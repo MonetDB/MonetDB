@@ -23,20 +23,34 @@
 
 # make rules to generate MonetDB'\''s documentation
 
-$(prefix)/doc/Mx/mxdoc.tex:  $(top_srcdir)/doc/mxdoc.tex
+$(prefix)/doc/Mx/content.shtml:	$(top_srcdir)/src/utils/Mx/content.shtml
 	-@mkdir -p $(prefix)/doc/Mx
-	cp $(top_srcdir)/doc/mxdoc.tex $(prefix)/doc/Mx
+	cp $< $@
 
-$(prefix)/doc/Mx/mxdoc.aux:  $(prefix)/doc/Mx/mxdoc.tex
+$(prefix)/doc/Mx/title.txt:	$(top_srcdir)/src/utils/Mx/title.txt
+	-@mkdir -p $(prefix)/doc/Mx
+	cp $< $@
+
+$(prefix)/doc/Mx/mxdoc.tex:	$(top_srcdir)/doc/mxdoc.tex
+	-@mkdir -p $(prefix)/doc/Mx
+	cp $< $@
+
+$(prefix)/doc/Mx/mxdoc.aux:	$(prefix)/doc/Mx/mxdoc.tex
 	(cd $(prefix)/doc/Mx; latex mxdoc.tex; latex mxdoc.tex)
 
-html:	$(prefix)/doc/Mx/mxdoc.aux
+$(prefix)/doc/Mx/index.html:	$(prefix)/doc/Mx/mxdoc.aux
 	(cd $(prefix); latex2html -ascii_mode -noimages -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc/Mx doc/Mx/mxdoc.tex)
+
+$(prefix)/doc/MapiJava/index.html:	$(top_srcdir)/src/mapi/clients/java/MapiClient.java	\
+					$(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java	\
+					$(top_srcdir)/src/mapi/clients/java/mapi/MapiException.java
 	-@mkdir -p $(prefix)/doc/MapiJava
 	lynx -source http://monetdb.cwi.nl/MonetDB.css > $(prefix)/doc/MapiJava/MonetDB.css
 	javadoc -d $(prefix)/doc/MapiJava -stylesheetfile $(prefix)/doc/MapiJava/MonetDB.css\
 		$(top_srcdir)/src/mapi/clients/java/MapiClient.java       		\
 	        $(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java        		\
 	        $(top_srcdir)/src/mapi/clients/java/mapi/MapiException.java
+
+html:	$(prefix)/doc/Mx/content.shtml $(prefix)/doc/Mx/title.txt $(prefix)/doc/Mx/index.html $(prefix)/doc/MapiJava/index.html $(top_srcdir)/doc/mkdoc.py
 	python $(top_srcdir)/doc/mkdoc.py $(top_srcdir) $(prefix)
 
