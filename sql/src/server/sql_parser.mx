@@ -476,6 +476,8 @@ sqlstmt:
 			  lc->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ mvc *lc = (mvc*)parm; 
 			  lc->sym = $$ = NULL; YYACCEPT; }
+ | ';'			{ mvc *lc = (mvc*)parm; 
+			  lc->sym = $$ = NULL; YYACCEPT; }
  | error ';'		{ mvc *lc = (mvc*)parm;
 			  lc->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR 		{ mvc *lc = (mvc*)parm;
