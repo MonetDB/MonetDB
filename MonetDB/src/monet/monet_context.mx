@@ -179,11 +179,15 @@ Cntxt CNTXTnew(Cntxt outer){
         CNTXTclient(outer, &c);
 
         MT_set_lock(monet_contextLock, "CNTXTnew");
-        if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)BATMARGIN)) {
+        if (monet_cntxtcur >= MAXCLIENTS) {
+                i = monet_cntxtcur; /* get from freelist */
+                monet_cntxtcur = monet_cntxt[monet_cntxtcur].next;
+        } else if (monet_cntxtfree >= monet_cntxtmax && !CNTXTrealloc(BATMARGIN)) {
                 MT_unset_lock(monet_contextLock, "CNTXTnew");
                 return 0;
+        } else {
+                i = monet_cntxtfree++; /* alloc new at end succeeded */
         }
-        i = monet_cntxtcur;
         monet_cntxtcur = monet_cntxt[i].next;
         if (!monet_cntxtcur) monet_cntxtcur = i+1;
         monet_cntxt[i].shadow = 0;

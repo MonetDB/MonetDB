@@ -944,29 +944,34 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 Most dictionary tables are created once and loaded upon system 
 restart. By keeping the reference count at one we are assured that 
 they remain fixed in memory for the duration of the session.
-
-@= TBL_create
-   TBL_@1_@2 = TBL_create(monet_clients, "@1_@2", BATnew(TYPE_@3, TYPE_@4, @5));
-   if (@6) BATkey(TBL_@1_@2,@6);
-   if (@7) BATkey(BATmirror(TBL_@1_@2),@7);
-@= VAR_create
-   sprintf(buf, "%s_%s", @1, nme);
-   v = VARnew((Cntxt) (client-monet_clients), buf); 
-   v->binding.val.bval = b->batCacheid;
-   v->binding.vtype = TYPE_bat;
-   v->binding.len = 0;
-   VARfreeze(v);
-   VARfixate(v);
 @c
-BAT *TBL_create(Client client, str nme, BAT *b) {
-	char buf[128];
+BAT *TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, int tmode) {
+	BAT *b = BATnew(htpe, ttpe, cnt);
+	char buf[128], *user = client->user;
 	Variable v;
 
-	BATmode(b, TRANSIENT);
-	@:VAR_create("monet")@
+	if (hmode) BATkey(b,hmode);
+	if (tmode) BATkey(BATmirror(b),tmode);
+
+	/* the batname is prefixed with the client user name to make in easy to spot 
+         * in the BBP dir list. Note that this rename may fail if such a bat already 
+	 * exists (very rare and contrived though)
+	 */
+   	sprintf(buf, "%s_%s", user?user:"monet", nme);
 	BBPrename(b->batCacheid, buf);
-	if (client == monet_clients && strchr(nme,'_') == NULL) {
-		@:VAR_create("adm")@
+
+	/* whereas the batname is for debugging, each client sees his bat using the 
+         * alias monet_X using a MIL variable.
+         */
+	if (user) {
+   		sprintf(buf, "monet_%s", nme);
+		v = VARnew((Cntxt) (client-monet_clients), buf); 
+   		v->binding.val.bval = b->batCacheid;
+   		v->binding.vtype = TYPE_bat;
+   		v->binding.len = 0;
+   		BBPincref(b->batCacheid, TRUE);
+   		VARfreeze(v);
+   		VARfixate(v);
 	}
 	return b;
 }
@@ -981,7 +986,7 @@ BAT *TBL_lookup( Client client, str nme ){
 	if (v){ /* dirty replacement of the client bats */
 		BAT *o = BATdescriptor(v->binding.val.bval);
 		b = BATcopy(o);
-		BBPdecref(o->batCacheid, FALSE);
+		BBPunfix(o->batCacheid);
    		v->binding.val.bval = b->batCacheid;
 	} else {
 		GDKerror("variable %s not found\n",  buf );
@@ -994,6 +999,8 @@ The TBL initialization creates a set of function tables.
 Subsequently the starting address of all built-in functions is stored,
 (and documentary information) [Should be removed or used as a view]
 Since all code will move to modules this function will be come obsolute.
+@= TBL_create
+ 	TBL_@1_@2 = TBL_create(monet_clients,"@1_@2",@5,TYPE_@3,TYPE_@4,@6,@7);
 @c
 void TBL_init(void) {
         TBL_protector = MT_create_lock();
@@ -2334,26 +2341,19 @@ void TBL_initclient(Client client, Client father) {
 		if (father)
 		    TBL_inc_mod_use(client, father); /* inc mod use counters */
 	} else {
-		client->fcntbl = TBL_create(client, "fcntbl", 
-				    BATnew(TYPE_str, TYPE_oid, TBL_SIZE));
-   		BATkey(BATmirror(client->fcntbl),BOUND2BTRUE);
+		client->fcntbl = TBL_create(client, "fcntbl", TBL_SIZE, TYPE_str, TYPE_oid, 0, BOUND2BTRUE);
 
 		/* Create the client acc-table, and fill it 
 	 	 * with the standard types.
 	 	 */
-		client->acctbl = TBL_create(client, "acctbl", 
-			     	    BATnew(TYPE_str, TYPE_int, TBL_SIZE));
-   		BATkey(client->acctbl,BOUND2BTRUE); /* unique acc names */
-   		BATkey(BATmirror(client->acctbl),BOUND2BTRUE);
+		client->acctbl = TBL_create(client, "acctbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, BOUND2BTRUE);
 		i = ACC_hash; BUNins(client->acctbl, "hash", &i);
 		i = ACC_index;BUNins(client->acctbl, "index", &i);
 
 		/* Create the client atom-table, and fill it 
 	 	 * with the standard types.
 	 	 */
-		client->atomtbl = TBL_create(client, "atomtbl", 
-				     BATnew(TYPE_str, TYPE_int, TBL_SIZE));
-   		BATkey(client->atomtbl,BOUND2BTRUE);/* unique type names */
+		client->atomtbl = TBL_create(client, "atomtbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, 0);
 		i = TYPE_void;BUNins(client->atomtbl, "void", &i);
 		i = TYPE_bit; BUNins(client->atomtbl, "bit", &i);
 		i = TYPE_chr; BUNins(client->atomtbl, "chr", &i);
@@ -2426,9 +2426,9 @@ void TBL_exitclient(Client client) {
 	BBPreclaim(b);
 	BBPreclaim(bn);
 
-	VARclearBAT(client->fcntbl);
-	VARclearBAT(client->atomtbl);
-	VARclearBAT(client->acctbl);
+	BBPunfix(client->fcntbl->batCacheid);
+	BBPunfix(client->atomtbl->batCacheid);
+	BBPunfix(client->acctbl->batCacheid);
 	client->fcntbl = client->atomtbl = client->acctbl = 0;
 	TBL_M_unlock(NULL);
 }

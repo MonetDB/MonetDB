@@ -1366,9 +1366,16 @@ BAT *BATmode(BAT *b, int mode) {
         if (mode != b->batPersistence) {
                 bat bid = ABS(b->batCacheid);
                 BBPdirty(1);
-                if (mode == PERSISTENT && VIEWparent(b)) {
+		
+		/* a SESSION bat is a TRANSIENT with one logical reference added */
+		if (mode == SESSION) {
+			BBPincref(bid, TRUE);
+		} else if (b->batPersistence == SESSION) {
+			BBPdecref(bid, TRUE);
+		} 
+		if (mode == PERSISTENT && VIEWparent(b)) {
                         VIEWreset(b);
-                }
+                }  
                 MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
                 if (mode == PERSISTENT) {
                         if (!(BBPstatus(bid)&BBPDELETED))

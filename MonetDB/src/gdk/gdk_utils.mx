@@ -1159,7 +1159,6 @@ int GDKinit(char *dbname, char *dbfarm) {
 	GDKenv = BATnew(TYPE_str,TYPE_str,100);
 	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
-	BBPfix(BBPcacheid(GDKenv));
 
 	return 1;
 }

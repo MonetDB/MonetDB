@@ -316,7 +316,7 @@ BAT* BAThashjoin(BAT* l, BAT* r, size_t estimate) {
 	ptr	v, nil = ATOMnilptr(r->htype); 
 	BUN	p, q, w;
 	int	any;
-	BAT	*bn;
+	BAT	*bn = NULL;
 
         @:joincheck(BAThashjoin, l->ttype, r->htype)@
 	@:joinbat(JOIN_EQ, BAThashjoin(l,r,oid_nil), estimate)@
@@ -588,7 +588,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
 	ssize_t offset;
         BUN r_cur, l_cur, l_end, dst;
         oid seqbase;
-        BAT *bn, *l_orig = l;
+        BAT *bn = NULL, *l_orig = l;
 
         BATcheck(l, "BATfetchjoin: l");
         BATcheck(r, "BATfetchjoin: r");
@@ -843,7 +843,7 @@ probes it using the larger one. [TODO]
 @c
 BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
 	int	any; 
-	BAT	*bn; 
+	BAT	*bn = NULL; 
 	
 	@:joincheck(BATouterjoin, l->ttype, r->htype)@
 	if (BAThdense(l) && BAThkey(r)) {
@@ -1847,10 +1847,11 @@ while(algo) {
 	 */
 	if (n == lead_col) {
 		if (ATOMcmp(b->htype, h, ATOMnilptr(b->htype)) == 0) {
-			n->lo = n->hi = p;
+    			n->lo = n->hi = p;
 			continue;
 		} else if (algo <= LEAD_TRAVERSE_SEQ) { 
-    			n->hi = p + BUNsize(b);
+    			n->lo = p;
+			n->hi = p + BUNsize(b);
 			continue;
 		}
 	}

@@ -920,7 +920,7 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 	/* resolve only once: CONSTANT */
         lt->token = TOK_CONSTANT; 
 	i = BBPindex(lt->yyval.val.sval);
-	if (i) BBPincref(i, FALSE);
+	if (i) BBPfix(i);
 	if (i == 0 || (b=BATdescriptor(i)) == NULL) {
 		lt->yyval.vtype = TYPE_str;
 		lt->yyval.len = 1+strlen(lt->yyval.val.sval);
@@ -936,6 +936,8 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 	lt->dealloc = TYPE_bat;
 	lt->free.batref.id = i;
 	lt->free.batref.stamp = b->batStamp;
+	BBPincref(i, TRUE);
+	BBPunfix(i);
 	*res = lt->yyval;
 	return 0;
 }

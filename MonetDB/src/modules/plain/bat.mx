@@ -770,11 +770,15 @@ int CMDdestroy(bit *res, str input, bit *immediately) {
         *res = FALSE;
         if (bid ) {
                 BBPfix(bid);
-                if (BBPindex(input) == bid) {
-                        BAT *b = BBPquickdesc(bid, FALSE);
-			BATmode(b, *immediately?TRANSIENT:SESSION);
-                        *res = TRUE;
-                }
+		if (BBPindex(input) == bid) {
+			BAT *b = BBPquickdesc(bid, FALSE);
+			if (*immediately == FALSE) {
+				b->batKeeparound = 1;
+				b->batDirtydesc = 1;
+			}
+			BATmode(b, TRANSIENT);
+			*res = TRUE;
+		}
                 BBPunfix(bid);
         }
         return GDK_SUCCEED;

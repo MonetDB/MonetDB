@@ -884,6 +884,7 @@ typedef struct {
 typedef int (*GDKfcn)();
 
 /* macros's to hide complexity of BAT structure */
+#define batKeeparound	P->keeparound	
 #define batPersistence	P->persistence	
 #define batCopiedtodisk	P->copiedtodisk	
 #define batSet		P->set	
