@@ -959,6 +959,8 @@ void sqltypeinit()
 	for(i=0; ts[i]; i++){
 		sql_create_aggr("min", "min", ts[i], ts[i]);
 		sql_create_aggr("max", "max", ts[i], ts[i]);
+		sql_create_func("sql_min","min", ts[i], ts[i], ts[i],SCALE_FIX);
+		sql_create_func("sql_max","max", ts[i], ts[i], ts[i],SCALE_FIX);
 	}
 
 	for(t=numerical; t < decimals; t++){
@@ -997,8 +999,6 @@ void sqltypeinit()
 	sql_create_aggr( "count", "count", NULL, INT ); 
 
 	for(t=misc; t < strings; t++){
-		sql_create_func("sql_max","max", *t, *t, *t, SCALE_FIX);
-		sql_create_func("sql_min","min", *t, *t, *t, SCALE_FIX);
 		sql_create_func("and","and", *t, *t, *t, SCALE_FIX);
 		sql_create_func("or","or", *t, *t, *t, SCALE_FIX);
 		sql_create_func("xor","xor", *t, *t, *t, SCALE_FIX);
@@ -1011,8 +1011,6 @@ void sqltypeinit()
 		sql_create_func("sql_add","+", *t, *t, *t, SCALE_FIX);
 		sql_create_func("sql_mul","*", *t, *t, *t, SCALE_ADD);
 		sql_create_func("sql_div","/", *t, *t, *t, SCALE_SUB);
-		sql_create_func("sql_max","max", *t, *t, *t, SCALE_FIX);
-		sql_create_func("sql_min","min", *t, *t, *t, SCALE_FIX);
 		sql_create_func("sql_mod","%", *t, *t, *t, SCALE_FIX);
 		sql_create_func("and","and", *t, *t, *t, SCALE_FIX);
 		sql_create_func("or","or", *t, *t, *t, SCALE_FIX);

@@ -188,9 +188,11 @@ sql_set_var( mvc *sql, symbol *s )
 
 		if (!v)
 			return NULL;
+
 		if (!simple_type(v)) {
-			
-			return sql_error(sql, 02, "Can only set %s=simple_value (%s,%d)\n", name, st_type2string(v->type), v->type);
+			return sql_error(sql, 02, 
+				"Can only set %s=simple_value (%s,%d)\n", 
+				name, st_type2string(v->type), v->type);
 		}
 
 		n = mvc_bind( sql, "sys", "session", "name", 0); 
@@ -198,7 +200,8 @@ sql_set_var( mvc *sql, symbol *s )
 		if (!(p=BUNfnd(BATmirror(n), name))) {
 			bat_destroy(n);
 			bat_destroy(t);
-			return sql_error(sql, 02, "Unknown session variable, %s\n",
+			return sql_error(sql, 02, 
+				"Unknown session variable, %s\n",
 				name);
 		}
 		typename = BUNtail(t, BUNfnd(t, BUNhead(n,p)));

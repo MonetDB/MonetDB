@@ -38,7 +38,6 @@ module 'sql_server'
 [ "cast2sht(str) : sht"							  ]
 [ "cast2sht(str, int, int) : sht"					  ]
 [ "hash(any::1, int) : int"							  ]
-[ "sqllogmanager() : void"							  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_ibat(mvc, str, str, str, int) : BAT[any::1,any::2]"		  ]
@@ -64,6 +63,7 @@ module 'sql_server'
 [ "round(sht, sht) : sht"						  ]
 [ "sqlclient( Stream s_in, Stream s_out ) "					  ]
 [ "sqlconsole( ) "							  ]
+[ "sqllogmanager() : void"						  ]
 
 quit;
 
