@@ -351,10 +351,11 @@ public class MonetConnection implements Connection {
 			new SQLException("This driver can only handle savepoints it created itself");
 
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
-		if (!sp.isValid()) throw new SQLException("Savepoint invalidated");
 
 		// send the appropriate query string to the database
-		sendIndependantCommand("sRELEASE SAVEPOINT s" + sp.getId() + ";");
+		String error =
+			sendIndependantCommand("sRELEASE SAVEPOINT " + sp.getName() + ";");
+		if (error != null) throw new SQLException(error);
 	}
 
 	/**
@@ -387,9 +388,12 @@ public class MonetConnection implements Connection {
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself");
 
-		// send the appropriate query string to the database
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
- 		sendIndependantCommand("sROLLBACK TO SAVEPOINT s" + sp.getId() + ";");
+
+		// send the appropriate query string to the database
+		String error =
+			sendIndependantCommand("sROLLBACK TO SAVEPOINT " + sp.getName() + ";");
+		if (error != null) throw new SQLException(error);
 	}
 
 	/**
@@ -418,7 +422,9 @@ public class MonetConnection implements Connection {
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		this.autoCommit = autoCommit;
 
-		sendIndependantCommand("SSET autocommit = " + autoCommit + ";");
+		String error =
+			sendIndependantCommand("SSET autocommit = " + autoCommit + ";");
+		if (error != null) throw new SQLException(error);
 	}
 
 	public void setCatalog(String catalog) {}
@@ -439,7 +445,9 @@ public class MonetConnection implements Connection {
 		// create a new Savepoint object
 		MonetSavepoint sp = new MonetSavepoint();
 		// send the appropriate query string to the database
-		sendIndependantCommand("SSAVEPOINT s" + sp.getId() + ";");
+		String error =
+			sendIndependantCommand("sSAVEPOINT " + sp.getName() + ";");
+		if (error != null) throw new SQLException(error);
 
 		return(sp);
 	}
@@ -464,7 +472,9 @@ public class MonetConnection implements Connection {
 			throw new SQLException(e.getMessage());
 		}
 		// send the appropriate query string to the database
-		sendIndependantCommand("SSAVEPOINT s" + sp.getId() + ";");
+		String error =
+			sendIndependantCommand("sSAVEPOINT " + sp.getName() + ";");
+		if (error != null) throw new SQLException(error);
 
 		return(sp);
 	}
@@ -482,7 +492,7 @@ public class MonetConnection implements Connection {
 	 */
 	public void setTransactionIsolation(int level) {
 		if (level != TRANSACTION_SERIALIZABLE) {
-			addWarning("MonetDB only supports fully serializable transactions, transaction level is raised to TRANSACTION_SERIALIZABLE");
+			addWarning("MonetDB only supports fully serializable transactions, continuing with transaction level raised to TRANSACTION_SERIALIZABLE");
 		}
 	}
 
@@ -513,7 +523,10 @@ public class MonetConnection implements Connection {
 			// don't do work if it's not needed
 			if (size == curReplySize) return;
 
-			sendIndependantCommand("SSET reply_size = " + size + ";");
+			String error =
+				sendIndependantCommand("SSET reply_size = " + size + ";");
+			if (error != null) throw new SQLException(error);
+
 			// store the reply size after a successful change
 			curReplySize = size;
 		}
@@ -528,7 +541,10 @@ public class MonetConnection implements Connection {
 	 */
 	void sendCommit() throws SQLException {
 		// send commit to the server (note the s in front is a protocol issue)
-		sendIndependantCommand("SCOMMIT;");
+		String error = sendIndependantCommand("sCOMMIT;");
+		// I don't know why and how an error could be produced, but you never
+		// know with Monet
+		if (error != null) throw new SQLException(error);
 	}
 
 	/**
@@ -540,7 +556,10 @@ public class MonetConnection implements Connection {
 	 */
 	void sendRollback() throws SQLException {
 		// send commit to the server (note the s in front is a protocol issue)
-		sendIndependantCommand("SROLLBACK;");
+		String error = sendIndependantCommand("sROLLBACK;");
+		// I don't know why and how an error could be produced, but you never
+		// know with Monet
+		if (error != null) throw new SQLException(error);
 	}
 
 	/**
@@ -549,9 +568,12 @@ public class MonetConnection implements Connection {
 	 * discarded.
 	 *
 	 * @param command the exact string to send to Monet
+	 * @return a string containing errors that occurred after the command was
+	 *         executed, or null if no errors occurred
 	 * @throws SQLException if an IO exception occurs
 	 */
-	private void sendIndependantCommand(String command) throws SQLException {
+	private String sendIndependantCommand(String command) throws SQLException {
+		String error;
 		// get lock on Monet
 		synchronized(monet) {
 			try {
@@ -560,11 +582,12 @@ public class MonetConnection implements Connection {
 				// send the command
 				monet.writeln(command);
 				// wait for the prompt again
-				monet.waitForPrompt();
+				error = monet.waitForPrompt();
 			} catch (IOException e) {
 				throw new SQLException(e.toString());
 			}
 		}
+		return(error);
 	}
 
 	/**
