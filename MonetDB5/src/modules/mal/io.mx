@@ -517,7 +517,7 @@ str CMDprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str 
 		ATOMprint(tpe, *(str*)val, fp);
         else  	ATOMprint(tpe, val, fp);
         if(tl) stream_printf(fp,"%s",tl);
-	fp->flush(fp);
+	stream_flush(fp);
         return MAL_SUCCEED;
 }
 str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -554,7 +554,7 @@ str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tpe == TYPE_str)
 		ATOMprint(TYPE_str, *(str*)val, GDKout);
 	else ATOMprint(tpe, val, GDKout);
-	GDKout->flush(GDKout);
+	stream_flush(GDKout);
 	return MAL_SUCCEED;
 }
 
@@ -583,7 +583,7 @@ str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk,
         } 
 	/*if(printhead)*/ nbats++;
         BATmultiprintf(f, nbats, piv, printhead, order);
-	f->flush(f);
+	stream_flush(f);
 	for(k=0; k< nbats-1;k++) BBPunfix(piv[k]->batCacheid);
         return MAL_SUCCEED;
 }

@@ -1747,14 +1747,14 @@ str CMDexport(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	stream  *s = open_wastream(*fnme);
 	@:getBATdescriptor(ret,bid,b,export)@
-	if (s== NULL || s->errnr ) {
+	if (s== NULL || stream_errnr(s) ) {
 		*ret = FALSE;
 		return throwException(MALEXCEPTION,"bat.export",
 			"could not open %s",*fnme);
 	}
 	BATprintf(s,b);
-	s->close(s);
-	s->destroy(s);
+	stream_close(s);
+	stream_destroy(s);
 	*ret = TRUE;
 	return MAL_SUCCEED;
 }

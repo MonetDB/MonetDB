@@ -128,7 +128,7 @@ void MAPIlistenThread(int sock)
 				continue;
 			}
 			/* Get at most 1 LINE with identity information*/
-			while( fdin->read(fdin,command+i,1,1)==1 ){
+			while( stream_read(fdin,command+i,1,1)==1 ){
 				if( command[i]=='\n') break;
 				if( i==BLOCK-1) break;
 				i++;

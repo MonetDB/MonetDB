@@ -64,7 +64,7 @@ command readInt( s:stream):str = stream_read_int
 	comment "read integer data from the stream";
 
 
-command flush( s:stream ) = stream_flush
+command flush( s:stream ) = stream_flush_stream
 	comment "flush the stream";
 
 command close( s:stream ) = stream_close_stream 
@@ -89,8 +89,8 @@ command close( s:stream ) = stream_close_stream
 str stream_open_@1( stream *S, str filename ){
 	stream *s;
 
-	if ((s = open_@1( filename )) == NULL || s->errnr){
-		if (s) s->destroy(s);
+	if ((s = open_@1( filename )) == NULL || stream_errnr(s)){
+		if (s) stream_destroy(s);
 		return throwMessage("stream","Could not open file\n");
  	} else {
 		*(stream**)S = s;
@@ -108,8 +108,8 @@ str stream_open_@1( stream *S, str filename ){
 str stream_socket_@1( stream *S, int *socket, str name ){
 	stream *s;
 
-	if ((s = socket_@1( *socket, name )) == NULL || s->errnr){
-		if (s) s->destroy(s);
+	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)){
+		if (s) stream_destroy(s);
 		return throwMessage("streams.socket_rstream","failed"); 
 	} else {
 		*(stream**)S = s;
@@ -124,7 +124,7 @@ str stream_socket_@1( stream *S, int *socket, str name ){
 
 str stream_write_string( stream *S, str *data ){
 	stream *s = *(stream**)S;
-	s->write( s, *data, 1, strlen(*data));
+	stream_write( s, *data, 1, strlen(*data));
 	return MAL_SUCCEED;
 }
 str stream_write_int( stream *S, int *data ){
@@ -139,7 +139,7 @@ str stream_read_str( str *res,stream *S){
         size_t size = CHUNK + 1;
         char *buf = GDKmalloc(size), *start = buf;
 
-        while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
+        while ((len = stream_read(s, start, 1, CHUNK)) == CHUNK){
                 size += CHUNK;
                 buf = GDKrealloc(buf, size);
                 start = buf + size - CHUNK - 1;
@@ -156,16 +156,16 @@ str stream_read_int( int *data, stream *S){
 	return MAL_SUCCEED;
 }
 
-str stream_flush( stream *S ){
+str stream_flush_stream( stream *S ){
 	stream *s = *(stream**)S;
-	s->flush( s );
+	stream_flush( s );
 	return MAL_SUCCEED;
 }
 
 str stream_close_stream( stream *S ){
 	stream *s = *(stream**)S;
-	s->close( s );
-	s->destroy( s );
+	stream_close( s );
+	stream_destroy( s );
 	return MAL_SUCCEED;
 }
 

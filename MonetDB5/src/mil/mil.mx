@@ -85,8 +85,8 @@ str MILreader(Client c){
 #ifdef MIL_DEBUG
 	stream_printf(GDKout,"MILparser: finished reading the block\n");
 #endif
-	f->flush(f);
-	f->close(f);
+	stream_flush(f);
+	stream_close(f);
 	/* if( c->fdin->eof(c->fdin) )  c->mode= FINISHING;*/
 	if( c->mode <= FINISHING)
 		return throwMessage("MILreader","end of MIL input\n");

@@ -447,8 +447,8 @@ static int isBATVector(Table *t);
 static void TABshowPage(Table *t);
 static int setTabwidth(Column *c);
 
-#define LINE(s, X)     { int n=X-1; s->write(s, "#", 1, 1); while(--n>0)\
-                                s->write(s, "-", 1, 1); \
+#define LINE(s, X)     { int n=X-1; stream_write(s, "#", 1, 1); while(--n>0)\
+                                stream_write(s, "-", 1, 1); \
                                 stream_printf(s, "#\n"); }
 #define TABS(s, X)     { int n=X; while(n-->0) stream_printf(s, "\t");  }
 @+
@@ -525,7 +525,7 @@ str TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return throwMessage("tablet.print","Only scalars expected");
 	else TABshowRow(t);
 	if( t->tbotbrk==0) { LINE(t->fd,t->rowwidth);}
-	else t->fd->write(t->fd, t->tbotbrk,1,strlen(t->tbotbrk)); 
+	else stream_write(t->fd, t->tbotbrk,1,strlen(t->tbotbrk)); 
 	return MAL_SUCCEED;
 }
 str TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -536,7 +536,7 @@ str TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	TABformatPrepare(mb,stk,pci);
 	t= tableReports[rnr];
 	if( t->ttopbrk==0) { LINE(t->fd,t->rowwidth);}
-	else t->fd->write(t->fd, t->ttopbrk,1,strlen(t->ttopbrk)); 
+	else stream_write(t->fd, t->ttopbrk,1,strlen(t->ttopbrk)); 
 	if( !isBATVector(t))
 		return throwMessage("tablet.print","Only aligned BATs expected");
 	else {
@@ -1073,8 +1073,8 @@ int dump_line( char **buf, int *len, Column *fmt, stream *fd, size_t nr_attrs, s
 		Column *f = fmt+i;
 		char *p = (char*)bun_tail(f->bval,id);
 		int l = f->tostr( f->extra, buf, len, f->adt, p);
-		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, f->sep, 1, f->seplen );
+		(void)stream_write( fd, *buf, 1, l );
+		(void)stream_write( fd, f->sep, 1, f->seplen );
 	}
 	return 0;
 }
@@ -1092,8 +1092,8 @@ int output_line( char **buf, int *len, Column *fmt, stream *fd, size_t nr_attrs,
 		Column *f = fmt+i;
 		char *p = BUNtail(f->bval, f->pval);
 		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, f->sep, 1, f->seplen );
+		(void)stream_write( fd, *buf, 1, l );
+		(void)stream_write( fd, f->sep, 1, f->seplen );
 	    }
 	}
 	return 0;
@@ -1106,8 +1106,8 @@ int output_line_dense( char **buf, int *len, Column *fmt, stream *fd, size_t nr_
 		Column *f = fmt+i;
 		char *p = BUNtail(f->bval, f->pval);
 		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, f->sep, 1, f->seplen );
+		(void)stream_write( fd, *buf, 1, l );
+		(void)stream_write( fd, f->sep, 1, f->seplen );
 		f->pval = BUNnext( f->bval, f->pval );
 	}
 	return 0;
@@ -1120,8 +1120,8 @@ int output_line_lookup( char **buf, int *len, Column *fmt, stream *fd, size_t nr
 		Column *f = fmt+i;
 		char *p = BUNtail(f->bval, BUNptr(f->bval,id+BUNindex(f->bval,BUNfirst(f->bval))));
 		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, f->sep, 1, f->seplen );
+		(void)stream_write( fd, *buf, 1, l );
+		(void)stream_write( fd, f->sep, 1, f->seplen );
 	}
 	return 0;
 }
@@ -1278,14 +1278,14 @@ BAT *TABLEload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr ){
 	stream *s = open_rastream( datafile );
 	bstream *b = NULL;
 
-	if (s->errnr){
+	if (stream_errnr(s)){
 		GDKerror("could not open file %s\n", datafile );
 		return NULL;
 	}
 	res = TABLEinput( names, seps, types, b=bstream_create(s, SIZE), nr );
 	bstream_destroy(b);
-	s->close(s);
-	s->destroy(s);
+	stream_close(s);
+	stream_destroy(s);
 	return res;
 }
 
@@ -1312,15 +1312,15 @@ void TABLEdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr ){
 	if (create_dumpformat( &as, names, seps, bats) != ~(size_t)0 && 
 	    TABLEassign_BATs( &as, bats ) != ~(size_t)0){
 		stream *s = open_wastream( datafile );
-		if (!s->errnr && dump_file( &as, s ) >= 0){
+		if (!stream_errnr(s) && dump_file( &as, s ) >= 0){
 			stream_printf(GDKerr, "saved in %s\n", datafile );
 		}
-		if (s->errnr){
+		if (stream_errnr(s)){
 		 	GDKerror("could not open file %s\n", datafile );
 		} else {
-			s->close(s);
+			stream_close(s);
 		}
-		s->destroy(s);
+		stream_destroy(s);
 	}
 	TABLEdestroy_format( &as );
 }
@@ -1590,14 +1590,14 @@ void TABshowHeader(Table *t){
 	unsigned int i;
 	char *prop="name",*p,*q;
 
-	if( t->title) t->fd->write(t->fd, t->title,1,strlen(t->title));
+	if( t->title) stream_write(t->fd, t->title,1,strlen(t->title));
 	else { LINE(t->fd,t->rowwidth); }
 
 	p= t->properties?t->properties:prop;
 	while(p){
 		q= strchr(p,',');
 		if(q) *q=0;
-		t->fd->write(t->fd,"# ",1,2);
+		stream_write(t->fd,"# ",1,2);
 		for(i=0; i< t->nr_attrs; i++){
 			Column *c= t->columns+i;
 			unsigned int len ;
@@ -1666,24 +1666,24 @@ break;
 			len= prop?strlen(prop):0;
 			if(c->maxwidth && len > c->maxwidth) len= c->maxwidth;
 			if( c->lbrk) 
-				t->fd->write(t->fd, c->lbrk,1,u=strlen(c->lbrk));
-			t->fd->write(t->fd, prop, len, 1);
+				stream_write(t->fd, c->lbrk,1,u=strlen(c->lbrk));
+			stream_write(t->fd, prop, len, 1);
 			if( c->rbrk && i+1<t->nr_attrs)
-				t->fd->write(t->fd, c->rbrk,1,v=strlen(c->rbrk));
+				stream_write(t->fd, c->rbrk,1,v=strlen(c->rbrk));
 			if( c == t->columns) 
 				len+= t->rlbrk? strlen(t->rlbrk):0;
 			TABS(t->fd, c->tabs-((len+u+v)/8));
 			if(prop){ GDKfree(prop); prop=0;}
 
 		}
-		t->fd->write(t->fd,"# ",1,2);
-		t->fd->write(t->fd,p,1,strlen(p));
-		t->fd->write(t->fd,"\n",1,1);
+		stream_write(t->fd,"# ",1,2);
+		stream_write(t->fd,p,1,strlen(p));
+		stream_write(t->fd,"\n",1,1);
 		if(q){ *q=','; p= q+1;} else p=0;
 	}
 
 	if( t->tbotbrk==0) { LINE(t->fd,t->rowwidth);}
-	else t->fd->write(t->fd, t->tbotbrk,1,strlen(t->tbotbrk));
+	else stream_write(t->fd, t->tbotbrk,1,strlen(t->tbotbrk));
 }
 void TABshowRow(Table *t){
 	unsigned int i, m=0;
@@ -1722,14 +1722,14 @@ void TABshowRow(Table *t){
 		len= strlen(buf);
 		if(c->maxwidth && len > c->maxwidth) len= c->maxwidth;
 		if( c->lbrk) 
-			t->fd->write(t->fd, c->lbrk,1,u=strlen(c->lbrk));
-		t->fd->write(t->fd,buf,1,len);
+			stream_write(t->fd, c->lbrk,1,u=strlen(c->lbrk));
+		stream_write(t->fd,buf,1,len);
 		if( c->rbrk ) {
 			v = strlen(c->rbrk);
 			if( i+1< t->nr_attrs){
-				t->fd->write(t->fd, c->rbrk,1,v);
+				stream_write(t->fd, c->rbrk,1,v);
 			} else 
-			if( *c->rbrk != ',')  t->fd->write(t->fd,c->rbrk,1,v);
+			if( *c->rbrk != ',')  stream_write(t->fd,c->rbrk,1,v);
 		}
 		
 		if( c == t->columns) 

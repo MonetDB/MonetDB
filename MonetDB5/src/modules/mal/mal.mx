@@ -189,7 +189,7 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ATOMprint(tpe, *(str*)val, fp);
         else  	ATOMprint(tpe, val, fp);
         stream_printf(fp," ]\n");
-	fp->flush(fp);
+	stream_flush(fp);
         return MAL_SUCCEED;
 }
 str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -203,7 +203,7 @@ str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tpe == TYPE_str)
 		ATOMprint(TYPE_str, *(str*)val, GDKout);
 	else ATOMprint(tpe, val, GDKout);
-	GDKout->flush(GDKout);
+	stream_flush(GDKout);
 	return MAL_SUCCEED;
 }
 
@@ -227,7 +227,7 @@ str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, nbats, piv, flg, order);
-	GDKout->flush(GDKout);
+	stream_flush(GDKout);
         return MAL_SUCCEED;
 }
 
@@ -257,7 +257,7 @@ str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
-	GDKout->flush(GDKout);
+	stream_flush(GDKout);
         return MAL_SUCCEED;
 }
 @- Input redirectionrs
