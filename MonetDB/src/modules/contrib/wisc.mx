@@ -214,7 +214,7 @@ WISCgenerator(
 	count = *cnt;
 	stream_printf(GDKout,"WISC generator active on \"%s\" with %d tuples\n",
 		nme,*cnt);
-	GDKout->flush(GDKout);
+	stream_flush(GDKout);
 	
 	for (i = 0; i != 16; i++) {
 		char	buf[150];
@@ -315,7 +315,7 @@ int WISCdestroy(str nme)
 	BAT	*b;
 
 	stream_printf(GDKout,"WISC destroy active \"%s\" \n", nme);
-	GDKout->flush(GDKout);
+	stream_flush(GDKout);
 	for (i = 0; i != 16; i++) {
 		char	buf[150];
 		sprintf(buf, "%s_%s", nme, wisctype[i].attr);

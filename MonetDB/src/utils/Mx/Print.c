@@ -316,7 +316,7 @@ void	HideOff(void)
 {
     extern char *defHideText;
 
-    if( (pr_hide == opt_hide) && !pr_hide_text && (defHideText != (char *)0))
+    if(pr_hide == opt_hide && !pr_hide_text && defHideText != 0)
 	ofile_printf(defHideText);
     pr_hide--;
     pr_hide_text = 0;

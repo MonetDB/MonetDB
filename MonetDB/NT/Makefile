@@ -52,6 +52,7 @@ targetdirs:
 	if not exist $(includedir)	$(MKDIR) $(includedir)
 	if not exist $(pkgdatadir)	$(MKDIR) $(pkgdatadir)
 	if not exist $(pkglibdir)	$(MKDIR) $(pkglibdir)
+	if not exist $(pkglibdir)\Tests	$(MKDIR) $(pkglibdir)\Tests
 	if not exist $(pkgincludedir)	$(MKDIR) $(pkgincludedir)
 
 html:

@@ -123,6 +123,9 @@ code_gen = { 'm':       [ '.proto.h', '.glue.c', '.mil' ],
             'mal.in':   [ '.mal' ],
             'py.in':    [ '.py' ],
             'bat.in':    [ '.bat' ],
+            'mt.sed':    [ '.mt' ],
+            'c.sed':    [ '.c' ],
+            'h.sed':    [ '.h' ],
 }
 
 lib_code_gen = { 'fgr': [ '_glue.c' ], }

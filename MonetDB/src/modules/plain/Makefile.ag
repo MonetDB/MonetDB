@@ -78,7 +78,7 @@ LIBS = {
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-	LDFLAGS = -module
+	LDFLAGS = -module -lm
 }
 
 lib__counters = {

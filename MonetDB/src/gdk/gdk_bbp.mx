@@ -650,8 +650,8 @@ int BBPdir(void) {
 	    IODEBUG new_bbpentry(GDKerr, i);
 	  }
 
-	s->close(s);
-	s->destroy(s);
+	stream_close(s);
+	stream_destroy(s);
 	IODEBUG THRprintf(GDKerr, "BBPdir end\n");
 	return 0;
 error:	GDKsyserror("BBPdir failed:\n"); 

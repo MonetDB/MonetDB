@@ -32,7 +32,7 @@
 #include "disclaimer.h"
 
 int disclaimer=0;
-char disclaimerfile[256];
+char *disclaimerfile;
 
 static const char defaultfile[]="COPYRIGHT";
 

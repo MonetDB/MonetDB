@@ -10,17 +10,17 @@ int main(int argc, char **argv){
 	Mapi	dbh;
 	int    rows;
 
-	if( argc != 3){
-		printf("usage:%s <host>:<port> <language>\n",argv[0]);
+	if( argc != 4){
+		printf("usage:%s <host> <port> <language>\n",argv[0]);
 			exit(-1);
 	}
-	dbh= mapi_connect(argv[1],"guest",0,argv[2]);
+	dbh= mapi_connect(argv[1],atoi(argv[2]),"guest",0,argv[3]);
 	if(mapi_error(dbh)) die(dbh);
 
-	mapi_cache_limit(dbh,2,-1);
-	mapi_trace_log(dbh,"/tmp/mapilog");
+	mapi_cache_limit(dbh,2);
+	/* mapi_trace_log(dbh,"/tmp/mapilog"); */
 	/* mapi_trace(dbh,1);*/
-	if(strcmp(argv[2],"sql")==0){
+	if(strcmp(argv[3],"sql")==0){
 		if( mapi_query(dbh,"create table emp(name varchar,age int)")) 
 			die(dbh);
 		if( mapi_query(dbh,"insert into emp values(\"John\", 23)") ) 

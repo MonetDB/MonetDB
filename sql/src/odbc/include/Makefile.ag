@@ -1,2 +1,0 @@
-
-EXTRA_DIST = sql.h sqlext.h sqltypes.h sqlucode.h odbcinst.h

@@ -507,11 +507,12 @@ char *strip( char *s, char *e ){
 }
 
 static INLINE
-int insert_val( ascii_io *fmt, char *s, char *e ){
+int insert_val( ascii_io *fmt, char *s, char *e, int need2strip ){
 	ptr *adt;
 	oid on = oid_nil;	/* can't use &oid_nil because of the
 				   way it's defined */
-	adt = fmt->frstr( fmt->extra, fmt->adt, strip(s,e) );
+	if (need2strip) s = strip(s,e);
+	adt = fmt->frstr( fmt->extra, fmt->adt, s );
 	
 	if (!adt){
 		GDKerror("%lx not inserted %s\n", (size_t)adt, s);
@@ -584,14 +585,14 @@ int insert_line( ascii *as, char *line ){
 		if (e){
 			char *end = e;
 			if (quotes){
-				quotes = 0;
 				s = find_quote(s, quote);
 				if (!s) return -1;
 				s++;
 				e = rfind_quote(e, quote);
 			}
 			*e = 0;
-			res |= insert_val( &fmt[i], s, e );
+			res |= insert_val( &fmt[i], s, e, !quotes );
+			quotes = 0;
 			line = end + fmt[i].seplen;
 		} else {
 		        GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
@@ -625,14 +626,14 @@ int insert_line( ascii *as, char *line ){
 	if (e){
 		char *end = e;
 		if (quotes){
-			quotes = 0;
 			s = find_quote(s, quote);
 			if (!s) return -1;
 			s++;
 			e = rfind_quote(e, quote);
 		}
 		*e = 0;
-		res |= insert_val( &fmt[as->nr_attrs-1], s, e );
+		res |= insert_val( &fmt[as->nr_attrs-1], s, e, !quotes );
+		quotes = 0;
 		line = end + fmt[as->nr_attrs-1].seplen;
 	} else {
 		GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
@@ -649,8 +650,8 @@ int dump_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs,
 		ascii_io *f = fmt+i;
 		char *p = (char*)bun_tail(f->c,id);
 		int l = f->tostr( f->extra, buf, len, f->adt, p);
-		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, f->sep, 1, f->seplen );
+		(void)stream_write( fd, *buf, 1, l );
+		(void)stream_write( fd, f->sep, 1, f->seplen );
 	}
 	return 0;
 }
@@ -668,8 +669,8 @@ int output_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attr
 		ascii_io *f = fmt+i;
 		char *p = BUNtail(f->c, f->p);
 		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, f->sep, 1, f->seplen );
+		(void)stream_write( fd, *buf, 1, l );
+		(void)stream_write( fd, f->sep, 1, f->seplen );
 	    }
 	}
 	return 0;
@@ -682,8 +683,8 @@ int output_line_dense( char **buf, int *len, ascii_io *fmt, stream *fd, size_t n
 		ascii_io *f = fmt+i;
 		char *p = BUNtail(f->c, f->p);
 		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, f->sep, 1, f->seplen );
+		(void)stream_write( fd, *buf, 1, l );
+		(void)stream_write( fd, f->sep, 1, f->seplen );
 		f->p = BUNnext( f->c, f->p );
 	}
 	return 0;
@@ -696,8 +697,8 @@ int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, size_t 
 		ascii_io *f = fmt+i;
 		char *p = BUNtail(f->c, BUNptr(f->c,id+BUNindex(f->c,BUNfirst(f->c))));
 		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)fd->write( fd, *buf, 1, l );
-		(void)fd->write( fd, f->sep, 1, f->seplen );
+		(void)stream_write( fd, *buf, 1, l );
+		(void)stream_write( fd, f->sep, 1, f->seplen );
 	}
 	return 0;
 }
@@ -854,14 +855,14 @@ BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr ){
 	stream *s = open_rastream( datafile );
 	bstream *b = NULL;
 
-	if (s->errnr){
+	if (stream_errnr(s)){
 		GDKerror("could not open file %s\n", datafile );
 		return NULL;
 	}
 	res = ASCIIinput( names, seps, types, b=bstream_create(s, SIZE), nr );
 	bstream_destroy(b);
-	s->close(s);
-	s->destroy(s);
+	stream_close(s);
+	stream_destroy(s);
 	return res;
 }
 
@@ -888,15 +889,15 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr ){
 	if (create_dumpformat( &as, names, seps, bats) != ~(size_t)0 && 
 	    ASCIIassign_BATs( &as, bats ) != ~(size_t)0){
 		stream *s = open_wastream( datafile );
-		if (!s->errnr && dump_file( &as, s ) >= 0){
+		if (!stream_errnr(s) && dump_file( &as, s ) >= 0){
 			stream_printf(GDKerr, "saved in %s\n", datafile );
 		}
-		if (s->errnr){
+		if (stream_errnr(s)){
 		 	GDKerror("could not open file %s\n", datafile );
 		} else {
-			s->close(s);
+			stream_close(s);
 		}
-		s->destroy(s);
+		stream_destroy(s);
 	}
 	ASCIIdestroy_format( &as );
 }
