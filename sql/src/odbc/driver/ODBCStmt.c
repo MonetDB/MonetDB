@@ -56,6 +56,7 @@ newODBCStmt(ODBCDbc *dbc)
 	assert(stmt->hdl);
 
 	stmt->currentRow = 0;
+	stmt->query = NULL;
 
 	/* add this stmt to the administrative linked stmt list */
 	stmt->next = dbc->FirstStmt;
@@ -187,6 +188,8 @@ destroyODBCStmt(ODBCStmt *stmt)
 	*stmtp = stmt->next;
 
 	/* cleanup own managed data */
+	if (stmt->query)
+		free(stmt->query);
 	deleteODBCErrorList(&stmt->Error);
 
 	destroyODBCDesc(stmt->ImplParamDescr);

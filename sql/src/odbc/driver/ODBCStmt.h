@@ -61,6 +61,7 @@ typedef struct tODBCDRIVERSTMT {
 	unsigned int currentRow;	/* used by SQLFetch() */
 	unsigned int currentCol; /* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
+	char *query;		/* the query to be executed */
 
 	ODBCDesc *ApplRowDescr;	/* Application Row Descriptor (ARD) */
 	ODBCDesc *ApplParamDescr; /* Application Parameter Descriptor (APD) */

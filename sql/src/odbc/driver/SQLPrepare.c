@@ -58,12 +58,14 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	/* TODO: count the number of output columns and their description */
 
 	/* we need a null-terminated string, so allocate a copy */
-	query = dupODBCstring(szSqlStr, (size_t) nSqlStrLength);
+	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStrLength);
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
+	if (stmt->query)
+		free(stmt->query);
+	stmt->query = query;
 	ret = mapi_prepare_handle(stmt->hdl, query);
-	free(query);
 	if (ret != MOK) {
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;

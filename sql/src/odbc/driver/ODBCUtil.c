@@ -32,7 +32,7 @@
  * Postcondition: returns a newly allocated null terminated string.
  */
 char *
-dupODBCstring(SQLCHAR *inStr, size_t length)
+dupODBCstring(const SQLCHAR *inStr, size_t length)
 {
 	char *tmp = (char *) malloc((length + 1) * sizeof(char));
 
@@ -40,4 +40,10 @@ dupODBCstring(SQLCHAR *inStr, size_t length)
 	strncpy(tmp, (char *) inStr, length);
 	tmp[length] = '\0';   /* make it null terminated */
 	return tmp;
+}
+
+char *
+ODBCTranslateSQL(const SQLCHAR *query, size_t length)
+{
+	return dupODBCstring(query, length);
 }

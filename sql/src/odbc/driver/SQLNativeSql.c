@@ -12,8 +12,6 @@
  * SQLNativeSql()
  * CLI Compliance: ODBC (Microsoft)
  *
- * Note: this function is not supported (yet), it returns an error.
- *
  * Author: Martin van Dinther
  * Date  : 30 aug 2002
  *
@@ -21,6 +19,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -28,26 +27,40 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	     SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	char *query;
+	size_t querylen;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLNativeSql\n");
 #endif
-
-	(void) szSqlStrIn;	/* Stefan: unused!? */
-	(void) cbSqlStrIn;	/* Stefan: unused!? */
-	(void) szSqlStr;	/* Stefan: unused!? */
-	(void) cbSqlStrMax;	/* Stefan: unused!? */
-	(void) pcbSqlStr;	/* Stefan: unused!? */
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
 
-	/* TODO: implement this function and corresponding behavior */
+	fixODBCstring(szSqlStrIn, cbSqlStrIn, addStmtError, stmt);
 
-	/* for now return error IM001: driver not capable */
-	addStmtError(stmt, "IM001", NULL, 0);
+	if (szSqlStrIn == NULL) {
+		addStmtError(stmt, "HY009", NULL, 0);
+		return SQL_ERROR;
+	}
 
-	return SQL_ERROR;
+	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn);
+	querylen = strlen(query);
+
+	if (cbSqlStrMax > 0)
+		strncpy(szSqlStr, query, cbSqlStrMax);
+	free(query);
+
+	if (pcbSqlStr)
+		*pcbSqlStr = (SQLINTEGER) querylen;
+
+	if (querylen >= cbSqlStrMax) {
+		szSqlStr[cbSqlStrMax - 1] = 0;
+		addStmtError(stmt, "01004", NULL, 0);
+		return SQL_SUCCESS_WITH_INFO;
+	}
+
+	return SQL_SUCCESS;
 }

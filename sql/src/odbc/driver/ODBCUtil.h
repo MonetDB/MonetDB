@@ -33,7 +33,7 @@
  * Precondition: inStr != NULL
  * Postcondition: returns a newly allocated null terminated string
  */
-char *dupODBCstring(SQLCHAR *inStr, size_t length);
+extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 
 /*
  * Utility macro to fix up args that represent an ODBC string.  If len
@@ -58,5 +58,11 @@ char *dupODBCstring(SQLCHAR *inStr, size_t length);
 		}							\
 	} while (0)
 
+/*
+  Function to translate an ODBC SQL query to native format.
+  The return value is a freshly allocated null-terminated string.
+  For now this function just calls dupODBCstring.
+*/
+extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
 
 #endif /* _H_ODBCUTIL */
