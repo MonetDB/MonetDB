@@ -66,6 +66,8 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		return SQL_ERROR;
 	}
 
+	/* we need NULL-terminated strings for uid and password, so we
+	   need to make copies */
 	fixODBCstring(szUID, nUIDLength, addDbcError, dbc);
 	if (nUIDLength == 0) {
 		uid = strdup(mo_find_option(NULL, 0, "sql_user"));
