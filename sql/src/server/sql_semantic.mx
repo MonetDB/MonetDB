@@ -293,7 +293,10 @@ static stmt *sql_subquery(context * sql, scope * scp, symbol * sq)
 		}
 
 	} else if (toplevel) {	/* only on top level query */
-		return sql_simple_select(sql, scp, sn->selection);
+		scp = scope_open(scp);
+		res = sql_simple_select(sql, scp, sn->selection);
+		scp = scope_close(scp);
+		return res;
 	}
 
 	res = sql_select(sql, scp, sn, toplevel );
@@ -2379,7 +2382,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 				}
 			} else if (cs->nrcols == 0 && nrcols > 0){
 				/* temp hack to fix  select name,count(*) bug */
-				if (cs->type == st_atom){
+				if (cs->type == st_atom || cs->type == st_var){
 					stmt *ss = first_subset(subset);
 					cs = stmt_const(ss,stmt_dup(cs));
 					list_append(rl, cs);
