@@ -1162,7 +1162,7 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m not in env['TST_MODS']:
                 missing.append(m)
     if CALL in ["x100", "x100Xs"]:
-        m = "x100"
+        m = "amdb"
         if m not in env['TST_MODS']:
             missing.append(m)
     if CALL in ["pf", "pfXs"]:
