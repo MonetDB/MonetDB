@@ -1166,7 +1166,7 @@ def CheckMods(env, TST, SERVER, CALL) :
         if m not in env['TST_MODS']:
             missing.append(m)
     if CALL in ["pf", "pfXs"]:
-        for m in "pathfinder", "pf_support":
+        for m in "pathfinder", "pf_support", "ascii_io":
             if m not in env['TST_MODS']:
                 missing.append(m)
     return missing
@@ -1381,6 +1381,8 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".x100" and  not env['exe']['X100_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['X100CLIENT'].split(None, 1)[0]+" is not available.")
+    elif EXT == ".xq" and  not env['exe']['XQuery_Client'][0]:
+        elem = SkipTest(env, TST, EXT, "as "+env['XQUERYCLIENT'].split(None, 1)[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
         elem = SkipTest(env, TST, EXT, "as python is not available.")
         #TODO:
@@ -1746,16 +1748,18 @@ def CheckSocket2(env,SERVER,SrvrErr) :
         os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
         op = 'port=%d' % port
         np = 'port=%s' % env[SERVER+'PORT']
-        env['exe']['Mserver']     = env['exe']['Mserver'][0]      , env['exe']['Mserver'][1].replace(op, np)
-        env['exe']['Mshutdown']   = env['exe']['Mshutdown'][0]    , env['exe']['Mshutdown'][1].replace(op, np)
-        env['exe']['Mapi_Client'] = env['exe']['Mapi_Client'][0]  , env['exe']['Mapi_Client'][1].replace(op, np)
-        env['exe']['SQL_client']  = env['exe']['SQL_client'][0]   , env['exe']['SQL_client'][1].replace(op, np)
-        env['exe']['X100_Client']  = env['exe']['X100_Client'][0] , env['exe']['X100_Client'][1].replace(op, np)
-        os.environ['MSERVER']     = os.environ['MSERVER'].replace(op, np)
-        os.environ['MSHUTDOWN']   = os.environ['MSHUTDOWN'].replace(op, np)
-        os.environ['MAPI_CLIENT'] = os.environ['MAPI_CLIENT'].replace(op, np)
-        os.environ['SQL_CLIENT']  = os.environ['SQL_CLIENT'].replace(op, np)
-        os.environ['X100_CLIENT']  = os.environ['X100_CLIENT'].replace(op, np)
+        env['exe']['Mserver']       = env['exe']['Mserver'][0]       , env['exe']['Mserver'][1].replace(op, np)
+        env['exe']['Mshutdown']     = env['exe']['Mshutdown'][0]     , env['exe']['Mshutdown'][1].replace(op, np)
+        env['exe']['Mapi_Client']   = env['exe']['Mapi_Client'][0]   , env['exe']['Mapi_Client'][1].replace(op, np)
+        env['exe']['SQL_client']    = env['exe']['SQL_client'][0]    , env['exe']['SQL_client'][1].replace(op, np)
+        env['exe']['X100_Client']   = env['exe']['X100_Client'][0]   , env['exe']['X100_Client'][1].replace(op, np)
+        env['exe']['XQuery_Client'] = env['exe']['XQuery_Client'][0] , env['exe']['XQuery_Client'][1].replace(op, np)
+        os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
+        os.environ['MSHUTDOWN']     = os.environ['MSHUTDOWN'].replace(op, np)
+        os.environ['MAPI_CLIENT']   = os.environ['MAPI_CLIENT'].replace(op, np)
+        os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
+        os.environ['X100_CLIENT']   = os.environ['X100_CLIENT'].replace(op, np)
+        os.environ['XQUERY_CLIENT'] = os.environ['XQUERY_CLIENT'].replace(op, np)
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 ! Using new %sPORT=%s !
@@ -1972,7 +1976,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             for f in d:
                 if test.match(f):
                     if CALL in ["pf", "pfXs"]:
-                        RunIt("pf %s | %s --dbinit='module(pathfinder,pf_support);'" % (f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
+                        RunIt("%s %s | %s --dbinit='module(pathfinder,pf_support,ascii_io);'" % (exe['XQuery_Client'][1],f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
                     elif CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     elif env['VERSION'] >= 49900:
@@ -2350,7 +2354,7 @@ def main(argv) :
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
             'SQL_PREFIX'                                   ]
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars = vars + [ 'SQLCLIENT', 'MAPICLIENT', 'X100CLIENT']    #, 'MONETDB_MOD_PATH' ]
+        vars = vars + [ 'SQLCLIENT', 'MAPICLIENT', 'X100CLIENT', 'XQUERYCLIENT']    #, 'MONETDB_MOD_PATH' ]
     if THISFILE == "Mprofile.py":
         vars = vars + ['CMDLST']
 
@@ -2373,6 +2377,7 @@ def main(argv) :
         dft['SQLCLIENT']      = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
         dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
         dft['X100CLIENT']     = "'x100run_mapi'" # --port='+env['MAPIPORT']"
+        dft['XQUERYCLIENT']   = "'pf'" # --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
     env = {}
@@ -2433,6 +2438,8 @@ def main(argv) :
              'default: %s' % dft['SQLCLIENT']),
             ('X100CLIENT', None, 'X100CLIENT', '<x100-client program>',
              'default: %s' % dft['X100CLIENT']),
+            ('XQUERYCLIENT', None, 'XQUERYCLIENT', '<XQuery to MIL compiler>',
+             'default: %s' % dft['XQUERYCLIENT']),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -2720,15 +2727,16 @@ def main(argv) :
     # check for executables, set their standard options and export them
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
-        exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set monet_prompt= --trace' % \
-                                                         (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'])
-        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
-        exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
-        exe['python']      = CheckExec('python')       , 'python'
-        exe['Mapi_Client'] = CheckExec(env['MAPICLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
-        exe['SQL_client']  = CheckExec(env['SQLCLIENT'].split(None, 1)[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
-        exe['X100_Client'] = CheckExec(env['X100CLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
+        exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set monet_prompt= --trace' % \
+                                                           (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'])
+        exe['Mshutdown']     = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
+        exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
+        exe['python']        = CheckExec('python')       , 'python'
+        exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['SQL_client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
+        exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s' % env['XQUERYCLIENT']
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
