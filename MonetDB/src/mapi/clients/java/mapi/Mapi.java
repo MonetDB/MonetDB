@@ -638,6 +638,7 @@ public int sliceRow(){
 		if(instring) f++;
 		boolean done =false;
 		
+		boolean unescape = false;
 		while(!done && l<p.length ){
 			switch(p[l]){
 			case '\t':
@@ -652,7 +653,7 @@ public int sliceRow(){
 				}
 				l++;
 				break;
-			case '\\': l+=2; break;
+			case '\\': l+=2; unescape=true; break;
 			case '\'':
 			case '"':
 				if(instring ){
@@ -666,7 +667,13 @@ public int sliceRow(){
 			}
 		}
 
-		String fld= s.substring(f,l).trim();
+		String fld= s.substring(f,l);
+		if (unescape) {
+			fld = fld.replaceAll("\\\\n","\n");
+			fld = fld.replaceAll("\\\\t","\t");
+			fld = fld.replaceAll("\\\\","\\");
+		}
+
 		if(trace) traceLog.println("field ["+cr+"]["
 				+i+" "+l+"]"+fld+":"+instring+":");
 		cache.fields[cr][i]= fld;
