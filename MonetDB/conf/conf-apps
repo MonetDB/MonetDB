@@ -1,3 +1,12 @@
-CC='cc' CXX=CC configure --disable-static --with-readline=/opt/gnu
-#configure --disable-static --with-readline=/opt/gnu
+# 64 bits
+# native
+#CC='cc -xargs=v9' CXX='CC -xargs=v9' \
+# GNU
+	../configure --with-readline=/var/tmp/local/lib --prefix=`pwd`
+# 32 bits
+# native
+#CC='cc' CXX='CC' \
+# GNU
+#CC='gcc -m32' CXX='g++ -m32' \
+	../configure --with-readline=/usr/local/lib --prefix=`pwd`
 
