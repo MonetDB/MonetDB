@@ -28,6 +28,7 @@ import regsub
 import string
 import random
 import time
+import socket
 #import signal
 #import getpass
 
@@ -988,12 +989,12 @@ def RunTest(env, TST) :
 		DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME)
 		t1 = time.time()
 		TX = t1 - t0
-		STDOUT.write(" %7.3fs\n" % TX)
-		STDOUT.flush()
+		STDOUT.write(" %7.3fs " % TX)
 
 		if os.name != "nt":
 			StopAt(ATJOB1,ME)
 
+		killed = 0
 		n = TST+".KILLED."
 		for (x,p) in [("out",TestOut),("err",TestErr)]:
 			f = n+x
@@ -1006,6 +1007,11 @@ def RunTest(env, TST) :
 			if os.path.isfile(f):
 				for l in fileinput.input(f):
 					p.write("! "+l)
+					killed = 1
+		if killed:
+			STDOUT.write("(Killed!)")
+		STDOUT.write("\n")
+		STDOUT.flush()
 
 		#TODO:
 		##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -1098,6 +1104,33 @@ def RunTest(env, TST) :
 	return TX
 ### RunTest(env, TST) #
 
+def CheckSocket(env,SERVER,SrvrErr,LogLine) :
+	wait = 66
+	host=''
+	port = 0
+	if SERVER == "MAPI":
+		port = int(string.splitfields(env['MAPIPORT'],':')[1])
+	if SERVER == "SQL":
+		port = int(env['SQLPORT'])
+	S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	try:
+		S.bind((host,port))
+	except socket.error, (Serrno,Serrstr):
+		Smsg =      "\n! Socket-Check failed for "+SERVER+"server on <"+host+":"+str(port)+"> with #"+str(Serrno)+"; '"+Serrstr+"' !"
+		Smsg = Smsg+"\n! Waiting "+str(wait)+" seconds... "
+		STDERR.write(Smsg)
+		STDERR.flush()
+		SrvrErr.write(Smsg)
+		SrvrErr.flush()
+		time.sleep(wait)
+		SrvrErr.write("Done.\n\n")
+		SrvrErr.flush()
+		STDERR.write("Done.\n"+LogLine)
+		STDERR.flush()
+	else:
+		S.close()
+### CheckSocket(env,SERVER,SrvrErr,LogLine) #
+
 def Prompt(cmd) :
 	prompt = time.strftime('\n# %H:%M:%S >  ',time.localtime(time.time()))
 	return prompt+prompt+cmd+prompt+"\n\n"
@@ -1127,8 +1160,9 @@ def RunIt(cmd, TestIn, TestOut, TestErr) :
 
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
 	ATJOB2 = ""
+	LogLine = time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE+" ..."
 	STDERR.flush()
-	STDOUT.write(time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE+" ...")
+	STDOUT.write(LogLine)
 	STDOUT.flush()
 	TSTDB = env['TSTDB']
 	exe = env['exe']
@@ -1166,6 +1200,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 		SrvrErr = open(TST+".server.err","w")
 		ClntOut = open(TST+".client.out","w")
 		ClntErr = open(TST+".client.err","w")
+
+		CheckSocket(env, SERVER, SrvrErr, LogLine)
 
 		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
 		ln=""
@@ -1235,17 +1271,27 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 	if SERVER in ["MAPI", "SQL"]:
 		if os.path.isfile(TST+".epilogue"):
 			EPILOGUE = open(TST+".epilogue",'r')
-			pSrvrIn.writelines(EPILOGUE.readlines())
-			pSrvrIn.flush()
-			EPILOGUE.close()
-
-			pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
-			pSrvrIn.flush()
+			EpiFailed = ""
+			if not pSrvrIn.closed:
+				try:
+					pSrvrIn.writelines(EPILOGUE.readlines())
+					pSrvrIn.flush()
+					pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
+					pSrvrIn.flush()
+				except IOError, (IOerrNo, IOerrStr):
+					EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
+					EpiFailed = EpiFailed+"\n! Probably, Mserver has died before or during. !\n"
+			else:
+				EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed as Mserver's console is already closed. !"
+				EpiFailed = EpiFailed+"\n! Mserver seems to have died before. !\n"
 			ln=""
 			while ( not ( pSrvrIn.closed or pSrvrOut.closed or pSrvrErr.closed ) ) and ( len(ln) < 6 or ln[:6] not in  ['Done..','Over..'] ):
 				ln=pSrvrOut.readline()
 				SrvrOut.write(ln)
 				SrvrOut.flush()
+			SrvrOut.write(EpiFailed)
+			SrvrOut.flush()
+			EPILOGUE.close()
 
 		if SERVER == "MAPI":
 			Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
@@ -1620,11 +1666,14 @@ def main(argv) :
 	# make TSTxxxBASE absolute physical paths
 	BACK = os.getcwd()
 	for p in 'TSTSRCBASE', 'TSTBLDBASE', 'TSTTRGBASE':
-		os.chdir(env[p])
-		if (os.getcwd() != env[p]):
-			Warn(p+": Replacing logical path  "+env[p]+
-			     "  by absolute physical path  "+os.getcwd())
-			env[p] = os.getcwd()
+		if os.path.isdir(env[p]):
+			os.chdir(env[p])
+			if (os.getcwd() != env[p]):
+				Warn(p+": Replacing logical path  "+env[p]+
+				     "  by absolute physical path  "+os.getcwd())
+				env[p] = os.getcwd()
+		else:
+			ErrXit("Illegal "+p+": directory '"+env[p]+"' does not exist!")
 	os.chdir(BACK)
 
 	# some relative path's for relocatable HTML output
