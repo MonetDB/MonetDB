@@ -1,4 +1,0 @@
-stderr of test 'no.171` in directory 'tests/BugReports` itself:
-
-#> Mtest:	milS no.171 milS
-#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db tests_BugReports no.171.milS
