@@ -1007,12 +1007,13 @@ static BAT *TBL_lookup( Client client, Client father, str nme ){
 	v = VARfind(&father->stk, buf);
 	if (v){ /* dirty replacement of the client bats */
 		Variable n = VARnew(client->stk, v->name);
-		BAT *o = BBPdescriptor(v->binding.val.bval);
+		BAT *o = BATdescriptor(v->binding.val.bval);
 		n->constant = TRUE;
 		n->frozen = TRUE;
 		n->binding.vtype = TYPE_bat;
 		b = BATcopy(o);
 		BBPincref(b->batCacheid, TRUE);
+		BBPdecref(o->batCacheid, FALSE);
    		n->binding.val.bval = b->batCacheid;
 	} else {
 		GDKerror("variable %s not found\n",  buf );
@@ -1195,7 +1196,7 @@ int TBL_M_directloaded(Client client, oid mid, str module) {
 	/* count the number of references stemming from dependencies */
 	BATloopFast(TBL_mod_dep, p, q, xx) 
 		if (strCmp(module,BUNtvar(TBL_mod_dep,p)) == 0)
-			yy += countusage(client, *(oid*) BUNhloc(TBL_mod_dep,p));
+		   	yy += countusage(client, *(oid*)BUNhloc(TBL_mod_dep,p));
 
 	if (zz > yy) 
 		return TRUE; 
@@ -1247,7 +1248,7 @@ int TBL_M_decref(Client client, oid mid) {
 	int i = TBL_M_countref(mid);
 
 	if (i <= 0) {
-		GDKwarning("TBL_M_incref: mod(%lu) cannot decrease refcnt\n", mid);
+		GDKwarning("TBL_M_decref: mod(%lu) cannot decrease refcnt\n", mid);
 	} else {
 		BUN p = BUNlocate(TBL_mod_use, &mid, &client);
 		BUNdelete(TBL_mod_use, p);
@@ -1344,7 +1345,7 @@ Lets do the things in the right order, see above!
 		BAT *b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE); 	
 		BUN p, q;
 		BATloop(b, p, q) {
-			TBL_loadmod(client, (str) BUNhvar(b,p), parmod, level+1, initstr);
+			TBL_loadmod(client, (str) BUNhvar(b,p), module, level+1, initstr);
 		}
 		BBPreclaim(b);
 	}
@@ -1563,7 +1564,7 @@ check if the C-module is physically dropped that none of its atoms or accelerato
 @-
 decrease the refount of the module. we are ready if it isn't zero (LOGICAL DROP).
 @c
-	refcnt = TBL_M_decref(father, mid);
+	refcnt = TBL_M_decref(father, mid); 
 @-
 drop will go through; delete all the C-modules's atoms, accelerators and functions 
 @c
