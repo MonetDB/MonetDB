@@ -61,6 +61,8 @@ quit = 0
 concatenate = 0
 temp_sentence = ''
 beeninhash = 0
+close_brac = 0
+prev_with_semicolon = 0
 
 fin_fil.write('module(mprof);\n')
 
@@ -84,6 +86,8 @@ for line in input_fil.readlines() :
 		with_semicolon = 0
 	first_time_in_loop = 1
 	for splitted_sentence in regsub.split(line,";") :
+		if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*}\([\n\t ]*\)$',splitted_sentence) != -1 :
+			close_brac = 1
 		if concatenate == 1 :
 			if semicolon == 0 :
 				splitted_sentence = temp_sentence + splitted_sentence
@@ -100,7 +104,7 @@ for line in input_fil.readlines() :
 				temp_sentence = ''
 
 		if regex.search('#',splitted_sentence) != -1 :
-			if regex.search('\(.\)*\(#\)[^;]*\(.\)\([^\n\t\w]\)',line) != -1 :
+			if regex.search('\(.\)*\(#\)[^;]*\(.\)\([^\n\t ]\)',line) != -1 :
 				if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*#.',splitted_sentence) != -1 :
 					if beeninhash == 0 :	
 						concatenate = 1
@@ -124,6 +128,10 @@ for line in input_fil.readlines() :
 						temp_sentence = t_sentence[0]
 					concatenate = 1
 	
+		if close_brac == 1 :
+			with_semicolon = 0
+			prev_with_semicolon = with_semicolon
+
 		flag = 0
 		if (splitted_sentence!='\n' and concatenate == 0) :
 			beeninhash = 0
@@ -144,6 +152,9 @@ for line in input_fil.readlines() :
 	                                	line1 = splitted_sentence + ';\n'
 				else :
                                 	line1 = splitted_sentence
+				if close_brac == 1 :
+					with_semicolon = prev_with_semicolon
+					close_brac = 0
 				commands_fil.seek(0);
 				command_no = 0
 				prev_line2 = ''
@@ -159,7 +170,7 @@ for line in input_fil.readlines() :
 							break
 					if regex.search('\<'+line2+'\>',line1) != -1 :
 						if regex.search('#',line1) == -1 :
-							found = 1	
+							found = 1
 #							if (line2 !='join' or ( line2 == 'join' and regex.search('\<' + 'semijoin' + '\>',splitted_sentence) == -1)) :
 							if prev_line2!='' :
 								multiple = 1
@@ -169,11 +180,19 @@ for line in input_fil.readlines() :
 							epatt = 'pmE("' + line2 + "%d" %command_name[command_no] + '");'
 							if multiple == 1 :
 								line2 = line2+'.'+prev_line2
+								
 								bpatt = 'pmB("' + line2 + '");'
 								epatt = 'pmE("' + line2 + '");'
 							prev_line2 = line2
 						
 				if found == 1 :
+					if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*}.',line1) == -1 :
+						bra_place = regex.search('{',line1)
+						if bra_place != -1 :
+							temp_line1 = line1[0:bra_place+1]
+							line1 = line1[bra_place+1:]
+							fin_fil.write(temp_line1)
+							
 					fin_fil.write('\n' + bpatt + '\n')
 					fin_fil.write(line1)
 					fin_fil.write(epatt + '\n\n')
