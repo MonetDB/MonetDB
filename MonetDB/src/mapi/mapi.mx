@@ -33,10 +33,10 @@ This module contains a simple interface for internet connections.
 	.USE streams;
 
 	.BUILTIN mapi_listen(int port, int maxusers, str cmd) = MAPIlisten; 
-		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."
+		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."
 
 	.BUILTIN mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) = MAPIlistenSSL;
-		"Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s) is called.\nIf no <cmd> is specified a new client thread is forked."
+		"Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."
 
 	.COMMAND stream_until(Stream S,str stop) : str = stream_read_until;
 		"read a string from <S> until the <stop> word"
@@ -347,16 +347,14 @@ Get the new information for the server socket and start listening.
 					msgsock);
 		} else {
 			ValRecord res;
-			int cres = 0;
 			char buf[BUFSIZ];
+			stream *sin, *sout;
 
-			snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
+			sin = socket_rastream(msgsock, "mapi-r");
+			sout = socket_wastream(msgsock, "mapi-w");
+			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, sin, sout );
 			res.vtype = TYPE_void; 
 			interpret_str( stk, buf, &res);
-			if ((cres = s_close(msgsock)) < 0){
-				GDKerror("Error closing socket %d\n", cres );
-				return GDK_FAIL;
-			}
 		}
 	} while (monet_running);
 	return GDK_SUCCEED;
@@ -508,10 +506,6 @@ int MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 	cmd = GDKstrdup(Cmd);
 	res->vtype = TYPE_void;
 
-	if (cmd && *cmd) {
-		GDKerror("MAPIlistenSSL: cmd not implemented");
-		goto fail;
-	}
 	if (!port)
 		port = MAPISSLPORT;
 	if (!maxusers)
@@ -644,10 +638,7 @@ Get the new information for the server socket and start listening.
 			break;
 		}
 
-#if 0
-		if (STREQ(cmd,""))
-#endif
-		{
+		if (STREQ(cmd,"")) {
 			int i=0, mpl;
 			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
 			char *mp, *nmp;
@@ -724,22 +715,18 @@ Get the new information for the server socket and start listening.
 			PARDEBUG THRprintf(GDKerr, 
 				"MAPIlistenSSL:client accepted %d\n", 
 					msgsock);
-		}
-#if 0
-		else {
+		} else {
 			ValRecord res;
-			int cres = 0;
 			char buf[BUFSIZ];
+			stream *sin, *sout;
 
-			snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
+			sin = ssl_rastream(ssl, "mapi-r");
+			sout = ssl_wastream(ssl, "mapi-w");
+			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, sin, sout );
+			THRprintf(GDKerr, "MAPIlistenSSL: %s", buf);
 			res.vtype = TYPE_void; 
 			interpret_str( stk, buf, &res);
-			if ((cres = s_close(msgsock)) < 0){
-				GDKerror("Error closing socket %d\n", cres );
-				goto fail;
-			}
 		}
-#endif
 	  end_loop:;
 	} while (monet_running);
 	SSL_CTX_free(ctx);

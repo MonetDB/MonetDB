@@ -624,7 +624,8 @@ Module: "mapi"
 [ "listen",		  "PROC:      ",  "listen(int, int, str) : any",			  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
 [ "listen",		  "PROC:      ",  "listen(int, str) : any",				  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
 [ "listen",		  "PROC:      ",  "listen(str) : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
-[ "mapi_listen",	  "BUILTIN:   ",  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "mapi_listen",	  "BUILTIN:   ",  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) ", "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
 [ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : any",			  "not available"																					  ]
 [ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",			  "Read a string from <S> until a '1' character."																	  ]
 [ "socket_close",	  "COMMAND:   ",  "socket_close(int) : void",				  "close a socket"																					  ]
@@ -1012,8 +1013,8 @@ Module: "stats"
 
 Module: "streams"
 
-[ 36 ]
-[ 36 ]
+[ 38 ]
+[ 38 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature						| help									  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -1050,8 +1051,10 @@ Module: "streams"
 [ "stream_flush",	  "COMMAND:   ",  "stream_flush(Stream) : void",			  "flush the stream"							  ]
 [ "stream_read",	  "COMMAND:   ",  "stream_read(Stream) : str",				  "read data from the stream"						  ]
 [ "stream_readInt",	  "COMMAND:   ",  "stream_readInt(Stream) : int",			  "write an integer on the stream"					  ]
+[ "stream_rstream",	  "COMMAND:   ",  "stream_rstream(Stream) : Stream",			  "convert an ascii stream to binary"					  ]
 [ "stream_write",	  "COMMAND:   ",  "stream_write(Stream, str) : void",			  "write data on the stream"						  ]
 [ "stream_writeInt",	  "COMMAND:   ",  "stream_writeInt(Stream, int) : void",		  "write an integer on the stream"					  ]
+[ "stream_wstream",	  "COMMAND:   ",  "stream_wstream(Stream) : Stream",			  "convert an ascii stream to binary"					  ]
 [ "test_streams",	  "PROC:      ",  "test_streams() : void",				  "not available"							  ]
 
 Module: "tcpip"

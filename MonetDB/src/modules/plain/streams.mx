@@ -49,6 +49,11 @@ data files.
 .COMMAND open_wastream( str filename ) : Stream = stream_open_wastream; 
 	"open ascii file stream for writing"
 
+.COMMAND stream_rstream( Stream s ) : Stream = stream_stream_rstream;
+	"convert an ascii stream to binary"
+.COMMAND stream_wstream( Stream s ) : Stream = stream_stream_wstream;
+	"convert an ascii stream to binary"
+
 .COMMAND socket_rstream( int socket, str name ) : Stream = 
 	stream_socket_rstream; "open a socket stream for reading"
 .COMMAND socket_wstream( int socket, str name ) : Stream = 
@@ -186,6 +191,16 @@ int stream_open_@1( Stream *S, str filename ){
 @:open_stream(wstream)@
 @:open_stream(rastream)@
 @:open_stream(wastream)@
+
+@= stream_stream
+int stream_stream_@1(Stream *Sout, Stream *Sin)
+{
+	*(stream**)Sout = stream_@1(*(stream**)Sin);
+	return GDK_SUCCEED;
+}
+@c
+@:stream_stream(rstream)@
+@:stream_stream(wstream)@
 
 @= open_socket
 int stream_socket_@1( Stream *S, int *socket, str name ){
