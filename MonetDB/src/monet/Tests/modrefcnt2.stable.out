@@ -92,13 +92,6 @@ Over..
 # 15:14:16 >  Mtimeout -timeout 600 Mshutdown
 # 15:14:16 >  
 
-connection= landvast:53714
-template= shutdown;
-query= shutdown;
-Error text= !terminating connection
-
-Reply= 
-# shutdown finished
 
 # 15:14:16 >  
 # 15:14:16 >  Done.

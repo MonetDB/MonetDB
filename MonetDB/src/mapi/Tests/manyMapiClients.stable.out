@@ -414,13 +414,6 @@ done: 195
 # 01:08:31 >  Mtimeout -timeout 300 Mshutdown
 # 01:08:31 >  
 
-connection= bek:54321
-template= shutdown;
-query= shutdown;
-Error text= !terminating connection
-
-Reply= 
-# shutdown finished
 
 # 01:08:31 >  
 # 01:08:31 >  Done.

@@ -1627,13 +1627,6 @@ End of MIL script.
 # 05:52:19 >  Mtimeout -timeout 432 Mshutdown
 # 05:52:19 >  
 
-connection= bezaan:52324
-template= shutdown;
-query= shutdown;
-Error text= !terminating connection
-
-Reply= 
-# shutdown finished
 
 # 05:52:19 >  
 # 05:52:19 >  Done.

@@ -833,13 +833,6 @@ End of MIL script.
 # 15:15:34 >  Mtimeout -timeout 600 Mshutdown
 # 15:15:34 >  
 
-connection= landvast:53714
-template= shutdown;
-query= shutdown;
-Error text= !terminating connection
-
-Reply= 
-# shutdown finished
 
 # 15:15:34 >  
 # 15:15:34 >  Done.

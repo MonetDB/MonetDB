@@ -2152,13 +2152,6 @@ MapiClient: This is what MapiClient says.
 # 21:11:26 >  Mtimeout -timeout 600 Mshutdown
 # 21:11:26 >  
 
-connection= wodan:54665
-template= shutdown;
-query= shutdown;
-Error text= !terminating connection
-
-Reply= 
-# shutdown finished
 
 # 21:11:26 >  
 # 21:11:26 >  Done.

@@ -1427,13 +1427,5 @@ End of MIL script.
 ! Terminating connection
 ! Connection broken
 #> Mtest:	Mtimeout -timeout 900 Mshutdown
-Shutdown of server in progress
-connection= medusa:25961
-template= shutdown;
-query= shutdown;
-Error text= !terminating connection
-
-Reply= 
-# shutdown finished
 #> Mtest:	sleep 9
 
