@@ -16,6 +16,7 @@ echo $?
 echo "insert MODELs"
 $SQL < insert_MODEL.int.sql
 echo $?
+exit
 echo "check0"
 $SQL < check0.sql
 echo "queries"
