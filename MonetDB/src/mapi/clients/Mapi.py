@@ -15,28 +15,30 @@ class server:
 			print 'IO error '
 	
 	def result(self):
-		result  = ''
-		c = self.getchar()
-		try:
-			while ( c != '\1'):
-				result = result + c
-				c = self.getchar()
-			self.getprompt()
-			if (trace>0):
-				print result
-		except EOFError:
-			print 'end of file'
-		except error:
-			print 'end of file'
-			sys.exit(1)
+		result = self.getstring()
+		self.getprompt()
+		if (trace>0):
+			print result
 		return result
 	
-	def getchar(self):
+	def getstring(self):
 		try:
-			c = self.socket.recv(1)
+			idx = string.find( self.buffer, "\1" )
 			if (trace>1):
-				print c
-			return c
+				self.buffer;
+			str = ""
+			while (idx < 0):
+				if (trace>1):
+					print self.buffer
+				str = str + self.buffer
+				self.buffer = self.socket.recv(8096)
+				idx = string.find( self.buffer, "\1" )
+
+			str = str + self.buffer[0:idx]
+			self.buffer = self.buffer[idx+1:]
+			if (trace>1):
+				print str
+			return str
 		except IOError:
 			print 'IO error '
 		except error:
@@ -45,26 +47,20 @@ class server:
 		return ''
 
 	def getprompt(self):
-		self.prompt = ''
-		c = self.getchar()
-		try:
-			while ( c != '\1'):
-				self.prompt = self.prompt + c
-				c = self.getchar()
-		except EOFError:
-			print 'end of file'
+		self.prompt = self.getstring()
 		if (interactive==1):
 			print self.prompt
-	
+
 	def __init__ ( self, server, port, user ):
 		try:
 			self.socket = socket(AF_INET, SOCK_STREAM)
-			self.socket.connect(server, port)
+			self.socket.connect((server, port))
 			self.prompt = ''
+			self.buffer = ''
 		except IOError:
 			print 'server refuses access'
 	
-		self.cmd_intern(user)
+		self.cmd_intern(user+'\n')
 		self.result()
 		if (trace>0):
 			print 'connected ', self.socket
@@ -105,7 +101,7 @@ def portnr():
 if __name__ == '__main__':
 	import fileinput;
 
-	s = server( 'localhost', 50000, 'niels\n')
+	s = server( 'localhost', 50000, 'niels')
 	fi = fileinput.FileInput()
 	sys.stdout.write( s.prompt )
 	line= fi.readline()
