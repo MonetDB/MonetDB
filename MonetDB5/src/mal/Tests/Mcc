@@ -6,7 +6,7 @@ echo "MCC compiler called for" $1
 base=`basename $1 .c`
 echo "Result available as " $base
 
-gcc -DHAVE_CONFIG_H -c $1 -I. \
+libtool --mode=compile gcc -DHAVE_CONFIG_H \
      -I../.. -I/ufs/mk/monet5/src/mal \
      -I/ufs/mk/monet5/Linux/src/modules/mal \
      -I/ufs/mk/monet5/Linux/src/modules/kernel \
@@ -20,15 +20,17 @@ gcc -DHAVE_CONFIG_H -c $1 -I. \
     -I/ufs/mk/opensource/MonetDB/Linux/include/MonetDB/plain \
     -I/ufs/mk/opensource/MonetDB/Linux/include/MonetDB/contrib \
     -I/ufs/mk/opensource/MonetDB/Linux/include/MonetDB/mapi \
-    -I/ufs/mk/opensource/MonetDB/Linux/include/MonetDB/C \
-    -g -O2 -DHWCOUNTERS -DHW_Linux -DHW_i686 \
-    -D_REENTRANT -fPIC -DPIC 
-    # -g -O2 -std=c99 -Wall -W -DHWCOUNTERS -DHW_Linux -DHW_i686 \
-    # -Wno-sign-compare -D_REENTRANT -fPIC -DPIC 
-    # -Werror-implicit-function-declaration -Werror -Wno-format \
-    #-Wno-unused-function -Wno-unused-label -Wno-strict-aliasing \
+    -I/ufs/mk/opensource/MonetDB/Linux/include/MonetDB/C  \
+    -g -O2 -std=c99 -DHWCOUNTERS -DHW_Linux -DHW_i686 \
+    -D_REENTRANT -c -o $base.lo $base.c
 
-echo "Program is ready to be linked"
-    ld -r -E -o $base.so $base.o 
+
+libtool --mode=link gcc   -g -O2 -std=c99 -Wall -W -DHWCOUNTERS \
+    -DHW_Linux -DHW_i686 -Werror-implicit-function-declaration \
+    -Werror -Wno-format -Wno-unused-function -Wno-unused-label \
+    -Wno-strict-aliasing -Wno-sign-compare   -D_REENTRANT   \
+    -o lib$base.la -rpath /ufs/mk/monet5/Linux/lib/MonetDB5   $base.lo
+
+
 
 

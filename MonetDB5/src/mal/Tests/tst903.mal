@@ -1,5 +1,6 @@
 # the multiplex code blocks.
 
+t0:= alarm.usec();
 b:= new(:void,:lng);
 barrier (go,i):= newRange(0:lng);
 	k:= rand();
@@ -7,6 +8,9 @@ barrier (go,i):= newRange(0:lng);
 	insert(b,nil,l);
 	redo (go,i):= nextElement(1:lng,1000000:lng);
 exit (go,i);
+t1:= alarm.usec();
+d0:= t1-t0;
+printf("#loop %d\n",d0);
 #setReadMode(b);
 mx:= max(b); 
 #printf("max %d",mx);

@@ -2,3 +2,4 @@
 
 command tst903()
 address MCCAdmin_tst903;
+tst903();
