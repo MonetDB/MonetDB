@@ -5,6 +5,7 @@
 
 # cl -? describes the options
 CC = cl -GF -W3 -D -nologo -Zi
+CXX = $(CC)
 # optimize use -Ox
 
 # No general LDFLAGS needed
@@ -16,7 +17,6 @@ CD = cd
 
 TOPDIR = .
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
-
 CXXEXT = "cxx"
 
 all: all-msc all-recursive

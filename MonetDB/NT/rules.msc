@@ -1,30 +1,30 @@
+# install python, flex and bison on your systems 
+PYTHON=python
+YACC=bison -b y -y
+LEX=flex 
 
 # This is the location of pthreads for Win32, 
 # see http://sourceware.cygnus.com/pthreads-win32/
+PTHREAD = \ddd\ds2.4\Pthreads
+PTHREAD_LIBS = $(PTHREAD)\pthread.lib
+PTHREAD_INCS = -I$(PTHREAD) 
 
 pkglibdir = $(TOPDIR)
 pkgbindir = $(TOPDIR)
 libdir = $(TOPDIR)
 bindir = $(TOPDIR)
 
-LIBC_INCS = -I\tmp\pthread
 
-PTHREAD = \tmp\pthread
-
-PTHREAD_LIBS = $(PTHREAD)\pthread.lib
-PTHREAD_INCS = -I$(PTHREAD)
+#-FI$(TOPDIR)\config.h 
+LIBC_INCS = -I$(PTHREAD)
 SOCKET_LIBS = wsock32.lib
 
+CXX=$(CC)
 MEL=$(TOPDIR)\src\mel\mel
 MX=$(TOPDIR)\src\utils\Mx\Mx
-YACC=bison -y
-LEX=flex 
 CP=copy
 MV=rename
 DEL=del
-PYTHON=python
-#PYTHON = "c:\program files\python\python.exe" 
-#PYTHON = "c:\python16\python.exe" 
 
 {$(SRCDIR)}.mx.h:
 	$(MX) $(MXFLAGS) -l -x h $<

@@ -163,8 +163,9 @@ def msc_deps(fd,deps,objext, msc):
     tf = msc_translate_file(t,msc)
     fd.write( tf + ":" )
     for d in deplist:
-      fd.write( " " + msc_translate_dir(\
-		msc_translate_ext(msc_translate_file(d,msc)),msc) )
+      dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d,msc)),msc)
+      if (dep != t):
+	fd.write( " " + dep)
     fd.write("\n");
     if (ext == "tab.h"):
 	x,de = split_filename(deplist[0])
@@ -258,7 +259,7 @@ def msc_binary(fd, var, binmap, msc ):
         SCRIPTS.append(target)
   fd.write(srcs + "\n")
   fd.write( "%s.exe: $(%s_OBJS)\n" % (binname,binname))
-  fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console\n\n" % (binname,binname,binname)) 
+  fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (binname,binname,binname)) 
 
   if (len(SCRIPTS) > 0):
     fd.write(binname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -319,7 +320,7 @@ def msc_bins(fd, var, binsmap, msc ):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write( "%s.exe: $(%s_OBJS)\n" % (bin,bin))
-    fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console\n\n" % (bin,bin,bin)) 
+    fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (bin,bin,bin)) 
 
   if (len(SCRIPTS) > 0):
     fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -532,7 +533,7 @@ CXXEXT = \\\"cxx\\\"
   msc['TREE'] = tree
   msc['cwd'] = cwd
   
-  fd.write("CFLAGS = $(INCLUDES) $(CFLAGS)\n" )
+  fd.write("CFLAGS = $(CFLAGS) $(INCLUDES)\n" )
   fd.write("CXXFLAGS = $(CFLAGS)\n" )
 
   prefix = os.path.commonprefix([cwd,topdir])

@@ -55,7 +55,7 @@ int *TMfakeCommit(){
         /* succeeded: adapt BBPstatus of all bats while we're still locked */
         for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i)&BBPPERSISTENT) {
-			BBP_status(i) |= BBPEXISTING;
+			BBP_status_on(i, BBPEXISTING, "TMfakeCommit");
 		} else if ((BBP_status(i)&BBPDELETED) && BBP_refs(i) <= 0) {
 			/* We cannot kill here, because some complex accelerators (histolink)
                          * need BBP locks in their delete sequence. Hence we must postpone 
@@ -66,9 +66,9 @@ int *TMfakeCommit(){
 			}
 			kills[nkills++] = i;
 			BBP_refs(i) = 1; /* make unkillable; so nobody else can kill it */
-                        BBP_status(i) |= BBPUNLOADING; /* make unloadable */
+                        BBP_status_on(i, BBPUNLOADING, "TMfakeCommit"); /* make unloadable */
 		}
-		BBP_status(i) &= ~(BBPDELETED|BBPSWAPPED|BBPNEW);
+		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMfakeCommit");
         }
 	kills[nkills] = 0;
 	return kills;
@@ -159,12 +159,12 @@ int TMabort() {
 			BATundo(b); 
 			if (BBP_status(i)&BBPDELETED) {
 				b->batPersistence &= ~TRANSIENT;
-				BBP_status(i) |= BBPEXISTING;
+				BBP_status_on(i, BBPEXISTING, "TMabort");
 				b->batPersistence |= PERSISTENT;
 				b->batDirtydesc = 1;
 			}					
 		}
-		BBP_status(i) &= ~(BBPDELETED|BBPSWAPPED|BBPNEW);
+		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMabort");
 	}
 	BBPunlock("TMabort");
 	return 0; 

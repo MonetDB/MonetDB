@@ -199,6 +199,7 @@ gdk_export int _MT_pagesize;
 
 #endif /*_GDK_SYSTEM_H_*/
 
+
 @- Mthreads Routine implemtations
 @c
 #include "gdk_system.h"
@@ -280,7 +281,7 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 	return ret;
 }
 
-void 	MT_global_exit(int s) {
+void MT_global_exit(int s) {
 #if 0
 	(void) kill(0, SIGHUP);
 	pthread_kill_other_threads_np();
@@ -289,13 +290,13 @@ void 	MT_global_exit(int s) {
 }
 
 
-void 	MT_exit_thread(int s) {
+void MT_exit_thread(int s) {
 	int st=0;
 	pthread_exit(&st);
 }
 
 
-int 	MT_kill_thread (MT_Id t) {
+int MT_kill_thread (MT_Id t) {
 	int id = (int)t-1;
 	return pthread_kill((pthread_t)id, SIGHUP);
 }
@@ -317,7 +318,7 @@ MT_Lock	MT_create_lock() {
 }
 
 
-void	MT_destroy_lock (MT_Lock l) {
+void MT_destroy_lock (MT_Lock l) {
 	int idx = (int) (((pthread_mutex_t*) l) - MT_firstlock);
 	if (l == NULL) return;
 	pthread_mutex_destroy(l);
@@ -346,7 +347,7 @@ void MT_unset_lock(MT_Lock l, char *name)	{
  	t = pthread_mutex_unlock((pthread_mutex_t*)l);
 }
  
-int	MT_try_lock (MT_Lock l) {
+int MT_try_lock (MT_Lock l) {
 	if (MT_debug & 1024) {
 		fprintf(MT_out,"MT_try_lock:%lu %ld\n", 
 			(long)MT_getpid(), (long) l);
@@ -357,7 +358,7 @@ int	MT_try_lock (MT_Lock l) {
 }
 
 
-void 	MT_dump_lock (MT_Lock l, FILE *fp, char* name) {
+void MT_dump_lock (MT_Lock l, FILE *fp, char* name) {
 	fprintf(fp, "%s: MT_dump_lock() not implemented.\n", name);
 }
 
@@ -379,7 +380,7 @@ void MT_down_sema(MT_Sema s, char *name){
 	}   
 }
 
-int	MT_try_sema (MT_Sema s){
+int MT_try_sema (MT_Sema s){
 	if (MT_debug & 1024) {
 		fprintf(MT_out,"MT_try_sema:%lu %ld\n", 
 			(long) MT_getpid(), (long) s);
@@ -427,9 +428,8 @@ MT_Id MT_getpid(){
 	return (MT_Id)((int)pthread_self()+1);
 }
 
-int MT_alive(pid)
-int pid;
-{
+int MT_alive(int pid) {
 	int st = getpgid(pid);
 	return (st >= 0 && st != ESRCH);
 }
+

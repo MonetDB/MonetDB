@@ -825,7 +825,7 @@ BAT_hashselect code already ensures a good allocation estimate.
                 BAT *tmp2 = BAT_select(tmp1, tl, th, tail);
                 if (tmp2) {
 		    /* reserve 105% of what has been estimated */
-                    estimate = (((lng) BATcount(tmp2)) * (lng) batcnt)/100LL;
+                    estimate = (((lng) BATcount(tmp2)) * (lng) batcnt)/LL_CONSTANT(100);
                     BBPreclaim(tmp2);
                 }
                 BBPreclaim(tmp1);

@@ -426,7 +426,6 @@ below.  The global variables should not be modified directly.
 #define PATHLENGTH	128		/* maximum file pathnamde length */ 
 #define BATMARGIN	1.2		/* extra free margin for new heaps */ 
 #define BATTINY		50		/* extra fixed margin for BATS */
-#define GDK_VMUNITSIZE	65536
 
 #define TYPE_void	0		
 #define TYPE_bit	1		
@@ -2213,6 +2212,7 @@ gdk_export int	GDKfatal    (char* format, ... );
 #define BBPLOCKMASK     7
 
 gdk_export MT_Lock		GDKthreadLock;
+gdk_export MT_Lock		GDKstatusLock[BBPLOCKMASK+1]; 
 gdk_export MT_Lock		GDKswapLock[BBPLOCKMASK+1]; 
 gdk_export MT_Lock		GDKidxLock[BBPLOCKMASK+1]; 
 gdk_export MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 

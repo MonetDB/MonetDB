@@ -213,7 +213,6 @@ AC_SUBST(CXXFLAGS)
 
 AC_OUTPUT(src/Makefile
 src/utils/Makefile src/utils/Mx/Makefile 
-src/utils/rewrite/Makefile src/utils/testing/Makefile 
 src/mil/Makefile src/mel/Makefile src/mal/Makefile
 src/gdk/Makefile src/monet/Makefile
 src/modules/Makefile 

@@ -67,9 +67,10 @@ int HEAPalloc(Heap *h, int nitems, int itemsize) {
         h->offset = h->free = 0;
 	h->base = h->filename = NULL;
 	if (h->size > GDKmem_bigsize()) {
-		size_t sz = h->size + GDK_VMUNITSIZE;
+		size_t sz = h->size + MT_VMUNITSIZE;
         	h->storage = STORE_MMAP;
                 h->base = (char *) GDKvmalloc(h->size, &sz);
+		MT_alloc_register(h->base, sz, 'B');
 		if (h->base) h->maxsize = sz;
 	}
 	if (h->base == NULL) {
@@ -152,6 +153,7 @@ error:		HEAPalloc(&nw, size, 1);
 	} else { /* anonymous virtual memory */
 		char *p = (char*) GDKvmrealloc(h->base, h->size, size, h->maxsize, &h->maxsize);
 		if (p == NULL) goto error;
+		MT_alloc_register(h->base, h->maxsize, 'B');
 		h->base = p;
 		h->size = size;
 	}
@@ -282,6 +284,7 @@ int HEAPfree(Heap* h) {
                 }
                 GDKfree(h->filename);
         } else { /* anonymous virtual memory */
+		MT_alloc_register(h->base, h->maxsize, 'b');
                 GDKvmfree(h->base, h->size, h->maxsize);
         } 
         h->filename = NULL;

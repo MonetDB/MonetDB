@@ -48,12 +48,6 @@ struct passwd {
 #define alarm(x) 0
 
 #define sbrk(x)	0
-
-#define lockf(fd,locktype,nr) 0
-#define F_TLOCK
-#define F_ULOCK
-#define F_LOCK
-
 #define sysconf(flag) 0
 
 #define sigset_t int
@@ -169,6 +163,87 @@ struct tms
 #    define fdopen		_fdopen
 #endif /*__cplusplus */
 
+
+#define	ENOTBLK 15	/* Block device required */
+#define	ETXTBSY 26	/* Text file busy */
+#define	ENOMSG 35	/* No message of desired type */
+#define	EIDRM 45	/* Identifier removed */
+#define	ECHRNG 37	/* Channel number out of range */
+#define	EL2NSYNC 91	/* Level 2 not synchronized */
+#define	EL3HLT 46	/* Level 3 halted */
+#define	EL3RST 88	/* Level 3 reset */
+#define	ELNRNG 90	/* Link number out of range */
+#define	EUNATCH 56	/* Protocol driver not attached */
+#define	ENOCSI 43	/* No CSI structure available */
+#define	EL2HLT 44	/* Level 2 halted */
+#define EBADE 50	/* Invalid exchange */
+#define EBADR 51	/* Invalid request descriptor */
+#define EXFULL 52	/* Exchange full */
+#define ENOANO 53	/* No anode */
+#define EBADRQC 54	/* Invalid request code */
+#define EBADSLT 55	/* Invalid slot */
+#define EBFONT 57	/* Bad font file fmt */
+#define ENOSTR 60	/* Device not a stream */
+#define ENODATA 61	/* No data (for no delay io) */
+#define ETIME 62	/* Timer expired */
+#define ENOSR 63	/* Out of streams resources */
+#define ENONET 64	/* Machine is not on the network */
+#define ENOPKG 65	/* Package not installed */
+#define EREMOTE 66	/* The object is remote */
+#define ENOLINK 67	/* The link has been severed */
+#define EADV 68		/* Advertise error */
+#define ESRMNT 69	/* Srmount error */
+#define	ECOMM 70	/* Communication error on send */
+#define EPROTO 71	/* Protocol error */
+#define	EMULTIHOP 74	/* Multihop attempted */
+#define	ELBIN 75	/* Inode is remote (not really error) */
+#define	EDOTDOT 76	/* Cross mount point (not really error) */
+#define EBADMSG 77	/* Trying to read unreadable message */
+#define ENOTUNIQ 80	/* Given log. name not unique */
+#define EBADFD 81	/* f.d. invalid for this operation */
+#define EREMCHG 82	/* Remote address changed */
+#define ELIBACC 83	/* Can't access a needed shared lib */
+#define ELIBBAD 84	/* Accessing a corrupted shared lib */
+#define ELIBSCN 85	/* .lib section in a.out corrupted */
+#define ELIBMAX 86	/* Attempting to link in too many libs */
+#define ELIBEXEC 87	/* Attempting to exec a shared library */
+#define ENMFILE 89      /* No more files */
+#define ELOOP 92	/* Too many symbolic links */
+#define EOPNOTSUPP 95	/* Operation not supported on transport endpoint */
+#define EPFNOSUPPORT 96 /* Protocol family not supported */
+#define ECONNRESET 104  /* Connection reset by peer */
+#define ENOBUFS 105	/* No buffer space available */
+#define EAFNOSUPPORT 106
+#define EPROTOTYPE 107
+#define ENOTSOCK 108
+#define ENOPROTOOPT 109
+#define ESHUTDOWN 110
+#define ECONNREFUSED 111	/* Connection refused */
+#define EADDRINUSE 112		/* Address already in use */
+#define ECONNABORTED 113	/* Connection aborted */
+#define ENETUNREACH 114
+#define ENETDOWN 115
+#define ETIMEDOUT 116
+#define EHOSTDOWN 117
+#define EHOSTUNREACH 118
+#define EINPROGRESS 119
+#define EALREADY 120
+#define EDESTADDRREQ 121
+#define EMSGSIZE 122
+#define EPROTONOSUPPORT 123
+#define ESOCKTNOSUPPORT 124
+#define EADDRNOTAVAIL 125
+#define ENETRESET 126
+#define EISCONN 127
+#define ENOTCONN 128
+#define ETOOMANYREFS 129
+#define EPROCLIM 130
+#define EUSERS 131
+#define EDQUOT 132
+#define ESTALE 133
+#define ENOTSUP 134
+
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -179,5 +254,6 @@ extern "C" {
 
 #  endif /* _MSC_VER */
 #endif	 /* NATIVE_WIN32 */
+
 
 #endif /* WINLIBC_H */

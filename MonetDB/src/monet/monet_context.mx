@@ -87,10 +87,12 @@ void CNTXTinit() {
         size_t maxsize = monet_cntxtlim*sizeof(CntxtRec);
 
         monet_cntxtbuf = (CntxtRec*) GDKvmalloc(size, &maxsize);
+	MT_alloc_register(monet_cntxtbuf, maxsize, 'C');
         if (monet_cntxtbuf && maxsize >= (size_t) (monet_cntxtlim*sizeof(CntxtRec))) {
 		monet_cntxtlim = maxsize / sizeof(CntxtRec);
                 break;
         }
+	MT_alloc_register(monet_cntxtbuf, maxsize, 'c');
         if (monet_cntxtbuf) GDKvmfree(monet_cntxtbuf, size, maxsize);
         if ((monet_cntxtlim/=2) < monet_cntxtmax+1) {
             GDKfatal("CNTXTinit: could not alloc arena\n");

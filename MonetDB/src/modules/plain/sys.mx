@@ -34,6 +34,8 @@ that you might well find very useful.
 .COMMAND view_gdk_bbp(): BAT[str,int] = view_gdk_bbp; 
 	"Global BBP usage info"
 
+.COMMAND mem_printmap() : void = print_mem_map;
+        "print a map of all memory that is in use"
 .COMMAND mem_cursize() : lng = get_mem_cursize;
  	"the amount of physical swapspace in KB that is currently in use"
 .COMMAND mem_maxsize() : lng = get_mem_maxsize;
@@ -1309,6 +1311,11 @@ int format_fcn_sig(str *sig, oid *fid){
 	}
 	GDKfree(*sig);
 	return GDK_FAIL;
+}
+
+int print_mem_map() {
+        MT_alloc_print();
+        return GDK_SUCCEED;
 }
 @
 @}

@@ -344,15 +344,20 @@ It enforces a common starting environment.
 	}
 }
 void initDB(char *home, char *db) {	
-	char buffer[2048];
-
-	printf("Mcreatedb: calling 'Mserver -db %s' for the first time..\n",db);
-	sprintf(buffer,"Mserver -single -home %s -db %s </dev/null >/dev/null\n", farm, db);
-	if (system(buffer))
+        char buffer[2048];
+        int ret;
+        printf("Mcreatedb: calling 'Mserver -db %s' for the first time..\n",db);
+        sprintf(buffer,"Mserver -single -home %s -db %s %s%cscripts%cinit.mil\n",
+                        farm, db, farm, DIR_SEP, DIR_SEP);
+        ret = system(buffer);
+#ifndef WIN32
+        if (ret)
             printf("Mcreatedb: database '%s' crashed!\n",db);
         else
+#endif
             printf("Mcreatedb: database '%s' has been initialized succesfully!\n",db);
 }
+
 @- Common utilities
 The routine getarguments is shared by most tools. They analyse the calling
 parameters to determine the home and database. 
