@@ -937,18 +937,18 @@ void sqltypeinit()
 	*/
 
 	numerical = t;
-	*t++ = sql_create_type("TINYINT", 2, 0, 2, 	"sht"); /* sht as sum(uchr) isn't implemented */
-	*t++ = sql_create_type("SMALLINT", 4, 0, 2,	"sht");
-	INT = *t++ = sql_create_type("MEDIUMINT", 9, 0, 2,	"int");
-	OID = *t++ = sql_create_type("OID", 9, 0, 2, 	  	"oid");
+	*t++ = sql_create_type("TINYINT", 2, 0, 10, 	"sht"); /* sht as sum(uchr) isn't implemented */
+	*t++ = sql_create_type("SMALLINT", 4, 0, 10,	"sht");
+	INT = *t++ = sql_create_type("MEDIUMINT", 9, 0, 10,	"int");
+	OID = *t++ = sql_create_type("OID", 9, 0, 10, 	  	"oid");
 	sql_create_alias(INT->sqlname, "INTEGER");
 	sql_create_alias(INT->sqlname, "NUMBER");
-	*t++ = sql_create_type("BIGINT", 19, 0, 2,	"lng");
+	*t++ = sql_create_type("BIGINT", 19, 0, 10,	"lng");
 
-	/*sql_type("INT", 2, 0, 2, 		"uchr"); */
-	*t++ = sql_create_type("INT", 4, 0, 2,		"sht");
-	*t++ = sql_create_type("INT", 9, 0, 2,		"int");
-	LNG = *t++ = sql_create_type("INT", 19, 0, 2,	"lng");
+	/*sql_type("INT", 2, 0, 10, 		"uchr"); */
+	*t++ = sql_create_type("INT", 4, 0, 10,		"sht");
+	*t++ = sql_create_type("INT", 9, 0, 10,		"int");
+	LNG = *t++ = sql_create_type("INT", 19, 0, 10,	"lng");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,

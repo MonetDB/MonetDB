@@ -301,7 +301,6 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 		if (nulls) {
 			stmt *t = stmt_temp( sql_dup_subtype(bt) );
 			stmt *n = stmt_temp( sql_dup_subtype(tail_type(s))); 
-
 			stmt *nn = s;
 	
 			stmt_append(n, stmt_atom(atom_general( 
@@ -311,7 +310,8 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 				stmt_reverse(stmt_const(stmt_reverse(n), 
 				stmt_bool(1))), cmp_equal );
 			n = stmt_join( t, 
-				stmt_reverse(stmt_const(stmt_reverse(nn), 
+				stmt_reverse(stmt_const(
+					stmt_reverse(stmt_dup(nn)), 
 				stmt_bool(0))), cmp_equal );
 			s = stmt_union(n,nn);
 		}

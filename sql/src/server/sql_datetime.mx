@@ -41,6 +41,11 @@ typedef enum inttype {
 	isec
 } itype;
 
+int parse_interval_qualifier(mvc * sql, struct dlist *pers, int *sk, int *ek);
+/* returns 0 for month intervals, 
+ *         1 for sec intervals, 
+ * 	   in both cases sk/ek contain the start and end qualifiers 
+ *         <0 for errors */
 int parse_interval(mvc * sql, int sign, char *str, struct dlist *pers,
 		   int *val);
 /* returns 0 for month intervals and value in val, 
@@ -55,6 +60,40 @@ char *datetime_field(itype field);
 #include "sql_datetime.h"
 #include "sql_string.h"
 #include <stdlib.h>
+
+int
+parse_interval_qualifier(mvc * sql, struct dlist *pers, int *sk, int *ek)
+{
+	*sk = iyear;
+	*ek = isec;
+
+	if (pers) {
+		dlist *s = pers->h->data.lval;
+
+		*ek = *sk = s->h->data.ival;
+
+		if (dlist_length(pers) == 2) {
+			dlist *e = pers->h->next->data.lval;
+
+			*ek = e->h->data.ival;
+		}
+	}
+	if (*sk > *ek) {
+		snprintf(sql->errstr, ERRSIZE,
+			 _
+			 ("End interval field is larger than the start field\n"));
+		return -1;
+	}
+	if ((*sk == iyear || *sk == imonth) && *ek > imonth) {
+		snprintf(sql->errstr, ERRSIZE,
+			 _
+			 ("Correct interval ranges are year-month or day-seconds\n"));
+		return -1;
+	}
+	if (*sk == iyear || *sk == imonth)
+		return 0;
+	return 1;
+}
 
 int 
 parse_interval_intern(mvc * sql, int sign, char *str, int sk, int ek, int *i)
@@ -113,30 +152,10 @@ parse_interval(mvc * sql, int sign, char *str, struct dlist *pers, int *val)
 
 	int sk = iyear, ek = isec;
 
-	if (pers) {
-		dlist *s = pers->h->data.lval;
+	if (parse_interval_qualifier( sql, pers, &sk, &ek ) < 0)
+		return -1;
 
-		ek = sk = s->h->data.ival;
-
-		if (dlist_length(pers) == 2) {
-			dlist *e = pers->h->next->data.lval;
-
-			ek = e->h->data.ival;
-		}
-	}
 	*val = 0;
-	if (sk > ek) {
-		snprintf(sql->errstr, ERRSIZE,
-			 _
-			 ("End interval field is larger than the start field\n"));
-		return -1;
-	}
-	if ((sk == iyear || sk == imonth) && ek > imonth) {
-		snprintf(sql->errstr, ERRSIZE,
-			 _
-			 ("Correct interval ranges are year-month or day-seconds\n"));
-		return -1;
-	}
 	return parse_interval_intern(sql, sign, str, sk, ek, val);
 }
 

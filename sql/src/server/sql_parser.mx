@@ -2184,10 +2184,22 @@ interval_qualifier:
 
 interval_type:
     INTERVAL interval_qualifier	{ 
-		/* TODO: 
-		   usual trick is to have a INTERVAL type per range (YEAR-DAY
-		 * etc, and store the precisions in digits/scale */
-		$$ = sql_bind_subtype("INTERVAL", 0, 0); }
+		int sk, ek;
+		mvc *m = (mvc*)parm;
+	  	int tpe;
+
+		$$ = NULL;
+	  	if ( (tpe = parse_interval_qualifier( m, $2, &sk, &ek )) < 0){
+			yyerror("incorrect interval");
+			YYABORT;
+	  	} else {
+			if (tpe == 0){
+				$$ = sql_bind_subtype("MONTH_INTERVAL", 0, 0);
+			} else {
+				$$ = sql_bind_subtype("SEC_INTERVAL", 0, 0);
+			}
+	  	}
+	}
  ;
 
 user:
