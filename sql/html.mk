@@ -1,0 +1,39 @@
+# The contents of this file are subject to the MonetDB Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of
+# the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+# 
+# Software distributed under the License is distributed on an "AS
+# IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# rights and limitations under the License.
+# 
+# The Original Code is the Monet Database System.
+# 
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2003 CWI.
+# All Rights Reserved.
+# 
+# Contributor(s):
+# 		Martin Kersten <Martin.Kersten@cwi.nl>
+# 		Peter Boncz <Peter.Boncz@cwi.nl>
+# 		Niels Nes <Niels.Nes@cwi.nl>
+# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
+# make rules to generate sql's documentation
+
+$(prefix)/doc/SQLsessionDemo:	$(top_srcdir)/SQLsessionDemo
+	-@mkdir -p $(prefix)/doc
+	cp $(top_srcdir)/SQLsessionDemo $(prefix)/doc
+
+$(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures.tex
+	-@mkdir -p $(prefix)/doc/SQLfeatures
+	cp $(top_srcdir)/SQLfeatures.tex $(prefix)/doc/SQLfeatures
+
+$(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures.tex
+	(cd $(prefix)/doc/SQLfeatures; latex SQLfeatures.tex; latex SQLfeatures.tex)
+
+html:	$(prefix)/doc/SQLsessionDemo $(prefix)/doc/SQLfeatures/SQLfeatures.aux
+	(cd $(prefix); latex2html -ascii_mode -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex)
+
