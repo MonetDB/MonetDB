@@ -11,7 +11,7 @@ stdout of test 'sigs` in directory 'src` itself:
 var mods := new(void,str);
 mods.insert(nil,"sql_server");
 
-mods@batloop{
+mods@batloop(){
 	printf("module '%s'\n",$t);
 	module($t);
 	sigs($t);
@@ -58,7 +58,7 @@ module 'sql_server'
 [ "sqlconsole( ) "							  ]
 [ "sqllogmanager() : void"						  ]
 
-quit;
+quit();
 
 # 21:25:54 >  
 # 21:25:54 >  Done.
