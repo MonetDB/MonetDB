@@ -157,7 +157,7 @@ HIDE=1
 	# in the path, which latex2html doesn't like; hence, we temporarly link the
 	# .tex file to the local build dir.
 	if [ "$<" != "$(<F)" ] ; then $(LN_S) $< $(<F) ; fi
-	$(LATEX2HTML) -split 0 -noimages -rootdir ./ -norooted -noinfo -nosubdir  $(<F)
+	$(LATEX2HTML) -split 0 -no_images -info 0 -no_subdir  $(<F)
 	$(RM) -f $(<F)
 
 %.pdf: %.tex
