@@ -140,7 +140,7 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
          for details about  %s.
 """ % (THISFILE,
        THISFILE,
-       path(GetMonetConfig('--source')+"/src/utils/testing/"),
+       path(GetMonetConfig('--source')+"/src/testing/"),
        THISFILE)
 
 ### Usage () #
