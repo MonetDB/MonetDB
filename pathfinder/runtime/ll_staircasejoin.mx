@@ -717,7 +717,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
 @c
 
     GDKfree(stack);
-    GDKfree(onstack);
 
     for ( i=0; i<num_iters; i++ ) {
         if (BATcount(tmp_res[i]) > 0) {
@@ -741,6 +740,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
         }
     }
     GDKfree(tmp_res);
+    GDKfree(onstack);
     
     *result = res;    
     return GDK_SUCCEED;
