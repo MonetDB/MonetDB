@@ -12,7 +12,7 @@ import java.io.*;
 public class MonetDB {
 	public static void main(String[] args) throws Exception {
 		// quickly parse the arguments
-		boolean hasFile = false, hasUser = false, hasHost = false;
+		boolean hasFile = false, hasUser = false, hasHost = false, debug = false;
 		String file = "", user = "", host = "";
 		for (int i = 0; i < args.length; i++) {
 			if (!hasFile && args[i].equals("-f") && i + 1 < args.length) {
@@ -36,12 +36,14 @@ public class MonetDB {
 			} else if (!hasHost && args[i].startsWith("-h")) {
 				host = args[i].substring(2);
 				hasHost = true;
+			} else if (!debug && args[i].equals("-d")) {
+				debug = true;
 			} else if (args[i].equals("--help")) {
-				System.out.println("Usage java -jar MonetDB [-h host] [-u user] [-f file]");
+				System.out.println("Usage java -jar examples.jar [-h host] [-u user] [-f file] [-d]");
 				System.out.println("where arguments may be written directly after the option like -hlocalhost.");
 				System.out.println("If no host is given, localhost is assumed. The program will ask for the");
 				System.out.println("username if not given. If no input file is given, an interactive session");
-				System.out.println("is started on the terminal.");
+				System.out.println("is started on the terminal. The -d option creates a debug log.");
 				System.exit(-1);
 			} else {
 				System.out.println("Ignoring unknown argument: " + args[i]);
@@ -74,7 +76,7 @@ public class MonetDB {
 
 		// make sure the driver is loaded
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-		nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
+		if (debug) nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
 		// request a connection suitable for Monet from the driver manager
 		// note that the database specifier is currently not implemented, for
 		// Monet itself can't access multiple databases.

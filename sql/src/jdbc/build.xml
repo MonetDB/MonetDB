@@ -16,7 +16,7 @@
 
   <property file="build.properties"/>
 
-  
+
   <!-- default target -->
   <target name="all">
     <antcall target="jar" />
@@ -31,13 +31,16 @@
       </fileset>
     </jar>
 
-    <jar jarfile="${jardir}/monetdb-examples.jar">
+    <jar jarfile="${jardir}/examples.jar">
       <fileset dir="${builddir}">
         <include name="*.class" />
+        <include name="${package}/**/*.class" />
       </fileset>
-    </jar>
+	  <manifest>
+	    <attribute name="Main-Class" value="MonetDB" />
+	  </manifest>
+	</jar>
   </target>
-
 
   <target name="compile" depends="prepare,driver">
     <echo message="Debug is ${debug}" />
@@ -66,12 +69,12 @@
     <filter token="MAJORVERSION" value="${major}" />
     <filter token="MINORVERSION" value="${minor}" />
     <filter token="DEF_MPORT" value="${def_mport}" />
- 
+
      <fail unless="major" message="'major' undefined. Please follow the directions in build.properties."/>
      <fail unless="minor" message="'minor' undefined. Please follow the directions in build.properties."/>
      <fail unless="def_mport" message="'def_mport' undefined. Please follow the directions in build.properties."/>
      <fail unless="enable_debug" message="'enable_debug' undefined. Please follow the directions in build.properties."/>
- 
+
     <!-- Put a check for the current version here -->
 
     <!-- now copy and filter the file -->
