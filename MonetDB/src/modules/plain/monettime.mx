@@ -967,22 +967,21 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 @+ auxiliary functions
 @c
 
-#define tz_isnil(z) ((z).dst == 0 && (z).off2 == 0 && (z).dst_start == 0 && \
-			(z).dst_end == 0 && (z).off1 == 12)
-#define ts_isnil(t) ((t).days == date_nil && (t).msecs == daytime_nil)
+#define tz_isnil(z)	((* (lng *) &z) == lng_nil)
+#define ts_isnil(t)	((* (lng *) &t) == lng_nil)
 
-static timestamp ts_nil = {-1,-1};
-static tzone tz_nil = {0,12,0,0,0};
+static timestamp ts_nil;
+static tzone tz_nil;
 static timestamp *ts_nilptr = NULL;
 static tzone *tz_nilptr = NULL;
 
 static void date_prelude(void);
 
 bat* monettime_prelude(void){
-	ts_nil.days = date_nil;
-	ts_nil.msecs = daytime_nil;
+	* (lng *) &ts_nil = lng_nil;
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
 	*ts_nilptr = ts_nil;
+	* (lng *) &tz_nil = lng_nil;
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
 	*tz_nilptr = tz_nil;
 	date_prelude();

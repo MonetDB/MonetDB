@@ -430,6 +430,7 @@ e.print;
 # (oid)	  (void)  #
 #-----------------#
 e@batloop { b.find($h).print; }
+quit();
 
 # 17:33:35 >  
 # 17:33:35 >  Done.

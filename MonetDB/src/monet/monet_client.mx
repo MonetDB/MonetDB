@@ -530,8 +530,17 @@ int readClient(Client c)
 				if (c->limit - c->top <= 1)
 					enlargebuffer(c);
 				i = stream_read(c->fdin, c->top, 1, 1);
-				if (i <= 0)
+				if (i == 0) {
+					/* simulate quit command at EOF */
+					if (c->top != c->input)
+						GDKwarning("readClient: unexpected end of file; discarding partial input\n");
+					strcpy(c->input, "quit();\n");
+					c->top = c->input + strlen(c->input);
+					return 1;
+				}
+				if (i < 0) {
 					return 0;
+				}
 			} while (*c->top++ != '\n');
 		}
 		PARSEDEBUG THRprintf(GDKerr, "%.*s", c->top - (c->input + offset), c->input+offset);

@@ -26,6 +26,7 @@ u2.print;
 # void	url	  # type
 #-----------------------------------------#
 [ nil,	  "http://www.cwi.nl/~monet/"	  ]
+quit();
 
 # 10:25:30 >  
 # 10:25:30 >  Done.

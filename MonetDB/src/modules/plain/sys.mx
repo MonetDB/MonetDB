@@ -1130,6 +1130,14 @@ int view_gdk_mem(BAT **retval) {
 	return GDK_SUCCEED;
 }
 
+int get_mem_bigsize(lng *num) {
+	*num = GDK_mem_bigsize;
+	return GDK_SUCCEED;
+}
+int set_mem_bigsize(lng *num) {
+	GDK_mem_bigsize = MAX(32768,*num);
+	return GDK_SUCCEED;
+}
 int get_mem_cursize(lng *num) {
 	*num = GDKmem_cursize();
 	return GDK_SUCCEED;
@@ -1139,7 +1147,8 @@ int get_mem_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_mem_maxsize(lng *num) {
-	GDK_mem_maxsize = (size_t) *num;
+	if (*num < GDK_mem_bigsize) set_mem_bigsize(num);
+	GDK_mem_maxsize = MAX(GDK_mem_bigsize,*num);
 	return GDK_SUCCEED;
 }
 int get_vm_cursize(lng *num) {
@@ -1151,7 +1160,8 @@ int get_vm_minsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_vm_minsize(lng *num) {
-	GDK_vm_minsize = (size_t) *num;
+	if (*num < GDK_mem_bigsize) set_mem_bigsize(num);
+	GDK_vm_minsize = MAX(GDK_mem_bigsize,*num);
 	return GDK_SUCCEED;
 }
 int get_vm_maxsize(lng *num) {
@@ -1159,15 +1169,8 @@ int get_vm_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_vm_maxsize(lng *num) {
-	GDK_vm_maxsize = (size_t) *num;
-	return GDK_SUCCEED;
-}
-int get_mem_bigsize(lng *num) {
-	*num = GDK_mem_bigsize;
-	return GDK_SUCCEED;
-}
-int set_mem_bigsize(lng *num) {
-	GDK_mem_bigsize = (size_t) *num;
+	if (*num < GDK_vm_minsize) set_vm_minsize(num);
+	GDK_vm_maxsize = MAX(GDK_vm_minsize,*num);
 	return GDK_SUCCEED;
 }
 

@@ -29,6 +29,7 @@ varval("bar").print;
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
+quit();
 
 # 17:10:10 >  
 # 17:10:10 >  Done.

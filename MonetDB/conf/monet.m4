@@ -378,10 +378,11 @@ aix*)
       yes)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -mthreads"
         dnl  With "-On" (n>0), compilation of monet_multiplex.mx fails on sara's solo with
-        dnl  "Assembler:
-        dnl   /tmp/cc8qluZf.s: line 33198: Displacement must be divisible by 4.";
-        dnl  hence:
-        NO_OPTIMIZE_FILES="monet_multiplex.mx"
+        dnl  "Assembler: /tmp/cc8qluZf.s: line 33198: Displacement must be divisible by 4.".
+        dnl  Likewise, the MIL parser does not work correctly, unless compile monet_parse.yy.c
+        dnl  without optimization (i.e., with "-O0").
+        dnl  Hence:
+        NO_OPTIMIZE_FILES="monet_multiplex.mx monet_parse.yy.mx"
         ;;
       *)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -qthreaded"

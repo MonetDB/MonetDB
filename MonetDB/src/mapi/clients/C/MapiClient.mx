@@ -139,7 +139,6 @@ timerEnd(void)
 static int
 doRequest(Mapi mid, const char *buf)
 {
-	/* char *rtrn;*/
 	MapiHdl hdl;
 
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
@@ -151,12 +150,7 @@ doRequest(Mapi mid, const char *buf)
 		mapi_close_handle(hdl);
 		return 1;
 	}
-	mapi_quick_response(hdl,toConsole);
-/*
-	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
-		fprintf(toConsole, "%s\n", rtrn);
-	}
-*/
+	mapi_quick_response(hdl, toConsole);
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
@@ -189,7 +183,6 @@ doFile(Mapi mid, const char *file)
 	size_t length;
 	MapiHdl hdl;
 	int rc;
-	/* char *rtrn;*/
 
 	if ((fp = fopen(file, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", file);
@@ -199,10 +192,12 @@ doFile(Mapi mid, const char *file)
 
 	rc = 0;
 	if ((hdl = mapi_query_prep(mid)) == NULL) {
+		timerEnd();
 		mapi_explain(mid, stderr);
 		return 1;
 	}
 	if (mapi_error(mid)) {
+		timerEnd();
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
 		return 1;
@@ -210,23 +205,32 @@ doFile(Mapi mid, const char *file)
 	while ((length = fread(buf, 1, sizeof(buf), fp)) > 0) {
 		mapi_query_part(hdl, buf, length);
 		if (mapi_error(mid)) {
+			timerEnd();
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 			return 1;
 		}
 	}
-	mapi_query_done(hdl);
+	fclose(fp);
+	if (mapi_query_done(hdl) == MMORE) {
+		/* the server wants more, but there isn't anything more */
+		if (mapi_query_done(hdl) == MMORE) {
+			timerEnd();
+			fprintf(stderr, "Encountered a bug in the server:\n"
+				"The server wants more data, was told there "
+				"isn't any, but still asks for more\n");
+			mapi_close_handle(hdl);
+			return 1;
+		}
+	}
 	if (mapi_error(mid)) {
+		timerEnd();
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
 		return 1;
 	}
 
-	mapi_quick_response(hdl,toConsole);
-/*
-	while ((rtrn = mapi_fetch_line(hdl)) != 0)
-		fprintf(toConsole, "%s\n", rtrn);
-*/
+	mapi_quick_response(hdl, toConsole);
 
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -234,7 +238,6 @@ doFile(Mapi mid, const char *file)
 	}
 	timerEnd();
 	mapi_close_handle(hdl);
-	fclose(fp);
 	return rc;
 }
 
@@ -251,7 +254,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 #endif
 		buf = malloc(BUFSIZ);
 
-	for (;;) {
+	do {
 #ifdef HAVE_LIBREADLINE
 		if (prompt) {
 			if (buf)
@@ -279,16 +282,19 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			line = fgets(buf, BUFSIZ, fp);
 		}
 		if (line == NULL) {
-			if (buf)
-				free(buf);
-			return 0;
-		}
-		length = strlen(line);
-		if (length == 0)
-			continue;
+			/* end of file */
+			if (hdl == NULL) {
+				/* nothing more to do */
+				return 0;
+			}
+			/* hdl != NULL, we should finish the current query */
+			length = 0;
+		} else
+			length = strlen(line);
 
-		if (!linemode ||
-		    (hdl == NULL && length > 0 && line[length - 1] == '\n')) {
+		if (length > 0 &&
+		    (!linemode ||
+		     (hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
 			/* test for special commands */
 			while (length > 0 && isspace((int) *line)) {
 				line++;
@@ -423,10 +429,16 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			}
 		}
 		if ((length == 0 || line[length - 1] == '\n') && linemode) {
-			/* char *rtrn;*/
-
 			assert(hdl != NULL);
-			if (mapi_query_done(hdl) == MMORE)
+			/* If the server wants more but we're at the
+			   end of file (line == NULL), notify the
+			   server that we don't have anything more.
+			   If the server still wants more (shouldn't
+			   happen accordint to the protocol) we break
+			   out of the loop (via the continue).  The
+			   assertion at the end will then go off. */
+			if (mapi_query_done(hdl) == MMORE &&
+			    (line != NULL || mapi_query_done(hdl) == MMORE))
 				continue; /* get more data */
 
 			switch (mapi_error(mid)) {
@@ -447,11 +459,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				return 1;
 			}
 
-			mapi_quick_response(hdl,toConsole);
-/*
-			while ((rtrn = mapi_fetch_line(hdl)) != 0)
-				fprintf(toConsole, "%s\n", rtrn);
-*/
+			mapi_quick_response(hdl, toConsole);
 
 			switch (mapi_error(mid)) {
 			case MOK:
@@ -475,14 +483,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			mapi_close_handle(hdl);
 			hdl = NULL;
 		}
-	}
-	/* only reached on error */
-	if (hdl) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return 1;
+	} while (line != NULL);
+	/* reached on end of file */
+	assert(hdl == NULL);
+	return 0;
 }
 
 static const char *column_format = "select name,type,type_digits,type_scale,"

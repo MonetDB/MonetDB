@@ -154,7 +154,6 @@ int HEAPextend(Heap *h, size_t size) {
 	if (h->filename) {
 		strcpy(nme, h->filename);
 		ext = decompose_filename(nme);
-		strcat(ext, ".priv");
 	}
 	if (size <= h->size) 
 		return 0;
@@ -191,6 +190,7 @@ int HEAPextend(Heap *h, size_t size) {
 			FILE *fp;
 
 			h->filename = NULL;
+			strcat(ext, ".priv");
 			fp = GDKfilelocate(nme, "wb", ext);
 			if (fp != NULL) {
 				fclose(fp);
@@ -267,17 +267,10 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	h->offset = 0;
 	h->filename = NULL;
 
-        if (h->storage&STORE_MMAP) {
-		if (h->size < GDK_vm_minsize) {
-			/* legacy 1: some old repositories have wrong mmap modes => correct during load */
-                	h->storage = STORE_MEM; /* don't scatter memory in too small mmap-files */
-			desc_status = 1; /* modified descriptor */
-		} else if (minsize != h->size) {
-			/* round up mmap heap sizes to 64K segments */
-			h->size = minsize;
-			h->maxsize = MAX(minsize, h->maxsize);
-			desc_status = 1; /* modified descriptor */
-		}
+	/* round up mmap heap sizes to 64K segments */
+        if ((h->storage&STORE_MMAP) && (minsize != h->size)) {
+		h->size = minsize;
+		h->maxsize = MAX(minsize, h->maxsize);
 	}
 	IODEBUG {
 		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=" SZFMT ",free=" SZFMT ",size=" SZFMT ") = %d\n", 

@@ -148,6 +148,7 @@ gdk_export dbl*		dblRead        (dbl *a, stream* s, size_t cnt);
 gdk_export void		dblWrite       (dbl *a, stream* s, size_t cnt);
 int		dblCmp         (dbl* r, dbl* l);
 
+gdk_export int		GDKstrFromStr  (unsigned char *src, unsigned char *dst, int len);
 gdk_export int		strFromStr     (str  src, int* len, str*  dst);
 gdk_export int		strToStr       (str* dst, int* len, str   src);
 gdk_export str		strRead        (str a, stream* s, size_t cnt);
@@ -1582,11 +1583,87 @@ static int utf8chkmsk[] = {
 	0x7c000000,
 };
 
+int GDKstrFromStr( unsigned char *dst, unsigned char *src, int len ) 
+{
+	unsigned char *p = dst, *cur = src, *end = src + len;
+	int escaped = FALSE, mask = 0, n, c, utf8char = 0;
+
+	/* copy it in, while performing the correct escapes */
+	/* n is the number of follow-on bytes left in a multi-byte
+	  UTF-8 sequence */
+	for (cur = src, n = 0; cur < end || escaped; cur++) {
+		/* first convert any \ escapes and store value in c */
+		if (escaped) {
+			if (*cur == 'n') { 
+				c = '\n';
+			} else if (*cur == 't') { 
+				c = '\t';
+			} else if ((cur[0] >= '0' && cur[0] <= '3') &&
+				   (cur[1] >= '0' && cur[1] <= '7') &&
+				   (cur[2] >= '0' && cur[2] <= '7')) {
+				c = ((cur[0] & 7) <<6) |
+				    ((cur[1] & 7) <<3) | 
+				    (cur[2] & 7);
+				cur += 2;
+			} else {
+				c = *cur;
+			}
+			escaped = FALSE;
+		} else if (*cur == '\\') {
+			escaped = TRUE;
+			continue;
+		} else {
+			c = *cur;
+		}
+		if (n > 0) {
+			/* we're still expecting follow-up bytes in a
+			  UTF-8 sequence */
+			if ((c & 0xC0) != 0x80) {
+				/* incorrect UTF-8 sequence: byte is
+				  not 10xxxxxx */
+				return -1;
+			}
+			utf8char = (utf8char << 6) | (c & 0x3F);
+			n--;
+			if (n == 0) {
+				/* this was the last byte in the sequence */
+				if ((utf8char & mask) == 0) {
+					/* incorrect UTF-8 sequence:
+					  not shortest possible */
+					return -1; 
+				}
+			}
+		} else if (c >= 0x80) {
+			int m;
+
+			/* start of multi-byte UTF-8 character */
+			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
+				;
+			/* n now is number of 10xxxxxx bytes that should follow */
+			if (n == 0 || n >= 6) {
+				/* incorrect UTF-8 sequence */
+				/* n==0: c == 10xxxxxx */
+				/* n>=6: c == 1111111x */
+				return -1; 
+			}
+			mask = utf8chkmsk[n];
+			/* collect the Unicode code point in utf8char */
+			utf8char = c & ~(0xFFC0 >> n); /* remove non-x bits */
+		}
+		*p++ = c;
+	}
+	if (n > 0) {
+		/* incomplete UTF-8 sequence */
+		return -1; 
+	}
+	*p++ = 0;
+	return len;
+}
+
 int strFromStr(char *src, int *len, char** dst)
 {
 	unsigned char *p, *start = NULL, *cur = (unsigned char *) src;
-	int l = 1, escaped = FALSE;
-	int mask = 0, n, c, utf8char = 0;
+	int res, l = 1, escaped = FALSE;
 
 	while(GDKisspace(*cur)) cur++;
 	if (*cur != '"') {
@@ -1620,76 +1697,8 @@ int strFromStr(char *src, int *len, char** dst)
 		p = GDKmalloc(*len = l);
 	*dst = (char *) p;
 
-	/* copy it in, while performing the correct escapes */
-	/* n is the number of follow-on bytes left in a multi-byte
-	  UTF-8 sequence */
-	for (cur = start, n = 0; *cur != '"' || escaped; cur++) {
-		/* first convert any \ escapes and store value in c */
-		if (escaped) {
-			if (*cur == 'n') { 
-				c = '\n';
-			} else if (*cur == 't') { 
-				c = '\t';
-			} else if ((cur[0] >= '0' && cur[0] <= '3') &&
-				   (cur[1] >= '0' && cur[1] <= '7') &&
-				   (cur[2] >= '0' && cur[2] <= '7')) {
-				c = ((cur[0] & 7) <<6) |
-				    ((cur[1] & 7) <<3) | 
-				    (cur[2] & 7);
-				cur += 2;
-			} else {
-				c = *cur;
-			}
-			escaped = FALSE;
-		} else if (*cur == '\\') {
-			escaped = TRUE;
-			continue;
-		} else {
-			c = *cur;
-		}
-		if (n > 0) {
-			/* we're still expecting follow-up bytes in a
-			  UTF-8 sequence */
-			if ((c & 0xC0) != 0x80) {
-				/* incorrect UTF-8 sequence: byte is
-				  not 10xxxxxx */
-				goto error;
-			}
-			utf8char = (utf8char << 6) | (c & 0x3F);
-			n--;
-			if (n == 0) {
-				/* this was the last byte in the sequence */
-				if ((utf8char & mask) == 0) {
-					/* incorrect UTF-8 sequence:
-					  not shortest possible */
-					goto error;
-				}
-			}
-		} else if (c >= 0x80) {
-			int m;
-
-			/* start of multi-byte UTF-8 character */
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-				;
-			/* n now is number of 10xxxxxx bytes that should follow */
-			if (n == 0 || n >= 6) {
-				/* incorrect UTF-8 sequence */
-				/* n==0: c == 10xxxxxx */
-				/* n>=6: c == 1111111x */
-				goto error;
-			}
-			mask = utf8chkmsk[n];
-			/* collect the Unicode code point in utf8char */
-			utf8char = c & ~(0xFFC0 >> n); /* remove non-x bits */
-		}
-		*p++ = c;
-	}
-	if (n > 0) {
-		/* incomplete UTF-8 sequence */
-		goto error;
-	}
-	*p++ = 0;
-	return (int) (((char *)cur + 1) - src);
+	if ((res = GDKstrFromStr( (unsigned char*)*dst, start,  cur-start )) >= 0)
+		return res;
 
 error:
 	if (*dst && *dst != str_nil)

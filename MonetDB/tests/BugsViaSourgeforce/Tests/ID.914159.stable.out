@@ -16,6 +16,7 @@ PROC crash()
 crash();
 !ERROR: interpret: unresolved reference.
 !ERROR: print(param 1): evaluation error.
+quit();
 
 
 
