@@ -59,8 +59,8 @@ LIBC_INCS = $(PTHREAD_INCS)
 SOCKET_LIBS = wsock32.lib
 
 CXX=$(CC)
-MEL=$(TOPDIR)\src\mel\mel
-MX=$(TOPDIR)\src\utils\Mx\Mx
+MEL=$(MONET_PREFIX)\bin\mel
+MX=$(MONET_PREFIX)\bin\Mx
 CP=copy
 MV=copy
 DEL=del
