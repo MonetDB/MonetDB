@@ -1,0 +1,219 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at 
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+@' All Rights Reserved.
+@' 
+@' Contributor(s):
+@' 		Martin Kersten <Martin.Kersten@cwi.nl>
+@' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
+
+@f sql_session
+@a N.J. Nes
+@* 
+
+@* Context code
+
+This small module contains the code to instantiate an SQL client.
+This code strongly depends on the front-end/back-end setup.
+
+@h
+#ifndef _SQL_SESSION_H_
+#define _SQL_SESSION_H_
+
+#include <sql_context.h>
+#include <monet_context.h>
+#include <kernel.h>
+
+extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
+
+#endif /*_SQL_SESSION_H_*/
+@c
+#include "sql_session.h"
+#include "sql_server.h"
+
+@= builtin_operand
+{       int _k = interpret(stk, arg(lt, @1), res);
+        if (_k < 0) {
+                return _k;
+        }
+        @3 = VALconvert(@2, res);
+        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+                return handle_paramerror(res,@1,res->vtype,@2);
+        }
+}
+@c
+
+int connect_error(stream *in, stream *out, int sock)
+{
+	close_stream(in);
+	close_stream(out);
+	close(sock);
+	return GDK_FAIL;
+}
+
+
+int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+	int debug = 0, trace = 0, reply_size = 100, l = 0, i, sock, *Sock;
+	char buf[BUFSIZ+1], *errbuf;
+	char *user, *passwd, *schema, *dbname;
+	Variable v;
+
+	mvc *m;
+	stream *in, *out;
+	context *sql;
+
+  	if (lt->cnt != 1) {
+        	return handle_argerror(res, lt->cnt, 1);
+  	}
+  	@:builtin_operand(0,TYPE_int,Sock)@
+	sock = *Sock;
+
+	out = block_stream( socket_wstream( sock, "SQLSERVER" ));
+	in  = block_stream( socket_rstream( sock, "SQLSERVER" ));
+
+	if ((i = in->read(in, buf, 1, BUFSIZ)) >= BUFSIZ)
+		return connect_error(in, out, sock);
+	buf[i] = 0;
+	/* expect api(sql,debug); */
+	l = strlen("api(sql,");
+	if (i > l+1 ){
+		char *s = NULL;
+		debug = strtol(buf+l,&s,10);
+		if (s){
+			s++; /* skip , */
+			trace = strtol(s, &s, 10);
+			if (s){
+				s++; /* skip , */
+				reply_size = strtol(s, NULL, 10);
+			}
+		}
+	}
+
+	i=snprintf(buf, BUFSIZ, "login\n" );
+	out->write(out, buf, 1, i);
+	out->flush(out);
+
+	if ((i = in->read(in, buf, 1, BUFSIZ)) >= BUFSIZ)
+		return connect_error(in, out, sock);
+	buf[i] = 0;
+	/* expect login(user,passwd); */
+	l = strlen("login(");
+	if (i > l+1 ){
+		char *s, *e = strchr(buf+l,',');
+		if (!e) return connect_error(in, out, sock);
+		*e = 0;
+		s = e+1; /* skip comma */
+		e = strrchr(s, ')');
+		if (!e) return connect_error(in, out, sock);
+		*e = 0;
+		user = GDKstrdup(buf+l);
+		passwd = GDKstrdup(s);
+	} else {
+		return connect_error(in, out, sock);
+	}
+
+	m = mvc_create(debug);
+	schema = mvc_login( m, user, passwd );
+	dbname = GDKgetenv("gdk_dbname");
+
+	i = snprintf(buf, BUFSIZ, "%s,%s\n", dbname, schema?schema:"" );
+	out->write(out, buf, 1, i);
+	out->flush(out);
+
+	if (!schema){ 
+		GDKfree(user);
+		GDKfree(passwd);
+		mvc_destroy(m);
+		return connect_error(in, out, sock);
+	}
+
+	sql = NEW(context);
+	sql_init_context( sql, debug, trace, reply_size, m );
+	sql->qc = qc_create();
+
+	/* add myc and Output, Input to the stack */
+	v = VARnew(stk, "myc");
+	v->binding.vtype = TYPE_mvc;
+	v->binding.val.pval = m;
+
+	v = VARnew(stk, "Output");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = out;
+
+	v = VARnew(stk, "Input");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = in;
+
+ 	errbuf = GDKmalloc(GDKMAXERRLEN);
+	errbuf[0] = '\0';
+	GDKsetbuf(errbuf);
+
+	while(TRUE){
+		int size = BUFSIZ + 1, err = 0;
+		char *inbuf = NEW_ARRAY(char, size ), *start = inbuf;
+		int inlen = 0, len;
+
+		while ((len = in->read(in, start, 1, BUFSIZ)) == BUFSIZ){
+			inlen += BUFSIZ;
+			size += BUFSIZ;
+			inbuf = RENEW_ARRAY(char, inbuf, size); 
+			start = inbuf + size - BUFSIZ - 1;
+			*start = '\0';
+		}
+		inlen += len;
+		inbuf[inlen] = '\0';
+
+		if (!inlen || inbuf[0] == EOT)
+			break;
+
+		sql->buf = inbuf;
+		sql->cur = ' ';
+
+		while( sql->buf && *sql->buf && *sql->buf != EOT ){
+			char *ibuf = sql->buf;
+
+			err = sqlexecute(sql, out, stk, res);
+			if (err){ /* output error */
+				char *buf = GDKerrbuf;
+				stream_writeInt( out, -1 );
+				stream_writeInt( out, err );
+				out->write( out, sql->errstr, strlen(sql->errstr), 1 );
+				if (buf)
+				out->write( out, buf, strlen(buf), 1 );
+				buf[0] = 0; /* reset error buf */
+	
+				/* show the buggy query */
+				out->write( out, " in:\n", 5, 1);
+				while (ibuf[0] == '\n') ibuf++;
+				out->write( out, ibuf, strlen(ibuf), 1);
+				out->flush( out );
+			}
+		}
+		if (inbuf) _DELETE(inbuf);
+	}
+	mvc_destroy(m);
+
+	if (sql->qc) qc_destroy(sql->qc, stk); 
+	sql->qc = NULL;
+
+	sql_exit_context( sql );
+	close_stream(in);
+	close_stream(out);
+	close(sock);
+	return GDK_SUCCEED;
+}
+

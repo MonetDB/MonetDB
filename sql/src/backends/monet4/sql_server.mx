@@ -215,7 +215,7 @@ kernel libraries, e.g. bat.mx
 #include <mem.h>
 #include "sql_server.h"
 #include "sql_privileges.h"
-#include "sql_context.h"
+#include "sql_session.h"
 #include <algebra.h>
 
 int mvc_init_wrap( int* debug ){
@@ -544,6 +544,15 @@ int hash_wrap( int *res, ptr v, int tpe, int *sh )
 	*res = (ATOMhash(tpe,v)<<(*sh))&0xEFFFFFFF;
 	return GDK_SUCCEED;
 }
+
+int senddata_wrap( Stream *Out ){
+	stream *out = *(stream**)Out;
+	stream_writeInt( out, Q_DATA );
+	stream_writeInt( out, 0 );
+	out->flush( out );
+	return GDK_SUCCEED;
+}
+
 
 @mil
 module(alarm);
