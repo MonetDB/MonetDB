@@ -191,7 +191,7 @@ proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 #include <ascii_io.proto.h>
 
 extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, int nr );
-extern BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, stream *s, int nr );
+extern BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, bstream *s, int nr );
 extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr );
 extern int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s );
 
@@ -600,25 +600,23 @@ int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_
 }
 
 
-#define SIZE 1*1024*1024
 static
-int load_file( ascii *as, stream *fd ){
-	int eof = 0, p = 0, done = 0, bufsz = SIZE;
-	char *buf = GDKmalloc(bufsz+1);
-	char *s = buf,*sep = as->format[as->nr_attrs-1].sep;
-        int i = 0, seplen = as->format[as->nr_attrs-1].seplen;
+int load_file( ascii *as, bstream *b ){
+	int eof = 0, done = 0, i = 0;
+	char *sep = as->format[as->nr_attrs-1].sep;
+        int seplen = as->format[as->nr_attrs-1].seplen;
 
 	if (ascii_io_debug)
 		stream_printf( GDKerr, "load_file\n");
 
-	while(!eof && (as->nr < 0|| i < as->nr)){
-		int l, size = bufsz-p;
-		char *end;
-		if ((l=fd->read(fd, buf+p, 1, size )) < size )
+	while(!eof && (as->nr < 0 || i < as->nr)){
+		int l;
+		char *s, *end;
+		if ((l=bstream_read(b, b->size - (b->len - b->pos) )) == 0 )
 			eof = 1;
-		end = s + p + l;
+		end = b->buf + b->len;
+		s = b->buf + b->pos;
 		*end = '\0';
-		p = l = 0;
 		done = 0;
 		while( s < end ){
 			char *e = strstr( s, sep );
@@ -636,21 +634,23 @@ int load_file( ascii *as, stream *fd ){
 				if (!done){ /* nothing found in current buf
 					     * ie. need to enlarge 
 					     */
-					buf = GDKrealloc(buf, (bufsz*=16) +1);
+					if ((l=bstream_read(b, b->size*16 )) == 0 )
+						eof = 1;
+					end = b->buf + b->len;
+					s = b->buf + b->pos;
+					*end = '\0';
+					continue;
 				}
-				p = end - s;
-				memcpy(buf, s, p );
 				break;
 			}
+			b->pos = (s-b->buf);
 			i++;
 			if (ascii_io_debug && (i%100000) == 0)
 				stream_printf(GDKerr, "inserted %d\n", i);
 			if (as->nr > 0 && i >= as->nr)
 				break;
 		}
-		s = buf;
 	}
-	GDKfree(buf);
 	as->nr = i;
 	return 0;
 }
@@ -732,22 +732,25 @@ int output_file_ordered( ascii *as, BAT *order, stream *fd, int base ){
 	return i;
 }
 
-
+#define SIZE 1*1024*1024
 BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, 
 		 char *datafile, int nr ){
 	BAT *res;
 	stream *s = open_rastream( datafile );
+	bstream *b = NULL;
+
 	if (s->errnr){
 		GDKerror("could not open file %s\n", datafile );
 		return NULL;
 	}
-	res = ASCIIinput( names, seps, types, s, nr );
+	res = ASCIIinput( names, seps, types, b=bstream_create(s, SIZE), nr );
+	bstream_destroy(b);
 	s->close(s);
 	s->destroy(s);
 	return res;
 }
 
-BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, stream *s, int nr ){
+BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, bstream *s, int nr ){
 	BAT *bats = NULL;
 	ascii as;
 

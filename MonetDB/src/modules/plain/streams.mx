@@ -82,6 +82,10 @@ data files.
     .ATOM Buffer = ptr;
     .END;
 
+@+ deprecated!
+The buffer streams are deprecated (removed in 5.0). They are only used within 
+the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump). 
+@m
 .COMMAND buffer_create( int size ) : Buffer = buffer_create_wrap;
 	"create a buffer of the given size"
 
@@ -93,6 +97,18 @@ data files.
 
 .COMMAND buffer_wastream( Buffer b, str name ) : Stream = buffer_wastream_wrap; 
 	"create a buffer write stream"
+
+    .ATOM Bstream = ptr;
+    .END;
+
+.COMMAND bstream_create( Stream s, int bufsize ) : Bstream = bstream_create_wrap; 
+	"create a buffered stream"
+
+.COMMAND bstream_destroy( Bstream s ) = bstream_destroy_wrap;
+	"destroy bstream"
+
+.COMMAND bstream_read( Bstream s, int size ) : int = bstream_read_wrap; 
+	"read atleast size bytes into the buffer of s"
 
     .COMMAND fprintf( Stream filep, str format, ... ) = io_fprintf; 
 	"See: man fprintf"
@@ -137,6 +153,7 @@ data files.
 
 typedef ptr Stream;
 typedef ptr Buffer;
+typedef ptr Bstream;
 
 #include "streams.proto.h"
 
@@ -288,6 +305,24 @@ int buffer_wastream_wrap( Stream *S, Buffer *b, str name ){
 	} else {
 		return GDK_SUCCEED;
 	}
+}
+
+int bstream_create_wrap( Bstream *BS, Stream *S, int *bufsize ){
+	if ((*(bstream**)BS = bstream_create( *(stream**)S, *bufsize )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+
+int bstream_destroy_wrap( Bstream *BS ){
+	bstream_destroy( *(bstream**)BS );
+	return GDK_SUCCEED;
+}
+
+int bstream_read_wrap( int *res, Bstream *BS, int *size ){
+	*res = bstream_read( *(bstream**)BS, *size ); 
+	return GDK_SUCCEED;
 }
 
 int io_fprintf(Stream *filepp, str format,  ...){

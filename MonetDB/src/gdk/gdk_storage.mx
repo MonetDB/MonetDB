@@ -82,7 +82,7 @@ void GDKfilepath(str path, str dir, str name, str ext) {
 }
 
 int GDKcreatedir(char *dir) {
-	long_str path;
+	char path[MAXPATHLEN];
 	char *r;
 	int ret = TRUE;
 
@@ -107,7 +107,7 @@ int GDKcreatedir(char *dir) {
 
 int GDKremovedir(str dirname) {
         DIR *dirp = opendir(dirname);
-        long_str path;
+        char path[MAXPATHLEN];
         struct dirent *dent;
 	int ret;
  
@@ -189,7 +189,7 @@ This way we save about half the system calls, because each file can
 only be in one state.
 @c
 int GDKunlink(str dir, str nme, str ext) {
-	long_str path;
+	char path[MAXPATHLEN];
 	int err, t0 = GDKms();
 
 	if ((nme == NULL) || (*nme == 0) ) {
@@ -199,7 +199,7 @@ int GDKunlink(str dir, str nme, str ext) {
 	err = unlink(path); 
 	IODEBUG THRprintf(GDKerr, "unlink %s = %d (%dms)\n", path, err, GDKms() - t0); 
 	if (err < 0) {
-		long_str path2;
+		char path2[MAXPATHLEN];
 		strcpy(path2, path); strcat(path2, ".Z");
 		err = unlink(path2); 
 		if (err) GDKsyserror("GDKunlink(%s)\n", path);
@@ -335,7 +335,7 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 	    }
 	} else {
 	    if ((fp = GDKfilelocate(nme, "mrb+", ext)) != NULL) {
-		long_str path; 
+		char path[MAXPATHLEN];
 		int tpe = 0;
 		/*
 	        int tpe = (store==STORE_MMAP)?MAP_SHARED:MAP_PRIVATE;
