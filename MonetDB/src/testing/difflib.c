@@ -23,7 +23,7 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
-#include "config.h"
+#include "monetdb_config.h"
 #include "helpers.h"
 #include "difflib.h"
 

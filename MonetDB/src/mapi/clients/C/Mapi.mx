@@ -471,7 +471,7 @@ MERROR  & Mapi internal error.\\
 @{
 @+ Implementation
 @c
-#include "config.h"
+#include "monetdb_config.h"
 #include   "Mapi.h"
 
 #ifdef HAVE_UNISTD_H

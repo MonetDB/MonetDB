@@ -24,7 +24,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <monetdb_config.h>
 #endif
 
 #include <stdlib.h>

@@ -57,7 +57,7 @@ Can be used in scripts, but is insecure.
 @{
 @+ Implementation
 @c
-#include <monet_options.h>	/* includes config.h */
+#include <monet_options.h>	/* includes monetdb_config.h */
 #include "Mapi.h"
 #include <stdlib.h>
 #include <ctype.h>
