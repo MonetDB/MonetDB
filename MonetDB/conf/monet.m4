@@ -162,7 +162,13 @@ LIBS="$save_LIBS"
 
 
 SOCKET_LIBS=""
-AC_CHECK_LIB(socket, socket, [ SOCKET_LIBS="-lsocket -lnsl" ], [], "-lnsl" )
+AC_CHECK_FUNC(gethostbyname_r, [], [
+  AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
+    AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
+AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt, 
+	[ SOCKET_LIBS="-lsocket $SOCKET_LIBS" ] ))
+
+#AC_CHECK_LIB(setsockopt, socket, [ SOCKET_LIBS="-lsocket -lnsl" ], [], "-lnsl" )
 AC_SUBST(SOCKET_LIBS)
 
 dnl check for z (de)compression library (default /usr and /usr/local)

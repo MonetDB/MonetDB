@@ -86,7 +86,10 @@ stream_export stream *block_stream( stream *s );
 #include <config.h>
 #include "stream.h"
 #include <string.h> 
+
 #ifdef HAVE_NETDB_H
+# include <sys/types.h> 
+# include <netinet/in_systm.h> 
 # include <netinet/in.h> 
 # include <netinet/ip.h> 
 # include <netinet/tcp.h>
@@ -493,14 +496,23 @@ stream *open_bzwastream( char *filename ){
 
 static int socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int size = elmsize*cnt;
+#ifdef WIN32
+	size = send( (int)s->stream_data, buf, size, 0 );
+#else
 	size = write( (int)s->stream_data, buf, size );
+#endif
 	if (size) return size/elmsize;
 	return 0;
 }
 static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int res = 0, size = elmsize*cnt;
-	while( (res += read( (int)s->stream_data, buf+res, size-res )) > 0 && 
-			res < size );
+	while( (res += 
+#ifdef WIN32
+			recv( (int)s->stream_data, buf+res, size-res, 0 )
+#else
+			read( (int)s->stream_data, buf+res, size-res )
+#endif
+			) > 0 && res < size );
 	if (size) return size/elmsize;
 	return 0;
 }
@@ -514,7 +526,6 @@ static void socket_close( stream *s ){
 }
 static
 stream *socket_open( int socket, char *name ){
-	int opt = 0, tos = IPTOS_THROUGHPUT, nodelay = 1;
 	int fl = fcntl(socket, F_GETFL);
 	stream *s = create_stream(name);
 	s->read  = &socket_read;
@@ -526,13 +537,22 @@ stream *socket_open( int socket, char *name ){
 	s->flush = &socket_flush;
 	s->stream_data = (char*)socket;
 
+#ifdef SO_KEEPALIVE
+	{ int opt = 0; 
 	setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (char *) &opt,
-			                   sizeof(opt));
-    	setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos));
+			                   sizeof(opt)); }
+#endif
+#ifdef IPTOS_THROUGHPUT
+	{ int tos = IPTOS_THROUGHPUT; 
+    	setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos)); }
+#endif
+#ifdef TCP_NODELAY
+	{ int nodelay = 1;
     	setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
-		                         sizeof(nodelay));
+		                         sizeof(nodelay)); }
+#endif
 	fl &= ~O_NONBLOCK;
-	fcntl(socket, F_SETFL, fl );
+	fcntl(socket, F_SETFL, fl ); 
 
 	return s;
 }
