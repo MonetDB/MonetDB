@@ -815,14 +815,14 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     init (void)
     {
         printf("# init ()\n");
-        printf("values := bat(void,str);\n");
+        printf("values := bat(void,str).seqbase(0@0);\n");
         printf("loop000 := bat(void,oid);\n");
         printf("loop000.insert(nil, 1@0);\n");
         printf("loop000 := loop000.reverse.mark(0@0).reverse;\n");
-        printf("v_vid000 := bat(void,oid);\n");
-        printf("v_iter000 := bat(void,oid);\n");
-        printf("v_pos000 := bat(void,oid);\n");
-        printf("v_item000 := bat(void,oid);\n");
+        printf("v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
+        printf("v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
+        printf("v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
+        printf("v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
         printf("empty_bat := bat(void,oid);\n");
     }
 
@@ -835,6 +835,26 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("item := empty_bat;\n");
     }
 
+    static void
+    deleteTemp (void)
+    {
+        printf("# deleteTemp ()\n");
+        printf("temp := nil;\n");
+        printf("temp2 := nil;\n");
+        printf("temp3 := nil;\n");
+    }
+                                                                                                                                                        
+    static void
+    cleanUpLevel (void)
+    {
+        printf("# cleanUpLevel ()\n");
+        printf("v_vid%03u := nil;\n", act_level);
+        printf("v_iter%03u := nil;\n", act_level);
+        printf("v_pos%03u := nil;\n", act_level);
+        printf("v_item%03u := nil;\n", act_level);
+        deleteTemp ();
+    }
+                                                                                                                                                        
     static void
     translateVar (PFcnode_t *c)
     {
@@ -874,15 +894,6 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
     }
 
     static void
-    deleteTemp (void)
-    {
-        printf("# deleteTemp ()\n");
-        printf("temp := nil;\n");
-        printf("temp2 := nil;\n");
-        printf("temp3 := nil;\n");
-    }
-
-    static void
     project (void)
     {
         printf("# project ()\n");
@@ -915,41 +926,56 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         printf("temp2 := temp2.reverse;\n");
         printf("temp2 := outer%03u.join(temp2);\n", act_level);
         printf("temp2 := temp2.reverse;\n");
-        printf("v_iter%03u := temp2.join(inner%03u);\n", act_level, act_level);
-        printf("temp2 := v_iter%03u.mark(0@0);\n", act_level);
+        printf("temp2 := temp2.join(inner%03u);\n", act_level);
+        printf("v_iter%03u := temp2;\n", act_level);
+        printf("temp2 := temp2.mark(0@0);\n");
         printf("temp2 := temp2.reverse;\n");
+        printf("temp2 := temp2.join(temp);\n");
     }
 
     static void
     join (void)
     {
         printf("# join ()\n");
-        printf("v_iter%03u := v_iter%03u.reverse;\n", act_level, act_level);
-        printf("v_iter%03u := v_iter%03u.mark(0@0);\n", act_level, act_level);
-        printf("v_iter%03u := v_iter%03u.reverse;\n", act_level, act_level);
-        printf("v_vid%03u := temp2.join(temp);\n", act_level);
-        printf("v_vid%03u := v_vid%03u.join(v_vid%03u);\n",
-               act_level, act_level, act_level - 1);
-        printf("v_pos%03u := temp2.join(temp);\n", act_level);
-        printf("v_pos%03u := v_pos%03u.join(v_pos%03u);\n",
-               act_level, act_level, act_level - 1);
-        printf("v_item%03u := temp2.join(temp);\n", act_level);
-        printf("v_item%03u := v_item%03u.join(v_item%03u);\n",
-               act_level, act_level, act_level - 1);
-    }
+        printf("v_iter%03u := v_iter%03u.reverse.mark(0@0).reverse;\n", act_level, act_level);
 
-    static void
-    append (char *name, int level)
-    {
-        printf("# append (%s, level)\n", name);
-        printf("temp := %s.reverse;\n", name);
+        printf("temp3 := v_iter%03u;\n", act_level);
+        printf("v_iter%03u := bat(void,oid,count(temp3)*2).seqbase(0@0);\n", act_level);
+        printf("v_iter%03u.insert(temp3);\n", act_level);
+        printf("v_iter%03u := v_iter%03u.access(BAT_APPEND);\n", act_level, act_level);
+                                                                                                                                                        
+        printf("temp3 := temp2.join(v_vid%03u);\n", act_level - 1);
+        printf("v_vid%03u := bat(void,oid,count(temp3)*2).seqbase(0@0);\n", act_level);
+        printf("v_vid%03u.insert(temp3);\n", act_level);
+        printf("v_vid%03u := v_vid%03u.access(BAT_APPEND);\n", act_level, act_level);
+
+        printf("temp3 := temp2.join(v_pos%03u);\n", act_level - 1);
+        printf("v_pos%03u := bat(void,oid,count(temp3)*2).seqbase(0@0);\n", act_level);
+        printf("v_pos%03u.insert(temp3);\n", act_level);
+        printf("v_pos%03u := v_pos%03u.access(BAT_APPEND);\n", act_level, act_level);
+                                                                                                                                                        
+        printf("temp3 := temp2.join(v_item%03u);\n", act_level - 1);
+        printf("v_item%03u := bat(void,oid,count(temp3)*2).seqbase(0@0);\n", act_level);
+        printf("v_item%03u.insert(temp3);\n", act_level);
+        printf("v_item%03u := v_item%03u.access(BAT_APPEND);\n", act_level, act_level);
+
+        printf("# sort inside join ()\n");
+        printf("temp := v_iter%03u.reverse;\n",act_level);
+        printf("temp := temp.sort;\n");
+        printf("temp := temp.reverse;\n");
+        printf("temp := temp.CTrefine(v_pos%03u);\n",act_level);
         printf("temp := temp.mark(0@0);\n");
         printf("temp := temp.reverse;\n");
-        printf("temp := temp.seqbase(temp2);\n");
-        printf("v_%s%03u := v_%s%03u.access(BAT_APPEND);\n",name, level, name, level);
-        printf("v_%s%03u.insert(temp);\n",name, level);
-        printf("v_%s%03u.access(BAT_READ);\n",name, level);
-        printf("temp := nil;\n");
+        printf("v_vid%03u := temp.join(v_vid%03u).access(BAT_APPEND);\n",act_level,act_level);
+        printf("v_iter%03u := temp.join(v_iter%03u).access(BAT_APPEND);\n",act_level,act_level);
+        printf("v_pos%03u := temp.join(v_pos%03u).access(BAT_APPEND);\n",act_level,act_level);
+        printf("v_item%03u := temp.join(v_item%03u).access(BAT_APPEND);\n",act_level,act_level);
+
+        /*
+        printf("temp := v_item%03u.join(values);\n",act_level);
+        printf("print (\"testoutput in join() expanded to level %i\");\n",act_level);
+        printf("print (v_vid%03u, v_iter%03u, v_pos%03u, temp);\n",act_level,act_level,act_level);
+        */
     }
 
     static void
@@ -966,29 +992,45 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
     }
 
     static void
-    insertVar (int vid_)
+    append (char *name, int level)
     {
-        char *vid, *iter, *pos, *item;
-        vid = PFmalloc (sizeof("vid"));
-        snprintf (vid, sizeof("vid"), "vid");
-        iter = PFmalloc (sizeof("iter"));
-        snprintf (iter, sizeof("iter"), "iter");
-        pos = PFmalloc (sizeof("pos"));
-        snprintf (pos, sizeof("pos"), "pos");
-        item = PFmalloc (sizeof("item"));
-        snprintf (item, sizeof("item"), "item");
+        printf("# append (%s, level)\n", name);
+        printf("temp := %s.reverse.mark(nil).reverse;\n", name);
+        printf("v_%s%03u.insert(temp);\n",name, level);
+        printf("v_%s%03u := v_%s%03u.reverse.mark(0@0).reverse;\n",
+               name, level, name, level);
+        printf("v_%s%03u := v_%s%03u.access(BAT_APPEND);\n",
+               name, level, name, level);
+        printf("temp := nil;\n");
+    }
+
+    static void
+    insertVar (int vid)
+    {
+        char *vid_str, *iter_str, *pos_str, *item_str;
+        vid_str = PFmalloc (sizeof("vid"));
+        snprintf (vid_str, sizeof("vid"), "vid");
+        iter_str = PFmalloc (sizeof("iter"));
+        snprintf (iter_str, sizeof("iter"), "iter");
+        pos_str = PFmalloc (sizeof("pos"));
+        snprintf (pos_str, sizeof("pos"), "pos");
+        item_str = PFmalloc (sizeof("item"));
+        snprintf (item_str, sizeof("item"), "item");
 
         printf("# insertVar (vid)\n");
-        printf("vid := iter.project(%i@0);\n", vid_);
-        printf("temp2 := count(vid);\n");
-        printf("temp2 := oid(temp2);\n");
+        printf("vid := iter.project(%i@0);\n", vid);
 
-        append (vid, act_level);
-        append (iter, act_level);
-        append (pos, act_level);
-        append (item, act_level);
-        printf("temp2 := nil;\n");
+        append (vid_str, act_level);
+        append (iter_str, act_level);
+        append (pos_str, act_level);
+        append (item_str, act_level);
         printf("vid := nil;\n");
+
+        /*
+        printf("temp := v_item%03u.join(values);\n",act_level);
+        printf("print (\"testoutput in insertVar(%i@0) expanded to level %i\");\n", vid, act_level);
+        printf("print (v_vid%03u, v_iter%03u, v_pos%03u, temp);\n",act_level,act_level,act_level);
+        */
     }
 
     static void
@@ -996,13 +1038,28 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
     {
         printf("# translateConst (valueId)\n");
         printf("iter := loop%03u;\n",act_level);
-        printf("iter := iter.reverse;\n");
-        printf("iter := iter.mark(0@0);\n");
-        printf("iter := iter.reverse;\n");
+        printf("iter := iter.reverse.mark(0@0).reverse;\n");
         printf("pos := iter.project(1@0);\n");
         printf("item := iter.project(%i@0);\n", valueId);
     }
 
+    /**
+     * prints to stdout MIL-expressions, for the following
+     * core nodes:
+     * c_var, c_seq, c_for, c_let
+     * c_lit_str, c_lit_dec, c_lit_dbl, c_lit_int
+     * c_empty
+     *
+     * the following list is not supported so far:
+     * c_nil
+     * c_apply, c_arg,
+     * c_typesw, c_cases, c_case, c_seqtype, c_seqcast
+     * c_ifthenelse,
+     * c_locsteps, (axis: c_ancestor, ...)
+     * (tests: c_namet, c_kind_node, ...)
+     * c_true, c_false, c_error, c_root, c_int_eq
+     * (constructors: c_constr_elem, ...)
+     */
     static void
     translate2MIL (PFcnode_t *c)
     {
@@ -1058,6 +1115,7 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
                         translate2MIL (c->child[3]);
                         
                         mapBack ();
+                        cleanUpLevel ();
                         act_level--;
                         break;
                 case c_lit_str:
@@ -1240,6 +1298,7 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         printf("var_usage := bat(oid,oid);\n");
         append_lev (c, way);
         printf("var_usage := var_usage.unique.reverse.sort;\n");
+        printf("var_usage.access(BAT_READ);\n");
         printf("vu_fid := var_usage.mark(1000@0).reverse;\n");
         printf("vu_vid := var_usage.reverse.mark(1000@0).reverse;\n");
 
@@ -1249,8 +1308,7 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         translate2MIL (c);
 
         /* print result in iter|pos|item representation */
-        printf("temp := values.reverse.mark(0@0).reverse;\n");
-        printf("temp := item.join(temp);\n");
+        printf("temp := item.join(values);\n");
         printf("print (iter, pos, temp);\n");
     }
 /* vim:set shiftwidth=4 expandtab: */
