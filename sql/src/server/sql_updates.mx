@@ -761,6 +761,9 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 	if (!s || (t = mvc_bind_table(sql, s, tname)) == NULL) {
 		return sql_error(sql, 02, 
 			"Inserting into non existing table %s", tname);
+	} else if (!t->table) {
+		return sql_error(sql, 02, 
+			"Cannot insert into the view %s", tname);
 	}
 	if (!table_privs(sql, t, PRIV_INSERT)){
 		return sql_error(sql, 02, 
@@ -1011,6 +1014,8 @@ static stmt *sql_update_table(mvc * sql, sql_schema *schema, char *tname,
 
 	if (!t) {
 		return sql_error(sql, 02, "Updating non existing table %s", tname);
+	} else if (!t->table) {
+		return sql_error(sql, 02, "Cannot update the view %s", tname);
 	} else {
 		int len = 0, i = 0;
 		tvar *tv = NULL;
@@ -1225,6 +1230,9 @@ static stmt *delete_table(mvc * sql, dlist * qname, symbol * opt_where)
 	if (!t) {
 		return sql_error(sql, 02, 
 			 "Deleting from non existing table %s", tname);
+	} else if (!t->table) {
+		return sql_error(sql, 02, 
+			"Cannot delete from the view %s", tname);
 	}
 	if (!table_privs(sql, t, PRIV_DELETE)){
 		return sql_error(sql, 02, 

@@ -2276,7 +2276,10 @@ literal:
 		{ sql_subtype *t = sql_bind_subtype("DATE", 0, 0 );
 		  atom *a = atom_general(t, $2); 
 		  if (!a) {
-			yyerror("incorrect date value");
+			char buf[BUFSIZ]; 
+
+			snprintf(buf, BUFSIZ, "incorrect date value (%s)", $2);
+			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
 		  } else {
@@ -2286,7 +2289,10 @@ literal:
 		{ sql_subtype *t = sql_bind_subtype("TIME", 0, 0 );
 		  atom *a = atom_general(t, $2); 
 		  if (!a) {
-			yyerror("incorrect time value");
+			char buf[BUFSIZ]; 
+
+			snprintf(buf, BUFSIZ, "incorrect time value (%s)", $2);
+			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
 		  } else {
@@ -2296,7 +2302,10 @@ literal:
 		{ sql_subtype *t = sql_bind_subtype("TIMESTAMP", 0, 0 );
 		  atom *a = atom_general(t, $2); 
 		  if (!a) {
-			yyerror("incorrect timestamp value");
+			char buf[BUFSIZ]; 
+
+			snprintf(buf, BUFSIZ, "incorrect timestamp value (%s)", $2);
+			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
 		  } else {
