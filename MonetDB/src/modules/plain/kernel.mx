@@ -419,7 +419,6 @@ int CMDvarval(int stk, YYSTREE lt, ValPtr res){
                         VALcopy(res, &act->binding);
 			if (res->vtype == TYPE_bat){
 				BBPfix(res->val.bval);
-				printf("%d\n", BBP_lrefs(res->val.bval));
 			}
                         return 0;
                 }
