@@ -50,7 +50,7 @@ mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkEnd(MalBlkPtr mb, InstrPtr pp);
 mal_export void chkLabel(MalBlkPtr mb, InstrPtr p);
-mal_export InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind);
+mal_export InstrPtr newCall(str modname, str fcnname, int kind);
 mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
 
 mal_export str		raiseException(MalBlkPtr mb, int pc, str name, str msg);
@@ -75,15 +75,15 @@ Symbol newFunction(str nme){
 	int i,j;
 
 	s = newSymbol(nme,FUNCTIONsymbol);
-	p = newInstruction(s->def, FUNCTIONsymbol);
+	p = newInstruction(FUNCTIONsymbol);
 	p->fcnname = GDKstrdup(nme);
 	p->argv[0]= newVariable(s->def,GDKstrdup(nme),malAnyType);
 	pushInstruction(s->def,p);
 	return s;
 }
-InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind){
+InstrPtr newCall(str modname, str fcnname, int kind){
 	InstrPtr p;
-	p= newInstruction(m,kind);
+	p= newInstruction(kind);
 	p->modname= GDKstrdup(modname);
 	p->fcnname= GDKstrdup(fcnname);
 	return p;
@@ -231,7 +231,7 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
 #ifdef DEBUG_MAL_FCN
 		printf(" %d x= %d\n",i,x);
 #endif 
-		if( isBatType(x)){
+		if( isaBatType(x)){
 			int head,tail;
 			int hx,tx;
 			head = getHeadType(x);
@@ -273,7 +273,7 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		int t = getArgType(mb,p,i);
 		int v = getArgType(new->def,pp,i);
 
-		if( isBatType(t) ){
+		if( isaBatType(t) ){
 			int head,tail;
 			head = getHeadType(t);
 			tail = getTailType(t);

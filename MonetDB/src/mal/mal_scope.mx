@@ -86,7 +86,8 @@ html
 
 typedef struct SCOPEDEF {
         struct SCOPEDEF   *outer; /* outer level in the scope tree */
-        str             name;
+        str     name;
+	GDKfcn	typeChecker;	/* function address for type checker */
         struct SYMDEF   **subscope; /* type dispatcher table */
 } *Scope, ScopeDefinition;
 
@@ -97,7 +98,6 @@ mal_export Scope 	newScope(Scope cntxt, str nme);
 mal_export Scope	fixateScope(Scope cntxt, str nme);
 mal_export void         freeScope(Scope cur);
 mal_export void         freeScopeList(Scope cur);
-mal_export void		initScope();
 mal_export int		getSubScope(str nme);
 mal_export void		insertSymbol(Scope cntxt, Symbol prg);
 mal_export Scope	findScope(Scope cntxt, str name);
@@ -125,6 +125,7 @@ point for the modules to be added later.
 	bzero((str)cur,sizeof(SymRecord));
 	cur->name = nme;
 	cur->outer = NULL;
+	cur->typeChecker = NULL;
 	cur->subscope = NULL; 
 
 @c
@@ -150,7 +151,7 @@ Scope newScope(Scope cntxt, str nme){
 	if( cntxt != NULL){
 		cur->outer = cntxt->outer;
 		cntxt->outer= cur;
-	}
+	} 
 	return cur;
 }
 @-
@@ -172,30 +173,30 @@ instructions and procedures. This forcefull action
 helps in localization of memory leakages.
 @c
 void freeSubScope(Scope cntxt){
+	int i;
 	if(cntxt->subscope==0) return;
+	for(i=0;i<MAXSCOPE;i++)
+	if( cntxt->subscope[i]){
+		freeSymbolList(cntxt->subscope[i]);
+		cntxt->subscope[i]= NULL;
+	}
 	GDKfree(cntxt->subscope);
 	cntxt->subscope = 0;
 }
 void freeScope(Scope s){
 	if(s==NULL) return;
 	freeSubScope(s);
-	if( s->name) GDKfree(s->name);
+	if( s->name) { GDKfree(s->name); s->name = NULL;}
 	GDKfree(s);
 }
 void freeScopeList(Scope s){
 	Scope t=s;
-	while(t){
-		t= t->outer;
+	while(s){
+		t= s->outer;
+		s->outer= NULL;
 		freeScope(s);
 		s=t;
 	}
-}
-void	initScope()
-{	Scope cur;
-	str nme= GDKstrdup("root");
-	@:newscope(initScope)@
-	newSubScope(cur);
-	mal_scope = cur;
 }
 @-
 After filling in a structure it is added to the multi-level

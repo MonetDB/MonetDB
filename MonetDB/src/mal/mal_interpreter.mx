@@ -161,6 +161,10 @@ MALrestart:
 MALevalExit:
 	/* garbage collect and return */
 	if( glb == 0) garbageCollector(mb,stk);
+	/* pass any left-over exception */
+	if( stk->exception >= 0){
+		ret= raiseException(mb,stk->pc,"MALexception", ret);
+	}
 	return ret;
 }
 @+ Safeguarding
@@ -231,9 +235,10 @@ elements in the value stack.
 			lhs = &env->stk[pci->argv[0]];
 			VALcopy(lhs,rhs);
 			@:BATfix(lhs)@
-			if(glb == 0) garbageCollector(mb,stk);
+			/* if(glb == 0) garbageCollector(mb,stk);*/
 			if(env) env->cmd = cmd; /* save debugger command */
-			return 0;
+			goto MALevalExit;
+			/* return 0;*/
 		}
 	case ENDDEFsymbol: 
 		goto MALevalExit;
@@ -319,7 +324,6 @@ are determined at compile time.
 	default:
 		ret= raiseException(mb,stk->pc,"MALexception",
 				"too many arguments\n");
-		goto exceptionHdlr;
 	}
 	@:resultParameter@
 
@@ -332,6 +336,7 @@ are determined at compile time.
 		retval->vtype = pci->gdktype;
 		garbageElement(retval);
 		ret = (str) (*pci->fcn)(mb,stk,pci);
+		@:resultParameter@
 	}
 
 @-
@@ -340,9 +345,11 @@ a new stack frame and do housekeeping, such as garbagecollection of all
 non-returned values.
 
 @= functioncall
-	lhs = &stk->stk[pci->argv[0]];
-	garbageElement(lhs);
+	retval=  &stk->stk[pci->argv[0]];
+	retval->vtype = pci->gdktype;
+	garbageElement(retval);
 	ret= runMAL(cntxt,mb,stk,0);
+	@:resultParameter@
 @-
 All dynamically linked routines are called with references to their
 parameter values. They are assembled below by inspecting the argument list.
@@ -381,13 +388,7 @@ and we have to do some housekeeping, such as string length adjustment.
 	@:exceptionHndlr@
 	switch(ATOMstorage(retval->vtype)){
 	case TYPE_str: 
-		if(retval->val.pval == NULL){
-			char buf[1024];
-			sprintf(buf,"%s.%s returns NULL string.\n",
-				pci->modname,pci->fcnname);
-			ret= raiseException(mb,stk->pc,"MALexception",buf);
-			goto MALevalExit;
-		} else {
+		if(retval->val.pval ){
 			retval->len= ATOMlen(TYPE_str,retval->val.pval);
 		}
 	}
@@ -416,7 +417,6 @@ You can leave a barrier block by searching for the corresponding 'lab'
 by faking an exception.
 
 @= leaveControl
-	/* stk->exception= pci->argv[0];*/
 	for( stk->pc++; stk->pc<stop; stk->pc++){
 	InstrPtr l= getInstrPtr(mb,stk->pc);
 	if( l->token == ENDsymbol && l->argv[0]== pci->argv[0]){
@@ -467,7 +467,7 @@ in which it can be handled.
 if( pci->typechk== TYPE_UNKNOWN){
 	ret= raiseException(mb,stk->pc,"MALexception",
 			    "Instruction type not fixed\n");
-	goto exceptionHdlr;
+	@:exceptionHndlr@
 }
 if( stk->exception >=0){
 	if( pci->barrier== CATCHsymbol && pci->argv[0]==stk->exception)
@@ -497,7 +497,6 @@ encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
 
 @= exceptionHndlr
-exceptionHdlr:
 if( ret != (str) GDK_SUCCEED && ret != NULL){
 	str msg, nxt;
 	int symid;
@@ -594,7 +593,7 @@ if(@1->vtype == TYPE_bat && @1->val.bval)
 Garbage collection is relatively straightforward, because most values are
 retained on the stackframe of an interpreter call. However, two storage
 types and possibly user-defined type garbage collector definitions
-require attention.
+require attention. [TAKE CARE OF fixable atoms !!]
 
 All string values are private to the VALrecord, which means they
 have to freed explicitly before a MAL function returns. 

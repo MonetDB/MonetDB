@@ -89,7 +89,7 @@ int malStartupAdmin(int listing){
 	c= initClient(GDKstrdup("Admin"),NULL,0);
         oldtrace = c->itrace;    /* no debugging in startup ! */
         c->itrace =0;
-	c->nspace= newScope(mal_scope, GDKstrdup("Admin"));
+	c->nspace= newScope(NULL, GDKstrdup("Admin"));
 	initLibraries();
 	startupPrelude(c,SRVINIT,SRVORIGIN);
 	mal_scope = c->nspace->outer;
@@ -132,7 +132,7 @@ void closeClientPrg(Client cntxt, int flag){
 	if( !(i==0 && p->token == FUNCTIONsymbol)){
 		insertSymbol(cntxt->nspace,cntxt->curprg);
 	} else{
-		/* garbage collect prg ? */
+		/* garbage collect prg ? no just empty file*/
 		return;
 	}
 	if( flag){

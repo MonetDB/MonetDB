@@ -116,8 +116,17 @@ void skipComment(Client cntxt) {
 		cntxt->nxt++;
 	}
 }
-#define skipBlanc(X) { char c; while ((c = *(X)->nxt) && isblank(c)) (X)->nxt++;}
-#define skipBlanc2(X) { char c; while ((c = *(X)->nxt) && isspace(c)) (X)->nxt++;}
+#define skipBlanc(X) {char c; while ((c = *(X)->nxt) && isblank(c))(X)->nxt++;\
+	if( c == '#') skipComment(cntxt);}
+INLINE
+void skipBlanc2(Client cntxt){
+	char c; 
+	while ((c= *cntxt->nxt) && isspace(c))cntxt->nxt++;
+	if( c == '#') {
+		skipComment(cntxt);
+		skipBlanc2(cntxt);
+	}
+}
 INLINE
 void advance(Client cntxt, int length){
 	char c; 
@@ -436,6 +445,8 @@ int parseModule(Client cntxt)
 		GDKerror("duplicate module '%s'\n",modname);
 		cntxt->curprg->def->errors  = FATALINPUT;
 	} else	cntxt->nspace = fixateScope(cntxt->nspace, modname);
+	GDKfree(modname);
+	@:typeInfo@
 	skipToEnd(cntxt);
 	return 1;
 }
@@ -459,6 +470,7 @@ int parseImport(Client cntxt)
 	@:parsePath@
 
 	malImport(cntxt,modname, cntxt->listing);
+	GDKfree(modname);
 	skipToEnd(cntxt);
 	return 1;
 }
@@ -509,10 +521,10 @@ defineStmt : FUNCTION
 		skipBlanc2(cntxt);
 		/* the last argument may be variable length */
 		if( keyphrase2(cntxt,"[]") ){
-			pushArgument(curBlk,curInstr, 
-			newVariable(curBlk,GDKstrdup(malVARG), malAnyType));
+			curInstr->varargs++;
 			break;
 		}
+		skipBlanc2(cntxt);
 		if( (ch=currChar(cntxt)) != ',') {
 			if( ch==')') break;
 			return (MalBlkPtr) parseError(cntxt,"',' expected\n");
@@ -592,6 +604,7 @@ a column of a BAT.
 				setAnyTailIndex(type,k);
 			}
 		}
+		curInstr->polymorphic = TRUE;
 	} else {
 		char x;
 		l = idLength(cntxt);
@@ -615,7 +628,10 @@ a column of a BAT.
 			type = malAnyBatType(ht,tt);
 			if( !keyphrase1(cntxt,"]"))
 				return (MalBlkPtr) parseError(cntxt,"']' expected\n");
-		} else type = malAnyBatType(malAnyType,malAnyType);
+		} else {
+			type = malAnyBatType(malAnyType,malAnyType);
+			curInstr->polymorphic = TRUE;
+		}
 	} else{
 		@:melElement@
 	}
@@ -637,7 +653,7 @@ Most functions are (dynamically) linked with the kernel.
 		nme = idCopy(cntxt,i);
 		curInstr->modname = GDKstrdup(cntxt->nspace->name);
 		curInstr->fcn = getAddress(nme);
-		curBlk->binding = GDKstrdup(nme);
+		curBlk->binding = nme;
 		/* defAtomCommand(curInstr);*/
 	} else return (MalBlkPtr) parseError(cntxt,"'=' expected\n");
 @-
@@ -659,9 +675,28 @@ help information.
 		skipBlanc2(cntxt);
 		if( l= stringLength(cntxt)){
 			curBlk->help = strCopy(cntxt,l);
-		} else parseError("<string> expected\n");
+		} else parseError(cntxt,"<string> expected\n");
 	} 
 	skipToEnd(cntxt);
+@-
+Module components may include functions overruling
+the built-in type resolver.
+@= typeInfo
+	skipBlanc2(cntxt);
+	if( keyphrase(cntxt,"type",4)){
+		int l;
+		skipBlanc2(cntxt);
+		if( keyphrase(cntxt,"=",1)==0){
+			parseError(cntxt,"'=' expected\n");
+		} else{
+		skipBlanc2(cntxt);
+		if( l= idLength(cntxt)){
+			str nme = idCopy(cntxt,l);
+			cntxt->nspace->typeChecker = getAddress(nme);
+			GDKfree(nme);
+		} else parseError(cntxt,"<identifier> expected\n");
+		}
+	} 
 @c
 MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	MalBlkPtr curBlk = 0;
@@ -734,7 +769,7 @@ int parseEnd(Client cntxt)
 				v= idCopy(cntxt,l);
 				i= newVariable(curBlk, v, TYPE_str);
 			} else advance(cntxt,l);
-			curInstr = newInstruction(curBlk,ENDsymbol);
+			curInstr = newInstruction(ENDsymbol);
 			curInstr->argv[0]= i;
 			pushInstruction(curBlk,curInstr);
 		}
@@ -759,7 +794,7 @@ int parse@3(Client cntxt)
 	if( ! keyword(cntxt,@1,@2)) return 0;
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;	
-	curInstr= newInstruction(curBlk,@3symbol);
+	curInstr= newInstruction(@3symbol);
 	l = idLength(cntxt);
 	i = findVariableLength(curBlk,cntxt->nxt,l);
 	if( i<0){
@@ -852,7 +887,7 @@ void parseAssign(Client cntxt, int kind)
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
-	curInstr = newInstruction(curBlk,ASSIGNsymbol);
+	curInstr = newInstruction(ASSIGNsymbol);
 
 	curInstr->barrier = kind==BARRIERsymbol? kind :0 ;
 	if( keyword(cntxt,"raise",5)){
@@ -883,6 +918,7 @@ void parseAssign(Client cntxt, int kind)
 		curInstr->argv[0]= newTmpVariable(curBlk,malAnyType);
 		if( currChar(cntxt) != '.' &&
 		    currChar(cntxt) != '(' ){
+				GDKfree(arg);
 				parseError(cntxt,"'.' or '(' expected\n");
 				goto part3;
 		}
@@ -988,7 +1024,7 @@ getarguments:
 
 		@:parseArguments@
 		goto part3;
-	} 
+	}
 	
 part2:
 	if( i= operatorLength(cntxt) ){
@@ -1006,7 +1042,11 @@ part2b:
 		} 
 		@:term(part3)@
 		parseError(cntxt,"<term> expected\n");
-	} 
+	} else  {
+		skipBlanc2(cntxt);
+		if( *cntxt->nxt != ';' && *cntxt->nxt!='#')
+		parseError(cntxt,"operator expected\n");
+	}
 part3:
 	skipToEnd(cntxt);
 	pushInstruction(curBlk,curInstr);

@@ -51,7 +51,7 @@ typedef int malType;
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
 #define getHeadType(X)	((X>>8) & 0377 )
 #define getTailType(X)	((X) & 0377 )
-#define isBatType(X) 	((X)!=malAnyType && (1<<16) & (X))
+#define isaBatType(X) 	((X)!=malAnyType && (1<<16) & (X))
 @-
 Procedure type parameters may be qualified by a formal type term any::I ,
 where I is a small integer. 
@@ -116,11 +116,11 @@ str malTypeName(malType tpe)
 {
 #ifdef DEBUG_MAL_TYPE
 	printf("maltype: %d %d %d",tpe,getHeadTypeType(tpe),getTailType(tpe));
-	printf("	: %d\n",isBatType(tpe));
+	printf("	: %d\n",isaBatType(tpe));
 #endif
 	if( tpe == malAnyType ) return GDKstrdup("any");
 	if( tpe == malVarType ) return GDKstrdup("var");
-	if( isBatType(tpe)){
+	if( isaBatType(tpe)){
 		char buf[1024],*s;
 		if( getHeadIndex(tpe) ){
 			sprintf(buf,"bat[any::%d,", getHeadIndex(tpe));
@@ -258,7 +258,7 @@ int getTypeIndex(str nme){
 	return i;
 }
 int getGDKtype(int type){
-	if( isBatType(type)) return TYPE_bat;
+	if( isaBatType(type)) return TYPE_bat;
 	if( type == malAnyType) return TYPE_void;
 	return ATOMtype(type);
 }

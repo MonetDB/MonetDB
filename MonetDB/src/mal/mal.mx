@@ -104,7 +104,6 @@ void tstAligned()
 int mal_init(){
 	mal_contextLock= MT_create_lock();
 	tstAligned();
-	initScope();
         if( malStartupAdmin(mal_listing) == 0) return -1;
 	return 0;
 }
@@ -113,6 +112,7 @@ int mal_exit(Client cntxt){
 #ifdef MALprofiler
 	profileReport( cntxt->nspace,1,stdout);
 #endif
-	freeScopeList(mal_scope);
+	freeScopeList(cntxt->nspace);
+	mal_scope = 0;
 	GDKexit();
 }

@@ -237,7 +237,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		for(j=0;j<pp->argc;j++)
 		if( pp->argv[j]== symid){
 			/* insert blocking statement */
-			newstmt= newCall(m,"squeezer","AccessTst",CMDcall);
+			newstmt= newCall("squeezer","AccessTst",CMDcall);
 			setReturnArgument(newstmt, newTmpVariable(m,TYPE_int));
 			pushArgument(m,newstmt, symid);
 			pushInstruction(m,newstmt); /* add to block */
