@@ -132,7 +132,7 @@ if test "x$have_odbc" != xno; then
 
   save_LIBS="$LIBS"
   LIBS="$ODBC_LIBS $LIBS"
-  AC_CHECK_LIB(odbc$libsuff, odbc, 
+  AC_CHECK_LIB(odbc$libsuff, SQLConnect, 
 	[ ODBC_LIBS="$ODBC_LIBS -lodbc$libsuff" 
           AC_DEFINE(HAVE_LIBODBC) 
 	  have_odbc=yes ]
