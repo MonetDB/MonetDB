@@ -1,24 +1,24 @@
 stderr of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 13:39:29 >  
-# 13:39:29 >  Mtimeout -timeout 180 ./Arjen_01_noPropCheck Arjen_01_noPropCheck 
-# 13:39:29 >  
+# 17:49:25 >  
+# 17:49:25 >  Mtimeout -timeout 180 ./Arjen_01_noPropCheck Arjen_01_noPropCheck 
+# 17:49:25 >  
 
 
-# 13:39:29 >  
-# 13:39:29 >  echo 'debugmask(2);' > d2.mil
-# 13:39:29 >  
+# 17:49:26 >  
+# 17:49:26 >  echo 'debugmask(2);' > d2.mil
+# 17:49:26 >  
 
 
-# 13:39:29 >  
-# 13:39:29 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_tests_from_Twente_Bugs d2.mil Arjen_01.milM
-# 13:39:29 >  
+# 17:49:26 >  
+# 17:49:26 >  Mtimeout -timeout 60 Mserver --config=/db2/niels/monet/ntv64debug/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_tests_from_Twente_Bugs d2.mil Arjen_01.milM
+# 17:49:26 >  
 
-# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
+# builtin opt 	gdk_arch = 64bitmips-sgi-irix6.5
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 26071
-# builtin opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	monet_pid = 1404017
+# builtin opt 	prefix = /db2/niels/monet/ntv64debug
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -38,7 +38,7 @@ stderr of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # builtin opt 	sql_api = sql
 # builtin opt 	sql_user = sqladmin
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/monet/Linux
+# config opt 	prefix = /db2/niels/monet/ntv64debug
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -53,7 +53,7 @@ stderr of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_tests_from_Twente_Bugs
 
-# 13:39:29 >  
-# 13:39:29 >  Done.
-# 13:39:29 >  
+# 17:49:26 >  
+# 17:49:26 >  Done.
+# 17:49:26 >  
 

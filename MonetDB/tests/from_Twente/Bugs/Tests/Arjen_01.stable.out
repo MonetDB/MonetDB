@@ -1,19 +1,15 @@
 stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 06:08:02 >  
-# 06:08:02 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_from_Twente_Bugs  < Arjen_01.milM
-# 06:08:02 >  
+# 17:49:23 >  
+# 17:49:23 >  Mtimeout -timeout 60 Mserver --config=/db2/niels/monet/ntv64debug/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_from_Twente_Bugs  < Arjen_01.milM
+# 17:49:23 >  
 
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
-# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
-# dbname:Tests_tests_from_Twente_Bugs
-# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_from_Twente_Bugs
-
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for mips-sgi-irix6.5/64bit; dynamically linked.
 #-----------------#
-# BAT:	  tmp_24  #
+# BAT:	  tmp_26  #
 # (void)  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -21,7 +17,7 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_25  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  10	  ]
@@ -29,7 +25,7 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 [ 2@0,	  30	  ]
 [ 3@0,	  40	  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  false	  ]
@@ -37,14 +33,14 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 [ 2@0,	  true	  ]
 [ 3@0,	  true	  ]
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 [ 3@0,	  2@0	  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_29  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -52,38 +48,38 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 [ 2@0,	  true	  ]
 [ 3@0,	  false	  ]
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_31  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 #-----------------#
-# BAT:	  tmp_30  #
-# (void)  (void)  #
-#-----------------#
-[ 1@0,	  0@0	  ]
-[ 2@0,	  1@0	  ]
-#-----------------#
-# BAT:	  tmp_31  #
-# (void)  (void)  #
-#-----------------#
-[ 1@0,	  0@0	  ]
-[ 2@0,	  1@0	  ]
-#-----------------#
 # BAT:	  tmp_32  #
+# (void)  (void)  #
+#-----------------#
+[ 1@0,	  0@0	  ]
+[ 2@0,	  1@0	  ]
+#-----------------#
+# BAT:	  tmp_33  #
+# (void)  (void)  #
+#-----------------#
+[ 1@0,	  0@0	  ]
+[ 2@0,	  1@0	  ]
+#-----------------#
+# BAT:	  tmp_35  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_33  #
 # (void)  (void)  #
 #-----------------#
 [ 0@0,	  1@0	  ]
 [ 1@0,	  2@0	  ]
 #-----------------#
-# BAT:	  tmp_33  #
+# BAT:	  tmp_36  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  20	  ]
@@ -109,7 +105,7 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 [ "hsorted",			  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65"		  ]
 [ "hident",			  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "t",		  "t",		  "h"		  ]
 [ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
-[ "hseqbase",			  "0",		  "0",		  "0",		  "1",		  "0",		  "0",		  "1",		  "1",		  "1",		  "0",		  "0"		  ]
+[ "hseqbase",			  "0@0",	  "0@0",	  "0@0",	  "1@0",	  "0@0",	  "0@0",	  "1@0",	  "1@0",	  "1@0",	  "0@0",	  "0@0"		  ]
 [ "hkey",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "hloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "hvarsized",			  "1",		  "1",		  "1",		  "1",		  "1",		  "0",		  "1",		  "1",		  "0",		  "1",		  "1"		  ]
@@ -117,7 +113,7 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 [ "halignflushed",		  "2000",	  "2002",	  "2022",	  "2022",	  "2032",	  "2034",	  "2022",	  "2022",	  "2047",	  "2023",	  "2050"	  ]
 [ "tident",			  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "h",		  "h",		  "t"		  ]
 [ "tdense",			  "1",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
-[ "tseqbase",			  "0",		  "-2147483648",  "-2147483648",  "0",		  "-2147483648",  "0",		  "0",		  "0",		  "0",		  "1",		  "-2147483648"	  ]
+[ "tseqbase",			  "0@0",	  "nil",	  "nil",	  "0@0",	  "nil",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "1@0",	  "nil"		  ]
 [ "tsorted",			  "65",		  "65",		  "65",		  "65",		  "0",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65"		  ]
 [ "tkey",			  "1",		  "1",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "tloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
@@ -172,7 +168,7 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 [ "taccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "taccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 
-# 06:08:02 >  
-# 06:08:02 >  Done.
-# 06:08:02 >  
+# 17:49:24 >  
+# 17:49:24 >  Done.
+# 17:49:24 >  
 
