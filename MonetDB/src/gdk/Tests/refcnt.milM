@@ -1,8 +1,10 @@
 PROC tmp() : void {
-        var sts := view_bbp_status();
+        # var sts := view_bbp_status();
         var nme := view_bbp_name().access(BAT_WRITE).col_name("name");
         var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
-        nme.replace(rev).table(view_bbp_heat(), sts.col_name("status"),
+# disable display of status column since the value depends on the
+# system's memory situation which is unpredictable
+        nme.replace(rev).table(view_bbp_heat(), # sts.col_name("status"),
                 view_bbp_kind(), view_bbp_refcnt());
 }
 

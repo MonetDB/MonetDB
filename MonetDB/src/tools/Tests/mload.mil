@@ -1,7 +1,7 @@
 # Mload sets the void heads of the loaded BATs dense, but not key.
 # This inconsistency causes BATmultijoin to crash.
-ls;
-dir;
+ls();
+dir();
 corelE4_1.print();
 a:=corelE4_1.info();
 aa:=corelE4_1.reverse().info();

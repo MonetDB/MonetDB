@@ -5,7 +5,7 @@ printf("Start of MIL prelude.\n");
 clientid().print();
 qstat();
 
-bbp().print();
+bbp().reverse().like("bat").reverse().print();
 loaded();
 procs();
 # vars() without the value (view_var_value())
@@ -15,7 +15,6 @@ view_bbp_kind().print();
 view_bbp_location().print();
 view_bbp_name().print();
 view_bbp_refcnt().print();
-view_bbp_status().print();
 view_client_tree().print();
 view_gdk_bbp().print();
 view_var_name().reverse().join(view_var_constant()).print();

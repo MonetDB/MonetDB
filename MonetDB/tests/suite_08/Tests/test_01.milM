@@ -18,7 +18,9 @@ view_bbp_heat().print();
 view_bbp_dirty().print();
 
 # Pseudo bat to map a BAT id into its disk/loaded/dirty status
-view_bbp_status().print();
+# disabled since the output depends on the system's available memory
+# and hence is unpredictable
+# view_bbp_status().print();
 
 # Pseudo bat to map a BAT id into its type
 view_bbp_kind().print();

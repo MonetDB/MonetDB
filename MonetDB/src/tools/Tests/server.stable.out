@@ -20,9 +20,6 @@ Start of MIL prelude.
 [ "bats",	  28	  ]
 [ "tmpbats",	  28	  ]
 [ "perbats",	  0	  ]
-[ "ondisk",	  0	  ]
-[ "todisk",	  0	  ]
-[ "fromdisk",	  0	  ]
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -325,37 +322,6 @@ Start of MIL prelude.
 [ 25,	  1	  ]
 [ 26,	  1	  ]
 [ 27,	  1	  ]
-#-----------------#
-# BAT:	  status  #
-# (int)	  (str)	  #
-#-----------------#
-[ 1,	  "load"  ]
-[ 2,	  "load"  ]
-[ 3,	  "load"  ]
-[ 4,	  "load"  ]
-[ 5,	  "load"  ]
-[ 6,	  "load"  ]
-[ 7,	  "load"  ]
-[ 8,	  "load"  ]
-[ 9,	  "load"  ]
-[ 10,	  "load"  ]
-[ 11,	  "load"  ]
-[ 12,	  "load"  ]
-[ 13,	  "load"  ]
-[ 14,	  "load"  ]
-[ 15,	  "load"  ]
-[ 16,	  "load"  ]
-[ 17,	  "load"  ]
-[ 18,	  "load"  ]
-[ 19,	  "load"  ]
-[ 20,	  "load"  ]
-[ 21,	  "load"  ]
-[ 22,	  "load"  ]
-[ 23,	  "load"  ]
-[ 24,	  "load"  ]
-[ 25,	  "load"  ]
-[ 26,	  "load"  ]
-[ 27,	  "load"  ]
 #-------------------------------------------------------------------------------------------------#
 # BAT:	  tree											  #
 # (int)	  (str)											  #
@@ -637,16 +603,16 @@ Start of MIL prelude.
 # client	name	login				tree											  # name
 # int	str	str				str											  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 0,	  "adm",  "Fri Oct 29 13:00:38 2004",	  "clients()"										  ]
-[ 1,	  "adm",  "Fri Oct 29 13:00:38 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
+[ 0,	  "adm",  "Fri Oct 29 17:05:42 2004",	  "clients()"										  ]
+[ 1,	  "adm",  "Fri Oct 29 17:05:42 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  390	  ]
+[ "user",	  340	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  1410	  ]
+[ "system",	  1380	  ]
 [ "elapsystem",	  0	  ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
@@ -655,7 +621,7 @@ Start of MIL prelude.
 [ "config",		  "/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf"																						  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"																									  ]
 [ "gdk_version",	  "4.5.0"																											  ]
-[ "monet_pid",		  "3623"																											  ]
+[ "monet_pid",		  "24673"																											  ]
 [ "prefix",		  "/ufs/sjoerd/Monet"																										  ]
 [ "exec_prefix",	  "/ufs/sjoerd/Monet"																										  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -671,10 +637,10 @@ Start of MIL prelude.
 [ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47682"																											  ]
+[ "mapi_port",		  "42525"																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53173"																											  ]
+[ "sql_port",		  "50313"																											  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
@@ -688,7 +654,7 @@ Start of MIL prelude.
 [ "config",		  "/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf"																						  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"																									  ]
 [ "gdk_version",	  "4.5.0"																											  ]
-[ "monet_pid",		  "3623"																											  ]
+[ "monet_pid",		  "24673"																											  ]
 [ "prefix",		  "/ufs/sjoerd/Monet"																										  ]
 [ "exec_prefix",	  "/ufs/sjoerd/Monet"																										  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -704,10 +670,10 @@ Start of MIL prelude.
 [ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47682"																											  ]
+[ "mapi_port",		  "42525"																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53173"																											  ]
+[ "sql_port",		  "50313"																											  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
@@ -724,22 +690,22 @@ Start of MIL prelude.
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  8	  ]
-[ "ninvcsw",	  233	  ]
+[ "nvcsw",	  3	  ]
+[ "ninvcsw",	  23	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1671168	  ]
-[ "arena",	  1806336	  ]
-[ "ordblks",	  120		  ]
+[ "memincr",	  1662976	  ]
+[ "arena",	  1798144	  ]
+[ "ordblks",	  124		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1663768	  ]
-[ "fordblks",	  142568	  ]
+[ "uordblks",	  1664344	  ]
+[ "fordblks",	  133800	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -749,8 +715,8 @@ Start of MIL prelude.
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Oct 29 13:00:38 2004"	  ]
-[ 1,	  "Fri Oct 29 13:00:38 2004"	  ]
+[ 0,	  "Fri Oct 29 17:05:42 2004"	  ]
+[ 1,	  "Fri Oct 29 17:05:42 2004"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
@@ -762,9 +728,9 @@ Start of MIL prelude.
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  390	  ]
+[ "user",	  340	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  1410	  ]
+[ "system",	  1380	  ]
 [ "elapsystem",	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
@@ -773,7 +739,7 @@ Start of MIL prelude.
 [ "config",		  "/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf"																						  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"																									  ]
 [ "gdk_version",	  "4.5.0"																											  ]
-[ "monet_pid",		  "3623"																											  ]
+[ "monet_pid",		  "24673"																											  ]
 [ "prefix",		  "/ufs/sjoerd/Monet"																										  ]
 [ "exec_prefix",	  "/ufs/sjoerd/Monet"																										  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -789,10 +755,10 @@ Start of MIL prelude.
 [ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47682"																											  ]
+[ "mapi_port",		  "42525"																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53173"																											  ]
+[ "sql_port",		  "50313"																											  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
@@ -809,22 +775,22 @@ Start of MIL prelude.
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  8	  ]
-[ "ninvcsw",	  233	  ]
+[ "nvcsw",	  3	  ]
+[ "ninvcsw",	  23	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1806336	  ]
-[ "ordblks",	  112		  ]
+[ "arena",	  1798144	  ]
+[ "ordblks",	  121		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1672600	  ]
-[ "fordblks",	  133736	  ]
+[ "uordblks",	  1673176	  ]
+[ "fordblks",	  124968	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -844,7 +810,7 @@ qstat();
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
 
-bbp().print();
+bbp().reverse().like("bat").reverse().print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -852,9 +818,6 @@ bbp().print();
 [ "bats",	  28	  ]
 [ "tmpbats",	  28	  ]
 [ "perbats",	  0	  ]
-[ "ondisk",	  0	  ]
-[ "todisk",	  0	  ]
-[ "fromdisk",	  0	  ]
 loaded();
 #---------------------------------#
 # module	| usage_count	  #
@@ -1166,38 +1129,6 @@ view_bbp_refcnt().print();
 [ 25,	  1	  ]
 [ 26,	  1	  ]
 [ 27,	  1	  ]
-view_bbp_status().print();
-#-----------------#
-# BAT:	  status  #
-# (int)	  (str)	  #
-#-----------------#
-[ 1,	  "load"  ]
-[ 2,	  "load"  ]
-[ 3,	  "load"  ]
-[ 4,	  "load"  ]
-[ 5,	  "load"  ]
-[ 6,	  "load"  ]
-[ 7,	  "load"  ]
-[ 8,	  "load"  ]
-[ 9,	  "load"  ]
-[ 10,	  "load"  ]
-[ 11,	  "load"  ]
-[ 12,	  "load"  ]
-[ 13,	  "load"  ]
-[ 14,	  "load"  ]
-[ 15,	  "load"  ]
-[ 16,	  "load"  ]
-[ 17,	  "load"  ]
-[ 18,	  "load"  ]
-[ 19,	  "load"  ]
-[ 20,	  "load"  ]
-[ 21,	  "load"  ]
-[ 22,	  "load"  ]
-[ 23,	  "load"  ]
-[ 24,	  "load"  ]
-[ 25,	  "load"  ]
-[ 26,	  "load"  ]
-[ 27,	  "load"  ]
 view_client_tree().print();
 #-----------------------------------------#
 # BAT:	  tree				  #
@@ -1471,16 +1402,16 @@ clients();
 # BAT:	  name	| login				| tree		  #
 # (int)	  (str)	| (str)				| (str)		  #
 #-----------------------------------------------------------------#
-[ 0,	  "adm",  "Fri Oct 29 13:00:38 2004",	  "clients()"	  ]
+[ 0,	  "adm",  "Fri Oct 29 17:05:42 2004",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  410	  ]
+[ "user",	  360	  ]
 [ "elapuser",	  20	  ]
-[ "system",	  1410	  ]
+[ "system",	  1380	  ]
 [ "elapsystem",	  0	  ]
 environment().kdiff(skiplist.reverse()).print();
 #---------------------------------------------------------#
@@ -1517,23 +1448,23 @@ io().print();
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  8	  ]
-[ "ninvcsw",	  236	  ]
+[ "nvcsw",	  5	  ]
+[ "ninvcsw",	  25	  ]
 memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1806336	  ]
-[ "ordblks",	  447		  ]
+[ "arena",	  1798144	  ]
+[ "ordblks",	  446		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1521408	  ]
-[ "fordblks",	  284928	  ]
+[ "uordblks",	  1521440	  ]
+[ "fordblks",	  276704	  ]
 threads();
 #-------------------------#
 # BAT:	  thread	  #
@@ -1545,7 +1476,7 @@ view_client_login().print();
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Oct 29 13:00:38 2004"	  ]
+[ 0,	  "Fri Oct 29 17:05:42 2004"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -1558,9 +1489,9 @@ view_gdk_cpu().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  410	  ]
+[ "user",	  360	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  1410	  ]
+[ "system",	  1380	  ]
 [ "elapsystem",	  0	  ]
 view_gdk_env().print();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -1570,7 +1501,7 @@ view_gdk_env().print();
 [ "config",		  "/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf"																						  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"																									  ]
 [ "gdk_version",	  "4.5.0"																											  ]
-[ "monet_pid",		  "3623"																											  ]
+[ "monet_pid",		  "24673"																											  ]
 [ "prefix",		  "/ufs/sjoerd/Monet"																										  ]
 [ "exec_prefix",	  "/ufs/sjoerd/Monet"																										  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -1586,10 +1517,10 @@ view_gdk_env().print();
 [ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47682"																											  ]
+[ "mapi_port",		  "42525"																											  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53173"																											  ]
+[ "sql_port",		  "50313"																											  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
@@ -1607,23 +1538,23 @@ view_gdk_io().print();
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  8	  ]
-[ "ninvcsw",	  236	  ]
+[ "nvcsw",	  5	  ]
+[ "ninvcsw",	  25	  ]
 view_gdk_memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1806336	  ]
-[ "ordblks",	  450		  ]
+[ "arena",	  1798144	  ]
+[ "ordblks",	  449		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1520800	  ]
-[ "fordblks",	  285536	  ]
+[ "uordblks",	  1520832	  ]
+[ "fordblks",	  277312	  ]
 view_gdk_thread().print();
 #-------------------------#
 # BAT:	  thread	  #

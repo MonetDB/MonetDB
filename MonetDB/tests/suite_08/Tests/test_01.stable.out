@@ -183,38 +183,9 @@ view_bbp_dirty().print();
 [ 27,	  "dirty"	  ]
 
 # Pseudo bat to map a BAT id into its disk/loaded/dirty status
-view_bbp_status().print();
-#-----------------#
-# BAT:	  status  #
-# (int)	  (str)	  #
-#-----------------#
-[ 1,	  "load"  ]
-[ 2,	  "load"  ]
-[ 3,	  "load"  ]
-[ 4,	  "load"  ]
-[ 5,	  "load"  ]
-[ 6,	  "load"  ]
-[ 7,	  "load"  ]
-[ 8,	  "load"  ]
-[ 9,	  "load"  ]
-[ 10,	  "load"  ]
-[ 11,	  "load"  ]
-[ 12,	  "load"  ]
-[ 13,	  "load"  ]
-[ 14,	  "load"  ]
-[ 15,	  "load"  ]
-[ 16,	  "load"  ]
-[ 17,	  "load"  ]
-[ 18,	  "load"  ]
-[ 19,	  "load"  ]
-[ 20,	  "load"  ]
-[ 21,	  "load"  ]
-[ 22,	  "load"  ]
-[ 23,	  "load"  ]
-[ 24,	  "load"  ]
-[ 25,	  "load"  ]
-[ 26,	  "load"  ]
-[ 27,	  "load"  ]
+# disabled since the output depends on the system's available memory
+# and hence is unpredictable
+# view_bbp_status().print();
 
 # Pseudo bat to map a BAT id into its type
 view_bbp_kind().print();
@@ -277,15 +248,15 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#-----------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"		  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf"																						  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"					  ]
 [ "gdk_version",	  "4.5.0"							  ]
-[ "monet_pid",		  "24459"							  ]
-[ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"				  ]
-[ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"				  ]
+[ "monet_pid",		  "2020"																											  ]
+[ "prefix",		  "/ufs/sjoerd/Monet"																										  ]
+[ "exec_prefix",	  "/ufs/sjoerd/Monet"																										  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/dbfarm"		  ]
+[ "gdk_dbfarm",		  "/ufs/sjoerd/src/MonetDB/build/dbfarm"																							  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -294,19 +265,19 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
 [ "monet_nostalgic",	  "no"																																												  ]
-[ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"		  ]
+[ "monet_mod_path",	  "/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "43363"							  ]
+[ "mapi_port",		  "42525"																											  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "59761"							  ]
+[ "sql_port",		  "50313"																											  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"		  ]
+[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/build/log"																								  ]
 [ "gdk_embedded",	  "no"								  ]
-[ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/tests/suite_08"	  ]
+[ "monet_cwd",		  "/net/indus/export/scratch1/sjoerd/MonetDB/mTests/tests/suite_08"																				  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -336,7 +307,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Mon Oct 25 19:08:20 2004"	  ]
+[ 0,	  "Fri Oct 29 17:18:44 2004"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree
