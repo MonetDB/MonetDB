@@ -209,8 +209,8 @@ icc-icpc|ecc-ecpc)
 	X_CXXFLAGS="$X_CXXFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,108,188,1357"
-	X_CXXFLAGS="$X_CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,108,188,1357"
+	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357"
+	X_CXXFLAGS="$X_CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357"
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
 	dnl  # 279: controlling expression is constant
@@ -224,6 +224,7 @@ icc-icpc|ecc-ecpc)
 	dnl  # 171: invalid type conversion: "." to "."
 	dnl  # 181: argument is incompatible with corresponding format string conversion
 	dnl  # 764: nonstandard format string conversion
+	dnl  # 269: invalid format string conversion
 	dnl  # 108: implicitly-signed bit field of length 1
 	dnl  # 188: enumerated type mixed with another type
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
