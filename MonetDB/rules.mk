@@ -186,5 +186,8 @@ $(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 	$(COMPILE) -O0 -c $<
 
+$(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
+	$(LIBTOOL) --mode=compile $(COMPILE) -O0 -c $<
+
 SUFFIXES-local: $(BUILT_SOURCES)
 
