@@ -234,7 +234,7 @@ want to take a horizontal fragment (stable=false), this cannot
 be done, and we need to put different information in U (so we can't 
 use a copy.
 @c
-	if (slice_view) {
+	if (slice_view || VIEWparent(b)) {
 		/* slices are unequal to their parents; cannot use accs */
 		bn->hidx.base = bn->tidx.base = NULL;
 		bn->hhash_heap = bn->thash_heap = NULL;
