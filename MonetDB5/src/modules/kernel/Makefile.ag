@@ -16,7 +16,7 @@ LIBS = {
 	SCRIPTS = mal mil ""
 	LIBS = ../common/libmutils ../common/libstream ../../gdk/libbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-	LDFLAGS = -module -lm
+	LDFLAGS = -lm
 }
 scripts_mal = {
 	DIR = pkglibdir/kernel
