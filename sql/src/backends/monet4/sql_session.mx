@@ -150,43 +150,67 @@ void monet4_freestack( backend_stack stk )
 	Cntxt procstk = (Cntxt)(ptrdiff_t)stk;
 
 	monet_cntxt[procstk].reuse = FALSE;
+	CNTXTclear(procstk);
 	CNTXTfree1(procstk);
+	CNTXTdelete(procstk);
+}
+
+static void 
+reset_arg_tree( YYSTREE args )
+{
+	while(args){
+		int i;
+		for (i=0; i< args->cnt; i++){
+			if (args->yysons[i])
+				reset_arg_tree(args->yysons[i]);
+
+		}
+		args->yyval.vtype = TYPE_void; 
+		args->yyval.len = 0; 
+
+		args = args->overflow;
+	}
 }
 
 void monet4_freecode( backend_code code, backend_stack stk, int nr)
 {
-	YYSTREE procnode = (YYSTREE)code;
+	YYSTREE callnode = (YYSTREE)code;
 	if (code){
 		Client client;
 		char name[BUFSIZ]; 
 		int i;
-		int l = procnode->yysons[1]->cnt;
-		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
+		int l = callnode->yysons[1]->cnt;
+		ValPtr argv;
 
-		/* clear arguments */
+		/* clear default arguments */
+		reset_arg_tree( callnode->yysons[0] );
+
+		/* clear fastpath arguments */
+ 		argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
 		for (i=1; i<l; i++){
 			argv[i].vtype = TYPE_void; 
 			argv[i].len = 0; 
 		}
+
 		/* cleanup proc */
+		yyfree(callnode);
+
 		snprintf(name, BUFSIZ, "sql%d", nr);
 		CNTXTclient( (Cntxt)(ptrdiff_t)stk, &client);
 		TBL_delproc(client, name);
-
-		_DELETE(procnode);
 	}
 }
 
 YYSTREE backend_interpret( Cntxt procstk, char *name, list *args )
 {
-	YYSTREE procnode;
+	YYSTREE callnode;
 	YYSTREE argtree;
 	node *n;
 	int err = 0;
 	ValRecord v;
 
 	v.vtype = TYPE_void;
-	procnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name)); 
+	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name)); 
  	argtree = yynode(0,0);
 	if (args){
   		for (n=args->h; n; n = n->next){
@@ -195,16 +219,16 @@ YYSTREE backend_interpret( Cntxt procstk, char *name, list *args )
        			argtree = yyexpand(argtree, arg);
 		}
 	}
-	yyexpand(procnode, argtree);
-	yyexpand(procnode, yynode(0,TYPE_int));
-	err = interpret( procstk, procnode, &v);
+	yyexpand(callnode, argtree);
+	yyexpand(callnode, yynode(0,TYPE_int));
+	err = interpret( procstk, callnode, &v);
 
 	(void) err;	/* Stefan: unused!? */
 
-	return procnode;
+	return callnode;
 }
 
-int backend_fastpath( Cntxt procstk, YYSTREE procnode, list *args )
+int backend_fastpath( Cntxt procstk, YYSTREE callnode, list *args )
 {
 	int err = 0;
 	ValRecord v;
@@ -214,13 +238,13 @@ int backend_fastpath( Cntxt procstk, YYSTREE procnode, list *args )
 	if (args){
 		int i;
 
-		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
+		ValPtr argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
 	  	for (i=1, n=args->h; n; i++, n = n->next){
 			atom *a = n->data;
 			argv[i] = a->data;
 		}
 	}
-	err = interpret( procstk, procnode->yysons[1]->yysons[0], &v);
+	err = interpret( procstk, callnode->yysons[1]->yysons[0], &v);
 	return err;
 }
 
@@ -340,15 +364,15 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 	} else if (!q->code){
 		char buf[BUFSIZ];
 		Cntxt procstk = backend_newstack(stk);
-		YYSTREE procnode;
+		YYSTREE callnode;
 
 		snprintf( buf, BUFSIZ, "sql%d", q->id);
 
 		c->mvc->type = q->type;
-		procnode = backend_interpret( procstk, buf, c->args);
+		callnode = backend_interpret( procstk, buf, c->args);
 
-		if (!err){
-			q->code = (backend_code)procnode;
+		if (callnode){
+			q->code = (backend_code)callnode;
 			q->stk = (backend_stack)(ptrdiff_t)procstk;
 		} else {
 			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
@@ -361,7 +385,8 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
  	 * clear query cache after Transaction boundaries (commit/rollback)
 	 * and on schema changes 
 	 */
-	if (c->mvc->type == Q_TRANS || c->mvc->type == Q_SCHEMA){
+	if (c->mvc->type == Q_TRANS || c->mvc->type == Q_SCHEMA || 
+	    c->qc->id > 10) {
 		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
