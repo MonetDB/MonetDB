@@ -2543,6 +2543,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
 		if (!cs) {
+			if (subset) stmt_destroy(subset);
 			list_destroy(rl);
 			return NULL;
 		}
@@ -2555,6 +2556,8 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 			if (list_length(cs->op1.lval) == 1) {
 				list_append(rl, stmt_dup(cs->op1.lval->h->data));
 			} else {
+				if (subset) stmt_destroy(subset);
+				list_destroy(rl);
 				stmt_destroy(cs);
 				return sql_error(sql, 02, "Subquery should return a single value");
 			}

@@ -1200,14 +1200,16 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		tv = scope_add_table_columns(sql, scp, t, t->base.name);
 
 		if (opt_where) {
+			stmt *subset = NULL;
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
-			if (s)
-				s = stmt2pivot(scp, s);
-			if (!s) {
+			if (s) {
+				subset = stmt2pivot(scp,s);
+			} else {
 				scope_close(scp);
 				return NULL;
 			}
-			s = sql_delete(sql, tv, t, s, 1);
+			s = sql_delete(sql, tv, t, subset, 1);
+			stmt_destroy(subset);
 		} else {	/* delete all */
 			s = stmt_table_clear(t);
 			s = output_value(s);
