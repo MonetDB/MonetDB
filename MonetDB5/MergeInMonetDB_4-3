@@ -8,10 +8,13 @@ SharedDirs="conf src/common src/gdk src/testing src/utils src/mapi/clients src/m
 
 if [ ! "$1" ] ; then
 	echo ''
-	echo 'Usage: $0 <SF-username>'
+	echo 'Usage: $0 <SF-username> [<CVS-tag>]'
 	echo ' <SF-username>: your username at SourceForge.net,'
 	echo '                or "anonymous", in case you are not a'
 	echo '                registered user at SourceForge.net.'
+	echo ' <CVS-tag>: a valid CVS-tag in the MonetDB repository'
+	echo '            to merge-in a specific release or branch'
+	echo '            of MonetDB_4-3, e.g., "MonetDB_4-3-16".'
 	echo ''
 	exit 1
 fi
@@ -24,11 +27,21 @@ if [ "$SFuser" = "anonymous" ] ; then
 fi
 SFsource="-d:$SFuser@cvs.sf.net:/cvsroot/monetdb"
 
+CVStag=""
+branch=""
+if [ "$2" ] ; then
+	if [ "$2" = "-A"  -o  "${2#-r}" != "$2" ]
+	  then	CVStag="$2"
+	  else	CVStag="-r$2"
+	fi
+	branch=" ('${CVStag#-r}')"
+fi
+
 echo "pruning empty directories..."
 cvs -q update -d -P
 echo "pruning empty directories... done."
 
-echo "checking-out directories shared with MonetDB_4-3:"
+echo "checking-out directories shared with MonetDB_4-3$branch:"
 for d0 in $SharedDirs ; do
 	echo "$d0:"
 	if [ "${d0%/*}" = "$d0" ] ; then
@@ -41,7 +54,7 @@ for d0 in $SharedDirs ; do
 	( cd $d1 && (
 		Entries="yes"
 		if [ ! -d "$d2" ] ; then
-			cvs -q $SFsource checkout -P -d $d2 MonetDB/$d0
+			cvs -q $SFsource checkout -P "$CVStag" -d $d2 MonetDB/$d0
 		  else
 			x="`cat $d2/CVS/Root 2>/dev/null`/`cat $d2/CVS/Repository 2>/dev/null`"
 			y="${SFsource#*@}/MonetDB/$d0"
@@ -57,5 +70,5 @@ for d0 in $SharedDirs ; do
 	))
 	echo "$d0: done."
 done
-echo "checking-out directories shared with MonetDB_4-3: done."
+echo "checking-out directories shared with MonetDB_4-3$branch: done."
 
