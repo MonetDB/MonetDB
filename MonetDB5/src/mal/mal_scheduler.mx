@@ -254,9 +254,11 @@ function main();
 	sql_cache.qry01(12,false);
 @end example
 
-Note, these scheduler interventions are called for by the SQL compiler.
+These scheduler interventions are called for by the SQL compiler.
 It may have flagged the cached version as a high potential for
 dynamic optimization, something that is not known at the MAL level.
+[The current optimizer also generates a factory, that should be
+done here and upon explicit request]
 @c
 str 
 RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){

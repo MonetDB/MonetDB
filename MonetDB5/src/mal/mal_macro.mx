@@ -81,6 +81,10 @@ the return list.
 Likewise, we assume here that the block has a single return
 statement, which is also the last one to be executed.
 
+The MCoptimizer can only expand functions. Factories already
+carry a significant complex flow of control that is hard
+to simulate in the nested flow structure of an arbitrary function.
+
 The MEoptimizer can not deal with calls controlled by a barrier.
 It would often require a rewrite of several other statements as well.
 
@@ -388,8 +392,7 @@ str MACROprocessor(MalBlkPtr mb, Symbol t){
         q= getInstrPtr(mb,i);
         if( functionId(q) &&
             idcmp(functionName(q),t->name)==0){
-            if( getSignature(t)->token == FUNCTIONsymbol ||
-                getSignature(t)->token == FACTORYsymbol){
+            if( getSignature(t)->token == FUNCTIONsymbol ){
 #ifdef DEBUG_MAL_MACRO
             printf("Hit, replace macro call %s\n",t->name);
 #endif
