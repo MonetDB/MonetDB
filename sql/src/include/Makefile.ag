@@ -17,7 +17,4 @@
 
 ## Process this file with automake to produce Makefile.in
 
-
-SQL_INCLUDES = {
-	SOURCES = sql_mem.h sql_list.h sql_catalog.h
-}
+EXTRA_HEADERS = sql_mem.h sql_list.h sql_catalog.h
