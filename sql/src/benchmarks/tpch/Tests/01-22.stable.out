@@ -1,13 +1,14 @@
 stdout of test '01-22` in directory 'src/benchmarks/tpch` itself:
 
 
-# 12:47:37 >  
-# 12:47:37 >  Mtimeout -timeout 1500 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=49637 --set sql_port=50736 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/var/tmp/_BUILD_SQL_GNU_32_d__/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 12:47:37 >  
+# 11:37:28 >  
+# 11:37:28 >  Mtimeout -timeout 1500 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=48783 --set sql_port=53498 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 11:37:28 >  
 
-# Monet Database Server V4.3.15
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
 
@@ -29,8 +30,8 @@ Over..
 # 3 # querytype
 # lineitem,	lineitem,	lineitem,	lineitem,	,	,	lineitem,	,	,	lineitem # table_name
 # l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-# varchar,	varchar,	int,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
-# 1,	1,	0,	0,	0,	0,	0,	0,	0,	0 # length
+# varchar,	varchar,	bigint,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
+# 1,	1,	20,	21,	21,	21,	22,	22,	22,	11 # length
 # 4,	,	,	,	,	,	,	,	,	 # tuplecount
 # 1,	,	,	,	,	,	,	,	,	 # id
 [ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
@@ -46,7 +47,7 @@ Over..
 # supplier,	supplier,	nation,	part,	part,	supplier,	supplier,	supplier # table_name
 # s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
 # decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
-# 0,	18,	7,	0,	14,	26,	15,	37 # length
+# 17,	18,	7,	11,	14,	39,	15,	93 # length
 # 4,	,	,	,	,	,	,	 # tuplecount
 # 1,	,	,	,	,	,	,	 # id
 [ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
@@ -62,7 +63,7 @@ Over..
 # lineitem,	,	orders,	orders # table_name
 # l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
 # int,	decimal,	date,	int # type
-# 0,	0,	0,	0 # length
+# 11,	21,	10,	11 # length
 # 10,	,	,	 # tuplecount
 # 1,	,	,	 # id
 [ 47714,	267010.5894,	1995-03-11,	0	]
@@ -84,7 +85,7 @@ Over..
 # orders,	orders # table_name
 # o_orderpriority,	order_count # name
 # varchar,	int # type
-# 15,	0 # length
+# 15,	11 # length
 # 5,	 # tuplecount
 # 1,	 # id
 [ "1-URGENT",	93	]
@@ -101,7 +102,7 @@ Over..
 # nation,	 # table_name
 # n_name,	revenue # name
 # varchar,	decimal # type
-# 9,	0 # length
+# 9,	21 # length
 # 5,	 # tuplecount
 # 1,	 # id
 [ "VIETNAM",	1000926.6999	]
@@ -118,7 +119,7 @@ Over..
 #  # table_name
 # revenue # name
 # decimal # type
-# 0 # length
+# 21 # length
 # 1 # tuplecount
 # 1 # id
 [ 1193053.2253	]
@@ -128,10 +129,10 @@ Over..
 # 16:23:03 >  
 
 # 3 # querytype
-# n1,	n2,	,	 # table_name
+# shipping,	shipping,	shipping,	shipping # table_name
 # supp_nation,	cust_nation,	l_year,	revenue # name
 # varchar,	varchar,	int,	decimal # type
-# 7,	7,	0,	0 # length
+# 7,	7,	11,	21 # length
 # 4,	,	,	 # tuplecount
 # 1,	,	,	 # id
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
@@ -144,10 +145,10 @@ Over..
 # 16:23:03 >  
 
 # 3 # querytype
-# ,	 # table_name
+# all_nations,	 # table_name
 # o_year,	mkt_share # name
 # int,	decimal # type
-# 0,	0 # length
+# 11,	21 # length
 # 2,	 # tuplecount
 # 1,	 # id
 [ 1995,	0.0000	]
@@ -158,10 +159,10 @@ Over..
 # 16:23:03 >  
 
 # 3 # querytype
-# nation,	,	 # table_name
+# profit,	profit,	profit # table_name
 # nation,	o_year,	sum_profit # name
 # varchar,	int,	decimal # type
-# 14,	0,	0 # length
+# 14,	11,	21 # length
 # 174,	,	 # tuplecount
 # 1,	,	 # id
 [ "ALGERIA",	1998,	386617.8283	]
@@ -347,7 +348,7 @@ Over..
 # customer,	customer,	,	customer,	nation,	customer,	customer,	customer # table_name
 # c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 # int,	varchar,	decimal,	decimal,	varchar,	varchar,	varchar,	varchar # type
-# 0,	18,	0,	0,	14,	40,	15,	116 # length
+# 11,	18,	21,	17,	14,	40,	15,	116 # length
 # 20,	,	,	,	,	,	,	 # tuplecount
 # 1,	,	,	,	,	,	,	 # id
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"regular ideas promise against the furiously final deposits. f"	]
@@ -379,7 +380,7 @@ Over..
 # partsupp,	 # table_name
 # ps_partkey,	value # name
 # int,	decimal # type
-# 0,	0 # length
+# 11,	21 # length
 # 359,	 # tuplecount
 # 1,	 # id
 [ 1376,	13271249.89	]
@@ -750,7 +751,7 @@ Over..
 # lineitem,	,	 # table_name
 # l_shipmode,	high_line_count,	low_line_count # name
 # varchar,	int,	int # type
-# 4,	0,	0 # length
+# 4,	11,	11 # length
 # 2,	,	 # tuplecount
 # 1,	,	 # id
 [ "MAIL",	64,	86	]
@@ -764,7 +765,7 @@ Over..
 # c_orders,	c_orders # table_name
 # c_count,	custdist # name
 # int,	int # type
-# 0,	0 # length
+# 11,	11 # length
 # 32,	 # tuplecount
 # 1,	 # id
 [ 0,	500	]
@@ -808,7 +809,7 @@ Over..
 #  # table_name
 # promo_revenue # name
 # decimal # type
-# 0 # length
+# 21 # length
 # 1 # tuplecount
 # 1 # id
 [ 15.4865	]
@@ -822,7 +823,7 @@ Over..
 # supplier,	supplier,	supplier,	supplier,	revenue0 # table_name
 # s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
 # int,	varchar,	varchar,	varchar,	decimal # type
-# 0,	18,	36,	15,	0 # length
+# 11,	18,	36,	15,	21 # length
 # 1,	,	,	,	 # tuplecount
 # 1,	,	,	,	 # id
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
@@ -836,7 +837,7 @@ Over..
 # part,	part,	part,	partsupp # table_name
 # p_brand,	p_type,	p_size,	supplier_cnt # name
 # varchar,	varchar,	int,	int # type
-# 8,	25,	0,	0 # length
+# 8,	25,	11,	11 # length
 # 296,	,	,	 # tuplecount
 # 1,	,	,	 # id
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
@@ -1144,7 +1145,7 @@ Over..
 #  # table_name
 # avg_yearly # name
 # decimal # type
-# 0 # length
+# 21 # length
 # 1 # tuplecount
 # 1 # id
 [ 0.00	]
@@ -1156,8 +1157,8 @@ Over..
 # 3 # querytype
 # customer,	customer,	orders,	orders,	orders,	lineitem # table_name
 # c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	sum_l_quantity # name
-# varchar,	int,	int,	date,	decimal,	int # type
-# 18,	0,	0,	0,	0,	0 # length
+# varchar,	int,	int,	date,	decimal,	bigint # type
+# 18,	11,	11,	10,	17,	20 # length
 # 2,	,	,	,	,	 # tuplecount
 # 1,	,	,	,	,	 # id
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
@@ -1171,63 +1172,24 @@ Over..
 #  # table_name
 # revenue # name
 # decimal # type
-# 0 # length
+# 21 # length
 # 1 # tuplecount
 # 1 # id
 [ 22923.0280	]
 
-# 19:37:14 >  
-# 19:37:14 >  Done.
-# 19:37:14 >  
+# 11:37:32 >  
+# 11:37:32 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53498
+# 11:37:32 >  
 
-# 16:41:41 >  
-# 16:41:41 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace < 20.sql
-# 16:41:41 >  
-
-#SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	s_name,
-#     5: 0 	s_address
-#     6: 0 from
-#     7: 0 	supplier,
-#     8: 0 	nation
-#     9: 0 where
-#    10: 0 	s_suppkey in (
-#    11: 0 		select
-#    12: 0 			ps_suppkey
-#    13: 0 		from
-#    14: 0 			partsupp
-#    15: 0 		where
-#    16: 0 			ps_partkey in (
-#    17: 0 				select
-#    18: 0 					p_partkey
-#    19: 0 				from
-#    20: 0 					part
-#    21: 0 				where
-#    22: 0 					p_name like 'forest%'
-#    23: 0 			)
-#    24: 0 			and ps_availqty > (
-#    25: 0 				select
-#    26: 0 					0.5 * sum(l_quantity)
-#    27: 0 				from
-#    28: 0 					lineitem
-#    29: 0 				where
-#    30: 0 					l_partkey = ps_partkey
-#    31: 0 					and l_suppkey = ps_suppkey
-#    32: 0 					and l_shipdate >= date '1994-01-01'
-#    33: 0 					and l_shipdate < date '1994-01-01' + interval '1' year
-#    34: 0 			)
-#    35: 0 	)
-#    36: 0 	and s_nationkey = n_nationkey
-#    37: 0 	and n_name = 'CANADA'
-#    38: 0 order by
-#    39: 1 	s_name;
-#----------------------
-#| s_name | s_address |
-#----------------------
+# 3 # querytype
+# supplier,	supplier # table_name
+# s_name,	s_address # name
+# varchar,	varchar # type
+# 18,	30 # length
+# 1,	 # tuplecount
+# 1,	 # id
 [ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
+
 
 # 16:23:05 >  
 # 16:23:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
@@ -1237,7 +1199,7 @@ Over..
 # supplier,	supplier # table_name
 # s_name,	numwait # name
 # varchar,	int # type
-# 18,	0 # length
+# 18,	11 # length
 # 1,	 # tuplecount
 # 1,	 # id
 [ "Supplier#000000074",	9	]
@@ -1247,10 +1209,10 @@ Over..
 # 16:23:05 >  
 
 # 3 # querytype
-# ,	,	customer # table_name
+# custsale,	custsale,	custsale # table_name
 # cntrycode,	numcust,	totacctbal # name
 # varchar,	int,	decimal # type
-# 2,	0,	0 # length
+# 2,	11,	21 # length
 # 7,	,	 # tuplecount
 # 1,	,	 # id
 [ "13",	10,	75359.29	]

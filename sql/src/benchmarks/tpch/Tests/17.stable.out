@@ -1,13 +1,15 @@
 stdout of test '17` in directory 'src/benchmarks/tpch` itself:
 
 
-# 16:41:36 >  
-# 16:41:36 >  Mtimeout -timeout 180 Mserver "--config=/export/data1/manegold/Monet/_PREFIX_GNU_32_d_--enable-optimize_/etc/monet.conf" --debug=10 --set "monet_mod_path=/export/data1/manegold/Monet/_PREFIX_GNU_32_d_--enable-optimize_/lib/MonetDB" --set "gdk_dbfarm=/export/data1/manegold/Monet/_PREFIX_GNU_32_d_--enable-optimize_/var/MonetDB/dbfarm" --set "sql_logdir=/export/data1/manegold/Monet/_PREFIX_GNU_32_d_--enable-optimize_/var/MonetDB/log" --set mapi_port=57815 --set sql_port=58043 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/export/data1/manegold/Monet/_PREFIX_GNU_32_d_--enable-optimize_/lib/MonetDB/sqlserver.mil" ; echo ; echo Over..
-# 16:41:36 >  
+# 11:37:13 >  
+# 11:37:13 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=48783 --set sql_port=53498 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 11:37:13 >  
 
-# Monet Database Server V4.3.11
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
 printf("\nReady.\n");
 
 Ready.
@@ -23,7 +25,7 @@ Over..
 #  # table_name
 # avg_yearly # name
 # decimal # type
-# 0 # length
+# 21 # length
 # 1 # tuplecount
 # 1 # id
 [ 0.00	]

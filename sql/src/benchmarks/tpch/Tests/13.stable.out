@@ -1,13 +1,15 @@
 stdout of test '13` in directory 'src/benchmarks/tpch` itself:
 
 
-# 19:37:07 >  
-# 19:37:07 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=53320 --set sql_port=53292 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB/sqlserver.mil" ; echo ; echo Over..
-# 19:37:07 >  
+# 11:37:04 >  
+# 11:37:04 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=48783 --set sql_port=53498 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 11:37:04 >  
 
-# Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
 printf("\nReady.\n");
 
 Ready.
@@ -15,15 +17,15 @@ quit();
 
 Over..
 
-# 13:19:32 >  
-# 13:19:32 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 13.sql
-# 13:19:32 >  
+# 11:37:05 >  
+# 11:37:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53498  < 13.sql
+# 11:37:05 >  
 
 # 3 # querytype
 # c_orders,	c_orders # table_name
 # c_count,	custdist # name
 # int,	int # type
-# 0,	0 # length
+# 11,	11 # length
 # 32,	 # tuplecount
 # 1,	 # id
 [ 0,	500	]
@@ -59,7 +61,7 @@ Over..
 [ 2,	2	]
 [ 30,	1	]
 
-# 19:37:07 >  
-# 19:37:07 >  Done.
-# 19:37:07 >  
+# 11:37:05 >  
+# 11:37:05 >  Done.
+# 11:37:05 >  
 

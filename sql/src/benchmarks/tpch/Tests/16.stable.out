@@ -1,13 +1,15 @@
 stdout of test '16` in directory 'src/benchmarks/tpch` itself:
 
 
-# 19:37:11 >  
-# 19:37:11 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=53320 --set sql_port=53292 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB/sqlserver.mil" ; echo ; echo Over..
-# 19:37:11 >  
+# 11:37:11 >  
+# 11:37:11 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=48783 --set sql_port=53498 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 11:37:11 >  
 
-# Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
 printf("\nReady.\n");
 
 Ready.
@@ -23,7 +25,7 @@ Over..
 # part,	part,	part,	partsupp # table_name
 # p_brand,	p_type,	p_size,	supplier_cnt # name
 # varchar,	varchar,	int,	int # type
-# 8,	25,	0,	0 # length
+# 8,	25,	11,	11 # length
 # 296,	,	,	 # tuplecount
 # 1,	,	,	 # id
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
