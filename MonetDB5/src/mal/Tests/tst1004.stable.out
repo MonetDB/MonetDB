@@ -46,7 +46,7 @@ function Admin.main():int;	# 0  (main:int)
     io.print("Start test");	# 1 IOprint_val ($1:int)<-($2:str)
     bbp.open();	# 2 CMDbbpopen ($3:void)
     b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($5:int)($6:int)
-    bat.insert(b,1,2);	# 4 BKCinsert_bun ($7:void)<-(b:bat[:int,:int])($8:int)($9:int)
+    bat.insert(b,1,2);	# 4 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($9:int)
     bbp.deposit("myfirstbat",b);	# 5 CMDbbpdeposit ($10:void)<-($11:str)(b:bat[:int,:int])
     c := bbp.take("myfirstbat");	# 6 CMDbbptake (c:bat[:any,:any])<-($11:str)
 catch MALexception;	# 7  (MALexception:any) jump 9

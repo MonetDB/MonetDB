@@ -32,8 +32,8 @@ stdout of test 'tst890` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.setName(b,"b");	# 2 BKCsetName ($4:void)<-(b:bat[:int,:int])($5:str)
-    bat.insert(b,1,1);	# 3 BKCinsert_bun ($6:void)<-(b:bat[:int,:int])($7:int)($7:int)
+    bat.setName(b,"b");	# 2 BKCsetName ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:str)
+    bat.insert(b,1,1);	# 3 BKCinsert_bun ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($7:int)
     c := batcalc.+(b,2);	# 4 CMDbatADDcst (c:bat[:int,:int])<-(b:bat[:int,:int])($10:int)
     c := batcalc.+(b,3);	# 5 CMDbatADDcst (c:bat[:int,:int])<-(b:bat[:int,:int])($11:int)
     c := batcalc.+(b,4);	# 6 CMDbatADDcst (c:bat[:int,:int])<-(b:bat[:int,:int])($12:int)
@@ -68,7 +68,7 @@ end main;	# 16
 [ 10,	  "stat_id_min_lng",	  1,	  1		  ]
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
-[ 13,	  "b",			  0,	  1		  ]
+[ 13,	  "b",			  0,	  3		  ]
 [ 14,	  "tmp_14",		  0,	  1		  ]
 #
 

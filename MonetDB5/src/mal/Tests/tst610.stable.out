@@ -69,9 +69,9 @@ end refs;	# 5
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.insert(b,23,32);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($6:int)
-    bat.setName(b,"tasks");	# 3 BKCsetName ($7:void)<-(b:bat[:int,:int])($8:str)
-    bat.setPersistent(b);	# 4 BKCsetPersistent ($9:bit)<-(b:bat[:int,:int])
+    bat.insert(b,23,32);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($6:int)
+    bat.setName(b,"tasks");	# 3 BKCsetName ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:str)
+    bat.setPersistent(b);	# 4 BKCsetPersistent ($9:bat[:int,:int])<-(b:bat[:int,:int])
     io.print("open box");	# 5 IOprint_val ($10:int)<-($11:str)
     bbp.open();	# 6 CMDbbpopen ($12:void)
     Admin.refs();	# 7  ($13:void)
@@ -114,7 +114,7 @@ end main;	# 29
 [ 10,	  "stat_id_min_lng",	  1,	  1		  ]
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
-[ 13,	  "tasks",		  0,	  2		  ]
+[ 13,	  "tasks",		  0,	  5		  ]
 #-----------------#
 # h	tasks	  # name
 # int	int	  # type

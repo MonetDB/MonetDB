@@ -23,10 +23,10 @@ stdout of test 'tst210` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.insert(b,1,1);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($5:int)
+    bat.insert(b,1,1);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($5:int)
     io.print(b);	# 3 IOprint_val ($6:int)<-(b:bat[:int,:int])
-    bat.setName(b,"myhome");	# 4 BKCsetName ($7:void)<-(b:bat[:int,:int])($8:str)
-    bat.setColumn(b,"first","last");	# 5 BKCsetColumns ($9:void)<-(b:bat[:int,:int])($10:str)($11:str)
+    bat.setName(b,"myhome");	# 4 BKCsetName ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:str)
+    bat.setColumn(b,"first","last");	# 5 BKCsetColumns ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:str)($11:str)
     io.print(b);	# 6 IOprint_val ($12:int)<-(b:bat[:int,:int])
 end main;	# 7  
 #-----------------#

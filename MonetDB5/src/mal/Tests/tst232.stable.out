@@ -40,7 +40,7 @@ function Admin.main():int;	# 0  (main:int)
     io.printf("refcount =%d\n",i);	# 4 IOprint_formatted_int ($6:int)<-($7:str)(i:int)
     j := bbp.getLRefCount(b);	# 5 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
     io.printf("lrefcount =%d\n",j);	# 6 IOprint_formatted_int ($9:int)<-($10:str)(j:int)
-    bat.insert(b,1,"bat B");	# 7 BKCinsert_bun ($11:void)<-(b:bat[:int,:str])($12:int)($13:str)
+    bat.insert(b,1,"bat B");	# 7 BKCinsert_bun ($11:bat[:int,:str])<-(b:bat[:int,:str])($12:int)($13:str)
     io.print(b);	# 8 IOprint_val ($14:int)<-(b:bat[:int,:str])
     i := bbp.getRefCount(b);	# 9 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("refcount =%d\n",i);	# 10 IOprint_formatted_int ($15:int)<-($7:str)(i:int)
@@ -60,7 +60,7 @@ lrefcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1
-lrefcount =1
+lrefcount =2
 [ "bat was destroyed" ]
 
 # 08:01:03 >  

@@ -31,7 +31,7 @@ function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-($4:lng)($5:lng)
     i := -1:lng;	# 3  (i:lng)<-($7:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-($9:lng) jump 7
-    bat.insert(b,i,i);	# 5 BKCinsert_bun ($10:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    bat.insert(b,i,i);	# 5 BKCinsert_bun ($10:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
     redo (v,i):= mal.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (v:bit)(i:lng)<-($11:lng)($12:lng) jump 5
 exit (v,i);	# 7  (v:bit)(i:lng)
     io.print(b);	# 8 IOprint_val ($13:int)<-(b:bat[:lng,:lng])

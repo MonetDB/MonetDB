@@ -28,8 +28,8 @@ stdout of test 'tst252` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:str,:str);	# 1 CMDBATnew (b:bat[:str,:str])<-($2:str)($3:str)
-    bat.insert(b,"one","red");	# 2 BKCinsert_bun ($4:void)<-(b:bat[:str,:str])($5:str)($6:str)
-    bat.insert(b,"two","green");	# 3 BKCinsert_bun ($7:void)<-(b:bat[:str,:str])($8:str)($9:str)
+    bat.insert(b,"one","red");	# 2 BKCinsert_bun ($4:bat[:str,:str])<-(b:bat[:str,:str])($5:str)($6:str)
+    bat.insert(b,"two","green");	# 3 BKCinsert_bun ($7:bat[:str,:str])<-(b:bat[:str,:str])($8:str)($9:str)
     io.print(b);	# 4 IOprint_val ($10:int)<-(b:bat[:str,:str])
 barrier (v,h,t):= chopper.newIterator(b);	# 5 CHPbunIterator (v:lng)(h:str)(t:str)<-(b:bat[:str,:str]) jump 9
     io.printf("[ %s,",h);	# 6 IOprint_formatted_str ($14:int)<-($15:str)(h:str)

@@ -23,14 +23,14 @@ stdout of test 'tst017` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(nil:int,nil:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($2:int)
-    aa_a := bat.insert(b,1,2);	# 2 BKCinsert_bun (aa_a:void)<-(b:bat[:int,:int])($4:int)($5:int)
-    ba_a := bat.insert(b,2,3);	# 3 BKCinsert_bun (ba_a:void)<-(b:bat[:int,:int])($5:int)($7:int)
+    aa_a := bat.insert(b,1,2);	# 2 BKCinsert_bun (aa_a:bat[:int,:int])<-(b:bat[:int,:int])($4:int)($5:int)
+    ba_a := bat.insert(b,2,3);	# 3 BKCinsert_bun (ba_a:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($7:int)
     z := bbp.getLRefCount(b);	# 4 CMDgetBATlrefcnt (z:int)<-(b:bat[:int,:int])
     io.print(z);	# 5 IOprint_val ($9:int)<-(z:int)
     b := algebra.join(b,b);	# 6 ALGjoin (b:bat[:int,:int])<-(b:bat[:int,:int])(b:bat[:int,:int])
     io.print(b);	# 7 IOprint_val ($10:int)<-(b:bat[:int,:int])
 end main;	# 8  
-[ 1 ]
+[ 3 ]
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type

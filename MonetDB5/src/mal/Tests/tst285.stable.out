@@ -23,26 +23,27 @@ stdout of test 'tst285` in directory 'src/mal` itself:
 #print(z2);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
-    bat.insert(b,1,"hello");	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:str])($5:int)($6:str)
-    bat.insert(b,2,"goodbye");	# 3 BKCinsert_bun ($7:void)<-(b:bat[:int,:str])($8:int)($9:str)
-    z1 := batcalc.match(b,"hel");	# 4 CMDmatchStr (z1:bat[:int,:bit])<-(b:bat[:int,:str])($11:str)
-    io.print(z1);	# 5 IOprint_val ($12:int)<-(z1:bat[:int,:bit])
-    z2 := batcalc.match(b,".*[ly].*");	# 6 CMDmatchStr (z2:bat[:int,:bit])<-(b:bat[:int,:str])($14:str)
-    io.print(z2);	# 7 IOprint_val ($15:int)<-(z2:bat[:int,:bit])
-end main;	# 8  
+    b := bbp.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-($2:void)($3:str)
+    bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:str])<-(b:bat[:void,:str])($5:oid)
+    bat.insert(b,nil,"hello");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(b:bat[:void,:str])($7:void)($8:str)
+    bat.insert(b,nil,"goodbye");	# 4 BKCinsert_bun ($9:bat[:void,:str])<-(b:bat[:void,:str])($7:void)($10:str)
+    z1 := batstr.match(b,"hel");	# 5 STRbatmatchCst (z1:bat[:void,:bit])<-(b:bat[:void,:str])($12:str)
+    io.print(z1);	# 6 IOprint_val ($13:int)<-(z1:bat[:void,:bit])
+    z2 := batstr.match(b,".*[ly].*");	# 7 STRbatmatchCst (z2:bat[:void,:bit])<-(b:bat[:void,:str])($15:str)
+    io.print(z2);	# 8 IOprint_val ($16:int)<-(z2:bat[:void,:bit])
+end main;	# 9  
 #-----------------#
 # h	tmp_5	  # name
 # int	bit	  # type
 #-----------------#
-[ 1,	  true	  ]
-[ 2,	  false	  ]
+[ 0@0,	  true	  ]
+[ 1@0,	  false	  ]
 #-----------------#
 # h	tmp_6	  # name
 # int	bit	  # type
 #-----------------#
-[ 1,	  true	  ]
-[ 2,	  true	  ]
+[ 0@0,	  true	  ]
+[ 1@0,	  true	  ]
 
 # 08:01:12 >  
 # 08:01:12 >  Done.

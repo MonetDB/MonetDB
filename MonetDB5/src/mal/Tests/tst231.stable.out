@@ -39,7 +39,7 @@ function Admin.main():int;	# 0  (main:int)
     io.printf("refcount =%d\n",i);	# 3 IOprint_formatted_int ($5:int)<-($6:str)(i:int)
     j := bbp.getLRefCount(b);	# 4 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
     io.printf("lrefcount =%d\n",j);	# 5 IOprint_formatted_int ($8:int)<-($9:str)(j:int)
-    bat.insert(b,1,"bat B");	# 6 BKCinsert_bun ($10:void)<-(b:bat[:int,:str])($11:int)($12:str)
+    bat.insert(b,1,"bat B");	# 6 BKCinsert_bun ($10:bat[:int,:str])<-(b:bat[:int,:str])($11:int)($12:str)
     io.print(b);	# 7 IOprint_val ($13:int)<-(b:bat[:int,:str])
     i := bbp.getRefCount(b);	# 8 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("refcount =%d\n",i);	# 9 IOprint_formatted_int ($14:int)<-($6:str)(i:int)
@@ -59,9 +59,9 @@ lrefcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1
-lrefcount =1
+lrefcount =2
 after mirror assignment refcount =1
-lrefcount =1
+lrefcount =2
 
 # 08:01:02 >  
 # 08:01:02 >  Done.

@@ -27,7 +27,7 @@ stdout of test 'tst905` in directory 'src/mal` itself:
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (v:bit)(i:lng)<-($6:lng) jump 5
-    bat.insert(b,i,i);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    bat.insert(b,i,i);	# 3 BKCinsert_bun ($7:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
     redo (v,i):= mal.nextElement(1:lng,10:lng);	# 4 RNGnextElement_lng (v:bit)(i:lng)<-($8:lng)($9:lng) jump 3
 exit (v,i);	# 5  (v:bit)(i:lng)
     c := algebra.copy(b);	# 6 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])

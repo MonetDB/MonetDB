@@ -52,7 +52,7 @@ function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
     i := -1:lng;	# 2  (i:lng)<-($5:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-($7:lng) jump 6
-    bat.insert(b,i,i);	# 4 BKCinsert_bun ($8:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    bat.insert(b,i,i);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
     redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-($9:lng)($10:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
     c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])

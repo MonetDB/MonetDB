@@ -25,8 +25,8 @@ stdout of test 'tst253` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-($2:void)($3:str)
-    bat.insert(b,"hello");	# 2 BKCinsert_void_bun ($4:void)<-(b:bat[:void,:str])($5:str)
-    bat.insert(b,nil,"world");	# 3 BKCinsert_bun ($6:void)<-(b:bat[:void,:str])($7:void)($8:str)
+    bat.insert(b,"hello");	# 2 BKCinsert_void_bun ($4:bat[:str,:any])<-(b:bat[:void,:str])($5:str)
+    bat.insert(b,nil,"world");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(b:bat[:void,:str])($7:void)($8:str)
     io.print(b);	# 4 IOprint_val ($9:int)<-(b:bat[:void,:str])
     c := bat.reverse(b);	# 5 BKCreverse (c:bat[:str,:void])<-(b:bat[:void,:str])
     io.print(c);	# 6 IOprint_val ($11:int)<-(c:bat[:str,:void])

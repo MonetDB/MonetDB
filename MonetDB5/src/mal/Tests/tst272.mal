@@ -11,10 +11,6 @@ b:= new(:int,:int);
 #test basic functionality of the BAT library.
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.
-printf("#~BeginVariableOutput~#\n");
-binfo:= info(b);
-print(binfo);
-printf("#~EndVariableOutput~#\n");
 
 profiler.startTrace();
 err := insert(b,1,15);
@@ -32,8 +28,10 @@ err := insert(b,n0,81);
 print(b);
 print(b,b,b);
 profiler.stopTrace();
+printf("#~BeginVariableOutput~#\n");
 t:= profiler.getTrace("ticks");
 print(t);
 s:= profiler.getTrace("statement");
 print(s);
 print(t,s);
+printf("#~EndVariableOutput~#\n");

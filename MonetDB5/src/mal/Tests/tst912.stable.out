@@ -102,7 +102,7 @@ function Admin.main():int;	# 0  (main:int)
 barrier (go,i):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (go:bit)(i:lng)<-($6:lng) jump 7
     k := mmath.rand();	# 3 MATHrandint (k:int)
     l := calc.lng(k);	# 4 CALCint2lng (l:lng)<-(k:int)
-    bat.insert(b,nil,l);	# 5 BKCinsert_bun ($9:void)<-(b:bat[:void,:lng])($10:void)(l:lng)
+    bat.insert(b,nil,l);	# 5 BKCinsert_bun ($9:bat[:void,:lng])<-(b:bat[:void,:lng])($10:void)(l:lng)
     redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 6 RNGnextElement_lng (go:bit)(i:lng)<-($11:lng)($12:lng) jump 3
 exit (go,i);	# 7  (go:bit)(i:lng)
     t0 := alarm.usec();	# 8 ALARMusec (t0:lng)

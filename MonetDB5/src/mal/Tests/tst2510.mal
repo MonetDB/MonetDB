@@ -1,9 +1,9 @@
 # A exception in a factory should terminate it 
 
 factory tryme():void;
-    a:= bat.setWriteMode(b);
+    bat.setWriteMode(b);
 barrier always:= true;
-    yield a;
+    yield always;
     redo always;
 exit always;
 #catch MALexception;
