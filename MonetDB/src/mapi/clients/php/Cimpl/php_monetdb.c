@@ -98,8 +98,9 @@ ZEND_GET_MODULE(monetdb)
  */
 static void _free_monetdb_link(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 {
-    Mapi monet_link = (Mapi)rsrc->ptr;
-	mapi_destroy(monet_link);
+	Mapi monet_link = (Mapi)rsrc->ptr;
+	if (monet_link)
+		mapi_destroy(monet_link);
 }
 /* }}} */
 
@@ -107,8 +108,9 @@ static void _free_monetdb_link(zend_rsrc_list_entry *rsrc TSRMLS_DC)
  */
 static void _free_monetdb_handle(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 {
-    MapiHdl monet_handle = (MapiHdl)rsrc->ptr;
-	mapi_close_handle(monet_handle);
+	MapiHdl monet_handle = (MapiHdl)rsrc->ptr;
+	if (monet_handle)
+		mapi_close_handle(monet_handle);
 }
 /* }}} */
 
@@ -403,6 +405,10 @@ PHP_FUNCTION(monetdb_query)
 	//~ printf("MON: query=%s conn=%p\n", query, conn);
 	
 	MapiHdl handle = mapi_query(conn, query);
+
+	/* We need to cache all rows directly, otherwise things get confusing. This is a mapi bug/feature. */
+	mapi_fetch_all_rows(handle); 
+
 	if (mapi_error(conn)) {
 		mapi_close_handle(handle);
 		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, 
