@@ -4,7 +4,7 @@ use Mapi;
 
 my ($monet, $line);
 $monet = new Mapi( 
-  Mapi::hostname() . ':' . Mapi::portnr(), $ENV{'USER'} );
+  Mapi::hostname() . ':' . Mapi::portnr(), $ENV{'USER'}, '' );
 
 print "> ";
 while ( !(($line=<>) =~ /quit;/) ){
