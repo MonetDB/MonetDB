@@ -1848,9 +1848,7 @@ loop_liftedSCJ (opt_t *f,
         if (kind)
         {
             milprintf(f,
-                    "var temp_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-                    "var temp1 := temp_kind.ord_uselect(%s).mark(0@0).reverse();\n"
-                    "temp_kind := nil_oid_chr;\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(%s))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1860,9 +1858,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns && loc)
         {
             milprintf(f,
-                    "var temp_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-                    "var temp1 := temp_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
-                    "temp_kind := nil_oid_chr;\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1893,9 +1889,7 @@ loop_liftedSCJ (opt_t *f,
         else if (loc)
         {
             milprintf(f,
-                    "var temp_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-                    "var temp1 := temp_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
-                    "temp_kind := nil_oid_chr;\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1915,9 +1909,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns)
         {
             milprintf(f,
-                    "var temp_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
-                    "var temp1 := temp_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
-                    "temp_kind := nil_oid_chr;\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2680,6 +2672,20 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);\n"
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);\n"
+                "{\n"
+                "  var knd := ELEMENT;\n"
+                "  while ( knd <= DOCUMENT ) {\n"
+                "    var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();\n"
+                "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS);\n"
+                "    kind_pre.insert(kind_root);\n"
+                "    if ( knd <= ELEMENT ) {\n"
+                "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
+                "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS);\n"
+                "      prop_pre.insert(prop_root);\n"
+                "    }\n"
+                "    knd :+= chr(1);\n"
+                "  }\n"
+                "}\n"
     
                 /* printing output for debugging purposes */
                 /*
@@ -2877,6 +2883,20 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "ws.fetch(PRE_KIND).fetch(WS).insert(_elem_kind);\n"
             "ws.fetch(PRE_PROP).fetch(WS).insert(_elem_prop);\n"
             "ws.fetch(PRE_FRAG).fetch(WS).insert(_elem_frag);\n"
+            "{\n"
+            "  var knd := ELEMENT;\n"
+            "  while ( knd <= DOCUMENT ) {\n"
+            "    var kind__elem := _elem_kind.ord_uselect(knd).reverse().chk_order();\n"
+            "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS);\n"
+            "    kind_pre.insert(kind__elem);\n"
+            "    if ( knd <= ELEMENT ) {\n"
+            "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
+            "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS);\n"
+            "      prop_pre.insert(prop__elem);\n"
+            "    }\n"
+            "    knd :+= chr(1);\n"
+            "  }\n"
+            "}\n"
             /* save the new roots for creation of the intermediate result */
             "var roots := _elem_level.ord_uselect(chr(0));\n"
             "roots := roots.mark(0@0).reverse();\n"
@@ -3100,6 +3120,11 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));\n"
                 "ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));\n"
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));\n"
+                "{\n"
+                "  var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();\n"
+                "  var kind_pre := ws.fetch(KIND_PRE + int(TEXT)).fetch(WS);\n"
+                "  kind_pre.insert(kind_pre_);\n"
+                "}\n"
                 "newPre_prop := nil_oid_oid;\n"
                 "item := item%s.mark(seqb);\n"
                 "seqb := nil_oid;\n"

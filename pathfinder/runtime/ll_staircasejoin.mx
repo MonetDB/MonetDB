@@ -70,6 +70,12 @@ const int PF_SOFTWARE_PREFETCH = 128;
     }\
 }
 
+@= bat2array
+    /* definition for "array-like" access on tails of void-headed BAT */
+    /* ! FIXME: works only if BUNsize(@1) == sizeof(@3) !!!!!!!! */
+    @2 = ((@3*) BUNtloc(@1, BUNfirst(@1))) - (int)@1->hseqbase;
+@c
+
 /*******************************************************************/
 
 /* DESCENDANT STEP */
@@ -104,9 +110,10 @@ const int PF_SOFTWARE_PREFETCH = 128;
 
 @= ll_head
 static int
-ll_@1 (BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res );
+ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
+	int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res, BAT *_pre);
 int
-PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workingset)
+PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workingset, BAT *_pre)
 {
     /* --------------------------- declaration ----------------------------- */
 
@@ -116,19 +123,21 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     BAT **tmp_res = NULL;
     oid num_tmp_res = 0, j;
     BAT *iter_chunk = NULL, *ctx_chunk = NULL;
-    BAT *pre_size_bat = NULL, *pre_size_frag = NULL;
     size_t res_size = 0;
     size_t chunk_size = 0;
-    oid pre_size_id = (oid)PRE_SIZE;
     oid doc_height_id = (oid)HEIGHT;
     int doc_height = 0;
     BUN p;
+    oid pre_size_id = (oid)PRE_SIZE;
+    BAT *pre_size_bat = NULL;
+    BAT *pre_size_frag = NULL;
 
 @= ll_specialcases
     /* --------------------------- special cases --------------------------- */
     BATcheck(iter_bat, name);
     BATcheck(ctx_bat, name);
     BATcheck(workingset, name);
+    BATcheck(_pre, name);
     if (!(BAThdense(iter_bat) && BAThdense(ctx_bat)))
     {
         GDKerror("%s: both iter_bat and ctx_bat must have a dense head.\n", name);
@@ -160,6 +169,14 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
                  name, BATcount(workingset), WS_SIZE);
         @:ll_return(GDK_FAIL)@
     }
+
+    BUNfndVOID(p, workingset, &doc_height_id);
+    if (p == NULL)
+    {
+        GDKerror("%s: inconsistent workingset: HEIGHT not found.\n", name);
+        @:ll_return(GDK_FAIL)@
+    }
+    doc_height = *(int*)BUNtloc(workingset, p);
 
     BUNfndVOID(p, workingset, &pre_size_id);
     if (p == NULL)
@@ -204,17 +221,24 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         @:ll_return(GDK_FAIL)@
     }
 
-    BUNfndVOID(p, workingset, &doc_height_id);
-    if (p == NULL)
-    {
-        GDKerror("%s: inconsistent workingset: HEIGHT not found.\n", name);
-        @:ll_return(GDK_FAIL)@
+    if (BATcount(_pre) == BATcount(pre_size_frag)) {
+        _pre = NULL;
+    } else {
+        if (BATtvoid(_pre) && _pre->tseqbase == oid_nil)
+        {
+            GDKerror("%s: tail of _pre must not be VOID-NIL.\n", name);
+            @:ll_return(GDK_FAIL)@
+        }
+        if (!(BATtordered(_pre) & 1))
+        {
+            GDKerror("%s: _pre must be ordered on tail.\n", name);
+            @:ll_return(GDK_FAIL)@
+        }
     }
-    doc_height = *(int*)BUNtloc(workingset, p);
 
-    if (BATcount(iter_bat) == 0)
+    if (BATcount(iter_bat) == 0 || (_pre && BATcount(_pre) == 0))
     {
-        res = BATnew(TYPE_oid, TYPE_oid, 0);
+        res = BATnew(TYPE_oid, TYPE_void, 0);
         BATkey (res, TRUE);
         res->hsorted = GDK_SORTED;
         res->hdense = TRUE;
@@ -362,11 +386,12 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     }
 
     if ( num_iters==1 && num_ctx==1 ) {
-        BUN dst;
-
+        BUN dst = 0;
+        int bs_res = 0;
+        
         BUNfndVOID(p, pre_size_frag, &fst_ctx);
         res_size = (size_t)(*(int*)BUNtloc(pre_size_frag, p) + (int)self);
-        res = BATnew(TYPE_oid, TYPE_void, res_size);
+        res = BATnew(TYPE_oid, TYPE_oid, res_size);
         if (res == NULL) 
         { 
             GDKerror("%s: could not allocate a result BAT[oid,void] of size " SZFMT ".\n", name, res_size);
@@ -374,12 +399,39 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         }
         fst_ctx = fst_ctx + (oid)(1 - (int)self);
         lst_ctx = fst_ctx + (oid)res_size;
-        BATseqbase (BATmirror(res), fst_ctx);
-        dst = BUNlast(res);
-        bun_size = BUNsize(res);
-        for ( ; fst_ctx < lst_ctx ; fst_ctx++ ) {
-            *(oid*)BUNhloc(res, dst) = fst_iter;
-            dst += bun_size;
+        dst = BUNhloc(res, BUNlast(res));
+        bs_res = BUNsize(res);
+        if (_pre) {
+            if (BATtdense(_pre)) {
+                oid pre = 0;
+                oid fst_pre = MAX(fst_ctx, _pre->tseqbase);
+                oid lst_pre = MIN(lst_ctx, _pre->tseqbase + BATcount(_pre));
+
+                for (pre = fst_pre ; pre < lst_pre; pre++ ) {
+                    *(oid*)dst              = fst_iter;
+                    *(oid*)(dst+SIZEOF_OID) = pre;
+                    dst += bs_res;
+                }
+            } else {
+                BUN pre = 0;
+                int bs_pre = bs_pre = BUNsize(_pre);
+                BUN fst_pre = BUNtloc(_pre, SORTfndfirst_oid(_pre, &fst_ctx));
+                BUN lst_pre = BUNtloc(_pre, BUNlast(_pre));
+                
+                for (pre = fst_pre ; pre < lst_pre && *(oid*)pre < lst_ctx; pre += bs_pre ) {
+                    *(oid*)dst              = fst_iter;
+                    *(oid*)(dst+SIZEOF_OID) = *(oid*)pre;
+                    dst += bs_res;
+                }
+            }
+        } else {
+            oid pre;
+            
+            for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
+                *(oid*)dst              = fst_iter;
+                *(oid*)(dst+SIZEOF_OID) = pre;
+                dst += bs_res;
+            }
         }
         res->batBuns->free = dst - res->batBuns->base;
 
@@ -389,7 +441,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         @:ll_resultallocation@
     }
 }
-     
+
 @= ll_main
     /* ---------------------------- main part ----------------------------- */
     /* 
@@ -443,7 +495,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         if (num_iters == 1) {
             _tmp_res = NULL;
         }
-        if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, doc_height, fst_iter, lst_iter, self, _tmp_res) == GDK_FAIL)
+        if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, 
+                  doc_height, fst_iter, lst_iter, self, _tmp_res, _pre) == GDK_FAIL )
         {
             @:ll_return(GDK_FAIL)@
         }
@@ -589,7 +642,8 @@ struct stack_item_C {
 };
 
 static int
-ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res )
+ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, 
+             int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res, BAT *_pre)
 {
     BAT *res = *result;
     si_C *stack = 0;
@@ -611,9 +665,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
     }
     stack_top = 0;
 
-    /* definition for "array-like" access on size values of given nodes */
-    /* ! FIXME: works only if BUNsize(pre_size) == sizeof(int) !!!!!!!! */
-    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    @:bat2array(pre_size,size,int)@
 
     iter_bunsize = BUNsize(iter_bat);
     ctx_bunsize = BUNsize(ctx_bat);
@@ -687,31 +739,65 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
         @:popctx@
     }
 
-@
 @= inner_loop_child
     pre = stack[stack_top-1].next_child;
     /* iterates over all childs until the next limit is reached
        (either descendant ctx node or end of scope) and prunes
        all subtree which can't hold any matches */
-    for (; pre <= @1; pre += size[pre] + 1) {
+    if (_pre) {
+        if (BATtdense(_pre)) {
+            oid fst_pre = MAX(pre, _pre->tseqbase);
+            oid lst_pre = MIN(@1 , _pre->tseqbase + BATcount(_pre) - 1);
+            for (; pre <= @1 && pre <  fst_pre; pre += size[pre] + 1) {};
+            for (;              pre <= lst_pre; pre += size[pre] + 1) {
+                @:inner_loop_child_body@
+            }
+            for (; pre <= @1; pre += size[pre] + 1) {};
+        } else {
+            oid fst_ctx = pre, lst_ctx = @1;
+            int bs_pre = BUNsize(_pre);
+            BUN fst_pre = BUNtloc(_pre, SORTfndfirst_oid(_pre, &fst_ctx));
+            BUN lst_pre = BUNtloc(_pre, SORTfndlast_oid (_pre, &lst_ctx)) - bs_pre;
+            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) {};
+            for (; pre <= @1 && pre <= *(oid*)lst_pre; pre += size[pre] + 1) {
+                while (*(oid*)fst_pre < pre && fst_pre < lst_pre) {
+                    fst_pre += bs_pre;
+                }
+/*
+            for (; pre <= @1 && pre <= *(oid*)lst_pre && fst_pre <= lst_pre; pre += size[pre] + 1, fst_pre += bs_pre) {
+                for (;            pre < *(oid*)fst_pre &&     pre < @1     ;     pre += size[pre] + 1) {};
+                for (; *(oid*)fst_pre <            pre && fst_pre < lst_pre; fst_pre += bs_pre       ) {};
+*/
+                if (*(oid*)fst_pre == pre) {
+                    @:inner_loop_child_body@
+                }
+            }
+            for (; pre <= @1; pre += size[pre] + 1) {};
+        }
+    } else {
+        for (; pre <= @1; pre += size[pre] + 1) {
+            @:inner_loop_child_body@
+        }
+    }
+@
+@= inner_loop_child_body
         size_t grow = ((stack[stack_top-1].last - stack[stack_top-1].first) / iter_bunsize) + 1;
         BUN dst = NULL;
-        size_t bunsize = BUNsize(res);
+        int bunsize = BUNsize(res);
 
         /* check, if result buffer is big enough; otherwise extend it */
         PFll_check_BAT_capacity(res, grow);
         /* creates a row for every iter, whose ctx node produced
            a match */
-        dst = BUNlast(res);
+        dst = BUNhloc(res, BUNlast(res));
         for (cur_bun = stack[stack_top-1].first;
              cur_bun <= stack[stack_top-1].last;
              cur_bun += iter_bunsize) {
-            *(oid*)BUNhloc(res, dst) = *(oid*)BUNtail(iter_bat,cur_bun);
-            *(oid*)BUNtloc(res, dst) = pre;
+            *(oid*)dst              = *(oid*)BUNtail(iter_bat,cur_bun);
+            *(oid*)(dst+SIZEOF_OID) = pre;
             dst += bunsize;
         }
         res->batBuns->free = dst - res->batBuns->base;
-    }
 @
 @c
 
@@ -766,7 +852,8 @@ struct stack_item_D {
 #define onstack_get(b)	(onstack[(b)>>OST_shift] &   (((OST)1)<<((b)&OST_mask)))
 
 static int
-ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res )
+ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
+                  int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res, BAT *_pre)
 {
     BAT *res = *result;
     si_D *stack = 0;
@@ -785,13 +872,11 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     oid lst_ctx = *(oid*)BUNtail(ctx_bat, BUNlast(ctx_bat) - BUNsize(ctx_bat));
     oid num_ctx = (lst_ctx - fst_ctx) + 1;
 
-    /* definition for "array-like" access on size values of given nodes */
-    /* ! FIXME: works only if BUNsize(pre_size) == sizeof(int) !!!!!!!! */
-    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    @:bat2array(pre_size,size,int)@
 
     if (num_ctx==1) {
         BAT *bat_iter = BATmirror(iter_bat);
-        size_t bunsize = BUNsize(res);
+        int bs_res = BUNsize(res);
         BUN dst;
         size_t grow = (size_t)(size[fst_ctx]);
 
@@ -801,18 +886,61 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
         grow *= MIN((size_t)num_iters, BATcount(iter_bat));
         
         PFll_check_BAT_capacity(res, grow);
-        dst = BUNlast(res);
 
-        for ( i=0; i<num_iters; i++ ) {
-            BUN p;
-            oid iter = i + fst_iter;
+        dst = BUNhloc(res, BUNlast(res));
+        if (_pre) {
+            if (BATtdense(_pre)) {
+                oid pre = 0;
+                oid fst_pre = MAX(fst_ctx, _pre->tseqbase);
+                oid lst_pre = MIN(lst_ctx, _pre->tseqbase + BATcount(_pre) - 1);
+                
+                for ( i=0; i<num_iters; i++ ) {
+                    BUN p;
+                    oid iter = i + fst_iter;
 
-	    BUNfndOID(p, bat_iter, &iter);
-            if (p) {
-                for ( pre = fst_ctx ; pre <= lst_ctx ; pre++ ) {
-                    *(oid*)BUNhloc(res, dst) = iter;
-                    *(oid*)BUNtloc(res, dst) = pre;
-                    dst += bunsize;
+                    BUNfndOID(p, bat_iter, &iter);
+                    if (p) {
+                        for (pre = fst_pre ; pre <= lst_pre; pre++ ) {
+                            *(oid*)dst              = iter;
+                            *(oid*)(dst+SIZEOF_OID) = pre;
+                            dst += bs_res;
+                        }
+                    }
+                }
+            } else {
+                BUN pre = 0;
+                int bs_pre = bs_pre = BUNsize(_pre);
+                BUN fst_pre = BUNtloc(_pre, SORTfndfirst_oid(_pre, &fst_ctx));
+                BUN lst_pre = BUNtloc(_pre, BUNlast(_pre));
+                
+                for ( i=0; i<num_iters; i++ ) {
+                    BUN p;
+                    oid iter = i + fst_iter;
+
+                    BUNfndOID(p, bat_iter, &iter);
+                    if (p) {
+                        for (pre = fst_pre ; pre < lst_pre && *(oid*)pre <= lst_ctx; pre += bs_pre ) {
+                            *(oid*)dst              = iter;
+                            *(oid*)(dst+SIZEOF_OID) = *(oid*)pre;
+                            dst += bs_res;
+                        }
+                    }
+                }
+            }
+        } else {
+            oid pre;
+            
+            for ( i=0; i<num_iters; i++ ) {
+                BUN p;
+                oid iter = i + fst_iter;
+
+                BUNfndOID(p, bat_iter, &iter);
+                if (p) {
+                    for (pre = fst_ctx ; pre <= lst_ctx ; pre++ ) {
+                        *(oid*)dst              = iter;
+                        *(oid*)(dst+SIZEOF_OID) = pre;
+                        dst += bs_res;
+                    }
                 }
             }
         }
@@ -870,8 +998,10 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
         stack[stack_top++] = new_stack_item;
         onstack_set(iter_idx);
         if (self) {
-            oid iter = oid_nil;
-            bunfastins(tmp_res[iter_idx], &iter, &pre);
+            if (!_pre || SORTfnd_oid(BATmirror(_pre), &pre)) {
+                oid iter = oid_nil;
+                bunfastins(tmp_res[iter_idx], &iter, &pre);
+            }
         }
     }
 @
@@ -917,7 +1047,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     while (stack_top) {
         @:finish_scope_descendant@
     }
-@
+
 @= finish_scope_descendant
     oid eocs = stack[stack_top-1].eocs;
     /* find all results in the current scope */
@@ -935,9 +1065,8 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     size_t grow = (@1 - pre) + 1;
     int s = 0;
     oid idx0 = stack[s].iter_idx, idx = idx0;
-    oid p = pre;
     BUN fst_res = NULL, cur_res = NULL, lst_res = NULL, dst = NULL;
-    size_t bunsize0 = BUNsize(tmp_res[idx]), bunsize = BUNsize(tmp_res[idx]);
+    int bunsize0 = BUNsize(tmp_res[idx]), bunsize = BUNsize(tmp_res[idx]);
 
     /* check, if result buffer is big enough; otherwise extend it */
     PFll_check_BAT_capacity(tmp_res[idx], grow);
@@ -948,12 +1077,34 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     /* iterate over all descendants until the next limit is reached
        (either descendant ctx node or end of scope)
        and insert their pre value into the results */
-    dst = BUNlast(tmp_res[idx]); 
-    for ( p = pre ; p <= @1 ; p++ ) {
-        /* if ( ANY TEST ) {  */
-            *(oid*)BUNtloc(tmp_res[idx], dst) = p;
+    dst = BUNtloc(tmp_res[idx], BUNlast(tmp_res[idx]));
+    if (_pre) {
+        if (BATtdense(_pre)) {
+            oid cur_pre = 0;
+            oid fst_pre = MAX(pre, _pre->tseqbase);
+            oid lst_pre = MIN(@1 , _pre->tseqbase + BATcount(_pre) - 1);
+                        
+            for (cur_pre = fst_pre ; cur_pre <= lst_pre ; cur_pre++ ) {
+                *(oid*)dst = cur_pre;
+                dst += bunsize;
+            }
+        } else {
+            BUN cur_pre = 0;
+            int bs_pre = bs_pre = BUNsize(_pre);
+            oid fst_ctx = pre, lst_ctx = @1;
+            BUN fst_pre = BUNtloc(_pre, SORTfndfirst_oid(_pre, &fst_ctx));
+            BUN lst_pre = BUNtloc(_pre, BUNlast(_pre));
+                        
+            for (cur_pre = fst_pre ; cur_pre < lst_pre && *(oid*)cur_pre <= lst_ctx; cur_pre += bs_pre ) {
+                *(oid*)dst = *(oid*)cur_pre;
+                dst += bunsize;
+            }
+        }
+    } else {
+        for ( ; pre <= @1 ; pre++ ) {
+            *(oid*)dst = pre;
             dst += bunsize;
-        /* } */
+        }
     }
     tmp_res[idx]->batBuns->free = dst - tmp_res[idx]->batBuns->base;
     
@@ -963,7 +1114,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     /* now loop over all remaining iters on the stack, ... */
     for ( s = 1 ; s < stack_top ; s++ ) {
         idx = stack[s].iter_idx;
-        p = pre;
         bunsize = BUNsize(tmp_res[idx]);
 
         /* (check, if result buffer is big enough; otherwise extend it) */
@@ -995,8 +1145,8 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
                 oid iter = i + fst_iter;
                 BUN fst_res = BUNfirst(tmp_res[i]);
                 BUN lst_res = BUNlast(tmp_res[i]);
-                size_t bunsize0 = BUNsize(tmp_res[i]);
-                size_t bunsize1 = BUNsize(res);
+                int bunsize0 = BUNsize(tmp_res[i]);
+                int bunsize1 = BUNsize(res);
                 BUN dst = BUNlast(res), cur_res;
                 for ( cur_res = fst_res ; cur_res < lst_res ; cur_res += bunsize0 ) {
                     *(oid*)BUNhloc(res, dst) = iter;
@@ -1024,7 +1174,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     } else {
         BUN fst_res = BUNptr(res, res_start);
         BUN lst_res = BUNlast(res);
-        size_t bunsize = BUNsize(res);
+        int bunsize = BUNsize(res);
         BUN cur_res;
         for ( cur_res = fst_res ; cur_res < lst_res ; cur_res += bunsize ) {
             *(oid*)BUNhloc(res, cur_res) = fst_iter;
