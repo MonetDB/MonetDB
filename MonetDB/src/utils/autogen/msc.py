@@ -179,7 +179,9 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
     for l in list:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
-        elif l[0] in  ("-", "$"):
+        elif l[:2] == "-l":
+            add = add + " lib"+l[2:]+".lib"
+        elif l[0] in ("-", "$"):
             add = add + " " + l
         elif l[0] not in  ("@"):
             add = add + " " + msc_translate_dir(l, msc) + ".lib"
@@ -187,6 +189,8 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
     for l in dlibs:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
+        elif l[:2] == "-l":
+            add = add + " lib"+l[2:]+".lib"
         elif l[0] in  ("-", "$"):
             add = add + " " + l
         elif l[0] not in  ("@"):
@@ -395,8 +399,13 @@ def msc_binary(fd, var, binmap, msc):
     if binmap.has_key('MTSAFE'):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
+    binlist = []
+    if binmap.has_key("WINLIBS"):
+        binlist = binlist + binmap["WINLIBS"]
     if binmap.has_key("LIBS"):
-        fd.write(msc_additional_libs(fd, binname, "", "BIN", binmap["LIBS"], [], msc))
+        binlist = binlist + binmap["LIBS"]
+    if binlist:
+        fd.write(msc_additional_libs(fd, binname, "", "BIN", binlist, [], msc))
 
     srcs = binname+"_OBJS ="
     for target in binmap['TARGETS']:
@@ -416,7 +425,7 @@ def msc_binary(fd, var, binmap, msc):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname))
-    fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (binname, binname, binname))
+    fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (binname, binname, binname))
 
     if len(SCRIPTS) > 0:
         fd.write(binname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -454,8 +463,14 @@ def msc_bins(fd, var, binsmap, msc):
 
         if binsmap.has_key(bin + "_LIBS"):
             fd.write(msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc))
-        elif binsmap.has_key("LIBS"):
-            fd.write(msc_additional_libs(fd, bin, "", "BIN", binsmap["LIBS"], [], msc))
+        else:
+            binslist = []
+            if binsmap.has_key("WINLIBS"):
+                binslist = binslist + binsmap["WINLIBS"]
+            if binsmap.has_key("LIBS"):
+                binslist = binslist + binsmap["LIBS"]
+            if binslist:
+                fd.write(msc_additional_libs(fd, bin, "", "BIN", binslist, [], msc))
 
         srcs = bin+"_OBJS ="
         for target in binsmap['TARGETS']:
@@ -477,7 +492,7 @@ def msc_bins(fd, var, binsmap, msc):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin))
-        fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (bin, bin, bin))
+        fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (bin, bin, bin))
 
     if len(SCRIPTS) > 0:
         fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -572,7 +587,7 @@ def msc_library(fd, var, libmap, msc):
     ln = "lib" + sep + libname
     fd.write(ln + ".lib: " + ln + ".dll\n")
     fd.write(ln + ".dll: $(" + ln + "_OBJS) \n")
-    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln, ln, ln))
+    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n\n" % (ln, ln, ln))
 
     if len(SCRIPTS) > 0:
         fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -647,7 +662,7 @@ def msc_libs(fd, var, libsmap, msc):
         ln = "lib" + sep + libname
         fd.write(ln + ".lib: " + ln + ".dll\n")
         fd.write(ln + ".dll: $(" + ln + "_OBJS)\n")
-        fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln, ln, ln))
+        fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n\n" % (ln, ln, ln))
 
     if len(SCRIPTS) > 0:
         fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -871,6 +886,8 @@ CXXEXT = \\\"cxx\\\"
         for (dst, src, ext, dir) in msc['INSTALL']:
             fd.write("install_%s: %s%s %s\n" % (dst, src, ext, dir))
             fd.write("\t$(INSTALL) %s%s %s\\%s%s\n" % (src, ext, dir, dst, ext))
+            if ext == '.dll':
+                fd.write("\t$(INSTALL) %s%s %s\\%s%s\n" % (src, '.lib', dir, dst, '.lib'))
         td = []
         for (x, y, u, dir) in msc['INSTALL']:
             if td.count(dir) == 0:
