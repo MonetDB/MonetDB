@@ -21,7 +21,8 @@ Fhelp:=new(oid,str);Fhelp.col_name("help");
 Fnts:=new(oid,str);
 
 #Plain_mods:=MODULES.select("plain").sort.copy;
-Plain_mods:=MODULES.select("plain").copy.access(BAT_WRITE).delete("mprof","plain").sort.copy.access(BAT_WRITE).insert("mprof","plain");
+mod_mprof:=MODULES.reverse.select("mprof").reverse;
+Plain_mods:=MODULES.select("plain").copy.access(BAT_WRITE).delete("mprof","plain").sort.copy.access(BAT_WRITE).insert(mod_mprof);
 table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 #-----------------#
 # 35 modules	  #
