@@ -37,27 +37,27 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 	AUTOGEN=src/utils/autogen/autogen.py 
 	CONFDIR=
  else
-	if [ -z "$MONET_PREFIX" -a -n "$MONETDIST" ] ; then
-		MONET_PREFIX=$MONETDIST
+	if [ -z "$MONETDB_PREFIX" -a -n "$MONETDIST" ] ; then
+		MONETDB_PREFIX=$MONETDIST
 	fi
-	if [ "$MONET_PREFIX" = "" ]; then
-		type -p monet-config > /dev/null 2>&1
+	if [ "$MONETDB_PREFIX" = "" ]; then
+		type -p monetdb-config > /dev/null 2>&1
 		ERROR=$?
 		if [ $ERROR -eq 0 ]; then
-			MONET_PREFIX=`monet-config --prefix`
+			MONETDB_PREFIX=`monetdb-config --prefix`
 		else
-			echo "!ERROR: requires MONET_PREFIX to be set or monet-config in your PATH"
+			echo "!ERROR: requires MONETDB_PREFIX to be set or monetdb-config in your PATH"
 			exit 1
 		fi
 	fi
 
 	#Some variables autogen needs to be able to expand
 	#to get the dependencies right.
-	export MONET_INCLUDEDIR=`$MONET_PREFIX/bin/monet-config --pkgincludedir`
-	export MONET_INCS=`$MONET_PREFIX/bin/monet-config --includes`
+	export MONETDB_INCLUDEDIR=`$MONETDB_PREFIX/bin/monetdb-config --pkgincludedir`
+	export MONETDB_INCS=`$MONETDB_PREFIX/bin/monetdb-config --includes`
 
-	AUTOGEN=$MONET_PREFIX/lib/autogen/autogen.py
-	CONFDIR="-I `$MONET_PREFIX/bin/monet-config --pkgdatadir`/conf"
+	AUTOGEN=$MONETDB_PREFIX/lib/autogen/autogen.py
+	CONFDIR="-I `$MONETDB_PREFIX/bin/monetdb-config --pkgdatadir`/conf"
 fi
 
 if [ "`uname`" = Darwin  -a  "`type -p glibtool 2>/dev/null`"  -a  "`type -p glibtoolize 2>/dev/null`" ] ; then
