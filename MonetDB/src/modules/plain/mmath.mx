@@ -163,13 +163,13 @@ isnan(log(-1.0LL)).print;
 #       (unlikely with IEEE(like) floating point types though)
 pow(2.0LL,5000.0LL).print;
 isinf(pow(2.0LL,5000.0LL)).print;
-pow(-2.0LL,5000.0LL).print;
-isinf(pow(-2.0LL,5000.0LL)).print;
+pow(-2.0LL,5001.0LL).print;
+isinf(pow(-2.0LL,5001.0LL)).print;
 
 finite(1.0LL).print;
 finite(log(-1.0LL)).print;
 finite(pow(2.0LL,5000.0LL)).print;
-finite(pow(-2.0LL,5000.0LL)).print;
+finite(pow(-2.0LL,5001.0LL)).print;
 
 quit;
 @{
@@ -319,25 +319,22 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
 #endif
 
 #ifdef HAVE_FPCLASS
-static int isinf(double x)
-{
-	int cl = fpclass(x);
-	if (cl == FP_NINF) return -1;
-        else if(cl == FP_PINF) return 1;
-        return 0;
+static int isinf(double x) {
+    int cl = fpclass(x);
+    return ((cl == FP_NINF) || (cl == FP_PINF));
 }
 #endif
 
 int math_unary_ISNAN(bit *res , dbl *a ) {
 #ifdef DEBUG
-	printf( "math_unary_ISNAN\n");
+    printf( "math_unary_ISNAN\n");
 #endif
-   if (*a == dbl_nil) {
+    if (*a == dbl_nil) {
 	*res = bit_nil;
-   } else {
+    } else {
 	*res = isnan(*a);
-   }
-   return(GDK_SUCCEED);
+    }
+    return(GDK_SUCCEED);
 }
 
 int math_unary_ISINF(int *res , dbl *a ) {
@@ -347,7 +344,11 @@ int math_unary_ISINF(int *res , dbl *a ) {
    if (*a == dbl_nil) {
 	*res = int_nil;
    } else {
-	*res = isinf(*a);
+	if(isinf(*a)) {
+        	*res = (*a < 0.0) ? -1 : 1;
+        } else {
+        	*res = 0;
+        }
    }
    return(GDK_SUCCEED);
 }
