@@ -798,8 +798,10 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 	mid= mapi_new();
 
 	
-	if(host==0) host="localhost";
-	c= strchr(host,':');
+	/* avoid writing into constant strings ! */
+	if( host) snprintf(mid->hostname,NAMELEN,"%s",host);
+	else strcpy(mid->hostname,"localhost");
+	c= strchr(mid->hostname,':');
 	if( c){
 		*c = 0;
 		port = atol(c+1);
@@ -815,7 +817,6 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 	if(password) strcpy(mid->password,password);
 	
 	mid->port= port;
-	snprintf(mid->hostname,NAMELEN,"%s",host);
 	hp = gethostbyname(mid->hostname);
 	if(!hp) {
 	    mapi_setError(mid,"gethostbyname failed","mapi_connect");
