@@ -1,0 +1,376 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+
+@f mal_compiler
+@a M. L. Kersten
+@+ MAL compilation
+One of the last resorts to gain performance is to
+compile the MAL into C, followed by compilation
+and dynamic linkage.
+The facility is offered as one of the optimization
+steps.
+
+The current translation sheme is choosen for
+simplicity and is particularly aimed at
+removing the MAL interpreter overhead.
+To best result is most likely obtained after
+the other MAL optimizers have performed their job.
+This may involve code inlineing steps specifically
+geared at producing C later on.
+
+To illustrate the process consider the MAL function 
+below (actual a fragment of tst903 from the test suite).
+It contains most of the language features.
+
+@example
+function tst903();
+    b:= new(:void,:lng);
+    barrier (go,i):= newRange(0:lng);
+        k:= rand();
+        l:= lng(k);
+        insert(b,nil,l);
+        redo (go,i):= nextElement(1:lng,1000000:lng);
+    exit (go,i);
+#setReadMode(b);
+    mx:= max(b);
+#printf("max %d",mx);
+    mi:= min(b);
+#printf(" min %d\n",mi);
+    t0:= alarm.usec();
+    c:= copy(b);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    printf("#copy %d",d0);
+    cnt:= count(c);
+    printf("#count %d\n",cnt);
+    t0:= alarm.usec();
+    z:= select(b,25:lng,25:lng);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    printf("#select none %d",d0);
+    cnt:= count(z);
+    printf(" count %d\n",cnt);
+    t0:= alarm.usec();
+    z2:= select(b,mi,mx);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    printf("#select all %d",d0);
+end tst903;
+@end example
+
+The C code is derived in a few steps. First the variables
+are collected from the symbol table and turned into an
+initialized C variable. Thereafter, we simple produce
+function calls for each MAL instruction and plug in
+the required flow of control statements.
+Notice that each instruction may produce an exception,
+which should be catched. This code is postponed.
+
+Ofcourse the resulting code is not optimal, e.g.
+the following portion for the example is produced:
+@example
+    ...
+        Xmsg = RNGnewRange_lng(&go,&i,&T6);
+        if( !( go == 0 ||go== bit_nil) ) goto EXIT_7; 
+BARRIER_3:
+        Xmsg = CALCrandint(&k);
+        Xmsg = CALCint2lng(&l,&k);
+        Xmsg = BKCinsert_bun(&T9,&b,&T10,&l);
+        Xmsg = RNGnextElement_lng(&go,&i,&T11,&T12);
+        if(  go == 0 ||go== bit_nil ) goto BARRIER_3; 
+EXIT_7:
+    ...
+@end example
+This models a for-loop over an integer range and
+contains an expensive coercion.
+One way to improve code generation is to associate
+a code string to each MAL signature, and make
+exception handling explicit.
+@h
+#ifndef _MAL_COMPILER_H_
+#define _MAL_COMPILER_H_
+#include "mal.h"
+#include "mal_client.h"
+
+#define DEBUG_MAL_COMPILER
+
+mal_export str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+#endif /* _MAL_COMPILER_H_ */
+@-
+@c
+#include "mal_compiler.h"
+#include "mal_interpreter.h"
+#include "mal_function.h"
+
+static char *mccPrelude[]={
+    "/* MAL to C compiler\n",
+    "   Copyright (c) 2001-2004, CWI.\n",
+    "   All rights reserved.\n",
+    " \n",
+    "   The current version does not yet\n",
+    "   CATCH, THREAD blocks\n",
+    "*/\n",
+    "#include \"mal.h\"\n",
+    "#include \"mal_function.h\"\n",
+    0
+};
+void mccVar(stream *f,MalBlkPtr mb,int i){
+    if(isTmpVar(mb,i))
+        stream_printf(f,"T%d", mb->var[i]->tmpindex);
+    else
+        stream_printf(f,"%s", mb->var[i]->name);
+}
+
+void mccArg(stream *f,MalBlkPtr mb,int i){
+    stream_printf(f,"&");
+    mccVar(f,mb,i);
+}
+
+void mccValue(stream *f, MalBlkPtr mb, int i){
+    int (*tostr)(str *, int *, ptr);
+    str buf = 0,c;
+    int sz = 0;
+    int l;
+    ValPtr val;
+
+    val= &getVarConstant(mb,i);
+    if( val->vtype == TYPE_str)
+        stream_printf(f,"%s",val->val.sval);
+    else {
+        tostr= BATatoms[val->vtype].atomToStr;
+        l = (*tostr)(&buf,&sz,VALptr(val));
+        c= strchr(buf,'@');
+        if(c && *(c+1)=='0') *c=0;
+        stream_printf(f,buf);
+        GDKfree(buf);
+    }
+}
+
+void mccType(stream *f, MalBlkPtr mb, int i){
+    str tpe;
+    tpe= getTypeName(getVarType(mb,i));
+    if( isaBatType(getVarType(mb,i)) ) {
+        stream_printf(f,"BAT *");
+    } else {
+        stream_printf(f,"%s *", tpe);
+    }
+    GDKfree(tpe);
+}
+void mccInit(stream *f, MalBlkPtr mb){
+    int i,j;
+    InstrPtr p;
+
+    for(i=0; mccPrelude[i];i++)
+        stream_printf(f,"%s",mccPrelude[i]);
+    p= getInstrPtr(mb,0);
+    stream_printf(f,"str MCC%s_%s(",
+        moduleName(p), functionName(p));
+    if( p->argc > 0) {
+        mccType(f,mb,i);
+        mccVar(f,mb,getArg(p,0));
+        for(j=1; j<p->argc; j++){
+            stream_printf(f,",");
+            mccType(f,mb,i);
+            mccVar(f,mb,getArg(p,j));
+        }
+    }
+    stream_printf(f,")\n{\n");
+}
+
+void mccVariables(stream *f,MalBlkPtr mb){
+    int i;
+    str tpe, v;
+    for(i=1;i<mb->vtop; i++)
+    if( isVarUsed(mb,i)){
+        tpe= getTypeName(getVarType(mb,i));
+        v= getVarName(mb, i);
+        if(isTmpVar(mb,i)) *v='V';
+        if( isaBatType(getVarType(mb,i)) ) {
+            stream_printf(f,"\tBAT *");
+            mccVar(f,mb,i);
+            stream_printf(f,"= 0; /* %s */\n", tpe);
+        } else {
+            stream_printf(f,"\t%s ", tpe);
+            mccVar(f,mb,i);
+            stream_printf(f," = ");
+            mccValue(f,mb,i);
+            stream_printf(f,";\n");
+        }
+        GDKfree(tpe);
+        /* if( isTmpVar(mb,i) ) GDKfree(v);*/
+    }
+    stream_printf(f,"\tstr Xmsg = MAL_SUCCEED;\n");
+}
+void mccEntry(stream *f, MalBlkPtr mb, int i){
+    switch( getVarType(mb,i)){
+    case TYPE_void:
+        stream_printf(f,"1");
+        break;
+    case TYPE_bit:
+        mccVar(f,mb,i);
+        stream_printf(f," == 0 ||");
+        mccVar(f,mb,i);
+        stream_printf(f,"== bit_nil");
+        break;
+    case TYPE_chr:
+        mccVar(f,mb,i);
+        stream_printf(f,"== chr_nil");
+        break;
+    case TYPE_sht:
+        mccVar(f,mb,i);
+        stream_printf(f," < 0 ||");
+        mccVar(f,mb,i);
+        stream_printf(f,"== sht_nil");
+        break;
+    case TYPE_int:
+        mccVar(f,mb,i);
+        stream_printf(f," < 0 ||");
+        mccVar(f,mb,i);
+        stream_printf(f,"== int_nil");
+        break;
+    case TYPE_lng:
+        mccVar(f,mb,i);
+        stream_printf(f," < 0 ||");
+        mccVar(f,mb,i);
+        stream_printf(f,"== lng_nil");
+        break;
+    case TYPE_flt:
+    case TYPE_dbl:
+        mccVar(f,mb,i);
+        stream_printf(f," < 0 ||");
+        mccVar(f,mb,i);
+        stream_printf(f,"== dbl_nil");
+        break;
+    case TYPE_oid:
+        mccVar(f,mb,i);
+        stream_printf(f,"== oid_nil");
+        break;
+    case TYPE_str:
+        stream_printf(f," strlen(");
+        mccVar(f,mb,i);
+        stream_printf(f,") == 0 ||");
+        mccVar(f,mb,i);
+        stream_printf(f,"== str_nil");
+        break;
+    default:
+        stream_printf(f,"/* Unknown barrier :%d */",getVarType(mb,i));
+    }
+}
+void mccBody(stream *f,MalBlkPtr mb){
+    int i,j;
+    InstrPtr p;
+    for(i=1; i<mb->stop; i++){
+        p= getInstrPtr(mb,i);
+        if( p->barrier== EXITsymbol )
+            stream_printf(f,"\nEXIT_%d:\n",i);
+        if( p->blk && p->blk->binding){
+            stream_printf(f,"\tXmsg = ");
+            stream_printf(f,"%s(", p->blk->binding);
+            mccArg(f,mb,getArg(p,0));
+            for(j=1; j<p->argc; j++){
+                stream_printf(f,",");
+                mccArg(f,mb,getArg(p,j));
+            }
+            stream_printf(f,");\n");
+        }
+        if( p->barrier)
+        switch(p->barrier){
+        case BARRIERsymbol:
+            stream_printf(f,"\n\tif( !( ");
+            mccEntry(f,mb,getArg(p,0));
+            stream_printf(f,") ) goto EXIT_%d; ",p->jump);
+            stream_printf(f,"\nBARRIER_%d:\n",i+1);
+            break;
+        case EXITsymbol:
+            break;
+        case LEAVEsymbol:
+        case REDOsymbol:
+            stream_printf(f,"\n\tif(  ");
+            mccEntry(f,mb,getArg(p,0));
+            stream_printf(f," ) goto BARRIER_%d; ",p->jump);
+            break;
+            break;
+        default:
+            stream_printf(f,"/* case not yet covered: %d */\n",p->barrier);
+        }
+    }
+}
+void mccExit(stream *f){
+    stream_printf(f,"\treturn Xmsg;\n}\n");
+    (void) stream_close(f);
+}
+
+@-
+The compiler is called with arguments to designate
+the routine be expanded and the designated file.
+@c
+
+str mccGenerate(MalBlkPtr mb){
+    char buf[1024];
+    stream *f;
+
+    snprintf(buf,1024,"%s/MCC%s_%s.c", monet_cwd, 
+            moduleName(getInstrPtr(mb,0)),
+            functionName(getInstrPtr(mb,0)));
+    f= open_wastream(buf);
+    if( f == NULL)
+        return throwMessage("optimizer.MCcompiler","Could not access file");
+    mccInit(f, mb);
+    mccVariables(f,mb);
+    mccBody(f,mb);
+    mccExit(f);
+    return MAL_SUCCEED;
+}
+@-
+The static compiler assumes constant values for the module
+and function name,
+The dynamic version takes variables from the runtime stack.
+@c
+str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    Scope s;
+    Symbol t;
+    int j;
+    str nme, fcn,msg=MAL_SUCCEED;
+
+    (void)mb;
+    printf("Calling the dynamic compiler\n");
+    nme= *(str*) getArgReference(stk, p,1);
+    fcn= *(str*) getArgReference(stk, p,2);
+
+#ifdef DEBUG_MAL_COMPILER
+    printf("MCdynamicCompiler: %s.%s\n",nme,fcn);
+#endif
+
+    s= findModule(mal_scope,nme);
+    if (s == 0) s= mal_scope;
+    for(; s; s=s->outer)
+    if(strcmp(s->name,nme)== 0 && s->subscope){
+        j = getSubScope(fcn);
+        for(t= s->subscope[j];t!=NULL;t=t->peer)
+        if( t->def->errors == 0) {
+            if( getSignature(t)->token == FUNCTIONsymbol &&
+                idcmp(fcn, functionName(getSignature(t)) )==0
+                )
+                /* call macro expansion */
+                mccGenerate(t->def);
+                if( msg) return msg;
+        }
+    }
+    return msg;
+}
+
