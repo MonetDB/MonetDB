@@ -10,21 +10,21 @@
 \usepackage{color}
 \usepackage{url}
 \begin{document}
-\title{The Monet SQL front-end}
+\title{The MonetDB SQL front-end}
 \author{ Niels Nes, Martin Kersten, {\small \textsc{CWI}, Netherlands}}
 \date{}
 \maketitle
 
 \section{Introduction}
 The language intergalactica for database applications is SQL. It evolved
-through several phases of standardization to the version known as SQL'99.
+through several phases of standardization to the version known as SQL-2003.
 The SQL standard provides an ideal language framework, 
 in terms of standardization committee viewpoints, 
 which is hardly met by any of the existing (commercial) implementations.
 This is largely due to legacy of old software and backward compatability
 requirements from their client base.
  
-The Monet database system is originally developed as a database backend
+The MonetDB database system is originally developed as a database backend
 kernel with its own, low-level algebraic interface and scripting language.
 The development of a SQL frontend has been purposely postponed to the point
 where the kernel code base was sufficiently mature and field tested in
@@ -37,34 +37,19 @@ tools for end-users to migrate applications from their current system
 remains, however, a time-consuming task and conflicts with our primary tasks,
 innovative research on database kernel technology.
 
-The Monet database kernel made publictly available is version V 4.3.?
-with a multiyear life of experience. It is considered the prime platform
-for our research partners to built applications and to exchange
-ideas, experiences, and bug reports. Developments of version 5 and beyond
-are already on their way, but also considered major departures from
-the version 4 software base.
-
 This document has been written to give a quick introduction on the SQL
 front-end, its limitations, and the way to use it. 
-Section \ref{Architecture}  provides a brief summary of the Monet
-system architecture.
-Section \ref{Functionality} introduces the language functionality and
-position Monet SQL within the leading pack of SQL implementations.
+Information on the architecture of MonetDB and the available programming
+language interfaces can be found on the website http://monetdb.cwi.nl.
 A historical database is used in Section \ref{Tutorial}
 set-up your first application.
 A brief description of the application interfaces is given in Section \ref{Apis}.
 
-\section{Architecture}
-\label{Architecture}
-%cut-paste of Monet architecture
-
 \section{Functional overview}
 \label{Functionality}
-The Monet SQL front-end is designed with the SQL99 standard as the starting
+The MonetDB/SQL front-end is designed with the SQL99 standard as the starting
 point. The initial goal was to provide Core SQL99 conformance and
 selectively add feature packages.
-
-%Core functionality overview
 
 %Packages included
 The feature packages identified in the standard are often vendor specific
@@ -73,86 +58,85 @@ the result of a scientific/engineering task.
 Features may re-appear in multiple packages and vendors have a lot of
 space to {\em enhance} the set.
 
-The same holds for Monet, which is heavily based on an extensible 
+The same holds for MonetDB, which is heavily based on an extensible 
 infrastructure. Modules with novel functionality often grow out of
 specific application needs. Once in a while some clean-up improves
 the situation.
-The feature package structure and its status is shortly described as follows\footnote{The summary information is based on the book "SQL in a nutshell" of
-O'Reilly Press, which we highly recommend for a quick overview over the
-differences between relational engines.}
+The feature package structure and its status is shortly described as follows
 %check against standard for missing issues
 
 \onecolumn
 \begin{tabular}{l | l | l| l |}\\
-ID	&Name		&Features		&Monet SQL	\\\hline
+ID	&Name		&Features		&MonetDB/SQL	\\\hline
 PKGOO1	&Datetime	&Interval datatype		& Supported\\
-	&		&Time zone specification	& Supported\\
-	&		&Full datetime			& Supported\\
-	&		&Interval qualifier 		& Supported\\
+	&		&Time zone specification	& \\
+	&		&Full datetime			& \\
+	&		&Interval qualifier 		& \\
 PKG002	&Enhanced 	&Assertions		& Not supported\\
-	&Integrity	&Referential delete actions	& Not supported\\
-	&Management	&Referential update actions& Not supported\\
-	&		&Constraint management		& Not supported\\
-	&	 	&Subqueries in CHECK constraint	& Not supported\\
-	&	 	&Triggers			& Not supported\\
-	&	 	&FOR EACH STATEMENT triggers	& Not supported\\
-	&	 	&Referential action RESTRICT	& Not supported\\
-PKG003	&OLAP capabilities&CUBE and ROLLER		& Not supported\\
-%	& 		&INTERSECT operator		& Not supported\\
-%	&	 	&Row and table constructs	& Not supported\\
-%	&		&FULL OUTER JOIN		& Not supported\\
-%	&	 	&Scalar subquery values		& Not supported\\
-PKG004	&SQL Persistent	&A programmatic extension to SQL that makes it	& \\
+	&Integrity	&Referential delete actions	& \\
+	&Management	&Referential update actions& \\
+	&		&Constraint management		& \\
+	&	 	&Subqueries in CHECK constraint	& \\
+	&	 	&Triggers			& \\
+	&	 	&FOR EACH STATEMENT triggers	& \\
+	&	 	&Referential action RESTRICT	& \\
+PKG003	&OLAP capabilities&CUBE and ROLLER		& \\
+	& 		&INTERSECT operator		& \\
+	&	 	&Row and table constructs	& \\
+	&		&FULL OUTER JOIN		& \\
+	&	 	&Scalar subquery values		& \\
+PKG004	&SQL Persistent	&A programmatic extension to SQL that makes it	& Not supported \\
 	&Stored		&suitable for developing more functionally	& \\
 	&Modules(PST)	&complete applications	& Not supported\\
-%	&	 	&The commands CASE, IF, WHILE, REPEAT,	& \\
-%	&	 	&LOOP, and FOR	& \\
-%	&	 	&Stored Modules	& \\
-%	&	 	&Computational completeness	& \\
-%	&	 	&INFORMATION SCHEMA views	& \\
+	&	 	&The commands CASE, IF, WHILE, REPEAT,	& \\
+	&	 	&LOOP, and FOR	& \\
+	&	 	&Stored Modules	& \\
+	&	 	&Computational completeness	& \\
+	&	 	&INFORMATION SCHEMA views	& \\
 PKG005	&SQL Call-level	&SQL Call-level Interface support: an Application	& Not supported\\
 &(CLI)	&Programming Interface (API) that enables SQL	& \\
 	&Basic object support	&operations to he called that is very similar to the	& \\
 	&	 & Open Database Connectivity (ODBC) standard	& \\
-PKG006	&Basic object support&Overloading SQL-invoked functions & \\
-	&		& and procedures	& Not supported\\
-%	&	 	&User-defined types with single inheritance: basic	& Not supported\\
-%	&	&SQL routines on user-defined types (including	& Not supported\\
-%	&	&dynamic dispatch)	& Not supported\\
-%	&	 	&Reference types	& Not supported\\
-%	&	 	&CREATE TABLE	& Not supported\\
-%	&	 	&Array support: basic array support, array	& Not supported\\
-%	&	&expressions, array locators, user-datatype (DDT )	& Not supported\\
-%	&	&array support, reference-type array support, SQL	& Not supported\\
-%	&	&routine on arrays	& Not supported\\
-%	&	 	&Attribute and field reference	& Not supported\\
-%	&	 	&Reference and deference operations	& Not supported\\
-PKG007	& Enhanced object&ALTER TABLE, ADD	& Not supported\\
+PKG006	&Basic object support&Overloading SQL-invoked functions & Not supported\\
+	&		& and procedures	& \\
+	&	 	&User-defined types with single inheritance: basic	& \\
+	&	&SQL routines on user-defined types (including	& \\
+	&	&dynamic dispatch)	& \\
+	&	 	&Reference types	& \\
+	&	 	&CREATE TABLE	& \\
+	&	 	&Array support: basic array support, array	& \\
+	&	&expressions, array locators, user-datatype (DDT )	& \\
+	&	&array support, reference-type array support, SQL	& \\
+	&	&routine on arrays	& \\
+	&	 	&Attribute and field reference	& \\
+	&	 	&Reference and deference operations	& \\
+PKG007	& Enhanced object&ALTER TABLE, ADD	& \\
 	& support	&Enhanced user-defined types (including	& \\
-%	&	&constructor options, attribute defaults, multiple	& Not supported\\
-%	&	&inheritance, and ordering clause)	& Not supported\\
-%	&	 	&SQL functions and type-name' resonation	& Not supported\\
-%	&	 	&Subtypes	& Not supported\\
-%	&	 	&ONLY in queries	& Not supported\\
-%	&	 	&Type predicate	& Not supported\\
-%	&	 	&Subtype treatment	& Not supported\\
-%	&	 	&User-defined CAST functions	& Not supported\\
-%	&	 	&DDT locators	& Not supported\\
-%	&	 	&SQL routines on user-defined types such as	& Not supported\\
-%	&	&identity functions and generalized expressions	& Not supported\\
+	&	&constructor options, attribute defaults, multiple	& \\
+	&	&inheritance, and ordering clause)	& \\
+	&	 	&SQL functions and type-name' resonation	& \\
+	&	 	&Subtypes	& \\
+	&	 	&ONLY in queries	& \\
+	&	 	&Type predicate	& \\
+	&	 	&Subtype treatment	& \\
+	&	 	&User-defined CAST functions	& \\
+	&	 	&DDT locators	& \\
+	&	 	&SQL routines on user-defined types such as	& \\
+	&	&identity functions and generalized expressions	& \\
 \end{tabular}	
 
 
 \subsection{SQL Data types}
-The datatypes supported by Monet SQL are summarized below.
-The Monet kernel supports extensibility with new atomic types.
+The datatypes supported by MonetDB/SQL are summarized below.
+The MonetDB kernel supports extensibility with new atomic types.
 They are not immediately visible at the SQL layer. It requires
-patching the catalog initialization routine of the parser.
+patching the catalog initialization routine of the parser
+and possibly the semantic analyzer.
 
 \begin{tabular}{l |l | l | l}
-Category	& SQL99 & Monet SQL & Comments\\
+Category	& SQL03 & MonetDB/SQL & Comments\\
 		& type	& type	&	\\\hline
-binary		& BLOB	& blob	& 	[TOBEINCLUDED] \\
+binary		& BLOB	& blob	& 	\\
 bit string	& bit	&	&	Not supported\\
 		& bit varying&	&	Not supported\\
 boolean		& boolean& boolean&		\\
@@ -180,7 +164,7 @@ temporal	& date & date&	\\
 \end{tabular}
 
 Types considered relevant by other vendors and not (yet) supported in the
-current setup. We should identify the equivalent Monet SQL types.
+current setup. We should identify the equivalent MonetDB/SQL types.
 
 \begin{tabular}{l |l |l}
 binary & SQLserver & up to 8K fixed-length binaries\\
@@ -216,75 +200,9 @@ polygon & & closed collection of line segments\\
 timespan & & \\
 \end{tabular}
 
-\subsection{SQL Command reference}
-The table below is copied and adapted from "SQL in a nutshell".
-The vendor level support is defined as follows:
-\begin{itemize}
-\item {\em Supported (S)} The SQL 99 semantics is supported.
-\item {\em Supported, with variations (SWV)} A vendor specific command or syntax is used.
-\item {\em Supported, with limitations (SWL} Not all the functionality required by the standard is supported.
-\item {\em Not supported (NS)} The SQL99 functionality is not supported.
-\end{itemize}
-
-% we need to update this table to more recent versions
-\begin{tabular}{l l| l|l|l|l}
-{\em command} & {\em Monet SQL}& {\em MS\footnote{Microsoft SQLserver 2000}} & {\em MySQL\footnote{Version 2.4??}} & {\em Oracle\footnote{Version 8.1}} & {\em PostgreSQL}\\
-ALTER PROCEDURE & NS	& SWV	& NS	& SWV	& NS\\
-ALTER TABLE & NS	& SWV	& SWL	& SWV	& SWV\\
-ALTER TRIGGER & NS	& SWV	& NS	& SWV	& NS\\
-CALL	&	NS	& NS	& NS	& S	& S\\
-CASE	&	S	& S	& S	& NS	& S\\
-CAST	&	S	& S	& NS	& NS	& S\\
-CLOSE CURSOR &	NS	& S	& NS	& S	& S\\
-COMMIT TRANSACTION &S	& SWV	& SWV	& S	& S\\
-CONCAT OPs&	S 	& SWV	& SWV	& S	& S\\
-CONNECT & 	??	&SWL	& NS	& S	& NS\\
-CREATE DATABASE& ??	& SWV	& S 	& S	& SWV\\
-CREATE FUNCTION& NS	& SWV	& SWV	& SWV	& SWV\\
-CREATE INDEX&	??	& SWV	& SWV   & SWV	& SWV\\
-CREATE PROCEDURE& NS	& S	& NS	& S	& NS\\
-CREATE ROLE&	S	& NS	& NS	& SWV	& NS\\
-CREATE SCHEMA& ??	& S	& NS	& S	& NS\\
-CREATE TABLE& SWV	& SWB	& SWV	& SWV	& SWV\\
-CREATE TRIGGER& NS	& SWV	& NS	& SWV	& SWV\\
-CREATE VIEW & 	S	& SWV 	& NS	& SWV	& SWV\\
-DECLARE CURSOR& NS	& S	& NS	& S	& S\\
-DELETE	&	S	& SWV	& SWV	& S	& S\\
-DISCONNECT&	??	& SWL	& NS	& SWV	& NS\\
-DROP DATABASE&	??	& SWV 	& SWV	& SWV	& SWV\\
-DROP INDEX&	??	& SWV	& SWV	& SWV	& SWV\\
-DROP PROCEDURE&	NS	& S	& NS	& S	& NS\\
-DROP ROLE&	S	& NS	& NS	& SWV 	& NS\\
-DROP TABLE&	S	& SWV	& SWV	& SWV	& SWV\\
-DROP TRIGGER& 	NS	& SWV	& NS	& SWV	& SWV\\
-DROP VIEW&	S	& S	& NS	& S	& S\\
-FETCH&		NS	& S	& NS	& S	& SWV\\
-GRANT&		S	& SWV	& SWV	& SWV	& SWV\\
-INSERT	&	SWV	& SWV	& SWV	& S	& S\\
-JOIN clause&	S	& S	& SWL	& NS(+theta)& SWV(+theta)\\
-LIKE operator&	S	& SWV	& SWV	& SWV 	& SWV\\
-OPEN	&	NS	& S	& NS	& S	& S\\
-OPERATORS&	??	& SWV	& SWV	& SWV	& SWV\\
-RETURN	&	NS	& S	& S	& S	& S\\
-REVOKE	&	S	& SWV	& SWV	& SWV 	& SWV\\
-ROLLBACK &	S	& SWV	& NS	& S	& S\\
-SAVEPOINT&	S	& SWV	& NS	& S	& S\\
-SELECT &	SWV	& SWV	& SWV	& SWV	& SWV\\
-SET CONNECTION&	??	& SWL	& NS	& NS	& NS\\
-SET ROLE &	??	& NS	& NS	& SWV	& NS\\
-SET TIMEZONE &	??	& NS	& NS	& SWV	& NS\\
-SET TRANSACTION& ??	& SWV	& NS(+)	& SWL	& S\\
-START TRANSACTION&	& NS	& NS(++)& NS	& NS(**)\\
-TRUNCATE TABLE	& ??	& S	& NS	& SWV	& S\\
-UPDATE	&	S	& SWV	& SWV	& SWV	& S\\
-\end{tabular}
-
-
 \subsection{Quick Reference}
-The specifics of the Monet SQL implementation are grossly organized
+The specifics of the MoneDB/SQL implementation are grossly organized
 by category.
-[Niels, for each supported issue we should make clear whether
-the syntax is standard compiliant and what limitations exist]
 
 \subsubsection*{CASE}
 The CASE function provides IF-THEN-ELSE functionality within
@@ -295,76 +213,79 @@ The CAST operation  operation is SQL99 compliant.
 The conversions are derived from the underlying storage engine facilities,
 which embody all reasonable coercions between basic data types.
 
-\subsubsection*{COMMIT TRANSACTION }
+\subsubsection*{COMMIT TRANSACTION/ROLLBACK }
 Transactions over both the catalog and database tables is supported.
 The underlying store uses two facilities to ensure ACID properties.
 First, a (binary) log table is maintained with all updates performed
 on the database on behalf of a user. Second, base tables are assigned
 a version number as part of the transaction initia
-[Niels, een korte beschrijving van 5 zinnen is hier nodig]
 
 \subsubsection*{(DIS)CONNECT }
 
 The CONNECT statement provides a mechanism to change the user role
 for administrative actions or to overrule the default setting for
-accessing the database server. To be done.
+accessing the database server. [NOT SUPPORTED]
 
-\subsubsection*{CREATE/DROP DATABASE}
+\subsubsection*{CREATE/DROP/USE DATABASE}
 The databases are mapped to directories (maps) in a default location, as 
-specified in the Monet initialization file. The current scheme is 
+specified in the MonetDB initialization file. The current scheme is 
 to simply allow any user to create a database by reserving a
 directory to hold all information. The location of the database
 log is similarly controlled.
 
-[Niels, stmt should be included. It seems that both instructions are
+The CREATE/DROP DATABASE are not implemented, because each one
+should have its own instance of Mserver.
+
+[stmt could be included. It seems that both instructions are
 easy to implement and a rudimentary authorization scheme should be
 applied, e.g. the user issuing the command is the owner of the directory
 in which the database is placed]
 
 \subsubsection*{CREATE/DROP FUNCTION}
-[Niels, the catalog initialization for all applicable
-functions could be simplified if we supported the construct
-CREATE FUNCTION f RETURNS t
-with external linkage. Much like I do in MAL.]
+Not yet implemented
 
 \subsubsection*{CREATE/DROP INDEX}
 
-The Monet kernel creates indices on the fly whenever profitable for
+The MonetDB kernel creates indices on the fly whenever profitable for
 achieving good performance. Applying this statement is considered
 an advice to create and maintain a hash index during a user session.
-Furthermore, it triggers an update of the statistics table for the
-optimizer[todo].
 
 \subsubsection*{CREATE/DROP ROLE}
-\subsubsection*{CREATE SCHEMA}
+The SQL authorization scheme has been implemented.
+
+\subsubsection*{CREATE/DROP SCHEMA}
 The schema is a named collection if related objects under control of
 a single authorization scheme. 
 
 \subsubsection*{CREATE/DROP TABLE}
-What is allowed for integrity constraints.
+A table can be declared TEMPORARY ?
+Create table supports NOT NULL, UNIQUE, REFERENCES..
 
 \subsubsection*{CREATE/DROP VIEW}
 Views definitions are separately administered.
-[Niels, do you support the [CASCADED|LOCAL] CHECK OPTION
+[CASCADED|LOCAL] CHECK OPTION are supported?
+
 Do we support updates through a view?
 Do we keep track of the underlying related tables? e.g.
 viewdep(viewname, view/table/...name)
 
 \subsubsection*{DELETE}
 \subsubsection*{GRANT/REVOKE}
-Seem to be limited, tell howfar
+The SQL authorization scheme has been implemented.
 
 \subsubsection*{INSERT}
 \subsubsection*{JOIN clause}
+The LEFT/RIGHT OUTER joins are supported and also the NATURAL join
+
 \subsubsection*{LIKE operator}
 \subsubsection*{CONCAT operator}
 \subsubsection*{Operators}
 The common arithmetic operations are defined. A full list of the
 available functions should be included as an appendix (see CREATE FUNCTION)
 
-\subsubsection*{REVOKE}
-\subsubsection*{ROLLBACK }
 \subsubsection*{SAVEPOINT}
+Savepoints within transactions can be set
+
 \subsubsection*{SELECT }
 \subsubsection*{SET CONNECTION}
 \subsubsection*{SET ROLE }
@@ -373,5 +294,44 @@ available functions should be included as an appendix (see CREATE FUNCTION)
 \subsubsection*{START TRANSACTION}
 \subsubsection*{TRUNCATE TABLE}
 \subsubsection*{UPDATE}
-
 \end{document}
+
+
+\subsection{The todo-list}
+SQL'99 and its successor SQL-2003 are extensive languages.
+Several language constructs have been included/retained for
+compatibility reasons, or a vendor pressing for it.
+In the long run we intend to provide all functionality that
+the standard pre-scribes. But, the road towards this holy grail
+is long and should not be waited for.
+The following table lists functionality that awaits an implementation
+as of version MonetDB/SQL 1.0.16. It is more or less sorted by
+our perception of need.
+
+\begin{tabular}{l}
+POSITION(str IN str)\\
+SUBSTRING(str SIMILAR str ESCAPE chr)\\
+OVERLAY function, i.e. substring replacment\
+TRIM [BOTH|LEADING|TRAILING]( chr FROM str)\\
+EXTRACT( datetimefile FROM interval)\\
+WITH CHECK OPTION in view definitions\\
+SYSTEM\_USER, CURRENT\_ROLE, CURRENT\_PATH\\
+TIME ZONE manipulation and inspection (EXTRACT)\\
+CAST (NULL AS <datatype>)\\
+Column constraints: REFERENCES ARE [NOT] CHECKED [ON DELETE]\\
+CREATE TEMPORARY TABLE which is autodropped \\
+SQL functions \\
+SQL client modules\\
+OCTET\_LENGTH, BIT\_LENGTH, CARDINALITY functions\\
+User defined types \\
+Literal INTERVAL arithmetic, e.g. interval '6' day - interval '1' day\\
+NATIONAL CHARACTER type and operators\\
+CONVERT|TRANSLATE(str USING translation\_\\
+DROP SCHEMA xx [CASCADE/RESTRICT]\\
+CREATE LOCAL/GLOBAL TEMPORARY TABLE in procedures \\
+CREATE DOMAIN\\
+ARRAY type and operators\\
+(Literal) ROW and reference type \\
+Locator type for e.g. Blob\\
+CONNECT statement to establish connections. \\
+\end{tabular}
