@@ -183,6 +183,7 @@ sub quote {
 	s/\n/\\n/g;
 	s/\r/\\r/g;
 	s/"/\\"/g;
+	s/'/''/g;
     }
     return "'$statement'";
 }
