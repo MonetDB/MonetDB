@@ -586,8 +586,9 @@ typedef struct {
 	pfarg_reg_t pc[PFMLIB_MAX_PMCS] ;
 	pfarg_load_t load_args ;
 } pfmInfo_t;
+
 #else 
-#error "V2"
+
 typedef struct {
 	pid_t pid;
 	pfmlib_param_t evt;
