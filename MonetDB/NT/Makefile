@@ -52,3 +52,6 @@ targetdirs:
 	if not exist $(pkgdatadir)	$(MKDIR) $(pkgdatadir)
 	if not exist $(pkglibdir)	$(MKDIR) $(pkglibdir)
 	if not exist $(pkgincludedir)	$(MKDIR) $(pkgincludedir)
+
+html:
+	python $(SRCDIR)\doc\mkdoc.py $(SRCDIR) $(TOPDIR)

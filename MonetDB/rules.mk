@@ -137,3 +137,6 @@ $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 	$(COMPILE) -O0 -c $<
 
 SUFFIXES-local: $(BUILT_SOURCES)
+
+html:
+	python $(top_srcdir)/doc/mkdoc.py $(top_srcdir) $(prefix)
