@@ -57,6 +57,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <stdarg.h>
 
 /* PFcore_t */
 #include "core.h"
@@ -1411,12 +1412,14 @@ PFcore_ebv (PFcnode_t *n)
 static PFcnode_t *
 error_impl (const char * msg, va_list msgs)
 {
+    va_list tmp;
     char c;
     char *buf;
     unsigned int size;
     PFcnode_t *core;
 
-    size = vsnprintf (&c, 1, msg, msgs) + 1;
+    va_copy(tmp, msgs);
+    size = vsnprintf (&c, 1, msg, tmp) + 1;
     buf = (char *) PFmalloc (size);
     vsnprintf (buf, size, msg, msgs);
 

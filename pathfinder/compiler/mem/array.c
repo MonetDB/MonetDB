@@ -61,6 +61,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #include "array.h"
 
@@ -207,6 +208,7 @@ PFarray_printf (PFarray_t *a, const char *fmt, ...)
 int
 PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
 {
+    va_list tmp;
     char  try;
     int   nchars;
 
@@ -218,10 +220,12 @@ PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
      * been printed if we had enough space available...)  
      * @note this assumes the C99 semantics of vsnprintf ()
      */
-    nchars = vsnprintf (&try, 1, fmt, mat);
+    va_copy(tmp, mat);
+    nchars = vsnprintf (&try, 1, fmt, tmp);
 
     if (nchars < 0)
         return nchars;
+
 
     /* now that we know the actual size, print the formatted material
      * into the array (+ 1 for the trailing '\0' printed by vsprintf)
