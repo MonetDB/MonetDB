@@ -166,8 +166,8 @@ resolving addresses.
 		if( msg && msg != (str) GDK_SUCCEED){
 			GDKerror(msg);
 			GDKfree(msg);
-			showErrors(c);
 		}
+		showErrors(c);
 		resetMalBlk(prg->def,0);
 	} 
 endImport:

@@ -647,10 +647,9 @@ has been given at the language level. A Warning is issued
 to make the user aware of this situation.
 @c
 	tonil= strcmp(val,"nil")==0;
-	 switch( BATatoms[type].storage){
+	 /*switch( BATatoms[type].storage){*/
 retryConstant:
-/*
-	switch( parsetype){ */
+	switch( parsetype){ 
 	case TYPE_void: VALset(vr,TYPE_void,ATOMnilptr(TYPE_void));break;
 	case TYPE_bit: { int x;
 			 x= val[0]=='t' || val[0]=='T';
@@ -718,7 +717,7 @@ retryConstant:
 			break; }
 	case TYPE_dbl: {double d= strtod(val,NULL);
 			if( tonil) vr->val.dval = dbl_nil; 
-			else vr->val.fval= d;
+			else vr->val.dval= d;
 			vr->vtype= type;
 			break;}
 	case TYPE_lng: {long l= strtol(val,NULL,0);
