@@ -1661,7 +1661,9 @@ char *table_name(stmt * st)
 		return NULL;
 
 	case st_atom:
-		if (st->op1.aval->data.vtype == TYPE_str)
+		if (st->op1.aval->data.vtype == TYPE_str && 
+		    st->op1.aval->data.val.sval &&
+		    strlen(st->op1.aval->data.val.sval))
 			return atom2string(st->op1.aval);
 
 	case st_var:
