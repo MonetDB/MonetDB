@@ -31,7 +31,7 @@
 /* == files for function definitions, global variables, macros, and  == */
 /* == typdefs, and puts them in Mx indexing notation.                == */
 /* ==================================================================== */
-#include <config.h>
+#include <monetdb_config.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>

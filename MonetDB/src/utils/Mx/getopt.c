@@ -53,10 +53,10 @@
 #endif
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include <monetdb_config.h>
 #endif
 
-#if 0				/* already taken care of in config.h */
+#if 0				/* already taken care of in monetdb_config.h */
 #if !defined __STDC__ || !__STDC__
 /* This is a separate conditional since some stdc systems
    reject `defined (const)'.  */
