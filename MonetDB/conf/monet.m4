@@ -233,22 +233,26 @@ yes-*-*)
 	dnl  standard.  Moreover, there seems to be no standard for the
 	dnl  defines that enable the features beyond C89 in the various
 	dnl  platforms.  Here's what we found working so far...
-	CFLAGS="$CFLAGS -std=c99"
 	case "$gcc_ver-$host_os" in
-	*-solaris*)
-		CFLAGS="$CFLAGS -D__EXTENSIONS__"
-		;;
 	*-cygwin*)
-		dnl  Otherwise, snprintf prototype is not declared in stdio.h ...
-		CFLAGS="$CFLAGS -U__STRICT_ANSI__"
+		dnl  MonetDB/src/testing/Mtimeout.c fails to compile with
+		dnl  "--std=c99" as the compiler then refuses to recognize
+		dnl  the "sa_handler" member of the "sigaction" struct,
+		dnl  which is defined in an unnamed union in
+		dnl  /usr/include/cygwin/signal.h ...
 		;;
 	*-irix*|*-darwin*)
-		dnl  Are these exceptions still necessary??
+		CFLAGS="$CFLAGS -std=c99"
+		;;
+	*-solaris*)
+		CFLAGS="$CFLAGS -std=c99"
+		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
 	3.*-*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+		CFLAGS="$CFLAGS -std=c99"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	esac
