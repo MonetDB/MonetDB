@@ -32,9 +32,9 @@ end refs;	# 5
 #print("open box");
 #bbp.open();
 #refs();
-#t:= bind("tasks");
+#t:= bbp.bind("tasks");
 #print(t);
-#bat.destroy(t,true);
+#bbp.destroy(t,true);
 #refs();
 ## the bat is still visible, because the destroy only
 ## marks it for deletion at the end of session or
@@ -48,6 +48,7 @@ end refs;	# 5
 #refs();
 #print(t);
 ## but it is still there and should
+#print("get released bat");
 #t:=bind("tasks");
 #refs();
 #print(t);
@@ -67,7 +68,7 @@ function Admin.main():int;	# 0  (main:int)
     Admin.refs();	# 7  ($13:void)
     t := bbp.bind("tasks");	# 8 CMDbbpbind (t:bat[:any,:any])<-($8:str)
     io.print(t);	# 9 IOprint_val ($15:int)<-(t:bat[:any,:any])
-    bat.destroy(t,true);	# 10 BKCdestroyImmediate ($16:void)<-(t:bat[:any,:any])($17:bit)
+    bbp.destroy(t,true);	# 10 CMDbbpdestroyBAT ($16:void)<-(t:bat[:any,:any])($17:bit)
     Admin.refs();	# 11  ($18:void)
     t := bbp.bind("tasks");	# 12 CMDbbpbind (t:bat[:any,:any])<-($8:str)
     Admin.refs();	# 13  ($19:void)
@@ -75,13 +76,14 @@ function Admin.main():int;	# 0  (main:int)
     bbp.release(t);	# 15 CMDbbpreleaseBAT ($21:void)<-(t:bat[:any,:any])
     Admin.refs();	# 16  ($22:void)
     io.print(t);	# 17 IOprint_val ($23:int)<-(t:bat[:any,:any])
-    t := bbp.bind("tasks");	# 18 CMDbbpbind (t:bat[:any,:any])<-($8:str)
-    Admin.refs();	# 19  ($24:void)
-    io.print(t);	# 20 IOprint_val ($25:int)<-(t:bat[:any,:any])
-    c := bbp.getRefCount(t);	# 21 CMDgetBATrefcnt (c:int)<-(t:bat[:any,:any])
-    io.print(c);	# 22 IOprint_val ($27:int)<-(c:int)
-    Admin.refs();	# 23  ($28:void)
-end main;	# 24  
+    io.print("get released bat");	# 18 IOprint_val ($24:int)<-($25:str)
+    t := bbp.bind("tasks");	# 19 CMDbbpbind (t:bat[:any,:any])<-($8:str)
+    Admin.refs();	# 20  ($26:void)
+    io.print(t);	# 21 IOprint_val ($27:int)<-(t:bat[:any,:any])
+    c := bbp.getRefCount(t);	# 22 CMDgetBATrefcnt (c:int)<-(t:bat[:any,:any])
+    io.print(c);	# 23 IOprint_val ($29:int)<-(c:int)
+    Admin.refs();	# 24  ($30:void)
+end main;	# 25  
 [ "open box" ]
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
@@ -117,7 +119,7 @@ end main;	# 24
 # int	int	  # type
 #-----------------#
 [ 23,	  32	  ]
-free the bat as well#---------------------------------------------------------#
+#---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
 #---------------------------------------------------------#
@@ -125,5 +127,6 @@ free the bat as well#---------------------------------------------------------#
 [ 2,	  "monet_unicode_case",	  1,	  0		  ]
 [ 3,	  "timezones",		  1,	  0		  ]
 [ "nil" ]
+[ "get released bat" ]
 !ERROR: MALexception:bbp.bind:failed to find 'tasks' in box
 >

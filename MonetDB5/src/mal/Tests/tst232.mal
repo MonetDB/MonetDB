@@ -1,4 +1,5 @@
 # a test checking BAT reference counting under various situations
+	bbp.open();
 	b:= new(:int,:str);
 	i:= getRefCount(b);
 	printf("refcount =%d\n",i);
@@ -8,6 +9,6 @@
 	i:= getRefCount(b);
 	printf("refcount =%d\n",i);
 
-	bat.destroy(b);
+	bbp.destroy(b);
 	i:= getRefCount(b);
 	printf("after destroy refcount =%d\n",i);

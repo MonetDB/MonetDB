@@ -6,6 +6,7 @@
 # dbname:demo
 # Visit http://monetdb.cwi.nl for further information.
 ## a test checking BAT reference counting under various situations
+#	bbp.open();
 #	b:= new(:int,:str);
 #	i:= getRefCount(b);
 #	printf("refcount =%d\n",i);
@@ -15,22 +16,23 @@
 #	i:= getRefCount(b);
 #	printf("refcount =%d\n",i);
 #
-#	bat.destroy(b);
+#	bbp.destroy(b);
 #	i:= getRefCount(b);
 #	printf("after destroy refcount =%d\n",i);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
-    i := bbp.getRefCount(b);	# 2 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("refcount =%d\n",i);	# 3 IOprint_formatted_int ($5:int)<-($6:str)(i:int)
-    bat.insert(b,1,"bat B");	# 4 BKCinsert_bun ($7:void)<-(b:bat[:int,:str])($8:int)($9:str)
-    io.print(b);	# 5 IOprint_val ($10:int)<-(b:bat[:int,:str])
-    i := bbp.getRefCount(b);	# 6 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("refcount =%d\n",i);	# 7 IOprint_formatted_int ($11:int)<-($6:str)(i:int)
-    bat.destroy(b);	# 8 BKCdestroy ($12:void)<-(b:bat[:int,:str])
-    i := bbp.getRefCount(b);	# 9 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("after destroy refcount =%d\n",i);	# 10 IOprint_formatted_int ($13:int)<-($14:str)(i:int)
-end main;	# 11  
+    bbp.open();	# 1 CMDbbpopen ($1:void)
+    b := bbp.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-($3:int)($4:str)
+    i := bbp.getRefCount(b);	# 3 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("refcount =%d\n",i);	# 4 IOprint_formatted_int ($6:int)<-($7:str)(i:int)
+    bat.insert(b,1,"bat B");	# 5 BKCinsert_bun ($8:void)<-(b:bat[:int,:str])($9:int)($10:str)
+    io.print(b);	# 6 IOprint_val ($11:int)<-(b:bat[:int,:str])
+    i := bbp.getRefCount(b);	# 7 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("refcount =%d\n",i);	# 8 IOprint_formatted_int ($12:int)<-($7:str)(i:int)
+    bbp.destroy(b);	# 9 CMDbbpdestroyBAT1 ($13:void)<-(b:bat[:int,:str])
+    i := bbp.getRefCount(b);	# 10 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("after destroy refcount =%d\n",i);	# 11 IOprint_formatted_int ($14:int)<-($15:str)(i:int)
+end main;	# 12  
 refcount =1
 #-------------------------#
 # h	tmp_4		  # name
@@ -38,5 +40,5 @@ refcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1
-!ERROR: MALexception:bbp.getBATrefcnt:cannot access bat bid in bbp
+free the bat as well!ERROR: MALexception:bbp.getBATrefcnt:cannot access bat bid in bbp
 >

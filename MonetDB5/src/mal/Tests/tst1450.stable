@@ -260,7 +260,7 @@ function Admin.main():int;	# 0  (main:int)
     aa_a := bat.reverse(view_bbp_name);	# 2 BKCreverse (aa_a:bat[:str,:int])<-(view_bbp_name:bat[:int,:str])
 barrier ba_a := algebra.exist(aa_a,"tpe");	# 3 ALGexist (ba_a:bit)<-(aa_a:bat[:str,:int])($4:str) jump 7
     tpe := bbp.bind("tpe");	# 4 CMDbbpbind (tpe:bat[:any,:any])<-($4:str)
-    enum.destroy(tpe);	# 5 ENUMdestroy ($6:void)<-(tpe:bat[:any,:any])
+    bbp.destroy(tpe);	# 5 CMDbbpdestroyBAT1 ($6:void)<-(tpe:bat[:any,:any])
     commit := bbp.bind("commit");	# 6 CMDbbpbind (commit:bat[:any,:any])<-($8:str)
 exit ba_a;	# 7  (ba_a:bit)
     a := bbp.new(:oid,:oid);	# 8 CMDBATnew (a:bat[:oid,:oid])<-($10:oid)($11:oid)

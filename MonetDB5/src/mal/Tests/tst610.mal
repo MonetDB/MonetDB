@@ -19,9 +19,9 @@ setPersistent(b);
 print("open box");
 bbp.open();
 refs();
-t:= bind("tasks");
+t:= bbp.bind("tasks");
 print(t);
-bat.destroy(t,true);
+bbp.destroy(t,true);
 refs();
 # the bat is still visible, because the destroy only
 # marks it for deletion at the end of session or
@@ -35,6 +35,7 @@ bbp.release(t);
 refs();
 print(t);
 # but it is still there and should
+print("get released bat");
 t:=bind("tasks");
 refs();
 print(t);
