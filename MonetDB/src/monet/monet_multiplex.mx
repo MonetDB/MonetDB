@@ -518,7 +518,7 @@ Set the correct properties in the result BAT.
 	if (MULTIJOIN_SYNCED(r)) {
 		ALIGNsetH(desc.b, desc.piv[(int) MULTIJOIN_LEAD(r)]);
 	} else {
-		desc.b->hsorted = MULTIJOIN_SORTED(r)?1:0;
+		desc.b->hsorted = MULTIJOIN_SORTED(r)?GDK_SORTED:0;
 		if (MULTIJOIN_KEY(r)) BATkey(desc.b, TRUE);
 	}
 	desc.b->tsorted = 0;
@@ -1131,7 +1131,7 @@ but rather discard the complete result and return an error.
 			ALIGNsetH(retb, b3);
 		}
 		BATkey(retb, 1);
-		retb->hsorted = 1;
+		retb->hsorted = GDK_SORTED;
 	} else if (replace) { 
 		retb->tsorted = FALSE;
 		BATkey(BATmirror(retb), FALSE);

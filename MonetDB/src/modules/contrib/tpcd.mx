@@ -858,7 +858,7 @@ ordered like 'extent'.
 		yy++;
 	    }
  	}
-	bn->hsorted = 1;
+	bn->hsorted = GDK_SORTED;
 	bn->tsorted = 0;
 	ALIGNsetH(bn, extent); 
 	return;

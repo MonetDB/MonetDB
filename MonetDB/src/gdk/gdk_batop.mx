@@ -1734,8 +1734,8 @@ BAT *part_bat(BAT *b, int ht, int tt, size_t expected_size, int respect_order){
 	if (bn) {
 	    BATkey(bn, b->hkey);
 	    BATkey(BATmirror(bn), b->tkey);
-            bn->hsorted = (respect_order && (BAThordered(b)&1));
-            bn->tsorted = (respect_order && (BATtordered(b)&1));
+            bn->hsorted = (respect_order && (BAThordered(b)&1))?GDK_SORTED:0;
+            bn->tsorted = (respect_order && (BATtordered(b)&1))?GDK_SORTED:0;
 	}
         return bn;
 }

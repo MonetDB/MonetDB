@@ -822,7 +822,7 @@ bunins_failed:
         } else {
                 bn->hsorted = l->hsorted;
         }
-        bn->tsorted = BATtordered(l)&BATtordered(r)&1;
+        bn->tsorted = (BATtordered(l)&BATtordered(r)&1)?GDK_SORTED:0;
         if (BATtkey(l)) {
                 /* if BATtkey(l) elements of r match at most once */
                 if ((BATtordered(l)&1) && BATcount(bn) == BATcount(r)) {
@@ -1005,7 +1005,7 @@ BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
 			}
 			bunfastins_nocheck(bn, s, BUNhead(l, p), t, xx); s += xx;
 		}
-		bn->tsorted = BATtordered(l) & BATtordered(r) & 1;
+		bn->tsorted = (BATtordered(l) & BATtordered(r) & 1)?GDK_SORTED:0;
 	} else {
 		/* hash based algorithm (default) */
 		int any = ATOMstorage(r->htype);

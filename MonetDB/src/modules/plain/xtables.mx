@@ -169,8 +169,8 @@ for quick re-use. They are attached to the CT by means of a histolink.
      }
 
      PROC CTorderby_rev(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
-         if (not(b.reverse().ordered())) {
-                b := b.reverse().sort().reverse();
+         if (not(b.reverse().ordered_rev())) {
+                b := b.reverse().sort_rev().reverse();
          }
          return CTrefine_rev(b,a);
      }
@@ -271,7 +271,7 @@ static bat build_hl(Heap* hp, bat histo, BAT *b) {
 		h->halign = NOID_AGGR(b->halign);
 	        BATkey(h, TRUE);
         	h->tsorted = 0;
-        	if ((h->hsorted = BAThordered(b)) == TRUE) {
+        	if ((h->hsorted = BAThordered(b))&1) {
         		if (BATcount(h) == BATcount(b)) {
                 		ALIGNsetH(h,BATmirror(b));
         		}
@@ -710,7 +710,7 @@ CTgroup_custom(
 		return GDK_FAIL;
 	}
 	/* Poor man's clustered test: sorted & !keyed => clustered  */
-	if ( (b->tsorted) && !(b->tkey) ) {
+	if ( ((b->tsorted)&1) && !(b->tkey) ) {
 	  @:choosegroup@1(tailtype(b,TRUE),bn,NULL,clustered,histo)@
 	} else {
 	  @:choosegroup@1(tailtype(b,TRUE),bn,NULL,unclustered,histo)@
@@ -862,13 +862,13 @@ int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 
 	/* CTderive with correct lookup method (hash,synced) and type */
 	if (synced) {
-	   if ((ct->tsorted) && !(ct->tkey)) {
+	   if (((ct->tsorted)&1) && !(ct->tkey)) {
 		@:choosederive(sync,clustered)@
 	   } else {
 		@:choosederive(sync,unclustered)@
            }
 	} else {
-	   if ((ct->tsorted) && !(ct->tkey)) {
+	   if (((ct->tsorted)&1) && !(ct->tkey)) {
 		@:choosederive(hash,clustered)@
 	   } else {
 		@:choosederive(hash,unclustered)@
@@ -1138,7 +1138,7 @@ int refine(BAT **res, BAT *b, BAT *a, int rv) {
 	dst = sort_flush(buf, (size_t) (cur-buf), a->ttype, base?base:a->theap.base, dst, &id, rv);
 	GDKfree(buf);
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-	bn->tsorted = 1;
+	bn->tsorted = GDK_SORTED;
     } 
     *res = bn;
     return GDK_SUCCEED;
