@@ -146,7 +146,7 @@ We cannot release and remap, as then our changes will be lost, so we map
 the next chunk to exactly the right address. Normally MAP_FIXED is very
 dangerous, as it destroys all other mappings that you might have, even
 if it is a piece of shared library code that is PROT_EXEC!
-As we now that size < maxsize, we know that we have this range
+As we know that size < maxsize, we know that we have this range
 PROT_NONE, so we can do it.
 @c
 		totsize -=  h->offset + h->size;
