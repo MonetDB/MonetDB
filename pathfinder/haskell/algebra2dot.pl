@@ -1,0 +1,75 @@
+#!/usr/bin/perl -w
+#
+#    Convert Algebra output from Haskell script into AT&T dot format.
+#
+#    Copyright Notice:
+#    -----------------
+#
+#     The contents of this file are subject to the MonetDB Public
+#     License Version 1.0 (the "License"); you may not use this file
+#     except in compliance with the License. You may obtain a copy of
+#     the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+#
+#     Software distributed under the License is distributed on an "AS
+#     IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+#     implied. See the License for the specific language governing
+#     rights and limitations under the License.
+#
+#     The Original Code is the ``Pathfinder'' system. The Initial
+#     Developer of the Original Code is the Database & Information
+#     Systems Group at the University of Konstanz, Germany. Portions
+#     created by U Konstanz are Copyright (C) 2000-2004 University
+#     of Konstanz. All Rights Reserved.
+#
+#     Contributors:
+#             Jens Teubner <jens.teubner@uni-konstanz.de>
+#
+#    $Id$
+#
+#
+
+
+use strict;
+
+my $left_bracket = '[';
+my $right_bracket = ']';
+
+my $char;
+my $pre = 0;
+my @pre_stack = (0);
+my %label = ();
+
+print "digraph foo {\n";
+
+# iterate over lines
+while (<>) {
+
+    # and over each character
+    foreach (split //) {
+        $char = $_;
+
+        if ($char eq $left_bracket) {
+            $pre++;
+            push @pre_stack, $pre;
+            print "node$pre_stack[-2] -> node$pre_stack[-1];\n";
+        }
+        elsif ($char eq $right_bracket) {
+            print "node$pre_stack[-1] \[label=\"$label{$pre_stack[-1]}\"\]\n";
+            pop @pre_stack;
+        }
+        else {
+            # quote quotes correctly
+            $char =~ s/\"/\\\"/g;
+            $char =~ s/\n//g;
+            $label{$pre_stack[-1]} .= $char;
+        }
+    }
+}
+
+print "node$pre_stack[-1] \[label=\"$label{$pre_stack[-1]}\"\]\n";
+
+print "}\n";
+
+if ($#pre_stack != 0) {
+    warn "Warning: parens do not match.\n";
+}

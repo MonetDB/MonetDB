@@ -1,0 +1,133 @@
+#! /bin/sh
+#
+# Usage: ./haskellify-xml <xml-file> <pre> <frag>
+# (Example: ./haskellify-xml foo.xml 12 2)
+#
+#    Copyright Notice:
+#    -----------------
+#
+#     The contents of this file are subject to the MonetDB Public
+#     License Version 1.0 (the "License"); you may not use this file
+#     except in compliance with the License. You may obtain a copy of
+#     the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+#
+#     Software distributed under the License is distributed on an "AS
+#     IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+#     implied. See the License for the specific language governing
+#     rights and limitations under the License.
+#
+#     The Original Code is the ``Pathfinder'' system. The Initial
+#     Developer of the Original Code is the Database & Information
+#     Systems Group at the University of Konstanz, Germany. Portions
+#     created by U Konstanz are Copyright (C) 2000-2004 University
+#     of Konstanz. All Rights Reserved.
+#
+#     Contributors:
+#             Torsten Grust <torsten.grust@uni-konstanz.de>
+#             Jens Teubner <jens.teubner@uni-konstanz.de>
+#             Sabine Mayer <sabine.mayer@uni-konstanz.de>
+#
+#    $Id$
+#
+
+# argument #1: XML file (mandatory)
+XML=$1
+
+# argument #2: starting pre value for document node (default: 0)
+PRE=${2:-0}
+
+# argument #3: fragment identifier for document (default: 0)
+FRAG=${3:-0}
+
+# SAXON XSLT processor
+SAXON=saxon
+
+# Pathfinder XML shredder
+PFSHRED=../../loader/pf-shred
+
+# temporary file prefix
+TMP=__XMark$$
+
+# ......................................................................
+# transform attributes into elements, strip whitespace-only text nodes
+echo "-- transform attributes into elements, strip whitespace ($SAXON)"
+$SAXON $XML attr2elem.xsl > $TMP-1
+
+# shred transformed XML into relations
+echo "-- shred transformed XML into relations ($PFSHRED)"
+$PFSHRED -v -o $TMP-2 $TMP-1
+
+# remove relations unused by us
+rm -f $TMP-2.{@,com,pi}
+
+# generate pre|size|level|kind|prop|frag mapping from relations
+# {.pre,.qn,.text}
+echo "-- generate pre|size|level|kind|prop|frag mapping from relations"
+
+# (1) remove document node (first node) from .pre relation,
+#     remove any whitespace for further processing
+#     use # as delimiter
+tail +2 $TMP-2.pre | sed 's/ //g' | sed 's/,/\#/g' > $TMP-3.pre
+
+# (2) generate pre column (starting with pre = argument #2 + 1)
+seq $(( $PRE + 1 )) $(( `wc -l $TMP-3.pre | cut -d${TMP:0:1} -f1` + $PRE )) \
+	> $TMP-4.pre
+
+# (3) attach leading pre column
+paste -d'#' $TMP-4.pre $TMP-3.pre > $TMP-5.pre
+
+# (4) remove the Monet `@0' oid mark
+sed s/@.//g $TMP-5.pre > $TMP-6.pre
+
+# (5) separate the element and text nodes
+grep '0$' $TMP-6.pre > $TMP-7.elem
+grep '1$' $TMP-6.pre > $TMP-7.text
+
+# (6) generate and attach identifier column for .qn relation 
+#     (void head in Monet),
+#     remove tag namespace field (unused in XMark)
+seq 0 $(( `wc -l $TMP-2.qn | cut -d${TMP:0:1} -f1` - 1 )) > $TMP-8.qn
+cut -d, -f2 $TMP-2.qn > $TMP-3.qn
+paste -d'#' $TMP-8.qn $TMP-3.qn > $TMP-9.qn
+
+# (7) generate and attach identifier column for .text relation 
+#     (void head in Monet)
+seq 0 $(( `wc -l $TMP-2.text | cut -d${TMP:0:1} -f1` - 1 )) > $TMP-8.text
+paste -d'#' $TMP-8.text $TMP-2.text > $TMP-9.text
+
+# (8) join element nodes with tags
+#     reorder fields in result to match node encoding in Haskell program
+join -t'#' -1 4 -2 1 -o 1.1,1.2,1.3,1.5,2.2 $TMP-7.elem $TMP-9.qn \
+	> $TMP-10.elem
+
+# (9) join text nodes with content
+#     reorder fields in result to match node encoding in Haskell program
+join -t'#' -1 4 -2 1 -o 1.1,1.2,1.3,1.5,2.2 $TMP-7.text $TMP-9.text \
+	> $TMP-10.text
+
+# (10) re-union element and text nodes, sort according to pre column
+sort -t'#' -n -k1,1 $TMP-10.elem $TMP-10.text > $TMP-11.nodes
+
+# (11) produce Haskell-style output:
+#      [ N pre, I size, I level, I kind, S prop, I frag ]
+#      (first node is document node)
+echo "-- produce Haskell-style output (in file \``basename $XML`.hs')"
+awk -F'#' -f- $TMP-11.nodes > `basename $XML`.hs <<AWK
+  BEGIN { printf " [\n" } 
+  BEGIN { printf "  [ N %d,\tI %d,\tI (-1),\tI _doc,\tS %s,\t I %d ]\n", 
+                 $PRE, 
+                 `wc -l $TMP-11.nodes | cut -d${TMP:0:1} -f1`,
+                 "\"$XML\"",
+                 $FRAG }
+        { printf " ,[ N %d,\tI %d,\tI %d,\tI %s,\tS %s,\tI %d ]\n", 
+                 \$1, 
+                 \$2, 
+                 \$3, 
+                 \$4 == 0 ? "_elem" : "_text", 
+                 \$5, 
+                 $FRAG }
+  END   { printf "\n ]" } 
+AWK
+
+rm -f $TMP*
+
