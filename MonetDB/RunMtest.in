@@ -17,6 +17,10 @@ PYTHONPATH="${builddir}/src/testing:${srcdir}/src/testing:${builddir}/src/common
 LD_LIBRARY_PATH="${MOD_PATH}:${builddir}/src/common/.libs:${builddir}/src/gdk/.libs:${builddir}/src/mapi/clients/.libs:${builddir}/src/modules/plain/stream/.libs:${builddir}/src/monet/.libs${LD_LIBRARY_PATH}"
 export PATH PYTHONPATH LD_LIBRARY_PATH
 
+# as opposed to the libraries, <modname>.mil files don't end up the .libs
+# subdirectories, hence:
+MOD_PATH="$MOD_PATH:`echo $MOD_PATH | sed 's|/\.libs||g'`"
+
 # execute Mtest.py in the source directory
 cd "$srcdir"
 
