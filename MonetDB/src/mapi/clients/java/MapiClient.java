@@ -68,7 +68,7 @@ public class MapiClient
       		Mapi M = new Mapi( hostname, portnr, user, password, lang );
 		Reader r = new BufferedReader(new InputStreamReader(System.in));
 		LineNumberReader input = new LineNumberReader(r);
-		DataOutputStream out = new DataOutputStream(System.out);
+		Writer out = new OutputStreamWriter(System.out);
 		String s;
 		System.out.print(M.getPrompt());
 		while((s=input.readLine()) != null){

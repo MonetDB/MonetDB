@@ -8,7 +8,7 @@ EOMIL
 
 elif [ -f "$MONET_PREFIX/lib/MonetDB/java/mapi.jar" ]; then
 
-java -cp "$MONET_PREFIX/lib/MonetDB/java/mapi.jar" MapiClient localhost $MAPIPORT << EOMIL
+LANG="en_US.UTF-8" java -cp "$MONET_PREFIX/lib/MonetDB/java/mapi.jar" MapiClient localhost $MAPIPORT << EOMIL
 	print("\303\251\303\251n");
 EOMIL
 

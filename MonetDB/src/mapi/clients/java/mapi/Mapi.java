@@ -322,9 +322,7 @@ throws MapiException
 			traceLog.println("setup socket "+host+":"+port);
 		socket   = new Socket( host, port );
 		fromMonet= new BufferedReader(
-			new InputStreamReader(socket.getInputStream()));
-			//new InputStreamReader(socket.getInputStream(),"UTF-8"));
-		//fromMonet= new DataInputStream(socket.getInputStream());
+			new InputStreamReader(socket.getInputStream(),"UTF-8"));
 		toMonet= new DataOutputStream(socket.getOutputStream());
 		connected = true;
 	} catch(IOException e) {
@@ -1112,7 +1110,7 @@ public int queryArray(String cmd, String arg[]){
  * header information, but simply through the output
  * received from the server to the stream indicated.
 */
-public int quickQuery(String cmd, DataOutputStream fd){
+public int quickQuery(String cmd, Writer fd){
 	check("quickQuery");
 	if(cmd == null) return setError("Null query","queryArray");
 	prepareQueryInternal(cmd);
@@ -1121,7 +1119,7 @@ public int quickQuery(String cmd, DataOutputStream fd){
 	if(trace && error !=MOK) traceLog.println("query returns error");
 	return error;
 }
-public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
+public int quickQueryArray(String cmd, String arg[], Writer fd){
 	check("quickQueryArray");
 	if(cmd == null) return setError("Null query","quickQueryArray");
 	prepareQueryArrayInternal(cmd,arg);
@@ -1448,19 +1446,18 @@ public String fetchLineInternal() throws MapiException {
  * @param fd - the file destination
 */
 
-public int quickResponse(DataOutputStream fd){
+public int quickResponse(Writer fd){
 	String msg;
 
 	if( fd== null)
 		return setError("File destination missing","response");
 	try{
-		while( active && (msg=fetchLineInternal()) != null)
-		try{
-			fd.writeBytes(msg.toString());
-			fd.writeBytes("\n");
-			fd.flush();
-		} catch( IOException e){
-			throw new MapiException("Can not write to destination" );
+		PrintWriter p = new PrintWriter(fd);
+		while( active && (msg=fetchLineInternal()) != null) {
+			p.println(msg);
+			p.flush();
+			if (p.checkError())
+				throw new MapiException("Can not write to destination" );
 		}
 	} catch(MapiException e){
 	}
