@@ -690,6 +690,7 @@ def ApproveOutput (env, TST) :
                             f.write(l)
                             as = 'Approving'
                         else:
+			    f.write(l[:1]+'\n')
                             as = 'Skipping'
                         Warn('%s new (error) message: "%s"' % (as,string.replace(l, os.linesep, '')))
                         sem = 1
@@ -701,7 +702,7 @@ def ApproveOutput (env, TST) :
                 os.remove(stableOUTPUT+".ORG")
                 os.remove(patch+".1")
             else:
-                print "No differences detected between  %s and  stable.%s%s  that are not ignored be Mtest.py." % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM)
+                print "No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM)
             os.remove(patch+".0")
             
             thefile = os.path.split(stableOUTPUT)[1]
@@ -715,7 +716,7 @@ def ApproveOutput (env, TST) :
                 Warn('There are other (specific) stable outputs for test  %s:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
                 STDERR.write('  To propagate the changes that were just made in  %s\n' % os.path.join(TSTDIR,'Tests',thefile))
                 STDERR.write('  to the other (specific) stable outputs,\n')
-                STDERR.write('  simply apply the patch in  %s  to them.\n' % patch)
+                STDERR.write('  simply apply the patch in  %s  to them.\n\n' % patch)
                 STDERR.flush()
         else:
             Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
