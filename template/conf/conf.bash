@@ -167,7 +167,6 @@ fi
 
 if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv" ] ; then
-		libpath="/soft/IntelC++-6.0-020312Z/lib:${libpath}"
 		cc="icc"
 		cxx="icc"
 		if [ "${what}" = "MONET" ] ; then
