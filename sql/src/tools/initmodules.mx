@@ -4,10 +4,20 @@
 @a Florian Waas
 
 
-@= install_module
 {	extern oid @1_Module_Install(TBLinstall*, str);
 	DL_regfcn(DL_reglib("@1", NULL, 40), 
 		  @1_Module_Install, "@1_Module_Install" );
+}
+@= install_module
+{
+        str initscript=NULL;
+	TBL_loadmod( c, "@1", 0, &initscript );
+        if (initscript) {
+		Cntxt stk = NULL;
+		ValRecord res;
+                interpret_str(stk, initscript, &res);
+		GDKfree(initscript);
+	}
 }
 @c
 #include "gdk.h"

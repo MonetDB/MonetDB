@@ -7,7 +7,7 @@ CXXFLAGS = $(CFLAGS)
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
 
-STATIC_MODS = -L$(MONET_PREFIX)/lib/Monet \
+STATIC_MODS = -L$(MONET_PREFIX)/lib/MonetDB \
 	-l_kernel -l_arith \
 	-l_bat -l_algebra \
 	-l_sys -l_trans \
@@ -60,10 +60,9 @@ largeTOC_SHARED_MODS =	\
 CONFLICT_MODS =	\
 	-l_perfex
 
-EXTRA_DIST = static_modules.mx
+EXTRA_DIST = static_modules.mx 
 
 bin_Mserver = {
-	SOURCES = Mserver.mx initmodules.mx 
+	SOURCES = Mserver.mx.in initmodules.mx 
 	LIBS = -L$(MONET_PREFIX)/lib -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONET_LIBS)
 }
-

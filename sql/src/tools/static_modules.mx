@@ -2,11 +2,11 @@
 /* core */
 @:install_module(kernel)@
 @:install_module(arith)@
+@:install_module(str)@
 @:install_module(bat)@
 @:install_module(algebra)@
 @:install_module(sys)@
 @:install_module(trans)@
-@:install_module(str)@
 
 #ifdef STATIC
 /* mapi */
