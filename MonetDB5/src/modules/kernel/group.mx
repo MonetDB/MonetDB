@@ -151,7 +151,7 @@ command min(b:BAT[any::2,any::1], e:BAT[any::2,any]) : BAT[any::2,any::1] = CTmi
 command max(b:BAT[any::2,any::1], e:BAT[any::2,any]) : BAT[any::2,any::1] = CTmax 
 	comment "grouped tail maximum";
 
-command count(b:BAT[any::2,any], e:BAT[any::2,any]) : BAT[any::2,int] = CTcount 
+command count(b:BAT[any::2,any], e:BAT[any::2,any], nonils:bit) : BAT[any::2,int] = CMDaggr_count 
 	comment "grouped count";
 command size(b:BAT[any::2,bit], e:BAT[any::2,any]) : BAT[any::2,int] = CTsize
 	comment "grouped count of true values";
@@ -1038,7 +1038,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 
 
 @= arithpump
-str CTsum_@1(int *retval, int *bid,int  *eid){
+str CTsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
 	BAT *ret, *b, *e;
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	@1 zero = (@1) 0, *sums;
@@ -1205,7 +1205,8 @@ str CT@1(int *retval, int *bid,int  *eid){
                 BUNfndOID(r, bn, h);
                 if (r) {
                         ptr t = BUNtail(b,p);
-                        if (ATOMcmp(btt,t,bt_nil)) {
+                        /*if (ATOMcmp(btt,t,bt_nil)) {*/
+			@1 {
                                 int *dst = (int*) BUNtloc(bn, r);
                                 (*dst)++;
                         }
@@ -1220,7 +1221,8 @@ str CT@1(int *retval, int *bid,int  *eid){
 
                 if (h >= 0 && h < range) {
                         ptr t = BUNtail(b,p);
-                        if (ATOMcmp(btt,t,bt_nil)) {
+                        /* if (ATOMcmp(btt,t,bt_nil)) {*/
+			@1 {
                                 cnt[h]++;
                         }
                 }
@@ -1232,7 +1234,7 @@ str CT@1(int *retval, int *bid,int  *eid){
         GDKfree(cnt);
 @c
 
-str CTcount(int *retval, int *bid,int  *eid){
+str CMDaggr_count(int *retval, int *bid,int  *eid, bit *ignore_nils){
 	BAT *ret, *b, *e;
 	BAT *bn ;
 	int zero = 0, *cnt;
@@ -1243,9 +1245,9 @@ str CTcount(int *retval, int *bid,int  *eid){
 
 
 	@:getBATdescriptor(retval,bid,b,count)@
-	@:chkHeader(e,CTcount@1)@
+	@:chkHeader(e,CMDaggr_count@1)@
 	@:getBATdescriptor(retval,eid,e,count)@
-	@:chkHeader(e,CTcount@1)@
+	@:chkHeader(e,CMDaggr_count@1)@
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	btt = b->ttype;
         bt_nil = ATOMnilptr(b->ttype);
@@ -1273,11 +1275,23 @@ str CTcount(int *retval, int *bid,int  *eid){
 
         /* scan b, and add increment totals for true values */
         if (range > SMALL_AGGR_MAX) {
-                ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count\n",range,SMALL_AGGR_MAX);
-                @:large_aggr_count@
+		if (*ignore_nils) {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(unsigned long)range,SMALL_AGGR_MAX);
+                       @:large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
+               } else {
+                       ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n",(unsigned long)range,SMALL_AGGR_MAX);
+                       @:large_aggr_count()@
+               }
+
         } else {
-                ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count\n",range,SMALL_AGGR_MAX);
-                @:small_aggr_count@
+               if (*ignore_nils) {
+                       ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(unsigned long)range,SMALL_AGGR_MAX);
+                       @:small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
+               } else {
+                       ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n",(unsigned long)range,SMALL_AGGR_MAX);
+                       @:small_aggr_count()@
+               }
+
         }
 
 	*retval = bn->batCacheid;

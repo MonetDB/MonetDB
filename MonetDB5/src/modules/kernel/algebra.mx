@@ -421,8 +421,11 @@ These operations examine a BAT, and compute some simple aggregate result
 over it.
 @- BAT size
 @mal
-command count ( b:bat[any,any] ) : int = CMDcount
+command count( b:bat[any,any] ) : int = CMDcount
 comment "Return the number of elements currently in a BAT.";
+command count ( b:bat[any,any], ignore_nils:bit ) : int = CMDcount_nil
+comment "Return the number of elements currently in a BAT
+ignores BUNs with nil-tail iff ignore_nils==TRUE.";
 command topN ( b:bat[any,any], top:lng ) : int = CMDtopN
 comment "Trim all but the top N tuples.";
 @- Histogram on Tail 
@@ -1025,6 +1028,17 @@ str CMD@1(int *result, int* bid, int *param) {
 @:binary(sdiff, BATsdiff)@
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
+
+str CMDcount_nil(int *result, int *bid, bit *ignore_nils) {
+	BAT *b;
+	@:getBATdescriptor(result,bid,b,count_nil)@
+	if (*ignore_nils)
+	      *result = (int) BATcount_no_nil(b);
+	else
+	      *result = (int) BATcount(b);
+	return MAL_SUCCEED;
+}
+
 
 str CMDfetchjoin(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn;

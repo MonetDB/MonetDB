@@ -17,6 +17,7 @@ use "kernel/alarm";
 use "kernel/mmath";
 use "atoms/atoms_init";
 use "kernel/bat";
+use "kernel/mkey";
 use "kernel/algebra";
 use "kernel/calc";
 use "kernel/batcalc";	

@@ -95,7 +95,7 @@ command max(b:BAT[oid,any::1], g:BAT[oid,oid], e:BAT[oid,any]) : BAT[oid,any::1]
 
 command count(b:BAT[oid,any], e:BAT[oid,any]) : BAT[oid,int] = CMDaggrX3_count
 	comment "grouped count";
-command count(b:BAT[oid,any], g:BAT[oid,oid], e:BAT[oid,any]) : BAT[oid,int] = CMDaggrX3_count3
+command count(b:BAT[oid,any], g:BAT[oid,oid], e:BAT[oid,any], nonils:bit) : BAT[oid,int] = CMDaggrX3_count3
 	comment "grouped count";
 
 command size(b:BAT[oid,bit], e:BAT[oid,any]) : BAT[oid,int] = CMDaggrX3_size
@@ -1075,49 +1075,69 @@ str CMDaggrX3_@1(int *ret, int *bid, int *eid){
 	/* scan b, and increment counts in-place or in cnt-array */
         bhsb = b->hseqbase;
         btt = b->ttype;
-	switch(ATOMstorage(btt)) {
-	 case TYPE_chr:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,chr))@
-	 case TYPE_sht:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,sht))@
-	 case TYPE_int:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,int))@
-	 case TYPE_lng:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,lng))@
-	 case TYPE_flt:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,flt))@
-	 case TYPE_dbl:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,dbl))@
-	 default: if (b->tvarsized) {
-			@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtvar(b,p),bt_nil,btt))@
-		  } else {
-		 	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtloc(b,p),bt_nil,btt))@
-		  }
-	}
-	if (@1) {
-        	/* copy cnt array to final result */
-       		BATloopFast(bn, p, q, xx) {
-			oid h = (*(oid*) BUNh@4(bn,p)) - min;
-			*(int*)BUNtloc(bn, p) = cnt[h];
-		}
-	        GDKfree(cnt);
-	}
+        if (*ignore_nils) {
+                switch(ATOMstorage(btt)) {
+                 case TYPE_chr: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,chr)))@
+                 case TYPE_sht: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,sht)))@
+                 case TYPE_int: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,int)))@
+                 case TYPE_lng: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,lng)))@
+                 case TYPE_flt: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,flt)))@
+                 case TYPE_dbl: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,dbl)))@
+                 default: if (b->tvarsized) {
+                                @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtvar(b,p),bt_nil,btt)))@
+                          } else {
+                                @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtloc(b,p),bt_nil,btt)))@
+                          }
+                }
+        } else {
+                switch(ATOMstorage(btt)) {
+                 case TYPE_chr: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+                 case TYPE_sht: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+                 case TYPE_int: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+                 case TYPE_lng: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+                 case TYPE_flt: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+                 case TYPE_dbl: @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+                 default: if (b->tvarsized) {
+                                @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+                          } else {
+                                @:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+                          }
+                }
+        }
+        if (@1) {
+                /* copy cnt array to final result */
+                BATloopFast(bn, p, q, xx) {
+                        oid h = (*(oid*) BUNh@4(bn,p)) - min;
+                        *(int*)BUNtloc(bn, p) = cnt[h];
+                }
+                GDKfree(cnt);
+        }
+
 @c
 /*	aggrX3_count_loop
-	@7:	atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt)		b-tail nil check
-		simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl})
+       @7:     if (!atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt))            b-tail nil check
+               if (!simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl}))
+
 */
 @= aggrX3_count_loop
+
+        ALGODEBUG THRprintf(GDKout, "aggrX3_count_loop(@1,@2,@3,@4,@5,@6,@7);\n");
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) @5;
 
 		@3(r, bn, (oid*)h);
 		if (r) {
-			/*if (!@7) {*/
+			@7 {
 				int *dst = (int*) @6;
 				(*dst)++;
-			/*}*/
+			}
 		}
 	} 
 	break;
 @c
 	int rtrn, tt;
 
-str CMDaggrX3_count(int *retid, int *bid, int *eid){
+str CMDaggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils){
 	BAT *b, *e;
 	BAT *bn;
 	int zero = 0, *cnt;
@@ -1853,18 +1873,36 @@ str CMDaggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	btt = b->ttype;
-	switch(ATOMstorage(btt)) {
-	 case TYPE_chr:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,chr))@
-	 case TYPE_sht:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,sht))@
-	 case TYPE_int:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,int))@
-	 case TYPE_lng:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,lng))@
-	 case TYPE_flt:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,flt))@
-	 case TYPE_dbl:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,dbl))@
-	 default: if (b->tvarsized) {
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtvar(b,p),bt_nil,btt))@
-		  } else {
-		 	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtloc(b,p),bt_nil,btt))@
-		  }
+
+
+       if (*ignore_nils) {
+               switch(ATOMstorage(btt)) {
+                case TYPE_chr: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,chr)))@
+                case TYPE_sht: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,sht)))@
+                case TYPE_int: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,int)))@
+                case TYPE_lng: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,lng)))@
+                case TYPE_flt: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,flt)))@
+                case TYPE_dbl: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,dbl)))@
+                default: if (b->tvarsized) {
+                               @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtvar(b,p),bt_nil,btt)))@
+                         } else {
+                               @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtloc(b,p),bt_nil,btt)))@
+                         }
+               }
+       } else {
+               switch(ATOMstorage(btt)) {
+                case TYPE_chr: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+                case TYPE_sht: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+                case TYPE_int: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+                case TYPE_lng: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+                case TYPE_flt: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+                case TYPE_dbl: @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+                default: if (b->tvarsized) {
+                               @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+                         } else {
+                               @:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+                         }
+               }
 	}
 	if (@1) {
         	/* copy cnt array to final result */
@@ -1876,8 +1914,9 @@ str CMDaggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	}
 @c
 /*	aggrX3_count3_loop
-	@7:	atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt)		b-tail nil check
-		simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl})
+       @7:     if (!atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt))            b-tail nil check
+               if (!simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl}))
+1
 */
 @= aggrX3_count3_loop
 	BATloopFast(b, p, q, xx) {
@@ -1889,16 +1928,16 @@ str CMDaggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 
 			@3(r, bn, (oid*)h);
 			if (r) {
-				/*if (!@7) {*/
+				@7 {
 					int *dst = (int*) @6;
 					(*dst)++;
-				/*}*/
+				}
 			}
 		}
 	} 
 	break;
 @c
-str CMDaggrX3_count3(int *retid,int *bid, int *gid, int *eid){
+str CMDaggrX3_count3(int *retid,int *bid, int *gid, int *eid, bit *ignore_nils){
 	BAT *b,*g,*e;
 	BAT *bn;
 	int zero = 0, *cnt;
@@ -1925,7 +1964,7 @@ str CMDaggrX3_count3(int *retid,int *bid, int *gid, int *eid){
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		int k = BATjoin(BATmirror(g),b)->batCacheid;
-		return CMDaggrX3_count(retid, &k, eid);
+		return CMDaggrX3_count(retid, &k, eid, ignore_nils);
 	}
 
 	/* init: set all counts to zero and calculate min/max oid */

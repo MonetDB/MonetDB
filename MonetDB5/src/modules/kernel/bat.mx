@@ -909,18 +909,51 @@ void bun_inplace(BAT *b, oid id, ptr val )
 	b->batInserted = oldInserted;
 }
 
-size_t void_delete_bat( BAT *b, BAT *d){
+size_t void_delete_bat( BAT *b, BAT *d, int delta){
 	size_t nr = 0;
 	BUN r,s;
 	ptr nil = ATOMnilptr(b->ttype);
 
-	BATloop(d, r, s){
-		oid delid = *(oid*)BUNtail(d,r);
-		bun_inplace(b,  delid, nil);
-		nr++;
-	}
+        if (delta) {
+            for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) {
+                oid delid = *(oid*)BUNtail(d,r);
+                bun_inplace(b,  delid, nil);
+                nr++;
+            }
+        } else {
+            BATloop(d, r, s){
+                oid delid = *(oid*)BUNtail(d,r);
+                bun_inplace(b,  delid, nil);
+                nr++;
+            }
+        }
 	return nr;
 }
+size_t void_insert_delta( BAT *b, BAT *u ){
+        size_t nr = 0;
+        BUN r;
+        oid nil = oid_nil;
+
+        for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) {
+                BUNins(b,  (ptr)&nil, BUNtail(u,r));
+                nr++;
+        }
+        return nr;
+}
+
+size_t void_replace_delta( BAT *b, BAT *u){
+        size_t nr = 0;
+        BUN r;
+
+        for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) {
+                oid updid = *(oid*)BUNhead(u,r);
+                ptr val = BUNtail(u,r);
+                bun_inplace(b,  updid, val);
+                nr++;
+        }
+        return nr;
+}
+
 size_t void_replace_bat( BAT *b, BAT *u){
 	size_t nr = 0;
 	BUN r,s;
