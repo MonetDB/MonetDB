@@ -215,6 +215,7 @@ static int id_rand(void){
 	int i, r = rand();
 	for(i = 0; i < id_size; i++) 
 		if (id_hist[i] == r) {
+			cerr << "src/mel/command.mx:id_rand: found duplicate random number " << r << " => calling srand(time(NULL))!\n";
 			srand(time(NULL));
 			return id_rand();
 		} 
