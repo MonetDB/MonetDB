@@ -44,7 +44,6 @@ unsigned char *conv( unsigned char *org, iconv_t cd)
 			free(buf);
 			exit(1);
 		}
-		printf("%d %d\n", len, to - buf );
 		*to = 0;
 		return buf;
 	} else {

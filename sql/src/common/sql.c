@@ -1214,19 +1214,16 @@ static stmt *jointree_tmp(context * sql, list * l)
 	flag = 2;
 	joins = list_select(l, (void*)&flag, 
 			(fcmp)&reduced_joins, (fdup)&stmt_dup );
-	printf("%d\n", list_length(joins));
 	ps = pivot_sets(joins, &markid);
 	flag = 1;
 	joins = list_select(l, (void*)&flag, 
 			(fcmp)&reduced_joins, (fdup)&stmt_dup );
-	printf("%d\n", list_length(joins));
 	/*
 	merge_pivot_sets(ps, joins);
 	*/
 	flag = 0;
 	joins = list_select(l, (void*)&flag, 
 			(fcmp)&reduced_joins, (fdup)&stmt_dup );
-	printf("%d\n", list_length(joins));
 	/*
 	merge_pivot_sets(ps, joins);
 	*/

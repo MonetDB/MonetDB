@@ -289,7 +289,6 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	    		lc->out->flush( lc->out );
 
 			if (lc->debug&64){
-				fprintf(stderr, "debug\n");
 				stream_writeInt( out, 0 );
 				stream_writeInt( out, QDEBUG );
 				stream_writeInt( out, lc->debug );

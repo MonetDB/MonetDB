@@ -528,6 +528,8 @@ int lex_string(context * lc, int quote)
 	int cur = 0;
 	int escape = 0;
 
+	assert(lc->yylen == 0);
+
 	while ((cur = lex_getc(lc)) != EOF && (cur != quote || escape)) {
 		if (!escape && cur == '\\')
 			escape = 1;
@@ -734,6 +736,8 @@ int sqllex(YYSTYPE * yylval, void *parm)
 
 	if (!token) {
 		lc->yylen = 0;
+		lc->yytext[0] = 0;
+
 		token = tokenize(lc);
 		yylval->sval = lc->yytext;
 
