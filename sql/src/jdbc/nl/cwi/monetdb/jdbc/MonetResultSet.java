@@ -856,19 +856,46 @@ public class MonetResultSet implements ResultSet {
 			 * insensitive. Therefore this method will always return false.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
-			 * @returns true if so; false otherwise
+			 * @returns false
 			 */
 			public boolean isCaseSensitive(int column) {
 				return(false);
 			}
 
-			public boolean isSearchable(int column) {return(false);}
-			public boolean isCurrency(int column) {return(false);}
+			/**
+			 * Indicates whether the designated column can be used in a
+			 * where clause.
+			 * It is unknown to me what kind ot columns they regard to,
+			 * as I think all columns are useable in a where clause.
+			 * Returning true for all here, for the time being.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @returns true
+			 */
+			public boolean isSearchable(int column) {
+				return(true);
+			}
+
+			/**
+			 * Indicates whether the designated column is a cash value.
+			 * From the MonetDB database perspective it is by definition
+			 * unknown whether the value is a currency, because there are
+			 * no currency datatypes such as MONEY.  With this knowledge
+			 * we can always return false here.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @returns false
+			 */
+			public boolean isCurrency(int column) {
+				return(false);
+			}
+			
 			public int isNullable(int column) {return(columnNullableUnknown);}
 
 			/**
 			 * Indicates whether values in the designated column are signed
 			 * numbers.
+			 * Within MonetDB all numeric types are signed.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
