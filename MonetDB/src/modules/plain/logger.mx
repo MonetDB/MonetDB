@@ -254,7 +254,7 @@ void logger_bat(buf_p buf, BAT *b ){
 	} 
 	if (status&BBPDELETED){
 	    if (logger_debug&2)
-		fprintf(stderr, "logger_bat destroyed %ld \n", l.id );
+		fprintf(stderr, "logger_bat destroyed %d \n", l.id );
 	    l.flag = LOG_DESTROY;
 	    bwrite(buf, &l, sizeof(logf));
 	} 
@@ -275,8 +275,8 @@ void logger_bat(buf_p buf, BAT *b ){
 	    bwrite(buf, &l, sizeof(logf));
 	    for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
 		int s1,s2;
-		ptr h = BUNhead(b,p);
-		ptr t = BUNtail(b,p);
+		ptr h = (ptr)BUNhead(b,p);
+		ptr t = (ptr)BUNtail(b,p);
 		bwrite(buf, h, s1=ATOMlen(b->htype,h));
 		bwrite(buf, t, s2=ATOMlen(b->ttype,t));
 		sz += (s1+s2);
@@ -292,8 +292,8 @@ void logger_bat(buf_p buf, BAT *b ){
 	    bwrite(buf, &l, sizeof(logf));
 	    for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
 		int s1,s2;
-		ptr h = BUNhead(b,p);
-		ptr t = BUNtail(b,p);
+		ptr h = (ptr)BUNhead(b,p);
+		ptr t = (ptr)BUNtail(b,p);
 		bwrite(buf, h, s1=ATOMlen(b->htype,h));
 		bwrite(buf, t, s2=ATOMlen(b->ttype,t));
 		sz += (s1+s2);
@@ -371,13 +371,13 @@ void merge_block(char *p, char *block_end){
 	memcpy(&l, p, sizeof(logf)); p += sizeof(logf);
 	switch(l.flag){
 	case LOG_CREATE:
-		printf("create bat htype %d ttype %d id %ld\n",
+		printf("create bat htype %d ttype %d id %d\n",
 			(l.nr>>16)&((1<<16)-1), l.nr&((1<<16)-1), l.id);
 		b = BATnew((l.nr>>16)&((1<<16)-1),l.nr&((1<<16)-1),l.id);
 		BATmode(b,PERSISTENT);
 		break;
 	case LOG_DESTROY:
-		printf("destroy bat %ld\n", l.id);
+		printf("destroy bat %d\n", l.id);
 		b = BATdescriptor(l.id); 
 		BATmode(b,TRANSIENT);
 		BBPreclaim(b);
@@ -387,7 +387,7 @@ void merge_block(char *p, char *block_end){
 		s2 = strlen(p);
 		BBPrename(l.id,p);
 		BBPrename(-l.id,p+s1);
-		printf("rename bat %ld %s %s\n", l.id, p, p+s1);
+		printf("rename bat %d %s %s\n", l.id, p, p+s1);
 		break;
 	default:	
 		b = BATdescriptor(l.id); 
@@ -561,7 +561,6 @@ int logger_listen(int *port){
 			}
 		}
 	} while (1);
-	return GDK_SUCCEED;
 }
 
 @}
