@@ -429,7 +429,6 @@ faster system start.
 @-
 Time to execute the script files. Start with the init command[todo]
 @c
-        initClientPrg(mal_clients,"main");
 	if( dbinit )
 		callString(mal_clients,GDKstrdup(dbinit),listing);
 	if( GDKgetenv("mal_listing"))
@@ -440,6 +439,7 @@ Time to execute the script files. Start with the init command[todo]
 		monet_script[i]=0;
         }
 	GDKfree(monet_script);
+        initClientPrg(mal_clients,"main");
         serveClient(mal_clients);
 
 	assert(0);	/* should not come here */

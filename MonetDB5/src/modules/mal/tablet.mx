@@ -316,7 +316,7 @@ comment "Print all pages with header to a stream";
 
 pattern setFormat(b:any...):void 
 address TABsetFormat
-comment "Initialize a new reporting structure.\n");
+comment "Initialize a new reporting structure.";
 command finish():void 
 address TABfinishReport
 comment "Free the storage space of the 
