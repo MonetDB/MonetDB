@@ -497,7 +497,7 @@ coordination).
 #ifdef MAL_SCENARIO_DEBUG
     stream_printf(GDKout,"start @1\n");
 #endif
-    if(c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
+    if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
         /* error occurred */
 #ifdef MAL_SCENARIO_DEBUG
         stream_printf(GDKout,"Error in @1 phase\n");
@@ -516,6 +516,7 @@ void runScenario(Client c){
 	assert(c && c->phase[READER]!= 0);
 
     while( c->mode > FINISHING ){
+		msg= MAL_SUCCEED;
         @:runPhase(READER)@
         @:runPhase(PARSER)@
         @:runPhase(OPTIMIZE)@
