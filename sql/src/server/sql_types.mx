@@ -871,7 +871,7 @@ void sqltypeinit()
 
 	sql_type *ts[100];
 	sql_type **misc, **strings, **numerical, **decimals, **floats, **dates;
-	sql_type **t, *INT, *OID, *BIT, *DBL, *T;
+	sql_type **t, *INT, *LNG, *OID, *BIT, *DBL, *T;
 	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP;
 
  	t = ts;
@@ -908,7 +908,7 @@ void sqltypeinit()
 	/*sql_type("INT", 2, 0, 2, 		"uchr"); */
 	*t++ = sql_create_type("INT", 4, 0, 2,		"sht");
 	*t++ = sql_create_type("INT", 9, 0, 2,		"int");
-	*t++ = sql_create_type("INT", 19, 0, 2,		"lng");
+	LNG = *t++ = sql_create_type("INT", 19, 0, 2,	"lng");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits, 
@@ -1116,6 +1116,9 @@ void sqltypeinit()
 
 	sql_create_func( "sql_sub", "date_sub_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func( "sql_sub", "date_sub_month_interval", DTE, MONINT, DTE, SCALE_FIX);
+
+	sql_create_func( "sql_sub", "diff", DTE, DTE, INT, SCALE_FIX);
+	sql_create_func( "sql_sub", "diff", TMESTAMP, TMESTAMP, LNG, SCALE_FIX);
 
 	sql_create_func( "sql_add", "date_add_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func( "sql_add", "addmonths", DTE, MONINT, DTE, SCALE_FIX);
