@@ -57,7 +57,6 @@ the WIN32 native platform.
 #ifdef NATIVE_WIN32
 #include <io.h>
 #include <direct.h>
-# define mkdir(path,mode) _mkdir(path)
 #endif
 
 /* Some systems (SGI, Sun) call malloc before we get a chance to call
@@ -186,6 +185,12 @@ gdk_export int		dlclose (void *__handle);
 gdk_export void*	dlsym (void * __handle, const char * __name);
 gdk_export char*	dlerror (void);
 gdk_export int 		gettimeofday(struct timeval *tv, int *ignore_zone);
+gdk_export int win_stat(const char*, struct stat *);
+gdk_export int win_rmdir(const char*);
+gdk_export int win_mkdir(const char*, const int mode);
+#define stat(x,y)	win_stat(x,y)
+#define mkdir		win_mkdir
+#define rmdir		win_rmdir
 
 #define NAME_MAX 255
 
@@ -333,6 +338,9 @@ int MT_path_absolute(char *pathname) {
 #endif
 
 #undef _errno
+#undef stat
+#undef rmdir
+#undef mkdir
 
 #undef NAME_MAX
 
@@ -691,6 +699,37 @@ void *dlsym(void * __handle, const char * __name){
 
 char *dlerror(void){
   return strerror(errno);
+}
+
+/* dir manipulations fail in WIN32 if file name contains trailing slashes; work around this */
+static char* reduce_dir_name(const char* src, char* dst, const int cap) {
+        int len = strlen(src);
+        char *buf = dst;
+        if (len >= cap) buf = malloc(len+1);
+        while(--len > 0 && src[len-1] != ':' && src[len] == DIR_SEP);
+        for(buf[++len]=0; --len>=0; buf[len]=src[len]);
+        return buf;
+}
+
+int win_stat(const char* pathname, struct stat *st) {
+	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
+	int ret = stat(p, st);
+	if (p != buf) free(p);
+	return ret;
+}
+
+int win_rmdir(const char* pathname) {
+	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
+	int ret = rmdir(p);
+	if (p != buf) free(p);
+	return ret;
+}
+
+int win_mkdir(const char* pathname, const int mode) {
+	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
+	int ret = mkdir(p);
+	if (p != buf) free(p);
+	return ret;
 }
 
 typedef struct {

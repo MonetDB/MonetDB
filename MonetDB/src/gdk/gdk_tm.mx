@@ -111,14 +111,15 @@ int TMcommit(void) {
 		}
 	}
 
-        /* atomic write of all dirty BATs and BBP.dir */
-	if (ret == 0)
+	if (ret == 0) {
+	        /* succeeded: adapt BBPstatus of all bats while we're still locked */
 		TMfakeCommit();
-	ret = BBPsync(TRUE);
 
-        /* succeeded: adapt BBPstatus of all bats while we're still locked */
-	if (ret == 0) 
-		BBPunlock("TMcommit");
+        	/* atomic write of all dirty BATs and BBP.dir */
+		ret = BBPsync(TRUE);
+	}
+
+	BBPunlock("TMcommit");
 	return ret; 
 }
 @- 
