@@ -39,7 +39,7 @@ AM_CONDITIONAL(MONET5,test "x$backend" = xmonet5)
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 
 dnl values needed for the JDBC driver;
-dnl keep in sync with src/jdbc/build.properties!
+dnl keep in sync with src/jdbc/build.properties and NT/configure.py !
 JDBC_MAJOR=0
 JDBC_MINOR=4
 JDBC_VER_SUFFIX="beta release"
