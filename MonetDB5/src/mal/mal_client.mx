@@ -734,7 +734,7 @@ statementblock is recognized, it is taken into execution.
 To simplify misaligned communication with front-ends, we use different
 prompts structures. [think, can we avoid acks]
 @= makespace
-	if( c->limit-s < BLOCK){
+	if( c->limit-s <= BLOCK){
 		enlargebuffer(c, BLOCK);
 		s = c->nxt; *s = 0;
 	}
@@ -816,7 +816,7 @@ int bstreamClient(Client c, str prompt){
 
 	s = c->nxt; *s = 0;
 	ln= c->nxt - c->input; /* left over bytes */
-	if( (c->limit-c->input) < BLOCK+1){
+	if( (c->limit-c->input) <= BLOCK){
 		@:makespace@
 	}
 	@:sentPrompt@
@@ -826,10 +826,10 @@ printf("bstreamClient:read block\n"); fflush(stdout);
 
         while ((len = stream_read(c->fdin, s, 1, BLOCK)) ){
                 size += len;
-		s[len]=0;
 		if( (c->limit-c->input) - size < BLOCK+1){
 			@:makespace@
 		}
+		s[len]=0;
                 s= c->input+len;
         }
 	if( len <0){

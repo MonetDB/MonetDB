@@ -709,7 +709,9 @@ functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
 @
 @= binding
 	l = idLength(cntxt);
-	arg = idCopy(cntxt,l);
+	if( l>0)
+		arg = idCopy(cntxt,l);
+	else arg= GDKstrdup("");
 	type= typeElm(cntxt);
 	varid= newVariable(curBlk,arg,type);
 	@:propList(varid)@
