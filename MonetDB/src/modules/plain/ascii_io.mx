@@ -123,8 +123,6 @@ extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr 
 #include <string.h>
 #include <ctype.h>
 
-#define MAXATTR 1024
-
 typedef struct ascii_io_t {
 	char *name;
 	char *sep;
@@ -137,7 +135,7 @@ typedef struct ascii_io_t {
 typedef struct ascii_load_t {
 	int nr;
 	int nr_attrs;
-	ascii_io format[MAXATTR];
+	ascii_io *format;
 } ascii;
 
 static int ascii_io_debug = 0;
@@ -238,6 +236,7 @@ void destroy_format( ascii *as ){
 	for (p=0; p<as->nr_attrs; p++){
 		GDKfree( fmt[p].sep );
 	}
+	GDKfree(fmt);
 }
 
 static
@@ -413,6 +412,7 @@ int load_file( ascii *as, stream *fd ){
 			eof = 1;
 		end = s + p + l;
 		*end = '\0';
+		p = l = 0;
 		while( s < end ){
 			char *e = strstr( s, sep );
 			if (e){
@@ -425,7 +425,6 @@ int load_file( ascii *as, stream *fd ){
 			} else {
 				p = end - s;
 				memcpy(buf, s, p );
-				s = buf;
 				break;
 			}
 			i++;
@@ -434,6 +433,7 @@ int load_file( ascii *as, stream *fd ){
 			if (i >= as->nr)
 				break;
 		}
+		s = buf;
 	}
 	GDKfree(buf);
 	as->nr = i;
@@ -459,6 +459,7 @@ BAT *ASCIIload( BAT *names, BAT *seps, BAT *types,
 
 	as.nr_attrs = 0;
 	as.nr = nr;
+	as.format = GDKmalloc(sizeof(ascii_io) * (BATcount(names) + 1) );
 	if (create_loadformat( &as, names, seps, types) >= 0 && 
 	    create_bats( &as ) >= 0){
 		stream *s = open_rastream( datafile );
