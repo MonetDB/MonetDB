@@ -70,17 +70,18 @@ In order to use the MonetDB JDBC driver, the jar-archive has to be in the Java c
 Make sure this is actually the case.
 
 Loading the driver in your Java program requires two lines of code, which can be for example:
-\begin{quote}
-\texttt{Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");\\
-Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/notused", "monetdb", "monetdb");}
-\end{quote}
+\begin{verbatim}
+Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
+Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/notused", "monetdb", "monetdb");
+\end{verbatim}
 The first line makes sure the Java ClassLoader has initialized the Driver class of the MonetDB
 JDBC package, so it is registered with the DriverManager. The second line requests a Connection
 object from the DriverManager which is suitable for MonetDB.
 
-The string passed to the \texttt{getConnection} method is defined as
-\texttt{jdbc:monetdb://$<$host$>$[:$<$port$>$]/$<$database$>$} where elements between
-$<$ and $>$ are required and elements between [ and ] are optional.\\
+The string passed to the \verb"getConnection" method is defined as
+\verb"jdbc:monetdb://<host>[:<port>]/<database>" where elements between
+\verb"<" and \verb">" are required and elements between [ and ] are optional.
+
 As obvious from the example above, currently the database name is not used, and does not affect
 the connection in any way. This database element is reserved for future use.
 
