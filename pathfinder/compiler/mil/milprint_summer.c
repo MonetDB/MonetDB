@@ -41,11 +41,13 @@
 #include "subtyping.h"
 
 /* add some timing results for the code */
-#define TIMINGS 0
+#define TIMINGS 1
 #define WITH_SCRIPT 0
 
 static void
 translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c);
+static int
+var_is_used (PFvar_t *v, PFcnode_t *e);
 
 /**
  * Test if two types are castable into each other
@@ -1162,8 +1164,6 @@ translateLocsteps (FILE *f, PFcnode_t *c)
             axis = "preceding_sibling";
             break;
         case c_self:
-            axis = "attribute";
-            break;
         default:
             PFoops (OOPS_FATAL, "XPath axis is not supported in MIL-translation");
     }
@@ -3339,6 +3339,505 @@ is2ns (FILE *f, int counter, PFty_t input_type)
     deleteResult (f, counter);
 }
 
+static void eval_join_helper (FILE *f,
+                              PFcnode_t *fst, int cast_fst, int fst_res, 
+                              PFcnode_t *snd, int cast_snd, int snd_res,
+                              type_co container)
+{
+    if (cast_fst)
+    {
+        if (fst->child[0]->kind == c_attribute)
+        {
+            fprintf(f,
+                    "var join_item1;\n"
+                    "{\n"
+                    "var join_item_str;\n"
+                    "var frag := kind%03u.get_fragment();\n"
+                    "join_item_str := mposjoin (mposjoin (item%03u, frag, ws.fetch(ATTR_PROP)), "
+                                               "mposjoin (item%03u, frag, ws.fetch(ATTR_FRAG)), "
+                                               "ws.fetch(PROP_VAL));\n",
+                    fst_res, fst_res, fst_res);
+        }
+        else
+        {
+            fprintf(f,
+                    "var join_item1;\n"
+                    "{\n"
+                    "var join_item_str;\n"
+                    "var frag := kind%03u.get_fragment();\n"
+                    "join_item_str := mposjoin (mposjoin (item%03u, frag, ws.fetch(PRE_PROP)), "
+                                               "mposjoin (item%03u, frag, ws.fetch(PRE_FRAG)), "
+                                               "ws.fetch(PROP_TEXT));\n",
+                    fst_res, fst_res, fst_res);
+        }
+        fprintf(f,
+                "join_item1 := join_item_str.[%s]();\n"
+                "}\n"
+                "if (join_item1.ord_uselect(%s(nil)).count() != 0)\n"
+                "{    ERROR (\"couldn't cast all values to %s\"); }\n",
+                container.mil_type, container.mil_type, container.name);
+    }
+    else
+    {
+        fprintf(f, "var join_item1 := item%03u.leftfetchjoin(%s);\n", fst_res, container.table);
+    }
+
+    if (cast_snd)
+    {
+        if (snd->child[3]->child[0]->kind == c_attribute)
+        {
+            fprintf(f,
+                    "var join_item2;\n"
+                    "{\n"
+                    "var join_item_str;\n"
+                    "var frag := kind%03u.get_fragment();\n"
+                    "join_item_str := mposjoin (mposjoin (item%03u, frag, ws.fetch(ATTR_PROP)), "
+                                               "mposjoin (item%03u, frag, ws.fetch(ATTR_FRAG)), "
+                                                "ws.fetch(PROP_VAL));\n",
+                    snd_res, snd_res, snd_res);
+        }
+        else
+        {
+            fprintf(f,
+                    "var join_item2;\n"
+                    "{\n"
+                    "var join_item_str;\n"
+                    "var frag := kind%03u.get_fragment();\n"
+                    "join_item_str := mposjoin (mposjoin (item%03u, frag, ws.fetch(PRE_PROP)), "
+                                                "mposjoin (item%03u, frag, ws.fetch(PRE_FRAG)), "
+                                                "ws.fetch(PROP_TEXT));\n",
+                    snd_res, snd_res, snd_res);
+        }
+        fprintf(f,
+                "join_item2 := join_item_str.[%s]();\n"
+                "}\n"
+                "if (join_item2.ord_uselect(%s(nil)).count() != 0)\n"
+                "{    ERROR (\"couldn't cast all values to %s\"); }\n",
+                container.mil_type, container.mil_type, container.name);
+    }
+    else
+    {
+        fprintf(f, "var join_item2 := item%03u.leftfetchjoin(%s);\n", snd_res, container.table);
+    }
+}
+
+static void
+evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
+{
+    int lev_fst, lev_snd, fst_res, snd_var, snd_res, i, cast_fst, cast_snd;
+    PFcnode_t *fst, *snd, *res, *c;
+    PFfun_t *fun;
+    char *comp;
+
+    fst = args->child[0];
+    args = args->child[1];
+    c = args->child[0];
+    if (c->kind == c_seqtype)
+    {
+        cast_fst = 1;
+    }
+    else 
+    {
+        cast_fst = 0;
+    }
+        
+    args = args->child[1];
+    c = args->child[0];
+    lev_fst = c->sem.num;
+
+    args = args->child[1];
+    snd = args->child[0];
+
+    args = args->child[1];
+    c = args->child[0];
+    if (c->kind == c_seqtype)
+    {
+        cast_snd = 1;
+    }
+    else 
+    {
+        cast_snd = 0;
+    }
+        
+    args = args->child[1];
+    c = args->child[0];
+    lev_snd = c->sem.num;
+
+    args = args->child[1];
+    c = args->child[0];
+    fun = c->sem.fun;
+    if (!PFqname_eq(fun->qname,PFqname (PFns_op,"eq")))
+         comp = "EQ";
+/*   
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"ne")))
+         comp = "NE";
+*/   
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"ge")))
+         comp = "GE";
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"le")))
+         comp = "LE";
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"gt")))
+         comp = "GT";
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"lt")))
+         comp = "LT";
+    else
+    {
+         PFoops (OOPS_FATAL, "not supported comparison in join");
+    }
+
+    args = args->child[1];
+    res = args->child[0];
+
+    c = 0;
+
+    counter++;
+    snd_var = counter;
+    fprintf(f,
+            "{ # evaluate_join\n"
+            "var iter%03u;\n"
+            "var pos%03u;\n"
+            "var item%03u;\n"
+            "var kind%03u;\n",
+            snd_var, snd_var, snd_var, snd_var);
+    counter++;
+    fst_res = counter;
+    fprintf(f,
+            "var iter%03u;\n"
+            "var pos%03u;\n"
+            "var item%03u;\n"
+            "var kind%03u;\n",
+            fst_res, fst_res, fst_res, fst_res);
+    counter++;
+    snd_res = counter;
+    fprintf(f,
+            "var iter%03u;\n"
+            "var pos%03u;\n"
+            "var item%03u;\n"
+            "var kind%03u;\n",
+            snd_res, snd_res, snd_res, snd_res);
+    fprintf(f,
+            "var jouter%03u ;\n"
+            "var jinner%03u ;\n"
+            "var jloop%03u  ;\n"
+            "var jv_vid%03u ;\n"
+            "var jv_iter%03u;\n"
+            "var jv_pos%03u ;\n"
+            "var jv_item%03u;\n"
+            "var jv_kind%03u;\n",
+            fst_res, fst_res, fst_res, fst_res,
+            fst_res, fst_res, fst_res, fst_res);
+
+
+    if (lev_fst)
+    {
+        translate2MIL (f, act_level, counter, fst);
+        fprintf(f,
+                "iter%03u := iter;\n"
+                "pos%03u  := pos ;\n"
+                "item%03u := item;\n"
+                "kind%03u := kind;\n",
+                fst_res, fst_res, fst_res, fst_res);
+        fprintf(f,
+                "jouter%03u  := outer%03u ;\n"
+                "jinner%03u  := inner%03u ;\n"
+                "jloop%03u   := loop%03u  ;\n"
+                "jv_vid%03u  := v_vid%03u ;\n"
+                "jv_iter%03u := v_iter%03u;\n"
+                "jv_pos%03u  := v_pos%03u ;\n"
+                "jv_item%03u := v_item%03u;\n"
+                "jv_kind%03u := v_kind%03u;\n",
+                fst_res, act_level, fst_res, act_level,
+                fst_res, act_level, fst_res, act_level,
+                fst_res, act_level, fst_res, act_level,
+                fst_res, act_level, fst_res, act_level);
+    }
+    else
+    {
+        fprintf(f,
+                "jouter%03u  := outer%03u ;\n"
+                "jinner%03u  := inner%03u ;\n"
+                "jloop%03u   := loop%03u  ;\n"
+                "jv_vid%03u  := v_vid%03u ;\n"
+                "jv_iter%03u := v_iter%03u;\n"
+                "jv_pos%03u  := v_pos%03u ;\n"
+                "jv_item%03u := v_item%03u;\n"
+                "jv_kind%03u := v_kind%03u;\n",
+                fst_res, act_level, fst_res, act_level,
+                fst_res, act_level, fst_res, act_level,
+                fst_res, act_level, fst_res, act_level,
+                fst_res, act_level, fst_res, act_level);
+        fprintf(f,
+                "outer%03u  := outer%03u .copy();\n"
+                "inner%03u  := inner%03u .copy();\n"
+                "loop%03u   := loop%03u  .copy();\n"
+                "v_vid%03u  := v_vid%03u .copy();\n"
+                "v_iter%03u := v_iter%03u.copy();\n"
+                "v_pos%03u  := v_pos%03u .copy();\n"
+                "v_item%03u := v_item%03u.copy();\n"
+                "v_kind%03u := v_kind%03u.copy();\n",
+                act_level, 0, act_level, 0,
+                act_level, 0, act_level, 0,
+                act_level, 0, act_level, 0,
+                act_level, 0, act_level, 0);
+        fprintf(f,
+                "outer%03u .access(BAT_WRITE);\n"
+                "inner%03u .access(BAT_WRITE);\n"
+                "loop%03u  .access(BAT_WRITE);\n"
+                "v_vid%03u .access(BAT_WRITE);\n"
+                "v_iter%03u.access(BAT_WRITE);\n"
+                "v_pos%03u .access(BAT_WRITE);\n"
+                "v_item%03u.access(BAT_WRITE);\n"
+                "v_kind%03u.access(BAT_WRITE);\n",
+                act_level, act_level,
+                act_level, act_level,
+                act_level, act_level,
+                act_level, act_level);
+        translate2MIL (f, act_level, counter, fst);
+        fprintf(f,
+                "iter%03u := iter;\n"
+                "pos%03u  := pos ;\n"
+                "item%03u := item;\n"
+                "kind%03u := kind;\n",
+                fst_res, fst_res, fst_res, fst_res);
+    }
+    if (!lev_snd)
+    {
+        fprintf(f,
+                "outer%03u  := outer%03u .copy();\n"
+                "inner%03u  := inner%03u .copy();\n"
+                "loop%03u   := loop%03u  .copy();\n"
+                "v_vid%03u  := v_vid%03u .copy();\n"
+                "v_iter%03u := v_iter%03u.copy();\n"
+                "v_pos%03u  := v_pos%03u .copy();\n"
+                "v_item%03u := v_item%03u.copy();\n"
+                "v_kind%03u := v_kind%03u.copy();\n",
+                act_level, 0, act_level, 0,
+                act_level, 0, act_level, 0,
+                act_level, 0, act_level, 0,
+                act_level, 0, act_level, 0);
+    }
+    else
+    {
+        /* this part of the code never occurs (at least until now) */
+        fprintf(f,
+                "outer%03u  := outer%03u .copy();\n"
+                "inner%03u  := inner%03u .copy();\n"
+                "loop%03u   := loop%03u  .copy();\n"
+                "v_vid%03u  := v_vid%03u .copy();\n"
+                "v_iter%03u := v_iter%03u.copy();\n"
+                "v_pos%03u  := v_pos%03u .copy();\n"
+                "v_item%03u := v_item%03u.copy();\n"
+                "v_kind%03u := v_kind%03u.copy();\n",
+                act_level, act_level-1, act_level, act_level-1,
+                act_level, act_level-1, act_level, act_level-1,
+                act_level, act_level-1, act_level, act_level-1,
+                act_level, act_level-1, act_level, act_level-1);
+    }
+    fprintf(f,
+            "outer%03u .access(BAT_WRITE);\n"
+            "inner%03u .access(BAT_WRITE);\n"
+            "loop%03u  .access(BAT_WRITE);\n"
+            "v_vid%03u .access(BAT_WRITE);\n"
+            "v_iter%03u.access(BAT_WRITE);\n"
+            "v_pos%03u .access(BAT_WRITE);\n"
+            "v_item%03u.access(BAT_WRITE);\n"
+            "v_kind%03u.access(BAT_WRITE);\n",
+            act_level, act_level,
+            act_level, act_level,
+            act_level, act_level,
+            act_level, act_level);
+
+    translate2MIL (f, act_level, counter, snd->child[2]);
+    fprintf(f,
+            "{  # for-translation\n"
+            "# project ()\n"
+            "outer%03u := iter;\n"
+            "iter := iter.mark(1@0);\n"
+            "inner%03u := iter;\n"
+            "pos := iter.project(1@0);\n"
+            "loop%03u := inner%03u;\n",
+            act_level, act_level, act_level, act_level);
+    fprintf(f,
+            "iter%03u := iter;\n"
+            "pos%03u  := pos ;\n"
+            "item%03u := item;\n"
+            "kind%03u := kind;\n",
+            snd_var, snd_var, snd_var, snd_var);
+
+    /* in the actual scenario not supported 
+    fprintf(f,
+            "var expOid := v_vid%03u.mirror();\n"
+            "var oidNew_expOid;\n",
+            act_level-1);
+            expand (f, act_level);
+            join (f, act_level);
+    fprintf(f, "expOid := nil_oid_oid;\n");
+    */
+
+
+    if (snd->child[0]->sem.var->used)
+        insertVar (f, act_level, snd->child[0]->sem.var->vid);
+    if ((snd->child[1]->kind == c_var)
+        && (snd->child[1]->sem.var->used))
+    {
+        createEnumeration (f, act_level);
+        insertVar (f, act_level, snd->child[1]->sem.var->vid);
+    }
+
+    translate2MIL (f, act_level, counter, snd->child[3]);
+    fprintf(f,
+            "iter%03u := iter;\n"
+            "pos%03u := pos;\n"
+            "item%03u := item;\n"
+            "kind%03u := kind;\n",
+            snd_res, snd_res, snd_res, snd_res);
+        
+    /* mapBack (f, act_level); */
+    cleanUpLevel (f, act_level);
+    fprintf(f, "}  # end of for-translation\n");
+
+    fprintf(f,
+            "outer%03u  := jouter%03u ;\n"
+            "inner%03u  := jinner%03u ;\n"
+            "loop%03u   := jloop%03u  ;\n"
+            "v_vid%03u  := jv_vid%03u ;\n"
+            "v_iter%03u := jv_iter%03u;\n"
+            "v_pos%03u  := jv_pos%03u ;\n"
+            "v_item%03u := jv_item%03u;\n"
+            "v_kind%03u := jv_kind%03u;\n",
+            act_level, fst_res, act_level, fst_res, 
+            act_level, fst_res, act_level, fst_res, 
+            act_level, fst_res, act_level, fst_res, 
+            act_level, fst_res, act_level, fst_res);
+
+    PFty_t input_type = (fun->par_ty)[0];
+    if (PFty_subtype (PFty_integer (), input_type))
+    {
+        eval_join_helper (f, fst, cast_fst, fst_res, snd, cast_snd, snd_res, int_container());
+    }
+    else if (PFty_subtype (PFty_decimal (), input_type))
+    {
+        eval_join_helper (f, fst, cast_fst, fst_res, snd, cast_snd, snd_res, dec_container());
+    }
+    else if (PFty_subtype (PFty_double (), input_type))
+    {
+        eval_join_helper (f, fst, cast_fst, fst_res, snd, cast_snd, snd_res, dbl_container());
+    }
+    else if (PFty_subtype (PFty_string (), input_type))
+    {
+        eval_join_helper (f, fst, cast_fst, fst_res, snd, cast_snd, snd_res, str_container());
+    }
+    else if (PFty_subtype (PFty_boolean (), input_type))
+    {
+        if (cast_fst || cast_snd)
+            PFoops (OOPS_FATAL, "cast to boolean in join not supported until now");
+
+        fprintf(f,
+                "var join_item1 := item%03u;\n"
+                "var join_item2 := item%03u;\n",
+                fst_res, snd_res);
+    }
+    else
+    {
+        PFoops (OOPS_FATAL, "not supported type for comparison in join");
+    }
+
+    fprintf(f,
+            "var join_result := thetajoin(join_item1, join_item2.reverse(), "
+                                         "%s, join_item1.count().lng());\n"
+            "var join_order := join_result.leftfetchjoin(iter%03u)"
+                                         ".reverse().leftfetchjoin(iter%03u).reverse();\n"
+            "join_order := join_order.sort();\n"
+            "var snd_iter := join_order.reverse().mark(0@0).reverse();\n"
+            "var fst_iter := join_order.mark(0@0).reverse();\n"
+            "var sorting := fst_iter.CTrefine(snd_iter).reverse().kunique().reverse().mark(0@0).reverse();\n"
+            "fst_iter := sorting.leftfetchjoin(fst_iter);\n"
+            "snd_iter := sorting.leftfetchjoin(snd_iter);\n",
+            comp, snd_res, fst_res);
+
+    if (lev_fst && lev_snd)
+    {
+        PFoops (OOPS_FATAL, "no solution for join with dependence");
+    }
+    else if (lev_snd)
+    {
+        PFoops (OOPS_FATAL, "no solution for mapping in join so far");
+    }
+    else if (!lev_fst && act_level)
+    {
+        fprintf(f,
+                "{\n"
+                "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
+                0, 0);
+        for (i = 0; i < act_level; i++)
+        {
+            fprintf(f, 
+                    "mapping := mapping.leftjoin(outer%03u.reverse());\n"
+                    "mapping := mapping.leftfetchjoin(inner%03u);\n",
+                    i+1, i+1);
+        }
+        fprintf(f,
+                "fst_iter := fst_iter.leftjoin(mapping);\n"
+                "}\n"
+                "snd_iter := fst_iter.mark(0@0).reverse().leftfetchjoin(snd_iter);\n"
+                "fst_iter := fst_iter.reverse().mark(0@0).reverse();\n"
+                "var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse());\n"
+                "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
+                act_level, snd_var);
+    }
+    else
+    {
+        fprintf(f,
+                "var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse());\n"
+                "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
+                act_level, snd_var);
+    
+    }
+
+    act_level++;
+    fprintf(f, "{  # for-translation\n");
+
+    fprintf(f, "iter := fst_iter;\n");
+    project (f, act_level);
+
+    fprintf(f, 
+            "var expOid := v_vid%03u.mirror();\n"
+            "var oidNew_expOid;\n",
+            act_level-1);
+            expand (f, act_level);
+            join (f, act_level);
+    fprintf(f, "expOid := nil_oid_oid;\n");
+
+    if (var_is_used (snd->child[0]->sem.var, res))
+    {
+        fprintf(f,
+                "item := order_snd.leftfetchjoin(item%03u);\n"
+                "iter := item.mark(1@0);\n"
+                "pos := item.project(1@0);\n"
+                "kind := order_snd.leftfetchjoin(kind%03u);\n",
+                snd_var, snd_var);
+        insertVar (f, act_level, snd->child[0]->sem.var->vid);
+    }
+    if (snd->child[1]->kind == c_var && var_is_used (snd->child[0]->sem.var, res))
+    {
+        addValues (f, int_container(), "snd_iter.[int]()", "item");
+        fprintf(f,
+                "iter := item.mark(1@0);\n"
+                "pos := item.project(1@0);\n"
+                "kind := item.project(INT);\n");
+        insertVar (f, act_level, snd->child[1]->sem.var->vid);
+    }
+
+    translate2MIL (f, act_level, counter, res);
+        
+    mapBack (f, act_level);
+    cleanUpLevel (f, act_level);
+    act_level--;
+    fprintf(f,
+            "}  # end of for-translation\n"
+            "} # end of evaluate_join\n");
+}
+
 /**
  * translateFunction translates the builtin functions
  *
@@ -3852,6 +4351,12 @@ translateFunction (FILE *f, int act_level, int counter,
                 "sorting := nil_oid_oid;\n"
                 "} # end of translate fn:distinct-values (atomic*) as atomic*\n");
     }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_pf,"join")))
+    {
+        /* first hack to support join recognition */
+        evaluate_join (f, act_level, counter, args);
+    }
     else 
     {
         PFlog("function %s is not supported and therefore ignored",
@@ -4225,9 +4730,9 @@ noConstructor (PFcnode_t *c)
 
 /**
  * noForBetween tests wether between the declaration of a variable and
- * its usage is a for loop, which stops a bound element construction 
+ * its usage is a for loop, which stops a bound element construction
  * from expanding.
- * 
+ *
  * @param v the variable which is tested
  * @param c the subtree of the variable binding
  * @return 0 if for-node is between (> 1 else)
@@ -4246,18 +4751,18 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
     }
     else if (c->kind == c_var && c->sem.var == v)
         return 1;
-    else 
+    else
         for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
             if ((j = noForBetween (v, c->child[i])) < 2)
                 return j;
     return 2;
 }
-
+                                                                                                                                                             
 /**
- * expandable tests wether a variable can be expanded without causing 
+ * expandable tests wether a variable can be expanded without causing
  * any problems and returns the result of the functions noConstructor and
  * noForBetween
- * 
+ *
  * @param c the let-node which is tested
  * @return 1 if expandable; 0 otherwise
  */
@@ -4652,6 +5157,19 @@ simplifyCoreTree (PFcnode_t *c)
                 c->child[1] = new_node;
             }
             break;
+        case c_locsteps:
+            simplifyCoreTree (c->child[0]);
+            simplifyCoreTree (c->child[1]);
+            /* don't have to look at predicates because they are already expanded */
+            if (c->child[0]->kind == c_child &&
+                c->child[1]->kind == c_locsteps &&
+                c->child[1]->child[0]->kind == c_descendant_or_self &&
+                c->child[1]->child[0]->child[0]->kind == c_kind_node)
+            {
+                c->child[0]->kind = c_descendant;
+                c->child[1] = c->child[1]->child[1];
+            }
+            break;
         case c_text:
             simplifyCoreTree (c->child[0]);
             /* substitutes empty text nodes by empty nodes */
@@ -4663,6 +5181,774 @@ simplifyCoreTree (PFcnode_t *c)
                 simplifyCoreTree (c->child[i]);
             break;
     }
+}
+
+static PFfun_t * switch_fun(PFfun_t *fun)
+{
+    assert(fun);
+    if (!PFqname_eq(fun->qname,PFqname (PFns_op,"eq")))
+        return fun;
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"ne")))
+        return fun;
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"le")))
+        return PFcore_function (PFqname (PFns_op,"ge"));
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"ge")))
+        return PFcore_function (PFqname (PFns_op,"le"));
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"lt")))
+        return PFcore_function (PFqname (PFns_op,"gt"));
+    else if (!PFqname_eq(fun->qname,PFqname (PFns_op,"gt")))
+        return PFcore_function (PFqname (PFns_op,"lt"));
+    else {
+        PFoops (OOPS_WARNING, "switch_fun: no inverse function for '%s' found.", PFqname_str(fun->qname));
+        return fun;
+    }
+}
+
+static PFcnode_t * create_join(PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested, 
+                               PFcnode_t *snd_for, PFcnode_t *snd_cast, int snd_nested,
+                               PFfun_t *fun, int fst_arg, PFcnode_t *result)
+{
+    PFcnode_t *c, *comp;
+
+    assert(fst_for);
+    assert(snd_for);
+    assert(fun);
+    assert(result);
+
+    fst_cast = (!fst_cast)?PFcore_nil():fst_cast;
+    snd_cast = (!snd_cast)?PFcore_nil():snd_cast;
+
+    comp = PFcore_leaf(c_apply);
+    comp->sem.fun = (fst_arg == 1)?fun:switch_fun(fun);
+
+    PFfun_t *join = PFfun_new(PFqname (PFns_pf,"join"), 8, true, 0, 0, 0);
+
+    c = PFcore_nil();
+    c = PFcore_arg(result, c);
+    c = PFcore_arg(comp, c);
+    c = PFcore_arg(PFcore_num(snd_nested),c);
+    c = PFcore_arg(snd_cast,c);
+    c = PFcore_arg(snd_for,c);
+    c = PFcore_arg(PFcore_num(fst_nested),c);
+    c = PFcore_arg(fst_cast,c);
+    c = PFcore_arg(fst_for,c);
+    c = PFcore_wire1 (c_apply, c);
+    c->sem.fun = join;
+    return c;
+}
+
+/* var info */
+struct var_info {
+    PFcnode_t *parent;
+    PFvar_t *id;
+    int act_lev;
+    PFarray_t *reflist;
+};
+typedef struct var_info var_info;
+
+struct if_info {
+    PFarray_t *varlist;
+    int act_lev;
+};
+typedef struct if_info if_info;
+
+static void recognize_join(PFcnode_t *c, 
+                           PFarray_t *active_if,
+                           PFarray_t *active_vlist,
+                           PFarray_t *active_vdefs,
+                           PFarray_t *path,
+                           int act_level);
+
+static var_info create_var_info (PFcnode_t *parent, PFvar_t *id, int act_lev)
+{
+    var_info vi;
+    PFarray_t *reflist = PFarray (sizeof (var_info));
+
+    vi.parent = parent;
+    vi.id = id;
+    vi.act_lev = act_lev;
+    vi.reflist = reflist;    
+    return vi;
+}
+
+static if_info create_if_info (int act_lev)
+{
+    if_info ii;
+    PFarray_t *varlist = PFarray (sizeof (var_info));
+    ii.act_lev = act_lev;
+    ii.varlist = varlist;
+    return ii;
+}
+
+static var_info var_lookup (PFvar_t *id, PFarray_t *active_vlist)
+{
+    unsigned int i;
+    for (i = 0; i < PFarray_last (active_vlist); i++)
+    {
+        if ((*(var_info *) PFarray_at (active_vlist, i)).id == id)
+                return *(var_info *) PFarray_at (active_vlist, i);
+    }
+    PFoops (OOPS_FATAL, "thinking error in var_lookup");
+    return *(var_info *) 0; /* only to pacify compiler */
+}
+
+static void add_ref_to_vdef (var_info var, PFarray_t *active_vdefs)
+{
+    unsigned int i, j, found;
+    PFarray_t *reflist;
+    found = 0;
+    for (i = 0; i < PFarray_last (active_vdefs); i++)
+    {
+        reflist = (*(var_info *) PFarray_at (active_vdefs, i)).reflist;
+        for (j = 0; j < PFarray_last (reflist); j++)
+        {
+            if ((*(var_info *) PFarray_at (reflist, j)).id == var.id)
+            {
+                found = 1;
+            }
+        }
+        if (!found && 
+            (*(var_info *) PFarray_at (active_vdefs, i)).act_lev >= var.act_lev)
+        {
+            *(var_info *) PFarray_add (reflist) = var;
+        }
+    }
+}
+
+static int test_join(PFcnode_t *for_node,
+                     PFarray_t *active_if,
+                     PFarray_t *active_vlist,
+                     PFarray_t *active_vdefs,
+                     PFarray_t *path,
+                     int act_level)
+{
+/* printf("start test_join\n"); */
+
+    PFcnode_t *if_node, *apply_node, *c, *fst_inner, *snd_inner, *res, *fst_inner_cast, *snd_inner_cast;
+    int fst_arg, found_in_fst, found_in_snd, max_lev_fst, max_lev_snd, subtree_tested;
+    if_info fst_if_info, snd_if_info;
+    var_info vi;
+    PFfun_t *fun;
+    unsigned int i;
+
+    subtree_tested = 0;
+
+    /* test independence from outer loop */
+    if (act_level)
+    {
+        vi = var_lookup (for_node->child[0]->sem.var, active_vlist);
+/*        printf("%s: ", PFqname_str(vi.id->qname)); */
+        for (i = 0; i < PFarray_last (vi.reflist); i++)
+        {
+/*        printf("%s, ", PFqname_str((*(var_info *) PFarray_at (vi.reflist, i)).id->qname)); */
+            if ((*(var_info *) PFarray_at (vi.reflist, i)).act_lev == vi.act_lev -1)
+            {
+                return subtree_tested;
+            }
+        }
+/*        printf("\n"); */
+    }
+
+    res = 0;
+    fst_inner = 0;
+    snd_inner = 0;
+    fst_inner_cast = 0;
+    snd_inner_cast = 0;
+    fst_arg = 0;
+
+    if (for_node->child[3]->kind != c_ifthenelse &&
+        for_node->child[3]->child[0]->kind != c_apply)
+    {
+        return subtree_tested;
+    }
+
+    if_node = for_node->child[3];
+    apply_node = if_node->child[0];
+    fun = apply_node->sem.fun;
+
+    if (!PFqname_eq (fun->qname, PFqname (PFns_fn,"empty")) &&
+        if_node->child[1]->kind == c_empty &&
+        apply_node->child[0]->child[0]->kind == c_for &&
+        apply_node->child[0]->child[0]->child[3]->kind == c_ifthenelse &&
+        apply_node->child[0]->child[0]->child[3]->child[0]->kind == c_apply)
+    {
+        res = if_node->child[2];
+
+        c = apply_node->child[0]->child[0];
+        fst_inner = PFcore_wire4 (c_for, c->child[0], c->child[1], c->child[2], PFcore_empty());
+        if_node = c->child[3];
+        apply_node = if_node->child[0];
+        fun = apply_node->sem.fun;
+
+        if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
+            if_node->child[1]->kind == c_empty &&
+            apply_node->child[0]->child[0]->kind == c_for &&
+            apply_node->child[0]->child[0]->child[3]->kind == c_ifthenelse &&
+            apply_node->child[0]->child[0]->child[3]->child[0]->kind == c_apply)
+        {
+
+            c = apply_node->child[0]->child[0];
+            snd_inner = PFcore_wire4 (c_for, c->child[0], c->child[1], c->child[2], PFcore_empty());
+            if_node = c->child[3];
+            apply_node = if_node->child[0];
+            fun = apply_node->sem.fun;
+        }
+    }
+
+    /* find matching patterns */
+    if (if_node->child[2]->kind == c_empty &&
+        (!PFqname_eq(fun->qname,PFqname (PFns_op,"eq")) ||
+    /*   !PFqname_eq(fun->qname,PFqname (PFns_op,"ne")) || */
+         !PFqname_eq(fun->qname,PFqname (PFns_op,"le")) ||
+         !PFqname_eq(fun->qname,PFqname (PFns_op,"lt")) ||
+         !PFqname_eq(fun->qname,PFqname (PFns_op,"ge")) ||
+         !PFqname_eq(fun->qname,PFqname (PFns_op,"gt"))))
+    {
+        if (!res)
+        {
+            res = if_node->child[1];
+        }
+
+        if (fst_inner &&
+            var_is_used(fst_inner->child[0]->sem.var,apply_node->child[0]->child[0]))
+        {
+            fst_inner_cast = apply_node->child[0]->child[0];
+            /*
+            fst_inner->child[3] = c->child[0]->child[0];
+            */
+            fst_arg = 1;
+        }
+        else if (fst_inner && 
+                 var_is_used(fst_inner->child[0]->sem.var,apply_node->child[0]->child[1]->child[0]))
+        {
+            fst_inner_cast = apply_node->child[0]->child[1]->child[0];
+            /*
+            fst_inner->child[3] = c->child[0]->child[1]->child[0];
+            */
+        }
+
+        if (snd_inner &&
+            var_is_used(snd_inner->child[0]->sem.var,apply_node->child[0]->child[0]))
+        {
+            snd_inner_cast = apply_node->child[0]->child[0];
+            /*
+            snd_inner->child[3] = c->child[0]->child[0];
+            */
+            fst_arg = 2;
+        }
+        else if (snd_inner && 
+                 var_is_used(snd_inner->child[0]->sem.var,apply_node->child[0]->child[1]->child[0]))
+        {
+            snd_inner_cast = apply_node->child[0]->child[1]->child[0];
+            /*
+            snd_inner->child[3] = c->child[0]->child[1]->child[0];
+            */
+        }
+
+        if (fst_inner && snd_inner)
+        {
+           /* do nothing  */            
+        }
+        else if (fst_inner)
+        {
+            if (fst_arg)
+            {
+                snd_inner = apply_node->child[0]->child[1]->child[0];
+            }
+            else
+            {
+                snd_inner = apply_node->child[0]->child[0];
+                fst_arg = 2;
+            }
+        }
+        else if (snd_inner)
+        {
+            if (fst_arg)
+            {
+                fst_inner = apply_node->child[0]->child[1]->child[0];
+            }
+            else
+            {
+                fst_inner = apply_node->child[0]->child[0];
+                fst_arg = 1;
+            }
+        }
+        else
+        {
+            fst_inner = apply_node->child[0]->child[0];
+            fst_arg = 1;
+            snd_inner = apply_node->child[0]->child[1]->child[0];
+        }
+
+        /* now test simplifications for quantified expressions */
+/*printf("test_join\n"); */
+        if (fst_inner_cast)
+        {
+            if (fst_inner->child[2]->kind == c_for &&
+                fst_inner->child[2]->child[2]->kind == c_locsteps &&
+                (fst_inner->child[2]->child[2]->child[0]->kind == c_attribute ||
+                 fst_inner->child[2]->child[2]->child[0]->child[0]->kind == c_kind_text) &&
+                fst_inner->child[2]->child[3]->kind == c_seqcast &&
+                fst_inner->child[2]->child[3]->child[0]->kind == c_seqtype &&
+                PFty_eq (fst_inner->child[2]->child[3]->child[0]->sem.type, PFty_untypedAtomic()) &&
+                fst_inner->child[2]->child[3]->child[1]->kind == c_apply &&
+                !PFqname_eq (fst_inner->child[2]->child[3]->child[1]->sem.fun->qname,
+                             PFqname (PFns_pf,"string-value")) &&
+                fst_inner->child[2]->child[3]->child[1]->child[0]->child[0]->kind == c_var &&
+                fst_inner->child[2]->child[3]->child[1]->child[0]->child[0]->sem.var == fst_inner->child[2]->child[0]->sem.var &&
+                ((fst_inner_cast->kind == c_var && fst_inner_cast->sem.var == fst_inner->child[0]->sem.var) ||
+                 (fst_inner_cast->kind == c_seqcast && fst_inner_cast->child[1]->kind == c_var && 
+                  fst_inner_cast->child[1]->sem.var == fst_inner->child[0]->sem.var)))
+            {
+                fst_inner = fst_inner->child[2]->child[2];
+                if (fst_inner_cast->kind != c_seqcast) 
+                {
+                    PFoops (OOPS_FATAL, "find_join: thinking error in join recognition!");
+                }
+                fst_inner_cast = fst_inner_cast->child[0];
+                if (fst_inner_cast->sem.type.type == ty_opt)
+                {
+                    fst_inner_cast->type = PFty_child(fst_inner_cast->sem.type);
+                    fst_inner_cast->sem.type = PFty_child(fst_inner_cast->sem.type);
+                }
+/*                printf("found pattern :)\n"); */
+            }
+            else if (fst_inner_cast->kind == c_var && fst_inner_cast->sem.var == fst_inner->child[0]->sem.var)
+            {
+                fst_inner = fst_inner->child[2];
+                fst_inner_cast = 0;
+/*                printf("found other pattern :)\n"); */
+            }
+            else
+            {
+                fst_inner->child[3] = fst_inner_cast;
+                fst_inner_cast = 0;
+            }
+        }
+        if (snd_inner_cast)
+        {
+            if (snd_inner->child[2]->kind == c_for &&
+                snd_inner->child[2]->child[2]->kind == c_locsteps &&
+                (snd_inner->child[2]->child[2]->child[0]->kind == c_attribute ||
+                 snd_inner->child[2]->child[2]->child[0]->child[0]->kind == c_kind_text) &&
+                snd_inner->child[2]->child[3]->kind == c_seqcast &&
+                snd_inner->child[2]->child[3]->child[0]->kind == c_seqtype &&
+                PFty_eq (snd_inner->child[2]->child[3]->child[0]->sem.type, PFty_untypedAtomic()) &&
+                snd_inner->child[2]->child[3]->child[1]->kind == c_apply &&
+                !PFqname_eq (snd_inner->child[2]->child[3]->child[1]->sem.fun->qname,
+                             PFqname (PFns_pf,"string-value")) &&
+                snd_inner->child[2]->child[3]->child[1]->child[0]->child[0]->kind == c_var &&
+                snd_inner->child[2]->child[3]->child[1]->child[0]->child[0]->sem.var == snd_inner->child[2]->child[0]->sem.var &&
+                ((snd_inner_cast->kind == c_var && snd_inner_cast->sem.var == snd_inner->child[0]->sem.var) ||
+                 (snd_inner_cast->kind == c_seqcast && snd_inner_cast->child[1]->kind == c_var && 
+                  snd_inner_cast->child[1]->sem.var == snd_inner->child[0]->sem.var)))
+            {
+                snd_inner = snd_inner->child[2]->child[2];
+                if (snd_inner_cast->kind != c_seqcast) 
+                {
+                    PFoops (OOPS_FATAL, "find_join: thinking error in join recognition!");
+                }
+                snd_inner_cast = snd_inner_cast->child[0];
+                if (snd_inner_cast->sem.type.type == ty_opt)
+                {
+                    snd_inner_cast->type = PFty_child(snd_inner_cast->sem.type);
+                    snd_inner_cast->sem.type = PFty_child(snd_inner_cast->sem.type);
+                }
+/*                printf("found pattern :)\n"); */
+            }
+            else if (snd_inner_cast->kind == c_var && snd_inner_cast->sem.var == snd_inner->child[0]->sem.var)
+            {
+                snd_inner = snd_inner->child[2];
+                snd_inner_cast = 0;
+/*                printf("found other pattern :)\n"); */
+            }
+            else
+            {
+                snd_inner->child[3] = snd_inner_cast;
+                snd_inner_cast = 0;
+            }
+        }
+
+        act_level++;
+        *(if_info *) PFarray_add (active_if) = create_if_info (act_level);
+        recognize_join (fst_inner, active_if, active_vlist, active_vdefs, path, act_level);
+        fst_if_info = *(if_info *) PFarray_top (active_if);
+        PFarray_del (active_if);
+
+        *(if_info *) PFarray_add (active_if) = create_if_info (act_level);
+        recognize_join (snd_inner, active_if, active_vlist, active_vdefs, path, act_level);
+        snd_if_info = *(if_info *) PFarray_top (active_if);
+        PFarray_del (active_if);
+        recognize_join (res, active_if, active_vlist, active_vdefs, path, act_level);
+        
+        subtree_tested = 1;
+
+/* printf("foobar\n"); */
+        found_in_fst = 0;
+        max_lev_fst = 0;
+        for (i = 0; i < PFarray_last (fst_if_info.varlist); i++)
+        {
+            if ((*(var_info *) PFarray_at (fst_if_info.varlist, i)).act_lev == act_level)
+            {
+                if ((*(var_info *) PFarray_at (fst_if_info.varlist, i)).id == for_node->child[0]->sem.var)
+                {
+                     found_in_fst = 1;
+                }
+                else if (for_node->child[1]->kind == c_var &&
+                    (*(var_info *) PFarray_at (fst_if_info.varlist, i)).id == for_node->child[1]->sem.var)
+                {
+                     found_in_fst = 1;
+                }
+            }
+            else
+            {
+                max_lev_fst = (max_lev_fst>(*(var_info *) PFarray_at (fst_if_info.varlist, i)).act_lev)?
+                          max_lev_fst:
+                          (*(var_info *) PFarray_at (fst_if_info.varlist, i)).act_lev;
+            }
+        }
+        found_in_snd = 0;
+        max_lev_snd = 0;
+        for (i = 0; i < PFarray_last (snd_if_info.varlist); i++)
+        {
+            if ((*(var_info *) PFarray_at (snd_if_info.varlist, i)).act_lev == act_level)
+            {
+                if ((*(var_info *) PFarray_at (snd_if_info.varlist, i)).id == for_node->child[0]->sem.var)
+                {
+                     found_in_snd = 1;
+                }
+                else if (for_node->child[1]->kind == c_var &&
+                    (*(var_info *) PFarray_at (snd_if_info.varlist, i)).id == for_node->child[1]->sem.var)
+                {
+                     found_in_snd = 1;
+                }
+            }
+            else
+            {
+                max_lev_snd = (max_lev_snd>(*(var_info *) PFarray_at (snd_if_info.varlist, i)).act_lev)?
+                          max_lev_snd:
+                          (*(var_info *) PFarray_at (snd_if_info.varlist, i)).act_lev;
+            }
+        }
+        /* check independence */
+
+        /* change arguments if used in switched order */
+        if (found_in_fst && !found_in_snd)
+        {
+            c = fst_inner;
+            fst_inner = snd_inner;
+            snd_inner = c;
+            c = fst_inner_cast;
+            fst_inner_cast = snd_inner_cast;
+            snd_inner_cast = c;
+            i = max_lev_fst;
+            max_lev_fst = max_lev_snd;
+            max_lev_snd = i;
+            fst_arg = (fst_arg == 2)?1:2;
+        }
+        else if (!found_in_fst && found_in_snd)
+        {
+            /* do nothing */
+        }
+        /* change for-loop and if-expression if no reference is used */
+        else if (!found_in_fst && !found_in_snd && !max_lev_fst && !max_lev_snd)
+        {
+            if_node = for_node->child[3];
+            res = PFcore_wire4 (c_for,
+                                for_node->child[0],
+                                for_node->child[1],
+                                for_node->child[2],
+                                res);
+            if (if_node->child[1]->kind == c_empty)
+            {
+                if_node->child[2] = res;
+            }
+            else
+            {
+                if_node->child[1] = res;
+            }
+            *for_node = *if_node;
+            return subtree_tested;
+        }
+        else
+        {
+            return subtree_tested;
+        }
+
+        /* check references of the reflist of the for-loop variable */
+        vi = var_lookup (for_node->child[0]->sem.var, active_vlist);
+        for (i = 0; i < PFarray_last (vi.reflist); i++)
+        {
+            max_lev_snd = (max_lev_snd>(*(var_info *) PFarray_at (vi.reflist, i)).act_lev)?
+                      max_lev_snd:
+                      (*(var_info *) PFarray_at (vi.reflist, i)).act_lev;
+        }
+        /* don't need to test reflist of snd because it should be identical 
+        if (for_node->child[1]->kind == c_var)
+        {
+            vi = var_lookup (for_node->child[1]->sem.var, active_vlist);
+            for (i = 0; i < PFarray_last (vi.reflist); i++)
+            {
+                max_lev_snd = (max_lev_snd>(*(var_info *) PFarray_at (vi.reflist, i)).act_lev)?
+                          max_lev_snd:
+                          (*(var_info *) PFarray_at (vi.reflist, i)).act_lev;
+            }
+        }
+        */
+
+        
+        if (max_lev_fst && max_lev_snd)
+        {
+            /* no idea to handle this until now */
+            /* test if 'reflist.act_lev = var.act_lev - 1' and throw this out */
+            return subtree_tested;
+        }
+        else if (max_lev_fst)
+        {
+            /* normal translation */
+            snd_inner = PFcore_wire4 (c_for, 
+                                      for_node->child[0],
+                                      for_node->child[1],
+                                      for_node->child[2],
+                                      snd_inner);
+            *for_node = *create_join(fst_inner, fst_inner_cast, max_lev_fst,
+                                     snd_inner, snd_inner_cast, max_lev_snd,
+                                     fun, fst_arg, res);
+            return subtree_tested;
+        }
+        else if (max_lev_snd)
+        {
+            /* no idea to handle this until now */
+            return subtree_tested;
+        /*
+            snd_inner = PFcore_wire4 (c_for, 
+                                      for_node->child[0],
+                                      for_node->child[1],
+                                      for_node->child[2],
+                                      snd_inner);
+            *for_node = *create_join(fst_inner, fst_inner_cast, max_lev_fst,
+                                     snd_inner, snd_inner_cast, max_lev_snd,
+                                     fun, fst_arg, res);
+        */
+        }
+        else
+        {
+            /* translate each side with level 0 and then multiply result by loop act_level */
+            snd_inner = PFcore_wire4 (c_for, 
+                                      for_node->child[0],
+                                      for_node->child[1],
+                                      for_node->child[2],
+                                      snd_inner);
+            *for_node = *create_join(fst_inner, fst_inner_cast, max_lev_fst,
+                                     snd_inner, snd_inner_cast, max_lev_snd,
+                                     fun, fst_arg, res);
+            return subtree_tested;
+        }
+
+/*
+printf("fst_inner: ");
+for (i = 0; i < PFarray_last (fst_if_info.varlist); i++)
+{
+ printf("%s, ", PFqname_str ((*(var_info *) PFarray_at (fst_if_info.varlist, i)).id->qname));
+}
+printf("\n");
+
+printf("snd_inner: ");
+for (i = 0; i < PFarray_last (snd_if_info.varlist); i++)
+{
+ printf("%s, ", PFqname_str ((*(var_info *) PFarray_at (snd_if_info.varlist, i)).id->qname));
+}
+printf("\n");
+*/
+        /* find most specific act_level in active if list */
+/*        create_join (fst_for, way_no, fst_inner, snd_inner, fun, fst_arg, res); */
+/*        printf("join\n"); */
+        return subtree_tested;
+    }
+        return subtree_tested;
+}
+
+static int test_select(PFcnode_t *c,
+                       PFarray_t *active_if,
+                       PFarray_t *active_vlist,
+                       PFarray_t *active_vdefs,
+                       PFarray_t *path,
+                       int act_level)
+{
+   assert(c);
+   assert(active_if);
+   assert(active_vlist);
+   assert(active_vdefs);
+   assert(path);
+   act_level = act_level;
+   return 0;
+}
+
+static void test_print(PFcnode_t *c, PFarray_t *active_if, PFarray_t *active_vlist, PFarray_t *active_vdefs, PFarray_t *path, int act_level)
+{
+unsigned int i, j;
+var_info vi;
+PFarray_t *reflist;
+
+assert(active_if);
+printf("==========\n");
+printf("active node:\n");
+printf("path: ");
+for (i = 0; i < PFarray_last (path); i++)
+{
+  printf("%i, ", *(int *) PFarray_at (path, i));
+}
+printf("\n");
+printf("act_level: %i\n", act_level);
+printf("active_vdefs:\n");
+for (i = 0; i < PFarray_last (active_vdefs); i++)
+{
+        vi = (*(var_info *) PFarray_at (active_vdefs, i));
+        printf("%s, ", PFqname_str((*(var_info *) PFarray_at (active_vdefs, i)).id->qname));
+        printf("act_lev: %i\n", vi.act_lev);
+
+        reflist = (*(var_info *) PFarray_at (active_vdefs, i)).reflist;
+        if (PFarray_last(reflist) > 0)
+        {
+        printf("reflist: ");
+        for (j = 0; j < PFarray_last (reflist); j++)
+        {
+             printf("%s, ", PFqname_str((*(var_info *) PFarray_at (reflist, j)).id->qname));
+        }
+        printf("\n");
+        }
+}
+
+printf("active_vlist:\n");
+for (i = 0; i < PFarray_last (active_vlist); i++)
+{
+        vi = (*(var_info *) PFarray_at (active_vlist, i));
+        printf("%s, ", PFqname_str((*(var_info *) PFarray_at (active_vlist, i)).id->qname));
+        printf("act_lev: %i\n", vi.act_lev);
+
+        reflist = (*(var_info *) PFarray_at (active_vlist, i)).reflist;
+        if (PFarray_last(reflist) > 0)
+        {
+        printf("reflist: ");
+        for (j = 0; j < PFarray_last (reflist); j++)
+        {
+             printf("%s, ", PFqname_str((*(var_info *) PFarray_at (reflist, j)).id->qname));
+        }
+        printf("\n");
+        }
+}
+}
+
+
+static void recognize_join(PFcnode_t *c, 
+                           PFarray_t *active_if,
+                           PFarray_t *active_vlist,
+                           PFarray_t *active_vdefs,
+                           PFarray_t *path,
+                           int act_level)
+{
+    unsigned int i;
+    assert(c);
+    var_info var_struct;
+
+/* test_print(c,active_if,active_vlist,active_vdefs,path,act_level); */
+
+    switch (c->kind)
+    {
+        case c_var:
+            /* get var_info of actual var */
+            var_struct = var_lookup (c->sem.var, active_vlist);
+            /* add variable to usage lists of active if-calls if they are defined outside the if expression */
+            for (i = 0; i < PFarray_last (active_if); i++)
+            {
+                if ((*(if_info *) PFarray_at (active_if, i)).act_lev >= var_struct.act_lev)
+                {
+                    *(var_info *) PFarray_add ((*(if_info *) PFarray_at (active_if, i)).varlist) = var_struct;
+                }
+            }
+            /* add reference to variable definitions */
+            add_ref_to_vdef (var_struct, active_vdefs);
+            break;
+        case c_let:
+            /* add var to the active variable definition list */
+            *(var_info *) PFarray_add (active_vdefs) = create_var_info (c, c->child[0]->sem.var, act_level);
+
+            /* call let binding */
+            *(int *) PFarray_add (path) = 1;
+            recognize_join (c->child[1], active_if, active_vlist, active_vdefs, path, act_level);
+            PFarray_del (path);
+
+            /* move var from definition to active variable list */
+            *(var_info *) PFarray_add (active_vlist) = *(var_info *) PFarray_top (active_vdefs);
+            PFarray_del (active_vdefs);
+
+            /* TODO: in a later step test act_level = min (active_vdefs.act_lev) and move let expression */
+
+            /* call let body */
+            *(int *) PFarray_add (path) = 2;
+            recognize_join (c->child[2], active_if, active_vlist, active_vdefs, path, act_level);
+            PFarray_del (path);
+
+            /* delete variable from active list */
+            PFarray_del (active_vlist);
+            break;
+        case c_for: 
+            /* add var to the active variable definition list */
+            *(var_info *) PFarray_add (active_vdefs) = create_var_info (c, c->child[0]->sem.var, act_level+1);
+            if (c->child[1]->kind != c_nil)
+            {
+                i = 1;
+                /* add positional var to the active variable definition list */
+                *(var_info *) PFarray_add (active_vdefs) = create_var_info (c, c->child[1]->sem.var, act_level+1);
+            }
+            else i = 0;
+
+            /* call for binding */
+            *(int *) PFarray_add (path) = 2;
+            recognize_join (c->child[2], active_if, active_vlist, active_vdefs, path, act_level);
+            PFarray_del (path);
+
+            if (i)
+            {
+                /* move positional var from definition to active variable list */
+                *(var_info *) PFarray_add (active_vlist) = *(var_info *) PFarray_top (active_vdefs);
+                PFarray_del (active_vdefs);
+            }
+            /* move var from definition to active variable list */
+            *(var_info *) PFarray_add (active_vlist) = *(var_info *) PFarray_top (active_vdefs);
+            PFarray_del (active_vdefs);
+
+            if (!test_join (c, active_if, active_vlist, active_vdefs, path, act_level))
+            {
+                /* call for body */
+                act_level++;
+                *(int *) PFarray_add (path) = 3;
+                recognize_join (c->child[3], active_if, active_vlist, active_vdefs, path, act_level);
+                PFarray_del (path);
+            }
+
+            /* delete variable from active list */
+            PFarray_del (active_vlist);
+            if (i)
+            {
+                /* delete positional variable from active list */
+                PFarray_del (active_vlist);
+            }
+            break;
+        case c_ifthenelse:
+            if (test_select (c, active_if, active_vlist, active_vdefs, path, act_level))
+            {
+                break;
+            }
+        default:
+            for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++) {
+                *(int *) PFarray_add (path) = i;
+                recognize_join (c->child[i], active_if, active_vlist, active_vdefs, path, act_level);
+                PFarray_del (path);
+            }
+            break;
+    }
+
 }
 
 /* the fid increasing for every for node */ 
@@ -4811,9 +6097,16 @@ PFprintMILtemp (FILE *f, PFcnode_t *c, PFstate_t *status)
     *(int *) PFarray_add (counter) = 0; 
     *(int *) PFarray_add (counter) = 0; 
 
-    /* resolves nodes, which are not supported and prunes 
+    /* resolves nodes, which are not supported and prunes
        code which is not needed (e.g. casts, let-bindings) */
     simplifyCoreTree (c);
+
+    recognize_join (c,
+                    PFarray (sizeof (if_info)),
+                    PFarray (sizeof (var_info)),
+                    PFarray (sizeof (var_info)),
+                    PFarray (sizeof (int)),
+                    0);
 
 #if WITH_SCRIPT
 #else
