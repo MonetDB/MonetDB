@@ -21,4 +21,4 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SUBDIRS = C perl python haskell tcl php java
+SUBDIRS = C perl python haskell tcl php HAVE_JAVA_1_2?java
