@@ -414,7 +414,7 @@ MERROR  & Mapi internal error.\\
 @h
 
 /*#define MONET5*/
-#define BLOCKED
+#define BLOCKED 
 
 #include  <stdio.h>
 #include  <stream.h>
@@ -1424,7 +1424,7 @@ The content received is analysed further by mapi_getRow()
 
 char * mapi_fetch_line(Mapi mid){
 	char *l,*reply,*newbuf, *s;
-	int n=0,k;        
+	int k;      
 
 
 	if(mid->cache.writer>0 && mid->cache.reader+1< mid->cache.writer)
@@ -1437,22 +1437,26 @@ char * mapi_fetch_line(Mapi mid){
                 mapi_clear_cache(mid)) return 0;
 
 	/* check if you need to read more blocks to catch a new line */
-	n= mid->blk.nxt;
 	mid->blk.eos=0;
-	while( n==mid->blk.lim || !strchr(mid->blk.buf+n,'\n')){
+	while( !strchr(mid->blk.buf+mid->blk.nxt,'\n') && mid->blk.eos==0){
 		char *newbuf;
-		int len;
-		if( mid->blk.eos)  return 0;
+		int len,rest,n;
 
-		len= n? mid->blk.lim - n : 0;
-		if( len < BLOCK) len+= BLOCK+1; /* scratch null byte */
-		newbuf= (char *)malloc(len * sizeof(char));
-		if(n) memcpy(newbuf,  mid->blk.buf + n, mid->blk.lim - n);
-		if( mid->blk.buf) free(mid->blk.buf);
-		mid->blk.buf= newbuf;
-		mid->blk.nxt= 0;
-		mid->blk.lim= len;
-		n=0;
+		s= strchr(mid->blk.buf+mid->blk.nxt,'\0');
+		assert(s);
+		n= s - mid->blk.buf;
+
+		if( mid->blk.lim-n < BLOCK){
+			len= mid->blk.lim+BLOCK; 
+			rest= n-mid->blk.nxt;
+			newbuf= (char *)malloc(len * sizeof(char));
+			if(rest) memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest+1);
+			if( mid->blk.buf) free(mid->blk.buf);
+			mid->blk.buf= newbuf;
+			mid->blk.nxt= 0;
+			mid->blk.lim= len;
+			n = rest;
+		}
 
                 if (mid->from->errnr) {
                         mapi_setError(mid, "Connection terminated","mapi_fetch_line");
@@ -1461,8 +1465,9 @@ char * mapi_fetch_line(Mapi mid){
 		}
 #ifdef BLOCKED
 		/* fetch one more block */
-		len = mid->from->read(mid->from, mid->blk.buf+mid->blk.nxt, 
+		len = mid->from->read(mid->from, mid->blk.buf+n, 
 					1, BLOCK);
+		if(len>=0) mid->blk.buf[n+len]=0;
 		if( len != BLOCK) mid->blk.eos=1;
 		@:endofsession@
 #else
@@ -1471,28 +1476,27 @@ char * mapi_fetch_line(Mapi mid){
 		s=mid->blk.buf+n;
 		while( (k= mid->from->read(mid->from,s,1,1))==1 ){
 			len++;
-			if( *s== '\n'){ *(s+1)=0; break;}
+			if( *s== '\n') break;
 			s++;
 			if(s== mid->blk.buf+mid->blk.lim) break;
 		}
+		mid->blk.buf[n+len]=0;
 		@:endofsession@
 
 #endif
-		if(mid->blk.buf[0]== PROMPTBEG) break;
-		if( len >=0) mid->blk.buf[mid->blk.nxt+len]=0;
 	}
-	if(mid->blk.buf[n]== PROMPTBEG){
+	if(mid->blk.buf[mid->blk.nxt]== PROMPTBEG){
 			promptMonet(mid);
 			return 0;
 	}
 	/* we have a complete line in the buffer */
-	s= strchr(mid->blk.buf + n,'\n');
+	s= strchr(mid->blk.buf + mid->blk.nxt,'\n');
 	assert(s);
 	*s=0;
-	k= strlen(mid->blk.buf+n)+1;
+	k= strlen(mid->blk.buf+mid->blk.nxt)+1;
 	reply = (char *) malloc(k);
 	assert(reply);
-	strcpy(reply, mid->blk.buf+n);
+	strcpy(reply, mid->blk.buf+mid->blk.nxt);
 	mid->blk.nxt += k;
 
 	/* manage the row cache space first */
