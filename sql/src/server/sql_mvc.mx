@@ -1936,12 +1936,13 @@ static void mvc_init_type( struct bm *bm )
 	if (BATcount(type_sqlname) == 0) for (n = types->h; n; n = n->next) {
 		oid nil = oid_nil;
 		sql_type *t = n->data;
+		int radix = t->radix;
 
 		BUNins(type_id, &nil, &t->base.id);
 		BUNins(type_sqlname, &nil, t->sqlname);
 		BUNins(type_digits, &nil, &t->digits);
 		BUNins(type_scale, &nil, &t->scale);
-		BUNins(type_radix, &nil, &t->radix);
+		BUNins(type_radix, &nil, &radix);
 		BUNins(type_module_id, &nil, &zero);
 		BUNins(type_systemname, &nil, t->base.name);
 	}
