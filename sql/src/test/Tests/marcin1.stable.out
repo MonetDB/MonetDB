@@ -1,13 +1,15 @@
 stdout of test 'marcin1` in directory 'src/test` itself:
 
 
-# 20:07:32 >  
-# 20:07:32 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=0 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_test" --set sql_port=50445 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" ; echo ; echo Over..
-# 20:07:32 >  
+# 16:14:20 >  
+# 16:14:20 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX__GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX__GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/log" --set mapi_port=45373 --set sql_port=50816 --set monet_prompt= --trace "--dbname=mTests_src_test" "/var/tmp/_BUILD_SQL_GNU_32_d__/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 16:14:20 >  
 
-# Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
 printf("\nReady.\n");
 
 Ready.
@@ -15,39 +17,96 @@ quit();
 
 Over..
 
-# 20:07:32 >  
-# 20:07:32 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < marcin1.sql
-# 20:07:32 >  
+# 16:14:21 >  
+# 16:14:21 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < marcin1.sql
+# 16:14:21 >  
 
-SQL  connected to database mTests_src_test using schema sys
-#     1: 0 ############################
-#     2: 0 
-#     3: 1 create table t1(id int, val int);
-#     4: 1 create table t2(id int, val int);
-#     5: 1 insert into t1 values(1,1);
-SQL  no Rows affected
-#     6: 1 insert into t1 values(2,2);
-SQL  no Rows affected
-#     7: 1 insert into t1 values(3,3);
-SQL  no Rows affected
-#     8: 1 insert into t1 values(4,4);
-SQL  no Rows affected
-#     9: 1 insert into t1 values(5,5);
-SQL  no Rows affected
-#    10: 1 insert into t2 values(1,3);
-SQL  no Rows affected
-#    11: 1 insert into t2 values(2,2);
-SQL  no Rows affected
-#    12: 1 insert into t2 values(3,1);
-SQL  no Rows affected
-#    13: 0 
-#    14: 0 #and now some strange queries and even stranger results
-#    15: 0 
-#    16: 0 #cartesian-product missing
-#    17: 1 select * from t1,t2;
-#-----------------------
-#| id | val | id | val |
-#-----------------------
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 0 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 3 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 4 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 5 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 6 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 7 # id
+[ 1	]
+#-
+# 7 # querytype
+#-
+# 3 # querytype
+# t1,	t1,	t2,	t2 # table_name
+# id,	val,	id,	val # name
+# int,	int,	int,	int # type
+# 0,	0,	0,	0 # length
+# 15,	,	,	 # tuplecount
+# 8,	,	,	 # id
 [ 1,	1,	1,	3	]
 [ 2,	2,	1,	3	]
 [ 3,	3,	1,	3	]
@@ -63,13 +122,14 @@ SQL  no Rows affected
 [ 3,	3,	3,	1	]
 [ 4,	4,	3,	1	]
 [ 5,	5,	3,	1	]
-SQL  15 Rows affected
-#    18: 0 
-#    19: 0 #These actually give good results (cartesian-product like):
-#    20: 1 select t1.id,t2.id from t1,t2 where t1.id<>t2.id;
-#-----------
-#| id | id |
-#-----------
+#-
+# 3 # querytype
+# t1,	t2 # table_name
+# id,	id # name
+# int,	int # type
+# 0,	0 # length
+# 12,	 # tuplecount
+# 9,	 # id
 [ 1,	2	]
 [ 1,	3	]
 [ 2,	1	]
@@ -82,11 +142,14 @@ SQL  15 Rows affected
 [ 5,	1	]
 [ 5,	2	]
 [ 5,	3	]
-SQL  12 Rows affected
-#    21: 1 select t1.id,t2.id from t1,t2 where t1.id>t2.id;
-#-----------
-#| id | id |
-#-----------
+#-
+# 3 # querytype
+# t1,	t2 # table_name
+# id,	id # name
+# int,	int # type
+# 0,	0 # length
+# 9,	 # tuplecount
+# 10,	 # id
 [ 2,	1	]
 [ 3,	1	]
 [ 3,	2	]
@@ -96,87 +159,109 @@ SQL  12 Rows affected
 [ 5,	1	]
 [ 5,	2	]
 [ 5,	3	]
-SQL  9 Rows affected
-#    22: 0 
-#    23: 0 #does not work (and should, assuming ids are unique)
-#    24: 1 select t1.id, (select t2.id from t2 where t1.id=t2.id) from t1;
-#-----------
-#| id | id |
-#-----------
+#-
+# 3 # querytype
+# t1,	t2 # table_name
+# id,	id # name
+# int,	int # type
+# 0,	0 # length
+# 5,	 # tuplecount
+# 11,	 # id
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]
 [ 4,	NULL	]
 [ 5,	NULL	]
-SQL  5 Rows affected
-#    25: 0 
-#    26: 0 # As the sub-select returns a single value (3), no error occures
-#    27: 1 select t1.id, (select t2.id from t2 where t2.id>2) from t1;
-#-----------
-#| id | id |
-#-----------
+#-
+# 3 # querytype
+# t1,	t2 # table_name
+# id,	id # name
+# int,	int # type
+# 0,	0 # length
+# 5,	 # tuplecount
+# 12,	 # id
 [ 1,	3	]
 [ 2,	3	]
 [ 3,	3	]
 [ 4,	3	]
 [ 5,	3	]
-SQL  5 Rows affected
-#    28: 0 
-#    29: 0 #Return only columns from first table
-#    30: 1 select * from t2,t1 where t1.id=t2.id;
-#-----------------------
-#| id | val | id | val |
-#-----------------------
+#-
+# 7 # querytype
+#-
+# 3 # querytype
+# t2,	t2,	t1,	t1 # table_name
+# id,	val,	id,	val # name
+# int,	int,	int,	int # type
+# 0,	0,	0,	0 # length
+# 3,	,	,	 # tuplecount
+# 13,	,	,	 # id
 [ 1,	3,	1,	1	]
 [ 2,	2,	2,	2	]
 [ 3,	1,	3,	3	]
-SQL  3 Rows affected
-#    31: 1 select * from t1,t2 where t1.id=t2.id;
-#-----------------------
-#| id | val | id | val |
-#-----------------------
+#-
+# 3 # querytype
+# t1,	t1,	t2,	t2 # table_name
+# id,	val,	id,	val # name
+# int,	int,	int,	int # type
+# 0,	0,	0,	0 # length
+# 3,	,	,	 # tuplecount
+# 14,	,	,	 # id
 [ 1,	1,	1,	3	]
 [ 2,	2,	2,	2	]
 [ 3,	3,	3,	1	]
-SQL  3 Rows affected
-#    32: 0 
-#    33: 0 #I'm not sure if t2.* is allowed but anyway it's strange
-#    34: 1 select * from t2;
-#------------
-#| id | val |
-#------------
+#-
+# 3 # querytype
+# t2,	t2 # table_name
+# id,	val # name
+# int,	int # type
+# 0,	0 # length
+# 3,	 # tuplecount
+# 15,	 # id
 [ 1,	3	]
 [ 2,	2	]
 [ 3,	1	]
-SQL  3 Rows affected
-#    35: 1 select t2.* from t2;
-#------------
-#| id | val |
-#------------
+#-
+# 3 # querytype
+# t2,	t2 # table_name
+# id,	val # name
+# int,	int # type
+# 0,	0 # length
+# 3,	 # tuplecount
+# 16,	 # id
 [ 1,	3	]
 [ 2,	2	]
 [ 3,	1	]
-SQL  3 Rows affected
-#    36: 0 
-#    37: 0 #wrong subsets
-#    38: 1 select * from t1 where id>2;
-#------------
-#| id | val |
-#------------
+#-
+# 3 # querytype
+# t1,	t1 # table_name
+# id,	val # name
+# int,	int # type
+# 0,	0 # length
+# 3,	 # tuplecount
+# 17,	 # id
 [ 3,	3	]
 [ 4,	4	]
 [ 5,	5	]
-SQL  3 Rows affected
-#    39: 1 select * from t1 where id>2 and id<2;
-#------------
-#| id | val |
-#------------
-SQL  no Rows affected
-#    40: 0 
-#    41: 1 drop table t1;
-#    42: 1 drop table t2;
+#-
+# 7 # querytype
+#-
+# 3 # querytype
+# t1,	t1 # table_name
+# id,	val # name
+# int,	int # type
+# 0,	0 # length
+# 0,	 # tuplecount
+# 18,	 # id
+#-
+# 7 # querytype
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 7 # querytype
 
-# 19:16:12 >  
-# 19:16:12 >  Done.
-# 19:16:12 >  
+# 16:14:21 >  
+# 16:14:21 >  Done.
+# 16:14:21 >  
 

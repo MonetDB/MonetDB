@@ -1,13 +1,14 @@
 stdout of test 'count` in directory 'src/test` itself:
 
 
-# 17:00:33 >  
-# 17:00:33 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=46593 --set sql_port=50327 --set monet_prompt= --trace "--dbname=mTests_src_test" "/export/scratch1/roberto/Monet/build/sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 17:00:33 >  
+# 16:14:39 >  
+# 16:14:39 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX__GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX__GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/log" --set mapi_port=45373 --set sql_port=50816 --set monet_prompt= --trace "--dbname=mTests_src_test" "/var/tmp/_BUILD_SQL_GNU_32_d__/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 16:14:39 >  
 
-# Monet Database Server V4.3.15
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
 
@@ -16,68 +17,114 @@ quit();
 
 Over..
 
-# 17:00:34 >  
-# 17:00:34 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=aquila --port=50327 --trace < count.sql
-# 17:00:34 >  
+# 16:14:40 >  
+# 16:14:40 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < count.sql
+# 16:14:40 >  
 
-SQL  connected to database mTests_src_test using schema sys
-#     0: create table test (val int );
-#     1: insert into test values (10);
-SQL  no Rows affected
-#     2: insert into test values (20);
-SQL  no Rows affected
-#     3: insert into test values (30);
-SQL  no Rows affected
-#     4: insert into test values (10);
-SQL  no Rows affected
-#     5: insert into test values (20);
-SQL  no Rows affected
-#     6: insert into test values (NULL);
-SQL  no Rows affected
-#     7: select count(*) from test;
-#-------------
-#| count_val |
-#-------------
+#-
+# 6 # querytype
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 0 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 3 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 4 # id
+[ 1	]
+#-
+# 4 # querytype
+#  # table_name
+# single_value # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 5 # id
+[ 1	]
+#-
+# 3 # querytype
+# test # table_name
+# count_val # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 6 # id
 [ 6	]
-SQL  1 Row affected
-#     8: -- 6
-#     8: select count(val) from test;
-#--------------------
-#| count_no_nil_val |
-#--------------------
+#-
+# 3 # querytype
+# test # table_name
+# count_no_nil_val # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 7 # id
 [ 5	]
-SQL  1 Row affected
-#     9: -- 5
-#     9: select count(*) from test group by val;
-#-------------
-#| count_val |
-#-------------
+#-
+# 3 # querytype
+# test # table_name
+# count_x # name
+# mediumint # type
+# 0 # length
+# 4 # tuplecount
+# 8 # id
 [ 1	]
 [ 1	]
 [ 2	]
 [ 2	]
-SQL  4 Rows affected
-#    10: --        1 
-#    10: --        2 
-#    10: --        2 
-#    10: --        1 
-#    10: select count(val) from test group by val;
-#--------------------
-#| count_no_nil_val |
-#--------------------
+#-
+# 3 # querytype
+# test # table_name
+# count_val # name
+# mediumint # type
+# 0 # length
+# 4 # tuplecount
+# 9 # id
 [ 0	]
 [ 1	]
 [ 2	]
 [ 2	]
-SQL  4 Rows affected
-#    11: --        0 
-#    11: --        2 
-#    11: --        2 
-#    11: --        1 
-#    11: drop table test;
-#    12: COMMIT;
+#-
+# 6 # querytype
+#-
+# 7 # querytype
 
-# 17:00:34 >  
-# 17:00:34 >  Done.
-# 17:00:34 >  
+# 16:14:40 >  
+# 16:14:40 >  Done.
+# 16:14:40 >  
 
