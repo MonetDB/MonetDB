@@ -5,6 +5,7 @@
 @+ Introduction
 In Monet multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
+A assemblage of components is called a scenario.
 The default being to accept MAL instructions immediately
 followed by a MAL optimization & interpreter call.
 
@@ -18,30 +19,22 @@ After parsing the MAL code block is passed through a strategic
 optimizer, which normally deploys language specific optimizations,
 e.g. foreign-key optimizations in joins and volume reduction over
 intermediates. They may leave advice and their findings in attributes
-associated the symbols.
+in the symboltable.
 
 Once the MAL block has thus been prepared for execution, the
 tactics optimizer(s) is (are) called to prepare scheduling the program.
 For example, it may perform symbolic evaluations, parallelize the code,
 or prepare for replication management.
 
-Built-in scenarios have a name for ease of reference.
-The first time a scenario is used, the system looks for an initialization
-file in the corresponding module, e.g. sql/scenario_init.mal, and executes
-it using the default setting ("mal").
-It is typically used to prepare the server for language specific interactions.
+The first time a scenario is used, the system looks for a scenario
+initialization routine and executes it. It is typically used to 
+prepare the server for language specific interactions.
 Thereafter the reader,parsers,... are set to those required by
 the scenario (e.g. "sql") and the client initialization takes place.
-using e.g. sql/client_init.sql.
+using initClientScenario().
 
-Before the server terminates (cleanly) the exit scripts of the
-active scenarios are executed , e.g. sql/client_exit.mal. [TODO].
+Before the server terminates (cleanly) an exit routine is called.
 They typically perform cleanup, backup and monitoring functions.
-
-The control scripts can be overruled by setting up a new scenario.
-A new scenario can always be built at run-time using the
-comment session.newscenario() passing the necessary
-script files.
 
 A scenario is interpreted in a strictly linear fashion,
 i.e. performing a symbolic optimization after a parallelization 
@@ -90,6 +83,8 @@ may be legal.
 #define OPTIMIZE 2
 #define TACTICS 3
 #define ENGINE 4
+#define INITCLIENT 5
+#define EXITCLIENT 6
 
 /*#define MAL_SCENARIO_DEBUG*/
 @-
@@ -102,8 +97,10 @@ into an exception and aborts the scenario.
 
 typedef struct SCENARIO{
 	str 	name;
-	str	initScenario, exitScenario;
-	str	initClientScenario, exitClientScenario;
+	str	initScenario;	GDKfcn initScenarioCmd;
+	str	exitScenario;	GDKfcn exitScenarioCmd;
+	str	initClient;	GDKfcn initClientCmd;
+	str	exitClient;	GDKfcn exitClientCmd;
 	str	reader;		GDKfcn readerCmd;	void *readerState;
 	str	parser;		GDKfcn parserCmd;	void *parserState;
 	str	optimizer;	GDKfcn optimizerCmd;	void *optimizerState;
@@ -117,6 +114,7 @@ mal_export Scenario dropScenario();
 mal_export str setScenario(Client c, str nme);
 mal_export void runScenario(Client c);
 mal_export void fillScenario(Client c, Scenario scen);
+mal_export void clrScenario(Client c);
 
 mal_export void showCurrentScenario();
 mal_export void showScenarioByName(stream *f, str s);
@@ -130,25 +128,27 @@ mal_export str setScenario(Client c, str nme);
 #include "mal_scenario.h"
 
 struct SCENARIO scenarioRec[MAXSCEN]={
-{"mal",	0,0,0,0,
+{"mal",	0,0,0,0,0,0,0,0,
 	"MALreader", 	0,0,
 	"MALparser",	0, 0,
 	"MALoptimizer",	0, 0,
 	0,		0, 0,
 	"MALengine",	0, 0,  0},
-{"mil",	0,0,0,0,
+{"mil",	0,0,0,0,0,0,0,0,
 	"MILreader",	0,0,
 	"MILparser",	0, 0,
 	0,		0, 0,
 	0,		0, 0,
 	"MILengine",	0, 0,  0},
-{"sql",	0,0,0,0,
+{"sql",	"SQLinit",0, "SQLexit",0,
+	"SQLinitClient",0,
+	"SQLexitClient",0,
 	"SQLreader",	0, 0,
 	"SQLparser",	0, 0,
 	0,		0, 0,
 	0,		0, 0,
 	"SQLengine",	0, 0,  0},
-{0,	0,0,0,0,
+{0,	0,0,0,0,0,0,0,0,
 	0,		0, 0,
 	0,		0, 0,
 	0,		0, 0,
@@ -177,65 +177,46 @@ Scenario getFreeScenario(){
 @-
 @= initScen
 	if( @1->@2 ) @1->@2Cmd = (GDKfcn)getAddress( @1->@2);
-	if( @1->@2 && @1->@2Cmd == 0) 
-	    return throwMessage("initScenario","@2 address not found\n");
+	if( @1->@2 && @1->@2Cmd == 0) {
+	    return throwMessage("initScenario","@2 address not found\n"); }
 @-
-A scenario is initialized only once per session. All other requests are 
-silently ignored. 
+A scenario is initialized only once per session. 
+All other requests are silently ignored. 
 After initialization, all state functions should have been set.
 Initialization includes searching for the scenario startup file in
 the etc/MonetDB directory. This creates a dependency, because the
 malImport also needs a scenario. To break this cycle, the system should
 call once the routine default scenario for each client first.
 @c
-str defaultScenario(Client c){
+str initScenario(Client c, Scenario s){
 	char buf[PATHLENGTH];
 
-	@:initScen(scenarioRec,reader)@
-	@:initScen(scenarioRec,parser)@
-	@:initScen(scenarioRec,optimizer)@
-	@:initScen(scenarioRec,tactics)@
-	@:initScen(scenarioRec,engine)@
-	fillScenario(c,scenarioRec);
-	if( scenarioRec->initScenario){
-		malImport(c,scenarioRec->name,scenarioRec->name,0);
-	} else {
-		snprintf(buf,PATHLENGTH,"%s/%s_scenario",
-			scenarioRec->name, scenarioRec->name);
-		malImport(c,buf,buf,0);
+	if(s->initScenario && s->initScenarioCmd==0){
+		/* prepare for conclicts */
+		MT_set_lock(mal_contextLock,"Scenario");
+		s->initScenarioCmd= (GDKfcn)getAddress( s->initScenario);
+		if(s->initScenarioCmd) (*s->initScenarioCmd)(c);
+		MT_unset_lock(mal_contextLock,"Scenario");
 	}
+	@:initScen(s,exitScenario)@
+	@:initScen(s,initClient)@
+	@:initScen(s,exitClient)@
+	@:initScen(s,reader)@
+	@:initScen(s,parser)@
+	@:initScen(s,optimizer)@
+	@:initScen(s,tactics)@
+	@:initScen(s,engine)@
+	fillScenario(c,s);
+
 	return 0;
 }
-@-
-Initialization of the scenario first attempts to execute the
-MAL scenario initialization script. The client should also execute
-the scenario script.
-@c
-str initScenario(Client c, Scenario scen){
-	char buf[PATHLENGTH];
-	if(scen->readerCmd==0){
-		if( scen->initScenario){
-			malImport(c,scen->name,scen->name,0);
-		} else {
-			snprintf(buf,PATHLENGTH,"%s/%s_scenario",
-				scen->name,scen->name);
-			malImport(c,buf,buf,0);
-		}
-		@:initScen(scen,reader)@
-		@:initScen(scen,parser)@
-		@:initScen(scen,optimizer)@
-		@:initScen(scen,tactics)@
-		@:initScen(scen,engine)@
-	}
-	return 0;
+str defaultScenario(Client c){
+	initScenario(c,scenarioRec);
+	return MAL_SUCCEED;
 }
 @-
 The Monet debugger provides an option to inspect the scenarios currently
 defined.
-@= scenarioScript
-	if( scen->@1Scenario)
-		stream_printf(f," \"%s%s\",", scen->@1Scenario);
-	else stream_printf(f," nil,");
 @= scenarioCommand
 	if( scen->@1) stream_printf(f," \"%s%s\",",scen->@1,
 		(scen->@1Cmd?"":"?"));
@@ -243,10 +224,10 @@ defined.
 @c
 void showScenario(stream *f, Scenario scen){
 	stream_printf(f,"[ \"%s\",", scen->name);
-	@:scenarioScript(init)@
-	@:scenarioScript(exit)@
-	@:scenarioScript(initClient)@
-	@:scenarioScript(exitClient)@
+	@:scenarioCommand(initScenario)@
+	@:scenarioCommand(exitScenario)@
+	@:scenarioCommand(initClient)@
+	@:scenarioCommand(exitClient)@
 	@:scenarioCommand(parser)@
 	@:scenarioCommand(optimizer)@
 	@:scenarioCommand(tactics)@
@@ -287,7 +268,7 @@ Scenario fndScenario(str nme){
 	return 0;
 }
 @-
-All client records should be initialized with the default
+All client records should be initialized with a default
 scenario, i.e. the first described in the scenario table.
 @c
 void fillScenario(Client c, Scenario scen){
@@ -298,12 +279,41 @@ void fillScenario(Client c, Scenario scen){
 	c->phase[OPTIMIZE] = scen->optimizerCmd;
 	c->phase[TACTICS] = scen->tacticsCmd;
 	c->phase[ENGINE] = scen->engineCmd;
+	c->phase[INITCLIENT] = scen->initClientCmd;
+	c->phase[EXITCLIENT] = scen->exitClientCmd;
 	c->state[READER] =0;
 	c->state[PARSER] =0;
 	c->state[OPTIMIZE] =0;
 	c->state[TACTICS] =0;
 	c->state[ENGINE] =0;
+	c->state[INITCLIENT] =0;
+	c->state[EXITCLIENT] =0;
+	if( scen->initClientCmd)
+		(*scen->initClientCmd)(c);
 }
+void clrScenario(Client c){
+	if( c->scenario==0) return;
+	GDKfree(c->scenario);
+	c->scenario=0;
+	c->phase[READER] = 0;
+	c->phase[PARSER] = 0;
+	c->phase[OPTIMIZE] = 0;
+	c->phase[TACTICS] = 0;
+	c->phase[ENGINE] = 0;
+	c->phase[INITCLIENT] =0;
+	c->phase[EXITCLIENT] =0;
+	c->state[READER] =0;
+	c->state[PARSER] =0;
+	c->state[OPTIMIZE] =0;
+	c->state[TACTICS] =0;
+	c->state[ENGINE] =0;
+	c->state[INITCLIENT] =0;
+	c->state[EXITCLIENT] =0;
+}
+@-
+Setting a new scenario calls for saving the previous state
+and execution of the initClientScenario routine.
+@c
 str setScenario(Client c, str nme){
 	int i;
 	str msg;
@@ -316,45 +326,50 @@ str setScenario(Client c, str nme){
 			"Missing scenario specification\n");
 	if(c->scenario){
 		c->oldscenario = c->scenario;
-		for(i=0;i<5;i++){
+		for(i=0;i<7;i++){
 			c->oldstate[i] = c->state[i];
 			c->oldphase[i] = c->phase[i];
 		}
 	}
-	for(i=0;i<5;i++) c->state[i]= 0;
+	for(i=0;i<7;i++) c->state[i]= 0;
 
 	msg= initScenario(c,scen);
 	if(msg) return msg;
-	fillScenario(c,scen);
-@-
-Before we return we should initialize the state structures of
-the scenario phases. This is delegated to a scenario specific routine,
-that should take care of all of them.
-@c
-	/* initialize the scenario administration */
-	if( scen->initScenario ) {
-		start = (GDKfcn)getAddress( scen->initScenario);
-		if( start == 0) 
-			return throwMessage("setScenario",
-				"address of initScenario not found\n");
-		else (*start)(c);
-	}
-	return 0;
+	return MAL_SUCCEED;
 }
+@-
+After finishing a session in a scenario, we should reset the
+state of the previous one. But also call the exitClient
+to garbage collect any scenario specific structures.
+@c
 str getCurrentScenario(Client c){
 	return c->scenario;
 }
 void resetScenario(Client c){
 	int i;
-	if( c->oldscenario) {
-		if(c->scenario) GDKfree(c->scenario);
-		c->scenario= c->oldscenario;
-		for(i=0;i<5;i++){
-			c->state[i] = c->oldstate[i];
-			c->phase[i] = c->oldphase[i];
-		}
+	str msg;
+	Scenario scen= scenarioRec;
+	if( c->scenario==0) return;
+
+	scen = fndScenario(c->scenario);
+	if( scen!= NULL && scen->exitClientCmd)
+		(*scen->exitClientCmd)(c);
+	
+	if(c->scenario) GDKfree(c->scenario);
+	c->scenario= c->oldscenario;
+	for(i=0;i<7;i++){
+		c->state[i] = c->oldstate[i];
+		c->phase[i] = c->oldphase[i];
 	}
 	c->oldscenario =0;
+}
+void exitScenario(Client c){
+	str msg;
+	Scenario scen= scenarioRec;
+	if( c->scenario==0) return;
+	scen = fndScenario(c->scenario);
+	if( scen->exitScenarioCmd)
+		(*scen->exitScenarioCmd)(c);
 }
 @- Running a scenario
 The building blocks of scenarios are routines obeying a strict
@@ -399,8 +414,9 @@ void runScenario(Client c){
 		@:runPhase(ENGINE)@
 	}
 #ifdef MAL_SCENARIO_DEBUG
-	printf("About to terminate scenario\n");
+	printf("About to terminate scenario %s\n",c->scenario);
 #endif
+	if(c->phase[EXITCLIENT] ) (*c->phase[EXITCLIENT])(c);
 }
 
 @+ MAL scenario initialization

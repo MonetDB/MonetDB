@@ -901,13 +901,17 @@ retryConstant:
 			} else
 			if( l>255 || l<0) {
 				if( l<2^31 && l> -2^31){
-				GDKwarning("newConstant:sht coerced to int\n");
-				if(type== TYPE_sht) vr->vtype= TYPE_int;
+				if(type== TYPE_sht){
+					vr->vtype= TYPE_int;
+					setVarType(mb, idx, TYPE_int);
+				}
 				vr->val.ival = l;
 				} else{
-				GDKwarning("newConstant:sht coerced to lng\n");
-				if(type== TYPE_sht) vr->vtype= TYPE_lng;
-				vr->val.lval = l;
+					if(type== TYPE_sht){
+						vr->vtype= TYPE_lng;
+						setVarType(mb, idx, TYPE_lng) ;
+					}
+					vr->val.lval = l;
 				}
 			} else {
 				vr->vtype= TYPE_sht;
@@ -922,7 +926,10 @@ retryConstant:
 			} else
 			if( l>= (1<<15) || l <= (-1<<15)){
 			GDKwarning("newConstant:int coerced to lng\n");
-				if(type==TYPE_int) vr->vtype= TYPE_lng;
+				if(type==TYPE_int){
+					vr->vtype= TYPE_lng;
+					setVarType(mb,idx, TYPE_lng);
+				}
 				vr->val.lval= l;
 			} else {
 				if(type==TYPE_int) vr->vtype= TYPE_int;
@@ -934,7 +941,7 @@ retryConstant:
 			if( tonil) vr->val.oval = oid_nil;
 			else {
 				int site= val[strlen(val)-1]-'0';
-			if(site) GDKwarning("newConstant:server id ignored\n");
+			/*if(site) GDKwarning("newConstant:server id ignored\n");*/
 				vr->val.oval= l;
 			}
 			vr->vtype= type;

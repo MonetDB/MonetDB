@@ -103,8 +103,8 @@ to temporarily switch to another scenario. Propagation of the state
 information should be dealt with separately.[TODO]
 @h
 	str	scenario, oldscenario;	/* scenario management */
-	void	*state[5], *oldstate[5];
-	GDKfcn	phase[5], oldphase[5];
+	void	*state[7], *oldstate[7];
+	GDKfcn	phase[7], oldphase[7];
 	short	itrace;		/* trace execution using interactive mdb */
 	short 	debugoptimizer;
 	long	timer;		/* trace time in usec */
@@ -440,7 +440,7 @@ void closeClient(Client c) {
 	Client k;
 
 #ifdef MAL_DEBUG_CLIENT
-	printf("closeClient %d\n",c-mal_clients);
+	printf("closeClient %d %s\n",c-mal_clients,c->user);
 #endif
 	/* kill living background clients */
 	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
