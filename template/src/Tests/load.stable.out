@@ -23,6 +23,7 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 mods@batloop{
 	printf("loading module '%s'\n",$t);
 	module($t);
@@ -45,6 +46,7 @@ loading module 'example'
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 dropping module 'example'
 #---------------------------------#
 # module	| usage_count	  #
@@ -57,6 +59,7 @@ dropping module 'example'
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 
 quit;
 
