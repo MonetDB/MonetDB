@@ -35,8 +35,12 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifndef WIN32
+#ifdef HAVE_UTIME_NULL
+#ifdef HAVE_SYS_UTIME_H
+#include <sys/utime.h>
+#else
 #include <utime.h>
+#endif
 #endif
 #include "disclaimer.h"
 
@@ -284,14 +288,20 @@ void UpdateFiles(void)
         switch(status){
         case 0: /* identical files, remove temporary file */
             printf("%s: %s - not modified \n",mx_file,f->f_name);
-#ifndef WIN32
-	    if (!notouch)
+	    if (!notouch) {
+#ifdef HAVE_UTIME_NULL
             	utime(f->f_name,0); /* touch the file */
+#else
+		goto rename;
 #endif
+	    }
             unlink(f->f_tmp);
             break;
         case 1: /* different file */
             printf("%s: %s - modified \n",mx_file,f->f_name);
+#ifndef HAVE_UTIME_NULL
+	rename:
+#endif
 	    unlink(f->f_name);
             if (rename(f->f_tmp, f->f_name)) perror("rename");
             break;
