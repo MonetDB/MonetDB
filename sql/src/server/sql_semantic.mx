@@ -395,18 +395,19 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 			   char *query, symbol * optname)
 {
 	node *m;
+	char *tmpname = NULL;
 	char *tname = NULL;
 	dlist *columnrefs = NULL;
 	tvar *tv;
 	sql_schema *schema = cur_schema(sql);
 
 	if (optname && optname->token == SQL_NAME) {
-		tname = optname->data.lval->h->data.sval;
+		tmpname = tname = optname->data.lval->h->data.sval;
 		columnrefs = optname->data.lval->h->next->data.lval;
 	} else {	
-		tname = tmp_table_name();
+		tmpname = tmp_table_name();
 	}
-	(void)create_table_intern(sql, schema, tname, query, sq, tt_temp);
+	(void)create_table_intern(sql, schema, tmpname, query, sq, tt_temp);
 	tv = scope_add_table(scp, sq, tname);
 	if (columnrefs) {
 		dnode *d;

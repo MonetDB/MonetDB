@@ -2001,9 +2001,9 @@ char *table_name(stmt * st)
 		return table_name(st->op1.stval);
 
 	case st_bat:
-		return st->op1.cval->t->base.name;
+		return _strdup(st->op1.cval->t->base.name);
 	case st_alias:
-		return "unknown";
+		return _strdup("unknown");
 	case st_column_alias:
 		return table_name(st->op2.stval);
 
