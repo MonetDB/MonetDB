@@ -69,7 +69,6 @@ it is enough to handle the (cached) BAT descriptor.
 @{
 @c
 int TMcommit() {
-	int nkills=0, maxkills=1024, killbuf[1024], *kills = killbuf;
 	int i, ret = 0;
 
 	/* Acquire BBP locks */
@@ -97,57 +96,20 @@ int TMcommit() {
         for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i)&BBPPERSISTENT) {
 			BBP_status_on(i, BBPEXISTING, "TMcommit");
-		} else if ((BBP_status(i)&(BBPDELETED|BBPTMP)) && BBP_refs(i) <= 0) {
-			/* We cannot kill here, because some complex accelerators (histolink)
-                         * need BBP locks in their delete sequence. Hence we must postpone 
-                         * their destruction until after the commit has released all locks.
-                         */
-			if (nkills >= maxkills) {
-				int *bak = kills;
-				kills = (int*) GDKmalloc((maxkills*=2)*sizeof(int));
-				memcpy(kills, bak, nkills*sizeof(int));
-				if (bak != killbuf) {
-					GDKfree(bak);
-				}
+		} else if ((BBP_status(i)&(BBPDELETED|BBPTMP)) && BBP_refs(i) <= 0 && BBP_lrefs(i) <= 0) {
+                	BAT *b = BBPquickdesc(i, TRUE);
+                	if (BBP_cache(i)) {
+				/* those that quickdesc decides to load => proper unfix */
+                        	BBPunfix(i);
+                	} else {
+				/* the unloaded ones are deleted without loading */
+				BATdelete(b); /* delete disk images */
+				BBPclear(i); /* clear with locking */
 			}
-			/* unregister logical names; bat will be called tmp_X again */
-			if (BBP_logical(-i)) {
-                		BBP_delete(-i);
-        			GDKfree(BBP_logical(-i));
-        			BBP_logical(-i) = NULL;
-			}
-        		if (BBPnamecheck(BBP_logical(i)) == 0) {
-				char buf[32];
-				sprintf(buf, "tmp_%d", i);
-                		BBP_delete(i);
-        			GDKfree(BBP_logical(i));
-        			BBP_logical(i) = GDKstrdup(buf);
-			}
-			kills[nkills++] = i;
-			BBP_refs(i) = 1; /* make unkillable; so nobody else can kill it */
-			BBP_status_on(i, BBPUNLOADING, "TMcommit");
 		}
 		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMcommit");
         }
 	BBPunlock("TMcommit");
-
-	/* outside the lock: now kill all ex-persistent bats */
-	if (ret == 0)
-	for(i=0; i<nkills; i++) {
-                BAT *b = BBPquickdesc(kills[i], TRUE);
-
-                if (BBP_cache(kills[i])) {
-			/* those that quickdesc decides to load => proper unfix */
-                        BBPunfix(kills[i]);
-                } else {
-                        /* the unloaded ones are deleted without loading */
-                        BATdelete(b); /* delete disk images */
-                        BBPclear(kills[i]); /* clear with locking */
-                }
-        }
-	if (kills != killbuf) {
-		GDKfree(kills);
-	}
 	return ret; 
 }
 @- 
