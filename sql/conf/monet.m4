@@ -10,22 +10,18 @@ if test "x$have_monet" != xno; then
   if test "x$have_monet" != xauto; then
     AC_CHECK_PROG(MONET_CONFIG,monet-config,$withval/bin/monet-config,,$withval/bin)
     MONET_PREFIX=`$MONET_CONFIG --prefix`
-    GDKLIBS=`$MONET_CONFIG --gdklibs`
     have_monet=yes
   else
     have_monet=yes
     AC_CHECK_PROG(MONET_CONFIG,monet-config,monet-config)
     MONET_PREFIX=`$MONET_CONFIG --prefix`
-    GDKLIBS=`$MONET_CONFIG --gdklibs`
   fi
 
   if test "x$have_monet" != xyes; then
     MONET_PREFIX=""
-    GDKLIBS=""
   fi
 fi
 AC_SUBST(MONET_PREFIX)
-AC_SUBST(GDKLIBS)
 ])
 
 AC_DEFUN(AM_MONET_OPTIONS,
