@@ -353,6 +353,7 @@ code construction.
 @= malInstr
 	q= newInstruction(@1symbol);
 	q->argv[0]= @2 ;
+	if(@1symbol == EXITsymbol) q->barrier= EXITsymbol;
 	pushInstruction(m,q);
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -608,11 +609,11 @@ find the actule arguments at the proper place of the callee.
 	q->argc=2;
 	pushInstruction(m,q);
 #endif
-	@:malInstr(END,k)@	/* end  MALexception; */
+	@:malInstr(EXIT,k)@	/* end  MALexception; */
 	@:malInstr(REDO,mloop)@	/* redo mloop; */
-	@:malInstr(END,mloop)@	/* end mloop; */
+	@:malInstr(EXIT,mloop)@	/* end mloop; */
 	@:malInstr(RETURN,resB)@/* return resB; */
-	@:malInstr(ENDDEF,0)@/* end function ; */
+	@:malInstr(END,0)@/* end function ; */
 @-
 It is time to type check the code and request for any optimization.
 @c
@@ -632,7 +633,7 @@ and leave it up to the interpreter to deal with exception handling.
 @c
         retval=  &stk->stk[pci->argv[0]];
         garbageElement(retval);
-        ret= runMAL(getClient(),m,mb,pci,stk);
+        ret= runMAL(getClient(),m,mb,stk,pci);
 @-
 It is tempting to retain the function in the namespace of
 the client. However, this complicates the administration, e.g.

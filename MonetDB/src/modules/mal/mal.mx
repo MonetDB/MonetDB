@@ -134,6 +134,8 @@ comment "return the BUN tail value using the cursor.";
 To enable ease of debugging and performance monitoring, the MAL interpreter
 comes with a hardwired gdb-like text-based debugger.
 @mal
+pattern mdb(c:chr):void = mdbSetCmd
+	comment "Start debugger with command 'c'";
 pattern mdb(b:bit):void = mdbToggle
 	comment "Start interactive debugger";
 pattern mdb():void = mdbToggle
@@ -160,7 +162,7 @@ function timestamp(secs:lng):timestamp;
         d1:=epoch();
         d2:= secs *1000:lng;
         d3:= d1+d2;
-        return d3
+        return d3;
 end timestamp;
 function epoch():timestamp
         comment "unix-time (epoch) support: seconds since 1-jan-1970 GMT";

@@ -451,7 +451,8 @@ command @1 ( b:bat[any,@2] ) : @2 = CMD@1_@2 comment @3;
 For SQL convenience we provide a serie of interval selectors.
 @mal
 function between(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
-	return select(b,l,h);
+	k:= select(b,l,h);
+	return k;
 end between;
 # between Close Open interval
 function betweenCO(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];

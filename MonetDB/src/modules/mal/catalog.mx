@@ -90,13 +90,13 @@ The BATs created below are rather expensive views over the
 GDK kernel. They have been retained for backward compatibility.
 
 @mal
-command gdkCpu() : bat[str,int] = CATALOGgdkCPU
+command gdkCPU() : bat[str,int] = CATALOGgdkCPU
 	comment "Global cpu usage information";
 command gdkMemory(): bat[str,int] = CATALOGgdkMem
 	comment "Global memory usage information";
-command gdkIo(): bat[str,int] = CATALOGgdkIO
+command gdkIO(): bat[str,int] = CATALOGgdkIO
 	comment "Global IO activity information";
-command gdkBbp(): bat[str,int] = CATALOGgdkBBP
+command gdkBBP(): bat[str,int] = CATALOGgdkBBP
 	comment "Global BBP usage information";
 
 command vmUsage(minsize:lng) : bat[str,lng] = CATALOGvm_usage
@@ -196,16 +196,20 @@ function environment():void;
         print(t);
 end environment;
 function cpu():bat[str,int];
-        return gdkCPU();
+	v:= gdkCPU();
+        return v;
 end cpu;
 function memory():bat[str,int];
-        return gdkMemory();
+	v:= gdkMemory();
+        return v;
 end memory;
 function io():bat[str,int];
-        return gdkIO();
+	v:= gdkIO();
+        return v;
 end io;
 function bbp():bat[str,int];
-        return gdkBBP();
+	v:= gdkBBP();
+        return v;
 end bbp;
 
 function dir(b:bat[int,str]):void;

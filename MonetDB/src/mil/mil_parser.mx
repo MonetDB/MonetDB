@@ -253,21 +253,22 @@ int mil_pop() {
 The next character is retrieved from the string pool
 using the routine mil_getch. The position of the last
 newline is retained to gain quick access.
+Beware, we first produce the comment line before attempting
+the parse.
 @c
 int mil_getch() {
-        char ch;
+        char ch, *s;
 	ch = *mil_stack->cptr;
-        if (ch == '\n') {
+        if (ch == '\n' || (ch && mil_stack->cptr == mil_stack->buf) ){
                 if (mil_stack->listing) { 
-                        *mil_stack->cptr = 0;
 			fputc('#',GDKout);
-                        fputs(mil_stack->nxtline, GDKout);
+			for(s= mil_stack->nxtline; *s && *s!='\n'; s++)
+				fputc(*s,GDKout);
                         fputc('\n', GDKout);
                         fflush(GDKout);
-                        /* *mil_stack->cptr = '\n';*/
                 }
 		mil_stack->prevline= mil_stack->nxtline;
-                mil_stack->nxtline = mil_stack->cptr + 1;
+                mil_stack->nxtline = s+1;
         } 
         if (ch) mil_stack->cptr++;
         return ch;
@@ -526,7 +527,7 @@ stmt: ';'
 	stmt
 	{
 	  printf("redo\t%s;\n", $2.val);
-	  printf("end\t%s;\n",$2.val);
+	  printf("exit\t%s;\n",$2.val);
 	  popIterator();
 	}
     |   expression TOK_ITERATION iterator
@@ -541,7 +542,7 @@ stmt: ';'
 	stmt
 	{
 	  printf("redo\t%s;\n", $2.val);
-	  printf("end\t%s;\n",$2.val);
+	  printf("exit\t%s;\n",$2.val);
 	  popIterator();
 	}
     |   blk_expression
@@ -561,22 +562,22 @@ stmt: ';'
 	{ 
 	  printf("redo\t%s;\n", $1.val);
 	  popIterator();
-	  printf("end\t%s;\n",$2.val);
+	  printf("exit\t%s;\n",$2.val);
 	  popIterator();
-	  printf("end\t%s;\n",$1.val);
+	  printf("exit\t%s;\n",$1.val);
 	}
 
     |   ifhead stmt
-	{ printf("end\t%s;\n",$1.val); popIterator();}
+	{ printf("exit\t%s;\n",$1.val); popIterator();}
     |   ifhead stmt TOK_ELSE 
-	{ printf("end\t%s;\n",$1.val); 
+	{ printf("exit\t%s;\n",$1.val); 
 	  popIterator();
 	  $3.val= newName();
 	  pushIterator($3.val);
 	   printf("barrier\t%s:= not(%s);\n",$3.val,$1.val);
 	}
 	stmt
-	{ printf("end\t%s;\n",$3.val); popIterator();}
+	{ printf("exit\t%s;\n",$3.val); popIterator();}
     |   TOK_BREAK ';'
 	{ printf("leave\t%s;\n",getLastIterator()); }
 
@@ -601,15 +602,13 @@ ret_value:
 	{ $$.val= GDKstrdup("nil");}
 
 sequential_block:
-        '{' /* {$1.val= newName(); printf("barrier\t%s:=true;\n",$1.val);}*/
-	statement_seq '}'
-	/* { printf("end\t %s;\n", $1.val);} */
+        '{' statement_seq '}'
 
 parallel_block:
         TOK_PARBLOCK 
-	{ $1.val= newName(); printf("barrier\t%s:= true;\n",$1.val);}
+	{ $1.val= newName(); printf("thread\t%s;\n",$1.val);}
 	statement_seq TOK_PAREND
-	{ printf("end\t%s;\n",$1.val);}
+	{ printf("exit\t%s;\n",$1.val);}
 
 proc_definition:
         TOK_PROCDEF proc_name proc_header stmt
@@ -651,8 +650,14 @@ proc_name:
 	{ printf("function %s(",$1.val);$$=$1;}
 
 proc_header:
-        '(' mel_header ')' mel_return
-    |    '(' ')' mel_return
+        '(' mel_header ')' ':' mel_type
+	{ printf("):%s;\n",$5.val);}
+    |   '(' mel_header ')' 
+	{ printf("):void;\n");}
+    |    '(' ')' ':' mel_type
+	{ printf("):%s;\n",$4.val);}
+    |    '(' ')' 
+	{ printf("):void;\n");}
 
 mel_header:
         mel_params ',' mel_range
@@ -705,12 +710,6 @@ type_var: TOK_CONSTANT
 	  printf("ERROR:type variable should be chosen from [0-9a-zA-Z]\n");
 	  }
 	}
-
-mel_return:
-        ':' mel_type
-	{ printf("):%s;\n",$2.val);}
-    |   /* empty */ 
-	{ printf("):void;\n");}
 
 blk_expression:
         sequential_block
