@@ -77,16 +77,13 @@ derived from the parser to avoid a loop in the define-structure.
 #define LEAVEsymbol	28
 #define SPACEsymbol	29
 #define IMPORTsymbol	30	/* dependency on outer scopes */
-#define COMMANDsymbol   31
-#define FUNCTIONsymbol	32
-#define STREAMsymbol	37
+
 #define ENDDEFsymbol	34
 #define THRDsymbol	43
 #define COMMENTsymbol	35	/* propagation of comments */
 #define ENDsymbol 	36
 #define SCOPEsymbol	41
 #define PUSHsymbol	42	/* move constant to stack */
-#define PATTERNsymbol   44
 #define THREADsymbol     46
 #define EXITsymbol	47
 
@@ -95,6 +92,12 @@ derived from the parser to avoid a loop in the define-structure.
 #define CMDcall		52
 #define THRDcall	53
 #define PATcall		54	/* pattern call */
+
+
+#define COMMANDsymbol   61	/* these tokens should be the last group !! */
+#define FUNCTIONsymbol	62
+#define STREAMsymbol	63
+#define PATTERNsymbol   64
 
 mal_export str	malTypeName(malType tpe);
 mal_export malType coercion(malType t1, malType t2);

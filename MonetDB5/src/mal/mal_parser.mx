@@ -107,8 +107,14 @@ void skipComment(Client cntxt) {
 }
 INLINE
 void skipSpace(Client cntxt){
-	char c;
-	while( strchr(" \t\n\r",*cntxt->nxt)) cntxt->nxt++;
+	for(;;){
+		switch(*cntxt->nxt){
+		case ' ': case '\t': case '\n': case '\r':
+			cntxt->nxt++;
+			break;
+		default: return;
+		}
+	}
 }
 INLINE
 void advance(Client cntxt, int length){
@@ -333,6 +339,7 @@ parseTFN:
 	}
 	return 0;
 }
+INLINE
 str cstCopy(Client cntxt, int i){ return idCopy(cntxt,i);}
 
 @-
@@ -593,7 +600,7 @@ the function definition in a particular module instead of the current one.
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk,0);
-	if( moduleName(curInstr)) GDKfree(moduleName(curInstr));
+	if( moduleId(curInstr)) freeModuleName(curInstr);
 	setModuleId(curInstr, modnme== 0? GDKstrdup(cntxt->nspace->name):modnme);
 
 	/* get calling parameters */

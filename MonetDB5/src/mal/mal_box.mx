@@ -359,9 +359,8 @@ int takeBox(Box box, str name, ValPtr val){
 	}
 	VALcopy(val, &box->val->stk[i]);
 	if( val->vtype == TYPE_bat){
-		BAT *b;
-		b= (BAT*) BBPgetdesc(val->val.bval);
-		if( b ) BBPfix(b->batCacheid);
+		if(val->val.bval)
+			BBPdecref(val->val.bval,FALSE);
 		else return -1;
 	}
 #ifdef DEBUG_MAL_BOX

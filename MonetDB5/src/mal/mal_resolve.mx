@@ -113,6 +113,7 @@ mal_export int isPolymorphic(malType t);
 mal_export malType getPolyType(malType t, int polytype[MAXTYPEVAR]);
 mal_export int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 
+extern void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs);
 extern str traceFcnName;
 
 #endif /*  _MAL_RESOLVE_H*/
@@ -127,6 +128,9 @@ Debugging of this module can be dynamically controlled in the debugger
 by setting the routine of interest.
 @c
 #include "mal_resolve.h"
+
+#define MAXMALARG 256
+
 str traceFcnName= "____";
 int tracefcn;
 int polyVector[MAXTYPEVAR];
@@ -146,7 +150,7 @@ malType findFunctionType(Scope scope, MalBlkPtr mb, InstrPtr p){
 	int i,j,k,l, polymorphic, unmatched = 0, s1;
 	int foundbutwrong=0;
 	int polytype[MAXTYPEVAR];
-	int *returntype;
+	int returntype[MAXMALARG];
 
 @-
 Check first for a module specific type checker. It takes
@@ -163,6 +167,10 @@ upon failure, which shortcuts the execution.
 Within a module find the subscope to locate the element in its list
 of symbols.
 @c
+	if( p->maxarg >= MAXMALARG){
+		GDKerror("Function called with too many arguments");
+		return -3;
+	}
 	m= scope;
 	s= m->subscope[getSubScope(functionName(p))];
 	while(s != NULL){	/* single scope element check */
@@ -282,8 +290,7 @@ If any of the arguments refer to a constraint type, any::x, then
 the resulting type can not be determined.
 @c
 	s1 = 0;
-	returntype= (int*) GDKmalloc(p->maxarg *sizeof(int));
-	for(k=i=0; s1 >= 0 && i < p->argc; i++){
+	for(k=i=0; i < p->argc; i++){
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,k);
 
@@ -292,17 +299,15 @@ the resulting type can not be determined.
 		returntype[i]= resolveType(actual,s1);
 		if( returntype[i]== -1 && i< p->retc){
 			returntype[i]= TYPE_any;
+			typeMismatch(mb, p, actual, s1);
 			s1= -1;
-			GDKerror("type conflict in statement %s.%s[%d]\n",
-				(moduleId(p)?moduleName(p):""),
-				functionName(p),getPC(mb,p));
+			break;
 		}
 		k++;
 		if( sig->varargs && k== sig->argc) k--;
 	}
 	if(s1<0 ){
 		if(getSignature(s)->token !=PATTERNsymbol) foundbutwrong++;
-		GDKfree(returntype);
 		s= s->peer; continue;
 	}
 @-
@@ -326,7 +331,6 @@ reflected in the symbol table.
 @c
 	if(moduleId(p) == 0) setModuleId(p, GDKstrdup(m->name));
 	s1= returntype[0];	/* for those interested */
-	GDKfree(returntype);
 	foundbutwrong = 0;
 @-
 If the call refers to a polymorphic function, we
@@ -484,6 +488,20 @@ We try to clear the type check flag by looking up the
 functions. Errors are simply ignored at this point of the game,
 because they may be resolved as part of the calling sequence.
 @c
+void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs){
+	str n1 = malTypeName(lhs);
+	str n2 = malTypeName(rhs);
+	char buf[1024];
+	int i;
+	snprintf(buf,1024,"type mismatch %s := ",n1);
+	i= strlen(buf);
+	snprintf(buf+i,1024-i,"%s\n",n2);
+	showException(mb, getPC(mb,p),"MALresolve",buf);
+	GDKfree(n1); GDKfree(n2);
+	mb->errors++;
+	p->typechk= TYPE_UNKNOWN;
+}
+
 void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p){
 	int s1= -1, i,k;
 	char buf[1024];
@@ -564,16 +582,7 @@ requires a call to a type-specific setToNil() function call.
 
 		s1= resolveType(lhs,rhs);
 		if( s1== -1 ){
-			str n1 = malTypeName(lhs);
-			str n2 = malTypeName(rhs);
-			int i;
-			snprintf(buf,1024,"type mismatch %s := ",n1);
-			i= strlen(buf);
-			snprintf(buf+i,1024-i,"%s\n",n2);
-			showException(mb,getPC(mb,p),"MALresolve",buf);
-			GDKfree(n1); GDKfree(n2);
-			mb->errors++;
-			p->typechk= TYPE_UNKNOWN;
+			typeMismatch(mb,p,lhs,rhs);
 			return;
 		}
 		if( !isFixed(mb,p->argv[k])) {

@@ -148,6 +148,8 @@ void scheduleClient(str user, str passwd, int socket, stream *fin, stream *fout)
 	c->socket= socket;
 	defaultScenario(c);
 	initClientPrg(c,"main");
+	if( !isAdministrator(c))
+		stream_printf(c->fdout,"%s\n", GDKgetenv("gdk_version"));
 
 	if( (i= MT_create_thread(&p, serveClient, (void *)c)) < 0) {
 		GDKerror("initClient: can not fork new client\n");

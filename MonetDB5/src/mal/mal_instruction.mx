@@ -107,6 +107,8 @@ html
 #include "mal_stack.h"
 #include "mal_properties.h"
 
+#define isaSignature(P)  ((P)->token >=COMMANDsymbol)
+
 #ifdef MALprofiler
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
@@ -267,7 +269,7 @@ mal_export int		newTmpVariable(MalBlkPtr mb, malType type);
 mal_export void		delVariable(MalBlkPtr mb, int varid);
 mal_export void		freeVariable(MalBlkPtr mb, int varid);
 mal_export int		newConstant(MalBlkPtr mb, malType type, str val, int f);
-mal_export int		isaSignature(InstrPtr p);
+/* mal_export int		isaSignature(InstrPtr p);*/
 
 mal_export void		pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr	pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
@@ -524,7 +526,8 @@ void clrInstruction(InstrPtr p){
 	bzero((char*)p, sizeof(InstrRecord)+ (p->argc-1)*sizeof(int));
 }
 void freeInstruction(InstrPtr p){
-	clrInstruction(p);
+	if(moduleId(p)) freeModuleName(p);
+	if(functionId(p)) freeFunctionName(p);
 	GDKfree(p);
 }
 @-
@@ -1014,6 +1017,7 @@ end.
 	return idx;
 }
 
+/*
 int isaSignature(InstrPtr p){
 	switch(p->token){
 	case FUNCTIONsymbol:
@@ -1024,6 +1028,7 @@ int isaSignature(InstrPtr p){
 	}
 	return FALSE;
 }
+*/
 @- Argument handling
 The number of arguments for procedures is currently limited.
 Furthermore, we should assure that no variable is referenced
@@ -1272,7 +1277,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 	sprintf(t,"%s ",fcnClass(p));
 
 	advance(t);
-	if( moduleName(p)) sprintf(t,"%s.",moduleName(p));
+	if( moduleId(p)) sprintf(t,"%s.",moduleName(p));
 	advance(t);
 	sprintf(t,"%s(",functionName(p));
 	for(i=p->retc;i<p->argc;i++){ @:showParam(argc)@ }
@@ -1433,7 +1438,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	GDKfree(pstring); pstring=0;
 	advance(t);
 	low= p->retc; high= p->argc;
-	if( moduleName(p)) sprintf(t,"%s.",moduleName(p));
+	if( moduleId(p)) sprintf(t,"%s.",moduleName(p));
 	advance(t);
 	if( p->token == RETURNsymbol){
 		/* low= 0; high= p->retc;*/
@@ -1573,17 +1578,13 @@ void batBeforeCall(ValPtr v, ValPtr bak){
 void batAfterCall(ValPtr v, ValPtr bak){
 	if( bak->val.bval != v->val.bval)
 		batFinalCall(bak);
+	if( v->val.bval)
+		BBPincref(v->val.bval,TRUE);
 }
 void batFinalCall(ValPtr v){ 
 	if(v->val.bval)
-	{       BAT *b;
-		b= (BAT*) BBPgetdesc(v->val.bval);
-		if( b ) {
-			BBPunfix(b->batCacheid);
-			/* printf("decrement %s (%d) to %d\n",b->batId, 
-				b->val.bval, 
-				BBP_refs(b->batCacheid)); */
-		}
+	{       
+		BBPdecref(v->val.bval,TRUE);
 		v->val.bval =0;
 	}
 #ifdef DEBUG_MAL_INTERPRETER

@@ -240,10 +240,10 @@ int mal_exit(Client cntxt){
 #ifdef MALprofiler
 	profileReport( cntxt->nspace,1, open_wastream("/tmp/Monet.prof"));
 #endif
-	freeBoxes();
 	freeScopeList(cntxt->nspace);
+	freeBoxes();
 	mal_scope = 0;
 	TMcommit();
-	GDKexit();
+	GDKexit(1);
 }
 

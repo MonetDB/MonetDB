@@ -217,9 +217,9 @@ int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int b;
 	if( p->argc==1){
 		/* Toggle */
-		stk->cmd= stk->cmd? 0: 'n';
+		stk->cmd= stk->cmd? 0: 's';
 		cntxt->itrace = cntxt->itrace == 0;
-		if( stk->up) stk->up->cmd=  b?'n':0;
+		if( stk->up) stk->up->cmd=  b?'s':0;
 		return 0;
 	}
 	if( p->argc >1){
@@ -597,7 +597,8 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 		BAT *b;
 		b= BATdescriptor(v->val.ival);
 		if(b){
-			stream_printf(f," count=%d",BATcount(b));
+			stream_printf(f," count=%d refs=%d",
+				BATcount(b),BBP_refs(b->batCacheid));
 			BBPunfix(b->batCacheid);
 		}
 		stream_printf(f,"\n");

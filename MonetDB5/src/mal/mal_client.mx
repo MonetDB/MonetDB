@@ -408,6 +408,13 @@ void freeClient(Client c)
 
 	if( c->curprg ) freeSymbol(c->curprg);
 	c->curprg= 0;
+	/* scope list can not be removed, because the client may recide in a
+	  quit() command. Therefore the scopelist is re-used.
+	if( c->nspace) {
+		freeScopeList(c->nspace);
+		c->nspace=0;
+	}
+	*/
 	/* re-use input/output buffers */
 	if(c->scenario) GDKfree(c->scenario); c->scenario = NULL;
 	if(c->prompt) GDKfree(c->prompt); c->prompt = NULL;
@@ -669,7 +676,7 @@ All except the console should mark the prompt with the
 	if(c->promptlength) { 
 		if(isAdministrator(c))
 			stream_printf(c->fdout,"%s",prompt);
-		else	stream_printf(c->fdout,"\001%s\002",prompt);
+		else	stream_printf(c->fdout,"\001%s\002\n",prompt);
 		c->fdout->flush(c->fdout);
 	}
 @-

@@ -916,8 +916,8 @@ substructure introduced.
 	if( altpci){
 		freeInstruction(pci);
 		pci= altpci;
+		altpci=0;
 	}
-	altpci=0;
 @-
 During instruction interpretation we may have to be
 assured that the type associated with a destination variable
@@ -954,7 +954,7 @@ if(@1->vtype == TYPE_bat)
 { 	BAT *b;
 	b= (BAT*) BBPgetdesc(@1->val.bval);
 	if( b ) {
-		BBPfix(b->batCacheid);
+		BBPincref(b->batCacheid,TRUE);
 	} else raiseException(mb,@2,"interpreter",
 		"Can not find bat, internal error\n");
 }
@@ -1024,18 +1024,19 @@ we have to keep track of essential system counter information.
 
 @= performanceVariables
 #ifdef MALprofiler
+	int profileMode= malProfileMode; /* cheaper then global access */
 	long newclk=0;
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if( malProfileMode){
+	if( profileMode){
 		pci->clk= GDKusec();
 		times(&pci->timer);
 	}
 #endif
 @= endProfile
 #ifdef MALprofiler
-	if( malProfileMode){
+	if( profileMode){
 		newclk= GDKusec();
 		pci->counter++;
 		pci->ticks += newclk - pci->clk;

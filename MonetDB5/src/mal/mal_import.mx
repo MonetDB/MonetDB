@@ -96,7 +96,7 @@ str malLoadScript(Client c, str modname){
 	size_t rd=0, max=0, len=0;
 	str s;
 
-	c->nxt = c->input = (char *) GDKmalloc(max=16*BLOCKSIZE);
+	c->nxt = c->input = (char *) GDKmalloc(max=32*BLOCKSIZE);
 	c->limit = c->input + max;
 	*c->nxt=0;
         fd= malOpenSource(modname);
@@ -108,7 +108,7 @@ str malLoadScript(Client c, str modname){
 		if( rd<=0) { c->input[0]=0; break;}
 		if( rd<max) { c->input[len+rd]=0; break;}
 		len+= max;
-		max= BLOCKSIZE;
+		max= 32*BLOCKSIZE;
 		s= GDKmalloc(len+max+2);
 		if( s == 0)
 			GDKfatal("unable to allocate buffer\n");
