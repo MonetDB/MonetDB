@@ -1952,6 +1952,8 @@ def main(argv) :
 
     if env.has_key('SQL_PREFIX'):
         bp = os.path.join(env['SQL_PREFIX'],"bin")
+        if not os.path.isdir(bp):
+            bp = env['SQL_PREFIX']
         if os.environ.has_key('PATH'):
             bp = bp+os.pathsep+os.environ['PATH']
         os.environ['PATH'] = bp
