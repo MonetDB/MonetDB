@@ -570,7 +570,7 @@ Recursive BATs are a special case. You should modify their reference count.
 		(void) strPut(P2, (int*) (P3), (str) (P4));\
 	} else {                                        \
 	    if (BATatoms[t_].atomPut) {			\
-		(*BATatoms[t_].atomPut)(P2, P3, P4);	\
+		(*BATatoms[t_].atomPut)(P2, (int*) P3, P4);	\
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
