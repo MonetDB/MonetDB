@@ -34,7 +34,7 @@ EOF
 WARNING:
 
 The file "$dir/$f" should be kept identical in
-MonetDB, template, sql, pathfinder,  xml, pruning, playpen, times100, misq, gis, acoi, monet5!
+MonetDB, template, sql, pathfinder,  xml, pruning, playpen, times100, misq, gis, acoi, monet5, amdb!
 
 (If necessary, please contact Stefan.Manegold@cwi.nl for details.)
 
