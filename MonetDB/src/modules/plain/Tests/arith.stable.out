@@ -278,7 +278,7 @@ test_arith();
 [ false ]
 [ true ]
 [ true ]
-[ 479142414 ]
+[ 3558 ]
 quit;
 
 # 19:54:40 >  

@@ -3026,14 +3026,6 @@ Z := nil;
 printf("\nDone..\n");
 
 Done..
-# All but the first (#) and the last (\n) character of this line seem to get swallowed on/by Windows ... #
-# In case the previous line contains just a '#', all but the first and the last character got swallowed by someone ... #
-# In case the output ends after the following line, containing just a ';', Mshutdown might have been successful, #
-# but the Mserver's stdin was still open and got closed only after the first MIL command-end, i.e., ';'+'\n' is reached ... #
-;
-printf("\n! Mserver still running after Mshutdown. Quitting now. !\n");
-
-quit;
 
 Over..
 
