@@ -539,7 +539,6 @@ inspect the properties of BATs and their propagation.
 		/*log( "hloc=\"%d\" ", b->hloc);*/
 		/* log( "hvarsized=\"%d\" ", b->hvarsized);*/
 		if(b->halign) log( "halign=\"%d\" ", b->halign);
-		if(b->halignflushed) log( "halignflushed=\"%d\" ", b->halignflushed);
 	 
 		/*log( "tident", b->tident);*/
 		if(BATtdense(b)) log( "tdense=\"%d\" ", BATtdense(b));
@@ -549,7 +548,6 @@ inspect the properties of BATs and their propagation.
 		/*log( "tloc=\"%d\" ", b->tloc);*/
 		/*log( "tvarsized=\"%d\" ", b->tvarsized);*/
 		if(b->talign)log( "talign=\"%d\" ", b->talign);
-		if(b->talignflushed)log( "talignflushed=\"%d\" ", b->talignflushed);
 	 
 		/*log( "batInserted=\"%d\" ", BUNindex(b, b->batInserted));*/
 		/*log( "batDeleted=\"%d\" ", BUNindex(b, b->batDeleted));*/

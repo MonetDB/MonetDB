@@ -1098,9 +1098,13 @@ int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
         return (*result = BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;
 }
 
+@- vertical projection
+This operation has been moved to module bbp, because it requires access
+to the type identifier for the second argument.
 int CMDproject(BAT** res, BAT *b, ptr p, int t) {
 	return (*res=BATconst(b, t, p))?GDK_SUCCEED:GDK_FAIL;
 }
+@c
 
 int CMDmark(BAT** res, BAT *b, oid *base){
 	return (*res=BATmark(b, *base))?GDK_SUCCEED:GDK_FAIL;
