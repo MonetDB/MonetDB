@@ -1016,6 +1016,7 @@ public class JdbcClient {
 				case Types.CHAR:
 				case Types.VARCHAR:
 				case Types.LONGVARCHAR:
+				case Types.CLOB:
 				case Types.DATE:
 				case Types.TIME:
 				case Types.TIMESTAMP:
