@@ -833,7 +833,7 @@ void BBPclear(int i, int lock) {
 
 void BBPspin(int i, str s) {
 	if (BBPcheck(i,"BBPspin") && (BBP_status(i)&BBPWAITING)) {
-		lng spin = (lng)0;
+		lng spin = LL_CONSTANT(0);
 		while(BBP_status(i)&BBPWAITING) spin++;
 		BATDEBUG 
 		THRprintf(GDKout, "BBPspin(%d,%s): %ld loops\n", i,s,spin);
@@ -1848,10 +1848,10 @@ lng BBPdiskscan(str parent) {
 	struct dirent *dent;
 	long_str fullname;
 	str dst = fullname, src = dir;
-	lng ret, tot = (lng)0;
+	lng ret, tot = LL_CONSTANT(0);
 
 	if (dirp == NULL) {
-		return (lng)-1; /* nothing to do */
+		return LL_CONSTANT(-1); /* nothing to do */
 	}
 	while(*src) *dst++ = *src++;
 	*dst++ = DIR_SEP;

@@ -457,10 +457,20 @@ typedef __int64		lng;
 #endif
 typedef char*		str; 		
 
+#if SIZEOF_INT==8
+#	define LL_CONSTANT(val)     (val)
+#elif SIZEOF_LONG==8
+#	define LL_CONSTANT(val)     (val##L)
+#elif defined(HAVE_LONGLONG)
+#	define LL_CONSTANT(val)     (val##LL)
+#elif defined(HAVE__INT64)
+#	define LL_CONSTANT(val)     (val##i64)
+#endif
+
 /* representation of the nil */
 gdk_export chr		chr_nil; 	
 gdk_export bit		bit_nil; 	
-gdk_export short		sht_nil; 	
+gdk_export short	sht_nil; 	
 gdk_export int		int_nil; 	
 gdk_export flt		flt_nil; 	
 gdk_export dbl		dbl_nil; 	
@@ -2119,8 +2129,6 @@ gdk_export	lng 	GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export	lng 	GDK_mem_bigsize;	/* size after which we use VM rather than heap memory */
 gdk_export	lng 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
 gdk_export	lng 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
-/*
-gdk_export	lng 	GDK_heap_cursize;	/* bytes in use in the malloc heap */
 gdk_export volatile	lng 	GDK_mem_cursize;	/* committed bytes outside the heap */
 gdk_export volatile	lng 	GDK_vm_cursize;		/* reserved vm in bytes */
 

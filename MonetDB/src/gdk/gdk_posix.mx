@@ -85,6 +85,9 @@ typedef struct mallinfo mallinfo_t;
 
 /* in order to be sure of madvise and msync modes, pass them to mmap() call as well */
 
+/* a hook function to add any initialization required for the MT_ functionality */
+gdk_export void MT_init_posix();
+
 gdk_export void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed);
 gdk_export int   MT_munmap(void* p, size_t off);
 gdk_export int   MT_msync(void* p, size_t len, int mode);
@@ -164,6 +167,9 @@ gdk_export int MT_gettimeofday(struct timeval *tv, int *ignore_zone);
 #endif 
 
 #define MT_PAGESIZE(s)  ((((s-1)/MT_pagesize())+1)*MT_pagesize())
+
+void MT_init_posix(){
+}
 
 void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed){
 	FILE *fp = fopen(path, (mode&MMAP_WRITABLE)?"rb+":"rb" );
@@ -267,6 +273,17 @@ MT_mallinfo(){
 
 #define MT_PAGESIZE(s)		(((((s)-1) >> 12) + 1) << 12)
 #define MT_SEGSIZE(s)		((((((s)-1) >> 16) & 65535) + 1) << 16)
+
+void MT_init_posix(){
+	WSDATA w;
+
+	WSAStartup(0x0101, &w);
+	if (w.version != 0x0101){
+		GDKerror("MT_init: winsock initialisation failed %d\n", 
+			WSAGetLastError());
+		WSACleanup();
+	}
+}
 
 void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
 	void *ret = NULL;

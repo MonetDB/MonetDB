@@ -582,6 +582,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+	MT_init_posix();
 	if (debug==0) {
 		if (connectMonet(address) < 0) {
 			perror("connection");
