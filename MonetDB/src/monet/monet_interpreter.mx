@@ -132,8 +132,8 @@ m_export int interpret_ident     (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_var       (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_assignment(Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_seqblock  (Cntxt stk, YYSTREE lt, ValPtr res, int scope);
-m_export int interpret_parblock  (Cntxt stk, YYSTREE lt, int scope);
-m_export int interpret_iterator  (Cntxt stk, YYSTREE lt, int parallel);
+m_export int interpret_parblock  (Cntxt stk, YYSTREE lt, ValPtr res, int scope);
+m_export int interpret_iterator  (Cntxt stk, YYSTREE lt, ValPtr res, int paralle);
 m_export int interpret_str       (Cntxt stk, str buf, ValPtr res);
 m_export int interpret_file      (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_cast      (str atom, int argc, ValPtr val, ValPtr res);
@@ -591,7 +591,7 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 	case TOK_SEQ:
 		return interpret_seqblock(stk, lt, res, i);
 	case TOK_PARBLOCK:
-		return interpret_parblock(stk, lt, 1);
+		return interpret_parblock(stk, lt, res, 1);
 	case TOK_PAREND:
 		return 0;
 	case TOK_IDENT:
@@ -635,7 +635,7 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 		} else {
 			i = 1;
 		}
-		i = interpret_iterator(stk, lt, i);
+		i = interpret_iterator(stk, lt, res, i);
 		@:profileEvent(itcompiler)@
 		return CATCHBREAK(i);
 	case TOK_BREAK:
@@ -1233,8 +1233,7 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res)
 int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 {
 	BAT *bn, *b = BBP_cache(val->val.bval);
-	int ok = 0, tpe = ATOMindex(atom);
-	ptr v = NULL;
+	int tpe = ATOMindex(atom);
 	(void) argc;
 
 	if (trivial_cast(tpe,b->ttype)) {
@@ -1242,14 +1241,12 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 	    int dense_bak = b->T->dense;
 	    b->T->dense = FALSE; 	
 	    bn = BATrcopy(b); /* we do not want smart oid->void conversion */
-	    if (bn == NULL) return -1;
 	    b->T->dense = dense_bak; 	
 	    bn->ttype = BATmirror(bn)->htype = tpe;
 	    strcpy(bn->tatom, ATOMname(tpe));
 	} else {
 	    int reduce = 0;
 	    bn = BATnew(b->htype, tpe, BATcount(b));
-	    if (bn == NULL) return -1;
 
 	    /* propagate properties */
 	    bn->hsorted = BAThordered(b);
@@ -1261,26 +1258,24 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		int len = ATOMsize(BATttype(b));
 		BUN q = BUNlast(b);
 		BUN p = BUNfirst(b);
-		BUN r = BUNfirst(bn);
 		int xx = BUNsize(b);
-		int yy = BUNsize(bn);
 	    
 		if (tpe == TYPE_oid && b->ttype == TYPE_void) {
 		    /* void => oid materialization is a special case */
 		    oid curid = b->tseqbase;
 		    BATloopFast(b,p,q,xx) {
-		        bunfastins_nocheck(bn, r, BUNhead(b,p), &curid, yy); r += yy;
+		        BUNfastins(bn, BUNhead(b,p), &curid);
                         if (curid != oid_nil) curid++;
 		    }
 		    ALIGNsetT(bn,b);
 		} else if (tpe == TYPE_str || b->ttype == TYPE_str) {
 		    /* from-string or to-string conversion */
-		    v = GDKmalloc(len);
+		    ptr v = GDKmalloc(len);
 		    if (tpe == TYPE_chr) {
 			/* str => chr: just get first character */
 			BATloopFast(b,p,q,xx) {
 			    /* accidentally works well on NILs */
-			    bunfastins_nocheck(bn, r, BUNhead(b,p), BUNtvar(b,p), yy); r += yy;
+			    BUNfastins(bn, BUNhead(b,p), BUNtvar(b,p));
 			}
 		    } else if (tpe != TYPE_str) {
 			/* str => any: use fromstr ADT routine */
@@ -1288,7 +1283,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BATloopFast(b,p,q,xx) {
 			    /* nil str value will produce a nil atom value */
 			    (*fromstr)(BUNtvar(b,p), &len, &v);
-			    bunfastins_nocheck(bn, r, BUNhead(b,p), v, yy); r += yy;
+			    BUNfastins(bn, BUNhead(b,p), v);
 			}
 		    } else if (b->ttype == TYPE_chr) {
 			/* chr => str: do this efficiently */
@@ -1296,7 +1291,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BATloopFast(b,p,q,xx) {
 			    /* accidentally works well on NILs */
 			    s[1] = *(char*) BUNtloc(b,p); 
-			    bunfastins_nocheck(bn, r, BUNhead(b,p), s, yy); r += yy;
+			    BUNfastins(bn, BUNhead(b,p), s);
 			}
 		    } else {
 			/* any => str: use tostr ADT routine */
@@ -1306,13 +1301,14 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BATloopFast(b,p,q,xx) {
 			    ptr t = BUNtail(b,p);
 			    if ((*cmp)(t, nilptr)) {
-			    	(*tostr)((str*)(ptr)&v, &len, t);
-			    	bunfastins_nocheck(bn, r, BUNhead(b,p), v, yy); r += yy;
+			    	(*tostr)((str*)&v, &len, t);
+			    	BUNfastins(bn, BUNhead(b,p), v);
 			    } else {
-			    	bunfastins_nocheck(bn, r, BUNhead(b,p), str_nil, yy); r += yy;
+			    	BUNfastins(bn, BUNhead(b,p), str_nil);
 			    }
 			}
 		    }
+		    GDKfree(v);
 		} else {
 		    ptr s;
 
@@ -1335,22 +1331,23 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		    if (s == ILLEGALVALUE || TYPEerror(tpe, res->vtype)) {
 			GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", 
 					ATOMname(b->ttype), ATOMname(tpe));
-			goto bunins_failed;
+			BBPreclaim(bn);
+			return -1;
 		    }
-		    bunfastins_nocheck(bn, r, BUNhead(b,p), s, yy); r += yy;
+		    BUNfastins(bn, BUNhead(b,p), s);
 		    if (ATOMextern(BATttype(b))) {
 			for(p+=xx; p < q; p+=xx) {
 		    	    res->vtype = BATttype(b);
 			    res->val.pval = BUNtail(b,p);
 			    s = VALconvert(tpe, res);
-			    bunfastins_nocheck(bn, r, BUNhead(b,p), s, yy); r += yy;
+			    BUNfastins(bn, BUNhead(b,p), s);
 			} 
 		    } else {
 			for(p+=xx; p < q; p+=xx) {
 		    	    res->vtype = BATttype(b);
 			    memcpy(&res->val.ival, BUNtail(b,p), len);
 			    s = VALconvert(tpe, res);
-			    bunfastins_nocheck(bn, r, BUNhead(b,p), s, yy); r += yy;
+			    BUNfastins(bn, BUNhead(b,p), s);
 			}
 		    }
 		} /* different kind of conversions */
@@ -1358,13 +1355,6 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 	    if ((!bn->tkey) && (!reduce)) {
 		BATkey(BATmirror(bn), b->tkey);
 	    }
-	}
-	ok = 1;
-bunins_failed:
-	if (v) GDKfree(v);
-	if (!ok) {
-	    BBPreclaim(bn);
-	    return -1;
 	}
 	res->vtype = TYPE_bat;
 	res->val.bval = bn->batCacheid;
@@ -1381,7 +1371,7 @@ int interpret_assignment(int stk, YYSTREE lt, ValPtr res)
 	int	i, s = stk;
 	ValRecord oldvalue, *value;
 	Variable act = 0;
-
+	
 	if (arg(lt, 0)->token == TOK_IDENT) {	
 		str nme = arg(lt, 0)->yyval.val.sval; 
 		for(i = arg(lt, 0)->yyval.len; i > 0; i--) {
@@ -1488,7 +1478,7 @@ The sole action is to delete the context for the parallel block.
 The parallel statements are immediately taken into execution.
 @{
 @c
-int interpret_parblock(int stk, YYSTREE lt, int scope)
+int interpret_parblock(int stk, YYSTREE lt, ValPtr res, int scope)
 {
 	int	reuse = monet_cntxt[stk].reuse;
 	int	tid = THRgettid();
@@ -1500,6 +1490,7 @@ int interpret_parblock(int stk, YYSTREE lt, int scope)
 	Request q = 0;
 	Client  c;
 	unsigned i;
+	(void) res;
 
 	PARDEBUG THRprintf(GDKerr, "parallel block\n");
 
@@ -1699,7 +1690,7 @@ ptr interpret_fcn(int ht, int tt, int parallel)
 	return addr;
 }
 
-int interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
+int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel)
 {
 	int reuse = monet_cntxt[stk].reuse;
         ValRecord argv[MAXPARAMS+2];
@@ -1749,8 +1740,8 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 	 	*/
 		handle = (Iteration) GDKmalloc(sizeof(ITrecord));
 		handle->stk = stk;
-		handle->params = 0; 
-		handle->tree = 0;
+		handle->res = res;
+		handle->params = 0; handle->tree = 0;
 		handle->parcnt = 0;
 		handle->parmax = handle->parcap = 0;
 	} else {
@@ -1842,12 +1833,11 @@ int tuple_interpret_@1@2_@3@4(
 	ptr tail, 
 	Iteration handle)
 {
-	ValRecord res;
 	assign_@2(handle->params[0].val, head);
 	assign_@4(handle->params[1].val, tail);
  	len_@1@3(handle->params,handle);
-	handle->status = interpret(handle->stk, handle->tree, &res);
-	CATCHRET(handle->stk,handle->tree,(&res),handle->status); 
+	handle->status = interpret(handle->stk, handle->tree, handle->res);
+	/* CATCHRET(handle->stk,handle->tree,handle->res,handle->status); */
 	CLEANUP(handle->tree);
 	return handle->status;
 }
@@ -1887,7 +1877,7 @@ int par_collect_@1@2_@3@4(
 			for(i = 0; i < t->cnt; i++)
 				t->yysons[i]->par_retval = 0; 	
 		
-		interpret_parblock(@1->stk, @1->tree, 0);
+		interpret_parblock(@1->stk, @1->tree, @1->res, 0);
 
 		@1->status = 0;
 		for(t = @1->tree; t; t = t->overflow)
@@ -1895,7 +1885,6 @@ int par_collect_@1@2_@3@4(
 				if (t->yysons[i]->par_retval < 0)
 					@1->status = t->yysons[i]->par_retval;
 	} 
-
 
 @+ Profiler
 The remainder consists of utilities for the dynamic profiler
