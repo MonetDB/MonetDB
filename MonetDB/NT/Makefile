@@ -16,6 +16,10 @@ all: $(SRCDIR)\Makefile.msc all-msc
 	set MONET_PREFIX=$(MONET_PREFIX)
 	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc all
 
+check: $(SRCDIR)\Makefile.msc RunMtest.bat
+	$(MAKE) /nologo /k /i /f $(SRCDIR)\Makefile.msc check
+	call RunMtest.bat
+
 install: targetdirs
 	set MONET_BUILD=$(MONET_BUILD)
 	set MONET_PREFIX=$(MONET_PREFIX)
@@ -44,6 +48,9 @@ sys\socket.h:
 	$(ECHO) #define SOCKET_H >> sys\socket.h
 	$(ECHO) #include "winsock.h" >> sys\socket.h
 	$(ECHO) #endif >> sys\socket.h
+
+RunMtest.bat: $(SRCDIR)\RunMtest.bat.in
+	if exist $(SRCDIR)\RunMtest.bat.in $(CONFIGURE) $(SRCDIR)\RunMtest.bat.in > RunMtest.bat
 
 targetdirs:
 	if not exist $(bindir)		$(MKDIR) $(bindir)

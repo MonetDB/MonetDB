@@ -33,6 +33,10 @@ def msc_subdirs(fd, var, values, msc ):
         fd.write("%s: \n\tif not exist %s $(MKDIR) %s\n" % (v,v,v))
         fd.write("%s\\Makefile: $(SRCDIR)\\%s\\Makefile.msc\n" % (v,v))
         fd.write("\t$(INSTALL) $(SRCDIR)\\%s\\Makefile.msc %s\\Makefile\n" % (v,v))
+    fd.write("check-recursive: %s\n" % msc_list2string(values,"","-check ") )
+    for v in values:
+        fd.write("%s-check: %s\n" % (v,v))
+        fd.write("\t$(CD) %s && $(MAKE) /nologo /k check\n" % v)
     fd.write("install-recursive: %s\n" % msc_list2string(values,"","-install ") )
     for v in values:
         fd.write("%s-install: $(bindir) $(libdir)\n" % v)
@@ -677,9 +681,11 @@ CXXEXT = \\\"cxx\\\"
     fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
     if tree.has_key("SUBDIRS"):
         fd.write("all: all-recursive all-msc\n")
+        fd.write("check: check-recursive check-msc\n")
         fd.write("install: install-recursive install-msc\n")
     else:
         fd.write("all: all-msc\n")
+        fd.write("check: check-msc\n")
         fd.write("install: install-msc\n")
 
     for i,v in tree.items():
@@ -732,6 +738,12 @@ CXXEXT = \\\"cxx\\\"
         for v in msc['SCRIPTS']:
             fd.write(" %s" % (v) )
 
+    fd.write("\n")
+
+    fd.write("check-msc: all-msc")
+    if (len(msc['INSTALL']) > 0):
+        for (dst,src,ext,dir) in msc['INSTALL']:
+            fd.write(" %s%s" % (src,ext))
     fd.write("\n")
 
     fd.write("install-msc: install-exec install-data\n")
