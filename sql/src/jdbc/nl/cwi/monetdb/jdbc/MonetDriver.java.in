@@ -133,13 +133,15 @@ public class MonetDriver implements Driver {
 			throw new SQLException(e.toString());
 		}
 
+		if (uri.getHost() == null)
+			throw new SQLException("Invalid URL: no hostname given or unparsable in '" + url + "'");
 		info.put("host", uri.getHost());
 		if (uri.getPort() > 0) info.put("port", "" + uri.getPort());
 
 		// check the database
 		if (uri.getPath() == null ||
 			uri.getPath().substring(1).trim().equals(""))
-			throw new SQLException("Invalid URL: A database is required");
+			throw new SQLException("Invalid URL: A database is required in '" +  url + "'");
 		info.put("database", uri.getPath().substring(1));
 
 		if (uri.getQuery() != null) {
