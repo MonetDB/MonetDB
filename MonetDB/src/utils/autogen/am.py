@@ -196,7 +196,12 @@ def am_find_ins(am, map):
             am['OutList'].append(am['CWD']+t)
 
 def am_additional_flags(name, sep, type, list, am):
-    add = "lib"+sep+name+"_la_LDFLAGS ="
+    if type == "BIN":
+        add = am_normalize(name)+"_LDFLAGS ="
+    elif type == "LIB":
+        add = "lib"+sep+name+"_la_LDFLAGS ="
+    else:
+        add = name + " ="
     for l in list:
         add = add + " " + l
     return add + "\n"
@@ -399,6 +404,9 @@ def am_binary(fd, var, binmap, am):
     if binmap.has_key("LIBS"):
         fd.write(am_additional_libs(binname, "", "BIN", binmap["LIBS"], am))
 
+    if binmap.has_key("LDFLAGS"):
+        fd.write(am_additional_flags(binname, "", "BIN", binmap["LDFLAGS"], am))
+
     for src in binmap['SOURCES']:
         base, ext = split_filename(src)
         if ext not in automake_ext:
@@ -452,6 +460,9 @@ def am_bins(fd, var, binsmap, am):
             fd.write(am_additional_libs(bin, "", "BIN", binsmap[bin + "_LIBS"], am))
         elif binsmap.has_key("LIBS"):
             fd.write(am_additional_libs(bin, "", "BIN", binsmap["LIBS"], am))
+
+        if binmap.has_key("LDFLAGS"):
+            fd.write(am_additional_flags(bin, "", "BIN", binsmap["LDFLAGS"], am))
 
         srcs = am_normalize(bin)+"_SOURCES ="
         for target in binsmap['TARGETS']:
