@@ -209,4 +209,4 @@ def parse_options(argv, cmd_options = cmd_options):
         parse_config(os.path.join(BuiltinOptions.get(BuiltinOptions(),'sysconfdir'),'monet.conf'), SystemOptions)
     if debug:
         print_options(options)
-    return options
+    return options, args
