@@ -5,4 +5,4 @@
 @set MONETDB=%MONETDB:~0,-1%
 
 @rem start the real server
-@"%MONETDB%\Mserver.bat" "%MONETDB%\lib\MonetDB\sql_server.mil" %*
+@"%MONETDB%\Mserver.bat" --dbinit="module(sql_server); sql_server_start();" %*

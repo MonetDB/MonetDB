@@ -174,13 +174,6 @@ This should produce much the same output as nmake check above, but uses
 the installed version of MonetDB/SQL.
 
 
-Documentation:
-==============
-
-Some initial documention of the MonetDB SQL front end is available in
-SQLfeatures.tex and SQLsessionDemo.html.
-
-
 Usage:
 ======
 
@@ -192,15 +185,22 @@ sure, that your environment is set as described in "Compiling" and
 In case the install (i.e., prefix) directories of MonetDB and
 MonetDB/SQL are identical, simply call
 
- Mserver <sql-prefix>\lib\MonetDB\sql_server.mil
+ Mserver --dbinit="module(sql_server); sql_server_start();"
 
 In case you use different install (i.e., prefix) directories of MonetDB
 and MonetDB/SQL, call
 
- Mserver --set monet_mod_path=<monet-prefix>\lib\MonetDB;<sql-prefix>\lib\MonetDB <sql-prefix>\lib\MonetDB\sql_server.mil
+ Mserver --set monet_mod_path=<monet-prefix>\lib\MonetDB;<sql-prefix>\lib\MonetDB --dbinit="module(sql_server); sql_server_start();"
 
 Then, in a second Windows command shell, set up the same environment
 and start the MonetDB SQL front end by calling
 
  MapiClient -lsql -umonetdb -Pmonetdb
+
+
+Documentation:
+==============
+
+Some initial documention of the MonetDB SQL front end is available in
+SQLfeatures.tex and SQLsessionDemo.html.
 

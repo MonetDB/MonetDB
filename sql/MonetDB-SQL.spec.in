@@ -12,15 +12,36 @@ Source: sql-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-BuildRequires: MonetDB-devel python
+Requires: python
+
+%if !%buildsystem
+BuildRequires: MonetDB-devel 
+%define buildjava 1
+%define comp_cc gcc
+%define comp_cxx g++
+%endif
+
+%define builddoc 0
+
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
+%define bits 32
+%else
+%define bits 64
+%endif
 
 %package odbc
 Summary: MonetDB SQL odbc
 Group: System
 
+%if %{buildjava}
 %package java
 Summary: MonetDB SQL java interface
 Group: System
+# Requires: java
+%endif
 
 %package python
 Summary: MonetDB SQL python interface
@@ -34,7 +55,7 @@ Group: System
 Summary: MonetDB SQL development package 
 Group: System 
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %package docu
 Summary: MonetDB SQL documentation package 
 Group: System 
@@ -50,8 +71,10 @@ accellerators, SQL- and XML- frontends.
 Add the MonetDB SQL odbc description here
 Requires: MonetDB-client
 
+%if %{buildjava}
 %description java
 Add the MonetDB SQL java description here
+%endif
 
 %description python
 Add the MonetDB SQL python description here
@@ -69,11 +92,10 @@ Add the MonetDB devel description here
 Requires: %{name}-server
 Requires: MonetDB-devel
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %description docu
 Add the MonetDB documentaion description here
 %endif
-
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -82,7 +104,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %build
 
-./configure --prefix=%{prefix} --with-monet=%{prefix}
+./configure \
+	--enable-bits=%{bits} \
+	--with-gcc="%{comp_cc}" \
+	--with-gxx="%{comp_cxx}" \
+	--prefix=%{prefix} \
+	--with-monet=%{prefix}
 
 make
 
@@ -105,9 +132,11 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/lib/libMonetODBC*
 %{prefix}/lib/sql/Tests/odbcsample1
 
+%if %{buildjava}
 %files java
 %{prefix}/share/MonetDB/lib/MonetDB_JDBC.jar
 %{prefix}/share/sql/Tests/Test_*.class
+%endif
 
 %files python
 %defattr(-,monetdb,monetdb) 
@@ -125,7 +154,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/include/sql/storage/*.h
 %{prefix}/lib/pkgconfig/MonetDB-SQL.pc
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %files docu
 %defattr(-,monetdb,monetdb) 
 %{prefix}/share/MonetDB/docs/SQL/*.html
