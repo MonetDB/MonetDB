@@ -726,8 +726,10 @@ int serveClient(Cntxt stk, YYSTREE lt, ValPtr res)
 	if (readClient(c)) {
 		parseClient(c, TRUE);
 	} else {
+		Request q;
+
 		if( monet_embedded >1) monet_embedded=1;
-		Request q = thisRequest();
+		q = thisRequest();
 		q->ev_kill = c->stk + 1;
 	}
         return 0;
