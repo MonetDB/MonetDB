@@ -36,7 +36,10 @@ static statement *query( context *sql, int distinct, dlist *selection,
 
 char *toLower( char *v ){
 	char *s = v;
-	while(*v) *v++ = (char)tolower(*v);
+	while(*v){
+		*v = (char)tolower(*v);
+		v++;
+	}
 	return s;
 }
 
@@ -155,7 +158,7 @@ column *bind_column( list *columns, char *name ){
 }
 
 static 
-column *column_ref( catalog *cat, list *tables, symbol *column_r ){
+column *column_ref( context *sql, list *tables, symbol *column_r ){
 	dlist *l = column_r->data.lval;
 	assert (column_r->token == SQL_COLUMN && column_r->type == type_list);
 
@@ -169,7 +172,8 @@ column *column_ref( catalog *cat, list *tables, symbol *column_r ){
 			n = n->next;
 		}
 		if (!c)
-			printf("missing column %s\n", name);
+			snprintf(sql->errstr, ERRSIZE, 
+		  		_("Column: %s unknown"), name );
 		return c;
 	} else if (dlist_length(l) == 2){
 		char *tname = l->h->data.sval;
@@ -178,13 +182,16 @@ column *column_ref( catalog *cat, list *tables, symbol *column_r ){
 		if (t){
 			column *c = bind_column( t->columns, cname ); 
 			if (!c)
-				printf("missing column %s.%s\n", tname, cname);
+				snprintf(sql->errstr, ERRSIZE, 
+		  		_("Column: %s.%s unknown"), tname, cname );
 			return c;
 		} else {
-			printf("missing table %s\n", tname);
+			snprintf(sql->errstr, ERRSIZE, 
+		  	_("Table: %s unknown"), tname );
 		}
 	} else if (dlist_length(l) >= 3){
-		printf("not handeled yet column names of level >= 3\n" );
+		snprintf(sql->errstr, ERRSIZE, 
+		  	_("TODO: column names of level >= 3\n") );
 	}
 	return NULL;
 }
@@ -253,7 +260,9 @@ statement *find_subset( statement *subset, table *t ){
 static
 statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 	      statement *subset	){
-	column* c;
+
+	column* c = NULL;
+
 	switch(se->token){
 	case SQL_BINOP: { 
 		dnode *l = se->data.lval->h;
@@ -263,9 +272,12 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 						sql, tables, groupby, subset);
 			statement *ls = scalar_exp( l->next->next->data.sym, 
 						sql, tables, groupby, subset);
+			if (!rs || !ls) return NULL;
 			return statement_binop( rs, ls ,f );
 		} else {
-			printf("Missing binop\n");
+			snprintf(sql->errstr, ERRSIZE, 
+		  		_("Binary operator: %s unknown"), 
+					l->data.sval );
 		}
 	} break;
 	case SQL_UNOP: {
@@ -274,32 +286,32 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 		if (f){
 			statement *rs = scalar_exp( l->next->data.sym, 
 						sql, tables, groupby, subset);
+			if (!rs) return NULL;
 			return statement_unop( rs, f );
 		} else {
-			printf("Missing unop\n");
+			snprintf(sql->errstr, ERRSIZE, 
+		  		_("Unary operator: %s unknown"), 
+					l->data.sval );
 		}
 	} break;
 	case SQL_COLUMN: {
-		        c = column_ref( sql->cat, tables, se );
-			if (c){ 
-				statement *res = statement_column(c);
-				if (subset){
-					statement *foundsubset = 
-						find_subset(subset, c->table);
-					res = statement_join(foundsubset, res,
-							cmp_equal);
-				} 
-				return res;
-			} else {
-				printf("missing column\n" );
-			}
-			break;
-	}
+		c = column_ref( sql, tables, se );
+		if (c){ 
+			statement *res = statement_column(c);
+			if (res && subset){
+				statement *foundsubset = 
+					find_subset(subset, c->table);
+				res = statement_join(foundsubset, res,
+						cmp_equal);
+			} 
+			return res;
+		}
+	} break;
 	case SQL_AMMSC: {
 		dlist *l = se->data.lval;
 		aggr *a = cat_bind_aggr(sql->cat, l->h->data.sval );
 		int distinct = l->h->next->data.ival;
-		statement *s;
+		statement *s = NULL;
 		if (!l->h->next->next->data.sym){
 		    	table *t = ((var*)tables->h->data.sval)->t;
 			/* TODO if subset etc */
@@ -308,7 +320,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 		    	s = scalar_exp( l->h->next->next->data.sym, 
 					sql, tables, groupby, subset);
 		}
-		if (distinct) s = statement_unique(s);
+		if (s && distinct) s = statement_unique(s);
 		if (s && a){
 			if (groupby){
 			  column *c = basecolumn(s);
@@ -319,8 +331,9 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 			} else {
 			  return statement_aggr(s, a, NULL);
 			}
-		} else {
-			printf("aggr %s missing\n", l->h->data.sval );
+		} else if (!a){
+			snprintf(sql->errstr, ERRSIZE, 
+		  		_("Aggregate: %s unknown"), l->h->data.sval );
 		}
 		return NULL;
 	} break;
@@ -373,7 +386,6 @@ statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *gro
 		snprintf(sql->errstr, ERRSIZE, 
 		  _("Column expression Symbol(%d)->token = %s"),
 		  (int)column_e->token, token2string(column_e->token));
-		return NULL;
 	}
 	snprintf(sql->errstr, ERRSIZE, 
 	  _("Column expression Symbol(%d)->token = %s no output"),
@@ -594,6 +606,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
 		statement *rs1 = scalar_exp(ro1, sql, tables, NULL, NULL);
 		statement *rs2 = scalar_exp(ro2, sql, tables, NULL, NULL);
+		if (!ls || !rs1 || !rs2) return NULL;
 		if (rs1->type != st_atom || rs2->type != st_atom){
 			snprintf(sql->errstr, ERRSIZE, 
 		  	_("Between requires an atom on the right handside"));
@@ -608,6 +621,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
 		statement *rs1 = scalar_exp(ro1, sql, tables, NULL, NULL);
 		statement *rs2 = scalar_exp(ro2, sql, tables, NULL, NULL);
+		if (!ls || !rs1 || !rs2) return NULL;
 		if (rs1->type != st_atom || rs2->type != st_atom){
 			snprintf(sql->errstr, ERRSIZE, 
 		  	_("Between requires an atom on the right handside"));
@@ -667,6 +681,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 		dlist *l = sc->data.lval;
 		symbol *lo  = l->h->data.sym;
 		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
+		if (!ls) return NULL;
 		if (l->h->next->type == type_list){
 			dnode *n = l->h->next->data.lval->h;
 			list *nl = list_create();
@@ -691,6 +706,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 		dlist *l = sc->data.lval;
 		symbol *lo  = l->h->data.sym;
 		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
+		if (!ls) return NULL;
 		if (l->h->next->type == type_list){
 			dnode *n = l->h->next->data.lval->h;
 			list *nl = list_create();
@@ -898,7 +914,7 @@ statement *query_groupby( context *sql, list *tables, symbol *groupby, statement
 	while(o){
 	    node *n = st->op1.lval->h;
 	    symbol *group = o->data.sym;
-	    column *c = column_ref(sql->cat, tables, group );
+	    column *c = column_ref(sql, tables, group );
 	    while(n){
 		    statement *s = n->data.stval;
 		    if (s->t->id == c->table->id ){
@@ -932,7 +948,7 @@ statement *query_orderby( context *sql, list *tables, symbol *orderby, statement
 	    if (order->token == SQL_COLUMN){
 		symbol *col = order->data.lval->h->data.sym;
 		int direction = order->data.lval->h->next->data.ival;
-		column *c = column_ref(sql->cat, tables, col );
+		column *c = column_ref(sql, tables, col );
 	        while(n){
 		    statement *s = n->data.stval;
 		    if (s->t->id == c->table->id ){
@@ -1063,17 +1079,18 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
 		s = ns;
 	}
 
-  	if (groupby) s = query_groupby(sql, ftables, groupby, s );
-  	if (orderby) order = query_orderby(sql, ftables, orderby, s );
+  	if (s && groupby) s = query_groupby(sql, ftables, groupby, s );
+  	if (s && orderby) order = query_orderby(sql, ftables, orderby, s );
   }
 
   if (s){
   	if (selection){
 	  dnode *n = selection->h;
 	  while (n){
-		statement *cs = column_exp(sql, ftables, n->data.sym, groupby, s);
+		statement *cs = 
+			column_exp(sql, ftables, n->data.sym, groupby, s);
+		if (!cs) return NULL;
 		list_append_statement(rl, cs);
-				/* todo add ordering /groupby */
 		n = n->next;
 	  }
   	} else {
@@ -1106,7 +1123,7 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
   }
   if (!s && sql->errstr[0] == '\0')
 	  snprintf(sql->errstr, ERRSIZE, _("Subquery result missing")); 
-  if (order) 
+  if (s && order) 
 	  return statement_ordered(order,s);
   return s;
 }
