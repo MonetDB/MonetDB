@@ -18,5 +18,6 @@ use "kernel/calc";
 use "kernel/batcalc";
 use "kernel/system";
 use "kernel/group";
+use "kernel/aggrX3";
 use "kernel/mapi";
 @-

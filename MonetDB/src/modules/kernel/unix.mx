@@ -10,27 +10,26 @@ Similar modules may be defined for Windows platforms.
 @-
 
 @mal
-
 module unix;
 
-command getenv(nme:str) : str = unix_getenv
+command getenv(nme:str) : str = UNIXgetenv
 comment "Get the environment variable string.";
 
-command setenv(nme:str,val:str) : bit = unix_setenv
+command setenv(nme:str,val:str) : bit = UNIXsetenv
 comment "Set the environment variable string.";
 
-command system(nme:str) : int = unix_system
-comment "execute a command and give back the return value";
+command system(nme:str) : int = UNIXsystem
+comment "Execute a command and give back the return value";
 
-command getpid():int = unix_getpid
-comment "return process identifier of the thread.";
+command getpid():int = UNIXgetpid
+comment "Return process identifier of the thread.";
 @-
 The implementation is relatively straight forward.
 
 @c
-#include <gdk.h>
+#include "mal.h"
 
-int unix_getenv(str *res, str *varname)
+str UNIXgetenv(str *res, str *varname)
 {
 	char *p = getenv(*varname);
 	if (p) {
@@ -38,22 +37,22 @@ int unix_getenv(str *res, str *varname)
 	} else {
 		*res = GDKstrdup("");
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int unix_setenv(bit *res, str *varname, str *valname)
+str UNIXsetenv(bit *res, str *varname, str *valname)
 {
 	*res = setenv(*varname, *valname, TRUE);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int unix_getpid(int *res)
+str UNIXgetpid(int *res)
 {
 	*res = getpid();
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int unix_system(int *res, str *command)
+str UNIXsystem(int *res, str *command)
 {
 	*res = system(*command);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }

@@ -40,6 +40,28 @@ firing.
 The top contains the next timer event to go off.
 The timer is disabled when no timer events are outstanding.
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ */
+
 #include <monet.h> 
 #ifdef HAVE_SYS_SIGNAL_H
 # include <sys/signal.h> 
@@ -54,6 +76,7 @@ typedef struct {
 
 @c
 #include "alarm.h"
+#include "mal_function.h"
 
 static monet_timer_t            timer[MAXtimer]; 
 static int                      timerTop = 0; 
@@ -78,8 +101,7 @@ MT_Sema CLKalarm(int t, str action){
  
 	TRGDEBUG THRprintf(GDKerr, "CLKalarm: push %d \n", t); 
         if (timerTop == MAXtimer) {
-                GDKerror("CLKalarm: timer stack overflow\n"); 
-                return 0; 
+                return throwMessage("CLKalarm: timer stack overflow"); 
         }
         for (j = 0; j < timerTop; j++) {
                 if (timer[j].alarm_time > t) break; 
@@ -132,12 +154,12 @@ void CLKsignal(int nr){
         }
 }
 
-int CLKprelude(){
+str CLKprelude(){
         (void) signal(SIGALRM, (void (*)()) CLKsignal);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CLKepilogue(){
+str CLKepilogue(){
 	int k;
 #if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32))
         (void) sigignore(SIGALRM);
@@ -145,15 +167,14 @@ int CLKepilogue(){
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action) GDKfree(timer[k].action);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
-int CMDsleep(int *res,int *secs){
+str CMDsleep(int *res,int *secs){
 
         if (*secs < 0) {
-                GDKerror("sleep: negative delay\n");
-        	return GDK_FAIL;
+                return throwMessage("CMDsleep: negative delay");
         } else {
 		sleep(*secs);
 /*
@@ -164,17 +185,16 @@ int CMDsleep(int *res,int *secs){
 		MT_destroy_sema(s);
 */
         }
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
  
-int CMDalarm(int *res, int *secs, str *action){
+str CMDalarm(int *res, int *secs, str *action){
         if (*secs < 0) {
-                GDKerror("alarm: negative delay\n");
-        	return GDK_FAIL;
+                return throwMessage("CMDalarm: negative delay");
         } else {
                 (void) CLKalarm(*secs+time(0), *action);
         }
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 @-
 Problem with CMDtimers is that they use static buffers that
@@ -182,7 +202,7 @@ may be overwritten under parallel processing.
 Therefore, the code below is dangerous (!) and the re-entrant code
 should be used. 
 @c
-int CMDtimers(int *res) {
+str CMDtimers(int *res) {
 	char buf[27];
 	int k;
 	BAT *retval = BATnew(TYPE_str, TYPE_str, timerTop);
@@ -202,10 +222,10 @@ int CMDtimers(int *res) {
 			timer[k].action? timer[k].action:"barrier");
         }
 	*res= retval->batCacheid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDctime(str *retval){
+str CMDctime(str *retval){
 	time_t t = time(0);
 #ifdef HAVE_CTIME_R3
 	char buf[128];
@@ -218,16 +238,16 @@ int CMDctime(str *retval){
 	*retval = GDKstrdup((char*)ctime(&t));
 #endif
 #endif
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDepoch(int *res) {
+str CMDepoch(int *res) {
 	*res = time(0);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDtime(int *res){
+str CMDtime(int *res){
 	*res = GDKms();
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @}

@@ -51,47 +51,47 @@ module str;
 
 command str(s:str):str = CMDstr
 	comment "Noop routine.";
-command string( s:str, offset:int ) : str = strTail
+command string( s:str, offset:int ) : str = STRTail
 	comment "Return the tail s[offset..n] of a string s[0..n].";
-command string( s:str, offset:int, count:int) : str = strSubString
+command string( s:str, offset:int, count:int) : str = STRSubString
 	comment "Return substring s[offset..offset+count] of a string s[0..n]";
-command +( l:str, r:str) : str = strConcat
+command +( l:str, r:str) : str = STRConcat
 	comment "Concatenate two strings.";
-command length( s:str ) : int = strLength
+command length( s:str ) : int = STRLength
 	comment "Return the length of a string.";
-command chrAt( s:str, index:lng) : chr = strChrAt
+command chrAt( s:str, index:lng) : chr = STRChrAt
 	comment "String array lookup operation.";
-command chrAt( s:str, index:sht) : chr = strChrAt
+command chrAt( s:str, index:sht) : chr = STRChrAt
 	comment "String array lookup operation.";
-command chrAt( s:str, index:int) : chr = strChrAt
+command chrAt( s:str, index:int) : chr = STRChrAt
 	comment "String array lookup operation.";
 
-command startsWith( s:str, prefix:str ) : bit = strPrefix
+command startsWith( s:str, prefix:str ) : bit = STRPrefix
         comment "Prefix check.";
-command endsWith( s:str, suffix:str ) : bit = strSuffix
+command endsWith( s:str, suffix:str ) : bit = STRSuffix
         comment "Suffix check.";
 
-command toLower( s:str ) : str = strLower
+command toLower( s:str ) : str = STRLower
         comment "Convert a string to lower case.";
-command toUpper( s:str ) : str = strUpper
+command toUpper( s:str ) : str = STRUpper
         comment "Convert a string to upper case.";
 
-command search( s:str, c:chr ) : int = strChrSearch
+command search( s:str, c:chr ) : int = STRChrSearch
 	comment "Search for a character. Returns position, -1 if not found.";
-command r_search( s:str, c:chr ) : int = strReverseChrSearch
+command r_search( s:str, c:chr ) : int = STRReverseChrSearch
 	comment "Reverse search for a char. Returns position, -1 if not found.";
-command search( s:str, s2:str) : int = strStrSearch
+command search( s:str, s2:str) : int = STRStrSearch
 	comment "Search for a substring. Returns position, -1 if not found.";
-command r_search( s:str, s2:str ) : int = strReverseStrSearch
+command r_search( s:str, s2:Str ) : int = STRReverseStrSearch
 	comment "Reverse search for a substring. 
 	Returns position, -1 if not found.";
-command trim( s:str ) : str = strStrip
+command trim( s:str ) : str = STRStrip
 	comment "Strip whitespaces around a string.";
-command ltrim( s:str ) : str = strLtrim
+command ltrim( s:str ) : str = STRLtrim
 	comment "Strip whitespaces from start of a string.";
-command rtrim( s:str ) : str = strRtrim
+command rtrim( s:str ) : str = STRRtrim
 	comment "Strip whitespaces from end of a string.";
-command substitute( s:str, src:str, dst:str, repeated:bit) : str = strSubstitute
+command substitute( s:str, src:str, dst:str, repeated:bit) : str = STRSubstitute
 	comment "Substitute first occurrence of substring 'src' by 'dst'.
          Iff repeated = true this is repeated while 'src' can be found in 
 	 the result string. In order to prevent recursion and result strings 
@@ -209,7 +209,7 @@ quit;
 	   } else {\
 	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
  	   }\
-	   return GDK_SUCCEED; \
+	   return MAL_SUCCEED; \
 	}
 
 #ifdef MAX
@@ -222,11 +222,11 @@ quit;
 #endif
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
-int CMDstr(str *res, str *src){
+str CMDstr(str *res, str *src){
 	*res = GDKstrdup(*src);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int strConcat(str *res, str *val1, str *val2){
+str STRConcat(str *res, str *val1, str *val2){
 	str s,t;
 	ptr val;
 	int l1, l2 ;
@@ -236,7 +236,7 @@ int strConcat(str *res, str *val1, str *val2){
 
 	if( strNil(s)|| strNil(t)) {
 		*res= GDKstrdup(str_nil);
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	l1 = strlen(s);
 	l2 = strlen(t);
@@ -244,18 +244,18 @@ int strConcat(str *res, str *val1, str *val2){
 	memcpy(*res, s, l1);
 	memcpy(*res + l1, t, l2);
 	(*res)[l1+l2] = '\0';
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strLength( int *res, str *arg1 ){
+str STRLength( int *res, str *arg1 ){
 	str s= *arg1;
 	RETURN_NIL_IF(strNil(s),TYPE_int);
 
 	*res = strlen(s);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strTail( str *res, str *arg1, int *offset){
+str STRTail( str *res, str *arg1, int *offset){
 	str s = *arg1;
 	int l;
 	RETURN_NIL_IF(strNil(s)||*offset==int_nil,TYPE_str);
@@ -263,7 +263,7 @@ int strTail( str *res, str *arg1, int *offset){
 	if (*offset >= 0) {
 		if (l < (*offset)) {
 			*res = GDKstrdup("");
-			return GDK_SUCCEED;
+			return MAL_SUCCEED;
 		}
 		l = l - *offset;
 		*res = (char*)GDKmalloc( l+1 );
@@ -276,22 +276,22 @@ int strTail( str *res, str *arg1, int *offset){
 		strncpy(*res, s + l, len);
 		(*res)[len] = 0;
 	} 
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strSubString( str *res, str *arg1, int *offset, int *length ){
+str STRSubString( str *res, str *arg1, int *offset, int *length ){
 	str s= *arg1;
 	int l, len;
 	RETURN_NIL_IF(strNil(s)||*offset==int_nil||*length==int_nil,TYPE_str);
 	if (*length < 0) {
 		*res = GDKstrdup("");
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
    	l = strlen(s);
 	if (*offset >= 0) {
 		if (l < *offset) {
 			*res = GDKstrdup("");
-			return GDK_SUCCEED;
+			return MAL_SUCCEED;
 		}
 		len = MIN(*length, l - *offset);
  		*res = (char*)GDKmalloc( len+1 );
@@ -308,20 +308,20 @@ int strSubString( str *res, str *arg1, int *offset, int *length ){
 		strncpy(*res, s + o, len);
 		(*res)[len] = 0;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strChrAt( chr *res, str *arg1, int *at ){
+str STRChrAt( chr *res, str *arg1, int *at ){
 	str s= *arg1;
 	int l;
 	RETURN_NIL_IF(strNil(s)||*at==int_nil,TYPE_chr);
    	l = strlen(s);
 	RETURN_NIL_IF(l<=(*at)||(*at)<0, TYPE_chr);
 	*res = s[*at];
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strPrefix( bit *res, str *arg1, str *arg2 ){
+str STRPrefix( bit *res, str *arg1, str *arg2 ){
 	str s= *arg1, prefix= *arg2;
 	int pl, i;
 
@@ -329,19 +329,19 @@ int strPrefix( bit *res, str *arg1, str *arg2 ){
    	pl = strlen(prefix);
 	if ((int)strlen(s)<pl){
 		*res = 0;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	*res = 1;
 	for (i=0; i<pl; i++){
 	   	if(s[i] != prefix[i]){
 			*res = 0;
-			return GDK_SUCCEED;
+			return MAL_SUCCEED;
 		}
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strSuffix( bit *res, str *arg1, str *arg2 ){
+str STRSuffix( bit *res, str *arg1, str *arg2 ){
 	str s= *arg1, suffix = *arg2;
 	int i, sl, sul;
 	RETURN_NIL_IF(strNil(s)||strNil(suffix),TYPE_bit);
@@ -350,19 +350,19 @@ int strSuffix( bit *res, str *arg1, str *arg2 ){
 
 	if (sl<sul){
 		*res = 0;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	*res = 1;
 	for (i=0; i<sul; i++){
 	   	if(s[sl-1-i] != suffix[sul-1-i]){
 			*res = 0;
-			return GDK_SUCCEED;
+			return MAL_SUCCEED;
 		}
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strLower( str *res, str *arg1 ){
+str STRLower( str *res, str *arg1 ){
 	str s= *arg1;
 	int l, i;
 	RETURN_NIL_IF(strNil(s),TYPE_str);
@@ -371,10 +371,10 @@ int strLower( str *res, str *arg1 ){
 	for(i = 0; i<l; i++)
 		(*res)[i] = (char)tolower((char)s[i]);
 	(*res)[l] = 0;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strUpper( str *res, str *arg1 ){
+str STRUpper( str *res, str *arg1 ){
 	str s= *arg1;
 	int l, i;
 	RETURN_NIL_IF(strNil(s),TYPE_str);
@@ -383,10 +383,10 @@ int strUpper( str *res, str *arg1 ){
 	for(i = 0; i<l; i++)
 		(*res)[i] = (char)toupper((char)s[i]);
 	(*res)[l] = 0;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strChrSearch( int *res, str *arg1, chr *c ){
+str STRChrSearch( int *res, str *arg1, chr *c ){
 	str s= *arg1;
 	char *p;
 	RETURN_NIL_IF(strNil(s)||*c==chr_nil,TYPE_int);
@@ -394,10 +394,10 @@ int strChrSearch( int *res, str *arg1, chr *c ){
 		*res = p-s;
 	else 
 		*res = -1;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strReverseChrSearch( int *res, str *arg1, chr *c ){
+str STRReverseChrSearch( int *res, str *arg1, chr *c ){
 	str s= *arg1;
 	char *p;
 	RETURN_NIL_IF(strNil(s)||*c==chr_nil,TYPE_int);
@@ -405,10 +405,10 @@ int strReverseChrSearch( int *res, str *arg1, chr *c ){
 		*res = p-s;
 	else 
 		*res = -1;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strStrSearch( int *res, str *arg1, str *arg2 ){
+str STRStrSearch( int *res, str *arg1, str *arg2 ){
 	str s= *arg1, s2= *arg2;
 	char *p;
 	RETURN_NIL_IF(strNil(s)||strNil(s2),TYPE_int);
@@ -416,10 +416,10 @@ int strStrSearch( int *res, str *arg1, str *arg2 ){
 		*res = p-s;
 	else 
 		*res = -1;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strReverseStrSearch( int *res, str *arg1, str *arg2 ){
+str STRReverseStrSearch( int *res, str *arg1, str *arg2 ){
 	str s= *arg1, s2= *arg2;
 	int len, slen;
 	char *p, *q;
@@ -439,10 +439,10 @@ int strReverseStrSearch( int *res, str *arg1, str *arg2 ){
 	    }
 	}
 	
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strStrip(str *res, str *arg1) {
+str STRStrip(str *res, str *arg1) {
 	str s= *arg1;
 	str start = s;
 	int len;
@@ -460,19 +460,19 @@ int strStrip(str *res, str *arg1) {
 	*res = GDKmalloc(len);
 	memcpy(*res, start, len - 1);
 	(*res)[len - 1] = '\0';
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strLtrim(str *res, str *arg1) {
+str STRLtrim(str *res, str *arg1) {
 	str s= *arg1;
 	RETURN_NIL_IF(strNil(s), TYPE_str);
 	while (GDKisspace(*s))
 	   	s++;
 	*res = GDKstrdup(s);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strRtrim(str *res, str *arg1) {
+str STRRtrim(str *res, str *arg1) {
 	str s= *arg1;
 	int len = strlen(s);
 
@@ -481,10 +481,10 @@ int strRtrim(str *res, str *arg1) {
 	*res = GDKmalloc(len+1);
   	memcpy(*res, s, len);
   	(*res)[len] = '\0';
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g) {
+str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g) {
 	str s= *arg1, src=*arg2, dst= *arg3;
 	int repeat = *g, lsrc = strlen(src), ldst = strlen(dst);
 	int l = strLen(s), n = l + ldst;
@@ -506,10 +506,10 @@ int strSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g) {
 		fnd += ldst - 1; 
 	} while(repeat);
 
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int strSubstitute2(str *res, str s, str src, str dst, bit *g) {
+str STRSubstitute2(str *res, str s, str src, str dst, bit *g) {
 	int repeat = *g, lsrc = strlen(src), ldst = strlen(dst);
 	int l = strLen(s), n = l + ldst;
 	str buf, fnd, end; 
@@ -533,7 +533,7 @@ int strSubstitute2(str *res, str s, str src, str dst, bit *g) {
 		fnd -= lsrc-1; /* we can actually do better */
 	} while(repeat);
 
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @
 @}

@@ -10,16 +10,16 @@ as already present in the Monet system.
 @mal
 atom module lock:ptr;
 
-command create() : lock = create_lock
-	comment "create an unset lock";
-command set(l:lock) = set_lock
-	comment "try to set a lock; if set, block till it is freed";
-command try(l:lock) : int = try_lock
-	comment "try a lock, if free set it, if not return EBUSY";
-command unset(l:lock) = unset_lock
-	comment "unset a lock";
-command destroy(l:lock) = destroy_lock
-	comment "destroy a lock";
+command create() : lock = LCKcreate
+	comment "Create an unset lock";
+command set(l:lock) = LCKset
+	comment "Try to set a lock; if set, block till it is freed";
+command try(l:lock) : int = LCKtry
+	comment "Try a lock, if free set it, if not return EBUSY";
+command unset(l:lock) = LCKunset
+	comment "Unset a lock";
+command destroy(l:lock) = LCKdestroy
+	comment "Destroy a lock";
 command tostr(l:lock) = lockToStr
 	comment "Overloaded atom function";
 
@@ -27,16 +27,16 @@ command tostr(l:lock) = lockToStr
 @mal
 atom module sema:ptr;
 
-command create(init:int ) : sema = create_sema
-	comment "create an unset sema, with an initial value";
-command down(s:sema) = down_sema
-	comment "decrease the semaphpore if >0; else block";
-command try(s:sema) : int = try_sema
+command create(init:int ) : sema = SEMAcreate
+	comment "Create an unset sema, with an initial value";
+command down(s:sema) = SEMAdown
+	comment "Decrement the semaphpore if >0; else block";
+command try(s:sema) : int = SEMAtry
 	comment "try the semaphpore";
-command up(s:sema) = up_sema
-	comment "increase the semaphore";
-command destroy(s:sema) = destroy_sema
-	comment "destroy a sema";
+command up(s:sema) = SEMAup
+	comment "Increment the semaphore";
+command destroy(s:sema) = SEMAdestroy
+	comment "Destroy a semaphore";
 
 @mil
 	CONST EBUSY := 16;
@@ -65,35 +65,35 @@ command destroy(s:sema) = destroy_sema
  *		   Peter Boncz <Peter.Boncz@cwi.nl>
  */
 
-#include <gdk.h>
+#include "monet.h"
 typedef ptr lock;
 typedef ptr sema;
 typedef ptr monet_lock;
 typedef ptr monet_sema;
 
-int create_lock(monet_lock *l){
+str LCKcreate(monet_lock *l){
 	*l = MT_create_lock();
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int set_lock(int *res, monet_lock *l){
-	MT_set_lock((MT_Lock) *l, "set_lock");
-	return GDK_SUCCEED;
+str LCKset(int *res, monet_lock *l){
+	MT_set_lock((MT_Lock) *l, "LCKset");
+	return MAL_SUCCEED;
 }
 
-int try_lock(int* res, monet_lock* l){
+str LCKtry(int* res, monet_lock* l){
 	*res = MT_try_lock((MT_Lock) *l);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int unset_lock(int *res, monet_lock *l){
+str LCKunset(int *res, monet_lock *l){
 	MT_unset_lock((MT_Lock) *l, "unset_lock");
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int destroy_lock(int *res, monet_lock *l){
+str LCKdestroy(int *res, monet_lock *l){
 	MT_destroy_lock((MT_Lock) *l);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 int lockToStr(char **dst, int *len, ptr *src){
@@ -104,28 +104,28 @@ int lockToStr(char **dst, int *len, ptr *src){
 	sprintf(*dst,"%o", *src);
 	return strlen(*dst);
 }
-int create_sema(monet_sema *s, int *init){
+str SEMAcreate(monet_sema *s, int *init){
 	*s = MT_create_sema(*init);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int up_sema(int *res, monet_sema *s){
-	MT_up_sema((MT_Sema) *s, "up_sema");
-	return GDK_SUCCEED;
+str SEMAup(int *res, monet_sema *s){
+	MT_up_sema((MT_Sema) *s, "SEMAup");
+	return MAL_SUCCEED;
 }
 
-int try_sema(int *res, monet_sema *s){
+str SEMAtry(int *res, monet_sema *s){
 	*res = MT_try_sema((MT_Sema) *s)?0:EBUSY;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int down_sema(int *res, monet_sema *s){
-	MT_down_sema((MT_Sema) *s, "down_sema");
-	return GDK_SUCCEED;
+str SEMAdown(int *res, monet_sema *s){
+	MT_down_sema((MT_Sema) *s, "SEMAdown");
+	return MAL_SUCCEED;
 }
 
-int destroy_sema(int *res, monet_sema *s){
+str SEMAdestroy(int *res, monet_sema *s){
 	MT_destroy_sema((MT_Sema) *s);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @}

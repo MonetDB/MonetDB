@@ -49,92 +49,95 @@ try to encode/decode a value.
 atom enum:int;
 module enum;
 
-pattern create(e:any::2, src:bat[any,any::1]): bat[any::1,any::2]= enum_create
+pattern create(e:any::2, src:bat[any,any::1]): bat[any::1,any::2]= ENUMcreate
 comment "Associate a value domain with an enumerated type.";
 
-pattern load(map:any::1):BAT[any,any::1] = enum_load
+pattern load(map:any::1):BAT[any,any::1] = ENUMload
 comment "Load/activate a previously created enumeration type.";
 
-pattern destroy(map:any):void = enum_destroy
+pattern destroy(map:any):void = ENUMdestroy
 comment "Destroy an enumeration type";
 
-pattern encode(e:any::1,v:any::2):any::1 = enum_encode
+pattern encode(e:any::1,v:any::2):any::1 = ENUMencode
 comment "Encode a value using a small map";
 
-pattern encode(e:any::2,b:BAT[any::1,any]):BAT[any::1,any::2] = enum_encode_multi
+pattern encode(e:any::2,b:BAT[any::1,any]):BAT[any::1,any::2] = ENUMencode_multi
 comment "Encode a BAT of tail values, into a new BAT of encoded values.
 This action is actually a join operation.";
 
-pattern lower(e:any::1, v:any::2):any::1 = enum_lower
+pattern lower(e:any::1, v:any::2):any::1 = ENUMlower
 comment "Encode to the lowest value in the encoded domain that is 
 	equal to or larger than v";
 
-pattern upper(e:any::1, v:any::2):any::1 = enum_upper
+pattern upper(e:any::1, v:any::2):any::1 = ENUMupper
 comment "Encode to the highest value in the encoded domain that is 
 	equal to or less than v";
 
-pattern decode(e:any):any = enum_decode
+pattern decode(e:any):any = ENUMdecode
 comment "Decode a value";
 
-pattern decode(b:BAT[any::2,any::1]) : BAT[any::2,any] = enum_decode_multi
+pattern decode(b:BAT[any::2,any::1]) : BAT[any::2,any] = ENUMdecode_multi
 comment "Decode a BAT of tail values, into a new BAT of decoded values";
 
-pattern getTable(e:any::1) : bat = enum_table
+pattern getTable(e:any::1) : bat = ENUMtable
 comment "Return the enumeration BAT of an enum type";
 
 command isEnum(tpe:bat) : bit = isEnum
 comment "Returns true iff the bat is used as an enumerated type";
 
-command setHistogram(tpe:any::1, b:BAT[any,any]):void = enum_sethisto
-comment "registers the fact that enum_table(tpe) is a histogram on b's head column";
+command setHistogram(tpe:any::1, b:BAT[any,any]):void = ENUMsethisto
+comment "registers the fact that ENUMtable(tpe) is a histogram on b's head column";
 
-pattern isHistogram(tpe:any,b:BAT[any,any]) : bit = enum_ishisto
-comment "returns whether enum_table(tpe) is a histogram on b's head column";
+pattern isHistogram(tpe:any,b:BAT[any,any]) : bit = ENUMishisto
+comment "returns whether ENUMtable(tpe) is a histogram on b's head column";
 
 @- 
 oldstuff
 
-    proc enum_trick(bat[oid,any] b, BAT[any,int] map) : bat[oid,any] {
-        var nme := sprintf("enum_%d", abs(int(map)));
+    proc ENUMtrick(bat[oid,any] b, BAT[any,int] map) : bat[oid,any] {
+        var nme := sprintf("ENUM%d", abs(int(map)));
         map.rename(nme);
-        var tpe := enum_load(nme);
-        enum_sethisto(tpe, b.reverse);
+        var tpe := ENUMload(nme);
+        ENUMsethisto(tpe, b.reverse);
         return [*nme](b);
     }
-    ADDHELP("enum_trick", "boncz", "Dec  5 1998",
+    ADDHELP("ENUMtrick", "boncz", "Dec  5 1998",
          "create a view on a BAT with a diffrent enum map.", "enum");
 
 @{
 @* Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
 @= getBATdescriptor
-        if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
+        if( BBPcheck(*@2,"@4")==0) 
+		return throwMessage("@4:cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0; return GDK_FAIL;}
+        if( @3 == NULL) { *@1 = 0; 
+		return throwMessage("@4:cannot access descriptor @2");
+        }
 	if( *@2 <0) @3= BATmirror(@3);
 @-
 Note that we have to build the table with pre-instantiated
 function references, because there is no easy way from the GDK layer
 to access the enum administration.
+@= enumCheck
+     for(xx=0; xx<MAX_ENUM; xx++)\
+	if (ENUMtpe[xx] == @1) break;\
+     if ((xx>MAX_ENUM) || ((b=BATdescriptor(ENUMmap[xx])) == NULL)) {\
+	return throwException("@2: illegal enum type.");\
+     }
 @c
 #include "gdk.h"
 #include "mal_client.h"
 #include "io.h"
+#include "mal.h"
 
 typedef int (*fcn)();
-#define ENUM_CHK(x,y)\
-	     for(xx=0; xx<MAX_ENUM; xx++)\
-		if (enum_tpe[xx] == x) break;\
-	     if ((xx>MAX_ENUM) || ((b=BATdescriptor(enum_map[xx])) == NULL)) {\
-	 	GDKerror("%s: illegal enum type.\n",y);\
-		return GDK_FAIL; \
-	     }
 
 #define MAX_ENUM 80
 
-bat enum_map[MAX_ENUM] = { 0 };
-oid enum_histo[MAX_ENUM] = { 0 };
-int enum_tpe[MAX_ENUM] = { -1 };
+bat ENUMmap[MAX_ENUM] = { 0 };
+oid ENUMhisto[MAX_ENUM] = { 0 };
+int ENUMtpe[MAX_ENUM] = { -1 };
 
 @:imp(0)@	@:imp(1)@	@:imp(2)@	@:imp(3)@ 	@:imp(4)@
 @:imp(5)@	@:imp(6)@	@:imp(7)@	@:imp(8)@ 	@:imp(9)@
@@ -153,7 +156,7 @@ int enum_tpe[MAX_ENUM] = { -1 };
 @:imp(70)@	@:imp(71)@	@:imp(72)@	@:imp(73)@ 	@:imp(74)@
 @:imp(75)@	@:imp(76)@	@:imp(77)@	@:imp(78)@ 	@:imp(79)@
 
-fcn enum_conv[MAX_ENUM*4+1] = { 
+fcn ENUMconv[MAX_ENUM*4+1] = { 
 @:def(0)@	@:def(1)@	@:def(2)@	@:def(3)@ 	@:def(4)@
 @:def(5)@	@:def(6)@	@:def(7)@	@:def(8)@ 	@:def(9)@
 @:def(10)@	@:def(11)@	@:def(12)@	@:def(13)@ 	@:def(14)@
@@ -177,7 +180,7 @@ fcn enum_conv[MAX_ENUM*4+1] = {
 @= block
 int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 	int l; ptr v; 
-	BAT *b = BATdescriptor(enum_map[mapid]);
+	BAT *b = BATdescriptor(ENUMmap[mapid]);
 
 	if (*src == @1_nil) {
 		v = ATOMnilptr(b->htype);
@@ -200,7 +203,7 @@ int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 int enum@1Fromstr(int mapid, str src, int* len, @1** dst){
 	int r, l = 0;
 	BUN p; ptr v;
-	BAT *b = BATdescriptor(enum_map[mapid]);
+	BAT *b = BATdescriptor(ENUMmap[mapid]);
 
 	if (b->htype != TYPE_str) {
 		fcn fromstr = BATatoms[b->htype].atomFromStr;
@@ -235,57 +238,56 @@ static int enum@1@2Fromstr(str src, int* len, @2** dst){
 	return enum@2Fromstr(@1,dst,len,src);
 }
 @c
-int enum_atom(int i, BAT *h){
+int ENUMatom(int i, BAT *h){
 	str name= h->batId;
 	if (BATcount(h) > 255) {
 		ATOMproperty(name, "storage", (fcn) TYPE_sht); 
-		ATOMproperty(name, "tostr", enum_conv[i*4+2]);
-		ATOMproperty(name, "fromstr", enum_conv[i*4+3]);
+		ATOMproperty(name, "tostr", ENUMconv[i*4+2]);
+		ATOMproperty(name, "fromstr", ENUMconv[i*4+3]);
 	} else {
 		ATOMproperty(name, "storage", (fcn) TYPE_chr); 
-		ATOMproperty(name, "tostr", enum_conv[i*4]);
-		ATOMproperty(name, "fromstr", enum_conv[i*4+1]);
+		ATOMproperty(name, "tostr", ENUMconv[i*4]);
+		ATOMproperty(name, "fromstr", ENUMconv[i*4+1]);
 	}
-	enum_tpe[i] = ATOMindex(name);
-	enum_map[i] = h->batCacheid;
+	ENUMtpe[i] = ATOMindex(name);
+	ENUMmap[i] = h->batCacheid;
 	BBPfix(h->batCacheid);
-	return enum_tpe[i];
+	return ENUMtpe[i];
 }
-int enum_reload(int *retval, int bid) {
+str ENUMreload(int *retval, int bid) {
 	int i;
 	BAT *h;
 
-	@:getBATdescriptor(retval,&bid,h,"enum_load")@
-	MT_set_lock(mal_contextLock, "enum_load");
+	@:getBATdescriptor(retval,&bid,h,ENUMload)@
+	MT_set_lock(mal_contextLock, "ENUMload");
 	for(i=0; i<MAX_ENUM; i++) {
-		if (enum_map[i] == 0) {
+		if (ENUMmap[i] == 0) {
 			char *name = h->batId;
 			if (BATcount(h) > 255) {
 				ATOMproperty(name, "storage", (fcn) TYPE_sht); 
-				ATOMproperty(name, "tostr", enum_conv[i*4+2]);
-				ATOMproperty(name, "fromstr", enum_conv[i*4+3]);
+				ATOMproperty(name, "tostr", ENUMconv[i*4+2]);
+				ATOMproperty(name, "fromstr", ENUMconv[i*4+3]);
 			} else {
 				ATOMproperty(name, "storage", (fcn) TYPE_chr); 
-				ATOMproperty(name, "tostr", enum_conv[i*4]);
-				ATOMproperty(name, "fromstr", enum_conv[i*4+1]);
+				ATOMproperty(name, "tostr", ENUMconv[i*4]);
+				ATOMproperty(name, "fromstr", ENUMconv[i*4+1]);
 			}
-			enum_tpe[i] = ATOMindex(name);
-			enum_map[i] = h->batCacheid;
+			ENUMtpe[i] = ATOMindex(name);
+			ENUMmap[i] = h->batCacheid;
 			BBPfix(h->batCacheid);
 			*retval = h->batCacheid;
-			MT_unset_lock(mal_contextLock, "enum_load");
-			return GDK_SUCCEED;
+			MT_unset_lock(mal_contextLock, "ENUMload");
+			return MAL_SUCCEED;
 		}
 	}
-	MT_unset_lock(mal_contextLock, "enum_load");
-	GDKerror("enum_load: too many active enum types.\n");
-	return GDK_FAIL;
+	MT_unset_lock(mal_contextLock, "ENUMload");
+	return throwMessage("ENUMload: too many active enum types.");
 }
 
-int enum_create(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *h,*b;
 	ptr nil;
-	int *retval,hid,bid,ret;
+	int *retval,hid,bid; str ret;
 	int tpe,xx;
 	str name;
 
@@ -293,7 +295,7 @@ int enum_create(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= getArgType(mb,pci,1);
 	bid= *(int*) getArgReference(stk,pci,2);
 	name= malTypeName(tpe);
-	@:getBATdescriptor(retval,&bid,b,"enum_create")@
+	@:getBATdescriptor(retval,&bid,b,ENUMcreate)@
 	h = BAThistogram(b);
 	nil = ATOMnilptr(b->htype);
 	BUNdelHead(h, nil);
@@ -304,44 +306,43 @@ int enum_create(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BBPsave(h);
 */
 	hid= h->batCacheid;
-	ret= enum_reload(retval, hid);
+	ret= ENUMreload(retval, hid);
 	GDKfree(name);
 	return ret;
 }
-int enum_load(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMload(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	int xx;
-	int tpe, *retval,ret;
+	int tpe, *retval;
+	str ret;
 	str name;
 
 	tpe= getArgType(mb,pci,1);
 	name= malTypeName(tpe);
 	retval= (int*) getArgReference(stk,pci,0);
 	*retval= BBPindex(name);
-	if( *retval ==0){
-		GDKerror("enum_load: encoding BAT does not exist.\n");
-		return GDK_FAIL;
-	}
-	ret= enum_reload(retval,*retval);
+	if( *retval ==0)
+		return throwMessage("ENUMload: encoding BAT does not exist.");
+	ret= ENUMreload(retval,*retval);
 	GDKfree(name);
 	return ret;
 }
 
-int enum_destroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	int xx;
 	int tpe;
 
 	tpe= getArgType(mb,pci,1);
-	ENUM_CHK(tpe, "enum_destroy");
-	MT_set_lock(mal_contextLock, "enum_destroy");
+	@:enumCheck(tpe, ENUMdestroy)@
+	MT_set_lock(mal_contextLock, "ENUMdestroy");
 	ATOMdelete(tpe);
-	BBPunfix(enum_map[xx]);
-	enum_histo[xx] = 0;
-	enum_map[xx] = 0;
-	enum_tpe[xx] = 0;
-	MT_unset_lock(mal_contextLock, "enum_destroy");
-	return GDK_SUCCEED;
+	BBPunfix(ENUMmap[xx]);
+	ENUMhisto[xx] = 0;
+	ENUMmap[xx] = 0;
+	ENUMtpe[xx] = 0;
+	MT_unset_lock(mal_contextLock, "ENUMdestroy");
+	return MAL_SUCCEED;
 }
 @-
 The result of an encode/lower/upper step is stored in the 
@@ -355,21 +356,21 @@ receiving variable.
 		else *(unsigned short*) dst = BUNindex(b,p) - 1;
 	}
 @c
-int enum_encode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMencode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	ptr p,src,dst;
 	int xx;
 	int tpe;
 
 	tpe= getArgType(mb,pci,1);
-	ENUM_CHK(tpe,"enum_encode");
+	@:enumCheck(tpe,ENUMencode)@
 	src= *(ptr*) getArgReference(stk,pci,2);
 	dst= (ptr) getArgReference(stk,pci,0);
 	p = BUNfnd(b, src);
 	@:encoding@
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int enum_lower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMlower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int xx,tpe;
 	BUN p,src,dst;
 	BAT *b;
@@ -377,11 +378,9 @@ int enum_lower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= getArgType(mb,pci,1);
 	src= *(ptr*) getArgReference(stk,pci,2);
 	dst= (ptr) getArgReference(stk,pci,0);
-	ENUM_CHK(tpe,"enum_lower");
-	if (!ATOMlinear(b->htype)) {
-	 	GDKerror("enum_lower@1Map: incompatible source type.\n");
-		return GDK_FAIL;
-	}
+	@:enumCheck(tpe,ENUMlower)@
+	if (!ATOMlinear(b->htype))
+	 	return throwMessage("ENUMlower@1Map: incompatible source type.");
 	if (BAThordered(b)&1) {
 		p = SORTfndlast(BATmirror(b), src);
 		if (p && p > BUNfirst(b))  p -= BUNsize(b);
@@ -393,10 +392,10 @@ int enum_lower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		else p = NULL;
 	}
 	@:encoding@
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 } 
 
-int enum_upper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMupper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int xx,tpe;
 	BUN p,src,dst;
 	BAT *b;
@@ -404,11 +403,9 @@ int enum_upper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= getArgType(mb,pci,1);
 	src= *(ptr*) getArgReference(stk,pci,2);
 	dst= (ptr) getArgReference(stk,pci,0);
-	ENUM_CHK(tpe,"enum_lower");
-	if (!ATOMlinear(b->htype)) {
-	 	GDKerror("enum_upper@1Map: incompatible source type.\n");
-		return GDK_FAIL;
-	}
+	@:enumCheck(tpe,ENUMlower)@
+	if (!ATOMlinear(b->htype))
+	 	return throwException("ENUMupper@1Map: incompatible source type.");
 	if (BAThordered(b)&1) {
 		p = SORTfndfirst(BATmirror(b), src);
 	} else {
@@ -417,10 +414,10 @@ int enum_upper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if (p) p = *(BUN*) p;
 	}
 	@:encoding@
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 } 
 
-int enum_decode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMdecode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int xx,tpe;
 	BUN p,src, *dst;
 	BAT *b;
@@ -428,12 +425,10 @@ int enum_decode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= getArgType(mb,pci,1);
 	src= *(ptr*) getArgReference(stk,pci,1);
 	dst= (ptr) getArgReference(stk,pci,0);
-	ENUM_CHK(tpe,"enum_lower");
+	@:enumCheck(tpe,ENUMlower)@
 
-	if( b->htype != getArgType(mb,pci,0)){
-		GDKerror("enum_decode:incompatible source type\n");
-		return GDK_FAIL;
-	}
+	if( b->htype != getArgType(mb,pci,0))
+		return throwMessage("ENUMdecode:incompatible source type");
 	if( ATOMstorage(tpe) == TYPE_chr){
 		if (*(chr*) src == chr_nil) p = ATOMnilptr(b->htype);
 		else p = BUNhead(b, BUNptr(b, 1 + *(unsigned char*)src));
@@ -449,7 +444,7 @@ int enum_decode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else {
 		memcpy(dst, p, ATOMsize(b->htype));
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
@@ -487,27 +482,24 @@ int enum_decode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ALIGNsetH(bn, src);
 } break;
 @c
-int enum_encode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*src;
 	ptr p;
 	int xx,bid,*retval;
 	int tpe;
 
 	tpe= getArgType(mb,pci,1);
-	ENUM_CHK(tpe,"enum_encode_multi");
+	@:enumCheck(tpe,ENUMencode_multi)@
 	bid= *(int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:getBATdescriptor(retval,&bid,src,"enum_encode_multi")@
+	@:getBATdescriptor(retval,&bid,src,ENUMencode_multi)@
 
-	if (src->ttype != b->htype) {
-	 	GDKerror("[encode]: incompatible source type.\n");
-		return GDK_FAIL;
-	}
+	if (src->ttype != b->htype) 
+	 	return throwMessage("ENUMencode_multi: incompatible types");
 	if (ATOMstorage(tpe) == TYPE_chr) { 
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		GDKerror("[encode](): illegal tail type.\n");
-	        return GDK_FAIL;
+		return throwMessage("ENUMencode_multi: illegal tail type");
 	    case TYPE_chr:	@:encode(chr,char,loc,_chr)@
 	    case TYPE_sht:	@:encode(chr,char,loc,_sht)@
 	    case TYPE_int:	@:encode(chr,char,loc,_int)@
@@ -522,8 +514,7 @@ int enum_encode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else {
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		GDKerror("[encode](): illegal tail type.\n");
-	        return GDK_FAIL;
+		return throwMessage("ENUMencode_multi: illegal tail type");
 	    case TYPE_chr:	@:encode(sht,short,loc,_chr)@
 	    case TYPE_sht:	@:encode(sht,short,loc,_sht)@
 	    case TYPE_int:	@:encode(sht,short,loc,_int)@
@@ -536,7 +527,7 @@ int enum_encode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				@:encode(sht,short,loc,_loc)#
 	    }	    }
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 } 
 
 @= decode
@@ -557,7 +548,7 @@ int enum_encode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	*retval = bn->batCacheid;
 }
 @c
-int enum_decode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*src;
 	ptr p;
 	int xx,*bid,*retval;
@@ -565,33 +556,31 @@ int enum_decode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	bid= (int*) getArgReference(stk,pci,1);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:getBATdescriptor(retval,bid,src,"enum_encode_multi")@
+	@:getBATdescriptor(retval,bid,src,ENUMencode_multi)@
 	tpe= src->ttype;
-	ENUM_CHK(tpe,"enum_encode_multi");
+	@:enumCheck(tpe,ENUMencode_multi)@
 	if (ATOMstorage(tpe) == TYPE_chr) { 
 	    @:decode(chr,char)@
 	} else if (ATOMstorage(tpe) == TYPE_sht) { 
 	    @:decode(sht,short)@
-	} else {
-	    GDKerror("enum_decode_multi(): illegal tail type.\n");
-	    return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
+	} else
+	    return throwMessage("ENUMdecode_multi: illegal tail type.");
+	return MAL_SUCCEED;
 }
 
-int enum_chktpe(int tpe) {
+int ENUMchktpe(int tpe) {
 	int i;
 	for(i=0; i<MAX_ENUM; i++)
-		if (enum_tpe[i] == tpe) return TRUE;
+		if (ENUMtpe[i] == tpe) return TRUE;
 	return FALSE;
 }
 
-int enum_isTable(BAT *b, int tpe){
+int ENUMisTable(BAT *b, int tpe){
 	if( b->ttype== tpe)
-		return enum_chktpe(tpe);
+		return ENUMchktpe(tpe);
 	return FALSE;
 }
-int enum_table(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	int xx,*retval;
 	int tpe;
@@ -599,36 +588,36 @@ int enum_table(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= *(int*) getArgReference(stk,pci,1);
 	retval= (int*) getArgReference(stk,pci,0);
 
-	ENUM_CHK(tpe, "enum_table");
+	@:enumCheck(tpe, ENUMtable)@
 	BBPfix(b->batCacheid);
 	*retval = b->batCacheid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int isEnum(bit *ret, int *bid){
+str isEnum(bit *ret, int *bid){
 	BAT *b;
 	int i;
-	@:getBATdescriptor(ret,bid,b,"isEnum")@
+	@:getBATdescriptor(ret,bid,b,isEnum)@
 	*ret= FALSE;
 	for(i=0; i<MAX_ENUM; i++)
-		if (enum_map[i] == b->batCacheid) { *ret= TRUE;break;}
-	return GDK_SUCCEED;
+		if (ENUMmap[i] == b->batCacheid) { *ret= TRUE;break;}
+	return MAL_SUCCEED;
 }
 
-int enum_sethisto(int *retval, int* tpe, int *bid) {
+str ENUMsethisto(int *retval, int* tpe, int *bid) {
 	BAT *b,*column;
 	int xx;
-	ENUM_CHK(*tpe, "enum_sethisto");
-	@:getBATdescriptor(retval,bid,column,"enum_sethisto")@
+	@:enumCheck(*tpe, ENUMsethisto)@
+	@:getBATdescriptor(retval,bid,column,ENUMsethisto)@
 	if (column->halign == 0) {
 		column->halign = OIDnew(1);
 		column->batDirtydesc = TRUE;
 	}
-	enum_histo[xx] = column->halign;
-	return GDK_SUCCEED;
+	ENUMhisto[xx] = column->halign;
+	return MAL_SUCCEED;
 }
 
-int enum_ishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str ENUMishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*column;
 	int xx,*retval;
 	int tpe,*bid;
@@ -636,18 +625,18 @@ int enum_ishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= *(int*) getArgReference(stk,pci,1);
 	bid= (int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
-	ENUM_CHK(tpe, "enum_ishisto");
-	@:getBATdescriptor(retval,bid,column,"enum_ishisto")@
-	*retval = (enum_histo[xx] == column->halign);
-	return GDK_SUCCEED;
+	@:enumCheck(tpe, ENUMishisto)@
+	@:getBATdescriptor(retval,bid,column,ENUMishisto)@
+	*retval = (ENUMhisto[xx] == column->halign);
+	return MAL_SUCCEED;
 }
 
-int enum_epilogue() {
+str ENUMepilogue() {
 	int xx;
 	for(xx=0; xx<MAX_ENUM; xx++)  {
-		if (enum_map[xx])  {
-			BBPunfix(enum_map[xx]);
+		if (ENUMmap[xx])  {
+			BBPunfix(ENUMmap[xx]);
 		}
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }

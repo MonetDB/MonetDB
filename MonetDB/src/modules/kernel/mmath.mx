@@ -12,22 +12,22 @@ ANSI-C/POSIX manuals of the equaly named functions.
 @mal
 module mmath;
 
-command acos(x:dbl):dbl = math_unary_ACOS
+command acos(x:dbl):dbl = MATHunary_ACOS
 "The acos(x) function calculates the arc cosine of x,
 that is the value whose cosine is x. The value is returned in radians
 and is mathematically defined to be between 0 and PI (inclusive).";
 
-command asin(x:dbl)  : dbl = math_unary_ASIN
+command asin(x:dbl)  : dbl = MATHunary_ASIN
 "The asin(x) function calculates the arc sine of x,
 that is the value whose sine is x. The value is returned in radians
 and is mathematically defined to be between -PI/20 and -PI/2 (inclusive).";
 
-command atan(x:dbl)     : dbl = math_unary_ATAN
+command atan(x:dbl)     : dbl = MATHunary_ATAN
 "The atan(x) function calculates the arc tangent of x,
 that is the value whose tangent is x. The value is returned in radians
 and is mathematically defined to be between -PI/2 and PI/2 (inclusive).";
 
-command atan2(x:dbl,y:dbl): dbl = math_binary_ATAN2
+command atan2(x:dbl,y:dbl): dbl = MATHbinary_ATAN2
 "The atan2(x,y) function calculates the arc tangent of the two
 variables x and y. It is similar to calculating the arc
 tangent of y / x, except that the signs of both arguments
@@ -36,66 +36,66 @@ The value is returned in radians and is mathematically defined
 to be between -PI/2 and PI/2 (inclusive).";
 
 
-command cos(x:dbl)   	  : dbl = math_unary_COS
+command cos(x:dbl)   	  : dbl = MATHunary_COS
 comment "The cos(x) function returns the cosine of x,
 where x is given in radians. The return value is between -1 and 1.";
 
-command sin(x:dbl)   	  : dbl = math_unary_SIN
+command sin(x:dbl)   	  : dbl = MATHunary_SIN
 comment "The sin(x) function returns the cosine of x,
 where x is given in radians. The return value is between -1 and 1.";
 
-command tan(x:dbl)   	  : dbl = math_unary_TAN
+command tan(x:dbl)   	  : dbl = MATHunary_TAN
 comment "The tan(x) function returns the tangent of x,
 where x is given in radians";
 
 
-command cosh(x:dbl)     : dbl = math_unary_COSH
+command cosh(x:dbl)     : dbl = MATHunary_COSH
 comment "The cosh() function  returns the hyperbolic cosine of x,
 which is defined mathematically as (exp(x) + exp(-x)) / 2.";
 
-command sinh(x:dbl)     : dbl = math_unary_SINH
+command sinh(x:dbl)     : dbl = MATHunary_SINH
 comment "The sinh() function  returns  the  hyperbolic sine of x,
 which is defined mathematically as (exp(x) - exp(-x)) / 2.";
 
-command tanh(x:dbl)     : dbl = math_unary_TANH
+command tanh(x:dbl)     : dbl = MATHunary_TANH
 comment "The tanh() function returns the hyperbolic tangent of x,
 which is defined mathematically as sinh(x) / cosh(x).";
 
 
-command exp(x:dbl)   	  : dbl = math_unary_EXP
+command exp(x:dbl)   	  : dbl = MATHunary_EXP
 comment "The exp(x) function returns the value of e
 (the base of natural logarithms) raised to the power of x.";
 
-command log(x:dbl)   	  : dbl = math_unary_LOG
+command log(x:dbl)   	  : dbl = MATHunary_LOG
 comment "The log(x) function returns the natural logarithm of x.";
 
-command log10(x:dbl)    : dbl = math_unary_LOG10
+command log10(x:dbl)    : dbl = MATHunary_LOG10
 comment "The log10(x) function returns the base-10 logarithm of x.";
 
 
-command pow(x:dbl,y:dbl)  : dbl = math_binary_POW
+command pow(x:dbl,y:dbl)  : dbl = MATHbinary_POW
 comment "The pow(x,y) function  returns the value of x raised to the power of y.";
 
-command sqrt(y:dbl)  	  : dbl = math_unary_SQRT
+command sqrt(y:dbl)  	  : dbl = MATHunary_SQRT
 comment "The sqrt(x) function returns the non-negative square root of x.";
 
 
-command ceil(y:dbl)     : dbl = math_unary_CEIL
+command ceil(y:dbl)     : dbl = MATHunary_CEIL
 comment "The ceil(x) function rounds x upwards to the nearest integer.";
 
-command fabs(y:dbl)     : dbl = math_unary_FABS
+command fabs(y:dbl)     : dbl = MATHunary_FABS
 comment "The fabs(x) function  returns  the  absolute value of the 
 floating-point number x.";
 
-command floor(y:dbl)    : dbl = math_unary_FLOOR
+command floor(y:dbl)    : dbl = MATHunary_FLOOR
 comment "The floor(x) function rounds x downwards to the nearest integer.";
 
-command fmod(y:dbl,x:dbl) : dbl = math_binary_FMOD
+command fmod(y:dbl,x:dbl) : dbl = MATHbinary_FMOD
 comment "The fmod(x,y) function computes the remainder of dividing x by y.
 The return value is x - n * y, where n is the quotient of x / y,
 rounded towards zero to an integer.";
 
-command round(x:dbl,y:int)     : dbl = math_binary_ROUND
+command round(x:dbl,y:int)     : dbl = MATHbinary_ROUND
 comment "The round(n, m) returns n rounded to m places to the right of the
 decimal point; if m is omitted, to 0 places. m can be negative to
 round off digits left of the decimal point. m must be an integer.";
@@ -156,6 +156,7 @@ quit;
 
 #include "mmath.h"
 #include <math.h>
+#include "mal.h"
 
 extern double sqrt(double x);
 extern double cbrt(double x);
@@ -212,35 +213,35 @@ extern double fabs(double x);
 @:binop(_FMOD,fmod)@
 
 @= unop
-int math_unary@1(dbl *res , dbl *a ) {
+str MATHunary@1(dbl *res , dbl *a ) {
 #ifdef DEBUG
-	printf( "math_unary@1\n");
+	printf( "MATHunary@1\n");
 #endif
    if (*a == dbl_nil) {
 	*res = dbl_nil;
    } else {
 	@2_unary( a, res );
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 @
 
 @= binop
-int math_binary@1(dbl *res, dbl *a, dbl *b ) {
+str MATHbinary@1(dbl *res, dbl *a, dbl *b ) {
 #ifdef DEBUG
-	printf( "math_binary@1\n");
+	printf( "MATHbinary@1\n");
 #endif
    if (*a == dbl_nil || *b == dbl_nil) {
 	*res = dbl_nil;
    } else {
 	@2_binary( a, b, res);
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 @
 
 @c
-int math_binary_ROUND(dbl *res, dbl *x, int *y) {
+str MATHbinary_ROUND(dbl *res, dbl *x, int *y) {
   if(*x == dbl_nil || *y == int_nil) {
     *res = dbl_nil;
   } else {
@@ -260,6 +261,6 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
     *res = tmp;
   }
 
-  return(GDK_SUCCEED);
+  return MAL_SUCCEED;
 }
 @}

@@ -3,23 +3,24 @@
 @a Niels Nes
 @d 12/01/2001
 @+
+SHOULD BE REMODELLED FOR V5
 What is the purpose of this module...?
 @mal
 module ascii_io;
 
-command ascii_io_debug( int debug ) = init_ascii_io 
-comment "Ascii_io debug control";
+command ascii_io_debug( int debug ) = CMDinit_ascii_io 
+	comment "Ascii_io debug control";
 
 command load( names:BAT[void,str], seps:BAT[void,str], types:BAT[void,str],
-	datafile:str, nr:int ) : BAT[str,bat] = ascii_io_load
+	datafile:str, nr:int ) : BAT[str,bat] = CMDascii_io_load
 comment "Load a bat using specific format.";
 
 command dump(names:BAT[void,str], seps:BAT[void,str], bats:BAT[void,bat],
-	datafile:str, nr:int) = ascii_io_dump 
+	datafile:str, nr:int) = CMDascii_io_dump 
 comment "Dump the bat in ascii format";
 
 command output(order:BAT[any,any], seps:BAT[void,str], bats:BAT[void,bat],
-	s:stream) = ascii_io_output 
+	s:stream) = CMDascii_io_output 
 comment "Send the bat to an output stream.";
 @-
 The remainder should be compiled into a mal procedure to be loaded
@@ -158,8 +159,7 @@ proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 #define _ASCII_IO2_H_
 
 #include <streams.h>
-#include <ascii_io.proto.h>
-
+#include "monet.h"
 extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, int nr );
 extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr );
 
@@ -735,11 +735,11 @@ int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s ){
 	return as.nr;
 }
 
-int init_ascii_io(int *debug){
+str CMDinit_ascii_io(int *debug){
 	ascii_io_debug = *debug;
 	return GDK_SUCCEED;
 }
-int ascii_io_load( BAT **bats, BAT *names, BAT* seps, BAT* types, str datafile, int *nr){
+str ascii_io_load( BAT **bats, BAT *names, BAT* seps, BAT* types, str datafile, int *nr){
 	*bats = ASCIIload( names, seps, types, datafile, *nr );
 	if (*bats) {
 		return GDK_SUCCEED;
@@ -747,11 +747,11 @@ int ascii_io_load( BAT **bats, BAT *names, BAT* seps, BAT* types, str datafile, 
 		return GDK_FAIL;
 	}
 }
-int ascii_io_dump( BAT *names, BAT* seps, BAT* bats, str datafile, int *nr){
+str ascii_io_dump( BAT *names, BAT* seps, BAT* bats, str datafile, int *nr){
 	ASCIIdump( names, seps, bats, datafile, *nr );
 	return GDK_SUCCEED;
 }
-int ascii_io_output( BAT *order, BAT* seps, BAT* bats, stream *s ){
+str ascii_io_output( BAT *order, BAT* seps, BAT* bats, stream *s ){
 	ASCIIoutput( order, seps, bats, *(stream**)s );
 	return GDK_SUCCEED;
 }

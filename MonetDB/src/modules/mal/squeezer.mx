@@ -53,9 +53,8 @@ PATTERN propagateConstants():int = sqzPropagateConstants;
 #endif /* _SQUEEZER_H*/
 @c
 #include "squeezer.h"
-#include "gdk.h"
+#include "monet.h"
 
-int sqzPropagateConstants(int *ret){
-	GDKerror("ERROR:sqzPropageConstants: not yet implemented\n");
-	return GDK_SUCCEED;
+str sqzPropagateConstants(int *ret){
+	return throwMessage("sqzPropageConstants: not yet implemented");
 }

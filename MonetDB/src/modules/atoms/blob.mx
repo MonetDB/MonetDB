@@ -23,16 +23,16 @@ the bytes-size of the blob (excluding the integer), and then just binary data.
 @mal
 atom module blob;
 
-      command tostr()   = blob_tostr;
-      command fromstr() = blob_fromstr;
-      command nequal()  = blob_nequal;
-      command hash()    = blob_hash;
-      command null()    = blob_null;
-      command convert() = blob_convert;
-      command put()     = blob_put;
-      command del()     = blob_del;
-      command length()  = blob_length;
-      command heap()    = blob_heap;
+      command tostr()   = BLOBtostr;
+      command fromstr() = BLOBfromstr;
+      command nequal()  = BLOBnequal;
+      command hash()    = BLOBhash;
+      command null()    = BLOBnull;
+      command convert() = BLOBconvert;
+      command put()     = BLOBput;
+      command del()     = BLOBdel;
+      command length()  = BLOBlength;
+      command heap()    = BLOBheap;
 
 @+ string functions
 Manipulation functions to extract strings from blobs and vice versa.
@@ -41,12 +41,12 @@ Not to be confused with blob parsing and printing.
    command tostring(v:blob) : str = fromblob
 	comment "get the bytes from blob as a string, till the first 0 byte
          or the end of the blob";
-   command tostring(v:blob, index:int ) : str = fromblob_idx
+   command tostring(v:blob, index:int ) : str = BLOBfromidx
 	comment "get the bytes from blob as a string, starting at byte 'index'
          till the first 0 byte or the end of the blob.";
    command toblob(v:str) : blob = toblob
 	comment "store a string as a blob.";
-   command nitems(b:blob):int = blob_nitems
+   command nitems(b:blob):int = BLOBnitems
 	comment " get the number of bytes in this blob."
 
 @* Example MAL Script
@@ -104,7 +104,7 @@ typedef struct blob
 #include <gdk_heap.h>
 
 #include "blob.h"
-/* #include "blob.proto.h"*/
+#include "monet.h"
 
 size_t blobsize(int nitems)
 {
@@ -113,7 +113,7 @@ size_t blobsize(int nitems)
    return (sizeof(int)+nitems);
 }
 
-void blob_put(Heap* h,int* bun,blob* val)
+void BLOBput(Heap* h,int* bun,blob* val)
 {
    char* base;
 
@@ -122,7 +122,7 @@ void blob_put(Heap* h,int* bun,blob* val)
    memcpy(&base[*bun],(char *)val,blobsize(val->nitems));
 }
 
-int blob_get(Heap* h,int* bun,int* l,blob** val)
+int BLOBget(Heap* h,int* bun,int* l,blob** val)
 {
    blob* from = HEAP_index(h,*bun,blob);
    int size = blobsize(from->nitems);
@@ -143,7 +143,7 @@ int blob_get(Heap* h,int* bun,int* l,blob** val)
    return (size);
 }
 
-int blob_nequal(blob* l,blob*  r)
+int BLOBnequal(blob* l,blob*  r)
 {
    int len;
    int i;
@@ -163,44 +163,44 @@ int blob_nequal(blob* l,blob*  r)
    return(0);
 }
 
-void blob_del(Heap* h,int* index)
+void BLOBdel(Heap* h,int* index)
 {
    HEAP_free(h,*index);
 }
 
-int blob_hash(blob* b)
+int BLOBhash(blob* b)
 {
    return(b->nitems);
 }
 
-blob *blob_null()
+blob *BLOBnull()
 {
    static blob nullval;
    nullval.nitems = -1;
    return(&nullval);
 }
 
-void blob_convert( blob *b, int direction){
+void BLOBconvert( blob *b, int direction){
 	b->nitems = normal_int_SWAP(b->nitems);
 }
 
-int blob_length(blob* p)
+int BLOBlength(blob* p)
 { return(blobsize(p->nitems)); }
 
 
-int blob_heap(Heap* heap,int capacity)
+int BLOBheap(Heap* heap,int capacity)
 {
    HEAP_initialize(heap,capacity,0,4);
    return 0;
 }
 
-int blob_nitems(int *ret,blob *b) {
+int BLOBnitems(int *ret,blob *b) {
      *ret = b->nitems;
      return GDK_SUCCEED;
 }
 
 #ifndef ODSTYLE
-int blob_tostr(str* tostr,int* l,blob** pin)
+int BLOBtostr(str* tostr,int* l,blob** pin)
 {
    blob *p= *pin;
    char* s;
@@ -229,7 +229,7 @@ int blob_tostr(str* tostr,int* l,blob** pin)
    return(s - *tostr);
 }
 
-int blob_fromstr(char* instr,int* l,blob** val)
+int BLOBfromstr(char* instr,int* l,blob** val)
 {
    int i;
    int nitems;
@@ -342,7 +342,7 @@ char *blob_outdec(char* p,char* dst)
 	return dst+4;
 }
  
-int blob_tostr(str* dst,int* size,blob** srcin)
+int BLOBtostr(str* dst,int* size,blob** srcin)
 {
 	blob *src= *srcin;
 	int i, n, len = *(int*) src;
@@ -379,14 +379,14 @@ correct memsize for first and last chars of each line
 	return out - *dst;
 }
 
-str blob_eoln(char* src,char*  end)
+str BLOBeoln(char* src,char*  end)
 {
 	char *r=strchr(src,'\n');
 	if (r) return r;
 	return end;
 }
 
-int blob_fromstr(char* src,int* size,blob** dst)
+int BLOBfromstr(char* src,int* size,blob** dst)
 {
 	int l = strlen(src), memsize = sizeof(int) + 1 + (l*3)/4;
 	char *ut, *r, *end = src+l;
@@ -399,7 +399,7 @@ int blob_fromstr(char* src,int* size,blob** dst)
 	}
 	ut = (char *)*dst + sizeof(int);
 
-	for (r=blob_eoln(src,end); src<end; src=r, r=blob_eoln(src,end)) {
+	for (r=BLOBeoln(src,end); src<end; src=r, r=BLOBeoln(src,end)) {
 		unsigned int n, c, len = r-src;
 		char buf[LINELEN], *bp;
 @-
@@ -442,7 +442,7 @@ output all of them at the end of the file.
 }
 #endif
 
-int fromblob_idx(str *retval, blob **binp, int *index){
+str BLOBfromidx(str *retval, blob **binp, int *index){
 	blob *b = *binp;
 	str s, p = b->data + *index; 
 	str r, q = b->data + b->nitems;
@@ -453,20 +453,20 @@ int fromblob_idx(str *retval, blob **binp, int *index){
 	for(p; p<r; p++, s++) 
 		*s = *p;  
 	*s = 0;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int fromblob(str *retval, blob **b){
+str fromblob(str *retval, blob **b){
 	int zero = 0;
-	return fromblob_idx(retval, b , &zero);
+	return BLOBfromidx(retval, b , &zero);
 }
 
-int toblob(blob **retval, str *s){
+str toblob(blob **retval, str *s){
 	int len = strLen(*s); 	
 	blob *b = (blob*) GDKmalloc(sizeof(int) + len);
 	b->nitems = len;
 	memcpy(b->data, *s, len);
 	*retval = b;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @}

@@ -14,37 +14,37 @@ to set-up the list of current users and to perform authorization.
 @mal
 module box;
 
-pattern open(bname:str):void= CMDbox_open
+pattern open(bname:str):void= BOXopen
 comment "Locate the boxant box and open it ";
 
-pattern close(bname:str):void= CMDbox_close
+pattern close(bname:str):void= BOXclose
 comment "Close the box ";
 
-pattern destroy(bname:str):void= CMDbox_destroy
+pattern destroy(bname:str):void= BOXdestroy
 comment "Destroy the box ";
 
-pattern take(bname:str,name:str):any = CMDbox_take
+pattern take(bname:str,name:str):any = BOXtake
 comment "Locates the typed value in the boxant box";
 
-pattern deposit(bname:str,name:str,v:any):void = CMDbox_deposit
+pattern deposit(bname:str,name:str,v:any):void = BOXdeposit
 comment "Enter a new value into the boxant box";
 
-pattern releaseAll(bname:str,):void = CMDbox_releaseAll
+pattern releaseAll(bname:str,):void = BOXreleaseAll
 comment "Release all boxants for this client";
 
-pattern release(bname:str,name:str,val:any):void = CMDbox_release
+pattern release(bname:str,name:str,val:any):void = BOXrelease
 comment "Release the BAT from the client pool";
 
-pattern release(bname:str,name:str):void = CMDbox_release
+pattern release(bname:str,name:str):void = BOXrelease
 comment "Release the BAT from the client pool";
 
-pattern toString(bname:str,name:str):str = CMDbox_toString
+pattern toString(bname:str,name:str):str = BOXtoString
 comment "Get the string representation of the i-th element in the box";
 
-pattern discard(bname:str,name:str):void = CMDbox_discard
+pattern discard(bname:str,name:str):void = BOXdiscard
 comment "Release the BAT from the client pool";
 
-pattern iterator(nme:str):lng = CMDbox_iterator
+pattern iterator(nme:str):lng = BOXiterator
 comment "Locates the next element in the boxant box";
 @-
 @+ Dummy code 
@@ -73,29 +73,28 @@ comment "Locates the next element in the boxant box";
 #define _ITERATOR_H
 #endif /* _ITERATOR_H*/
 @c
+#include "monet.h"
 #include "mal_box.h"
 
-int CMDbox_open(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	name = (str) getArgValue(stk,pci,1);
-	if(openBox(name) != 0) return GDK_SUCCEED;
-	return (int) raiseException(mb,stk->pc,"boxException",
-		"failed to open box\n");
+	if(openBox(name) != 0) return MAL_SUCCEED;
+	return throwMessage("BOXopen: failed to open box");
 }
 
-int CMDbox_close(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	name = (str) getArgValue(stk,pci,1);
-	if( closeBox(name,FALSE) ==0) return GDK_SUCCEED;
-	return (int) raiseException(mb,stk->pc,"boxException",
-		"failed to close box\n");
+	if( closeBox(name,FALSE) ==0) return MAL_SUCCEED;
+	return throwMessage("BOXclose: failed to close box");
 }
-int CMDbox_destroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	str name;
-	@:OpenBox@
+	@:OpenBox(BOXdestroy)@
 	destroyBox(name);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @-
 Access to a box calls for resolving the first parameter
@@ -104,92 +103,81 @@ to a named box.
 	name = (str) getArgValue(stk,pci,1);
 	box= findBox(name);
 	if( box ==0) 
-	return (int) raiseException(mb,stk->pc,"boxException",
-		"box is not open\n");
+	return throwMessage("@1: box is not open");
 @-
 @c
-int CMDbox_deposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	ValPtr v;
 	Box box;
 
-	@:OpenBox@
+	@:OpenBox(BOXdeposit)@
 	name = (str) getArgValue(stk,pci,2);
 	v = &stk->stk[pci->argv[3]];
-	if(depositBox(box,name,v) == GDK_FAIL) {
-		char msg[1024];
-		sprintf(msg,"%s:failed to deposit box\n",name);
-		return (int) raiseException(mb,stk->pc,"boxException",msg);
-	}
-	return GDK_SUCCEED;
+	if(depositBox(box,name,v) )
+		return throwException("BOXdeposit:%s:failed to deposit box",name);
+	return MAL_SUCCEED;
 }
 
-int CMDbox_take(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 	ValPtr v;
 
-	@:OpenBox@
+	@:OpenBox(BOXtake)@
 	name = (str) getArgValue(stk,pci,2);
 	v = &stk->stk[pci->argv[0]];
-	if(takeBox(box,name,v)== GDK_FAIL) {
-		char msg[1024];
-		sprintf(msg,"%s:failed to take from box\n",name);
-		return (int) raiseException(mb,stk->pc,"boxException",msg);
-	}
-	return GDK_SUCCEED;
+	if(takeBox(box,name,v))
+		return throwException("BOXtake:%s:failed to take from box",name);
+	return MAL_SUCCEED;
 }
 
-int CMDbox_release(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
-	@:OpenBox@
+	@:OpenBox(BOXrelease)@
 	name = (str) getArgValue(stk,pci,2);
 	releaseBox(box,name);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDbox_releaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
-
-	@:OpenBox@
+	@:OpenBox(BOXreleaseAll)@
 	releaseAllBox(box);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDbox_discard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
-	@:OpenBox@
+	@:OpenBox(BOXdiscard)@
 	name = (str) getArgValue(stk,pci,2);
-	if( discardBox(box,name) == GDK_FAIL){
-		char msg[1024];
-		sprintf(msg,"failed to discard '%s' from box '%s'\n",
+	if( discardBox(box,name) )
+		return throwException("BOXdiscard:failed to discard '%s' from box '%s'",
 			name, box->name);
-		return (int) raiseException(mb,stk->pc,"boxException",msg);
-	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDbox_toString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
-
-	@:OpenBox@
-	return GDK_SUCCEED;
+	@:OpenBox(BOXtoString)@
+	return MAL_SUCCEED;
 }
 
-int CMDbox_iterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
         Box box;
         lng *cursor;
         ValPtr v;
 
-        @:OpenBox@
+        @:OpenBox(BOXiterator)@
         cursor= (lng*) getArgValue(stk,pci,0);
         v= &stk->stk[pci->argv[2]];
-        return nextBoxElement(box, cursor, v);
+        nextBoxElement(box, cursor, v);
+	return MAL_SUCCEED;
 }

@@ -42,23 +42,23 @@ command Trace(flag:bit):void = MAPItrace
 #function main():void;
 	#vm1:bat[int,int]:= bat(5:int,11:int);
 	#bat.setName(vm1,"view_mapi_owner");
-	#bat.setRole(vm1,"mapi","owner");
+	#bat.setRoles(vm1,"mapi","owner");
 
 	#vm2:bat[int,int]:= bat(5:int,5:int);
 	#bat.setName(vm2,"view_mapi_port");
-	#bat.setRole(vm2,"mapi","port");
+	#bat.setRoles(vm2,"mapi","port");
 
 	#vm3:bat[int,int]:= bat(5:int,5:int);
 	#bat.setName(vm3,"view_mapi_maxusers");
-	#bat.setRole(vm3,"mapi","maxusers");
+	#bat.setRoles(vm3,"mapi","maxusers");
 
 	#vm4:bat[int,int]:= bat(5:int,5:int);
 	#bat.setName(vm4,"view_mapi_users");
-	#bat.setRole(vm4,"mapi","users");
+	#bat.setRoles(vm4,"mapi","users");
 
 	#vm5:bat[int,int]:= bat(5:int,5:int);
 	#bat.setName(vm5,"view_mapi_timeout");
-	#bat.setRole(vm5,"mapi","timeout");
+	#bat.setRoles(vm5,"mapi","timeout");
 #end function;
 	
 @h
@@ -146,7 +146,7 @@ void MAPIlistenThread(int sock)
 }
 
 
-int MAPIlisten(int *ret, int *port, int *maxusers){
+str MAPIlisten(int *ret, int *port, int *maxusers){
 	struct sockaddr_in server;
 	int 	sock;
 #ifdef AIX
@@ -163,8 +163,7 @@ int MAPIlisten(int *ret, int *port, int *maxusers){
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
-		GDKsyserror("creation of stream socket failed\n");
-		return GDK_FAIL;
+		return throwMessage("MAPIlisten: creation of socket failed");
 	}
 @-
 Set server port and allow internet connections from any workstation.
@@ -185,21 +184,18 @@ The port id is obtained from the Monet configuration file.
 
 	length = sizeof(server);
 	if (bind(sock, (SOCKPTR)&server, length) < 0) {
-		GDKsyserror("binding to stream socket (%d) failed\n", *port);
-		return GDK_FAIL;
+		return throwException("binding to socket (%d) failed", *port);
 	}
 @-
 Get the new information for the server socket and start listening.
 @c
 	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
-		GDKsyserror("getting socket name\n");
-		return GDK_FAIL;
+		return throwMessage("MAPIlisten: getting socket name");
 	}
 	listen(sock, *maxusers); 
 
 	if( MT_create_thread((MT_Id)&pid, MAPIlistenThread, (void*) sock) <0){
-		GDKerror("Can not start internet thread\n");
-		return GDK_FAIL;
+		return throwMessage("MAPIlisten: start internet thread failed");
 	}
 	if( DEBUG_MAPI)
 		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
@@ -211,10 +207,10 @@ Get the new information for the server socket and start listening.
 	}
 	fprintf(GDKout,msg);
 	*ret = TRUE;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int MAPIlisten_default(int *ret){
+str MAPIlisten_default(int *ret){
 	int port = MAPIPORT;
 	int maxusers = MAPIMAXUSERS;
 	return MAPIlisten(ret, &port, &maxusers);
@@ -222,16 +218,16 @@ int MAPIlisten_default(int *ret){
 @-
 An internet connection may be terminated by the owner of the process only.
 @c
-int MAPIstop(int *ret, int *pid)
+str MAPIstop(int *ret, int *pid)
 {
 	printf("kill process %d\n",*pid);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int MAPIstopClient(int *ret, str *nme)
+str MAPIstopClient(int *ret, str *nme)
 {
 	printf("kill process for client %s\n",*nme);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @-
 It is advisable to trace the interactions of clients on the server
@@ -239,13 +235,13 @@ side. At least as far as it concerns requests received.
 The kernel supports this 'spying' behavior with a file descriptor
 field in the client record.
 @c
-int MAPItrace2(str *nme,int *flg){
+str MAPItrace2(str *nme,int *flg){
 	traceClient(*nme,*flg);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int MAPItrace(int *flg){
+str MAPItrace(int *flg){
 	traceAllClients(*flg);
 	mapiSpy = *flg;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }

@@ -27,49 +27,49 @@ possible to redefine hashing.
 @mal
 atom module url:str;
 
-command url(s:str):url = url_new
+command url(s:str):url = URLnew
 	comment "Create an URL from a string literal";
-command getAnchor(u:url) : str        = url_getAnchor 
+command getAnchor(u:url) : str        = URLgetAnchor 
 	comment "Extract the anchor (reference) from the URL";
-command getBasename(u:url) : str        = url_getBasename 
+command getBasename(u:url) : str        = URLgetBasename 
 	comment "Extract the base file name of the URL";
-command getContent(u:url)   : str        = url_getContent 
+command getContent(u:url)   : str        = URLgetContent 
 	comment "Get the URL resource in a local file";
-command getContext(u:url)   : str        = url_getContext 
+command getContext(u:url)   : str        = URLgetContext 
 	comment "Get the path context of a URL ";
-command getDirectory(u:url) : bat[int,str]  = url_getDirectory 
+command getDirectory(u:url) : bat[int,str]  = URLgetDirectory 
 	comment "Extract the directory names from the URL";
-command getDomain(u:url) : str        = url_getDomain 
+command getDomain(u:url) : str        = URLgetDomain 
 	comment "Extract the Internet domain from the URL";
-command getExtension(u:url) : str        = url_getExtension 
+command getExtension(u:url) : str        = URLgetExtension 
 	comment "Extract the file extension of the URL";
-command getFile(u:url) : str        = url_getFile 
+command getFile(u:url) : str        = URLgetFile 
 	comment "Extract the last file name of the URL";
-command getHost(u:url)   : str        = url_getHost 
+command getHost(u:url)   : str        = URLgetHost 
 	comment "Extract the server identity from the URL";
-command getPort(u:url) : str        = url_getPort 
+command getPort(u:url) : str        = URLgetPort 
 	comment "Extract the port id from the URL";
-command getProtocol(u:url) : str        = url_getProtocol 
+command getProtocol(u:url) : str        = URLgetProtocol 
 	comment "Extract the protocol from the URL";
-command getQuery(u:url) : str        = url_getQuery 
+command getQuery(u:url) : str        = URLgetQuery 
 	comment "Extract the query string from the URL";
-command getQueryArg(u:url) : bat[str,str]  = url_getQueryArg 
+command getQueryArg(u:url) : bat[str,str]  = URLgetQueryArg 
 	comment "Extract the argument mappings from the URL";
-command getUser(u:url) : str        = url_getUser 
+command getUser(u:url) : str        = URLgetUser 
 	comment "Extract the user identity from the URL";
-command getRobotURL(u:url) : str        = url_getRobotURL 
+command getRobotURL(u:url) : str        = URLgetRobotURL 
 	comment "Extract the location of the robot control file";
-command isaURL(u:url)   : bit        = url_isaURL 
+command isaURL(u:url)   : bit        = URLisaURL 
 	comment "Check conformity of the URL syntax";
-command newurl(prot:str,host:str,port:int,fnme:str)   : url        = url_new4 
+command newurl(prot:str,host:str,port:int,fnme:str)   : url        = URLnew4 
 	comment "Construct a URL from protocol, host,port,and file";
-command newurl(prot:str,host:str,fnme:str)   : url        = url_new3 
+command newurl(prot:str,host:str,fnme:str)   : url        = URLnew3 
 	comment "Construct a URL from protocol, host,and file";
 
 # the remaining instructions replace the string equivalent versions
-command fromstr() = url_fromString
+command fromstr() = URLfromString
 	comment "Convert a string to an url. ";
-command tostr() = url_toString
+command tostr() = URLtoString
 	comment "Convert url to string equivalent";
 @* Example Script
 @mil
@@ -152,6 +152,7 @@ secure concurrent use from different threads.
  */
 
 #include <gdk.h>
+#include "monet.h"
 
 typedef str url;
 
@@ -160,14 +161,14 @@ char x2c(char *what);
 void unescape_url(char *url);
 void plustospace(char *str);
 
-int url_fromString(str src, int *len, str *url){
+int URLfromString(str src, int *len, str *url){
 	/* actually parse the message for valid url */
 	if( *url != 0) GDKfree(url);
 	*len= strlen(src);
 	*url= GDKstrdup(src);
 	return *len;
 }
-int url_toString(str *s, int *len, str src){
+int URLtoString(str *s, int *len, str src){
 	int l;
 	if( GDK_STRNIL(src) ){
 		**s = 0;
@@ -185,10 +186,10 @@ int url_toString(str *s, int *len, str src){
 	return *len;
 }
 
-int url_getAnchor( str *retval, str *Str1 ){
+str URLgetAnchor( str *retval, str *Str1 ){
 	char *s,*d;
 
-	if( *Str1 == 0) return GDK_FAIL;
+	if( *Str1 == 0) return throwMessage("URLgetAnchor:no string");
 	s= strchr(*Str1,'#');
 	if( s ==0 ){
 		d= GDKmalloc(strlen(str_nil)+1);
@@ -198,11 +199,11 @@ int url_getAnchor( str *retval, str *Str1 ){
 		if(d) strcpy(d,s);
 	}
 	*retval =d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int url_getBasename(str *retval, str *t){
+str URLgetBasename(str *retval, str *t){
         char *d =0, *s;
-	if( *t == 0) return GDK_FAIL;
+	if( *t == 0) return throwMessage("URLgetBasename:no string");
 	s= strrchr(*t,'/');
 	if( s) s++; else s= str_nil;
 	d= GDKmalloc(strlen(s)+1);
@@ -210,18 +211,18 @@ int url_getBasename(str *retval, str *t){
 	s= strchr(d,'.');
 	if( s) *s = 0;
 	*retval = d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int url_getContent( str *retval, str *Str1){
+str URLgetContent( str *retval, str *Str1){
 	*retval = 0;
-	return GDK_FAIL;
+	return throwMessage("URLgetContent:not yet implemented");
 }
 
-int url_getContext(str *retval, str *Str1){
+str URLgetContext(str *retval, str *Str1){
 	char *s,*d;
 
-	if( *Str1 == 0) return GDK_FAIL;
+	if( *Str1 == 0) return throwMessage("URLgetContext:no string");
 	s= strchr(*Str1,'/');
 	if( s ==0 ){
 		d= GDKmalloc(strlen(str_nil)+1);
@@ -232,16 +233,16 @@ int url_getContext(str *retval, str *Str1){
 		if(d) strncpy(d,s,i);
 	}
 	*retval =d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int url_getDirectory(int *ret, str *tv){
+str URLgetDirectory(int *ret, str *tv){
         static char buf[1024];
         char *d,*s;
 	int i=0, k=0;
 	BAT *b;
 	str t= *tv;
 
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetDirectory:no string");
 
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getDir_done;
@@ -249,7 +250,7 @@ int url_getDirectory(int *ret, str *tv){
         t++;  
         while( *t && *t != '/') t++;
 	b= BATnew(TYPE_int,TYPE_str,40);
-        if (b == 0) return GDK_FAIL;
+	if( b == 0) return throwMessage("URLgetDirectory:GDKerror");
 
         s= buf; 
         for(t++  ; *t  ; t++){
@@ -263,17 +264,17 @@ int url_getDirectory(int *ret, str *tv){
 		}
 		*s++ = *t;
 		if( i++ == 1023) {
-			GDKwarning("url_getDirectory:server name too long\n");
+			GDKwarning("URLgetDirectory:server name too long\n");
 			break;
 		}
         }
 getDir_done:
         @:Pseudo(dir,name)@
 	*ret= b->batCacheid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int url_getDomain( str *retval, str *tv){
+str URLgetDomain( str *retval, str *tv){
         static char buf[1024];
         char *b,*d,*s=buf;
 	int i=0;
@@ -281,7 +282,7 @@ int url_getDomain( str *retval, str *tv){
 
 	*retval = 0;
 	s = str_nil;
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetDomain:no string");
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getDomain_done;
         t++; if( *t != '/') goto getDomain_done;
@@ -292,7 +293,7 @@ int url_getDomain( str *retval, str *tv){
 		if( *t == ':') break;
 		*b++ = *t;
 		if( i++ == 1023) {
-			GDKwarning("url_getDomain:server name too long\n");
+			GDKwarning("URLgetDomain:server name too long\n");
 			break;
 		}
         }
@@ -302,13 +303,13 @@ getDomain_done:
 	d= GDKmalloc(strlen(s)+1);
 	if(d) strcpy(d,s);
 	*retval = d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int url_getExtension( str *retval, str *tv){
+str URLgetExtension( str *retval, str *tv){
         char *d =0, *s;
 	str t= *tv;
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetExtension:no string");
 	s= strrchr(t,'/');
 	if( s) {
 		s++; 
@@ -318,32 +319,32 @@ int url_getExtension( str *retval, str *tv){
 	d= GDKmalloc(strlen(s)+1);
 	if(d) strcpy(d,s);
 	*retval = d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int url_getFile(str *retval, str *tv){
+str URLgetFile(str *retval, str *tv){
         char *d =0, *s;
 	str t= *tv;
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetFile:no string");
 	s= strrchr(t,'/');
 	if( s) s++; else s= str_nil;
 	d= GDKmalloc(strlen(s)+1);
 	if(d) strcpy(d,s);
 	*retval = d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 @+ Url_getHost
 Extract the server identity from the URL
 SIGNATURE: getHost(str) : str; 
 @c
-int url_getHost(str *retval, str *tv){
+str URLgetHost(str *retval, str *tv){
         static char buf[1024];
         char *b, *d,*s;
 	int i=0;
 	str t= *tv;
 	s= str_nil;
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetHost:no string");
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getHost_done;
         t++; if( *t != '/') goto getHost_done;
@@ -352,7 +353,7 @@ int url_getHost(str *retval, str *tv){
         for( ; *t && *t !='/'; t++){
                 *b++ = *t;
 		if( i++ == 1023) {
-			GDKwarning("url_getHosterver:server name too long\n");
+			GDKwarning("URLgetHosterver:server name too long\n");
 			break;
 		}
         }
@@ -361,18 +362,18 @@ getHost_done:
 	d= GDKmalloc(strlen(s)+1);
 	if(d) strcpy(d,s);
 	*retval = d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-@+ url_getPort
+@+ URLgetPort
  Extract the port id from the URL SIGNATURE: getPort(str) : str; 
 @c
-int url_getPort(str *retval, str *tv){
+str URLgetPort(str *retval, str *tv){
         char buf[1024];
         char *b,*d =0, *s=buf;
 	int i=0;
 	str t= *tv;
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetPort:no string");
         s= str_nil;
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getPort_done;
@@ -383,7 +384,7 @@ int url_getPort(str *retval, str *tv){
                 if( *t== ':') d=b;
                 *b++ = *t;
 		if( i++ == 1023) {
-			GDKwarning("url_getPort:server name too long\n");
+			GDKwarning("URLgetPort:server name too long\n");
 			break;
 		}
         }
@@ -393,21 +394,21 @@ getPort_done:
 	d= GDKmalloc(strlen(s)+1);
 	if(d) strcpy(d,s);
 	*retval = d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int url_getProtocol(str *retval, str *tv){
+str URLgetProtocol(str *retval, str *tv){
         static char buf[1024];
         char *b,*d =0, *s=buf;
 	int i=0;
 	str t= *tv;
 
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetProtocol:no string");
 	b= buf;
         for( ; *t && *t !=':'; t++){
                 *b++ = *t;
 		if( i++ == 1023) {
-			GDKwarning("url_getProtocol:server name too long\n");
+			GDKwarning("URLgetProtocol:server name too long\n");
 			break;
 		}
         }
@@ -415,14 +416,14 @@ int url_getProtocol(str *retval, str *tv){
 	d= GDKmalloc(strlen(buf)+1);
 	if(d) strcpy(d,buf);
 	*retval = d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-url_getQuery(str *retval,  str *tv){
+str URLgetQuery(str *retval,  str *tv){
 	char *s,*d;
 	str Str1= *tv;
 
-	if( Str1 == 0) return GDK_FAIL;
+	if( Str1 == 0) return throwMessage("URLgetQuery:no string");
 	s= strchr(Str1,'?');
 	if( s ==0 ){
 		d= GDKmalloc(strlen(str_nil)+1);
@@ -433,23 +434,24 @@ url_getQuery(str *retval,  str *tv){
 		if(d) strcpy(d,s);
 	}
 	*retval =d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int url_getQueryArg(int *ret, str *tv){
+str URLgetQueryArg(int *ret, str *tv){
 	char query[1024];
         char val[1024];
         char name[1024];
 	BAT *b;
 	str t= *tv;
 
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetQueryArg:no string");
 	t= strchr(t,'?');
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetQueryArg:no query arguments");
 	t++;
 
 	b= BATnew(TYPE_str,TYPE_str,40);
-        if (b == 0) return GDK_FAIL;
-	if(strlen(t) >1023) return GDK_FAIL;
+	if( b == 0) return throwMessage("URLgetQueryArg:GDKerror");
+	if(strlen(t) >1023) 
+		return throwMessage("URLgetQueryArg:string too long");
 	strcpy(query,t);
 
 	for(; query[0] != '\0';) {
@@ -461,15 +463,15 @@ int url_getQueryArg(int *ret, str *tv){
 	}
         @:Pseudo(dir,name)@
 	*ret= b->batCacheid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int url_getRobotURL(str *retval, str *tv){
+str URLgetRobotURL(str *retval, str *tv){
         static char buf[1024];
         char *b, *d,*s = buf;
 	int i=0;
 	str t = *tv;
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetRobotURL:no string");
         b= buf; 
         while( *t && *t != ':') *b++ = *t++;
         *b++ = *t++; if( *t != '/') goto getRobot_done;
@@ -477,8 +479,8 @@ int url_getRobotURL(str *retval, str *tv){
         *b++ = *t++;  
         for( ; *t && *t !='/'; t++){
                 *b++ = *t;
-		if( i++ == 1000) {
-			GDKwarning("url_getRobot:server name too long\n");
+		if( i++ == 980) {
+			GDKwarning("URLgetRobot:server name too long\n");
 			break;
 		}
         }
@@ -487,19 +489,17 @@ getRobot_done:
 	d= GDKmalloc(strlen(s)+1);
 	if(d) strcpy(d,s);
 	*retval = d;
-	return GDK_SUCCEED;
-	if( i>1000)  s= str_nil;
-	else strcpy(b,"/robots.txt");
+	return MAL_SUCCEED;
 }
 
 
-int url_getUser(str *retval, str *tv){
+str URLgetUser(str *retval, str *tv){
         static char buf[1024];
         char *b,*d =0, *s;
 	int i=0;
 	str t= *tv;
 
-	if( t == 0) return GDK_FAIL;
+	if( t == 0) return throwMessage("URLgetUser:no string");
 	s= str_nil;
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getUser_done;
@@ -514,7 +514,7 @@ int url_getUser(str *retval, str *tv){
         for( ; *t && *t !='/'; t++){
                 *b++ = *t;
 		if( i++ == 1023) {
-			GDKwarning("url_getUser:server name too long\n");
+			GDKwarning("URLgetUser:server name too long\n");
 			break;
 		}
         }
@@ -524,19 +524,19 @@ getUser_done:
 	d= GDKmalloc(strlen(s)+1);
 	if(d) strcpy(d,s);
 	*retval = d;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int url_isaURL( bit *retval, str *tv){
+str URLisaURL( bit *retval, str *tv){
 	str Str1= *tv;
-	if( Str1 == 0) return GDK_FAIL;
-	return GDK_SUCCEED;
+	if( tv == 0) return throwMessage("URLisaURL:no string");
+	return throwMessage("URLisaURL:not yet implemented");
 }
 
-int url_new( str *url, str *Str1 ){
+str URLnew( str *url, str *Str1 ){
 	*url= GDKstrdup(*Str1);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int url_new3(str *url, str *protocol, str *server, str *file){
+str URLnew3(str *url, str *protocol, str *server, str *file){
 	str Protocol;
 	str Server;
 	str File;
@@ -549,10 +549,10 @@ int url_new3(str *url, str *protocol, str *server, str *file){
 	snprintf(*url+i,l-i,"%s",*server);
 	i= strlen(*url);
 	snprintf(*url+i,l-i,"/%s",*file);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int url_new4(str *url, str *protocol, str *server, int *port, str *file){
+str URLnew4(str *url, str *protocol, str *server, int *port, str *file){
 	str Protocol;
 	str Server;
 	str File;
@@ -570,7 +570,7 @@ int url_new4(str *url, str *protocol, str *server, int *port, str *file){
 	snprintf(*url+i,l-i,":%d",*port);
 	i= strlen(*url);
 	snprintf(*url+i,l-i,"/%s",*File);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @+ Utilities
 @c

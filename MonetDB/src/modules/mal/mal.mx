@@ -123,7 +123,7 @@ variable values and their binding (view_stk_*),
 and the instruction(s) being executed (view_mal_stmt).
 
 @mal 
-pattern view_var_type() : bat[int,str] = CMDviewvartype
+pattern view_var_type() : bat[int,str] = CMDviewVarType
 	comment "Pseudo bat to gain access to all visible variables";
 pattern view_var_used() : bat[int,str] = CMDviewVarUsed
 	comment "Pseudo bat to map variable name to access modes";
@@ -183,11 +183,14 @@ specifier.";
 #include "gdk.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
+#include "mal_function.h"
+#include "monet.h"
 
+#define throwMessage(M) throwException("%s",M)
 
 @+ BAT declarations
 @c
-int CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
         int ht, tt, cap=0;
 	int *res;
 
@@ -197,21 +200,24 @@ int CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
                 cap= *(int *) getArgReference(s,p,3);
 	res= (int *) getArgReference(s,p,0);
 
-	return CMDnewBat2(res,&ht,&tt,&cap);
+	return (str) CMDnewBat2(res,&ht,&tt,&cap);
 }
 
 @+ Exception implementation
 @c
-int CMDraise(str *ret,  str *msg){
+str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);
-	return (int) *ret;
+	return GDKstrdup(*msg);
 }
 @+ BAT Iterator Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
 @= getBATdescriptor
-        if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
+        if( BBPcheck(*@2,"@4")==0) 
+		return throwMessage("@4:cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0; return GDK_FAIL; }
+        if( @3 == NULL) { *@1 = 0; 
+                return throwMessage("@4:cannot access descriptor @2");
+	}
 	if(*@2 <0) @3= BATmirror(@3);
 @-
 @= hashiter
@@ -223,34 +229,33 @@ Part of the code is copied from the V 4.3 bat.mx file.
 			if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0) return i;
 	} break;
 @c
-int CMDhashloop(int *ret, lng *cursor, int *bid)
+str CMDhashloop(int *ret, lng *cursor, int *bid)
 {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
-	GDKerror("not yet implemented\n");
-	return GDK_SUCCEED;
+	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
+	return throwMessage("CMDhashloop:not yet implemented");
 }
 
 @-
 In principle, we could add iterators with other range bounds.
 @= nextLoop
-int CMDnextElement_@1(bit *ret, @1 *cursor, int *bid)
+str CMDnextElement_@1(bit *ret, @1 *cursor, int *bid)
 {
 	BAT *b;
 	int limit;
-	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor <0)
 		*cursor = BUNindex(b,BUNfirst(b));
 	else	*cursor = *cursor+1;
 	*ret = *cursor < limit;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @-
 @c
 	@:nextLoop(lng)@
 
-int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
 	bit *ret;
@@ -266,7 +271,7 @@ int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	head = &stk->stk[pci->argv[3]];
 	tail = &stk->stk[pci->argv[4]];
 
-	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 
 	if( *cursor <0)
@@ -274,7 +279,7 @@ int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	else	*cursor = *cursor+1;
 	*ret = *cursor < limit;
 
-	if( *ret== FALSE) return GDK_SUCCEED;
+	if( *ret== FALSE) return MAL_SUCCEED;
 	/* get head = ... tail = ... */
 	p = BUNptr(b,*cursor);
 	garbageElement(head);
@@ -282,7 +287,7 @@ int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,4),BUNtail(b,p));
 printf("%s",BUNtail(b,p));
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @-
 The BUN- and BAT-stream manipulate a long handle, i.e.
@@ -292,7 +297,7 @@ it fetches a bun and returns the increment to the control
 variable. If it returns zero the control variable has been reset
 to zero and end of stream has been reached.
 @c
-int CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
 	bit *ret;
@@ -306,12 +311,12 @@ int CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[2]];
 	tail = &stk->stk[pci->argv[3]];
-	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 
 	if( *cursor >=limit){
 		*cursor = 0;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	} 
 	if( *cursor == 0)
 		*cursor = BUNindex(b,BUNfirst(b));
@@ -323,17 +328,16 @@ int CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	VALinit( head, getArgType(mb,pci,2),BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
 	*cursor = *cursor+1;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDbatstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	GDKerror("batstream not yet implemented\n");
-	return GDK_SUCCEED;
+str CMDbatstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	return throwMessage("CMDbatstream: not yet implemented");
 }
 
-int CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
+str CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
 {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,"CMDnextSlice")@
+	@:getBATdescriptor(ret,bid,b,CMDnextSlice)@
 	if( *cursor > *high){
 		*ret = FALSE;
 	} else 
@@ -342,7 +346,7 @@ int CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
 		*cursor = BUNindex(b,BUNfirst(b));
 	} else
 		*cursor = *cursor+1;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @-
 The fetch operations are all pretty straight forward, provided
@@ -350,7 +354,7 @@ you know the underlying type. Often it is cheaper to use
 the extended BAT iterator, because then it can re-use the
 BAT descriptor.
 @c
-int CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
 	int *bid;
@@ -363,20 +367,19 @@ int CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[0]];
 
-	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
-		return (int)raiseException(mb,stk->pc,"MALexception",
-					"getHead:range error");
+		return throwMessage("getHead:range error");
 	}
 
 	/* get head = ... */
 	p = BUNptr(b,*cursor);
 	garbageElement(head);
 	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
 	int *bid;
@@ -389,18 +392,17 @@ int CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	tail = &stk->stk[pci->argv[0]];
 
-	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
-		return (int)raiseException(mb,stk->pc,"MALexception",
-					"getTail:range error");
+		return throwMessage("getTail:range error");
 	}
 
 	/* get head = ... */
 	p = BUNptr(b,*cursor);
 	garbageElement(tail);
 	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @+ Variables and stack information
 The variable information can be turned into a BAT for inspection as well.
@@ -414,13 +416,13 @@ The variable information can be turned into a BAT for inspection as well.
         *ret = b->batCacheid;
 
 @c
-int CMDviewvartype(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str CMDviewVarType(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	VarPtr *v = m->var;
 	ValPtr w;
 	int bid, *ret= &bid;
 	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
+	if (b == 0) return throwMessage("CMDviewVarType:GDKerror");
 
 	for( ; i<s->stktop ; i++,v++)
 		BUNins(b,&i,malTypeName((*v)->type));
@@ -428,46 +430,46 @@ int CMDviewvartype(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	/* store the result ! */
 	w = &s->stk[p->argv[0]];
 	w->val.bval= bid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDviewVarUsed(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str CMDviewVarUsed(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	VarPtr *v = m->var;
 	ValPtr w;
 	int bid, *ret= &bid;
 	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
+	if (b == 0) return throwMessage("CMDviewVarUsed:GDKerror");
 	for( ; i<s->stktop ; i++,v++)
 		BUNins(b,&i,((*v)->isused? "used":""));
 	@:Pseudo(var,protected)@
 	/* store the result ! */
 	w = &s->stk[p->argv[0]];
 	w->val.bval= bid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDviewVarConstant(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str CMDviewVarConstant(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	VarPtr *v = m->var;
 	ValPtr w;
 	int bid, *ret= &bid;
 	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
+	if (b == 0) return throwMessage("CMDviewVarConstant:GDKerror");
 	for( ; i<s->stktop ; i++,v++)
 		BUNins(b,&i,((*v)->isaconstant? "constant":""));
 	@:Pseudo(var,constant)@
 	/* store the result ! */
 	w = &s->stk[p->argv[0]];
 	w->val.bval= bid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDviewStkValue(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str CMDviewStkValue(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	ValPtr v = s->stk;
 	ValPtr w;
 	int i;
 	int bid, *ret= &bid;
 	str buf;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
+	if (b == 0) return throwMessage("CMDviewStkValue:GDKerror");
 	for( ; i<s->stktop ; i++,v++){
 		ATOMformat(v->vtype, VALget(v), &buf);
 		BUNins(b,&i,buf);
@@ -476,34 +478,34 @@ int CMDviewStkValue(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	/* store the result ! */
 	w = &s->stk[p->argv[0]];
 	w->val.bval= bid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDviewStkWhere(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str CMDviewStkWhere(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	ValPtr v = s->stk;
 	ValPtr w;
 	int bid, *ret= &bid;
 	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
+	if (b == 0) return throwMessage("CMDviewStkWhere:GDKerror");
 	@:Pseudo(var,type)@
 	/* store the result ! */
 	w = &s->stk[p->argv[0]];
 	w->val.bval= bid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @+ Basic value operations
 @c
-int CMDbatcast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDbatcast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	printf("cast(v:bat) not yet implemented\n");
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDcast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDcast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	printf("cast(v:any) not yet implemented\n");
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	printf("type(v:any) not yet implemented\n");
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @+ Printing
 The print commands are implemented as single instruction rules,
@@ -514,47 +516,46 @@ The old method in V4 essentially causes a lot of overhead
 because you have to prepare for the worst (e.g. mismatch format
 identifier and argument value)
 @c
-int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
 	ptr val = (ptr) getArgReference(stk,pci,1);
         FILE *fp = GDKout;
 	if( val==NULL) {
 		ATOMprint(TYPE_str, "nil", GDKout);
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	if( isaBatType(tpe)){
 		BAT *b = BATdescriptor(*(int*)val);
 		if( b== NULL) {
-			GDKerror("CMDprint_val:could not access descriptor\n");
-			return GDK_FAIL;
+			return throwMessage("CMDprint_val:descriptor access failed");
 		}
 		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
         fputs("[ ", fp);
 	if( tpe == TYPE_str)
 		ATOMprint(tpe, *(str*)val, fp);
         else  	ATOMprint(tpe, val, fp);
         fputs(" ]\n", fp);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
-int CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
 	ptr val = (ptr) getArgReference(stk,pci,1);
 	if( val==NULL) {
 		ATOMprint(TYPE_str, "nil", GDKout);
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	if( tpe == TYPE_str)
 		ATOMprint(TYPE_str, *(str*)val, GDKout);
 	else ATOMprint(tpe, val, GDKout);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
+str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
         BAT *piv[MAXPARAMS],*b;
         int nbats = 0;
 	int tpe,i=1,order=0;
@@ -567,26 +568,27 @@ int CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
 	for(; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
 		val = (ptr) getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) return GDK_FAIL;
+		if( !isaBatType(tpe)) 
+			return throwMessage("CMDotable: BAT expected");
 		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return GDK_FAIL;
+		if(b == NULL) return throwMessage("CMDotable:GDKerror");
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, nbats, piv, flg, order);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 
-int CMDprint_otable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDprint_otable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	CMDotable(mb,stk,pci,1,TRUE);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 
-int CMDprint_table( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDprint_table( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	CMDotable(mb,stk,pci,0,FALSE);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 
-int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         BAT *piv[MAXPARAMS],*b;
         int nbats = 0;
 	int tpe,i;
@@ -595,11 +597,12 @@ int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	for(i=pci->retc; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
 		val = (ptr) getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) return GDK_FAIL;
+		if( !isaBatType(tpe)) 
+			return throwMessage("CMDprint_table_default:BAT expected");
 		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return GDK_FAIL;
+		if(b == NULL) return throwMessage("CMDprint_table_default:GDKerror");
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }

@@ -82,12 +82,13 @@ comment "Generic processor for mutiplexed instructions.";
 #ifndef _MAL_MULTIPLEX_H_
 #define _MAL_MULTIPLEX_H_
 #include "mal.h"
+#include "mal_interpreter.h"
 #include "mal_client.h"
 
-/* #define DEBUG_MULTIPLEX*/
+/* #define DEBUG_MULTIPLEX  */
 
 mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
-mal_export int CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 
 #endif /* _MAL_MULTIPLEX_H_ */
 
@@ -130,7 +131,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 #endif
 		GDKerror("multiplexType:string constant expected in %s[%d]\n",
 			getFcnName(mb), getPC(mb,pci));
-		return GDK_FAIL;
+		return -1;
 	}
 	fcnname= getVarLiteral(mb,pci->argv[1]);
 	inplace = operatorModifier(name,fcnname);
@@ -167,25 +168,47 @@ Constants passed into the multiplex operator are a special case.
 
 	/* resolve the type of the derived function call */
 	if( first){
-		GDKerror("multiplexType:at least one BAT argument required\n");
-		i= -1;
-	} else {
-		typeChecker(getClient()->nspace,m,p,TYPE_FIXED);
-		i= (p->typechk == TYPE_UNKNOWN) ? -1 : 0;
-	}
-	if( i == 0){
-		tt= getArgType(m,p,0);
-		tpe= newBatType(tpe,tt);
-		i= typeConformance(mb,pci,tpe);
-	}
 #ifdef DEBUG_MULTIPLEX
-	printInstruction(stdout,m,p);
+		printf("multiplexType:at least one BAT argument required\n");
 #endif
+		return -1;
+	} 
+
+	typeChecker(getClient()->nspace,m,p,TYPE_FIXED);
+#ifdef DEBUG_MULTIPLEX
+	if( p->typechk== TYPE_UNKNOWN){
+		printf("Can not resolve instruction type\n");
+		printInstruction(stdout,m,p);
+	}
+#endif
+	if( p->typechk == TYPE_UNKNOWN) return -1;
+
+	tt= getArgType(m,p,0);
+	tpe= newBatType(tpe,tt);
+	i= typeConformance(mb,pci,tpe);
+#ifdef DEBUG_MULTIPLEX
+	if( i<0){
+		printf("Type conformance on %d failed\n",tpe);
+		printInstruction(stdout,mb,pci);
+	}
+#endif
+	if(i<0) return -1;
+	
 	/* re-use old code to resolve the element of the multiplex module */
 	fcnname= pci->modname;
 	pci->modname= 0;
+	/* initialize the instruction further?*/
 	findFunctionType(scope,mb,pci);
+	pci->fcn = CMDmultiplexScript;
 	pci->modname= fcnname;
+#ifdef DEBUG_MULTIPLEX
+	printf("--> multiplex instruction\n");
+	printInstruction(stdout,m,p);
+	printf("--> modified instruction\n");
+	printInstruction(stdout,mb,pci);
+	printf("return code %d\n",i);
+
+#endif
 	return i;
 }
 
@@ -208,21 +231,19 @@ The call multiplex.script(CMD,A1,...An) introduces the following function:
 @T
 \begin{verbatim}
 function CMD000(A1,....,An):bat
-	rB:= new(headtype,tailtype);
-	setRoles(...,CMD);
-	k := -1:lng;
-barrier mloop:= batloop(k,Ai,h,t);
+	resB:= new(headtype,tailtype);
+barrier mloop:= bunStream(Ai,h,t);
 	$1:= bat.find(A1,h);
 	$2:= A2;	# in case of constant?
 	...
 	cr:= mod.CMD($1,...,$n);
-	insert(rB,h,cr);
+	insert(resB,h,cr);
+catch 	MALexception;
+	#ignore errors
+end	MALexception;
 	redo mloop;
-catch 	GDKerror;
-	leave mloop;
-end	GDKerror;
 end mloop;
-	return rB;
+	return resB;
 end function;
 \end
 @
@@ -233,8 +254,9 @@ The algorithm consists of two phases: phase one deals with
 collecting the relevant information, phase two is the actual
 code construction.
 @c
-int CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int i,k,l,x,mloop,cursor,refBat=0,resB,refType,bt=0,cr,ret= GDK_SUCCEED;
+str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int i,k,l,x,mloop,cursor,refBat=0,resB,refType,bt=0,cr;
+	str ret= MAL_SUCCEED;
 	int hvar,rIndex=0;
 	int assignop = FALSE;
 	char name[128];
@@ -249,10 +271,8 @@ int CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	p = newInstruction(ASSIGNsymbol);
 	/* perform type analysis  and function resolution */
 	i= multiplexType(getClient()->nspace,mb,pci,m1,p);
-	if( i<0){
-		GDKerror("CMDmultiplexScript:type error\n");
-		return GDK_FAIL;
-	}
+	if( i<0)
+		return throwMessage("CMDmultiplexScript:type error");
 	/* get result type of multiplexed operation */
 	refType = getArgType(m1,p,0);
 
@@ -295,9 +315,9 @@ find the actule arguments at the proper place of the callee.
 	}
 	pushInstruction(m,q);
 
-	/* rB := new(headtype,tailtype */
+	/* resB := new(headtype,tailtype */
 	q= newInstruction(ASSIGNsymbol);
-	q->argv[0]= resB = newVariable(m,GDKstrdup("rB"),refType);
+	q->argv[0]= resB = newVariable(m,GDKstrdup("resB"),refType);
 	q->modname= GDKstrdup("mal");
 	q->fcnname= GDKstrdup("new");
 	q->argv[1]= newVariable(m, malTypeName(getHeadType(refType)),malAnyType);
@@ -305,7 +325,7 @@ find the actule arguments at the proper place of the callee.
 	q->argc= 3;
 	pushInstruction(m,q);
 
-	/* x:= getRole(rb) */
+/* x:= getRole(rb) 
 	q= newInstruction(ASSIGNsymbol);
 	q->modname= GDKstrdup("bat");
 	q->fcnname= GDKstrdup("getRole");
@@ -313,8 +333,9 @@ find the actule arguments at the proper place of the callee.
 	q->argv[1]= resB;
 	q->argc=2;
 	pushInstruction(m,q);
+*/
 
-	/* setRoles(rB, ..., CMD */
+/* setRoles(resB, ..., CMD 
 	q= newInstruction(ASSIGNsymbol);
 	q->modname= GDKstrdup("bat");
 	q->fcnname= GDKstrdup("setRole");
@@ -324,6 +345,7 @@ find the actule arguments at the proper place of the callee.
 	q->argv[3]= newConstant(m,TYPE_str,GDKstrdup(p->fcnname));
 	q->argc=4;
 	pushInstruction(m,q);
+*/
 
 	/* barrier mloop:= bunStream(refBat,h,rIndex); */
 	q= newInstruction(ASSIGNsymbol);
@@ -342,9 +364,10 @@ find the actule arguments at the proper place of the callee.
 	/* $1:= bat.find(Ai,h) or constant */
 	for(i=2;i<pci->argc;i++)
 	if( isaBatType(l= getArgType(mb,pci,i)) && i!= rIndex){
+		int z;
 		q= newInstruction(ASSIGNsymbol);
 		sprintf(name,"B%d",i);
-		q->argv[0]= newVariable(m, GDKstrdup(name), getTailType(l));
+		z= q->argv[0]= newVariable(m, GDKstrdup(name), getTailType(l));
 		q->modname= GDKstrdup("algebra");
 		q->fcnname= GDKstrdup("find");
 		sprintf(name,"A%d",i);
@@ -370,7 +393,7 @@ find the actule arguments at the proper place of the callee.
 	}
 	pushInstruction(m,q);
 
-        /* insert(rB,h,cr); */
+        /* insert(resB,h,cr); */
 	q= newInstruction(ASSIGNsymbol);
 	q->modname= GDKstrdup("bat");
 	q->fcnname= GDKstrdup("insert");
@@ -381,25 +404,22 @@ find the actule arguments at the proper place of the callee.
 	q->argc=4;
 	pushInstruction(m,q);
 
+	/* catch   MALexception; */
+	q= newInstruction(CATCHsymbol);
+	q->barrier = CATCHsymbol;
+	k= q->argv[0]= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
+	pushInstruction(m,q);
+
+	/* #ignore errors; */
+
+	/* end     MALexception; */
+	q= newInstruction(ENDsymbol);
+	q->argv[0]= k;
+	pushInstruction(m,q);
+
 	/* redo mloop; */
 	q= newInstruction(REDOsymbol);
 	q->argv[0]= mloop;
-	pushInstruction(m,q);
-
-	/* catch   GDKerror; */
-	q= newInstruction(CATCHsymbol);
-	q->barrier = CATCHsymbol;
-	k= q->argv[0]= newVariable(m, GDKstrdup("GDKerror"),TYPE_str);
-	pushInstruction(m,q);
-
-	/* leave mloop; */
-	q= newInstruction(LEAVEsymbol);
-	q->argv[0]= mloop;
-	pushInstruction(m,q);
-
-	/* end     GDKerror; */
-	q= newInstruction(ENDsymbol);
-	q->argv[0]= k;
 	pushInstruction(m,q);
 
 	/* end mloop; */
@@ -407,7 +427,7 @@ find the actule arguments at the proper place of the callee.
 	q->argv[0]= mloop;
 	pushInstruction(m,q);
 
-        /* return rB; */
+        /* return resB; */
 	q= newInstruction(RETURNsymbol);
 	q->argv[0]= resB;
 	pushInstruction(m,q);
@@ -423,6 +443,7 @@ It is time to type check the code and request for any optimization.
 #ifdef DEBUG_MULTIPLEX
 	printf("# multiplex function generated\n");
 	printFunction(stdout,m);
+	fflush(stdout);
 #endif
 @-
 After all the preparatory work has been finished, it is time to

@@ -70,9 +70,9 @@ comment "Returns a positional selection of b by the oid head values of s";
 @mal
 command select (b:bat[any::1,any::2], low:any::2, high:any::2) : 
 				bat[any::1, any::2] = CMDselect
-comment "Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.\n
-NIL boundary values have a special meaning.\n
-+ low  == nil means: no lower bound\n
+comment "Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.
+NIL boundary values have a special meaning.
++ low  == nil means: no lower bound
 + high == nil means: no upper bound.
 
 NOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)
@@ -281,7 +281,7 @@ not match an head-value in 'inner'.";
 @mal
 command thetajoin ( left:bat[any::1,any::2], right:bat[any::2,any::3], 
 		mode:int) : bat[any::1,any::3] = CMDthetajoin
-comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.\n
+comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.
 JOIN_EQ is just the same as join(). All other options do merge
 algorithms; either using the fact that they are ordered()
 already (left on tail, right on head), or by using/creating
@@ -306,7 +306,7 @@ command bandjoin ( outer:bat[any::1,any::2],
 				bat[any::1,any::3] = CMDbandjoin
 comment "This is a join() for which the predicate is that two BUNs match if
 the left-tail value is within the range [right-head - minus,
-right-head + plus]\n
+right-head + plus]
 Works only for the builtin numerical types, and their derivates.";
 @+ OID Introducing Commands
 For relational processing, some operators are necessary to produce newly 
@@ -384,15 +384,15 @@ The type-specific routines defined later are faster, and will
 override these any implementations.
 @- minimum tail value
 @mal
-command min ( b:bat[any::1,any::2] ): any::2 = CMDminany
+command min ( b:bat[any::1,any::2] ): any::2 = CMDBATminimum
 comment "Give the lowest tail value. Error on empty BATs.";
 
 @- maximum tail value
 @mal
-command max ( b:bat[any::1,any::2] ) : any::2 = CMDmaxany
+command max ( b:bat[any::1,any::2] ) : any::2 = CMDBATmaximum
 comment "Give the highest tail value. Error on empty BATs.";
 
-command size ( b:bat[any,any] ) : int = CMDsize
+command size ( b:bat[any,any] ) : int = CMDBATsize
 comment "Returns the current size (in number of elements) of a BAT.";
 
 @+ Type-Specific Sum, Max and Min
@@ -495,29 +495,35 @@ The BAT identifiers passed through this module may indicate
 that the 'reverse' view applies. This should be taken into
 account while resolving them.
 @= getBATdescriptor
-        if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
+        if( BBPcheck(*@2,"@4")==0) 
+                return throwMessage("@4:cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0; return GDK_FAIL; }
+        if( @3 == NULL) { *@1 = 0; 
+                return throwMessage("@4:cannot access descriptor @2");
+	}
 	if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
 
 @= aggregate_implementation
-int CMDsum_@1(@1* result, int *bid) {
+str CMDsum_@1(@1* result, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(result,bid,b,"CMDsum")@
-	return BATsum(b, result)?GDK_SUCCEED:GDK_FAIL;
+	@:getBATdescriptor(result,bid,b,CMDsum)@
+	if( BATsum(b, result)) return MAL_SUCCEED;
+	return throwMessage("CMDsum_@1:GDKerror");
 }
-int CMDmin_@1(@1* result, int *bid) {
+str CMDmin_@1(@1* result, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(result,bid,b,"CMDmin")@
-	return BATmin(b, result)?GDK_SUCCEED:GDK_FAIL;
+	@:getBATdescriptor(result,bid,b,CMDmin)@
+	if( BATmin(b, result)) return MAL_SUCCEED;
+	return throwMessage("CMDmin_@1:GDKerror");
 }
-int CMDmax_@1(@1* result, int *bid) {
+str CMDmax_@1(@1* result, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(result,bid,b,"CMDmax")@
-	return BATmax(b, result)?GDK_SUCCEED:GDK_FAIL;
+	@:getBATdescriptor(result,bid,b,CMDmax)@
+	if( BATmax(b, result)) return  MAL_SUCCEED;
+	return throwMessage("CMDmax_@1:GDKerror");
 }
 @c
-#include "gdk.h"
+#include "monet.h"
 /*
  * The contents of this file are subject to the Monet Public
  * License Version 1.1 (the "License"); you may not use this file
@@ -541,8 +547,8 @@ int CMDmax_@1(@1* result, int *bid) {
  *		   Niels Nes <Niels.Nes@cwi.nl>
  */
 
-int CMDsize(int *res, int *bid) {
-        if (BBPcheck(*bid, "CMDsize")) {
+str CMDBATsize(int *res, int *bid) {
+        if (BBPcheck(*bid, "CMDBATsize")) {
                 BAT *b = (BAT*) BBPgetdesc(*bid);
                 if (b == NULL) {
                         *res = int_nil;
@@ -554,7 +560,7 @@ int CMDsize(int *res, int *bid) {
 			(b->batHole - b->batBuns->base))/BUNsize(b) - 1;
                 }
         }
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 
 
@@ -565,93 +571,97 @@ int CMDsize(int *res, int *bid) {
 @:aggregate_implementation(dbl)@
 @:aggregate_implementation(lng)@
 
-int CMDminany(ptr *result, int *bid) {
+str CMDBATminimum(ptr *result, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(result,bid,b,"CMDminany")@
+
+	@:getBATdescriptor(result,bid,b,CMDBATminimum)@
 	if (!ATOMlinear(b->ttype)) 
-	    return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n",
-			ATOMname(b->ttype));
+		return throwException("CMDminANY:'%s' lacks linear order",
+					ATOMname(b->ttype));
 	if (ATOMvarsized(b->ttype)) {
-	    *(ptr*) result = BATmin(b, NULL);
-	    if( *(ptr*) result ) return GDK_SUCCEED; else return GDK_FAIL;
+		*(ptr*) result = BATmin(b, NULL);
+		if( *(ptr*) result ) return MAL_SUCCEED; 
+		return throwMessage("CMDBATminimum:GDKerror");
 	}
 	if (BATmin(b, result)) {
-	    if (b->ttype == TYPE_bat) 
-		*(BAT**) result = BATdescriptor(*(int*) result);
-	    return GDK_SUCCEED;
+		if (b->ttype == TYPE_bat) 
+			*(int*) result = BATdescriptor(*(int*) result)->batCacheid;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDBATminimum:GDKerror");
 }
-int CMDmaxany(ptr *result, int *bid) {
+str CMDBATmaximum(ptr *result, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(result,bid,b,"CMDmaxany")@
+
+	@:getBATdescriptor(result,bid,b,CMDBATmaximum)@
 	if (!ATOMlinear(b->ttype)) 
-	    return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n",
-			ATOMname(b->ttype));
+		return throwException("CMDmaxANY:'%s' lacks linear order",
+				ATOMname(b->ttype));
 	if (ATOMvarsized(b->ttype)) {
-	    *(ptr*) result = BATmax(b, NULL);
-	    if( *(ptr*) result ) return GDK_SUCCEED; else return GDK_FAIL;
+		*(ptr*) result = BATmax(b, NULL);
+		if( *(ptr*) result ) return MAL_SUCCEED; 
+		return throwMessage("CMDBATmaximum:GDKerror");
 	}
 	if (BATmax(b, result)) {
-	    if (b->ttype == TYPE_bat) 
-		*(BAT**) result = BATdescriptor(*(int*) result);
-	    return GDK_SUCCEED;
+		if (b->ttype == TYPE_bat) 
+			*(int*) result = BATdescriptor(*(int*) result)->batCacheid;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDBATmaximum:GDKerror");
 }
-int CMDselect1(int *result, int *bid, ptr value) {
+str CMDselect1(int *result, int *bid, ptr value) {
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDselect1")@
+	@:getBATdescriptor(result,bid,b,CMDselect1)@
 	@:derefStr(b,h,value);@
 	bn = (BAT*) BATselect(b, value, 0);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDselect1:GDKerror");
 }
 
-int CMDuselect1(int *result, int *bid, ptr value) {
+str CMDuselect1(int *result, int *bid, ptr value) {
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDuselect1")@
+	@:getBATdescriptor(result,bid,b,CMDuselect1)@
 	@:derefStr(b,h,value);@
 	bn = (BAT*) BATuselect(b, value, 0);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDuselect1:GDKerror");
 }
 
-int CMDselect(int *result, int *bid, ptr low, ptr high) {
+str CMDselect(int *result, int *bid, ptr low, ptr high) {
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDselect")@
+	@:getBATdescriptor(result,bid,b,CMDselect)@
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
 	bn = (BAT*) BATselect(b, low, high);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDselect:GDKerror");
 }
-int CMDuselect(int *result, int *bid, ptr low, ptr high) {
+str CMDuselect(int *result, int *bid, ptr low, ptr high) {
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDuselect")@
+	@:getBATdescriptor(result,bid,b,CMDuselect)@
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
 	bn = (BAT*) BATuselect(b, low, high);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDuselect:GDKerror");
 }
-int CMDfragment(int *result, int *bid, 
+str CMDfragment(int *result, int *bid, 
 		ptr hlow, ptr hhigh, ptr tlow, ptr thigh) 
 {
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDfragment")@
+	@:getBATdescriptor(result,bid,b,CMDfragment)@
 	@:derefStr(b,h,hlow);@
 	@:derefStr(b,h,hhigh);@
 	@:derefStr(b,t,tlow);@
@@ -659,89 +669,89 @@ int CMDfragment(int *result, int *bid,
 	bn = (BAT*) BATrestrict(b, hlow, hhigh, tlow, thigh);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDfragment:GDKerror");
 }
-int CMDthetajoin(int *result, int *lid, int *rid, int *mode) {
+str CMDthetajoin(int *result, int *lid, int *rid, int *mode) {
 	BAT *left, *right, *bn;
-	@:getBATdescriptor(result,lid,left,"CMDthetajoin")@
-	@:getBATdescriptor(result,rid,right,"CMDthetajoin")@
+	@:getBATdescriptor(result,lid,left,CMDthetajoin)@
+	@:getBATdescriptor(result,rid,right,CMDthetajoin)@
 	bn = (BAT*) BATthetajoin(left, right, *mode);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDthetajoin:GDKerror");
 }
-int CMDtheta(int *iid, int *oi, int *lid, int *rid, int *mode) {
+str CMDtheta(int *iid, int *oi, int *lid, int *rid, int *mode) {
 	BAT *inner,*outer, *left, *right;
 	int result;
-	@:getBATdescriptor(&result,iid,inner,"CMDtheta")@
-	@:getBATdescriptor(&result,oi,outer,"CMDtheta")@
-	@:getBATdescriptor(&result,lid,left,"CMDtheta")@
-	@:getBATdescriptor(&result,rid,right,"CMDtheta")@
+	@:getBATdescriptor(&result,iid,inner,CMDtheta)@
+	@:getBATdescriptor(&result,oi,outer,CMDtheta)@
+	@:getBATdescriptor(&result,lid,left,CMDtheta)@
+	@:getBATdescriptor(&result,rid,right,CMDtheta)@
 	BATtheta(inner, outer, left, right, *mode);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
+str CMDbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
 	BAT *left, *right, *bn;
-	@:getBATdescriptor(result,lid,left,"CMDbandjoin")@
-	@:getBATdescriptor(result,rid,right,"CMDbandjoin")@
+	@:getBATdescriptor(result,lid,left,CMDbandjoin)@
+	@:getBATdescriptor(result,rid,right,CMDbandjoin)@
 	bn = (BAT*) BATbandjoin(left, right, minus, plus);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDbandjoin:GDKerror");
 }
 
 @-
 Let cut this text down with some Mx macro's
 @= unary
-int CMD@1(int *result, int *bid) {
+str CMD@1(int *result, int *bid) {
 	BAT *b,*bn;
-	@:getBATdescriptor(result,bid,b,"CMD@1")@
+	@:getBATdescriptor(result,bid,b,CMD@1)@
 	*result = 0;
 	bn = (BAT*) @2(b);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMD@1:GDKerror");
 }
 @= unaryint
-int CMD@1(int *result, int *bid) {
+str CMD@1(int *result, int *bid) {
 	BAT *b;
 	*result = 0;
-	@:getBATdescriptor(result,bid,b,"CMD@1")@
+	@:getBATdescriptor(result,bid,b,CMD@1)@
 	*result = (int) @2(b);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @= binary
-int CMD@1(int *result, int *lid, int *rid) {
+str CMD@1(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn;
 	*result = 0;
-	@:getBATdescriptor(result,lid,left,"CMD@1")@
-	@:getBATdescriptor(result,rid,right,"CMD@1")@
+	@:getBATdescriptor(result,lid,left,CMD@1)@
+	@:getBATdescriptor(result,rid,right,CMD@1)@
 	bn = (BAT*) @2(left, right);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMD@1:GDKerror");
 }
 @= binaryint
-int CMD@1(int *result, int* bid, int *param) {
+str CMD@1(int *result, int* bid, int *param) {
 	BAT *b, *bn;
 	*result = 0;
-	@:getBATdescriptor(result,bid,b,"CMD@1")@
+	@:getBATdescriptor(result,bid,b,CMD@1)@
 	bn = @2(b, *param);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMD@1:GDKerror");
 }
 @c
 @:unaryint(count, BATcount)@
@@ -762,84 +772,84 @@ int CMD@1(int *result, int* bid, int *param) {
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
 
-int CMDproject(int *result, int *bid, ptr *p, int *t) {
+str CMDproject(int *result, int *bid, ptr *p, int *t) {
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDproject")@
+	@:getBATdescriptor(result,bid,b,CMDproject)@
 	bn= BATconst(b, *t, *p);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDproject:GDKerror");
 }
 
-int CMDmark(int *result, int *bid, oid *base){
+str CMDmark(int *result, int *bid, oid *base){
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDmark")@
+	@:getBATdescriptor(result,bid,b,CMDmark)@
 	bn= BATmark(b, *base);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDmark:GDKerror");
 }
-int CMDmark_default(int *result, int *bid){
+str CMDmark_default(int *result, int *bid){
 	oid base;
 	BAT *b;
-	@:getBATdescriptor(result,bid,b,"CMDmark_default")@
+	@:getBATdescriptor(result,bid,b,CMDmark_default)@
 	base = OIDnew(BATcount(b));
 	return CMDmark(result, bid, &base);
 }
-int CMDhashsplit(int *result, int *bid, int *nfrag){
+str CMDhashsplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDhashsplit")@
+	@:getBATdescriptor(result,bid,b,CMDhashsplit)@
 	bn= BAThashsplit(b, *nfrag, FALSE);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDhashsplit:GDKerror");
 }
-int CMDuhashsplit(int *result, int *bid, int *nfrag){
+str CMDuhashsplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDuhashsplit")@
+	@:getBATdescriptor(result,bid,b,CMDuhashsplit)@
 	bn= BAThashsplit(b, *nfrag, TRUE);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDuhashsplit:GDKerror");
 }
-int CMDrangesplit(int *result, int *bid, int *nfrag){
+str CMDrangesplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDrangesplit")@
+	@:getBATdescriptor(result,bid,b,CMDrangesplit)@
 	bn= BATrangesplit(b, *nfrag, FALSE);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDrangesplit:GDKerror");
 }
-int CMDurangesplit(int *result, int *bid, int *nfrag){
+str CMDurangesplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDurangesplit")@
+	@:getBATdescriptor(result,bid,b,CMDurangesplit)@
 	bn= BATrangesplit(b, *nfrag, TRUE);
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDurangesplit:GDKerror");
 }
 
-int CMDhistogram_rev(int *result, int *bid) {
+str CMDhistogram_rev(int *result, int *bid) {
 	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,"CMDhistogram_rev")@
+	@:getBATdescriptor(result,bid,b,CMDhistogram_rev)@
 	bn =BAThistogram(BATmirror(b));
 	if( bn ) {
 		*result = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDhistogram:GDKerror");
 } 
 
 
@@ -871,12 +881,12 @@ int ylen;
         return 0;
 }
 
-int CMDlike(int *ret, int *bid, str *k) {
+str CMDlike(int *ret, int *bid, str *k) {
 	BAT *c, *b, *bn;
 	str	t,s;
 	BUN	u, v;
 	int 	xx, yy=0;
-	@:getBATdescriptor(ret,bid,b,"CMDlike")@
+	@:getBATdescriptor(ret,bid,b,CMDlike)@
         c = BATnew(BAThtype(b), TYPE_str, BATcount(b)/10);
 	t = GDKstrdup(*k);
 
@@ -896,66 +906,62 @@ int CMDlike(int *ret, int *bid, str *k) {
 	c->tsorted = BATtordered(b);
 	GDKfree(t);
 	*ret = c->batCacheid;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 @- BAT slice
 @c
-int CMDslice(int *ret, bat *bid, int *start, int *end){
+str CMDslice(int *ret, bat *bid, int *start, int *end){
 	BAT *b, *br;
-	@:getBATdescriptor(ret,bid,b,"CMDslice")@
+	@:getBATdescriptor(ret,bid,b,CMDslice)@
 	br = BATslice(b, start, end);
 	if( br != NULL){
 		*ret= br->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	*ret =0;
-	return GDK_FAIL;
+	return throwMessage("CMDslice:GDKerror");
 }
 
 @- BUN Get/Fetch
 @c
-int CMDposition(int *retval, int *bid, ptr val){
+str CMDposition(int *retval, int *bid, ptr val){
 	BAT *b;
 	ptr p,v;
 
-	@:getBATdescriptor(retval,bid,b,"CMDposition")@
+	@:getBATdescriptor(retval,bid,b,CMDposition)@
 	@:derefStr(b,h,val)@
 	v = BUNfnd(b, val);
-        if (v == 0) {
-                GDKerror("CMDposition: item not found\n");
-                return GDK_FAIL;
-        }
+        if (v == 0) 
+                return throwMessage("CMDposition: item not found");
         *retval = BUNindex(b, v)- BUNindex(b, BUNfirst(b));
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
-int CMDpositionBUN(int *retval, int *bid, ptr val, ptr tval){
+str CMDpositionBUN(int *retval, int *bid, ptr val, ptr tval){
 	BAT *b;
 	ptr v;
 
-	@:getBATdescriptor(retval,bid,b,"CMDpositionBUN")@
+	@:getBATdescriptor(retval,bid,b,CMDpositionBUN)@
 	@:derefStr(b,h,val)@
 	@:derefStr(b,t,tval)@
 	v = BUNlocate(b, val, tval);
-        if (v == 0) {
-                GDKerror("CMDposition: item not found\n");
-                return GDK_FAIL;
-        }
+        if (v == 0) 
+                return throwMessage("CMDposition: item not found");
         *retval = BUNindex(b, v)- BUNindex(b, BUNfirst(b));
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 
-int CMDfetchbat(int * ret, int *bid, int *sid){
+str CMDfetchbat(int * ret, int *bid, int *sid){
 	BAT *b, *s, *bn;
-	@:getBATdescriptor(ret,bid,b,"CMDfetchbat")@
-	@:getBATdescriptor(ret,sid,s,"CMDfetchbat")@
+	@:getBATdescriptor(ret,bid,b,CMDfetchbat)@
+	@:getBATdescriptor(ret,sid,s,CMDfetchbat)@
 
 	bn= BATfetch(b, s);
 	if( bn ) {
 		*ret = bn->batCacheid;
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
-	return GDK_FAIL;
+	return throwMessage("CMDfetchbat:GDKerror");
 }
 
 @-
@@ -989,73 +995,67 @@ Factor out some common code.
 	    }
 	}
 @c
-int CMDfetch(ptr ret, int *bid, int *pos){
+str CMDfetch(ptr ret, int *bid, int *pos){
 	int i = *pos;
 	BAT *b;
 	int result;
 
-	@:getBATdescriptor(&result,bid,b,"CMDfetch");
-        if ((i < 0) || (i >= BATcount(b))) {
-                GDKerror("CMDfetch: idx out of range\n");
-                return GDK_FAIL;
-        }
+	@:getBATdescriptor(&result,bid,b,CMDfetch);
+        if ((i < 0) || (i >= BATcount(b)))
+                return throwMessage("CMDfetch: idx out of range");
         i += BUNindex(b, BUNfirst(b));
 	@:putTail(BUNptr(b,i))@
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 
-int CMDfetchoid(ptr *ret, int *bid, oid *pos){
+str CMDfetchoid(ptr *ret, int *bid, oid *pos){
 	BAT *b;
 	int newpos;
 	int result;
 
-	@:getBATdescriptor(&result,bid,b,"CMDfetchoid");
+	@:getBATdescriptor(&result,bid,b,CMDfetchoid);
 	newpos = (int) (*pos - b->hseqbase);
-	if (b->hseqbase == oid_nil) {
-                GDKerror("CMDfetchoid: void lookup on uninitialized column.\n");
-                return GDK_FAIL;
-        }
+	if (b->hseqbase == oid_nil) 
+                return throwMessage("CMDfetchoid: void lookup on uninitialized column.");
 	return CMDfetch(*ret, bid, &newpos);
 }
 
-int CMDexist(bit *ret, int *bid, ptr val){ 
+str CMDexist(bit *ret, int *bid, ptr val){ 
 	BAT *b;
 	BUN q;
 	int result;
 
-	@:getBATdescriptor(&result,bid,b,"CMDexist");
+	@:getBATdescriptor(&result,bid,b,CMDexist);
 	@:derefStr(b,h,val)@
 	q = BUNfnd(b, val);
 	*ret = q?1:0;
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
-int CMDexistBUN(bit *ret, int *bid, ptr val, ptr tval){ 
+str CMDexistBUN(bit *ret, int *bid, ptr val, ptr tval){ 
 	BAT *b;
 	BUN q;
 	int result;
 
-	@:getBATdescriptor(&result,bid,b,"CMDexistBUN");
+	@:getBATdescriptor(&result,bid,b,CMDexistBUN);
 	@:derefStr(b,h,val)@
 	@:derefStr(b,t,tval)@
 	q = BUNlocate(b, val, tval);
 	*ret = q?1:0;
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 
-int CMDfind(ptr ret, int *bid, ptr val){ 
+str CMDfind(ptr ret, int *bid, ptr val){ 
 	BAT *b;
 	ptr p;
 	BUN q;
 	int result;
 
-	@:getBATdescriptor(&result,bid,b,"CMDfind");
+	@:getBATdescriptor(&result,bid,b,CMDfind);
 	@:derefStr(b,h,val)@
 	q = BUNfnd(b, val);
-	if (q == NULL) {
-		GDKerror("CMDfind: value not found.\n");
-		return GDK_FAIL;
-	}
+	if (q == NULL)
+		return throwException("CMDfind: value not found.");
 	@:putTail(q)@
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 

@@ -185,6 +185,10 @@ printf( "%s\n", s );
 quit;
 @{
 @* Implementation Code
+
+@= fileCheck
+#define FILEP_CHECK(fp) if (!fp) \
+		return throwMessage( "@1:Incorrect file pointer"); 
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -214,6 +218,7 @@ quit;
 #include <stdio.h>
 #include <stdarg.h>
 #include <blob.h>
+#include "mal.h"
 
 typedef struct {
 	int up, down;
@@ -221,11 +226,6 @@ typedef struct {
 
 typedef FILE* fstream;
 
-#define FILEP_CHECK(fp) \
-	if (!fp){ \
-		GDKerror( "Incorrect file pointer\n"); \
-		return(GDK_FAIL); \
-	}
 
 
 #endif /* _IO_H_ */
@@ -234,143 +234,134 @@ typedef FILE* fstream;
 #include "io.h"
 #include "monet.h"
 
-int io_stdin (fstream *ret) { *ret = GDKin;  return GDK_SUCCEED; }
-int io_stdout(fstream *ret) { *ret = GDKout; return GDK_SUCCEED; }
-int io_stderr(fstream *ret) { *ret = stderr; return GDK_SUCCEED; }
+str io_stdin (fstream *ret) { *ret = GDKin;  return MAL_SUCCEED; }
+str io_stdout(fstream *ret) { *ret = GDKout; return MAL_SUCCEED; }
+str io_stderr(fstream *ret) { *ret = stderr; return MAL_SUCCEED; }
 
-int io_fclose(int *ret, fstream* filepp ){
+str io_fclose(int *ret, fstream* filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   @:fileCheck(io_fclose)@
    if (fclose(fp) < 0) {
-	GDKsyserror("io_fclose:");
-	return GDK_FAIL;
+	return throwMessage("io_fclose: failed");
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_fflush(int *ret, fstream *filepp ){
+str io_fflush(int *ret, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   @:fileCheck(io_fflush)@;
    (void)fflush(fp);
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_popen(bipipe **retval){
+str io_popen(bipipe **retval){
    if(*retval) GDKfree(*retval);
    *retval= (bipipe*) GDKmalloc(sizeof(bipipe));
-   if (pipe((int*) *retval) < 0) {
-	GDKsyserror("io_popen:");
-	return GDK_FAIL;
-   }
-   return GDK_SUCCEED;
+   if (pipe((int*) *retval) < 0)
+	return throwMessage("io_popen: failed");
+   return MAL_SUCCEED;
 }
-int io_fdpipe(fstream *retval, bipipe* p, bit *up, str *mode){
+str io_fdpipe(fstream *retval, bipipe* p, bit *up, str *mode){
    *retval = (fstream) fdopen(up?p->up:p->down, *mode);
-   if (*retval == 0) return GDK_SUCCEED;
-   GDKsyserror("io_fdpipe:");
-   return GDK_FAIL;
+   if (*retval == 0) return MAL_SUCCEED;
+   return throwMessage("io_fdpipe: failed");
 }
 
-int io_feof( bit *res, fstream *filepp ){
+str io_feof( bit *res, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   @:fileCheck(io_feof)@;
    *res = feof(fp)?TRUE:FALSE;
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_fopen( fstream *res, str *name, str *mode ){
+str io_fopen( fstream *res, str *name, str *mode ){
    *res = fopen(*name,*mode);
    if (!*res) *res = *(fstream*) ATOMnilptr(TYPE_ptr);
-   return GDK_SUCCEED;
+   return MAL_SUCCEED;
 }
 
-int io_freopen( fstream *res, str *name, str *mode, fstream *filepp ){
+str io_freopen( fstream *res, str *name, str *mode, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   @:fileCheck(io_freopen)@;
    *res = freopen(*name,*mode,fp);
    if (!*res) *res = *(fstream*) ATOMnilptr(TYPE_ptr);
-   return GDK_SUCCEED;
+   return MAL_SUCCEED;
 }
 
-int io_ferror( str *msg) {
+str io_ferror( str *msg) {
    int r = MT_geterrno();
    if (r) {
     	*msg = GDKstrdup(strerror(r));
    } else { 
 	*msg = str_nil;
    }
-   return GDK_SUCCEED;
+   return MAL_SUCCEED;
 }
 
-int io_fread( blob **res, fstream *filepp, int *nbytes ){
+str io_fread( blob **res, fstream *filepp, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int err = -1;
    str buf;
-   FILEP_CHECK(fp);
+   @:fileCheck(io_fread)@;
    buf = (str) GDKmalloc( sizeof(int) + *nbytes );
    if ((*res = (blob*) buf) != NULL){
    	err = fread(buf+sizeof(int),1,*nbytes,fp);
    }
    if (err<0){
-      GDKsyserror("io_fread:");
       if (*res) GDKfree(*res);
-      return(GDK_FAIL);
+      return throwMessage("io_fread: failed");
    }
    (**res).nitems= err;
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_fwrite_str(int *ret, fstream *filepp, str *buf, int *nbytes ){
+str io_fwrite_str(int *ret, fstream *filepp, str *buf, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = strlen(*buf); 
-   FILEP_CHECK(fp);
+   @:fileCheck(io_fwrite_str)@;
    if (*nbytes < n) n = *nbytes;
    if (fwrite(*buf,1,n,fp) < (size_t) n) {
-      GDKsyserror("io_fwrite_str:");
-      return(GDK_FAIL);
+      return throwMessage("io_fwrite_str: failed");
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_fwrite(int *ret, fstream *filepp, blob **b, int *nbytes ){
+str io_fwrite(int *ret, fstream *filepp, blob **b, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = *nbytes;
    str buf = (str) *b;
-   FILEP_CHECK(fp);
+   @:fileCheck(io_fwrite)@;
    if (n> (**b).nitems) {
 	n = MAX(0,(**b).nitems);
 	GDKerror("io_fwrite: blob contains only %d bytes.\n", (**b).nitems);
    }
    if (fwrite(buf+sizeof(int),1,n,fp) < (size_t) n) {
-      GDKsyserror("io_fwrite:");
-      return(GDK_FAIL);
+      return throwMessage("io_fwrite: failed");
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_fseek(int *res, fstream *filepp, int *pos, int *nbytes ){
+str io_fseek(int *res, fstream *filepp, int *pos, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   @:fileCheck(io_fseek)@;
    *res = fseek(fp, (long)*pos, *nbytes);
    if (*res < 0) {
-      GDKsyserror("io_fseek:");
-      return(GDK_FAIL);
+      return throwMessage("io_fseek: failed");
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_ftell(int *res, fstream *filepp ){
+str io_ftell(int *res, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   @:fileCheck(io_ftell)@;
    *res = ftell(fp);
    if (*res < 0) {
-      GDKsyserror("io_ftell:");
-      return(GDK_FAIL);
+      throwMessage("io_ftell: failed");
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_fsize(int* res, str *filename){
+str io_fsize(int* res, str *filename){
 #ifdef HAVE_FSTAT
 	struct stat buf;
 	if (stat(*filename,&buf))
@@ -380,13 +371,13 @@ int io_fsize(int* res, str *filename){
 #else
         *res = -1;
 #endif
-	return(GDK_SUCCEED);
+	return MAL_SUCCEED;
 }
 
 
-int io_fprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str io_fprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	GDKwarning("io_fprintf: not yet defined in version-5\n");
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 /*
 int io_fprintf(fstream *filepp, str format,  ...){
@@ -398,22 +389,21 @@ int io_fprintf(fstream *filepp, str format,  ...){
         va_start(ap,format);
         ret = monet_sprintf(&s, format, ap);
         va_end(ap);
-        if (ret == GDK_FAIL) {
-                return GDK_FAIL;
+        if (ret == 0) {
+                return throwMessage("io_printf:failed");
         }
         if (fputs(s, *filepp) < 0) {
-                GDKsyserror("io_fprintf():");
                 GDKfree(s);
-                return GDK_FAIL;
+                return throwMessage("io_fprintf:failed");
         }
 	GDKfree(s);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 */
 
-int io_fprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str io_fprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	GDKwarning("io_fprint: not defined in version-5\n");
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 /*
 int io_fprint(fstream *filepp, ...){
@@ -446,57 +436,51 @@ int io_fprint(fstream *filepp, ...){
 		}
 	}
         va_end(ap);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 */
 
 
-int io_fputs(int *ret, str *s, fstream *filepp ){
+str io_fputs(int *ret, str *s, fstream *filepp ){
    FILEP_CHECK(*filepp);
    if (fputs(*s,*(FILE**)filepp) < 0) {
-      GDKsyserror("io_fputs: ");
-      return GDK_FAIL;
+      return throwMessage("io_fputs: failed");
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_fputc(int *ret,int *c, fstream *filepp ){
+str io_fputc(int *ret,int *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
-   if (fputc(*c, fp) < 0) {
-      GDKsyserror("io_fputs: ");
-      return GDK_FAIL;
-   }
-   return(GDK_SUCCEED);
+   @:fileCheck(io_fputc)@;
+   if (fputc(*c, fp) < 0)
+      return throwMessage("io_fputs: failed");
+   return MAL_SUCCEED;
 }
 
-int io_fgets( str *s, fstream *filepp ){
+str io_fgets( str *s, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   @:fileCheck(io_fgets)@;
    *s = GDKmalloc( BUFSIZ );
    **s = 0;
    if (fgets(*s, BUFSIZ, fp) <= (char *) 0) {
       if (feof(fp)){
         **s = 0;
-      	return(GDK_SUCCEED);
+      	return MAL_SUCCEED;
       }
-      GDKsyserror("io_fgets: ");
-      return GDK_FAIL;
+      return throwMessage("io_fgets: failed");
    }
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
-int io_fgetc( chr *c, fstream *filepp ){
+str io_fgetc( chr *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
    int ret;
-   FILEP_CHECK(fp);
+   @:fileCheck(io_fgetc)@;
    ret = (int)fgetc(fp);
-   if (ret <= 0) {
-      GDKsyserror("io_fgetc: ");
-      return GDK_FAIL;
-   }
+   if (ret <= 0) 
+      return throwMessage("io_fgetc: failed");
    *c = ret;
-   return(GDK_SUCCEED);
+   return MAL_SUCCEED;
 }
 
 @+ Printing
@@ -508,51 +492,50 @@ The old method in V4 essentially causes a lot of overhead
 because you have to prepare for the worst (e.g. mismatch format
 identifier and argument value)
 @c
-int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
 	ptr val = (ptr) getArgReference(stk,pci,1);
         FILE *fp = GDKout;
 	if( val==NULL) {
 		ATOMprint(TYPE_str, "nil", GDKout);
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	if( isaBatType(tpe)){
 		BAT *b = BATdescriptor(*(int*)val);
 		if( b== NULL) {
-			GDKerror("CMDprint_val:could not access descriptor\n");
-			return GDK_FAIL;
+			return throwMessage("CMDprint_val:could not access descriptor");
 		}
 		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
         fputs("[ ", fp);
 	if( ATOMstorage(tpe) == TYPE_str)
 		ATOMprint(tpe, *(str*)val, fp);
         else  	ATOMprint(tpe, val, fp);
         fputs(" ]\n", fp);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
-int CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
 	ptr val = (ptr) getArgReference(stk,pci,1);
 	if( val==NULL) {
 		ATOMprint(TYPE_str, "nil", GDKout);
-		return GDK_SUCCEED;
+		return MAL_SUCCEED;
 	}
 	if( tpe == TYPE_str)
 		ATOMprint(TYPE_str, *(str*)val, GDKout);
 	else ATOMprint(tpe, val, GDKout);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 @-
 The table printing routine implementations rely on the multiprintf.
 They merely differ in destination and order prerequisite
 @c
-int CMDtableAll(FILE *f, MalBlkPtr mb, MalStkPtr stk, 
+str CMDtableAll(FILE *f, MalBlkPtr mb, MalStkPtr stk, 
 		  InstrPtr pci, int i, int order, int printhead)
 {
         BAT *piv[MAXPARAMS],*b;
@@ -562,26 +545,28 @@ int CMDtableAll(FILE *f, MalBlkPtr mb, MalStkPtr stk,
 	for(; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
 		val = (ptr) getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) return GDK_FAIL;
+		if( !isaBatType(tpe)) 
+			return throwMessage("CMDtableAll:BAT expected");
 		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return GDK_FAIL;
+		if(b == NULL) 
+		return throwMessage("CMDtableAll:could not access descriptor");
                 piv[nbats++] = b;
         } 
 	/*if(printhead)*/ nbats++;
         BATmultiprintf(f, nbats, piv, printhead, order);
-        return GDK_SUCCEED;
+        return MAL_SUCCEED;
 }
 
-int CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int order;
 	order = *(int*) getArgReference(stk,pci,1);
 	return CMDtableAll(GDKout,mb,stk,pci,2,order,TRUE);
 }
 
-int CMDtable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDtable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return CMDtableAll(GDKout,mb,stk,pci,1,0,TRUE);
 }
-int CMDfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	FILE *fp;
 	int order;
 
@@ -590,16 +575,15 @@ int CMDfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return CMDtableAll(fp,mb,stk,pci,3,1,TRUE);
 }
 
-int CMDftable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDftable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	FILE *fp;
-
 	fp= *(FILE **) getArgReference(stk,pci,1);
 	return CMDtableAll(fp,mb,stk,pci,2,0,TRUE);
 }
-int CMDttable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDttable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return CMDtableAll(GDKout,mb,stk,pci,1,0,FALSE);
 }
-int CMDtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int order;
 	order = *(int*) getArgReference(stk,pci,1);
 	return CMDtableAll(GDKout,mb,stk,pci,1,0,FALSE);

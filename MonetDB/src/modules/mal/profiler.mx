@@ -112,81 +112,81 @@ its generates a noticable overhead.
 #include "mal_resolve.h"
 #include "mal_squeezer.h"
 #include "mal_client.h"
+#include "monet.h"
 
 @-
 Using the Monet Performance Profiler is contrainted by the mal_profiler.
 @= checkProfiler
-	#ifndef MALprofiler
-		GDKerror("Monet not compiled for performance monitoring\n");
-		return GDK_FAIL;
-	#endif
+#ifndef MALprofiler
+	return throwMessage("Monet not compiled for performance monitoring");
+#endif
 @c
 #include "profiler.h"
 
-int CMDactivateProfiler(int *res, str *name){
+str CMDactivateProfiler(int *res, str *name){
 	@:checkProfiler@
 	activateCounter(*name);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDdeactivateProfiler(int *res, str *name){
+str CMDdeactivateProfiler(int *res, str *name){
 	@:checkProfiler@
 	deactivateCounter(*name);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDsetFilterProfiler(int *res, str *mod, str *fcn){
+str CMDsetFilterProfiler(int *res, str *mod, str *fcn){
 	@:checkProfiler@
 	eventFilter(getClient()->nspace, *mod, *fcn);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDsetAllProfiler(int *res){
+str CMDsetAllProfiler(int *res){
 	str x = GDKstrdup("*");
 	str y = GDKstrdup("*");
 	return CMDsetFilterProfiler(res, &x, &y);
 }
-int CMDclrFilterProfiler(int *res, str *mod, str *fcn){
+str CMDclrFilterProfiler(int *res, str *mod, str *fcn){
 	@:checkProfiler@
 	resetFilter(getClient()->nspace, *mod, *fcn);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDclrAllProfiler(int *res){
+str CMDclrAllProfiler(int *res){
 	str x = GDKstrdup("*");
 	str y = GDKstrdup("*");
 	return CMDclrFilterProfiler(res, &x, &y);
 }
 
-int CMDsetProfilerStream(int *res, str *fnme){
+str CMDsetProfilerStream(int *res, str *fnme){
 	@:checkProfiler@
 	setLogFile(getClient()->nspace, *fnme);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDstartPointProfiler(int *res, str *mod, str *fcn){
+str CMDstartPointProfiler(int *res, str *mod, str *fcn){
 	@:checkProfiler@
 	setStartPoint(getClient()->nspace, *mod, *fcn);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDendPointProfiler(int *res, str *mod, str *fcn){
+str CMDendPointProfiler(int *res, str *mod, str *fcn){
 	@:checkProfiler@
 	setStartPoint(getClient()->nspace, *mod, *fcn);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-int CMDstopProfiler(int *res){
+str CMDstopProfiler(int *res){
 	Client c= getClient();
 	@:checkProfiler@
 	fprintf(c->fdout,"# Performance profiling stopped\n");
 	stopProfiling();
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int CMDstartProfiler(int *res){
+str CMDstartProfiler(int *res){
 	Client c= getClient();
 	@:checkProfiler@
 	fprintf(c->fdout,"# Start performance profiling\n");
 	startProfiling();
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
