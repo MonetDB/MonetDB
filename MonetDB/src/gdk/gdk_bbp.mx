@@ -1783,7 +1783,8 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
  	while(ndescs > 0  || memtarget > 0 || vmtarget > 0) {
 		/* acquire the BBP locks */
 		MT_set_lock(GDKcacheLock, "BBPtrim");
-                BBPlock("BBPtrim");
+		for(i=0; i <= BBPLOCKMASK; i++)
+			MT_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPtrim");
 
 		/* gather a list of unload candidate BATs, but try to avoid scanning by reusing previous leftovers first */
 		if (scan) {
