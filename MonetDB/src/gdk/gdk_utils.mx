@@ -21,6 +21,7 @@ gdk_export int  GDKcsec      ();
 gdk_export int  GDKsec       ();
 
 gdk_export BAT *GDKenv;
+gdk_export void GDKenvironment(str db, str monetrc);
 
 #endif /* _GDK_UTILS_H_ */
 @c
