@@ -105,13 +105,35 @@ operands are already supported in the kernel, but are not nearly as fast,
 @mal
         @:mal_comp_ops(any::1,any)@
         @:mal_eq_ops(bit,chr)@
+        @:mal_eq_ops(bit,sht)@
+        @:mal_eq_ops(bit,int)@
+        @:mal_eq_ops(bit,lng)@
+
         @:mal_comp_ops(chr,chr)@
+        @:mal_comp_ops(chr,sht)@
+        @:mal_comp_ops(chr,int)@
+        @:mal_comp_ops(chr,lng)@
+
+        @:mal_comp_ops(sht,chr)@
         @:mal_comp_ops(sht,sht)@
+        @:mal_comp_ops(sht,int)@
+        @:mal_comp_ops(sht,lng)@
+
+        @:mal_comp_ops(int,chr)@
+        @:mal_comp_ops(int,sht)@
         @:mal_comp_ops(int,int)@
+        @:mal_comp_ops(int,lng)@
+
         @:mal_comp_ops(oid,oid)@
         @:mal_comp_ops(flt,flt)@
+        @:mal_comp_ops(flt,dbl)@
         @:mal_comp_ops(dbl,dbl)@
+
+        @:mal_comp_ops(lng,chr)@
+        @:mal_comp_ops(lng,sht)@
+        @:mal_comp_ops(lng,int)@
         @:mal_comp_ops(lng,lng)@
+
         @:mal_comp_ops(str,str)@
 
 @- computation of { +, -, *, /, % }
@@ -131,34 +153,58 @@ atomic types and a result type.
 	COMMAND -(left:@1, right:@2) : @3 = @1@2_binary_SUB;	"substraction"
 	COMMAND *(left:@1, right:@2) : @3 = @1@2_binary_MUL;	"multiplication"
 	COMMAND /(left:@1, right:@2) : @3 = @1@2_checkbinary_DIV;"division"
+@-
+The coercions described below ensure that there is never an information loss.
 @mal
 	@:mal_arith_ops(chr,chr,chr)@
 	@:mal_arith_ops(chr,sht,sht)@
 	@:mal_arith_ops(chr,int,int)@
+	@:mal_arith_ops(chr,lng,lng)@
+	@:mal_arith_ops(chr,flt,flt)@
+	@:mal_arith_ops(chr,dbl,dbl)@
+
 	@:mal_arith_ops(sht,chr,sht)@
 	@:mal_arith_ops(sht,sht,sht)@
 	@:mal_arith_ops(sht,int,int)@
+	@:mal_arith_ops(sht,lng,lng)@
+	@:mal_arith_ops(sht,flt,flt)@
+	@:mal_arith_ops(sht,dbl,dbl)@
+
 	@:mal_arith_ops(int,chr,int)@
 	@:mal_arith_ops(int,sht,int)@
 	@:mal_arith_ops(int,int,int)@
+	@:mal_arith_ops(int,lng,lng)@
 	@:mal_arith_ops(int,flt,flt)@
 	@:mal_arith_ops(int,dbl,dbl)@
-	@:mal_arith_ops(int,lng,lng)@
+
+	@:mal_arith_ops(lng,chr,lng)@
+	@:mal_arith_ops(lng,sht,lng)@
+	@:mal_arith_ops(lng,int,lng)@
+	@:mal_arith_ops(lng,lng,lng)@
+	@:mal_arith_ops(lng,flt,flt)@
+	@:mal_arith_ops(lng,dbl,dbl)@
+
+	@:mal_arith_ops(flt,chr,flt)@
+	@:mal_arith_ops(flt,sht,flt)@
 	@:mal_arith_ops(flt,int,flt)@
+	@:mal_arith_ops(flt,lng,flt)@
 	@:mal_arith_ops(flt,flt,flt)@
 	@:mal_arith_ops(flt,dbl,dbl)@
-	@:mal_arith_ops(dbl,dbl,dbl)@
+
+	@:mal_arith_ops(dbl,chr,dbl)@
+	@:mal_arith_ops(dbl,sht,dbl)@
 	@:mal_arith_ops(dbl,int,dbl)@
+	@:mal_arith_ops(dbl,lng,dbl)@
 	@:mal_arith_ops(dbl,flt,dbl)@
-	@:mal_arith_ops(lng,lng,lng)@
-	@:mal_arith_ops(lng,int,lng)@
+	@:mal_arith_ops(dbl,dbl,dbl)@
+
+	@:mal_arith_ops(oid,oid,oid)@
 
 @- binary  operations { max, min, }
 @= mal_binary_ops
    	COMMAND max(l:@1, r:@1) : @1 = @2_binary_MAX; "maximum of two values"
    	COMMAND min(l:@1, r:@1) : @1 = @2_binary_MIN; "minimum of two values"
 @mal
-	@:mal_binary_ops(any::1,any)@
 	@:mal_binary_ops(chr,chr)@
 	@:mal_binary_ops(sht,sht)@
 	@:mal_binary_ops(int,int)@
@@ -217,8 +263,10 @@ The following example script will do each operation in the
 arith module. It can be used for testing.
 
 @mil
+module("kernel/arith");
 setoid(oid(20000000));
-module(arith);
+chr1 := 'a';
+chr2 := 'c';
 sht1 := sht(2);
 sht2 := sht(5);
 int1 := 5;
@@ -239,53 +287,67 @@ oid2 := oid(int2);
 @:mil_comp_ops(dbl1,dbl2)@
 @:mil_comp_ops("abcde","abcdf")@
 
+@:mil_arith_ops(chr1,chr2)@
+@:mil_arith_ops(chr1,sht2)@
+@:mil_arith_ops(chr1,int2)@
+@:mil_arith_ops(chr1,lng2)@
+@:mil_arith_ops(chr1,flt2)@
+@:mil_arith_ops(chr1,dbl2)@
+
+@:mil_arith_ops(sht1,chr2)@
 @:mil_arith_ops(sht1,sht2)@
 @:mil_arith_ops(sht1,int2)@
+@:mil_arith_ops(sht1,lng2)@
 @:mil_arith_ops(sht1,flt2)@
 @:mil_arith_ops(sht1,dbl2)@
-@:mil_arith_ops(sht1,lng2)@
 
+@:mil_arith_ops(int1,chr2)@
 @:mil_arith_ops(int1,sht2)@
 @:mil_arith_ops(int1,int2)@
+@:mil_arith_ops(int1,lng2)@
 @:mil_arith_ops(int1,flt2)@
 @:mil_arith_ops(int1,dbl2)@
-@:mil_arith_ops(int1,lng2)@
 
-@:mil_arith_ops(flt1,sht2)@
-@:mil_arith_ops(flt1,int2)@
-@:mil_arith_ops(flt1,flt2)@
-@:mil_arith_ops(flt1,dbl2)@
-@:mil_arith_ops(flt1,lng2)@
-
-@:mil_arith_ops(dbl1,sht2)@
-@:mil_arith_ops(dbl1,int2)@
-@:mil_arith_ops(dbl1,flt2)@
-@:mil_arith_ops(dbl1,dbl2)@
-@:mil_arith_ops(dbl1,lng2)@
-
+@:mil_arith_ops(lng1,chr2)@
 @:mil_arith_ops(lng1,sht2)@
 @:mil_arith_ops(lng1,int2)@
+@:mil_arith_ops(lng1,lng2)@
 @:mil_arith_ops(lng1,flt2)@
 @:mil_arith_ops(lng1,dbl2)@
-@:mil_arith_ops(lng1,lng2)@
 
-abs(sht2).print;
-abs(int2).print;
-abs(flt2).print;
-abs(dbl2).print;
-abs(lng2).print;
+@:mil_arith_ops(flt1,chr2)@
+@:mil_arith_ops(flt1,sht2)@
+@:mil_arith_ops(flt1,int2)@
+@:mil_arith_ops(flt1,lng2)@
+@:mil_arith_ops(flt1,flt2)@
+@:mil_arith_ops(flt1,dbl2)@
+
+@:mil_arith_ops(dbl1,chr2)@
+@:mil_arith_ops(dbl1,sht2)@
+@:mil_arith_ops(dbl1,int2)@
+@:mil_arith_ops(dbl1,lng2)@
+@:mil_arith_ops(dbl1,flt2)@
+@:mil_arith_ops(dbl1,dbl2)@
+
+@:mil_arith_ops(oid1,oid2)@
 
 max(sht1,sht2).print;
 max(int1,int2).print;
+max(lng1,lng2).print;
 max(flt1,flt2).print;
 max(dbl1,dbl2).print;
-max(lng1,lng2).print;
 
 min(sht1,sht2).print;
 min(int1,int2).print;
 min(flt1,flt2).print;
 min(dbl1,dbl2).print;
 min(lng1,lng2).print;
+
+abs(sht2).print;
+abs(int2).print;
+abs(flt2).print;
+abs(dbl2).print;
+abs(lng2).print;
 
 @:mil_arith_ops(oid1,oid2)@
 max(oid1,oid2).print;
@@ -380,7 +442,6 @@ the string representations.
 #include "gdk.h"
 /* DEBUG phase.  #include "arith.proto.h" */
 
-
 #endif /* __arith_H__ */
 @}
 
@@ -400,23 +461,46 @@ the string representations.
 @:c_arith_ops(chr,chr,chr)@
 @:c_arith_ops(chr,sht,sht)@
 @:c_arith_ops(chr,int,int)@
+@:c_arith_ops(chr,lng,lng)@
+@:c_arith_ops(chr,flt,flt)@
+@:c_arith_ops(chr,dbl,dbl)@
+
 @:c_arith_ops(sht,chr,sht)@
 @:c_arith_ops(sht,sht,sht)@
 @:c_arith_ops(sht,int,int)@
+@:c_arith_ops(sht,lng,lng)@
+@:c_arith_ops(sht,flt,flt)@
+@:c_arith_ops(sht,dbl,dbl)@
+
 @:c_arith_ops(int,chr,int)@
 @:c_arith_ops(int,sht,int)@
 @:c_arith_ops(int,int,int)@
+@:c_arith_ops(int,lng,lng)@
 @:c_arith_ops(int,flt,flt)@
 @:c_arith_ops(int,dbl,dbl)@
-@:c_arith_ops(int,lng,lng)@
-@:c_arith_ops(flt,int,flt)@
-@:c_arith_ops(flt,flt,flt)@
-@:c_arith_ops(flt,dbl,dbl)@
-@:c_arith_ops(dbl,int,dbl)@
-@:c_arith_ops(dbl,flt,dbl)@
-@:c_arith_ops(dbl,dbl,dbl)@
+
+@:c_arith_ops(lng,chr,lng)@
+@:c_arith_ops(lng,sht,lng)@
 @:c_arith_ops(lng,int,lng)@
 @:c_arith_ops(lng,lng,lng)@
+@:c_arith_ops(lng,flt,flt)@
+@:c_arith_ops(lng,dbl,dbl)@
+
+@:c_arith_ops(flt,chr,flt)@
+@:c_arith_ops(flt,sht,flt)@
+@:c_arith_ops(flt,int,flt)@
+@:c_arith_ops(flt,lng,flt)@
+@:c_arith_ops(flt,flt,flt)@
+@:c_arith_ops(flt,dbl,dbl)@
+
+@:c_arith_ops(dbl,chr,dbl)@
+@:c_arith_ops(dbl,sht,dbl)@
+@:c_arith_ops(dbl,int,dbl)@
+@:c_arith_ops(dbl,lng,dbl)@
+@:c_arith_ops(dbl,flt,dbl)@
+@:c_arith_ops(dbl,dbl,dbl)@
+
+@:c_arith_ops(oid,oid,oid)@
 
 #define arith_abs(s) ((s)>0)?(s):-(s)
 @:arith_unop(_ABS,arith_abs,chr)@

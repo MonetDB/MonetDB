@@ -13,21 +13,20 @@ A sequence of instructions is represented by a variable, instruction,
 and program stmt block.
 The variable block is the symbol table associated with the 
 instruction sequence.
-Each quintuple contain a reference to the argument name ,
+Each tuple contain a reference to the argument name ,
 a reference to a lexical value when it denotes a constant,
-an instruction offset into the procedure where it is first defined,
-its associated Mal type identifier, 
+its associated Mal type identifier, access mode,
 and the offset into the runtime stack.
 Upon procedure return, the variable block is inspected to find
 objects eligable for garbage collection (e.g. strings).
 
-The instruction block is a large linear integer string overlaid with the
+The instruction block is a large code byte string overlaid with the
 instruction pattern InstrPattern. This method leads to a large
 allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
-The argument list starts with a reference to the destination variable. 
+Each argument list starts with a reference to the destination variable. 
 
-An array of byte-offsets into the stream provides for fast
+An array of byte-offsets into the code byt string provides for fast
 access to any statement.
 
 Instruction-, variable- and stmt- block together describe the
@@ -74,7 +73,10 @@ html
 #include "mal.h"
 
 #define DEBUG_MAL_INSTR
-#define MAXARG 256
+#define MAXARG 32
+#define MAXVARS 128
+#define MALBLKSIZE 4096
+#define MAXSTMTS 512
 
 typedef struct SYMDEF {
         struct SYMDEF   *peer;  /* where to look next */
@@ -84,8 +86,8 @@ typedef struct SYMDEF {
         str             help;   /* supportive commentary */
 	str		binding;/* related C-function */
         int             kind;
-        struct MALBLK   *def;    /* the details */
-        struct SYMDEF   **subscope; /* type dispatcher */
+        struct MALBLK   *def;    /* the details of the MAL fcn */
+        struct SYMDEF   **subscope; /* type dispatcher table */
 } *Symbol, SymDefinition;
 
 typedef struct{
@@ -103,6 +105,7 @@ typedef struct {
 	short	barrier;	/* Begin-end of block */
 	short	pc;		/* instruction index in current proc */
 	short	gdbinfo;	/* debugger control field */
+	int	polymorphic; /* set when arguments are still open */
 @-
 For performance analysis we keep track of the number of calls
 and the total time spent while executing the instruction.
@@ -170,7 +173,7 @@ mal_export malType getType(MalBlkPtr mb, str nme);
 mal_export int newVariable(MalBlkPtr mb, str name,malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export str newConstant(MalBlkPtr mb, malType type, str val);
-mal_export int isPolymorphic(MalBlkPtr mb, InstrPtr p, int i);
+mal_export int isPolymorphicArgument(MalBlkPtr mb, InstrPtr p, int i);
 mal_export int isVARG(MalBlkPtr mb, InstrPtr p, int i);
 mal_export int chkPolyType(malType p1, malType a1);
 mal_export int chkPolyTypePair(malType p1, malType a1, malType p2, malType a2);
@@ -195,30 +198,28 @@ MalBlkPtr newMalBlk(){
 	MalBlkPtr mb;
 	VarPtr v;
 	char *c;
-	int *n,*o;
+	int *n;
 
-	v = (VarPtr)GDKmalloc(sizeof(VarRecord) * MAXARG);
+	v = (VarPtr)GDKmalloc(sizeof(VarRecord) * MAXVARS);
 	if( v== NULL )
 		GDKfatal("newMalBlk:could not get variable storage\n");
-	c = (char *)GDKmalloc(4096);
+	c = (char *)GDKmalloc(MALBLKSIZE);
 	if( c== NULL )
 		GDKfatal("newMalBlk:could not get code storage\n");
-	o = (int *)GDKmalloc(sizeof(int) * MAXARG);
-	if( o== NULL )
-		GDKfatal("newMalBlk:could not get instruction storage\n");
-	n = (int *)GDKmalloc(sizeof(int) * MAXARG);
+	n = (int *)GDKmalloc(sizeof(int) * MAXSTMTS);
 	if( n== NULL )
 		GDKfatal("newMalBlk:could not get instruction storage\n");
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
 	if( mb== NULL )
 		GDKfatal("newMalBlk:could not get storage\n");
 
-	mb->var = v; mb->vtop = 0; mb->vsize = MAXARG;
-	mb->code = c; mb->ctop = 0; mb->csize= 4096;
-	mb->stmt = n; mb->stop = 0; mb->ssize = MAXARG;
+	mb->var = v; mb->vtop = 0; mb->vsize = MAXVARS;
+	mb->code = c; mb->ctop = 0; mb->csize= MALBLKSIZE;
+	mb->stmt = n; mb->stop = 0; mb->ssize = MAXSTMTS;
 	mb->errors = 0;
 	return mb;
 }
+
 void freeMalBlk(MalBlkPtr mb){
 	int i;
 	for(i=0;i<mb->stop; i++)
@@ -280,7 +281,8 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 
 	space = MAXARG * sizeof(int)+ sizeof(InstrRecord);
 	if( mb->csize-mb->ctop <= space){
-		char *newblk= GDKmalloc(mb->csize + 4096);
+		char *newblk= GDKmalloc(mb->csize + MALBLKSIZE);
+		/* printf("generate new code block\n");*/
 		if( newblk== NULL){
 			mb->errors++;
 			GDKerror("ERROR:newInstruction:no storage left\n");
@@ -288,7 +290,7 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 		}
 		memcpy(newblk,mb->code,mb->ctop);
 		mb->code = newblk;
-		mb->csize += 4096;
+		mb->csize += MALBLKSIZE;
 	}
 	p= (InstrPtr) (mb->code+mb->ctop);
 	mb->ctop += sizeof(InstrRecord);
@@ -302,6 +304,7 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 	p->argc= 1;
 	p->argv[0] = -1;
 	p->pc=0;
+	p->polymorphic = FALSE;
 	return p;
 }
 
@@ -359,8 +362,9 @@ int newVariable(MalBlkPtr mb, str name, malType type){
         
 	if( mb->vtop+1 >= mb->vsize){
 		VarRecord *new;
-		int s= mb->vtop + MAXARG;
+		int s= mb->vtop + MAXVARS;
 		new= (VarPtr) GDKmalloc(s*sizeof(VarRecord));
+		/*printf("generate new variable block\n");*/
 		if( new== NULL ){
 			mb->errors++;
 			GDKerror("ERROR:newMalBlk:no storage left\n");
@@ -369,6 +373,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 		memcpy(new,mb->var, sizeof(VarRecord)*mb->vtop);
 		GDKfree(mb->var);
 		mb->vsize= s;
+		mb->var= new;
 	}
 	n= findVariable(mb,name);
 	if( n>=0){
@@ -529,7 +534,7 @@ MAL provides for type variables of the form any::N. This feature
 supports polymorphic types, but also complicates the subsequent
 analysis.
 @c
-int isPolymorphic(MalBlkPtr mb, InstrPtr p, int i){
+int isPolymorphicArgument(MalBlkPtr mb, InstrPtr p, int i){
 	malType t= getArgType(mb,p,i);
 	if( isAnyExpression(t)) return 1;
 	if( t== malAnyType) return 1;
@@ -590,7 +595,7 @@ malType getPolyReturn(MalBlkPtr cmd, InstrPtr pp, MalBlkPtr mb, InstrPtr p){
 	int head= malAnyType, tail = malAnyType;
 	malType t= getArgType(cmd,pp,0), t2;
 
-	if( !isPolymorphic(cmd,pp,0)) return t;
+	if( !isPolymorphicArgument(cmd,pp,0)) return t;
 	hi = getHeadIndex(t);
 	ti = getTailIndex(t);
 	for(i=1;i<pp->argc;i++){
@@ -647,7 +652,9 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p){
 
 	i= mb->stop;
 	if( i+1 >= mb->ssize){
-		int *newblk= (int *) GDKmalloc( (mb->ssize + MAXARG)*sizeof(int));
+		int *newblk= (int *) GDKmalloc( (mb->ssize + MAXSTMTS)
+						* sizeof(int));
+		/*printf("generate new stmt block\n");*/
 		if( newblk== NULL){
 			mb->errors++;
 			GDKerror("ERROR:pushInstruction:no storage left\n");
@@ -676,7 +683,7 @@ to leave information on the signature behind.
 str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	int i;
 	
-	sprintf(s,"\t#%d:",p->pc);
+	sprintf(s,"\t#%c%d:",p->pc, (p->polymorphic?' ':'?'));
 	advance(s);
 	for(i=0;i<p->argc;i++)
 	if( p->argv[i] >=0){

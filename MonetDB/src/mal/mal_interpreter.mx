@@ -11,7 +11,7 @@ This calls for safeguarding their value and garbage collection before returning.
 A malicious procedure or implementation will lead to memory leakage.
 
 A system command (linked C-routine) may be interested in extending the
-stack. This is precluded, because it would interfere with the recursive
+stack. This is precluded, because it could interfere with the recursive
 calling sequence of procedures. To accommodate the (rare) case, the routine
 should issue an exception to be handled by the interpreter before retrying.
 All other errors are turned into an exception, followed by continuing
@@ -56,6 +56,7 @@ mal_export str runMAL(MalBlkPtr mbcaller, MalStkPtr env,
 str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace){
 	MalBlkPtr mb=mbcaller;
 	MalStkPtr stk= NULL;
+	int space = 0;
 	ValPtr retval;
 	InstrPtr pci=0;
 	int exception = -1;
@@ -63,7 +64,6 @@ str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace){
 	char 	cmd='n';	/* debugger command */
 	ptr argv[MAXARG];
 	@:performanceVariables@
-	@:garbageCollectorVariables@
 
 	if( mbcaller->errors){
 		char buf[1024];
@@ -73,7 +73,9 @@ str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace){
 		return raiseException("SyntaxError",buf);
 	}
 	/* allocate space for value stack */
-	newStack(stk,STACKINCR);
+allocStackLabel:
+	space += STACKINCR;
+	newStack(stk,space);
 	@:safeguardStack@
 
 @-
@@ -105,6 +107,7 @@ a MAL function is called recursively.
 	} else mb = mbcaller;
 
 	stk->blk= mb;
+	if( mb->vtop>= space) goto allocStackLabel;
 	stk->stktop= mb->vtop; /* check for overflow !*/
 	/* run the program */
 MALrestart:
@@ -117,6 +120,7 @@ MALrestart:
 			if( cmd == 'q') goto MALevalExit;
 			cmd = gdbStep(mb,stk,pci,in,out,cmd);
 			if( cmd == 'r'){
+				cmd = 'n';
 				exception = -1;
 				continue;
 			}
@@ -228,13 +232,10 @@ symbol table and moves it to the stackframe location.
 @= assignStmt
 {	ValPtr lhs, rhs;
 	lhs = &stk->stk[pci->argv[0]];
-	if( lhs->vtype== TYPE_str && !isVarConstant(mb,pci->argv[0]) )
-		@:keepString(lhs->val.pval)@
 	if( isVarConstant(mb,pci->argv[1]))
 		rhs = &getVarConstant(mb,pci->argv[1]);
 	else	rhs = &stk->stk[pci->argv[1]];
 	VALcopy(lhs,rhs);
-	@:releaseString@
 	ret = 0;
 }
 if( pci->barrier == RAISEsymbol){
@@ -330,48 +331,20 @@ BAT parameters require some care. Ideally, a BAT should not be kept
 around long. This would mean that each time we access a BAT it has to be
 pinned in memory and upon leaving the function, it is unpinned.
 This degrades performance significantly. 
+After the parameters are fixed, we can safely free the destination
+variable and re-initialize it to nil;
 
 The policy implemented here is to make pin/unpin decisions part of
 the bind(namespace,batname,mode) operation.[todo]
 
 @= evalParameters
-{ int k;
-retval=  &stk->stk[pci->argv[0]];
-retval->vtype = mb->var[pci->argv[0]].type;
-for(k=0;k<pci->argc; k++){
-	int j;
-	ptr val = NULL;
-	ValPtr v;
-
-	j = pci->argv[k];
-	if( isVarConstant(mb,j) )
-		v= &getVarConstant(mb,j);
-	else {
-		v= &stk->stk[j];
-	}
-	switch(ATOMstorage(v->vtype)){
-	case TYPE_void: val= (ptr) & v->val.ival; break;
-	case TYPE_bit: val= (ptr) & v->val.bval; break;
-	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: val= (ptr) & v->val.shval; break;
-	case TYPE_bat: 
-		if( k==0 && v == &stk->stk[j]) @:keepBAT(v)@
-		val= (ptr) BATdescriptor(v->val.br.id);
-		break;
-	case TYPE_int: val= (ptr) & v->val.ival; break;
-	case TYPE_oid: val= (ptr) & v->val.oval; break;
-	case TYPE_ptr: val= (ptr) & v->val.pval; break;
-	case TYPE_flt: val= (ptr) & v->val.fval; break;
-	case TYPE_dbl: val= (ptr) & v->val.dval; break;
-	case TYPE_lng: val= (ptr) & v->val.lval; break;
-	case TYPE_str: val= (ptr) & v->val.sval; 
-		if( k==0 && v == &stk->stk[j]) @:keepString(argv[k])@
-		break;
-	default:
-		GDKerror("evalParameters:unknown value type\n");
-	}
-	argv[k]= val;
-}
+{	int k;
+	retval=  &stk->stk[pci->argv[0]];
+	retval->vtype = mb->var[pci->argv[0]].type;
+	for(k=0;k<pci->argc; k++){
+		argv[k] =(ptr) getValuePtr(mb,stk,pci,k);
+	} 
+	@:clearResult(retval)@
 }
 @-
 The type dispatching table can be removed if we determine at compile
@@ -384,9 +357,6 @@ and we have to do some housekeeping, such as string length adjustment.
 @= resultParameter
 	@:exceptionHndlr@
 	switch(ATOMstorage(retval->vtype)){
-	case TYPE_bat: 
-		@:releaseBAT@
-		break;
 	case TYPE_str: 
 		if(retval->val.pval == NULL){
 			char buf[1024];
@@ -396,7 +366,6 @@ and we have to do some housekeeping, such as string length adjustment.
 			@:exceptionHndlr@
 		} else {
 			retval->len= ATOMlen(TYPE_str,retval->val.pval);
-			@:releaseString@
 		}
 	}
 	@:barrierControl@
@@ -524,49 +493,20 @@ retained on the stackframe of an interpreter call. However, two storage
 type requires and possible user-defined garbage collector definitions
 require attention.
 
-@- String management
 All string values are private to the VALrecord, which means they
 have to freed explicitly before a MAL function returns. 
-Moreover, each time a string-variable is assigned a value, the old one
-should be freed. This can not be done before the function returns, because
-an exception may be raised instead.
-The solution choosen is to set an interpreter variable freeValue, before
-the operator is called. Then upon return we know what to disgard.
+The solution choosen is to always clear the destination variable
+before a function call is made.
 
-@= garbageCollectorVariables
-ptr freeValue = NULL;
-batrec freeBat={ 0,0};
-
-@= keepString
-{	freeValue = @1;
-	/* printf("keep %s\n",(str)freeValue);*/
+@= clearResult
+{
+	if( ATOMstorage(@1->vtype)== TYPE_bat)
+		printf("unfix a bat, to do\n");
+	else VALclear(@1);
 }
-@= releaseString
-	/* printf("release string? %s\n",freeValue?"yes":"no");*/
-	if( freeValue != NULL){
-		GDKfree(freeValue);
-		freeValue = NULL;
-	}
-
-@- BAT reference counting
+@-
 The second major area to be careful, is management of the BAT reference counts.
-The technique is the same as for bats. We introduce a freeBATindex variable,
-which is set to the BAT to be de-referenced after an assignment.
-Especially, when hard pointers are maintained to BAT descriptors, it may
-happen that the underlying systems re-assigns it to another.
 
-@= keepBAT
-freeBat = @1->val.br;
-if( freeBat.id >0){
-printf("fix the bat\n");
-}
-@-
-
-@= releaseBAT
-if( freeBat.id >0){
-printf("unfix the bat\n");
-}
-@-
 Before we return from the interpreter, we should free all
 dynamically allocated objects and adjust the BAT reference counts.
 @= cleanupStack
@@ -574,18 +514,8 @@ dynamically allocated objects and adjust the BAT reference counts.
 	ValPtr v;
 
 	for(k=0;k<mb->vtop;k++) {
-		v= &stk->stk[getVarOffset(mb,k)];
-		switch(ATOMstorage(v->vtype)){
-		case TYPE_bat:
-			printf("clean out bat\n");
-			break;
-		case TYPE_str:
-			if( v->val.pval){
-				/* printf("clean out string %s\n",
-					 (str)v->val.pval); */
-				GDKfree(v->val.pval);
-			}
-		}
+		v= &stk->stk[k];
+		@:clearResult(v)@
 	}
 }
 	/* to be done */

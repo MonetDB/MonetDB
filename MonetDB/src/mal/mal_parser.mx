@@ -645,7 +645,7 @@ using a single global variable to accummulate the
 properties.
 @y
 fcnHeader: 
-	fcnName fcnParamList fcnType fcnBinding
+	fcnName fcnParamList fcnType fcnDefinition
 
 fcnParamList:
 	'(' fcnParams ')' 
@@ -680,7 +680,7 @@ fcnParams:
         binding
     |   fcnParams ',' binding
 
-fcnBinding :
+fcnDefinition :
 	TOK_OPERATOR TOK_IDENT
 	{int i;
 	  if( strcmp($1.val,"=") )
@@ -756,7 +756,8 @@ assume much about the resulting type structure.
 
 malType:
         melElement
-	{  $$=$1;}
+	{  $$=$1;
+	}
     |   TOK_IDENT '[' melElement ',' melElement ']'
 	{ 
 	  if( strcmp($1.val,"bat")!= 0 && strcmp($1.val,"BAT")!= 0 )
@@ -770,13 +771,15 @@ melElement:
         TOK_IDENT 
 	{ $$.tpe = getTypeIndex($$.val);
 	  GDKfree($1.val);
-	  $$.val = 0; }
+	  $$.val = 0; 
+	}
     |   TOK_ANY_VAR
 	{ int i= atoi(rindex($1.val,':')+1);
 	  $$.tpe= malAnyType;
 	  setAnyTailIndex($$.tpe,i);
 	  GDKfree($1.val);
-	  $$.val = 0; }
+	  $$.val = 0; 
+	}
 @-
 The curInstr always has to point to the last instruction generated.
 All other information is passed around as a variable identifier

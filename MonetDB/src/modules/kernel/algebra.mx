@@ -390,7 +390,6 @@ COMMAND @1 ( b:BAT[any,@2] ) : @2 = CMD@1_@2; @3
 @* MIL definitions
 @f algebraload
 @mil
-.LOAD
 @- constants for theta() and thetajoin()
 @mil
 CONST EQ := 0;

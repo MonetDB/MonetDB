@@ -10,7 +10,7 @@ functions are grouped under the module name directly.
 
 To simplify function call resolution, each scope level is organized 
 as a linked list of symbols. The symbol kind is determined from the
-first instruction, i.e. COMMAND, FUNCTION, or RULER.
+first instruction, i.e. COMMAND, FUNCTION, or PATTERN.
 
 A function call mod.fcn(T0 A0, ..) is resolved as follows. We traverse the
 nested scopes towards the root to locate the MODULE symbol named 'mod'.
@@ -102,9 +102,10 @@ mal_export Symbol 	newScope(Symbol cntxt, str nme);
 mal_export Symbol	insertSymbol(Symbol cntxt, Symbol prg);
 mal_export Symbol	findScope(Symbol cntxt, str name);
 mal_export Symbol	findTypeScope(Symbol cntxt, MalBlkPtr mb, InstrPtr sig);
-mal_export int	getSubScope(MalBlkPtr mb, InstrPtr sig);
+mal_export int		getSubScope(MalBlkPtr mb, InstrPtr sig);
 mal_export Symbol	fixateScope(Symbol cntxt, str nme);
 mal_export Symbol 	findSymbol(str mod, str fcn);
+mal_export int	 	displaySymbol(FILE *f, str mod, str fcn);
 
 mal_export Symbol 	newSymbolDefinition(str nme, int kind);
 mal_export Symbol	newSymbol(str nme, int kind, Symbol outer);
@@ -164,7 +165,7 @@ int getSubScope(MalBlkPtr mb, InstrPtr sig){
 	int t;
 	if( sig== NULL) return 257;
 	if( sig->argc==1) return 256;
-	if( !isPolymorphic(mb,sig,1) ){ 
+	if( !isPolymorphicArgument(mb,sig,1) ){ 
 		t = getTailType(getArgType(mb,sig,1));
 		if( t<0 || t>257) GDKerror("illegal type in getSubScope");
 		return (int) t;
@@ -305,6 +306,9 @@ inspect the outer scopes.
 In principal, external variables are subject to synchronization actions
 to avoid concurrency conflicts. This also implies, that any parallel
 block introduces a temporary scope.
+
+The variation on this routine is to dump the definition of
+all matching definitions.
 @c
 Symbol findSymbol(str mod, str fcn){
 	Symbol v, s;
@@ -320,4 +324,22 @@ Symbol findSymbol(str mod, str fcn){
 		}
 	}
 	return NULL;
+}
+int displaySymbol(FILE *f, str mod, str fcn){
+	Symbol v, s;
+	int i,k=0;
+
+	v= findScope(MAL_scope, mod);
+	if( v == NULL) return NULL;
+	for(i=0;i<MAXSCOPE;i++){
+		s= v->subscope[i];
+		while(s!=NULL){
+			if( strcmp(s->name,fcn)==0 ) {
+				printFunction(f,s->def);
+				k++;
+			}
+			s= s->peer;
+		}
+	}
+	return k;
 }

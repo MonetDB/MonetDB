@@ -2,6 +2,70 @@
 @a M. Kersten
 @v 0.0
 @+ MAL type resolution
+@- Type resolution principles.
+The type resolution scheme should be flexible and efficient.
+Given the interpretative nature of many of the MAL instructions,
+when and where type resolution takes place is a critical design issue.
+Performing it too late, i.e. at each instruction, leads to 
+performance problems if we derive the same information over and over again.
+However, many built-in operators handle polymorphic typed objects, 
+so we cannot escape it altogether.
+
+Consider the small illustrative MAL program which we should
+definitely support at the language level.
+@T
+\begin{verbatim}
+function sample(nme:str, val:any):bit;
+   c := 2*3;
+   b := dictionary.lookup(nme);	#find a bat
+   h := select(b,val,val);
+   t := count(h);
+   x := print(t);
+   y := print(val);
+end function;
+
+\end{verbatim}
+@-
+The function definition is polymorphic typed, it becomes a concrete
+type upon invocation. Morover, it relies on the callee to provide
+for the proper value types, but this is something we can not be
+100% sure.
+
+The first assignment can be type checked during
+parsing and could lead to a frozen value. Looking up a BAT leads to
+an element bat[ht,tt] where ht and tt are runtime dependent types.
+We can not typecheck the bat selection. It should be done at runtime.
+We can check t and x at compile time, because we only have to assure
+that count() is given a bat argument.
+The last print statement can be checked upon system invocation.
+
+Life becomes really complex if the body contains a loop, which changes
+the ht and tt types. For then we also have to keep track of the original
+state of the function. Or alternatively, type checking should consider
+the runtime stack rather than the function definition itself.
+@-
+A few conclusions can be drawn. 1) Every statement should carry a
+flag to indicate whether it has been type-resolved. 
+1a) the runtime stack should be accomodated with a function stack,
+because function resolution may be different for each call that
+involves (indirectly) a polymorphic type. Or we have to resolve
+such functions repeatedly.
+1b) you can always postpone type checking, but then you may leave
+a computation in an inconsistent state.
+1c) interpreter should consult the actual runtime stack for type resolution
+2) we have to call the type-checker potentially at every instruction
+and its result can not be retained, unless we propagate every new
+type information upon production.
+3) cloning a function helps to built a cache of instantiated polymorphic
+functions.
+4) the select statement involves a type check, which in turn calls
+for a pattern call.
+
+Alternatie solutions.
+A) split the function such that type analysis only occurs at the
+   function call level.
+Disadvantage, you need to carry too much contextual information.
+B) ..
 The code below manages function resolution over MAL instructions. 
 The policy is described in mal_symbol.mx
 @h
@@ -96,13 +160,13 @@ we simple avoid an increment when running out of formal arguments.
 	unmatched = 0;
 	for(k=i=1;i<p->argc;i++,k++){
 		if( isVARG(s->def,sig,k)) k--;
-		if( isPolymorphic(s->def,sig,k) ){
+		if( isPolymorphicArgument(s->def,sig,k) ){
 			polymorphic++;
 
 			for(l=j=i+1;j<p->argc;j++,l++){
 			/* the variable argument list is checked in outerloop*/
 			if( isVARG(s->def,sig,l)) break;
-			if( isPolymorphic(s->def,sig,l) &&
+			if( isPolymorphicArgument(s->def,sig,l) &&
 			    chkPolyTypePair(
 				   getArgType(s->def,sig,l),
 				   getArgType(mb,p,j),
@@ -198,7 +262,7 @@ Polymorphic types require extra checks. In particular, the
 type variables should be bound to the same underlying type.
 @c
 	for(i=1;i<p->argc;i++){
-		if( isPolymorphic(mb,p,i)){
+		if( isPolymorphicArgument(mb,p,i)){
 			mb->errors++;
 			sprintf(buf,"ERROR:%d: type unknown for '%s'\n",
 					p->pc,

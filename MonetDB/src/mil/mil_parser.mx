@@ -94,7 +94,7 @@ needed for tracing the parser.
 #include "mil_parser.tab.h"
 
 #define RETURN(Y)       { PARSEDEBUG {\
-                                THRprintf(GDKerr, "%s %s\n", yylexname(Y), yytext);\
+                                THRprintf(GDKerr, "\n%s %s\n", yylexname(Y), yytext);\
                           } return Y; }
 
 
@@ -294,7 +294,7 @@ int itop=0;
 
 str getLastIterator(){
 	if(itop==0){
-		printf("ERROR: no iterators on stack\n");
+		printf("\n#ERROR: no iterators on stack\n");
 		return GDKstrdup("unknown");
 	}
 	return GDKstrdup(iterators[itop-1]);
@@ -308,16 +308,18 @@ void pushIterator(str nme){
 }
 void popIterator(){
 	if(itop==0){
-		printf("ERROR: no iterators on stack\n");
+		printf("\n#ERROR: no iterators on stack\n");
 		return;
 	}
 	itop--;
+	GDKfree(iterators[itop]);
 }
 void resetIterator(){ itop=0;}
+
 str getLast(char c){
 	char buf[IDLENGTH];
 	if(itop==0){
-		printf("ERROR: no iterators on stack\n");
+		printf("\n#ERROR: no iterators on stack\n");
 		return GDKstrdup("unknown");
 	}
 	sprintf(buf,"%s%c",iterators[itop-1],c);
@@ -392,13 +394,13 @@ stmt:
     |   expression TOK_ITERATION '[' expression ']' iterator
 	{ $2.val= newName();
 	  pushIterator($2.val);
-	  printf("\t%s := 0:lng;\n",$2.val);
-	  printf("\t%sH:= nil;\n",$2.val);
-	  printf("\t%sT:= nil;\n",$2.val);
-	  printf("barrier\t%s:= batloop(%s,%s,%s,%sH,%sT);\n",
-		$2.val,$4.val,$2.val,$2.val,$2.val);
+	  printf("\t%s_cursor := 0:lng;\n",$2.val);
+	  printf("barrier\t%s:= batloop(%s,%s_cursor);\n",
+		$2.val,$4.val,$2.val);
+	  printf("\t%sH := fetchHead(%s,%s_cursor);\n", $2.val,$4.val,$2.val);
+	  printf("\t%sT := fetchTail(%s,%s_cursor);\n", $2.val,$4.val,$2.val);
 	}
-	blk_expression
+	stmt
 	{
 	  printf("redo\t%s;\n", $2.val);
 	  printf("end\t%s;\n",$2.val);
@@ -407,13 +409,13 @@ stmt:
     |   expression TOK_ITERATION iterator
 	{ $2.val= newName();
 	  pushIterator($2.val);
-	  printf("\t%s := 0:lng;\n",$2.val);
-	  printf("\t%sH:= nil;\n",$2.val);
-	  printf("\t%sT:= nil;\n",$2.val);
-	  printf("barrier\t%s:= batloop(%s,%s,%sH,%sT);\n",
-		$2.val,$1.val,$2.val,$2.val,$2.val);
+	  printf("\t%s_cursor := 0:lng;\n",$2.val);
+	  printf("barrier\t%s:= batloop(%s,%s_cursor);\n",
+		$2.val,$1.val,$2.val);
+	  printf("\t%sH := fetchHead(%s,%s_cursor);\n", $2.val,$1.val,$2.val);
+	  printf("\t%sT := fetchTail(%s,%s_cursor);\n", $2.val,$1.val,$2.val);
 	}
-	blk_expression
+	stmt
 	{
 	  printf("redo\t%s;\n", $2.val);
 	  printf("end\t%s;\n",$2.val);
@@ -488,11 +490,11 @@ parallel_block:
 
 proc_definition:
         TOK_PROCDEF proc_name proc_header stmt
-	{ printf("end proc;\n"); }
+	{ printf("end function;\n"); }
     |   TOK_PROCDEF proc_name TOK_ASSIGNMENT stmt
-	{ printf("end proc;\n"); }
+	{ printf("end function;\n"); }
     |   TOK_PROCDEF proc_name proc_header TOK_ASSIGNMENT stmt
-	{ printf("end proc;\n"); }
+	{ printf("end function;\n"); }
     |   TOK_UNDEF TOK_IDENT';'
 
 proc_name:
@@ -549,7 +551,7 @@ mel_any:
 	}
     |   TOK_ANY
 	{ $$.val = GDKstrdup("any");
-	  printf("# ERROR: 'any' types should be bound to a type variable\n");
+	  printf("\n# ERROR: 'any' types should be bound to a type variable\n");
 	}
 
 type_var: TOK_CONSTANT
@@ -680,7 +682,6 @@ fcn_call:
     |	fcn_hdr '(' ')'
 	{ char *nme=newName();
 	printf("\t%s:= %s();\n",nme,$1.val); $$.val = nme;}
-	{ printf(");\n"); $$.val = $1.val;}
 
 fcn_hdr: 
        TOK_DEREF factor ')'  

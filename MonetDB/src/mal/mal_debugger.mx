@@ -55,7 +55,7 @@ void gdbSetBreakpoints(MalBlkPtr mb, str name, char cmd, FILE *out){
 	char *c=name;
 	InstrPtr p;
 
-	while(*c && (isalnum(*c) ||*c=='$')) c++;
+	while(*c && (isalnum(*c) || *c=='$' || *c=='_')) c++;
 	*c = 0;
 	fprintf(out,"breakpoints for %s\n",name);
 	for(i=0;i<mb->stop; i++){
@@ -221,13 +221,11 @@ current function.
 				*fcnname = 0;
 				fcnname ++;
 			}
-			/* search the symbol */
-			fsym= findSymbol(modname,fcnname);
-			if( fsym==NULL){
+			/* display the overloaded symbol definition */
+			if( displaySymbol(out,modname,fcnname)==0){
 				fprintf(out,"Symbol '%s.%s' not found\n",
 					modname,fcnname);
-				continue;
-			} 
+			} else continue; 
 			printFunction(out,fsym->def);
 			continue;
 		}
@@ -266,6 +264,8 @@ char gdbStep(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char c
 DUmping a stack on a file is primarilly used for debugging.
 Printing the stack requires access to both the symbol table and
 the stackframes.
+Beware that a stack frame need not be initialized with null values.
+Instead, it has been zeroed upon creation.
 @c
 void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
         ValPtr v= s->stk;
@@ -273,7 +273,7 @@ void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
 
         fprintf(f,"Stack pc=%d size=%d top=%d\n",s->pc,s->stksize,s->stktop);
         for( ; i<s->stktop ; i++,v++){
-		printStackElm(f, mb->var+i, v);
+		printStackElm(f, mb->var+i, s->stk+i);
         }
 }
 

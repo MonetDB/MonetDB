@@ -122,31 +122,31 @@ The polymorphic print commands are collected here.
 Watch out, the order of definitions is crucial
 @mal
 
-PATTERN print(b1:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY]...) = CMDprint_table;
+PATTERN print(b1:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY]...):void = CMDprint_table;
  "BATs are printed with '#' for legend lines, and the BUNs on seperate
  lines between brackets, containing each to comma separated values
  (head and tail).
  If multiple BATs are passed for printing, print() performs an implicit
  natural join, producing a multiattribute table."
 
-PATTERN print(order:int,b:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY]...)
+PATTERN print(order:int,b:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY]...):void
                                                 = CMDprint_otable;
  "The same as normal table print, but enforces to use the order of
   BAT number [1..argc] to do the printing."
 
-PATTERN table(b1:BAT[any::1,any], b2:BAT[any::1,any]...) = CMDprint_table_default;
+PATTERN table(b1:BAT[any::1,any], b2:BAT[any::1,any]...):void = CMDprint_table_default;
 	"Print an n-ary table. Like print(n-ary) but does not print oid column"
 
-PATTERN table(order:int, b1:BAT[any::1,any], b2:BAT[any::1,any]...) = CMDprint_table;
+PATTERN table(order:int, b1:BAT[any::1,any], b2:BAT[any::1,any]...):void = CMDprint_table;
 	"Print an n-ary table. Use the ordering of param [1..argc]"
 
-PATTERN printf(format:str, argv:ANY...) = print_format;
+PATTERN printf(format:str, argv:ANY...):void = print_format;
 	"Print a formatted string on the standard client output." 
 
 PATTERN sprintf(format:str, argv:ANY...) : str = print_str;
 	"Print a formatted string on the standard client output." 
 
-PATTERN print(val:any) = CMDprint_val;
+PATTERN print(val:any):void = CMDprint_val;
 "Print a MIL value between square brackets."
 @+ MIL Procedure definitions
 The MIL script to obtain information about the scope and functions
@@ -1019,7 +1019,10 @@ int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tpe = getArgType(mb,pci,1);
 	ptr val = getArgVal(mb,stk,pci,1);
         FILE *fp = GDKout;
-	if( val==NULL) val = (ptr) "<null>";
+	if( val==NULL) {
+		tpe = TYPE_str;
+		val = (ptr) "<null>";
+	}
         fputs("[ ", fp);
         ATOMprint(tpe, val, fp);
         fputs(" ]\n", fp);

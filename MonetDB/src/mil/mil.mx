@@ -83,6 +83,15 @@ The files are processed as one big program
 		fclose(fd);
 		buf[i] = 0;
 	}
+	mil_code_prelude();
 	mil_push(buf);	/*no need to copy here */
 	yyparse();
+}
+
+mil_code_prelude(){
+	printf("# Mil compiler Version 1.0)\n");
+        printf("# Copyright (c) 1993-2001, CWI. ");
+        printf("All rights reserved.\n");
+	printf("\n# Predefined code segment\n");
+	printf("use \"mal/iterator\";\n");
 }

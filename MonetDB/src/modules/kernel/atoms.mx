@@ -172,7 +172,16 @@ int oidToStrImpl(str *ret, oid *val){
 @:convertImpl(ptr)@
 @:convertImpl(bat)@
 @:convertImpl(chr)@
-
+@-
+@= setoidCode
+int @1SetoidImpl(str *ret, @1 *v){
+	OIDbase(*v);
+	return GDK_SUCCEED;
+}
+@c
+@:setoidCode(oid)@
+@:setoidCode(lng)@
+@:setoidCode(int)@
 @-
 Type conversion template. Only allowed then no information is lost.
 

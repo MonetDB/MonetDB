@@ -378,7 +378,7 @@ Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	/* now change the definition of the original proc */
 	pp = getSignature(new);
 	for(i=1;i<pp->argc;i++)
-	if( isPolymorphic(new->def,pp,i) ){
+	if( isPolymorphicArgument(new->def,pp,i) ){
 		int t = getArgType(mb,p,i);
 		int v = getArgType(new->def,pp,i);
 
@@ -391,7 +391,7 @@ Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		} else
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
 	}
-	/* check polymorphic errors */
+	/* check for errors after fixation , TODO*/
 	/* include the function at the proper place in the scope */
 
 	i= getSubScope(mb,p);

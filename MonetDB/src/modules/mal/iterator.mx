@@ -28,8 +28,29 @@ COMMAND foreach(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep;
 
 PATTERN argument(i:int, arg:any):bit = tobedefinedIterator;
 
-# batloop functions require fixed storage for their result
-COMMAND batloop(b:bat, head:int,tail:int):bit = intintBatloopStep;
+@-
+A BATloop construct uses an integer cursor to keep track of its
+position in the underlying table. To avoid side-effects, the access mode
+is set to readonly and restored upon leaving the barrier.
+The head and tail elements can be obtained
+using the fetchHead and fetchTail functions, which are to be defined for
+all atomary types.
+@= fetch
+COMMAND fetchHead(b:bat[@1, any], cursor:lng):@1= @1fetchHeadImpl;
+COMMAND fetchTail(b:bat[any, @1], cursor:lng):@1= @1fetchTailImpl;
+@mal
+COMMAND batloop(b:bat[any,any], cursor:lng):bit = batloopStep;
+	@:fetch(any)@
+	@:fetch(bit)@
+	@:fetch(chr)@
+	@:fetch(sht)@
+	@:fetch(int)@
+	@:fetch(lng)@
+	@:fetch(oid)@
+	@:fetch(ptr)@
+	@:fetch(str)@
+	@:fetch(flt)@
+	@:fetch(dbl)@
 @+ Dummy code 
 @h
 /*

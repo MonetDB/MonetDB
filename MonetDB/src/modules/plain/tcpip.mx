@@ -46,6 +46,12 @@ only one will be created.
 "start a TCP/IP server with the default port number."
 .COMMAND listen(int port) = TCPlisten;
 "start a TCP/IP server"
+
+.COMMAND TCPIP_listen()  = TCPlisten_default;
+"start a TCP/IP server with the default port number."
+.COMMAND TCPIP_listen(int port) = TCPlisten;
+"start a TCP/IP server"
+
 .COMMAND terminate() = TCPterminate_default;
 "stop a TCP/IP server"
 .COMMAND terminate(int port) = TCPterminate;
@@ -635,8 +641,8 @@ First stop to examine its type, and heap sizes.
 		if ((ht=strchr(p,':')) && (tt=strchr(ht+1,':')) && 
 		    (hs=strchr(tt+1,':')) && (ts=strchr(hs+1,':')))
 		{
-		    char *tmod = tt-1;
-		    char *hmod = hs-1;
+		    char *hmod = tt-1;
+		    char *tmod = hs-1;
 		
 		    if (*hmod == 'k') { h_key = 1; hmod--; }
 		    if (*tmod == 'k') { t_key = 1; tmod--; }
@@ -722,6 +728,9 @@ For variable sized atoms, there may be a head and/or tail heap.
 		} else if (b->htype == TYPE_void) {
 			BATseqbase(b, batSeqbase);
 		}
+#ifndef WORDS_BIGENDIAN
+	    	BATconvert(b,CONV_NTOH);
+#endif
 		BATpropcheck(b);
 		BATpropcheck(BATmirror(b));
 
