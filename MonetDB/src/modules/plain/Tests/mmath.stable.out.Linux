@@ -1,11 +1,11 @@
 stdout of test 'mmath` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other mmath
-#> Mtest:	Mtimeout -timeout 420 ./mmath mmath
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain mmath.mil
-# Monet Database Server V4.1
+#> Mtest (13:31:45):	other mmath 1200
+#> Mtest (13:31:45):	Mtimeout -timeout 1200 ./mmath mmath
+#> Mlog (13:31:45):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain mmath.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for Linux2.2.12-20smp/32bit on Thu Mar 23 00:51:04 CET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:mmath.mil
 
 

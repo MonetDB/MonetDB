@@ -28,8 +28,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  29	  ]
-[ "tmpbats",	  29	  ]
+[ "bats",	  32	  ]
+[ "tmpbats",	  32	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -37,17 +37,17 @@ Start of MIL script.
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "blob",	  1		  ]
-[ "io",		  1		  ]
-[ "kernel",	  1		  ]
-[ "mapi",	  1		  ]
-[ "str",	  2		  ]
-[ "streams",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
+[ "algebra",	  2		  ]
+[ "arith",	  2		  ]
+[ "bat",	  2		  ]
+[ "blob",	  2		  ]
+[ "io",		  2		  ]
+[ "kernel",	  2		  ]
+[ "mapi",	  2		  ]
+[ "str",	  4		  ]
+[ "streams",	  2		  ]
+[ "sys",	  2		  ]
+[ "trans",	  2		  ]
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -129,6 +129,14 @@ Start of MIL script.
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
+[ "port",		  "int",  "liquid",	  "changeable",	  "50000"		  ]
+[ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
+[ "cmd",		  "str",  "liquid",	  "changeable",	  "\"\""		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "50000"		  ]
+[ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
+[ "l",			  "int",  "liquid",	  "changeable",	  "0"			  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "50000"		  ]
+[ "nr",			  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "SEEK_END",		  "int",  "liquid",	  "constant",	  "2"			  ]
@@ -224,6 +232,9 @@ Start of MIL script.
 [ 26,	  "tran"  ]
 [ 27,	  "tran"  ]
 [ 28,	  "tran"  ]
+[ 29,	  "tran"  ]
+[ 30,	  "tran"  ]
+[ 31,	  "tran"  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -256,6 +267,9 @@ Start of MIL script.
 [ 26,	  "26"		  ]
 [ 27,	  "27"		  ]
 [ 28,	  "28"		  ]
+[ 29,	  "29"		  ]
+[ 30,	  "30"		  ]
+[ 31,	  "31"		  ]
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -288,6 +302,9 @@ Start of MIL script.
 [ 26,	  "tmp_26"		  ]
 [ 27,	  "tmp_27"		  ]
 [ 28,	  "tmp_28"		  ]
+[ 29,	  "tmp_29"		  ]
+[ 30,	  "tmp_30"		  ]
+[ 31,	  "tmp_31"		  ]
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -320,6 +337,9 @@ Start of MIL script.
 [ 26,	  1	  ]
 [ 27,	  1	  ]
 [ 28,	  1	  ]
+[ 29,	  1	  ]
+[ 30,	  1	  ]
+[ 31,	  1	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -352,6 +372,9 @@ Start of MIL script.
 [ 26,	  "load"  ]
 [ 27,	  "load"  ]
 [ 28,	  "load"  ]
+[ 29,	  "load"  ]
+[ 30,	  "load"  ]
+[ 31,	  "load"  ]
 #-------------------------------------------------#
 # BAT:	  tree					  #
 # (int)	  (str)					  #
@@ -363,8 +386,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  29	  ]
-[ "tmpbats",	  29	  ]
+[ "bats",	  32	  ]
+[ "tmpbats",	  32	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -373,6 +396,14 @@ Start of MIL script.
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
+[ "port",		  "changeable"	  ]
+[ "maxusers",		  "changeable"	  ]
+[ "cmd",		  "changeable"	  ]
+[ "port",		  "changeable"	  ]
+[ "maxusers",		  "changeable"	  ]
+[ "l",			  "changeable"	  ]
+[ "port",		  "changeable"	  ]
+[ "nr",			  "changeable"	  ]
 [ "mapi_params",	  "changeable"	  ]
 [ "_params",		  "changeable"	  ]
 [ "SEEK_END",		  "constant"	  ]
@@ -440,6 +471,14 @@ Start of MIL script.
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
+[ "port",		  "liquid"	  ]
+[ "maxusers",		  "liquid"	  ]
+[ "cmd",		  "liquid"	  ]
+[ "port",		  "liquid"	  ]
+[ "maxusers",		  "liquid"	  ]
+[ "l",			  "liquid"	  ]
+[ "port",		  "liquid"	  ]
+[ "nr",			  "liquid"	  ]
 [ "mapi_params",	  "liquid"	  ]
 [ "_params",		  "liquid"	  ]
 [ "SEEK_END",		  "liquid"	  ]
@@ -507,6 +546,14 @@ Start of MIL script.
 # BAT:			  type	  #
 # (str)			  (str)	  #
 #---------------------------------#
+[ "port",		  "int"	  ]
+[ "maxusers",		  "int"	  ]
+[ "cmd",		  "str"	  ]
+[ "port",		  "int"	  ]
+[ "maxusers",		  "int"	  ]
+[ "l",			  "int"	  ]
+[ "port",		  "int"	  ]
+[ "nr",			  "int"	  ]
 [ "mapi_params",	  "BAT"	  ]
 [ "_params",		  "BAT"	  ]
 [ "SEEK_END",		  "int"	  ]
@@ -576,19 +623,19 @@ Start of MIL script.
 [ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 6,	  0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_environment",	  "str",  "str",  21,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  604,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  634,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  604,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  604,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  560,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  634,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  604,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  634,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_environment",	  "str",  "str",  23,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  605,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  635,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  605,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  605,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  561,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  635,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  605,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  635,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1586,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  634,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_fcntbl",	  "str",  "oid",  634,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  38,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  635,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  635,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  5,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  11,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
@@ -597,10 +644,13 @@ Start of MIL script.
 [ "monet_mod_hdl",	  "oid",  "ptr",  11,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  11,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  24,	  0,	  "dirty",	  "load", "tran", 3,	  0	  ]
 [ "tmp_26",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_27",		  "str",  "oid",  634,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_27",		  "str",  "oid",  635,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "tmp_28",		  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_29",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_30",		  "str",  "oid",  635,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_31",		  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #-----------------------------------------------------------------------------------------#
@@ -636,6 +686,9 @@ Start of MIL script.
 [ 26,	  0	  ]
 [ 27,	  0	  ]
 [ 28,	  0	  ]
+[ 29,	  0	  ]
+[ 30,	  0	  ]
+[ 31,	  0	  ]
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
@@ -668,7 +721,9 @@ unknown(1)#"                            ]
 #---------------------------------------------------------------------------------------------------------#
 [ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
 [ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "10143954"									  ]
+[ "monet_pid",		  "6632773"									  ]
+[ "prefix",		  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
+[ "exec_prefix",	  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"								  ]
 [ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
 [ "gdk_debug",		  "10"										  ]
@@ -693,7 +748,9 @@ unknown(1)#"                            ]
 #---------------------------------------------------------------------------------------------------------#
 [ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
 [ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "10143954"									  ]
+[ "monet_pid",		  "6632773"									  ]
+[ "prefix",		  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
+[ "exec_prefix",	  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"								  ]
 [ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
 [ "gdk_debug",		  "10"										  ]
@@ -774,7 +831,9 @@ unknown(1)#"                            ]
 #---------------------------------------------------------------------------------------------------------#
 [ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
 [ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "10143954"									  ]
+[ "monet_pid",		  "6632773"									  ]
+[ "prefix",		  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
+[ "exec_prefix",	  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"								  ]
 [ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
 [ "gdk_debug",		  "10"										  ]
@@ -843,8 +902,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  29	  ]
-[ "tmpbats",	  29	  ]
+[ "bats",	  32	  ]
+[ "tmpbats",	  32	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -852,17 +911,17 @@ Start of MIL script.
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "blob",	  1		  ]
-[ "io",		  1		  ]
-[ "kernel",	  1		  ]
-[ "mapi",	  1		  ]
-[ "str",	  2		  ]
-[ "streams",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
+[ "algebra",	  2		  ]
+[ "arith",	  2		  ]
+[ "bat",	  2		  ]
+[ "blob",	  2		  ]
+[ "io",		  2		  ]
+[ "kernel",	  2		  ]
+[ "mapi",	  2		  ]
+[ "str",	  4		  ]
+[ "streams",	  2		  ]
+[ "sys",	  2		  ]
+[ "trans",	  2		  ]
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -944,6 +1003,14 @@ Start of MIL script.
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
+[ "port",		  "int",  "liquid",	  "changeable",	  "50000"		  ]
+[ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
+[ "cmd",		  "str",  "liquid",	  "changeable",	  "\"\""		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "50000"		  ]
+[ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
+[ "l",			  "int",  "liquid",	  "changeable",	  "0"			  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "50000"		  ]
+[ "nr",			  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "SEEK_END",		  "int",  "liquid",	  "constant",	  "2"			  ]
@@ -1039,6 +1106,9 @@ Start of MIL script.
 [ 26,	  "tran"  ]
 [ 27,	  "tran"  ]
 [ 28,	  "tran"  ]
+[ 29,	  "tran"  ]
+[ 30,	  "tran"  ]
+[ 31,	  "tran"  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -1071,6 +1141,9 @@ Start of MIL script.
 [ 26,	  "26"		  ]
 [ 27,	  "27"		  ]
 [ 28,	  "28"		  ]
+[ 29,	  "29"		  ]
+[ 30,	  "30"		  ]
+[ 31,	  "31"		  ]
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -1103,6 +1176,9 @@ Start of MIL script.
 [ 26,	  "tmp_26"		  ]
 [ 27,	  "tmp_27"		  ]
 [ 28,	  "tmp_28"		  ]
+[ 29,	  "tmp_29"		  ]
+[ 30,	  "tmp_30"		  ]
+[ 31,	  "tmp_31"		  ]
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -1135,6 +1211,9 @@ Start of MIL script.
 [ 26,	  1	  ]
 [ 27,	  1	  ]
 [ 28,	  1	  ]
+[ 29,	  1	  ]
+[ 30,	  1	  ]
+[ 31,	  1	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -1167,6 +1246,9 @@ Start of MIL script.
 [ 26,	  "load"  ]
 [ 27,	  "load"  ]
 [ 28,	  "load"  ]
+[ 29,	  "load"  ]
+[ 30,	  "load"  ]
+[ 31,	  "load"  ]
 #-------------------------------------------------#
 # BAT:	  tree					  #
 # (int)	  (str)					  #
@@ -1178,8 +1260,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  29	  ]
-[ "tmpbats",	  29	  ]
+[ "bats",	  32	  ]
+[ "tmpbats",	  32	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -1188,6 +1270,14 @@ Start of MIL script.
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
+[ "port",		  "changeable"	  ]
+[ "maxusers",		  "changeable"	  ]
+[ "cmd",		  "changeable"	  ]
+[ "port",		  "changeable"	  ]
+[ "maxusers",		  "changeable"	  ]
+[ "l",			  "changeable"	  ]
+[ "port",		  "changeable"	  ]
+[ "nr",			  "changeable"	  ]
 [ "mapi_params",	  "changeable"	  ]
 [ "_params",		  "changeable"	  ]
 [ "SEEK_END",		  "constant"	  ]
@@ -1255,6 +1345,14 @@ Start of MIL script.
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
+[ "port",		  "liquid"	  ]
+[ "maxusers",		  "liquid"	  ]
+[ "cmd",		  "liquid"	  ]
+[ "port",		  "liquid"	  ]
+[ "maxusers",		  "liquid"	  ]
+[ "l",			  "liquid"	  ]
+[ "port",		  "liquid"	  ]
+[ "nr",			  "liquid"	  ]
 [ "mapi_params",	  "liquid"	  ]
 [ "_params",		  "liquid"	  ]
 [ "SEEK_END",		  "liquid"	  ]
@@ -1322,6 +1420,14 @@ Start of MIL script.
 # BAT:			  type	  #
 # (str)			  (str)	  #
 #---------------------------------#
+[ "port",		  "int"	  ]
+[ "maxusers",		  "int"	  ]
+[ "cmd",		  "str"	  ]
+[ "port",		  "int"	  ]
+[ "maxusers",		  "int"	  ]
+[ "l",			  "int"	  ]
+[ "port",		  "int"	  ]
+[ "nr",			  "int"	  ]
 [ "mapi_params",	  "BAT"	  ]
 [ "_params",		  "BAT"	  ]
 [ "SEEK_END",		  "int"	  ]
@@ -1391,19 +1497,19 @@ Start of MIL script.
 [ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 8,	  0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_environment",	  "str",  "str",  21,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  604,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  634,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  604,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  604,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  560,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  634,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  604,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  634,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_environment",	  "str",  "str",  23,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  605,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  635,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  605,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  605,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  561,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  635,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  605,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  635,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1586,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  634,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_fcntbl",	  "str",  "oid",  634,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  38,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  635,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  635,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  5,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  11,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
@@ -1412,10 +1518,13 @@ Start of MIL script.
 [ "monet_mod_hdl",	  "oid",  "ptr",  11,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  11,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  24,	  0,	  "dirty",	  "load", "tran", 4,	  0	  ]
 [ "tmp_26",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_27",		  "str",  "oid",  634,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_27",		  "str",  "oid",  635,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "tmp_28",		  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_29",		  "str",  "oid",  635,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_30",		  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_31",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #-----------------------------------------------------------------------------------------#
@@ -1451,6 +1560,9 @@ Start of MIL script.
 [ 26,	  0	  ]
 [ 27,	  0	  ]
 [ 28,	  0	  ]
+[ 29,	  0	  ]
+[ 30,	  0	  ]
+[ 31,	  0	  ]
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
@@ -1485,7 +1597,9 @@ unknown(1)#"                            ]
 #---------------------------------------------------------------------------------------------------------#
 [ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
 [ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "10143954"									  ]
+[ "monet_pid",		  "6632773"									  ]
+[ "prefix",		  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
+[ "exec_prefix",	  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"								  ]
 [ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
 [ "gdk_debug",		  "10"										  ]
@@ -1510,7 +1624,9 @@ unknown(1)#"                            ]
 #---------------------------------------------------------------------------------------------------------#
 [ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
 [ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "10143954"									  ]
+[ "monet_pid",		  "6632773"									  ]
+[ "prefix",		  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
+[ "exec_prefix",	  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"								  ]
 [ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
 [ "gdk_debug",		  "10"										  ]
@@ -1591,7 +1707,9 @@ unknown(1)#"                            ]
 #---------------------------------------------------------------------------------------------------------#
 [ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
 [ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "10143954"									  ]
+[ "monet_pid",		  "6632773"									  ]
+[ "prefix",		  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
+[ "exec_prefix",	  "/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"								  ]
 [ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
 [ "gdk_debug",		  "10"										  ]

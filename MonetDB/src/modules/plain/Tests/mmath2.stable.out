@@ -4,7 +4,7 @@ stdout of test 'mmath2` in directory 'src/modules/plain` itself:
 #> Mtest (13:31:46):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain -single mmath2.milS
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
+# compiled for Linux2.2.12-20smp/32bit on Thu Mar 23 00:51:04 CET 2000.
 #script:mmath2.milS
 
 

@@ -67,9 +67,9 @@ stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 [ "monet_acctbl",	  2,	  2,		  0	  ]
 [ "monet_atomtbl",	  18,	  18,		  0	  ]
 [ "mapi_params",	  1,	  1,		  0	  ]
-[ "tmp_28",		  2,	  2,		  0	  ]
-[ "tmp_29",		  635,	  635,		  0	  ]
-[ "tmp_30",		  18,	  18,		  0	  ]
+[ "tmp_26",		  2,	  2,		  0	  ]
+[ "tmp_27",		  635,	  635,		  0	  ]
+[ "tmp_28",		  18,	  18,		  0	  ]
 printf("\nReady.\n");
 
 Ready.
@@ -139,9 +139,9 @@ Over..
 [ "monet_acctbl",	  2,	  2,		  0	  ]
 [ "monet_atomtbl",	  18,	  18,		  0	  ]
 [ "mapi_params",	  1,	  1,		  0	  ]
-[ "tmp_28",		  2,	  2,		  0	  ]
-[ "tmp_29",		  635,	  635,		  0	  ]
-[ "tmp_30",		  18,	  18,		  0	  ]
+[ "tmp_26",		  2,	  2,		  0	  ]
+[ "tmp_27",		  635,	  635,		  0	  ]
+[ "tmp_28",		  18,	  18,		  0	  ]
 
 # 10:20:11 >  
 # 10:20:11 >  Mtimeout -timeout 3 Mshutdown.py --set mapi_port=58924

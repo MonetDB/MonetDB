@@ -1,16 +1,16 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
 
-# 06:02:26 >  
-# 06:02:26 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.ntv_32-s.17473/monet/.ntv_32-s/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
-# 06:02:26 >  
+# 15:26:01 >  
+# 15:26:01 >  Mtimeout -timeout 600 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
+# 15:26:01 >  
 
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; statically linked.
-# dbfarm:/var/tmp/monet.ntv_32-s.17473/monet/.ntv_32-s/Linux2.2.14-12smp/dbfarm
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
 # dbname:Tests_tests_sigs
-# dbdir:/var/tmp/monet.ntv_32-s.17473/monet/.ntv_32-s/Linux2.2.14-12smp/dbfarm/Tests_tests_sigs
+# dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_tests_sigs
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -23,7 +23,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_24  #
+# BAT:		  tmp_23  #
 # (str)		  (void)  #
 #-------------------------#
 [ "algebra",	  nil	  ]
@@ -117,7 +117,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
 #-------------------------#
-# BAT:		  tmp_28  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -172,7 +172,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_28  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -206,7 +206,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  1		  ]
 [ "wisc",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "wisc", nil	  ]
@@ -241,7 +241,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  1		  ]
 [ "vector",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_28  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "vector",	  nil	  ]
@@ -279,7 +279,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  1		  ]
 [ "url",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "url",  nil	  ]
@@ -314,7 +314,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_29  #
 # (str)	  (void)  #
 #-----------------#
 [ "unix", nil	  ]
@@ -352,7 +352,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "uchr", nil	  ]
@@ -386,7 +386,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "tpcd", nil	  ]
@@ -420,7 +420,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_28  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "tcpip",	  nil	  ]
@@ -456,7 +456,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_24  #
 # (str)		  (void)  #
 #-------------------------#
 [ "streams",	  nil	  ]
@@ -498,7 +498,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_28  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "stats",	  nil	  ]
@@ -532,7 +532,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "salgebra",	  nil	  ]
@@ -566,7 +566,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_32  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "radix",	  nil	  ]
@@ -605,7 +605,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "qt",		  nil	  ]
@@ -693,7 +693,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
@@ -810,7 +810,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "malalgebra",	  nil	  ]
@@ -844,7 +844,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_32  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "logger",	  nil	  ]
@@ -878,7 +878,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_33  #
+# BAT:	  tmp_31  #
 # (str)	  (void)  #
 #-----------------#
 [ "lock", nil	  ]
@@ -912,7 +912,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "iterator",	  nil	  ]
@@ -947,7 +947,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_32  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "io",	  nil	  ]
@@ -987,7 +987,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_33  #
+# BAT:	  tmp_29  #
 # (str)	  (void)  #
 #-----------------#
 [ "enum", nil	  ]
@@ -1029,7 +1029,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "decimal",	  nil	  ]
@@ -1067,7 +1067,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_32  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ddbench",	  nil	  ]
@@ -1117,7 +1117,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_32  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "counters",	  nil	  ]
@@ -1186,7 +1186,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "blob", nil	  ]
@@ -1222,7 +1222,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_33  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
@@ -1264,7 +1264,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitset",	  nil	  ]
@@ -1336,7 +1336,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ascii_io",	  nil	  ]
@@ -1382,7 +1382,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_33  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
@@ -1450,7 +1450,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_31  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1484,7 +1484,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_43  #
+# BAT:		  tmp_41  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mprof",	  nil	  ]
@@ -1503,7 +1503,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-# 06:02:27 >  
-# 06:02:27 >  Done.
-# 06:02:27 >  
+# 15:26:05 >  
+# 15:26:05 >  Done.
+# 15:26:05 >  
 

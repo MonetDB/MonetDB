@@ -50,8 +50,8 @@ stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ 28 ]
-!WARNING: CMDsize: range error 28
+[ 26 ]
+!WARNING: CMDsize: range error 26
 [ nil ]
 
 # 15:35:25 >  

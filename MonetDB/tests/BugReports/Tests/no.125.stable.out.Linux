@@ -4,7 +4,7 @@ stdout of test 'no.125` in directory 'tests/BugReports` itself:
 #> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.125.milS
 # Monet Database Server V4.1
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for Linux2.2.12-20smp/32bit on Thu Mar 23 00:51:04 CET 2000.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
 #script:no.125.milS
 
 

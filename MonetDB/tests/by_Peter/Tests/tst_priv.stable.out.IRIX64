@@ -1,8 +1,8 @@
 stdout of test 'tst_priv` in directory 'tests/by_Peter` itself:
 
-#> Mtest:	milM tst_priv milM
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_priv.milM
-# Monet Database Server V4.1
+#> Mtest (20:55:13):	milM tst_priv milM
+#> Mtest (20:55:13):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_priv.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for Linux2.2.12-20smp/32bit on Wed Apr 12 05:50:14 CEST 2000.
 #script:tst_priv.milM
@@ -24,7 +24,7 @@ stdout of test 'tst_priv` in directory 'tests/by_Peter` itself:
 #01 interpret_unpin(insert) on bat(31) refcnt = 1
 #01 interpret_unpin(insert) => kill 31[0,1]
 #-----------------------------------------#
-# BAT:			  tmp_25	  #
+# BAT:			  tmp_23	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
 [ "theap.storage",	  "anonymous vm"  ]

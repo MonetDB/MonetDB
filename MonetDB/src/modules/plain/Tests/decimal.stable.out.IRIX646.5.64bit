@@ -1,15 +1,13 @@
 stdout of test 'decimal` in directory 'src/modules/plain` itself:
 
-#> Mtest (13:32:21):	other decimal 1200
-#> Mtest (13:32:21):	Mtimeout -timeout 1200 ./decimal decimal
-#> Mlog (13:32:21):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain decimal.mil
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:decimal.mil
 
+# 01:42:29 >  
+# 01:42:29 >  Mtimeout -timeout 300 Mserver --config=/export/scratch1/monet/tmp/monet.GNU_32-d.17350/monet/.GNU_32-d/Linux2.4.9-14smp/etc/monet.conf --debug=10  --set monet_prompt= --dbname=Tests_src_modules_plain  < decimal.milM
+# 01:42:29 >  
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------------------------------------------------------#
 # BAT:		  value			| precision	| scale	  #
 # (str)		  (decimal)		| (int)		| (int)	  #
@@ -2276,7 +2274,7 @@ stdout of test 'decimal` in directory 'src/modules/plain` itself:
 [ "dec_huge",	  2244E9010		  ]
 [ "nec_huge",	  2244E9010		  ]
 #---------------------------------#
-# BAT:		  tmp_51	  #
+# BAT:		  tmp_53	  #
 # (str)		  (str)		  #
 #---------------------------------#
 [ "dec_zero",	  "dec_zero"	  ]
@@ -2302,57 +2300,62 @@ stdout of test 'decimal` in directory 'src/modules/plain` itself:
 [ "nec_huge",	  "nec_huge"	  ]
 #~BeginVariableOutput~#
 [/](int_10K) = 4ms
-join(int_10K=10000) = 11 ms
-group(int_10K=100) = 3 ms
-[*](int_10K=10000) = 5 ms
+join(int_10K=10000) = 10 ms
+group(int_10K=100) = 4 ms
+[*](int_10K=10000) = 4 ms
 [-](int_10K=10000) = 3 ms
 [+](int_10K=10000) = 4 ms
-[pow](int_10K=10000) = 441 ms
-sort(int_10K) = 14 ms
+[pow](int_10K=10000) = 408 ms
+sort(int_10K) = 12 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-[/](dec_10K) = 48ms
-join(dec_10K=10000) = 44 ms
+[/](dec_10K) = 50ms
+join(dec_10K=10000) = 43 ms
 group(dec_10K=100) = 10 ms
-[*](dec_10K=10000) = 157 ms
-[-](dec_10K=10000) = 110 ms
-[+](dec_10K=10000) = 111 ms
-[pow](dec_10K=10000) = 1022 ms
-sort(dec_10K) = 71 ms
+[*](dec_10K=10000) = 149 ms
+[-](dec_10K=10000) = 105 ms
+[+](dec_10K=10000) = 107 ms
+[pow](dec_10K=10000) = 978 ms
+sort(dec_10K) = 69 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 [/](int_100K) = 36ms
-join(int_100K=100000) = 129 ms
-group(int_100K=100) = 33 ms
-[*](int_100K=100000) = 56 ms
-[-](int_100K=100000) = 28 ms
-[+](int_100K=100000) = 52 ms
-[pow](int_100K=100000) = 4600 ms
-sort(int_100K) = 157 ms
+join(int_100K=100000) = 110 ms
+group(int_100K=100) = 29 ms
+[*](int_100K=100000) = 50 ms
+[-](int_100K=100000) = 26 ms
+[+](int_100K=100000) = 45 ms
+[pow](int_100K=100000) = 4307 ms
+sort(int_100K) = 135 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-[/](dec_100K) = 527ms
-join(dec_100K=100000) = 531 ms
-group(dec_100K=100) = 101 ms
-[*](dec_100K=100000) = 1699 ms
-[-](dec_100K=100000) = 1124 ms
-[+](dec_100K=100000) = 1175 ms
-[pow](dec_100K=100000) = 10421 ms
-sort(dec_100K) = 819 ms
+[/](dec_100K) = 552ms
+join(dec_100K=100000) = 520 ms
+group(dec_100K=100) = 99 ms
+[*](dec_100K=100000) = 1601 ms
+[-](dec_100K=100000) = 1089 ms
+[+](dec_100K=100000) = 1121 ms
+[pow](dec_100K=100000) = 9850 ms
+sort(dec_100K) = 792 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-[/](int_1M) = 358ms
-join(int_1M=1000000) = 1328 ms
-group(int_1M=100) = 322 ms
-[*](int_1M=1000000) = 1376 ms
-[-](int_1M=1000000) = 285 ms
-[+](int_1M=1000000) = 563 ms
+[/](int_1M) = 356ms
+join(int_1M=1000000) = 1169 ms
+group(int_1M=100) = 285 ms
+[*](int_1M=1000000) = 1265 ms
+[-](int_1M=1000000) = 258 ms
+[+](int_1M=1000000) = 504 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-[/](dec_1M) = 5867ms
-join(dec_1M=1000000) = 6208 ms
-group(dec_1M=100) = 998 ms
-[*](dec_1M=1000000) = 19882 ms
-[-](dec_1M=1000000) = 11538 ms
-[+](dec_1M=1000000) = 12518 ms
+[/](dec_1M) = 6010ms
+join(dec_1M=1000000) = 6028 ms
+group(dec_1M=100) = 976 ms
+[*](dec_1M=1000000) = 18851 ms
+[-](dec_1M=1000000) = 11120 ms
+[+](dec_1M=1000000) = 11964 ms
 #~EndVariableOutput~#
+
+# 01:43:27 >  
+# 01:43:27 >  Done.
+# 01:43:27 >  
+
