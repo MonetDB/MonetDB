@@ -1069,7 +1069,7 @@ proc ascii_io_output( bat Order, bat bats, Stream Output, str Sep ) : int := {
 	return output( Order, seps.reverse, bats.reverse, Output );
 }
 
-proc server_output( Stream Output, int Order, any val) : void := {
+proc server_output( Stream Output, any Order, any val) : void := {
 	stream_writeInt( Output, 0 ); # write not done.
 	stream_writeInt( Output, QTABLE ); # type TABLE.
 	stream_writeInt( Output, 1 ); # NR records.
