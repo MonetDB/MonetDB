@@ -54,6 +54,7 @@ use "mal/inspect";
 use "mal/optimizer";
 use "mal/chopper";
 use "mal/crackers";
+use "mal/transaction";
 use "sql/sql_server";
 use "sql/sql";
 

@@ -12,7 +12,8 @@ LIBS = {
 		chopper.mx language.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx streams.mx inspect.mx crackers.mx \
-		thread.mx optimizer.mx clients.mx tablet.mx
+		thread.mx optimizer.mx clients.mx tablet.mx \
+		transaction.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -25,7 +26,8 @@ doc_mal = {
 		startup.mx mal_init.mx language.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx streams.mx inspect.mx crackers.mx \
-		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx
+		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
+		transaction.mx
 }
 
 scripts_mal = {
@@ -33,7 +35,8 @@ scripts_mal = {
 	SOURCES = language.mx mal_init.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx streams.mx inspect.mx crackers.mx \
-		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx
+		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
+		transaction.mx
 }
 
 EXTRA_DIST_DIR = Tests
