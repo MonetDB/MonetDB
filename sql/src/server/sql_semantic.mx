@@ -599,7 +599,7 @@ dyncheck_types(mvc *sql, sql_subtype *ct, stmt *s)
 			/* type with no scale and nonzero length */
 			(ct->digits > 0 &&
 			 ct->scale == 0 &&
-			 ct->digits < st->digits
+			 (ct->digits < st->digits || st->digits == 0)
 			) ||
 			/* scaled type */
 			(ct->scale > 0 &&

@@ -1753,7 +1753,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 {
 	stmt *rs, *ls;
 
-	if (lo->token == SQL_SELECT) {
+	if (lo->token == SQL_SELECT) { /* swap subquery to the right handside */
 		symbol *tmp = lo;
 
 		lo = ro;
@@ -2287,6 +2287,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		break;
 	case SQL_NULL:
 	case SQL_NOT_NULL:
+	/* is (NOT) NULL */
 	{
 		symbol *cr = sc->data.sym;
 		stmt *res = sql_value_exp(sql, scp, cr, grp, subset, f);
@@ -2533,8 +2534,11 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	stmt *subset = NULL;
 	stmt *s = NULL;
 	list *rl;
-	dnode *n = selection->h;
+	dnode *n = NULL;
 
+	if (!selection) 
+		return sql_error(sql, 02, "A query without a 'from' part cannot have a '*' selection");
+		
 	if (where) {
 		s = sql_logical_exp(sql, scp, where, NULL, NULL, sql_where);
 		if (!s)
@@ -2545,7 +2549,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 		subset = s;
 	}
 	rl = create_stmt_list();
-	while (n) {
+	for ( n = selection->h; n; n = n->next) {
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
 		if (!cs) {
@@ -2575,7 +2579,6 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 		} else {
 			list_append(rl, cs);
 		}
-		n = n->next;
 	}
 	if (subset)
 		stmt_destroy(subset);

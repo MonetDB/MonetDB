@@ -11,7 +11,7 @@ var htpe := [oid](view_bbp_htype().semijoin(prs.join(nme.reverse())).col_name("h
 var ttpe := [oid](view_bbp_ttype().semijoin(prs.join(nme.reverse())).col_name("ttype").reverse()).reverse();
 
 var order := CTrefine(cnt, htpe);
-var order := CTrefine(cnt, ttpe);
+order := CTrefine(order, ttpe);
 
 table(1, order, htpe, ttpe, cnt);
 quit();
