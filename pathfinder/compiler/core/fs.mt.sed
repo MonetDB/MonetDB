@@ -971,12 +971,16 @@ ComparisonExpr:         eq (RangeExpr, RangeExpr)
 
         [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
                          some (var (v2), fn_data ([[ $2$ ]]),
-                               let (var (u1), 
-                                    fs_convert_op_by_expr (var (v1),
-                                                           var (v2)),
+                               let (var (u1),
+                                    fs_convert_op_by_type( 
+                                               fs_convert_op_by_expr (var (v1),
+                                                                      var (v2)),
+                                               PFty_xs_string ()),
                                     let (var (u2), 
-                                         fs_convert_op_by_expr (var (v2), 
-                                                                var (v1)),
+                                         fs_convert_op_by_type (
+                                                fs_convert_op_by_expr (var (v2), 
+                                                                       var (v1)),
+                                                PFty_xs_string ()),
                                          APPLY (op_eq, var (u1), var (u2))))
                               )
                         );
@@ -994,12 +998,16 @@ ComparisonExpr:         ne (RangeExpr, RangeExpr)
 
         [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
                          some (var (v2), fn_data ([[ $2$ ]]),
-                               let (var (u1), 
-                                    fs_convert_op_by_expr (var (v1),
-                                                           var (v2)),
+                               let (var (u1),
+                                    fs_convert_op_by_type( 
+                                               fs_convert_op_by_expr (var (v1),
+                                                                      var (v2)),
+                                               PFty_xs_string ()),
                                     let (var (u2), 
-                                         fs_convert_op_by_expr (var (v2), 
-                                                                var (v1)),
+                                         fs_convert_op_by_type (
+                                                fs_convert_op_by_expr (var (v2), 
+                                                                       var (v1)),
+                                                PFty_xs_string ()),
                                          APPLY (op_ne, var (u1), var (u2))))
                               )
                         );
@@ -1017,12 +1025,16 @@ ComparisonExpr:         lt (RangeExpr, RangeExpr)
 
         [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
                          some (var (v2), fn_data ([[ $2$ ]]),
-                               let (var (u1), 
-                                    fs_convert_op_by_expr (var (v1),
-                                                           var (v2)),
+                               let (var (u1),
+                                    fs_convert_op_by_type( 
+                                               fs_convert_op_by_expr (var (v1),
+                                                                      var (v2)),
+                                               PFty_xs_string ()),
                                     let (var (u2), 
-                                         fs_convert_op_by_expr (var (v2), 
-                                                                var (v1)),
+                                         fs_convert_op_by_type (
+                                                fs_convert_op_by_expr (var (v2), 
+                                                                       var (v1)),
+                                                PFty_xs_string ()),
                                          APPLY (op_lt, var (u1), var (u2))))
                               )
                         );
@@ -1040,12 +1052,16 @@ ComparisonExpr:         le (RangeExpr, RangeExpr)
 
         [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
                          some (var (v2), fn_data ([[ $2$ ]]),
-                               let (var (u1), 
-                                    fs_convert_op_by_expr (var (v1),
-                                                           var (v2)),
+                               let (var (u1),
+                                    fs_convert_op_by_type( 
+                                               fs_convert_op_by_expr (var (v1),
+                                                                      var (v2)),
+                                               PFty_xs_string ()),
                                     let (var (u2), 
-                                         fs_convert_op_by_expr (var (v2), 
-                                                                var (v1)),
+                                         fs_convert_op_by_type (
+                                                fs_convert_op_by_expr (var (v2), 
+                                                                       var (v1)),
+                                                PFty_xs_string ()),
                                          APPLY (op_le, var (u1), var (u2))))
                               )
                         );
@@ -1063,12 +1079,16 @@ ComparisonExpr:         gt (RangeExpr, RangeExpr)
 
         [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
                          some (var (v2), fn_data ([[ $2$ ]]),
-                               let (var (u1), 
-                                    fs_convert_op_by_expr (var (v1),
-                                                           var (v2)),
+                               let (var (u1),
+                                    fs_convert_op_by_type( 
+                                               fs_convert_op_by_expr (var (v1),
+                                                                      var (v2)),
+                                               PFty_xs_string ()),
                                     let (var (u2), 
-                                         fs_convert_op_by_expr (var (v2), 
-                                                                var (v1)),
+                                         fs_convert_op_by_type (
+                                                fs_convert_op_by_expr (var (v2), 
+                                                                       var (v1)),
+                                                PFty_xs_string ()),
                                          APPLY (op_gt, var (u1), var (u2))))
                               )
                         );
@@ -1086,12 +1106,16 @@ ComparisonExpr:         ge (RangeExpr, RangeExpr)
 
         [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
                          some (var (v2), fn_data ([[ $2$ ]]),
-                               let (var (u1), 
-                                    fs_convert_op_by_expr (var (v1),
-                                                           var (v2)),
+                               let (var (u1),
+                                    fs_convert_op_by_type( 
+                                               fs_convert_op_by_expr (var (v1),
+                                                                      var (v2)),
+                                               PFty_xs_string ()),
                                     let (var (u2), 
-                                         fs_convert_op_by_expr (var (v2), 
-                                                                var (v1)),
+                                         fs_convert_op_by_type (
+                                                fs_convert_op_by_expr (var (v2), 
+                                                                       var (v1)),
+                                                PFty_xs_string ()),
                                          APPLY (op_ge, var (u1), var (u2))))
                               )
                         );
@@ -1497,42 +1521,60 @@ Constructor:            TextConstructor;
 ElementConstructor:     elem (TagName, ElementContent)
     =
     {
-        [[ $$ ]] = constr_elem ([[ $1$ ]], [[ $2$ ]]);
+        PFfun_t *is2ns = 
+                function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
+
+        [[ $$ ]] = constr_elem ([[ $1$ ]], APPLY (is2ns, [[ $2$ ]]));
     }
     ;
 
 AttributeConstructor:   attr (TagName, AttributeValue)
     =
     {
-        [[ $$ ]] = constr_attr ([[ $1$ ]], [[ $2$ ]]);
+        PFfun_t *is2uA = 
+                function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
+
+        [[ $$ ]] = constr_attr ([[ $1$ ]], APPLY (is2uA, [[ $2$ ]]));
     }
     ;
 
 TextConstructor:        text (OptExprSequence_)
     =
     {
-        [[ $$ ]] = constr (($$)->kind, [[ $1$ ]]);
+        PFfun_t *is2uA = 
+                function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
+
+        [[ $$ ]] = constr (($$)->kind, APPLY (is2uA, [[ $1$ ]]));
     }
     ;
 
 DocumentConstructor:    doc (OptExprSequence_)
     =
     {
-        [[ $$ ]] = constr (($$)->kind, [[ $1$ ]]);
+        PFfun_t *is2ns = 
+                function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
+
+        [[ $$ ]] = constr (($$)->kind, APPLY (is2ns, [[ $1$ ]]));
     }
     ;
 
 XmlComment:             comment (StringLiteral)
     =
     {
-        [[ $$ ]] = constr (($$)->kind, [[ $1$ ]]);
+        PFfun_t *is2uA = 
+                function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
+
+        [[ $$ ]] = constr (($$)->kind, APPLY (is2uA, [[ $1$ ]]));
     }
     ;
 
 XmlProcessingInstruction: pi (StringLiteral)
     =
     {
-        [[ $$ ]] = constr (($$)->kind, [[ $1$ ]]);
+        PFfun_t *is2uA = 
+                function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
+
+        [[ $$ ]] = constr (($$)->kind, APPLY (is2uA, [[ $1$ ]]));
     }
     ;
                         
@@ -1693,22 +1735,27 @@ StepExpr:               pred (PathExpr, Expr)
 
         [[ $$ ]] = 
         let (var (v1), [[ $1$ ]],
-             let (var (v5), seq (var (v1), empty ()),
-                  for_ (var(fs_dot), var (fs_position), var(v5),
-                        let (var (v2), [[ $2$ ]],
-                             let (var (v3), 
-                                  typeswitch (var (v2),
-                                      cases (case_ (seqtype (PFty_numeric ()),
-                                                    let (var (v4),
-                                                         apply (fn_eq,
-                                                                arg (var (v2),
-                                                                     arg (var (fs_position),
-                                                                          nil ()))),
-                                                         var (v4))),
-                                             nil ()),
-                                      ebv (var (v2))),
-                                  ifthenelse (var (v3), 
-                                              var (fs_dot), empty ()))))));
+             for_ (var(fs_dot), var (fs_position), var(v1),
+                   let (var (v2), [[ $2$ ]],
+                        let (var (v3), 
+                             typeswitch 
+                                 (var (v2),
+                                  cases
+                                    (case_
+                                       (seqtype (PFty_numeric ()),
+        /* instead of numeric-eq ()  */ let (var (v5),
+        /* proposed by the W3C a     */      seqcast (seqtype (PFty_integer ()),
+        /* cast to integer is chosen */               var (v2)),
+                                             let (var (v4),
+                                                  apply (fn_eq,
+                                                         arg (var (v5),
+                                                              arg (var (fs_position),
+                                                                   nil ()))),
+                                                  var (v4)))),
+                                     nil ()),
+                                  ebv (var (v2))),
+                             ifthenelse (var (v3), 
+                                         var (fs_dot), empty ())))));
 
         /* restore $fs:dot */
         fs_dot = dot;
