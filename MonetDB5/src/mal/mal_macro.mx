@@ -105,6 +105,8 @@ mal_export str QOTMEoptimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str QOTMCoptimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str QOTMCoptimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str QOTMCoptimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MCoptimizer(Client c, MalBlkPtr mb, InstrPtr p, 
+        str mod, str fcn);
 #endif /* _MAL_MACRO_H_ */
 @-
 @c
@@ -497,6 +499,36 @@ str ORCAMprocessor(MalBlkPtr mb, Symbol t){
         else break;
     }
     chkProgram(getClient()->nspace,mb);
+    return msg;
+}
+@-
+The optimizer call infrastructure
+@c
+mal_export str MCoptimizer(Client c, MalBlkPtr mb, InstrPtr p, 
+    str mod, str fcn)
+{
+    Scope s;
+    Symbol t;
+    str msg= MAL_SUCCEED;
+    int j;
+    (void) p;
+    (void) c;
+
+    s= findModule(c->nspace,mod);
+    if( s== 0)
+        return throwException(MALEXCEPTION,"optimizer.@1optimizer",
+            "module '%s' not found\n",fcn);
+    if( s->subscope){
+        j = getSubScope(fcn); 
+        for(t= s->subscope[j];t!=NULL;t=t->peer)
+        if( t->def->errors == 0) {
+            if( getSignature(t)->token == FUNCTIONsymbol )
+                /* call macro expansion */
+                ORCAMprocessor(mb,t); 
+                if( msg) break;
+        }
+    }
+    chkFlow(mb);
     return msg;
 }
 @}

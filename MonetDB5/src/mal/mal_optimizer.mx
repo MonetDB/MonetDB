@@ -453,7 +453,7 @@ called sql_optimizer.
 #include "mal_client.h"
 #include "mal_scenario.h"
 
-#define DEBUG_MAL_OPTIMIZER     /* show result */
+#define DEBUG_MAL_OPTIMIZER2     /* show partial result */
 
 #define isAlife(M,I,X)          ( (M)->var[I]->beginLifespan<=X && \
                                   (M)->var[I]->endLifespan>=X)
@@ -696,6 +696,8 @@ int ARoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
         stream_printf(GDKout,"Delete alias assignment\n");
         printInstruction(GDKout,mb,p,LIST_MAL_ALL);
         }
+#else
+        (void) cntxt;
 #endif
        }
     }
@@ -974,7 +976,7 @@ str CXoptimizer(Client cntxt, MalBlkPtr mb, int pc)
                !isUpdated(mb,i) &&
                !hasCommonResults(p,q) &&
                !hasSideEffects(p) ){
-#ifdef DEBUG_MAL_OPTIMIZER
+#ifdef DEBUG_MAL_OPTIMIZER2
     if( cntxt->debugoptimizer){
     stream_printf(GDKout,"Found a common expression %d <-> %d\n",j,i);
     printInstruction(GDKout,mb,q,LIST_MAL_ALL);
@@ -1244,6 +1246,8 @@ str SPoptimizer(Client cntxt, MalBlkPtr mb, int pc)
             stream_printf(GDKout,"Combinator found\n");
             printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
             }
+#else
+            (void) cntxt;
 #endif
             combis++;
             k--; /* an instruction has been removed */
@@ -1310,6 +1314,8 @@ str RRoptimizer(Client cntxt, MalBlkPtr mb, int pc)
             printInstruction(GDKout,mb,p,LIST_MAL_ALL);
             printInstruction(GDKout,mb,q,LIST_MAL_ALL);
         }
+#else
+        (void) cntxt;
 #endif
                 ARreplaceAlias(mb,i,mb->stop,
                     p->argv[0], p->argv[1]);

@@ -391,7 +391,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
             break;
         } 
         stk->cmd= *b;
-        break;
+        return;
     case 'm': /* display a module */
         {
         str modnme, fcnname;
@@ -844,6 +844,7 @@ void mdbHelp(stream *f){
     stream_printf(f,"down       -- go down the stack\n");
     stream_printf(f,"up         -- go up the stack\n");
     stream_printf(f,"timer      -- produce micro-second response time\n");
+    stream_printf(f,"Trace      -- trace call\n");
     stream_printf(f,"help       -- this message\n");
 }
 @}
