@@ -1624,7 +1624,7 @@ gdk_export int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext
 @item int
 @tab BATprintf (stream *f, BAT *b)
 @item int
-@tab BATmultiprintf (stream *f, int argc, BAT *b[], int printoid, int order)
+@tab BATmultiprintf (stream *f, int argc, BAT *b[], int printoid, int order, int printorderby)
 @end multitable
 hline\end{tabular}
 @
@@ -1644,7 +1644,7 @@ over them, and prints the multi-column result on the file.
 @h
 gdk_export int BATprint(BAT *b);
 gdk_export int BATprintf(stream *f, BAT *b);
-gdk_export int BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order);
+gdk_export int BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
 @
 @}
 
