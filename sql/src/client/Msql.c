@@ -25,6 +25,18 @@
 #include <locale.h>
 #endif
 
+/*
+ * Debug levels
+ * 	0 	no debugging
+ * 	1 	continue in case of errors 
+ * 	2	output on server additional time statements
+ * 	4	output on server bat.info for statements involving bats
+ * 	8	output code to stderr
+ * 	16	output parsed SQL
+ * 	32	execute but there is no output send to the client
+ * 	64 	output mil code only, no excution on the server.
+ */ 
+
 #define SQL_DUMP 1
 #define MIL_DUMP 2
 
@@ -150,7 +162,6 @@ static int column_info( char *buf, int len, Msql_col *cols, int cur ){
 	char *end = buf + len;
 
 	while(buf<end){
-		int size = 0;
 		char *s = buf;
 		while(buf<end && *buf != ','){
 			buf++;
@@ -177,7 +188,6 @@ static int column_info( char *buf, int len, Msql_col *cols, int cur ){
 static void header_data( stream *rs, stream *out, int nCols, int debug ){
 	Msql_col *cols = (Msql_col*)malloc(sizeof(Msql_col) * nCols);
 	int cur = 0;
-	int flag = 0, res = 0;
 	int i, len = 0;
 
 	memset(cols, 0, nCols*sizeof(Msql_col));
@@ -221,7 +231,7 @@ static void header_data( stream *rs, stream *out, int nCols, int debug ){
 void receive( stream *rs, stream *out, int debug ){
 	int flag = 0, res = 0;
 	if ((res = stream_readInt(rs, &flag)) && flag != COMM_DONE){
-		char buf[BLOCK+1], *n = buf;
+		char buf[BLOCK+1];
 		int last = 0;
 		int type;
 		int status;
@@ -230,7 +240,7 @@ void receive( stream *rs, stream *out, int debug ){
 		stream_readInt(rs, &type);
 		stream_readInt(rs, &status);
 		if (status < 0){ /* output error */
-			int size, nr = bs_read_next(rs,buf,&last);
+			int nr = bs_read_next(rs,buf,&last);
 			char *s;
 
 			fprintf( stdout, "SQL ERROR %d: ", status );
@@ -250,7 +260,7 @@ void receive( stream *rs, stream *out, int debug ){
 		}
 		nRows = status;
 		if ((type == QTABLE || type == QDEBUG) && nRows > 0){
-			int size, nr = bs_read_next(rs,buf,&last);
+			int nr = bs_read_next(rs,buf,&last);
 			char *s;
 	
 			buf[nr] = 0;
@@ -389,7 +399,7 @@ int handle_result( stream *ws, stream *rs, int cnt, fptr f, int rlen, int dump, 
 	sc = bs->buf + bs->pos;
 	ec = bs->buf + bs->len;
 	while(sc < ec){
-		char *s, *line = NULL;
+		char *s;
 	
 		s = sc;
 	
@@ -515,9 +525,14 @@ static sql_type *create_type(char *sname, char *digits, char *scale, char *name)
 
 static void destroy_type(sql_type *t)
 {
-	_DELETE(t->sqlname);
-	_DELETE(t->name);
-	_DELETE(t);
+	sql_type *n = t;
+	while ( t ) {
+		n = t->next;
+		_DELETE(t->sqlname);
+		_DELETE(t->name);
+		_DELETE(t);
+		t = n;
+	}
 }
 
 static sql_type *types = NULL;
@@ -525,7 +540,7 @@ static sql_type *types = NULL;
 static char *find_type(char *name, char *Digits, char *Scale)
 {
 	int digits = strtol(Digits,NULL,10);
-	int scale = strtol(Scale,NULL,10);
+	/*int scale = strtol(Scale,NULL,10);*/
 	sql_type *m, *n;
 
 	/* assumes the types are ordered on name,digits,scale where is always
@@ -669,6 +684,7 @@ static int dump_view( stream *ws, stream *rs, char **views, int cnt, int rlen, i
 	int i,j;
 	for(i=0, j=0; i<cnt; i++, j+=rlen)
 		printf("CREATE VIEW %s %s\n", views[j+0], views[j+1] );
+	return 0;
 }
 
 static int dump_tables( stream *ws, stream *rs, int dump )
@@ -899,6 +915,7 @@ main(int ac, char **av)
 	ws->close(ws);
 	ws->destroy(ws);
 
+	destroy_type(types);
 #ifndef NO_LOCALE 
 	if (to_utf) iconv_close(to_utf);
 	if (from_utf) iconv_close(from_utf);

@@ -56,7 +56,6 @@ typedef enum stmt_type {
 	st_insert,
 	st_like,
 	st_replace,
-	st_delete,
 	st_count,
 	st_const,
 	st_mark,
@@ -79,10 +78,10 @@ typedef enum stmt_type {
 	st_set,
 	st_sets,
 	st_ptable,
+	st_pivot,
 	/* used internally only */
 	st_list,
 	st_output, /* return table */
-	st_result  /* return status */
 } st_type;
 
 typedef enum comp_type {
@@ -100,6 +99,7 @@ typedef struct stmt {
 	symdata op1;
 	symdata op2;
 	symdata op3;
+	symdata op4;		/* only op4 will hold other types */
 	char nrcols;
 	char key;		/* key (aka all values are unique) */
 	int flag;
@@ -182,13 +182,13 @@ extern stmt *stmt_list(list * l);
 extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
 extern stmt *stmt_ptable(list * basetables, stmt *s);
+extern stmt *stmt_pivot(stmt *s, stmt *ptable);
 
 extern stmt *stmt_copyfrom(table * t, list *files, char *tsep, char *rsep, int nr );
 sql_export list *stmt_copyfrom_files( stmt *s );
 
 extern stmt *stmt_insert(stmt *c, stmt * values, int unique_oids);
 extern stmt *stmt_replace(stmt * c, stmt * values);
-extern stmt *stmt_delete(table * t, stmt * where);
 
 extern stmt *stmt_count(stmt * s);
 extern stmt *stmt_const(stmt * s, stmt * val);
@@ -206,7 +206,7 @@ extern stmt *stmt_op(sql_func * op);
 extern stmt *stmt_unop(stmt * op1, sql_func * op);
 extern stmt *stmt_binop(stmt * op1, stmt * op2, sql_func * op);
 extern stmt *stmt_triop(stmt * op1, stmt * op2, stmt * op3, sql_func * op);
-extern stmt *stmt_aggr(stmt * op1, sql_aggr * op, group * grp);
+extern stmt *stmt_aggr(stmt * op1, group * grp, sql_aggr * op );
 
 extern stmt *stmt_exists(stmt * op1, list * l);
 
@@ -214,7 +214,6 @@ extern stmt *stmt_alias(stmt * op1, char *name);
 extern stmt *stmt_column(stmt * op1, stmt *t, char *tname, char *cname);
 
 extern stmt *stmt_output(stmt * l);
-extern stmt *stmt_result(stmt * l);
 
 extern sql_subtype *head_type(stmt * st);
 sql_export sql_subtype *tail_type(stmt * st);
@@ -228,8 +227,6 @@ extern column *basecolumn(stmt *st);
 extern int stmt_dump(stmt * s, int *nr, context * sql);
 
 sql_export void stmt_destroy(stmt *s );
-/* reset the stmt nr's */
-extern void stmt_reset( stmt *s );
 extern stmt *stmt_dup( stmt *s );
 
 extern group *grp_create(stmt * s, group *og );

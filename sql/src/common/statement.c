@@ -4,6 +4,11 @@
 #include "statement.h"
 
 /* todo make proper traversal operations */
+static stmt *stmt_atom_string( char * s )
+{
+	sql_subtype *t = sql_bind_subtype("CHAR", strlen(s), 0);
+	return stmt_atom( atom_string(t, _strdup(s)) );
+}
 
 static stmt *stmt_create()
 {
@@ -12,6 +17,7 @@ static stmt *stmt_create()
 	s->op1.sval = NULL;
 	s->op2.sval = NULL;
 	s->op3.sval = NULL;
+	s->op4.sval = NULL;
 	s->flag = 0;
 	s->nrcols = 0;
 	s->key = 0;
@@ -55,12 +61,6 @@ static stmt *stmt_derive(stmt * s, stmt * t)
 	ns->key = 0;
 	ns->t = stmt_dup(s->t);
 	return ns;
-}
-
-void grp_reset( group * g)
-{
-	stmt_reset(g->grp);
-	stmt_reset(g->ext);
 }
 
 void grp_destroy( group * g)
@@ -117,6 +117,7 @@ void stmt_destroy(stmt * s)
 		case st_ibat:
 		case st_column: case st_create_column:
 		case st_table: case st_create_table: 
+		case st_key:
 
 		case st_null:
 		case st_reverse:
@@ -125,17 +126,17 @@ void stmt_destroy(stmt * s)
 		case st_group_ext:
 		case st_order:
 		case st_limit:
-		case st_unop:
 		case st_output:
-		case st_result:
 			stmt_destroy(s->op1.stval);
 			break;
-		case st_alias:
-		case st_column_alias:
 		case st_drop_table:
 			stmt_destroy(s->op1.stval);
 			_DELETE(s->op2.sval);
 			if (s->op3.sval) _DELETE(s->op3.sval);
+			break;
+		case st_create_key:
+			if (s->op2.stval)
+				stmt_destroy(s->op2.stval);
 			break;
 		case st_exists:
 			stmt_destroy(s->op1.stval);
@@ -145,51 +146,27 @@ void stmt_destroy(stmt * s)
 		case st_default:
 		case st_like:
 		case st_semijoin:
-		case st_diff:
-		case st_intersect:
-		case st_union:
-		case st_join:
-		case st_outerjoin:
+		case st_diff: case st_intersect: case st_union:
+		case st_join: case st_outerjoin:
 		case st_const:
 		case st_derive:
-		case st_ordered:
-		case st_reorder:
-		case st_binop:
-		case st_insert:
-		case st_replace:
-			stmt_destroy(s->op1.stval);
-			stmt_destroy(s->op2.stval);
-			break;
-		case st_create_key:
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			break;
-		case st_delete:
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			break;
-		case st_mark:
+		case st_ordered: case st_reorder:
+		case st_select: case st_select2:
 		case st_unique:
-			stmt_destroy(s->op1.stval);
-			if (s->op2.gval)
-				grp_destroy(s->op2.gval);
-			break;
-		case st_select:
-		case st_select2:
-			stmt_destroy(s->op1.stval);
-			stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			break;
+		case st_mark:
+		case st_alias: case st_column_alias:
 		case st_aggr:
-			stmt_destroy(s->op1.stval);
-			if (s->op3.gval)
-				grp_destroy(s->op3.gval);
+		case st_op: case st_unop: case st_binop: case st_triop:
+		case st_insert: case st_replace:
+		case st_pivot:
+
+			if (s->op1.stval) stmt_destroy(s->op1.stval);
+			if (s->op2.stval) stmt_destroy(s->op2.stval);
+			if (s->op3.stval) stmt_destroy(s->op3.stval);
 			break;
 		case st_set:
 		case st_sets:
 		case st_list:
-		case st_triop:
 			list_destroy(s->op1.lval);
 			break;
 		case st_ptable:
@@ -200,10 +177,12 @@ void stmt_destroy(stmt * s)
 			atom_destroy(s->op1.aval);
 			break;
 
-		case st_bat:
-		case st_ubat:
+		case st_bat: case st_ubat:
+		case st_obat: case st_dbat:
 
 		case st_schema: case st_create_schema: case st_drop_schema:
+		case st_basetable: 
+		case st_grant: case st_revoke: 
 
 		case st_none:
 			break;
@@ -233,105 +212,6 @@ void stmt_destroy(stmt * s)
 		_DELETE(s);
 	}
 }
-
-void stmt_reset( stmt *s ){
-    	node *n;
-
-	if (s->nr == 0) return;
-
-	s->nr = 0;
-	switch(s->type){
-		/* stmt_reset  op1 */
-	case st_ibat:
-	case st_null: case st_reverse: case st_count: 
-	case st_group: case st_group_ext: 
-	case st_limit: case st_order: case st_unop: 
-	case st_alias: case st_column_alias:
-	case st_output: case st_result: case st_exists: 
-	case st_table: case st_create_table: case st_drop_table: 
-
-		stmt_reset(s->op1.stval);
-		break;
-
-	case st_default: case st_like: case st_semijoin: 
-	case st_diff: case st_intersect: case st_union: case st_join: 
-	case st_outerjoin: 
-	case st_const: case st_derive: case st_ordered: case st_reorder: 
-	case st_binop: case st_insert: case st_replace: 
-
-		stmt_reset(s->op1.stval);
-		stmt_reset(s->op2.stval);
-		break;
-	case st_delete: 
-
-		if (s->op2.stval)
-			stmt_reset(s->op2.stval);
-		break;
-	case st_mark: case st_unique: 
-		stmt_reset(s->op1.stval);
-		if (s->op2.gval)
-			grp_reset(s->op2.gval);
-		break;
-	case st_create_key:
-		if (s->op2.stval)
-			stmt_reset(s->op2.stval);
-		break;
-	case st_select: case st_select2: 
-
-		stmt_reset(s->op1.stval);
-		stmt_reset(s->op2.stval);
-		if (s->op3.stval)
-			stmt_reset(s->op3.stval);
-		break;
-	case st_aggr: 
-		stmt_reset(s->op1.stval);
-		if (s->op3.gval)
-			grp_reset(s->op3.gval);
-		break;
-	case st_set: case st_list: case st_triop: 
-		for (n = s->op1.lval->h; n; n = n->next ){
-			stmt_reset( n->data );
-		}
-		break;
-	case st_sets: {
-		for(n = s->op1.lval->h; n; n = n->next ){
-			list *l = n->data;
-			node *m = l->h;
-			while(m){
-				stmt_reset( m->data );
-			}
-		}
-	} break;
-	case st_ptable: {
-		for(n = s->op1.lval->h; n; n = n->next ){
-			list *l = n->data;
-			node *m = l->h;
-			while(m){
-				stmt_reset( m->data );
-			}
-		}
-		stmt_reset( s->op2.stval );
-	} break;
-
-	case st_column: case st_create_column: 
-		stmt_reset( s->op1.stval );
-		if (s->op2.cval->s){
-			stmt_reset( s->op2.cval->s );
-		}
-		break;
-	case st_bat:
-	case st_ubat:
-		if (s->op1.cval->s){
-			stmt_reset( s->op1.cval->s );
-		}
-		break;
-	case st_schema: case st_drop_schema: case st_create_schema: 
-	case st_release: case st_commit: case st_rollback:
-	case st_atom: case st_none: case st_copyfrom:
-		break;
-	}
-}
-
 
 stmt *stmt_release(char *name)
 {
@@ -615,7 +495,8 @@ stmt *stmt_unique(stmt * s, group * g)
 	ns->type = st_unique;
 	ns->op1.stval = s;
 	if (g) {
-		ns->op2.gval = g;
+		ns->op2.stval = stmt_dup(g->grp);
+		grp_destroy(g);
 	}
 	ns->nrcols = s->nrcols;
 	ns->key = 1; /* ?? maybe change key to unique ? */
@@ -849,14 +730,6 @@ stmt *stmt_output(stmt * l)
 	return s;
 }
 
-stmt *stmt_result(stmt * l)
-{
-	stmt *s = stmt_create();
-	s->type = st_result;
-	s->op1.stval = l;
-	return s;
-}
-
 stmt *stmt_sets(list * l1)
 {
 	stmt *s = stmt_create();
@@ -865,12 +738,23 @@ stmt *stmt_sets(list * l1)
 	return s;
 }
 
-stmt *stmt_pivot_table(list * l1, stmt *set)
+stmt *stmt_ptable(list * l1, stmt *set)
 {
 	stmt *s = stmt_create();
 	s->type = st_ptable;
 	s->op1.lval = l1;
 	s->op2.stval = set;
+	return s;
+}
+
+stmt *stmt_pivot(stmt * p, stmt *ptable)
+{
+	stmt *s = stmt_create();
+	s->type = st_pivot;
+	s->op1.stval = p;
+	s->op2.stval = ptable;
+	s->nrcols = 2;
+	s->t = stmt_dup(p->h); /* pivots have oid's in the tail */
 	return s;
 }
 
@@ -897,20 +781,11 @@ stmt *stmt_replace(stmt * c, stmt * b)
 }
 
 
-stmt *stmt_delete(table * t, stmt * where)
-{
-	stmt *s = stmt_create();
-	s->type = st_delete;
-	s->op1.tval = t;
-	s->op2.stval = where;
-	return s;
-}
-
 stmt *stmt_op(sql_func * op)
 {
 	stmt *s = stmt_create();
 	s->type = st_op;
-	s->op1.funcval = op;
+	s->op4.funcval = op;
 	s->nrcols = 0; /* function without arguments returns single value */
 	s->key = 1;
 	return s;
@@ -921,7 +796,7 @@ stmt *stmt_unop(stmt * op1, sql_func * op)
 	stmt *s = stmt_create();
 	s->type = st_unop;
 	s->op1.stval = op1;
-	s->op2.funcval = op;
+	s->op4.funcval = op;
 	s->h = stmt_dup(op1->h);
 	s->nrcols = op1->nrcols;
 	return s;
@@ -933,7 +808,7 @@ stmt *stmt_binop(stmt * op1, stmt * op2, sql_func * op)
 	s->type = st_binop;
 	s->op1.stval = op1;
 	s->op2.stval = op2;
-	s->op3.funcval = op;
+	s->op4.funcval = op;
 	if (op1->nrcols > op2->nrcols)
 		s->h = stmt_dup(op1->h);
 	else
@@ -946,11 +821,10 @@ stmt *stmt_triop(stmt * op1, stmt * op2, stmt * op3, sql_func * op)
 {
 	stmt *s = stmt_create();
 	s->type = st_triop;
-	s->op1.lval = list_create((fdestroy)&stmt_destroy);
-	list_append(s->op1.lval, op1); 
-	list_append(s->op1.lval, op2); 
-	list_append(s->op1.lval, op3); 
-	s->op2.funcval = op;
+	s->op1.stval = op1; 
+	s->op2.stval = op2; 
+	s->op3.stval = op3; 
+	s->op4.funcval = op;
 	if (op1->nrcols > op2->nrcols)
 		s->h = stmt_dup(op1->h);
 	else
@@ -959,22 +833,24 @@ stmt *stmt_triop(stmt * op1, stmt * op2, stmt * op3, sql_func * op)
 	return s;
 }
 
-stmt *stmt_aggr(stmt * op1, sql_aggr * op, group * grp)
+stmt *stmt_aggr(stmt * op1, group * grp, sql_aggr * op )
 {
 	stmt *s = stmt_create();
 	s->type = st_aggr;
 	s->op1.stval = op1;
-	s->op2.aggrval = op;
 	if (grp) {
-		s->op3.gval = grp; 
+		s->op2.stval = stmt_dup(grp->grp);
+		s->op3.stval = stmt_dup(grp->ext);
 		s->nrcols = 1;
 		s->h = stmt_dup(grp->grp->h);
 		s->key = 1;
+		grp_destroy(grp);
 	} else {
 		s->nrcols = 0;	
 		s->key = 1;
 		s->h = stmt_dup(op1->h);
 	}
+	s->op4.aggrval = op;
 	return s;
 }
 
@@ -995,7 +871,7 @@ stmt *stmt_alias(stmt * op1, char *alias)
 	stmt *s = stmt_create();
 	s->type = st_alias;
 	s->op1.stval = op1;
-	s->op2.sval = _strdup(alias);
+	s->op2.stval = stmt_atom_string(alias);
 	s->h = stmt_dup(op1->h);
 	s->t = stmt_dup(op1->t);
 	s->nrcols = op1->nrcols;
@@ -1008,8 +884,8 @@ stmt *stmt_column(stmt * op1, stmt *t, char *tname, char *cname)
 	stmt *s = stmt_create();
 	s->type = st_column_alias;
 	s->op1.stval = op1;
-	s->op2.sval = (tname)? _strdup(tname):NULL;
-	s->op3.sval = (cname)? _strdup(cname):NULL;
+	s->op2.stval = (tname)? stmt_atom_string(tname):NULL;
+	s->op3.stval = (cname)? stmt_atom_string(cname):NULL;
 	s->h = t;
 	s->nrcols = 1; 
 	s->key = op1->key;
@@ -1178,15 +1054,12 @@ sql_subtype *tail_type(stmt * st)
 		return head_type(st->op1.stval);
 
 	case st_aggr:
-		return sql_bind_localtype(st->op2.aggrval->res);
+		return sql_bind_localtype(st->op4.aggrval->res);
 	case st_op:
-		return sql_bind_localtype(st->op1.funcval->res);
 	case st_unop:
-		return sql_bind_localtype(st->op2.funcval->res);
 	case st_binop:
-		return sql_bind_localtype(st->op3.funcval->res);
 	case st_triop:
-		return sql_bind_localtype(st->op2.funcval->res);
+		return sql_bind_localtype(st->op4.funcval->res);
 	case st_atom:
 		return atom_type(st->op1.aval);
 
@@ -1245,7 +1118,7 @@ stmt *tail_column(stmt * st)
 	case st_mark:
 	case st_unop:
 	case st_binop:
-
+	case st_triop:
 	case st_diff:
 	case st_like:
 	case st_select:
@@ -1253,13 +1126,14 @@ stmt *tail_column(stmt * st)
 	case st_semijoin:
 	case st_atom:
 	case st_alias:
-	case st_column_alias:
 	case st_group:
 	case st_group_ext:
 	case st_union:
 	case st_unique:
 		return tail_column(st->op1.stval);
 
+	case st_column_alias:
+	case st_pivot:
 	case st_ibat:
 	case st_bat:
 		return st;
@@ -1267,11 +1141,8 @@ stmt *tail_column(stmt * st)
 	case st_reverse:
 		return head_column(st->op1.stval);
 
-	case st_triop:
-		return head_column(st->op1.lval->h->data );
-
 	default:
-		fprintf(stderr, "missing base column %d\n", st->type );
+		fprintf(stderr, "missing tail column %d\n", st->type );
 		assert(0);
 		return NULL;
 	}
@@ -1283,12 +1154,12 @@ stmt *head_column(stmt * st)
 	case st_atom:
 	case st_mark:
 	case st_alias:
-	case st_column_alias:
 	case st_union:
 	case st_unique:
 	case st_aggr:
 	case st_unop:
 	case st_binop:
+	case st_triop:
 	case st_diff:
 	case st_join:
 	case st_outerjoin:
@@ -1298,6 +1169,9 @@ stmt *head_column(stmt * st)
 	case st_select:
 	case st_select2:
 		return head_column(st->op1.stval);
+
+	case st_column_alias:
+	case st_pivot:
 	case st_ibat:
 	case st_bat:
 		return st;
@@ -1309,11 +1183,8 @@ stmt *head_column(stmt * st)
 
 	case st_derive:
 		return tail_column(st->op2.stval);
-
-	case st_triop:
-		return head_column(st->op1.lval->h->data );
 	default:
-		fprintf(stderr, "missing base column %d\n", st->type );
+		fprintf(stderr, "missing head column %d\n", st->type );
 		assert(0);
 		return NULL;
 	}
@@ -1351,34 +1222,36 @@ char *column_name(stmt * st)
 	case st_select:
 	case st_select2:
 	case st_diff:
-		return column_name(st->op1.stval);
-
-	case st_bat:
-		return st->op1.cval->name;
-	case st_unop:
-	case st_triop:
-		return func_name(st->op2.funcval->name,
-				 column_name(st->op1.stval));
-	case st_binop:
-		return func_name(st->op3.funcval->name,
-				 column_name(st->op1.stval));
-	case st_aggr:
-		return func_name(st->op2.aggrval->name,
-				 column_name(st->op1.stval));
-	case st_alias:
-		return st->op2.sval;
-	case st_column_alias:
-		return st->op3.sval;
 	case st_unique:
 		return column_name(st->op1.stval);
-	case st_atom:
-		return strdup("single_value");
 
+	case st_op:
+		return _strdup(st->op4.funcval->name);
+	case st_unop:
+	case st_binop:
+	case st_triop:
+		return func_name(st->op4.funcval->name,
+				 column_name(st->op1.stval));
+	case st_aggr:
+		return func_name(st->op4.aggrval->name,
+				 column_name(st->op1.stval));
+	case st_alias:
+		return column_name(st->op2.stval);
+	case st_column_alias:
+		return column_name(st->op3.stval);
+	case st_bat:
+		return _strdup(st->op1.cval->name);
+	case st_atom:
+		if (st->op1.aval->type == string_value)
+			return atom2string(st->op1.aval);
+		assert(0);
+		return strdup("single_value");
 	default:
 		fprintf(stderr, "missing name %d\n", st->type );
 		return NULL;
 	}
 }
+
 char *table_name(stmt * st)
 {
 	switch (st->type) {
@@ -1395,21 +1268,22 @@ char *table_name(stmt * st)
 	case st_select:
 	case st_select2:
 	case st_diff:
+	case st_aggr:
+	case st_unique:
 		return table_name(st->op1.stval);
 
 	case st_bat:
 		return st->op1.cval->table->name;
-
-	case st_aggr:
-		return table_name(st->op1.stval);
 	case st_alias:
 		return "unknown";
-
 	case st_column_alias:
-		return st->op2.sval;
+		return table_name(st->op2.stval);
 
-	case st_unique:
-		return table_name(st->op1.stval);
+	case st_atom:
+		if (st->op1.aval->type == string_value)
+			return atom2string(st->op1.aval);
+		assert(0);
+
 	default:
 		fprintf(stderr, "missing name %d\n", st->type );
 		return NULL;
@@ -1422,6 +1296,7 @@ column *basecolumn(stmt * st)
 	case st_reverse:
 		return basecolumn(head_column(st->op1.stval));
 
+	case st_pivot:
 	case st_bat:
 		return st->op1.cval;
 

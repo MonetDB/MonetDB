@@ -86,14 +86,9 @@ sql_subtype *sql_bind_localtype( char *name )
 
 static int type_cmp( sql_type *t1, sql_type *t2)
 {
-	int res = 0;
 	if (!t1 || !t2){	
 		return -1;
 	}
-	/*
-	res = strcmp(t1->sqlname, t2->sqlname);
-	if (res == 0) return 0;
-	*/
 	/* types are only equal if they map onto the same systemtype */
 	return strcmp(t1->name, t2->name);
 }
@@ -168,14 +163,14 @@ sql_func *sql_bind_func_result(char *sqlfname, sql_subtype *tp1, sql_subtype *tp
 }
 
 
-sql_type *sql_create_type(char *sqlname, int digits, int scale, char *name)
+sql_type *sql_create_type(char *sqlname, int digits, int scale, int radix, char *name)
 {
-	oid nil = oid_nil;
 	sql_type *t = NEW(sql_type);
 
 	t->sqlname = toLower(sqlname);
 	t->digits = digits;
 	t->scale = scale;
+	t->radix = radix;
 	t->name = _strdup(name);
 	t->nr = list_length(types);
 	if (!keyword_exists(t->sqlname))
@@ -255,14 +250,6 @@ static void func_destroy(sql_func * t)
 	if (t->tpe3) _DELETE(t->tpe3);
 	_DELETE(t->res);
 	_DELETE(t);
-}
-
-static BAT *types_new_bat(int type, char *name)
-{
-	BAT *b = BATnew( TYPE_void, type, BUFSIZ); 
-	BATseqbase(b,0);
-	BATrename(b, name);
-	return b;
 }
 
 void parser_init(int debug)

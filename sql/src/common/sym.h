@@ -1,6 +1,8 @@
 #ifndef SYM_H
 #define SYM_H
 
+#include <sql_config.h>
+
 #ifdef _MSC_VER
 #ifndef LIBSQL
 #define sql_export extern __declspec(dllimport)

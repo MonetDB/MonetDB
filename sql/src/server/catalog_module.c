@@ -32,7 +32,7 @@ static void getschemas( mvc *myc, context *lc, catalog *c, char *schema, char *u
 	      		table *t = cat_create_table( c, nt->id, c->cur_schema, nt->name, nt->type, NULL );
 			for (m = nt->columns->h; m; m = m->next ){
 				sql_column *col = m->data;
-		  		column *cx = cat_create_column( c, col->id, t, col->name, 
+		  		cat_create_column( c, col->id, t, col->name, 
 					sql_dup_subtype(col->type), col->def, col->null );
 			}	
 			if (nt->keys) for (m = nt->keys->h; m; m = m->next ){

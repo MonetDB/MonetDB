@@ -109,6 +109,8 @@ void symbol_destroy(symbol * s)
 		case type_aggr:
 		case type_func:
 			break;
+		case type_atom:
+			assert(0);
 		}
 		_DELETE(s->sql);
 		_DELETE(s);
@@ -134,9 +136,12 @@ void dnode_destroy(dnode * s)
 		case type_stmt:
 		case type_column:
 		case type_table:
+		case type_schema:
 		case type_aggr:
 		case type_func:
 			break;
+		case type_atom:
+			assert(0);
 		}
 	}
 	_DELETE(s);

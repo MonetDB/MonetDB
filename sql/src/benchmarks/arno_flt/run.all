@@ -7,6 +7,7 @@ fi
 
 echo "creating"
 $SQL < create_tables.flt.sql
+exit
 echo "insert BONDs"
 $SQL < insert_BOND.flt.sql   
 echo $?
@@ -18,8 +19,8 @@ $SQL < insert_MODEL.flt.sql
 echo $?
 echo "check0"
 $SQL < Tests/check0.sql
-echo "queries"
-$SQL < queries.sql
+#echo "queries"
+#$SQL < queries.sql
 
 #echo "queries_sorted"
 #$SQL < queries_sorted.sql

@@ -28,7 +28,7 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND parser_exit() = parser_exit_wrap; 
 		"cleanup the global structures"
 
-	.COMMAND sql_type(str sqlname, int digits, int scale, str name ) = 
+	.COMMAND sql_type(str sqlname, int digits, int scale, int radix, str name ) = 
 		sql_type_wrap; "Add a new sql type"
 
 	.COMMAND sql_aggr(str name, str imp, str atp, str rtp) = 
@@ -189,8 +189,8 @@ int parser_exit_wrap( ){
 	parser_exit();
 	return GDK_SUCCEED;
 }
-int sql_type_wrap( str sqlname, int *digits, int *scale, str name ){
-	(void)sql_create_type( sqlname, *digits, *scale, name );
+int sql_type_wrap( str sqlname, int *digits, int *scale, int *radix, str name ){
+	(void)sql_create_type( sqlname, *digits, *scale, *radix, name );
 	return GDK_SUCCEED;
 }
 int sql_aggr_wrap( str name, str imp, str atp, str rtp){
@@ -444,35 +444,35 @@ PROC renameFUNC(str OLD,str NEW) : void := {
 var sql_debug := int(monet_environment.find("sql_debug"));
 parser_init(sql_debug);
 
-sql_type("OID", 0, 0, 	  	"oid");
-sql_type("BOOL", 0, 0,	  	"bit");
-sql_type("BOOLEAN", 0, 0,	"bit");
+sql_type("OID", 0, 0, 2,  	"oid");
+sql_type("BOOL", 0, 0, 2,  	"bit");
+sql_type("BOOLEAN", 0, 0, 2,	"bit");
 
-sql_type("CHAR", 0, 0,  	"str"); # defined as a fixed length string 
-sql_type("CHARACTER", 0, 0, 	"str");
-sql_type("VARCHAR", 0, 0, 	"str");
+sql_type("CHAR", 0, 0, 0,  	"str"); # defined as a fixed length string 
+sql_type("CHARACTER", 0, 0, 0,	"str");
+sql_type("VARCHAR", 0, 0, 0,	"str");
 
-sql_type("TEXT", 0, 0, 		"str");
-sql_type("TINYTEXT", 0, 0, 	"str");
-sql_type("STRING", 0, 0, 	"str");
+sql_type("TEXT", 0, 0, 0, 	"str");
+sql_type("TINYTEXT", 0, 0, 0,	"str");
+sql_type("STRING", 0, 0, 0,	"str");
 
 # *INT(n) n <= 2 -> TINYINT
 #	  n <= 5 -> SMALLINT
 #	  n <= 9 -> MEDIUMINT
 #	  n <= 19 -> BIGINT
 
-sql_type("UBYTE", 2, 0,		"uchr");
-sql_type("TINYINT", 2, 0, 	"sht"); # sht as sum(uchr) isn't implemented 
-sql_type("SMALLINT", 5, 0,	"sht");
-sql_type("MEDIUMINT", 9, 0,	"int");
-sql_type("INTEGER", 9, 0,	"int");
-sql_type("NUMBER", 9, 0,	"int");
-sql_type("BIGINT", 19, 0,	"lng");
+sql_type("UBYTE", 2, 0,	2,	"uchr");
+sql_type("TINYINT", 2, 0, 2,	"sht"); # sht as sum(uchr) isn't implemented 
+sql_type("SMALLINT", 5, 0, 2,	"sht");
+sql_type("MEDIUMINT", 9, 0, 2,	"int");
+sql_type("INTEGER", 9, 0, 2,	"int");
+sql_type("NUMBER", 9, 0, 2,	"int");
+sql_type("BIGINT", 19, 0, 2,	"lng");
 
-#sql_type("INT", 2, 0, 		"uchr"); 
-sql_type("INT", 5, 0,		"sht");
-sql_type("INT", 9, 0,		"int");
-sql_type("INT", 19, 0,		"lng");
+#sql_type("INT", 2, 0, 2,	"uchr"); 
+sql_type("INT", 5, 0, 2,	"sht");
+sql_type("INT", 9, 0, 2,	"int");
+sql_type("INT", 19, 0, 2,	"lng");
 
 # float(n) (n indicates precision of atleast n digits)
 # ie n <= 23 -> flt
@@ -480,42 +480,41 @@ sql_type("INT", 19, 0,		"lng");
 #    n <= 62 -> long long dbl (with -ieee) (not supported)
 # this requires a type definition
 
-sql_type("FLOAT", 23, 0, 	"flt");
-sql_type("FLOAT", 51, 0, 	"dbl");
-
-sql_type("DOUBLE", 51, 0, 	"dbl");
-sql_type("REAL", 51, 0, 	"dbl");
+sql_type("REAL", 23, 0, 2,	"dbl");
+sql_type("FLOAT", 23, 0, 2, 	"flt");
+sql_type("FLOAT", 51, 0, 2,	"dbl");
+sql_type("DOUBLE", 51, 0, 2,	"dbl");
 
 # decimal(n) == int(n)
 
-#sql_type("DECIMAL", 2, 0, 		"uchr"); 
-sql_type("DECIMAL", 5, 0,		"sht");
-sql_type("DECIMAL", 9, 0,		"int");
-sql_type("DECIMAL", 19, 0,		"lng");
+#sql_type("DECIMAL", 2, 0, 10, 		"uchr"); 
+sql_type("DECIMAL", 5, 0, 10,		"sht");
+sql_type("DECIMAL", 9, 0, 10,		"int");
+sql_type("DECIMAL", 19, 0, 10,		"lng");
 
 # decimal(d,s) (d indicates nr digits, s scale indicates nr of digits after the dot .)
-#sql_type("DECIMAL", 51, 50, "decimal");		# (fixed precision) requires decimal module
+#sql_type("DECIMAL", 51, 50, 10, 	"decimal");		# (fixed precision) requires decimal module
 
-sql_type("DECIMAL", 23, 22,		"flt");
-sql_type("DECIMAL", 51, 50,		"dbl");
+sql_type("DECIMAL", 23, 22, 10,		"flt");
+sql_type("DECIMAL", 51, 50, 10,		"dbl");
 
-#sql_type("NUMERIC", 2, 0, 		"uchr"); 
-sql_type("NUMERIC", 5, 0,		"sht");
-sql_type("NUMERIC", 9, 0,		"int");
-sql_type("NUMERIC", 19, 0,		"lng");
+#sql_type("NUMERIC", 2, 0, 10, 		"uchr"); 
+sql_type("NUMERIC", 5, 0, 10,		"sht");
+sql_type("NUMERIC", 9, 0, 10,		"int");
+sql_type("NUMERIC", 19, 0, 10,		"lng");
 
-sql_type("NUMERIC", 23, 22,		"flt");
-sql_type("NUMERIC", 51, 50,		"dbl");
+sql_type("NUMERIC", 23, 22, 10,		"flt");
+sql_type("NUMERIC", 51, 50, 10,		"dbl");
 
 
 # Date etc
 
-sql_type("MONTH_INTERVAL", 0, 0, 	"int");
-sql_type("SEC_INTERVAL", 0, 0, 		"int");
-sql_type("DATE", 0, 0, 			"date");
-sql_type("TIME", 0, 0, 			"time");
-sql_type("DATETIME", 0, 0, 		"datetime");
-sql_type("TIMESTAMP", 0, 0, 		"timestamp");
+sql_type("MONTH_INTERVAL", 0, 0, 10, 	"int");
+sql_type("SEC_INTERVAL", 0, 0, 10,	"int");
+sql_type("DATE", 0, 0, 0,		"date");
+sql_type("TIME", 0, 0, 0,		"time");
+sql_type("DATETIME", 0, 0, 0,		"datetime");
+sql_type("TIMESTAMP", 0, 0, 0, 		"timestamp");
 
 var strings := new(str,str);
 strings.insert("CHAR", 		"chr");
@@ -650,19 +649,19 @@ proc mvc_bind_dbat_( m, schema, Table, write_access ){
 }
 
 proc initialize(int debug) {
-        # change to sql statements !!
-        var myc = mvc_create(debug);
-        var schema = mvc_admin_login(myc);
-
-        if (schema != ""){
-                user_name = mvc_bind_( myc, schema, "users", "name", 1);
-                if (user_name.count() = 0){
-                        mvc_create_user( myc, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
-                        # probably needs priv's too
-                        mvc_commit( myc, 0, "");
-                }
-        }
-        mvc_destroy( myc );
+	# change to sql statements !!
+	var myc := mvc_create(debug);
+	var schema := mvc_admin_login(myc);
+	
+	if (schema != ""){
+		user_name := mvc_bind_( myc, schema, "users", "name", 1);
+		if (user_name.count() = 0){
+			mvc_create_user( myc, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
+			# probably needs priv's too 
+			mvc_commit( myc, 0, "");
+		}
+	}
+	mvc_destroy( myc );
 }
 
 initialize(sql_debug);

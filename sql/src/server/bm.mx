@@ -36,6 +36,7 @@ bat ids.
 #include <gdk.h>
 
 /* TODO move void_* functions into bm */
+extern void bat_destroy(BAT *b);
 
 extern struct bm *bm_create();
 extern void bm_destroy(struct bm *bm);
@@ -93,6 +94,13 @@ static BAT *bat_descriptor(bat bid)
 		return BATdescriptor(bid);
 	}
 	return NULL;
+}
+
+void bat_destroy(BAT *b)
+{
+	if (b){
+		BBPunfix(b->batCacheid);
+	}
 }
 
 static BAT *bm_create_bat( int ht, int tt, size_t size ){
@@ -274,8 +282,6 @@ void bm_commit( bm *bm, int tid )
 	    	int version = *(int*)BUNtail(b,p);
 	    	if (tid == version){
 	    		oid id = *(oid*)BUNhead(b,p);
-			str name = BUNtail(bm->bat_name,
-				BUNfnd(bm->bat_name,&id));
 			bat bid = *(oid*)BUNtail(bm->bat_bid,
 				BUNfnd(bm->bat_bid,&id));
 			BAT *b = bat_descriptor(bid);
@@ -311,8 +317,6 @@ void bm_abort( bm * bm, int tid )
 	    	int version = *(int*)BUNtail(b,p);
 	    	if (tid == version){
 	    		oid id = *(oid*)BUNhead(b,p);
-			str name = BUNtail(bm->bat_name,
-					BUNfnd(bm->bat_name,&id));
 			bat bid = *(oid*)BUNtail(bm->bat_bid,
 					BUNfnd(bm->bat_bid,&id));
 			BAT *b = bat_descriptor(bid);

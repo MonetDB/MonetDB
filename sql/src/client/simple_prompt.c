@@ -1,6 +1,7 @@
 
 #include <mem.h>
 #include <stdio.h>
+#include <string.h>
 #include <sql_config.h>
 
 #ifdef HAVE_TERMIOS_H

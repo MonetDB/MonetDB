@@ -25,6 +25,7 @@
 
 #include "mem.h"
 #include "statement.h"
+#include <string.h>
 
 
 static void atom_dump( atom *a, context *sql){
@@ -90,7 +91,7 @@ static void write_part( context *sql, char *buf, int len )
 		fwrite( buf, 1, len, stderr);
 }
 
-static int dump( context *sql, char *buf, int len, int nr )
+static void dump( context *sql, char *buf, int len, int nr )
 {
 	write_head(sql,nr);
 	write_part(sql,buf,len);
@@ -444,6 +445,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			len = snprintf( buf, BUFSIZ, 
 					"error impossible\n");
 	  	} 
+		if (sql->debug&4){
+			len += snprintf(buf +len, BUFSIZ-len, 
+				"s%d.info.print;\n", -s->nr);
+		}
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_ibat: 
@@ -563,8 +568,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} 	break;
 	case st_unique: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
-		if (s->op2.gval){
-			int g = stmt_dump( s->op2.gval->grp, nr, sql );
+		if (s->op2.stval){
+			int g = stmt_dump( s->op2.stval, nr, sql );
 
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 			"s%dg := s%d.CTgroup(s%d);\n", -s->nr, g, l);
@@ -601,17 +606,17 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} 	break;
 	case st_op: {
 		len = snprintf( buf, BUFSIZ, 
-		   "s%d := %s();\n", -s->nr, s->op1.funcval->imp);
+		   "s%d := %s();\n", -s->nr, s->op4.funcval->imp);
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_unop: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		if (s->op1.stval->nrcols)
 		  len = snprintf( buf, BUFSIZ, 
-		   "s%d := [%s](s%d);\n", -s->nr, s->op2.funcval->imp, l );
+		   "s%d := [%s](s%d);\n", -s->nr, s->op4.funcval->imp, l );
 		else 
 		  len = snprintf( buf, BUFSIZ, 
-		   "s%d := %s(s%d);\n", -s->nr, s->op2.funcval->imp, l);
+		   "s%d := %s(s%d);\n", -s->nr, s->op4.funcval->imp, l);
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_binop: {
@@ -632,39 +637,38 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		  	}
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 		    	"s%d := [%s](s%d,s%d);\n", 
-			-s->nr, s->op3.funcval->imp, l, r );
+			-s->nr, s->op4.funcval->imp, l, r );
 		} else  {
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 		    	"s%d := %s(s%d,s%d);\n", 
-			-s->nr, s->op3.funcval->imp, l,r );
+			-s->nr, s->op4.funcval->imp, l,r );
 		}
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_triop: {
-		stmt *op1 = s->op1.lval->h->data;
-		stmt *op2 = s->op1.lval->h->next->data;
-		stmt *op3 = s->op1.lval->h->next->next->data;
-		int r1 = stmt_dump( op1, nr, sql );
-		int r2 = stmt_dump( op2, nr, sql );
-		int r3 = stmt_dump( op3, nr, sql );
-		if (op1->nrcols || op2->nrcols || op3->nrcols){
+		int r1 = stmt_dump( s->op1.stval, nr, sql );
+		int r2 = stmt_dump( s->op2.stval, nr, sql );
+		int r3 = stmt_dump( s->op3.stval, nr, sql );
+		if (s->op1.stval->nrcols || 
+	 	    s->op2.stval->nrcols || 
+		    s->op3.stval->nrcols){
 			int l = 0;
-			if (op1->nrcols) l = r1;
-			if (op2->nrcols) l = r2;
-			if (op3->nrcols) l = r3;
-		  	if (!op1->nrcols){
+			if (s->op1.stval->nrcols) l = r1;
+			if (s->op2.stval->nrcols) l = r2;
+			if (s->op3.stval->nrcols) l = r3;
+		  	if (!s->op1.stval->nrcols){
 				int n = (*nr)++; 
 		  		len += snprintf( buf+len, BUFSIZ-len, 
 		    		"s%d := [ s%d ~ s%d];\n", n, l, r1 ); 
 				r1 = n;
 		  	}
-		  	if (!op2->nrcols){
+		  	if (!s->op2.stval->nrcols){
 				int n = (*nr)++; 
 		  		len += snprintf( buf+len, BUFSIZ-len, 
 		    		"s%d := [ s%d ~ s%d];\n", n, l, r2 ); 
 				r2 = n;
 		  	}
-		  	if (!op3->nrcols){
+		  	if (!s->op3.stval->nrcols){
 				int n = (*nr)++; 
 		  		len += snprintf( buf+len, BUFSIZ-len, 
 		    		"s%d := [ s%d ~ s%d];\n", n, l, r3 ); 
@@ -672,10 +676,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		  	}
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 		    	"s%d := [%s](s%d,s%d,s%d);\n", 
-			-s->nr, s->op2.funcval->imp, r1, r2, r3 );
+			-s->nr, s->op4.funcval->imp, r1, r2, r3 );
 		} else {
 		  len += snprintf( buf+len, BUFSIZ-len, 
-		    "s%d := %s(s%d,s%d,s%d);\n", -s->nr, s->op2.funcval->imp, 
+		    "s%d := %s(s%d,s%d,s%d);\n", -s->nr, s->op4.funcval->imp, 
 		    	r1, r2, r3 );
 		}
 		dump(sql,buf,len,-s->nr);
@@ -683,15 +687,15 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_aggr: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		if (s->op3.gval){
-			int g = stmt_dump( s->op3.gval->grp, nr, sql );
-			int e = stmt_dump( s->op3.gval->ext, nr, sql );
+			int g = stmt_dump( s->op2.stval, nr, sql );
+			int e = stmt_dump( s->op3.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ-len, 
 			"s%d := {%s}(s%d, s%d, s%d);\n", 
-				-s->nr, s->op2.aggrval->imp, l, g, e);
+				-s->nr, s->op4.aggrval->imp, l, g, e);
 		} else {
 			len += snprintf( buf+len, BUFSIZ-len, 
 				"s%d := s%d.%s();\n", 
-				-s->nr, l, s->op2.aggrval->imp );
+				-s->nr, l, s->op4.aggrval->imp );
 		}
 		dump(sql,buf,len,-s->nr);
 	} 	break;
@@ -753,19 +757,6 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		  "s%d := replace(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		dump(sql,buf,len,-s->nr);
 	} break;
-	case st_delete: {
-		if (s->op2.stval){
-			int l = stmt_dump( s->op2.stval, nr, sql );
-			len = snprintf( buf, BUFSIZ, 
-			"s%d := mvc_delete(myc, \"%s\", s%d);\n", 
-			-s->nr, s->op1.tval->name, l);
-		} else {
-			len = snprintf( buf, BUFSIZ, 
-			"s%d := mvc_delete(myc, \"%s\", nil);\n",
-			  -s->nr, s->op1.tval->name );
-		}
-		dump(sql,buf,len,-s->nr);
-	} break;
 	case st_alias: 
 	case st_column_alias: 
 		s->nr = - stmt_dump( s->op1.stval, nr, sql );
@@ -776,7 +767,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 	} break;
 	case st_sets: {
-		for(n = s->op1.lval->h; n; n->next ){
+		for(n = s->op1.lval->h; n; n = n->next ){
 			list *l = n->data;
 			node *m = l->h;
 			while(m){
@@ -892,11 +883,15 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		write_part(sql,buf,len);
 		write_tail(sql,-s->nr);
 	} break;
-	case st_result: {
-		stmt *k = s->op1.stval;
-		int l =  stmt_dump( k, nr, sql );
-	} break;
 
+	/* todo */
+	case st_basetable: 
+	case st_grant:
+	case st_revoke:
+	case st_ptable:
+	case st_pivot:
+		printf("not implemented stmt\n");
+		assert(0);
 	}
 
     	if (s->nr > 0) 

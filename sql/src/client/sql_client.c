@@ -21,8 +21,8 @@ stream *ws = NULL, *rs = NULL;
  * 	16	output parsed SQL
  * 	32	execute but no output write to the client
  * 	64 	output code only, no excution on the server.
- *     128 	export code in xml.
  */ 
+
 extern catalog *catalog_create_stream( stream *s, context *lc );
 
 void usage( char *prog ){
@@ -134,11 +134,6 @@ int clientAccept( context *lc, stream *rs ){
 		}
 		if (s){
 	    		int nr = 1;
-			if (lc->debug&128){
-	    			stmt2xml( s, &nr, lc );
-				stmt_reset( s );
-				nr= 1;
-			} 
 	    		stmt_dump( s, &nr, lc );
 	    		lc->out->flush( lc->out );
 

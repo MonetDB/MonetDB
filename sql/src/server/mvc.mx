@@ -246,8 +246,6 @@ static sql_column *bootstrap_create_column(mvc * m, sql_table *t, char *name,
    one for reads and writes. 
  */
 
-static int transaction_id = 0;
-
 static int stamp = 1;
 
 static int timestamp()
@@ -338,17 +336,11 @@ static BAT *bat_descriptor(bat bid)
 	return NULL;
 }
 
-static void bat_destroy(BAT *b)
-{
-	BBPunfix(b->batCacheid);
-}
-
 static BAT *bat_lcopy(BAT *b){
 	BAT *nb = BATcopy(b);
 	bat_destroy(b);
-	b = nb;
-	BATfakeCommit(b);
-	return b;
+	BATfakeCommit(nb);
+	return nb;
 }
 
 static BAT *sys_bat( struct bm *bm, char *name ) {
@@ -1240,10 +1232,12 @@ static void mvc_init_type( struct bm *bm )
 	BAT *type_sqlname = mvc_bat(bm, "types_sqlname", TYPE_str);
 	BAT *type_digits = mvc_bat(bm, "types_digits", TYPE_int);
 	BAT *type_scale = mvc_bat(bm, "types_scale", TYPE_int);
+	BAT *type_radix = mvc_bat(bm, "types_radix", TYPE_int);
 	BAT *type_systemname = mvc_bat(bm, "types_systemname", TYPE_str);
 	BAT *U_type_sqlname = mvc_bat(bm, "U_types_sqlname", TYPE_str);
 	BAT *U_type_digits = mvc_bat(bm, "U_types_digits", TYPE_int);
 	BAT *U_type_scale = mvc_bat(bm, "U_types_scale", TYPE_int);
+	BAT *U_type_radix = mvc_bat(bm, "U_types_radix", TYPE_int);
 	BAT *U_type_systemname = mvc_bat(bm, "U_types_systemname", TYPE_str);
 	BAT *D_type = mvc_bat(bm, "D_types", TYPE_oid);
 	BAT *O_type = mvc_bat(bm, "O_types", TYPE_oid);
@@ -1255,16 +1249,19 @@ static void mvc_init_type( struct bm *bm )
 		BUNins(type_sqlname, &nil, t->sqlname);
 		BUNins(type_digits, &nil, &t->digits);
 		BUNins(type_scale, &nil, &t->scale);
+		BUNins(type_radix, &nil, &t->radix);
 		BUNins(type_systemname, &nil, t->name);
 	}
 
 	bat_destroy(type_sqlname);
 	bat_destroy(type_digits);
 	bat_destroy(type_scale);
+	bat_destroy(type_radix);
 	bat_destroy(type_systemname);
 	bat_destroy(U_type_sqlname);
 	bat_destroy(U_type_digits);
 	bat_destroy(U_type_scale);
+	bat_destroy(U_type_radix);
 	bat_destroy(U_type_systemname);
 	bat_destroy(D_type);
 	bat_destroy(O_type);
@@ -1341,6 +1338,7 @@ void mvc_init(int debug, char *dirname)
 		bootstrap_create_column(m, t, "sqlname", "VARCHAR",0,0, 0);
 		bootstrap_create_column(m, t, "digits", "MEDIUMINT",0,0, 1);
 		bootstrap_create_column(m, t, "scale", "MEDIUMINT",0,0, 2);
+		bootstrap_create_column(m, t, "radix", "MEDIUMINT",0,0, 2);
 		bootstrap_create_column(m, t, "systemname", "VARCHAR",0,0, 3);
 
 		/* now the authorisation related tables */
@@ -2975,7 +2973,7 @@ void mvc_export(stream * s, BAT * order, BAT * bats, char *sep,
 	}
 	BUNins(seps, (ptr) &nil, (ptr) &rsep);
 
-	i = snprintf(buf, BUFSIZ, "%ld\n", BATcount(order));
+	i = snprintf(buf, BUFSIZ, "%ld\n", (long)BATcount(order));
 	s->write(s, buf, i, 1);
 	ASCIIoutput(order, seps, bats, s);
 	BBPreclaim(seps);

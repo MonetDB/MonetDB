@@ -237,7 +237,6 @@ static void log_read_destroy(logger *logger, logformat *l, char *name )
 
 static void log_read_create(logger *logger, logformat *l, char *name )
 {
-	int len;
 	char *buf = log_read_string(logger);
 
         if (logger->debug&1)
@@ -327,7 +326,6 @@ static int logger_readlog( logger *logger, char *filename ){
 	}
 	while( log_read_format(logger, &l) ){
 		char *name = NULL;
-		int len;
 
 		if (l.flag != LOG_START && l.flag != LOG_END){
 			name = log_read_string(logger);
@@ -545,7 +543,6 @@ void log_bat_transient(logger *logger, oid lbid ){
 void log_bat(logger *logger, oid lbid, BAT *b ){
 	char *name = bm_lbid2name(logger->bm, lbid);
 	logformat l;
-	int 	status;
 	BUN	p; 
 
 	if (logger->debug&128){
@@ -561,7 +558,6 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 		log_write_format( logger, &l );
 		log_write_string(logger, name);
 	    	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
-			int s1,s2;
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
 			wh( h, logger->log,1);
@@ -579,7 +575,6 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 		log_write_format( logger, &l);
 		log_write_string(logger, name);
 	    	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
-			int s1,s2;
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
 			wh( h, logger->log,1);

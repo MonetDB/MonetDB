@@ -47,6 +47,7 @@
 # endif
 #endif
 #include <unistd.h>
+#include <string.h>
 #include <stream.h>
 
 #include <mem.h>

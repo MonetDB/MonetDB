@@ -211,6 +211,7 @@ void init_keywords()
 	/*
 	   keywords_insert("SQLCODE", SQLCODE );
 	 */
+	keywords_insert("COLUMN", COLUMN);
 	keywords_insert("TABLE", TABLE);
 	keywords_insert("TEMPORARY", TEMPORARY);
 	keywords_insert("TEMP", TEMPORARY);
@@ -262,7 +263,10 @@ void init_keywords()
 	keywords_insert("RELEASE", RELEASE);
 	keywords_insert("WORK", WORK);
 	keywords_insert("CHAIN", CHAIN);
+	keywords_insert("PRESERVE", PRESERVE);
+	keywords_insert("ROWS", ROWS);
 	keywords_insert("NO", NO);
+
 }
 
 void exit_keywords()

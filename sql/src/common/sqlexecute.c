@@ -68,8 +68,11 @@ stmt *sqlnext(context * lc, stream * in, int *err)
 
 	if (lc->cur != EOF && !(*err = sqlparse(lc))) {
 		res = semantic(lc, lc->sym);
-		if (res)
-			res = optimize(lc, res);
+		if (res){
+			stmt *opt = optimize(lc, res);
+			stmt_destroy(res);
+			res = opt;
+		}
 		if (!res && lc->status){
 			*err = 1;
 		}

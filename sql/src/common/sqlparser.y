@@ -1,5 +1,6 @@
 %{
 #include <unistd.h>
+#include <string.h>
 #include "sql.h"
 #include "sqlexecute.h"
 #include "symbol.h"
@@ -97,6 +98,9 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	revoke
 	operation
 	table_element
+	add_table_element
+	alter_table_element
+	drop_table_element
 	table_constraint
 	table_constraint_type
 	column_def
@@ -147,7 +151,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	column
 	authid
 	grantee
-	opt_column_name
+	opt_alias_name
 	opt_to_savepoint
 	opt_using
 
@@ -207,8 +211,10 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_limit
 	opt_match
 	opt_match_type
+	opt_on_commit
 	opt_grantor
 	opt_from_grantor
+	opt_column
 	grantor
 
 %type <bval>
@@ -245,7 +251,7 @@ OPEN CLOSE FETCH
 */
 %token <sval> sqlDELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER UNIONJOIN
-%token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO
+%token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 	
 /*-
 %token <operation> '+' '-' '*' '/'
@@ -293,7 +299,8 @@ UNDER WHENEVER
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES HIERARCHY
 %token<sval> PUBLIC REFERENCES SCHEMA SET
-%token ALTER ADD TABLE TO UNION UNIQUE USER VALUES VIEW WHERE WITH 
+
+%token ALTER ADD TABLE COLUMN TO UNION UNIQUE USER VALUES VIEW WHERE WITH 
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT
@@ -544,13 +551,52 @@ grantee:
  * TRIGGER, PROCEDURE, FUNCTION, ROLE */ 
 
 alter: 
-  ALTER TABLE qname ADD table_element 
+   ALTER TABLE qname ADD add_table_element 
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
 	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname ALTER alter_table_element 
+
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $3);
+	  dlist_append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname DROP drop_table_element 
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $3);
+	  dlist_append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
+
+alter_table_element:
+	opt_column ident SET DEFAULT default_value 
+	{ dlist *l = dlist_create();
+	  dlist_append_string(l, $2);
+	  dlist_append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_DEFAULT, l); }
+ | 	opt_column ident DROP DEFAULT 
+	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
+ ;
+
+drop_table_element:
+     opt_column ident drop_action
+	{ dlist *l = dlist_create();
+	  dlist_append_string(l, $2 );
+	  dlist_append_int(l, $3 );
+	  $$ = _symbol_create_list( SQL_DROP_COLUMN, l ); }
+  |  CONSTRAINT ident drop_action
+	{ dlist *l = dlist_create();
+	  dlist_append_string(l, $2 );
+	  dlist_append_int(l, $3 );
+	  $$ = _symbol_create_list( SQL_DROP_CONSTRAINT, l ); }
+  ;
+
+opt_column:
+     COLUMN	 { $$ = 0; }
+ |   /* empty */ { $$ = 0; }
+ ;
 
 create:	role_def | table_def | view_def ;
 
@@ -563,7 +609,7 @@ role_def:
  ;
 
 table_def:
-    CREATE opt_temp TABLE qname table_content_source
+    CREATE opt_temp TABLE qname table_content_source opt_on_commit
 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $2);
@@ -577,6 +623,12 @@ opt_temp:
  |  LOCAL TEMPORARY 	{ $$ = _symbol_create( SQL_TEMP_LOCAL, NULL); }
  |  GLOBAL TEMPORARY	{ $$ = _symbol_create( SQL_TEMP_GLOBAL, NULL); }
  ;
+
+opt_on_commit: /* only for temporary tables */
+    /* empty */			 { $$ = 0; } /* default delete rows on commit */
+ |  ON COMMIT PRESERVE ROWS  	 { $$ = 1; }
+ |  ON COMMIT sqlDELETE ROWS	 { $$ = 0; } 
+ ;
 	
 table_content_source:
     '(' table_element_list ')' 	{ $$ = $2; }
@@ -587,7 +639,8 @@ table_element_list:
  |  table_element_list ',' table_element { $$ = dlist_append_symbol( $1, $3 ); }
  ;
 
-table_element: column_def | column_options | table_constraint ;
+add_table_element: column_def | table_constraint ;
+table_element: add_table_element | column_options ;
 
 column_def:
     column data_type opt_column_def_opt_list
@@ -674,7 +727,7 @@ ref_action:
 
 opt_ref_delete:
     /* empty */			{ $$ = NULL; }
- | ON sqlDELETE ref_action		{ $$ = _symbol_create_int(SQL_DELETE, $3); }
+ | ON sqlDELETE ref_action	{ $$ = _symbol_create_int(SQL_DELETE, $3); }
  ;
 
 opt_ref_update:
@@ -1520,14 +1573,14 @@ column_exp:
   		  dlist_append_string(l, $1);
   		  dlist_append_string(l, NULL);
   		  $$ = _symbol_create_list( SQL_TABLE, l ); }
- |  scalar_exp opt_column_name	
+ |  scalar_exp opt_alias_name	
 		{ dlist *l = dlist_create();
   		  dlist_append_symbol(l, $1);
   		  dlist_append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  ;
 
-opt_column_name:
+opt_alias_name:
     /* empty */	{ $$ = NULL; }
  |  AS ident	{ $$ = $2; }
  ;

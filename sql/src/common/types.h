@@ -11,6 +11,7 @@ typedef struct sql_type {
 	char *name;
 	unsigned int digits;
 	unsigned int scale;
+	unsigned int radix; 
 	int nr;
 } sql_type;
 
@@ -47,7 +48,7 @@ sql_export void sql_subtype_destroy( sql_subtype *t );
 extern int subtype_cmp( sql_subtype *t1, sql_subtype *t2);
 
 sql_export sql_type *sql_create_type(char *sqlname, int digits, 
-					int scale, char *name );
+					int scale, int radix, char *name );
 
 extern sql_aggr *sql_bind_aggr(char *name, sql_subtype *type);
 sql_export sql_aggr *sql_create_aggr(char *name, char *imp, char *tpe, char *res);
