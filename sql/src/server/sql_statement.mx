@@ -140,6 +140,7 @@ typedef struct stmt {
 	int flag;
 
 	int nr; 		/* variable assignement */
+	int nr2;		/* usage count */
 
 	struct stmt *h;
 	struct stmt *t;
@@ -394,6 +395,7 @@ static stmt *stmt_create(st_type type)
 	s->key = 0;
 	s->aggr = 0;
 	s->nr = 0;
+	s->nr2 = -1;
 	s->h = NULL;
 	s->t = NULL;
 	s->optimized = 0;
@@ -620,6 +622,7 @@ static void list_reset( list *l )
 void stmt_reset(stmt * s)
 {
 	s->nr = 0;
+	s->nr = -1;
 	s->optimized = 0;
 
 	switch (s->type) {
