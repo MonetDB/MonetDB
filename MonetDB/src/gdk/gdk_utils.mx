@@ -246,7 +246,6 @@ RETSIGTYPE BATSIGpipe(int nr) {
 	while (waitpid(-1, &status, WNOHANG) > 0)
 		;
 	PARDEBUG THRprintf(GDKerr, "BROKEN PIPE \n"); 
-abort();
 	(void) signal(SIGPIPE, BATSIGpipe); 
 }
 #endif
