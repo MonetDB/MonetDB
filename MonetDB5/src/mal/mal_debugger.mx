@@ -558,7 +558,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	/* search the symbol */
         	i = findVariable(mb,b);
         	if( i<0){
-            	stream_printf(out,"%sSymbol not found\n","#mdb ");
+            	stream_printf(out,"%s Symbol not found\n","#mdb ");
             	continue;
         	} 
         	printStackElm(out, mb, getVar(mb,i),stk->stk+i,i,size,first);
@@ -567,7 +567,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
     	case 'u':
         	if( stk->up == NULL) 
 				break;
-        	stream_printf(out,"%sgo up the stack\n","#mdb ");
+        	stream_printf(out,"%s go up the stack\n","#mdb ");
         	stk= stk->up;
         	mb = stk->blk;
         	printCall(cntxt,mb,stk,pc);
@@ -576,10 +576,13 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
     	{   
 			MalStkPtr w;
         	MalBlkPtr mw=mb;
+			int pci=pc; /*  how to find enclosing pc */
         	for(w=stk;w!= NULL; w=w->up){
             	mw = w->blk;
             	stream_printf(out,"#mdb ");
-            	printCall(cntxt,mw,w,pc);
+            	printCall(cntxt,mw,w,pci);
+				if( w->up)
+					pci=w->up->pcup;
         	}
         	continue;
     	}
