@@ -963,7 +963,14 @@ int interpret_var(int	stk, YYSTREE lt, ValPtr res){
             for(j = 0; j < lt->cnt; j++) { 
                 YYSTREE t = lt->yysons[j];
                 if (t != NULL) {
-                    v = VARnew(stk, t->yyval.val.sval);
+		    v = VARlocalfind(&stk, t->yyval.val.sval);
+		    if (!v){
+                    	v = VARnew(stk, t->yyval.val.sval);
+		    } else {
+			GDKwarning("Overwriting var %s\n", t->yyval.val.sval);
+			ATOMunfix(v->binding.vtype, v->binding.val.pval);
+			VALclear(&v->binding);
+		    }
                     if (t->token == TOK_ASSIGNMENT) {
                         arg(t,0)->token = TOK_TEMPLATE;
                         arg(t,0)->yyval.vtype = TYPE_ptr;

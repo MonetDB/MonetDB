@@ -60,6 +60,7 @@ m_export void 	CNTXTcopy    (Cntxt dst, Cntxt src);
 						    CNTXTfree2(stk,c); }
 
 m_export Variable	VARfind      (Cntxt *stk, str scope);
+m_export Variable	VARlocalfind (Cntxt *stk, str scope);
 m_export Variable	VARnew       (Cntxt stk, str name);  
 m_export int 	VARpurge     (int nbats, int* bats, int natoms, int* atoms);
 
@@ -328,6 +329,29 @@ Variable VARfind(Cntxt *stk, str nme){
 
         return 0;
 }
+
+@-
+The routine @%VARlocalfind@ dereferences a name to find the variable descriptor.
+Only the local stack is inspected. 
+@c
+Variable VARlocalfind(Cntxt *stk, str nme){
+        Variable v;
+	int i, s = *stk;
+
+        if (nme == NULL) {
+                return 0;
+        }
+	i = s;
+	for (v = monet_cntxt[i].var; v; v = v->next) {
+                if (*nme == *v->name && strcmp(nme, v->name) == 0) {
+			*stk = s;
+               	        return v;
+        	}
+	}
+
+        return 0;
+}
+
 
 
 @-
