@@ -84,11 +84,23 @@ typedef struct {
  */
 
 static BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
-        /* stream_printf(GDKout,"# FTECH WS[%d][%d] \n",batID,wsID); */
+        /* stream_printf(GDKout,"# FETCH WS[%d][%d] \n",batID,wsID); */
         BUN bun = BUNfnd(ws,&batID);
+
+        if ( wsID > 0 && batID==DOC_LOADED )
+                return NULL; /* incomplete:
+                              * The is no valid BATdescriptor for these BAT
+                              * for some reason
+                              */
         if ( !bun )
               stream_printf(GDKout,"# NOT FOUND BAT[%d] in WS!!!!\n",batID);
-        BAT* batbat = BATdescriptor(*(bat*)bun);
+        BAT* batbat;
+        
+        if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
+                stream_printf(GDKout,"# FETCH BATBAT for WS[%d][%d] FAILED\n",batID ,wsID);
+                return NULL;
+        }
+
 
         BUN bbun = BUNfnd(batbat,&wsID);
         BAT *res;
@@ -96,7 +108,13 @@ static BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
                 res = 0;
                 /* stream_printf(GDKout,"# NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID); */
         } else {
-                res = BATdescriptor(*(bat*)bbun);
+                if ( !(res = BATdescriptor(*(bat*)bbun)) ) {
+                        /* incomplete:
+                         * fetch[18(=WS_FRAG)][0] fails often but to no harm
+                         * 
+                         * stream_printf(GDKout,"# FETCH WS[%d][%d] FAILED\n",batID,wsID);
+                         */
+                }
         }
         BBPunfix( BBPcacheid( batbat ) );
         return res;
