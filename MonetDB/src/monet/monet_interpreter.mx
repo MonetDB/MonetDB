@@ -1990,6 +1990,7 @@ any performance profiling.
 
 void onlineProfilerHeader(void)
 {
+	/* the column header name info */
 	log0("# ");
 	log0("caller,\t");
 	log0("callee,\t");
@@ -2016,6 +2017,33 @@ void onlineProfilerHeader(void)
 	log0("context switch,\t");
 	log0("involunarty switch,\t");
 	log0("event\t# name\n");
+	/* the column header type info */
+	log0("# ");
+	log0("str,\t");
+	log0("str,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("str,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int,\t");
+	log0("int\t# type\n");
 	flushLog();
 }
 static void quote(char *buf, int lim)
