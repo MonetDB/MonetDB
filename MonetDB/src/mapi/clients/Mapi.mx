@@ -1570,7 +1570,6 @@ char * mapi_fetch_line(Mapi mid)
 
 		if (mid->from->errnr) {
 			mapi_setError(mid, "Connection terminated","mapi_fetch_line");
-			free(reply);
 			return 0;
 		}
 #ifdef BLOCKED
