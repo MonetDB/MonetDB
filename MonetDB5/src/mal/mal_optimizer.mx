@@ -1133,6 +1133,12 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     /* removeInstruction(mb,pci); was dead code ! */
     return NULL;
 }
+@-
+The second form of dead code removal is to detect expressions, whose
+result is not used. This can be detected by look-ahead for any
+alternative assignment. The blocks are causing problems here,
+because the variable should be re-assigned in each related block before we
+can safely conclude that it is dead code. (see test4004)
 
 @+ Select Push Down heuristic
 One of the oldest optimizer tricks in relation processing is

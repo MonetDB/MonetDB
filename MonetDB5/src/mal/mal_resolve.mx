@@ -653,8 +653,15 @@ variables.
                 return;
             }
         } else 
-        if( lhs != rhs && lhs != TYPE_void && 
-            rhs != TYPE_any && lhs != TYPE_any) {
+@-
+The language permits assignment of 'nil' to any variable,
+using the target type.
+@c
+		if( lhs != TYPE_void && lhs != TYPE_any){
+			p->argv[i]= newConstant(mb,
+				(isaBatType(lhs)?TYPE_bat:lhs), GDKstrdup("nil"),TRUE);
+		} else 
+        if( lhs != TYPE_void && lhs != TYPE_any) {
             typeMismatch(mb,p,lhs,rhs);
             return;
         }
