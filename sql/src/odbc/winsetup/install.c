@@ -207,23 +207,6 @@ VersionCheckCopyFile(const char *srcpath, const char *dstpath,
 }
 
 static BOOL
-CopyODBCCore(const char *redistpath, const char *path)
-{
-	return VersionCheckCopyFile(redistpath, path, "ds16gt.dll") &&
-		VersionCheckCopyFile(redistpath, path, "ds32gt.dll") &&
-		VersionCheckCopyFile(redistpath, path, "odbc16gt.dll") &&
-		VersionCheckCopyFile(redistpath, path, "odbc32.dll") &&
-		VersionCheckCopyFile(redistpath, path, "odbc32gt.dll") &&
-		VersionCheckCopyFile(redistpath, path, "odbccp32.cpl") &&
-		VersionCheckCopyFile(redistpath, path, "odbccp32.dll") &&
-		VersionCheckCopyFile(redistpath, path, "odbccr32.dll") &&
-		VersionCheckCopyFile(redistpath, path, "odbcint.dll") &&
-		VersionCheckCopyFile(redistpath, path, "odbctrac.dll");
-/* 	VersionCheckCopyFile(redistpath, path, "odbcinst.cnt"); */
-/* 	VersionCheckCopyFile(redistpath, path, "odbcinst.hlp"); */
-}
-
-static BOOL
 InstallMyDriver(const char *driverpath)
 {
 	char driver[300];
@@ -393,13 +376,11 @@ RemoveMyDSN()
 }
 
 static BOOL
-Install(const char *redistpath, const char *driverpath)
+Install(const char *driverpath)
 {
 	char path[300];
 	WORD pathlen;
 	BOOL rc;
-	char existingversion[300];
-	char newversion[300];
 	DWORD usagecount;
 
 	/* first, retrieve the path the driver should be installed to
@@ -408,58 +389,24 @@ Install(const char *redistpath, const char *driverpath)
 	    ProcessSQLErrorMessages("SQLInstallDriverManager"))
 		return FALSE;
 
-	if (redistpath && !CheckIfFileExists(path, redistpath)) {
-		snprintf(path, sizeof(path), "Can't find ODBC SDK in %s\n", redistpath);
-		MessageBox(NULL, path, "Install",
-			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
-		SQLRemoveDriverManager(&usagecount);
-		exit(-10);
-	}
-	rc = TRUE;
-	if (CheckIfFileExists(path, "odbc32.dll")) {
-		if (redistpath) {
-			char existingfile[_MAX_PATH], newfile[_MAX_PATH];
-
-			snprintf(existingfile, sizeof(existingfile),
-				 "%s\\odbc32.dll", path);
-			snprintf(newfile, sizeof(newfile),
-				 "%s\\odbc32.dll", redistpath);
-
-			GetFileVersion(existingfile, existingversion,
-				       sizeof(existingversion));
-			GetFileVersion(newfile, newversion,
-				       sizeof(newversion));
-
-			if (strcmp(newversion, existingversion) > 0) {
-				if (!SQLRemoveDriverManager(&usagecount)) {
-					if (ProcessSQLErrorMessages("SQLRemoveDriverManager"))
-						return FALSE;
-				} else
-					rc = CopyODBCCore(redistpath, path);
-			}
-		}
-	} else if (redistpath == NULL) {
+	if (!CheckIfFileExists(path, "odbc32.dll")) {
 		MessageBox(NULL, "You must install MDAC before you can use the ODBC driver", "Install",
 			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
-		return FALSE;
-	} else
-		rc = CopyODBCCore(redistpath, path);
-
-	if (!rc) {
-		/* copy failed */
 		SQLRemoveDriverManager(&usagecount);
 		return FALSE;
 	}
 
-	/* if not, install the driver */
 	rc = InstallMyDriver(driverpath);
 
 	if (rc) {
 		/* after the driver is installed create the new DSN */
-		AddMyDSN();
+		rc = AddMyDSN();
 	}
 
-	return TRUE;
+	if (!rc)
+		SQLRemoveDriverManager(&usagecount);
+
+	return rc;
 }
 
 static BOOL
@@ -491,15 +438,11 @@ main(int argc, char **argv)
 		else
 			strcpy(buf, ".");
 		strcat(buf, "\\lib");
-		p = malloc(strlen(buf) + 10);
-		strcpy(p, buf);
-		strcat(p, "\\odbcdist");
-		if (!Install(p, buf)) {
+		if (!Install(buf)) {
 			MessageBox(NULL, "ODBC Install Failed", argv[0],
 				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 			exit(1);
 		}
-		free(p);
 		free(buf);
 	} else if (strcmp("/Uninstall", argv[1]) == 0) {
 		if (!Uninstall()) {
