@@ -1427,25 +1427,39 @@ fi ]
 AC_MSG_RESULT($INSTALL_BACKUP)
 AC_SUBST(INSTALL_BACKUP)
 
-PHP_INCS=
+PHP_INCS=""
+PHP_EXTENSIONDIR=""
 AC_ARG_WITH(php,
-	AC_HELP_STRING([--with-php=DIR], [php.h is installed in DIR/include]),
+	AC_HELP_STRING([--with-php=<value>], [PHP support (yes/no/auto)]),
 	have_php="$withval",
 	have_php=auto)
+AC_ARG_WITH(php-config, AC_HELP_STRING([  --with-php-config=FILE], [Path to php-config script]),
+	PHP_CONFIG="$withval",
+	PHP_CONFIG=php-config)
+
+AC_MSG_CHECKING([for PHP])
 if test "x$have_php" != xno; then
-  if test "x$have_php" != xauto; then
-    PHP_INCS="-I$withval/include"
-  fi
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $PHP_INCS"
-  AC_CHECK_HEADER(php.h, have_php=yes, have_php=no)
-  CPPFLAGS="$save_CPPFLAGS"
+	php_prefix="`$PHP_CONFIG --prefix 2>/dev/null`"
+	PHP_INCS=" `$PHP_CONFIG --includes 2>/dev/null`"
+	PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir 2>/dev/null`"
+ 
+	if test -z "$php_prefix"; then
+		if test x"$have_php" = xyes -o x"$PHP_CONFIG" != xphp-config; then
+			AC_MSG_ERROR(Cannot find php-config. Please use --with-php-config=PATH)
+		else
+			have_php=no
+		fi
+	fi
 fi
-if test $have_php != yes; then
-  PHP_INCS=
+if test x"$have_php" != xno; then
+	have_php=yes
 fi
+AC_MSG_RESULT($have_php)
 AC_SUBST(PHP_INCS)
-AM_CONDITIONAL(HAVE_PHP, test $have_php = yes)
+AC_SUBST(PHP_EXTENSIONDIR)
+AM_CONDITIONAL(HAVE_PHP, test x"$have_php" != xno)
+
+
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
