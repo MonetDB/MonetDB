@@ -121,7 +121,7 @@ def usage(cmd_options, cmd = None):
         if argument:
             arg = arg + ' ' + argument
         if comment:
-            arg = arg + '\n\t' + comment
+            arg = arg + '\n\t' + string.replace(comment, '\n', '\n\t')
         sys.stderr.write(arg+'\n')
     raise Error('usage')
 
