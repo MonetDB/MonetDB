@@ -982,6 +982,7 @@ stmt *optimize( context *c, stmt *s ){
 		}
 		return stmt_dup(s->op4.stval);
 	case st_set: case st_sets: 
+	default:
 		assert(0); 	/* these should have been rewriten by now */
 	}
 	return res;

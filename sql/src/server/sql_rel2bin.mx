@@ -97,6 +97,8 @@ static stmt* stmt_min(stmt *x, stmt *y)
 {
 	sql_subtype *t;
 	sql_subfunc *f;
+	assert(x->nrcols == 0);
+	assert(y->nrcols == 0);
 	t = tail_type(x);
 	assert(t);
 /*	assert(t == tail_type(y));	*/
@@ -109,6 +111,8 @@ static stmt* stmt_max(stmt *x, stmt *y)
 {
 	sql_subtype *t;
 	sql_subfunc *f;
+	assert(x->nrcols == 0);
+	assert(y->nrcols == 0);
 	t = tail_type(x);
 	assert(t);
 /*	assert(t == tail_type(y));	*/
@@ -374,10 +378,9 @@ list *shrink_select_ranges(list *oldsels)
 	return newsels;
 }
 
+
 stmt *rel2bin( context *c, stmt *s )
 {
-	stmt *res = s;
-
 	switch(s->type){
 	/* first just return those statements which we cannot optimize,
 	 * such as schema manipulation, transaction managment, 
@@ -446,7 +449,9 @@ stmt *rel2bin( context *c, stmt *s )
 @' replaced by "shrink_select_ranges()"
 			l = distill_range_selects(l);
 @)
-			l = shrink_select_ranges(l);
+			if (!(c->debug&4096)) {
+				l = shrink_select_ranges(l);
+			}
 			res = (stmt*)list_reduce(l, (freduce)&stmt_semijoin, (fdup)&stmt_dup );
 		}
 		list_destroy(l);
@@ -457,7 +462,7 @@ stmt *rel2bin( context *c, stmt *s )
 
 	case st_temp:
 	case st_filter: 
-	case st_select: case st_select2: case st_like: case st_semijoin: 
+	case st_select: case st_select2: case st_like: case st_semijoin:
 	case st_diff: case st_intersect: case st_union: case st_outerjoin:
 	case st_join: 
 	case st_mirror: case st_reverse: case st_const: case st_mark: 
@@ -524,7 +529,9 @@ stmt *rel2bin( context *c, stmt *s )
 	case st_partial_pivot:
 	case st_ptable:
 	case st_set: case st_sets: 
+	default:
 		assert(0); 	/* these should have been rewriten by now */
 	}
-	return res;
+	return stmt_dup(s);
 }
+

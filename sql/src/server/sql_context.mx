@@ -128,19 +128,6 @@ int senddata_wrap( Stream *Out ){
 	return GDK_SUCCEED;
 }
 
-/*
-			if (sql->debug&4096) {
-				char *sqzd_cmd = NULL;
-				int misq_x = 0;
-				cmdsqueezestr2str(&sqzd_cmd, cmd, &misq_x);
-				if (sqzd_cmd && (sqzd_cmd != str_nil)) {
-					if (cmd)
-						free(cmd);
-					cmd = sqzd_cmd;
-				}
-			}
-*/
-
 stmt *symbol2stmt( context *c ){
 	stmt *s = semantic(c, c->sym);
 	if (s){
@@ -176,6 +163,17 @@ int milinterpret( context *c, char *cmd, stream *out, Cntxt stk, int part )
 {
 	int err = 0;
 	if (cmd){
+@(
+		if (c->debug&8192) {
+			char *sqzd_cmd = NULL;
+			int misq_x = 0;
+			CMDsqueezeStr2Str(&sqzd_cmd, cmd, &misq_x);
+			if (sqzd_cmd && (sqzd_cmd != str_nil)) {
+				/*_DELETE?*/free(cmd);
+				cmd = sqzd_cmd;
+			}
+		}
+@)
 		if (c->debug&64){
 			stream_writeInt( out, (part)?Q_DEBUGP:Q_DEBUG );
 			stream_writeInt( out, c->debug );

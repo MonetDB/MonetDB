@@ -42,6 +42,7 @@
  * 		with <40 BUNs, the whole BAT is printed;
  * 		for larges BATs, we print the first 10 BUNs, the last 10 BUNs, 
  * 		and 10 BUNs sampled from the rest.
+ * 	4096	disable optimization/"squeezing" in rel2bin
  */ 
 
 #define SQL_DUMP 1

@@ -461,7 +461,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 					"error impossible\n");
 	  		} 
 			len = snprintf( buf, BUFSIZ, 
-				"s%d := [%s](s%d,s%d).select(TRUE);\n", 
+				"s%d := [%s](s%d,s%d).uselect(TRUE);\n", 
 				-s->nr, op, l, r ); 
 		} else {
 		switch(s->flag){

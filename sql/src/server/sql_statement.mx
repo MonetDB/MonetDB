@@ -413,6 +413,7 @@ const char * st_type2string(st_type type) {
 	case st_partial_pivot:	return "st_partial_pivot";
 	case st_pivot:	return "st_pivot";
 	case st_list:	return "st_list";
+	default:	return "st_?";
 	}
 	return "unknown"; /* just needed for broken compilers ! */
 }
@@ -1707,11 +1708,10 @@ stmt *tail_column(stmt * st)
 		return tail_column(st->op1.lval->h->data);
 
 	case st_kbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
-		printf("= TODO: tail_column(%d=%s) -> %d=%s !?\n",
-			st->type, st_type2string(st->type), st->type, st_type2string(st->type) );
-		return st;
+		printf("= TODO: tail_column(%d=%s) -> NULL !?\n",
+			st->type, st_type2string(st->type) );
+		return NULL;
 
-	case st_relselect:
 	default:
 		fprintf(stderr, "missing tail column %d: %s\n", st->type, st_type2string(st->type) );
 		assert(0);
@@ -1888,6 +1888,7 @@ char *table_name(stmt * st)
 
 sql_column *basecolumn(stmt * st)
 {
+	if (!st) return NULL; /* required for shrink_select_ranges() in sql_rel2bin.mx */
 	switch (st->type) {
 	case st_reverse:
 	case st_mirror:
@@ -1898,7 +1899,8 @@ sql_column *basecolumn(stmt * st)
 	case st_bat:
 		return st->op1.cval;
 
-	case st_kbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
+	case st_column_alias: /* required to avoid cyclic calls */
+	case st_ibat:
 		printf("= TODO: basecolumn(%d=%s) -> NULL !?\n",
 			st->type, st_type2string(st->type) );
 		return NULL;
