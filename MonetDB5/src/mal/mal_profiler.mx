@@ -281,8 +281,8 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     static struct rusage   prevUsage;
     static int eventcounter;
     struct tms newTms;
-        struct mallinfo infoMalloc;
-        struct rusage   infoUsage;
+	struct mallinfo infoMalloc;
+	struct rusage   infoUsage;
     str stmt,c;
 
     (void) cntxt; (void) stk; /* still unused */
@@ -368,8 +368,6 @@ saved in XML format for post-processing. Compared to the
 profilerRecord above, it is more verbose and contains more
 information relevant for off-line analysis.
 @c
-
-
 void infoHeapProfile(Heap *hp, str nme){
         char buf[PATHLENGTH], *p = buf;
 
@@ -404,10 +402,10 @@ void HASHinfoProfile(Hash *h, str s){
 void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef MALprofiler
     struct tms newTms;
-        struct mallinfo infoMalloc;
-        struct rusage   infoUsage;
-        static struct mallinfo prevMalloc;
-        static struct rusage   prevUsage;
+	struct mallinfo infoMalloc;
+	struct rusage   infoUsage;
+	static struct mallinfo prevMalloc;
+	static struct rusage   prevUsage;
     str stmt,c;
     (void) cntxt; /* still unused */
 

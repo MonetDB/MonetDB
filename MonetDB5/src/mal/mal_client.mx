@@ -217,6 +217,7 @@ mal_export void     initClientThread(Client c);
 mal_export void     closeClient    (Client c);
 mal_export void     killClient     (Client c);
 mal_export void     freeClient  (Client c);
+mal_export int		countClients();
 mal_export void     appendInput(Client c, str msg);
 mal_export int      readClient  (Client c);
 mal_export void     setClientTrace(Client c, int flag);
@@ -733,6 +734,25 @@ str resumeClient(Client c,int sessionkey){
     return throwMessage("suspend","Not yet implemented");
 }
 @}
+@-
+In embedded mode there can be at most one console client and one 
+Mapi connection. Moreover, the Mapi connection should disable the administrator
+console.
+@c
+int 
+countClients(){
+	int cnt=0;
+	Client c;
+    for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
+        if (c->mode != FREECLIENT) cnt++;
+	return cnt;
+}
+int 
+runEmbedded(Client c){
+	(void) c;
+	/* to be defined */
+	return 0;
+}
 @+ Spying on clients
 During system monitoring with multiple clients active it is
 often hard to detect who or what is causing a system degradation. 
