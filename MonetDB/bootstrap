@@ -133,11 +133,10 @@ _REQ_LT_VERSION=`echo $REQ_LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", 
 if [ "$_LT_VERSION" -ge "$_REQ_LT_VERSION" ]; then
 	echo "libtool $LT_VERSION is $REQ_LT_VERSION or newer. Good."
 elif [ "$_LT_VERSION" -lt "$_REQ_LT_VERSION" ]; then
-	echo "libtool $LT_VERSION is older than $REQ_LT_VERSION"
-	echo "using conf/*.1.4"
-	for i in ltmain.sh ltconfig config.guess config.sub ; do
-		cp conf/$i.1.4 conf/$i
-	done
+	echo "libtool $LT_VERSION is older than $REQ_LT_VERSION."
+	echo "We require (at least) libtool $REQ_LT_VERSION."
+	echo "Please get a newer version (cf. http://www.gnu.org/software/libtool/)."
+	exit 1
 fi
 
 
