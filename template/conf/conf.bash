@@ -1,7 +1,7 @@
 # The contents of this file are subject to the MonetDB Public
 # License Version 1.0 (the "License"); you may not use this file
 # except in compliance with the License. You may obtain a copy of
-# the License at 
+# the License at
 # http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 # 
 # Software distributed under the License is distributed on an "AS
@@ -12,7 +12,7 @@
 # The Original Code is the Monet Database System.
 # 
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+# Portions created by CWI are Copyright (C) 1997-2003 CWI.
 # All Rights Reserved.
 # 
 # Contributor(s):
@@ -22,8 +22,8 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 #
-# ! this file should be kept identical in !
-# ! monet, sql, xml, acoi, template       !
+# ! this file should be kept identical in         !
+# ! monet, sql, xml, acoi, template, playpen, gis !
 #
 # In the following. ${what} is one of monet, sql, xml, acoi. 
 # It is automatically derived from the current directory name.
@@ -294,8 +294,8 @@ fi
 #	conf_opts="${conf_opts} --with-pthread=/tmp"
 #fi
 
-if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN" ] ; then
-	# on Linux & CYGWIN, /soft/local is identical with /usr/local
+if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; then
+	# on Linux, CYGWIN, & Darwin, /soft/local is identical with /usr/local
 	# prepend ${softpath} to ${binpath} & ${libpath}
 	binpath="${softpath}/bin:${binpath}"
 	libpath="${softpath}/lib:${libpath}"
@@ -361,6 +361,9 @@ if [ "${what}" != "MONET"  -a  "${WHAT_PREFIX}" != "${MONET_PREFIX}" ] ; then
 	modpath="${WHAT_PREFIX}/lib/MonetDB"
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
 	mtest_modpath="--monet_mod_path=`${MONET_PREFIX}/bin/monet-config --modpath`:${modpath}"
+  elif  [ "${OS}" = IRIX64 ] ; then
+	# IRIX64 requires this to find dependend modules
+	libpath="${WHAT_PREFIX}/lib/MonetDB:${libpath}"
 fi
 
 # remove trailing ':'
