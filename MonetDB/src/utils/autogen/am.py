@@ -649,12 +649,12 @@ CXXEXT = \\\"cc\\\"
             am_list2string(am['ALL']," all-local-",""))
 
     if (len(am['HDRS']) > 0):
-        cache = ""
-        if os.path.exists(".cache"):
-            cache = ".cache"
+        incs = ""
+        if os.path.exists(".incs.in"):
+            incs = ".incs.in"
         if (len(name) > 0):
             fd.write("%sincludedir = $(includedir)/%s\n" % (name,name))
-        fd.write("%sinclude_HEADERS = %s %s\n" % (name,am_list2string(am['HDRS']," ",""), cache))
+        fd.write("%sinclude_HEADERS = %s %s\n" % (name,am_list2string(am['HDRS']," ",""), incs))
 
     fd.write('''
 include $(top_srcdir)/*.mk

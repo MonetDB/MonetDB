@@ -225,43 +225,74 @@ def find_org(deps,f):
 # do_deps finds the dependencies for the given list of targets
 # based on the includes (or alike)
 #
-# cache contains the includes of the local directory, and will be stored
-# in a .cache.
+# incs contains the includes of the local directory, and will be stored
+# in a .incs.ag file. And after translating to the install include dirs 
+# also in .incs.in
 
-def do_deps(targets,deps,includes,incmap,cwd):
-    cache = {}
-    do_scan(targets,deps,incmap,cwd,cache)
-    do_dep_rules(deps,cwd,cache)
-    do_dep_combine(deps,includes,cwd,cache)
-    cachefile = os.path.join(cwd, '.cache')
-    if os.path.exists( cachefile ):
-        os.unlink(cachefile)
-    cache_store = shelve.open( cachefile, "c")
-    for k,vals in cache.items():
-        cache_store[k] = vals
-    cache_store.close()
+def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
+    basename = os.path.basename(cwd)
+    incs = {}
+    do_scan(targets,deps,incmap,cwd,incs)
+    do_dep_rules(deps,cwd,incs)
+    do_dep_combine(deps,includes,cwd,incs)
 
-def do_recursive_combine(deplist,includes,cache,depfiles):
+    buildincsfile = os.path.join(cwd, '.incs.ag')
+    if os.path.exists( buildincsfile ):
+        os.unlink(buildincsfile)
+    buildincs = shelve.open( buildincsfile, "c")
+    for k,vals in incs.items():
+        buildincs[k] = vals
+    buildincs.close()
+
+    installincsfile = os.path.join(cwd, '.incs.in')
+    if os.path.exists( installincsfile ):
+        os.unlink(installincsfile)
+    installincs = shelve.open( installincsfile, "c")
+    for k,vals in incs.items():
+	nvals = []
+	for i in vals:
+		if (os.path.isabs(i)):
+			nvals.append(i)
+		else:
+			inc = os.path.normpath(os.path.join(cwd,i))
+			mlen = 0;
+			subsrc = ''
+			subins = ''
+			for src,install in incdirsmap:
+				m = re.match(src,inc)
+				if (m and m.end() > mlen):
+					mlen = m.end()
+					subsrc = src
+					subins = install
+					
+			if mlen > 0:
+				inc = re.sub(subsrc,\
+					re.sub('includedir','..',subins),inc)
+			nvals.append(inc)
+        installincs[k] = nvals
+    installincs.close()
+
+def do_recursive_combine(deplist,includes,incs,depfiles):
     for d in deplist:
         if includes.has_key(d):
             for f in includes[d]:
                 if f not in depfiles:
                     depfiles.append(f)
-                    do_recursive_combine([f],includes,cache,depfiles)
+                    do_recursive_combine([f],includes,incs,depfiles)
             # need to add include d too
             if d not in depfiles:
                 depfiles.append(d)
-        elif cache.has_key(d):
+        elif incs.has_key(d):
             if d not in depfiles:
                 depfiles.append(d)
-                do_recursive_combine(cache[d],includes,cache,depfiles)
+                do_recursive_combine(incs[d],includes,incs,depfiles)
 
 # combine the found dependencies, ie. transitive closure.
-def do_dep_combine(deps,includes,cwd,cache):
+def do_dep_combine(deps,includes,cwd,incs):
     for target,depfiles in deps.items():
         for d in depfiles:
-            if cache.has_key(d):
-                do_recursive_combine(cache[d],includes,cache,depfiles)
+            if incs.has_key(d):
+                do_recursive_combine(incs[d],includes,incs,depfiles)
         # remove recursive dependencies (target depends somehow on itself)
         if target in depfiles:
             depfiles.remove(target)
@@ -271,25 +302,25 @@ def do_dep_combine(deps,includes,cwd,cache):
 # second dependency between generated targets based on
 # dependencies between the input files for the target generation process
 # ie. io.m, generates io_glue.c which and depends on io_proto.h)
-def do_dep_rules(deps,cwd,cache):
+def do_dep_rules(deps,cwd,incs):
     for target in deps.keys():
         tf,te = split_filename(target)
         if dep_rules.has_key(te):
             dep,new = dep_rules[te]
-            if cache.has_key(tf+"."+dep):
-                if tf+new not in cache[target]:
-                    cache[target].append(tf+new)
-                for d in cache[tf+"."+dep]:
+            if incs.has_key(tf+"."+dep):
+                if tf+new not in incs[target]:
+                    incs[target].append(tf+new)
+                for d in incs[tf+"."+dep]:
                     df,de = split_filename(d)
-                    if de == dep and df+new not in cache[target]:
-                        cache[target].append(df+new)
+                    if de == dep and df+new not in incs[target]:
+                        incs[target].append(df+new)
             else:
-                cache[target].append(tf+new)
+                incs[target].append(tf+new)
 
 # scan for includes and match against the known deps and include map.
-def do_scan_target(target,targets,deps,incmap,cwd,cache):
+def do_scan_target(target,targets,deps,incmap,cwd,incs):
     base,ext = split_filename(target)
-    if not cache.has_key(target):
+    if not incs.has_key(target):
         inc_files = []
         if scan_map.has_key(ext):
             org = os.path.join(cwd,find_org(deps,target))
@@ -323,18 +354,18 @@ def do_scan_target(target,targets,deps,incmap,cwd,cache):
 ##                    else:
 ##                        print fnd + incext + " not in deps and incmap "
                     res = pat.search(b,res.end(0))
-        cache[target] = inc_files
+        incs[target] = inc_files
 
-def do_scan(targets,deps,incmap,cwd,cache):
+def do_scan(targets,deps,incmap,cwd,incs):
     for target in targets:
         if not deps.has_key(target):
-            do_scan_target(target,targets,{},incmap,cwd,cache)
+            do_scan_target(target,targets,{},incmap,cwd,incs)
     for target,depfiles in deps.items():
-        do_scan_target(target,targets,deps,incmap,cwd,cache)
+        do_scan_target(target,targets,deps,incmap,cwd,incs)
         for target in depfiles:
-            do_scan_target(target,targets,deps,incmap,cwd,cache)
-    #for i in cache.keys():
-        #print(i,cache[i])
+            do_scan_target(target,targets,deps,incmap,cwd,incs)
+    #for i in incs.keys():
+        #print(i,incs[i])
 
 def do_lib(lib,deps):
     true_deps = []
@@ -436,21 +467,25 @@ def collect_includes(incdirs, cwd, topdir):
 
     for dir,org in dirs:
             if os.path.isabs(dir):
-                f = os.path.join(dir, ".cache")
+                f = os.path.join(dir, ".incs.ag")
+            	if not os.path.exists(f):
+                	f = os.path.join(dir, ".incs.in")
             else:
-                f = os.path.join(cwd, dir, ".cache")
+                f = os.path.join(cwd, dir, ".incs.ag")
+            	if not os.path.exists(f):
+                	f = os.path.join(cwd, dir, ".incs.in")
 
             if os.path.exists(f):
-                cache = shelve.open(f)
-                for file in cache.keys():
+                incs = shelve.open(f)
+                for file in incs.keys():
                     incfiles = []
-                    for inc in cache[file]:
+                    for inc in incs[file]:
                         if not os.path.isabs(inc) and inc[0] != '$':
                             inc = os.path.join(org,inc)
                         incfiles.append(inc)
                     includes[os.path.join(org,file)] = incfiles
                     incmap[file] = org
-                cache.close()
+                incs.close()
             else:
                 if os.path.exists(dir):
                     for inc in os.listdir(dir):
@@ -469,7 +504,7 @@ def collect_includes(incdirs, cwd, topdir):
 # these should for portability be relative or given using an environment
 # variable 
 
-def codegen(tree, cwd, topdir):
+def codegen(tree, cwd, topdir, incdirsmap):
     includes = {}
     incmap = {}
     if tree.has_key("INCLUDES"):
@@ -488,7 +523,7 @@ def codegen(tree, cwd, topdir):
                 targets = do_code_gen(targets,deps,lib_code_gen)
             if i[0:4] == "bin_" or i == "BINS":
                 targets = do_code_gen(targets,deps,bin_code_gen)
-            do_deps(targets,deps,includes,incmap,cwd)
+            do_deps(targets,deps,includes,incmap,cwd,incdirsmap)
             libs = do_libs(deps)
             v["TARGETS"] = targets
             v["DEPS"] = deps

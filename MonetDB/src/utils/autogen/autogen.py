@@ -102,10 +102,11 @@ def expand_subdirs(subdirs):
             res.append(dir)
     return res
 
-def main(cwd,topdir,automake):
+# incdirsmap is a map between srcdir and install-include-dir
+def main(cwd,topdir,automake,incdirsmap):
     p = parser()
     read_makefile(p,cwd)
-    codegen(p.curvar,cwd,topdir)
+    codegen(p.curvar,cwd,topdir,incdirsmap)
     (InstallList,OutList) = am.output(p.curvar,cwd,topdir,automake)
     msc.output(p.curvar,cwd,topdir)
     if p.curvar.has_key('SUBDIRS'):
@@ -113,8 +114,10 @@ def main(cwd,topdir,automake):
         for dir in subdirs:
             d = os.path.join(cwd,dir)
             if (os.path.exists(d)):
+    		incdirsmap.append(d,os.path.join('includedir',dir))
                 print(d)
-                (deltaInstallList, deltaOutList) = main(d,topdir,automake)
+                (deltaInstallList, deltaOutList) = \
+			main(d,topdir,automake,incdirsmap)
                 InstallList = InstallList + deltaInstallList
                 OutList = OutList + deltaOutList
                 #cmd = "cd " + dir + "; " + sys.argv[0] + " " + topdir
@@ -122,7 +125,7 @@ def main(cwd,topdir,automake):
     return InstallList,OutList
 
 InstallListFd = open("install.lst", "w")
-(InstallList,OutList) = main(topdir,topdir,automake)
+(InstallList,OutList) = main(topdir,topdir,automake,[])
 InstallListFd.writelines( InstallList )
 InstallListFd.close()
 
