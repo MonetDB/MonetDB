@@ -218,12 +218,13 @@ static int id_rand(void){
 		srand(time(NULL));
 		seeded = 1;
 	}
+
+  try_again:
 	r = rand();
 	for(i = 0; i < id_size; i++) 
 		if (id_hist[i] == r) {
-			cerr << "src/mel/command.mx:id_rand: found duplicate random number " << r << " => calling srand(time(NULL))!\n";
-			srand(time(NULL));
-			return id_rand();
+			// found duplicate random number: just try again
+			goto try_again;
 		} 
 	id_hist[id_size++] = r;
 	assert(id_size <= MAX_ID_HIST);
