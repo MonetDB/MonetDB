@@ -1318,7 +1318,8 @@ static int file_exists(str dir, str name, str ext)
 }
 
 static int heap_move(Heap* hp, str srcdir, str dstdir, str nme, str ext) {
-	if (hp->storage == STORE_PRIV || (hp->filename && strstr(hp->filename, ".priv"))) {
+	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on .priv heap modes */
+	if (hp->filename && strstr(hp->filename, ".priv")) {
 		long_str path;
 		struct stat st;
 		GDKfilepath(path, srcdir, nme, ext);
@@ -1340,6 +1341,7 @@ static int heap_move(Heap* hp, str srcdir, str dstdir, str nme, str ext) {
 				return 1;
 			}
 		}
+		/* if X.priv already has a saved X, that one is backed up as normal.. */
 	}
 	return file_move(srcdir, dstdir, nme, ext);
 }

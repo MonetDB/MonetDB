@@ -183,26 +183,25 @@ version. If it fails then the compressed file is removed
 This way we save about half the system calls, because each file can 
 only be in one state.
 @c
-int GDKunlink(str dir, str nme, str ext) {
-	char path[MAXPATHLEN];
-	int err, t0=0;
-
-	IODEBUG t0 = GDKms();
-
-	if ((nme == NULL) || (*nme == 0) ) {
-		return -1; 
-	}
-	GDKfilepath(path,dir,nme,ext);
-	err = unlink(path); 
-	IODEBUG THRprintf(GDKerr, "unlink %s = %d (%dms)\n", path, err, GDKms() - t0); 
-	if (err < 0) {
-		char path2[MAXPATHLEN];
-		strcpy(path2, path); strcat(path2, ".Z");
-		err = unlink(path2); 
-		if (err) GDKsyserror("GDKunlink(%s)\n", path);
-		IODEBUG THRprintf(GDKerr, "2nd unlink %s = %d\n", path2, err); 
-	}
+static int delete_file(str path) {
+	int err = unlink(path); 
+	if (err) GDKsyserror("GDKunlink(%s)\n", path);
+	IODEBUG THRprintf(GDKerr, "unlink %s = %d\n", path, err); 
 	return err;
+}
+
+int GDKunlink(str dir, str nme, str ext) {
+	if (nme && *nme) {
+		char path[MAXPATHLEN];
+		struct stat st;
+		GDKfilepath(path,dir,nme,ext);
+		if (stat(path, &st) == 0)
+			return delete_file(path);
+		strcat(path, ".Z");
+		if (stat(path, &st) == 0)
+			return delete_file(path);
+	}
+	return -1;
 }
 
 @-
@@ -220,8 +219,6 @@ int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 	}
 	GDKfilepath(path1,dir1,nme1,ext1);
 	GDKfilepath(path2,dir2,nme2,ext2);
-
-	/*(void)unlink(path2); */
 	ret = rename(path1,path2);
 
 	IODEBUG THRprintf(GDKerr, "move %s %s = %d (%dms)\n", path1, path2, ret, GDKms()-t0); 
@@ -254,10 +251,10 @@ Maybe it is better to make use of @%MT_msync()@. But then, we would need to
 bring in a backup mechanism, in which stable images of the BATs are created
 at commit-time.
 @c
-		err = MT_msync(buf, size, MMAP_ASYNC);
+		err = MT_msync(buf, size, MMAP_SYNC);
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-		IODEBUG THRprintf(GDKerr, "MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_ASYNC) = %d\n", 
+		IODEBUG THRprintf(GDKerr, "MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", 
 			buf, size, err);
 	} else if (mode == STORE_COMPR) {
 		char extension[PATHLENGTH];
@@ -286,6 +283,7 @@ at commit-time.
 					break;
 				}
 				size -= ret;
+				buf += ret;
 			}
 			IODEBUG THRprintf(GDKerr, "fwrite(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", buf, size, fd, err);
 	       	}  else {
@@ -463,6 +461,7 @@ implement heap mmap rules. return whether something changed.
 #define HEAPcurmode(x) ((x)->size?((x)->filename?(x)->storage:STORE_MEM):-1)
 
 static int HEAPcheckmode(Heap *h, char storage, int persistent, int writeable) {
+	/* user may have requested illegal or system-wise unwanted mmap modes. correct this */
 	if (storage != (char) -1) {	
 		if ((storage&STORE_MMAP) && h->free < GDKvm_minsize()) {
 			h->storage = STORE_MEM;  /* avoid VM memory waste with a lowerbound */
@@ -554,9 +553,6 @@ BAT *BATsave(BAT *bd) {
 	b->T = &bs.T;
 	b->batBuns = &b->U->buns;
 
-	/* check the legality of the heap modes */
-	DESCsetmodes(bd, b);
-
 @+ NIELS broken needs correction of DELTA status
 	/* try to cut off unused bytes at the start of the heap */
 	if ((!(b->batBuns->storage & STORE_MMAP || b->batRestricted)) && 
@@ -574,7 +570,6 @@ BAT *BATsave(BAT *bd) {
 		}
 	}
 @c
-
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtybuns) {
@@ -608,6 +603,9 @@ BAT *BATsave(BAT *bd) {
                     if (err == 0) tsaved = TRUE;
                 }
 	}
+	/* correct heap modes such that they are ACID respecting */
+	DESCsetmodes(bd, b);
+
 	if (err == 0) 
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtydesc) { 
 		DESCclean(b);
@@ -823,31 +821,35 @@ int BATdelete(BAT* b) {
                 BATfree(b);
                 b = (BAT*) BBPgetdesc(bid);
         }
-	if (o && b->batCopiedtodisk) {
-	    IODEBUG THRprintf(GDKerr, "BATdelete %s\n", o); 
-
-	    if (GDKunlink(BATDIR, o, "desc")) {
-		GDKwarning("BATdelete(%s): descriptor\n", b->batId);
-	    }
-	    if (HEAPdelete(b->batBuns, o, "buns")) {
-		GDKwarning("BATdelete(%s): bun heap\n", b->batId);
-	    }
-	    if (HEAPdelete(&b->hheap, o, "hheap")) {
-		GDKwarning("BATdelete(%s): head heap\n", b->batId);
-	    }
-	    if (HEAPdelete(&b->theap, o, "theap")) {
-		GDKwarning("BATdelete(%s): tail heap\n", b->batId);
-	    }
-	    if (b->haccCopiedtodisk && HEAPdelete(&b->haccelerator, o, "hacc")) {
-		GDKwarning("BATdelete(%s): head accelerator\n", b->batId);
-	    }
-	    if (b->taccCopiedtodisk && HEAPdelete(&b->taccelerator, o, "tacc")) {
-		GDKwarning("BATdelete(%s): tail accelerator\n", b->batId);
-	    }
-            b->batCopiedtodisk = FALSE;
-            b->haccCopiedtodisk = FALSE;
-            b->taccCopiedtodisk = FALSE;
+	if (b->batCopiedtodisk) {
+	    	IODEBUG THRprintf(GDKerr, "BATdelete %s\n", o); 
+		if (GDKunlink(BATDIR, o, "desc")) {
+			GDKwarning("BATdelete(%s): descriptor\n", b->batId);
+		}
 	}
+	if (b->batCopiedtodisk || (b->batBuns->storage&STORE_MMAP)) {
+		if (HEAPdelete(b->batBuns, o, "buns") && b->batCopiedtodisk)
+			GDKwarning("BATdelete(%s): bun heap\n", b->batId);
+	}
+	if (b->batCopiedtodisk || (b->hheap.storage&STORE_MMAP)) {
+		if (HEAPdelete(&b->hheap, o, "hheap") && b->batCopiedtodisk)
+			GDKwarning("BATdelete(%s): head heap\n", b->batId);
+	}
+	if (b->batCopiedtodisk || (b->theap.storage&STORE_MMAP)) {
+		if (HEAPdelete(&b->theap, o, "theap") && b->batCopiedtodisk)
+			GDKwarning("BATdelete(%s): tail heap\n", b->batId);
+	}
+	if (b->haccCopiedtodisk || (b->haccelerator.storage&STORE_MMAP)) {
+		if (HEAPdelete(&b->haccelerator, o, "hacc") && b->haccCopiedtodisk)
+			GDKwarning("BATdelete(%s): head accelerator\n", b->batId);
+	}
+	if (b->taccCopiedtodisk || (b->taccelerator.storage&STORE_MMAP)) {
+		if (HEAPdelete(&b->taccelerator, o, "tacc") && b->taccCopiedtodisk)
+			GDKwarning("BATdelete(%s): tail accelerator\n", b->batId);
+	}
+        b->batCopiedtodisk = FALSE;
+        b->haccCopiedtodisk = FALSE;
+        b->taccCopiedtodisk = FALSE;
 	return 0;
 }
 

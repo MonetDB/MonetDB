@@ -247,32 +247,26 @@ int HEAPfree(Heap* h) {
                 	GDKfree(h->base);
         	} else { /* mapped file, or STORE_PRIV */
         		char nme[PATHLENGTH], *ext;
-                        long_str path, dst;
+                        long_str fullname, privname;
+			struct stat st;
                 	int ret = GDKmunmap(h->base, h->maxsize);
                 	if (ret < 0) {
 				GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
-				return -1;
                 	}
-			strcpy(nme, h->filename);
-			ext = decompose_filename(nme);
                 	IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", 
 					(void *) h->base, h->maxsize, ret);
-			if (h->storage == STORE_PRIV) {
-				struct stat st;
-				/* may need to move back the file from X.priv to X */
-				GDKfilepath(dst, BATDIR, nme, ext);
-				strcat(ext, ".priv");
-				GDKfilepath(path, BATDIR, nme, ext);
 
-				/* dst may already exist (a newer version) */
-				if (stat(dst, &st)) 
-					ret = GDKmove(BATDIR, path, NULL, BATDIR, dst, NULL); 
-			}
-			if (ret >= 0 && strstr(h->filename, ".priv")) { 
-				/* remove priv file */
-				GDKfilepath(path, BATDIR, h->filename, NULL);
-				ret = unlink(path); 
-				IODEBUG THRprintf(GDKerr, "HEAPfree: unlink %s = %d\n", path, ret);
+			/* we move back X.priv to X, if X does not exist */
+			strcpy(nme, h->filename);
+			ext = decompose_filename(nme);
+			GDKfilepath(fullname, BATDIR, nme, ext);
+			strcat(ext, ".priv");
+			GDKfilepath(privname, BATDIR, nme, ext);
+
+			if (stat(privname, &st) == 0 && stat(fullname, &st)) {
+				ret = rename(privname, fullname);
+				IODEBUG THRprintf(GDKerr, "HEAPfree: rename(%s,%s) = %d\n", 
+							privname, fullname, ret);
 			}
         	} 
         	h->base = NULL;
@@ -331,8 +325,8 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 		fp = (FILE*) GDKfilelocate(nme, "mrb+", ext);
 		if (fp) {
 			ret = ftruncate(fileno(fp), (off_t) ((double)h->free*1.05));
-			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s, size=" SZFMT ") = %d\n", 
-                                                h->filename, h->maxsize, ret);
+			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s.%s, size=" SZFMT ") = %d\n", 
+                                                nme, ext, h->maxsize, ret);
 			fclose(fp);
 			if (ret == 0) {
 				h->size = h->maxsize = (size_t) ((double)h->free*1.05);
@@ -372,10 +366,24 @@ int HEAPsave(Heap* h, str nme, str ext) {
 }
 
 int HEAPdelete(Heap* h, str o, str ext) {
-	if (h->size) {
-		return GDKunlink(BATDIR, o, ext);
+	int ret;	
+	if (h->size <= 0 || h->filename == NULL) {
+		return 0;
 	}
-	return 0;
+	ret = GDKunlink(BATDIR, o, ext);
+
+	/* for memory mapped files, also try to remove any X.priv */
+	if (h->storage&STORE_MMAP) {
+		long_str path;
+		struct stat st;
+		GDKfilepath(path, BATDIR, o, ext);
+		strcat(path, ".priv");
+		if (stat(path, &st) == 0) {
+			ret = unlink(path);
+			IODEBUG THRprintf(GDKerr, "HEAPdelete unlink(%s) = %d\n", path, ret);
+		}
+	}
+	return ret;
 }
 
 size_t HEAPvmsize(Heap *h) {

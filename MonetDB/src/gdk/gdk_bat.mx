@@ -1243,31 +1243,128 @@ BAT *BATset(BAT *b, int flag) {
 	return b; 
 }
 
+@- BATsetaccess
+@T
+Changes the access permission mode. It may seem simple, but this has become very tricky 
+when memory-mapped files are involved.
+
+Let us recall the two main memory mapped heap modes:
+\begin{itemize}
+\item STORE_MMAP files must be readonly, because you never know the exact saved status. 
+      HEAPsave consists of the rather efficient msync(X).
+\item STORE_PRIV files modify pages in swap area, and can be writable. 
+      HEAPsave actually write a full write(X), while the mapped file stays is X.priv
+\end{itemize}
+In case of a change from writable->readonly (PRIV->MMAP), nothing needs to be done immediately.
+The mapped BAT is saved in the old mode (in X, not X.priv), and made un-modifyable.
+As there are no updates, we need not worry about saving either.
+@-
+@T
+A change from readonly->writable (MMAP->PRIV) is more traumatic. We must unload, and re-load 
+immediately, before the BAT can become modifyable.
+@-
+@T
+This picture is complicated further by the new MMAP heaps for temporary BATs.
+While such BATs are non-persistent, it is legal to have them as MMAP, because
+they won't need to survive a system crash (ie global abort), so we don't care
+about consistent files.
+@-
+@T
+Now, for such non-persistent MMAP bats we want to keep the change writable->readonly 
+(i.e. MMAP->MMAP) efficient, that is a simple msync(X) should be sufficient (no writing 
+to X.priv). To change a temporary writable MMAP heap into a readonly permanent
+MMAP heap, we must *modify* the filename.
+@-
+@T
+To summarize, there are three heap attributes of interest;
+\begin{description}
+\item[H = (priv,map)] heap mode as registered in h->storage 
+\item[M = (priv,map)] heap mode as has been requested from the OS 
+\item[F = (X,X.priv)] h->filename 
+\end{description}
+
+We show now all 4 legal heap states, and transitions between them:
+
+\begin{verbatim}
+writable:                      initially created by:     when made readonly:
+
+(1) [ H=priv,M=priv,F=X.priv ] load a writable mmap bat  goto (4) 
+(2) [ H=map, M=map, F=X.priv ] new temporary heap bat    goto (3)
+
+readonly:                                                when made writable:
+
+(3) [ H=map, M=map, F=X]       load a readonly mmap bat  if (persistent) goto (1) else goto (4)
+(4) [ H=map, M=priv,F=X.priv ] n.a.                      goto (1)
+\end{verbatim}
+
+Now we see that for BBPsync (heap_move) it is sufficient to check for the .priv
+suffix to determine the appropriate backup_bat behavior (i.e. register a X .killfile
+anticipating the write(X) besides a X.priv).
+
+HEAPsave: we do not need to worry about saving readonly bats: as we save them in 
+BATsetaccess anyway just before changing modes, we know that readonly heaps will 
+never be dirty and as such never saved. 
+
+HEAPsave on a writable BAT just needs to look at H (h->storage) to know what to do.
+
+Finally, accelerator heaps may indeed be saved even on readonly bats (basically
+after they have been created -- which can happen on readonly bats). In case of
+readonly mmap heaps, we see that due to H=map in all cases, HEAPsave will use
+the (efficient) msync. This is not dangerous when saving an accelerator heap the
+first time, as its file will be ignored if [ht]accCopiedtodisc in the .desc
+is not set (only happens after fully succesful heap write).
+
 @= mmap_write
-    if (@2.base != NULL && @2.storage == STORE_MMAP && @2.filename != NULL) {
-	@1 = STORE_PRIV; 
-        action = 2;
-    } else @1 = @2.storage;
+    /* transition from readonly to writable (or appendable) */
+    if (@2.base != NULL && (@2.storage&STORE_MMAP) && @2.filename != NULL) {
+        str p = strstr(@2.filename, ".priv");
+	assert(@2.storage != STORE_PRIV); /* would indicate an illegal heap state */
+        if (p) {
+		/* state(4), goto state (1) */
+	        @1 = STORE_PRIV; 
+	} else if (BBP_status(b->batCacheid)&BBPEXISTING) {
+		/* state(3), goto state (1) */
+	        @1 = STORE_PRIV; 
+		reload = TRUE; 
+	} else {
+		/* state(3), goto state (4) */
+		str nme = @2.filename; 
+		sprintf(@2.filename = (char*) GDKmalloc(strlen(nme)+12), "%s.priv", nme);
+		GDKfree(nme);
+	        @1 = STORE_MMAP; 
+	}
+	remap = 1; 
+    } else {
+        @1 = @2.storage;
+    }
 @= mmap_read
-    if (@2.base != NULL && @2.filename != NULL) {
-      str p = strstr(@2.filename, ".priv");
+    /* transition from writable (or appendable) to readonly */
+    if (@2.base != NULL && (@2.storage&STORE_MMAP) && @2.filename != NULL) {
       if (@2.storage == STORE_PRIV) {
-        @1 = STORE_MMAP; 
-        action = 2;
-      } else if (p) {
-        @1 = STORE_MMAP; 
-        action = 1;
-	*p = 0; 
-      }
-    } else @1 = @2.storage;
+         /* state(1), goto state (4) */
+         @1 = STORE_MMAP; 
+      } else {
+         /* state(2), goto state (3) */
+         str p = strstr(@2.filename, ".priv");
+	 assert(p); /* absence of .priv would indicate an illegal heap state */
+	 *p = 0; /* cut off .priv */
+      } 
+      remap = 1; 
+    } else {
+        @1 = @2.storage;
+    }
 @c
 BAT *BATsetaccess(BAT *b, int mode) {
 	BATcheck(b, "BATsetaccess"); 
 
 	if (b->batRestricted != mode) {
-   	    int action=0, m1=0, m2=0, m3=0, m4=0, m5=0;	
-	    int dirty = BATdirty(b);
-	
+   	    int reload=FALSE, remap=FALSE, dirty=BATdirty(b), bak=b->batRestricted;
+	    int m1=0, bak1 = b->batBuns->storage; 
+	    int m2=0, bak2 = b->hheap.storage; 
+	    int m3=0, bak3 = b->theap.storage; 
+	    int m4=0, bak4 = b->haccelerator.storage; 
+	    int m5=0, bak5 = b->taccelerator.storage; 
+
 	    if (VIEWparent(b) && mode != BAT_READ) {
 		VIEWreset(b);
 	    }  
@@ -1296,20 +1393,36 @@ BAT *BATsetaccess(BAT *b, int mode) {
 		    @:mmap_write(m5,b->haccelerator)@
 		}
 	    }
-	    if (action && b->batCopiedtodisk && dirty) {
+	    if (remap && b->batCopiedtodisk && dirty) {
+		/* make sure any disk images are clean */
+	        int dirty = b->batDirtydesc;
 	        b->batDirtydesc = FALSE;
-		BBPsave(b); /* make sure any disk images are clean */
+
+		/* TODO? saving entire bat may be a bit overkill if only one heap needs it.. */
+		if (BBPsave(b)) {
+			/* deal with BAT write errors: no access mode change */
+	        	b->batDirtydesc = dirty;
+			return NULL; 
+		}
 	    }
 	    /* set new access mode */
 	    b->batRestricted = mode;
 	    b->batDirtydesc = TRUE;
 
-	    if (action) {
+	    if (remap) {
 		BATmmap(b, m1, m2, m3, m4, m5);
 	    }
-	    if (action == 2) {
+	    if (reload) {
+		/* we assume total exclusive access when B.access() is done. MIL USER RESPONABILITY!!! */
 	  	bat bid = b->batCacheid;
-		BBPsave(b);
+
+		/* TODO? saving entire bat may be a bit overkill if only one heap needs it.. */
+		if (BBPsave(b)) {
+			/* deal with BAT write errors: no access mode change */
+	    		b->batRestricted = bak;
+			BATmmap(b, bak1, bak2, bak3, bak4, bak5);
+			return NULL;
+		}
 		BATfree(b);
 		BBPuncacheit(bid, TRUE);
 		b = BATload_intern(bid);
