@@ -525,14 +525,12 @@ int CMDinsert_bat(BAT **r, BAT *b, BAT *s){
 	}
 @c
 int CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	@:void_append_only(CMDreplace_bun)@
 	BUNreplace(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDreplace_bat(BAT **r, BAT *b, BAT *s){
-	@:void_append_only(CMDreplace_bat)@
 	BATreplace(*r=b,s);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
