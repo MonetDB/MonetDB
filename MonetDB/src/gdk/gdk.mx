@@ -2115,7 +2115,7 @@ gdk_export size_t GDKmem_heapinuse(void);
 gdk_export void* 	GDKmalloc  (size_t size); 
 gdk_export void* 	GDKrealloc (void* pold, size_t size); 
 gdk_export void	GDKfree    (void* blk); 
-gdk_export str	GDKstrdup  (str s);
+gdk_export str	GDKstrdup  (const char *s);
 
 gdk_export void*	GDKvmalloc  (size_t size, size_t *maxsize);
 gdk_export void*	GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize);

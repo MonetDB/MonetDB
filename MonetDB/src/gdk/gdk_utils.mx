@@ -949,7 +949,7 @@ void* GDKcalloc(size_t nmemb, size_t size) {
 }
 
 
-char *GDKstrdup(char *s) {
+char *GDKstrdup(const char *s) {
         int l = strLen(s);
         char *n = (char *) GDKmalloc(l);
         memcpy(n,s, l);

@@ -155,7 +155,7 @@ gdk_export void		strWrite       (str a, stream* s, size_t cnt);
 gdk_export hash_t	strHash        (str s); 
 gdk_export int		strPut         (Heap* b, var_t *off, str src);
 gdk_export void 	strHeap        (Heap* d, size_t cap);
-gdk_export int		strLen         (str s);
+gdk_export int		strLen         (const char *s);
 gdk_export int		strCmp         (str l, str r);
 gdk_export int		strNil         (str s);
 gdk_export void 	strHeapConvert (Heap *h, int directon);
@@ -1396,7 +1396,7 @@ we have to take corrective action to ensure that str(nil) is the smallest value 
 					strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
 @c
 int strNil(str s)        { return GDK_STRNIL(s); }
-int strLen(str s)        { return (int) GDK_STRLEN(s); }
+int strLen(const char *s) { return (int) GDK_STRLEN(s); }
 int strCmp(str l, str r) { return GDK_STRCMP(l,r); }
 
 int strCmpNoNil(unsigned char *l, unsigned char *r) {
