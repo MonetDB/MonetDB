@@ -41,10 +41,10 @@ public class MapiClient
 	String lang = "mil";
 
 	if (argv.length == 1){
-      		user = argv[0];
+      		hostname = argv[0];
 	} else if (argv.length == 2){
-		portnr = Integer.parseInt(argv[0]);
-      		user = argv[1];
+      		hostname = argv[0];
+		portnr = Integer.parseInt(argv[1]);
 	} else if (argv.length == 3){
 		hostname = argv[0];
 		portnr = Integer.parseInt(argv[1]);
@@ -53,7 +53,7 @@ public class MapiClient
 		hostname = argv[0];
 		portnr = Integer.parseInt(argv[1]);
       		user = argv[2];
-      		lang = argv[3];
+      		password = argv[3];
 	} else if (argv.length == 5){
 		hostname = argv[0];
 		portnr = Integer.parseInt(argv[1]);
