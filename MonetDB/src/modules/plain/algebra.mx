@@ -539,6 +539,20 @@ that for the moment are defined as procs.
 
     PROC join(bat[any::1,any::2] l, bat[any::2,any::3] r, str fcn, ..any..) : bat[any::1,any::3] 
   		return join(l, r, lng(nil), fcn, $(4..));
+   
+    PROC new( BAT a, BAT b, int sz ) : BAT {
+        var ht := a.htype;
+        var tt := b.ttype;
+        if ((ht = tt) and (ht = void)) {
+                if (not(isnil(b.reverse.seqbase()))) {
+                        tt := oid;
+                } else if (not(isnil(a.seqbase()))) {
+                        ht := oid;
+                }
+        }
+	return new(ht, tt, sz);
+    }
+
 
     PROC join(bat[any::1,any::2] l, bat[any::2,any::3] r, lng estimate, str fcn, ..any..) : bat[any::1,any::3] 
     {
@@ -554,7 +568,7 @@ that for the moment are defined as procs.
             } else if (fcn = ">") {
                 return thetajoin(l,r,GT,estimate);
             } else if (fcn = "true") {
-                var bn := new(l.htype,r.ttype, l.count*r.count);
+                var bn := new(l,r, l.count*r.count);
                 l@batloop() {
                     var h := $h;
                     r@batloop() bn.insert(h,$t);
@@ -569,7 +583,7 @@ that for the moment are defined as procs.
             swapped := true;
         }
 	if (isnil(estimate)) estimate := l.count;
-        var bn := new(l.htype, r.ttype, estimate);
+        var bn := new(l, r, estimate);
         l@batloop() {
             var h := $h;
             var t := $t;

@@ -480,6 +480,8 @@ One day we should introduce the concept of locale, and hook here.
 .END monettime;
 
 @mil
+  	module("alarm");
+
 	# default time creation with zeroed secs and msecs
 	proc "daytime" (int h) : daytime
 		return daytime(h, 0, 0, 0);
@@ -595,7 +597,6 @@ The below tests try to be exhaustive in trying all time functionality.
 @mil
 
 PROC test_monettime() : void := {
-  module("alarm");
 
 @- rule
 @mil
