@@ -730,6 +730,11 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 @:tpe(integer)@
 @:tpe(int)@
 
+.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v,
+                 int radix_bits, int stride, int vector_size) : BAT[void,any::1] = posjoin_clustered;
+"perform a positional join that exploits radix-clusteredness for prefetching"
+
+
 .COMMAND pax_blocksize(int) : int = pax_blocksize; "get/set the pax blocksize"
 
 .COMMAND uniform(oid base, int size, int domain) : bat[oid,int] = BATuniform;
@@ -781,6 +786,11 @@ proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int h
 
 var CACHE_SIZE := 256*1024;
 proc CACHE_LINES() : int { return CACHE_SIZE/32; }
+
+proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits, int stride) : BAT[void,any::1] 
+	return posjoin(c, v, radixbits, stride, 512);
+proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits) : BAT[void,any::1] 
+	return posjoin(c, v, radixbits, 128);
 
 proc log2(int i) : int {
   var n := 0;
@@ -3129,5 +3139,130 @@ int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 	BATseqbase(bn,0);
 	bn->tsorted = BAThordered(proj)&BATtordered(proj)&BATtordered(attr)&1;
 	if (proj->tkey && attr->tkey) BATkey(BATmirror(bn), TRUE); 
+	return GDK_SUCCEED;
+}
+
+@+ clustered positional join
+@c
+#define RESTRICT
+#ifdef RESTRICT
+#define __r  __restrict__
+#else
+#define __r
+#endif
+
+static
+dbl prefetch(ssize_t n, int stride, dbl*__r src) {  
+	dbl tot = 0;
+	ssize_t i;
+	n >>= 3;
+	if (stride == 32) {
+		for(i=0; i+16<n; i+=16) 
+			tot += src[i] + src[i+4] + src[i+8] + src[i+12];
+	} else if (stride == 64) { 
+		for(i=0; i+32<n; i+=32) 
+			tot += src[i] + src[i+8] + src[i+16] + src[i+24];
+	} else if (stride == 128) { 
+		for(i=0; i+64<n; i+=64) 
+			tot += src[i] + src[i+16] + src[i+32] + src[i+48];
+	} else if (stride == 256) { 
+		for(i=0; i+128<n; i+=128) 
+			tot += src[i] + src[i+32] + src[i+64] + src[i+96];
+	} else {
+		if (stride > 8) stride >>= 3;
+		for(i=0; i<n; i+=stride) 
+			tot += src[i];
+	}
+	return tot;
+}
+
+@= posjoin
+static void posjoin_@1(int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
+	ssize_t i;
+	if (oidhead) {
+		/* pos = tail of BAT[oid,oid] */
+		for(i=0; i+7<n; i+=4) {
+			res[i] = val[pos[i+i]];
+			res[i+1] = val[pos[i+i+2]];
+			res[i+2] = val[pos[i+i+4]];
+			res[i+3] = val[pos[i+i+6]];
+		}
+		for(i=0; i<n; i++) {
+			res[i] = val[pos[i+i]];
+		}
+	} else {
+		/* pos = tail of BAT[void,oid] */
+		for(i=0; i+3<n; i+=4) {
+			res[i] = val[pos[i]];
+			res[i+1] = val[pos[i+1]];
+			res[i+2] = val[pos[i+2]];
+			res[i+3] = val[pos[i+3]];
+		}
+		for(i=0; i<n; i++) {
+			res[i] = val[pos[i]];
+		}
+	}
+}
+@c
+@:posjoin(chr)@
+@:posjoin(sht)@
+@:posjoin(int)@
+@:posjoin(dbl)@
+
+int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
+	ssize_t n, c_cnt = BATcount(c), v_cnt = BATcount(v);
+	int prev_bits = -1, radix_shift, radix_bits = *rb;
+	int oidhead = (BUNsize(c) != sizeof(oid));
+	ssize_t width = BUNsize(v), i = MAX(1, BATcount(v) - 1);
+	ssize_t vectorsize = *vs, stride = *st;
+	oid *pos, radix_mask;
+	BUN res, vf = BUNfirst(v);
+	BAT *bn;
+
+	if (BUNsize(v) != ATOMsize(v->ttype)) {
+		GDKerror("posjoin: %s does not have a void head column.\n", BBP_logical(v->batCacheid));
+		return GDK_FAIL;
+	}
+	bn = *r = BATnew(TYPE_void, v->ttype, c_cnt);
+	pos = (oid*) BUNtloc(c,BUNfirst(c));
+	res = (BUN) BUNtloc(bn,BUNfirst(bn));
+
+	for(n=0; i > 0 ; n++) {
+		i >>= 1;
+	}
+	radix_shift = n - radix_bits;
+	radix_mask = ((1 << radix_bits) - 1) << radix_shift;
+	bn->batBuns->free += c_cnt*BUNsize(bn);
+
+	for(i=0; i<c_cnt; i+=vectorsize) {
+		int cur_bits = pos[i<<oidhead]&radix_mask;
+		if (prev_bits != cur_bits && stride > 0 && radix_shift > 3) {
+			(void) prefetch(width*MIN(v_cnt-cur_bits,1<<radix_shift), stride, (dbl*) (vf+cur_bits*width));
+		}
+		switch(ATOMstorage(v->ttype)){
+		case TYPE_chr: 
+			posjoin_chr(oidhead, MIN(c_cnt-i,vectorsize), (chr*) res, pos+(i<<oidhead), (chr*) vf); 
+			break;
+		case TYPE_sht: 
+			posjoin_sht(oidhead, MIN(c_cnt-i,vectorsize), (sht*) res, pos+(i<<oidhead), (sht*) vf); 
+			break;
+		case TYPE_int:	
+		case TYPE_flt: 
+			posjoin_int(oidhead, MIN(c_cnt-i,vectorsize), (int*) res, pos+(i<<oidhead), (int*) vf); 
+			break;
+		case TYPE_lng:	
+		case TYPE_dbl: 
+			posjoin_dbl(oidhead, MIN(c_cnt-i,vectorsize), (dbl*) res, pos+(i<<oidhead), (dbl*) vf); 
+			break;
+		default: 
+			GDKerror("posjoin: type %s not implemented\n", ATOMname(v->ttype));
+			bn->batBuns->free -= c_cnt*BUNsize(bn);
+			break;
+		}
+		prev_bits = cur_bits;
+		res += vectorsize * BUNsize(bn);
+	}
+	BATseqbase(bn, c->hseqbase);
+	bn->tsorted = 0;
 	return GDK_SUCCEED;
 }
