@@ -30,19 +30,28 @@ or through its server console.
 Access through the internet requires a Monet client program at the
 source, but ordinary telnet connections can be applied when the internet
 port number of the database server is publicised.
-At the server, each client is represented by a session record about the
+
+At the server side, each client is represented by a session record about the
 current status, such as name, file descriptors, namespace, and local stack.
-Furthermore, each client session has a dedicated thread of control.
-@-
-The number of clients permitted concurrent access is a compile time option.
+Each client session has a dedicated thread of control, which limits
+the number of concurrent users to the thread management facilities of the
+underlying OS. A large client base should be supported using
+a single serverside client thread, geared at providing
+a particular service.
+
+The number of clients permitted concurrent access is 
+currently a compile time option.
 They are referenced internally by number. The console is the first and 
 should always be present. It reads from standard input and writes to 
 standard output.
-The number of clients depends on the permissible open file descriptors. 
-@-
+
 Client records are linked into a hierarchy, where the top record
-describes system-wide resources, owned by the dba. The next layer
-contains the user session descriptors.
+denotes the context of the Monet administrator. The next layer
+is formed by a database administrator and the third layer contains
+user sessions.
+This hierachy is used to share and constrain resources, such
+as global variables or references to catalogue information.
+During parallel execution additional layers may be constructed.
 @{
 The routines defined below provide management of the client
 administration. Routines dealing with serviceing requests
@@ -70,7 +79,6 @@ are located in mal_startup.
 #define TIMEOUT		(5*60)	/* seconds */
 #define PROCESSTIMEOUT	2	/* seconds */
 @-
-@}
 The prompt structure is designed to simplify recognition
 of the language framework for interaction. For direct console
 access it is a short printable ascii string. For access through
@@ -82,10 +90,7 @@ dropped if a single stream of information is expected from the
 server(See mal_profiler.mx).
 @-
 The user can request server-side compilation as part of the 
-initialization string. 
-The languages foreseen are SQL, MIL (Monet version 4) and MAL (Monet
-Assembler Language), MDB (Monet DeBugger)
-@{
+initialization string. See the documentation on Scenarios.
 @h
 typedef struct CLIENT{
 	int	idx;		/* entry in mal_clients */
@@ -94,8 +99,6 @@ typedef struct CLIENT{
 	int	sessionkey;	/* unique key addressed to session */
 	int	permission;	/* access mode */
 @-
-@}
-@-
 The actions for a client is separated into several stages: parsing,
 strategic optimization, tactial optimization, and execution. 
 The routines to handle them are obtained once the scenario is choosen.
@@ -103,7 +106,6 @@ Each stage carries a state descriptor, but they share the IO state
 description. A backup structure is provided
 to temporarily switch to another scenario. Propagation of the state
 information should be dealt with separately.[TODO]
-@{
 @h
 	str	scenario, oldscenario;	/* scenario management */
 	void	*state[7], *oldstate[7];
@@ -114,16 +116,17 @@ information should be dealt with separately.[TODO]
 @-
 @}
 @-
-The time interval between requests are maintained. At some point
-we will kill clients when their time-out value is exceeded.
+
+Client sessions remain in existence until the corresponding
+communication channels break or its retention timer expires
 A client can manipulate the timeout with a system call.
+An option should be provided to also re-connect to an
+existing session.[TODO]
 @{
 @h
 	time_t		login;	
 	time_t		logout;
 	time_t		delay;
-@-
-@}
 @-
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.
@@ -131,15 +134,12 @@ It will simple terminate after consuming the input buffer.
 The monitor file descriptor can be set to trace the input received
 from a particular client. This facility is used by Mapi to trace
 the interaction on the system console (sysmon). 
-@{
 @h
 	stream	*fdin, *fdout;		/* streams from and to user. */
 	str	input, output, limit;	/* IO buffers + input limit */
 	str	nxt;			/* next unparsed input */
 	str	prompt;			/* acknowledge prompt */
 	int	promptlength;
-@-
-@}
 @-
 In interactive mode, reading one line at a time, we should be
 aware of parsing compound structures, such as functions and
@@ -148,13 +148,13 @@ which is reset to zero upon encountering an end instruction,
 or the closing bracket has been detected. Once the complete
 structure has been parsed the program can be checked and executed.
 Nesting is indicated using a '+' before the prompt.
-@{
 @h
 	int	blkmode;		/* control block parsing */
 @-
 @}
 @-
-The listing bit set controls the level of detail to be generated during
+
+A listing bit controls the level of detail to be generated during
 program execution tracing. The lowest level (1) simply dumps the input,
 (2) also demonstrates the MAL internal structur (4) adds the hidden information
 @{
@@ -163,7 +163,10 @@ program execution tracing. The lowest level (1) simply dumps the input,
 @-
 @}
 @-
-The debug bit set contains the debugger flags for both the GDK kernel and
+
+Debugger control consists of tracing the interaction using a
+journal file for offline inspection.
+The debug flag can be set to trace both the GDK kernel and
 the MAL layer.
 @{
 @h
@@ -173,25 +176,20 @@ the MAL layer.
 	int	mode;			/* FREECLIENT..BLOCKED */
 	str	cwd;			/* working directory of client */
 @-
-@}
 @-
 Client records are organized into a two-level dependency
 tree, where children may be created to deal with parallel processing
 activities. Each client runs in its own process thread. Its identity
 is retained here for access by others (=father).
-@{
 @h
 	Thread		mythread;
 	str		errbuf;		/* location of GDK exceptions */
 	struct CLIENT	*father;	
 @-
-@}
-@-
 Each client has a private entry point into the namespace and
 object space (the global variables).
 Moreover, the parser needs some administration variables
 to keep track of critical elements.
-@{
 @h
 	Scope		nspace;
 	Box		ospace;
@@ -220,6 +218,8 @@ mal_export void 	traceAllClients(int flag);
 
 #endif /* _MAL_CLIENT_H_ */
 @-
+@}
+
 Upon acceptance of a connection a client record is initialized.
 After initializion the client record is activated in its own
 thread of control until it finds a
@@ -233,10 +233,12 @@ control to simplify debugging with external debuggers.
 A new Client structure can only be requested if the 'adm'
 user is available, because it guarantees a way to deliver
 any error message.
-Searching a free client record should be encapsulated in
+Searching a free client record is encapsulated in
 a critical section to hand them out one-at-a-time.
 Marking them as being claimed avoids any interference from parallel
 actions to obtain client records.
+
+@{
 @c
 #include "mal_client.h"
 
@@ -385,7 +387,7 @@ the proper IO descriptors.
 	t->data[1] = c->fdin;
 	t->data[0] = c->fdout;
 } 
-
+@}
 @- Client decendants
 Forking is a relatively cheap way to create a new client.
 The new client record shares the IO descriptors.
@@ -416,6 +418,7 @@ Client forkClient(Client father){
 }
 
 @-
+
 When a client needs to be terminated then the file descriptors for
 its input/output are simply closed. 
 This leads to a graceful degradation, but may take some time
@@ -426,6 +429,7 @@ may leave locks and semaphores in an undesirable state.
 The routine freeClient ends a single client session,
 but through side effects of sharing IO descriptors,
 also its children. Conversely, a child can not close a parent.
+@{
 @c
 void freeClient(Client c)
 {
@@ -609,12 +613,15 @@ str stopClient(Client c, str nme){
 	MT_unset_lock(mal_contextLock, "stopClient");
 	return throwMessage("stop","Illegal client name");
 }
+@}
 @-
+
 A client may temporarily leave the scene by calling the routine suspend(K,T),
 where K is a user defined random number to represent the session, and T is
 a timeout value (in seconds). If the client returns within T seconds the changes
 are high his thread of control is still avaiable and the session can be
 continued where he left off.
+@{
 @c
 str suspendClient(Client c, int sessionkey, int timeout){
 	c->sessionkey= sessionkey;
@@ -626,9 +633,14 @@ str resumeClient(Client c,int sessionkey){
 	(void) c; (void) sessionkey; /* fool the compiler */
 	return throwMessage("suspend","Not yet implemented");
 }
+@}
 @+ Spying on clients
-To enable tracing interactions from the internet connections,
-the system console can be used as a duplicate echo device.
+During system monitoring with multiple clients active it is
+often hard to detect who or what is causing a system degradation. 
+Therefore a spying scheme for the system administrator is
+available. He can enable tracing interactions from the internet connections
+to the system console.
+@{
 @= sysTrace
 if( c->sysmon){
 	stream_printf(c->sysmon,"#[%s]",c->user);
@@ -657,14 +669,17 @@ void traceAllClients(int flag){
 		else c->sysmon= NULL;
 	}
 }
+@}
 @+ Client input
 The input is read from a (blocked) stream and stored in the client record
 input buffer. The storage area grows automatically upon need.
-Where the stream is comming from depends on the connectivity mode.
+The origin of the input stream depends on the connectivity mode.
 
 Most interactions should be regulated through the Mclient
 front-end. This will also take care of buffering a request before
 submission. This avoids a significant number of network interactions.
+
+@{
 @c
 static 
 void enlargebuffer(Client c, int newsize){

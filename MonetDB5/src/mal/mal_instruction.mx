@@ -25,36 +25,179 @@
 @a M. Kersten
 @v 0.0
 @* Monet Assembler Language
-The primary interface to the Monet kernel
+The primary textual interface to the Monet kernel
 is a simple, assembler-like language, called MAL. 
 
 The language reflects the virtual machine architecture around the
-kernel libraries and has been designed for speed of interpretation,
-ease of analysis, and ease of target compilation by 
-query compilers.
+kernel libraries and has been designed for speed of parsing,
+ease of analysis, and ease of target compilation by query compilers.
 
-@+ MAL instruction blocks
-MAL instruction sequences have a simple format.
-The operation is either an assigment "variable := module.fcn(a1..a32)"
-where the actual function arguments are references to variables on the
-runtime variable stack, or reference to a MAL control statement, 
-i.e. RAISE, CATCH, RETURN, BARRIER, LEAVE,REDO
-@+ MAL descriptor
-A sequence of instructions is represented by a variable, instruction,
-and program stmt block.
-The variable block is the symbol table associated with the instruction sequence.
+The language is not meant as a primary programming language,
+or scripting language. Such use is even discouraged.
+
+Furthermore, the program blocks are considered specifications
+of intended computation and data flow behaviour. It should be
+understood that its actual evaluation depends on the execution
+paradigm choosen in the scenario. The program blocks can both
+be interpreted as ordered sequences of assembler instructions
+as a representation of a dataflow graph that should be resolved.
+
+The language uses a slightly different
+keyword connotation to make this distinction more evident.
+In particular, flow of control statements address both the
+interpretation order of a  computation as it denotes a synchronization
+point for dataflow.
+
+@+ MAL instructions
+MAL instructions have a simple format. 
+For simplicty, each instruction should fit on a single line and 
+is either a dataflow assignment, a control statement,
+or a signature. We discuss each of them.
+
+@- Assignment
+Assignments are by far the most common MAL instructions.
+They designate the consumption of a series of values
+by an operator and delivery of the result in a number of target
+variables.
+
+Variables are implicitly defined upon first use and take
+on a type through a type classifier or inherit it from
+the context in which they are used. 
+(See the MAL typing section)
+
+Built-in operators adhire to the conventional syntax
+as pre-, post-, and infix notations. They are translated
+during parsing to the generic form.
+
+The assignment patterns recognized are illustrated below.
+@T
+\begin{verbatim}
+(t1,..,t32) := module.fcn(a1,..,a32);
+t1 := module.fcn(a1,..,a32);
+t1 := fcn(a1,..,a32);
+t1 := v1 operator v2;
+t1 := constant;
+(t1,..,tn) := (c1,..,cn);
+\end{verbatim}
+
+Each operator is defined in a (user-defined) module.
+Knowing its name simplifies subsequent implementation
+binding, but its use is optional.
+Ommission of the module initiates a search for a possible
+matching definition in a hierarchical ordered module
+sequence. (See modules)
+
+For implementation reasons the maximum number of parameters is a
+compile time constant. Its choice should be large enough to
+accomodate the functions you have in mind. 
+[todo, the size is known after parsing]
+
+@- Flow control
+@T
+The flow assignments can be preceeded by one of the flow
+control keywords to change data/execution flow,
+handle exceptions, and interprocess communication.
+
+The primary flow control keywords are:
+{\tt barrier}, {\tt leave}, {\tt redo}, and {\tt exit}.
+The {\tt barrier} and {\tt exit} mark a block
+to be interpreted when the barrier can be taken.
+All four constrol structures should use the same
+target variable set.
+
+Builtin barrier controls exists for boolean and integers.
+The barrier is opened when the target variable holds
+true or an integer value $>$=0.
+All target variables form a combined lock on the
+code block.
+
+The {\tt exit} marks the exit for a block. Its assignment
+can be used to re-initialize the barrier control variables
+or wrap-up any related administration.
+
+Once inside the barrier you have an option to prematurely
+leave it or to restart interpretation just after the
+barrier statement. (like 'break' and 'continue'}
+For both the expression is evaluated and the target
+variables are assigned their new value. Then 
+barrier control takes over and will move the program
+counter to the beginning or end of the block.
+
+Using multiple targets can be used to model a
+variety of strategies to adjust the dataflow
+within a guarded block.
+
+Note that {\tt redo} and {\tt leave} statements mark
+the partial end of a block. Statements within these
+blocks can be re-arranged according to the dataflow
+dependencies. The order of partial blocks can not
+be changed that easily. It depends on the mutual
+exclusion of the data flows within each partial block.
+
+Common guarded blocks in imperative languages are
+the for-loop and if-then-else constructs.
+They can be simulated as follows.
+
+Consider the statement {\em for(i=1;i<10;i++) print(i)}.
+The (optimized) MAL block to implement this becomes:
+\begin{verbatim}
+     V:= 1;
+barrier B:= true;
+     print(V);
+     V:= V+1;
+redo B:= V<10;
+exit B;
+\end{verbatim}
+
+Translation of the statement {\em if(i<1) print("ok"); else print("wrong");}
+becomes:
+\begin{verbatim}
+    i:=1; b:=i<1;
+barrier b;
+    print("ok");
+exit b;
+barrier b:= not b;
+    print("wrong");
+exit b;
+\end{verbatim}
+
+
+The exception handling keywords are: {\tt catch}, {\tt raise}, {\tt end}
+The {\tt catch} statement marks a point in the dataflow where
+an exception raised can be dealt with. Any statement between the
+point where it is raised and the catch block is ignored.
+
+An exception can be raised explicitly at any time
+using the {\tt raise} control. Its expression is evaluated
+and exception values are created.
+The builtin exception mechanism casts an exception into a string
+value, which contains the module, function, and message. [check]
+
+Note that due to code re-shuffling an exception raised in one
+thread of control is invisible to others. 
+
+@- Signatures
+The interprocess communication keywords are:
+{\tt return}, 
+
+@+ Block descriptor
+The datastructures to represent a block of MAL instructions is kept simple.
+Each block descriptor represents a sequence of MAL statements 
+and a local symbol table.
+
+The constants are stored in the symbol table.
 Each tuple contains a reference to the argument name,
 a reference to a lexical value when it denotes a constant,
 its associated Mal type identifier.
 Upon procedure return, the variable block is inspected to find
 objects eligable for garbage collection (e.g. strings).
-@-
+
 The instruction is a code byte string overlaid with the
 instruction pattern. This method leads to a large
 allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
 Each argument list starts with a reference to the destination variable. 
-@-
+
 Variable- and stmt- block together describe the
 static part of a MAL procedure. It carries carry enough information to produce
 a listing and to aid symbolic debugging. Ideally, the listing
@@ -62,7 +205,7 @@ of a MAL program is identical to the non-commented source.
 This costs some space, but will improve readability and permits
 instruction sequences generated internally also to be kept
 around as ascii text for later inclusion.
-@-
+
 WARNING. The way we lay out the instructions means that 
 you can prepare only one instruction at a time, because you don't
 know how many arguments may be needed upfront.

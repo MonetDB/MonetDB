@@ -23,21 +23,16 @@
 
 @a M. Kersten
 @v 0.0
-@* MAL session startup
+@+ Session startup
 
-For the time being we distinguish two classes of clients.
-The primary client is the 'Admin', which runs directly against the server. 
-It works as a console and will be the recipient of major error messages.
+The Monet server uses a startup script to boot the system.
+This script is an ordinary MAL program, but will mostly
+consist of USE statements to load modules of interest.
+The startup script is ran in Admin mode.
+Its location is described in Monet configuration file.
 
-Secondary clients gain access to the Monet server through a internet connection.
-Access through the internet requires a Monet client program at the
-source, but ordinary telnet connections can be applied when the internet
-port number of the database server is publicised.
-
-Each user has a separate scope, but the secondary clients have shared
-access to the definitions available to the administrator.
-The global scope and private scopes are separated by an a priori known
-scope name "MAL_scope". 
+In addition, startup scripts will be looked for each
+time a user initializes a session against a database.[todo]
 @{
 @h
 #ifndef _MAL_SESSION_H
@@ -57,11 +52,7 @@ mal_export void resetInstructions(MalBlkPtr mb, int start);
 mal_export void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start);
 
 #endif /*  _MAL_SESSION_H*/
-@-
-The startup script for the databases server recides in a fixed location.
-Its location can be overruled using the Monet configuration script.
-If initialization of the server is successful, then the MAL_scope symbol
-position is being returned as the namespace entry point for the client.
+
 @c
 #include "mal_session.h"
 #include "mal_instruction.h"	/* for pushEndInstruction() */
@@ -110,6 +101,7 @@ void initClientPrg(Client cntxt, str nme){
 		insertSymbol(cntxt->nspace, cntxt->curprg);
 	}
 }
+@}
 @+ Client authorization
 The default method to interact with the database server is to
 connect using a port number. The first line received should contain
@@ -120,6 +112,7 @@ No encryption scheme is performed yet.
 An example initialization string would be "guest:23" which indicates access
 of the client named 'guest' to a session previously started under identity 23.
 
+@{
 The scheduleClient receives a single block from the API.
 The first line should represent a user. The remainder may
 be a request to be handled. This way, a single message
