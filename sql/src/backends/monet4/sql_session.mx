@@ -473,11 +473,11 @@ sqlexecute(backend *be, stream *out)
 		q = qc_find(c->qc, id);
 
 		if (!q) {
-			error(out, "Error: no prepared statement with the given query id\n");
+			error(out, "no prepared statement with the given query id\n");
 			err = -1;
 		} else if ((c->args != q->params && (!c->args || !q->params))
 			   || (c->args && q->params && list_length(q->params) != list_length(c->args))) {
-			error(out, "Error: wrong number of arguments for prepared statement\n");
+			error(out, "wrong number of arguments for prepared statement\n");
 			err = -1;
 			q = NULL;
 		} else {
@@ -489,7 +489,7 @@ sqlexecute(backend *be, stream *out)
 					if (subtype_cmp(pt, arg->tpe) != 0) {
 						char buf[BUFSIZ];
 
-						snprintf(buf, BUFSIZ, "Error: wrong argument for prepared statement (%s,%s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+						snprintf(buf, BUFSIZ, "wrong argument for prepared statement (%s,%s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
 						error(out, buf);
 						err = -1;
 						q = NULL;
