@@ -562,7 +562,7 @@ int enum_epilogue() {
 	int xx;
 	MT_destroy_lock(enum_lock);
 	for(xx=0; xx<MAX_ENUM; xx++)  {
-		if (enum_tpe[xx])  {
+		if (enum_map[xx])  {
 			BBPunfix(enum_map[xx]);
 		}
 	}
