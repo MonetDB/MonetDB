@@ -1837,17 +1837,27 @@ void strFinalCall(ValPtr v){
 }       
 
 void batBeforeCall(ValPtr v, ValPtr bak){
-	bak->val.bval= v->val.bval;
+	if( v->vtype== TYPE_bat)
+		bak->val.bval= v->val.bval;
+	/* else it was garbage for sure */
 }
 void batAfterCall(ValPtr v, ValPtr bak){
-	if( bak->val.bval != v->val.bval)
+	if( bak->val.bval == v->val.bval)
+		return;
+	if( v->val.bval){
 		batFinalCall(bak);
-	if( v->val.bval)
 		BBPincref(v->val.bval,TRUE);
+	}
 }
+@- 
+When the logical reference count drops to zero
+we can decrement the physical refcount as well.
+@c
 void batFinalCall(ValPtr v){ 
-	if(v->val.bval)
+	if(v->val.bval && BBP_lrefs(v->val.bval))
 	{       
+		if( BBP_lrefs(v->val.bval) == 1 && BBP_refs(v->val.bval))
+			BBPunfix(v->val.bval);
 		BBPdecref(v->val.bval,TRUE);
 		v->val.bval =0;
 	}

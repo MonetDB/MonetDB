@@ -77,6 +77,7 @@ mal_export str setDynamicType(MalBlkPtr mb,
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, 
 		MalStkPtr stk, int forceall);
+mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 
 mal_export ptr getArgValue(MalStkPtr stk, 
 		InstrPtr pci, int k);
@@ -314,6 +315,8 @@ str runMALsequence( malTask *task)
 	ptr argv[MAXARG];
 	ValRecord backup;
 	@:performanceVariables@
+	backup.vtype= TYPE_int;
+	backup.val.ival= 0;
 
 MALrestart:
 	stkpc = startpc;
@@ -524,6 +527,9 @@ It takes the constant value discovered at compile time and stored in the
 symbol table and moves it to the stackframe location. This activity
 is made part of the start-up procedure.
 
+The before after calls should be reconsidered here, because
+their. They seem superflous and the way they are used will
+cause errors in multi-assignment statements.
 @-
 @= assignStmt
 {	
@@ -1142,6 +1148,34 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 	printStack(GDKout,mb,stk);
 #endif
 }
+@-
+Sometimes it helps to release a BAT when it won;t be used anymore.
+In this case, we have to assure that all references are cleared
+as well. The routine below performs this action in the local
+stack frame only.
+@c
+#define STACKTRACE
+void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
+{ 	int k;
+
+#ifdef STACKTRACE
+	stream_printf(GDKout,"--->release BAT %d \n", bid);
+	printStack(GDKout,mb,stk);
+#endif
+	for(k=0;k<mb->vtop-1; k++) 
+	if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.ival)==bid) {
+#ifdef STACKTRACE
+	stream_printf(GDKout,"released entry %d\n",k);
+#endif
+		batFinalCall(stk->stk+k);
+		stk->stk[k].val.ival= 0;
+	}
+#ifdef STACKTRACE
+	stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
+	printStack(GDKout,mb,stk);
+#endif
+}
+
 @-
 @}
 @+ Performance section
