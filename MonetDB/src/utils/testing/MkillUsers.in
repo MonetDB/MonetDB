@@ -11,7 +11,7 @@ while [ "${1#-}" != "$1" ] ; do
   if      [ "$1" =       -l   ] ; then  LOCKFILE="$2"      ; shift ; shift
     elif  [ "$1" != "${1#-l}" ] ; then  LOCKFILE="${1#-l}" ; shift 
     elif  [ "$1" =       -p   ] ; then  PARENT="$2"        ; shift ; shift
-    elif  [ "$1" != "${1#-p}" ] ; then  PARENT="${1#-l}"   ; shift 
+    elif  [ "$1" != "${1#-p}" ] ; then  PARENT="${1#-p}"   ; shift 
   fi
 done
 LOCKFILE=/tmp/.${0##*/}.$LOCKFILE
@@ -34,7 +34,14 @@ if [ "$PARENT" ] ; then
   fi
 fi
 
-files="$files `ls $THISPATH/* | egrep -v '/(M[a-z]*\.py(|\.bat)|'"$THISFILE"')$'`"
+BINPATH="$THISPATH"
+if [ "$MONET_PREFIX" ] ; then BINPATH="$BINPATH $MONET_PREFIX/bin" ; fi
+if [  "$ACOI_PREFIX" ] ; then BINPATH="$BINPATH  $ACOI_PREFIX/bin" ; fi
+if [   "$SQL_PREFIX" ] ; then BINPATH="$BINPATH   $SQL_PREFIX/bin" ; fi
+if [   "$XML_PREFIX" ] ; then BINPATH="$BINPATH   $XML_PREFIX/bin" ; fi
+for b in $BINPATH ; do
+	files="$files `ls $b/* 2>/dev/null | egrep -v '/(M[a-z]*\.py(|\.bat)|'"$THISFILE"')$'`"
+done
 
 case `uname` in
   Linux)
@@ -60,6 +67,8 @@ esac
 
 if [ "$pids1" ] ; then
 	pids2="(`echo $pids1 | sed 's/ /|/g'`)"
+	echo pids1=$pids1
+	echo pids2=$pids2
 	LOG2x	$PS
 	LOG2x	$FUSER   $files
 	LOG2x	fuser -k $files
