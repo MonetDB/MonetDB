@@ -224,6 +224,7 @@ arbitrarily.
 .ATOM timestamp = lng;
 	.FROMSTR = timestamp_fromstr;
 	.TOSTR = timestamp_tostr;
+	.NULL	 = timestamp_null;
 .END;
 
 @T
@@ -276,6 +277,7 @@ nil-timezone.
 .ATOM tzone = lng;
 	.FROMSTR = tzone_fromstr;
 	.TOSTR   = tzone_tostr;
+	.NULL	 = tzone_null;
 .END;
 
 .ATOM rule = int;
@@ -862,6 +864,19 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 
 @+ auxiliary functions
 @c
+
+static timestamp ts_nil = {-1,-1};
+static tzone tz_nil = {1,1,1,1,1};
+
+timestamp*
+timestamp_null() {
+	return( &ts_nil);
+}
+tzone*
+tzone_null() {
+	return( &tz_nil);
+}
+
 static int synonyms = TRUE;
 
 int monettime_synonyms(bit* allow) {
@@ -1031,6 +1046,9 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2)) 
 
+#define ts_isnil(t) ((t).days == -1 && (t).msecs == -1)
+#define tz_isnil(z) ((z).dst == (z).off1 == (z).off2 == (z).dst_start == (z).dst_end == 1)
+
 static INLINE
 int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {
 	/* starts with GMT time t, and returns whether it is in the DST for z */
@@ -1040,7 +1058,7 @@ int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {
 
 	timestamp_add(ret, t, &add);
 
-	if (*(lng*) ret == lng_nil || z->dst == 0) {
+	if (ts_isnil(*ret) || z->dst == 0) {
 		return 0;
 	}
 	set_rule(start, z->dst_start);
@@ -1225,7 +1243,7 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 		(*ret)->msecs = int_nil;
 	}
 	if (s <= buf || (int) (*ret)->days == int_nil || (int) (*ret)->msecs == int_nil) {
-		**(lng**) ret = lng_nil;
+		**ret = ts_nil;
 	} else {
 	    lng offset;
 
@@ -1268,7 +1286,7 @@ int timestamp_tostr(str* buf, int* len, timestamp *val) {
 		if (*buf) GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = len1+len2+2);
 	} s = *buf;
-	if (*(lng*) &tmp == lng_nil) {
+	if (ts_isnil(tmp)) {
 		strcpy(s, "nil");
 		return 3;
 	}
@@ -1420,7 +1438,7 @@ int tzone_fromstr(str buf, int *len, tzone **d) {
 		if (*d) GDKfree(*d);
 		*d = (tzone*) GDKmalloc(*len = sizeof(tzone));
 	}
-	**(lng**)d = lng_nil;
+	**d = tz_nil;
 
 	/* syntax checks */
 	if (fleximatch(cur, "gmt", 0) == 0) {
@@ -1479,7 +1497,7 @@ int tzone_tostr(str* buf, int* len, tzone *z) {
 		*buf = (str) GDKmalloc(*len = 160);
 	} 
         s = *buf;
-	if (*(lng*) z == lng_nil) {
+	if (tz_isnil(*z)) {
 		strcpy(s, "nil"); s += 3;
 	} else {
 		rule dst_start, dst_end;
@@ -1625,8 +1643,8 @@ int daytime_create(daytime* ret, int *hour, int *min, int* sec, int* msec) {
 
 /* creates a timestamp from (date,daytime) parameters */
 int timestamp_create(timestamp* ret, date *d, daytime* t, tzone *z) {
-	if (*(int*) d == int_nil || *(int*) t == int_nil || *(lng*) z == lng_nil) {
-		*(lng*) ret = lng_nil;
+	if (*(int*) d == int_nil || *(int*) t == int_nil || tz_isnil(*z)) {
+		*ret = ts_nil;
 	} else {
 		lng add = get_offset(z) * (lng)-60000;
 		ret->days = *d;
@@ -1764,7 +1782,7 @@ int daytime_extract_milliseconds(int *ret, daytime* v) {
 
 /* extracts daytime from timestamp */
 int timestamp_extract_daytime(daytime* ret, timestamp* t, tzone *z) {
-	if (*(lng*) t == lng_nil || *(lng*) z == lng_nil) {
+	if (ts_isnil(*t) || tz_isnil(*z)) {
 		*ret = int_nil;
 	} else {
 		timestamp tmp;
@@ -1772,7 +1790,7 @@ int timestamp_extract_daytime(daytime* ret, timestamp* t, tzone *z) {
 			lng add = (lng)3600000;
 			timestamp_add(&tmp, &tmp, &add);
 		} 
-		if (*(lng*) &tmp == lng_nil) {
+		if (ts_isnil(tmp)) {
 			*ret = int_nil;
 		} else {
 			*ret = tmp.msecs;
@@ -1787,7 +1805,7 @@ int timestamp_extract_daytime_default(daytime* ret, timestamp* t) {
 
 /* extracts date from timestamp */
 int timestamp_extract_date(date* ret, timestamp *t, tzone *z) {
-	if (*(lng*) t == lng_nil || *(lng*) z == lng_nil) {
+	if (ts_isnil(*t) || tz_isnil(*z)) {
 		*ret = int_nil;
 	} else { 
 		timestamp tmp;
@@ -1795,7 +1813,7 @@ int timestamp_extract_date(date* ret, timestamp *t, tzone *z) {
 			lng add = (lng)3600000;
 			timestamp_add(&tmp, &tmp, &add);
 		} 
-		if (*(lng*) &tmp == lng_nil) {
+		if (ts_isnil(tmp)) {
 			*ret = int_nil;
 		} else {
 			*ret = tmp.days;
@@ -1885,7 +1903,7 @@ int date_diff(int *ret, date* v1, date *v2) {
 
 /* returns the timestamp that comes 'milliseconds' after 'value'. */
 int timestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
-	if (*(lng*) v != lng_nil && *msecs != lng_nil) {
+	if (!ts_isnil(*v) && *msecs != lng_nil) {
 		int days = *msecs / (24*60*60*1000);
 		ret->msecs = v->msecs + (*msecs - ((lng) days) * (24*60*60*1000));
 		ret->days = v->days;
@@ -1897,11 +1915,11 @@ int timestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
 		if (days) {
 			date_adddays(&ret->days, &ret->days, &days);
 			if (ret->days == int_nil) {
-				*(lng*) ret = lng_nil;
+				*ret = ts_nil;
 			} 
 		}
 	} else {
-		*(lng*) ret = lng_nil;
+		*ret = ts_nil;
 	}
 	return GDK_SUCCEED;
 }
@@ -1909,7 +1927,7 @@ int timestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
 
 /* returns the number of milliseconds between 'val1' and 'val2'. */
 int timestamp_diff(lng * ret, timestamp *v1, timestamp *v2) {
-	if (*(lng*) v1 == lng_nil || *(lng*) v2 == lng_nil) {
+	if (ts_isnil(*v1) || ts_isnil(*v2)) {
 		*ret = lng_nil;
 	} else {
 		*ret = ((lng) (v1->days - v2->days))*((lng) 24*60*60*1000) +
@@ -1923,7 +1941,7 @@ int timestamp_diff(lng * ret, timestamp *v1, timestamp *v2) {
 int timestamp_inside_dst(bit *ret, timestamp *p, tzone* z) {
 	*ret = FALSE;
 
-	if (*(lng*) z == lng_nil) {
+	if (tz_isnil(*z)) {
 		*ret = int_nil;
 	} else if (z->dst) {
 		timestamp tmp;
@@ -1950,7 +1968,7 @@ int rule_create(rule *ret, int *month, int* day, int* weekday, int *minutes) {
 
 /* create a tzone as a simple hour difference from GMT. */
 int tzone_create_dst(tzone *ret, int* minutes, rule* start, rule* end) {
-	*(lng*) ret = lng_nil;
+	*ret = tz_nil;
 	if (*minutes != int_nil && ABS(*minutes) < 24*60 &&
             *(int*) start != int_nil && *(int*) end != int_nil) 
 	{
@@ -1964,7 +1982,7 @@ int tzone_create_dst(tzone *ret, int* minutes, rule* start, rule* end) {
 
 /* create a tzone as an hour difference from GMT and a DST. */
 int tzone_create(tzone *ret, int* minutes) {
-	*(lng*)ret = lng_nil;
+	*ret = tz_nil;
 	if (*minutes != int_nil && ABS(*minutes) < 24*60) {
 		set_offset(ret, *minutes);
 		ret->dst = FALSE;
@@ -1998,7 +2016,7 @@ int rule_extract_minutes(int *ret, rule* r) {
 
 /* extract rule that determines start of DST from tzone. */
 int tzone_extract_start(rule *ret, tzone* t) {
-	if (*(lng*) t == lng_nil || !t->dst){
+	if (tz_isnil(*t) || !t->dst){
 		*(int*) ret = int_nil;
 	} else {
 		set_rule(*ret, t->dst_start);
@@ -2008,7 +2026,7 @@ int tzone_extract_start(rule *ret, tzone* t) {
 
 /* extract rule that determines end of DST from tzone. */
 int tzone_extract_end(rule *ret, tzone* t) {
-	if (*(lng*) t == lng_nil || !t->dst){
+	if (tz_isnil(*t) || !t->dst){
 		*(int*) ret = int_nil;
 	} else {
 		set_rule(*ret, t->dst_end);
@@ -2018,7 +2036,7 @@ int tzone_extract_end(rule *ret, tzone* t) {
 
 /* extract number of minutes that tzone is offset wrt GMT. */
 int tzone_extract_minutes(int *ret, tzone* t) {
-	*ret = (*(lng*) t == lng_nil)?int_nil:get_offset(t);
+	*ret = (tz_isnil(*t))?int_nil:get_offset(t);
 	return GDK_SUCCEED;
 }
 
