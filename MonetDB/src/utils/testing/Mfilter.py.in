@@ -20,9 +20,11 @@ Usage:  %s [-I<exp>] <files>
  <files> : list of files to be processed
 
 ''' % THISFILE)
+### Usage(THISFILE) #
 
 def Warn(THISFILE,TEXT) :
 	sys.stderr.write("%s warning: %s\n" % (THISFILE,TEXT))
+### Warn(THISFILE,TEXT) #
 
 def mFilter (FILE, IGNORE) :
 	fin = open(FILE, "r")
@@ -43,6 +45,8 @@ def mFilter (FILE, IGNORE) :
 			  + "^Mcreatedb: database .* has been initialized succesfully!$"+ "|"	\
 			  + "^connection= .*:[0-9]*$"					+ "|"	\
 			  + "^Connecting to server: localhost:[0-9]*$"				)
+	#		  + "^!WARNING: TCPlisten\([0-9]*\): stopped.$"			+ "|"	\
+	#		  + "^!WARNING: TCPepilogue: terminate [01] listeners$" 	+ "|"	\
 		
 	ftmp = []
 	ig = n = 0
@@ -92,6 +96,7 @@ def mFilter (FILE, IGNORE) :
 	fout.close()
 	if os.name == "nt":
 		time.sleep(1)
+### mFilter (FILE, IGNORE) #
 
 #############################################################################
 #	MAIN
@@ -117,6 +122,7 @@ def main(argv) :
 			mFilter(f, IGNORE)
 	 	else:	
 	 		Warn(THISFILE, "file missing: " + f)
+### main(argv) #
 
 if __name__ == "__main__":
 	main(sys.argv)

@@ -123,24 +123,27 @@ have changed since my proposal.
 	MONET_SOURCE=~/dev/monet
 	MONET_BUILD=~/dev/monet/$OSVER
 	MONET_PREFIX=~/dev/monet/$OSVER
-     by setting the respective environment variables (e.g.) as follows
+     by
+     either setting the respective environment variables (e.g.) as follows
 	MONET_SOURCE=/net/myhost/export/scratch1/myname/monet
 	MONET_BUILD=/net/myhost/export/scratch1/myname/monet/$OSVER
 	MONET_PREFIX=/net/myhost/export/scratch1/myname/monet/$OSVER
-     before running Mtest.py
+     before running Mtest.py 
+     or using the respective command line options to Mtest.py
   or
   b) overrule the default settings of TSTSRCBASE, TSTBLDBASE, and
      TSTTRGBASE (e.g.) as follows
 	TSTSRCBASE=/net/myhost/export/scratch1/myname/monet
 	TSTBLDBASE=/net/myhost/export/scratch1/myname/monet/$OSVER
 	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$OSVER
-     either by setting the repective environment variables or using the
-     respective command line option \s to Mtest.py (see above).
+     either by setting the repective environment variables
+     or by using the respective command line options to Mtest.py (see
+     above).
 
 
 - Further, Mtest.py needs a .monet.conf just like Mserver. To distinguish it
-  from your usual .monet.conf, the one for Mtest.py is called .monet.Mtest.conf. 
-  By default Mtest.py uses the first one it finds of
+  from your usual .monet.conf, the one for Mtest.py is called
+  .monet.Mtest.conf. By default Mtest.py uses the first one it finds of
 	./.monet.Mtest.conf
 	$TSTSRCBASE/.monet.Mtest.conf
 	$HOME/.monet.Mtest.conf

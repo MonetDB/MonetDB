@@ -3,7 +3,6 @@
 #TODO:
 #=====
 # - check all TODO's below
-# - add Mapprove.py
 # - tidy -up HTML-generation by "keeping in mind" during testing, 
 #   which OUT/ERR differ or not and which tests were skipped.
 #   dump HTML-stuff only at end
@@ -39,43 +38,66 @@ STDERR = sys.stdout	# err
 
 random.seed(time.time())
 
-def Usage() :
-	print('''
+def Usage () :
+	print('''\
 
-Usage:  %s [options] ( [<dir>] [<tests>] | [<dirs>] )
+Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
+''')
 
- -I<exp> : (optional) ignore lines matching <exp> during diff (default: -I'^#')
- -c<num> : (optional) use <num> lines of context during diff (default: -c1)
- -a<num> : (optional) accuracy for diff: 0=lines, 1=words, 2=chars (default: -a1)
- -t<sec> : (optional) timeout: kill (hanging) M{server,client,createdb,destroydb,load}
-                       after <sec> seconds; -t0 means no timeout (default: -t600)
- -r      : (optional) proceed in subdirectories as well (implies 'All`)
+	if THISFILE == "Mtest.py":
+		print('''\
+ -I<exp> : ignore lines matching <exp> during diff (default: -I'^#')
+ -c<num> : use <num> lines of context during diff (default: -c1)
+ -a<num> : accuracy for diff: 0=lines, 1=words, 2=chars (default: -a1)
+ -t<sec> : timeout: kill (hanging) tests after <sec> seconds;
+            -t0 means no timeout (default: -t600)
+ -r      : proceed in subdirectories as well (implies 'All`)
 
  --monetrc=<path>
-         : (optional) location of .monet.conf file; default is the first found of
-			%s.monet.Mtest.conf                        
-			<TSTSRCBASE>%s.monet.Mtest.conf            
-			%s.monet.Mtest.conf                               
-			%smonet.Mtest.conf                                                                      
+ --MONETRC=<path>
+         : location of .monet.conf file; default is the first found of
+		'''+os.getcwd()+os.sep+'''.monet.Mtest.conf                        
+		<TSTSRCBASE>'''+os.sep+'''.monet.Mtest.conf            
+		'''+os.environ['HOME']+os.sep+'''.monet.Mtest.conf                               
+		'''+path("@MONET_PREFIX@/share/Monet/")+'''monet.Mtest.conf                                                                      
+''')
 
+	else: # THISFILE == "Mapprove.py"
+		print('''\
+ -x<ext> : consider only output files *.<ext><sys> (<ext> = 'out' or 'err')
+            (default: <ext> = 'out' & 'err')
+ -s<sys> : consider only output files *.<ext><sys> 
+            (<sys> = '', '.'''+OS+"', '."+OSVER+"', or '."+OSVER+'''.(32|64)bit' )
+            (default: <sys> = '')
+ -r      : proceed in subdirectories as well (implies 'All`)
+''')
+
+	print('''\
+ --MONET_SOURCE=<abspath>
+ --MONET_BUILD=<abspath>
+ --MONET_PREFIX=<abspath>
  --TSTSRCBASE=<abspath>
  --TSTBLDBASE=<abspath>
  --TSTTRGBASE=<abspath>
-         : (optional) overrule defaults:
-			TSTSRCBASE=@MONET_SOURCE@
-			TSTBLDBASE=@MONET_BUILD@
-			TSTTRGBASE=@MONET_PREFIX@
+         : overrule defaults:
+		MONET_SOURCE=@MONET_SOURCE@
+		MONET_BUILD=@MONET_BUILD@
+		MONET_PREFIX=@MONET_PREFIX@
+		TSTSRCBASE=<MONET_SOURCE>
+		TSTBLDBASE=<MONET_BUILD>
+		TSTTRGBASE=<MONET_PREFIX>
 
- <dir>   : (optional) if present, %s behaves as if called in <dir>
- <tests> : (optional) list of tests to be processed; if none or 'All` is given,
-                       all tests listed in 'Tests/All` are processed
-                       (defaults to 'All` if -r is used)
- <dirs>  : (optional) list of directories to be processed; if present, %s processes
-                       'All` tests in each directory of <dirs>; -r may be used also
+ <dir>   : if present, '''+THISFILE+''' behaves as if called in <dir>
+ <tests> : list of tests to be processed; if none or 'All` is given,
+            all tests listed in 'Tests/All` are processed
+            (defaults to 'All` if -r is used)
+ <dirs>  : list of directories to be processed; if present, '''+THISFILE+'''
+            processes 'All` tests in each directory of <dirs>; -r may be used also
 
-         See  %sREADME  for details about  %s.
-
-''' % (THISFILE, os.getcwd()+os.sep, os.sep, os.environ['HOME']+os.sep, path("@MONET_PREFIX@/share/Monet/"), THISFILE, THISFILE, path("@MONET_SOURCE@/src/utils/testing/"), THISFILE))
+         See  '''+path("@MONET_SOURCE@/src/utils/testing/")+'''README
+         for details about  '''+THISFILE+'''.
+''')
+### Usage () #
 
 #TODO:
 #class TimeoutError:
@@ -84,34 +106,41 @@ Usage:  %s [options] ( [<dir>] [<tests>] | [<dirs>] )
 #	def __str__(self):
 #		return self.text
 #
-#def AlarmHandler(signum, frame):
+#def AlarmHandler(signum, frame) :
 #	raise TimeoutError, "Timeout"
+#### AlarmHandler(signum, frame) #
 
 def ErrMsg(TEXT) :
 	STDOUT.flush()
 	STDERR.write("\n"+THISFILE+":  ERROR:  %s\n\n" % TEXT)
 	STDERR.flush()
+### ErrMsg(TEXT) #
 
 def ErrXit(TEXT) :
 	ErrMsg(TEXT)
 	sys.exit(1)
+### ErrXit(TEXT) #
 
 def Warn(TEXT) :
 	STDOUT.flush()
 	STDERR.write("\n"+THISFILE+"  Warning:  %s\n\n" % TEXT)
 	STDERR.flush()
+### Warn(TEXT) #
 
 def startswith(str,pre) :
 	return not ((len(str) < len(pre)) or (str[:len(pre)] != pre))
+### startswith(str,pre) #
 
 def path(str) :
 	return regsub.gsub("/",os.sep,str)
+### path(str) #
 
 def url(str) :
 	if os.name == "nt":
 		return regsub.gsub("\\\\","/",str)
 	else:
 		return regsub.gsub(os.sep,"/",str)
+### url(str) #
 
 def CreateHtmlIndex (env) :
 	TSTDIR=env['TSTDIR']
@@ -131,7 +160,7 @@ def CreateHtmlIndex (env) :
 		BODY = f.readlines()
 		f.close()
 		f = open(INDEX+".head.html","w")
-		f.write("""
+		f.write("""\
 <HTML>
 <HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
 <BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
@@ -141,7 +170,7 @@ def CreateHtmlIndex (env) :
 <TH ALIGN=CENTER><FONT FACE='helvetica, arial'>
 """)
 		if TSTDIR:
-			f.write("""
+			f.write("""\
 <A HREF='"""+URLPREFIX+url(TSTDIR)+"/Tests"+URLSUFFIX_D+"""' TARGET='"""+OSVER+"_"+TSTDIR+"""_body'><FONT COLOR=#000000>"""+TSTDIR+"""</FONT></A><BR>
 """)
 			#TODO ?
@@ -149,7 +178,7 @@ def CreateHtmlIndex (env) :
 		else:
 			f.write("<FONT COLOR=#000000>"+OSVER+"</FONT>")
 			#TODO ?
-			#f.write("""
+			#f.write("""\
 			#<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
 			#""")
 		f.write("</FONT></TH>\n")
@@ -167,7 +196,7 @@ def CreateHtmlIndex (env) :
 		else:
 			ROWS="54"
 		f = open(INDEX+".html","w")
-		f.write("""
+		f.write("""\
 <HTML>
 <HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
 <FRAMESET ROWS='"""+ROWS+""",*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
@@ -179,6 +208,7 @@ def CreateHtmlIndex (env) :
 		f.close()
 		env['_'+TSTDIR+'_BODY_'] = ["",0]
 		os.chdir(BACK)
+### CreateHtmlIndex (env) #
 
 def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
 	WHAT = stableWHAT[7:11]
@@ -206,7 +236,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
 		SYSTEM = COMPILER+", "+SYSTEM
 
 	f = open("."+TST+WHAT+".html","w")
-	f.write("""
+	f.write("""\
 <HTML>
 <HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
 <FRAMESET ROWS='42,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
@@ -217,7 +247,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
 """)
 	f.close()
 	f = open("."+TST+WHAT+".head.html","w")
-	f.write("""
+	f.write("""\
 <HTML>
 <HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
 <BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
@@ -248,13 +278,14 @@ in
 	f.close()
 #TODO?
 # <A HREF='.Mtest.Slave.Log.OutErr' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>LOG</A>).
+### CreateTstWhatXhtml (env, TST, stableWHAT, EXT) #
 
 def CreateSrcIndex (env, TST, EXT) :
 	TSTSRCDIR = env['TSTSRCDIR']
 	TSTDIR    = env['TSTDIR']
 
 	f = open("."+TST+".src.index.html","w")
-	f.write("""
+	f.write("""\
 <HTML>
 <HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
 <FRAMESET ROWS='54,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
@@ -266,7 +297,7 @@ def CreateSrcIndex (env, TST, EXT) :
 """)
 	f.close()
 	f = open("."+TST+".src.index.head.html","w")
-	f.write("""
+	f.write("""\
 <HTML>
 <HEAD><TITLE>"""+HTMLTITLE+"""</TITLE></HEAD>
 <BODY BGCOLOR=#ffffff TEXT=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>
@@ -277,12 +308,12 @@ def CreateSrcIndex (env, TST, EXT) :
 """)
 	for s in os.listdir(TSTSRCDIR):
 		if len(s) >= len(TST)  and  s[:len(TST)] == TST:
-			f.write("""
+			f.write("""\
 <TD><FONT FACE='helvetica, arial'>
   <A HREF='"""+URLPREFIX+url(TSTDIR)+"/Tests/"+s+URLSUFFIX_F+"""'
     TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_body'>"+s+"""</A></FONT></TD>
 """)
-	f.write("""
+	f.write("""\
 </TR>
 </TABLE>
 </CENTER>
@@ -290,6 +321,7 @@ def CreateSrcIndex (env, TST, EXT) :
 </HTML>
 """)
 	f.close()
+### CreateSrcIndex (env, TST, EXT) #
 
 def AddHref (TSTDIR, TST, WHAT, diff) :
 	STRING = "<A HREF='."+TST+WHAT+".html' TARGET='"+OSVER+"_"+TSTDIR+"_body'>"+WHAT[1:]+"</A>"
@@ -297,6 +329,7 @@ def AddHref (TSTDIR, TST, WHAT, diff) :
 		return "<B>"+STRING+"</B>"
 	else:
 		return "("+STRING+")"
+### AddHref (TSTDIR, TST, WHAT, diff) #
 
 def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 	TSTDIR = env['TSTDIR']
@@ -333,6 +366,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 			env['_'+TSTDIR+'_BODY_'] = ["."+TST+".out.html", o]
 
 	CreateSrcIndex(env, TST, EXT)
+### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
 
 def AddSubToHtmlIndex (env, TSTDIR) :
 	TSTTRGBASE = env['TSTTRGBASE']
@@ -359,6 +393,7 @@ def AddSubToHtmlIndex (env, TSTDIR) :
 		   ( (not env['__BODY_'][1])  and  diff ):
 			env['__BODY_'] = [TSTDIR+"/.index.html", diff]
 		os.chdir(BACK)
+### AddSubToHtmlIndex (env, TSTDIR) #
 
 def SkipTest(env, TST, EXT, REASON) :
 	TSTDIR = env['TSTDIR']
@@ -368,7 +403,7 @@ def SkipTest(env, TST, EXT, REASON) :
 	f.write("\n"+THISFILE+"  Warning:  %s\n\n" % TEXT)
 	f.close()
 	f = open(".index.head.html","a")
-	f.write("""
+	f.write("""\
 <TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='."""+TST+""".src.index.html' TARGET='"""+OSVER+"_"+TSTDIR+"""_body'><FONT COLOR=#000000>
 """+TST+"</FONT></A><BR><A HREF='."+TST+".SKIPPED' TARGET='"+OSVER+"_"+TSTDIR+"""_body'>(skipped)</A></FONT></TD>
 """)
@@ -377,6 +412,7 @@ def SkipTest(env, TST, EXT, REASON) :
 	   not env['_'+TSTDIR+'_BODY_'][1]:
 		env['_'+TSTDIR+'_BODY_'] = ["."+TST+".SKIPPED", 1]
 	CreateSrcIndex(env, TST, EXT)
+### SkipTest(env, TST, EXT, REASON) #
 
 def find_test_dirs(thisdir) :
 	testdirs = []
@@ -390,8 +426,9 @@ def find_test_dirs(thisdir) :
 		if os.path.isdir(d):
 			testdirs = testdirs + find_test_dirs(d)
 	return testdirs
+### find_test_dirs(thisdir) #
 
-def runtests(env, testdir, testlist) :
+def PerformDir(env, testdir, testlist) :
 	TSTSRCBASE = env['TSTSRCBASE']
 	if testdir == TSTSRCBASE:
 		TSTDIR = os.curdir
@@ -400,10 +437,15 @@ def runtests(env, testdir, testlist) :
 	TSTSRCDIR = testdir+os.sep+"Tests"
 	TSTBLDDIR = env['TSTBLDBASE']+os.sep+TSTDIR+"Tests"
 	TSTTRGDIR = env['TSTTRGBASE']+os.sep+"Tests"+os.sep+TSTDIR
-	if os.name == "nt":
-		TSTDB = "Tests_"+regsub.gsub("\\\\","_",TSTDIR)
-	else:
-		TSTDB = "Tests_"+regsub.gsub(os.sep,"_",TSTDIR)
+
+	if THISFILE == "Mtest.py":
+		if os.name == "nt":
+			TSTDB = "Tests_"+regsub.gsub("\\\\","_",TSTDIR)
+		else:
+			TSTDB = "Tests_"+regsub.gsub(os.sep,"_",TSTDIR)
+	else: # THISFILE == "Mapprove.py"
+		TSTDB = ""
+
 	if not testlist:
 		for tst in fileinput.input(TSTSRCDIR+os.sep+"All"):
 			tst = string.strip(tst)
@@ -412,9 +454,7 @@ def runtests(env, testdir, testlist) :
 	if not testlist:
 		Warn("No tests found in '"+TSTSRCDIR+"`; skipping directory!")
 		return
-	if not os.path.exists(TSTTRGDIR):
-		#TODO: set mode to umask
-		os.makedirs(TSTTRGDIR)
+
 	env['TSTDB']     = TSTDB
 	env['TSTDIR']    = TSTDIR
 	env['TSTSRCDIR'] = TSTSRCDIR
@@ -429,21 +469,65 @@ def runtests(env, testdir, testlist) :
 	os.environ['TSTTRGDIR'] = TSTTRGDIR
 	os.environ['RELSRCDIR'] = env['RELSRCDIR']
 	os.environ['RELBLDDIR'] = env['RELBLDDIR']
-	if os.path.exists(env['GDK_DBFARM']+os.sep+TSTDB):
-		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db "+TSTDB, ""):
-			Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+
+	if THISFILE == "Mtest.py":
+		if os.path.exists(env['GDK_DBFARM']+os.sep+TSTDB):
+			if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db "+TSTDB, ""):
+				Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+				#TODO:
+				# add "something" to HTML output
+				return
+		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mcreatedb'][1] +" -db "+TSTDB, ""):
+			Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
 			#TODO:
 			# add "something" to HTML output
 			return
-	if Check(env['exe']['Mtimeout'][1]+env['exe']['Mcreatedb'][1] +" -db "+TSTDB, ""):
-		Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
-		#TODO:
-		# add "something" to HTML output
-		return
-	for t in testlist:
-		runtest(env, t)
-	CreateHtmlIndex(env)
-	AddSubToHtmlIndex(env, TSTDIR)
+		if not os.path.exists(TSTTRGDIR):
+			#TODO: set mode to umask
+			os.makedirs(TSTTRGDIR)
+
+		for t in testlist:
+			RunTest(env, t)
+
+		CreateHtmlIndex(env)
+		AddSubToHtmlIndex(env, TSTDIR)
+
+	else: # THISFILE == "Mapprove.py"
+		if not os.path.exists(TSTTRGDIR):
+			Warn("Output directory '"+TSTTRGDIR+"` missing; skipping directory!")
+			return
+
+		for t in testlist:
+			ApproveOutput(env, t)
+### PerformDir(env, testdir, testlist) #
+
+def ApproveOutput (env, TST) :
+	TSTDB = env['TSTDB']
+	TSTDIR  = env['TSTDIR']
+	TSTSRCDIR = env['TSTSRCDIR']
+	TSTTRGDIR = env['TSTTRGDIR']
+	os.chdir(TSTSRCDIR)
+	EXTENSIONS = par['EXTENSION']
+	SYSTEM = par['SYSTEM']
+	
+#	filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"	+ "|"	\
+#			   + "^!WARNING: TCPepilogue: terminate [01] listeners$"	)
+
+	for WHAT in EXTENSIONS:
+		testOUTPUT   = TSTTRGDIR+os.sep+TST+".test."+WHAT
+		stableOUTPUT = TSTSRCDIR+os.sep+TST+".stable."+WHAT+SYSTEM
+		if os.path.isfile(testOUTPUT):
+#			print("Approving "+testOUTPUT+" -> "+stableOUTPUT)
+			print("Approving "+TSTDIR+os.sep+TST+".test."+WHAT+" -> stable."+WHAT+SYSTEM)
+			f = open(stableOUTPUT, "w")
+			for l in fileinput.input(testOUTPUT):
+				if len(l) == 0  or  l[0] != '!':	# or  filter.match(ln):
+					f.write(l)
+			f.flush()
+			f.close()
+		else:
+			Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
+### ApproveOutput (env, TST) #
 
 def isexecutable(TST) :
 	if   os.name == "nt":
@@ -459,10 +543,11 @@ def isexecutable(TST) :
 	#else:
 		# ???
 	return [ 0, "" ]
+### isexecutable(TST) #
 
 def GetBitsAndMods(env) :
 	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db Tests")
-	pIn.write('''
+	pIn.write('''\
 printf("\\n");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.kunique@batloop{printf("%s'%s'",x,$h);x:=",";}printf("\\n");quit;
 ''')
 	pIn.close()
@@ -488,6 +573,7 @@ printf("\\n");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.kunique@bat
 		env['TST_MODS'] = []
 	os.environ['TST_MODS'] = str(env['TST_MODS'])
 	return env['TST_BITS'], env['TST_MODS']
+### GetBitsAndMods(env) #
 
 def CheckMods(env, TST, EXT) :
 	missing = []
@@ -501,10 +587,11 @@ def CheckMods(env, TST, EXT) :
 			if m not in env['TST_MODS']:
 				missing.append(m)
 	return missing
+### CheckMods(env, TST, EXT) #
 
 def CheckBATs(env, TST, TSTDB) :
 	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db "+TSTDB)
-	pIn.write('''
+	pIn.write('''\
 printf("\\n");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("\\n");quit;
 ''')
 	pIn.close()
@@ -529,8 +616,9 @@ printf("\\n");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("
 			if b  and  b[0] != "#"  and  b not in TST_BATS:
 					missing.append(b)
 	return missing
+### CheckBATs(env, TST, TSTDB) #
 
-def runtest(env, TST) :
+def RunTest(env, TST) :
 	TSTDB = env['TSTDB']
 	TSTDIR  = env['TSTDIR']
 	TSTSRCDIR = env['TSTSRCDIR']
@@ -777,28 +865,33 @@ def runtest(env, TST) :
 		os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
 
 		AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
+### RunTest(env, TST) #
 
-def Prompt(cmd):
+def Prompt(cmd) :
 	prompt = time.strftime('\n# %H:%M:%S >  ',time.localtime(time.time()))
 	return prompt+prompt+cmd+prompt+"\n\n"
+### Prompt(cmd) #
 
-def LaunchIt(cmd, TestIn, TestOut, TestErr):
+def LaunchIt(cmd, TestIn, TestOut, TestErr) :
 	TestOut.write(Prompt(cmd)) ; TestOut.flush()
 	TestErr.write(Prompt(cmd)) ; TestErr.flush()
 	pOut,pIn,pErr = popen2.popen3(cmd)
 	pIn.write(TestIn)
 	return pIn, pOut, pErr
+### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
-def CollectIt(pOut, pErr, TestOut, TestErr):
+def CollectIt(pOut, pErr, TestOut, TestErr) :
 	TestOut.writelines(pOut.readlines()) ; TestOut.flush()
 	TestErr.writelines(pErr.readlines()) ; TestErr.flush()
 	pOut.close()
 	pErr.close()
+### CollectIt(pOut, pErr, TestOut, TestErr) #
 
-def RunIt(cmd, TestIn, TestOut, TestErr):
+def RunIt(cmd, TestIn, TestOut, TestErr) :
 	pIn, pOut, pErr = LaunchIt(cmd, TestIn, TestOut, TestErr)
 	pIn.close()
 	CollectIt(pOut, pErr, TestOut, TestErr)
+### RunIt(cmd, TestIn, TestOut, TestErr) #
 
 def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 	STDERR.flush()
@@ -892,6 +985,7 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 	#elif CALL == "milCXp":
 	TestOut.write(Prompt('Done.')) ; TestOut.flush()
 	TestErr.write(Prompt('Done.')) ; TestErr.flush()
+### DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) #
 
 def Check(command, input) :
 	pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")
@@ -916,6 +1010,7 @@ def Check(command, input) :
 		STDERR.flush()
 		#sys.exit(1)
 	return rOutErr
+### Check(command, input) #
 
 def CheckExec(cmd) :
 	for p in string.split(os.environ['PATH'],os.pathsep):
@@ -923,6 +1018,7 @@ def CheckExec(cmd) :
 		if x[0]:
 			return p+os.sep+cmd+x[1]
 	return ""
+### CheckExec(cmd) #
 
 #############################################################################
 #	MAIN
@@ -969,7 +1065,7 @@ URLSUFFIX_D = '?cvsroot=Monet-4.2'
 
 par = {}
 
-def FindMonetConf(env):
+def FindMonetConf(env) :
 	dirs = [ os.getcwd()+os.sep+".", env['TSTSRCBASE']+os.sep+"." ]
 	if os.environ.has_key('HOME'):
 		dirs.append(os.environ['HOME']+os.sep+".")
@@ -979,8 +1075,9 @@ def FindMonetConf(env):
 		if os.path.isfile(f):
 			return f
 	return ""
+### FindMonetConf(env) #
 
-def ReadFromMonetConf(env, var):
+def ReadFromMonetConf(env, var) :
 	value = ""
 	test = re.compile("^\s*"+var+"\s*=\s*([^#\s]+)")
 	for l in fileinput.input(env['MONETRC']):
@@ -990,14 +1087,16 @@ def ReadFromMonetConf(env, var):
 	if len(value) >= 4  and  url(value[:4]) == ".../":
 		value = env['MONET_PREFIX']+value[3:]
 	return value
+### ReadFromMonetConf(env, var) #
 
 def main(argv) :
 	#TODO:
 	#signal.signal(signal.SIGALRM, AlarmHandler)
 
-	vars = ['MONET_SOURCE', 'MONET_BUILD'   , 'MONET_PREFIX'  , \
-		'TSTSRCBASE'  , 'TSTBLDBASE'    , 'TSTTRGBASE'    , \
-		'MONETRC'     , 'MONET_MOD_PATH', 'MAPIPORT'         ]
+	vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX', \
+		'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'     ]
+	if THISFILE == "Mtest.py":
+		vars = vars + ['MONETRC', 'MONET_MOD_PATH', 'MAPIPORT']
 
 	# most intuitive (?) default settings
 	dft = {}
@@ -1007,16 +1106,21 @@ def main(argv) :
 	dft['TSTSRCBASE']     = "env['MONET_SOURCE']"
 	dft['TSTBLDBASE']     = "env['MONET_BUILD']"
 	dft['TSTTRGBASE']     = "env['MONET_PREFIX']"	# or os.getcwd() ?
-	dft['MONETRC']        = "FindMonetConf(env)"
-	dft['MONET_MOD_PATH'] = "env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
-	dft['MAPIPORT']       = "HOST+':'+str(random.randrange(50000,59999,1))"
+	if THISFILE == "Mtest.py":
+		dft['MONETRC']        = "FindMonetConf(env)"
+		dft['MONET_MOD_PATH'] = "env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
+		dft['MAPIPORT']       = "HOST+':'+str(random.randrange(50000,59999,1))"
 	env = {}
 
 	#par = {}
-	par['IGNORE']    = '-I"^#"'
-	par['CONTEXT']   = '-c1'
-	par['ACCURACY']  = 2
-	par['TIMEOUT']   = 600
+	if THISFILE == "Mtest.py":
+		par['IGNORE']    = '-I"^#"'
+		par['CONTEXT']   = '-c1'
+		par['ACCURACY']  = 2
+		par['TIMEOUT']   = 600
+	else: # THISFILE == "Mapprove.py"
+		par['EXTENSION'] = ['out', 'err']
+		par['SYSTEM']    = ''
 	par['RECURSIVE'] = 0
 
 	# get current environment
@@ -1027,15 +1131,27 @@ def main(argv) :
 			# make sure, that PATHs ar absolute
 
 	# commandline options overrule environment
+	shortOpts = "?hr"
+	longOpts  = ["help", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX="]
+	if THISFILE == "Mtest.py":
+		shortOpts = shortOpts + "I:c:a:t:"
+		longOpts  = longOpts  + ["monetrc=", "MONETRC="]
+	else: # THISFILE == "Mapprove.py"
+		shortOpts = shortOpts + "x:s:"
 	try:
-		opts, args = getopt.getopt(argv[1:], "?hI:c:a:t:r", ["help", "monetrc=", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX="])
+		opts, args = getopt.getopt(argv[1:], shortOpts, longOpts)
 	except getopt.GetoptError:
 		Usage()
 		sys.exit(1)
 	for o, a in opts:
+		# Mtest.py & Mapprove.py
 		if   o in ("-?", "-h", "--help"):
 			Usage()
 			sys.exit(0)
+		elif o == "-r":
+			par['RECURSIVE'] = 1
+			# commandline options overrule environment
+		# Mtest.py
 		elif o == "-I":
 			par['IGNORE'] = o+a
 		elif o == "-c":
@@ -1045,23 +1161,32 @@ def main(argv) :
 			if a not in (0,1,2):
 				Usage()
 				ErrXit("Accuracy for diff (-a) must be one of: 0=lines, 1=words, 2=chars !")
+			#TODO
+			if os.name == "nt"  and  a != 0:
+				Warn("Currently only '-a0` is supported on NT!")
+				a = 0
 			par['ACCURACY'] = a
 		elif o == "-t":
 			par['TIMEOUT'] = int(a)
-		elif o == "-r":
-			par['RECURSIVE'] = 1
-			# commandline options overrule environment
-		elif len(o) > 2  and  o[:2] == "--"  and  o[2:] in vars:
-			env[o[2:]] = a
+		# Mapprove.py
+		elif o == "-x":
+			if a not in ('out', 'err'):
+				Usage()
+				ErrXit("Extension (-x) must be one of: 'out', 'err' !")
+			par['EXTENSION'] = [a]
+		elif o == "-s":
+			if a not in ('', '.'+OS, '.'+OSVER, '.'+OSVER+'.32bit', '.'+OSVER+'.64bit'):
+				Usage()
+				ErrXit("System (-s) must be one of:  '', '."+OS+"', '."+OSVER+"', '."+OSVER+".32bit', '."+OSVER+".64bit' !")
+			par['SYSTEM'] = a
+		# Mtest.py & Mapprove.py
+		elif len(o) > 2  and  o[:2] == "--"  and  string.upper(o[2:]) in vars:
+			env[string.upper(o[2:])] = a
 			#TODO:
 			# make sure, that PATHs ar absolute
 		else:
 			Usage()
 			ErrXit("Illegal option: '"+o+"`!")
-	#TODO
-	if os.name == "nt"  and  par['ACCURACY'] != 0:
-		Warn("Currently only '-a0` is supported on NT!")
-		par['ACCURACY'] = 0
 
 	# display par's
 	STDERR.flush()
@@ -1078,7 +1203,7 @@ def main(argv) :
 			#TODO:
 			# make sure, that PATHs ar absolute
 
-	if not env['MONETRC']:
+	if THISFILE == "Mtest.py"  and  not env['MONETRC']:
 		Usage()
 		ErrXit("No .monet.[Mtest.]conf found!")
 
@@ -1111,18 +1236,26 @@ def main(argv) :
 	#	print(v+" = "+str(env[v]))
 	#STDOUT.flush()
 
-	env['GDK_DBFARM'] = path(ReadFromMonetConf(env, "gdk_dbfarm"))
+	if THISFILE == "Mtest.py":
+		env['GDK_DBFARM'] = path(ReadFromMonetConf(env, "gdk_dbfarm"))
 
 	# export and display env
 	STDERR.flush()
-	for v in vars + ['GDK_DBFARM']:
+	if THISFILE == "Mtest.py":
+		vars_ = vars + ['GDK_DBFARM']
+	else: # THISFILE == "Mapprove.py"
+		vars_ = vars
+	for v in vars_:
 		os.environ[v] = env[v]
 		print(v+" = "+env[v])
 	STDOUT.flush()
 
 	# set/extend PATH & LD_LIBRARY_PATH
 	bp = env['MONET_PREFIX']+os.sep+"bin"
-	lp = env['MONET_MOD_PATH']
+	if THISFILE == "Mtest.py":
+		lp = env['MONET_MOD_PATH']
+	else: # THISFILE == "Mapprove.py"
+		lp = ""
 	if os.name == "nt":
 		bp = bp+os.pathsep+lp
 	if os.environ.has_key('PATH'):
@@ -1141,37 +1274,38 @@ def main(argv) :
 		os.chdir(env['TSTSRCBASE'])
 
 	# check for executables, set their standard options and export them
-	exe = {}
-	exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
-	exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -monetrc '+env['MONETRC']
-	exe['MapiClient'] = CheckExec('MapiClient'), 'MapiClient -everything'
-	exe['Mcreatedb']  = CheckExec('Mcreatedb') , 'Mcreatedb -monetrc '+env['MONETRC']
-	exe['Mdestroydb'] = CheckExec('Mdestroydb'), 'Mdestroydb -monetrc '+env['MONETRC']
-	exe['Mshutdown']  = CheckExec('Mshutdown') , 'Mshutdown'
-	exe['Mdiff']      = CheckExec('Mdiff')     , 'Mdiff'
-	exe['python']     = CheckExec('python')    , 'python'
-	if not exe['Mtimeout'][0]:
-		exe['Mtimeout'] = '', ''
-	if os.name == "nt":
-		CALL = "call "
-	else:
-		CALL = ""
-	STDERR.flush()
-	for v in exe.keys():
-		V = string.upper(v)
-		if  v != 'Mtimeout':
-			os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
-		elif exe[v][0]:
-			os.environ[V] = CALL+exe[v][1]
+	if THISFILE == "Mtest.py":
+		exe = {}
+		exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
+		exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -monetrc '+env['MONETRC']
+		exe['MapiClient'] = CheckExec('MapiClient'), 'MapiClient -everything'
+		exe['Mcreatedb']  = CheckExec('Mcreatedb') , 'Mcreatedb -monetrc '+env['MONETRC']
+		exe['Mdestroydb'] = CheckExec('Mdestroydb'), 'Mdestroydb -monetrc '+env['MONETRC']
+		exe['Mshutdown']  = CheckExec('Mshutdown') , 'Mshutdown'
+		exe['Mdiff']      = CheckExec('Mdiff')     , 'Mdiff'
+		exe['python']     = CheckExec('python')    , 'python'
+		if not exe['Mtimeout'][0]:
+			exe['Mtimeout'] = '', ''
+		if os.name == "nt":
+			CALL = "call "
 		else:
-			os.environ[V] = ""
-		print(V+" = "+exe[v][0]+" : "+exe[v][1])
-	STDOUT.flush()
-	env['exe'] = exe
+			CALL = ""
+		STDERR.flush()
+		for v in exe.keys():
+			V = string.upper(v)
+			if  v != 'Mtimeout':
+				os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
+			elif exe[v][0]:
+				os.environ[V] = CALL+exe[v][1]
+			else:
+				os.environ[V] = ""
+			print(V+" = "+exe[v][0]+" : "+exe[v][1])
+		STDOUT.flush()
+		env['exe'] = exe
 
-	#TODO:
-	#exe['JAVA']       = 'java'
-	#exe['JAVAC']      = 'javac'
+		#TODO:
+		#exe['JAVA']       = 'java'
+		#exe['JAVAC']      = 'javac'
 
 	# parse commandline arguments
 	testdirs = []
@@ -1248,43 +1382,47 @@ def main(argv) :
 		Warn("No tests found!")
 		sys.exit(1)
 
-	if os.path.exists(env['TSTTRGBASE']+os.sep+"Tests"):
-		shutil.rmtree(env['TSTTRGBASE']+os.sep+"Tests")
-	if not os.path.exists(env['GDK_DBFARM']):
-		#TODO: set mode to umask
-		os.makedirs(env['GDK_DBFARM'])
+	if THISFILE == "Mtest.py":
+		if os.path.exists(env['TSTTRGBASE']+os.sep+"Tests"):
+			shutil.rmtree(env['TSTTRGBASE']+os.sep+"Tests")
+		if not os.path.exists(env['GDK_DBFARM']):
+			#TODO: set mode to umask
+			os.makedirs(env['GDK_DBFARM'])
 
-	if os.path.exists(env['GDK_DBFARM']+os.sep+"Tests"):
-		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db Tests", ""):
+		if os.path.exists(env['GDK_DBFARM']+os.sep+"Tests"):
+			if Check(env['exe']['Mtimeout'][1]+env['exe']['Mdestroydb'][1]+" -db Tests", ""):
+				sys.exit(1)
+		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mcreatedb'][1] +" -db Tests", ""):
 			sys.exit(1)
-	if Check(env['exe']['Mtimeout'][1]+env['exe']['Mcreatedb'][1] +" -db Tests", ""):
-		sys.exit(1)
-	if Check(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]   +" -db Tests", "quit;\n"):
-		sys.exit(1)
-	GetBitsAndMods(env)
-	STDERR.flush()
-	print("Bits: ", env['TST_BITS'])
-	print("Modules: ", env['TST_MODS'])
-	STDOUT.flush()
+		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]   +" -db Tests", "quit;\n"):
+			sys.exit(1)
+		GetBitsAndMods(env)
+		STDERR.flush()
+		print("Bits: ", env['TST_BITS'])
+		print("Modules: ", env['TST_MODS'])
+		STDOUT.flush()
 
 	if len(testdirs) == 1:
-		runtests(env, testdirs[0], testlist)
+		PerformDir(env, testdirs[0], testlist)
 	else:
 		testdirs.sort()
 		for d in testdirs:
-			runtests(env, d, [])
-	env['TSTDIR'] = ""
-	env['TSTTRGDIR'] = env['TSTTRGBASE']+os.sep+"Tests"
-	CreateHtmlIndex(env)
+			PerformDir(env, d, [])
 
-	test = re.compile("^.*<B>.*$")
-	failed = 0
-	for l in fileinput.input(env['TSTTRGBASE']+os.sep+"Tests"+os.sep+"index.head.html"):
-		if test.match(l):
-			failed = 1
-	STDERR.flush()
-	if failed:
-		print("""
+	if THISFILE == "Mtest.py":
+		env['TSTDIR'] = ""
+		env['TSTTRGDIR'] = env['TSTTRGBASE']+os.sep+"Tests"
+		CreateHtmlIndex(env)
+
+		test = re.compile("^.*<B>.*$")
+		failed = 0
+		for l in fileinput.input(env['TSTTRGBASE']+os.sep+"Tests"+os.sep+"index.head.html"):
+			if test.match(l):
+				failed = 1
+		STDERR.flush()
+		if failed:
+			print("""\
+
  !ERROR:  Testing FAILED ! 
 
  First, check the testing results in  """+env['TSTTRGBASE']+os.sep+"Tests"+os.sep+"index.html"+"""  ! 
@@ -1292,16 +1430,26 @@ def main(argv) :
  Then, fix the problems by: 
   - fixing sources and test scripts 
   - fixing stable output by hand 
-  - approving test output by Mapprove (cf. Mapprove -?) 
+  - approving test output by Mapprove.py (cf. Mapprove.py -?) 
 
  After that, re-run Mtest. 
 """)
-	else:
-		print("""
+		else:
+			print("""\
+
  No differences encountered during testing. 
 
  If necessary, you can checkin your modifications, now. 
 """)
+
+	else: # THISFILE == "Mapprove.py"
+		print("""\
+
+ First, run 'cvs -q diff` to check what you have changed.
+
+ Then, re-run Mtest.
+""")
+### main(argv) #
 
 if __name__ == "__main__":
 	main(sys.argv)
