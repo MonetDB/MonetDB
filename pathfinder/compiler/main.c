@@ -405,7 +405,7 @@
 
 #include "pathfinder.h"
 
-#if HAVE_GETOPT_H
+#if HAVE_GETOPT_H && HAVE_GETOPT_LONG
 #include <getopt.h>
 
 /**

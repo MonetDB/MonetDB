@@ -105,6 +105,7 @@ fi
 
 dnl Check for GNU Getopt
 AC_CHECK_HEADERS([getopt.h])
+AC_CHECK_FUNCS(getopt_long)
 
 dnl Check for stdbool.h
 AC_CHECK_HEADERS([stdbool.h])
