@@ -39,7 +39,7 @@ import java.math.*;	// BigDecimal, etc.
  * underlying Statement.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.2
+ * @version 0.3
  */
 public class MonetPreparedStatement
 	extends MonetStatement

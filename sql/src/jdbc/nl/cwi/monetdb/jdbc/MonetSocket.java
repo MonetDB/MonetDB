@@ -95,7 +95,7 @@ class MonetSocket {
 		toMonet = new BufferedWriter(
 			new OutputStreamWriter(con.getOutputStream(), "UTF-8"));
 		
-		// set the blocksize, use socket defaul
+		// set the blocksize, use socket default
 		readcapacity = con.getReceiveBufferSize();
 		writecapacity = con.getSendBufferSize();
 	}
@@ -166,7 +166,8 @@ class MonetSocket {
 	 * @throws IOException if writing to the stream failed
 	 */
 	public void writeln(String data) throws IOException {
-		write(data + "\n");
+		write(data);
+		write("\n");
 		flush();
 	}
 

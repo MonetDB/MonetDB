@@ -46,7 +46,7 @@ import java.text.SimpleDateFormat;
  * result sets.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.5
+ * @version 0.6
  */
 public class MonetResultSet implements ResultSet {
 	/** The last column read using some getXXX function */
@@ -200,13 +200,10 @@ public class MonetResultSet implements ResultSet {
 
 		if (tmpLine == null) return(false);
 
-		// remove brackets from result
-		tmpLine = tmpLine.substring(1, tmpLine.length() - 2);
-
 		// extract separate fields by examining string, char for char
 		boolean inString = false, escaped = false;
-		int cursor = 0, column = 0, i = 0;
-		for (; i < tmpLine.length(); i++) {
+		int cursor = 2, column = 0, i = 2;
+		for (; i < tmpLine.length() - 2; i++) {
 			switch(tmpLine.charAt(i)) {
 				case '\\':
 					escaped = !escaped;
@@ -243,7 +240,7 @@ public class MonetResultSet implements ResultSet {
 					{
 						// split!
 						result[column++] =
-							tmpLine.substring(cursor, i - 1).trim();
+							tmpLine.substring(cursor, i - 1);
 						cursor = i + 1;
 					}
 
@@ -254,7 +251,8 @@ public class MonetResultSet implements ResultSet {
 		}
 		// put the left over (if any) in the next column (should be there!!!)
 		if (i - cursor > 0)
-			result[column++] = tmpLine.substring(cursor).trim();
+			result[column++] =
+				tmpLine.substring(cursor, tmpLine.length() - 2);
 		// check if this result is of the size we expected it to be
 		if (column != columns.length) throw new AssertionError("Illegal result length: " + column + "\nlast read: " + result[column - 1]);
 		// trim spaces off all columns and unquote + unescape if they are quoted
