@@ -1163,11 +1163,11 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "MAPI":
-        for m in "str", "mapi":
+        for m in "mapi":
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
-        for m in "str", env['SQL_SERVER'], "ascii_io", "alarm", "unix", "xtables", "aggrX3", "monettime", "mmath", "mkey", "blob", "txtsim", "bat_arith", "mapi":
+        for m in env['SQL_SERVER'], "streams", "ascii_io", "monettime", "alarm", "xtables", "aggrX3", "blob", "txtsim", "mmath", "mkey", "bat_arith", "pcre":
             if m not in env['TST_MODS']:
                 missing.append(m)
     if CALL in ["x100", "x100Xs"]:
@@ -1175,7 +1175,7 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m not in env['TST_MODS']:
                 missing.append(m)
     if CALL in ["pf", "pfXs"]:
-        for m in "pathfinder", "pf_support", "ascii_io":
+        for m in "pathfinder", "pf_support", "ascii_io", "alarm", "malalgebra", "aggrX3", "xtables":
             if m not in env['TST_MODS']:
                 missing.append(m)
     return missing
