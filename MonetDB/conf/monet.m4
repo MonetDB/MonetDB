@@ -100,23 +100,14 @@ AC_ARG_WITH(gcc,
 [  --with-gcc=<compiler>   which C compiler to use
   --without-gcc           do not use GCC], [
 	case $withval in
-	no)	CC=cc CXX=CC;;
-	yes|gcc)	
-		CC=gcc CXX=g++
-		CFLAGS="$CFLAGS -Werror-implicit-function-declaration"
-		CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
-		;;
-	[[Ii]]ntel|icc|ecc)
-		case $host in
-		i?86*)	CC=icc CXX=icpc;;
-		ia64*)	CC=ecc CXX=ecpc;;
+	yes)	CC=gcc CXX=g++;;
+	no)	case $host_os-$host in
+		linux*-i?86*)	CC=icc	CXX=icpc;;
+		linux*-x86_64*)	CC=icc	CXX=icpc;;
+		linux*-ia64*)	CC=ecc	CXX=ecpc;;
+		aix*)		CC=xlc	CXX=xlC;;
+		*)		CC=cc	CXX=CC;;
 		esac
-	 	LDFLAGS="$LDFLAGS -i_dynamic"
-		dnl  Let warning #140 "too many arguments in function call"
-		dnl  become an error to make configure tests work properly.
-		CFLAGS="$CFLAGS -we140" CXXFLAGS="$CXXFLAGS -we140"
-		dnl  Let warning #266 "function declared implicitly" become an error.
-		CFLAGS="$CFLAGS -we266" CXXFLAGS="$CXXFLAGS -we266"
 		;;
 	*)	CC=$withval;;
 	esac])
@@ -125,21 +116,6 @@ AC_ARG_WITH(gxx,
 [  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
-	g++)	CXX=g++
-		CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
-		;;
-	[[Ii]]ntel|icpc|ecpc)
-		case $host in
-		i?86*)	CXX=icpc;;
-		ia64*)	CXX=ecpc;;
-		esac
-	 	LDFLAGS="$LDFLAGS -i_dynamic"
-		dnl  Let warning #140 "too many arguments in function call"
-		dnl  become an error to make configure tests work properly.
-		CXXFLAGS="$CXXFLAGS -we140"
-		dnl  Let warning #266 "function declared implicitly" become an error.
-		CXXFLAGS="$CXXFLAGS -we266"
-		;;
 	*)	CXX=$withval;;
 	esac])
 
@@ -147,7 +123,43 @@ AC_PROG_CC()
 AC_PROG_CXX()
 AC_PROG_CPP()
 AC_PROG_GCC_TRADITIONAL()
+
+dnl if test "x$CC$CXX" = "x"; then
+dnl	CC=gcc 	CXX=g++
+dnl fi
+case $CC in
+gcc)	
+	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
+	CFLAGS="$CFLAGS -Wall"
+	dnl "-W"
+	;;
+icc|ecc)
+ 	LDFLAGS="$LDFLAGS -i_dynamic"
+	dnl  Let warning #140 "too many arguments in function call"
+	dnl  become an error to make configure tests work properly.
+	CFLAGS="$CFLAGS -we140"
+	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
+	CFLAGS="$CFLAGS -Wall -w2"
+	;;
+esac
+case $CXX in
+g++)	
+	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
+	dnl CXXFLAGS="$CXXFLAGS -Wall"
+	dnl "-W"
+	;;
+icpc|ecpc)
+ 	LDFLAGS="$LDFLAGS -i_dynamic"
+	dnl  Let warning #140 "too many arguments in function call"
+	dnl  become an error to make configure tests work properly.
+	CXXFLAGS="$CXXFLAGS -we140"
+	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
+	CXXFLAGS="$CXXFLAGS -Wall -w2"
+	;;
+esac
+
 AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
 
 bits=32
 AC_ARG_WITH(bits,
@@ -165,7 +177,7 @@ case $withval in
 esac
 bits=$withval
 ])
-case "$GCC-$host_os-$bits" in
+case "$GCC-$host_os-$host-$bits" in
 yes-solaris*-64)
 	case `$CC -v 2>&1` in
 	*'gcc version 3.'*)	;;
@@ -185,6 +197,10 @@ yes-irix*-64)
 -irix*-64)
 	CC="$CC -$bits"
 	CXX="$CXX -$bits"
+	;;
+yes-linux*-x86_64*-64)
+	CC="$CC -m$bits"
+	CXX="$CXX -m$bits"
 	;;
 esac
 
@@ -297,15 +313,11 @@ if test "x$enable_debug" = xyes; then
   else
     dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[0-9] | |g' -e 's|^ ||' -e 's| $||'`"
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's|^ ||' -e 's| $||'`"
     CXXFLAGS=" $CXXFLAGS "
-    CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[0-9] | |g' -e 's|^ ||' -e 's| $||'`"
-    if test "x$GCC" = xyes; then
-      CFLAGS="$CFLAGS -O0"
-      CXXFLAGS="$CXXFLAGS -O0"
-    fi
-    CFLAGS="$CFLAGS -g"
-    CXXFLAGS="$CXXFLAGS -g"
+    CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's|^ ||' -e 's| $||'`"
+    CFLAGS="$CFLAGS -O0 -g"
+    CXXFLAGS="$CXXFLAGS -O0 -g"
   fi
 fi
 
