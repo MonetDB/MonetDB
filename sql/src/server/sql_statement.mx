@@ -1073,7 +1073,7 @@ stmt *stmt_semijoin(stmt * op1, stmt * op2)
 	stmt *s = stmt_create(st_semijoin);
 	s->op1.stval = op1;
 	s->op2.stval = op2;
-	//assert( op1->h == op2->h );
+	/* assert( op1->h == op2->h ); */
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->h = stmt_dup(op1->h);

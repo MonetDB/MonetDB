@@ -207,14 +207,14 @@ YYSTREE milnode2(int tok, ValPtr valp)
 
 int sqlexecute(context * c, char *inbuf, stream *out, Cntxt stk, ValPtr res )
 {
-	ValRecord v;
-	v.vtype = TYPE_void;
-
 	stream *cout = c->out;
 	char *cmd = NULL, buf[BUFSIZ];
 	node *n;
 	int i, err = 0;
 	cq *q = NULL;
+
+	ValRecord v;
+	v.vtype = TYPE_void;
 
 	c->buf = inbuf;
 	c->cur = ' ';

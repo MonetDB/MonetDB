@@ -57,6 +57,7 @@ sql_export void atom_dump(atom *a, stream *s);
 
 @c
 #include "sql_atom.h"
+#include <sql_string.h>
 
 static int atom_debug = 0;
 
@@ -85,7 +86,7 @@ atom *atom_int(sql_subtype * tpe, lng val)
 		}
 		a->data.len = 0;
 		if (atom_debug)
-			fprintf(stderr, "atom_int(%s,%ld)\n", tpe->type->sqlname, val);
+			fprintf(stderr, "atom_int(%s,%lld)\n", tpe->type->sqlname, val);
 		return a;
 	}
 	return NULL;
