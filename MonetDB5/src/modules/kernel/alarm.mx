@@ -114,6 +114,7 @@ are outstanding timer events.
 @c
 void CLKinitTimer(int sec, int usec){
 	int i = sec - time(0);
+	(void) usec; /* fool compiler */
 	TRGDEBUG THRprintf(GDKerr, "CLKinitTimer: set timer to %d secs \n", i); 
         alarm(i);
 }
@@ -155,9 +156,9 @@ emit a notify signal.
 @c
 #ifdef SIGALRM
 static RETSIGTYPE CLKsignal(int nr){
-	int restype;
 	int k=timerTop;
         int t; 
+	(void)nr; /* fool compiler */
  
 	if (signal(SIGALRM, CLKsignal) == SIG_ERR) {
 		GDKsyserror("CLKsignal: call failed\n");
@@ -214,7 +215,9 @@ str CLKusec(int *ret){
 }
 
 
-str CLKsleep(int *res,int *secs){
+str CLKsleep(int *res,int *secs)
+{
+	(void) res; /* fool compiler */
 
         if (*secs < 0) {
                 return throwMessage("alarm.sleep", "negative delay");
@@ -232,6 +235,7 @@ str CLKsleep(int *res,int *secs){
 }
  
 str CLKsetalarm(int *res, int *secs, str *action){
+	(void) res; /* fool compiler */
         if (*secs < 0) {
                 return throwMessage("alarm.setalarm", "negative delay");
         } else {

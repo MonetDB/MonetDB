@@ -106,6 +106,7 @@ The content of this box my only be changed by the Administrator.
 #include "const.h"
 #include "mal.h"
 #include "mal_client.h"
+#include "mal_interpreter.h"
 
 int isAuthorized(str nme){
 	Client c;
@@ -115,8 +116,7 @@ int isAuthorized(str nme){
 }
 str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
-	ValRecord vr;
-	str msg;
+	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:authorize(prelude)@
 	box= openBox("const");
 	if( box== 0) 
@@ -157,18 +157,21 @@ str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @- Operator implementation
 @c
 str CONSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:authorize(open)@
 	if(openBox("const.open") != 0) return MAL_SUCCEED;
 	return throwMessage("const.open","failed to open box");
 }
 
 str CONSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:authorize(close)@
 	if( closeBox("const" ,TRUE) ==0) return MAL_SUCCEED;
 	return throwMessage("const.close","failed to close box");
 }
 str CONSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
+	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:OpenBox(destroy)@
 	destroyBox("const");
 	return MAL_SUCCEED;
@@ -187,6 +190,7 @@ str CONSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	ValPtr v;
 	Box box;
+	(void)mb; /* fool compiler*/
 
 	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk,pci,1);
@@ -201,6 +205,7 @@ str CONSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 	ValPtr v;
+	(void)mb; /* fool compiler*/
 
 	@:OpenBox(take)@
 	name = (str) getArgValue(stk,pci,1);
@@ -214,6 +219,7 @@ str CONSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CONSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
+	(void)mb; /* fool compiler*/
 
 	@:OpenBox(release)@
         name = (str) getArgValue(stk,pci,1);
@@ -224,6 +230,7 @@ str CONSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CONSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
+	(void)mb; (void)stk; (void) pci; /* fool compiler */
 	@:OpenBox(release)@
 	releaseAllBox(box);
 	return MAL_SUCCEED;
@@ -233,6 +240,7 @@ str CONSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
+	(void)mb; /* fool compiler */
 	@:OpenBox(discard)@
         name = (str) getArgValue(stk,pci,1);
         if( discardBox(box,name) == 0)
@@ -246,6 +254,7 @@ str CONSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 	str nme,s=0;
 
+	(void)mb; /* fool compiler */
 	@:OpenBox(toString)@
 	nme = (str) getArgValue(stk,pci,1);
 	i= findVariable(box->sym,nme);
@@ -271,6 +280,7 @@ str CONSTiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *cursor;
 	ValPtr v;
 
+	(void)mb; /* fool compiler */
 	@:OpenBox(iterator)@
 	cursor= (lng*) getArgValue(stk,pci,0);
 	v= &stk->stk[pci->argv[1]];

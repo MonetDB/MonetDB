@@ -586,7 +586,7 @@ str compareaccum@1(BAT *dst, BAT *left, BAT *right){
 str CMDcmp@1(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
 	int s1,xx;
-	ptr p1, hend;
+	ptr p1;
 	bit bn= bit_nil;
 	BUN p,q;
 
@@ -652,8 +652,8 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 
 str CMDcmp@1cst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
-	int s1,d,xx;
-	ptr p1, hend;
+	int s1,xx;
+	ptr p1;
 	bit bn= bit_nil;
 	BUN p,q;
 
@@ -703,7 +703,6 @@ str CMDbitbataccumNOT(int *ret, int *d, int *l)
 {	BAT *dst, *left;
 	int s1,s2;
 	ptr p1,p2, hend;
-	bit bn= bit_nil;
 
 	@:getBATdescriptor(ret,d,dst,CMDbitbataccum@1)@
 	@:getBATdescriptor(ret,l,left,CMDbitbataccum@1)@
@@ -726,7 +725,7 @@ str CMDbitbataccumNOT(int *ret, int *d, int *l)
 str CMDbitbatNOT(int *ret, int *l)
 {	BAT *dst, *left;
 	int s1,xx,d;
-	ptr p1, hend;
+	ptr p1;
 	bit bn= bit_nil;
 	BUN p,q;
 
@@ -767,7 +766,6 @@ str CMDconvert@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
 	BUN p,q;
-	ptr h,t;
 	@1 x;
 	@2 y;
 
@@ -801,7 +799,6 @@ str CMDconvertstr_int(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
 	BUN p,q;
-	ptr h,t;
 	str x;
 	int y;
 
@@ -828,9 +825,7 @@ str CMDconvertvoid_oid(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
 	BUN p,q;
-	ptr h,t;
 	oid x;
-	int y;
 
 	@:getBATdescriptor(ret,bid,b,CMDconvertstr_int)@
 
@@ -1000,7 +995,6 @@ str CMDfilltail_@1(int *ret, int *iid, ptr *val){
 	BAT *ib, *bn;
 	int xx;
 	BUN p,q;
-	@1 bnil= @1_nil;
 
 	@:getBATdescriptor(ret,iid,ib,CMDfilltail_@1)@
 
@@ -1017,7 +1011,6 @@ str CMDfillhead_@1(int *ret,ptr *val, int *iid){
 	BAT *ib, *bn;
 	int xx;
 	BUN p,q;
-	@1 bnil= @1_nil;
 
 	@:getBATdescriptor(ret,iid,ib,CMDfillhead_@1)@
 
@@ -1160,7 +1153,6 @@ str CMDmatchStr(int  *ret, int *bid, str *pat){
 	BATloopFast(b, p, q, xx) {
 		ptr h = BUNhead(b,p);
 		ptr t = BUNtail(b,p);
-		int idx = BUNindex(b,p);
 
 		if( ATOMcmp(tpe, t, nilptr)==0 ){
 			bunfastins(bn, h, t);

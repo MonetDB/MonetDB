@@ -437,6 +437,8 @@ mal_export str RRoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str MALoptimizer(Client c);
 
 mal_export void setLifespan(MalBlkPtr mb);
+mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
+
 @+ Optimizer scenario
 The large number of query transformers calls for a flexible scheme for
 the deploy them. The approach taken is to make all optimizers visible

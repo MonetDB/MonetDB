@@ -81,32 +81,42 @@ pattern heap(nme:str):int    = atomsHeap;
 @c
 #include "atoms.h"
 str atomsToStr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.ToStr", "not yet implemented\n");
 }
 str atomsFromStr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.fromStr", "not yet implemented\n");
 }
 str atomsNequal(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.nequal", "not yet implemented\n");
 }
 str atomsHash(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.hash", "not yet implemented\n");
 }
 str atomsNull(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.null", "not yet implemented\n");
 }
 str atomsConvert(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.convert", "not yet implemented\n");
 }
 str atomsPut(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.put", "not yet implemented\n");
 }
 str atomsDel(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.del", "not yet implemented\n");
 }
 str atomsheap(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.heap", "not yet implemented\n");
 }
 str atomsLength(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.length", "not yet implemented\n");
 }

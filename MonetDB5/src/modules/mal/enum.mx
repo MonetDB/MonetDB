@@ -165,6 +165,8 @@ bat ENUMmap[MAX_ENUM] = { 0 };
 oid ENUMhisto[MAX_ENUM] = { 0 };
 int ENUMtpe[MAX_ENUM] = { -1 };
 
+@:block(chr,char)@
+@:block(sht,short)@
 @:imp(0)@	@:imp(1)@	@:imp(2)@	@:imp(3)@ 	@:imp(4)@
 @:imp(5)@	@:imp(6)@	@:imp(7)@	@:imp(8)@ 	@:imp(9)@
 @:imp(10)@	@:imp(11)@	@:imp(12)@	@:imp(13)@ 	@:imp(14)@
@@ -206,7 +208,6 @@ fcn ENUMconv[MAX_ENUM*4+1] = {
 @= block
 int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 	int l; ptr v; 
-	str s;
 	BAT *b = BATdescriptor(ENUMmap[mapid]);
 
 	if (*src == @1_nil) {
@@ -228,7 +229,8 @@ int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 	memcpy(*dst, v, l);
 	return (l-1);  /* return string length excluding eos */
 }
-int enum@1Fromstr(int mapid, str src, int* len, @1** dst){
+int enum@1Fromstr(int mapid, str src, int* l1, @1** dst){
+	unsigned int len= *l1;
 	int r, l = 0;
 	BUN p; ptr v;
 	BAT *b = BATdescriptor(ENUMmap[mapid]);
@@ -241,8 +243,8 @@ int enum@1Fromstr(int mapid, str src, int* len, @1** dst){
 		r = strlen(src); 
 		v = src;
 	}
-	if (*len < sizeof(@1)) {
-		*dst = (@1*) GDKmalloc(*len = sizeof(@1));
+	if (len < sizeof(@1)) {
+		*dst = (@1*) GDKmalloc(len = sizeof(@1));
 	}
 	if ((p = SORTfnd(b, v)) != NULL) {
 		**(unsigned @2**) dst = BUNindex(b,p)-1;
@@ -254,16 +256,14 @@ int enum@1Fromstr(int mapid, str src, int* len, @1** dst){
 }
 @-
 @c
-@:block(chr,char)@
-@:block(sht,short)@
 @= imp
 	@:template(@1,chr,char)@ @:template(@1,sht,short)@
 @= template
 static int enum@1@2Tostr(char** dst, int* len, @2* src){
 	return enum@2Tostr(@1,dst,len,src);
 }
-static int enum@1@2Fromstr(str src, int* len, @2** dst){
-	return enum@2Fromstr(@1,dst,len,src);
+static int enum@1@2Fromstr(@2** src, int* len, str dst){
+	return enum@2Fromstr(@1, dst,len, src);
 }
 @c
 int ENUMatom(int i, BAT *h){
@@ -316,7 +316,7 @@ str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *h,*b;
 	ptr nil;
 	int *retval,hid,bid; str ret;
-	int tpe,xx;
+	int tpe;
 	str name;
 
 	retval = (int*) getArgReference(stk,pci,0);
@@ -339,8 +339,6 @@ str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return ret;
 }
 str ENUMload(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT *b;
-	int xx;
 	int tpe, *retval;
 	str ret;
 	str name;
@@ -361,6 +359,7 @@ str ENUMdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int xx;
 	int tpe;
 
+	(void) stk; /* fool compiler */
 	tpe= getArgType(mb,pci,1);
 	@:enumCheck(tpe, ENUMdestroy)@
 	MT_set_lock(mal_contextLock, "ENUMdestroy");
@@ -388,7 +387,6 @@ receiving variable.
 str ENUMencode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	ptr p,src,dst;
-	int xx;
 	int tpe;
 
 	tpe= getArgType(mb,pci,1);
@@ -401,7 +399,7 @@ str ENUMencode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 str ENUMlower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int xx,tpe;
+	int tpe;
 	BUN p,src,dst;
 	BAT *b;
 	
@@ -429,7 +427,7 @@ str ENUMlower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 } 
 
 str ENUMupper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int xx,tpe;
+	int tpe;
 	BUN p,src,dst;
 	BAT *b;
 	
@@ -455,7 +453,7 @@ str ENUMupper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 } 
 
 str ENUMdecode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int xx,tpe;
+	int tpe;
 	BUN p,src, *dst;
 	BAT *b;
 	
@@ -524,8 +522,7 @@ str ENUMdecode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @c
 str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*src;
-	ptr p;
-	int xx,bid,*retval;
+	int bid,*retval;
 	int tpe;
 
 	tpe= getArgType(mb,pci,1);
@@ -594,10 +591,10 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @c
 str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*src;
-	ptr p;
-	int xx,*bid,*retval;
+	int *bid,*retval;
 	int tpe;
 
+	(void) mb; /* fool compiler */
 	bid= (int*) getArgReference(stk,pci,1);
 	retval= (int*) getArgReference(stk,pci,0);
 	@:getBATdescriptor(retval,bid,src,encode)@
@@ -627,7 +624,7 @@ int ENUMisTable(BAT *b, int tpe){
 }
 str ENUMtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
-	int xx,*retval;
+	int *retval;
 	int tpe;
 	str tname;
 

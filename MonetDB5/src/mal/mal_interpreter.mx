@@ -1027,19 +1027,18 @@ we have to keep track of essential system counter information.
 
 @= performanceVariables
 #ifdef MALprofiler
-	int profileMode= malProfileMode; /* cheaper then global access */
 	long newclk=0;
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if( profileMode){
+	if( malProfileMode){
 		pci->clk= GDKusec();
 		times(&pci->timer);
 	}
 #endif
 @= endProfile
 #ifdef MALprofiler
-	if( profileMode){
+	if( malProfileMode){
 		newclk= GDKusec();
 		pci->counter++;
 		pci->ticks += newclk - pci->clk;

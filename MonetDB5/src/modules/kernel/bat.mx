@@ -1031,7 +1031,7 @@ str CMDbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 
 str CMDoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 {
-	BUN r,s;
+	BUN r=0,s;
         oid o;
 	BAT *i, *u;
 	@:getBATdescriptor2(r,bid,i,append)@
@@ -1628,16 +1628,19 @@ str CMDload(int *res, str *input) {
 }
 
 str CMDhot(int *res, str *input) {
+	(void)res; /* fool compiler */
 	BBPhot(BBPindex(*input));
 	return MAL_SUCCEED;
 }
 
 str CMDcold(int *res, str *input) {
+	(void)res; /* fool compiler */
 	BBPcold(BBPindex(*input));
 	return MAL_SUCCEED;
 }
 str CMDcoldBAT(int *res, int *bid) {
 	BAT *b;
+	(void)res; (void)bid; /* fool compiler */
 	@:getBATdescriptor(res,bid,b,isCached)@
 	BBPcold(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1650,6 +1653,7 @@ str CMDheat(int *res, str *input) {
  	return throwMessage("bat","heat not yet implemented\n");
  }
 str CMDhotBAT(int *res, int *bid) {
+	(void)res; /* fool compiler */
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,isCached)@
 	BBPhot(b->batCacheid);
@@ -1820,7 +1824,7 @@ Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 @= memcpy
 		if (buf+bufsize < dst+l) {
 		        int len = dst - buf;
-			int inc = (dst+l) - buf;
+			size_t inc = (size_t) ((dst+l) - buf);
 			buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
 			dst = buf + len;
 		}
@@ -1852,7 +1856,7 @@ Unmap already parsed memory, to keep the memory usage low.
 @c
 #ifndef WIN32
 #define MAXBUF 40*MT_pagesize()
-		if (cur - base > MAXBUF) {
+		if ( (unsigned)(cur - base) > MAXBUF) {
 			MT_munmap(base, MAXBUF);
 			base += MAXBUF;
 		} 
@@ -1873,6 +1877,7 @@ Cleanup and exit. Return the filled BAT.
 @+ Accelerator Control
 @c
 str CMDaccbuild(int *ret, int *bid, int* acc, ptr *param){
+	(void) bid; (void) acc; (void) acc; (void) param; /* fool compiler */
 /*
 	BAT *b;
 	@:getBATdescriptor(ret,bid,b,accbuild)@
@@ -1882,6 +1887,7 @@ str CMDaccbuild(int *ret, int *bid, int* acc, ptr *param){
 	return throwMessage("Accelerator","Obsolete functionality");
 }
 str CMDaccbuild_std(int *ret, int *bid, int* acc){
+	(void)ret;(void)bid; (void)acc; /* fool compiler */
 /*
 	ptr n= NULL;
 	CMDaccbuild(ret,bid, acc, &n);	*/
@@ -1889,6 +1895,7 @@ str CMDaccbuild_std(int *ret, int *bid, int* acc){
 }
 
 str CMDaccdestroy(int *ret, int *bid, int *acc) {
+	(void)ret;(void)bid; (void)acc; /* fool compiler */
 /*
 	BAT *b;
 	@:getBATdescriptor(ret,bid,b,accdestroy)@
@@ -1899,6 +1906,7 @@ str CMDaccdestroy(int *ret, int *bid, int *acc) {
 }
 
 str CMDaccpresent(int *ret, int *bid) {
+	(void)ret;(void)bid; /* fool compiler */
 /*
 	BAT *b;
 	@:getBATdescriptor(ret,bid,b,accpresent)@
@@ -1915,12 +1923,14 @@ str CMDaccpresent(int *ret, int *bid) {
 
 str CMDhasHash(bit *ret, int *bid) {
 	BAT *b;
+	(void)ret; /* fool compiler */
 	@:getBATdescriptor(ret,bid,b,hasHash)@
 	*ret = b->hacctype == 1;
 	return MAL_SUCCEED;
 }
 str CMDsetHash(bit *ret, int *bid, bit *prop) {
 	BAT *b;
+	(void)ret; (void) prop; /* fool compiler */
 	@:getBATdescriptor(ret,bid,b,setHash)@
 	BAThash(b,0);
 	return MAL_SUCCEED;
@@ -1933,6 +1943,7 @@ str CMDhasIndex(bit *ret, int *bid) {
 }
 str CMDsetIndex(bit *ret, int *bid, bit *prop) {
 	BAT *b;
+	(void) prop; /* fool compiler */
 	@:getBATdescriptor(ret,bid,b,setIndex)@
 	return throwMessage("bat.setIndex", " not yet implemented");
 }

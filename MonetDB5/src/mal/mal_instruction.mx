@@ -1310,7 +1310,6 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 	PropertySet ps =0;
 
 	t=s;
-	@:performanceData@
 	sprintf(t,"%s ",fcnClass(p));
 
 	advance(t);
@@ -1375,7 +1374,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	s= GDKmalloc(len);
 	s[0]=0;
 	t=s;
-	@:performanceData@
+	/* @:performanceData@ */
 	if( isTmpVar(mb, getArg(p,0)) ) {
 		snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
 			getVarTmp(mb, getArg(p,0)));

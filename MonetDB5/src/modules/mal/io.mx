@@ -213,7 +213,7 @@ quit;
 #include <stdarg.h>
 #include "blob.h"
 #include "mal.h"
-#include "mal_function.h"
+#include "mal_interpreter.h"
 
 extern str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
 		  InstrPtr pci, int i, int order, int printhead);
@@ -234,6 +234,7 @@ typedef FILE* fstream;
 
 str io_fclose(int *ret, fstream* filepp ){
    FILE *fp = *(FILE**) filepp; 
+   (void) ret; /* fool compiler */
    fileCheck(fp)
    if (fclose(fp) < 0) {
 	return throwMessage("io.fclose"," failed");
@@ -243,6 +244,7 @@ str io_fclose(int *ret, fstream* filepp ){
 
 str io_fflush(int *ret, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
+   (void) ret; /* fool compiler */
    fileCheck(fp);
    (void)fflush(fp);
    return MAL_SUCCEED;
@@ -312,6 +314,7 @@ str io_fread( blob **res, fstream *filepp, int *nbytes ){
 str io_fwrite_str(int *ret, fstream *filepp, str *buf, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = strlen(*buf); 
+   (void) ret; /* fool compiler */
    fileCheck(fp);
    if (*nbytes < n) n = *nbytes;
    if (fwrite(*buf,1,n,fp) < (size_t) n) {
@@ -324,6 +327,7 @@ str io_fwrite(int *ret, fstream *filepp, blob **b, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = *nbytes;
    str buf = (str) *b;
+   (void) ret; /* fool compiler */
    fileCheck(fp);
    if (n> (**b).nitems) {
 	n = MAX(0,(**b).nitems);
@@ -370,6 +374,7 @@ str io_fsize(int* res, str *filename){
 
 
 str io_fprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+   (void) mb;(void) stk; (void)pci; /* fool compiler */
 	return throwMessage("io.fprintf"," not yet defined in version-5\n");
 }
 /*
@@ -395,6 +400,7 @@ int io_fprintf(fstream *filepp, str format,  ...){
 */
 
 str io_fprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb;(void) stk; (void)pci; /* fool compiler */
 	GDKwarning("io_fprint: not defined in version-5\n");
         return MAL_SUCCEED;
 }
@@ -435,6 +441,7 @@ int io_fprint(fstream *filepp, ...){
 
 
 str io_fputs(int *ret, str *s, fstream *filepp ){
+   (void) ret; /* fool compiler */
    fileCheck(*filepp);
    if (fputs(*s,*(FILE**)filepp) < 0) {
       return throwMessage("io.fputs"," failed");
@@ -444,6 +451,7 @@ str io_fputs(int *ret, str *s, fstream *filepp ){
 
 str io_fputc(int *ret,int *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
+   (void) ret; /* fool compiler */
    fileCheck(fp);
    if (fputc(*c, fp) < 0)
       return throwMessage("io.fputs"," failed");

@@ -70,23 +70,25 @@ recognizable by the command 'dot' on the file s";
 #endif /* _OPTIMIZER_H*/
 @c
 #include "optimizer.h"
+#include "mal_interpreter.h"
 #include "mal_optimizer.h"
 
-str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr s, InstrPtr p){
-	debugOptimizers(getClient(),mb,getPC(mb,p));
+str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) stk; /* fool compiler */
+	debugOptimizers(getClient(),mb,getPC(mb,pci));
 	return NULL;
 }
 @-
 MAL functions can be optimized explicitly using the routines below.
 @= QOTC
 str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	MalBlkPtr mf;
 	str	modnme= getArgName(mb,p,1);
 	str	fcnnme= getArgName(mb,p,2);
 	Scope  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
 
+	(void) stk; /* fool compiler */
 	scope = findScope(c->nspace,modnme);
 	if( scope)
 		s= findSymbolInScope(scope,fcnnme);
@@ -102,9 +104,10 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	removeInstruction(mb, getPC(mb,p));
 	return NULL;
 }
-str QOT@1optimizer(MalBlkPtr mb, MalStkPtr s, InstrPtr p){
+str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void)stk; /* fool compiler */
 	setLifespan(mb);
-	@1optimizer(getClient(),mb, getPC(mb,p));
+	@1optimizer(getClient(),mb, getPC(mb,pci));
 	return NULL;
 }
 @c

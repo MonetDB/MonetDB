@@ -395,7 +395,6 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	/* set all sums/avgs/counts to zero */
 	/* where necessary, calculate min/max oid with minimal effort */
 	if (e->htype == TYPE_void) {
-		oid nil = oid_nil;
 		ALGODEBUG THRprintf(GDKout, "init_result(@1): e->htype == TYPE_void, e->hseqbase=%lu\n", (unsigned long) e->hseqbase);
 		BATloopFast(e, p, q, xx) {
 			void@1_bunfastins_nocheck_noinc(bn, _p, &nil, &zero);
@@ -637,7 +636,7 @@ str CMDaggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	BUN p, q, r;
 	size_t range;
 	int xx;
-	oid i,min, max;
+	oid i,min=oid_nil, max=oid_nil;
 
 	@:getBATdescriptor(retid,bid,b,sum)@
 	@:getBATdescriptor(retid,eid,e,sum)@
@@ -685,7 +684,7 @@ str CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 	BUN p, q, r;
 	int xx;
 	size_t range;
-	oid min, max;
+	oid min=oid_nil, max=oid_nil;
 	oid bhsb;
 
 /* TEST */
@@ -754,11 +753,11 @@ str CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 str CMDaggrX3_avg_@1(int *retid, int *bid, int *eid){
 	BAT *b, *e;
 	BAT *bn;
-	int xx, yy = 0;
+	int xx;
 	size_t off;
 	size_t *cnt;
 	size_t range, slots; 
-	oid min,max;
+	oid min=oid_nil,max=oid_nil;
 	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
 	oid bhsb;
@@ -918,7 +917,7 @@ str CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BUN p, q, r;
 	int xx;
 	size_t range;
-	oid min, max;
+	oid min=oid_nil, max=oid_nil;
 	oid bhsb;
 	size_t base, end, w;
 	ssize_t offset;
@@ -1023,6 +1022,7 @@ str CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	/* insert the extreme values into the result */
 	BATloopFast(bn, r, q, xx) {
 		oid *h = (oid*)BUNh@4(bn,r);
+		(void) h; /* fool compiler */
 		ptr val = extremes[@8];
 		/* trick: using a void head-type, only the tail are (over)written */
 		void@6_bunfastins_nocheck_noinc(bn, r, h, val?val:nil);
@@ -1043,12 +1043,12 @@ str aggrX3_@1_@3_@4(int *retid, int *bid, int *eid){
 	BAT *bn;
 	int (*cmp)(ptr,ptr);
 	ptr nil, zero ;
-	int xx, yy = 0;
+	int xx;
 	size_t off;
 	ptr *extremes;
 	BUN p, q, r;
 	size_t slots, range;
-	oid min, max;
+	oid min=oid_nil, max=oid_nil;
 	oid bhsb;
 
 	@:getBATdescriptor(retid,bid,b,@1)@
@@ -1237,7 +1237,7 @@ str CMDaggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils){
 	BUN p, q, r;
 	int xx;
 	size_t range;
-	oid min, max;
+	oid min=oid_nil, max=oid_nil;
 	oid bhsb;
 	int btt;
 	ptr bt_nil;
@@ -1369,7 +1369,7 @@ str CMDaggrX3_size(int *retid, int *bid, int *eid){
 		@8 {
 			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
 
-			@3(r, bn, (oid*)h);
+			@3(r, bn, ((oid*)h));
 			if (r) {
 				@9 *dst = (@9*) @7;
 				if (*dst != @9_nil) {
@@ -1558,7 +1558,7 @@ str CMDaggrX3_size(int *retid, int *bid, int *eid){
 */
 @= arithsum3
 
-BAT* aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, oid min, int max){
+BAT* aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, oid min, oid max){
 	@2 zero = (@2) 0, *sums;
 	BUN p, q, r;
 	int xx;
@@ -1580,7 +1580,7 @@ str CMDaggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BUN p, q, r;
 	int xx;
 	size_t range;
-	oid min, max;
+	oid min= oid_nil, max=oid_nil;
 	oid bhsb;
 	size_t base, end, w;
 	ssize_t offset;
@@ -1626,7 +1626,7 @@ str CMDaggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 				@:aggrX3_sum3(0,1,HASHfnd_int,loc,&bhsb; bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
 			}
 		} else {
-			@:aggrX3_sum3(0,1,HASHfnd_int,loc,BUNhloc(b,p),@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
+			@:aggrX3_sum3(0,1,HASHfnd_oid,loc,BUNhloc(b,p),@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
 		}
 	} else {
 		/* array lookup */
@@ -1684,11 +1684,11 @@ str CMDaggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 str CMDaggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e;
 	BAT *bn;
-	int xx, yy = 0;
+	int xx;
 	size_t off;
 	size_t *cnt;
 	size_t range;
-	oid min, max; 
+	oid min=oid_nil, max=oid_nil; 
 	dbl zero = (dbl) 0, *sums;
 	size_t slots;
 	BUN p, q, r;
@@ -1793,6 +1793,7 @@ str CMDaggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 		if (w >= base && w < end) {
 			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
 
+			(void) h; /* fool compiler */
 			@3(r, bn, (oid*)h);
 			if (r) {
 				ptr *val = &extremes[@8];
@@ -1809,6 +1810,7 @@ str CMDaggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	/* insert the extreme values into the result */
 	BATloopFast(bn, r, q, xx) {
 		oid *h = (oid*)BUNh@4(bn,r);
+		(void) h; /*fool compiler */
 		ptr val = extremes[@8];
 		/* trick: using a void head-type, only the tail are (over)written */
 		void@6_bunfastins_nocheck_noinc(bn, r, h, val?val:nil);
@@ -1826,13 +1828,13 @@ str CMDaggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 str aggrX3_@13_@3_@4(int *ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
-	ptr nil = ATOMnilptr(bn->ttype), zero = nil;
-	int xx, yy = 0;
+	ptr nil = ATOMnilptr(bn->ttype);
+	int xx;
 	size_t off = BUNindex(bn,BUNfirst(bn));
 	ptr *extremes;
 	BUN p, q, r;
 	size_t slots, range;
-	oid min, max;
+	oid min=oid_nil, max=oid_nil;
 	oid bhsb;
   	size_t base, end, w;
 	ssize_t offset;
@@ -2037,7 +2039,7 @@ str CMDaggrX3_count3(int *retid,int *bid, int *gid, int *eid, bit *ignore_nils){
 	BUN p, q, r;
 	int xx; 
 	size_t range;
-	oid min, max;
+	oid min=oid_nil, max=oid_nil;
 	oid bhsb;
   	size_t base, end, w;
 	ssize_t offset;
@@ -2141,7 +2143,7 @@ int CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
-	oid i, range, min, max;
+	oid i, range, min=oid_nil, max=oid_nil;
   	int btt = b->ttype;
 	ptr bt_nil = ATOMnilptr(b->ttype);
 
@@ -2279,12 +2281,12 @@ if (BATtordered(b)&1) {
 }
 @c
 
-str CMDcard(int *result, int *bid, int* maxelements) {
-	int maxsize = *maxelements; 
+str CMDcard(int *result, int *bid, unsigned int* maxelements) {
+	unsigned int maxsize = *maxelements; 
 	BAT *b;
 
 	@:getBATdescriptor(result,bid,b,count)@
-	int cursize = BATcount(b); 
+	unsigned int cursize = BATcount(b); 
 
 	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
 		cursize = 1; 
@@ -2294,13 +2296,13 @@ str CMDcard(int *result, int *bid, int* maxelements) {
 			maxsize = 256;
 		} else if (b->ttype == TYPE_sht && *maxelements > 65536) {
 			maxsize = 65536;
-		} else if (cursize == int_nil && BATcount(b) > 10000 && *maxelements > 1000 && !(BATtordered(b)&1)) {
+		} else if (cursize == (unsigned) int_nil && BATcount(b) > 10000 && *maxelements > 1000 && !(BATtordered(b)&1)) {
 			/* the recursive quick-look optimization does not make sense made for the sorted case */
 			maxsize = *maxelements / 10;
 			CMDcard(&cursize, &b->batCacheid, &maxsize); /* try your luck with a smaller limit... */
 			maxsize = *maxelements;
 		}
-		if (cursize == int_nil) {
+		if (cursize == (unsigned)int_nil) {
 			BUN p, q, r; /* if we could not figure out the cardinality by now, we must do real work.. :( */
 			int xx, tpe = b->ttype;
 #if 0

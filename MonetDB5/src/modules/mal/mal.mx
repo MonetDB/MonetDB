@@ -147,10 +147,11 @@ pattern include(f:str):void= CMDincludeFile
 #include <time.h>
 #include "gdk.h"
 #include "mal.h"
+#include "mal_scope.h"
 #include "mal_session.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
-#include "mal_function.h"
+#include "mal_interpreter.h"
 
 str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);
@@ -262,11 +263,11 @@ str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @- Input redirectionrs
 @c
 str CMDcallString(int *ret, str *s){
-	Client c= getClient();
 	str src;
 	str buf=0;
 	int len =0;
 
+	(void) ret; /* fool compiler */
 	if(strlen(*s)==0) return MAL_SUCCEED;
 	src= (str) GDKmalloc(len=strlen(*s)+3);
 	/* GDK_atom routine requires enclosing quotes */
@@ -282,10 +283,10 @@ str CMDcallString(int *ret, str *s){
 }
 str CMDevalFile(int *ret, str *fnme){
 	str s = *fnme;
-	FILE *fd;
 	Client c= getClient();
 	char buffer[1024];
 
+	(void) ret; /* fool compiler */
 	if( strlen(s)+strlen(c->cwd)+2>=1024){
 		return throwMessage("mal.setCwd","Evaluation buffer too small\n");
 	}
@@ -298,10 +299,12 @@ str CMDevalFile(int *ret, str *fnme){
 	malImport(getClient(),buffer,0,FALSE);
 	return MAL_SUCCEED;
 }
-str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb; (void)stk; (void) pci; /* fool compiler */
 	return throwMessage("mal.call","Not yet implemented");
 }
-str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb; (void)stk; (void) pci; /* fool compiler */
 	return throwMessage("mal.include","Not yet implemented");
 }
 str CMDdebug(int *ret, int *flg){
@@ -311,6 +314,7 @@ str CMDdebug(int *ret, int *flg){
 }
 str CMDmanual(int *ret, str *fname, str *mod,int *recursive){
 	stream *fs;
+	(void) ret; /* fool compiler */
 	fs= open_wastream(*fname);
 	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
 	dumpManualHeader(fs);
@@ -320,15 +324,18 @@ str CMDmanual(int *ret, str *fname, str *mod,int *recursive){
 }
 str CMDmanual2(int *ret, str *fname, str *mod,int *recursive){
 	int r= 0;
+	(void) recursive; /* fool compiler */
 	return CMDmanual(ret,fname,mod,&r);
 }
 str CMDmanual1(int *ret, str *mod){
+	(void) ret; /* fool compiler */
 	dumpManualHeader(GDKout);
 	dumpManual(GDKout, findScope(getClient()->nspace,*mod),0);
 	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
 str CMDmanual0(int *ret){
+	(void) ret; /* fool compiler */
 	dumpManualHeader(GDKout);
 	dumpManual(GDKout, getClient()->nspace,1);
 	dumpManualFooter(GDKout);

@@ -91,6 +91,7 @@ int isAuthorized(str nme){
 
 str CLTsetListing(int *ret, int *flag) {
         Client c;
+	(void)ret; /*fool compiler */
         c= getClient();
         c->listing = *flag;
         return MAL_SUCCEED;
@@ -167,10 +168,10 @@ str CLTLogin(int *ret){
 }
 
 str CLTsetDebug(int *ret, int *flg){
-	printf("Not yet implemented");
-	return MAL_SUCCEED;
+	(void)ret; (void) flg; /*fool compiler */
+	return throwMessage("clients.setDebug","not yet implemented");
 }
 str CLTclearDebug(int *ret, int *flg){
-	printf("Not yet implemented");
-	return MAL_SUCCEED;
+	(void)ret; (void) flg; /*fool compiler */
+	return throwMessage("clients.clearDebug","not yet implemented");
 }

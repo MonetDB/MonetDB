@@ -206,26 +206,31 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "mal_box.h"
 #include "mal_client.h"
 #include "mal.h"
+#include "mal_interpreter.h"
+extern str CMDnewBat2(int *res, int *ht, int *tt, size_t *cap);
+
 
 str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Box box;
-	ValRecord vr;
+	(void) mb; (void)stk; (void) pci; /* fool compiler */
 	if( openBox("bbp")) return MAL_SUCCEED;
 	return throwMessage( "bbp.prelude","failed to open box");
 }
 @- Operator implementation
 @c
 str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb; (void)stk; (void) pci; /* fool compiler */
 	if(openBox("bbp") != 0) return MAL_SUCCEED;
 	return throwMessage( "bbp.open","failed to open box");
 }
 
 str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb; (void)stk; (void) pci; /* fool compiler */
 	if( closeBox("bbp" ,TRUE) ==0) return MAL_SUCCEED;
 	return throwMessage( "bbp.close","failed to close 'bbp' box");
 }
 str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
+	(void) mb; (void)stk; (void) pci; /* fool compiler */
 	@:OpenBox(destroy)@
 	if( getClient() != mal_clients)
 	return throwMessage( "bbp.destroy","not allowed to destroy 'bbp' box");
@@ -245,6 +250,7 @@ str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	ValPtr v;
 	Box box;
+	(void) mb; /* fool compiler */
 
 	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk,pci,1);
@@ -260,6 +266,7 @@ str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name, loc;
 	Box box;
 
+	(void) mb; /* fool compiler */
 	@:OpenBox(bind)@
 	name = (str) getArgValue(stk,pci,1);
 	loc = (str) getArgValue(stk,pci,2);
@@ -274,10 +281,10 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 	ValPtr lhs,rhs;
-	int i= -1, k;
-	char msg[1024];
+	int i= -1;
 	BAT *b;
 
+	(void) mb; /* fool compiler */
 	lhs= &stk->stk[pci->argv[0]];
 	name = (str) getArgValue(stk,pci,1);
 	@:chkIdentifier(name,bind)@
@@ -318,6 +325,7 @@ str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	ValPtr v;
 
+	(void) mb; /* fool compiler */
 	@:OpenBox(take)@
 	name = (str) getArgValue(stk,pci,1);
 	@:chkIdentifier(name,take)@
@@ -335,6 +343,7 @@ str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
+	(void) mb; /* fool compiler */
 	@:OpenBox(release)@
         name = (str) getArgValue(stk,pci,1);
         releaseBox(box,name);
@@ -346,6 +355,7 @@ str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CMDbbpreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
+	(void) mb; (void)stk;(void)pci; /* fool compiler */
 	@:OpenBox(releaseAll)@
 	releaseAllBox(box);
 	/* merge the updates with the master copies */
@@ -357,6 +367,7 @@ str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
+	(void) mb; /* fool compiler */
 	@:OpenBox(discard)@
         name = (str) getArgValue(stk,pci,1);
         if( discardBox(box,name) )
@@ -371,6 +382,7 @@ str CMDbbptoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 	str nme;
 
+	(void) mb; /* fool compiler */
 	@:OpenBox(toString)@
 	nme = (str) getArgValue(stk,pci,1);
 	i= findVariable(box->sym,nme);
@@ -390,6 +402,7 @@ str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *cursor;
 	ValPtr v;
 
+	(void) mb; /* fool compiler */
 	@:OpenBox(iterator)@
 	cursor= (lng*) getArgValue(stk,pci,0);
 	v= &stk->stk[pci->argv[1]];
@@ -466,6 +479,7 @@ Part of the code is copied from the V 4.3 bat.mx file.
 str CMDhashloop(int *ret, lng *cursor, int *bid)
 {
         BAT *b;
+	(void) cursor; /* fool compiler */
         @:getBATdescriptor(ret,bid,b,nextElement)@
         return throwMessage("mal.hashloop","not yet implemented");
 }
@@ -679,6 +693,7 @@ str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box 	box;
 	int	*ret;
 
+	(void) mb; /* fool compiler */
 	@:OpenBox(getObjects)@
         b= BATnew(TYPE_int,TYPE_str,BBPsize);
         if (b == 0) return throwMessage("bbp.getObjects","GDKerror");

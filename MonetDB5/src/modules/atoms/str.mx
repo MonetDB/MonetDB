@@ -554,7 +554,6 @@ str CMDstr(str *res, str *src){
 }
 str STRConcat(str *res, str *val1, str *val2){
 	str s,t;
-	ptr val;
 	int l1, l2 ;
 
 	s = *val1;

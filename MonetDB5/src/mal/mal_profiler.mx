@@ -109,7 +109,7 @@ mal_export void profileReport(Scope cntxt,int outer, stream *out);
 
 
 mal_export int malProfileMode;
-/*#define DEBUG_MAL_PROFILER */
+#define DEBUG_MAL_PROFILER
 
 #endif
 @+ Administration
@@ -129,13 +129,12 @@ int onlineProfiling = TRUE;
 int offlineProfiling = FALSE;
 int cachedProfiling = FALSE;
 #endif
+
 static void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+static void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 int malProfileMode;	/* global flag to indicate profiling mode */
 static int delayswitch; /* to wait before sending the profile info */
-
-int Tms_size(){ return sizeof(Tms); }
-int Tms_align(){ return sizeof(double); }
 
 @+ Performance tracing
 The interpreter comes with several variables to hold performance
@@ -149,18 +148,24 @@ The performance monitor has exclusive access to the event file, which
 avoid concurrency conflicts amongst clients. It avoid cluthered
 event records on the event stream.
 @c
+#define PROFlabel	0
+#define PROFcpu		1
+#define PROFmemory	2
+#define PROFio		3
+#define PROFpc		4
+#define PROFstmt	5
 
 static struct{
 	str name;	/* which logical counter is needed */
 	int status;	/* trace it or not */
 } profileCounter[]={
-	/*  0 5 */ {"tick",1},
-	/*  1 0 */ {"cpu",1},
-	/*  2 4 */ {"memory",1},
-	/*  3 */ {"io",1},
-	/*  4 1 */ {"pc",1},
-	/*  5 2 */ {"statement",1},
-	/*  7 */ {0,0}
+	/*  0 */ {"tick",0},
+	/*  1 */ {"cpu",0},
+	/*  2 */ {"memory",0},
+	/*  3 */ {"io",0},
+	/*  4 */ {"pc",0},
+	/*  5 */ {"statement",0},
+	/*  6 */ {0,0}
 };
 @-
 The counters can be set individually. The XML output uses the order of their
@@ -197,6 +202,7 @@ Online- and offline-profiling are disjoint options, because they
 currently share the same file descriptor in the client record.
 @c
 void profilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+fprintf(stderr,"sent event\n");
 #ifdef MALprofiler
 	if( onlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
 	if( offlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
@@ -210,24 +216,74 @@ produce a correct tuple format for the front-end.
 @c
 #define log(X,Y) stream_printf(eventstream,X,Y)
 #define log0(X)	stream_printf(eventstream,X)
+#define flushLog() eventstream->flush(eventstream);
 
 #ifdef MALprofiler
+
+void onlineProfilerHeader(){
+	@:getEventStream()@	/* profilerEvent -> void */
+	log0("# ");
+	if( profileCounter[PROFlabel].status ){
+		log0("clock,\t");
+		log0("ticks,\t");
+	}
+	if( profileCounter[PROFcpu].status ){
+		log0("utime,\t");
+		log0("cutime,\t");
+		log0("stime,\t");
+		log0("cstime,\t");
+	}
+
+	if( profileCounter[PROFpc].status ){
+		log0("module\t,");
+		log0("function\t,");
+		log0("pc\t,");
+	}
+	if( profileCounter[PROFmemory].status ){
+		log0("ru_maxrss,\t");
+		log0("arena,\t");
+		log0("ordblks,\t");
+		log0("smblks,\t");
+		log0("hblkhd,\t");
+		log0("hblks,\t");
+		log0("fsmblks,\t");
+		log0("uordblks,\t");
+	}
+	if( profileCounter[PROFio].status ){
+		log0("ru_minflt,\t");
+		log0("ru_majflt,\t");
+		log0("ru_nswap,\t");
+		log0("ru_inblock,\t");
+		log0("ru_oublock\t");
+		log0("ru_nvcsw,\t");
+		log0("ru_nivcsw,\t");
+	}
+	if( profileCounter[PROFstmt].status ){
+		log0("stmt,");
+	}
+	log0("\n");
+	flushLog();
+	MT_unset_lock(profileLock,"profileLock");
+}
 void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	static struct mallinfo prevMalloc;
+	static struct rusage   prevUsage;
 	struct tms newTms;
         struct mallinfo infoMalloc;
         struct rusage   infoUsage;
-        /*static struct mallinfo prevMalloc;*//* still unused */
-        /*static struct rusage   prevUsage;*//* still unused */
 	str stmt,c;
+
 	(void) cntxt; (void) stk; /* still unused */
 
+	if(pci->trace== FALSE) return;
 	if( delayswitch >0){
+		/* first call to profiled */
+		onlineProfilerHeader();
 		delayswitch--;
 		return;
 	}
 	@:getEventStream()@	/* profilerEvent -> void */
 	if( delayswitch==0){
-		log0("<MonetProfile>\n");
 		delayswitch= -1;
 	} 
 	times(&newTms);
@@ -235,35 +291,58 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	getrusage(RUSAGE_SELF,&infoUsage);
 
 	/* make basic profile event tuple  */
-	log0("]\n");
-	if( profileCounter[0].status ){
-		log("%d,", GDKusec());
+	log0("[ ");
+	if( profileCounter[PROFlabel].status ){
+		log("%d,\t", pci->clk);
+		log("%d,\t", pci->ticks);
 	}
-	if( profileCounter[1].status ){
+	if( profileCounter[PROFcpu].status ){
 		log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
 		log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
 		log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
 		log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
-		log("%d,\t", GDKusec() - pci->clk);
 	}
 
-	if( profileCounter[4].status ){
-		log("\"%s\"\t", (moduleId(pci)?moduleName(pci):"unknown"));
-		log("\"%s\"\t", (functionId(pci)?functionName(pci):"unknown"));
-		log("%d\t", getPC(mb,pci));
+	if( profileCounter[PROFpc].status ){
+		log("\"%s\",\t", (moduleId(pci)?moduleName(pci):"unknown"));
+		log("\"%s\",\t", (functionId(pci)?functionName(pci):"unknown"));
+		log("%d,\t", getPC(mb,pci));
 	}
-	if( profileCounter[5].status ){
+	if( profileCounter[PROFmemory].status ){
+		log("%d,\t",infoUsage.ru_maxrss);
+		log("%d,\t", infoMalloc.arena-prevMalloc.arena);
+		log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
+		log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
+		log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
+		log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
+		log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
+		log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
+		prevMalloc = infoMalloc;
+	}
+	if( profileCounter[PROFio].status ){
+		log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
+		log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
+		log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
+		log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
+		log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
+		log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
+		log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
+		prevUsage = infoUsage;
+	}
+	if( profileCounter[PROFstmt].status ){
 		stmt= instruction2str(mb,pci,FALSE);
 		c= stmt;
 		while(c && *c && isspace(*c) ) c++;
 		log(" \"%s\",",c);
 	}
 	log0(" ]\n");
+	flushLog();
+	MT_unset_lock(profileLock,"profileLock");
 }
 #endif
 @+ Cached processing
 @+ Postprocessing events
-The profilerEventXML below illustrates information that could be
+The offlineProfilerEvent below illustrates information that could be
 saved in XML format for post-processing. Compared to the
 profilerRecord above, it is more verbose and contains more
 information relevant for off-line analysis.
@@ -301,7 +380,7 @@ void HASHinfoProfile(Hash *h, str s){
 	snprintf(buf+i,MAXPATHLEN-i,"%d\"", h->lim);
 	log0(buf);
 }
-void profilerEventXML(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef MALprofiler
 	struct tms newTms;
         struct mallinfo infoMalloc;
@@ -327,7 +406,7 @@ void profilerEventXML(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	/* make XML record */
 	log0("<event>\n");
-	if( profileCounter[0].status ){
+	if( profileCounter[PROFcpu].status ){
 	log("\t<tms utime=\"%d\" ", newTms.tms_utime - pci->timer.tms_utime);
 	log("cutime=\"%d\" ", newTms.tms_cutime - pci->timer.tms_cutime);
 	log("stime=\"%d\" ", newTms.tms_stime - pci->timer.tms_stime);
@@ -336,7 +415,7 @@ void profilerEventXML(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	log0("/>\n");
 	}
 
-	if( profileCounter[1].status ){
+	if( profileCounter[PROFstmt].status ){
 	log0("\t<mal");
 	stmt= instruction2str(mb,pci,FALSE);
 	c= strchr(stmt,']');
@@ -502,7 +581,7 @@ inspect the properties of BATs and their propagation.
 	log0("/>\n");
 	}
 
-	if( profileCounter[4].status ){
+	if( profileCounter[PROFio].status ){
 	log0("\t<io ");
 	log("minflt=\"%d\" ", infoUsage.ru_minflt- prevUsage.ru_minflt);
 	log("majflt=\"%d\" ", infoUsage.ru_majflt- prevUsage.ru_majflt);
@@ -547,7 +626,7 @@ str openProfilerStream(){
 }
 str closeProfilerStream(){
 	Client c= getClient();
-	log0("</MonetProfile>\n");
+	if( offlineProfiling) log0("</MonetProfile>\n");
 	if( eventstream != c->fdout) eventstream->close(eventstream);
 	malProfileMode = FALSE;
 	eventstream = NULL;
@@ -581,6 +660,7 @@ should wait for the next instruction the stream
 is initiated. This is controlled by a delay-switch
 @c
 str startProfiling(){
+fprintf(stderr,"start Profiling\n");
 	if( eventstream != NULL){
 		malProfileMode= TRUE;
 		delayswitch=1;
@@ -588,6 +668,8 @@ str startProfiling(){
 	return MAL_SUCCEED;
 }
 str stopProfiling(){
+fprintf(stderr,"stop Profiling\n");
+	eventstream->flush(eventstream);
 	malProfileMode= FALSE;
 	return MAL_SUCCEED;
 }
@@ -652,6 +734,11 @@ int eventFilter(Scope cntxt, str mod, str fcn){
 #endif
 	return -1;
 }
+@-
+Watch out. The profiling bits are only set for the shared modules and
+the private main(). The profiler setFilter should explicitly called in
+each separate top level routine.
+@c
 int resetFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
         int j,k;

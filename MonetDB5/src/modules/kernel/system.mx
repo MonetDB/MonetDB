@@ -196,6 +196,7 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
 #endif
  
 str SYSquit(int *ret) {
+	(void) ret; /* fool compiler */
 	Client c= getClient();
 	c->mode = FINISHING;
 	return MAL_SUCCEED;

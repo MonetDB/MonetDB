@@ -80,13 +80,12 @@ command exp(x:dbl)   	  : dbl = MATHunary_EXPdbl
 comment "The exp(x) function returns the value of e
 (the base of natural logarithms) raised to the power of x.";
 
-command log(x:flt)   	  : flt = MATHunary_LOGflt;
-command log(x:dbl)   	  : dbl = MATHunary_LOGdbl
-comment "The log(x) function returns the natural logarithm of x.";
+#command log(x:dbl)   	  : dbl = MATHunary_LOGdbl
+#comment "The log(x) function returns the natural logarithm of x.";
 
-command log10(x:flt)    : flt = MATHunary_LOG10flt;
-command log10(x:dbl)    : dbl = MATHunary_LOG10dbl
-comment "The log10(x) function returns the base-10 logarithm of x.";
+#command log10(x:flt)    : flt = MATHunary_LOG10flt;
+#command log10(x:dbl)    : dbl = MATHunary_LOG10dbl
+#comment "The log10(x) function returns the base-10 logarithm of x.";
 
 
 command pow(x:flt,y:flt)  : flt = MATHbinary_POWflt;
@@ -102,7 +101,6 @@ command ceil(y:flt)     : flt = MATHunary_CEILflt;
 command ceil(y:dbl)     : dbl = MATHunary_CEILdbl
 comment "The ceil(x) function rounds x upwards to the nearest integer.";
 
-command fabs(y:flt)     : flt = MATHunary_FABSflt;
 command fabs(y:dbl)     : dbl = MATHunary_FABSdbl
 comment "The fabs(x) function  returns  the  absolute value of the 
 floating-point number x.";
@@ -204,6 +202,42 @@ extern double fabs(double x);
 #define floor_unary(x, z)     *z = floor(*x)
 #define fmod_binary(x, y, z)  *z = fmod(*x,*y)
 
+#ifdef NATIVE_WIN32
+#include <float.h>
+/* Windows spells these differently */
+#define isnan(x)	_isnan(x)
+#define finite(x)	_finite(x)
+/* NOTE: HAVE_FPCLASS assumed... */
+#define fpclass(x)	_fpclass(x)
+#define FP_NINF         _FPCLASS_NINF
+#define FP_PINF         _FPCLASS_PINF
+#else /* !NATIVE_WIN32 */
+#ifdef HAVE_IEEEFP_H
+#include <ieeefp.h>
+#endif
+#endif
+
+#if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
+/* C99 interface: fpclassify */
+#undef isinf
+#undef isnan
+#define isinf(x)	(fpclassify(x) == FP_INFINITE)
+#define isnan(x)	(fpclassify(x) == FP_NAN)
+#define finite(x)	(!isinf(x) && !isnan(x))
+#else
+#ifndef HAVE_ISINF
+static int isinf(double x)
+{
+#ifdef HAVE_FPCLASS
+    int cl = fpclass(x);
+    return ((cl == FP_NINF) || (cl == FP_PINF));
+#else
+    return 0;		/* XXX not correct if infinite */
+#endif	/* HAVE_FPCLASS */
+}
+#endif	/* HAVE_ISINF */
+#endif	/* HAVE_FPCLASSIFY */
+
 @:unop(_ACOS,acos)@
 @:unop(_ASIN,asin)@
 @:unop(_ATAN,atan)@
@@ -217,14 +251,14 @@ extern double fabs(double x);
 @:unop(_TANH,tanh)@
 
 @:unop(_EXP,exp)@
-@:unop(_LOG,log)@
-@:unop(_LOG10,log10)@
+/*@:unop(_LOG,log)@*/
+/*@:unop(_LOG10,log10)@*/
 
 @:binop(_POW,pow)@
 @:unop(_SQRT,sqrt)@
 
 @:unop(_CEIL,ceil)@
-@:unop(_FABS,fabs)@
+@:unopbase(_FABS,fabs,dbl)@
 @:unop(_FLOOR,floor)@
 @:binop(_FMOD,fmod)@
 
@@ -294,39 +328,6 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
 @:round(dbl)@
 @:round(flt)@
 
-#ifdef NATIVE_WIN32
-#include <float.h>
-/* Windows spells these differently */
-#define isnan(x)	_isnan(x)
-#define finite(x)	_finite(x)
-/* NOTE: HAVE_FPCLASS assumed... */
-#define fpclass(x)	_fpclass(x)
-#define FP_NINF         _FPCLASS_NINF
-#define FP_PINF         _FPCLASS_PINF
-#else /* !NATIVE_WIN32 */
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>
-#endif
-#endif
-
-#if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
-/* C99 interface: fpclassify */
-#define isinf(x)	(fpclassify(x) == FP_INFINITE)
-#define isnan(x)	(fpclassify(x) == FP_NAN)
-#define finite(x)	(!isinf(x) && !isnan(x))
-#else
-#ifndef HAVE_ISINF
-static int isinf(double x)
-{
-#ifdef HAVE_FPCLASS
-    int cl = fpclass(x);
-    return ((cl == FP_NINF) || (cl == FP_PINF));
-#else
-    return 0;		/* XXX not correct if infinite */
-#endif	/* HAVE_FPCLASS */
-}
-#endif	/* HAVE_ISINF */
-#endif	/* HAVE_FPCLASSIFY */
 
 str math_unary_ISNAN(bit *res , dbl *a ) {
 #ifdef DEBUG

@@ -81,7 +81,7 @@ command openStream(fnme:str)= CMDsetProfilerStream
 command closeStream():void = closeProfilerStream
 	comment "Stop sending the event records and close log file";
 
-command setAll()= CMDsetAllProfiler
+command setFilterAll()= CMDsetAllProfiler
 comment "Short cut for setFilter(*,*).";
 
 command setFilter(mod:str,fcn:str)= CMDsetFilterProfiler
@@ -135,6 +135,7 @@ its generates a noticable overhead.
 #include "mal_resolve.h"
 #include "mal_function.h"
 #include "mal_client.h"
+#include "mal_profiler.h"
 
 @-
 Using the Monet Performance Profiler is contrainted by the mal_profiler.
@@ -146,29 +147,34 @@ Using the Monet Performance Profiler is contrainted by the mal_profiler.
 #include "profiler.h"
 
 str CMDactivateProfiler(int *res, str *name){
+	(void) res; /* fool compiler */
 	@:checkProfiler(activate)@
 	activateCounter(*name);
 	return MAL_SUCCEED;
 }
 
 str CMDdeactivateProfiler(int *res, str *name){
+	(void) res; /* fool compiler */
 	@:checkProfiler(deactivate)@
 	deactivateCounter(*name);
 	return MAL_SUCCEED;
 }
 
 str CMDsetFilterProfiler(int *res, str *mod, str *fcn){
+	(void) res; /* fool compiler */
 	@:checkProfiler(setFilter)@
 	eventFilter(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str CMDsetAllProfiler(int *res){
+	(void) res; /* fool compiler */
 	str x = GDKstrdup("*");
 	str y = GDKstrdup("*");
 	return CMDsetFilterProfiler(res, &x, &y);
 }
 str CMDclrFilterProfiler(int *res, str *mod, str *fcn){
+	(void) res; /* fool compiler */
 	@:checkProfiler(clrFilter)@
 	resetFilter(getClient()->nspace , *mod, *fcn);
 	return MAL_SUCCEED;
@@ -176,22 +182,26 @@ str CMDclrFilterProfiler(int *res, str *mod, str *fcn){
 str CMDclrAllProfiler(int *res){
 	str x = GDKstrdup("*");
 	str y = GDKstrdup("*");
+	(void) res; /* fool compiler */
 	return CMDclrFilterProfiler(res, &x, &y);
 }
 
 str CMDsetProfilerStream(int *res, str *fnme){
+	(void) res; /* fool compiler */
 	@:checkProfiler(setProfiler)@
 	setLogFile(getClient()->nspace, *fnme);
 	return MAL_SUCCEED;
 }
 
 str CMDstartPointProfiler(int *res, str *mod, str *fcn){
+	(void) res; /* fool compiler */
 	@:checkProfiler(startPoint)@
 	setStartPoint(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str CMDendPointProfiler(int *res, str *mod, str *fcn){
+	(void) res; /* fool compiler */
 	@:checkProfiler(endPoint)@
 	setStartPoint(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
@@ -199,6 +209,7 @@ str CMDendPointProfiler(int *res, str *mod, str *fcn){
 
 str CMDstopProfiler(int *res){
 	Client c= getClient();
+	(void) res; /* fool compiler */
 	@:checkProfiler(stop)@
 	stream_printf(c->fdout,"# Performance profiling stopped\n");
 	stopProfiling();
@@ -206,6 +217,7 @@ str CMDstopProfiler(int *res){
 }
 str CMDstartProfiler(int *res){
 	Client c= getClient();
+	(void) res; /* fool compiler */
 	@:checkProfiler(start)@
 	stream_printf(c->fdout,"# Start performance profiling\n");
 	startProfiling();
@@ -213,14 +225,12 @@ str CMDstartProfiler(int *res){
 }
 
 str CMDprofCntModFcn(int *ret, str *mod, str *fcn){
-	BAT *b;
-	Symbol *s;
 	*ret= 0;
+	(void) mod; (void) fcn; /* fool compiler */
 	return throwMessage("profiler.getCnt", "not yet implemented");
 }
 str CMDprofTime(int *ret, str *mod, str *fcn){
-	BAT *b;
-	Symbol *s;
 	*ret= 0;
+	(void) mod; (void) fcn; /* fool compiler */
 	return throwMessage("profiler.getTime", "not yet implemented");
 }

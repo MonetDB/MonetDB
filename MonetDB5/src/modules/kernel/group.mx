@@ -198,6 +198,9 @@ indxentry.
 #include "mal_function.h"
 static int TYPE_mapentry;
 static int TYPE_idxentry;
+extern ptr BATmin(BAT *b, ptr aggr);
+extern ptr BATmax(BAT *b, ptr aggr);
+
 @-
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
@@ -290,6 +293,8 @@ typedef struct {
 	Heap hp;		/* storage for hash buckets */
 } map_T;
 
+extern int malAtomFixed(int size, int align);
+
 str groupPrelude(){
 	/* printf("#init group\n");*/
 	TYPE_mapentry = malAtomFixed(16,4);
@@ -367,8 +372,9 @@ settings differ significantly from the original datamining application.
 @= CTgroup
 BAT *CTgroup_@1_@4_@5( group_params_@5 BAT *b, BAT *bn, map_T *m ){
 	oid *dst = (oid*) BUNfirst(bn);
-	int xx, zz, *hash, mask, mapsize;
+	int xx, *hash, mask, mapsize;
 	mapentry_t entry, *e;
+	oid zz;
 	BUN p, q, r;
 	BAT *map;
 	declare_@3
@@ -546,9 +552,10 @@ str CTgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 @= derive
 BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) { 
 	oid *dst = (oid*) BUNfirst(bn);
-	int zz, xx, yy = BUNsize(ct), *hash, mask, mapsize;
+	int xx, yy = BUNsize(ct), *hash, mask, mapsize;
 	BUN p, q, r, cp = BUNfirst(ct) - yy;
 	mapentry_t entry, *e;
+	oid zz;
 	BAT *map;
 	declare_@4
    
@@ -1054,12 +1061,13 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 
 @= arithpump
 str CTsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
-	BAT *ret, *b, *e;
+	BAT *b, *e;
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
 	int xx,i,range,min,max;
 
+	(void) ignore_nils; /* fool compiler */
 	@:getBATdescriptor(retval,bid,b,sum)@
 	@:chkHeader(b,CTsum_@1)@
 	@:getBATdescriptor(retval,eid,e,sum)@
@@ -1098,7 +1106,7 @@ str CTsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
 }
 
 str CTavg_@1(int *retval, int *bid,int  *eid){
-	BAT *ret, *b, *e;
+	BAT *b, *e;
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
 	int *cnt = (int*) GDKmalloc(BATcount(e)*sizeof(int)); 
@@ -1157,7 +1165,7 @@ str CTavg_@1(int *retval, int *bid,int  *eid){
 
 @= extreme
 str CT@1(int *retval, int *bid,int  *eid){
-	BAT *ret, *b, *e;
+	BAT *b, *e;
 	BAT *bn;
 	int (*cmp)(ptr,ptr);
 	ptr nil;
@@ -1219,8 +1227,9 @@ str CT@1(int *retval, int *bid,int  *eid){
 
                 BUNfndOID(r, bn, h);
                 if (r) {
-                        ptr t = BUNtail(b,p);
-                        /*if (ATOMcmp(btt,t,bt_nil)) {*/
+                         ptr t = BUNtail(b,p);
+			 (void) t ; /* fool compiler */
+                          /*if (ATOMcmp(btt,t,bt_nil)) {*/
 			@1 {
                                 int *dst = (int*) BUNtloc(bn, r);
                                 (*dst)++;
@@ -1235,7 +1244,8 @@ str CT@1(int *retval, int *bid,int  *eid){
                 int h = (int)(*(oid*) BUNhead(b,p)) - min;
 
                 if (h >= 0 && h < range) {
-                        ptr t = BUNtail(b,p);
+                         ptr t = BUNtail(b,p);
+			(void)t; /* fool compiler */
                         /* if (ATOMcmp(btt,t,bt_nil)) {*/
 			@1 {
                                 cnt[h]++;
@@ -1250,7 +1260,7 @@ str CT@1(int *retval, int *bid,int  *eid){
 @c
 
 str CMDaggr_count(int *retval, int *bid,int  *eid, bit *ignore_nils){
-	BAT *ret, *b, *e;
+	BAT *b, *e;
 	BAT *bn ;
 	int zero = 0, *cnt;
 	BUN p, q, r;
@@ -1314,7 +1324,7 @@ str CMDaggr_count(int *retval, int *bid,int  *eid, bit *ignore_nils){
 }
 
 str CTsize(int *retval, int *bid,int  *eid){
-	BAT *ret, *b, *e;
+	BAT *b, *e;
 	BAT *bn;
 	int zero = 0;
 	BUN p, q, r;

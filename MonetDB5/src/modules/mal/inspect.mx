@@ -126,6 +126,7 @@ pattern mdb():void = mdbToggle
 #include "mal_client.h"
 #include "mal_function.h"
 #include "mal_debugger.h"
+#include "mal_interpreter.h"
 
 @+ Variables and stack information
 The variable information can be turned into a BAT for inspection as well.
@@ -140,8 +141,9 @@ The variable information can be turned into a BAT for inspection as well.
 
 @c
 
-str INSPECTStkDepth(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str INSPECTStkDepth(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {       int i=0, *ret= (int*) getArgReference(s,p,0);
+	(void)mb; /* fool compiler */
         while(s!= 0){
                 i++;
                 s= s->up;
@@ -182,7 +184,6 @@ str INSPECTStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 str INSPECTStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 	str msg;
-	Client c= getClient();
 	int *ret= (int*) getArgReference(s,p,0);
 	int k=0;
 
@@ -278,7 +279,7 @@ str INSPECTsymbolDef(int *ret, str *nme, str *fcn)
 }
 str INSPECTcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {	int i, *ret= (int*)getArgReference(stk,p,0);
-	str ps, cm;
+	str ps;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
         if(b == 0) return throwMessage("inspect.codeDump", "failed to create BAT");
 	
@@ -292,7 +293,7 @@ str INSPECTcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 }
 str INSPECTcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {	int i, *ret= (int*)getArgReference(stk,p,0);
-	str ps, cm;
+	str ps;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
         if(b == 0) return throwMessage("inspect.symbolDefinition", "failed to create BAT");
 	
@@ -307,7 +308,7 @@ str INSPECTcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 str INSPECTsymbolSignature(int *ret, str *mod, str *fcn)
 {	Symbol s;
 	str msg;
-	str ps,cm;
+	str ps;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
         if (b == 0) return throwMessage("inspect.symbolSignature", "failed to create BAT");
 
@@ -373,6 +374,7 @@ void INSPECTshowFunction(MalBlkPtr m, lng flg, stream *f) {
 	printFunction(f,m,flg);
 }
 str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	(void) stk; /* fool compiler */
 	@:getFunction(showFunction)@
 	else { 
 		INSPECTshowFunction(s->def,(lng) FALSE,GDKout);

@@ -181,6 +181,7 @@ blob *BLOBnull()
 }
 
 void BLOBconvert( blob *b, int direction){
+	(void) direction; /* fool compiler */
 	b->nitems = normal_int_SWAP(b->nitems);
 }
 

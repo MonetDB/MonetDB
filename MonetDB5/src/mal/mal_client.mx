@@ -190,6 +190,7 @@ mal_export str 		stopClientIndex(Client c, int id);
 mal_export str 		resumeClient(Client c, int sessionkey);
 mal_export str 		suspendClient(Client c, int sessionkey, int timeout);
 mal_export void 	cleanupClients();
+mal_export void 	traceAllClients(int flag);
 
 #endif /* _MAL_CLIENT_H_ */
 @-

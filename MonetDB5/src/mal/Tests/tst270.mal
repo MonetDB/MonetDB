@@ -1,9 +1,13 @@
 #Same as tst200, but includes testing of the profiler
 
-profiler.setAll();
+#profiler.setAll();
+profiler.activate("tick");
+profiler.activate("pc");
+profiler.activate("statement");
+profiler.setFilter("*","*");
 #profiler.setFilter("*","insert");
 #profiler.setFilter("*","print");
-profiler.openStream("/tmp/MonetProfile.xml");
+profiler.openStream("/tmp/MonetEvents");
 
 o:=oid(20000000);
 setoid(o);

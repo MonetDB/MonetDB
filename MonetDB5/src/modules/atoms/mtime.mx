@@ -988,7 +988,7 @@ static void date_prelude() {
 str CMDtime_prelude(){
 	Box box;
 	ValRecord vr;
-	int ticks,len;
+	int ticks;
 	rule RULE_MAR, RULE_OCT;
 	str s1="first sunday from end of march@02:00";
 	str s2="first sunday from end of october@02:00";
@@ -1198,8 +1198,9 @@ static int dummy;
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2)) 
 
 #define ts_isnil(t) ((t).days == date_nil && (t).msecs == daytime_nil)
-#define tz_isnil(z) ((z).dst == (z).off2 == (z).dst_start == (z).dst_end == 1 \
-			&& (z).off1 == 12 )
+#define tz_isnil(z) ( ( ( ((z).dst == (z).off2) == (z).dst_start ) == (z).dst_end ) == (unsigned) 1 \
+                        && (z).off1 == (unsigned) 12 )
+
 
 static INLINE
 int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {
@@ -1745,6 +1746,7 @@ str olddate(date *d, str *bufin) {
 
 str CMDtimezone(tzone *z, str *name){
 	str s= *name;
+	(void)z;	/* fool compiler */
 	if( BUNfnd(timezones,s)==0) s = "GMT";
 	if( BUNfnd(timezones,s))
 		printf("CMDtimezone NYI\n");
@@ -1752,6 +1754,7 @@ str CMDtimezone(tzone *z, str *name){
 	return MAL_SUCCEED;
 }
 str tzone_set_local(int res, tzone *z) {
+	(void)res;	/* fool compiler */
 	tzone_local = *z;
 	return MAL_SUCCEED;
 }
@@ -2341,14 +2344,17 @@ str CMDdaytime3(daytime *ret, int *h, int *m, int *s){
 
 str CMDcurrent_timestamp(timestamp *t)
 {
+	(void)t; /* fool compiler */
 	return throwMessage("mtime","current_timestamp not yet implemented\n");
 }
 str CMDcurrent_date(date *t)
 {
+	(void)t; /* fool compiler */
 	return throwMessage("mtime","current_date not yet implemented\n");
 }
 str CMDcurrent_time(daytime *t)
 {
+	(void)t; /* fool compiler */
 	return throwMessage("mtime","current_date not yet implemented\n");
 }
 str CMDepoch(timestamp *ret){
@@ -2364,7 +2370,6 @@ str CMDepoch(timestamp *ret){
 }
 str CMDepoch2(lng *ret, timestamp *t){
 	timestamp e;
-	timestamp r;
 	lng v;
 	CMDepoch(&e);
 	timestamp_diff(&v,&e,t);

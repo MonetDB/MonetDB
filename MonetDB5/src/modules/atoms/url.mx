@@ -215,6 +215,7 @@ str URLgetBasename(str *retval, str *t){
 }
 
 str URLgetContent( str *retval, str *Str1){
+	(void) Str1; /* fool compiler */
 	*retval = 0;
 	return throwMessage("url.getContent", "not yet implemented");
 }
@@ -237,9 +238,9 @@ str URLgetContext(str *retval, str *Str1){
 }
 str URLgetDirectory(int *ret, str *tv){
         static char buf[1024];
-        char *d,*s;
+        char *s;
 	int i=0, k=0;
-	BAT *b;
+	BAT *b=0;
 	str t= *tv;
 
 	if( t == 0) return throwMessage("url.getDirectory", "no string");
@@ -527,19 +528,17 @@ getUser_done:
 	return MAL_SUCCEED;
 }
 str URLisaURL( bit *retval, str *tv){
-	str Str1= *tv;
+	(void) retval; (void) tv; /* fool compiler */
 	if( tv == 0) return throwMessage("url.isaURL", "no string");
 	return throwMessage("url.isaURL", "not yet implemented");
 }
 
 str URLnew( str *url, str *Str1 ){
+	(void) Str1; /* fool compiler */
 	*url= GDKstrdup(*Str1);
 	return MAL_SUCCEED;
 }
 str URLnew3(str *url, str *protocol, str *server, str *file){
-	str Protocol;
-	str Server;
-	str File;
 	int l,i;
 
 	l= GDK_STRLEN(*file)+ GDK_STRLEN(*server)+GDK_STRLEN(*protocol)+10;
@@ -553,9 +552,9 @@ str URLnew3(str *url, str *protocol, str *server, str *file){
 }
 
 str URLnew4(str *url, str *protocol, str *server, int *port, str *file){
-	str Protocol;
-	str Server;
-	str File;
+	str Protocol= *protocol;
+	str Server= *server;
+	str File= *file;
 	int l,i;
 
 	if( GDK_STRNIL(file)) File="";
@@ -563,13 +562,13 @@ str URLnew4(str *url, str *protocol, str *server, int *port, str *file){
 	if( GDK_STRNIL(protocol)) Protocol="";
 	l= strlen(File)+ strlen(Server)+strlen(Protocol)+20;
 	*url= (str) GDKmalloc(l);
-	snprintf(*url,l,"%s://",*Protocol);
+	snprintf(*url,l,"%s://",Protocol);
 	i= strlen(*url);
-	snprintf(*url+i,l-i,"%s",*Server);
+	snprintf(*url+i,l-i,"%s",Server);
 	i= strlen(*url);
 	snprintf(*url+i,l-i,":%d",*port);
 	i= strlen(*url);
-	snprintf(*url+i,l-i,"/%s",*File);
+	snprintf(*url+i,l-i,"/%s",File);
 	return MAL_SUCCEED;
 }
 @+ Utilities
@@ -588,7 +587,7 @@ void getword(char *word, char *line, char stop) {
     if(line[x]) ++x;
     y=0;
 
-    while(line[y++] = line[x++]);
+    while( (line[y++] = line[x++]) );
 }
 
 char *makeword(char *line, char stop) {
@@ -602,7 +601,7 @@ char *makeword(char *line, char stop) {
     if(line[x]) ++x;
     y=0;
 
-    while(line[y++] = line[x++]);
+    while( (line[y++] = line[x++]) );
     return word;
 }
 

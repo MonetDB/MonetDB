@@ -78,9 +78,11 @@ comment "Locates the next element in the box";
 @c
 #include "mal_function.h"
 #include "mal_box.h"
+#include "mal_interpreter.h"
 
 str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
+	(void)mb; /*fool compiler */
 	name = (str) getArgValue(stk,pci,1);
 	if(openBox(name) != 0) return MAL_SUCCEED;
 	return throwMessage("box.open","failed to open box");
@@ -88,6 +90,7 @@ str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
+	(void)mb; /*fool compiler */
 	name = (str) getArgValue(stk,pci,1);
 	if( closeBox(name ,FALSE) ==0) return MAL_SUCCEED;
 	return throwMessage("box.close","failed to close box");
@@ -95,6 +98,7 @@ str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	str name;
+	(void)mb; /*fool compiler */
 	@:OpenBox(BOXdestroy)@
 	destroyBox(name);
 	return MAL_SUCCEED;
@@ -114,6 +118,7 @@ str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 	Box box;
 
+	(void)mb; /*fool compiler */
 	@:OpenBox(BOXdeposit)@
 	name = (str) getArgValue(stk,pci,2);
 	v = &stk->stk[pci->argv[3]];
@@ -128,6 +133,7 @@ str BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	ValPtr v;
 
+	(void)mb; /*fool compiler */
 	@:OpenBox(BOXtake)@
 	name = (str) getArgValue(stk,pci,2);
 	v = &stk->stk[pci->argv[0]];
@@ -141,6 +147,7 @@ str BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
+	(void)mb; /*fool compiler */
 	@:OpenBox(BOXrelease)@
 	name = (str) getArgValue(stk,pci,2);
 	releaseBox(box,name);
@@ -150,6 +157,7 @@ str BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
+	(void)mb; /*fool compiler */
 	@:OpenBox(BOXreleaseAll)@
 	releaseAllBox(box);
 	return MAL_SUCCEED;
@@ -159,6 +167,7 @@ str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
+	(void)mb; /*fool compiler */
 	@:OpenBox(BOXdiscard)@
 	name = (str) getArgValue(stk,pci,2);
 	if( discardBox(box,name) )
@@ -171,6 +180,7 @@ str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
+	(void)mb; /*fool compiler */
 	@:OpenBox(BOXtoString)@
 	return MAL_SUCCEED;
 }
@@ -181,6 +191,7 @@ str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         lng *cursor;
         ValPtr v;
 
+	(void)mb; /*fool compiler */
         @:OpenBox(BOXiterator)@
         cursor= (lng*) getArgValue(stk,pci,0);
         v= &stk->stk[pci->argv[2]];

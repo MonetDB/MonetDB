@@ -109,6 +109,8 @@ mal_export int	 	displayScope(stream *f, Scope v, str fcn);
 mal_export void		showScopes(stream *f, Scope s);
 mal_export void 	debugScope(stream *f, Scope v, str nme);
 mal_export void 	dumpManual(stream *f, Scope v, int recursive);
+mal_export void		dumpManualHeader(stream *f);
+mal_export void		dumpManualFooter(stream *f);
 mal_export void 	showScopeStatistics(stream *f,Scope s);	/* used in src/mal/mal_debugger.c */
 
 #define getSubScope(N)	(*(N))

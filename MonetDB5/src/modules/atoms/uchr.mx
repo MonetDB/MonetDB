@@ -84,6 +84,7 @@ int TYPE_uchr;
 @c
 
 str uchrInit(int *ret){
+	(void)ret; /* fool compiler */
 	TYPE_uchr= ATOMindex("uchr");
 	return MAL_SUCCEED;
 }
@@ -99,7 +100,7 @@ int uchr_fromstr(str uchrStr, int *len, uchr** c) {
 
 	if (!*c){
 		*c = (uchr*)GDKmalloc(sizeof(uchr));
-	} else if (*len < sizeof(uchr)){
+	} else if ( (unsigned)*len < sizeof(uchr)){
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(uchr));
 		*len = sizeof(uchr);

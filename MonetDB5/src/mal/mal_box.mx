@@ -183,6 +183,7 @@ mal_export void destroyBox(str name);
 mal_export str boxFileName(Box box, str extension);
 mal_export int saveBox(Box box,int flag);
 mal_export void loadBox(str nme);
+mal_export int releaseAllBox(Box box);
 
 mal_export int depositBox(Box box, str name, ValPtr val);
 mal_export void insertToBox(Box box, str name, str val);

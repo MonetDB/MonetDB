@@ -97,6 +97,7 @@ str LCKcreate(monet_lock *l){
 }
 
 str LCKset(int *res, monet_lock *l){
+	(void) res; /* fool compiler */
 	MT_set_lock((MT_Lock) *l, "LCKset");
 	return MAL_SUCCEED;
 }
@@ -107,21 +108,24 @@ str LCKtry(int* res, monet_lock* l){
 }
 
 str LCKunset(int *res, monet_lock *l){
+	(void) res; /* fool compiler */
 	MT_unset_lock((MT_Lock) *l, "unset_lock");
 	return MAL_SUCCEED;
 }
 
 str LCKdestroy(int *res, monet_lock *l){
+	(void) res; /* fool compiler */
 	MT_destroy_lock((MT_Lock) *l);
 	return MAL_SUCCEED;
 }
 
 int lockToStr(char **dst, int *len, ptr *src){
+	(void)len; /* fool compiler */
 	if( src == ptr_nil){
 		strcpy(*dst,"nil");
 		return 3;
 	}
-	sprintf(*dst,"%o", *src);
+	sprintf(*dst,"%o", (int)*src);
 	return strlen(*dst);
 }
 str SEMAcreate(monet_sema *s, int *init){
@@ -130,6 +134,7 @@ str SEMAcreate(monet_sema *s, int *init){
 }
 
 str SEMAup(int *res, monet_sema *s){
+	(void) res; /* fool compiler */
 	MT_up_sema((MT_Sema) *s, "SEMAup");
 	return MAL_SUCCEED;
 }
@@ -140,11 +145,13 @@ str SEMAtry(int *res, monet_sema *s){
 }
 
 str SEMAdown(int *res, monet_sema *s){
+	(void) res; /* fool compiler */
 	MT_down_sema((MT_Sema) *s, "SEMAdown");
 	return MAL_SUCCEED;
 }
 
 str SEMAdestroy(int *res, monet_sema *s){
+	(void) res; /* fool compiler */
 	MT_destroy_sema((MT_Sema) *s);
 	return MAL_SUCCEED;
 }
