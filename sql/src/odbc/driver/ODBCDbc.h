@@ -107,8 +107,7 @@ ODBCError *getDbcError(ODBCDbc *dbc);
 #define clearDbcErrors(dbc) do {					\
 				assert(dbc);				\
 				if (dbc->Error) {			\
-					deleteODBCErrorList(dbc->Error); \
-					dbc->Error = NULL;		\
+					deleteODBCErrorList(&dbc->Error); \
 					dbc->RetrievedErrors = 0;	\
 				}					\
 			} while (0)

@@ -128,6 +128,6 @@ destroyODBCEnv(ODBCEnv *env)
 	/* first set this object to invalid */
 	env->Type = 0;
 
-	deleteODBCErrorList(env->Error);
+	deleteODBCErrorList(&env->Error);
 	free((void *) env);
 }

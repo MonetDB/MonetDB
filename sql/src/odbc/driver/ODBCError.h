@@ -96,6 +96,7 @@ ODBCError *getErrorRec(ODBCError *error, int recNumber);
 void appendODBCError(ODBCError **head, ODBCError *err);
 
 
+#if 0				/* unused */
 /*
  * Prepends a valid ODBCError object 'this' to the front of the list
  * of a valid ODBCError object 'head' and return the new head.
@@ -103,7 +104,8 @@ void appendODBCError(ODBCError **head, ODBCError *err);
  * Precondition: both head and this must be valid (non NULL)
  * Returns: the new head (which is the same as the prepended 'this').
  */
-ODBCError *prependODBCError(ODBCError *head, ODBCError *err);
+void prependODBCError(ODBCError **head, ODBCError *err);
+#endif
 
 
 /*
@@ -111,6 +113,6 @@ ODBCError *prependODBCError(ODBCError *head, ODBCError *err);
  *
  * Precondition: none (error may be NULL)
  */
-void deleteODBCErrorList(ODBCError *err);
+void deleteODBCErrorList(ODBCError **err);
 
 #endif /* _H_ODBCERROR */

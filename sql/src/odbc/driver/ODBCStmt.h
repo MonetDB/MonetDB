@@ -152,8 +152,7 @@ ODBCError *getStmtError(ODBCStmt *stmt);
 #define clearStmtErrors(stm) do {					\
 				assert(stm);				\
 				if (stm->Error) {			\
-					deleteODBCErrorList(stm->Error); \
-					stm->Error = NULL;		\
+					deleteODBCErrorList(&stm->Error); \
 					stm->RetrievedErrors = 0;	\
 				}					\
 			} while (0)

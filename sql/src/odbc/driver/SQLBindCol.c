@@ -30,7 +30,7 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	int mapitype;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindCol\n");
+	ODBCLOG("SQLBindCol %d %d\n", nCol, nTargetType);
 #endif
 
 	if (!isValidStmt(stmt))

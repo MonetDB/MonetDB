@@ -109,13 +109,14 @@ SQLRETURN SQLSetConnectAttr_(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 SQLRETURN SQLSetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);
 
-/* #define ODBCDEBUG 1 */
+#define ODBCDEBUG 1
 
 #ifdef ODBCDEBUG
 #define ODBCLOG(...)	do {						\
-				if (getenv("ODBCDEBUG")) {		\
+				char *s = getenv("ODBCDEBUG");		\
+				if (s && *s) {				\
 					FILE *f;			\
-					f = fopen("MonetODBC.log", "a"); \
+					f = fopen(s, "a");		\
 					if (f) {			\
 						fprintf(f, __VA_ARGS__); \
 						fclose(f);		\

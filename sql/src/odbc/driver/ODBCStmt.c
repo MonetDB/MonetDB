@@ -203,7 +203,7 @@ destroyODBCStmt(ODBCStmt *stmt)
 	*stmtp = stmt->next;
 
 	/* cleanup own managed data */
-	deleteODBCErrorList(stmt->Error);
+	deleteODBCErrorList(&stmt->Error);
 
 	ODBCfreebindcol(stmt);
 	if (stmt->hdl)

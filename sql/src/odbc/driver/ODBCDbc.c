@@ -181,7 +181,7 @@ destroyODBCDbc(ODBCDbc *dbc)
 	}
 
 	/* cleanup own managed data */
-	deleteODBCErrorList(dbc->Error);
+	deleteODBCErrorList(&dbc->Error);
 	if (dbc->DSN) {
 		free(dbc->DSN);
 	}

@@ -91,8 +91,7 @@ ODBCError *getEnvError(ODBCEnv *env);
 #define clearEnvErrors(env) do {					\
 				assert(env);				\
 				if (env->Error) {			\
-					deleteODBCErrorList(env->Error); \
-					env->Error = NULL;		\
+					deleteODBCErrorList(&env->Error); \
 					env->RetrievedErrors = 0;	\
 				}					\
 			} while (0)

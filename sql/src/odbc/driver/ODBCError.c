@@ -244,6 +244,7 @@ appendODBCError(ODBCError **head, ODBCError *this)
 }
 
 
+#if 0				/* unused */
 /*
  * Prepends a valid ODBCError object 'this' to the front of the list
  * of a valid ODBCError object 'head' and return the new head.
@@ -251,17 +252,17 @@ appendODBCError(ODBCError **head, ODBCError *this)
  * Precondition: both head and this must be valid (non NULL)
  * Returns: the new head (which is the same as the prepended 'this').
  */
-ODBCError *
-prependODBCError(ODBCError *head, ODBCError *this)
+void
+prependODBCError(ODBCError **head, ODBCError *this)
 {
-	assert(head);		/* if head could be NULL this function would do nothing */
+	assert(head);
 	assert(this);
 	assert(this->next == NULL);
 
-	this->next = head;
-
-	return this;
+	this->next = *head;
+	*head = this;
 }
+#endif
 
 
 /*
@@ -270,15 +271,15 @@ prependODBCError(ODBCError *head, ODBCError *this)
  * Precondition: none (error may be NULL)
  */
 void
-deleteODBCErrorList(ODBCError *error)
+deleteODBCErrorList(ODBCError **error)
 {
-	ODBCError *nxt = NULL;
+	ODBCError *cur;
 
-	while (error) {
-		nxt = error->next;
-		if (error->message)
-			free(error->message);
-		free(error);
-		error = nxt;
+	while (*error) {
+		cur = *error;
+		*error = cur->next;
+		if (cur->message)
+			free(cur->message);
+		free(cur);
 	}
 }
