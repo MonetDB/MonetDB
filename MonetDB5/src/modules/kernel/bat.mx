@@ -737,7 +737,7 @@ ptr BAT@1(BAT *b, ptr aggr) {
 #include <mal.h>
 
 mal_export str BKCsetRole(int *r, int *bid, str *hname, str *tname);
-mal_export str BKCdestroyImmediate(bit *r,int *bid, bit *immediate);
+mal_export str BKCdestroyImmediate(bit *r,int *bid);
 
 #endif /*_BAT_H_*/
 @c
@@ -976,16 +976,13 @@ int CMDpersists(BAT **r, BAT *input, bit *param) {
         return GDK_SUCCEED;
 }
 
-int CMDdestroy(bit *res, str input, bit *immediately) {
+int CMDdestroy(bit *res, str input) {
         int bid = BBPindex(input);
         *res = FALSE;
         if (bid ) {
                 BBPfix(bid);
 		if (BBPindex(input) == bid) {
 			BAT *b = BBPquickdesc(ABS(bid), FALSE);
-			if (*immediately == FALSE) {
-				b->batDirtydesc = 1;
-			}
 			BATmode(b, TRANSIENT);
 			*res = TRUE;
 		}
@@ -1687,11 +1684,11 @@ str BKCdelete_bat(int *r, int *bid, int *sid){
 	BBPunfix(s->batCacheid);
 	return throwMessage("bat.delete_bats", "GDKerror");
 }
-str BKCdestroy_bat(bit *r,str *input, bit *immediate) {
-	CMDdestroy(r, *input, immediate);
+str BKCdestroy_bat(bit *r,str *input) {
+	CMDdestroy(r, *input);
 	return MAL_SUCCEED;
 }
-str BKCdestroyImmediate(bit *r,int *bid, bit *immediate) {
+str BKCdestroyImmediate(bit *r,int *bid) {
 	BAT *b;
 	char buf[512];
 	(void) r;
@@ -1699,7 +1696,7 @@ str BKCdestroyImmediate(bit *r,int *bid, bit *immediate) {
         return throwMessage("bat.destroy", "Cannot access descriptor");
     }
 	BBPlogical(b->batCacheid,buf);
-	CMDdestroy(r,buf,immediate);
+	CMDdestroy(r,buf);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -336,8 +336,6 @@ str SYSmem_usage(int *ret, lng *minsize) {
 		@:heap(mem,b->batBuns,buns)@
 		@:heap(mem,b->hhash_heap,hhsh)@
 		@:heap(mem,b->thash_heap,thsh)@
-		@:heap(mem,b->hidx_heap,hind)@
-		@:heap(mem,b->tidx_heap,tind)@
 		@:heap(mem,&b->hheap,head)@
 		@:heap(mem,&b->theap,tail)@
 		@:heap(mem,&b->haccelerator,hacc)@
@@ -407,8 +405,6 @@ str SYSvm_usage(int *ret, lng *minsize) {
 		@:heap(vm,b->batBuns,buns)@
 		@:heap(vm,b->hhash_heap,hhsh)@
 		@:heap(vm,b->thash_heap,thsh)@
-		@:heap(vm,b->hidx_heap,hind)@
-		@:heap(vm,b->tidx_heap,tind)@
 		@:heap(vm,&b->hheap,head)@
 		@:heap(vm,&b->theap,tail)@
 		@:heap(vm,&b->haccelerator,hacc)@
