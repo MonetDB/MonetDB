@@ -864,13 +864,14 @@ that for the moment are defined as procs.
     "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
 
     # SQL LIKE functionality, PCRE implementation
-	PROC sql2pcre(str pat, str esc) : int {
+	PROC sql2pcre(str pat, str esc) : str {
 		# change the SQL wilcards into PCRE wildcards
 		var i, len;
 		var c;
 		var ppat := "";
 		var pesc;
 		var escaped := false;
+		var hasWildcard := false;
 
 		# the escape character can be a char which is special in a PCRE
 		# if the user used the "+" char as escape and has "++" in
@@ -924,6 +925,7 @@ that for the moment are defined as procs.
 					ppat :+= c;
 				} else {
 					ppat :+= ".*";
+					hasWildcard := true;
 				}
 				escaped := false;
 			} else if (c = "_") {
@@ -931,6 +933,7 @@ that for the moment are defined as procs.
 					ppat :+= c;
 				} else {
 					ppat :+= ".";
+					hasWildcard := true;
 				}
 				escaped := false;
 			} else {
@@ -940,28 +943,44 @@ that for the moment are defined as procs.
 
 			i :+= 1;
 		}
-		return "^" + ppat + "$";
+		if (hasWildcard) {
+			return("^" + ppat + "$");
+		} else {
+			return(nil);
+		}
 	}
     ADDHELP("sql2pcre", "groffen", "Dec 20 2004",
     "converts SQL LIKE to PCRE pattern", "algebra");
 
     PROC like(str s, str pat, str esc) : bit  {
 		var ppat := sql2pcre(pat, esc);
-		return(pcre_match(pcre_compile(ppat), s));
+		if (isnil(ppat)) {
+			return(b = pat);
+		} else {
+			return(pcre_match(pcre_compile(ppat), s));
+		}
     }
     ADDHELP("like", "nes", "Dec 20 2004",
     "does SQL LIKE expression with use of PCRE", "algebra");
 
     PROC like(str s, str pat) : bit  {
 		var ppat := sql2pcre(pat, "\\");
-		return(pcre_match(pcre_compile(ppat), s));
+		if (isnil(ppat)) {
+			return(b = pat);
+		} else {
+			return(pcre_match(pcre_compile(ppat), s));
+		}
     }
     ADDHELP("like", "nes", "Dec 20 2004",
     "does SQL LIKE expression with use of PCRE", "algebra");
 
     PROC like_uselect_pcre(bat[any::1,str] b, str pat, str esc) : bat[any::1,void]  {
 		var ppat := sql2pcre(pat, esc);
-		return(pcre_uselect(ppat, b));
+		if (isnil(ppat)) {
+			return(uselect(b, pat));
+		} else {
+			return(pcre_uselect(ppat, b));
+		}
     }
     ADDHELP("like_uselect_pcre", "groffen", "Dec 19 2004",
     "does SQL LIKE select with use of PCRE", "algebra");
