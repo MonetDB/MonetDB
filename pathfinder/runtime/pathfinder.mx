@@ -230,11 +230,11 @@ PROC serialize (BAT[void,oid] pos,
     # Sort by pos column
     positions := pos.reverse().sort().reverse();
 
-    positions@batloop {
+    positions@batloop () {
         var curr_oid := $h;
 
-        values@batloop {
-            $t.reverse().select (curr_oid).reverse()@batloop {
+        values@batloop () {
+            $t.reverse().select (curr_oid).reverse()@batloop () {
                 print ($t);
             }
         }
@@ -879,7 +879,7 @@ PROC attr_print(oid pre, oid frag, BAT[void,bat] ws) : void
 {
     var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(pre);
     var name;
-    attr_list@batloop
+    attr_list@batloop ()
     {
 	var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fetch($h);
 	var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($h);
@@ -983,7 +983,7 @@ PROC xml_print(BAT[void,bat] ws,
     var format_last := item.reverse().max();
    
     # for all nodes in the context set do ...
-    item@batloop{
+    item@batloop () {
         var type_ := types.fetch($h);
 	var frag := frags.fetch($h);
 	if (type_ = INT) {
