@@ -573,7 +573,7 @@ primitives CATCH* look after garbage collecting these results.
     		res->val.oval = void_nil;
 		stamp = BBPcurstamp();	
 		i = (*imp)(stk, lt, res); 
-		CATCHVAL(stk,lt,res,FALSE);
+		CATCHVAL(stk,lt,res,TRUE);
 		CATCHERR(stk,lt,res,i,((YYSTREE) imp)); break; }
 #ifdef MKMODS
         case TOK_TRG:
