@@ -2190,8 +2190,9 @@ str BKCsetColumns(int *r, int *bid, str *hname, str *tname){
 
 
 str BKCsetName(bit *retval, int *bid, str *s){
+	int id= ABS(*bid);
 	BAT *b;
-	@:getBATdescriptor(retval,bid,b,setName)@
+	@:getBATdescriptor(retval,&id,b,setName)@
 	CMDrename(retval, b, *s);
 	return MAL_SUCCEED;
 }
