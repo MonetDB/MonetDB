@@ -4,6 +4,11 @@
 
 module(lock);
 
+# should show module "lock" with refcount 1:
 loaded;
+
+# should all succeed:
+sigs("lock");
 test.print;
 test.count.print;
+

@@ -23,6 +23,19 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 [ "sys",	  2		  ]
 [ "trans",	  2		  ]
 [ "uchr",	  4		  ]
+#---------------------------------#
+# signature			  #
+#---------------------------------#
+[ "lock_create() : lock"	  ]
+[ "lock_destroy(lock) : void"	  ]
+[ "lock_set(lock) : void"	  ]
+[ "lock_try(lock) : int"	  ]
+[ "lock_unset(lock) : void"	  ]
+[ "sema_create(int) : sema"	  ]
+[ "sema_destroy(sema) : void"	  ]
+[ "sema_down(sema) : void"	  ]
+[ "sema_try(sema) : int"	  ]
+[ "sema_up(sema) : void"	  ]
 #-----------------#
 # BAT:	  test	  #
 # (int)	  (lock)  #
@@ -49,6 +62,20 @@ loaded;
 [ "sys",	  2		  ]
 [ "trans",	  2		  ]
 [ "uchr",	  4		  ]
+sigs("lock");
+#---------------------------------#
+# signature			  #
+#---------------------------------#
+[ "lock_create() : lock"	  ]
+[ "lock_destroy(lock) : void"	  ]
+[ "lock_set(lock) : void"	  ]
+[ "lock_try(lock) : int"	  ]
+[ "lock_unset(lock) : void"	  ]
+[ "sema_create(int) : sema"	  ]
+[ "sema_destroy(sema) : void"	  ]
+[ "sema_down(sema) : void"	  ]
+[ "sema_try(sema) : int"	  ]
+[ "sema_up(sema) : void"	  ]
 test.print;
 #-----------------#
 # BAT:	  test	  #
@@ -56,6 +83,25 @@ test.print;
 #-----------------#
 test.count.print;
 [ 0 ]
+
+drop("lock");
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "_mapi",	  2		  ]
+[ "algebra",	  2		  ]
+[ "arith",	  2		  ]
+[ "bat",	  2		  ]
+[ "kernel",	  2		  ]
+[ "main",	  2		  ]
+[ "str",	  2		  ]
+[ "streams",	  2		  ]
+[ "sys",	  2		  ]
+[ "trans",	  2		  ]
+[ "uchr",	  4		  ]
+sigs("lock");
+!ERROR: sigs: must load module first.
 ;
 printf("\nDone..\n");
 
@@ -63,9 +109,9 @@ Done..
 
 Over..
 
-# 22:59:33 >  
-# 22:59:33 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=54354 < modrefcnt2_s00.milC
-# 22:59:33 >  
+# 15:23:57 >  
+# 15:23:57 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=53745 < modrefcnt2_s00.milC
+# 15:23:57 >  
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -75,18 +121,29 @@ Over..
 [ "arith",	  3		  ]
 [ "bat",	  3		  ]
 [ "kernel",	  3		  ]
-[ "lock",	  1		  ]
 [ "main",	  3		  ]
 [ "str",	  3		  ]
 [ "streams",	  3		  ]
 [ "sys",	  3		  ]
 [ "trans",	  3		  ]
 [ "uchr",	  6		  ]
-#-----------------#
-# BAT:	  test	  #
-# (int)	  (lock)  #
-#-----------------#
-[ 0 ]
+
+MAPI  = anonymous@draco:58320
+ACTION= mapi_get_row
+QUERY = sigs("lock");
+ERROR = !ERROR: sigs: must load module first.
+
+MAPI  = anonymous@draco:58320
+ACTION= mapi_get_row
+QUERY = test.print;
+ERROR = !ERROR: interpret: MIL operator invocation of 'print(BAT[int,lock])' with illegal types.
+
+MAPI  = anonymous@draco:58320
+ACTION= mapi_get_row
+QUERY = test.count.print;
+ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
+!ERROR: print(param 1): evaluation error.
+
 
 
 
@@ -102,13 +159,26 @@ Over..
 [ "arith",	  3		  ]
 [ "bat",	  3		  ]
 [ "kernel",	  3		  ]
-[ "lock",	  2		  ]
+[ "lock",	  1		  ]
 [ "main",	  3		  ]
 [ "str",	  3		  ]
 [ "streams",	  3		  ]
 [ "sys",	  3		  ]
 [ "trans",	  3		  ]
 [ "uchr",	  6		  ]
+#---------------------------------#
+# signature			  #
+#---------------------------------#
+[ "lock_create() : lock"	  ]
+[ "lock_destroy(lock) : void"	  ]
+[ "lock_set(lock) : void"	  ]
+[ "lock_try(lock) : int"	  ]
+[ "lock_unset(lock) : void"	  ]
+[ "sema_create(int) : sema"	  ]
+[ "sema_destroy(sema) : void"	  ]
+[ "sema_down(sema) : void"	  ]
+[ "sema_try(sema) : int"	  ]
+[ "sema_up(sema) : void"	  ]
 #-----------------#
 # BAT:	  test	  #
 # (int)	  (lock)  #
@@ -116,7 +186,7 @@ Over..
 [ 0 ]
 
 # 18:26:30 >  
-# 18:26:30 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708 < modrefcnt2_s01.milC
+# 18:26:30 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708 < modrefcnt2_s02.milC
 # 18:26:30 >  
 
 #---------------------------------#
@@ -127,31 +197,60 @@ Over..
 [ "arith",	  3		  ]
 [ "bat",	  3		  ]
 [ "kernel",	  3		  ]
-[ "lock",	  1		  ]
 [ "main",	  3		  ]
 [ "str",	  3		  ]
 [ "streams",	  3		  ]
 [ "sys",	  3		  ]
 [ "trans",	  3		  ]
 [ "uchr",	  6		  ]
-#-----------------#
-# BAT:	  test	  #
-# (int)	  (lock)  #
-#-----------------#
-[ 0 ]
 
-MAPI  = anonymous@draco:54354
+MAPI  = anonymous@draco:58320
+ACTION= mapi_get_row
+QUERY = sigs("lock");
+ERROR = !ERROR: sigs: must load module first.
+
+MAPI  = anonymous@draco:58320
+ACTION= mapi_get_row
+QUERY = test.print;
+ERROR = !ERROR: interpret: MIL operator invocation of 'print(BAT[int,lock])' with illegal types.
+
+MAPI  = anonymous@draco:58320
+ACTION= mapi_get_row
+QUERY = test.count.print;
+ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
+!ERROR: print(param 1): evaluation error.
+
+MAPI  = anonymous@draco:58320
 ACTION= mapi_get_row
 QUERY = drop("lock");
 ERROR = !ERROR: TBL_unloadmod: lock was not loaded.
 
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "_mapi",	  3		  ]
+[ "algebra",	  3		  ]
+[ "arith",	  3		  ]
+[ "bat",	  3		  ]
+[ "kernel",	  3		  ]
+[ "main",	  3		  ]
+[ "str",	  3		  ]
+[ "streams",	  3		  ]
+[ "sys",	  3		  ]
+[ "trans",	  3		  ]
+[ "uchr",	  6		  ]
 
-# 22:59:33 >  
-# 22:59:33 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=54354
-# 22:59:33 >  
+MAPI  = anonymous@draco:58320
+ACTION= mapi_get_row
+QUERY = sigs("lock");
+ERROR = !ERROR: sigs: must load module first.
+
+# 15:23:57 >  
+# 15:23:57 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=53745
+# 15:23:57 >  
 
 
-# 22:59:34 >  
-# 22:59:34 >  Done.
-# 22:59:34 >  
+# 15:23:58 >  
+# 15:23:58 >  Done.
+# 15:23:58 >  
 
