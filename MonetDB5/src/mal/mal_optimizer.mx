@@ -95,6 +95,13 @@ patterns.  (Enhance is with semantic equivalent instructions)
 Impact: High
 Prereq: AR
 
+@emph{Access Mode Optimizer (AMoptimizer)}
+Goal: the default access mode for BATs is readonly.
+When updates are needed, it is switched to WriteMode,
+which needs to be done only once.
+Approach: remove duplicate calls
+Impact: low
+
 @emph{Dead Code Removal (DCoptimizer)}
 Goal: to remove all instructions whose result is not used
 Rationale: due to sloppy coding or alternative execution paths
@@ -327,6 +334,8 @@ them in a preferred order of deployment.
 @item group F:
 @tab    Alias Removal (ARoptimizer)
 @item 
+@tab    Access Mode Optimizer (AMoptimizer)
+@item 
 @tab    Dead Code Removal (DCoptimizer)
 @item 
 @tab    Garbage Collector (GCoptimizer)
@@ -440,6 +449,7 @@ catalog management (23) and query processing (42)
 mal_export void debugOptimizers();
 mal_export str CXoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str ARoptimizer(Client cntxt,MalBlkPtr mb, int pc);
+mal_export str AMoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str DCoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str SPoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str RRoptimizer(Client cntxt,MalBlkPtr mb, int pc);
@@ -693,6 +703,46 @@ str ARoptimizer(Client cntxt, MalBlkPtr mb, int pc)
     for(i=1;i< mb->stop; i++)
         i= ARoptimizerStep(cntxt,mb,i);
     /* remove the ARoptimizer request */
+    if(pc) removeInstruction(mb,pc);
+    return NULL;
+}
+@+ Access Mode optimizer
+Walk through the program code searching for setWriteMode
+and make sure it is done once per basic block. It assumes
+that instructions do not change the access mode as a side
+effect.
+@c
+static MALfcn AMsetWriteMode;
+
+int AMoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
+{   int k,kn=0;
+    InstrPtr p;
+    (void) cntxt;
+    p= getInstrPtr(mb,pc);
+    if( p->fcn != AMsetWriteMode) return pc;
+    kn = getArg(p,1);
+
+    for(k=pc-1;k>1; k--){
+        p= getInstrPtr(mb,k);
+        if( p->barrier) return pc;
+        if( p->fcn != AMsetWriteMode) continue;
+        if( getArg(p,1) == kn){
+            removeInstruction(mb,pc);
+            return pc-1;
+        }
+    }
+    return pc;
+}
+str AMoptimizer(Client cntxt, MalBlkPtr mb, int pc)
+{   int i;
+    Symbol s;
+    s= findSymbol("bat","setWriteMode");
+    if( s== 0)
+        return throwMessage("AMoptimizer","bat.setWriteMode missing\n");
+    AMsetWriteMode = getSignature(s)->fcn;
+    for(i=1;i< mb->stop; i++)
+        i= AMoptimizerStep(cntxt,mb,i);
+    /* remove the AMoptimizer request */
     if(pc) removeInstruction(mb,pc);
     return NULL;
 }

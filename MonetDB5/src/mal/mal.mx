@@ -51,15 +51,16 @@ In the remainder of this section we shortly introduce the
 MonetDB product family, the design considerations and
 a quick overview of the MonetDB Version 5 architecture.
 @menu
-* Backward compatibility::
-* Design considerations::
-* Architecture overview::
-* MAL Synopsis::
-* MAL interpretation::
+* The history of MonetDB::
+* Architecture overview:: 
+* Design considerations:: 
+* Backward compatibility:: 
 * Session management::
+* MAL synopsis:: 
+* MAL execution:: 
 @end menu
 
-@node Backward compatibility, Design considerations, ,Top
+@node Backward compatibility, Design considerations, ,TOC
 @+ Backward compatibility
 In the development of Version 5 the requirements of the
 following components are taken into account.
@@ -82,15 +83,16 @@ of interest in Version 4 user community.
 @end itemize
 
 @menu
-* Backward compatibility::
-* Design considerations::
-* Architecture overview::
-* MAL Synopsis::
-* MAL interpretation::
+* The history of MonetDB::
+* Architecture overview:: 
+* Design considerations:: 
+* Backward compatibility:: 
 * Session management::
+* MAL synopsis:: 
+* MAL execution:: 
 @end menu
 
-@node  Design considerations, Architecture overview,Backward compatibility,Top
+@node  Design considerations, Architecture overview,Backward compatibility,TOC
 @+ Design considerations
 Redesign of the MonetDB software stack was driven by the need to
 reduce the Total Execution Cost (TEC) for query execution.
@@ -128,15 +130,16 @@ This results in a PnP architecture to assemble the components
 for a particular application domain and hardware platform.
 
 @menu
-* Backward compatibility::
-* Design considerations::
-* Architecture overview::
-* MAL Synopsis::
-* MAL interpretation::
+* The history of MonetDB::
+* Architecture overview:: 
+* Design considerations:: 
+* Backward compatibility:: 
 * Session management::
+* MAL synopsis:: 
+* MAL execution:: 
 @end menu
 
-@node Architecture overview, MAL Synopsis, Design considerations,Top
+@node Architecture overview, MAL synopsis, Design considerations,TOC
 @+ Architecture overview
 The software stack for Version 5 is shown in Figure
  @c image{architecture}
@@ -145,16 +148,17 @@ strategic optimizers. Moreover, each language comes with its language
 oriented catalog, which may, but need not be stored in the MonetDB database.
 
 @menu
-* Backward compatibility::
-* Design considerations::
-* Architecture overview::
-* MAL Synopsis::
-* MAL interpretation::
+* The history of MonetDB::
+* Architecture overview:: 
+* Design considerations:: 
+* Backward compatibility:: 
 * Session management::
+* MAL synopsis:: 
+* MAL execution:: 
 @end menu
 
-@node MAL Synopsis, MAL interpretation, Architecture overview,Top
-@+ MAL Synopsis
+@node MAL synopsis, MAL execution, Architecture overview,TOC
+@+ MAL synopsis
 The target language for Version 5 is an assembler-like language,
 derived as a subset of the Monet Interface Language introduced
 previously. This language provides the textual interface to
@@ -203,12 +207,13 @@ streaming applications.
 for use during compilation and optimization.
 @end itemize
 @menu
-* Backward compatibility::
-* Design considerations::
-* Architecture overview::
-* MAL Synopsis::
-* MAL interpretation::
+* The history of MonetDB::
+* Architecture overview:: 
+* Design considerations:: 
+* Backward compatibility:: 
 * Session management::
+* MAL synopsis:: 
+* MAL execution:: 
 @end menu
 @-
 @{
@@ -269,8 +274,8 @@ str             *monet_script;
 
 @}
 @-
-@node MAL interpretation, , MAL Synopsis, Top
-@+ MAL interpretation
+@node MAL execution, , MAL synopsis, TOC
+@+ MAL execution
 
 Startup of the Monet engine consists of two steps. First, the
 system kernel libraries are loaded.
@@ -295,12 +300,13 @@ This danger required all accesses to global information to be packaged
 in a critical section, which was known to be a performance hindrence.
 @-
 @menu
-* Backward compatibility::
-* Design considerations::
-* Architecture overview::
-* MAL Synopsis::
-* MAL interpretation::
+* The history of MonetDB::
+* Architecture overview:: 
+* Design considerations:: 
+* Backward compatibility:: 
 * Session management::
+* MAL synopsis:: 
+* MAL execution:: 
 @end menu
 @{
 @h

@@ -18,7 +18,7 @@
 @a M. L. Kersten
 @v 5.0
 @-
-@node Client Administration, , Scenario Administration, Top
+@node Client administration, Session scenarios, Session management, Session management
 @* Monet Client Interface
 Clients gain access to the Monet server through a internet connection
 or through its server console.
@@ -48,9 +48,8 @@ This hierachy is used to share and constrain resources, such
 as global variables or references to catalogue information.
 During parallel execution additional layers may be constructed.
 @menu
-* Scenarios::
-* Scenario Administration::
-* Client Administration::
+* Client administration::
+* Session scenarios::
 @end menu
 
 @{

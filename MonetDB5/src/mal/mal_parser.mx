@@ -15,7 +15,7 @@
 @v 1.1
 
 @-
-@node The parser ,Reverse programming, Before-after calls , Top
+@node The parser ,Reverse programming, Before-after calls , MonetDB Assembler Language
 @+ The parser
 MAL is processed by a small thread-safe parser.
 The parser (and its target language) are designed for speed of analysis.
@@ -993,7 +993,7 @@ modified with a barrier/catch tag.
 @item varlist         
 @tab :  variable 
 @item
-@tab |  '(' variable @{',' variable@}* ')' 
+@tab |  @verb{'{' variable {',' variable}* ')' } 
 @item variable        
 @tab :  identifier propQualifier 
 @item factor          

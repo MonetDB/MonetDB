@@ -52,7 +52,7 @@ description. (See functions)
 * Reverse programming::
 @end menu
 
-@node MAL instructions,Flow of control, MAL variables, Top
+@node MAL instructions,Flow of control, MAL variables, MonetDB Assembler Language
 @+ MAL instructions
 MAL instructions have a simple format. 
 Each instruction denotes a data-flow statement.
@@ -124,7 +124,7 @@ bulk assignment instructions.
 * The parser ::
 * Reverse programming::
 @end menu
-@node Flow of control, Instruction Records,MAL instructions, Top
+@node Flow of control, Instruction Records,MAL instructions, MonetDB Assembler Language
 @+ Flow of control
 An assignment statement is turned into a flow of control statement
 by tagging it with a control modifier.
@@ -277,7 +277,7 @@ exit    hdl;
 @-
 @}
 @-
-@node Instruction Records,Before-after calls, Flow of control, Top
+@node Instruction Records,Before-after calls, Flow of control, MonetDB Assembler Language
 @+ The MAL instruction records
 The data structure to represent a MAL block is kept simple.
 It carries a sequence of MAL statements and a variable table.
@@ -318,7 +318,7 @@ instruction in the source.]
 * Reverse programming::
 @end menu
 
-@node Before-after calls, The parser ,Instruction Records, Top
+@node Before-after calls, The parser ,Instruction Records, MonetDB Assembler Language
 @+ Before-after calls
 The instruction records contain three optional pointers to functions:
 beforeCall and afterCall. They are bound to the result type.
@@ -1053,7 +1053,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 } 
 @}
 @-
-@node MAL variables, MAL instructions, MAL constants, Top
+@node MAL variables, MAL instructions, MAL constants, MonetDB Assembler Language
 @+ MAL variables
 Temporary target variable act as sinks in the data flow graph.
 In this case, an optimizer can group them by underlying type and this way
@@ -1174,7 +1174,7 @@ void freeVariable(MalBlkPtr mb, int varid){
 }
 @}
 @-
-@node MAL constants, MAL variables, , Top
+@node MAL constants, MAL variables, , MonetDB Assembler Language
 @+ MAL constants
 Constants are stored in the symbol table and referenced
 by a variable identifier.
@@ -1558,7 +1558,7 @@ void pushEndInstruction(MalBlkPtr mb){
 }
 @}
 @-
-@node Reverse programming, , The parser, Top
+@node Reverse programming, , The parser, MonetDB Assembler Language
 @+ Reverse programming
 Since MAL programs can be created on the fly by linked-in query
 compilers, or transformed by optimizers, it becomes

@@ -23,19 +23,17 @@ A repetition is marked with either '+' or '*' to
 indicate at least once and many times, respectively.
 Lexical tokens are illustrated in small capitals.
 
-@multitable @columnfractions .15 .8
+@multitable @columnfractions .15 .8 @verb @verb
 @item program		
-@tab : ( definition [helpinfo] ';' | & statement ';' ) *
+@tab : ( definition [helpinfo] ';' | statement ';' ) *
 @item definition	
 @tab : moduleStmt | includeStmt | commandStmt
 @item
 @tab | patternStmt | functionStmt | factoryStmt | includeStmt
-@item
 @item moduleStmt	
 @tab : @code{ atom} ident [':'ident]
 @item
 @tab |  @code{ module} ident 
-@item
 @item commandStmt	
 @tab : @code{ command } header 
 @item
@@ -43,20 +41,15 @@ Lexical tokens are illustrated in small capitals.
 @item patternStmt	
 @tab : @code{ pattern } header 
 @code{ address } identifier
-@item
 @item functionStmt	
 @tab : @code{ function } header statement* @code{ end } identifier
 @item factoryStmt	
 @tab : @code{ factory } header statement* @code{ end } identifier
-@item
 @item includeStmt	
 @tab : @code{ include} identifier 
-@item
-@tab |  @code{ include} string_literal
-@item
+|  @code{ include} string_literal
 @item helpinfo	
 @tab : @code{ comment} string_literal 
-@item
 @item header		
 @tab : hdrName '(' params ')' result 
 @item hdrName		
@@ -67,45 +60,33 @@ Lexical tokens are illustrated in small capitals.
 @tab : binding [',' binding]* 
 @item binding		
 @tab : identifier typeName [ props ]
-@item
 @item typeName	
 @tab : scalarType | collectionType 
-@item
-@tab | ':' @code{ any} [digit] 
+| ':' @code{ any} [digit] 
 @item scalarType	
 @tab : ':' @code{ identifier} 
 @item collectionType	
 @tab : ':' @code{ bat} ['[' colType ',' colType ']'] 
 @item colType		
 @tab : scalarType | anyType 
-@item
 @item props	
-@tab : ['@verb{{}' property [ ',' property]* '@verb{@}}']
+@tab : @verb{ ['{' property [ ',' property]* '}'] }
 @item property	
 @tab : identifier 
-@item
 @item statement	
-@tab : tag varlist [':=' expr ] props
+@tab : [tag] varlist [':=' expr ] props
 @item tag     	
 @tab |  @code{ return} | @code{ barrier} | @code{ catch}
-@item
-@tab |  @code{ leave} | @code{ redo} | 
+|  @code{ leave} | @code{ redo} 
 @item varlist		
 @tab : variable 
-@item
-@tab |  '(' variable [',' variable ] * ')' 
+|  '(' variable [',' variable ] * ')' 
 @item variable	
-@tab : identifier propQualifier 
-@item
+@tab : identifier props 
 @item expr    	
-@tab : fcncall 
-@item
-@tab : [factor  operator] factor 
+@tab : fcncall | [factor  operator] factor 
 @item factor  	
-@tab : constant | var 
-@item
-@item constant	
-@tab : @code{ literal_constant} | @code{ nil}
+@tab :  @code{ literal_constant} | @code{ nil} | var 
 @end multitable
 
 @-

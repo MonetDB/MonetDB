@@ -19,7 +19,7 @@
 @a M. Kersten
 @v 0.0
 @-
-@node Session management , Scenarios , ,Top
+@node Session management , Client administration , ,TOC
 @* Session scenarios
 In MonetDB multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
@@ -64,11 +64,10 @@ defined function, dataflow driven interpretation,
 or vectorized pipe-line execution by a dedicated engine.
 
 @menu
-* Scenarios::
-* Scenario Administration::
-* Client Administration::
+* Client administration::
+* Session scenarios::
 @end menu
-@node Scenarios, Scenario Administration, Session management ,Top
+@node Session scenarios, , Client administration, Session management, 
 @+ Scenario interpretation
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.
@@ -98,11 +97,6 @@ processor). Propagation of the state information is
 encapsulated a scenario2scenario() call. Not all transformations
 may be legal.
 
-@menu
-* Scenarios::
-* Scenario Administration::
-* Client Administration::
-@end menu
 @{
 @+ Scenario administration
 Administration of scenarios follows the access rules 
@@ -414,7 +408,6 @@ void exitScenario(Client c){
 }
 @}
 @-
-@node Scenario Administration, Client Administration,Scenarios,Top
 @+ Scenario Administration
 The building blocks of scenarios are routines obeying a strict
 signature. They all require sole access to the client
@@ -437,9 +430,8 @@ or alignment of the request with concurrent actions (e.g. transaction
 coordination).
 
 @menu
-* Scenarios::
-* Scenario Administration::
-* Client Administration::
+* Client administration::
+* Session scenarios::
 @end menu
 @-
 @{
