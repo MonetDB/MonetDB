@@ -94,13 +94,13 @@ public class JdbcClient {
 				hasPort = true;
 			} else if (!debug && args[i].equals("-d")) {
 				debug = true;
-			} else if (!hasHost && args[i].equals("-D") && i + 1 < args.length) {
+			} else if (!hasDump && args[i].equals("-D") && i + 1 < args.length) {
 				dump = args[i + 1];
 				i++;
 				hasDump = true;
-			} else if (!hasHost && args[i].startsWith("-D")) {
+			} else if (!hasDump && args[i].startsWith("-D")) {
 				dump = args[i].substring(2);
-				if (host.equals("")) dump = null;
+				if (dump.equals("")) dump = null;
 				hasDump = true;
 			} else if (args[i].equals("--help")) {
 				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user] [-d] [-D [table]]");
@@ -162,7 +162,7 @@ public class JdbcClient {
 				ResultSet tbl = dbmd.getTables(null, null, null, types);
 				// dump all tables that are returned
 				while (tbl.next()) {
-					describe(dbmd, stmt, tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME"), true);
+					describe(con.getMetaData(), stmt, tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME"), true);
 				}
 			}
 			System.out.println("COMMIT;");

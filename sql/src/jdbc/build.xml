@@ -14,6 +14,7 @@
   <property name="builddir" value="build" />
   <property name="package"  value="nl/cwi/monetdb/jdbc" />
 
+  <property file="build.local.properties"/>
   <property file="build.properties"/>
 
 
