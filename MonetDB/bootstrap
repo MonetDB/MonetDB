@@ -9,8 +9,10 @@
 
 if [ -x src/utils/autogen/autogen.py ] ; then
 	AUTOGEN=src/utils/autogen/autogen.py 
+	CONFDIR=conf
  elif [ "$1" != ""  -a  -x "$1" ] ; then
 	AUTOGEN=$1
+	CONFDIR=conf
  else
 	if [ ! "$MONET_PREFIX"  -a  "$MONETDIST" ] ; then
 		MONET_PREFIX=$MONETDIST
@@ -26,6 +28,7 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 		fi
 	fi
 	AUTOGEN=$MONET_PREFIX/lib/autogen/autogen.py
+	CONFDIR='$MONET_PREFIX/bin/monet-config --pkgdatadir'/conf
 fi
 
 find . -name .cache\* \-exec rm {} \;
@@ -111,7 +114,7 @@ test -f conf/ltconfig && perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&
 #EOF
 #)
 
-aclocal -I . -I conf
+aclocal -I . -I $CONFDIR
 
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
