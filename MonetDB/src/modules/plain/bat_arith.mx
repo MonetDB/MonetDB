@@ -79,7 +79,7 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 @* Implementation
 @c
 #include <gdk.h>
-#include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "bat_arith.proto.h"
 
 @c
@@ -369,4 +369,3 @@ int batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v) {
 @:implementations(dbl,-,sub)@
 @:implementations(dbl,*,mul)@
 @:implementations(dbl,/,div)@
-

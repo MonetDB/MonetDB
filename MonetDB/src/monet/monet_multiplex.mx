@@ -74,23 +74,21 @@ executes CMD(argv[]) and inserts the outcome into the result BAT.
 @+ Exported Functions
 @- {Y}() set aggregate implementation 
 @h
-int interpret_setaggr
-	(str s, int argc, ValPtr argv, ValPtr res, YYSTREE lt, int stk);
+int interpret_setaggr(str s, int argc, ValPtr argv, ValPtr res, YYSTREE lt, int stk);
 
 @- [X]() implementation 
 @h
-int interpret_multiplex
-	(str s, int argc, ValPtr argv, ValPtr res, YYSTREE t, Cntxt stk);
+int interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res, YYSTREE t, Cntxt stk);
 
 @- [X?Y:Z]() implementation functions
 @h
-m_export int interpret_ifthen    (str *r, bit *b, str t);
-m_export int interpret_ifelse    (str *r, bit *b, str f);
+m_export int interpret_ifthen(str *r, bit *b, str t);
+m_export int interpret_ifelse(str *r, bit *b, str f);
 m_export int interpret_ifthenelse(str *r, bit *b, str t, str f);
 
-m_export int CMDifthen           (int argc, ValPtr argv);
-m_export int CMDifelse           (int argc, ValPtr argv);
-m_export int CMDifthenelse       (int argc, ValPtr argv);
+m_export int CMDifthen(int argc, ValPtr argv);
+m_export int CMDifelse(int argc, ValPtr argv);
+m_export int CMDifthenelse(int argc, ValPtr argv);
 
 #endif /* _MONET_SETOP_H_ */
 
@@ -105,59 +103,72 @@ all errors in a summary.
 #define EXEC_ERROR_WHERE 80
 
 typedef struct {
-	char buf[GDKMAXERRLEN];		/* buffer where GDKerror functions log into */
-        char where[EXEC_ERROR_WHERE];   /* tuples where errors happened */
-        char first[GDKMAXERRLEN];	/* first error */
-	char *bak;			/* backup of GDKerrbuf */
-	int cnt;			/* number of errors that have occurred sofar */
+	char buf[GDKMAXERRLEN];	/* buffer where GDKerror functions log into */
+	char where[EXEC_ERROR_WHERE];	/* tuples where errors happened */
+	char first[GDKMAXERRLEN];	/* first error */
+	char *bak;		/* backup of GDKerrbuf */
+	int cnt;		/* number of errors that have occurred sofar */
 } bulkerror_t;
 
-void bulkerror_init(bulkerror_t *bulkerror) {
+void
+bulkerror_init(bulkerror_t *bulkerror)
+{
 	bulkerror->bak = GDKerrbuf;
 	bulkerror->cnt = 0;
 	GDKsetbuf(bulkerror->buf);
 }
 
-void bulkerror_handle(bulkerror_t *bulkerror, str msg) {
+void
+bulkerror_handle(bulkerror_t *bulkerror, str msg)
+{
 	if (bulkerror->cnt++ == 0) {
 		strcpy(bulkerror->first, bulkerror->buf);
-		strncpy(bulkerror->where, msg, EXEC_ERROR_WHERE-1);
+		strncpy(bulkerror->where, msg, EXEC_ERROR_WHERE - 1);
 	} else if (strlen(bulkerror->where) + strlen(msg) + 2 < EXEC_ERROR_WHERE) {
 		strcat(bulkerror->where, ", ");
 		strcat(bulkerror->where, msg);
 	}
-	bulkerror->buf[0] = 0; 
+	bulkerror->buf[0] = 0;
 }
 
-void bulkerror_format(bulkerror_t *bulkerror, int tpe, ptr val) {
+void
+bulkerror_format(bulkerror_t *bulkerror, int tpe, ptr val)
+{
 	char *buf = NULL;
+
 	ATOMformat(tpe, val, &buf);
 	bulkerror_handle(bulkerror, buf);
-	GDKfree(buf); 
+	GDKfree(buf);
 }
 
-void bulkerror_finish(bulkerror_t *bulkerror, str fcn_nme) { 
+void
+bulkerror_finish(bulkerror_t *bulkerror, str fcn_nme)
+{
 	GDKsetbuf(bulkerror->bak);
 	if (bulkerror->cnt > 0) {
-		GDKerror("%s: %d times inserted nil due to errors at tuples %s.\n",
-			fcn_nme, bulkerror->cnt, bulkerror->where);
+		GDKerror("%s: %d times inserted nil due to errors at tuples %s.\n", fcn_nme, bulkerror->cnt, bulkerror->where);
 		GDKerror("%s: first error was:\n%s", fcn_nme, bulkerror->first);
-	}	
+	}
 }
 
-static int BATunfix(ptr i){
-	if (i && *(bat*)i)
-		(void)BBPunfix(*(bat*)i);
+static int
+BATunfix(ptr i)
+{
+	if (i && *(bat *) i)
+		(void) BBPunfix(*(bat *) i);
 	return 0;
 }
 
 /* call an interpret tree, and return <0 only on error */
-int interpret_interpret(Cntxt stk, YYSTREE tt, ValPtr argv) {
+int
+interpret_interpret(Cntxt stk, YYSTREE tt, ValPtr argv)
+{
 	int ret_val = interpret(stk, tt, argv);
+
 	if (ret_val == -TOK_RETURN) {
-		return 0; /* this is what we expect normally */
+		return 0;	/* this is what we expect normally */
 	}
-	VALempty(argv); /* no return value! */
+	VALempty(argv);		/* no return value! */
 	return ret_val;
 }
 
@@ -176,16 +187,14 @@ int interpret_interpret(Cntxt stk, YYSTREE tt, ValPtr argv) {
 @c
 #define REALLY_REALLY_BIG	2000000000
 
-static int interpret_multiplex_fcn(
-	str s, int argc, ValPtr argv, ValPtr res, int assignop,
-	int stk, size_t size, int tpe, int ret, GDKfcn imp);
+static int interpret_multiplex_fcn(str s, int argc, ValPtr argv, ValPtr res, int assignop, int stk, size_t size, int tpe, int ret, GDKfcn imp);
 
-int interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res, 
-			YYSTREE t, Cntxt stk) 
+int
+interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res, YYSTREE t, Cntxt stk)
 {
- 	monet_sig_t *sig = (monet_sig_t*) t->yyval.val.pval;
+	monet_sig_t *sig = (monet_sig_t *) t->yyval.val.pval;
 	int i, tpe = 0, nbats = 0;
-	BAT *all_synced=NULL;
+	BAT *all_synced = NULL;
 	int one_unique = FALSE;
 	int all_unique = TRUE;
 	int all_sorted = TRUE;
@@ -205,41 +214,41 @@ to discover if all the input BAT parameters are sorted or in sync. This
 may enable the use optimizations. Constants passed into the multiplex 
 operator are a special case.
 @c
-	for(i=1; i < argc; i++) {
-	    if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
-		BAT *b = BBPdescriptor(argv[i].val.bval);
-		size_t sz = BATcount(b);
+	for (i = 1; i < argc; i++) {
+		if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
+			BAT *b = BBPdescriptor(argv[i].val.bval);
+			size_t sz = BATcount(b);
 
-		if (min_size == REALLY_REALLY_BIG) {
-		    all_synced = b; 
-		    tpe = BAThtype(b);
-		    if (sig->assignop && b->batRestricted) {
-                        GDKerror("interpret_multiplex: %s: param 1 must be writeable.\n", name);
-                        return -2;
-                    }
-		}
-		if (sz > max_size) {
-			max_size = sz;
-		}
-		if (sz < min_size) {
-			min_size = sz;
-		}
-		if (b->hkey) {
-		    one_unique = TRUE;
+			if (min_size == REALLY_REALLY_BIG) {
+				all_synced = b;
+				tpe = BAThtype(b);
+				if (sig->assignop && b->batRestricted) {
+					GDKerror("interpret_multiplex: %s: param 1 must be writeable.\n", name);
+					return -2;
+				}
+			}
+			if (sz > max_size) {
+				max_size = sz;
+			}
+			if (sz < min_size) {
+				min_size = sz;
+			}
+			if (b->hkey) {
+				one_unique = TRUE;
+			} else {
+				all_unique = FALSE;
+			}
+			if ((b->hsorted & 1) == 0 || b->htype == TYPE_void) {
+				all_sorted = FALSE;
+			}
+			if (all_synced && !ALIGNsynced(all_synced, b)) {
+				all_synced = FALSE;
+			}
+			nbats++;
 		} else {
-		    all_unique = FALSE;
+			/* no merge optimization for constants */
+			all_sorted = FALSE;
 		}
-		if ((b->hsorted&1) == 0 || b->htype == TYPE_void) { 
-		    all_sorted = FALSE;
-		}
-		if (all_synced && !ALIGNsynced(all_synced, b)) { 
-		    all_synced = FALSE;
-		}
-	    	nbats++;
-	    } else {
-		/* no merge optimization for constants */
-		all_sorted = FALSE; 
-	    }
 	}
 @- 
 Multiplex functions have multi-equijoin semantics for the matching of 
@@ -262,49 +271,32 @@ with the more sophisticated matching of the multijoin implementation.
 That implementation has more overhead, but presumably wins that back
 by doing binary search on the 10M table.
 @c
-	if (all_sorted && min_size*100 < max_size) {
+	if (all_sorted && min_size * 100 < max_size) {
 		all_sorted = FALSE;
 	}
 
 @- execution
 @c
-	if ((GDKfcn) sig->pack_fcn == sig->fast_fcn) { /* TOK_PROC */
- 		return interpret_multiplex_fcn(
-					name, argc, argv, res,
-					sig->assignop, stk, min_size,
-					tpe, sig->ret_tpe, (GDKfcn) t);
+	if ((GDKfcn) sig->pack_fcn == sig->fast_fcn) {	/* TOK_PROC */
+		return interpret_multiplex_fcn(name, argc, argv, res, sig->assignop, stk, min_size, tpe, sig->ret_tpe, (GDKfcn) t);
 	} else if (sig->special) {
 		if (sig->array_opt && all_synced) {
-			return interpret_special_array(
-					name, argc, argv, res, 
-					sig->fast_fcn, min_size, sig->ret_tpe,
-					sig->assignop, sig->special);
+			return interpret_special_array(name, argc, argv, res, sig->fast_fcn, min_size, sig->ret_tpe, sig->assignop, sig->special);
 		}
 		if (sig->merge_opt && all_sorted) {
-			return interpret_special_merge(
-					name, argc, argv, res,
-					sig->fast_fcn, min_size, sig->ret_tpe,
-					sig->assignop, sig->special);
+			return interpret_special_merge(name, argc, argv, res, sig->fast_fcn, min_size, sig->ret_tpe, sig->assignop, sig->special);
 		}
 	} else if (sig->fast_fcn != NULL) {
 		if (sig->array_opt && all_synced) {
-			return interpret_multiplex_array(
-					name, argc, argv, res,
-					sig->fast_fcn, min_size, sig->ret_tpe,
-					sig->assignop, FALSE);
-		} 
-		if (sig->merge_opt && all_sorted) {
-			return interpret_multiplex_merge(
-					name, argc, argv, res,
-					sig->fast_fcn, min_size, sig->ret_tpe,
-					sig->assignop, FALSE);
+			return interpret_multiplex_array(name, argc, argv, res, sig->fast_fcn, min_size, sig->ret_tpe, sig->assignop, FALSE);
 		}
-	}{
+		if (sig->merge_opt && all_sorted) {
+			return interpret_multiplex_merge(name, argc, argv, res, sig->fast_fcn, min_size, sig->ret_tpe, sig->assignop, FALSE);
+		}
+	}
+	{
 		/* fall-through => 'durchfall' implementation */
-		return interpret_multiplex_fcn(
-					name, argc, argv, res,
-					sig->assignop, -1, min_size,
-					tpe, sig->ret_tpe, sig->pack_fcn); 
+		return interpret_multiplex_fcn(name, argc, argv, res, sig->assignop, -1, min_size, tpe, sig->ret_tpe, sig->pack_fcn);
 	}
 }
 
@@ -321,17 +313,17 @@ typedef struct {
 	GDKfcn fcn;		/* function to be called */
 	int stk;		/* client stack */
 	int argc;		/* number of arguments to call */
-	ValPtr argv; /* [MAXPARAMS] space for matching tail values */
-	ValPtr c[MAXPARAMS]; 	/* pointer to the elements in argv */
-	ColFcn f[MAXPARAMS]; 	/* pointer to value functions */
-	int (*unfix)(ptr);	/* unfix function for produced atoms */ 
+	ValPtr argv;		/* [MAXPARAMS] space for matching tail values */
+	ValPtr c[MAXPARAMS];	/* pointer to the elements in argv */
+	ColFcn f[MAXPARAMS];	/* pointer to value functions */
+	int (*unfix) (ptr);	/* unfix function for produced atoms */
 	int need_unfix;		/* indicates if an unfix function is needed */
 	ValRecord id;		/* current head value */
 	size_t cap;		/* capacity of the result */
 	BAT *b;			/* result bat */
 	BAT *piv[MAXPARAMS];	/* bats to be joined */
 	int nbats;		/* actual number of involved bats */
-        int notall;		/* ifthen or ifelse do not yield all values */
+	int notall;		/* ifthen or ifelse do not yield all values */
 	str name;		/* operator name */
 	bulkerror_t bulkerror;	/* bulk error structure */
 } exec_t;
@@ -347,26 +339,36 @@ static void multiplex_copy_@1(ValPtr val, @1* v) {
 @:multiplex_copy(int,ival)@
 @:multiplex_copy(lng,lval)@
 
-static void multiplex_copy_var(ValPtr val, ptr v){
+static void
+multiplex_copy_var(ValPtr val, ptr v)
+{
 	val->val.pval = v;
 	val->len = ATOMlen(val->vtype, v);
 }
 
-static void multiplex_copy_loc(ValPtr val, ptr v){
+static void
+multiplex_copy_loc(ValPtr val, ptr v)
+{
 	val->val.pval = v;
 }
 
-static ColFcn multiplex_fcn(int tpe){
-	switch(ATOMstorage(tpe)) {
-	case TYPE_chr: return (ColFcn) multiplex_copy_chr;
-	case TYPE_sht: return (ColFcn) multiplex_copy_sht;
-	case TYPE_void: 
-	case TYPE_int: 
-	case TYPE_flt: return (ColFcn) multiplex_copy_int;
-	case TYPE_lng: 
-	case TYPE_dbl: return (ColFcn) multiplex_copy_lng;
+static ColFcn
+multiplex_fcn(int tpe)
+{
+	switch (ATOMstorage(tpe)) {
+	case TYPE_chr:
+		return (ColFcn) multiplex_copy_chr;
+	case TYPE_sht:
+		return (ColFcn) multiplex_copy_sht;
+	case TYPE_void:
+	case TYPE_int:
+	case TYPE_flt:
+		return (ColFcn) multiplex_copy_int;
+	case TYPE_lng:
+	case TYPE_dbl:
+		return (ColFcn) multiplex_copy_lng;
 	}
-	return (ColFcn) (ATOMextern(tpe)?multiplex_copy_var:multiplex_copy_loc);
+	return (ColFcn) (ATOMextern(tpe) ? multiplex_copy_var : multiplex_copy_loc);
 }
 
 #if 0
@@ -377,35 +379,38 @@ static ColFcn multiplex_fcn(int tpe){
 @:multiplex_exec(fcn,extern,intern)@
 @:multiplex_exec(fcn,intern,extern)@
 @:multiplex_exec(fcn,extern,extern)@
+
 @:multiplex_exec(fcn,intern,tpechk)@
 @:multiplex_exec(fcn,extern,tpechk)@
+
 @:multiplex_exec_bat(proc,intern,tpechk)@
 @:multiplex_exec_bat(proc,extern,tpechk)@
+
 @:multiplex_exec_bat(fcn,intern,intern)@
 @:multiplex_exec_bat(fcn,extern,intern)@
 @:multiplex_exec_bat(fcn,intern,extern)@
 @:multiplex_exec_bat(fcn,extern,extern)@
+
 @:multiplex_exec_bat(fcn,intern,tpechk)@
 @:multiplex_exec_bat(fcn,extern,tpechk)@
 
-static 
-int interpret_multiplex_fcn(
-	str s,         /* operator name */
-	int argc,      /* #nparams */
-	ValPtr argv,   /* parameter */
-	ValPtr res,    /* result value (to store bat) */
-	int assignop,  /* project away result head */
-	int stk,       /* -1 if no proc */
-	size_t size,	/* expected result size */
-	int tpe,       /* head column type */
-	int ret,       /* return type; <=0 if unknown */
-	GDKfcn imp     /* command pack address or proc YYSTREE */
-){
+static
+int interpret_multiplex_fcn(str s,	/* operator name */
+			    int argc,	/* #nparams */
+			    ValPtr argv,	/* parameter */
+			    ValPtr res,	/* result value (to store bat) */
+			    int assignop,	/* project away result head */
+			    int stk,	/* -1 if no proc */
+			    size_t size,	/* expected result size */
+			    int tpe,	/* head column type */
+			    int ret,	/* return type; <=0 if unknown */
+			    GDKfcn imp	/* command pack address or proc YYSTREE */
+    ) {
 	int recursive_bats = 0;
 	int r, i, proc = (stk >= 0), real_type = 0;
 	int special = (imp == CMDifthen || imp == CMDifelse || imp == CMDifthenelse);
-	BAT *assignbat=assignop?BBPdescriptor(argv[1].val.bval):NULL;
-	ValPtr bak = (ValPtr) alloca(argc*(int)sizeof(ValRecord));
+	BAT *assignbat = assignop ? BBPdescriptor(argv[1].val.bval) : NULL;
+	ValPtr bak = (ValPtr) alloca(argc * (int) sizeof(ValRecord));
 	exec_t desc;
 	RowFcn wrap;
 
@@ -415,72 +420,59 @@ int interpret_multiplex_fcn(
 	desc.argc = argc;
 	desc.argv = argv;
 	desc.stk = stk;
-	desc.notall = special; 
+	desc.notall = special;
 	desc.cap = size;
 	desc.nbats = 0;
 
-	for(i=1; i<argc; i++) {
-	    bak[i] = argv[i];
-	    if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
-	        BAT *b = BBPdescriptor(argv[i].val.bval); 
-		if (b == NULL) return 0;
-		real_type = b->htype;
-		desc.piv[desc.nbats] = b;	
-		desc.c[++desc.nbats] = desc.argv + i;
-	    } else if (argv[i].vtype == TYPE_bat){
-		argv[i].len = 0; /* no idea but != int_nil */
-	    }
+	for (i = 1; i < argc; i++) {
+		bak[i] = argv[i];
+		if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
+			BAT *b = BBPdescriptor(argv[i].val.bval);
+
+			if (b == NULL)
+				return 0;
+			real_type = b->htype;
+			desc.piv[desc.nbats] = b;
+			desc.c[++desc.nbats] = desc.argv + i;
+		} else if (argv[i].vtype == TYPE_bat) {
+			argv[i].len = 0;	/* no idea but != int_nil */
+		}
 	}
 @- 
 Set up type and length info for the values that will come out of BAT params.
 @c
-	for(i=0; i<desc.nbats; i++) {
+	for (i = 0; i < desc.nbats; i++) {
 		recursive_bats |= (desc.piv[i]->ttype == TYPE_bat);
-		desc.f[i+1] = multiplex_fcn(desc.piv[i]->ttype);
-		desc.c[i+1]->vtype = ATOMtype(desc.piv[i]->ttype);
-		desc.c[i+1]->len = ATOMsize(desc.c[i+1]->vtype);
+		desc.f[i + 1] = multiplex_fcn(desc.piv[i]->ttype);
+		desc.c[i + 1]->vtype = ATOMtype(desc.piv[i]->ttype);
+		desc.c[i + 1]->len = ATOMsize(desc.c[i + 1]->vtype);
 	}
 	if (desc.nbats == 1 && real_type == TYPE_void) {
 		desc.id.vtype = real_type;
-        } else {
+	} else {
 		desc.id.vtype = tpe;
-        }
+	}
 	desc.id.len = ATOMsize(tpe);
+
 	desc.f[0] = multiplex_fcn(tpe);
 	desc.c[0] = &desc.id;
-	wrap = (RowFcn) (recursive_bats?
-		  ((proc?(ATOMextern(desc.id.vtype)?
-			multiplex_bat_proc_extern_tpechk:
-			multiplex_bat_proc_intern_tpechk):
-		     (ret > 0)?	
-			(ATOMextern(ret)?
-			    (ATOMextern(desc.id.vtype)?
-				multiplex_bat_fcn_extern_extern:
-				multiplex_bat_fcn_intern_extern):
-			    (ATOMextern(desc.id.vtype)?
-				multiplex_bat_fcn_extern_intern:
-				multiplex_bat_fcn_intern_intern)):
-			(ATOMextern(desc.id.vtype)?
-			    multiplex_bat_fcn_extern_tpechk:
-			    multiplex_bat_fcn_intern_tpechk))):
-		  ((proc?(ATOMextern(desc.id.vtype)?
-			multiplex_bat_proc_extern_tpechk:
-			multiplex_bat_proc_intern_tpechk):
-		     (ret > 0)?	
-			(ATOMextern(ret)?
-			    (ATOMextern(desc.id.vtype)?
-				multiplex_fcn_extern_extern:
-				multiplex_fcn_intern_extern):
-			    (ATOMextern(desc.id.vtype)?
-				multiplex_fcn_extern_intern:
-				multiplex_fcn_intern_intern)):
-			(ATOMextern(desc.id.vtype)?
-			    multiplex_fcn_extern_tpechk:
-			    multiplex_fcn_intern_tpechk))));
+	wrap =
+	    (RowFcn) (recursive_bats
+		      ? ((proc ? (ATOMextern(desc.id.vtype) ? multiplex_bat_proc_extern_tpechk : multiplex_bat_proc_intern_tpechk) : (ret > 0)
+			  ? (ATOMextern(ret) ? (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_extern : multiplex_bat_fcn_intern_extern) : (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_intern : multiplex_bat_fcn_intern_intern))
+			  : (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_tpechk : multiplex_bat_fcn_intern_tpechk))) : ((proc ? (ATOMextern(desc.id.vtype) ? multiplex_bat_proc_extern_tpechk : multiplex_bat_proc_intern_tpechk) : (ret >
+																													      0)
+																  ? (ATOMextern(ret) ? (ATOMextern(desc.id.vtype) ? multiplex_fcn_extern_extern : multiplex_fcn_intern_extern)
+																     : (ATOMextern(desc.id.vtype) ? multiplex_fcn_extern_intern : multiplex_fcn_intern_intern)) : (ATOMextern(desc.id.
+																													      vtype) ?
+																												   multiplex_fcn_extern_tpechk
+																												   :
+																												   multiplex_fcn_intern_tpechk))));
 	desc.need_unfix = (!proc && !desc.notall);
- 	if (ret > 0) {
-		desc.b = BATnew(desc.id.vtype, ret, desc.cap+3); 
-		desc.unfix = (desc.notall)?NULL:BATatoms[ret].atomUnfix;
+	if (ret > 0) {
+		desc.b = BATnew(desc.id.vtype, ret, desc.cap + 3);
+
+		desc.unfix = (desc.notall) ? NULL : BATatoms[ret].atomUnfix;
 		if (desc.need_unfix && ret == TYPE_bat)
 			desc.unfix = BATunfix;
 	}
@@ -489,8 +481,7 @@ Ok, do it! The integer return status tells us about how the matching
 process was conducted.
 @c
 	bulkerror_init(&desc.bulkerror);
-	r = BATmultijoin(desc.nbats, desc.piv, wrap, &desc, desc.f, 
-			 (void**) desc.c, 0);
+	r = BATmultijoin(desc.nbats, desc.piv, wrap, &desc, desc.f, (void **) desc.c, 0);
 	bulkerror_finish(&desc.bulkerror, desc.name);
 @-
 New semantic of multiplexes as required by the SQL frontend:
@@ -518,23 +509,24 @@ Set the correct properties in the result BAT.
 	if (MULTIJOIN_SYNCED(r)) {
 		ALIGNsetH(desc.b, desc.piv[(int) MULTIJOIN_LEAD(r)]);
 	} else {
-		desc.b->hsorted = MULTIJOIN_SORTED(r)?GDK_SORTED:0;
-		if (MULTIJOIN_KEY(r)) BATkey(desc.b, TRUE);
+		desc.b->hsorted = MULTIJOIN_SORTED(r) ? GDK_SORTED : 0;
+		if (MULTIJOIN_KEY(r))
+			BATkey(desc.b, TRUE);
 	}
 	desc.b->tsorted = 0;
 @-
 Do simply an update for [+=]() kind of operations.
 @c
 	if (assignop) {
-	    BATclear(assignbat);
-	    BATins(assignbat, desc.b);
-	    BBPreclaim(desc.b);
-	    res->val.ival = assignbat->batCacheid;
+		BATclear(assignbat);
+		BATins(assignbat, desc.b);
+		BBPreclaim(desc.b);
+		res->val.ival = assignbat->batCacheid;
 	} else {
-	    res->val.ival = desc.b->batCacheid;
+		res->val.ival = desc.b->batCacheid;
 	}
-	for(i=1; i<argc; i++) {
-	    argv[i] = bak[i];
+	for (i = 1; i < argc; i++) {
+		argv[i] = bak[i];
 	}
 	res->vtype = TYPE_bat;
 	res->len = 0;
@@ -628,14 +620,14 @@ bunins_failed:
     if (desc->unfix) (desc->unfix)(@2);
 
 @= insert_intern_intern
-    @:insert_bat(&desc->id.val.ival, &desc->argv[0].val.ival)@
+    @:insert_bat(&desc->id.val.ival,&desc->argv[0].val.ival)@
 @= insert_extern_intern
-    @:insert_bat(desc->id.val.pval, &desc->argv[0].val.ival)@
+    @:insert_bat(desc->id.val.pval,&desc->argv[0].val.ival)@
 @= insert_intern_extern
-    @:insert_bat(&desc->id.val.ival, desc->argv[0].val.pval)@
+    @:insert_bat(&desc->id.val.ival,desc->argv[0].val.pval)@
     GDKfree(desc->argv[0].val.pval);
 @= insert_extern_extern
-    @:insert_bat(desc->id.val.pval, desc->argv[0].val.pval)@
+    @:insert_bat(desc->id.val.pval,desc->argv[0].val.pval)@
     GDKfree(desc->argv[0].val.pval);
 
 @= insert_intern
@@ -1170,28 +1162,35 @@ value in the first vector. These optimized implementations
 also work with variable-sized atoms, and avoid all atom copying,
 even in the fixed size case.
 @c
-int interpret_ifelse(str *retv, bit *b, str p1){
-     if (*b != FALSE) {
-         return GDK_FAIL;
-     }
-     *retv = p1;
-     return GDK_SUCCEED;
+int
+interpret_ifelse(str *retv, bit *b, str p1)
+{
+	if (*b != FALSE) {
+		return GDK_FAIL;
+	}
+	*retv = p1;
+	return GDK_SUCCEED;
 }
 
-int interpret_ifthen(str *retv, bit *b,  str p1){
-     if (*b != TRUE) {
-         return GDK_FAIL;
-     }
-     *retv = p1;
-     return GDK_SUCCEED;
+int
+interpret_ifthen(str *retv, bit *b, str p1)
+{
+	if (*b != TRUE) {
+		return GDK_FAIL;
+	}
+	*retv = p1;
+	return GDK_SUCCEED;
 }
-int interpret_ifthenelse(str *retv, bit *b, str p1, str p2) {
-     if (*b == bit_nil) {
-	 *retv = NULL;
-     } else {
-         *retv = *b?p1:p2;
-     }
-     return GDK_SUCCEED;
+
+int
+interpret_ifthenelse(str *retv, bit *b, str p1, str p2)
+{
+	if (*b == bit_nil) {
+		*retv = NULL;
+	} else {
+		*retv = *b ? p1 : p2;
+	}
+	return GDK_SUCCEED;
 }
 
 @- Non-optimized Special Multiplex Operators
@@ -1200,40 +1199,49 @@ These are used as a backup implementation if optimization using
 some bulk technique is not possible.
 
 @c
-int CMDifelse(int argc, ValPtr argv){
+int
+CMDifelse(int argc, ValPtr argv)
+{
 	int ret = argv[1].val.cval[0];
+
 	(void) argc;
 
 	if (ret == FALSE) {
-	    VALcopy(argv,argv+2);
+		VALcopy(argv, argv + 2);
 	} else {
-	    return -1;
+		return -1;
 	}
 	return 0;
 }
 
-int CMDifthen(int argc, ValPtr argv){
+int
+CMDifthen(int argc, ValPtr argv)
+{
 	int ret = argv[1].val.cval[0];
+
 	(void) argc;
 
 	if (ret == TRUE) {
-	    VALcopy(argv,argv+2);
+		VALcopy(argv, argv + 2);
 	} else {
-	    return -1;
+		return -1;
 	}
 	return 0;
 }
-	
-int CMDifthenelse(int argc, ValPtr argv){
+
+int
+CMDifthenelse(int argc, ValPtr argv)
+{
 	int ret = argv[1].val.cval[0];
+
 	(void) argc;
 
 	if (ret == bit_nil) {
-            VALnil(argv, argv[2].vtype);
+		VALnil(argv, argv[2].vtype);
 	} else if (ret) {
-	    VALcopy(argv,argv+2);
+		VALcopy(argv, argv + 2);
 	} else {
-	    VALcopy(argv,argv+3);
+		VALcopy(argv, argv + 3);
 	}
 	return 0;
 }
@@ -1337,29 +1345,25 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	bunfastins(ret, @1, buf);
 	@:exec_cleanup@
 @c
-int interpret_setaggr(
-	str name, 
-	int argc, 
-	ValPtr argv, 
-	ValPtr res, 
-	YYSTREE tt, 
-	int stk
-){
-	monet_sig_t *sig = (monet_sig_t*) tt->yyval.val.pval;
-	BAT	*b, *nested, *nested_rev, *histo=0, *extent=0, *ret=0;
-	size_t	minpos;
-	int	ret_val = -1, varsize, head_type, hidden_vartype=0;
-	int	prop_key, prop_sorted = 0;
-	GDKfcn	direct_call = NULL, packed_call = NULL;
-        BATstore *nested_bak=NULL;
-	Heap    *hheap_bak = NULL;
+int
+interpret_setaggr(str name, int argc, ValPtr argv, ValPtr res, YYSTREE tt, int stk)
+{
+	monet_sig_t *sig = (monet_sig_t *) tt->yyval.val.pval;
+	BAT *b, *nested, *nested_rev, *histo = 0, *extent = 0, *ret = 0;
+	size_t minpos;
+	int ret_val = -1, varsize, head_type, hidden_vartype = 0;
+	int prop_key, prop_sorted = 0;
+	GDKfcn direct_call = NULL, packed_call = NULL;
+	BATstore *nested_bak = NULL;
+	Heap *hheap_bak = NULL;
 	ValRecord argv_bak;
-	BUN	p, q, r, s;
-	int	xx, yy;
-	size_t	zz;
-	hash_t	hh;
-	str	buf = NULL;
+	BUN p, q, r, s;
+	int xx, yy;
+	size_t zz;
+	hash_t hh;
+	str buf = NULL;
 	bulkerror_t bulkerror;
+
 	(void) name;
 
 @- argument check
@@ -1375,24 +1379,23 @@ head values only (no empty sets possible).
 	if ((argc == 3) && !(extent = BBPdescriptor(argv[2].val.bval))) {
 		return -1;
 	}
-	minpos = BUNindex(b, (p=BUNfirst(b)));
+	minpos = BUNindex(b, (p = BUNfirst(b)));
 
- 	/* try to establish whether we can use the non-packed direct implementation */
-	if ((GDKfcn) sig->pack_fcn != sig->fast_fcn) { /* {Y} with Y is not TOK_PROC */
-	    if (sig->fast_fcn && 
-                /* fast path call available */
-	        ATOMstorage(b->htype) <= TYPE_flt && 
-                ATOMsize(b->htype) <= (int) sizeof(int) && 
-		/* small int head matching */
-		BATatoms[sig->ret_tpe].atomUnfix == NULL && 
-		/* no unfix work */
-		!ATOMvarsized(sig->ret_tpe))
-		/* no garbage collection needed */
-	    {
-		direct_call = sig->fast_fcn; /* ok, do the optimized calling */
-	    } else {
-		packed_call = sig->pack_fcn; /* nope, use standard method */
-	    }
+	/* try to establish whether we can use the non-packed direct implementation */
+	if ((GDKfcn) sig->pack_fcn != sig->fast_fcn) {	/* {Y} with Y is not TOK_PROC */
+		if (sig->fast_fcn &&
+		    /* fast path call available */
+		    ATOMstorage(b->htype) <= TYPE_flt && ATOMsize(b->htype) <= (int) sizeof(int) &&
+		    /* small int head matching */
+		    BATatoms[sig->ret_tpe].atomUnfix == NULL &&
+		    /* no unfix work */
+		    !ATOMvarsized(sig->ret_tpe))
+			/* no garbage collection needed */
+		{
+			direct_call = sig->fast_fcn;	/* ok, do the optimized calling */
+		} else {
+			packed_call = sig->pack_fcn;	/* nope, use standard method */
+		}
 	}
 
 @- tricks with the nested bat
@@ -1408,52 +1411,52 @@ BAT is passed to the Y function, the theap of nested points to 'b', and voila,
 there are the {strings, polygons, images, etc}!
 @c
 	if (!extent) {
-	    BAT *v = VIEWhead(b); /* just copy the heads */ 
-	    extent = histo = (BAT*) BATukunique(v);
-	    BBPreclaim(v);
+		BAT *v = VIEWhead(b);	/* just copy the heads */
+
+		extent = histo = (BAT *) BATukunique(v);
+		BBPreclaim(v);
 	}
-	if ((BAThordered(b)&1) == 0 && ATOMvarsized(b->ttype)) {
-	    hidden_vartype = b->ttype; /* just copy offsets */
+	if ((BAThordered(b) & 1) == 0 && ATOMvarsized(b->ttype)) {
+		hidden_vartype = b->ttype;	/* just copy offsets */
 	}
-        nested = BATnew(hidden_vartype?TYPE_var:BATttype(b),
-                       TYPE_void, (BATcount(b)*3)/(BATcount(extent)+1));
-        nested_rev = BATmirror(nested);
-        nested->batRestricted = BAT_READ;
+	nested = BATnew(hidden_vartype ? TYPE_var : BATttype(b), TYPE_void, (BATcount(b) * 3) / (BATcount(extent) + 1));
+	nested_rev = BATmirror(nested);
+	nested->batRestricted = BAT_READ;
 	prop_key = (b->batSet || b->tkey);
 
-        /* TRICK: on varsized types we reuse the heaps from 'b' in 'nested' */
-        if (hidden_vartype) {
-            nested_rev->ttype = nested->htype = hidden_vartype;
-            nested_rev->tvarsized = nested->hvarsized = TRUE;
-            strcpy(nested->hatom, ATOMname(hidden_vartype));
-            hheap_bak = (Heap*) alloca(sizeof(Heap));
-	    *hheap_bak = nested->hheap;
-            nested->hheap = b->theap;
-        }
-
-        /* TRICK: for sorted aggregation, we let 'nested' point into 'b' */
-        if (BAThordered(b)&1) {
-            nested_bak = (BATstore*) alloca(sizeof(BATstore));
-            *nested_bak = *(BATstore*) nested;
-            nested->hsorted = nested->tsorted = BATtordered(b);
-            nested->dims = BATmirror(b)->dims;
-            nested_rev->dims = b->dims;
-            *nested->batBuns = *b->batBuns;
-            nested_rev->batHole = nested->batHole = b->batHole;
-            nested_rev->T = nested->H;
-            *nested->H = *b->T;
-            nested->halign = nested->hacctype = 0;
-	    prop_sorted = BATtordered(b)&1;
-        } else {
-	    nested->hsorted = nested->tsorted = 0;
+	/* TRICK: on varsized types we reuse the heaps from 'b' in 'nested' */
+	if (hidden_vartype) {
+		nested_rev->ttype = nested->htype = hidden_vartype;
+		nested_rev->tvarsized = nested->hvarsized = TRUE;
+		strcpy(nested->hatom, ATOMname(hidden_vartype));
+		hheap_bak = (Heap *) alloca(sizeof(Heap));
+		*hheap_bak = nested->hheap;
+		nested->hheap = b->theap;
 	}
 
-        /* TRICK: let the tail column of 'nested' point to the head column */
-        nested_rev->hloc = nested->tloc = nested->hloc;
-        nested_rev->H = nested->T = nested->H;
-        nested_rev->htype = nested->ttype = nested->htype;
-        nested_rev->hvarsized = nested->tvarsized = nested->hvarsized;
-        nested_rev->hseqbase = nested->tseqbase = nested->hseqbase;
+	/* TRICK: for sorted aggregation, we let 'nested' point into 'b' */
+	if (BAThordered(b) & 1) {
+		nested_bak = (BATstore *) alloca(sizeof(BATstore));
+		*nested_bak = *(BATstore *) nested;
+		nested->hsorted = nested->tsorted = BATtordered(b);
+		nested->dims = BATmirror(b)->dims;
+		nested_rev->dims = b->dims;
+		*nested->batBuns = *b->batBuns;
+		nested_rev->batHole = nested->batHole = b->batHole;
+		nested_rev->T = nested->H;
+		*nested->H = *b->T;
+		nested->halign = nested->hacctype = 0;
+		prop_sorted = BATtordered(b) & 1;
+	} else {
+		nested->hsorted = nested->tsorted = 0;
+	}
+
+	/* TRICK: let the tail column of 'nested' point to the head column */
+	nested_rev->hloc = nested->tloc = nested->hloc;
+	nested_rev->H = nested->T = nested->H;
+	nested_rev->htype = nested->ttype = nested->htype;
+	nested_rev->hvarsized = nested->tvarsized = nested->hvarsized;
+	nested_rev->hseqbase = nested->tseqbase = nested->hseqbase;
 
 @- non-tricky? initializations
 @c
@@ -1464,12 +1467,13 @@ there are the {strings, polygons, images, etc}!
 	argv[1].len = 0;
 
 	/* create the result BAT */
-	ret = BATnew(BAThtype(b),sig->ret_tpe,BATcount(extent));
+	ret = BATnew(BAThtype(b), sig->ret_tpe, BATcount(extent));
 
 	/* find out things about the head type and the result type */
-	head_type = BAThvoid(b)?TYPE_void:ATOMstorage(ATOMtype(b->htype));
+	head_type = BAThvoid(b) ? TYPE_void : ATOMstorage(ATOMtype(b->htype));
 	varsize = ATOMvarsized(sig->ret_tpe);
-	if (!varsize) buf = (char*) GDKmalloc(ATOMsize(sig->ret_tpe)); 
+	if (!varsize)
+		buf = (char *) GDKmalloc(ATOMsize(sig->ret_tpe));
 
 	bulkerror_init(&bulkerror);
 
@@ -1480,39 +1484,41 @@ the below is a merge-semijoin of 'extent' and 'b'. For each element in 'extent'
 let 'nested' point (by manipulating its BUNheap pointers) to the matching 
 range in 'b' (possibly empty). We then call the execution function on 'nested'.
 @c
-	if (BAThordered(b)&1) {
-	    BAT *m= BATmirror(b);
-	    int (*cmp)(ptr, ptr) = BATatoms[b->htype].atomCmp;
-	    oid minoid = b->hseqbase;
-	    oid maxoid = minoid + BATcount(b);
-	    oid sqb = 0;
-	    BUN pp = NULL;
+	if (BAThordered(b) & 1) {
+		BAT *m = BATmirror(b);
+		int (*cmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
+		oid minoid = b->hseqbase;
+		oid maxoid = minoid + BATcount(b);
+		oid sqb = 0;
+		BUN pp = NULL;
 
-	    if (!(BAThordered(extent)&1)) {
-		BAT *n = BATsort(extent);
-		if (histo) BBPreclaim(histo);
-		extent = histo = n;
-	    }
-	    p  = BUNfirst(b); 
-	    r  = BUNfirst(extent); 
-	    q  = BUNlast(b); 
-	    s  = BUNlast(extent); 
-	    xx = BUNsize(b);
-	    yy = BUNsize(extent);
+		if (!(BAThordered(extent) & 1)) {
+			BAT *n = BATsort(extent);
 
-	    if (direct_call == NULL) {
+			if (histo)
+				BBPreclaim(histo);
+			extent = histo = n;
+		}
+		p = BUNfirst(b);
+		r = BUNfirst(extent);
+		q = BUNlast(b);
+		s = BUNlast(extent);
+		xx = BUNsize(b);
+		yy = BUNsize(extent);
+
+		if (direct_call == NULL) {
 @-
 here we do not have an efficient execution function, so other optimizations
 are quite useless. Maybe we shouldn't even distinuish this case and do
 it with the generic hashimpl anyway.
 @c
-		if (b->ttype == TYPE_void) {
-			pp = p;
-			sqb = nested->hseqbase;
-			@:non_opt_sort((void),nested->hseqbase = nested->tseqbase = sqb + ((p-pp)/xx))@
-		} else {
-			@:non_opt_sort(,)@
-		}
+			if (b->ttype == TYPE_void) {
+				pp = p;
+				sqb = nested->hseqbase;
+				@:non_opt_sort((void),nested->hseqbase=nested->tseqbase=sqb+((p-pp)/xx))@
+			} else {
+				@:non_opt_sort(,)@
+			}
 @= non_opt_sort
 		if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: non-optimized sort @1\n");
 		for(; r<s; r+=yy) { /* loop on extent */
@@ -1533,34 +1539,35 @@ it with the generic hashimpl anyway.
 @-
 optimized cases that use exec_opt and hence optimize_call
 @c
-	    } else {
-		if (head_type == TYPE_int) {
-		    @:getset_int(int)@
-		} else if (head_type == TYPE_sht) { 
-		    @:getset_int(sht)@
-		} else if (head_type == TYPE_chr) {
-		    @:getset_int(chr)@
-		} else { /* (head_type == TYPE_void) */ 
-		    if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: void-optimized sort\n");
-		    for(; r<s; r+=yy) { 
-			oid last = *(oid*) BUNhead(extent,r);
-			if (last >= minoid && last < maxoid) {
-			    zz = minpos + (last-minoid);
-			    q = BUNptr(b, zz); p = q + xx;
-			    /* needed in case b->ttype == TYPE_void; shouldn't harm in other cases */
-	    		    nested->hseqbase = nested->tseqbase = last;
-			} else {
-			    q = p;
+		} else {
+			if (head_type == TYPE_int) {
+				@:getset_int(int)@
+			} else if (head_type == TYPE_sht) {
+				@:getset_int(sht)@
+			} else if (head_type == TYPE_chr) {
+				@:getset_int(chr)@
+			} else {	/* (head_type == TYPE_void) */
+				if (GDKdebug & 131072)
+					THRprintf(GDKout, "setaggr impl: void-optimized sort\n");
+				for (; r < s; r += yy) {
+					oid last = *(oid *) BUNhead(extent, r);
+
+					if (last >= minoid && last < maxoid) {
+						zz = minpos + (last - minoid);
+						q = BUNptr(b, zz);
+						p = q + xx;
+						/* needed in case b->ttype == TYPE_void; shouldn't harm in other cases */
+						nested->hseqbase = nested->tseqbase = last;
+					} else {
+						q = p;
+					}
+					nested->batBuns->base = nested->batDeleted = nested->batHole = q - xx;
+					nested->batInserted = q;
+					nested->batBuns->size = nested->batBuns->free = p - nested->batBuns->base;
+					@:exec_opt(&last)@
+				}
 			}
-	    		nested->batBuns->base = nested->batDeleted = 
-				nested->batHole = q - xx;
-	    		nested->batInserted = q;
-	    		nested->batBuns->size = nested->batBuns->free = 
-				p - nested->batBuns->base;
-			@:exec_opt(&last)@
-		    }
 		}
-	    }
 @= getset_int
 if (b->ttype == TYPE_void) {
 	pp = p;
@@ -1591,55 +1598,60 @@ head values that make up each set. For each set, we materialize
 a temporary BAT 'nested'; in which we insert all tail values.
 @c
 	} else {
-	    oid voiddelta = b->tseqbase - minpos;
-	    int bunsize = BUNsize(nested);
-	    Heap *batbuns = nested->batBuns;
+		oid voiddelta = b->tseqbase - minpos;
+		int bunsize = BUNsize(nested);
+		Heap *batbuns = nested->batBuns;
 
-	    nested->batDeleted = batbuns->base;
-	    nested->batInserted = batbuns->base + bunsize;
+		nested->batDeleted = batbuns->base;
+		nested->batInserted = batbuns->base + bunsize;
 
-	    if (direct_call == NULL) {
-		if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: non-optimized hash\n");
-		BATloopFast(extent, p, q, yy) {
-		    
-		    ptr last = BUNhead(extent, p);
+		if (direct_call == NULL) {
+			if (GDKdebug & 131072)
+				THRprintf(GDKout, "setaggr impl: non-optimized hash\n");
+			BATloopFast(extent, p, q, yy) {
 
-		    /* make nested empty and writeable */
-		    nested->batDeleted = nested->batHole = batbuns->base;
-		    batbuns->free = bunsize;
-		    nested->batInserted = batbuns->base + bunsize;
+				ptr last = BUNhead(extent, p);
 
-	    	    if (BATprepareHash(b)) goto bunins_failed;
-		    HASHloop(b, b->hhash, hh, last) { 
-			r = BUNptr(b, hh);
-			@:bunins_unary(r,hh)@
-		    }
-	            @:exec_interpret(last)@
-		    nested->hsorted = 0;
-		}
-	    } else {
+				/* make nested empty and writeable */
+				nested->batDeleted = nested->batHole = batbuns->base;
+				batbuns->free = bunsize;
+				nested->batInserted = batbuns->base + bunsize;
+
+				if (BATprepareHash(b))
+					goto bunins_failed;
+				HASHloop(b, b->hhash, hh, last) {
+					r = BUNptr(b, hh);
+					@:bunins_unary(r,hh)@
+				}
+				@:exec_interpret(last)@
+				nested->hsorted = 0;
+			}
+		} else {
 
 @- optimized hashed or binary index implementation
 we know that the head is oid (or a small version) here.. 
 @c
-		BUN *idxptr, *idxlast;
+			BUN *idxptr, *idxlast;
 
-	  	if (b->hidx_heap) {
-		    if (!(BAThordered(extent)&1)) {
-			BAT *n = BATsort(extent);
-			if (histo) BBPreclaim(histo);
-			extent = histo = n;
-		    }
-		    idxptr = b->hidx.first;
-		    idxlast = b->hidx.last;
-		    @:getset_ins(idx)@
-		} else if (BATcount(extent) > 6) {
-		    if (BATprepareHash(b)) goto bunins_failed;
-		    @:getset_ins(hash)@
-		} else {
-		    @:getset_ins(loop)@
+			if (b->hidx_heap) {
+				if (!(BAThordered(extent) & 1)) {
+					BAT *n = BATsort(extent);
+
+					if (histo)
+						BBPreclaim(histo);
+					extent = histo = n;
+				}
+				idxptr = b->hidx.first;
+				idxlast = b->hidx.last;
+				@:getset_ins(idx)@
+			} else if (BATcount(extent) > 6) {
+				if (BATprepareHash(b))
+					goto bunins_failed;
+				@:getset_ins(hash)@
+			} else {
+				@:getset_ins(loop)@
+			}
 		}
-	    } 
 	}
 
 @= getset_ins
@@ -1690,21 +1702,21 @@ we know that the head is oid (or a small version) here..
 @+ epilogue
 set result bat properties
 @c
-	ret_val = 0;	
+	ret_val = 0;
 	BATkey(ret, TRUE);
 	ret->tsorted = 0;
-		
+
 	if (histo) {
-		if (b->halign == 0) { 
+		if (b->halign == 0) {
 			b->halign = OIDnew(1);
 		}
 		ret->hsorted = BAThordered(b);
 		ret->halign = NOID_AGGR(b->halign);
 		if (BATcount(ret) == BATcount(b)) {
-			ALIGNsetH(ret,b);
+			ALIGNsetH(ret, b);
 		}
 	} else {
-		ALIGNsetH(ret,extent);
+		ALIGNsetH(ret, extent);
 	}
 @-
 set return value
@@ -1715,7 +1727,7 @@ set return value
 @-
 clean up and exit
 @c
-bunins_failed:
+      bunins_failed:
 	bulkerror_finish(&bulkerror, "interpret_setaggr");
 @-
 New semantic of multiplexes as required by the SQL frontend:
@@ -1726,20 +1738,24 @@ but rather discard the complete result and return an error.
 		ret_val = -1;
 	}
 	nested->ttype = nested_rev->htype = TYPE_void;
-        if (hheap_bak) nested->hheap = *hheap_bak;
-        if (nested_bak) *(BATstore*) nested = *nested_bak;
+	if (hheap_bak)
+		nested->hheap = *hheap_bak;
+	if (nested_bak)
+		*(BATstore *) nested = *nested_bak;
 	if (hidden_vartype) {
 		nested->htype = nested_rev->ttype = TYPE_var;
-	        nested_rev->tvarsized = nested->hvarsized = FALSE; 
+		nested_rev->tvarsized = nested->hvarsized = FALSE;
 #if TYPE_var == TYPE_int
-            	strcpy(nested->hatom, "int");
+		strcpy(nested->hatom, "int");
 #else
-            	strcpy(nested->hatom, "lng");
+		strcpy(nested->hatom, "lng");
 #endif
 		nested->hheap.base = NULL;
 	}
-	if (histo) BBPreclaim(histo);
-	if (!varsize) GDKfree(buf);
+	if (histo)
+		BBPreclaim(histo);
+	if (!varsize)
+		GDKfree(buf);
 	argv[1] = argv_bak;
 	BBPreclaim(nested);
 	if (ret_val < 0) {

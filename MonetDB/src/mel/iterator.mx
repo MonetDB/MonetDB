@@ -24,18 +24,15 @@
 
 #include "command.h"
 
-class Iterator : public Command {
-    public:
-	Iterator( int t, char *n, 
-	      char *fcn, 
-	      List *args = NULL,
-	      char *hlp = NULL ); 
+class Iterator:public Command {
+      public:
+	Iterator(int t, char *n, char *fcn, List * args = NULL, char *hlp = NULL);
 
-	virtual const char* Token() const;
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual const char *Token() const;
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 };
-#endif 
+#endif
 
 @C
 #include <monetdb_config.h>

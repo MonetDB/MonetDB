@@ -28,21 +28,17 @@
 #include "mel.tab.h"
 
 enum cmd_types {
-   	NORMAL,
+	NORMAL,
 	AGGREGATE,
 	MULTIPLEX
 };
 
 
-class Command : public Symbol {
-    public:
-	Command( int t, char *n, 
-	      char *fcn, int type,
-	      Symbol *result = NULL, 
-	      List *args = NULL,
-	      char *hlp = NULL); 
+class Command:public Symbol {
+      public:
+	Command(int t, char *n, char *fcn, int type, Symbol *result = NULL, List * args = NULL, char *hlp = NULL);
 
-	char *fcn() const; 
+	char *fcn() const;
 	Symbol *result() const;
 	List *args() const;
 	char *hlp() const;
@@ -50,20 +46,20 @@ class Command : public Symbol {
 	int varargs() const;
 	int Id() const;
 
-	virtual const char* Token() const;
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
-    	void set_arg_names( const char *base );
+	virtual const char *Token() const;
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
+	void set_arg_names(const char *base);
 
-        char *_fcn;
+	char *_fcn;
 	Symbol *_result;
-        char *_hlp;
+	char *_hlp;
 	int _type;
 	int _id;
-    protected:
-	List *_args;
+      protected:
+	 List * _args;
 };
-#endif 
+#endif
 
 @C
 #include <monetdb_config.h>

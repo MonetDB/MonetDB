@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#define _GNU_SOURCE	/* to get declaration of strsignal on Linux */
+#define _GNU_SOURCE		/* to get declaration of strsignal on Linux */
 
 #ifdef HAVE_CONFIG_H
 #include <monetdb_config.h>
@@ -60,148 +60,151 @@ invocation(FILE *fp, char *prefix, char **argv)
 			fprintf(fp, "\n%s", prefix);
 		}
 	} else {
-	    fprintf(fp, "\n!%s: %s", progname, prefix);
+		fprintf(fp, "\n!%s: %s", progname, prefix);
 	}
-    while(*argv) {
-	if (!quiet || fp == stderr) fprintf(fp, "%s ", *argv);
-	argv++;
-    }
-    if (!quiet || fp == stderr) fprintf(fp, "\n");
+	while (*argv) {
+		if (!quiet || fp == stderr)
+			fprintf(fp, "%s ", *argv);
+		argv++;
+	}
+	if (!quiet || fp == stderr)
+		fprintf(fp, "\n");
 }
 
 static void
 alarm_handler(int sig)
 {
-    (void) sig;
-    exec_timeout = 1;
-    kill(-exec_pid, SIGKILL);
+	(void) sig;
+	exec_timeout = 1;
+	kill(-exec_pid, SIGKILL);
 }
 
 static int
 limit(char **argv)
 {
-    struct sigaction action;
-    int status;
+	struct sigaction action;
+	int status;
 
-    exec_pid = fork();
-    if (exec_pid == 0){
-        pid_t pid = getpid();
+	exec_pid = fork();
+	if (exec_pid == 0) {
+		pid_t pid = getpid();
 
-	/* Make this process the process group leader */
-	setpgid(pid, pid);
+		/* Make this process the process group leader */
+		setpgid(pid, pid);
 
-	action.sa_handler = SIG_DFL;
-	sigemptyset(&action.sa_mask);
-	action.sa_flags = 0;
-	sigaction(SIGXCPU, &action, 0);
-	sigaction(SIGXFSZ, &action, 0);
+		action.sa_handler = SIG_DFL;
+		sigemptyset(&action.sa_mask);
+		action.sa_flags = 0;
+		sigaction(SIGXCPU, &action, 0);
+		sigaction(SIGXFSZ, &action, 0);
 
-	execvp(argv[0], argv);
-	perror("exec");
-	
-	exit(EXIT_FAILURE); /* could not exec binary */
-    } else {
-	if (timeout) {
-	    /* We register the alarm handler in the parent process. If
-             * we would put the alarm in the child process, the child
-             * process could overrule it.  
-	     */
-	    action.sa_handler = alarm_handler;
-	    sigemptyset(&action.sa_mask);
-	    action.sa_flags = 0;
-	    sigaction(SIGALRM, &action, 0);
-	    alarm(timeout);	
-	}
+		execvp(argv[0], argv);
+		perror("exec");
 
-	while(waitpid(exec_pid, &status, 0) != exec_pid)
-	    ;
+		exit(EXIT_FAILURE);	/* could not exec binary */
+	} else {
+		if (timeout) {
+			/* We register the alarm handler in the parent process. If
+			 * we would put the alarm in the child process, the child
+			 * process could overrule it.  
+			 */
+			action.sa_handler = alarm_handler;
+			sigemptyset(&action.sa_mask);
+			action.sa_flags = 0;
+			sigaction(SIGALRM, &action, 0);
+			alarm(timeout);
+		}
 
-	if (WIFEXITED(status)) { /* Terminated normally */
-	    return WEXITSTATUS(status);
-	} else if (WIFSIGNALED(status)) { /* Got a signal */
-	    if (exec_timeout) {
-			if (quiet) {
-				char *cp[1];
-				cp[0] = argv[9];	/* hardwired: the test output file */
-				invocation(stderr, "!Timeout: ", cp);
+		while (waitpid(exec_pid, &status, 0) != exec_pid) ;
+
+		if (WIFEXITED(status)) {	/* Terminated normally */
+			return WEXITSTATUS(status);
+		} else if (WIFSIGNALED(status)) {	/* Got a signal */
+			if (exec_timeout) {
+				if (quiet) {
+					char *cp[1];
+
+					cp[0] = argv[9];	/* hardwired: the test output file */
+					invocation(stderr, "!Timeout: ", cp);
+				} else {
+					invocation(stderr, "Timeout: ", argv);
+				}
+				return 1;
 			} else {
-				invocation(stderr, "Timeout: ", argv);
-			}
-		return 1;
-	    } else {
-	        int wts = WTERMSIG(status);
-		char msg[1024];
+				int wts = WTERMSIG(status);
+				char msg[1024];
+
 #ifdef HAVE_STRSIGNAL
-		snprintf(msg, 1022, "%s (%d): ", strsignal(wts), wts);
+				snprintf(msg, 1022, "%s (%d): ", strsignal(wts), wts);
 #else
 #ifdef HAVE__SYS_SIGLIST
-		snprintf(msg, 1022, "%s (%d): ", _sys_siglist[wts], wts);
+				snprintf(msg, 1022, "%s (%d): ", _sys_siglist[wts], wts);
 #else
-		snprintf(msg, 1022, "signal %d: ", wts);
+				snprintf(msg, 1022, "signal %d: ", wts);
 #endif
 #endif
-		invocation(stderr, msg, argv);
-		return ((wts>0)?wts:1);
-	    }
+				invocation(stderr, msg, argv);
+				return ((wts > 0) ? wts : 1);
+			}
+		}
+
+		abort();
 	}
 
 	abort();
-    }
-
-    abort();
-    return 0;			/* to silence some compilers */
+	return 0;		/* to silence some compilers */
 }
 
 
 static void
 usage(void)
 {
-    fprintf(stderr, "Usage: %s\n"
-	    "\t-timeout <seconds>\n"
-	    "\t-q\n"
-	    "\t<progname> [<arguments>]\n", progname);
-    exit(EXIT_FAILURE);
+	fprintf(stderr, "Usage: %s\n" "\t-timeout <seconds>\n" "\t-q\n" "\t<progname> [<arguments>]\n", progname);
+	exit(EXIT_FAILURE);
 }
 
 static void
 parse_args(int argc, char **argv)
 {
-    progname = argv[0];
-    argv++; argc--;
+	progname = argv[0];
+	argv++;
+	argc--;
 
-    while(argc && argv[0][0] == '-') {
-	if (strcmp(argv[0], "-help") == 0) {
-	    usage();
-	} else if (strcmp(argv[0], "-timeout") == 0) {
-	    argc--; argv++;
-	    if (argc == 0) usage();
-	    timeout = atoi(argv[0]);
-	} else if (strcmp(argv[0], "-q") == 0) {
-		quiet = 1;
-	} else {
-	    usage();
+	while (argc && argv[0][0] == '-') {
+		if (strcmp(argv[0], "-help") == 0) {
+			usage();
+		} else if (strcmp(argv[0], "-timeout") == 0) {
+			argc--;
+			argv++;
+			if (argc == 0)
+				usage();
+			timeout = atoi(argv[0]);
+		} else if (strcmp(argv[0], "-q") == 0) {
+			quiet = 1;
+		} else {
+			usage();
+		}
+
+		argv++;
+		argc--;
 	}
 
-	argv++; argc--;
-    } 
+	if (argc == 0) {
+		usage();
+	}
 
-    if (argc == 0) {
-	usage();
-    }
-
-    exec_argv = argv;
+	exec_argv = argv;
 }
 
 
 int
 main(int argc, char **argv)
 {
-    int x;
+	int x;
 
-    parse_args(argc, argv);
+	parse_args(argc, argv);
 
-    x=limit(exec_argv);
+	x = limit(exec_argv);
 
-    return x;
+	return x;
 }
-

@@ -25,55 +25,52 @@
 #include "ListIterator.h"
 
 class List {
-    public:
+      public:
 
-	List( int size ) {
+	List(int size) {
 		_size = size;
 		_next = 0;
-		_l = new void*[size];
+		_l = new void *[size];
+	} ~List() {
+		delete[]_l;
 	}
 
-	~List( ) {
-		delete [] _l;
-	}
-
-	void insert( void* obj ) {
-   		if (_next >= _size)
-	   		resize();
+	void insert(void *obj) {
+		if (_next >= _size)
+			resize();
 		_l[_next++] = obj;
 	}
 
-	void insert( List * l ){
-		for ( int i = 0; i < l->_next; i++ ){
-			insert( l->_l[i] );
+	void insert(List * l) {
+		for (int i = 0; i < l->_next; i++) {
+			insert(l->_l[i]);
 		}
 	}
 
-	void *operator[](int i){
+	void *operator[] (int i) {
 		return _l[i];
 	}
 
-	int count( ) const{
-   		return _next;
+	int count() const {
+		return _next;
+	} ListIterator *iterator() {
+		return new ListIterator(_l, _next);
 	}
 
-	ListIterator *iterator(){
-		return new ListIterator( _l, _next );
-	}
 
-
-    private:
+      private:
 	void **_l;
 	int _next;
 	int _size;
-    
-	void resize(){
-   		_size *= 2;
-		void ** buf = new void*[_size];
-		for (int i = 0; i < _next; i++){
-	   		buf[i] = _l[i];
+
+	void resize() {
+		_size *= 2;
+		void **buf = new void *[_size];
+
+		for (int i = 0; i < _next; i++) {
+			buf[i] = _l[i];
 		}
-		delete [] _l;
+		delete[]_l;
 		_l = buf;
 	}
 };

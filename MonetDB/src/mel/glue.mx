@@ -32,19 +32,22 @@ the properties are set. It inherits form language so only the code
 generation methods needed have to be re-implemented.
 
 @h
-class glue: public language {
-    public:
-    	glue() { arg_nr = 0; }
-	const char *get_name() const{ return "glue"; }
-	int generate_code( ostream &o, Symbol *rootptr );
-	int generate_table( ostream &o, Symtable *tableptr );
+class glue:public language {
+      public:
+	glue() {
+		arg_nr = 0;
+	} const char *get_name() const {
+		return "glue";
+	} int generate_code(ostream & o, Symbol *rootptr);
+	int generate_table(ostream & o, Symtable * tableptr);
 
-	ostream &gen_module( ostream &o, const Module &m );
-    public:
+	ostream & gen_module(ostream & o, const Module & m);
+
+      public:
 	int arg_nr;
 	Symtable *tableptr;
-    	ostream &gen_command_args(ostream &o, const Command &m, const char* sep="");
-    	ostream &gen_operator_args(ostream &o, const Operator &m, const char* sep="");
+	ostream & gen_command_args(ostream & o, const Command & m, const char *sep = "");
+	ostream & gen_operator_args(ostream & o, const Operator & m, const char *sep = "");
 };
 
 #endif //_GLUE_H_

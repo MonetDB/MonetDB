@@ -196,51 +196,80 @@ later add low level api
 
 #ifndef HAVE_LIBPCL
 
-bat* pcl_init(){ return NULL; }
-void pcl_exit(){ }
+bat *
+pcl_init()
+{
+	return NULL;
+}
 
-int pcl_info(BAT **result){
+void
+pcl_exit()
+{
+}
+
+int
+pcl_info(BAT **result)
+{
 	*result = NULL;
 	return GDK_SUCCEED;
 }
 
-int pcl_start(BAT *event, int *mode){
-	(void) event; (void) mode;
+int
+pcl_start(BAT *event, int *mode)
+{
+	(void) event;
+	(void) mode;
 	return GDK_SUCCEED;
 }
-int pcl_start_rates(BAT *event, int *mode){
-	(void) event; (void) mode;
+
+int
+pcl_start_rates(BAT *event, int *mode)
+{
+	(void) event;
+	(void) mode;
 	return GDK_SUCCEED;
 }
 
-int pcl_stop(BAT **result, BAT *event){ 
+int
+pcl_stop(BAT **result, BAT *event)
+{
 	(void) event;
-	*result = NULL; 
-	return GDK_SUCCEED; 
+	*result = NULL;
+	return GDK_SUCCEED;
 }
 
-int pcl_stop_rates(BAT **result, BAT *event){ 
+int
+pcl_stop_rates(BAT **result, BAT *event)
+{
 	(void) event;
-	*result = NULL; 
-	return GDK_SUCCEED; 
+	*result = NULL;
+	return GDK_SUCCEED;
 }
 
-int pcl_query(BAT **result, BAT *event, int *mode){ 
-	(void) event; (void) mode;
-	*result = NULL; 
-	return GDK_SUCCEED; 
-}
-
-int pcl_try(bit *result, BAT *event, int *mode){ 
-	(void) event; (void) mode;
-	*result = FALSE; 
-	return GDK_SUCCEED; 
-}
-
-int pcl_eventname(str *result, int *event){ 
+int
+pcl_query(BAT **result, BAT *event, int *mode)
+{
 	(void) event;
-	*result = str_nil; 
-	return GDK_SUCCEED; 
+	(void) mode;
+	*result = NULL;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_try(bit *result, BAT *event, int *mode)
+{
+	(void) event;
+	(void) mode;
+	*result = FALSE;
+	return GDK_SUCCEED;
+}
+
+int
+pcl_eventname(str *result, int *event)
+{
+	(void) event;
+	*result = str_nil;
+	return GDK_SUCCEED;
 }
 #else
 
@@ -249,115 +278,130 @@ int pcl_eventname(str *result, int *event){
 
 static PCL_DESCR_TYPE pcl_desc;
 
-bat* pcl_init(){
-	if (PCLinit(&pcl_desc) != PCL_SUCCESS){
+bat *
+pcl_init()
+{
+	if (PCLinit(&pcl_desc) != PCL_SUCCESS) {
 		GDKwarning("couldn't initialize pcl library\n");
 	}
 	return NULL;
 }
 
-void pcl_exit(){
-	if (PCLexit(pcl_desc) != PCL_SUCCESS){
+void
+pcl_exit()
+{
+	if (PCLexit(pcl_desc) != PCL_SUCCESS) {
 		GDKwarning("couldn't free pcl library resources\n");
 	}
 }
 
-int pcl_info(BAT **result){
+int
+pcl_info(BAT **result)
+{
 	int res;
 	char mhz[16], ncounters[16];
 	PCL_PROCESSOR_INFO info;
-	
+
 	res = PCL_driver_info(&info);
-	if (res != PCL_SUCCESS){
+	if (res != PCL_SUCCESS) {
 		GDKwarning("pcl_info failed with %d\n", res);
 		*result = NULL;
 		return GDK_FAIL;
 	}
 	*result = BATnew(TYPE_str, TYPE_str, 5);
-	if( *result == NULL) return GDK_FAIL;
+	if (*result == NULL)
+		return GDK_FAIL;
 	BUNins(*result, "vendor", info.vendor);
 	BUNins(*result, "family", info.family);
 	BUNins(*result, "model", info.model);
-	snprintf(mhz,16,"%d",info.mhz);
+	snprintf(mhz, 16, "%d", info.mhz);
 	BUNins(*result, "mhz", mhz);
-	snprintf(ncounters,16,"%d",info.ncounters);
+	snprintf(ncounters, 16, "%d", info.ncounters);
 	BUNins(*result, "ncounters", ncounters);
 	return GDK_SUCCEED;
 }
 
-int pcl_start(BAT *event, int *mode){
+int
+pcl_start(BAT *event, int *mode)
+{
 	int clist[PCL_MAX_EVENT_PER_CALL];
 	int res, i = 0;
-	BUN p,q;
+	BUN p, q;
 
-	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only use %d events per call\n", 
-			PCL_MAX_EVENT_PER_CALL);
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
-	BATloop(event,p,q){
-		int ev = *(int*)BUNhloc(event,p);
-		if (PCL_EVENT_IS_INT(ev)){
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		if (PCL_EVENT_IS_INT(ev)) {
 			clist[i] = ev;
 			i++;
 		}
 	}
 	res = PCLstart(pcl_desc, clist, i, *mode);
-	if (res != PCL_SUCCESS){
+	if (res != PCL_SUCCESS) {
 		GDKwarning("pcl_start failed with %d\n", res);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
 
-int pcl_start_rates(BAT *event, int *mode){
+int
+pcl_start_rates(BAT *event, int *mode)
+{
 	int clist[PCL_MAX_EVENT_PER_CALL];
 	int res, i = 0;
-	BUN p,q;
+	BUN p, q;
 
-	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only use %d events per call\n", 
-			PCL_MAX_EVENT_PER_CALL);
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
-	BATloop(event,p,q){
-		int ev = *(int*)BUNhloc(event,p);
-		if (!PCL_EVENT_IS_INT(ev)){
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		if (!PCL_EVENT_IS_INT(ev)) {
 			clist[i] = ev;
 			i++;
 		}
 	}
 	res = PCLstart(pcl_desc, clist, i, *mode);
-	if (res != PCL_SUCCESS){
+	if (res != PCL_SUCCESS) {
 		GDKwarning("pcl_start_rates failed with %d\n", res);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
 
-int pcl_stop(BAT **result, BAT *event){
+int
+pcl_stop(BAT **result, BAT *event)
+{
 	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
 	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
 	int res, i = 0;
 	size_t cnt = BATcount(event);
-	BUN p,q;
+	BUN p, q;
 
-	if (cnt > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only use %d events per call\n", 
-			PCL_MAX_EVENT_PER_CALL);
+	if (cnt > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
 	res = PCLstop(pcl_desc, ilist, flist, cnt);
-	if (res != PCL_SUCCESS){
+	if (res != PCL_SUCCESS) {
 		GDKwarning("pcl_stop failed with %d\n", res);
 		return GDK_FAIL;
 	}
 	*result = BATnew(TYPE_int, TYPE_lng, cnt);
-	if( *result == NULL) return GDK_FAIL;
-	BATloop(event,p,q){
-		int ev = *(int*)BUNhloc(event,p);
-		if (PCL_EVENT_IS_INT(ev)){
+	if (*result == NULL)
+		return GDK_FAIL;
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		if (PCL_EVENT_IS_INT(ev)) {
 			lng h = ilist[i];
+
 			BUNins(*result, &ev, &h);
 		}
 		i++;
@@ -365,29 +409,33 @@ int pcl_stop(BAT **result, BAT *event){
 	return GDK_SUCCEED;
 }
 
-int pcl_stop_rates(BAT **result, BAT *event){
+int
+pcl_stop_rates(BAT **result, BAT *event)
+{
 	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
 	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
 	int res, i = 0;
 	size_t cnt = BATcount(event);
-	BUN p,q;
+	BUN p, q;
 
-	if (cnt > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only use %d events per call\n", 
-			PCL_MAX_EVENT_PER_CALL);
+	if (cnt > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
 	res = PCLstop(pcl_desc, ilist, flist, cnt);
-	if (res != PCL_SUCCESS){
+	if (res != PCL_SUCCESS) {
 		GDKwarning("pcl_stop_rates failed with %d\n", res);
 		return GDK_FAIL;
 	}
 	*result = BATnew(TYPE_int, TYPE_dbl, cnt);
-	if( *result == NULL) return GDK_FAIL;
-	BATloop(event,p,q){
-		int ev = *(int*)BUNhloc(event,p);
-		if (!PCL_EVENT_IS_INT(ev)){
+	if (*result == NULL)
+		return GDK_FAIL;
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
+		if (!PCL_EVENT_IS_INT(ev)) {
 			dbl h = flist[i];
+
 			BUNins(*result, &ev, &h);
 		}
 		i++;
@@ -395,16 +443,20 @@ int pcl_stop_rates(BAT **result, BAT *event){
 	return GDK_SUCCEED;
 }
 
-int pcl_query(BAT **result, BAT *event, int *mode){
+int
+pcl_query(BAT **result, BAT *event, int *mode)
+{
 	int res;
 	size_t cnt = BATcount(event);
 	int clist;
-	BUN p,q;
+	BUN p, q;
 
-	*result = BATnew(TYPE_int,TYPE_int,cnt);
-	if( *result == NULL) return GDK_FAIL;
-	BATloop(event,p,q){
-		int ev = *(int*)BUNhloc(event,p);
+	*result = BATnew(TYPE_int, TYPE_int, cnt);
+	if (*result == NULL)
+		return GDK_FAIL;
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
 		clist = ev;
 		res = PCLquery(pcl_desc, &clist, 1, *mode);
 		BUNins(*result, &ev, &res);
@@ -412,38 +464,43 @@ int pcl_query(BAT **result, BAT *event, int *mode){
 	return GDK_SUCCEED;
 }
 
-int pcl_try(bit *result, BAT *event, int *mode){
+int
+pcl_try(bit *result, BAT *event, int *mode)
+{
 	int i = 0, res;
 	int clist[PCL_MAX_EVENT_PER_CALL];
-	BUN p,q;
+	BUN p, q;
 
-	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
-		GDKwarning("Can only use %d events per call\n", 
-			PCL_MAX_EVENT_PER_CALL);
+	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL) {
+		GDKwarning("Can only use %d events per call\n", PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
 	}
-	BATloop(event,p,q){
-		int ev = *(int*)BUNhloc(event,p);
+	BATloop(event, p, q) {
+		int ev = *(int *) BUNhloc(event, p);
+
 		clist[i] = ev;
 		i++;
 	}
 	res = PCLquery(pcl_desc, clist, i, *mode);
 	if (res == PCL_SUCCESS)
-	 	*result = TRUE;
+		*result = TRUE;
 	else
-	 	*result = FALSE;
+		*result = FALSE;
 	return GDK_SUCCEED;
 }
 
-int pcl_eventname(str *result, int *event){ 
-	str res = (str)PCLeventname(*event);
+int
+pcl_eventname(str *result, int *event)
+{
+	str res = (str) PCLeventname(*event);
+
 	if (res == NULL) {
 		*result = str_nil;
 	} else {
 		*result = GDKstrdup(res);
 		/* free(res); */
 	}
-	return GDK_SUCCEED; 
+	return GDK_SUCCEED;
 }
 #endif
 

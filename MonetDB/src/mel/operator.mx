@@ -25,27 +25,23 @@
 #include "command.h"
 #include "list.h"
 
-class Operator : public Command {
-    public:
-	Operator( int t, char *n, char *fcn = NULL, 
-	      Symbol *result = NULL, 
-	      Symbol *op1 = NULL, 
-	      Symbol *op2 = NULL,
-	      char *hlp = NULL );
+class Operator:public Command {
+      public:
+	Operator(int t, char *n, char *fcn = NULL, Symbol *result = NULL, Symbol *op1 = NULL, Symbol *op2 = NULL, char *hlp = NULL);
 
 	Symbol *op1() const;
 	Symbol *op2() const;
 
-	virtual const char* Token() const;
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
-    	void set_op_names();
+	virtual const char *Token() const;
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
+	void set_op_names();
 	int level;
 
 	Symbol *_op1;
 	Symbol *_op2;
 };
-#endif 
+#endif
 
 @C
 #include <monetdb_config.h>

@@ -37,23 +37,30 @@ Access to the transaction table is regulated by a semaphore.
 #include "gdk.h"
 #include "gdk_tm.h"
 
-char			TMname[MAXTM][IDLENGTH] = { SYSTRANSACTION }; 
+char TMname[MAXTM][IDLENGTH] = { SYSTRANSACTION };
 
-int TMnew(str s) {
-	THRprintf(GDKout, "begin transaction %s\n", s); 
-	strcpy(TMname[0], s); 
+int
+TMnew(str s)
+{
+	THRprintf(GDKout, "begin transaction %s\n", s);
+	strcpy(TMname[0], s);
 
-	return 0; 
-}
-
-int TMresume(str s) {
-	strcpy(TMname[0], s); 
 	return 0;
 }
 
-str TMcntxt(void) {
-	return TMname[0]; 
+int
+TMresume(str s)
+{
+	strcpy(TMname[0], s);
+	return 0;
 }
+
+str
+TMcntxt(void)
+{
+	return TMname[0];
+}
+
 @
 @}
 @- 
@@ -76,17 +83,20 @@ commit. The only way to abort in such a situation is COLD-abort: quit the server
 restart, so you get the recovered disk images.
 @{
 @c
-int TMcommit(void) {
+int
+TMcommit(void)
+{
 	int i, ret = 0;
 
 	/* Acquire BBP locks */
 	BBPlock("TMcommit");
 
-        /* commit the delta status of each BAT; we cannot soft-abort after this anymore */
-        for (i = 1; i < BBPsize; i++) { 
+	/* commit the delta status of each BAT; we cannot soft-abort after this anymore */
+	for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i) & BBPPERSISTENT) {
 			BAT *b = BBPcache(i);
-			if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
+
+			if (b == NULL && (BBP_status(i) & BBPSWAPPED)) {
 				b = BBPquickdesc(i, TRUE);
 				if (b == NULL) {
 					ret = 1;
@@ -97,32 +107,34 @@ int TMcommit(void) {
 			}
 		}
 	}
-        /* make sure the stable image of the persistent bATs is committed to disk */
+	/* make sure the stable image of the persistent bATs is committed to disk */
 	if (ret == 0) {
 		ret = BBPsync(TRUE);
 	}
 	/* in case the commit succeeded; delete the disk images of ex-persistent bats */
 	if (ret == 0) {
-        	for (i = 1; i < BBPsize; i++) {
+		for (i = 1; i < BBPsize; i++) {
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BBP_status_on(i, BBPEXISTING, "TMcommit");
-			} else if ((BBP_status(i)&(BBPDELETED|BBPTMP)) && BBP_refs(i) <= 0 && BBP_lrefs(i) <= 0) {
-               		 	BAT *b = BBPquickdesc(i, TRUE);
-                		if (BBP_cache(i)) {
+			} else if ((BBP_status(i) & (BBPDELETED | BBPTMP)) && BBP_refs(i) <= 0 && BBP_lrefs(i) <= 0) {
+				BAT *b = BBPquickdesc(i, TRUE);
+
+				if (BBP_cache(i)) {
 					/* those that quickdesc decides to load => proper unfix */
-                       		 	BBPunfix(i);
-                		} else {
+					BBPunfix(i);
+				} else {
 					/* the unloaded ones are deleted without loading */
-					BATdelete(b); /* delete disk images */
-					BBPclear(i); /* clear with locking */
+					BATdelete(b);	/* delete disk images */
+					BBPclear(i);	/* clear with locking */
 				}
-			} 
-			BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMcommit");
+			}
+			BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW, "TMcommit");
 		}
-        }
+	}
 	BBPunlock("TMcommit");
-	return ret; 
+	return ret;
 }
+
 @- 
 Transaction abort is cheap. We use the delta statuses
 to go back to the previous version of each BAT. Also
@@ -130,13 +142,16 @@ for BATs that are currently swapped out. Persistent BATs
 that were made transient in this transaction become
 persistent again.
 @c
-int TMabort(void) {
-	int i; 
+int
+TMabort(void)
+{
+	int i;
 
 	BBPlock("TMabort");
-	for (i = 1; i < BBPsize; i++) { 
+	for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i) & BBPNEW) {
 			BAT *b = BBPquickdesc(i, FALSE);
+
 			if (b) {
 				if (b->batPersistence == PERSISTENT)
 					BBPdecref(i, TRUE);
@@ -145,14 +160,16 @@ int TMabort(void) {
 			}
 		}
 	}
-	for (i = 1; i < BBPsize; i++) { 
-		if (BBP_status(i) & (BBPPERSISTENT|BBPDELETED|BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i, TRUE); 
-			if (b == NULL) continue;
-	
+	for (i = 1; i < BBPsize; i++) {
+		if (BBP_status(i) & (BBPPERSISTENT | BBPDELETED | BBPSWAPPED)) {
+			BAT *b = BBPquickdesc(i, TRUE);
+
+			if (b == NULL)
+				continue;
+
 			BBPfix(i);
 			if (BATdirty(b) || DELTAdirty(b)) {
- 				/* BUN move-backes need a real BAT! */
+				/* BUN move-backes need a real BAT! */
 				/* Stefan: 
 				 * Actually, in case DELTAdirty(b), i.e., a
 				 * BAT with differences that is
@@ -167,20 +184,21 @@ int TMabort(void) {
 				 * efficient way...
 				 */
 				b = BBPdescriptor(i);
-				BATundo(b); 
+				BATundo(b);
 			}
-			if (BBP_status(i)&BBPDELETED) {
+			if (BBP_status(i) & BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
 				if (b->batPersistence != PERSISTENT)
 					BBPincref(i, TRUE);
 				b->batPersistence = PERSISTENT;
 				b->batDirtydesc = 1;
-			}					
+			}
 			BBPunfix(i);
 		}
-		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMabort");
+		BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW, "TMabort");
 	}
 	BBPunlock("TMabort");
-	return 0; 
+	return 0;
 }
+
 @}

@@ -25,13 +25,13 @@
 #include "symbol.h"
 #include "list.h"
 
-class Ops : public Symbol {
-    public:
-	Ops( int t, char *n, int op ); 
+class Ops:public Symbol {
+      public:
+	Ops(int t, char *n, int op);
 
 	int operation() const;
 
-    private:
+      private:
 	int _op;
 };
 #endif // _OPS_H_

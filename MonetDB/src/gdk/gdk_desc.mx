@@ -44,7 +44,7 @@ introduced to the atom ADT (atomConvert and atomHeapConvert).
 @+ BAT versions
 Three BAT formats are currently supported:
 @h
-#define GDKLIBRARY	980714 /* new 64-bits BAT */
+#define GDKLIBRARY	980714	/* new 64-bits BAT */
 
 #define GDKversionOK(x)	((x)==GDKLIBRARY)
 
@@ -62,12 +62,13 @@ BAT image, to check whether the image is in big endian or little endian format.
 @+ BAT Conversion functions
 These functions save/load a BAT descriptor to/from disk.
 @h
-int  BATsavedesc    (BAT *b, str nme);
-BAT *BATloaddesc    (str nme);
+int BATsavedesc(BAT *b, str nme);
+BAT *BATloaddesc(str nme);
+
 @
 Convert a BAT that contains little-endian data into big endian (or vice versa).
 @h
-gdk_export BAT* BATconvert     (BAT *b, int direction);
+gdk_export BAT *BATconvert(BAT *b, int direction);
 
 
 @- defines
@@ -218,58 +219,63 @@ That is where the DELTA macros are for.
 @+ implementations
 @- BATsavedesc 
 @c
-int BATsavedesc(BAT *b, str nme) {
-	BATstore *bs = (BATstore*) b;
-        int ret = 0;
+int
+BATsavedesc(BAT *b, str nme)
+{
+	BATstore *bs = (BATstore *) b;
+	int ret = 0;
 
 	DELTAsave(b);
 	if (b->GDKversion == GDKLIBRARY) {
 		ret = GDKsave(nme, "desc", (void *) bs, sizeof(BATstore), STORE_MEM);
-        }
+	}
 	/* a saved bat could still be used so reset the delta status */
 	DELTAload(b);
-	return (ret < 0)?ret:0;
+	return (ret < 0) ? ret : 0;
 }
 
 @- BATloaddesc 
 @c
-BAT* BATloaddesc(str nme) {
-        BATstore *src = (BATstore *) GDKload(nme, "desc", sizeof(BATstore),
-					sizeof(BATstore), STORE_MEM);
-        BATstore *dst = src;
-	int ver, conv=FALSE;
+BAT *
+BATloaddesc(str nme)
+{
+	BATstore *src = (BATstore *) GDKload(nme, "desc", sizeof(BATstore),
+					     sizeof(BATstore), STORE_MEM);
+	BATstore *dst = src;
+	int ver, conv = FALSE;
 	BAT *b;
 
 	if (src == NULL) {
-                return NULL;
-        }
+		return NULL;
+	}
 	ver = src->B.GDKversion;
-        if (!GDKversionOK(ver)) {
+	if (!GDKversionOK(ver)) {
 		ver = normal_int_SWAP(ver);
 		conv = TRUE;
-	} 
-        if (!GDKversionOK(ver)) {
+	}
+	if (!GDKversionOK(ver)) {
 		GDKerror("GDKload: incompatible version %d.\n", src->B.GDKversion);
 		GDKfree(src);
-                return NULL;
-        }
+		return NULL;
+	}
 	if (conv) {
 		@:BATstore_ALL(normal_int,dst,normal_int,dst,SWAP,load)@
 	}
-	b = (BAT*) dst;
-        b->H = &dst->H;
-        b->T = &dst->T;
-        b->P = &dst->P;
-        b->U = &dst->U;
-        b->batBuns = &b->U->buns;
+	b = (BAT *) dst;
+	b->H = &dst->H;
+	b->T = &dst->T;
+	b->P = &dst->P;
+	b->U = &dst->U;
+	b->batBuns = &b->U->buns;
 	b->batId = dst->fullid;
 	b->batCopiedtodisk = 1;
-        b->batElmshift = BATelmshift(b);
+	b->batElmshift = BATelmshift(b);
 	b->batConvert = conv;
 	DELTAload(b);
 
-        return b;
+	return b;
 }
+
 @}
 @- big endian vs little endian
 This function uses the byte order conversion ADT functions
@@ -278,51 +284,62 @@ to convert a little endian BAT to big endian (or vice versa).
 @= swap
 { @2 *_p = (@2*) @3, _i=*_p; *_p = @1_SWAP(_i); }
 @c
-static int batswap(BAT* b,int direction){
-	void (*fcn)(ptr, int) = BATatoms[b->htype].atomConvert;
-        BUN p,q; 
+static int
+batswap(BAT *b, int direction)
+{
+	void (*fcn) (ptr, int) = BATatoms[b->htype].atomConvert;
+	BUN p, q;
 	int xx;
- 
-	switch(ATOMstorage(b->htype)) {
+
+	switch (ATOMstorage(b->htype)) {
 	case TYPE_void:
-	case TYPE_chr: 
+	case TYPE_chr:
 		break;
-	case TYPE_sht: 
-		DELloop(b,p,q,xx)     @:swap(short_int,sht,BUNhloc(b,p))@
-		BATloopFast(b,p,q,xx) @:swap(short_int,sht,BUNhloc(b,p))@
+	case TYPE_sht:
+		DELloop(b, p, q, xx) @:swap(short_int,sht,BUNhloc(b,p))@
+		BATloopFast(b, p, q, xx) @:swap(short_int,sht,BUNhloc(b,p))@
+
 		break;
-	case TYPE_int: 
-	case TYPE_flt: 
-		DELloop(b,p,q,xx)     @:swap(normal_int,int,BUNhloc(b,p))@
-		BATloopFast(b,p,q,xx) @:swap(normal_int,int,BUNhloc(b,p))@
+	case TYPE_int:
+	case TYPE_flt:
+		DELloop(b, p, q, xx) @:swap(normal_int,int,BUNhloc(b,p))@
+		BATloopFast(b, p, q, xx) @:swap(normal_int,int,BUNhloc(b,p))@
+
 		break;
-	case TYPE_lng: 
-	case TYPE_dbl: 
-		DELloop(b,p,q,xx)     @:swap(long_long,lng,BUNhloc(b,p))@
-		BATloopFast(b,p,q,xx) @:swap(long_long,lng,BUNhloc(b,p))@
+	case TYPE_lng:
+	case TYPE_dbl:
+		DELloop(b, p, q, xx) @:swap(long_long,lng,BUNhloc(b,p))@
+		BATloopFast(b, p, q, xx) @:swap(long_long,lng,BUNhloc(b,p))@
+
 		break;
-	default:ATOMheapConvert(b->htype,&b->hheap,direction);
-		DELloop(b,p,q,xx) {
+	default:
+		ATOMheapConvert(b->htype, &b->hheap, direction);
+		DELloop(b, p, q, xx) {
 			@:swap(normal_int,int,BUNhloc(b,p))@
-     			if (fcn != NULL)
-				(*fcn)(BUNhead(b,p), direction);
+
+			if (fcn != NULL)
+				(*fcn) (BUNhead(b, p), direction);
 		}
-	        BATloopFast(b,p,q,xx) {
+		BATloopFast(b, p, q, xx) {
 			@:swap(normal_int,int,BUNhloc(b,p))@
-     			if (fcn != NULL)
-				(*fcn)(BUNhead(b,p), direction);
+
+			if (fcn != NULL)
+				(*fcn) (BUNhead(b, p), direction);
 		}
 	}
 	return TRUE;
 }
 
-BAT* BATconvert(BAT* b, int direction){
-	if (batswap(b,direction)) {
-		if (!batswap(BATmirror(b),direction)) {
-			batswap(b,direction==CONV_HTON?CONV_NTOH:CONV_HTON);
+BAT *
+BATconvert(BAT *b, int direction)
+{
+	if (batswap(b, direction)) {
+		if (!batswap(BATmirror(b), direction)) {
+			batswap(b, direction == CONV_HTON ? CONV_NTOH : CONV_HTON);
 		}
 	}
 	b->batDirty = 1;
 	return b;
 }
+
 @}

@@ -25,22 +25,21 @@
 #include "symbol.h"
 #include "list.h"
 
-class Builtin : public Symbol {
-    public:
-	Builtin( int t, char *n, char *fcn = NULL, 
-		char *hlp = NULL, char* sig = NULL );
+class Builtin:public Symbol {
+      public:
+	Builtin(int t, char *n, char *fcn = NULL, char *hlp = NULL, char *sig = NULL);
 
 	char *sig() const;
 	char *fcn() const;
 	char *hlp() const;
 
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
-    	char *_fcn;
-    	char *_hlp;
-    	char *_sig;
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
+	char *_fcn;
+	char *_hlp;
+	char *_sig;
 };
-#endif 
+#endif
 
 @C
 #include <monetdb_config.h>

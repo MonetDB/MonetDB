@@ -140,6 +140,7 @@ PROC test_iterator() : void {
 @h
 #include "monet.h"
 typedef ptr iter;
+
 @c
 #include "iterator.h"
 #include "iterator.proto.h"
@@ -171,7 +172,7 @@ point to the original BATs at the bottom of the tree.
     p += BUNsize(it->result);\
 }
 
- 
+
 @- Data Structure
 @T
 A stream is an object that has a next() method that returns more tuples. We also gave 
@@ -183,32 +184,32 @@ The data part of a stream consists of a BAT that contains the current result tup
 and an operator-specific handle.
 @c
 typedef struct _ITER ITER;
-typedef BAT*   (*BATfcn)(ITER *, BAT *);
-typedef size_t (*NEXTfcn)(ITER *);
-typedef void   (*FREEfcn)(ITER *);
-typedef size_t (*GUESSfcn)(ITER *);
+typedef BAT *(*BATfcn) (ITER *, BAT *);
+typedef size_t(*NEXTfcn) (ITER *);
+typedef void (*FREEfcn) (ITER *);
+typedef size_t(*GUESSfcn) (ITER *);
 
-typedef union {                 
-    ScanHandle scan;
-    JoinHandle join;
-    SelectHandle sel;
+typedef union {
+	ScanHandle scan;
+	JoinHandle join;
+	SelectHandle sel;
 } OperatorHandle;
 
 struct _ITER {
-    str        		name;
-    size_t     		tuples_seen;
-    /* result tuple buffer (BAT slice of max chunksize) */
-    BAT        		*result, *mirror;        
-    BUN        		result_cur;
-    sht	       		result_hloc, result_tloc;
-    sht	       		result_hsize, result_tsize;
-    /* iterator methods */
-    NEXTfcn    		next;     /* stream->next() : number of items read */
-    FREEfcn    		free;     /* stream->free() : deallocate handle */
-    GUESSfcn   		guess;    /* stream->guess() : guess of total stream size */
-    ptr			input;    /* ITER* child */ 
-    /* stream-specific handle */
-    OperatorHandle      hdl;       
+	str name;
+	size_t tuples_seen;
+	/* result tuple buffer (BAT slice of max chunksize) */
+	BAT *result, *mirror;
+	BUN result_cur;
+	sht result_hloc, result_tloc;
+	sht result_hsize, result_tsize;
+	/* iterator methods */
+	NEXTfcn next;		/* stream->next() : number of items read */
+	FREEfcn free;		/* stream->free() : deallocate handle */
+	GUESSfcn guess;		/* stream->guess() : guess of total stream size */
+	ptr input;		/* ITER* child */
+	/* stream-specific handle */
+	OperatorHandle hdl;
 };
 
 @- Iterator Loop Macro
@@ -222,97 +223,115 @@ Compareable with BATloopFast
 
 @- Iterator Interface
 @c
-static 
-ITER *ITERinit(ITER *input, str name, 
-	       NEXTfcn next, FREEfcn free, GUESSfcn guess, 
-	       BAT *b, BAT *h, BAT *t) 
+static
+ITER *
+ITERinit(ITER *input, str name, NEXTfcn next, FREEfcn free, GUESSfcn guess, BAT *b, BAT *h, BAT *t)
 {
-    ITER *it = (ITER*) GDKmalloc(sizeof(ITER));
-    BAT *v = VIEWcreate_(b, TRUE);
-    oid hseq = BAThdense(v)?v->hseqbase-chunksize:oid_nil; 
-    oid tseq = BATtdense(v)?v->tseqbase-chunksize:oid_nil; 
+	ITER *it = (ITER *) GDKmalloc(sizeof(ITER));
+	BAT *v = VIEWcreate_(b, TRUE);
+	oid hseq = BAThdense(v) ? v->hseqbase - chunksize : oid_nil;
+	oid tseq = BATtdense(v) ? v->tseqbase - chunksize : oid_nil;
 
-    it->name = name;
-    it->next = next;
-    it->free = free;
-    it->guess = guess;
-    if (h) {
-	BAT *m = BATmirror(v);
-        if (t == NULL) {
-	    t = BATmirror(h);
- 	}
-	v->H = m->T = b->H;
-	v->T = m->H = b->T;
-    }
-    it->result = v;
-    it->result_hloc = v->hloc;
-    it->result_tloc = v->tloc;
-    it->result_hsize = ATOMsize(v->htype);
-    it->result_tsize = ATOMsize(v->ttype);
-    it->result_cur = BUNfirst(b);
-    it->tuples_seen = 0;
-    it->input = (ptr) input;
-    it->mirror = BATmirror(it->result);
-    it->result->hseqbase = it->mirror->tseqbase = hseq;
-    it->result->tseqbase = it->mirror->hseqbase = tseq;
-    return it;
+	it->name = name;
+	it->next = next;
+	it->free = free;
+	it->guess = guess;
+	if (h) {
+		BAT *m = BATmirror(v);
+
+		if (t == NULL) {
+			t = BATmirror(h);
+		}
+		v->H = m->T = b->H;
+		v->T = m->H = b->T;
+	}
+	it->result = v;
+	it->result_hloc = v->hloc;
+	it->result_tloc = v->tloc;
+	it->result_hsize = ATOMsize(v->htype);
+	it->result_tsize = ATOMsize(v->ttype);
+	it->result_cur = BUNfirst(b);
+	it->tuples_seen = 0;
+	it->input = (ptr) input;
+	it->mirror = BATmirror(it->result);
+	it->result->hseqbase = it->mirror->tseqbase = hseq;
+	it->result->tseqbase = it->mirror->hseqbase = tseq;
+	return it;
 }
 
-static INLINE 
-size_t ITERnext(ITER *it) {
-    size_t cnt = (*it->next)(it);
-    BAT *b = it->result;
-    BUN cur = BUNfirst(b);
-    size_t idx = cnt + BUNindex(b, cur);
-    b->batBuns->free = BUNptr(b, idx) - b->batBuns->base;
-    it->tuples_seen += cnt;
-    it->result_cur = cur;
-    if (b->hseqbase != oid_nil) it->mirror->tseqbase = (b->hseqbase += cnt);
-    if (b->tseqbase != oid_nil) it->mirror->hseqbase = (b->tseqbase += cnt);
-    return cnt;
+static INLINE size_t
+ITERnext(ITER *it)
+{
+	size_t cnt = (*it->next) (it);
+	BAT *b = it->result;
+	BUN cur = BUNfirst(b);
+	size_t idx = cnt + BUNindex(b, cur);
+
+	b->batBuns->free = BUNptr(b, idx) - b->batBuns->base;
+	it->tuples_seen += cnt;
+	it->result_cur = cur;
+	if (b->hseqbase != oid_nil)
+		it->mirror->tseqbase = (b->hseqbase += cnt);
+	if (b->tseqbase != oid_nil)
+		it->mirror->hseqbase = (b->tseqbase += cnt);
+	return cnt;
 }
 
-static 
-size_t ITERguess(ITER *it) {
-    return (*it->guess)(it);
+static
+    size_t
+ITERguess(ITER *it)
+{
+	return (*it->guess) (it);
 }
 
-static 
-int ITERfree(ITER *it) {
-    int cnt = BBPunfix(it->result->batCacheid);
-    if (cnt <= 0) {
-    	if (it->free) (*it->free)(it);
-	GDKfree(it);
-    }
-    return cnt;
+static
+    int
+ITERfree(ITER *it)
+{
+	int cnt = BBPunfix(it->result->batCacheid);
+
+	if (cnt <= 0) {
+		if (it->free)
+			(*it->free) (it);
+		GDKfree(it);
+	}
+	return cnt;
 }
 
-static 
-BAT *ITERcollect(ITER *it) {
-    BAT *bn = BATnew(it->result->htype, it->result->ttype, ITERguess(it));
-    BUN p, q, r = BUNfirst(bn);
-    int xx, yy = BUNsize(bn);
+static
+BAT *
+ITERcollect(ITER *it)
+{
+	BAT *bn = BATnew(it->result->htype, it->result->ttype, ITERguess(it));
+	BUN p, q, r = BUNfirst(bn);
+	int xx, yy = BUNsize(bn);
 
-    if (it->result->hkey) BATkey(bn, TRUE); 
-    if (it->result->tkey) BATkey(BATmirror(bn), TRUE); 
-    bn->tsorted = it->result->tsorted;
-    bn->hsorted = it->result->tsorted; 
-    if (BAThdense(it->result)) BATseqbase(bn, it->result->hseqbase);
-    if (BATtdense(it->result)) BATseqbase(BATmirror(bn), it->result->tseqbase);
+	if (it->result->hkey)
+		BATkey(bn, TRUE);
+	if (it->result->tkey)
+		BATkey(BATmirror(bn), TRUE);
+	bn->tsorted = it->result->tsorted;
+	bn->hsorted = it->result->tsorted;
+	if (BAThdense(it->result))
+		BATseqbase(bn, it->result->hseqbase);
+	if (BATtdense(it->result))
+		BATseqbase(BATmirror(bn), it->result->tseqbase);
 
-    ITERloop(it, p, q, xx) {
-        if (bn->batBuns->free + yy > bn->batBuns->size) {
-            size_t delta = ITERguess(it);
-            if (BATextend(bn, BATcount(bn) + MAX(100,delta)) == NULL) goto bunins_failed;
-	    r = BUNlast(bn);
-        }
-        bunfastins_nocheck(bn, r, BUNhead(it->result,p), BUNtail(it->result,p), xx);
-	r += xx;
-    }
-    return bn;
-bunins_failed:
-    BBPreclaim(bn);
-    return NULL;
+	ITERloop(it, p, q, xx) {
+		if (bn->batBuns->free + yy > bn->batBuns->size) {
+			size_t delta = ITERguess(it);
+
+			if (BATextend(bn, BATcount(bn) + MAX(100, delta)) == NULL)
+				goto bunins_failed;
+			r = BUNlast(bn);
+		}
+		bunfastins_nocheck(bn, r, BUNhead(it->result, p), BUNtail(it->result, p), xx);
+		r += xx;
+	}
+	return bn;
+      bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 
@@ -321,34 +340,42 @@ bunins_failed:
 Input is simpy an already loaded bat. We provide slices of it.
 @h
 typedef struct {
-    size_t tuples_left;
+	size_t tuples_left;
 } ScanHandle;
+
 @c
-size_t ScanNext(ITER *it) {
-    size_t cnt = MIN(chunksize, it->hdl.scan.tuples_left);
-    BAT *b = it->result;
-    b->batHole = BUNlast(b) - BUNsize(b);
-    it->hdl.scan.tuples_left -= cnt;
-    return cnt;
+size_t
+ScanNext(ITER *it)
+{
+	size_t cnt = MIN(chunksize, it->hdl.scan.tuples_left);
+	BAT *b = it->result;
+
+	b->batHole = BUNlast(b) - BUNsize(b);
+	it->hdl.scan.tuples_left -= cnt;
+	return cnt;
 }
 
-size_t ScanGuess(ITER *it) {
-    return it->hdl.scan.tuples_left; /* no guess: it's for sure */
+size_t
+ScanGuess(ITER *it)
+{
+	return it->hdl.scan.tuples_left;	/* no guess: it's for sure */
 }
 
-int iter_scan(iter *res, BAT *b) {
-    ITER *it;
+int
+iter_scan(iter *res, BAT *b)
+{
+	ITER *it;
 
-    if (b->batRestricted != BAT_READ) {
-	GDKerror("iter_scan: %s must be a read-only BAT.\n", b->batId);
-	return GDK_FAIL;
-    }
-    it = ITERinit(NULL, "scan", ScanNext, NULL, ScanGuess, b, NULL,NULL);
-    it->result->batBuns->free = BUNfirst(b) - it->result->batBuns->base;
-    it->hdl.scan.tuples_left = BATcount(b);
+	if (b->batRestricted != BAT_READ) {
+		GDKerror("iter_scan: %s must be a read-only BAT.\n", b->batId);
+		return GDK_FAIL;
+	}
+	it = ITERinit(NULL, "scan", ScanNext, NULL, ScanGuess, b, NULL, NULL);
+	it->result->batBuns->free = BUNfirst(b) - it->result->batBuns->base;
+	it->hdl.scan.tuples_left = BATcount(b);
 
-    *res = (iter) it;
-    return GDK_SUCCEED;
+	*res = (iter) it;
+	return GDK_SUCCEED;
 }
 
 @+ Mirror, Reverse and Mark Iterators
@@ -356,45 +383,59 @@ int iter_scan(iter *res, BAT *b) {
 This passes through the mirrored results of its input. No buns need to be copied as
 their BAT buffers are views of each other; hence share the same data structures. 
 @c
-size_t ViewNext(ITER *it) {
-    return ITERnext((ITER*) it->input);
+size_t
+ViewNext(ITER *it)
+{
+	return ITERnext((ITER *) it->input);
 }
 
-size_t ViewGuess(ITER *it) {
-    return ITERguess((ITER*) it->input);
+size_t
+ViewGuess(ITER *it)
+{
+	return ITERguess((ITER *) it->input);
 }
 
-void ViewFree(ITER *it) {
-     (void) ITERfree((ITER*) it->input);
+void
+ViewFree(ITER *it)
+{
+	(void) ITERfree((ITER *) it->input);
 }
 
-int iter_mirror(iter *res, iter *in) {
-    ITER* input = (ITER*) *in;
-    *res = (iter) ITERinit(input, "mirror", ViewNext, ViewFree, ViewGuess,
-                    VIEWcombine(input->result), input->result, BATmirror(input->result));
-    return GDK_SUCCEED;
+int
+iter_mirror(iter *res, iter *in)
+{
+	ITER *input = (ITER *) *in;
+
+	*res = (iter) ITERinit(input, "mirror", ViewNext, ViewFree, ViewGuess, VIEWcombine(input->result), input->result, BATmirror(input->result));
+	return GDK_SUCCEED;
 }
 
 @- reverse
 @T
 This passes through the reversed results of its input. We reuse the mirror methods.
 @c
-int iter_reverse(iter *res, iter *in) {
-    ITER* input = (ITER*) *in;
-    BAT *b = BATmirror(input->result);
-    *res = (iter) ITERinit(input, "reverse", ViewNext, ViewFree, ViewGuess, b, b, NULL);
-    return GDK_SUCCEED;
+int
+iter_reverse(iter *res, iter *in)
+{
+	ITER *input = (ITER *) *in;
+	BAT *b = BATmirror(input->result);
+
+	*res = (iter) ITERinit(input, "reverse", ViewNext, ViewFree, ViewGuess, b, b, NULL);
+	return GDK_SUCCEED;
 }
 
 @- mark
 @c
-int iter_mark(iter *res, iter *in, oid *base) {
-    ITER *input = (ITER*) *in;
-    BAT  *b = BATmark(input->result, *base);
-    *res = (iter) ITERinit(input, "mark", ViewNext, ViewFree, ViewGuess, b, NULL, NULL);
-    return GDK_SUCCEED;
+int
+iter_mark(iter *res, iter *in, oid *base)
+{
+	ITER *input = (ITER *) *in;
+	BAT *b = BATmark(input->result, *base);
+
+	*res = (iter) ITERinit(input, "mark", ViewNext, ViewFree, ViewGuess, b, NULL, NULL);
+	return GDK_SUCCEED;
 }
- 
+
 @+ Scan-Select Iterator
 @T
 This scans the input stream (whatever it may be) and only lets pass the qualifying 
@@ -404,9 +445,10 @@ Special cases without function call are coded out for equi-select and range-sele
 of various atomic types; 
 @h
 typedef struct {
-    GDKfcn fcn;
-    ptr v1, v2;
+	GDKfcn fcn;
+	ptr v1, v2;
 } SelectHandle;
+
 @c
 /* the code expansions */
 @:select(any,any,tail,any,any)@
@@ -448,71 +490,98 @@ size_t SelectNext_@1_@2(ITER *it) {
     return yy;
 }
 @c
-size_t SelectGuess(ITER *it) {
-    ITER *input = (ITER*) it->input;
-    size_t totsize = (*input->guess)(input);
-    return totsize/MAX(10, input->tuples_seen / MAX(1, it->tuples_seen));
+size_t
+SelectGuess(ITER *it)
+{
+	ITER *input = (ITER *) it->input;
+	size_t totsize = (*input->guess) (input);
+
+	return totsize / MAX(10, input->tuples_seen / MAX(1, it->tuples_seen));
 }
 
-int iter_select2(iter *res, iter *in, bit *t, str fcn, ptr p1, int t1, ptr p2, int t2) {
-    NEXTfcn nxt = SelectNext_any_any;
-    ITER *it, *input = (ITER*) *in;
-    ValRecord argv[4];
-    monet_sig_t sig;
-    int argc = 3;
-    BAT *bn;
+int
+iter_select2(iter *res, iter *in, bit *t, str fcn, ptr p1, int t1, ptr p2, int t2)
+{
+	NEXTfcn nxt = SelectNext_any_any;
+	ITER *it, *input = (ITER *) *in;
+	ValRecord argv[4];
+	monet_sig_t sig;
+	int argc = 3;
+	BAT *bn;
 
-    argv[1].vtype = BATttype(input->result);
-    argv[2].vtype = t1;
-    if (p2) {
-        argv[argc++].vtype = t2;
-    }
-    sig.ret_tpe = 0;
-    if (argc == 3 && strcmp(fcn,"rng") == 0 && t1 == t2 && t2 == input->result->ttype) {
-        switch(ATOMstorage(input->result->ttype)) {
-        case TYPE_chr: nxt = SelectNext_chr_rng; break;
-        case TYPE_sht: nxt = SelectNext_sht_rng; break;
-        case TYPE_int: nxt = SelectNext_int_rng; break;
-        case TYPE_flt: nxt = SelectNext_flt_rng; break;
-        case TYPE_lng: nxt = SelectNext_lng_rng; break;
-        case TYPE_dbl: nxt = SelectNext_dbl_rng; break;
-        default:       nxt = SelectNext_any_rng;
-        }
-    } else if (argc == 2 && strcmp(fcn,"eq") == 0 && t1 == input->result->ttype) {
-        switch(ATOMstorage(input->result->ttype)) {
-        case TYPE_chr: nxt = SelectNext_chr_eq; break;
-        case TYPE_sht: nxt = SelectNext_sht_eq; break;
-        case TYPE_int: 
-        case TYPE_flt: nxt = SelectNext_int_eq; break;
-        case TYPE_lng: 
-        case TYPE_dbl: nxt = SelectNext_lng_eq; break;
-        default:       nxt = SelectNext_any_eq;
-        }
-    } else if (TBL_normal_resolve(fcn, argc, argv, &sig, 0) != TOK_COMMAND || 
-               sig.ret_tpe != TYPE_bit || sig.fast_fcn == NULL) 
-    {
-        GDKerror("iter_select: %s(%s,%s%s%s):%s is not a useable bit-command.\n", 
-                 fcn, ATOMname(BATttype(input->result)), ATOMname(t1), 
-		 p2?",":"", p2?ATOMname(t2):"", ATOMname(sig.ret_tpe));
-        return GDK_FAIL;
-    }
-    bn = BATnew(BAThtype(input->result), *t?BATttype(input->result):TYPE_void, chunksize);
-    if (input->result->hkey) BATkey(bn, TRUE);
-    if (input->result->tkey) BATkey(BATmirror(bn), TRUE);
-    bn->hsorted = input->result->hsorted;
-    bn->tsorted = input->result->tsorted;
+	argv[1].vtype = BATttype(input->result);
+	argv[2].vtype = t1;
+	if (p2) {
+		argv[argc++].vtype = t2;
+	}
+	sig.ret_tpe = 0;
+	if (argc == 3 && strcmp(fcn, "rng") == 0 && t1 == t2 && t2 == input->result->ttype) {
+		switch (ATOMstorage(input->result->ttype)) {
+		case TYPE_chr:
+			nxt = SelectNext_chr_rng;
+			break;
+		case TYPE_sht:
+			nxt = SelectNext_sht_rng;
+			break;
+		case TYPE_int:
+			nxt = SelectNext_int_rng;
+			break;
+		case TYPE_flt:
+			nxt = SelectNext_flt_rng;
+			break;
+		case TYPE_lng:
+			nxt = SelectNext_lng_rng;
+			break;
+		case TYPE_dbl:
+			nxt = SelectNext_dbl_rng;
+			break;
+		default:
+			nxt = SelectNext_any_rng;
+		}
+	} else if (argc == 2 && strcmp(fcn, "eq") == 0 && t1 == input->result->ttype) {
+		switch (ATOMstorage(input->result->ttype)) {
+		case TYPE_chr:
+			nxt = SelectNext_chr_eq;
+			break;
+		case TYPE_sht:
+			nxt = SelectNext_sht_eq;
+			break;
+		case TYPE_int:
+		case TYPE_flt:
+			nxt = SelectNext_int_eq;
+			break;
+		case TYPE_lng:
+		case TYPE_dbl:
+			nxt = SelectNext_lng_eq;
+			break;
+		default:
+			nxt = SelectNext_any_eq;
+		}
+	} else if (TBL_normal_resolve(fcn, argc, argv, &sig, 0) != TOK_COMMAND || sig.ret_tpe != TYPE_bit || sig.fast_fcn == NULL) {
+		GDKerror("iter_select: %s(%s,%s%s%s):%s is not a useable bit-command.\n", fcn, ATOMname(BATttype(input->result)), ATOMname(t1), p2 ? "," : "", p2 ? ATOMname(t2) : "", ATOMname(sig.ret_tpe));
+		return GDK_FAIL;
+	}
+	bn = BATnew(BAThtype(input->result), *t ? BATttype(input->result) : TYPE_void, chunksize);
+	if (input->result->hkey)
+		BATkey(bn, TRUE);
+	if (input->result->tkey)
+		BATkey(BATmirror(bn), TRUE);
+	bn->hsorted = input->result->hsorted;
+	bn->tsorted = input->result->tsorted;
 
-    it = ITERinit(input, "select", nxt, ViewFree, SelectGuess,  bn, input->result, NULL);
-    it->hdl.sel.fcn = sig.fast_fcn;
-    it->hdl.sel.v1 = p1;
-    it->hdl.sel.v2 = p2;
+	it = ITERinit(input, "select", nxt, ViewFree, SelectGuess, bn, input->result, NULL);
+	it->hdl.sel.fcn = sig.fast_fcn;
+	it->hdl.sel.v1 = p1;
+	it->hdl.sel.v2 = p2;
 
-    *res = (iter) it;
-    return GDK_SUCCEED;
+	*res = (iter) it;
+	return GDK_SUCCEED;
 }
 
-int iter_select1(iter *res, iter *input, bit *t, str fcn, ptr v1, int t1) {
-    return iter_select2(res, input, t, fcn, v1, t1, NULL, TYPE_void);
+int
+iter_select1(iter *res, iter *input, bit *t, str fcn, ptr v1, int t1)
+{
+	return iter_select2(res, input, t, fcn, v1, t1, NULL, TYPE_void);
 }
 
 @+ Join Iterator
@@ -526,10 +595,11 @@ operand is materialied (it is a BAT).  The iterator then iteratively
 returns matches on tuples from the outer stream with the hash-table.
 @h
 typedef struct {
-    BAT *inner;
-    var_t *hash, *link;
-    var_t mask, hashnum;
+	BAT *inner;
+	var_t *hash, *link;
+	var_t mask, hashnum;
 } JoinHandle;
+
 @c
 #define iterator_hashchr(tpe,val,msk) ((var_t) ((unsigned char*) val)[0])
 #define iterator_hashsht(tpe,val,msk) (((var_t) ((unsigned short*) val)[0]) % msk)
@@ -572,85 +642,101 @@ size_t JoinNext_@2(ITER *it) {
 @- postional-join
 Here we can look up an OID by its position, because it resides in a VOID column.
 @c
-size_t JoinNextVoid(ITER *it) {
-    ITER *outer = (ITER*) it->input;
-    BUN p, q, t, r = BUNfirst(it->result);
-    int xx;
-    size_t yy = 0;
+size_t
+JoinNextVoid(ITER *it)
+{
+	ITER *outer = (ITER *) it->input;
+	BUN p, q, t, r = BUNfirst(it->result);
+	int xx;
+	size_t yy = 0;
 
-    ITERloop(outer, p, q, xx) {
-	ptr val;
-        BUNfndVOID(t, it->hdl.join.inner, BUNtloc(outer->result,p));
-        if (t) {
-	    val = BUNtail(it->hdl.join.inner,t); 
-	} else {
-	    /* match error: 'recover' like outerjoin */
-	    val = ATOMnilptr(it->hdl.join.inner->ttype);
+	ITERloop(outer, p, q, xx) {
+		ptr val;
+
+		BUNfndVOID(t, it->hdl.join.inner, BUNtloc(outer->result, p));
+		if (t) {
+			val = BUNtail(it->hdl.join.inner, t);
+		} else {
+			/* match error: 'recover' like outerjoin */
+			val = ATOMnilptr(it->hdl.join.inner->ttype);
+		}
+		buncopy(it, r, BUNhead(outer->result, p), val);
+		ITERbreak(outer, p + xx, ++yy);
 	}
-        buncopy(it, r, BUNhead(outer->result,p), val); 
-        ITERbreak(outer, p+xx, ++yy);
-    }
-    return yy;
-}
-        
-size_t JoinGuess(ITER *it) {
-    ITER *outer = (ITER*) it->input;
-    flt lsize = (flt) (*outer->guess)(outer);
-    flt rsize = (flt) BATcount(it->hdl.join.inner);
-    flt div = (flt) MAX(1.0,lsize/MAX(1.0, rsize));
-    if (it->next == JoinNextVoid) {
-	return (size_t) lsize;
-    }
-    return (size_t) (lsize/MAX(div, ((flt) outer->tuples_seen) / (flt) MAX(1,it->tuples_seen)));
+	return yy;
 }
 
-int iter_join(iter *res, iter *input, BAT *inner) {
-    NEXTfcn nxt = JoinNextVoid;
-    ITER *it, *outer = (ITER*) *input;
-    int ht = outer->result->htype;
-    int n_one = outer->result->tkey;
-    BAT *bn;
+size_t
+JoinGuess(ITER *it)
+{
+	ITER *outer = (ITER *) it->input;
+	flt lsize = (flt) (*outer->guess) (outer);
+	flt rsize = (flt) BATcount(it->hdl.join.inner);
+	flt div = (flt) MAX(1.0, lsize / MAX(1.0, rsize));
 
-    if (outer->result->ttype != TYPE_oid || !BAThdense(inner)) {
-    if (ATOMstorage(outer->result->ttype) == ATOMstorage(inner->htype)) {
-        switch (ATOMstorage(inner->ttype)) {
-        case TYPE_chr: nxt = JoinNext_chr; break;
-        case TYPE_sht: nxt = JoinNext_sht; break;
-        case TYPE_int:
-        case TYPE_flt: nxt = JoinNext_int; break;
-        case TYPE_lng: 
-        case TYPE_dbl: nxt = JoinNext_lng; break;
-	default:       nxt = (inner->tvarsized)?JoinNext_var:JoinNext_loc;
-        }
-    } else { 
-        GDKerror("iter_join(iter[%s,%s], bat[%s,%s]) : not implemented.\n",
-                 ATOMname(outer->result->htype), ATOMname(outer->result->ttype),
-                 ATOMname(inner->htype), ATOMname(inner->ttype));
-        return GDK_FAIL;
-    }}
-    if (ht == TYPE_void && !n_one) {
-	ht = TYPE_oid;
-    }
-    bn = BATnew(ht, BATttype(inner), chunksize);
-    bn->hsorted = outer->result->hsorted;
-    bn->tsorted = 0;
-    bn->hkey = outer->result->hkey && inner->hkey; 
-    it = ITERinit(outer, "join", nxt, ViewFree, JoinGuess, bn, outer->result, inner);
-    it->hdl.join.inner = inner;
-    if (nxt == JoinNextVoid) {
-	BATseqbase(bn, outer->result->hseqbase);
-    	bn->tkey = outer->result->tkey && inner->tkey; 
-    } else {
-        (void) BATprepareHash(inner);
-    	it->hdl.join.hash = inner->hhash.hash;
-    	it->hdl.join.link = inner->hhash.link;
-    	it->hdl.join.mask = inner->hhash.mask;
-    	it->hdl.join.hashnum = 0;
-	n_one = FALSE;
-    }
+	if (it->next == JoinNextVoid) {
+		return (size_t) lsize;
+	}
+	return (size_t) (lsize / MAX(div, ((flt) outer->tuples_seen) / (flt) MAX(1, it->tuples_seen)));
+}
 
-    *res = (iter) it;
-    return GDK_SUCCEED;
+int
+iter_join(iter *res, iter *input, BAT *inner)
+{
+	NEXTfcn nxt = JoinNextVoid;
+	ITER *it, *outer = (ITER *) *input;
+	int ht = outer->result->htype;
+	int n_one = outer->result->tkey;
+	BAT *bn;
+
+	if (outer->result->ttype != TYPE_oid || !BAThdense(inner)) {
+		if (ATOMstorage(outer->result->ttype) == ATOMstorage(inner->htype)) {
+			switch (ATOMstorage(inner->ttype)) {
+			case TYPE_chr:
+				nxt = JoinNext_chr;
+				break;
+			case TYPE_sht:
+				nxt = JoinNext_sht;
+				break;
+			case TYPE_int:
+			case TYPE_flt:
+				nxt = JoinNext_int;
+				break;
+			case TYPE_lng:
+			case TYPE_dbl:
+				nxt = JoinNext_lng;
+				break;
+			default:
+				nxt = (inner->tvarsized) ? JoinNext_var : JoinNext_loc;
+			}
+		} else {
+			GDKerror("iter_join(iter[%s,%s], bat[%s,%s]) : not implemented.\n", ATOMname(outer->result->htype), ATOMname(outer->result->ttype), ATOMname(inner->htype), ATOMname(inner->ttype));
+			return GDK_FAIL;
+		}
+	}
+	if (ht == TYPE_void && !n_one) {
+		ht = TYPE_oid;
+	}
+	bn = BATnew(ht, BATttype(inner), chunksize);
+	bn->hsorted = outer->result->hsorted;
+	bn->tsorted = 0;
+	bn->hkey = outer->result->hkey && inner->hkey;
+	it = ITERinit(outer, "join", nxt, ViewFree, JoinGuess, bn, outer->result, inner);
+	it->hdl.join.inner = inner;
+	if (nxt == JoinNextVoid) {
+		BATseqbase(bn, outer->result->hseqbase);
+		bn->tkey = outer->result->tkey && inner->tkey;
+	} else {
+		(void) BATprepareHash(inner);
+		it->hdl.join.hash = inner->hhash.hash;
+		it->hdl.join.link = inner->hhash.link;
+		it->hdl.join.mask = inner->hhash.mask;
+		it->hdl.join.hashnum = 0;
+		n_one = FALSE;
+	}
+
+	*res = (iter) it;
+	return GDK_SUCCEED;
 }
 
 
@@ -686,7 +772,7 @@ the aggregate function into an init-value, an add-macro and a finish-macro.
     } if (r == NULL) {\
         GDKerror("iter_groupby: matching problem oid=%lu.\n", *(oid*) v);\
     } else
-#define aggr_count_add(tpe,idx,v) 
+#define aggr_count_add(tpe,idx,v)
 #define aggr_max_add(tpe,idx,v) bunfnd(r,v)\
     { tpe *_t=(tpe*)aggr(idx), *_a=(tpe*)BUNtloc(attr,r); if (*_a > *_t) *_t = *_a; }
 #define aggr_min_add(tpe,idx,v) bunfnd(r,v)\
@@ -707,19 +793,21 @@ the aggregate function into an init-value, an add-macro and a finish-macro.
 @:groupby_valtpe(avg)@
 @:groupby_valtpe(sum)@
 
-BATfcn groupby_fcn(str aggr, int valtpe, int grptpe) {
-    if (strcmp(aggr, "count") == 0) {
-        return groupby_fcn_count_void(grptpe);
-    } else if (strcmp(aggr, "max") == 0) {
-        return groupby_fcn_max(valtpe, grptpe);
-    } else if (strcmp(aggr, "min") == 0) {
-        return groupby_fcn_min(valtpe, grptpe);
-    } else if (strcmp(aggr, "avg") == 0) {
-        return groupby_fcn_avg(valtpe, grptpe);
-    } else if (strcmp(aggr, "sum") == 0) {
-        return groupby_fcn_sum(valtpe, grptpe);
-    }
-    return NULL;
+BATfcn
+groupby_fcn(str aggr, int valtpe, int grptpe)
+{
+	if (strcmp(aggr, "count") == 0) {
+		return groupby_fcn_count_void(grptpe);
+	} else if (strcmp(aggr, "max") == 0) {
+		return groupby_fcn_max(valtpe, grptpe);
+	} else if (strcmp(aggr, "min") == 0) {
+		return groupby_fcn_min(valtpe, grptpe);
+	} else if (strcmp(aggr, "avg") == 0) {
+		return groupby_fcn_avg(valtpe, grptpe);
+	} else if (strcmp(aggr, "sum") == 0) {
+		return groupby_fcn_sum(valtpe, grptpe);
+	}
+	return NULL;
 }
 
 @= groupby_valtpe
@@ -837,23 +925,27 @@ BAT* groupby_@1_@2_@3(ITER *input, BAT *attr) {
     return bn;
 }
 @c
-int iter_aggr(BAT **bn, iter *input, str aggr, BAT *b) {
-    BAT *result = ((ITER*) *input)->result;
-    BATfcn fcn = groupby_fcn(aggr, b?b->ttype:0, result->ttype); 
+int
+iter_aggr(BAT **bn, iter *input, str aggr, BAT *b)
+{
+	BAT *result = ((ITER *) *input)->result;
+	BATfcn fcn = groupby_fcn(aggr, b ? b->ttype : 0, result->ttype);
 
-    if (fcn == NULL || ATOMstorage(BAThtype(result)) != ATOMstorage(TYPE_oid)) {
-        GDKerror("iter_aggr(grp[%s,%s], %s, attr[%s,%s]): illegal parameters.\n",
-		ATOMname(result->htype), ATOMname(result->ttype), 
-		aggr,  b?ATOMname(b->htype):"*", b?ATOMname(b->ttype):"*");
-        return GDK_FAIL;
-    }
-    *bn = (*fcn)(*input, b);
-    return GDK_SUCCEED;
+	if (fcn == NULL || ATOMstorage(BAThtype(result)) != ATOMstorage(TYPE_oid)) {
+		GDKerror("iter_aggr(grp[%s,%s], %s, attr[%s,%s]): illegal parameters.\n", ATOMname(result->htype), ATOMname(result->ttype), aggr, b ? ATOMname(b->htype) : "*", b ? ATOMname(b->ttype) : "*");
+		return GDK_FAIL;
+	}
+	*bn = (*fcn) (*input, b);
+	return GDK_SUCCEED;
 }
 
-int iter_histo(BAT **bn, iter *input) {
-    BAT dummy_attr; dummy_attr.ttype = TYPE_int;
-    return iter_aggr(bn, input, "count", &dummy_attr);
+int
+iter_histo(BAT **bn, iter *input)
+{
+	BAT dummy_attr;
+
+	dummy_attr.ttype = TYPE_int;
+	return iter_aggr(bn, input, "count", &dummy_attr);
 }
 
 
@@ -862,17 +954,21 @@ int iter_histo(BAT **bn, iter *input) {
 Replace the contents of the result bat with the next chunk (if any) and return TRUE.
 Otherwise, deallocate the iterator and return FALSE.
 @c
-int iter_next(bit *ret, iter *input) {
-    *ret = (ITERnext((ITER*) *input) > 0);
-    return GDK_SUCCEED;
+int
+iter_next(bit *ret, iter *input)
+{
+	*ret = (ITERnext((ITER *) *input) > 0);
+	return GDK_SUCCEED;
 }
 
 @+ chunk
 give back the current chunk
 @c
-int iter_chunk(BAT **ret, iter *input) {
-    *ret = ((ITER*) *input)->result;
-    return GDK_SUCCEED;
+int
+iter_chunk(BAT **ret, iter *input)
+{
+	*ret = ((ITER *) *input)->result;
+	return GDK_SUCCEED;
 }
 
 @+ collect
@@ -880,22 +976,26 @@ int iter_chunk(BAT **ret, iter *input) {
 Materialize a tuple stream into a BAT. This function intelligently uses
 the guess() method for estimating the memory resources needed.
 @c
-int iter_collect(BAT **res, iter *input) {
-    *res = ITERcollect((ITER*) *input);
-    return *res?GDK_SUCCEED:GDK_FAIL;
+int
+iter_collect(BAT **res, iter *input)
+{
+	*res = ITERcollect((ITER *) *input);
+	return *res ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @+ count
 @c
-int iter_count(int *res, iter *input) {
-    ITER *it = (ITER*) *input;
-    BUN p, q;
-    int xx = 0;
+int
+iter_count(int *res, iter *input)
+{
+	ITER *it = (ITER *) *input;
+	BUN p, q;
+	int xx = 0;
 
-    ITERloop(it, p, q, xx) xx++;
+	ITERloop(it, p, q, xx) xx++;
 
-    *res = xx;
-    return GDK_SUCCEED;
+	*res = xx;
+	return GDK_SUCCEED;
 }
 
 @+ chunksize
@@ -903,15 +1003,30 @@ int iter_count(int *res, iter *input) {
 Get and set the chunksize parameter. This determines the granularity in
 which tuples flow through an iterator tree.
 @c
-int iter_setchunksize(int *size) { chunksize = (size_t)*size; return GDK_SUCCEED; }
-int iter_getchunksize(int *size) { *size = (int)chunksize; return GDK_SUCCEED; }
+int
+iter_setchunksize(int *size)
+{
+	chunksize = (size_t) * size;
+	return GDK_SUCCEED;
+}
+
+int
+iter_getchunksize(int *size)
+{
+	*size = (int) chunksize;
+	return GDK_SUCCEED;
+}
 
 @+ fix/unfix
 @c
-int iter_fix(iter* input) {
-    return BBPfix(((ITER*) *input)->result->batCacheid);
+int
+iter_fix(iter *input)
+{
+	return BBPfix(((ITER *) *input)->result->batCacheid);
 }
 
-int iter_unfix(iter* input) {
-    return ITERfree((ITER*) *input);
+int
+iter_unfix(iter *input)
+{
+	return ITERfree((ITER *) *input);
 }

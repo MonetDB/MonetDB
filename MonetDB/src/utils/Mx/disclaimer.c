@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include <monetdb_config.h>       
+#include <monetdb_config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,67 +25,66 @@
 #include <limits.h>
 #include "disclaimer.h"
 
-int disclaimer=0;
+int disclaimer = 0;
 char *disclaimerfile;
 
-static const char defaultfile[]="COPYRIGHT";
+static const char defaultfile[] = "COPYRIGHT";
 
-static FILE *openDisclaimerFile(const char *filename)
+static FILE *
+openDisclaimerFile(const char *filename)
 {
-    FILE *fp;
+	FILE *fp;
 
-    if (!filename || strlen(filename)<1) filename=defaultfile;
+	if (!filename || strlen(filename) < 1)
+		filename = defaultfile;
 
-    if ((fp=fopen(filename,"r"))==0)
-        fprintf(stderr,"Mx: can't open disclaimer file '%s' (skipping).\n",
-                filename);
-    return fp;
+	if ((fp = fopen(filename, "r")) == 0)
+		fprintf(stderr, "Mx: can't open disclaimer file '%s' (skipping).\n", filename);
+	return fp;
 }
 
-static void writeDisclaimer(FILE *fp, const char *comment_start,
-			    const char *prefix, const char *comment_end,
-			    const char *filename)
+static void
+writeDisclaimer(FILE *fp, const char *comment_start, const char *prefix, const char *comment_end, const char *filename)
 {
 
-    FILE *dfile;
-    char line[DISC_WIDTH+2];
-    size_t prefixLength=strlen(prefix),i,ret;
-    
-    dfile=openDisclaimerFile(filename);
+	FILE *dfile;
+	char line[DISC_WIDTH + 2];
+	size_t prefixLength = strlen(prefix), i, ret;
 
-    if (!dfile) return;
-    
-    if (strlen(comment_start)>0)
-        {
-            fwrite(comment_start,strlen(comment_start),1,fp);
-            fwrite("\n",1,1,fp);
-        }
-    
-    memcpy(line,prefix,prefixLength);
+	dfile = openDisclaimerFile(filename);
 
-    while(!feof(dfile))
-        {
-            i=prefixLength;
-            do
-                {
-                    ret=fread(&line[i++],1,1,dfile);
-                }
-            while(i<DISC_WIDTH && line[i-1]!='\n' && ret);
-            if (!ret) break;
-            
-            if (line[i-1]!='\n') line[i++]='\n';
-            line[i]='\0';
-            fwrite(line,strlen(line),1,fp);
-        }
-    if (strlen(comment_end)>0)
-        {
-            fwrite(comment_end,strlen(comment_end),1,fp);
-            fwrite("\n",1,1,fp);
-        }
-    
-    fwrite("\n",1,1,fp);
-    fclose(dfile);
-    
+	if (!dfile)
+		return;
+
+	if (strlen(comment_start) > 0) {
+		fwrite(comment_start, strlen(comment_start), 1, fp);
+		fwrite("\n", 1, 1, fp);
+	}
+
+	memcpy(line, prefix, prefixLength);
+
+	while (!feof(dfile)) {
+		i = prefixLength;
+		do {
+			ret = fread(&line[i++], 1, 1, dfile);
+		}
+		while (i < DISC_WIDTH && line[i - 1] != '\n' && ret);
+		if (!ret)
+			break;
+
+		if (line[i - 1] != '\n')
+			line[i++] = '\n';
+		line[i] = '\0';
+		fwrite(line, strlen(line), 1, fp);
+	}
+	if (strlen(comment_end) > 0) {
+		fwrite(comment_end, strlen(comment_end), 1, fp);
+		fwrite("\n", 1, 1, fp);
+	}
+
+	fwrite("\n", 1, 1, fp);
+	fclose(dfile);
+
 }
 
 /* format <suffix> <comment_begin> <comment_prefix> <comment_end> */
@@ -95,19 +94,22 @@ static struct suffixes {
 	const char *comment_prefix;
 	const char *comment_end;
 } suffixes[] = {
-	{"c","/*"," * "," */",},
-	{"h","/*"," * "," */",},
-	{MX_CXX_SUFFIX,"/*"," * "," */",},
-	{"html","<!--"," + "," -->",},
-	{"tex","","% ","",},
-	{"mil","","# ","",},
-	{"m","","# ","",},
-	{"mx","","@' ",""},
-	{0,0,0,0},		/* sentinel */
+	{
+	"c", "/*", " * ", " */",}, {
+	"h", "/*", " * ", " */",}, {
+	MX_CXX_SUFFIX, "/*", " * ", " */",}, {
+	"html", "<!--", " + ", " -->",}, {
+	"tex", "", "% ", "",}, {
+	"mil", "", "# ", "",}, {
+	"m", "", "# ", "",}, {
+	"mx", "", "@' ", ""}, {
+	0, 0, 0, 0},		/* sentinel */
 };
+
 #define DISC_SUFFIXES  (sizeof(suffixes)/sizeof(siffixes[0]))
 
-void insertDisclaimer(FILE *fp, char *rfilename)
+void
+insertDisclaimer(FILE *fp, char *rfilename)
 {
 	struct suffixes *s;
 	char *suffix;
@@ -117,11 +119,7 @@ void insertDisclaimer(FILE *fp, char *rfilename)
 	suffix++;		/* position after "." */
 	for (s = suffixes; s->suffix; s++)
 		if (strcmp(s->suffix, suffix) == 0) {
-			writeDisclaimer(fp,
-					s->comment_begin,
-					s->comment_prefix,
-					s->comment_end,
-					disclaimerfile);
+			writeDisclaimer(fp, s->comment_begin, s->comment_prefix, s->comment_end, disclaimerfile);
 			break;
 		}
 }

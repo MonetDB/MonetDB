@@ -26,14 +26,14 @@
 #include "list.h"
 
 
-class Object : public Symbol {
-    public:
-	Object( int t, char *n, const Symbol *arg = NULL ); 
+class Object:public Symbol {
+      public:
+	Object(int t, char *n, const Symbol *arg = NULL);
 
 	const Symbol *arg() const;
 
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 	const Symbol *_arg;
 };
 #endif // _OBJECT_H_

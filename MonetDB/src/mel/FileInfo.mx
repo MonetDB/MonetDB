@@ -26,25 +26,22 @@
 #include "list.h"
 
 class FileInfo {
-    public:
-	FileInfo( FILE *f, int lineno, char *filename, 
-		  char *basename,  FileInfo *parent = NULL);
+      public:
+	FileInfo(FILE *f, int lineno, char *filename, char *basename, FileInfo * parent = NULL);
 	~FileInfo();
-	static char *find_module( char *name, List *dir_list );
-	static FileInfo *open( char *filename, 
-			       char *basename = NULL, 
-			       FileInfo *parent = NULL );
+	static char *find_module(char *name, List * dir_list);
+	static FileInfo *open(char *filename, char *basename = NULL, FileInfo * parent = NULL);
 	void close();
 	int LineNo();
 	void LineNo(int lineno);
 	FILE *FilePtr();
 	char *FileName();
-	void FileName( char *fname );
+	void FileName(char *fname);
 	char *BaseName();
 	FileInfo *Parent();
-	void *Buffer();
-	void Buffer( void *buf);
-    private:
+	void *Buffer ();
+	void Buffer (void *buf);
+      private:
 	FILE *_f;
 	int _lineno;
 	char *_filename;

@@ -39,36 +39,37 @@
 
 #define	assert(e, m)	if( !(e) ) Fatal(m, "Assertion failed"); else
 
-extern	unsigned int	db_flag;
-extern	int	archived;
+extern unsigned int db_flag;
+extern int archived;
 
 /* MX control indicators
  */
-#define MARK		'@' 
+#define MARK		'@'
 
 
-typedef enum { 
-    Nop =0,
-    Index0,Index1,Index2,Index3,Index4,Index5,Index6,Index7,Index8,Index9,
-    Bfile, Efile, Ofile, Mxmacro, Ifdef, Ifndef, Endif,
-    Title, Author, Version, Date, InHide, OutHide, Comment, 
-    Module, Section, Subsection, Paragraph, Qtex, Qtexi, Qcode, Continue,
-    Pspec, Pimpl, Cdef, Csrc, CCsrc, ODLspec, SQL,
-    OQLspec, Cyacc, Clex, Prolog, Haskell, Monet, MALcode, MILcode, 
-    Qnap, HTML, Java,
-    Tcl, ProC, Shell, fGrammar, Macro, XML, DTD, XSL, Config, Swig,
-    CCyacc, CClex, BibTeX } CmdCode;
+typedef enum {
+	Nop = 0,
+	Index0, Index1, Index2, Index3, Index4, Index5, Index6, Index7, Index8, Index9,
+	Bfile, Efile, Ofile, Mxmacro, Ifdef, Ifndef, Endif,
+	Title, Author, Version, Date, InHide, OutHide, Comment,
+	Module, Section, Subsection, Paragraph, Qtex, Qtexi, Qcode, Continue,
+	Pspec, Pimpl, Cdef, Csrc, CCsrc, ODLspec, SQL,
+	OQLspec, Cyacc, Clex, Prolog, Haskell, Monet, MALcode, MILcode,
+	Qnap, HTML, Java,
+	Tcl, ProC, Shell, fGrammar, Macro, XML, DTD, XSL, Config, Swig,
+	CCyacc, CClex, BibTeX
+} CmdCode;
 
 
 typedef struct {
-    char *cmd;
-    CmdCode code;
-    char *ext;
+	char *cmd;
+	CmdCode code;
+	char *ext;
 } Directive;
 
 extern char *outputdir;
 extern Directive str2dir[];
- 
+
 /* CtlDir (can be any where)
  */
 
@@ -116,7 +117,8 @@ extern	char *		strchr();
 #define	M_TEX	0xf000
 #define	M_TEXI	0xf0000
 
-extern	int	mode;
+extern int mode;
+
 /* 
  * Environments.
  */
@@ -131,46 +133,48 @@ extern	int	mode;
 
 /* Mx Currents
  */
-extern	int	mx_err;
-extern	char *	mx_file;
-extern	int	mx_line;
-extern	int	mx_chp;
-extern	int	mx_mod;
-extern	int	mx_sec;
-extern	int	mx_out;
+extern int mx_err;
+extern char *mx_file;
+extern int mx_line;
+extern int mx_chp;
+extern int mx_mod;
+extern int mx_sec;
+extern int mx_out;
 
 /* Mx Options
  */
-extern	int	opt_column;
-extern	int	opt_hide;
-extern	char	*opt_code;	/* extract code of interest only*/
-extern	int	textmode;	/* either T_TEX or T_MS */
-extern	int	bodymode;	/* either 0= all 1= for inclusion */
-extern  int	noline;
-extern  int	notouch;
-extern  int texihdr;
+extern int opt_column;
+extern int opt_hide;
+extern char *opt_code;		/* extract code of interest only */
+extern int textmode;		/* either T_TEX or T_MS */
+extern int bodymode;		/* either 0= all 1= for inclusion */
+extern int noline;
+extern int notouch;
+extern int texihdr;
+
 #define	NO_HIDE	-1
 
 /* MX Files
  */
 
 
-extern	FILE *	ofile;
-extern	FILE *	ofile_body;
-extern	FILE *	ofile_index;
-extern	FILE *	ifile;
+extern FILE *ofile;
+extern FILE *ofile_body;
+extern FILE *ofile_index;
+extern FILE *ifile;
+
 #define	M_FILES	128
 struct file_s {
-	char *	f_name;
-	char *  f_tmp;
-	char *  f_str;
-	int	f_mode;
+	char *f_name;
+	char *f_tmp;
+	char *f_str;
+	int f_mode;
 };
 typedef struct file_s File;
 
 extern char filename[200];	/* assume that no errors will occur */
-extern char filename_index[200];	
-extern char filename_body[200];	
+extern char filename_index[200];
+extern char filename_body[200];
 
 /* MX Def
  */
@@ -180,28 +184,28 @@ extern char filename_body[200];
 #define	M_STR	1024
 
 typedef
- struct{
-	CmdCode	d_dir;
-	char *	d_cmd;
-	char *	d_blk;
-	int	d_mod;
-	int	d_sec;
-	char *	d_cms;
-	char *	d_file;
-	int	d_line;
+    struct {
+	CmdCode d_dir;
+	char *d_cmd;
+	char *d_blk;
+	int d_mod;
+	int d_sec;
+	char *d_cms;
+	char *d_file;
+	int d_line;
 } Def;
 
-extern	Def *	defs;
-extern	int	ndef;
+extern Def *defs;
+extern int ndef;
 
 /* MX Tok
  */
-typedef struct{
-	char	t_dir;
-	char *	t_str;
-	char	t_ext;
-	char *	t_nxt;
-	char	t_chr;
+typedef struct {
+	char t_dir;
+	char *t_str;
+	char t_ext;
+	char *t_nxt;
+	char t_chr;
 } Tok;
 
 /* MX Index
@@ -214,19 +218,19 @@ typedef struct{
 #define IMACRO		11
 
 typedef struct {
-	char *	ie_name;
-	int	ie_sec;
-	int	ie_mod;
+	char *ie_name;
+	int ie_sec;
+	int ie_mod;
 } Ientry;
 
 typedef struct {
-	char *	it_name;
-	int	it_nentry;
+	char *it_name;
+	int it_nentry;
 	Ientry *it_entrys;
 } Itable;
 
-extern	Itable *itable;
-extern	int itable_done;
+extern Itable *itable;
+extern int itable_done;
 
 #define link_color "#6666ff"
 #define vlnk_color "#871F78"

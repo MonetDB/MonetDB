@@ -26,14 +26,10 @@
 #include "list.h"
 #include "type_arg.h"
 
-class Atom : public Symbol {
-    public:
-	Atom( int t, char *n, int size = 0, 
-	      int align = 0, Atom *parent = NULL,
-	      Ops **cmds = NULL ); 
-	Atom( int t, char *n, int size = 0, 
-	      int align = 0, Arg *type = NULL,
-	      Ops **cmds = NULL ); 
+class Atom:public Symbol {
+      public:
+	Atom(int t, char *n, int size = 0, int align = 0, Atom * parent = NULL, Ops ** cmds = NULL);
+	 Atom(int t, char *n, int size = 0, int align = 0, Arg * type = NULL, Ops ** cmds = NULL);
 
 	int isFixed() const;
 	int size() const;
@@ -44,15 +40,15 @@ class Atom : public Symbol {
 	Arg *top_type() const;
 	Ops **cmds() const;
 
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 	int _size;
 	int _align;
 	Atom *_parent;
 	Arg *_type;
 	Ops **_cmds;
 };
-#endif 
+#endif
 
 @C
 #include <monetdb_config.h>

@@ -24,11 +24,11 @@
 
 #include "symbol.h"
 
-class Prelude : public Symbol {
-    public:
-	Prelude( int t, char *n ); 
+class Prelude:public Symbol {
+      public:
+	Prelude(int t, char *n);
 
-	virtual ostream &print( language *l, ostream &o ) const ;
+	virtual ostream & print(language * l, ostream & o) const;
 };
 #endif // _PRELUDE_H_
 

@@ -25,12 +25,13 @@
 
 #define die(X) (mapi_explain(X, stdout), exit(-1))
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	/* a parameter binding test */
-	char *nme= 0;
-       	int age= 0;
-	char *parm[]={"peter", "25", 0};
+	char *nme = 0;
+	int age = 0;
+	char *parm[] = { "peter", "25", 0 };
 	Mapi dbh;
 	MapiHdl hdl;
 
@@ -43,12 +44,12 @@ int main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh);
 
-	/* mapi_trace(dbh,1);*/
+	/* mapi_trace(dbh,1); */
 	if (strcmp(argv[3], "sql") == 0) {
-		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL) 
+		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL)
 			die(dbh);
 		mapi_close_handle(hdl);
-		if ((hdl = mapi_query_array(dbh, "insert into emp values('?', ?)", parm)) == NULL) 
+		if ((hdl = mapi_query_array(dbh, "insert into emp values('?', ?)", parm)) == NULL)
 			die(dbh);
 		mapi_close_handle(hdl);
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL)

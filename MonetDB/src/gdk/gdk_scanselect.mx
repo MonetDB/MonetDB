@@ -250,6 +250,7 @@ Expand on head type
 @:H_BUNfastins(int,SIMPLE,int)@
 @:H_BUNfastins(lng,SIMPLE,lng)@
 @:H_BUNfastins(any,ATOM,(b)->htype)@
+
 @-
 Type-mappers for convenience
 @= HT_bunfastins_typemap
@@ -272,6 +273,7 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(int,dbl,lng)@
 @:HT_bunfastins_typemap(lng,dbl,lng)@
 @:HT_bunfastins_typemap(any,dbl,lng)@
+
 #if SIZEOF_OID == SIZEOF_INT
 @:HT_bunfastins_typemap(void,oid,int)@
 @:HT_bunfastins_typemap(chr,oid,int)@
@@ -649,9 +651,9 @@ Adding test for v != nil for types where nil != MIN.
 	@:DEFseqscanIF(lng,lng,tloc,simple,lng,)@
 #endif
 #endif	/* SKIP_TYPE_EXPANSIONS */
-	@:DEFseqscanHTget(eq_str,any,tloc,if (*(var_t*)v == str_idx),tl)@
-	@:DEFseqscanIF(fix,any,tloc,atom,t,&& !atom_EQ(nil,v,t))@
-	@:DEFseqscanIF(var,any,tvar,atom,t,&& !atom_EQ(nil,v,t))@
+	@:DEFseqscanHTget(eq_str,any,tloc,if(*(var_t*)v==str_idx),tl)@
+	@:DEFseqscanIF(fix,any,tloc,atom,t,&&!atom_EQ(nil,v,t))@
+	@:DEFseqscanIF(var,any,tvar,atom,t,&&!atom_EQ(nil,v,t))@
 @= seqscanTTget
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_CHR
@@ -694,12 +696,12 @@ Adding test for v != nil for types where nil != MIN.
 			 * This is an equi select, so we assemble the
 			 * predicate here and skip seqscanIF. */
 			str_idx = strLocate(&b->theap, tl);
-			@:seqscanHTget(eq_str,any,tloc,if ((*(var_t*)v) == str_idx),tl)@
+			@:seqscanHTget(eq_str,any,tloc,if((*(var_t*)v)==str_idx),tl)@
 		} else {
-			@:seqscanIF(var,any,tvar,atom,t,&& !atom_EQ(nil,v,t))@
+			@:seqscanIF(var,any,tvar,atom,t,&&!atom_EQ(nil,v,t))@
 		}
 	} else {
-			@:seqscanIF(fix,any,tloc,atom,t,&& !atom_EQ(nil,v,t))@
+			@:seqscanIF(fix,any,tloc,atom,t,&&!atom_EQ(nil,v,t))@
 	}
 @-
 
@@ -712,21 +714,24 @@ Generate all working functions.
 The dispatcher, called from BAT_select (gdk_batop.mx).
 
 @c
-BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lval, int hval, int nocheck)
+BAT *
+BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lval, int hval, int nocheck)
 {
 	int t = b->ttype;
+
 #ifndef SKIP_TYPE_EXPANSIONS
 #if !defined(NOEXPAND_CHR) || !defined(NOEXPAND_SHT) || !defined(NOEXPAND_INT) || !defined(NOEXPAND_LNG)
-        int AsHt = ATOMstorage(bn->htype), AsTt = ATOMstorage(t);
+	int AsHt = ATOMstorage(bn->htype), AsTt = ATOMstorage(t);
 #endif
 #endif
 	var_t str_idx = 0;
-	oid oid_ctr = (oid)0;
+	oid oid_ctr = (oid) 0;
 
 	@:seqscanTTget@
-	
+
 	/* return is called in the leave of the decision tree to shortcut
 	 * the exit from this dispatcher function. */
 }
+
 @}
 @-

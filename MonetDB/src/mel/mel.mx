@@ -162,15 +162,15 @@ For further details look in the code.
 #include <stdlib.h>
 
 typedef union {
-        int i;		// integer
-        char *s;	// string
-	Symbol *sym;	// symbol
-	List *l;// symbol list
-	Ops **a; 	// symbol array
-	Ops *op; 	// Operation
+	int i;			// integer
+	char *s;		// string
+	Symbol *sym;		// symbol
+	List *l;		// symbol list
+	Ops **a;		// symbol array
+	Ops *op;		// Operation
 	struct {
-		int i1,i2;
-	}r;
+		int i1, i2;
+	} r;
 } yystype;
 
 #define yyerror(err)	mel_yyerror(err)
@@ -179,30 +179,31 @@ typedef union {
 int yylex();
 extern "C" int yyparse();
 
-extern void  mel_yyerror(const char *);
+extern void mel_yyerror(const char *);
 
-extern void *get_cur_buffer( );
-extern void new_buffer( FILE *f );
-extern void close_and_change( void *buf, FILE *f );
+extern void *get_cur_buffer();
+extern void new_buffer(FILE *f);
+extern void close_and_change(void *buf, FILE *f);
 extern void semerror();
 
-extern const char *token2str( int token );
-extern const char *type2str( int tpe );
-extern const char *get_signature( char* fcn);
+extern const char *token2str(int token);
+extern const char *type2str(int tpe);
+extern const char *get_signature(char *fcn);
 
 
 #define yywrap()	1
 
 extern int parse_error;
 extern int sem_error;
-extern char  *progname;
-extern int   yylineno;
+extern char *progname;
+extern int yylineno;
+
 #ifdef YYTEXT_POINTER
-extern char  *yytext;
+extern char *yytext;
 #else
-extern char  yytext[];
+extern char yytext[];
 #endif
-extern FILE* yyin;
+extern FILE *yyin;
 
 extern Symtable *table;
 extern Symbol *root;

@@ -64,21 +64,21 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 #define HITk(t1,t2)             TRUE
 #define HITs(t1,t2)             ((*cmp)(t1,t2) == 0)
 #define TAILCHECKs(l,r)         TYPEerror(BATttype(l),	BATttype(r))
-#define TAILCHECKk(l,r)         FALSE		
+#define TAILCHECKk(l,r)         FALSE
 #define EQUALs(t1,t2)           ((*cmp)(t1,t2) == 0 && (*cmp)(t1,tnil))
 #define EQUALk(t1,t2)           TRUE
 #define FLIPs(l,r)              TRUE
 #define FLIPk(l,r)              FALSE
 
 #define HITintersect(h,t)       bunfastins(bn,h,t)
-#define HITdiff(h,t)		
+#define HITdiff(h,t)
 #define MISSintersect(h,t)
 #define MISSdiff(h,t)           bunfastins(bn,h,t)
 #define ENDintersect(h,t)
 #define ENDdiff(h,t)            for(;p1<q1;p1+=s1) bunfastins(bn,h,t)
 #define RALIGNdiff(bn,l,r)      FALSE
 #define RALIGNintersect(bn,l,r) ((BAThordered(l)&BAThordered(r)&1) && l->hkey\
-                                && BATcount(bn)==BATcount(r)) 
+                                && BATcount(bn)==BATcount(r))
 #endif /* _GDK_SETOP_H */
 
 @c
@@ -174,20 +174,24 @@ next@2@3@5:;
 	    }  
 	}
 @c
-BAT* BATins_kunique(BAT *bn, BAT *b) {
+BAT *
+BATins_kunique(BAT *bn, BAT *b)
+{
 	BATcheck(b, "BATins_kunique: src BAT");
 	@:elim_doubles(k)@
-    	return bn;
-bunins_failed:
+	return bn;
+      bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }
 
-BAT* BATins_sunique(BAT *bn, BAT *b) {
+BAT *
+BATins_sunique(BAT *bn, BAT *b)
+{
 	BUN fst1, fst2, last1, last2;
 
-   	BATcheck(b, "BATins_sunique: src BAT");
-   	BATcheck(bn, "BATins_sunique: dst BAT");
+	BATcheck(b, "BATins_sunique: src BAT");
+	BATcheck(bn, "BATins_sunique: dst BAT");
 
 	fst1 = BUNfirst(bn);
 	fst2 = BUNfirst(b);
@@ -195,24 +199,21 @@ BAT* BATins_sunique(BAT *bn, BAT *b) {
 	last1 = (BUNlast(bn) - BUNsize(bn));
 	last2 = (BUNlast(b) - BUNsize(b));
 
-	if (BATcount(b) && (BAThordered(b)&1) && ATOMcmp(b->htype,BUNhead(b,fst2),BUNhead(b,last2)) == 0 &&
-	   (BATcount(bn) == 0 || (ATOMcmp(bn->htype,BUNhead(bn,fst1),BUNhead(b,fst2)) == 0 &&
-	   (BAThordered(bn)&1) && ATOMcmp(bn->htype,BUNhead(bn,fst1),BUNhead(bn,last1)) == 0)))
-	{
+	if (BATcount(b) && (BAThordered(b) & 1) && ATOMcmp(b->htype, BUNhead(b, fst2), BUNhead(b, last2)) == 0 &&
+	    (BATcount(bn) == 0 || (ATOMcmp(bn->htype, BUNhead(bn, fst1), BUNhead(b, fst2)) == 0 && (BAThordered(bn) & 1) && ATOMcmp(bn->htype, BUNhead(bn, fst1), BUNhead(bn, last1)) == 0))) {
 		return BATins_kunique(BATmirror(bn), BATmirror(b));
 	}
-	if (BATcount(b) && (BATtordered(b)&1) && ATOMcmp(b->ttype,BUNtail(b,fst2),BUNtail(b,last2)) == 0 &&
-	   (BATcount(bn) == 0 || (ATOMcmp(bn->ttype,BUNtail(bn,fst1),BUNtail(b,fst2)) == 0 &&
-	   (BATtordered(bn)&1) && ATOMcmp(bn->ttype,BUNtail(bn,fst1),BUNtail(bn,last1)) == 0)))
-	{
+	if (BATcount(b) && (BATtordered(b) & 1) && ATOMcmp(b->ttype, BUNtail(b, fst2), BUNtail(b, last2)) == 0 &&
+	    (BATcount(bn) == 0 || (ATOMcmp(bn->ttype, BUNtail(bn, fst1), BUNtail(b, fst2)) == 0 && (BATtordered(bn) & 1) && ATOMcmp(bn->ttype, BUNtail(bn, fst1), BUNtail(bn, last1)) == 0))) {
 		return BATins_kunique(bn, b);
 	}
-	if ((BATtordered(b)&1) && ATOMstorage(b->ttype) < TYPE_str) {
-		BATflipflop(bn); BATflipflop(b);
+	if ((BATtordered(b) & 1) && ATOMstorage(b->ttype) < TYPE_str) {
+		BATflipflop(bn);
+		BATflipflop(b);
 	}
 	@:elim_doubles(s)@
-   	return bn;
-bunins_failed:
+	return bn;
+      bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -222,91 +223,109 @@ bunins_failed:
 The routine @`BATsunique@5 removes duplicate BUNs,
 The routine @`BATkunique@5 removes duplicate head entries. 
 @c
-BAT *BATkunique(BAT *b) {
-	BAT	*bn;
+BAT *
+BATkunique(BAT *b)
+{
+	BAT *bn;
+
 	BATcheck(b, "BATkunique:");
 
-        if (b->hkey) {
-	    bn = BATrcopy(b);
+	if (b->hkey) {
+		bn = BATrcopy(b);
 	} else {
-	    size_t cnt = BATcount(b);
-	    if (cnt > 10000) {
-		BAT *tmp2=NULL, *tmp1, *tmp0 = VIEWhead_(b, BAT_WRITE);
-		if (tmp0) {
-			tmp1 = BATsample(b, 1000);
-			if (tmp1) {
-				tmp2 = BATkunique(tmp1);
-				if (tmp2) {
-					cnt = (size_t) ((((lng) BATcount(tmp2)) * cnt) / 900);
-					BBPreclaim(tmp2);
+		size_t cnt = BATcount(b);
+
+		if (cnt > 10000) {
+			BAT *tmp2 = NULL, *tmp1, *tmp0 = VIEWhead_(b, BAT_WRITE);
+
+			if (tmp0) {
+				tmp1 = BATsample(b, 1000);
+				if (tmp1) {
+					tmp2 = BATkunique(tmp1);
+					if (tmp2) {
+						cnt = (size_t) ((((lng) BATcount(tmp2)) * cnt) / 900);
+						BBPreclaim(tmp2);
+					}
+					BBPreclaim(tmp1);
 				}
-				BBPreclaim(tmp1);
+				BBPreclaim(tmp0);
 			}
-			BBPreclaim(tmp0);
+			if (tmp2 == NULL)
+				return NULL;
 		}
-		if (tmp2 == NULL) return NULL;
-	    }
-	    bn = BATnew(BAThtype(b), BATttype(b), cnt);
-	    if (bn == NULL || BATins_kunique(bn, b) == NULL) return NULL;
+		bn = BATnew(BAThtype(b), BATttype(b), cnt);
+		if (bn == NULL || BATins_kunique(bn, b) == NULL)
+			return NULL;
 	}
 
 	/* property management */
 	if (b->halign == 0) {
 		b->halign = OIDnew(1);
 	}
-	BATkey(bn, TRUE); /* this we accomplished */ 
+	BATkey(bn, TRUE);	/* this we accomplished */
 	BATkey(BATmirror(bn), b->tkey);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
-	if (BATcount(bn)==BATcount(b)) {
+	if (BATcount(bn) == BATcount(b)) {
 		ALIGNset(bn, b);
 	}
-	return bn; 
+	return bn;
 }
 
-BAT *BATukunique(BAT *b) {
+BAT *
+BATukunique(BAT *b)
+{
 	BAT *v, *bn;
+
 	BATcheck(b, "BATukunique:");
 	bn = BATkunique(v = VIEWhead(b));
 	BBPreclaim(v);
 	return bn;
 }
 
-BAT *BATsunique (BAT *b) {
-	BAT	*bn;
+BAT *
+BATsunique(BAT *b)
+{
+	BAT *bn;
+
 	BATcheck(b, "BATsnique:");
 
 	if (b->hkey || b->tkey || b->batSet) {
-	    bn = BATrcopy(b);
+		bn = BATrcopy(b);
 	} else {
-	    size_t cnt = BATcount(b);
-	    if (cnt > 10000) {
-		BAT *tmp2 = NULL, *tmp1 = BATsample(b, 1000);
-		if (tmp1) {
-			tmp2 = BATkunique(tmp1);
-			if (tmp2) {
-				cnt = BATcount(tmp2) * (cnt/1000);
-				BBPreclaim(tmp2);
+		size_t cnt = BATcount(b);
+
+		if (cnt > 10000) {
+			BAT *tmp2 = NULL, *tmp1 = BATsample(b, 1000);
+
+			if (tmp1) {
+				tmp2 = BATkunique(tmp1);
+				if (tmp2) {
+					cnt = BATcount(tmp2) * (cnt / 1000);
+					BBPreclaim(tmp2);
+				}
+				BBPreclaim(tmp1);
 			}
-			BBPreclaim(tmp1);
+			if (tmp2 == NULL)
+				return NULL;
 		}
-		if (tmp2 == NULL) return NULL;
-	    }
-	    bn = BATnew(BAThtype(b), BATttype(b), cnt);
-	    if (bn == NULL || BATins_sunique(bn, b) == NULL) return NULL;
+		bn = BATnew(BAThtype(b), BATttype(b), cnt);
+		if (bn == NULL || BATins_sunique(bn, b) == NULL)
+			return NULL;
 	}
 
 	/* property management */
-	BATset(bn, TRUE); /* this we accomplished */ 
+	BATset(bn, TRUE);	/* this we accomplished */
 	BATkey(bn, b->hkey);
 	BATkey(BATmirror(bn), b->tkey);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
-	if (BATcount(bn)==BATcount(b)) {
+	if (BATcount(bn) == BATcount(b)) {
 		ALIGNset(bn, b);
 	}
-	return bn; 
+	return bn;
 }
+
 @}
 @+ Difference and Intersect
 Difference and Intersection are handled together. For each routine
@@ -589,28 +608,31 @@ double elimination.
 #define KEYk	TRUE
 #define KEYs	FALSE
 
-BAT* BATmaterialize_(BAT *b, size_t size){
+BAT *
+BATmaterialize_(BAT *b, size_t size)
+{
 	BAT *bn = BATnew(TYPE_oid, ATOMtype(b->ttype), size);
-	BUN p,q; 
+	BUN p, q;
 	int xx;
 	oid base;
 
-	if (bn == NULL) return NULL;
+	if (bn == NULL)
+		return NULL;
 	base = b->hseqbase;
 	if (base == oid_nil) {
-		BATloopFast(b,p,q,xx) {
-		    bunfastins(bn, &base, BUNtail(b,p)); 
+		BATloopFast(b, p, q, xx) {
+			bunfastins(bn, &base, BUNtail(b, p));
 		}
 	} else {
-		BATloopFast(b,p,q,xx) {
-		    bunfastins(bn, &base, BUNtail(b,p)); 
-		    base++;
+		BATloopFast(b, p, q, xx) {
+			bunfastins(bn, &base, BUNtail(b, p));
+			base++;
 		}
 	}
-	ALIGNsetH(bn,b);
-	ALIGNsetT(bn,b);
+	ALIGNsetH(bn, b);
+	ALIGNsetT(bn, b);
 	return bn;
-bunins_failed:
+      bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }

@@ -25,7 +25,8 @@
 
 #define die(X) (mapi_explain(X, stdout), exit(-1))
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	Mapi dbh;
 	MapiHdl hdl;
@@ -42,12 +43,12 @@ int main(int argc, char **argv)
 
 	mapi_cache_limit(dbh, 2);
 	/* mapi_trace_log(dbh, "/tmp/mapilog"); */
-	/* mapi_trace(dbh, 1);*/
+	/* mapi_trace(dbh, 1); */
 	if (strcmp(argv[3], "sql") == 0) {
-		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL) 
+		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL)
 			die(dbh);
 		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL) 
+		if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL)
 			die(dbh);
 		mapi_close_handle(hdl);
 		if ((hdl = mapi_query(dbh, "insert into emp values('Mary', 22)")) == NULL)
@@ -74,10 +75,11 @@ int main(int argc, char **argv)
 	while (mapi_fetch_row(hdl)) {
 		char *nme = mapi_fetch_field(hdl, 0);
 		char *age = mapi_fetch_field(hdl, 1);
+
 		printf("%s is %s\n", nme, age);
 	}
 	/* mapi_stat(dbh);
-	printf("mapi_ping %d\n",mapi_ping(dbh)); */
+	   printf("mapi_ping %d\n",mapi_ping(dbh)); */
 	mapi_close_handle(hdl);
 	mapi_disconnect(dbh);
 

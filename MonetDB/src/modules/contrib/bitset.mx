@@ -135,7 +135,9 @@ allowed strings are:
 @-
 @c
 
-int bitset_fromstr(char* src,int* len,bitset** atom) {
+int
+bitset_fromstr(char *src, int *len, bitset **atom)
+{
 
 	if (*len < (int) sizeof(int)) {
 		GDKfree(*atom);
@@ -143,7 +145,7 @@ int bitset_fromstr(char* src,int* len,bitset** atom) {
 		*len = sizeof(bitset);
 	}
 
-	sscanf(src,"%i",*atom);
+	sscanf(src, "%i", *atom);
 
 	return (int) strlen(src);
 
@@ -156,48 +158,50 @@ Create a string from a BitSet
 @-
 @c
 
-int bitset_tostr(char** dst,int* len,bitset* atom) {
+int
+bitset_tostr(char **dst, int *len, bitset *atom)
+{
 
 	int i;
 
 #ifdef DEBUG
-	printf("printing bitset[%d]\n",(int)*atom);
+	printf("printing bitset[%d]\n", (int) *atom);
 #endif
 
 #ifdef DEBUG
-	printf("len[%d]\n",*len);
+	printf("len[%d]\n", *len);
 #endif
-	if (*len < (int) ((sizeof(bitset)*8)+1)) {
+	if (*len < (int) ((sizeof(bitset) * 8) + 1)) {
 #ifdef DEBUG
-	printf("freeing allocated memory\n");
+		printf("freeing allocated memory\n");
 #endif
 		GDKfree(*dst);
-		*dst = GDKmalloc((sizeof(bitset)*8)+1);
-		*len = (sizeof(bitset)*8)+1;
+		*dst = GDKmalloc((sizeof(bitset) * 8) + 1);
+		*len = (sizeof(bitset) * 8) + 1;
 	}
 #ifdef DEBUG
 	printf("allocating memory\n");
 #endif
 #ifdef DEBUG
-	printf("allocated %d bytes\n",*len);
+	printf("allocated %d bytes\n", *len);
 #endif
 
 #ifdef DEBUG
 	printf("constructing string\n");
 #endif
-	strcpy(*dst,"");
-	for (i=(sizeof(bitset)*8)-1;i>=0;i--) {
+	strcpy(*dst, "");
+	for (i = (sizeof(bitset) * 8) - 1; i >= 0; i--) {
 #ifdef DEBUG
-	printf("%d ",i);
+		printf("%d ", i);
 #endif
-		if ( (*atom >> i) & 1 )
-			strcat(*dst,"t");
+		if ((*atom >>i) &1)
+			strcat(*dst, "t");
 		else
-			strcat(*dst,"f");
+			strcat(*dst, "f");
 	}
 
 #ifdef DEBUG
-	printf("\nconstructed string[%s]\n",*dst);
+	printf("\nconstructed string[%s]\n", *dst);
 #endif
 
 	return (int) strlen(*dst);
@@ -214,12 +218,14 @@ Create a new BitSet from an existing integer.
 @-
 @c
 
-int newBitset1( bitset* res, int* theBits ) {
+int
+newBitset1(bitset *res, int *theBits)
+{
 
 	*res = *theBits;
 
 #ifdef DEBUG
-	printf("created new bitset[%d] from int[%d]\n",*res,*theBits);
+	printf("created new bitset[%d] from int[%d]\n", *res, *theBits);
 #endif
 
 	return GDK_SUCCEED;
@@ -233,12 +239,14 @@ Create a new empty BitSet.
 @-
 @c
 
-int newBitset2( bitset* res ) {
+int
+newBitset2(bitset *res)
+{
 
 	*res = 0;
 
 #ifdef DEBUG
-	printf("created new empty bitset[%d]\n",(int)*res);
+	printf("created new empty bitset[%d]\n", (int) *res);
 #endif
 
 	return GDK_SUCCEED;
@@ -255,16 +263,18 @@ Clear the specified bit in this BitSet.
 @-
 @c
 
-extern int bitset_clearBit( bitset* res, bitset* theBitSet, int* theBit ) {
+extern int
+bitset_clearBit(bitset *res, bitset *theBitSet, int *theBit)
+{
 
-	if (*theBit >= (int) (sizeof(bitset)*8)) {
+	if (*theBit >= (int) (sizeof(bitset) * 8)) {
 		GDKerror("bitset_clearBit: This bit doesn't exist in the set\n");
 		return GDK_FAIL;
 	}
 
 	*res = *theBitSet & (~(1 << *theBit));
 
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 
 }
 
@@ -276,16 +286,18 @@ Flip the specified bit in this BitSet.
 @-
 @c
 
-extern int bitset_flipBit( bitset* res, bitset* theBitSet, int* theBit ) {
+extern int
+bitset_flipBit(bitset *res, bitset *theBitSet, int *theBit)
+{
 
-	if (*theBit >= (int) (sizeof(bitset)*8)) {
+	if (*theBit >= (int) (sizeof(bitset) * 8)) {
 		GDKerror("bitset_flipBit: This bit doesn't exist in the set\n");
 		return GDK_FAIL;
 	}
 
 	*res = *theBitSet ^ (1 << *theBit);
 
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 
 }
 
@@ -296,9 +308,11 @@ Get the specified bit from this BitSet.
 @-
 @c
 
-extern int bitset_getBit( bit* res, bitset* theBitSet, int* theBit ) {
+extern int
+bitset_getBit(bit *res, bitset *theBitSet, int *theBit)
+{
 
-	if (*theBit >= (int) (sizeof(bitset)*8)) {
+	if (*theBit >= (int) (sizeof(bitset) * 8)) {
 		GDKerror("bitset_getBit: This bit doesn't exist in the set\n");
 		return GDK_FAIL;
 	}
@@ -307,7 +321,7 @@ extern int bitset_getBit( bit* res, bitset* theBitSet, int* theBit ) {
 /*
 fprintf(GDKout,"bitset_getBit(%d,%d) result: %d %s\n",*theBitSet,*theBit,*res,*res?"true":"false");
 */
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 
 }
 
@@ -318,16 +332,18 @@ Set the specified bit from this BitSet.
 @-
 @c
 
-extern int bitset_setBit( bitset* res, bitset* theBitSet, int* theBit ) {
+extern int
+bitset_setBit(bitset *res, bitset *theBitSet, int *theBit)
+{
 
-	if (*theBit >= (int) (sizeof(bitset)*8)) {
+	if (*theBit >= (int) (sizeof(bitset) * 8)) {
 		GDKerror("bitset_setBit: This bit doesn't exist in the set\n");
 		return GDK_FAIL;
 	}
 
 	*res = *theBitSet | (1 << *theBit);
 
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 
 }
 
@@ -338,11 +354,13 @@ AND this BitSet with an other BitSet.
 @-
 @c
 
-extern int bitset_and( bitset* res, bitset* theBitSet, bitset* otherBitSet ) {
+extern int
+bitset_and(bitset *res, bitset *theBitSet, bitset *otherBitSet)
+{
 
 	*res = (*theBitSet) & (*otherBitSet);
-	
-        return GDK_SUCCEED;
+
+	return GDK_SUCCEED;
 
 }
 
@@ -353,11 +371,13 @@ OR this BitSet with an other BitSet.
 @-
 @c
 
-extern int bitset_or( bitset* res, bitset* theBitSet, bitset* otherBitSet ) {
+extern int
+bitset_or(bitset *res, bitset *theBitSet, bitset *otherBitSet)
+{
 
 	*res = (*theBitSet) | (*otherBitSet);
-	
-        return GDK_SUCCEED;
+
+	return GDK_SUCCEED;
 
 }
 
@@ -368,11 +388,13 @@ XOR this BitSet with an other BitSet.
 @-
 @c
 
-extern int bitset_xor( bitset* res, bitset* theBitSet, bitset* otherBitSet ) {
+extern int
+bitset_xor(bitset *res, bitset *theBitSet, bitset *otherBitSet)
+{
 
 	*res = (*theBitSet) ^ (*otherBitSet);
-	
-        return GDK_SUCCEED;
+
+	return GDK_SUCCEED;
 
 }
 
@@ -383,11 +405,13 @@ NOT this BitSet.
 @-
 @c
 
-extern int bitset_not( bitset* res, bitset* theBitSet ) {
+extern int
+bitset_not(bitset *res, bitset *theBitSet)
+{
 
 	*res = ~(*theBitSet);
-	
-        return GDK_SUCCEED;
+
+	return GDK_SUCCEED;
 
 }
 
@@ -398,11 +422,13 @@ Convert this BitSet to an integer.
 @-
 @c
 
-extern int bitset_toInt( int* res, bitset* theBitSet ) {
+extern int
+bitset_toInt(int *res, bitset *theBitSet)
+{
 
 	*res = *theBitSet;
-	
-        return GDK_SUCCEED;
+
+	return GDK_SUCCEED;
 
 }
 

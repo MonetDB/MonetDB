@@ -61,52 +61,82 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
 @c
 #include "trans.proto.h"
 
-int global_sync(void) { BBPsync(TRUE); return GDK_SUCCEED; }
-int global_commit(void) { TMcommit(); return GDK_SUCCEED; }
-int global_abort(void) { TMabort(); return GDK_SUCCEED; }
-
-int trans_alpha(BAT **retval, BAT *b) {
-	*retval = BATalpha(b);
-	return retval?GDK_SUCCEED:GDK_FAIL;
-}
-
-int trans_delta(BAT **retval, BAT *b) {
-	*retval = BATdelta(b);
-	return retval?GDK_SUCCEED:GDK_FAIL;
-}
-
-int trans_commit(BAT *b, ...) {
-        va_list ap;
-
-        va_start (ap,b);
-	do {
-		BATcommit(b);
-	} while ((b = va_arg(ap, BAT*)) != 0);
-        va_end (ap);
+int
+global_sync(void)
+{
+	BBPsync(TRUE);
 	return GDK_SUCCEED;
 }
 
-int trans_abort(BAT *b, ...) {
-        va_list ap;
+int
+global_commit(void)
+{
+	TMcommit();
+	return GDK_SUCCEED;
+}
 
-        va_start (ap,b);
+int
+global_abort(void)
+{
+	TMabort();
+	return GDK_SUCCEED;
+}
+
+int
+trans_alpha(BAT **retval, BAT *b)
+{
+	*retval = BATalpha(b);
+	return retval ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+trans_delta(BAT **retval, BAT *b)
+{
+	*retval = BATdelta(b);
+	return retval ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+trans_commit(BAT *b, ...)
+{
+	va_list ap;
+
+	va_start(ap, b);
+	do {
+		BATcommit(b);
+	} while ((b = va_arg(ap, BAT *)) != 0);
+
+	va_end(ap);
+	return GDK_SUCCEED;
+}
+
+int
+trans_abort(BAT *b, ...)
+{
+	va_list ap;
+
+	va_start(ap, b);
 	do {
 		BATundo(b);
 		if (b->batPersistence == PERSISTENT)
 			BBPsave(b);
-	} while ((b = va_arg(ap, BAT*)) != 0); 
-        va_end (ap);
+	} while ((b = va_arg(ap, BAT *)) != 0);
+
+	va_end(ap);
 	return GDK_SUCCEED;
 }
 
-int trans_clean(BAT *b, ...) {
-        va_list ap;
+int
+trans_clean(BAT *b, ...)
+{
+	va_list ap;
 
-        va_start (ap,b);
+	va_start(ap, b);
 	do {
 		BATfakeCommit(b);
-	} while ((b = va_arg(ap, BAT*)) != 0);
-        va_end (ap);
+	} while ((b = va_arg(ap, BAT *)) != 0);
+
+	va_end(ap);
 	return GDK_SUCCEED;
 }
 @

@@ -25,20 +25,18 @@
 #include "symbol.h"
 #include "list.h"
 
-class Module : public Symbol {
-    public:
-	Module( int t, char *n, char *fn, 
-		    List *deps = NULL,
-		    List *defs = NULL );
-	List *Deps() const ;
-	List *Defs() const ;
+class Module:public Symbol {
+      public:
+	Module(int t, char *n, char *fn, List * deps = NULL, List * defs = NULL);
+	List *Deps() const;
+	List *Defs() const;
 	char *filename() const;
 
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 	char *_fn;
-	List*	 _deps;
-	List*	 _defs;
+	List *_deps;
+	List *_defs;
 };
 #endif // _MODULE_H_
 

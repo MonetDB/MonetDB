@@ -83,11 +83,11 @@
 #define MAXLEVELS 9
 #define LENPLATEAU 3
 
-	#define EPSILON1 0.1	
+#define EPSILON1 0.1
 /*	#define EPSILON3 2.0	*/
 
 /*	#define EPSILON2 0.04	*/
-	#define EPSILON4 1.0	
+#define EPSILON4 1.0
 
 
 #define CALIBRATOR_CREATE_PLOTS
@@ -99,23 +99,26 @@
 
 #include "calib_common.c"
 caliblng MINTIME = 10000;
+
 #include "calib_run.c"
 #include "calib_analyse.c"
 #include "calib_plot.c"
 #include "calib_print.c"
 #include "calib_main.c"
 
-int main(int ac, char **av)
+int
+main(int ac, char **av)
 {
 	caliblng MHz, maxrange;
 	struct fullInfo *caliInfo;
 
-	fprintf(stdout,"\nCalibrator v%s\n(by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n", CALIB_VERSION);
+	fprintf(stdout, "\nCalibrator v%s\n(by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n", CALIB_VERSION);
 	fflush(stdout);
 
-	if (ac < 4) ErrXit("usage: '%s <MHz> <size>[k|M|G] <filename>`", av[0]);
+	if (ac < 4)
+		ErrXit("usage: '%s <MHz> <size>[k|M|G] <filename>`", av[0]);
 
-	MHz      = atoi(av[1]);
+	MHz = atoi(av[1]);
 	maxrange = bytes(av[2]) * 1.25;
 
 /*
@@ -127,12 +130,12 @@ int main(int ac, char **av)
 	printCPU(caliInfo->cache, MHz, caliInfo->delayC);
 	printCache(caliInfo->cache, caliInfo->Asso, MHz);
 	printTLB(caliInfo->TLB, MHz);
-	
+
 #ifdef CALIBRATOR_CHECK_SMP
 	printf("SMP: CPUs found: %ld\n", caliInfo->smp.nrCpus);
 #endif
-	
+
 	freeFullInfo(caliInfo);
 
-	return(0);
+	return (0);
 }

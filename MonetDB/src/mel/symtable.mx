@@ -31,17 +31,17 @@ using namespace std;
 #endif
 
 class Symtable {
-	
-    public: 
-	Symtable( size_t size );
-	~Symtable( );
-	void insert( const Symbol &s);
-	const Symbol *find( int token, const char *name ) const;
-	const Symbol *find( const char *name ) const;
-	void traverse( language *l, ostream &s );
-    private:
-	int      _next;
-	size_t   _size;
+
+      public:
+	Symtable(size_t size);
+	~Symtable();
+	void insert(const Symbol &s);
+	const Symbol *find(int token, const char *name) const;
+	const Symbol *find(const char *name) const;
+	void traverse(language * l, ostream & s);
+      private:
+	int _next;
+	size_t _size;
 	const Symbol **_table;
 };
 #endif //_SYMTABLE_H_

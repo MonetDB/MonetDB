@@ -49,7 +49,7 @@ cast functions ([dbl],[oid],...) on void-headed BATs.
 @* Implementation
 @c
 #include <gdk.h>
-#include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "bat_cast.proto.h"
 
 @c
@@ -86,4 +86,3 @@ int batcast_@1_@2(BAT **ret, BAT *b) {
 
 @:implementation(int,oid)@
 @:implementation(int,dbl)@
-

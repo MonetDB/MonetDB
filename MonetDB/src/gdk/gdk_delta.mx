@@ -104,7 +104,7 @@ transaction-dirty). For this we have @%DELTAdirty(b)@.
 @{
 @h
 #define DELTAdirty(b)	(((b)->batDeleted != (b)->batHole) ||\
-	((b)->batInserted < (b)->batBuns->base+(b)->batBuns->free)) 
+	((b)->batInserted < (b)->batBuns->base+(b)->batBuns->free))
 
 #define DELTAnexthole(b)						\
 	DELTAprintf( "#DELTAnexthole %s \n", (b)->batId );		\
@@ -136,72 +136,72 @@ The hash structure is maintained for all elements to be deleted ?.
 #include "gdk.h"
 
 
-BAT *BATprecommit (BAT *b) {
-	GDKwarning("BATprecommit:nyi\n"); 
-	return b; 
+BAT *
+BATprecommit(BAT *b)
+{
+	GDKwarning("BATprecommit:nyi\n");
+	return b;
 }
+
 @- 
 batcommit really forgets the atoms guarded for an undo; we just need to free their heap space (only if necessary).
 @c
-BAT *BATcommit(BAT *b) {
+BAT *
+BATcommit(BAT *b)
+{
 	BATcheck(b, "BATcommit");
-	DELTAprintf(
-		"#BATcommit1 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", 
-		b->batId, b->batBuns->free,
-		PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted,
-		PTRFMTCAST b->batHole, PTRFMTCAST b->batBuns->base);
+	DELTAprintf("#BATcommit1 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", b->batId, b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batHole, PTRFMTCAST b->batBuns->base);
 	ALIGNcommit(b);
-	if (b->batDeleted < b->batHole  && BBP_cache(b->batCacheid)) {
-		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel)(Heap*,var_t*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*,var_t*) = BATatoms[b->ttype].atomDel;
-		BUN p,q;
+	if (b->batDeleted < b->batHole && BBP_cache(b->batCacheid)) {
+		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
+		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
+		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
+		BUN p, q;
 		int xx;
 
 		if (hatmdel || hunfix || tatmdel || tunfix) {
-		DELloop(b, p, q, xx) {
-			ptr h = BUNhead(b,p);
-			ptr t = BUNtail(b,p);
+			DELloop(b, p, q, xx) {
+				ptr h = BUNhead(b, p);
+				ptr t = BUNtail(b, p);
 
-			if (hunfix) {
-				(*hunfix)(h);
-			}
-			if (hatmdel) {
-				(*hatmdel)(&b->hheap,(var_t*)(h));
-			}
-			if (tunfix) {
-				(*tunfix)(t);
-			}
-			if (tatmdel) {
-				(*tatmdel)(&b->theap,(var_t*)(t));
-			}
+				if (hunfix) {
+					(*hunfix) (h);
+				}
+				if (hatmdel) {
+					(*hatmdel) (&b->hheap, (var_t *) (h));
+				}
+				if (tunfix) {
+					(*tunfix) (t);
+				}
+				if (tatmdel) {
+					(*tatmdel) (&b->theap, (var_t *) (t));
+				}
 		}}
 	}
-        if (!BATdirty(b)) {
+	if (!BATdirty(b)) {
 		b->batDirtyflushed = 0;
 	}
 	if (DELTAdirty(b)) {
 		b->batDirtydesc = 1;
 	}
-	b->batDeleted = b->batHole; 
+	b->batDeleted = b->batHole;
 	if (b->batBuns->base) {
-		b->batInserted = BUNlast(b); 
+		b->batInserted = BUNlast(b);
 	} else {
 		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
 	}
-	DELTAprintf(
-		"#BATcommit2 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", 
-		b->batId, b->batBuns->free,
-		PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted,
-		PTRFMTCAST b->batHole, PTRFMTCAST b->batBuns->base);
-	return b; 
+	DELTAprintf("#BATcommit2 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " hole " PTRFMT " base " PTRFMT "\n", b->batId, b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batHole, PTRFMTCAST b->batBuns->base);
+	return b;
 }
+
 @-
 BATfakeCommit() flushed the delta info, but leaves the BAT marked clean.
 @c 
-BAT *BATfakeCommit(BAT *b) {
-	if (b) { 
+BAT *
+BATfakeCommit(BAT *b)
+{
+	if (b) {
 		BATcommit(b);
 		b->batDirty = 0;
 		b->batDirtydesc = b->batDirtybuns = 0;
@@ -210,6 +210,7 @@ BAT *BATfakeCommit(BAT *b) {
 	}
 	return b;
 }
+
 @
 @}
 @- 
@@ -220,16 +221,18 @@ inserted into the accelerators.
 @-
 @{
 @c
-BAT *BATundo(BAT *b) {
+BAT *
+BATundo(BAT *b)
+{
 	int bunsize = BUNsize(b);
-	BUN p, bunlast, bunfirst; 
+	BUN p, bunlast, bunfirst;
 	BAT *m = BATmirror(b);
 
 	BATcheck(b, "BATundo");
-	DELTAprintf( "#BATundo %s \n", b->batId );		
+	DELTAprintf("#BATundo %s \n", b->batId);
 	ALIGNundo(b);
 	if (b->hidx_heap || b->tidx_heap) {
-		IDXdestroy(b); 
+		IDXdestroy(b);
 	}
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->batDirtybuns = 1;
@@ -241,89 +244,90 @@ BAT *BATundo(BAT *b) {
 		b->hheapdirty = b->theapdirty = 0;
 	}
 	bunfirst = b->batInserted;
-	bunlast = BUNlast(b) - BUNsize(b); 
+	bunlast = BUNlast(b) - BUNsize(b);
 	if (bunlast >= b->batInserted) {
 		size_t i = BUNindex(b, bunfirst);
-		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel)(Heap*, var_t*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*, var_t*) = BATatoms[b->ttype].atomDel;
-		void (*haccdel)(Heap*,var_t,BAT*,ptr) = 
-			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accDelete;
-		void (*taccdel)(Heap*,var_t,BAT*,ptr) = 
-			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accDelete;
-               
-		if (hunfix || tunfix || hatmdel || tatmdel || haccdel || taccdel) {
-		for(p = bunfirst; p <= bunlast; p += bunsize, i++) { 
-			ptr h = BUNhead(b,p);
-			ptr t = BUNtail(b,p);
+		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
+		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
+		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
+		void (*haccdel) (Heap *, var_t, BAT *, ptr) = BATaccelerators[(b->hacctype > 0) ? b->hacctype : 0].accDelete;
+		void (*taccdel) (Heap *, var_t, BAT *, ptr) = BATaccelerators[(b->tacctype > 0) ? b->tacctype : 0].accDelete;
 
-                	if (b->hhash_heap) {
-				HASHdel(b->hhash, i, h, p < bunlast);
-			}
-			if (hunfix) {
-				(*hunfix)(h);
-			}
-			if (haccdel) {
-				(*haccdel)(&b->haccelerator, i, b, h);
-			}
-			if (hatmdel) {
-				(*hatmdel)(&b->hheap, (var_t*) (p+b->hloc));
-			}
-                	if (b->thash_heap) {
-				HASHdel(b->thash, i, t, p < bunlast);
-			}
-			if (tunfix) {
-				(*tunfix)(t);
-			}
-			if (taccdel) {
-				(*taccdel)(&b->taccelerator, i, b, t);
-			}
-			if (tatmdel) {
-				(*tatmdel)(&b->theap, (var_t*) (p+b->tloc));
-			}
+		if (hunfix || tunfix || hatmdel || tatmdel || haccdel || taccdel) {
+			for (p = bunfirst; p <= bunlast; p += bunsize, i++) {
+				ptr h = BUNhead(b, p);
+				ptr t = BUNtail(b, p);
+
+				if (b->hhash_heap) {
+					HASHdel(b->hhash, i, h, p < bunlast);
+				}
+				if (hunfix) {
+					(*hunfix) (h);
+				}
+				if (haccdel) {
+					(*haccdel) (&b->haccelerator, i, b, h);
+				}
+				if (hatmdel) {
+					(*hatmdel) (&b->hheap, (var_t *) (p + b->hloc));
+				}
+				if (b->thash_heap) {
+					HASHdel(b->thash, i, t, p < bunlast);
+				}
+				if (tunfix) {
+					(*tunfix) (t);
+				}
+				if (taccdel) {
+					(*taccdel) (&b->taccelerator, i, b, t);
+				}
+				if (tatmdel) {
+					(*tatmdel) (&b->theap, (var_t *) (p + b->tloc));
+				}
 		}}
 	}
 	b->batBuns->free = (char *) b->batInserted - (char *) Bunbase(b);
 
-	bunfirst = b->batDeleted+bunsize;
+	bunfirst = b->batDeleted + bunsize;
 	bunlast = b->batHole;
-	if (bunlast > b->batDeleted) { 
+	if (bunlast > b->batDeleted) {
 		size_t i = BUNindex(b, bunfirst);
-		void (*haccins)(Heap*,var_t,BAT*,ptr) = 
-			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accInsert;
-		void (*taccins)(Heap*,var_t,BAT*,ptr) = 
-			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accInsert;
+		void (*haccins) (Heap *, var_t, BAT *, ptr) = BATaccelerators[(b->hacctype > 0) ? b->hacctype : 0].accInsert;
+		void (*taccins) (Heap *, var_t, BAT *, ptr) = BATaccelerators[(b->tacctype > 0) ? b->tacctype : 0].accInsert;
 
 		memcpy(b->batHole, b->batDeleted, bunsize);
 
 		/* elements are 'inserted' => zap properties */
-		if (b->hsorted&1) b->hsorted = FALSE;
-		if (b->tsorted&1) b->tsorted = FALSE;
-		if (b->hkey) BATkey(b, FALSE);
-		if (b->tkey) BATkey(BATmirror(b), FALSE);
+		if (b->hsorted & 1)
+			b->hsorted = FALSE;
+		if (b->tsorted & 1)
+			b->tsorted = FALSE;
+		if (b->hkey)
+			BATkey(b, FALSE);
+		if (b->tkey)
+			BATkey(BATmirror(b), FALSE);
 
-		for(p = bunfirst; p < bunlast; p += bunsize, i++) { 
-			ptr h = BUNhead(b,p);
-			ptr t = BUNtail(b,p);
+		for (p = bunfirst; p < bunlast; p += bunsize, i++) {
+			ptr h = BUNhead(b, p);
+			ptr t = BUNtail(b, p);
 
 			if (b->hhash_heap) {
 				HASHins(b->hhash, i, h);
-	    		} 
-			if (haccins) {
-				(*haccins)(&b->hheap, i, m, h);
 			}
-            		if (b->thash_heap) {
+			if (haccins) {
+				(*haccins) (&b->hheap, i, m, h);
+			}
+			if (b->thash_heap) {
 				HASHins(b->thash, i, t);
-	    		}
+			}
 			if (taccins) {
-				(*taccins)(&b->theap, i, m, t);
-	    		}
+				(*taccins) (&b->theap, i, m, t);
+			}
 		}
 	}
-	b->batHole = b->batDeleted; 
-	return b; 
+	b->batHole = b->batDeleted;
+	return b;
 }
+
 @}
 @- 
 The proposed modifications can be obtained through the @%BATalpha@
@@ -331,53 +335,62 @@ and @%BATdelta@ routines , which return the inserted and deleted BUNs,
 respectively.
 @{
 @c
-BAT *BATalpha(BAT *b) {
-	BUN	p; 
-	BAT	*bn; 
-	
+BAT *
+BATalpha(BAT *b)
+{
+	BUN p;
+	BAT *bn;
+
 	BATcheck(b, "BATalpha");
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b)); 
+	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b));
 	if (bn == NULL) {
-		return bn; 
+		return bn;
 	}
 	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
 		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p)) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
-		} 
+		}
 	}
-	return bn; 
+	return bn;
 }
 
-BAT *BATdelta(BAT *b) {
-	BUN	p; 
-	BAT	*bn; 
-	
+BAT *
+BATdelta(BAT *b)
+{
+	BUN p;
+	BAT *bn;
+
 	BATcheck(b, "BATdelta");
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b)); 
+	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b));
 	if (bn == NULL) {
-		return bn; 
+		return bn;
 	}
 	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)) {
 		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p)) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
-		} 
+		}
 	}
-	return bn; 
+	return bn;
 }
+
 @
 @- 
 The event status associated with a BAT can be inspected by simple routines.
 @c
-int BATdeltaEvent(BAT *b) {
+int
+BATdeltaEvent(BAT *b)
+{
 	BATcheck(b, "BATdeltaEvent");
-	return BUNindex(b, b->batHole) > BUNindex(b, b->batDeleted); 
+	return BUNindex(b, b->batHole) > BUNindex(b, b->batDeleted);
 }
 
-int BATalphaEvent(BAT *b) {
+int
+BATalphaEvent(BAT *b)
+{
 	BATcheck(b, "BATalphaEvent");
-	return BUNindex(b, BUNlast(b)) > BUNindex(b, b->batInserted); 
+	return BUNindex(b, BUNlast(b)) > BUNindex(b, b->batInserted);
 }
 
 @}

@@ -64,59 +64,59 @@ information (htop,hot). The events are sorted by starting time.
 #define EVAWAIT		-3
 
 typedef struct MEVENT {
-	YYSTREE		ev_data;
-	Client		ev_client;
-	Cntxt		ev_stk;
-	int		ev_status;
-	int		ev_kill;
-	int		ev_process;
-	struct MEVENT	*ev_wakeup;
-	struct MEVENT	*ev_next;
-	struct MEVENT	*ev_prev;
-	int		ev_seqnr;		/* unique integer */
+	YYSTREE ev_data;
+	Client ev_client;
+	Cntxt ev_stk;
+	int ev_status;
+	int ev_kill;
+	int ev_process;
+	struct MEVENT *ev_wakeup;
+	struct MEVENT *ev_next;
+	struct MEVENT *ev_prev;
+	int ev_seqnr;		/* unique integer */
 	/* Add space for detailed performance tracing */
-	@:QMstatistics@
+	 @:QMstatistics@
 } *Request, RequestRec;
 
 /* request management */
-m_export Request	newRequest(Cntxt stk, YYSTREE data, int barrier);
-m_export void		putkillRequest(void);
-m_export void		wakeupRequest(Request p);
-m_export void		putRequest(Request p);
-m_export void		nxtRequest(Request p);
-m_export Request	getRequest(Request barrier);
-m_export void		unlinkRequest(Request q);
-m_export void		clrRequest(Request q);	
-m_export void		rmRequest(Request r);
-m_export int		handleRequest  (Thread t, Request q, ValPtr res);
-m_export void		doRequest(Thread t, Request preference);
-m_export void		prRequest(stream *fp, Request p);
-m_export Request	thisRequest(void);
-m_export Request	topRequest(Client c);
+m_export Request newRequest(Cntxt stk, YYSTREE data, int barrier);
+m_export void putkillRequest(void);
+m_export void wakeupRequest(Request p);
+m_export void putRequest(Request p);
+m_export void nxtRequest(Request p);
+m_export Request getRequest(Request barrier);
+m_export void unlinkRequest(Request q);
+m_export void clrRequest(Request q);
+m_export void rmRequest(Request r);
+m_export int handleRequest(Thread t, Request q, ValPtr res);
+m_export void doRequest(Thread t, Request preference);
+m_export void prRequest(stream *fp, Request p);
+m_export Request thisRequest(void);
+m_export Request topRequest(Client c);
 
-m_export Request	qm_first;
-m_export Request	qm_last;
-m_export Request	qm_top;
-m_export Request	qm_bot;
-m_export int		qm_profile;
+m_export Request qm_first;
+m_export Request qm_last;
+m_export Request qm_top;
+m_export Request qm_bot;
+m_export int qm_profile;
 
 /* QM queue management */
-m_export int		QMenqueue(Cntxt stk, YYSTREE data, int bar, int kill);
-m_export Request	QMrequest(int qkey);
-m_export Request	QMclient(Request start, Client c);
-m_export void		QMwakeup(int qkey);
-m_export int		QMbefore(int qkey1, int qkey2);
-m_export void		QMprint(void);
-m_export int		QMopen(void);
+m_export int QMenqueue(Cntxt stk, YYSTREE data, int bar, int kill);
+m_export Request QMrequest(int qkey);
+m_export Request QMclient(Request start, Client c);
+m_export void QMwakeup(int qkey);
+m_export int QMbefore(int qkey1, int qkey2);
+m_export void QMprint(void);
+m_export int QMopen(void);
 
 /* QM statistics */
-m_export void 		QMtrace(int flag);
-m_export void 		QMmessage(Request q, str msg);
-m_export void 		QMenqueueStat(Request q);
-m_export void 		QMexecStat(Request q);
-m_export void 		QMdequeueStat(Request q);
-m_export void 		QMprintStat(void);
-m_export void 		QMclearStat(void);
+m_export void QMtrace(int flag);
+m_export void QMmessage(Request q, str msg);
+m_export void QMenqueueStat(Request q);
+m_export void QMexecStat(Request q);
+m_export void QMdequeueStat(Request q);
+m_export void QMprintStat(void);
+m_export void QMclearStat(void);
 
 #endif /* _MONET_QUEUE_H_ */
 @}
@@ -128,28 +128,28 @@ processing.
 @c
 #include "monet_deparse.h"
 
-int		QMclock;
-int		QMrequests;
-Request		qm_first, qm_last;
+int QMclock;
+int QMrequests;
+Request qm_first, qm_last;
 
-void prRequest(stream *fp, Request p) {
+void
+prRequest(stream *fp, Request p)
+{
 	char buf[256], *s;
 	int l = 0;
 
-	sprintf(buf,"%d", p->ev_status);
-	THRprintf(fp, "[ %6d, %9d, %9s, %9d, \"", 
-		p->ev_seqnr, p->ev_process, 
-		( p->ev_status == EVDONE ? "done":
-		( p->ev_status == EVRUNNING ? "running":
-		( p->ev_status == EVAWAIT? "waiting":
-		( p->ev_status == EVPENDING ? "pending": buf 
-		)))),
-		(p->ev_wakeup? p->ev_wakeup->ev_seqnr:0) );
-	if( p->ev_data ) {
-		l = 28-yytoProlog(p->ev_data, 25);
+	sprintf(buf, "%d", p->ev_status);
+	THRprintf(fp, "[ %6d, %9d, %9s, %9d, \"", p->ev_seqnr, p->ev_process, (p->ev_status == EVDONE ? "done" : (p->ev_status == EVRUNNING ? "running" : (p->ev_status == EVAWAIT ? "waiting" : (p->ev_status == EVPENDING ? "pending" : buf)))),
+		  (p->ev_wakeup ? p->ev_wakeup->ev_seqnr : 0));
+	if (p->ev_data) {
+		l = 28 - yytoProlog(p->ev_data, 25);
 	}
-	for(s=buf,*s++='"'; l > 0; l--) *s++ = ' '; 
-	*s++ = ' '; *s++ = ']'; *s++ = '\n'; *s = 0;
+	for (s = buf, *s++ = '"'; l > 0; l--)
+		*s++ = ' ';
+	*s++ = ' ';
+	*s++ = ']';
+	*s++ = '\n';
+	*s = 0;
 	THRprintf(fp, buf);
 }
 
@@ -162,7 +162,9 @@ This way a sequence can be prepared with all dependencies in place.
 The request immediately gets a unique time stamp for tracing.
 @{
 @c
-Request newRequest(Cntxt stk, YYSTREE data, int barrier){
+Request
+newRequest(Cntxt stk, YYSTREE data, int barrier)
+{
 	Request p = (Request) GDKmalloc(sizeof(RequestRec));
 
 	p->ev_data = data;
@@ -174,12 +176,13 @@ Request newRequest(Cntxt stk, YYSTREE data, int barrier){
 	p->ev_wakeup = 0;
 	p->ev_next = 0;
 	p->ev_prev = 0;
-	p->ev_seqnr = QMclock++; /* DANGEROUS, should be in critical section */
+	p->ev_seqnr = QMclock++;	/* DANGEROUS, should be in critical section */
 	p->qm_puttid = p->qm_gettid = 0;
 	p->qm_enter = p->qm_start = 0;
 	p->qm_cmd[0] = 0;
 	return p;
 }
+
 @
 @}
 
@@ -189,10 +192,14 @@ and puts it in the queue. A kill request will kill the
 one arbitrary monet Interpreter thread that stumbles on it.
 @{
 @c
-void putkillRequest(void) {
-        Request m = newRequest((Cntxt) 0, (YYSTREE) 0, 0);
-        putRequest(m);
+void
+putkillRequest(void)
+{
+	Request m = newRequest((Cntxt) 0, (YYSTREE) 0, 0);
+
+	putRequest(m);
 }
+
 @
 @}
 @-
@@ -206,26 +213,32 @@ operation.
 All code should pass the wakeupRequest point.
 @{
 @c
-int sem=0; char mybuf[16000], *myp = mybuf;
+int sem = 0;
+char mybuf[16000], *myp = mybuf;
 
-void wakeupRequest(Request p){
+void
+wakeupRequest(Request p)
+{
 	p->ev_status = EVPENDING;
-	monet_up_sema(monet_available, "wakeupRequest"); 
+	monet_up_sema(monet_available, "wakeupRequest");
 }
- 
-void putRequest(Request p){
+
+void
+putRequest(Request p)
+{
 	Request last, op = p;
 	int cnt = 0;
 
-	if ( p == NULL ) {
+	if (p == NULL) {
 		GDKerror("putRequest: nil request received\n");
 		return;
 	}
 
-	for (last = p; TRUE ; last = last->ev_next) {
+	for (last = p; TRUE; last = last->ev_next) {
 		QMenqueueStat(last);
 		cnt++;
-		if( last->ev_next == NULL) break;
+		if (last->ev_next == NULL)
+			break;
 	}
 
 	monet_set_lock(monet_critical, "putRequest");
@@ -243,8 +256,8 @@ void putRequest(Request p){
 Now that all requests have been added, we should identify those that
 are eligable for execution. Their state is set accordingly.
 @c
-	for( ; p ; p = p->ev_next)
-		if ( p->ev_status==0) {
+	for (; p; p = p->ev_next)
+		if (p->ev_status == 0) {
 			wakeupRequest(p);
 		}
 
@@ -254,38 +267,43 @@ are eligable for execution. Their state is set accordingly.
 		stream_printf(GDKerr, "\n");
 		QMprint();
 	}
-       	monet_unset_lock(monet_critical, "putRequest");
+	monet_unset_lock(monet_critical, "putRequest");
 }
-	
-void nxtRequest(Request p){
+
+void
+nxtRequest(Request p)
+{
 	Request q;
 	int tid = THRgettid();
 
-	if (p == 0 ||  p->ev_next != 0 || p->ev_prev != 0) {
+	if (p == 0 || p->ev_next != 0 || p->ev_prev != 0) {
 		GDKerror("nxtRequest: single request expected\n");
 	}
 	QMenqueueStat(p);
 
-       	monet_set_lock(monet_critical, "nxtRequest");
-	for (q = qm_last; q; q = q->ev_prev) 
-		if (q->ev_process == tid)  break;
+	monet_set_lock(monet_critical, "nxtRequest");
+	for (q = qm_last; q; q = q->ev_prev)
+		if (q->ev_process == tid)
+			break;
 
 	if (q == 0) {
 		GDKerror("nxtRequest: Context request not found\n");
 		monet_unset_lock(monet_critical, "nxtRequest");
 		return;
-	} 
+	}
 
-	QMrequests ++;
+	QMrequests++;
 	p->ev_prev = q;
 	p->ev_next = q->ev_next;
 	p->ev_status = 1;
-	if ( q->ev_next) q->ev_next->ev_prev = p;
+	if (q->ev_next)
+		q->ev_next->ev_prev = p;
 	p->ev_wakeup = q->ev_wakeup;
 	q->ev_wakeup = p;
 	q->ev_next = p;
-	
-	if( q == qm_last ) qm_last = p;
+
+	if (q == qm_last)
+		qm_last = p;
 
 	PARDEBUG {
 		THRprintf(GDKerr, "Mnxt = ");
@@ -293,9 +311,9 @@ void nxtRequest(Request p){
 		stream_printf(GDKerr, "\n");
 		QMprint();
 	}
-       	monet_unset_lock(monet_critical, "nxtRequest");
+	monet_unset_lock(monet_critical, "nxtRequest");
 }
-	
+
 @-
 The getRequest function is protected by the semaphore, such that
 the processes interested in a request are blocked until one becomes
@@ -303,36 +321,42 @@ available. Note that some requests may be directed towards a specific
 thread. Then it should reset the status before leaving this scope.
 The flag barrier searches requests that lower the barrier request first.
 @c
-Request getRequest(Request barrier){
-	Request	q;
-	int tid= THRgettid();
-       	monet_down_sema(monet_available, "getRequest");
-       	monet_set_lock(monet_critical, "getRequest");
+Request
+getRequest(Request barrier)
+{
+	Request q;
+	int tid = THRgettid();
 
-	if ( barrier) {
-		for (q = qm_first; q; q = q->ev_next) 
-			if ( q->ev_status== EVPENDING  && q->ev_wakeup== barrier){
-				PARDEBUG THRprintf(GDKerr, "barrier found " PTRFMT "\n", PTRFMTCAST (void *) barrier);
+	monet_down_sema(monet_available, "getRequest");
+	monet_set_lock(monet_critical, "getRequest");
+
+	if (barrier) {
+		for (q = qm_first; q; q = q->ev_next)
+			if (q->ev_status == EVPENDING && q->ev_wakeup == barrier) {
+				PARDEBUG THRprintf(GDKerr, "barrier found " PTRFMT "\n", PTRFMTCAST(void *)barrier);
+
 				goto getReq0;
 			}
 	}
-	for (q = qm_first; q; q = q->ev_next) 
-		if ( q->ev_status== EVPENDING ){
-			if ( q->ev_process ==0 || q->ev_process== tid) {
+	for (q = qm_first; q; q = q->ev_next)
+		if (q->ev_status == EVPENDING) {
+			if (q->ev_process == 0 || q->ev_process == tid) {
 				goto getReq0;
 			}
 		}
 
 	PARDEBUG QMprint();
+
 	monet_up_sema(monet_available, "getRequest");
 	monet_unset_lock(monet_critical, "getRequest");
 	return 0;
 
 /* we did not find anything because what is available is for another process */
-/* all because of braindead queue impl. => parallel blocks should allocate a private semaphore of course! */ 
-getReq0:
+/* all because of braindead queue impl. => parallel blocks should allocate a private semaphore of course! */
+      getReq0:
 	q->ev_status = EVRUNNING;
 	PARDEBUG QMprint();
+
 	monet_unset_lock(monet_critical, "getRequest");
 	QMexecStat(q);
 	q->ev_process = tid;
@@ -349,8 +373,10 @@ and it is the last one for the thread in the process.
 The corresponding unlink code has been written such that
 this routine need not be placed in a critical section.
 @c
-Request thisRequest(void){
-	Request	q; 
+Request
+thisRequest(void)
+{
+	Request q;
 	int tid = THRgettid();
 
 	for (q = qm_last; q; q = q->ev_prev) {
@@ -362,8 +388,11 @@ Request thisRequest(void){
 	return NULL;
 }
 
-Request topRequest(Client c){
-	Request	q; 
+Request
+topRequest(Client c)
+{
+	Request q;
+
 	for (q = qm_first; q; q = q->ev_next) {
 		if (q->ev_client == c && q->ev_status == EVRUNNING) {
 			return q;
@@ -372,6 +401,7 @@ Request topRequest(Client c){
 	GDKerror("topRequest: could not a request for this client\n");
 	return NULL;
 }
+
 @
 @}
 
@@ -381,20 +411,25 @@ dependent requests should be removed from the queue.
 It directly manipulates the stack and also gets rid of the 
 old requests.
 @c
-void rmRequest(Request r){
-	Request s,t;
+void
+rmRequest(Request r)
+{
+	Request s, t;
 
 	monet_set_lock(monet_critical, "rmRequest");
-	PARDEBUG THRprintf(GDKerr, "remove dependents of " PTRFMT "\n", PTRFMTCAST (void *) r);
-	for ( s=r->ev_wakeup; s; s=t )  {
-		t= s->ev_wakeup;
+	PARDEBUG THRprintf(GDKerr, "remove dependents of " PTRFMT "\n", PTRFMTCAST(void *)r);
+
+	for (s = r->ev_wakeup; s; s = t) {
+		t = s->ev_wakeup;
 		unlinkRequest(s);
 		QMrequests--;
 	}
 	PARDEBUG QMprint();
+
 	r->ev_wakeup = 0;
 	monet_unset_lock(monet_critical, "rmRequest");
 }
+
 @-
 Once an event is handled the status field should be changed
 to reflect the situation and any runable event should be detected.
@@ -404,7 +439,9 @@ semaphore.
 
 @{
 @c
-void unlinkRequest(Request q){
+void
+unlinkRequest(Request q)
+{
 	if (qm_first == qm_last && qm_first == q) {
 		qm_first = qm_last = 0;
 	} else if (qm_first == q) {
@@ -437,89 +474,95 @@ when there is a runnable request.
 
 The process id is invalidated to avoid collapses with thisRequest().
 @c
-void clrRequest(Request q){	
-	Request	r;
+void
+clrRequest(Request q)
+{
+	Request r;
 
-	q->ev_process = (MT_Id) - (int)q->ev_process;
+	q->ev_process = (MT_Id) -(int) q->ev_process;
 	q->ev_status = EVDONE;
 	r = q->ev_wakeup;
 
 	monet_set_lock(monet_critical, "clrRequest");
 	QMrequests--;
-       	if (r && r->ev_status > 0) {
+	if (r && r->ev_status > 0) {
 		r->ev_status--;
-		if ( r->ev_status==0) {
-			r->ev_status= EVPENDING;
+		if (r->ev_status == 0) {
+			r->ev_status = EVPENDING;
 			monet_up_sema(monet_available, "clrRequest");
 		}
 	}
 	unlinkRequest(q);
-	monet_unset_lock(monet_critical, "clrRequest"); 
+	monet_unset_lock(monet_critical, "clrRequest");
 }
 
 @- Request exeuction
 @c
-int handleRequest(Thread t, Request q, ValPtr res){
-        YYSTREE lt;
-        int     i, stk;
- 
-        if (!q) {
-                return 0;
-        }
-        lt = q->ev_data;
-        stk = q->ev_stk;
- 
-        PARDEBUG THRprintf(GDKerr, "MIget = ");
-        PARDEBUG yytoProlog(lt, 30);
-        PARDEBUG stream_printf(GDKerr, "\n");
- 
-        if (q->ev_client &&
-            monetSetChannel(t, q->ev_client->fdin, q->ev_client->fdout))
-        {
-                clrRequest(q);
- 
-                return 0;
-        }
+int
+handleRequest(Thread t, Request q, ValPtr res)
+{
+	YYSTREE lt;
+	int i, stk;
+
+	if (!q) {
+		return 0;
+	}
+	lt = q->ev_data;
+	stk = q->ev_stk;
+
+	PARDEBUG THRprintf(GDKerr, "MIget = ");
+	PARDEBUG yytoProlog(lt, 30);
+	PARDEBUG stream_printf(GDKerr, "\n");
+
+	if (q->ev_client && monetSetChannel(t, q->ev_client->fdin, q->ev_client->fdout)) {
+		clrRequest(q);
+
+		return 0;
+	}
 @-
 This was needed to ensure proper delivery of output;
 A kill request is handled directly.
 @c
-        if (lt == NULL && stk == 0) {
-                PARDEBUG {
-                        THRprintf(GDKerr, "handleRequest(dies)\n");
-                }
-                clrRequest(q);
-                return 1;
-        }
-        q->ev_process = t->tid ; /* THRgettid(); */
-        i = interpret(stk, lt, res);
-        CATCHRET(stk,lt,res,i);
+	if (lt == NULL && stk == 0) {
+		PARDEBUG {
+			THRprintf(GDKerr, "handleRequest(dies)\n");
+		}
+		clrRequest(q);
+		return 1;
+	}
+	q->ev_process = t->tid;	/* THRgettid(); */
+	i = interpret(stk, lt, res);
+	CATCHRET(stk, lt, res, i);
 	CLEANUP(lt);
-        lt->par_retval = i;
-        if (q->ev_kill < 0) {
-                killClient(monet_clients-q->ev_kill, TRUE);
-        } else if (q->ev_kill > 0) {
-                closeClient(monet_clients+q->ev_kill-1, TRUE);
-        }
-        clrRequest(q);
- 
-        return 0;
+	lt->par_retval = i;
+	if (q->ev_kill < 0) {
+		killClient(monet_clients - q->ev_kill, TRUE);
+	} else if (q->ev_kill > 0) {
+		closeClient(monet_clients + q->ev_kill - 1, TRUE);
+	}
+	clrRequest(q);
+
+	return 0;
 }
 
-void doRequest(Thread t, Request preference){
-        ValRecord       res;
-        Request         q;
-        int status=0;
- 
-        MT_seterrno(0);
-        res.vtype= TYPE_void;
-        res.val.ival = 0;
-        while (status == 0) {
-                q = getRequest(preference);
-                status = handleRequest(t, q, &res);
-                if (preference &&  q == preference) break;
-        }
+void
+doRequest(Thread t, Request preference)
+{
+	ValRecord res;
+	Request q;
+	int status = 0;
+
+	MT_seterrno(0);
+	res.vtype = TYPE_void;
+	res.val.ival = 0;
+	while (status == 0) {
+		q = getRequest(preference);
+		status = handleRequest(t, q, &res);
+		if (preference && q == preference)
+			break;
+	}
 }
+
 @
 @}
 
@@ -535,7 +578,9 @@ The code is written with the assumption that the user limits himself to
 manipulation with queue keys returned by QMenqueue. They others are generated
 internally.
 @c
-int QMenqueue(Cntxt stk, YYSTREE data, int barrier, int kill){
+int
+QMenqueue(Cntxt stk, YYSTREE data, int barrier, int kill)
+{
 	Request p;
 
 	p = newRequest(stk, data, barrier);
@@ -543,38 +588,51 @@ int QMenqueue(Cntxt stk, YYSTREE data, int barrier, int kill){
 	p->ev_kill = -kill;
 	putRequest(p);
 	PARDEBUG THRprintf(GDKerr, "QMenqueue: return key %d\n", p->ev_seqnr);
+
 	return p->ev_seqnr;
 }
 
-Request QMrequest(int qkey){
+Request
+QMrequest(int qkey)
+{
 	Request p;
-	for(p= qm_first; p; p= p->ev_next) 
-		if (p->ev_seqnr == qkey) return p;
+
+	for (p = qm_first; p; p = p->ev_next)
+		if (p->ev_seqnr == qkey)
+			return p;
 	return 0;
 }
 
-Request QMclient(Request start, Client c){
+Request
+QMclient(Request start, Client c)
+{
 	Request p;
-		
-	for(p= start?start->ev_next:qm_first; p; p= p->ev_next) 
-		if (p->ev_client == c) return p;
+
+	for (p = start ? start->ev_next : qm_first; p; p = p->ev_next)
+		if (p->ev_client == c)
+			return p;
 	return 0;
 }
+
 @-
 Dequeuing a request cascades to its dependents (in all directions).
 This way the user need not keep track of all requests generated on the fly.
 @c
-void QMdequeue(int qkey){
-	Request q,p=QMrequest(qkey);
+void
+QMdequeue(int qkey)
+{
+	Request q, p = QMrequest(qkey);
+
 	if (p != NULL) {
 		PARDEBUG THRprintf(GDKerr, "QMdequeue: qkey %d found\n", qkey);
+
 		q = p->ev_wakeup;
-		if( q && q->ev_status == EVAWAIT) {
+		if (q && q->ev_status == EVAWAIT) {
 			QMdequeue(q->ev_seqnr);
 		}
-		p->ev_status --;
-		q= p->ev_prev;
-		if( q && q->ev_status == EVAWAIT ) {
+		p->ev_status--;
+		q = p->ev_prev;
+		if (q && q->ev_status == EVAWAIT) {
 			QMdequeue(q->ev_seqnr);
 		}
 		clrRequest(p);
@@ -582,18 +640,22 @@ void QMdequeue(int qkey){
 	}
 	PARDEBUG THRprintf(GDKerr, "QMdequeue: qkey %d not found\n", qkey);
 }
+
 @-
 A request can be activated using the queue key.
 @c
-void QMwakeup(int qkey){
+void
+QMwakeup(int qkey)
+{
 	Request p;
 
 	monet_set_lock(monet_critical, "QMwakeup");
 	p = QMrequest(qkey);
 	if (p != NULL) {
 		PARDEBUG THRprintf(GDKerr, "QMwakeup: qkey %d found\n", qkey);
-		if( p->ev_status != EVAWAIT ){
-			GDKwarning("QMwakeup: request already awake %d\n",qkey);
+
+		if (p->ev_status != EVAWAIT) {
+			GDKwarning("QMwakeup: request already awake %d\n", qkey);
 		} else {
 			p->ev_status = 0;
 			wakeupRequest(p);
@@ -604,19 +666,23 @@ void QMwakeup(int qkey){
 	monet_unset_lock(monet_critical, "QMwakeup");
 	PARDEBUG THRprintf(GDKerr, "QMwakeup: qkey %d not found\n", qkey);
 }
+
 @-
 The user is responsible for creation of a synchronization request to
 align multiple parallel requests.
 @c
-int QMbefore(int qkey1, int qkey2){
-	Request q,p=QMrequest(qkey2);
-	if( p == 0 ) {
-		GDKerror("QMbefore: could not find %d\n",qkey2);
+int
+QMbefore(int qkey1, int qkey2)
+{
+	Request q, p = QMrequest(qkey2);
+
+	if (p == 0) {
+		GDKerror("QMbefore: could not find %d\n", qkey2);
 		return qkey2;
 	}
 	q = QMrequest(qkey1);
-	if( q == 0 ) {
-		GDKerror("QMbefore: could not find %d\n",qkey1);
+	if (q == 0) {
+		GDKerror("QMbefore: could not find %d\n", qkey1);
 		return qkey2;
 	}
 	q->ev_wakeup = p;
@@ -628,21 +694,26 @@ int QMbefore(int qkey1, int qkey2){
 The routine QMopen assess the queue and determines if we have
 run out of eligable requests. 
 @c
-int QMopen(void){
+int
+QMopen(void)
+{
 	return QMrequests > 0;
 }
 
-void QMprint(void) {
-	stream	*fp = GDKerr;
-	Request	q;
+void
+QMprint(void)
+{
+	stream *fp = GDKerr;
+	Request q;
 
-	THRprintf(fp, "#------------------------------------------------------------------#\n"); 
-	THRprintf(fp, "# req      | tid      | status   | wakeup | action                 #\n"); 
-	THRprintf(fp, "#------------------------------------------------------------------#\n"); 
+	THRprintf(fp, "#------------------------------------------------------------------#\n");
+	THRprintf(fp, "# req      | tid      | status   | wakeup | action                 #\n");
+	THRprintf(fp, "#------------------------------------------------------------------#\n");
 	for (q = qm_first; q; q = q->ev_next) {
 		prRequest(fp, q);
 	}
 }
+
 @
 @+ Performance tracing
 The performance of the Monet kernel can be traced at the level of
@@ -659,44 +730,58 @@ is turned off.
 	char	qm_cmd[IDLENGTH];
 @
 @c
-Request		qm_top, qm_bot;
-int		qm_profile = 0;
+Request qm_top, qm_bot;
+int qm_profile = 0;
 
-void QMtrace(int flag) {	
+void
+QMtrace(int flag)
+{
 	qm_profile = flag;
-	if( flag == 0 ) {
+	if (flag == 0) {
 		QMclearStat();
 	}
 }
 
-void QMmessage(Request q, str msg){
-	char *s, *t,*tlim;
+void
+QMmessage(Request q, str msg)
+{
+	char *s, *t, *tlim;
+
 	t = q->qm_cmd;
-	tlim = t + IDLENGTH-1;
-	for( s= msg; *s && *s != '\n' && t<tlim; ) *t++ = *s ++;
+	tlim = t + IDLENGTH - 1;
+	for (s = msg; *s && *s != '\n' && t < tlim;)
+		*t++ = *s++;
 	*t = 0;
 }
 
-void QMenqueueStat(Request q){
-	if( qm_profile == 0 ) return;
+void
+QMenqueueStat(Request q)
+{
+	if (qm_profile == 0)
+		return;
 	q->qm_puttid = THRgettid();
 	q->qm_enter = (ssize_t) GDKms();
 }
 
-void QMexecStat(Request q){
-	if( qm_profile == 0 ) return;
+void
+QMexecStat(Request q)
+{
+	if (qm_profile == 0)
+		return;
 	q->qm_gettid = THRgettid();
 	q->qm_start = GDKms();
 }
 
-void QMdequeueStat(Request q){
-	if( qm_profile == 0 ) {
+void
+QMdequeueStat(Request q)
+{
+	if (qm_profile == 0) {
 		GDKfree(q);
 		return;
 	}
 
 	q->qm_finish = GDKms() - q->qm_start;
-	if( qm_top == 0) {
+	if (qm_top == 0) {
 		qm_top = qm_bot = q;
 	} else {
 		qm_bot->ev_next = q;
@@ -705,36 +790,32 @@ void QMdequeueStat(Request q){
 	}
 }
 
-void QMprintStat(void) {
-	stream	*fd = GDKerr;
-	Request	q;
+void
+QMprintStat(void)
+{
+	stream *fd = GDKerr;
+	Request q;
 
-	THRprintf(fd, "#------------------------------------------------------------------------#\n"); 
-	THRprintf(fd, "# key   | put   | get  | wakeup  | enter | start | duration | action     #\n"); 
-	THRprintf(fd, "#------------------------------------------------------------------------#\n"); 
+	THRprintf(fd, "#------------------------------------------------------------------------#\n");
+	THRprintf(fd, "# key   | put   | get  | wakeup  | enter | start | duration | action     #\n");
+	THRprintf(fd, "#------------------------------------------------------------------------#\n");
 	for (q = qm_top; q; q = q->ev_next) {
 		/* XXX SSZFMT was %7ld, i.e. 7 chars wide */
-		THRprintf(fd, "[ %5d, %6d, %6d, %6d, " SSZFMT ", " SSZFMT ", " SSZFMT ", \"%s\"]\n",
-		q->ev_seqnr,
-		q->qm_puttid,
-		q->qm_gettid,
-		(q->ev_wakeup ? q->ev_wakeup->ev_seqnr: 0),
-		q->qm_enter,
-		q->qm_start,
-		q->qm_finish,
-		q->qm_cmd);
+		THRprintf(fd, "[ %5d, %6d, %6d, %6d, " SSZFMT ", " SSZFMT ", " SSZFMT ", \"%s\"]\n", q->ev_seqnr, q->qm_puttid, q->qm_gettid, (q->ev_wakeup ? q->ev_wakeup->ev_seqnr : 0), q->qm_enter, q->qm_start, q->qm_finish, q->qm_cmd);
 	}
 }
 
-void QMclearStat(void){
-	Request q,r;
+void
+QMclearStat(void)
+{
+	Request q, r;
+
 	monet_set_lock(monet_critical, "QMclearStat");
-	q = qm_top; qm_top = qm_bot = 0;
+	q = qm_top;
+	qm_top = qm_bot = 0;
 	monet_unset_lock(monet_critical, "QMclearStat");
-	for( ; q; q= r ) {
-		r= q->ev_next;
+	for (; q; q = r) {
+		r = q->ev_next;
 		GDKfree(q);
 	}
 }
-
-

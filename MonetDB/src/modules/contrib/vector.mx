@@ -69,16 +69,21 @@ Revision History:
 #include "vector.h"
 #include "vector.proto.h"
 
-static long get_long(const char* startp,char** endp) {
-   return(strtol(startp,endp,10));
+static long
+get_long(const char *startp, char **endp)
+{
+	return (strtol(startp, endp, 10));
 }
 
-static double get_double(const char* startp,char** endp) {
-   return(strtod(startp,endp));
+static double
+get_double(const char *startp, char **endp)
+{
+	return (strtod(startp, endp));
 }
 
 #ifndef HAVE_MRAND48
-long int mrand48(void)
+long int
+mrand48(void)
 {
 	/* for now we assume that RAND_MAX == 0x7FFF */
 	return (rand() << 8) | (rand() << 1) | (rand() & 1);
@@ -86,7 +91,8 @@ long int mrand48(void)
 #endif
 
 #ifndef HAVE_DRAND48
-double drand48(void)
+double
+drand48(void)
 {
 	return (double) mrand48() / 2147483648.0;
 }

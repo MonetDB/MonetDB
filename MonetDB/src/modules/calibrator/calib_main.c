@@ -35,67 +35,69 @@ struct fullInfo {
 	AssoInfo *Asso;
 };
 
-struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
+struct fullInfo *
+mainRun(caliblng MHz, caliblng maxrange, char *fname)
 {
-	caliblng align=0;
-	caliblng	mincachelines, minTLBentries, maxlinesize, mincachesize, 
-		/*maxcachesize,*/ minstride = (caliblng)sizeof(char*), yy, y;
-	caliblng maxCstride=0,	maxTstride=0, maxAstride=0, delayC /*,delayT*/;
-        char	*array0, *array;
-	caliblng	**result1, **result2;
+	caliblng align = 0;
+	caliblng mincachelines, minTLBentries, maxlinesize, mincachesize,
+	    /*maxcachesize, */ minstride = (caliblng) sizeof(char *), yy, y;
+	caliblng maxCstride = 0, maxTstride = 0, maxAstride = 0, delayC /*,delayT */ ;
+	char *array0, *array;
+	caliblng **result1, **result2;
 	cacheInfo *cache;
-	TLBinfo	  *TLB;
-	AssoInfo  *Asso;
-	caliblng pgsz=getpagesize();
+	TLBinfo *TLB;
+	AssoInfo *Asso;
+	caliblng pgsz = getpagesize();
 	struct fullInfo *calibratorInfo;
+
 #ifdef CALIBRATOR_CREATE_PLOTS
-	FILE	*fp;
-	char	fnn1[1024], fnx1[1024], fnn2[1024], fnx2[1024];
+	FILE *fp;
+	char fnn1[1024], fnx1[1024], fnn2[1024], fnx2[1024];
 #endif
 	(void) fname;
-	
-	if (MHz==0) {
-		MHz=1000; /* arbitrary. should never be printed */
+
+	if (MHz == 0) {
+		MHz = 1000;	/* arbitrary. should never be printed */
 	}
-	
-	if (!(array0 = (char *)malloc(maxrange+pgsz)))
-		ErrXit("main: 'array0 = malloc(%ld)` failed", maxrange+pgsz);
+
+	if (!(array0 = (char *) malloc(maxrange + pgsz)))
+		ErrXit("main: 'array0 = malloc(%ld)` failed", maxrange + pgsz);
 
 	array = array0;
 #ifdef CALIBRATOR_PRINT_OUTPUT
-	fprintf(stderr,"\n%lx %ld %ld %5ld\n",(long)array,(caliblng)array,pgsz,(caliblng)array%pgsz);
+	fprintf(stderr, "\n%lx %ld %ld %5ld\n", (long) array, (caliblng) array, pgsz, (caliblng) array % pgsz);
 #endif
-	while (((caliblng)array % pgsz) != align) {
+	while (((caliblng) array % pgsz) != align) {
 #ifdef CALIBRATOR_PRINT_OUTPUT
-		fprintf(stderr,"\r%lx %ld %ld %5ld",(long)array,(caliblng)array,pgsz,(caliblng)array%pgsz);
+		fprintf(stderr, "\r%lx %ld %ld %5ld", (long) array, (caliblng) array, pgsz, (caliblng) array % pgsz);
 		fflush(stderr);
 #endif
 		array++;
 	}
 #ifdef CALIBRATOR_PRINT_OUTPUT
-	fprintf(stderr,"\n%lx %ld %ld %5ld\n\n",(long)array,(caliblng)array,pgsz,(caliblng)array%pgsz);
+	fprintf(stderr, "\n%lx %ld %ld %5ld\n\n", (long) array, (caliblng) array, pgsz, (caliblng) array % pgsz);
 	fflush(stderr);
-	
-	fprintf(stderr,"now        = %ld\n",now());
-	fprintf(stderr,"getMINTIME = %ld\n",getMINTIME());
+
+	fprintf(stderr, "now        = %ld\n", now());
+	fprintf(stderr, "getMINTIME = %ld\n", getMINTIME());
 #endif
 #ifdef WIN32
 	MINTIME = 100000;
 #else
-	MINTIME = MAX( MINTIME, 10*getMINTIME() );
+	MINTIME = MAX(MINTIME, 10 * getMINTIME());
 #endif
 #ifdef CALIBRATOR_PRINT_OUTPUT
-	fprintf(stderr,"MINTIME    = %ld\n\n",MINTIME);
+	fprintf(stderr, "MINTIME    = %ld\n\n", MINTIME);
 	fflush(stderr);
 #endif
 
 #ifdef CALIBRATOR_CREATE_PLOTS
 	sprintf(fnn1, "%s.cache-replace-time", fname);
 	sprintf(fnx1, "%s.data", fnn1);
-	if (!(fp = fopen(fnx1,"w"))) 
+	if (!(fp = fopen(fnx1, "w")))
 		ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx1);
 	result1 = runCache(array, maxrange, minstride, MHz, fp, &maxCstride);
- 	fclose(fp);
+	fclose(fp);
 #else
 	result1 = runCache(array, maxrange, minstride, MHz, 0, &maxCstride);
 #endif
@@ -103,30 +105,30 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 #ifdef CALIBRATOR_CREATE_PLOTS
 	sprintf(fnn2, "%s.cache-miss-latency", fname);
 	sprintf(fnx2, "%s.data", fnn2);
-	if (!(fp = fopen(fnx2,"w"))) 
+	if (!(fp = fopen(fnx2, "w")))
 		ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx2);
 	result2 = runCache(array, maxrange, minstride, MHz, fp, &maxCstride);
- 	fclose(fp);
+	fclose(fp);
 #else
 	result2 = runCache(array, maxrange, minstride, MHz, 0, &maxCstride);
 #endif
 
 	cache = analyzeCache(result1, result2, MHz);
-	mincachelines = ( cache->size[0] && cache->linesize[1] ? cache->size[0] / cache->linesize[1] : 1024 );
-	maxlinesize = ( cache->linesize[cache->levels] ? cache->linesize[cache->levels] : maxCstride / 2 );
-	mincachesize = ( cache->size[0] ? cache->size[0] : 0 );
-	/*maxcachesize = ( cache->levels && cache->size[cache->levels - 1] ? cache->size[cache->levels - 1] : 0 );*/
+	mincachelines = (cache->size[0] && cache->linesize[1] ? cache->size[0] / cache->linesize[1] : 1024);
+	maxlinesize = (cache->linesize[cache->levels] ? cache->linesize[cache->levels] : maxCstride / 2);
+	mincachesize = (cache->size[0] ? cache->size[0] : 0);
+	/*maxcachesize = ( cache->levels && cache->size[cache->levels - 1] ? cache->size[cache->levels - 1] : 0 ); */
 	delayC = cache->latency2[0] - cache->latency1[0];
 
 #ifdef CALIBRATOR_CREATE_PLOTS
 	sprintf(fnx1, "%s.gp", fnn1);
-	if (!(fp = fopen(fnx1,"w"))) 
+	if (!(fp = fopen(fnx1, "w")))
 		ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx1);
 	plotCache(cache, result1, MHz, fnn1, fp, 0);
 	fclose(fp);
 
-    sprintf(fnx2, "%s.gp", fnn2);
-	if (!(fp = fopen(fnx2,"w"))) 
+	sprintf(fnx2, "%s.gp", fnn2);
+	if (!(fp = fopen(fnx2, "w")))
 		ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx2);
 	plotCache(cache, result2, MHz, fnn2, fp, delayC);
 	fclose(fp);
@@ -151,14 +153,12 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 #ifdef CALIBRATOR_CREATE_PLOTS
 	sprintf(fnn1, "%s.TLB-miss-latency", fname);
 	sprintf(fnx1, "%s.data", fnn1);
-	if (!(fp = fopen(fnx1,"w"))) 
+	if (!(fp = fopen(fnx1, "w")))
 		ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx1);
-	result1 = runTLB(array, maxrange, 1024, maxlinesize, mincachelines, 
-		MHz, fp, &maxTstride);
+	result1 = runTLB(array, maxrange, 1024, maxlinesize, mincachelines, MHz, fp, &maxTstride);
 	fclose(fp);
 #else
-	result1 = runTLB(array, maxrange, 1024, maxlinesize, mincachelines, 
-		MHz, 0, &maxTstride);
+	result1 = runTLB(array, maxrange, 1024, maxlinesize, mincachelines, MHz, 0, &maxTstride);
 #endif
 /*
         sprintf(fnn2, "%s.TLB2", fname);
@@ -170,12 +170,13 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 	result2 = result1;
 
 	TLB = analyzeTLB(result1, result2, maxlinesize, mincachelines, MHz);
-	minTLBentries = ( TLB->levels && TLB->entries[0] ? TLB->entries[0] : mincachelines );
-	/*delayT = TLB->latency2[0] - TLB->latency1[0];*/
+	minTLBentries = (TLB->levels && TLB->entries[0] ? TLB->entries[0] : mincachelines);
+	/*delayT = TLB->latency2[0] - TLB->latency1[0]; */
 
 #ifdef CALIBRATOR_CREATE_PLOTS
-    sprintf(fnx1, "%s.gp", fnn1);
-	if (!(fp = fopen(fnx1,"w"))) ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx1);
+	sprintf(fnx1, "%s.gp", fnn1);
+	if (!(fp = fopen(fnx1, "w")))
+		ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx1);
 	plotTLB(TLB, result1, MHz, fnn1, fp, 0);
 	fclose(fp);
 #endif
@@ -207,7 +208,7 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 
 
 	maxAstride = 1;
-	while (maxAstride <= /*MIN(maxcachesize*2,*/(maxrange/2))
+	while (maxAstride <= /*MIN(maxcachesize*2, */ (maxrange / 2))
 		maxAstride *= 2;
 /*
 	maxAstride *= 2;
@@ -217,26 +218,23 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 	fprintf(stderr,"runAsso(array, maxrange=%ld, mincachesize=%ld, 0=%ld, minTLBentries=%ld, MHz=%ld, fp, &maxAstride=%ld)\n",maxrange, mincachesize, 0, minTLBentries, MHz, maxAstride);
 -*/
 #ifdef CALIBRATOR_CREATE_PLOTS
-    sprintf(fnn1, "%s.cache-associativity", fname);
-    sprintf(fnx1, "%s.data", fnn1);
-	if (!(fp = fopen(fnx1,"w"))) 
+	sprintf(fnn1, "%s.cache-associativity", fname);
+	sprintf(fnx1, "%s.data", fnn1);
+	if (!(fp = fopen(fnx1, "w")))
 		ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx1);
-	result1 = runAsso(array, maxrange, mincachesize, 0, minTLBentries, 
-		MHz, fp, &maxAstride);
+	result1 = runAsso(array, maxrange, mincachesize, 0, minTLBentries, MHz, fp, &maxAstride);
 	fclose(fp);
 #else
-	result1 = runAsso(array, maxrange, mincachesize, 0, minTLBentries, 
-		MHz, 0, &maxAstride);
+	result1 = runAsso(array, maxrange, mincachesize, 0, minTLBentries, MHz, 0, &maxAstride);
 #endif
 	result2 = result1;
 
-	Asso = analyzeAsso(result1, result2, maxlinesize, minTLBentries, 
-		cache->levels, MHz);
-	/*delayT = Asso->latency2[0] - Asso->latency1[0];*/
+	Asso = analyzeAsso(result1, result2, maxlinesize, minTLBentries, cache->levels, MHz);
+	/*delayT = Asso->latency2[0] - Asso->latency1[0]; */
 
 #ifdef CALIBRATOR_CREATE_PLOTS
-    sprintf(fnx1, "%s.gp", fnn1);
-	if (!(fp = fopen(fnx1,"w"))) 
+	sprintf(fnx1, "%s.gp", fnn1);
+	if (!(fp = fopen(fnx1, "w")))
 		ErrXit("main: 'fp = fopen(%s,\"w\")` failed", fnx1);
 	plotAsso(Asso, result1, MHz, fnn1, fp, 0, cache);
 	fclose(fp);
@@ -254,26 +252,28 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 
 #ifdef CALIBRATOR_PRINT_OUTPUT
 	fflush(stderr);
-	fprintf(stdout,"\n");
+	fprintf(stdout, "\n");
 #endif
 
 /*
 	printAsso(Asso, MHz);
 */
 
-	if (!(calibratorInfo=(struct fullInfo*)malloc(sizeof(struct fullInfo))))
+	if (!(calibratorInfo = (struct fullInfo *) malloc(sizeof(struct fullInfo))))
 		fatalex("malloc");
-	calibratorInfo->delayC=delayC;
-	calibratorInfo->cache=cache;
-	calibratorInfo->Asso=Asso;
-	calibratorInfo->TLB=TLB;
+	calibratorInfo->delayC = delayC;
+	calibratorInfo->cache = cache;
+	calibratorInfo->Asso = Asso;
+	calibratorInfo->TLB = TLB;
 #ifdef CALIBRATOR_CHECK_SMP
 	checkSMP(&(calibratorInfo->smp));
 #endif
-	return(calibratorInfo);
+	return (calibratorInfo);
 
 }
-void freeFullInfo(struct fullInfo *caliInfo)
+
+void
+freeFullInfo(struct fullInfo *caliInfo)
 {
 	free(caliInfo->cache);
 	caliInfo->cache = 0;
@@ -283,4 +283,3 @@ void freeFullInfo(struct fullInfo *caliInfo)
 	caliInfo->TLB = 0;
 	free(caliInfo);
 }
-

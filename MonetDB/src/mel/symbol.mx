@@ -39,18 +39,18 @@ using namespace std;
 
 class language;
 class Symbol {
-    public:
-	Symbol( int token, const char *name );
-	virtual ~Symbol();
+      public:
+	Symbol (int token, const char *name);
+	 virtual ~ Symbol ();
 
 	int operator==(const Symbol &) const;
 	int Token() const;
 	const char *Name() const;
-        virtual const char *toString() const;
-	void Name( const char * name);
-	virtual ostream &print( language *l, ostream &) const;
-    private:
-	int   _token;
+	virtual const char *toString() const;
+	void Name(const char *name);
+	virtual ostream & print(language * l, ostream &) const;
+      private:
+	int _token;
 	char *_name;
 };
 

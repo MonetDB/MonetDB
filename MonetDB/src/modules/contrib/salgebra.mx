@@ -262,15 +262,15 @@ Explain fields.
 @h
 
 typedef struct {
-  bat	b;	    /* the batId of the original bat b
-		       (which may/will be trimmed from memory) */
-  char	*bname;	    /* a copy of b's name */
-  Hash  *bhash;	    /* a copy of b's hash structure
-		       (necessary to access HASHprobe) */
-  int   bttype;	    /* the type of the tail values */
-  Heap	*dict;	    /* the clusterhash dictionary */
-  int	isPerfect;  /* boolean indicating if the hash-function is perfect */
-  bat	hv, tv;     /* the head values; the tail values (iff !isPerfect) */
+	bat b;			/* the batId of the original bat b
+				   (which may/will be trimmed from memory) */
+	char *bname;		/* a copy of b's name */
+	Hash *bhash;		/* a copy of b's hash structure
+				   (necessary to access HASHprobe) */
+	int bttype;		/* the type of the tail values */
+	Heap *dict;		/* the clusterhash dictionary */
+	int isPerfect;		/* boolean indicating if the hash-function is perfect */
+	bat hv, tv;		/* the head values; the tail values (iff !isPerfect) */
 } clusterhash;
 
 #include "algebra.h"
@@ -307,10 +307,13 @@ static INLINE char* local_itoa(int i){
 */
 
 /* safe implementation with potential memory leak */
-static INLINE char* local_itoa(int i){
-  char* buf = GDKmalloc( 33 );
-  sprintf(buf,"%d",i);
-  return buf;
+static INLINE char *
+local_itoa(int i)
+{
+	char *buf = GDKmalloc(33);
+
+	sprintf(buf, "%d", i);
+	return buf;
 }
 
 
@@ -325,13 +328,13 @@ SWAP@1ptr(@1 **b1, @1 **b2) {
 @:SWAP(oid)@
 @:SWAP(BAT)@
 
-MT_Lock		salgebra_chashLock[BBPLOCKMASK+1]; 
-MT_Lock		salgebra_cacheLock; 
-MT_Lock		salgebra_refcntLock; 
+MT_Lock salgebra_chashLock[BBPLOCKMASK + 1];
+MT_Lock salgebra_cacheLock;
+MT_Lock salgebra_refcntLock;
 
-BAT* salgebra_cache;
-BAT* salgebra_namecache;
-BAT* salgebra_refcnt;
+BAT *salgebra_cache;
+BAT *salgebra_namecache;
+BAT *salgebra_refcnt;
 
 @+ MEL required functions
 @T
@@ -343,8 +346,17 @@ BAT* salgebra_refcnt;
 \end{itemize}
 @c
 
-int clusterhash_size(void) { return sizeof(clusterhash); }
-int clusterhash_align(void) { return sizeof(ptr); }
+int
+clusterhash_size(void)
+{
+	return sizeof(clusterhash);
+}
+
+int
+clusterhash_align(void)
+{
+	return sizeof(ptr);
+}
 
 clusterhash clusterhash_nil = { 0, NULL, NULL, 0, NULL, 0, 0, 0 };
 
@@ -354,124 +366,142 @@ clusterhash clusterhash_nil = { 0, NULL, NULL, 0, NULL, 0, 0, 0 };
 /*
    NOTE: return value of atomFix should be void, as it is not used 
 */
-static int salgebra_getRefCnt( clusterhash *ch );
-static int salgebra_incRefCnt( clusterhash *ch );
-static int salgebra_decRefCnt( clusterhash *ch );
+static int salgebra_getRefCnt(clusterhash *ch);
+static int salgebra_incRefCnt(clusterhash *ch);
+static int salgebra_decRefCnt(clusterhash *ch);
 
 int
-clusterhashFix( clusterhash *ch ) {
-  int refCnt = 0;
-  if ( clusterhashIsNil( ch ) ) return 0;
-  refCnt = salgebra_incRefCnt( ch );
-  (void) refCnt;		/* keep compiler happy */
+clusterhashFix(clusterhash *ch)
+{
+	int refCnt = 0;
+
+	if (clusterhashIsNil(ch))
+		return 0;
+	refCnt = salgebra_incRefCnt(ch);
+	(void) refCnt;		/* keep compiler happy */
 #ifdef DEBUG
-printf( "Fix ch for batId %d = %d\n", (int) ABS(ch->b), refCnt );
+	printf("Fix ch for batId %d = %d\n", (int) ABS(ch->b), refCnt);
 #endif
-  return 0;
+	return 0;
 }
 
-int 
-clusterhashUnfix( clusterhash *ch ) {
-  int refCnt = 0;
-  if ( clusterhashIsNil( ch ) ) return 0;
-  refCnt = salgebra_decRefCnt( ch );
+int
+clusterhashUnfix(clusterhash *ch)
+{
+	int refCnt = 0;
+
+	if (clusterhashIsNil(ch))
+		return 0;
+	refCnt = salgebra_decRefCnt(ch);
 #ifdef DEBUG
-printf( "Unfix ch for batId %d = %d\n", (int) ABS(ch->b), refCnt );
+	printf("Unfix ch for batId %d = %d\n", (int) ABS(ch->b), refCnt);
 #endif
-  if ( !refCnt ) {
+	if (!refCnt) {
 #ifdef DEBUG
-printf( "Unfix: refcount(%d) == 0\n", (int) ch->b );
+		printf("Unfix: refcount(%d) == 0\n", (int) ch->b);
 #endif
-    GDKfree( ch->bname );
-    GDKfree( ch->bhash );
-    HEAPfree( ch->dict );
-    GDKfree( ch->dict );
-  }
-  return 0;
+		GDKfree(ch->bname);
+		GDKfree(ch->bhash);
+		HEAPfree(ch->dict);
+		GDKfree(ch->dict);
+	}
+	return 0;
 }
 
-clusterhash* 
-clusterhashNull(void){
-  clusterhash* ch_nil = GDKmalloc( clusterhash_size() );
-  return clusterhashNil( ch_nil );
+clusterhash *
+clusterhashNull(void)
+{
+	clusterhash *ch_nil = GDKmalloc(clusterhash_size());
+
+	return clusterhashNil(ch_nil);
 }
 
 str
-clusterhashName( int batId ) {
-  BUN bun;
-  str result;
-  /* find ch in dictionary */
-  MT_set_lock(salgebra_cacheLock, "clusterhashName");
-  if (! ( bun = BUNfnd( salgebra_namecache, &batId )) ) {
-    MT_unset_lock(salgebra_cacheLock, "clusterhashName");
-    GDKwarning( "Inconsistency in clusterhash repository...\n" );
-    return NULL;
-  }
-  result = (str) BUNtail( salgebra_namecache, bun );
-  MT_unset_lock(salgebra_cacheLock, "clusterhashName");
-  return result;
+clusterhashName(int batId)
+{
+	BUN bun;
+	str result;
+
+	/* find ch in dictionary */
+	MT_set_lock(salgebra_cacheLock, "clusterhashName");
+	if (!(bun = BUNfnd(salgebra_namecache, &batId))) {
+		MT_unset_lock(salgebra_cacheLock, "clusterhashName");
+		GDKwarning("Inconsistency in clusterhash repository...\n");
+		return NULL;
+	}
+	result = (str) BUNtail(salgebra_namecache, bun);
+	MT_unset_lock(salgebra_cacheLock, "clusterhashName");
+	return result;
 }
 
 int
-clusterhashToStr( char** dst, int* len, clusterhash* ch ){
-  int nchar = 4, isnil = clusterhashIsNil( ch );
-  str name = NULL;
-  if ( !isnil ) {
-    name = clusterhashName( ABS(ch->b) );
-    if ( !(isnil = (name==NULL)) ) nchar = strLen( name );
-  }
-  if (*len < nchar) {
-    if (*dst) GDKfree(*dst);
-    *dst = GDKmalloc(*len = nchar);
-  }
-  if ( isnil ) {
-    strcpy( *dst, "nil" );
-    return 3;
-  }
-  strcpy( *dst, name );
-  return strlen( *dst ); 
+clusterhashToStr(char **dst, int *len, clusterhash *ch)
+{
+	int nchar = 4, isnil = clusterhashIsNil(ch);
+	str name = NULL;
+
+	if (!isnil) {
+		name = clusterhashName(ABS(ch->b));
+		if (!(isnil = (name == NULL)))
+			nchar = strLen(name);
+	}
+	if (*len < nchar) {
+		if (*dst)
+			GDKfree(*dst);
+		*dst = GDKmalloc(*len = nchar);
+	}
+	if (isnil) {
+		strcpy(*dst, "nil");
+		return 3;
+	}
+	strcpy(*dst, name);
+	return strlen(*dst);
 }
 
 int
-clusterhashByName( clusterhash *res, char *chname  ) {
-  BUN bun;
-  int batId;
-  clusterhash *ch = NULL;
-  BAT *ncrev = BATmirror( salgebra_namecache );
-  /* find ch in dictionary */
-  MT_set_lock(salgebra_cacheLock, "clusterhashByName");
-  if (! ( bun = BUNfnd( ncrev, chname )) ) {
-    MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
-    GDKwarning( "Clusterhash does not exist.\n" );
-    clusterhashNil( res );
-    return GDK_FAIL;
-  }
-  batId = *(int*) BUNtail( ncrev, bun );
-  if (! (ch = (clusterhash*) BUNtail( salgebra_cache, BUNfnd( salgebra_cache, &batId ) ) ) ) {
-    MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
-    GDKerror( "clusterhashByName: Inconsistency in clusterhash repository...\n" );
-    clusterhashNil( res );
-    return GDK_FAIL;
-  }
-  /* copy data into output buf */
-  MT_set_lock(salgebra_chashLock[ABS(ch->b)&BBPLOCKMASK], "clusterhashByName");
-  memcpy( res, ch, clusterhash_size() );
-  MT_unset_lock(salgebra_chashLock[ABS(ch->b)&BBPLOCKMASK], "clusterhashByName");
-  MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
-  return GDK_SUCCEED;
+clusterhashByName(clusterhash *res, char *chname)
+{
+	BUN bun;
+	int batId;
+	clusterhash *ch = NULL;
+	BAT *ncrev = BATmirror(salgebra_namecache);
+
+	/* find ch in dictionary */
+	MT_set_lock(salgebra_cacheLock, "clusterhashByName");
+	if (!(bun = BUNfnd(ncrev, chname))) {
+		MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
+		GDKwarning("Clusterhash does not exist.\n");
+		clusterhashNil(res);
+		return GDK_FAIL;
+	}
+	batId = *(int *) BUNtail(ncrev, bun);
+	if (!(ch = (clusterhash *) BUNtail(salgebra_cache, BUNfnd(salgebra_cache, &batId)))) {
+		MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
+		GDKerror("clusterhashByName: Inconsistency in clusterhash repository...\n");
+		clusterhashNil(res);
+		return GDK_FAIL;
+	}
+	/* copy data into output buf */
+	MT_set_lock(salgebra_chashLock[ABS(ch->b) & BBPLOCKMASK], "clusterhashByName");
+	memcpy(res, ch, clusterhash_size());
+	MT_unset_lock(salgebra_chashLock[ABS(ch->b) & BBPLOCKMASK], "clusterhashByName");
+	MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
+	return GDK_SUCCEED;
 }
 
 /* NOTE: implement on-demand clustering instead of an error! */
 int
-clusterhashFromStr( str src, int* len, clusterhash** dst ) {
-  int l = strlen( src );
-  if ( *len < clusterhash_size() )
-  {
-    if (*dst) GDKfree( *dst );
-    *dst = GDKmalloc( *len = clusterhash_size() );
-  }
-  clusterhashByName( *dst, src );
-  return l;
+clusterhashFromStr(str src, int *len, clusterhash **dst)
+{
+	int l = strlen(src);
+
+	if (*len < clusterhash_size()) {
+		if (*dst)
+			GDKfree(*dst);
+		*dst = GDKmalloc(*len = clusterhash_size());
+	}
+	clusterhashByName(*dst, src);
+	return l;
 }
 
 @+ Dictionary
@@ -486,24 +516,32 @@ DICTentry: entry in dictionary for bucket B
 @c
 
 typedef struct {
-  int s,e;
+	int s, e;
 } dict_entry;
 
 #define DICTprobe(CH,V) HASHprobe(CH->bhash, V)
 #define DICTentry(CH,B) ((dict_entry*) CH->dict->base)[B]
 
-static INLINE int 
-DICTclustersize(clusterhash* ch, ptr v){
-  int bucket = DICTprobe( ch, v );
-  int s = DICTentry(ch,bucket).s;
-  if ( s == -1 ) return 0;
-  else return DICTentry(ch,bucket).e - s + 1;
+static INLINE int
+DICTclustersize(clusterhash *ch, ptr v)
+{
+	int bucket = DICTprobe(ch, v);
+	int s = DICTentry(ch, bucket).s;
+
+	if (s == -1)
+		return 0;
+	else
+		return DICTentry(ch, bucket).e - s + 1;
 }
 
-static INLINE void 
-DICTclear(dict_entry *d, int n) {
-  int i;
-  for ( i = 0; i < n; i++ ) { d[i].s = d[i].e = -1; }
+static INLINE void
+DICTclear(dict_entry *d, int n)
+{
+	int i;
+
+	for (i = 0; i < n; i++) {
+		d[i].s = d[i].e = -1;
+	}
 }
 
 @+ Hashtable
@@ -512,78 +550,87 @@ DICTclear(dict_entry *d, int n) {
 ...
 
 @c
-/* return a newly allocated and assigned name */ 
-str salgebra_CHname( char *ch_basename, int batId ) {
-  int l = strlen(ch_basename);
-  char *id = local_itoa( ABS(batId) );
-  int l2 = strLen( id );
-  char *n = (char *) GDKmalloc( l + l2 );
-  memcpy(n,ch_basename, l);
-  *(char *) (n + l++ ) = '_';
-  memcpy(&n[l], id, l2);
-  GDKfree( id );
-  return n;
+/* return a newly allocated and assigned name */
+str
+salgebra_CHname(char *ch_basename, int batId)
+{
+	int l = strlen(ch_basename);
+	char *id = local_itoa(ABS(batId));
+	int l2 = strLen(id);
+	char *n = (char *) GDKmalloc(l + l2);
+
+	memcpy(n, ch_basename, l);
+	*(char *) (n + l++) = '_';
+	memcpy(&n[l], id, l2);
+	GDKfree(id);
+
+	return n;
 }
 
 /* fill the proper structures */
-char*
-salgebra_CHadmin( clusterhash* ch ) {
-  char *hvname = NULL, *result = NULL;
-  int l = 0;
+char *
+salgebra_CHadmin(clusterhash *ch)
+{
+	char *hvname = NULL, *result = NULL;
+	int l = 0;
 
-  /* set the names of hv (tv), ch, and cache some info */
-  ch->bname = GDKstrdup( BBPname( ch->b ) );
-  l = strLen( ch->bname );
-  hvname = (char *) GDKmalloc(l + 6);
-  strcpy( hvname, "ch_" );
-  memcpy( (char *) (hvname + 3), ch->bname, l );
-  strcpy( (char *) (hvname + l + 2), "_hv" );
-  BBPrename( ch->hv, hvname );
-  if ( ! (ch->isPerfect) ) {
-    *(char *) (hvname + l + 3) = 't';
-    BBPrename( ch->tv, hvname );
-  }
-  *(char *) (hvname + l + 2) = '\0';
-  result = salgebra_CHname( hvname, (int) ch->b );
-  GDKfree( hvname );
-  return result;
+	/* set the names of hv (tv), ch, and cache some info */
+	ch->bname = GDKstrdup(BBPname(ch->b));
+	l = strLen(ch->bname);
+	hvname = (char *) GDKmalloc(l + 6);
+	strcpy(hvname, "ch_");
+	memcpy((char *) (hvname + 3), ch->bname, l);
+	strcpy((char *) (hvname + l + 2), "_hv");
+	BBPrename(ch->hv, hvname);
+	if (!(ch->isPerfect)) {
+		*(char *) (hvname + l + 3) = 't';
+		BBPrename(ch->tv, hvname);
+	}
+	*(char *) (hvname + l + 2) = '\0';
+	result = salgebra_CHname(hvname, (int) ch->b);
+	GDKfree(hvname);
+	return result;
 }
 
 /* should we indeed protect the insert with a lock? */
 void
-salgebra_cacheIt( clusterhash* ch ) {
-  int refCnt = 0;
-  char *name = NULL;
-  int bid = ABS( ch->b );
+salgebra_cacheIt(clusterhash *ch)
+{
+	int refCnt = 0;
+	char *name = NULL;
+	int bid = ABS(ch->b);
 
-  name = salgebra_CHadmin( ch );
-  MT_set_lock(salgebra_cacheLock, "cacheIt");
-  MT_set_lock(salgebra_refcntLock, "cacheIt");
-  BUNins( salgebra_refcnt, &bid, &refCnt );
-  MT_unset_lock(salgebra_refcntLock, "cacheIt");
-  BUNins( salgebra_cache, &bid, ch );
-  BUNins( salgebra_namecache, &bid, name );
-  MT_unset_lock(salgebra_cacheLock, "cacheIt");
+	name = salgebra_CHadmin(ch);
+	MT_set_lock(salgebra_cacheLock, "cacheIt");
+	MT_set_lock(salgebra_refcntLock, "cacheIt");
+	BUNins(salgebra_refcnt, &bid, &refCnt);
+	MT_unset_lock(salgebra_refcntLock, "cacheIt");
+	BUNins(salgebra_cache, &bid, ch);
+	BUNins(salgebra_namecache, &bid, name);
+	MT_unset_lock(salgebra_cacheLock, "cacheIt");
 }
 
 void
-salgebra_uncacheIt( clusterhash* ch ) {
-  int bid = ABS( ch->b );
+salgebra_uncacheIt(clusterhash *ch)
+{
+	int bid = ABS(ch->b);
 
-  MT_set_lock(salgebra_cacheLock, "uncacheIt");
-  BUNdelHead( salgebra_namecache, &bid );
-  BUNdelHead( salgebra_cache, &bid );
-  MT_set_lock(salgebra_refcntLock, "uncacheIt");
-  BUNdelHead( salgebra_refcnt, &bid );
-  MT_unset_lock(salgebra_refcntLock, "uncacheIt");
-  MT_unset_lock(salgebra_cacheLock, "uncacheIt");
+	MT_set_lock(salgebra_cacheLock, "uncacheIt");
+	BUNdelHead(salgebra_namecache, &bid);
+	BUNdelHead(salgebra_cache, &bid);
+	MT_set_lock(salgebra_refcntLock, "uncacheIt");
+	BUNdelHead(salgebra_refcnt, &bid);
+	MT_unset_lock(salgebra_refcntLock, "uncacheIt");
+	MT_unset_lock(salgebra_cacheLock, "uncacheIt");
 }
 
 int
-salgebra_isCached( int batId ) {
-  int bid = ABS( batId );
-  BUN chbun = BUNfnd( salgebra_cache, &bid );
-  return chbun?TRUE:FALSE;
+salgebra_isCached(int batId)
+{
+	int bid = ABS(batId);
+	BUN chbun = BUNfnd(salgebra_cache, &bid);
+
+	return chbun ? TRUE : FALSE;
 }
 
 /* pre: !isNil( ch ) */
@@ -612,113 +659,122 @@ defined for b.
 @c
 
 int
-salgebra_CHbuild( clusterhash* ch, BAT* b ) {
-  Hash *h = NULL;
-  BAT *bt = NULL, *hv = NULL, *tv = NULL;
-  dict_entry *dict = NULL;
-  int hb = 0, cur = 0, cstart = 0, cend = 0, chlen = 0, cluster = 0, xx = 0;
-  int isPerfect = 1, bid = BBPcacheid( b );
-  oid *hvs = NULL;
+salgebra_CHbuild(clusterhash *ch, BAT *b)
+{
+	Hash *h = NULL;
+	BAT *bt = NULL, *hv = NULL, *tv = NULL;
+	dict_entry *dict = NULL;
+	int hb = 0, cur = 0, cstart = 0, cend = 0, chlen = 0, cluster = 0, xx = 0;
+	int isPerfect = 1, bid = BBPcacheid(b);
+	oid *hvs = NULL;
 
-  /* CHECK: existing clusterhash on this bat? */
-  MT_set_lock(salgebra_chashLock[ABS(bid)&BBPLOCKMASK], "CHbuild");
-  if ( salgebra_isCached( ch->b = bid ) ) { 
-    GDKerror( "salgebra_CHbuild: Clusterhash already exists.\n" );
-    clusterhashNil( ch );
-    MT_unset_lock(salgebra_chashLock[ABS(bid)&BBPLOCKMASK], "CHbuild");
-    return GDK_FAIL;
-  }
-  ch->bttype = BATttype( b );
-  /* build a hash if it does not yet exist */
-  bt = BATmirror( b );
-  if ( !( bt->hhash_heap ) ) BAThash( bt, 0 );
-  h = &bt->hhash;
-  ch->bhash = (Hash*) GDKmalloc( sizeof(Hash) );
-  memcpy( ch->bhash, h, sizeof(Hash) );
+	/* CHECK: existing clusterhash on this bat? */
+	MT_set_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CHbuild");
+	if (salgebra_isCached(ch->b = bid)) {
+		GDKerror("salgebra_CHbuild: Clusterhash already exists.\n");
+		clusterhashNil(ch);
+		MT_unset_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CHbuild");
+		return GDK_FAIL;
+	}
+	ch->bttype = BATttype(b);
+	/* build a hash if it does not yet exist */
+	bt = BATmirror(b);
+	if (!(bt->hhash_heap))
+		BAThash(bt, 0);
+	h = &bt->hhash;
+	ch->bhash = (Hash *) GDKmalloc(sizeof(Hash));
+	memcpy(ch->bhash, h, sizeof(Hash));
 
-  /* allocate space for the chash */
-  chlen = h->mask + 1;
-  ch->dict = (Heap*) GDKmalloc(sizeof(Heap));
-  ch->dict->filename = NULL;
-  if (HEAPalloc(ch->dict, chlen, sizeof(dict_entry)) < 0) {
-  	MT_unset_lock(salgebra_chashLock[ABS(bid)&BBPLOCKMASK], "CHbuild");
-	GDKfree(ch->bhash);
-	GDKfree(ch->dict);
-	ch->bhash = NULL;
-	ch->dict = NULL;
-	return GDK_FAIL;
-  }
-  dict = (dict_entry*) ch->dict->base;
-  DICTclear( dict, chlen );
+	/* allocate space for the chash */
+	chlen = h->mask + 1;
+	ch->dict = (Heap *) GDKmalloc(sizeof(Heap));
+	ch->dict->filename = NULL;
+	if (HEAPalloc(ch->dict, chlen, sizeof(dict_entry)) < 0) {
+		MT_unset_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CHbuild");
+		GDKfree(ch->bhash);
+		GDKfree(ch->dict);
+		ch->bhash = NULL;
+		ch->dict = NULL;
+		return GDK_FAIL;
+	}
+	dict = (dict_entry *) ch->dict->base;
+	DICTclear(dict, chlen);
 
-  /* 
-     allocate a bat for the ordered head values, and another bat for the 
-     tail values; the tail value bat is disregarded if the hash turns out 
-     perfect
-   */
+	/* 
+	   allocate a bat for the ordered head values, and another bat for the 
+	   tail values; the tail value bat is disregarded if the hash turns out 
+	   perfect
+	 */
 
-  /* NOTE: htype == void; 
-     the idea should however extend to other ordered types as well (?) */
-  hv = BATnew( TYPE_oid, TYPE_void, xx = BATcount( b ) );
-  hv->batBuns->free += xx*sizeof(oid);
-  hvs = (oid*) BUNfirst( hv );
+	/* NOTE: htype == void; 
+	   the idea should however extend to other ordered types as well (?) */
+	hv = BATnew(TYPE_oid, TYPE_void, xx = BATcount(b));
+	hv->batBuns->free += xx * sizeof(oid);
+	hvs = (oid *) BUNfirst(hv);
 
-  /* Read the unique ch's from the hash (i.e., do a k-cluster-unique) */  
-  for ( cur = 0; cur < chlen ; cur++ ) {
-    int ncur = 0, cc = 0;
-    ptr cur_tl = NULL;
+	/* Read the unique ch's from the hash (i.e., do a k-cluster-unique) */
+	for (cur = 0; cur < chlen; cur++) {
+		int ncur = 0, cc = 0;
+		ptr cur_tl = NULL;
 
-    /* Any values for this cluster? */
-    cluster = h->hash[cur];
-    if ( !cluster ) continue;
+		/* Any values for this cluster? */
+		cluster = h->hash[cur];
+		if (!cluster)
+			continue;
 
-    /* determine size of cluster and set pointers */
-    for (hb = cluster; hb; hb = h->link[hb]) ncur++;
-    cc = 0;
-    cstart = cend;
-    cend += ncur;
+		/* determine size of cluster and set pointers */
+		for (hb = cluster; hb; hb = h->link[hb])
+			ncur++;
+		cc = 0;
+		cstart = cend;
+		cend += ncur;
 
-    /* extend dictionary */
-    dict[cur].s = cstart;
-    dict[cur].e = cend - 1;
+		/* extend dictionary */
+		dict[cur].s = cstart;
+		dict[cur].e = cend - 1;
 
-    /* printf( "dict entry[%d]=<%d,%d>\n", cur, cstart, cend - 1 ); */
-    for (hb = cluster; hb; hb = h->link[hb]) {
-      /* and create the output bat */
-      ptr tl = NULL;
-      int hoid = hb - 1;
-      /* printf( "ch[%d]=<%d@0,%d>\n", cend - cc - 1, hoid, cur ); */
-      hvs[cend - cc - 1] = hoid;
-      if ( !isPerfect ) { cc++; continue; }      
-      /* check if still perfect */
-      tl = BUNtail(b, BUNptr(b, hb)); /* will be obsolete if isPerfect */
-      if ( cc++ == 0 ) {
-        /* cache tail value of first bun */
-	cur_tl = tl;
-      } else {
-        /* compare tail values */
-	isPerfect = ( ! ATOMcmp( b->ttype, cur_tl, tl ) );
-	if ( !isPerfect ) GDKwarning("Imperfect hash detected!\n");
-      }
-    }
-  }
-  /* Set properties;
-     some day, this should be hv->hsorted = GDK_CLUSTERSORTED */
-  ch->hv = BBPcacheid( hv );
+		/* printf( "dict entry[%d]=<%d,%d>\n", cur, cstart, cend - 1 ); */
+		for (hb = cluster; hb; hb = h->link[hb]) {
+			/* and create the output bat */
+			ptr tl = NULL;
+			int hoid = hb - 1;
 
-  if ( !( ch->isPerfect = isPerfect ) ) {
-    /* set tv := join( hv.reverse, b ).reverse.seqbase(0@0); */
-    tv = BATjoin( BATmirror( hv ), b, oid_nil );
-    tv = BATmirror( tv );
-    ch->tv = BBPcacheid( tv );
-  }
+			/* printf( "ch[%d]=<%d@0,%d>\n", cend - cc - 1, hoid, cur ); */
+			hvs[cend - cc - 1] = hoid;
+			if (!isPerfect) {
+				cc++;
+				continue;
+			}
+			/* check if still perfect */
+			tl = BUNtail(b, BUNptr(b, hb));	/* will be obsolete if isPerfect */
+			if (cc++ == 0) {
+				/* cache tail value of first bun */
+				cur_tl = tl;
+			} else {
+				/* compare tail values */
+				isPerfect = (!ATOMcmp(b->ttype, cur_tl, tl));
+				if (!isPerfect)
+					GDKwarning("Imperfect hash detected!\n");
+			}
+		}
+	}
+	/* Set properties;
+	   some day, this should be hv->hsorted = GDK_CLUSTERSORTED */
+	ch->hv = BBPcacheid(hv);
 
-  /* maintain some admin. info in the bbp etc. */
-  salgebra_cacheIt( ch );
-  BBPcold( ch->b );
+	if (!(ch->isPerfect = isPerfect)) {
+		/* set tv := join( hv.reverse, b ).reverse.seqbase(0@0); */
+		tv = BATjoin(BATmirror(hv), b, oid_nil);
+		tv = BATmirror(tv);
+		ch->tv = BBPcacheid(tv);
+	}
 
-  MT_unset_lock(salgebra_chashLock[ABS(bid)&BBPLOCKMASK], "CHbuild");
-  return GDK_SUCCEED;
+	/* maintain some admin. info in the bbp etc. */
+	salgebra_cacheIt(ch);
+	BBPcold(ch->b);
+
+	MT_unset_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CHbuild");
+	return GDK_SUCCEED;
 }
 
 /* 
@@ -729,18 +785,22 @@ salgebra_CHbuild( clusterhash* ch, BAT* b ) {
 */
 
 void
-salgebra_mergesort_matches( oid *res, oid *a, int na, oid *b, int nb ) {
-  oid *ae = a + na, *be = b+nb;
-  while ( (a < ae) && (b < be) )
-    if (*a < *b) {
-      *res++ = *a++;
-    } else if (*a > *b) {
-      *res++ = *b++;
-    } else {
-      GDKerror( "salgebra_mergesort_matches: clusterhash head values are not unique" );
-    }
-  while (a < ae) *res++ = *a++;
-  while (b < be) *res++ = *b++;
+salgebra_mergesort_matches(oid *res, oid *a, int na, oid *b, int nb)
+{
+	oid *ae = a + na, *be = b + nb;
+
+	while ((a < ae) && (b < be))
+		if (*a < *b) {
+			*res++ = *a++;
+		} else if (*a > *b) {
+			*res++ = *b++;
+		} else {
+			GDKerror("salgebra_mergesort_matches: clusterhash head values are not unique");
+		}
+	while (a < ae)
+		*res++ = *a++;
+	while (b < be)
+		*res++ = *b++;
 }
 
 /* 
@@ -752,46 +812,57 @@ salgebra_mergesort_matches( oid *res, oid *a, int na, oid *b, int nb ) {
    TODO: can we easily get the <hvs = BUNfirst> statement out of the loop?
 */
 
-int 
-salgebra_collect_matches_imperfect( oid* res, clusterhash* ch, int bucket, ptr v) {
-  BAT *hv = BBPdescriptor( ch->hv ), *tv = BBPdescriptor( ch->tv );
-  oid *hvs = (oid*) BUNfirst( hv );
-  int i = 0, j = DICTentry(ch,bucket).s, n = DICTentry(ch,bucket).e - j + 1, nres = 0;
+int
+salgebra_collect_matches_imperfect(oid *res, clusterhash *ch, int bucket, ptr v)
+{
+	BAT *hv = BBPdescriptor(ch->hv), *tv = BBPdescriptor(ch->tv);
+	oid *hvs = (oid *) BUNfirst(hv);
+	int i = 0, j = DICTentry(ch, bucket).s, n = DICTentry(ch, bucket).e - j + 1, nres = 0;
+
 #ifdef DEBUG
-printf( "cm_imperfect: ch[%d]=<%d,%d>\n", bucket, DICTentry(ch,bucket).s, DICTentry(ch,bucket).e );
+	printf("cm_imperfect: ch[%d]=<%d,%d>\n", bucket, DICTentry(ch, bucket).s, DICTentry(ch, bucket).e);
 #endif
-  if ( j == -1 ) return 0; /* no matches */
-  for ( i=0; i<n; i++ ) {
-    /* Inner loop over q; check tails since the hash is imperfect */
-    if ( ! (ATOMcmp( ch->bttype, BUNhead(tv, BUNptr(tv, j+1)), v)) ) {
-      *res++ = hvs[j];
-      nres++;
-    }
-    j++;
-  }
-  return nres;
+	if (j == -1)
+		return 0;	/* no matches */
+	for (i = 0; i < n; i++) {
+		/* Inner loop over q; check tails since the hash is imperfect */
+		if (!(ATOMcmp(ch->bttype, BUNhead(tv, BUNptr(tv, j + 1)), v))) {
+			*res++ = hvs[j];
+			nres++;
+		}
+		j++;
+	}
+	return nres;
 }
 
-int 
-salgebra_collect_matches_perfect( oid* res, clusterhash* ch, int bucket) {
-  BAT *hv = BBPdescriptor( ch->hv );
-  oid *hvs = (oid*) BUNfirst( hv );
-  int i = 0, j = DICTentry(ch,bucket).s, n = DICTentry(ch,bucket).e - j + 1;
+int
+salgebra_collect_matches_perfect(oid *res, clusterhash *ch, int bucket)
+{
+	BAT *hv = BBPdescriptor(ch->hv);
+	oid *hvs = (oid *) BUNfirst(hv);
+	int i = 0, j = DICTentry(ch, bucket).s, n = DICTentry(ch, bucket).e - j + 1;
+
 #ifdef DEBUG
-printf( "cm_perfect: ch[%d]=<%d,%d>\n", bucket, DICTentry(ch,bucket).s, DICTentry(ch,bucket).e );
+	printf("cm_perfect: ch[%d]=<%d,%d>\n", bucket, DICTentry(ch, bucket).s, DICTentry(ch, bucket).e);
 #endif
-  if ( j == -1 ) return 0; /* no matches */
-  for ( i=0; i<n; i++ ) *res++ = hvs[j++];
-  return n;
+	if (j == -1)
+		return 0;	/* no matches */
+	for (i = 0; i < n; i++)
+		*res++ = hvs[j++];
+	return n;
 }
 
-int 
-salgebra_collect_matches( oid* res, clusterhash* ch, ptr v) {
-  int nres = 0;
-  int bucket = DICTprobe( ch, v );
-  if ( ch->isPerfect ) nres = salgebra_collect_matches_perfect( res, ch, bucket );
-  else nres = salgebra_collect_matches_imperfect( res, ch, bucket, v );
-  return nres;
+int
+salgebra_collect_matches(oid *res, clusterhash *ch, ptr v)
+{
+	int nres = 0;
+	int bucket = DICTprobe(ch, v);
+
+	if (ch->isPerfect)
+		nres = salgebra_collect_matches_perfect(res, ch, bucket);
+	else
+		nres = salgebra_collect_matches_imperfect(res, ch, bucket, v);
+	return nres;
 }
 
 /*
@@ -806,232 +877,249 @@ if ( clusterhashIsNil( ch ) ) {
 }
 @c
 
-int 
-salgebra_CMDclusterhash( clusterhash* res, BAT* b) {
-  int batId;
-  clusterhash *ch;
+int
+salgebra_CMDclusterhash(clusterhash *res, BAT *b)
+{
+	int batId;
+	clusterhash *ch;
 
-  BATcheck(b, "CHbuild");
-  ERRORcheck( (b->htype!=TYPE_void), "Argument head must be void.\n" );
-  batId = ABS( BBPcacheid( b ) );
-  if ( !salgebra_isCached( batId ) ) {
-    /* build clusterhash */
-    int ret;
+	BATcheck(b, "CHbuild");
+	ERRORcheck((b->htype != TYPE_void), "Argument head must be void.\n");
+	batId = ABS(BBPcacheid(b));
+	if (!salgebra_isCached(batId)) {
+		/* build clusterhash */
+		int ret;
+
 #ifdef DEBUG
-    GDKwarning( "Building clusterhash\n" );
+		GDKwarning("Building clusterhash\n");
 #endif
-    ret = salgebra_CHbuild( res, b );
-    clusterhashFix( res );
-    return ret;
-  }
-  /* retrieve ch from the dictionary */
-  MT_set_lock(salgebra_cacheLock, "CMDclusterhash");
-  ch = (clusterhash*) BUNtail( salgebra_cache, BUNfnd( salgebra_cache, &batId ) );
-  memcpy( res, ch, clusterhash_size() );
-  MT_unset_lock(salgebra_cacheLock, "CMDclusterhash");
-  clusterhashFix( res );
-  return GDK_SUCCEED;
-}
- 
-int
-salgebra_CMDgetBAT( BAT** res, clusterhash* ch ) {
-  @:CHECKnil(error,FAIL)@
-  *res = BATdescriptor( ch->b );
-  if ( !(*res) ) {
-    GDKerror( "CMDgetBAT: Bat %s is no longer valid.\n", ch->bname );
-    return GDK_FAIL;
-  }
-  return GDK_SUCCEED;
+		ret = salgebra_CHbuild(res, b);
+		clusterhashFix(res);
+		return ret;
+	}
+	/* retrieve ch from the dictionary */
+	MT_set_lock(salgebra_cacheLock, "CMDclusterhash");
+	ch = (clusterhash *) BUNtail(salgebra_cache, BUNfnd(salgebra_cache, &batId));
+	memcpy(res, ch, clusterhash_size());
+	MT_unset_lock(salgebra_cacheLock, "CMDclusterhash");
+	clusterhashFix(res);
+	return GDK_SUCCEED;
 }
 
 int
-salgebra_CMDinfo( BAT** res, clusterhash* ch ) {
-  BAT *bn;
-  @:CHECKnil(error,FAIL)@
-
-  if ( !(bn = BATnew( TYPE_str, TYPE_str, 16 )) )
-    return GDK_FAIL;
-
-  BUNins(bn, "name",  clusterhashName( ABS(ch->b) ) );
-  BUNins(bn, "bname", ch->bname );
-  BUNins(bn, "ttype", ATOMname(ch->bttype) );
-  BUNins(bn, "batId", local_itoa(ch->b) );
-  BUNins(bn, "perfect", local_itoa(ch->isPerfect) );
-  BUNins(bn, "refCnt", local_itoa( salgebra_getRefCnt( ch ) ) );
-  *res = bn;
-  return GDK_SUCCEED;
+salgebra_CMDgetBAT(BAT **res, clusterhash *ch)
+{
+	@:CHECKnil(error,FAIL)@
+	*res = BATdescriptor(ch->b);
+	if (!(*res)) {
+		GDKerror("CMDgetBAT: Bat %s is no longer valid.\n", ch->bname);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
 int
-salgebra_CMDrename( clusterhash* ch, str name ) {    
-  BAT *ncrev = NULL;
-  int batId = ABS(ch->b);
+salgebra_CMDinfo(BAT **res, clusterhash *ch)
+{
+	BAT *bn;
 
-  @:CHECKnil(error,FAIL)@
+	@:CHECKnil(error,FAIL)@
 
-  MT_set_lock(salgebra_cacheLock, "rename");
-  ncrev = BATmirror( salgebra_namecache );
-  if (BUNfnd(ncrev, name)) {
-    GDKerror( "salgebra_CMDrename: A clusterhash with name %s already exists.\n", name );
-    MT_unset_lock(salgebra_cacheLock, "rename");
-    return GDK_FAIL;
-  }
-  BUNdelHead( salgebra_namecache, &batId );
-  BUNins( salgebra_namecache, &batId, name );
-  MT_unset_lock(salgebra_cacheLock, "rename");
-  return GDK_SUCCEED;
+	if (!(bn = BATnew(TYPE_str, TYPE_str, 16)))
+		return GDK_FAIL;
+
+	BUNins(bn, "name", clusterhashName(ABS(ch->b)));
+	BUNins(bn, "bname", ch->bname);
+	BUNins(bn, "ttype", ATOMname(ch->bttype));
+	BUNins(bn, "batId", local_itoa(ch->b));
+	BUNins(bn, "perfect", local_itoa(ch->isPerfect));
+	BUNins(bn, "refCnt", local_itoa(salgebra_getRefCnt(ch)));
+	*res = bn;
+	return GDK_SUCCEED;
 }
 
 int
-salgebra_CMDuselect( BAT** res, clusterhash* ch, ptr v, int v_type ) {
-  BAT *result = NULL;
-  int nres = 0, nmaxres = 0;
-  (void) v_type;
+salgebra_CMDrename(clusterhash *ch, str name)
+{
+	BAT *ncrev = NULL;
+	int batId = ABS(ch->b);
 
-  @:CHECKnil(error,FAIL)@
-  nmaxres = DICTclustersize( ch, v );
-  result = BATnew( TYPE_oid, TYPE_void, nmaxres );
-  result->batBuns->free += nmaxres*sizeof( oid );
-  nres = salgebra_collect_matches( (oid*) BUNfirst( result ), ch, v );
-  result->batBuns->free -= (nmaxres-nres)*sizeof( oid );
-  *res = result;
-  return GDK_SUCCEED;
+	@:CHECKnil(error,FAIL)@
+
+	MT_set_lock(salgebra_cacheLock, "rename");
+	ncrev = BATmirror(salgebra_namecache);
+	if (BUNfnd(ncrev, name)) {
+		GDKerror("salgebra_CMDrename: A clusterhash with name %s already exists.\n", name);
+		MT_unset_lock(salgebra_cacheLock, "rename");
+		return GDK_FAIL;
+	}
+	BUNdelHead(salgebra_namecache, &batId);
+	BUNins(salgebra_namecache, &batId, name);
+	MT_unset_lock(salgebra_cacheLock, "rename");
+	return GDK_SUCCEED;
 }
 
 int
-salgebra_CMDujoin( BAT** res, clusterhash* ch, BAT* b ) {
-  BUN p,q;
-  BAT *result = NULL;
-  oid *matches = NULL;
-  int nres = 0, nmaxres = 0;
-  
-  /* basic type checks */
-  @:CHECKnil(error,FAIL)@
-  ERRORcheck( (b->htype != ch->bttype), "ujoin: types do not match\n" );
+salgebra_CMDuselect(BAT **res, clusterhash *ch, ptr v, int v_type)
+{
+	BAT *result = NULL;
+	int nres = 0, nmaxres = 0;
 
-  /* determine result size if perfect hash */
-  BATloop(b, p, q)
-    nmaxres += ( DICTclustersize(ch, BUNhead(b, p)) );
+	(void) v_type;
 
-  /* create result BAT */
-  result = BATnew( TYPE_oid, TYPE_void, nmaxres );
-  result->hsorted = 0;
-  result->batBuns->free += nmaxres*sizeof(oid);
-
-  /* construct result */
-  matches = (oid*) BUNfirst( result );
-  BATloop(b, p, q)
-    nres += salgebra_collect_matches( &matches[nres], ch, BUNhead(b, p) );
-  result->batBuns->free -= (nmaxres-nres)*sizeof(oid);
-
-  /* return the result */
-  *res = result;
-  return GDK_SUCCEED;
+	@:CHECKnil(error,FAIL)@
+	nmaxres = DICTclustersize(ch, v);
+	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
+	result->batBuns->free += nmaxres * sizeof(oid);
+	nres = salgebra_collect_matches((oid *) BUNfirst(result), ch, v);
+	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+	*res = result;
+	return GDK_SUCCEED;
 }
 
 int
-salgebra_CMDusortedjoin( BAT** res, clusterhash* ch, BAT* b ) {
-  BUN p,q;
-  BAT *result = NULL, *hbuf = NULL;
-  oid *cur = NULL, *prev = NULL, *matches = NULL;
-  int ncur = 0, nres = 0, nmaxres = 0;
-  
-  /* basic type checks */
-  @:CHECKnil(error,FAIL)@
-  ERRORcheck( (b->htype != ch->bttype), "usortedjoin: types do not match\n" );
+salgebra_CMDujoin(BAT **res, clusterhash *ch, BAT *b)
+{
+	BUN p, q;
+	BAT *result = NULL;
+	oid *matches = NULL;
+	int nres = 0, nmaxres = 0;
 
-  /* determine result size if perfect hash */
-  BATloop(b, p, q)
-    nmaxres += ( DICTclustersize(ch, BUNhead(b, p)) );
+	/* basic type checks */
+	@:CHECKnil(error,FAIL)@
+	ERRORcheck((b->htype != ch->bttype), "ujoin: types do not match\n");
 
-  /* create result BAT, and a temporary buffer for mergesorting */
-  result = BATnew( TYPE_oid, TYPE_void, nmaxres );
-  result->batBuns->free += nmaxres*sizeof(oid);
+	/* determine result size if perfect hash */
+	BATloop(b, p, q)
+	    nmaxres += (DICTclustersize(ch, BUNhead(b, p)));
 
-  hbuf = BATnew( TYPE_oid, TYPE_void, nmaxres );
-  hbuf->batBuns->free += nmaxres*sizeof(oid);
+	/* create result BAT */
+	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
+	result->hsorted = 0;
+	result->batBuns->free += nmaxres * sizeof(oid);
 
-  /* construct sorted result */
-  prev = (oid*) BUNfirst( result );
-  matches = (oid*) BUNfirst( hbuf );
-  BATloop(b, p, q) {
-    cur = &prev[nres];
-    ncur = salgebra_collect_matches( cur, ch, BUNhead(b, p) );
-    salgebra_mergesort_matches( matches, cur, ncur, prev, nres );
-    nres += ncur;
-    SWAPoidptr( &prev, &matches );
-    SWAPBATptr( &result, &hbuf );
-  }
-  BBPreclaim( hbuf );
-  result->batBuns->free -= (nmaxres-nres)*sizeof( oid );
-  
-  /* return the result */
-  *res = result;
-  return GDK_SUCCEED;
+	/* construct result */
+	matches = (oid *) BUNfirst(result);
+	BATloop(b, p, q)
+	    nres += salgebra_collect_matches(&matches[nres], ch, BUNhead(b, p));
+	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+
+	/* return the result */
+	*res = result;
+	return GDK_SUCCEED;
 }
 
 int
-salgebra_CMDdestroy( str chname ) {
-  int refcnt, bid;
-  clusterhash *ch = GDKmalloc( clusterhash_size() );
-  if ( !clusterhashByName( ch, chname ) ) return GDK_FAIL;
-  refcnt = salgebra_getRefCnt( ch );
-  ERRORcheck( refcnt > 1, "Still references around; cannot destroy ch\n" );
-  MT_set_lock(salgebra_chashLock[ABS(bid = ch->b)&BBPLOCKMASK], "CMDdestroy");
-  salgebra_uncacheIt( ch );
-  MT_unset_lock(salgebra_chashLock[ABS(bid)&BBPLOCKMASK], "CMDdestroy");
-  return GDK_SUCCEED;
+salgebra_CMDusortedjoin(BAT **res, clusterhash *ch, BAT *b)
+{
+	BUN p, q;
+	BAT *result = NULL, *hbuf = NULL;
+	oid *cur = NULL, *prev = NULL, *matches = NULL;
+	int ncur = 0, nres = 0, nmaxres = 0;
+
+	/* basic type checks */
+	@:CHECKnil(error,FAIL)@
+	ERRORcheck((b->htype != ch->bttype), "usortedjoin: types do not match\n");
+
+	/* determine result size if perfect hash */
+	BATloop(b, p, q)
+	    nmaxres += (DICTclustersize(ch, BUNhead(b, p)));
+
+	/* create result BAT, and a temporary buffer for mergesorting */
+	result = BATnew(TYPE_oid, TYPE_void, nmaxres);
+	result->batBuns->free += nmaxres * sizeof(oid);
+
+	hbuf = BATnew(TYPE_oid, TYPE_void, nmaxres);
+	hbuf->batBuns->free += nmaxres * sizeof(oid);
+
+	/* construct sorted result */
+	prev = (oid *) BUNfirst(result);
+	matches = (oid *) BUNfirst(hbuf);
+	BATloop(b, p, q) {
+		cur = &prev[nres];
+		ncur = salgebra_collect_matches(cur, ch, BUNhead(b, p));
+		salgebra_mergesort_matches(matches, cur, ncur, prev, nres);
+		nres += ncur;
+		SWAPoidptr(&prev, &matches);
+		SWAPBATptr(&result, &hbuf);
+	}
+	BBPreclaim(hbuf);
+	result->batBuns->free -= (nmaxres - nres) * sizeof(oid);
+
+	/* return the result */
+	*res = result;
+	return GDK_SUCCEED;
 }
 
-bat*
-salgebra_prelude(void) {
-  static bat buf[2];
-  int i = 0;
+int
+salgebra_CMDdestroy(str chname)
+{
+	int refcnt, bid;
+	clusterhash *ch = GDKmalloc(clusterhash_size());
+
+	if (!clusterhashByName(ch, chname))
+		return GDK_FAIL;
+	refcnt = salgebra_getRefCnt(ch);
+	ERRORcheck(refcnt > 1, "Still references around; cannot destroy ch\n");
+	MT_set_lock(salgebra_chashLock[ABS(bid = ch->b) & BBPLOCKMASK], "CMDdestroy");
+	salgebra_uncacheIt(ch);
+	MT_unset_lock(salgebra_chashLock[ABS(bid) & BBPLOCKMASK], "CMDdestroy");
+	return GDK_SUCCEED;
+}
+
+bat *
+salgebra_prelude(void)
+{
+	static bat buf[2];
+	int i = 0;
+
 #ifdef DEBUG
-GDKwarning( "salgebra prelude!\n" );
+	GDKwarning("salgebra prelude!\n");
 #endif
-  /* allocate locks */
-  for( i=0; i<=BBPLOCKMASK; i++ ) {
-    salgebra_chashLock[i] = MT_create_lock(); 
-  }
-  salgebra_cacheLock = MT_create_lock();
-  salgebra_refcntLock = MT_create_lock();
+	/* allocate locks */
+	for (i = 0; i <= BBPLOCKMASK; i++) {
+		salgebra_chashLock[i] = MT_create_lock();
+	}
+	salgebra_cacheLock = MT_create_lock();
+	salgebra_refcntLock = MT_create_lock();
 
-  salgebra_cache = BATnew( TYPE_int, TYPE_clusterhash, 10 );
-  BBPrename(BBPcacheid(salgebra_cache), "ch_cache");
+	salgebra_cache = BATnew(TYPE_int, TYPE_clusterhash, 10);
+	BBPrename(BBPcacheid(salgebra_cache), "ch_cache");
 
-  salgebra_namecache = BATnew( TYPE_int, TYPE_str, 10 );
-  BBPrename( BBPcacheid(salgebra_namecache), "ch_namecache");
+	salgebra_namecache = BATnew(TYPE_int, TYPE_str, 10);
+	BBPrename(BBPcacheid(salgebra_namecache), "ch_namecache");
 
-  salgebra_refcnt = BATnew( TYPE_int, TYPE_int, 10 );
-  BBPrename(BBPcacheid(salgebra_refcnt), "ch_refcnt");
+	salgebra_refcnt = BATnew(TYPE_int, TYPE_int, 10);
+	BBPrename(BBPcacheid(salgebra_refcnt), "ch_refcnt");
 
-  clusterhash_nil.bttype = int_nil;
-  clusterhash_nil.isPerfect = int_nil;
-  clusterhash_nil.b = *( (bat*) ATOMnilptr(TYPE_bat) );
-  clusterhash_nil.hv = *( (bat*) ATOMnilptr(TYPE_bat) );
-  clusterhash_nil.tv = *( (bat*) ATOMnilptr(TYPE_bat) );
+	clusterhash_nil.bttype = int_nil;
+	clusterhash_nil.isPerfect = int_nil;
+	clusterhash_nil.b = *((bat *) ATOMnilptr(TYPE_bat));
+	clusterhash_nil.hv = *((bat *) ATOMnilptr(TYPE_bat));
+	clusterhash_nil.tv = *((bat *) ATOMnilptr(TYPE_bat));
 
-  buf[0] = BBPcacheid(salgebra_cache);
-  buf[1] = 0;
-  return buf;
+	buf[0] = BBPcacheid(salgebra_cache);
+	buf[1] = 0;
+	return buf;
 }
 
 void
-salgebra_epilogue(void) {
-  int i = 0;
-#ifdef DEBUG
-  GDKwarning("salgebra epilogue!\n");
-#endif
-  BBPunfix(BBPcacheid(salgebra_namecache));
-  BBPunfix(BBPcacheid(salgebra_cache));
-  BBPunfix(BBPcacheid(salgebra_refcnt));
+salgebra_epilogue(void)
+{
+	int i = 0;
 
-  MT_destroy_lock( salgebra_cacheLock );
-  MT_destroy_lock( salgebra_refcntLock );
-  for( i=0; i<=BBPLOCKMASK; i++ ) {
-    MT_destroy_lock( salgebra_chashLock[i] ); 
-  }
+#ifdef DEBUG
+	GDKwarning("salgebra epilogue!\n");
+#endif
+	BBPunfix(BBPcacheid(salgebra_namecache));
+	BBPunfix(BBPcacheid(salgebra_cache));
+	BBPunfix(BBPcacheid(salgebra_refcnt));
+
+	MT_destroy_lock(salgebra_cacheLock);
+	MT_destroy_lock(salgebra_refcntLock);
+	for (i = 0; i <= BBPLOCKMASK; i++) {
+		MT_destroy_lock(salgebra_chashLock[i]);
+	}
 }
 
 @}

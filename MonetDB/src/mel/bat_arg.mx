@@ -27,17 +27,17 @@
 #include "type_arg.h"
 
 
-class BatArg : public Arg {
-    public:
-	BatArg( int t, char *n, const Arg *atom1, const Arg *atom2 ); 
+class BatArg:public Arg {
+      public:
+	BatArg(int t, char *n, const Arg * atom1, const Arg * atom2);
 
 	const Arg *atom1() const;
 	const Arg *atom2() const;
 
 	int isFixed() const;
-	virtual const char *toString() const; 
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual const char *toString() const;
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 	const Arg *_atom1;
 	const Arg *_atom2;
 };

@@ -305,29 +305,34 @@ initialization script.
 @c
 #include "monet_parse.h"
 
-Client 	   ll_client = 0;
-int	   ll_nlines=0;		  /* current number of string chunks */
-int	   ll_maxlines=0; 	  /* maximum number of string chunks */
-str*	   ll_lines=0;		  /* string chunks */
+Client ll_client = 0;
+int ll_nlines = 0;		/* current number of string chunks */
+int ll_maxlines = 0;		/* maximum number of string chunks */
+str *ll_lines = 0;		/* string chunks */
 
 char ll_nocommand[256] = { 0 };
-int ll_lastval=0;
+int ll_lastval = 0;
 
 typedef struct _strstack_t {
 	str cleanup, cptr, cline, mod;
 	struct _strstack_t *up;
 } strstack;
 
-strstack  *ll_insert = NULL, *ll_stack = NULL;
+strstack *ll_insert = NULL, *ll_stack = NULL;
 str ll_mod = NULL;
 
-	
-void ll_reset() {	
+
+void
+ll_reset()
+{
 	ll_insert = NULL;
 }
 
-int ll_push(str s, str mod) {
-	strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
+int
+ll_push(str s, str mod)
+{
+	strstack *sp = (strstack *) GDKmalloc(sizeof(strstack));
+
 	if (ll_insert) {
 		*sp = *ll_insert;
 		ll_insert->up = sp;
@@ -335,10 +340,10 @@ int ll_push(str s, str mod) {
 		ll_insert->mod = GDKstrdup(mod);
 		ll_insert = sp;
 	} else {
-		sp->cline = ll_client->cline; 
+		sp->cline = ll_client->cline;
 		sp->cptr = ll_client->cptr;
 		sp->mod = ll_mod;
- 		ll_mod = GDKstrdup(mod);
+		ll_mod = GDKstrdup(mod);
 		ll_client->cline = ll_client->cptr = s;
 		sp->up = ll_stack;
 		ll_insert = ll_stack = sp;
@@ -347,14 +352,18 @@ int ll_push(str s, str mod) {
 	return 1;
 }
 
-int ll_pop(void) {
+int
+ll_pop(void)
+{
 	strstack *sp = ll_stack;
+
 	if (ll_stack) {
 		ll_insert = NULL;
 		if (ll_insert) {
 		}
 		ll_stack = sp->up;
-		if (ll_mod) GDKfree(ll_mod);
+		if (ll_mod)
+			GDKfree(ll_mod);
 		ll_mod = sp->mod;
 		if (ll_client->cleanup)
 			GDKfree(ll_client->cleanup);
@@ -367,172 +376,191 @@ int ll_pop(void) {
 	return 0;
 }
 
-str ll_parent_module(){
-	if (ll_mod) return ll_mod;
+str
+ll_parent_module()
+{
+	if (ll_mod)
+		return ll_mod;
 	return moduleGetClient(ll_client);
 }
 
-int ll_getch(void) {
+int
+ll_getch(void)
+{
 	char ch;
 
 	if (ll_client == 0) {
 		GDKfatal("parser: no client for lexical.\n");
 	}
-   	do {
+	do {
 		ch = *ll_client->cptr;
 	} while (ch == 0 && ll_pop());
 
 	if (ch == '\n') {
 		if (ll_client->listing) {
-			if (GDKdebug&16384 || !ll_stack) {
+			if (GDKdebug & 16384 || !ll_stack) {
 				stream *s = ll_client->fdout;
-				if (stream_write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1 , 1  ) < 0 || stream_flush(s))
-					GDKdebug &= ~16384; /* stop logging after error */
+
+				if (stream_write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1, 1) < 0 || stream_flush(s))
+					GDKdebug &= ~16384;	/* stop logging after error */
 			}
 		}
 		ll_client->cline = ll_client->cptr + 1;
 	}
-	if (ch) ll_client->cptr++;
+	if (ch)
+		ll_client->cptr++;
 	return ch;
 }
 
-int ll_getstring(char *buf, int max_size)
+int
+ll_getstring(char *buf, int max_size)
 {
 	char *start = buf, *end = buf + max_size;
 	char ch;
 	int statement = 0;
 
-        if (ll_client == 0) {
-               	GDKfatal("parser: no client for lexical.\n");
-        }
-	while(buf < end){
-   		do {
-        		ch = *ll_client->cptr;
+	if (ll_client == 0) {
+		GDKfatal("parser: no client for lexical.\n");
+	}
+	while (buf < end) {
+		do {
+			ch = *ll_client->cptr;
 		} while (ch == 0 && ll_pop());
 
 		if (ch == 0)
 			break;
-        	if (statement && !isspace((int)ch)) {
-        		/* quit before non-whitespace after end of statement */
-        		break;
-        	}
+		if (statement && !isspace((int) ch)) {
+			/* quit before non-whitespace after end of statement */
+			break;
+		}
 
 		ll_client->cptr++;
 		*buf++ = ch;
 
-        	if (ch == '\n') {
+		if (ch == '\n') {
 			/* quit after end of line */
-                	ll_client->cline = ll_client->cptr;
+			ll_client->cline = ll_client->cptr;
 			break;
-        	}
+		}
 		if (ch == ';') {
 			/* end of statement (unless quoted);
 			 * don't quit, yet, but read trailing whitespaces */
 			statement = 1;
 		}
 	}
-	if (ll_client->listing &&
-	    (GDKdebug&16384 || !ll_stack)) {
+	if (ll_client->listing && (GDKdebug & 16384 || !ll_stack)) {
 		stream *s = ll_client->fdout;
-		if (stream_write(s, start, 1, buf - start) < 0 ||
-		    stream_flush(s))
-			GDKdebug &= ~16384; /* stop logging after error */
+
+		if (stream_write(s, start, 1, buf - start) < 0 || stream_flush(s))
+			GDKdebug &= ~16384;	/* stop logging after error */
 	}
-	return (int) (buf-start);
+	return (int) (buf - start);
 }
 
 
-void ll_init(void) {
-	ll_lines = (str*) GDKmalloc((ll_maxlines=500)*sizeof(str));
+void
+ll_init(void)
+{
+	ll_lines = (str *) GDKmalloc((ll_maxlines = 500) * sizeof(str));
 
 	/* when these chars are seen after an identifier, MIL language constructs impede it be an operator */
-	ll_nocommand[(int)';'] = 1; /* a  ; */
-	ll_nocommand[(int)','] = 1; /* fcn(a  , b) */
-	ll_nocommand[(int)')'] = 1; /* fcn(a  ) */
-	ll_nocommand[(int)'.'] = 1; /* a . fcn(..) */
-	ll_nocommand[(int)'@'] = 1; /* a @ batloop() */
-	ll_nocommand[(int)'?'] = 1; /* a ? b : c */
-        ll_nocommand[(int)':'] = 1; /* b ? a : c ALSO a := ... */
-	ll_nocommand[(int)']'] = 1; /* b@batloop[ a ]() .. */
-	ll_nocommand[(int)'['] = 1; /* b@batloop[ a ]() .. */
+	ll_nocommand[(int) ';'] = 1;	/* a  ; */
+	ll_nocommand[(int) ','] = 1;	/* fcn(a  , b) */
+	ll_nocommand[(int) ')'] = 1;	/* fcn(a  ) */
+	ll_nocommand[(int) '.'] = 1;	/* a . fcn(..) */
+	ll_nocommand[(int) '@'] = 1;	/* a @ batloop() */
+	ll_nocommand[(int) '?'] = 1;	/* a ? b : c */
+	ll_nocommand[(int) ':'] = 1;	/* b ? a : c ALSO a := ... */
+	ll_nocommand[(int) ']'] = 1;	/* b@batloop[ a ]() .. */
+	ll_nocommand[(int) '['] = 1;	/* b@batloop[ a ]() .. */
 
 	/* operator starter symbols (an operator cannot come after an operator) */
-	ll_nocommand[(int)'<'] = 1; /* a < .. */
-	ll_nocommand[(int)'>'] = 1; /* a > .. */
-	ll_nocommand[(int)'='] = 1; /* a = .. */
-	ll_nocommand[(int)'%'] = 1; /* a % b */
-	ll_nocommand[(int)'/'] = 1; /* a / b */
-	ll_nocommand[(int)'-'] = 1; /* a - b */
-	ll_nocommand[(int)'+'] = 1; /* a + b */
-	ll_nocommand[(int)'*'] = 1; /* a * b */
+	ll_nocommand[(int) '<'] = 1;	/* a < .. */
+	ll_nocommand[(int) '>'] = 1;	/* a > .. */
+	ll_nocommand[(int) '='] = 1;	/* a = .. */
+	ll_nocommand[(int) '%'] = 1;	/* a % b */
+	ll_nocommand[(int) '/'] = 1;	/* a / b */
+	ll_nocommand[(int) '-'] = 1;	/* a - b */
+	ll_nocommand[(int) '+'] = 1;	/* a + b */
+	ll_nocommand[(int) '*'] = 1;	/* a * b */
 
 	/* symbols not yet used that in the future may be first chars of operators */
-	ll_nocommand[(int)'|'] = 1; 
-	ll_nocommand[(int)'~'] = 1; 
-	ll_nocommand[(int)'!'] = 1;
-	ll_nocommand[(int)'^'] = 1;
-	ll_nocommand[(int)'&'] = 1;
-	ll_nocommand[(int)'\\'] = 1;
+	ll_nocommand[(int) '|'] = 1;
+	ll_nocommand[(int) '~'] = 1;
+	ll_nocommand[(int) '!'] = 1;
+	ll_nocommand[(int) '^'] = 1;
+	ll_nocommand[(int) '&'] = 1;
+	ll_nocommand[(int) '\\'] = 1;
 }
 
-str ll_lastline(void){
-        static char line[1024];
-        char *l=line, *s = ll_client->cline;
+str
+ll_lastline(void)
+{
+	static char line[1024];
+	char *l = line, *s = ll_client->cline;
 	int c = *s--;
 
-        if (ll_emptychar(c)) {
-                while((s >= ll_client->input) && ll_emptychar(c = *s)) s--;
-                while((s >= ll_client->input) && *s && (*s != '\n')) s--;
-        }
+	if (ll_emptychar(c)) {
+		while ((s >= ll_client->input) && ll_emptychar(c = *s))
+			s--;
+		while ((s >= ll_client->input) && *s && (*s != '\n'))
+			s--;
+	}
 	if (ll_client->cline - s > 512) {
 		s = ll_client->cline - 40;
 	}
-        while ((c = *++s) != 0) {
-                if (c == '\n' || l > line+1000) break;
-                *l++ = c;
-        }
+	while ((c = *++s) != 0) {
+		if (c == '\n' || l > line + 1000)
+			break;
+		*l++ = c;
+	}
 	*l = 0;
-        return line;
+	return line;
 }
 
-str ll_getstr(char *buf, int len, int offending) {
+str
+ll_getstr(char *buf, int len, int offending)
+{
 	static int ll_buf_len, ll_border;
 	int escape = 0;
 	str p;
 
-	if (ll_nlines == 0)  { /* first call of sequence? */
+	if (ll_nlines == 0) {	/* first call of sequence? */
 		ll_buf_len = 0;
 		ll_border = buf[0];
 	}
 
 	/* find out if the string goes on */
-	for(p=buf+len-1; p >= buf; p--) {
-		if (*p != '\\') break;
-                else escape = !escape;
+	for (p = buf + len - 1; p >= buf; p--) {
+		if (*p != '\\')
+			break;
+		else
+			escape = !escape;
 	}
 	if (escape) {
 		/* it goes on; append this line to the ll_lines array */
-		ll_lines[ll_nlines++] = p = (str) GDKmalloc(len+2);
+		ll_lines[ll_nlines++] = p = (str) GDKmalloc(len + 2);
 		if (ll_nlines >= ll_maxlines) {
-		     ll_lines = (str*) GDKrealloc((int*)ll_lines, (ll_maxlines*=2)*sizeof(str));
+			ll_lines = (str *) GDKrealloc((int *) ll_lines, (ll_maxlines *= 2) * sizeof(str));
 		}
 		if (offending == '\n') {
 			len--;
-		} else /* enter border char */ {
+		} else {	/* enter border char */
+
 			buf[len++] = ll_border;
 		}
-		memcpy(p, buf+1, len);
-		p[len-1] = 0;
+		memcpy(p, buf + 1, len);
+		p[len - 1] = 0;
 
 		/* increment the total length of the buffer */
 		ll_buf_len += len;
 		return NULL;
 	}
 	/* concat all */
-	ll_lines[ll_nlines] = buf+1;
-	p = buf = GDKmalloc(ll_buf_len+len+3);
+	ll_lines[ll_nlines] = buf + 1;
+	p = buf = GDKmalloc(ll_buf_len + len + 3);
 	*p++ = ll_border;
-	for(len=0; len < ll_nlines; len++) {
+	for (len = 0; len < ll_nlines; len++) {
 		strcpy(p, ll_lines[len]);
 		p += strlen(ll_lines[len]);
 		GDKfree(ll_lines[len]);
@@ -541,9 +569,9 @@ str ll_getstr(char *buf, int len, int offending) {
 	p += strlen(ll_lines[len]);
 	*p++ = ll_border;
 	*p++ = 0;
-	ll_nlines = 0; /* ready */
+	ll_nlines = 0;		/* ready */
 
-	return buf; /* return concatenated string and its length*/
+	return buf;		/* return concatenated string and its length */
 }
 
 @+ The Parser
@@ -553,20 +581,20 @@ str ll_getstr(char *buf, int len, int offending) {
 
 #include "monet.h"
 
-#define YY_NEVER_INTERACTIVE	1		/* bison brain damage evasion */
+#define YY_NEVER_INTERACTIVE	1	/* bison brain damage evasion */
 
-m_export int        ll_modcmds;           /* are "module" cmd or tokens? */
-m_export int        ll_resolution;        /* perform ident-->MIL resolution */
-m_export Client     ll_client;
-m_export int        ll_nlines;            /* current number of string chunks */
-m_export int        ll_maxlines;          /* maximum number of string chunks */
-m_export str*       ll_lines;             /* string chunks */
-m_export int        ll_parblockdepth;
-m_export YYSTREE    ll_firstnode, ll_sugarnode;
-m_export int        ll_templates;
-m_export int        ll_argc;
-m_export char       ll_nocommand[256];
-m_export int        ll_lastval;
+m_export int ll_modcmds;	/* are "module" cmd or tokens? */
+m_export int ll_resolution;	/* perform ident-->MIL resolution */
+m_export Client ll_client;
+m_export int ll_nlines;		/* current number of string chunks */
+m_export int ll_maxlines;	/* maximum number of string chunks */
+m_export str *ll_lines;		/* string chunks */
+m_export int ll_parblockdepth;
+m_export YYSTREE ll_firstnode, ll_sugarnode;
+m_export int ll_templates;
+m_export int ll_argc;
+m_export char ll_nocommand[256];
+m_export int ll_lastval;
 
 #define ll_emptychar(x)	((x == 0) || GDKisspace(x))
 
@@ -583,27 +611,34 @@ m_export str ll_parent_module();
 
 @- Global variables for YACC 
 @c
-int        ll_parblockdepth = 0;  /* nesting depth of paralellism. */
-int        ll_templates = 0;      /* are templates currently allowed? */
-int        ll_modcmds = 0;        /* are "module" cmd or tokens? */
-int        ll_resolution = 1;     /* perform ident-->MIL resolution */
-YYSTREE    ll_firstnode,ll_sugarnode;/* for parsing OO sugar syntax XX.op(YY) */
-int        ll_argc = 0;           /* */
+int ll_parblockdepth = 0;	/* nesting depth of paralellism. */
+int ll_templates = 0;		/* are templates currently allowed? */
+int ll_modcmds = 0;		/* are "module" cmd or tokens? */
+int ll_resolution = 1;		/* perform ident-->MIL resolution */
+YYSTREE ll_firstnode, ll_sugarnode;	/* for parsing OO sugar syntax XX.op(YY) */
+int ll_argc = 0;		/* */
 
 @-
 The Monet interpreter language provides a sugar version to OO
 programming by considering the first argument the receiver of the method.
 @c
-YYSTREE yysugar(YYSTREE node){
-        YYSTREE t = Myylognode(0, 0);
-        if (node) {
-                Myylogexpand(t, node); /* put the sugar argument in front. */
-        }
-        ll_sugarnode = NULL;
-        return t;
+YYSTREE
+yysugar(YYSTREE node)
+{
+	YYSTREE t = Myylognode(0, 0);
+
+	if (node) {
+		Myylogexpand(t, node);	/* put the sugar argument in front. */
+	}
+	ll_sugarnode = NULL;
+	return t;
 }
 
-int yywrap(void) { return 1; }
+int
+yywrap(void)
+{
+	return 1;
+}
 
 @- The YACC Grammar
 @T
@@ -1412,89 +1447,97 @@ if-then-else).
 
 @{
 @c
-str        ids[500];		/* contains all ids of the parblock. */
-char       iderrors[500];	/* just to avoid multiple warnings. */
+str ids[500];			/* contains all ids of the parblock. */
+char iderrors[500];		/* just to avoid multiple warnings. */
 
 @-
 The identifier table is also used to map the formal arguments into their
 position number.
 In this case we start at the bottom.
 @c
-void ll_clrids(void) {
-        str *t = ids;
-        char *c = iderrors;
+void
+ll_clrids(void)
+{
+	str *t = ids;
+	char *c = iderrors;
 
-        while (t < ids+500 && *t) {
-                *t++ = 0;
-                *c++ = 0;
-        }
-        for( t= ids+499; *t  ; t-- ) {
-                *t = 0;
-        }
+	while (t < ids + 500 && *t) {
+		*t++ = 0;
+		*c++ = 0;
+	}
+	for (t = ids + 499; *t; t--) {
+		*t = 0;
+	}
 }
 
-void ll_idconflict(str s){
-        str        *t;
-        char        *c;
+void
+ll_idconflict(str s)
+{
+	str *t;
+	char *c;
 
-        if (ll_parblockdepth == 0 ) {
-                return ;
-        }
-        for (c = iderrors, t = ids; t < ids+500 && *t && *(t+1); t++, c++) {
-                if (s && strcmp(*t, s) == 0) {
-                        if (*c == 0) {
-                                GDKwarning("// conflict on %s\n", s);
-                        }
-                        *c = *c + 1;
-                        return ;
-                }
-        }
-        if (t < ids+500) {
-                *t = s;
-        } else {
-                GDKerror("potential // conflicts\n");
-        }
+	if (ll_parblockdepth == 0) {
+		return;
+	}
+	for (c = iderrors, t = ids; t < ids + 500 && *t && *(t + 1); t++, c++) {
+		if (s && strcmp(*t, s) == 0) {
+			if (*c == 0) {
+				GDKwarning("// conflict on %s\n", s);
+			}
+			*c = *c + 1;
+			return;
+		}
+	}
+	if (t < ids + 500) {
+		*t = s;
+	} else {
+		GDKerror("potential // conflicts\n");
+	}
 }
 
 @-
 All variables mentioned in the constant list become constant.
 @c
-int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res){
+int
+CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res)
+{
 	unsigned i;
-        int j;
-        Variable act;
-        YYSTREE t;
+	int j;
+	Variable act;
+	YYSTREE t;
+
 	(void) res;
 
-        for(t=lt; t; t=t->overflow) {
-            for(i=0 ; i<lt->cnt; i++)
-		    if ((int) arg(t, i)->token == monet_tokident) {
-		    str nme = arg(t, i)->yyval.val.sval;
-		    int s = stk;
+	for (t = lt; t; t = t->overflow) {
+		for (i = 0; i < lt->cnt; i++)
+			if ((int) arg(t, i)->token == monet_tokident) {
+				str nme = arg(t, i)->yyval.val.sval;
+				int s = stk;
 
-		    for(j = arg(t, i)->yyval.len; j > 0; j--) {
-			    if (s >= 0) {
-				    s = monet_cntxt[s].outer;
-			    } else {
-				    GDKerror("CMDconstant: illegal context.\n");
-				    return -1;
-			    }
-		    }
-		    if ((act = VARfind(&s, nme)) == 0) {
-			    GDKerror("CMDconstant: variable '%s' does not exist.\n",nme);
-			    return -1;
-		    }
-		    if (act->constant) {
-			    GDKerror("CMDconstant: cannot assign to constant '%s'.\n",nme);
-			    return -1;
-		    }
-		    VARfixate(act);
-		} else {
-		    GDKerror("CMDconstant: CONST works on variable names only.\n");
-		    return -1;
-		}
-        }
+				for (j = arg(t, i)->yyval.len; j > 0; j--) {
+					if (s >= 0) {
+						s = monet_cntxt[s].outer;
+					} else {
+						GDKerror("CMDconstant: illegal context.\n");
+						return -1;
+					}
+				}
+				if ((act = VARfind(&s, nme)) == 0) {
+					GDKerror("CMDconstant: variable '%s' does not exist.\n", nme);
+					return -1;
+				}
+				if (act->constant) {
+					GDKerror("CMDconstant: cannot assign to constant '%s'.\n", nme);
+					return -1;
+				}
+				VARfixate(act);
+			} else {
+				GDKerror("CMDconstant: CONST works on variable names only.\n");
+				return -1;
+			}
+	}
 	return 0;
 }
+
 @
 @}

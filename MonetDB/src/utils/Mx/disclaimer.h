@@ -28,6 +28,6 @@
 extern char *disclaimerfile;
 
 extern int disclaimer;
-void insertDisclaimer(FILE *,char *);
+void insertDisclaimer(FILE *, char *);
 
 #endif

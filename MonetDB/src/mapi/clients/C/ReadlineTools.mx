@@ -24,7 +24,7 @@
 void init_readline(Mapi mid, const char *language, int save_history);
 void deinit_readline(void);
 rl_completion_func_t *suspend_completion(void);
-void continue_completion(rl_completion_func_t *func);
+void continue_completion(rl_completion_func_t * func);
 
 #endif /* HAVE_LIBREADLINE */
 #endif /* READLINETOOLS_H_INCLUDED */
@@ -45,7 +45,7 @@ void continue_completion(rl_completion_func_t *func);
 #include <strings.h>		/* for strncasecmp */
 #endif
 
-#define PATHLENGTH	256		/* maximum file pathname length. */ 
+#define PATHLENGTH	256	/* maximum file pathname length. */
 
 static const char *sql_commands[] = {
 	"SELECT",
@@ -54,7 +54,7 @@ static const char *sql_commands[] = {
 	"SET",
 	"DELETE",
 	"COMMIT",
-	"ROLLBACK", 
+	"ROLLBACK",
 	"DROP TABLE",
 	"CREATE",
 	"ALTER",
@@ -68,7 +68,7 @@ static char _history_file[PATHLENGTH];
 static int _save_history = 0;
 
 static char *
-sql_tablename_generator (const char *text, int state)
+sql_tablename_generator(const char *text, int state)
 {
 
 	static int seekpos, len, rowcount;
@@ -77,8 +77,8 @@ sql_tablename_generator (const char *text, int state)
 
 	if (!state) {
 		seekpos = 0;
-      		len = strlen (text);
-		if ((table_hdl = mapi_query(_mid, "SELECT name FROM tables"))==NULL || mapi_error(_mid)) {
+		len = strlen(text);
+		if ((table_hdl = mapi_query(_mid, "SELECT name FROM tables")) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
@@ -88,13 +88,13 @@ sql_tablename_generator (const char *text, int state)
 		}
 		mapi_fetch_all_rows(table_hdl);
 		rowcount = mapi_get_row_count(table_hdl);
-    	}
+	}
 
 	while (seekpos < rowcount) {
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
-		if (strncmp(name, text, len) == 0) 
+		if (strncmp(name, text, len) == 0)
 			return strdup(name);
 	}
 
@@ -103,22 +103,23 @@ sql_tablename_generator (const char *text, int state)
 
 /* SQL commands (at start of line) */
 static char *
-sql_command_generator (const char *text, int state)
+sql_command_generator(const char *text, int state)
 {
 
 	static int index, len;
 	const char *name;
+
 	if (!state) {
 		index = 0;
 		len = strlen(text);
 	}
 
-	
+
 	while ((name = sql_commands[index++])) {
 #ifdef HAVE_STRNCASECMP
-		if (strncasecmp(name, text, len)==0)
+		if (strncasecmp(name, text, len) == 0)
 #else
-		if (strncmp(name, text, len)==0)
+		if (strncmp(name, text, len) == 0)
 #endif
 			return strdup(name);
 	}
@@ -127,26 +128,26 @@ sql_command_generator (const char *text, int state)
 }
 
 static char **
-sql_completion (const char *text, int start, int end)
+sql_completion(const char *text, int start, int end)
 {
 	char **matches;
 
-	matches = (char **)NULL;
+	matches = (char **) NULL;
 
 	(void) end;
 
 	/* FIXME: Nice, context-sensitive completion strategy should go here */
 	if (start == 0) {
-		matches = rl_completion_matches (text, sql_command_generator);
+		matches = rl_completion_matches(text, sql_command_generator);
 	} else {
-		matches = rl_completion_matches (text, sql_tablename_generator);
+		matches = rl_completion_matches(text, sql_tablename_generator);
 	}
 
 	return (matches);
 }
 
 static char *
-mil_batname_generator (const char *text, int state)
+mil_batname_generator(const char *text, int state)
 {
 
 	static int seekpos, len, rowcount;
@@ -155,8 +156,8 @@ mil_batname_generator (const char *text, int state)
 
 	if (!state) {
 		seekpos = 0;
-      		len = strlen (text);
-		if ((table_hdl = mapi_query(_mid, "ls();"))==NULL || mapi_error(_mid)) {
+		len = strlen(text);
+		if ((table_hdl = mapi_query(_mid, "ls();")) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
@@ -172,7 +173,7 @@ mil_batname_generator (const char *text, int state)
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
-		if (strncmp(name, text, len) == 0) 
+		if (strncmp(name, text, len) == 0)
 			return strdup(name);
 	}
 
@@ -180,37 +181,38 @@ mil_batname_generator (const char *text, int state)
 }
 
 static char **
-mil_completion (const char *text, int start, int end)
+mil_completion(const char *text, int start, int end)
 {
 	(void) start;
 	(void) end;
 
 	/* FIXME: Nice, context-sensitive completion strategy should go here */
-	return rl_completion_matches (text, mil_batname_generator);
+	return rl_completion_matches(text, mil_batname_generator);
 }
 
 rl_completion_func_t *
 suspend_completion(void)
 {
 	rl_completion_func_t *func = rl_attempted_completion_function;
+
 	rl_attempted_completion_function = NULL;
 	return func;
 }
 
 void
-continue_completion(rl_completion_func_t *func)
+continue_completion(rl_completion_func_t * func)
 {
 	rl_attempted_completion_function = func;
 }
 
-void 
+void
 init_readline(Mapi mid, const char *language, int save_history)
 {
 	_mid = mid;
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MapiClient";
 	/* Tell the completer that we want to try our own completion before std completion (filename) kicks in. */
-	if (strcmp(language, "sql")==0) {
+	if (strcmp(language, "sql") == 0) {
 		rl_attempted_completion_function = sql_completion;
 	} else {
 		rl_attempted_completion_function = mil_completion;
@@ -218,7 +220,7 @@ init_readline(Mapi mid, const char *language, int save_history)
 
 	if (save_history) {
 #ifndef NATIVE_WIN32
-		if (getenv("HOME")!=NULL) {
+		if (getenv("HOME") != NULL) {
 			snprintf(_history_file, PATHLENGTH, "%s/.mapiclient_history_%s", getenv("HOME"), language);
 			_save_history = 1;
 		}

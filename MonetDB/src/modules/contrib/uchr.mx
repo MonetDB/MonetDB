@@ -74,64 +74,71 @@ Type-mappers for convenience
 @- Atom commands
 @c
 
-int uchr_fromstr(char *uchrStr, int *len, uchr** c) {
+int
+uchr_fromstr(char *uchrStr, int *len, uchr **c)
+{
 	char *p = uchrStr;
 
 #ifdef DEBUG
 	printf("* uchr_fromstr:\n");
-	printf("  - uchrStr: %s\n",(uchrStr!=NULL?uchrStr:"null"));
-	printf("  - *len: %d\n",*len);
+	printf("  - uchrStr: %s\n", (uchrStr != NULL ? uchrStr : "null"));
+	printf("  - *len: %d\n", *len);
 #endif
 
-	if (!*c){
-		*c = (uchr*)GDKmalloc(sizeof(uchr));
-	} else if (*len < (int) sizeof(uchr)){
+	if (!*c) {
+		*c = (uchr *) GDKmalloc(sizeof(uchr));
+	} else if (*len < (int) sizeof(uchr)) {
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(uchr));
 		*len = sizeof(uchr);
 	}
 
-	while(GDKisspace(*p)) p++; 
+	while (GDKisspace(*p))
+		p++;
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		char **sc = (char**)c;
-		**sc = chr_nil; 
+		char **sc = (char **) c;
+
+		**sc = chr_nil;
 		p += 3;
 	} else {
 		long v = strtol(p, &p, 10);
-		if (v < 0 || v > 255){
-			GDKwarning( "Unsigned character cannot hold %d\n", v);
+
+		if (v < 0 || v > 255) {
+			GDKwarning("Unsigned character cannot hold %d\n", v);
 			v = chr_nil;
 		}
-		**c = (uchr)v;
+		**c = (uchr) v;
 	}
 
 #ifdef DEBUG
-	printf("  = *c: %d\n", (int)**c);
-	printf("  = *len: %d\n",*len);
+	printf("  = *c: %d\n", (int) **c);
+	printf("  = *len: %d\n", *len);
 #endif
 
-	return p-uchrStr;
+	return p - uchrStr;
 }
 
-int uchr_tostr(char **uchrStr, int *len, uchr *c) {
+int
+uchr_tostr(char **uchrStr, int *len, uchr *c)
+{
 	int sc = *c;
 
 #ifdef DEBUG
 	printf("* uchr_tostr:\n");
-	printf("  - *len: %d\n",*len);
-	printf("  - c: %s\n",(c!=NULL?c:"null"));
+	printf("  - *len: %d\n", *len);
+	printf("  - c: %s\n", (c != NULL ? c : "null"));
 #endif
 
 	/* allocate and fill a new string */
-	
+
 	if (*len < 4) {
 		GDKfree(*uchrStr);
 		*uchrStr = GDKmalloc(4);
 		*len = 4;
 	}
 
-	if (sc < 0){
-		GDKwarning( "Unsigned character cannot hold %d\n", sc);
+	if (sc < 0) {
+		GDKwarning("Unsigned character cannot hold %d\n", sc);
 		sc = chr_nil;
 	}
 	if ((chr) sc == chr_nil) {
@@ -141,12 +148,13 @@ int uchr_tostr(char **uchrStr, int *len, uchr *c) {
 	snprintf(*uchrStr, *len, "%d", sc);
 
 #ifdef DEBUG
-	printf("  = buf: %s\n",buf);
-	printf("  = *uchrStr: %s\n",*uchrStr);
-	printf("  = *len: %d\n",*len);
+	printf("  = buf: %s\n", buf);
+	printf("  = *uchrStr: %s\n", *uchrStr);
+	printf("  = *len: %d\n", *len);
 #endif
 	return strlen(*uchrStr);
 }
+
 @mil
 
 PROC test_uchr() : void {

@@ -27,15 +27,15 @@
 #include "list.h"
 
 
-class AtomArg : public Arg {
-    public:
-	AtomArg( int t, const char *n, const Atom *arg, char *v); 
+class AtomArg:public Arg {
+      public:
+	AtomArg(int t, const char *n, const Atom * arg, char *v);
 
 	const Atom *arg() const;
 
-        virtual const char *toString() const;
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual const char *toString() const;
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 	const Atom *_arg;
 };
 #endif // _ATOMARG_H_

@@ -665,20 +665,24 @@ PROC test_ddbench() : void {
 #include "enum.proto.h"
 #include "enum.h"
 
-static size_t estimate(BAT* b, size_t lo, size_t hi) {
-	BUN p = BUNptr(b, BUNindex(b,BUNfirst(b))+lo);
-	BUN q = BUNptr(b, BUNindex(b,BUNfirst(b))+hi);
+static size_t
+estimate(BAT *b, size_t lo, size_t hi)
+{
+	BUN p = BUNptr(b, BUNindex(b, BUNfirst(b)) + lo);
+	BUN q = BUNptr(b, BUNindex(b, BUNfirst(b)) + hi);
 	int xx = BUNsize(b);
-	size_t sum=1;
+	size_t sum = 1;
 
-	if (p < BUNfirst(b)) p = BUNfirst(b);
-	if (q >= BUNlast(b)) q = BUNlast(b) - xx;
+	if (p < BUNfirst(b))
+		p = BUNfirst(b);
+	if (q >= BUNlast(b))
+		q = BUNlast(b) - xx;
 
-	while(p <= q) {
-		sum += *(int*) BUNtloc(b,p);
+	while (p <= q) {
+		sum += *(int *) BUNtloc(b, p);
 		p += xx;
 	}
-	return (size_t) (sum*BATMARGIN);
+	return (size_t) (sum * BATMARGIN);
 }
 
 @= rng_estimate
@@ -723,28 +727,34 @@ static size_t estimate(BAT* b, size_t lo, size_t hi) {
 @c
 extern int TYPE_bit32;
 
-int bit32ToStr(char **dst, int *len, int *src) {
-	int mask=1;
+int
+bit32ToStr(char **dst, int *len, int *src)
+{
+	int mask = 1;
 	str p;
 
-        @:atommem(char,33)@
-        if (*src == int_nil) {
-                strcpy(*dst, "nil");
-                return 3;
-        }
+	@:atommem(char,33)@
+
+	if (*src == int_nil) {
+		strcpy(*dst, "nil");
+		return 3;
+	}
 	p = *dst;
 	do {
-		*p++ = (*src & mask)?'1':'0';
+		*p++ = (*src & mask) ? '1' : '0';
 	} while (mask <<= 1);
 	*p = 0;
-        return (int) strlen(*dst);
+	return (int) strlen(*dst);
 }
 
-int bit32FromStr(char *src, int *len, int **dst){
-        str p = src;
-	int res=0, mask=1;
- 
-        @:atommem(int,sizeof(int))@
+int
+bit32FromStr(char *src, int *len, int **dst)
+{
+	str p = src;
+	int res = 0, mask = 1;
+
+	@:atommem(int,sizeof(int))@
+
 	do {
 		if (*p == '1') {
 			res |= mask;
@@ -754,24 +764,28 @@ int bit32FromStr(char *src, int *len, int **dst){
 		}
 	} while (mask <<= 1);
 	**dst = res;
-        return (int) (p-src);
+	return (int) (p - src);
 }
 
 
-int bit32tobat(BAT** ret, BAT *sel) {
-	oid size = sel->halign-1;
+int
+bit32tobat(BAT **ret, BAT *sel)
+{
+	oid size = sel->halign - 1;
 	oid o = sel->hseqbase, last = o + size;
-	int *cur = (int*) BUNhloc(sel,BUNfirst(sel));
+	int *cur = (int *) BUNhloc(sel, BUNfirst(sel));
 	BAT *bn;
 
 	@:check_bitsel(bit32tobat,sel,sel,size)@
-	
+
 	*ret = bn = BATnew(TYPE_oid, TYPE_void, size);
 
 	for (;;) {
 		int mask = 1, val = *cur++;
+
 		do {
-			if (val&mask) BUNfastins(bn, &o, NULL); 
+			if (val & mask)
+				BUNfastins(bn, &o, NULL);
 			if (++o >= last) {
 				BATkey(bn, TRUE);
 				return GDK_SUCCEED;
@@ -781,48 +795,64 @@ int bit32tobat(BAT** ret, BAT *sel) {
 }
 
 
-int bit32semijoin(BAT** ret, BAT *b, BAT* sel) {
-	int *cur = (int*) BUNhloc(sel,BUNfirst(sel));
+int
+bit32semijoin(BAT **ret, BAT *b, BAT *sel)
+{
+	int *cur = (int *) BUNhloc(sel, BUNfirst(sel));
 	BUN p = BUNfirst(b), q = BUNlast(b);
 	int xx = BUNsize(b);
 	BAT *bn;
 
 	@:check_bitsel(bit32semijoin,sel,b,BATcount(b))@
-	*ret = bn = BATnew(TYPE_oid, BATttype(b), sel->halign-1);
+	*ret = bn = BATnew(TYPE_oid, BATttype(b), sel->halign - 1);
 
 	for (;;) {
 		int mask = 1, val = *cur++;
+
 		do {
-			if (val&mask) BUNfastins(bn, BUNhead(b,p),BUNtail(b,p));
+			if (val & mask)
+				BUNfastins(bn, BUNhead(b, p), BUNtail(b, p));
 			if ((p += xx) >= q) {
 				bn->hsorted = BAThordered(b);
 				bn->tsorted = BATtordered(b);
-				if (b->hkey) BATkey(bn, TRUE);
-				if (b->tkey) BATkey(BATmirror(bn), TRUE);
+				if (b->hkey)
+					BATkey(bn, TRUE);
+				if (b->tkey)
+					BATkey(BATmirror(bn), TRUE);
 				return GDK_SUCCEED;
-			} 
+			}
 		} while (mask <<= 1);
 	}
 }
 
 
-int bit32stats(BAT** ret, BAT *sel) {
-	size_t hits = 0, size = sel->halign-1, i = size;
-	int *cur = (int*) BUNhloc(sel,BUNfirst(sel));
+int
+bit32stats(BAT **ret, BAT *sel)
+{
+	size_t hits = 0, size = sel->halign - 1, i = size;
+	int *cur = (int *) BUNhloc(sel, BUNfirst(sel));
 
 	@:check_bitsel(bit32stats,sel,sel,size)@
 
 	for (;;) {
 		int mask = 1, val = *cur++;
+
 		do {
-			if (val&mask) hits++;
+			if (val & mask)
+				hits++;
 			if (--i == 0) {
 				lng v;
+
 				*ret = BATnew(TYPE_str, TYPE_lng, 4);
-				v = (lng) sel->hseqbase; BUNins(*ret, "seqbase", &v);
-				v = (lng) size; BUNins(*ret, "size", &v);
-				v = (lng) hits; BUNins(*ret, "yes", &v); size -= hits;
-				v = (lng) size; BUNins(*ret, "no", &v);
+				v = (lng) sel->hseqbase;
+				BUNins(*ret, "seqbase", &v);
+				v = (lng) size;
+				BUNins(*ret, "size", &v);
+				v = (lng) hits;
+				BUNins(*ret, "yes", &v);
+				size -= hits;
+				v = (lng) size;
+				BUNins(*ret, "no", &v);
 				return GDK_SUCCEED;
 			}
 		} while (mask <<= 1);
@@ -840,12 +870,14 @@ typedef struct {
 	int cnt;
 } histo_t;
 
-int enum_view( BAT** res, BAT* b){
+int
+enum_view(BAT **res, BAT *b)
+{
 	BAT *histo;
 	int tpe = b->ttype;
 
 	if (!enum_table(&histo, &tpe)) {
-        	return GDK_FAIL;
+		return GDK_FAIL;
 	}
 	if (ATOMsize(b->ttype) == 1) {
 		@:createview(char)@
@@ -885,7 +917,9 @@ int enum_view( BAT** res, BAT* b){
  * table and directly create enumerated group oid-s
  */
 
-int enum_group( BAT** res, BAT* ct, BAT* b){
+int
+enum_group(BAT **res, BAT *ct, BAT *b)
+{
 	size_t card_b, card_c, pow_c, pow_b;
 	int log_c, log_b;
 	BAT *histo_b, *histo_ct;
@@ -906,26 +940,32 @@ int enum_group( BAT** res, BAT* ct, BAT* b){
 	enum_table(&histo_b, &btpe);
 	card_c = BATcount(histo_ct);
 	card_b = BATcount(histo_b);
-	for(log_c=0, pow_c=1; pow_c < card_c; pow_c<<=1, log_c++);
-	for(log_b=0, pow_b=1; pow_b < card_b; pow_b<<=1, log_b++);
+	for (log_c = 0, pow_c = 1; pow_c < card_c; pow_c <<= 1, log_c++)
+		;
+	for (log_b = 0, pow_b = 1; pow_b < card_b; pow_b <<= 1, log_b++)
+		;
 
 	/* we shift on the maptable that is closest to a power of 2 */
-	if (pow_b*card_c < pow_c*card_b) {
-		BAT *swap_bat = ct; 
-		size_t swap_card = card_c; 
-		ct = b; b = swap_bat;
-		card_c = card_b; card_b = swap_card;
-		pow_c = pow_b; log_c = log_b;
+	if (pow_b * card_c < pow_c * card_b) {
+		BAT *swap_bat = ct;
+		size_t swap_card = card_c;
+
+		ct = b;
+		b = swap_bat;
+		card_c = card_b;
+		card_b = swap_card;
+		pow_c = pow_b;
+		log_c = log_b;
 	}
 
 	/* group, create histogram and result in enumtype */
-	if (card_b*pow_c < 255) {
+	if (card_b * pow_c < 255) {
 		if (ATOMsize(b->ttype) != 1 || ATOMsize(ct->ttype) != 1) {
 			GDKerror("enum_group: nyi: unexpected types.\n");
 			return GDK_FAIL;
 		}
 		@:enumgroup(char,char,char)@
-	} else if (card_b*pow_c > 65535) {
+	} else if (card_b * pow_c > 65535) {
 		GDKerror("enum_group: overflow scenario nyi.\n");
 		return GDK_FAIL;
 	} else if (ATOMsize(b->ttype) == ATOMsize(ct->ttype)) {
@@ -1205,7 +1245,7 @@ direction is also inverse. All that is handled by the below macros:
 #endif
 
 #define NEXTrefine	submask = *(sub++);
-#define NEXTnormal	 
+#define NEXTnormal
 
 #define multiplex 	for(i=0;i<argc;i++)
 
@@ -1213,15 +1253,17 @@ direction is also inverse. All that is handled by the below macros:
  * do a range-scan equiselect, but output the result as a bitmask, paritioned
  * in 32-bits integers. The head-oids are densly incremental from from 0@0
  */
-int val_bitselect( BAT** res, BAT* b, ptr v){
+int
+val_bitselect(BAT **res, BAT *b, ptr v)
+{
 	int *dst, val;
-	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b)/32);
-	int vector=0;
+	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+	int vector = 0;
 
 	@:bitselect(normal,val)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 @c
@@ -1229,139 +1271,158 @@ int val_bitselect( BAT** res, BAT* b, ptr v){
  * do a range-scan rangeselect, but output the result as a bitmask, paritioned
  * in 32-bits integers. The head-oids are densly incremental from from 0@0
  */
-int rng_bitselect( BAT** res, BAT* b, ptr lo, ptr hi){
+int
+rng_bitselect(BAT **res, BAT *b, ptr lo, ptr hi)
+{
 	int *dst, low, high;
-	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b)/32);
-	int vector=0;
+	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+	int vector = 0;
 
 	@:bitselect(normal,rng)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 
 /* COMMAND 
  * do a bitselect on the subset indicated by the first BAT param
  */
-int val_bitsubsel( BAT** res, BAT* sel, BAT* b, ptr v){
-	int *sub = (int*) BUNfirst(sel);
+int
+val_bitsubsel(BAT **res, BAT *sel, BAT *b, ptr v)
+{
+	int *sub = (int *) BUNfirst(sel);
 	int *dst, val, submask;
-	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b)/32);
-	int vector=0;
+	BAT *bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+	int vector = 0;
 
 	@:check_bitsel(val_bitsubsel,sel,b,BATcount(b))@
-	bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b)/32);
+	bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
 	@:bitselect(refine,val)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a bitselect on the subset indicated by the first BAT param
  */
-int rng_bitsubsel( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
-	int *sub = (int*) BUNfirst(sel);
+int
+rng_bitsubsel(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
+{
+	int *sub = (int *) BUNfirst(sel);
 	int *dst, low, high, submask;
-	int vector=0;
+	int vector = 0;
 	BAT *bn;
 
 	@:check_bitsel(rng_bitsubsel,sel,b,BATcount(b))@
-	bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b)/32);
+	bn = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
 	@:bitselect(refine,rng)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a bitselect on the subset indicated by the first BAT param
  */
-int val_bitrefine( BAT** res, BAT* sel, BAT* b, ptr v){
-	int *sub = (int*) BUNfirst(sel);
+int
+val_bitrefine(BAT **res, BAT *sel, BAT *b, ptr v)
+{
+	int *sub = (int *) BUNfirst(sel);
 	int *dst, val, submask;
 	BAT *bn = sel;
-	int vector=0;
+	int vector = 0;
 
 	ALIGNdel(sel, "val_oidrefine");
 	@:check_bitsel(val_bitrefine,sel,b,BATcount(b))@
 	@:bitselect(refine,val)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a bitselect on the subset indicated by the first BAT param
  */
-int rng_bitrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
-	int *sub = (int*) BUNfirst(sel);
+int
+rng_bitrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
+{
+	int *sub = (int *) BUNfirst(sel);
 	int *dst, low, high, submask;
 	BAT *bn = sel;
-	int vector=0;
+	int vector = 0;
 
 	ALIGNdel(sel, "val_oidrefine");
 	@:check_bitsel(rng_bitrefine,sel,b,BATcount(b))@
 	@:bitselect(refine,rng)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a range-scan equiselect, but output the result as a bitmask, 
  * partitioned  in 32-bits integers. 
  */
-int vals_bitselect( BAT** res, BAT* b, ...){
+int
+vals_bitselect(BAT **res, BAT *b, ...)
+{
 	int *v[MAXPARAMS], val[MAXPARAMS];
 	int vector[MAXPARAMS], *dst[MAXPARAMS], i, argc;
 	BAT *bn[MAXPARAMS];
-        va_list ap;
+	va_list ap;
 
-        va_start (ap, b);
-	for(argc=0; TRUE; argc++) {
-	    v[argc] = va_arg (ap,int*) ;
-	    if (v[argc] == NULL) break;
-	    bn[argc] = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b)/32);
-	    vector[argc] = 0;
-        } 
-        va_end (ap);
+	va_start(ap, b);
+	for (argc = 0; TRUE; argc++) {
+		v[argc] = va_arg(ap, int *);
+
+		if (v[argc] == NULL)
+			break;
+		bn[argc] = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+		vector[argc] = 0;
+	}
+	va_end(ap);
 
 	@:bitselect(normal,val,multiplex,[i])@
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
-	for(i=0; i<argc; i++)
+	for (i = 0; i < argc; i++)
 		BUNins(*res, &i, &bn[i]->batCacheid);
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a range-scan rangeselect, but output the result as a bitmask, 
  * partitioned in 32-bits integers.
  */
-int rngs_bitselect( BAT** res, BAT* b, ...){
+int
+rngs_bitselect(BAT **res, BAT *b, ...)
+{
 	int *lo[MAXPARAMS], *hi[MAXPARAMS], low[MAXPARAMS], high[MAXPARAMS];
 	int *dst[MAXPARAMS], vector[MAXPARAMS], i, argc;
 	BAT *bn[MAXPARAMS];
-        va_list ap;
+	va_list ap;
 
-        va_start (ap, b);
-	for(argc=0; TRUE; argc++) {
-	    lo[argc] = va_arg (ap,int*) ;
-	    if (lo[argc] == NULL) break;
-	    hi[argc] = va_arg (ap,int*) ;
-	    bn[argc] = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b)/32);
-	    vector[argc] = 0;
-        } 
-        va_end (ap);
+	va_start(ap, b);
+	for (argc = 0; TRUE; argc++) {
+		lo[argc] = va_arg(ap, int *);
+
+		if (lo[argc] == NULL)
+			break;
+		hi[argc] = va_arg(ap, int *);
+
+		bn[argc] = BATnew(TYPE_void, TYPE_bit32, 1 + BATcount(b) / 32);
+		vector[argc] = 0;
+	}
+	va_end(ap);
 
 	@:bitselect(normal,rng,multiplex,[i])@
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
-	for(i=0; i<argc; i++)
+	for (i = 0; i < argc; i++)
 		BUNins(*res, &i, &bn[i]->batCacheid);
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 
@@ -1578,7 +1639,9 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 /* COMMAND 
  * do a equi-select
  */
-int val_oidselect( BAT** res, BAT* b, ptr v){
+int
+val_oidselect(BAT **res, BAT *b, ptr v)
+{
 	oid *dst, *last = 0;
 	int val;
 	BAT *bn;
@@ -1587,14 +1650,16 @@ int val_oidselect( BAT** res, BAT* b, ptr v){
 	@:oidselect(val)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 @c
 /* COMMAND 
  * do a range-select
  */
-int rng_oidselect( BAT** res, BAT* b, ptr lo, ptr hi){
+int
+rng_oidselect(BAT **res, BAT *b, ptr lo, ptr hi)
+{
 	oid *dst, *last = 0;
 	int low, high;
 	BAT *bn;
@@ -1603,59 +1668,69 @@ int rng_oidselect( BAT** res, BAT* b, ptr lo, ptr hi){
 	@:oidselect(rng)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 
 /* COMMAND 
  * do a equi-select on multiple values, yielding multiple BAT results.
  */
-int vals_oidselect( BAT** res, BAT* b, ...){
+int
+vals_oidselect(BAT **res, BAT *b, ...)
+{
 	int *v[MAXPARAMS], val[MAXPARAMS], i, argc;
 	oid *dst[MAXPARAMS], *last[MAXPARAMS];
 	BAT *bn[MAXPARAMS];
-        va_list ap;
+	va_list ap;
 
-        va_start (ap, b);
-	last[0] = 0; (void) last[0];
-	for(argc=0; TRUE; argc++) {
-	    v[argc] = va_arg (ap,int*) ;
-	    if (v[argc] == NULL) break;
-        } 
-        va_end (ap);
+	va_start(ap, b);
+	last[0] = 0;
+	(void) last[0];
+	for (argc = 0; TRUE; argc++) {
+		v[argc] = va_arg(ap, int *);
+
+		if (v[argc] == NULL)
+			break;
+	}
+	va_end(ap);
 	@:oidselect(val,multiplex,[i])@
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
-	for(i=0; i<argc; i++)
+	for (i = 0; i < argc; i++)
 		BUNins(*res, &i, &bn[i]->batCacheid);
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a range-select on multiple range predicates yielding multiple BAT results.
  */
-int rngs_oidselect( BAT** res, BAT* b, ...){
+int
+rngs_oidselect(BAT **res, BAT *b, ...)
+{
 	int *lo[MAXPARAMS], *hi[MAXPARAMS], low[MAXPARAMS], high[MAXPARAMS];
 	oid *dst[MAXPARAMS], *last[MAXPARAMS];
 	BAT *bn[MAXPARAMS];
 	int i, argc;
-        va_list ap;
+	va_list ap;
 
-        va_start (ap, b);
-	last[0] = 0; (void) last[0];
-	for(argc=0; TRUE; argc++) {
-	    lo[argc] = va_arg (ap,int*) ;
-	    if (lo[argc] == NULL) break;
-	    hi[argc] = va_arg (ap,int*) ;
-        } 
-        va_end (ap);
+	va_start(ap, b);
+	last[0] = 0;
+	(void) last[0];
+	for (argc = 0; TRUE; argc++) {
+		lo[argc] = va_arg(ap, int *);
+
+		if (lo[argc] == NULL)
+			break;
+		hi[argc] = va_arg(ap, int *);
+	}
+	va_end(ap);
 
 	@:oidselect(rng,multiplex,[i])@
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
-	for(i=0; i<argc; i++)
+	for (i = 0; i < argc; i++)
 		BUNins(*res, &i, &bn[i]->batCacheid);
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 @- optimized oid-select implementation
@@ -1828,7 +1903,9 @@ if ((GDKdebug&786432)==262144) {
 /* COMMAND 
  * do a bitselect on the subset indicated by the first BAT param
  */
-int val_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr v){
+int
+val_oidsubsel(BAT **res, BAT *sel, BAT *b, ptr v)
+{
 	oid *dst = NULL, *last;
 	int val;
 	BAT *bn = NULL;
@@ -1837,13 +1914,15 @@ int val_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr v){
 	@:oidrefine(val,TRUE)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a bitselect on the subset indicated by the first BAT param
  */
-int rng_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
+int
+rng_oidsubsel(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
+{
 	int low, high;
 	oid *dst = NULL, *last;
 	BAT *bn = NULL;
@@ -1852,13 +1931,15 @@ int rng_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 	@:oidrefine(rng,TRUE)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a bitselect on the subset indicated by the first BAT param
  */
-int val_oidrefine( BAT** res, BAT* sel, BAT* b, ptr v){
+int
+val_oidrefine(BAT **res, BAT *sel, BAT *b, ptr v)
+{
 	oid *dst = NULL, *last = 0;
 	int val;
 	BAT *bn = NULL;
@@ -1869,13 +1950,15 @@ int val_oidrefine( BAT** res, BAT* sel, BAT* b, ptr v){
 	@:oidrefine(val,FALSE)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /* COMMAND 
  * do a bitselect on the subset indicated by the first BAT param
  */
-int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
+int
+rng_oidrefine(BAT **res, BAT *sel, BAT *b, ptr lo, ptr hi)
+{
 	int low, high;
 	oid *dst = NULL, *last = 0;
 	BAT *bn = NULL;
@@ -1886,7 +1969,7 @@ int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 	@:oidrefine(rng,FALSE)@
 
 	*res = bn;
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 
@@ -1938,12 +2021,15 @@ int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 /* COMMAND sel_histo
  * computes a subset-histogram on b, receiving the subset as a selection BAT
  */
-int oid_subhisto( BAT** res, BAT* b, BAT* sel){
-	oid *cur = (oid*) BUNhloc(sel,BUNfirst(sel));
+int
+oid_subhisto(BAT **res, BAT *b, BAT *sel)
+{
+	oid *cur = (oid *) BUNhloc(sel, BUNfirst(sel));
 	int *cnt;
 	BAT *bn = NULL;
 
-	@:subhisto(oid)@	
+	@:subhisto(oid)@
+
 	*res = bn;
 	return GDK_SUCCEED;
 }
@@ -1952,35 +2038,42 @@ int oid_subhisto( BAT** res, BAT* b, BAT* sel){
 /* COMMAND 
  * computes a subset-histogram on b, receiving the subset as a bitmask
  */
-int bit_subhisto( BAT** res, BAT* b, BAT* sel){
-	int *cur = (int*) BUNhloc(sel,BUNfirst(sel));
+int
+bit_subhisto(BAT **res, BAT *b, BAT *sel)
+{
+	int *cur = (int *) BUNhloc(sel, BUNfirst(sel));
 	int *cnt;
 	BAT *bn = NULL;
 
-	@:subhisto(bit)@	
+	@:subhisto(bit)@
+
 	*res = bn;
 	return GDK_SUCCEED;
 }
 
 /* basically the same implementation, but now we produce multiple histograms 
    at the same time */
-int bits_subhisto( BAT** res, BAT* b, ...){
+int
+bits_subhisto(BAT **res, BAT *b, ...)
+{
 	int *cur[MAXPARAMS], *cnt[MAXPARAMS], i, argc;
 	BAT *bn[MAXPARAMS], *sel[MAXPARAMS];
-        va_list ap;
-	
-        va_start (ap, b);
-	for(argc=0; TRUE; argc++) {
-	    sel[argc] = va_arg (ap,BAT*) ;
-	    if (sel[argc] == NULL) break;
-	    cur[argc] = (int*) BUNfirst(sel[argc]);
-        } 
-        va_end (ap);
+	va_list ap;
 
-	@:subhisto(bit,multiplex,[i])@	
+	va_start(ap, b);
+	for (argc = 0; TRUE; argc++) {
+		sel[argc] = va_arg(ap, BAT *);
+
+		if (sel[argc] == NULL)
+			break;
+		cur[argc] = (int *) BUNfirst(sel[argc]);
+	}
+	va_end(ap);
+
+	@:subhisto(bit,multiplex,[i])@
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
-	for(i=0; i<argc; i++) 
+	for (i = 0; i < argc; i++)
 		BUNins(*res, &i, &bn[i]->batCacheid);
 	return GDK_SUCCEED;
 }

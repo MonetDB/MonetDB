@@ -96,14 +96,15 @@ static void php_monetdb_fetch_row(
 */
 
 ZEND_BEGIN_MODULE_GLOBALS(monetdb)
-	long default_link; /* default mapi used */
-	long default_handle; /* default query handle used */
-	long default_port;
-	char *default_language;
-	char *default_hostname;
-	char *default_username;
-	char *default_password;
-    long query_timeout;
+long default_link;		/* default mapi used */
+long default_handle;		/* default query handle used */
+long default_port;
+char *default_language;
+char *default_hostname;
+char *default_username;
+char *default_password;
+long query_timeout;
+
 ZEND_END_MODULE_GLOBALS(monetdb)
 
 /* In every utility function you add that needs to use variables 
@@ -115,15 +116,12 @@ ZEND_END_MODULE_GLOBALS(monetdb)
    encouraged to rename these macros something shorter, see
    examples in any other php module directory.
 */
-
 #ifdef ZTS
 #define MONET_G(v) TSRMG(monetdb_globals_id, zend_monetdb_globals *, v)
 #else
 #define MONET_G(v) (monetdb_globals.v)
 #endif
-
-#endif	/* PHP_MONETDB_H */
-
+#endif /* PHP_MONETDB_H */
 /*
  * Local variables:
  * tab-width: 4

@@ -731,46 +731,50 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
         GDKfree(cnt);
 @c
 
-int CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
+int
+CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
+{
 /* XXX in a large BAT, it is conceivable that there are head elements
    that occur more often than fits in an "int", so the return BAT
    should really have a tail type of size_t.
  */
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
+	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
 	oid i, range, min, max;
-  	int btt;
+	int btt;
 	ptr bt_nil;
 
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	btt = b->ttype;
 	bt_nil = ATOMnilptr(b->ttype);
 
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
-	if (BAThordered(e)&1) {
-		min = *(oid*)BUNhead(e, BUNfirst(e));
+	if (BAThordered(e) & 1) {
+		min = *(oid *) BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+			if (BUNfastins(bn, BUNhead(e, p), &zero) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 		}
-		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
+		max = *(oid *) BUNhead(e, BUNlast(e) - BUNsize(e));
 	} else {
-		min = max = *(oid*)BUNhead(e, BUNfirst(e));
+		min = max = *(oid *) BUNhead(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
-			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+			if (BUNfastins(bn, BUNhead(e, p), &zero) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			i = *(oid*)BUNhead(e, p);
-			if (i < min) min = i;
-			else
-			if (i > max) max = i;
+			i = *(oid *) BUNhead(e, p);
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
 		}
 	}
 	range = max - min + 1;
@@ -778,18 +782,22 @@ int CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	/* scan b, and add increment totals for true values */
 	if (range > SMALL_AGGR_MAX) {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(size_t) range,SMALL_AGGR_MAX);
-			@:large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
+
+			@:large_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n",(size_t) range,SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
+
 			@:large_aggr_count()@
 		}
 	} else {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(size_t) range,SMALL_AGGR_MAX);
-			@:small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
+
+			@:small_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n",(size_t) range,SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
+
 			@:small_aggr_count()@
 		}
 	}
@@ -797,18 +805,21 @@ int CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	return GDK_SUCCEED;
 }
 
-int CMDaggr_size(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
+int
+CMDaggr_size(BAT **ret, BAT *b, BAT *e)
+{
+	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
 	int zero = 0;
 	BUN p, q, r;
 	int xx;
 
-	if(bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	BATloopFast(e, p, q, xx) {
-		if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+		if (BUNfastins(bn, BUNhead(e, p), &zero) == NULL) {
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
@@ -819,27 +830,32 @@ int CMDaggr_size(BAT **ret, BAT *b, BAT *e){
 		return GDK_FAIL;
 	}
 	BATloopFast(b, p, q, xx) {
-		if (*(bit*) BUNtloc(b,p) == TRUE) {
-			oid *h = (oid*) BUNhead(b,p);
+		if (*(bit *) BUNtloc(b, p) == TRUE) {
+			oid *h = (oid *) BUNhead(b, p);
 
 			BUNfndOID(r, bn, h);
 			if (r) {
-				int *dst = (int*) BUNtloc(bn, r);
+				int *dst = (int *) BUNtloc(bn, r);
+
 				(*dst)++;
 			}
 		}
-	} 
+	}
 	*ret = bn;
 	return GDK_SUCCEED;
 }
 
-int CMDsize(int *ret, BAT* b) {
+int
+CMDsize(int *ret, BAT *b)
+{
 	*ret = BATgetaggr(b, GDK_AGGR_SIZE);
 	if (*ret < 0) {
-		bit *cur = (bit*) BUNtail(b, BUNfirst(b));
-		bit *end = (bit*) BUNtail(b, BUNlast(b));
+		bit *cur = (bit *) BUNtail(b, BUNfirst(b));
+		bit *end = (bit *) BUNtail(b, BUNlast(b));
 		int cnt, xx = BUNsize(b);
-		for(cnt=0; cur<end; cur+=xx) cnt += (*cur == TRUE);
+
+		for (cnt = 0; cur < end; cur += xx)
+			cnt += (*cur == TRUE);
 		BATsetaggr(b, GDK_AGGR_SIZE, *ret = cnt);
 	}
 	return GDK_SUCCEED;
@@ -911,36 +927,39 @@ if (BATtordered(b)&1) {
 }
 @c
 
-int CMDcard(int *result, BAT* b, int* maxelements) {
-	int maxsize = *maxelements, cursize = BATcount(b); 
+int
+CMDcard(int *result, BAT *b, int *maxelements)
+{
+	int maxsize = *maxelements, cursize = BATcount(b);
 
 	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
-		cursize = 1; 
+		cursize = 1;
 	} else if (cursize > 1 && !b->tkey) {
 		cursize = BATgetaggr(b, GDK_AGGR_CARD);
 		if (b->ttype == TYPE_chr && *maxelements > 256) {
 			maxsize = 256;
 		} else if (b->ttype == TYPE_sht && *maxelements > 65536) {
 			maxsize = 65536;
-		} else if (cursize == int_nil && BATcount(b) > 10000 && *maxelements > 1000 && !(BATtordered(b)&1)) {
+		} else if (cursize == int_nil && BATcount(b) > 10000 && *maxelements > 1000 && !(BATtordered(b) & 1)) {
 			/* the recursive quick-look optimization does not make sense made for the sorted case */
 			maxsize = *maxelements / 10;
-			CMDcard(&cursize, b, &maxsize); /* try your luck with a smaller limit... */
+			CMDcard(&cursize, b, &maxsize);	/* try your luck with a smaller limit... */
 			maxsize = *maxelements;
 		}
 		if (cursize == int_nil) {
-			BUN p, q, r; /* if we could not figure out the cardinality by now, we must do real work.. :( */
+			BUN p, q, r;	/* if we could not figure out the cardinality by now, we must do real work.. :( */
 			int xx, tpe = b->ttype;
+
 #if 0
-			if (tpe ==TYPE_str && strElimDoubles(&b->theap)) {
-				tpe = TYPE_int; /* use offsets only in case of a double-eliminated string heap */
+			if (tpe == TYPE_str && strElimDoubles(&b->theap)) {
+				tpe = TYPE_int;	/* use offsets only in case of a double-eliminated string heap */
 			}
 #endif
 			if ((size_t) maxsize <= BATcount(b)) {
 				@:card_bound(BOUNDED)@
 			} else {
-				maxsize = BATcount(b); /* reducing maxsize limits memory consumption in hash table */ 
-				@:card_bound(UNBOUNDED)@ /* UNBOUNDED = no overhead for checking maxsize */
+				maxsize = BATcount(b);	/* reducing maxsize limits memory consumption in hash table */
+				@:card_bound(UNBOUNDED)@	/* UNBOUNDED = no overhead for checking maxsize */
 			}
 		}
 	}
@@ -952,20 +971,24 @@ int CMDcard(int *result, BAT* b, int* maxelements) {
 	return GDK_SUCCEED;
 }
 
-int CMDcard_unlimited(int *result, BAT* b) {
+int
+CMDcard_unlimited(int *result, BAT *b)
+{
 	int limit = BATcount(b);
+
 	return CMDcard(result, b, &limit);
 }
 
-int CMDhasNil(bit *ret, BAT* b) {
-	*ret = (BATcount(b) == 0)?FALSE:
-                                  BATtdense(b)?(b->tseqbase == oid_nil):
-	                                       BATgetaggr(BATmirror(b), GDK_AGGR_HASNIL);
+int
+CMDhasNil(bit *ret, BAT *b)
+{
+	*ret = (BATcount(b) == 0) ? FALSE : BATtdense(b) ? (b->tseqbase == oid_nil) : BATgetaggr(BATmirror(b), GDK_AGGR_HASNIL);
 	if (*ret == bit_nil) {
-		*ret = BUNfnd(BATmirror(b),ATOMnilptr(b->ttype))?TRUE:FALSE;
-		 BATsetaggr(BATmirror(b), GDK_AGGR_HASNIL, *ret);
+		*ret = BUNfnd(BATmirror(b), ATOMnilptr(b->ttype)) ? TRUE : FALSE;
+		BATsetaggr(BATmirror(b), GDK_AGGR_HASNIL, *ret);
 	}
 	return GDK_SUCCEED;
 }
+
 @}
 @}

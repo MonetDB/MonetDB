@@ -81,12 +81,12 @@ Record containing all data-specific info.
 Introduced to reduce number of qsort parameters 
 @c
 typedef struct {
-	int		(*cmp)(ptr, ptr); /* routine that compares two atoms */
-	char*		offst;		/* NULL or start of varsized heap */ 
-	int		loc;		/* byte-offset of sort atom in record */
-	int 		shift;		/* log2 if width is a power of two, else -1 */ 
-	unsigned	width;		/* byte-width of record */
-} buf_t; 
+	int (*cmp) (ptr, ptr);	/* routine that compares two atoms */
+	char *offst;		/* NULL or start of varsized heap */
+	int loc;		/* byte-offset of sort atom in record */
+	int shift;		/* log2 if width is a power of two, else -1 */
+	unsigned width;		/* byte-width of record */
+} buf_t;
 
 /* fast arithmetic on the record width */
 #define MULT_WIDTH(d)					\
@@ -171,6 +171,7 @@ typedef lng ptrdiff_t;
 
 typedef chr any;
 @:qsort_L_or_G_direction(any)@
+
 #ifndef NOEXPAND_CHR
 @:qsort_cmpdef(chr)@
 #endif

@@ -53,13 +53,13 @@ The threads have to update their I/O descriptor before doing I/O.
 #include "gdk.h"
 
 /* monet standard threads */
-m_export void	monetInterpreter(void *dummy);
-m_export void	monetSingle  	(int status);
+m_export void monetInterpreter(void *dummy);
+m_export void monetSingle(int status);
 
 /* interpreter thread handling */
-m_export MT_Id	monetFork (void);
-m_export int	monetAdjustThreads (int i);
-m_export int	monetSetChannel (Thread t, stream* in, stream* out);
+m_export MT_Id monetFork(void);
+m_export int monetAdjustThreads(int i);
+m_export int monetSetChannel(Thread t, stream *in, stream *out);
 
 
 #endif /* _MONET_PROCESS_H_ */
@@ -77,17 +77,20 @@ The single threaded code is large copied from @%monetInterpreter@.
 @c
 int monet_threads = 0;
 
-void monetSingle(int status){
+void
+monetSingle(int status)
+{
 	Thread t = THRget(THRgettid());
 
 	(void) status;
-	if( t == 0) return;
+	if (t == 0)
+		return;
 	monet_threads++;
-	PARDEBUG THRprintf(GDKerr, "monetInterpreter()\n" );
+	PARDEBUG THRprintf(GDKerr, "monetInterpreter()\n");
 
-	doRequest(t,0);
+	doRequest(t, 0);
 	monet_threads--;
-       	PARDEBUG THRprintf(GDKerr, "exit\n");
+	PARDEBUG THRprintf(GDKerr, "exit\n");
 }
 
 
@@ -95,43 +98,49 @@ void monetSingle(int status){
 @-
 This will be dropped when everything works ok.
 @c
-void monetInterpreter(void* status){
-	Thread	t;
+void
+monetInterpreter(void *status)
+{
+	Thread t;
 
 	t = THRnew(MT_getpid(), "Interpreter");
 	if (t) {
 		monet_threads++;
 		monet_up_sema(monet_forksync, "monetInterpreter");
-		PARDEBUG THRprintf(GDKerr, "monetInterpreter()\n" );
+		PARDEBUG THRprintf(GDKerr, "monetInterpreter()\n");
 
-		doRequest(t,0);
+		doRequest(t, 0);
 		monet_set_lock(monet_critical, "monetInterpreter");
 		THRdel(t);
- 		monet_threads--;
+		monet_threads--;
 		monet_unset_lock(monet_critical, "monetInterpreter");
 	} else {
 		if (status)
-			* (int *) status = -1;
+			*(int *) status = -1;
 		monet_up_sema(monet_forksync, "monetInterpreter");
 	}
-       	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
+	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
+
 	MT_exit_thread(0);
 }
 
-int monetSetChannel(Thread t, stream* in, stream* out){
-        if ( t==0) {
-                GDKerror("monetSetChannel: unknown thread\n");
-        }
-        if (t->data[0] == 0 || t->data[1] == 0) {
-                return EOF;
-        }
-        PARDEBUG THRprintf(GDKerr, "setchannel %s %s\n",stream_name(in), stream_name(out));
-        t->data[1] = in;
-        t->data[0] = out;
- 
-        return 0;
+int
+monetSetChannel(Thread t, stream *in, stream *out)
+{
+	if (t == 0) {
+		GDKerror("monetSetChannel: unknown thread\n");
+	}
+	if (t->data[0] == 0 || t->data[1] == 0) {
+		return EOF;
+	}
+	PARDEBUG THRprintf(GDKerr, "setchannel %s %s\n", stream_name(in), stream_name(out));
+
+	t->data[1] = in;
+	t->data[0] = out;
+
+	return 0;
 }
- 
+
 
 
 @-
@@ -139,15 +148,17 @@ New interpreters threads are added here.
 If the system is supposed to run with a single interpreter thread
 we simply ignore all subsequent requests.
 @c
-MT_Id monetFork(void) {
+MT_Id
+monetFork(void)
+{
 	MT_Id p = 0;
 	int status = 0;
 
-	TMDEBUG printf("# monetFork: embedded %d protected %d forks %d\n",
-			GDKembedded,GDKprotected,monet_forks);
-	if (GDKembedded && monet_forks > 0){
+	TMDEBUG printf("# monetFork: embedded %d protected %d forks %d\n", GDKembedded, GDKprotected, monet_forks);
+
+	if (GDKembedded && monet_forks > 0) {
 		/* allow for one client only */
-		return  ~ (MT_Id) 0;
+		return ~(MT_Id) 0;
 	}
 	if (!GDKprotected && !GDKembedded) {
 		protectMonet();
@@ -158,27 +169,31 @@ MT_Id monetFork(void) {
 	 * and monet_threads counter. */
 	if (MT_create_thread(&p, monetInterpreter, &status) != 0) {
 		GDKsyserror("monetFork:failed\n");
-		p = ~ (MT_Id) 0;
+		p = ~(MT_Id) 0;
 	} else {
 		monet_down_sema(monet_forksync, "monetFork");
 		if (status)
-			p = ~ (MT_Id) 0;
+			p = ~(MT_Id) 0;
 	}
 	monet_unset_lock(monet_critical, "monetFork");
 	return p;
 }
 
 
-int monetAdjustThreads(int i){
+int
+monetAdjustThreads(int i)
+{
 	PARDEBUG THRprintf(GDKerr, "monetAdjustThreads(%d)\n", i);
+
 	for (; i < 0; i++) {
 		putkillRequest();
 	}
 	for (; i > 0; i--) {
-		if (monetFork() == ~ (MT_Id) 0) {
+		if (monetFork() == ~(MT_Id) 0) {
 			return monet_threads;
 		}
-       	}
+	}
 	return monet_threads;
 }
+
 @}

@@ -24,13 +24,14 @@
 
 #include "language.h"
 
-class use: public language {
-    public:
-	const char *get_name() const{ return "use"; }
-	int generate_code( ostream &o, Symbol *root );
+class use:public language {
+      public:
+	const char *get_name() const {
+		return "use";
+	} int generate_code(ostream & o, Symbol *root);
 
-	ostream &gen_module( ostream &o, const Module &m );
-	ostream &gen_dependency( ostream &o, const Dependency &m );
+	 ostream & gen_module(ostream & o, const Module & m);
+	 ostream & gen_dependency(ostream & o, const Dependency & m);
 };
 
 #endif //_USE_H_

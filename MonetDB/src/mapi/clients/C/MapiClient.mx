@@ -117,14 +117,16 @@ static long
 gettime(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
-        struct timeval tp;
-        gettimeofday(&tp, NULL);
-        return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
+	struct timeval tp;
+
+	gettimeofday(&tp, NULL);
+	return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
-        struct timeb tb;
-        ftime(&tb);
-        return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
+	struct timeb tb;
+
+	ftime(&tb);
+	return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
 #endif
 #endif
 }
@@ -140,8 +142,7 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark) {
-		fprintf(toConsole, "%s %d.%03d msec %s\n", mark,
-			(t1 - t0) / 1000, (t1 - t0) % 1000, mark2?mark2:"");
+		fprintf(toConsole, "%s %d.%03d msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 	}
 }
 
@@ -209,17 +210,16 @@ dump_table(Mapi mid, char *tname)
 	fprintf(toConsole, " (\n");
 
 	snprintf(query, maxquerylen,
-		 "SELECT \"name\","		/* 0 */
-			"\"type\","		/* 1 */
-			"\"type_digits\","	/* 2 */
-			"\"type_scale\","	/* 3 */
-			"\"null\","		/* 4 */
-			"\"default\","		/* 5 */
-			"\"number\" "		/* 6 */
+		 "SELECT \"name\","			/* 0 */
+			"\"type\","			/* 1 */
+			"\"type_digits\","		/* 2 */
+			"\"type_scale\","		/* 3 */
+			"\"null\","			/* 4 */
+			"\"default\","			/* 5 */
+			"\"number\" "			/* 6 */
 		 "FROM \"columns\" \"c\",\"tables\" \"t\" "
 		 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
-		 "AND '%s' = \"t\".\"name\" ORDER BY \"number\"",
-		 tname);
+		 "AND '%s' = \"t\".\"name\" ORDER BY \"number\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -275,8 +275,7 @@ dump_table(Mapi mid, char *tname)
 		} else if (strcmp(c_type_scale, "0") == 0) {
 			fprintf(toConsole, "%s(%s)", c_type, c_type_digits);
 		} else {
-			fprintf(toConsole, "%s(%s,%s)", c_type,
-				c_type_digits, c_type_scale);
+			fprintf(toConsole, "%s(%s,%s)", c_type, c_type_digits, c_type_scale);
 		}
 		if (strcmp(c_null, "false") == 0)
 			fprintf(toConsole, " NOT NULL");
@@ -293,17 +292,16 @@ dump_table(Mapi mid, char *tname)
 	mapi_close_handle(hdl);
 	snprintf(query, maxquerylen,
 		 "SELECT \"kc\".\"column\","		/* 0 */
-		 	"\"kc\".\"nr\", "		/* 1 */
+			"\"kc\".\"nr\", "		/* 1 */
 			"\"k\".\"name\" "		/* 2 */
 		 "FROM \"keycolumns\" \"kc\", "
-		       "\"keys\" \"k\", "
-		       "\"tables\" \"t\" "
+		      "\"keys\" \"k\", "
+		      "\"tables\" \"t\" "
 		 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
 		       "\"k\".\"table_id\" = \"t\".\"id\" AND "
 		       "\"k\".\"type\" = 0 AND "
 		       "\"t\".\"name\" = '%s' "
-		 "ORDER BY \"nr\"",
-		 tname);
+		 "ORDER BY \"nr\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -349,17 +347,16 @@ dump_table(Mapi mid, char *tname)
 
 	snprintf(query, maxquerylen,
 		 "SELECT \"kc\".\"column\","		/* 0 */
-		 	"\"kc\".\"nr\", "		/* 1 */
+			"\"kc\".\"nr\", "		/* 1 */
 			"\"k\".\"name\" "		/* 2 */
 		 "FROM \"keycolumns\" \"kc\", "
-		       "\"keys\" \"k\", "
-		       "\"tables\" \"t\" "
+		      "\"keys\" \"k\", "
+		      "\"tables\" \"t\" "
 		 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
 		       "\"k\".\"table_id\" = \"t\".\"id\" AND "
 		       "\"k\".\"type\" = 1 AND "
 		       "\"t\".\"name\" = '%s' "
-		 "ORDER BY \"nr\"",
-		 tname);
+		 "ORDER BY \"nr\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -386,7 +383,7 @@ dump_table(Mapi mid, char *tname)
 				putc(')', toConsole);
 			fprintf(toConsole, ",\n\t");
 			if (k_name) {
-				fprintf(toConsole, "CONSTRAINT " );
+				fprintf(toConsole, "CONSTRAINT ");
 				quoted_print(toConsole, k_name);
 				putc(' ', toConsole);
 			}
@@ -411,22 +408,21 @@ dump_table(Mapi mid, char *tname)
 			"\"pkkc\".\"column\","		/* 1 */
 			"\"fkkc\".\"column\","		/* 2 */
 			"\"fkkc\".\"nr\","		/* 3 */
-		 	"\"fkk\".\"name\""		/* 4 */
+			"\"fkk\".\"name\""		/* 4 */
 		 "FROM \"tables\" \"fkt\","
 		      "\"keycolumns\" \"fkkc\","
 		      "\"keys\" \"fkk\","
 		      "\"tables\" \"pkt\","
 		      "\"keycolumns\" \"pkkc\","
 		      "\"keys\" \"pkk\""
-		 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" and "
-		       "\"pkt\".\"id\" = \"pkk\".\"table_id\" and "
-		       "\"fkk\".\"id\" = \"fkkc\".\"id\" and "
-		       "\"pkk\".\"id\" = \"pkkc\".\"id\" and "
-		       "\"fkk\".\"rkey\" = \"pkk\".\"id\" and "
-		       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" and "
+		 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
+		       "\"pkt\".\"id\" = \"pkk\".\"table_id\" AND "
+		       "\"fkk\".\"id\" = \"fkkc\".\"id\" AND "
+		       "\"pkk\".\"id\" = \"pkkc\".\"id\" AND "
+		       "\"fkk\".\"rkey\" = \"pkk\".\"id\" AND "
+		       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" AND "
 		       "\"fkt\".\"name\" = '%s'"
-		 "ORDER BY \"fkk\".\"name\", \"nr\"",
-		 tname);
+		 "ORDER BY \"fkk\".\"name\", \"nr\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -453,14 +449,13 @@ dump_table(Mapi mid, char *tname)
 			return 1;
 		}
 		assert(strcmp(c_nr, "0") == 0);
-		(void) c_nr; /* pacify compilers in case assertions are disabled */
+		(void) c_nr;	/* pacify compilers in case assertions are disabled */
 		nkeys = 1;
 		fkeys = malloc(nkeys * sizeof(*fkeys));
 		pkeys = malloc(nkeys * sizeof(*pkeys));
 		pkeys[nkeys - 1] = c_pcolumn;
 		fkeys[nkeys - 1] = c_fcolumn;
-		while ((cnt = mapi_fetch_row(hdl)) != 0 &&
-		       strcmp(mapi_fetch_field(hdl, 3), "0") != 0) {
+		while ((cnt = mapi_fetch_row(hdl)) != 0 && strcmp(mapi_fetch_field(hdl, 3), "0") != 0) {
 			nkeys++;
 			pkeys = realloc(pkeys, nkeys * sizeof(*pkeys));
 			fkeys = realloc(fkeys, nkeys * sizeof(*fkeys));
@@ -509,7 +504,7 @@ dump_table(Mapi mid, char *tname)
 			"\"kc\".\"nr\", "		/* 2 */
 			"\"c\".\"name\" "		/* 3 */
 		 "FROM \"idxs\" AS \"i\" LEFT JOIN \"keys\" AS \"k\" "
-		      "ON \"i\".\"name\" = \"k\".\"name\", "
+				"ON \"i\".\"name\" = \"k\".\"name\", "
 		      "\"keycolumns\" AS \"kc\", "
 		      "\"columns\" AS \"c\", "
 		      "\"tables\" AS \"t\" "
@@ -519,8 +514,7 @@ dump_table(Mapi mid, char *tname)
 		       "\"kc\".\"column\" = \"c\".\"name\" AND "
 		       "(\"k\".\"type\" IS NULL OR \"k\".\"type\" = 1) AND "
 		       "\"t\".\"name\" = '%s' "
-		 "ORDER BY \"i\".\"name\", \"kc\".\"nr\"",
-		 tname);
+		 "ORDER BY \"i\".\"name\", \"kc\".\"nr\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -583,6 +577,7 @@ dump_table(Mapi mid, char *tname)
 	}
 	if (mapi_fetch_row(hdl)) {
 		char *cnt = mapi_fetch_field(hdl, 0);
+
 		fprintf(toConsole, "COPY %s RECORDS INTO ", cnt);
 		quoted_print(toConsole, tname);
 		fprintf(toConsole, " FROM stdin USING DELIMITERS '\\t';\n");
@@ -601,19 +596,17 @@ dump_table(Mapi mid, char *tname)
 	}
 
 	cnt = mapi_get_field_count(hdl);
-	string = malloc(sizeof(int)*cnt);
+	string = malloc(sizeof(int) * cnt);
 	for (i = 0; i < cnt; i++) {
 		string[i] = 0;
-		if (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
-			strcmp(mapi_get_type(hdl, i), "varchar") == 0)
-		{
+		if (strcmp(mapi_get_type(hdl, i), "char") == 0 || strcmp(mapi_get_type(hdl, i), "varchar") == 0) {
 			string[i] = 1;
 		}
 	}
 	while (mapi_fetch_row(hdl)) {
 		char *s;
 
-		for(i = 0; i < cnt; i++) {
+		for (i = 0; i < cnt; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
 				fputs("NULL", toConsole);
@@ -803,9 +796,8 @@ doFile(Mapi mid, const char *file)
 		   protocol) we break out of the loop (via the
 		   continue).  The assertion at the end will then go
 		   off. */
-		if (mapi_query_done(hdl) == MMORE &&
-		    (length > 0 || mapi_query_done(hdl) == MMORE))
-			continue;	       /* get more data */
+		if (mapi_query_done(hdl) == MMORE && (length > 0 || mapi_query_done(hdl) == MMORE))
+			continue;	/* get more data */
 
 		switch (mapi_error(mid)) {
 		case MOK:
@@ -835,9 +827,8 @@ doFile(Mapi mid, const char *file)
 			while ((reply = mapi_fetch_line(hdl)) != NULL)
 				fprintf(toConsole, "%s\n", reply);
 		} while ((rc = mapi_next_result(hdl)) == 1);
-		if (rc == MMORE &&
-		    (length > 0 || mapi_query_done(hdl) != MOK))
-			continue; /* get more data */
+		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
+			continue;	/* get more data */
 
 		switch (mapi_error(mid)) {
 		case MOK:
@@ -904,6 +895,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 #ifdef HAVE_LIBREADLINE
 		if (prompt) {
 			rl_completion_func_t *func = NULL;
+
 			if (buf)
 				free(buf);
 			if (hdl)
@@ -943,9 +935,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 		} else
 			length = strlen(line);
 
-		if (length > 0 &&
-		    (!linemode ||
-		     (hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
+		if (length > 0 && (!linemode || (hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
 			/* test for special commands */
 			while (length > 0 && isspace((int) *line)) {
 				line++;
@@ -1014,13 +1004,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				if (length == 0 || strcmp(line, "stdout") == 0)
 					toConsole = stdout;
 				else if (strcmp(line, "stderr") == 0)
-					  toConsole = stderr;
+					toConsole = stderr;
 				else if ((toConsole = fopen(line, "w")) == NULL) {
 					toConsole = stdout;
 					fprintf(stderr, "Cannot open %s\n", line);
 				}
 				continue;
-			case 'c': /* cd command? */
+			case 'c':	/* cd command? */
 				if (line[1] == 'd' && isspace((int) line[2])) {
 					if (line[length - 1] == '\n')
 						line[--length] = 0;
@@ -1093,9 +1083,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				return 1;
 			}
 		}
-		if ((line == NULL ||
-		     (length > 0 && line[length - 1] == '\n')) &&
-		    linemode) {
+		if ((line == NULL || (length > 0 && line[length - 1] == '\n')) && linemode) {
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
@@ -1104,9 +1092,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			   happen accordint to the protocol) we break
 			   out of the loop (via the continue).  The
 			   assertion at the end will then go off. */
-			if (mapi_query_done(hdl) == MMORE &&
-			    (line != NULL || mapi_query_done(hdl) == MMORE))
-				continue; /* get more data */
+			if (mapi_query_done(hdl) == MMORE && (line != NULL || mapi_query_done(hdl) == MMORE))
+				continue;	/* get more data */
 
 			switch (mapi_error(mid)) {
 			case MOK:
@@ -1135,9 +1122,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				while ((reply = mapi_fetch_line(hdl)) != NULL)
 					fprintf(toConsole, "%s\n", reply);
 			} while ((rc = mapi_next_result(hdl)) == 1);
-			if (rc == MMORE &&
-			    (line != NULL || mapi_query_done(hdl) != MOK))
-				continue; /* get more data */
+			if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
+				continue;	/* get more data */
 
 			switch (mapi_error(mid)) {
 			case MOK:
@@ -1198,9 +1184,10 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 	}
 
 	if (prompt) {
-		if( def)
-			fprintf(termout,"%s(%s):",prompt,def);
-		else	fprintf(termout,"%s:",prompt);
+		if (def)
+			fprintf(termout, "%s(%s):", prompt, def);
+		else
+			fprintf(termout, "%s:", prompt);
 		fflush(termout);
 	}
 #ifdef HAVE_TERMIOS_H
@@ -1216,8 +1203,8 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 
 	length = strlen(destination);
 	if (length > 0 && destination[length - 1] != '\n') {
-		char	buf[128];
-		int	buflen;
+		char buf[128];
+		int buflen;
 
 		do {
 			if (fgets(buf, sizeof(buf), termin) == NULL)
@@ -1239,8 +1226,9 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 	if (termout != stdout)
 		fclose(termout);
 #endif
-	if( destination[0]==0 && def) strcpy(destination,def);
-        return destination;
+	if (destination[0] == 0 && def)
+		strcpy(destination, def);
+	return destination;
 }
 
 static void
@@ -1260,13 +1248,13 @@ usage(const char *prog)
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
 	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
 	fprintf(stderr, " -T          | --time           /* time commands */\n");
-	fprintf(stderr, " -u user     | --user=user      /* user id */\n" );
-	fprintf(stderr, " -H          | --history        /* load/save cmdline history (default off) */\n" );
+	fprintf(stderr, " -u user     | --user=user      /* user id */\n");
+	fprintf(stderr, " -H          | --history        /* load/save cmdline history (default off) */\n");
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
 	exit(-1);
 }
 
-#define SQLdefaultPort 45123 	/* hardwired SQL default */
+#define SQLdefaultPort 45123	/* hardwired SQL default */
 
 int
 main(int argc, char **argv)
@@ -1327,20 +1315,15 @@ main(int argc, char **argv)
 				usage(argv[0]);
 			break;
 		case 'c':
-			setlen = mo_add_option(&set, setlen, opt_cmdline,
-					       "config", optarg);
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;
 		case 'l':
 			/* accept unambiguous prefix of language */
-			if (strcmp(optarg, "sql") == 0 ||
-			    strcmp(optarg, "sq") == 0 ||
-			    strcmp(optarg, "s") == 0) {
+			if (strcmp(optarg, "sql") == 0 || strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
 				language = "sql";
-			} else if (strcmp(optarg, "mil") == 0 ||
-				   strcmp(optarg, "mi") == 0) {
+			} else if (strcmp(optarg, "mil") == 0 || strcmp(optarg, "mi") == 0) {
 				language = "mil";
-			} else if (strcmp(optarg, "mal") == 0 ||
-				   strcmp(optarg, "ma") == 0) {
+			} else if (strcmp(optarg, "mal") == 0 || strcmp(optarg, "ma") == 0) {
 				language = "mal";
 			} else {
 				fprintf(stderr, "language option needs to be one of sql, mil, or mal\n");
@@ -1348,11 +1331,11 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'u':
-			guest= 0;
+			guest = 0;
 			user = optarg;
 			break;
 		case 'P':
-			guest= 0;
+			guest = 0;
 			passwd = optarg;
 			break;
 		case 'i':
@@ -1363,8 +1346,7 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			port = atoi(optarg);
-			setlen = mo_add_option(&set, setlen, opt_cmdline,
-					       "port", optarg);
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "port", optarg);
 			break;
 		case 's':
 			command = optarg;
@@ -1382,16 +1364,14 @@ main(int argc, char **argv)
 			trace = 1;
 			break;
 		case 'd':
-			setlen = mo_add_option(&set, setlen, opt_cmdline,
-					       "debug", optarg ? optarg : "2");
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "debug", optarg ? optarg : "2");
 			break;
-		case 'S': {
+		case 'S':{
 			char *eq = strchr(optarg, '=');
 
 			if (eq)
 				*eq = 0;
-			setlen = mo_add_option(&set, setlen, opt_cmdline,
-					       optarg, eq ? eq + 1 : "");
+			setlen = mo_add_option(&set, setlen, opt_cmdline, optarg, eq ? eq + 1 : "");
 			if (eq)
 				*eq = '=';
 			break;
@@ -1427,11 +1407,11 @@ main(int argc, char **argv)
 
 	if (strcmp(language, "sql") == 0) {
 		if (guest)
-			user= "monetdb";
+			user = "monetdb";
 		else if (user == NULL)
 			user = simple_prompt("User ", BUFSIZ, 1, "monetdb");
 		if (guest)
-			passwd= "monetdb";
+			passwd = "monetdb";
 		else if (passwd == NULL)
 			passwd = simple_prompt("Password ", BUFSIZ, 0, "monetdb");
 	}
@@ -1467,7 +1447,6 @@ main(int argc, char **argv)
 		if (!interactive)
 			exit(0);
 	}
-
 #ifdef HAVE_LIBREADLINE
 	init_readline(mid, language, save_history);
 #endif
@@ -1479,11 +1458,9 @@ main(int argc, char **argv)
 		char *prompt = NULL;
 		char promptbuf[16];
 
-		if (fstat(fileno(stdin), &statb) == 0 &&
-		    S_ISCHR(statb.st_mode)) {
+		if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode)) {
 			/* reading from terminal, prepare prompt */
-			sprintf(promptbuf, "%.*s>",
-				(int) sizeof(promptbuf) - 2, language);
+			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 			prompt = promptbuf;
 		}
 		c = doFileByLines(mid, stdin, prompt, linemode);

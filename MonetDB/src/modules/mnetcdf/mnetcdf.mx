@@ -77,12 +77,12 @@ Quirks:
 #define __mnetcdf_h__
 
 #include <gdk.h>
-#include <algebra.h> /* to include BATmin and BATmax */
+#include <algebra.h>		/* to include BATmin and BATmax */
 
 #include "mnetcdf.proto.h"
 
 
-#endif 
+#endif
 /*============================================================================*/
 @c
 /*============================================================================*/
@@ -118,19 +118,25 @@ Quirks:
 
 /*----------------------------------------------------------------------------*/
 
-int _nc_open(int *ncid, str filename) {
-    int nc_status;
-    nc_status = nc_open(filename,NC_NOWRITE,ncid);
-    ASSERT_STATUS;
-    return GDK_SUCCEED;
+int
+_nc_open(int *ncid, str filename)
+{
+	int nc_status;
+
+	nc_status = nc_open(filename, NC_NOWRITE, ncid);
+	ASSERT_STATUS;
+	return GDK_SUCCEED;
 }
 
 /*----------------------------------------------------------------------------*/
 
-int _nc_create(int *ncid, str filename) {
-    int nc_status;
-    nc_status = nc_create (filename,0 /*default mode = overwrite*/ ,ncid);
-    ASSERT_STATUS;
+int
+_nc_create(int *ncid, str filename)
+{
+	int nc_status;
+
+	nc_status = nc_create(filename, 0 /*default mode = overwrite */ , ncid);
+	ASSERT_STATUS;
 
 @t
 
@@ -142,18 +148,21 @@ although atomicity of disk updates is {\bf not} guaranteed.
 
 @c
 
-    nc_status = nc_enddef(*ncid);
-    ASSERT_STATUS;
-    return GDK_SUCCEED;
+	nc_status = nc_enddef(*ncid);
+	ASSERT_STATUS;
+	return GDK_SUCCEED;
 }
-   
+
 /*----------------------------------------------------------------------------*/
 
-int _nc_close(int *ncid) {
-    int nc_status;
-    nc_status = nc_close(*ncid);
-    ASSERT_STATUS;
-    return GDK_SUCCEED;
+int
+_nc_close(int *ncid)
+{
+	int nc_status;
+
+	nc_status = nc_close(*ncid);
+	ASSERT_STATUS;
+	return GDK_SUCCEED;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -164,23 +173,28 @@ names.
 These names are returned in a single [void,str] table.
 
 @c
-int _nc_list(BAT **out,int *ncid) {
-    int nc_status,nvars,i;
-    oid nil_value = oid_nil;
-    char var_name[NC_MAX_NAME+1];
-    nc_status = nc_inq_nvars(*ncid,&nvars);
-    ASSERT_STATUS;
+int
+_nc_list(BAT **out, int *ncid)
+{
+	int nc_status, nvars, i;
+	oid nil_value = oid_nil;
+	char var_name[NC_MAX_NAME + 1];
 
-    *out = BATnew(TYPE_void, TYPE_str, nvars);
-    if(*out == NULL) { return GDK_FAIL; }
-    BATseqbase(*out,0);
+	nc_status = nc_inq_nvars(*ncid, &nvars);
+	ASSERT_STATUS;
 
-    for(i=0;i<nvars;i++) {
-        nc_status = nc_inq_varname(*ncid,i,var_name);
-        ASSERT_STATUS_out;
-        BUNins(*out, &nil_value, var_name);
-    }
-    return GDK_SUCCEED;
+	*out = BATnew(TYPE_void, TYPE_str, nvars);
+	if (*out == NULL) {
+		return GDK_FAIL;
+	}
+	BATseqbase(*out, 0);
+
+	for (i = 0; i < nvars; i++) {
+		nc_status = nc_inq_varname(*ncid, i, var_name);
+		ASSERT_STATUS_out;
+		BUNins(*out, &nil_value, var_name);
+	}
+	return GDK_SUCCEED;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -191,14 +205,16 @@ variable and returns these in a single [str(property name),str(value)] table.
 
 @c
 
-int _nc_describe(BAT **out,int *ncid,str varname) {
-    int     varid, glob_dims, var_dims, var_atts, i, nc_status;
-    size_t  size;
-    nc_type xtype;
-    size_t  glob_axes[NC_MAX_DIMS];
-    int     var_axes[NC_MAX_DIMS];
-    size_t  shape[NC_MAX_DIMS];
-    char    buf[BUF_SIZE];
+int
+_nc_describe(BAT **out, int *ncid, str varname)
+{
+	int varid, glob_dims, var_dims, var_atts, i, nc_status;
+	size_t size;
+	nc_type xtype;
+	size_t glob_axes[NC_MAX_DIMS];
+	int var_axes[NC_MAX_DIMS];
+	size_t shape[NC_MAX_DIMS];
+	char buf[BUF_SIZE];
 
 @t
 
@@ -206,16 +222,16 @@ First retrieve all global dimension information.
 
 @c
 
-    nc_status = nc_inq_ndims(*ncid,&glob_dims);
-    ASSERT_STATUS;
-    if(glob_dims==0) {
-	GDKerror("No dimensions defined");
-        return GDK_FAIL;
-    }
-    for(i=0;i<glob_dims;i++) {
-        nc_status = nc_inq_dimlen(*ncid,i,&glob_axes[i]);
-        ASSERT_STATUS;
-    }
+	nc_status = nc_inq_ndims(*ncid, &glob_dims);
+	ASSERT_STATUS;
+	if (glob_dims == 0) {
+		GDKerror("No dimensions defined");
+		return GDK_FAIL;
+	}
+	for (i = 0; i < glob_dims; i++) {
+		nc_status = nc_inq_dimlen(*ncid, i, &glob_axes[i]);
+		ASSERT_STATUS;
+	}
 
 @t
 
@@ -223,131 +239,147 @@ Then retrieve variable specific information.
 
 @c
 
-    nc_status = nc_inq_varid(*ncid, varname, &varid);
-    ASSERT_STATUS;
-    nc_status = nc_inq_vartype(*ncid,varid,&xtype);
-    ASSERT_STATUS;
-    nc_status = nc_inq_varndims(*ncid,varid,&var_dims);
-    ASSERT_STATUS;
-    nc_status = nc_inq_varnatts(*ncid,varid,&var_atts);
-    ASSERT_STATUS;
-    nc_status = nc_inq_vardimid(*ncid,varid,&var_axes[0]);
-    ASSERT_STATUS;
+	nc_status = nc_inq_varid(*ncid, varname, &varid);
+	ASSERT_STATUS;
+	nc_status = nc_inq_vartype(*ncid, varid, &xtype);
+	ASSERT_STATUS;
+	nc_status = nc_inq_varndims(*ncid, varid, &var_dims);
+	ASSERT_STATUS;
+	nc_status = nc_inq_varnatts(*ncid, varid, &var_atts);
+	ASSERT_STATUS;
+	nc_status = nc_inq_vardimid(*ncid, varid, &var_axes[0]);
+	ASSERT_STATUS;
 
-    size = 1;
-    for(i=0;i<var_dims;i++) {
-        shape[i]  = glob_axes[var_axes[i]];
-        size     *= shape[i];
-    }
-    if(var_dims==0 || size==0) {
-	GDKerror("Zero-sized array");
-        return GDK_FAIL;
-    }
+	size = 1;
+	for (i = 0; i < var_dims; i++) {
+		shape[i] = glob_axes[var_axes[i]];
+		size *= shape[i];
+	}
+	if (var_dims == 0 || size == 0) {
+		GDKerror("Zero-sized array");
+		return GDK_FAIL;
+	}
 
-    *out = BATnew(TYPE_str, TYPE_str, 32);
-    if(*out == NULL) { return GDK_FAIL; }
+	*out = BATnew(TYPE_str, TYPE_str, 32);
+	if (*out == NULL) {
+		return GDK_FAIL;
+	}
 
-    BUNins(*out, "name", varname);
-    sprintf(buf,"%d",varid);
-    BUNins(*out, "id", buf);
+	BUNins(*out, "name", varname);
+	sprintf(buf, "%d", varid);
+	BUNins(*out, "id", buf);
 
-    switch(xtype) {
-        case NC_BYTE:   BUNins(*out,"netCDF type","BYTE");
-                        BUNins(*out,"MonetDB type","chr");
-                        break;
-        case NC_CHAR:   BUNins(*out,"netCDF type","CHAR");
-                        BUNins(*out,"MonetDB type","str");
-                        break;
-        case NC_SHORT:  BUNins(*out,"netCDF type","SHORT");
-                        BUNins(*out,"MonetDB type","sht");
-                        break;
-        case NC_INT:    BUNins(*out,"netCDF type","INT");
-                        BUNins(*out,"MonetDB type","int");
-                        break;
-        case NC_FLOAT:  BUNins(*out,"netCDF type","FLOAT");
-                        BUNins(*out,"MonetDB type","flt");
-                        break;
-        case NC_DOUBLE: BUNins(*out,"netCDF type","DOUBLE");
-                        BUNins(*out,"MonetDB type","dbl");
-                        break;
-        default:        GDKerror("Unknown datatype");
-                        return GDK_FAIL;
-    }
+	switch (xtype) {
+	case NC_BYTE:
+		BUNins(*out, "netCDF type", "BYTE");
+		BUNins(*out, "MonetDB type", "chr");
+		break;
+	case NC_CHAR:
+		BUNins(*out, "netCDF type", "CHAR");
+		BUNins(*out, "MonetDB type", "str");
+		break;
+	case NC_SHORT:
+		BUNins(*out, "netCDF type", "SHORT");
+		BUNins(*out, "MonetDB type", "sht");
+		break;
+	case NC_INT:
+		BUNins(*out, "netCDF type", "INT");
+		BUNins(*out, "MonetDB type", "int");
+		break;
+	case NC_FLOAT:
+		BUNins(*out, "netCDF type", "FLOAT");
+		BUNins(*out, "MonetDB type", "flt");
+		break;
+	case NC_DOUBLE:
+		BUNins(*out, "netCDF type", "DOUBLE");
+		BUNins(*out, "MonetDB type", "dbl");
+		break;
+	default:
+		GDKerror("Unknown datatype");
+		return GDK_FAIL;
+	}
 
-    sprintf(buf,"%d",var_dims);
-    BUNins(*out, "dimensions", buf);
-    sprintf(buf,"%d",shape[0]);
-    for(i=1;i<var_dims;i++) {
-        sprintf(&buf[strlen(buf)],",%d",shape[i]);
-    }
-    BUNins(*out, "shape", buf);
-    sprintf(buf,"%ld",size);
-    BUNins(*out, "size", buf);
+	sprintf(buf, "%d", var_dims);
+	BUNins(*out, "dimensions", buf);
+	sprintf(buf, "%d", shape[0]);
+	for (i = 1; i < var_dims; i++) {
+		sprintf(&buf[strlen(buf)], ",%d", shape[i]);
+	}
+	BUNins(*out, "shape", buf);
+	sprintf(buf, "%ld", size);
+	BUNins(*out, "size", buf);
 
-    sprintf(buf,"%d",var_atts);
-    BUNins(*out, "attributes", buf);
+	sprintf(buf, "%d", var_atts);
+	BUNins(*out, "attributes", buf);
 
-    for(i=0;i<var_atts;i++) {
-        char att_name[NC_MAX_NAME+1];
-        nc_status = nc_inq_attname(*ncid,varid,i,att_name);
-        ASSERT_STATUS_out;
-        nc_status = nc_inq_atttype(*ncid,varid,att_name,&xtype);
-        ASSERT_STATUS_out;
-        switch(xtype) {
-            case NC_BYTE:   {
-	                    char b;
-	                    nc_status = nc_get_att_schar(*ncid,varid,att_name,&b);
-			    sprintf(buf,"%d",(int)b);
-			    }
-                            break;
-            case NC_CHAR:   {
-                            size_t len;
-                            nc_status = nc_inq_attlen(*ncid,varid,att_name,&len);
-                            if(len>BUF_SIZE) {
-			        BATdelete(*out);
-                                GDKerror("String too long");
-                                return GDK_FAIL;
-                            }
-                            nc_status = nc_get_att_text(*ncid,varid,att_name,buf);
-			    }
-                            break;
-            case NC_SHORT:  {
-	                    short s;
-	                    nc_status = nc_get_att_short(*ncid,varid,att_name,&s);
-			    sprintf(buf,"%d",(int)s);
-			    }
-                            break;
-            case NC_INT:    {
-	                    int i;
-	                    nc_status = nc_get_att_int(*ncid,varid,att_name,&i);
-			    sprintf(buf,"%d",i);
-			    }
-                            break;
-            case NC_FLOAT:  {
-	                    float f;
-	                    nc_status = nc_get_att_float(*ncid,varid,att_name,&f);
-			    sprintf(buf,"%f",f);
-			    }
-                            break;
-            case NC_DOUBLE: {
-	                    double d;
-	                    nc_status = nc_get_att_double(*ncid,varid,att_name,&d);
-			    sprintf(buf,"%lf",d);
-			    }
-                            break;
-            default:    /* This is actually valid, but don't know how to handle */
-	                    strcpy(buf,"NULL");
-                            nc_status = NC_NOERR;
-                            break;
-        }
-        ASSERT_STATUS_out;
+	for (i = 0; i < var_atts; i++) {
+		char att_name[NC_MAX_NAME + 1];
 
-        BUNins(*out,att_name,&buf);
-    }
+		nc_status = nc_inq_attname(*ncid, varid, i, att_name);
+		ASSERT_STATUS_out;
+		nc_status = nc_inq_atttype(*ncid, varid, att_name, &xtype);
+		ASSERT_STATUS_out;
+		switch (xtype) {
+		case NC_BYTE:{
+			char b;
 
-    return GDK_SUCCEED;
+			nc_status = nc_get_att_schar(*ncid, varid, att_name, &b);
+			sprintf(buf, "%d", (int) b);
+		}
+			break;
+		case NC_CHAR:{
+			size_t len;
+
+			nc_status = nc_inq_attlen(*ncid, varid, att_name, &len);
+			if (len > BUF_SIZE) {
+				BATdelete(*out);
+				GDKerror("String too long");
+				return GDK_FAIL;
+			}
+			nc_status = nc_get_att_text(*ncid, varid, att_name, buf);
+		}
+			break;
+		case NC_SHORT:{
+			short s;
+
+			nc_status = nc_get_att_short(*ncid, varid, att_name, &s);
+			sprintf(buf, "%d", (int) s);
+		}
+			break;
+		case NC_INT:{
+			int i;
+
+			nc_status = nc_get_att_int(*ncid, varid, att_name, &i);
+			sprintf(buf, "%d", i);
+		}
+			break;
+		case NC_FLOAT:{
+			float f;
+
+			nc_status = nc_get_att_float(*ncid, varid, att_name, &f);
+			sprintf(buf, "%f", f);
+		}
+			break;
+		case NC_DOUBLE:{
+			double d;
+
+			nc_status = nc_get_att_double(*ncid, varid, att_name, &d);
+			sprintf(buf, "%lf", d);
+		}
+			break;
+		default:	/* This is actually valid, but don't know how to handle */
+			strcpy(buf, "NULL");
+			nc_status = NC_NOERR;
+			break;
+		}
+		ASSERT_STATUS_out;
+
+		BUNins(*out, att_name, &buf);
+	}
+
+	return GDK_SUCCEED;
 }
-   
+
 /*----------------------------------------------------------------------------*/
 @t
 
@@ -361,102 +393,112 @@ byte, char, short, int, float, and, double.
 
 @c
 
-void check_nil_schr(int ncid,int varid,char *p,long size) {
-    char fill_value;
-    int   nc_status;
-    long  i;
-    
-    nc_status = nc_get_att_schar(ncid,varid,"_FillValue",&fill_value);
-    if(nc_status != NC_NOERR) { 
-        fill_value = NC_FILL_BYTE;
-    }
+void
+check_nil_schr(int ncid, int varid, char *p, long size)
+{
+	char fill_value;
+	int nc_status;
+	long i;
 
-    for(i=0;i<size;i++) {
-        if(fill_value == p[i]) {
-	    p[i] = chr_nil;
+	nc_status = nc_get_att_schar(ncid, varid, "_FillValue", &fill_value);
+	if (nc_status != NC_NOERR) {
+		fill_value = NC_FILL_BYTE;
 	}
-    }
+
+	for (i = 0; i < size; i++) {
+		if (fill_value == p[i]) {
+			p[i] = chr_nil;
+		}
+	}
 }
 
-void check_nil_sht(int ncid,int varid,short *p,long size) {
-    short fill_value;
-    int   nc_status;
-    long  i;
-    
-    nc_status = nc_get_att_short(ncid,varid,"_FillValue",&fill_value);
-    if(nc_status != NC_NOERR) { 
-        fill_value = NC_FILL_SHORT;
-    }
+void
+check_nil_sht(int ncid, int varid, short *p, long size)
+{
+	short fill_value;
+	int nc_status;
+	long i;
 
-    for(i=0;i<size;i++) {
-        if(fill_value == p[i]) {
-	    p[i] = sht_nil;
+	nc_status = nc_get_att_short(ncid, varid, "_FillValue", &fill_value);
+	if (nc_status != NC_NOERR) {
+		fill_value = NC_FILL_SHORT;
 	}
-    }
+
+	for (i = 0; i < size; i++) {
+		if (fill_value == p[i]) {
+			p[i] = sht_nil;
+		}
+	}
 }
 
-void check_nil_int(int ncid,int varid,int *p,long size) {
-    int   fill_value;
-    int   nc_status;
-    long  i;
-    
-    nc_status = nc_get_att_int(ncid,varid,"_FillValue",&fill_value);
-    if(nc_status != NC_NOERR) { 
-        fill_value = NC_FILL_INT;
-    }
+void
+check_nil_int(int ncid, int varid, int *p, long size)
+{
+	int fill_value;
+	int nc_status;
+	long i;
 
-    for(i=0;i<size;i++) {
-        if(fill_value == p[i]) {
-	    p[i] = int_nil;
+	nc_status = nc_get_att_int(ncid, varid, "_FillValue", &fill_value);
+	if (nc_status != NC_NOERR) {
+		fill_value = NC_FILL_INT;
 	}
-    }
+
+	for (i = 0; i < size; i++) {
+		if (fill_value == p[i]) {
+			p[i] = int_nil;
+		}
+	}
 }
 
-void check_nil_flt(int ncid,int varid,float *p,long size) {
-    float fill_value;
-    int   nc_status;
-    long  i;
-    
-    nc_status = nc_get_att_float(ncid,varid,"_FillValue",&fill_value);
-    if(nc_status != NC_NOERR) { 
-        fill_value = NC_FILL_FLOAT; 
-    }
+void
+check_nil_flt(int ncid, int varid, float *p, long size)
+{
+	float fill_value;
+	int nc_status;
+	long i;
 
-    for(i=0;i<size;i++) {
-        if(*((int*)((void*)(&fill_value))) == 
-	   *((int*)((void*)(&p[i])))) {
-	    p[i] = flt_nil;
+	nc_status = nc_get_att_float(ncid, varid, "_FillValue", &fill_value);
+	if (nc_status != NC_NOERR) {
+		fill_value = NC_FILL_FLOAT;
 	}
-    }
+
+	for (i = 0; i < size; i++) {
+		if (*((int *) ((void *) (&fill_value))) == *((int *) ((void *) (&p[i])))) {
+			p[i] = flt_nil;
+		}
+	}
 }
 
-void check_nil_dbl(int ncid,int varid,double *p,long size) {
-    double fill_value;
-    int    nc_status;
-    long   i;
-    
-    nc_status = nc_get_att_double(ncid,varid,"_FillValue",&fill_value);
-    if(nc_status != NC_NOERR) { 
-        fill_value = NC_FILL_DOUBLE;
-    }
+void
+check_nil_dbl(int ncid, int varid, double *p, long size)
+{
+	double fill_value;
+	int nc_status;
+	long i;
 
-    for(i=0;i<size;i++) {
-        if(*((long*)((void*)(&fill_value))) == 
-	   *((long*)((void*)(&p[i])))) {
-	    p[i] = dbl_nil;
+	nc_status = nc_get_att_double(ncid, varid, "_FillValue", &fill_value);
+	if (nc_status != NC_NOERR) {
+		fill_value = NC_FILL_DOUBLE;
 	}
-    }
+
+	for (i = 0; i < size; i++) {
+		if (*((long *) ((void *) (&fill_value))) == *((long *) ((void *) (&p[i])))) {
+			p[i] = dbl_nil;
+		}
+	}
 }
 
-int _nc_import(BAT **out,int *ncid, str varname) {
-    int     varid, glob_dims, var_dims, i, nc_status;
-    size_t  size;
-    nc_type xtype;
-    int     mtype;
-    size_t  glob_axes[NC_MAX_DIMS];
-    int     var_axes[NC_MAX_DIMS];
-    size_t  shape[NC_MAX_DIMS];
-    void    *p;
+int
+_nc_import(BAT **out, int *ncid, str varname)
+{
+	int varid, glob_dims, var_dims, i, nc_status;
+	size_t size;
+	nc_type xtype;
+	int mtype;
+	size_t glob_axes[NC_MAX_DIMS];
+	int var_axes[NC_MAX_DIMS];
+	size_t shape[NC_MAX_DIMS];
+	void *p;
 
 @t
 
@@ -464,105 +506,128 @@ First retrieve all global dimension information.
 
 @c
 
-    nc_status = nc_inq_ndims(*ncid,&glob_dims);
-    ASSERT_STATUS;
-    if(glob_dims==0) {
-	GDKerror("No dimensions defined");
-        return GDK_FAIL;
-    }
-    for(i=0;i<glob_dims;i++) {
-        nc_status = nc_inq_dimlen(*ncid,i,&glob_axes[i]);
-        ASSERT_STATUS;
-    }
+	nc_status = nc_inq_ndims(*ncid, &glob_dims);
+	ASSERT_STATUS;
+	if (glob_dims == 0) {
+		GDKerror("No dimensions defined");
+		return GDK_FAIL;
+	}
+	for (i = 0; i < glob_dims; i++) {
+		nc_status = nc_inq_dimlen(*ncid, i, &glob_axes[i]);
+		ASSERT_STATUS;
+	}
 
 @t
 
 Then retrieve variable specific information.
 
 @c
-    nc_status = nc_inq_varid(*ncid, varname, &varid);
-    ASSERT_STATUS;
-    nc_status = nc_inq_vartype(*ncid,varid,&xtype);
-    ASSERT_STATUS;
-    nc_status = nc_inq_varndims(*ncid,varid,&var_dims);
-    ASSERT_STATUS;
-    nc_status = nc_inq_vardimid(*ncid,varid,&var_axes[0]);
-    ASSERT_STATUS;
+	nc_status = nc_inq_varid(*ncid, varname, &varid);
+	ASSERT_STATUS;
+	nc_status = nc_inq_vartype(*ncid, varid, &xtype);
+	ASSERT_STATUS;
+	nc_status = nc_inq_varndims(*ncid, varid, &var_dims);
+	ASSERT_STATUS;
+	nc_status = nc_inq_vardimid(*ncid, varid, &var_axes[0]);
+	ASSERT_STATUS;
 
-    size = 1;
-    for(i=0;i<var_dims;i++) {
-        shape[i]  = glob_axes[var_axes[i]];
-        size     *= shape[i];
-    }
-    if(var_dims==0 || size==0) {
-	GDKerror("Zero-sized array");
-        return GDK_FAIL;
-    }
+	size = 1;
+	for (i = 0; i < var_dims; i++) {
+		shape[i] = glob_axes[var_axes[i]];
+		size *= shape[i];
+	}
+	if (var_dims == 0 || size == 0) {
+		GDKerror("Zero-sized array");
+		return GDK_FAIL;
+	}
 
-    switch(xtype) {
-        case NC_BYTE:   mtype = TYPE_chr; 
-	                break;
-        case NC_CHAR:   mtype = TYPE_str;  
-	                break;
-        case NC_SHORT:  mtype = TYPE_sht;  
-	                break;
-        case NC_INT:    mtype = TYPE_int;  
-	                break;
-        case NC_FLOAT:  mtype = TYPE_flt;  
-	                break;
-        case NC_DOUBLE: mtype = TYPE_dbl;  
-	                break;
-	default:        GDKerror("Unknown datatype");
-                        return GDK_FAIL;
-    }
-    
-    *out = BATnew(TYPE_void, mtype, size);
-    if(*out == NULL) { return GDK_FAIL; }
-    BATseqbase(*out,0);
-    (*out)->batBuns->free += size * BUNsize(*out); /* "add" tuples */
-    BATkey(BATmirror(*out),0);
-    (*out)->tsorted = 0;
-    p = (void*)BUNfirst(*out);
+	switch (xtype) {
+	case NC_BYTE:
+		mtype = TYPE_chr;
+		break;
+	case NC_CHAR:
+		mtype = TYPE_str;
+		break;
+	case NC_SHORT:
+		mtype = TYPE_sht;
+		break;
+	case NC_INT:
+		mtype = TYPE_int;
+		break;
+	case NC_FLOAT:
+		mtype = TYPE_flt;
+		break;
+	case NC_DOUBLE:
+		mtype = TYPE_dbl;
+		break;
+	default:
+		GDKerror("Unknown datatype");
+		return GDK_FAIL;
+	}
 
-    switch(xtype) {
-        case NC_BYTE:   nc_status = nc_get_var_schar(*ncid,varid,(char*)p); 
-	                break;
-        case NC_CHAR:   GDKerror("String arrays not yet implemented");
-	                BATdelete(*out);
-			return GDK_FAIL;
-	                break;
-        case NC_SHORT:  nc_status = nc_get_var_short(*ncid,varid,(short*)p); 
-	                break;
-        case NC_INT:    nc_status = nc_get_var_int(*ncid,varid,(int*)p); 
-	                break;
-        case NC_FLOAT:  nc_status = nc_get_var_float(*ncid,varid,(float*)p); 
-	                break;
-        case NC_DOUBLE: nc_status = nc_get_var_double(*ncid,varid,(double*)p); 
-	                break;
-	default:        GDKerror("Unknown datatype");
-                        return GDK_FAIL;
-    }
-    ASSERT_STATUS_out;
+	*out = BATnew(TYPE_void, mtype, size);
+	if (*out == NULL) {
+		return GDK_FAIL;
+	}
+	BATseqbase(*out, 0);
+	(*out)->batBuns->free += size * BUNsize(*out);	/* "add" tuples */
+	BATkey(BATmirror(*out), 0);
+	(*out)->tsorted = 0;
+	p = (void *) BUNfirst(*out);
 
-    switch(xtype) {
-        case NC_BYTE:   check_nil_schr(*ncid,varid,(char*)p,size);
-	                break;
-        case NC_CHAR:   GDKerror("String arrays not yet implemented");
-                        BATdelete(*out);
-	                break;
-        case NC_SHORT:  check_nil_sht(*ncid,varid,(short*)p,size);
-	                break;
-        case NC_INT:    check_nil_int(*ncid,varid,(int*)p,size);
-	                break;
-        case NC_FLOAT:  check_nil_flt(*ncid,varid,(float*)p,size);
-	                break;
-        case NC_DOUBLE: check_nil_dbl(*ncid,varid,(double*)p,size);
-	                break;
-	default:        GDKerror("Unknown datatype");
-                        return GDK_FAIL;
-    }
+	switch (xtype) {
+	case NC_BYTE:
+		nc_status = nc_get_var_schar(*ncid, varid, (char *) p);
+		break;
+	case NC_CHAR:
+		GDKerror("String arrays not yet implemented");
+		BATdelete(*out);
+		return GDK_FAIL;
+		break;
+	case NC_SHORT:
+		nc_status = nc_get_var_short(*ncid, varid, (short *) p);
+		break;
+	case NC_INT:
+		nc_status = nc_get_var_int(*ncid, varid, (int *) p);
+		break;
+	case NC_FLOAT:
+		nc_status = nc_get_var_float(*ncid, varid, (float *) p);
+		break;
+	case NC_DOUBLE:
+		nc_status = nc_get_var_double(*ncid, varid, (double *) p);
+		break;
+	default:
+		GDKerror("Unknown datatype");
+		return GDK_FAIL;
+	}
+	ASSERT_STATUS_out;
 
-    return GDK_SUCCEED;
+	switch (xtype) {
+	case NC_BYTE:
+		check_nil_schr(*ncid, varid, (char *) p, size);
+		break;
+	case NC_CHAR:
+		GDKerror("String arrays not yet implemented");
+		BATdelete(*out);
+		break;
+	case NC_SHORT:
+		check_nil_sht(*ncid, varid, (short *) p, size);
+		break;
+	case NC_INT:
+		check_nil_int(*ncid, varid, (int *) p, size);
+		break;
+	case NC_FLOAT:
+		check_nil_flt(*ncid, varid, (float *) p, size);
+		break;
+	case NC_DOUBLE:
+		check_nil_dbl(*ncid, varid, (double *) p, size);
+		break;
+	default:
+		GDKerror("Unknown datatype");
+		return GDK_FAIL;
+	}
+
+	return GDK_SUCCEED;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -573,18 +638,20 @@ already limits them.
 
 @c
 
-int _nc_export(int *ncid,str varname,BAT* data,...) {
-    va_list ap;
-    BAT     *tmp,*batptr[NC_MAX_DIMS];
-    int     dimid[NC_MAX_DIMS];
-    int     dims, varid, nc_status, i;
-    int     minvector[NC_MAX_DIMS];
-    size_t  idxvector[NC_MAX_DIMS];
-    int     maxvector[NC_MAX_DIMS];
-    size_t  lenvector[NC_MAX_DIMS];
-    oid     *arrayindex;
-    nc_type xtype;
-    size_t  size,cnt;
+int
+_nc_export(int *ncid, str varname, BAT *data, ...)
+{
+	va_list ap;
+	BAT *tmp, *batptr[NC_MAX_DIMS];
+	int dimid[NC_MAX_DIMS];
+	int dims, varid, nc_status, i;
+	int minvector[NC_MAX_DIMS];
+	size_t idxvector[NC_MAX_DIMS];
+	int maxvector[NC_MAX_DIMS];
+	size_t lenvector[NC_MAX_DIMS];
+	oid *arrayindex;
+	nc_type xtype;
+	size_t size, cnt;
 
 @t
 
@@ -592,165 +659,187 @@ Handle the arcaine variable argument stuff:
 just produce an array of bat pointers.
 
 @c
-    va_start(ap,data);
-    dims = 0;
-    while((tmp = va_arg(ap,BAT*)) != NULL) {
-        if(dims == NC_MAX_DIMS) {
-            GDKerror("dimensionality too high");
-            return GDK_FAIL;
-        }
-        batptr[dims++] = tmp;
-    }
-    va_end(ap);
+	va_start(ap, data);
+	dims = 0;
+	while ((tmp = va_arg(ap, BAT *)) != NULL) {
+		if (dims == NC_MAX_DIMS) {
+			GDKerror("dimensionality too high");
+			return GDK_FAIL;
+		}
+		batptr[dims++] = tmp;
+	}
+	va_end(ap);
 
-    cnt = 1;
-    for(i=0;i<dims;i++) {
-        BATmin(batptr[i],&(minvector[i]));
-        BATmax(batptr[i],&(maxvector[i]));
-        lenvector[i] = maxvector[i] - minvector[i] + 1;
-        cnt *= lenvector[i];
-    }
-    if(dims == 0) {
-        GDKerror("no dimensions provided");
-        return GDK_FAIL;
-    }
-    size = BATcount(data);
-    if(size != cnt) {
-        GDKerror("array size does not match dimension count");
-        return GDK_FAIL;
-    }
+	cnt = 1;
+	for (i = 0; i < dims; i++) {
+		BATmin(batptr[i], &(minvector[i]));
+		BATmax(batptr[i], &(maxvector[i]));
+		lenvector[i] = maxvector[i] - minvector[i] + 1;
+		cnt *= lenvector[i];
+	}
+	if (dims == 0) {
+		GDKerror("no dimensions provided");
+		return GDK_FAIL;
+	}
+	size = BATcount(data);
+	if (size != cnt) {
+		GDKerror("array size does not match dimension count");
+		return GDK_FAIL;
+	}
 
-    switch(BATttype(data)) {
-        case TYPE_chr: xtype = NC_BYTE;
-	               break;
-        case TYPE_sht: xtype = NC_SHORT;
-	               break;
-        case TYPE_int: xtype = NC_INT;
-	               break;
-        case TYPE_flt: xtype = NC_FLOAT;
-	               break;
-        case TYPE_dbl: xtype = NC_DOUBLE;
-	               break;
-        default:       GDKerror("invalid data type: can only handle chr,sht,int,flt,dbl");
-	               return GDK_FAIL;
-    }
+	switch (BATttype(data)) {
+	case TYPE_chr:
+		xtype = NC_BYTE;
+		break;
+	case TYPE_sht:
+		xtype = NC_SHORT;
+		break;
+	case TYPE_int:
+		xtype = NC_INT;
+		break;
+	case TYPE_flt:
+		xtype = NC_FLOAT;
+		break;
+	case TYPE_dbl:
+		xtype = NC_DOUBLE;
+		break;
+	default:
+		GDKerror("invalid data type: can only handle chr,sht,int,flt,dbl");
+		return GDK_FAIL;
+	}
 
-    arrayindex = GDKmalloc(sizeof(oid) * cnt);
-    if(arrayindex == NULL) {
-        GDKerror("failed to allocate index buffer");
-        return GDK_FAIL;
-    }
-    
-    /* Iterate over the first index BAT.              */
-    /* And fetch additional indices (for a given oid) */
-    /* building the full M-D structure (of oid's).    */
-    {
-        register BUN p,q;
-        p = BUNfirst(batptr[0]);
-        q = BUNlast(batptr[0]);
-        while(p < q){
-            register oid* o      = (oid*)BUNhead(batptr[0],p);
-            register int  offset;
-            offset = *((int*)BUNtail(batptr[0],p)) - minvector[0];
-            for(i=1;i<dims;i++) {
-                register ptr p = BUNfnd(batptr[i],o);
-                if(p == NULL) {
-                   GDKerror("index %d missing for oid %d.",i,*o);
-                   GDKfree(arrayindex);
-		   return GDK_FAIL;
-                }
-                offset = (offset * lenvector[i]) +
-                         ((*((int*)p)) - minvector[i]);
-            }
-            arrayindex[offset] = *o;
-            p = BUNnext(batptr[0], p);
-        }
-    }
-    
-    /* Iterate over the first index BAT.              */
-    nc_status = nc_redef(*ncid);
-    ASSERT_STATUS_arrayindex;
+	arrayindex = GDKmalloc(sizeof(oid) * cnt);
+	if (arrayindex == NULL) {
+		GDKerror("failed to allocate index buffer");
+		return GDK_FAIL;
+	}
 
-    for(i=0;i<dims;i++) {
-        nc_status = nc_def_dim(*ncid,BBPname(BBPcacheid(batptr[i])),lenvector[i],&dimid[i]);
-        ASSERT_STATUS_arrayindex;
-    }
-    nc_status = nc_def_var(*ncid,varname,xtype,dims,dimid,&varid);
-    ASSERT_STATUS_arrayindex;
+	/* Iterate over the first index BAT.              */
+	/* And fetch additional indices (for a given oid) */
+	/* building the full M-D structure (of oid's).    */
+	{
+		register BUN p, q;
 
-    switch(xtype) {
-        case NC_BYTE:   nc_status = nc_put_att_schar(*ncid,varid,"_FillValue",NC_BYTE,1,&chr_nil);
-                        break;
-        case NC_SHORT:  nc_status = nc_put_att_short(*ncid,varid,"_FillValue",NC_SHORT,1,&sht_nil);
-                        break;
-        case NC_INT:    nc_status = nc_put_att_int(*ncid,varid,"_FillValue",NC_INT,1,&int_nil);
-                        break;
-        case NC_FLOAT:  nc_status = nc_put_att_float(*ncid,varid,"_FillValue",NC_FLOAT,1,&flt_nil);
-                        break;
-        case NC_DOUBLE: nc_status = nc_put_att_double(*ncid,varid,"_FillValue",NC_DOUBLE,1,&dbl_nil);
-                        break;
-        default:        GDKerror("should not occur, must be serious...");
-                        GDKfree(arrayindex);
-                        return GDK_FAIL;
-    }
-    ASSERT_STATUS_arrayindex;
+		p = BUNfirst(batptr[0]);
+		q = BUNlast(batptr[0]);
+		while (p < q) {
+			register oid *o = (oid *) BUNhead(batptr[0], p);
+			register int offset;
 
-    nc_status = nc_enddef(*ncid);
-    ASSERT_STATUS_arrayindex;
+			offset = *((int *) BUNtail(batptr[0], p)) - minvector[0];
+			for (i = 1; i < dims; i++) {
+				register ptr p = BUNfnd(batptr[i], o);
 
-    /* Iterate over all valid indices             */
-    /* (note: normalized to [0..l-1] ranges !)    */
-    /* And fill the CDF datastructure one element */
-    /* at a time...                               */
-    for(i=0;i<dims;i++) idxvector[i] = 0;
-    while(idxvector[dims-1] < lenvector[dims-1]) {
-        int offset;
-        i=0;
-        for(offset=idxvector[0],i=1;i<dims;i++) {
-            offset = (offset * lenvector[i]) + idxvector[i];
-        }
-        {
-          register ptr p = BUNfnd(data,&arrayindex[offset]);
-          if(p == NULL) {
-            GDKerror("value missing for oid %d.",
-                     arrayindex[offset]);
-            GDKfree(arrayindex);
-            return GDK_FAIL;
-          }
-          switch(xtype) {
-              case NC_BYTE:   nc_status = nc_put_var1_schar(*ncid,varid,idxvector,(char*)BUNtail(data,p));
-                              break;
-              case NC_SHORT:  nc_status = nc_put_var1_short(*ncid,varid,idxvector,(short*)BUNtail(data,p));
-                              break;
-              case NC_INT:    nc_status = nc_put_var1_int(*ncid,varid,idxvector,(int*)BUNtail(data,p));
-                              break;
-              case NC_FLOAT:  nc_status = nc_put_var1_float(*ncid,varid,idxvector,(float*)BUNtail(data,p));
-                              break;
-              case NC_DOUBLE: nc_status = nc_put_var1_double(*ncid,varid,idxvector,(double*)BUNtail(data,p));
-                              break;
-              default:        GDKerror("should not occur, must be serious...");
-                              GDKfree(arrayindex);
-                              return GDK_FAIL;
-          }
-          ASSERT_STATUS_arrayindex;
-        }
-        i = 0;
-        while((++idxvector[i]) == lenvector[i]) {
-            if(i<dims-1) {
-                idxvector[i] = 0;
-                i++;
-            }
-        }
-    }
+				if (p == NULL) {
+					GDKerror("index %d missing for oid %d.", i, *o);
+					GDKfree(arrayindex);
+					return GDK_FAIL;
+				}
+				offset = (offset * lenvector[i]) + ((*((int *) p)) - minvector[i]);
+			}
+			arrayindex[offset] = *o;
+			p = BUNnext(batptr[0], p);
+		}
+	}
 
-    GDKfree(arrayindex);
+	/* Iterate over the first index BAT.              */
+	nc_status = nc_redef(*ncid);
+	ASSERT_STATUS_arrayindex;
 
-    nc_status = nc_sync(*ncid);
-    ASSERT_STATUS;
+	for (i = 0; i < dims; i++) {
+		nc_status = nc_def_dim(*ncid, BBPname(BBPcacheid(batptr[i])), lenvector[i], &dimid[i]);
+		ASSERT_STATUS_arrayindex;
+	}
+	nc_status = nc_def_var(*ncid, varname, xtype, dims, dimid, &varid);
+	ASSERT_STATUS_arrayindex;
 
-    return GDK_SUCCEED;
+	switch (xtype) {
+	case NC_BYTE:
+		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, &chr_nil);
+		break;
+	case NC_SHORT:
+		nc_status = nc_put_att_short(*ncid, varid, "_FillValue", NC_SHORT, 1, &sht_nil);
+		break;
+	case NC_INT:
+		nc_status = nc_put_att_int(*ncid, varid, "_FillValue", NC_INT, 1, &int_nil);
+		break;
+	case NC_FLOAT:
+		nc_status = nc_put_att_float(*ncid, varid, "_FillValue", NC_FLOAT, 1, &flt_nil);
+		break;
+	case NC_DOUBLE:
+		nc_status = nc_put_att_double(*ncid, varid, "_FillValue", NC_DOUBLE, 1, &dbl_nil);
+		break;
+	default:
+		GDKerror("should not occur, must be serious...");
+		GDKfree(arrayindex);
+		return GDK_FAIL;
+	}
+	ASSERT_STATUS_arrayindex;
+
+	nc_status = nc_enddef(*ncid);
+	ASSERT_STATUS_arrayindex;
+
+	/* Iterate over all valid indices             */
+	/* (note: normalized to [0..l-1] ranges !)    */
+	/* And fill the CDF datastructure one element */
+	/* at a time...                               */
+	for (i = 0; i < dims; i++)
+		idxvector[i] = 0;
+	while (idxvector[dims - 1] < lenvector[dims - 1]) {
+		int offset;
+
+		i = 0;
+		for (offset = idxvector[0], i = 1; i < dims; i++) {
+			offset = (offset * lenvector[i]) + idxvector[i];
+		}
+		{
+			register ptr p = BUNfnd(data, &arrayindex[offset]);
+
+			if (p == NULL) {
+				GDKerror("value missing for oid %d.", arrayindex[offset]);
+				GDKfree(arrayindex);
+				return GDK_FAIL;
+			}
+			switch (xtype) {
+			case NC_BYTE:
+				nc_status = nc_put_var1_schar(*ncid, varid, idxvector, (char *) BUNtail(data, p));
+				break;
+			case NC_SHORT:
+				nc_status = nc_put_var1_short(*ncid, varid, idxvector, (short *) BUNtail(data, p));
+				break;
+			case NC_INT:
+				nc_status = nc_put_var1_int(*ncid, varid, idxvector, (int *) BUNtail(data, p));
+				break;
+			case NC_FLOAT:
+				nc_status = nc_put_var1_float(*ncid, varid, idxvector, (float *) BUNtail(data, p));
+				break;
+			case NC_DOUBLE:
+				nc_status = nc_put_var1_double(*ncid, varid, idxvector, (double *) BUNtail(data, p));
+				break;
+			default:
+				GDKerror("should not occur, must be serious...");
+				GDKfree(arrayindex);
+				return GDK_FAIL;
+			}
+			ASSERT_STATUS_arrayindex;
+		}
+		i = 0;
+		while ((++idxvector[i]) == lenvector[i]) {
+			if (i < dims - 1) {
+				idxvector[i] = 0;
+				i++;
+			}
+		}
+	}
+
+	GDKfree(arrayindex);
+
+	nc_status = nc_sync(*ncid);
+	ASSERT_STATUS;
+
+	return GDK_SUCCEED;
 }
-   
+
 /*----------------------------------------------------------------------------*/
 @t
 
@@ -759,14 +848,16 @@ This allows the use of bulk-export functions in the netCDF library.
 
 @c
 
-int _nc_export_fast(int *ncid,str varname,BAT* data,...) {
-    va_list ap;
-    int     *tmp,shape[NC_MAX_DIMS];
-    int     dimid[NC_MAX_DIMS];
-    int     dims, varid, nc_status, i;
-    nc_type xtype;
-    size_t  size,cnt;
-    void*   p;
+int
+_nc_export_fast(int *ncid, str varname, BAT *data, ...)
+{
+	va_list ap;
+	int *tmp, shape[NC_MAX_DIMS];
+	int dimid[NC_MAX_DIMS];
+	int dims, varid, nc_status, i;
+	nc_type xtype;
+	size_t size, cnt;
+	void *p;
 
 @t
 
@@ -774,98 +865,118 @@ Handle the arcaine variable argument stuff:
 just produce an array of bat pointers.
 
 @c
-    va_start(ap,data);
-    dims = 0;
-    while((tmp = va_arg(ap,int*)) != NULL) {
-        if(dims == NC_MAX_DIMS) {
-            GDKerror("dimensionality too high");
-            return GDK_FAIL;
-        }
-        shape[dims++] = *tmp;
-    }
-    va_end(ap);
+	va_start(ap, data);
+	dims = 0;
+	while ((tmp = va_arg(ap, int *)) != NULL) {
+		if (dims == NC_MAX_DIMS) {
+			GDKerror("dimensionality too high");
+			return GDK_FAIL;
+		}
+		shape[dims++] = *tmp;
+	}
+	va_end(ap);
 
-    cnt = 1;
-    for(i=0;i<dims;i++) cnt *= shape[i];
-    if(dims == 0) {
-        GDKerror("no dimensions provided");
-        return GDK_FAIL;
-    }
-    size = BATcount(data);
-    if(size != cnt) {
-        GDKerror("array size does not match dimension count");
-        return GDK_FAIL;
-    }
+	cnt = 1;
+	for (i = 0; i < dims; i++)
+		cnt *= shape[i];
+	if (dims == 0) {
+		GDKerror("no dimensions provided");
+		return GDK_FAIL;
+	}
+	size = BATcount(data);
+	if (size != cnt) {
+		GDKerror("array size does not match dimension count");
+		return GDK_FAIL;
+	}
 
-    switch(BATttype(data)) {
-        case TYPE_chr: xtype = NC_BYTE;
-	               break;
-        case TYPE_sht: xtype = NC_SHORT;
-	               break;
-        case TYPE_int: xtype = NC_INT;
-	               break;
-        case TYPE_flt: xtype = NC_FLOAT;
-	               break;
-        case TYPE_dbl: xtype = NC_DOUBLE;
-	               break;
-        default:       GDKerror("invalid data type: can only handle chr,sht,int,flt,dbl");
-	               return GDK_FAIL;
-    }
+	switch (BATttype(data)) {
+	case TYPE_chr:
+		xtype = NC_BYTE;
+		break;
+	case TYPE_sht:
+		xtype = NC_SHORT;
+		break;
+	case TYPE_int:
+		xtype = NC_INT;
+		break;
+	case TYPE_flt:
+		xtype = NC_FLOAT;
+		break;
+	case TYPE_dbl:
+		xtype = NC_DOUBLE;
+		break;
+	default:
+		GDKerror("invalid data type: can only handle chr,sht,int,flt,dbl");
+		return GDK_FAIL;
+	}
 
-    nc_status = nc_redef(*ncid);
-    ASSERT_STATUS;
+	nc_status = nc_redef(*ncid);
+	ASSERT_STATUS;
 
-    for(i=0;i<dims;i++) {
-        char dim_name[NC_MAX_NAME+1];
-	sprintf(dim_name,"%s_%d",varname,i);
-        nc_status = nc_def_dim(*ncid,dim_name,shape[i],&dimid[i]);
-        ASSERT_STATUS;
-    }
-    nc_status = nc_def_var(*ncid,varname,xtype,dims,dimid,&varid);
-    ASSERT_STATUS;
+	for (i = 0; i < dims; i++) {
+		char dim_name[NC_MAX_NAME + 1];
 
-    switch(xtype) {
-        case NC_BYTE:   nc_status = nc_put_att_schar(*ncid,varid,"_FillValue",NC_BYTE,1,&chr_nil);
-                        break;
-        case NC_SHORT:  nc_status = nc_put_att_short(*ncid,varid,"_FillValue",NC_SHORT,1,&sht_nil);
-                        break;
-        case NC_INT:    nc_status = nc_put_att_int(*ncid,varid,"_FillValue",NC_INT,1,&int_nil);
-                        break;
-        case NC_FLOAT:  nc_status = nc_put_att_float(*ncid,varid,"_FillValue",NC_FLOAT,1,&flt_nil);
-                        break;
-        case NC_DOUBLE: nc_status = nc_put_att_double(*ncid,varid,"_FillValue",NC_DOUBLE,1,&dbl_nil);
-                        break;
-        default:        GDKerror("should not occur, must be serious...");
-                        return GDK_FAIL;
-    }
-    ASSERT_STATUS;
+		sprintf(dim_name, "%s_%d", varname, i);
+		nc_status = nc_def_dim(*ncid, dim_name, shape[i], &dimid[i]);
+		ASSERT_STATUS;
+	}
+	nc_status = nc_def_var(*ncid, varname, xtype, dims, dimid, &varid);
+	ASSERT_STATUS;
 
-    nc_status = nc_enddef(*ncid);
-    ASSERT_STATUS;
+	switch (xtype) {
+	case NC_BYTE:
+		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, &chr_nil);
+		break;
+	case NC_SHORT:
+		nc_status = nc_put_att_short(*ncid, varid, "_FillValue", NC_SHORT, 1, &sht_nil);
+		break;
+	case NC_INT:
+		nc_status = nc_put_att_int(*ncid, varid, "_FillValue", NC_INT, 1, &int_nil);
+		break;
+	case NC_FLOAT:
+		nc_status = nc_put_att_float(*ncid, varid, "_FillValue", NC_FLOAT, 1, &flt_nil);
+		break;
+	case NC_DOUBLE:
+		nc_status = nc_put_att_double(*ncid, varid, "_FillValue", NC_DOUBLE, 1, &dbl_nil);
+		break;
+	default:
+		GDKerror("should not occur, must be serious...");
+		return GDK_FAIL;
+	}
+	ASSERT_STATUS;
 
-    p = (void*)BUNfirst(data);
-    switch(xtype) {
-        case NC_BYTE:   nc_status = nc_put_var_schar(*ncid,varid,(char*)p);
-                        break;
-        case NC_SHORT:  nc_status = nc_put_var_short(*ncid,varid,(short*)p);
-                        break;
-        case NC_INT:    nc_status = nc_put_var_int(*ncid,varid,(int*)p);
-                        break;
-        case NC_FLOAT:  nc_status = nc_put_var_float(*ncid,varid,(float*)p);
-                        break;
-        case NC_DOUBLE: nc_status = nc_put_var_double(*ncid,varid,(double*)p);
-                        break;
-        default:        GDKerror("should not occur, must be serious...");
-                        return GDK_FAIL;
-    }
-    ASSERT_STATUS;
+	nc_status = nc_enddef(*ncid);
+	ASSERT_STATUS;
 
-    nc_status = nc_sync(*ncid);
-    ASSERT_STATUS;
+	p = (void *) BUNfirst(data);
+	switch (xtype) {
+	case NC_BYTE:
+		nc_status = nc_put_var_schar(*ncid, varid, (char *) p);
+		break;
+	case NC_SHORT:
+		nc_status = nc_put_var_short(*ncid, varid, (short *) p);
+		break;
+	case NC_INT:
+		nc_status = nc_put_var_int(*ncid, varid, (int *) p);
+		break;
+	case NC_FLOAT:
+		nc_status = nc_put_var_float(*ncid, varid, (float *) p);
+		break;
+	case NC_DOUBLE:
+		nc_status = nc_put_var_double(*ncid, varid, (double *) p);
+		break;
+	default:
+		GDKerror("should not occur, must be serious...");
+		return GDK_FAIL;
+	}
+	ASSERT_STATUS;
 
-    return GDK_SUCCEED;
+	nc_status = nc_sync(*ncid);
+	ASSERT_STATUS;
+
+	return GDK_SUCCEED;
 }
-   
+
 /*============================================================================*/
 @mil
 

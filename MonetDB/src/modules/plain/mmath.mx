@@ -225,18 +225,20 @@ extern double fabs(double x);
 
 #else
 
-static int MNisinf(double x)
+static int
+MNisinf(double x)
 {
 #ifdef HAVE_FPCLASS
-    int cl = fpclass(x);
-    return ((cl == FP_NINF) || (cl == FP_PINF));
+	int cl = fpclass(x);
+
+	return ((cl == FP_NINF) || (cl == FP_PINF));
 #else
-    return 0;		/* XXX not correct if infinite */
-#endif	/* HAVE_FPCLASS */
+	return 0;		/* XXX not correct if infinite */
+#endif /* HAVE_FPCLASS */
 }
 
-#endif	/* HAVE_ISINF */
-#endif	/* HAVE_FPCLASSIFY */
+#endif /* HAVE_ISINF */
+#endif /* HAVE_FPCLASSIFY */
 
 @:unop(_ACOS,acos)@
 @:unop(_ASIN,asin)@
@@ -308,66 +310,75 @@ int math_binary@1(dbl *res, dbl *a, dbl *b ) {
 @
 
 @c
-int math_binary_ROUND(dbl *res, dbl *x, int *y) {
-  if(*x == dbl_nil || *y == int_nil) {
-    *res = dbl_nil;
-  } else {
-    double factor = pow(10,*y), integral;
-    double tmp = *y>0?modf(*x,&integral):*x;
+int
+math_binary_ROUND(dbl *res, dbl *x, int *y)
+{
+	if (*x == dbl_nil || *y == int_nil) {
+		*res = dbl_nil;
+	} else {
+		double factor = pow(10, *y), integral;
+		double tmp = *y > 0 ? modf(*x, &integral) : *x;
 
-    tmp *= factor;
-    if(tmp>=0)
-      tmp = floor(tmp+0.5);
-    else
-      tmp = ceil(tmp-0.5);
-    tmp /= factor;
+		tmp *= factor;
+		if (tmp >= 0)
+			tmp = floor(tmp + 0.5);
+		else
+			tmp = ceil(tmp - 0.5);
+		tmp /= factor;
 
-    if(*y>0)
-      tmp += integral;
+		if (*y > 0)
+			tmp += integral;
 
-    *res = tmp;
-  }
+		*res = tmp;
+	}
 
-  return(GDK_SUCCEED);
+	return (GDK_SUCCEED);
 }
 
-int math_unary_ISNAN(bit *res , dbl *a ) {
+int
+math_unary_ISNAN(bit *res, dbl *a)
+{
 #ifdef DEBUG
-    printf( "math_unary_ISNAN\n");
+	printf("math_unary_ISNAN\n");
 #endif
-    if (*a == dbl_nil) {
-	*res = bit_nil;
-    } else {
-	*res = MNisnan(*a);
-    }
-    return(GDK_SUCCEED);
+	if (*a == dbl_nil) {
+		*res = bit_nil;
+	} else {
+		*res = MNisnan(*a);
+	}
+	return (GDK_SUCCEED);
 }
 
-int math_unary_ISINF(int *res , dbl *a ) {
+int
+math_unary_ISINF(int *res, dbl *a)
+{
 #ifdef DEBUG
-	printf( "math_unary_ISINF\n");
+	printf("math_unary_ISINF\n");
 #endif
-   if (*a == dbl_nil) {
-	*res = int_nil;
-   } else {
-	if(MNisinf(*a)) {
-        	*res = (*a < 0.0) ? -1 : 1;
-        } else {
-        	*res = 0;
-        }
-   }
-   return(GDK_SUCCEED);
+	if (*a == dbl_nil) {
+		*res = int_nil;
+	} else {
+		if (MNisinf(*a)) {
+			*res = (*a < 0.0) ? -1 : 1;
+		} else {
+			*res = 0;
+		}
+	}
+	return (GDK_SUCCEED);
 }
 
-int math_unary_FINITE(bit *res , dbl *a ) {
+int
+math_unary_FINITE(bit *res, dbl *a)
+{
 #ifdef DEBUG
-	printf( "math_unary_FINITE\n");
+	printf("math_unary_FINITE\n");
 #endif
-   if (*a == dbl_nil) {
-	*res = bit_nil;
-   } else {
-	*res = MNfinite(*a);
-   }
-   return(GDK_SUCCEED);
+	if (*a == dbl_nil) {
+		*res = bit_nil;
+	} else {
+		*res = MNfinite(*a);
+	}
+	return (GDK_SUCCEED);
 }
+
 @}

@@ -640,130 +640,139 @@ typedef struct {
 	char extent_name[IDLENGTH];
 	oid extent_align;
 	int vectorsize;
-	int vector[1]; /* TRICKY really dynamic: vector[vectorsize] */
+	int vector[1];		/* TRICKY really dynamic: vector[vectorsize] */
 } vectoridx;
 
 @+ Implementation 
 @c
-vectoridx* vectoridx_new(Heap* hp, BAT *e, int cnt) {
+vectoridx *
+vectoridx_new(Heap *hp, BAT *e, int cnt)
+{
 	vectoridx *vi;
-	if (HEAPalloc(hp, sizeof(vectoridx)+cnt*sizeof(int),1) < 0) return NULL;
+	if (HEAPalloc(hp, sizeof(vectoridx) + cnt * sizeof(int), 1) < 0)
+		return NULL;
 	hp->free = hp->size;
-	vi = (vectoridx*) hp->base;
+	vi = (vectoridx *) hp->base;
 	sprintf(vi->extent_name, "%s", e->batId);
 	vi->extent = e->batCacheid;
 	vi->extent_align = e->halign;
 	vi->vectorsize = cnt;
 	return vi;
 }
+
 void
-DVIbuild(
-   Heap*	hp,	/* INOUT: vectoridx accelerator heap */
-   int*		param,	/* an extra parameter */
-   BAT*		b	/* IN: BAT with head-column. */
-){
-	BAT *extent = BATdescriptor(*(bat*)param);	
+DVIbuild(Heap *hp,		/* INOUT: vectoridx accelerator heap */
+	 int *param,		/* an extra parameter */
+	 BAT *b			/* IN: BAT with head-column. */
+    )
+{
+	BAT *extent = BATdescriptor(*(bat *) param);
 	oid *first, *cur;
-	int xx, yy=0;
+	int xx, yy = 0;
 	vectoridx *vi;
 	BUN p, q;
+
 @-
 Check things
 @c
-	if (extent==NULL) {
-	    GDKerror("DVIbuild: you must provide an extent BAT.\n");
-	    return;
+	if (extent == NULL) {
+		GDKerror("DVIbuild: you must provide an extent BAT.\n");
+		return;
 	}
-	if ((BAThordered(extent)&1) == 0) {
-	    GDKerror("DVIbuild: extent must be sorted.\n");
-	    return;
+	if ((BAThordered(extent) & 1) == 0) {
+		GDKerror("DVIbuild: extent must be sorted.\n");
+		return;
 	}
 	if (extent->htype != TYPE_oid) {
-	    GDKerror("DVIbuild: illegal extent.\n");
-	    return;
+		GDKerror("DVIbuild: illegal extent.\n");
+		return;
 	}
 @-
 Allocate memory for the index. Fill the structure.
 @c
 	vi = vectoridx_new(hp, extent, BATcount(b));
 	if (vi == NULL) {
-	    GDKerror("DVIbuild: could not allocate vectorindex.\n");
-	    return;
+		GDKerror("DVIbuild: could not allocate vectorindex.\n");
+		return;
 	}
-	cur = first = (oid*) BUNfirst(extent);
+	cur = first = (oid *) BUNfirst(extent);
 @-
 Merge-walk through 'b', and 'extent', knowing that both are ordered
 and assuming that 'extent' is a superset of 'b'.
 @c
-	if (BATordered(b) && (3*BATcount(b) > BATcount(extent))) {
-	    oid* end = (oid*) BUNlast(extent); 
-	    BATloopFast(b, p, q, xx) {
-		while(*cur - *(oid*) BUNhloc(b,p)) 
-		    if (++cur >= end) goto error;
-		vi->vector[yy++] = cur - first;
-	    }
+	if (BATordered(b) && (3 * BATcount(b) > BATcount(extent))) {
+		oid *end = (oid *) BUNlast(extent);
+
+		BATloopFast(b, p, q, xx) {
+			while (*cur - *(oid *) BUNhloc(b, p))
+				if (++cur >= end)
+					goto error;
+			vi->vector[yy++] = cur - first;
+		}
 @-
 Walk through 'b' and use very fast probe-based binary lookup in the extent.
 On dense BATs this is just a computed array lookup in 'extent'.
 @c
-	} else { 
-	    BATreverse(extent);
-	    BATloopFast(b, p, q, xx) {
-		cur = (oid*) SORTfndfirst_int(extent, BUNhloc(b,p));
-		if (cur == NULL) {
-error:		    GDKerror("DVIbuild: %s has %d, %s not.\n",
-			b->batId, *(oid*)BUNhloc(b,p), extent->batId);
-		    ACCdestroy(ACC_vectoridx, b, hp);
-		    return;
-		}
+	} else {
+		BATreverse(extent);
+		BATloopFast(b, p, q, xx) {
+			cur = (oid *) SORTfndfirst_int(extent, BUNhloc(b, p));
+			if (cur == NULL) {
+			      error:GDKerror("DVIbuild: %s has %d, %s not.\n", b->batId, *(oid *) BUNhloc(b, p), extent->batId);
+				ACCdestroy(ACC_vectoridx, b, hp);
+				return;
+			}
 @-
 Then we compute the position of the found OID in 'extent'. It is stored
 in the vectoridx.
 @c
-		vi->vector[yy++] = cur - first;
-	    }
+			vi->vector[yy++] = cur - first;
+		}
 	}
 }
 
 void
-DVIdestroy(
-   Heap*	hp,	/* INOUT: accelerator heap. */
-   BAT*		b	/* IN: BAT with accelerated head column. */
-){
+DVIdestroy(Heap *hp,		/* INOUT: accelerator heap. */
+	   BAT *b		/* IN: BAT with accelerated head column. */
+    )
+{
 	(void) b;
 	HEAPfree(hp);
 }
 
 void
-DVIinsert(
-   Heap*	hp,	/* INOUT: vectoridx accelerator heap. */
-   var_t	idx,	/* IN: BUNindex() of value. */
-   BAT*		b,	/* IN: BAT with accelerated head column. */
-   oid*     	o	/* IN: atomic value that was inserted. */
-){
-	(void) idx; (void) o;
+DVIinsert(Heap *hp,		/* INOUT: vectoridx accelerator heap. */
+	  var_t idx,		/* IN: BUNindex() of value. */
+	  BAT *b,		/* IN: BAT with accelerated head column. */
+	  oid *o		/* IN: atomic value that was inserted. */
+    )
+{
+	(void) idx;
+	(void) o;
 	GDKwarning("DVIinsert: destroys vector index\n");
 	ACCdestroy(ACC_vectoridx, b, hp);
 }
 
 void
-DVIdelete(
-   Heap*	hp,	/* INOUT: vectoridx accelerator heap. */
-   var_t	idx,	/* IN: BUNindex() of value. */
-   BAT*		b,	/* IN: BAT with accelerated head column. */
-   oid*     	o	/* IN: atomic value that was deleted. */
-){
-	(void) idx; (void) o;
+DVIdelete(Heap *hp,		/* INOUT: vectoridx accelerator heap. */
+	  var_t idx,		/* IN: BUNindex() of value. */
+	  BAT *b,		/* IN: BAT with accelerated head column. */
+	  oid *o		/* IN: atomic value that was deleted. */
+    )
+{
+	(void) idx;
+	(void) o;
 	GDKwarning("DVIdelete: destroys vector index\n");
 	ACCdestroy(ACC_vectoridx, b, hp);
 }
 
 void
-DVIsave(
-   Heap*	hp,	/* INOUT: accelerator heap. */
-   BAT*		b	/* IN: BAT with accelerated head column. */
-){
-	(void) hp; (void) b;
+DVIsave(Heap *hp,		/* INOUT: accelerator heap. */
+	BAT *b			/* IN: BAT with accelerated head column. */
+    )
+{
+	(void) hp;
+	(void) b;
 	/* vectoridx *v = (vectoridx*) hp->base; */
 }
 
@@ -784,16 +793,17 @@ typedef struct {
 @+ Implementation
 @c
 void
-DVbuild(
-   Heap*	hp,	/* INOUT: vector accelerator heap */
-   int*		param,	/* an extra parameter */
-   BAT*		b	/* IN: BAT with head-column. */
-){
-	BAT *bn, *extent = BATdescriptor(*(bat*)param);	
-	int bunsize, atomsize, xx, yy=0;
+DVbuild(Heap *hp,		/* INOUT: vector accelerator heap */
+	int *param,		/* an extra parameter */
+	BAT *b			/* IN: BAT with head-column. */
+    )
+{
+	BAT *bn, *extent = BATdescriptor(*(bat *) param);
+	int bunsize, atomsize, xx, yy = 0;
 	datavector *v;
 	vectoridx *vi;
 	BUN p, q;
+
 @-
 Create a new BAT, which will contain the data vector.
 @c
@@ -802,7 +812,7 @@ Create a new BAT, which will contain the data vector.
 		return;
 	}
 	hp->free = hp->size;
-	v = (datavector*) hp->base;
+	v = (datavector *) hp->base;
 	sprintf(v->vector_name, "%s_v", b->batId);
 	sprintf(v->extent_name, "%s", extent->batId);
 	v->extent = extent->batCacheid;
@@ -810,22 +820,21 @@ Create a new BAT, which will contain the data vector.
 Important! Check whether Santa Claus left the vector under the chimney.
 @c
 	if ((v->vector = BBPindex(v->vector_name)) != 0) {
-	    bn = BBPdescriptor(v->vector);
-	    if (!ALIGNsynced(bn, extent)) {
-		GDKwarning("DVbuild: aligning %s and %s..\n", 
-			extent->batId, bn->batId); 
-		ALIGNsynced(bn, extent);
-	    } 
-	    return;
+		bn = BBPdescriptor(v->vector);
+		if (!ALIGNsynced(bn, extent)) {
+			GDKwarning("DVbuild: aligning %s and %s..\n", extent->batId, bn->batId);
+			ALIGNsynced(bn, extent);
+		}
+		return;
 	}
 @-
 Look up the oid positions in the extent.
 @c
 	ACCbuild(ACC_vectoridx, BATmirror(b), &b->taccelerator, (ptr) param);
 	if (b->taccelerator.base == NULL) {
-	    return;
+		return;
 	}
-	vi = (vectoridx*) b->taccelerator.base;
+	vi = (vectoridx *) b->taccelerator.base;
 
 	bn = BATnew(TYPE_void, b->htype, BATcount(b));
 	BATrename(bn, v->vector_name);
@@ -833,162 +842,158 @@ Look up the oid positions in the extent.
 	v->vector = bn->batCacheid;
 	atomsize = ATOMsize(b->htype);
 	bunsize = BUNsize(bn);
-	bn->batBuns->free = (BATcount(b)+1)*bunsize;
+	bn->batBuns->free = (BATcount(b) + 1) * bunsize;
 @-
 Create a tail column, filled with the contents of bn, but
 ordered like 'extent'.
 @c
 	if (b->hvarsized) {
-	    BATloopFast(b, p, q, xx) {
-		ATOMput((bn)->ttype, &(bn)->theap, 
-			BUNptr(bn,1+vi->vector[yy]), BUNhvar(b,p));
-		yy++;
-	    }
+		BATloopFast(b, p, q, xx) {
+			ATOMput((bn)->ttype, &(bn)->theap, BUNptr(bn, 1 + vi->vector[yy]), BUNhvar(b, p));
+			yy++;
+		}
 	} else if (atomsize == sizeof(int)) {
-	    BATloopFast(b, p, q, xx) {
-		*(int*) BUNptr(bn,1+vi->vector[yy]) = *(int*) BUNhloc(b,p);
-		yy++;
-	    }
+		BATloopFast(b, p, q, xx) {
+			*(int *) BUNptr(bn, 1 + vi->vector[yy]) = *(int *) BUNhloc(b, p);
+			yy++;
+		}
 	} else {
-	    BATloopFast(b, p, q, xx) {
-		char *dst = (char*) BUNptr(bn,1+vi->vector[yy]);
-		char *end = dst + atomsize;
-		char *src = (char*) BUNhloc(b,p);
-		while(dst < end) *dst++ = *src++;
-		yy++;
-	    }
- 	}
+		BATloopFast(b, p, q, xx) {
+			char *dst = (char *) BUNptr(bn, 1 + vi->vector[yy]);
+			char *end = dst + atomsize;
+			char *src = (char *) BUNhloc(b, p);
+
+			while (dst < end)
+				*dst++ = *src++;
+			yy++;
+		}
+	}
 	bn->hsorted = GDK_SORTED;
 	bn->tsorted = 0;
-	ALIGNsetH(bn, extent); 
+	ALIGNsetH(bn, extent);
 	return;
-bunins_failed:
+      bunins_failed:
 	HEAPfree(hp);
 	BBPreclaim(bn);
 }
 
 void
-DVdestroy(
-   Heap*	hp,	/* INOUT: accelerator heap. */
-   BAT*		b	/* IN: BAT with accelerated head column. */
-){
-	datavector *v = (datavector*) hp->base;	
+DVdestroy(Heap *hp,		/* INOUT: accelerator heap. */
+	  BAT *b		/* IN: BAT with accelerated head column. */
+    )
+{
+	datavector *v = (datavector *) hp->base;
 	str vector_name;
 
 	if (v == NULL) {
-	    GDKerror("DVdestroy: null vector reference.\n");
-	    return;
+		GDKerror("DVdestroy: null vector reference.\n");
+		return;
 	} else if (BBPdescriptor(v->vector) == 0) {
-	    GDKerror("DVdestroy: invalid reference %d to vector %s\n",
-		v->vector, v->vector_name);
+		GDKerror("DVdestroy: invalid reference %d to vector %s\n", v->vector, v->vector_name);
 	} else {
-	    vector_name = BBPname(v->vector);
-	    if (vector_name && *vector_name &&
-		!strcmp(vector_name,v->vector_name)) 
-	    {
-		BBPunfix(v->vector);
-	    } else {
-		GDKerror("DVdestroy: unary index %s was lost previously\n", 
-			v->vector_name);
-	    }
+		vector_name = BBPname(v->vector);
+		if (vector_name && *vector_name && !strcmp(vector_name, v->vector_name)) {
+			BBPunfix(v->vector);
+		} else {
+			GDKerror("DVdestroy: unary index %s was lost previously\n", v->vector_name);
+		}
 	}
 	HEAPfree(hp);
 	b->hacctype = 0;
 }
 
 void
-DVinsert(
-   Heap*	hp,	/* INOUT: vector accelerator heap. */
-   var_t	idx,	/* IN: BUNindex() of value. */
-   BAT*		b,	/* IN: BAT with accelerated head column. */
-   ptr      	p	/* IN: atomic value that was inserted. */
-){
-	(void) idx; (void) p;
+DVinsert(Heap *hp,		/* INOUT: vector accelerator heap. */
+	 var_t idx,		/* IN: BUNindex() of value. */
+	 BAT *b,		/* IN: BAT with accelerated head column. */
+	 ptr p			/* IN: atomic value that was inserted. */
+    )
+{
+	(void) idx;
+	(void) p;
 	GDKwarning("DVinsert: destroys vector\n");
 	ACCdestroy(ACC_datavector, b, hp);
 }
 
 void
-DVdelete(
-   Heap*	hp,	/* INOUT: vector accelerator heap. */
-   var_t	idx,	/* IN: BUNindex() of value. */
-   BAT*		b,	/* IN: BAT with accelerated head column. */
-   ptr      	p	/* IN: atomic value that was deleted. */
-){
-	(void) idx; (void) p;
+DVdelete(Heap *hp,		/* INOUT: vector accelerator heap. */
+	 var_t idx,		/* IN: BUNindex() of value. */
+	 BAT *b,		/* IN: BAT with accelerated head column. */
+	 ptr p			/* IN: atomic value that was deleted. */
+    )
+{
+	(void) idx;
+	(void) p;
 	GDKwarning("DVdelete: destroys vector\n");
 	ACCdestroy(ACC_datavector, b, hp);
 }
 
 void
-DVsave(
-   Heap*	hp,	/* INOUT: accelerator heap. */
-   BAT*		b	/* IN: BAT with accelerated head column. */
-){
-	(void) hp; (void) b;
+DVsave(Heap *hp,		/* INOUT: accelerator heap. */
+       BAT *b			/* IN: BAT with accelerated head column. */
+    )
+{
+	(void) hp;
+	(void) b;
 	/* datavector *v = (datavector*) hp->base; */
 }
 
 int
-DVrepair(
-   Heap*     	hp,	/* put return BAT[oid,any] here. */
-   BAT*     	b	/* pointer to BAT[oid,any] record.*/
-){
-	datavector *v = (datavector*) hp->base;	
+DVrepair(Heap *hp,		/* put return BAT[oid,any] here. */
+	 BAT *b			/* pointer to BAT[oid,any] record. */
+    )
+{
+	datavector *v = (datavector *) hp->base;
 	str vector_name = BBPname(v->vector);
 	str extent_name = BBPname(v->extent);
 
-	if (vector_name && *vector_name &&
-	    extent_name && *extent_name &&
-	    strcmp(vector_name,v->vector_name) == 0 &&
-	    strcmp(extent_name,v->extent_name) == 0 &&
-	    ALIGNsynced(BBPdescriptor(v->vector),
-	    		BBPdescriptor(v->extent))) 
-	{
-		return GDK_SUCCEED;	
+	if (vector_name && *vector_name && extent_name && *extent_name && strcmp(vector_name, v->vector_name) == 0 && strcmp(extent_name, v->extent_name) == 0 && ALIGNsynced(BBPdescriptor(v->vector), BBPdescriptor(v->extent))) {
+		return GDK_SUCCEED;
 	}
 	ACCdestroy(ACC_datavector, b, hp);
-	return GDK_FAIL;	
+	return GDK_FAIL;
 }
 
 @+ Information Functions
 @c
 int
-DVextent(
-   BAT**     	retval,	/* put pointer to BAT[oid,any] record here. */
-   BAT*     	b	/* pointer to BAT[oid,any] record.*/
-){
-    if (b->tacctype == ACC_datavector) {
-	datavector *v = (datavector*) b->taccelerator.base;
-	BAT *extent;
-	if (v==NULL || v->extent==0 || !(extent=BBPdescriptor(v->extent))) {
-		GDKerror("DVextent: illegal datavector.\n");
-		return GDK_FAIL;
+DVextent(BAT **retval,		/* put pointer to BAT[oid,any] record here. */
+	 BAT *b			/* pointer to BAT[oid,any] record. */
+    )
+{
+	if (b->tacctype == ACC_datavector) {
+		datavector *v = (datavector *) b->taccelerator.base;
+		BAT *extent;
+
+		if (v == NULL || v->extent == 0 || !(extent = BBPdescriptor(v->extent))) {
+			GDKerror("DVextent: illegal datavector.\n");
+			return GDK_FAIL;
+		}
+		*retval = extent;
+		return GDK_SUCCEED;
 	}
-	*retval = extent;
-	return GDK_SUCCEED;
-    }
-    GDKerror("DVextent: no datavector on the tail.\n");
-    return GDK_FAIL;
+	GDKerror("DVextent: no datavector on the tail.\n");
+	return GDK_FAIL;
 }
 
 int
-DVvector(
-   BAT**     	retval,	/* put pointer to BAT[oid,any] record here. */
-   BAT*     	b	/* pointer to BAT[oid,any] record.*/
-){
-    if (b->tacctype == ACC_datavector) {
-	datavector *v = (datavector*) b->taccelerator.base;
-	BAT *vector;
-	if (v==NULL || v->vector==0 || !(vector=BATdescriptor(v->vector))) {
-		GDKerror("DVvector: illegal datavector.\n");
-		return GDK_FAIL;
+DVvector(BAT **retval,		/* put pointer to BAT[oid,any] record here. */
+	 BAT *b			/* pointer to BAT[oid,any] record. */
+    )
+{
+	if (b->tacctype == ACC_datavector) {
+		datavector *v = (datavector *) b->taccelerator.base;
+		BAT *vector;
+
+		if (v == NULL || v->vector == 0 || !(vector = BATdescriptor(v->vector))) {
+			GDKerror("DVvector: illegal datavector.\n");
+			return GDK_FAIL;
+		}
+		*retval = vector;
+		return GDK_SUCCEED;
 	}
-	*retval = vector;
-	return GDK_SUCCEED;
-    }
-    GDKerror("DVvector: no datavector on the tail.\n");
-    return GDK_FAIL;
+	GDKerror("DVvector: no datavector on the tail.\n");
+	return GDK_FAIL;
 }
 
 @* Vectorized Operations
@@ -1029,26 +1034,26 @@ to speed up semijoins.
 	bunsize = BUNsize(v);
 @c
 int
-DVsemijoin(
-   BAT**     	retval,	/* put pointer to BAT[oid,any] record here. */
-   BAT*     	e,	/* pointer to BAT[oid,any] record.*/
-   BAT*     	v,	/* pointer to BAT[oid,any] record.*/
-   BAT*     	r	/* pointer to BAT[oid,any] record.*/
-){
+DVsemijoin(BAT **retval,	/* put pointer to BAT[oid,any] record here. */
+	   BAT *e,		/* pointer to BAT[oid,any] record. */
+	   BAT *v,		/* pointer to BAT[oid,any] record. */
+	   BAT *r		/* pointer to BAT[oid,any] record. */
+    )
+{
 	BAT *bn = BATnew(TYPE_oid, BATttype(v), BATcount(r));
+
 	@:dvprepare(semijoin)@
 
 	if (v->tvarsized) {
-	    BATloopFast(r, p, q, xx) {
-		BUNfastins(bn, BUNhloc(r,p), 
-			heapbase + *(int*) (base + vi->vector[yy]*bunsize));
-		yy++;
-	    }
+		BATloopFast(r, p, q, xx) {
+			BUNfastins(bn, BUNhloc(r, p), heapbase + *(int *) (base + vi->vector[yy] * bunsize));
+			yy++;
+		}
 	} else {
-	    BATloopFast(r, p, q, xx) {
-		BUNfastins(bn, BUNhloc(r,p), base + vi->vector[yy]*bunsize);
-		yy++;
-	    }
+		BATloopFast(r, p, q, xx) {
+			BUNfastins(bn, BUNhloc(r, p), base + vi->vector[yy] * bunsize);
+			yy++;
+		}
 	}
 	*retval = bn;
 	BATkey(bn, 1);
@@ -1057,6 +1062,7 @@ DVsemijoin(
 	ALIGNsetH(bn, r);
 	return GDK_SUCCEED;
 }
+
 @+ Vectorized Join
 Is implemented reusing the semijoin code. We look up the OID values
 of the right BAT in the extent. We then fetch positionally from the vector.
@@ -1078,19 +1084,20 @@ The only difference with semijoin is that the result consists of
    }
 @c
 int
-DVjoin(
-   BAT**     	retval,	/* put pointer to BAT[oid,any] record here. */
-   BAT*     	e,	/* pointer to BAT[oid,any] record.*/
-   BAT*     	v,	/* pointer to BAT[oid,any] record.*/
-   BAT*     	r	/* pointer to BAT[oid,any] record.*/
-){
+DVjoin(BAT **retval,		/* put pointer to BAT[oid,any] record here. */
+       BAT *e,			/* pointer to BAT[oid,any] record. */
+       BAT *v,			/* pointer to BAT[oid,any] record. */
+       BAT *r			/* pointer to BAT[oid,any] record. */
+    )
+{
 	BAT *bn = BATnew(BATttype(v), BATttype(r), BATcount(r));
+
 	@:dvprepare(join)@
 
 	if (r->tvarsized) {
-	   @:joinins(var)@
+		@:joinins(var)@
 	} else {
-	   @:joinins(loc)@
+		@:joinins(loc)@
 	}
 	*retval = bn;
 	bn->hsorted = 0;
@@ -1098,5 +1105,6 @@ DVjoin(
 	ALIGNsetT(bn, r);
 	return GDK_SUCCEED;
 }
+
 @}
 @}

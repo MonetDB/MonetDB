@@ -60,11 +60,16 @@ typedef str overloadedstr;
 
 #include "mel.proto.h"
 
-int ovstr_unfix( overloadedstr input){
-	printf("unfix overloadedstr %s\n", input );
+int
+ovstr_unfix(overloadedstr input)
+{
+	printf("unfix overloadedstr %s\n", input);
 	return 0;
 }
-int ovstr_fix( overloadedstr input){
-	printf("fix overloadedstr %s\n", input );
+
+int
+ovstr_fix(overloadedstr input)
+{
+	printf("fix overloadedstr %s\n", input);
 	return 0;
 }

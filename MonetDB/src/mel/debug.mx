@@ -24,15 +24,16 @@
 
 #include "language.h"
 
-class debug: public language {
-    public:
-	const char *get_name() const{ return "debug"; }
-	int generate_code( ostream &o, Symbol *rootptr );
+class debug:public language {
+      public:
+	const char *get_name() const {
+		return "debug";
+	} int generate_code(ostream & o, Symbol *rootptr);
 
-	ostream &gen_module( ostream &o, const Module &m );
-	ostream &gen_dependency( ostream &o, const Dependency &m );
-	ostream &gen_atom( ostream &o, const Atom &m );
-	ostream &gen_atomops( ostream &o, const Atomops &m );
+	 ostream & gen_module(ostream & o, const Module & m);
+	 ostream & gen_dependency(ostream & o, const Dependency & m);
+	 ostream & gen_atom(ostream & o, const Atom & m);
+	 ostream & gen_atomops(ostream & o, const Atomops & m);
 };
 
 #endif //_DEBUG_H_

@@ -27,14 +27,14 @@
 #include "type_arg.h"
 
 
-class VarArg : public Arg {
-    public:
-	VarArg( int t, char *n, const Symbol *arg = NULL); 
+class VarArg:public Arg {
+      public:
+	VarArg(int t, char *n, const Symbol *arg = NULL);
 
 	const Symbol *arg() const;
-        virtual const char *toString() const;
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual const char *toString() const;
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 	const Symbol *_arg;
 };
 #endif // _VARARG_H_

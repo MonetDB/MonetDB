@@ -105,7 +105,7 @@ ADDHELP("startProfiler", "manegold", "Feb 05 2004",
 #  define HZ CLK_TCK
 # endif
 #endif
- 
+
 #define PARAM(x)        (argv+x)
 #define RETVAL          (argv)
 
@@ -127,61 +127,87 @@ nouse(
 
 @+ Modules
 @c
-int startProfilerCMD(int *res){
+int
+startProfilerCMD(int *res)
+{
 	(void) res;
 	setProfilerMode(2);
 	return GDK_SUCCEED;
 }
 
-int startProfilerStreamCMD(int *res, Stream *output){
-	startProfiler(*(stream**)output);
-	*res=0;
+int
+startProfilerStreamCMD(int *res, Stream *output)
+{
+	startProfiler(*(stream **) output);
+	*res = 0;
 	return GDK_SUCCEED;
 }
-int startProfilerFileCMD(int *res, str fname){
+
+int
+startProfilerFileCMD(int *res, str fname)
+{
 	stream *output;
+
 	output = open_wstream(fname);
-	if( output == 0){
+	if (output == 0) {
 		GDKerror("startProfiler: could not create file\n");
 		return GDK_FAIL;
 	}
 	startProfiler(output);
-	*res=0;
+	*res = 0;
 	return GDK_SUCCEED;
 }
-int stopProfilerCMD(int *res){
+
+int
+stopProfilerCMD(int *res)
+{
 	stopProfiler();
-	*res=0;
+	*res = 0;
 	return GDK_SUCCEED;
 }
-int getProfilerCountCMD(BAT **res){
+
+int
+getProfilerCountCMD(BAT **res)
+{
 	BAT *bn;
+
 	*res = NULL;
 	bn = getProfilerCount();
-	if( bn) {
-		BBPfix( bn->batCacheid);
-		*res= bn;
+	if (bn) {
+		BBPfix(bn->batCacheid);
+		*res = bn;
 	}
 	return GDK_SUCCEED;
 }
-int getProfilerTicksCMD(BAT **res){
+
+int
+getProfilerTicksCMD(BAT **res)
+{
 	BAT *bn;
+
 	*res = NULL;
 	bn = getProfilerTicks();
-	if( bn) {
-		BBPfix( bn->batCacheid);
-		*res= bn;
+	if (bn) {
+		BBPfix(bn->batCacheid);
+		*res = bn;
 	}
 	return GDK_SUCCEED;
 }
-int resetProfilerCMD(){
+
+int
+resetProfilerCMD()
+{
 	resetProfiler();
 	return GDK_SUCCEED;
 }
-int setFilterCmd(int *res, str left, str right){
-	*res=0;
-	return setProfilerFilter(left,right);
+
+int
+setFilterCmd(int *res, str left, str right)
+{
+	*res = 0;
+	return setProfilerFilter(left, right);
 }
+
 @-
  
 @T

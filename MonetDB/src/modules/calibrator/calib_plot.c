@@ -22,33 +22,41 @@
 \***************************************************************************/
 
 
-void plotCache(cacheInfo *cache, caliblng **result, caliblng MHz, char *fn, FILE *fp, caliblng delay)
+void
+plotCache(cacheInfo * cache, caliblng ** result, caliblng MHz, char *fn, FILE *fp, caliblng delay)
 {
-	caliblng	l, x, xx = (result[0][0] & 0xffffff) - 1, y, yy = (result[0][0] >> 24) - 1;
-	calibdbl	xl, xh, yl, yh, z;
-	char	*s, *flnm=strdup(fn), top=0;
-	
-	xl = (calibdbl)result[1][0] / 1024.0;
-	xh = (calibdbl)result[yy][0] / 1024.0;
-	for (yl = 1.0;  yl > (caliblng)NSperIt(result[1][1]  - delay); yl /= 10);
-	for (yh = 1000; yh < (caliblng)NSperIt(result[yy][1] - delay); yh *= 10);
-	if ( ( log10(yh) - log10((caliblng)NSperIt(result[yy][1] - delay)) ) > ( log10((caliblng)NSperIt(result[1][1]  - delay)) - log10(yl) ) )	top = 1;
+	caliblng l, x, xx = (result[0][0] & 0xffffff) - 1, y, yy = (result[0][0] >> 24) - 1;
+	calibdbl xl, xh, yl, yh, z;
+	char *s, *flnm = strdup(fn), top = 0;
+
+	xl = (calibdbl) result[1][0] / 1024.0;
+	xh = (calibdbl) result[yy][0] / 1024.0;
+	for (yl = 1.0; yl > (caliblng) NSperIt(result[1][1] - delay); yl /= 10) ;
+	for (yh = 1000; yh < (caliblng) NSperIt(result[yy][1] - delay); yh *= 10) ;
+	if ((log10(yh) - log10((caliblng) NSperIt(result[yy][1] - delay))) > (log10((caliblng) NSperIt(result[1][1] - delay)) - log10(yl)))
+		top = 1;
 	fprintf(fp, "# Calibrator v%s\n", CALIB_VERSION);
 	fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
-	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
+	if (delay)
+		fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
 	fprintf(fp, " set term postscript portrait enhanced\t# PS\n");
 	fprintf(fp, " set output '%s.ps'\t# PS\n", fn);
 	fprintf(fp, " set title '");
-	fprintf(fp, "%s", strtok(flnm,"_"));
-	while ((s=strtok(NULL,"_"))) fprintf(fp, "\\_%s", s);
+	fprintf(fp, "%s", strtok(flnm, "_"));
+	while ((s = strtok(NULL, "_")))
+		fprintf(fp, "\\_%s", s);
 	fprintf(fp, "'\t# PS\n");
-	if(top)	fprintf(fp, " set label %d '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.96 center\t# PS\n", 1, CALIB_VERSION);
-	  else	fprintf(fp, " set label %d '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.02 center\t# PS\n", 1, CALIB_VERSION);
+	if (top)
+		fprintf(fp, " set label %d '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.96 center\t# PS\n", 1, CALIB_VERSION);
+	else
+		fprintf(fp, " set label %d '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.02 center\t# PS\n", 1, CALIB_VERSION);
 	fprintf(fp, "#set term gif transparent interlace small size 500, 707 # xFFFFFF x333333 x333333 x0055FF x005522 x660000 xFF0000 x00FF00 x0000FF\t# GIF\n");
 	fprintf(fp, "#set output '%s.gif'\t# GIF\n", fn);
 	fprintf(fp, "#set title '%s'\t# GIF\n", fn);
-	if(top)	fprintf(fp, "#set label %d    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.97 center\t# GIF\n", 1, CALIB_VERSION);
-	  else	fprintf(fp, "#set label %d    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.03 center\t# GIF\n", 1, CALIB_VERSION);
+	if (top)
+		fprintf(fp, "#set label %d    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.97 center\t# GIF\n", 1, CALIB_VERSION);
+	else
+		fprintf(fp, "#set label %d    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.03 center\t# GIF\n", 1, CALIB_VERSION);
 	fprintf(fp, "set data style linespoints\n");
 	fprintf(fp, "set key below\n");
 	fprintf(fp, "set xlabel 'memory range [bytes]'\n");
@@ -70,7 +78,7 @@ void plotCache(cacheInfo *cache, caliblng **result, caliblng MHz, char *fn, FILE
 	fprintf(fp, "set grid x2tics\n");
 	fprintf(fp, "set xtics mirror");
 	for (x = 1, l = 1, s = " ("; x <= xh; x *= 2, l++, s = ", ") {
-		if (l&1) {
+		if (l & 1) {
 			if (x >= (1024 * 1024)) {
 				fprintf(fp, "%s'%ldG' %ld", s, x / (1024 * 1024), x);
 			} else if (x >= 1024) {
@@ -96,17 +104,21 @@ void plotCache(cacheInfo *cache, caliblng **result, caliblng MHz, char *fn, FILE
 	fprintf(fp, ")\n");
 	fprintf(fp, "set y2tics");
 	for (l = 0, s = " ("; l <= cache->levels; l++, s = ", ") {
-		if (!delay)	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(cache->latency1[l] - delay)), NSperIt(cache->latency1[l] - delay));
-			else	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(cache->latency2[l] - delay)), NSperIt(cache->latency2[l] - delay));
+		if (!delay)
+			fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(cache->latency1[l] - delay)), NSperIt(cache->latency1[l] - delay));
+		else
+			fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(cache->latency2[l] - delay)), NSperIt(cache->latency2[l] - delay));
 	}
 	for (y = 1; y <= yh; y *= 10) {
-		fprintf(fp, "%s'%1.4g' %ld", s, (calibdbl)(y * MHz) / 1000.0, y);
+		fprintf(fp, "%s'%1.4g' %ld", s, (calibdbl) (y * MHz) / 1000.0, y);
 	}
 	fprintf(fp, ")\n");
 	for (l = 0; l <= cache->levels; l++) {
-		if (!delay)	z = cround(CYperIt(cache->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
-			else	z = cround(CYperIt(cache->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
-		fprintf(fp, " set label %ld '(%1.4g)  ' at %f,%f right\t# PS\n" , l + 2, z, xl, z);
+		if (!delay)
+			z = cround(CYperIt(cache->latency1[l] - delay)) * 1000.0 / (calibdbl) MHz;
+		else
+			z = cround(CYperIt(cache->latency2[l] - delay)) * 1000.0 / (calibdbl) MHz;
+		fprintf(fp, " set label %ld '(%1.4g)  ' at %f,%f right\t# PS\n", l + 2, z, xl, z);
 		fprintf(fp, "#set label %ld '(%1.4g)'   at %f,%f right\t# GIF\n", l + 2, z, xl, z);
 		fprintf(fp, "set arrow %ld from %f,%f to %f,%f nohead lt 0\n", l + 2, xl, z, xh, z);
 	}
@@ -115,7 +127,7 @@ void plotCache(cacheInfo *cache, caliblng **result, caliblng MHz, char *fn, FILE
 		fprintf(fp, " , \\\n'%s.data' using 1:($%ld-%f) title '", fn, (6 * x) + 1, NSperIt(delay));
 		if ((l > 0) && (result[0][x] == cache->linesize[l])) {
 			fprintf(fp, "\\{%ld\\}", result[0][x]);
-			while ((--l >= 0) && (result[0][x] == cache->linesize[l]));
+			while ((--l >= 0) && (result[0][x] == cache->linesize[l])) ;
 		} else {
 			fprintf(fp, "%ld", result[0][x]);
 		}
@@ -129,33 +141,41 @@ void plotCache(cacheInfo *cache, caliblng **result, caliblng MHz, char *fn, FILE
 	free(flnm);
 }
 
-void plotTLB(TLBinfo *TLB, caliblng **result, caliblng MHz, char *fn, FILE *fp, caliblng delay)
+void
+plotTLB(TLBinfo * TLB, caliblng ** result, caliblng MHz, char *fn, FILE *fp, caliblng delay)
 {
-	caliblng	l, x, xx = (result[0][0] & 0xffffff) - 1, y, yy = (result[0][0] >> 24) - 1;
-	calibdbl	xl, xh, yl, yh, z;
-	char	*s, *flnm=strdup(fn), top=0;
-	
-	xl = (calibdbl)result[2][0];
-	xh = (calibdbl)result[yy][0];
-        for (yl = 1.0;  yl > (caliblng)NSperIt(result[2][2]  - delay); yl /= 10);
-	for (yh = 1000; yh < (caliblng)NSperIt(result[yy][2] - delay); yh *= 10);
-	if ( ( log10(yh) - log10((caliblng)NSperIt(result[yy][1] - delay)) ) > ( log10((caliblng)NSperIt(result[1][1]  - delay)) - log10(yl) ) )	top = 1;
+	caliblng l, x, xx = (result[0][0] & 0xffffff) - 1, y, yy = (result[0][0] >> 24) - 1;
+	calibdbl xl, xh, yl, yh, z;
+	char *s, *flnm = strdup(fn), top = 0;
+
+	xl = (calibdbl) result[2][0];
+	xh = (calibdbl) result[yy][0];
+	for (yl = 1.0; yl > (caliblng) NSperIt(result[2][2] - delay); yl /= 10) ;
+	for (yh = 1000; yh < (caliblng) NSperIt(result[yy][2] - delay); yh *= 10) ;
+	if ((log10(yh) - log10((caliblng) NSperIt(result[yy][1] - delay))) > (log10((caliblng) NSperIt(result[1][1] - delay)) - log10(yl)))
+		top = 1;
 	fprintf(fp, "# Calibrator v%s\n", CALIB_VERSION);
 	fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
-	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
+	if (delay)
+		fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
 	fprintf(fp, " set term postscript portrait enhanced\t# PS\n");
 	fprintf(fp, " set output '%s.ps'\t# PS\n", fn);
 	fprintf(fp, " set title '");
-	fprintf(fp, "%s", strtok(flnm,"_"));
-	while ((s=strtok(NULL,"_"))) fprintf(fp, "\\_%s", s);
+	fprintf(fp, "%s", strtok(flnm, "_"));
+	while ((s = strtok(NULL, "_")))
+		fprintf(fp, "\\_%s", s);
 	fprintf(fp, "'\t# PS\n");
-	if(top)	fprintf(fp, " set label %d '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.96 center\t# PS\n", 1, CALIB_VERSION);
-	  else	fprintf(fp, " set label %d '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.02 center\t# PS\n", 1, CALIB_VERSION);
+	if (top)
+		fprintf(fp, " set label %d '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.96 center\t# PS\n", 1, CALIB_VERSION);
+	else
+		fprintf(fp, " set label %d '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.02 center\t# PS\n", 1, CALIB_VERSION);
 	fprintf(fp, "#set term gif transparent interlace small size 500, 707 # xFFFFFF x333333 x333333 x0055FF x005522 x660000 xFF0000 x00FF00 x0000FF\t# GIF\n");
 	fprintf(fp, "#set output '%s.gif'\t# GIF\n", fn);
 	fprintf(fp, "#set title '%s'\t# GIF\n", fn);
-        if(top)	fprintf(fp, "#set label %d    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.97 center\t# GIF\n", 1, CALIB_VERSION);
-          else	fprintf(fp, "#set label %d    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.03 center\t# GIF\n", 1, CALIB_VERSION);
+	if (top)
+		fprintf(fp, "#set label %d    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.97 center\t# GIF\n", 1, CALIB_VERSION);
+	else
+		fprintf(fp, "#set label %d    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.03 center\t# GIF\n", 1, CALIB_VERSION);
 	fprintf(fp, "set data style linespoints\n");
 	fprintf(fp, "set key below\n");
 	fprintf(fp, "set xlabel 'spots accessed'\n");
@@ -203,17 +223,21 @@ void plotTLB(TLBinfo *TLB, caliblng **result, caliblng MHz, char *fn, FILE *fp, 
 	fprintf(fp, "%s'<L1>' %ld)\n", s, TLB->mincachelines);
 	fprintf(fp, "set y2tics");
 	for (l = 0, s = " ("; l <= TLB->levels; l++, s = ", ") {
-		if (!delay)	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(TLB->latency1[l] - delay)), NSperIt(TLB->latency1[l] - delay));
-			else	fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(TLB->latency2[l] - delay)), NSperIt(TLB->latency2[l] - delay));
+		if (!delay)
+			fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(TLB->latency1[l] - delay)), NSperIt(TLB->latency1[l] - delay));
+		else
+			fprintf(fp, "%s'(%ld)' %f", s, cround(CYperIt(TLB->latency2[l] - delay)), NSperIt(TLB->latency2[l] - delay));
 	}
 	for (y = 1; y <= yh; y *= 10) {
-		fprintf(fp, "%s'%1.4g' %ld", s, (calibdbl)(y * MHz) / 1000.0, y);
+		fprintf(fp, "%s'%1.4g' %ld", s, (calibdbl) (y * MHz) / 1000.0, y);
 	}
 	fprintf(fp, ")\n");
 	for (l = 0; l <= TLB->levels; l++) {
-		if (!delay)	z = cround(CYperIt(TLB->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
-			else	z = cround(CYperIt(TLB->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
-		fprintf(fp, " set label %ld '(%1.4g)  ' at %f,%f right\t# PS\n" , l + 2, z, xl, z);
+		if (!delay)
+			z = cround(CYperIt(TLB->latency1[l] - delay)) * 1000.0 / (calibdbl) MHz;
+		else
+			z = cround(CYperIt(TLB->latency2[l] - delay)) * 1000.0 / (calibdbl) MHz;
+		fprintf(fp, " set label %ld '(%1.4g)  ' at %f,%f right\t# PS\n", l + 2, z, xl, z);
 		fprintf(fp, "#set label %ld '(%1.4g)'   at %f,%f right\t# GIF\n", l + 2, z, xl, z);
 		fprintf(fp, "set arrow %ld from %f,%f to %f,%f nohead lt 0\n", l + 2, xl, z, xh, z);
 	}
@@ -222,7 +246,7 @@ void plotTLB(TLBinfo *TLB, caliblng **result, caliblng MHz, char *fn, FILE *fp, 
 		fprintf(fp, " , \\\n'%s.data' using 1:($%ld-%f) title '", fn, (6 * (x - 1)) + 1, NSperIt(delay));
 		if ((l > 0) && (result[0][x] == TLB->pagesize[l])) {
 			fprintf(fp, "\\{%ld\\}", result[0][x]);
-			while ((--l >= 0) && (result[0][x] == TLB->pagesize[l]));
+			while ((--l >= 0) && (result[0][x] == TLB->pagesize[l])) ;
 		} else {
 			fprintf(fp, "%ld", result[0][x]);
 		}
@@ -236,35 +260,43 @@ void plotTLB(TLBinfo *TLB, caliblng **result, caliblng MHz, char *fn, FILE *fp, 
 	free(flnm);
 }
 
-void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *fp, caliblng delay, cacheInfo *cache)
+void
+plotAsso(AssoInfo * Asso, caliblng ** result, caliblng MHz, char *fn, FILE *fp, caliblng delay, cacheInfo * cache)
 {
-	caliblng	l, ll = 0, x, xx = (result[0][0] & 0xffffff) - 1, y, yy = (result[0][0] >> 24) - 1;
-	calibdbl	xl, xh, yl, yh, z;
-	char	*s, *flnm=strdup(fn), top=0;
-	
-	xl = (calibdbl)result[2][0];
-	xh = (calibdbl)result[yy][0];
-        for (yl = 1.0;  yl > (caliblng)NSperIt(result[2][1]  - delay); yl /= 10);
-	for (yh = 1000; yh < (caliblng)NSperIt(result[yy][1] - delay); yh *= 10);
-	if ( ( log10(yh) - log10((caliblng)NSperIt(result[yy][1] - delay)) ) > ( log10((caliblng)NSperIt(result[1][1]  - delay)) - log10(yl) ) )	top = 1;
+	caliblng l, ll = 0, x, xx = (result[0][0] & 0xffffff) - 1, y, yy = (result[0][0] >> 24) - 1;
+	calibdbl xl, xh, yl, yh, z;
+	char *s, *flnm = strdup(fn), top = 0;
+
+	xl = (calibdbl) result[2][0];
+	xh = (calibdbl) result[yy][0];
+	for (yl = 1.0; yl > (caliblng) NSperIt(result[2][1] - delay); yl /= 10) ;
+	for (yh = 1000; yh < (caliblng) NSperIt(result[yy][1] - delay); yh *= 10) ;
+	if ((log10(yh) - log10((caliblng) NSperIt(result[yy][1] - delay))) > (log10((caliblng) NSperIt(result[1][1] - delay)) - log10(yl)))
+		top = 1;
 	fprintf(fp, "# Calibrator v%s\n", CALIB_VERSION);
 	fprintf(fp, "# (by Stefan.Manegold@cwi.nl, http://www.cwi.nl/~manegold/)\n");
-	if (delay)	fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
+	if (delay)
+		fprintf(fp, "# ( delay: %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
 	fprintf(fp, " set term postscript portrait enhanced\t# PS\n");
 	fprintf(fp, " set output '%s.ps'\t# PS\n", fn);
 	fprintf(fp, " set title '");
-	fprintf(fp, "%s", strtok(flnm,"_"));
-	while ((s=strtok(NULL,"_"))) fprintf(fp, "\\_%s", s);
+	fprintf(fp, "%s", strtok(flnm, "_"));
+	while ((s = strtok(NULL, "_")))
+		fprintf(fp, "\\_%s", s);
 	fprintf(fp, "'\t# PS\n");
 	ll += 1;
-	if(top)	fprintf(fp, " set label %ld '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.96 center\t# PS\n", ll, CALIB_VERSION);
-	  else	fprintf(fp, " set label %ld '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.02 center\t# PS\n", ll, CALIB_VERSION);
+	if (top)
+		fprintf(fp, " set label %ld '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.96 center\t# PS\n", ll, CALIB_VERSION);
+	else
+		fprintf(fp, " set label %ld '^{ Calibrator v%s (Stefan.Manegold\\@cwi.nl, www.cwi.nl/~manegold) }' at graph 0.5,graph 0.02 center\t# PS\n", ll, CALIB_VERSION);
 	fprintf(fp, "#set term gif transparent interlace small size 500, 707 # xFFFFFF x333333 x333333 x0055FF x005522 x660000 xFF0000 x00FF00 x0000FF\t# GIF\n");
 	fprintf(fp, "#set output '%s.gif'\t# GIF\n", fn);
 	fprintf(fp, "#set title '%s'\t# GIF\n", fn);
 	/* ll += 1; */
-        if(top)	fprintf(fp, "#set label %ld    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.97 center\t# GIF\n", ll, CALIB_VERSION);
-          else	fprintf(fp, "#set label %ld    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.03 center\t# GIF\n", ll, CALIB_VERSION);
+	if (top)
+		fprintf(fp, "#set label %ld    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.97 center\t# GIF\n", ll, CALIB_VERSION);
+	else
+		fprintf(fp, "#set label %ld    'Calibrator v%s (Stefan.Manegold@cwi.nl, www.cwi.nl/~manegold)'    at graph 0.5,graph 0.03 center\t# GIF\n", ll, CALIB_VERSION);
 	fprintf(fp, "set data style linespoints\n");
 	fprintf(fp, "set key below\n");
 	fprintf(fp, "set xlabel 'spots accessed'\n");
@@ -319,11 +351,13 @@ void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *f
 	}
 +*/
 	for (l = 1; l <= cache->levels; l++, s = ", ") {
-		if (!delay)	fprintf(fp, "%s'<L%ld>' %f", s, l, NSperIt(cache->latency1[l] - delay));
-			else	fprintf(fp, "%s'<L%ld>' %f", s, l, NSperIt(cache->latency2[l] - delay));
+		if (!delay)
+			fprintf(fp, "%s'<L%ld>' %f", s, l, NSperIt(cache->latency1[l] - delay));
+		else
+			fprintf(fp, "%s'<L%ld>' %f", s, l, NSperIt(cache->latency2[l] - delay));
 	}
 	for (y = 1; y <= yh; y *= 10, s = ", ") {
-		fprintf(fp, "%s'%1.4g' %ld", s, (calibdbl)(y * MHz) / 1000.0, y);
+		fprintf(fp, "%s'%1.4g' %ld", s, (calibdbl) (y * MHz) / 1000.0, y);
 	}
 	fprintf(fp, ")\n");
 /*+
@@ -337,10 +371,12 @@ void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *f
 	}
 +*/
 	for (l = 1; l <= cache->levels; l++) {
-		if (!delay)	z = cround(CYperIt(cache->latency1[l] - delay)) * 1000.0 / (calibdbl)MHz;
-			else	z = cround(CYperIt(cache->latency2[l] - delay)) * 1000.0 / (calibdbl)MHz;
+		if (!delay)
+			z = cround(CYperIt(cache->latency1[l] - delay)) * 1000.0 / (calibdbl) MHz;
+		else
+			z = cround(CYperIt(cache->latency2[l] - delay)) * 1000.0 / (calibdbl) MHz;
 		ll += 1;
-		fprintf(fp, " set label %ld '<L%ld>  ' at %f,%f right\t# PS\n" , ll, l, xl, z);
+		fprintf(fp, " set label %ld '<L%ld>  ' at %f,%f right\t# PS\n", ll, l, xl, z);
 		fprintf(fp, "#set label %ld '<L%ld>'   at %f,%f right\t# GIF\n", ll, l, xl, z);
 		fprintf(fp, "set arrow %ld from %f,%f to %f,%f nohead lt 0\n", ll, xl, z, xh, z);
 	}
@@ -353,7 +389,7 @@ void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *f
 			while ((--l >= 0) && (result[0][x] == Asso->pagesize[l]));
 		} else {
 +*/
-			fprintf(fp, "%ld", result[0][x]);
+		fprintf(fp, "%ld", result[0][x]);
 /*+
 		}
 +*/
@@ -366,4 +402,3 @@ void plotAsso(AssoInfo *Asso, caliblng **result, caliblng MHz, char *fn, FILE *f
 
 	free(flnm);
 }
-

@@ -1389,8 +1389,8 @@ int CMDprod_@1_@2(@2* res, BAT *b) {
 
 #include "algebra.proto.h"
 
-algebra_export ptr BATmax( BAT *b, ptr res );
-algebra_export ptr BATmin( BAT *b, ptr res );
+algebra_export ptr BATmax(BAT *b, ptr res);
+algebra_export ptr BATmin(BAT *b, ptr res);
 
 #endif
 @c
@@ -1503,29 +1503,32 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:aggregate_implementation(dbl)@
 @:aggregate_implementation(lng)@
 
-int CMDminany(ptr result, BAT *b) {
-	if (!ATOMlinear(b->ttype)) 
-	    return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n",
-			ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype)) 
-	    return (*(ptr*) result = BATmin(b, NULL))?GDK_SUCCEED:GDK_FAIL;
+int
+CMDminany(ptr result, BAT *b)
+{
+	if (!ATOMlinear(b->ttype))
+		return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
+	if (ATOMvarsized(b->ttype))
+		return (*(ptr *) result = BATmin(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
 	if (BATmin(b, result)) {
-	    if (b->ttype == TYPE_bat) 
-		*(BAT**) result = BATdescriptor(*(bat*) result);
-	    return GDK_SUCCEED;
+		if (b->ttype == TYPE_bat)
+			*(BAT **) result = BATdescriptor(*(bat *) result);
+		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
-int CMDmaxany(ptr result, BAT *b) {
-	if (!ATOMlinear(b->ttype)) 
-	    return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n",
-			ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype)) 
-	    return (*(ptr*) result = BATmax(b, NULL))?GDK_SUCCEED:GDK_FAIL;
+
+int
+CMDmaxany(ptr result, BAT *b)
+{
+	if (!ATOMlinear(b->ttype))
+		return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
+	if (ATOMvarsized(b->ttype))
+		return (*(ptr *) result = BATmax(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
 	if (BATmax(b, result)) {
-	    if (b->ttype == TYPE_bat) 
-		*(BAT**) result = BATdescriptor(*(bat*) result);
-	    return GDK_SUCCEED;
+		if (b->ttype == TYPE_bat)
+			*(BAT **) result = BATdescriptor(*(bat *) result);
+		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
@@ -1535,21 +1538,36 @@ This module contains just a wrapper implementations; since all described
 operations are part of the GDK kernel.
 
 @c
-int CMDselect1(BAT **result, BAT* b, ptr value) {
-	return (*result = BATselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
+int
+CMDselect1(BAT **result, BAT *b, ptr value)
+{
+	return (*result = BATselect(b, value, 0)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDuselect1(BAT **result, BAT* b, ptr value) {
-	return (*result = BATuselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
+
+int
+CMDuselect1(BAT **result, BAT *b, ptr value)
+{
+	return (*result = BATuselect(b, value, 0)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDselect(BAT **result, BAT *b, ptr low, ptr high) {
-	return (*result = BATselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
+
+int
+CMDselect(BAT **result, BAT *b, ptr low, ptr high)
+{
+	return (*result = BATselect(b, low, high)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDuselect(BAT **result, BAT *b, ptr low, ptr high) {
-	return (*result = BATuselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
+
+int
+CMDuselect(BAT **result, BAT *b, ptr low, ptr high)
+{
+	return (*result = BATuselect(b, low, high)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
+
+int
+CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
+{
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
+
 	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
 		GDKerror("CMDselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
@@ -1558,11 +1576,15 @@ int CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
 		GDKerror("CMDselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
-	return (*result = BATselect_(b, low, high, *l_in, *h_in))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BATselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
+
+int
+CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
+{
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
+
 	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
 		GDKerror("CMDuselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
@@ -1571,24 +1593,32 @@ int CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
 		GDKerror("CMDuselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
-	return (*result = BATuselect_(b, low, high, *l_in, *h_in))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BATuselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh) 
+
+int
+CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 {
-	return (*result = BATrestrict(b, hlow, hhigh, tlow, thigh))?
-		GDK_SUCCEED:GDK_FAIL;
+	return (*result = BATrestrict(b, hlow, hhigh, tlow, thigh)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate) {
-	return (*result = BATthetajoin(left, right, *mode, (*estimate == lng_nil)?oid_nil:(size_t)*estimate))?
-		GDK_SUCCEED:GDK_FAIL;
+
+int
+CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate)
+{
+	return (*result = BATthetajoin(left, right, *mode, (*estimate == lng_nil) ? oid_nil : (size_t) * estimate)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode) {
+
+int
+CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode)
+{
 	BATtheta(inner, outer, left, right, *mode);
 	return GDK_SUCCEED;
 }
-int CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus) {
-	return (*result = BATbandjoin(left, right, minus, plus))?
-		GDK_SUCCEED:GDK_FAIL;
+
+int
+CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus)
+{
+	return (*result = BATbandjoin(left, right, minus, plus)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @-
@@ -1615,27 +1645,29 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 	return (*result = @2(b, *param))?GDK_SUCCEED:GDK_FAIL;
 }
 @c
-@:unaryint(count, BATcount)@
-@:unary(histogram, BAThistogram)@
-@:unary(sort, BATsort)@
-@:unary(sort_rev, BATsort_rev)@
-@:unary(number, BATnumber)@
-@:unary(copy, BATcopy)@
-@:unary(kunique, BATkunique)@
-@:unary(sunique, BATsunique)@
-@:binary(semijoin, BATsemijoin)@
-@:binary(cross, BATcross)@
-@:binaryestimate(join, BATjoin)@
-@:binaryestimate(outerjoin, BATouterjoin)@
-@:binary(sunion, BATsunion)@
-@:binary(kunion, BATkunion)@
-@:binary(sintersect, BATsintersect)@
-@:binary(kintersect, BATkintersect)@
-@:binary(sdiff, BATsdiff)@
-@:binary(kdiff, BATkdiff)@
-@:binaryint(sample, BATsample)@
+@:unaryint(count,BATcount)@
+@:unary(histogram,BAThistogram)@
+@:unary(sort,BATsort)@
+@:unary(sort_rev,BATsort_rev)@
+@:unary(number,BATnumber)@
+@:unary(copy,BATcopy)@
+@:unary(kunique,BATkunique)@
+@:unary(sunique,BATsunique)@
+@:binary(semijoin,BATsemijoin)@
+@:binary(cross,BATcross)@
+@:binaryestimate(join,BATjoin)@
+@:binaryestimate(outerjoin,BATouterjoin)@
+@:binary(sunion,BATsunion)@
+@:binary(kunion,BATkunion)@
+@:binary(sintersect,BATsintersect)@
+@:binary(kintersect,BATkintersect)@
+@:binary(sdiff,BATsdiff)@
+@:binary(kdiff,BATkdiff)@
+@:binaryint(sample,BATsample)@
 
-int CMDcount_nil(int *result, BAT *b, bit *ignore_nils) {
+int
+CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
+{
 	if (*ignore_nils)
 		*result = (int) BATcount_no_nil(b);
 	else
@@ -1643,37 +1675,61 @@ int CMDcount_nil(int *result, BAT *b, bit *ignore_nils) {
 	return GDK_SUCCEED;
 }
 
-int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
-        return (*result = BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;
+int
+CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize)
+{
+	return (*result = BATgroup(b, *start, *incr, *grpsize)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int CMDproject(BAT** res, BAT *b, ptr p, int t) {
-	return (*res=BATconst(b, t, p))?GDK_SUCCEED:GDK_FAIL;
+int
+CMDproject(BAT **res, BAT *b, ptr p, int t)
+{
+	return (*res = BATconst(b, t, p)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int CMDmark(BAT** res, BAT *b, oid *base){
-	return (*res=BATmark(b, *base))?GDK_SUCCEED:GDK_FAIL;
+int
+CMDmark(BAT **res, BAT *b, oid *base)
+{
+	return (*res = BATmark(b, *base)) ? GDK_SUCCEED : GDK_FAIL;
 }
-int CMDmark_default(BAT** res, BAT *b){
+
+int
+CMDmark_default(BAT **res, BAT *b)
+{
 	oid base = OIDnew(BATcount(b));
+
 	return CMDmark(res, b, &base);
 }
-int CMDhashsplit(BAT **res, BAT *b, int *nfrag){
-	return (*res=BAThashsplit(b, *nfrag, FALSE))?GDK_SUCCEED:GDK_FAIL;
-}
-int CMDuhashsplit(BAT **res, BAT *b, int *nfrag){
-	return (*res=BAThashsplit(b, *nfrag, TRUE))?GDK_SUCCEED:GDK_FAIL;
-}
-int CMDrangesplit(BAT **res, BAT *b, int *nfrag){
-	return (*res=BATrangesplit(b, *nfrag, FALSE))?GDK_SUCCEED:GDK_FAIL;
-}
-int CMDurangesplit(BAT **res, BAT *b, int *nfrag){
-	return (*res=BATrangesplit(b, *nfrag, TRUE))?GDK_SUCCEED:GDK_FAIL;
+
+int
+CMDhashsplit(BAT **res, BAT *b, int *nfrag)
+{
+	return (*res = BAThashsplit(b, *nfrag, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int CMDhistogram_rev(BAT **bn, BAT *b) {
+int
+CMDuhashsplit(BAT **res, BAT *b, int *nfrag)
+{
+	return (*res = BAThashsplit(b, *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDrangesplit(BAT **res, BAT *b, int *nfrag)
+{
+	return (*res = BATrangesplit(b, *nfrag, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDurangesplit(BAT **res, BAT *b, int *nfrag)
+{
+	return (*res = BATrangesplit(b, *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDhistogram_rev(BAT **bn, BAT *b)
+{
 	return CMDhistogram(bn, BATmirror(b));
-} 
+}
 
 
 @- Substring Select
@@ -1681,49 +1737,57 @@ The string pattern matching routine has been added. It should be
 dynamically linked.
 A simple string matcher is included. It should be refined later on
 @c
-INLINE int like(char *x, char *y, int ylen)
+INLINE int
+like(char *x, char *y, int ylen)
 {
-        char *r;
-        if (x == (char *)NULL) {
-                return 0;
-        }
-        for (r = x+strlen(x)-ylen; x <= r; x++) {
-                int ok = 1;
-                char *s = x;
-                char *q;
-                for (q = y; *q; q++, s++)
-                    if (*q != tolower(*s)) {
-                        ok = 0; break;
-                    }
-                if (ok) return 1;
-        }
-        return 0;
+	char *r;
+
+	if (x == (char *) NULL) {
+		return 0;
+	}
+	for (r = x + strlen(x) - ylen; x <= r; x++) {
+		int ok = 1;
+		char *s = x;
+		char *q;
+
+		for (q = y; *q; q++, s++)
+			if (*q != tolower(*s)) {
+				ok = 0;
+				break;
+			}
+		if (ok)
+			return 1;
+	}
+	return 0;
 }
 
-int CMDlike(BAT **ret, BAT* b, str s) {
-        BAT	*c = BATnew(BAThtype(b), TYPE_str, BATcount(b)/10);
-	str	t = GDKstrdup(s);
-	BUN	u, v;
-	int 	xx, yy=0;
+int
+CMDlike(BAT **ret, BAT *b, str s)
+{
+	BAT *c = BATnew(BAThtype(b), TYPE_str, BATcount(b) / 10);
+	str t = GDKstrdup(s);
+	BUN u, v;
+	int xx, yy = 0;
 
-	if( c == NULL ) return GDK_FAIL;
-	for(s=t; *s; s++,yy++)
+	if (c == NULL)
+		return GDK_FAIL;
+	for (s = t; *s; s++, yy++)
 		*s = tolower(*s);
-	
+
 	if (b->hvarsized) {
-	    BATloopFast(b, u, v, xx) 
-		if (like(BUNtvar(b, u), t, yy)) 
-		    if (BUNfastins(c, BUNhvar(b, u), BUNtvar(b, u)) == NULL) {
-			BBPreclaim(c);
-			return GDK_FAIL;
-		    }
+		BATloopFast(b, u, v, xx)
+		    if (like(BUNtvar(b, u), t, yy))
+			if (BUNfastins(c, BUNhvar(b, u), BUNtvar(b, u)) == NULL) {
+				BBPreclaim(c);
+				return GDK_FAIL;
+			}
 	} else {
-	    BATloopFast(b, u, v, xx) 
-		if (like(BUNtvar(b, u), t, yy)) 
-		    if (BUNfastins(c, BUNhloc(b, u), BUNtvar(b, u)) == NULL) {
-			BBPreclaim(c);
-			return GDK_FAIL;
-		    }
+		BATloopFast(b, u, v, xx)
+		    if (like(BUNtvar(b, u), t, yy))
+			if (BUNfastins(c, BUNhloc(b, u), BUNtvar(b, u)) == NULL) {
+				BBPreclaim(c);
+				return GDK_FAIL;
+			}
 	}
 	c->hsorted = BAThordered(b);
 	c->tsorted = BATtordered(b);
@@ -1733,51 +1797,63 @@ int CMDlike(BAT **ret, BAT* b, str s) {
 
 @- BAT slice
 @c
-int CMDslice(BAT **retval, BAT *b, int *start, int *end){
+int
+CMDslice(BAT **retval, BAT *b, int *start, int *end)
+{
 	/* the internal BATslice requires exclusive end */
-	if (*start < 0){
-                GDKerror("CMDslice: start position of slice should >= 0\n");
-                return GDK_FAIL;
-        }
-		
-	return (*retval = BATslice(b, (size_t)*start, (size_t)*end+1))?
-			GDK_SUCCEED:GDK_FAIL;
+	if (*start < 0) {
+		GDKerror("CMDslice: start position of slice should >= 0\n");
+		return GDK_FAIL;
+	}
+
+	return (*retval = BATslice(b, (size_t) * start, (size_t) * end + 1)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @- BUN Get/Fetch
 @c
-int CMDposition(int *retval, BAT *b, ptr val){
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) val)->batCacheid:val;
+int
+CMDposition(int *retval, BAT *b, ptr val)
+{
+	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
 	ptr v = BUNfnd(b, p);
-        if (v == 0) {
-                GDKerror("CMDposition: item not found\n");
-                return GDK_FAIL;
-        }
-        *retval = BUNindex(b, v)- BUNindex(b, BUNfirst(b));
-        return GDK_SUCCEED;
-}
-int CMDpositionBUN(int *retval, BAT *b, ptr val, ptr tval){
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) val)->batCacheid:val;
-	ptr o = (b->ttype == TYPE_bat)?(ptr) &((BAT*) tval)->batCacheid:tval;
-	ptr v = BUNlocate(b, p,o);
-        if (v == 0) {
-                GDKerror("CMDposition: item not found\n");
-                return GDK_FAIL;
-        }
-        *retval = BUNindex(b, v)- BUNindex(b, BUNfirst(b));
-        return GDK_SUCCEED;
+
+	if (v == 0) {
+		GDKerror("CMDposition: item not found\n");
+		return GDK_FAIL;
+	}
+	*retval = BUNindex(b, v) - BUNindex(b, BUNfirst(b));
+	return GDK_SUCCEED;
 }
 
-int CMDfetchbat(BAT** ret, BAT *b, BAT *s){
-	return (*ret = BATfetch(b, s))?GDK_SUCCEED:GDK_FAIL;
+int
+CMDpositionBUN(int *retval, BAT *b, ptr val, ptr tval)
+{
+	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
+	ptr o = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) tval)->batCacheid : tval;
+	ptr v = BUNlocate(b, p, o);
+
+	if (v == 0) {
+		GDKerror("CMDposition: item not found\n");
+		return GDK_FAIL;
+	}
+	*retval = BUNindex(b, v) - BUNindex(b, BUNfirst(b));
+	return GDK_SUCCEED;
 }
 
-static int doCMDfetch(ptr ret, BAT *b, size_t i){
-        if (i >= BATcount(b)) {
-                GDKerror("CMDfetch: idx out of range\n");
-                return GDK_FAIL;
-        }
-        i += BUNindex(b, BUNfirst(b));
+int
+CMDfetchbat(BAT **ret, BAT *b, BAT *s)
+{
+	return (*ret = BATfetch(b, s)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+static int
+doCMDfetch(ptr ret, BAT *b, size_t i)
+{
+	if (i >= BATcount(b)) {
+		GDKerror("CMDfetch: idx out of range\n");
+		return GDK_FAIL;
+	}
+	i += BUNindex(b, BUNfirst(b));
 	@:putTail(BUNptr(b,i))@
 @= putTail
 	if (b->theap.base) {
@@ -1806,44 +1882,58 @@ static int doCMDfetch(ptr ret, BAT *b, size_t i){
 	    }
 	}
 @c
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
-int CMDfetch(ptr ret, BAT *b, int *pos){
-	return doCMDfetch(ret, b, (size_t) *pos);
+int
+CMDfetch(ptr ret, BAT *b, int *pos)
+{
+	return doCMDfetch(ret, b, (size_t) * pos);
 }
 
-int CMDfetchoid(ptr ret, BAT *b, oid *pos){
+int
+CMDfetchoid(ptr ret, BAT *b, oid *pos)
+{
 	if (b->hseqbase == oid_nil) {
-                GDKerror("CMDfetchoid: void lookup on uninitialized column.\n");
-                return GDK_FAIL;
-        }
+		GDKerror("CMDfetchoid: void lookup on uninitialized column.\n");
+		return GDK_FAIL;
+	}
 	return doCMDfetch(ret, b, (size_t) (*pos - b->hseqbase));
 }
 
-int CMDexist(bit *ret, BAT* b, ptr val){ 
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) val)->batCacheid:val;
+int
+CMDexist(bit *ret, BAT *b, ptr val)
+{
+	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
 	BUN q = BUNfnd(b, p);
-	*ret = q?1:0;
-        return GDK_SUCCEED;
-}
-int CMDexistBUN(bit *ret, BAT* b, ptr val, ptr tval){ 
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) val)->batCacheid:val;
-	ptr o = (b->ttype == TYPE_bat)?(ptr) &((BAT*) tval)->batCacheid:tval;
-	BUN q = BUNlocate(b, p, o);
-	*ret = q?1:0;
-        return GDK_SUCCEED;
+
+	*ret = q ? 1 : 0;
+	return GDK_SUCCEED;
 }
 
-int CMDfind(ptr ret, BAT* b, ptr val){ 
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) val)->batCacheid:val;
+int
+CMDexistBUN(bit *ret, BAT *b, ptr val, ptr tval)
+{
+	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
+	ptr o = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) tval)->batCacheid : tval;
+	BUN q = BUNlocate(b, p, o);
+
+	*ret = q ? 1 : 0;
+	return GDK_SUCCEED;
+}
+
+int
+CMDfind(ptr ret, BAT *b, ptr val)
+{
+	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
 	BUN q = BUNfnd(b, p);
+
 	if (q == NULL) {
 		GDKerror("CMDfind: value not found.\n");
 		return GDK_FAIL;
 	}
 	@:putTail(q)@
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 @= find_bounds
@@ -1959,43 +2049,48 @@ int CMDfind_@2(oid *ret, BAT *b, ptr v) {
 }
 @c
 @:find_bounds(min,higher,<,last,-)@
-@:find_bounds(max,lower,>,first,+,if (idx && (p >= BUNlast(b) || ATOMcmp(b->htype, v, BUNhead(b,p)))) idx--)@
+@:find_bounds(max,lower,>,first,+,if (idx && (p >= BUNlast(b) || ATOMcmp(b->htype, v, BUNhead(b, p)))) idx--) @
 
-int CMDmerge(BAT** ret, BAT *b) {
+int
+CMDmerge(BAT **ret, BAT *b)
+{
 	int n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_lng, TYPE_void, n);
-	BUN p,q;
+	BUN p, q;
 	int xx;
-	lng *r = (lng*)BUNhead(bn, BUNfirst(bn));
-	
+	lng *r = (lng *) BUNhead(bn, BUNfirst(bn));
+
 	BATloopFast(b, p, q, xx) {
-		oid hp = *(oid*)BUNhead(b,p);
-		oid tp = *(oid*)BUNtail(b,p);
-		
-		*r++ = (((lng)hp)<<32) + tp;
+		oid hp = *(oid *) BUNhead(b, p);
+		oid tp = *(oid *) BUNtail(b, p);
+
+		*r++ = (((lng) hp) << 32) + tp;
 	}
-        bn->batBuns->free = (BUN)r - bn->batBuns->base;
-        if (!bn->batDirty) bn->batDirty = TRUE;
-	
+	bn->batBuns->free = (BUN) r - bn->batBuns->base;
+	if (!bn->batDirty)
+		bn->batDirty = TRUE;
+
 	return GDK_SUCCEED;
 }
 
-int CMDsplit(BAT** ret, BAT *b) {
+int
+CMDsplit(BAT **ret, BAT *b)
+{
 	int n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_oid, TYPE_oid, n);
 	int i;
-	lng *r = (lng*)BUNhead(b, BUNfirst(b));
-	
-	for(i=0;i<n;i++, r++) {
-		oid hp = (int)(*r>>32);
-		oid tp = (int)*r;
-		
+	lng *r = (lng *) BUNhead(b, BUNfirst(b));
+
+	for (i = 0; i < n; i++, r++) {
+		oid hp = (int) (*r >> 32);
+		oid tp = (int) *r;
+
 		bunfastins(bn, &hp, &tp);
 	}
-	
+
 	bn->hsorted = b->hsorted;
 	return GDK_SUCCEED;
-bunins_failed:
+      bunins_failed:
 	BBPreclaim(bn);
 	return GDK_FAIL;
 }

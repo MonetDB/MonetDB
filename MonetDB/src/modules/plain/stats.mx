@@ -69,42 +69,42 @@ struct _StatOps_t;
 typedef struct _StatOps_t StatOps_t;
 
 typedef struct {
-  StatOps_t	*st_ops;		/* Operations */
-  char		*st_name;		/* Name of this object */
-  gdk_uint32	st_nresets;		/* Number of resets */
-  gdk_uint64	st_nadds;		/* Number of adds */
-  gdk_uint64	st_sum;			/* Sum of values */
-  gdk_uint64	st_sumsq;		/* Sum of squares */
-  gdk_uint64	st_min;			/* Minimum value */
-  gdk_uint64	st_max;			/* Maximum value */
+	StatOps_t *st_ops;	/* Operations */
+	char *st_name;		/* Name of this object */
+	gdk_uint32 st_nresets;	/* Number of resets */
+	gdk_uint64 st_nadds;	/* Number of adds */
+	gdk_uint64 st_sum;	/* Sum of values */
+	gdk_uint64 st_sumsq;	/* Sum of squares */
+	gdk_uint64 st_min;	/* Minimum value */
+	gdk_uint64 st_max;	/* Maximum value */
 } Stats_t;
 
 typedef struct {
-  Stats_t	sh_stats;		/* Encapsulate a stats object */
-  gdk_uint32	sh_numbins;		/* Number of bins */
-  gdk_uint64	sh_binlo;		/* Low bin */
-  gdk_uint64	sh_binhi;		/* High bin */
-  gdk_uint32	*sh_bins;		/* The bins themselves */
-  gdk_uint64	sh_binwidth;		/* Width of a bin */
+	Stats_t sh_stats;	/* Encapsulate a stats object */
+	gdk_uint32 sh_numbins;	/* Number of bins */
+	gdk_uint64 sh_binlo;	/* Low bin */
+	gdk_uint64 sh_binhi;	/* High bin */
+	gdk_uint32 *sh_bins;	/* The bins themselves */
+	gdk_uint64 sh_binwidth;	/* Width of a bin */
 } StatsHistogram_t;
 
 struct _StatOps_t {
-  void     (*Reset)(Stats_t *st);
-  void     (*Add)(Stats_t *st, gdk_uint64 value);
-  void     (*Report)(Stats_t *st, FILE *out);
-  gdk_uint32 (*Resets)(Stats_t *st);
-  gdk_uint64 (*NAdds)(Stats_t *st);
-  gdk_uint64 (*Min)(Stats_t *st);
-  gdk_uint64 (*Max)(Stats_t *st);
-  gdk_uint64 (*Mean)(Stats_t *st);
-  gdk_uint64 (*Stddev)(Stats_t *st);
-  gdk_uint64 (*Variance)(Stats_t *st);
-  gdk_uint64 (*Conf95)(Stats_t *st);
-  gdk_uint64 (*RelConf95)(Stats_t *st);
-  gdk_uint64 (*Total)(Stats_t *st);
-  char *   (*Name)(Stats_t *st);
-  void	   (*SetName)(Stats_t *st, char *name);
-  void     (*Dispose)(Stats_t *st);
+	void (*Reset) (Stats_t *st);
+	void (*Add) (Stats_t *st, gdk_uint64 value);
+	void (*Report) (Stats_t *st, FILE *out);
+	gdk_uint32 (*Resets) (Stats_t *st);
+	gdk_uint64 (*NAdds) (Stats_t *st);
+	gdk_uint64 (*Min) (Stats_t *st);
+	gdk_uint64 (*Max) (Stats_t *st);
+	gdk_uint64 (*Mean) (Stats_t *st);
+	gdk_uint64 (*Stddev) (Stats_t *st);
+	gdk_uint64 (*Variance) (Stats_t *st);
+	gdk_uint64 (*Conf95) (Stats_t *st);
+	gdk_uint64 (*RelConf95) (Stats_t *st);
+	gdk_uint64 (*Total) (Stats_t *st);
+	char *(*Name) (Stats_t *st);
+	void (*SetName) (Stats_t *st, char *name);
+	void (*Dispose) (Stats_t *st);
 };
 
 #define StatsReset(st)		((Stats_t *)st)->st_ops->Reset((st))
@@ -115,12 +115,12 @@ struct _StatOps_t {
 #define StatsDispose(st)	((Stats_t *)st)->st_ops->Dispose((st))
 #define StatsMean(st)		((Stats_t *)st)->st_ops->Mean((st))
 
-static void     Reset_m(Stats_t *st);
-static void     HistogramReset_m(StatsHistogram_t *st);
-static void     Add_m(Stats_t *st, gdk_uint64 value);
-static void     HistogramAdd_m(StatsHistogram_t *st, gdk_uint64 value);
-static void     Report_m(Stats_t *st, FILE *out);
-static void     HistogramReport_m(StatsHistogram_t *, FILE *out);
+static void Reset_m(Stats_t *st);
+static void HistogramReset_m(StatsHistogram_t *st);
+static void Add_m(Stats_t *st, gdk_uint64 value);
+static void HistogramAdd_m(StatsHistogram_t *st, gdk_uint64 value);
+static void Report_m(Stats_t *st, FILE *out);
+static void HistogramReport_m(StatsHistogram_t *, FILE *out);
 static gdk_uint32 Resets_m(Stats_t *st);
 static gdk_uint64 NAdds_m(Stats_t *st);
 static gdk_uint64 Min_m(Stats_t *st);
@@ -131,327 +131,324 @@ static gdk_uint64 Variance_m(Stats_t *st);
 static gdk_uint64 Conf95_m(Stats_t *st);
 static gdk_uint64 RelConf95_m(Stats_t *st);
 static gdk_uint64 Total_m(Stats_t *st);
-static void	SetName_m(Stats_t *st, char *name);
-static char *   Name_m(Stats_t *st);
-static void     Dispose_m(Stats_t *st);
-static void     HistogramDispose_m(StatsHistogram_t *st);
+static void SetName_m(Stats_t *st, char *name);
+static char *Name_m(Stats_t *st);
+static void Dispose_m(Stats_t *st);
+static void HistogramDispose_m(StatsHistogram_t *st);
 
 static StatOps_t statops = {
-  Reset_m,
-  Add_m,
-  Report_m,
-  Resets_m,
-  NAdds_m,
-  Min_m,
-  Max_m,
-  Mean_m,
-  Stddev_m,
-  Variance_m,
-  Conf95_m,
-  RelConf95_m,
-  Total_m,
-  Name_m,
-  SetName_m,
-  Dispose_m,
+	Reset_m,
+	Add_m,
+	Report_m,
+	Resets_m,
+	NAdds_m,
+	Min_m,
+	Max_m,
+	Mean_m,
+	Stddev_m,
+	Variance_m,
+	Conf95_m,
+	RelConf95_m,
+	Total_m,
+	Name_m,
+	SetName_m,
+	Dispose_m,
 };
 
 static StatOps_t stathistops = {
-  (void (*)(Stats_t *))HistogramReset_m,
-  (void (*)(Stats_t *, gdk_uint64))HistogramAdd_m,
-  (void (*)(Stats_t *, FILE *))HistogramReport_m,
-  Resets_m,
-  NAdds_m,
-  Min_m,
-  Max_m,
-  Mean_m,
-  Stddev_m,
-  Variance_m,
-  Conf95_m,
-  RelConf95_m,
-  Total_m,
-  Name_m,
-  SetName_m,
-  (void (*)(Stats_t *))HistogramDispose_m,
+	(void (*)(Stats_t *)) HistogramReset_m,
+	(void (*)(Stats_t *, gdk_uint64)) HistogramAdd_m,
+	(void (*)(Stats_t *, FILE *)) HistogramReport_m,
+	Resets_m,
+	NAdds_m,
+	Min_m,
+	Max_m,
+	Mean_m,
+	Stddev_m,
+	Variance_m,
+	Conf95_m,
+	RelConf95_m,
+	Total_m,
+	Name_m,
+	SetName_m,
+	(void (*)(Stats_t *)) HistogramDispose_m,
 };
 
 int
 stats_new(ptr *_st, str name)
 {
-  Stats_t *st;
+	Stats_t *st;
 
-  /* Allocate private state */
-  st = (Stats_t *)GDKmalloc(sizeof(*st));
-  if (st == NULL)
-    return GDK_FAIL;
-  
-  Reset_m(st);
-  st->st_name    = (char *)GDKstrdup(name);
-  st->st_nresets = 0;
-  st->st_ops	 = &statops;
-  *_st = (ptr)st;
-  return GDK_SUCCEED;
+	/* Allocate private state */
+	st = (Stats_t *) GDKmalloc(sizeof(*st));
+	if (st == NULL)
+		return GDK_FAIL;
+
+	Reset_m(st);
+	st->st_name = (char *) GDKstrdup(name);
+	st->st_nresets = 0;
+	st->st_ops = &statops;
+	*_st = (ptr) st;
+	return GDK_SUCCEED;
 }
 
 int
 stats_histogram_new(ptr *_st, str name, int *bins, int *binwidth, lng *binlo)
 {
-  StatsHistogram_t *st;
+	StatsHistogram_t *st;
 
-  /* Allocate private state */
-  st = (StatsHistogram_t *)GDKmalloc(sizeof(*st));
-  if (st == NULL) return GDK_FAIL;
-  
-  st->sh_numbins  = *bins;
-  st->sh_binlo    = *binlo;
-  st->sh_binhi    = *binlo + *bins * *binwidth;
-  st->sh_bins	  = (gdk_uint32 *)GDKmalloc(*bins * sizeof(gdk_uint32));
-  memset(st->sh_bins, 0, *bins * sizeof(gdk_uint32));
-  st->sh_binwidth = *binwidth;
-  HistogramReset_m(st);
+	/* Allocate private state */
+	st = (StatsHistogram_t *) GDKmalloc(sizeof(*st));
+	if (st == NULL)
+		return GDK_FAIL;
 
-  st->sh_stats.st_name    = (char *)GDKstrdup(name);
-  st->sh_stats.st_nresets = 0;
-  st->sh_stats.st_ops     = &stathistops;
+	st->sh_numbins = *bins;
+	st->sh_binlo = *binlo;
+	st->sh_binhi = *binlo + *bins * *binwidth;
+	st->sh_bins = (gdk_uint32 *) GDKmalloc(*bins * sizeof(gdk_uint32));
+	memset(st->sh_bins, 0, *bins * sizeof(gdk_uint32));
+	st->sh_binwidth = *binwidth;
+	HistogramReset_m(st);
 
-  *_st = (ptr)st;
-  return GDK_SUCCEED;
+	st->sh_stats.st_name = (char *) GDKstrdup(name);
+	st->sh_stats.st_nresets = 0;
+	st->sh_stats.st_ops = &stathistops;
+
+	*_st = (ptr) st;
+	return GDK_SUCCEED;
 }
 
 static void
 Reset_m(Stats_t *st)
 {
-  st->st_nresets++;
-  st->st_nadds = 0;
-  st->st_sum   = 0;
-  st->st_sumsq = 0;
-  st->st_min   = 0;
-  st->st_max   = 0;
+	st->st_nresets++;
+	st->st_nadds = 0;
+	st->st_sum = 0;
+	st->st_sumsq = 0;
+	st->st_min = 0;
+	st->st_max = 0;
 }
 
 static void
 HistogramReset_m(StatsHistogram_t *st)
 {
-  gdk_uint32 n;
-  
-  Reset_m((Stats_t *)st);
-  for (n = 0; n != st->sh_numbins; n++)
-    st->sh_bins[n] = 0;
+	gdk_uint32 n;
+
+	Reset_m((Stats_t *) st);
+	for (n = 0; n != st->sh_numbins; n++)
+		st->sh_bins[n] = 0;
 }
 
 int
 stats_add(ptr *_st, lng *value)
 {
-  StatsAdd(*_st, *value);
-  return GDK_SUCCEED;
+	StatsAdd(*_st, *value);
+	return GDK_SUCCEED;
 }
 
 static void
 Add_m(Stats_t *st, gdk_uint64 value)
 {
-  st->st_nadds++;
-  st->st_sum   += value;
-  st->st_sumsq += value * value;
+	st->st_nadds++;
+	st->st_sum += value;
+	st->st_sumsq += value * value;
 
-  if (st->st_nadds == 1) {
-    st->st_min = value;
-    st->st_max = value;
-  }
-  else {
-    if (value < st->st_min)
-      st->st_min = value;
-    if (value > st->st_max)
-      st->st_max = value;
-  }
+	if (st->st_nadds == 1) {
+		st->st_min = value;
+		st->st_max = value;
+	} else {
+		if (value < st->st_min)
+			st->st_min = value;
+		if (value > st->st_max)
+			st->st_max = value;
+	}
 }
 
 static void
 HistogramAdd_m(StatsHistogram_t *st, gdk_uint64 value)
 {
-  gdk_uint64 bin;	/* 32 might be enough, but 64 shuts up the compiler */
+	gdk_uint64 bin;		/* 32 might be enough, but 64 shuts up the compiler */
 
-  Add_m((Stats_t *)st, value);
-  bin = 
-    (value < st->sh_binlo)? 0:
-    ((value >= st->sh_binhi)? 
-     st->sh_numbins - 1: (value - st->sh_binlo) / st->sh_binwidth);
-  st->sh_bins[bin]++;
+	Add_m((Stats_t *) st, value);
+	bin = (value < st->sh_binlo) ? 0 : ((value >= st->sh_binhi) ? st->sh_numbins - 1 : (value - st->sh_binlo) / st->sh_binwidth);
+	st->sh_bins[bin]++;
 }
 
 int
 stats_report(ptr *_st, str outfile)
 {
-  FILE *fp;
+	FILE *fp;
 
-  if ((fp = fopen(outfile, "a")) == NULL) {
-    GDKerror("stats_report: Cannot open %s for writing: %s\n",
-	     outfile, strerror(errno));
-    return GDK_FAIL;
-  }
-  StatsReport(*_st, fp);
-  (void)fclose(fp);
-  return GDK_SUCCEED;
+	if ((fp = fopen(outfile, "a")) == NULL) {
+		GDKerror("stats_report: Cannot open %s for writing: %s\n", outfile, strerror(errno));
+		return GDK_FAIL;
+	}
+	StatsReport(*_st, fp);
+	(void) fclose(fp);
+	return GDK_SUCCEED;
 }
 
 static void
 Report_m(Stats_t *st, FILE *out)
 {
-  fprintf(out, "%s.count = " ULLFMT "\n", st->st_name, NAdds_m(st));
-  fprintf(out, "%s.min = " ULLFMT "\n", st->st_name, Min_m(st));
-  fprintf(out, "%s.max = " ULLFMT "\n", st->st_name, Max_m(st));
-  fprintf(out, "%s.mean = " ULLFMT "\n", st->st_name, Mean_m(st));
-  fprintf(out, "%s.stddev = " ULLFMT "\n", st->st_name, Stddev_m(st));
-  fprintf(out, "%s.variance = " ULLFMT "\n", st->st_name, Variance_m(st));
-  fprintf(out, "%s.conf95 = " ULLFMT "\n", st->st_name, Conf95_m(st));
-  fprintf(out, "%s.relconf95 = " ULLFMT "\n", st->st_name, RelConf95_m(st));
-  fprintf(out, "%s.total = " ULLFMT "\n", st->st_name, Total_m(st));
-  fflush(out);
+	fprintf(out, "%s.count = " ULLFMT "\n", st->st_name, NAdds_m(st));
+	fprintf(out, "%s.min = " ULLFMT "\n", st->st_name, Min_m(st));
+	fprintf(out, "%s.max = " ULLFMT "\n", st->st_name, Max_m(st));
+	fprintf(out, "%s.mean = " ULLFMT "\n", st->st_name, Mean_m(st));
+	fprintf(out, "%s.stddev = " ULLFMT "\n", st->st_name, Stddev_m(st));
+	fprintf(out, "%s.variance = " ULLFMT "\n", st->st_name, Variance_m(st));
+	fprintf(out, "%s.conf95 = " ULLFMT "\n", st->st_name, Conf95_m(st));
+	fprintf(out, "%s.relconf95 = " ULLFMT "\n", st->st_name, RelConf95_m(st));
+	fprintf(out, "%s.total = " ULLFMT "\n", st->st_name, Total_m(st));
+	fflush(out);
 }
 
 static void
 HistogramReport_m(StatsHistogram_t *st, FILE *out)
 {
-  gdk_uint32 n;
-  gdk_uint64 sum, nadds;
+	gdk_uint32 n;
+	gdk_uint64 sum, nadds;
 
-  nadds = st->sh_stats.st_nadds;
-  Report_m((Stats_t *)st, out);
-  sum = 0;
-  if (nadds > 0) {
-    for (n = 0; n != st->sh_numbins; n++) {
-      gdk_uint32 cumulative;
-      
-      if (n > 0 && n < st->sh_numbins - 1 && st->sh_bins[n] == 0 && 
-	  st->sh_bins[n - 1] == 0 && st->sh_bins[n + 1] == 0) 
-	continue;
+	nadds = st->sh_stats.st_nadds;
+	Report_m((Stats_t *) st, out);
+	sum = 0;
+	if (nadds > 0) {
+		for (n = 0; n != st->sh_numbins; n++) {
+			gdk_uint32 cumulative;
 
-      sum        += st->sh_bins[n];
-      cumulative  = (gdk_uint32)((sum * 100) / nadds);
-      
-      /* Print in two steps, it seems printf is buggy when dealing
-	 with 64 bits numbers (and I didn't feel like debugging) */
-      fprintf(out, "%s.cumulative = \t" ULLFMT "\t", st->sh_stats.st_name,
-	      st->sh_binlo + n * st->sh_binwidth);
-      fprintf(out, "%u.%02u\n", cumulative / 100, cumulative % 100);
-    }
-  
-    for (n = 0; n != st->sh_numbins; n++) {
-      if (n > 0 && n < st->sh_numbins - 1 && st->sh_bins[n] == 0 && 
-	  st->sh_bins[n - 1] == 0 && st->sh_bins[n + 1] == 0) 
-	continue;
-      
-      fprintf(out, "%s.density = \t" ULLFMT "\t", st->sh_stats.st_name,
-	      st->sh_binlo + n * st->sh_binwidth);
-      fprintf(out, "%u\n", st->sh_bins[n]);
-    }
-  }
-  fflush(out);
+			if (n > 0 && n < st->sh_numbins - 1 && st->sh_bins[n] == 0 && st->sh_bins[n - 1] == 0 && st->sh_bins[n + 1] == 0)
+				continue;
+
+			sum += st->sh_bins[n];
+			cumulative = (gdk_uint32) ((sum * 100) / nadds);
+
+			/* Print in two steps, it seems printf is buggy when dealing
+			   with 64 bits numbers (and I didn't feel like debugging) */
+			fprintf(out, "%s.cumulative = \t" ULLFMT "\t", st->sh_stats.st_name, st->sh_binlo + n * st->sh_binwidth);
+			fprintf(out, "%u.%02u\n", cumulative / 100, cumulative % 100);
+		}
+
+		for (n = 0; n != st->sh_numbins; n++) {
+			if (n > 0 && n < st->sh_numbins - 1 && st->sh_bins[n] == 0 && st->sh_bins[n - 1] == 0 && st->sh_bins[n + 1] == 0)
+				continue;
+
+			fprintf(out, "%s.density = \t" ULLFMT "\t", st->sh_stats.st_name, st->sh_binlo + n * st->sh_binwidth);
+			fprintf(out, "%u\n", st->sh_bins[n]);
+		}
+	}
+	fflush(out);
 }
 
 static gdk_uint32
 Resets_m(Stats_t *st)
 {
-  return st->st_nresets;
+	return st->st_nresets;
 }
 
 static gdk_uint64
 NAdds_m(Stats_t *st)
 {
-  return st->st_nadds;
+	return st->st_nadds;
 }
 
 static gdk_uint64
 Min_m(Stats_t *st)
 {
-  return st->st_min;
+	return st->st_min;
 }
 
 static gdk_uint64
 Max_m(Stats_t *st)
 {
-  return st->st_max;
+	return st->st_max;
 }
 
 static gdk_uint64
 Mean_m(Stats_t *st)
 {
-  if (st->st_nadds == 0) return 0;
-  return st->st_sum / st->st_nadds;
+	if (st->st_nadds == 0)
+		return 0;
+	return st->st_sum / st->st_nadds;
 }
 
 static gdk_uint64
 Stddev_m(Stats_t *st)
 {
-  gdk_int64 sigsq;
+	gdk_int64 sigsq;
 
-  sigsq = Variance_m(st);
-  if (sigsq <= 0) return 0;
-  return (gdk_uint64)sqrt((double)sigsq);
+	sigsq = Variance_m(st);
+	if (sigsq <= 0)
+		return 0;
+	return (gdk_uint64) sqrt((double) sigsq);
 }
 
 static gdk_uint64
 Variance_m(Stats_t *st)
 {
-  gdk_uint64 m;
+	gdk_uint64 m;
 
-  if (st->st_nadds == 0) return 0;
-  m = Mean_m(st);
-  return st->st_sumsq / st->st_nadds - m * m;
+	if (st->st_nadds == 0)
+		return 0;
+	m = Mean_m(st);
+	return st->st_sumsq / st->st_nadds - m * m;
 }
 
 static gdk_uint64
 Conf95_m(Stats_t *st)
 {
-  if (st->st_nadds == 0) return (gdk_uint64)-1;
-  /* cast to gdk_int64 first because Visual C++ 6.0 can't cast
-     gdk_uint64 directly to double */
-  return (gdk_uint64) ((19600 * (gdk_int64) Stddev_m(st)) /
-		       sqrt((double) (gdk_int64) st->st_nadds * 100000000));
+	if (st->st_nadds == 0)
+		return (gdk_uint64) -1;
+	/* cast to gdk_int64 first because Visual C++ 6.0 can't cast
+	   gdk_uint64 directly to double */
+	return (gdk_uint64) ((19600 * (gdk_int64) Stddev_m(st)) / sqrt((double) (gdk_int64) st->st_nadds * 100000000));
 }
 
 static gdk_uint64
 RelConf95_m(Stats_t *st)
 {
-  if (Mean_m(st) == 0) return (gdk_uint64)-1;
-  return Conf95_m(st) / Mean_m(st);
+	if (Mean_m(st) == 0)
+		return (gdk_uint64) -1;
+	return Conf95_m(st) / Mean_m(st);
 }
 
 static gdk_uint64
 Total_m(Stats_t *st)
 {
-  return st->st_sum;
+	return st->st_sum;
 }
 
 static char *
 Name_m(Stats_t *st)
 {
-  return (char *)GDKstrdup(st->st_name);
+	return (char *) GDKstrdup(st->st_name);
 }
 
 static void
 SetName_m(Stats_t *st, char *name)
 {
-  GDKfree(st->st_name);
-  st->st_name = GDKstrdup(name);
+	GDKfree(st->st_name);
+	st->st_name = GDKstrdup(name);
 }
 
 int
 stats_del(ptr *_st)
 {
-  StatsDispose(*_st);
-  return GDK_SUCCEED;
+	StatsDispose(*_st);
+	return GDK_SUCCEED;
 }
 
 static void
 Dispose_m(Stats_t *st)
 {
-  GDKfree(st->st_name);
-  GDKfree(st);
+	GDKfree(st->st_name);
+	GDKfree(st);
 }
 
 static void
 HistogramDispose_m(StatsHistogram_t *st)
 {
-  GDKfree(st->sh_bins);
-  Dispose_m((Stats_t *)st);
+	GDKfree(st->sh_bins);
+	Dispose_m((Stats_t *) st);
 }
+
 @}

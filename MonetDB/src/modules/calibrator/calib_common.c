@@ -43,20 +43,26 @@
 
 /*	#define	MINTIME  100000	*/
 
-size_t getpagesize(void) { return 4096; }
+size_t
+getpagesize(void)
+{
+	return 4096;
+}
 
 caliblng oldtp = 0;
 
-caliblng now(void)
+caliblng
+now(void)
 {
-	caliblng tp = (caliblng)timeGetTime();
+	caliblng tp = (caliblng) timeGetTime();
+
 	if (oldtp == 0) {
 		/* timeBeginPeriod(1); */
 		tp += 11;
-		while ((caliblng)timeGetTime() <= tp) ;
-		oldtp = tp = (caliblng)timeGetTime();
+		while ((caliblng) timeGetTime() <= tp) ;
+		oldtp = tp = (caliblng) timeGetTime();
 	}
-        return (caliblng)((tp - oldtp) * (caliblng)1000);
+	return (caliblng) ((tp - oldtp) * (caliblng) 1000);
 }
 
 #else
@@ -76,47 +82,53 @@ caliblng now(void)
 
 /*	#define	MINTIME  10000	*/
 
-struct timeval oldtp = { 0 , 0 };
+struct timeval oldtp = { 0, 0 };
 
-caliblng now(void)
+caliblng
+now(void)
 {
 	struct timeval tp;
+
 	gettimeofday(&tp, 0);
 	if (oldtp.tv_sec == 0 && oldtp.tv_usec == 0) {
 		oldtp = tp;
 	}
-        return (caliblng)( (caliblng)(tp.tv_sec  - oldtp.tv_sec ) * (caliblng)1000000 + 
-			(caliblng)(tp.tv_usec - oldtp.tv_usec)	);
+	return (caliblng) ((caliblng) (tp.tv_sec - oldtp.tv_sec) * (caliblng) 1000000 + (caliblng) (tp.tv_usec - oldtp.tv_usec));
 }
 
 #endif
 
-void ErrXit(char *format, ...) {
-        va_list	ap;
-        char	s[1024];
+void
+ErrXit(char *format, ...)
+{
+	va_list ap;
+	char s[1024];
 
-	va_start(ap,format);
-        vsprintf(s, format, ap);
-  	va_end(ap);
+	va_start(ap, format);
+	vsprintf(s, format, ap);
+	va_end(ap);
 	fprintf(stderr, "\n! %s !\n", s);
 	fflush(stderr);
 	exit(1);
 }
 
-caliblng cround(calibdbl x)
+caliblng
+cround(calibdbl x)
 {
-	return (caliblng)(x + 0.5);
+	return (caliblng) (x + 0.5);
 }
 
-char last(char *s)
+char
+last(char *s)
 {
-	while (*s++);
+	while (*s++) ;
 	return (s[-2]);
 }
 
-caliblng bytes(char *s)
+caliblng
+bytes(char *s)
 {
-	caliblng	n = atoi(s);
+	caliblng n = atoi(s);
 
 	if ((last(s) == 'k') || (last(s) == 'K'))
 		n *= 1024;
@@ -127,14 +139,14 @@ caliblng bytes(char *s)
 	return (n);
 }
 
-caliblng getMINTIME (void) {
-	caliblng t0=0, t1=0;
-	t0=t1=now();
-	while(t0>=t1){
-		t1=now();
+caliblng
+getMINTIME(void)
+{
+	caliblng t0 = 0, t1 = 0;
+
+	t0 = t1 = now();
+	while (t0 >= t1) {
+		t1 = now();
 	}
-	return (t1-t0);
+	return (t1 - t0);
 }
-
-
-

@@ -26,16 +26,16 @@ server.
 #ifndef _MU_H_
 #define _MU_H_
 
-#include <monetdb_config.h>		/* we always have this */
+#include <monetdb_config.h>	/* we always have this */
 
 #ifdef _MSC_VER
 #ifndef LIBMUTILS
-#define mutils_export extern __declspec(dllimport) 
+#define mutils_export extern __declspec(dllimport)
 #else
-#define mutils_export extern __declspec(dllexport) 
+#define mutils_export extern __declspec(dllexport)
 #endif
 #else
-#define mutils_export extern 
+#define mutils_export extern
 #endif
 
 #define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, '/'    ); t; t=strchr(t+1, '/'    )) *t=DIR_SEP;}
@@ -46,14 +46,14 @@ server.
 # include <sys/types.h>
 #endif
 #ifdef HAVE_NETDB_H
-# include <netinet/in.h> 
-# include <netdb.h> 
+# include <netinet/in.h>
+# include <netdb.h>
 #endif
 
-#include <stdio.h>      /* NULL, printf etc. */
-#include <stdlib.h>     
-#include <errno.h> 
-#include <stdarg.h>     /* va_alist.. */
+#include <stdio.h>		/* NULL, printf etc. */
+#include <stdlib.h>
+#include <errno.h>
+#include <stdarg.h>		/* va_alist.. */
 
 /* AIX requires this to be the first thing in the file.  */
 #if HAVE_ALLOCA_H
@@ -62,13 +62,13 @@ server.
 #  ifdef _AIX
 #pragma alloca
 #  else
-#   ifndef alloca /* predefined by HP cc +Olibcalls */
-void* alloca(size_t);
+#   ifndef alloca		/* predefined by HP cc +Olibcalls */
+void *alloca(size_t);
 #   endif
 #  endif
 #endif
 
-#include <assert.h>     
+#include <assert.h>
 
 /* Backward compatibility: configure figures out whether it needs to
    define "inline" as something else for the architecture it is testing.
@@ -80,11 +80,13 @@ void* alloca(size_t);
 #define REGISTER	register
 
 #ifdef HAVE_LONG_LONG
-typedef long long	lng;
+typedef long long lng;
+
 #define SIZEOF_LNG SIZEOF_LONG_LONG
 #else
 #ifdef HAVE___INT64
-typedef __int64		lng;
+typedef __int64 lng;
+
 #define SIZEOF_LNG SIZEOF___INT64
 #endif
 #endif
@@ -108,9 +110,8 @@ typedef lng ptrdiff_t;
 #endif
 
 /* prompts for MAPI protocol */
-#define PROMPTBEG	'\001'		/* start prompt bracket */
+#define PROMPTBEG	'\001'	/* start prompt bracket */
 #define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
 #define PROMPT2		"\001\002\n"	/* prompt: more data needed */
 
 #endif /* _MU_H_ */
-

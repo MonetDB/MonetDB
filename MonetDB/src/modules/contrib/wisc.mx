@@ -52,33 +52,34 @@ The generator can be loaded as a module into any running server.
 @c
 #include "gdk.h"
 
-char	string1[54] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-char	*rndstr;
-oid	count;
+char string1[54] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+char *rndstr;
+oid count;
 
-void WISCinitRndStr(int u1)
+void
+WISCinitRndStr(int u1)
 {
-	int	i;
-	int	k;
-	char	*p;
-	char	*q;
+	int i;
+	int k;
+	char *p;
+	char *q;
 
-	rndstr = (char*)malloc(sizeof(char)*7*u1);
+	rndstr = (char *) malloc(sizeof(char) * 7 * u1);
 	p = rndstr;
-	q = rndstr+7*u1;
+	q = rndstr + 7 * u1;
 	while (p < q) {
-		*p++= 'A';
+		*p++ = 'A';
 	}
 
-	for (i = 1, p = rndstr, q = rndstr+7; i != u1; i++) {
+	for (i = 1, p = rndstr, q = rndstr + 7; i != u1; i++) {
 		for (k = 0; k != 7; k++, p++, q++) {
-			*q= *p + 1;
+			*q = *p + 1;
 /*		if (q > rndstr+7*count) printf("bug"); */
-			if (*q> 'Z') {
-				*q= 'A'; 
+			if (*q > 'Z') {
+				*q = 'A';
 			} else {
-				p += 7-k;
-				q += 7-k;
+				p += 7 - k;
+				q += 7 - k;
 				break;
 			}
 		}
@@ -86,23 +87,21 @@ void WISCinitRndStr(int u1)
 }
 
 
-char	*rndStr(int i)
+char *
+rndStr(int i)
 {
-	int	j;
-	char	*p, *q;
+	int j;
+	char *p, *q;
 
 /* boundary test: i = count-1= >q = &rndstr[(count-1)+1 * 7] */
-	for (	j = 0, p = string1, q = &rndstr[(i+1)*7-1];
-		j != 7;
-		j++)
-	{
-		*p++= *q--;
+	for (j = 0, p = string1, q = &rndstr[(i + 1) * 7 - 1]; j != 7; j++) {
+		*p++ = *q--;
 	}
 	return string1;
 }
 
 
-char	string4[4][54] = {
+char string4[4][54] = {
 	"AAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	"HHHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	"OOOOxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -111,24 +110,26 @@ char	string4[4][54] = {
 
 #define rnd4Str(u) (string4[(u)%4])
 
-int	*rnd;
+int *rnd;
 
-void WISCinitUniq(int cnt)
+void
+WISCinitUniq(int cnt)
 {
-	int	*src = (int *) malloc(sizeof(int)*cnt);
-	int	top = cnt;
-	int	i;
-	
-	srand((int)time(0));
-	rnd = (int*) malloc(sizeof(int)*cnt);
+	int *src = (int *) malloc(sizeof(int) * cnt);
+	int top = cnt;
+	int i;
+
+	srand((int) time(0));
+	rnd = (int *) malloc(sizeof(int) * cnt);
 	WISCinitRndStr(cnt);
 	for (i = 0; i != cnt; i++) {
 		src[i] = i;
 	}
 	for (i = 0; i != cnt; i++, top--) {
-		ssize_t idx = rand()%top;
+		ssize_t idx = rand() % top;
+
 		rnd[i] = src[idx];
-		src[idx] = src[top-1];
+		src[idx] = src[top - 1];
 	}
 	free(src);
 }
@@ -173,45 +174,43 @@ ssize_t wiscrand(ssize_t seed, ssize_t limit)
 }
 */
 struct {
-	char	*attr;
-	int	type;
+	char *attr;
+	int type;
 } wisctype[16] = {
-	{ "unique1", TYPE_int, },
-	{ "unique2", TYPE_int, },
-	{ "two", TYPE_int, },
-	{ "four", TYPE_int, },
-	{ "ten", TYPE_int, },
-	{ "twenty", TYPE_int, },
-	{ "onePercent", TYPE_int, },
-	{ "tenPercent", TYPE_int, },
-	{ "twentyPercent", TYPE_int, },
-	{ "fiftyPercent", TYPE_int, },
-	{ "unique3", TYPE_int, },
-	{ "evenOnePercent", TYPE_int, },
-	{ "oddOnePercent", TYPE_int, },
-	{ "stringu1", TYPE_str, },
-	{ "stringu2", TYPE_str, },
-	{ "string4", TYPE_str },
-};
+	{
+	"unique1", TYPE_int,}, {
+	"unique2", TYPE_int,}, {
+	"two", TYPE_int,}, {
+	"four", TYPE_int,}, {
+	"ten", TYPE_int,}, {
+	"twenty", TYPE_int,}, {
+	"onePercent", TYPE_int,}, {
+	"tenPercent", TYPE_int,}, {
+	"twentyPercent", TYPE_int,}, {
+	"fiftyPercent", TYPE_int,}, {
+	"unique3", TYPE_int,}, {
+	"evenOnePercent", TYPE_int,}, {
+	"oddOnePercent", TYPE_int,}, {
+	"stringu1", TYPE_str,}, {
+	"stringu2", TYPE_str,}, {
+"string4", TYPE_str},};
 
 int
-WISCgenerator(
-   str          nme,   /* string: pointer to char.*/
-   int*         cnt    /* pointer to integer.*/
-)
+WISCgenerator(str nme,		/* string: pointer to char. */
+	      int *cnt		/* pointer to integer. */
+    )
 {
-	int	u1, tmp;
-	oid	u2;
-	int	i;
-	BAT 	*b[16];
+	int u1, tmp;
+	oid u2;
+	int i;
+	BAT *b[16];
 
 	count = (oid) *cnt;
-	stream_printf(GDKout,"WISC generator active on \"%s\" with %d tuples\n",
-		nme,*cnt);
+	stream_printf(GDKout, "WISC generator active on \"%s\" with %d tuples\n", nme, *cnt);
 	stream_flush(GDKout);
-	
+
 	for (i = 0; i != 16; i++) {
-		char	buf[150];
+		char buf[150];
 
 		sprintf(buf, "%s_%s", nme, wisctype[i].attr);
 		b[i] = BATnew(TYPE_void, wisctype[i].type, count);
@@ -226,67 +225,69 @@ WISCgenerator(
 		b[0] = BUNins(b[0], &u2, &u1);
 	}
 	for (u2 = 0; u2 != count; u2++) {
-		u1 = rnd[u2]; tmp = u2;
+		u1 = rnd[u2];
+		tmp = u2;
 		b[1] = BUNins(b[1], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
-		u1 = rnd[u2];tmp = u1%2;
+		u1 = rnd[u2];
+		tmp = u1 % 2;
 		b[2] = BUNins(b[2], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%4;
+		tmp = u1 % 4;
 		b[3] = BUNins(b[3], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%10;
+		tmp = u1 % 10;
 		b[4] = BUNins(b[4], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%20;
+		tmp = u1 % 20;
 		b[5] = BUNins(b[5], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%100;
+		tmp = u1 % 100;
 		b[6] = BUNins(b[6], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%10;
+		tmp = u1 % 10;
 		b[7] = BUNins(b[7], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%5;
+		tmp = u1 % 5;
 		b[8] = BUNins(b[8], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%2;
+		tmp = u1 % 2;
 		b[9] = BUNins(b[9], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		tmp = u1;
-	 	b[10] = BUNins(b[10], &u2, &tmp);	
+		b[10] = BUNins(b[10], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%50*2;
+		tmp = u1 % 50 * 2;
 		b[11] = BUNins(b[11], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		tmp = u1%50*2+1;
+		tmp = u1 % 50 * 2 + 1;
 		b[12] = BUNins(b[12], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
 		/* (void) malloc(20); */
-		 b[13] = BUNins(b[13], &u2, rndStr(u1));
+		b[13] = BUNins(b[13], &u2, rndStr(u1));
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
@@ -299,27 +300,31 @@ WISCgenerator(
 	free(rndstr);
 	return GDK_SUCCEED;
 }
+
 @-
 The tables created for the Wisconsin database can be easily removed
 by giving their base name only.
 @c
-int WISCdestroy(str nme)
+int
+WISCdestroy(str nme)
 {
-	int	i;
-	BAT	*b;
+	int i;
+	BAT *b;
 
-	stream_printf(GDKout,"WISC destroy active \"%s\" \n", nme);
+	stream_printf(GDKout, "WISC destroy active \"%s\" \n", nme);
 	stream_flush(GDKout);
 	for (i = 0; i != 16; i++) {
-		char	buf[150];
+		char buf[150];
+
 		sprintf(buf, "%s_%s", nme, wisctype[i].attr);
 		b = BATload(buf);
-		if( b == 0 ){
-			GDKerror("WISCdestroy: %s not found\n",buf);
+		if (b == 0) {
+			GDKerror("WISCdestroy: %s not found\n", buf);
 		} else {
 			BBPreclaim(b);
 		}
 	}
 	return GDK_SUCCEED;
 }
+
 @}

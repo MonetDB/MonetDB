@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include	<monetdb_config.h>       
+#include	<monetdb_config.h>
 #include	<stdio.h>
 #include	<ctype.h>
 #include        <stdlib.h>
@@ -26,157 +26,165 @@
 #include	"Mx.h"
 #include	"MxFcnDef.h"
 
-Tok *	FstTok(char *s)
+Tok *
+FstTok(char *s)
 {
-Tok *	t;
+	Tok *t;
 
-	if( s == 0 )
+	if (s == 0)
 		return 0;
 
-	t= (Tok *) Malloc(sizeof(Tok));
-	t->t_dir= '\0';
-	t->t_str= 0;
-	t->t_ext= '\0';
-	t->t_nxt= s;
-	t->t_chr= s[0];
+	t = (Tok *) Malloc(sizeof(Tok));
+	t->t_dir = '\0';
+	t->t_str = 0;
+	t->t_ext = '\0';
+	t->t_nxt = s;
+	t->t_chr = s[0];
 
-	t= NxtTok(t);
+	t = NxtTok(t);
 	return t;
 }
 
-Tok *	NxtTok(Tok *t)
+Tok *
+NxtTok(Tok * t)
 {
-  int inside=0;
+	int inside = 0;
 
 /* since NxtTok() is only called in FstTok (see above) and in two for-loop
    in Form.C & Code.c that do roughly the following: for(t=FstTok(blk); t; t=NxtTok(t)) ,
    we assume, we can savely ignore NULL arguments, here.... 
 */
-	if (t==NULL) return t;
+	if (t == NULL)
+		return t;
 
 /* Restore */
-	t->t_nxt[0]= t->t_chr;
-	if( t->t_dir ) {
-		if( t->t_chr == MARK )
+	t->t_nxt[0] = t->t_chr;
+	if (t->t_dir) {
+		if (t->t_chr == MARK)
 			t->t_nxt++;
-		if( t->t_ext != '\0' )
+		if (t->t_ext != '\0')
 			t->t_nxt++;
 	}
 
 /* NxtTok */
-	if( t->t_nxt[0] == '\0' ){
-		free((char *) t); t= 0;
+	if (t->t_nxt[0] == '\0') {
+		free((char *) t);
+		t = 0;
 		return t;
 	}
-	if( (t->t_nxt[0] == MARK) && (CallDir(t->t_nxt[1]))){
-	        int hook=0;
-		int ok=1;
+	if ((t->t_nxt[0] == MARK) && (CallDir(t->t_nxt[1]))) {
+		int hook = 0;
+		int ok = 1;
 
 		t->t_nxt++;
-		t->t_dir= *t->t_nxt++;
-		t->t_str= t->t_nxt;
+		t->t_dir = *t->t_nxt++;
+		t->t_str = t->t_nxt;
 
-		if( !HideDir(t->t_dir) )
-			for( ;(t->t_nxt[0] && ok); t->t_nxt++ ) {
-				switch(t->t_nxt[0]){
-			    	case '\n': ok= 0; break;
-		            	case '\\':
-                                	if (*(t->t_nxt+1))
-			            		t->t_nxt++;
-			        	break;
-		            	case '"':
-					inside^=1;
-			        	break;
-			    	case '(': 
+		if (!HideDir(t->t_dir))
+			for (; (t->t_nxt[0] && ok); t->t_nxt++) {
+				switch (t->t_nxt[0]) {
+				case '\n':
+					ok = 0;
+					break;
+				case '\\':
+					if (*(t->t_nxt + 1))
+						t->t_nxt++;
+					break;
+				case '"':
+					inside ^= 1;
+					break;
+				case '(':
 					if (!inside)
 						hook++;
 					break;
-			    	case ')': 
+				case ')':
 					if (!inside)
 						hook--;
 					break;
-			    	case MARK:
+				case MARK:
 					if (!(inside || hook))
-				    		ok = 0;
-				break;
-			    	}
+						ok = 0;
+					break;
+				}
 			}
-		t->t_chr= t->t_nxt[0];
-		t->t_nxt[-1]= '\0';
-		if( t->t_dir == '`' )
-			t->t_ext= t->t_nxt[1];
+		t->t_chr = t->t_nxt[0];
+		t->t_nxt[-1] = '\0';
+		if (t->t_dir == '`')
+			t->t_ext = t->t_nxt[1];
 		DbTok(t);
 		return t;
 	}
 
-	if( (t->t_nxt[0] == MARK) && (CtlDir(t->t_nxt[1])) ){
+	if ((t->t_nxt[0] == MARK) && (CtlDir(t->t_nxt[1]))) {
 		t->t_nxt++;
-		t->t_dir= *t->t_nxt++;
-		t->t_str= t->t_nxt;
+		t->t_dir = *t->t_nxt++;
+		t->t_str = t->t_nxt;
 
-		if( !HideDir(t->t_dir) )
-			for( ; t->t_nxt[0]; t->t_nxt++ ) {
-				if( (t->t_nxt[0] == '\n') )
+		if (!HideDir(t->t_dir))
+			for (; t->t_nxt[0]; t->t_nxt++) {
+				if ((t->t_nxt[0] == '\n'))
 					break;
-				if( (t->t_nxt[0] == MARK) && (t->t_nxt[-1] != '\\') )
+				if ((t->t_nxt[0] == MARK) && (t->t_nxt[-1] != '\\'))
 					break;
 			}
-		t->t_chr= t->t_nxt[0];
-		t->t_nxt[0]= '\0';
-		if( t->t_dir == '`' )
-			t->t_ext= t->t_nxt[1];
+		t->t_chr = t->t_nxt[0];
+		t->t_nxt[0] = '\0';
+		if (t->t_dir == '`')
+			t->t_ext = t->t_nxt[1];
 		DbTok(t);
 		return t;
 	}
 
-	if( (t->t_nxt[0] == '\\') && (t->t_nxt[1] == MARK) ){
-		t->t_dir= '\0';
-		t->t_str= t->t_nxt+1;
-		t->t_ext= '\0';
-		t->t_nxt+= 2;
-		t->t_chr= t->t_nxt[0];
-		t->t_nxt[0]= '\0';
+	if ((t->t_nxt[0] == '\\') && (t->t_nxt[1] == MARK)) {
+		t->t_dir = '\0';
+		t->t_str = t->t_nxt + 1;
+		t->t_ext = '\0';
+		t->t_nxt += 2;
+		t->t_chr = t->t_nxt[0];
+		t->t_nxt[0] = '\0';
 		return t;
 	}
 
-	t->t_dir= '\0';
-	t->t_str= t->t_nxt;
-	t->t_ext= '\0';
+	t->t_dir = '\0';
+	t->t_str = t->t_nxt;
+	t->t_ext = '\0';
 	t->t_nxt++;
-	t->t_chr= t->t_nxt[0];
-	t->t_nxt[0]= '\0';
+	t->t_chr = t->t_nxt[0];
+	t->t_nxt[0] = '\0';
 
 	return t;
 }
 
-Tok *SkipTok(Tok *t, char tok)
+Tok *
+SkipTok(Tok * t, char tok)
 {
-	char 	*s;
-	
+	char *s;
+
 	t->t_str[0] = t->t_chr;
-	for(s = t->t_str; *s; s++){
-		switch(*s){
-		case MARK :
-			if (s[1] == tok) 
+	for (s = t->t_str; *s; s++) {
+		switch (*s) {
+		case MARK:
+			if (s[1] == tok)
 				return FstTok(s);
-		case '\n' :
+		case '\n':
 			mx_line++;
 			break;
 		case '\\':
-			if (s[1] == MARK) s += 2;
+			if (s[1] == MARK)
+				s += 2;
 			break;
 		}
 	}
 	return 0;
-	
+
 }
 
-void	DbTok(Tok *t)
+void
+DbTok(Tok * t)
 {
-	if( (db_flag & DB_TOK) == DB_TOK ){
-		if( t != 0 )
-			fprintf(stderr, "Tok[d:%c,s:%s,e:%c,c:%c,n:%c]\n",
-				t->t_dir,t->t_str,t->t_ext,t->t_chr,t->t_nxt[1]);
+	if ((db_flag & DB_TOK) == DB_TOK) {
+		if (t != 0)
+			fprintf(stderr, "Tok[d:%c,s:%s,e:%c,c:%c,n:%c]\n", t->t_dir, t->t_str, t->t_ext, t->t_chr, t->t_nxt[1]);
 		else
 			fprintf(stderr, "Tok[NIL]\n");
 	}
@@ -186,82 +194,86 @@ void	DbTok(Tok *t)
  */
 #define M_ARGS	9
 
-char **	MkArgv(char *str)
+char **
+MkArgv(char *str)
 {
-char **	argv;
-int	argc= 0;
-int	inside=0;
-int	level= 0;
-char *	c;
-int	i;
+	char **argv;
+	int argc = 0;
+	int inside = 0;
+	int level = 0;
+	char *c;
+	int i;
 
-	argv= (char **) Malloc(sizeof(char *) * (M_ARGS + 1));
-	for( argc= 0; argc <= M_ARGS; argc++ )
-		argv[argc]= 0;
-	argc= -1;
-	argv[0]= c= StrDup(str);
+	argv = (char **) Malloc(sizeof(char *) * (M_ARGS + 1));
+	for (argc = 0; argc <= M_ARGS; argc++)
+		argv[argc] = 0;
+	argc = -1;
+	argv[0] = c = StrDup(str);
 
-	i= 0;
-	for( c= argv[0]; *c; c++){
-		switch( *c ){
+	i = 0;
+	for (c = argv[0]; *c; c++) {
+		switch (*c) {
 		case '\\':
-                        if (*(c+1))
-			        c++;
+			if (*(c + 1))
+				c++;
 			break;
 		case '"':
-			inside^=1;
+			inside ^= 1;
 			break;
 		case '(':
 			if (!inside) {
 				level++;
-				if( level == 1 ){
+				if (level == 1) {
 					*c = '\0';
-					argv[++i]= c + 1;
+					argv[++i] = c + 1;
 				}
 			}
 			break;
 		case ')':
 			if (!inside) {
-				if( level == 1 ){
-					*c= '\0';
-					argc= i;
+				if (level == 1) {
+					*c = '\0';
+					argc = i;
 				}
 				level--;
 			}
 			break;
 		case ',':
 			if (!inside) {
-				if( level == 1 ){
-					*c= '\0';
-					argv[++i]= c + 1;
+				if (level == 1) {
+					*c = '\0';
+					argv[++i] = c + 1;
 				}
 			}
-       			break;
+			break;
 		}
-		if( argc == (M_ARGS + 1) )
+		if (argc == (M_ARGS + 1))
 			Fatal("MkArgv", "Too many arguments:%s", str);
 	}
-	if( level != 0 )
+	if (level != 0)
 		Fatal("MkArgv", "Unbalanced Argument:%s", str);
+
 	DbArgv(argv);
 	return argv;
 }
 
-char **	RmArgv(char **argv)
+char **
+RmArgv(char **argv)
 {
 	Free((char *) argv[0]);
 	Free((char *) argv);
-	
+
 	return 0;
 }
 
-void	DbArgv(char **argv)
+void
+DbArgv(char **argv)
 {
-int	argc;
+	int argc;
 
-        if( (db_flag & DB_TOK) == DB_TOK ){
-                fprintf(stderr, "Argv:");
-                for( argc= 0; *argv && (argc <= M_ARGS); argc++ )
-                        fprintf(stderr, "argv[%d]:%s\n", argc, argv[argc]);
-        }
-}	
+	if ((db_flag & DB_TOK) == DB_TOK) {
+		fprintf(stderr, "Argv:");
+		for (argc = 0; *argv && (argc <= M_ARGS); argc++)
+			fprintf(stderr, "argv[%d]:%s\n", argc, argv[argc]);
+	}
+}

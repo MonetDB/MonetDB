@@ -28,99 +28,120 @@ within a YACC environment.
 #define par_retval	free.batref.id
 #define old_cntxt	yyval.len
 
-m_export YYSTREE 		Myylognode(int, int);
-m_export YYSTREE	 	Myylogexpand(YYSTREE, YYSTREE);
-m_export void 		Myylogstart(void);
-m_export void 		Myylogclean(void);
+m_export YYSTREE Myylognode(int, int);
+m_export YYSTREE Myylogexpand(YYSTREE, YYSTREE);
+m_export void Myylogstart(void);
+m_export void Myylogclean(void);
 
-m_export YYSTREE	 	Myyexpand(YYSTREE, YYSTREE);
-m_export YYSTREE 		Myynode(int, int);
-m_export YYSTREE 		Myyload(FILE *);
-m_export void 		Myysave(FILE *, YYSTREE);
-m_export void 		Myyfree(YYSTREE);
-m_export YYSTREE 		Myycopy(YYSTREE);
-m_export void 		Myyclean(YYSTREE);
-m_export YYSTREE 		Myysubstitute_proc(YYSTREE, int, ValPtr);
-m_export YYSTREE 		Myysubstitute_iter(YYSTREE, int, ValPtr);
-m_export int 		Myypostprocess(YYSTREE);
-m_export void 		Myylogout(YYSTREE);
+m_export YYSTREE Myyexpand(YYSTREE, YYSTREE);
+m_export YYSTREE Myynode(int, int);
+m_export YYSTREE Myyload(FILE *);
+m_export void Myysave(FILE *, YYSTREE);
+m_export void Myyfree(YYSTREE);
+m_export YYSTREE Myycopy(YYSTREE);
+m_export void Myyclean(YYSTREE);
+m_export YYSTREE Myysubstitute_proc(YYSTREE, int, ValPtr);
+m_export YYSTREE Myysubstitute_iter(YYSTREE, int, ValPtr);
+m_export int Myypostprocess(YYSTREE);
+m_export void Myylogout(YYSTREE);
+
 @c
 #include "monet.h"
-#include <stdio.h> 
-#include <ctype.h> 
+#include <stdio.h>
+#include <ctype.h>
 #include "monet_parse.h"
 
 static oid yyid = 1, yyoid = 1;
-YYSTREE	 yyroot = NULL;
+YYSTREE yyroot = NULL;
 static YYSTREE nfree = NULL;
 
-void Myylogstart(void) { 
+void
+Myylogstart(void)
+{
 	yyroot = NULL;
 }
 
-void Myylogclean(void) {
+void
+Myylogclean(void)
+{
 	YYSTREE t2, t1 = yyroot;
-	while ((t2=t1) != NULL) {
-	    t1 = t1->next; 
-	    if (t2->free.yyid == 0) {
-		@:yykill(t2)@
-	    }
+
+	while ((t2 = t1) != NULL) {
+		t1 = t1->next;
+		if (t2->free.yyid == 0) {
+			@:yykill(t2)@
+		}
 	}
 }
 
-void Myylogout(YYSTREE t) {
-	YYSTREE t1,t2=0;
+void
+Myylogout(YYSTREE t)
+{
+	YYSTREE t1, t2 = 0;
 
-	if (++yyoid == 0) yyoid=2; 
+	if (++yyoid == 0)
+		yyoid = 2;
 	yyid = yyoid;
 	if (Myypostprocess(t) < 0) {
 		GDKerror("Myylogout: Myypostprocess(t) failed.\n");
 	}
 	yyid = 1;
 
-	for (t1=yyroot; t1; t1=t1->next) {
-	    if (t1->free.yyid == yyoid) {
-		if (t2) t2->next = t1->next;
-		else yyroot = t1->next;
-	    } else t2 = t1; 
+	for (t1 = yyroot; t1; t1 = t1->next) {
+		if (t1->free.yyid == yyoid) {
+			if (t2)
+				t2->next = t1->next;
+			else
+				yyroot = t1->next;
+		} else
+			t2 = t1;
 	}
 }
 
-static 
-void checklist(YYSTREE t) {
+static
+    void
+checklist(YYSTREE t)
+{
 	YYSTREE t2, t1 = yyroot;
-	while ((t2=t1) != NULL) {
-	    t1 = t1->next; 
-	    if (t2 == t) {
-		t1 = yyroot;
-		while(t1 != t2) {
-			fprintf(stderr, PTRFMT " ", PTRFMTCAST (void *) t1);
-			t1 = t1->next;
+
+	while ((t2 = t1) != NULL) {
+		t1 = t1->next;
+		if (t2 == t) {
+			t1 = yyroot;
+			while (t1 != t2) {
+				fprintf(stderr, PTRFMT " ", PTRFMTCAST(void *)t1);
+
+				t1 = t1->next;
+			}
+			GDKerror("checklist: double present %d!!\n", t);
+			break;
 		}
-		GDKerror("checklist: double present %d!!\n", t);
-		break;
-	    }
 	}
 }
-	
 
-YYSTREE Myylognode( int tok, int val) {
-	YYSTREE t = Myynode(tok,val);
+
+YYSTREE
+Myylognode(int tok, int val)
+{
+	YYSTREE t = Myynode(tok, val);
 	PARDEBUG checklist(t);
+
 	t->next = yyroot;
 	return yyroot = t;
 }
 
-YYSTREE Myynode( int tok, int val) {
+YYSTREE
+Myynode(int tok, int val)
+{
 	YYSTREE t;
 
-  	monet_set_lock(monet_critical, "Myynode");
+	monet_set_lock(monet_critical, "Myynode");
 	t = nfree;
 	if (t)
 		nfree = t->nfree;
 	else
-		t =(YYSTREE) GDKmalloc(sizeof(*t));
-        monet_unset_lock(monet_critical, "Myynode");
+		t = (YYSTREE) GDKmalloc(sizeof(*t));
+	monet_unset_lock(monet_critical, "Myynode");
 	memset(t, 0, sizeof(*t));
 	t->token = tok;
 	t->yyval.vtype = val;
@@ -144,9 +165,11 @@ YYSTREE Myynode( int tok, int val) {
 @-
 To avoid concurrency conflicts, all nodes are explicitly freed. 
 @c
-void Myyfree(YYSTREE yytree) {
+void
+Myyfree(YYSTREE yytree)
+{
 	YYSTREE delnode;
-	unsigned i; 
+	unsigned i;
 
 	while (yytree) {
 		for (i = 0; i < yytree->cnt; i++) {
@@ -154,7 +177,7 @@ void Myyfree(YYSTREE yytree) {
 				Myyfree(yytree->yysons[i]);
 			}
 		}
-		delnode = yytree; 
+		delnode = yytree;
 		yytree = yytree->overflow;
 		@:yykill(delnode)@
 	}
@@ -186,160 +209,193 @@ YYSTREE Myy@1expand( YYSTREE yytree, YYSTREE y) {
 
 extern str LEXNAME(int);
 
-void yyprint(YYSTREE yytree) {
+void
+yyprint(YYSTREE yytree)
+{
 	static unsigned level;
-	char	num[20], tpe[20],*p;
+	char num[20], tpe[20], *p;
 	unsigned i;
 
-	for(i = 0; i < level; i++) printf("\t");
+	for (i = 0; i < level; i++)
+		printf("\t");
 	if (yytree == 0) {
 		printf("NULL\n");
 		return;
 	}
-	switch(yytree->yyval.vtype) {
-	case TYPE_int:	strcpy(tpe, "int"); break;
-	case TYPE_chr:	strcpy(tpe, "chr"); break;
-	case TYPE_bit:	strcpy(tpe, "bit"); break;
-	case TYPE_oid:	strcpy(tpe, "oid"); break;
-	case TYPE_str:	strcpy(tpe, "str"); break;
-	case TYPE_ptr:	strcpy(tpe, "ptr"); break;
-	case TYPE_flt:	strcpy(tpe, "flt"); break;
-	case TYPE_bat:	strcpy(tpe, "bat"); break;
-	default: 	sprintf(tpe, "extended%d", yytree->yyval.vtype);
+	switch (yytree->yyval.vtype) {
+	case TYPE_int:
+		strcpy(tpe, "int");
+		break;
+	case TYPE_chr:
+		strcpy(tpe, "chr");
+		break;
+	case TYPE_bit:
+		strcpy(tpe, "bit");
+		break;
+	case TYPE_oid:
+		strcpy(tpe, "oid");
+		break;
+	case TYPE_str:
+		strcpy(tpe, "str");
+		break;
+	case TYPE_ptr:
+		strcpy(tpe, "ptr");
+		break;
+	case TYPE_flt:
+		strcpy(tpe, "flt");
+		break;
+	case TYPE_bat:
+		strcpy(tpe, "bat");
+		break;
+	default:
+		sprintf(tpe, "extended%d", yytree->yyval.vtype);
 	}
 	if (yytree->yyval.vtype != TYPE_str) {
-		p = num; sprintf(num, "%d", yytree->yyval.val.ival); 
-	} else { 
+		p = num;
+		sprintf(num, "%d", yytree->yyval.val.ival);
+	} else {
 		if (yytree->yyval.val.sval) {
 			p = yytree->yyval.val.sval;
 		} else {
-			p = num; 
-			strcpy(num, "<null>"); 
+			p = num;
+			strcpy(num, "<null>");
 		}
 	}
-	printf("%s [%s][%s]\n",LEXNAME(yytree->token),tpe,p);
+	printf("%s [%s][%s]\n", LEXNAME(yytree->token), tpe, p);
 	level++;
 	do {
 		for (i = 0; i < yytree->cnt; i++) {
-			if (yytree->yysons[i]) yyprint(yytree->yysons[i]);
+			if (yytree->yysons[i])
+				yyprint(yytree->yysons[i]);
 		}
-	} while((yytree = yytree->overflow) != NULL);
+	} while ((yytree = yytree->overflow) != NULL);
 	level--;
 }
 
 
-void Myysave(FILE *fp, YYSTREE t) {
+void
+Myysave(FILE *fp, YYSTREE t)
+{
 	int i;
 
 	do {
-		fwrite(t, 1, sizeof(struct YYS), fp); 
+		fwrite(t, 1, sizeof(struct YYS), fp);
 		if (ATOMextern(t->yyval.vtype)) {
 			i = strlen(t->yyval.val.sval) + 1;
-			fwrite(&i, 1, 4, fp); 
-			fwrite(t->yyval.val.sval, 1, i, fp); 
+			fwrite(&i, 1, 4, fp);
+			fwrite(t->yyval.val.sval, 1, i, fp);
 		}
-		for(i = 0; i < YYMAXSONS && t->yysons[i]; i++) {
+		for (i = 0; i < YYMAXSONS && t->yysons[i]; i++) {
 			Myysave(fp, t->yysons[i]);
 		}
-	} while ((t = t->overflow) != NULL); 
+	} while ((t = t->overflow) != NULL);
 }
 
 
-YYSTREE Myyload(FILE *fp) {
-       	YYSTREE t = Myynode(0,0);
+YYSTREE
+Myyload(FILE *fp)
+{
+	YYSTREE t = Myynode(0, 0);
 	int i;
 
-       	if (fread(t, 1, sizeof(struct YYS), fp) == sizeof(struct YYS)) {
+	if (fread(t, 1, sizeof(struct YYS), fp) == sizeof(struct YYS)) {
 		if (ATOMextern(t->yyval.vtype)) {
 			if (fread(&i, 1, 4, fp) != 4) {
 				return 0;
 			}
-			t->yyval.val.sval = GDKmalloc(i);	
+			t->yyval.val.sval = GDKmalloc(i);
 			if (fread(t->yyval.val.sval, 1, i, fp) != (size_t) i) {
 				return 0;
 			}
 		}
-	       	for(i = 0; i < YYMAXSONS && t->yysons[i]; i++) {
-	       		t->yysons[i] = Myyload(fp);
-       		}
+		for (i = 0; i < YYMAXSONS && t->yysons[i]; i++) {
+			t->yysons[i] = Myyload(fp);
+		}
 		if (t->overflow) {
 			t->overflow = Myyload(fp);
 		}
 	} else {
-		return 0; 
+		return 0;
 	}
-	
+
 	return t;
 }
 
 
-YYSTREE Myycopy(YYSTREE t) {
-        unsigned i;
-        YYSTREE tn;
- 
-        if (t == 0) {
-                return 0;
-        }
-        tn = Myynode(t->token,0);
-        tn->cnt = t->cnt;
-        tn->yyval = t->yyval;
+YYSTREE
+Myycopy(YYSTREE t)
+{
+	unsigned i;
+	YYSTREE tn;
+
+	if (t == 0) {
+		return 0;
+	}
+	tn = Myynode(t->token, 0);
+	tn->cnt = t->cnt;
+	tn->yyval = t->yyval;
 	if (t->yyval.val.pval && (t->token != TOK_TEMPLATE)) {
 		if (t->yyval.vtype == TYPE_str) {
-			tn->yyval.val.sval = GDKstrdup(t->yyval.val.sval); 
+			tn->yyval.val.sval = GDKstrdup(t->yyval.val.sval);
 		} else if (ATOMextern(t->yyval.vtype)) {
-			tn->yyval.val.pval = GDKmalloc(t->yyval.len); 
-			memcpy(tn->yyval.val.pval, 
-				t->yyval.val.pval, t->yyval.len);
+			tn->yyval.val.pval = GDKmalloc(t->yyval.len);
+			memcpy(tn->yyval.val.pval, t->yyval.val.pval, t->yyval.len);
 		}
 	}
- 
-        for (i = 0; i < t->cnt; i++) {
-                if (t->yysons[i]) tn->yysons[i] = Myycopy(t->yysons[i]);
-        }
+
+	for (i = 0; i < t->cnt; i++) {
+		if (t->yysons[i])
+			tn->yysons[i] = Myycopy(t->yysons[i]);
+	}
 	if (t->overflow) {
 		tn->overflow = Myycopy(t->overflow);
 	}
-        return tn;
+	return tn;
 }
 
 @- Set Operator Trees
 @c
 
-int Myypostprocess(YYSTREE lt) {
+int
+Myypostprocess(YYSTREE lt)
+{
 	int rtrn = 0;
+
 @-
 Rewrite TOK_ASSIGNOP in the non-multiplexed case into a simple assignment.
 In this way, we do not have to interpret it. It can follow the normal route.
 @c
-	if (lt->token==TOK_ASSIGNOP) {
-		if (lt->yyval.val.sval[0]!='[') {
+	if (lt->token == TOK_ASSIGNOP) {
+		if (lt->yyval.val.sval[0] != '[') {
 			if (lt->yysons[0]->token != TOK_IDENT) {
-			    lt->token = 0;
-			    GDKerror("Myypostprocess: must %s= to a variable\n"
-				, lt->yyval.val.sval);
-			    rtrn = -1;
+				lt->token = 0;
+				GDKerror("Myypostprocess: must %s= to a variable\n", lt->yyval.val.sval);
+				rtrn = -1;
 			} else {
-			    YYSTREE var = Myylognode(0,0);
-			    YYSTREE op = Myylognode(0,0);
-			    *var = *lt->yysons[0];
-			    *op = *lt;
-			    var->yyval.val.sval=GDKstrdup(var->yyval.val.sval);
-			    op->token = TOK_FUNCTION;
-			    lt->token = TOK_ASSIGNMENT;
-			    lt->yyval.val.ival = 0;
-			    lt->yyval.vtype = TYPE_void;
-			    lt->cnt = 2;
-			    lt->last = lt->overflow = NULL;
-			    lt->yysons[0] = var;
-			    lt->yysons[1] = op;
+				YYSTREE var = Myylognode(0, 0);
+				YYSTREE op = Myylognode(0, 0);
+				*var = *lt->yysons[0];
+
+				*op = *lt;
+				var->yyval.val.sval = GDKstrdup(var->yyval.val.sval);
+
+				op->token = TOK_FUNCTION;
+				lt->token = TOK_ASSIGNMENT;
+				lt->yyval.val.ival = 0;
+				lt->yyval.vtype = TYPE_void;
+				lt->cnt = 2;
+				lt->last = lt->overflow = NULL;
+				lt->yysons[0] = var;
+
+				lt->yysons[1] = op;
 			}
-		    
+
 		} else {
 			/* multiplex_resolve will catch the ASSIGNOP */
 			lt->token = TOK_FUNCTION;
-			lt->yyval.len = -TOK_ASSIGNOP; 
+			lt->yyval.len = -TOK_ASSIGNOP;
 		}
-	} 
+	}
 @-
 rewrite the FUNCTION tree to its modern syntax with 
 yysons[0]=params, yysons[1]=expansion-cache, yysons[2]=deref/NULL
@@ -348,38 +404,37 @@ We store the parameter evaluation space size in the ival of the exec node.
 	if (lt->token == TOK_ATOM) {
 		lt->token = TOK_FUNCTION;
 	}
-	if (lt->token==TOK_FUNCTION || 
-	    lt->token==TOK_SETOP || 
-            lt->token==TOK_SETAGGR) 
-	{
-		YYSTREE params, exec = Myynode(0,0), deref;
+	if (lt->token == TOK_FUNCTION || lt->token == TOK_SETOP || lt->token == TOK_SETAGGR) {
+		YYSTREE params, exec = Myynode(0, 0), deref;
+
 		if (lt->yyval.vtype == TYPE_void) {
 			deref = lt->yysons[0];
-		    	params = lt->yysons[1];
-                	if (Myypostprocess(deref) < 0) {
-                		rtrn = -1;
-                	}
+			params = lt->yysons[1];
+			if (Myypostprocess(deref) < 0) {
+				rtrn = -1;
+			}
 		} else {
 			deref = NULL;
-		    	params = Myynode(0,0);
+			params = Myynode(0, 0);
 			*params = *lt;
 			params->token = 0;
 			params->yyval.vtype = TYPE_void;
 		}
 		exec->yyval.vtype = TYPE_int;
 		exec->yyval.val.ival = Myypostprocess(params);
-               	if (exec->yyval.val.ival < 0) {
+		if (exec->yyval.val.ival < 0) {
 			rtrn = -1;
-               		exec->yyval.val.ival = 0;
-               	} else {
-               		exec->yyval.val.ival *= (int)sizeof(ValRecord);
-               	}
+			exec->yyval.val.ival = 0;
+		} else {
+			exec->yyval.val.ival *= (int) sizeof(ValRecord);
+		}
 		lt->cnt = 0;
 		lt->last = lt->overflow = NULL;
 		lt->free.yyid = yyid;
-		Myyexpand(lt,params); 
-		Myyexpand(lt,exec); 
-		if (deref) Myyexpand(lt,deref); 
+		Myyexpand(lt, params);
+		Myyexpand(lt, exec);
+		if (deref)
+			Myyexpand(lt, deref);
 	} else {
 @-
 otherwise just count the number of sons (i.e. parameters below 'params' nodes)
@@ -387,22 +442,23 @@ otherwise just count the number of sons (i.e. parameters below 'params' nodes)
 		unsigned i;
 		int sons = 1, range_sons = 0;
 		YYSTREE t = lt;
+
 		do {
 			t->free.yyid = yyid;
-			for(i=0; i<t->cnt; i++)
+			for (i = 0; i < t->cnt; i++)
 				if (t->yysons[i]) {
 					range_sons |= (t->yysons[i]->token == TOK_RANGETEMP);
-		                	if (Myypostprocess(t->yysons[i]) < 0) {
-                				rtrn = -1;
-                			}
+					if (Myypostprocess(t->yysons[i]) < 0) {
+						rtrn = -1;
+					}
 					sons++;
 				}
-		}  while ((t = t->overflow) != NULL);
-		return (rtrn<0)?rtrn:(range_sons?MAXPARAMS:sons);
-	} 
-        return rtrn;
+		} while ((t = t->overflow) != NULL);
+		return (rtrn < 0) ? rtrn : (range_sons ? MAXPARAMS : sons);
+	}
+	return rtrn;
 }
- 
+
 @- Run-Time Proc Trees
 Procedures are parsed into template trees, forming their definition.
 At run-time, copies are drawn from it with @%yysubstitute()@. During
@@ -415,78 +471,80 @@ tree has pointers into this array, such that on repetitive PROC invocations,
 the new values just have to be assembled in the array, without having to 
 traverse the MIL tree.
 @c
-YYSTREE Myysubstitute_proc(YYSTREE t, int argc, ValPtr argv) {
+YYSTREE
+Myysubstitute_proc(YYSTREE t, int argc, ValPtr argv)
+{
 	YYSTREE tt = Myynode(t->token, 0);
 	int i;
 	unsigned j;
 
 #if 0
-argv->val.ival++; /* PETER: proc instantiation stats hack */
+	argv->val.ival++;	/* PETER: proc instantiation stats hack */
 #endif
 	tt->yyval = t->yyval;
-       	if (t->token == TOK_TEMPLATE) {
-	    if ((i = t->yyval.val.ival) == 0) {
-		tt->token = TOK_CONSTANT;
-		tt->yyval.vtype = TYPE_int;
-		tt->yyval.val.ival = argc;
-	    } else if ((i>0) && (i <= argc)) {
-	        tt->yyval.vtype = TYPE_ptr;
-		tt->yyval.val.pval = argv+i;
-	    } else { 
-		GDKerror("yysubstitute: illegal argument '$%d'.\n", i);
-		tt->yyval.vtype = TYPE_int;
-		tt->yyval.val.ival = 0;
-	    }
+	if (t->token == TOK_TEMPLATE) {
+		if ((i = t->yyval.val.ival) == 0) {
+			tt->token = TOK_CONSTANT;
+			tt->yyval.vtype = TYPE_int;
+			tt->yyval.val.ival = argc;
+		} else if ((i > 0) && (i <= argc)) {
+			tt->yyval.vtype = TYPE_ptr;
+			tt->yyval.val.pval = argv + i;
+		} else {
+			GDKerror("yysubstitute: illegal argument '$%d'.\n", i);
+			tt->yyval.vtype = TYPE_int;
+			tt->yyval.val.ival = 0;
+		}
 	} else if (t->yyval.val.pval && ATOMextern(t->yyval.vtype)) {
-	    if (t->yyval.vtype == TYPE_str) {
-		tt->yyval.val.sval = GDKstrdup(t->yyval.val.pval);
-	    } else {
-	        tt->yyval.val.pval = GDKmalloc(t->yyval.len); 
-	        memcpy(tt->yyval.val.pval, t->yyval.val.pval, t->yyval.len);
-	    } 
+		if (t->yyval.vtype == TYPE_str) {
+			tt->yyval.val.sval = GDKstrdup(t->yyval.val.pval);
+		} else {
+			tt->yyval.val.pval = GDKmalloc(t->yyval.len);
+			memcpy(tt->yyval.val.pval, t->yyval.val.pval, t->yyval.len);
+		}
 	}
 	tt->cnt = t->cnt;
-	for(j = 0; j < t->cnt; j++) 
-       	    if (t->yysons[j]) 
-		tt->yysons[j] = Myysubstitute_proc(t->yysons[j], argc, argv);
+	for (j = 0; j < t->cnt; j++)
+		if (t->yysons[j])
+			tt->yysons[j] = Myysubstitute_proc(t->yysons[j], argc, argv);
 
-	if (t->overflow) 
-	    tt->overflow = Myysubstitute_proc(t->overflow, argc, argv);
+	if (t->overflow)
+		tt->overflow = Myysubstitute_proc(t->overflow, argc, argv);
 
-	if ((t->token == TOK_VARTEMP)  || (t->token == TOK_RANGETEMP)) {
+	if ((t->token == TOK_VARTEMP) || (t->token == TOK_RANGETEMP)) {
 		tt->yyval.val.pval = (ptr) argv;
-		tt->yyval.len = argc; 
+		tt->yyval.len = argc;
 	}
 	return tt;
 }
 
-YYSTREE Myysubstitute_iter(YYSTREE t, int argc, ValPtr argv) {
+YYSTREE
+Myysubstitute_iter(YYSTREE t, int argc, ValPtr argv)
+{
 	YYSTREE tt = Myynode(t->token, 0);
 	unsigned i;
 
 	tt->yyval = t->yyval;
-       	if (t->token == TOK_ITERTEMP) {
-	    tt->yyval.vtype = TYPE_ptr;
-	    tt->yyval.val.pval = argv + t->yyval.val.ival;
+	if (t->token == TOK_ITERTEMP) {
+		tt->yyval.vtype = TYPE_ptr;
+		tt->yyval.val.pval = argv + t->yyval.val.ival;
 	} else if (t->yyval.val.pval && ATOMextern(t->yyval.vtype)) {
-	    if (t->yyval.vtype == TYPE_str) {
-		tt->yyval.val.sval = GDKstrdup(t->yyval.val.pval);
-	    } else {
-	        tt->yyval.val.pval = GDKmalloc(t->yyval.len); 
-	        memcpy(tt->yyval.val.pval, t->yyval.val.pval, t->yyval.len);
-	    } 
+		if (t->yyval.vtype == TYPE_str) {
+			tt->yyval.val.sval = GDKstrdup(t->yyval.val.pval);
+		} else {
+			tt->yyval.val.pval = GDKmalloc(t->yyval.len);
+			memcpy(tt->yyval.val.pval, t->yyval.val.pval, t->yyval.len);
+		}
 	}
 	tt->cnt = t->cnt;
-	if (t->yysons[0]) 
-	     tt->yysons[0] = (t->token == TOK_ITERATOR)?
-		Myycopy(t->yysons[0]):
-		Myysubstitute_iter(t->yysons[0], argc, argv);
-	for(i = 1; i < t->cnt; i++) 
-	    if (t->yysons[i]) 
-		tt->yysons[i] = Myysubstitute_iter(t->yysons[i], argc, argv);
+	if (t->yysons[0])
+		tt->yysons[0] = (t->token == TOK_ITERATOR) ? Myycopy(t->yysons[0]) : Myysubstitute_iter(t->yysons[0], argc, argv);
+	for (i = 1; i < t->cnt; i++)
+		if (t->yysons[i])
+			tt->yysons[i] = Myysubstitute_iter(t->yysons[i], argc, argv);
 
 	if (t->overflow)
-	    tt->overflow = Myysubstitute_iter(t->overflow, argc, argv);
+		tt->overflow = Myysubstitute_iter(t->overflow, argc, argv);
 
 	return tt;
 }
@@ -620,20 +678,27 @@ if trees are more than 2-deep.
 #endif /* _YYTREE_H_ */
 @c
 
-void Myyclean(YYSTREE t) { switch(t->token) {
-        case TOK_SEQ:
-        case TOK_SEQBLOCK:
-        case TOK_PARBLOCK:
-        case TOK_WHILE:
-        case TOK_ITCOMPILED: return;
-        }
-        GARBAGE(t);
+void
+Myyclean(YYSTREE t)
+{
+	switch (t->token) {
+	case TOK_SEQ:
+	case TOK_SEQBLOCK:
+	case TOK_PARBLOCK:
+	case TOK_WHILE:
+	case TOK_ITCOMPILED:
+		return;
+	}
+	GARBAGE(t);
 	for (; t; t = t->overflow) {
-                YYSTREE *sons;
+		YYSTREE *sons;
 		unsigned j;
-                for(j = 0, sons= t->yysons; j < t->cnt; j++, sons++) {
-                        if (*sons) CLEANUP(*sons);
-                }
+
+		for (j = 0, sons = t->yysons; j < t->cnt; j++, sons++) {
+			if (*sons)
+				CLEANUP(*sons);
+		}
 	}
 }
+
 @}

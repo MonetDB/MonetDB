@@ -26,18 +26,21 @@
 #include "list.h"
 #include <string.h>
 
-class Link: public language {
-    private:
-	List *monet_mod_path;
-    public:
-	Link(){ libsfx = strdup(""); }
-	const char *get_name() const{ return "Link"; }
-	virtual int handle_args( int , char **);
-	int generate_code( ostream &o, Symbol *root );
+class Link:public language {
+      private:
+	List * monet_mod_path;
+      public:
+	Link() {
+		libsfx = strdup("");
+	} const char *get_name() const {
+		return "Link";
+	} virtual int handle_args(int, char **);
+	int generate_code(ostream & o, Symbol *root);
 
-	ostream &gen_module( ostream &o, const Module &m );
-	ostream &gen_dependency( ostream &o, const Dependency &m );
-    public:
+	ostream & gen_module(ostream & o, const Module & m);
+	ostream & gen_dependency(ostream & o, const Dependency & m);
+
+      public:
 	char *libsfx;
 };
 

@@ -24,11 +24,11 @@
 
 #include "symbol.h"
 
-class Epilogue : public Symbol {
-    public:
-	Epilogue( int t, char *n ); 
+class Epilogue:public Symbol {
+      public:
+	Epilogue(int t, char *n);
 
-	virtual ostream &print( language *l, ostream &o ) const ;
+	virtual ostream & print(language * l, ostream & o) const;
 };
 #endif // _EPILOGUE_H_
 

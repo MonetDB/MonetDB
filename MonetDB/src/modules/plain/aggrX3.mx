@@ -166,7 +166,7 @@ These implementations need just one scan and a simple hash-maintained data
 structure to compute a group of common aggregates. 
 @c
 #include <gdk.h>
-#include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "aggrX3.proto.h"
 
 /* 
@@ -466,7 +466,7 @@ int CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),@3)@
+			@:aggrX3_sum(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bn,r),@3)@
 		} else {
 			@:aggrX3_sum(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),@3)@
 		}
@@ -474,14 +474,14 @@ int CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),@3)@
+			@:aggrX3_sum(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bn,r),@3)@
 		} else {
 			@:aggrX3_sum(0,1,HASHfnd_oid,loc,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),@3)@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&sums[(*(oid*)h)-min],@3)@
+			@:aggrX3_sum(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&sums[(*(oid*)h)-min],@3)@
 		} else {
 			@:aggrX3_sum(1,0,CHKrange,loc,BUNhloc(b,p),@1,@2,&sums[(*(oid*)h)-min],@3)@
 		}
@@ -518,7 +518,7 @@ int CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_prod(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),@3)@
+			@:aggrX3_prod(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bn,r),@3)@
 		} else {
 			@:aggrX3_prod(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),@3)@
 		}
@@ -526,14 +526,14 @@ int CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_prod(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),@3)@
+			@:aggrX3_prod(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bn,r),@3)@
 		} else {
 			@:aggrX3_prod(0,1,HASHfnd_oid,loc,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),@3)@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_prod(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&prods[(*(oid*)h)-min],@3)@
+			@:aggrX3_prod(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&prods[(*(oid*)h)-min],@3)@
 		} else {
 			@:aggrX3_prod(1,0,CHKrange,loc,BUNhloc(b,p),@1,@2,&prods[(*(oid*)h)-min],@3)@
 		}
@@ -594,7 +594,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 		/* void lookup */
 		slots = BATcount(e);
 		if (b->htype == TYPE_void) {
-			@:aggrX3_avg(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
+			@:aggrX3_avg(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
 		} else {
 			@:aggrX3_avg(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
 		}
@@ -603,7 +603,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 		/* hash lookup */
 		slots = BATcount(e);
 		if (b->htype == TYPE_void) {
-			@:aggrX3_avg(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
+			@:aggrX3_avg(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
 		} else {
 			@:aggrX3_avg(0,1,HASHfnd_oid,loc,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
 		}
@@ -611,7 +611,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 		/* array lookup */
 		slots = range;
 		if (b->htype == TYPE_void) {
-			@:aggrX3_avg(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
+			@:aggrX3_avg(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
 		} else {
 			@:aggrX3_avg(1,0,CHKrange,loc,BUNhloc(b,p),@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
 		}
@@ -873,8 +873,10 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 	} 
 	break;
 @c
-int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
+int
+CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
+{
+	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
@@ -884,9 +886,11 @@ int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
 
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 
-	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count(b=%s,e=%s);\n",b->batId,e->batId);
+	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count(b=%s,e=%s);\n", b->batId, e->batId);
+
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(int)@
 	range = max - min + 1;
@@ -895,65 +899,69 @@ int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(0,0,BUNfndVOID,var,&bhsb; bhsb++,BUNtloc(bn,r))@
+			@:aggrX3_count(0,0,BUNfndVOID,var,&bhsb;bhsb++,BUNtloc(bn,r))@
 		} else {
 			@:aggrX3_count(0,0,BUNfndVOID,var,BUNhloc(b,p),BUNtloc(bn,r))@
 		}
-	/* e->htype == TYPE_oid */
+		/* e->htype == TYPE_oid */
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,BUNtloc(bn,r))@
+			@:aggrX3_count(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,BUNtloc(bn,r))@
 		} else {
 			@:aggrX3_count(0,1,HASHfnd_oid,loc,BUNhloc(b,p),BUNtloc(bn,r))@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(1,0,CHKrange,loc,&bhsb; bhsb++,&cnt[(*(oid*)h)-min])@
+			@:aggrX3_count(1,0,CHKrange,loc,&bhsb;bhsb++,&cnt[(*(oid*)h)-min])@
 		} else {
 			@:aggrX3_count(1,0,CHKrange,loc,BUNhloc(b,p),&cnt[(*(oid*)h)-min])@
 		}
 	}
-			
+
 	*ret = bn;
 	return GDK_SUCCEED;
 }
 
 @- Size
 @c
-int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
+int
+CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
+{
+	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
 	int zero = 0;
 	BUN p, q, r;
 	int xx;
 
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	BATloopFast(e, p, q, xx) {
-		if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
+		if (BUNfastins(bn, BUNhead(e, p), &zero) == NULL) {
 			BBPreclaim(bn);
-			return GDK_FAIL; 
+			return GDK_FAIL;
 		}
 	}
 	/* scan b, and add increment totals for true values */
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
-		return GDK_FAIL; 
+		return GDK_FAIL;
 	}
 	BATloopFast(b, p, q, xx) {
-		if (*(bit*) BUNtloc(b,p) == TRUE) {
-			oid *h = (oid*) BUNhead(b,p);
+		if (*(bit *) BUNtloc(b, p) == TRUE) {
+			oid *h = (oid *) BUNhead(b, p);
 
 			BUNfndOID(r, bn, h);
 			if (r) {
-				int *dst = (int*) BUNtloc(bn, r);
+				int *dst = (int *) BUNtloc(bn, r);
+
 				(*dst)++;
 			}
 		}
-	} 
+	}
 	*ret = bn;
 	return GDK_SUCCEED;
 }
@@ -1223,7 +1231,7 @@ static int aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, 
 
         ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" SZFMT ",min=" SZFMT ",max=" SZFMT ");\n",
 	                             bn->batId,b->batId,g->batId,e->batId,range,(size_t) min,(size_t) max);
-	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&sums[(*(oid*)h)-min],,@2)@
+	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],,@2)@
 	
 	return GDK_SUCCEED;
 }
@@ -1259,9 +1267,9 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* void lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,BUNtloc(bn,r),,@2)@
+				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bn,r),,@2)@
 			} else {
-				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
+				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
 			}
 		} else {
 			@:aggrX3_sum3(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
@@ -1271,9 +1279,9 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,@1,BUNtloc(bn,r),,@2)@
+				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bn,r),,@2)@
 			} else {
-				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
+				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
 			}
 		} else {
 			@:aggrX3_sum3(0,1,HASHfnd_oid,loc,BUNhloc(b,p),@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
@@ -1284,7 +1292,7 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
 				return aggrX3_sum3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
 			} else {
-				@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2)@
+				@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2)@
 			}
 		} else {
 			@:aggrX3_sum3(1,0,CHKrange,loc,BUNhloc(b,p),@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2)@
@@ -1316,7 +1324,7 @@ static int aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e,
 
         ALGODEBUG THRprintf(GDKout, "aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" SZFMT ",min=" SZFMT ",max=" SZFMT ");\n",
 	                             bn->batId,b->batId,g->batId,e->batId,range,(size_t) min,(size_t) max);
-	@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&prods[(*(oid*)h)-min],,@2)@
+	@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],,@2)@
 	
 	return GDK_SUCCEED;
 }
@@ -1352,9 +1360,9 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* void lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_prod3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,BUNtloc(bn,r),,@2)@
+				@:aggrX3_prod3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bn,r),,@2)@
 			} else {
-				@:aggrX3_prod3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
+				@:aggrX3_prod3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
 			}
 		} else {
 			@:aggrX3_prod3(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
@@ -1364,9 +1372,9 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,@1,BUNtloc(bn,r),,@2)@
+				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bn,r),,@2)@
 			} else {
-				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
+				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
 			}
 		} else {
 			@:aggrX3_prod3(0,1,HASHfnd_oid,loc,BUNhloc(b,p),@1,BUNtloc(bn,r),if (w >= base && w < end),@2)@
@@ -1377,7 +1385,7 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
 				return aggrX3_prod3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
 			} else {
-				@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2)@
+				@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2)@
 			}
 		} else {
 			@:aggrX3_prod3(1,0,CHKrange,loc,BUNhloc(b,p),@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2)@
@@ -1453,7 +1461,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* void lookup */
 		slots = BATcount(e);
 		if (b->htype == TYPE_void) {
-			@:aggrX3_avg3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
+			@:aggrX3_avg3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
 		} else {
 			@:aggrX3_avg3(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
 		}
@@ -1462,7 +1470,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* hash lookup */
 		slots = BATcount(e);
 		if (b->htype == TYPE_void) {
-			@:aggrX3_avg3(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
+			@:aggrX3_avg3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
 		} else {
 			@:aggrX3_avg3(0,1,HASHfnd_oid,loc,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),BUNindex(bn,r)-off)@
 		}
@@ -1470,7 +1478,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* array lookup */
 		slots = range;
 		if (b->htype == TYPE_void) {
-			@:aggrX3_avg3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
+			@:aggrX3_avg3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
 		} else {
 			@:aggrX3_avg3(1,0,CHKrange,loc,BUNhloc(b,p),@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
 		}
@@ -1762,27 +1770,31 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	} 
 	break;
 @c
-int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e, bit *ignore_nils){
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
+int
+CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
+{
+	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
 	size_t range;
 	oid min, max;
 	oid bhsb;
-  	size_t base, end, w;
-  	ssize_t offset;
-  	int btt;
+	size_t base, end, w;
+	ssize_t offset;
+	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
 
-	if(bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 
-        ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count3(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
+	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count3(b=%s,g=%s,e=%s);\n", b->batId, g->batId, e->batId);
+
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_count3: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_count3: head of BAT g must not be nil.\n");
 
-	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return CMDaggrX3_count(ret, BATjoin(BATmirror(g),b,oid_nil), e, ignore_nils);
+	if ((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b) & 1)) || (!g->hkey)) {
+		return CMDaggrX3_count(ret, BATjoin(BATmirror(g), b, oid_nil), e, ignore_nils);
 	}
 
 	/* init: set all counts to zero and calculate min/max oid */
@@ -1793,27 +1805,27 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e, bit *ignore_nils){
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(0,0,BUNfndVOID,var,&bhsb; bhsb++,BUNtloc(bn,r))@
+			@:aggrX3_count3(0,0,BUNfndVOID,var,&bhsb;bhsb++,BUNtloc(bn,r))@
 		} else {
 			@:aggrX3_count3(0,0,BUNfndVOID,var,BUNhloc(b,p),BUNtloc(bn,r))@
 		}
-	/* e->htype == TYPE_oid */
+		/* e->htype == TYPE_oid */
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(0,1,HASHfnd_oid,loc,&bhsb; bhsb++,BUNtloc(bn,r))@
+			@:aggrX3_count3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,BUNtloc(bn,r))@
 		} else {
 			@:aggrX3_count3(0,1,HASHfnd_oid,loc,BUNhloc(b,p),BUNtloc(bn,r))@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(1,0,CHKrange,loc,&bhsb; bhsb++,&cnt[(*(oid*)h)-min])@
+			@:aggrX3_count3(1,0,CHKrange,loc,&bhsb;bhsb++,&cnt[(*(oid*)h)-min])@
 		} else {
 			@:aggrX3_count3(1,0,CHKrange,loc,BUNhloc(b,p),&cnt[(*(oid*)h)-min])@
 		}
 	}
-			
+
 	*ret = bn;
 	return GDK_SUCCEED;
 }

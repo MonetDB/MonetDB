@@ -29,23 +29,23 @@
 
 const int ANY_MAX = 32;
 
-class AnyArg : public Arg {
-    public:
-	AnyArg( int t, char *n, int nr = -1, const char* s = "null"); 
+class AnyArg:public Arg {
+      public:
+	AnyArg(int t, char *n, int nr = -1, const char *s = "null");
 
 	int nr() const;
-	AnyArg* bound() const;
+	AnyArg *bound() const;
 
-        virtual const char *toString() const;
-	virtual ostream &print( language *l, ostream &o ) const ;
-        char typestr[128];
-    private:
+	virtual const char *toString() const;
+	virtual ostream & print(language * l, ostream & o) const;
+	char typestr[128];
+      private:
 	int _nr;
-	AnyArg* _bound;
+	AnyArg *_bound;
 };
 
-extern void anynr_clear( );
-extern AnyArg* anynr_find( int, AnyArg* );
+extern void anynr_clear();
+extern AnyArg *anynr_find(int, AnyArg *);
 
 #endif // _ANYARG_H_
 

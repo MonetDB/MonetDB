@@ -69,19 +69,19 @@ This was shown to be inferior to direct hashing with integer anding. The new imp
 reflects this.
 @{
 @h
-gdk_export Heap*	HASHnew      (Hash *h, Heap *hp, int tpe, size_t size, hash_t mask);
-gdk_export hash_t	HASHmask     (size_t cnt);
-gdk_export BAT*	        HASHprint    (BAT *b);
-gdk_export void	        HASHremove   (BAT *b);
-gdk_export void		HASHdestroy  (BAT *b);
-gdk_export hash_t	HASHprobe    (Hash *h, ptr v); 
-gdk_export hash_t	HASHlist     (Hash* h, size_t i) ;
+gdk_export Heap *HASHnew(Hash *h, Heap *hp, int tpe, size_t size, hash_t mask);
+gdk_export hash_t HASHmask(size_t cnt);
+gdk_export BAT *HASHprint(BAT *b);
+gdk_export void HASHremove(BAT *b);
+gdk_export void HASHdestroy(BAT *b);
+gdk_export hash_t HASHprobe(Hash *h, ptr v);
+gdk_export hash_t HASHlist(Hash *h, size_t i);
 
 #define mix_sht(X)            (((X)>>7)^(X))
 #define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))
 #define hash_loc(H,V)         hash_any(H,V)
 #define hash_var(H,V)         hash_any(H,V)
-#define hash_any(H,V)         (ATOMhash((H).type, (V)) & (H).mask) 
+#define hash_any(H,V)         (ATOMhash((H).type, (V)) & (H).mask)
 #define hash_chr(H,V)         ((hash_t) (*(unsigned char*) (V)) & (H).mask)
 #define hash_sht(H,V)         ((hash_t) mix_sht(((unsigned short*) (V))[0]) & (H).mask)
 #define hash_int(H,V)         ((hash_t) mix_int(((unsigned int*) (V))[0]) & (H).mask)
@@ -223,29 +223,39 @@ larger. This converges after three cycles to direct hashing.
 @c
 #include "gdk.h"
 
-hash_t HASHmask(size_t cnt) {
-	size_t m = 8; /* minumum size */
-	while(m+m < cnt) m += m;
-	if (m+m - cnt < 2*(cnt - m)) m += m;
-  	return m;
+hash_t
+HASHmask(size_t cnt)
+{
+	size_t m = 8;		/* minumum size */
+
+	while (m + m < cnt)
+		m += m;
+	if (m + m - cnt < 2 * (cnt - m))
+		m += m;
+	return m;
 }
 
-void HASHclear(Hash *h) {
+void
+HASHclear(Hash *h)
+{
 	hash_t *i, *j;
+
 	for (i = h->hash, j = i + h->mask; i <= j; i++) {
 		*i = 0;
 	}
 }
 
-Heap* HASHnew(Hash *h, Heap *hp, int tpe, size_t size, hash_t mask) { 
-	if (HEAPalloc(hp, mask + size + 1, sizeof(hash_t)) < 0) /* +1 is for the hole */
+Heap *
+HASHnew(Hash *h, Heap *hp, int tpe, size_t size, hash_t mask)
+{
+	if (HEAPalloc(hp, mask + size + 1, sizeof(hash_t)) < 0)	/* +1 is for the hole */
 		return NULL;
-        h->lim = size;
+	h->lim = size;
 	h->mask = mask - 1;
-        h->link = (hash_t*) hp->base;
-        h->hash = h->link + h->lim;
-        h->type = tpe;
-	HASHclear(h); /* zero the mask */
+	h->link = (hash_t *) hp->base;
+	h->hash = h->link + h->lim;
+	h->type = tpe;
+	HASHclear(h);		/* zero the mask */
 	return hp;
 }
 
@@ -271,172 +281,205 @@ The prime routine for the BAT layer is to create a new hash index.
 Its argument is the element type and the maximum number of BUNs
 be stored under the hash function. 
 @c
-BAT* BAThash(BAT *b, size_t masksize) {
-    gdk_set_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
-    if (b->hhash_heap == NULL) {
-	unsigned int xx, tpe = ATOMstorage(b->htype);
-	size_t i, cnt = BATcount(b);
-	hash_t mask;
-	BUN p = BUNfirst(b), q = BUNlast(b), r;
-	Hash* h = &b->hhash;
-	Heap *hp = NULL;
-	str nme = BBP_physical(b->batCacheid);
+BAT *
+BAThash(BAT *b, size_t masksize)
+{
+	gdk_set_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BAThash");
+	if (b->hhash_heap == NULL) {
+		unsigned int xx, tpe = ATOMstorage(b->htype);
+		size_t i, cnt = BATcount(b);
+		hash_t mask;
+		BUN p = BUNfirst(b), q = BUNlast(b), r;
+		Hash *h = &b->hhash;
+		Heap *hp = NULL;
+		str nme = BBP_physical(b->batCacheid);
 
-	/* cnt = 0, hopefully there is a proper capacity from which
-	 * we can derive enough information */
-	if (!cnt) cnt = BATcapacity(b);
+		/* cnt = 0, hopefully there is a proper capacity from which
+		 * we can derive enough information */
+		if (!cnt)
+			cnt = BATcapacity(b);
 
-	if (b->htype == TYPE_void) {
-		BATDEBUG GDKwarning("BAThash: creating hash-table on void column..\n");
-		tpe = TYPE_void;
-	}
-	/* determine hash mask size */
-	if (masksize > 0) {
-		mask = HASHmask(masksize); /* p = first; so no dynamic scheme */
-	} else if (b->hkey) {
-		mask = HASHmask(cnt); /* p = first; so no dynamic scheme */
-	} else {
-		/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions 
-		 * we try HASHmask(cnt/16), then HASHmask(cnt/4), and finally HASHmask(cnt).  */ 
-		mask = HASHmask(cnt >> 6);
-		p += (cnt>>2) * BUNsize(b); /* try out on first 25% of b */
-		if (p>q) p = q;
-	}
-	do {
-		size_t nslots = mask >> 1; /* 1/2 full is too full */
-		r = BUNfirst(b);
-		i = BUNindex(b, r); 
-		if (hp) {
-			HEAPfree(hp);
-			GDKfree(hp);
+		if (b->htype == TYPE_void) {
+			BATDEBUG GDKwarning("BAThash: creating hash-table on void column..\n");
+
+			tpe = TYPE_void;
 		}
-		/* create the hash structures */
-		hp = (Heap*) GDKmalloc(sizeof(Heap));
-		hp->filename = GDKmalloc(strlen(nme)+12);
-		sprintf(hp->filename, "%s.%chash", nme, b->batCacheid>0?'h':'t');
-		if (HASHnew(h, hp, ATOMtype(b->htype), BATcapacity(b), (size_t)mask) == NULL) {
-    			gdk_unset_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
-			GDKfree(hp->filename);
-			GDKfree(hp);
-			return NULL;
+		/* determine hash mask size */
+		if (masksize > 0) {
+			mask = HASHmask(masksize);	/* p = first; so no dynamic scheme */
+		} else if (b->hkey) {
+			mask = HASHmask(cnt);	/* p = first; so no dynamic scheme */
+		} else {
+			/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions 
+			 * we try HASHmask(cnt/16), then HASHmask(cnt/4), and finally HASHmask(cnt).  */
+			mask = HASHmask(cnt >> 6);
+			p += (cnt >> 2) * BUNsize(b);	/* try out on first 25% of b */
+			if (p > q)
+				p = q;
 		}
-		if (hp->storage & STORE_MMAP)
-			MT_mmap_pin(hp->base, hp->maxsize);
+		do {
+			size_t nslots = mask >> 1;	/* 1/2 full is too full */
 
-		switch(tpe) {
+			r = BUNfirst(b);
+			i = BUNindex(b, r);
+			if (hp) {
+				HEAPfree(hp);
+				GDKfree(hp);
+			}
+			/* create the hash structures */
+			hp = (Heap *) GDKmalloc(sizeof(Heap));
+			hp->filename = GDKmalloc(strlen(nme) + 12);
+			sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
+			if (HASHnew(h, hp, ATOMtype(b->htype), BATcapacity(b), (size_t) mask) == NULL) {
+				gdk_unset_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BAThash");
+				GDKfree(hp->filename);
+				GDKfree(hp);
+				return NULL;
+			}
+			if (hp->storage & STORE_MMAP)
+				MT_mmap_pin(hp->base, hp->maxsize);
+
+			switch (tpe) {
 #ifndef NOEXPAND_CHR
-		case TYPE_chr: @:starthash(chr,hloc)@
+			case TYPE_chr:
+				@:starthash(chr,hloc)@
 #endif
 #ifndef NOEXPAND_SHT
-		case TYPE_sht: @:starthash(sht,hloc)@
+			case TYPE_sht:
+				@:starthash(sht,hloc)@
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
+			case TYPE_int:
+			case TYPE_flt:
+				@:starthash(int,hloc)@
+#endif
+#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
+			case TYPE_dbl:
+			case TYPE_lng:
+				@:starthash(lng,hloc)@
+#endif
+			default:
+				@:starthash(any,head)@
+			}
+		} while (r < p && mask < cnt && (mask <<= 2));
+
+		/* finish the hashtable with the current mask */
+		p = r;
+		switch (tpe) {
+#ifndef NOEXPAND_CHR
+		case TYPE_chr:
+			@:finishhash(chr,hloc)@
+#endif
+#ifndef NOEXPAND_SHT
+		case TYPE_sht:
+			@:finishhash(sht,hloc)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
-		case TYPE_flt: @:starthash(int,hloc)@
+		case TYPE_flt:
+			@:finishhash(int,hloc)@
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl:
-		case TYPE_lng: @:starthash(lng,hloc)@
+		case TYPE_lng:
+			@:finishhash(lng,hloc)@
 #endif
-		default:       @:starthash(any,head)@
+		default:
+			@:finishhash(any,head)@
 		}
-	} while(r < p && mask < cnt && (mask <<= 2));
-
-	/* finish the hashtable with the current mask */
-	p = r;
-	switch(tpe) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr: @:finishhash(chr,hloc)@
-#endif
-#ifndef NOEXPAND_SHT
-	case TYPE_sht: @:finishhash(sht,hloc)@
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
-	case TYPE_int:
-	case TYPE_flt: @:finishhash(int,hloc)@
-#endif
-#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
-	case TYPE_dbl:
-	case TYPE_lng: @:finishhash(lng,hloc)@
-#endif
-	default:       @:finishhash(any,head)@
+		b->hhash_heap = BATmirror(b)->thash_heap = hp;
 	}
-        b->hhash_heap = BATmirror(b)->thash_heap = hp; 
-    }
-    gdk_unset_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
-    return b; 
+	gdk_unset_lock(GDKhashLock[ABS(b->batCacheid) & BBPLOCKMASK], "BAThash");
+	return b;
 }
 
 @- 
 The entry on which a value hashes can be calculated with the 
 routine @%HASHprobe@. 
 @c
-hash_t HASHprobe(Hash *h, ptr v) {
-	switch(ATOMstorage(h->type)) {
+hash_t
+HASHprobe(Hash *h, ptr v)
+{
+	switch (ATOMstorage(h->type)) {
 #ifndef NOEXPAND_CHR
-	case TYPE_chr: return hash_chr(*h,v);
+	case TYPE_chr:
+		return hash_chr(*h, v);
 #endif
 #ifndef NOEXPAND_SHT
-	case TYPE_sht: return hash_sht(*h,v);
+	case TYPE_sht:
+		return hash_sht(*h, v);
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
-	case TYPE_flt: return hash_int(*h,v);
+	case TYPE_flt:
+		return hash_int(*h, v);
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
-	case TYPE_lng: return hash_lng(*h,v);
+	case TYPE_lng:
+		return hash_lng(*h, v);
 #endif
-	default:       return hash_any(*h,v);
+	default:
+		return hash_any(*h, v);
 	}
 }
 
-BAT *HASHprint(BAT *b) {
+BAT *
+HASHprint(BAT *b)
+{
 #if SIZEOF_OID == SIZEOF_INT
 	BAT *bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
 #else
 	BAT *bn = BATnew(BAThtype(b), TYPE_lng, BATcount(b));
 #endif
-	BUN p,q;
+	BUN p, q;
 
-	if( bn == NULL) return NULL;
-	if (!(b && b->hhash_heap)) return 0;
-	BATloop(b,p,q) {
-		size_t i = HASHprobe(&b->hhash, BUNhead(b,p));
-		bunfastins(bn, BUNhead(b,p), &i); 
+	if (bn == NULL)
+		return NULL;
+	if (!(b && b->hhash_heap))
+		return 0;
+	BATloop(b, p, q) {
+		size_t i = HASHprobe(&b->hhash, BUNhead(b, p));
+
+		bunfastins(bn, BUNhead(b, p), &i);
 	}
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = FALSE;
 	return bn;
-bunins_failed:
+      bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }
 
-hash_t HASHlist(Hash* h, size_t i) {
-        hash_t j;
-        hash_t c = 1;
+hash_t
+HASHlist(Hash *h, size_t i)
+{
+	hash_t j;
+	hash_t c = 1;
 
-        while ((j = h->link[i]) > 0) {
-                c++;
-                i = j;
-                if (i > h->lim) {
-                        stream_printf(GDKout, "hash inconsistency link " SZFMT "\n",i);
-                        break;
-                }
-        }
-        return c;
+	while ((j = h->link[i]) > 0) {
+		c++;
+		i = j;
+		if (i > h->lim) {
+			stream_printf(GDKout, "hash inconsistency link " SZFMT "\n", i);
+			break;
+		}
+	}
+	return c;
 }
 
-void HASHremove(BAT *b) {
+void
+HASHremove(BAT *b)
+{
 	if (b->hhash_heap) {
 		BAT *p = BBP_cache(VIEWparent(b));
+
 		if (p && b->hhash_heap == p->hhash_heap) {
 			GDKerror("HASHremove: view-bat cannot remove parent hash-table\n");
 		} else {
 			HEAPfree(b->hhash_heap);
-        		if (b->hhash_heap->storage&STORE_MMAP) 
-                		HEAPdelete(b->hhash_heap, BBP_physical(b->batCacheid), (b->batCacheid>0)?"hhash":"thash");
+			if (b->hhash_heap->storage & STORE_MMAP)
+				HEAPdelete(b->hhash_heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hhash" : "thash");
 			GDKfree(b->hhash_heap);
 		}
 		memset(&b->hhash, 0, sizeof(Hash));
@@ -444,10 +487,13 @@ void HASHremove(BAT *b) {
 	}
 }
 
-void HASHdestroy(BAT *b) {
+void
+HASHdestroy(BAT *b)
+{
 	HASHremove(b);
 	HASHremove(BATmirror(b));
 }
+
 @}
 @+  Binary Index Trees
 In this @emph{index} implementation we have chosen for attachment of a sorted list
@@ -479,56 +525,62 @@ instead for accelerating range predicates. (TODO)
 @- Binary Index Trees
 @h
 /* type specific binary search implementations */
-gdk_export BUN	IDXfnd_chr       (BAT *b, ptr v);
-gdk_export BUN	IDXfnd_sht       (BAT *b, ptr v);
-gdk_export BUN	IDXfnd_int       (BAT *b, ptr v);
-gdk_export BUN	IDXfnd_flt       (BAT *b, ptr v);
-gdk_export BUN	IDXfnd_lng       (BAT *b, ptr v);
-gdk_export BUN	IDXfnd_dbl       (BAT *b, ptr v);
-gdk_export BUN	IDXfnd_loc       (BAT *b, ptr v);
-gdk_export BUN	IDXfnd_var       (BAT *b, ptr v);
-gdk_export BUN*	IDXfndfirst_chr  (BAT *b, ptr v);
-gdk_export BUN*	IDXfndfirst_sht  (BAT *b, ptr v);
-gdk_export BUN*	IDXfndfirst_int  (BAT *b, ptr v);
-gdk_export BUN*	IDXfndfirst_flt  (BAT *b, ptr v);
-gdk_export BUN*	IDXfndfirst_lng  (BAT *b, ptr v);
-gdk_export BUN*	IDXfndfirst_dbl  (BAT *b, ptr v);
-gdk_export BUN*	IDXfndfirst_loc  (BAT *b, ptr v);
-gdk_export BUN*	IDXfndfirst_var  (BAT *b, ptr v);
-gdk_export BUN*	IDXfndlast_chr   (BAT *b, ptr v);
-gdk_export BUN*	IDXfndlast_sht   (BAT *b, ptr v);
-gdk_export BUN*	IDXfndlast_int   (BAT *b, ptr v);
-gdk_export BUN*	IDXfndlast_flt   (BAT *b, ptr v);
-gdk_export BUN*	IDXfndlast_lng   (BAT *b, ptr v);
-gdk_export BUN*	IDXfndlast_dbl   (BAT *b, ptr v);
-gdk_export BUN*	IDXfndlast_loc   (BAT *b, ptr v);
-gdk_export BUN*	IDXfndlast_var   (BAT *b, ptr v);
+gdk_export BUN IDXfnd_chr(BAT *b, ptr v);
+gdk_export BUN IDXfnd_sht(BAT *b, ptr v);
+gdk_export BUN IDXfnd_int(BAT *b, ptr v);
+gdk_export BUN IDXfnd_flt(BAT *b, ptr v);
+gdk_export BUN IDXfnd_lng(BAT *b, ptr v);
+gdk_export BUN IDXfnd_dbl(BAT *b, ptr v);
+gdk_export BUN IDXfnd_loc(BAT *b, ptr v);
+gdk_export BUN IDXfnd_var(BAT *b, ptr v);
+gdk_export BUN *IDXfndfirst_chr(BAT *b, ptr v);
+gdk_export BUN *IDXfndfirst_sht(BAT *b, ptr v);
+gdk_export BUN *IDXfndfirst_int(BAT *b, ptr v);
+gdk_export BUN *IDXfndfirst_flt(BAT *b, ptr v);
+gdk_export BUN *IDXfndfirst_lng(BAT *b, ptr v);
+gdk_export BUN *IDXfndfirst_dbl(BAT *b, ptr v);
+gdk_export BUN *IDXfndfirst_loc(BAT *b, ptr v);
+gdk_export BUN *IDXfndfirst_var(BAT *b, ptr v);
+gdk_export BUN *IDXfndlast_chr(BAT *b, ptr v);
+gdk_export BUN *IDXfndlast_sht(BAT *b, ptr v);
+gdk_export BUN *IDXfndlast_int(BAT *b, ptr v);
+gdk_export BUN *IDXfndlast_flt(BAT *b, ptr v);
+gdk_export BUN *IDXfndlast_lng(BAT *b, ptr v);
+gdk_export BUN *IDXfndlast_dbl(BAT *b, ptr v);
+gdk_export BUN *IDXfndlast_loc(BAT *b, ptr v);
+gdk_export BUN *IDXfndlast_var(BAT *b, ptr v);
 
 @- 
 Once a BAT is being destroyed, it should also take care of the indexes
 maintained.
 @c
-void IDXremove(BAT *b) {
+void
+IDXremove(BAT *b)
+{
 	if (b->hidx_heap) {
 		BAT *p = BBP_cache(VIEWparent(b));
+
 		if (p && b->hidx_heap == p->hidx_heap) {
 			GDKerror("IDXremove: view-bat cannot remove parent idx-tree\n");
 		} else {
 			HEAPfree(b->hidx_heap);
-        		if (b->hidx_heap->storage&STORE_MMAP) 
-                		HEAPdelete(b->hhash_heap, BBP_physical(b->batCacheid), (b->batCacheid>0)?"hidx":"tidx");
+			if (b->hidx_heap->storage & STORE_MMAP)
+				HEAPdelete(b->hhash_heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hidx" : "tidx");
 			GDKfree(b->hidx_heap);
 		}
 		memset(&b->hidx, 0, sizeof(IDX));
-		BATmirror(b)->tidx_heap = b->hidx_heap = NULL; 
+		BATmirror(b)->tidx_heap = b->hidx_heap = NULL;
 	}
 }
 
 
-void IDXdestroy(BAT *b) {
+void
+IDXdestroy(BAT *b)
+{
 	IDXremove(b);
 	IDXremove(BATmirror(b));
 }
+
 @- 
 Insertion is straight forward, 
 The intermediate tree should be built around the hloc directly. This
@@ -583,188 +635,207 @@ binary search trees later on.
 		*base[j] = p; base[j]++;
 	} break;
 @c
-void IDXcollect(Index vt, Tnode	*t){
+void
+IDXcollect(Index vt, Tnode *t)
+{
 	if (t == NULL) {
-		return; 
+		return;
 	}
-	IDXcollect(vt, t->l); 
-	*vt->last = t->v; 
-	vt->last++; 
-	IDXcollect(vt, t->r); 
+	IDXcollect(vt, t->l);
+	*vt->last = t->v;
+	vt->last++;
+	IDXcollect(vt, t->r);
 }
 
-BAT* BATidx(BAT *b, BAT *h) {
-    if (b->htype == TYPE_void || !ATOMlinear(b->htype)) {
-	    return NULL;
-    }
-    gdk_set_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
-    if (b->hidx_heap == NULL) {
-	    size_t cnt = BATcount(b);
-	    BAT *unique = h;
-	    size_t r = 0;
-	    BUN p, q, *lnk; 
-	    size_t i, j;
-	    Index idx = &b->hidx;
-	    Heap tmp, *hp = (Heap*) GDKmalloc(sizeof(Heap));
-	    str nme = BBP_physical(b->batCacheid);
-		
-	    hp->filename = GDKmalloc(strlen(nme)+12);
-	    sprintf(hp->filename, "%s.%cidx", nme, b->batCacheid>0?'h':'t');
-	    if (HEAPalloc(hp, MAX(1,cnt), sizeof(BUN)) < 0) {
-                gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
-		GDKfree(hp->filename);
-		GDKfree(hp);
+BAT *
+BATidx(BAT *b, BAT *h)
+{
+	if (b->htype == TYPE_void || !ATOMlinear(b->htype)) {
 		return NULL;
-	    }
-	    if (hp->storage & STORE_MMAP)
-	        MT_mmap_pin(hp->base, hp->maxsize);
+	}
+	gdk_set_lock(GDKidxLock[ABS(b->batCacheid) & BBPLOCKMASK], "BATidx");
+	if (b->hidx_heap == NULL) {
+		size_t cnt = BATcount(b);
+		BAT *unique = h;
+		size_t r = 0;
+		BUN p, q, *lnk;
+		size_t i, j;
+		Index idx = &b->hidx;
+		Heap tmp, *hp = (Heap *) GDKmalloc(sizeof(Heap));
+		str nme = BBP_physical(b->batCacheid);
+
+		hp->filename = GDKmalloc(strlen(nme) + 12);
+		sprintf(hp->filename, "%s.%cidx", nme, b->batCacheid > 0 ? 'h' : 't');
+		if (HEAPalloc(hp, MAX(1, cnt), sizeof(BUN)) < 0) {
+			gdk_unset_lock(GDKidxLock[ABS(b->batCacheid) & BBPLOCKMASK], "BATidx");
+			GDKfree(hp->filename);
+			GDKfree(hp);
+			return NULL;
+		}
+		if (hp->storage & STORE_MMAP)
+			MT_mmap_pin(hp->base, hp->maxsize);
 @-
 dynamic check using sampling to see whether there are many doubles.
 @c
 #define IDX_MANY_DUPLICATES	4
-	    if (b->hkey == 0 && cnt > 10000 && unique == NULL) {
-		BAT *v = NULL, *s = BATsample(b, MIN(BATcount(b),1000));
-		if (s) {
-			v = BAThistogram(BATmirror(s));
-			if (v) {
-				if (BATcount(v) * IDX_MANY_DUPLICATES < BATcount(b) ) {
-		    			unique = BAThistogram(BATmirror(b));
-				} 
-				BBPreclaim(v);
+		if (b->hkey == 0 && cnt > 10000 && unique == NULL) {
+			BAT *v = NULL, *s = BATsample(b, MIN(BATcount(b), 1000));
+
+			if (s) {
+				v = BAThistogram(BATmirror(s));
+				if (v) {
+					if (BATcount(v) * IDX_MANY_DUPLICATES < BATcount(b)) {
+						unique = BAThistogram(BATmirror(b));
+					}
+					BBPreclaim(v);
+				}
+				BBPreclaim(s);
 			}
-			BBPreclaim(s);
+			if (v == NULL) {
+				gdk_unset_lock(GDKidxLock[ABS(b->batCacheid) & BBPLOCKMASK], "BATidx");
+				HEAPfree(hp);
+				return NULL;
+			}
 		}
-		if (v == NULL) {
-                	gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
-			HEAPfree(hp);
-			return NULL;
-		}
-	    } 
 @- normal case
 Use randomized order for insert elements to get a nicely balanced tree
 @c
-	    lnk = idx->base = (BUN*) hp->base; 
-	    idx->last = idx->first = idx->base; 
-	    idx->root = 0; 
+		lnk = idx->base = (BUN *) hp->base;
+		idx->last = idx->first = idx->base;
+		idx->root = 0;
 
-	    if (unique == NULL) {
-	    	tmp.filename = GDKmalloc(strlen(nme)+12);
-	        sprintf(tmp.filename, "%s.%cidxtmp", nme, b->batCacheid>0?'h':'t');
-		if (HEAPalloc(&tmp, MAX(1,cnt), sizeof(Tnode)) < 0) {
-			idx->base = idx->last = idx->first = NULL;
-                	gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
-			HEAPfree(hp);
-			return NULL;
-		}
-	        if (tmp.storage & STORE_MMAP)
-	            MT_mmap_pin(tmp.base, tmp.maxsize);
-		idx->stack = (Tnode*) tmp.base;
-		idx->free = idx->stack; 
-		memset((str)idx->stack, 0, cnt*sizeof(Tnode)); 
-		BATloopFast(b, p, q, i) {
-			*(lnk++) = p; 
-		}
-		i = lnk - idx->base; 
-		lnk = idx->base; 
+		if (unique == NULL) {
+			tmp.filename = GDKmalloc(strlen(nme) + 12);
+			sprintf(tmp.filename, "%s.%cidxtmp", nme, b->batCacheid > 0 ? 'h' : 't');
+			if (HEAPalloc(&tmp, MAX(1, cnt), sizeof(Tnode)) < 0) {
+				idx->base = idx->last = idx->first = NULL;
+				gdk_unset_lock(GDKidxLock[ABS(b->batCacheid) & BBPLOCKMASK], "BATidx");
+				HEAPfree(hp);
+				return NULL;
+			}
+			if (tmp.storage & STORE_MMAP)
+				MT_mmap_pin(tmp.base, tmp.maxsize);
+			idx->stack = (Tnode *) tmp.base;
+			idx->free = idx->stack;
+			memset((str) idx->stack, 0, cnt * sizeof(Tnode));
+			BATloopFast(b, p, q, i) {
+				*(lnk++) = p;
+			}
+			i = lnk - idx->base;
+			lnk = idx->base;
 
-		switch(ATOMstorage(b->htype)) {
+			switch (ATOMstorage(b->htype)) {
 #ifndef NOEXPAND_CHR
-		case TYPE_chr:	@:idxinsloop(simple,chr,loc)@
+			case TYPE_chr:
+				@:idxinsloop(simple,chr,loc)@
 #endif
 #ifndef NOEXPAND_SHT
-		case TYPE_sht:	@:idxinsloop(simple,sht,loc)@
+			case TYPE_sht:
+				@:idxinsloop(simple,sht,loc)@
 #endif
 #ifndef NOEXPAND_INT
-		case TYPE_int:	@:idxinsloop(simple,int,loc)@
+			case TYPE_int:
+				@:idxinsloop(simple,int,loc)@
 #endif
 #ifndef NOEXPAND_FLT
-		case TYPE_flt:	@:idxinsloop(simple,flt,loc)@
+			case TYPE_flt:
+				@:idxinsloop(simple,flt,loc)@
 #endif
 #ifndef NOEXPAND_DBL
-		case TYPE_dbl:	@:idxinsloop(simple,dbl,loc)@
+			case TYPE_dbl:
+				@:idxinsloop(simple,dbl,loc)@
 #endif
 #ifndef NOEXPAND_LNG
-		case TYPE_lng:	@:idxinsloop(simple,lng,loc)@
+			case TYPE_lng:
+				@:idxinsloop(simple,lng,loc)@
 #endif
-		default:
-			if (b->hvarsized) {
-				@:idxinsloop(atom,b->htype,var)@
-			} else {
-				@:idxinsloop(atom,b->htype,loc)@
+			default:
+				if (b->hvarsized) {
+					@:idxinsloop(atom,b->htype,var)@
+				} else {
+					@:idxinsloop(atom,b->htype,loc)@
+				}
 			}
-		}
-		IDXcollect(&b->hidx, b->hidx.root); 
+			IDXcollect(&b->hidx, b->hidx.root);
 
 @- many duplicates
 construction in one pass from a sorted histogram 
 @c
-	    } else {
-		size_t off, cur = 0;
-		BUN **base, **map;
-		BAT *histo;
-
- 		if (BAThordered(unique)&1) {
-			histo = unique;
 		} else {
-		   	histo = BATsort(unique);
-	        	if (unique != h) BBPunfix(unique->batCacheid);
-		}
- 		off = BUNindex(histo, BUNfirst(histo));
-	    	tmp.filename = GDKmalloc(strlen(nme)+12);
-	        sprintf(tmp.filename, "%s.%cidxtmp", nme, b->batCacheid>0?'h':'t');
-		if (histo == NULL || HEAPalloc(&tmp, BATcount(histo), sizeof(BUN*)) < 0) {
-			idx->base = idx->last = idx->first = NULL;
-                	gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
-			HEAPfree(hp);
-			return NULL;
-		}
-	        if (tmp.storage & STORE_MMAP)
-	            MT_mmap_pin(tmp.base, tmp.maxsize);
- 		base = map = (BUN**) tmp.base;
+			size_t off, cur = 0;
+			BUN **base, **map;
+			BAT *histo;
 
-		BATloopFast(histo, p, q, i) {
-			*(map++) = lnk + cur;
-			cur += *(int*) BUNtloc(histo,p);
-		}
-		if (cur == cnt) 
-		switch(ATOMstorage(b->htype)) {
+			if (BAThordered(unique) & 1) {
+				histo = unique;
+			} else {
+				histo = BATsort(unique);
+				if (unique != h)
+					BBPunfix(unique->batCacheid);
+			}
+			off = BUNindex(histo, BUNfirst(histo));
+			tmp.filename = GDKmalloc(strlen(nme) + 12);
+			sprintf(tmp.filename, "%s.%cidxtmp", nme, b->batCacheid > 0 ? 'h' : 't');
+			if (histo == NULL || HEAPalloc(&tmp, BATcount(histo), sizeof(BUN *)) < 0) {
+				idx->base = idx->last = idx->first = NULL;
+				gdk_unset_lock(GDKidxLock[ABS(b->batCacheid) & BBPLOCKMASK], "BATidx");
+				HEAPfree(hp);
+				return NULL;
+			}
+			if (tmp.storage & STORE_MMAP)
+				MT_mmap_pin(tmp.base, tmp.maxsize);
+			base = map = (BUN **) tmp.base;
+
+			BATloopFast(histo, p, q, i) {
+				*(map++) = lnk + cur;
+				cur += *(int *) BUNtloc(histo, p);
+			}
+			if (cur == cnt)
+				switch (ATOMstorage(b->htype)) {
 #ifndef NOEXPAND_CHR
-		case TYPE_chr:	@:idxhistoloop(chr,loc)@
+				case TYPE_chr:
+					@:idxhistoloop(chr,loc)@
 #endif
 #ifndef NOEXPAND_SHT
-		case TYPE_sht:	@:idxhistoloop(sht,loc)@
+				case TYPE_sht:
+					@:idxhistoloop(sht,loc)@
 #endif
 #ifndef NOEXPAND_INT
-		case TYPE_int:	@:idxhistoloop(int,loc)@
+				case TYPE_int:
+					@:idxhistoloop(int,loc)@
 #endif
 #ifndef NOEXPAND_FLT
-		case TYPE_flt:	@:idxhistoloop(flt,loc)@
+				case TYPE_flt:
+					@:idxhistoloop(flt,loc)@
 #endif
 #ifndef NOEXPAND_DBL
-		case TYPE_dbl:	@:idxhistoloop(dbl,loc)@
+				case TYPE_dbl:
+					@:idxhistoloop(dbl,loc)@
 #endif
 #ifndef NOEXPAND_LNG
-		case TYPE_lng:	@:idxhistoloop(lng,loc)@
+				case TYPE_lng:
+					@:idxhistoloop(lng,loc)@
 #endif
-		default:
-			if (b->hvarsized) {
-				@:idxhistoloop(var,var)@
-			} else {
-				@:idxhistoloop(loc,loc)@
+				default:
+					if (b->hvarsized) {
+						@:idxhistoloop(var,var)@
+					} else {
+						@:idxhistoloop(loc,loc)@
+					}
+				}
+			if (histo != unique || h == NULL) {
+				BBPunfix(histo->batCacheid);
 			}
+			idx->last = idx->first + cnt;
 		}
-		if (histo != unique || h == NULL) {
-			BBPunfix(histo->batCacheid);
-		}
-		idx->last = idx->first + cnt;
-	    }
-	    HEAPfree(&tmp);
-	    idx->stack = idx->root = 0; 
-	    b->hidx_heap = BATmirror(b)->tidx_heap = hp; 
-    }
-    gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
-    return b; 
+		HEAPfree(&tmp);
+		idx->stack = idx->root = 0;
+		b->hidx_heap = BATmirror(b)->tidx_heap = hp;
+	}
+	gdk_unset_lock(GDKidxLock[ABS(b->batCacheid) & BBPLOCKMASK], "BATidx");
+	return b;
 }
+
 @-
 @}
 Binary searching is used to locate elements in the sorted list. 
@@ -818,34 +889,42 @@ BUN IDXfnd_@2(BAT *b, ptr v) {
 @:idxfnd(atom,var,var)@
 @:idxfnd(atom,loc,loc)@
 
-BUN IDXfnd(BAT *b, ptr v){
-	FATALcheck(b->hidx_heap == NULL, "IDXfnd: tree expected"); 
-	FATALcheck(v == NULL, "IDXfnd: value expected"); 
+BUN
+IDXfnd(BAT *b, ptr v)
+{
+	FATALcheck(b->hidx_heap == NULL, "IDXfnd: tree expected");
+	FATALcheck(v == NULL, "IDXfnd: value expected");
 
-	switch(ATOMstorage(b->htype)) {
+	switch (ATOMstorage(b->htype)) {
 #ifndef NOEXPAND_CHR
-	case TYPE_chr:	return IDXfnd_chr(b,v);
+	case TYPE_chr:
+		return IDXfnd_chr(b, v);
 #endif
 #ifndef NOEXPAND_SHT
-	case TYPE_sht:	return IDXfnd_sht(b,v);
+	case TYPE_sht:
+		return IDXfnd_sht(b, v);
 #endif
 #ifndef NOEXPAND_INT
-	case TYPE_int:	return IDXfnd_int(b,v);
+	case TYPE_int:
+		return IDXfnd_int(b, v);
 #endif
 #ifndef NOEXPAND_FLT
-	case TYPE_flt:	return IDXfnd_flt(b,v);
+	case TYPE_flt:
+		return IDXfnd_flt(b, v);
 #endif
 #ifndef NOEXPAND_DBL
-	case TYPE_dbl:	return IDXfnd_dbl(b,v);
+	case TYPE_dbl:
+		return IDXfnd_dbl(b, v);
 #endif
 #ifndef NOEXPAND_LNG
-	case TYPE_lng:	return IDXfnd_lng(b,v);
+	case TYPE_lng:
+		return IDXfnd_lng(b, v);
 #endif
 	default:
 		if (b->hvarsized) {
-			return IDXfnd_var(b,v);
+			return IDXfnd_var(b, v);
 		}
-		return IDXfnd_loc(b,v);
+		return IDXfnd_loc(b, v);
 	}
 }
 
@@ -957,30 +1036,52 @@ BUN *IDXfnd@1(BAT *b, ptr v){
 @:idxfndwhich(first)@
 @:idxfndwhich(last)@
 
-void IDXrng_(BAT *b, ptr v, ptr w, bit li, bit hi, BUN **p, BUN **q){
-	int (*cmp)(ptr,ptr) = BATatoms[b->htype].atomCmp;
-	int res = (*cmp)(v, w);
+void
+IDXrng_(BAT *b, ptr v, ptr w, bit li, bit hi, BUN **p, BUN **q)
+{
+	int (*cmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
+	int res = (*cmp) (v, w);
+
 	if (res > 0) {
-		{ptr _swap = v; v = w; w = _swap;}
-		{bit _si = li; li = hi; hi = _si;}
+		{
+			ptr _swap = v;
+
+			v = w;
+			w = _swap;
+		}
+		{
+			bit _si = li;
+
+			li = hi;
+			hi = _si;
+		}
 	}
-	if (li) *p = IDXfndfirst(b,v);
-	else    *p = IDXfndlast(b,v);
+	if (li)
+		*p = IDXfndfirst(b, v);
+	else
+		*p = IDXfndlast(b, v);
 	if (res) {
-		if (hi) *q = IDXfndlast(b,w);
-		else    *q = IDXfndfirst(b,w);
+		if (hi)
+			*q = IDXfndlast(b, w);
+		else
+			*q = IDXfndfirst(b, w);
 	} else if (!(li && hi)) {
 		*q = *p;
 	} else {
 		BUN *cur, *end = IDXlast(b);
-		for(cur = *p; cur < end && (cmp)(BUNhead(b,*cur),v) == 0; cur++);
+
+		for (cur = *p; cur < end && (cmp) (BUNhead(b, *cur), v) == 0; cur++)
+			;
 		*q = cur;
 	}
 }
 
-void IDXrng(BAT *b, ptr v, ptr w, BUN **p, BUN **q){
+void
+IDXrng(BAT *b, ptr v, ptr w, BUN **p, BUN **q)
+{
 	IDXrng_(b, v, w, TRUE, TRUE, p, q);
 }
+
 @}
 @+ Binary Search on a Sorted BAT
 We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that 
@@ -1014,30 +1115,30 @@ value and expands to @`SORTfndlast_chr@5, @`SORTfndlast_sht@5,
 @{
 @h
 /* type specific binary search implementations */
-gdk_export BUN	SORTfnd_chr      (BAT *b, ptr v);
-gdk_export BUN	SORTfnd_sht      (BAT *b, ptr v);
-gdk_export BUN	SORTfnd_int      (BAT *b, ptr v);
-gdk_export BUN	SORTfnd_flt      (BAT *b, ptr v);
-gdk_export BUN	SORTfnd_lng      (BAT *b, ptr v);
-gdk_export BUN	SORTfnd_dbl      (BAT *b, ptr v);
-gdk_export BUN	SORTfnd_loc      (BAT *b, ptr v);
-gdk_export BUN	SORTfnd_var      (BAT *b, ptr v);
-gdk_export BUN	SORTfndfirst_chr (BAT *b, ptr v);
-gdk_export BUN	SORTfndfirst_sht (BAT *b, ptr v);
-gdk_export BUN	SORTfndfirst_int (BAT *b, ptr v);
-gdk_export BUN	SORTfndfirst_flt (BAT *b, ptr v);
-gdk_export BUN	SORTfndfirst_lng (BAT *b, ptr v);
-gdk_export BUN	SORTfndfirst_dbl (BAT *b, ptr v);
-gdk_export BUN	SORTfndfirst_loc (BAT *b, ptr v);
-gdk_export BUN	SORTfndfirst_var (BAT *b, ptr v);
-gdk_export BUN	SORTfndlast_chr  (BAT *b, ptr v);
-gdk_export BUN	SORTfndlast_sht  (BAT *b, ptr v);
-gdk_export BUN	SORTfndlast_int  (BAT *b, ptr v);
-gdk_export BUN	SORTfndlast_flt  (BAT *b, ptr v);
-gdk_export BUN	SORTfndlast_lng  (BAT *b, ptr v);
-gdk_export BUN	SORTfndlast_dbl  (BAT *b, ptr v);
-gdk_export BUN	SORTfndlast_loc  (BAT *b, ptr v);
-gdk_export BUN	SORTfndlast_var  (BAT *b, ptr v);
+gdk_export BUN SORTfnd_chr(BAT *b, ptr v);
+gdk_export BUN SORTfnd_sht(BAT *b, ptr v);
+gdk_export BUN SORTfnd_int(BAT *b, ptr v);
+gdk_export BUN SORTfnd_flt(BAT *b, ptr v);
+gdk_export BUN SORTfnd_lng(BAT *b, ptr v);
+gdk_export BUN SORTfnd_dbl(BAT *b, ptr v);
+gdk_export BUN SORTfnd_loc(BAT *b, ptr v);
+gdk_export BUN SORTfnd_var(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_chr(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_sht(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_int(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_flt(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_lng(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_dbl(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_loc(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_var(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_chr(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_sht(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_int(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_flt(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_lng(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_dbl(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_loc(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_var(BAT *b, ptr v);
 
 
 @-
@@ -1191,7 +1292,7 @@ BUN SORTfnd@2(BAT *b, ptr v) {
 		if (id > ACC_index && BATaccelerators[id].accSave) {\
 			(*BATaccelerators[id].accSave)(acc, b);\
 			 b->haccdirty=TRUE;\
-		} 
+		}
 #define ACCcluster(id, b, acc)\
 		if (id > ACC_index && BATaccelerators[id].accCluster) {\
 			(*BATaccelerators[id].accCluster)(acc, b);\
@@ -1214,54 +1315,67 @@ gdk_export int ACC_index;
 int ACC_hash = 1;
 int ACC_index = 2;
 
-int ACCbuild(int id, BAT *b, Heap* acc, ptr extra) {
+int
+ACCbuild(int id, BAT *b, Heap *acc, ptr extra)
+{
 	str nme = BBP_physical(b->batCacheid);
+
 	if (id == ACC_hash) {
 		size_t masksize = 127;
+
 		if (extra)
-			masksize = *(lng*) extra;
-		return BAThash(b, masksize)?0:-1;
+			masksize = *(lng *) extra;
+		return BAThash(b, masksize) ? 0 : -1;
 	} else if (id == ACC_index) {
-		BAT *h = extra?BBPdescriptor(*(int*) extra):NULL;
-		return BATidx(b, h)?0:-1;
+		BAT *h = extra ? BBPdescriptor(*(int *) extra) : NULL;
+
+		return BATidx(b, h) ? 0 : -1;
 	} else if (b->hacctype == id) {
 		GDKwarning("ACCbuild: accelerator already present\n");
 		return 0;
 	} else if (b->hacctype) {
 		GDKwarning("ACCbuild: destroying %s first\n", ACCname(b->hacctype));
 		ACCdestroy(b->hacctype, b, acc);
-	} 
-	sprintf(b->haccelerator.filename = (str) GDKmalloc(strlen(nme)+12), "%s.%cacc", nme, (b->batCacheid>0)?'h':'t');
+	}
+	sprintf(b->haccelerator.filename = (str) GDKmalloc(strlen(nme) + 12), "%s.%cacc", nme, (b->batCacheid > 0) ? 'h' : 't');
 	if (BATaccelerators[id].accBuild) {
 		str nme = BBP_physical(b->batCacheid);
-		b->haccelerator.filename = (str) GDKmalloc(strlen(nme)+12);
-		sprintf(b->haccelerator.filename, "%s.%cacc", nme, b->batCacheid>0?'h':'t');
-		(*BATaccelerators[id].accBuild)(acc, extra, b);
+
+		b->haccelerator.filename = (str) GDKmalloc(strlen(nme) + 12);
+		sprintf(b->haccelerator.filename, "%s.%cacc", nme, b->batCacheid > 0 ? 'h' : 't');
+		(*BATaccelerators[id].accBuild) (acc, extra, b);
+
 		if (acc->base == NULL) {
-        		GDKerror("ACCbuild: accelerator '%s' could not be created on %s.\n", ACCname(id), BBP_logical(b->batCacheid));
+			GDKerror("ACCbuild: accelerator '%s' could not be created on %s.\n", ACCname(id), BBP_logical(b->batCacheid));
+
 			GDKfree(b->haccelerator.filename);
 			b->haccelerator.filename = NULL;
 			return -1;
 		}
 		b->hacctype = id;
-                strcpy(b->haccname, BATaccelerators[id].name);
-                b->batDirtydesc = b->haccdirty = TRUE;
+		strcpy(b->haccname, BATaccelerators[id].name);
+
+		b->batDirtydesc = b->haccdirty = TRUE;
 		return 0;
 	}
-        GDKerror("ACCbuild: invalid accelerator '%s'.\n", ACCname(id));
+	GDKerror("ACCbuild: invalid accelerator '%s'.\n", ACCname(id));
 	return -1;
 }
 
-int ACCunload(int id, BAT *b, Heap *acc) {
+int
+ACCunload(int id, BAT *b, Heap *acc)
+{
 	if (id == ACC_hash) {
 		HASHremove(b);
 	} else if (id == ACC_index) {
 		IDXremove(b);
 	} else if (b->hacctype != id) {
-        	GDKerror("ACCunload: invalid accelerator '%s'.\n",ACCname(id));
-        	return -1;
-	} else if (BATaccelerators[id].accDestroy) { 
-		(*BATaccelerators[id].accDestroy)(acc, b);
+		GDKerror("ACCunload: invalid accelerator '%s'.\n", ACCname(id));
+
+		return -1;
+	} else if (BATaccelerators[id].accDestroy) {
+		(*BATaccelerators[id].accDestroy) (acc, b);
+
 		if (b->haccelerator.filename) {
 			GDKfree(b->haccelerator.filename);
 			b->haccelerator.filename = NULL;
@@ -1270,25 +1384,32 @@ int ACCunload(int id, BAT *b, Heap *acc) {
 	return 0;
 }
 
-int ACCdestroy(int id, BAT* b, Heap* acc){
+int
+ACCdestroy(int id, BAT *b, Heap *acc)
+{
 	int ret = 0;
-	if (b->haccCopiedtodisk || (b->haccelerator.storage&STORE_MMAP)) {
+
+	if (b->haccCopiedtodisk || (b->haccelerator.storage & STORE_MMAP)) {
 		str nme = BBP_physical(b->batCacheid);
+
 		HEAPdelete(&b->haccelerator, nme, "hacc");
 		b->haccCopiedtodisk = 0;
-        	b->batDirtydesc = TRUE;
+		b->batDirtydesc = TRUE;
 	}
-	if (id > ACC_index) {
+	if (id >ACC_index) {
 		ret = ACCunload(id, b, acc);
+
 		BATmirror(b)->tacctype = b->hacctype = 0;
-        	b->haccname[0] = 0;
-        	b->batDirtydesc = TRUE;
+		b->haccname[0] = 0;
+		b->batDirtydesc = TRUE;
 	}
 	return ret;
 }
 
 
-int ACCrepairSTD(Heap *hp, BAT *b) {
+int
+ACCrepairSTD(Heap *hp, BAT *b)
+{
 	HeapRepair hr;
 	int ret = HEAP_check(hp, &hr);
 
@@ -1303,51 +1424,58 @@ int ACCrepairSTD(Heap *hp, BAT *b) {
 	return ret;
 }
 
-void ACCunloadall(BAT *b) {
+void
+ACCunloadall(BAT *b)
+{
 	IDXdestroy(b);
 	HASHdestroy(b);
-        if (b->hacctype) {
-                ACCunload(b->hacctype, b, &b->haccelerator);
-        }
-        if (b->tacctype) {
-                ACCunload(b->tacctype, BATmirror(b), &b->taccelerator);
-        }
+	if (b->hacctype) {
+		ACCunload(b->hacctype, b, &b->haccelerator);
+	}
+	if (b->tacctype) {
+		ACCunload(b->tacctype, BATmirror(b), &b->taccelerator);
+	}
 }
 
-void ACCremoveall(BAT *b) {
+void
+ACCremoveall(BAT *b)
+{
 	VIEWunlink(b);
 	IDXdestroy(b);
 	HASHdestroy(b);
-        if (b->hacctype && b->haccelerator.base) {
-                ACCdestroy(b->hacctype, b, &b->haccelerator);
-        }
-        if (b->tacctype && b->taccelerator.base) {
-                ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
-        }
+	if (b->hacctype && b->haccelerator.base) {
+		ACCdestroy(b->hacctype, b, &b->haccelerator);
+	}
+	if (b->tacctype && b->taccelerator.base) {
+		ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
+	}
 }
 
 accDesc BATaccelerators[MAXACCS] = {
-   { "_dummy_",	0,		0,		0,
-		0,		0,		0,
-		0,		0,		0,
-		0,		0,		0 },
-   { "hash",	0,		0,		0,
-		0,		0,		0,
-		0,		0,		0,
-		0,		0,		0 },
-   { "index",	0,		0,		0,
-		0,		0,		0,
-		0,		0,		0,
-		0,		0,		0 } };
+	{"_dummy_", 0, 0, 0,
+	 0, 0, 0,
+	 0, 0, 0,
+	 0, 0, 0},
+	{"hash", 0, 0, 0,
+	 0, 0, 0,
+	 0, 0, 0,
+	 0, 0, 0},
+	{"index", 0, 0, 0,
+	 0, 0, 0,
+	 0, 0, 0,
+	 0, 0, 0}
+};
 
 
 
 
 
 
-int	GDKacc_cnt = 3;
+int GDKacc_cnt = 3;
 
-int ACCindex(str name) {
+int
+ACCindex(str name)
+{
 	int i, j = GDKacc_cnt;
 
 	if (strcmp(name, "hash") == 0) {
@@ -1355,7 +1483,7 @@ int ACCindex(str name) {
 	} else if (strcmp(name, "index") == 0) {
 		return ACC_index;
 	}
-	for(i = 1; i < GDKacc_cnt; i++) {
+	for (i = 1; i < GDKacc_cnt; i++) {
 		if (BATaccelerators[i].name[0]) {
 			if (strcmp(BATaccelerators[i].name, name) == 0) {
 				return i;
@@ -1364,18 +1492,23 @@ int ACCindex(str name) {
 			j = i;
 		}
 	}
-        return -j;      
+	return -j;
 }
 
-void ACCdelete(int i) {
-	if (i >= GDKacc_cnt-1) {
+void
+ACCdelete(int i)
+{
+	if (i >= GDKacc_cnt - 1) {
 		GDKacc_cnt--;
 	}
 	BATaccelerators[i].name[0] = 0;
 }
 
-void ACCproperty(str name, str prop, ptr fcn) {
+void
+ACCproperty(str name, str prop, ptr fcn)
+{
 	int i;
+
 	gdk_set_lock(GDKthreadLock, "ACCproperty");
 	i = ACCindex(name);
 	if (i < 0) {
@@ -1387,31 +1520,33 @@ void ACCproperty(str name, str prop, ptr fcn) {
 		}
 	}
 	if (strcmp(prop, "build") == 0) {
-		BATaccelerators[i].accBuild = (void (*)(Heap*, BAT*, void *param)) fcn;
+		BATaccelerators[i].accBuild = (void (*)(Heap *, BAT *, void *param)) fcn;
 	} else if (strcmp(prop, "destroy") == 0) {
-		BATaccelerators[i].accDestroy = (void (*)(Heap*, BAT*)) fcn;
+		BATaccelerators[i].accDestroy = (void (*)(Heap *, BAT *)) fcn;
 	} else if (strcmp(prop, "insert") == 0) {
-		BATaccelerators[i].accInsert = (void (*)(Heap*, var_t, BAT*, ptr)) fcn;
+		BATaccelerators[i].accInsert = (void (*)(Heap *, var_t, BAT *, ptr)) fcn;
 	} else if (strcmp(prop, "delete") == 0) {
-		BATaccelerators[i].accDelete = (void (*)(Heap*, var_t, BAT*, ptr)) fcn;
+		BATaccelerators[i].accDelete = (void (*)(Heap *, var_t, BAT *, ptr)) fcn;
 	} else if (strcmp(prop, "move") == 0) {
-		BATaccelerators[i].accMove = (void (*)(Heap*, var_t, var_t, BAT*, ptr)) fcn;
+		BATaccelerators[i].accMove = (void (*)(Heap *, var_t, var_t, BAT *, ptr)) fcn;
 	} else if (strcmp(prop, "save") == 0) {
-		BATaccelerators[i].accSave = (void (*)(Heap*, BAT*)) fcn;
+		BATaccelerators[i].accSave = (void (*)(Heap *, BAT *)) fcn;
 	} else if (strcmp(prop, "commit") == 0) {
-		BATaccelerators[i].accCommit = (void (*)(Heap*, BAT*)) fcn;
+		BATaccelerators[i].accCommit = (void (*)(Heap *, BAT *)) fcn;
 	} else if (strcmp(prop, "abort") == 0) {
-		BATaccelerators[i].accAbort = (void (*)(Heap*, BAT*)) fcn;
+		BATaccelerators[i].accAbort = (void (*)(Heap *, BAT *)) fcn;
 	} else if (strcmp(prop, "cluster") == 0) {
-		BATaccelerators[i].accBuncluster = (int (*)(Heap*, BAT*)) fcn;
+		BATaccelerators[i].accBuncluster = (int (*)(Heap *, BAT *)) fcn;
 	} else if (strcmp(prop, "repair") == 0) {
-		BATaccelerators[i].accRepair = (int (*)(Heap*, BAT*)) fcn;
+		BATaccelerators[i].accRepair = (int (*)(Heap *, BAT *)) fcn;
 	}
-        gdk_unset_lock(GDKthreadLock, "ACCproperty");
+	gdk_unset_lock(GDKthreadLock, "ACCproperty");
 }
 
-char *ACCname(int t) {
-	return  (t>0 && t<GDKacc_cnt && BATaccelerators[t].name)?
-                               BATaccelerators[t].name:"null";
+char *
+ACCname(int t)
+{
+	return (t > 0 && t < GDKacc_cnt && BATaccelerators[t].name) ? BATaccelerators[t].name : "null";
 }
+
 @}

@@ -312,12 +312,35 @@ The constants defined in limit.h are defined using autoloaded mil code.
 #include "arith.h"
 #include "stdlib.h"
 
-int lng2dbl(dbl *r, lng* v) { *r = *(dbl*) v; return GDK_SUCCEED; } 
-int dbl2lng(lng *r, dbl* v) { *r = *(lng*) v; return GDK_SUCCEED; } 
-int int2flt(flt *r, int* v) { *r = *(flt*) v; return GDK_SUCCEED; } 
-int flt2int(int *r, flt* v) { *r = *(int*) v; return GDK_SUCCEED; } 
+int
+lng2dbl(dbl *r, lng *v)
+{
+	*r = *(dbl *) v;
+	return GDK_SUCCEED;
+}
 
-/* third param indicates return value if one of the params is nil */ 
+int
+dbl2lng(lng *r, dbl *v)
+{
+	*r = *(lng *) v;
+	return GDK_SUCCEED;
+}
+
+int
+int2flt(flt *r, int *v)
+{
+	*r = *(flt *) v;
+	return GDK_SUCCEED;
+}
+
+int
+flt2int(int *r, flt *v)
+{
+	*r = *(int *) v;
+	return GDK_SUCCEED;
+}
+
+/* third param indicates return value if one of the params is nil */
 @:c_comp_ops(<,LT)@
 @:c_comp_ops(<=,LE)@
 @:c_comp_ops(==,EQ)@
@@ -421,88 +444,113 @@ int flt2int(int *r, flt* v) { *r = *(int*) v; return GDK_SUCCEED; }
 @:c_shift_ops(sht)@
 @:c_shift_ops(int)@
 
-int lngint_binary_RSH(lng *ret, lng *val, int *shift) {
-    if (*val == lng_nil || *shift == int_nil) {
-	*ret = lng_nil;
-    } else {
-	*ret = *val >> *shift; 
-    }
-    return GDK_SUCCEED;
-}
-int lngint_binary_LSH(lng *ret, lng *val, int *shift) {
-    if (*val == lng_nil || *shift == int_nil) {
-	*ret = lng_nil;
-    } else {
-	*ret = *val << *shift;
-    }
-    return GDK_SUCCEED;
-}
-int bit_binary_AND(bit *retval, bit *v1, bit *v2){
-    if (*v1 == FALSE || *v2 == FALSE) {
-	*retval = FALSE;
-    } else if (*v1 == bit_nil || *v2 == bit_nil) {
-	*retval = bit_nil;
-    } else {
-	*retval = TRUE;
-    }
-    return GDK_SUCCEED;
-}
-int bit_binary_OR(bit *retval, bit *v1, bit *v2){
-    if (*v1 && *v1 != bit_nil) {
-	*retval = TRUE;
-    } else if (*v2 && *v2 != bit_nil) {
-	*retval = TRUE;
-    } else if (*v1 == bit_nil || *v2 == bit_nil) {
-	*retval = bit_nil;
-    } else {
-	*retval = *v1 || *v2;
-    }
-    return GDK_SUCCEED;
-}
-int bit_binary_XOR(bit *retval, bit *v1, bit *v2){
-    if (*v1 == bit_nil || *v2 == bit_nil) {
-	*retval = bit_nil;
-    } else {
-	*retval = ((*v1 && *v2 == FALSE) || (*v1 == FALSE && *v2));
-    }
-    return GDK_SUCCEED;
-}
-int bit_unary_NOT(bit *retval, bit *value){
-    if (*value == bit_nil) {
-	*retval = bit_nil;
-    } else {
-	*retval = (*value)?FALSE:TRUE;
-    }
-    return GDK_SUCCEED;
-}
-int bit_switch(ptr retval, bit *b, ptr v1, int tpe, ptr v2) {
-    register ptr p;
-    if (*b == bit_nil) {
-	p = ATOMnilptr(tpe);
-    } else if (*b) {
-	p = v1;
-    } else {
-	p = v2;
-    }
-    if (ATOMextern(tpe)) {
-	*(ptr**) retval = ATOMdup(tpe, p);
-    } else if (tpe == TYPE_bat) {
-	BBPfix(((BAT*)p)->batCacheid);
-	*(BAT**) retval = p; 
-    } else {
-	memcpy(retval, p, ATOMsize(tpe)); 
-    }
-    return GDK_SUCCEED;
+int
+lngint_binary_RSH(lng *ret, lng *val, int *shift)
+{
+	if (*val == lng_nil || *shift == int_nil) {
+		*ret = lng_nil;
+	} else {
+		*ret = *val >> *shift;
+	}
+	return GDK_SUCCEED;
 }
 
-int int_rand( int *res ){
-    *res = rand();
-    return GDK_SUCCEED;
+int
+lngint_binary_LSH(lng *ret, lng *val, int *shift)
+{
+	if (*val == lng_nil || *shift == int_nil) {
+		*ret = lng_nil;
+	} else {
+		*ret = *val << *shift;
+	}
+	return GDK_SUCCEED;
 }
 
-int int_srand( int *seed ){
-    srand( *seed );
-    return GDK_SUCCEED;
+int
+bit_binary_AND(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 == FALSE || *v2 == FALSE) {
+		*retval = FALSE;
+	} else if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = TRUE;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+bit_binary_OR(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 && *v1 != bit_nil) {
+		*retval = TRUE;
+	} else if (*v2 && *v2 != bit_nil) {
+		*retval = TRUE;
+	} else if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = *v1 || *v2;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+bit_binary_XOR(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = ((*v1 && *v2 == FALSE) || (*v1 == FALSE && *v2));
+	}
+	return GDK_SUCCEED;
+}
+
+int
+bit_unary_NOT(bit *retval, bit *value)
+{
+	if (*value == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = (*value) ? FALSE : TRUE;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+bit_switch(ptr retval, bit *b, ptr v1, int tpe, ptr v2)
+{
+	register ptr p;
+
+	if (*b == bit_nil) {
+		p = ATOMnilptr(tpe);
+	} else if (*b) {
+		p = v1;
+	} else {
+		p = v2;
+	}
+	if (ATOMextern(tpe)) {
+		*(ptr **) retval = ATOMdup(tpe, p);
+	} else if (tpe == TYPE_bat) {
+		BBPfix(((BAT *) p)->batCacheid);
+		*(BAT **) retval = p;
+	} else {
+		memcpy(retval, p, ATOMsize(tpe));
+	}
+	return GDK_SUCCEED;
+}
+
+int
+int_rand(int *res)
+{
+	*res = rand();
+	return GDK_SUCCEED;
+}
+
+int
+int_srand(int *seed)
+{
+	srand(*seed);
+	return GDK_SUCCEED;
 }
 
 @T
@@ -572,7 +620,9 @@ int any_comp_@2(bit *retval, ptr v1, int tpe, ptr v2){
 @:c_between_op(flt)@
 @:c_between_op(dbl)@
 @:c_between_op(lng)@
-int str_comp_between(bit *retval, str val, str low, str high){
+int
+str_comp_between(bit *retval, str val, str low, str high)
+{
 	int val_nil = strNil(val);
 	int low_nil = strNil(low);
 	int high_nil = strNil(high);
@@ -580,29 +630,32 @@ int str_comp_between(bit *retval, str val, str low, str high){
 	if (val_nil || (low_nil && high_nil)) {
 		*retval = bit_nil;
 	} else if (low_nil) {
-		*retval = (strcmp(val,high) <= 0);
+		*retval = (strcmp(val, high) <= 0);
 	} else if (high_nil) {
-		*retval = (strcmp(low,val) <= 0);
+		*retval = (strcmp(low, val) <= 0);
 	} else {
-		*retval = (strcmp(low,val) <= 0 && strcmp(val,high) <= 0);
+		*retval = (strcmp(low, val) <= 0 && strcmp(val, high) <= 0);
 	}
 	return GDK_SUCCEED;
 }
-int any_comp_between(bit *retval, ptr val, int tpe, ptr low, ptr high){
-	int (*cmp)(ptr, ptr) = BATatoms[tpe].atomCmp;
+
+int
+any_comp_between(bit *retval, ptr val, int tpe, ptr low, ptr high)
+{
+	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
 	ptr nilptr = ATOMnilptr(tpe);
-	int val_nil = ((*cmp)(val,nilptr) == 0);
-	int low_nil = ((*cmp)(low,nilptr) == 0);
-	int high_nil = ((*cmp)(high,nilptr) == 0);
+	int val_nil = ((*cmp) (val, nilptr) == 0);
+	int low_nil = ((*cmp) (low, nilptr) == 0);
+	int high_nil = ((*cmp) (high, nilptr) == 0);
 
 	if (val_nil || (low_nil && high_nil)) {
 		*retval = bit_nil;
 	} else if (low_nil) {
-		*retval = ((*cmp)(val,high) <= 0);
+		*retval = ((*cmp) (val, high) <= 0);
 	} else if (high_nil) {
-		*retval = ((*cmp)(low,val) <= 0);
+		*retval = ((*cmp) (low, val) <= 0);
 	} else {
-		*retval = ((*cmp)(low,val) <= 0 && (*cmp)(val,high) <= 0);
+		*retval = ((*cmp) (low, val) <= 0 && (*cmp) (val, high) <= 0);
 	}
 	return GDK_SUCCEED;
 }
@@ -621,16 +674,22 @@ int @1_isnil(bit *retval, @1* val) {
 @:c_isnil(lng)@
 @:c_isnil(dbl)@
 
-int str_isnil(bit *retval, str val) {
-        *retval = (*(chr*) (val) == GDK_chr_min);
+int
+str_isnil(bit *retval, str val)
+{
+	*retval = (*(chr *) (val) == GDK_chr_min);
 	return GDK_SUCCEED;
 }
 
-int any_isnil(bit *retval, ptr val, int tpe) {
+int
+any_isnil(bit *retval, ptr val, int tpe)
+{
 	ptr nilval = ATOMnilptr(tpe);
+
 	*retval = (ATOMcmp(tpe, nilval, val) == 0);
 	return GDK_SUCCEED;
 }
+
 @= c_between_op
 int @1_comp_between(bit *retval, @1 *v, @1 *low, @1 *high){
 	if (*v == @1_nil || (*low == @1_nil && *high == @1_nil)) {
@@ -759,9 +818,11 @@ int CMDget@1_MIN(@2* minval) {
 @:limit_implementation(INT,int)@
 @:limit_implementation(LNG,lng)@
 
-int CMDgetRAND_MAX(int* randmaxval) {
-  *randmaxval = RAND_MAX;
-  return GDK_SUCCEED;
+int
+CMDgetRAND_MAX(int *randmaxval)
+{
+	*randmaxval = RAND_MAX;
+	return GDK_SUCCEED;
 }
 
 @}

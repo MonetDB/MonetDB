@@ -25,11 +25,12 @@
 
 #define die(X) (mapi_explain(X, stdout), exit(-1))
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	Mapi dbh;
 	MapiHdl hdl;
-	int rows, i,j;
+	int rows, i, j;
 
 	if (argc != 4) {
 		printf("usage:%s <host> <port> <language>\n", argv[0]);
@@ -42,10 +43,10 @@ int main(int argc, char **argv)
 
 	/* mapi_trace(dbh, 1); */
 	if (strcmp(argv[3], "sql") == 0) {
-		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL) 
+		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL)
 			die(dbh);
 		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL) 
+		if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL)
 			die(dbh);
 		mapi_close_handle(hdl);
 		if ((hdl = mapi_query(dbh, "insert into emp values('Mary', 22)")) == NULL)
@@ -73,8 +74,7 @@ int main(int argc, char **argv)
 
 	/* Interpret the cache as a two-dimensional array */
 	for (i = 0; i < rows; i++) {
-		if (mapi_seek_row(hdl, i, MAPI_SEEK_SET) ||
-		    mapi_fetch_row(hdl) == 0)
+		if (mapi_seek_row(hdl, i, MAPI_SEEK_SET) || mapi_fetch_row(hdl) == 0)
 			break;
 		for (j = 0; j < mapi_get_field_count(hdl); j++) {
 			printf("%s=%s ", mapi_get_name(hdl, j), mapi_fetch_field(hdl, j));

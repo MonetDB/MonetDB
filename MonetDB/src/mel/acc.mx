@@ -25,22 +25,20 @@
 #include "ops.h"
 #include "list.h"
 
-class Acc : public Symbol {
-    public:
-	Acc( int t, char *n, 
-	      List *args = NULL,
-	      Ops **cmds = NULL ); 
+class Acc:public Symbol {
+      public:
+	Acc(int t, char *n, List * args = NULL, Ops ** cmds = NULL);
 
 	List *args() const;
 	Ops **cmds() const;
 
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
-    	void set_arg_names( const char * base );
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
+	void set_arg_names(const char *base);
 	List *_args;
 	Ops **_cmds;
 };
-#endif 
+#endif
 
 @C
 #include <monetdb_config.h>

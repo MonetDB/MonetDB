@@ -107,285 +107,285 @@ PROC test_bitvector() : void {
 bitvector_export int
 bitvector_allocate(BAT **b_dst, int *nbits, bit *initial)
 {
-  lng v;
-  int nentries, n;
-  ptr atom_nil;
+	lng v;
+	int nentries, n;
+	ptr atom_nil;
 
-  nentries = numentries(*nbits, (int) sizeof(lng) * 8);
-  *b_dst   = BATnew(TYPE_void, TYPE_lng, nentries);
-  atom_nil = ATOMnilptr((*b_dst)->htype);
+	nentries = numentries(*nbits, (int) sizeof(lng) * 8);
+	*b_dst = BATnew(TYPE_void, TYPE_lng, nentries);
+	atom_nil = ATOMnilptr((*b_dst)->htype);
 
-  v = (*initial)? -1: 0;
-  for (n = 0; n != nentries; n++)
-    BUNins(*b_dst, atom_nil, (ptr)&v);
-  return GDK_SUCCEED;
+	v = (*initial) ? -1 : 0;
+	for (n = 0; n != nentries; n++)
+		BUNins(*b_dst, atom_nil, (ptr) &v);
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_set(BAT *b_src, int *bnum)
 {
-  size_t entry;
-  lng *v;
+	size_t entry;
+	lng *v;
 
-  entry = (size_t) *bnum / (sizeof(lng) * 8);
-  if (BATcount(b_src) < entry + 1) {
-    GDKerror("bitvector_set: BAT too small %d < %u\n",
-	     BATcount(b_src), entry + 1);
-    return GDK_FAIL;
-  }
+	entry = (size_t) * bnum / (sizeof(lng) * 8);
+	if (BATcount(b_src) < entry + 1) {
+		GDKerror("bitvector_set: BAT too small %d < %u\n", BATcount(b_src), entry + 1);
+		return GDK_FAIL;
+	}
 
-  v   = (lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *v |= (lng)1 << (*bnum % (sizeof(lng) * 8));
-  b_src->batDirty = TRUE;
-  return GDK_SUCCEED;
+	v = (lng *) BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
+	*v |= (lng) 1 << (*bnum % (sizeof(lng) * 8));
+	b_src->batDirty = TRUE;
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_isset(bit *rv, BAT *b_src, int *bnum)
 {
-  size_t entry;
-  lng v;
+	size_t entry;
+	lng v;
 
-  entry = (size_t) *bnum / (sizeof(lng) * 8);
-  if (BATcount(b_src) < entry + 1) {
-    GDKerror("bitvector_isset: BAT too small %d < %u\n",
-	     BATcount(b_src), entry + 1);
-    return GDK_FAIL;
-  }
+	entry = (size_t) * bnum / (sizeof(lng) * 8);
+	if (BATcount(b_src) < entry + 1) {
+		GDKerror("bitvector_isset: BAT too small %d < %u\n", BATcount(b_src), entry + 1);
+		return GDK_FAIL;
+	}
 
-  v   = *(lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *rv = (bit) (v & ((lng)1 << (*bnum % (sizeof(lng) * 8))));
-  return GDK_SUCCEED;
+	v = *(lng *) BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
+	*rv = (bit) (v & ((lng) 1 << (*bnum % (sizeof(lng) * 8))));
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_clr(BAT *b_src, int *bnum)
 {
-  size_t entry;
-  lng *v;
+	size_t entry;
+	lng *v;
 
-  entry = (size_t) *bnum / (sizeof(lng) * 8);
-  if (BATcount(b_src) < entry + 1) {
-    GDKerror("bitvector_clr: BAT too small %d < %u\n",
-	     BATcount(b_src), entry + 1);
-    return GDK_FAIL;
-  }
+	entry = (size_t) * bnum / (sizeof(lng) * 8);
+	if (BATcount(b_src) < entry + 1) {
+		GDKerror("bitvector_clr: BAT too small %d < %u\n", BATcount(b_src), entry + 1);
+		return GDK_FAIL;
+	}
 
-  v   = (lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *v &= ~((lng)1 << (*bnum % (sizeof(lng) * 8)));
-  b_src->batDirty = TRUE;
-  return GDK_SUCCEED;
+	v = (lng *) BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
+	*v &= ~((lng) 1 << (*bnum % (sizeof(lng) * 8)));
+	b_src->batDirty = TRUE;
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_isclr(bit *rv, BAT *b_src, int *bnum)
 {
-  size_t entry;
-  lng v;
+	size_t entry;
+	lng v;
 
-  entry = (size_t) *bnum / (sizeof(lng) * 8);
-  if (BATcount(b_src) < entry + 1) {
-    GDKerror("bitvector_isclr: BAT too small %d < %u\n",
-	     BATcount(b_src), entry + 1);
-    return GDK_FAIL;
-  }
+	entry = (size_t) * bnum / (sizeof(lng) * 8);
+	if (BATcount(b_src) < entry + 1) {
+		GDKerror("bitvector_isclr: BAT too small %d < %u\n", BATcount(b_src), entry + 1);
+		return GDK_FAIL;
+	}
 
-  v   = *(lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *rv = (v & ((lng)1 << (*bnum % (sizeof(lng) * 8))))? 0: 1;
-  return GDK_SUCCEED;
+	v = *(lng *) BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
+	*rv = (v & ((lng) 1 << (*bnum % (sizeof(lng) * 8)))) ? 0 : 1;
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_encode(BAT **b_dst, BAT *b_src)
 {
-  lng bf;
-  int *nbits, lastentry, xx;
-  BUN p, q;
-  ptr atom_nil;
+	lng bf;
+	int *nbits, lastentry, xx;
+	BUN p, q;
+	ptr atom_nil;
 
-  if (b_src == NULL || b_src->ttype != TYPE_oid || BATorder(b_src) == NULL) {
-    GDKerror("bitvector_encode: No OID table.\n");
-    return GDK_FAIL;
-  }
-  nbits     = (int *)BUNtail(b_src, BUNlast(b_src));
-  *nbits   += 1;
-  *b_dst    = BATnew(TYPE_void, TYPE_lng, numentries(*nbits, sizeof(lng) * 8));
-  atom_nil  = ATOMnilptr((*b_dst)->htype);
-  lastentry = -1;
-  bf        = 0;
+	if (b_src == NULL || b_src->ttype != TYPE_oid || BATorder(b_src) == NULL) {
+		GDKerror("bitvector_encode: No OID table.\n");
+		return GDK_FAIL;
+	}
+	nbits = (int *) BUNtail(b_src, BUNlast(b_src));
+	*nbits += 1;
+	*b_dst = BATnew(TYPE_void, TYPE_lng, numentries(*nbits, sizeof(lng) * 8));
+	atom_nil = ATOMnilptr((*b_dst)->htype);
+	lastentry = -1;
+	bf = 0;
 
-  BATloopFast(b_src, p, q, xx) {
-    int *bnum, entry;
+	BATloopFast(b_src, p, q, xx) {
+		int *bnum, entry;
 
-    bnum  = (int *)BUNtail(b_src, p);
-    entry = *bnum / ((int) sizeof(lng) * 8);
-    while (lastentry + 1 < entry) {
-      lastentry++;
-      BUNins(*b_dst, atom_nil, (ptr)&bf);
-      bf = 0;
-    }
-    bf |= ((lng)1 << (*bnum % (sizeof(lng) * 8)));
-  }
-  lastentry++;
-  BUNins(*b_dst, atom_nil, (ptr)&bf);
+		bnum = (int *) BUNtail(b_src, p);
+		entry = *bnum / ((int) sizeof(lng) * 8);
+		while (lastentry + 1 < entry) {
+			lastentry++;
+			BUNins(*b_dst, atom_nil, (ptr) &bf);
+			bf = 0;
+		}
+		bf |= ((lng) 1 << (*bnum % (sizeof(lng) * 8)));
+	}
+	lastentry++;
+	BUNins(*b_dst, atom_nil, (ptr) &bf);
 
-  return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
- 
+
 bitvector_export int
 bitvector_decode(BAT **b_dst, BAT *b_src)
 {
-  oid entry, soid;
-  BUN p, q;
-  int xx, n;
+	oid entry, soid;
+	BUN p, q;
+	int xx, n;
 
-  if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
-    GDKerror("bitvector_decode: None void/lng table.\n");
-    return GDK_FAIL;
-  }
-
-  *b_dst = BATnew(TYPE_oid, TYPE_oid, BATcount(b_src) * sizeof(lng) * 8);
-  entry  = soid = 0;
-  BATloopFast(b_src, p, q, xx) {
-    lng bf;
-
-    bf = *(lng *)BUNtail(b_src, p);
-    if (bf)
-      for (n = 0; n != sizeof(lng) * 8; n++)
-	if (bf & ((lng)1 << n)) {
-	  oid _soid = soid + n;
-	  BUNins(*b_dst, (ptr)&entry, (ptr)&_soid);
-	  entry++;
+	if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
+		GDKerror("bitvector_decode: None void/lng table.\n");
+		return GDK_FAIL;
 	}
-    soid += sizeof(lng) * 8;
-  }
-  return GDK_SUCCEED;
+
+	*b_dst = BATnew(TYPE_oid, TYPE_oid, BATcount(b_src) * sizeof(lng) * 8);
+	entry = soid = 0;
+	BATloopFast(b_src, p, q, xx) {
+		lng bf;
+
+		bf = *(lng *) BUNtail(b_src, p);
+		if (bf)
+			for (n = 0; n != sizeof(lng) * 8; n++)
+				if (bf & ((lng) 1 << n)) {
+					oid _soid = soid + n;
+
+					BUNins(*b_dst, (ptr) &entry, (ptr) &_soid);
+					entry++;
+				}
+		soid += sizeof(lng) * 8;
+	}
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_print(BAT *b_src)
 {
-  BUN p, q;
-  int xx;
+	BUN p, q;
+	int xx;
 
-  if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
-    GDKerror("bitvector_decode: None void/lng table.\n");
-    return GDK_FAIL;
-  }
+	if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
+		GDKerror("bitvector_decode: None void/lng table.\n");
+		return GDK_FAIL;
+	}
 
-  BATloopFast(b_src, p, q, xx) {
-    lng v = *(lng *)BUNtail(b_src, p);
-    printf("x%08x%08x\n", (unsigned int)(v >> 32), (unsigned int)v);
-  }
-  return GDK_SUCCEED;
+	BATloopFast(b_src, p, q, xx) {
+		lng v = *(lng *) BUNtail(b_src, p);
+
+		printf("x%08x%08x\n", (unsigned int) (v >> 32), (unsigned int) v);
+	}
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_and(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 {
-  ptr atom_nil;
-  BUN p1, q1, p2, q2;
+	ptr atom_nil;
+	BUN p1, q1, p2, q2;
 
-  if (b_src1->htype != TYPE_void || b_src1->ttype != TYPE_lng ||
-      b_src2->htype != TYPE_void || b_src2->ttype != TYPE_lng) {
-    GDKerror("bitvector_and: No void/lng table(s).\n");
-    return GDK_FAIL;
-  }
+	if (b_src1->htype != TYPE_void || b_src1->ttype != TYPE_lng || b_src2->htype != TYPE_void || b_src2->ttype != TYPE_lng) {
+		GDKerror("bitvector_and: No void/lng table(s).\n");
+		return GDK_FAIL;
+	}
 
-  assert(BUNsize(b_src1) == sizeof(lng));
+	assert(BUNsize(b_src1) == sizeof(lng));
 
-  *b_dst   = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1) * sizeof(lng));
-  atom_nil = ATOMnilptr((*b_dst)->htype);
+	*b_dst = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1) * sizeof(lng));
+	atom_nil = ATOMnilptr((*b_dst)->htype);
 
-  p1 = BUNfirst(b_src1); q1 = BUNlast(b_src1);
-  p2 = BUNfirst(b_src2); q2 = BUNlast(b_src2);
-  for (; p1 < q1 && p2 < q2; p1 += sizeof(lng), p2 += sizeof(lng)) {
-    lng *v1, *v2;
+	p1 = BUNfirst(b_src1);
+	q1 = BUNlast(b_src1);
+	p2 = BUNfirst(b_src2);
+	q2 = BUNlast(b_src2);
+	for (; p1 < q1 && p2 < q2; p1 += sizeof(lng), p2 += sizeof(lng)) {
+		lng *v1, *v2;
 
-    v1   = (lng *)BUNtail(b_src1, p1);
-    v2   = (lng *)BUNtail(b_src2, p2);
-    *v1 &= *v2;
-    BUNins(*b_dst, atom_nil, (ptr)v1);
-  }
+		v1 = (lng *) BUNtail(b_src1, p1);
+		v2 = (lng *) BUNtail(b_src2, p2);
+		*v1 &= *v2;
+		BUNins(*b_dst, atom_nil, (ptr) v1);
+	}
 
-  /* No need to copy the tail */
-  return GDK_SUCCEED;
+	/* No need to copy the tail */
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 {
-  ptr atom_nil;
-  BUN p1, q1, p2, q2;
+	ptr atom_nil;
+	BUN p1, q1, p2, q2;
 
-  if (b_src1->htype != TYPE_void || b_src1->ttype != TYPE_lng ||
-      b_src2->htype != TYPE_void || b_src2->ttype != TYPE_lng) {
-    GDKerror("bitvector_and: No void/lng table(s).\n");
-    return GDK_FAIL;
-  }
+	if (b_src1->htype != TYPE_void || b_src1->ttype != TYPE_lng || b_src2->htype != TYPE_void || b_src2->ttype != TYPE_lng) {
+		GDKerror("bitvector_and: No void/lng table(s).\n");
+		return GDK_FAIL;
+	}
 
-  assert(BUNsize(b_src1) == sizeof(lng));
+	assert(BUNsize(b_src1) == sizeof(lng));
 
-  *b_dst   = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1) * sizeof(lng));
-  atom_nil = ATOMnilptr((*b_dst)->htype);
+	*b_dst = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1) * sizeof(lng));
+	atom_nil = ATOMnilptr((*b_dst)->htype);
 
-  p1 = BUNfirst(b_src1); q1 = BUNlast(b_src1);
-  p2 = BUNfirst(b_src2); q2 = BUNlast(b_src2);
-  for (; p1 < q1 && p2 < q2; p1 += sizeof(lng), p2 += sizeof(lng)) {
-    lng *v1, *v2;
+	p1 = BUNfirst(b_src1);
+	q1 = BUNlast(b_src1);
+	p2 = BUNfirst(b_src2);
+	q2 = BUNlast(b_src2);
+	for (; p1 < q1 && p2 < q2; p1 += sizeof(lng), p2 += sizeof(lng)) {
+		lng *v1, *v2;
 
-    v1   = (lng *)BUNtail(b_src1, p1);
-    v2   = (lng *)BUNtail(b_src2, p2);
-    *v1 |= *v2;
-    BUNins(*b_dst, atom_nil, (ptr)v1);
-  }
+		v1 = (lng *) BUNtail(b_src1, p1);
+		v2 = (lng *) BUNtail(b_src2, p2);
+		*v1 |= *v2;
+		BUNins(*b_dst, atom_nil, (ptr) v1);
+	}
 
-  /* Copy the tail, when required */
-  if (p1 < q1 || p2 < q2) {
-    BUN p = NULL, q = NULL;
-    BAT *b_src = NULL;
+	/* Copy the tail, when required */
+	if (p1 < q1 || p2 < q2) {
+		BUN p = NULL, q = NULL;
+		BAT *b_src = NULL;
 
-    if (p1 < q1) {
-      assert(p2 == q2);
-      p = p1;
-      q = q1;
-      b_src = b_src1;
-    }
-    else if (p2 < q2) {
-      assert(p1 == q1);
-      p = p2;
-      q = q2;
-      b_src = b_src2;
-    }
+		if (p1 < q1) {
+			assert(p2 == q2);
+			p = p1;
+			q = q1;
+			b_src = b_src1;
+		} else if (p2 < q2) {
+			assert(p1 == q1);
+			p = p2;
+			q = q2;
+			b_src = b_src2;
+		}
 
-    for (; p < q; p += sizeof(lng))
-      BUNins(*b_dst, atom_nil, BUNtail(b_src, p));
-  }      
+		for (; p < q; p += sizeof(lng))
+			BUNins(*b_dst, atom_nil, BUNtail(b_src, p));
+	}
 
-  return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_count(int *count, BAT *b_src)
 {
-  BUN p, q;
-  int xx;
-  
-  *count = 0;
-  if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
-    GDKerror("bitvector_count: None void/lng table.\n");
-    return GDK_FAIL;
-  }
+	BUN p, q;
+	int xx;
 
-  BATloopFast(b_src, p, q, xx) {
-    int n;
-    lng v = *(lng *)BUNtail(b_src, p);
-    if (v)
-      for (n = 0; n != sizeof(lng) * 8; n++)
-	if (v && (1 << n))
-	  (*count)++;
-  }
-  return GDK_SUCCEED;
+	*count = 0;
+	if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
+		GDKerror("bitvector_count: None void/lng table.\n");
+		return GDK_FAIL;
+	}
+
+	BATloopFast(b_src, p, q, xx) {
+		int n;
+		lng v = *(lng *) BUNtail(b_src, p);
+
+		if (v)
+			for (n = 0; n != sizeof(lng) * 8; n++)
+				if (v && (1 << n))
+					(*count)++;
+	}
+	return GDK_SUCCEED;
 }
 
 @}

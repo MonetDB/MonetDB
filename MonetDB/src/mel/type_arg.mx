@@ -38,27 +38,33 @@ enum type_arg_types_t {
 	TYPE_STR
 };
 
-class Arg : public Symbol {
-    public:
-	Arg( int t, const char *n, char *v=NULL ) : Symbol(t,n){ _value = v; }
-	virtual int type() const { return 0; }
-	virtual int isFixed() const { return 1; }
-	char *value() const { return _value; };
-    private:
+class Arg:public Symbol {
+      public:
+      Arg(int t, const char *n, char *v = NULL):Symbol (t, n) {
+		_value = v;
+	} virtual int type() const {
+		return 0;
+	} virtual int isFixed() const {
+		return 1;
+	} char *value() const {
+		return _value;
+	};
+
+      private:
 	char *_value;
 };
 
-class TypeArg : public Arg {
-    public:
-	TypeArg( int t, const char *n, int type, char *v=NULL ); 
+class TypeArg:public Arg {
+      public:
+	TypeArg(int t, const char *n, int type, char *v = NULL);
 
 	virtual const char *toString() const;
-	static ostream &gen_type( ostream &o, int t );
+	static ostream & gen_type(ostream & o, int t);
 	int type() const;
 	int isFixed() const;
 
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 	int _type;
 };
 #endif // _TYPEARG_H_

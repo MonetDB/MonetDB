@@ -21,28 +21,30 @@
 *              PRINTING INFO TO THE SCREEN                                  *
 \***************************************************************************/
 
-void printCPU(cacheInfo *cache, caliblng MHz, caliblng delay)
+void
+printCPU(cacheInfo * cache, caliblng MHz, caliblng delay)
 {
-	FILE	*fp = stderr;
-		
+	FILE *fp = stderr;
+
 	fprintf(fp, "CPU loop + L1 access:    ");
 	fprintf(fp, " %6.2f ns = %3ld cy\n", NSperIt(cache->latency1[0]), cround(CYperIt(cache->latency1[0])));
 	fprintf(fp, "             ( delay:    ");
-	fprintf(fp, " %6.2f ns = %3ld cy )\n", NSperIt(delay),            cround(CYperIt(delay)));
+	fprintf(fp, " %6.2f ns = %3ld cy )\n", NSperIt(delay), cround(CYperIt(delay)));
 	fprintf(fp, "\n");
 	fflush(fp);
 }
 
-void printCache(cacheInfo *cache, AssoInfo *Asso, caliblng MHz)
+void
+printCache(cacheInfo * cache, AssoInfo * Asso, caliblng MHz)
 {
-	caliblng	l;
-	FILE	*fp = stderr;
+	caliblng l;
+	FILE *fp = stderr;
 
-		
+
 	fprintf(fp, "caches:\n");
 	fprintf(fp, "level  size    linesize   associativity  miss-latency        replace-time\n");
 	for (l = 0; l < cache->levels; l++) {
-		fprintf(fp, "  %1ld   ", l+1);
+		fprintf(fp, "  %1ld   ", l + 1);
 		if (cache->size[l] >= (1024 * 1024 * 1024)) {
 			fprintf(fp, " %3ld GB ", cache->size[l] / (1024 * 1024 * 1024));
 		} else if (cache->size[l] >= (1024 * 1024)) {
@@ -52,18 +54,19 @@ void printCache(cacheInfo *cache, AssoInfo *Asso, caliblng MHz)
 		}
 		fprintf(fp, " %3ld bytes ", cache->linesize[l + 1]);
 		fprintf(fp, "    %3ld-way    ", Asso->entries[l]);
-		fprintf(fp, " %6.2f ns = %3ld cy " , NSperIt(cache->latency2[l + 1] - cache->latency2[l]), cround(CYperIt(cache->latency2[l + 1] - cache->latency2[l])));
+		fprintf(fp, " %6.2f ns = %3ld cy ", NSperIt(cache->latency2[l + 1] - cache->latency2[l]), cround(CYperIt(cache->latency2[l + 1] - cache->latency2[l])));
 		fprintf(fp, " %6.2f ns = %3ld cy\n", NSperIt(cache->latency1[l + 1] - cache->latency1[l]), cround(CYperIt(cache->latency1[l + 1] - cache->latency1[l])));
 	}
 	fprintf(fp, "\n");
 	fflush(fp);
 }
 
-void printTLB(TLBinfo *TLB, caliblng MHz)
+void
+printTLB(TLBinfo * TLB, caliblng MHz)
 {
-	caliblng	l;
-	FILE	*fp = stderr;
-		
+	caliblng l;
+	FILE *fp = stderr;
+
 	fprintf(fp, "TLBs:\n");
 	fprintf(fp, "level #entries  pagesize  miss-latency");
 /*
@@ -71,7 +74,7 @@ void printTLB(TLBinfo *TLB, caliblng MHz)
 */
 	fprintf(fp, "\n");
 	for (l = 0; l < TLB->levels; l++) {
-		fprintf(fp, "  %1ld   ", l+1);
+		fprintf(fp, "  %1ld   ", l + 1);
 		fprintf(fp, "   %3ld   ", TLB->entries[l]);
 		if (TLB->pagesize[l + 1] >= (1024 * 1024 * 1024)) {
 			fprintf(fp, "  %3ld GB  ", TLB->pagesize[l + 1] / (1024 * 1024 * 1024));
@@ -90,12 +93,14 @@ void printTLB(TLBinfo *TLB, caliblng MHz)
 	fflush(fp);
 }
 
-void printAsso(AssoInfo *Asso, caliblng MHz)
+void
+printAsso(AssoInfo * Asso, caliblng MHz)
 {
-	caliblng	l;
-	FILE	*fp = stderr;
+	caliblng l;
+	FILE *fp = stderr;
+
 	(void) MHz;
-		
+
 	fprintf(fp, "Assos:\n");
 /*+
 	fprintf(fp, "level #entries  pagesize  miss-latency");
@@ -106,7 +111,7 @@ void printAsso(AssoInfo *Asso, caliblng MHz)
 */
 	fprintf(fp, "\n");
 	for (l = 0; l < Asso->levels; l++) {
-		fprintf(fp, "  %1ld   ", l+1);
+		fprintf(fp, "  %1ld   ", l + 1);
 		fprintf(fp, "   %3ld-way ", Asso->entries[l]);
 /*+
 		if (Asso->pagesize[l + 1] >= (1024 * 1024 * 1024)) {

@@ -26,9 +26,9 @@
 #define dummy_export extern
 #endif
 
-dummy_export void* 	GDKmalloc  (size_t size);
-dummy_export void* 	GDKrealloc (void* pold, size_t size);
-dummy_export void	GDKfree    (void* blk); 
-dummy_export char*	GDKstrdup  (char *s);
+dummy_export void *GDKmalloc(size_t size);
+dummy_export void *GDKrealloc(void *pold, size_t size);
+dummy_export void GDKfree(void *blk);
+dummy_export char *GDKstrdup(char *s);
 
 #endif /*_GDK_UTILS_H*/

@@ -136,7 +136,7 @@ This module contains a simple interface for network connections.
 @c
 #include <monet.h>
 #include "mapi.h"
-#include  <sys/types.h> 
+#include  <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
@@ -178,10 +178,12 @@ This module contains a simple interface for network connections.
 }
 @c
 
-int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
+int
+MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	struct sockaddr_in server;
 	int sock = -1;
+
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
 	int usock = -1;
@@ -196,15 +198,14 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	char *cmd;
 	Client father;
 
-        CNTXTclient(stk, &father);
+	CNTXTclient(stk, &father);
 	if (lt->cnt != 4) {
-		return handle_argerror(res,lt->cnt,4);
+		return handle_argerror(res, lt->cnt, 4);
 	}
 	@:builtin_operand(0,TYPE_int,Port)@
 	port = *Port;
 	@:builtin_operand(1,TYPE_str,usockfile)@
-	if (usockfile == NULL || *usockfile == 0 ||
-	    strcmp(usockfile, str_nil) == 0)
+	if (usockfile == NULL || *usockfile == 0 || strcmp(usockfile, str_nil) == 0)
 		usockfile = NULL;
 	else {
 #ifdef HAVE_SYS_UN_H
@@ -220,8 +221,8 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	cmd = GDKstrdup(cmd);
 	res->vtype = TYPE_void;
 
-	port = (port?port:MAPIPORT);
-	maxusers = (maxusers?maxusers:MAPIMAXUSERS);
+	port = (port ? port : MAPIPORT);
+	maxusers = (maxusers ? maxusers : MAPIMAXUSERS);
 
 	if (port <= 0 && usockfile == NULL) {
 		GDKsyserror("MAPIlisten: no port or socket file specified\n");
@@ -241,25 +242,25 @@ The port id should be obtained from the Homes file.
 @c
 		server.sin_family = AF_INET;
 		server.sin_addr.s_addr = INADDR_ANY;
-		server.sin_port = htons((unsigned short)((port)&0xFFFF));
-		for (i=0;i<8;i++)
-		    server.sin_zero[i]=0;
+		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
+		for (i = 0; i < 8; i++)
+			server.sin_zero[i] = 0;
 
-		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
 		length = (SOCKLEN) sizeof(server);
-		if (bind(sock, (SOCKPTR)&server, length) < 0) {
+		if (bind(sock, (SOCKPTR) & server, length) < 0) {
 			GDKsyserror("MAPIlisten:binding to stream socket (%d) failed\n", port);
 			return GDK_FAIL;
 		}
 @-
 Get the new information for the server socket and start listening.
 @c
-		if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
+		if (getsockname(sock, (SOCKPTR) & server, &length) < 0) {
 			GDKsyserror("MAPIlisten:getting socket name\n");
 			return GDK_FAIL;
 		}
-		listen(sock, maxusers); 
+		listen(sock, maxusers);
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile) {
@@ -272,12 +273,12 @@ Get the new information for the server socket and start listening.
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
 
 		length = (SOCKLEN) sizeof(userver);
-		if (bind(usock, (SOCKPTR)&userver, length) < 0) {
+		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			GDKsyserror("MAPIlisten:binding to Unix socket (%s) failed\n", usockfile);
 			return GDK_FAIL;
 		}
-		listen(usock, maxusers); 
-	}		
+		listen(usock, maxusers);
+	}
 #endif
 
 	PARDEBUG {
@@ -285,20 +286,20 @@ Get the new information for the server socket and start listening.
 	}
 	do {
 		int retval;
-    		struct timeval tv;
-    		fd_set fds;
+		struct timeval tv;
+		fd_set fds;
 		int msgsock;
 
-    		FD_ZERO(&fds);
+		FD_ZERO(&fds);
 		if (sock >= 0)
 			FD_SET(sock, &fds);
 #ifdef HAVE_SYS_UN_H
 		if (usock >= 0)
 			FD_SET(usock, &fds);
 #endif
-    		/* Wait up to 0.5 seconds. */
-    		tv.tv_sec = 0;
-    		tv.tv_usec = 500;
+		/* Wait up to 0.5 seconds. */
+		tv.tv_sec = 0;
+		tv.tv_usec = 500;
 
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;
@@ -306,7 +307,7 @@ Get the new information for the server socket and start listening.
 		if (usock > sock)
 			msgsock = usock;
 #endif
-    		retval = select(msgsock+1, &fds, NULL, NULL, &tv);
+		retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -338,24 +339,24 @@ Get the new information for the server socket and start listening.
 #endif
 		} else
 			continue;
-		if (STREQ(cmd,"")) {
-			int i=0;
-			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
+		if (STREQ(cmd, "")) {
+			int i = 0;
+			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *mp;
-			int blocked=0;
+			int blocked = 0;
 			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
-			stream *fdout= NULL;
+			stream *fdout = NULL;
 			Client c;
 
 			assert(name);
-			memset(name,0,BLOCK);
-			if (fdin == 0 || stream_errnr(fdin) ){
+			memset(name, 0, BLOCK);
+			if (fdin == 0 || stream_errnr(fdin)) {
 				GDKsyserror("MAPIlisten:fdin problems\n");
 				continue;
 			}
 			/* get user name */
 			stream_read(fdin, user, 1, 1);
-			for(i=0; !stream_errnr(fdin) && i<BLOCK && *user != '\n'; i++){
+			for (i = 0; !stream_errnr(fdin) && i < BLOCK && *user != '\n'; i++) {
 				user++;
 				stream_read(fdin, user, 1, 1);
 			}
@@ -366,21 +367,21 @@ Get the new information for the server socket and start listening.
 				continue;
 			}
 			/* in embedded mode we allow just one client */
-			if( GDKembedded && monet_forks > 0 ){
+			if (GDKembedded && monet_forks > 0) {
 				stream_close(fdin);
 				stream_destroy(fdin);
 				continue;
 			}
-			*user=0;
-            s= strrchr(name,':');
-            blocked= s && strncmp(s,":blocked",8)==0;
-            if( blocked){
-            	/* printf("mapi:use blocked mode\n");fflush(stdout);*/
-                *s=0;
-                fdin= block_stream(stream_rstream(fdin));
-                fdout= block_stream(socket_wstream(msgsock, "Mserver mapi write"));
-            } else {
-            	fdout= socket_wastream(msgsock,"Mserver mapi write");
+			*user = 0;
+			s = strrchr(name, ':');
+			blocked = s && strncmp(s, ":blocked", 8) == 0;
+			if (blocked) {
+				/* printf("mapi:use blocked mode\n");fflush(stdout); */
+				*s = 0;
+				fdin = block_stream(stream_rstream(fdin));
+				fdout = block_stream(socket_wstream(msgsock, "Mserver mapi write"));
+			} else {
+				fdout = socket_wastream(msgsock, "Mserver mapi write");
 			}
 			/* remove password (eventually we have to
 			   check the password, for now ignore it) */
@@ -388,14 +389,14 @@ Get the new information for the server socket and start listening.
 			if (s != NULL)
 				*s = 0;
 
-			if (fdout == 0){
+			if (fdout == 0) {
 				GDKsyserror("MAPIlisten:fdout problems\n");
 				continue;
 			}
 			mp = GDKgetenv("monet_prompt");
 			c = initClient(name, mp, FALSE);
 			if (c == 0) {
-				stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name );
+				stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name);
 				GDKfree(name);
 
 				/* Make sure that the write- (from-) stream is closed first,
@@ -415,13 +416,11 @@ Get the new information for the server socket and start listening.
 			c->fdout = fdout;
 			c->mode = BLOCKMODE;
 			monet_hello(fdout);
-			CNTXTcopy(stk,c);
+			CNTXTcopy(stk, c);
 			TBL_initclient(c, father);
-			(void)monetFork();
+			(void) monetFork();
 			scheduleClient(c);
-			PARDEBUG THRprintf(GDKerr, 
-					   "MAPIlisten:client accepted %d\n", 
-					   msgsock);
+			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		} else {
 			ValRecord res;
 			char buf[BUFSIZ];
@@ -429,9 +428,9 @@ Get the new information for the server socket and start listening.
 
 			sin = socket_rastream(msgsock, "mapi-r");
 			sout = socket_wastream(msgsock, "mapi-w");
-			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, PTRFMTCAST sin, PTRFMTCAST sout );
-			res.vtype = TYPE_void; 
-			interpret_str( stk, buf, &res);
+			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, PTRFMTCAST sin, PTRFMTCAST sout);
+			res.vtype = TYPE_void;
+			interpret_str(stk, buf, &res);
 		}
 	} while (monet_running);
 #ifdef HAVE_SYS_UN_H
@@ -439,7 +438,7 @@ Get the new information for the server socket and start listening.
 		unlink(usockfile);
 #endif
 	return GDK_SUCCEED;
-  error:
+      error:
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
@@ -479,7 +478,7 @@ ssl_error(const char *name, int err, int ret)
 			} else if (ret == -1) {
 				/* the underlying BIO reported an I/O error */
 				errstr = "I/O error";
-			} else {  /* possible? */
+			} else {	/* possible? */
 				errstr = "Some I/O error occurred";
 			}
 		} else {
@@ -488,9 +487,9 @@ ssl_error(const char *name, int err, int ret)
 		break;
 	case SSL_ERROR_SSL:
 		e = ERR_get_error();
-		if (e != 0) 
+		if (e != 0)
 			errstr = ERR_error_string(e, buf);
-		else { /* possible? */
+		else {		/* possible? */
 			errstr = "A failure in the SSL library occurred";
 		}
 		break;
@@ -498,7 +497,7 @@ ssl_error(const char *name, int err, int ret)
 		errstr = "Invalid error code";
 	}
 	s = GDKmalloc(strlen(errstr) + strlen(name) + 4);
-	sprintf(s, "%s: %s\n", name, errstr); /* we allocated enough, so it fits */
+	sprintf(s, "%s: %s\n", name, errstr);	/* we allocated enough, so it fits */
 	return s;
 }
 
@@ -520,9 +519,10 @@ id_function(void)
 {
 	return (unsigned long) MT_getpid();
 }
-#endif	/* HAVE_OPENSSL */
+#endif /* HAVE_OPENSSL */
 
-bat *mapi_prelude(void)
+bat *
+mapi_prelude(void)
 {
 #ifdef HAVE_OPENSSL
 	int i, nlocks;
@@ -541,7 +541,8 @@ bat *mapi_prelude(void)
 	return NULL;
 }
 
-void mapi_epilogue(void)
+void
+mapi_epilogue(void)
 {
 #ifdef HAVE_OPENSSL
 	if (mutex_buf) {
@@ -555,18 +556,19 @@ void mapi_epilogue(void)
 		GDKfree(mutex_buf);
 		mutex_buf = NULL;
 	}
-#endif	/* HAVE_OPENSSL */
+#endif /* HAVE_OPENSSL */
 }
 
-int MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
+int
+MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 #ifdef HAVE_OPENSSL
 	struct sockaddr_in server;
-	int 	sock = -1;
-	SOCKLEN 	length = 0;
-	int    	on = 1;
-	int 	msgsock;
-	int	i = 0;
+	int sock = -1;
+	SOCKLEN length = 0;
+	int on = 1;
+	int msgsock;
+	int i = 0;
 
 	int port, *Port;
 	int maxusers, *Maxusers;
@@ -577,9 +579,9 @@ int MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 	SSL_CTX *ctx = NULL;
 	SSL *ssl = NULL;
 
-        CNTXTclient(stk, &father);
+	CNTXTclient(stk, &father);
 	if (lt->cnt != 5) {
-		return handle_argerror(res,lt->cnt,5);
+		return handle_argerror(res, lt->cnt, 5);
 	}
 	@:builtin_operand(0,TYPE_int,Port)@;
 	port = *Port;
@@ -596,7 +598,7 @@ int MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 	if (!port)
 		port = MAPISSLPORT;
 	if (!maxusers)
- 		maxusers = MAPIMAXUSERS;
+		maxusers = MAPIMAXUSERS;
 
 	ctx = SSL_CTX_new(SSLv23_method());
 	if (ctx == NULL) {
@@ -636,41 +638,41 @@ The port id should be obtained from the Homes file.
 @c
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons((unsigned short)((port)&0xFFFF));
-   	for (i=0;i<8;i++)
-	    server.sin_zero[i]=0;
- 
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
+	server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
+	for (i = 0; i < 8; i++)
+		server.sin_zero[i] = 0;
+
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
 	length = (SOCKLEN) sizeof(server);
-	if (bind(sock, (SOCKPTR)&server, length) < 0) {
+	if (bind(sock, (SOCKPTR) & server, length) < 0) {
 		GDKsyserror("MAPIlistenSSL:binding to stream socket (%d) failed\n", port);
 		goto fail;
 	}
 @-
 Get the new information for the server socket and start listening.
 @c
-	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
+	if (getsockname(sock, (SOCKPTR) & server, &length) < 0) {
 		GDKsyserror("MAPIlistenSSL:getting socket name\n");
 		goto fail;
 	}
-	listen(sock, maxusers); 
+	listen(sock, maxusers);
 
 	PARDEBUG {
 		THRprintf(GDKerr, "MAPIlistenSSL:Network started at %d\n", port);
 	}
 	do {
 		int retval;
-    		struct timeval tv;
-    		fd_set fds;
+		struct timeval tv;
+		fd_set fds;
 
-    		FD_ZERO(&fds);
-    		FD_SET(sock, &fds);
-    		/* Wait up to 0.5 seconds. */
-    		tv.tv_sec = 0;
-    		tv.tv_usec = 500;
+		FD_ZERO(&fds);
+		FD_SET(sock, &fds);
+		/* Wait up to 0.5 seconds. */
+		tv.tv_sec = 0;
+		tv.tv_usec = 500;
 
-    		retval = select(sock+1, &fds, &fds, &fds, &tv);
+		retval = select(sock + 1, &fds, &fds, &fds, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -679,11 +681,11 @@ Get the new information for the server socket and start listening.
 			GDKsyserror("MAPIlistenSSL:select failed\n");
 			goto fail;
 		}
-    		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlistenSSL:accept failed\n");
 				goto fail;
-	    		}
+			}
 			continue;
 		}
 		if ((ssl = SSL_new(ctx)) == 0) {
@@ -725,18 +727,18 @@ Get the new information for the server socket and start listening.
 			break;
 		}
 
-		if (STREQ(cmd,"")) {
-			int i=0;
-			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
+		if (STREQ(cmd, "")) {
+			int i = 0;
+			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *mp;
-			int blocked=0;
+			int blocked = 0;
 			stream *fdin = ssl_rastream(ssl, "Mserver mapi read");
-			stream *fdout= NULL;
+			stream *fdout = NULL;
 			Client c;
 
 			assert(name);
-			memset(name,0,BLOCK);
-			if (fdin == 0 || stream_errnr(fdin) ){
+			memset(name, 0, BLOCK);
+			if (fdin == 0 || stream_errnr(fdin)) {
 				GDKsyserror("MAPIlistenSSL:fdin problems\n");
 				if (fdin)
 					stream_destroy(fdin);
@@ -744,7 +746,7 @@ Get the new information for the server socket and start listening.
 			}
 			/* get user name */
 			stream_read(fdin, user, 1, 1);
-			for(i=0; i<BLOCK && *user != '\n' && !stream_errnr(fdin); i++){
+			for (i = 0; i < BLOCK && *user != '\n' && !stream_errnr(fdin); i++) {
 				user++;
 				stream_read(fdin, user, 1, 1);
 			}
@@ -755,21 +757,19 @@ Get the new information for the server socket and start listening.
 				continue;
 			}
 			*user = 0;
-                        /* printf("mapi:Client accepted %s\n", name);fflush(stdout);*/
-                        s = strrchr(name,':');
-                        blocked = s && strncmp(s,":blocked",8)==0;
-                        if (blocked) {
-                                /* printf("mapi:use blocked mode\n");fflush(stdout);*/
-                                *s=0;
-                                fdin = block_stream(stream_rstream(fdin));
-                                fdout = block_stream(ssl_wstream(SSL_dup(ssl),
-								 "Mserver mapi write"));
-                        } else {
-                                fdout = ssl_wastream(SSL_dup(ssl),
-						     "Mserver mapi write");
+			/* printf("mapi:Client accepted %s\n", name);fflush(stdout); */
+			s = strrchr(name, ':');
+			blocked = s && strncmp(s, ":blocked", 8) == 0;
+			if (blocked) {
+				/* printf("mapi:use blocked mode\n");fflush(stdout); */
+				*s = 0;
+				fdin = block_stream(stream_rstream(fdin));
+				fdout = block_stream(ssl_wstream(SSL_dup(ssl), "Mserver mapi write"));
+			} else {
+				fdout = ssl_wastream(SSL_dup(ssl), "Mserver mapi write");
 			}
 
-			if (fdout == 0){
+			if (fdout == 0) {
 				GDKsyserror("MAPIlistenSSL:fdout problems\n");
 				continue;
 			}
@@ -777,7 +777,7 @@ Get the new information for the server socket and start listening.
 			mp = GDKgetenv("monet_prompt");
 			c = initClient(name, mp, FALSE);
 			if (c == 0) {
-				stream_printf(fdout, "MAPIlistenSSL:Failed to init client for user %s\n", name );
+				stream_printf(fdout, "MAPIlistenSSL:Failed to init client for user %s\n", name);
 				GDKfree(name);
 
 				/* Make sure that the write- (out-) stream is closed first,
@@ -796,13 +796,11 @@ Get the new information for the server socket and start listening.
 			c->fdin = fdin;
 			c->fdout = fdout;
 			c->mode = BLOCKMODE;
-			CNTXTcopy(stk,c);
+			CNTXTcopy(stk, c);
 			TBL_initclient(c, father);
-			(void)monetFork();
+			(void) monetFork();
 			scheduleClient(c);
-			PARDEBUG THRprintf(GDKerr, 
-				"MAPIlistenSSL:client accepted %d\n", 
-					msgsock);
+			PARDEBUG THRprintf(GDKerr, "MAPIlistenSSL:client accepted %d\n", msgsock);
 		} else {
 			ValRecord res;
 			char buf[BUFSIZ];
@@ -810,19 +808,19 @@ Get the new information for the server socket and start listening.
 
 			sin = ssl_rastream(ssl, "mapi-r");
 			sout = ssl_wastream(SSL_dup(ssl), "mapi-w");
-			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, PTRFMTCAST sin, PTRFMTCAST sout );
+			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, PTRFMTCAST sin, PTRFMTCAST sout);
 			THRprintf(GDKerr, "MAPIlistenSSL: %s", buf);
-			res.vtype = TYPE_void; 
-			interpret_str( stk, buf, &res);
+			res.vtype = TYPE_void;
+			interpret_str(stk, buf, &res);
 		}
-	  end_loop:;
+	      end_loop:;
 	} while (monet_running);
 	SSL_CTX_free(ctx);
 	close(sock);
 	if (cmd)
 		GDKfree(cmd);
 	return GDK_SUCCEED;
-  fail:;
+      fail:;
 	if (sock >= 0)
 		close(sock);
 	if (ctx)
@@ -836,24 +834,24 @@ Get the new information for the server socket and start listening.
 	(void) res;
 	GDKerror("No SSL support\n");
 	return GDK_FAIL;
-#endif	/* HAVE_OPENSSL */
+#endif /* HAVE_OPENSSL */
 }
 
-int stream_read_until(str *res, Stream *S , str stop)
+int
+stream_read_until(str *res, Stream *S, str stop)
 {
-	stream *s = *(stream**)S;
+	stream *s = *(stream **) S;
 	int slen = strlen(stop);
 	int len = 0;
 	char buf[BUFSIZ + 1], *start = buf;
 
-	while (stream_read(s, start, 1, 1) > 0){
-		if (start - buf >= slen - 1 &&
-		    strncmp(start - slen + 1, stop, slen) == 0) {
+	while (stream_read(s, start, 1, 1) > 0) {
+		if (start - buf >= slen - 1 && strncmp(start - slen + 1, stop, slen) == 0) {
 /*
 				start = start-slen+1;
 */
-				start++;
-				break;
+			start++;
+			break;
 		}
 		start++;
 	}
@@ -861,17 +859,18 @@ int stream_read_until(str *res, Stream *S , str stop)
 	if (stream_errnr(s))
 		return GDK_FAIL;
 
-	len = start-buf;
-	if (len > 0){
-		*res = NEW_ARRAY(char, len+1);
+	len = start - buf;
+	if (len > 0) {
+		*res = NEW_ARRAY(char, len + 1);
 
 		buf[len] = '\0';
-		memcpy(*res, buf, len+1);
+		memcpy(*res, buf, len + 1);
 	} else {
 		*res = GDKstrdup("");
 	}
 	return GDK_SUCCEED;
 }
+
 @}
 @- daemon initialization
 @mil

@@ -25,16 +25,16 @@
 #include "symbol.h"
 #include "list.h"
 
-class Dependency : public Symbol {
-    public:
-	Dependency( int t, char *n, char *fn ); 
+class Dependency:public Symbol {
+      public:
+	Dependency(int t, char *n, char *fn);
 
 	char *filename() const;
-	void setModule ( Symbol *m );
-	Symbol *Module ( ) const;
+	void setModule(Symbol *m);
+	Symbol *Module() const;
 
-	virtual ostream &print( language *l, ostream &o ) const ;
-    private:
+	virtual ostream & print(language * l, ostream & o) const;
+      private:
 	char *_fn;
 	Symbol *_mod;
 };

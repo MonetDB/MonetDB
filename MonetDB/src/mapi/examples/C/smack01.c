@@ -25,7 +25,8 @@
 
 #define die(X) (mapi_explain(X, stdout), exit(-1))
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	Mapi dbh;
 	MapiHdl hdl;
@@ -44,22 +45,22 @@ int main(int argc, char **argv)
 	port = atol(argv[1]);
 
 	for (i = 0; i < 1000; i++) {
-		/* printf("setup connection %d\n", i);*/
-		dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (sql)?"sql":0);
+		/* printf("setup connection %d\n", i); */
+		dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (sql) ? "sql" : 0);
 		if (mapi_error(dbh))
 			die(dbh);
 		if (sql)
 			snprintf(buf, 40, "select %d;", i);
 		else
 			snprintf(buf, 40, "print(%d);", i);
-		if ((hdl = mapi_query(dbh,buf)) == NULL)
+		if ((hdl = mapi_query(dbh, buf)) == NULL)
 			die(dbh);
 		while ((line = mapi_fetch_line(hdl))) {
 			printf("%s \n", line);
 		}
 		mapi_close_handle(hdl);
 		mapi_disconnect(dbh);
-		/* printf("close connection %d\n", i);*/
+		/* printf("close connection %d\n", i); */
 	}
 
 	return 0;

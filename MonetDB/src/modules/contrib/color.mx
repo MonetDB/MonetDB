@@ -112,71 +112,86 @@ Type-mappers for convenience
 @- Atom commands
 @c
 
-int hextoint(chr h, chr l) {
+int
+hextoint(chr h, chr l)
+{
 	int r = 0;
-	if(h>='0' && h<='9') r = 16*(int)(h-'0'); 
-	if(h>='a' && h<='f') r = 16*(int)(10+h-'a'); 
-	if(h>='A' && h<='F') r = 16*(int)(10+h-'A'); 
-	if(l>='0' && l<='9') r += (int)(l-'0'); 
-	if(l>='a' && l<='f') r += (int)(10+l-'a'); 
-	if(l>='A' && l<='F') r += (int)(10+l-'A'); 
+
+	if (h >= '0' && h <= '9')
+		r = 16 * (int) (h - '0');
+	if (h >= 'a' && h <= 'f')
+		r = 16 * (int) (10 + h - 'a');
+	if (h >= 'A' && h <= 'F')
+		r = 16 * (int) (10 + h - 'A');
+	if (l >= '0' && l <= '9')
+		r += (int) (l - '0');
+	if (l >= 'a' && l <= 'f')
+		r += (int) (10 + l - 'a');
+	if (l >= 'A' && l <= 'F')
+		r += (int) (10 + l - 'A');
 	return r;
 }
 
-int color_fromstr(char *colorStr, int *len, color** c) {
+int
+color_fromstr(char *colorStr, int *len, color **c)
+{
 	char *p = colorStr;
 
 #ifdef DEBUG
 	printf("* color_fromstr:\n");
-	printf("  - colorStr: %s\n",(colorStr!=NULL?colorStr:"null"));
-	printf("  - *len: %d\n",*len);
+	printf("  - colorStr: %s\n", (colorStr != NULL ? colorStr : "null"));
+	printf("  - *len: %d\n", *len);
 #endif
 
-	if (!*c){
-		*c = (color*)GDKmalloc(sizeof(color));
-	} else if (*len < (int) sizeof(color)){
+	if (!*c) {
+		*c = (color *) GDKmalloc(sizeof(color));
+	} else if (*len < (int) sizeof(color)) {
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(color));
 		*len = sizeof(color);
 	}
 
-	while(GDKisspace(*p)) p++; 
+	while (GDKisspace(*p))
+		p++;
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		color **sc = (color**)c;
-		**sc = color_nil; 
+		color **sc = (color **) c;
+
+		**sc = color_nil;
 		p += 3;
 	} else {
-		if(p[0] == '0' && p[1] == 'x' && 
-                   p[2] == '0' && p[3] == '0') {
-			int r = hextoint(p[4],p[5]);
-			int g = hextoint(p[6],p[7]);
-			int b = hextoint(p[8],p[9]);
-			**c = (color)(r<<16 | g<<8 | b);
+		if (p[0] == '0' && p[1] == 'x' && p[2] == '0' && p[3] == '0') {
+			int r = hextoint(p[4], p[5]);
+			int g = hextoint(p[6], p[7]);
+			int b = hextoint(p[8], p[9]);
+
+			**c = (color) (r << 16 | g << 8 | b);
 		} else {
-			GDKwarning( "Invalid color string representation '%s'\n", p);
+			GDKwarning("Invalid color string representation '%s'\n", p);
 			**c = chr_nil;
 		}
 	}
 
 #ifdef DEBUG
-	printf("  = *c: 0x%08X\n", (int)**c);
-	printf("  = *len: %d\n",*len);
+	printf("  = *c: 0x%08X\n", (int) **c);
+	printf("  = *len: %d\n", *len);
 #endif
 
-	return p-colorStr;
+	return p - colorStr;
 }
 
-int color_tostr(char **colorStr, int *len, color *c) {
+int
+color_tostr(char **colorStr, int *len, color *c)
+{
 	color sc = *c;
 
 #ifdef DEBUG
 	printf("* color_tostr:\n");
-	printf("  - *len: %d\n",*len);
-	printf("  - c: %s\n",(c!=NULL?c:"null"));
+	printf("  - *len: %d\n", *len);
+	printf("  - c: %s\n", (c != NULL ? c : "null"));
 #endif
 
 	/* allocate and fill a new string */
-	
+
 	if (*len < 11) {
 		GDKfree(*colorStr);
 		*colorStr = GDKmalloc(11);
@@ -190,32 +205,40 @@ int color_tostr(char **colorStr, int *len, color *c) {
 	snprintf(*colorStr, *len, "0x%08X", (unsigned int) sc);
 
 #ifdef DEBUG
-	printf("  = buf: %s\n",buf);
-	printf("  = *colorStr: %s\n",*colorStr);
-	printf("  = *len: %d\n",*len);
+	printf("  = buf: %s\n", buf);
+	printf("  = *colorStr: %s\n", *colorStr);
+	printf("  = *len: %d\n", *len);
 #endif
 	return strlen(*colorStr);
 }
 
 
-int rgb(color *rgb,int* r,int* g,int *b) {
-	*rgb = (color)(((*r&0xFF)<<16) | ((*g&0xFF)<<8) | (*b&0xFF));
-	return(GDK_SUCCEED);
+int
+rgb(color *rgb, int *r, int *g, int *b)
+{
+	*rgb = (color) (((*r & 0xFF) << 16) | ((*g & 0xFF) << 8) | (*b & 0xFF));
+	return (GDK_SUCCEED);
 }
 
-int red(int *r, color *c) {
-	*r = (int)((*c>>16) & 0xFF);
-	return(GDK_SUCCEED);
+int
+red(int *r, color *c)
+{
+	*r = (int) ((*c >> 16) & 0xFF);
+	return (GDK_SUCCEED);
 }
 
-int green(int *g, color *c) {
-	*g = (int)((*c>> 8) & 0xFF);
-	return(GDK_SUCCEED);
+int
+green(int *g, color *c)
+{
+	*g = (int) ((*c >> 8) & 0xFF);
+	return (GDK_SUCCEED);
 }
 
-int blue(int *b, color *c) {
-	*b = (int)( *c      & 0xFF);
-	return(GDK_SUCCEED);
+int
+blue(int *b, color *c)
+{
+	*b = (int) (*c & 0xFF);
+	return (GDK_SUCCEED);
 }
 
 #define max2(a,b) ((a)>(b)?(a):(b))
@@ -226,78 +249,122 @@ int blue(int *b, color *c) {
 
 #define EPS 0.001f
 
-void color_rgb2hsv(float *h,float *s,float *v,int R,int G,int B) {
-    register float H,S,V,max;
-    register float Rtmp = ((float)(R))/255.0f;
-    register float Gtmp = ((float)(G))/255.0f;
-    register float Btmp = ((float)(B))/255.0f;
-    max = max3(Rtmp,Gtmp,Btmp);
-    V   = max;
-    if(fabs(max) <= EPS)  {
-        S = 0;
-        H = 0;
-    } else {
-        register float min, delta;
-        min   = min3(Rtmp,Gtmp,Btmp);
-        delta = max - min;
-        S = delta / max;
-        if     (Rtmp == max)   H =     (Gtmp - Btmp) / delta;
-        else if(Gtmp == max)   H = 2 + (Btmp - Rtmp) / delta;
-        else /* Btmp == max */ H = 4 + (Rtmp - Gtmp) / delta;
-        H *= 60;
-        if(H<0) H += 360;
-    }
-    *h = H;
-    *s = S;
-    *v = V;
+void
+color_rgb2hsv(float *h, float *s, float *v, int R, int G, int B)
+{
+	register float H, S, V, max;
+	register float Rtmp = ((float) (R)) / 255.0f;
+	register float Gtmp = ((float) (G)) / 255.0f;
+	register float Btmp = ((float) (B)) / 255.0f;
+
+	max = max3(Rtmp, Gtmp, Btmp);
+	V = max;
+	if (fabs(max) <= EPS) {
+		S = 0;
+		H = 0;
+	} else {
+		register float min, delta;
+
+		min = min3(Rtmp, Gtmp, Btmp);
+		delta = max - min;
+		S = delta / max;
+		if (Rtmp == max)
+			H = (Gtmp - Btmp) / delta;
+		else if (Gtmp == max)
+			H = 2 + (Btmp - Rtmp) / delta;
+		else		/* Btmp == max */
+			H = 4 + (Rtmp - Gtmp) / delta;
+		H *= 60;
+		if (H < 0)
+			H += 360;
+	}
+	*h = H;
+	*s = S;
+	*v = V;
 }
 
-int hsv(color *c,flt* h,flt* s,flt* v) {
-	int r,g,b;
-        float Rtmp,Gtmp,Btmp;
-        if(fabs(*s)<=EPS) {
-            Rtmp = Gtmp = Btmp = (*v);
-        } else {
-            float Htmp = (*h) / 60;
-            float f = Htmp - ((int)Htmp);
-            float p = (*v) * ( 1 - (*s) );
-            float q = (*v) * ( 1 - (*s) * f );
-            float t = (*v) * ( 1 - (*s) * ( 1 - f ) );
-            switch((int)floor(Htmp)) {
-                    case 0: Rtmp = *v; Gtmp = t;  Btmp = p;  break;
-                    case 1: Rtmp = q;  Gtmp = *v; Btmp = p;  break;
-                    case 2: Rtmp = p;  Gtmp = *v; Btmp = t;  break;
-                    case 3: Rtmp = p;  Gtmp = q;  Btmp = *v; break;
-                    case 4: Rtmp = t;  Gtmp = p;  Btmp = *v; break;
-                    default: /* case 5: */
-                            Rtmp = *v; Gtmp = p;  Btmp = q;  break;
-            }
-        }
-	r = (int)((Rtmp * 255.0f)+0.5f);
-        g = (int)((Gtmp * 255.0f)+0.5f);
-        b = (int)((Btmp * 255.0f)+0.5f);
-	return rgb(c,&r,&g,&b);
+int
+hsv(color *c, flt *h, flt *s, flt *v)
+{
+	int r, g, b;
+	float Rtmp, Gtmp, Btmp;
+
+	if (fabs(*s) <= EPS) {
+		Rtmp = Gtmp = Btmp = (*v);
+	} else {
+		float Htmp = (*h) / 60;
+		float f = Htmp - ((int) Htmp);
+		float p = (*v) * (1 - (*s));
+		float q = (*v) * (1 - (*s) * f);
+		float t = (*v) * (1 - (*s) * (1 - f));
+
+		switch ((int) floor(Htmp)) {
+		case 0:
+			Rtmp = *v;
+			Gtmp = t;
+			Btmp = p;
+			break;
+		case 1:
+			Rtmp = q;
+			Gtmp = *v;
+			Btmp = p;
+			break;
+		case 2:
+			Rtmp = p;
+			Gtmp = *v;
+			Btmp = t;
+			break;
+		case 3:
+			Rtmp = p;
+			Gtmp = q;
+			Btmp = *v;
+			break;
+		case 4:
+			Rtmp = t;
+			Gtmp = p;
+			Btmp = *v;
+			break;
+		default:	/* case 5: */
+			Rtmp = *v;
+			Gtmp = p;
+			Btmp = q;
+			break;
+		}
+	}
+	r = (int) ((Rtmp * 255.0f) + 0.5f);
+	g = (int) ((Gtmp * 255.0f) + 0.5f);
+	b = (int) ((Btmp * 255.0f) + 0.5f);
+	return rgb(c, &r, &g, &b);
 }
 
-int hue(flt *f, color *c) {
-	float h,s,v;
-	color_rgb2hsv(&h,&s,&v,(*c>>16)&0xFF,(*c>> 8)&0xFF,(*c    )&0xFF);
+int
+hue(flt *f, color *c)
+{
+	float h, s, v;
+
+	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
 	*f = h;
-	return(GDK_SUCCEED);
+	return (GDK_SUCCEED);
 }
 
-int saturation(flt *f, color *c) {
-	float h,s,v;
-	color_rgb2hsv(&h,&s,&v,(*c>>16)&0xFF,(*c>> 8)&0xFF,(*c    )&0xFF);
+int
+saturation(flt *f, color *c)
+{
+	float h, s, v;
+
+	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
 	*f = s;
-	return(GDK_SUCCEED);
+	return (GDK_SUCCEED);
 }
 
-int value(flt *f, color *c) {
-	float h,s,v;
-	color_rgb2hsv(&h,&s,&v,(*c>>16)&0xFF,(*c>> 8)&0xFF,(*c    )&0xFF);
+int
+value(flt *f, color *c)
+{
+	float h, s, v;
+
+	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
 	*f = v;
-	return(GDK_SUCCEED);
+	return (GDK_SUCCEED);
 }
 
 
@@ -305,42 +372,53 @@ int value(flt *f, color *c) {
 #define CLIP(X)     ((unsigned char)(((X)&~0xFF)?(((X)<0x00)?0x00:0xFF):(X)))
 #endif
 
-int ycc(color *c,int* y,int* cr,int* cb) {
-	int r,g,b;
-	float Y  = (float) *y;
+int
+ycc(color *c, int *y, int *cr, int *cb)
+{
+	int r, g, b;
+	float Y = (float) *y;
 	float CR = (float) (*cr - 128);
 	float CB = (float) (*cb - 128);
-	r = (int)(Y+CR*1.4022f);
+
+	r = (int) (Y + CR * 1.4022f);
 	r = CLIP(r);
-	g = (int)(Y-CB*0.3456f-CR*0.7145f);
-        g = CLIP(g);
-	b = (int)(Y+CB*1.7710f); 
-        b = CLIP(b);
-	return rgb(c,&r,&g,&b);
+	g = (int) (Y - CB * 0.3456f - CR * 0.7145f);
+	g = CLIP(g);
+	b = (int) (Y + CB * 1.7710f);
+	b = CLIP(b);
+	return rgb(c, &r, &g, &b);
 }
 
-int luminance(int *y, color *c) {
-	int r = (int)((*c>>16) & 0xFF);
-	int g = (int)((*c>> 8) & 0xFF);
-	int b = (int)( *c      & 0xFF);
-	*y = (int)(0.2989f*(float)(r)+0.5866f*(float)(g)+0.1145f*(float)(b));
+int
+luminance(int *y, color *c)
+{
+	int r = (int) ((*c >> 16) & 0xFF);
+	int g = (int) ((*c >> 8) & 0xFF);
+	int b = (int) (*c & 0xFF);
+
+	*y = (int) (0.2989f * (float) (r) + 0.5866f * (float) (g) + 0.1145f * (float) (b));
 	*y = CLIP(*y);
-	return(GDK_SUCCEED);
+	return (GDK_SUCCEED);
 }
 
-int cr(int *cr, color *c) {
-	int r = (int)((*c>>16) & 0xFF);
-	int g = (int)((*c>> 8) & 0xFF);
-	int b = (int)( *c      & 0xFF);
-	*cr = (int)(0.5000f*(float)(r)-0.4183f*(float)(g)-0.0816f*(float)(b)) + 128;
-	return(GDK_SUCCEED);
+int
+cr(int *cr, color *c)
+{
+	int r = (int) ((*c >> 16) & 0xFF);
+	int g = (int) ((*c >> 8) & 0xFF);
+	int b = (int) (*c & 0xFF);
+
+	*cr = (int) (0.5000f * (float) (r) - 0.4183f * (float) (g) - 0.0816f * (float) (b)) + 128;
+	return (GDK_SUCCEED);
 }
 
-int cb(int *cb, color *c) {
-	int r = (int)((*c>>16) & 0xFF);
-	int g = (int)((*c>> 8) & 0xFF);
-	int b = (int)( *c      & 0xFF);
-	*cb = (int)(-0.1687f*(float)(r)-0.3312f*(float)(g)+0.5000f*(float)(b)) + 128;
-	return(GDK_SUCCEED);
-}
+int
+cb(int *cb, color *c)
+{
+	int r = (int) ((*c >> 16) & 0xFF);
+	int g = (int) ((*c >> 8) & 0xFF);
+	int b = (int) (*c & 0xFF);
 
+	*cb = (int) (-0.1687f * (float) (r) - 0.3312f * (float) (g) + 0.5000f * (float) (b)) + 128;
+	return (GDK_SUCCEED);
+}
