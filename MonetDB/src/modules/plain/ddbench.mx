@@ -888,7 +888,8 @@ int enum_view( BAT** res, BAT* b){
 @+ enum_group
 @c	
 /* COMMAND 
- * optimized group: use a byte-array[card(ct)*card(b)] instead of a hash\n\t           table and directly create enumerated group oid-s
+ * optimized group: use a byte-array[card(ct)*card(b)] instead of a hash
+ * table and directly create enumerated group oid-s
  */
 
 int enum_group( BAT** res, BAT* ct, BAT* b){
@@ -1216,7 +1217,8 @@ direction is also inverse. All that is handled by the below macros:
 #define multiplex 	for(i=0;i<argc;i++)
 
 /* COMMAND 
- * do a range-scan equiselect, but output the result as a bitmask, paritioned\n  in 32-bits integers. The head-oids are densly incremental from from 0@0
+ * do a range-scan equiselect, but output the result as a bitmask, paritioned
+ * in 32-bits integers. The head-oids are densly incremental from from 0@0
  */
 int val_bitselect( BAT** res, BAT* b, ptr v){
 	int *dst, val;
@@ -1231,7 +1233,8 @@ int val_bitselect( BAT** res, BAT* b, ptr v){
 
 @c
 /* COMMAND 
- * do a range-scan rangeselect, but output the result as a bitmask, paritioned\n  in 32-bits integers. The head-oids are densly incremental from from 0@0
+ * do a range-scan rangeselect, but output the result as a bitmask, paritioned
+ * in 32-bits integers. The head-oids are densly incremental from from 0@0
  */
 int rng_bitselect( BAT** res, BAT* b, ptr lo, ptr hi){
 	int *dst, low, high;
@@ -1342,7 +1345,7 @@ int vals_bitselect( BAT** res, BAT* b, ...){
 
 /* COMMAND 
  * do a range-scan rangeselect, but output the result as a bitmask, 
- * partitioned\n  in 32-bits integers. 
+ * partitioned in 32-bits integers.
  */
 int rngs_bitselect( BAT** res, BAT* b, ...){
 	int *lo[MAXPARAMS], *hi[MAXPARAMS], low[MAXPARAMS], high[MAXPARAMS];
@@ -1424,7 +1427,7 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 	if (ATOMstorage(b->ttype) == TYPE_chr) {
 		int *src = (int*) p;
 		/* treat 32 tuples = 32 (=2^5) bytes per iteration */
-		int n = (q-p) >> 5, *end = src + (n << 3); 
+		int *end = src + (((q-p) >> 5) << 3); 
 
 		@3 @:INIT@2(unsigned char,@4)@
 
@@ -1470,7 +1473,7 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 	} else if (ATOMstorage(b->ttype) == TYPE_sht) {
 		int *src = (int*) p;
 		/* treat 32 tuples = 32*2 = 64 (=2^6) bytes per iteration */
-		int n = (q-p) >> 6, *end = src + (n << 4);
+		int *end = src + (((q-p) >> 6) << 4);
 
 		@3 @:INIT@2(unsigned short,@4)@
 

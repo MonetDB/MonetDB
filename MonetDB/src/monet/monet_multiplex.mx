@@ -723,7 +723,7 @@ static int interpret_@1_array(
 	if (argc == 2) {
 #ifndef FIRST_PARAM_FIXEDSIZE
 	    if (a1) {
-	         @:arrayloop1(@1,a1+*(int*)p1)@
+	         @:arrayloop1(@1,a1+*(var_t*)p1)@
 	    } else 
 #endif
 	    {
@@ -733,15 +733,15 @@ static int interpret_@1_array(
 #ifndef FIRST_PARAM_FIXEDSIZE
 	    if (a1) {
 		if (a2) {
-		    @:arrayloop2(@1,a1+*(int*)p1,a2+*(int*)p2)@
+		    @:arrayloop2(@1,a1+*(var_t*)p1,a2+*(var_t*)p2)@
 		} else {
-		    @:arrayloop2(@1,a1+*(int*)p1,p2)@
+		    @:arrayloop2(@1,a1+*(var_t*)p1,p2)@
 		}
 	    } else 
 #endif
 	    {
 		if (a2) {
-		    @:arrayloop2(@1,p1,a2+*(int*)p2)@
+		    @:arrayloop2(@1,p1,a2+*(var_t*)p2)@
 		} else {
 		    @:arrayloop2(@1,p1,p2)@
 		}
@@ -750,28 +750,28 @@ static int interpret_@1_array(
 	} else if (a1) {
 	    if (a2) {
 		if (a3) {
-		    @:arrayloop3(@1,a1+*(int*)p1,a2+*(int*)p2,a3+*(int*)p3)@
+		    @:arrayloop3(@1,a1+*(var_t*)p1,a2+*(var_t*)p2,a3+*(var_t*)p3)@
 		} else {
-		    @:arrayloop3(@1,a1+*(int*)p1,a2+*(int*)p2,p3)@
+		    @:arrayloop3(@1,a1+*(var_t*)p1,a2+*(var_t*)p2,p3)@
 		}
 	    } else {
 		if (a3) {
-		    @:arrayloop3(@1,a1+*(int*)p1,p2,a3+*(int*)p3)@
+		    @:arrayloop3(@1,a1+*(var_t*)p1,p2,a3+*(var_t*)p3)@
 		} else {
-		    @:arrayloop3(@1,a1+*(int*)p1,p2,p3)@
+		    @:arrayloop3(@1,a1+*(var_t*)p1,p2,p3)@
 		}
 	    }
 #endif
 	} else {
 	    if (a2) {
 		if (a3) {
-		    @:arrayloop3(@1,p1,a2+*(int*)p2,a3+*(int*)p3)@
+		    @:arrayloop3(@1,p1,a2+*(var_t*)p2,a3+*(var_t*)p3)@
 		} else {
-		    @:arrayloop3(@1,p1,a2+*(int*)p2,p3)@
+		    @:arrayloop3(@1,p1,a2+*(var_t*)p2,p3)@
 		}
 	    } else {
 		if (a3) {
-		    @:arrayloop3(@1,p1,p2,a3+*(int*)p3)@
+		    @:arrayloop3(@1,p1,p2,a3+*(var_t*)p3)@
 		} else {
 		    @:arrayloop3(@1,p1,p2,p3)@
 		}
@@ -1277,7 +1277,7 @@ there are the {strings, polygons, images, etc}!
 	if ((BAThordered(b)&1) == 0 && ATOMvarsized(b->ttype)) {
 	    hidden_vartype = b->ttype; /* just copy offsets */
 	}
-        nested = BATnew(hidden_vartype?TYPE_int:BATttype(b),
+        nested = BATnew(hidden_vartype?TYPE_var:BATttype(b),
                        TYPE_void, (BATcount(b)*3)/(BATcount(extent)+1));
         nested_rev = BATmirror(nested);
         nested->batRestricted = BAT_READ;
@@ -1554,9 +1554,13 @@ clean up and exit
 	bulkerror_finish(&bulkerror, "interpret_setaggr");
         if (nested_bak) *(BATstore*) nested = *nested_bak;
 	if (hidden_vartype) {
-		nested->htype = nested_rev->ttype = TYPE_int;
+		nested->htype = nested_rev->ttype = TYPE_var;
 	        nested_rev->tvarsized = nested->hvarsized = FALSE; 
+#if TYPE_var == TYPE_int
             	strcpy(nested->hatom, "int");
+#else
+            	strcpy(nested->hatom, "lng");
+#endif
 		nested->hheap.base = NULL;
 	}
 	if (histo) BBPreclaim(histo);

@@ -302,7 +302,7 @@ BAT *BATmaterialize(BAT *b, size_t size){
 	size_t hole_padding = 0, cnt = 0;
 	Heap buns = *b->batBuns, hh = b->H->heap, th = b->T->heap;
 	int bunwidth = b->dims.bunwidth, hlc = b->hloc, tlc = b->tloc;
-	char *hbase = Hbase(b), *tbase = Tbase(b);
+	char *hbase = (char *) Hbase(b), *tbase = (char *) Tbase(b);
 	int newbw = 0;
 	BUN p = BUNfirst(b), q = BUNlast(b);
 	

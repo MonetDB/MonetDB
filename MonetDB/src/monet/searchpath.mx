@@ -71,6 +71,7 @@ struct moddir {
 
 static struct moddir *moddir_list=0;
 
+#if 0				/* not used */
 static void print_moddir_list(void) {
     struct moddir *entry=moddir_list;
     while(entry)
@@ -79,6 +80,7 @@ static void print_moddir_list(void) {
             entry=entry->next;
         }
 }
+#endif
 
 static 
 void insert_moddir_entry(char *name) {

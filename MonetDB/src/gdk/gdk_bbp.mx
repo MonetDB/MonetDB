@@ -145,7 +145,7 @@ gdk_export int  BBPfix       (bat b);
 gdk_export int  BBPunfix     (bat b);
 gdk_export int BBPpersistent(bat b, int pers); 
 gdk_export int BBPtransient (bat b, int trans);
-gdk_export void BATpersistent(void *dummy, int *d2, bat *b);
+gdk_export void BATpersistent(void *dummy, var_t *d2, bat *b);
 gdk_export void BATtransient (void *dummy, bat *b);
 gdk_export void BBPshare     (bat b);
 gdk_export void BBPunshare   (bat b);
@@ -846,7 +846,7 @@ int BBPtransient(bat i, int trans) {
 	}
 	return lrefs;
 }
-void BATpersistent(void *dummy, int *d2, bat *i) {
+void BATpersistent(void *dummy, var_t *d2, bat *i) {
 	BBPpersistent(*i,TRUE);
 }
 void BATtransient(void *dummy, bat *i) {
@@ -1456,17 +1456,17 @@ void BBPclean(BAT *b){
 	BUN p, q;
 	int bs=BUNsize(b);
 
-	void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
-	void (*tatmdel)(Heap*,int*) = BATatoms[b->ttype].atomDel;
+	void (*hatmdel)(Heap*,size_t*) = BATatoms[b->htype].atomDel;
+	void (*tatmdel)(Heap*,size_t*) = BATatoms[b->ttype].atomDel;
 
 	if (hatmdel || tatmdel) {
 		for(p=b->batDeleted, q=b->batHole; p < q; p += bs) {
-			if (hatmdel) (*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
-			if (tatmdel) (*tatmdel)(&b->theap, (int*) BUNtloc(b,p));
+			if (hatmdel) (*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
+			if (tatmdel) (*tatmdel)(&b->theap, (size_t*) BUNtloc(b,p));
 		}
 		for(p=BUNfirst(b), q=BUNlast(b); p < q; p += bs) {
-			if (hatmdel) (*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
-			if (tatmdel) (*tatmdel)(&b->theap, (int*) BUNtloc(b,p));
+			if (hatmdel) (*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
+			if (tatmdel) (*tatmdel)(&b->theap, (size_t*) BUNtloc(b,p));
 		}
 	}
 }

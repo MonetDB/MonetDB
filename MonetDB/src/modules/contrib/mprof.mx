@@ -632,7 +632,7 @@ Tms_null(void) {
 void
 Tms_del(
 	Heap* h,    
-    int* b	  
+    size_t* b	  
 ){
 }
 
@@ -805,7 +805,7 @@ Ma_null(void){
 void
 Ma_del(
 	Heap* h,     
-    int* b
+    size_t* b
 ){
 }
 
@@ -994,7 +994,7 @@ Ru_null(void){
 void
 Ru_del(
 	Heap* h,    
-    int* b
+    size_t* b
 ){
 }
 

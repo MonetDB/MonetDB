@@ -1297,7 +1297,7 @@ int CMDfetch(ptr ret, BAT *b, int *pos){
 	@:putTail(BUNptr(b,i))@
 @= putTail
 	if (b->theap.base) {
-	    ptr _src = b->theap.base + *(int*) BUNtloc(b,@1);
+	    ptr _src = BUNtvar(b,@1);/*b->theap.base + *(var_t*) BUNtloc(b,@1);*/
 	    int _len = ATOMlen(b->ttype, _src);
 	    ptr _dst = GDKmalloc(_len);
 	    memcpy(_dst, _src, _len);

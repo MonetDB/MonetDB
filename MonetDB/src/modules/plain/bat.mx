@@ -924,7 +924,7 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)));
         BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)));
         BUNins(bn, "batHole", local_utoa(BUNindex(b, b->batHole)));
-        BUNins(bn, "top", local_utoa(BUNindex(b, (Bunbase(b) + b->batBuns->free))));
+        BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))));
 	BUNins(bn, "batStamp", local_itoa(b->batStamp));
 	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()));
         BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk));

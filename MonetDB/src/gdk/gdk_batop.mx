@@ -388,7 +388,7 @@ BAT *BAThistogram(BAT *b) {
 	if (b->talign==0) {
 		b->talign = OIDnew(1);
 	}
-	bn = BATnew(tricky?TYPE_int:b->ttype, TYPE_int, 200); 
+	bn = BATnew(tricky?TYPE_var:b->ttype, TYPE_int, 200); 
 	if (bn == NULL) {
 		return bn;
 	}
@@ -569,7 +569,8 @@ BAT *BAT_hashselect(BAT *b, BAT *bn, ptr tl) {
 	BATflipflop(b);
 	(void) BATprepareHash(b);
 	while(bn) {
-	    BUN p, q = BUNfirst(bn), r = Bunbase(bn) + bn->batBuns->size;
+	    BUN p, q = BUNfirst(bn);
+	    BUN r = (BUN) ((char *) Bunbase(bn) + bn->batBuns->size);
 	    int bs = BUNsize(bn);
 
 	    if (b->tvarsized) {
@@ -1227,7 +1228,7 @@ uniform size.
 @c
 BAT *BATrangesplit(BAT *b, size_t n, int unary) {
 	BAT	*metabat, *slice, *histo, *bf = NULL, *bn, *m;
-	int 	target, tpe, maxsize, *sizes;
+	int 	target, tpe, *sizes;
 	int	xx, zz=0;
 	size_t	yy=0;
 	ptr 	*seps, nilval;

@@ -1467,7 +1467,7 @@ ostream &typecheck::gen_atomops( ostream &o, const Atomops &d ){
 		break;
         case OP_DEL 	: 
 	    	o << "extern void " << fcn;
-	    	o << "( Heap* hp, int* offset);\n";
+	    	o << "( Heap* hp, size_t* offset);\n";
 		break;
         case OP_HEAP 	: 
 	    	o << "extern int " << fcn;

@@ -153,7 +153,7 @@ gdk_export int		strToStr       (str* dst, int* len, str   src);
 gdk_export str		strRead        (str a, stream* s, size_t cnt);
 gdk_export void		strWrite       (str a, stream* s, size_t cnt);
 gdk_export hash_t	strHash        (str s); 
-gdk_export int		strPut         (Heap* b, int *off, str src);
+gdk_export int		strPut         (Heap* b, var_t *off, str src);
 gdk_export void 	strHeap        (Heap* d, size_t cap);
 gdk_export int		strLen         (str s);
 gdk_export int		strCmp         (str l, str r);
@@ -247,7 +247,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(int (*)(ptr, ptr)) intCmp, 		
  		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
 		(int (*)(ptr)) batFix,		(int (*)(ptr)) batUnfix,
- 		(void (*)(Heap*, int*, ptr)) BATpersistent,	(void (*)(Heap*, int*)) BATtransient,
+ 		(void (*)(Heap*, var_t*, ptr)) BATpersistent,	(void (*)(Heap*, var_t*)) BATtransient,
  		0,			0,
  		0,			0},
   { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, 
@@ -322,13 +322,13 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
-  { "str",  	TYPE_str, 1, sizeof(int), sizeof(int), 1, (ptr) &chr_nil,	
-		(int (*)(str, int*, ptr*)) strFromStr,	(int (*)(str*, int*, ptr)) strToStr,
+  { "str",  	TYPE_str, 1, sizeof(var_t), sizeof(var_t), 1, (ptr) &chr_nil,
+		(int (*)(str, int*, ptr*)) strFromStr, (int (*)(str*, int*, ptr)) strToStr,
 		(void *(*)(void *, stream *, size_t)) strRead, (void (*)(void *, stream*, size_t)) strWrite,
-		(int (*)(ptr, ptr)) strCmp,		
+		(int (*)(ptr, ptr)) strCmp,
 	    	(hash_t (*)(ptr)) strHash,	0,
 		0, 		0,
- 		(void (*)(Heap*, int*, ptr)) strPut,		0,
+ 		(void (*)(Heap*, var_t*, ptr)) strPut,		0,
  		(int (*)(ptr)) strLen,		strHeap,
  		(void (*)(Heap*, int)) strHeapConvert,	0} ,
 };
@@ -377,12 +377,17 @@ void ATOMdelete(int id) {
 	if (id == GDKatomcnt-1) GDKatomcnt--;
 }
 
-int align(int n) {
-        if (n==0) return 0;
-        if ((n%8)==0) return 8;
-        if ((n%4)==0) return 4;
-        if ((n%2)==0) return 2;
-        return 1;
+static int align(int n) {
+	if (n == 0)
+		return 0;
+	/* successively check bits from the bottom to see if one is set */
+	if (n & 1)
+		return 1;
+	if (n & 2)
+		return 2;
+	if (n & 4)
+		return 4;
+	return 8;
 }
 
 void ATOMproperty(str id, str property, int (*arg) ()) {
@@ -409,9 +414,9 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 		BATatoms[t].varsized = 0; 
 		BATatoms[t].align = align((int) (long) arg); 
 	    } else { 
-		BATatoms[t].size = sizeof(int); 
+		BATatoms[t].size = sizeof(var_t); 
 		BATatoms[t].varsized = 1; 
-		BATatoms[t].align = sizeof(int); 
+		BATatoms[t].align = sizeof(var_t); 
 	    } 
 	} else if (strcmp("linear", property) == 0) {
 		BATatoms[t].linear = (int) (long) arg; 
@@ -437,18 +442,20 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
   	    ptr oldval = NULL;
 
 	    if (strcmp("heap", property) == 0) {
-		BATatoms[t].varsized = 1;
+		BATatoms[t].size = sizeof(var_t); 
+		BATatoms[t].varsized = 1; 
+		BATatoms[t].align = sizeof(var_t); 
 		atomset(BATatoms[t].atomHeap, (void (*)(Heap *,size_t)) arg); 
 	    } else if (strcmp("heapconvert", property) == 0) {
 		atomset(BATatoms[t].atomHeapConvert, (void (*)(Heap *,int)) arg); 
 	    } else if (strcmp("check", property) == 0) {
 		atomset(BATatoms[t].atomHeapCheck, (int (*)(Heap *,HeapRepair *)) arg); 
 	    } else if (strcmp("del", property) == 0) {
-		atomset(BATatoms[t].atomDel, (void (*)(Heap *,int *)) arg); 
+		atomset(BATatoms[t].atomDel, (void (*)(Heap *,var_t *)) arg); 
 	    } else if (strcmp("convert", property) == 0) {
 		atomset(BATatoms[t].atomConvert, (void (*)(void *,int)) arg); 
 	    } else if (strcmp("put", property) == 0) {
-		atomset(BATatoms[t].atomPut, (void (*)(Heap *,int *,void *)) arg); 
+		atomset(BATatoms[t].atomPut, (void (*)(Heap *,var_t *,void *)) arg); 
 	    } else if (strcmp("null", property) == 0) {
 		ptr atmnull = ((ptr (*)(void))arg)();
 		atomset(BATatoms[t].atomNull, atmnull); 
@@ -628,24 +635,21 @@ from the sets of operations on the father type.
 \end{description}
 @h
 @{
+/* use "do ... while(0)" so that lhs can safely be used in if statements */
 #define ATOMstorage(t)		BATatoms[t].storage
 #define ATOMsize(t)		BATatoms[t].size
 #define ATOMalign(t)		BATatoms[t].align
 #define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
 #define ATOMnilptr(t)		BATatoms[t].atomNull
 #define ATOMhash(t,src)		BATatoms[t].atomHash(src)
-#define ATOMdel(t,hp,src)	if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src)
+#define ATOMdel(t,hp,src)	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
 #define ATOMvarsized(t)		((t != TYPE_void) && BATatoms[t].varsized)
 #define ATOMlinear(t)		BATatoms[t].linear
 #define ATOMtype(t)		((t == TYPE_void)?TYPE_oid:t)
-#define ATOMfix(t,v)		if (BATatoms[t].atomFix)\
-				BATatoms[t].atomFix(v)
-#define ATOMunfix(t,v)		if (BATatoms[t].atomUnfix)\
-				BATatoms[t].atomUnfix(v)
-#define ATOMconvert(t,v,d)	if (BATatoms[t].atomConvert)\
-				BATatoms[t].atomConvert(v,d)
-#define ATOMheapConvert(t,hp,d)	if (BATatoms[t].atomHeapConvert)\
-				BATatoms[t].atomHeapConvert(hp,d)
+#define ATOMfix(t,v)		do if (BATatoms[t].atomFix) BATatoms[t].atomFix(v); while (0)
+#define ATOMunfix(t,v)		do if (BATatoms[t].atomUnfix) BATatoms[t].atomUnfix(v); while (0)
+#define ATOMconvert(t,v,d)	do if (BATatoms[t].atomConvert) BATatoms[t].atomConvert(v,d); while (0)
+#define ATOMheapConvert(t,hp,d)	do if (BATatoms[t].atomHeapConvert) BATatoms[t].atomHeapConvert(hp,d); while (0)
 
 #define CONV_HTON               1
 #define CONV_NTOH               0
@@ -673,10 +677,10 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ <= TYPE_lng) {			\
 		*(lng *) (P3) = * (lng *) (P4); 	\
 	} else if (t_ == TYPE_str) {			\
-		(void) strPut(P2, (int*) (P3), (str) (P4));\
+		(void) strPut(P2, (var_t*) (P3), (str) (P4));\
 	} else {                                        \
 	    if (BATatoms[t_].atomPut) {			\
-		(*BATatoms[t_].atomPut)(P2, (int*) P3, P4);	\
+		(*BATatoms[t_].atomPut)(P2, (var_t*) P3, P4);	\
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
@@ -703,13 +707,13 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ <= TYPE_lng) {			\
 		*(lng *) (P3) = * (lng *) (P4); 	\
 	} else if (t_ == TYPE_str) {			\
-		(void) strPut(P2, (int*) (P3), (str) (P4));\
+		(void) strPut(P2, (var_t*) (P3), (str) (P4));\
 	} else {					\
 	    if (BATatoms[t_].atomDel) {		\
-		ATOMdel(t_, P2,(int*) P3);		\
+		ATOMdel(t_, P2,(var_t*) P3);		\
 	    } 						\
 	    if (BATatoms[t_].atomPut) {		\
-		(*BATatoms[t_].atomPut) (P2, (int*) (P3), P4);\
+		(*BATatoms[t_].atomPut) (P2, (var_t*) (P3), P4);\
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
@@ -761,7 +765,7 @@ The comparison against the NULL value is hard coded for speed.
 #define LINE_LEN	60
 
 int ATOMprint(int t, ptr p, stream* s) {
-	int (*tostr)();
+	int (*tostr)(str *, int *, ptr);
 	
 	if (p && (t>=0) && (t<GDKatomcnt) && (tostr=BATatoms[t].atomToStr)) {
 	    if (t != TYPE_bat && t < TYPE_str) {
@@ -770,7 +774,7 @@ int ATOMprint(int t, ptr p, stream* s) {
 		s->write(s, buf, l, 1);
 		return l;
 	    } else {
-		char *buf = 0;
+		str buf = 0;
 		int sz = 0, l = (*tostr)(&buf, &sz, p);
 		s->write(s, buf, l, 1);
 		GDKfree(buf);
@@ -783,7 +787,7 @@ int ATOMprint(int t, ptr p, stream* s) {
 
 
 int ATOMformat(int t, ptr p, char** buf) {
-	int (*tostr)();
+	int (*tostr)(str *, int *, ptr);
 	
 	if (p && (t>=0) && (t<GDKatomcnt) && (tostr=BATatoms[t].atomToStr)) {
 		int sz = 0, l = (*tostr)(buf, &sz, p);
@@ -1270,13 +1274,13 @@ int strCmpNoNil(unsigned char *l, unsigned char *r) {
 
 void strHeap(Heap *d, size_t cap) {
 	size_t size;
-	int *h, *e; 
+	var_t *h, *e; 
 
 	cap = MAX(cap, BATTINY);
-	size = (GDK_STRHASHTABLE+1)*sizeof(int) + MIN(GDK_ELIMLIMIT, cap*12);
+	size = (GDK_STRHASHTABLE+1)*sizeof(var_t) + MIN(GDK_ELIMLIMIT, cap*12);
 	HEAPalloc(d, size, 1);
-	d->free = GDK_STRHASHTABLE*sizeof(int); 
-	h = (int*) d->base; 
+	d->free = GDK_STRHASHTABLE*sizeof(var_t); 
+	h = (var_t*) d->base; 
 	for (e = h; e < h + GDK_STRHASHTABLE; e++) {
 		*e = 0; 
 	}
@@ -1346,15 +1350,15 @@ The @%strPut@ routine. The routine @%strLocate@ can be used to identify
 the location of a string in the heap if it exists. Otherwise it returns
 zero.
 @c
-size_t strLocate(Heap *h, str v) {
-	int *htab = (int*) h->base; 
-	int *l, *e = htab + (strOldHash(v) & GDK_STRHASHMASK); 
+var_t strLocate(Heap *h, str v) {
+	var_t *htab = (var_t*) h->base; 
+	var_t *l, *e = htab + (strOldHash(v) & GDK_STRHASHMASK); 
 
 	if (*e) {
-		for (l = e; *l; l = (int*) (h->base + *l)) {
-			str x = (str) (h->base + *l + sizeof(int)); 
+		for (l = e; *l; l = (var_t*) ((char *) h->base + *l)) {
+			str x = (str) ((char *) h->base + *l + sizeof(var_t)); 
 			if (GDK_STRCMP(v, x) == 0) {
-				return (size_t) *l + sizeof(int); 
+				return *l + (var_t) sizeof(var_t);
 			}
 		}
 	}
@@ -1363,37 +1367,38 @@ size_t strLocate(Heap *h, str v) {
 
 /* convert the integers in the implicit hash table structure */ 
 void strHeapConvert(Heap *h,int dir) {
-	int *htab = (int*) h->base; 
-	int *l, i, j; 
+	var_t *htab = (var_t*) h->base; 
+	var_t *l, i, j; 
 
 	if (dir == CONV_HTON){
 	    for(i=0; i<GDK_STRHASHTABLE; i++) {
-		for (l= htab+i; (j=*l) != 0; l=(int*) (h->base + j)) {
-			*l = normal_int_SWAP(j);
+		for (l= htab+i; (j=*l) != 0; l=(var_t*) (h->base + j)) {
+			*l = normal_vart_SWAP(j);
 		}
 	    }
 	} else {
 	    for(i=0; i<GDK_STRHASHTABLE; i++) {
-		for (l= htab+i; (j=*l) != 0; l=(int*) (h->base + *l)) {
-			*l = normal_int_SWAP(j);
+		for (l= htab+i; (j=*l) != 0; l=(var_t*) (h->base + *l)) {
+			*l = normal_vart_SWAP(j);
 		}
 	    }
 	}
 }
 
-int strPut(Heap *h, int *dst, str v) {
-	int *l;
+int strPut(Heap *h, var_t *dst, str v) {
+	var_t *l;
 	size_t i = GDK_STRLEN(v);
 	hash_t off;
-	size_t len = (((i-1) >> 2) + 2) << 2; /* round up to 4-byte alignment + 4 (next pointer) */
+	/* round up to var_t-byte alignment + var_t (next pointer) */
+	size_t len = ((i+sizeof(var_t)-1) & ~(sizeof(var_t)-1)) + sizeof(var_t);
 	size_t elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
 
 	/* search hash-table, if double-elimination is still in place */
 	off = strOldHash(v) & GDK_STRHASHMASK; 
-	for (l = ((int*) h->base) + off; *l; l = (int*) (h->base + *l)) {
-		str x = (str) (h->base + *l + sizeof(int)); 
+	for (l = ((var_t*) h->base) + off; *l; l = (var_t*) (h->base + *l)) {
+		str x = (str) (h->base + *l + sizeof(var_t)); 
 		if (GDK_STRCMP(v, x) == 0) {
-			*dst = *l + (int) sizeof(int); /* already in heap; do not insert! */
+			*dst = *l + (var_t) sizeof(var_t); /* already in heap; do not insert! */
 			return 0; 
 		}
  	}
@@ -1407,11 +1412,11 @@ int strPut(Heap *h, int *dst, str v) {
 	if (h->free + len >= h->size) {
 		size_t newsize = len + (size_t)((dbl)h->size*BATMARGIN);
 
-		/* XXX: if the heap just becomes too big, insert a nil (last 4 bytes are free) */
+		/* XXX: if the heap just becomes too big, insert a nil (last var_t bytes are free) */
 		if (newsize > GDK_VM_MAXSIZE) {
 			h->free = h->size;
-			h->base[h->size - 4] = GDK_chr_min;
-			*dst = h->size - 4;
+			h->base[h->size - sizeof(var_t)] = GDK_chr_min;
+			*dst = h->size - sizeof(var_t);
 			return 0;
 		}
 		if (h->free + len < h->maxsize) {
@@ -1421,11 +1426,11 @@ int strPut(Heap *h, int *dst, str v) {
 		HEAPextend(h, newsize);
 	}
 
-	/* insert string in hash table and copy into int the heap */
-	l = (int*) (h->base + h->free);
-	*(l++) = ((int*) h->base)[off]; 
-	((int*) h->base)[off] = h->free;
-	*dst = h->free + sizeof(int);
+	/* insert string in hash table and copy into the heap */
+	l = (var_t*) (h->base + h->free);
+	*(l++) = ((var_t*) h->base)[off]; 
+	((var_t*) h->base)[off] = h->free;
+	*dst = h->free + sizeof(var_t);
 	h->free += len;
 	memcpy((char*) l, v, i); 
 

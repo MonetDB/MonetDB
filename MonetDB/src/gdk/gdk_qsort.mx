@@ -85,7 +85,7 @@ Introduced to reduce number of qsort parameters
 @c
 typedef struct {
 	int		(*cmp)();	/* routine that compares two atoms */
-	char*		offset;		/* NULL or start of varsized heap */ 
+	char*		offst;		/* NULL or start of varsized heap */ 
 	int		loc;		/* byte-offset of sort atom in record */
 	int 		shift;		/* log2 if width is a power of two, else -1 */ 
 	int		width;		/* byte-width of record */
@@ -152,7 +152,7 @@ qsort is macro expanded in three dimensions:
 \end{description}
 Thus, there are 7 * 2 * 2 = 28 GDKqsort implementation routines.
 @c
-#define offset(p) 		(buf->offset + *(int*) (p))
+#define offset(p) 		(buf->offst + *(var_t*) (p))
 #define direct(p) 		(p)
 
 #define any_CMP(a,b)		(buf->cmp)(a,b)
@@ -293,7 +293,7 @@ loop:	swap_cnt = 0;
 @= call_qsort2
 /* factorization by storage mode */
 if (base) {
-	GDKqsort_@2_offset_@1(((char*) a)+loc, n, &buf); /* array of integers, that are byte-offsets from some base */
+	GDKqsort_@2_offset_@1(((char*) a)+loc, n, &buf); /* array of var_t, that are byte-offsets from some base */
 } else {
 	GDKqsort_@2_direct_@1(((char*) a)+loc, n, &buf); /* array of fixed-size values */
 } 
@@ -312,7 +312,7 @@ void GDKqsort(void *a, void* base, size_t n, int width, int tpe, int loc) {
 
 	/* init the qsort record */
 	buf.cmp = BATatoms[tpe].atomCmp;
-	buf.offset = base;
+	buf.offst = base;
 	buf.width = width;
 	buf.loc = loc;
 	buf.shift = -1;

@@ -472,12 +472,6 @@ Some explanation of what mem_usage() and vm_usage() display:
 #define PARAM(x)        (argv+x)
 #define RETVAL          (argv)
 
-static char* local_itoa(int i){
-        static char buf[32];
-        sprintf(buf,"%d",i);
-        return buf;
-}
-
 @+ BBP status
 The BAT buffer pool datastructures describe the memory resident information
 on the whereabouts of the BATs. The three predominant tables are made accessible

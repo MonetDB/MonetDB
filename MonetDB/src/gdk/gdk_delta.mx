@@ -43,18 +43,22 @@ item of e.g. a BAT[void,bit] is (at least) integer aligned.
 This optimizes processing on such BATs (DDBENCH).
 @h
 #define DELTAprintf DELTADEBUG printf
-#define DELTAinit(P1)	{ 						\
-	(P1)->batBuns->free = MAX(sizeof(int), (P1)->dims.bunwidth);    \
-	(P1)->batDeleted = (P1)->batHole = ((char*) (Bunbase(P1))) + 	\
-			((P1)->batBuns->free - (P1)->dims.bunwidth);	\
-	(P1)->batInserted = BUNlast((P1)); 				\
-	(P1)->batElmshift = BATelmshift((P1)); 				\
-	DELTAprintf(							\
-	 	"#DELTAinit %s free %ld ins %ld del %ld hole %ld base %ld\n",\
-		(P1)->batId, (long)(P1)->batBuns->free, 		\
-		(long)(P1)->batInserted, (long)(P1)->batDeleted, 	\
-		(long)(P1)->batHole, (long)(P1)->batBuns->base );   	\
-	memset((P1)->batHole, 0, BUNsize(P1));				}
+#define DELTAinit(P1)	{						      \
+	(P1)->batBuns->free = MAX(sizeof(int), (P1)->dims.bunwidth);	      \
+	(P1)->batDeleted = (P1)->batHole = (BUN) ((char*) Bunbase(P1) +	      \
+			((P1)->batBuns->free - (P1)->dims.bunwidth));	      \
+	(P1)->batInserted = BUNlast((P1));				      \
+	(P1)->batElmshift = BATelmshift((P1));				      \
+	DELTAprintf(							      \
+	 	"#DELTAinit %s free %lu ins %lu del %lu hole %lu base %lu\n", \
+		(P1)->batId,						      \
+		(unsigned long) (P1)->batBuns->free,			      \
+		(unsigned long) (P1)->batInserted,			      \
+		(unsigned long) (P1)->batDeleted,			      \
+		(unsigned long) (P1)->batHole,				      \
+		(unsigned long) (P1)->batBuns->base );			      \
+	memset((P1)->batHole, 0, BUNsize(P1));				      \
+}
 @
 @}
 
@@ -63,29 +67,36 @@ and convert them back into pointers upon reload.
 
 @{
 @h
-#define DELTAsave(P1)	if ((P1)->batBuns->base) {			\
-	(P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted); 	\
-	(P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted); 	\
-	(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole); 		\
-}									\
-	DELTAprintf(							\
-	 	"#DELTAsave %s free %ld ins %ld del %ld hole %ld base %ld\n",\
-		(P1)->batId, (long)(P1)->batBuns->free, 		\
-		(long)(P1)->batInserted, (long)(P1)->batDeleted, 	\
-		(long)(P1)->batHole, (long)(P1)->batBuns->base );   	
-	
+#define DELTAsave(P1)	{						      \
+	if ((P1)->batBuns->base) {					      \
+		(P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted);  \
+		(P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted);    \
+		(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole);	      \
+	}								      \
+	DELTAprintf(							      \
+	 	"#DELTAsave %s free %lu ins %lu del %lu hole %lu base %lu\n", \
+		(P1)->batId,						      \
+		(unsigned long) (P1)->batBuns->free,			      \
+		(unsigned long) (P1)->batInserted,			      \
+		(unsigned long) (P1)->batDeleted,			      \
+		(unsigned long) (P1)->batHole,				      \
+		(unsigned long) (P1)->batBuns->base );			      \
+}
 
-#define DELTAload(P1)	{						\
-	DELTAprintf(							\
-		"#DELTAload %s free %ld ins %ld del %ld hole %ld base %ld\n",\
-		(P1)->batId, (long)(P1)->batBuns->free, 		\
-		(long)(P1)->batInserted, (long)(P1)->batDeleted, 	\
-		(long)(P1)->batHole, (long)(P1)->batBuns->base );   	\
-	if ((P1)->batBuns->base){					\
-	  (P1)->batInserted = BUNptr((P1), (int) (long) (P1)->batInserted);\
-	  (P1)->batDeleted = BUNptr((P1), (int) (long) (P1)->batDeleted);\
-	  (P1)->batHole = BUNptr((P1), (int) (long) (P1)->batHole); 	\
-	}								\
+#define DELTAload(P1)	{						      \
+	DELTAprintf(							      \
+		"#DELTAload %s free %lu ins %lu del %lu hole %lu base %lu\n", \
+		(P1)->batId,						      \
+		(unsigned long) (P1)->batBuns->free,			      \
+		(unsigned long) (P1)->batInserted,			      \
+		(unsigned long) (P1)->batDeleted,			      \
+		(unsigned long) (P1)->batHole,				      \
+		(unsigned long) (P1)->batBuns->base );			      \
+	if ((P1)->batBuns->base) {					      \
+		(P1)->batInserted = BUNptr((P1), (size_t) (P1)->batInserted); \
+		(P1)->batDeleted = BUNptr((P1), (size_t) (P1)->batDeleted);   \
+		(P1)->batHole = BUNptr((P1), (size_t) (P1)->batHole);	      \
+	}								      \
 }
 @	
 @}
@@ -143,13 +154,15 @@ BAT *BATprecommit (BAT *b) {
 batcommit really forgets the atoms guarded for an undo; we just need to free their heap space (only if necessary).
 @c
 BAT *BATcommit(BAT *b) {
-	DELTAprintf("#BATcommit1 %s free %ld ins %ld del %ld hole %ld base %ld\n", 
-	  (b)->batId, (long)(b)->batBuns->free, (long)(b)->batInserted, 
-	  (long)(b)->batDeleted, (long)(b)->batHole, (long)(b)->batBuns->base );
+	DELTAprintf(
+		"#BATcommit1 %s free %lu ins %lu del %lu hole %lu base %lu\n", 
+		b->batId, (unsigned long) b->batBuns->free,
+		(unsigned long) b->batInserted, (unsigned long) b->batDeleted,
+		(unsigned long) b->batHole, (unsigned long) b->batBuns->base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batHole  && BBP_cache(b->batCacheid)) {
-		void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*,int*) = BATatoms[b->ttype].atomDel;
+		void (*hatmdel)(Heap*,size_t*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*,size_t*) = BATatoms[b->ttype].atomDel;
 		BUN p,q;
 		int xx;
 
@@ -159,10 +172,10 @@ BAT *BATcommit(BAT *b) {
 			ptr t = BUNtail(b,p);
 
 			if (hatmdel) {
-				(*hatmdel)(&b->hheap,(int*)(h));
+				(*hatmdel)(&b->hheap,(size_t*)(h));
 			}
 			if (tatmdel) {
-				(*tatmdel)(&b->theap,(int*)(t));
+				(*tatmdel)(&b->theap,(size_t*)(t));
 			}
 		}}
 	}
@@ -178,9 +191,11 @@ BAT *BATcommit(BAT *b) {
 	} else {
 		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
 	}
-	DELTAprintf("#BATcommit2 %s free %ld ins %ld del %ld hole %ld base %ld\n", 
-	  (b)->batId, (long)(b)->batBuns->free, (long)(b)->batInserted, 
-	  (long)(b)->batDeleted, (long)(b)->batHole, (long)(b)->batBuns->base );
+	DELTAprintf(
+		"#BATcommit2 %s free %lu ins %lu del %lu hole %lu base %lu\n", 
+		b->batId, (unsigned long) b->batBuns->free,
+		(unsigned long) b->batInserted, (unsigned long) b->batDeleted,
+		(unsigned long) b->batHole, (unsigned long) b->batBuns->base);
 	return b; 
 }
 @-
@@ -211,7 +226,7 @@ BAT *BATundo(BAT *b) {
 	BUN p, bunlast, bunfirst; 
 	BAT *m = BATmirror(b);
 
-	DELTAprintf( "#BATundo %s \n", (b)->batId );		
+	DELTAprintf( "#BATundo %s \n", b->batId );		
 	ALIGNundo(b);
 	if (b->hidx_heap || b->tidx_heap) {
 		IDXdestroy(b); 
@@ -229,8 +244,8 @@ BAT *BATundo(BAT *b) {
 	bunlast = BUNlast(b) - BUNsize(b); 
 	if (bunlast >= b->batInserted) {
 		size_t i = BUNindex(b, bunfirst);
-		void (*hatmdel)(Heap*, int*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*, int*) = BATatoms[b->ttype].atomDel;
+		void (*hatmdel)(Heap*, size_t*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*, size_t*) = BATatoms[b->ttype].atomDel;
 		void (*haccdel)(Heap*,size_t,BAT*,ptr) = 
 			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accDelete;
 		void (*taccdel)(Heap*,size_t,BAT*,ptr) = 
@@ -247,7 +262,7 @@ BAT *BATundo(BAT *b) {
 				(*haccdel)(&b->haccelerator, i, b, h);
 			}
 			if (hatmdel) {
-				(*hatmdel)(&b->hheap, (int*) (p+b->hloc));
+				(*hatmdel)(&b->hheap, (size_t*) (p+b->hloc));
 			}
                 	if (b->thash_heap) {
 				HASHdel(b->thash, i, t, p < bunlast);
@@ -256,11 +271,11 @@ BAT *BATundo(BAT *b) {
 				(*taccdel)(&b->taccelerator, i, b, t);
 			}
 			if (tatmdel) {
-				(*tatmdel)(&b->theap, (int*) (p+b->tloc));
+				(*tatmdel)(&b->theap, (size_t*) (p+b->tloc));
 			}
 		}}
 	}
-	b->batBuns->free = b->batInserted - Bunbase(b); 
+	b->batBuns->free = (char *) b->batInserted - (char *) Bunbase(b);
 	memcpy(b->batHole, b->batDeleted, bunsize);
 
 	bunfirst = b->batDeleted+bunsize;

@@ -404,13 +404,13 @@ BAT *BATclear(BAT *b) {
 		}
 	} else {
 		/* do heap-delete of all inserted atoms */
-		void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*,int*) = BATatoms[b->ttype].atomDel;
+		void (*hatmdel)(Heap*,size_t*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*,size_t*) = BATatoms[b->ttype].atomDel;
 
 		if (hatmdel || tatmdel) 
 		for(p=b->batInserted, q=BUNlast(b); p < q; p += bs) {
-			if (hatmdel) (*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
-			if (tatmdel) (*tatmdel)(&b->theap, (int*) BUNtloc(b,p));
+			if (hatmdel) (*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
+			if (tatmdel) (*tatmdel)(&b->theap, (size_t*) BUNtloc(b,p));
 		}
 	}
 
@@ -819,14 +819,14 @@ bun is moved to its old place. The "hole" pointer is incremented.
 This bun was not committed, and should therefore disappear. The 
 last inserted bun (if present) is copied over it. 
 @c
-        	void (*hatmdel)(Heap*, int*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*, int*) = BATatoms[b->ttype].atomDel;
+        	void (*hatmdel)(Heap*, size_t*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*, size_t*) = BATatoms[b->ttype].atomDel;
 
 		if (hatmdel) {
-			(*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
+			(*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
 		}
 		if (tatmdel) {
-			(*tatmdel)(&b->theap, (int*) BUNtloc(b,p));
+			(*tatmdel)(&b->theap, (size_t*) BUNtloc(b,p));
 		}
 		idx1 = BUNindex(b, p); 
 		@:hacc_update(del,head,p,idx1)@

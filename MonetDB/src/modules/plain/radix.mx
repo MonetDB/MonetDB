@@ -1092,7 +1092,7 @@ radix_cluster(attr_int,
 int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
         size_t n = (size_t) *size, i, r;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
-	char *bunbase = Bunbase(b);
+	char *bunbase = (char *) Bunbase(b);
 	int bunsize;		/* initialized in BATloopFast */
         oid bs = *base;
 	int j = 0;
@@ -1128,7 +1128,7 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 	unsigned int r = (unsigned int) n;
         size_t d = (size_t) *domain;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
-	char *bunbase = Bunbase(b);
+	char *bunbase = (char *) Bunbase(b);
 	int bunsize;
 	BUN p, q;
   	int m = *mean, s = *stddev; 
@@ -1161,7 +1161,7 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 	GDKfree(itab);
 
 	/* mix BUNs randomly */
-        for(r=i=0; i<n; i++) {
+        for(r=0,i=0; i<n; i++) {
                 size_t idx = i + ((r += rand()) % (n-i));
 		int val;
 		p = (BUN) (bunbase + i*bunsize); /* fast version of BUNptr */
@@ -1537,7 +1537,7 @@ BUN radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
     	hash_t x = @1_RADIX(p,mask) >> shift;
 	BUN dst = base + cur[x];
     	if (cur[x] == lim[x]) break;
-        ATOMput(htpe, &bn->hheap, (int*) BUNhloc(bn,dst), BUNhead(b,src));
+        ATOMput(htpe, &bn->hheap, BUNhloc(bn,dst), BUNhead(b,src));
 	*(@1*) BUNtloc(bn,dst) = *(@1*) p;
 	cur[x] += dst_bunsize; src += src_bunsize;
 	@1_CHECK(*maxbits, p);
@@ -2383,7 +2383,7 @@ int radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier) {
 
     /* create destination bat and init some variables */
     if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_int;
+	tpe = any = TYPE_var;
     }
 
     /* init variables for the decluster operation */
@@ -2407,7 +2407,7 @@ int radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier) {
     default:       @:radix_decluster(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_int && b->ttype == TYPE_str) {
+    if (any == TYPE_var && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
         bm->ttype = bn->htype = tpe;
         bm->tvarsized = bn->hvarsized = 1;
@@ -2617,7 +2617,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
     /* create destination bat and init some variables */
     if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_int;
+	tpe = any = TYPE_var;
     }
 
     /* init variables for the decluster operation */
@@ -2642,7 +2642,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     default:       @:radix_decluster2(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_int && b->ttype == TYPE_str) {
+    if (any == TYPE_var && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
         bm->ttype = bn->htype = tpe;
         bm->tvarsized = bn->hvarsized = 1;
@@ -2721,7 +2721,7 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
     /* create destination bat and init some variables */
     if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_int;
+	tpe = any = TYPE_var;
     }
 
     /* init variables for the decluster operation */
@@ -2746,7 +2746,7 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     default:       @:radix_decluster3(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_int && b->ttype == TYPE_str) {
+    if (any == TYPE_var && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
         bm->ttype = bn->htype = tpe;
         bm->tvarsized = bn->hvarsized = 1;
@@ -2810,7 +2810,7 @@ int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
     /* create destination bat and init some variables */
     if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_int;
+	tpe = any = TYPE_var;
     }
 
     /* init variables for the decluster operation */
@@ -2835,7 +2835,7 @@ int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     default:       @:radix_decluster4(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_int && b->ttype == TYPE_str) {
+    if (any == TYPE_var && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
         bm->ttype = bn->htype = tpe;
         bm->tvarsized = bn->hvarsized = 1;

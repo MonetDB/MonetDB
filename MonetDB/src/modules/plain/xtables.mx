@@ -662,7 +662,7 @@ typedef struct {
 		map = m->map; hash = m->hash; mask = m->mask;		\
     	} else {							\
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
-		hash = (hash_t*) alloca(sizeof(hash_t)*((mask=@2)+1));	\
+		hash = (hash_t*) alloca((int)(sizeof(hash_t)*((mask=@2)+1))); \
 		for(xx=0; xx<=@2; xx++) {				\
 			hash[xx] = 0;					\
 		}							\
@@ -688,7 +688,7 @@ map_T map_multigroup(size_t size, size_t heap, int tt) {
 
 	/* init the hash table */
 	for(xx=1; (xx+xx) < size; xx+=xx);
-	HEAPalloc(&m.hp, xx, sizeof(int));
+	HEAPalloc(&m.hp, xx, sizeof(hash_t));
 	m.mask = xx-1;
 	m.hash = (hash_t*) m.hp.base;
 
@@ -704,7 +704,7 @@ void map_free(map_T m) {
 }
 
 #ifndef offsetof
-#define offsetof(type, member)	((int) &((type *) 0)->member)
+#define offsetof(type, member)	((size_t) &((type *) 0)->member)
 #endif
 
 BAT *map2histo(BAT *map) {
@@ -716,17 +716,20 @@ BAT *map2histo(BAT *map) {
 	}
         /* trickily transform a bat[mapentry,any] into bat[oid,int] */
 	map->htype = BATmirror(map)->ttype = TYPE_oid;
-	map->ttype = BATmirror(map)->htype = TYPE_int;
 	strcpy(map->hatom, "oid");
+	map->ttype = BATmirror(map)->htype = TYPE_int;
 	strcpy(map->tatom, "int");
 	if (map->tvarsized && map->theap.base) {
 		HEAPfree(&map->theap);
 	}
 	BATmirror(map)->hvarsized = map->tvarsized = 0;
-	BATmirror(map)->dims.tailloc = 
-	    map->dims.headloc = map->dims.headloc + offsetof(mapentry_t,gid);
+	/* do these in the right order: map->dims.headloc is used, so
+	 * change it at end
+	 */
 	BATmirror(map)->dims.headloc = 
-	    map->dims.tailloc = map->dims.headloc + offsetof(mapentry_t,link);
+	    map->dims.tailloc = map->dims.headloc + (int) offsetof(mapentry_t,cnt);
+	BATmirror(map)->dims.tailloc = 
+	    map->dims.headloc = map->dims.headloc + (int) offsetof(mapentry_t,gid);
 	return map;
 }
  
@@ -816,7 +819,7 @@ int tailtype(BAT *b, int str_trick) {
 	} else if (tpe == TYPE_dbl) {
 		return TYPE_lng; 
 	} else if (tpe == TYPE_str && str_trick && GDK_ELIMDOUBLES((&b->theap))) {
-		return TYPE_int; /* string offsets are identifying integers */
+		return TYPE_var; /* string offsets are identifying integers */
 	}
 	return tpe;
 }
@@ -1357,10 +1360,11 @@ int CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom) {
                 hash[c] = yy; 
 		yy++;
 	}
-	bn->batBuns->free = r - Bunbase(bn);
+	bn->batBuns->free = (char *) r - (char *) Bunbase(bn);
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	strcpy(bn->hatom, "oid");
+	/* assert(offsetof(idxentry_t,hcur) == 0); */
 	ALIGNsetH(bn, dom);
 
         /* add the counts for this selection using the hash table */
@@ -1390,7 +1394,7 @@ int CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom) {
 #define DEFAULT_SIZE 10000
 
 struct refine {
-	int off;
+	var_t off;
 	oid o;
 };
 
@@ -1466,7 +1470,7 @@ int CTrefine(BAT **res, BAT *b, BAT *a) {
 			cur = buf + off;
 		}
 		r += a->tloc;
-		cur->off = (base)?(r-base):*(int*) r;
+		cur->off = base ? (var_t) (r - base) : *(var_t*) r;
 		cur->o = o;
 		cur++;
 	} 

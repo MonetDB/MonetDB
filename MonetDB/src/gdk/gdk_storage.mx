@@ -236,7 +236,7 @@ The primary concern here is to handle STORE_MMAP and STORE_MEM.
 extern int compress   (str buf, str end, FILE* fp);
 extern int decompress (FILE* fp, str dst);
 
-int GDKsave(str nme, str ext, str buf, size_t size, int mode) { 
+int GDKsave(str nme, str ext, void *buf, size_t size, int mode) { 
 	int fd = -1, err = 0;
 	FILE *fp = NULL; 
 
@@ -255,8 +255,8 @@ at commit-time.
 		err = MT_msync(buf, size, MMAP_ASYNC);
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-		IODEBUG THRprintf(GDKerr, "MT_msync(buf %ld, size %ld, MMAP_ASYNC) = %d\n", 
-							(long) buf, (long) size, err);
+		IODEBUG THRprintf(GDKerr, "MT_msync(buf %lu, size %lu, MMAP_ASYNC) = %d\n", 
+			(unsigned long) buf, (unsigned long) size, err);
 	} else if (mode == STORE_COMPR) {
 		char extension[PATHLENGTH];
         	sprintf(extension, "%s.Z", ext); 
@@ -266,8 +266,9 @@ at commit-time.
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "compress(buf %ld, size %ld, fd %d) = %d\n", 
-							(long) buf, (long) size, fileno(fp), err);
+			IODEBUG THRprintf(GDKerr, "compress(buf %lu, size %lu, fd %d) = %d\n", 
+				(unsigned long) buf, (unsigned long) size,
+				fileno(fp), err);
 	       	}  else {
 			err = -1;
 		}
@@ -278,8 +279,9 @@ at commit-time.
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "fwrite(buf %ld, size %ld, fd %d) = %d\n", 
-							(long) buf, (long) size, fd, err);
+			IODEBUG THRprintf(GDKerr, "fwrite(buf %lu, size %lu, fd %d) = %d\n", 
+				(unsigned long) buf, (unsigned long) size,
+				fd, err);
 	       	}  else {
 			err = -1;
 		}
@@ -307,8 +309,8 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 	int 	fd = -1;
 	ssize_t	n;
 	size_t	n_expected = 0; 
-	int	varsize = mode&256;
-	int	store = mode&255;
+	int	varsize = mode & STORE_VARSIZE;
+	int	store = mode & STORE_MODEMASK;
 	FILE*	fp = NULL;
 
 	IODEBUG {

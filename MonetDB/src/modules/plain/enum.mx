@@ -180,7 +180,12 @@ int enum_tpe[MAX_ENUM] = { -1 };
 @:imp(70)@	@:imp(71)@	@:imp(72)@	@:imp(73)@ 	@:imp(74)@
 @:imp(75)@	@:imp(76)@	@:imp(77)@	@:imp(78)@ 	@:imp(79)@
 
-fcn enum_conv[MAX_ENUM*4+1] = { 
+struct {
+	int (*tochr)(str*, int*, ptr);
+	int (*fromchr)(str, int*, ptr*);
+	int (*tosht)(str*, int*, ptr);
+	int (*fromsht)(str, int*, ptr*);
+} enum_conv[MAX_ENUM] = {
 @:def(0)@	@:def(1)@	@:def(2)@	@:def(3)@ 	@:def(4)@
 @:def(5)@	@:def(6)@	@:def(7)@	@:def(8)@ 	@:def(9)@
 @:def(10)@	@:def(11)@	@:def(12)@	@:def(13)@ 	@:def(14)@
@@ -197,25 +202,25 @@ fcn enum_conv[MAX_ENUM*4+1] = {
 @:def(65)@	@:def(66)@	@:def(67)@	@:def(68)@ 	@:def(69)@
 @:def(70)@	@:def(71)@	@:def(72)@	@:def(73)@ 	@:def(74)@
 @:def(75)@	@:def(76)@	@:def(77)@	@:def(78)@ 	@:def(79)@
-0 };
+};
 
 @= def
-	tostr@1chr, fromstr@1chr, tostr@1sht, fromstr@1sht,
+	{tostr@1chr, fromstr@1chr, tostr@1sht, fromstr@1sht,},
 @= imp
 	@:template(@1,chr,char)@ @:template(@1,sht,short)@
 @= template
-static int tostr@1@2(char** dst, int* len, @2* src){
+static int tostr@1@2(char** dst, int* len, ptr src){
 	BAT *b = BATdescriptor(enum_map[@1]);
 	int l; ptr v; 
 
-	if (*src == @2_nil) {
+	if (*(@2*)src == @2_nil) {
 		v = ATOMnilptr(b->htype);
 	} else {
 		BUN p = BUNptr(b, 1 + *(unsigned @3*) src); 
 		v = BUNhead(b,p);
 	}
 	if (b->htype != TYPE_str) {
-		fcn tostr = BATatoms[b->htype].atomToStr;
+		int (*tostr)(str*, int*, ptr) = BATatoms[b->htype].atomToStr;
 		return (*tostr)(dst, len, v);
 	}
 	l = strLen(v);
@@ -226,13 +231,13 @@ static int tostr@1@2(char** dst, int* len, @2* src){
 	memcpy(*dst, v, l);
 	return l; 
 }
-static int fromstr@1@2(str src, int* len, @2** dst){
+static int fromstr@1@2(str src, int* len, ptr* dst){
 	BAT *b = BATdescriptor(enum_map[@1]);
 	int r, l = 0;
 	BUN p; ptr v;
 
 	if (b->htype != TYPE_str) {
-		fcn fromstr = BATatoms[b->htype].atomFromStr;
+		int (*fromstr)(str, int*, ptr*) = BATatoms[b->htype].atomFromStr;
  		v = (ptr) GDKmalloc(l=32);
 		r = (*fromstr)(src, &l, &v);
 	} else {
@@ -240,12 +245,12 @@ static int fromstr@1@2(str src, int* len, @2** dst){
 		v = src;
 	}
 	if (*len < sizeof(@2)) {
-		*dst = (@2*) GDKmalloc(*len = sizeof(@2));
+		*(@2**)dst = (@2*) GDKmalloc(*len = sizeof(@2));
 	}
 	if ((p = SORTfnd(b, v)) != NULL) {
 		**(unsigned @3**) dst = (unsigned @3) (BUNindex(b,p)-1);
 	} else {
-		**dst = @2_nil;
+		**(@2**)dst = @2_nil;
 	}
 	if (l) GDKfree(v);
 	return r;
@@ -260,12 +265,12 @@ enum_export int enum_load(int *retval, BAT *h) {
 			char *name = h->batId;
 			if (BATcount(h) > 255) {
 				ATOMproperty(name, "storage", (fcn) TYPE_sht); 
-				ATOMproperty(name, "tostr", enum_conv[i*4+2]);
-				ATOMproperty(name, "fromstr", enum_conv[i*4+3]);
+				ATOMproperty(name, "tostr", (fcn) enum_conv[i].tosht);
+				ATOMproperty(name, "fromstr", (fcn) enum_conv[i].fromsht);
 			} else {
 				ATOMproperty(name, "storage", (fcn) TYPE_chr); 
-				ATOMproperty(name, "tostr", enum_conv[i*4]);
-				ATOMproperty(name, "fromstr", enum_conv[i*4+1]);
+				ATOMproperty(name, "tostr", (fcn) enum_conv[i].tochr);
+				ATOMproperty(name, "fromstr", (fcn) enum_conv[i].fromchr);
 			}
 			enum_tpe[i] = *retval = ATOMindex(name);
 			enum_map[i] = h->batCacheid;

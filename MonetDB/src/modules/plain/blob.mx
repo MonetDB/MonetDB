@@ -85,7 +85,7 @@ PROC test_blob() : void := {
 
 typedef struct blob
 {
-   int nitems;
+   size_t nitems;
    /*unsigned*/ char data[1];
 } blob;
 
@@ -97,30 +97,30 @@ typedef struct blob
 #include <string.h>
 
 #include <gdk.h>
-#include <gdk_heap.h>
 
 #include "blob.h"
 
-blob_export size_t blobsize(int nitems)
+blob_export size_t blobsize(size_t nitems)
 {
-   if (nitems <0)
+   if (nitems == ~(size_t)0)
       nitems = 0;
-   return (sizeof(int)+nitems);
+   return (sizeof(size_t)+nitems);
 }
 
-void blob_put(Heap* h,int* bun,blob* val)
+void blob_put(Heap* h,var_t* bun,blob* val)
 {
    char* base;
 
-   *bun  = HEAP_malloc(h,blobsize(val->nitems));
+   *bun = HEAP_malloc(h,blobsize(val->nitems));
    base = h->base;
    memcpy(&base[*bun],(char *)val,blobsize(val->nitems));
 }
 
+#if 0
 int blob_get(Heap* h,int* bun,int* l,blob** val)
 {
    blob* from = HEAP_index(h,*bun,blob);
-   int size = blobsize(from->nitems);
+   size_t size = blobsize(from->nitems);
 
    if (*val == NULL)
    {
@@ -137,46 +137,40 @@ int blob_get(Heap* h,int* bun,int* l,blob** val)
 
    return (size);
 }
+#endif
 
 int blob_nequal(blob* l,blob*  r)
 {
-   int len;
-   int i;
-   if (l->nitems != r->nitems)
+   size_t len = l->nitems;
+
+   if (len != r->nitems)
       return(1);
 
-   len = l->nitems;
-
-   if (len == -1)
+   if (len == ~(size_t)0)
       return(0);
 
-   for(i=0;i<len;++i)
-   {
-      if (l->data[i] != r->data[i])
-	 return(1);
-   }
-   return(0);
+   return memcmp(l->data, r->data, len) != 0;
 }
 
-void blob_del(Heap* h,int* index)
+void blob_del(Heap* h,var_t* index)
 {
-   HEAP_free(h,*index);
+   HEAP_free(h, *index);
 }
 
 hash_t blob_hash(blob* b)
 {
-   return(b->nitems);
+   return (hash_t) b->nitems;
 }
 
 blob* blob_null(void)
 {
    static blob nullval;
-   nullval.nitems = -1;
+   nullval.nitems = ~(size_t)0;
    return(&nullval);
 }
 
 void blob_convert( blob *b, int direction){
-	b->nitems = normal_int_SWAP(b->nitems);
+	b->nitems = normal_vart_SWAP(b->nitems);
 }
 
 int blob_length(blob* p)
@@ -187,43 +181,50 @@ int blob_length(blob* p)
 
 void blob_heap(Heap* heap, size_t capacity)
 {
-   HEAP_initialize(heap,capacity,0,4);
+   HEAP_initialize(heap,capacity,0,(int)sizeof(var_t));
 }
 
 #ifndef ODSTYLE
 int blob_tostr(str* tostr,int* l,blob* p)
 {
-   char* s;
-   int i;
-   {
-      int expectedlen = 20 + (p->nitems * 4);
-      if (*l < expectedlen)
-      {
-         if (*tostr != NULL)
-            GDKfree(*tostr);
-         *tostr = (str)GDKmalloc(expectedlen);
-         *l = expectedlen;
-      }
-   }
+	char* s;
+	size_t i;
+	size_t expectedlen;
 
-   sprintf(*tostr,"(%d:", p->nitems);
-   s = *tostr + strlen(*tostr);
+	if (p->nitems == ~(size_t)0)
+		expectedlen = 4;
+	else
+		expectedlen = 24 + (p->nitems * 4);
+	if (*l < expectedlen) {
+		if (*tostr != NULL)
+			GDKfree(*tostr);
+		*tostr = (str)GDKmalloc(expectedlen);
+		*l = expectedlen;
+	}
+	if (p->nitems == ~(size_t)0) {
+		strcpy(*tostr, "nil");
+		return 3;
+	}
 
-   for (i=0;i<p->nitems;++i)
-   {
-      sprintf(s,"%s%02X", ((i==0)?"":" "), (unsigned char) p->data[i]);
-      s += strlen(s);
-   }
-   *s++ = ')';
-   *s = '\0';
-   return(s - *tostr);
+	sprintf(*tostr,"(%lu:", (unsigned long) p->nitems);
+	s = *tostr + strlen(*tostr);
+
+	for (i = 0; i < p->nitems; i++) {
+		sprintf(s, "%02X ", (unsigned char) p->data[i]);
+		s += 3;
+	}
+	if (s[-1] == ' ')	/* i.e. if i > 0, remove trailing space */
+		s--;
+	*s++ = ')';
+	*s = '\0';
+	return(s - *tostr);
 }
 
 int blob_fromstr(char* instr,int* l,blob** val)
 {
-   int i;
-   int nitems;
-   int nbytes;
+   size_t i;
+   size_t nitems;
+   size_t nbytes;
    blob *result;
    char* s = instr;
 
@@ -234,14 +235,14 @@ int blob_fromstr(char* instr,int* l,blob** val)
       *val = (blob*)NULL;
       return(0);
    }
-   nitems = (int) strtol(s + 1,&s,10);
-   nbytes = blobsize(nitems);
+   nitems = (size_t) strtoul(s + 1, &s, 10);
    if (s == NULL)
    {
       GDKwarning("Missing nitems in blob\n");
       *val = (blob *)NULL;
       return(0);
    }
+   nbytes = blobsize(nitems);
    s = strchr(s,':');
    if (s == NULL)
    {
@@ -268,7 +269,7 @@ int blob_fromstr(char* instr,int* l,blob** val)
    /*
    // Read the values of the blob.
    */
-   for (i = 0;i < nitems; ++i)
+   for (i = 0; i < nitems; ++i)
    {
       result->data[i] = (char) strtol(s,&s,16);
       if (s == 0)
@@ -450,8 +451,8 @@ int fromblob(str *retval, blob *b){
 }
 
 int toblob(blob **retval, str s){
-	int len = strLen(s); 	
-	blob *b = (blob*) GDKmalloc(sizeof(int) + len);
+	int len = strLen(s);
+	blob *b = (blob*) GDKmalloc(blobsize(len));
 	b->nitems = len;
 	memcpy(b->data, s, len);
 	*retval = b;

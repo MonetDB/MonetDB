@@ -95,12 +95,12 @@ gdk_export hash_t	HASHlist     (Hash* h, size_t i) ;
 
 
 @= hashfnd
-#define HASHfnd_@1(x,y,z)	{ size_t _i; BUN _v; x=NULL;\
+#define HASHfnd_@1(x,y,z)	{ hash_t _i; BUN _v; (x) = NULL;\
         if ((y)->hhash_heap || BAThash((y), NULL))\
         HASHloop_@1((y), (y)->hhash, _i, (z), _v) { (x) = _v; break; }\
 }
 @h
-#define HASHfnd_str(x,y,z)	{ size_t _i; x=NULL;\
+#define HASHfnd_str(x,y,z)	{ hash_t _i; (x) = NULL;\
         if ((y)->hhash_heap || BAThash((y), 0))\
         HASHloop_str((y), (y)->hhash, _i, (z)) { (x) = BUNptr((y),_i); break; }\
 }
@@ -238,7 +238,7 @@ void HASHclear(Hash *h) {
 
 Heap* HASHnew(Hash *h, int tpe, size_t size, hash_t mask) { 
 	Heap *hp = (Heap*) GDKmalloc(sizeof(Heap));
-	HEAPalloc(hp, mask+ size + 1, sizeof(size_t)); /* +1 is for the hole */
+	HEAPalloc(hp, mask+ size + 1, sizeof(hash_t)); /* +1 is for the hole */
         h->lim = size;
 	h->mask = mask - 1;
         h->link = (hash_t*) hp->base;
@@ -251,7 +251,7 @@ Heap* HASHnew(Hash *h, int tpe, size_t size, hash_t mask) {
 @= starthash
 	for(xx=BUNsize(b); r < p; r += xx) { 
 		ptr v = BUN@2(b, r); 
-		size_t c = hash_@1((*h), v);
+		hash_t c = hash_@1((*h), v);
 		if (h->hash[c] == 0 && nslots-- == 0) {
 			break; /* mask too full */
 		}
@@ -261,7 +261,7 @@ Heap* HASHnew(Hash *h, int tpe, size_t size, hash_t mask) {
 @= finishhash
 	for(xx=BUNsize(b); p < q; p += xx) { 
 		ptr v = BUN@2(b, p); 
-		size_t c = hash_@1((*h), v);
+		hash_t c = hash_@1((*h), v);
 		h->link[i] = h->hash[c]; 
 		h->hash[c] = (hash_t) i++;
 	} break; 

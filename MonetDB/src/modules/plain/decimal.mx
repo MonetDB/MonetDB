@@ -877,11 +877,11 @@ void decimal_heap(Heap* h, size_t capacity) {
 	HEAP_initialize_compact(h, capacity*DECIMAL_AVGSIZE, 0, 0, (int (*)(ptr)) decimal_length);
 }
 
-void decimal_del(Heap* h, int* index) {
-	HEAP_free(h,*index);
+void decimal_del(Heap* h, var_t* index) {
+	HEAP_free(h,(size_t)*index);
 }
 
-void decimal_put(Heap* h, int* bun, decimal* val) {
+void decimal_put(Heap* h, var_t* bun, decimal* val) {
 	int *dst, len = TOTLEN(val->precision);
 	int *src = (int*) val;
 	int *end = (int*) (((char*) src) + len);
@@ -1616,7 +1616,7 @@ int decimal_divide_default(decimal **ret, decimal *num, decimal *div) {
 int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 	size_t xx = BATcount(b);
 	int yy = 10;
-	BAT *bn = *ret = BATnew(b->htype, TYPE_int, xx);
+	BAT *bn = *ret = BATnew(b->htype, TYPE_var, xx);
 	BAT *bm = BATmirror(bn);
 	decimal *mult[10];
 	BUN p, q;
@@ -1641,7 +1641,7 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 		int zero = ISZERO(src);
 		int nil = ISNIL(src);
 		int len = (zero || nil)?(int)sizeof(decimal):TOTLEN(divprc);
-		int idx = HEAP_malloc(&hp, len);
+		var_t idx = HEAP_malloc(&hp, len);
 		decimal *dst = (decimal*) (hp.base + idx);
 
 		BUNfastins(bn, BUNhead(b,p), &idx);

@@ -1105,7 +1105,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 			}
 		    } else if (tpe != TYPE_str) {
 			/* str => any: use fromstr ADT routine */
-			int (*fromstr)() = BATatoms[tpe].atomFromStr;
+			int (*fromstr)(str, int*, ptr*) = BATatoms[tpe].atomFromStr;
 			BATloopFast(b,p,q,xx) {
 			    /* nil str value will produce a nil atom value */
 			    (*fromstr)(BUNtvar(b,p), &len, &v);
@@ -1121,13 +1121,13 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 			}
 		    } else {
 			/* any => str: use tostr ADT routine */
-			int (*tostr)() = BATatoms[b->ttype].atomToStr;
-			int (*cmp)() = BATatoms[b->ttype].atomCmp;
+			int (*tostr)(str*,int*,ptr) = BATatoms[b->ttype].atomToStr;
+			int (*cmp)(ptr,ptr) = BATatoms[b->ttype].atomCmp;
 			ptr nilptr = ATOMnilptr(b->ttype);
 			BATloopFast(b,p,q,xx) {
 			    ptr t = BUNtail(b,p);
 			    if ((*cmp)(t, nilptr)) {
-			    	(*tostr)(&v, &len, t);
+			    	(*tostr)((str*)&v, &len, t);
 			    	BUNfastins(bn, BUNhead(b,p), v);
 			    } else {
 			    	BUNfastins(bn, BUNhead(b,p), str_nil);
