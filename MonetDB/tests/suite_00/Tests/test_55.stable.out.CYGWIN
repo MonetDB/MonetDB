@@ -1,12 +1,12 @@
 stdout of test 'test_55` in directory 'tests/suite_00` itself:
 
 
-# 11:48:44 >  
-# 11:48:44 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_suite_00  < test_55.milS
-# 11:48:44 >  
+# 20:03:10 >  
+# 20:03:10 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  < test_55.milS
+# 20:03:10 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 # basic nameing problem
@@ -25,7 +25,7 @@ b.insert(int(nil),81);
 
 b.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -42,7 +42,7 @@ b.print;
 h:=b.hashsplit(3);
 h.print;
 #-------------------------#
-# BAT:	  tmp_25	  #
+# BAT:	  tmp_29	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 0,	  <tmp_30>	  ]
@@ -73,10 +73,11 @@ dir("tmp");
 [ "tmp_32",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 vars;
 #-----------------------------------------------------------------------------------------#
-# type			| type	| type_status	| value_status	| value_value		  #
+# tmp_36		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
 [ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_28>"		  ]
+[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -99,8 +100,8 @@ vars;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'Å'"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "''"		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛"		  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -113,7 +114,7 @@ vars;
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 quit;
 
-# 11:48:45 >  
-# 11:48:45 >  Done.
-# 11:48:45 >  
+# 20:03:10 >  
+# 20:03:10 >  Done.
+# 20:03:10 >  
 

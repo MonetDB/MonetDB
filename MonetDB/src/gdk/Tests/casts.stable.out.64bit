@@ -1,13 +1,13 @@
 stdout of test 'casts` in directory 'src/gdk` itself:
 
 
-# 10:05:58 >  
-# 10:05:58 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/manegold.GNU_64-d.697/monet/Linux2.4.18-e.25smp/conf/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/manegold.GNU_64-d.697/monet/Linux2.4.18-e.25smp/src/modules/plain/.libs:/var/tmp/manegold.GNU_64-d.697/monet/Linux2.4.18-e.25smp/src/modules/contrib/.libs:/var/tmp/manegold.GNU_64-d.697/monet/Linux2.4.18-e.25smp/src/modules/calibrator/.libs:/var/tmp/manegold.GNU_64-d.697/monet/Linux2.4.18-e.25smp/src/mapi/.libs" --set "gdk_dbfarm=/var/tmp/manegold.GNU_64-d.697/monet/Linux2.4.18-e.25smp/dbfarm" --set "sql_logdir=/var/tmp/manegold.GNU_64-d.697/monet/Linux2.4.18-e.25smp/log" --set mapi_port=54350 --set sql_port=51846 --set monet_prompt= --trace --dbname=mTests_src_gdk  < casts.milM
-# 10:05:58 >  
+# 17:02:58 >  
+# 17:02:58 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/build/log" --set mapi_port=57598 --set sql_port=52003 --set monet_prompt= --trace --dbname=mTests_src_gdk  < casts.milM
+# 17:02:58 >  
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for ia64-unknown-linux-gnu/64bit; dynamically linked.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # casting to int
 
 0.print;
@@ -1420,7 +1420,7 @@ str(false).print;
 
 # from chr
 str('a').print;
-[ "'a'" ]
+[ "a" ]
 
 # from sht
 str(sht(1)).print;
@@ -1564,7 +1564,7 @@ str("").print;
 str("random string").print;
 [ "random string" ]
 
-# 10:05:58 >  
-# 10:05:58 >  Done.
-# 10:05:58 >  
+# 17:02:59 >  
+# 17:02:59 >  Done.
+# 17:02:59 >  
 

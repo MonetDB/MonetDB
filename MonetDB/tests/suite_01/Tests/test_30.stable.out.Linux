@@ -1,38 +1,35 @@
 stdout of test 'test_30` in directory 'tests/suite_01` itself:
 
 
-# 00:40:50 >  
-# 00:40:50 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/manegold.GNU_32-d.11786/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_suite_01  < test_30.milS
-# 00:40:50 >  
+# 20:03:26 >  
+# 20:03:26 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_suite_01  < test_30.milS
+# 20:03:26 >  
 
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 # definition and use of Monet procs.
 # Note that complex procs should normally be prepared in block mode.
 
 unknown("hello");
-!ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 
 #simple procedure with withdrawal
 proc c:= clock.print;
 c;
-!WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
 undef c;
 c;
-!WARNING: interpret: convert identifier 'c' to string.
 
 # block administration
 
 # how about variables in a block
 { i:=123; vars;}
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# tmp_31		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "i",			  "int",  "liquid",	  "changeable",	  "123"			  ]
+[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -55,8 +52,8 @@ c;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'Å'"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "''"		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛"		  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
@@ -72,11 +69,11 @@ c;
 proc xyz:= {var j; j:=23; k:=234; vars;}
 xyz;
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# tmp_33		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "k",			  "int",  "liquid",	  "changeable",	  "234"			  ]
 [ "j",			  "int",  "liquid",	  "changeable",	  "23"			  ]
+[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -99,8 +96,8 @@ xyz;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'Å'"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "''"		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛"		  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
@@ -113,9 +110,9 @@ xyz;
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 vars;
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# tmp_30		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
+[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -138,8 +135,8 @@ vars;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'Å'"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "''"		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛"		  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
@@ -152,7 +149,7 @@ vars;
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 quit;
 
-# 00:40:51 >  
-# 00:40:51 >  Done.
-# 00:40:51 >  
+# 20:03:26 >  
+# 20:03:26 >  Done.
+# 20:03:26 >  
 

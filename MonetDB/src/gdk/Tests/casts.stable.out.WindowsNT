@@ -907,7 +907,7 @@ flt("-1.0E+10").print;
 flt("-1.0E-10").print;
 [ -1.00000001e-010 ]
 # flt range is -3.402823466E+38F to 3.402823466E+38F which is
-# -3.4028234663852886e+038 to 3.4028234663852886e+038 in double
+# -3.4028234663852886e+38 to 3.4028234663852886e+38 in double
 # precission
 flt("340282347000000000000000000000000000000").print;
 [ 3.40282347e+038 ]
@@ -1420,7 +1420,7 @@ str(false).print;
 
 # from chr
 str('a').print;
-[ "'a'" ]
+[ "a" ]
 
 # from sht
 str(sht(1)).print;

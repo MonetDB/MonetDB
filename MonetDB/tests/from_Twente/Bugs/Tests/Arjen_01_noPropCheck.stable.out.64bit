@@ -1,20 +1,20 @@
 stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 17:18:38 >  
-# 17:18:38 >  Mtimeout -timeout 180 ./Arjen_01_noPropCheck Arjen_01_noPropCheck 
-# 17:18:38 >  
+# 20:02:40 >  
+# 20:02:40 >  Mtimeout -timeout 180 ./Arjen_01_noPropCheck Arjen_01_noPropCheck 
+# 20:02:40 >  
 
 
-# 17:18:38 >  
-# 17:18:38 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/monet/build.irix64/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/monet/build.irix64/src/modules/plain/.libs:/ufs/sjoerd/src/monet/build.irix64/src/modules/contrib/.libs:/ufs/sjoerd/src/monet/build.irix64/src/modules/calibrator/.libs:/ufs/sjoerd/src/monet/build.irix64/src/mapi/.libs:/ufs/sjoerd/src/monet/build.irix64/src/modules/plain:/ufs/sjoerd/src/monet/build.irix64/src/modules/contrib:/ufs/sjoerd/src/monet/build.irix64/src/modules/calibrator:/ufs/sjoerd/src/monet/build.irix64/src/mapi --dbfarm /ufs/sjoerd/src/monet/build.irix64/dbfarm --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs d2.mil Arjen_01.milM
-# 17:18:38 >  
+# 20:02:40 >  
+# 20:02:40 >  Mtimeout -timeout 60 Mserver --config=/ufs/boncz/MonetDB/linux/etc/monet.conf --debug=10 --set monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB --set gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm --set sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs d2.mil Arjen_01.milM
+# 20:02:40 >  
 
-# Monet Database Server V4.3.9
+# Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for mips-sgi-irix6.5/64bit; dynamically linked.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_28  #
 # (void)  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -22,7 +22,7 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_29  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  10	  ]
@@ -30,7 +30,7 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ 2@0,	  30	  ]
 [ 3@0,	  40	  ]
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_30  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  false	  ]
@@ -38,14 +38,14 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ 2@0,	  true	  ]
 [ 3@0,	  true	  ]
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_31  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 [ 3@0,	  2@0	  ]
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_32  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -53,127 +53,129 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ 2@0,	  true	  ]
 [ 3@0,	  false	  ]
 #-----------------#
-# BAT:	  tmp_32  #
+# BAT:	  tmp_34  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 #-----------------#
-# BAT:	  tmp_33  #
-# (void)  (void)  #
-#-----------------#
-[ 1@0,	  0@0	  ]
-[ 2@0,	  1@0	  ]
-#-----------------#
-# BAT:	  tmp_34  #
+# BAT:	  tmp_35  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 #-----------------#
 # BAT:	  tmp_36  #
+# (void)  (void)  #
+#-----------------#
+[ 1@0,	  0@0	  ]
+[ 2@0,	  1@0	  ]
+#-----------------#
+# BAT:	  tmp_38  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 #-----------------#
-# BAT:	  tmp_34  #
+# BAT:	  tmp_36  #
 # (void)  (void)  #
 #-----------------#
 [ 0@0,	  1@0	  ]
 [ 1@0,	  2@0	  ]
 #-----------------#
-# BAT:	  tmp_37  #
+# BAT:	  tmp_39  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  20	  ]
 [ 1@0,	  30	  ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:				  t		| t		| t		| t		| t		| t		| t		| t		| t			| t			| t		  #
-# (str)				  (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)			| (str)			| (str)		  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "version",			  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",		  "980714",		  "980714"	  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# BAT:				  indexA	| valuesA	| MMoper_2	| MMuselect_3	| MMoper_4	| MMuselect_5	| MMsemijoin_6	| MMcastnil_7	| MMjoin_8	| MMreverse_9	| MMjoin_10	  #
+# (str)				  (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "version",			  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714"	  ]
 [ "batId",			  "tmp_28",	  "tmp_29",	  "tmp_30",	  "tmp_31",	  "tmp_32",	  "tmp_34",	  "tmp_35",	  "tmp_36",	  "tmp_38",	  "tmp_36",	  "tmp_39"	  ]
 [ "batCacheid",			  "28",		  "29",		  "30",		  "31",		  "32",		  "34",		  "-35",	  "36",		  "-38",	  "-36",	  "39"		  ]
 [ "batParentid",		  "0",		  "0",		  "0",		  "30",		  "0",		  "33",		  "-30",	  "30",		  "0",		  "30",		  "0"		  ]
-[ "batSharecnt",		  "0",		  "0",		  "3",		  "1",		  "0",		  "1",		  "1",		  "1",		  "0",			  "1",			  "0"		  ]
-[ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",		  "void",		  "void"	  ]
-[ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",		  "void",		  "int"		  ]
-[ "batPersistence",		  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",		  "transient",		  "transient"	  ]
-[ "batRestricted",		  "updatable",	  "updatable",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",		  "read-only",		  "read-only"	  ]
-[ "batRefcnt",			  "1",		  "1",		  "2",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",			  "1",			  "1"		  ]
-[ "batDirty",			  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",		  "dirty",		  "dirty"	  ]
-[ "batSet",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "head_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",		  "absent",		  "absent"	  ]
-[ "tail_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",		  "absent",		  "absent"	  ]
-[ "hsorted",			  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",			  "65",			  "65"		  ]
-[ "hident",			  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "t",			  "t",			  "h"		  ]
-[ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",			  "1",			  "1"		  ]
-[ "hseqbase",			  "0@0",	  "0@0",	  "0@0",	  "1@0",	  "0@0",	  "0@0",	  "1@0",	  "1@0",	  "1@0",		  "0@0",		  "0@0"		  ]
-[ "hkey",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",			  "1",			  "1"		  ]
-[ "hloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "hvarsized",			  "1",		  "1",		  "1",		  "1",		  "1",		  "0",		  "1",		  "1",		  "0",			  "1",			  "1"		  ]
-[ "halign",			  "0",		  "2006",	  "2006",	  "2011",	  "2006",	  "2017",	  "2011",	  "2011",	  "2030",		  "2026",		  "2026"	  ]
-[ "halignflushed",		  "2000",	  "2002",	  "2004",	  "2004",	  "2015",	  "2017",	  "2004",	  "2004",	  "2030",		  "2005",		  "2033"	  ]
-[ "tident",			  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "h",			  "h",			  "t"		  ]
-[ "tdense",			  "1",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",			  "1",			  "0"		  ]
-[ "tseqbase",			  "0@0",	  "nil",	  "nil",	  "0@0",	  "nil",	  "0@0",	  "0@0",	  "0@0",	  "0@0",		  "1@0",		  "nil"		  ]
-[ "tsorted",			  "1",		  "1",		  "65",		  "65",		  "0",		  "65",		  "65",		  "65",		  "65",			  "65",			  "1"		  ]
-[ "tkey",			  "1",		  "1",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",			  "1",			  "1"		  ]
-[ "tloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "tvarsized",			  "0",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",			  "1",			  "0"		  ]
-[ "talign",			  "0",		  "0",		  "2005",	  "2014",	  "2016",	  "2021",	  "2014",	  "2026",	  "2026",		  "2011",		  "2034"	  ]
-[ "talignflushed",		  "2001",	  "2003",	  "2005",	  "2005",	  "2016",	  "2018",	  "2005",	  "2005",	  "2029",		  "2004",		  "2034"	  ]
-[ "batInserted",		  "1",		  "1",		  "4",		  "1",		  "4",		  "1",		  "1",		  "1",		  "1",			  "1",			  "1"		  ]
-[ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "top",			  "5",		  "5",		  "8",		  "4",		  "8",		  "4",		  "3",		  "3",		  "3",			  "3",			  "3"		  ]
-[ "batStamp",			  "-162",	  "-163",	  "-164",	  "-167",	  "-168",	  "-170",	  "-171",	  "-172",	  "-174",	  "-172",	  "-176"	  ]
-[ "curStamp",			  "177",	  "180",	  "183",	  "186",	  "189",	  "192",	  "195",	  "198",	  "201",	  "204",	  "207"		  ]
-[ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",		  "dirty",		  "dirty"	  ]
-[ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",		  "clean",		  "clean"	  ]
+[ "batSharecnt",		  "0",		  "0",		  "3",		  "1",		  "0",		  "1",		  "1",		  "1",		  "0",		  "1",		  "0"		  ]
+[ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",	  "void",	  "void"	  ]
+[ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
+[ "batPersistence",		  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient"	  ]
+[ "batRestricted",		  "updatable",	  "updatable",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only"	  ]
+[ "batRefcnt",			  "1",		  "1",		  "2",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
+[ "batDirty",			  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
+[ "batSet",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "head_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
+[ "tail_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
+[ "hsorted",			  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65"		  ]
+[ "hident",			  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "t",		  "t",		  "h"		  ]
+[ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
+[ "hseqbase",			  "0@0",	  "0@0",	  "0@0",	  "1@0",	  "0@0",	  "0@0",	  "1@0",	  "1@0",	  "1@0",	  "0@0",	  "0@0"		  ]
+[ "hkey",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
+[ "hloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "hvarsized",			  "1",		  "1",		  "1",		  "1",		  "1",		  "0",		  "1",		  "1",		  "0",		  "1",		  "1"		  ]
+[ "halign",			  "0",		  "2006",	  "2006",	  "2011",	  "2006",	  "2017",	  "2011",	  "2011",	  "2030",	  "2026",	  "2026"	  ]
+[ "halignflushed",		  "2000",	  "2002",	  "2004",	  "2004",	  "2015",	  "2017",	  "2004",	  "2004",	  "2030",	  "2005",	  "2033"	  ]
+[ "tident",			  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "h",		  "h",		  "t"		  ]
+[ "tdense",			  "1",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
+[ "tseqbase",			  "0@0",	  "nil",	  "nil",	  "0@0",	  "nil",	  "0@0",	  "0@0",	  "0@0",	  "0@0",	  "1@0",	  "nil"		  ]
+[ "tsorted",			  "1",		  "1",		  "65",		  "65",		  "0",		  "65",		  "65",		  "65",		  "65",		  "65",		  "1"		  ]
+[ "tkey",			  "1",		  "1",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
+[ "tloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "tvarsized",			  "0",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
+[ "talign",			  "0",		  "0",		  "2005",	  "2014",	  "2016",	  "2021",	  "2014",	  "2026",	  "2026",	  "2011",	  "2034"	  ]
+[ "talignflushed",		  "2001",	  "2003",	  "2005",	  "2005",	  "2016",	  "2018",	  "2005",	  "2005",	  "2029",	  "2004",	  "2034"	  ]
+[ "batInserted",		  "1",		  "1",		  "4",		  "1",		  "4",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
+[ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "top",			  "5",		  "5",		  "8",		  "4",		  "8",		  "4",		  "3",		  "3",		  "3",		  "3",		  "3"		  ]
+[ "batStamp",			  "-166",	  "-167",	  "-168",	  "-171",	  "-172",	  "-174",	  "-175",	  "-176",	  "-178",	  "-176",	  "-180"	  ]
+[ "lastUsed",			  "4087",	  "4124",	  "4141",	  "4158",	  "4175",	  "4192",	  "4209",	  "4226",	  "4243",	  "4260",	  "4277"	  ]
+[ "keepAround",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "curStamp",			  "181",	  "184",	  "187",	  "190",	  "193",	  "196",	  "199",	  "202",	  "205",	  "208",	  "211"		  ]
+[ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
+[ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
 [ "batBuns.free",		  "40",		  "20",		  "8",		  "4",		  "8",		  "32",		  "3",		  "3",		  "24",			  "3",			  "12"		  ]
 [ "batBuns.size",		  "424",	  "212",	  "56",		  "4",		  "56",		  "424",	  "3",		  "3",		  "424",		  "3",			  "212"		  ]
 [ "batBuns.maxsize",		  "424",	  "212",	  "56",		  "4",		  "56",		  "424",	  "3",		  "3",		  "424",		  "3",			  "212"		  ]
-[ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",		  "malloced",		  "malloced"	  ]
-[ "batBuns.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",		  "no file",		  "no file"	  ]
-[ "batBuns.offset",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "hheapdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",		  "clean",		  "clean"	  ]
-[ "hheap.free",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "hheap.size",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "hheap.maxsize",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "hheap.storage",		  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",		  "absent",		  "absent"	  ]
-[ "hheap.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",		  "no file",		  "no file"	  ]
-[ "hheap.offset",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "theapdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",		  "clean",		  "clean"	  ]
-[ "theap.free",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "theap.size",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "theap.maxsize",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "theap.storage",		  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",		  "absent",		  "absent"	  ]
-[ "theap.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",		  "no file",		  "no file"	  ]
-[ "theap.offset",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "hacctype",			  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",		  "null",		  "null"	  ]
-[ "haccdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",		  "clean",		  "clean"	  ]
-[ "haccCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "haccelerator.free",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "haccelerator.size",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "haccelerator.maxsize",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "haccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",		  "absent",		  "absent"	  ]
-[ "haccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",		  "no file",		  "no file"	  ]
-[ "haccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "tacctype",			  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",		  "null",		  "null"	  ]
-[ "taccdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",		  "clean",		  "clean"	  ]
-[ "taccCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "taccelerator.free",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "taccelerator.size",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "taccelerator.maxsize",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
-[ "taccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",		  "absent",		  "absent"	  ]
-[ "taccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",		  "no file",		  "no file"	  ]
-[ "taccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",			  "0",			  "0"		  ]
+[ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
+[ "batBuns.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
+[ "batBuns.offset",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "hheapdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
+[ "hheap.free",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "hheap.size",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "hheap.maxsize",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "hheap.storage",		  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
+[ "hheap.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
+[ "hheap.offset",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "theapdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
+[ "theap.free",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "theap.size",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "theap.maxsize",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "theap.storage",		  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
+[ "theap.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
+[ "theap.offset",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "hacctype",			  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null"	  ]
+[ "haccdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
+[ "haccCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "haccelerator.free",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "haccelerator.size",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "haccelerator.maxsize",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "haccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
+[ "haccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
+[ "haccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "tacctype",			  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null"	  ]
+[ "taccdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
+[ "taccCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "taccelerator.free",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "taccelerator.size",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "taccelerator.maxsize",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "taccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
+[ "taccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
+[ "taccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 
-# 17:18:39 >  
-# 17:18:39 >  Done.
-# 17:18:39 >  
+# 20:02:40 >  
+# 20:02:40 >  Done.
+# 20:02:40 >  
 

@@ -1,13 +1,13 @@
 stdout of test '02_Modules_contrib` in directory 'tests/Availability` itself:
 
 
-# 17:19:47 >  
-# 17:19:47 >   Mserver "--config=C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\conf\monet.conf" --debug=10 --set "monet_mod_path=C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\modules\plain;C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\modules\calibrator;C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\mapi" --dbfarm "C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 02_Modules_contrib.milS
-# 17:19:47 >  
+# 15:30:10 >  
+# 15:30:10 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 02_Modules_contrib.milS
+# 15:30:10 >  
 
-# Monet Database Server V4.3.7
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-win32/32bit; dynamically linked.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
 Static_fcn:=monet_fcntbl.reverse.copy;
@@ -22,7 +22,7 @@ Fnts:=new(oid,str);
 Plain_mods:=MODULES.select("contrib").sort.copy;
 table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 #-----------------#
-# 36 modules	  #
+# 13 modules	  #
 #-----------------#
 [ "bitset"	  ]
 [ "bitvector"	  ]
@@ -116,19 +116,19 @@ Module: "bitvector"
 [ 12 ]
 [ 12 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature						| help							  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "[allocate]",	  "COMMAND:   ",  "[allocate](int, bit) : BAT[void,lng]",		  "Allocate a new and empty bitvector"			  ]
-[ "[and]",	  "COMMAND:   ",  "[and](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",  "Logically ANDs two bitvectors"			  ]
-[ "[clr]",	  "COMMAND:   ",  "[clr](BAT[any::1,lng], int) : void",			  "Clear a bit in a bitvector"				  ]
-[ "[count]",	  "COMMAND:   ",  "[count](BAT[void,lng]) : int",			  "Count the number of bits set"			  ]
-[ "[decode]",	  "COMMAND:   ",  "[decode](BAT[void,lng]) : BAT[oid,oid]",		  "Decodes a bitvector into a real BAT"			  ]
-[ "[encode]",	  "COMMAND:   ",  "[encode](BAT[any::1,oid]) : BAT[void,lng]",		  "Encode a BAT with tail values into a bitvector"	  ]
-[ "[isclr]",	  "COMMAND:   ",  "[isclr](BAT[any::1,lng], int) : bit",		  "Is bit bnum not set?"				  ]
-[ "[isset]",	  "COMMAND:   ",  "[isset](BAT[any::1,lng], int) : bit",		  "Is bit bnum set?"					  ]
-[ "[or]",	  "COMMAND:   ",  "[or](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "Logically ORs two bitvectors"			  ]
-[ "[prt]",	  "COMMAND:   ",  "[prt](BAT[void,lng]) : void",			  "Print a bitvector"					  ]
-[ "[set]",	  "COMMAND:   ",  "[set](BAT[any::1,lng], int) : void",			  "Set a bit in a bitvector"				  ]
+# function		| type		| signature						| help							  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[allocate]",		  "COMMAND:   ",  "[allocate](int, bit) : BAT[void,lng]",		  "Allocate a new and empty bitvector"			  ]
+[ "[and]",		  "COMMAND:   ",  "[and](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",  "Logically ANDs two bitvectors"			  ]
+[ "[clr]",		  "COMMAND:   ",  "[clr](BAT[any::1,lng], int) : void",			  "Clear a bit in a bitvector"				  ]
+[ "[count]",		  "COMMAND:   ",  "[count](BAT[void,lng]) : int",			  "Count the number of bits set"			  ]
+[ "[decode]",		  "COMMAND:   ",  "[decode](BAT[void,lng]) : BAT[oid,oid]",		  "Decodes a bitvector into a real BAT"			  ]
+[ "[encode]",		  "COMMAND:   ",  "[encode](BAT[any::1,oid]) : BAT[void,lng]",		  "Encode a BAT with tail values into a bitvector"	  ]
+[ "[isclr]",		  "COMMAND:   ",  "[isclr](BAT[any::1,lng], int) : bit",		  "Is bit bnum not set?"				  ]
+[ "[isset]",		  "COMMAND:   ",  "[isset](BAT[any::1,lng], int) : bit",		  "Is bit bnum set?"					  ]
+[ "[or]",		  "COMMAND:   ",  "[or](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "Logically ORs two bitvectors"			  ]
+[ "[prt]",		  "COMMAND:   ",  "[prt](BAT[void,lng]) : void",			  "Print a bitvector"					  ]
+[ "[set]",		  "COMMAND:   ",  "[set](BAT[any::1,lng], int) : void",			  "Set a bit in a bitvector"				  ]
 [ "test_bitvector",	  "PROC:      ",  "test_bitvector() : void",				  "not available"					  ]
 
 Module: "cluster"
@@ -144,12 +144,13 @@ Module: "cluster"
 
 Module: "ddbench"
 
-[ 56 ]
-[ 56 ]
+[ 57 ]
+[ 57 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature										| help																																													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "CTorderby",		  "PROC:      ",  "CTorderby(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",				  "not available"																																											  ]
+[ "CTorderby_rev",	  "PROC:      ",  "CTorderby_rev(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",				  "not available"																																											  ]
 [ "CTsubgroup",		  "PROC:      ",  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",		  "not available"																																											  ]
 [ "enum_group",		  "COMMAND:   ",  "enum_group(BAT[void,any], BAT[void,any]) : BAT[void,any]",				  "optimized group: use a byte-array[card(ct)*card(b)] instead of a hash\n\t           table and directly create enumerated group oid-s"																												  ]
 [ "enum_join",		  "COMMAND:   ",  "enum_join(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "positional join if the b2 head type is an enumerated oid"																																						  ]
@@ -211,23 +212,23 @@ Module: "iterator"
 [ 16 ]
 [ 16 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature						| help								  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "aggr",	  "COMMAND:   ",  "aggr(iter, str, BAT[oid,any::1]) : BAT[any,any::1]",	  "groupby-aggregate(attr), aggr in {max,min,sum,avg}"		  ]
-[ "chunk",	  "COMMAND:   ",  "chunk(iter) : BAT[any,any]",				  "get the next chunk"						  ]
-[ "chunksize",	  "COMMAND:   ",  "chunksize() : int",					  "return the iterator chunksize (default=1)"			  ]
-[ "chunksize",	  "COMMAND:   ",  "chunksize(int) : void",				  "set the iterator chunksize"					  ]
-[ "collect",	  "COMMAND:   ",  "collect(iter) : BAT[any,any]",			  "recursively execute an iterator; collect results in a bat"	  ]
-[ "count",	  "COMMAND:   ",  "count(iter) : int",					  "recursively execute an iterator; just count the elements"	  ]
-[ "histo",	  "COMMAND:   ",  "histo(iter) : BAT[any,int]",				  "groupby-count on tail"					  ]
-[ "join",	  "COMMAND:   ",  "join(iter, BAT[any,any]) : iter",			  "hash-join iterator"						  ]
-[ "mark",	  "COMMAND:   ",  "mark(iter, oid) : iter",				  "mark tail buns of the input iterator"			  ]
-[ "mirror",	  "COMMAND:   ",  "mirror(iter) : iter",				  "mirror buns (both head) in the input iterator"		  ]
-[ "next",	  "COMMAND:   ",  "next(iter) : bit",					  "false: no more chunks / true: iter contains next chunk"	  ]
-[ "reverse",	  "COMMAND:   ",  "reverse(iter) : iter",				  "reverse the buns in the input iterator"			  ]
-[ "scan",	  "COMMAND:   ",  "scan(BAT[any,any]) : iter",				  "sequential-scan on bat"					  ]
-[ "select",	  "COMMAND:   ",  "select(iter, bit, str, any) : iter",			  "select on tail (fcn in {eq,=,!=,<,>,<=,>=,..})"		  ]
-[ "select",	  "COMMAND:   ",  "select(iter, bit, str, any, any) : iter",		  "select on tail (fcn in {rng,..})"				  ]
+# function		| type		| signature						| help								  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "aggr",		  "COMMAND:   ",  "aggr(iter, str, BAT[oid,any::1]) : BAT[any,any::1]",	  "groupby-aggregate(attr), aggr in {max,min,sum,avg}"		  ]
+[ "chunk",		  "COMMAND:   ",  "chunk(iter) : BAT[any,any]",				  "get the next chunk"						  ]
+[ "chunksize",		  "COMMAND:   ",  "chunksize() : int",					  "return the iterator chunksize (default=1)"			  ]
+[ "chunksize",		  "COMMAND:   ",  "chunksize(int) : void",				  "set the iterator chunksize"					  ]
+[ "collect",		  "COMMAND:   ",  "collect(iter) : BAT[any,any]",			  "recursively execute an iterator; collect results in a bat"	  ]
+[ "count",		  "COMMAND:   ",  "count(iter) : int",					  "recursively execute an iterator; just count the elements"	  ]
+[ "histo",		  "COMMAND:   ",  "histo(iter) : BAT[any,int]",				  "groupby-count on tail"					  ]
+[ "join",		  "COMMAND:   ",  "join(iter, BAT[any,any]) : iter",			  "hash-join iterator"						  ]
+[ "mark",		  "COMMAND:   ",  "mark(iter, oid) : iter",				  "mark tail buns of the input iterator"			  ]
+[ "mirror",		  "COMMAND:   ",  "mirror(iter) : iter",				  "mirror buns (both head) in the input iterator"		  ]
+[ "next",		  "COMMAND:   ",  "next(iter) : bit",					  "false: no more chunks / true: iter contains next chunk"	  ]
+[ "reverse",		  "COMMAND:   ",  "reverse(iter) : iter",				  "reverse the buns in the input iterator"			  ]
+[ "scan",		  "COMMAND:   ",  "scan(BAT[any,any]) : iter",				  "sequential-scan on bat"					  ]
+[ "select",		  "COMMAND:   ",  "select(iter, bit, str, any) : iter",			  "select on tail (fcn in {eq,=,!=,<,>,<=,>=,..})"		  ]
+[ "select",		  "COMMAND:   ",  "select(iter, bit, str, any, any) : iter",		  "select on tail (fcn in {rng,..})"				  ]
 [ "test_iterator",	  "PROC:      ",  "test_iterator() : void",				  "not available"						  ]
 
 Module: "malalgebra"
@@ -235,31 +236,31 @@ Module: "malalgebra"
 [ 16 ]
 [ 16 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature									| help								  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "fetchjoin",	  "COMMAND:   ",  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the fetch implementation of the join."	  ]
-[ "hashjoin",	  "COMMAND:   ",  "hashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the hash implementation of the join."	  ]
-[ "indexjoin",	  "COMMAND:   ",  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the index implementation of the join."	  ]
-[ "lrhashjoin",	  "COMMAND:   ",  "lrhashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the lrhash implementation of the join."	  ]
-[ "mergejoin",	  "COMMAND:   ",  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the merge implementation of the join."	  ]
+# function		| type		| signature									| help								  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fetchjoin",		  "COMMAND:   ",  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the fetch implementation of the join."	  ]
+[ "hashjoin",		  "COMMAND:   ",  "hashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the hash implementation of the join."	  ]
+[ "indexjoin",		  "COMMAND:   ",  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the index implementation of the join."	  ]
+[ "lrhashjoin",		  "COMMAND:   ",  "lrhashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the lrhash implementation of the join."	  ]
+[ "mergejoin",		  "COMMAND:   ",  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the merge implementation of the join."	  ]
 [ "test_malalgebra",	  "PROC:      ",  "test_malalgebra() : void",							  "not available"						  ]
-[ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
-[ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]
-[ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,int]) : BAT[oid,int]",					  "grouped tail sum"						  ]
-[ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "grouped tail sum"						  ]
-[ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "grouped tail sum"						  ]
-[ "{csum}",	  "PROC:      ",  "{csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "Choose a different implementation if b is sorted on head."	  ]
-[ "{csum}",	  "PROC:      ",  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "Choose a different implementation if b is sorted on head."	  ]
-[ "{csum}",	  "PROC:      ",  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "Choose a different implementation if b is sorted on head."	  ]
-[ "{csum}",	  "PROC:      ",  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "Choose a different implementation if b is sorted on head."	  ]
-[ "{csum}",	  "PROC:      ",  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
+[ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]
+[ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,int]) : BAT[oid,int]",					  "grouped tail sum"						  ]
+[ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "grouped tail sum"						  ]
+[ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "grouped tail sum"						  ]
+[ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",		  "PROC:      ",  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "Choose a different implementation if b is sorted on head."	  ]
 
 Module: "mel"
 
 [ 2 ]
 [ 2 ]
 #---------------------------------------------------------------------------------#
-# function	| type	| signature	| help	  #
+# function	| type		| signature		| help			  #
 #---------------------------------------------------------------------------------#
 [ "mel_test",	  "PROC:      ",  "mel_test() : any",	  "not available"	  ]
 [ "test_mel",	  "PROC:      ",  "test_mel() : void",	  "not available"	  ]
@@ -496,7 +497,7 @@ Module: "wisc"
 
 quit;
 
-# 17:19:54 >  
-# 17:19:54 >  Done.
-# 17:19:54 >  
+# 15:30:10 >  
+# 15:30:10 >  Done.
+# 15:30:10 >  
 
