@@ -699,10 +699,13 @@ dnl  on CYGWIN, they are even called libiconv* (iconv.h takes care of mapping
 dnl  iconv* to libiconv*).
 ICONV_LIBS=""
 have_iconv=no
-AC_CHECK_FUNC(iconv, [have_iconv=yes], [
-  AC_CHECK_LIB(iconv, iconv, [ ICONV_LIBS="-liconv" have_iconv=yes ],
-    AC_CHECK_LIB(iconv, libiconv, [ ICONV_LIBS="-liconv"  have_iconv=yes ] ))
-])
+AC_CHECK_LIB(iconv, iconv, 
+  [ ICONV_LIBS="-liconv" have_iconv=yes ],
+  [ AC_CHECK_LIB(iconv, libiconv, [ ICONV_LIBS="-liconv" have_iconv=yes ], 
+    [ AC_CHECK_FUNC(iconv, [ have_iconv=yes ], []) 
+    ]) 
+  ]
+)
 if test "x$have_iconv" = xyes; then
 	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv function])
 fi
