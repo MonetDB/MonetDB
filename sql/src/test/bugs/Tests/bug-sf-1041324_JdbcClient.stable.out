@@ -1,0 +1,47 @@
+stdout of test 'bug-sf-1041324_JdbcClient` in directory 'src/test/bugs` itself:
+
+
+# 19:28:39 >  
+# 19:28:39 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.4.0_PREFIX_SQL_GNU_32_d_--enable-debug_/lib/MonetDB:/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/var/MonetDB/log" --set mapi_port=46000 --set sql_port=56954 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/var/tmp/_4.4.0_BUILD_SQL_GNU_32_d_--enable-debug_/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 19:28:39 >  
+
+# Monet Database Server V4.4.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 19:53:31 >  
+# 19:53:31 >  Mtimeout -timeout 78 ./bug-sf-1041324_JdbcClient.SQL bug-sf-1041324_JdbcClient 
+# 19:53:31 >  
+
+
+# 19:53:31 >  
+# 19:53:31 >  { echo monetdb ; cat ../../../../../../../ufs/manegold/Monet/4.4.0/sql/src/test/bugs/Tests/../bug-sf-1041324_weird-char.sql ; } | Mtimeout -timeout 9 java -jar /var/tmp/_4.4.0_BUILD_SQL_GNU_32_d_--enable-debug_/src/jdbc/MonetDB_JDBC.jar -p 57845 -u monetdb
+# 19:53:31 >  
+
+  
+Welcome to the MonetDB interactive JDBC terminal!
+Database: MonetDB 4.4.0
+Driver: MonetDB Native Driver 1.0 (Dawn)
+Type \q to quit, \h for a list of available commands
+auto commit mode: on
+monetdb-> +----------------------------------------------------------------------------------------------------------------------------------+
+| single_value                                                                                                                     |
++==================================================================================================================================+
+| http://shopping.b92.net/index.php?IDS=11&ID_Group=39&ID_prod=754&PROD_NAME=Belgrade+Coffee+Shop+4&GROUP_NAME=Muzi�a+produkcija   |
++----------------------------------------------------------------------------------------------------------------------------------+
+1 row
+
+monetdb-> 
+
+# 19:59:41 >  
+# 19:59:41 >  Done.
+# 19:59:41 >  
+
