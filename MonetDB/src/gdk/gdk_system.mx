@@ -355,11 +355,17 @@ void MT_global_exit(int s) {
 	   process (i.e. with all its threads) is replaced by the new
 	   program.  If this new program does nothing, other than
 	   exit, we effectively exit the server.
+
+	   In case of profiling (ie gdk_alloc_map=no) we need to exit 
+           correctly without losing the proper image, so in that case we 
+	   don't apply this Hack.
 	 */
-	if (s)
-		execl("/bin/false", "false", (char *) 0);
-	else
-		execl("/bin/true", "true", (char *) 0);
+	if (GDKgetenv_isyes("gdk_alloc_map")) { 
+		if (s)
+			execl("/bin/false", "false", (char *) 0);
+		else
+			execl("/bin/true", "true", (char *) 0);
+	}
 #endif
 	exit(s);
 }
