@@ -1,5 +1,5 @@
 @f gdk_relop
-@a M. L. Kersten, P. Boncz
+@a M. L. Kersten, P. Boncz, S. Manegold
 @* BAT relational operators
 The basic relational operators are implemented for BATs.
 Particular attention has been paid to speed-up processing
@@ -296,6 +296,7 @@ The aftermath -- property setting -- is relatively straightforward here.
 		@6put(@5, &bn->theap, (int*) BUNtloc(bn, dst), BUN@4(r, r_cur));
 @c
 @= densefetchjoin
+	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: densefetchjoin(@1,@2,@3,@4,@5,@6);\n");
 	r_cur = BUNptr(r, offset + *(unsigned int*) BUNtail(l,BUNfirst(l)));
 	yy = BUNsize(r);
 	BATloopFast(l, l_cur, l_end, xx) {
@@ -306,6 +307,7 @@ The aftermath -- property setting -- is relatively straightforward here.
 	bn->batBuns->free = dst - bn->batBuns->base;
 @c
 @= orderedfetchjoin
+        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedfetchjoin(@1,@2,@3,@4,@5,@6);\n");
         BATloopFast(l, l_cur, l_end, xx) {
                 yy = offset + *(unsigned int*) BUNtail(l,l_cur);
                 r_cur = BUNptr(r, yy);
@@ -315,6 +317,7 @@ The aftermath -- property setting -- is relatively straightforward here.
         bn->batBuns->free = dst - bn->batBuns->base;
 @c
 @= defaultfetchjoin
+        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultfetchjoin(@1,@2,@3,@4,@5,@6);\n");
         BATloopFast(l, l_cur, l_end, xx) {
                 yy = offset + *(unsigned int*) BUNtail(l,l_cur);
                 if (yy < base || yy >= end) {
@@ -327,18 +330,19 @@ The aftermath -- property setting -- is relatively straightforward here.
 	bn->batBuns->free = dst - bn->batBuns->base;
 @c
 @= fetchjoin_switch_rtt
-        if (ATOMstorage(rtt) == TYPE_chr) {
+	if (ATOMstorage(rtt) == TYPE_chr) {
                 @:@1fetchjoin(@2,@3,@4,tloc,chr,SIMPLE)@
         } else if (ATOMstorage(rtt) == TYPE_sht) {
                 @:@1fetchjoin(@2,@3,@4,tloc,sht,SIMPLE)@
-	} else if (rtt == TYPE_bat) {
-                @:@1fetchjoin(@2,@3,@4,tloc,rtt,ATOM)@
-        } else if (ATOMstorage(rtt) == TYPE_int || ATOMstorage(rtt) == TYPE_flt || ATOMstorage(rtt) == TYPE_oid) {
+        } else if (rtt != TYPE_bat && (ATOMstorage(rtt) == TYPE_int || ATOMstorage(rtt) == TYPE_flt || ATOMstorage(rtt) == TYPE_oid)) {
+	        /* ensure use of ATOMput for TYPE_bat */
                 @:@1fetchjoin(@2,@3,@4,tloc,int,SIMPLE)@
         } else if (ATOMstorage(rtt) == TYPE_lng || ATOMstorage(rtt) == TYPE_dbl) {
                 @:@1fetchjoin(@2,@3,@4,tloc,lng,SIMPLE)@
+        } else if (r->tvarsized) {
+                @:@1fetchjoin(@2,@3,@4,tvar,rtt,ATOM)@
         } else {
-                @:@1fetchjoin(@2,@3,@4,tail,bn->ttype,ATOM)@
+                @:@1fetchjoin(@2,@3,@4,tloc,rtt,ATOM)@
         }
 @c
 @= fetchjoin_switch_lht
@@ -346,29 +350,83 @@ The aftermath -- property setting -- is relatively straightforward here.
                 @:fetchjoin_switch_rtt(@1,hloc,chr,SIMPLE)@
         } else if (ATOMstorage(lht) == TYPE_sht) {
                 @:fetchjoin_switch_rtt(@1,hloc,sht,SIMPLE)@
-	} else if (lht == TYPE_bat) {
-                @:fetchjoin_switch_rtt(@1,hloc,lht,ATOM)@
-        } else if (ATOMstorage(lht) == TYPE_int || ATOMstorage(lht) == TYPE_flt || ATOMstorage(lht) == TYPE_oid) {
+        } else if (lht != TYPE_bat && (ATOMstorage(lht) == TYPE_int || ATOMstorage(lht) == TYPE_flt || ATOMstorage(lht) == TYPE_oid)) {
+                /* ensure use of ATOMput for TYPE_bat */
                 @:fetchjoin_switch_rtt(@1,hloc,int,SIMPLE)@
         } else if (ATOMstorage(lht) == TYPE_lng || ATOMstorage(lht) == TYPE_dbl) {
                 @:fetchjoin_switch_rtt(@1,hloc,lng,SIMPLE)@
+        } else if (l->hvarsized) {
+                @:fetchjoin_switch_rtt(@1,hvar,lht,ATOM)@
         } else {
-                @:fetchjoin_switch_rtt(@1,head,bn->htype,ATOM)@
+                @:fetchjoin_switch_rtt(@1,hloc,lht,ATOM)@
         }
 @c
-@= voidfetchjoin
+@= densevoidfetchjoin
+    ALGODEBUG THRprintf(GDKout, "BATfetchjoin: densevoidfetchjoin(@1,@2,@3);\n");
+    r_cur = BUNptr(r, offset + *(unsigned int*) BUNtloc(l,BUNfirst(l)));
+    yy = BUNsize(r);
+    BATloopFast(l, l_cur, l_end, xx) {
+        @3put(@2, &bn->theap, (int*) dst, BUN@1(r, r_cur));
+        r_cur += yy;
+        dst += zz;
+    }
+    bn->batBuns->free = dst - bn->batBuns->base;
+@c
+@= orderedvoidfetchjoin
+    ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedvoidfetchjoin(@1,@2,@3);\n");
     BATloopFast(l, l_cur, l_end, xx) {
         yy = offset + *(unsigned int*) BUNtloc(l,l_cur);
-        if (yy < base || yy >= end) {
-            bn->batBuns->free = dst - bn->batBuns->base;
-            BBPreclaim(bn);
-            goto nondense;
-        }
         r_cur = BUNptr(r, yy);
         @3put(@2, &bn->theap, (int*) dst, BUN@1(r, r_cur));
         dst += zz;
     }
     bn->batBuns->free = dst - bn->batBuns->base;
+@c
+@= defaultvoidfetchjoin
+    ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3);\n");
+    BATloopFast(l, l_cur, l_end, xx) {
+        yy = offset + *(unsigned int*) BUNtloc(l,l_cur);
+        if (yy < base || yy >= end) {
+            bn->batBuns->free = dst - bn->batBuns->base;
+            BBPreclaim(bn);
+            nondense = 1;
+	    break;
+        }
+        r_cur = BUNptr(r, yy);
+        @3put(@2, &bn->theap, (int*) dst, BUN@1(r, r_cur));
+        dst += zz;
+    }
+    if (nondense) {
+        /* not (yet?) completely typ-optimized ! */
+        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3): discovered non-density, resuming with non-void head\n");
+        bn = BATnew(BAThtype(l), ATOMtype(tpe), BATcount(l));
+        BATloopFast(l, l_cur, l_end, xx) {
+                yy = offset + *(unsigned int*) BUNtail(l,l_cur);
+                if (yy < base || yy >= end) {
+                        continue;
+                }
+                r_cur = BUNptr(r, yy);
+		ATOMput(bn->htype, &bn->hheap, (int*) BUNhloc(bn, dst), BUNtail(l, l_cur));
+		@3put(  @2,        &bn->theap, (int*) BUNtloc(bn, dst), BUN@1(  r, r_cur));
+                dst += zz;
+        }    	
+    }
+    bn->batBuns->free = dst - bn->batBuns->base;
+@c
+@= voidfetchjoin
+	if (BATtdense(l)) {
+		/* dense => ordered, i.e., we did check the bounderies already above */
+		/* and we can do a "synchronized walk" through l & r */
+		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && BATtdense(l)\n");
+		@:densevoidfetchjoin(@1,@2,@3)@
+	} else if (BATtordered(l)&1) {
+		/* we did check the bounderies already above */
+		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && BATtordered(l)&1\n");
+		@:orderedvoidfetchjoin(@1,@2,@3)@
+	} else {
+		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && !BATtordered(l)&1\n");
+		@:defaultvoidfetchjoin(@1,@2,@3)@
+	}
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
@@ -410,8 +468,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 
         if (!BAThvoid(l)) {
                 /* default case: no void column to propagate */
-		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l)\n");
-nondense:       lht = l->htype;
+                lht = l->htype;
                 rtt = r->ttype;
                 bn = BATnew(BAThtype(l), BATttype(r), BATcount(l));
                 ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: %d\n",BATcount(l));
@@ -421,21 +478,21 @@ nondense:       lht = l->htype;
 		if (BATtdense(l)) {
 			/* dense => ordered, i.e., we did check the bounderies already above */
 			/* and we can do a "synchronized walk" through l & r */
-			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l) && BATtdense(l) => densefetchjoin\n");
+			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l) && BATtdense(l)\n");
 			@:fetchjoin_switch_lht(dense)@
 		} else if (BATtordered(l)&1) {
 			/* we did check the bounderies already above */
-			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && BATtordered(l)&1 => orderedfetchjoin\n");
+			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && BATtordered(l)&1\n");
 			@:fetchjoin_switch_lht(ordered)@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && !BATtordered(l)&1 => defaultfetchjoin\n");
+			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && !BATtordered(l)&1\n");
 			@:fetchjoin_switch_lht(default)@
 		}
                 bn->hsorted = (BATtordered(l)&BAThordered(r)&1)?BAThordered(l):0;
         } else if (!BATtvoid(l)) {
                 /* propagation of void columns in the result */
+		int nondense = 0;
                 int tpe = r->ttype;
-		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l) => voidfetchjoin\n");
                 if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(&r->theap)) {
                         tpe = TYPE_int; /* insert double-eliminated strings as ints */
                 }
@@ -448,12 +505,15 @@ nondense:       lht = l->htype;
                         @:voidfetchjoin(tloc,chr,SIMPLE)@
                 } else if (ATOMstorage(tpe) == TYPE_sht) {
                         @:voidfetchjoin(tloc,sht,SIMPLE)@
-                } else if (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt) {
+                } else if (tpe != TYPE_bat && (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt)) {
+	                /* ensure use of ATOMput for TYPE_bat */   
                         @:voidfetchjoin(tloc,int,SIMPLE)@
                 } else if (ATOMstorage(tpe) == TYPE_lng || ATOMstorage(tpe) == TYPE_dbl) {
                         @:voidfetchjoin(tloc,lng,SIMPLE)@
+                } else if (r->tvarsized) {
+                        @:voidfetchjoin(tvar,bn->ttype,ATOM)@
                 } else {
-                        @:voidfetchjoin(tail,bn->ttype,ATOM)@
+                        @:voidfetchjoin(tloc,bn->ttype,ATOM)@
                 }
                 /* handle string trick */
                 if (tpe == TYPE_int && ATOMstorage(r->ttype) == TYPE_str) {
@@ -463,9 +523,13 @@ nondense:       lht = l->htype;
                         strcpy(bn->tatom, ATOMname(r->ttype));
                         HEAPcopy(&bn->theap, &r->theap);
                 }
-                BATseqbase(bn, seqbase);
-                if (seqbase != oid_nil) BATkey(bn, TRUE);
-                bn->hsorted = GDK_SORTED;
+                if (nondense) {
+                	bn->hsorted = (BATtordered(l)&BAThordered(r)&1)?BAThordered(l):0;
+                } else {
+                	BATseqbase(bn, seqbase);
+                	if (seqbase != oid_nil) BATkey(bn, TRUE);
+                	bn->hsorted = GDK_SORTED;
+                }
         } else if (l->tseqbase != oid_nil) {
                 /* execute using slice */
                 BAT *v = BATmirror(VIEWhead(BATmirror(r)));
