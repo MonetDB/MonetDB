@@ -161,7 +161,9 @@ MMONETERR & Monet error.\\
 @h
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <gdk.h>		/* needed for windows version since the
+				   posix wrappers are part of gdk 
+				   this should move to a small wrap library */
 #endif
 #include  <stdio.h>
 

@@ -147,7 +147,11 @@ def am_doc(fd, var, docmap, am ):
       srcs = srcs + " " + am_find_srcs(target,docmap['DEPS'], am)
   fd.write(srcs + "\n")
 
+  fd.write("if DOCTOOLS\n")
   fd.write("all-local-%s: $(%s_DOCS)\n" % (name,name))
+  fd.write("else\n")
+  fd.write("all-local-%s: \n" % (name))
+  fd.write("endif\n")
   am['ALL'].append(name)
   
   am_deps(fd,docmap['DEPS'],"\.o",am);
@@ -294,8 +298,6 @@ def am_library(fd, var, libmap, am ):
     fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
     fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
 
-# temporarily switched off, the by libtool created scripts cause problems
-# for so-so linking
   if (libmap.has_key("LIBS")):
     fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
 
@@ -496,9 +498,12 @@ CXXEXT = \\\"cc\\\"
 	am_list2string(am['ALL']," all-local-",""))
 
   if (len(am['HDRS']) > 0):
+    cache = ""
+    if os.path.exists(".cache"):
+      cache = ".cache"
     if (len(name) > 0): 
       fd.write("%sincludedir = $(includedir)/%s\n" % (name,name))
-    fd.write("%sinclude_HEADERS = %s\n" % (name,am_list2string(am['HDRS']," ","")))
+    fd.write("%sinclude_HEADERS = %s %s\n" % (name,am_list2string(am['HDRS']," ",""), cache))
 
   fd.write('''
 include $(top_srcdir)/rules.mk
