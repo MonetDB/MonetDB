@@ -840,8 +840,7 @@ int CMDnotify(Cntxt stk, YYSTREE lt, ValPtr res){
 			return -1;
 		}
 		obj = v->binding.val.ival;
-	} else
-	if( ov ) {
+	} else if( ov ) {
 		@:builtin_operand(0, TYPE_int, p)@
 		obj= *(int *) p;
 	}
@@ -1027,7 +1026,8 @@ int CMDcatch(Cntxt stk, YYSTREE lt, ValPtr res){
 			mode = newmode;
 			bak = head;
 			*head = c;
-		} head = tail;
+		}
+		head = tail;
 	}
 	if (mode == 1) {
 		GDKwarning(bak+strlen(GDKWARNING));
