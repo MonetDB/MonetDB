@@ -649,6 +649,7 @@ salgebra_CHbuild( clusterhash* ch, BAT* b ) {
   /* allocate space for the chash */
   chlen = h->mask + 1;
   ch->dict = (Heap*) GDKmalloc(sizeof(Heap));
+  ch->dict->filename = NULL;
   HEAPalloc(ch->dict, chlen, sizeof(dict_entry));
   dict = (dict_entry*) ch->dict->base;
   DICTclear( dict, chlen );
