@@ -38,6 +38,8 @@
 #define PATH_SEP_STR ";"
 #define SO_EXT ".dll"
 
+#define isatty _isatty
+
 /* Define if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */

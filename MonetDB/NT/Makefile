@@ -11,7 +11,7 @@ MONET_PREFIX = $(MAKEDIR)
 
 !INCLUDE $(TOPDIR)\rules.msc
 
-all: $(SRCDIR)\Makefile.msc all-msc
+all: $(SRCDIR)\Makefile.msc all-msc unistd.h
 	set MONET_BUILD=$(MONET_BUILD)
 	set MONET_PREFIX=$(MONET_PREFIX)
 	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc all
@@ -34,6 +34,12 @@ all-msc: config.h
 
 config.h: winconfig.h
 	$(INSTALL) winconfig.h config.h
+
+unistd.h: 
+	$(ECHO) #ifndef UNISTD_H > unistd.h
+	$(ECHO) #define UNISTD_H >> unistd.h
+	$(ECHO) #include "io.h" >> unistd.h
+	$(ECHO) #endif >> unistd.h
 
 RunMtest.bat: $(SRCDIR)\RunMtest.bat.in
 	if exist $(SRCDIR)\RunMtest.bat.in $(CONFIGURE) $(SRCDIR)\RunMtest.bat.in > RunMtest.bat
