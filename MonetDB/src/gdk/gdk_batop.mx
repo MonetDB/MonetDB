@@ -25,6 +25,7 @@ variable storage heap. The updateloop(dstbat, srcbat, operation) macro
 invokes operation(dstbat, BUNhead(srcbat), BUNtail(srcbat)) on all buns
 of the srcbat, but testing only once where they reside.
 @c
+#include "gdk_bat.h"
 #include "gdk_batop.h"
 
 @= updateloop
