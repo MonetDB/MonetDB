@@ -328,14 +328,15 @@ void freeClient(Client c) {
 		c->father = monet_cntxt[c->stk].outer = -1;
 	} else {
 		Thread t;
-		stream *bkin;
+		stream *bkin, *bkout;
 
 		/* remove possible profiler channel */
 		closeProfiler((void*)c->fdout);
 
 		/* normal client  */
 		t = THRget(THRgettid()); 
-		bkin = t->data[1], *bkout = t->data[0];
+		bkin = t->data[1];
+		bkout = t->data[0];
 
 		if (c->cleanup) {
 			(*c->cleanup)(c);
