@@ -22,6 +22,7 @@ the applications at a later stage.
 #include "mil_parser.h"	/* for mil_push() */
 #endif
 
+void prelude();
 void advice();
 void mil_code_prelude();
 
@@ -30,6 +31,7 @@ extern void showmappings();
 extern int yyparse();
 str	mil_script[MAXSCRIPT];
 char	mil_cwd[PATHLENGTH];
+int	trace_code= 0;
 
 void usage(){
 	printf("usage:M2m <file.mil>\n");
@@ -62,13 +64,14 @@ int main(int argc,char ** av)
 	int k,len,totlen;
 	char *dbname, *dbfarmval, dbfarm[BUFSIZ];
 
-	static struct option long_options[7] =
+	static struct option long_options[8] =
              {
                {"config", 1, 0, (int) 'c'},
                {"dbname", 1, 0, 0},
                {"dbfarm", 1, 0, 0},
                {"debug", 2, 0, (int) 'd'},
                {"help", 0, 0, (int) '?'},
+               {"trace-code", 1, 0, (int) 't'},
                {"set", 1, 0, (int) 's'},
                {0, 0, 0, 0}
              };
@@ -128,6 +131,10 @@ int main(int argc,char ** av)
 					opt_cmdline, "gdk_debug", optarg );
 			}
 			break;
+		case 't': {
+			/* generate MIL trace code */
+			if( optarg) trace_code = atoi(optarg);
+			} break;
 		case 's': {
 			/* should add option to a list */
 			char *tmp = strchr(optarg, '=');
@@ -201,7 +208,7 @@ The files are processed as one big program
 		fclose(fd);
 		buf[i] = 0;
 	}
-	mil_code_prelude();
+	prelude();
 	mil_push(buf);	/*no need to copy here */
 	yyparse();
 	showmappings();
@@ -210,12 +217,13 @@ The files are processed as one big program
 	return 0;
 }
 
-void mil_code_prelude(){
+void prelude(){
         printf("# Monet Mil to Mal compiler\n");
         printf("# Copyright (c) 2001-2004, CWI. ");
         printf("All rights reserved.\n");
-	printf("\n# Predefined code segment\n");
+	printf("\n#Predefined code segment\n");
 	advice();
+	mil_code_prelude();
 }
 /* The compiler does not compile everything */
 char *hlp[]={
@@ -224,9 +232,18 @@ char *hlp[]={
 "A few guidelines to maximize usefullness.",
 "- make the type of variables explicit, in particular 'nil'",
 "- upon advice of M2m to remap identifiers, change it in your program directly",
+"include \"mil_prelude\";",
 0
 };
 void advice(){
 	int i;
 	for(i=0; hlp[i]; i++) printf("#%s\n",hlp[i]);
+}
+char *code[]={
+"include \"mil_prelude\";",
+0
+};
+void mil_code_prelude(){
+	int i;
+	for(i=0; code[i]; i++) printf("%s\n",code[i]);
 }
