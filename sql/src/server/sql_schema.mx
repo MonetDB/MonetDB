@@ -1202,6 +1202,30 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 		res = stmt_none();
 	} break;
+	case SQL_DROP_COLUMN:
+	{
+		dlist *l = s->data.lval;
+		char *cname = l->h->data.sval;
+		int action = l->h->next->data.ival;
+
+		(void)action;
+		if (mvc_bind_column(sql, t, cname) == NULL)
+			return sql_error(sql, 02, "Cannot drop unknown column %s\n", cname);
+		mvc_drop_column(sql, t, cname);
+		res = stmt_none();
+	} break;
+	case SQL_DROP_CONSTRAINT:
+	{
+		dlist *l = s->data.lval;
+		char *kname = l->h->data.sval;
+		int action = l->h->next->data.ival;
+
+		(void)action;
+		if (mvc_bind_key(sql, ss, kname ) == NULL)
+			return sql_error(sql, 02, "Cannot drop unknown constraint %s\n", kname);
+		mvc_drop_key(sql, ss, kname);
+		res = stmt_none();
+	} break;
 	}
 	if (!res) {
 		return sql_error(sql, 02, "Unknown table element (%ld)->token = %s\n", (long) s, token2string(s->token));
