@@ -2391,7 +2391,6 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					cs = stmt_const(ss,stmt_dup(cs));
 					list_append(rl, cs);
 				} else {
-					printf("cleanup return error\n");
 					list_destroy(sl);
 					list_destroy(rl);
 					sql_select_cleanup(sql, s, subset, grp);
