@@ -70,7 +70,7 @@ Bats which have a logical reference (ie. a lrefs > 0) but no memory
 reference (refcnt == 0) can be unloaded. Unloading dirty bats means,
 moving the original (commited version) to the BACKUP/ dir and saving
 the bat. This complicates the commit and recovery/abort issues.
-The commit has to check if the bat is allready moved. And The recovery
+The commit has to check if the bat is already moved. And The recovery
 has to always move back the files from the BACKUP/ dir.
 
 \item [reference counting]
@@ -282,8 +282,6 @@ static MT_Id locked_by = 0;
 
 MT_Id MT_getpid_(){
 	MT_Id x = MT_getpid();
-	if (x == locked_by)
-		printf("allready locked by me %ld\n", (long)x);
 	return x;
 }
 
