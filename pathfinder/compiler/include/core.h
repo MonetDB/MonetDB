@@ -240,7 +240,6 @@ PFcnode_t *PFcore_empty (void);
 PFcnode_t *PFcore_true (void);
 PFcnode_t *PFcore_false (void);
 
-PFcnode_t *PFcore_root (void);
 PFcnode_t *PFcore_locsteps (PFcnode_t *, PFcnode_t *);
 PFcnode_t *PFcore_step (PFpaxis_t, PFcnode_t *);
 PFcnode_t *PFcore_kindt (PFpkind_t, PFcnode_t *);

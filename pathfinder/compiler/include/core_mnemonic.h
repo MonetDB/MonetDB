@@ -114,7 +114,6 @@
 #define empty()               PFcore_empty ()
 #define true_()               PFcore_true ()
 #define false_()              PFcore_false ()
-#define _root()               PFcore_root ()
 #define constr_elem(e1,e2)    PFcore_constr_elem(e1,e2)
 #define constr_attr(e1,e2)    PFcore_constr_attr(e1,e2)
 #define constr(k,e1)          PFcore_constr(k,e1)

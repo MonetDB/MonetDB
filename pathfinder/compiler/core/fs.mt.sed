@@ -1756,7 +1756,16 @@ PathExpr:               LocationPath_;
 LocationPath_:          root_
     =
     {
-        [[ $$ ]] = _root ();
+        PFfun_t *_root = function (PFqname (PFns_fn, "root"));
+        if (fs_dot)
+        {
+            [[ $$ ]] = APPLY (_root, var (fs_dot));
+        }
+        else
+        {
+            PFoops_loc (OOPS_NOCONTEXT, ($$)->loc,
+                        "``.'' is unbound");
+        }
     }
     ;
 LocationPath_:          dot
@@ -1808,24 +1817,36 @@ LocationPath_:          locpath (StepExpr, LocationPath_)
     {
         PFvar_t *v = new_var (0);
         PFvar_t *dot;
+        PFvar_t *position;
+        PFvar_t *last;
+
+        PFfun_t *count = function (PFqname (PFns_fn, "count"));
         
         tDO ($%2$);
 
-        /* save $fs:dot, establish new context item */
+        /* save context items $fs:dot, $fs:position, $fs:last
+           and establish new context item */
         dot = fs_dot;
         fs_dot = new_var ("dot");
+        position = fs_position;
+        fs_position = new_var ("pos");
+        last = fs_last;
+        fs_last = new_var ("lst");
         
         tDO ($%1$);
         
         [[ $$ ]] =
         let (var (v), [[ $2$ ]],
-             for_ (var (fs_dot),
-                   nil (),
-                   var (v),
-                   [[ $1$ ]]));
+             let (var(fs_last), APPLY (count, var(v)),
+                  for_ (var (fs_dot),
+                        var (fs_position),
+                        var (v),
+                        [[ $1$ ]])));
              
-        /* restore $fs:dot */
+        /* restore context items $fs:dot, $fs:position, and $fs:last */
         fs_dot = dot;
+        fs_position = position;
+        fs_last = last;
     }
     ;
 LocationPath_:          locpath (StepExpr, StepExpr)
@@ -1835,28 +1856,40 @@ LocationPath_:          locpath (StepExpr, StepExpr)
         PFvar_t *v1 = new_var (0);
         PFvar_t *v2 = new_var (0);
         PFvar_t *dot;
+        PFvar_t *position;
+        PFvar_t *last;
         PFfun_t *pf_distinct_doc_order = 
             function (PFqname (PFns_pf, 
                                "distinct-doc-order"));
         
         tDO ($%2$);
 
-        /* save $fs:dot, establish new context item */
+        /* save context items $fs:dot, $fs:position, $fs:last
+           and establish new context item */
         dot = fs_dot;
         fs_dot = new_var ("dot");
+        position = fs_position;
+        fs_position = new_var ("pos");
+        last = fs_last;
+        fs_last = new_var ("lst");
+
+        PFfun_t *count = function (PFqname (PFns_fn, "count"));
         
         tDO ($%1$);
         
         [[ $$ ]] =
         let (var (v1), [[ $2$ ]],
-             let (var (v2), APPLY (pf_distinct_doc_order, var (v1)),
-                  for_ (var (fs_dot),
-                        nil (),
-                        var (v2),
-                        [[ $1$ ]])));
+             let (var(fs_last), APPLY (count, var(v1)),
+                  let (var (v2), APPLY (pf_distinct_doc_order, var (v1)),
+                       for_ (var (fs_dot),
+                             var (fs_position),
+                             var (v2),
+                             [[ $1$ ]]))));
              
-        /* restore $fs:dot */
+        /* restore context items $fs:dot, $fs:position, and $fs:last */
         fs_dot = dot;
+        fs_position = position;
+        fs_last = last;
     }
     ;
 
@@ -1870,45 +1903,55 @@ StepExpr:               pred (PathExpr, Expr)
         PFvar_t *v3 = new_var (0);
         PFvar_t *v4 = new_var (0);
         PFvar_t *v5 = new_var (0);
-        PFvar_t *dot = new_var ("dot");
-        PFvar_t *fs_position = new_var ("pos");
+        PFvar_t *dot;
+        PFvar_t *position;
+        PFvar_t *last;
 
         PFfun_t *fn_eq = function (PFqname (PFns_op, "eq"));
+        PFfun_t *count = function (PFqname (PFns_fn, "count"));
 
         tDO ($%1$);
 
-        /* save $fs:dot, establish new context item */
+        /* save context items $fs:dot, $fs:position, $fs:last
+           and establish new context item */
         dot = fs_dot;
         fs_dot = new_var ("dot");
+        position = fs_position;
+        fs_position = new_var ("pos");
+        last = fs_last;
+        fs_last = new_var ("lst");
 
         tDO ($%2$);
 
         [[ $$ ]] = 
         let (var (v1), [[ $1$ ]],
-             for_ (var(fs_dot), var (fs_position), var(v1),
-                   let (var (v2), [[ $2$ ]],
-                        let (var (v3), 
-                             typeswitch 
-                                 (var (v2),
-                                  cases
-                                    (case_
-                                       (seqtype (PFty_numeric ()),
-        /* instead of numeric-eq ()  */ let (var (v5),
-        /* proposed by the W3C a     */      seqcast (seqtype (PFty_integer ()),
-        /* cast to integer is chosen */               var (v2)),
-                                             let (var (v4),
-                                                  apply (fn_eq,
-                                                         arg (var (v5),
-                                                              arg (var (fs_position),
-                                                                   nil ()))),
-                                                  var (v4)))),
-                                     nil ()),
-                                  ebv (var (v2))),
-                             ifthenelse (var (v3), 
-                                         var (fs_dot), empty ())))));
+             let (var(fs_last), APPLY (count, var(v1)),
+                  for_ (var(fs_dot), var (fs_position), var(v1),
+                        let (var (v2), [[ $2$ ]],
+                             let (var (v3), 
+                                  typeswitch 
+                                      (var (v2),
+                                       cases
+                                         (case_
+                                            (seqtype (PFty_numeric ()),
+             /* instead of numeric-eq ()  */ let (var (v5),
+             /* proposed by the W3C a     */      seqcast (seqtype (PFty_integer ()),
+             /* cast to integer is chosen */               var (v2)),
+                                                  let (var (v4),
+                                                       apply (fn_eq,
+                                                              arg (var (v5),
+                                                                   arg (var (fs_position),
+                                                                        nil ()))),
+                                                       var (v4)))),
+                                          nil ()),
+                                       ebv (var (v2))),
+                                  ifthenelse (var (v3), 
+                                              var (fs_dot), empty ()))))));
 
-        /* restore $fs:dot */
+        /* restore context items $fs:dot, $fs:position, and $fs:last */
         fs_dot = dot;
+        fs_position = position;
+        fs_last = last;
     }
     ;
 
@@ -1982,6 +2025,65 @@ StringLiteral:          lit_str
         [[ $$ ]] = str (($$)->sem.str);
     }
     ; 
+
+/* special rule to translate built-in functions (fn:root(), fn:last(),
+   and fn:position()) according to the current context set
+   (here is the only place where we have the context set information
+   available) */
+FunctionCall:           apply (Nil_)
+    { TOPDOWN; }
+    =
+    {
+        PFfun_t *fun = ($$)->sem.fun;
+
+        /* apply context item $fs:dot to retrieve context roots */
+        if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"root")))
+        {
+            if (fs_dot)
+            {
+                [[ $$ ]] = APPLY (fun, var (fs_dot));
+            }
+            /* handle undefined context set */
+            else
+            {
+                PFoops_loc (OOPS_NOCONTEXT, ($$)->loc,
+                            "``.'' is unbound");
+            }
+        }
+        /* replace function call fn:last() by context item $fs_last */
+        else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"last")))
+        {
+            if (fs_last)
+            {
+                [[ $$ ]] = var (fs_last);
+            }
+            /* handle undefined context set */
+            else
+            {
+                PFoops_loc (OOPS_NOCONTEXT, ($$)->loc,
+                            "``.'' is unbound");
+            }
+        }
+        /* replace function call fn:position() by context item $fs_postion */
+        else if(!PFqname_eq(fun->qname,PFqname (PFns_fn,"position")))
+        {
+            if (fs_position)
+            {
+                [[ $$ ]] = var (fs_position);
+            }
+            /* handle undefined context set */
+            else
+            {
+                PFoops_loc (OOPS_NOCONTEXT, ($$)->loc,
+                            "``.'' is unbound");
+            }
+        }
+        else
+        {
+            [[ $$ ]] = apply (fun, nil ());
+        }
+    }
+    ;
 
 FunctionCall:           apply (FuncArgList_)
     { TOPDOWN; }

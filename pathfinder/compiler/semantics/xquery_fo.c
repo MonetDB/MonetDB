@@ -813,10 +813,14 @@
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
     .ret_ty = PFty_opt (PFty_node ()) }                                  \
                                                                          \
-, /* pf:root () as document { xs:anyType } *  */                         \
-  { .ns = PFns_pf, .loc = "root",                                        \
+, /* fn:root () as node */                                               \
+  { .ns = PFns_fn, .loc = "root",                                        \
     .arity = 0, .par_ty = { PFty_none () },                              \
-    .ret_ty = PFty_star (PFty_doc (PFty_xs_anyType ())) }                \
+    .ret_ty = PFty_node() }                                              \
+, /* fn:root (node?) as node? */                                         \
+  { .ns = PFns_fn, .loc = "root",                                        \
+    .arity = 1, .par_ty = { PFty_opt (PFty_node ()) },                   \
+    .ret_ty = PFty_opt (PFty_node()) }                                   \
 , /* pf:node-name-eq (xs:string, xs:string,                          */  \
   /*                  (xs:anyElement | xs:anyAttribute) *)           */  \
   /*     as xs:boolean                                               */  \

@@ -298,9 +298,12 @@ static int TWIG_ID[] = {
 #include "core_mnemonic.h"
 
 /**
- * The current context item $fs:dot (see W3C XQuery Formal Semantics 4.1.2)
+ * The current context items $fs:dot, $fs:position, and $fs:last
+ * (see W3C XQuery Formal Semantics 3.1.2)
  */
 static PFvar_t *fs_dot;
+static PFvar_t *fs_position;
+static PFvar_t *fs_last;
 
 /**
  * The top of this stack holds a reference to the current function
@@ -329,6 +332,8 @@ PFfs (PFpnode_t *r)
 
     /* initially, the context item is undefined */
     fs_dot = 0;
+    fs_position = 0;
+    fs_last = 0;
 
     /* return core equivalent of the root node, i.e.,
      * the core-mapped query

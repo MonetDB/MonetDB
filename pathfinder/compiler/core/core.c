@@ -598,19 +598,6 @@ PFcore_false (void)
     return PFcore_leaf (c_false);
 }
 
-/** 
- * FIXME: should this be replaced by a function call `fn:root ($.)'?
- *
- * Creates the core tree node for the XPath step `/' (root).
- * 
- * @return core representation of `/' step.
- */
-PFcnode_t *
-PFcore_root (void)
-{
-    return PFcore_leaf (c_root);
-}
-
 /**
  * Create a core tree node representing a path of location steps.
  *
@@ -999,23 +986,25 @@ PFcore_apply (PFfun_t *fn, PFcnode_t *e)
 {
     PFcnode_t *core;
     PFarray_t *funs;
-    PFfun_t *fun;
+    PFfun_t *fun, *fun_prev;
     unsigned int arity, i;
 
     assert (fn && e);
     arity = actual_args (e);
     fun = fn;
     funs = PFenv_lookup (PFfun_env, fun->qname);
-    /* get the first entry */
-    fun = *((PFfun_t **) PFarray_at (funs, 0));
 
     /* get the function where the number of arguments fit */
-    for (i = 1; i < PFarray_last (funs); i++) {
+    for (i = 0; i < PFarray_last (funs); i++) {
+        fun_prev = fun;
+        fun = *((PFfun_t **) PFarray_at (funs, i));
         /* be sure that the least specific one (last)
            with the same arity is chosen */
         if (arity < fun->arity)
+        {
+            fun = fun_prev;
             break;
-        fun = *((PFfun_t **) PFarray_at (funs, i));
+        }
     }
                                                                                                                                                              
     /* see if number of actual argument matches function declaration */
