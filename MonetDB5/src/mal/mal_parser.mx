@@ -155,7 +155,8 @@ INLINE void
 advance(Client cntxt, int length)
 {
 	cntxt->yycur += length;
-	skipSpace(cntxt);
+	if( *CURRENT(cntxt) )
+		skipSpace(cntxt);
 }
 
 @-
