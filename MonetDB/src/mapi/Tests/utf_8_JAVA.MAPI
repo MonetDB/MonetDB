@@ -3,7 +3,7 @@
 if [ -f "$MONET_BUILD/src/mapi/clients/java/mapi.jar" ]; then
 
 java -cp "$MONET_BUILD/src/mapi/clients/java/mapi.jar" MapiClient localhost $MAPIPORT << EOMIL
-	print("één");
+	print("\303\251\303\251n");
 EOMIL
 
 else
