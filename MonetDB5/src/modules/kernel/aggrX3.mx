@@ -58,6 +58,7 @@ command sum(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:void,:any]):bat[:oid,:@1]
 address AX3aggrX3_sum3_@1_@1
 comment "grouped tail sum on @1";
 
+
 command avg(b:bat[:oid,:@1], e:bat[:oid,:any]) :bat[:oid,:@1] 
 address AX3aggrX3_avg_@1
 comment "grouped tail average on @1";
@@ -92,6 +93,12 @@ command sum(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:void,:any]):bat[:oid,:@2]
 address AX3aggrX3_sum3_@1_@2
 comment "grouped tail sum on @1";
 
+command prod(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]):bat[:oid,:@2] 
+address AX3aggrX3_prod3_@1_@2
+comment "grouped tail sum on @1";
+command prod(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:void,:any]):bat[:oid,:@2] 
+address AX3aggrX3_prod3_@1_@2
+comment "grouped tail sum on @1";
 @mal
 @:sum_avg_signatures(sht)@
 @:sum_avg_signatures(int)@

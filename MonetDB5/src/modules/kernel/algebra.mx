@@ -444,19 +444,17 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 
 @- Marking tables
 @mal
-command tmark( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
+command tmark( b:bat[:any$1,:any], base:void ) :bat[:any$1,:oid] 
 address ALGtmark_default
-comment "Produces a new BAT with fresh unique OIDs 
-	in the tail starting at 0@0.";
+comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
+
+command tmark( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
+address ALGtmark0
+comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
 command tmark( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
 address ALGtmark
-comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
-        the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
-
-command tmark( b:bat[:any$1,:any]) :bat[:any$1,:oid] 
-address ALGtmark0
-comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
+comment "Produces a BAT with fresh unique dense sequense of OIDs in 
         the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
 
 command hmark( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
@@ -1940,9 +1938,8 @@ str ALGtmark(int *result, int *bid, oid *base) {
 	return throwMessage("algebra.mark", 
 		"marking group failed");
 }
-str ALGtmark0(int *result, int *bid, oid *base) {
+str ALGtmark0(int *result, int *bid) {
 	oid o= oid_nil;
-	(void) base;
 	return ALGtmark(result,bid,&o);
 }
 str ALGtmark_default(int *result, int *bid) {

@@ -255,18 +255,21 @@ command int(b:bat[:any$1,:str]):bat[:any$1,:int]
 address CMDconvertstr_int
 comment "Coerce an str tail to a bat with a int tail.";
 
+command int(b:bat[:oid,:oid]):bat[:oid,:int] 
+address CMDconvertOIDclass
+comment "Materialize the oid into an int";
+
 command oid(b:bat[:void,:any$1]):bat[:oid,:any$1] 
-address CMDconvertvoid_oid
+address CMDconvertOIDclass
 comment "Materialize the virtual oid into an oid";
 
 command oid(b:bat[:oid,:any$1]):bat[:oid,:any$1] 
-address CMDconvertoid_oid
-comment "Materialize the virtual oid into an oid";
+address CMDconvertOIDclass
+comment "Identity mapping";
 
 command oid(b:bat[:oid,:int]):bat[:oid,:oid] 
-address CMDconvertint_oid
+address CMDconvertOIDclass
 comment "Materialize the integer into an oid";
-
 @}
 @+ Scientific routines
 The mmath functions are also overloaded to provide for
@@ -984,16 +987,14 @@ bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDconvertoid_oid(int *ret, int *bid){
-	/* no-op operation */
-	*ret= *bid;
+str CMDconvertOIDclass(int *ret, int *bid){
+	BAT *b;
+	@:getBATdescriptor(ret,bid,b,CMDconvertOIDclass)@
+	BBPfix( *ret= b->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDconvertint_oid(int *ret, int *bid){
-	/* no-op operation */
-	*ret= *bid;
-	return MAL_SUCCEED;
-}
+/* You don;t have to materialize the oids.
+This is taken care upon access */
 str CMDconvertvoid_oid(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
