@@ -29,8 +29,9 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #     7: 0 where
 #     8: 0 	l_shipdate >= date '1994-01-01'
 #     9: 0 	and l_shipdate < date '1994-01-01' + interval '1' year
-#    10: 0 	and l_discount between 0.05 and 0.07
-#    11: 1 	and l_quantity < 24;
+#    10: 0 --	and l_discount between 0.06 - 0.01 and 0.06 + 0.01
+#    11: 0 	and l_discount between 0.05        and 0.07
+#    12: 1 	and l_quantity < 24;
 #-----------
 #| revenue |
 #-----------
