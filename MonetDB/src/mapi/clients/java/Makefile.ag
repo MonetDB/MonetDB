@@ -23,8 +23,11 @@
 
 MTSAFE
 
+EXTRA_DIST = manifest
+
 jar_mapi = {
 	DIR = pkglibdir/java
 	SOURCES = mapi/MapiException.java mapi/Mapi.java MapiClient.java
+	MANIFEST = $(srcdir)/manifest
 }
 
