@@ -156,6 +156,11 @@ oops (PFrc_t rc, bool halt,
 #ifndef NDEBUG
         /* if this is a debug version of Pathfinder, log source location */
         PFlog ("halted in %s (%s), line %d", file, func, line);
+#else
+	/* fool compilers that otherwise complain about unused parameters */
+	(void)file;
+	(void)func;
+	(void)line;
 #endif
 
         exit (-rc);
