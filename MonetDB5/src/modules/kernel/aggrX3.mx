@@ -40,8 +40,8 @@ where feasable, replaced (expansive) hash-lookup by significantly cheaper positi
 void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by 
 (also positional) array lookups (in case the group-ids span a reasonably small range);
 \item
-in addition to the 2-parameter {}(BAT[oid,any::1] b, BAT[oid,any] e)
-functions, there are now also 3-parameter {}(BAT[void,any::1] b,
+in addition to the 2-parameter {}(BAT[oid,any$1] b, BAT[oid,any] e)
+functions, there are now also 3-parameter {}(BAT[void,any$1] b,
 BAT[void,oid] g, BAT[oid,any] e) functions, that require b & g to be
 head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 \end{itemize}
@@ -54,25 +54,25 @@ module aggrX3;
 #module group;
 
 @= sum_avg_signatures
-command sum(b:BAT[oid,@1],e:BAT[oid,any]) : BAT[oid,@1] = CMDaggrX3_sum_@1_@1
+command sum(b:bat[oid,@1],e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_sum_@1_@1
 	comment "grouped tail sum on @1";
-command prod(b:BAT[oid,@1],e:BAT[oid,any]) : BAT[oid,@1] = CMDaggrX3_prod_@1_@1
+command prod(b:bat[oid,@1],e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_prod_@1_@1
 	comment "grouped tail product on @1";
-command sum(b:BAT[oid,@1], g:BAT[oid,oid], e:BAT[oid,any]) : BAT[oid,@1] = CMDaggrX3_sum3_@1_@1
+command sum(b:bat[oid,@1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_sum3_@1_@1
 	comment "grouped tail sum on @1";
-command avg(b:BAT[oid,@1], e:BAT[oid,any]) : BAT[oid,@1] = CMDaggrX3_avg_@1
+command avg(b:bat[oid,@1], e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_avg_@1
 	comment "grouped tail average on @1";
-command avg(b:BAT[oid,@1], g:BAT[oid,oid], e:BAT[oid,any]) : BAT[oid,@1] = CMDaggrX3_avg3_@1
+command avg(b:bat[oid,@1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_avg3_@1
 	comment "grouped tail average on @1";
 
 @= sum_avg_signatures2
-command sum(b:BAT[oid,@1],e:BAT[oid,any]) : BAT[oid,@1] = CMDaggrX3_sum_@1_@1
+command sum(b:bat[oid,@1],e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_sum_@1_@1
 	comment "grouped tail sum on @1";
-command sum(b:BAT[oid,@1], g:BAT[oid,oid], e:BAT[oid,any]) : BAT[oid,@1] = CMDaggrX3_sum3_@1_@1
+command sum(b:bat[oid,@1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_sum3_@1_@1
 	comment "grouped tail sum on @1";
-command sum(b:BAT[oid,@1],e:BAT[oid,any]) : BAT[oid,@2] = CMDaggrX3_sum_@1_@2
+command sum(b:bat[oid,@1],e:bat[oid,any]) :bat[oid,@2] = CMDaggrX3_sum_@1_@2
 	comment "grouped tail sum on @1";
-command sum(b:BAT[oid,@1], g:BAT[oid,oid], e:BAT[oid,any]) : BAT[oid,@2] = CMDaggrX3_sum3_@1_@2
+command sum(b:bat[oid,@1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,@2] = CMDaggrX3_sum3_@1_@2
 	comment "grouped tail sum on @1";
 
 @= var_signature
@@ -95,59 +95,59 @@ comment "grouped tail on variance";
 @:var_signature(dbl)@
 @:var_signature(flt)@
 
-command min(b:BAT[oid,any::1], e:BAT[oid,any]) : BAT[oid,any::1] = CMDaggrX3_min
+command min(b:bat[oid,any$1], e:bat[oid,any]) :bat[oid,any$1] = CMDaggrX3_min
 	comment "grouped tail minimum";
-command max(b:BAT[oid,any::1], e:BAT[oid,any]) : BAT[oid,any::1] = CMDaggrX3_max
+command max(b:bat[oid,any$1], e:bat[oid,any]) :bat[oid,any$1] = CMDaggrX3_max
 	comment "grouped tail maximum";
-command min(b:BAT[oid,any::1], g:BAT[oid,oid], e:BAT[oid,any]) : BAT[oid,any::1] = CMDaggrX3_min3
+command min(b:bat[oid,any$1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,any$1] = CMDaggrX3_min3
 	comment "grouped tail minimum";
-command max(b:BAT[oid,any::1], g:BAT[oid,oid], e:BAT[oid,any]) : BAT[oid,any::1] = CMDaggrX3_max3
+command max(b:bat[oid,any$1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,any$1] = CMDaggrX3_max3
 	comment "grouped tail maximum";
 
-command count(b:BAT[oid,any], e:BAT[oid,any]) : BAT[oid,int] = CMDaggrX3_count
+command count(b:bat[oid,any], e:bat[oid,any]) :bat[oid,int] = CMDaggrX3_count
 	comment "grouped count";
-command count(b:BAT[oid,any], g:BAT[oid,oid], e:BAT[oid,any], nonils:bit) : BAT[oid,int] = CMDaggrX3_count3
+command count(b:bat[oid,any], g:bat[oid,oid], e:bat[oid,any], nonils:bit) :bat[oid,int] = CMDaggrX3_count3
 	comment "grouped count";
 
-command size(b:BAT[oid,bit], e:BAT[oid,any]) : BAT[oid,int] = CMDaggrX3_size
+command size(b:bat[oid,bit], e:bat[oid,any]) :bat[oid,int] = CMDaggrX3_size
 	comment "grouped count of true values";
-command size(b:BAT[oid,bit]) : int = CMDsize
+command size(b:bat[oid,bit]) :int = CMDsize
 	comment "grouped count of true values in the tail";
-command hasNil(b:BAT[any,any]) : bit = CMDhasNil
+command hasNil(b:bat[any,any]) :bit = CMDhasNil
         comment "return if there is a nil value in the tail column";
-command card(b:BAT[any,any]) : lng = CMDcard_unlimited
+command card(b:bat[any,any]) :lng = CMDcard_unlimited
         comment "return the number of different values in a tail column";
-command card(b:BAT[any,any], maxelements:int) : lng = CMDcard
+command card(b:bat[any,any], maxelements:int) :lng = CMDcard
         comment "as card(b), but returns nil if card(b) > maxelements";
 @-
 OLD STUFF, recast in MAL proc 
 
-    proc size(BAT[any,bit] b) : int {
+    proc size(BAT[any,bit] b) :int {
 	var h := b.histogram;
 	if (h.exist(true)) 
 	    return h.find(true);
 	return 0;
     }
 
-    proc avg(BAT[any, any::1] b) : any::1 {
+    proc avg(BAT[any, any$1] b) :any$1 {
 	var cnt := count(b);
         if (cnt = 0) 
 	    return cast(0,ttype(b));
 	return /(sum(b),cast(cnt,ttype(b)));
     }
 
-    proc card(BAT[any,any] b) : int {
+    proc card(BAT[any,any] b) :int {
 	return b.tunique.count;
     }
 
-    proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+    proc {card}(BAT[oid,any] b, BAT[oid,any] e) :bat[oid,int] {
 	return {count}(b.sunique,e);
     }
 @{
 @+ Test Script
 @mil
 
-proc toset(bat[any,any] b) : str {
+proc toset(bat[any,any] b) :str {
         var res := "{ ";
         b@batloop() {
                 res :+= str($t) + " ";
@@ -408,7 +408,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			_p += _bunsize;
 		}
 		max = *(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e));
-		ALGODEBUG THRprintf(GDKout, "init_result(@1): BAThordered(e)&1, min=%d, max=%d\n", (unsigned long) min, (unsigned long) max);
+		ALGODEBUG THRprintf(GDKout, "init_result(@1):bathordered(e)&1, min=%d, max=%d\n", (unsigned long) min, (unsigned long) max);
 	} else {
 		oid i;
 		min = max = *(oid*)BUNhloc(e, BUNfirst(e));
@@ -924,7 +924,7 @@ str CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	ssize_t offset;
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_prod3_@1_@2(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
-/*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_prod3_@1: BATs b & g must be of equal size.\n");	*/
+/*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_prod3_@1:bats b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_prod3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
@@ -1596,7 +1596,7 @@ str CMDaggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	bn = BATnew(e->htype, BATttype(g), (int) BATcount(e));	
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum3_@1_@2(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
-/*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
+/*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1:bats b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
@@ -1708,7 +1708,7 @@ str CMDaggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	bn = BATnew(e->htype, BATttype(b), (int) BATcount(e));	
 	off = BUNindex(bn,BUNfirst(bn));
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
-/*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_avg3_@1: BATs b & g must be of equal size.\n");	*/
+/*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_avg3_@1:bats b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_avg3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
@@ -1845,7 +1845,7 @@ str aggrX3_@13_@3_@4(int *ret, BAT *b, BAT *g, BAT *e){
 	ssize_t offset;
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
-/*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13_@3_@4: BATs b & g must be of equal size.\n");	*/
+/*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13_@3_@4:bats b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13_@3_@4: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
@@ -1914,7 +1914,7 @@ str CMDaggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	tt = ATOMstorage(b->ttype);
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
-/*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13: BATs b & g must be of equal size.\n");	*/
+/*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13:bats b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
@@ -2061,7 +2061,7 @@ str CMDaggrX3_count3(int *retid,int *bid, int *gid, int *eid, bit *ignore_nils){
 	bt_nil = ATOMnilptr(b->ttype);
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count3(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
-/*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_count3: BATs b & g must be of equal size.\n");	*/
+/*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_count3:bats b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_count3: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {

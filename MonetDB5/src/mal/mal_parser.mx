@@ -427,17 +427,18 @@ int typeId(Client cntxt)
 }
 @-
 The type alias number is defined within the context of a function
-scope.
+scope. Currently limited to 10, next step is to allow for a single
+character.
 @c
 int typeAlias(Client cntxt){
 	int t;
-	if( *cntxt->nxt!='@' ) return -1;
+	if( *cntxt->nxt!='$' ) return -1;
 	cntxt->nxt++;
-	if( !isdigit((int)*cntxt->nxt)) {
-		parseError(cntxt,"@DIGIT expected\n");
+	t= *cntxt->nxt-'0';
+	if(t==0 || !isdigit((int)*cntxt->nxt)) {
+		parseError(cntxt,"[1-9] expected\n");
 		return -1;
 	}
-	t= *cntxt->nxt-'0';
 	cntxt->nxt++;
 	return t;
 }
@@ -720,7 +721,7 @@ to resolve the actual argument list. Furthermore, we can not
 assume much about the resulting type structure.
 @T
 melType	: melElm [propList] | bat '[' melElm [propList]',' melElm [propList]']'\\
-melElm  : identifier | any ['::'digit]\\
+melElm  : identifier | any ['@'['1'-'9']]\\
 propList : '\{' identifier [ ',' identifier] '\}'\\
 @-
 Variables will later be extended with a property list to enable
@@ -761,14 +762,10 @@ The argument to propList is the variable that owns the properties.
 	}
 @= melElement
 	if( keyword(cntxt,"any",3)){
+		int k;
 		type = TYPE_any;
-		if( keyphrase2(cntxt,"::")){
-			if( !isdigit(currChar(cntxt)) ){
-				parseError(cntxt,"[1-9] expected\n");
-			} else {
-				int k= nextChar(cntxt) - '0';
-				setAnyTailIndex(type,k);
-			}
+		if( (k= typeAlias(cntxt)) >=0){
+			setAnyTailIndex(type,k);
 		}
 		curInstr->polymorphic = TRUE;
 	} else {

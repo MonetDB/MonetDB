@@ -79,7 +79,7 @@ See for more information ../modules/mal/enum.mx
 #ifndef _MAL_ATOM_H
 #define _MAL_ATOM_H
 
-#define MAL_ATOM_DEBUG  
+/* #define MAL_ATOM_DEBUG  */
 
 #include "mal_instruction.h"
 mal_export void malAtomDefinition(str name,int tpe);
@@ -154,10 +154,10 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 	stream_printf(GDKout,"Atomproperty %s.%s\n",
 		moduleName(pci),functionName(pci));
 #endif
-	if( tpe<0 || tpe>= GDKatomcnt)
-		GDKfatal("malAtomProperty:illegal type name");
 	if( pci->fcn == 0)
 		GDKwarning("malAtomProperty:function not bound\n");
+	if( tpe<0 || tpe>= GDKatomcnt)
+		GDKfatal("malAtomProperty:illegal type name");
 	switch(name[0]){
 	case 'a': GDKwarning("illegal atom property"); break;
 	case 'd': 

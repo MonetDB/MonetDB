@@ -84,45 +84,45 @@ Look at the related ANSI-C/POSIX manual pages to get the needed information.
 This module uses the blob atom.
 @* Module Definition
 @mal
-atom module fstream : ptr
+atom module fstream :ptr
 comment "Mapping to the FILE descriptor on the Unix platforms.
 Should be replaced by the stream package primitives on NT";
 
-atom module bipipe : lng;
-command popen( ) : bipipe = io_popen 
-comment "Open a bidirectional pipe. See: man pipe" ;
-command fdpipe(b:bipipe, up:bit, mode:str) : fstream = io_fdpipe 
+atom module bipipe :lng;
+command popen( ) :bipipe = io_popen 
+comment "Open a bidirectional pipe. See:man pipe" ;
+command fdpipe(b:bipipe, up:bit, mode:str) :fstream = io_fdpipe 
 comment "Open a fstream in one direction through a pipe." ;
 
 module io;
-command fopen ( filename:str, mode:str ) : fstream = io_fopen 
-comment "See: man fopen. Returns fstream, or fstream(nil) on failure.";
-command freopen ( filename:str, mode:str, f:fstream ) : fstream = io_freopen 
-comment "See: man freopen. Returns fstream, or fstream(nil) on failure.";
-command fsize( filename:str ) : int = io_fsize 
+command fopen ( filename:str, mode:str ) :fstream = io_fopen 
+comment "See:man fopen. Returns fstream, or fstream(nil) on failure.";
+command freopen ( filename:str, mode:str, f:fstream ) :fstream = io_freopen 
+comment "See:man freopen. Returns fstream, or fstream(nil) on failure.";
+command fsize( filename:str ) :int = io_fsize 
 comment "Return the filesize, or -1 when there was some error";
-command ferror() : str = io_ferror 
+command ferror() :str = io_ferror 
 comment "returns last error message. str(nil) if none. ";
 
-command fclose( f:fstream ):void = io_fclose comment "See: man fclose";
-command fflush( f:fstream ):void = io_fflush comment "See: man fflush";
-command feof( f:fstream ) : bit = io_feof comment "See: man feof";
-command fread( filep:fstream, nbytes:int ) : blob = io_fread 
-comment "See: man fread";
+command fclose( f:fstream ):void = io_fclose comment "See:man fclose";
+command fflush( f:fstream ):void = io_fflush comment "See:man fflush";
+command feof( f:fstream ) :bit = io_feof comment "See: man feof";
+command fread( filep:fstream, nbytes:int ) :blob = io_fread 
+comment "See:man fread";
 command fwrite( filep:fstream, buf:str, nbytes:int ):void = io_fwrite_str 
-comment "See: man fwrite";
+comment "See:man fwrite";
 command fwrite( filep:fstream, buf:blob, nbytes:int ):void = io_fwrite 
-comment "See: man fwrite";
-command fseek( filep:fstream, pos:int, offset:int ) : int = io_fseek 
-comment "See: man fseek";
-command ftell( filep:fstream ) : int = io_ftell 
-comment "See: man ftell";
+comment "See:man fwrite";
+command fseek( filep:fstream, pos:int, offset:int ) :int = io_fseek 
+comment "See:man fseek";
+command ftell( filep:fstream ) :int = io_ftell 
+comment "See:man ftell";
 
-command fputs( s:str, filep:fstream):void = io_fputs comment "See: man fputs";
-command fgets( filep:fstream ): str = io_fgets comment "See: man fgets";
+command fputs( s:str, filep:fstream):void = io_fputs comment "See:man fputs";
+command fgets( filep:fstream ):str = io_fgets comment "See: man fgets";
 
-command fputc( c:int, filep:fstream ):void = io_fputc comment "See: man fputs";
-command fgetc( filep:fstream ): chr = io_fgetc comment "See: man fgetc";
+command fputc( c:int, filep:fstream ):void = io_fputc comment "See:man fputs";
+command fgetc( filep:fstream ):chr = io_fgetc comment "See: man fgetc";
 
 @+ Printing 
 The polymorphic print commands are collected here.
@@ -130,28 +130,28 @@ Watch out, the order of definitions is crucial, because the most
 specific should be introduced last.
 @mal
 
-pattern print(b1:bat[ANY::1,ANY], b2:bat[ANY::1,ANY]...):int = CMDtable
+pattern print(b1:bat[any$1,any], b2:bat[any$1,any]...):int = CMDtable
  comment "BATs are printed with '#' for legend lines, and the BUNs on seperate
  lines between brackets, containing each to comma separated values
  (head and tail).
  If multiple BATs are passed for printing, print() performs an implicit
  natural join, producing a multiattribute table.";
 
-pattern ftable( filep:fstream, b1:bat[any::1,any], b:BAT[any::1,any]... ):int
+pattern ftable( filep:fstream, b1:bat[any$1,any], b:bat[any$1,any]... ):int
 = CMDftable comment "Print an n-ary table to a file.";
 
-pattern print(order:int,b:bat[ANY::1,ANY], b2:bat[ANY::1,ANY]...):int
+pattern print(order:int,b:bat[any$1,any], b2:bat[any$1,any]...):int
                                                 = CMDotable
  comment "The same as normal table print, but enforces to use the order of
   BAT number [1..argc] to do the printing.";
 
-pattern table(b1:bat[any::1,any], b2:bat[any::1,any]...):int = CMDttable
+pattern table(b1:bat[any$1,any], b2:bat[any$1,any]...):int = CMDttable
 	comment "Print an n-ary table. Like print(n-ary) but does not print oid column";
 
-pattern table(order:int, b1:bat[any::1,any], b2:bat[any::1,any]...):int 
+pattern table(order:int, b1:bat[any$1,any], b2:bat[any$1,any]...):int 
 	= CMDtotable
 	comment "Print an n-ary table. Use the ordering of param [1..argc]";
-pattern ftable(fp:fstream, order:int,b1:bat[any::1,any], b:BAT[any::1,any]...)
+pattern ftable(fp:fstream, order:int,b1:bat[any$1,any], b:bat[any$1,any]...)
 	= CMDfotable 
 comment "Print an n-ary table to a file, using order of BAT [1..argc].";
 
@@ -167,7 +167,7 @@ pattern fprint( filep:fstream , arg:any... ):void = io_fprint
 comment "Print a (comma seperated) list of arguments";
 
 pattern fprintf( filep:fstream, format:str, arg:any... ):void = io_fprintf 
-comment "See: man fprintf";
+comment "See:man fprintf";
 
 
 @- MIL initializations 
@@ -334,7 +334,7 @@ str io_fwrite(int *ret, fstream *filepp, blob **b, int *nbytes ){
    fileCheck(fp);
    if (n> (**b).nitems) {
 	n = MAX(0,(**b).nitems);
-	GDKerror("io_fwrite: blob contains only %d bytes.\n", (**b).nitems);
+	GDKerror("io_fwrite:blob contains only %d bytes.\n", (**b).nitems);
    }
    if (fwrite(buf+sizeof(int),1,n,fp) < (size_t) n) {
       return throwMessage("io.fwrite"," failed");
@@ -404,7 +404,7 @@ int io_fprintf(fstream *filepp, str format,  ...){
 
 str io_fprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb;(void) stk; (void)pci; /* fool compiler */
-	GDKwarning("io_fprint: not defined in version-5\n");
+	GDKwarning("io_fprint:not defined in version-5\n");
         return MAL_SUCCEED;
 }
 /*

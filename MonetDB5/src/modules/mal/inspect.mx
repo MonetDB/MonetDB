@@ -60,7 +60,7 @@ Each module forms a separately named scope. Scopes visible to a user
 are relevant for resolving function names.
 
 @mal
-command getModules() : bat[void,str] = INSPECTmoduleNames
+command getModules() :bat[void,str] = INSPECTmoduleNames
         comment "Collect bat with all modules loaded" ;
 
 command getPatterns():bat[str,str] = INSPECTpatternNames
@@ -84,15 +84,15 @@ comment "Returns the signature(s) of a function";
 
 command getType(mod:str,fcn:str):bat[str,str] = INSPECTsymbolType
 comment "Get the return type of a particular function";
-pattern getType(v:any) : int = INSPECTtype
+pattern getType(v:any) :int = INSPECTtype
 comment "Return the type of a variable (expression)";
-command getTypeName(v:int): str = INSPECTtypename;
+command getTypeName(v:int):str = INSPECTtypename;
 
 
 command getAtoms():bat[int,str] = INSPECTatom_names
 comment "Collect a BAT with the atom names";
 
-command getClients( ): bat[int,str] = INSPECTclients
+command getClients( ):bat[int,str] = INSPECTclients
         comment "Pseudo bat to map client identifiers to their name";
 @- Display code
 A key tool for analysis of the MAL code is being able to dump

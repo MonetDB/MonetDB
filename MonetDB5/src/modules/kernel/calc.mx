@@ -92,7 +92,7 @@ A heuristic is to organize the routines along the types
 (int,lng,sht,bit,oid,flt,...) to reduce number of checks
 at function resoluton.
 @= mal_isnil
-	command isnil(v:@1) : bit = CALCisnil_@1
+	command isnil(v:@1) :bit = CALCisnil_@1
 	comment "is a value nil?";
 @-
 [Mx bug, space required here]
@@ -122,17 +122,17 @@ A heuristic is to organize the routines along the types
 at function resoluton. The least interesting one is pushed
 first onto the symbol table stack.
 Default case excluded for the time being
-        @:mal_comp_ops(any::1,any)@
+        @:mal_comp_ops(any$1,any)@
 @= mal_eq_ops
-	command ==(left:@1, right:@2) : bit = CALCcompEQ@1@2;
-	command !=(left:@1, right:@2) : bit = CALCcompNEQ@1@2;
+	command ==(left:@1, right:@2) :bit = CALCcompEQ@1@2;
+	command !=(left:@1, right:@2) :bit = CALCcompNEQ@1@2;
 @= mal_comp_ops
 	@:mal_eq_ops(@1,@2)@
-	command <(left:@1, right:@2) : bit = CALCcompLT@1@2;
-	command <=(left:@1, right:@2) : bit = CALCcompLE@1@2;
-	command >=(left:@1, right:@2) : bit = CALCcompGE@1@2;
-	command >(left:@1, right:@2) : bit = CALCcompGT@1@2;
-	command between(val:@1, low:@1, high:@1) : bit = CALCcompBetween@1;
+	command <(left:@1, right:@2) :bit = CALCcompLT@1@2;
+	command <=(left:@1, right:@2) :bit = CALCcompLE@1@2;
+	command >=(left:@1, right:@2) :bit = CALCcompGE@1@2;
+	command >(left:@1, right:@2) :bit = CALCcompGT@1@2;
+	command between(val:@1, low:@1, high:@1) :bit = CALCcompBetween@1;
 @mal
 
         @:mal_comp_ops(oid,oid)@
@@ -173,18 +173,18 @@ The {\tt mel\_calc\_ops} Mx macro implements the mel interface to the
 arithmetic operations.  The macro expects three parameters, two input
 atomic types and a result type. 
 @mal
-	command %(left:chr, right:int) : int = CALCbinaryMODchrint;
-	command %(left:sht, right:int) : int = CALCbinaryMODshtint;
-	command %(left:int, right:int) : int = CALCbinaryMODintint;
-	command %(left:lng, right:int) : int = CALCbinaryMODlngint;
-	command %(left:lng, right:lng) : lng = CALCbinaryMODlnglng;
-	command %(left:int, right:chr) : chr = CALCbinaryMODintchr;
-	command %(left:int, right:sht) : sht = CALCbinaryMODintsht;
+	command %(left:chr, right:int) :int = CALCbinaryMODchrint;
+	command %(left:sht, right:int) :int = CALCbinaryMODshtint;
+	command %(left:int, right:int) :int = CALCbinaryMODintint;
+	command %(left:lng, right:int) :int = CALCbinaryMODlngint;
+	command %(left:lng, right:lng) :lng = CALCbinaryMODlnglng;
+	command %(left:int, right:chr) :chr = CALCbinaryMODintchr;
+	command %(left:int, right:sht) :sht = CALCbinaryMODintsht;
 @= mal_calc_ops
-	command +(left:@1, right:@2) : @3 = CALCbinaryADD@1@2; 
-	command -(left:@1, right:@2) : @3 = CALCbinarySUB@1@2;
-	command *(left:@1, right:@2) : @3 = CALCbinaryMUL@1@2;
-	command /(left:@1, right:@2) : @3 = CALCbinarycheckDIV@1@2;
+	command +(left:@1, right:@2) :@3 = CALCbinaryADD@1@2; 
+	command -(left:@1, right:@2) :@3 = CALCbinarySUB@1@2;
+	command *(left:@1, right:@2) :@3 = CALCbinaryMUL@1@2;
+	command /(left:@1, right:@2) :@3 = CALCbinarycheckDIV@1@2;
 @-
 The coercions described below ensure that there is never any information loss.
 @mal
@@ -235,8 +235,8 @@ The coercions described below ensure that there is never any information loss.
 
 @- binary  operations { max, min, }
 @= mal_binary_ops
-   	command max(l:@1, r:@1) : @1 = CALCbinaryMAX@2; 
-   	command min(l:@1, r:@1) : @1 = CALCbinaryMIN@2;
+   	command max(l:@1, r:@1) :@1 = CALCbinaryMAX@2; 
+   	command min(l:@1, r:@1) :@1 = CALCbinaryMIN@2;
 @-
 @mal
 	@:mal_binary_ops(chr,chr)@
@@ -250,9 +250,9 @@ The coercions described below ensure that there is never any information loss.
 @- unary operations { abs, inv }
 The unary operators include coercion routines for built-in types
 @= mal_unary_ops
-   	command abs(x:@1) : @1 = CALCunary@1ABS comment "absolute value";
-   	command inv(x:@1) : @1 = CALCunarycheck@1INV comment "inverse value (1/x)";
-   	command -(x:@1) : @1 = CALCunary@1NEG comment "negative value";
+   	command abs(x:@1) :@1 = CALCunary@1ABS comment "absolute value";
+   	command inv(x:@1)  @1 = CALCunarycheck@1INV comment "inverse value (1/x)";
+   	command -(x:@1) :@1 = CALCunary@1NEG comment "negative value";
 @-
 @mal
 	@:mal_unary_ops(dbl)@
@@ -265,7 +265,7 @@ The unary operators include coercion routines for built-in types
 @-
 Coercion functions are typical used in multiplex calls.
 @= mal_coercion
-   	command @1(x:@2): @1 = CALC@22@1 comment "coercion @2 to @1";
+   	command @1(x:@2):@1 = CALC@22@1 comment "coercion @2 to @1";
 @= scalar_coercion
 	@:mal_coercion(@1,oid)@
 	@:mal_coercion(@1,bit)@
@@ -318,22 +318,22 @@ Coercion functions are typical used in multiplex calls.
 
 @- boolean { or, xor, and, not }
 @mal
-	command or(left:bit, right:bit) : bit = CALCbinaryORbit;
-	command and(left:bit, right:bit) : bit = CALCbinaryANDbit;
-	command xor(left:bit, right:bit) : bit = CALCbinaryXORbit;
-	command not(left:bit) : bit = CALCunarybitNOT ;
-	command ifthenelse(b:bit, t:any::1, f:any::1) : any::1 = CALCswitchbit;
+	command or(left:bit, right:bit) :bit = CALCbinaryORbit;
+	command and(left:bit, right:bit) :bit = CALCbinaryANDbit;
+	command xor(left:bit, right:bit) :bit = CALCbinaryXORbit;
+	command not(left:bit) :bit = CALCunarybitNOT ;
+	command ifthenelse(b:bit, t:any$1, f:any$1) :any$1 = CALCswitchbit;
 
 @- bitwise operations
 Cardinal numerical types (inclusing {\tt chr} can be regarded as a bit
 array. Specific operations work with this interpretation.
 @= mal_bitwise_ops
-	command or(left:@1, right:@1) : @1 = CALCbinaryOR@1@1;
-	command and(left:@1, right:@1) : @1 = CALCbinaryAND@1@1;
-	command xor(left:@1, right:@1) : @1 = CALCbinaryXOR@1@1;
-	command not(left:@1) : @1 = CALCunary@1NOT;
-	command <<(left:@1,right:int) : @1 = CALCbinaryLSH@1int;
-	command >>(left:@1, right:int) : @1 = CALCbinaryRSH@1int;
+	command or(left:@1, right:@1) :@1 = CALCbinaryOR@1@1;
+	command and(left:@1, right:@1) :@1 = CALCbinaryAND@1@1;
+	command xor(left:@1, right:@1) :@1 = CALCbinaryXOR@1@1;
+	command not(left:@1) :@1 = CALCunary@1NOT;
+	command <<(left:@1,right:int) :@1 = CALCbinaryLSH@1int;
+	command >>(left:@1, right:int) :@1 = CALCbinaryRSH@1int;
 @mal
 	@:mal_bitwise_ops(chr)@
 	@:mal_bitwise_ops(sht)@
@@ -342,7 +342,7 @@ array. Specific operations work with this interpretation.
 
 @- random numbers
 @mal
-	command rand () : int = CALCrandint
+	command rand () :int = CALCrandint
 	comment "return a random number";
 	command srand(seed:int) :void = CALCsrandint
 	comment "initialize the rand() function with a seed";
@@ -354,7 +354,7 @@ Those accessible at the MAL command level are introduced below.
 @= convertCmd
 command @1(v:str):@1 = CALCstr2@1;
 command str(v:@1):str = CALC@12str;
-command @1(v:void) : @1 = CALCnil2@1;
+command @1(v:void) :@1 = CALCnil2@1;
 
 @mal
 @:convertCmd(oid)@
@@ -383,18 +383,18 @@ This is a noop operation that should ideally be filtered out with
 the code squeezer. [TODO]
 @+ OID utility functions
 @mal
-command newoid() : oid = CALCnewoidBase
+command newoid() :oid = CALCnewoidBase
 comment "Generate a new oid. Equivalent to newoid(0,1)";
 
-command newoid(incr:int) : oid = CALCnewoidInc
+command newoid(incr:int) :oid = CALCnewoidInc
 comment "Reserves a range of consecutive unique OIDs; returns the 
 lowest in range. equivalent to newoid(0,incr)";
 
-command setoid(base:oid) : oid = CALCsetoidInc
+command setoid(base:oid) :oid = CALCsetoidInc
 comment "Sets the oid range of consecutive unique OIDs; returns the 
 lowest in range.";
 
-command setoid() : oid = CALCsetoidBase
+command setoid() :oid = CALCsetoidBase
 comment "Equivalent to setoid(1:oid).";
 
 @+ Example script 

@@ -48,10 +48,10 @@ command setScenario(msg:str):str = CLTsetScenario
 command clearDebug(flg:int):void= CLTclearDebug
 	comment "Clear the flag in the debugging bitset";
 
-command login( ): bat[int,str] = CLTLogin
+command login( ):bat[int,str] = CLTLogin
 	comment "Pseudo bat to map client identifiers to their login time";
 
-command info( ): bat[int,str] = CLTInfo
+command info( ):bat[int,str] = CLTInfo
 	comment "Pseudo bat with client attributes ";
 @+ Monet client data
 Portions of the client record can be directly obtained for

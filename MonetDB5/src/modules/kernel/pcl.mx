@@ -64,22 +64,22 @@ later add low level api
 @mal
 module pcl;
 
-command start(events:BAT[int,any],  mode:int) = CMDpclstart
+command start(events:bat[int,any],  mode:int) = CMDpclstart
   comment "start counting the given events";
 
-command stop(events:BAT[int,any] ) : BAT[int,lng] = CMDpclstop
+command stop(events:bat[int,any] ) : bat[int,lng] = CMDpclstop
   comment "stop counting and return the counts for the given events.";
 
-command start_rates(rates:BAT[int,any] , mode:int) = CMDpclstart_rates
+command start_rates(rates:bat[int,any] , mode:int) = CMDpclstart_rates
   comment "start counting the events needed for the given rates";
 
-command stop_rates(rates:BAT[int,any] ) : BAT[int,dbl] = CMDpclstop_rates
+command stop_rates(rates:bat[int,any] ) : bat[int,dbl] = CMDpclstop_rates
   comment "stop event counters and return the requested rates.";
 
-command query(events:BAT[int,any] , mode:int ) : BAT[int,int] = CMDpclquery
+command query(events:bat[int,any] , mode:int ) : bat[int,int] = CMDpclquery
   comment "query for existing events";
 
-command try(events:BAT[int,any] , mode:int ) : bit = CMDpcltry
+command try(events:bat[int,any] , mode:int ) :bit = CMDpcltry
   comment "try wheter the events could be started together on this CPU";
 
 command init():void = CMDpclinit;
@@ -458,7 +458,7 @@ int pcl_try(bit *result, BAT *event, int *mode){
 
 @mil
 
-PROC test_pcl() : void := {
+PROC test_pcl() :void := {
   names := bat(str,void);
   names.insert("PCL_L1CACHE_MISS",  nil);
   names.insert("PCL_L1DCACHE_MISS", nil);

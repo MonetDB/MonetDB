@@ -60,15 +60,15 @@ The BATs created below are rather expensive views over the
 GDK kernel. They have been retained for backward compatibility.
 
 @mal
-command cpuStatistics() : bat[str,int] = SYScpuStatistics
+command cpuStatistics() :bat[str,int] = SYScpuStatistics
 	comment "Global cpu usage information";
-command memStatistics(): bat[str,int] = SYSmemStatistics
+command memStatistics():bat[str,int] = SYSmemStatistics
 	comment "Global memory usage information";
-command ioStatistics(): bat[str,int] = SYSioStatistics
+command ioStatistics():bat[str,int] = SYSioStatistics
 	comment "Global IO activity information";
-command bbpStatistics(): bat[str,int] = SYSbbpStatistics
+command bbpStatistics():bat[str,int] = SYSbbpStatistics
 	comment "Global BBP usage information";
-command memMap() : void = SYSmemMap
+command memMap() :void = SYSmemMap
         comment "print a map of all memory that is in use";
 @-
 @T
@@ -91,9 +91,9 @@ If you want to see all your memory in the map, lower the gdk\_mmap threshold in 
 low value (say 64KB).
 @-
 @mal
-command vmUsage(minsize:lng) : bat[str,lng] = SYSvm_usage
+command vmUsage(minsize:lng) :bat[str,lng] = SYSvm_usage
         comment "Get a split-up of how much virtual memory blocks are in use.";
-command memUsage(minsize:lng) : bat[str,lng] = SYSmem_usage
+command memUsage(minsize:lng) :bat[str,lng] = SYSmem_usage
         comment "Get a split-up of how much memory blocks are in use.";
 @-
 @T
@@ -135,22 +135,22 @@ Some explanation of what mem_usage() and vm_usage() display:
 \end{verbatim}
 @- MAL runtime status 
 @mal
-command gdkEnv( ): bat[str,str] = SYSgdkEnv
+command gdkEnv( ):bat[str,str] = SYSgdkEnv
 	comment "Pseudo bat to map thread to name";
-command gdkThread( ): bat[int,str] = SYSgdkThread
+command gdkThread( ):bat[int,str] = SYSgdkThread
 	comment "Pseudo bat to map thread to name";
 
-command mem_cursize() : lng = SYSgetmem_cursize
+command mem_cursize() :lng = SYSgetmem_cursize
  	comment "the amount of physical swapspace in KB that is currently in use";
-command mem_maxsize() : lng = SYSgetmem_maxsize
+command mem_maxsize() :lng = SYSgetmem_maxsize
  	comment "the maximum usable amount of physical swapspace in KB (target only)";
-command mem_maxsize(v:lng) : void = set_mem_maxsize
+command mem_maxsize(v:lng) :void = set_mem_maxsize
  	comment "set the maximum usable amount of physical swapspace in KB";
-command vm_cursize() : lng = SYSgetvm_cursize
+command vm_cursize() :lng = SYSgetvm_cursize
  	comment "the amount of logical VM space in KB that is currently in use";
-command vm_maxsize() : lng = SYSgetvm_maxsize
+command vm_maxsize() :lng = SYSgetvm_maxsize
  	comment "the maximum usable amount of logical VM space in KB (target only)";
-command vm_maxsize(v:lng) : void = SYSsetvm_maxsize
+command vm_maxsize(v:lng) :void = SYSsetvm_maxsize
  	comment "set the maximum usable amount of physical swapspace in KB";
 @- Printing 
 The routines that inspect the runtime setting are moved out of this area.

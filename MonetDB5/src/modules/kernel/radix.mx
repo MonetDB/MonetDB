@@ -270,7 +270,7 @@ when an OID-column is joined with a VOID column. A VOID column is a column that 
 a sequence of densely ascending OIDs: 1@0, 2@0, 3@0, ..., N@0. In its implementation,
 Monet does not materialize suchOID sequences, hence the type-name "void". It is easy to lookup
 a value in a VOID column, as the value you look up (e.g. 3@0) already tells its position (=3).
-The positional join algorithms joins an outer BAT[any,oid] with an inner BAT[void,any]
+The positional join algorithms joins an outer bat[any,oid] with an inner bat[void,any]
 by scanning over the inner-BAT and performing positional lookup into the outer BAT.
 
 In a typical data warehouse, the join at line 03 would be positional if the "key" 
@@ -424,16 +424,16 @@ after line 05:
 ..
 \end{verbatim}
 However, this approach of the problem only transfers the problem to later phases of query processing. 
-The positional joins would run fine, but as a tail-sorted res\_smaller would be a BAT[oid,oid] (i.e.
+The positional joins would run fine, but as a tail-sorted res\_smaller would be a bat[oid,oid] (i.e.
 it would no longer have a VOID head column), the result of the positional joins with the smaller\_aX 
-BAT[void,T]s would be of the form BAT[oid,T]. These results would not only take more space than the 
-desired form BAT[void,T], but would also create a problem in further use of the query result, as these 
+bat[void,T]s would be of the form bat[oid,T]. These results would not only take more space than the 
+desired form bat[void,T], but would also create a problem in further use of the query result, as these 
 res\_aX BATs will not be sorted on head. Join access to them would go to the hash-join rather than the 
 positional join, and due to the random acccess this would pose a memory caching problem as these 
 res\_aX BATs tend to be larger than the memory cache. 
 
 Therefore, for these projection joins, we propose the use of a new memory-conscious join algorithm that is 
-called {\em clustered positional join} which implements a join(BAT[void,oid] L, BAT[void,T] R) : BAT[void,T]
+called {\em clustered positional join} which implements a join(bat[void,oid] L, bat[void,T] R) : bat[void,T]
 
 This algorithm consists of three phases, of which we already know the first two:
 \begin{description}
@@ -443,7 +443,7 @@ the positional joins to the column BATs smaller\_aX) is clustered on some number
 radix-bits, but not on all radix-bits. Because the radix-cluster on OIDs does not use a hash-function,
 clustering an OID column on all significant bits radix-sorts it, or - as in this case - on a subset of the
 highest significant bits, partially orders it. The partial ordering of OIDs in chunks is done in such a way that the
-size of the corresponding chunk in R (remember R is a BAT[void,T] and has all OIDs in a densely ascending sequence) fits
+size of the corresponding chunk in R (remember R is a bat[void,T] and has all OIDs in a densely ascending sequence) fits
 the memory cache.
 \item[positional join]
 The purpose of the radix-clustering in the previous phase L is to accelerate the positional join between L and R
@@ -452,18 +452,18 @@ will only randomly access data from one chunk in R.  Therfore, during positional
 memory resident, accelerating performance wrt to doing the same with a non-clustered L (where each access to
 R would be a cache miss). 
 \item[radix decluster]
-The result of the positional join is a BAT[oid,T]. Still, we know that the head column, when sorted, would
+The result of the positional join is a bat[oid,T]. Still, we know that the head column, when sorted, would
 form an void column. What is now the fastest way to sort it and convert it back to a void BAT? One special property 
 of the radix-cluster algorithm is that when we cluster on tail column, each result chunk will have the head-values 
 in order. In this case, the clustered version of L (res\_smaller\_clustered, see below) has the head OIDs in order {\em within the 
 chunk}. This sub-ordering is also carried over by the positional join to result of the positional join: in each 
-'virtual chunk' in the BAT[oid,T], the OIDs appear in order. Therefore, we can perform an merge operation to merge
-all BAT[oid,T] chunks into a BAT[void,T] result. Normally, the cost of a merge is at least O(log(P)*N), where N
+'virtual chunk' in the bat[oid,T], the OIDs appear in order. Therefore, we can perform an merge operation to merge
+all bat[oid,T] chunks into a bat[void,T] result. Normally, the cost of a merge is at least O(log(P)*N), where N
 is the total number of tuples, and P is the number of chunks. By using the special property that eventually, 
 the merged OIDs form a densely ascending sequence (0@0, 1@0,..,N@0), we can bring this cost back to O(N)! This {\em radix decluster}
 algorithm keeps a windows open of OIDs [windowStart, windowStart+1, ..., windowStart+windowSize-1] during the
 merge. Each iteration of the algorithm finds all the next windowSize OIDs in the chunks and inserts them 
-in the result BAT[void,T]. This is done by going to through all (not yet empty) chunks and inserting from the top of 
+in the result bat[void,T]. This is done by going to through all (not yet empty) chunks and inserting from the top of 
 each chunk all elements whose OID fits into the window. Due to the fact that all chunks are sorted, we are
 sure to have found all OIDs after having processed all chunks. Then, the window is shifted windowSize positions
 and the process repeats. The windowSize is typically a multiple of the number of chunks, such that per iteration 
@@ -541,7 +541,7 @@ which closely mimicks what happens in a typical relational DBMS.
 
 In order to give a concrete example, we suppose "smaller" and "larger" each have 128 columns, and 
 the projection widths are Y=Z=8; we emulate relational storage of both tables in Monet by storing 
-them as BAT[integer128,integer], where the tail columns contain the "key" value and the head contains 
+them as bat[integer128,integer], where the tail columns contain the "key" value and the head contains 
 all other columns.  
 
 The entire MIL sequence are then the following 5 statements:
@@ -584,17 +584,17 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 @mal
 module radix;
 
-comand cluster(b:bat[any::1,any::2], limits:str, perc:flt, radix1:int...) :
-		bat[any::1,any::2] = radix_cluster
+comand cluster(b:bat[any$1,any$2], limits:str, perc:flt, radix1:int...) :
+		bat[any$1,any$2] = radix_cluster
 comment "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) 
  clusters.  partial radix cluster (i.e. skipping lower significant bits) 
  can be indicated by pasing a negative number of bits as last parameter. ";
 
-command bits(b:bat[any,any]) : int = radix_bits
+command bits(b:bat[any,any]) :int = radix_bits
 comment "return the number of bits on which the head column 
  is radix clustered.";
 
-command count(b:bat[oid,oid],shift:int, radix:int) : bat[int,int] = radix_count
+command count(b:bat[oid,oid],shift:int, radix:int) :bat[int,int] = radix_count
 comment "return a histogram [radix-pattern,bucket-size] for the tail values 
  of some BAT b.  the first int holds the number of radix bits, the second 
  how many lower bits to ignore. Notice that the bat b maybe partially 
@@ -602,22 +602,22 @@ comment "return a histogram [radix-pattern,bucket-size] for the tail values
  consecutive chunks where (1) the tail values have the same specified
  radix-bits and (2) the head values are ascending";
 
-command decluster(b:bat[oid,any::1], radix_cnt:bat[int,int], multiplier:int) : 
-         bat[void,any::1] = radix_decluster
+command decluster(b:bat[oid,any$1], radix_cnt:bat[int,int], multiplier:int) : 
+         bat[void,any$1] = radix_decluster
 comment "merge a (partially) radix-clustered dense collection of oids 
  back to their original void position.  second bat *must* be result 
  of b.radix_count(x,y). Third parameter is a multiplier that tells how 
  many times the number of chunks the matching-window-size should be.";
 
-command decluster2(b:bat[any::2,oid], a:bat[any::2,any::1], 
-	radix_cnt:bat[int,int], multiplier:int) : bat[void,any::1] 
+command decluster2(b:bat[any$2,oid], a:bat[any$2,any$1], 
+	radix_cnt:bat[int,int], multiplier:int) :bat[void,any$1] 
 	= radix_decluster2 comment "";
 
-command radix_join(l:bat[any::1,any::2], r:bat[any::2,any::3], radix:int, 
-	hitrate:int) : bat[any::1,any::3] = radix_join
+command radix_join(l:bat[any$1,any$2], r:bat[any$2,any$3], radix:int, 
+	hitrate:int) :bat[any$1,any$3] = radix_join
 comment "nested-loop join on radix clustered inputs";
 
-command phash_join(l:bat[any::1,any::2], r:bat[any::2,any::3], radix:int, hitrate:int, cutoff:bit) : bat[any::1,any::3] = phash_join
+command phash_join(l:bat[any$1,any$2], r:bat[any$2,any$3], radix:int, hitrate:int, cutoff:bit) :bat[any$1,any$3] = phash_join
 comment "partitioned hash-join on radix clustered inputs";
 
 @= integer
@@ -639,49 +639,49 @@ comment "partitioned hash-join on radix clustered inputs";
 @:integer(integer256,1024)@
 
 @mal
-command uniform(base:oid, size:int, domain:int) : bat[oid,int] = BATuniform
+command uniform(base:oid, size:int, domain:int) :bat[oid,int] = BATuniform
 comment "create a random bat of certain size, head values unique, tail values
  perfect uniform from a certain domain (domain>size => unique tails).";
 
-command normal(base:oid, size:int, domain:int, stddev:int, mean:int) : bat[oid,int] = BATnormal
+command normal(base:oid, size:int, domain:int, stddev:int, mean:int) :bat[oid,int] = BATnormal
 comment "create a random bat of certain size, head values unique, tail values
  from a normal distribution between [0..domain].
  default values: base = 0@0, mean = size/2, stddev = size/10, domain=size.";
 
-command integer(b:BAT[any::1,any], width:int) : BAT[any::1,any] = BATinteger
+command integer(b:bat[any$1,any], width:int) : bat[any$1,any] = BATinteger
 comment "create a view that makes tail column appear as an integerX column for some width=X";
 @-
 OLD stuff
 .LOAD
 
-proc uniform(int s, int d) : bat[oid,int] := return uniform(0@0,s,d); 
-proc uniform(int s) : bat[oid,int] := return uniform(s,s); 
-proc normal(int s, int d, int v, int m) : bat[oid,int] := return normal(0@0,s,d,v,m); 
-proc normal(oid base, int s, int d, int v) : bat[oid,int] := return normal(base,s,d,v,d/2); 
-proc normal(int s, int d, int v) : bat[oid,int] := return normal(0@0,s,d,v); 
-proc normal(oid base, int s, int d) : bat[oid,int] := return normal(0@0,s,d,d/10); 
-proc normal(int s, int d) : bat[oid,int] := return normal(0@0,s,d); 
-proc normal(int s) : bat[oid,int] := return normal(s,s); 
-proc radix_cluster(bat[any::1,any::2] b, int radix1, ..int..) : 
-	bat[any::1,any::2] := return radix_cluster(b, "tmp_0", 1.0, $(2..)); 
-proc radix_cluster(bat[any::1,any::2] b, str limits, int radix1, ..int..) : 
-	bat[any::1,any::2] := return radix_cluster(b, limits, 1.0, $(3..)); 
-proc radix_cluster(bat[any::1,any::2] b, flt perc, int radix1, ..int..) : 
-	bat[any::1,any::2] := return radix_cluster(b, "tmp_0", perc, $(3..)); 
-proc radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
+proc uniform(int s, int d) :bat[oid,int] := return uniform(0@0,s,d); 
+proc uniform(int s) :bat[oid,int] := return uniform(s,s); 
+proc normal(int s, int d, int v, int m) :bat[oid,int] := return normal(0@0,s,d,v,m); 
+proc normal(oid base, int s, int d, int v) :bat[oid,int] := return normal(base,s,d,v,d/2); 
+proc normal(int s, int d, int v) :bat[oid,int] := return normal(0@0,s,d,v); 
+proc normal(oid base, int s, int d) :bat[oid,int] := return normal(0@0,s,d,d/10); 
+proc normal(int s, int d) :bat[oid,int] := return normal(0@0,s,d); 
+proc normal(int s) :bat[oid,int] := return normal(s,s); 
+proc radix_cluster(bat[any$1,any$2] b, int radix1, ..int..) : 
+	bat[any$1,any$2] := return radix_cluster(b, "tmp_0", 1.0, $(2..)); 
+proc radix_cluster(bat[any$1,any$2] b, str limits, int radix1, ..int..) : 
+	bat[any$1,any$2] := return radix_cluster(b, limits, 1.0, $(3..)); 
+proc radix_cluster(bat[any$1,any$2] b, flt perc, int radix1, ..int..) : 
+	bat[any$1,any$2] := return radix_cluster(b, "tmp_0", perc, $(3..)); 
+proc radix_join(bat[any$1,any$2] l, bat[any$2,any$3] r) :bat[any$1,any$3]
 	return radix_join(l,r, min(l.reverse.radix_bits, r.radix_bits), 1);
-proc radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int b) : bat[any::1,any::3]
+proc radix_join(bat[any$1,any$2] l, bat[any$2,any$3] r, int b) :bat[any$1,any$3]
 	return radix_join(l,r, b, 1);
-proc phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
+proc phash_join(bat[any$1,any$2] l, bat[any$2,any$3] r) :bat[any$1,any$3]
 	return phash_join(l,r, min(l.reverse.radix_bits, r.radix_bits), 1, r.key);
-proc radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt) : bat[void,any::1] 
+proc radix_decluster(bat[oid,any$1] b, bat[int,int] radix_cnt) :bat[void,any$1] 
 	return radix_decluster(b,radix_cnt,4);
-proc "[integer]"(bat[any::1,int] b) : bat[any::1,integer1]
+proc "[integer]"(bat[any$1,int] b) :bat[any$1,integer1]
         return [integer](b, 1);
 
-proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int nbits) : bat[any::1,any::3] return phash_join_new(l,r,nbits,1,false);
+proc phash_join_new(bat[any$1,any$2] l, bat[any$2,any$3] r, int nbits) :bat[any$1,any$3] return phash_join_new(l,r,nbits,1,false);
 
-proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) : bat[any::1,any::3] return phash_join(l, r, radix, hitrate, cutoff);
+proc phash_join_new(bat[any$1,any$2] l, bat[any$2,any$3] r, int radix, int hitrate, bit cutoff) :bat[any$1,any$3] return phash_join(l, r, radix, hitrate, cutoff);
  
 @-
 Test stuff

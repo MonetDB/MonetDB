@@ -33,11 +33,11 @@ as already present in the Monet system.
 @mal
 atom module lock:ptr;
 
-command create() : lock = LCKcreate
+command create() :lock = LCKcreate
 	comment "Create an unset lock";
 command set(l:lock) = LCKset
 	comment "Try to set a lock; if set, block till it is freed";
-command try(l:lock) : int = LCKtry
+command try(l:lock) :int = LCKtry
 	comment "Try a lock, if free set it, if not return EBUSY";
 command unset(l:lock) = LCKunset
 	comment "Unset a lock";
@@ -50,11 +50,11 @@ command tostr(l:lock) = lockToStr
 @mal
 atom module sema:ptr;
 
-command create(init:int ) : sema = SEMAcreate
+command create(init:int ) :sema = SEMAcreate
 	comment "Create an unset sema, with an initial value";
 command down(s:sema) = SEMAdown
 	comment "Decrement the semaphpore if >0; else block";
-command try(s:sema) : int = SEMAtry
+command try(s:sema) :int = SEMAtry
 	comment "try the semaphpore";
 command up(s:sema) = SEMAup
 	comment "Increment the semaphore";

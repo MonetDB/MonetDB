@@ -29,29 +29,29 @@ data files. It encapsulates the corresponding library managed in
 .../stream.
 
 @mal
-atom stream : ptr;
+atom stream :ptr;
 
 module streams;
 
-command open_rstream( filename:str ) : stream = stream_open_rstream
+command open_rstream( filename:str ) :stream = stream_open_rstream
 	comment "open a file stream for reading";
-command open_wstream( filename:str ) : stream = stream_open_wstream
+command open_wstream( filename:str ) :stream = stream_open_wstream
 	comment "open a file stream for writing";
-command open_rastream( filename:str ) : stream = stream_open_rastream 
+command open_rastream( filename:str ) :stream = stream_open_rastream 
 	comment "open ascii file stream for reading";
-command open_wastream( filename:str ) : stream = stream_open_wastream 
+command open_wastream( filename:str ) :stream = stream_open_wastream 
 	comment "open ascii file stream for writing";
 
-command socket_rstream( socket:int, name:str ) : stream = stream_socket_rstream
+command socket_rstream( socket:int, name:str ) :stream = stream_socket_rstream
 	comment "open a socket stream for reading";
-command socket_wstream( socket:int, name:str ) : stream = stream_socket_wstream
+command socket_wstream( socket:int, name:str ) :stream = stream_socket_wstream
 	comment "open a socket stream for writing";
-command socket_rastream( socket:int, name:str ) : stream = stream_socket_rastream
+command socket_rastream( socket:int, name:str ) :stream = stream_socket_rastream
 	comment "open ascii socket stream for reading";
-command socket_wastream( socket:int, name:str ) : stream = stream_socket_wastream
+command socket_wastream( socket:int, name:str ) :stream = stream_socket_wastream
 	comment "open ascii socket stream for writing";
 
-command block_stream( s:stream ) : stream = open_block_stream
+command block_stream( s:stream ) :stream = open_block_stream
 	comment "open a block based stream";
 
 command writeStr( s:stream, data:str ):void = stream_write_string

@@ -35,10 +35,10 @@ Similar modules may be defined for Windows platforms.
 @mal
 module unix;
 
-command getenv(nme:str) : str = UNIXgetenv
+command getenv(nme:str) :str = UNIXgetenv
 comment "Get the environment variable string.";
 
-command setenv(nme:str,val:str,overwrite:int) : bit = UNIXsetenv
+command setenv(nme:str,val:str,overwrite:int) :bit = UNIXsetenv
 comment "Set the environment variable string.";
 
 @-

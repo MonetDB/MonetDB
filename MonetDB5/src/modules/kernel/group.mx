@@ -66,44 +66,44 @@ can be used as well; note for instance that histogram == \{count\}(b.reverse).
 @* Module Definition
 The Monet interface module specification is shown below.
 Ideally we should defined stronger type constraints, e.g.
-command group(attr:bat[{void,oid},any::1]
+command group(attr:bat[{void,oid},any$1]
 
 @mal
 module group;
 
-command group(b:BAT[any::1, any], start:int, incr:int, grpsize:int):BAT[any::1, int] = CTgroup0
+command group(b:bat[any$1, any], start:int, incr:int, grpsize:int):bat[any$1, int] = CTgroup0
 	comment "Produces a new BAT with identical head column, and in the tail 
 	column groups of equally valued integers within each group. Parameters: 
 	a start group value, group number increment, group size.";
 
 
-command group(attr:bat[any::2,any::1] ) 
-	:(histo:bat[any::1,int], grp:bat[any::2,oid]) = CTgroup
+command group(attr:bat[any$2,any$1] ) 
+	:(histo:bat[any$1,int], grp:bat[any$2,oid]) = CTgroup
 comment "Cross tabulation group initialization.
          Returned head values are identical as in 'attr'. Tail values are from
          the same domain and indicate unique groups in 'attr' tail column.";
-command group(attr:bat[any::2,any::1] ) 
-	:bat[any::2,oid] = CTgroup2
+command group(attr:bat[any$2,any$1] ) 
+	:bat[any$2,oid] = CTgroup2
  
-command group(attr:bat[any::2,any::1], N:int, rng:int) 
-	:(histo:bat[any::1,int],grp:bat[any::2,oid]) = CTgroup_custom 
+command group(attr:bat[any$2,any$1], N:int, rng:int) 
+	:(histo:bat[any$1,int],grp:bat[any$2,oid]) = CTgroup_custom 
 comment "Cross tabulation group initialization like CTgroup, but with user
          provided #bits in hashmask and #distinct values in range.";
  
-command group(ct:bat[any::2,any], attr:bat[any::2,any::1]) 
-	:(map:bat[any::1,oid],grp:bat[any::2,oid]) = CTderive 
+command group(ct:bat[any$2,any], attr:bat[any$2,any$1]) 
+	:(map:bat[any$1,oid],grp:bat[any$2,oid]) = CTderive 
 comment "Cross tabulation group extension step.
          Returned head values are identical as in 'ct'. Tail values are from
          the same domain and indicate further refinement of the groups in 'ct',
          taking into account also the tail-values in 'attr'.";
-command group(ct:bat[any::2,any], attr:bat[any::2,any::1]) 
-	:bat[any::2,oid] = CTderive2;
+command group(ct:bat[any$2,any], attr:bat[any$2,any$1]) 
+	:bat[any$2,oid] = CTderive2;
 
-command regroup(ct:bat[any::2,oid],attr:bat[any::2,any]) :
-	 bat[any::2,oid] = CTregroup
+command regroup(ct:bat[any$2,oid],attr:bat[any$2,any]) :
+	 bat[any$2,oid] = CTregroup
 comment "Performs a regrouping, modifying ct doing a group";
 
-command refine(b:bat[any::2,any], a:bat[any::2,any]) : bat[any::2,oid] = CTrefine 
+command refine(b:bat[any$2,any], a:bat[any$2,any]) :bat[any$2,oid] = CTrefine 
 comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
          values of a second bat 'a' (where the heads of a and b match 1-1).  
          The effect of this is similar to (hash-based) CTderive, with the 
@@ -112,8 +112,8 @@ comment "refine the ordering of a tail-ordered BAT by sub-ordering on the
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the CT by means of a histolink.
 oldstuff
-command subhisto(sel:BAT[void,bit], grp:BAT[void,oid], domain:BAT[oid,any]) 
-	: BAT[oid,int] = CTsubhisto
+command subhisto(sel:bat[void,bit], grp:bat[void,oid], domain:bat[oid,any]) 
+	:bat[oid,int] = CTsubhisto
 comment "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] 
          bats on a previously known domain ";
 
@@ -130,36 +130,36 @@ most value-based operators work on the tail, while counting groups
 is focussed on the head.
 @mal
 
-command sum(b:BAT[any::2,sht], e:BAT[any::2,any]) : BAT[any::2,sht] = CTsum_sht 
+command sum(b:bat[any$2,sht], e:bat[any$2,any]) :bat[any$2,sht] = CTsum_sht 
 	comment "grouped tail sum";
-command sum(b:BAT[any::2,int], e:BAT[any::2,any]) : BAT[any::2,int] = CTsum_int 
+command sum(b:bat[any$2,int], e:bat[any$2,any]) :bat[any$2,int] = CTsum_int 
 	comment "grouped tail sum";
-command sum(b:BAT[any::2,lng], e:BAT[any::2,any]) : BAT[any::2,lng] = CTsum_lng 
+command sum(b:bat[any$2,lng], e:bat[any$2,any]) :bat[any$2,lng] = CTsum_lng 
 	comment "grouped tail sum";
-command sum(b:BAT[any::2,flt], e:BAT[any::2,any]) : BAT[any::2,flt] = CTsum_flt 
+command sum(b:bat[any$2,flt], e:bat[any$2,any]) :bat[any$2,flt] = CTsum_flt 
 	comment "grouped tail sum";
-command sum(b:BAT[any::2,dbl], e:BAT[any::2,any]) : BAT[any::2,dbl] = CTsum_dbl 
+command sum(b:bat[any$2,dbl], e:bat[any$2,any]) :bat[any$2,dbl] = CTsum_dbl 
 	comment "grouped tail sum";
 
-command avg(b:BAT[any::2,sht], e:BAT[any::2,any]) : BAT[any::2,sht] = CTavg_sht 
+command avg(b:bat[any$2,sht], e:bat[any$2,any]) :bat[any$2,sht] = CTavg_sht 
 	comment "grouped tail average";
-command avg(b:BAT[any::2,int], e:BAT[any::2,any]) : BAT[any::2,int] = CTavg_int 
+command avg(b:bat[any$2,int], e:bat[any$2,any]) :bat[any$2,int] = CTavg_int 
 	comment "grouped tail average";
-command avg(b:BAT[any::2,lng], e:BAT[any::2,any]) : BAT[any::2,lng] = CTavg_lng 
+command avg(b:bat[any$2,lng], e:bat[any$2,any]) :bat[any$2,lng] = CTavg_lng 
 	comment "grouped tail average";
-command avg(b:BAT[any::2,flt], e:BAT[any::2,any]) : BAT[any::2,flt] = CTavg_flt 
+command avg(b:bat[any$2,flt], e:bat[any$2,any]) :bat[any$2,flt] = CTavg_flt 
 	comment "grouped tail average";
-command avg(b:BAT[int,dbl], e:BAT[int,any]) : BAT[int,dbl] = CTavg_dbl 
+command avg(b:bat[int,dbl], e:bat[int,any]) :bat[int,dbl] = CTavg_dbl 
 	comment "grouped tail average";
 
-command min(b:BAT[any::2,any::1], e:BAT[any::2,any]) : BAT[any::2,any::1] = CTmin 
+command min(b:bat[any$2,any$1], e:bat[any$2,any]) :bat[any$2,any$1] = CTmin 
 	comment "grouped tail minimum";
-command max(b:BAT[any::2,any::1], e:BAT[any::2,any]) : BAT[any::2,any::1] = CTmax 
+command max(b:bat[any$2,any$1], e:bat[any$2,any]) :bat[any$2,any$1] = CTmax 
 	comment "grouped tail maximum";
 
-command count(b:BAT[any::2,any], e:BAT[any::2,any], nonils:bit) : BAT[any::2,int] = CMDaggr_count 
+command count(b:bat[any$2,any], e:bat[any$2,any], nonils:bit) :bat[any$2,int] = CMDaggr_count 
 	comment "grouped count";
-command size(b:BAT[any::2,bit], e:BAT[any::2,any]) : BAT[any::2,int] = CTsize
+command size(b:bat[any$2,bit], e:bat[any$2,any]) :bat[any$2,int] = CTsize
 	comment "grouped count of true values";
 
 
@@ -167,25 +167,25 @@ command prelude()= groupPrelude;
 prelude();
 @-
 old stuff
-    proc size(BAT[any,bit] b) : int {
+    proc size(bat[any,bit] b) :int {
 	var h := b.histogram;
 	if (h.exist(true)) 
 	    return h.find(true);
 	return 0;
     }
 
-    proc avg(BAT[any, any::1] b) : any::1 {
+    proc avg(bat[any, any$1] b) :any$1 {
 	var cnt := count(b);
         if (cnt = 0) 
 	    return cast(0,ttype(b));
 	return /(sum(b),cast(cnt,ttype(b)));
     }
 
-    proc card(BAT[any,any] b) : int {
+    proc card(bat[any,any] b) :int {
 	return b.tunique.count;
     }
 
-    proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+    proc {card}(bat[oid,any] b, bat[oid,any] e) :bat[oid,int] {
 	return {count}(b.sunique,e);
     }
 
@@ -510,7 +510,7 @@ str CTgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	@:chkHeader(b,CTgroup)@
 	bn = BATnew(b->htype, TYPE_oid, BATcount(b));
 
-	/* Poor man's clustered test: sorted & !keyed => clustered  */
+	/* Poor man's clustered test:sorted & !keyed => clustered  */
 	if ( (b->tsorted) && !(b->tkey) ) {
 	  @:choosegroup@1(tailtype(b,TRUE),bn,NULL,clustered,histo)@
 	} else {

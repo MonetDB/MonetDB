@@ -43,13 +43,13 @@ module alarm;
 command sleep(secs:int):void = CLKsleep comment "sleep X secs";
 command alarm(secs:int, action:str):void = CLKsetalarm 
 comment "execute action in X secs";
-command timers() : bat[str,str] = CLKtimers
+command timers() :bat[str,str] = CLKtimers
 comment "give a list of all active timers";
-command usec() : lng = CLKusec
+command usec() :lng = CLKusec
 comment "return cpu microseconds info";
-command time() : int = CLKtime comment "time in millisecs";
-command epoch() : int = CLKepoch comment "current time as unix epoch";
-command ctime() : str = CLKctime comment "current time as a string";
+command time() :int = CLKtime comment "time in millisecs";
+command epoch() :int = CLKepoch comment "current time as unix epoch";
+command ctime() :str = CLKctime comment "current time as a string";
 command prelude():void= CLKprelude comment "Initialize alarm module";
 command epilogue():void= CLKepilogue comment "Finalize alarm module";
 

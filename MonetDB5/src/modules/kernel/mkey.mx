@@ -5,21 +5,21 @@
 @mal
 module mkey;
 
-command rotate(v:int,nbits:int) : int = CMDrotate
+command rotate(v:int,nbits:int) :int = CMDrotate
 comment "left-rotate an int by nbits";
 
-command hash(v:any) : int = CMDhash 
+command hash(v:any) :int = CMDhash 
 comment "compute a hash int number from any value";
-command hash(v:bit) : int = CMDhash_chr;
-command hash(v:chr) : int = CMDhash_chr;
-command hash(v:sht) : int = CMDhash_sht;
-command hash(v:int) : int = CMDhash_int;
-command hash(v:flt) : int = CMDhash_flt;
-command hash(v:dbl) : int = CMDhash_dbl;
-command hash(v:lng) : int = CMDhash_lng;
-command hash(v:str) : int = CMDhash_str;
+command hash(v:bit) :int = CMDhash_chr;
+command hash(v:chr) :int = CMDhash_chr;
+command hash(v:sht) :int = CMDhash_sht;
+command hash(v:int) :int = CMDhash_int;
+command hash(v:flt) :int = CMDhash_flt;
+command hash(v:dbl) :int = CMDhash_dbl;
+command hash(v:lng) :int = CMDhash_lng;
+command hash(v:str) :int = CMDhash_str;
 
-command bulk_rotate_xor_hash(h:BAT[oid,int], nbits:int, b:BAT[oid,any]) : BAT[oid,int] = CMDbulk_rotate_xor_hash
+command bulk_rotate_xor_hash(h:bat[oid,int], nbits:int, b:bat[oid,any]) :bat[oid,int] = CMDbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
@@ -134,15 +134,15 @@ could be replaced by partitioned hash-join with radix-cluster/decluster.
 
 # Stefan Manegold:
 # Temporary HACK: don't do any sorting
-proc ds_sort(BAT[any::1, any::2] b, bit x) : BAT[any::1, any::2] {
+proc ds_sort(bat[any$1, any$2] b, bit x) :bat[any$1, any$2] {
   return b;
 }
 
-proc rotate_xor_hash(int h, int nbits, any v) : int {
+proc rotate_xor_hash(int h, int nbits, any v) :int {
   return xor(rotate(h, nbits), hash(v));
 }
 
-proc "[:rotate_xor_hash=]"(BAT[any::1,int] h, int nbits, BAT[any::1,any] b) : BAT[any::1,int] {
+proc "[:rotate_xor_hash=]"(bat[any$1,int] h, int nbits, bat[any$1,any] b) :bat[any$1,int] {
   if (synced(h,b)) {
 	return bulk_rotate_xor_hash(h, nbits, b);
   }
@@ -150,7 +150,7 @@ proc "[:rotate_xor_hash=]"(BAT[any::1,int] h, int nbits, BAT[any::1,any] b) : BA
   return [:xor=]([:rotate=](h, nbits), [hash](b));
 }
 
-proc ds_hash(BAT[str,any] keys) : BAT[oid,int] {
+proc ds_hash(bat[str,any] keys) :bat[oid,int] {
   var nbits := 1 + (31 / keys.count);
   var fst := keys.reverse.fetch(0);
   var res := [hash](bat(fst)).access(BAT_WRITE);
@@ -166,16 +166,16 @@ proc ds_hash(BAT[str,any] keys) : BAT[oid,int] {
 
 const JOIN_BULK_SIZE := INT_MAX;	# 5000000;
 
-proc ds_eq(BAT[void,oid] l_slice, str l_nme, BAT[void,oid] r_slice, str r_nme) : BAT[void,bit] {
+proc ds_eq(bat[void,oid] l_slice, str l_nme, bat[void,oid] r_slice, str r_nme) :bat[void,bit] {
   var l := join(l_slice,bat(l_nme));
   var r := join(r_slice,bat(r_nme));
   return [=](l.ds_sort(true),r.ds_sort(true));
 }
  
-proc ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) : BAT[oid, oid] {
+proc ds_link(bat[oid,any$1] l1, bat[oid,any$1] r1, ..bat[oid,any]..) :bat[oid, oid] {
 	var n := $0;
 	if (bit(n % 2)) {
-		ERROR("ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) requires an even number of parameters!\n");
+		ERROR("ds_link(bat[oid,any$1] l1, bat[oid,any$1] r1, ..bat[oid,any]..) requires an even number of parameters!\n");
 		return nil;
 	} else {
 		var keys := new(str,str,n / 2);
@@ -188,11 +188,11 @@ proc ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) : BAT[oid
 	}
 }
 
-proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid] {
+proc ds_link(bat[bat,bat] keys) :bat[oid, oid] {
 	return ds_link(reverse([bbpname](reverse([bbpname](keys)))));
 }
 
-proc ds_link(BAT[str,str] keys) : BAT[oid, oid]
+proc ds_link(bat[str,str] keys) :bat[oid, oid]
 {
   var res;
   {

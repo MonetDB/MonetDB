@@ -37,7 +37,7 @@ on a series of BATs with corresponding head values
 by putting the command between square brackets, giving the
 following corresponding signature:.
 @
-[CMD](bat[any::1,T1],...,bat[any::1,Tn]) : bat[any::1,Tr]
+[CMD](bat[any::1,T1],...,bat[any::1,Tn]) :bat[any::1,Tr]
 @
 and
 @
