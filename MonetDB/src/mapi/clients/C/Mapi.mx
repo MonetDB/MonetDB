@@ -225,7 +225,7 @@ It also contains an explanation when connection to the server fails.
 
 \item[Mapi mapi_dup(Mapi mid)]:
 Setup a second communication channel using the parameter setting of
-the previous on.
+the previous one.
 \item[int mapi_disconnect(Mapi mid)]:
 Terminates the session described by {\em mid}. Subsequent use
 of the channel represented by this descriptor leads to a failure.
@@ -279,7 +279,7 @@ to either mapi_fetch_row() will take
 the row from the cache. The number or rows cached
 is returned.
 
-\item[int mapi_quick_response(Mapi mid, stream s)]:
+\item[int mapi_quick_response(Mapi mid, FILE *fd)]:
 Read the answer to a query and pass the results verbatim
 to a stream. The result is not analyzed, nor cached.
 
@@ -302,7 +302,7 @@ Returns a pointer a C-string representation of the value returned.
 A zero is returned upon encountering an error;
 This can be analyzed in using mapi_error().
 
-\item[MapiMsg mapi_prepare(Mapi mid, char **Command)];
+\item[MapiMsg mapi_prepare(Mapi mid, char *Command)];
 Move the query to the connection structure. Possibly interact with the
 back-end to prepare the query for execution.
 
@@ -311,7 +311,7 @@ The command is shipped to the backend for execution. A single answer
 is pre-fetched to detect any runtime error. A NULL command is
 interpreted as taking the previous query. MOK is returned upon success.
 
-\item[int mapi_execute_array(Mapi mid, char **Command, char **argv)];
+\item[int mapi_execute_array(Mapi mid, char **argv)];
 Similar to mapi_execute but replacing the placeholders for the
 string values provided.
 
@@ -629,6 +629,7 @@ mapi_export Mapi mapi_connect_ssl(char *host, char *username,
 	char *password, char *lang);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_error(Mapi mid);
+mapi_export char *mapi_error_str(Mapi mid);
 mapi_export MapiMsg mapi_finish(Mapi mid);
 mapi_export MapiMsg mapi_fetch_reset(Mapi mid);
 mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
@@ -993,6 +994,12 @@ MapiMsg mapi_error(Mapi mid)
 {
 	assert(mid);
 	return mid->error;
+}
+
+char *mapi_error_str(Mapi mid)
+{
+	assert(mid);
+	return mid->errorstr;
 }
 
 static void promptMonet(Mapi mid)
