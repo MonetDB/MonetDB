@@ -2735,7 +2735,7 @@ int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 	return GDK_FAIL;
     }
     /* init cluster offset arrays (byte distances) */
-    cnk = (cnk2_t*) GDKmalloc(cnt*sizeof(cnk2_t));
+    cnk = (cnk4_t*) GDKmalloc(cnt*sizeof(cnk4_t));
     offset1 = BUNindex(b, BUNfirst(b))*BUNsize(b);
     offset2 = BUNindex(a, BUNfirst(a))*BUNsize(a);
     yy = zz = -1;
@@ -2854,7 +2854,6 @@ if (@6 || proj->ttype != TYPE_void) {
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
 int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
-	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
 	int any = attr->ttype;
 	BAT *bn = *res = BATnew(proj->htype, any, BATcount(proj));
 	int xx, yy = 1 << *nbits, zz = *shift;
