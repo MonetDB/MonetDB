@@ -1,8 +1,8 @@
 #!/bin/sh
 
-Mlog -x Mserver -?
-Mlog -x MapiClient -help
-Mlog -x Mcreatedb -?
-Mlog -x Mdestroydb -?
-Mlog -x Mshutdown -?
+Mlog -x $MTIMEOUT Mserver -?
+Mlog -x $MTIMEOUT MapiClient -help
+Mlog -x $MTIMEOUT Mcreatedb -?
+Mlog -x $MTIMEOUT Mdestroydb -?
+Mlog -x $MTIMEOUT Mshutdown -?
 
