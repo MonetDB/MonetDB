@@ -766,22 +766,27 @@ def GetBitsAndModsAndStatic(env) :
     TSTPREF = env['TSTPREF']
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF)
     pOut,pIn,pErr = popen2.popen3(cmd)
-    pIn.write('''\
-        help("kunion");
-        {
-            # print a list of all modules found
-            # "Modules: mod1, mod2, ..."
-            MODs := kunion([~monet_mod_nme].reverse,[~view_modules].reverse).kunique;
-            printf("\\nModules: ");
-            x := "";
-            MODs@batloop{
-                printf("%s\'%s\'",x,$h);
-                x:=",";
+    if string.split("@VERSION@",".")[0] == '5':
+        pIn.write('''\
+            quit();
+        ''')
+    else:
+        pIn.write('''\
+            help("kunion");
+            {
+                # print a list of all modules found
+                # "Modules: mod1, mod2, ..."
+                MODs := kunion([~monet_mod_nme].reverse,[~view_modules].reverse).kunique;
+                printf("\\nModules: ");
+                x := "";
+                MODs@batloop{
+                    printf("%s\'%s\'",x,$h);
+                    x:=",";
+                }
+                printf("\\n");
             }
-            printf("\\n");
-        }
-        quit;
-    ''')
+            quit();
+        ''')
     ##module("NoModule");
     try:
         pIn.close()
@@ -813,7 +818,11 @@ def GetBitsAndModsAndStatic(env) :
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
         if not env['TST_MODS']:
-            ErrMsg("Checking for Modules failed!")
+            if string.split("@VERSION@",".")[0] == '5':
+                Warn("Monet5: Check, whether required modules do exist, is not possible, yet!")
+                env['TST_MODS'].append("")
+            else:
+                ErrMsg("Checking for Modules failed!")
         if not env['TST_BITS'] or not env['TST_MODS']:
             STDERR.write(cmd + "\n\n")
             STDERR.write(qOut)
@@ -857,13 +866,19 @@ def CheckMods(env, TST, SERVER, CALL) :
 ### CheckMods(env, TST, SERVER, CALL) #
 
 def CheckBATs(env, TST, TSTDB) :
+    missing = []
+
+    if string.split("@VERSION@",".")[0] == '5':
+        Warn("Monet5: Check, whether required BATs do exist, is not possible, yet!")
+        return missing
+
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB)
     pOut,pIn,pErr = popen2.popen3(cmd)
     pIn.write('''\
         {
             # print a list of all persistent BATs
             # "BATs: bat1, bat2, ..."
-            BATs := view_bbp_name;
+            BATs := view_bbp_name();
             printf("\\nBATs: ");
             x := "";
             BATs@batloop{
@@ -872,7 +887,7 @@ def CheckBATs(env, TST, TSTDB) :
             }
             printf("\\n");
         }
-        quit;
+        quit();
     ''')
     try:
         pIn.close()
@@ -894,7 +909,6 @@ def CheckBATs(env, TST, TSTDB) :
             STDERR.write("\n")
             STDERR.flush()
 
-    missing = []
     if os.path.isfile(TST+".BATs"):
         for b in fileinput.input(TST+".BATs"):
             b = string.strip(b)
@@ -977,6 +991,8 @@ def RunTest(env, TST, BusyPorts) :
         EXT = ".SQL.py"     ; CALL = "python" ; SERVER = "SQL"
     elif os.path.isfile(TST+".MAPI"+".py")  or  os.path.isfile(TST+".MAPI"+".py.src"):
         EXT = ".MAPI.py"    ; CALL = "python" ; SERVER = "MAPI"
+    elif os.path.isfile(TST+".mal")        or  os.path.isfile(TST+".mal.src"):
+        EXT = ".mal"       ; CALL = "mal"
     elif os.path.isfile(TST+".milM")        or  os.path.isfile(TST+".milM.src"):
         EXT = ".milM"       ; CALL = "milM"
     elif os.path.isfile(TST+".milS")        or  os.path.isfile(TST+".milS.src"):
@@ -1009,11 +1025,11 @@ def RunTest(env, TST, BusyPorts) :
     else:
         EXT = CALL = SERVER = ""
         if os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|milM|milS|milC|x100)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|milM|milS|milC|sql|x100)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.milM|.milS|.milC|.x100]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.milM|.milS|.milC|.sql|.x100]`")
         return TX,Failed
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
@@ -1155,7 +1171,7 @@ def RunTest(env, TST, BusyPorts) :
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["milM", "milS", "milC", "sql", "x100"]:
+        elif CALL in ["mal", "milM", "milS", "milC", "sql", "x100"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
@@ -1564,6 +1580,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         STO = ""
         CTO = ""
 
+    LOCAL_CONF = ""
+    if os.path.isfile(TST+".conf"):
+        LOCAL_CONF = ' "--config=%s"' % TST+".conf"
+    elif os.path.isfile(os.path.join(env['TSTSRCDIR'],"All.conf")):
+        LOCAL_CONF = ' "--config=%s"' % os.path.join(env['TSTSRCDIR'],"All.conf")
+
     ServerReady = True
     if SERVER in ["MAPI", "SQL"]:
         SrvrOutFile = TST+".server.out"
@@ -1583,7 +1605,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if os.path.isfile(TST+".prologue"):
             PROLOGUE = " "+TST+".prologue"
 
-        Srvr = '%s%s %s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], TSTDB)
+        Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
         if SERVER == "MAPI":
             Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
         if SERVER == "SQL":
@@ -1616,9 +1638,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         elif CALL == "python":
             cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
             RunIt(cmd, "", ClntOutFile, ClntErrFile)
-        elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
-            cmd = '%s%s %s --dbname=%s %s < ' % (MTO, str(TOT), exe['Mserver'][1], TSTDB, PRELUDE)
-            if CALL in ["milM", "milS"]:
+        elif CALL in ["mal", "milM", "milS", "milMXs", "milSXs"]:
+            cmd = '%s%s %s%s --dbname=%s %s ' % (MTO, str(TOT), exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
+            if CALL in ["mal", "milM", "milS"]:
                 X=""
             else:
                 X="_s[0-9][0-9]"
@@ -1627,7 +1649,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             d.sort()
             for f in d:
                 if test.match(f):
-                    RunIt(cmd+f, "", ClntOutFile, ClntErrFile)
+                    if CALL == "mal":
+                        RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
+                    else:
+                        RunIt(cmd+"< "+f, "", ClntOutFile, ClntErrFile)
         elif CALL in ["milC", "milCXs"]:
             TSTs = []
             if CALL == "milC":
@@ -1723,7 +1748,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 pSrvrIn.write("# but the Mserver's stdin was still open and got closed only after the first MIL command-end, i.e., ';'+'\\n' is reached ... #\n")
                 pSrvrIn.write(';\n')
                 pSrvrIn.write('printf("\\n! Mserver still running after Mshutdown. Quitting now. !\\n");\n')
-            pSrvrIn.write('quit;\n')
+            pSrvrIn.write('quit();\n')
             pSrvrIn.flush()
         except IOError:
             pass
@@ -2471,7 +2496,7 @@ def main(argv) :
             ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
 
         os.makedirs(os.path.join(env['TSTTRGBASE'],TSTPREF))
-        if Check('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF), "quit;\n"):
+        if Check('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF), "quit();\n"):
             sys.exit(1)
         if GetBitsAndModsAndStatic(env):
             sys.exit(1)
