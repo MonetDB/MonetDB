@@ -83,6 +83,12 @@ The BBPpersistent/BBPtransport functions should be
 used for incrementing/decrementing both lrefs and plevel. These
 functions always inc/dec the lrefs and only inc/dec the plevel iff
 the pers/trans parameter is TRUE.
+
+\item [share counting]
+Views use the heaps of there parent bats. To save guard this, the
+parent has a shared counter, which is incremented and decremented
+using BBPshare and BBPunshare. These functions make sure the
+parent is memory resident as required because of the 'pointer' sharing.
 \end{description}
 @h
 #ifndef _GDK_BBP_H_
@@ -141,6 +147,8 @@ gdk_export int BBPpersistent(bat b, int pers);
 gdk_export int BBPtransient (bat b, int trans);
 gdk_export void BATpersistent(void *dummy, int *d2, bat *b);
 gdk_export void BATtransient (void *dummy, bat *b);
+gdk_export void BBPshare       (bat b);
+gdk_export void BBPunshare     (bat b);
 
 #endif /* _GDK_BBP_H_ */
 @
@@ -295,8 +303,8 @@ void BBPunlock(str nme) {
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], nme);
 	MT_unset_lock(GDKcacheLock, nme);
 	BBP_notrim = NULL;
-	MT_unset_lock(GDKtrimLock, nme);
 	locked_by = 0;
+	MT_unset_lock(GDKtrimLock, nme);
 }
 
 void BBPinithash() {
@@ -1063,6 +1071,7 @@ These might be in recursive BATs, C or MIL variables.  The count is
 incremented with @%BBPfix@ and decremented with @%BBPunfix@.
 @c
 int BBPfix(bat i) {
+	MT_Id pid = MT_getpid_();
 	int refs = 0;
 
 	if (i < 0) i = -i;
@@ -1071,7 +1080,8 @@ int BBPfix(bat i) {
 			THRprintf(GDKerr, "fix %d (%s)\n", i, BBP_logical(i)); 
 		}
 		while(TRUE) {
-			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
+			if (pid != locked_by) 
+				MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
 			if (BBP_status(i) & BBPUNLOADING) { /* must wait for unload, then reload */
 				MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix spin wait"); 
 				BBPspin(i, "BBPfix", BBPWAITING);
@@ -1080,12 +1090,14 @@ int BBPfix(bat i) {
 			}
 		}
 		refs = ++BBP_refs(i);
-		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
+		if (pid != locked_by) 
+			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
 	}
 	return refs;
 }
 
 int BBPunfix(bat i) {
+	MT_Id pid = MT_getpid_();
 	int refs;
 	BAT *b;
 	int swap = 0;
@@ -1097,7 +1109,8 @@ int BBPunfix(bat i) {
 		THRprintf(GDKerr, "unfix %d (%s)\n", i, BBP_logical(i)); 
 	}
 	if (i < 0) i = -i;
-	MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix"); 
+	if (pid != locked_by) 
+		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix"); 
 	refs = --BBP_refs(i);
 	if (refs < 0) {
 		GDKwarning("BBPunfix: bat(%d) has refcnt %d\n", i,refs);
@@ -1116,11 +1129,39 @@ int BBPunfix(bat i) {
 	/* unlock before re-locking in unload; as saving a dirty persistent 
   	 * bat may take a long time 
 	 */
-	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix"); 
+	if (pid != locked_by) 
+		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix"); 
 	if (b && swap) BBPfree(b);
 	return refs;
 }
 
+void BBPshare(bat parent)
+{
+	MT_Id pid = MT_getpid_();
+	int fix = 0;
+
+	if (pid != locked_by) 
+        	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWcreate");
+        if (++BBP_cache(parent)->batSharecnt == 1) 
+		fix = 1;
+	if (pid != locked_by) 
+        	MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWcreate");
+	if (fix) BBPfix(parent);
+}
+
+void BBPunshare(bat parent)
+{
+	MT_Id pid = MT_getpid_();
+	int unfix = 0;
+
+	if (pid != locked_by) 
+		MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWunlink");
+        if (--BBP_cache(parent)->batSharecnt == 0) 
+		unfix = 1;
+	if (pid != locked_by) 
+		MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWunlink");
+	if (unfix) BBPunfix(parent);
+}
 
 int BBPunload(bat i) {
 	BAT *b = NULL;

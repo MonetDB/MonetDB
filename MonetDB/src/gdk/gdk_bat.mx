@@ -1229,15 +1229,9 @@ BAT *BATsetaccess(BAT *b, int mode) {
 */
 	    if (b->batSharecnt && mode != BAT_READ) {
 	        GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", b->batId, b->batSharecnt);
-/*
-	        MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
-*/
 	        b = BATsetaccess(batcopy(b,b->htype,b->ttype,TRUE),mode); 
 		if (b->batStamp > 0) b->batStamp = -b->batStamp; /* prevent MIL setaccess */
 	    } else {
-/*
-	        MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
-*/
 		
 		if (mode == BAT_READ) {
 		    @:mmap_read(m1,(*b->batBuns))@
@@ -1260,6 +1254,9 @@ BAT *BATsetaccess(BAT *b, int mode) {
 		}
 	    }
 	    b->batRestricted = mode;
+/*
+	        MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
+*/
 	    b->batDirtydesc = TRUE;
 	    if (action) {
 		BATmmap(b, m1, m2, m3, m4, m5);
