@@ -900,6 +900,8 @@ sql_column_value(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset
 				else
 					return sql_error(sql, 02, "Cannot use non group by column in query result without aggregation" );
 			}
+		} else if (s && grp && f && s->type != st_aggr) {
+			s = stmt_join(stmt_dup(grp->ext), s, cmp_equal);
 		}
 	} 
 	return s;
@@ -971,6 +973,7 @@ stmt *stmt2pivot(scope * scp, stmt * s)
 	stmt *res = ptable;
 	while (ptable_parent(ptable)) 
 		ptable = ptable_parent(ptable);
+	assert(!ptable_statements(ptable)); 
 	ptable_statements(ptable) = s;
 	res ->nrcols = s->nrcols;
 	return res;
@@ -1655,6 +1658,7 @@ static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, sy
 	return NULL;
 }
 
+static
 void filter(stmt *ptable, stmt *s)
 {
 	stmt *ps;
@@ -2177,8 +2181,8 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 			scope_add_alias( scp, stmt_dup(t), "row");
 
 	} else if (s && s->nrcols == 0 && f == sql_search && subset) {
-		stmt *t = subset->op1.lval->h->data;
-		t = stmt_const( stmt_dup(t), stmt_bool(1) ); 
+		stmt *t = first_subset(subset);
+		t = stmt_const( t, stmt_bool(1) ); 
 		return stmt_select(t, s, cmp_equal);
 	}
 	return s;
@@ -2196,7 +2200,6 @@ static group *query_groupby_inner(mvc * sql, scope * scp, stmt * c, stmt * subse
 
 	if (!cur) {
 		char *cn = column_name(c);
-		assert(cur);
 		(void) sql_error(sql, 02, 
 			 "subset not found for groupby column %s\n", cn);
 		_DELETE(cn);
@@ -2390,33 +2393,6 @@ static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * se
 	return s;
 }
 
-static stmt *pred2join( stmt *s, stmt *subset )
-{
-	
-	if (s -> type != st_set && s->type != st_sets && s->nrcols == 0) {
-		stmt *l,*r,*c = subset->op1.lval->h->data;
-		l = stmt_const( stmt_dup(c), stmt_bool(1) ); 
-		r = stmt_temp(sql_dup_subtype(tail_type(l)));
-		r = stmt_append(r, stmt_dup(s)); /* insert true or false */
-		return stmt_join(l, stmt_reverse(r), cmp_equal);
-	}
-	return stmt_dup(s);
-}
-
-static stmt *convert_preds( stmt *s, stmt *subset ) 
-{
-	/* expecting a single statement or a list of semijoin/union s */
-	if (s->type == st_semijoin){
-		return stmt_semijoin(convert_preds( s->op1.stval, subset), 
-				     convert_preds( s->op2.stval, subset));
-	}
-	if (s->type == st_union){
-		return stmt_union(convert_preds( s->op1.stval, subset), 
-				  convert_preds( s->op2.stval, subset));
-	}
-	return pred2join(s, subset);
-}
-
 static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 {
 	list *rl = NULL;
@@ -2532,24 +2508,27 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	subset = stmt_dup(s);
 
 	if (sn->having) {
-		stmt *t = sql_logical_exp(sql, scp, sn->having, 
-						grp, subset, sql_search);
+		stmt *t, *ss = subset;
+
+
+		/* handle havings without group by as a subquery, ie
+		   they work on the partial pivot tables 
+		 */
+		if (!grp) 
+			ss = ptable_parent(subset);
+
+		t = sql_logical_exp(
+			sql, scp, sn->having, grp, ss, sql_search);
 		if (!t){
 			sql_select_cleanup(sql, s, subset, grp);
 			return sql_error( sql, 02, "Subquery result missing");
 		}
 
 		if (!grp) {
-			sql_subtype *it = sql_bind_localtype( "int" );
-
-			/* implicit single group of whole result */
-			grp = grp_create(stmt_const(stmt_dup(subset),
-				stmt_atom(atom_int(sql_dup_subtype(it), 0))), 
-			      NULL, NULL);
+			filter(subset,stmt_filter(t));
+		} else {
+			grp = grp_semijoin(grp, t); 
 		}
-
-		grp = grp_semijoin(grp, convert_preds(t, subset));
-		stmt_destroy(t);
 	}
 
 	if (!subset){

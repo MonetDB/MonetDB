@@ -166,6 +166,7 @@ init_keywords()
 
 	keywords_insert("DEC", sqlDECIMAL);
 	keywords_insert("DECIMAL", sqlDECIMAL);
+	keywords_insert("DECLARE", DECLARE);
 	keywords_insert("DEFAULT", DEFAULT);
 	keywords_insert("DESC", DESC);
 	keywords_insert("DISTINCT", DISTINCT);

@@ -340,14 +340,6 @@ int sqlcleanup( mvc *c, int err, int cache)
 		c->sym = NULL;
 	}
 	scanner_query_processed(&(c->scanner));
-	if (c->auto_commit && c->trans) {
-		if (err) 
-			mvc_rollback(c, 0, NULL);
-		else
-			mvc_commit(c, 0, NULL);
-		if (c->qc) qc_destroy(c->qc);
-		c->qc = qc_create();
-	}
 	return err;
 }
 
@@ -640,14 +632,24 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 		if (in->pos >= in->len) {
 			ssize_t rd;
 			assert(in->pos == in->len);
+
 			if (in->eof || !isa_block_stream(in->s)) {
 				language = 0;
+
 				if (stream_write(out,PROMPT1,sizeof(PROMPT1)-1,1) != 1 ||
 				    stream_flush(out)) {
 					go = FALSE;
 					break;
 				}
 				in->eof = 0;
+
+				/* auto_commit on end of statement */
+				if (m->auto_commit && m->trans) {
+					mvc_commit(m, 0, NULL);
+					if (m->qc) qc_destroy(m->qc);
+					m->qc = qc_create();
+				}
+
 			}
 			if ((rd = bstream_next(in)) <= 0) {
 				if (rd == 0 && language != 0 && in->eof) {
@@ -716,6 +718,14 @@ query string with "M".
 
 		if (err){ /* output error */
 			char *buf = GDKerrbuf;
+
+			if (m->auto_commit && m->trans) {
+				/* rollback and skip rest */
+				mvc_rollback(m, 0, NULL);
+				in->pos = in->len;
+				if (m->qc) qc_destroy(m->qc);
+				m->qc = qc_create();
+			}
 
 			/* transaction allready broken */
 			if (m->type != Q_TRANS && pstatus < 0) { 

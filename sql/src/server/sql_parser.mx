@@ -55,6 +55,7 @@ typedef enum tokens {
 	SQL_DROP_COLUMN,
 	SQL_DROP_CONSTRAINT,
 	SQL_DROP_DEFAULT,
+	SQL_DECLARE,
 	SQL_SET,
 	SQL_NAME,
 	SQL_USER,
@@ -211,6 +212,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	assignment
 	create
 	drop
+	declare
 	set
 	sql
 	sqlstmt
@@ -456,15 +458,16 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 
 	/* literal keyword tokens */
 /*
-CONTINUE CURRENT CURSOR DECLARE FOUND GOTO GO LANGUAGE 
+CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE 
 SQLCODE SQLERROR UNDER WHENEVER 
 */
 
 %token TEMPORARY 
 %token<sval> AS ASC DESC AUTHORIZATION 
 %token CHECK CONSTRAINT CREATE 
-%token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME PREPARE EXECUTE
-%token DEFAULT DISTINCT DROP
+%token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
+%token PREPARE EXECUTE
+%token DEFAULT DISTINCT DROP 
 %token FOREIGN 
 %token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO 
 %token IS KEY ON OPTION OPTIONS
@@ -497,14 +500,31 @@ sqlstmt:
 
 
 	/* schema definition language */
-sql: schema | grant | revoke | create | drop | alter | set ;
+sql: 
+    opt_prep schema  	{ $$ = $2; }
+ |  opt_prep grant  	{ $$ = $2; }
+ |  opt_prep revoke  	{ $$ = $2; }
+ |  opt_prep create  	{ $$ = $2; }
+ |  opt_prep drop   	{ $$ = $2; }
+ |  opt_prep alter   	{ $$ = $2; }
+ |  declare 
+ |  set 
+ ;
 	
+declare:
+	DECLARE ident data_type 
+			{ dlist *l = dlist_create();
+			dlist_append_string(l, $2 );
+	  		dlist_append_type(l, $3 );
+			$$ = _symbol_create_list( SQL_DECLARE, l); }
+	;
+
 set: 
 	SET ident '=' scalar_exp	
-				{ dlist *l = dlist_create();
-				dlist_append_string(l, $2 );
-				dlist_append_symbol(l, $4 );
-				$$ = _symbol_create_list( SQL_SET, l); }
+			{ dlist *l = dlist_create();
+			dlist_append_string(l, $2 );
+			dlist_append_symbol(l, $4 );
+			$$ = _symbol_create_list( SQL_SET, l); }
 	;
 
 schema:
@@ -1130,11 +1150,11 @@ drop_action:
 	/* data manipulative stmts */
 
 sql: 
-   transaction_stmt 
- | delete_stmt
- | insert_stmt 
- | update_stmt 
- | copyfrom_stmt
+   opt_prep transaction_stmt  	{ $$ = $2; }
+ | opt_prep delete_stmt 	{ $$ = $2; }
+ | opt_prep insert_stmt  	{ $$ = $2; }
+ | opt_prep update_stmt  	{ $$ = $2; }
+ | opt_prep copyfrom_stmt 	{ $$ = $2; }
  ;
 
 transaction_stmt:
@@ -2717,6 +2737,8 @@ char *token2string(int token)
 		return "Start";
 	case TR_MODE:
 		return "Mode";
+	case SQL_DECLARE:
+		return "Declare";
 	case SQL_SET:
 		return "Set";
 	case SQL_SELECT:
