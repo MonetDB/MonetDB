@@ -1,9 +1,9 @@
-This directory contains a cleaned file to built
+This directory contains a cleaned file to build
 the VOC demo database.  It is also large enough to 
-monitor for performance degrations.
+monitor performance degradations.
 
 The voc_dump.sql file contains all SQL CREATE and
-INSERT statements to built it.
+INSERT statements to build it.
 
 The voc_dump.sql file should be made available
 in the (binary) distribution.
