@@ -60,7 +60,8 @@ SQLTables_(ODBCStmt *stmt,
 	if (nSchemaNameLength == 0 && nTableNameLength == 0 && szCatalogName &&
 	    strcmp((char*)szCatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
-		/* Note: Catalogs are not supported so the result set will be empty. */
+		/* Note: Catalogs are not supported so the result set
+		   will be empty. */
 		query = strdup("select "
 			       "cast('' as varchar) as table_cat, "
 			       "cast('' as varchar) as table_schem, "
@@ -72,7 +73,7 @@ SQLTables_(ODBCStmt *stmt,
 		   szSchemaName && 
 		   strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
-		query = strdup("select cast('' as varchar) as table_cat, "
+		query = strdup("select cast(null as varchar) as table_cat, "
 			       "name as table_schem, "
 			       "cast('' as varchar) as table_name, "
 			       "cast('' as varchar) as table_type, "
@@ -83,7 +84,7 @@ SQLTables_(ODBCStmt *stmt,
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
 		query = strdup("select distinct "
-			       "cast('' as varchar) as table_cat, "
+			       "cast(null as varchar) as table_cat, "
 			       "cast('' as varchar) as table_schem, "
 			       "cast('' as varchar) as table_name, "
 			       "case when t.istable = true and t.system = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
@@ -99,26 +100,24 @@ SQLTables_(ODBCStmt *stmt,
 		char *query_end;
 
 		/* construct the query now */
-		query = (char *) malloc(1000 + nCatalogNameLength +
-					nSchemaNameLength + nTableNameLength +
-					nTableTypeLength);
+		query = (char *) malloc(1000 + nSchemaNameLength +
+					nTableNameLength + nTableTypeLength);
 		assert(query);
 		query_end = query;
 
-		sprintf(query_end,
-			"select "
-			"cast('%.*s' as varchar) as table_cat, "
-			"cast(s.name as varchar) as table_schem, "
-			"cast(t.name as varchar) as table_name, "
-			"case when t.istable = true and t.system = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
-			"when t.istable = true and t.system = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
-			"when t.istable = false then cast('VIEW' as varchar) "
-			"when t.istable = true and t.system = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
-			"else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
-			"cast('' as varchar) as remarks "
-			"from sys.schemas s, sys.tables t "
-			"where s.id = t.schema_id",
-			nCatalogNameLength, szCatalogName);
+		strcpy(query_end,
+		       "select "
+		       "cast(null as varchar) as table_cat, "
+		       "cast(s.name as varchar) as table_schem, "
+		       "cast(t.name as varchar) as table_name, "
+		       "case when t.istable = true and t.system = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
+		       "when t.istable = true and t.system = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
+		       "when t.istable = false then cast('VIEW' as varchar) "
+		       "when t.istable = true and t.system = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
+		       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
+		       "cast('' as varchar) as remarks "
+		       "from sys.schemas s, sys.tables t "
+		       "where s.id = t.schema_id");
 		query_end += strlen(query_end);
 
 		/* dependent on the input parameter values we must add a
@@ -177,7 +176,7 @@ SQLTables_(ODBCStmt *stmt,
 
 		/* add the ordering */
 		strcpy(query_end,
-		       " order by table_type, table_cat, "
+		       " order by table_type, "
 		       "table_schem, table_name");
 	}
 
