@@ -34,7 +34,10 @@ called atomHeap.
 @h
 #ifndef _GDK_BAT_H_
 #define _GDK_BAT_H_
+
 #include "gdk.h"
+
+gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
 
 #endif /* _GDK_BAT_H_ */
 @c
