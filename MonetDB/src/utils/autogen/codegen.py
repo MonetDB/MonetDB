@@ -406,7 +406,11 @@ def do_lib(lib,deps):
                         if b not in true_deps:
                             if len(dirname) > 0 and \
                                 (dirname[0] == '$' or os.path.isabs(dirname)):
-                                true_deps.append("-l_"+b) 
+                                # MacOS X/Darwin doesn't like linking-in USEd modules;
+                                # other unixes don't seem to require this, either, 
+                                # hence we skip it.
+                                ##true_deps.append("-l_"+b) 
+                                pass
                                 # user should add -L$dirname to the Makefile.ag
                             else:
                                 true_deps.append(os.path.join(dirname,"lib_"+b))
