@@ -291,12 +291,14 @@ actions are to go on unlocked while other entries in the BBP may be modified).
 #define BBP_status_off(bid, flags, nme) \
 		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme);
 
-
-#define BBP_unload_on(bid, nme) {						\
+#define BBP_unload_cnt(bid, nme) {						\
 		MT_set_lock(GDKunloadLock, nme);				\
 		BBPunloadCnt++;							\
-		MT_unset_lock(GDKunloadLock, nme);				\
-		BBP_status_on(bid, BBPUNLOADING, nme);				}
+		MT_unset_lock(GDKunloadLock, nme); 				}
+
+#define BBP_unload_on(bid, nme) {						\
+		BBP_status_on(bid, BBPUNLOADING, nme);				\
+		BBP_unload_cnt(bid, nme); 					}
 
 #define BBP_unload_off(bid, nme) {						\
 		BBP_status_off(bid, BBPUNLOADING, nme);				\
@@ -317,6 +319,12 @@ static int BBPunloadCnt=0;
 
 void BBPlock(str nme) {
 	int i;
+
+	/* wait for all pending unloads to finish */
+	MT_set_lock(GDKunloadLock, nme);				
+	if (BBPunloadCnt > 0)
+		MT_wait_cond(GDKunloadCond, GDKunloadLock, nme);
+
 	MT_set_lock(GDKtrimLock, nme);
 	BBP_notrim = BBP_getpid();
 	MT_set_lock(GDKcacheLock, nme);
@@ -324,10 +332,6 @@ void BBPlock(str nme) {
 		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], nme);
 	locked_by = BBP_notrim;
 
-	/* wait for all pending unloads to finish */
-	MT_set_lock(GDKunloadLock, nme);				
-	if (BBPunloadCnt > 0)
-		MT_wait_cond(GDKunloadCond, GDKunloadLock, nme);
 	MT_unset_lock(GDKunloadLock, nme);				
 }
 
@@ -1151,7 +1155,7 @@ int decref(bat i, int logical, int lock) {
                 BBP_lastused(i) = BBPLASTUSED(GDKstamp());
 	} else if (b || (BBP_status(i)&BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
-		BBP_unload_on(i, "BBPdecref");
+		BBP_status_on(i, BBPUNLOADING, "BBPdecref");	
 		swap = TRUE;
 	}
         
@@ -1160,6 +1164,7 @@ int decref(bat i, int logical, int lock) {
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPdecref");
 
         if (swap) {
+		BBP_unload_cnt(i, "BBPdecref");
                 b = BBPquickdesc(i, TRUE);
                 if (b) BBPfree(b, "BBPdecref"); /* free memory (if loaded) and delete from disk (if transient but saved) */
 	}
@@ -1240,13 +1245,14 @@ int BBPreclaim(BAT* b) {
 	} else {
 		/* unload whatever the LRU in the BBP */
 		BBP_refs(b->batCacheid) = 0;
-		BBP_unload_on(i, "BBPreclaim"); 
+		BBP_status_on(i, BBPUNLOADING, "BBPreclaim");	
 	}
 	if (lock)
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
 
 	/* BBPfree potentially saves the BAT. Do this after releasing the short-term lock */
 	if (ret == 0) {
+		BBP_unload_cnt(i, "BBPreclaim"); 
 		ret = BBPfree(b, "BBPreclaim");
 	}
 	return ret;
