@@ -764,7 +764,8 @@ def isexecutable(TST) :
 def GetBitsAndModsAndStatic(env) :
     rtrn = 0
     TSTPREF = env['TSTPREF']
-    pOut,pIn,pErr = popen2.popen3('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF))
+    cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF)
+    pOut,pIn,pErr = popen2.popen3(cmd)
     pIn.write('''\
         loaded;
         help("kunion");
@@ -815,6 +816,7 @@ def GetBitsAndModsAndStatic(env) :
         if not env['TST_MODS']:
             ErrMsg("Checking for Modules failed!")
         if not env['TST_BITS'] or not env['TST_MODS']:
+            STDERR.write(cmd + "\n\n")
             STDERR.write(qOut)
             STDERR.write("\n")
             STDERR.write(qErr)
@@ -825,6 +827,7 @@ def GetBitsAndModsAndStatic(env) :
         rtrn = 1
         ErrMsg("No output from Mserver when checking for Bits & Modules!?")
         if qErr:
+            STDERR.write(cmd + "\n\n")
             STDERR.write(qErr)
             STDERR.write("\n")
             STDERR.flush()
@@ -851,7 +854,8 @@ def CheckMods(env, TST, SERVER) :
 ### CheckMods(env, TST, SERVER) #
 
 def CheckBATs(env, TST, TSTDB) :
-    pOut,pIn,pErr = popen2.popen3('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB))
+    cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB)
+    pOut,pIn,pErr = popen2.popen3(cmd)
     pIn.write('''\
         {
             # print a list of all persistent BATs
@@ -882,6 +886,7 @@ def CheckBATs(env, TST, TSTDB) :
     else:
         Warn("No output from Mserver when checking for Bats!?")
         if qErr:
+            STDERR.write(cmd + "\n\n")
             STDERR.write(qErr)
             STDERR.write("\n")
             STDERR.flush()
