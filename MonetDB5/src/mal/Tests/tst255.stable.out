@@ -29,8 +29,8 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(z1,nil,1);	# 4 BKCinsert_bun ($9:void)<-(z1:bat[:void,:int])($7:void)($10:int)
     bat.insert(z1,nil,2);	# 5 BKCinsert_bun ($11:void)<-(z1:bat[:void,:int])($7:void)($12:int)
     io.print(z1);	# 6 IOprint_val ($13:int)<-(z1:bat[:void,:int])
-    o := batcalc.oid(z1);	# 7 CMDconvertOIDclass (o:bat[:oid,:oid])<-(z1:bat[:void,:int])
-    io.print(o);	# 8 IOprint_val ($15:int)<-(o:bat[:oid,:oid])
+    o := batcalc.oid(z1);	# 7 CMDconvertOIDclass (o:bat[:void,:oid])<-(z1:bat[:void,:int])
+    io.print(o);	# 8 IOprint_val ($15:int)<-(o:bat[:void,:oid])
 end main;	# 9  
 #-----------------#
 # h	tmp_4	  # name
