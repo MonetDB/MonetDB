@@ -272,17 +272,16 @@ error(stream *out, char *str)
 	char *p;
 
 	while ((p = strchr(str, '\n')) != NULL) {
-		if (*str != '!')
-			if (stream_write(out, "!", 1, 1) != 1)
-				return -1;
+		p++;		/* include newline */
+		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
+			return -1;
 		if (stream_write(out, str, p - str, 1) != 1)
 			return -1;
-		str = p + 1;
+		str = p;
 	}
 	if (str && *str) {
-		if (*str != '!')
-			if (stream_write(out, "!", 1, 1) != 1)
-				return -1;
+		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
+			return -1;
 		if (stream_write(out, str, strlen(str), 1) != 1 ||
 		    stream_write(out, "\n", 1, 1) != 1) 
 			return -1;
