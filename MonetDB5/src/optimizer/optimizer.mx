@@ -105,13 +105,13 @@ address QOTMEoptimizerSymbol
 comment "Inliner of a specific function";
 
 pattern macroContraction():void
-address QOTmacroContraction
+address QOTMCoptimizer
 comment "Inliner of any function";
 pattern macroContraction(mod:str):void
-address QOTmacroContractionModule
+address QOTMCoptimizerModule
 comment "Inliner of functions in a specific module";
 pattern macroContraction(mod:str, fcn:str):void
-address QOTmacroContractionSymbol
+address QOTMCoptimizerSymbol
 comment "Inliner of a specific function";
 
 @-
