@@ -56,6 +56,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	int nrCols;
 	ODBCDescRec *rec;
 	MapiHdl hdl;
+	char *errstr;
 
 	hdl = stmt->hdl;
 	/* initialize the Result meta data values */
@@ -65,8 +66,18 @@ ODBCInitResult(ODBCStmt *stmt)
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
   repeat:
+	errstr = mapi_result_error(hdl);
+	if (errstr) {
+		/* XXX more fine-grained control required */
+		/* Syntax error or access violation */
+		addStmtError(stmt, "42000", errstr, 0);
+		return SQL_ERROR;
+	}
 	nrCols = mapi_get_field_count(hdl);
 	stmt->querytype = mapi_get_querytype(hdl);
+#ifdef ODBCDEBUG
+	ODBCLOG("ODBCInitResult: querytype %d\n", stmt->querytype);
+#endif
 
 	switch (stmt->querytype) {
 	case 3:			/* Q_TABLE */
