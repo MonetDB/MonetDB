@@ -1,0 +1,220 @@
+@f opengiswriter
+@A C.W. Quak
+@h
+#ifndef __OPENGISWRITER_H__
+#define __OPENGISWRITER_H__
+
+#include <ctype.h>
+#include <writer.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+class OpenGisWriter: public StringWriter
+{
+public:
+   OpenGisWriter(char* s,int l);
+
+   void write(const Point& v);
+   void write(const Line& l);
+   void write(const LineString& v);
+   void write(const Polygon& v);
+   void write(const MultiPoint& v);
+   void write(const MultiLineString& v);
+   void write(const Geometry& val);
+   void write(const GeometryCollection& v);
+   void write(const MultiPolygon& v);
+
+private:
+   void writeCoordinatePair(const Point& p);
+   void writePolygon(const Polygon& p);
+   void writeLineString(const polystruct& p);
+};
+
+#endif /* __OPENGISWRITER_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+#include "opengiswriter.h"
+#include <gdk.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+OpenGisWriter::OpenGisWriter(char *s,int l)
+   :StringWriter(s,l)
+{
+}
+
+
+void OpenGisWriter::write(const Line& l)
+{
+   if (l.isnull())
+   {
+      writeString("LINE EMPTY");
+   }
+   else
+   {
+      writeString("LINE (");
+      writeCoordinatePair(l.source);
+      writeString(",");
+      writeCoordinatePair(l.dest);
+      writeString(")");
+   }
+}
+
+void OpenGisWriter::write(const Point& p)
+{
+   if (p.isnull())
+   {
+      writeString("POINT EMPTY");
+   }
+   else
+   {
+      writeString("POINT (");
+      writeCoordinatePair(p);
+      writeString(")");
+   }
+}
+
+void OpenGisWriter::write(const MultiPoint& m)
+{
+   writeString("MULTIPOINT ");
+   writeLineString(m);
+}
+
+void OpenGisWriter::write(const LineString& l)
+{
+   writeString("LINESTRING ");
+   writeLineString(l);
+}
+
+void OpenGisWriter::write(const MultiPolygon& l)
+{
+   if (l.isnull())
+   {
+      writeString("MULTIPOLYGON EMPTY");
+   }
+   else
+   {
+      writeString("MULTIPOLYGON (");
+
+      for(int i=0;i<l.nitems();++i)
+      {
+	 writePolygon(l.geometry(i));
+	 if(i != l.nitems() -1)
+	    writeString(",");
+      }
+      writeString(")");
+   }
+}
+
+void OpenGisWriter::write(const MultiLineString& l)
+{
+   if (l.isnull())
+   {
+      writeString("MULTILINESTRING EMPTY");
+   }
+   else
+   {
+      writeString("MULTILINESTRING (");
+
+      for(int i=0;i<l.nitems();++i)
+      {
+	 writeLineString(l.geometry(i));
+	 if(i != l.nitems() -1)
+	    writeString(",");
+      }
+      writeString(")");
+   }
+}
+
+void OpenGisWriter::write(const GeometryCollection& g)
+{
+   writeString("GEOMETRYCOLLECTION (");
+
+   for(int i=0;i<g.nitems();++i)
+   {
+      write(g.geometry(i));
+      if(i != g.nitems() -1)
+         writeString(",");
+   }
+   writeString(")");
+}
+
+void OpenGisWriter::write(const Polygon& p)
+{
+   writeString("POLYGON ");
+   writePolygon(p);
+}
+
+void OpenGisWriter::write(const Geometry& g)
+{
+   if (g.isnull())
+   {
+      writeString("EMPTY");
+   }
+   else
+   {
+      switch(g.type())
+      {
+	 case Geometry::TypePoint: write(g.asPoint()); break;
+	 case Geometry::TypeLineString: write(g.asLineString()); break;
+	 case Geometry::TypePolygon: write(g.asPolygon()); break;
+	 case Geometry::TypeMultiPoint: write(g.asMultiPoint()); break;
+	 case Geometry::TypeGeometryCollection: write(g.asGeometryCollection()); break;
+	 case Geometry::TypeMultiLineString: write(g.asMultiLineString()); break;
+	 case Geometry::TypeMultiPolygon: write(g.asMultiPolygon()); break;
+	 default: 
+	   GDKwarning("Dont know how to write type %d\n",g.type());
+	   break;
+      }
+   }
+}
+
+void OpenGisWriter::writeCoordinatePair(const Point& p)
+{
+   writeDouble(p.x);
+   writeString(" ");
+   writeDouble(p.y);
+}
+
+void OpenGisWriter::writeLineString(const polystruct& l)
+{
+   if (l.isnull())
+   {
+      writeString("EMPTY");
+   }
+   else
+   {
+      writeString("(");
+
+      for(int i=0;i<l.npoints();++i)
+      {
+	 writeCoordinatePair(l.pnt(i));
+	 if(i != l.npoints() -1)
+	    writeString(",");
+      }
+      writeString(")");
+   }
+}
+
+void OpenGisWriter::writePolygon(const Polygon& p)
+{
+   if (p.isnull())
+   {
+      writeString("EMPTY");
+   }
+   else
+   {
+      writeString("(");
+
+      writeLineString((const LineString&)p.boundary());
+
+      for(int i=0;i<p.nholes();++i)
+      {
+	 writeString(",");
+	 writeLineString((const LineString&)p.hole(i));
+      }
+      writeString(")");
+   }
+}

@@ -1,0 +1,175 @@
+@f monet_deparse
+@a M. L. Kersten, P. Boncz
+
+@* Deparsing interface
+To simplify tracing and debugging it should be possible to print
+any YYSTREE in ascii. 
+The function tables may have to searched in reverse order to
+obtain the ascii name for functions.
+Quick programing called for a buffer to be filled by recursively
+walking through the tree.
+Care is taken not to overload the buffer.
+@{
+@h
+#ifndef _MONET_DEPARSE_H
+#define _MONET_DEPARSE_H
+
+extern int yytoProlog (YYSTREE t,int cnt);
+extern char* yydeparse(Client c, YYSTREE t, char *buf, char* end);
+
+#endif /* _MONET_DEPARSE_H */
+@-
+To reduce the text produced, it is possible to limit the
+code to a number of characters. This is necessary for debugging.
+@c
+#include "monet.h"
+#include "monet_deparse.h"
+
+char 			yybuffer[4048], *yylim= yybuffer+4048;
+
+static int lex_name(Client c, char* buf, char *end, YYSTREE t, ValPtr v){
+	str nme=0; ptr p = v->val.pval;
+
+	if (t == NULL || buf > end) {
+		end[-1] = 0;
+		return 0;
+	}
+	switch(t->token){
+	case TOK_ITERATOR:
+		*(buf++) = '@';
+	case TOK_FUNCTION:
+		if (t->yysons[2]) {
+			YYSTREE sigs = t->yysons[1];
+			if (sigs && sigs->yysons[0]) {
+				monet_sig_t *s = (monet_sig_t*) sigs->yysons[0]->yyval.val.pval;
+			 	sprintf(buf, "(*%s)", s->fcn_nme);
+			} else {
+			 	strcpy(buf, "(*<str>)");
+			}
+		} else {
+			sprintf(buf, "%s", v->val.sval);
+		} break;
+	case TOK_ITCOMPILED:
+		*(buf++) = '@';
+	case TOK_BUILTIN:
+		if (p) nme = (str) TBL_getname(p);
+		if (nme) sprintf(buf, "%s", nme);
+		else sprintf(buf, "unknown");
+		break;
+	case TOK_SEQ:
+	case TOK_SEQBLOCK:
+	case TOK_PARBLOCK:
+		break;
+	case TOK_TEMPLATE:
+		strcpy(buf, "<VAR>");
+		break;
+	case TOK_WHILE:
+		sprintf(buf, "while ");
+		break;
+	case TOK_IF:
+		strcat(buf," if ");
+		break;
+	case TOK_PAREND:
+		strcat(buf," (sync) ");
+		break;
+	case TOK_IDENT:
+		sprintf(buf," %s ", v->val.sval);
+		break;
+	case TOK_ATOM:
+		strcat(buf, " ");
+		strcat(buf,  ATOMname(v->val.ival));
+		break;
+	case TOK_CONSTANT:
+                {       char *p = NULL;
+                        ATOMformat(v->vtype, VALptr(v), &p);
+                        strcpy(buf, p);
+                        GDKfree(p);
+                }     
+	}
+	return t->token;
+}
+
+int yytoProlog(YYSTREE t,int cnt){
+	yylim = yybuffer + cnt;
+	yybuffer[0] = 0;
+	yylim = yybuffer + 4000;
+	yydeparse(monet_clients,t,yybuffer, yylim);
+	if( cnt<4000) yybuffer[cnt] = 0;
+	return fputs(yybuffer,GDKout);
+}
+
+char* yydeparse(Client c, YYSTREE t, char* buf, char* end){
+	int	i,tk;
+
+	if (t == NULL || buf > end) {
+		end[-1] = 0;
+		return end;
+	}
+	if (t->token == TOK_ASSIGNMENT) {
+		buf = yydeparse(c, t->yysons[0], buf, end); 
+		if (buf < end) {
+			*buf++ = ':'; *buf++ = '='; *buf = 0;
+			buf = yydeparse(c, t->yysons[1], buf, end); 
+			if (buf < end) {
+				*buf++ = ';'; *buf = 0;
+			}
+		}
+		return buf;
+	} else {
+		tk = lex_name(c, buf, end, t, &t->yyval);
+	}
+	while (*buf) {
+		buf++;
+	}
+	switch( tk ){
+	case TOK_COMMAND:
+	case TOK_OPERATOR:
+	case TOK_SETAGGR:
+	case TOK_SETOP:
+	case TOK_FUNCTION:
+		t = t->yysons[0];
+	case TOK_BUILTIN:	
+		*buf++ ='('; *buf = 0; 
+		break;
+	case TOK_SEQBLOCK: 
+		*buf++ ='{'; 
+	case TOK_SEQ:	   
+		*buf = 0; break;
+	case TOK_PARBLOCK:	
+		*buf++ ='['; *buf = 0; 
+	}
+	for ( ; t; t= t->overflow )
+	for (i=0; (i < YYMAXSONS) && t->yysons[i];) {
+		yydeparse(c,t->yysons[i], buf, end);
+		while (*buf) {
+			  buf++;
+		}
+		if (t->token == TOK_ITERATOR || t->token == TOK_ITCOMPILED) break;
+		i++;
+		if (t->yysons[i]) { 
+			if( tk == TOK_SEQBLOCK || tk == TOK_PARBLOCK || tk == TOK_SEQ )
+				*buf++ = ';';
+			else *buf++ = ',';
+			*buf = 0;
+		}
+	}
+	switch( tk ){
+	case TOK_COMMAND:
+	case TOK_OPERATOR:
+	case TOK_SETAGGR:
+	case TOK_SETOP:
+	case TOK_FUNCTION:
+	case TOK_BUILTIN: 
+		*buf++ =')'; *buf = 0; 
+		break;
+	case TOK_SEQBLOCK: 
+		*buf++ ='}'; 
+	case TOK_SEQ:	
+		*buf = 0; break;
+	case TOK_PARBLOCK: 
+		*buf++ =']'; *buf = 0; 
+	}
+	return buf;
+}
+@
+@}

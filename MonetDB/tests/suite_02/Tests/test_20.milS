@@ -1,0 +1,49 @@
+setoid(oid(2000000));
+# analyse selection using indexing
+print(count(k10_unique1));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+
+#Index first to speed-up selection
+accbuild(k10_unique1,find(monet_acctbl,"index"));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+
+#index the tail
+accbuild(reverse(k10_unique1),find(monet_acctbl,"index"));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+quit;

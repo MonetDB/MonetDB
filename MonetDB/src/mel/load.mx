@@ -1,0 +1,28 @@
+@f load
+@a Niels Nes
+
+@h
+#ifndef _LOAD_H_
+#define _LOAD_H_
+
+#include "symbol.h"
+
+class Load : public Symbol {
+    public:
+	Load( int t, char *n ); 
+
+	virtual ostream &print( language *l, ostream &o ) const ;
+};
+#endif // _LOAD_H_
+
+@C
+#include "load.h"
+#include "language.h"
+#include <string.h>
+
+
+Load::Load( int t, char *n ) : Symbol(t,n) { }
+
+ostream &Load::print( language *l, ostream &o ) const {
+	return l->gen_load( o, *this );
+}

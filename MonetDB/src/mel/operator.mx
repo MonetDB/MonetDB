@@ -1,0 +1,80 @@
+@f operator
+@a Niels Nes
+
+@h
+#ifndef _OPERATOR_H_
+#define _OPERATOR_H_
+
+#include "command.h"
+#include "list.h"
+
+class Operator : public Command {
+    public:
+	Operator( int t, char *n, char *fcn = NULL, 
+	      Symbol *result = NULL, 
+	      Symbol *op1 = NULL, 
+	      Symbol *op2 = NULL,
+	      char *hlp = NULL );
+
+	Symbol *op1() const;
+	Symbol *op2() const;
+
+	virtual char* Token() const;
+	virtual ostream &print( language *l, ostream &o ) const ;
+    private:
+    	void set_op_names();
+
+	Symbol *_op1;
+	Symbol *_op2;
+};
+#endif 
+
+@C
+#include "operator.h"
+#include "language.h"
+#include <string.h>
+
+List<Symbol> *oplist(Symbol *op1, Symbol *op2){
+	List<Symbol> *l = new List<Symbol>(3);
+	if (op1) l->insert(op1);
+	if (op2) l->insert(op2);
+	return l;
+}
+
+Operator::Operator( int t, char *n, char *fcn,
+		Symbol *result, Symbol *op1, Symbol *op2, char *hlp ) 
+	: Command(t, n, fcn, NORMAL, result, oplist(op1, op2), hlp) {
+	if (op1 == NULL) {
+		_op1 = op2;
+		_op2 = NULL;
+	} else {
+		_op1 = op1;
+		_op2 = op2;
+	}
+	set_op_names();
+}
+
+void Operator::set_op_names(){
+   if (!_op1->Name() && _op2)
+      	_op1->Name("op1");
+   else if (!_op1->Name())
+      	_op1->Name("op");
+   if (_op2 && !_op2->Name())
+      _op2->Name( "op2" );
+}
+
+Symbol *Operator::op1() const {
+	return _op1;
+}
+
+Symbol *Operator::op2() const {
+	return _op2;
+}
+
+char* Operator::Token() const {
+        return "TOK_OPERATOR";
+}
+
+ostream &Operator::print( language *l, ostream &o ) const {
+	return l->gen_operator( o, *this );
+}

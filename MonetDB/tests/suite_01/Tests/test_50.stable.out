@@ -1,0 +1,76 @@
+stdout of test 'test_50` in directory 'tests/suite_01` itself:
+
+#> Mtest:	milS test_50 milS
+#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_01 -single test_50.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Wed Jan 19 11:06:12 MET 2000.
+#script:test_50.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(20000000));
+#advanced features BATs as primitives.
+
+c:= new(int,bat);
+#c.insert(1,gdk_cpu_stat);
+c.insert(1,cpu);
+c.insert(2,c);
+c.print;
+#-------------------------#
+# BAT:	  tmp_26	  #
+# (int)	  (BAT)		  #
+#-------------------------#
+[ 1,	  <cpu>		  ]
+[ 2,	  <tmp_26>	  ]
+
+printf("#~BeginVariableOutput~#\n"); c.find(1).print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  130	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  50	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+c.print;
+#-------------------------#
+# BAT:	  tmp_26	  #
+# (int)	  (BAT)		  #
+#-------------------------#
+[ 1,	  <cpu>		  ]
+[ 2,	  <tmp_26>	  ]
+c.find(2).print;
+#-------------------------#
+# BAT:	  tmp_26	  #
+# (int)	  (BAT)		  #
+#-------------------------#
+[ 1,	  <cpu>		  ]
+[ 2,	  <tmp_26>	  ]
+c.print;
+#-------------------------#
+# BAT:	  tmp_26	  #
+# (int)	  (BAT)		  #
+#-------------------------#
+[ 1,	  <cpu>		  ]
+[ 2,	  <tmp_26>	  ]
+quit;

@@ -1,0 +1,50 @@
+stdout of test 'triangulate` in directory 'modules/geometry` itself:
+
+#> Mtest:	other triangulate
+#> Mtest:	Mtimeout -timeout 1200 ./triangulate triangulate
+#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_geometry triangulate.mil
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Tue Jan 18 14:49:14 MET 2000.
+#script:triangulate.mil
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+
+#line 353 "triangulate.mx"
+setoid(oid(20000000));
+
+p := polygon("(4:-2,2,2,2,2,-2,-2,-2)");
+p.triangulate.print;
+#-------------------------------------------------#
+# BAT:		  tmp_25			  #
+# (oid)		  (segment)			  #
+#-------------------------------------------------#
+[ 20000039@0,	  ((2.0,-2.0),(-2.0,2.0))	  ]
+c := cpolygon("(0:(4:-2,2,2,2,2,-2,-2,-2))");
+c.triangulate.print;
+#-------------------------------------------------#
+# BAT:		  tmp_25			  #
+# (oid)		  (segment)			  #
+#-------------------------------------------------#
+[ 20000044@0,	  ((2.0,-2.0),(-2.0,2.0))	  ]
+#c := cpolygon("(1:(4:-2,2,2,2,2,-2,-2,-2),(4:-1,1,1,1,1,-1,-1,-1))");
+#c.triangulate.print;
+
+quit;

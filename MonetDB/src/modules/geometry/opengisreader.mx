@@ -1,0 +1,395 @@
+@f opengisreader
+@A C.W. Quak
+@h
+#ifndef __OPENGISREADER_H__
+#define __OPENGISREADER_H__
+
+#include <ctype.h>
+#include <reader.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+class OpenGisReader: public StringReader
+{
+public:
+   OpenGisReader(char* s);
+
+   Point readTaggedPoint();
+   Line readTaggedLine();
+   polyline* readTaggedLineString();
+   cpolygon* readTaggedPolygon();
+   multipoint* readTaggedMultiPoint();
+   MultiLineString* readTaggedMultiLineString();
+   GeometryCollection* readTaggedGeometryCollection();
+   Geometry* readTaggedGeometry();
+   MultiPolygon* readTaggedMultiPolygon();
+
+   Point readPoint();
+   Line readLine();
+   polyline* readLineString();
+   cpolygon* readPolygon();
+   multipoint* readMultiPoint();
+   MultiLineString* readMultiLineString();
+   GeometryCollection* readGeometryCollection();
+   MultiPolygon* readMultiPolygon();
+
+private:
+   point readCoordinatePair();
+   void readPointList(Array<Point>& points);
+   bool checkEmpty();
+};
+
+#endif /* __OPENGISREADER_H__ */
+@C
+#include "geometry.h"
+#include "reader.h"
+#include "opengis.h"
+#include "opengisreader.h"
+#include <gdk.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+OpenGisReader::OpenGisReader(char *s)
+   :StringReader(s)
+{
+}
+
+MultiLineString* OpenGisReader::readMultiLineString()
+{
+   skipSpaces();
+
+   if (checkEmpty())
+   {
+      return(MultiLineString::null());
+   }
+   else
+   {
+      Array<LineString*> lines;
+
+      skipChar('(');
+      skipSpaces();
+      while(nextChar() != ')')
+      {
+	 lines.append(readLineString());
+	 skipChar(',');
+      }
+
+      MultiLineString* rval = MultiLineString::create(lines);
+
+      for(int i = 0; i < lines.nitems();++i)
+	 delete (lines[i]);
+
+      return(rval);
+   }
+}
+
+cpolygon* OpenGisReader::readPolygon()
+{
+   skipSpaces();
+
+   if (checkEmpty())
+   {
+      return(cpolygon::null());
+   }
+   else
+   {
+      Array<polygon*> holes;
+
+      skipChar('(');
+      LineString* boundary = readLineString();
+      skipSpaces();
+      while(nextChar() != ')')
+      {
+	 holes.append((polygon *)readLineString());
+      }
+      skipChar(')');
+
+      cpolygon* rval = cpolygon::create((polygon*)boundary,holes);
+
+      for(int i = 0; i < holes.nitems();++i)
+	 delete (holes[i]);
+
+      return(rval);
+   }
+}
+
+multipoint* OpenGisReader::readMultiPoint()
+{
+   skipSpaces();
+
+   if (checkEmpty())
+   {
+      return(multipoint::null.copy());
+   }
+   else
+   {
+      Array<Point> points;
+
+      readPointList(points);
+      return(multipoint::create(points));
+   }
+}
+
+MultiPolygon* OpenGisReader::readMultiPolygon()
+{
+   skipSpaces();
+
+   if (checkEmpty())
+   {
+      return(MultiPolygon::null());
+   }
+   else
+   {
+      Array<Polygon*> lines;
+
+      skipChar('(');
+      do
+      {
+	 lines.append(readPolygon());
+	 skipSpaces();
+	 
+	 if (nextChar() != ',')
+	    break;
+	 skipChar(',');
+      }
+      while(nextChar() != 0);
+
+      MultiPolygon* rval = MultiPolygon::create(lines);
+
+      for(int i = 0; i < lines.nitems();++i)
+	 delete (lines[i]);
+
+      return(rval);
+   }
+}
+
+Geometry* OpenGisReader::readTaggedGeometry()
+{
+   skipSpaces();
+   char* type = readString();
+   Geometry* rval;
+
+   if (strcmp(type,"POINT") == 0)
+   {
+      Point p = readPoint();
+      rval = Geometry::create(p);
+   }
+   else if (strcmp(type,"LINESTRING") == 0)
+   {
+      LineString* l = readLineString();
+      rval = Geometry::create(*l);
+   }
+   else if (strcmp(type,"POLYGON") == 0)
+   {
+      Polygon* l = readPolygon();
+      rval = Geometry::create(*l);
+   }
+   else if (strcmp(type,"MULTIPOINT") == 0)
+   {
+      MultiPoint* l = readMultiPoint();
+      rval = Geometry::create(*l);
+   }
+   else if (strcmp(type,"MULTILINESTRING") == 0)
+   {
+      MultiLineString* l = readMultiLineString();
+      rval = Geometry::create(*l);
+   }
+   else if (strcmp(type,"MULTIPOLYGON") == 0)
+   {
+      MultiPolygon* l = readMultiPolygon();
+      rval = Geometry::create(*l);
+   }
+   else if (strcmp(type,"GEOMETRYCOLLECTION") == 0)
+   {
+      GeometryCollection* l = readGeometryCollection();
+      rval = Geometry::create(*l);
+   }
+   else
+   {
+      GDKwarning("Unsupported Geometry type %s empty Geometry returned\n",type);
+      rval = Geometry::null();
+   }
+
+   delete type;
+   return(rval);
+}
+
+GeometryCollection* OpenGisReader::readGeometryCollection()
+{
+   skipSpaces();
+
+   if (checkEmpty())
+   {
+      return(GeometryCollection::null());
+   }
+   else
+   {
+      Array<Geometry*> geoms;
+
+      skipChar('(');
+      do
+      {
+	 geoms.append(readTaggedGeometry());
+	 skipSpaces();
+
+	 if (nextChar() != ',')
+	    break;
+	 skipChar(',');
+      }
+      while(nextChar() != 0);
+
+      GeometryCollection* rval = GeometryCollection::create(geoms);
+
+      for(int i = 0; i < geoms.nitems();++i)
+	 delete (geoms[i]);
+
+      return(rval);
+   }
+}
+
+Line OpenGisReader::readLine()
+{
+   skipSpaces();
+
+   if (checkEmpty())
+   {
+      return(segment::null);
+   }
+   else
+   {
+      Array<Point> points;
+
+      readPointList(points);
+
+      if (points.nitems() != 2)
+         GDKwarning("A line should have 2 points\n");
+      return(Line(points[0],points[1]));
+   }
+}
+
+polyline* OpenGisReader::readLineString()
+{
+   skipSpaces();
+
+   if (checkEmpty())
+   {
+      return(polyline::null.copy());
+   }
+   else
+   {
+      Array<Point> points;
+
+      readPointList(points);
+      return(polyline::create(points));
+   }
+}
+
+polyline* OpenGisReader::readTaggedLineString()
+{
+   if (!skipString("LINESTRING"))
+      GDKwarning("LINESTRING string not found while parsing Line\n");
+   return(readLineString());
+}
+
+cpolygon* OpenGisReader::readTaggedPolygon()
+{
+   if (!skipString("POLYGON"))
+      GDKwarning("POLYGON string not found while parsing Line\n");
+   return(readPolygon());
+}
+
+multipoint* OpenGisReader::readTaggedMultiPoint()
+{
+   if (!skipString("MULTIPOINT"))
+      GDKwarning("MULTIPOINT string not found while parsing Line\n");
+   return(readMultiPoint());
+}
+
+MultiLineString* OpenGisReader::readTaggedMultiLineString()
+{
+   if (!skipString("MULTILINESTRING"))
+      GDKwarning("MULTILINESTRING string not found while parsing Line\n");
+   return(readMultiLineString());
+}
+
+MultiPolygon* OpenGisReader::readTaggedMultiPolygon()
+{
+   if (!skipString("MULTIPOLYGON"))
+      GDKwarning("MULTIPOLYGON string not found while parsing Line\n");
+   return(readMultiPolygon());
+}
+
+GeometryCollection* OpenGisReader::readTaggedGeometryCollection()
+{
+   if (!skipString("GEOMETRYCOLLECTION"))
+      GDKwarning("GEOMETRYCOLLECTION string not found while parsing Line\n");
+   return(readGeometryCollection());
+}
+
+
+Line OpenGisReader::readTaggedLine()
+{
+   if (!skipString("LINE"))
+      GDKwarning("LINE string not found while parsing Line\n");
+   return(readLine());
+}
+
+point OpenGisReader::readTaggedPoint()
+{
+   if (!skipString("POINT"))
+      GDKwarning("POINT string not found while parsing Point\n");
+   return(readPoint());
+}
+
+bool OpenGisReader::checkEmpty()
+{
+   if(startsWith("EMPTY"))
+   {
+      skipString("EMPTY");
+      return(true);
+   }
+   else
+      return(false);
+}
+
+point OpenGisReader::readPoint()
+{
+   skipSpaces();
+   if(checkEmpty())
+   {
+      return(point::null);
+   }
+   else
+   {
+      skipChar('(');
+      point rval = readCoordinatePair();
+      skipChar(')');
+      return(rval);
+   }
+}
+
+void OpenGisReader::readPointList(Array<Point>& points)
+{
+   skipChar('(');
+   do
+   {
+      points.append(readCoordinatePair());
+      skipSpaces();
+
+      if (nextChar() != ',')
+         break;
+      skipChar(',');
+   }
+   while(nextChar() != 0);
+
+   skipChar(')');
+}
+
+point OpenGisReader::readCoordinatePair()
+{
+   double xv = readDouble();
+   skipSpaces();
+   double yv = readDouble();
+   return(point(xv,yv));
+}

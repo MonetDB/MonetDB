@@ -1,0 +1,181 @@
+@f MultiLineString
+@a C.W. Quak
+@h
+#ifndef __MULTILINESTRING_H__
+#define __MULTILINESTRING_H__
+
+class MultiLineString : public varray
+{
+public:
+   //
+   // Operations needed by Monet.
+   //
+   int hash() const;
+   bool OK() const;
+   bool operator==(const MultiLineString& r) const;
+   bool operator!=(const MultiLineString& r) const;
+
+   const LineString& geometry(int index) const;
+   LineString& geometry(int index);
+
+   static MultiLineString* null();
+
+   static MultiLineString* create(int nitems,int usedbytes);
+   static MultiLineString* create(Array<LineString*> items);
+   static MultiLineString* fromstr(char *s,int* parselen,int *buflen,MultiLineString* p);
+   int tostr(char* s,int len) const;
+   int expectedstrlen() const;
+
+   MultiLineString* copy() const;
+
+   //
+   // Update operations.
+   //
+   MultiLineString* additem(const LineString& p);
+
+   int dimension() const;
+};
+
+inline int MultiLineString::dimension() const
+{
+   return(1);
+}
+
+#endif /* __MULTILINESTRING_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+MultiLineString* MultiLineString::copy() const
+{
+   return((MultiLineString *)varray::copy());
+}
+
+MultiLineString* MultiLineString::create(int nitems,int usedbytes)
+{
+   return((MultiLineString *)varray::create(nitems,usedbytes));
+}
+
+int MultiLineString::expectedstrlen() const
+{
+   return(20 + (nbytes() * 10));
+}
+
+int MultiLineString::tostr(char* string,int len) const
+{
+   int rval = 0;
+
+   rval += sprintf(string + rval,"(%d:", nitems());
+
+   for (int i = 0; i < nitems();++i)
+   {
+      rval += geometry(i).tostr(string + rval,len - rval);
+   }
+   rval += sprintf(string + rval,")");
+
+   if (rval > len)
+      GDKwarning("Increase value of MultiLineString::expectedstrlen()\n");
+   return(rval);
+}
+
+MultiLineString* MultiLineString::fromstr(char *,int* ,int *,MultiLineString*)
+{
+   return(NULL);
+}
+
+MultiLineString* MultiLineString::additem(const LineString& p)
+{
+   varray* rval;
+
+   if (!fits(p.nbytes(),8))
+   {
+      rval = realloc(1,p.nbytes() + 8);
+      delete this;
+   }
+   else
+      rval = this;
+   
+   rval->append(&p,p.nbytes(),8);
+
+   return((MultiLineString* )rval);
+}
+
+int MultiLineString::hash() const
+{
+   return(nitems());
+}
+
+bool MultiLineString::operator!=(const MultiLineString& r) const
+{
+   return(!(*this == r));
+}
+
+bool MultiLineString::operator==(const MultiLineString& r) const
+{
+   if (nitems() != r.nitems())
+      return(false);
+
+   int i;
+   for(i=0;i<nitems();++i)
+   {
+      if (geometry(i) != r.geometry(i))
+         break;
+   }
+   if (i == nitems())
+      return(true);
+   
+   GDKwarning("MultiLineString_comp not fully implemented yet");
+   return(false);
+}
+
+bool MultiLineString::OK() const
+{
+   varray::OK();
+
+   if (nitems() < 0)
+   {
+      GDKerror("MultiLineString with %d items \n",nitems());
+      return(false);
+   }
+
+   for(int i=0;i<nitems();++i)
+   {
+      if (!geometry(i).OK())
+      {
+	 GDKerror("item %d of MultiLineString is not ok\n",i);
+	 return(false);
+      }
+   }
+
+   return(true);
+}
+
+MultiLineString* MultiLineString::null()
+{
+   return((MultiLineString *)varray::null());
+}
+
+LineString& MultiLineString::geometry(int i)
+{
+   return(*(LineString *)(varray::item(i)));
+}
+
+const LineString& MultiLineString::geometry(int i) const
+{
+   return(*(const LineString *)(varray::item(i)));
+}
+
+MultiLineString* MultiLineString::create(Array<LineString*> items)
+{
+   MultiLineString* rval = MultiLineString::create(items.nitems(),3000);
+   for(int i = 0; i < items.nitems();++i)
+   {
+      rval = rval->additem(*(items[i]));
+   }
+   return(rval);
+}

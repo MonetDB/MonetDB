@@ -1,0 +1,348 @@
+@f minirealm
+@a C.W. Quak
+@h
+#ifndef __MINIREALM_H__
+#define __MINIREALM_H__ 
+
+#include "Set.h"
+
+class rline
+{
+public:
+   Line l;
+   bool a;
+   bool b;
+
+   rline()
+   {
+   }
+
+   rline(Line l_val,bool a_val,bool b_val)
+   {
+      l = l_val;
+      a = a_val;
+      b = b_val;
+
+      if ((a == false) && (b == false))
+      {
+	 GDKerror("Line created (%f,%f)-(%f,%f) %d %d \n",
+	       l.source.x,
+	       l.source.y,
+	       l.dest.x,
+	       l.dest.y,
+	       a,
+	       b);
+      }
+   }
+
+   bool setab(bool a_val,bool b_val)
+   {
+      if (a_val)
+         a = a_val;
+      if (b_val)
+         b = b_val;
+      return ((a == true) && (b == true));
+   }
+};
+
+class rpoint
+{
+public:
+   Point p;
+   bool a;
+   bool b;
+
+   rpoint()
+   {
+   }
+
+   rpoint(Point p_val,bool a_val,bool b_val)
+   {
+      p = p_val;
+      a = a_val;
+      b = b_val;
+
+      if ((a == false) && (b == false))
+      {
+	 GDKerror("Pointcreated (%f,%f) %d %d \n", p.x, p.y, a, b);
+      }
+   }
+
+   bool setab(bool a_val,bool b_val)
+   {
+      if (a_val)
+         a = a_val;
+      if (b_val)
+         b = b_val;
+      return ((a == true) && (b == true));
+   }
+};
+
+bool operator==(const rpoint& left,const rpoint& right)
+{
+   return(left.p == right.p);
+}
+
+bool operator<(const rpoint& left,const rpoint& right)
+{
+   return(left.p < right.p);
+}
+
+class minirealm
+{
+public:
+   Array<rline> lines;
+   Set<rpoint> points;
+   int dimab;
+
+   MultiPoint* bnda;
+   MultiPoint* bndb;
+
+   void incab(int dim);
+
+   //
+   // Add a LineString at once as long it is known that
+   // it does not intersect with anything in the minirealm,
+   // and is not selfintersecting.
+   //
+   void add_nonintersect(const LineString& l,bool a,bool b);
+
+   minirealm(MultiPoint* bnd1,MultiPoint* bnd2);
+   ~minirealm();
+
+   void add(const Line& l,bool a,bool b,int startindex = 0);
+   void add(const Point& p,bool a,bool b);
+   void split(int index,const Point& p);
+   void dump() const;
+};
+
+#endif /* __MINIREALM_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+#include "Array.h"
+#include "minirealm.h"
+
+minirealm::~minirealm()
+{
+   delete bnda;
+   delete bndb;
+}
+
+minirealm::minirealm(MultiPoint* bnda,MultiPoint* bndb)
+{
+   dimab = -1;
+   this->bnda = bnda;
+   this->bndb = bndb;
+}
+
+void minirealm::incab(int dim)
+{
+   if (dim > dimab)
+   {
+      dimab = dim;
+   }
+}
+
+void minirealm::split(int index,const Point& p)
+{
+//   GDKwarning("Splitting Line (%f,%f)-(%f,%f) %d %d at (%f,%f)\n",
+//         lines[index].l.source.x,
+//         lines[index].l.source.y,
+//         lines[index].l.dest.x,
+//         lines[index].l.dest.y,
+//	 lines[index].a,
+//	 lines[index].b,
+//	 p.x,
+//	 p.y);
+   add(p,lines[index].a,lines[index].b);
+   lines.append(rline(Line(lines[index].l.source,p),lines[index].a,lines[index].b));
+   lines[index].l.source = p;
+}
+
+void minirealm::add(const Point& p,bool a, bool b)
+{
+   rpoint rps(p,a,b);
+   rpoint* rp = points.find(rps);
+   
+   if (rp == 0)
+   {
+      points.insert(*new rpoint(p,a,b));
+   }
+   else
+   {
+      rp->setab(a,b);
+      if (rp->a == true && rp->b == true)
+      {
+	 if ((!bnda->contains(p)) && (!bndb->contains(p)))
+	    incab(0);
+      }
+   }
+}
+
+void minirealm::add(const Line& l,bool a, bool b,int startindex)
+{
+   if ((a == true) && (b == true))
+      incab(1);
+
+   add(l.source,a,b);
+   add(l.dest,a,b);
+
+//   GDKwarning("Adding Line (%f,%f)-(%f,%f) %d %d\n",
+//      l.source.x, l.source.y, l.dest.x, l.dest.y, a, b);
+
+   for(int i=startindex;i<lines.nitems();++i)
+   {
+      Line isection;
+
+      int rel = intRelate(l,lines[i].l,isection);
+
+//      if (dim != -1)
+//      {
+//	 GDKwarning("  Lines (%.2f,%.2f)-(%.2f,%.2f) and (%.2f,%.2f)-(%.2f,%.2f)\n",
+//	       l.source.x,
+//	       l.source.y,
+//	       l.dest.x,
+//	       l.dest.y,
+//	       lines[i].l.source.x,
+//	       lines[i].l.source.y,
+//	       lines[i].l.dest.x,
+//	       lines[i].l.dest.y);
+//	 GDKwarning("   have isection (%.2f,%.2f)-(%.2f,%.2f)\n",
+//	       isection.source.x,
+//	       isection.source.y,
+//	       isection.dest.x,
+//	       isection.dest.y);
+//      }
+
+      switch(rel)
+      {
+         case relationship::DISJOINT:
+	    //
+	    // Nothing needs to be done.
+	    //
+	    break;
+         case relationship::TOUCH:
+	    //
+	    // Nothing needs to be done.
+	    //
+	    break;
+         case relationship::REINL:
+	    // GDKwarning("REINL\n");
+	    add(Line(l.source,isection.source),a,b,i);
+	    add(Line(l.dest,isection.source),a,b,i);
+	    return;
+         case relationship::LEINR:
+	    // GDKwarning("LRINR\n");
+	    split(i,isection.source);
+	    break;
+         case relationship::CROSS:
+	    // GDKwarning("CROSS\n");
+	    split(i,isection.source);
+	    add(Line(l.source,isection.source),a,b,i);
+	    add(Line(l.dest,isection.source),a,b,i);
+	    add(isection.source,a,b);
+	    return;
+         case relationship::EQUAL:
+	    // GDKwarning("EQUAL\n");
+	    if (lines[i].setab(a,b))
+	       incab(1);
+	    return;
+         case relationship::LINR:
+	    //
+	    // We split the line in one place. And insert again.
+	    // It would be better to do it differently!!!!
+	    //
+	    // GDKwarning("LINR\n");
+	    split(i,isection.source);
+	    add(l,a,b,i);
+	    return;
+         case relationship::RINL:
+	    //
+	    // We split the line in one place. And insert again.
+	    // It would be better to do it differently!!!!
+	    //
+	    // GDKwarning("RINL\n");
+	    add(Line(l.source,isection.source),a,b,i);
+	    add(Line(l.dest,isection.source),a,b,i);
+	    return;
+         case relationship::LIN2R:
+	    // GDKwarning("LIN2R\n");
+	    if (!lines[i].l.hasendpoint(isection.source))
+	       split(i,isection.source);
+	    else
+	       split(i,isection.dest);
+	    add(l,a,b,i);
+	    return;
+         case relationship::RIN2L:
+	    // GDKwarning("RIN2L\n");
+	    //
+	    // We have to split l.
+	    //
+	    if (!l.hasendpoint(isection.source))
+	    {
+	       add(Line(l.source,isection.source),a,b,i);
+	       add(Line(l.dest,isection.source),a,b,i);
+	    }
+	    else
+	    {
+	       add(Line(l.source,isection.dest),a,b,i);
+	       add(Line(l.dest,isection.dest),a,b,i);
+	    }
+	    return;
+         case relationship::OVERLAP:
+	    // GDKwarning("OVERLAP\n");
+	    if (!lines[i].l.hasendpoint(isection.source))
+	       split(i,isection.source);
+	    else
+	       split(i,isection.dest);
+	    if (!l.hasendpoint(isection.source))
+	    {
+	       add(Line(l.source,isection.source),a,b,i);
+	       add(Line(l.dest,isection.source),a,b,i);
+	    }
+	    else
+	    {
+	       add(Line(l.source,isection.dest),a,b,i);
+	       add(Line(l.dest,isection.dest),a,b,i);
+	    }
+	    return;
+	 default:
+	    GDKerror("Unexpected case in minirealm\n");
+      }
+   }
+
+   //
+   // This line is completely new.
+   // Just add it to the end of the list.
+   //
+   lines.append(rline(l,a,b));
+}
+
+void minirealm::add_nonintersect(const LineString& l,bool a,bool b)
+{
+   for(int j=0;j<l.npoints();++j)
+   {
+      add(l.pnt(j),a,b);
+   }
+
+   for(int i=0;i<l.nsegments();++i)
+   {
+      lines.append(rline(l.sgmt(i),a,b));
+   }
+}
+
+void minirealm::dump() const
+{
+   for(int i=0;i<lines.nitems();++i)
+   {
+      GDKwarning("Line[%d] (%f,%f)-(%f,%f) %d %d\n",
+         i,
+         lines[i].l.source.x,
+         lines[i].l.source.y,
+         lines[i].l.dest.x,
+         lines[i].l.dest.y,
+	 lines[i].a,
+	 lines[i].b);
+   }
+}

@@ -1,0 +1,21 @@
+#! /bin/sh
+
+# helps bootstrapping NDK, when checked out from CVS
+# requires GNU autoconf and GNU automake
+# this is not meant to go into the distributions
+
+test -f conf/ltmain.sh || libtoolize -c -f; perl -i -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
+aclocal -I .
+autoheader
+automake -a -c
+mfiles=`find . \( -name Makefile.in \)  -print`
+for i in $mfiles; do
+  if [ "`grep all-local $i 2>/dev/null`" ]; then  
+    perl -i -p -e 's|all-am: Makefile|all-am: Makefile \$\(BUILT_SOURCES\)|g' $i
+  fi
+done
+autoupdate
+autoconf
+
+exit 0
+

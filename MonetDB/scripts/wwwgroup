@@ -1,0 +1,139 @@
+#!/bin/sh
+#
+#   SOURCE CODE WEB GENERATION FOR A GROUP OF MONET EXTENSION MODULES
+# =====================================================================
+#
+# Make sure FIRST:
+# - have WWWlink, WWWidx, WWWhtml, and Mserver installed.
+# - have a working Monet database called "index" 
+#   + the administrator already indexed the GDK defs there (wwwmake script)
+#   + you have access also to this database (via $MONETHOME/homes).
+#   + your "monet.prelude" file symbolically linked to "wwwmake.mil" file.
+# - a generated WWW tree available of the GDK layer:
+#   + WWW $DSTDIR avaliable with extracted GDK html files.
+#   + you can write in the $DSTDIR/$GROUP directory
+# - set DSTDIR, GROUP, GROUPNAME variables correctly IN THIS SCRIPT.
+#
+# =====================================================================
+#
+# USAGE: (from the local directory of your Mx-files)
+#  wwwgroup group grpname [mkdirs] [clean] [index] [link] [extract] [dbgen]
+#
+#     group:  short id for your group of modules (e.g. "odmg")
+#     grpname:longer name for your group of modules (e.g. "odmg modules")
+#     mkdirs: Generate empty directories in the WWW html tree.
+#             [do this the first time only]
+#     clean:  throw all old html files away. A lot of them, coffee break!
+#     index:  index all your Mx-files. It will produce .mx.idx files
+#             in the WWW tree [done with WWWidx utility].
+#     link:   find links between your files internally, and between
+#             defenitions in the GDK layer (xref with $GROUP and gdk)
+#             [done with WWWlink utility].
+#     extract:generate final .html files.
+#     dbgen:  generate glossaries, overview files for every single 
+#             definition, and nice netscape-compatible frame-files
+#             [performed by procedures from the wwwmake.mil script].
+# =====================================================================
+
+
+# short id for your group of modules
+GROUP="$1" ; shift
+
+# longer name for your group of modules  
+GROUPNAME="$1" ; shift
+
+# top of the tree with html files. You must have a writable $DSTDIR/$GROUP dir.
+WWWSCW=www/scw
+DSTDIR=$MONETHOME/$WWWSCW/
+
+# set this if you want to link function calls to manual pages
+#MANDIR=http://www.cs.ubc.ca/man/solaris2.1
+
+# path from group directory to top of the WWW tree 
+WWWDIR=..
+
+do_mkdirs()
+{
+    echo == checking dirs
+    for i in *.mx
+    do
+        DIR=`echo $i | awk -F".mx" '{ printf "%s\n", $1  }'`
+        if [ -d $DSTDIR/$GROUP/$DIR ]; then 
+             rm -f $DSTDIR/$GROUP/$DIR/* 2>/dev/null
+        else 
+             echo "mkdir -p $DSTDIR/$GROUP/$DIR" 
+             mkdir -p $DSTDIR/$GROUP/$DIR 2> /dev/null
+        fi
+        for j in 1 2 3 4 5 6 7 8 9
+        do
+            if [ -d $DSTDIR/$GROUP/$DIR/$j ]; then 
+                rm $DSTDIR/$GROUP/$DIR/$j/* 2>/dev/null
+            else
+                echo mkdir -p $DSTDIR/$GROUP/$DIR/$j
+                mkdir -p $DSTDIR/$GROUP/$DIR/$j 2>/dev/null
+            fi
+        done
+    done
+}
+
+do_clean()
+{
+    find $DSTDIR/$GROUP \( \( -name '*.mx*' -o -name '*.html' \)  ! -name index.html \) -exec rm {} \;
+    do_mkdirs()
+}
+
+do_index()
+{
+    for i in *.mx
+    do
+        echo WWWidx $i -G$GROUP ">" $WWWSCW/$GROUP/$i.idx 
+        WWWidx $i -G$GROUP > $DSTDIR/$GROUP/$i.idx 
+    done
+}
+
+do_link()
+{    
+    for i in *.mx
+    do
+        echo WWWlink $WWWSCW/$GROUP/$i.idx  -R$GROUP -Rmonet -Rgdk ">" $WWWSCW/$GROUP/$i
+        WWWlink $DSTDIR/$GROUP/$i.idx  -W$WWWDIR -R$GROUP -Rmonet -Rgdk > $DSTDIR/$GROUP/$i
+    done
+}
+
+do_extract()
+{
+    for i in *.mx
+    do
+        echo Mx -w $i
+	Mx -w $DSTDIR/$GROUP/$i
+    done
+    cp *.gif $DSTDIR/$GROUP 2>/dev/null
+    mv *.html $DSTDIR/$GROUP 2>/dev/null
+}
+
+do_dbgen()
+{
+    echo == db generation 
+    echo "GEN_GROUP(\"$GROUP\",\"$GROUPNAME\"); commit;" | Mserver -db index
+    echo "mod_grp.reverse@hashloop(\"$GROUP\") { GEN_MOD(mod_nme.find(\$t)); }" | Mserver -db index
+    echo "GEN_GLOBAL(all_grp);" | Mserver -db index
+}
+   
+case $* in
+*mkdirs*) do_mkdirs;;
+esac
+case $* in
+*clean*) do_clean;;
+esac
+case $* in
+*index*) do_index;;
+esac
+case $* in
+*link*) do_link;;
+esac
+case $* in
+*extract*) do_extract;;
+esac
+case $* in
+*dbgen*) do_dbgen;;
+esac

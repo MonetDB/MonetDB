@@ -1,0 +1,5 @@
+stderr of test 'bat` in directory 'modules/plain` itself:
+
+#> Mtest:	other bat
+#> Mtest:	./bat bat
+#> Mlog:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db modules_plain bat.mil

@@ -1,0 +1,121 @@
+@f MultiPointMultiPoint
+@A C.W. Quak
+@h
+#ifndef __MULTIPOINTMULTIPOINT_H__
+#define __MULTIPOINTMULTIPOINT_H__
+
+extern bool Relate(const MultiPoint& p1,const MultiPoint& p2,const char matrix[9]);
+extern relationship Relate(const MultiPoint& p1,const MultiPoint& p2);
+
+#endif /* __MULTIPOINTMULTIPOINT_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+
+//
+//===============================================
+// Dimensionally Extended Nine-Intersection Model
+//===============================================
+//
+
+static bool calc_134578(
+   const MultiPoint& /* p1 */,
+   const MultiPoint& /* p2 */,
+   relmatrix& rel)
+{
+   rel.setdimension(1,-1);
+   rel.setdimension(3,-1);
+   rel.setdimension(4,-1);
+   rel.setdimension(5,-1);
+   rel.setdimension(7,-1);
+   rel.setdimension(8,2);
+
+   return (rel.isfalse(1) || rel.isfalse(3) || rel.isfalse(4) || rel.isfalse(5) || rel.isfalse(7) || rel.isfalse(8));
+}
+
+static bool calc_0(
+   const MultiPoint& p1,
+   const MultiPoint& p2,
+   relmatrix& rel)
+{
+   if (intersect(p1,p2))
+      rel.setdimension(0,0);
+   else
+      rel.setdimension(0,1);
+
+   return(rel.isfalse(0));
+}
+
+static bool calc_6(
+   const MultiPoint& p1,
+   const MultiPoint& p2,
+   relmatrix& rel)
+{
+   if(subset(p2,p1))
+      rel.setdimension(6,0);
+   else
+      rel.setdimension(6,1);
+
+   return(rel.isfalse(6));
+}
+
+static bool calc_2(
+   const MultiPoint& p1,
+   const MultiPoint& p2,
+   relmatrix& rel)
+{
+   if(subset(p1,p2))
+      rel.setdimension(2,0);
+   else
+      rel.setdimension(2,1);
+
+   return(rel.isfalse(2));
+}
+
+bool Relate(const MultiPoint& p1,const MultiPoint& p2,const char matrix[9])
+{
+   //
+   // Initialize the relationship matrix.
+   //
+   relmatrix rel(p1.dimension(),p2.dimension(),matrix);
+
+   //
+   // This fulnction fills some cells of the matrix. These
+   // are the cells that can be computed in constant time, so
+   // we do not check whether there is a need for these values.
+   //
+   if (calc_134578(p1,p2,rel))
+      return(false);
+
+   if (rel.unresolved(0))
+   {
+      if (calc_0(p1,p2,rel))
+         return(false);
+   }
+
+   if (rel.unresolved(6))
+   {
+      if (calc_6(p1,p2,rel))
+         return(false);
+   }
+
+   if (rel.unresolved(2))
+   {
+      if (calc_2(p1,p2,rel))
+         return(false);
+   }
+
+   return(rel.match());
+}
+
+relationship Relate(const MultiPoint& p1,const MultiPoint& p2)
+{
+   relmatrix rel(p1.dimension(),p2.dimension(),"?????????");
+
+   calc_134578(p1,p2,rel);
+   calc_0(p1,p2,rel);
+   calc_2(p1,p2,rel);
+   calc_6(p1,p2,rel);
+
+   return(rel.toRelationship());
+}

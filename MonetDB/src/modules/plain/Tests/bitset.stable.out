@@ -1,0 +1,121 @@
+stdout of test 'bitset` in directory 'modules/plain` itself:
+
+#> Mtest:	other bitset
+#> Mtest:	Mtimeout -timeout 420 ./bitset bitset
+#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain bitset.mil
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:bitset.mil
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+
+#line 394 "bitset.mx"
+
+
+sigs("bitset");
+#-------------------------------------------------#
+# signature					  #
+#-------------------------------------------------#
+[ "bitset_and(bitset, bitset) : bitset"		  ]
+[ "bitset_clearBit(bitset, int) : bitset"	  ]
+[ "bitset_flipBit(bitset, int) : bitset"	  ]
+[ "bitset_getBit(bitset, int) : bit"		  ]
+[ "bitset_not(bitset) : bitset"			  ]
+[ "bitset_or(bitset, bitset) : bitset"		  ]
+[ "bitset_setBit(bitset, int) : bitset"		  ]
+[ "bitset_toInt(bitset) : int"			  ]
+[ "bitset_xor(bitset, bitset) : bitset"		  ]
+[ "newBitset() : bitset"			  ]
+[ "newBitset(int) : bitset"			  ]
+
+printf("constructor\n");
+constructor
+b := newBitset();
+b.print;
+[ ffffffffffffffffffffffffffffffff ]
+
+printf("get(15)\n");
+get(15)
+b.bitset_getBit(15).print;
+[ false ]
+printf("set(15)\n");
+set(15)
+b := b.bitset_setBit(15);
+b.print;
+[ fffffffffffffffftfffffffffffffff ]
+printf("get(15)\n");
+get(15)
+b.bitset_getBit(15).print;
+[ true ]
+printf("clear(15)\n");
+clear(15)
+b := b.bitset_clearBit(15);
+b.print;
+[ ffffffffffffffffffffffffffffffff ]
+printf("get(15)\n");
+get(15)
+b.bitset_getBit(15).print;
+[ false ]
+
+printf("flip(7)\n");
+flip(7)
+b := b.bitset_flipBit(7);
+b.print;
+[ fffffffffffffffffffffffftfffffff ]
+printf("flip(7)\n");
+flip(7)
+b := b.bitset_flipBit(7);
+b.print;
+[ ffffffffffffffffffffffffffffffff ]
+
+printf("constructor(35)\n");
+constructor(35)
+a := newBitset(35);
+a.print;
+[ fffffffffffffffffffffffffftffftt ]
+
+printf("constructor(0x22)\n");
+constructor(0x22)
+b := bitset("0x22");
+b.print;
+[ fffffffffffffffffffffffffftffftf ]
+
+printf("and\n");
+and
+bitset_and(a,b).print;
+[ fffffffffffffffffffffffffftffftf ]
+printf("or\n");
+or
+bitset_or(a,b).print;
+[ fffffffffffffffffffffffffftffftt ]
+printf("xor\n");
+xor
+bitset_xor(a,b).print;
+[ ffffffffffffffffffffffffffffffft ]
+printf("not\n");
+not
+bitset_not(a).print;
+[ ttttttttttttttttttttttttttftttff ]
+
+printf("convert to integer\n");
+convert to integer
+bitset_toInt(a).print;
+[ 35 ]

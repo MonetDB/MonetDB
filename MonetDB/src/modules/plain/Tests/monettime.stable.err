@@ -1,0 +1,5 @@
+stderr of test 'monettime` in directory 'modules/plain` itself:
+
+#> Mtest:	other monettime
+#> Mtest:	Mtimeout -timeout 1200 ./monettime monettime
+#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_plain monettime.mil

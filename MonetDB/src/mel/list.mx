@@ -1,0 +1,65 @@
+@f list
+@a Niels Nes
+
+@h
+#ifndef _LIST_H_
+#define _LIST_H_
+
+#include "ListIterator.h"
+
+template<class T>
+class List {
+    public:
+
+	List( int size ) {
+	_size = size;
+	_next = 0;
+	_l = new T*[size];
+	}
+
+	~List( ) {
+	delete [] _l;
+	}
+
+	void insert( T* obj ) {
+   	if (_next >= _size)
+	   	resize();
+	_l[_next++] = obj;
+	}
+
+	void insert( List<T> * l ){
+	for ( int i = 0; i < l->_next; i++ ){
+		insert( l->_l[i] );
+	}
+	}
+
+	T *operator[](int i){
+	return _l[i];
+	}
+
+	int count( ) const{
+   	return _next;
+	}
+
+	ListIterator<T> *iterator(){
+	return new ListIterator<T>( _l, _next );
+	}
+
+
+    private:
+	T **_l;
+	int _next;
+	int _size;
+    
+	void resize(){
+   	_size *= 2;
+	T ** buf = new T*[_size];
+	for (int i = 0; i < _next; i++){
+	   buf[i] = _l[i];
+	}
+	delete [] _l;
+	_l = buf;
+	}
+};
+
+#endif // _LIST_H_

@@ -1,0 +1,12 @@
+stderr of test 'create_destroy_db` in directory 'src/tools` itself:
+
+#> Mtest:	other create_destroy_db
+#> Mtest:	./create_destroy_db create_destroy_db
+#> Mlog:	Mcreatedb -user manegold -db TestDB1
+Mcreatedb: using default dbdir /dbfarm/Monet/StM/Current/monet/IRIX646.5/dbfarm/TestDB1.
+#> Mlog:	echo 'quit;' | Mtimeout -timeout 99 Mserver -yaccsilent -d8 -db TestDB1
+#> Mlog:	Mdestroydb -db TestDB1
+#> Mlog:	Mcreatedb -user manegold -home /dbfarm/Monet/StM/Current/monet/IRIX646.5 -db TestDB2
+Mcreatedb: using default dbdir /dbfarm/Monet/StM/Current/monet/IRIX646.5/dbfarm/TestDB2.
+#> Mlog:	echo 'quit;' | Mtimeout -timeout 99 Mserver -yaccsilent -d8 -home /dbfarm/Monet/StM/Current/monet/IRIX646.5 -db TestDB2
+#> Mlog:	Mdestroydb -home /dbfarm/Monet/StM/Current/monet/IRIX646.5 -db TestDB2

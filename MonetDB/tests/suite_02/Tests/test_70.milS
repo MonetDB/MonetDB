@@ -1,0 +1,14 @@
+setoid(oid(2000000));
+#test correct decisions in the join operation.
+t:= k100_unique1.select(10,10);
+t.count.print; k100_unique1.count.print;
+u:= t.copy;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+
+z:= t.reverse.join(k100_unique1);
+z.print;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+z:= k100_unique1.reverse.join(u);
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+z.print;
+quit;

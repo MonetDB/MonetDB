@@ -1,0 +1,181 @@
+@f Pqueue
+@t The Pqueue class
+@a C.W. Quak
+@* The Pqueue class
+This C++ class implements a priority queue. The implementation is based on
+the heap priority queue as described in the book: 'Introduction to Algorithms'
+by Cormen, Leiserson and Rivest.
+@h
+#ifndef __PQUEUE__H__
+#define __PQUEUE__H__
+//
+// The highest priority gets out first.
+//
+
+template<class PRIORITY>
+class Pqueue
+{
+private:
+   int nitems_v;
+   int capacity_v;
+   PRIORITY* priority_v;
+public:
+
+   static inline int PARENT(int idx)
+   {
+      return(idx/2);
+   }
+
+   static inline int LEFT(int idx)
+   {
+      return(idx + idx);
+   }
+
+   static inline int RIGHT(int idx)
+   {
+      return(idx + idx + 1);
+   }
+
+   inline int capacity()
+   {
+      return(capacity_v);
+   }
+
+   inline int nitems()
+   {
+      return(nitems_v);
+   }
+
+   inline bool empty()
+   {
+      return(nitems() == 0);
+   }
+
+   inline Pqueue(int capacity=20)
+   {
+      nitems_v = 0;
+      capacity_v = capacity;
+      priority_v = new PRIORITY[capacity_v];
+   }
+
+   ~Pqueue()
+   {
+      delete [] priority_v;
+   }
+
+   inline const PRIORITY& priority(int i)
+   {
+#ifdef DEBUG
+      if ((i < 0) || (i >= nitems()))
+	 GDKerror("Pqueue::priority with index %d out of bounds [0:%d]\n", i,nitems());
+#endif
+      return(priority_v[i]);
+   }
+
+   inline void move(int id1,int id2)
+   {
+      set(id2,priority(id1));
+   }
+
+   inline void swap(int id1,int id2)
+   {
+      PRIORITY prio = priority(id1);
+      move(id2,id1);
+      set(id2,prio);
+   }
+
+   inline void set(int idx,const PRIORITY& priority)
+   {
+#ifdef DEBUG
+      if ((idx < 0) || (idx >= nitems()))
+	 GDKerror("Pqueue::set with index %d out of bounds [0:%d]\n", idx,nitems());
+#endif
+      priority_v[idx] = priority;
+   }
+
+   void heapify(int i)
+   {
+      int l = LEFT(i);
+      int r = RIGHT(i);
+      int largest;
+
+      if ((l < nitems()) && (priority(l) > priority(i)))
+	 largest = l;
+      else
+	 largest = i;
+      if ((r < nitems()) && (priority(r) > priority(largest)))
+	 largest = r;
+
+      if (largest != i)
+      {
+	 swap(largest,i);
+	 heapify(largest);
+      }
+   }
+
+   inline PRIORITY top()
+   {
+      if (nitems() == 0)
+      {
+	 GDKerror("TOP on empty queue\n");
+      }
+
+      return(priority(0));
+   }
+
+   inline PRIORITY pop()
+   {
+      if (nitems() == 0)
+      {
+	 GDKerror("POP on empty queue\n");
+      }
+
+      PRIORITY rval = priority(0);
+      move(nitems() -1,0);
+      --nitems_v;
+      heapify(0);
+      return(rval);
+   }
+
+   void build()
+   {
+      for(int i=nitems()/2;i>0;--i)
+	 heapify(i);
+   }
+
+   void insert(const PRIORITY& p)
+   {
+      //
+      // If the PQ is full make some space at the end.
+      //
+      if (nitems() >= capacity())
+      {
+	 int newcap = capacity() + capacity() + 1;
+	 PRIORITY *newp = new PRIORITY[newcap];
+	 for(int i=0;i< capacity();++i)
+	 {
+	    newp[i] = priority_v[i];
+	 }
+
+	 GDKwarning("Reallocating from %d to %d\n",capacity(),newcap);
+
+	 delete [] priority_v;
+	 priority_v = newp;
+	 capacity_v = newcap;
+      }
+
+      //
+      // Insert the element at the end of the heap.
+      //
+      int newindex = nitems();
+      ++nitems_v;
+
+      while ((newindex != 0) && (p > priority(PARENT(newindex))))
+      {
+	 move(PARENT(newindex),newindex);
+	 newindex = PARENT(newindex);
+      }
+      set(newindex,p);
+   }
+};
+#endif

@@ -1,0 +1,10 @@
+setoid(oid(2000000));
+# Checking out the effect of hash clustering
+module("cluster");
+t:= k10_unique1.select(0,20);
+t.accbuild(find(monet_acctbl,"hash"));
+t.print;
+t.acccluster(find(monet_acctbl,"hash"));
+t.print;
+
+quit;

@@ -1,0 +1,47 @@
+@f atom_arg
+@a Niels Nes
+
+@h
+#ifndef _ATOMARG_H_
+#define _ATOMARG_H_
+
+#include "symbol.h"
+#include "atom.h"
+#include "list.h"
+
+
+class AtomArg : public Arg {
+    public:
+	AtomArg( int t, char *n, const Atom *arg, char *v); 
+
+	const Atom *arg() const;
+
+        virtual char *toString() const;
+	virtual ostream &print( language *l, ostream &o ) const ;
+    private:
+	const Atom *_arg;
+};
+#endif // _ATOMARG_H_
+
+@C
+#include "atom_arg.h"
+#include "language.h"
+#include <string.h>
+
+
+AtomArg::AtomArg( int t, char *n, const Atom *arg, char* v ) : Arg(t,n,v) {
+	_arg = arg;
+}
+
+const Atom *AtomArg::arg() const {
+	return _arg;
+}
+
+char *AtomArg::toString( ) const {
+/* return this->Name(); */
+	return _arg->toString();
+}
+ 
+ostream &AtomArg::print( language *l, ostream &o ) const {
+	return l->gen_atom_arg( o, *this );
+}

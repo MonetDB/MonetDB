@@ -1,0 +1,175 @@
+stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
+
+#> Mtest:	milS 99_Modules_ALL milS
+#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 99_Modules_ALL.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for AIX4.3/32bit on Sat May 27 02:27:35 NFT 2000.
+#script:99_Modules_ALL.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(20000000));
+
+#All_mods:=MODULES.sort.copy;
+module("cluster");
+
+All_mods:=MODULES.sort.copy.access(BAT_WRITE).revert;
+All_mods@batloop {
+	printf("%9s: ",$h);
+	if (not(monet_mod_nme.reverse.exist($h))) {
+		printf("loading... ");
+		module($h);
+		printf("done.\n");
+	} else {
+		printf("loaded.\n");
+	}
+}
+  xtables: loading... done.
+     wisc: loading... done.
+      url: loading... done.
+     unix: loading... done.
+    trans: loaded.
+     tpcd: loading... done.
+ temporal: loading... done.
+    tcpip: loading... done.
+      sys: loaded.
+      str: loaded.
+signature: loaded.
+    radix: loading... done.
+      oo7: loading... done.
+     odmg: loaded.
+    mprof: loading... done.
+monettime: loading... done.
+    mmath: loading... done.
+     lock: loading... done.
+   kernel: loaded.
+    jOdmg: loading... done.
+       io: loaded.
+     enum: loading... done.
+  decimal: loading... done.
+  ddbench: loading... done.
+ counters: loading... done.
+  cluster: loaded.
+     blob: loaded.
+   bitset: loaded.
+      bat: loaded.
+    arith: loaded.
+  algebra: loaded.
+    alarm: loading... done.
+     aggr: loading... done.
+TransTest: loading... done.
+    Test7: loading... done.
+     Meta: loaded.
+  CC_odmg: loaded.
+  CC_Test: loading... done.
+BasicOdmg: loaded.
+
+table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod_nme.count)));
+#-----------------#
+# 39 modules	  #
+#-----------------#
+[ "BasicOdmg"	  ]
+[ "CC_Test"	  ]
+[ "CC_odmg"	  ]
+[ "Meta"	  ]
+[ "Test7"	  ]
+[ "TransTest"	  ]
+[ "aggr"	  ]
+[ "alarm"	  ]
+[ "algebra"	  ]
+[ "arith"	  ]
+[ "bat"		  ]
+[ "bitset"	  ]
+[ "blob"	  ]
+[ "cluster"	  ]
+[ "counters"	  ]
+[ "ddbench"	  ]
+[ "decimal"	  ]
+[ "enum"	  ]
+[ "io"		  ]
+[ "jOdmg"	  ]
+[ "kernel"	  ]
+[ "lock"	  ]
+[ "mmath"	  ]
+[ "monettime"	  ]
+[ "mprof"	  ]
+[ "odmg"	  ]
+[ "oo7"		  ]
+[ "radix"	  ]
+[ "signature"	  ]
+[ "str"		  ]
+[ "sys"		  ]
+[ "tcpip"	  ]
+[ "temporal"	  ]
+[ "tpcd"	  ]
+[ "trans"	  ]
+[ "unix"	  ]
+[ "url"		  ]
+[ "wisc"	  ]
+[ "xtables"	  ]
+
+##Fname:=new(oid,str);Fname.col_name("function");
+##FnameS:=new(oid,str);FnameS.col_name("function");
+##Ftype:=new(oid,str);Ftype.col_name("type");
+##Fmod:=new(oid,str);Fmod.col_name("module");
+##FmodS:=new(oid,str);FmodS.col_name("module");
+##Fsig:=new(oid,str);Fsig.col_name("signature");
+##Fhelp:=new(oid,str);Fhelp.col_name("help");
+##Fntms:=new(oid,str);
+##Fmnts:=new(oid,str);
+
+##monet_fcntbl@batloop {
+##	Tname:=$h;
+##	Ttype:=help_tpe(monet_fcn_tpe.find($t));
+##	Tmod:="";
+##	if (monet_fcn_mid.exist($t)) {
+##		Tmod:=monet_mod_nme.find(monet_fcn_mid.find($t));
+##	} else {
+##		Tmod:="";
+##	}
+##	Tsig:=format_fcn_sig($t);
+##	Thelp:="";
+##	if (monet_fcn_dsc.exist($t)) {
+##		Thelp:=monet_fcn_dsc.find($t);
+##	} else {
+##		Thelp:="not available";
+##	}
+##	Fname.insert($t,Tname);
+##	Ftype.insert($t,Ttype);
+##	Fmod.insert($t,Tmod);
+##	Fsig.insert($t,Tsig);
+##	Fhelp.insert($t,Thelp);
+##	Fntms.insert($t,sprintf("%s %s %s %s",Tname,Ttype,Tmod,Tsig));
+##	Fmnts.insert($t,sprintf("%s %s %s %s",Tmod,Tname,Ttype,Tsig));
+##}
+
+##Fntms.count.print;
+##Fntms.reverse.sort.reverse@batloop {
+##	FnameS.insert($h,Fname.find($h));
+##}
+##FnameS.count.print; table(1,FnameS,Ftype,Fmod,Fsig,Fhelp);
+
+##Fmnts.count.print;
+##Fmnts.reverse.sort.reverse@batloop {
+##	FmodS.insert($h,Fmod.find($h));
+##}
+##FmodS.count.print; table(1,FmodS,Fname,Ftype,Fsig,Fhelp);
+
+quit;

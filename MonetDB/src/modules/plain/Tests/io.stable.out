@@ -1,0 +1,58 @@
+stdout of test 'io` in directory 'modules/plain` itself:
+
+#> Mtest:	other io
+#> Mtest:	Mtimeout -timeout 420 ./io io
+#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain io.mil
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:io.mil
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+
+#line 142 "io.mx"
+setoid(oid(20000000));
+
+
+fp := fopen ( "test", "w+" );
+fwrite( fp, "Dit is een test\n", 17 );
+fp := freopen ( "test", "r+", fp );
+fread( fp, 17 ).tostr.print;
+[ "Dit is een test\n" ]
+
+fseek( fp, 0, 0);
+fprintf( fp, "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
+
+s := "testing again and again\n";
+
+fseek( fp, 0, 0);
+fputs( s, fp );
+fseek( fp, 0, 0);
+s := fgets( fp );
+
+fflush( fp );
+fclose( fp );
+printf( "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
+test 10 c 10 7.000000
+printf( "%s\n", s );
+testing again and again
+
+
+quit;

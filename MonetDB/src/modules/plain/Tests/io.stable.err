@@ -1,0 +1,5 @@
+stderr of test 'io` in directory 'modules/plain` itself:
+
+#> Mtest:	other io
+#> Mtest:	./io io
+#> Mlog:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db modules_plain -single /ufs/manegold/Current/monet/IRIX6.3/modules/plain/io.mil

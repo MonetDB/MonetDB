@@ -1,0 +1,417 @@
+@f interval
+@A C.W. Quak
+@* The class interval
+@h
+#ifndef __INTERVAL_H__
+#define __INTERVAL_H__
+
+class interval
+{
+public:
+   double min;
+   double max;
+
+   int hash() const;
+
+   interval();
+   interval(double min,double max);
+   int operator== (const interval& p) const;
+   int operator!= (const interval& p) const;
+   int operator== (const double& v) const;
+   int operator!= (const double& v) const;
+   interval* copy() const;
+
+   bool inside(double d) const;
+   bool contains(double d) const;
+   bool OK() const;
+   bool isempty() const;
+   bool singular() const;
+
+   void include(const interval& i);
+
+   void setmin(double v);
+   void setmax(double v);
+
+   double length() const;
+   static interval* null();
+   static interval empty();
+   int expectedstrlen() const;
+   int tostr(char* s,int len) const;
+   static interval* fromstr(char *s,int* parselen,int *buflen,interval* p);
+   static interval* create();
+   void convert_net_to_host();
+   void convert_host_to_net();
+
+};
+
+extern bool inside(const interval& i1,const interval& i2);
+extern bool touch(const interval& i1,const interval& i2);
+extern interval intersection(const interval& i1,const interval& i2);
+
+inline interval* interval::create()
+{
+#ifdef OVERLOAD_NEW
+   return new interval;
+#else
+   return((interval* )GDKmalloc(sizeof(interval)));
+#endif
+}
+
+inline double interval::length() const
+{
+   return(max-min);
+}
+
+inline void interval::include(const interval& i)
+{
+    if (i.min < min)
+       min = i.min;
+    if (i.max > max)
+       max = i.max;
+}
+
+inline double distance(const interval &i,double d)
+{
+   if (d < i.min)
+      return(i.min - d);
+   if (d > i.max)
+      return(d - i.max);
+   return(0);
+}
+
+inline interval::interval(double val1,double val2)
+{
+   if (val1 < val2)
+   {
+      min = val1;
+      max = val2;
+   }
+   else
+   {
+      min = val2;
+      max = val1;
+   }
+}
+
+inline bool disjoint(const interval& i1,const interval& i2)
+{
+   return((i1.max) < (i2.min) || (i1.min > i2.max));
+}
+
+
+inline double mindist(const interval& i1,const interval& i2)
+{
+   if (i1.max < i2.min)
+      return(i2.min - i1.max);
+   if (i2.max < i1.min)
+      return(i1.min - i2.max);
+   return(0);
+}
+
+inline double maxdist(const interval& i1,const interval& i2)
+{
+   double d1 = fabs(i1.max - i2.min);
+   double d2 = fabs(i1.min - i2.max);
+   double w = (d1 < d2)?(d2):(d1);
+
+   return(w);
+}
+
+inline double mindist(const double& n,const interval& i)
+{
+   if (n < i.min)
+      return(i.min - n);
+   if (n > i.max)
+      return(n - i.max);
+   return(0);
+}
+
+inline double maxdist(const double& n,const interval& i)
+{
+   double d1 = fabs(i.max - n);
+   double d2 = fabs(i.min - n);
+   double w = (d1 < d2)?(d2):(d1);
+
+   return(w);
+}
+
+//
+// Calculate the bounding interval.
+//
+inline interval bounds(const interval& i1,const interval& i2)
+{
+   return(interval(
+      (i1.min < i2.min)?(i1.min):(i2.min),
+      (i1.max > i2.max)?(i1.max):(i2.max)));
+
+}
+
+inline bool interval::singular() const
+{
+   return(length() == 0.0);
+}
+
+inline bool interval::isempty() const
+{
+   return((min == DBL_MAX) && (max == DBL_MAX));
+}
+
+inline double distance(const double &n, const interval &i)
+{
+   return(mindist(n,i));
+}
+inline double distance(const interval &i1, const interval &i2)
+{
+   return(mindist(i1,i2));
+}
+
+inline bool overlap(const interval& i1,const interval& i2)
+{
+   return((i1.max >= i2.max && i1.min <= i2.max) ||
+          (i2.max >= i1.max && i2.min <= i1.max));
+}
+
+#endif /* __INTERVAL_H__ */
+@+ Implementation Code for INTERVAL values.
+@C
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "geometry.h"
+#include "interval.h"
+
+int interval::operator== (const double& v) const
+{
+   return((min == v) && (max == v));
+}
+
+int interval::operator!= (const double& v) const
+{
+   return(!(*this == v));
+}
+
+int interval::operator== (const interval& p) const
+{
+   return((min == p.min) && (max == p.max));
+}
+
+int interval::operator!= (const interval& p) const
+{
+   return(!(*this == p));
+}
+
+bool interval::contains(double d) const
+{
+   if (d < min)
+      return(false);
+   if (d > max)
+      return(false);
+   return(true);
+}
+
+bool interval::inside(double d) const
+{
+   if (d < min)
+      return(false);
+   if (d > max)
+      return(false);
+   return(true);
+}
+
+bool interval::OK() const
+{
+   if (min > max)
+   {
+      GDKerror("Interval [%f,%f] is not OK\n",min,max);
+      return(false);
+   }
+   return(true);
+}
+
+interval::interval()
+{
+}
+
+interval* interval::copy() const
+{
+   interval* rval = interval::create();
+   *rval = *this;
+   return(rval);
+}
+
+bool inside(const interval& i1,const interval& i2)
+{
+   return((i2.inside(i1.min) && i2.inside(i1.max)));
+}
+
+bool touch(const interval& i1,const interval& i2)
+{
+   return((i1.min == i2.max) || (i1.max == i2.min));
+}
+
+interval intersection(const interval& i1,const interval& i2)
+{
+#ifdef DEBUG
+   if (!overlap(i1,i2))
+      GDKerror("intersection of two interval is empty\n");
+#endif
+
+   return(interval(
+      (i1.min > i2.min)?(i1.min):(i2.min),
+      (i1.max < i2.max)?(i1.max):(i2.max)));
+}
+
+//------------------------------------------------------------------------
+int interval::hash() const
+{
+   union flcu
+   {
+      float fval;
+      int  lval;
+      char  cval[4];
+   } h;
+
+   h.fval = (min + max);
+   h.lval *= 104729;
+   h.cval[0] = 0;
+
+   return(h.lval);
+}
+
+interval interval::empty()
+{
+   return(interval(DBL_MAX,DBL_MAX));
+}
+
+interval* interval::null()
+{
+   interval* rval = new interval(DBL_MAX,DBL_MAX);
+   return(rval);
+}
+
+int interval::tostr(char* s,int len) const
+{
+   int rval = 0;
+   rval += sprintf(s + rval,"[");
+   if (min != DBL_MIN)
+      rval += put_double(s + rval,min);
+   rval += sprintf(s + rval,",");
+   if (max != DBL_MAX)
+      rval += put_double(s + rval,max);
+   rval += sprintf(s + rval,"]");
+
+   if (rval > len)
+      GDKwarning("Prepare for the worst\n");
+   return(rval);
+}
+
+
+int interval::expectedstrlen() const
+{
+   return(100);
+}
+
+interval* interval::fromstr(char *s,int* parselen,int *buflen,interval* p)
+{
+   if (p == NULL)
+   {
+      p = interval::create();
+      *buflen = sizeof(interval);
+   }
+   if (*buflen < (int)sizeof(interval))
+   {
+      delete (void *)p;
+      p = interval::create();
+      *buflen = sizeof(interval);
+   }
+
+   char* snew = s;
+
+   snew = strchr(snew,'[');
+   if (snew == 0)
+   {
+      GDKwarning("missing [ in interval\n");
+      return p;
+   }
+   ++snew;
+
+   //
+   // Sloppy Parsing for checking open intervals.
+   //
+   if (*snew == ',')
+   {
+      p->min = DBL_MIN;
+   }
+   else
+   {
+      p->min = get_coord(snew,&snew);
+      if (snew == 0)
+      {
+	 GDKwarning("illegal first coordinate in interval\n");
+	 return p;
+      }
+   }
+   snew = strchr(snew,',');
+   if (snew == 0)
+   {
+      GDKwarning("missing , in interval\n");
+      return p;
+   }
+   ++snew;
+
+   
+   if (*snew == ']')
+   {
+      p->max = DBL_MAX;
+   }
+   else
+   {
+      p->max = get_coord(snew,&snew);
+      if (snew == 0)
+      {
+	 GDKwarning("illegal second coordinate in interval\n");
+	 return p;
+      }
+   }
+
+   snew = strchr(snew,']');
+   if (snew == 0)
+   {
+      GDKwarning("missing ] in interval\n");
+      return p;
+   }
+   ++snew;
+
+   size_t bytesread = snew-s;
+   if (bytesread > (size_t)*parselen)
+      GDKwarning("Problems\n");
+   
+   *parselen = bytesread;
+   return(p);
+}
+
+void interval::convert_host_to_net()
+{
+   convert_endianism(min);
+   convert_endianism(max);
+}
+void interval::convert_net_to_host()
+{
+   convert_endianism(min);
+   convert_endianism(max);
+}
+
+void interval::setmin(double v)
+{
+   if (v > max)
+      GDKwarning("interval::setmin(%f) illegal with interval[%f,%f]\n",v,min,max);
+   min = v;
+}
+
+void interval::setmax(double v)
+{
+   if (v < min)
+      GDKwarning("interval::setmax(%f) illegal with interval[%f,%f]\n",v,min,max);
+   max = v;
+}

@@ -1,0 +1,31 @@
+setoid(oid(20000000));
+# escape sequences
+# first some basics, escaped characters are normalized
+
+print("got single quote \' .");	# remove superfluous escapes
+print("got single quote ' without escape");
+print("got tab \t and single newline \n .");
+print("problem signalled before \\\"");
+
+t0:= "got single quote \' .";	t0.print;
+t1:= "got single quote ' without escape";	t1.print;
+t2:= "got tab \t and single newline \n ."; t2.print;
+t3:= "problem signalled before \\\""; t3.print;
+
+# character constants
+c0:= "\n"; c0.print;
+c1:= "\'"; c1.print;
+c2:= "\\"; c2.print;
+
+s:=new(int,str,100);
+s.insert(2," single quote \' got it");
+s.insert(4," backslash  \\ ");
+s.insert(3," single quote ' ");
+s.print;
+
+# Monet printf should behave as in C
+printf("got single quote \' .\n"); # remove superfluous escapes
+printf("got single quote ' without escape\n");
+printf("got tab \t and newline \n .\n");
+printf("problem signalled before \\\"\n");
+quit;

@@ -1,0 +1,347 @@
+@f opengisbulk
+@A C.W. Quak
+@m
+.MODULE opengisbulk;
+
+   .USE opengis;
+
+   .COMMAND sselect(bat[any::1,polyline],point p,str pattern)
+   			: bat[any::1,polyline] = opengis_select_polyline_point; ""
+
+   .COMMAND sjoin(bat[any::1,segment],bat[segment,any::2],str pattern)
+   			: bat[any::1,any::2] = opengis_join_segment_segment; ""
+
+.END opengisbulk;
+@h
+#ifndef __OPENGISBULK_H__
+#define __OPENGISBULK_H__
+
+
+#endif /* __OPENGISBULK_H__ */
+@C
+#include "opengis.h"
+#include "opengisbulk.h"
+
+#include "opengisbulk.proto.h"
+#include "gisbulk.proto.h"
+#include "rtree.h"
+#include "rtree_segment.h"
+
+//
+//========================================
+// Joining two segment BATs using an RTREE
+//========================================
+//
+static void sjoin_segment_segment_rtree_rec(
+   BAT* batleft,
+   BAT* batright,
+   Heap* heapleft,
+   Heap* heapright,
+   int nodeleft,
+   int noderight,
+   char* pattern,
+   BAT* result)
+{
+   RTREEnode* leftptr = RTREEindex(heapleft,nodeleft);
+   RTREEnode* rightptr = RTREEindex(heapright,noderight);
+
+   //
+   // If bounding boxes do not overlap the join is empty
+   //
+   if (!overlap(leftptr->bbox,rightptr->bbox))
+      return;
+
+   //
+   // If both are leaves we are at the deepest level and must compare al pairs.
+   //
+   if ((leftptr->isleaf()) && (rightptr->isleaf()))
+   {
+      for(int i=0;i<leftptr->number;++i)
+      {
+	 segment* leftseg = (segment *)BUNtail(batleft,BUNptr(batleft,leftptr->entries[i]));
+
+	 for(int j=0;j<rightptr->number;++j)
+	 {
+	    segment* rightseg = (segment *)BUNhead(batright,BUNptr(batright,rightptr->entries[j]));
+
+	    if (Relate(*leftseg,*rightseg,pattern))
+	    {
+	       BUNins(result,
+		  BUNhead(batleft,BUNptr(batleft,leftptr->entries[i])),
+		  BUNtail(batright,BUNptr(batright,rightptr->entries[j])));
+	    }
+	 }
+      }
+   }
+   else
+   {
+      /*
+      // We must decide which node we enter. If we can choose (when both node
+      // are intermediate nodes) we choose the largest node.
+      */
+      int deepen;
+      if (leftptr->isleaf())
+	 deepen = RIGHTBOX;
+      else if (rightptr->isleaf())
+	 deepen = LEFTBOX;
+      else
+      {
+	 if (leftptr->bbox.area() > rightptr->bbox.area())
+	    deepen = LEFTBOX;
+	 else
+	    deepen = RIGHTBOX;
+      }
+
+      if (deepen == LEFTBOX)
+      {
+
+	 for(int i=0;i<leftptr->number;++i)
+	 {
+	    sjoin_segment_segment_rtree_rec(
+	       batleft,batright, heapleft,heapright,
+	       leftptr->entries[i],noderight,
+	       pattern,result);
+	 }
+      }
+      else // we go into the right node
+      {
+	 for(int j=0;j<rightptr->number;++j)
+	 {
+	    sjoin_segment_segment_rtree_rec(
+	       batleft,batright, heapleft,heapright,
+	       nodeleft,rightptr->entries[j],
+	       pattern,result);
+	 }
+      }
+   }
+}
+
+BAT* sjoin_segment_segment_rtree(BAT* left,BAT* right,char* pattern)
+{
+   if (left->tacctype != ACC_rtree_segment)
+   {
+      int dummy;
+      RTREEbuild_segment(&left->taccelerator,&dummy,BATmirror(left));
+   }
+
+   if (right->hacctype != ACC_rtree_segment)
+   {
+      int dummy;
+      RTREEbuild_segment(&right->haccelerator,&dummy,right);
+   }
+
+   int res_tuples = BATcount(left) + BATcount(right);
+   BAT *rval = BATnew(BAThtype(left),BATttype(right),res_tuples);
+
+   Heap* heapleft = &(left->taccelerator);
+   Heap* heapright = &(right->haccelerator);
+   int leftrootindex = RTREErootindex(heapleft);
+   int rightrootindex = RTREErootindex(heapright);
+
+   if ((leftrootindex != 0) && (rightrootindex != 0))
+   {
+      sjoin_segment_segment_rtree_rec(
+	 left, right,
+	 heapleft, heapright,
+	 leftrootindex, rightrootindex,
+	 pattern,
+	 rval);
+   }
+   return(rval);
+
+}
+
+//
+//============================================
+// Joining two segment BATs with a nested loop
+//============================================
+//
+BAT* sjoin_segment_segment_nestedloop(BAT* left,BAT* right,char* pattern)
+{
+   BUN leftindex;
+   BUN leftdummy;
+   BUN rightindex;
+   BUN rightdummy;
+
+   //
+   // Estimated size of result bat and create a BAT of that size.
+   //
+   int res_tuples = BATcount(left) + BATcount(right);
+   BAT *rval = BATnew(BAThtype(left),BATttype(right),res_tuples);
+
+   BATloop(left,leftindex,leftdummy)
+   {
+      segment& leftsegment = *(segment *)BUNtail(left,leftindex);
+      BATloop(right,rightindex,rightdummy)
+      {
+	 segment& rightsegment = *(segment *)BUNhead(right,rightindex);
+
+	 if (Relate(leftsegment,rightsegment,pattern))
+	 {
+	    BUNins(rval,
+	       BUNhead(left,leftindex),
+	       BUNtail(right,rightindex));
+	 }
+      }
+   }
+   return(rval);
+}
+
+//
+//=========================
+// Joining two segment BATs 
+//=========================
+//
+BAT* sjoin_segment_segment(BAT* left,BAT* right,char* pattern)
+{
+   //
+   // This is the relation between two segments if their bounding boxes
+   // do not overlap.
+   //
+   relationship bboxrel(-1,-1,1,-1,-1,0,1,0,2);
+
+   if (bboxrel.match(pattern))
+   {
+      //
+      // If the pattern matches the bboxrel pattern, the use of
+      // an rtree to speed up the join is useless. We do a nested
+      // loop.
+      //
+      return(sjoin_segment_segment_nestedloop(left,right,pattern));
+   }
+   else
+   {
+      //
+      // The pattern does not match the bboxrel relationship. Now it
+      // is useful to use an RTREE.
+      //
+      return(sjoin_segment_segment_rtree(left,right,pattern));
+   }
+}
+
+int opengis_join_segment_segment(
+   BAT** rval,
+   BAT* left,
+   BAT* right,
+   char* pattern)
+{
+   *rval = sjoin_segment_segment(left,right,pattern);
+   return(GDK_SUCCEED);
+}
+
+//
+//=============================================
+// Selecting polylines with pattern using Rtree
+//=============================================
+//
+
+static void sselect_polyline_rtree_rec(
+   BAT* polylines,
+   Heap* heap,
+   int nodeindex,
+   const point& pnt,
+   const char* pattern,
+   BAT* result)
+{
+   RTREEnode* self = RTREEindex(heap,nodeindex);
+
+   if (!overlap(self->bbox,pnt))
+      return;
+
+   if (self->isleaf())
+   {
+      for(int i = 0;i<self->number;++i)
+      {
+	 BUN bun = (BUN)BUNptr(polylines,self->entries[i]);
+	 polyline *pln = (polyline *)BUNtail(polylines,bun);
+	 if (Relate(*pln,pnt,pattern))
+	 {
+	    BUNins(result,BUNhead(polylines,bun),pln);
+	 }
+      }
+   }
+   else
+   {
+      for(int i = 0;i < self->number;++i)
+	 sselect_polyline_rtree_rec(polylines,heap,self->entries[i],pnt,pattern,result);
+   }
+}
+
+static BAT* sselect_polyline_rtree(BAT* polylines,const point& p,const char* pattern)
+{
+   BAT* result = BATnew(BAThtype(polylines),BATttype(polylines),BATcount(polylines)/10);
+   Heap* heap = &polylines->taccelerator;
+
+   if (heap->base == NULL)
+   {
+      int dummy;
+      RTREEbuild_polyline(&polylines->taccelerator,&dummy,polylines);
+   }
+
+   int rootindex = RTREErootindex(heap);
+
+   if (rootindex != 0)
+      sselect_polyline_rtree_rec(polylines,heap,rootindex,p,pattern,result);
+
+   return(result);
+}
+
+static BAT* sselect_polyline_loop(BAT* polylines,const point& pnt,const char* pattern)
+{
+   //
+   // Estimated size of result bat and create a BAT of that size.
+   //
+   int res_tuples = BATcount(polylines)  / 10;
+   BAT *rval = BATnew(BAThtype(polylines),BATttype(polylines),res_tuples);
+
+   BUN index;
+   BUN dummy;
+   BATloop(polylines,index,dummy)
+   {
+      polyline* pln = (polyline *)BUNtail(polylines,index);
+
+      if (Relate(*pln,pnt,pattern))
+      {
+	 BUNins(rval,
+	    BUNhead(polylines,index),
+	    BUNtail(polylines,index));
+      }
+   }
+   return(rval);
+}
+
+BAT* sselect_polyline(BAT* polylines,const point& p,char* pattern)
+{
+   //
+   // This is the relation between two polylines if their bounding boxes
+   // do not overlap.
+   //
+   relationship bboxrel(-1,-1,1,-1,-1,0,1,0,2);
+
+   if (bboxrel.match(pattern))
+   {
+      //
+      // If the pattern matches the bboxrel pattern, the use of
+      // an rtree to speed up the select is useless. We do a loop.
+      //
+      return(sselect_polyline_loop(polylines,p,pattern));
+   }
+   else
+   {
+      //
+      // The pattern does not match the bboxrel relationship. Now it
+      // is useful to use an RTREE.
+      //
+      return(sselect_polyline_rtree(polylines,p,pattern));
+   }
+}
+
+int opengis_select_polyline_point(
+   BAT** rval,
+   BAT* polylines,
+   point* p,
+   char* pattern)
+{
+   *rval = sselect_polyline(polylines,*p,pattern);
+   return(GDK_SUCCEED);
+}

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+Mlog -x Mserver -?
+Mlog -x Mclient -help
+Mlog -x Mcreatedb -?
+Mlog -x Mdestroydb -?
+Mlog -x Mload -?
+Mlog -x Mdump -?
+Mlog -x Mrecover -?
+

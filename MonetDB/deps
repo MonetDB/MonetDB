@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ $# -lt 1 ]; then
+	echo "usage: deps -on|-off"
+fi
+
+if [ "$1" = "-on" ]; then
+	find . \( -name Makefile.am \) -exec perl -i -p -e "s/AUTOMAKE_OPTIONS = no-dependencies/#AUTOMAKE_OPTIONS = no-dependencies/" {} \;
+elif [ "$1" = "-off" ]; then
+	find . \( -name Makefile.am \) -exec perl -i -p -e "s/#AUTOMAKE_OPTIONS = no-dependencies/AUTOMAKE_OPTIONS = no-dependencies/" {} \;
+else
+	echo "usage: deps -on|-off"
+fi

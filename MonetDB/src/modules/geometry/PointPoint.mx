@@ -1,0 +1,32 @@
+@f PointPoint
+@A C.W. Quak
+@h
+#ifndef __POINTPOINT_H__
+#define __POINTPOINT_H__
+
+extern bool Relate(const Point& p1,const Point& p2,const char matrix[9]);
+extern relationship Relate(const Point& p1,const Point& p2);
+
+#endif /* __POINTPOINT_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+
+//
+//===============================================
+// Dimensionally Extended Nine-Intersection Model
+//===============================================
+//
+relationship Relate(const Point& p1,const Point& p2)
+{
+   if (equivalent(p1,p2))
+      return(relationship(0,-1,-1,-1,-1,-1,-1,-1,2));
+   else
+      return(relationship(-1,-1,0,-1,-1,-1,0,-1,2));
+}
+
+bool Relate(const Point& p1,const Point& p2,const char matrix[9])
+{
+   relationship rel = Relate(p1,p2);
+   return(rel.match(matrix));
+}

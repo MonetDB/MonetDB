@@ -1,0 +1,120 @@
+#!/bin/sh
+if [ $# != 2 ]; then 
+	echo "usage: $0 monethome local_monethome"
+	echo "  The monethome directory is the root of the monet distribution"
+	echo "  The local monethome is used to develop new modules in"
+	exit 1
+fi
+
+# MONET DEVELOP SCRIPT
+# ====================
+#
+# AUDIENCE
+# This script is intended for Monet users, who have a Monet distribution
+# running on their system, but now want to start developing new database 
+# extension software themselves.
+#
+# NOTE: if you are the one and only Monet user/developer in your world,
+#       this script is not necessary. You can then just edit the main 
+#	monet source tree to your likings.
+#	This script is intended for facilitating multiple developers 
+#	working on one Monet installation.
+#
+# PREREQUISITES
+# - a running Monet environment, which means that there is a MONETHOME on
+#   the system, and you have correctly set PATH and LD_LIBRARY_PATH 
+#   variables so all Monet utility programs work. 
+#	also set the MONET_MOD_PATH
+# - basic Monet user knowledge, such as can be obtained by reading the 
+#   documentation (start with $(MONETHOME)/index.html, in 'Documentation')
+#
+# EXECUTIVE SUMMARY
+# What is needed to become a Monet developer is that you create a private
+# MONETHOME, that contains a lot of symbolic links to stuff in the
+# system-wide MONETHOME. You then will have private modules/ and lib/
+# directories, so you can edit and compile your own stuff, without
+# molesting other Monet users. 
+#
+# Ah.. one more thing: you *must* use gnu make 3.76 or higher for the
+#                      standard Makefiles to work. ANYTHING ELSE WON'T DO!
+#
+# WHAT THE SCRIPT EXACTLY DOES FOR YOU
+# A local monet home directory is needed by each extension developer.
+# So it creates one, using mkdir. We will assume a directory Monet is created 
+# in the developers home directory. 
+#
+# OBSOLETE
+# It then makes a link between the scripts directory in the distribution
+# and the local Monet Home Directory.
+#	ln -s /home/monet/monet/scripts $(MONETHOME)/scripts
+# if present, it also links the Monet kernel sources into the new MONETHOME:
+#	ln -s /home/monet/monet $(MONETHOME)/kernel
+# 
+# Now it can create a directory modules/. This directory will contain
+# the modules sources and makefiles. 
+#
+# This directory will contain the source directories for each 
+# project. For each project the developer can create a subdirectory 
+# in the this directory in which [s]he can put her/his mx source 
+# files and a Makefile. A template for such a project-specific makefile 
+# can also be found in the modules/template directory of the Monet 
+# distribution. 
+#
+# Success!
+
+if [ -d $2 ]; then
+	echo "Warning: local_monethome Directory exists"
+else
+	mkdir -p $2
+fi
+
+if [ ! -d $1/scripts ]; then
+	echo "Error: the monethome directory contains no scripts directory"
+	echo "Wrong distribution directory"
+fi
+if [ ! -d $1/modules ]; then
+	echo "Error: the monethome directory contains no modules directory"
+	echo "Wrong distribution directory"
+fi
+
+#if [ ! -d $2/kernel ]; then
+#	ln -f -s $1 $2/kernel
+#fi
+#if [ ! -d $2/scripts ]; then
+#	ln -f -s $1/scripts $2/scripts
+#fi
+prefix=`uname``uname -r`
+if [ ! -d $2/modules/template ]; then
+	mkdir -p $2/modules/template
+	cp $1/modules/template/* $2/modules/template
+fi
+
+port=`expr 1024 + $$`
+MONETDIST=$1; export MONETDIST
+MONETHOME=$2; export MONETHOME
+MONETPORT=:$port; export MONETPORT
+MONET_MOD_PATH=$MONETHOME/$prefix/lib:$MONETDIST/$prefix/lib; 
+LD_LIBRARY_PATH=$MONET_MOD_PATH
+export LD_LIBRARY_PATH MONET_MOD_PATH
+
+mkdir -p $2/dbfarm/demo
+$1/$prefix/bin/Mcreatedb -db demo -port $port -user $USER
+
+echo "The local monethome directory is created correctly"
+echo "Set the following environment variables in your "
+echo "        standard .cshrc/.login/.profile/.bashrc:"
+echo "set MONETDIST to $MONETDIST"
+echo "set MONETHOME to $MONETHOME"
+echo "set MONETPORT to $MONETPORT"
+echo "set MONET_MOD_PATH to $MONET_MOD_PATH"
+echo "set LD_LIBRARY_PATH to include MONET_MOD_PATH directories"
+echo
+echo "The Makefiles in the directories $2/modules and"
+echo "$2/modules/template have the following commands:"
+echo
+echo "src: generate the needed code files"
+echo "depend: generate the depend files for make"
+echo "all: build everything"
+echo "complete: src depend all"
+echo "doc-ps: doc-tex: doc-dvi: doc-html: for documentation"
+echo "tst: run the tst scripts"

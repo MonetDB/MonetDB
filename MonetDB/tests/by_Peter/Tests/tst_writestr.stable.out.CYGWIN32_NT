@@ -1,0 +1,82 @@
+stdout of test 'tst_writestr` in directory 'tests/by_Peter` itself:
+
+#> Mtest:	milM tst_writestr milM
+#> Mtest:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_writestr.milM
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for CYGWIN32_NT4.0/32bit on Thu Feb 24 03:32:02  2000.
+#script:tst_writestr.milM
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+# test memory map of string heap under append
+i := 0;
+b := 500000;
+BIG := new(void,int,50000000); # claim 200MB
+d := new(void,int,b).seqbase(0@0);
+
+# temporarily disable propmask in order to make this bearable
+m := debugmask;
+debugmask(2);
+while(i < b) d.insert(nil,i :+= 1);
+debugmask(m);
+
+{
+ new(void,str,1000000).seqbase(0@0).access(BAT_WRITE).rename("aa").persists(true);
+ unload("aa");
+}
+
+commit;
+
+i := 0;
+while(true) { 
+ aa.info.reverse.select("theap.storage").reverse.print;
+ e := [str]([+](d,b));
+ #e := [str]([/](d,10000));
+ print(b :+= 500000); 
+ aa.insert(e);
+ aa.mmap(1,1,1,1,1);
+ i :+= 1;
+ if (i = 4) shutdown;
+ unload("aa");
+}
+#-----------------------------------------#
+# BAT:			  tmp_32	  #
+# (str)			  (str)		  #
+#-----------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
+[ 1000000 ]
+#-----------------------------------------#
+# BAT:			  tmp_32	  #
+# (str)			  (str)		  #
+#-----------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
+[ 1500000 ]
+#-----------------------------------------#
+# BAT:			  tmp_32	  #
+# (str)			  (str)		  #
+#-----------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
+[ 2000000 ]
+#-----------------------------------------#
+# BAT:			  tmp_32	  #
+# (str)			  (str)		  #
+#-----------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
+[ 2500000 ]

@@ -1,0 +1,99 @@
+stdout of test 'test_90` in directory 'tests/suite_00` itself:
+
+#> Mtest:	milS test_90 milS
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_90.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:test_90.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(20000000));
+#test mark and number primitives
+
+b:= new(str,int);
+b.insert("the",1);
+b.insert("quick",20);
+b.insert("brown",30);
+b.insert("fox",40);
+b.insert("jumps",50);
+b.insert("over",60);
+b.insert("lazy",70);
+b.insert("dog",80);
+b.insert(str(nil),90);
+b.insert(".",100);
+b.insert("",int(nil));
+b.insert(str(nil),int(nil));
+b.print;
+#-------------------------#
+# BAT:		  tmp_25  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "the",	  1	  ]
+[ "quick",	  20	  ]
+[ "brown",	  30	  ]
+[ "fox",	  40	  ]
+[ "jumps",	  50	  ]
+[ "over",	  60	  ]
+[ "lazy",	  70	  ]
+[ "dog",	  80	  ]
+[ nil,		  90	  ]
+[ ".",		  100	  ]
+[ "",		  nil	  ]
+[ nil,		  nil	  ]
+
+c:= mark(b);
+print(c);
+#---------------------------------#
+# BAT:		  tmp_26	  #
+# (str)		  (void)	  #
+#---------------------------------#
+[ "the",	  20000050@0	  ]
+[ "quick",	  20000051@0	  ]
+[ "brown",	  20000052@0	  ]
+[ "fox",	  20000053@0	  ]
+[ "jumps",	  20000054@0	  ]
+[ "over",	  20000055@0	  ]
+[ "lazy",	  20000056@0	  ]
+[ "dog",	  20000057@0	  ]
+[ nil,		  20000058@0	  ]
+[ ".",		  20000059@0	  ]
+[ "",		  20000060@0	  ]
+[ nil,		  20000061@0	  ]
+
+d:=number(b);
+print(d);
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "the",	  0	  ]
+[ "quick",	  1	  ]
+[ "brown",	  2	  ]
+[ "fox",	  3	  ]
+[ "jumps",	  4	  ]
+[ "over",	  5	  ]
+[ "lazy",	  6	  ]
+[ "dog",	  7	  ]
+[ nil,		  8	  ]
+[ ".",		  9	  ]
+[ "",		  10	  ]
+[ nil,		  11	  ]
+quit;

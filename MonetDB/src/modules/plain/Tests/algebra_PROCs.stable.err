@@ -1,0 +1,4 @@
+stderr of test 'algebra_PROCs` in directory 'modules/plain` itself:
+
+#> Mtest:	milS algebra_PROCs milS
+#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -home /ufs/manegold/Current/monet/modules/plain/IRIX6.2 -db modules_plain -single algebra_PROCs.milS

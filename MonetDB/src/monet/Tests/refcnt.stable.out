@@ -1,0 +1,83 @@
+stdout of test 'refcnt` in directory 'src/monet` itself:
+
+#> Mtest:	other refcnt 1629
+#> Mtest:	Mtimeout -timeout 1629 ./refcnt refcnt
+#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db src_monet refcnt.1.mil
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Sun Mar  5 04:35:19 MET 2000.
+#script:refcnt.1.mil
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+# restart gives correct refcnt b from 0 to 1 
+# since b is part of a and persistent expected refcnt should be 2
+b:=new(int,int);
+b.rename("b");
+b.persists(true);
+a:=new(int,bat);
+a.rename("a");
+a.persists(true);
+a.insert(1,b);
+commit;
+quit;   
+ restart gives correct refcnt b from 0 to 1 
+ since b is part of a and persistent expected refcnt should be 2 
+#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db src_monet refcnt.2.mil
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Sun Mar  5 04:35:19 MET 2000.
+#script:refcnt.2.mil
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+ls;
+#---------------------------------------------------------------------------------#
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
+#---------------------------------------------------------------------------------#
+[ "a",	  "int",  "bat",  1,	  0,	  "clean",	  "load", "pers", 0	  ]
+[ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 1	  ]
+a.print;
+#-----------------#
+# BAT:	  a	  #
+# (int)	  (BAT)	  #
+#-----------------#
+[ 1,	  <b>	  ]
+b.print;
+#-----------------#
+# BAT:	  b	  #
+# (int)	  (int)	  #
+#-----------------#
+quit;   

@@ -1,0 +1,296 @@
+# Makefile.in generated automatically by automake 1.4a from Makefile.am
+
+# Copyright (C) 1994, 1995-9, 2000 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ../../..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_STRIP_FLAG =
+transform = @program_transform_name@
+
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+
+@SET_MAKE@
+host_alias = @host_alias@
+host_triplet = @host@
+AMDEP = @AMDEP@
+AMTAR = @AMTAR@
+AS = @AS@
+AWK = @AWK@
+BASH = @BASH@
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXFLAGS = @CXXFLAGS@
+DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
+DL_LIBS = @DL_LIBS@
+EXEEXT = @EXEEXT@
+LEX = @LEX@
+LIBTOOL = @LIBTOOL@
+LN_S = @LN_S@
+MAKEINFO = @MAKEINFO@
+MALLOC_LIBS = @MALLOC_LIBS@
+MV = @MV@
+OBJC = @OBJC@
+OBJDUMP = @OBJDUMP@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+READLINE_LIBS = @READLINE_LIBS@
+RM = @RM@
+SOCKET_LIBS = @SOCKET_LIBS@
+STRIP = @STRIP@
+THREAD = @THREAD@
+THREAD_LIBS = @THREAD_LIBS@
+VERSION = @VERSION@
+YACC = @YACC@
+install_sh = @install_sh@
+thread_safe_flag_spec = @thread_safe_flag_spec@
+
+#AUTOMAKE_OPTIONS = no-dependencies
+
+#BUILT_SOURCES =  geometry.h geometry.cc baserelate.h baserelate.cc precision.h precision.cc reader.h reader.cc direction.h direction.cc interval.h interval.cc point.h point.cc box.h box.cc segment.h segment.cc triangle.h triangle.cc circle.h circle.cc polystruct.h polystruct.cc polyline.h polyline.cc polygon.h polygon.cc cpolygon.h cpolygon.cc multipoint.h multipoint.cc distance.h distance.cc overlap.h overlap.cc inside.h inside.cc triangulate.h triangulate.cc tri_construct.cc tri_misc.cc tri_monotone.cc tri_tri.h tri_tri.cc varray.h varray.cc varlen.h varlen.cc varheap.h varheap.cc chull.h chull.cc minitree.h minitree.cc point3d.h point3d.cc triangle3d.h triangle3d.cc box3d.h box3d.cc Array.h Pqueue.h Set.h gis.h gis.cc gis_glue.c gis.proto.h writer.h writer.cc opengiswriter.h opengiswriter.cc Geometry.h Geometry.cc opengisreader.h opengisreader.cc MultiLineString.h MultiLineString.cc MultiPolygon.h MultiPolygon.cc GeometryCollection.h GeometryCollection.cc Polygon.h Polygon.cc PointPoint.h PointPoint.cc LineLine.h LineLine.cc PointLine.h PointLine.cc LineStringLineString.h LineStringLineString.cc PointLineString.h PointLineString.cc MultiPointMultiPoint.h MultiPointMultiPoint.cc PointMultiPoint.h PointMultiPoint.cc MultiPointLine.h MultiPointLine.cc LineLineString.h LineLineString.cc MultiPointLineString.h MultiPointLineString.cc PointPolygon.h PointPolygon.cc MultiPointPolygon.h MultiPointPolygon.cc PointMultiLineString.h PointMultiLineString.cc minirealm.h minirealm.cc PolygonLineString.h PolygonLineString.cc Reverse.h Reverse.cc opengis.h opengis.cc opengis_glue.c opengis.proto.h split.h split.cc rtree.h rtree.cc rtree_box.h rtree_box.cc rtree_point.h rtree_point.cc rtree_segment.h rtree_segment.cc rtree_polyline.h rtree_polyline.cc rtree_polygon.h rtree_polygon.cc rtree_djoin.h rtree_djoin.cc rtree_sjoin.h rtree_sjoin.cc interval_tree.h interval_tree.cc octree.h octree.cc gisbulk.h gisbulk.cc gisbulk_glue.c gisbulk.proto.h blg.h blg.cc blg_glue.c blg.proto.h opengisbulk.h opengisbulk.cc opengisbulk_glue.c opengisbulk.proto.h gdkmem.h gdkmem.cc gdkmem_glue.c gdkmem.proto.h
+
+
+
+INCLUDES = -I$(top_builddir)/src/gdk -I$(top_builddir)/src/monet 	   -I$(top_builddir)/src/modules/plain
+
+# interface:implementation:age
+LT_VERSION = 0:1:0
+
+EXTRA_DIST = Makefile.am.sh  geometry.mx baserelate.mx precision.mx reader.mx direction.mx interval.mx point.mx box.mx segment.mx triangle.mx circle.mx polystruct.mx polyline.mx polygon.mx cpolygon.mx multipoint.mx distance.mx overlap.mx inside.mx triangulate.mx tri_construct.mx tri_misc.mx tri_monotone.mx tri_tri.mx varray.mx varlen.mx varheap.mx chull.mx minitree.mx point3d.mx triangle3d.mx box3d.mx Array.mx Pqueue.mx Set.mx gis.mx writer.mx opengiswriter.mx Geometry.mx opengisreader.mx MultiLineString.mx MultiPolygon.mx GeometryCollection.mx Polygon.mx PointPoint.mx LineLine.mx PointLine.mx LineStringLineString.mx PointLineString.mx MultiPointMultiPoint.mx PointMultiPoint.mx MultiPointLine.mx LineLineString.mx MultiPointLineString.mx PointPolygon.mx MultiPointPolygon.mx PointMultiLineString.mx minirealm.mx PolygonLineString.mx Reverse.mx opengis.mx split.mx rtree.mx rtree_box.mx rtree_point.mx rtree_segment.mx rtree_polyline.mx rtree_polygon.mx rtree_djoin.mx rtree_sjoin.mx interval_tree.mx octree.mx gisbulk.mx blg.mx opengisbulk.mx gdkmem.mx
+
+MEL = $(top_builddir)/src/mel/mel
+MX = $(top_builddir)/src/utils/Mx/Mx
+
+SUFFIXES = .m .mx .proto.h .mil
+PRECIOUS = .m 
+subdir = src/modules/geometry
+mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
+CONFIG_HEADER = ../../../config.h
+CONFIG_CLEAN_FILES = 
+DIST_SOURCES = 
+DIST_COMMON =  Makefile.am Makefile.in
+
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+GZIP_ENV = --best
+all: all-redirect
+.SUFFIXES:
+.SUFFIXES: .m .mil .mx .proto.h
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/modules/geometry/Makefile
+
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+tags: TAGS
+TAGS:
+
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+	$(MAKE) $(AM_MAKEFLAGS) top_distdir="$(top_distdir)" distdir="$(distdir)" dist-hook
+info-am:
+info: info-am
+dvi-am:
+dvi: dvi-am
+check-am: all-am
+check: check-am
+installcheck-am:
+installcheck: installcheck-am
+install-exec-am:
+install-exec: install-exec-am
+
+install-data-am:
+install-data: install-data-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+install: install-am
+uninstall-am:
+uninstall: uninstall-am
+all-am: Makefile $(BUILT_SOURCES) all-local
+all-redirect: all-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
+installdirs:
+
+
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	-rm -f Makefile.in
+mostlyclean-am:  mostlyclean-generic
+
+mostlyclean: mostlyclean-am
+
+clean-am:  clean-generic mostlyclean-am
+
+clean: clean-am
+
+distclean-am:  distclean-generic clean-am
+	-rm -f libtool
+
+distclean: distclean-am
+
+maintainer-clean-am:  maintainer-clean-generic distclean-am
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+maintainer-clean: maintainer-clean-am
+
+.PHONY: tags distdir info-am info dvi-am dvi check check-am \
+installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-local all-redirect all-am all install-strip installdirs \
+mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
+
+
+%_tab.y: %.y
+	$(MV) $^ $@
+
+%_tab.yy: %.yy
+	$(MV) $^ $@
+
+%_yy.l: %.l
+	$(MV) $^ $@
+
+%_yy.ll: %.ll
+	$(MV) $^ $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
+
+%.h: %.mx
+	$(MX) $(MXFLAGS) -x h $<
+
+%.y: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+
+%.yy: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+	$(MV) $*.y $@
+
+%.l: %.mx
+	$(MX) $(MXFLAGS) -x l $< 
+
+%.ll: %.mx
+	$(MX) $(MXFLAGS) -x l $<
+	$(MV) $*.l $@
+
+%.m: %.mx
+	$(MX) $(MXFLAGS) -x m $<
+
+%.mil: %.mx
+	$(MX) $(MXFLAGS) -x mil $<
+
+%.proto.h: %.m
+	$(MEL) $(INCLUDES) -o $@ -proto $<
+
+%_glue.c: %.m
+	$(MEL) $(INCLUDES) -o $@ -glue $<
+
+all-local: $(BUILT_SOURCES)
+
+#-version-info $(LT_VERSION)
+#lib_LTLIBRARIES =  lib_gis.la lib_opengis.la lib_gisbulk.la lib_blg.la lib_opengisbulk.la lib_gdkmem.la
+
+#lib_gis_la_SOURCES = geometry.h geometry.cc baserelate.h baserelate.cc precision.h precision.cc reader.h reader.cc direction.h direction.cc interval.h interval.cc point.h point.cc box.h box.cc segment.h segment.cc triangle.h triangle.cc circle.h circle.cc polystruct.h polystruct.cc polyline.h polyline.cc polygon.h polygon.cc cpolygon.h cpolygon.cc multipoint.h multipoint.cc distance.h distance.cc overlap.h overlap.cc inside.h inside.cc triangulate.h triangulate.cc tri_construct.cc tri_misc.cc tri_monotone.cc tri_tri.h tri_tri.cc varray.h varray.cc varlen.h varlen.cc varheap.h varheap.cc chull.h chull.cc minitree.h minitree.cc point3d.h point3d.cc triangle3d.h triangle3d.cc box3d.h box3d.cc Array.h Pqueue.h Set.h gis.h gis.cc gis_glue.c gis.proto.h
+#lib_opengis_la_SOURCES = writer.h writer.cc opengiswriter.h opengiswriter.cc Geometry.h Geometry.cc opengisreader.h opengisreader.cc MultiLineString.h MultiLineString.cc MultiPolygon.h MultiPolygon.cc GeometryCollection.h GeometryCollection.cc Polygon.h Polygon.cc PointPoint.h PointPoint.cc LineLine.h LineLine.cc PointLine.h PointLine.cc LineStringLineString.h LineStringLineString.cc PointLineString.h PointLineString.cc MultiPointMultiPoint.h MultiPointMultiPoint.cc PointMultiPoint.h PointMultiPoint.cc MultiPointLine.h MultiPointLine.cc LineLineString.h LineLineString.cc MultiPointLineString.h MultiPointLineString.cc PointPolygon.h PointPolygon.cc MultiPointPolygon.h MultiPointPolygon.cc PointMultiLineString.h PointMultiLineString.cc minirealm.h minirealm.cc PolygonLineString.h PolygonLineString.cc Reverse.h Reverse.cc opengis.h opengis.cc opengis_glue.c opengis.proto.h
+#lib_gisbulk_la_SOURCES = split.h split.cc rtree.h rtree.cc rtree_box.h rtree_box.cc rtree_point.h rtree_point.cc rtree_segment.h rtree_segment.cc rtree_polyline.h rtree_polyline.cc rtree_polygon.h rtree_polygon.cc rtree_djoin.h rtree_djoin.cc rtree_sjoin.h rtree_sjoin.cc interval_tree.h interval_tree.cc octree.h octree.cc gisbulk.h gisbulk.cc gisbulk_glue.c gisbulk.proto.h
+#lib_blg_la_SOURCES = blg.h blg.cc blg_glue.c blg.proto.h
+#lib_opengisbulk_la_SOURCES = opengisbulk.h opengisbulk.cc opengisbulk_glue.c opengisbulk.proto.h
+#lib_gdkmem_la_SOURCES = gdkmem.h gdkmem.cc gdkmem_glue.c gdkmem.proto.h
+#lib_blg_la_LIBADD =   lib_gis.la
+#lib_gis_la_LIBADD =   lib_gdkmem.la
+#lib_opengis_la_LIBADD =   lib_gis.la
+#lib_gisbulk_la_LIBADD =   lib_opengis.la
+#lib_opengisbulk_la_LIBADD =   lib_opengis.la
+
+#blg.m:   gis.m
+#gis.m:   gdkmem.m
+#opengis.m:   gis.m
+#gisbulk.m:   opengis.m
+#opengisbulk.m:   opengis.m
+
+dist-hook:
+	mkdir $(distdir)/Tests
+	cd $(srcdir)/Tests; cp [^C]* $(distdir)/Tests
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

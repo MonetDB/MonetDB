@@ -1,0 +1,4 @@
+# prelude file: executed at session start
+printf("This is a guest account to Monet\n");
+printf("and currently disabled \n");
+quit;

@@ -1,0 +1,73 @@
+@f accops
+@a Niels Nes
+
+@h
+#ifndef _ACCOPS_H_
+#define _ACCOPS_H_
+
+#include "ops.h"
+#include "list.h"
+
+enum acc_ops_t {
+	OP_INSERT, 
+	OP_DELETE,
+	OP_BUILD,
+	OP_DESTROY,
+	OP_ABORT,
+	OP_COMMIT,
+	OP_SAVE,
+	OP_CLUSTER,
+	OP_TRAVERSE,
+	OP_REPAIR,
+	OP_MOVE
+};
+
+class Accops : public Ops {
+    public:
+	Accops( int t, char *n, int op ); 
+
+	char *toString() const;
+
+	virtual ostream &print( language *l, ostream &o ) const ;
+};
+#endif // _ACCOPS_H_
+
+@C
+#include "accops.h"
+#include "language.h"
+#include <string.h>
+
+
+Accops::Accops( int t, char *n, int op ) : Ops(t,n,op) { }
+
+char *Accops::toString() const {
+   	switch(operation()){
+	case OP_INSERT:
+		return "insert"; 
+	case OP_DELETE:
+		return "delete"; 
+	case OP_BUILD:
+		return "build"; 
+	case OP_DESTROY:
+		return "destroy"; 
+	case OP_ABORT:
+		return "abort"; 
+	case OP_COMMIT:
+		return "commit"; 
+	case OP_SAVE:
+		return "save"; 
+	case OP_CLUSTER:
+		return "cluster"; 
+	case OP_TRAVERSE:
+		return "traverse"; 
+	case OP_REPAIR:
+		return "repair"; 
+	case OP_MOVE:
+		return "move"; 
+	}
+	return "";
+}
+
+ostream &Accops::print( language *l, ostream &o ) const {
+	return l->gen_accops( o, *this );
+}

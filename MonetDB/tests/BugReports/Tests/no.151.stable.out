@@ -1,0 +1,58 @@
+stdout of test 'no.151` in directory 'tests/BugReports` itself:
+
+#> Mtest:	milS no.151 milS
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.151.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:no.151.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+# >Number:         151
+# >Category:       MIL
+# >Synopsis:       type check problem when inserting bats
+# >Confidential:   no
+# >Severity:       critical
+# >Priority:       high
+# >Responsible:    boncz (Peter Boncz)
+# >State:          open
+# >Class:          sw-bug
+# >Submitter-Id:   unknown
+# >Arrival-Date:   Wed Apr 15 13:00:01 1998
+# >Originator:     niels@cwi.nl
+# >Organization:
+# DDi
+# >Release:        980101
+# >Environment:
+# IRIX 5.3
+# >Description:
+# Following script gives an error
+# a:= new(int,bat);
+# b:= new(int,bat);
+# a.insert(1,b);
+# !ERROR: interpret: no matching MIL operator to 'insert(bat[int,bat], int, bat[int,bat])'.
+# !MAYBE YOU MEAN:
+# !       insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
+
+setoid(oid(20000000));
+a:= new(int,bat);
+b:= new(int,bat);
+a.insert(1,b);
+quit;

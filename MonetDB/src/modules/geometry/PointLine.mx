@@ -1,0 +1,35 @@
+@f PointLine
+@A C.W. Quak
+@h
+#ifndef __POINTLINE_H__
+#define __POINTLINE_H__
+
+extern bool Relate(const Point& p,const Line& l,const char matrix[9]);
+extern relationship Relate(const Point& p,const Line& l);
+
+#endif /* __POINTLINE_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+
+//
+//===============================================
+// Dimensionally Extended Nine-Intersection Model
+//===============================================
+//
+relationship Relate(const Point& p,const Line& l)
+{
+   double rel = baserelate(l,p);
+
+   if (rel == -1)
+      return(relationship(-1,-1,0,-1,-1,-1,1,0,2));
+   else if ((rel == 0) || (rel == 1))
+      return(relationship(-1,0,-1,-1,-1,-1,1,0,2));
+   else
+      return(relationship(0,-1,-1,-1,-1,-1,1,0,2));
+}
+
+bool Relate(const Point& p,const Line& l,const char matrix[9])
+{
+   return(Relate(p,l).match(matrix));
+}

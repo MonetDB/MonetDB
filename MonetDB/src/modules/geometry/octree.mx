@@ -1,0 +1,876 @@
+@f octree
+@A C.W. Quak
+@h
+#ifndef __OCTREE_H__
+#define __OCTREE_H__
+
+//
+// An oct tree is a tree inside a Monet heap structure.
+// There are two types of nodes and leaves.
+//
+
+class oct_node
+{
+public:
+   static const int maxkids/*=8*/;
+
+   box3d bbox;		// Bounding box of all children.
+   int nkids;		// number of used items.
+
+   int kids[8];		// Array of all children. negative children
+                        // are leaves.
+};
+
+class oct_leaf
+{
+public:
+   static const int maxkids /*=10*/;
+
+   box3d bbox; 		// Bounding box of all children.
+   int nkids;		// number of used items.
+   int kids[10];	// array with indices.
+};
+
+int octree_getrootindex(Heap* tree);
+void octree_setrootindex(Heap* tree,int idx);
+int octree_makenode(Heap* tree,const box3d& bb);
+int octree_makeleaf(Heap* tree);
+oct_node* octree_getnode(Heap* tree,int index);
+oct_leaf* octree_getleaf(Heap* tree,int index);
+
+#endif /* __OCTREE_H__ */
+@C
+#include "gis.h"
+#include "gisbulk.proto.h"
+#include "octree.h"
+
+const int oct_node::maxkids = 8;
+const int oct_leaf::maxkids = 10;
+
+//
+//================================
+// octree helper functions.
+//================================
+//
+void octree_setrootindex(Heap* h,int idx)
+{
+   int rootptrindex = HEAP_private(h);
+   *HEAPindex(h,rootptrindex,int) = idx;
+}
+
+int octree_getrootindex(Heap* h)
+{
+   int rootptrindex = HEAP_private(h);
+   return(*HEAPindex(h,rootptrindex,int));
+}
+
+int octree_makenode(Heap* h,const box3d& bb)
+{
+   int newindex = HEAP_malloc(h,sizeof(oct_node));
+   oct_node* n = octree_getnode(h,newindex);
+   n->nkids = 0;
+   n->bbox = bb;
+   return(newindex);
+}
+
+int octree_makeleaf(Heap* h)
+{
+   int newindex = -HEAP_malloc(h,sizeof(oct_leaf));
+   oct_leaf* n = octree_getleaf(h,newindex);
+   n->nkids = 0;
+   return(newindex);
+}
+
+oct_node* octree_getnode(Heap* h,int idx)
+{
+   return(HEAPindex(h,idx,oct_node));
+}
+
+oct_leaf* octree_getleaf(Heap* h,int idx)
+{
+   return(HEAPindex(h,-idx,oct_leaf));
+}
+
+//
+//================================
+// Code for splitting a leaf node.
+//================================
+//
+
+//
+// Temporary struct needed for split.
+//
+class box3d_index
+{ 
+public:
+   box3d b;
+   int b_idx;
+   int newchild;
+};
+
+
+
+//
+// Adding an box to a leaf that is full. The current
+// leaf is split, its entries are spread over the two
+// leaves and connected with a new node. The index of the
+// node is returned.
+//
+// static int oct_split_leaf(
+//    BAT* bat,
+//    Heap* tree,
+//    int leaf_idx,	// Leaf to be split.
+//    int b_idx,		// Index of box to be inserted.
+//    const box3d& b)	// Box to be inserted.
+// {
+//    oct_leaf* leaf = octree_getleaf(tree,leaf_idx);
+// 
+//    //
+//    // Make an array of all old entries and the new one.
+//    //
+//    box3d_index ii[oct_leaf::maxkids + 1];
+// 
+//    //
+//    // Calculate the range of the new node.
+//    //
+//    box3d bb = b;
+// 
+//    for(int x=0;x<oct_leaf::maxkids;++x)
+//    {
+//       ii[x].b = *((box3d *)BUNhloc(bat,BUNptr(bat,leaf->kids[x])));
+//       ii[x].b_idx = leaf->kids[x];
+// 
+//       bb.bbox_include(ii[x].b);
+//    }
+//    ii[oct_leaf::maxkids].b = b;
+//    ii[oct_leaf::maxkids].b_idx = b_idx;
+// 
+//    //
+//    // DO a nice split XXX QQQQ
+//    //
+// 
+//    //
+//    // Clear the old leaf
+//    // Create new leaves;
+//    // Generate a node with new leaves as children.
+//    //
+//    leaf->nkids = 0;
+// 
+//    int newleaves [oct_node::maxkids + 1];
+//    for(int i=0;i<oct_node::maxkids - 1;++i)
+//       newleaves[i] = octree_makeleaf(tree);
+//    newleaves[oct_node::maxkids] = leaf_idx;
+// 
+//    int node_idx = octree_makenode(tree,bb);
+//    oct_node* node = octree_getnode(tree,node_idx);
+// 
+//    for(int n=0;n<oct_node::maxkids;++n)
+//    {
+//       oct_leaf* current_leaf = octree_getleaf(tree,node->kids[n]);
+//       for(int l=0;l<=oct_leaf::maxkids;++l)
+//       {
+// 	 if (ii[l].newchild == n)
+// 	 {
+// 	    current_leaf->kids[current_leaf->nkids++] = ii[i1].i_idx;
+// 	 }
+//       }
+//       //
+//       // XX set bbox.
+//       //
+//    }
+// 
+//    //
+//    // Return the index of the created node.
+//    //
+//    return(node_idx);
+// }
+// 
+// //
+// //======================================
+// // Code for clustering an array of box3d
+// //======================================
+// //
+// typedef struct b
+// {
+//    int index;
+//    box3d* box;
+// } boxje;
+// 
+// 
+// //
+// //============================================
+// // Code for inserting a box3d into the octree.
+// //============================================
+// //
+// 
+// //
+// // Insert a new box3d in the octree.
+// //
+// static int octree_insert_rec(
+//    BAT* b,		// BAT on which index is created.
+//    Heap* tree,		// Heap in which tree resides.
+//    int self_idx,	// Index of the current node in the tree.
+//    int i_idx,		// Index of the inserted element in the bat.
+//    const box3d& i)	// Value of inserted element.
+// {
+//    if (self_idx == 0)
+//    {
+//       //
+//       // create a new leaf.
+//       //
+//       return(octree_insert_rec(b,tree,octree_makeleaf(tree),i_idx,i));
+//    }
+//    else if (self_idx > 0)
+//    {
+//       //
+//       // this is a node.
+//       // 
+//       oct_node* self = octree_getnode(tree,self_idx);
+// 
+//       if (self->val.min < i.min)
+//       {
+//          //
+// 	 // Insert into left.
+// 	 //
+// 	 self->left = octree_insert_rec(b,tree,self->left,i_idx,i);
+// 	 self->val.include(i);
+// 	 return(self_idx);
+//       }
+//       else
+//       {
+//          //
+// 	 // Insert into right.
+// 	 //
+// 	 self->right = octree_insert_rec(b,tree,self->right,i_idx,i);
+// 	 self->val.include(i);
+// 	 return(self_idx);
+//       }
+//    }
+//    else
+//    {
+//       //
+//       // this is a leaf.
+//       //
+//       oct_leaf* leaf = octree_getleaf(tree,self_idx);
+// 
+//       if (++leaf->nkids <= oct_leaf::maxkids)
+//       {
+//          //
+// 	 // There is room in the leaf.
+// 	 //
+// 	 leaf->kids[leaf->nkids - 1] = i_idx;
+// 
+// 	 //
+// 	 // Update bbox.
+// 	 //
+// 	 if (leaf->nkids == 1)
+// 	    leaf->bbox = i;
+// 	 else
+// 	    leaf->bbox.bbox_include(i);
+// 
+//          return(self_idx);
+//       }
+//       else
+//       {
+// 	 //
+// 	 // We split the leaf.
+// 	 //
+//          return(interval_split_leaf(b,tree,self_idx,i_idx,i));
+//       }
+//    }
+// }
+// 
+void octree_insert(
+   Heap* tree,
+   int index,
+   BAT* b,
+   box3d* i)
+{
+   (void)tree;
+   (void)index;
+   (void)b;
+   (void)i;
+
+   // octree_setrootindex(tree,octree_insert_rec(b,tree,rootindex,index,*i));
+}
+
+//
+//==========================
+// Build a octree bottom up.
+//==========================
+//
+class candidatebox
+{ 
+public:
+   box3d b;
+   int b_idx;
+};
+
+@:comparefunc(xinterval,min)@
+@:comparefunc(yinterval,min)@
+@:comparefunc(zinterval,min)@
+
+@= comparefunc
+int compare_@1_@2(const void *l, const void *r)
+{
+   candidatebox* left = (candidatebox* )l;
+   candidatebox* right = (candidatebox* )r;
+
+   if(left->b.@1.@2 > right->b.@1.@2)
+      return(1);
+   if(left->b.@1.@2 < right->b.@1.@2)
+      return(-1);
+   return(0);
+}
+@
+@C
+
+int octree_build_bup_rec(
+   Heap* tree,
+   candidatebox* candidates,
+   int nboxes,
+   box3d& bb,
+   int level)
+{
+   //
+   // If there are less boxes than the size of a leaf.
+   //
+   if (nboxes < oct_leaf::maxkids)
+   {
+      //
+      // We create a leaf.
+      //
+      int leaf_idx = octree_makeleaf(tree);
+      oct_leaf* leaf = octree_getleaf(tree,leaf_idx);
+
+      //
+      // Initialize the bounding box of the leaf to the
+      // first item in the list.
+      //
+      leaf->bbox = candidates[0].b;
+
+      for(int i=0;i<nboxes;++i)
+      {
+         leaf->kids[leaf->nkids++] = candidates[i].b_idx;
+	 leaf->bbox.bbox_include(candidates[i].b);
+      }
+      bb = leaf->bbox;
+      return(leaf_idx);
+   }
+   else
+   {
+      //
+      // We split the candidates and make different nodes.
+      //
+      // Currently we split in the middle???
+      //
+      if ((level % 3) == 0)
+      {
+	 qsort(
+	    candidates,
+	    nboxes,
+	    sizeof(candidatebox),
+	    compare_xinterval_min);
+      }
+      else if ((level % 3) == 1)
+      {
+	 qsort(
+	    candidates,
+	    nboxes,
+	    sizeof(candidatebox),
+	    compare_yinterval_min);
+      }
+      else
+      {
+	 qsort(
+	    candidates,
+	    nboxes,
+	    sizeof(candidatebox),
+	    compare_zinterval_min);
+      }
+
+
+      //
+      // Create a temporary node
+      //
+      oct_node tempnode;
+      tempnode.nkids = 0;
+
+      int mid = nboxes / 2;
+
+
+      tempnode.kids[tempnode.nkids++] =
+         octree_build_bup_rec(tree,candidates,mid,tempnode.bbox,level + 1);
+
+      box3d bb2;
+      tempnode.kids[tempnode.nkids++] =
+         octree_build_bup_rec(tree,&(candidates[mid]),nboxes - mid,bb2,level + 1);
+      tempnode.bbox.bbox_include(bb2);
+
+      int node_idx = octree_makenode(tree,candidates[0].b);
+      oct_node* node = octree_getnode(tree,node_idx);
+      *node = tempnode;
+
+      bb = node->bbox;
+      return(node_idx);
+   }
+}
+
+void octree_build_bup(
+   Heap* tree,
+   int*,
+   BAT* b)
+{
+   if (BAThtype(b) != TYPE_box3d)
+   {
+      GDKerror("Cannot build octree because head not of type box3d\n");
+      return;
+   }
+
+   b->hacctype = ACC_octree;
+   HEAP_initialize(tree,100,sizeof(int),8);
+
+   int nboxes = BATcount(b);
+   candidatebox* candidates = new candidatebox[nboxes];
+   int boxindex=0;
+
+   //
+   // Insert all buns into the candidate structure.
+   //
+   BUN bun,dummy; 
+   BATloop(b,bun,dummy)
+   {
+      candidates[boxindex].b = *(box3d *)BUNhead(b, bun);
+      candidates[boxindex].b_idx = BUNindex(b,bun);
+      ++boxindex;
+   }
+
+   if (boxindex != nboxes)
+      GDKerror("boxindex = %d and nboxes = %d\n",boxindex,nboxes);
+
+   box3d dummybox;
+   int rootindex = octree_build_bup_rec(
+      tree,candidates,nboxes,dummybox,0);
+   octree_setrootindex(tree,rootindex);
+
+   // GDKwarning("Setting rootindex %d\n",rootindex);
+}
+
+
+
+//
+//=============================================
+// Functions needed for interfacing with monet.
+//=============================================
+//
+void octree_save(Heap*,BAT*)
+{
+}
+
+void octree_destroy(Heap* h,BAT*)
+{
+   HEAP_destroy(h);
+}
+
+void octree_build(
+   Heap* tree,
+   int*,
+   BAT* b)
+{
+   if (BAThtype(b) != TYPE_box3d)
+   {
+      GDKerror("Cannot build octree because head not of type octree\n");
+      return;
+   }
+
+   b->hacctype = ACC_octree;
+   HEAP_initialize(tree,100,sizeof(int),8);
+   octree_setrootindex(tree,0);
+
+   //
+   // Insert all buns into the heap.
+   //
+   BUN index,dummy; 
+   BATloop(b,index,dummy)
+   {
+      octree_insert(tree,BUNindex(b,index),b,(box3d *)BUNhead(b, index));
+   }
+}
+
+//
+//====================================================
+// Code for deleting an octree from the interval tree.
+//====================================================
+//
+static bool octree_delete_rec(
+   Heap* h,
+   int self_idx,
+   int b_idx,
+   const box3d& b)
+{
+   if(self_idx == 0)
+   {
+      return(false);
+   }
+   else if (self_idx > 0)
+   {
+      //
+      // This is a node.
+      //
+      oct_node* self = octree_getnode(h,self_idx);
+
+      if (!overlap(self->bbox,b))
+         return(false);
+
+      for(int i=0;i<self->nkids;++i)
+      {
+	 if (octree_delete_rec(h,self->kids[i],b_idx,b))
+	    return(true);
+      }
+      return(false);
+   }
+   else
+   {
+      //
+      // This is a leaf.
+      //
+      oct_leaf* leaf = octree_getleaf(h,self_idx);
+
+      for(int x=0;x<leaf->nkids;++x)
+      {
+         if(leaf->kids[x] == b_idx)
+	 {
+	    leaf->kids[x] = leaf->kids[leaf->nkids--];
+	    return(true);
+	 }
+      }
+      return(false);
+   }
+}
+
+void octree_delete(
+   Heap* h,	
+   int index,   
+   BAT*,	
+   box3d* b)
+{
+   if (!octree_delete_rec(
+      h,
+      octree_getrootindex(h),
+      index,
+      *b))
+   {
+      GDKerror("octree structure corrupt\n");
+   }
+}
+
+//
+//========================================
+// Code for selection on an octree.
+//========================================
+//
+static void octree_select_rec(
+   BAT* boxes,
+   Heap* tree,
+   int self_idx,
+   const box3d& b,
+   BAT* result)
+{
+   if (self_idx == 0)
+      return;
+
+   if(self_idx > 0)
+   {
+      //
+      // This is a node.
+      //
+      oct_node* self = octree_getnode(tree,self_idx);
+
+//      GDKwarning("node %d = (%f,%f,%f,%f,%f,%f)\n",
+//         self_idx,
+//	 self->bbox.xinterval.min,self->bbox.xinterval.max,
+//	 self->bbox.yinterval.min,self->bbox.yinterval.max,
+//	 self->bbox.zinterval.min,self->bbox.zinterval.max
+//      );
+
+      if (overlap(self->bbox,b))
+      {
+	 for(int i=0;i<self->nkids;++i)
+	    octree_select_rec(boxes,tree,self->kids[i],b,result);
+      }
+   }
+   else
+   {
+      //
+      // This is a leaf.
+      //
+      oct_leaf* leaf = octree_getleaf(tree,self_idx);
+
+//      GDKwarning("leaf %d = %d (%f,%f,%f,%f,%f,%f)\n",
+//         self_idx,leaf->nkids,
+//	 leaf->bbox.xinterval.min,leaf->bbox.xinterval.max,
+//	 leaf->bbox.yinterval.min,leaf->bbox.yinterval.max,
+//	 leaf->bbox.zinterval.min,leaf->bbox.zinterval.max
+//      );
+
+      if (overlap(leaf->bbox,b))
+      {
+	 for(int x=0;x<leaf->nkids;++x)
+	 {
+	    BUN bun = (BUN)BUNptr(boxes,(leaf->kids[x]));
+	    box3d* cur = (box3d *)BUNtail(boxes,bun);
+
+	    if (overlap(*cur,b))
+	    {
+	       BUNins(result,BUNhead(boxes,bun),cur);
+	    }
+	 }
+      }
+   }
+}
+
+//
+// Interface function to monet:
+//    COMMAND sselect(bat[any,box3d],box3d):bat[any,box3d]
+//
+int octree_select_box3d(
+   BAT** rval,
+   BAT* boxes,
+   box3d* b)
+{
+   Heap* tree = &boxes->taccelerator;
+
+   if (boxes->tacctype != ACC_octree)
+   {
+      int dummy;
+      octree_build_bup(&boxes->taccelerator,&dummy,BATmirror(boxes));
+   }
+   if (tree->base == NULL)
+   {
+      GDKerror("This BAT has no index");
+      return(NULL);
+   }
+
+   BAT* result = BATnew(BAThtype(boxes),BATttype(boxes),BATcount(boxes)/10);
+
+   int rootindex = octree_getrootindex(tree);
+
+   // GDKwarning("Starting search at root %d\n",rootindex);
+
+   octree_select_rec(boxes,tree,rootindex,*b,result);
+
+   *rval = result;
+   return(GDK_SUCCEED);
+
+}
+
+//
+//===============================================================
+// Code for numbering all boxes in a octree according to the node
+// they are in. This is useful for visualizing the clustering of
+// the tree.
+//===============================================================
+//
+static void octree_number_leaves_rec(
+   BAT* boxes,
+   Heap* tree,
+   int self_idx,
+   BAT* result,
+   int& number)
+{
+   if (self_idx == 0)
+      return;
+
+   if(self_idx > 0)
+   {
+      //
+      // This is a node.
+      //
+      oct_node* self = octree_getnode(tree,self_idx);
+
+      for(int i=0;i<self->nkids;++i)
+	 octree_number_leaves_rec(boxes,tree,self->kids[i],result,number);
+   }
+   else
+   {
+      //
+      // This is a leaf.
+      //
+      oct_leaf* leaf = octree_getleaf(tree,self_idx);
+
+      BUNins(result,&number,&(leaf->bbox));
+      number++;
+   }
+}
+
+int octree_number_leaves(
+   BAT** rval,
+   BAT* boxes)
+{
+   Heap* tree = &boxes->taccelerator;
+
+   if (boxes->tacctype != ACC_octree)
+   {
+      int dummy;
+      octree_build_bup(&boxes->taccelerator,&dummy,BATmirror(boxes));
+   }
+   if (tree->base == NULL)
+   {
+      GDKerror("This BAT has no index");
+      return(NULL);
+   }
+
+   BAT* result = BATnew(TYPE_int,BATttype(boxes),BATcount(boxes) / oct_leaf::maxkids);
+
+   int number = 0;
+
+   octree_number_leaves_rec(boxes,tree,octree_getrootindex(tree),result,number);
+
+   *rval = result;
+   return(GDK_SUCCEED);
+
+}
+
+//
+//===============================================================
+// Code for numbering all boxes in a octree according to the node
+// they are in. This is useful for visualizing the clustering of
+// the tree.
+//===============================================================
+//
+static void octree_number_rec(
+   BAT* boxes,
+   Heap* tree,
+   int self_idx,
+   BAT* result,
+   int& number)
+{
+   if (self_idx == 0)
+      return;
+
+   if(self_idx > 0)
+   {
+      //
+      // This is a node.
+      //
+      oct_node* self = octree_getnode(tree,self_idx);
+
+      for(int i=0;i<self->nkids;++i)
+	 octree_number_rec(boxes,tree,self->kids[i],result,number);
+   }
+   else
+   {
+      //
+      // This is a leaf.
+      //
+      oct_leaf* leaf = octree_getleaf(tree,self_idx);
+
+      for(int x=0;x<leaf->nkids;++x)
+      {
+	 BUN bun = (BUN)BUNptr(boxes,(leaf->kids[x]));
+	 box3d* cur = (box3d *)BUNtail(boxes,bun);
+
+	 BUNins(result,&number,cur);
+      }
+      number++;
+   }
+}
+
+int octree_number(
+   BAT** rval,
+   BAT* boxes)
+{
+   Heap* tree = &boxes->taccelerator;
+
+   if (boxes->tacctype != ACC_octree)
+   {
+      int dummy;
+      octree_build_bup(&boxes->taccelerator,&dummy,BATmirror(boxes));
+   }
+   if (tree->base == NULL)
+   {
+      GDKerror("This BAT has no index");
+      return(NULL);
+   }
+
+   BAT* result = BATnew(TYPE_int,BATttype(boxes),BATcount(boxes));
+
+   int number = 0;
+
+   octree_number_rec(boxes,tree,octree_getrootindex(tree),result,number);
+
+   *rval = result;
+   return(GDK_SUCCEED);
+
+}
+
+//
+//======================================================
+// Code for printing tree structure of an octree.
+//======================================================
+//
+static void octree_print_rec(
+   BAT* boxes,
+   Heap* tree,
+   int self_idx,
+   int level)
+{
+   if (self_idx == 0)
+      return;
+   if(self_idx > 0)
+   {
+      //
+      // This is a node.
+      //
+      oct_node* self = octree_getnode(tree,self_idx);
+
+      GDKwarning("node %d (%d) = (%f,%f,%f,%f,%f,%f)\n",
+         self_idx,level,
+	 self->bbox.xinterval.min,self->bbox.xinterval.max,
+	 self->bbox.yinterval.min,self->bbox.yinterval.max,
+	 self->bbox.zinterval.min,self->bbox.zinterval.max
+      );
+
+      for(int i=0;i<self->nkids;++i)
+	 octree_print_rec(boxes,tree,self->kids[i],level + 1);
+   }
+   else
+   {
+      //
+      // This is a leaf.
+      //
+      oct_leaf* leaf = octree_getleaf(tree,self_idx);
+
+      GDKwarning("leaf %d (%d) = %d (%f,%f,%f,%f,%f,%f)\n",
+         self_idx,level,leaf->nkids,
+	 leaf->bbox.xinterval.min,leaf->bbox.xinterval.max,
+	 leaf->bbox.yinterval.min,leaf->bbox.yinterval.max,
+	 leaf->bbox.zinterval.min,leaf->bbox.zinterval.max
+      );
+   }
+}
+
+//
+// Interface function to monet:
+//    COMMAND print(bat[any,box3d])
+//
+int octree_print(BAT* boxes)
+{
+   Heap* tree = &boxes->taccelerator;
+
+   if (boxes->tacctype != ACC_octree)
+   {
+      GDKerror("There is no index on bat so I cannot print the tree structure\n");
+      return(GDK_FAIL);
+   }
+   if (tree->base == NULL)
+   {
+      GDKerror("This BAT has no index");
+      return(NULL);
+   }
+
+   octree_print_rec(boxes,tree,octree_getrootindex(tree),0);
+
+   return(GDK_SUCCEED);
+
+}

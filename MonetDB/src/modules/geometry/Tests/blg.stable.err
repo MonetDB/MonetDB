@@ -1,0 +1,5 @@
+stderr of test 'blg` in directory 'modules/geometry` itself:
+
+#> Mtest:	other blg
+#> Mtest:	Mtimeout -timeout 1200 ./blg blg
+#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_geometry blg.mil

@@ -1,0 +1,4 @@
+stderr of test 'mmath2` in directory 'modules/plain` itself:
+
+#> Mtest:	milS mmath2 milS
+#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db modules_plain -single mmath2.milS

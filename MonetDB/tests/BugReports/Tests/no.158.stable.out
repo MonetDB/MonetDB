@@ -1,0 +1,85 @@
+stdout of test 'no.158` in directory 'tests/BugReports` itself:
+
+#> Mtest:	milS no.158 milS -prelude no.158.prelude
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single -prelude no.158.prelude no.158.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:no.158.milS
+#prelude:no.158.prelude
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+# >Number:         158
+# >Category:       Mserver
+# >Synopsis:       non-persistent BATs in source/prelude disappear
+# >Confidential:   no
+# >Severity:       critical
+# >Priority:       high
+# >Responsible:    boncz (Peter Boncz)
+# >State:          open
+# >Class:          sw-bug
+# >Submitter-Id:   unknown
+# >Arrival-Date:   Wed Jun 24 11:06:43 1998
+# >Originator:     windhouw@cwi.nl
+# >Organization:
+# CWI
+# >Release:        980101
+# >Environment:
+# 
+# >Description:
+# Non-persistent BATs created in a module prelude or
+# in a source script are after execution not available
+# 
+# Test script
+# 8<-----
+# test := new(int,int);
+# test.insert(1,1);
+# 8<-----
+# Test output
+# 8<-----
+# #You are system administrator (adm)!
+# >source("/ufs/windhouw/tmp/test.mil");
+# >test.print;
+# !WARNING: interpret: convert identifier 'test' to string.
+# [ "test" ]
+# 8<-----
+# 
+# Renaming the temporary BAT doesn't help. Making
+# persistent helps, but well ...
+
+setoid(oid(10000000));
+test1 := new(int,int);
+test1.insert(1,1);
+setoid(oid(20000000));
+module("unix");
+test1.print;
+#-----------------#
+# BAT:	  tmp_30  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  1	  ]
+source(sprintf("%s/no.158.source.mil",getenv("TSTTRGDIR")));
+test2.print;
+#-----------------#
+# BAT:	  tmp_70  #
+# (int)	  (int)	  #
+#-----------------#
+[ 2,	  2	  ]
+quit;

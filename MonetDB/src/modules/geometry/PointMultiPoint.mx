@@ -1,0 +1,31 @@
+@f PointMultiPoint
+@A C.W. Quak
+@h
+#ifndef __POINTMULTIPOINT_H__
+#define __POINTMULTIPOINT_H__
+
+extern bool Relate(const Point& p1,const MultiPoint& p2,const char matrix[9]);
+extern relationship Relate(const Point& p1,const MultiPoint& p2);
+
+#endif /* __POINTMULTIPOINT_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+
+bool Relate(const Point& p,const MultiPoint& p2,const char matrix[9])
+{
+   MultiPoint* p1 = p.tomultipoint();
+
+   bool rval = Relate(*p1,p2,matrix);
+   delete p1;
+   return(rval);
+}
+
+relationship Relate(const Point& p,const MultiPoint& p2)
+{
+   MultiPoint* p1 = p.tomultipoint();
+
+   relationship rval = Relate(*p1,p2);
+   delete p1;
+   return(rval);
+}

@@ -1,0 +1,2 @@
+test2 := new(int,int);
+test2.insert(2,2);

@@ -1,0 +1,393 @@
+@f point
+@A C.W. Quak
+@* The point class
+@h
+#ifndef __POINT_H__
+#define __POINT_H__
+
+#include <math.h>
+
+//
+// Object Definition.
+//
+class point
+{
+public:
+   //
+   // Data Storage.
+   //
+   coord x;
+   coord y;
+
+   //
+   // Constructors.
+   //
+   point();
+   point(coord xc,coord yc);
+
+   //
+   // Operations Required by Monet.
+   //
+   int nbytes() const;
+   int hash() const;
+   bool OK() const;
+   bool operator== (const point& p) const;
+   bool operator!= (const point& p) const;
+   bool operator> (const point& right) const;
+   bool operator< (const point& right) const;
+   int expectedstrlen() const;
+   int tostr(char* s,int len) const;
+
+   static point null;
+   bool isnull() const;
+
+   static point* create();
+   static point* fromstr(char *s,int* parselen,int *buflen,point* p);
+
+   //
+   // Const Operations.
+   //
+   point operator+ (const point& p) const;
+   point operator/ (const double f) const;
+   point operator* (const double f) const;
+   point* copy() const;
+   class box bbox() const;
+   class multipoint* tomultipoint() const;
+   double length() const;
+   double squared_length() const;
+   int dimension() const;
+   class multipoint* boundary() const;
+   const char* typestring() const;
+
+   //
+   // Non Const Operations.
+   //
+   void translate(const point& p);
+   void scale(const double factor);
+   void rotate(const double angle);
+
+   void operator+=(const point& p);
+   void operator-=(const point& p);
+   void operator*=(const double factor);
+   void operator/=(const double factor);
+   
+   void convert_net_to_host();
+   void convert_host_to_net();
+};
+
+
+extern double direction(const point& src,const point& dest);
+extern double angle(const point& p1,const point& p2,const point& p3);
+
+//
+// Inline Implementations.
+//
+inline int point::nbytes() const
+{
+   return((int)sizeof(point));
+}
+
+inline point::point()
+{
+#ifdef DEBUG
+   x = 0;
+   y = 0;
+#endif
+}
+
+inline const char* point::typestring() const
+{
+   return "POINT";
+}
+
+inline int point::dimension() const
+{
+   return 0;
+}
+
+inline point* point::create()
+{
+   return new point;
+}
+
+inline double point::squared_length() const
+{
+   return((x * x) + (y * y));
+}
+
+inline double point::length() const
+{
+   return(sqrt(squared_length()));
+}
+
+inline point::point(coord xc,coord yc)
+{
+   x = xc;
+   y = yc;
+}
+
+inline bool point::operator< (const point& right) const
+{
+   return ((x < right.x) || ((x == right.x) && (y < right.y)));
+}
+
+inline bool point::operator> (const point& right) const
+{
+   return ((x > right.x) || ((x == right.x) && (y > right.y)));
+}
+
+inline bool point::operator!= (const point& p) const
+{
+   return((x != p.x) || (y != p.y));
+}
+
+inline bool point::operator== (const point& p) const
+{
+   return((x == p.x) && (y == p.y));
+}
+
+inline bool point::OK() const
+{
+   return(true);
+}
+
+inline int point_compare(const point& p1,const point &p2)
+{
+   if (p1.x > p2.x)
+      return (1);
+   if (p1.x < p2.x)
+      return (-1);
+   if (p1.y > p2.y)
+      return (1);
+   if (p1.y < p2.y)
+      return (-1);
+   return (0);
+}
+
+#endif /* __POINT_H__ */
+@+ Implementation Code for POINT values.
+@C
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "geometry.h"
+
+void point::operator -=(const point& p)
+{
+   x -= p.x;
+   y -= p.y;
+}
+
+void point::operator +=(const point& p)
+{
+   x += p.x;
+   y += p.y;
+}
+
+void point::translate(const point& p)
+{
+   x += p.x;
+   y += p.y;
+}
+
+point point::operator*(const double factor) const
+{
+   return(point(x * factor,y * factor));
+}
+
+void point::operator/=(const double factor)
+{
+   x = (coord)(x / factor);
+   y = (coord)(y / factor);
+}
+
+void point::operator*=(const double factor)
+{
+   x = (coord)(x * factor);
+   y = (coord)(y * factor);
+}
+
+void point::scale(const double factor)
+{
+   x = (coord)(x * factor);
+   y = (coord)(y * factor);
+}
+
+void point::rotate(const double angle) 
+{
+   double sina = sin(angle);
+   double cosa = cos(angle);
+   point oldp(*this);
+
+   x = (coord)((oldp.x * cosa) - (oldp.y * sina));
+   y = (coord)((oldp.x * sina) - (oldp.y * cosa));
+}
+
+point point::operator/ (const double f) const
+{
+   point rval(x/f,y/f);
+   return(rval);
+}
+
+point point::operator+ (const point& p) const
+{
+   point rval(x + p.x,y + p.y);
+   return(rval);
+}
+
+multipoint* point::boundary() const
+{
+   multipoint* rval = multipoint::create(0);
+   return(rval);
+}
+
+point* point::copy() const
+{
+   point* rval = create();
+   *rval = *this;
+   return(rval);
+}
+
+multipoint* point::tomultipoint() const
+{
+   multipoint* rval = multipoint::create(1);
+   rval->data(0) = *this;
+   return(rval);
+}
+
+box point::bbox() const
+{
+   return(box(x,y,x,y));
+}
+
+int point::hash() const
+{
+   union flcu
+   {
+      float fval;
+      int  lval;
+      char  cval[4];
+   } h;
+
+   h.fval = (x * y);
+   h.lval *= 104729;
+   h.cval[0] = 0;
+
+   return(h.lval);
+}
+
+point point::null(COORD_MAX,COORD_MAX);
+
+bool point::isnull() const
+{
+   return(*this == null);
+}
+
+int point::tostr(char* s,int len) const
+{
+   int rval = 0;
+   rval += sprintf(s + rval,"(");
+   rval += put_coord(s + rval,x);
+   rval += sprintf(s + rval,",");
+   rval += put_coord(s + rval,y);
+   rval += sprintf(s + rval,")");
+
+   if (rval > len)
+      GDKwarning("Prepare for the worst\n");
+   return(rval);
+}
+
+
+int point::expectedstrlen() const
+{
+   return(100);
+}
+
+point* point::fromstr(char *s,int* parselen,int *buflen,point* p)
+{
+   if (p == NULL)
+   {
+      p = point::create();
+      *buflen = sizeof(point);
+   }
+   if (*buflen < (int)sizeof(point))
+   {
+      delete (void *)p;
+      p = point::create();
+      *buflen = sizeof(point);
+   }
+
+   char* snew = s;
+
+   snew = strchr(snew,'(');
+   if (snew == 0)
+   {
+      GDKwarning("missing ( in point\n");
+      return p;
+   }
+   ++snew;
+   p->x = get_coord(snew,&snew);
+   if (snew == 0)
+   {
+      GDKwarning("illegal first coordinate in point\n");
+      return p;
+   }
+   snew = strchr(snew,',');
+   if (snew == 0)
+   {
+      GDKwarning("missing , in point\n");
+      return p;
+   }
+   ++snew;
+   p->y = get_coord(snew,&snew);
+   if (snew == 0)
+   {
+      GDKwarning("illegal second coordinate in point\n");
+      return p;
+   }
+   snew = strchr(snew,')');
+   if (snew == 0)
+   {
+      GDKwarning("missing ) in point\n");
+      return p;
+   }
+   ++snew;
+
+   size_t bytesread = snew-s;
+   if (bytesread > (size_t)*parselen)
+      GDKwarning("Problems\n");
+   
+   *parselen = bytesread;
+   return(p);
+}
+
+double angle(const point& p1,const point& p2,const point& p3)
+{
+   double dir1 = direction(p1,p2);
+   double dir2 = direction(p2,p3);
+
+   double rval = dir2 + M_PI - dir1;
+
+   return(to_angle(rval));
+}
+
+double direction(const point& src,const point& dest)
+{
+   return(to_angle(atan2(dest.y-src.y,dest.x-src.x)));
+}
+
+void point::convert_net_to_host()
+{
+   convert_endianism(x);
+   convert_endianism(y);
+}
+
+void point::convert_host_to_net()
+{
+   convert_endianism(x);
+   convert_endianism(y);
+}
+

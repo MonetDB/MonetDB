@@ -1,0 +1,122 @@
+stdout of test 'no.149` in directory 'tests/BugReports` itself:
+
+#> Mtest:	milS no.149 milS
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.149.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:no.149.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+# >Number:         149
+# >Category:       Mserver
+# >Synopsis:       string manipulation in while loops has problems
+# >Confidential:   no
+# >Severity:       critical
+# >Priority:       high
+# >Responsible:    boncz (Peter Boncz)
+# >State:          open
+# >Class:          sw-bug
+# >Submitter-Id:   unknown
+# >Arrival-Date:   Tue Mar 24 10:59:26 1998
+# >Originator:     niels@cwi.nl
+# >Organization:
+# UvA
+# >Release:        980101
+# >Environment:
+# SunOS
+# >Description:
+# Following script
+# crashes and returns wrong output
+# 
+# var b := new (int, str );
+# 
+# proc test1 := {
+#         var i := 1;
+#         "   test1".print;
+#         s := sprintf("Hallo dit is een string %d", i);
+#         s.print;
+#         b.insert(i,s);
+# #       b.insert(i,sprintf("Hallo %d", i));
+#         "   end test1".print;
+# }
+# 
+# var j := 0;
+# while(j < 5 ){
+#         test1;
+#         j := j + 1;
+# }
+# 
+# b.print;
+# quit;
+#  
+# 
+
+setoid(oid(20000000));
+
+var b := new (int, str );
+
+proc test1 := {
+        var i := 1;
+        "   test1".print;
+        s := sprintf("Hallo dit is een string %d", i);
+        s.print;
+        b.insert(i,s);
+        b.insert(i,sprintf("Hallo %d", i));
+        "   end test1".print;
+}
+
+var j := 0;
+while(j < 5 ){
+        test1;
+        j := j + 1;
+}
+[ "   test1" ]
+[ "Hallo dit is een string 1" ]
+[ "   end test1" ]
+[ "   test1" ]
+[ "Hallo dit is een string 1" ]
+[ "   end test1" ]
+[ "   test1" ]
+[ "Hallo dit is een string 1" ]
+[ "   end test1" ]
+[ "   test1" ]
+[ "Hallo dit is een string 1" ]
+[ "   end test1" ]
+[ "   test1" ]
+[ "Hallo dit is een string 1" ]
+[ "   end test1" ]
+
+b.print;
+#-----------------------------------------#
+# BAT:	  tmp_30			  #
+# (int)	  (str)				  #
+#-----------------------------------------#
+[ 1,	  "Hallo dit is een string 1"	  ]
+[ 1,	  "Hallo 1"			  ]
+[ 1,	  "Hallo dit is een string 1"	  ]
+[ 1,	  "Hallo 1"			  ]
+[ 1,	  "Hallo dit is een string 1"	  ]
+[ 1,	  "Hallo 1"			  ]
+[ 1,	  "Hallo dit is een string 1"	  ]
+[ 1,	  "Hallo 1"			  ]
+[ 1,	  "Hallo dit is een string 1"	  ]
+[ 1,	  "Hallo 1"			  ]
+quit;

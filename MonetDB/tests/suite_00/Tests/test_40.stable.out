@@ -1,0 +1,79 @@
+stdout of test 'test_40` in directory 'tests/suite_00` itself:
+
+#> Mtest:	milS test_40 milS
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_40.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:test_40.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(20000000));
+# Some applications may wish to directly access the buns
+# i.e. they use a BAT like an array.
+b:= new(int,int);
+b.rename("b");
+
+b.insert(1,15);
+b.insert(2,4);
+b.insert(3,int(nil));
+b.insert(4,16);
+b.insert(5,25);
+b.insert(6,36);
+b.insert(7,49);
+b.insert(8,64);
+b.insert(9,int(nil));
+b.insert(int(nil),int(nil));
+b.insert(int(nil),81);
+#b.rename("b");
+
+
+b.save;
+load("b");
+b.position(4).print;
+[ 3 ]
+b.fetch(5).print;
+[ 36 ]
+b.fetch(8).print;
+[ nil ]
+b.slice(5,8).print;
+#-----------------#
+# BAT:	  tmp_26  #
+# (int)	  (int)	  #
+#-----------------#
+[ 6,	  36	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 9,	  nil	  ]
+# errors
+b.position(111).print;
+!ERROR: CMDposition: item not found
+!ERROR: CMDposition: operation failed.
+!ERROR: print(param 1): evaluation error.
+b.fetch(-1).print;
+!ERROR: CMDfetch: idx out of range
+!ERROR: CMDfetch: operation failed.
+!ERROR: print(param 1): evaluation error.
+b.slice(8,5).print;
+#-----------------#
+# BAT:	  tmp_26  #
+# (int)	  (int)	  #
+#-----------------#
+quit;

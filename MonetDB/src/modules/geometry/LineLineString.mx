@@ -1,0 +1,31 @@
+@f LineLineString
+@A C.W. Quak
+@h
+#ifndef __LINELINESTRING_H__
+#define __LINELINESTRING_H__
+
+extern bool Relate(const Line&l,const LineString& l2,const char matrix[9]);
+extern relationship Relate(const Line& l,const LineString& l2);
+
+#endif /* __LINELINESTRING_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+
+bool Relate(const Line&l,const LineString& l2,const char matrix[9])
+{
+   LineString* l1 = l.topolyline();
+
+   bool rval = Relate(*l1,l2,matrix);
+   delete l1;
+   return(rval);
+}
+
+relationship Relate(const Line& l,const LineString& l2)
+{
+   LineString* l1 = l.topolyline();
+
+   relationship rval = Relate(*l1,l2);
+   delete l1;
+   return(rval);
+}

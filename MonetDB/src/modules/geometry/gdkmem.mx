@@ -1,0 +1,337 @@
+@f gdkmem
+@a Niels J. Nes
+@* The "gdkmem" extension
+
+@m
+.MODULE gdkmem;
+@ifdef MEM_DEBUG
+	.COMMAND mem_debug_tagB( str tag ) = mem_debug_tagB; ""
+	.COMMAND mem_debug_tagE( str tag ) = mem_debug_tagE; ""
+	.PRELUDE  = mem_debug_start;
+	.EPILOGUE = mem_debug_exit;
+
+	.LOAD =
+	proc mem_debug_print_tag( Id, tag ) := { 
+		print(tag);
+      		var tag_Bs := mem_debug_tag_B.reverse.select(Id).number();
+      		var tag_Es := mem_debug_tag_E.reverse.select(Id).number();
+		var x := new (int,ptr);
+		tag_Bs.reverse@batloop(){
+			var E := tag_Es.reverse.find($h);
+			var part := mem_debug_alloc.reverse.sort.select($t,E);
+   			x.insert(part.reverse);
+		}
+		if (x.count > 0 ){
+   	   	var notFreed := x.reverse.kdiff(mem_debug_free.reverse).reverse;
+   	   	var notFreed_size := mem_debug_size.semijoin( notFreed );
+	   	print(notFreed, notFreed_size);
+		}
+	}
+   
+	proc mem_debug_print := { 
+
+		#mem_debug_alloc.print;
+		#mem_debug_free.print;
+		#mem_debug_size.print;
+	
+		#mem_debug_tag_B.print;
+		#mem_debug_tag_E.print;
+		#mem_debug_tag.print;
+   		mem_debug_tag@batloop(){
+      			mem_debug_print_tag( $h, $t );
+   		}
+	}
+	.END;
+@endif
+.END gdkmem;
+
+@+ Introduction
+The Monet extensions have to use GDK's malloc and free primitives to ensure
+proper memory management. Therefore, the new and delete operations of
+C++ needs to be overloaded.
+
+@+ Representation
+The function c_alloc, c_new and c_delete are defined here. The c_alloc 
+function works like malloc. The c_free is the free counter part. The c_new 
+and c_delete are shorthand functions for creating and terminating types 
+in a simple way.  The operators new and delete overload the existing 
+operators, this is to make sure GDK's malloc and free are used.
+
+@h
+@{
+#ifndef _GDKMEM_H_
+#define _GDKMEM_H_
+
+//#include <stddef.h>
+#include "gdkmem.proto.h"	
+
+/*
+#define c_alloc(size) 	(void*)GDKmalloc(size)
+#define c_free(ptr) 	(void)GDKfree(ptr)
+#define c_new(type) 	(type*)GDKmalloc(sizeof(type))
+#define c_delete(ptr) 	(void)GDKfree(ptr)
+*/
+@}
+
+extern void* operator new( size_t size );
+extern void* operator new( size_t size, void *ptr );
+extern void operator delete( void *ptr);
+#if defined(__GNUC__) && defined(__cplusplus)
+extern void* operator new[]( size_t size );
+extern void operator delete[]( void *ptr, size_t size );
+#endif
+
+@{
+class PureVirtual {
+   public:
+      PureVirtual(){}
+      virtual void pv( const PureVirtual *PV) const = 0;
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+        extern int mem_debug_start();
+        extern int mem_debug_exit();
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _GDKMEM_H_ */
+@}
+
+@C
+
+@{
+#include "gdkmem.h"
+#include <stdio.h>
+
+@ifdef MEM_DEBUG
+static BAT *mem_debug_alloc = 0;
+static BAT *mem_debug_free = 0;
+static BAT *mem_debug_size = 0;
+static BAT *mem_debug_tag = 0;
+static BAT *mem_debug_tag_B = 0;
+static BAT *mem_debug_tag_E = 0;
+
+static int mem_debug_oid = 0;
+static int mem_debug_tag_oid = 0;
+static int mem_debug_init = 0;
+
+#define mem_debugOK  (mem_debug_init==6)
+
+@endif
+
+void *operator new( size_t size )
+{
+#ifdef MEM_DEBUG
+	printf( "new( %d )\n", size );
+#endif
+
+	void *ptr = GDKmalloc( size );
+
+@ifdef MEM_DEBUG
+	int id = mem_debug_oid++;
+	BUNins( mem_debug_alloc, &id, &ptr );
+	BUNins( mem_debug_size, &id, &size );
+@endif
+
+#ifdef MEM_DEBUG
+	printf( "new, end\n");
+#endif
+	return(ptr);
+}
+
+
+void *operator new( size_t size, void *ptr )
+{
+#ifdef MEM_DEBUG
+	printf( "new( %d, ptr )\n", size );
+#endif
+
+@ifdef MEM_DEBUG
+	int id = mem_debug_oid++;
+	BUNins( mem_debug_free, &id, &ptr );
+@endif
+
+	GDKfree(ptr);
+	ptr = GDKmalloc( size );
+
+@ifdef MEM_DEBUG
+	id = mem_debug_oid++;
+	BUNins( mem_debug_alloc, &id, &ptr );
+	BUNins( mem_debug_size, &id, &size );
+@endif
+
+#ifdef MEM_DEBUG
+	printf( "new, end\n");
+#endif
+	return(ptr);
+}
+
+void operator delete( void *ptr )
+{
+#ifdef MEM_DEBUG
+	printf( "delete( %lx )\n", (long)ptr );
+#endif
+
+@ifdef MEM_DEBUG
+	int id = mem_debug_oid++;
+	BUNins( mem_debug_free, &id, &ptr );
+@endif
+
+	GDKfree( ptr );
+
+#ifdef MEM_DEBUG
+	printf( "delete, end\n");
+#endif
+}
+
+#if defined(__GNUC__) && defined(__cplusplus)
+void *operator new[]( size_t size )
+{
+#ifdef MEM_DEBUG
+	printf( "new[]( %d )\n", size );
+#endif
+
+	void *ptr = GDKmalloc( size );
+
+@ifdef MEM_DEBUG
+	int id = mem_debug_oid++;
+	BUNins( mem_debug_alloc, &id, &ptr );
+	BUNins( mem_debug_size, &id, &size );
+@endif
+
+#ifdef MEM_DEBUG
+	printf( "new[], end\n");
+#endif
+	return(ptr);
+}
+
+void operator delete[]( void *ptr, size_t )
+{
+#ifdef MEM_DEBUG
+	printf( "delete[]( %lx, size )\n", (long)ptr );
+#endif
+
+@ifdef MEM_DEBUG
+	int id = mem_debug_oid++;
+	BUNins( mem_debug_free, &id, &ptr );
+@endif
+
+	GDKfree( ptr );
+
+#ifdef MEM_DEBUG
+	printf( "delete[], end\n");
+#endif
+}
+#endif
+
+@ifdef MEM_DEBUG
+int mem_debug_tagB(str tag){
+	
+	int id     = mem_debug_oid++;
+	BUN p = (BUN) BUNfnd( BATmirror(mem_debug_tag), tag);
+	if (p==0){
+		int tag_id = mem_debug_tag_oid++;
+		BUNins( mem_debug_tag,   &tag_id, tag );
+		p = (BUN) BUNfnd( BATmirror(mem_debug_tag), tag);
+	}
+	int tag_id = *(int*)BUNhloc(mem_debug_tag, p);
+	BUNins( mem_debug_tag_B, &tag_id, &id );
+	BUNins( mem_debug_tag_E, &tag_id, &id );
+	return(GDK_SUCCEED);
+}
+
+int mem_debug_tagE(str tag){
+	
+	BUN p = (BUN) BUNfnd( BATmirror(mem_debug_tag), tag);
+	if (p==0){
+		GDKerror("mem_debug_tagE: could not find tag %s\n", tag);
+		return (GDK_FAIL);
+	}
+	int tag_id = *(int*)BUNhloc(mem_debug_tag, p);
+	int id 	   = mem_debug_oid++;
+	BUNreplace(mem_debug_tag_E, &tag_id, &id );
+	return(GDK_SUCCEED);
+}
+
+void mem_debug_Bat(BAT **keep, str name, int typ1, int typ2)
+{
+        BAT *b;
+        bat i = BBPindex(name);
+
+        if (i==0){
+                b = BATnew(typ1,typ2,1000);
+                BATmode( b, PERMANENT | PERSISTENT );
+                BATrename( b, name );
+        } else {
+                b = BATdescriptor(i);
+                BATclear(b);
+        }
+	mem_debug_init++;
+        *keep = b;
+        (void)BATprepareHash(b);
+}
+
+int mem_debug_start()
+{
+   	mem_debug_Bat( &mem_debug_alloc, "mem_debug_alloc", TYPE_int, TYPE_ptr);
+   	mem_debug_Bat( &mem_debug_free, "mem_debug_free", TYPE_int, TYPE_ptr );
+   	mem_debug_Bat( &mem_debug_size, "mem_debug_size", TYPE_int, TYPE_int );
+
+   	mem_debug_Bat( &mem_debug_tag, "mem_debug_tag", TYPE_int, TYPE_str );
+   	mem_debug_Bat( &mem_debug_tag_B, "mem_debug_tag_B",TYPE_int,TYPE_int);
+   	mem_debug_Bat( &mem_debug_tag_E, "mem_debug_tag_E",TYPE_int,TYPE_int);
+
+	if (!mem_debugOK) return mem_debug_exit();
+	mem_debug_oid = 0;
+	mem_debug_tag_oid = 0;
+	return(GDK_SUCCEED);
+}
+
+int mem_debug_exit(){
+	mem_debug_init=0;
+	/*
+	if (mem_debug_alloc) BATdestroy(mem_debug_alloc);
+	mem_debug_alloc = 0;
+	if (mem_debug_free) BATdestroy(mem_debug_free);
+	mem_debug_free = 0;
+	if (mem_debug_size) BATdestroy(mem_debug_size);
+	mem_debug_size = 0;
+	if (mem_debug_tag) BATdestroy(mem_debug_tag);
+	mem_debug_tag = 0;
+	if (mem_debug_tag_B) BATdestroy(mem_debug_tag_B);
+	mem_debug_tag_B = 0;
+	if (mem_debug_tag_E) BATdestroy(mem_debug_tag_E);
+	mem_debug_tag_E = 0;
+	*/
+	mem_debug_oid = 0;
+	mem_debug_tag_oid = 0;
+	return(GDK_SUCCEED);
+}
+@endif
+@}
+
+@mil
+setoid(oid(20000000));
+
+module(gdkmem);
+
+@ifdef MEM_DEBUG
+	mem_debug_tagB("tag");
+
+	mem_debug_alloc.print;
+	mem_debug_free.print;
+	mem_debug_size.print;
+	
+	mem_debug_tag_B.print;
+	mem_debug_tag_E.print;
+	mem_debug_tag.print;
+
+	mem_debug_tagE("tag");
+	mem_debug_print();
+
+@endif
+
+quit;

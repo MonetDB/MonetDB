@@ -1,0 +1,491 @@
+@f overlap
+@A C.W. Quak
+@* The module 'overlap'
+@h
+#ifndef __OVERLAP_H__
+#define __OVERLAP_H__
+//
+// Two objects overlap iff they have at least one point in common.
+//
+extern bool overlap(const point& pnt,const polygon& pgn);
+extern bool overlap(const point& p,const cpolygon& c);
+extern bool overlap(const point& p,const box& b);
+extern bool overlap(const point& p,const segment& s);
+extern bool overlap(const point& pnt,const polyline& pln);
+
+extern bool overlap(const segment& s,const point& p);
+// extern bool overlap(const segment& s,const box& b);
+extern bool overlap(const segment& s1,const segment& s2);
+extern bool overlap(const segment& s,const polyline& pln);
+extern bool overlap(const segment& s,const polygon& pln);
+extern bool overlap(const segment& s,const cpolygon& pln);
+
+// extern bool overlap(const box& b1,const box& b2);
+// extern bool overlap(const box& b,const segment& s);
+extern bool overlap(const box& b,const point& p);
+
+extern bool overlap(const polyline& pln,const point& pnt);
+extern bool overlap(const polyline& p1,const polyline& p2);
+extern bool overlap(const polyline& pln,const polygon& pgn);
+extern bool overlap(const polyline& pln,const cpolygon& c);
+
+extern bool overlap(const polygon& pgn,const point& pnt);
+extern bool overlap(const polygon& pgn,const segment& s);
+extern bool overlap(const polygon& pgn,const polyline& pln);
+extern bool overlap(const polygon& p1,const polygon& p2);
+extern bool pq_overlap(const polygon& p1,const polygon& p2);
+extern bool overlap(const polygon& p,const cpolygon& c);
+
+extern bool overlap(const cpolygon& c,const polygon& p);
+extern bool overlap(const cpolygon& c1,const cpolygon& c2);
+extern bool overlap(const cpolygon& c,const polyline& pln);
+extern bool overlap(const cpolygon& c,const point& p);
+
+inline bool overlap(const box& b1,const box& b2)
+{
+   return(
+     ((b1.right >= b2.right && b1.left <= b2.right) ||
+      (b2.right >= b1.right && b2.left <= b1.right)) &&
+     ((b1.top >= b2.top && b1.bottom <= b2.top) ||
+      (b2.top >= b1.top && b2.bottom <= b1.top)));
+}
+
+#endif /* __OVERLAP_H__ */
+@+ Implementation of functions in overlap.
+@C
+#include "geometry.h"
+#include "opengis.h"
+#include <math.h>
+
+#include "minitree.h"
+#include "Pqueue.h"
+
+bool overlap(const point& p,const box& b)
+{
+   return(b.surrounds(p));
+}
+
+//
+// XXX this is a very strict constraint on overlaps.
+//
+bool overlap(const point& p,const segment& s)
+{
+   if ((p == s.source) || (p == s.dest))
+      return(true);
+   
+   if (s.horizontal() &&
+       (s.source.y == p.y) &&
+       interval(s.source.x,s.dest.x).contains(p.x))
+      return(true);
+
+   if (s.vertical() &&
+       (s.source.x == p.x) &&
+       interval(s.source.y,s.dest.y).contains(p.y))
+      return(true);
+
+   return(false);
+}
+
+bool overlap(const point& pnt,const polyline& pln)
+{
+   if (!overlap(pnt,pln.bbox()))
+      return(false);
+
+   for(int i=0;i<pln.nsegments();++i)
+      if(overlap(pnt,pln.sgmt(i)))
+	 return(true);
+   return(false);
+}
+
+bool overlap(const point& pnt,const polygon& pgn)
+{
+   return(inside(pnt,pgn));
+}
+
+bool overlap(const point& p,const cpolygon& c)
+{
+   return(inside(p,c));
+}
+
+bool overlap(const Line& s1,const Line& s2)
+{
+   if (!overlap(s1.bbox(),s2.bbox()))
+      return(false);
+   else
+   {
+      Line dummy;
+
+      int rval = (baserelate(s1,s2,dummy) != -1);
+      return(rval);
+   }
+}
+
+
+bool overlap(const segment& s,const polyline& p)
+{
+   if (!overlap(s.bbox(),p.bbox()))
+      return(false);
+   
+   for(int i=p.nsegments() - 1;i>=0;--i)
+   {
+      if (overlap(s,p.sgmt(i)))
+	 return(true);
+   }
+   return(false);
+}
+
+bool overlap(const segment& s,const polygon& p)
+{
+   if (!overlap(s.bbox(),p.bbox()))
+      return(false);
+   
+   if (inside(s.source,p))
+      return(true);
+
+   polyline* bnd = p.boundary();
+   bool rval = overlap(s,*bnd);
+   delete bnd;
+   return(rval);
+}
+
+bool overlap(const polyline& p1,const polyline& p2)
+{
+   for(int i=0;i<p1.nsegments();++i)
+      if(overlap(p1.sgmt(i),p2))
+	 return(true);
+   return(false);
+}
+
+bool overlap(const polyline& pln,const polygon& pgn)
+{
+   if(!overlap(pln.bbox(),pgn.bbox()))
+      return(false);
+   if(inside(pln.source(),pgn))
+      return(true);
+   
+   polyline* bnd = pgn.boundary();
+   bool rval = overlap(pln,*bnd);
+   delete bnd;
+   return(rval);
+}
+
+bool overlap(const polyline& p,const cpolygon& c)
+{
+   if(!overlap(p.bbox(),c.bbox()))
+      return(false);
+   if(inside(p.source(),c))
+      return(true);
+   
+   polyline* bnd = c.boundary().boundary();
+   bool rval = overlap(p,*bnd);
+   delete bnd;
+   if (rval == true)
+      return(true);
+   
+   for(int i=0;i<c.nholes();++i)
+   {
+      bnd = c.hole(i).boundary();
+      rval = overlap(p,*bnd);
+      delete bnd;
+      if (rval == true)
+	 return(true);
+   }
+   return(false);
+}
+
+//------------------------------------------------------------------------
+//
+// Check whether two polygons overlap using a sweepline algorithm.
+//
+// We sweep a line from left to right over the two polygons.
+// Every time the sweepline hits a segment it is added to the status line.
+// When the sweepline is past the segment, the segments needs to
+// be removed. 
+// An event consists of the following.
+//    -Which polygon is it about P1 or P2.
+//    -Do we enter or leave a segment _IN or _OUT.
+//    -What is the segment number segno.
+// The priority of an event is decided as follows:
+//    -The x coordinate of the point is the priority.
+//    -_IN events have a higher priority than _OUT events. This is
+//     to catch polygons that only touch in one point.
+// 
+
+
+//
+// These are the 4 event types.
+//
+enum
+{
+   P1_IN,
+   P1_OUT,
+   P2_IN,
+   P2_OUT
+};
+
+//
+// The Priority class contains all data which is needed for an 
+// event to calculate the priority.
+//
+class Priority
+{
+public:
+   double xcoord;
+   int type;
+   int segno;
+
+   inline Priority(){};
+   inline Priority(const double& x,const int t,const int s)
+   {
+      xcoord = x;
+      type = t;
+      segno = s;
+   };
+};
+
+//
+// Return which of two Priority structs is the highest.
+//
+inline bool operator>(const Priority& left,const Priority& right)
+{
+   //
+   // Smaller x-coordinates have higher priorities.
+   // If coordinates are the same, IN events have higher priority
+   // than out events.
+   //
+
+   if (left.xcoord != right.xcoord)
+      return (left.xcoord < right.xcoord);
+   else
+   {
+      if ((left.type == P1_IN) || (left.type == P2_IN))
+         return(true);
+      else
+         return(false);
+   }
+}
+
+class Event
+{
+public:
+   int type;
+   int segno;
+
+   inline Event(const int t,const int s) {type = t;segno = s;}
+   inline Event() {};
+};
+
+bool pq_overlap(const polygon& p1,const polygon& p2)
+{
+   int p1_rightmost = 0;
+   int p2_rightmost = 0;
+   //
+   // Calculte the interval of x-coordinates where the overlap
+   // should be.
+   //
+   box bb1(p1.bbox());
+   box bb2(p2.bbox());
+   if (!overlap(bb1,bb2))
+      return(false);
+
+   box area_of_interest(intersection(bb1,bb2));
+
+   //
+   // Precalculate the capacity of the priority Queue.
+   // this saves lots of reallocations.
+   //
+   int pqcap = 0;
+   pqcap += 2 * p1.nsegments();
+   pqcap += 2 * p2.nsegments();
+   pqcap += 1;				// Just in case.
+
+   //
+   // Fill the queue PQ with all the segments of both polylines.
+   //
+   Pqueue<Priority> pq(pqcap);
+   int i;
+   for(i=0;i<p1.nsegments();++i)
+   {
+      if (p1.pnt(i).x > p1.pnt(p1_rightmost).x)
+         p1_rightmost = i;
+
+      const segment& s = p1.sgmt(i);
+
+      if (overlap(area_of_interest,s.bbox()))
+      {
+	 if (s.source.x < s.dest.x)
+	 {
+	    pq.insert(Priority(s.source.x,P1_IN,i));
+	    pq.insert(Priority(s.dest.x,P1_OUT,i));
+	 }
+	 else
+	 {
+	    pq.insert(Priority(s.dest.x,P1_IN,i));
+	    pq.insert(Priority(s.source.x,P1_OUT,i));
+	 }
+      }
+   }
+   for(i=0;i<p2.nsegments();++i)
+   {
+      if (p2.pnt(i).x > p2.pnt(p2_rightmost).x)
+         p2_rightmost = i;
+
+      const segment& s = p2.sgmt(i);
+
+      if (overlap(area_of_interest,s.bbox()))
+      {
+	 if (s.source.x < s.dest.x)
+	 {
+	    pq.insert(Priority(s.source.x,P2_IN,i));
+	    pq.insert(Priority(s.dest.x,P2_OUT,i));
+	 }
+	 else
+	 {
+	    pq.insert(Priority(s.dest.x,P2_IN,i));
+	    pq.insert(Priority(s.source.x,P2_OUT,i));
+	 }
+      }
+   }
+
+   Array<int> status1;
+   Array<int> status2;
+
+   while(!pq.empty())
+   {
+      Priority event = pq.pop();
+
+      switch(event.type)
+      {
+	 case P1_IN:
+	    {
+	       const segment& s1 = p1.sgmt(event.segno);
+	       for(int j=status2.nitems() -1;j >= 0; --j)
+	       {
+		  const segment& s2 = p2.sgmt(status2[j]);
+		  if (overlap(s1,s2))
+		     return(true);
+	       }
+	       status1.append(event.segno);
+	       break;
+	    }
+	 case P1_OUT:
+	    if (status1.del(event.segno) == false)
+	    {
+	       GDKwarning("Segment %d of po 1 is deleted before it is inserted\n",
+	          event.segno);
+	    }
+	    break;
+	 case P2_IN:
+	    {
+	       const segment& s2 = p2.sgmt(event.segno);
+	       for(int k=status1.nitems() -1;k >= 0; --k)
+	       {
+		  const segment& s1 = p1.sgmt(status1[k]);
+		  if (overlap(s1,s2))
+		     return(true);
+	       }
+	       status2.append(event.segno);
+	       break;
+	    }
+	 case P2_OUT:
+	    if (status2.del(event.segno) == false)
+	    {
+	       GDKwarning("Segment %d of pol 2 is deleted before it is inserted\n",
+	          event.segno);
+            }
+      }
+   }
+
+   //
+   // We actually only calculated whether the boundaries 
+   // overlapped, so we now have to check manually whether one
+   // is completely inside the other.
+   //
+   if(inside(p2.pnt(p2_rightmost),p1))
+      return(true);
+   if(inside(p1.pnt(p1_rightmost),p2))
+      return(true);
+   
+   //
+   // If the boundaries do not intersect, and they are not
+   // nested the polygons are disjoint and we return false.
+   //
+   return(false);
+}
+//------------------------------------------------------------------------
+
+bool overlap(const polygon& p1,const polygon& p2)
+{
+   if (p1.hasminitree() && p2.hasminitree())
+   {
+      return(overlap(p1,*(p1.minitreeptr()),p2,*(p2.minitreeptr())));
+   }
+
+   if(!overlap(p1.bbox(),p2.bbox()))
+      return(false);
+   if(inside(p2.pnt(0),p1))
+      return(true);
+   if(inside(p1.pnt(0),p2))
+      return(true);
+   
+   polyline* bnd1 = p1.boundary();
+   polyline* bnd2 = p2.boundary();
+   bool rval = overlap(*bnd1,*bnd2);
+   delete bnd1;
+   delete bnd2;
+   return(rval);
+}
+
+bool overlap(const segment& s,const cpolygon& c)
+{
+   if (!overlap(s,c.boundary()))
+      return(false);
+   
+   for(int i=0;i<c.nholes();++i)
+      if(inside(s,c.hole(i)))
+	 return(false);
+   return(true);
+}
+
+bool overlap(const polygon& pgn,const cpolygon& cpg)
+{
+   if (!overlap(pgn,cpg.boundary()))
+      return(false);
+   
+   for(int i=0;i<cpg.nholes();++i)
+      if(inside(pgn,cpg.hole(i)))
+	 return(false);
+   return(true);
+}
+
+bool overlap(const cpolygon& c1,const cpolygon& c2)
+{
+   if (!overlap(c1.boundary(),c2.boundary()))
+      return(false);
+   
+   for(int i=0;i<c1.nholes();++i)
+      if(inside(c2,c1.hole(i)))
+	 return(false);
+   return(true);
+}
+
+
+//
+// Make sure overlap functions can be called both ways.
+//
+@:overlaprev(box,point)@
+@:overlaprev(segment,point)@
+@:overlaprev(polyline,point)@
+@:overlaprev(polygon,point)@
+@:overlaprev(polygon,segment)@
+@:overlaprev(polygon,polyline)@
+@:overlaprev(cpolygon,polygon)@
+@:overlaprev(cpolygon,polyline)@
+@:overlaprev(cpolygon,point)@
+
+@= overlaprev
+bool overlap(const @1& arg1,const @2& arg2)
+{
+   return(overlap(arg2,arg1));
+}
+@

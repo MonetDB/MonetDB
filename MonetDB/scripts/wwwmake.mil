@@ -1,0 +1,682 @@
+#=========================================================================#
+#== Makefile for the Monet Source Code Web                              ==#
+#==                                                                     ==#
+#==  ln -s with tstdb/index/users/adm/monet.prelude                     ==#
+#==        and  tstdb/index/users/$USER/monet.prelude                   ==#
+#==                                                                     ==#
+#== entry points:                                                       ==#
+#== GEN_ALL() :                generates indices for all groups and     ==# 
+#==                            definition pages for all modules.        ==#
+#== GEN_GROUP(str grp,title) : generates indices for group 'grp'.       ==#
+#== GEN_MOD(str mod) :         generates definition pages for a module  ==#
+#==                                                                     ==#
+#== On chart, GEN_ALL() takes about 20 minutes for the entire tree..    ==#
+#=========================================================================#
+
+module(str,blob,io);
+
+proc writeable(bat[any::1,any::2] b) : bat[any::1,any::2] := {
+	return b.copy.access(BAT_WRITE);
+}
+
+#=========================================================================#
+#== global variables                                                    ==#
+#=========================================================================#
+
+CONST BGRCOLOR  := "#ffffff";
+CONST BGRCOLOR2 := "#e0e0e0";
+CONST TXTCOLOR  := "#000000";
+CONST VLKCOLOR  := "#871F78";
+CONST LNKCOLOR  := "#6666ff";
+
+CONST EXTERN    := 1; # externally defined vars.
+CONST FORWARD   := 2; # forward declarations. 
+CONST TYPE      := 3; # C type definitions.
+CONST GLOBAL    := 4; # global C variables. 
+CONST ROUTINE   := 5; # routines. 
+CONST MACRO     := 6; # CPP macros. 
+CONST MIL_ATOM  := 7; # MIL Atom Extension. 
+CONST MIL_CMD   := 8; # MIL Command Extension. 
+CONST MIL_ACC   := 9; # MIL Accelerator Extension. 
+    
+module("unix");
+
+VAR WWWSCW	:= "www/scw";
+VAR WWWDIR      := sprintf("%s/%s",getenv("MONETHOME"),WWWSCW);
+    
+#=========================================================================#
+#== procedure definitions                                               ==#
+#=========================================================================#
+
+PROC sopen(name,mod) := {
+    VAR r := fopen(name,mod);
+    IF (isnil(r)) ERROR("fail in fopen(\"%s\",\"%s\").\n", name, mod);
+    RETURN r;
+}
+
+PROC TYPE_FILE(tpe) := 
+{
+        IF (tpe = TYPE)     RETURN "types"; 
+        IF (tpe = EXTERN)   RETURN "externs"; 
+        IF (tpe = GLOBAL)   RETURN "globals"; 
+        IF (tpe = FORWARD)  RETURN "fowards"; 
+        IF (tpe = ROUTINE)  RETURN "routines"; 
+        IF (tpe = MACRO)    RETURN "macros"; 
+        IF (tpe = MIL_ATOM) RETURN "mil_atoms"; 
+        IF (tpe = MIL_CMD)  RETURN "mil_cmds"; 
+        IF (tpe = MIL_ACC)  RETURN "mil_accs"; 
+        RETURN "unknown";
+}
+
+PROC TYPE_NAME(tpe) := 
+{
+        IF (tpe = TYPE)     RETURN "Type Definition"; 
+        IF (tpe = EXTERN)   RETURN "External Variable Declaration"; 
+        IF (tpe = GLOBAL)   RETURN "Global Variable"; 
+        IF (tpe = FORWARD)  RETURN "Forward Routine Definition"; 
+        IF (tpe = ROUTINE)  RETURN "Routine"; 
+        IF (tpe = MACRO)    RETURN "Macro"; 
+        IF (tpe = MIL_ATOM) RETURN "MIL Atom Definition"; 
+        IF (tpe = MIL_CMD)  RETURN "MIL Command Definition"; 
+        IF (tpe = MIL_ACC)  RETURN "MIL Search Accelerator Definition"; 
+        RETURN "unknown";
+}
+
+#=========================================================================#
+# HTML3.0 FRAMES/LINK chores
+#
+# It is impossible to jump to a tag inside a HTML document, embedded in
+# a frame ("jump to X.frame=Y#label", denoting a document X, containing
+# a document Y in frame 'frame', and 'label' a tag in Y)
+# When doing a cross-source-document jump to some label (e.g. the site where
+# a procedure is defined), this would exacltly be what we wanted to do.
+# PROBLEM!
+# We solve this by generating specific X' versions of X for any known 
+# jump. We call a HTML document X an 'index' if it has frames. Derived
+# X' with pre-jumped references in the frames are called 'pseudo-indices'.
+# This generates a lot of replication, but that is not my fault. 
+#
+# All link-printing functions (DEF_LINK, PAR_LINK and LINE_LINK) which
+# can generate cross-document jumps, now first check if a certain source
+# document has frames (if not, there is no problem). Documents only have
+# frames currently if they have a Table Of Contents (TOC).
+# If so, it auomagically generates the X' pseudo-indices. The link is 
+# converted to that pseudo-index.
+#=========================================================================#
+
+PROC HASTOC(mod,grp) := {
+    VAR has_toc := fopen(sprintf("%s/%s/%s.index.html",WWWDIR,grp,mod),"r");
+    IF (isnil(has_toc)) {
+        RETURN false;
+    }
+    fclose(has_toc);
+    RETURN true;
+}
+
+VAR PSEUDO := new(str,void); 
+VAR MODTOC := [[HASTOC](mod_nme,mod_grp)?mod_nme:]; 
+PSEUDO.key(true);
+
+PROC PSEUDO_CHECK(grp, mod, link, kind, back, to, from) := {
+    IF (MODTOC.reverse.exist(mod)) {
+	VAR file := sprintf("%s/%s/%s/%s_pseudo.html",WWWDIR,grp,to,kind);
+	IF (not(PSEUDO.exist(file))) {
+	    PSEUDO.insert(file,nil);
+            VAR fp := sopen(file, "w");
+            fprintf(fp, "<HTML>\n<HEAD>\n<TITLE>%s#%s</TITLE></HEAD>\n", mod, link);
+            fprintf(fp, "<FRAMESET border=1 ROWS=\"83%%,17%%\">\n\t<FRAME name=\"a\" ");
+            fprintf(fp, "src=\"%s/%s.body.html#%s\">\n", from,mod,link);
+            fprintf(fp, "\t<FRAME src=\"%s/%s.index.html\">\n", from,mod);
+            fprintf(fp, "</FRAMESET><NOFRAMES>");
+            fprintf(fp, "<BODY bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+	    fprintf(fp, "<H1><font color=red>click here:</font></H1>\n");
+	    fprintf(fp, "<H1><a href=\"%s/%s.html#%s\">", from,mod,link);
+            fprintf(fp, "one day, I will grow up and use Netscape</a></H1>\n");
+            fprintf(fp, "</BODY></HTML>\n");
+	    fclose(fp);
+	}
+        RETURN sprintf("\"%s/%s/%s/%s_pseudo.html\"", back,grp,to,kind); 
+    }
+    RETURN sprintf("\"%s/%s/%s.html#%s\"", back, grp, mod, link); 
+}
+
+PROC DEF_LINK(grp, mod, nme, tpe, back) :=  {
+    RETURN PSEUDO_CHECK(grp, mod, sprintf("%d_%s",tpe,nme), nme,
+                 back, sprintf("%s/%d",mod,tpe), "../..");
+}
+
+PROC PAR_LINK(grp, mod, nme) :=  {
+    RETURN PSEUDO_CHECK(grp, mod, sprintf("mod_%s",nme), nme, "../../..", mod, "..");
+}
+
+PROC LNE_LINK(grp, mod, lne, nme) := {
+    RETURN PSEUDO_CHECK(grp,mod,sprintf("L%d_%s",lne,nme),str(lne),"../../..",mod,"..");
+}
+
+PROC MOD_LINK(grp, mod) := {
+    RETURN sprintf("\"../../../%s/%s.html\"", grp, mod); 
+}
+
+PROC GEN_BLOCK(tpe, nme, mod_oid) := 
+{
+        IF (isnil(nme)) {
+                IF (tpe = 'T') RETURN "documentation text"; 
+                IF (tpe = 'M') RETURN "Mx code fragment"; 
+                IF (tpe = 'C') RETURN "C definitions"; 
+                IF (tpe = 'O') RETURN "comment in C code"; 
+        } else {
+                VAR mod := mod_nme.find(mod_oid);
+                VAR grp := mod_grp.find(mod_oid);
+
+                IF (tpe = 'T') 
+                RETURN sprintf("documentation <a href=%s>text</a>",
+                        PAR_LINK(grp, mod, nme)); 
+                IF (tpe = 'M') 
+                RETURN sprintf("Mx code fragment <a %s>%s</a>", 
+                sprintf("href=\"../../../%s/%s.html#%s\"", grp, mod, nme), nme);
+                IF (tpe = 'C') 
+                RETURN sprintf("body of C routine <a href=%s>%s()</a>", 
+                        DEF_LINK(grp, mod, nme, 5, "../../.."), nme); 
+                IF (tpe = 'O') 
+                RETURN sprintf("comment in C routine <a href=%s>%s()</a>", 
+                        DEF_LINK(grp, mod, nme, 5, "../../.."), nme); 
+        }
+        RETURN "unknown location";
+}
+
+
+PROC GEN_USAGE(fp,def_nme, title,mods) := 
+{
+        VAR blockold:="", grpold:="", modold:="";
+        fprintf(fp, "<h4>%s uses it:</h4>\n", title);
+
+        mods@batloop() {
+                VAR lne := use_lne.find($h);
+                VAR blk := use_blk.find($h);
+                VAR nme := use_nme.find($h);
+                VAR grp := mod_grp.find($t);
+                VAR mod := mod_nme.find($t);
+                VAR block := GEN_BLOCK(blk, nme, $t);
+
+                IF ((grp != grpold) or (mod != modold) or (block != blockold)) {
+                        IF (blockold != "") fprintf(fp, ".\n");
+                        fprintf(fp, "<br> - in %s on ", block);
+                        grpold := grp; modold := mod; blockold := block;
+                        fprintf(fp, "line <a href=%s>%d</a>", 
+                                        LNE_LINK(grp, mod, lne, def_nme), lne);
+                } ELSE {
+                        fprintf(fp, ", <a href=%s>%d</a>", 
+                                        LNE_LINK(grp, mod, lne, def_nme), lne);
+                }
+        }
+        IF (mods.count > 0) fprintf(fp, ".\n");
+}
+
+#=========================================================================#
+#== alphabetic index generation                                         ==#
+#=========================================================================#
+
+PROC GEN_GROUPINDEX(def_nmes, tpe, grp_dir, grp_str) := {
+        filename := sprintf("%s/%s/%d.html", WWWDIR, grp_dir, tpe);
+        VAR fp := sopen(filename, "w");                
+
+        fprintf(fp,"<html><head><title>%ss in %s</title></head>\n", 
+                                                TYPE_NAME(tpe), grp_str); 
+        fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+        fprintf(fp,"<h1>%ss in %s</h1>\n", TYPE_NAME(tpe), grp_str);
+        fprintf(fp,"<h4>Names and Places:</h4>\n<ul>\n");
+        def_nmes.reverse.sort@batloop() {
+            VAR lne := def_lne.find($t);
+            VAR mod := mod_nme.find(def_mod.find($t));
+            fprintf(fp,"<a href=\"%s/%d/%s.html\">%s</a><ul><ul><ul><ul>", 
+                                mod, tpe, $h, $h); 
+            fprintf(fp,"<li>on <a href=%s>line %04d</a> of module ",
+                 DEF_LINK(grp_dir, mod, $h, tpe, ".."), lne);
+            fprintf(fp,"<a href=\"%s.html\">%s.mx</a></ul></ul></ul></ul>\n",
+                                mod, mod);
+        }
+        fprintf(fp,"</ul></center>\n");
+        fprintf(fp,"</body></html>\n"); 
+        fclose(fp);
+}
+
+#=========================================================================#
+#== item overview per group and module                                  ==#
+#=========================================================================#
+
+PROC GEN_INDEXBODY(defs, fp) := 
+{
+    fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+    all_grp@batloop() {
+        VAR grp := $h;
+        IF (def_mod.semijoin(defs).join(mod_grp).select(grp).count > 0) {
+            fprintf(fp, "<h3><a href=\"%s\" target=e>%s</a></h3>\n<ul>\n", 
+			grp, $t);
+            mod_grp.reverse@hashloop(grp) {
+                VAR b := mod_def.find($t).semijoin(defs).reverse.sort;
+                VAR mod := mod_nme.find($t);
+                IF (b.count > 0) { 
+                    fprintf(fp, "<li> module <b><a href=\"%s/%s", grp,mod);
+                    fprintf(fp, ".html\" target=e>");
+                    fprintf(fp, "%s.mx</a></b>:\n<ul>\n", mod);
+                    b@batloop() {
+                        fprintf(fp, "<li> <a name=\"%s_%s_%s\"", grp, mod, $h); 
+                        fprintf(fp, " href=%s target=e>%s</a>\n", 
+                            DEF_LINK(grp, mod, $h, def_tpe.find($t), ".."), $h);
+                    }
+                    fprintf(fp, "</ul>\n");
+                }
+            }
+            fprintf(fp, "</ul>\n");
+        }
+    }
+    fprintf(fp,"</body></html>\n");
+}
+
+#=========================================================================#
+#== global files: stand above the group directories layer               ==#
+#=========================================================================#
+
+PROC GEN_GLOBAL(grps) :=
+{
+    # FILE: srcweb.html
+    # Horizontal Header Bar above every page. Navigates between groups.
+    VAR fp := sopen(sprintf("%s/srcweb.html", WWWDIR), "w"); 
+    fprintf(fp, "<html>\n<head>\n<title>Source Code Web</title></head>\n");
+    fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n<center>\n",
+                        BGRCOLOR2, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+    fprintf(fp,"<font size=\"+2\" color=red><b>The Monet Source Code Web");
+    fprintf(fp,"</b></font><br>\n");
+    fprintf(fp,"<table border=0><tr>\n");
+    grps@batloop() {
+        fprintf(fp, "<td align=center><font size=\"+1\">");
+        fprintf(fp, "<a href=\"%s/\" target=_top>",$h);
+        fprintf(fp, "%s</a></font></td>\n", $t);
+    }
+    fprintf(fp,"</tr></table>\n");
+    fprintf(fp,"</center></body></html>\n");
+    fclose(fp);
+
+    # GENERATE global (crossgroup) overview of all MIL definitions.
+    VAR tpe := MIL_ATOM;
+    WHILE(tpe <= MIL_ACC) {
+        VAR b := def_tpe.select(tpe);
+        IF (b.count > 0) {
+            printf("#== Global %s Index.\n", TYPE_NAME(tpe));
+
+            # FILE: <TYPE_FILE>.html
+            # Overview for all {groups,modules} of items of a certain type.
+            fp := sopen(sprintf("%s/%s.html", WWWDIR, TYPE_FILE(tpe)),"w");
+            fprintf(fp, "<html>\n<head>\n<title>%s Overview</title></head>\n",
+                        TYPE_NAME(tpe));
+            VAR o := b.reverse.fetch(0), m := def_mod.find(o);
+            fprintf(fp, "<frameset rows=\"70,*\" border=0>\n");
+            fprintf(fp, "<frameset cols=\"30%%,70%%\" border=0>\n");
+            fprintf(fp, "<frame scrolling=no src=\"%s_title.html\">\n", 
+                        TYPE_FILE(tpe));
+            fprintf(fp, "<frame scrolling=no src=\"implementation.html\">\n");
+            fprintf(fp, "</frameset>\n<frameset cols=\"30%%,70%%\" border=0>\n");
+            fprintf(fp, "<frame src=\"%s_frame.html\">\n", TYPE_FILE(tpe));
+            fprintf(fp, "<frame name=\"e\" src=\"%s/%s.html#%d_%s\">\n", 
+                         mod_grp.find(m),mod_nme.find(m),tpe,all_nme.find(o));
+            fprintf(fp, "</frameset>\n</frameset>\n<noframes>\n");
+            fprintf(fp, "<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                         BGRCOLOR, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+            fprintf(fp, "<h1>Registered %ss</h1>\n", TYPE_NAME(tpe));
+            GEN_INDEXBODY(b, fp);
+            fclose(fp);
+
+            # FILE: <TYPE_FILE>_frame.html
+            # version without frame codes, for display inside frame
+            fp := sopen(sprintf("%s/%s_frame.html",WWWDIR,TYPE_FILE(tpe)),"w");
+            fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+            fprintf(fp, "<html>\n<head>\n<title>%s Overview</title></head>\n",
+                        TYPE_NAME(tpe));
+            GEN_INDEXBODY(b, fp);
+            fclose(fp);
+
+            # FILE: <TYPE_FILE>_title.html
+            # title bar for left column, in frames layout.
+            fp := sopen(sprintf("%s/%s_title.html",WWWDIR,TYPE_FILE(tpe)),"w");
+            fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n<center>\n",
+                        BGRCOLOR2, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+            fprintf(fp, "<h2><font color=green>Registered %ss</font></h2>\n", 
+                        TYPE_NAME(tpe));
+	    fclose(fp);
+        }
+        tpe := tpe + 1;
+    }
+    # FILE: implementation.html
+    # title bar for right column, in frames layout.
+    fp := sopen(sprintf("%s/implementation.html",WWWDIR),"w");
+    fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n<center>\n",
+        BGRCOLOR2, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+    fprintf(fp, "<h2><font color=red>Implementation</font></h2>\n");
+    fclose(fp);
+}
+
+#=========================================================================#
+#== we use netscape frames for easy navigation                          ==#
+#=========================================================================#
+
+PROC GEN_FRAMEPAGE(grp, back, link, fp) := 
+{ 
+    # layout:
+    # +------------+----------------------------+
+    # | GROUPNAME  | SOURCE CODE WEB GLOBAL BAR |
+    # | head.html  | ../srcweb.html             |
+    # +------------+----------------------------+
+    # |  GLOSSARY  | THE CODE FILE or GLOSSARY  |
+    # |    list    |                            |
+    # | OR         |                            |
+    # |  MODULES   |                            |
+    # |    list    |                            |
+    # |            | mxfile.html                |
+    # | frame.html | target="d"                 |
+    # +------------+----------------------------+
+    IF (not(all_grp.exist(grp))) RETURN;
+    VAR title := all_grp.find(grp);
+    fprintf(fp, "<html>\n<head>\n<title>%s</title></head>\n",title);
+    fprintf(fp, "<frameset cols=\"12%%,88%%\" border=0>\n");
+    fprintf(fp, "<frameset rows=\"70,*\" border=0>\n");
+    fprintf(fp, "<frame scrolling=no src=\"%shead.html\">\n", back);
+    fprintf(fp, "<frame src=\"%sframe.html\">\n", back);
+    fprintf(fp, "</frameset>\n");
+    fprintf(fp, "<frameset rows=\"70,*\" border=0>\n");
+    fprintf(fp, "<frame scrolling=no src=\"%s../srcweb.html\">\n", back);
+    fprintf(fp, "<frame name=\"d\" src=%s>\n", link);
+    fprintf(fp, "</frameset>\n");
+    fprintf(fp, "</frameset>\n");
+    fprintf(fp, "<noframes>\n");
+}
+
+#=========================================================================#
+#== generated pages for each index item                                 ==#
+#=========================================================================#
+
+PROC GEN_DEFBODY(def_oid,grp_nme,mod,mod_oid,tpe,def_nme,defs,tpe_nme,fp) := 
+{
+        VAR uses       := use_def.select(def_oid);
+        VAR mods       := use_mod.semijoin(uses);
+        VAR ref_mods   := mod_grp.semijoin(mods.histogram());
+        VAR local_mods := mods.select(mod_oid);
+        VAR printcomma := FALSE;
+
+        fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+        fprintf(fp,"<h1>%s %s</h1>\n", 
+                        tpe_nme, def_nme); 
+
+        # look for forward declarations
+        IF ((tpe = GLOBAL) or (tpe = ROUTINE))
+        all_nme.reverse@hashloop(def_nme) {
+                VAR t := def_tpe.find($t);
+                IF ((t = EXTERN) or (t = FORWARD)) { 
+                    VAR o := def_mod.find($t);
+                    VAR m := mod_nme.find(o); 
+                    VAR g := mod_grp.find(o);
+                    VAR l := def_lne.find($t);
+                    fprintf(fp,"<h4>externally declared on <a href=%s>line ",
+                                LNE_LINK(g, m, l, def_nme));
+                    fprintf(fp,"%d</a> of module <a href=%s>%s.mx</a></h4>\n",
+                                l, MOD_LINK(g, m), m);
+                }
+        }
+        fprintf(fp,"<hr size=3 noshade>\n<h3>Defined on ");
+        defs.reverse@hashloop(def_nme) {
+                VAR tp := def_tpe.find($t); 
+                IF (tp = tpe) {
+                        IF (printcomma) fprintf(fp, ", ");
+                        ELSE            fprintf(fp, "line ");
+                        fprintf(fp, "<a href=%s>%d</a>",
+                                DEF_LINK(grp_nme,mod,def_nme,tpe,"../../.."), 
+                                def_lne.find($t));
+                        printcomma := TRUE;
+                }
+        }
+        fprintf(fp," of module <a href=\"../../%s.html\">%s.mx</a>", mod, mod);
+        fprintf(fp,"</h3>\n<hr size=3 noshade>\n");
+
+        IF (local_mods.count > 0) {
+                GEN_USAGE(fp, def_nme, "This module itself", local_mods);
+		mods := mods.writeable;
+                mods.delete(local_mods);
+                uses := uses.semijoin(mods);
+        }
+
+        # for all groups of modules 
+        all_grp@batloop() {
+          VAR grp     := $t; 
+          VAR GRP     := $h;
+          VAR doprint := TRUE;
+
+          # for all modules of this group
+          ref_mods.reverse@hashloop(GRP) {
+            local_mods := mods.select($t);
+            IF (local_mods.count > 0) {
+                VAR nme := mod_nme.find($t);
+                IF (doprint) { 
+                        doprint := FALSE; 
+                        fprintf(fp,"<hr size=3 noshade>\n");
+                        fprintf(fp,"<h2><a href=\"../../../%s\">%s</a></h2>\n",
+                                GRP, grp);
+                }
+                VAR header := sprintf("Module <a href=%s>%s.mx</a>", 
+                                MOD_LINK(GRP, nme), nme);
+                GEN_USAGE(fp, def_nme, header, local_mods);
+		mods := mods.writeable;
+                mods.delete(local_mods);
+                uses := uses.semijoin(mods);
+            }
+          }
+        }
+        fprintf(fp,"</body></html>\n"); 
+}
+
+PROC GEN_DEF (def_oid, grp_nme, mod, mod_oid, tpe, def_nme, defs) := 
+{
+        # overview of definition and uses of an indexed item.
+        VAR fp := sopen(sprintf("%s/%s/%s/%d/%s.html", 
+                                WWWDIR, grp_nme, mod, tpe,def_nme), "w");
+        VAR tpe_nme := TYPE_NAME(tpe);
+        fprintf(fp,"<html><head><title>%s %s</title></head>\n",
+                        tpe_nme, def_nme); 
+        GEN_DEFBODY(def_oid,grp_nme,mod,mod_oid,tpe,def_nme,defs,tpe_nme,fp);
+        fclose(fp);
+
+        fp := sopen(sprintf("%s/%s/%s/%d/%s_index.html",  
+                            WWWDIR, grp_nme, mod, tpe, def_nme), "w");
+        GEN_FRAMEPAGE(grp_nme, "../../", 
+            DEF_LINK(grp_nme, mod, def_nme, tpe, "../../.."), fp);
+        GEN_DEFBODY(def_oid,grp_nme,mod,mod_oid,tpe,def_nme,defs,tpe_nme,fp);
+        fclose(fp);
+}
+
+#=========================================================================#
+#== alphabetic indices generation for a group of modules                ==#
+#=========================================================================#
+
+PROC GEN_GROUP(grp,title) := {
+    IF (not(all_grp.exist(grp))) {
+        all_grp.insert(grp,title);
+        GEN_GLOBAL(all_grp);
+    } ELSE {
+        all_grp.replace(grp,title);
+    }
+    VAR defs := def_mod.reverse.semijoin(mod_grp.select(grp)); 
+    VAR mods := mod_nme.semijoin(mod_grp.select(grp)).reverse.sort;
+    VAR idxcount := new(int, int);
+
+    # generate glossaries for all interesting types
+    VAR tpe := TYPE;
+    WHILE(tpe <= MIL_ACC) {
+        printf("#== Indexing %ss of %s group.\n", TYPE_NAME(tpe), title);
+        VAR tpe_defs := defs.reverse.semijoin(def_tpe.select(tpe)); 
+        VAR nmes     := all_nme.semijoin(tpe_defs);
+        idxcount.insert(tpe, nmes.count);
+        IF (nmes.count > 0) {
+            GEN_GROUPINDEX(nmes, tpe, grp, title);
+	}
+        tpe := tpe + 1;
+    }  
+    
+    # Generate HTML main pages for this group, both standard version
+    # and frame version (standard in the noframes part):
+    #
+    # FILE: index.html
+    # The main frames structure + the standard text in <noframes> part 
+    VAR fp := sopen(sprintf("%s/%s/index.html", WWWDIR, grp), "w"); 
+    GEN_FRAMEPAGE(grp, "", sprintf("%s.html", mods.reverse.fetch(0)), fp); 
+    fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+    fprintf(fp, "<h1>The Modules Of <b>%s</b></h1>\n", title);
+    fprintf(fp, "<h3>C/C++ Glossaries</h3><ul>\n");
+    IF (idxcount.find(3) > 0)
+        fprintf(fp, "<li> <a href=\"3.html\">datatypes</a>\n");
+    IF (idxcount.find(4) > 0)
+        fprintf(fp, "<li> <a href=\"4.html\">variables</a>\n");
+    IF (idxcount.find(5) > 0)
+        fprintf(fp, "<li> <a href=\"5.html\">routines</a>\n");
+    IF (idxcount.find(6) > 0)
+        fprintf(fp, "<li> <a href=\"6.html\">CPP macros</a>\n");
+    fprintf(fp, "</ul><h3>Extension Glossaries</h3><ul>\n");
+    IF (idxcount.find(7) > 0)
+        fprintf(fp, "<li> <a href=\"7.html\">MIL datatypes</a>\n");
+    IF (idxcount.find(8) > 0)
+        fprintf(fp, "<li> <a href=\"8.html\">MIL commands</a>\n");
+    IF (idxcount.find(9) > 0)
+        fprintf(fp, "<li> <a href=\"9.html\">MIL accelerators</a>\n");
+    fprintf(fp, "</ul><h3>Modules in the Group</h3><ul>\n");
+    mods@batloop() {
+        fprintf(fp, "<li> <a href=\"%s.html\">%s.mx</a>\n", $h, $h);
+    }
+    fprintf(fp, "</ul>\n");
+    fprintf(fp, "</body></noframes></html>\n");
+    fclose(fp);
+
+    # FILE: head.html
+    # Left upper corner: the name of the current module group.
+    fp := sopen(sprintf("%s/%s/head.html", WWWDIR, grp), "w"); 
+    fprintf(fp, "<html>\n<head>\n<title>%s header</title></head>\n",title);
+    fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR2, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+    fprintf(fp, "<h1><font size=\"+2\" color=green>%s</font></h1>\n", title);
+    fprintf(fp, "</body></html>\n");
+    fclose(fp);
+
+    # FILE: frame.html
+    # Left sidebar: glossary link list and modules link list.
+    fp := sopen(sprintf("%s/%s/frame.html", WWWDIR, grp), "w"); 
+    fprintf(fp, "<html>\n<head>\n<title>%s</title></head>\n",title);
+    fprintf(fp,"<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR2, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+
+    # normal glossaries link list; generate only links to nonempty pages
+    IF (idxcount.reverse.select(3,6).reverse.sum > 0) {
+        fprintf(fp, "<font size=\"-1\"><h3>C/C++ Glossaries</h3>\n");
+        IF (idxcount.find(3) > 0)
+            fprintf(fp, "- <a href=\"3.html\" target=d>datatypes</a><br>\n");
+        IF (idxcount.find(4) > 0)
+            fprintf(fp, "- <a href=\"4.html\" target=d>variables</a><br>\n");
+        IF (idxcount.find(5) > 0)
+            fprintf(fp, "- <a href=\"5.html\" target=d>routines</a><br>\n");
+        IF (idxcount.find(6) > 0)
+            fprintf(fp, "- <a href=\"6.html\" target=d>macros</a><br>\n");
+    }
+
+    # extension glossaries link list; generate only links to nonempty pages
+    IF (idxcount.reverse.select(7,9).reverse.sum > 0) {
+        fprintf(fp, "<h3>Extension Glossaries</h3>\n");
+        IF (idxcount.find(7) > 0)
+            fprintf(fp, "- <a href=\"7.html\" target=d>MIL datatypes</a><br>\n");
+        IF (idxcount.find(8) > 0)
+            fprintf(fp, "- <a href=\"8.html\" target=d>MIL commands</a><br>\n");
+        IF (idxcount.find(9) > 0)
+           fprintf(fp, "- <a href=\"9.html\" target=d>MIL accelerators</a><br>\n");
+    }
+
+    # module link list
+    fprintf(fp, "<h3>Modules</h3>\n");
+    mods@batloop() {
+        fprintf(fp, "<a href=\"%s.html\" target=d>%s.mx</a><br>\n", $h, $h);
+    }
+    fprintf(fp, "</body></html>\n");
+    fclose(fp);
+}
+
+#=========================================================================#
+#== process a module: each definition gets his own html page            ==#
+#=========================================================================#
+
+PROC GEN_MOD(mod) := {
+	IF (not(mod_drt.exist(mod_nme.reverse.find(mod)))) RETURN;
+
+        # make the definition files pertaining to this module
+        VAR mod_oid := mod_nme.reverse.find(mod);
+        VAR defs    := mod_def.find(mod_oid); # bat variable
+        VAR grp     := mod_grp.find(mod_oid);
+
+	# we generate nothing for external declarations
+	defs := defs.writeable;
+	defs.delete(def_tpe.semijoin(defs).select(EXTERN,FORWARD));
+
+        printf("#== %s.mx (#%d)\n[ ", mod, defs.count);
+        defs@batloop() {
+                printf("%s ", $t); fflush(stdout);
+                GEN_DEF($h, grp, mod, mod_oid, def_tpe.find($h), $t, defs);
+        }
+        printf("]\n"); 
+        mod_drt.delete(mod_oid, nil);
+
+        VAR fp := sopen(sprintf("%s/%s/%s/index.html", 
+                                WWWDIR, grp, mod), "w");
+        GEN_FRAMEPAGE(grp, "../", sprintf("../%s.html", mod), fp);
+        fprintf(fp, "<body bgcolor=%s text=%s vlink=%s link=%s>\n",
+                        BGRCOLOR, TXTCOLOR, VLKCOLOR, LNKCOLOR);
+	fprintf(fp, "<h1><font color=red>click here:</font></h1>\n");
+	fprintf(fp, "<h1><a href=\"../%s.html\">one day, I will grow", mod);
+	fprintf(fp, " up and use Netscape</a></h1>\n</body></html>\n");
+	fclose(fp);
+} 
+
+#=========================================================================#
+#== main part                                                           ==#
+#=========================================================================#
+
+PROC GEN_ALL :=
+{
+    all_grp@batloop() {
+        # GENERATE for all groups:
+        #    indices of types, externals, globals, forwards, routines, macros
+        #    MIL atoms, MIL commands, MIL accelerators
+        GEN_GROUP($h, $t);
+    }  
+   
+    # GENERATE definition pages for every dirty module 
+    mod_nme@batloop() { 
+        GEN_MOD($t);
+    } 
+
+    # GENERATE GLOBAL pages
+    GEN_GLOBAL(all_grp);
+}
+
+# some tidbits from the time we were looking for memory leaks 
+#
+# PROC veryhot := { $1.exist(nil); $1.reverse.exist(nil); }
+# veryhot(def_tpe); veryhot(def_lne); veryhot(def_mod); veryhot(use_def);
+# veryhot(use_blk); veryhot(use_mod); veryhot(use_lne); veryhot(use_nme);
+# veryhot(mod_nme); veryhot(mod_drt); veryhot(mod_grp); veryhot(mod_def);
+# veryhot(mod_blk); veryhot(mod_lne); veryhot(all_grp); veryhot(all_nme);
+#
+# mod_def@batloop() $2.veryhot;
+# mod_blk@batloop() $2.veryhot;
+# mod_lne@batloop() $2.veryhot;
+#
+# gdk_align_integrated.veryhot; gdk_align_integrated_stable.veryhot;
+# gdk_align_synced.veryhot; gdk_align_synced_stable.veryhot;
+# gdk_align_ordered.veryhot; gdk_align_ordered_stable.veryhot;

@@ -1,0 +1,75 @@
+setoid(oid(10000000));
+
+MODULES:=new(str,str);
+MODULES.rename("MODULES");
+MODULES.persists(TRUE);
+MODULES.save;
+MODULES.commit;
+
+view_modules.reverse.sort@batloop { MODULES.insert($h,"UNKNOWN"); }
+
+MODULES.replace("aggr",      "plain");
+MODULES.replace("alarm",     "plain");
+MODULES.replace("algebra",   "plain");
+MODULES.replace("arith",     "plain");
+MODULES.replace("bat",       "plain");
+MODULES.replace("bitset",    "plain");
+MODULES.replace("blob",      "plain");
+MODULES.replace("cluster",   "plain");
+MODULES.replace("counters",  "plain");
+MODULES.replace("ddbench",   "plain");
+MODULES.replace("decimal",   "plain");
+MODULES.replace("enum",      "plain");
+MODULES.replace("io",        "plain");
+MODULES.replace("iterator",  "plain");
+MODULES.replace("kernel",    "plain");
+MODULES.replace("lock",      "plain");
+MODULES.replace("mmath",     "plain");
+MODULES.replace("monettime", "plain");
+MODULES.replace("mprof",     "plain");
+MODULES.replace("oo7",       "plain");
+MODULES.replace("perfex",    "plain");
+MODULES.replace("radix",     "plain");
+MODULES.replace("sys",       "plain");
+MODULES.replace("tcpip",     "plain");
+MODULES.replace("temporal",  "plain");
+MODULES.replace("tpcd",      "plain");
+MODULES.replace("trans",     "plain");
+MODULES.replace("unix",      "plain");
+MODULES.replace("url",       "plain");
+MODULES.replace("vector",    "plain");
+MODULES.replace("wisc",      "plain");
+MODULES.replace("xtables",   "plain");
+#MODULES.replace("gdkmem",    "misc");
+#MODULES.replace("vector",    "misc");
+MODULES.replace("CC_odmg",   "odmg");
+MODULES.replace("jOdmg",     "odmg");
+MODULES.replace("odmg",      "odmg");
+MODULES.replace("signature" ,"odmg");
+MODULES.replace("BasicOdmg" ,"odmgTest");
+MODULES.replace("CC_Test",   "odmgTest");
+MODULES.replace("Meta",      "odmgTest");
+MODULES.replace("Example",   "odmgTest");
+MODULES.replace("OdmgTest",  "odmgTest");
+MODULES.replace("Test7",     "odmgTest");
+MODULES.replace("TestUse",   "odmgTest");
+MODULES.replace("TransTest", "odmgTest");
+#MODULES.replace("gis",       "geometry");
+#MODULES.replace("gisbulk",   "geometry");
+#MODULES.replace("blg",       "geometry");
+#MODULES.replace("fmap",      "geometry");
+#MODULES.replace("opengis",   "geometry");
+#MODULES.replace("tdcel",     "geometry");
+
+monet_mod_nme@batloop { MODULES.replace($t,"static"); }
+
+#MODULES.delete("CC_Test");
+#MODULES.delete("Test");
+
+MODULES.save;
+MODULES.commit;
+
+MODULES.sort.print;
+
+commit;
+

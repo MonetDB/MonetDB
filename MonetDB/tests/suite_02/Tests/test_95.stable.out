@@ -1,0 +1,217 @@
+stdout of test 'test_95` in directory 'tests/suite_02` itself:
+
+#> Mtest:	milM test_95 milM
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_02 test_95.milM
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 19:36:03 MET 2000.
+#script:test_95.milM
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(2000000));
+# This sequence is conflict free
+#load(k10_unique1); load(k10_unique2);
+qtrace(1);
+t1:= k10_unique1.copy;
+t2:= k10_unique1.copy;
+t3:= k10_unique1.copy;
+t4:= k10_unique1.copy;
+t5:= k10_unique1.copy;
+s1:= k10_unique2.copy;
+s2:= k10_unique2.copy;
+s3:= k10_unique2.copy;
+s4:= k10_unique2.copy;
+s5:= k10_unique2.copy;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  140	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  30	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+join(t1,s1.reverse).count.print;
+[ 10000 ]
+join(t2,s2.reverse).count.print;
+[ 10000 ]
+join(t3,s3.reverse).count.print;
+[ 10000 ]
+join(t4,s4.reverse).count.print;
+[ 10000 ]
+join(t5,s5.reverse).count.print;
+[ 10000 ]
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  170	  ]
+[ "elapuser",	  30	  ]
+[ "system",	  40	  ]
+[ "elapsystem",	  10	  ]
+#~EndVariableOutput~#
+var i1,i2,i3,i4,i5;
+printf("#~BeginVariableOutput~#\n"); qstat; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+##------------------------------------------------------------------------#
+## key   | put   | get  | wakeup  | enter | start | duration | action     #
+##------------------------------------------------------------------------#
+#[     6,      0,      0,      5,       0,       0,     663, "# This sequence is conflict free"]
+#[     5,      0,      2,      8,       0,     663,       1, "readCmd;"]
+#[     8,      2,      2,      7,     664,     664,       6, "t1:= k10_unique1.copy;"]
+#[     7,      2,      2,     10,     664,     670,       0, "readCmd;"]
+#[    10,      2,      2,      9,     670,     670,       3, "t2:= k10_unique1.copy;"]
+#[     9,      2,      2,     12,     670,     673,       1, "readCmd;"]
+#[    12,      2,      2,     11,     674,     674,       3, "t3:= k10_unique1.copy;"]
+#[    11,      2,      2,     14,     673,     677,       0, "readCmd;"]
+#[    14,      2,      2,     13,     677,     677,       4, "t4:= k10_unique1.copy;"]
+#[    13,      2,      2,     16,     677,     681,       0, "readCmd;"]
+#[    16,      2,      2,     15,     681,     681,       3, "t5:= k10_unique1.copy;"]
+#[    15,      2,      2,     18,     681,     684,       1, "readCmd;"]
+#[    18,      2,      2,     17,     685,     685,       4, "s1:= k10_unique2.copy;"]
+#[    17,      2,      2,     20,     684,     689,       0, "readCmd;"]
+#[    20,      2,      2,     19,     689,     689,       3, "s2:= k10_unique2.copy;"]
+#[    19,      2,      2,     22,     689,     692,       0, "readCmd;"]
+#[    22,      2,      2,     21,     692,     692,       2, "s3:= k10_unique2.copy;"]
+#[    21,      2,      2,     24,     692,     694,       1, "readCmd;"]
+#[    24,      2,      2,     23,     695,     695,       2, "s4:= k10_unique2.copy;"]
+#[    23,      2,      2,     26,     694,     697,       0, "readCmd;"]
+#[    26,      2,      2,     25,     697,     697,       3, "s5:= k10_unique2.copy;"]
+#[    25,      2,      2,     28,     697,     700,       0, "readCmd;"]
+#[    28,      2,      2,     27,     700,     700,       2, "printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVa"]
+#[    27,      2,      2,     30,     700,     702,       0, "readCmd;"]
+#[    30,      2,      2,     29,     702,     702,      10, "join(t1,s1.reverse).count.print;"]
+#[    29,      2,      2,     32,     702,     712,       0, "readCmd;"]
+#[    32,      2,      2,     31,     712,     712,       8, "join(t2,s2.reverse).count.print;"]
+#[    31,      2,      2,     34,     712,     720,       0, "readCmd;"]
+#[    34,      2,      2,     33,     720,     720,       9, "join(t3,s3.reverse).count.print;"]
+#[    33,      2,      2,     36,     720,     729,       0, "readCmd;"]
+#[    36,      2,      2,     35,     729,     729,       8, "join(t4,s4.reverse).count.print;"]
+#[    35,      2,      2,     38,     729,     737,       1, "readCmd;"]
+#[    38,      2,      2,     37,     738,     738,       8, "join(t5,s5.reverse).count.print;"]
+#[    37,      2,      2,     40,     738,     746,       1, "readCmd;"]
+#[    40,      2,      2,     39,     747,     747,       1, "printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVa"]
+#[    39,      2,      2,     42,     746,     748,       0, "readCmd;"]
+#[    42,      2,      2,     41,     748,     748,       0, "var i1,i2,i3,i4,i5;"]
+#[    41,      2,      2,     44,     748,     748,       0, "readCmd;"]
+#~EndVariableOutput~#
+qtrace(0);qtrace(1);
+threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  180	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  50	  ]
+[ "elapsystem",	  10	  ]
+#~EndVariableOutput~#
+{|	
+	i1:=join(t1,s1.reverse).count;
+	i2:=join(t2,s2.reverse).count;
+	i3:=join(t3,s3.reverse).count;
+	i4:=join(t4,s4.reverse).count;
+	i5:=join(t5,s5.reverse).count;
+|}
+printf("#~BeginVariableOutput~#\n"); qstat; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+##------------------------------------------------------------------------#
+## key   | put   | get  | wakeup  | enter | start | duration | action     #
+##------------------------------------------------------------------------#
+#[    46,      2,      2,     45,     751,     751,       0, "qtrace(0);qtrace(1);"]
+#[    45,      2,      2,     48,     751,     751,       1, "readCmd;"]
+#[    48,      2,      2,     47,     752,     752,       6, "threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; pr"]
+#[    47,      2,      4,     50,     751,     758,       1, "readCmd;"]
+#[    52,      5,      5,     51,     760,     760,       6, "[0]"]
+#[    53,      5,      6,     51,     760,     766,       6, "[1]"]
+#[    54,      5,      7,     51,     760,     773,       6, "[2]"]
+#[    55,      5,      2,     51,     760,     779,       6, "[3]"]
+#[    56,      5,      4,     51,     760,     786,       7, "[4]"]
+#[    51,      5,      5,      0,     760,     793,       0, ""]
+#[    50,      4,      5,     49,     759,     759,      34, "{|	"]
+#[    49,      4,      6,     58,     758,     793,       1, "readCmd;"]
+#~EndVariableOutput~#
+qtrace(0);
+print(i1);
+[ 10000 ]
+print(i2);
+[ 10000 ]
+print(i3);
+[ 10000 ]
+print(i4);
+[ 10000 ]
+print(i5);
+[ 10000 ]
+print("done parallel");
+[ "done parallel" ]
+pseudo_thread_name.print;
+!WARNING: interpret: convert identifier 'pseudo_thread_name' to string.
+[ "pseudo_thread_name" ]
+printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:	  thread		  #
+# (int)	  (str)			  #
+#---------------------------------#
+[ 1,	  "Server"		  ]
+[ 2,	  "Interpreter"		  ]
+[ 3,	  "InternetServer"	  ]
+[ 4,	  "Interpreter"		  ]
+[ 5,	  "Interpreter"		  ]
+[ 6,	  "Interpreter"		  ]
+[ 7,	  "Interpreter"		  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-----------------------------------------------------------------------------------------#
+# BAT:		  env									  #
+# (str)		  (str)									  #
+#-----------------------------------------------------------------------------------------#
+[ "dbname",	  "tests_suite_02"							  ]
+[ "server",	  "medusa"								  ]
+[ "port",	  "52999"								  ]
+[ "directory",	  "/var/tmp/manegold.GNU_32/monet/IRIX646.5/dbfarm/tests_suite_02"	  ]
+[ "owner",	  "manegold"								  ]
+[ "prefix",	  "32bitIRIX646.5"							  ]
+[ "processid",	  "3815395"								  ]
+[ "home",	  "/var/tmp/manegold.GNU_32/monet/IRIX646.5"				  ]
+[ "version",	  "4.1"									  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  10	  ]
+[ "elapuser",	  -170	  ]
+[ "system",	  10	  ]
+[ "elapsystem",	  -40	  ]
+#~EndVariableOutput~#
+quit;

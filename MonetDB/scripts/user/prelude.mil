@@ -1,0 +1,3 @@
+# prelude file; executed at session start. 
+printf("# start session on %s:%s\n", 
+    environment.find("dbname"), environment.find("port"));

@@ -1,0 +1,496 @@
+# Makefile.in generated automatically by automake 1.4a from Makefile.am
+
+# Copyright (C) 1994, 1995-9, 2000 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ../..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_STRIP_FLAG =
+transform = @program_transform_name@
+
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+
+@SET_MAKE@
+host_alias = @host_alias@
+host_triplet = @host@
+AMDEP = @AMDEP@
+AMTAR = @AMTAR@
+AS = @AS@
+AWK = @AWK@
+BASH = @BASH@
+CC = @CC@
+CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXFLAGS = @CXXFLAGS@
+DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
+DL_LIBS = @DL_LIBS@
+EXEEXT = @EXEEXT@
+LEX = @LEX@
+LIBTOOL = @LIBTOOL@
+LN_S = @LN_S@
+MAKEINFO = @MAKEINFO@
+MALLOC_LIBS = @MALLOC_LIBS@
+MV = @MV@
+OBJC = @OBJC@
+OBJDUMP = @OBJDUMP@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+READLINE_LIBS = @READLINE_LIBS@
+RM = @RM@
+SOCKET_LIBS = @SOCKET_LIBS@
+STRIP = @STRIP@
+THREAD = @THREAD@
+THREAD_LIBS = @THREAD_LIBS@
+VERSION = @VERSION@
+YACC = @YACC@
+install_sh = @install_sh@
+thread_safe_flag_spec = @thread_safe_flag_spec@
+
+#AUTOMAKE_OPTIONS = no-dependencies
+
+
+
+gdkincludedir = $(includedir)/gdk
+
+gdkinclude_HEADERS = \
+	gdk.h gdk_align.h gdk_atoms.h gdk_bat.h gdk_batop.h \
+	gdk_bbp.h gdk_compress.h gdk_delta.h gdk_desc.h gdk_heap.h \
+	gdk_relop.h gdk_search.h gdk_setop.h gdk_storage.h gdk_tm.h \
+	gdk_utils.h gdk_system.h 
+
+
+GDK_SOURCES = \
+	$(gdkinclude_HEADERS) \
+	gdk_align.c gdk_atoms.c gdk_bat.c gdk_batop.c gdk_bbp.c \
+	gdk_compress.c gdk_delta.c gdk_desc.c gdk_heap.c gdk_qsort.c \
+	gdk_relop.c gdk_search.c gdk_setop.c gdk_storage.c gdk_tm.c \
+	gdk_utils.c gdk_system.c
+
+
+BUILT_SOURCES = $(GDK_SOURCES) 
+
+INCLUDES = 
+
+CFLAGS = @CFLAGS@ $(thread_safe_flag_spec)
+
+# Build a libtool library for installation in libdir.
+lib_LTLIBRARIES = libbat.la
+
+EXTRA_DIST = \
+	bat.eps gdk_atoms.mx gdk_delta.mx    gdk_relop.mx    gdk_utils.mx \
+	bat1.eps gdk_bat.mx gdk_desc.mx     gdk_search.mx  \
+	bat2.eps gdk_batop.mx gdk_heap.mx     gdk_setop.mx \
+	gdk.mx        gdk_bbp.mx       gdk_system.mx  gdk_storage.mx \
+	gdk_align.mx  gdk_compress.mx  gdk_qsort.mx    gdk_tm.mx
+
+
+libbat_la_LDFLAGS = 
+libbat_la_SOURCES = $(GDK_SOURCES)
+
+MEL = $(top_builddir)/src/mel/mel
+MX = $(top_builddir)/src/utils/Mx/Mx
+
+SUFFIXES = .m .mx .proto.h .mil
+PRECIOUS = .m 
+subdir = src/gdk
+mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
+CONFIG_HEADER = ../../config.h
+CONFIG_CLEAN_FILES = 
+LTLIBRARIES =  $(lib_LTLIBRARIES)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) -I../..
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+libbat_la_LIBADD = 
+am_libbat_la_OBJECTS =  gdk_align.lo gdk_atoms.lo gdk_bat.lo \
+gdk_batop.lo gdk_bbp.lo gdk_compress.lo gdk_delta.lo gdk_desc.lo \
+gdk_heap.lo gdk_qsort.lo gdk_relop.lo gdk_search.lo gdk_setop.lo \
+gdk_storage.lo gdk_tm.lo gdk_utils.lo gdk_system.lo
+libbat_la_OBJECTS =  $(am_libbat_la_OBJECTS)
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+DIST_SOURCES =  $(libbat_la_SOURCES)
+HEADERS =  $(gdkinclude_HEADERS)
+
+depcomp = $(SHELL) $(top_srcdir)/conf/depcomp
+DEP_FILES =  @AMDEP@ $(DEPDIR)/gdk_align.Plo $(DEPDIR)/gdk_atoms.Plo \
+$(DEPDIR)/gdk_bat.Plo $(DEPDIR)/gdk_batop.Plo $(DEPDIR)/gdk_bbp.Plo \
+$(DEPDIR)/gdk_compress.Plo $(DEPDIR)/gdk_delta.Plo \
+$(DEPDIR)/gdk_desc.Plo $(DEPDIR)/gdk_heap.Plo $(DEPDIR)/gdk_qsort.Plo \
+$(DEPDIR)/gdk_relop.Plo $(DEPDIR)/gdk_search.Plo \
+$(DEPDIR)/gdk_setop.Plo $(DEPDIR)/gdk_storage.Plo \
+$(DEPDIR)/gdk_system.Plo $(DEPDIR)/gdk_tm.Plo $(DEPDIR)/gdk_utils.Plo
+DIST_COMMON =  $(gdkinclude_HEADERS) Makefile.am Makefile.in compile
+
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+GZIP_ENV = --best
+SOURCES = $(libbat_la_SOURCES)
+OBJECTS = $(am_libbat_la_OBJECTS)
+
+all: all-redirect
+.SUFFIXES:
+.SUFFIXES: .c .h .lo .m .mil .mx .o .obj .proto.h
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/gdk/Makefile
+
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+
+mostlyclean-libLTLIBRARIES:
+
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+
+distclean-libLTLIBRARIES:
+
+maintainer-clean-libLTLIBRARIES:
+
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(LIBTOOL)  --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(LIBTOOL)  --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  echo " $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+mostlyclean-compile:
+	-rm -f *.o core *.core
+	-rm -f *.$(OBJEXT)
+
+clean-compile:
+
+distclean-compile:
+	-rm -f *.tab.c
+
+maintainer-clean-compile:
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
+
+distclean-libtool:
+
+maintainer-clean-libtool:
+
+libbat.la: $(libbat_la_OBJECTS) $(libbat_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libbat_la_LDFLAGS) $(libbat_la_OBJECTS) $(libbat_la_LIBADD) $(LIBS)
+
+install-gdkincludeHEADERS: $(gdkinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(gdkincludedir)
+	@list='$(gdkinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(gdkincludedir)/$$f"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(gdkincludedir)/$$f; \
+	done
+
+uninstall-gdkincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(gdkinclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(gdkincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(gdkincludedir)/$$f; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags  $$unique $(LISP)
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	-rm -f TAGS ID
+
+maintainer-clean-tags:
+
+@AMDEP@include $(DEPDIR)/gdk_align.Plo
+@AMDEP@include $(DEPDIR)/gdk_atoms.Plo
+@AMDEP@include $(DEPDIR)/gdk_bat.Plo
+@AMDEP@include $(DEPDIR)/gdk_batop.Plo
+@AMDEP@include $(DEPDIR)/gdk_bbp.Plo
+@AMDEP@include $(DEPDIR)/gdk_compress.Plo
+@AMDEP@include $(DEPDIR)/gdk_delta.Plo
+@AMDEP@include $(DEPDIR)/gdk_desc.Plo
+@AMDEP@include $(DEPDIR)/gdk_heap.Plo
+@AMDEP@include $(DEPDIR)/gdk_qsort.Plo
+@AMDEP@include $(DEPDIR)/gdk_relop.Plo
+@AMDEP@include $(DEPDIR)/gdk_search.Plo
+@AMDEP@include $(DEPDIR)/gdk_setop.Plo
+@AMDEP@include $(DEPDIR)/gdk_storage.Plo
+@AMDEP@include $(DEPDIR)/gdk_system.Plo
+@AMDEP@include $(DEPDIR)/gdk_tm.Plo
+@AMDEP@include $(DEPDIR)/gdk_utils.Plo
+
+mostlyclean-depend:
+
+clean-depend:
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+maintainer-clean-depend:
+
+@AMDEP@CCDEPMODE = @CCDEPMODE@
+
+.c.o:
+@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.c.lo:
+@AMDEP@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
+@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LTCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.c.obj:
+@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c -o $@ `cygpath -w $<`
+
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+	$(MAKE) $(AM_MAKEFLAGS) top_distdir="$(top_distdir)" distdir="$(distdir)" dist-hook
+info-am:
+info: info-am
+dvi-am:
+dvi: dvi-am
+check-am: all-am
+check: check-am
+installcheck-am:
+installcheck: installcheck-am
+install-exec-am: install-libLTLIBRARIES
+install-exec: install-exec-am
+
+install-data-am: install-gdkincludeHEADERS
+install-data: install-data-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+install: install-am
+uninstall-am: uninstall-libLTLIBRARIES uninstall-gdkincludeHEADERS
+uninstall: uninstall-am
+all-am: Makefile $(BUILT_SOURCES) $(LTLIBRARIES) $(HEADERS) all-local
+all-redirect: all-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
+installdirs:
+	$(mkinstalldirs)  $(DESTDIR)$(libdir) $(DESTDIR)$(gdkincludedir)
+
+
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	-rm -f Makefile.in
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+mostlyclean-am:  mostlyclean-libLTLIBRARIES mostlyclean-compile \
+		mostlyclean-libtool mostlyclean-tags mostlyclean-depend \
+		mostlyclean-generic
+
+mostlyclean: mostlyclean-am
+
+clean-am:  clean-libLTLIBRARIES clean-compile clean-libtool clean-tags \
+		clean-depend clean-generic mostlyclean-am
+
+clean: clean-am
+
+distclean-am:  distclean-libLTLIBRARIES distclean-compile \
+		distclean-libtool distclean-tags distclean-depend \
+		distclean-generic clean-am
+	-rm -f libtool
+
+distclean: distclean-am
+
+maintainer-clean-am:  maintainer-clean-libLTLIBRARIES \
+		maintainer-clean-compile maintainer-clean-libtool \
+		maintainer-clean-tags maintainer-clean-depend \
+		maintainer-clean-generic distclean-am
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+maintainer-clean: maintainer-clean-am
+
+.PHONY: mostlyclean-libLTLIBRARIES distclean-libLTLIBRARIES \
+clean-libLTLIBRARIES maintainer-clean-libLTLIBRARIES \
+uninstall-libLTLIBRARIES install-libLTLIBRARIES mostlyclean-compile \
+distclean-compile clean-compile maintainer-clean-compile \
+mostlyclean-libtool distclean-libtool clean-libtool \
+maintainer-clean-libtool uninstall-gdkincludeHEADERS \
+install-gdkincludeHEADERS tags mostlyclean-tags distclean-tags \
+clean-tags maintainer-clean-tags mostlyclean-depend distclean-depend \
+clean-depend maintainer-clean-depend distdir info-am info dvi-am dvi \
+check check-am installcheck-am installcheck install-exec-am \
+install-exec install-data-am install-data install-am install \
+uninstall-am uninstall all-local all-redirect all-am all install-strip \
+installdirs mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
+
+
+%_tab.y: %.y
+	$(MV) $^ $@
+
+%_tab.yy: %.yy
+	$(MV) $^ $@
+
+%_yy.l: %.l
+	$(MV) $^ $@
+
+%_yy.ll: %.ll
+	$(MV) $^ $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
+
+%.h: %.mx
+	$(MX) $(MXFLAGS) -x h $<
+
+%.y: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+
+%.yy: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+	$(MV) $*.y $@
+
+%.l: %.mx
+	$(MX) $(MXFLAGS) -x l $< 
+
+%.ll: %.mx
+	$(MX) $(MXFLAGS) -x l $<
+	$(MV) $*.l $@
+
+%.m: %.mx
+	$(MX) $(MXFLAGS) -x m $<
+
+%.mil: %.mx
+	$(MX) $(MXFLAGS) -x mil $<
+
+%.proto.h: %.m
+	$(MEL) $(INCLUDES) -o $@ -proto $<
+
+%_glue.c: %.m
+	$(MEL) $(INCLUDES) -o $@ -glue $<
+
+all-local: $(BUILT_SOURCES)
+
+dist-hook:
+	mkdir $(distdir)/Tests
+	cd $(srcdir)/Tests; cp [^C]* $(distdir)/Tests
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

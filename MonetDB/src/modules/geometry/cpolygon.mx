@@ -1,0 +1,478 @@
+@f cpolygon
+@t The cpolygon class
+@a C.W. Quak
+@* The cpolygon class
+@h
+#ifndef __CPOLYGON_H__
+#define __CPOLYGON_H__
+
+class cpolygon : public varray
+{
+public:
+   //
+   // Operations needed by Monet.
+   //
+   int hash() const;
+   bool OK() const;
+   bool operator==(const cpolygon& r) const;
+   bool operator!=(const cpolygon& r) const;
+
+   int nholes() const;
+   int npoints() const;
+   const polygon& boundary() const;
+   polygon& boundary();
+   polygon& hole(int index);
+   const polygon& hole(int index) const;
+   double area() const;
+   point centroid() const;
+   point internalpoint() const;
+
+   box bbox() const;
+   int dimension() const;
+   void plot() const;
+   static cpolygon* null();
+   bool hasminitree() const;
+
+   static cpolygon* create(polygon *boundary,Array<polygon*> holes);
+   static cpolygon* create(int nholes,int usedbytes);
+   static cpolygon* fromstr(char *s,int* parselen,int *buflen,cpolygon* p);
+   int tostr(char* s,int len) const;
+   int expectedstrlen() const;
+
+
+   cpolygon* copy() const;
+   polygon* topolygon() const;
+
+   //
+   // Update operations.
+   //
+   cpolygon* addhole(const polygon& p);
+   void convert_host_to_net();
+   void convert_net_to_host();
+};
+
+inline int cpolygon::dimension() const
+{
+   return(2);
+}
+
+#endif /* __CPOLYGON_H__ */
+@C
+#include "geometry.h"
+
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+int cpolygon::npoints() const
+{
+   int n = boundary().npoints();
+
+   for(int i=0;i<nholes();++i)
+      n += hole(i).npoints();
+
+   return(n);
+}
+
+void cpolygon::convert_host_to_net()
+{
+   boundary().convert_host_to_net();
+
+   for(int i=0;i<nholes();++i)
+      hole(i).convert_host_to_net();
+}
+void cpolygon::convert_net_to_host()
+{
+   boundary().convert_net_to_host();
+
+   for(int i=0;i<nholes();++i)
+      hole(i).convert_net_to_host();
+}
+
+double cpolygon::area() const
+{
+   double a = boundary().area();
+
+   for(int i=0;i<nholes();++i)
+      a -= hole(i).area();
+
+   return(a);
+}
+
+cpolygon* cpolygon::copy() const
+{
+   return((cpolygon *)varray::copy());
+}
+
+cpolygon* cpolygon::create(int nholes,int usedbytes)
+{
+   return((cpolygon *)varray::create(nholes + 1,usedbytes));
+}
+
+int cpolygon::nholes() const
+{
+   return(nitems() -1);
+}
+
+box cpolygon::bbox() const
+{
+   return(boundary().bbox());
+}
+
+int cpolygon::expectedstrlen() const
+{
+   return(20 + (nbytes() * 10));
+}
+
+int cpolygon::tostr(char* string,int len) const
+{
+   int rval = 0;
+
+   rval += sprintf(string + rval,"(%d:", nholes());
+
+   for (int pol = -1; pol < nholes();++pol)
+   {
+      if (pol == -1)
+	 rval += boundary().tostr(string + rval,len - rval);
+      else
+	 rval += hole(pol).tostr(string + rval,len - rval);
+   }
+   rval += sprintf(string + rval,")");
+
+   if (rval > len)
+      GDKwarning("Prepare for the worst\n");
+   return(rval);
+}
+
+cpolygon* cpolygon::fromstr(char *sstart,int* parselen,int *buflen,cpolygon* p)
+{
+   if (p != NULL)
+   {
+      delete p;
+      p = NULL;
+   }
+
+   char* s = sstart;
+
+   s = strchr(s,'(');
+   if (s == NULL)
+      GDKerror("Missing ( in Cpolygon");
+   ++s;
+
+   int nholes = get_long(s,&s);
+   if (s == NULL)
+      GDKerror("Illegal nholes in Cpolygon");
+
+   cpolygon *rval = cpolygon::create(nholes,3000);
+
+   s = strchr(s,':');
+   if (s == NULL)
+      GDKerror("Missing : in Cpolygon");
+   ++s;
+
+   polygon* tmppol = NULL;
+   int pbuflen=0;
+   for(int r = 0; r <= nholes;++r)
+   {
+      int pparselen = *parselen - (s - sstart);
+  
+      tmppol = polygon::fromstr(s,&pparselen,&pbuflen,tmppol);
+      s += pparselen;
+      
+      rval = rval->addhole(*tmppol);
+   }
+   delete tmppol;
+
+   s = strchr(s,')');
+   if (s == NULL)
+      GDKerror("Missing final ) in cpolygon");
+   ++s;
+
+   size_t bytesread = s-sstart;
+   
+   *parselen = bytesread;
+   *buflen = rval->nbytes();
+   return(rval);
+}
+
+const polygon& cpolygon::boundary() const
+{
+   return(*(const polygon *)(item(0)));
+}
+
+polygon& cpolygon::boundary()
+{
+   return(*(polygon *)(item(0)));
+}
+
+const polygon& cpolygon::hole(int i) const
+{
+   return(*(const polygon *)(item(i + 1)));
+}
+
+polygon& cpolygon::hole(int i)
+{
+   return(*(polygon *)(item(i + 1)));
+}
+
+cpolygon* cpolygon::addhole(const polygon& p)
+{
+   cpolygon* rval;
+   int beforeholes = nholes();
+
+   if (!fits(p.nbytes(),8))
+   {
+      rval = (cpolygon *)realloc(1,p.nbytes() + 8);
+      delete this;
+   }
+   else
+      rval = this;
+
+   rval->append(&p,p.nbytes(),8);
+
+   if (rval->nholes() != beforeholes + 1)
+      GDKerror("Something went very wrong\n");
+
+   return((cpolygon *)rval);
+}
+
+int cpolygon::hash() const
+{
+   return(boundary().hash());
+}
+
+bool cpolygon::operator!=(const cpolygon& r) const
+{
+   return(!(*this == r));
+}
+
+bool cpolygon::operator==(const cpolygon& r) const
+{
+   if (nholes() != r.nholes())
+      return(false);
+
+   if (boundary() != r.boundary())
+      return(false);
+
+   int i;
+   for(i=0;i<nholes();++i)
+   {
+      if (hole(i) != r.hole(i))
+         break;
+   }
+   if (i == nholes())
+      return(true);
+   
+   GDKwarning("cpolygon_comp not fully implemented yet");
+   return(false);
+}
+
+bool cpolygon::OK() const
+{
+   varray::OK();
+
+   if (nholes() < 0)
+   {
+      GDKerror("cpolygon with %d holes \n",nholes());
+      return(false);
+   }
+
+   if (!boundary().OK())
+   {
+      GDKerror("Boundary of cpolygons is not OK\n");
+      return(false);
+   }
+
+   for(int i=0;i<nholes();++i)
+   {
+      if (!hole(i).OK())
+      {
+	 GDKerror("hole %d of cpolygon is not ok\n",i);
+	 return(false);
+      }
+   }
+
+   if (area() < 0)
+   {
+      GDKerror("Cpolygon has area %f\n",area());
+      return(false);
+   }
+
+   return(true);
+}
+
+void cpolygon::plot() const
+{
+   boundary().plot("red");
+   for(int i=0;i<nholes();++i)
+      hole(i).plot("blue");
+}
+
+cpolygon* cpolygon::null()
+{
+   return((cpolygon *)varray::null());
+}
+
+//
+// Returns true if all constituent polygons have a minitree.
+//
+bool cpolygon::hasminitree() const
+{
+   if (!boundary().hasminitree())
+      return(false);
+   for(int i=0;i<nholes();++i)
+      if(!hole(i).hasminitree())
+	 return(false);
+
+   return(true);
+}
+
+//
+// Converts a complex polygon to a simple polygon (with some)
+// parallel edges.
+//
+polygon* cpolygon::topolygon() const
+{
+   polygon* rval = polygon::create(npoints() + 1 + nholes() + nholes());
+   int current = 0;
+
+   for (int pol = -1; pol < nholes();++pol)
+   {
+      const polygon* p;
+      bool direction;
+
+      if (pol == -1)
+      {
+	 p = &boundary();
+	 direction = p->clockwise();
+      }
+      else
+      {
+	 p = &hole(pol);
+	 direction = !p->clockwise();
+      }
+
+      for(int i=0;i<=p->npoints();++i)
+      {
+         if (direction)
+	    rval->pnt(current++) = p->modpnt(i);
+	 else
+	    rval->pnt(current++) = p->modpnt(p->npoints() -i);
+      }
+
+      if (pol != -1)
+	 rval->pnt(current++) = boundary().pnt(0);
+   }
+   if (current != rval->npoints())
+      GDKwarning("Something is going utterly wrong\n");
+   return(rval);
+}
+
+
+cpolygon* cpolygon::create(polygon *boundary,Array<polygon*> holes)
+{
+   cpolygon* rval = cpolygon::create(holes.nitems() + 1,3000);
+   rval = rval->addhole(*boundary);
+   for(int i = 0; i < holes.nitems();++i)
+   {
+      rval = rval->addhole(*(holes[i]));
+   }
+   return(rval);
+}
+
+point cpolygon::centroid() const
+{
+   GDKwarning("polygon::cetroid not implemented\n");
+   return(boundary().pnt(0));
+}
+
+//   FAQ:comp.graphics.algoritms.
+//
+//Subject 2.06: How do I find a single point inside a simple polygon?
+//
+//   Given a simple polygon, find some point inside it.  Here is a method
+//   based on the proof that there exists an internal diagonal, in
+//   [O'Rourke (C), 13-14].  The idea is that the midpoint of a diagonal
+//   is interior to the polygon.
+// 
+//   1. Identify a convex vertex v; let its adjacent vertices be a and b.
+//   2. For each other vertex q do:
+//        2a. If q is inside avb, compute distance to v (orthogonal to ab).
+//        2b. Save point q if distance is a new min.
+//   3. If no point is inside, return midpoint of ab, or centroid of avb.
+//   4. Else if some point inside, qv is internal: return its midpoint.
+// 
+//   Code for finding a diagonal is in [O'Rourke (C), 35-39], and is part
+//   of many other software packages.  See Subject 0.07: Where is all the 
+//   source?
+
+point cpolygon::internalpoint() const
+{
+   // 
+   // 1. Identify a convex vertex v; 
+   //    let its adjacent vertices be a and b.
+   //
+   const polygon& bnd = boundary();
+   int cw = bnd.clockwise();
+
+   int i;
+   for (i = 0; i < bnd.npoints(); ++i)
+   {
+      if (((cw) && (angle(bnd.pnt(i),bnd.modpnt(i+1),bnd.modpnt(i+2)) < M_PI)) ||
+          ((!cw) && (angle(bnd.pnt(i),bnd.modpnt(i+1),bnd.modpnt(i+2)) > M_PI)))
+         break;
+   }
+   int a = i;
+   int v = i + 1;
+   int b = i + 2;
+
+   //
+   // 2. For each other vertex q do:
+   //      2a. If q is inside avb, compute distance to v (orthogonal to ab).
+   //      2b. Save point q if distance is a new min.
+   //
+   point* closest = 0;
+   triangle t(bnd.modpnt(a),bnd.modpnt(v),bnd.modpnt(b));
+   for (i = 0; i < npoints(); ++i)
+   {
+      if ((i == a) || (i == b) || (i == v))
+         continue;
+      
+      if (t.inside(bnd.pnt(i)))
+      {
+         if (closest == 0)
+	    closest = bnd.pnt(i).copy();
+	 else
+	 {
+	    if (distance(bnd.pnt(v),bnd.pnt(i)) < distance(bnd.pnt(v),*closest))
+	       *closest = bnd.pnt(i);
+	 }
+      }
+   }
+
+   for(int j = 0;j<nholes();++j)
+   {
+      const polygon& p = hole(j);
+      for (i=0;i<p.npoints();++i)
+      {
+	 if (t.inside(p.pnt(i)))
+	 {
+	    if (closest == 0)
+	       closest = p.pnt(i).copy();
+	    else
+	    {
+	       if (distance(bnd.pnt(v),p.pnt(i)) < distance(bnd.pnt(v),*closest))
+		  *closest = p.pnt(i);
+	    }
+	 }
+      }
+   }
+
+   if (closest == 0)
+      return(t.centroid());
+   else
+      return(segment(*closest,bnd.pnt(v)).midpoint());
+}
+
+

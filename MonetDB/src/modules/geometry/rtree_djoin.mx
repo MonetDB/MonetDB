@@ -1,0 +1,286 @@
+@f rtree_djoin
+@A C.W. Quak
+@+ Code for Distance Join on Trees.
+@h
+#ifndef __RTREE_DJOIN_H__
+#define __RTREE_DJOIN_H__
+
+extern BAT* join_squared_dist_point_point(
+   BAT* left,
+   BAT* right,
+   double* squared_mindist,
+   double* squared_maxdist);
+
+extern BAT* join_squared_dist_point_box(
+   BAT* left,
+   BAT* right,
+   double* squared_mindist,
+   double* squared_maxdist);
+
+extern BAT* join_squared_dist_box_box(
+   BAT* left,
+   BAT* right,
+   double* squared_mindist,
+   double* squared_maxdist);
+
+#endif /* __RTREE_DJOIN_H__ */
+@C
+#include "gis.h"
+#include "rtree.h"
+#include "split.h"
+#include "gisbulk.proto.h"
+#include "rtree_djoin.h"
+
+@:djoin(point,point)@
+@:djoin(point,box)@
+@:djoin(box,box)@
+
+@= djoin
+
+static void RIGHT_local_select_squared_dist_@1_@2(
+   @1* p,
+   void* otherval,
+   BAT* @2s,
+   Heap* rtree,
+   int nodeindex,
+   double* squared_min,
+   double* squared_max,
+   BAT* result)
+{
+   RTREEnode* self = RTREEindex(rtree,nodeindex);
+
+   if ((squared_min != NULL) && (squared_maxdist(*p,self->bbox) < *squared_min))
+      return;
+   if ((squared_max != NULL) && (squared_mindist(*p,self->bbox) > *squared_max))
+      return;
+
+   if (self->isleaf())
+   {
+      for(int i = 0;i<self->number;++i)
+      {
+	 BUN bun = (BUN)BUNptr(@2s,self->entries[i]);
+	 @2 *t = (@2 *)BUNtail(@2s,bun);
+
+	 if ((squared_min != NULL) && (squared_distance(*p,*t) < *squared_min))
+	    continue;
+	 if ((squared_max != NULL) && (squared_distance(*p,*t) > *squared_max))
+	    continue;
+
+	 BUNins(result,otherval,t);
+      }
+   }
+   else
+   {
+      for(int i = 0;i < self->number;++i)
+	 RIGHT_local_select_squared_dist_@1_@2
+	    (p,otherval,@2s,rtree,self->entries[i],squared_min,squared_max,result);
+   }
+}
+
+static void LEFT_local_select_squared_dist_@1_@2(
+   @2* p,
+   void* otherval,
+   BAT* @1s,
+   Heap* rtree,
+   int nodeindex,
+   double* squared_min,
+   double* squared_max,
+   BAT* result)
+{
+   RTREEnode* self = RTREEindex(rtree,nodeindex);
+
+   if ((squared_min != NULL) && (squared_maxdist(*p,self->bbox) < *squared_min))
+      return;
+   if ((squared_max != NULL) && (squared_mindist(*p,self->bbox) > *squared_max))
+      return;
+
+   if (self->isleaf())
+   {
+      for(int i = 0;i<self->number;++i)
+      {
+	 BUN bun = (BUN)BUNptr(@1s,self->entries[i]);
+	 @1 *t = (@1 *)BUNhead(@1s,bun);
+
+	 if ((squared_min != NULL) && (squared_distance(*p,*t) < *squared_min))
+	    continue;
+	 if ((squared_max != NULL) && (squared_distance(*p,*t) > *squared_max))
+	    continue;
+
+	 BUNins(result,t,otherval);
+      }
+   }
+   else
+   {
+      for(int i = 0;i < self->number;++i)
+	 LEFT_local_select_squared_dist_@1_@2
+	    (p,otherval,@1s,rtree,self->entries[i],squared_min,squared_max,result);
+   }
+}
+
+
+void local_join_squared_dist_@1_@2(
+   BAT* batleft,
+   BAT* batright,
+   Heap* heapleft,
+   Heap* heapright,
+   int nodeleft,		// Index of current node in left tree.
+   int noderight,		// Index of current node in right tree.
+   double* squared_min,
+   double* squared_max,
+   BAT* result)
+{
+   RTREEnode* leftptr = RTREEindex(heapleft,nodeleft);
+   RTREEnode* rightptr = RTREEindex(heapright,noderight);
+
+   //
+   // If the current two nodes do not have no chance of contributing
+   // to the result we can return.
+   //
+   if ((squared_min != NULL) && (squared_maxdist(leftptr->bbox,rightptr->bbox) < *squared_min))
+      return;
+   if ((squared_max != NULL) && (squared_mindist(leftptr->bbox,rightptr->bbox) > *squared_max))
+      return;
+
+   //
+   // Depending on whether the left and right children are leaves or internal
+   // nodes. And on the sizes of these things. We do different things.
+   //
+
+   if ((leftptr->isleaf()) && (rightptr->isleaf()))
+   {
+      //
+      // If both are leaves we are at the deepest level and must compare al pairs.
+      //
+      for(int i=0;i<leftptr->number;++i)
+      {
+	 @1* leftatom =
+	     (@1* )BUNtail(batleft,BUNptr(batleft,leftptr->entries[i]));
+
+	 for(int j=0;j<rightptr->number;++j)
+	 {
+	    @2* rightatom =
+	       (@2* )BUNhead(batright,BUNptr(batright,rightptr->entries[j]));
+
+            double squared_maxd = squared_maxdist(*leftatom,*rightatom);
+            double squared_mind = squared_mindist(*leftatom,*rightatom);
+
+	    if ((squared_min != NULL) && (squared_maxd < *squared_min))
+	       continue;
+
+	    if ((squared_max != NULL) && (squared_mind > *squared_max))
+	       continue;
+
+	    BUNins(result,
+	       BUNhead(batleft,BUNptr(batleft,leftptr->entries[i])),
+	       BUNtail(batright,BUNptr(batright,rightptr->entries[j])));
+	 }
+      }
+   }
+   else
+   {
+      //
+      // We must decide which node we enter. If we can choose (when both node
+      // are intermediate nodes) we choose the largest node.
+      //
+      if (leftptr->bbox.area() > rightptr->bbox.area())
+      {
+	 if (leftptr->isleaf())
+	 {
+	    for(int i=0;i<leftptr->number;++i)
+	    {
+	       RIGHT_local_select_squared_dist_@1_@2(
+		  (@1 *)BUNtail(batleft,BUNptr(batleft,leftptr->entries[i])),
+		  BUNhead(batleft,BUNptr(batleft,leftptr->entries[i])),
+		  batright,
+		  heapright,
+		  noderight,
+		  squared_min,
+		  squared_max,
+		  result);
+	    }
+	 }
+	 else
+	 {
+	    for(int i=0;i<leftptr->number;++i)
+	    {
+	       local_join_squared_dist_@1_@2(
+		  batleft,batright, heapleft,heapright,
+		  leftptr->entries[i],noderight,
+		  squared_min,squared_max,
+		  result);
+	    }
+	 }
+      }
+      else // we go into the right node
+      {
+	 if (rightptr->isleaf())
+	 {
+	    for(int i=0;i<rightptr->number;++i)
+	    {
+	       LEFT_local_select_squared_dist_@1_@2(
+		  (@2 *)BUNhead(batright,BUNptr(batright,rightptr->entries[i])),
+		  BUNtail(batright,BUNptr(batright,rightptr->entries[i])),
+		  batleft,
+		  heapleft,
+		  nodeleft,
+		  squared_min,
+		  squared_max,
+		  result);
+	    }
+	 }
+	 else
+	 {
+	    for(int j=0;j<rightptr->number;++j)
+	    {
+	       local_join_squared_dist_@1_@2(
+		  batleft,batright, heapleft,heapright,
+		  nodeleft,rightptr->entries[j],
+		  squared_min,squared_max,
+		  result);
+	    }
+	 }
+      }
+   }
+}
+
+//
+// Join the left and the right bat, where the squared distance between
+// left.tail and right.head is between squared_mindist and squared_maxdist.
+//
+// Actually it does something slightly different. It has to do with
+// squared_maxdist and squared_mindist. 
+//
+BAT* join_squared_dist_@1_@2(BAT* left,BAT* right,double* squared_mindist,double* squared_maxdist)
+{
+   BAT* result;
+   Heap* heapleft = &(left->taccelerator);
+   Heap* heapright = &(right->haccelerator);
+   int leftrootindex = RTREErootindex(heapleft);
+   int rightrootindex = RTREErootindex(heapright);
+
+   //
+   // We create a BAT for the joined pairs.
+   // res_tuples should be set to the expected number of BUNs in the result.
+   //
+   {
+      int res_tuples = 1000;
+      result = BATnew(BAThtype(left),BATttype(right),res_tuples);
+   }
+
+   //
+   // If none of the BATS is empty we can perform the join.
+   //
+   if ((leftrootindex != 0) && (rightrootindex != 0))
+   {
+      local_join_squared_dist_@1_@2(
+	 left, right,
+	 heapleft, heapright,
+	 leftrootindex, rightrootindex,
+	 squared_mindist,squared_maxdist,
+	 result);
+   }
+   return(result);
+}
+@
+
+@C

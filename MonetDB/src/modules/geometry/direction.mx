@@ -1,0 +1,82 @@
+@f direction
+@a C.W. Quak
+@* The module 'direction'
+@h
+#ifndef __DIRECTION_H__
+#define __DIRECTION_H__
+
+#include <values.h>
+
+//
+// 0 <= angle < M_PI + M_PI
+//
+
+extern double to_angle(double a);
+extern double angle(double from,double to);
+extern double invertdir(double dir);
+
+class pie
+{
+public:
+   double left;
+   double right;
+
+   pie(const double& l,const double& r);
+};
+
+#endif /* __DIRECTION_H__ */
+@+ Implementation of functions in direction.
+@C
+#include <math.h>
+#include <float.h>
+#include "direction.h"
+// #include <Boolean.h>
+#include "geometry.h"
+
+double to_angle(double a)
+{
+   while (a < 0)
+      a+= M_PI + M_PI;
+   while (a >= M_PI + M_PI)
+      a-= M_PI + M_PI;
+   return(a);
+}
+
+double invertdir(double dir)
+{
+   return(to_angle(dir + M_PI));
+}
+
+double angle(double dir1,double dir2)
+{
+   double mina;
+   double maxa;
+
+   if (dir1 < dir2)
+   {
+      mina = dir1;
+      maxa = dir2;
+   }
+   else
+   {
+      mina = dir2;
+      maxa = dir1;
+   }
+
+   double a = maxa - mina;
+
+   if (a > M_PI)
+   {
+      a = M_PI + M_PI - maxa + mina;
+   }
+   return(a);
+}
+
+//
+//========================================================================
+//
+pie::pie(const double& l,const double& r)
+{
+   left = l;
+   right = r;
+}

@@ -1,0 +1,110 @@
+# The main procedure is evenheight(bat_param,nranges) 
+# it produces a new bat with an even-height remapping of tail-values.
+
+# this computes the weighed midpoint of a range 'low'..'high'
+# the weights are taken from the sorted histogram 'hst' 
+#
+proc compute_mid(hst, low, high) := {
+    var members := hst.reverse.select(low,high);
+    var weighed := new(int, members.ttype, members.count);
+    var mid := nil.cast(hst.htype);
+    var cum := 0;
+
+    members@batloop() {
+        cum := cum + $h;
+        weighed.insert(cum, $t);
+    }
+    weighed@batloop() {
+        mid := $t;
+        if ($h >= (cum / 2)) break;
+    }
+    return mid;
+}
+
+# we construct an equal-height partitioning range for the tail columns
+# of a bat. This partitioning range is represented by a new 'range-bat'.
+# Each BUN in the range-bat represents 1 range. Its tail contains the maximum 
+# range value (tails are sorted); its head contains the representative value.
+#
+# The below proc constructs such a range-bat iteratively using
+# a histogram. This algorithms dynamically adapts the ideal 
+# group-size 'ideal' to obtain a nicely balanced result.
+#
+proc range_bat(b, n) := {
+    var      histo := b.histogram.sort; # sort it!
+    var     ranges := new(b.ttype, b.ttype, (n*4)/3);
+    var    cursize := 0;
+    var items_left := b.count;
+    var mid_h, last_h, first_h;
+
+    histo@batloop() {
+        var idealsize := items_left/n;
+        if (cursize = 0) {
+            first_h := $h; # the lowest element of the range
+        }
+        cursize := cursize + $t;
+        if (cursize >= idealsize) {
+            # ok, we must create a new group
+            if ((cursize - idealsize) <= (idealsize - (cursize- $t))) {
+                items_left := items_left - cursize;
+	             mid_h := histo.compute_mid(first_h, $h);
+                    last_h := $h;
+                   cursize := 0;
+            } else {
+                # group would be too large with the current
+                # element in it. Keep the current for the next grp.
+                #
+                items_left := items_left - (cursize - $t);
+	             mid_h := histo.compute_mid(first_h, last_h);
+                   first_h := $h;
+                   cursize := $t;
+            }
+            # insert the new group description
+            ranges.insert(mid_h, last_h);
+            n := n - 1;
+        }
+        last_h := $h;
+    }
+    return ranges;
+}
+
+# use the range-bat to convert one value to its representative value.
+proc convert_val(v, rng) := {
+        rng@batloop() if ($t >= v) return $h;
+        return nil.cast(v.type);
+}
+
+# OVERALL USEABLE PROC
+proc evenheight(b, n) := {
+        var rng := range_bat(b, n);
+        print(rng); # print the range (for debugging purposes)
+        return [convert_val](b, const rng);
+}
+
+# TESTING
+
+TheSize := 1000;
+
+def_tpe := new(int,int);
+i := 0;
+while (i<TheSize) { def_tpe.insert(i,rand()); i+=1; }
+
+a := [str](def_tpe.mark(100000@0)).reverse.mirror;
+b := a.range_bat(10);
+c := [int](b.reverse.mirror);
+d := [int](b.reverse);
+print([-](c,d),b.reverse);
+
+aa := a.evenheight(9);
+
+z1 := new(int,int);
+z2 := new(int,int);
+i := 0;
+while (i<TheSize) { z1.insert(i,rand()); z2.insert(i,i); i+=1; }
+
+printf("#~BeginVariableOutput~#\n"); z1z:=z1.evenheight(8); printf("#~EndVariableOutput~#\n");
+
+z2z:=z2.evenheight(8);
+
+quit;
+

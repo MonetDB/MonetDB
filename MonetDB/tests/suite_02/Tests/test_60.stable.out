@@ -1,0 +1,180 @@
+stdout of test 'test_60` in directory 'tests/suite_02` itself:
+
+#> Mtest:	milS test_60 milS
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_02 -single test_60.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:test_60.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(2000000));
+# Testing effect on semijoin ordering
+load("k10_unique1");
+c:= k10_unique1.select(0,9);
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  130	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  60	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  1376256	  ]
+[ "arena",	  1425392	  ]
+[ "ordblks",	  107		  ]
+[ "smblks",	  7680		  ]
+[ "hblkhd",	  15360		  ]
+[ "hblks",	  480		  ]
+[ "usmblks",	  314304	  ]
+[ "fsmblks",	  438336	  ]
+[ "uordblks",	  531368	  ]
+[ "fordblks",	  126024	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  1648	  ]
+[ "minflt",	  129	  ]
+[ "majflt",	  1	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  4	  ]
+[ "oublock",	  7	  ]
+[ "nvcsw",	  21	  ]
+[ "ninvcsw",	  19	  ]
+#~EndVariableOutput~#
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  140	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  70	  ]
+[ "elapsystem",	  10	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1425392	  ]
+[ "ordblks",	  107		  ]
+[ "smblks",	  7680		  ]
+[ "hblkhd",	  15360		  ]
+[ "hblks",	  480		  ]
+[ "usmblks",	  315328	  ]
+[ "fsmblks",	  437312	  ]
+[ "uordblks",	  531368	  ]
+[ "fordblks",	  126024	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  1648	  ]
+[ "minflt",	  131	  ]
+[ "majflt",	  1	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  4	  ]
+[ "oublock",	  8	  ]
+[ "nvcsw",	  21	  ]
+[ "ninvcsw",	  19	  ]
+#~EndVariableOutput~#
+
+
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  150	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  70	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1425392	  ]
+[ "ordblks",	  107		  ]
+[ "smblks",	  7680		  ]
+[ "hblkhd",	  15360		  ]
+[ "hblks",	  480		  ]
+[ "usmblks",	  316352	  ]
+[ "fsmblks",	  436288	  ]
+[ "uordblks",	  531368	  ]
+[ "fordblks",	  126024	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  1648	  ]
+[ "minflt",	  131	  ]
+[ "majflt",	  1	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  4	  ]
+[ "oublock",	  8	  ]
+[ "nvcsw",	  21	  ]
+[ "ninvcsw",	  19	  ]
+#~EndVariableOutput~#
+quit;

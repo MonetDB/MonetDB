@@ -1,0 +1,122 @@
+#!@BASH@
+
+THIS=$0
+THISDIR=${0%/*}
+THISFILE=${0##*/}
+
+PATH=/usr/local/gnu/bin:/usr/local/bin/gnu:/usr/gnu/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb:/usr/bsd:/usr/ccs/bin
+
+#############################################################################
+#	FUNCTIONS
+
+function Usage () {
+	cat << EOT
+
+Usage:  $THISFILE [-I<exp>] <files>
+
+ -I<exp> : ignore lines matching <exp> during first count (optional, default: -I'^#\`)
+ <files> : list of files to be processed
+
+EOT
+	exit 0	
+} # Usage ()
+
+function Warn () { echo "$THISFILE warning: $1" >&2 ; }
+
+function ErrXit () { echo "$THISFILE ERROR: $1" >&2 ; exit 1 ; }
+
+function mFilter () {
+	local FILE="$1"   ; if [ "$1" ] ; then  shift ; fi
+	local IGNORE="$1" ; if [ "$1" ] ; then  shift ; fi
+
+	local TMP=$FILE.tmp.
+	local OUT=$FILE.FILTERED
+	local LINE="`grep "^std[oe][ur][tr] of test ..*. in directory ..*. itself:$" $FILE`"
+	local WHAT="`  echo $LINE | sed "s|^std\([oe][ur][tr]\) of test ..*. in directory ..*. itself:$|\1|g"`"
+	local TST="`   echo $LINE | sed "s|^std[oe][ur][tr] of test .\(.*\). in directory ..*. itself:$|\1|g"`"
+	local TSTDIR="`echo $LINE | sed "s|^std[oe][ur][tr] of test ..*. in directory .\(.*\). itself:$|\1|g"`"
+#	local L="`grep -n "^std[oe][ur][tr] of test ..*. in directory ..*. itself:$" $FILE | head -1 | cut -d: -f1`"
+#	if [ ! "$L" ]
+#	  then  L=1
+#	  else  L=$[L+1]
+#	fi
+#	tail +"$L" $FILE  \
+	cat $FILE  \
+	  | awk 'BEGIN { p = 1; } /^#~BeginVariableOutput~#$/ { p = 2; n = 0; } p==2 && ! /^!/ { print "#~", $0; n++; } p==1 || /^!/ { print $0; } /^#~EndVariableOutput~#$/ { p = 1; print "~",n,"~"; }'  \
+	  | awk 'BEGIN { p = 1; } /^#~BeginLoadingModule~#$/ { p = 2; n = 0; } p==2 && ! /^!/ { n++; } p==1 || /^!/ { print $0; } /^#~EndLoadingModule~#$/ { p = 1; n--; print "~ Module load sequence: skipped",n,"echoed lines. ~"; }'  \
+	  | sed	-e "s|^\(Mdestroydb: processing database ..*. in \)|#~ \1|g"  \
+		-e "s|^\(Mcreatedb: processing database ..*. in \)|#~ \1|g"  \
+		-e "s|^\(Mcreatedb: calling .Mserver -db .*. for the first time..\)$|#~ \1|g"  \
+		-e "s|^\(Mcreatedb: database ..*. has been initialized succesfully!\)$|#~ \1|g"  \
+		-e "s|^\(Mcreatedb: using default dbdir \)|#~ \1|g"  \
+		-e "s|^\(!WARNING: BATsave(.*): saving tail as [il]n[tg] instead of ptr.\)$|#~ \1|g"  \
+		-e "s|^\(fork(listen(.*));\)$|#~ \1|g"  \
+		-e "s|^\(Connecting to server: localhost:[0-9]*\)$|#~ \1|g"  \
+		-e "s|^\(Mother of child(null): Person_new(oid([0-9]*))\)$|#~ \1|g"  \
+		-e "s|^\([a-zA-Z0-9_]*\.import(./[^)]*.);\)$|#~ \1|g"  \
+		-e "s|^\(!WARNING: TCPepilogue: terminate [01] listeners\)$|#~ \1|g"  \
+		-e "s|^\(!WARNING: TCPlisten([0-9]*): stopped.\)$|#~ \1|g"  \
+		-e "s|^\(connection= .*:[0-9]*\)$|#~ \1|g"  \
+		-e "s|^\(openDM listening to port [0-9]*\)$|#~ \1|g"  \
+		-e "s|^!ERROR: ([0-9]*): \([^ ]*::[^ ]*: .*\)$|MAS ERROR: \1|g" \
+		-e "s|^\(!ERROR: binding to stream socket ([0-9]*) failed\)$|#~ \1|g"  \
+		-e "s|^\(Address already in use\)$|#~ \1|g"  \
+		-e "s|^\(Try: modules;                - for other modules.\)$|#~ \1|g"  \
+		-e "s|^\(     ls;                     - for persistent bat listing.\)$|#~ \1|g"  \
+		-e "s|^\(     sigs(.<module>.)        - for available commands per module.\)$|#~ \1|g"  \
+		-e "s|^\(     help(.<command>.)       - for help one-liner for a command.\)$|#~ \1|g"  \
+	    > $TMP
+#	  | sed -e "s|^\(M[creatdsoy]*db: \)|#- \1|g"  \
+#	        -e "s|^\([^#][^-].*$OSVER\)|#- \1|g"  \
+#	        -e "s|^\([^#][^-].*$OS\)|#- \1|g"  \
+#	        -e "s|^\([^#][^-].*$HOST\)|#- \1|g"  \
+#	        -e "s|^\([^#][^-].*$MONETDIST\)|#- \1|g"  \
+#	        -e "s|^\([^#][^-].*$MONETHOME\)|#- \1|g"  \
+#	        -e "s|^\([^#][^-].*$TSTSRCBASE\)|#- \1|g"  \
+#	        -e "s|^\([^#][^-].*$TSTTRGBASE\)|#- \1|g"  \
+#		> $TMP
+##	        -e "s|^\([^#].*$USER\)|# \1|g"  \
+	echo "Statistics about std$WHAT of test '$TST\` in directory '$TSTDIR\`:" > $OUT
+	cat $TMP | egrep -v "$IGNORE|^$" | wc  \
+	  | sed "s|^\( *\)\([0-9]*\)\( *\)\([0-9]*\)\( *\)\([0-9]*\)\(.*\)$|   \2 lines,  \4 words,  \6 chars   in lines not matching \'$IGNORE\|\^\$\`|g"  \
+	    >> $OUT
+	cat $TMP | wc  \
+	  | sed "s|^\( *\)\([0-9]*\)\( *\)\([0-9]*\)\( *\)\([0-9]*\)\(.*\)$|#  \2 lines,  \4 words,  \6 chars   in all lines|g"  \
+	    >> $OUT
+	echo "" >> $OUT
+#	echo -e "\nstd$WHAT of test '$TST\` in directory '$TSTDIR\` itself:\n"   >> $OUT
+	cat $TMP >> $OUT
+	rm -f $TMP
+}
+
+#############################################################################
+#	MAIN
+
+#USER=`whoami`
+#HOST=`hostname`
+#OS=`uname`
+#OSVER=$OS`uname -r`
+#PREFIX=$OSVER
+
+#if [ ! "$MONETDIST"  ] ; then MONETDIST="A string that should not match." ; fi
+#if [ ! "$MONETHOME"  ] ; then MONETHOME="A string that should not match." ; fi
+#if [ ! "$TSTSRCBASE" ] ; then TSTSRCBASE="A string that should not match." ; fi
+#if [ ! "$TSTTRGBASE" ] ; then TSTTRGBASE="A string that should not match." ; fi
+
+if [ "$1" = '?' -o "$1" = '-?' -o "$1" = '-h' -o "$1" = '-help' -o "$1" = '--help' ]; then Usage ; fi
+
+IGNORE="^#"
+if     [ "$1" =  "-I"      ] ; then  shift ; IGNORE="$1" ; if [ "$1" ] ; then  shift ; fi
+  elif [ "$1" != "${1#-I}" ] ; then  IGNORE="${1#-I}" ; shift
+fi
+
+FILES="$*"
+for f in $FILES ; do
+	if [ -f "$f" ]
+	 then	mFilter $f "$IGNORE"
+	 else	Warn "file missing: $f"
+	fi
+done
+
+#	END
+#############################################################################

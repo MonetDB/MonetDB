@@ -1,0 +1,898 @@
+stdout of test 'xtables` in directory 'modules/plain` itself:
+
+#> Mtest:	other xtables 1086
+#> Mtest:	Mtimeout -timeout 1086 ./xtables xtables
+#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db modules_plain xtables.mil
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri May 12 09:01:57 MET DST 2000.
+#script:xtables.mil
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+
+#line 216 "xtables.mx"
+setoid(oid(20000000));
+
+
+# First some procs for convenience: 
+# - xtable_print(group[oid,oid], str, attr1[oid,a1], attr2[oid,a2], ...)
+# 	print group count table 
+# - xtable_realloc(bat, capacity):  bat
+#	allocate more memory and return a copy of a bat
+# - xtable_test(str title, bat x, bat y, bat z)
+#	 major test script on xtable functionality
+ 
+proc xtable_print := {
+    printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
+                $2, $3.count, $1.count, $3.batsize);
+    table($1.col_name("count"), $(4..));
+}
+
+proc xtable_histo_direct := {
+    var histo := $2.histogram;
+    histo.xtable_print($(1..), histo.mirror.col_name("gid"));
+}
+
+proc xtable_histo_remap := {
+    var map := new(oid,oid).key(true).reverse.insert($2);
+    map.join($2.histogram).xtable_print($(1..), map.col_name("gid"));
+}
+ 
+proc xtable_realloc(b,cap) := {
+    var inf := b.info;
+    var ht := monet_atomtbl.find(inf.find("head"));
+    var tt := monet_atomtbl.find(inf.find("tail"));
+    var bn := new(ht, tt, cap);
+    bn.insert(b);
+    if (ht = void) bn.seqbase(b.reverse.fetch(0));
+    if (tt = void) bn.seqbase(b.fetch(0));
+    return bn;
+}
+ 
+proc xtable_test(title, x, y, z) := {
+    printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
+                title, x.count, x.batsize + y.batsize + z.batsize);
+    x.col_name("x"); y.col_name("y"); z.col_name("z");
+    var yy := [+](y,dbl(1.0)).col_name("yy");
+ 
+    print(x.slice(0,7).col_name("x"),y,yy,z);
+    printf("synced(x,y) := %s\n", synced(x,y).str);
+    printf("synced(x,z) := %s\n", synced(x,z).str);
+
+    # test group 
+    var b1 := CTgroup(x);
+    xtable_histo_direct("group(x)", b1, x);
+
+    # test derive
+    b1 := CTgroup(b1,y).access(BAT_WRITE);
+    xtable_histo_direct("group(x,y)", b1, x, y);
+
+    # test orderby
+{   var b2 := CTrefine(x.reverse.sort.reverse, y);
+    xtable_histo_remap("orderby(x,y)", b2, x, y); }
+ 
+    # test subgroup
+{   var b2 := {count}([<=](y,dbl(2.0)),b1,b1.histogram).col_name("count");
+    b2.xtable_print("subhisto(x,y|1-2)", x, y, b2.mirror.col_name("gid")); }
+    b1 := CTsubgroup(b1,y, y.uselect(dbl(1.0),dbl(2.0)));
+    xtable_histo_direct("group(x,y|1-2)", b1, x, y);
+
+    # test regroup
+    CTregroup(b1,z);
+    xtable_histo_direct("regroup(x,y,z)", b1, x, y, z);
+
+    # test multigroup
+    b1 := CTmultigroup(new(bat,void).insert(y,nil).insert(yy,nil)).reverse;
+    xtable_histo_remap("multigroup(y)", b1.fetch(0), y); 
+    xtable_histo_remap("multigroup(yy)", b1.fetch(1), yy); 
+
+    # test multiderive
+    b1 := CTmultiderive(new(bat,bat).insert(y,x).insert(yy,x)).reverse;
+    xtable_histo_remap("multigroup(y,x)", b1.fetch(0), y, x); 
+    xtable_histo_remap("multigroup(yy,x)", b1.fetch(1), yy, x); 
+
+    # test multiregroup
+    b1 := CTmultiregroup(project(b1.reverse,z)).reverse;
+    xtable_histo_remap("multiregroup(y,x)", b1.fetch(0), y, x, z); 
+    xtable_histo_remap("multiregroup(yy,x)", b1.fetch(1), yy, x, z); 
+}
+
+x := new(oid,chr);
+x.insert(1@0,'a');
+x.insert(2@0,'a');
+x.insert(3@0,'b');
+x.insert(4@0,'b');
+x.insert(5@0,'b');
+x.insert(6@0,'b');
+x.insert(7@0,'c');
+x.insert(8@0,'c');
+ 
+y:= new(oid,dbl);
+y.insert(1@0,dbl(1.0));
+y.insert(2@0,dbl(2.0));
+y.insert(3@0,dbl(2.0));
+y.insert(4@0,dbl(2.0));
+y.insert(5@0,dbl(2.0));
+y.insert(6@0,dbl(3.0));
+y.insert(7@0,dbl(1.0));
+y.insert(8@0,dbl(1.0));
+ 
+z:= new(oid,str);
+z.insert(1@0,"c");
+z.insert(2@0,"a");
+z.insert(3@0,"b");
+z.insert(4@0,"c");
+z.insert(5@0,"a");
+z.insert(6@0,"a");
+z.insert(7@0,"c");
+z.insert(8@0,"a");
+
+xtable_test("small hash", x, y, z);
+# xtable_test: small hash grouping (8 tuples, 8756 bytes)
+
+#-----------------------------------------#
+# BAT:	  x	| y	| yy	| z	  #
+# (oid)	  (chr)	| (dbl)	| (dbl)	| (str)	  #
+#-----------------------------------------#
+[ 1@0,	  'a',	  1,	  2,	  "c"	  ]
+[ 2@0,	  'a',	  2,	  3,	  "a"	  ]
+[ 3@0,	  'b',	  2,	  3,	  "b"	  ]
+[ 4@0,	  'b',	  2,	  3,	  "c"	  ]
+[ 5@0,	  'b',	  2,	  3,	  "a"	  ]
+[ 6@0,	  'b',	  3,	  4,	  "a"	  ]
+[ 7@0,	  'c',	  1,	  2,	  "c"	  ]
+[ 8@0,	  'c',	  1,	  2,	  "a"	  ]
+synced(x,y) := true
+synced(x,z) := true
+
+# group(x) (ct: 8 elts, 3 groups, 1120 bytes)
+#-------------------------#
+# count	| x	| gid	  #
+#-------------------------#
+[ 2,	  'a',	  1@0	  ]
+[ 4,	  'b',	  3@0	  ]
+[ 2,	  'c',	  7@0	  ]
+
+# group(x,y) (ct: 8 elts, 5 groups, 900 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 1,	  'a',	  1,	  1@0	  ]
+[ 1,	  'a',	  2,	  2@0	  ]
+[ 3,	  'b',	  2,	  3@0	  ]
+[ 1,	  'b',	  3,	  6@0	  ]
+[ 2,	  'c',	  1,	  7@0	  ]
+
+# orderby(x,y) (ct: 8 elts, 5 groups, 1120 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 1,	  'a',	  1,	  1@0	  ]
+[ 1,	  'a',	  2,	  2@0	  ]
+[ 3,	  'b',	  2,	  3@0	  ]
+[ 1,	  'b',	  3,	  4@0	  ]
+[ 2,	  'c',	  1,	  5@0	  ]
+
+# subhisto(x,y|1-2) (ct: 8 elts, 5 groups, 1112 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 1,	  1,	  1@0	  ]
+[ 1,	  2,	  2@0	  ]
+[ 3,	  2,	  3@0	  ]
+[ 0,	  3,	  6@0	  ]
+[ 2,	  1,	  7@0	  ]
+
+# group(x,y|1-2) (ct: 7 elts, 4 groups, 1120 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 1,	  'a',	  1,	  1@0	  ]
+[ 1,	  'a',	  2,	  2@0	  ]
+[ 3,	  'b',	  2,	  3@0	  ]
+[ 2,	  'c',	  1,	  7@0	  ]
+
+# regroup(x,y,z) (ct: 7 elts, 7 groups, 1340 bytes)
+#-----------------------------------------#
+# count	| x	| y	| z	| gid	  #
+#-----------------------------------------#
+[ 1,	  'a',	  1,	  "c",	  1@0	  ]
+[ 1,	  'a',	  2,	  "a",	  2@0	  ]
+[ 1,	  'b',	  2,	  "b",	  3@0	  ]
+[ 1,	  'b',	  2,	  "c",	  4@0	  ]
+[ 1,	  'b',	  2,	  "a",	  5@0	  ]
+[ 1,	  'c',	  1,	  "c",	  7@0	  ]
+[ 1,	  'c',	  1,	  "a",	  8@0	  ]
+
+# multigroup(y) (ct: 8 elts, 3 groups, 1120 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 3,	  1,	  1@0	  ]
+[ 4,	  2,	  2@0	  ]
+[ 1,	  3,	  3@0	  ]
+
+# multigroup(yy) (ct: 8 elts, 3 groups, 900 bytes)
+#-------------------------#
+# count	| yy	| gid	  #
+#-------------------------#
+[ 3,	  2,	  2@0	  ]
+[ 4,	  3,	  3@0	  ]
+[ 1,	  4,	  4@0	  ]
+
+# multigroup(y,x) (ct: 8 elts, 5 groups, 900 bytes)
+#---------------------------------#
+# count	| y	| x	| gid	  #
+#---------------------------------#
+[ 1,	  1,	  'a',	  1@0	  ]
+[ 1,	  2,	  'a',	  2@0	  ]
+[ 3,	  2,	  'b',	  3@0	  ]
+[ 1,	  3,	  'b',	  4@0	  ]
+[ 2,	  1,	  'c',	  5@0	  ]
+
+# multigroup(yy,x) (ct: 8 elts, 5 groups, 900 bytes)
+#---------------------------------#
+# count	| yy	| x	| gid	  #
+#---------------------------------#
+[ 1,	  2,	  'a',	  2@0	  ]
+[ 1,	  3,	  'a',	  6@0	  ]
+[ 3,	  3,	  'b',	  4@0	  ]
+[ 1,	  4,	  'b',	  7@0	  ]
+[ 2,	  2,	  'c',	  8@0	  ]
+
+# multiregroup(y,x) (ct: 8 elts, 8 groups, 900 bytes)
+#-----------------------------------------#
+# count	| y	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 1,	  1,	  'a',	  "c",	  1@0	  ]
+[ 1,	  2,	  'a',	  "a",	  2@0	  ]
+[ 1,	  2,	  'b',	  "b",	  3@0	  ]
+[ 1,	  2,	  'b',	  "c",	  4@0	  ]
+[ 1,	  2,	  'b',	  "a",	  5@0	  ]
+[ 1,	  3,	  'b',	  "a",	  6@0	  ]
+[ 1,	  1,	  'c',	  "c",	  7@0	  ]
+[ 1,	  1,	  'c',	  "a",	  8@0	  ]
+
+# multiregroup(yy,x) (ct: 8 elts, 8 groups, 900 bytes)
+#-----------------------------------------#
+# count	| yy	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 1,	  2,	  'a',	  "c",	  9@0	  ]
+[ 1,	  3,	  'a',	  "a",	  10@0	  ]
+[ 1,	  3,	  'b',	  "b",	  11@0	  ]
+[ 1,	  3,	  'b',	  "c",	  12@0	  ]
+[ 1,	  3,	  'b',	  "a",	  6@0	  ]
+[ 1,	  4,	  'b',	  "a",	  13@0	  ]
+[ 1,	  2,	  'c',	  "c",	  14@0	  ]
+[ 1,	  2,	  'c',	  "a",	  15@0	  ]
+ 
+# create vectorized versions
+x := x.reverse.project.reverse.copy;
+y := y.reverse.project.reverse.copy;
+z := z.reverse.project.reverse.copy;
+ 
+# activate voids
+x.seqbase(1@0);
+y.seqbase(1@0);
+z.seqbase(1@0);
+ 
+xtable_test("small vectorized", x, y, z);
+# xtable_test: small vectorized grouping (8 tuples, 7711 bytes)
+
+#-----------------------------------------#
+# BAT:	  x	| y	| yy	| z	  #
+# (void)  (chr)	| (dbl)	| (dbl)	| (str)	  #
+#-----------------------------------------#
+[ 1@0,	  'a',	  1,	  2,	  "c"	  ]
+[ 2@0,	  'a',	  2,	  3,	  "a"	  ]
+[ 3@0,	  'b',	  2,	  3,	  "b"	  ]
+[ 4@0,	  'b',	  2,	  3,	  "c"	  ]
+[ 5@0,	  'b',	  2,	  3,	  "a"	  ]
+[ 6@0,	  'b',	  3,	  4,	  "a"	  ]
+[ 7@0,	  'c',	  1,	  2,	  "c"	  ]
+[ 8@0,	  'c',	  1,	  2,	  "a"	  ]
+synced(x,y) := true
+synced(x,z) := true
+
+# group(x) (ct: 8 elts, 3 groups, 900 bytes)
+#-------------------------#
+# count	| x	| gid	  #
+#-------------------------#
+[ 2,	  'a',	  1@0	  ]
+[ 4,	  'b',	  3@0	  ]
+[ 2,	  'c',	  7@0	  ]
+
+# group(x,y) (ct: 8 elts, 5 groups, 900 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 1,	  'a',	  1,	  1@0	  ]
+[ 1,	  'a',	  2,	  2@0	  ]
+[ 3,	  'b',	  2,	  3@0	  ]
+[ 1,	  'b',	  3,	  6@0	  ]
+[ 2,	  'c',	  1,	  7@0	  ]
+
+# orderby(x,y) (ct: 8 elts, 5 groups, 1120 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 1,	  'a',	  1,	  1@0	  ]
+[ 1,	  'a',	  2,	  2@0	  ]
+[ 3,	  'b',	  2,	  3@0	  ]
+[ 1,	  'b',	  3,	  4@0	  ]
+[ 2,	  'c',	  1,	  5@0	  ]
+
+# subhisto(x,y|1-2) (ct: 8 elts, 5 groups, 727 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 1,	  1,	  1@0	  ]
+[ 1,	  2,	  2@0	  ]
+[ 3,	  2,	  3@0	  ]
+[ 0,	  3,	  6@0	  ]
+[ 2,	  1,	  7@0	  ]
+
+# group(x,y|1-2) (ct: 7 elts, 4 groups, 1120 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 1,	  'a',	  1,	  1@0	  ]
+[ 1,	  'a',	  2,	  2@0	  ]
+[ 3,	  'b',	  2,	  3@0	  ]
+[ 2,	  'c',	  1,	  7@0	  ]
+
+# regroup(x,y,z) (ct: 7 elts, 7 groups, 1340 bytes)
+#-----------------------------------------#
+# count	| x	| y	| z	| gid	  #
+#-----------------------------------------#
+[ 1,	  'a',	  1,	  "c",	  1@0	  ]
+[ 1,	  'a',	  2,	  "a",	  2@0	  ]
+[ 1,	  'b',	  2,	  "b",	  3@0	  ]
+[ 1,	  'b',	  2,	  "c",	  4@0	  ]
+[ 1,	  'b',	  2,	  "a",	  5@0	  ]
+[ 1,	  'c',	  1,	  "c",	  7@0	  ]
+[ 1,	  'c',	  1,	  "a",	  8@0	  ]
+
+# multigroup(y) (ct: 8 elts, 3 groups, 900 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 3,	  1,	  1@0	  ]
+[ 4,	  2,	  2@0	  ]
+[ 1,	  3,	  3@0	  ]
+
+# multigroup(yy) (ct: 8 elts, 3 groups, 900 bytes)
+#-------------------------#
+# count	| yy	| gid	  #
+#-------------------------#
+[ 3,	  2,	  2@0	  ]
+[ 4,	  3,	  3@0	  ]
+[ 1,	  4,	  4@0	  ]
+
+# multigroup(y,x) (ct: 8 elts, 5 groups, 900 bytes)
+#---------------------------------#
+# count	| y	| x	| gid	  #
+#---------------------------------#
+[ 1,	  1,	  'a',	  1@0	  ]
+[ 1,	  2,	  'a',	  2@0	  ]
+[ 3,	  2,	  'b',	  3@0	  ]
+[ 1,	  3,	  'b',	  4@0	  ]
+[ 2,	  1,	  'c',	  5@0	  ]
+
+# multigroup(yy,x) (ct: 8 elts, 5 groups, 900 bytes)
+#---------------------------------#
+# count	| yy	| x	| gid	  #
+#---------------------------------#
+[ 1,	  2,	  'a',	  2@0	  ]
+[ 1,	  3,	  'a',	  6@0	  ]
+[ 3,	  3,	  'b',	  4@0	  ]
+[ 1,	  4,	  'b',	  7@0	  ]
+[ 2,	  2,	  'c',	  8@0	  ]
+
+# multiregroup(y,x) (ct: 8 elts, 8 groups, 900 bytes)
+#-----------------------------------------#
+# count	| y	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 1,	  1,	  'a',	  "c",	  1@0	  ]
+[ 1,	  2,	  'a',	  "a",	  2@0	  ]
+[ 1,	  2,	  'b',	  "b",	  3@0	  ]
+[ 1,	  2,	  'b',	  "c",	  4@0	  ]
+[ 1,	  2,	  'b',	  "a",	  5@0	  ]
+[ 1,	  3,	  'b',	  "a",	  6@0	  ]
+[ 1,	  1,	  'c',	  "c",	  7@0	  ]
+[ 1,	  1,	  'c',	  "a",	  8@0	  ]
+
+# multiregroup(yy,x) (ct: 8 elts, 8 groups, 900 bytes)
+#-----------------------------------------#
+# count	| yy	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 1,	  2,	  'a',	  "c",	  9@0	  ]
+[ 1,	  3,	  'a',	  "a",	  10@0	  ]
+[ 1,	  3,	  'b',	  "b",	  11@0	  ]
+[ 1,	  3,	  'b',	  "c",	  12@0	  ]
+[ 1,	  3,	  'b',	  "a",	  6@0	  ]
+[ 1,	  4,	  'b',	  "a",	  13@0	  ]
+[ 1,	  2,	  'c',	  "c",	  14@0	  ]
+[ 1,	  2,	  'c',	  "a",	  15@0	  ]
+ 
+print("growing vectorized tables from 8 to 512k elements...");
+[ "growing vectorized tables from 8 to 512k elements..." ]
+x := x.xtable_realloc(512*1024);
+y := y.xtable_realloc(512*1024);
+z := z.xtable_realloc(512*1024);
+var i := 17;
+while((i := i - 1) > 0) {
+        x.insert(x.copy);
+        y.insert(y.copy);
+        z.insert(z.copy);
+        print(x.count);
+}
+[ 16 ]
+[ 32 ]
+[ 64 ]
+[ 128 ]
+[ 256 ]
+[ 512 ]
+[ 1024 ]
+[ 2048 ]
+[ 4096 ]
+[ 8192 ]
+[ 16384 ]
+[ 32768 ]
+[ 65536 ]
+[ 131072 ]
+[ 262144 ]
+[ 524288 ]
+print("done!");
+[ "done!" ]
+ 
+xtable_test("big vectorized", x, y, z);
+# xtable_test: big vectorized grouping (524288 tuples, 7170081 bytes)
+
+#-----------------------------------------#
+# BAT:	  x	| y	| yy	| z	  #
+# (void)  (chr)	| (dbl)	| (dbl)	| (str)	  #
+#-----------------------------------------#
+[ 1@0,	  'a',	  1,	  2,	  "c"	  ]
+[ 2@0,	  'a',	  2,	  3,	  "a"	  ]
+[ 3@0,	  'b',	  2,	  3,	  "b"	  ]
+[ 4@0,	  'b',	  2,	  3,	  "c"	  ]
+[ 5@0,	  'b',	  2,	  3,	  "a"	  ]
+[ 6@0,	  'b',	  3,	  4,	  "a"	  ]
+[ 7@0,	  'c',	  1,	  2,	  "c"	  ]
+[ 8@0,	  'c',	  1,	  2,	  "a"	  ]
+synced(x,y) := true
+synced(x,z) := true
+
+# group(x) (ct: 524288 elts, 3 groups, 2097852 bytes)
+#-------------------------#
+# count	| x	| gid	  #
+#-------------------------#
+[ 131072, 'a',	  1@0	  ]
+[ 262144, 'b',	  3@0	  ]
+[ 131072, 'c',	  7@0	  ]
+
+# group(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 65536,  'b',	  3,	  6@0	  ]
+[ 131072, 'c',	  1,	  7@0	  ]
+
+# orderby(x,y) (ct: 524288 elts, 5 groups, 4195024 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 65536,  'b',	  3,	  4@0	  ]
+[ 131072, 'c',	  1,	  5@0	  ]
+
+# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 2622137 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 65536,  1,	  1@0	  ]
+[ 65536,  2,	  2@0	  ]
+[ 196608, 2,	  3@0	  ]
+[ 0,	  3,	  6@0	  ]
+[ 131072, 1,	  7@0	  ]
+
+# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3670736 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 131072, 'c',	  1,	  7@0	  ]
+
+# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5505764 bytes)
+#-----------------------------------------#
+# count	| x	| y	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  'a',	  1,	  "c",	  1@0	  ]
+[ 65536,  'a',	  2,	  "a",	  2@0	  ]
+[ 65536,  'b',	  2,	  "b",	  3@0	  ]
+[ 65536,  'b',	  2,	  "c",	  4@0	  ]
+[ 65536,  'b',	  2,	  "a",	  5@0	  ]
+[ 65536,  'c',	  1,	  "c",	  7@0	  ]
+[ 65536,  'c',	  1,	  "a",	  8@0	  ]
+
+# multigroup(y) (ct: 524288 elts, 3 groups, 2097852 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 196608, 1,	  1@0	  ]
+[ 262144, 2,	  2@0	  ]
+[ 65536,  3,	  3@0	  ]
+
+# multigroup(yy) (ct: 524288 elts, 3 groups, 2097852 bytes)
+#-------------------------#
+# count	| yy	| gid	  #
+#-------------------------#
+[ 196608, 2,	  2@0	  ]
+[ 262144, 3,	  3@0	  ]
+[ 65536,  4,	  4@0	  ]
+
+# multigroup(y,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| y	| x	| gid	  #
+#---------------------------------#
+[ 65536,  1,	  'a',	  1@0	  ]
+[ 65536,  2,	  'a',	  2@0	  ]
+[ 196608, 2,	  'b',	  3@0	  ]
+[ 65536,  3,	  'b',	  4@0	  ]
+[ 131072, 1,	  'c',	  5@0	  ]
+
+# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| yy	| x	| gid	  #
+#---------------------------------#
+[ 65536,  2,	  'a',	  2@0	  ]
+[ 65536,  3,	  'a',	  6@0	  ]
+[ 196608, 3,	  'b',	  4@0	  ]
+[ 65536,  4,	  'b',	  7@0	  ]
+[ 131072, 2,	  'c',	  8@0	  ]
+
+# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+#-----------------------------------------#
+# count	| y	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  1,	  'a',	  "c",	  1@0	  ]
+[ 65536,  2,	  'a',	  "a",	  2@0	  ]
+[ 65536,  2,	  'b',	  "b",	  3@0	  ]
+[ 65536,  2,	  'b',	  "c",	  4@0	  ]
+[ 65536,  2,	  'b',	  "a",	  5@0	  ]
+[ 65536,  3,	  'b',	  "a",	  6@0	  ]
+[ 65536,  1,	  'c',	  "c",	  7@0	  ]
+[ 65536,  1,	  'c',	  "a",	  8@0	  ]
+
+# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+#-----------------------------------------#
+# count	| yy	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  2,	  'a',	  "c",	  9@0	  ]
+[ 65536,  3,	  'a',	  "a",	  10@0	  ]
+[ 65536,  3,	  'b',	  "b",	  11@0	  ]
+[ 65536,  3,	  'b',	  "c",	  12@0	  ]
+[ 65536,  3,	  'b',	  "a",	  6@0	  ]
+[ 65536,  4,	  'b',	  "a",	  13@0	  ]
+[ 65536,  2,	  'c',	  "c",	  14@0	  ]
+[ 65536,  2,	  'c',	  "a",	  15@0	  ]
+ 
+# materialize the oids again
+x := [oid](x.reverse).reverse;
+y := [oid](y.reverse).reverse;
+z := [oid](z.reverse).reverse;
+y.access(BAT_WRITE);
+z.access(BAT_WRITE);
+y.insert(0@0,dbl(nil));
+z.insert(0@0,str(nil));
+y.delete(0@0);
+z.delete(0@0);
+ 
+xtable_test("big hash", x, y, z);
+# xtable_test: big hash grouping (524288 tuples, 21325992 bytes)
+
+#-----------------------------------------#
+# BAT:	  x	| y	| yy	| z	  #
+# (oid)	  (chr)	| (dbl)	| (dbl)	| (str)	  #
+#-----------------------------------------#
+[ 1@0,	  'a',	  1,	  2,	  "c"	  ]
+[ 2@0,	  'a',	  2,	  3,	  "a"	  ]
+[ 3@0,	  'b',	  2,	  3,	  "b"	  ]
+[ 4@0,	  'b',	  2,	  3,	  "c"	  ]
+[ 5@0,	  'b',	  2,	  3,	  "a"	  ]
+[ 6@0,	  'b',	  3,	  4,	  "a"	  ]
+[ 7@0,	  'c',	  1,	  2,	  "c"	  ]
+[ 8@0,	  'c',	  1,	  2,	  "a"	  ]
+synced(x,y) := true
+synced(x,z) := true
+
+# group(x) (ct: 524288 elts, 3 groups, 4195024 bytes)
+#-------------------------#
+# count	| x	| gid	  #
+#-------------------------#
+[ 131072, 'a',	  1@0	  ]
+[ 262144, 'b',	  3@0	  ]
+[ 131072, 'c',	  7@0	  ]
+
+# group(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 65536,  'b',	  3,	  6@0	  ]
+[ 131072, 'c',	  1,	  7@0	  ]
+
+# orderby(x,y) (ct: 524288 elts, 5 groups, 4195024 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 65536,  'b',	  3,	  4@0	  ]
+[ 131072, 'c',	  1,	  5@0	  ]
+
+# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 6292188 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 65536,  1,	  1@0	  ]
+[ 65536,  2,	  2@0	  ]
+[ 196608, 2,	  3@0	  ]
+[ 0,	  3,	  6@0	  ]
+[ 131072, 1,	  7@0	  ]
+
+# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3670736 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 131072, 'c',	  1,	  7@0	  ]
+
+# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5505764 bytes)
+#-----------------------------------------#
+# count	| x	| y	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  'a',	  1,	  "c",	  1@0	  ]
+[ 65536,  'a',	  2,	  "a",	  2@0	  ]
+[ 65536,  'b',	  2,	  "b",	  3@0	  ]
+[ 65536,  'b',	  2,	  "c",	  4@0	  ]
+[ 65536,  'b',	  2,	  "a",	  5@0	  ]
+[ 65536,  'c',	  1,	  "c",	  7@0	  ]
+[ 65536,  'c',	  1,	  "a",	  8@0	  ]
+
+# multigroup(y) (ct: 524288 elts, 3 groups, 4195024 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 196608, 1,	  1@0	  ]
+[ 262144, 2,	  2@0	  ]
+[ 65536,  3,	  3@0	  ]
+
+# multigroup(yy) (ct: 524288 elts, 3 groups, 2097852 bytes)
+#-------------------------#
+# count	| yy	| gid	  #
+#-------------------------#
+[ 196608, 2,	  2@0	  ]
+[ 262144, 3,	  3@0	  ]
+[ 65536,  4,	  4@0	  ]
+
+# multigroup(y,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| y	| x	| gid	  #
+#---------------------------------#
+[ 65536,  1,	  'a',	  1@0	  ]
+[ 65536,  2,	  'a',	  2@0	  ]
+[ 196608, 2,	  'b',	  3@0	  ]
+[ 65536,  3,	  'b',	  4@0	  ]
+[ 131072, 1,	  'c',	  5@0	  ]
+
+# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| yy	| x	| gid	  #
+#---------------------------------#
+[ 65536,  2,	  'a',	  2@0	  ]
+[ 65536,  3,	  'a',	  6@0	  ]
+[ 196608, 3,	  'b',	  4@0	  ]
+[ 65536,  4,	  'b',	  7@0	  ]
+[ 131072, 2,	  'c',	  8@0	  ]
+
+# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+#-----------------------------------------#
+# count	| y	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  1,	  'a',	  "c",	  1@0	  ]
+[ 65536,  2,	  'a',	  "a",	  2@0	  ]
+[ 65536,  2,	  'b',	  "b",	  3@0	  ]
+[ 65536,  2,	  'b',	  "c",	  4@0	  ]
+[ 65536,  2,	  'b',	  "a",	  5@0	  ]
+[ 65536,  3,	  'b',	  "a",	  6@0	  ]
+[ 65536,  1,	  'c',	  "c",	  7@0	  ]
+[ 65536,  1,	  'c',	  "a",	  8@0	  ]
+
+# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+#-----------------------------------------#
+# count	| yy	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  2,	  'a',	  "c",	  9@0	  ]
+[ 65536,  3,	  'a',	  "a",	  10@0	  ]
+[ 65536,  3,	  'b',	  "b",	  11@0	  ]
+[ 65536,  3,	  'b',	  "c",	  12@0	  ]
+[ 65536,  3,	  'b',	  "a",	  6@0	  ]
+[ 65536,  4,	  'b',	  "a",	  13@0	  ]
+[ 65536,  2,	  'c',	  "c",	  14@0	  ]
+[ 65536,  2,	  'c',	  "a",	  15@0	  ]
+ 
+# let the Mserver find out that the head columns are equal
+y := x.mirror.join(y);
+z := x.mirror.join(z);
+ 
+xtable_test("big synced", x, y, z);
+# xtable_test: big synced grouping (524288 tuples, 12937304 bytes)
+
+#-----------------------------------------#
+# BAT:	  x	| y	| yy	| z	  #
+# (oid)	  (chr)	| (dbl)	| (dbl)	| (str)	  #
+#-----------------------------------------#
+[ 1@0,	  'a',	  1,	  2,	  "c"	  ]
+[ 2@0,	  'a',	  2,	  3,	  "a"	  ]
+[ 3@0,	  'b',	  2,	  3,	  "b"	  ]
+[ 4@0,	  'b',	  2,	  3,	  "c"	  ]
+[ 5@0,	  'b',	  2,	  3,	  "a"	  ]
+[ 6@0,	  'b',	  3,	  4,	  "a"	  ]
+[ 7@0,	  'c',	  1,	  2,	  "c"	  ]
+[ 8@0,	  'c',	  1,	  2,	  "a"	  ]
+synced(x,y) := true
+synced(x,z) := true
+
+# group(x) (ct: 524288 elts, 3 groups, 4195024 bytes)
+#-------------------------#
+# count	| x	| gid	  #
+#-------------------------#
+[ 131072, 'a',	  1@0	  ]
+[ 262144, 'b',	  3@0	  ]
+[ 131072, 'c',	  7@0	  ]
+
+# group(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 65536,  'b',	  3,	  6@0	  ]
+[ 131072, 'c',	  1,	  7@0	  ]
+
+# orderby(x,y) (ct: 524288 elts, 5 groups, 4195024 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 65536,  'b',	  3,	  4@0	  ]
+[ 131072, 'c',	  1,	  5@0	  ]
+
+# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 6292188 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 65536,  1,	  1@0	  ]
+[ 65536,  2,	  2@0	  ]
+[ 196608, 2,	  3@0	  ]
+[ 0,	  3,	  6@0	  ]
+[ 131072, 1,	  7@0	  ]
+
+# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3670736 bytes)
+#---------------------------------#
+# count	| x	| y	| gid	  #
+#---------------------------------#
+[ 65536,  'a',	  1,	  1@0	  ]
+[ 65536,  'a',	  2,	  2@0	  ]
+[ 196608, 'b',	  2,	  3@0	  ]
+[ 131072, 'c',	  1,	  7@0	  ]
+
+# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5505764 bytes)
+#-----------------------------------------#
+# count	| x	| y	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  'a',	  1,	  "c",	  1@0	  ]
+[ 65536,  'a',	  2,	  "a",	  2@0	  ]
+[ 65536,  'b',	  2,	  "b",	  3@0	  ]
+[ 65536,  'b',	  2,	  "c",	  4@0	  ]
+[ 65536,  'b',	  2,	  "a",	  5@0	  ]
+[ 65536,  'c',	  1,	  "c",	  7@0	  ]
+[ 65536,  'c',	  1,	  "a",	  8@0	  ]
+
+# multigroup(y) (ct: 524288 elts, 3 groups, 2097852 bytes)
+#-------------------------#
+# count	| y	| gid	  #
+#-------------------------#
+[ 196608, 1,	  1@0	  ]
+[ 262144, 2,	  2@0	  ]
+[ 65536,  3,	  3@0	  ]
+
+# multigroup(yy) (ct: 524288 elts, 3 groups, 2097852 bytes)
+#-------------------------#
+# count	| yy	| gid	  #
+#-------------------------#
+[ 196608, 2,	  2@0	  ]
+[ 262144, 3,	  3@0	  ]
+[ 65536,  4,	  4@0	  ]
+
+# multigroup(y,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| y	| x	| gid	  #
+#---------------------------------#
+[ 65536,  1,	  'a',	  1@0	  ]
+[ 65536,  2,	  'a',	  2@0	  ]
+[ 196608, 2,	  'b',	  3@0	  ]
+[ 65536,  3,	  'b',	  4@0	  ]
+[ 131072, 1,	  'c',	  5@0	  ]
+
+# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+#---------------------------------#
+# count	| yy	| x	| gid	  #
+#---------------------------------#
+[ 65536,  2,	  'a',	  2@0	  ]
+[ 65536,  3,	  'a',	  6@0	  ]
+[ 196608, 3,	  'b',	  4@0	  ]
+[ 65536,  4,	  'b',	  7@0	  ]
+[ 131072, 2,	  'c',	  8@0	  ]
+
+# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+#-----------------------------------------#
+# count	| y	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  1,	  'a',	  "c",	  1@0	  ]
+[ 65536,  2,	  'a',	  "a",	  2@0	  ]
+[ 65536,  2,	  'b',	  "b",	  3@0	  ]
+[ 65536,  2,	  'b',	  "c",	  4@0	  ]
+[ 65536,  2,	  'b',	  "a",	  5@0	  ]
+[ 65536,  3,	  'b',	  "a",	  6@0	  ]
+[ 65536,  1,	  'c',	  "c",	  7@0	  ]
+[ 65536,  1,	  'c',	  "a",	  8@0	  ]
+
+# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+#-----------------------------------------#
+# count	| yy	| x	| z	| gid	  #
+#-----------------------------------------#
+[ 65536,  2,	  'a',	  "c",	  9@0	  ]
+[ 65536,  3,	  'a',	  "a",	  10@0	  ]
+[ 65536,  3,	  'b',	  "b",	  11@0	  ]
+[ 65536,  3,	  'b',	  "c",	  12@0	  ]
+[ 65536,  3,	  'b',	  "a",	  6@0	  ]
+[ 65536,  4,	  'b',	  "a",	  13@0	  ]
+[ 65536,  2,	  'c',	  "c",	  14@0	  ]
+[ 65536,  2,	  'c',	  "a",	  15@0	  ]
+
+quit;

@@ -1,0 +1,5 @@
+stderr of test 'server-single_2` in directory 'src/tools` itself:
+
+#> Mtest:	other server-single_2 -prelude server-single_2.prelude
+#> Mtest:	./server-single_2 server-single_2 -prelude server-single_2.prelude
+#> Mlog:	Mtimeout -timeout 120 Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/SunOS5.6 -db src_tools -single -prelude server-single_2.prelude server-single_2.mil

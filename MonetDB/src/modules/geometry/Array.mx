@@ -1,0 +1,134 @@
+@f Array
+@t The Array class
+@a C.W. Quak
+@* The Array class
+This C++ class Array is a template class to store an array of the given type.
+The implementation is quite straightforward.
+@h
+#ifndef __ARRAY__H__
+#define __ARRAY__H__
+
+template<class ELEMENT>
+class Array
+{
+public:
+   int nitems_v;
+   int capacity_v;
+   ELEMENT *data_v;
+
+public:
+   Array(int c=20)
+   {
+      nitems_v = 0;
+      capacity_v = c;
+      data_v = new ELEMENT[c];
+   }
+
+   ~Array()
+   {
+      delete [] data_v;
+   }
+
+   int capacity() const
+   {
+      return(capacity_v);
+   }
+
+   void clear()
+   {
+      nitems_v = 0;
+   }
+
+   int nitems() const
+   {
+      return(nitems_v);
+   }
+
+   bool empty() const
+   {
+      return(nitems() == 0);
+   }
+
+   ELEMENT& operator[](int index) const
+   {
+#ifdef DEBUG
+      if ((index < 0) || (index >= nitems()))
+	 GDKerror("index %d out of bounds [0,%d] allowed in Array::operator[]\n",
+	    index,nitems()-1);
+#endif
+      return(data_v[index]);
+   }
+
+   void append(const ELEMENT& x)
+   {
+      if (nitems() == capacity())
+      {
+	 capacity_v += capacity_v + 1;
+	 ELEMENT* newvec = new ELEMENT[capacity_v];
+
+	 for(int i=0;i<nitems();++i)
+	    newvec[i] = data_v[i];
+	 delete [] data_v;
+	 data_v = newvec;
+      }
+
+      data_v[nitems_v++] = x;
+   }
+
+   ELEMENT pop()
+   {
+      if (nitems() == 0)
+      {
+	 GDKerror("Array::pop() called on empty set\n");
+      }
+
+      return(data_v[--nitems_v]);
+   }
+
+   int find(const ELEMENT& x) const
+   {
+      for(int i=nitems()-1;i>=0;--i)
+	 if (data_v[i] == x)
+	    return(i);
+      return(-1);
+   }
+
+   bool contains(const ELEMENT& x) const
+   {
+      return(find(x) != -1);
+   }
+
+
+   bool delpos(int idx)
+   {
+      if ((idx < 0) || (idx >= nitems()))
+      {
+	 GDKerror("index %d out of bounds [0,%d] allowed in Array::delpos\n",
+	    idx,nitems()-1);
+	 return(false);
+      }
+
+      data_v[idx] = data_v[nitems_v - 1];
+      --nitems_v;
+      return(true);
+   }
+
+   bool del(const ELEMENT& item)
+   {
+      int found = find(item);
+      if (found == -1)
+	 return(false);
+      else
+      {
+	 delpos(found);
+	 return(true);
+      }
+   }
+
+   void sort(int (*compar) (const void *, const void *))
+   {
+      qsort(data_v,nitems(),sizeof(ELEMENT),compar);
+   }
+};
+
+#endif

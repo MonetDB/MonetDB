@@ -1,0 +1,17 @@
+#!/bin/sh
+
+Mlog -x $MCREATEDB -db TestDB1
+Mlog   "echo 'quit;' | $MSERVER -db TestDB1"
+        echo 'quit;' | $MSERVER -db TestDB1
+echo
+Mlog -x $MDESTROYDB -db TestDB1
+
+TSTDBHOME=$MONETFARM
+unset MONETFARM
+
+Mlog -x $MCREATEDB -home $TSTDBHOME -db TestDB2
+Mlog   "echo 'quit;' | $MSERVER -home $TSTDBHOME -db TestDB2"
+        echo 'quit;' | $MSERVER -home $TSTDBHOME -db TestDB2
+echo
+Mlog -x $MDESTROYDB -home $TSTDBHOME -db TestDB2
+

@@ -1,0 +1,84 @@
+@f MultiPointPolygon
+@A C.W. Quak
+@h
+#ifndef __MULTIPOINTPOLYGON_H__
+#define __MULTIPOINTPOLYGON_H__
+
+extern bool Relate(const MultiPoint& mp,const Polygon& pol,const char matrix[9]);
+extern relationship Relate(const MultiPoint& mp,const Polygon& pol);
+
+#endif /* __MULTIPOINTPOLYGON_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+
+//
+//===============================================
+// Dimensionally Extended Nine-Intersection Model
+//===============================================
+//
+static bool calc_345678(
+   const MultiPoint& /* p */,
+   const Polygon& /* pol */,
+   relmatrix& rel)
+{
+   rel.setdimension(3,-1);
+   rel.setdimension(4,-1);
+   rel.setdimension(5,-1);
+   rel.setdimension(6,2);
+   rel.setdimension(7,1);
+   rel.setdimension(8,2);
+
+   return (rel.isfalse(3) || rel.isfalse(4) || rel.isfalse(5) || rel.isfalse(6) || rel.isfalse(7) || rel.isfalse(8));
+}
+
+static bool calc_012(
+   const MultiPoint&  p,
+   const Polygon& pol,
+   relmatrix& rel)
+{
+   rel.setdimension(0,-1);
+   rel.setdimension(2,-1);
+   rel.setdimension(1,-1);
+
+   MultiLineString* bnd = Boundary(pol);
+
+   for(int i=0;i<p.npoints();++i)
+   {
+      if (contains(*bnd,p.pnt(i)))
+	 if (rel.setdimension(1,1))
+	    return(true);
+      else if (inside(p.pnt(i),pol))
+	 if (rel.setdimension(0,1))
+	    return(true);
+      else
+	 if (rel.setdimension(2,1))
+	    return(true);
+   }
+
+   delete bnd;
+   return (rel.isfalse(0) || rel.isfalse(1) || rel.isfalse(2));
+}
+
+bool Relate(const MultiPoint& mp,const Polygon& pol,const char matrix[9])
+{
+   relmatrix rel(mp.dimension(),pol.dimension(),matrix);
+
+   if (calc_345678(mp,pol,rel))
+      return(false);
+   
+   if (rel.unresolved(0) || rel.unresolved(1) || rel.unresolved(2))
+      calc_012(mp,pol,rel);
+
+   return(rel.match());
+}
+
+relationship Relate(const MultiPoint& mp,const Polygon& pol)
+{
+   relmatrix rel(mp.dimension(),pol.dimension(),"?????????");
+
+   calc_345678(mp,pol,rel);
+   calc_012(mp,pol,rel);
+
+   return(rel.toRelationship());
+}

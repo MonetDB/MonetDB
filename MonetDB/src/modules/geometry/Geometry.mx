@@ -1,0 +1,257 @@
+@f Geometry
+@A C.W. Quak
+@* The Geometry class
+@h
+#ifndef __GEOM_H__
+#define __GEOM_H__
+
+// #include "Boolean.h"
+
+class Geometry
+{
+public:
+   int nbytes_v;
+   int type_v;
+
+   enum 
+   {
+      TypeGeometry = 0,
+      TypePoint = 1,
+      TypeLineString = 3,
+      TypePolygon = 5,
+      TypeMultiPoint = 7,
+      TypeGeometryCollection = 6,
+      TypeMultiLineString = 9,
+      TypeMultiPolygon = 11
+   };
+public:
+
+   //
+   // Return true if this instance is equivalent to the null value.
+   //
+   bool isnull() const;
+
+   //
+   // Return the lenght of the array.
+   //
+   int nbytes() const;
+
+   //
+   // Create a Geometry with nbytes free bytes.
+   //
+   static Geometry* create(int nbytes);
+
+   static Geometry* create(const Point& p);
+   static Geometry* create(const LineString& p);
+   static Geometry* create(const Polygon& p);
+   static Geometry* create(const MultiPoint& p);
+   static Geometry* create(const class GeometryCollection& p);
+   static Geometry* create(const class MultiLineString& p);
+   static Geometry* create(const class MultiPolygon& p);
+
+   const Point& asPoint() const;
+   const LineString& asLineString() const;
+   const Polygon& asPolygon() const;
+   const MultiPoint& asMultiPoint() const;
+   const GeometryCollection& asGeometryCollection() const;
+   const MultiLineString& asMultiLineString() const;
+   const MultiPolygon& asMultiPolygon() const;
+
+   //
+   // Perform some integrity checks.
+   //
+   bool OK() const;
+
+   //
+   // Return a pointer to the null value of this class.
+   //
+   static Geometry* null();
+
+   int expectedstrlen() const;
+   int hash() const;
+   bool operator== (const Geometry& r) const;
+   bool operator!= (const Geometry& r) const;
+   const char* typestring() const;
+   int type() const;
+
+   //
+   // Make a duplicate of this instance.
+   //
+   Geometry* copy() const;
+
+   //
+   // index operator on varray.
+   //
+   void* data() const;
+};
+
+#endif /* __GEOM_H__ */
+@C
+#include "gis.h"
+#include "opengis.h"
+
+
+int Geometry::type() const
+{
+   return(type_v);
+}
+
+@:asop(Point)@
+@:asop(LineString)@
+@:asop(Polygon)@
+@:asop(MultiPoint)@
+@:asop(GeometryCollection)@
+@:asop(MultiLineString)@
+@:asop(MultiPolygon)@
+
+@= asop
+const @1& Geometry::as@1() const
+{
+   return(*(const @1*)data());
+}
+@
+@C
+
+int Geometry::nbytes() const
+{
+   if (nbytes_v == -1)
+      return(sizeof(Geometry));
+
+#ifdef DEBUG
+   if (nbytes_v < (int)sizeof(Geometry))
+      GDKerror("Geometry::nbytes() too small %d\n",nbytes_v);
+#endif
+   return(nbytes_v);
+}
+
+Geometry* Geometry::create(int nbytes)
+{
+   int nb = sizeof(Geometry) + nbytes;
+#ifdef OVERLOAD_NEW
+   Geometry* rval = (Geometry *)new char[nb];
+#else
+   Geometry* rval = (Geometry *)GDKmalloc(nb);
+#endif
+
+   rval->nbytes_v = nb;
+   return(rval);
+}
+
+@:putop(Point)@
+@:putop(LineString)@
+@:putop(MultiPoint)@
+
+@= putop
+Geometry* Geometry::create(const @1& p)
+{
+   int nb = sizeof(Geometry) + p.nbytes();
+#ifdef OVERLOAD_NEW
+   Geometry* rval = (Geometry *)new char[nb];
+#else
+   Geometry* rval = (Geometry *)GDKmalloc(nb);
+#endif
+
+   rval->nbytes_v = nb;
+   rval->type_v = Type@1;
+   memcpy(rval->data(),&p,p.nbytes());
+
+   return(rval);
+}
+@
+@C
+
+@:putopvarray(Polygon)@
+@:putopvarray(MultiLineString)@
+@:putopvarray(GeometryCollection)@
+@:putopvarray(MultiPolygon)@
+
+@= putopvarray
+Geometry* Geometry::create(const @1& p)
+{
+   int nb = sizeof(Geometry) + p.usedbytes();
+#ifdef OVERLOAD_NEW
+   Geometry* rval = (Geometry *)new char[nb];
+#else
+   Geometry* rval = (Geometry *)GDKmalloc(nb);
+#endif
+
+   rval->nbytes_v = nb;
+   rval->type_v = Type@1;
+   memcpy(rval->data(),&p,p.usedbytes());
+
+   @1* dest = (@1* )rval->data();
+   dest->nbytes_v = p.usedbytes();
+
+   return(rval);
+}
+@
+@C
+
+
+bool Geometry::isnull() const
+{
+   return(nbytes_v == -1);
+}
+
+//
+// Null value for Geometry.
+//
+Geometry* Geometry::null()
+{
+   Geometry* rval = new Geometry;
+   rval->nbytes_v = -1;
+   return(rval);
+}
+
+//
+// Returns true if Geometry is internally consistent.
+//
+bool Geometry::OK() const
+{
+   bool rval = true;
+
+   if (nbytes_v < (int)sizeof(Geometry))
+   {
+      GDKerror("Geometry::nybtes() too small %d\n");
+      rval = true;
+   }
+   return(rval);
+}
+
+void* Geometry::data() const
+{
+   return((void *)(((char*)this)+ sizeof(Geometry)));
+}
+
+Geometry* Geometry::copy() const
+{
+   Geometry* rval = (Geometry *)new char[nbytes()];
+   memcpy(rval,this,nbytes());
+   return(rval);
+}
+
+int Geometry::expectedstrlen() const
+{
+   return(20 + (nbytes() * 4));
+}
+
+bool Geometry::operator!=(const Geometry& r) const
+{
+   return(!(*this == r));
+}
+
+bool Geometry::operator== (const Geometry& r) const
+{
+   if (nbytes() != r.nbytes())
+      return(1);
+
+   if (isnull() || r.isnull())
+      return(1);
+
+   return((0 == memcmp(this,&r,nbytes())));
+}
+
+int Geometry::hash() const
+{
+   return(nbytes());
+}

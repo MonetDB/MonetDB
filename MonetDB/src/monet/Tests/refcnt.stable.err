@@ -1,0 +1,6 @@
+stderr of test 'refcnt` in directory 'src/monet` itself:
+
+#> Mtest:	other refcnt
+#> Mtest:	./refcnt refcnt
+#> Mlog:	Mtimeout -timeout 123 Mserver -yaccsilent -d8 -db src_monet refcnt.1.mil
+#> Mlog:	Mtimeout -timeout 123 Mserver -yaccsilent -d8 -db src_monet refcnt.2.mil

@@ -1,0 +1,296 @@
+@f monet_process
+@a M. L. Kersten, P. Boncz
+
+@* Monet Processes
+@T
+The multi-threaded parallel implementation of Monet is geared towards 
+shared-memory multiprocessors only. 
+The single threaded code simply cycles through the queue until it becomes empty.
+The multi-threaded Monet code is split into three kinds
+of threads that work semi-independently:
+\begin{itemize}
+\item an Internet Server thread.
+\item MIL Interpreter threads.
+\item Client Interpreter threads
+\end{itemize}
+
+The  MIL interpreter threads take their requests from an internal request
+queue. They normally interpreter MIL statements obtained from client sources.
+
+However, the DBA can extend the number of interpreters easily. So as
+to support specialized language interpreters direct access to the BAT
+primitives and MIL request queue.
+
+since you have to swap fd-s on every request. ]
+@-
+The number of threads can be controlled by the Monet
+routine @%threads@, which assures a number of concurrent interpreter
+threads to become active. 
+If there are more threads already active then some are selected
+at random to cease operation. 
+@-
+The threads have to update their I/O descriptor before doing I/O.
+@h
+#ifndef _MONET_PROCESS_H_
+#define _MONET_PROCESS_H_
+#include "gdk.h"
+
+extern void	monetInternet ();
+
+/* monet standard threads */
+extern void	monetServer	(void *dummy);
+extern void	monetInterpreter(void* status);
+extern void	monetSingle  	(int status);
+
+/* interpreter thread handling */
+extern MT_Id	monetFork ();
+extern int	monetAdjustThreads (int i);
+extern int	monetSetChannel (Thread t, FILE* in, FILE* out);
+
+
+#endif /* _MONET_PROCESS_H_ */
+@c
+#include  <sys/types.h> 
+#include  <sys/socket.h> 
+#include "monet.h"
+
+@+ Monet Single Threaded
+The single threaded code is large copied from @%monetInterpreter@.
+@c
+int monet_threads = 0;
+
+void monetSingle(int status){
+	ValRecord res;
+	MT_Id tid = THRgettid();
+	Thread t = THRget(tid);
+
+        res.vtype= TYPE_void;
+        res.val.ival = 0;
+        monet_threads++;
+	while (status == 0 && QMopen() ) {
+		PARDEBUG THRprintf(GDKerr, "monetSingle(%d)\n", status);
+		PARDEBUG QMprint();
+		status = handleRequest(t, getRequest(0), &res);
+	}
+       	PARDEBUG THRprintf(GDKerr, "exit\n");
+}
+
+
+@+ Monet Interpreter Threads
+@-
+This will be dropped when everything works ok.
+What should be done with the status. { TODO: What's this?? }
+@c
+void monetInterpreter(void* status){
+	Thread	t;
+	MT_Id tid;
+
+	t = THRnew(MT_getpid(), "Interpreter");
+	MT_up_sema(monet_forksync, "monetInterpreter");
+	PARDEBUG THRprintf(GDKerr, "monetInterpreter(%d)\n", (int)status);
+	tid = t->tid;
+
+	doRequest(t,0);
+	MT_set_lock(monet_critical, "monetInterpreter");
+ 	monet_threads--;
+	MT_unset_lock(monet_critical, "monetInterpreter");
+	THRdel(t);
+       	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
+	MT_exit_thread(0);
+}
+
+int monetSetChannel(Thread t, FILE* in, FILE* out){
+        if ( t==0) {
+                GDKerror("monetSetChannel: unknown thread\n");
+        }
+        if (t->data[0] == 0 || t->data[1] == 0) {
+                return EOF;
+        }
+        PARDEBUG THRprintf(GDKerr, "setchannel %d %d\n",fileno(in), fileno(out));
+        t->data[1] = in;
+        t->data[0] = out;
+ 
+        return 0;
+}
+ 
+
+
+@-
+New interpreters threads are added here. The instruction is ignored
+when the system is supposed to run within one thread.
+@c
+MT_Id monetFork() {
+	MT_Id p = 0;
+
+	if (!monet_singlethreaded) {
+		MT_set_lock(monet_critical, "monetFork");
+		/* exclusive access to monet_forksync barrier
+	 	 * and monet_threads counter. */
+		if (MT_create_thread(&p, monetInterpreter, 0) < 0) {
+			GDKsyserror("monetFork:failed\n");
+			MT_unset_lock(monet_critical, "monetFork");
+			return (MT_Id)-1;
+		} 
+		MT_down_sema(monet_forksync, "monetFork");
+ 		monet_threads++;
+		MT_unset_lock(monet_critical, "monetFork");
+	}
+	return p;
+}
+
+
+int monetAdjustThreads(int i){
+	PARDEBUG THRprintf(GDKerr, "monetAdjustThreads(%d)\n", i);
+	for (; i < 0; i++) {
+		putkillRequest();
+	}
+	for (; i > 0; i--) {
+		if ((int)monetFork() < 0) {
+			return monet_threads;
+		}
+       	}
+	return monet_threads;
+}
+@}
+
+@+ Internet Server Thread
+The database server is accessible through the Internet according
+to the administration maintained in the homes file. Provided the system
+runs in multi-user mode. Otherwise, the console is the sole acces medium
+to the database.
+
+@{
+The code below spawns a thread to accept connections to the system.
+Note that the I/O descriptors are set to that of the server. This means
+that all error messages appear their unless the client is refused access.
+@c
+
+#define SOCKPTR	struct sockaddr *
+
+
+void monetServer(void *dummy){
+	struct sockaddr_in server;
+	int 	sock;
+#ifdef AIX
+	size_t 	length;
+#else
+	int 	length;
+#endif
+	int    	on = 1;
+	int 	msgsock;
+	Thread 	t;
+
+	int	i = 0;
+
+	MT_up_sema(monet_started, "monetServer");
+	if (GDKenviron[GDKport] == 0 || GDKenviron[GDKport][0] == 0)
+	{
+		fprintf(GDKout, "#no Internet access\n");
+		return;
+	}
+	t = THRnew(MT_getpid(), "InternetServer");
+	if ( t == NULL) {
+		GDKsyserror("monetServer: InternetServer creation failed\n");
+		return;
+	}
+	(void) monetSetChannel(t, stdin, stdout);
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0) {
+		GDKsyserror("creation of stream socket failed\n");
+		return;
+	}
+@-
+Set server port and allow internet connections from any workstation.
+Bind the socket to the server port.
+The port id should be obtained from the Homes file.
+@c
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
+	server.sin_port =
+		htons((unsigned short)(atoi(GDKenviron[GDKport])&0xFFFF));
+   	for (i=0;i<8;i++)
+	    server.sin_zero[i]=0;
+ 
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
+
+	length = sizeof(server);
+	if (bind(sock, (SOCKPTR) &server, length) < 0) {
+		GDKsyserror("binding to stream socket (%s) failed\n",
+                            GDKenviron[GDKport]);
+		return;
+	}
+@-
+Get the new information for the server socket and start listening.
+@c
+	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
+		GDKsyserror("getting socket name\n");
+		return;
+	}
+	listen(sock, 5); /* TODO: atoi(GDKenvirnment[GDKmaxuser]); */
+
+	PARDEBUG {
+		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
+	}
+	do {
+#ifdef AIX
+       		msgsock = accept(sock, (SOCKPTR)0, (size_t)0);
+#else
+       		msgsock = accept(sock, (SOCKPTR)0, (int *)0);
+#endif
+
+		if (msgsock == -1) {
+			if (MT_geterrno() != EINTR) {
+				GDKsyserror("monetServer: accept failed\n");
+	    		}
+		} else if (msgsock > 0) {
+			char *name = (char*) alloca(1024), *user = name;
+			FILE *fdin = fdopen(msgsock, "r");
+			FILE *fdout = fdopen(msgsock, "w");
+			Client c;
+
+			if (fdin == 0){
+				GDKsyserror("monetServer: fdin problems\n");
+				continue;
+			}
+			if (fdout == 0){
+				GDKsyserror("monetServer: fdout problems\n");
+				continue;
+			}
+			/* get user name */
+			while((*user = fgetc(fdin)) != '\n' && *user) user++;
+			*user = 0;
+			c = initClient(GDKstrdup(name), GDKstrdup(monet_prompt), TRUE);
+			if (c == 0) {
+				fprintf(fdout, "Failed to init client\n");
+				(void) fclose(fdin);
+				(void) fclose(fdout);
+				close(msgsock);
+				continue;
+			}
+        		c->login = time(0);
+			c->listing = 0;
+			c->socket = msgsock;
+			c->fdin = fdin;
+			c->fdout = fdout;
+@-
+changed setbuf to setbuffer to avoid unintentional buffer overflow.
+@c
+                        setbuffer(c->fdout, c->output, 4096);
+			c->mode = BLOCKMODE;
+			t->data[0] = fdout;
+			TBL_initclient(c);
+			t->data[0] = stdout;
+			scheduleClient(c);
+			PARDEBUG THRprintf(GDKerr, "client accepted %d %d\n", 
+					fileno(c->fdin), fileno(c->fdout));
+		}
+	} while (1);
+}
+
+void monetInternet(){ 
+	MT_Id p;
+	if (MT_create_thread(&p, monetServer, 0) < 0) {
+		GDKwarning("monetInternet:failed\n");
+	}
+}
+@}

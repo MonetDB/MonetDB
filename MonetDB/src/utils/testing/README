@@ -1,0 +1,210 @@
+Hi all Monet and DS hackers,
+
+here comes the new version of the testing environment. Only a few details
+have changed since my proposal.
+
+- The testing environment consists of the following tools:
+  + Mtest	a bash script to run tests
+  + Mfilter	a bash script to filter the test output before running Mdiff 
+		(see below)
+  + Mdiff	a C program to show the differences of two files as HTML document
+  + Mapprove	a bash script to approve recent test output (see below)
+  + Mtimeout	a C program to limit the resouces of a program
+		(thanks to Tim Ruhl, tim@ddi.nl)
+  + MkillUsers	a bash script to kill test processes that are orphaned
+		(used "fuser" to detect such processes)
+
+- In each directory of the current Monet and/or DS source tree tests may be
+  provided in a subdirectory called "Tests". Of course, the tests should
+  deal with the part/modules where they are located and they should be
+  provided and maintained by the respective developer (see also below).
+
+- Each "Tests" directory must contain a file "All" that contains the names
+  of all tests in that directory (one name per line).
+
+- Each test named TST consists of
+  + a test script which is ONE of the following:
+    * an arbitrary executable (e.g. a shell script)        (TST)
+    * a MIL script to be executed by Mserver               (TST.milM)
+    * a MIL script to be executed by Mserver -single       (TST.milS)
+    * a MIL script to be executed by Mclient               (TST.milC) (^)
+    * a JAVA program to be compiled & executed by java -cs (TST.java) (^)
+    * some ODMG stuff ?                                    (TST.odmg?)
+   (^) for Mclient & java if several files are present named
+       (1) TST_sXX.(milC|java) (XX={00,01,...,99})
+           these are executed subsequently using the same Mserver
+       (2) TST_pXX.(milC|java) (XX={00,01,...,99})
+           these are executed cuncurrently using the same Mserver
+  + a MIL script to be used as prelude for Mserver/Mclient
+     (optional)                                            (TST.prelude)
+  + a file that contains a list of modules (one per line)
+     required by the test  (optional)                      (TST.modules)
+  + a file that contains a list of BATs (one per line)
+     (created by previous tests within the same directory)
+     required by the test  (optional)                      (TST.BATs)
+  + a set of files used by the arbitrary executable
+     (optinal)                                             (TST.*)
+  + stable (i.e. correct) versions of stdout and stderr
+     of the test                                           (TST.stable.{out,err})
+    operating system (OS) specific stable output can be 
+    provided by adding the suffix ".<OSname>" (".`uname`")
+    or ".<OSname><OSversion>" (".`uanme``unamr -r`") to
+    the respective filename.
+
+  Using this naming conventions, the test environment can automatically
+  decide what to do when called as "Mtest TST" (see below), i.e. execute one
+  of the following:
+  * TST [-prelude TST.prelude]
+  * Mserver -db TSTDB [-prelude TST.prelude] TST.milM
+  * Mserver -db TSTDB -single [-prelude TST.prelude] TST.milS
+  * Mserver -db TSTDB -background &
+    Mclient [-prelude TST.prelude] TST[_(s|p)XX].milC
+    Mshutdown
+  * Mserver -db TSTDB -prelude TST.prelude &
+    java -cs TST[_(s|p)XX]
+    Mshutdown
+  (All M<tool>'s are started with "Mtimeout -timeout TIMEOUT M<tool> ..." to
+   kill (probably) hanging M<tool>'s after a certain timeout. The default
+   TIMEOUT value is 600 seconds, i.e. 10 minutes. Additionally, MkillUsers
+   is scheduled as at-job to kill orphaned processes that Mtimeout cannot
+   reach any more.)
+  (Mserver is called with "-modulesilent" & "-yaccsilent". See "Mserver -?"
+   for details.)
+
+  Some notes about java:
+  + The CLASSPATH variable is extended by the paths given in the
+    TST[_(s|p)XX].java file(s) as follows:
+        /*CLASSPATH
+         MONETDIST/directory/x.jar
+         MONETHOME/directory
+        */
+    During testing, MONETHOME and MONETDIST are replaced by the values of
+    $MONETHOME & $MONETDIST, respectively.
+  + An Mserver is started in the background, executing a TST.prelude MIL
+    script. This script should (at least) load the required modules and fork
+    a thread listening on an tcpip port, e.g.
+        module(OdmgTest, jOdmg, tcpip);
+        fork(listen(JAVAPORT));
+  + During testing, any occurance of 'JAVAPORT' in TST[_(s|p)XX].java and
+    TST.prelude is replaced by the appropriate port number.
+
+- Running one or several tests is done by simply calling
+  + "Mtest <names...>" to run tests <names...> in ./Tests/
+  + "Mtest [All]"      to run all tests given in ./Tests/All
+  + "Mtest -r"         to run all tests in ./Tests/ as well as all tests in
+                       any subdirectory of ./
+  (this is supposed to be similar to "[g]make"...).
+  For more details call "Mtest --help".
+
+- Environment variables:
+  + Mtest expects MONETDIST and/or MONETHOME to be set appropriately; if
+    only one is set, both are assumed to be equal.
+  + Other environment variables that Mtest uses/exports are:
+	name		default				description
+	----		-------				-----------
+	TSTSRCBASE	$MONETHOME			base of (test) source tree
+	TSTTRGBASE	$MONETHOMEPREFIX		base for test output
+	MONETPORT	$HOST:[10000..65536]		depending on pid
+	MONET_MOD_PATH	$MONET{DIST,HOME}PREFIX/lib
+	LD_LIBRARY_PATH	$MONET_MOD_PATH
+  + Further environment variables that Mtest exports (to be used in test scripts) are:
+  	name		description
+	----		-----------
+	HOST		hostname
+	OS		`uname`
+	OSVER		`uname``uname -r`
+	MONETHOMEPREFIX	$MONETHOME/$OSVER or $MONETHOME/$OS
+	MONETDISTPREFIX	$MONETDIST/$OSVER or $MONETDIST/$OS
+  	MONETFARM	directory for homes & dbfarm (=$TSTTRGBASE)
+  	TSTDB		name of default test database, unique for each directory
+	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
+	MSERVER		"$MTIMEOUT Mserver -modulesilent -yaccsilent -d8"
+	MCLIENT		"$MTIMEOUT Mclient"
+	MCREATEDB	"$MTIMEOUT Mcreatedb -user $USER"
+	MDESTROYDB	"$MTIMEOUT Mdestroydb"
+	MLOAD		"$MTIMEOUT Mload"
+	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
+	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
+	TSTTRGDIR	$TSTTRGBASE/Tests/$TSTDIR
+
+- There must be at least one directory level between $TSTSRCBASE and a
+  'Tests` directory (e.g. $TSTSRCBASE/myCode/Tests/).
+  Tests in $TSTSRCBASE/Tests/ are ignored.
+	
+- For each directory, Mtest creates a database $TSTDB before running any
+  test. The homes files and the dbfarm directory are created in $MONETFARM
+  (which is equal to $TSTTRGBASE and defaults to $MONETHOMEPREFIX).
+
+- A test is skipped (i.e. not executed), 
+  if $TST.modules exists and contains modules that are not available, or
+  if $TST.BATs exists and contains BATs that are not available in the
+  current database $TSTDB.
+
+- While executing test "$TSTSRCDIR/TST", Mtest uses $TSTTRGDIR as working
+  directory; for convenience, all files "$TSTSRCDIR/TST*" are linked to
+  $TSTTRGDIR.
+
+- Mtest stores the output of test "$TSTSRCDIR/TST" in
+  $TSTTRGDIR/TST.test.{out,err} and checks it against
+  $TSTSRCDIR/TST.stable.{out,err}. If system specific stable output files
+  ($TSTSRCDIR/TST.stable.{out,err}.[$OS|$OSVER]) exist, the most specific
+  stable output is used. Mtest stores the respective Mdiff results in
+  $TSTTRGDIR/TST.{out,err}.diff.html.
+  For each test directory, a common entry point to the test results is
+  created as $TSTTRGDIR/index.html.  
+  For the whole test run, a global entry point to the test results is
+  created as $TSTTRGBASE/Tests/index.html.
+  
+- Mfilter is used to filter out variable date form the test output to avoid
+  no-error differences when running Mdiff. Mfilter prefixes all lines
+  enclosed in two line containing only "#~BeginVariableOutput~#" and
+  "#~EndVariableOutput~#", respectively, with "#~". These lines are then
+  ignored during Mdiff.
+  
+  MIL Example:
+	printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n);
+
+  Additionally, Mfilter removes all lines between "#~BeginLoadingModule~#"
+  and "#~EndLoadingModule~#". This is handy to remove the echoed module .LOAD
+  sequences from the test output.
+
+- A tool Mapprove is provided to copy the recent output from
+  $TSTTRGDIR/TST.test.{out,err} to $TSTSRCDIR/TST.stable.{out,err}. Lines
+  starting with a '!' (i.e. error messages) are eliminated during copying. 
+  Like Mfilter, Mapprove also removes all lines between
+  "#~BeginLoadingModule~#" and "#~EndLoadingModule~#".
+  Of course, $TSTTRGDIR/TST.test.{out,err} have to be checked and claimed
+  correct before being approved!
+  See "Mapprove -?" for command-line options.
+
+- A development session is than supposed to proceed as follows:
+
+        cd $TSTSRCBASE/$TSTDIR
+        run  cvs update
+        loop
+                loop
+                        edit source
+                        [g]make
+                endloop
+                loop
+			edit/create  Tests/All
+                        edit/create  Tests/<names...>.*
+                        run  Mtest <names...>
+                        check 	$TSTTRGDIR/<names...>.test.{out,err}
+                        	$TSTTRGDIR/<names...>.{out,err}.diff.html
+				(cf. $TSTTRGBASE/Tests/index.html)
+                endloop
+        endloop
+        run  Mapprove <names...>
+        run  cvs ci
+
+
+
+        Stefan
+
+--
+| Stefan Manegold     | mailto:Stefan.Manegold@cwi.nl |
+| CWI,  P.O.Box 94079 | http://www.cwi.nl/~manegold/  |
+| 1090 GB Amsterdam   | Tel.: +31 (20) 592-4212       |
+| The Netherlands     | Fax : +31 (20) 592-4199       |
+

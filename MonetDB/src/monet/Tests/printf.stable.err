@@ -1,0 +1,4 @@
+stderr of test 'printf` in directory 'src/monet` itself:
+
+#> Mtest:	milM printf milM
+#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db src_monet printf.milM

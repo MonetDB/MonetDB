@@ -1,0 +1,57 @@
+@f var_arg
+@a Niels Nes
+
+@h
+#ifndef _VARARG_H_
+#define _VARARG_H_
+
+#include "symbol.h"
+#include "list.h"
+#include "type_arg.h"
+
+
+class VarArg : public Arg {
+    public:
+	VarArg( int t, char *n, const Symbol *arg = NULL); 
+
+	const Symbol *arg() const;
+        virtual char *toString() const;
+	virtual ostream &print( language *l, ostream &o ) const ;
+    private:
+	const Symbol *_arg;
+};
+#endif // _VARARG_H_
+
+@C
+#include "var_arg.h"
+#include "iterator.h"
+#include "language.h"
+#include <string.h>
+
+
+VarArg::VarArg( int t, char *n, const Symbol *arg) : Arg(t,n) {
+	_arg = arg;
+}
+
+const Symbol *VarArg::arg() const {
+	return _arg;
+}
+
+ostream &VarArg::print( language *l, ostream &o ) const {
+	return l->gen_var_arg( o, *this );
+}
+
+char *VarArg::toString( ) const {
+	char *buf = new char[80];
+	const char *arg = _arg?_arg->toString():"any";
+
+	if (strcmp(arg, "BAT") == 0) {
+		BatArg *ba = (BatArg*) _arg;
+        	sprintf(buf, "*BAT[%s,%s]",
+                	ba->atom1()?ba->atom1()->toString():"void",
+                	ba->atom2()?ba->atom2()->toString():"void");
+	} else {
+		sprintf(buf, "*%s", arg);
+	}
+	return buf;
+}

@@ -1,0 +1,136 @@
+stdout of test 'test_70` in directory 'tests/suite_00` itself:
+
+#> Mtest:	milS test_70 milS
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_70.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:test_70.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(20000000));
+#This collection of examples is geared at the support
+#of the data mining tool
+
+b:= new(int,int);
+b.insert(1,15);
+b.insert(2,15);
+
+b.sum.print;
+[ 30 ]
+b.insert(3,int(nil));
+b.sum.print;
+[ nil ]
+
+b.insert(4,15);
+b.insert(5,25);
+b.insert(6,36);
+b.insert(7,49);
+b.insert(8,64);
+b.insert(9,int(nil));
+
+t:= b.histogram;
+t.print;
+#-----------------#
+# BAT:	  tmp_26  #
+# (int)	  (int)	  #
+#-----------------#
+[ 15,	  3	  ]
+[ nil,	  2	  ]
+[ 25,	  1	  ]
+[ 36,	  1	  ]
+[ 49,	  1	  ]
+[ 64,	  1	  ]
+commit;
+
+s:= new(int,str);
+insert(s,1,"hello");
+insert(s,2,"hello");
+insert(s,3,"hello");
+insert(s,4,"dello");
+insert(s,5,"eello");
+insert(s,6,"fello");
+insert(s,7,"fello");
+insert(s,8,"fello");
+t:= s.histogram;
+t.print;
+#-------------------------#
+# BAT:		  tmp_28  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "hello",	  3	  ]
+[ "dello",	  1	  ]
+[ "eello",	  1	  ]
+[ "fello",	  3	  ]
+
+#It requires a few additional routines
+c:= new(int,int);
+c.insert(1,15);
+c.insert(2,15);
+c.insert(3,int(nil));
+c.insert(4,0);
+c.insert(5,30);
+
+c.print;
+#-----------------#
+# BAT:	  tmp_26  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  15	  ]
+[ 2,	  15	  ]
+[ 3,	  nil	  ]
+[ 4,	  0	  ]
+[ 5,	  30	  ]
+d:= [<](b,c);
+d.print;
+#-----------------#
+# BAT:	  tmp_29  #
+# (int)	  (bit)	  #
+#-----------------#
+[ 1,	  false	  ]
+[ 2,	  false	  ]
+[ 3,	  nil	  ]
+[ 4,	  false	  ]
+[ 5,	  true	  ]
+
+d:= [<](c,b);
+d.print;
+#-----------------#
+# BAT:	  tmp_30  #
+# (int)	  (bit)	  #
+#-----------------#
+[ 1,	  false	  ]
+[ 2,	  false	  ]
+[ 3,	  nil	  ]
+[ 4,	  true	  ]
+[ 5,	  false	  ]
+
+d:= [>](c,b);
+d.print;
+#-----------------#
+# BAT:	  tmp_29  #
+# (int)	  (bit)	  #
+#-----------------#
+[ 1,	  false	  ]
+[ 2,	  false	  ]
+[ 3,	  nil	  ]
+[ 4,	  false	  ]
+[ 5,	  true	  ]
+quit;

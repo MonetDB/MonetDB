@@ -1,0 +1,1696 @@
+stdout of test 'arith` in directory 'modules/plain` itself:
+
+#> Mtest:	other arith
+#> Mtest:	Mtimeout -timeout 1800 ./arith arith
+#> Mlog:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db modules_plain arith.mil
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Sat Feb  5 04:39:19 MET 2000.
+#script:arith.mil
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+
+#line 209 "arith.mx"
+setoid(oid(20000000));
+module(arith);
+sht1 := sht(2);
+sht2 := sht(5);
+int1 := 5;
+int2 := 2;
+flt1 := 2.5;
+flt2 := 5.4;
+dbl1 := dbl(-2.500001);	       # may also need string since float is default
+dbl2 := dbl(54.00456789);      # real and is less significant	
+lng1 := lng("-9000000000000"); # string needed because lng doesn't fit in an
+lng2 := lng("5400456789");     # int
+oid1 := oid(int1);
+oid2 := oid(int2);
+
+
+#line 316 "arith.mx"
+ ('a' < 'z').print;  ('z' < 'a').print;  ('a' < 'a').print;
+[ true ]
+[ false ]
+[ false ]
+('a' <= 'z').print; ('z' <= 'a').print; ('a' <= 'a').print;
+[ true ]
+[ false ]
+[ true ]
+ ('a' = 'z').print;  ('z' = 'a').print;  ('a' = 'a').print;
+[ false ]
+[ false ]
+[ true ]
+('a' >= 'z').print; ('z' >= 'a').print; ('a' >= 'a').print;
+[ false ]
+[ true ]
+[ true ]
+ ('a' > 'z').print;  ('z' > 'a').print;  ('a' > 'a').print;
+[ false ]
+[ true ]
+[ false ]
+
+
+#line 224 "arith.mx"
+
+
+#line 316 "arith.mx"
+ (sht1 < sht2).print;  (sht2 < sht1).print;  (sht1 < sht1).print;
+[ true ]
+[ false ]
+[ false ]
+(sht1 <= sht2).print; (sht2 <= sht1).print; (sht1 <= sht1).print;
+[ true ]
+[ false ]
+[ true ]
+ (sht1 = sht2).print;  (sht2 = sht1).print;  (sht1 = sht1).print;
+[ false ]
+[ false ]
+[ true ]
+(sht1 >= sht2).print; (sht2 >= sht1).print; (sht1 >= sht1).print;
+[ false ]
+[ true ]
+[ true ]
+ (sht1 > sht2).print;  (sht2 > sht1).print;  (sht1 > sht1).print;
+[ false ]
+[ true ]
+[ false ]
+
+
+#line 225 "arith.mx"
+
+
+#line 316 "arith.mx"
+ (int1 < int2).print;  (int2 < int1).print;  (int1 < int1).print;
+[ false ]
+[ true ]
+[ false ]
+(int1 <= int2).print; (int2 <= int1).print; (int1 <= int1).print;
+[ false ]
+[ true ]
+[ true ]
+ (int1 = int2).print;  (int2 = int1).print;  (int1 = int1).print;
+[ false ]
+[ false ]
+[ true ]
+(int1 >= int2).print; (int2 >= int1).print; (int1 >= int1).print;
+[ true ]
+[ false ]
+[ true ]
+ (int1 > int2).print;  (int2 > int1).print;  (int1 > int1).print;
+[ true ]
+[ false ]
+[ false ]
+
+
+#line 226 "arith.mx"
+
+
+#line 316 "arith.mx"
+ (flt1 < flt2).print;  (flt2 < flt1).print;  (flt1 < flt1).print;
+[ true ]
+[ false ]
+[ false ]
+(flt1 <= flt2).print; (flt2 <= flt1).print; (flt1 <= flt1).print;
+[ true ]
+[ false ]
+[ true ]
+ (flt1 = flt2).print;  (flt2 = flt1).print;  (flt1 = flt1).print;
+[ false ]
+[ false ]
+[ true ]
+(flt1 >= flt2).print; (flt2 >= flt1).print; (flt1 >= flt1).print;
+[ false ]
+[ true ]
+[ true ]
+ (flt1 > flt2).print;  (flt2 > flt1).print;  (flt1 > flt1).print;
+[ false ]
+[ true ]
+[ false ]
+
+
+#line 227 "arith.mx"
+
+
+#line 316 "arith.mx"
+ (dbl1 < dbl2).print;  (dbl2 < dbl1).print;  (dbl1 < dbl1).print;
+[ true ]
+[ false ]
+[ false ]
+(dbl1 <= dbl2).print; (dbl2 <= dbl1).print; (dbl1 <= dbl1).print;
+[ true ]
+[ false ]
+[ true ]
+ (dbl1 = dbl2).print;  (dbl2 = dbl1).print;  (dbl1 = dbl1).print;
+[ false ]
+[ false ]
+[ true ]
+(dbl1 >= dbl2).print; (dbl2 >= dbl1).print; (dbl1 >= dbl1).print;
+[ false ]
+[ true ]
+[ true ]
+ (dbl1 > dbl2).print;  (dbl2 > dbl1).print;  (dbl1 > dbl1).print;
+[ false ]
+[ true ]
+[ false ]
+
+
+#line 228 "arith.mx"
+
+
+#line 316 "arith.mx"
+ ("abcde" < "abcdf").print;  ("abcdf" < "abcde").print;  ("abcde" < "abcde").print;
+[ true ]
+[ false ]
+[ false ]
+("abcde" <= "abcdf").print; ("abcdf" <= "abcde").print; ("abcde" <= "abcde").print;
+[ true ]
+[ false ]
+[ true ]
+ ("abcde" = "abcdf").print;  ("abcdf" = "abcde").print;  ("abcde" = "abcde").print;
+[ false ]
+[ false ]
+[ true ]
+("abcde" >= "abcdf").print; ("abcdf" >= "abcde").print; ("abcde" >= "abcde").print;
+[ false ]
+[ true ]
+[ true ]
+ ("abcde" > "abcdf").print;  ("abcdf" > "abcde").print;  ("abcde" > "abcde").print;
+[ false ]
+[ true ]
+[ false ]
+
+
+#line 229 "arith.mx"
+
+
+
+#line 328 "arith.mx"
+(sht1 + sht2).print;
+[ 7 ]
+(sht1 - sht2).print;
+[ -3 ]
+(sht1 * sht2).print;
+[ 10 ]
+(sht1 / sht2).print;
+[ 0 ]
+
+
+#line 231 "arith.mx"
+
+
+#line 328 "arith.mx"
+(sht1 + int2).print;
+[ 4 ]
+(sht1 - int2).print;
+[ 0 ]
+(sht1 * int2).print;
+[ 4 ]
+(sht1 / int2).print;
+[ 1 ]
+
+
+#line 232 "arith.mx"
+
+
+#line 328 "arith.mx"
+(sht1 + flt2).print;
+!ERROR: interpret: no matching MIL operator to '+(sht, flt)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 - flt2).print;
+!ERROR: interpret: no matching MIL operator to '-(sht, flt)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 * flt2).print;
+!ERROR: interpret: no matching MIL operator to '*(sht, flt)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 / flt2).print;
+!ERROR: interpret: no matching MIL operator to '/(sht, flt)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 233 "arith.mx"
+
+
+#line 328 "arith.mx"
+(sht1 + dbl2).print;
+!ERROR: interpret: no matching MIL operator to '+(sht, dbl)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 - dbl2).print;
+!ERROR: interpret: no matching MIL operator to '-(sht, dbl)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 * dbl2).print;
+!ERROR: interpret: no matching MIL operator to '*(sht, dbl)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 / dbl2).print;
+!ERROR: interpret: no matching MIL operator to '/(sht, dbl)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 234 "arith.mx"
+
+
+#line 328 "arith.mx"
+(sht1 + lng2).print;
+!ERROR: interpret: no matching MIL operator to '+(sht, lng)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 - lng2).print;
+!ERROR: interpret: no matching MIL operator to '-(sht, lng)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 * lng2).print;
+!ERROR: interpret: no matching MIL operator to '*(sht, lng)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(sht1 / lng2).print;
+!ERROR: interpret: no matching MIL operator to '/(sht, lng)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 235 "arith.mx"
+
+
+
+#line 328 "arith.mx"
+(int1 + sht2).print;
+[ 10 ]
+(int1 - sht2).print;
+[ 0 ]
+(int1 * sht2).print;
+[ 25 ]
+(int1 / sht2).print;
+[ 1 ]
+
+
+#line 237 "arith.mx"
+
+
+#line 328 "arith.mx"
+(int1 + int2).print;
+[ 7 ]
+(int1 - int2).print;
+[ 3 ]
+(int1 * int2).print;
+[ 10 ]
+(int1 / int2).print;
+[ 2 ]
+
+
+#line 238 "arith.mx"
+
+
+#line 328 "arith.mx"
+(int1 + flt2).print;
+[ 10.4 ]
+(int1 - flt2).print;
+[ -0.4 ]
+(int1 * flt2).print;
+[ 27 ]
+(int1 / flt2).print;
+[ 0.925926 ]
+
+
+#line 239 "arith.mx"
+
+
+#line 328 "arith.mx"
+(int1 + dbl2).print;
+[ 59.0046 ]
+(int1 - dbl2).print;
+[ -49.0046 ]
+(int1 * dbl2).print;
+[ 270.023 ]
+(int1 / dbl2).print;
+[ 0.0925848 ]
+
+
+#line 240 "arith.mx"
+
+
+#line 328 "arith.mx"
+(int1 + lng2).print;
+[ 5400456794 ]
+(int1 - lng2).print;
+[ -5400456784 ]
+(int1 * lng2).print;
+[ 27002283945 ]
+(int1 / lng2).print;
+[ 0 ]
+
+
+#line 241 "arith.mx"
+
+
+
+#line 328 "arith.mx"
+(flt1 + sht2).print;
+!ERROR: interpret: no matching MIL operator to '+(flt, sht)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(flt1 - sht2).print;
+!ERROR: interpret: no matching MIL operator to '-(flt, sht)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(flt1 * sht2).print;
+!ERROR: interpret: no matching MIL operator to '*(flt, sht)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(flt1 / sht2).print;
+!ERROR: interpret: no matching MIL operator to '/(flt, sht)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 243 "arith.mx"
+
+
+#line 328 "arith.mx"
+(flt1 + int2).print;
+[ 4.5 ]
+(flt1 - int2).print;
+[ 0.5 ]
+(flt1 * int2).print;
+[ 5 ]
+(flt1 / int2).print;
+[ 1.25 ]
+
+
+#line 244 "arith.mx"
+
+
+#line 328 "arith.mx"
+(flt1 + flt2).print;
+[ 7.9 ]
+(flt1 - flt2).print;
+[ -2.9 ]
+(flt1 * flt2).print;
+[ 13.5 ]
+(flt1 / flt2).print;
+[ 0.462963 ]
+
+
+#line 245 "arith.mx"
+
+
+#line 328 "arith.mx"
+(flt1 + dbl2).print;
+[ 56.5046 ]
+(flt1 - dbl2).print;
+[ -51.5046 ]
+(flt1 * dbl2).print;
+[ 135.011 ]
+(flt1 / dbl2).print;
+[ 0.0462924 ]
+
+
+#line 246 "arith.mx"
+
+
+#line 328 "arith.mx"
+(flt1 + lng2).print;
+!ERROR: interpret: no matching MIL operator to '+(flt, lng)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(flt1 - lng2).print;
+!ERROR: interpret: no matching MIL operator to '-(flt, lng)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(flt1 * lng2).print;
+!ERROR: interpret: no matching MIL operator to '*(flt, lng)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(flt1 / lng2).print;
+!ERROR: interpret: no matching MIL operator to '/(flt, lng)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 247 "arith.mx"
+
+
+
+#line 328 "arith.mx"
+(dbl1 + sht2).print;
+!ERROR: interpret: no matching MIL operator to '+(dbl, sht)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(dbl1 - sht2).print;
+!ERROR: interpret: no matching MIL operator to '-(dbl, sht)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(dbl1 * sht2).print;
+!ERROR: interpret: no matching MIL operator to '*(dbl, sht)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(dbl1 / sht2).print;
+!ERROR: interpret: no matching MIL operator to '/(dbl, sht)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 249 "arith.mx"
+
+
+#line 328 "arith.mx"
+(dbl1 + int2).print;
+[ -0.500001 ]
+(dbl1 - int2).print;
+[ -4.5 ]
+(dbl1 * int2).print;
+[ -5 ]
+(dbl1 / int2).print;
+[ -1.25 ]
+
+
+#line 250 "arith.mx"
+
+
+#line 328 "arith.mx"
+(dbl1 + flt2).print;
+[ 2.9 ]
+(dbl1 - flt2).print;
+[ -7.9 ]
+(dbl1 * flt2).print;
+[ -13.5 ]
+(dbl1 / flt2).print;
+[ -0.462963 ]
+
+
+#line 251 "arith.mx"
+
+
+#line 328 "arith.mx"
+(dbl1 + dbl2).print;
+[ 51.5046 ]
+(dbl1 - dbl2).print;
+[ -56.5046 ]
+(dbl1 * dbl2).print;
+[ -135.011 ]
+(dbl1 / dbl2).print;
+[ -0.0462924 ]
+
+
+#line 252 "arith.mx"
+
+
+#line 328 "arith.mx"
+(dbl1 + lng2).print;
+!ERROR: interpret: no matching MIL operator to '+(dbl, lng)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(dbl1 - lng2).print;
+!ERROR: interpret: no matching MIL operator to '-(dbl, lng)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(dbl1 * lng2).print;
+!ERROR: interpret: no matching MIL operator to '*(dbl, lng)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(dbl1 / lng2).print;
+!ERROR: interpret: no matching MIL operator to '/(dbl, lng)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 253 "arith.mx"
+
+
+
+#line 328 "arith.mx"
+(lng1 + sht2).print;
+!ERROR: interpret: no matching MIL operator to '+(lng, sht)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 - sht2).print;
+!ERROR: interpret: no matching MIL operator to '-(lng, sht)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 * sht2).print;
+!ERROR: interpret: no matching MIL operator to '*(lng, sht)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 / sht2).print;
+!ERROR: interpret: no matching MIL operator to '/(lng, sht)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 255 "arith.mx"
+
+
+#line 328 "arith.mx"
+(lng1 + int2).print;
+[ -8999999999998 ]
+(lng1 - int2).print;
+[ -9000000000002 ]
+(lng1 * int2).print;
+[ -18000000000000 ]
+(lng1 / int2).print;
+[ -4500000000000 ]
+
+
+#line 256 "arith.mx"
+
+
+#line 328 "arith.mx"
+(lng1 + flt2).print;
+!ERROR: interpret: no matching MIL operator to '+(lng, flt)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 - flt2).print;
+!ERROR: interpret: no matching MIL operator to '-(lng, flt)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 * flt2).print;
+!ERROR: interpret: no matching MIL operator to '*(lng, flt)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 / flt2).print;
+!ERROR: interpret: no matching MIL operator to '/(lng, flt)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 257 "arith.mx"
+
+
+#line 328 "arith.mx"
+(lng1 + dbl2).print;
+!ERROR: interpret: no matching MIL operator to '+(lng, dbl)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 - dbl2).print;
+!ERROR: interpret: no matching MIL operator to '-(lng, dbl)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 * dbl2).print;
+!ERROR: interpret: no matching MIL operator to '*(lng, dbl)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(lng1 / dbl2).print;
+!ERROR: interpret: no matching MIL operator to '/(lng, dbl)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 258 "arith.mx"
+
+
+#line 328 "arith.mx"
+(lng1 + lng2).print;
+[ -8994599543211 ]
+(lng1 - lng2).print;
+[ -9005400456789 ]
+(lng1 * lng2).print;
+[ 3059533224668508160 ]
+(lng1 / lng2).print;
+[ -1666 ]
+
+
+#line 259 "arith.mx"
+
+
+abs(sht2).print;
+[ 5 ]
+abs(int2).print;
+[ 2 ]
+abs(flt2).print;
+[ 5.4 ]
+abs(dbl2).print;
+[ 54.0046 ]
+abs(lng2).print;
+[ 5400456789 ]
+
+max(sht1,sht2).print;
+[ 5 ]
+max(int1,int2).print;
+[ 5 ]
+max(flt1,flt2).print;
+[ 5.4 ]
+max(dbl1,dbl2).print;
+[ 54.0046 ]
+max(lng1,lng2).print;
+[ 5400456789 ]
+
+min(sht1,sht2).print;
+[ 2 ]
+min(int1,int2).print;
+[ 2 ]
+min(flt1,flt2).print;
+[ 2.5 ]
+min(dbl1,dbl2).print;
+[ -2.5 ]
+min(lng1,lng2).print;
+[ -9000000000000 ]
+
+
+#line 328 "arith.mx"
+(oid1 + oid2).print;
+!ERROR: interpret: no matching MIL operator to '+(oid, oid)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, int) : lng
+!	+(lng, lng) : lng
+!	+(dbl, flt) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, dbl) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, int) : flt
+!	+(int, lng) : lng
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(oid1 - oid2).print;
+!ERROR: interpret: no matching MIL operator to '-(oid, oid)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, int) : lng
+!	-(lng, lng) : lng
+!	-(dbl, flt) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, dbl) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, int) : flt
+!	-(int, lng) : lng
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(oid1 * oid2).print;
+!ERROR: interpret: no matching MIL operator to '*(oid, oid)'.
+!MAYBE YOU MEAN:
+!	*(lng, int) : lng
+!	*(lng, lng) : lng
+!	*(dbl, flt) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, dbl) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, int) : flt
+!	*(int, lng) : lng
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(oid1 / oid2).print;
+!ERROR: interpret: no matching MIL operator to '/(oid, oid)'.
+!MAYBE YOU MEAN:
+!	/(lng, int) : lng
+!	/(lng, lng) : lng
+!	/(dbl, flt) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, dbl) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, int) : flt
+!	/(int, lng) : lng
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 279 "arith.mx"
+
+max(oid1,oid2).print;
+[ 5@0 ]
+min(oid1,oid2).print;
+[ 2@0 ]
+
+inv(sht2).print;
+[ 0 ]
+inv(int2).print;
+[ 0 ]
+inv(flt2).print;
+[ 0.185185 ]
+inv(dbl2).print;
+[ 0.018517 ]
+inv(lng2).print;
+[ 0 ]
+
+(int1% int2).print;
+[ 1 ]
+(int1<<int2).print;
+[ 20 ]
+(int1>>int2).print;
+[ 1 ]
+
+(int1 or  int2).print;
+[ 7 ]
+(int1 and int2).print;
+[ 0 ]
+(int1 xor int2).print;
+[ 7 ]
+not(int2).print;
+[ -3 ]
+
+bit1 := true;
+bit2 := false;
+(bit1 or  bit2).print;
+[ true ]
+(bit1 and bit2).print;
+[ false ]
+(bit1 xor bit2).print;
+[ true ]
+not(bit2).print;
+[ true ]
+
+srand( 1234 );
+rand().print;
+[ 3558 ]
+quit;

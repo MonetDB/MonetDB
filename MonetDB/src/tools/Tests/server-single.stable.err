@@ -1,0 +1,4 @@
+stderr of test 'server-single` in directory 'src/tools` itself:
+
+#> Mtest:	milS server-single milS -prelude server-single.prelude
+#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -home /ufs/manegold/Monet/Current/monet/src/tools/IRIX6.2 -db src_tools -single -prelude server-single.prelude server-single.milS

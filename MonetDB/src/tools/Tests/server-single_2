@@ -1,0 +1,6 @@
+#!/bin/sh
+
+NAME="$1"
+PRELUDE="$2"
+
+Mlog -x $MSERVER -db $TSTDB -single $PRELUDE $NAME.mil

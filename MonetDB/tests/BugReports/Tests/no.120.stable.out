@@ -1,0 +1,78 @@
+stdout of test 'no.120` in directory 'tests/BugReports` itself:
+
+#> Mtest:	milS no.120 milS
+#> Mtest:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.120.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Feb 11 04:40:21 MET 2000.
+#script:no.120.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+# >Number:         120
+# >Category:       Mserver
+# >Synopsis:       First bun always nul in case of Virtual Oid.
+# >Confidential:   no
+# >Severity:       serious
+# >Priority:       medium
+# >Responsible:    boncz
+# >State:          open
+# >Class:          sw-bug
+# >Submitter-Id:   unknown
+# >Arrival-Date:   Mon Feb 16 15:25:54 1998
+# >Originator:     quak
+# >Organization:
+# UvA
+# >Release:        971007
+# >Environment:
+# solaris
+# >Description:
+# Have a look at the script:
+# 
+# > a := new(int,int);
+# > a.insert(1,2);
+# > a.insert(2,3);
+# > a.insert(3,4);
+# > a.seqbase(newoid(a.count()));
+# > [oid]([a~]).print;
+# #-------------------------#
+# # int   | tmp_107         #
+# #-------------------------#
+# [ 1,      nil             ]
+# [ 2,      1000000003@2    ]
+# [ 3,      1000000004@2    ]
+
+setoid(oid(20000000));
+a := new(int,int);
+a.insert(1,2);
+a.insert(2,3);
+a.insert(3,4);
+a.seqbase(newoid(a.count()));
+!ERROR: interpret: no matching MIL operator to 'seqbase(BAT[int,int], oid)'.
+!MAYBE YOU MEAN:
+!	seqbase(BAT[void,any::1], oid) : BAT[void,any::1]
+[oid]([a~]).print;
+#-----------------#
+# BAT:	  tmp_29  #
+# (int)	  (oid)	  #
+#-----------------#
+[ 1,	  nil	  ]
+[ 2,	  nil	  ]
+[ 3,	  nil	  ]
+quit;

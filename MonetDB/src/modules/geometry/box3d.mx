@@ -1,0 +1,258 @@
+@f box3d
+@t The Box3d class
+@A C.W. Quak
+@h
+#ifndef __BOX3D_H__
+#define __BOX3D_H__
+
+//
+// Object Definition.
+//
+class box3d
+{
+public:
+   //
+   // Data storage.
+   //
+   interval xinterval;
+   interval yinterval;
+   interval zinterval;
+
+   //
+   // Constructors.
+   //
+   box3d(const box& b,const interval& zi);
+   box3d(const interval& xi,const interval& yi,const interval& zi);
+   box3d();
+
+   //
+   // Operations Required by Monet.
+   //
+   int hash() const;
+   bool OK() const;
+   bool operator== (const box3d& b) const;
+   bool operator!= (const box3d& b) const;
+   int expectedstrlen() const;
+   int tostr(char* s,int len) const;
+   static box3d* null();
+   static box3d* create();
+   static box3d* fromstr(char *s,int* parselen,int *buflen,box3d* p);
+   box tobox() const;
+
+   void bbox_include(const box3d& b);
+
+   //
+   // Const Operations.
+   //
+   double volume() const;
+   box3d* copy() const;
+
+
+};
+
+inline bool overlap(const box3d& b1,const box3d& b2)
+{
+   return(overlap(b1.xinterval,b2.xinterval) &&
+          overlap(b1.yinterval,b2.yinterval) &&
+	  overlap(b1.zinterval,b2.zinterval));
+}
+
+inline bool box3d::OK() const
+{
+   return(xinterval.OK() && yinterval.OK() && zinterval.OK());
+}
+
+//
+// Inline Implementation
+//
+inline box3d::box3d():
+   xinterval(),yinterval(),zinterval()
+{
+}
+
+inline box3d::box3d(
+   const interval& xi,
+   const interval& yi,
+   const interval& zi):
+   xinterval(xi),yinterval(yi),zinterval(zi)
+{
+}
+
+inline box3d::box3d(const box& b, const interval& zi):
+   zinterval(zi)
+{
+   xinterval.min = b.left;
+   xinterval.max = b.right;
+   yinterval.min = b.bottom;
+   yinterval.max = b.top;
+}
+
+inline box3d* box3d::create()
+{
+#ifdef OVERLOAD_NEW
+   return new box3d;
+#else
+   return((box3d *)GDKmalloc(sizeof(box3d)));
+#endif
+}
+
+inline box3d* box3d::copy() const
+{
+#ifdef OVERLOAD_NEW
+   return(new box3d(*this));
+#else
+   box3d* rval = box3d::create();
+   *rval = *this;
+   return(rval);
+#endif
+}
+
+inline bool box3d::operator==(const box3d& r) const
+{
+   return((xinterval == r.xinterval) &&
+	  (yinterval == r.yinterval) &&
+	  (zinterval == r.zinterval));
+}
+
+inline bool box3d::operator!=(const box3d& r) const
+{
+   return(!(*this == r));
+}
+
+inline double box3d::volume() const
+{
+   OK();
+
+   return(xinterval.length() * yinterval.length() * zinterval.length());
+}
+
+inline box3d bbox3d(const box3d& b1,const box3d& b2)
+{
+   return(box3d(
+       bounds(b1.xinterval,b2.xinterval),
+       bounds(b1.yinterval,b2.yinterval),
+       bounds(b1.zinterval,b2.zinterval)));
+}
+
+inline box box3d::tobox() const
+{
+   return(box(xinterval.min,yinterval.max,xinterval.max,yinterval.min));
+}
+
+
+#endif /* __BOX3D_H__ */
+@C
+@+ Implementation Code for box3d values.
+@C
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
+#include "geometry.h"
+
+int box3d::expectedstrlen() const
+{
+   return(400);
+}
+
+int box3d::tostr(char* s,int len) const
+{
+   point p1(xinterval.min,xinterval.max);
+   point p2(yinterval.min,yinterval.max);
+   point p3(zinterval.min,zinterval.max);
+
+   int rval = 0;
+   rval += sprintf(s + rval,"(");
+   rval += p1.tostr(s + rval,len-rval);
+   rval += sprintf(s + rval,",");
+   rval += p2.tostr(s + rval,len-rval);
+   rval += sprintf(s + rval,",");
+   rval += p3.tostr(s + rval,len-rval);
+   rval += sprintf(s + rval,")");
+
+   if (rval > len)
+      GDKwarning("Prepare for the worst\n");
+   return(rval);
+}
+
+box3d* box3d::fromstr(char *s,int* parselen,int *buflen,box3d* t)
+{
+   if (t == NULL)
+   {
+      t = box3d::create();
+      *buflen = sizeof(box3d);
+   }
+   if (*buflen < (int)sizeof(box3d))
+   {
+      delete (void *)t;
+      t = box3d::create();
+      *buflen = sizeof(box3d);
+   }
+
+   char* snew = s;
+
+   int pbuflen = sizeof(point);
+   int pparselen;
+
+   point xinterval;
+   point yinterval;
+   point zinterval;
+
+
+   snew = strchr(snew,'(');
+   ++snew;
+   pparselen = *parselen - (s - snew);
+   point::fromstr(snew,&pparselen,&pbuflen,&xinterval);
+   snew += pparselen;
+   snew = strchr(snew,',');
+   pparselen = *parselen - (s - snew);
+   point::fromstr(snew,&pparselen,&pbuflen,&yinterval);
+   snew += pparselen;
+   snew = strchr(snew,',');
+   pparselen = *parselen - (s - snew);
+   point::fromstr(snew,&pparselen,&pbuflen,&zinterval);
+   snew += pparselen;
+   snew = strchr(snew,')');
+
+   t->xinterval.min = xinterval.x;
+   t->xinterval.max = xinterval.y;
+   t->yinterval.min = yinterval.x;
+   t->yinterval.max = yinterval.y;
+   t->zinterval.min = zinterval.x;
+   t->zinterval.max = zinterval.y;
+
+   int bytesread = snew-s;
+   if (bytesread > *parselen)
+      GDKwarning("Problems in box3d::fromstr  %d > %d\n",bytesread,*parselen);
+   
+   *parselen = bytesread;
+   return(t);
+}
+
+int box3d::hash() const
+{
+   return(xinterval.hash() + yinterval.hash() + zinterval.hash());
+
+}
+
+box3d* box3d::null()
+{
+   box3d* rval = new box3d();
+
+   rval->xinterval.min = DBL_MAX;
+   rval->xinterval.max = DBL_MAX;
+   rval->yinterval.min = DBL_MAX;
+   rval->yinterval.max = DBL_MAX;
+   rval->zinterval.min = DBL_MAX;
+   rval->zinterval.max = DBL_MAX;
+
+   return(rval);
+}
+
+void box3d::bbox_include(const box3d& b)
+{
+   xinterval.include(b.xinterval);
+   yinterval.include(b.yinterval);
+   zinterval.include(b.zinterval);
+}

@@ -1,0 +1,570 @@
+@f mil_parser
+@a M. L. Kersten
+@v 2.0
+
+@* Parsing MIL Version 4 
+This module contains a small footprint MIL parser for Monet Version 4.1 
+to assure backward compatibility. Compatibility is only guaranteed
+for the code base known May 2000 and excludes the active database component
+as well as some exotic constructs.
+
+Furthermore, this parser assumes availability of a complete MIL block upfront
+as a string to be parsed. 
+
+The parser produced is not thread safe, which means that parsing
+is encapsulated in a critical section. On single cpu systems this
+does not cause too much performance degration, on multi-cpu systems
+it may affect throughput when many users issue short (simple) commands.
+The quantitative effect is yet unknown.
+
+The stand-alone version of this parser (M2M) can be used 
+to check any MIL procedure for syntactic errors.
+@+ The lexical analyzer
+The lexical analyzer is generated using Flex, the preferred tool in Monet.
+
+The implementation of the lexical analyzer is straightforward:
+the input is taken from a client message buffer. It is assumed that
+this buffer contains the complete MIL structure to be parsed.
+This input buffer may be screwed up in the process, which implies
+that front-ends may have to make a copy first.
+
+The lexical analyzer and parser are prefixed with "mil", which ensures that
+other language analyzers can safely be added
+(provided they run not inparallel). The lexical analyzer should
+not maintain a linenumber. This aspect is made explicit in the rules
+any way.
+
+The lexical analyser returns simple triples to the parser.
+They include the token identifier, the Monet type-id, and a string
+representation.
+
+@h
+#ifndef _MIL_PARSER_H
+#define _MIL_PARSER_H
+
+#include "gdk.h"
+
+
+typedef struct YYSRECORD{
+	int	token, tpe, len;
+	char * 	val;
+ } yystype, *yystypeptr;
+
+#define YYSTYPE yystype
+extern YYSTYPE yylval;
+/* this should be  dependent on context of parser */
+#define GDKerror(M) 	printf("%s",M) /* no threads here */
+#ifdef GDKout
+#undef GDKout
+#endif
+#define GDKout stdout
+
+extern const char *millexname(int Y);
+extern void mil_parserror(str msg);
+extern void mil_flushbuffer();
+extern str mil_lastline();
+extern int mil_position();
+extern int mil_skipcomment();
+extern int mil_getch();
+extern int yylex();
+
+#endif /* _MIL_PARSER_H */
+@l
+%option noyylineno
+%option never-interactive
+%option noyywrap
+%option nomain
+
+D       [0-9]
+O       [0-7]
+L       [_a-zA-Z]
+E       [Ee][-+]?{D}+
+S       [\t\n ]*
+P       [-!\$%\^\*+|?<>=/\\]
+IDENT	{L}({L}|{D})*
+OPER	{P}+
+%{
+
+#include "mil_parser.h"
+@-
+The Bison parser generator will produce the table with token names
+needed for tracing the parser.
+@l
+#include "mil_parser_tab.h"
+
+#define RETURN(Y)       { PARSEDEBUG {\
+                                THRprintf(GDKerr, "%s %s\n", millexname(Y), yytext);\
+                          } return Y; }
+
+
+#define YY_INPUT(buf,result,max_size)   { int c = mil_getch();\
+                           result = (c==0) ? YY_NULL: (buf[0] = (char)c,1);}
+#define Symbol(X)       { Vector(X,TYPE_void,0,0); }
+#define Vector(X,Y,V,L)	{ yylval.token= X;	\
+			yylval.tpe  = Y;	\
+			if( V != 0 ) \
+			yylval.val = GDKstrdup(V);  	\
+			yylval.len = L;	\
+			RETURN (X); }
+
+#define YY_USE_PROTOS
+%}
+
+%%
+"#"                   { return mil_skipcomment();                              }
+("nil"|"NIL")         { Vector(TOK_CONSTANT, TYPE_void, "nil", 3);   }
+("proc"|"PROC")       { Symbol(TOK_PROCDEF);                                  }
+("undef"|"UNDEF")     { Symbol(TOK_UNDEF);                                    }
+("return"|"RETURN")   { Symbol(TOK_RETURN);                                   }
+("break"|"BREAK")     { Symbol(TOK_BREAK);                                    }
+("while"|"WHILE")     { Symbol(TOK_WHILE);                                    }
+("if"|"IF")           { Symbol(TOK_IF);                                       }
+("else"|"ELSE")       { Symbol(TOK_ELSE);                                     }
+("false"|"FALSE")     { Vector(TOK_CONSTANT, TYPE_bit, "0", 1);        }
+("var"|"VAR")         { Symbol(TOK_VAR);                                      }
+("const"|"CONST")     { Symbol(TOK_CONST);                                    }
+("true"|"TRUE")       { Vector(TOK_CONSTANT, TYPE_bit, "1", 1);        }
+("module"|"MODULE")   { Symbol(TOK_MODULE);				     }
+("any"|"ANY")         { Vector(TOK_ANY, TYPE_int,  "-1", 2);               }
+("bat"|"BAT")         { Symbol(TOK_BAT);				      }
+"$("                  { Symbol(TOK_VARTEMP);                                  }
+".."                  { Symbol(TOK_RANGETEMP);                                }
+"::"                  { Symbol(TOK_ANYNUM);                                   }
+("$h"|"$H"|"$head"|"$HEAD") { Vector(TOK_ITERTEMP, TYPE_int, "1", 1);         }
+("$t"|"$T"|"$tail"|"$TAIL") { Vector(TOK_ITERTEMP, TYPE_int, "2", 1);         }
+"$"{D}+               { Vector(TOK_TEMPLATE,TYPE_int,yytext+1,yyleng-1);       }
+"(*"                  { Symbol(TOK_DEREF);                                    }
+"[*"                  { Symbol(TOK_SETOP);                                    }
+"{*"                  { Symbol(TOK_SETAGGR);                                  }
+"@"                   { Symbol(TOK_ITERATION);                                }
+":="                  { Symbol(TOK_ASSIGNMENT);                               }
+("["{OPER}"]")	|
+("["{IDENT}"]")	|
+("{"{OPER}"}")	|
+("{"{IDENT}"}")	|
+("[:=]")	|
+("[:"{OPER}"=]")	|
+("{:=}") 	|
+({IDENT})	      { Vector(TOK_IDENT, TYPE_str, yytext,yyleng);	      }
+(":"{OPER}"=")	|
+({OPER}"="?) 	      { Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng);	      } 
+("-")?{D}+"LL"        { Vector(TOK_CONSTANT, TYPE_lng, yytext, yyleng);}
+("-")?{D}+            { Vector(TOK_CONSTANT, TYPE_int, yytext, yyleng);}
+{D}+"@"{D}+           { Vector(TOK_CONSTANT, TYPE_oid, yytext, yyleng);         }
+("-")?{D}+"."{D}+({E})?"LL" |
+("-")?"."{D}+({E})?"LL"     |
+("-")?{D}+{E}"LL"     { Vector(TOK_CONSTANT, TYPE_dbl,  yytext, yyleng);         }
+("-")?{D}+"."{D}+({E})? |
+("-")?"."{D}+({E})?     |
+("-")?{D}+{E}         { Vector(TOK_CONSTANT, TYPE_flt,  yytext, yyleng);         }
+"'"\\0{O}({O})?({O})?"'" {Vector(TOK_CONSTANT, TYPE_chr, yytext, yyleng);        }
+\"[^\n"]*\"		{
+                        if (yytext[yyleng-1] != '\\') {
+				yytext[yyleng-1]=0;
+                                Vector(TOK_CONSTANT, TYPE_str, yytext+1, yyleng-2);
+                        } else {
+				yymore(); 
+			}					                     }
+\'[^\n\']*\'            { 
+                        if (yytext[yyleng-1] != '\\') {
+                                Vector(TOK_CONSTANT, TYPE_chr, yytext+1, yyleng-2);
+                        } else {
+                                yymore(); 
+                        }                                                     }
+"{|"                  { Symbol(TOK_PARBLOCK);                                 }
+"|}"                  { Symbol(TOK_PAREND);                                   }
+{S}                   ;
+.                     { Symbol(*yytext);                                      }
+%%
+int mil_skipcomment() { 
+	char c; 
+	while ((c=input()) && (c != '\n')); 
+	return yylex();
+}
+int yywrap(){ return 1;}
+
+void mil_flushbuffer() {
+        YY_FLUSH_BUFFER;
+}
+@
+@- Input management
+The parser reads its input from a string buffer space, organized as a
+stack to permit easy escapes to "included" MIL programs (module inits).
+After parsing the string buffer space is freed by the parser as well.
+
+[These variables should be local to a parsing thread.]
+@c
+#include "mil_parser.h"
+
+typedef struct _strstack_t {
+	str buf, cptr, prevline, nxtline;
+	int listing;		/* trace line consumption */
+	struct _strstack_t *up;
+} strstack;
+
+static strstack  *mil_stack = NULL;
+
+int mil_push(str s, int l) {
+	strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
+	sp->listing = 1;
+	sp->cptr = sp->nxtline= sp->prevline = sp->buf = s;  
+	sp->up = mil_stack;
+	mil_stack = sp;
+	return 1;
+}
+
+int mil_pop() {
+	strstack *sp = mil_stack;
+	if (mil_stack) {
+		mil_stack = sp->up;
+		GDKfree(sp->buf);
+		GDKfree(sp);
+		return 1;
+	}
+	return 0;
+}
+
+@-
+The next character is retrieved from the string pool
+using the routine mil_getch. The position of the last
+newline is retained to gain quick access.
+@c
+int mil_getch() {
+        char ch;
+	ch = *mil_stack->cptr;
+        if (ch == '\n') {
+                if (mil_stack->listing) { 
+                        *mil_stack->cptr = 0;
+                        fputs(mil_stack->nxtline, GDKout);
+                        fputc('\n', GDKout);
+                        fflush(GDKout);
+                        /* *mil_stack->cptr = '\n'; */
+                }
+		mil_stack->prevline= mil_stack->nxtline;
+                mil_stack->nxtline = mil_stack->cptr + 1;
+        } 
+        if (ch) mil_stack->cptr++;
+        return ch;
+}
+
+@-
+For error reporting we have to find the start of the previous line,
+which, ofcourse, is easy.
+@c
+str mil_lastline(){ 
+	if( mil_stack->nxtline == 0)
+		return mil_stack->prevline;
+	return mil_stack->nxtline; 
+}
+int mil_position()
+{
+	return (int)(mil_stack->cptr)- (int)mil_stack->nxtline;
+}
+@-
+Long strings are in this version easier to handle, because the input is
+already concatenated by the front-end. This means that a string literal may not
+extend beyond end-of-line.
+REWORKED
+
+@+ The Parser
+Unlike Monet V4.3 the client is responsible to collect the
+input for parsing in a single string before calling the parser.
+Once the input is available parsing runs in a critial section for
+a single client thread.
+
+@c
+int mil_parse(str buf, int listing){
+	return 0;
+}
+@- The Bison Grammar
+The grammatica should be context free.
+@y
+%token_table
+
+%{
+#include "mil_parser.h"
+
+#define YYDEBUG 1
+#define YYERROR_VERBOSE 1
+
+#undef yyerror
+#define yyerror(X)      { mil_parserror(X);  }
+
+static int mil_print(FILE *f, int tpe, YYSTYPE v);
+#define YYPRINT(file,tpe,val)	mil_print(file,tpe,val)
+int yydebug = 0;
+void debugParser(int i){ yydebug=i; }
+%}
+
+%token TOK_ITERTEMP TOK_TEMPLATE TOK_VARTEMP TOK_RANGETEMP
+%token TOK_CONSTANT TOK_ASSIGNMENT TOK_PARBLOCK
+%token TOK_PAREND TOK_IDENT TOK_IF TOK_WHILE
+%token TOK_BREAK TOK_RETURN TOK_VAR 
+%token TOK_CONST TOK_BAT
+%token TOK_OPERATOR
+%token TOK_SETOP TOK_SETAGGR TOK_PROCDEF
+%token TOK_STRING TOK_ITERATION TOK_ELSE
+%token TOK_MODULE 
+%token TOK_ANY TOK_UNDEF TOK_DEREF TOK_ANYNUM
+
+%left TOK_ITERATION
+%left TOK_ASSIGNMENT TOK_OPERATOR
+%%
+program:
+        MIL_session
+    |   error ';' { yyerrok; yyclearin; return 1; }
+    |   /* empty */
+
+MIL_session:
+        session
+    |   MIL_session session
+
+session:
+        proc_definition
+    |   TOK_MODULE '(' module_list ')' ';'
+    |   statement
+
+statement_seq:
+        /* empty */
+    |   statement_list
+
+statement_list:
+        statement
+    |   statement_list statement
+
+statement:
+        stmt
+    |   varidents ';'
+    |   constidents ';'
+
+stmt:
+
+	';'
+    |   expression ';'
+    |   expression TOK_ITERATION '[' expression ']' iterator stmt
+    |   expression TOK_ITERATION iterator stmt
+    |   blk_expression
+    |   TOK_RETURN ret_value ';'
+    |   TOK_WHILE '(' expression ')' stmt
+    |   TOK_IF '(' expression ')' stmt
+    |   TOK_IF '(' expression ')' stmt TOK_ELSE stmt
+    |   TOK_BREAK ';'
+
+iterator :
+	fcn_call
+    |	TOK_IDENT
+        
+ret_value:
+        expression
+    |       /* empty */
+
+sequential_block:
+        '{' statement_seq '}'
+
+parallel_block:
+        TOK_PARBLOCK statement_seq TOK_PAREND
+
+proc_definition:
+        TOK_PROCDEF proc_name proc_header stmt
+    |   TOK_PROCDEF proc_name TOK_ASSIGNMENT stmt
+    |   TOK_PROCDEF proc_name proc_header TOK_ASSIGNMENT stmt
+    |   TOK_UNDEF TOK_IDENT';'
+
+proc_name:
+        TOK_IDENT
+    |   TOK_STRING
+    |   TOK_OPERATOR
+
+proc_header:
+        '(' mel_header ')' mel_return
+    |    '(' ')' mel_return
+
+mel_header:
+        mel_params ',' mel_range
+    |   mel_params 
+    |   mel_range
+
+mel_range:
+        TOK_RANGETEMP mel_type TOK_RANGETEMP
+
+mel_params:
+        mel_type TOK_IDENT
+    |	TOK_IDENT
+    |   mel_params ',' mel_type TOK_IDENT
+    |   mel_params ',' TOK_IDENT
+
+mel_type:
+        TOK_IDENT 
+    |   TOK_BAT
+    |   TOK_BAT '[' mel_atom ',' mel_atom ']'
+    |   mel_any
+
+mel_atom:
+        TOK_IDENT
+    | 	TOK_BAT
+    |   mel_any
+
+mel_any:
+        TOK_ANY TOK_ANYNUM TOK_CONSTANT
+    |   TOK_ANY
+
+mel_return:
+        ':' mel_type
+    |   /* empty */
+
+blk_expression:
+        sequential_block
+    |   parallel_block
+
+expression:
+	term
+	
+term :
+	factor
+    |	factor TOK_OPERATOR term
+    |	TOK_OPERATOR term
+    |	factor TOK_IDENT term
+    |   template TOK_ASSIGNMENT term
+    |   TOK_IDENT TOK_ASSIGNMENT term
+
+variable_reference:
+        template 
+    |  	TOK_IDENT
+
+template:
+        TOK_TEMPLATE
+    |   TOK_ITERTEMP
+    |   TOK_VARTEMP factor ')'
+    |   TOK_VARTEMP factor TOK_RANGETEMP ')'
+
+
+factor:
+        TOK_CONSTANT
+    |   TOK_STRING
+    |   TOK_BAT
+    |  	path_expr
+    | '[' multiplex_expression ']'
+    | '[' multiplex_expression ']' '.' path_expr
+    |   '(' expression ')'
+    |   '(' expression ')' '.' path_expr
+
+path_expr :
+      	path_elm 
+    | 	path_expr '.' path_elm
+
+path_elm : 
+	fcn_call
+    | 	variable_reference
+
+@-
+The separator should be limited to ',' and '~' should be
+added back as an operator symbol.
+@y
+multiplex_comma: ',' |  '~'
+
+multiplex_expression:
+      multiplex_term multiplex_comma multiplex_term
+
+multiplex_term:
+        TOK_CONST expression 
+    |   bat_expression
+    |   expression '?' bat_expression ':' bat_expression
+
+bat_expression:
+        expression
+     |   /* empty */
+
+fcn_call: 
+      	TOK_IDENT '(' expr_list ')'
+    | 	TOK_IDENT '(' ')'
+    |	fcn_hdr '(' expr_list ')'
+    |	fcn_hdr '(' ')'
+
+fcn_hdr: 
+       TOK_DEREF factor ')'  
+    |  TOK_SETOP factor ']' 
+    |  TOK_SETAGGR factor '}'
+    |  TOK_BAT
+ 
+expr_list:
+     	expression
+    |	expr_list ',' expression
+
+module_list:
+      modident
+    | module_list ',' modident
+
+modident:
+        TOK_CONSTANT
+    |   TOK_IDENT
+    |   TOK_BAT
+
+constidents:
+        TOK_CONST TOK_IDENT TOK_ASSIGNMENT expression
+ 	{ printf("id:= tpe(v); id.constant:= true;\n"); }
+   |   constidents ',' TOK_IDENT TOK_ASSIGNMENT expression
+
+varidents:
+        TOK_VAR ident_decl
+    |   varidents ',' ident_decl
+
+ident_decl:
+        TOK_IDENT 
+    |   TOK_IDENT TOK_ASSIGNMENT expression
+%%
+
+@-
+Display the error information for the current client.
+An arrow and state number is printed at the "appropriate" place. 
+If no lookahead character is a used and the next character is a newline,
+we should also copy the input .
+@{
+@y
+void mil_parserror(str msg){
+        static char buf[1024];
+        char *s=buf, *t, *l = mil_lastline();
+        int i = strlen(GDKERROR);
+	strcpy(buf,GDKERROR); s+= i;
+
+        mil_flushbuffer(); /* flush the lexer's buffer */
+
+        *s++ = '"';
+        for(t=l; *t && *t!='\n'; t++) {
+                /* accidental %s directives in the lastline can
+                   crash the vfsprintf later => escape them */
+                if (*t == '%') *s++ = '%';
+                *s++ = *t;
+        }
+        *s++ = '"'; *s++ = '\n';
+
+	/* produce the position marker */
+        for(*s++ = '!'; i > 0; i--) *s++ = ' ';
+	i = mil_position();
+        for(; i > 0; i--) {
+        /*for (; *l && *l!='\n'; l++) { */
+                *s++ = (*l != '\t')?' ':'\t';
+        }
+        *s++ = '^'; *s++ = '\n'; *s = 0;
+	/* include bison message */
+        if (msg) {
+                sprintf(s, "! %s.\n", msg);
+        } else {
+                sprintf(s, "! "); s += 2;
+                if (*s == 0) sprintf(s,"can't help you here, sorry.\n");
+        }
+        GDKerror(buf);
+}
+
+static int mil_print(FILE *f, int tpe, YYSTYPE v)
+{
+	if( v.len >0) fprintf(f," %s ", v.val);
+}
+const char *millexname(int Y)           
+{ 	if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
+		return yytname[Y-TOK_ITERTEMP];
+	} 
+	return "char";
+}
+@
+@}
+

@@ -1,0 +1,1083 @@
+@f Mapi
+@a M.L. Kersten, F. Kwakkel
+@v 1.0
+@* The Monet Application Programming Interface
+
+The easiest way to extend the functionality of Monet is to construct
+an independent Monet application, which communicates with a
+running server on a textual basis. 
+The prime advantage is a secure and traceable interface. Unlink Minstall,
+programming errors are likely to hang up the application without
+affecting the server. The server merely notices a client disappearing and
+can subsequently abort its pending transactions.
+The overhead in command preparation and response decoding is mainly 
+localized in the workstation of the application.
+
+The interface assumes a cautious user, who understands and has experience
+with the Monet programming model. In particular, syntax errors may easily
+lead to synchronization errors. A defensive programming style is adviced.
+Upon an error, the routine Mexplain gives information about the context of
+the failed call, include the expression shipped and any response received.
+
+The routines to build a Monet application are grouped in the library
+Monet Application Programming Interface, or Mapi.
+The application may be multi-threaded. 
+The channel information is stored in a Msession structure,
+which should be passed to the library in various circumstances.
+The application set up several channels with the same or a different
+Monet server. It is the programmers responsibility not to mix the
+descriptors in retrieving the results.
+The application is build around the following routines.
+
+@+ Manual Page
+@T
+\begin{description}
+
+\item[Msession Mconnect(char *host, int port, char *username, char *password)]:
+Setup a connection with a Monet server at a {\em host}:{\em port} and
+login with {\em username} and {\em password}. If host == NULL, the
+local host is accessed. If username == NULL, the username of the
+owner of the client application containing the Mapi code is used.
+If password == NULL, the password is ommited.\\
+The command returns a structure with administration about the interconnect.
+It also contains an explanation when connection to the server fails.
+
+\item[Msession Mdup(Msession mid)]:
+Creates a copy of a session descriptor. It is normally used to keep
+templates for database interactions, without the overhead of 
+occupying multiple IO channels. One descriptor should be used at a time.
+
+\item[int Mdisconnect(Msession mid)]:
+Terminates the session described by {\em mid}. Subsequent use leads
+to a failure.
+
+\item[int Mdorequest(Msession mid, char *Command)]:
+This is the lowest level operation to send the Command string
+to the database server. The command is fully prepared by the application,
+including a necessary newline to force the server to process the request.
+A copy of the command string is kept in the session structure.
+If Command is zero it takes the last query string kept around.
+
+\item[int Mgetreply(Msession mid)]:
+This is the lowest level routine to retrieve a single line from the server.
+The routine routinely ignores comment lines received unless the flag
+{\em everything} is set in the session structure.
+The text retrieved is kept around in a buffer linked with the session
+structure. Its address is returned. A zero is returned upon encountering
+a prompt or error. This can be analysed in using Merror().
+
+\item[int Msend(Msession mid, char *Command, void *Ptr$_0$...)]:
+Send a single Monet command that produces no result tuple.
+The Command string is interpreted as a format string using the pointer list.
+This list should be terminated with a 0.
+Returns MOK if the request succeeded, otherwise an error code is returned.
+A newline is appended upon need to force the server to process the request.
+The command should not contain other newlines to avoid synchronization errors.
+
+\item[int Mquery(Msession mid, char *Query, void *Ptr$_0$, ...)]:
+Send a single request which produces 0 or more tuples as a result
+using a print command.
+The resulting tuples can be fetched and processed one by one using 
+the {\em Mfetch} command. If a single answer is expected then {\em Mget}
+can be used to interpreter the first tuple and skip to the synchronization
+point.
+
+\item[int Mget(Msession mid, void *Ptr$_0$, Type$_0$, ...)]:
+A single answer tuple is expected and obtained from the server.
+The fields returned are stored into the memory pointed at
+by Ptr$_i$ (0 $\leq$ i $\leq$ fields-1). 
+This list is terminated by a null ptr.
+String values are copied into space allocated by the user.
+The return type TYPE\_ptr can be used to obtain a reference into the
+reply buffer. It can be used to handle large answers without the need
+to apriori allocate space. However, it is then up to the user to detect then 
+end of the field.
+Returns MOK if a value is received. The routine skips everything to the
+next prompt.
+
+\item[int Mfetch(Msession mid)]:
+Fetch the next tuple. The fields are extracted from the tuple 
+according to {\em Mget}.
+Mfetch returns MOK if a new tuple is retrieved, or MEOBAT if 
+no more tuples are available, otherwise an error code is returned.
+
+%\item[int Mgetfields(Msession mid)]:
+%Extract all values from the reply buffer. Used in combination with the low
+%level operations {\em Mdorequest} and {\em Mgetreply}.
+
+\item[int Mbatch(Msession mid, char *Query, void *Ptr$_0$, ...)]:
+A batch of commands is prepared with subsequent calls the {\em Mbatch}.
+The query pattern is expanded when it is about to be shipped to the server.
+This way, the command can be used to prepare parameterized queries.
+The routine returns an error upon buffer overflow, which should be considered
+a fatal one. The batch can be send using any of {\em Mdorequest}, {\em Msend},
+or {\em Mquery}. The batch of request is disgarded using {\em Mbatchreset()}.
+
+%\item[int Mfield(Msession mid, int fnr, void *ptr, int typ)]:
+%Describes the location of a field in a result tuple, the memory location
+%where to leave the result, and the expected type. 
+
+\item[int Merror(Msession mid)]:
+Returns the last error code or 0 if there is no error.
+
+\item[Mexplain(Msession mid, FILE *fd)]:
+Writes the error message obtained from Monet to a file.
+
+\item[Mstatistics(Msession mid, FILE *fd)]:
+Writes relevant statistics about the interconnect to the file.
+%
+%\item[char *Metext(Msession mid)]:
+%Returns a pointer to the text of the last error.
+
+%\item[int Mreset(Msession mid)]:
+%Reset the error status and clear the query, reply, format, binding,
+%and variable table.
+
+%\item[int Mbind(Msession mid, void *ptr)]:
+%Describe the location of the next  parameter in a query template.
+%The pointer should permit a dereference to gain access to the value
+%referenced.
+
+\item[int Mtimeout(Msession mid, int timeout)]:
+Sets the time out time in milli seconds for all subsequent
+Mapi commands. Default value is 0, wait indefinitely.
+\end{description}
+@
+
+@- Error message
+@T
+The Mapi interface calls return one of the following codes.\\
+
+\begin{tabular}{l l}
+MOK  & No error \\
+MEOBAT      & No more tuples retrieved: end of BAT. \\
+MSYNCERR  & Synchronization error. \\
+MMAPIERR  & Mapi internal error.\\
+MMONETERR & Monet error.\\
+\end{tabular}
+@
+@{
+@+ Implementation
+@h
+#define NAMELEN	256
+#define ERRLEN	1024
+#define QRYLEN	32000
+#define LINELEN	128000
+
+#define MOK	0
+#define MEOBAT	-1
+#define MTIMEOUT	-2
+#define MSYNCERR	-3
+#define MMAPIERR	-4
+#define MMONETERR	-5
+
+extern char *Mmessages[];
+
+#define COUNT(M,X)	(M)->counts[X]++;
+#define MAXVARS		32
+#define MAXBIND		16
+typedef struct {
+	int  field;
+	void *ptr;
+	int  type;
+} Mvarstruct;
+
+typedef struct {
+    char hostname[NAMELEN];
+    int  port;
+    char username[NAMELEN];
+    char password[NAMELEN];
+    char prompt[NAMELEN];
+    int  counts[20];
+    int *ptrs[MAXBIND];
+    Mvarstruct vars[MAXVARS];
+    int everything;
+    int error;
+    int trace;		/* Trace Mapi interaction */
+    char errortext[ERRLEN];
+    int querylength;	/* capacity of buffers */
+    int tmplength;
+    int  replylength;	
+    char *qrytail;	/* free space in querytext */
+    char *querytext; 
+    char *tmp;
+    char *reply;
+    FILE *from, *to;
+} MsessionStruct;
+
+
+typedef MsessionStruct *Msession;
+
+#define Merror(x)	((x)->error)
+#define Metext(x)	((x)->errortext)
+
+/*
+#define GDK_NOLINK
+#include <gdk.h>
+
+#define TYPE_void	0
+#define TYPE_bit	1
+#define TYPE_chr	2
+#define TYPE_sht	3
+#define TYPE_bat	4              
+#define TYPE_int	5
+#define TYPE_oid	6
+#define TYPE_ptr	7               
+#define TYPE_flt	8
+#define TYPE_dbl	9
+#define TYPE_lng	10
+#define TYPE_str	11
+*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void checkMid(Msession mid, char *nme);
+extern void promptMonet(Msession mid);
+extern void Mtail(Msession mid, char *qry);
+extern int Mbind(Msession mid, void *ptr);
+extern int Mrepl();
+extern char *Mgetreply(Msession mid);
+extern int Mdorequest(Msession mid,char *cmd);
+extern Msession Mconnect(char *host, int port, char *username, char *password);
+extern Msession Mdup();
+extern Msession Mnewstruct(Msession mid);
+extern void Mdisconnect(Msession mid);
+extern int Msend(Msession mid, char *format, ...);
+extern int Maction();
+extern int Mget(Msession mid, ...);
+extern int Mquery(Msession mid, char *query, ...);
+extern int Mfetch(Msession mid, ...);
+extern int Mclearerror();
+extern void Mreset();
+extern void Mbatchreset();
+extern void Mstatistics(Msession mid, FILE *fd);
+extern void Mexplain(Msession mid, FILE *fd);
+extern void Mgetfields(Msession mid);
+extern int Mslice(char *tuple,int fnr, void *ptr, int typ);
+extern int MsliceText(char *tuple, char **ptrs, int max);
+extern int Msync(Msession mid);
+extern int Mtimeout(Msession mid, int time);
+extern void promptMonet(Msession mid);
+
+#ifdef __cplusplus
+}
+#endif
+
+@
+@+ Mapi functions.
+The Monet application interface commands are described below.
+They have been developed to ease interaction.
+
+@c
+#include  <stdio.h>
+#include  <stdlib.h>
+#include  <ctype.h>
+#include  <sys/types.h>
+#include  <sys/socket.h>
+#include  <netinet/in.h>
+#include  <netdb.h>
+#include  <errno.h>
+#include  <string.h>
+#include  <signal.h>
+#include  <sys/wait.h>
+#include  <stdarg.h>
+
+#include   "Mapi.h"
+#include   "gdk.h"
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+
+#if sun && !solaris
+extern char *strchr();
+#endif
+
+char *Mmessages[]= { 
+	"No error:",
+	"End of BAT:",
+	"Time out occurred:",
+	"Synchronization error:",
+	"Mapi internal error:",
+	"Monet error:",
+	0
+};
+char *Mcommands[]={
+	"Unknown command",
+	"Mconnect",
+	"Mdisconnect",
+	"Msend",
+	"Mquery",
+	"Mfetch",
+	"Mget",
+	"Mbatch",
+	"--  total   --",
+	"Mbatchreset",
+	"Mdup",
+	"Mexplain",
+	"Mreset",
+	"Mtimeout",
+	"-- internal --",	/* low level routines */
+	"Mbind",
+	"Mfield",
+	"Mdorequest",
+	"Mgetreply",
+	"Mslice",
+	0};
+
+
+@
+The first call of an application is to establish a connection with
+an already server. The username and password are sent as part of
+the initialization sequence.
+Future versions may be allowed to set the username.
+The space for the buffers is dynamically allocated. It may be
+redefined by the user, provided he sets the corresponding length
+indicators as well.
+@c
+Msession Mnewstruct(Msession mid) {
+	Msession m;
+	m = (Msession) malloc(sizeof(MsessionStruct));
+	if(m==0) {
+		fprintf(stderr,"Could not allocate space for session.\n");
+		exit(1);
+	}
+	m->tmplength= (mid==0 ? QRYLEN: mid->tmplength);
+        m->tmp= (char *) malloc(m->tmplength);
+	m->querylength= (mid == 0 ? QRYLEN: mid->querylength);
+        m->querytext= (char *) malloc(m->querylength);
+	m->qrytail= m->querytext;
+	m->replylength= (mid == 0 ? LINELEN: mid->replylength);
+        m->reply= (char *) malloc(m->replylength);
+        if( m->reply == 0 || m->querytext == 0 || m->tmp==0){
+                printf("Could not allocate buffer space\n");
+                exit(1);
+        }
+	m -> trace = 0;
+	m -> everything = 0;
+
+	m->vars[0].ptr=0;
+	m->ptrs[0]=0;
+
+	m->error= MOK;
+	strcpy(m->hostname,"localhost");
+	return m;
+}
+
+Msession Mdup( Msession mid) {
+	Msession m;
+	checkMid(mid,"Mdup");
+	COUNT(mid,10);
+	m= Mnewstruct(mid);
+	if( mid){
+		m->to= mid->to;
+		m->from= mid->from;
+		strcpy(m->hostname, mid->hostname);
+		strcpy(m->username, mid->username);
+		strcpy(m->password, mid->password);
+		strcpy(m->prompt, mid->prompt);
+		m->port= mid->port;
+	}
+	return m;
+}
+Msession Mconnect(char *host, int port, char *username, char *password) {
+	struct hostent *hp;
+	struct sockaddr_in server;
+	int s;
+	char *defport;
+	Msession mid;
+
+	mid= Mnewstruct(0);
+
+	COUNT(mid,1);
+	if(host) strcpy(mid->hostname,host); 
+	
+	if(port) mid->port = port; 
+	else {
+	    if((defport = getenv("MONETPORT"))!=(char*)NULL && 
+	       ((mid->port=atoi(defport))!=0) && 
+	       errno != ERANGE)
+		errno= errno; /* no error */
+	    else {      
+		mid->error = MMAPIERR; 
+		sprintf(mid->errortext,     "Illegal or unknown port number"); 
+		return(mid);
+	   }
+	}
+	
+	if(username) strcpy(mid->username,username);
+	else strcpy(mid->username,cuserid((char*)NULL));
+
+	if(password) strcpy(mid->password,password);
+	else strcpy(mid->password,"");
+	
+	hp = gethostbyname(mid->hostname);
+	if(!hp) {
+	    mid->error = MMAPIERR;
+	    sprintf(mid->errortext,"gethostbyname(\"%s\") failed with h_errno=%d",mid->hostname,h_errno);
+	    return(mid);
+	}
+	memset(&server, 0, sizeof(server));
+	memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
+	
+	server.sin_family = hp->h_addrtype;
+	server.sin_port   = htons((unsigned short)(mid->port&0xFFFF));
+	
+	s=socket(AF_INET, SOCK_STREAM, 0);
+	if(s<0) {
+	    mid->error = MMAPIERR;
+	    sprintf(mid->errortext,"Open socket failed");
+	    return(mid);
+	}
+
+	if(connect(s,(struct sockaddr *)&server, sizeof(server))<0) {
+	    perror("! Mapi.Mconnect.connect: ");
+	    mid->error = MMAPIERR;
+	    sprintf(mid->errortext,"Connect to %s:%d failed",mid->hostname, mid->port);
+	    return(mid);
+	}
+	
+	if((mid->to = fdopen(s,"w"))==(FILE *)NULL) {
+	    mid->error = MMAPIERR;
+	    sprintf(mid->errortext,"Cannot open file descriptor for socket (\"w\")");
+	    return(mid);
+	}
+
+	if((mid->from = fdopen(s,"r"))==(FILE *)NULL) {
+	    mid->error = MMAPIERR;
+	    sprintf(mid->errortext,"Cannot open filedescriptor for socket (\"w\")");
+	    return(mid);
+	}
+
+	strcpy(mid -> prompt,"\001>\001");
+	
+	{ char buf[200];
+	  strcpy(buf,mid->username);
+	  strcat(buf,"\n");
+	  fprintf(mid->to,buf);
+	  fflush(mid->to);
+          /* printf("awaiting response from server\n");
+	  fflush(stdout); */
+	  while( getc(mid->from) != 1) ;
+	  promptMonet(mid);
+          /* printf("connection established\n");*/
+          return mid;
+	}
+}
+@-
+The library is programmed defensively.
+@c
+void checkMid(Msession mid, char *nme) {
+	if( mid==0){
+	fprintf(stderr,"Mapi %s called with illegal Msession argument\n",nme);
+	exit(0);
+	}
+}
+@-
+Once the start of the prompt has been recognized, the rest should
+be eaten away. It is stored for no purpose at all in the reply buffer.
+@c
+void promptMonet(Msession mid) {
+        int i;
+
+	checkMid(mid,"promptMonet");
+	if( mid->trace) fprintf(stderr,"promptMonet.");
+        for(i=0; (mid->reply[i] = getc(mid->from)) != 1; i++);
+        mid->reply[i++] = ' ';
+        mid->reply[i] = '\0';
+}
+
+@
+Disconnection from the server leads to removal of the
+Msession structure. Subsequent access may lead to a crash.
+@c
+void Mdisconnect(Msession mid) {
+	checkMid(mid,"Mdisconnect");
+	COUNT(mid,2);
+	(void) fclose(mid->from);
+	(void) fclose(mid->to);
+	(void) free(mid->reply);
+	(void) free(mid->tmp);
+	(void) free(mid->querytext);
+	(void) free(mid);
+}
+@
+@-
+To synchronize on a prompt, the low level routine Msync can be used.
+It disgards all output received.
+@c
+int Msync(Msession mid) {
+	checkMid(mid,"Msync");
+	while(Mgetreply(mid)) ;
+	return(mid->error);
+}
+@
+@-
+The Msend operation assumes a string with the query. The query string
+should not contain newlines, otherwise synchronization errors will occur.
+A semicolon and newline are appended if needed.
+[Future, count them??]
+@c
+int Msend(Msession mid, char *format, ...) {
+	va_list ap;
+	char *s;
+	int i=0;
+	void *ptr;
+
+	va_start(ap,format);
+	for(;;){
+		ptr= va_arg(ap,void*);
+		if( ptr==0) break;
+		mid->ptrs[i++]= ptr;
+	}
+	va_end(ap);
+
+	checkMid(mid,"MSend");
+	COUNT(mid,3);
+	if( mid->trace) fprintf(stderr,"Msend.");
+	mid->error= MOK;
+	if(format) strcpy(mid->tmp,format);
+	Mtail(mid, 0);
+	Mdorequest(mid, 0);
+	s= Mgetreply(mid);
+	if( s){
+		sprintf(mid->errortext,
+		"Incorrect reply from server: prompt expected got '%s'", s);
+		Msync(mid);
+		mid->error=MSYNCERR;
+		return mid->error;
+	}
+	return MOK;
+}
+@
+@-
+Formatting and batching the Monet requests can be delegated to the 
+Mapi library.
+Therefore, the user sets the format Mtemplate and announces the parameters to be
+used with Mbind. Thereafter, subsequent calls to Mget, Mquery, or Msend
+with an empty query string leads to preparing the format and shipping 
+it to the server. 
+@c
+int Mbatch(Msession mid, char *format, ...) {
+	va_list pa;
+	void *ptr;
+
+	va_start(pa,format);
+	for(;;){
+		ptr= va_arg(pa, void*);
+		if( ptr==0) break;
+		Mbind(mid,ptr);
+	}
+
+	va_end(pa);
+
+	checkMid(mid,"Mbatch");
+	COUNT(mid,7);
+	mid->error= MOK;
+	if ( ((int) strlen(format)) >= QRYLEN){
+		mid->error= MMAPIERR;
+		sprintf(mid->errortext,"Query format too long\n");
+		return mid->error;
+	}
+	strcat(mid->tmp, format);
+	return mid->error;
+}
+
+int Mbind(Msession mid, void *ptr) {
+	int i;
+	checkMid(mid,"Mbind");
+	COUNT(mid,16);
+	for(i=0; i<MAXBIND; i++)
+	if( mid->ptrs[i]==0) break;
+
+	if( i== MAXBIND-1){
+		mid->error= MMAPIERR;
+		sprintf(mid->errortext,"Too many bindings\n");
+		return MMAPIERR;
+	}
+	mid->ptrs[i]= ptr;
+	return mid->error;
+}
+@-
+The routine Mfield is similar. It sets an output variable.
+@c
+int Mfield(Msession mid, int fnr, void *ptr, int typ) {
+	int i;
+	checkMid(mid,"Mfield");
+	COUNT(mid,17);
+	for(i=0; i<MAXVARS; i++)
+	if( mid->vars[i].ptr ==0) break;
+
+	if( i== MAXVARS){
+		mid->error= MMAPIERR;
+		sprintf(mid->errortext,"Too many bindings\n");
+		return MMAPIERR;
+	}
+	mid->vars[i].ptr = ptr;
+	mid->vars[i].field = fnr;
+	mid->vars[i].type = typ;
+	return mid->error;
+}
+@-
+The routine Maction reuses the reply buffer to prepare the
+query for shipment. It should be large enough to hold it.
+Since this can only be determined at the end of formating,
+a failure may result when it did not fit.
+@c
+#define arg(Y,X)	( mid->ptrs[X]? *mid->ptrs[X]:dummy)
+
+int Maction(Msession mid) {
+	int bytes;
+	int dummy=0;
+
+	checkMid(mid,"Maction");
+	mid->error= MOK;
+	bytes= sprintf(mid->qrytail,mid->tmp, 
+	arg(mid,0),
+	arg(mid,1),
+	arg(mid,2),
+	arg(mid,3),
+	arg(mid,4),
+	arg(mid,5),
+	arg(mid,6),
+	arg(mid,7),
+	arg(mid,8),
+	arg(mid,9),
+	arg(mid,10),
+	arg(mid,11),
+	arg(mid,12),
+	arg(mid,13),
+	arg(mid,14),
+	arg(mid,15)
+	);
+	if( bytes >= QRYLEN){
+		sprintf(mid->errortext, "Expanded query too large for reply buffer");
+		mid->error= MMAPIERR;
+		return MMAPIERR;
+	}
+	return mid->error;
+}
+@-
+The routine Mtail appends the semicolon.
+@c
+void Mtail(Msession mid, char *qry) {
+	int i;
+
+	checkMid(mid,"Mtail");
+	if( qry  == 0) Maction(mid);
+	if( qry){
+		i= strlen(qry)-1;
+		if(  i < QRYLEN-2)
+			strcpy(mid->qrytail,qry);
+	} else 
+		i= strlen(mid->qrytail)-1;
+	
+	if( i >= QRYLEN-2){
+		mid->error= MMAPIERR;
+		sprintf(mid->errortext,"Query too large for buffer");
+		return;
+	}
+
+	if( mid->qrytail[i] != '\n'){
+		mid->qrytail[i+1]= '\n';
+		mid->qrytail[i+2]= 0;
+	}
+	return;
+}
+
+@c
+/* int Mget(Msession mid, char *query, void *ptr, int typ) */
+/*VARARGS*/
+int Mget(Msession mid, ...) {
+	va_list ap;
+	char *s;
+	int i,typ;
+	void *ptr;
+
+	va_start(ap,mid);
+	i=0;
+	for(;;){
+		ptr= va_arg(ap, void*);
+		if( ptr==0) break;
+		typ= va_arg(ap, int);
+		Mfield(mid, i, ptr, typ);
+		i++;
+	}
+	va_end(ap);
+
+	checkMid(mid,"Mget");
+	COUNT(mid,6);
+	if( mid->trace) fprintf(stderr,"Mget.");
+	mid->error= MOK;
+	s= Mgetreply(mid);
+	if( s == 0){
+                if (mid->error == MOK) {
+                        sprintf(mid->errortext,"End of BAT reached.");
+                        mid->error=MEOBAT;
+                } else {
+                        Msync(mid);
+			mid->error=MSYNCERR;
+		}
+                return mid->error;
+	}
+	if( mid->reply[0]=='!'){
+		mid->error= MMONETERR;
+		strncpy(mid->errortext,mid->reply,ERRLEN);
+	} else Mgetfields(mid);
+	mid->vars[0].ptr=0;
+	if( Merror(mid) == MOK) Msync(mid);
+	return mid->error;
+}
+
+void Mgetfields(Msession mid) {
+	int i;
+	checkMid(mid,"Mgetfields");
+
+	for(i=0; mid->vars[i].ptr; i++)
+		Mslice(mid->reply, i, mid->vars[i].ptr, mid->vars[i].type);
+}
+@
+
+@c
+int Mquery(Msession mid, char *query, ...) {
+	va_list ap;
+	void *ptr;
+	int i;
+
+	va_start(ap,query);
+	if( query ) Mreset(mid);
+	i=0;
+	do{ 
+		ptr= va_arg(ap,void *);
+		if(ptr ==0) break;
+		Mbind(mid, ptr);
+	} while( ++i <MAXBIND);
+	va_end(ap);
+
+	checkMid(mid,"Mquery");
+	COUNT(mid,4);
+	if( mid->trace) fprintf(stderr,"Mquery.");
+	mid->error= MOK;
+	if (query && (int)(strlen(query)) >= QRYLEN){
+		mid->error= MMAPIERR;
+		sprintf(mid->errortext,"Query format too long\n");
+		return mid->error;
+	}
+	if( query) strcpy(mid->tmp,query);
+	Mtail(mid, 0);
+	Mdorequest(mid, 0);
+	return mid->error;
+}
+@
+
+@c
+int Mfetch(Msession mid, ...) {
+	va_list ap;
+	char *s;
+	int i,typ;
+	void *ptr;
+
+	va_start(ap,mid);
+	i=0;
+	for(;;){
+		ptr= va_arg(ap, void*);
+		if( ptr==0) break;
+		typ= va_arg(ap, int);
+		Mfield(mid, i, ptr, typ);
+		i++;
+	}
+	va_end(ap);
+
+	checkMid(mid,"Mfetch");
+	COUNT(mid,5);
+	if( mid->trace) fprintf(stderr,"Mfetch.");
+	mid->error= MOK;
+	s= Mgetreply(mid);
+	if( s == 0){
+		if (mid->error == MOK) {
+			sprintf(mid->errortext,"End of BAT reached.");
+			mid->error=MEOBAT;
+                } else {
+                        Msync(mid);
+			mid->error=MSYNCERR;
+		}
+		return mid->error;
+	}
+	Mgetfields(mid);
+	mid->vars[0].ptr=0;
+	return mid->error;
+}
+@
+
+@c
+int Mtimeout(Msession mid, int time) {
+	checkMid(mid,"Mtimeout");
+	COUNT(mid,14);
+	if( mid->trace) printf("Set timeout to %d\n", time);
+	return MOK;
+}
+@
+
+@-
+The routine Mreset manipulates the Msession structure. 
+It can be used before bulk operation from the client or
+before a query result is consumed.
+@c
+void Mreset(Msession mid) {
+	int i;
+
+	checkMid(mid,"Mreset");
+	COUNT(mid,12);
+	mid->error = MOK;
+	strcpy(mid->errortext,"No error");
+	mid->querytext[0]=0;
+	mid->tmp[0]=0;
+	mid->qrytail= mid->querytext;
+	for(i=0; i< MAXBIND; i++){
+		mid->ptrs[i] =0;
+	}
+	for(i=0; i< MAXVARS; i++){
+		mid->vars[i].ptr =0;
+	}
+}
+
+void Mbatchreset(Msession mid){
+	checkMid(mid,"Mbatchreset");
+	COUNT(mid,9);
+	mid->qrytail = mid->querytext;
+	*mid->qrytail = 0;
+}
+
+void Mexplain(Msession mid, FILE *fd) { 
+	if(mid== 0) {
+		fprintf(fd, "Mexplain:Msession argument is zero \n");
+		return;
+	}
+	COUNT(mid,11);
+	fprintf(fd,"connection= %s:%d\n", mid->hostname, mid->port);
+	fprintf(fd,"template= %s", mid->querytext);
+	fprintf(fd,"query= %s", mid->querytext);
+	if( mid->error> -5 && mid->error <=0){
+		 fprintf(fd,"Error code=");
+		 fprintf(fd,Mmessages[-mid->error]);
+		 fprintf(fd,"\n");
+	}
+	fprintf(fd,"Error text= %s\n",mid->errortext);
+	fprintf(fd,"Reply= %s\n",mid->reply);
+}
+void Mstatistics(Msession mid, FILE *fd) {
+ 	int i;
+	if(mid== 0) {
+		fprintf(fd, "Mstatistics:Msession argument is zero \n");
+		return;
+	}
+	COUNT(mid,13);
+	fprintf(fd,"---- Mapi statistics for %s:%d\n",
+		mid->hostname,mid->port);
+	mid->counts[8]=0;
+	for(i=0; Mcommands[i]; i++){
+	fprintf(fd,"%15s %d\n", Mcommands[i], mid->counts[i]);
+	if( i< 8) mid->counts[8] += mid->counts[i];
+	}
+}
+@-
+Mdorequest and Mgetreply are two low level routines. They assume
+the default synchronization prompt.
+It assumes a complete Monet statement. Including newline?
+@c
+int Mdorequest(Msession mid, char* cmd) {
+	COUNT(mid,18);
+	if( cmd==0) cmd= mid->querytext;
+	else strcpy(mid->querytext,cmd);
+
+        if (mid->trace) {
+                printf("Mdorequest:%s", cmd);
+        }
+        if (ferror(mid->from) || ferror(mid->to)) {
+                sprintf(mid->errortext, "!communication line broken\n");
+		mid->error= MMONETERR;
+                return mid->error;
+        }
+        if (    fputs(cmd, mid->to) == -1 || 
+		fflush(mid->to) == -1) {
+                sprintf(mid->errortext, "!write error on stream\n");
+		mid->error= MMONETERR;
+                return mid->error;
+        }
+	fflush(mid->to);
+        return MOK;
+}
+
+@-
+The routine Mgetreply returns with 0 upon encountering the prompt
+(MOK) or an error.
+@c
+char *Mgetreply(Msession mid) {
+	char ch;
+	int n=0;        
+
+	COUNT(mid,19);
+	mid->error = MOK;
+	mid->reply[0]=0;
+
+        while ((ch = getc(mid->from)) != 1) {
+                if (ferror(mid->from)) break;
+		if( ch == '\n') break;
+                if (!isprint(ch) && !isspace(ch)) {
+                        sprintf(mid->errortext, "!terminating connection\n");
+			mid->error= MMONETERR;
+                        return 0;
+                }
+                if( n == mid->replylength){
+                        sprintf(mid->errortext,"!Answer too long\n");
+			mid->error=MMONETERR;
+                        return 0;
+                }
+		mid->reply[n++] = ch;
+        }
+        mid->reply[n]=0;
+        mid->error = (mid->reply[0]=='!');
+
+	if( mid->trace){
+		printf("Mgetreply:%s\n", mid->reply);
+	}
+	if( mid->reply[0]=='#' && mid->everything==0) return Mgetreply(mid);
+        
+        if (ferror(mid->from)) {
+                sprintf(mid->errortext, "!connection broken\n");
+		mid->error= MMONETERR;
+                return 0;
+        }
+	if( ch == 1){
+		promptMonet(mid);
+		return 0;
+	}
+        return mid->reply;
+}
+@-
+The routine @% Mslice@ acceps a tuple and slice out a specific
+field. The attribute value is copied to a dynamically allocated piece of
+memory and terminated by a null byte. The string quotes are removed in
+the process.
+It returns a NULL pointer when either the tuple does not conform the
+tuple output syntax or the field does not exists.
+@c
+int Mslice(char *tuple,int fnr, void *ptr, int typ) {
+        char *start, *out;
+        char *p,*s,quote;
+        int i;
+        unsigned size;
+
+        if( *tuple!='[' || fnr<0) return MMAPIERR;
+
+        p= tuple+1;
+	i =0;
+	do{
+                while(isspace(*p)) p++;
+                start =p;
+                size=0; quote= *p;
+                if( quote=='\'' || quote=='"'){
+                        /* get string */
+                        p++; start=p;
+                        while(*p != quote){
+                                if(*p=='\\') p++; p++;
+                                size++;
+                        }
+                }
+/* else
+                if( isalpha(*p)){
+                        while( isalnum(*p)) { p++;size++;}
+                } else
+                        while(!isspace(*p) && *p !=',') { p++;size++;}
+*/
+                if(i==fnr) break;
+                while(*p && *p!=',' && *p!=']') p++;
+                if(*p!=',') return MMAPIERR;
+                p++;i++;
+        } while(1);
+	switch( typ){
+	case TYPE_bit:
+		if( strncmp(start,"true",4)==0) *(int *)ptr=1; else
+                if( strncmp(start,"false",5)==0) *(int *)ptr=0; 
+		else return MMAPIERR;
+		/*FALLTHRU*/
+	case TYPE_int:
+        case TYPE_oid:
+        case TYPE_ptr:
+		return sscanf(start,"%d",ptr)==1? 0: MMAPIERR;
+        case TYPE_flt:
+                return sscanf(start,"%f",ptr)==1? 0: MMAPIERR;
+	case TYPE_chr:
+		*(char*) ptr= *start;
+		return 0;
+	case TYPE_str:
+		out= (char*) malloc(size+1);
+		*(char**)ptr= out;
+		s= out;
+		while(start<p){
+			if( *start=='\\') start++;
+			*s++ = *start++;
+		}
+	       *(out+size)=0;
+		break;
+	default: return MMAPIERR;
+	}
+       return 0;
+}
+@-
+The low level routine MsliceText is similar to Mslice, except that it
+initalizes a list of pointers to fragments in the reply buffer.
+It overwrites the contents of the Mid buffer
+@c
+int MsliceText(char *tuple, char **ptrs, int max) {
+        char *start;
+        char *p,quote;
+        int i;
+        unsigned size;
+
+        if( *tuple!='[' ) return MMAPIERR;
+
+        p= tuple+1;
+	i=0;
+	do{
+                while(isspace(*p)) p++;
+                start =p;
+                size=0; quote= *p;
+                if( quote=='\'' || quote=='"'){
+                        /* get string */
+                        p++; start=p;
+                        while(*p != quote){
+                                if(*p=='\\') p++; p++;
+                                size++;
+                        }
+			*p = 0;
+			p++;
+                }
+		ptrs[i] = start;
+/* else
+                if( isalpha(*p)){
+                        while( isalnum(*p)) { p++;size++;}
+                } else
+                        while(!isspace(*p) && *p !=',') { p++;size++;}
+*/
+                while(*p && *p!=',' && *p!=']') p++;
+		if ( *p == ']') {i++; *p=0; break;}
+                if(*p!=',') return MMAPIERR;
+		*p=0;
+                p++;
+		i++;
+        } while(i && i<max-1);
+	ptrs[i]=0;
+       return 0;
+}
+@}

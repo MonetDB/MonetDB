@@ -1,0 +1,76 @@
+stdout of test 'no.035` in directory 'tests/BugReports` itself:
+
+#> Mtest:	milS no.035 milS
+#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.035.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Wed Jan 19 11:06:12 MET 2000.
+#script:no.035.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+# >Number:         35
+# >Category:       Monet_SGI
+# >Synopsis:       BATloop semantics
+# >Confidential:   no
+# >Severity:       serious
+# >Priority:       high
+# >Responsible:    mk
+# >State:          feedback
+# >Class:          sw-bug
+# >Submitter-Id:   unknown
+# >Arrival-Date:   Tue Sep 30 20:45:03 1997
+# >Originator:     mk
+# >Organization:
+# >Release:        970101
+# >Environment:
+# SGI
+# >Description:
+# Since yesterday the semantics has changed?
+# > b:= view_bbp_name;
+# > b@batloop(){ printf("%s\n",$t);}
+# !ERROR: interpret: no matching iterator to 'batloop(bat[int,str], ptr)'.
+
+b:= view_bbp_name;
+b@batloop(){ printf("%s\n",$t);}
+monet_histo_mem
+monet_histo_vm
+monet_fcn_fcn
+monet_fcn_imp
+monet_fcn_tpe
+monet_fcn_mid
+monet_fcn_sig
+monet_fcn_dsc
+monet_fcn_aut
+monet_fcn_dat
+monet_fcn_nme
+monet_fcn_pro
+monet_mod_nme
+monet_mod_cnt
+monet_mod_atm
+monet_mod_acc
+monet_mod_hdl
+monet_mod_dep
+monet_mod_use
+monet_mod_load
+monet_mod_drop
+monet_fcntbl
+monet_acctbl
+monet_atomtbl
+quit;

@@ -1,0 +1,34 @@
+setoid(20000000);
+
+loaded;
+[~monet_mod_nme].reverse.sort.print;
+[~view_modules].reverse.sort.print;
+
+module("cluster");
+loaded;
+[~monet_mod_nme].reverse.sort.print;
+
+module("Meta");
+loaded;
+[~monet_mod_nme].reverse.sort.print;
+
+fix:=monet_mod_nme.reverse.copy;
+[fix~].print;
+
+mprof:=view_modules.select("mprof").reverse;
+others:=kdiff(view_modules.reverse,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
+[others~].print;
+
+others@batloop{
+	printf("\n\tloading %s\n\n",$h);
+	module($h);
+	loaded;
+	off:=kdiff(monet_mod_nme.reverse,fix);
+	[off~].print;
+	off@batloop{
+		printf("\n\tdropping %s\n\n",$h);
+	}
+	drop($h);
+	loaded;
+}
+quit;

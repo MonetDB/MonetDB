@@ -1,0 +1,61 @@
+stdout of test 'usage` in directory 'src/tools` itself:
+
+#> Mtest:	other usage
+#> Mtest:	Mtimeout -timeout 210 ./usage usage
+#> Mlog:	Mserver -?
+# Monet Database Server V4.0
+# Copyright (c) 1993-1998, CWI & SION. All rights reserved.
+# compiled for IRIX646.2/32bit on Tue Jul 20 00:58:19 MET DST 1999.
+usage: Mserver { option }
+option:	-db <db-name>		database to open
+	-prelude <input>	execute MIL file first
+	<script>		execute MIL file and exit
+	-single			singlethreaded (no Mclient+fork)
+	-noclients			no Mclient listener
+	-background		no console (only Mclient)
+	-home <dir>		use alternative MONETHOME
+	-port <nr>		TCP/IP listen port for Mclient
+	-version <ver>		create BATs in old formats
+	-id <num>		generate oid@id (default=0 <= id <= 3)
+	-p <prompt-str>		change the MIL prompt
+	-yaccsilent		no yacc-specific error msgs
+	-modulesilent		no module lines output
+	-mmap <size>		alloc blocks > sizeKB from VM
+	-d <debugmask>	    1 = thread-specific debug output
+			    2 = property enforcing on new BATs
+			    4 = memory allocation
+			    8 = property checking on all values
+			   16 = major IO activity
+			   32 = BAT handling
+			   64 = MIL parser debugging
+			  128 = Thread management
+			  256 = Event management 
+			  512 = Transaction management
+			 1024 = Triggers
+			 2048 = Dynamic loading
+#> Mlog:	Mclient -help
+#> Mlog:	Mcreatedb -?
+usage:
+Mdestroydb [-home <file>] -db <name> {-user <usr>}
+	the special file 'homes' is expected in $MONETHOME
+Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>] [-port <port>]
+	the default users are 'adm' and 'guest'
+	the default database directory is $MONETHOME/dbfarm/
+	the default tcp port is 50050
+#> Mlog:	Mdestroydb -?
+usage:
+Mdestroydb [-home <file>] -db <name> {-user <usr>}
+	the special file 'homes' is expected in $MONETHOME
+Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>] [-port <port>]
+	the default users are 'adm' and 'guest'
+	the default database directory is $MONETHOME/dbfarm/
+	the default tcp port is 50050
+#> Mlog:	Mload -?
+Mload: <ascii_file> { -db <db> | -id <stamp> | -home <home> | -version <ver>}
+	[-oid <seqbase>] [-s <size>] [-f <specfile>] {-mod <module>}
+	{ [[~|*|+]<batname>],("<sep>"|<len>),<type>[::<fcn>][,<nil>] } }
+#> Mlog:	Mdump -?
+usage: Mdump [-port <portid>] [-nonpersistent] <backupdirectory>
+#> Mlog:	Mrecover -?
+usage: Mrecover [-home <home>] -db <dbname> 
+database name missing

@@ -1,0 +1,939 @@
+@f rtree
+@A C.W. Quak
+@h
+#ifndef __RTREE_H__
+#define __RTREE_H__
+
+extern void RTREEbboxupdate_box(Heap* tree,BAT* bat,int index);
+extern void RTREEbboxupdate_point(Heap* tree,BAT* bat,int index);
+extern void RTREEbboxupdate_segment(Heap* tree,BAT* bat,int index);
+extern void RTREEbboxupdate_polyline(Heap* tree,BAT* bat,int index);
+extern void RTREEbboxupdate_polygon(Heap* tree,BAT* bat,int index);
+
+extern BUN RTREEwalk_box(BAT* bat,const box& b,void** environment);
+extern BUN RTREEwalk_point(BAT* bat,const box& b,void** environment);
+extern BUN RTREEwalk_polyline(BAT* bat,const box& b,void** environment);
+extern BUN RTREEwalk_polygon(BAT* bat,const box& b,void** environment);
+
+extern box RTREE_bbox_box(BAT* objects);
+extern box RTREE_bbox_point(BAT* objects);
+extern box RTREE_bbox_segment(BAT* objects);
+extern box RTREE_bbox_polyline(BAT* objects);
+extern box RTREE_bbox_polygon(BAT* objects);
+
+static const int MAXKIDS = 4;
+
+class RTREEnode
+{
+public:
+   box  bbox;
+   short isleaf_v;
+   short number;
+   int entries[ MAXKIDS ];
+
+   int isleaf() {return isleaf_v;}
+   int maxkids() {return MAXKIDS;}
+   void append(int number);
+   void del(int entry);
+   int& operator[](int index);
+};
+
+enum {LEFTBOX,RIGHTBOX};
+
+inline void RTREEnode::del(int entry)
+{
+#ifdef DEBUG
+   if (entry >= MAXKIDS -1)
+      GDKerror("deleting nonexisting child in del\n");
+#endif
+   --number;
+   entries[entry] = entries[number];
+   entries[number] = 0;
+}
+
+inline void RTREEnode::append(int getal)
+{
+   entries[number++] = getal;
+}
+
+static inline RTREEnode* RTREEindex(const Heap* const tree,int index)
+{
+   return(HEAPindex(tree,index,RTREEnode));
+}
+
+static inline box* RTREEbbox(Heap* tree,int nodeindex)
+{
+   RTREEnode* n = RTREEindex(tree,nodeindex);
+   return(&(n->bbox));
+}
+
+static inline int RTREErootindex(Heap* tree)
+{
+   int rootptrindex = HEAP_private(tree);
+   return(*HEAPindex(tree,rootptrindex,int));
+}
+
+static inline void RTREEsetrootindex(Heap* tree,int index)
+{
+   int rootptrindex = HEAP_private(tree);
+   *HEAPindex(tree,rootptrindex,int) = index;
+}
+
+//
+// Create an empty tree.
+//
+static inline void RTREEcreate(Heap* tree,int startsize=100)
+{
+   HEAP_initialize(tree,startsize,sizeof(int),8);
+   RTREEsetrootindex(tree,0);
+}
+
+//
+// Create a new leafnode on an rtree.
+//
+static inline int RTREEmakeleaf(Heap* tree)
+{
+   int newindex = HEAP_malloc(tree,sizeof(RTREEnode));
+   RTREEnode* n = RTREEindex(tree,newindex);
+   n->number = 0;
+   n->isleaf_v = 1;
+   return(newindex);
+}
+
+static inline int RTREEmakenode(Heap* tree)
+{
+   int newindex = HEAP_malloc(tree,sizeof(RTREEnode));
+   RTREEnode* n = RTREEindex(tree,newindex);
+   n->number = 0;
+   n->isleaf_v = 0;
+   return(newindex);
+}
+
+#endif /* __RTREE_H__ */
+@+ Generic code for rtree accelerator.
+@C
+#include "gisbulk.h"
+#include "rtree.h"
+#include "split.h"
+#include "gisbulk.proto.h"
+
+int& RTREEnode::operator[](int index)
+{
+#ifdef DEBUG
+   if ((index < 0) || (index >= MAXKIDS))
+      GDKerror("index out of bounds in tree operation\n");
+#endif
+   return(entries[index]);
+}
+
+void RTREEdestroy(Heap* heap,BAT*)
+{
+   HEAP_destroy(heap);
+}
+
+void RTREEsave(
+   Heap*,
+   BAT*)
+{
+}
+
+static void TREE_local_print(
+   BAT* bat,
+   int index,
+   Heap* tree)
+{
+   if (index == 0)
+      return;
+
+   RTREEnode* self = RTREEindex(tree,index);
+
+   if (self->isleaf())
+   {
+      printf("leaf %d has %d kids:",index,self->number);
+      for(int i=0;i<self->number;++i)
+	 printf(" %d (%d)",self->entries[i],(int)BUNptr(bat,self->entries[i]));
+      printf("\n");
+   }
+   else
+   {
+      printf("node %d has kids:",index);
+      for(int i=0;i<self->number;++i)
+	 printf(" %d",self->entries[i]);
+      printf("\n");
+      for(int j=0;j<self->number;++j)
+         TREE_local_print(bat,self->entries[j],tree);
+   }
+}
+
+
+static const int TREE_MD = 20;
+
+@:basicop(point)@
+@:basicop(segment)@
+@:basicop(box)@
+@:basicop(polyline)@
+@:basicop(polygon)@
+
+@= basicop
+
+int RTREEprint_@1(BAT* bat)
+{
+   Heap* tree = &bat->haccelerator;
+   int rootindex = RTREErootindex(tree);
+
+   printf("the root of  the tree has index %d\n",rootindex);
+
+   TREE_local_print(bat,rootindex,tree);
+
+   return(GDK_SUCCEED);
+}
+
+//
+// This code sucks: The problem is, we do not know whether the
+// polylines are in the head or the tail of the bat.
+//
+void RTREEbboxupdate_@1(Heap* tree,BAT* bat,int index)
+{
+   RTREEnode* n = RTREEindex(tree,index);
+
+   if (n->isleaf())
+   {
+      GDKwarning("Updating bbox of leaf at pos %d out of %d\n",index,n->number);
+      GDKwarning("The first polyline is at %d out of %d\n",n->entries[0],BATcount((BAT *)bat));
+
+      //
+      // We do not know whether the item is in the head or the tail.
+      //
+      n->bbox = ((@1 *)BUNhloc(bat,BUNptr(bat,n->entries[0])))->bbox();
+      GDKwarning("Doing bbox 0 of %d\n",n->number);
+      for(int i=1;i<n->number;++i)
+      {
+	 GDKwarning("Doing bbox %d\n",i);
+	 n->bbox.bbox_include(*(@1 *)BUNhloc(bat,BUNptr(bat,n->entries[i])));
+      }
+   }
+   else
+   {
+      n->bbox = *RTREEbbox(tree,n->entries[0]);
+      for(int i=1;i<n->number;++i)
+      {
+	 n->bbox.bbox_include(*RTREEbbox(tree,n->entries[i]));
+      }
+   }
+}
+
+
+//
+// Interface for:
+//   COMMAND rRTREEbbox(bat[any,box]) : box
+//
+int RTREEbbox_@1(
+   box* rval,
+   BAT* bat)
+{
+   *rval = RTREE_bbox_@1(bat);
+   return(GDK_SUCCEED);
+}
+
+box RTREE_bbox_@1(BAT* objects)
+{
+   if (objects->tacctype != ACC_rtree_@1)
+   {
+      GDKwarning("No bbox because no rtree\n");
+      return(box(COORD_MAX,COORD_MIN,COORD_MIN,COORD_MAX));
+   }
+
+   Heap* heap = &objects->taccelerator;
+   int rootindex = RTREErootindex(heap);
+   if (rootindex == 0)
+   {
+      GDKwarning("cannot calculate bbox of empty rtree\n");
+      return(box(COORD_MAX,COORD_MIN,COORD_MIN,COORD_MAX));
+   }
+   else
+   {
+      RTREEnode* root = RTREEindex(heap,rootindex);
+      return(root->bbox);
+   }
+}
+
+
+//
+// Returns the nubmer of boxes in this bat.
+//
+
+static int TREE_local_ok_@1(
+   const BAT* const bat,
+   int index,
+   box& thisbbox,
+   const Heap* const tree,
+   int depth,
+   int leaves[],
+   int nodes[],
+   int& maxdepth,
+   int& nleaves,
+   int& nnodes,
+   int& nodekids)
+{
+   if (index == 0)
+      return 0;
+
+   RTREEnode* self = RTREEindex(tree,index);
+   thisbbox = self->bbox;
+
+   if (!self->bbox.OK())
+      GDKerror("RTREEnode %d has an inconsistent bbox\n",index);
+
+   if (self->number == 0)
+      GDKwarning("tree has node with 0 entries\n");
+
+   if (depth > maxdepth)
+      maxdepth = depth;
+
+   if (self->isleaf())
+   {
+      ++nleaves;
+      if (depth < TREE_MD)
+	 ++leaves[depth];
+      for(int i=0;i<self->number;++i)
+      {
+	 if (!thisbbox.surrounds(*(@1 *)BUNhloc(bat,BUNptr(bat,self->entries[i]))))
+	    GDKwarning("Leaf %d does not contains kid %d\n",
+	       index,self->entries[i]);
+      }
+
+      return(self->number);
+   }
+   else
+   {
+      ++nnodes;
+      if (depth < TREE_MD)
+	 ++nodes[depth];
+      nodekids += self->number;
+      box bb;
+      int rval=0;
+      for(int i=0;i<self->number;++i)
+      {
+         rval += TREE_local_ok_@1(bat,self->entries[i],bb,tree,depth+1,
+	    leaves,nodes,maxdepth,nleaves,nnodes,nodekids);
+	 if (!thisbbox.surrounds(bb))
+	    GDKwarning("RTREEnode %d is not fully containd in its child %d\n",
+	       self->entries[i],index);
+      }
+      return(rval);
+   }
+}
+
+//
+// Interface for:
+//   COMMAND treecheck(bat(box,any)) :bit;
+//
+int RTREEok_@1(
+   bit *res,
+   BAT* bat)
+{
+   if (bat->hacctype != ACC_rtree_@1)
+   {
+      GDKerror("There is no index on bat so TREEok is wrong\n");
+      *res = false;
+      return(GDK_FAIL);
+   }
+
+   int rval = GDK_SUCCEED;
+   int nleaves = 0;
+   int nnodes = 0;
+   int nodekids = 0;
+   int maxdepth = 0;
+   Heap* tree = &bat->haccelerator;
+   int rootindex = RTREErootindex(tree);
+   int nitems = 0;
+
+   int leaves[TREE_MD];
+   int nodes[TREE_MD];
+   for(int q=0;q<TREE_MD;++q)
+   {
+      leaves[q] = 0;
+      nodes[q] = 0;
+   }
+
+   if (rootindex != 0)
+   {
+      box dummy;
+      nitems = TREE_local_ok_@1(bat,rootindex,dummy,tree,0,
+	 leaves,nodes,maxdepth,nleaves,nnodes,nodekids);
+   }
+
+   if (nitems != BATcount((BAT *)bat))
+   {
+      RTREEprint_@1(bat);
+      GDKfatal("#tree = %d while #rectanges = %d\n",nitems,BATcount((BAT *)bat));
+      rval = GDK_FAIL;
+   }
+#ifdef DEBUGX
+   GDKwarning("The rtree is %d levels deep\n",maxdepth);
+   GDKwarning("%d nodes which are %f full\n",nnodes,
+      (double)nodekids/(nnodes*MAXKIDS));
+   GDKwarning("%d leaves which are %f full\n",nleaves,
+      (double)nitems/(nleaves*MAXKIDS));
+
+   if (maxdepth + 1 > TREE_MD)
+      maxdepth = TREE_MD - 1;
+   for(int r=0;r<=maxdepth;++r)
+      GDKwarning("On level %2d there are %5d nodes and %5d leaves\n",
+         r,nodes[r],leaves[r]);
+#endif
+
+   if (rval == GDK_FAIL)
+      *res = false;
+   else
+      *res = true;
+   return(rval);
+}
+@
+@+ The tree implementation.
+@C
+@- Small basic routines on tree.
+@C
+@C
+@:insertop(segment)@
+@:insertop(point)@
+@:insertop(box)@
+@:insertop(polyline)@
+@:insertop(polygon)@
+
+@= insertop
+//
+// Insert 'object' with index 'objectindex' in node 'selfindex' of  tree 'heap'
+// where 'b' is the bounding box of 'object'.
+//
+static int RTREE_local_insert_@1(
+   BAT*  bat,
+   Heap* heap,
+   int   selfindex,	// Index of current node.
+   int   objectindex,	// Index of obj to be inserted.
+   const @1& object,	// Geometry of object to be inserted.
+   const box& b)	// Bounding box of object to be inserted.
+{
+   RTREEnode* self = RTREEindex(heap,selfindex);
+
+   if (self->isleaf())
+   {
+      if (self->number < self->maxkids()) // There is room left in the leaf
+      {
+	 //
+	 // We insert it.
+	 //
+	 self->entries[self->number++] = objectindex;
+
+	 if (self->number == 1)
+	    self->bbox = b;
+	 else
+	    self->bbox.bbox_include(b);
+
+	 // GDKwarning("Inserting in leaf %d at pos %d\n", selfindex,self->number -1);
+	 return(-1);
+      }
+      else // The Leaf is full
+      {
+	 //
+	 // We split the leaf.
+	 //
+	 int i;
+	 box  realboxes[MAXKIDS + 1];
+	 box* boxes[MAXKIDS + 1];
+	 int  groups[MAXKIDS + 1];
+	 int  boxindices[MAXKIDS + 1];
+
+	 int newindex = RTREEmakeleaf(heap);
+	 // GDKwarning("creating leaf at pos %d for split\n",newindex);
+	 RTREEnode* newptr = RTREEindex(heap,newindex);
+	 self = RTREEindex(heap,selfindex);
+
+	 newptr->number = 0;
+	 self->number = 0;
+
+	 boxindices[MAXKIDS] = objectindex;
+	 realboxes[MAXKIDS] = b;
+	 boxes[MAXKIDS] = &realboxes[MAXKIDS];
+	 for(i=0;i<MAXKIDS;++i)
+	 {
+	    boxindices[i] = self->entries[i];
+	    boxes[i] =  &realboxes[i];
+	    realboxes[i] = ((@1 *)BUNhead(bat,BUNptr(bat,self->entries[i])))->bbox();
+	 }
+
+	 quadratic_split(MAXKIDS+1,boxes,groups,newptr->bbox,self->bbox);
+
+	 for(i=0;i<MAXKIDS+1;++i)
+	 {
+	    if (groups[i] == 0)
+	       newptr->append(boxindices[i]);
+	    else
+	      self->append(boxindices[i]); 
+	 }
+	 return(newindex);
+      }
+   }
+   else // this is node.
+   {
+      //
+      // Select the most appropriate child to insert the box into.
+      //
+      int favourite_child=0;
+      {
+	 double bestkidarea = COORD_MAX;
+
+	 for(int i=0;i<self->number;++i)
+	 {
+	    box* testbox = RTREEbbox(heap,self->entries[i]);
+	    box dummy(b);
+	    dummy.bbox_include(*testbox);
+
+	    if (dummy.area() - testbox->area()  < bestkidarea)
+	    {
+	       bestkidarea = dummy.area()  - testbox->area();
+	       favourite_child = i;
+	    }
+
+	 }
+      }
+
+      //
+      // Insert the box into the selected child.
+      //
+      int rval =
+         RTREE_local_insert_@1(
+	    bat,heap,self->entries[favourite_child],objectindex,object,b);
+      self = RTREEindex(heap,selfindex);
+
+      if (rval == -1) // If the child is not split.
+      {
+	 self->bbox.bbox_include(b);
+	 return(-1);
+      }
+      else
+      {
+	 //
+	 // We insert the new child in this node.
+	 //
+	 if (self->number < self->maxkids()) // there is room left
+	 {
+	    //
+	    // We insert it.
+	    //
+	    self->append(rval);
+	    self->bbox.bbox_include(b);
+	    return(-1);
+	 }
+	 else // no room left.
+	 {
+	    //
+	    // We split the node.
+	    //
+	    int i;
+	    box realboxes[MAXKIDS + 1];
+	    box* boxes[MAXKIDS + 1];
+	    int  groups[MAXKIDS + 1];
+	    int  nodes[MAXKIDS + 1];
+
+
+	    int newnodeindex = RTREEmakenode(heap);
+	    RTREEnode* newnodeptr = RTREEindex(heap,newnodeindex);
+	    self = RTREEindex(heap,selfindex);
+
+	    self->number = 0;
+
+	    nodes[MAXKIDS] = rval;
+	    realboxes[MAXKIDS] = HEAPindex(heap,rval,RTREEnode)->bbox;
+	    boxes[MAXKIDS] = &realboxes[MAXKIDS];
+	    for(i=0;i<MAXKIDS;++i)
+	    {
+	       RTREEnode* kidi = HEAPindex(heap,self->entries[i],RTREEnode);
+	       realboxes[i] = kidi->bbox;
+	       boxes[i] = &realboxes[i];
+	       nodes[i] = self->entries[i];
+	    }
+
+	    quadratic_split(MAXKIDS+1,boxes,groups,newnodeptr->bbox,self->bbox);
+
+	    for(i=0;i<MAXKIDS+1;++i)
+	    {
+	       if (groups[i] == 0)
+		  newnodeptr->append(nodes[i]);
+	       else
+		  self->append(nodes[i]);
+	    }
+	    return(newnodeindex);
+	 }
+      }
+   }
+}
+
+void RTREEinsert_@1(
+   Heap* heap,
+   int index,
+   BAT* bat,
+   @1* object)
+{
+   //
+   // Put  the bounding box of the object to be inserted in 'bb'.
+   //
+   box bb(object->bbox());
+
+   //
+   // Find the root of the tree.
+   //
+   int rootindex = RTREErootindex(heap);
+
+   //
+   // If there is no tree, create an empty tree.
+   //
+   if (rootindex == 0)
+   {
+      rootindex = RTREEmakeleaf(heap);
+      RTREEsetrootindex(heap,rootindex);
+   }
+
+   //
+   // Insert object into the tree.
+   //
+   int rval = RTREE_local_insert_@1(bat,heap,rootindex,index,*object,bb);
+
+   //
+   // Split the rootnode if necessary.
+   //
+   if (rval != -1)
+   {
+      int newrootindex = RTREEmakenode(heap);
+      RTREEnode* newrootptr = RTREEindex(heap,newrootindex);
+
+      newrootptr->number = 2;
+
+      newrootptr->entries[0] = rootindex;
+      newrootptr->entries[1] = rval;
+
+      newrootptr->bbox = *RTREEbbox(heap,rootindex);
+      newrootptr->bbox.bbox_include(*RTREEbbox(heap,rval));
+
+      RTREEsetrootindex(heap,newrootindex);
+   }
+}
+@
+
+@- Implementation of delete on tree.
+@C
+
+@:deleteop(segment)@
+@:deleteop(point)@
+@:deleteop(box)@
+@:deleteop(polyline)@
+@:deleteop(polygon)@
+
+@= deleteop
+//
+// Implementation of delete on tree.
+//
+// Returns -1 if node is not deleted, otherwise the new index is returned.
+//
+static int RTREE_local_delete_@1(
+   BAT* bat,
+   Heap* heap,
+   int selfindex,
+   int boxindex,
+   const box& b)
+{
+   RTREEnode* self = RTREEindex(heap,selfindex);
+
+   //GDKwarning("Deleting node at position %d\n",selfindex);
+
+   if (!overlap(self->bbox,b))
+      return(-1);
+
+   if (self->isleaf())
+   {
+      //GDKwarning("It is a leaf\n",boxindex);
+      for (int i=0;i<self->number;++i)
+      {
+	 if ((*self)[i] == boxindex)
+	 {
+	    //GDKwarning("THe item is in this leaf at pos %d out of %d\n",i,self->number);
+	    self->del(i);
+
+	    if (self->number == 0)
+	    {
+	       //GDKwarning("The leaf is empty, we delete it\n");
+	       HEAP_free(heap,selfindex);
+	       return(0);
+	    }
+	    else
+	    {
+	       //GDKwarning("The leaf is not empty yet\n",i);
+	       // if (marginoverlap(b,self->bbox))
+	       //  RTREEbboxupdate_@1(heap,bat,selfindex);
+	       return(selfindex);
+	    }
+	 }
+      }
+      return(-1);
+   }
+   else
+   {
+      //GDKwarning("It is an internal node\n",boxindex);
+      for(int i=0;i<self->number;++i)
+      {
+	 int rval = RTREE_local_delete_@1(bat,heap,self->entries[i],boxindex,b);
+	 self = RTREEindex(heap,selfindex);
+
+	 if (rval == -1)
+	 {
+	    continue;
+	 }
+	 else if (rval == self->entries[i]) // deleted ready
+	 {
+	    //GDKwarning("Item was in this child\n",boxindex);
+	    if (marginoverlap(b,self->bbox))
+	       RTREEbboxupdate_@1(heap,bat,selfindex);
+	    return(selfindex);
+	 }
+	 else if (rval == 0) // deleted kid destroyed
+	 {
+	    //GDKwarning("The entry is deleted and we have an empty child at %d\n",boxindex);
+	    self->del(i);
+
+	    if (self->number == 0)
+	    {
+	       HEAP_free(heap,selfindex);
+	       return(0);
+	    }
+	    else if (self->number == 1)
+	    {
+	       rval = self->entries[0];
+	       HEAP_free(heap,selfindex);
+	       return(rval);
+	    }
+
+	    return(selfindex);
+	 }
+	 else // deleted new kid
+	 {
+	    //GDKwarning("The entry is deleted and we have a new kid %d\n",boxindex);
+	    self->entries[i] = rval;
+	    if (marginoverlap(b,self->bbox))
+	       RTREEbboxupdate_@1(heap,bat,selfindex);
+	    return(selfindex);
+	 }
+      }
+   }
+   return(-1);
+}
+
+//
+// Delete a given element from tree
+//
+void RTREEdelete_@1(
+   Heap* heap,	// In this heap the tree is stored.
+   int index,   // Index of object in bat.
+   BAT* bat,	// Bat in which objects are stored.
+   @1* object)	// Object to be deleted.
+{
+   box bb(object->bbox());
+
+   //GDKwarning("Deleint element with index %d from rtree\n",index);
+
+   int rootindex = RTREErootindex(heap);
+
+   //
+   // Delete box from the tree.
+   //
+   int rval = RTREE_local_delete_@1(bat,heap,rootindex,index,bb);
+
+   if (rval == -1)
+   {
+      RTREEprint_@1(bat);
+      GDKerror("RTREE corrupt, atom with index %d in BAT but not in tree\n",index);
+   }
+   else if (rval != rootindex)
+   {
+      RTREEsetrootindex(heap,rval);
+   }
+}
+@
+
+
+//
+//========================================================================
+//
+@+ Interface routines for tree walk.
+@C
+//
+// The following code implements a sort of iterator on an rtree. It gives you
+// the possibility to iterate over all boxes overlapping with a given box. 
+// 
+//
+
+const int MAXDEPTH = 40;
+
+@:walkop(point)@
+@:walkop(box)@
+
+@= walkop
+
+class tree_walk_@1
+{
+   box selbox;
+   BAT* rectlist;
+   Heap* heap;
+   int stackptr;
+   int stack_node[MAXDEPTH];
+   int stack_index[MAXDEPTH];
+
+public:
+   int number;
+   tree_walk_@1(BAT* rects,const box& b);
+   BUN next();
+};
+
+tree_walk_@1::tree_walk_@1(BAT* rects,const box& b)
+{
+   rectlist = rects;
+   heap = &(rectlist->taccelerator);
+   selbox = b;
+
+   stackptr=0;
+   stack_node[stackptr]=*HEAPindex(heap,HEAP_private(heap),int);
+   stack_index[stackptr]=0;
+}
+
+BUN tree_walk_@1::next()
+{
+   while(stackptr >= 0)
+   {
+      RTREEnode* current = HEAPindex(heap,stack_node[stackptr],RTREEnode);
+
+      if (!overlap(current->bbox,selbox))
+      {
+	 --stackptr;
+      }
+      else if (current->number == stack_index[stackptr])
+      {
+	 --stackptr;
+      }
+      else
+      {
+	 if (current->isleaf())
+	 {
+	    BUN bun = (BUN)BUNptr(rectlist,current->entries[stack_index[stackptr]]);
+	    ++stack_index[stackptr];
+	    @1 *th = (@1 *)BUNtail(rectlist,bun);
+	    if (overlap(*th,selbox))
+	    {
+	       return(bun);
+	    }
+	 }
+	 else
+	 {
+	    int newnode = current->entries[stack_index[stackptr]];
+	    ++stack_index[stackptr];
+	    ++stackptr;
+	    stack_index[stackptr]=0;
+	    stack_node[stackptr]=newnode;
+	 }
+      }
+   }
+   return(NULL);
+}
+
+BUN RTREEwalk_@1(BAT* rects,const box& b,void** environment)
+{
+   //
+   // If there is no environment we are starting a new treewalk
+   // and create an environment for it.
+   //
+   if(*environment == NULL)
+   {
+      *environment = new tree_walk_@1(rects,b);
+   }
+
+   //
+   // Return the next element for this treewalk.
+   //
+   tree_walk_@1* walk = (tree_walk_@1 *)*environment;
+
+   BUN rval = walk->next();
+
+   //
+   // If there are no more elements in this treewalk
+   // we delete the environment.
+   //
+   if (rval == NULL)
+   {
+      delete walk;
+   }
+
+   return(rval);
+}
+@
+@C
+
+//
+//===============================================================
+// Code for numbering all boxes in a rtree according to the node
+// they are in. This is useful for visualizing the clustering of
+// the tree.
+//===============================================================
+//
+static void rtree_number_leaves_rec(
+   BAT* boxes,
+   Heap* tree,
+   int self_idx,
+   BAT* result,
+   int& number)
+{
+   RTREEnode* self = RTREEindex(tree,self_idx);
+
+   if (self->isleaf())
+   {
+      //
+      // This is a leaf.
+      //
+      BUNins(result,&number,&(self->bbox));
+      number++;
+   }
+   else
+   {
+      //
+      // This is a node.
+      //
+      for(int i=0;i<self->number;++i)
+         rtree_number_leaves_rec(boxes,tree,self->entries[i],result,number);
+   }
+}
+
+int rtree_number_leaves(
+   BAT** rval,
+   BAT* boxes)
+{
+   Heap* tree = &boxes->taccelerator;
+
+   if (boxes->tacctype != ACC_rtree_box)
+   {
+      int dummy;
+      RTREEbuild_box(&boxes->taccelerator,&dummy,BATmirror(boxes));
+   }
+   if (tree->base == NULL)
+   {
+      GDKerror("This BAT has no index");
+      return(GDK_FAIL);
+   }
+
+   BAT* result = BATnew(TYPE_int,BATttype(boxes),BATcount(boxes) / MAXKIDS);
+
+   int number = 0;
+
+
+   rtree_number_leaves_rec(boxes,tree,RTREErootindex(tree),result,number);
+
+   *rval = result;
+   return(GDK_SUCCEED);
+
+}

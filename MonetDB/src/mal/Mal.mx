@@ -1,0 +1,53 @@
+@f Mal
+@a M.L. Kersten
+@v 1.0
+@* Standalone MIL parser
+
+This small program is primarilly meant to perform a
+syntax check on MIL programs. 
+Input is obtained from a file argument.
+
+The underlying parser
+is to be included in the Mclient front-end or
+the applications at a later stage.
+
+@c
+#include <stdio.h>
+#include <gdk.h>
+
+extern int yyparse();
+
+main(int argc,char ** argv)
+{
+	
+	FILE *fd;
+	int i =1;
+	int len, totlen;
+	char *ptr,*buf;
+
+	if( argc ==1){
+		printf("usage:%s <file.mal>\n",argv[0]);
+		exit(-1);
+	}
+	if( argv[1][0]=='-') {debugParser(1); i++;}
+	fd = fopen(argv[i],"rb");
+	if (fd == 0) {
+		printf("M2M: could not open file: %s\n", argv[1]);
+		exit (-1);
+	}
+	i = 0; len = totlen = 8192;
+	ptr = buf = (char *) GDKmalloc(totlen);
+
+	while((i+=fread(ptr, 1, len , fd)) == totlen) {
+		len = totlen; totlen *= 2;
+		ptr = GDKmalloc(totlen);
+		memcpy(ptr, buf, len);
+		GDKfree(buf);
+		buf = ptr; ptr += len;
+	}
+	fclose(fd);
+	printf("chars %d\n",i);
+	buf[i] = 0;
+	mal_push(buf);	/* no need to copy here */
+	printf("yyparse:%d",yyparse());
+}

@@ -1,0 +1,176 @@
+@f Set
+@t The Set class
+@A C.W. Quak
+@* The Set class
+This class defines an (unbalanced) binary tree. Untested and hence undocumented.
+@h
+#ifndef __SET__H__
+#define __SET__H__
+
+template<class ELEMENT>
+class SetNode
+{
+   SetNode* left;
+   SetNode* right;
+   ELEMENT* mid;
+public:
+   SetNode(ELEMENT& e)
+   {
+      mid = &e;
+      left = 0;
+      right = 0;
+   }
+
+   ~SetNode()
+   {
+      if (left != 0)
+	 delete left;
+      if (right != 0)
+	 delete right;
+      if (mid != 0)
+         delete mid ;
+   }
+
+   ELEMENT* find(const ELEMENT& e)
+   {
+      if (e == *mid)
+	 return(mid);
+      if (e < *mid)
+      {
+	 if (left == 0)
+	    return(0);
+	 else
+	    return(left->find(e));
+      }
+      else
+      {
+	 if (right == 0)
+	    return(0);
+	 else
+	    return(right->find(e));
+      }
+   }
+
+   void insert(ELEMENT& e)
+   {
+      if (e == *mid)
+	 GDKerror("we already have element e\n");
+      if (e < *mid)
+      {
+	 if (left == 0)
+	 {
+	    left = new SetNode(e);
+	 }
+	 else
+	 {
+	    left->insert(e);
+	 }
+      }
+      else
+      {
+	 if (right == 0)
+	 {
+	    right = new SetNode(e);
+	 }
+	 else
+	 {
+	    right->insert(e);
+	 }
+      }
+   }
+
+   SetNode* NextLeft()
+   {
+      if (left == 0)
+	 return this;
+      else
+	 return left->Nextleft();
+   }
+
+   SetNode* Delete(ELEMENT& e)
+   {
+      if (e == *mid)
+      {
+	 if (left == 0)
+	 {
+	    if (right == 0)
+            {
+	       delete this;
+	       return 0;
+	    }
+	    else
+	    {
+	       SetNode* rval = right;
+	       delete this;
+	       return rval;
+	    }
+	 }
+	 else
+	 {
+	    SetNode* nl = NextLeft(right);
+	    mid = nl->mid;
+	    nl->Delete(*mid);
+	    return(this);
+	 }
+      }
+      else if (e < *mid)
+      {
+	 left = Delete(e);
+	 return(this);
+      }
+      else
+      {
+	 right = Delete(e);
+	 return(this);
+      }
+   }
+};
+
+
+template<class ELEMENT>
+class Set
+{
+   SetNode<ELEMENT>* root;
+public:
+   Set()
+   {
+      root = 0;
+   };
+
+   ~Set()
+   {
+      if (root != 0)
+	 delete(root);
+   };
+
+   void insert(ELEMENT& e)
+   {
+      if(root == 0)
+      {
+	 root = new SetNode<ELEMENT>(e);
+      }
+      else
+      {
+	 root->insert(e);
+      }
+   };
+
+   void Delete(ELEMENT& e)
+   {
+      root = root->Delete(e);
+   };
+
+   ELEMENT* find(const ELEMENT& e)
+   {
+      if (root == 0)
+      {
+         return(0);
+      }
+      else
+      {
+	 ELEMENT* rval = root->find(e);
+         return(rval);
+      }
+   };
+};
+#endif

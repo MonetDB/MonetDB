@@ -1,0 +1,27 @@
+@f Polygon
+@a C.W. Quak
+@h
+#ifndef __OPENGIS_POLYGON_H__
+#define __OPENGIS_POLYGON_H__
+
+extern class MultiLineString* Boundary(const Polygon& p);
+
+#endif /* __OPENGIS_POLYGON_H__ */
+@C
+#include "geometry.h"
+#include "opengis.h"
+
+MultiLineString* Boundary(const Polygon& p)
+{
+   Array<LineString*> bnd;
+
+   bnd.append(p.boundary().boundary());
+   for(int i=0;i<p.nholes();++i)
+      bnd.append(p.hole(i).boundary());
+
+   MultiLineString* rval = MultiLineString::create(bnd);
+   for(int j=0;j<bnd.nitems();++j)
+      delete(bnd[j]);
+
+   return(rval);
+}

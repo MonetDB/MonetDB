@@ -1,0 +1,203 @@
+stdout of test 'test_00` in directory 'tests/suite_02` itself:
+
+#> Mtest:	milS test_00 milS -prelude test_00.prelude
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_02 -single -prelude test_00.prelude test_00.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+#script:test_00.milS
+#prelude:test_00.prelude
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(10000000));
+module("unix");
+# initialize the database
+t:= new(int,int);
+t.rename("k10_unique1");
+t.persists(true);
+t.import(sprintf("%s/test_00.k10_unique1",getenv("TSTTRGDIR")));
+t.count.print;
+[ 10000 ]
+z:= new(int,int);
+z.rename("k10_unique2");
+z.persists(true);
+z.import(sprintf("%s/test_00.k10_unique2",getenv("TSTTRGDIR")));
+z.count.print;
+[ 10000 ]
+w:= new(int,int);
+w.rename("k100_unique1");
+w.persists(true);
+w.import(sprintf("%s/test_00.k100_unique1",getenv("TSTTRGDIR")));
+w.count.print;
+[ 100000 ]
+commit;
+setoid(oid(2000000));
+# make a wisconsin-like database
+# it uses the predefined wisconsin generator
+module("wisc");
+wisc("W10k",10000);
+WISC generator active on "W10k" with 10000 tuples
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  700	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  110	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  4128768	  ]
+[ "arena",	  4177904	  ]
+[ "ordblks",	  150		  ]
+[ "smblks",	  7616		  ]
+[ "hblkhd",	  15232		  ]
+[ "hblks",	  476		  ]
+[ "usmblks",	  309984	  ]
+[ "fsmblks",	  440608	  ]
+[ "uordblks",	  2710224	  ]
+[ "fordblks",	  701856	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  6944	  ]
+[ "minflt",	  283	  ]
+[ "majflt",	  5	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  9	  ]
+[ "oublock",	  7	  ]
+[ "nvcsw",	  23	  ]
+[ "ninvcsw",	  58	  ]
+#~EndVariableOutput~#
+commit;
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  6944	  ]
+[ "minflt",	  283	  ]
+[ "majflt",	  5	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  9	  ]
+[ "oublock",	  15	  ]
+[ "nvcsw",	  30	  ]
+[ "ninvcsw",	  65	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  710	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  150	  ]
+[ "elapsystem",	  40	  ]
+#~EndVariableOutput~#
+wisc("W100k",100000);
+WISC generator active on "W100k" with 100000 tuples
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  3	  ]
+[ "user",	  2550	  ]
+[ "elapuser",	  1840	  ]
+[ "system",	  220	  ]
+[ "elapsystem",	  70	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  8536064	  ]
+[ "arena",	  12713968	  ]
+[ "ordblks",	  185		  ]
+[ "smblks",	  7616		  ]
+[ "hblkhd",	  15232		  ]
+[ "hblks",	  476		  ]
+[ "usmblks",	  313760	  ]
+[ "fsmblks",	  436832	  ]
+[ "uordblks",	  10180096	  ]
+[ "fordblks",	  1768048	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  14272	  ]
+[ "minflt",	  283	  ]
+[ "majflt",	  5	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  9	  ]
+[ "oublock",	  15	  ]
+[ "nvcsw",	  30	  ]
+[ "ninvcsw",	  283	  ]
+#~EndVariableOutput~#
+commit;
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  14272	  ]
+[ "minflt",	  283	  ]
+[ "majflt",	  5	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  9	  ]
+[ "oublock",	  22	  ]
+[ "nvcsw",	  31	  ]
+[ "ninvcsw",	  296	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  3	  ]
+[ "user",	  2570	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  310	  ]
+[ "elapsystem",	  90	  ]
+#~EndVariableOutput~#
+quit;

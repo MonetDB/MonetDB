@@ -1,0 +1,360 @@
+@f point3d
+@A C.W. Quak
+@* The point3d class
+@h
+#ifndef __POINT3D_H__
+#define __POINT3D_H__
+
+#include <math.h>
+
+//
+// Object Definition.
+//
+class point3d
+{
+public:
+   //
+   // Data Storage.
+   //
+   coord x;
+   coord y;
+   coord z;
+
+   //
+   // Constructors.
+   //
+   point3d();
+   point3d(coord xc,coord yc,coord zc);
+
+   //
+   // Operations Required by Monet.
+   //
+   int hash() const;
+   bool OK() const;
+   bool operator== (const point3d& p) const;
+   bool operator!= (const point3d& p) const;
+   int expectedstrlen() const;
+   int tostr(char* s,int len) const;
+   static point3d* null();
+   static point3d* create();
+   static point3d* fromstr(char *s,int* parselen,int *buflen,point3d* p);
+   point3d* copy() const;
+   void convert_net_to_host();
+   void convert_host_to_net();
+
+   //
+   // Vector operations.
+   //
+   point3d operator*(const point3d& right) const;
+   point3d operator+(const point3d& p) const;
+   point3d operator-(const point3d& p) const;
+   point3d operator/(const double f) const;
+   point3d operator*(const double f) const;
+   double length() const;
+   double squared_length() const;
+
+   //
+   // Return the angle between the vector and the z=0 plane.
+   //
+   coord angle() const;
+
+   //
+   // Non Const Operations.
+   //
+   void translate(const point3d& p);
+   void scale(const double factor);
+   void operator+=(const point3d& p);
+   void operator-=(const point3d& p);
+   void operator*=(const double factor);
+   void operator/=(const double factor);
+};
+
+//
+// Inline Implementations.
+//
+inline point3d::point3d()
+{
+#ifdef DEBUG
+   x = 0;
+   y = 0;
+   z = 0;
+#endif
+}
+
+inline point3d* point3d::create()
+{
+   return new point3d;
+}
+
+inline double point3d::squared_length() const
+{
+   return((x * x) + (y * y) + (z * z));
+}
+
+inline double point3d::length() const
+{
+   return(sqrt(squared_length()));
+}
+
+inline point3d::point3d(coord xc,coord yc,coord zc)
+{
+   x = xc;
+   y = yc;
+   z = zc;
+}
+
+inline bool point3d::operator!= (const point3d& p) const
+{
+   return((x != p.x) || (y != p.y) || (z != p.z));
+}
+
+inline bool point3d::operator== (const point3d& p) const
+{
+   return((x == p.x) && (y == p.y) && (z == p.z));
+}
+
+inline bool point3d::OK() const
+{
+   return(true);
+}
+
+#endif /* __POINT3D_H__ */
+@+ Implementation Code for POINT3D values.
+@C
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "geometry.h"
+
+void point3d::operator -=(const point3d& p)
+{
+   x -= p.x;
+   y -= p.y;
+   z -= p.z;
+}
+
+void point3d::operator +=(const point3d& p)
+{
+   x += p.x;
+   y += p.y;
+   z += p.z;
+}
+
+void point3d::translate(const point3d& p)
+{
+   x += p.x;
+   y += p.y;
+   z += p.z;
+}
+
+point3d point3d::operator*(const double factor) const
+{
+   return(point3d(x * factor,y * factor,z * factor));
+}
+
+void point3d::operator/=(const double factor)
+{
+   x = (coord)(x / factor);
+   y = (coord)(y / factor);
+   z = (coord)(z / factor);
+}
+
+void point3d::operator*=(const double factor)
+{
+   x = (coord)(x * factor);
+   y = (coord)(y * factor);
+   z = (coord)(z * factor);
+}
+
+void point3d::scale(const double factor)
+{
+   x = (coord)(x * factor);
+   y = (coord)(y * factor);
+   z = (coord)(z * factor);
+}
+
+point3d point3d::operator*(const point3d& r) const
+{
+   return(point3d(
+      y * r.z - z * r.y,
+      z * r.x - x * r.z,
+      x * r.y - y * r.x
+   ));
+}
+
+point3d point3d::operator/ (const double f) const
+{
+   point3d rval(x/f,y/f,z/f);
+   return(rval);
+}
+
+point3d point3d::operator-(const point3d& p) const
+{
+   point3d rval(x - p.x,y - p.y,z - p.z);
+   return(rval);
+}
+
+point3d point3d::operator+(const point3d& p) const
+{
+   point3d rval(x + p.x,y + p.y,z + p.z);
+   return(rval);
+}
+
+point3d* point3d::copy() const
+{
+   point3d* rval = create();
+   *rval = *this;
+   return(rval);
+}
+
+int point3d::hash() const
+{
+   union flcu
+   {
+      float fval;
+      int  lval;
+      char  cval[4];
+   } h;
+
+   h.fval = (x + y + z);
+   h.lval *= 104729;
+   h.cval[0] = 0;
+
+   return(h.lval);
+}
+
+point3d* point3d::null()
+{
+   point3d* rval = new point3d(COORD_MAX,COORD_MAX,COORD_MAX);
+   return(rval);
+}
+
+int point3d::tostr(char* s,int len) const
+{
+   int rval = 0;
+   rval += sprintf(s + rval,"(");
+   rval += put_coord(s + rval,x);
+   rval += sprintf(s + rval,",");
+   rval += put_coord(s + rval,y);
+   rval += sprintf(s + rval,",");
+   rval += put_coord(s + rval,z);
+   rval += sprintf(s + rval,")");
+
+   if (rval > len)
+      GDKwarning("Prepare for the worst\n");
+   return(rval);
+}
+
+
+int point3d::expectedstrlen() const
+{
+   return(150);
+}
+
+point3d* point3d::fromstr(char *s,int* parselen,int *buflen,point3d* p)
+{
+   if (p == NULL)
+   {
+      p = point3d::create();
+      *buflen = sizeof(point3d);
+   }
+   if (*buflen < (int)sizeof(point3d))
+   {
+      delete (void *)p;
+      p = point3d::create();
+      *buflen = sizeof(point3d);
+   }
+
+   char* snew = s;
+
+   snew = strchr(snew,'(');
+   if (snew == 0)
+   {
+      GDKwarning("missing ( in point3d\n");
+      return p;
+   }
+   ++snew;
+   p->x = get_coord(snew,&snew);
+   if (snew == 0)
+   {
+      GDKwarning("illegal first coordinate in point3d\n");
+      return p;
+   }
+   snew = strchr(snew,',');
+   if (snew == 0)
+   {
+      GDKwarning("missing , in point3d\n");
+      return p;
+   }
+   ++snew;
+   p->y = get_coord(snew,&snew);
+   if (snew == 0)
+   {
+      GDKwarning("illegal second coordinate in point3d\n");
+      return p;
+   }
+   snew = strchr(snew,',');
+   if (snew == 0)
+   {
+      GDKwarning("missing , in point3d\n");
+      return p;
+   }
+   ++snew;
+   p->z = get_coord(snew,&snew);
+   if (snew == 0)
+   {
+      GDKwarning("illegal third coordinate in point3d\n");
+      return p;
+   }
+   snew = strchr(snew,')');
+   if (snew == 0)
+   {
+      GDKwarning("missing ) in point3d\n");
+      return p;
+   }
+   ++snew;
+
+   size_t bytesread = snew-s;
+   if (bytesread > (size_t)*parselen)
+      GDKwarning("Problems\n");
+   
+   *parselen = bytesread;
+   return(p);
+}
+
+void point3d::convert_net_to_host()
+{
+   convert_endianism(x);
+   convert_endianism(y);
+   convert_endianism(z);
+}
+
+void point3d::convert_host_to_net()
+{
+   convert_endianism(x);
+   convert_endianism(y);
+   convert_endianism(z);
+}
+
+//
+// Might be done more efficiently.
+//
+coord point3d::angle() const
+{
+   //
+   // Project the point onto z=0
+   //
+   point3d znull(x,y,0.0);
+
+   double aanliggende = znull.length();
+   double schuine = length();
+
+   double cosalpha = aanliggende / schuine;
+
+   double rval = acos(cosalpha);
+
+   return((coord)rval);
+}

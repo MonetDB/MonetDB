@@ -1,0 +1,522 @@
+@f rtree_box
+@A C.W. Quak
+@* The 'rtree' accelerator for boxes.
+@+ Header Code for rtree accelerator.
+@h
+#ifndef __RTREE_BOX_H__
+#define __RTREE_BOX_H__
+
+extern void RTREEcluster(BAT* bat);
+
+extern BAT* join_inside_box_box(BAT* left,BAT* right);
+extern BAT* join_disjoint_box_box(BAT* left,BAT* right);
+extern BAT* join_overlap_box_box(BAT* left,BAT* right);
+extern BAT* join_overlap_box_point(BAT* left,BAT* right);
+
+extern BAT* select_overlap_box_point(BAT* rectlist,const point& p);
+extern BAT* select_overlap_box_box(BAT* rectlist,const box& b);
+extern BAT* select_dist_box_box(BAT* rectlist,const box& b,double* min,double* max);
+
+#endif /* __RTREE_BOX_H__ */
+@+ Code for rtree accelerator.
+@C
+#include "gis.h"
+#include "gisbulk.proto.h"
+#include "rtree.h"
+#include "rtree_box.h"
+#include "split.h"
+
+@+ The Rtree implementation.
+
+@- Rtree generation
+@C
+
+/*
+// Build an RTREE index on the head of the given bat.
+//
+// PRE: The bat must be of type (box,any).
+*/
+static int RTREEbuild_bup_rec(
+   Heap*  heap,
+   int*   INDEX,
+   box**  BOX,
+   int*   GROUP,
+   int    nitems)
+{
+   if (nitems <= MAXKIDS) // it fits in a leaf
+   {
+      int newnodeindex = RTREEmakeleaf(heap);
+      RTREEnode* newnodeptr = RTREEindex(heap,newnodeindex);
+
+      newnodeptr->number = nitems;
+      newnodeptr->bbox = *BOX[0];
+      for(int i=0;i<nitems;++i)
+      {
+	 newnodeptr->entries[i] = INDEX[i];
+	 newnodeptr->bbox.bbox_include(*BOX[i]);
+      }
+
+      return(newnodeindex);
+   }
+   else
+   {
+      int newnodeindex = RTREEmakenode(heap);
+      RTREEnode* newnodeptr = RTREEindex(heap,newnodeindex);
+
+      box bboxes[4];
+      int groupstart[5];
+      int loc = 0;
+      int group;
+
+      linear_split_4(
+	 nitems,
+	 BOX,
+	 GROUP,
+	 bboxes);
+
+      groupstart[0] = 0;
+      groupstart[4] = nitems;
+      for(group=0;group<3;++group)
+      {
+	 int j;
+
+	 while ((GROUP[loc] == group) && (loc < nitems))
+	    ++loc;
+	 for(j=loc+1;j<nitems;++j)
+	 {
+	    if (GROUP[j] == group)
+	    {
+	       int tmpind =   INDEX[j];
+	       int tmpgrp = GROUP[j];
+	       box* tmpbox = BOX[j];
+
+	       INDEX[j] = INDEX[loc];
+	       GROUP[j] = GROUP[loc];
+	       BOX[j] = BOX[loc];
+
+	       INDEX[loc] = tmpind;
+	       GROUP[loc] = tmpgrp;
+	       BOX[loc] = tmpbox;
+	       ++loc;
+	    }
+	 }
+         groupstart[group+1]=loc;
+      }
+
+      for(group=0;group<4;++group)
+      {
+	 if (groupstart[group+1] - groupstart[group] > 0)
+	 {
+	    int rval =  RTREEbuild_bup_rec(
+	       heap,
+	       &INDEX[groupstart[group]],
+	       &BOX[groupstart[group]],
+	       &GROUP[groupstart[group]],
+	       groupstart[group+1] - groupstart[group]);
+
+	    newnodeptr = RTREEindex(heap,newnodeindex);
+
+	    newnodeptr->entries[newnodeptr->number] = rval;
+	    ++(newnodeptr->number);
+	 }
+      }
+
+      newnodeptr->bbox = HEAPindex(heap,newnodeptr->entries[0],RTREEnode)->bbox;
+      for(int j=1;j<newnodeptr->number;++j)
+      {
+	 newnodeptr->bbox.bbox_include(
+	    HEAPindex(heap,newnodeptr->entries[j],RTREEnode)->bbox);
+      }
+      return(newnodeindex);
+   }
+}
+
+//
+// Build rtree index on head. Bottom up.
+//
+void RTREEbuild_box(
+   Heap* heap,
+   int*,
+   BAT* bat)
+{
+   if (BAThtype(bat) != TYPE_box)
+   {
+      GDKerror("Cannot build TREE because head not of type BOX\n");
+      return;
+   }
+   if ((MAXKIDS != 4) && (BATcount(bat) != 0))
+   {
+      GDKwarning("RTREE creation is optimised for 4 kids but has %d\n",MAXKIDS);
+   }
+
+
+   bat->hacctype = ACC_rtree_box;
+   int nitems = BATcount(bat);
+
+   if (nitems == 0)
+   {
+      RTREEcreate(heap);
+      return;
+   }
+   //
+   // Initialize
+   //
+   int* INDEX = (int *)GDKmalloc(nitems * sizeof(int));
+   box** BOX  = (box**)GDKmalloc(nitems * sizeof(box*));
+   int* GROUP  = (int *)GDKmalloc(nitems * sizeof(int));
+
+   RTREEcreate(heap);
+
+   {
+      int i=0;
+      BUN bun,dummy;
+
+      BATloop(bat,bun,dummy)
+      {
+	 BOX[i]  = (box *)BUNhead(bat, bun);
+	 INDEX[i]  = BUNindex(bat,bun);
+	 ++i;
+      }
+   }
+
+   RTREEsetrootindex(heap, RTREEbuild_bup_rec(heap,INDEX,BOX,GROUP,nitems));
+
+   GDKfree(INDEX);
+   GDKfree(BOX);
+   GDKfree(GROUP);
+}
+
+//
+//========================================================================
+//
+@+ Rtree clustering.
+@C
+static void RTREEcluster_rec(BAT* bat,int index,Heap* oldbunheap,int *bunidx)
+{
+   if (index == 0) // the rtree is empty.
+      return;
+
+   Heap* heap = &bat->haccelerator;
+   RTREEnode* self = RTREEindex(heap,index);
+   int bunsize = bat->batElmsize;
+
+   if (self->isleaf())
+   {
+      for(int i=0;i<self->number;++i)
+      {
+	 memcpy(BUNptr(bat,*bunidx),
+	        oldbunheap->base +(bunsize* self->entries[i]), bunsize);
+	 self->entries[i] = (*bunidx)++;
+      }
+   }
+   else
+   {
+      for(int i=0;i<self->number;++i)
+         RTREEcluster_rec(bat,self->entries[i],oldbunheap,bunidx);
+   }
+}
+
+void RTREEcluster(BAT* bat)
+{
+   Heap* heap = &bat->haccelerator;
+   Heap oldbunheap;
+   int bunidx;
+
+   if (bat->hacctype != ACC_rtree_box)
+      return;
+
+   HEAPcopy(&oldbunheap, bat->batBuns);
+   bunidx = BUNindex(bat, BUNfirst(bat));
+   RTREEcluster_rec(bat,*HEAPindex(heap,HEAP_private(heap),int),
+      &oldbunheap,&bunidx);
+   bat->batDirty = 1;
+   HEAPfree(&oldbunheap);
+
+   return;
+}
+@C
+@- Small basic routines on Rtree.
+@C
+//
+//========================================================================
+//
+static void RTREE_local_select_squared(
+   BAT* rectlist,
+   Heap* heap,
+   int nodeindex,
+   const box& b,
+   double* squared_min,
+   double* squared_max,
+   BAT* result)
+{
+   RTREEnode* self = RTREEindex(heap,nodeindex);
+
+   if ((squared_min != NULL) && (squared_maxdist(self->bbox,b) < *squared_min))
+      return;
+
+   if ((squared_max != NULL) && (squared_mindist(self->bbox,b) > *squared_max))
+      return;
+
+   if (self->isleaf())
+   {
+      for(int i = 0;i<self->number;++i)
+      {
+	 BUN bun = (BUN)BUNptr(rectlist,self->entries[i]);
+	 box *th = (box *)BUNtail(rectlist,bun);
+
+	 if ((squared_min != NULL) && (squared_maxdist(*th,b) < *squared_min))
+	    continue;
+
+	 if ((squared_max != NULL) && (squared_mindist(*th,b) > *squared_max))
+	    continue;
+
+	 BUNins(result,BUNhead(rectlist,bun),th);
+      }
+   }
+   else
+   {
+      for(int i = 0;i < self->number;++i)
+	 RTREE_local_select_squared(
+	    rectlist,
+	    heap,
+	    self->entries[i],
+	    b,
+	    squared_min,
+	    squared_max,
+	    result);
+   }
+}
+
+//
+// Select all rectangles which have distance between min and max.
+//
+BAT* select_dist_box_box(BAT* rectlist,const box& b,double* min,double* max)
+{
+   BAT* result = BATnew(BAThtype(rectlist),BATttype(rectlist),BATcount(rectlist)/10);
+   Heap* heap = &rectlist->taccelerator;
+
+   if (heap->base == NULL)
+   {
+      GDKerror("This BAT has no index");
+      return(NULL);
+   }
+
+   //
+   // Convert to squared distances, to prevent calling sqrt too often.
+   //
+   if (min != NULL)
+      *min *= *min;
+   if (max != NULL)
+      *max *= *max;
+
+   int rootindex = RTREErootindex(heap);
+   if (rootindex != 0)
+      RTREE_local_select_squared(rectlist,heap,rootindex,b,min,max,result);
+
+   return(result);
+}
+
+//
+//========================================================================
+//
+
+static void RTREE_local_select(
+   BAT* rectlist,
+   Heap* heap,
+   int nodeindex,
+   const box& b,
+   BAT* result)
+{
+   RTREEnode* self = RTREEindex(heap,nodeindex);
+
+   if (!overlap(self->bbox,b))
+      return;
+
+   if (self->isleaf())
+   {
+      for(int i = 0;i<self->number;++i)
+      {
+	 BUN bun = (BUN)BUNptr(rectlist,self->entries[i]);
+	 box *th = (box *)BUNtail(rectlist,bun);
+	 if (overlap(*th,b))
+	 {
+            BUNins(result,BUNhead(rectlist,bun),th);
+	 }
+      }
+   }
+   else
+   {
+      for(int i = 0;i < self->number;++i)
+	 RTREE_local_select(rectlist,heap,self->entries[i],b,result);
+   }
+}
+
+//
+// Select all rectangles from the rectlist which overlap with box b.
+//
+BAT* select_overlap_box_box(BAT* rectlist,const box& b)
+{
+   BAT* result = BATnew(BAThtype(rectlist),BATttype(rectlist),BATcount(rectlist)/10);
+   Heap* heap = &rectlist->taccelerator;
+
+   if (heap->base == NULL)
+   {
+      GDKerror("This BAT has no index");
+      return(NULL);
+   }
+
+   int rootindex = RTREErootindex(heap);
+
+   if (rootindex != 0)
+      RTREE_local_select(rectlist,heap,rootindex,b,result);
+
+   return(result);
+}
+
+//
+// Select all rectangles from the rectlist which overlap with point p.
+//
+BAT* select_overlap_box_point(BAT* rectlist,const point& p)
+{
+   box b(p.x,p.y,p.x,p.y);;
+   return(select_overlap_box_box(rectlist,b));
+}
+@C
+#ifdef XXYYZZ
+//
+// This macro generates a join operator on an rtree.
+// @1
+//   name of function.
+// @2:
+//    bool @1(const box& left,const box& right) returns true when this pair
+//    of boxes should be part of the result.
+// @3:
+//   bool @2(const box& left,const box& right) returns true when there is
+//   no chance that any subboxes of left and right will ever be part of the
+//   result.
+//
+
+static inline bool right_inside_left(const box& left,const box& right)
+{
+   return(left.surrounds(right));
+}
+
+@:joinop(disjoint,!overlap,overlap)@
+@:joinop(inside,right_inside_left,!overlap)@
+@:joinop(overlap,overlap,!overlap)@
+
+@= joinop
+void local_join_@1_box_box(
+   BAT* batleft,
+   BAT* batright,
+   Heap* heapleft,
+   Heap* heapright,
+   int nodeleft,
+   int noderight,
+   BAT* result)
+{
+   RTREEnode* leftptr = RTREEindex(heapleft,nodeleft);
+   RTREEnode* rightptr = RTREEindex(heapright,noderight);
+
+   //
+   // If bounding boxes do not overlap the join is empty
+   //
+   if (@3(leftptr->bbox,rightptr->bbox))
+      return;
+
+   //
+   // If both are leaves we are at the deepest level and must compare al pairs.
+   //
+   if ((leftptr->isleaf()) && (rightptr->isleaf()))
+   {
+      for(int i=0;i<leftptr->number;++i)
+      {
+	 box* leftbox = (box *)BUNtail(batleft,BUNptr(batleft,leftptr->entries[i]));
+
+	 for(int j=0;j<rightptr->number;++j)
+	 {
+	    box* rightbox = (box *)BUNhead(batright,BUNptr(batright,rightptr->entries[j]));
+
+	    if (@2(*leftbox,*rightbox))
+	    {
+	       BUNins(result,
+		  BUNhead(batleft,BUNptr(batleft,leftptr->entries[i])),
+		  BUNtail(batright,BUNptr(batright,rightptr->entries[j])));
+	    }
+	 }
+      }
+   }
+   else
+   {
+      /*
+      // We must decide which node we enter. If we can choose (when both node
+      // are intermediate nodes) we choose the largest node.
+      */
+      int deepen;
+      if (leftptr->isleaf())
+	 deepen = RIGHTBOX;
+      else if (rightptr->isleaf())
+	 deepen = LEFTBOX;
+      else
+      {
+	 if (leftptr->bbox.area() > rightptr->bbox.area())
+	    deepen = LEFTBOX;
+	 else
+	    deepen = RIGHTBOX;
+      }
+
+      if (deepen == LEFTBOX)
+      {
+
+	 for(int i=0;i<leftptr->number;++i)
+	 {
+	    local_join_@1_box_box(
+	       batleft,batright, heapleft,heapright,
+	       leftptr->entries[i],noderight,
+	       result);
+	 }
+      }
+      else // we go into the right node
+      {
+	 for(int j=0;j<rightptr->number;++j)
+	 {
+	    local_join_@1_box_box(
+	       batleft,batright, heapleft,heapright,
+	       nodeleft,rightptr->entries[j],
+	       result);
+	 }
+      }
+   }
+}
+
+BAT* join_@1_box_box(BAT* left,BAT* right)
+{
+   BAT* result;
+   Heap* heapleft = &(left->taccelerator);
+   Heap* heapright = &(right->haccelerator);
+   int leftrootindex = RTREErootindex(heapleft);
+   int rightrootindex = RTREErootindex(heapright);
+
+
+   /*
+   // We create a BAT for the joined pairs.
+   // res_tuples should be set to the expected number of BUNs in the result.
+   */
+   {
+      int res_tuples = 1000;
+      result = BATnew(BAThtype(left),BATttype(right),res_tuples);
+   }
+
+   if ((leftrootindex != 0) && (rightrootindex != 0))
+   {
+      local_join_@1_box_box(
+	 left, right,
+	 heapleft, heapright,
+	 leftrootindex, rightrootindex,
+	 result);
+   }
+   return(result);
+}
+@
+@C
+#endif

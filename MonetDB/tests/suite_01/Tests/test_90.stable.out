@@ -1,0 +1,45 @@
+stdout of test 'test_90` in directory 'tests/suite_01` itself:
+
+#> Mtest:	milS test_90 milS
+#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_01 -single test_90.milS
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for IRIX646.5/32bit on Fri Jan 14 19:36:03 MET 2000.
+#script:test_90.milS
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+setoid(oid(20000000));
+# This test at some point caused Monet to hang and
+# it did not present the error messages at the proper line.
+# It forgot to echo the input line.
+var x;
+#!ERROR: "var 34;"
+#!               ^
+#! can't help you here, sorry.
+#var 34;
+time.print;
+!WARNING: interpret: convert identifier 'time' to string.
+[ "time" ]
+module("alarm");
+printf("#~BeginVariableOutput~#\n"); time.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+[ 843 ]
+#~EndVariableOutput~#
+quit;

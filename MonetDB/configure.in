@@ -1,0 +1,188 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT
+AC_CONFIG_SRCDIR([src/utils/Mx/Mx.h])
+AC_CONFIG_AUX_DIR(conf)
+
+dnl ----------------------
+AM_INIT_AUTOMAKE("Monet", 4.2)
+AM_CONFIG_HEADER(config.h:conf/config.h.in)
+AC_CANONICAL_HOST
+
+HOST=[$host]
+AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
+
+dnl some dirty hacks
+thread_safe_flag_spec="-D_REENTRANT"
+[ case "$host_os" in
+  solaris*)
+    if [ "$CXX" = "CC" ]; then
+	echo "$CXX=CC"
+      LDFLAGS="$LDFLAGS -z muldefs"
+      thread_safe_flag_spec="-mt"
+    fi
+    ;;
+  irix*)
+    case "$CC" in
+      *-32|*"-32 ") libsuff="";;
+      "cc -32"|*-n32|*"-n32 ") libsuff=n32;;
+      "cc -64"|*-64|*"-64 ") libsuff=64;;
+      *) libsuff=n32;;
+    esac
+    LEXLIB=-ll
+    ;;
+  aix*)
+    thread_safe_flag_spec="-D_THREAD_SAFE $thread_safe_flag_spec"
+    ;;
+  cygwin*)
+    thread_safe_flag_spec="-mnocygwin $thread_safe_flag_spec"
+    ;;
+esac ]
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_GCC_TRADITIONAL
+AC_PROG_INSTALL
+AM_PROG_LEX
+AC_PROG_YACC
+AC_PROG_LIBTOOL
+AC_PROG_CC_STDC
+
+AC_PROG_LN_S
+AC_CHECK_PROG(RM,rm,rm -f)
+AC_CHECK_PROG(MV,mv,mv -f)
+AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
+
+dnl to shut up automake (.m files are used for mel not for objc)
+AC_CHECK_TOOL(OBJC,objc)
+
+AM_DEPENDENCIES(CC)
+AM_DEPENDENCIES(CXX)
+
+dnl AC_CHECK_PROG(CP,cp,cp -f)
+dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
+dnl AC_CHECK_PROG(TAGS,ctags,ctags)
+
+dnl systems checks
+AC_AIX
+
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_DIRENT
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(fcntl.h limits.h unistd.h getopt.h malloc.h)
+AC_CHECK_HEADERS(time.h sys/time.h sys/file.h)
+AC_CHECK_HEADERS(rlimit.h sys/resource.h)
+
+THREAD=""
+THREAD_LIBS=""
+AC_CHECK_HEADERS(pthread.h, [THREAD=gdk_pthread] )
+AC_CHECK_LIB(pthread, pthread_create, [ THREAD_LIBS="-lpthread" ] )
+AC_CHECK_LIB(posix4, sched_yield, THREAD_LIBS="$THREAD_LIBS -lposix4")
+AC_CHECK_HEADERS(thread.h)
+AC_SUBST(THREAD)
+AC_SUBST(THREAD_LIBS)
+
+dnl todo check if -ltermcap is needed
+READLINE_LIBS=""
+AC_ARG_WITH(readline,
+[  --with-readline=DIR     readline library is installed in DIR], 
+	[have_readline="$withval"])
+if test "x$have_readline" != xno; then
+  if test "x$have_readline" != xauto; then
+    READLINE_LIBS="-L$withval/lib"
+  fi
+
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $READLINE_LIBS"
+  AC_CHECK_LIB(readline$libsuff, readline, 
+	[ READLINE_LIBS="$READLINE_LIBS -lreadline$libsuff -ltermcap" 
+          AC_DEFINE(HAVE_LIBREADLINE) 
+	  have_readline=yes ]
+	, have_readline=no, "-ltermcap" )
+  LIBS="$save_LIBS"
+
+  if test "x$have_readline" != xyes; then
+    READLINE_LIBS=""
+  fi
+fi
+AC_SUBST(READLINE_LIBS)
+
+DL_LIBS=""
+AC_CHECK_LIB(dl, dlopen, [ DL_LIBS="-ldl" ] )
+AC_SUBST(DL_LIBS)
+
+MALLOC_LIBS=""
+AC_CHECK_LIB(malloc, malloc, [ MALLOC_LIBS="-lmalloc" ] )
+AC_SUBST(MALLOC_LIBS)
+
+SOCKET_LIBS=""
+AC_CHECK_LIB(socket, socket, [ SOCKET_LIBS="-lsocket -lnsl" ], [], "-lnsl" )
+AC_SUBST(SOCKET_LIBS)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_PID_T
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_HEADER_STAT
+AC_HEADER_TIME
+AC_STRUCT_TM
+AC_STRUCT_TIMEZONE
+AC_LANG([C++])
+AC_TRY_COMPILE( [], [ bool x = true; ], [ AC_DEFINE(HAVE_BOOL) ] )
+AC_LANG([C])
+AC_C_BIGENDIAN
+AC_CHECK_SIZEOF(long,4)
+
+dnl Checks for library functions.
+AC_FUNC_ALLOCA 
+AC_FUNC_MMAP
+AC_FUNC_SETPGRP
+AC_TYPE_SIGNAL
+AC_FUNC_UTIME_NULL
+AC_FUNC_VPRINTF
+AC_FUNC_MEMCMP 
+AC_CHECK_FUNCS(mkdir rmdir getcwd getopt rlimit)
+AC_CHECK_FUNCS(strcspn strdup strstr strtod strtol strerror )
+AC_CHECK_FUNCS(gethostname gettimeofday putenv select getpgid)
+AC_CHECK_FUNCS(sys_errlist)
+AC_TRY_COMPILE( [#include <stdio.h> ], [ int x = sys_errlist[1]; ],
+[ AC_DEFINE(NEED_SYS_ERRLIST,0)], [ AC_DEFINE(NEED_SYS_ERRLIST,1)] )
+
+AC_CHECK_FUNCS(ctime_r)
+ctime_r3=yes
+AC_MSG_CHECKING(ctime_r3)
+AC_TRY_COMPILE( [#include <time.h> ], 
+[ char buf[26]; time_t t; ctime_r(&t,buf,26); ], 
+[ AC_DEFINE(HAVE_CTIME_R3) ], [ ctime_r3=no ])
+AC_MSG_RESULT($ctime_r3)
+
+
+AC_SUBST(thread_safe_flag_spec)
+AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
+
+AC_CONFIG_FILES([src/Makefile
+src/utils/Makefile src/utils/Mx/Makefile 
+src/utils/rewrite/Makefile src/utils/testing/Makefile 
+src/mil/Makefile src/mel/Makefile src/mal/Makefile
+src/gdk/Makefile src/monet/Makefile
+src/modules/Makefile 
+src/modules/plain/Makefile
+src/modules/geometry/Makefile
+src/tools/Makefile
+conf/Makefile
+doc/Makefile
+scripts/Makefile
+tests/Makefile
+Makefile
+src/utils/testing/Mlog
+src/utils/testing/Mfilter
+src/utils/testing/Mtest
+src/utils/testing/MkillUsers
+])
+AC_OUTPUT

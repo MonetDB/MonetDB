@@ -1,0 +1,28 @@
+@f prelude
+@a Niels Nes
+
+@h
+#ifndef _PRELUDE_H_
+#define _PRELUDE_H_
+
+#include "symbol.h"
+
+class Prelude : public Symbol {
+    public:
+	Prelude( int t, char *n ); 
+
+	virtual ostream &print( language *l, ostream &o ) const ;
+};
+#endif // _PRELUDE_H_
+
+@C
+#include "prelude.h"
+#include "language.h"
+#include <string.h>
+
+
+Prelude::Prelude( int t, char *n ) : Symbol(t,n) { }
+
+ostream &Prelude::print( language *l, ostream &o ) const {
+	return l->gen_prelude( o, *this );
+}

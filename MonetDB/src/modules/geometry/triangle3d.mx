@@ -1,0 +1,246 @@
+@f triangle3d
+@A C.W. Quak
+@* The triangle3d class
+@h
+#ifndef __TRIANGLE3D_H__
+#define __TRIANGLE3D_H__
+
+//
+// Object Definition.
+//
+class triangle3d
+{
+public:
+   //
+   // Data storage.
+   //
+   point3d p1;
+   point3d p2;
+   point3d p3;
+
+   //
+   // Constructors.
+   //
+   triangle3d(const point3d& p1,const point3d& p2,const point3d& p3);
+   triangle3d();
+
+   //
+   // Operations needed by Monet.
+   //
+   bool OK() const;
+   bool operator== (const triangle3d& p) const;
+   bool operator!= (const triangle3d& p) const;
+   int expectedstrlen() const;
+   int tostr(char* s,int len) const;
+   static triangle3d* null();
+   static triangle3d* create();
+   static triangle3d* fromstr(char *s,int* parselen,int *buflen,triangle3d* p);
+   int hash() const;
+   void convert_host_to_net();
+   void convert_net_to_host();
+   triangle3d* copy() const;
+
+   point3d perpendicular() const;
+
+   point3d& data(int index);
+
+   void translate(const point3d& p);
+   void scale(const double factor);
+   void rotate(const double angle);
+
+};
+
+//
+// Inline Implementation
+//
+inline triangle3d::triangle3d()
+{
+}
+
+inline point3d& triangle3d::data(int index)
+{
+   if (index == 0)
+      return p1;
+   else if (index == 1)
+      return p2;
+   else if (index == 2)
+      return p3;
+   else
+   {
+      GDKerror("A triangle3d has no point %d \n",index);
+      return p1;
+   }
+}
+
+inline triangle3d* triangle3d::copy() const
+{
+   triangle3d* rval = new triangle3d(*this);
+   return(rval);
+}
+
+inline triangle3d::triangle3d(const point3d& pnt1,const point3d& pnt2,const point3d& pnt3)
+{
+   p1 = pnt1;
+   p2 = pnt2;
+   p3 = pnt3;
+}
+
+#endif /* __TRIANGLE3D_H__ */
+@C
+@+ Implementation Code for triangle3d values.
+@C
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "geometry.h"
+
+triangle3d* triangle3d::create()
+{
+   return new triangle3d;
+}
+
+void triangle3d::translate(const point3d& p)
+{
+   p1.translate(p);
+   p2.translate(p);
+   p3.translate(p);
+}
+
+void triangle3d::scale(const double factor)
+{
+   p1.scale(factor);
+   p2.scale(factor);
+   p3.scale(factor);
+}
+
+bool triangle3d::operator==(const triangle3d& s) const
+{
+   return(
+      ((p1 == s.p1) && (p2 == s.p2) && (p3 == s.p3)) ||
+      ((p1 == s.p1) && (p2 == s.p3) && (p3 == s.p2)) ||
+      ((p1 == s.p2) && (p2 == s.p1) && (p3 == s.p3)) ||
+      ((p1 == s.p2) && (p2 == s.p3) && (p3 == s.p1)) ||
+      ((p1 == s.p3) && (p2 == s.p1) && (p3 == s.p2)) ||
+      ((p1 == s.p3) && (p2 == s.p2) && (p3 == s.p1))
+   );
+}
+
+int triangle3d::hash() const
+{
+   return(p1.hash());
+}
+
+bool triangle3d::OK() const
+{
+   if ((p1 == p2) || (p1 == p3) || (p2 == p3))
+   {
+      GDKerror("Triangle with duplicate point3d\n");
+      return(false);
+   }
+   return(true);
+
+}
+
+//
+// ADT interface
+//
+
+int triangle3d::tostr(char* s,int len) const
+{
+   int rval = 0;
+   rval += sprintf(s + rval,"(");
+   rval += p1.tostr(s + rval,len-rval);
+   rval += sprintf(s + rval,",");
+   rval += p2.tostr(s + rval,len-rval);
+   rval += sprintf(s + rval,",");
+   rval += p3.tostr(s + rval,len-rval);
+   rval += sprintf(s + rval,")");
+
+   if (rval > len)
+      GDKwarning("Prepare for the worst\n");
+   return(rval);
+}
+
+int triangle3d::expectedstrlen() const
+{
+   return(400);
+}
+
+triangle3d* triangle3d::fromstr(char *s,int* parselen,int *buflen,triangle3d* t)
+{
+   if (t == NULL)
+   {
+      t = triangle3d::create();
+      *buflen = sizeof(triangle3d);
+   }
+   if (*buflen < (int)sizeof(triangle3d))
+   {
+      delete (void *)t;
+      t = triangle3d::create();
+      *buflen = sizeof(triangle3d);
+   }
+
+   char* snew = s;
+
+   int pbuflen = sizeof(point3d);
+   int pparselen;
+
+
+   snew = strchr(snew,'(');
+   ++snew;
+   pparselen = *parselen - (s - snew);
+   point3d::fromstr(snew,&pparselen,&pbuflen,&(t->p1));
+   snew += pparselen;
+   snew = strchr(snew,',');
+   pparselen = *parselen - (s - snew);
+   point3d::fromstr(snew,&pparselen,&pbuflen,&(t->p2));
+   snew += pparselen;
+   snew = strchr(snew,',');
+   pparselen = *parselen - (s - snew);
+   point3d::fromstr(snew,&pparselen,&pbuflen,&(t->p3));
+   snew += pparselen;
+   snew = strchr(snew,')');
+
+   int bytesread = snew-s;
+   if (bytesread > *parselen)
+      GDKwarning("Problems\n");
+   
+   *parselen = bytesread;
+   return(t);
+}
+
+triangle3d* triangle3d::null()
+{
+   triangle3d* rval = new triangle3d;
+   rval->p1.x = COORD_MAX;
+   rval->p1.y = COORD_MAX;
+   rval->p1.z = COORD_MAX;
+   rval->p2.x = COORD_MAX;
+   rval->p2.y = COORD_MAX;
+   rval->p2.z = COORD_MAX;
+   rval->p3.x = COORD_MAX;
+   rval->p3.y = COORD_MAX;
+   rval->p3.z = COORD_MAX;
+   return(rval);
+}
+
+void triangle3d::convert_host_to_net()
+{
+   p1.convert_host_to_net();
+   p2.convert_host_to_net();
+   p3.convert_host_to_net();
+}
+
+void triangle3d::convert_net_to_host()
+{
+   p1.convert_net_to_host();
+   p2.convert_net_to_host();
+   p3.convert_net_to_host();
+}
+
+point3d triangle3d::perpendicular() const
+{
+   return((p2-p1) * (p3-p1));
+}

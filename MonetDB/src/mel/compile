@@ -1,0 +1,20 @@
+#!/bin/sh
+# by Peter Boncz
+#
+# Script invented to stop me from gnawing off my left arm
+# while trying to 'make' (ehhhh) something..
+#
+OS=`uname`
+VE=`uname -r`
+PREFIX=$OS$VE
+ARCH=`egrep -e "^ARCH=" $MONETHOME/makefiles/$PREFIX.mk | sed 's/ARCH=//'`  
+ROOT=$MONETHOME/$PREFIX
+TRGDIR=$ROOT/src/mel
+
+for i in $*
+do
+  echo Mx -c -R$TRGDIR $i.mx
+  $MONETHOME/$PREFIX/bin/Mx -c -R$TRGDIR $i.mx
+  echo g++ -g -DNOPROTO -c $i.cc -o $TRGDIR/$i.o
+  g++ -I$TRGDIR -I$ROOT/include  -g -DNOPROTO -D_REENTRANT -D$ARCH -DARCH=\"$ARCH\" -DPREFIX=\"$PREFIX\"  -c $TRGDIR/$i.cc -o $TRGDIR/$i.o
+done

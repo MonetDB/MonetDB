@@ -1,0 +1,22 @@
+#!/bin/sh
+
+NAME="$1"
+PRELUDE="$2"
+
+for i in README awkscript column format gcol summary test100k init.mil tst100.mil; do
+    if [ ! -f $i ]; then
+        /bin/rm -f $i
+        ln -s $RELSRCDIR/$i .
+    fi
+done
+
+TSTDB=${TSTDB}_${NAME}
+
+Mlog -x $MCREATEDB  -db $TSTDB
+Mlog -x $MLOAD test100k -db $TSTDB -oid 30000000 -s 100000 -f format
+Mlog -x $MSERVER -db $TSTDB         init.mil
+Mlog -x $MSERVER -db $TSTDB         $NAME.mil | tee output
+PATH=/bin:$PATH ; export PATH
+Mlog -x sh summary
+#Mlog -x $MDESTROYDB -db $TSTDB
+
