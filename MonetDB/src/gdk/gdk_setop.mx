@@ -523,7 +523,7 @@ BAT* BATmaterialize_(BAT *b, size_t size){
 
 @= union
 BAT *BAT@1union(BAT *l, BAT *r) {
-	int hdisjunct, tdisjunct;
+	int hdisjunct, tdisjunct, bnhdense, bntdense;
 	BAT *bn, *b=0;
 	BUN p,q;
 	int xx;
@@ -548,6 +548,8 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 	      BUNhead(l,BUNlast(l)-BUNsize(l)), BUNhead(r,BUNfirst(r))) < 0);
 	tdisjunct = (BATtordered(r)&BATtordered(l)&1) && (ATOMcmp(l->ttype, 
 	      BUNtail(l,BUNlast(l)-BUNsize(l)), BUNtail(r,BUNfirst(r))) < 0);
+        bnhdense = (BAThdense(r)&BAThdense(l)&1) & !hdisjunct;
+        bntdense = (BATtdense(r)&BATtdense(l)&1) & !tdisjunct;
 
 	if (!hdisjunct) {
 	      b = r = BAT@1diff(r, bn); 
@@ -559,6 +561,8 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 	ACCremoveall(bn); 
 
 	/* set alignment info */
+        if (!bnhdense) bn->hseqbase = oid_nil;
+        if (!bntdense) bn->tseqbase = oid_nil;
 	bn->hsorted = hdisjunct?GDK_SORTED:FALSE;
 	bn->tsorted = tdisjunct?GDK_SORTED:FALSE;
 	bn->talign = bn->halign = 0;
