@@ -972,35 +972,35 @@ def RunTest(env, TST, BusyPorts) :
                     os.system('%s -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
 
         BITS = env['TST_BITS']
+        ACCURACYout = par['ACCURACY']
+        ACCURACYerr = par['ACCURACY']
         if env['TST_STATIC']:
-            STATIC = ".STATIC"
+            STATIC = "(\.STATIC)?"
         else:
             STATIC = ""
-        ACCURACYout = par['ACCURACY']
-        STABLEout = ""
-        for e in "."+OSVER+"."+BITS , "."+OSVER , "."+OS , "":
-            for s in STATIC , "":
-                es = e+s
-                E = ".stable.out"+es
-                if os.path.isfile(TST+E)  or  not es:
-                    STABLEout = E
-                    break
-            if STABLEout:
-                break
+        dir,file = os.path.split(TST)
+        outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.%s(%s)?)?(\.%s)?%s$' % (re.escape(OS), re.escape(RELEASE), BITS, STATIC))
+        bestout = besterr = ''
+        for f in os.listdir(dir or os.curdir):
+            res = outre.match(f)
+            if res is not None:
+                if res.group('tp') == 'out':
+                    if len(bestout) < len(f):
+                        bestout = f
+                else:                   # res.group('tp') == 'err'
+                    if len(besterr) < len(f):
+                        besterr = f
+        if bestout:
+            STABLEout = os.path.join(dir, bestout)[len(TST):]
+        else:
+            STABLEout = ''
+        if besterr:
+            STABLEerr = os.path.join(dir, besterr)[len(TST):]
+        else:
+            STABLEerr = ''
         if not os.path.isfile(TST+STABLEout):
             open(TST+STABLEout,"w").close()
             ACCURACYout = 0
-        ACCURACYerr = par['ACCURACY']
-        STABLEerr = ""
-        for e in "."+OSVER+"."+BITS , "."+OSVER , "."+OS , "":
-            for s in STATIC , "":
-                es = e+s
-                E = ".stable.err"+es
-                if os.path.isfile(TST+E)  or  not es:
-                    STABLEerr = E
-                    break
-            if STABLEerr:
-                break
         if not os.path.isfile(TST+STABLEerr):
             open(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
@@ -1672,13 +1672,14 @@ HOST = string.split(HOST,'.')[0]
 
 if os.name == "nt":
     OS    = "WindowsNT"
-    OSVER = OS+"5.0"
+    RELEASE = "5.0"
 else:
     OS    = string.split(os.uname()[0],"_NT-")[0]
     if OS == "AIX":
-        OSVER = OS+os.uname()[3]+"."+os.uname()[2]
+        RELEASE = os.uname()[3]+"."+os.uname()[2]
     else:
-        OSVER = OS+string.split(os.uname()[2],"(")[0]
+        RELEASE = string.split(os.uname()[2],"(")[0]
+OSVER = OS+RELEASE
 os.environ['OS'] = OS
 os.environ['OSVER'] = OSVER
 
