@@ -70,7 +70,7 @@ a.info.reverse.select("theap.storage").reverse.print;
 # BAT:			  tmp_23	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "theap.storage",	  "anonymous vm"  ]
+[ "theap.storage",	  "malloced"	  ]
 e := [str]([int](a.mirror));
 debugmask(49);
 a.insert(e);
@@ -100,7 +100,7 @@ a.info.reverse.select("theap.storage").reverse.print;
 # BAT:			  tmp_30	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "theap.storage",	  "anonymous vm"  ]
+[ "theap.storage",	  "malloced"	  ]
 a.insert(nil,"make dirty..");
 commit;
 #01 #BBPdir: writing BBP.dir (52 bats).
