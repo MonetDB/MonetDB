@@ -231,6 +231,8 @@ BAT *BATmark(BAT *b, oid oid_base) {
         BATcheck(b, "BATmark");
 	if (BATrestricted(b) == BAT_READ) {
 		bn = VIEWhead(b);
+	} else if (oid_base == oid_nil) {
+		return BATconst(b, TYPE_oid, (ptr)&oid_base);
 	} else {
 		int xx;
 		if (b->htype == TYPE_void) {

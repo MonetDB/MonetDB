@@ -1437,7 +1437,7 @@ Initialize a sequence of OID seeds (for a sequence of database)
 as stored in a string.
 @c
 int OIDread(str s) {
-	oid new, *p=&new;
+	oid new = 0, *p=&new;
 	int l=sizeof(oid);
 
 	while (GDKisspace(*s)) s++;
