@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 # This program makes an output file prof_(original file name) which can be
 # used to monitor the system performances like page faults, time taken
@@ -14,8 +14,9 @@
 # Mserver -db gold prof_input_file_name.mil
 # You can now observe the results....
 
-import string,os,re
-from sys import argv
+import string
+import re
+import sys
 import os
 
 # some helper variables
@@ -29,200 +30,197 @@ re_clbracket_end = re.compile('^'+_mquoted_string+r'\}'+'[\n\t ]*$', re.MULTILIN
 re_hash = re.compile('^'+_mquoted_string+'#.', re.MULTILINE)
 re_mquoted_string_only = re.compile('^'+_mquoted_string + '$', re.MULTILINE)
 
-dn = os.path.dirname(argv[0])
-
-try:
-    srcdir = sys.argv[1]
-except:
-    srcdir = "."
-
 # Opens the input file
-countr=0
-for check_fil_name in argv[1:] :
-    countr = countr +1
-    if countr == 1 :
-        input_fil_name = argv[1]
-    if countr == 2 :
-        commands_fil_name = argv[2]
+def prof(input_fil_name, commands_fil_name = None):
+    input_fil = open(input_fil_name, 'r')
 
-input_fil = open(input_fil_name, 'r')
+    # The final file which has the tags of mprof which are used in measuring system performances
 
-# The final file which has the tags of mprof which are used in measuring system performances
+    fin_fil_name = 'prof_' + input_fil_name
 
-fin_fil_name = 'prof_' + input_fil_name
+    fin_fil = open(fin_fil_name, 'w')
+    fin_fil.close()
+    fin_fil = open(fin_fil_name, 'r+')
 
-fin_fil = open(fin_fil_name, 'w')
-fin_fil.close()
-fin_fil = open(fin_fil_name, 'r+')
+    if commands_fil_name is None:
+        commands_fil_name = 'commands.txt'
+    commands_fil = open(commands_fil_name, 'r+')
 
-if countr == 1 :
-    commands_fil_name = 'commands.txt'
-commands_fil = open(commands_fil_name, 'r+')
+    command_no=0
+    command_name = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    for line2 in commands_fil.readlines() :
+        command_no=command_no+1
+        command_name[command_no]=0
 
-command_no=0
-command_name = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-for line2 in commands_fil.readlines() :
-    command_no=command_no+1
-    command_name[command_no]=0
+    counter = 1
+    bool = 0
+    count = 0
+    quit = 0
+    concatenate = 0
+    temp_sentence = ''
+    beeninhash = 0
+    close_brac = 0
+    prev_with_semicolon = 0
 
-counter = 1
-bool = 0
-count = 0
-quit = 0
-concatenate = 0
-temp_sentence = ''
-beeninhash = 0
-close_brac = 0
-prev_with_semicolon = 0
+    fin_fil.write('module(mprof);\n')
 
-fin_fil.write('module(mprof);\n')
+    global_tag_name = 'global_' + input_fil_name
+    g_bpatt = 'pmB("' + global_tag_name + '");'
+    g_epatt = 'pmE("' + global_tag_name + '");'
+    fin_fil.write(g_bpatt+'\n')
 
-global_tag_name = 'global_' + input_fil_name
-g_bpatt = 'pmB("' + global_tag_name + '");'
-g_epatt = 'pmE("' + global_tag_name + '");'
-fin_fil.write(g_bpatt+'\n')
-
-for line in input_fil.readlines() :
-    if string.find(line, '#') == -1 :
-        if string.find(line, 'quit;') != -1 :
-            quit = 1
-            fin_fil.write(g_epatt+'\n')
-            fin_fil.write('printf("#~BeginProfilingOutput~#\\n");\n')
-            fin_fil.write('pmSummary();\n')
-            fin_fil.write('printf("#~EndProfilingOutput~#\\n");\n')
-    semicolon = 0
-    if string.find(line,';') != -1 :
-        with_semicolon = 1
-    else :
-        with_semicolon = 0
-    first_time_in_loop = 1
-    for splitted_sentence in string.split(line,";") :
-        if re_clbracket_end.search(splitted_sentence) is not None:
-            close_brac = 1
-        if concatenate == 1 :
-            if semicolon == 0 :
-                splitted_sentence = temp_sentence + splitted_sentence
-            else :
-                splitted_sentence = temp_sentence + ';' + splitted_sentence
-            concatenate = 0
-            if (beeninhash == 1 and string.find(splitted_sentence, '#') != -1) :
-                if semicolon == 1 :
-                    with_semicolon = 0
-            if (string.find(splitted_sentence, '#') != -1 and string.find(splitted_sentence, '\n') == -1) :
-                concatenate = 1
-                temp_sentence = splitted_sentence
-            else :
-                temp_sentence = ''
-
-        if string.find(splitted_sentence, '#') != -1 and \
-           re.search('.*#[^;]*.[^\n\t ]',line) is not None and \
-           re_hash.search(splitted_sentence) is not None:
-            if beeninhash == 0 :
-                concatenate = 1
-                temp_sentence = splitted_sentence
-                semicolon = 1
-            beeninhash = 1
-
-        if string.find(splitted_sentence, '"') != -1 and \
-           re_mquoted_string_only.search(splitted_sentence) is None:
-            temp_sentence = splitted_sentence
-            concatenate = 1
-            semicolon = 1
-
-        if string.find(splitted_sentence, '#') == -1 :
-#                       if (with_semicolon == 0 and
-            if string.find(splitted_sentence, '\n') != -1 and splitted_sentence!='\n':
-                if string.find(splitted_sentence,'{') == -1 and string.find(splitted_sentence,'}') == -1:
-                    temp_sentence = splitted_sentence
-                    if string.find(temp_sentence,'\n') != -1 :
-                        t_sentence = string.split(splitted_sentence,"\n")
-                        temp_sentence = t_sentence[0]
-                    concatenate = 1
-
-        if close_brac == 1 :
+    for line in input_fil.readlines() :
+        if string.find(line, '#') == -1 :
+            if string.find(line, 'quit;') != -1 :
+                quit = 1
+                fin_fil.write(g_epatt+'\n')
+                fin_fil.write('printf("#~BeginProfilingOutput~#\\n");\n')
+                fin_fil.write('pmSummary();\n')
+                fin_fil.write('printf("#~EndProfilingOutput~#\\n");\n')
+        semicolon = 0
+        if string.find(line,';') != -1 :
+            with_semicolon = 1
+        else :
             with_semicolon = 0
-            prev_with_semicolon = with_semicolon
-
-        flag = 0
-        if (splitted_sentence!='\n' and concatenate == 0) :
-            beeninhash = 0
-            concatenate = 0
-            if string.find(temp_sentence,'#') == -1 :
-                flag = 1
-                cnt = 0
-                for j in splitted_sentence :
-                    cnt = cnt +1
-                    if (j != ' ' and j!='\n') :
-                        if first_time_in_loop == 0 :
-                            splitted_sentence=splitted_sentence[cnt-1:]
-                        flag = 0
-                        break
-            if flag == 0 :
-                if with_semicolon == 1 :
-                    if first_time_in_loop == 1 or string.find(splitted_sentence,'\n') == -1 or string.find(splitted_sentence,'#') != -1:
-                        line1 = splitted_sentence + ';\n'
+        first_time_in_loop = 1
+        for splitted_sentence in string.split(line,";") :
+            if re_clbracket_end.search(splitted_sentence) is not None:
+                close_brac = 1
+            if concatenate == 1 :
+                if semicolon == 0 :
+                    splitted_sentence = temp_sentence + splitted_sentence
                 else :
-                    line1 = splitted_sentence
-                if close_brac == 1 :
-                    with_semicolon = prev_with_semicolon
-                    close_brac = 0
-                commands_fil.seek(0);
-                command_no = 0
-                prev_line2 = ''
-                multiple = 0
-                found = 0
-                for line2 in commands_fil.readlines() :
-                    command_no=command_no + 1
-                    count = count + 1
-                    line2 = line2[0:10]
-                    for temp in range(10):
-                        if line2[temp] == ' ' or line2[temp] == '\n' :
-                            line2=line2[0:temp]
+                    splitted_sentence = temp_sentence + ';' + splitted_sentence
+                concatenate = 0
+                if (beeninhash == 1 and string.find(splitted_sentence, '#') != -1) :
+                    if semicolon == 1 :
+                        with_semicolon = 0
+                if (string.find(splitted_sentence, '#') != -1 and string.find(splitted_sentence, '\n') == -1) :
+                    concatenate = 1
+                    temp_sentence = splitted_sentence
+                else :
+                    temp_sentence = ''
+
+            if string.find(splitted_sentence, '#') != -1 and \
+               re.search('.*#[^;]*.[^\n\t ]',line) is not None and \
+               re_hash.search(splitted_sentence) is not None:
+                if beeninhash == 0 :
+                    concatenate = 1
+                    temp_sentence = splitted_sentence
+                    semicolon = 1
+                beeninhash = 1
+
+            if string.find(splitted_sentence, '"') != -1 and \
+               re_mquoted_string_only.search(splitted_sentence) is None:
+                temp_sentence = splitted_sentence
+                concatenate = 1
+                semicolon = 1
+
+            if string.find(splitted_sentence, '#') == -1 :
+##                if (with_semicolon == 0 and
+                if string.find(splitted_sentence, '\n') != -1 and splitted_sentence!='\n':
+                    if string.find(splitted_sentence,'{') == -1 and string.find(splitted_sentence,'}') == -1:
+                        temp_sentence = splitted_sentence
+                        if string.find(temp_sentence,'\n') != -1 :
+                            t_sentence = string.split(splitted_sentence,"\n")
+                            temp_sentence = t_sentence[0]
+                        concatenate = 1
+
+            if close_brac == 1 :
+                with_semicolon = 0
+                prev_with_semicolon = with_semicolon
+
+            flag = 0
+            if (splitted_sentence!='\n' and concatenate == 0) :
+                beeninhash = 0
+                concatenate = 0
+                if string.find(temp_sentence,'#') == -1 :
+                    flag = 1
+                    cnt = 0
+                    for j in splitted_sentence :
+                        cnt = cnt +1
+                        if (j != ' ' and j!='\n') :
+                            if first_time_in_loop == 0 :
+                                splitted_sentence=splitted_sentence[cnt-1:]
+                            flag = 0
                             break
-                    if re.search(r'\b'+line2+r'\b',line1) is not None:
-                        if string.find(line1,'#') == -1 :
-                            found = 1
-##                            if (line2 !='join' or ( line2 == 'join' and re.search(r'\b' + 'semijoin' + r'\b',splitted_sentence) == -1)) :
-                            if prev_line2!='' :
-                                multiple = 1
-                            if multiple == 0 :
-                                command_name[command_no]=command_name[command_no] + 1
-                            bpatt = 'pmB("' + line2 + "%d" %command_name[command_no] + '");'
-                            epatt = 'pmE("' + line2 + "%d" %command_name[command_no] + '");'
-                            if multiple == 1 :
-                                line2 = line2+'.'+prev_line2
-
-                                bpatt = 'pmB("' + line2 + '");'
-                                epatt = 'pmE("' + line2 + '");'
-                            prev_line2 = line2
-
-                if found == 1 :
-                    if re_clbracket.search(line1) is None:
-                        bra_place = string.find(line1,'{')
-                        if bra_place != -1 :
-                            temp_line1 = line1[0:bra_place+1]
-                            line1 = line1[bra_place+1:]
-                            fin_fil.write(temp_line1)
-
-                    fin_fil.write('\n' + bpatt + '\n')
-                    fin_fil.write(line1)
-                    fin_fil.write(epatt + '\n\n')
+                if flag == 0 :
+                    if with_semicolon == 1 :
+                        if first_time_in_loop == 1 or string.find(splitted_sentence,'\n') == -1 or string.find(splitted_sentence,'#') != -1:
+                            line1 = splitted_sentence + ';\n'
+                    else :
+                        line1 = splitted_sentence
+                    if close_brac == 1 :
+                        with_semicolon = prev_with_semicolon
+                        close_brac = 0
+                    commands_fil.seek(0);
+                    command_no = 0
+                    prev_line2 = ''
+                    multiple = 0
                     found = 0
-                    counter = counter + 1
-                    bool = 1
-                if (bool == 0) :
-                    fin_fil.write(line1)
-                bool = 0
-        first_time_in_loop = 0
-if quit == 0 :
-    fin_fil.write(g_epatt+'\n')
-    fin_fil.write('printf("#~BeginProfilingOutput~#\\n");\n')
-    fin_fil.write('pmSummary();\n')
-    fin_fil.write('printf("#~EndProfilingOutput~#\\n");\n')
+                    for line2 in commands_fil.readlines() :
+                        command_no=command_no + 1
+                        count = count + 1
+                        line2 = line2[0:10]
+                        for temp in range(10):
+                            if line2[temp] == ' ' or line2[temp] == '\n' :
+                                line2=line2[0:temp]
+                                break
+                        if re.search(r'\b'+line2+r'\b',line1) is not None:
+                            if string.find(line1,'#') == -1 :
+                                found = 1
+##                                if (line2 !='join' or ( line2 == 'join' and re.search(r'\b' + 'semijoin' + r'\b',splitted_sentence) == -1)) :
+                                if prev_line2!='' :
+                                    multiple = 1
+                                if multiple == 0 :
+                                    command_name[command_no]=command_name[command_no] + 1
+                                bpatt = 'pmB("' + line2 + "%d" %command_name[command_no] + '");'
+                                epatt = 'pmE("' + line2 + "%d" %command_name[command_no] + '");'
+                                if multiple == 1 :
+                                    line2 = line2+'.'+prev_line2
 
-print 'done.'
-commands_fil.close()
-# The output file prof_... has the original file with the mprof tags at
-# the appropriate places. These mprof tags help us in measuring the system
-# performances like page faults, time taken etc for the SQL commands.
-fin_fil.close();
+                                    bpatt = 'pmB("' + line2 + '");'
+                                    epatt = 'pmE("' + line2 + '");'
+                                prev_line2 = line2
+
+                    if found == 1 :
+                        if re_clbracket.search(line1) is None:
+                            bra_place = string.find(line1,'{')
+                            if bra_place != -1 :
+                                temp_line1 = line1[0:bra_place+1]
+                                line1 = line1[bra_place+1:]
+                                fin_fil.write(temp_line1)
+
+                        fin_fil.write('\n' + bpatt + '\n')
+                        fin_fil.write(line1)
+                        fin_fil.write(epatt + '\n\n')
+                        found = 0
+                        counter = counter + 1
+                        bool = 1
+                    if (bool == 0) :
+                        fin_fil.write(line1)
+                    bool = 0
+            first_time_in_loop = 0
+    if quit == 0 :
+        fin_fil.write(g_epatt+'\n')
+        fin_fil.write('printf("#~BeginProfilingOutput~#\\n");\n')
+        fin_fil.write('pmSummary();\n')
+        fin_fil.write('printf("#~EndProfilingOutput~#\\n");\n')
+
+    print 'done.'
+    commands_fil.close()
+    # The output file prof_... has the original file with the mprof tags at
+    # the appropriate places. These mprof tags help us in measuring the system
+    # performances like page faults, time taken etc for the SQL commands.
+    fin_fil.close();
+
+if __name__ == '__main__' or sys.argv[0] == __name__:
+    if not (2 <= len(sys.argv) <= 3):
+        print 'Usage: %s input_file [command_file]' % sys.argv[0]
+        sys.exit(1)
+    input_fil_name = sys.argv[1]
+    commands_fil_name = None
+    if len(sys.argv) > 2:
+        commands_fil_name = sys.argv[2]
+
+    prof(input_fil_name, commands_fil_name)
