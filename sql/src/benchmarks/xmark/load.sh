@@ -3,7 +3,7 @@
 PWD=`pwd`
 Mserver -db sql \
 	$MONET_PREFIX/share/Monet/mapi.mil \
-	$SQL_PREFIX/share/sql/sqlserver.mil << EOF
+	$SQL_PREFIX/share/MonetDB/sqlserver.mil << EOF
 
 proc input( str tab, str filename ) := {
 	bulkload(toLower(tab), "$PWD" + "/" + filename, "\t", "\n", -1 );

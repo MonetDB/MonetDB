@@ -3,7 +3,7 @@ PWD=`pwd`
 
 Mdestroydb -db sql
 Mcreatedb -db sql
-Mserver -db sql $SQL_PREFIX/share/sql/sqlserver.mil <<EOF 
+Mserver -db sql $SQL_PREFIX/share/MonetDB/sqlserver.mil <<EOF 
 sql_file( "$PWD/as3ap-schema.sql", "$PWD/as3ap-schema.t" );
 quit;
 EOF
@@ -12,9 +12,9 @@ echo "Output := Stdout;" >> as3ap-schema.mil
 cat as3ap-schema.t >> as3ap-schema.mil
 rm as3ap-schema.t
 echo "commit();quit;" >> as3ap-schema.mil
-Mserver -db sql $SQL_PREFIX/share/sql/sqlserver.mil as3ap-schema.mil
+Mserver -db sql $SQL_PREFIX/share/MonetDB/sqlserver.mil as3ap-schema.mil
 
-Mserver -db sql $SQL_PREFIX/share/sql/sqlserver.mil <<EOF
+Mserver -db sql $SQL_PREFIX/share/MonetDB/sqlserver.mil <<EOF
 module(ascii_io);
 
 proc merge( BAT[str,BAT] bats, str name ) := {
@@ -33,7 +33,7 @@ commit();
 quit;
 EOF
 
-Mserver -db sql $SQL_PREFIX/share/sql/sqlserver.mil <<EOF 
+Mserver -db sql $SQL_PREFIX/share/MonetDB/sqlserver.mil <<EOF 
 sql_file( "$PWD/as3ap-queries.sql", "$PWD/as3ap-queries.t");
 quit;
 EOF
@@ -42,4 +42,4 @@ echo "Output := Stdout;" >> as3ap-queries.mil
 cat as3ap-queries.t >> as3ap-queries.mil
 rm as3ap-queries.t
 echo "commit();quit;" >> as3ap-queries.mil
-Mserver -db sql $SQL_PREFIX/share/sql/sqlserver.mil as3ap-queries.mil
+Mserver -db sql $SQL_PREFIX/share/MonetDB/sqlserver.mil as3ap-queries.mil

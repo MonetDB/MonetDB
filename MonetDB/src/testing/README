@@ -108,7 +108,7 @@ have changed since my proposal.
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
     Mshutdown.py
-  * Mserver --dbname=TSTDB --set sql_port=$SQLPORT $SQL_PREFIX/share/sql/sqlserver.mil [TST.prologue] &
+  * Mserver --dbname=TSTDB --set sql_port=$SQLPORT $SQL_PREFIX/share/MonetDB/sqlserver.mil [TST.prologue] &
          sql_client < TST[_(s|p)XX].sql
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
