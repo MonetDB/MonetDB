@@ -3018,18 +3018,18 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 
 	sql_select_cleanup(sql, NULL, subset, grp);
 
-	if (sn->offset >= 0) {
-		if (order)
-			order = stmt_offset(order, sn->offset);
-		else
-			order = stmt_offset(stmt_dup(s->op1.lval->h->data), sn->offset);
-	}
-
 	if (sn->limit >= 0) {
-		if (order)
-			order = stmt_limit(order, sn->limit);
-		else
-			order = stmt_limit(stmt_dup(s->op1.lval->h->data), sn->limit);
+		int offset = (sn->offset >=0)?sn->offset:0;
+		if (order) {
+			order = stmt_limit(order, offset, sn->limit);
+		} else {
+			node *n;
+			list *l = create_stmt_list();
+			for (n = s->op1.lval->h; n; n = n->next)
+				list_append(l, stmt_limit(stmt_dup(n->data), offset, sn->limit));
+			stmt_destroy(s);
+			s = stmt_list(l);
+		}
 	}
 
 	if (s && order)

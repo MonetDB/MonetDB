@@ -49,7 +49,6 @@ typedef enum stmt_type {
 	st_mirror,
 
 	st_limit,
-	st_offset,
 	st_order,
 	st_reorder,
 
@@ -227,8 +226,7 @@ extern stmt *stmt_mark(stmt *s, int id);
 extern stmt *stmt_reverse(stmt *s);
 extern stmt *stmt_mirror(stmt *s);
 
-extern stmt *stmt_limit(stmt *s, int limit);
-extern stmt *stmt_offset(stmt *s, int offset);
+extern stmt *stmt_limit(stmt *s, int offset, int limit);
 extern stmt *stmt_order(stmt *s, int direction);
 extern stmt *stmt_reorder(stmt *s, stmt *t, int direction);
 
@@ -295,7 +293,6 @@ st_type2string(st_type type)
 		ST(mirror);
 
 		ST(limit);
-		ST(offset);
 		ST(order);
 		ST(reorder);
 
@@ -642,7 +639,6 @@ stmt_destroy(stmt *s)
 		case st_reorder:
 		case st_ordered:
 		case st_output:
-		case st_offset:
 
 		case st_column:
 		case st_group:
@@ -882,26 +878,13 @@ stmt_mirror(stmt *s)
 }
 
 stmt *
-stmt_limit(stmt *s, int limit)
+stmt_limit(stmt *s, int offset, int limit)
 {
 	stmt *ns = stmt_create(st_limit);
 
 	ns->op1.stval = s;
-	ns->op2.stval = stmt_atom_int(limit);
-	ns->nrcols = s->nrcols;
-	ns->key = s->key;
-	ns->aggr = s->aggr;
-	ns->t = stmt_dup(s->t);
-	return ns;
-}
-
-stmt *
-stmt_offset(stmt *s, int offset)
-{
-	stmt *ns = stmt_create(st_offset);
-
-	ns->op1.stval = s;
 	ns->op2.stval = stmt_atom_int(offset);
+	ns->op3.stval = stmt_atom_int(limit);
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;

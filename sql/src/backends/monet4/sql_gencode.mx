@@ -438,7 +438,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			dump_2(sql, s, "project", nr);
 			break;
 		case st_mark:
-			dump_2(sql, s, "mark", nr);
+			dump_2(sql, s, "sql_mark", nr);
 			break;
 		case st_reverse:
 			dump_1(sql, s, "reverse", nr);
@@ -448,26 +448,16 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		case st_limit:{
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
+			int r1 = backend_dumpstmt_(s->op2.stval, nr, sql);
+			int r2 = backend_dumpstmt_(s->op3.stval, nr, sql);
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
 
-			len = snprintf(buf, BUFSIZ, "var s%d := s%d.slice(0, s%d - 1);\n", -s->nr, l, r);
+			len = snprintf(buf, BUFSIZ, "var s%d := s%d.slice(s%d, s%d + s%d - 1);\n", -s->nr, l, r1, r1, r2);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);
 			backend_dump_nil(sql, s->op2.stval);
-			break;
-		}
-		case st_offset:{
-			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
-			buf = NEW_ARRAY(char, BUFSIZ + 1);
-
-			len = snprintf(buf, BUFSIZ, "var s%d := s%d.slice(s%d, s%d.count());\n", -s->nr, l, r, l);
-			dump(sql, buf, len, -s->nr);
-			_DELETE(buf);
-			backend_dump_nil(sql, s->op1.stval);
-			backend_dump_nil(sql, s->op2.stval);
+			backend_dump_nil(sql, s->op3.stval);
 			break;
 		}
 		case st_order:{

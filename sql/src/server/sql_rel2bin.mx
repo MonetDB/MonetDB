@@ -195,7 +195,6 @@ head_column(stmt *st)
 	case st_dbat:
 
 	case st_limit:
-	case st_offset:
 	case st_order:
 	case st_reorder:
 
@@ -875,6 +874,36 @@ rel2bin(mvc *c, stmt *s)
 		return res;
 	}
 
+	case st_limit: {
+		stmt *j = NULL;
+
+		if (s->op1.stval) {
+			stmt *os = s->op1.stval;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			stmt_destroy(os);
+			s->op1.stval = ns;
+		}
+		s->optimized = 2;
+		/* try to push the limit through the (fetch) join */
+		j = s->op1.stval;
+		/* equi join on same base table */
+		if (j->type == st_join && 
+		    j->flag == cmp_equal &&
+		    j->op1.stval->t == j->op2.stval->h ) {
+			stmt *l = stmt_dup(j->op1.stval);
+			stmt *r = stmt_dup(j->op2.stval);
+			l =stmt_limit(l, 
+				      s->op2.stval->op1.aval->data.val.ival,
+				      s->op3.stval->op1.aval->data.val.ival);
+			s = stmt_join(l, r, cmp_equal); 
+			s->optimized = 2;
+			return s;
+		}
+		s->optimized = 2;
+		return stmt_dup(s);
+	}
 	case st_semijoin:{
 
 		stmt *os, *ns;
@@ -944,13 +973,42 @@ rel2bin(mvc *c, stmt *s)
 		}
 		return ns;
 	}
-
-	case st_temp:
-	case st_filter:
 	case st_select:
 	case st_select2:
 	case st_uselect:
-	case st_uselect2:
+	case st_uselect2: {
+
+		if (s->op1.stval) {
+			stmt *os = s->op1.stval;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			stmt_destroy(os);
+			s->op1.stval = ns;
+		}
+		if (s->op2.stval) {
+			stmt *os = s->op2.stval;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			stmt_destroy(os);
+			s->op2.stval = ns;
+		}
+		/* remove expensive double kdiffs 
+		 * if join on oids from the same table then 	
+		 * right kdiff is not needed 
+		 */
+		if (s->op1.stval->type == st_diff){
+			stmt *old = s->op1.stval;
+			s->op1.stval = stmt_dup(old->op1.stval);
+			stmt_destroy(old);
+		}
+		s->optimized = 2;
+		return stmt_dup(s);
+	}
+
+	case st_temp:
+	case st_filter:
 	case st_diff:
 	case st_intersect:
 	case st_union:
@@ -962,11 +1020,9 @@ rel2bin(mvc *c, stmt *s)
 	case st_group_ext:
 	case st_derive:
 	case st_unique:
-	case st_limit:
 	case st_order:
 	case st_reorder:
 	case st_ordered:
-	case st_offset:
 
 	case st_alias:
 	case st_column:
@@ -1009,7 +1065,6 @@ rel2bin(mvc *c, stmt *s)
 		return stmt_dup(s);
 
 	case st_output: {
-		stmt *lst = NULL;
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
@@ -1033,8 +1088,10 @@ rel2bin(mvc *c, stmt *s)
 		if all outputs depend on the same mark, just use
 			   the mark as order and simply use the bases.
 		*/
-		lst = s->op1.stval;
-		if (lst->type != st_ordered) {
+		if (!mvc_debug_on(c, 65536) && s->op1.stval->type != st_ordered)
+		{
+			stmt *lst = s->op1.stval;
+
 			node *n = lst->op1.lval->h;
 			stmt *c = n->data;
 			stmt *h = c->op1.stval;
