@@ -101,7 +101,9 @@ while test $# -gt 0; do
 		-I\${MONET_INCLUDEDIR}/common \
 		-I\${MONET_INCLUDEDIR}/gdk \
 	  	-I\${MONET_INCLUDEDIR}/monet \
-	  	-I\${MONET_INCLUDEDIR}/plain 
+	  	-I\${MONET_INCLUDEDIR}/plain \
+	  	-I\${MONET_INCLUDEDIR}/stream \
+	  	-I\${MONET_INCLUDEDIR}/mapi 
        	;;
 
     --cflags)
@@ -110,7 +112,9 @@ while test $# -gt 0; do
 		-I$includedir/common \
 		-I$includedir/gdk \
 		-I$includedir/monet \
-		-I$includedir/plain 
+		-I$includedir/plain \
+		-I$includedir/stream \
+		-I$includedir/mapi 
        	;;
 
     --libs)
