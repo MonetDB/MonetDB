@@ -90,6 +90,8 @@ MXFLAGS= -notouch
 %.mil: %.m %.tmpmil $(MEL)
 	$(MEL) $(INCLUDES) -mil $*.m > $@
 	cat $*.tmpmil >> $@
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 
 %.tmpmil: %.mx
 	$(MX) $(MXFLAGS) -l -x mil $<
@@ -97,6 +99,8 @@ MXFLAGS= -notouch
 
 %.mil: %.m $(MEL)
 	$(MEL) $(INCLUDES) -mil $*.m > $@
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
