@@ -395,7 +395,7 @@ static stmt *stmt_create(st_type type)
 	s->key = 0;
 	s->aggr = 0;
 	s->nr = 0;
-	s->nr2 = -1;
+	s->nr2 = int_nil;
 	s->h = NULL;
 	s->t = NULL;
 	s->optimized = 0;
@@ -606,6 +606,24 @@ void stmt_destroy(stmt * s)
 			stmt_destroy(s->t);
 		if (s->rewritten) 
 			stmt_destroy(s->rewritten);
+
+		if (s->nr2 > 0) {
+/*
+ * happens far too often for now, hence, we keep it for debugging, only ...
+			printf("= sql_statement.mx: stmt_destroy: (result of) statement %s (%d) was used %d times less often than its refcnt indicated!\n",
+				st_type2string(s->type), (int)s->type, s->nr2);
+*/
+		} else if (s->nr2 == int_nil) {
+/*
+ * happens far too often for now, hence, we keep it for debugging, only ...
+			printf("= sql_statement.mx: stmt_destroy: statement %s (%d) was never executed!\n",
+				st_type2string(s->type), (int)s->type);
+*/
+		} else if (s->nr2 < 0) {
+			printf("= sql_statement.mx: stmt_destroy: (rssult of) statement %s (%d) was used %d times more often than its refcnt indicated!\n",
+				st_type2string(s->type), (int)s->type, -s->nr2);
+		}
+
 		_DELETE(s);
 	}
 }
