@@ -53,6 +53,17 @@ Too many bugs.
    prefix 'left' means that left and right input are not swapped during processing,
    and hence, the order of the left input's head in maintained in the result."
 
+  .COMMAND nlthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode, lng estimate) :
+                    BAT[any::1,any::3] = CMDnlthetajoin;
+  "Hook directly into the 'nested-loop-thetajoin' implementation of the join.
+   prefix 'left' means that left and right input are not swapped during processing,
+   and hence, the order of the left input's head in maintained in the result.
+   Also, for each left tuple, all matching right tuples will appear in their order
+   of appearrance in the right BAT. This property is handy for XQuery processing."
+
+
+@= select
+
 
 @= select
 .COMMAND ord_@1select ( BAT[any::1,any::2] b, any::2 low, any::2 high) : 
@@ -235,7 +246,9 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
 int CMDleftthetajoin(BAT **result, BAT *l, BAT *r, int *mode) {
   return (*result = BATleftthetajoin(l, r, *mode, MIN(BATcount(l),BATcount(r))))?GDK_SUCCEED:GDK_FAIL;
 }
-
+int CMDnlthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate) {
+  return (*result = BATnlthetajoin(l, r, *mode, (size_t) *estimate))?GDK_SUCCEED:GDK_FAIL;
+}
 
 @= selectcmd
 int CMDord_@1select1(BAT **result, BAT* b, ptr value) {

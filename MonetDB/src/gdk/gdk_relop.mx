@@ -1187,6 +1187,45 @@ BAT *BATleftindexjoin(BAT *l, BAT *r, size_t estimate) {
 	   and hence maintain order of left head in result */
 	return batthetajoin(l, r, JOIN_EQ, estimate, FALSE);
 }
+
+/* nested loop join; finally MonetDB can enjoy the virtues of this algorithm as well! */
+BAT *nlthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
+        BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate);
+        int (*cmp)(ptr,ptr) = BATatoms[l->ttype].atomCmp;
+        ptr nil = ATOMnilptr(l->ttype);
+        int rx, lx, lo = 0, hi = 0;
+        BUN rp, rq, lp, lq;
+
+        if (op == JOIN_GT) {
+                lo = 1; hi = GDK_int_max;
+        } else if (op == JOIN_GE) {
+                lo = 0; hi = GDK_int_max;
+        } else if (op == JOIN_LT) {
+                lo = GDK_int_min; hi = -1;
+        } else if (op == JOIN_LE) {
+                lo = GDK_int_min; hi = 0;
+        }
+        /* we are not going to optimize this by type; not worth it! */
+        BATloopFast(l, lp, lq, lx) {
+                ptr v = (ptr) BUNtail(l,lp);
+                if ((*cmp)(v,nil) == 0) {
+                    continue;
+                }
+                BATloopFast(r, rp, rq, rx) {
+                        ptr w = (ptr) BUNhead(r,rp);
+                        int c = (*cmp)(v,w);
+                        if ((c >= lo) & (c <= hi)) {
+                                bunfastins(bn, BUNhead(l,lp), BUNtail(r,rp));
+                        }
+                }
+        }
+        bn->hsorted = l->hsorted;
+        bn->tsorted = 0;
+        return bn;
+bunins_failed:
+        BBPreclaim(bn);
+        return NULL;
+}
 @}
 
 @+ Bandjoin

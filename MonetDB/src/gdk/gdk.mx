@@ -2973,6 +2973,7 @@ gdk_export BAT*	BATindexjoin (BAT *l, BAT *r, size_t estimate);
 gdk_export BAT*	BATleftindexjoin (BAT *l, BAT *r, size_t estimate); 
 gdk_export BAT*	BATthetajoin (BAT *l, BAT *r, int mode, size_t estimate); 
 gdk_export BAT*	BATleftthetajoin (BAT *l, BAT *r, int mode, size_t estimate); 
+gdk_export BAT*	BATnlthetajoin (BAT *l, BAT *r, int mode, size_t estimate); 
 gdk_export int	BATtheta     (BAT* in, BAT* out, BAT *l, BAT *r, int mode);
 gdk_export BAT*	BATbandjoin  (BAT *l, BAT *r, ptr c1, ptr c2);  /* should bandjoin remain in the kernel? */
 gdk_export BAT*	BATsemijoin  (BAT *l, BAT *r); 
