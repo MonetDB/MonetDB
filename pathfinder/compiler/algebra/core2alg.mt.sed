@@ -269,7 +269,7 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
 
             /* insert $p into NEW environment */
             *((PFalg_env_t *) PFarray_add (env)) =
-                enventry ($2$->sem.var, opt_var, empty_doc);
+                enventry ($2$->sem.var, opt_var, PFalg_empty_frag ());
         }
 
         /* update all variable bindings in old environment and put
@@ -296,7 +296,7 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
         env = old_env;
 
         /* compute result using old env and old loop. */
-        [[ $$ ]] =(struct  PFalg_pair_t) {
+        [[ $$ ]] =(struct PFalg_pair_t) {
                  .result = project (rownum (eqjoin([[ $4$ ]].result,
                                                    map, "iter", "inner"),
                                             "pos1",
@@ -466,7 +466,7 @@ TypeswitchExpr:  typesw (CoreExpr,
 
         [[ $$ ]] = (struct PFalg_pair_t) {
             .result = disjunion ([[ $2.1.2$ ]].result, [[ $3$ ]].result),
-            .doc    = disjunion ([[ $2.1.2$ ]].doc, [[ $3$ ]].doc)
+            .doc    = set_union ([[ $2.1.2$ ]].doc, [[ $3$ ]].doc)
         };
     }
     ;
@@ -581,7 +581,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
                  .result = disjunion ([[ $2$ ]].result, [[ $3$ ]].result),
-                 .doc = disjunion ([[ $2$ ]].doc, [[ $3$ ]].doc) };
+                 .doc = set_union ([[ $2$ ]].doc, [[ $3$ ]].doc) };
     }
     ;
 
@@ -615,7 +615,7 @@ SequenceExpr:    seq (Atom, Atom)
                      proj ("iter", "iter"),
                      proj ("pos", "pos1"),
                      proj ("item", "item")),
-                 .doc = disjunion ([[ $1$ ]].doc, [[ $2$ ]].doc) };
+                 .doc = set_union ([[ $1$ ]].doc, [[ $2$ ]].doc) };
     }
     ;
 
@@ -626,84 +626,84 @@ LocationStep:    ancestor (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = anc ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    ancestor_or_self (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = anc_self ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    attribute (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = attr ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    child_ (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = child ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    descendant (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = desc ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    descendant_or_self (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = desc_self ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    following (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = fol ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    following_sibling (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = fol_sibl ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    parent_ (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = par ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    preceding (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = prec ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    preceding_sibling (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = prec_sibl ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 LocationStep:    self (NodeTest)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = self ([[ $1$ ]].result),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 
@@ -718,7 +718,7 @@ LocationSteps:   locsteps (LocationStep, CoreExpr)
          *      proj_iter,item (q(e) join (doc U delta1)), delta1))
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = rownum (scjoin ([[ $2$ ]].doc,
+                 .result = rownum (scjoin (alg_union ([[ $2$ ]].doc),
                                            project ([[ $2$ ]].result,
                                                     proj ("iter", "iter"),
                                                     proj ("item", "item")),
@@ -732,7 +732,7 @@ NodeTest:        namet
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = nameTest ($$->sem.qname),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 NodeTest:        KindTest;
@@ -741,56 +741,56 @@ KindTest:        kind_node (nil)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = nodeTest (),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 KindTest:        kind_comment (nil)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = commTest (),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 KindTest:        kind_text (nil)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = textTest (),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 KindTest:        kind_pi (nil)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = piTest (),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 KindTest:        kind_pi (lit_str)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = pitarTest ($1$->sem.str),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 KindTest:        kind_doc (nil)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = docTest (),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 KindTest:        kind_elem (nil)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = elemTest (),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 KindTest:        kind_attr (nil)
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) { .result = attrTest (),
-                                            .doc = empty_doc };
+                                            .doc = PFalg_empty_frag () };
     }
     ;
 
@@ -817,7 +817,7 @@ ConstructorExpr: elem (TagName, CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *elem = element ([[ $2$ ]].doc,
+        PFalg_op_t *elem = element (alg_union ([[ $2$ ]].doc),
                                     [[ $1$ ]].result,
                                     [[ $2$ ]].result);
 
@@ -835,13 +835,13 @@ ConstructorExpr: elem (TagName, CoreExpr)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = project (elem,
-                                 proj ("pre", "pre"),
-                                 proj ("size", "size"),
-                                 proj ("level", "level"),
-                                 proj ("kind", "kind"),
-                                 proj ("prop", "prop"),
-                                 proj ("frag", "frag")) };
+                 .doc = new_frag (project (elem,
+                                           proj ("pre", "pre"),
+                                           proj ("size", "size"),
+                                           proj ("level", "level"),
+                                           proj ("kind", "kind"),
+                                           proj ("prop", "prop"),
+                                           proj ("frag", "frag"))) };
     }
     ;
 
@@ -868,7 +868,7 @@ ConstructorExpr: attr (TagName, CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *attr = attribute ([[ $2$ ]].doc,
+        PFalg_op_t *attr = attribute (alg_union ([[ $2$ ]].doc),
                                       [[ $1$ ]].result,
                                       [[ $2$ ]].result);
 
@@ -886,13 +886,13 @@ ConstructorExpr: attr (TagName, CoreExpr)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = project (attr,
-                                 proj ("pre", "pre"),
-                                 proj ("size", "size"),
-                                 proj ("level", "level"),
-                                 proj ("kind", "kind"),
-                                 proj ("prop", "prop"),
-                                 proj ("frag", "frag")) };
+                 .doc = new_frag (project (attr,
+                                           proj ("pre", "pre"),
+                                           proj ("size", "size"),
+                                           proj ("level", "level"),
+                                           proj ("kind", "kind"),
+                                           proj ("prop", "prop"),
+                                           proj ("frag", "frag"))) };
     }
     ;
 
@@ -914,7 +914,7 @@ ConstructorExpr: text (CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *textnode = textnode ([[ $1$ ]].doc,
+        PFalg_op_t *textnode = textnode (alg_union ([[ $1$ ]].doc),
                                          [[ $1$ ]].result);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
@@ -931,13 +931,13 @@ ConstructorExpr: text (CoreExpr)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = project (textnode,
-                                 proj ("pre", "pre"),
-                                 proj ("size", "size"),
-                                 proj ("level", "level"),
-                                 proj ("kind", "kind"),
-                                 proj ("prop", "prop"),
-                                 proj ("frag", "frag")) };
+                 .doc = new_frag (project (textnode,
+                                           proj ("pre", "pre"),
+                                           proj ("size", "size"),
+                                           proj ("level", "level"),
+                                           proj ("kind", "kind"),
+                                           proj ("prop", "prop"),
+                                           proj ("frag", "frag"))) };
     }
     ;
 
@@ -959,7 +959,7 @@ ConstructorExpr: doc (CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *docnode = docnode ([[ $1$ ]].doc,
+        PFalg_op_t *docnode = docnode (alg_union ([[ $1$ ]].doc),
                                        [[ $1$ ]].result);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
@@ -976,13 +976,13 @@ ConstructorExpr: doc (CoreExpr)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = project (docnode,
-                                 proj ("pre", "pre"),
-                                 proj ("size", "size"),
-                                 proj ("level", "level"),
-                                 proj ("kind", "kind"),
-                                 proj ("prop", "prop"),
-                                 proj ("frag", "frag")) };
+                 .doc = new_frag (project (docnode,
+                                           proj ("pre", "pre"),
+                                           proj ("size", "size"),
+                                           proj ("level", "level"),
+                                           proj ("kind", "kind"),
+                                           proj ("prop", "prop"),
+                                           proj ("frag", "frag"))) };
     }
     ;
 
@@ -1004,7 +1004,7 @@ ConstructorExpr: comment (lit_str)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *comment = comment ([[ $1$ ]].doc,
+        PFalg_op_t *comment = comment (alg_union ([[ $1$ ]].doc),
                                        [[ $1$ ]].result);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
@@ -1021,13 +1021,13 @@ ConstructorExpr: comment (lit_str)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = project (comment,
-                                 proj ("pre", "pre"),
-                                 proj ("size", "size"),
-                                 proj ("level", "level"),
-                                 proj ("kind", "kind"),
-                                 proj ("prop", "prop"),
-                                 proj ("frag", "frag")) };
+                 .doc = new_frag (project (comment,
+                                           proj ("pre", "pre"),
+                                           proj ("size", "size"),
+                                           proj ("level", "level"),
+                                           proj ("kind", "kind"),
+                                           proj ("prop", "prop"),
+                                           proj ("frag", "frag"))) };
     }
     ;
 
@@ -1049,7 +1049,7 @@ ConstructorExpr: pi (lit_str)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *pi = processi ([[ $1$ ]].doc,
+        PFalg_op_t *pi = processi (alg_union ([[ $1$ ]].doc),
                                    [[ $1$ ]].result);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
@@ -1066,13 +1066,13 @@ ConstructorExpr: pi (lit_str)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = project (pi,
-                                 proj ("pre", "pre"),
-                                 proj ("size", "size"),
-                                 proj ("level", "level"),
-                                 proj ("kind", "kind"),
-                                 proj ("prop", "prop"),
-                                 proj ("frag", "frag")) };
+                 .doc = new_frag (project (pi,
+                                           proj ("pre", "pre"),
+                                           proj ("size", "size"),
+                                           proj ("level", "level"),
+                                           proj ("kind", "kind"),
+                                           proj ("prop", "prop"),
+                                           proj ("frag", "frag"))) };
     }
     ;
 
@@ -1152,7 +1152,7 @@ FunctionAppl:    apply (FunctionArgs)
         [[ $$ ]] = (struct  PFalg_pair_t) {
                          .result = $$->sem.fun->alg (loop,
                                    [[ $1$ ]].result->sem.builtin.args->base),
-                         .doc = empty_doc };
+                         .doc = PFalg_empty_frag () };
 */
     }
     ;
@@ -1239,7 +1239,7 @@ LiteralString:    lit_str
                                   lit_tbl( attlist ("pos", "item"),
                                            tuple (lit_nat (1),
                                                   lit_str ($$->sem.str)))),
-                 .doc = empty_doc };
+                 .doc = PFalg_empty_frag () };
     }
     ;
 LiteralValue:    lit_int
@@ -1256,7 +1256,7 @@ LiteralValue:    lit_int
                                   lit_tbl( attlist ("pos", "item"),
                                            tuple (lit_nat (1),
                                                   lit_int ($$->sem.num)))),
-                 .doc = empty_doc };
+                 .doc = PFalg_empty_frag () };
     }
     ;
 LiteralValue:    lit_dec
@@ -1273,7 +1273,7 @@ LiteralValue:    lit_dec
                                   lit_tbl( attlist ("pos", "item"),
                                            tuple (lit_nat (1),
                                                   lit_dec ($$->sem.dec)))),
-                 .doc = empty_doc };
+                 .doc = PFalg_empty_frag () };
     }
     ;
 LiteralValue:    lit_dbl
@@ -1290,7 +1290,7 @@ LiteralValue:    lit_dbl
                                   lit_tbl( attlist ("pos", "item"),
                                            tuple (lit_nat (1),
                                                   lit_dbl ($$->sem.dbl)))),
-                 .doc = empty_doc };
+                 .doc = PFalg_empty_frag () };
     }
     ;
 LiteralValue:    true_
@@ -1307,7 +1307,7 @@ LiteralValue:    true_
                                   lit_tbl( attlist ("pos", "item"),
                                            tuple (lit_nat (1),
                                                   lit_bln (true)))),
-                 .doc = empty_doc };
+                 .doc = PFalg_empty_frag () };
     }
     ;
 LiteralValue:    false_
@@ -1324,7 +1324,7 @@ LiteralValue:    false_
                                   lit_tbl( attlist ("pos", "item"),
                                            tuple (lit_nat (1),
                                                   lit_bln (false)))),
-                 .doc = empty_doc };
+                 .doc = PFalg_empty_frag () };
     }
     ;
 LiteralValue:    empty_
@@ -1347,7 +1347,7 @@ LiteralValue:    empty_
         [[ $$ ]] = (struct  PFalg_pair_t) {
                  .result = PFalg_lit_tbl_ (attlist ("iter", "pos", "item"),
                                            0, NULL),
-                 .doc = empty_doc };
+                 .doc = PFalg_empty_frag () };
     }
     ;
 
@@ -1366,7 +1366,7 @@ BuiltIns:        root_
                                   lit_tbl( attlist ("pos", "item"),
                                            tuple (lit_nat (1),
                                                   lit_nat (1)))),
-                 .doc = empty_doc };
+                 .doc = PFalg_empty_frag () };
     }
     ;
 

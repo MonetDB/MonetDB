@@ -174,8 +174,7 @@ static int TWIG_ID[] = {
 
 
 /* Constructor for environment entry */
-static PFalg_env_t enventry (PFvar_t *var,
-                             PFalg_op_t *result, PFalg_op_t *doc);
+static PFalg_env_t enventry (PFvar_t *var, PFalg_op_t *result, PFarray_t *doc);
 
 
 /**
@@ -207,6 +206,22 @@ static PFalg_op_t *prec (PFalg_op_t *n);
 static PFalg_op_t *prec_sibl (PFalg_op_t *n);
 static PFalg_op_t *self (PFalg_op_t *n);
 
+/**
+ * Create new list with one fragment.
+ */
+static PFarray_t *new_frag (PFalg_op_t *n);
+
+/**
+ * Form algebraic disjoint union between the fragments of an
+ * algebra operator's document.
+ */
+static PFalg_op_t *alg_union (PFarray_t *frags);
+
+/**
+ * Form a set-oriented union between two lists of fragments.
+ */
+PFarray_t *set_union (PFarray_t *frag1, PFarray_t *frag2);
+
 /* Concatenate the parameters of built-in functions. */
 static struct PFalg_pair_t args (struct PFalg_pair_t arg,
                                  struct PFalg_pair_t args);
@@ -214,10 +229,9 @@ static struct PFalg_pair_t args (struct PFalg_pair_t arg,
 /** Create the tail of an argument list. */
 static struct PFalg_pair_t args_tail(void);
 
-
 static PFarray_t  *env = NULL;
 static PFalg_op_t *loop = NULL;
-static PFalg_op_t *delta __attribute__((unused)) = NULL;
+/*static PFalg_op_t *delta __attribute__((unused)) = NULL;*/
 static PFalg_op_t *empty_doc __attribute__((unused)) = NULL;
 
 /**
@@ -449,10 +463,10 @@ PFcore2alg (PFcnode_t *c)
      *
      delta = lit_tbl (attlist ("pre", "size", "level", "kind", "prop", "frag"));
      */
-    delta = PFalg_lit_tbl_ (
+    /*delta = PFalg_lit_tbl_ (
             attlist ("pre", "size", "level", "kind", "prop", "frag"),
             0, (PFalg_tuple_t *) NULL);
-
+    */
     empty_doc = PFalg_lit_tbl_ (
                 attlist ("pre", "size", "level", "kind", "prop", "frag"),
                 0, (PFalg_tuple_t *) NULL);
@@ -462,7 +476,7 @@ PFcore2alg (PFcnode_t *c)
     if (!ret)
         PFoops (OOPS_FATAL, "Translation to Relational Algebra failed.");
 
-    return serialize (ret->alg.doc, ret->alg.result);
+    return serialize (alg_union (ret->alg.doc), ret->alg.result);
 
     /*
     return serialize (lit_tbl (attlist ("pos", "item"),
@@ -580,7 +594,7 @@ implty (PFty_t ty)
  * Called whenever a new variable is declared.
  */
 static PFalg_env_t
-enventry (PFvar_t *var, PFalg_op_t *result, PFalg_op_t *doc)
+enventry (PFvar_t *var, PFalg_op_t *result, PFarray_t *doc)
 {
     return (PFalg_env_t) { .var = var, .result = result, .doc = doc };
 }
@@ -770,6 +784,90 @@ static PFalg_op_t *self (PFalg_op_t *n)
 
 
 /**
+ * Create empty document list signalling that there are no live
+ *  nodes belonging to an algebra operator.
+ */
+PFarray_t *PFalg_empty_frag (void)
+{
+    return PFarray (sizeof (PFalg_op_t *));
+}
+
+
+/**
+ * Create new list with one fragment.
+ */
+static PFarray_t *new_frag (PFalg_op_t *n)
+{
+    PFarray_t *ret = PFarray (sizeof (PFalg_op_t *));
+
+    /* add node */
+    *((PFalg_op_t **) PFarray_add (ret)) = n;
+
+    return ret;
+}
+
+
+/**
+ * Form algebraic disjoint union between the fragments of an
+ * algebra operator's document.
+ */
+static PFalg_op_t *alg_union (PFarray_t *frags)
+{
+    unsigned int i;
+    PFalg_op_t *ret;
+
+    /* make sure list contains fragments */
+    if (!PFarray_last (frags))
+        return empty_doc;
+
+    /* pick first fragment */
+    ret = *((PFalg_op_t **) PFarray_at (frags, 0));
+
+    for (i = 1; i < PFarray_last (frags); i++){
+        fprintf (stderr, "disjunion is next\n");
+        ret = disjunion (ret, *((PFalg_op_t **) PFarray_at (frags, i)));
+    }
+    return ret;
+}
+
+
+/**
+ * Form a set-oriented union between two lists of fragments.
+ */
+PFarray_t *set_union (PFarray_t *frag1, PFarray_t *frag2)
+{
+    unsigned int i, j;
+    PFalg_op_t *n1;
+    PFalg_op_t *n2;
+    PFarray_t *ret = PFarray (sizeof (PFalg_op_t *));
+
+    for (i = 0; i < PFarray_last (frag1); i++) {
+        n1 = *((PFalg_op_t **) PFarray_at (frag1, i));
+
+        for (j = 0; j < PFarray_last (frag2); j++) {
+            n2 = *((PFalg_op_t **) PFarray_at (frag2, j));
+
+            /* n2 is a duplicate of n1: n1 must not be added to result */
+            if (n1 == n2)
+                break;
+        }
+
+        /* n1 has no duplicate in frag2: add n1 to result */
+        if (j == PFarray_last (frag2))
+            *((PFalg_op_t **) PFarray_add (ret)) = n1;
+    }
+
+    /* now append all fragments from frag 2*/
+    for (j = 0; j < PFarray_last (frag2); j++) {
+        n2 = *((PFalg_op_t **) PFarray_at (frag2, j));
+        *((PFalg_op_t **) PFarray_add (ret)) = n2;
+    }
+
+    return ret;
+}
+
+
+/**
  * Concatenate the parameters of built-in functions. @a args
  * contains the arguments seen so far, @a arg is the new
  * argument to be concatenated to the beginning of the list
@@ -800,7 +898,7 @@ static struct PFalg_pair_t args_tail()
     struct  PFalg_pair_t ret;
     
     ret.result = PFmalloc (sizeof (PFalg_op_t));
-    ret.doc = empty_doc;
+    ret.doc = PFalg_empty_frag ();
 
     ret.result->sem.builtin.args = NULL;
 

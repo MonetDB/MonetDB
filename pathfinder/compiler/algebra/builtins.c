@@ -35,14 +35,6 @@
 #include "builtins.h"
 
 
-static PFalg_op_t *empty_doc (void)
-{
-    return PFalg_lit_tbl_ (
-	attlist ("pre", "size", "level", "kind", "prop", "frag"),
-	0, (PFalg_tuple_t *) NULL);
-}
-
-
 /**
  * Worker function to construct algebra implementation of binary
  * arithmetic functions (e.g., op:numeric-add(), op:numeric-subtract(),...).
@@ -94,7 +86,7 @@ bin_arith (PFalg_simple_type_t t,
 			   proj ("iter", "iter"),
 			   proj ("pos", "pos"),
 			   proj ("item", "res")),
-	.doc = empty_doc () };
+	.doc = PFalg_empty_frag () };
 }
 
 
@@ -455,7 +447,7 @@ PFbui_fn_boolean_optbool (PFalg_op_t *loop __attribute ((unused)),
                               ),
                           lit_tbl (attlist ("pos", "item"),
                                    tuple (lit_nat (1), lit_bln (false))))),
-	.doc = empty_doc () };
+	.doc = PFalg_empty_frag () };
 }
 
 /**
@@ -482,7 +474,7 @@ PFbui_fn_boolean_item (PFalg_op_t *loop __attribute ((unused)),
                               lit_tbl (attlist ("item"),
                                        tuple (lit_bln (false))))),
                       lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
-	.doc = empty_doc ()};
+	.doc = PFalg_empty_frag ()};
 }
 
 /**
@@ -519,7 +511,7 @@ PFbui_fn_empty (PFalg_op_t *loop __attribute ((unused)),
                               lit_tbl (attlist ("item"),
                                        tuple (lit_bln (true))))),
                       lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
-	.doc = empty_doc ()};
+	.doc = PFalg_empty_frag ()};
 }
 
 

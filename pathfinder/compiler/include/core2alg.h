@@ -32,10 +32,11 @@
 #ifndef CORE2ALG_H
 #define CORE2ALG_H
 
+#include "array.h"
 
 struct PFalg_pair_t {
     struct PFalg_op_t *result;
-    struct PFalg_op_t *doc;
+    PFarray_t *doc;
 };
 typedef struct PFalg_pair_t PFalg_pair_t;
 
@@ -43,6 +44,14 @@ typedef struct PFalg_pair_t PFalg_pair_t;
 
 /** Compile XQuery Core into Relational Algebra */
 struct PFalg_op_t *PFcore2alg (PFcnode_t *);
+
+/**
+ * Create empty document list signalling that there are no live
+ * nodes/fragments belonging to an algebra operator.
+ */
+PFarray_t *PFalg_empty_frag (void);
+
+
 
 /* ............. environment entry specification .............. */
 
@@ -55,9 +64,9 @@ struct PFalg_op_t *PFcore2alg (PFcnode_t *);
 
 /** environment entry node */
 struct PFalg_env_t {
-    PFvar_t        *var;
+    PFvar_t               *var;
     struct PFalg_op_t     *result;
-    struct PFalg_op_t     *doc;
+    PFarray_t             *doc;
 };
 /** environment entry node */
 typedef struct PFalg_env_t PFalg_env_t;
