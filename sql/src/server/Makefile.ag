@@ -1,7 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 
-EXTRA_DIST = sqlserver.mil
-
 INCLUDES = ../common ../client $(MONET_INCS)
 
 lib__sqlserver = {
@@ -14,6 +12,6 @@ lib__sqlserver = {
 }
 
 scripts_mil = {
-	DIR = datadir/MonetDB
-	SOURCES = sqlserver.mil
+	DIR = libdir/MonetDB
+	SOURCES = sqlserver.mx
 }
