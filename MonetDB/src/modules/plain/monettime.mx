@@ -774,6 +774,8 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 #define tz_isnil(z)   (get_offset(&(z)) == get_offset(tz_nilptr))
 #define ts_isnil(t)   ((t).days == ts_nilptr->days && (t).msecs == ts_nilptr->msecs)
 
+static union { timestamp ts; lng nilval; } ts_nil;
+static union { tzone tz; lng nilval; } tz_nil;
 static timestamp *ts_nilptr = NULL;
 static tzone *tz_nilptr = NULL;
 
@@ -781,32 +783,17 @@ static void date_prelude(void);
 
 bat* monettime_prelude(void)
 {
-	union {
-		lng nilval;
-		timestamp ts;
-	} ts_nil;
-	union {
-		lng nilval;
-		tzone tz;
-	} tz_nil;
-
 	ts_nil.nilval = lng_nil;
 	tz_nil.nilval = lng_nil;
 
-	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
-	*ts_nilptr = ts_nil.ts;
-
-	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
-	*tz_nilptr = tz_nil.tz;
+	ts_nilptr = &ts_nil.ts;
+	tz_nilptr = &tz_nil.tz;
 
 	date_prelude();
 	return NULL;
 }
 
-void monettime_epilogue(void){
-	GDKfree(ts_nilptr);
-	GDKfree(tz_nilptr);
-}
+void monettime_epilogue(void){ }
 
 timestamp*
 timestamp_null(void) {
