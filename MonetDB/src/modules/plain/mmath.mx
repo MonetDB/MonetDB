@@ -311,10 +311,13 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
 #endif
 #endif
 
-#ifndef HAVE_ISINF
 #if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
+/* C99 interface: fpclassify */
 #define isinf(x)	(fpclassify(x) == FP_INFINITE)
+#define isnan(x)	(fpclassify(x) == FP_NAN)
+#define finite(x)	(!isinf(x) && !isnan(x))
 #else
+#ifndef HAVE_ISINF
 static int isinf(double x)
 {
 #ifdef HAVE_FPCLASS
@@ -324,8 +327,8 @@ static int isinf(double x)
     return 0;		/* XXX not correct if infinite */
 #endif	/* HAVE_FPCLASS */
 }
-#endif	/* HAVE_FPCLASSIFY */
 #endif	/* HAVE_ISINF */
+#endif	/* HAVE_FPCLASSIFY */
 
 int math_unary_ISNAN(bit *res , dbl *a ) {
 #ifdef DEBUG
