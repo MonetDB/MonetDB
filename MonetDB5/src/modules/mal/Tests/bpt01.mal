@@ -1,6 +1,4 @@
 #testing the BAT partition table
-include partitions;
-
 a1:= new(:void,:int);
 setSequenceBase(a1,0@0);
 a2:= new(:void,:int);

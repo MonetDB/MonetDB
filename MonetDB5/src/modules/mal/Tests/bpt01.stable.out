@@ -60,10 +60,10 @@ exit (go,i);	# 12  (go:bit)(i:int)
     partitions.deposit(a1,a1);	# 17 BPTdeposit2 ($29:void)<-(a1:bat[:void,:int])(a1:bat[:void,:int])
 end main;	# 18  
 ptop=3 plimit=1024
-[0] bid=13 pid=13 f=0, l=9
-[1] bid=13 pid=14 f=10, l=19
-[2] bid=13 pid=15 f=20, l=-2147483648
-!ERROR: MALexception:partitions.deposit:Partition integrity violation
+[0] bid=13 pid=13 f=0, l=10 prv=0 nxt=1 cap=-2147483648
+[1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-2147483648
+[2] bid=13 pid=15 f=20, l=30 prv=1 nxt=0 cap=-2147483648
+!ERROR: MALexception:partitions.deposit:Partition already known
 #
 
 # 14:35:37 >  

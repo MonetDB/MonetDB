@@ -1,6 +1,5 @@
 #testing the BAT partition table
 # nothing is saved because the bats are not persistent
-
 a1:= new(:void,:int);
 setSequenceBase(a1,0@0);
 a2:= new(:void,:int);

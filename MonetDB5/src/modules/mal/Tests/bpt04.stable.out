@@ -59,19 +59,17 @@ exit (go,i);	# 12  (go:bit)(i:int)
     partitions.deposit(a1);	# 13 BPTdeposit ($25:void)<-(a1:bat[:void,:int])
     partitions.deposit(a1,a2);	# 14 BPTdeposit2 ($26:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
     partitions.deposit(a1,a3);	# 15 BPTdeposit2 ($27:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
-    partitions.deposit(a3,a1);	# 16 BPTdeposit2 ($28:void)<-(a3:bat[:void,:int])(a1:bat[:void,:int])
-    partitions.dump();	# 17 BPTdump ($29:void)
-barrier (idx,b):= partitions.newIterator(a1);	# 18 BPTnewIterator (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 22
-    io.print(idx);	# 19 IOprint_val ($32:int)<-(idx:int)
-    io.print(b);	# 20 IOprint_val ($33:int)<-(b:bat[:void,:int])
-    redo (idx,b):= partitions.hasMoreElements(a1);	# 21 BPThasMoreElements (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 19
-exit (idx,b);	# 22  (idx:int)(b:bat[:void,:int])
-end main;	# 23  
-ptop=4 plimit=1024
-[0] bid=13 pid=13 f=0, l=9
-[1] bid=13 pid=14 f=10, l=19
-[2] bid=13 pid=15 f=20, l=-2147483648
-[3] bid=15 pid=13 f=0, l=-2147483648
+    partitions.dump();	# 16 BPTdump ($28:void)
+barrier (idx,b):= partitions.newIterator(a1);	# 17 BPTnewIterator (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 21
+    io.print(idx);	# 18 IOprint_val ($31:int)<-(idx:int)
+    io.print(b);	# 19 IOprint_val ($32:int)<-(b:bat[:void,:int])
+    redo (idx,b):= partitions.hasMoreElements(a1);	# 20 BPThasMoreElements (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 18
+exit (idx,b);	# 21  (idx:int)(b:bat[:void,:int])
+end main;	# 22  
+ptop=3 plimit=1024
+[0] bid=13 pid=13 f=0, l=10 prv=0 nxt=1 cap=-2147483648
+[1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-2147483648
+[2] bid=13 pid=15 f=20, l=30 prv=1 nxt=0 cap=-2147483648
 [ 0 ]
 #-----------------#
 # h	tmp_13	  # name
