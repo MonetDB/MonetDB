@@ -1666,9 +1666,6 @@ gdk_export int  BBPfix        (bat b);
 gdk_export int  BBPunfix      (bat b);
 gdk_export void BBPhot        (bat b);
 gdk_export void BBPcold       (bat b);
-/*
-gdk_export int  BBPrefcnt     (bat b);
-*/
 gdk_export void BBPtrim       (lng memdelta, lng vmdelta);
 gdk_export void BBPunlock     (str s);
 gdk_export int  BBPfree       (BAT *b);
