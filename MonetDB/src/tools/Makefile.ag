@@ -69,6 +69,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_logger	\
 	../modules/plain/lib_ascii_io	\
 	../modules/plain/lib_streams	\
+	../modules/plain/lib_mel	\
 	\
 	../modules/plain/lib_qt
 

@@ -1,17 +1,13 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
 
-# 15:26:01 >  
-# 15:26:01 >  Mtimeout -timeout 600 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
-# 15:26:01 >  
+# 11:17:39 >  
+# 11:17:39 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/MonetDB/_BUILD_s_/conf/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/MonetDB/_BUILD_s_/src/modules/plain/.libs:/var/tmp/MonetDB/_BUILD_s_/src/modules/calibrator/.libs:/var/tmp/MonetDB/_BUILD_s_/src/mapi/.libs" --dbfarm "/var/tmp/MonetDB/_BUILD_s_/dbfarm" --set monet_prompt= --dbname=Tests_tests_sigs  < none.milS
+# 11:17:39 >  
 
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
-# dbname:Tests_tests_sigs
-# dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_tests_sigs
-
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; statically linked.
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -54,13 +50,13 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "ddbench",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "enum",	  nil	  ]
-[ "io",		  nil	  ]
 [ "iterator",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "logger",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "mapi",	  nil	  ]
+[ "mel",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mprof",	  nil	  ]
@@ -136,12 +132,12 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
+[ "mel",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
-[ "io",		  nil	  ]
 [ "enum",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "ddbench",	  nil	  ]
@@ -447,9 +443,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
@@ -460,16 +454,8 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 # (str)		  (void)  #
 #-------------------------#
 [ "streams",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 
 	dropping streams
-
-
-	dropping io
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -594,9 +580,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "bitvector",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "qt",		  1		  ]
 [ "stats",	  1		  ]
@@ -611,8 +595,6 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "qt",		  nil	  ]
 [ "uchr",	  nil	  ]
 [ "bitvector",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 [ "stats",	  nil	  ]
 
 	dropping qt
@@ -622,12 +604,6 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 
 
 	dropping bitvector
-
-
-	dropping io
-
-
-	dropping blob
 
 
 	dropping stats
@@ -746,6 +722,40 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
+	loading mel
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "mel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_35  #
+# (str)	  (void)  #
+#-----------------#
+[ "mel",  nil	  ]
+
+	dropping mel
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
 	loading mapi
 
 #---------------------------------#
@@ -754,9 +764,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  1		  ]
@@ -769,19 +777,11 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 #-------------------------#
 [ "mapi",	  nil	  ]
 [ "streams",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 
 	dropping mapi
 
 
 	dropping streams
-
-
-	dropping io
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -931,45 +931,6 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading io
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "blob",	  1		  ]
-[ "cluster",	  1		  ]
-[ "io",		  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_25  #
-# (str)	  (void)  #
-#-----------------#
-[ "io",	  nil	  ]
-[ "blob", nil	  ]
-
-	dropping io
-
-
-	dropping blob
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
 	loading enum
 
 #---------------------------------#
@@ -978,29 +939,24 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "enum",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_29  #
-# (str)	  (void)  #
-#-----------------#
-[ "enum", nil	  ]
-[ "io",	  nil	  ]
-[ "blob", nil	  ]
+#-------------------------#
+# BAT:		  tmp_36  #
+# (str)		  (void)  #
+#-------------------------#
+[ "enum",	  nil	  ]
+[ "streams",	  nil	  ]
 
 	dropping enum
 
 
-	dropping io
-
-
-	dropping blob
+	dropping streams
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1056,13 +1012,12 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "ddbench",	  1		  ]
 [ "enum",	  1		  ]
-[ "io",		  2		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  2		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
@@ -1072,8 +1027,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 #-------------------------#
 [ "ddbench",	  nil	  ]
 [ "xtables",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "enum",	  nil	  ]
 
 	dropping ddbench
@@ -1082,10 +1036,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 	dropping xtables
 
 
-	dropping io
-
-
-	dropping blob
+	dropping streams
 
 
 	dropping enum
@@ -1214,9 +1165,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "bitvector",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -1226,16 +1175,8 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 
 	dropping bitvector
-
-
-	dropping io
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1327,9 +1268,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "arith",	  1		  ]
 [ "ascii_io",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
@@ -1341,19 +1280,11 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 #-------------------------#
 [ "ascii_io",	  nil	  ]
 [ "streams",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 
 	dropping ascii_io
 
 
 	dropping streams
-
-
-	dropping io
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
