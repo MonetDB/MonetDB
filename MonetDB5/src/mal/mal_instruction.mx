@@ -935,6 +935,20 @@ retryConstant:
 			} else
 			if( l>255 || l<0) {
 				if( l< 2^31 && l> -2^31 ){	
+				 *
+				 * 2^31 = 29 in C as ^ is XOR !
+				 *
+				 * Probabaly 1<<31 was meant, 
+				 * but   1<<31  = -2147483648 when using 32-bit signed (long) int,
+				 * and -(1<<31) =           0 when using 32-bit signed (long) int !
+				 * Actually, MIN_INT and MAX_INT should be used, here.
+				 * Sjoerd nicely solved all such issues in Monet 4.3...
+				 * Moreover, checking 31/32-bit limits with for a 15/16 bit
+				 * target type (sht = signed short int = 2 byte = 16 bit)
+				 * doesn't make much sense either...
+				 * This needs to be solved!
+				 * Stefan.
+				 *
 				if(type== TYPE_sht){
 					vr->vtype= TYPE_int;
 					setVarType(mb, idx, TYPE_int);
