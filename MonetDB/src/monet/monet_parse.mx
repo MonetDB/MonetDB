@@ -828,7 +828,7 @@ nonvar_statement:
 expr_statement:
         ';'
         {   $$ = ll_sugarnode; ll_sugarnode = NULL;                           }
-    |   TOK_ITERATION parallel TOK_ITERATOR expression_list
+    |   TOK_ITERATION parallel TOK_ITERATOR argument_list
         {   $$ = ll_templates ? (YYSTREE)(size_t)1 /* non-NULL */ : (ptr) 0; ll_templates = 1; } nonvar_statement
         {   ll_templates = ($5 != NULL);
             Myylogexpand($3, $6); Myylogexpand($3, $4);
@@ -1116,13 +1116,13 @@ simple_expression:
     ;
 
 deref_or_simple_expression:
-        TOK_DEREF expression ')' expression_list
+        TOK_DEREF expression ')' argument_list
         {   $$ = Myylognode(TOK_FUNCTION,0);
             Myylogexpand($$,$2); Myylogexpand($$,$4);                           }
-    |	TOK_SETOP expression ']' expression_list
+    |	TOK_SETOP expression ']' argument_list
         {   $$ = Myylognode(TOK_SETOP,0);
             Myylogexpand($$,$2); Myylogexpand($$,$4);                           }
-    |	TOK_SETAGGR expression '}' expression_list
+    |	TOK_SETAGGR expression '}' argument_list
         {   $$ = Myylognode(TOK_SETAGGR,0);
             Myylogexpand($$,$2); Myylogexpand($$,$4);                           }
     |   '(' expression ')'
@@ -1173,7 +1173,7 @@ command_or_ident_expression:
         {   $2->yyval = $1->yyval;
             $2->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
             yylogkill($1); $$ = $2;                                           }
-    | TOK_ATOM 	{ $$ = $1; }
+    | TOK_ATOM '(' ')' 	{ $$ = $1; }
     ;
 
 command_expression:
@@ -1207,6 +1207,8 @@ command_or_operator_or_ident:
 command_or_operator:
 	TOK_COMMAND
         {   $$ = $1;                                                          }
+    |	TOK_PROC
+        {   $$ = $1;                                                          }
     |   TOK_ATOM
         {   $$ = $1;                                                          }
     |   operator
@@ -1214,9 +1216,7 @@ command_or_operator:
     ;
 
 operator:
-        TOK_PROC
-        {   $$ = $1;                                                          }
-    |   TOK_OPERATOR
+        TOK_OPERATOR
         {   $$ = $1;                                                          }
     |   TOK_ASSIGNOP
         {   $$ = $1;                                                          }
@@ -1234,13 +1234,11 @@ argument_list:
         {   $$ = $2;                                                          }
     |   '(' ')'
         {   $$ = (ptr) yysugar(ll_sugarnode);                                 }
-    ;
+    /* DISABLED TO ENFORCE () ON COMMANDS
+    |    |* empty *|
+         {   $$ = (ptr) yysugar(ll_sugarnode);                                }
+    */
 
-expression_list:
-	argument_list
-    |   /* empty */
-        {   $$ = (ptr) yysugar(ll_sugarnode);                                 }
-    ;
 
 expressions:
         { $$ = ll_sugarnode; } param_expression
