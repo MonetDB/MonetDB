@@ -386,7 +386,7 @@ src/utils/autogen/Makefile
 src/gdk/Makefile
 src/mal/Makefile
 src/monet/Makefile
-src/M2m/Makefile
+src/mil/Makefile
 src/modules/Makefile
 src/modules/kernel/Makefile
 src/modules/atoms/Makefile
