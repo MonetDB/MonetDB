@@ -1366,9 +1366,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
-            Srvr = Srvr+' & echo. & '
+            Srvr = Srvr+' & echo.& '
         else:
-            Srvr = Srvr+' ; echo  ; '
+            Srvr = Srvr+' ; echo ; '
         Srvr = Srvr+'echo Over..'
 
         SrvrOutFile = TST+".server.out"
