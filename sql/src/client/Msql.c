@@ -135,8 +135,10 @@ static int forward_data(stream *out, int trace)
 {
 	int done = 0;
 
-	if (trace)
+	if (trace){
 		printf("forward data\n");
+		fflush(stdout);
+	}
 	while(!done){
 		char *s = sql_readline("");
 		if (!s) {
@@ -300,7 +302,9 @@ int receive( stream *rs, stream *out, int trace ){
 				printf("SQL  no Rows affected\n" );
 		}
 	} else if (type != QEND){
-		printf("type %d, %d , %d\n", res, type, rs->errnr);
+		printf("type %d, %d , %d\n", type, res, rs->errnr);
+	} else {
+		printf("type QEND, %d , %d\n", res, rs->errnr);
 	}
 	fflush(stdout);
 	return status;
