@@ -31,6 +31,7 @@ import socket
 #import signal
 #import getpass
 import Mfilter
+import prof
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
@@ -882,7 +883,7 @@ def RunTest(env, TST, BusyPorts) :
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f)  and  f != TST+EXT+".src":
-                    os.system("python "+os.path.join(THISPATH,"prof.py")+" "+f+" "+env['CMDLST'])
+                    prof.prof(f, env['CMDLST'])
                     os.rename(f,f+".no_prof")
                     os.rename("prof_"+f,f)
                     os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(par['ACCURACY'])+' '+f+'.no_prof '+f+' '+f+'.prof.diff.html')
@@ -1134,8 +1135,7 @@ def CheckPort(host,port) :
         S.bind((host,port))
     except socket.error, (Serrno,Serrstr):
         busy = 1
-    else:
-        S.close()
+    S.close()
     return busy, Serrno, Serrstr
 ### CheckPort(host,port) #
 
