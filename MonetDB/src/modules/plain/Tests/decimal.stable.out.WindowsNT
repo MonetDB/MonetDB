@@ -2473,7 +2473,7 @@ proc pow(int base, int raise) : int {
 proc arith_perftest(bat[any::1,any::2] b, any::2 div, str s) : void {
   var t := time(), reduce := [/](b,div); printf("[/](%s) = %dms\n", s, time()-t);
   t := time(); printf("join(%s=%d) = %d ms\n", s, join(b,b.reverse()).count(), time() - t);
-  t := time(); printf("group(%s=%d) = %d ms\n", s, CTgroup(reduce).tunique().count(), time() - t);
+  t := time(); printf("group(%s=%d) = %d ms\n", s, CTgroup(reduce).extend().count(), time() - t);
   t := time(); printf("[*](%s=%d) = %d ms\n", s, [*](b,div).count(), time() - t);
   t := time(); printf("[-](%s=%d) = %d ms\n", s, [-](b,b).count(), time() - t);
   t := time(); printf("[+](%s=%d) = %d ms\n", s, [+](b,b).count(), time() - t);
@@ -2492,27 +2492,27 @@ int_10K.seqbase(0@0);
 
 printf("#~BeginVariableOutput~#\n"); arith_perftest(int_10K, 101, "int_10K"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[/](int_10K) = 2ms
-join(int_10K=10000) = 5 ms
-group(int_10K=100) = 2 ms
-[*](int_10K=10000) = 2 ms
-[-](int_10K=10000) = 1 ms
-[+](int_10K=10000) = 1 ms
-[pow](int_10K=10000) = 91 ms
-sort(int_10K) = 7 ms
+[/](int_10K) = 0ms
+join(int_10K=10000) = 10 ms
+group(int_10K=100) = 0 ms
+[*](int_10K=10000) = 0 ms
+[-](int_10K=10000) = 0 ms
+[+](int_10K=10000) = 0 ms
+[pow](int_10K=10000) = 110 ms
+sort(int_10K) = 0 ms
 #~EndVariableOutput~#
 
 var dec_10K := [decimal](int_10K);
 printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_10K, decimal("101"), "dec_10K"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[/](dec_10K) = 20ms
-join(dec_10K=10000) = 15 ms
-group(dec_10K=100) = 3 ms
-[*](dec_10K=10000) = 36 ms
-[-](dec_10K=10000) = 28 ms
-[+](dec_10K=10000) = 33 ms
-[pow](dec_10K=10000) = 257 ms
-sort(dec_10K) = 34 ms
+[/](dec_10K) = 30ms
+join(dec_10K=10000) = 10 ms
+group(dec_10K=100) = 10 ms
+[*](dec_10K=10000) = 40 ms
+[-](dec_10K=10000) = 30 ms
+[+](dec_10K=10000) = 40 ms
+[pow](dec_10K=10000) = 331 ms
+sort(dec_10K) = 10 ms
 #~EndVariableOutput~#
 
 int_10K.seqbase(oid(nil));
@@ -2526,26 +2526,26 @@ int_100K.seqbase(0@0);
 printf("#~BeginVariableOutput~#\n"); arith_perftest(int_100K, 1001, "int_100K"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 [/](int_100K) = 10ms
-join(int_100K=100000) = 58 ms
+join(int_100K=100000) = 80 ms
 group(int_100K=100) = 10 ms
-[*](int_100K=100000) = 36 ms
-[-](int_100K=100000) = 8 ms
-[+](int_100K=100000) = 19 ms
-[pow](int_100K=100000) = 926 ms
-sort(int_100K) = 94 ms
+[*](int_100K=100000) = 40 ms
+[-](int_100K=100000) = 10 ms
+[+](int_100K=100000) = 30 ms
+[pow](int_100K=100000) = 1052 ms
+sort(int_100K) = 60 ms
 #~EndVariableOutput~#
 
 var dec_100K := [decimal](int_100K);
 printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_100K, decimal("1001"), "dec_100K"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[/](dec_100K) = 209ms
-join(dec_100K=100000) = 368 ms
-group(dec_100K=100) = 28 ms
-[*](dec_100K=100000) = 425 ms
-[-](dec_100K=100000) = 296 ms
-[+](dec_100K=100000) = 367 ms
-[pow](dec_100K=100000) = 2629 ms
-sort(dec_100K) = 742 ms
+[/](dec_100K) = 261ms
+join(dec_100K=100000) = 390 ms
+group(dec_100K=100) = 30 ms
+[*](dec_100K=100000) = 541 ms
+[-](dec_100K=100000) = 330 ms
+[+](dec_100K=100000) = 411 ms
+[pow](dec_100K=100000) = 3345 ms
+sort(dec_100K) = 240 ms
 #~EndVariableOutput~#
 
 int_100K.seqbase(oid(nil));
@@ -2558,23 +2558,23 @@ int_1M.seqbase(0@0);
 
 printf("#~BeginVariableOutput~#\n"); arith_perftest(int_1M, 10001, "int_1M"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[/](int_1M) = 93ms
-join(int_1M=1000000) = 567 ms
-group(int_1M=100) = 97 ms
-[*](int_1M=1000000) = 543 ms
-[-](int_1M=1000000) = 78 ms
-[+](int_1M=1000000) = 187 ms
+[/](int_1M) = 100ms
+join(int_1M=1000000) = 721 ms
+group(int_1M=100) = 100 ms
+[*](int_1M=1000000) = 701 ms
+[-](int_1M=1000000) = 111 ms
+[+](int_1M=1000000) = 270 ms
 #~EndVariableOutput~#
 
 var dec_1M := [decimal](int_1M);
 printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_1M, decimal("10001"), "dec_1M"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[/](dec_1M) = 2333ms
-join(dec_1M=1000000) = 2735 ms
-group(dec_1M=100) = 272 ms
-[*](dec_1M=1000000) = 5286 ms
-[-](dec_1M=1000000) = 3071 ms
-[+](dec_1M=1000000) = 3885 ms
+[/](dec_1M) = 3174ms
+join(dec_1M=1000000) = 3425 ms
+group(dec_1M=100) = 331 ms
+[*](dec_1M=1000000) = 6869 ms
+[-](dec_1M=1000000) = 3696 ms
+[+](dec_1M=1000000) = 4486 ms
 #~EndVariableOutput~#
 
 quit();
