@@ -1,7 +1,7 @@
 #!/bin/sh
 PWD=`pwd`
 echo $PWD
-SQL='Msql -u monetdb -P monetdb --debug=10'
+SQL='MapiClient -lsql -u monetdb -P monetdb --debug=10'
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
