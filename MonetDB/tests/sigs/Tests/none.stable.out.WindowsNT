@@ -76,6 +76,7 @@ loaded;
 [ "tpcd",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "uchr",	  nil	  ]
+[ "unix",	  nil	  ]
 [ "url",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "wisc",	  nil	  ]
@@ -138,6 +139,7 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "wisc",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
+[ "unix",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "tcpip",	  nil	  ]
@@ -310,6 +312,45 @@ others@batloop{
 [ "url",  nil	  ]
 
 	dropping url
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading unix
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "unix",	  1		  ]
+#-----------------#
+# BAT:	  tmp_32  #
+# (str)	  (void)  #
+#-----------------#
+[ "unix", nil	  ]
+[ "blob", nil	  ]
+
+	dropping unix
+
+
+	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #

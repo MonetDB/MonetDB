@@ -58,6 +58,7 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "tcpip"	  ]
 [ "tpcd"	  ]
 [ "uchr"	  ]
+[ "unix"	  ]
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]
@@ -929,6 +930,18 @@ Module: "uchr"
 #-------------------------------------------------#
 # function	| type	| signature	| help	  #
 #-------------------------------------------------#
+
+Module: "unix"
+
+[ 4 ]
+[ 4 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature				| help																									  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "getenv",	  "COMMAND:   ",  "getenv(str) : str",			  "Get the environment variable string."																				  ]
+[ "run",	  "COMMAND:   ",  "run(blob, str, ..str..) : blob",	  "Execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caught and returned as a blob."  ]
+[ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",		  "Set the environment variable string."																				  ]
+[ "system",	  "COMMAND:   ",  "system(str) : int",			  "Execute a command and give back the return value"																			  ]
 
 Module: "url"
 

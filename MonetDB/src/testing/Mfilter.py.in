@@ -121,8 +121,8 @@ test = (
                 "|" r'^\[ 2@0,\t* +406@0\t* +\]$'
                 "|" r'^_MMjoin_18\.find\(7@0\)\.print;$'
                 # src/modules/plain/salgebra (on WindowsNT):
-                "|" r'^\[ "batId",\t* +"(28|29|30)"\t* +\]$'
-                "|" r'^\[ (28|29|30),\t* +"ti",\t* +1,\t* +ti\t* +\]$'
+                "|" r'^\[ "batId",\t* +"(28|29|30|31)"\t* +\]$'
+                "|" r'^\[ (28|29|30|31),\t* +"ti",\t* +1,\t* +ti\t* +\]$'
                 # Mtest warnings
                 "|" r'^(quit)?;$'
                 "|" r'^(printf\("\\n)?! Mserver still running after Mshutdown\. Quitting now\. !(\\n"\);)?$'

@@ -28,6 +28,7 @@ All_mods@batloop {
      wisc: loading... done.
    vector: loading... done.
       url: loading... done.
+     unix: loading... done.
      uchr: loading... done.
     trans: loaded.
      tpcd: loading... done.
@@ -55,7 +56,7 @@ malalgebra: loading... done.
   ddbench: loading... done.
  counters: loading... done.
   cluster: loaded.
-     blob: loading... done.
+     blob: loaded.
 bitvector: loaded.
    bitset: loading... done.
 bat_arith: loading... done.
@@ -109,6 +110,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "tpcd"	  ]
 [ "trans"	  ]
 [ "uchr"	  ]
+[ "unix"	  ]
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]

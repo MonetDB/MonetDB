@@ -104,7 +104,10 @@ int unix_system(int *res, str command) {
 
 /*----------------------------------------------------------------------------
  * The 'RUN' command and it's helper functions.
+ * Currently(?) not available on Windows, as there is no fork(), pipe(), and waitpid().
  */
+
+#ifndef NATIVE_WIN32
 
 static int unix_fork(int *inpipe, int *outpipe,char *command,va_list ap) {
 /* This function forks, and executes a given command,
@@ -212,7 +215,13 @@ static void unix_waitpid(int pid,int inpipe,int outpipe) {
 
 /*----------*/
 
+#endif	/* not NATIVE_WIN32 */
+
 int unix_run(blob **output,blob *input,str command,...) {
+#ifdef NATIVE_WIN32
+    GDKerror("Sorry, [unix_]run doesn't work on Windows (yet?)!\n");
+    return(GDK_FAIL);
+#else
     va_list ap;
     int   pid,inpipe,outpipe;
     int   got,size;
@@ -280,6 +289,7 @@ int unix_run(blob **output,blob *input,str command,...) {
 
     unix_waitpid(pid,inpipe,outpipe);
     return GDK_SUCCEED;
+#endif  /* not NATIVE_WIN32 */
 }
 
 
