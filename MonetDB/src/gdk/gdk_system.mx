@@ -342,8 +342,9 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 
 void MT_global_exit(int s) {
 #ifdef HAVE_PTHREAD_KILL_OTHER_THREADS_NP
-	/*(void) kill(0, SIGHUP);*/
+	/*(void) kill(0, SIGHUP);
 	pthread_kill_other_threads_np();
+*/
 #endif
 #ifndef NATIVE_WIN32
 	/* HACK ALERT
@@ -359,13 +360,13 @@ void MT_global_exit(int s) {
 	   In case of profiling (ie gdk_alloc_map=no) we need to exit 
            correctly without losing the proper image, so in that case we 
 	   don't apply this Hack.
-	 */
 	if (gdk_alloc_map) { 
 		if (s)
 			execl("/bin/false", "false", (char *) 0);
 		else
 			execl("/bin/true", "true", (char *) 0);
 	}
+	 */
 #endif
 	exit(s);
 }
