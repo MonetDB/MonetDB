@@ -636,11 +636,11 @@ type *head_type( statement *st ){
 	}
 }
 
-statement *_basecolumn( statement *st ){
+statement *tail_column( statement *st ){
 	switch(st->type){
 	case st_join: 
 	case st_derive: 
-	case st_intersect: return _basecolumn(st->op2.stval);
+	case st_intersect: return tail_column(st->op2.stval);
 
 	case st_mark: 
 	case st_unop: 
@@ -654,13 +654,13 @@ statement *_basecolumn( statement *st ){
 	case st_name: 
 	case st_group: 
 	case st_union: 
-	case st_unique: return _basecolumn(st->op1.stval);
+	case st_unique: return tail_column(st->op1.stval);
 
 	case st_column: return st; 
 
-	case st_reverse: return basecolumn(st->op1.stval);
+	case st_reverse: return head_column(st->op1.stval);
 
-	case st_triop: return basecolumn(st->op1.lval->h->data.stval);
+	case st_triop: return head_column(st->op1.lval->h->data.stval);
 	default:
 		fprintf( stderr, "missing base column %d %s\n", 
 				st->type, statement2string(st));
@@ -669,7 +669,7 @@ statement *_basecolumn( statement *st ){
 	}
 }
 
-statement *basecolumn( statement *st ){
+statement *head_column( statement *st ){
 	switch(st->type){
 	case st_atom: 
 	case st_mark: 
@@ -684,15 +684,15 @@ statement *basecolumn( statement *st ){
 	case st_semijoin: 
 	case st_like: 
 	case st_select: 
-	case st_select2: return basecolumn(st->op1.stval);
+	case st_select2: return head_column(st->op1.stval);
 	case st_column: return st;
 
 	case st_group: 
-	case st_reverse: return _basecolumn(st->op1.stval);
+	case st_reverse: return tail_column(st->op1.stval);
 
-	case st_derive: return _basecolumn(st->op2.stval);
+	case st_derive: return tail_column(st->op2.stval);
 
-	case st_triop: return basecolumn(st->op1.lval->h->data.stval);
+	case st_triop: return head_column(st->op1.lval->h->data.stval);
 	default:
 		fprintf( stderr, "missing base column %d %s\n", 
 				st->type, statement2string(st));

@@ -148,8 +148,8 @@ extern type *head_type( statement *st );
 extern type *tail_type( statement *st );
 
 extern char *column_name( statement *st );
-extern statement *_basecolumn( statement *st );
-extern statement *basecolumn( statement *st );
+extern statement *head_column( statement *st );
+extern statement *tail_column( statement *st );
 
 extern int statement_dump( statement *s, int *nr, context *sql );
 

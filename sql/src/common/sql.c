@@ -260,12 +260,12 @@ var *table_optname( context *sql, scope *scp, statement *sq,
 		for(; m; m = m->next){
 			statement *st = m->data.stval;
 			char *cname = column_name(st);
-			statement *bc = _basecolumn(st);
+			statement *bc = tail_column(st);
 
 			while(bc->type == st_column &&
 			      bc->op1.cval->table->name == NULL &&
 			      bc->op1.cval->s != NULL){
-				bc = _basecolumn(bc->op1.cval->s);
+				bc = tail_column(bc->op1.cval->s);
 			}
 			assert(bc->op1.cval->table->name);
 			scope_add_statement( scp, st, 
@@ -1546,7 +1546,7 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 			statement *sd, *j, *jr;
 
 			j = statement_const(
-				statement_diff( basecolumn(o->data.stval),
+				statement_diff( head_column(o->data.stval),
 				statement_reverse( o->data.stval )), a);
 
 			o = o->next;
@@ -1554,7 +1554,7 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 			    return j;
 
 			jr = statement_const(
-				statement_diff( basecolumn(o->data.stval),
+				statement_diff( head_column(o->data.stval),
 				statement_reverse( o->data.stval )), a);
 			sd = statement_diamond( 
 				 statement_join( j, 
@@ -1562,7 +1562,7 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 			o = o->next;
 			for( ; o; o = o->next ){
 				jr = statement_const(
-				  statement_diff( basecolumn(o->data.stval),
+				  statement_diff( head_column(o->data.stval),
 				  statement_reverse( o->data.stval )), a);
 
 				list_append_statement( sd->op1.lval,
