@@ -119,15 +119,15 @@ To prevent void bats to convert to oid bats we need overloaded insert and
 replace commands. These operations should at a later stage be moved to the
 kernel libraries, e.g. bat.mx
 @m
+ 	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
+
  	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
 
- 	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
+ 	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
 
  	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
 
  	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
-
- 	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
 
  	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
 
@@ -871,7 +871,7 @@ int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 	return GDK_SUCCEED;
 }
 
-int oid_bat_append_val_wrap( BAT **res, BAT *i, ptr u )
+int oid_bat_append_val_wrap( BAT **res, BAT *i, ptr t )
 {
         oid o;
 
@@ -879,17 +879,17 @@ int oid_bat_append_val_wrap( BAT **res, BAT *i, ptr u )
 	o = oid_max(i);
 	o++;
 	*res = i;
-	BUNins( i, (ptr) & o, u );
+	BUNins( i, (ptr) & o, @:batconvert(i,t)@ );
 	BBPfix(i->batCacheid);
 	return GDK_SUCCEED;
 }
 
 
-int bat_append_val_wrap( BAT **res, BAT *i, ptr u )
+int bat_append_val_wrap( BAT **res, BAT *i, ptr t )
 {
 	oid h = i->hseqbase + BATcount(i);
 	*res = i;
-	BUNins( i, (ptr) & h, u );
+	BUNins( i, (ptr) & h, @:batconvert(i,t)@ );
 	BBPfix(i->batCacheid);
 	return GDK_SUCCEED;
 }
