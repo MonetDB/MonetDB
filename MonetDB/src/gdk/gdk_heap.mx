@@ -183,9 +183,9 @@ int HEAPextend(Heap *h, size_t size) {
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (h->filename && size >= GDK_vm_minsize) {
+			char *of = h->filename;
 			FILE *fp;
 
-			GDKfree(h->filename);
 			h->filename = NULL;
 			strcat(ext, ".priv");
 			fp = GDKfilelocate(nme, "wb", ext);
@@ -199,6 +199,7 @@ int HEAPextend(Heap *h, size_t size) {
 					return 0;
 				}
 			} 
+			GDKfree(of);
 		}
 		*h = bak;
 	}
