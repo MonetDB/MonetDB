@@ -153,6 +153,12 @@ address CMDBATnew;
 pattern new(ht:void, tt:any$2, size:lng) 
 	:bat[:void,:any$2] 	
 address CMDBATnew;
+pattern new(b:bat[:any$1,:any$2] ) 
+	:bat[:any$1,:any$2] 	
+address CMDBATnewDerived;
+pattern new(b:bat[:any$1,:any$2], size:lng) 
+	:bat[:any$1,:any$2] 	
+address CMDBATnewDerived;
 @+ Algebraic operators
 Those that rely on knowledge of the runtime environment
 @mal
@@ -534,6 +540,28 @@ str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
         tt= getArgType(m,p,2);
         if( p->argc>3)
                 cap= *(int *) getArgReference(s,p,3);
+        res= (int *) getArgReference(s,p,0);
+
+        return (str) BKCnewBATint(res,&ht,&tt,&cap);
+}
+str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+        int bid, ht, tt;
+	int cap=0;
+        int *res;
+	BAT *b;
+	(void) m;
+
+	bid= *(int *) getArgReference(s,p,1);
+        @:getBATdescriptor(&res,&bid,b,clone)@
+	if( bid>0){
+		ht= b->htype;
+		tt= b->ttype;
+	} else {
+		tt= b->htype;
+		ht= b->ttype;
+	}
+        if( p->argc>2)
+                cap= *(int *) getArgReference(s,p,2);
         res= (int *) getArgReference(s,p,0);
 
         return (str) BKCnewBATint(res,&ht,&tt,&cap);
