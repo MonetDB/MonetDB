@@ -41,7 +41,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "abssyn.h"
+#include "parser.h"
 
 /* PFarray_t */
 #include "array.h"
@@ -400,7 +400,8 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                GeneralComp
                NodeComp
                OrderComp
-               ForwardAxis
+
+%type <axis>   ForwardAxis
                ReverseAxis
 
 %type <mode>   OrderModifier

@@ -103,7 +103,7 @@ static bool scoping_failed = false;
  * @param varname Name of the variable to push onto the stack. 
  * @return Status code as described in pathfinder/oops.c
  */
-void
+static void
 push (PFpnode_t *n)
 {
     PFvar_t *var;
@@ -154,7 +154,7 @@ find_var (PFqname_t varname)
  *
  * @param n The current abstract syntax tree node
  */
-void
+static void
 scope (PFpnode_t *n)
 {
     unsigned int child;     /* Iterate over children */

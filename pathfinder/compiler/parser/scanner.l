@@ -117,9 +117,9 @@ static int i;
  } while(0);
 
 /* prototypes */
-char predefined_entity (char *ent);
-char char_ref (char *ref);
-char *expand_esc_quots (char *quot);
+static char predefined_entity (char *ent);
+static char char_ref (char *ref);
+static char *expand_esc_quots (char *quot);
 
 /**
  * define DEBUG_SCANNER to activate debugging output in parser
@@ -194,7 +194,7 @@ gotoState (int s)
  *
  */
 
-#if USE_PAREN_STATE_STACK
+#ifdef USE_PAREN_STATE_STACK
 
 /** 
  * maximum depth of paren stack
@@ -1007,7 +1007,7 @@ _                                 ({S}|{ExprComment})+
 /* Map an XML predefined entity and return the
  * character it represents.
  */
-char predefined_entity (char *ent)
+static char predefined_entity (char *ent)
 {
     switch (*ent) {
         case 'l': /* &lt; */
@@ -1026,7 +1026,7 @@ char predefined_entity (char *ent)
 /* Return the character referenced by the given
  * (hexa)decimal code value.
  */
-char char_ref (char *ref)
+static char char_ref (char *ref)
 {
     switch (*ref) {
         case 'x': /* hexadecimal */
@@ -1044,7 +1044,7 @@ char char_ref (char *ref)
  * @param quot string to expand
  * @return expanded string (newly allocated)
  */
-char *expand_esc_quots (char *quot)
+static char *expand_esc_quots (char *quot)
 {
     /* string with escaped quotation marks expanded */
     char *e, *exp;

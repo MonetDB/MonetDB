@@ -282,7 +282,7 @@ PFns_eq (PFns_t ns1, PFns_t ns2)
  * @param c  owning element content node
  * @param cc parent of owning element content node
  */
-void
+static void
 apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
 {
     PFpnode_t *a;
@@ -411,7 +411,7 @@ apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
  *
  * @param n current abstract syntax tree node
  */
-void
+static void
 ns_resolve (PFpnode_t *n)
 {
     unsigned c = 0;    /* iterates over children of this node */

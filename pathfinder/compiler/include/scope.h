@@ -54,7 +54,7 @@ struct PFscope_t {
 };
 
 /** create a scope data structure */
-PFscope_t *PFscope ();
+PFscope_t *PFscope (void);
 
 /** bring new entry key |--> value into scope */
 void PFscope_into (PFscope_t *, PFqname_t, void *);

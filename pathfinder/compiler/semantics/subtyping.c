@@ -520,7 +520,7 @@ sigma (ty_set_t ts)
  * @param t2 (pointer to) second type
  * @return true, if both types are shallow equal, false otherwise
  */
-bool
+static bool
 name_eq (PFty_t *t1, PFty_t *t2)
 {
     assert (t1 && t2);
@@ -682,7 +682,7 @@ ty_eq (PFty_t *t1, PFty_t *t2)
  * @param p2 (pointer to) second pair
  * @return true if @a p1 and @a p2 are equal, false otherwise
  */
-bool
+static bool
 ty_pair_eq (ty_pair_t *p1, ty_pair_t *p2)
 {
     return ty_eq (&(p1->fst), &(p2->fst)) && 

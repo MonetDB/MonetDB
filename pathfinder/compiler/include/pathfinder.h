@@ -69,14 +69,14 @@ enum PFphases_t {
 typedef enum PFphases_t PFphases_t;
 
 /** Output types */
-typedef enum PFoutput_t PFoutput_t;
-
-/** Output types */
 enum PFoutput_t {
       output_monet       /**< Output to feed into Monet (w/o markup) */
     , output_xterm       /**< Output for screen-view (colored) */
     , output_html        /**< HTML-Output (colored) */
 };
+
+/** Output types */
+typedef enum PFoutput_t PFoutput_t;
 
 /** global state of the compiler  */
 typedef struct PFstate_t PFstate_t;

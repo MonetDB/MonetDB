@@ -924,6 +924,7 @@ main (int argc, char *argv[])
      * optimization code.
      */
 
+#if 0
     /* ***** begin of temporary unfolding code ***** */
 
     tm = PFtimer_start ();
@@ -939,6 +940,7 @@ main (int argc, char *argv[])
 #endif
 
     /* ***** end of temporary unfolding code ***** */
+#endif
 
 
     /*

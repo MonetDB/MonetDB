@@ -159,7 +159,7 @@ static int TWIG_ID[] = {
 #include "algebra_mnemonic.h"
 
 static PFalg_op_t *loop = NULL;
-static PFalg_op_t *delta = NULL;
+static PFalg_op_t *delta __attribute__((unused)) = NULL;
 
 PFalg_op_t *
 PFcore2alg (PFcnode_t *c)

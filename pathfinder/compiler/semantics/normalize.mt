@@ -34,7 +34,7 @@ prologue {
  */
 
 #include "pathfinder.h"
-#include "abssyn.h"
+#include "normalize.h"
 
 /*
  * Include all function declarations and definitions that reside

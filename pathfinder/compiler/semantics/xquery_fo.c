@@ -273,7 +273,7 @@
                                                                          \
 , /* pf:root () as document { xs:anyType } *  */                         \
   { .ns = PFns_pf, .loc = "root",                                        \
-    .arity = 0, .par_ty = { },                                           \
+    .arity = 0, .par_ty = { PFty_none () },                              \
     .ret_ty = PFty_star (PFty_doc (PFty_xs_anyType ())) }                \
 , /* pf:node-name-eq (xs:string, xs:string,                          */  \
   /*                  (xs:anyElement | xs:anyAttribute) *)           */  \
@@ -288,7 +288,7 @@
                                                                          \
 , { .loc = 0 }                                                           \
 }
-  
+
 void
 PFfun_xquery_fo ()
 {

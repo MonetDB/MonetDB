@@ -133,8 +133,6 @@
 /**
  * Encoding of internal types and type constructors.  
  */
-typedef enum PFtytype_t PFtytype_t;
-
 enum PFtytype_t {
   /* ty_none is not part of the XQuery type system per se, but
    * is introduced to facilitate type-checking and subtyping
@@ -172,6 +170,8 @@ enum PFtytype_t {
 
   ty_types                     /**< # of types                  */
 };
+
+typedef enum PFtytype_t PFtytype_t;
 
 /**
  * Maximum number of types a type constructor can take.

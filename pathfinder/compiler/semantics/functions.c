@@ -211,7 +211,7 @@ check_fun_usage (PFpnode_t * n)
         if (arity != fun->arity)
             PFoops_loc (OOPS_APPLYERROR, n->loc,
                         "wrong number of arguments for function `%s' "
-                        "(expected %i, got %i)",
+                        "(expected %u, got %u)",
                         PFqname_str (fun->qname), fun->arity, arity);
         
         /*

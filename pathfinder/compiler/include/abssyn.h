@@ -48,10 +48,7 @@
  */
 #define PFPNODE_MAXCHILD 4
 
-/** parse tree node type indicators
- */
-typedef enum PFptype_t PFptype_t;
-
+/** parse tree node type indicators */
 enum PFptype_t {
   p_plus,         /**< binary + */
   p_minus,        /**< binary - */
@@ -156,10 +153,9 @@ enum PFptype_t {
   p_param         /**< (formal) function parameter */
 };
 
-/** XQuery (XPath) axes
- */
-typedef enum PFpaxis_t PFpaxis_t;
+typedef enum PFptype_t PFptype_t;
 
+/** XQuery (XPath) axes */
 enum PFpaxis_t {
     p_ancestor,           /**< the parent, the parent's parent,... */
     p_ancestor_or_self,   /**< the parent, the parent's parent,... + self */
@@ -175,9 +171,7 @@ enum PFpaxis_t {
     p_self                /**< the context node itself */
 };
 
-/** XML node kinds 
- */
-typedef enum PFpkind_t PFpkind_t;
+typedef enum PFpaxis_t PFpaxis_t;
 
 /** XML node kinds */
 enum PFpkind_t {
@@ -190,11 +184,10 @@ enum PFpkind_t {
     p_kind_attr
 };
 
-/** XQuery sequence type occurrence indicator
- *  (see W3C XQuery, 2.1.3.2)
- */
-typedef enum PFpoci_t PFpoci_t;
+/** XML node kinds */
+typedef enum PFpkind_t PFpkind_t;
 
+/** XQuery sequence type occurrence indicator (see W3C XQuery, 2.1.3.2) */
 enum PFpoci_t {
   p_one,           /**< exactly one (no indicator) */
   p_zero_or_one,   /**< ? */
@@ -202,9 +195,9 @@ enum PFpoci_t {
   p_one_or_more    /**< + */
 };
 
-/** XQuery `order by' modifier
- *  (see W3C XQuery, 3.8.3)
- */
+typedef enum PFpoci_t PFpoci_t;
+
+/** XQuery `order by' modifier (see W3C XQuery, 3.8.3) */
 typedef struct PFpsort_t PFpsort_t;
 
 struct PFpsort_t {

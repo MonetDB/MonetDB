@@ -81,7 +81,7 @@ typedef TWIG_NODE *NODEPTR;
  * phase `foo'.
  */
 #define PHASE(p) if ((p) & twig_phase__) cost = 0; else ABORT
-static int twig_phase__;
+static int twig_phase__ __attribute__((unused));
 
 /**
  * Run the twig pattern matcher (in phases).
