@@ -1,8 +1,8 @@
 
-SUBDIRS = src conf doc scripts tests
+SUBDIRS = src conf doc scripts tests 
 
-EXTRA_DIST = rules.mk rules.msc winconfig.h bootstrap deps \
-	     winlibc.h getopt.c getopt1.c getopt.h
+EXTRA_DIST = rules.mk bootstrap
+EXTRA_DIST_DIR = NT
 
 EXTRA_HEADERS = config.h
 
