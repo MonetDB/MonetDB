@@ -71,6 +71,12 @@ pattern RRoptimizer(mod:any, fcn:any):str
 address QOTRRoptimizerCALL
 comment "Reversal idempotency removal";
 
+pattern GCoptimizer():str 
+address QOTGCoptimizer;
+pattern GCoptimizer(mod:any, fcn:any):str 
+address QOTGCoptimizerCALL
+comment "Garbage collector optimizer";
+
 pattern setDebug():void 
 address QOTdebugOptimizers;
 
@@ -191,6 +197,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(AR)@
 	@:QOTC(DC)@
 	@:QOTC(SP)@
+	@:QOTC(GC)@
 	@:QOTC(RR)@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
