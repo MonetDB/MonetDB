@@ -548,13 +548,14 @@ str IOexport(int *ret, int *bid, str *fnme) {
 The import command reads a single BAT from an ASCII file. It assumes
 a layout compatible with that produced by print or export.
 @c
+#define COMMA ','
 str IOimport(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	int	(*hconvert)(str, int*, ptr*), (*tconvert)(str, int*, ptr*);
 	size_t	bufsize = 2048; /* NIELS:tmp change used to be 1024 */
 	char	*base, *cur, *end;
 	char	*buf = (char *) GDKmalloc(bufsize);
-	ptr	*h = 0, *t = 0;
+	ptr	h = 0, t = 0;
 	int	lh = 0,	lt = 0;
 	FILE	*fp = fopen(*fnme, "r");
 
@@ -625,17 +626,17 @@ Parse the line, and insert a BUN.
 		if (*p == '#') continue;
 @-
 @= parsevalue
-	       	for (;*p && ((int) *p) != @2; p++);
+		for (;*p && *p != @2; p++);
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
-       		if (*p == 0){
-			*ret= FALSE;
-		       	return throwException(MALEXCEPTION,"bat.import",
+		if (*p == 0) {
+			*ret = FALSE;
+			return throwException(MALEXCEPTION, "bat.import",
 				"error in %s",buf);
-       		}
-       		p += @1(p, @3, @4);			
+		}
+		p += @1(p, @3, @4);
 @c
 		@:parsevalue(hconvert, '[', &lh, (ptr *) &h)@
-		@:parsevalue(tconvert, 44, &lt, (ptr *)&t)@
+		@:parsevalue(tconvert, COMMA, &lt, (ptr *)&t)@
 		BUNins(b, h, t);
 		
 @-
