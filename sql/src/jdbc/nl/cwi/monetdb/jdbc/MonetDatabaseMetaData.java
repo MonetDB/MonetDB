@@ -1138,7 +1138,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @see Connection
 	 */
 	public int getDefaultTransactionIsolation() {
-		return(Connection.TRANSACTION_READ_COMMITTED);
+		return(Connection.TRANSACTION_SERIALIZABLE);
 	}
 
 	/**
@@ -1161,7 +1161,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @see Connection
 	 */
 	public boolean supportsTransactionIsolationLevel(int level) {
-		return(level == Connection.TRANSACTION_READ_COMMITTED);
+		return(level == Connection.TRANSACTION_SERIALIZABLE);
 	}
 
 	/**

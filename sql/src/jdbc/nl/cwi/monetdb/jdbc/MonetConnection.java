@@ -261,7 +261,15 @@ public class MonetConnection implements Connection {
 		return(new MonetDatabaseMetaData(this));
 	}
 
-	public int getTransactionIsolation() {return(-1);}
+	/**
+	 * Retrieves this Connection object's current transaction isolation level.
+	 *
+	 * @return the current transaction isolation level, which will be 
+	 *         Connection.TRANSACTION_SERIALIZABLE
+	 */
+	public int getTransactionIsolation() {
+		return(TRANSACTION_SERIALIZABLE);
+	}
 
 	/**
 	 * Retrieves the Map object associated with this Connection object. Unless
@@ -453,7 +461,22 @@ public class MonetConnection implements Connection {
 		return(sp);
 	}
 
-	public void setTransactionIsolation(int level) {}
+	/**
+	 * Attempts to change the transaction isolation level for this Connection
+	 * object to the one given. The constants defined in the interface
+	 * Connection are the possible transaction isolation levels.
+	 *
+	 * @param level one of the following Connection constants:
+	 *        Connection.TRANSACTION_READ_UNCOMMITTED,
+	 *        Connection.TRANSACTION_READ_COMMITTED,
+	 *        Connection.TRANSACTION_REPEATABLE_READ, or
+	 *        Connection.TRANSACTION_SERIALIZABLE.
+	 */
+	public void setTransactionIsolation(int level) {
+		if (level != TRANSACTION_SERIALIZABLE) {
+			addWarning("MonetDB only supports fully serializable transactions, transaction level is raised to TRANSACTION_SERIALIZABLE");
+		}
+	}
 
 	/**
 	 * Installs the given TypeMap object as the type map for this Connection
