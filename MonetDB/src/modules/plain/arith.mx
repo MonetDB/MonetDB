@@ -288,11 +288,26 @@ lng2 := lng("5400456789");     # int
 oid1 := oid(int1);
 oid2 := oid(int2);
 
+sht1.print;
+sht2.print;
+int1.print;
+int2.print;
+flt1.print;
+flt2.print;
+dbl1.print;
+dbl2.print;
+lng1.print;
+lng2.print;
+oid1.print;
+oid2.print;
+
 @:mil_comp_ops('a','z')@
 @:mil_comp_ops(sht1,sht2)@
 @:mil_comp_ops(int1,int2)@
 @:mil_comp_ops(flt1,flt2)@
 @:mil_comp_ops(dbl1,dbl2)@
+@:mil_comp_ops(lng1,lng2)@
+@:mil_comp_ops(oid1,oid2)@
 @:mil_comp_ops("abcde","abcdf")@
 
 @:mil_arith_ops(sht1,sht2)@

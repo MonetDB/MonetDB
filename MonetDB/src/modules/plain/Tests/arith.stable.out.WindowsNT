@@ -460,13 +460,13 @@ oid2.print;
 
 #line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
 (flt1 + lng2).print;
-[ 5.40046e+09 ]
+[ 5.40046e+009 ]
 (flt1 - lng2).print;
-[ -5.40046e+09 ]
+[ -5.40046e+009 ]
 (flt1 * lng2).print;
-[ 1.35011e+10 ]
+[ 1.35011e+010 ]
 (flt1 / lng2).print;
-[ 4.62924e-10 ]
+[ 4.62924e-010 ]
 
 
 #line 329 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
@@ -531,13 +531,13 @@ oid2.print;
 
 #line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
 (dbl1 + lng2).print;
-[ 5.40046e+09 ]
+[ 5.40046e+009 ]
 (dbl1 - lng2).print;
-[ -5.40046e+09 ]
+[ -5.40046e+009 ]
 (dbl1 * lng2).print;
-[ -1.35011e+10 ]
+[ -1.35011e+010 ]
 (dbl1 / lng2).print;
-[ -4.62924e-10 ]
+[ -4.62924e-010 ]
 
 
 #line 335 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
@@ -574,13 +574,13 @@ oid2.print;
 
 #line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
 (lng1 + flt2).print;
-[ -9e+12 ]
+[ -9e+012 ]
 (lng1 - flt2).print;
-[ -9e+12 ]
+[ -9e+012 ]
 (lng1 * flt2).print;
-[ -4.86e+13 ]
+[ -4.86e+013 ]
 (lng1 / flt2).print;
-[ -1.66667e+12 ]
+[ -1.66667e+012 ]
 
 
 #line 339 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
@@ -588,13 +588,13 @@ oid2.print;
 
 #line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
 (lng1 + dbl2).print;
-[ -9e+12 ]
+[ -9e+012 ]
 (lng1 - dbl2).print;
-[ -9e+12 ]
+[ -9e+012 ]
 (lng1 * dbl2).print;
-[ -4.86041e+14 ]
+[ -4.86041e+014 ]
 (lng1 / dbl2).print;
-[ -1.66653e+11 ]
+[ -1.66653e+011 ]
 
 
 #line 340 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
@@ -859,7 +859,7 @@ not(bit2).print;
 
 srand( 1234 );
 rand().print;
-[ 3558 ]
+[ 4068 ]
 quit;
 
 # 12:50:12 >  
