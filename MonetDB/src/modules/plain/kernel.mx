@@ -261,6 +261,9 @@ any client activity.
 
 .COMMAND table(INT order, BAT[any::1,any], ...BAT[any::1,any]...) = print_table;
 	"Print an n-ary table. Use the ordering of param [1..argc]"
+	
+.COMMAND multitable(BAT[any,bat]) = CMDprint_multitable;
+	"Print an n-ary table contained within a BAT of BATs"
 
 .COMMAND printf(str format, ...) = print_format;
 	"Print a formatted string on the standard client output." 
@@ -1158,6 +1161,23 @@ int CMDprint_table(BAT* b, ...) {
         } while((b = va_arg(ap, BAT*)) != NULL);
         return CMDprint_bats(nbats, piv, 0);
 }
+
+int CMDprint_multitable(BAT* b)
+{
+	BAT *piv[MAXPARAMS];
+	int nbats = 0;
+	BUN p,q;
+	int xx ;
+	
+	BATloopFast(b, p, q, xx) {
+		piv[nbats++] = BATdescriptor(*(bat*) BUNtail(b,p));
+	}
+	
+	BATmultiprintf(GDKout, nbats+1, piv, FALSE, 0);
+	return GDK_SUCCEED;
+}
+
+
 
 int print_format(str format, ...) {
 	va_list ap;
