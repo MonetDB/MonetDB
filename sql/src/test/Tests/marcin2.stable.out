@@ -1,25 +1,28 @@
 stdout of test 'marcin2` in directory 'src/test` itself:
 
 
-# 21:05:19 >  
-# 21:05:19 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/.monet.conf --debug=0   --set monet_prompt= --dbname=Tests_src_test --set sql_port=51763 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil ; echo  ; echo Over..
-# 21:05:19 >  
+# 20:07:33 >  
+# 20:07:33 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=0 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_test" --set sql_port=50445 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 20:07:33 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 printf("\nReady.\n");
 
 Ready.
-# [ 9 10 ]
 quit;
 
 Over..
 
-# 21:05:20 >  
-# 21:05:20 >  Mtimeout -timeout 60 sql_client --port=51763 < marcin2.sql
-# 21:05:20 >  
+# 20:07:33 >  
+# 20:07:33 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < marcin2.sql
+# 20:07:33 >  
 
+SQL  connected to database mTests_src_test using schema sys
+#------------
+#| id | val |
+#------------
 1	nil
 nil	nil
 2	nil
@@ -30,6 +33,9 @@ nil	5
 nil	6
 1	6
 SQL  9 Rows affected
+#------------
+#| id | val |
+#------------
 nil	nil
 nil	5
 nil	6
@@ -40,6 +46,9 @@ nil	6
 2	5
 2	nil
 SQL  9 Rows affected
+#------------
+#| id | val |
+#------------
 nil	nil
 1	nil
 2	nil
@@ -50,6 +59,9 @@ nil	6
 1	6
 2	6
 SQL  9 Rows affected
+#------------
+#| id | val |
+#------------
 nil	nil
 nil	5
 nil	6
@@ -60,14 +72,10 @@ nil	6
 2	5
 2	6
 SQL  9 Rows affected
-9
-SQL  1 Row affected
-3	5
-3	6
-3	nil
-SQL  3 Rows affected
+SQL ERROR -1: Aggregate: Cannot do a sum(*)
+SQL ERROR -1: Aggregate: Cannot do a sum(*)
 
-# 21:05:20 >  
-# 21:05:20 >  Done.
-# 21:05:20 >  
+# 20:07:33 >  
+# 20:07:33 >  Done.
+# 20:07:33 >  
 
