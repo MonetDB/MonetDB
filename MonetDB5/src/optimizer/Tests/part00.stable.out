@@ -81,7 +81,7 @@ end main;	# 20
 ptop=3 plimit=1024
 [0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-2147483648
 [1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-2147483648
-[2] bid=13 pid=15 f=20, l=30 prv=1 nxt=0 cap=-2147483648
+[2] bid=13 pid=15 f=20, l=30 prv=1 nxt=-1 cap=-2147483648
 function Admin.qry(a:bat[:void,:any]):void;
     io.print("hello");
 barrier ($5,$6):= partitions.newIterator(a);
