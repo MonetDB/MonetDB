@@ -73,6 +73,7 @@ sql_export void qc_destroy( qc *cache );
 sql_export cq *qc_find( qc *cache, int id );
 sql_export cq *qc_match( qc *cache, symbol *s, list *params, int key );
 sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type, char *codedstr);
+sql_export void qc_delete( qc *cache, cq *q);
 sql_export int qc_size( qc *cache );
 
 #endif /*_SQL_QC_H_*/
@@ -90,6 +91,38 @@ qc *qc_create()
 	return r;
 }
 
+static void cq_delete(cq *q)
+{
+	if (q->s)
+		symbol_destroy(q->s);
+
+	if (q->params)
+		list_destroy(q->params);
+
+	if (q->code)
+		backend_freecode( q->code, q->stk, q->id );
+
+	if (q->stk)
+		backend_freestack( q->stk );
+	_DELETE(q->codestring);
+	_DELETE(q);
+}
+
+void qc_delete( qc *cache, cq *q) 
+{
+	cq *n, *p = NULL;
+	for (n = cache->q; n; p = n, n = n->next){
+			if (n == q) {
+				if (p) {
+					p -> next = q->next;
+				} else {
+					cache->q = q->next;
+				}
+				cq_delete(q);
+			}
+	}
+}
+
 void qc_destroy( qc *cache )
 {
 	cq *q, *n;
@@ -97,19 +130,7 @@ void qc_destroy( qc *cache )
 	for (q = cache->q; q; q = n){
 		n = q->next;
 		
-		if (q->s)
-			symbol_destroy(q->s);
-
-		if (q->params)
-			list_destroy(q->params);
-
-		if (q->code)
-			backend_freecode( q->code, q->stk, q->id );
-
-		if (q->stk)
-			backend_freestack( q->stk );
-		_DELETE(q->codestring);
-		_DELETE(q);
+		cq_delete(q);
 	}
 	_DELETE(cache);
 }

@@ -258,18 +258,21 @@ In combination with SQLparser this ensures that all statements
 are handled one by one.
 @c
 str SQLreader(Client c){
+	str res = NULL;
 	int go = TRUE;
 	lng T0;
 	backend *be = ((backend*)c->state[PARSER]);
 	bstream *in = c->fdin;
-	mvc *m = be->mvc;
+	mvc *m;
 	int language = 'S';
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"#SQLparser: start reading SQL block\n");
 #endif
-	if( c->mode <= FINISHING)
+	if (!be || c->mode <= FINISHING)
 		return throwMessage("SQLreader","end of SQL input\n");
+
+ 	m = be->mvc;
 @- 
 Continue processing any left-over input from the previous round.
 @c
@@ -313,24 +316,26 @@ Continue processing any left-over input from the previous round.
 			if (rd == 0 && language != 0 && in->eof) {
 				/* we hadn't seen the EOF before, so just try again
 				(this time with prompt) */
-				return SQLreader(c);
+				res = SQLreader(c);
+			} else {
+				go = FALSE;
 			}
-			go = FALSE;
-		}
-		if (go && !be->console && language == 0)
+		} else if (go && !be->console && language == 0) {
 			language = in->buf[in->pos++];
+		}
 	}
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"#SQL blk:%s\n",c->input);
 #endif
-	if (!go || strncmp(CURRENT(c),"quit",4)==0) {
+	if (!go || (strncmp(CURRENT(c), "quit", 4)==0)) {
+		in->pos = in->len; /* skip rest of the input */
 		c->mode= FINISHING;
 		return throwMessage("SQLreader","end of SQL input\n");
 	}
 	if (be) 
 		be->Tread= GDKusec()-T0;
-	return 0;
+	return res;
 }
 @-
 The SQL block is stored in the client input buffer, from which it
@@ -357,8 +362,7 @@ void SQLsetDebugger(Client c)
 	q= newInstruction(ASSIGNsymbol);
 	functionId(q)= GDKstrdup("mdb");
 	q= pushArgument(c->curprg->def,q, 
-		newConstant(c->curprg->def,TYPE_bit,
-		GDKstrdup("true"),0));
+	newConstant(c->curprg->def,TYPE_bit, GDKstrdup("true"),0));
 	pushInstruction(c->curprg->def,q);
 }
 
@@ -427,7 +431,7 @@ str SQLparser(Client c) {
 			stream_printf(c->fdout,"#%s\n", m->errstr);
 		}
 		*m->errstr=0;
-                sqlcleanup(m, err);
+		sqlcleanup(m, err);
 		msg= throwMessage("SQLparser","Parser errors\n");
 		goto finalize;
 	}
@@ -478,8 +482,7 @@ In the final phase we add any debugging control
 		q= newInstruction(ASSIGNsymbol);
 		functionId(q)= GDKstrdup("mdb");
 		q= pushArgument(c->curprg->def,q,
-			     newConstant(c->curprg->def,TYPE_bit,
-				       GDKstrdup("false"),0));
+			     newConstant(c->curprg->def,TYPE_bit, GDKstrdup("false"),0));
 		pushInstruction(c->curprg->def,q);
 	}
 

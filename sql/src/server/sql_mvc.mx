@@ -3106,6 +3106,10 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create\n");
 
+	/* never started! */
+	if (!logger)
+		return NULL;
+	
 	m->errstr[0] = '\0';
 
 	m->qc = qc_create();

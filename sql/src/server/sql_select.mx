@@ -2006,24 +2006,19 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 		if (ls->nrcols == 0 || f == sql_sel) {
 			sql_subtype *bt = sql_bind_localtype( "bit" );
 			sql_subtype *s = sql_bind_localtype( "str" );
-			char *l = (sc->token == SQL_LIKE || (f == sql_sel && ls->nrcols) ? "like" : "not_like");
-			sql_subfunc *like = sql_bind_func_result( l, s, s, bt);
+			sql_subfunc *like = sql_bind_func_result( "like", s, s, bt);
 	
 			res = stmt_binop(ls, a, like);
-			if (f == sql_sel && ls->nrcols) {
-				sql_subfunc *isnull = sql_bind_func_result("isnull", s, NULL, bt);
-				res = stmt_unop(stmt_outerjoin(ls, stmt_reverse(stmt_dup(res)), cmp_equal), isnull);
-				if (sc->token == SQL_LIKE) {
-					sql_subfunc *not = sql_bind_func_result("not", bt, NULL, bt);
-					res = stmt_unop(stmt_dup(res), not);
-				}
+			if (sc->token != SQL_LIKE) {
+				sql_subfunc *not = sql_bind_func_result("not", bt, NULL, bt);
+				res = stmt_unop(stmt_dup(res), not);
 			}
 		} else {
 			comp_type cmp = (sc->token == SQL_LIKE ? 
 					cmp_like : cmp_notlike);
 			/* default to the '\' char for escape */
 			if (es == NULL || strcmp(es, "") == 0)
-				e = stmt_atom_string("\\\\");
+				e = stmt_atom_string(_strdup(""));
 			res = stmt_likeselect(ls, a, e, cmp);
 		}
 		return res;

@@ -1251,7 +1251,6 @@ void sqltypeinit()
 	  sql_create_func(  "substring", "substring", *t, INT, *t, SCALE_NONE);
 	  sql_create_func3( "substring", "substring", *t, INT, INT, *t, SCALE_NONE);
 	  sql_create_func( "like", "like", *t, *t, BIT, SCALE_NONE);
-	  sql_create_func( "not_like", "not_like", *t, *t, BIT, SCALE_NONE);
 	  sql_create_func( "truncate", "stringleft", *t, INT, *t, SCALE_NONE);
 	  sql_create_func( "concat", "+", *t, *t, *t, DIGITS_ADD);
 	  sql_create_func( "ascii", "ascii", *t, NULL, INT, SCALE_NONE);

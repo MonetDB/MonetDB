@@ -35,6 +35,7 @@ This code strongly depends on the front-end/back-end setup.
 #include <str.h>
 
 typedef struct backend {
+	int 	console;
 	int 	trace;
 	mvc 	*mvc;
 
@@ -84,7 +85,7 @@ static res_table *find_export_table( mvc *m, int res_id );
 }
 @c
 
-static backend *backend_create( int trace, mvc *c )
+static backend *backend_create( int trace, mvc *c, int console )
 {
 	backend *b = NEW(backend);
 
@@ -93,6 +94,7 @@ static backend *backend_create( int trace, mvc *c )
  	b->outbuf = buffer_create( BUFSIZ );
 	b->out = buffer_wastream( b->outbuf, "SQLserver" );
 	b->trace = trace;
+	b->console = console;
 	return b;
 }
 
@@ -562,6 +564,7 @@ int sqlexecute(backend * be, stream *out )
 			c->status = err;
 			monet4_freecode( callnode, (backend_stack)(ptrdiff_t)procstk, q->id);
 			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
+			qc_delete(c->qc, q);
 		}
 	} else if (q) {
 		c->type = q->type;
@@ -646,7 +649,7 @@ int handle_error(mvc *m, stream *out, int pstatus)
 
 @c
 int
-sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
+sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
 {
 	int go = TRUE;
 	char *errbuf;
@@ -657,7 +660,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 	int language = 'S';
 	prot oldmode;
 
-        sql = backend_create( trace, m );
+	sql = backend_create( trace, m, console );
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(stk, "myc");
@@ -689,7 +692,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 			assert(in->pos == in->len);
 
 			if (in->eof || !isa_block_stream(in->s)) {
-				language = 0;
+				language = (sql->console)?'S':0;
 
 				/* auto_commit on end of statement */
 				if (m->auto_commit && m->trans) {
@@ -724,8 +727,13 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 				go= FALSE;
 				break;
 			}
-			if (language == 0)
+			if (go && !sql->console && language == 0)
 				language = in->buf[in->pos++];
+		}
+		if (sql->console && strncmp(in->buf+in->pos,"quit",4) == 0) {
+			in->pos = in->len; /* HACK: should use parsed lenght */
+			go=FALSE;
+			break;
 		}
 @-
 To enable tracing of SQL execution using its MIL code
@@ -733,12 +741,12 @@ requires the same client context. This means that we should
 have an escape from the sql parser and directly address the
 MIL interpreter. This is accomplished with a prepend of the
 query string with "M".
-@c
 		if (mil && language == 'M') {
 			sidestepMil(stk, in->buf+in->pos);
 			in->pos = in->len; /* HACK: should use parsed lenght */
 			continue;
 		}
+@c
 		oldmode = m->scanner.mode;
 		if (language == 's') {
 			language = 'S';
@@ -810,7 +818,7 @@ sqlstatement(char *cmd, Cntxt stk )
 	m->user_id = m->role_id = USER_MONETDB;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
-        sql = backend_create( 0, m );
+	sql = backend_create( 0, m, 1 );
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(stk, "myc");
@@ -843,7 +851,7 @@ mvc_sql(mvc *m, char *cmd )
 	backend *sql;
 	Variable v;
 
-        sql = backend_create( 0, m );
+	sql = backend_create( 0, m, 1 );
 
 	/* add myc and Output */
 	v = VARnew(stk, "myc");
@@ -1079,6 +1087,10 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	rs = bstream_create(in, 0);
 	m = mvc_create(1, (backend_stack)stk, rs, out );
+	if (!m) {
+		GDKerror("Couldn't start sqlconsole");
+		return GDK_FAIL;
+	}
 	schema = mvc_login( m, "monetdb", "monetdb" );
 
 	if (!schema){

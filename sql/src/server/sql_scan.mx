@@ -485,15 +485,15 @@ static int utf8chkmsk[] = {
 static void
 utf8_putchar(struct scanner *lc, int ch )
 {
-        if ((ch) < 0x80) {
+	if ((ch) < 0x80) {
 		lc->yycur--;
-        } else if ((ch) < 0x800) {
+	} else if ((ch) < 0x800) {
 		lc->yycur-=2;
-        } else if ((ch) < 0x10000) {
+	} else if ((ch) < 0x10000) {
 		lc->yycur-=3;
-        } else {
+	} else {
 		lc->yycur-=4;
-        }
+	}
 }
 
 static int
