@@ -263,8 +263,6 @@ sql_export sql_subtype *tail_type(stmt * st);
 
 sql_export char *column_name(stmt * st);
 extern char *table_name(stmt * st);
-extern stmt *head_column(stmt * st);
-extern stmt *tail_column(stmt * st);
 sql_export sql_column *basecolumn(stmt *st);
 
 sql_export void stmt_destroy(stmt *s );
@@ -1387,6 +1385,9 @@ sql_subtype *tail_type(stmt * st)
 	case st_column_alias:
 	case st_ibat:
 	case st_partial_pivot: case st_pivot:
+	case st_group:
+	case st_group_ext:
+	case st_mark:
 		return tail_type(st->op1.stval);
 
 	case st_list:
@@ -1454,6 +1455,8 @@ sql_subtype *head_type(stmt * st)
 	case st_replace:
 	case st_partial_pivot: case st_pivot:
 	case st_mark:
+	case st_group:
+	case st_group_ext:
 		return head_type(st->op1.stval);
 	case st_relselect:
 	case st_reljoin:
@@ -1478,7 +1481,9 @@ sql_subtype *head_type(stmt * st)
 	}
 }
 
-stmt *tail_column(stmt * st)
+static stmt *head_column(stmt * st);
+
+static stmt *tail_column(stmt * st)
 {
 	switch (st->type) {
 	case st_join:
@@ -1489,7 +1494,6 @@ stmt *tail_column(stmt * st)
 	case st_reljoin:
 		return tail_column(st->op2.lval->h->data);
 
-	case st_mark:
 	case st_const:
 	case st_unop:
 	case st_binop:
@@ -1504,8 +1508,6 @@ stmt *tail_column(stmt * st)
 	case st_semijoin:
 	case st_atom:
 	case st_alias:
-	case st_group:
-	case st_group_ext:
 	case st_union:
 	case st_append:
 	case st_unique:
@@ -1524,10 +1526,18 @@ stmt *tail_column(stmt * st)
 	case st_list:
 		return tail_column(st->op1.lval->h->data);
 
-	case st_idxbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
-	case st_relselect: /* required for eliminate_semijoin() in sql_rel2bin.mx */
+	/* required for shrink_select_ranges() in sql_rel2bin.mx */
+	case st_idxbat: 
+
+	/* required for eliminate_semijoin() in sql_rel2bin.mx */
+	case st_relselect: 
+
 		printf("= TODO: tail_column(%d=%s) -> NULL !?\n",
 			st->type, st_type2string(st->type) );
+	/* some statements have no column comming from any basetable */
+	case st_mark:
+	case st_group:	
+	case st_group_ext:
 		return NULL;
 
 	default:
@@ -1565,6 +1575,8 @@ stmt *head_column(stmt * st)
 	case st_replace:
 	case st_partial_pivot: case st_pivot:
 	case st_mirror:
+	case st_group:
+	case st_group_ext:
 		return head_column(st->op1.stval);
 	case st_relselect:
 	case st_reljoin:
@@ -1576,8 +1588,6 @@ stmt *head_column(stmt * st)
 	case st_var:
 		return st;
 
-	case st_group:
-	case st_group_ext:
 	case st_reverse:
 		return tail_column(st->op1.stval);
 
@@ -1586,9 +1596,9 @@ stmt *head_column(stmt * st)
 	case st_list:
 		return head_column(st->op1.lval->h->data);
 
-	case st_temp: /* required for eliminate_semijoin() in sql_rel2bin.mx */
-		printf("= TODO: head_column(%d=%s) -> NULL !?\n",
-			st->type, st_type2string(st->type) );
+	/* required for eliminate_semijoin() in sql_rel2bin.mx */
+	/* st_temp has no head column coming from any basetable */
+	case st_temp: 
 		return NULL;
 
 	default:
@@ -1622,17 +1632,18 @@ static char *func_name(char *n1, char *n2)
 char *column_name(stmt * st)
 {
 	switch (st->type) {
-	case st_group:
-	case st_group_ext:
 	case st_reverse:
-	case st_mirror:
-		return column_name(head_column(st->op1.stval));
+		return column_name(st->op1.stval);
 	case st_const:
 	case st_join:
 	case st_outerjoin:
 	case st_derive:
 	case st_exist:
 		return column_name(st->op2.stval);
+
+	case st_mirror:
+	case st_group:
+	case st_group_ext:
 	case st_ibat:
 	case st_union:
 	case st_append:
@@ -1642,6 +1653,7 @@ char *column_name(stmt * st)
 	case st_select2:
 	case st_uselect:
 	case st_uselect2:
+	case st_semijoin:
 	case st_diff:
 	case st_unique:
 	case st_partial_pivot: case st_pivot:
@@ -1695,16 +1707,16 @@ char *column_name(stmt * st)
 char *table_name(stmt * st)
 {
 	switch (st->type) {
-	case st_group:
-	case st_group_ext:
 	case st_reverse:
-	case st_mirror:
-		return table_name(head_column(st->op1.stval));
+		return table_name(st->op1.stval);
 	case st_const:
 	case st_join:
 	case st_outerjoin:
 	case st_derive:
 		return table_name(st->op2.stval);
+	case st_mirror:
+	case st_group:
+	case st_group_ext:
 	case st_ibat:
 	case st_union:
 	case st_append:
@@ -1714,6 +1726,7 @@ char *table_name(stmt * st)
 	case st_select2:
 	case st_uselect:
 	case st_uselect2:
+	case st_semijoin:
 	case st_diff:
 	case st_aggr:
 	case st_unique:
@@ -1745,7 +1758,6 @@ sql_column *basecolumn(stmt * st)
 	if (!st) return NULL; /* required for shrink_select_ranges() and eliminate_semijoin() in sql_rel2bin.mx */
 	switch (st->type) {
 	case st_reverse:
-	case st_mirror:
 		return basecolumn(head_column(st->op1.stval));
 
 	case st_partial_pivot: case st_pivot:

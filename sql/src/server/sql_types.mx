@@ -832,7 +832,6 @@ void sqltypeinit()
 		sql_create_func( ">=", ">=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func( "<", "<", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func( "<=", "<=", ts[i], ts[i], BIT, SCALE_FIX);
-
 	}
 
 	for(i=0; ts[i]; i++){
@@ -881,6 +880,8 @@ void sqltypeinit()
 		sql_create_func("and","and", *t, *t, *t, SCALE_FIX);
 		sql_create_func("or","or", *t, *t, *t, SCALE_FIX);
 		sql_create_func("xor","xor", *t, *t, *t, SCALE_FIX);
+		sql_create_func("not","not", *t, NULL, *t, SCALE_FIX);
+		sql_create_func("convert","int", *t, NULL, INT, SCALE_FIX);
 	}
 
 	for(t=numerical; t < dates; t++){

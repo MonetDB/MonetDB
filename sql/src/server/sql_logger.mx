@@ -378,6 +378,8 @@ static int logger_readlog( logger *logger, char *filename ){
 		if (name) _DELETE(name);
 	}
 	logger_close(logger);
+	if (logger->tid != 0)
+		logger_abort(logger);
 	return 0;
 }
 

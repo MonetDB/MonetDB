@@ -876,11 +876,14 @@ column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column 
 				mvc_default(sql, cs, "NULL");
 			} else {
 				atom *a = an->a;
-				/* TODO default should be ValRecord */
+
 				if (a->data.vtype == TYPE_str) {
 					mvc_default(sql, cs, a->data.val.sval); 
 				} else {
-					assert(0);
+					char *r = atom2string(a);
+
+					mvc_default(sql, cs, r);
+					_DELETE(r);
 				}
 			}
 			res = stmt_none();
@@ -1176,7 +1179,20 @@ drop_table(mvc * sql, dlist * qname, int drop_action)
 	if (!t) {
 		return sql_error(sql, 02, 
 			"Drop Table, table %s unknown", tname);
-	} else if (t->type != tt_view){
+	} else if (t->keys.set){
+		node *n;
+		for (n = t->keys.set->h; n; n = n->next) {
+			sql_key *k = n->data;
+			if (k->type == ukey || k->type == pkey){
+				sql_ukey *uk = (sql_ukey*)k;
+				if (uk->keys && list_length(uk->keys)) {
+					return sql_error(sql, 02, 
+					"Cannot drop Table %s, foreign keys depend on it", tname);
+				}
+			}
+		}
+	}
+	if (t->type != tt_view){
 		mvc_drop_table(sql, ss, t->base.name, drop_action);
 		return stmt_none();
 	} else {

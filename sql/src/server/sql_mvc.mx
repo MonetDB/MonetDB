@@ -2313,8 +2313,13 @@ static void
 rollforward_drop_key( sql_trans *tr, sql_key *k )
 {
 	(void) tr; /* unused! */
+	/* remove key from schema */
 	list_remove_data(k->t->s->keys, k);
-
+	if (k->type == fkey) {
+		sql_fkey *fk = (sql_fkey*)k;
+		node *n = list_find_name(fk->rkey->keys, fk->k.base.name);
+		list_remove_node(fk->rkey->keys, n);
+	}
 }
 
 static void 
@@ -3074,6 +3079,11 @@ sys_drop_key(sql_trans *tr, sql_key *k ){
 	}
 	syskey->base.wtime = tr->wtime = tr->stime;
 	list_remove_data( k->t->s->keys, k);
+	if (k->type == fkey) {
+		sql_fkey *fk = (sql_fkey*)k;
+		node *n = list_find_name(fk->rkey->keys, fk->k.base.name);
+		list_remove_node(fk->rkey->keys, n);
+	}
 }
 
 static void 
@@ -3525,6 +3535,8 @@ sql_key *mvc_create_kc( mvc *m, sql_key *k, sql_column *c /*, extra options such
 	kc->trunc = 0;
 	list_append(k->columns, kc);
 	if (k->idx) mvc_create_ic( m, k->idx, c);
+
+	if (k->type == pkey) mvc_null( m, c, 0);
 
 	b = bind_bat(tr, find_column(syskc, "id"), 1);
 	rid = BATcount(b);

@@ -2775,6 +2775,9 @@ void cleanup_stmts(stmt **stmts, int cnt){
 static stmt *
 insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 {
+/* pkey's cannot have NULLs, ukeys however can
+   current implementation switches on 'NOT NULL' on primary key columns */
+
 	char buf[BUFSIZ];
 	stmt *res;
 
@@ -2869,15 +2872,53 @@ insert_check_fkey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 	(void)sql; /* unused! */
 
 	if (inserts[0]->op2.stval->key){
-		s = stmt_binop( 
-			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
-			stmt_atom(atom_int(sql_dup_subtype(it),1)), ne);
+		stmt *cur = NULL;
+		sql_subtype *bt = sql_bind_localtype( "bit" );
+		sql_subfunc *or = sql_bind_func_result("or", bt, bt, bt);
+		sql_subfunc *not = sql_bind_func_result("not", bt, NULL, bt);
+		sql_subfunc *cnv = sql_bind_func_result("convert", bt, NULL, it);
+		node *m;
+
+		for(m = k->columns->h; m; m = m->next) {
+			sql_kc *c = m->data;
+			if (c->c->null) {
+				sql_subfunc *isnil = sql_bind_func(
+					"isnull", c->c->type, NULL );
+				stmt *ins = stmt_dup(inserts[c->c->colnr]->op2.stval);
+				ins = stmt_unop(ins, isnil);
+				if (!cur) {
+					cur = ins;
+				} else {
+					cur = stmt_binop(cur, ins, or);
+				}
+				cur = stmt_unop( stmt_unop(cur, not),  cnv);
+			}
+		}
+		if (!cur)
+			cur = stmt_atom_int(1);
+
+		s = stmt_binop(
+			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), cur, ne);
 	} else {
 		/* reljoin.count <> inserts[col1].count */
+		stmt *cur = stmt_dup(inserts[0]->op2.stval);
+		node *m;
+
+		for(m = k->columns->h; m; m = m->next) {
+			sql_kc *c = m->data;
+			if (c->c->null) {
+				stmt *ins;
+				ins = stmt_dup(inserts[c->c->colnr]->op2.stval);
+				ins = stmt_uselect(ins, stmt_atom( atom_general(
+					sql_dup_subtype(c->c->type), NULL)), 
+					cmp_equal);
+				cur = stmt_semijoin(cur,ins);
+			}
+		}
+
 		s = stmt_binop( 
 			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
-			stmt_aggr(stmt_dup(inserts[0]->op2.stval), NULL, 
-				sql_dup_aggr(cnt)) , ne);
+			stmt_aggr(cur, NULL, sql_dup_aggr(cnt)) , ne);
 	}
 
 	/* s should be empty */
@@ -3142,13 +3183,36 @@ update_check_fkey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 	sql_subaggr *cnt = sql_bind_aggr("count", NULL);
 	sql_subtype *bt = sql_bind_localtype( "bit" );
 	sql_subfunc *ne = sql_bind_func_result("<>", it, it, bt);
+	stmt *cur;
+	node *m;
 
 	(void)sql; /* unused! */
 	/* reljoin.count <> updates[updcol].count */
+
+	cur = stmt_dup(updates[updcol]->op2.stval);
+	for(m = k->columns->h; m; m = m->next) {
+		sql_kc *c = m->data;
+		if (c->c->null) {
+			stmt *upd;
+			if (updates[c->c->colnr]){
+				upd = stmt_dup(updates[c->c->colnr]->op2.stval);
+			} else {
+				stmt *ts = stmt_basetable(k->t);
+				upd = stmt_dup(updates[updcol]->op2.stval);
+				upd = stmt_semijoin(
+					stmt_cbat(c->c, ts, RDONLY, st_bat), 
+					upd);
+			}
+			upd = stmt_uselect(upd, stmt_atom(atom_general(
+				sql_dup_subtype(c->c->type), NULL)), cmp_equal);
+			cur = stmt_semijoin(cur,upd);
+		}
+	}
+
 	s = stmt_binop( 
 		stmt_aggr(stmt_dup(idx_updates), NULL, cnt), 
-		stmt_aggr(stmt_dup(updates[updcol]->op2.stval), NULL, sql_dup_aggr(cnt)), 
-		ne);
+		stmt_aggr(cur, NULL, 
+			sql_dup_aggr(cnt)), ne);
 
 	/* s should be empty */
 	snprintf(buf, BUFSIZ, 
