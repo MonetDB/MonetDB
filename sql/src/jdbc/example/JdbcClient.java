@@ -923,6 +923,8 @@ public class JdbcClient {
 			}
 			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
 				out.print("\tNOT NULL");
+			if ((s = cols.getString("COLUMN_DEF")) != null)
+				out.print("\tDEFAULT '" + s.replaceAll("\\\\", "\\\\\\\\").replaceAll("\\\'", "\\\\\'") + "'");
 		}
 		cols.close();
 
