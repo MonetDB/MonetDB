@@ -106,7 +106,7 @@ static char *phases[] = {
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
 /** global state of the compiler */
 PFstate_t PFstate = {
-    .debug               = false,
+    .debug               = 1,
     .timing              = false,
     .print_dot           = false,
     .print_pretty        = false,
