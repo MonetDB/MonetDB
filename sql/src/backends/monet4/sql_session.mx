@@ -1347,11 +1347,16 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 		res_col *c = t->cols+i;
 
 		if (c->type->type->localtype == TYPE_str) {
-			BAT *b = BATdescriptor(c->b);
-			int count = bat_max_length(b);
+			int count = 0;
+			if (c->b) {
+				BAT *b = BATdescriptor(c->b);
 			
+				count = bat_max_length(b);
+				BBPunfix(b->batCacheid);
+			} else {
+				count = strlen((char*)c->p);
+			}
 			stream_printf(s, SZFMT, count);
-			BBPunfix(b->batCacheid);
 		} else {
 			stream_write(s, "0", 1, 1);
 		}
