@@ -456,6 +456,22 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		  "s%d := s%d.kunion(s%d);\n", -s->nr, l, r ); 
 		dump(sql,buf,len,-s->nr);
 	} break;
+	case st_reljoin: {
+		node *ln = NULL, *rn = NULL;
+		char x = '(';
+		len = snprintf( buf, BUFSIZ,
+		  "s%d := ds_link", -s->nr );
+		for (ln = s->op1.lval->h, rn = s->op2.lval->h; ln && rn; ln = ln->next, rn = rn->next) {
+			int l = stmt_dump( ln->data, nr, sql );
+			int r = stmt_dump( rn->data, nr, sql );
+			len += snprintf(buf +len, BUFSIZ-len,
+			  "%c s%d, s%d", x, l, r );
+			x = ',';
+		}
+		len += snprintf(buf +len, BUFSIZ-len, 
+		  " );\n");
+		dump(sql,buf,len,-s->nr);
+	} break;
 	case st_outerjoin:
 	case st_join: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
@@ -536,7 +552,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		write_head(sql,-s->nr);
 		write_command(sql,buf);
 		write_part(sql,buf,len);
-		/*write_result(sql,buf);*/
+		write_result(sql,buf);
 		write_tail(sql,-s->nr);
 	} break;
 	case st_dbat:

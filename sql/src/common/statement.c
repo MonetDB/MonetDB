@@ -39,6 +39,7 @@ const char * st_type2string(st_type type) {
 	case st_reverse:	return "st_reverse";
 	case st_mirror:	return "st_mirror";
 	case st_atom:	return "st_atom";
+	case st_reljoin:	return "st_reljoin";
 	case st_join:	return "st_join";
 	case st_semijoin:	return "st_semijoin";
 	case st_outerjoin:	return "st_outerjoin";
@@ -222,6 +223,10 @@ void stmt_destroy(stmt * s)
 		case st_create_key:
 			if (s->op2.stval)
 				stmt_destroy(s->op2.stval);
+			break;
+		case st_reljoin:
+			list_destroy(s->op1.lval);
+			list_destroy(s->op2.lval);
 			break;
 		case st_default:
 		case st_like:
@@ -734,6 +739,45 @@ stmt *stmt_like(stmt * op1, stmt * a)
 	return s;
 }
 
+stmt *stmt_reljoin2(list * l1, list * l2)
+{
+	stmt *s = stmt_create();
+	s->type = st_reljoin;
+	s->op1.lval = l1;
+	s->op2.lval = l2;
+	s->nrcols = 2;
+	s->h = stmt_dup(((stmt*)(s->op1.lval->h->data))->h);
+	s->t = stmt_dup(((stmt*)(s->op2.lval->h->data))->h);
+	return s;
+}
+
+stmt *stmt_reljoin1(list * joins)
+{
+	list *l1 = list_create((fdestroy)&stmt_destroy);
+	list *l2 = list_create((fdestroy)&stmt_destroy);
+	node *n = NULL;
+	for (n = joins->h; n; n = n->next){
+		stmt *l = stmt_dup(((stmt*)(n->data))->op1.stval);
+		stmt *r = stmt_dup(((stmt*)(n->data))->op2.stval);
+		while(l->type == st_reverse){
+			stmt *t = l;
+			l = stmt_dup(l->op1.stval);
+			stmt_destroy(t);
+		}
+		while(r->type == st_reverse){
+			stmt *t = r;
+			r = stmt_dup(r->op1.stval);
+			stmt_destroy(t);
+		}
+		if (l->t != r->t){
+			r = stmt_reverse(r);
+		}
+		l1 = list_append(l1, l);
+		l2 = list_append(l2, r);
+	}
+	return stmt_reljoin2(l1, l2);
+}
+
 stmt *stmt_join(stmt * op1, stmt * op2, comp_type cmptype)
 {
 	stmt *s = stmt_create();
@@ -804,19 +848,22 @@ stmt *stmt_intersect(stmt * op1, stmt * op2)
 	if (op1->h != op2->h){
 		reverse = 1;
 	}
-	assert (op1->type == st_join && op2->type == st_join);
-	if (op1->flag == cmp_all){
+	assert ((op1->type == st_join || op1->type == st_reljoin) && (op2->type == st_join || op2->type == st_reljoin));
+	if (op1->type == st_join && op1->flag == cmp_all){
 		stmt_destroy(op1);
 		return op2;
-	} else if (op2->flag == cmp_all){
+	} else if (op2->type == st_join && op2->flag == cmp_all){
 		stmt_destroy(op2);
 		return op1;
 	}
 
-	if (op1->flag == cmp_equal && op2->flag == cmp_equal) {
-printf("#TODO stmt_intersect (1)\n");
+	/* this case should have been transformed into a proper multi-att join ("st_reljoin") by push_selects_down() */
+	assert (!(op1->flag == cmp_equal && op2->flag == cmp_equal));
+	
+	if (op1->type == st_reljoin || op2->type == st_reljoin) {
+printf("= TODO stmt_intersect (1)\n");
 		/* 
-		 * needs to be replaced by proper multi-attribute join
+		 * could/should we do a similar rewrite here as we do below?
 		 */
 		res = stmt_create();
 		res->type = st_intersect;
@@ -831,7 +878,7 @@ printf("#TODO stmt_intersect (1)\n");
 		res->h = stmt_dup(op1->h);
 		res->t = stmt_dup(op1->t);
 	} else {
-printf("#TODO stmt_intersect (2)\n");
+printf("= TODO stmt_intersect (2)\n");
 		/*
 	         * need to add the mark trick as [].select(true) on tables 
 		 * without unique head identifiers + semijoin is wrong
@@ -1184,6 +1231,8 @@ sql_subtype *tail_type(stmt * st)
 	case st_join:
 	case st_outerjoin:
 		return tail_type(st->op2.stval);
+	case st_reljoin:
+		return tail_type(st->op2.lval->h->data);
 
 	case st_diff:
 	case st_filter:
@@ -1252,6 +1301,8 @@ sql_subtype *head_type(stmt * st)
 	case st_replace:
 	case st_partial_pivot: case st_pivot:
 		return head_type(st->op1.stval);
+	case st_reljoin:
+		return head_type(st->op1.lval->h->data);
 
 	case st_list:
 		return head_type(st->op1.lval->h->data);
@@ -1265,6 +1316,7 @@ sql_subtype *head_type(stmt * st)
 		return tail_type(st->op1.stval);
 	case st_atom:
 		return atom_type(st->op1.aval);
+
 	default:
 		fprintf(stderr, "missing head type %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
@@ -1279,6 +1331,8 @@ stmt *tail_column(stmt * st)
 	case st_derive:
 	case st_intersect:
 		return tail_column(st->op2.stval);
+	case st_reljoin:
+		return tail_column(st->op2.lval->h->data);
 
 	case st_mark:
 	case st_const:
@@ -1311,6 +1365,7 @@ stmt *tail_column(stmt * st)
 		return head_column(st->op1.stval);
 	case st_list:
 		return tail_column(st->op1.lval->h->data);
+
 	default:
 		fprintf(stderr, "missing tail column %d: %s\n", st->type, st_type2string(st->type) );
 		assert(0);
@@ -1346,6 +1401,8 @@ stmt *head_column(stmt * st)
 	case st_partial_pivot: case st_pivot:
 	case st_mirror:
 		return head_column(st->op1.stval);
+	case st_reljoin:
+		return head_column(st->op1.lval->h->data);
 
 	case st_column_alias:
 	case st_ibat:
@@ -1361,6 +1418,7 @@ stmt *head_column(stmt * st)
 		return tail_column(st->op2.stval);
 	case st_list:
 		return head_column(st->op1.lval->h->data);
+
 	default:
 		fprintf(stderr, "missing head column %d: %s\n", st->type, st_type2string(st->type) );
 		assert(0);
@@ -1427,6 +1485,8 @@ char *column_name(stmt * st)
 		if (st->op1.aval->type == string_value)
 			return atom2string(st->op1.aval);
 		return strdup("single_value");
+
+	case st_reljoin:
 	default:
 		fprintf(stderr, "missing column name %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
@@ -1469,6 +1529,7 @@ char *table_name(stmt * st)
 			return atom2string(st->op1.aval);
 		assert(0);
 
+	case st_reljoin:
 	default:
 		fprintf(stderr, "missing table name %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;

@@ -23,6 +23,7 @@
 @:install_module(blob)@
 @:install_module(enum)@
 @:install_module(xtables)@
+@:install_module(mkey)@
 @:install_module(mmath)@
 @:install_module(monettime)@
 @:install_module(unix)@

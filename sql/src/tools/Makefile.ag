@@ -20,6 +20,7 @@ smallTOC_SHARED_MODS =	\
 	-l_bat_arith	\
 	-l_blob	\
 	-l_enum	\
+	-l_mkey	\
 	-l_mmath	\
 	-l_monettime	\
 	-l_streams	\

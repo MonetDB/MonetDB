@@ -501,6 +501,7 @@ module(xtables);
 module(aggrX3);
 module(monettime);
 module(mmath);
+module(mkey);
 module(mapi); # mapi_listen 
 
 # low memory usage for testing unloading

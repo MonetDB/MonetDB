@@ -50,6 +50,7 @@ typedef enum stmt_type {
 	st_reverse,
 	st_mirror,
 	st_atom,
+	st_reljoin,
 	st_join,
 	st_semijoin,
 	st_outerjoin,
@@ -197,6 +198,8 @@ extern stmt *stmt_select2(stmt * op1, stmt * op2,
 				    stmt * op3, int cmp);
 
 extern stmt *stmt_like(stmt * op1, stmt * a);
+extern stmt *stmt_reljoin1(list * joins);
+extern stmt *stmt_reljoin2(list * l1, list * l2);
 extern stmt *stmt_join(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_outerjoin(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_semijoin(stmt * op1, stmt * op2);
