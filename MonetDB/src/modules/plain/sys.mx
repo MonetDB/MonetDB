@@ -185,7 +185,7 @@ that you might well find very useful.
 	}
     }
 
-    # self help 
+    # self help
     ADDHELP("help", "boncz", "Feb  6 1996",
          "provide help for a MIL construct.", "sys");
 
