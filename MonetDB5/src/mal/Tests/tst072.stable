@@ -11,7 +11,7 @@
 #print(d);
 #
 function Admin.main():int;	# 0  (main:int)
-    (c,d):=("hello","world");	# 1  (c:str)(d:str)<-($3:str)($4:str)
+    (c,d):= ("hello","world");	# 1  (c:str)(d:str)<-($3:str)($4:str)
     io.print(c);	# 2 IOprint_val ($5:int)<-(c:str)
     io.print(d);	# 3 IOprint_val ($6:int)<-(d:str)
 end main;	# 4  

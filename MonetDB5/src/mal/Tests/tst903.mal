@@ -6,7 +6,7 @@ barrier v:= nextElement(i,0:lng,1000000:lng);
 	k:= rand();
 	l:= lng(k);
 	insert(b,nil,l);
-	redo v;
+	redo v:= nextElement(i,0:lng,1000000:lng);
 exit v;
 #setReadMode(b);
 mx:= max(b); 

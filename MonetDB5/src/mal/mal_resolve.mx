@@ -101,6 +101,7 @@ import K,L,M. This can be recognized by inspecting the code produced
 #ifndef _MAL_RESOLVE_H
 #define _MAL_RESOLVE_H
 
+#include "mal_exception.h"
 #include "mal_function.h"
 
 /*#define DEBUG_MAL_RESOLVE 1 */
@@ -378,7 +379,7 @@ does not contain errors detected earlier in the process.
 	}
 @-
 We found the proper function. Copy some properties. In particuler,
-determine the calling strategy, i.e. FCNcall, CMDcall, STRMcall, PATcall
+determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
 This piece of code may be shared by the separate binder
 @= bindFunction
 	if( p->token == ASSIGNsymbol){
@@ -391,8 +392,8 @@ This piece of code may be shared by the separate binder
 			p->token = PATcall; 
 			p->fcn = getSignature(s)->fcn;
 			break;
-		case STREAMsymbol:
-			p->token = STRMcall; 
+		case FACTORYsymbol:
+			p->token = FACcall; 
 			p->fcn = getSignature(s)->fcn;
 			break;
 		case FUNCTIONsymbol: 

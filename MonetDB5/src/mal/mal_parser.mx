@@ -580,7 +580,7 @@ out the code in a few text macros. Upon encountering a definition, we
 initialize a MAL instruction container. We should also check for
 non-terminated definitions.
 @T
-defineStmt : {FUNCTION COMMAND PATTERN STREAM} functionHdr [COMMENT string] ';'
+defineStmt : {FUNCTION COMMAND PATTERN FACTORY} functionHdr [COMMENT string] ';'
 
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
 the symbol table and stackframe contains the sequence
@@ -711,8 +711,8 @@ functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
 	l = idLength(cntxt);
 	arg = idCopy(cntxt,l);
 	type= typeElm(cntxt);
-	@:propList(varid)@
 	varid= newVariable(curBlk,arg,type);
+	@:propList(varid)@
 	curInstr= pushArgument(curBlk,curInstr, varid);
 	if( isPolymorphic(type))
 		curInstr->polymorphic = 1;
@@ -928,131 +928,19 @@ int parseEndDone(Client cntxt)
 	return 0;
 }
 @-
-The non-assignment control statements are :
-@T
-cntrl	: (CATCH | RAISE | RETURN) identifier\\
-@= endparseCntrl
+@= endparse
 	pushInstruction(curBlk, curInstr);
 	if( *cntxt->nxt != ';')
 		parseError(cntxt,"';' expected\n");
 	skipToEnd(cntxt);
 	return 1;
-@= parseCntrl
-int parse@3(Client cntxt)
-{	InstrPtr curInstr;
-	MalBlkPtr curBlk;
-	Symbol curPrg;
-	str arg,v;
-	int lt,i,l,z=0;
-
-	if( ! keyword(cntxt,@1,@2)) return 0;
-	curPrg = cntxt->curprg;
-	curBlk = curPrg->def;	
-	curInstr= newInstruction(@3symbol);
-	l= cstLength(cntxt,&lt);
-	if( l>0){
-		str v= cstCopy(cntxt,l);
-		i= typeId(cntxt);
-		if(i>=0) lt = i;
-		i= newConstant(curBlk,lt,v,TRUE);
-	} else {
-		l = idLength(cntxt);
-		if( l == 0){
-			if( @3symbol != RETURNsymbol ){
-				parseError(cntxt,"'return' expected\n");
-				@:endparseCntrl@
-			}
-			if( currChar(cntxt) != '('){
-				parseError(cntxt,"'(' or 'identifier' expected\n");
-				@:endparseCntrl@
-			}
-			nextChar(cntxt); skipSpace(cntxt);
-			z++; /* parse multiple return arguments */
-			@:parseArguments(0 /*? or 1 ?*/)@	/* parse@3() -> int */
-			curInstr->retc= curInstr->argc;
-			@:endparseCntrl@
-		} 
-		i = findVariableLength(curBlk,cntxt->nxt,l);
-		if( i<0){
-			arg= idCopy(cntxt,l);
-			i= newVariable(curBlk, arg, @4);
-		} else advance(cntxt,l); 
-	}
-	getDestVar(curInstr) = i;
-	if(@3symbol== CATCHsymbol) curInstr->barrier= CATCHsymbol;
-	if(@3symbol== THREADsymbol) {
-		curInstr->barrier= THREADsymbol;
-		setVarType(curBlk, getDestVar(curInstr),TYPE_int);
-	}
-	skipSpace(cntxt);
-	@:propList(i)@
-	@:endparseCntrl@
-}
-@c
-@:parseCntrl("catch", 5,CATCH, TYPE_str)@
-@:parseCntrl("raise", 5,RAISE, TYPE_any)@
-@:parseCntrl("thread", 6,THREAD, TYPE_any)@
-@-
-parseCntrl("return", 6,RETURN, TYPE_any)
-The return statements is a special kind of assignment in the sense
-that the target variables are the function return variables.
-By copying those into the assignment structure we ensure that
-a proper type analysis takes place later on.
-@c
-
-int parseRETURN(Client cntxt)
-{	InstrPtr curInstr, sig;
-	MalBlkPtr curBlk;
-	Symbol curPrg;
-	str arg,v;
-	int lt,i,l,z=0;
-
-	curPrg = cntxt->curprg;
-	curBlk = curPrg->def;	
-	curInstr= newInstruction(RETURNsymbol);
-	sig= getInstrPtr(curBlk,0);
-	for(l=0;l<sig->retc;l++)
-		curInstr->argv[l]= sig->argv[l];
-	curInstr->retc= curInstr->argc= l;
-
-	l= cstLength(cntxt,&lt);
-	if( l>0){
-		str v= cstCopy(cntxt,l);
-		i= typeId(cntxt);
-		if(i>=0) lt = i;
-		i= newConstant(curBlk,lt,v,TRUE);
-		curInstr= pushArgument(curBlk,curInstr, i);
-	} else {
-		l = idLength(cntxt);
-		if( l == 0){
-			if( currChar(cntxt) != '('){
-				parseError(cntxt,"'(' or 'identifier' expected\n");
-				@:endparseCntrl@
-			}
-			nextChar(cntxt); skipSpace(cntxt);
-			z= 1; /* funny control to parseArg */
-			curInstr->argc++;
-			@:parseArguments(0 /*? or 1 ?*/)@	/* parseRETURN() -> int */
-			@:endparseCntrl@
-		} 
-		i = findVariableLength(curBlk,cntxt->nxt,l);
-		if( i<0){
-			arg= idCopy(cntxt,l);
-			i= newVariable(curBlk, arg, TYPE_any);
-		} else advance(cntxt,l); 
-		curInstr= pushArgument(curBlk,curInstr, i);
-	}
-	skipSpace(cntxt);
-	@:propList(i)@
-	@:endparseCntrl@
-}
 @-
 Most instructions are simple assignments, possibly
 modified with a barrier/catch tag.
 @T
-stmt	: tag identifier ':=' expr [':'typeId]['{' proplist'}']\\
+stmt	: tag idlist [':=' expr [':'typeId]['{' proplist'}']]\\
 	| RETURN expr [':'typeId]['{' proplist'}']
-tag	: BARRIER | CATCH\\
+tag	: BARRIER | CATCH | LEAVE | REDO | \\
 expr	: fcncall | [factor  operator] factor \\
 factor	: constant | var | type'('constant')'\\
 
@@ -1074,27 +962,19 @@ if( (varid=findVariableLength(curBlk,cntxt->nxt,l)) == -1){
 	advance(cntxt,l); 
 }
 @-
-Control flow statements may be abreviated
-@= controlFlow
-if( kind == LEAVEsymbol || kind == REDOsymbol || kind == EXITsymbol ){
-	pushInstruction(curBlk,curInstr);
-	if(@1) curInstr->argv[0]= getBarrierEnvelop(curBlk);
-	skipToEnd(cntxt);
-	return;
-}
 @c
 void debugParse(){}
-void parseAssign(Client cntxt, int kind)
+void parseAssign(Client cntxt, int cntrl)
 {	InstrPtr curInstr;
 	MalBlkPtr curBlk;
 	Symbol curPrg;
-	int consumed =0,z=0, i=0, lt,l,type=TYPE_any, varid;
+	int consumed =0,i=0, lt,l,type=TYPE_any, varid= -1;
 	str v, arg=0;
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = newInstruction(ASSIGNsymbol);
-	curInstr->barrier = kind;
+	curInstr->barrier = cntrl;
 
 	/* start the parsing by recognition of the lhs of an assignment */
 	if( currChar(cntxt) == '('){
@@ -1112,15 +992,15 @@ void parseAssign(Client cntxt, int kind)
 			@:GETvariable@
 			type= typeId(cntxt);
 			if( type>0) setVarType(curBlk,varid,type);
+			/* check for any properties */
+			@:propList(curInstr->argv[varid])@
 			setVarInitialized(curBlk,varid);
 			curInstr= pushArgument(curBlk,curInstr, varid);
-			z++;
 			curInstr->retc++;
 			if( *cntxt->nxt == ')') break;
 			if( currChar(cntxt)==',') keyphrase1(cntxt,",");
 			skipSpace(cntxt);
 		}
-		curInstr->argc++; /* advance to make pushArgument work */
 		nextChar(cntxt); skipSpace(cntxt);
 
 	}else{ 
@@ -1130,8 +1010,14 @@ void parseAssign(Client cntxt, int kind)
 			l= operatorLength(cntxt);
 			if(l) goto startFCNcall;
 			/* we haven't seen an identifier nor an operator */
-			/* control blocks may use implied name */
-			@:controlFlow(1)@
+			/* flow of control statements may end here.
+			   the control variable can be looked up */
+			if( cntrl == LEAVEsymbol || cntrl == REDOsymbol || cntrl == EXITsymbol ){
+				pushInstruction(curBlk,curInstr);
+				curInstr->argv[0]= getBarrierEnvelop(curBlk);
+				skipToEnd(cntxt);
+				return;
+			}
 			pushInstruction(curBlk,curInstr);
 			parseError(cntxt,"<identifier> or <operator> expected\n"); 
 			return;
@@ -1139,17 +1025,20 @@ void parseAssign(Client cntxt, int kind)
 		/* Check if we are dealing with an assignment */
 		{	v= cntxt->nxt;
 			advance(cntxt,l);
-			/* first check for type qualifier */
-			if( *cntxt->nxt==':' && *(cntxt->nxt+1)!='='){
+			/* first check for type qualifier and propertyset */
+			if( (*cntxt->nxt==':' && *(cntxt->nxt+1)!='=') ||
+			     *cntxt->nxt=='{' ){
 				cntxt->nxt=v;
 				@:GETvariable@
 				curInstr->argv[0]= varid;
 				type= typeId(cntxt);
 				if( type>0) setVarType(curBlk,varid,type);
+				/* check for any properties */
+				@:propList(curInstr->argv[0])@
 				setVarInitialized(curBlk,varid);
 				consumed =1;
 				v= cntxt->nxt;
-			}
+			} 
 			/* look ahead for assignment operator */
 			if( !keyphrase2(cntxt,":=") ){
 				/* no assignment !! */
@@ -1158,7 +1047,7 @@ void parseAssign(Client cntxt, int kind)
 					if( consumed==0){
 						@:GETvariable@
 						curInstr->argv[0]= varid;
-						curInstr->token= kind;
+						curInstr->token= NOOPsymbol;
 						consumed++;
 						v= cntxt->nxt;
 					}
@@ -1181,12 +1070,15 @@ void parseAssign(Client cntxt, int kind)
 			cntxt->nxt=v;
 			@:GETvariable@ 
 			curInstr->argv[0]= varid;
+			/* check for any properties */
+			@:propList(curInstr->argv[0])@
 		}
 	}
 
 	/* test destination variable or function call */
 	if( !keyphrase2(cntxt,":=") ){
-		GDKerror("parseAssign:internal error\n");
+		if( cntrl == 0) 
+			GDKerror("parseAssign:internal error\n");
 		pushInstruction(curBlk,curInstr);
 		return;
 	}
@@ -1228,8 +1120,6 @@ Get arguments for a call, assume a single result.
 	parseAssign:	none/void
 )
 @= parseArguments
-	if(z) curInstr->argc--; /* should be done differently */
-	else curInstr->argc=1;
 	while( currChar(cntxt)!= ')'){
 		int idx;
 		@:term()@ else
@@ -1239,13 +1129,24 @@ Get arguments for a call, assume a single result.
 				i= typeId(cntxt);
 				i= i>=0?i: TYPE_any;
 				idx = newVariable(curBlk, v, i);
-			} else advance(cntxt,i);
+				setVarInitialized(curBlk,idx);
+				@:propList(curInstr->argv[idx])@
+			} else {
+				advance(cntxt,i);
+				i = typeId(cntxt);
+				if(i>=0 && getVarType(curBlk,idx)!= i){
+					parseError(cntxt,"incompatible type\n");
+					return @1;
+				}
+				@:propList(curInstr->argv[idx])@
+			}
 			curInstr= pushArgument(curBlk,curInstr,idx);
 		} else 
 		if( *cntxt->nxt==':' ){
 			i = typeId(cntxt);
 			i = i >=0? i :TYPE_any;
 			idx= newTypeVariable(curBlk, i );
+			@:propList(curInstr->argv[idx])@
 			curInstr= pushArgument(curBlk,curInstr,idx);
 		} else { 
 			idx= 0;
@@ -1360,7 +1261,7 @@ part3:
 }
 #define BRKONERR if( curPrg->def->errors>=MAXERRORS) return curPrg->def->errors;
 int parseMAL(Client cntxt, Symbol curPrg){
-	int kind=0;
+	int cntrl=0;
 	/*Symbol curPrg= cntxt->curprg;*/
 	char c;
 
@@ -1384,7 +1285,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 		case 'b': case 'B':
 			  if( keyword(cntxt,"barrier",7)) {
 				cntxt->blkmode++;
-				kind = BARRIERsymbol; 
+				cntrl = BARRIERsymbol; 
 			  }
 			  goto allLeft;
 		case 'D': case 'd':
@@ -1395,14 +1296,15 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				parseCommandPattern(cntxt, COMMANDsymbol);
 				continue;
 			  }
-			  if( parseCATCH(cntxt)) {
-				 break;
+			  if( keyword(cntxt,"catch",5)){
+				cntrl= CATCHsymbol;
+				goto allLeft;
 			  }
 			  goto allLeft;
 		case 'E': case 'e': 
 			  if( keyword(cntxt,"exit",4)){
 				if(cntxt->blkmode>0) cntxt->blkmode--;
-				kind= EXITsymbol;
+				cntrl= EXITsymbol;
 			  } else
 			  if( parseEndDone(cntxt)) break;
 			  goto allLeft;
@@ -1420,7 +1322,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 		case 'L':
 		case 'l': /* if( parseLEAVE(cntxt)) break;*/
 			  if( keyword(cntxt,"leave",5))
-				kind= LEAVEsymbol;
+				cntrl= LEAVEsymbol;
 			  goto allLeft;
 		case 'M': case 'm': 
 			  if( parseModule(cntxt, FALSE)!= 0) break;
@@ -1433,29 +1335,38 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  goto allLeft;
 		case 'R': case 'r': 
 			  if( keyword(cntxt,"redo",4)){
-				kind= REDOsymbol;
+				cntrl= REDOsymbol;
 				goto allLeft;
 			  }
-			  if( parseRAISE(cntxt)) break;
+			  if( keyword(cntxt,"raise",5)){
+				cntrl= RAISEsymbol;
+				goto allLeft;
+			  }
 			  if( keyword(cntxt,"return",6)){
-				  parseRETURN(cntxt);
-				  break;
+				cntrl= RETURNsymbol;
 			  }
 			  goto allLeft;
 		case 'S': case 's': 
 			  if( keyword(cntxt,"stream",6) ){
 				cntxt->blkmode++;
-				parseFunction(cntxt, STREAMsymbol);
+				parseFunction(cntxt, FACTORYsymbol);
 				break;
 			  }
 			  goto allLeft;
-		case 't':
-			  if( parseTHREAD(cntxt)) break;
+		case 'T': case 't':
+			  if( keyword(cntxt,"thread",6)){
+				cntrl= THREADsymbol;
+			  }
 			  goto allLeft;
 		case 'u': if( parseImport(cntxt)) continue;
+		case 'Y': case 'y':
+			if( keyword(cntxt,"yield",5)){
+				cntrl= RETURNsymbol;
+				goto allLeft;
+			}
 		default: allLeft:
-			parseAssign(cntxt,kind);
-			kind =0;
+			parseAssign(cntxt,cntrl);
+			cntrl =0;
 			BRKONERR;
 		}
 	}

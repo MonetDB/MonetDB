@@ -9,15 +9,13 @@
 ## which requires the exception identifier to be defined.
 #
 #function myException();
-#	IllegalAccess:="new exception";
-#	raise IllegalAccess;
+#raise	IllegalAccess:="new exception";
 #	print("should have left function ");
 #end myException;
 function Admin.myException():void;	# 0  (myException:void)
-    IllegalAccess := "new exception";	# 1  (IllegalAccess:str)<-($2:str)
-    raise IllegalAccess;	# 2  (IllegalAccess:str)
-    io.print("should have left function ");	# 3 IOprint_val ($3:int)<-($4:str)
-end myException;	# 4  
+    raise IllegalAccess := "new exception";	# 1  (IllegalAccess:str)<-($2:str)
+    io.print("should have left function ");	# 2 IOprint_val ($3:int)<-($4:str)
+end myException;	# 3  
 #
 #	myException();
 #	print("should not come here");
@@ -30,10 +28,10 @@ end myException;	# 4
 function Admin.main():int;	# 0  (main:int)
     Admin.myException();	# 1  ($1:void)
     io.print("should not come here");	# 2 IOprint_val ($2:int)<-($3:str)
-catch IllegalAccess;	# 3  (IllegalAccess:str) jump 5
+catch IllegalAccess;	# 3  (IllegalAccess:any) jump 5
     io.printf("catched IllegalAccess\n");	# 4 IOprint_str ($5:int)<-($6:str)
-exit IllegalAccess;	# 5  (IllegalAccess:str)
+exit IllegalAccess;	# 5  (IllegalAccess:any)
     io.print("done");	# 6 IOprint_val ($7:int)<-($8:str)
 end main;	# 7  
-!ERROR: new exceptionMALexception:Admin.myException[4]: propagated
+!ERROR: new exceptionMALexception:Admin.myException[3]: propagated
 >

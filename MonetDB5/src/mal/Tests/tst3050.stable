@@ -9,15 +9,13 @@
 #function dummy(a:int{unsafe,sorted},b:int{sequence}):int{dense};
 #	return dummy;
 #end dummy;
-function Admin.dummy(a:int{sequence},b:int):int;	# 0  (dummy:int)<-(a:int)(b:int)
-    return dummy{dense,sorted,unsafe};	# 1  (dummy:int)<-(dummy:int)
+function Admin.dummy(a:int{sorted,unsafe},b:int{sequence}):int;	# 0  (dummy:int)<-(a:int)(b:int)
+    return dummy{dense};	# 1  (dummy:int)
 end dummy;	# 2  
 #
 #t:= dummy(a{sorted},b{sequence});
 #
-!ERROR: t:= dummy(a{sorted},b{sequence});
-!                  ^',' expected
-function Admin.main():int;	# 0  unknown (main:int)
-    t := dummy(a);	# 1  unknown (t:any)<-(a:any)
-end main;	# 2  unknown 
+function Admin.main():int;	# 0  (main:int)
+    t := Admin.dummy(a,b);	# 1  (t:int)<-(a:int)(b:int)
+end main;	# 2  
 >

@@ -7,8 +7,7 @@
 # Visit http://monetdb.cwi.nl for further information.
 ## Exception identifiers can be introduced at any place
 #
-#	myNewException:="new exception";
-#	raise myNewException;
+#	raise myNewException:= "new exception";
 #	printf("should not come here\n");
 ##exception block;
 #catch	myNewException;
@@ -16,12 +15,11 @@
 #exit	myNewException;
 #
 function Admin.main():int;	# 0  (main:int)
-    myNewException := "new exception";	# 1  (myNewException:str)<-($2:str)
-    raise myNewException;	# 2  (myNewException:str)
-    io.printf("should not come here\n");	# 3 IOprint_str ($3:int)<-($4:str)
-catch myNewException;	# 4  (myNewException:str) jump 6
-    io.printf("catched exception\n");	# 5 IOprint_str ($5:int)<-($6:str)
-exit myNewException;	# 6  (myNewException:str)
-end main;	# 7  
+    raise myNewException := "new exception";	# 1  (myNewException:str)<-($2:str)
+    io.printf("should not come here\n");	# 2 IOprint_str ($3:int)<-($4:str)
+catch myNewException;	# 3  (myNewException:str) jump 5
+    io.printf("catched exception\n");	# 4 IOprint_str ($5:int)<-($6:str)
+exit myNewException;	# 5  (myNewException:str)
+end main;	# 6  
 catched exception
 >

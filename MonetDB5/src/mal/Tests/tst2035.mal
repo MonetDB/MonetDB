@@ -5,11 +5,12 @@ barrier	b:= n>0;
 	printf("clock tick %d\n",n);
 	alarm.sleep(5);
 	n:= n-1;
-	redo b;
+	redo b:= n>0;
 exit	b;
 end clkticks;
 
 thread 	hdl:=0;	# synchronize through a counter
+	print("start the child");
 	clkticks(1);
 	hdl:= hdl+1;
 	printf("hdl %d\n",hdl);
@@ -28,6 +29,6 @@ barrier	t0:=hdl == 2;
 	printf("Child died \n");
 	leave wl;
 exit	t0;
-	alarm.sleep(1);
+	alarm.sleep(10);
 	redo wl;
 exit	wl;

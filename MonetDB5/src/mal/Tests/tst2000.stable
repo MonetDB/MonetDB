@@ -21,7 +21,7 @@ barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
     io.printf("clock tick\n");	# 2 IOprint_str ($4:int)<-($5:str)
     alarm.sleep(2);	# 3 ALARMsleep ($6:void)<-($7:int)
     n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
-    redo b;	# 5  (b:bit) jump 1
+redo b;	# 5  (b:bit) jump 1
 exit b;	# 6  (b:bit)
 end clkticks;	# 7  
 #
@@ -39,13 +39,13 @@ end main;	# 3
 clock tick
 #mdb     alarm.sleep(2)
 #mdb     n := calc.-(2,1)
-#mdb     redo b;
+#mdb redo b;
 #mdb barrier b := calc.>(1,0)
 #mdb     io.printf("clock tick\\n")
 clock tick
 #mdb     alarm.sleep(2)
 #mdb     n := calc.-(1,1)
-#mdb     redo b;
+#mdb redo b;
 #mdb barrier b := calc.>(0,0)
 #mdb end clkticks;
 #mdb end main;

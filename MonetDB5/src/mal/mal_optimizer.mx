@@ -978,7 +978,7 @@ str DCoptimizer(Client cntxt, MalBlkPtr mb, int pc)
 		switch( p->token){
 		case FUNCTIONsymbol:
 		case COMMANDsymbol:
-		case STREAMsymbol:
+		case FACTORYsymbol:
 		case ENDDEFsymbol: 
 			pcused[i]=1;
 			for(k=0; k<p->retc;k++)

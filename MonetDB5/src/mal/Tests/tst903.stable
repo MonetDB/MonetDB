@@ -13,7 +13,7 @@
 #	k:= rand();
 #	l:= lng(k);
 #	insert(b,nil,l);
-#	redo v;
+#	redo v:= nextElement(i,0:lng,1000000:lng);
 #exit v;
 ##setReadMode(b);
 #mx:= max(b); 
@@ -128,7 +128,7 @@ barrier v := mal.nextElement(i,0,1000000);	# 3 lngForloop (v:bit)<-(i:lng)($7:ln
     k := calc.rand();	# 4 CALCrandint (k:int)
     l := calc.lng(k);	# 5 CALCint2lng (l:lng)<-(k:int)
     bat.insert(b,nil,l);	# 6 BKCinsert_bun ($11:void)<-(b:bat[:void,:lng])($12:void)(l:lng)
-    redo v;	# 7  (v:bit) jump 3
+    redo v := mal.nextElement(i,0,1000000);	# 7 lngForloop (v:bit)<-(i:lng)($7:lng)($8:lng) jump 4
 exit v;	# 8  (v:bit)
     mx := algebra.max(b);	# 9 ALGmax_lng (mx:lng)<-(b:bat[:void,:lng])
     mi := algebra.min(b);	# 10 ALGmin_lng (mi:lng)<-(b:bat[:void,:lng])
@@ -234,16 +234,16 @@ exit v;	# 8  (v:bit)
     io.printf("#multiplex.tactics(+) %d\n",d0);	# 110 IOprint_formatted_lng ($78:int)<-($79:str)(d0:lng)
 end main;	# 111  
 #copy 23#count 1000000
-#select none 274597 count 0
-#select all 42307 count 1000000
-#select 0.05 25894 count 50004
-#select 0.1 27545 count 100016
-#select 0.2 30331 count 199929
-#select 0.4 35625 count 399791
-#select 0.6 39466 count 600237
-#select 0.8 42626 count 799837
-#select 1.0 42145 count 999999
+#select none 205182 count 0
+#select all 43701 count 1000000
+#select 0.05 25940 count 50004
+#select 0.1 27575 count 100016
+#select 0.2 30514 count 199929
+#select 0.4 35649 count 399791
+#select 0.6 39582 count 600237
+#select 0.8 41857 count 799837
+#select 1.0 42122 count 999999
 #tail sort 9 count 1000000
-#multiplex.script(+) 19657046
-#multiplex.tactics(+) 70644
+#multiplex.script(+) 19581746
+#multiplex.tactics(+) 70269
 >

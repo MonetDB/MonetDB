@@ -57,21 +57,14 @@ mal_export Symbol	getFunctionSymbol(Scope scope, InstrPtr p);
 mal_export void chkFlow(MalBlkPtr mb);
 mal_export int getBarrierEnvelop(MalBlkPtr mb);
 
-/*VARARGS*/
-mal_export str throwException(str nme, str fcn, char *format, ...);
-mal_export str	raiseException(MalBlkPtr mb, int pc, str name, str msg);
-mal_export str appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
-mal_export str locateException(MalBlkPtr mb, int pc, str oldmsg);
-mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 
-#define MALEXCEPTION "MALexception"
-#define throwMessage(Fcn,Msg)	throwException(MALEXCEPTION,Fcn,"%s",Msg)
+#include "mal_exception.h"
 #endif /*  _MAL_FCN_H*/
 @-
 The MAL function blocks are constructed incrementally while parsing the source.
 The function kind determines its semantics. It is taken from the list
-FUNCTION, STREAM, COMMAND, PATTERN.
+FUNCTION, FACTORY, COMMAND, PATTERN.
 @c
 #include "mal_function.h"
 #include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */
@@ -122,14 +115,6 @@ flow of control primitives LEAVE, REDO and RAISE should form a valid
 hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.
 
-The operands of the LEAVE and REDO operators are either a single
-identifier or an assignment. In the former case, they are simply
-interpreted as  goto statements. If the REDO contains an assignment,
-it overrules the barrier expression, by providing an alternative test.
-If the LEAVE instruction contains an expression, it overrules any
-assignment in the EXIT statement and continues processing directly 
-following the EXIT. These jumps required are set accordingly.
-
 Check barrier should ensure that both exit-points of a block for the
 variable referenced in 'pp' exists. In addition, we should ensure
 proper weaveing of the begin-end pairs. This can simply be checked by
@@ -155,17 +140,15 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 @h
 #define functionStart(X) ((X)->token == FUNCTIONsymbol || \
 			  (X)->token == COMMANDsymbol || \
-			  (X)->token == STREAMsymbol )
+			  (X)->token == FACTORYsymbol )
 #define functionExit(X)	 ((X)->token == ENDDEFsymbol)
 
 #define blockStart(X)	((X)->barrier == BARRIERsymbol || \
 		     (X)->barrier == CATCHsymbol ||	\
 		     (X)->barrier == THREADsymbol)
 #define blockExit(X) (X)->barrier == EXITsymbol
-#define blockCntrl(X) ((X)->token== LEAVEsymbol || (X)->token== REDOsymbol ||\
-			((X)->token== ASSIGNsymbol && ( \
-			 (X)->barrier== LEAVEsymbol ||  \
-			 (X)->barrier== REDOsymbol  )) )
+#define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
+			 (X)->barrier== REDOsymbol  )
 
 @-
 Checking the control flow structure is done by a single pass over the
@@ -173,14 +156,6 @@ MAL program after the program has been type-checked.
 It should inspect all BARRIER and CATCH blocks for proper structure.
 @c
 #define DEPTH 128
-
-/* Moved from .h to .c as it conflicts with another assignCntrl() macro in mal_instructions.c.
- * This one is only used in mal_function.c; the other one only in mal_instructions.c.
- */
-#define assignCntrl(X)	((X)->token== ASSIGNsymbol ||\
-			  (X)->token== CMDcall ||\
-			  (X)->token== PATcall ||\
-			  (X)->token== FCNcall )
 
 void chkFlow(MalBlkPtr mb)
 {	int i,j,k, v;
@@ -247,17 +222,11 @@ void chkFlow(MalBlkPtr mb)
 			for(k=pc[btop]; k<i; k++){
 			InstrPtr p1= getInstrPtr(mb,k);
 			if( getDestVar(p1)==v ) {
-				if( p1->token == REDOsymbol ) 
-					p1->jump= pc[btop];
-				if(p1->token== LEAVEsymbol )
-					p1->jump= i;
 				/* handle assignments with leave/redo option*/
-				if( assignCntrl(p1) ){
-					if(p1->barrier== LEAVEsymbol )
-						p1->jump= i;
-					if( p1->barrier==REDOsymbol )
-						p1->jump= pc[btop];
-				}
+				if(p1->barrier== LEAVEsymbol )
+					p1->jump= i;
+				if( p1->barrier==REDOsymbol )
+					p1->jump= pc[btop]+1;
 			}
 			}
 		}  else 

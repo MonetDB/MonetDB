@@ -35,7 +35,7 @@
 #	print(h);
 #	print(B2);
 #	insert(rb,h,B2);
-#	redo mloop;
+#	redo mloop:=chopper.bunStream(t,h:int,B2:url);
 #exit mloop;
 #	print(rb);
 #
@@ -61,7 +61,7 @@ barrier mloop := chopper.bunStream(t,h,B2);	# 18 CHPbunStream (mloop:lng)<-(t:ba
     io.print(h);	# 19 IOprint_val ($39:int)<-(h:int)
     io.print(B2);	# 20 IOprint_val ($40:int)<-(B2:url)
     bat.insert(rb,h,B2);	# 21 BKCinsert_bun ($41:void)<-(rb:bat[:int,:url])(h:int)(B2:url)
-    redo mloop;	# 22  (mloop:lng) jump 18
+    redo mloop := chopper.bunStream(t,h,B2);	# 22 CHPbunStream (mloop:lng)<-(t:bat[:int,:url])(h:int)(B2:url) jump 19
 exit mloop;	# 23  (mloop:lng)
     io.print(rb);	# 24 IOprint_val ($42:int)<-(rb:bat[:int,:url])
 end main;	# 25  

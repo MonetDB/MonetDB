@@ -7,7 +7,7 @@ print(b);
 barrier v:= bunStream(b,h:str,t:str);
 	printf("[ %s,",h);
 	printf("%s]\n",t);
-	redo v;
+	redo v:= bunStream(b,h:str,t:str);
 exit v;
 
 

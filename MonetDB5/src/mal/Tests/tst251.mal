@@ -18,7 +18,7 @@ print(b);
 barrier v:= bunStream(b,h,t);
 	printf("[ %d,",h);
 	printf("%d]\n",t);
-	redo v;
+	redo v:= bunStream(b,h,t);
 exit v;
 
 
@@ -35,7 +35,7 @@ print(c);
 barrier v:= bunStream(c,h,ts:str);
 	printf("[%d,",h);
 	printf("%s]\n",ts);
-	redo v;
+	redo v:= bunStream(c,h,ts:str);
 exit v;
 
 #Testing a loop over string bats
@@ -47,7 +47,7 @@ print(d);
 barrier w:= bunStream(d,hs:str,ts);
 	printf("[ %s,",hs);
 	printf("%s]\n",ts);
-	redo w;
+	redo w:= bunStream(d,hs:str,ts);
 exit w;
 
 

@@ -72,38 +72,34 @@ typedef int malType;
 The symbol/instruction kinds are introduced here instead of reusing the defines 
 derived from the parser to avoid a loop in the define-structure.
 @h
-#define ASSIGNsymbol 	21
-#define RAISEsymbol 	23
-#define CATCHsymbol 	24
-#define RETURNsymbol 	25
-#define YIELDsymbol 	44
-#define BARRIERsymbol	26
-#define REDOsymbol	27
-#define LEAVEsymbol	28
-#define SPACEsymbol	29
-#define IMPORTsymbol	30	/* dependency on outer scopes */
 
-#define ENDDEFsymbol	34
-#define THRDsymbol	43
-#define COMMENTsymbol	35	/* propagation of comments */
-#define ENDsymbol 	36
-#define DONEsymbol 	37
-#define SCOPEsymbol	41
-#define PUSHsymbol	42	/* move constant to stack */
-#define THREADsymbol     46
-#define EXITsymbol	47
+#define RAISEsymbol 	21	/* flow of control modifiers */
+#define CATCHsymbol 	22
+#define RETURNsymbol 	23
+#define BARRIERsymbol	24	
+#define REDOsymbol	25
+#define LEAVEsymbol	26
+#define YIELDsymbol 	27
+#define THREADsymbol    28
+#define EXITsymbol	29
 
-#define FCNcall		50	/* determines interpreter action*/
-#define STRMcall	51
+#define ASSIGNsymbol 	40	/* interpreter entry points */
+#define ENDDEFsymbol	41
+#define COMMENTsymbol	42	/* propagation of comments */
+#define NOOPsymbol	43	/* no operation required */
+#define ENDsymbol 	44
+
+#define COMMANDsymbol   61	/* these tokens should be the last group !! */
+#define FUNCTIONsymbol	62	/* the designate the signature start */
+#define FACTORYsymbol	63	/* the co-routine infrastructure */
+#define PATTERNsymbol   64	/* the MAL self-reflection commands */
+
+#define FCNcall		50	/* internal symbols */
+#define FACcall		51
 #define CMDcall		52
 #define THRDcall	53
 #define PATcall		54	/* pattern call */
 
-
-#define COMMANDsymbol   61	/* these tokens should be the last group !! */
-#define FUNCTIONsymbol	62
-#define STREAMsymbol	63
-#define PATTERNsymbol   64
 
 mal_export str	getTypeName(malType tpe);
 mal_export malType coercion(malType t1, malType t2);

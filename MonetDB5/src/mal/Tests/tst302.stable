@@ -7,14 +7,12 @@
 # Visit http://monetdb.cwi.nl for further information.
 ##propagate INT exception
 ## (you should be able to pass it upwards though)
-#	IllegalAccess := 1234;
-#	raise IllegalAccess;
+#raise	IllegalAccess := 1234;
 #	print("should not come here\n");
 #
 function Admin.main():int;	# 0  (main:int)
-    IllegalAccess := 1234;	# 1  (IllegalAccess:int)<-($2:int)
-    raise IllegalAccess;	# 2  (IllegalAccess:int)
-    io.print("should not come here\n");	# 3 IOprint_val ($3:int)<-($4:str)
-end main;	# 4  
-!ERROR: IllegalAccess:Admin.main[4]: propagated
+    raise IllegalAccess := 1234;	# 1  (IllegalAccess:int)<-($2:int)
+    io.print("should not come here\n");	# 2 IOprint_val ($3:int)<-($4:str)
+end main;	# 3  
+!ERROR: IllegalAccess:Admin.main[3]: propagated
 >

@@ -14,7 +14,7 @@
 #exit	v;
 #barrier t:= i<3;
 #	i:=i+1;
-#	redo t;
+#	redo t:=i<3;
 #exit	t;
 #	i:= 0;
 #
@@ -26,7 +26,7 @@ barrier v := true;	# 2  (v:bit)<-($4:bit) jump 5
 exit v;	# 5  (v:bit)
 barrier t := calc.<(i,3);	# 6 CALCcompLTintint (t:bit)<-(i:int)($7:int) jump 9
     i := calc.+(i,1);	# 7 CALCbinaryADDintint (i:int)<-(i:int)($5:int)
-    redo t;	# 8  (t:bit) jump 6
+    redo t := calc.<(i,3);	# 8 CALCcompLTintint (t:bit)<-(i:int)($7:int) jump 7
 exit t;	# 9  (t:bit)
     i := 0;	# 10  (i:int)<-($2:int)
 end main;	# 11  

@@ -14,7 +14,7 @@
 ##barrier (nme,v):= const.iterator();
 #barrier v:= const.iterator(nme:str);
 #	print(nme);
-#	redo v;
+#	redo v:=const.iterator(nme:str);
 #exit v;
 #const.close();	# save the content on persistent store
 #
@@ -24,7 +24,7 @@ function Admin.main():int;	# 0  (main:int)
     io.print(t);	# 3 IOprint_val ($4:int)<-(t:flt)
 barrier v := const.iterator(nme);	# 4 CSTiterator (v:lng)<-(nme:str) jump 7
     io.print(nme);	# 5 IOprint_val ($7:int)<-(nme:str)
-    redo v;	# 6  (v:lng) jump 4
+    redo v := const.iterator(nme);	# 6 CSTiterator (v:lng)<-(nme:str) jump 5
 exit v;	# 7  (v:lng)
     const.close();	# 8 CSTclose ($8:void)
 end main;	# 9  

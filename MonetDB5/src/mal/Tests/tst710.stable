@@ -16,9 +16,9 @@
 function Admin.main():int;	# 0  (main:int)
     i := 1;	# 1  (i:int)<-($2:int)
     io.print(i);	# 2 IOprint_val ($3:int)<-(i:int)
-catch GDKerror;	# 3  (GDKerror:str) jump 5
+catch GDKerror;	# 3  (GDKerror:any) jump 5
     io.printf("GDKerror, do something\n");	# 4 IOprint_str ($5:int)<-($6:str)
-exit GDKerror;	# 5  (GDKerror:str)
+exit GDKerror;	# 5  (GDKerror:any)
 end main;	# 6  
 [ 1 ]
 >

@@ -19,7 +19,7 @@ barrier mloop:=mal.nextElement(m,0:lng,l,1:lng);
 	printf("B3 value %d\n",B3);
         cr := pow(B2,B3);
         insert(resB,nil,cr); 
-        redo mloop ;    
+        redo mloop:=mal.nextElement(m,0:lng,l,1:lng);    
 catch   MALexception;  
 exit    MALexception; 
 exit    mloop;  

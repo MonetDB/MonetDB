@@ -1,5 +1,4 @@
 #propagate INT exception
 # (you should be able to pass it upwards though)
-	IllegalAccess := 1234;
-	raise IllegalAccess;
+raise	IllegalAccess := 1234;
 	print("should not come here\n");

@@ -119,7 +119,7 @@ barrier sj_a := true;	# 6  (sj_a:bit)<-($12:bit) jump 14
     vj_a := calc.>=(uj_a,0);	# 9 CALCcompGElngint (vj_a:bit)<-(uj_a:lng)($16:int)
 barrier tj_a := vj_a;	# 10  (tj_a:bit)<-(vj_a:bit) jump 13
     xj_a := bat.insert(int_1M,nil,i);	# 11 BKCinsert_bun (xj_a:void)<-(int_1M:bat[:void,:lng])($19:void)(i:lng)
-    redo sj_a;	# 12  (sj_a:bit) jump 6
+    redo sj_a;	# 12  (sj_a:bit) jump 7
 exit tj_a;	# 13  (tj_a:bit)
 exit sj_a;	# 14  (sj_a:bit)
     t := alarm.time();	# 15 ALARMtime (t:int)
@@ -164,7 +164,7 @@ barrier sj_b := true;	# 51  (sj_b:bit)<-($12:bit) jump 59
     vj_b := calc.>=(uj_b,0);	# 54 CALCcompGElngint (vj_b:bit)<-(uj_b:lng)($16:int)
 barrier tj_b := vj_b;	# 55  (tj_b:bit)<-(vj_b:bit) jump 58
     xj_b := bat.insert(M2,i,i);	# 56 BKCinsert_bun (xj_b:void)<-(M2:bat[:lng,:lng])(i:lng)(i:lng)
-    redo sj_b;	# 57  (sj_b:bit) jump 51
+    redo sj_b;	# 57  (sj_b:bit) jump 52
 exit tj_b;	# 58  (tj_b:bit)
 exit sj_b;	# 59  (sj_b:bit)
     t := alarm.time();	# 60 ALARMtime (t:int)
@@ -290,10 +290,10 @@ end main;	# 94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 282 ms
-count 1000000 = 212 ms
-count 1000000 = 212 ms
-count 1000000 = 212 ms
+count 1000000 = 280 ms
+count 1000000 = 210 ms
+count 1000000 = 209 ms
+count 1000000 = 210 ms
 #-------------------------------------------------#
 # h				tmp_10		  # name
 # str				str		  # type
@@ -382,10 +382,10 @@ count 1000000 = 212 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 291 ms
-count 1000000 = 206 ms
-count 1000000 = 781 ms
-count 1000000 = 218 ms
+count 1000000 = 289 ms
+count 1000000 = 204 ms
+count 1000000 = 203 ms
+count 1000000 = 204 ms
 #-------------------------------------------------#
 # h				tmp_16		  # name
 # str				str		  # type

@@ -20,7 +20,7 @@ function Admin.get(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	
     b := bbp.nme();	# 1  unknown (b:any)
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:any])<-(z:bat[:any,:any])(title:str)
-    return z;	# 4  (get:bat[:any$3,:any$4])<-(z:bat[:any,:any])
+    return z;	# 4  (z:bat[:any,:any])
 end get;	# 5  
 ## Note the type of the variables will be fixed during the first call
 ## Thus, a better schould would be a term rewriter call, which
@@ -36,7 +36,7 @@ function Admin.getInt(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4
     b := bbp.nme();	# 1  unknown (b:any)
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:any])<-(z:bat[:any,:any])(title:str)
-    return z;	# 4  (getInt:bat[:any$3,:any$4])<-(z:bat[:any,:any])
+    return z;	# 4  (z:bat[:any,:any])
 end getInt;	# 5  
 #function getLng(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 #	b:= bbp.nme();
@@ -48,7 +48,7 @@ function Admin.getLng(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4
     b := bbp.nme();	# 1  unknown (b:any)
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:any])<-(z:bat[:any,:any])(title:str)
-    return z;	# 4  (getLng:bat[:any$3,:any$4])<-(z:bat[:any,:any])
+    return z;	# 4  (z:bat[:any,:any])
 end getLng;	# 5  
 #function dir(b:bat[:int,:str]):void;
 #	atm:= inspect.getAtoms();

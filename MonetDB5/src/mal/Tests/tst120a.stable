@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 #module top;
 #function first(i:sht):sht; end first;
 function top.first(i:sht):sht;	# 0  (first:sht)<-(i:sht)

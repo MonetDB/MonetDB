@@ -25,7 +25,7 @@
 #barrier v:= bunStream(b,h,t);
 #	printf("[ %d,",h);
 #	printf("%d]\n",t);
-#	redo v;
+#	redo v:= bunStream(b,h,t);
 #exit v;
 #
 #
@@ -42,7 +42,7 @@
 #barrier v:= bunStream(c,h,ts:str);
 #	printf("[%d,",h);
 #	printf("%s]\n",ts);
-#	redo v;
+#	redo v:= bunStream(c,h,ts:str);
 #exit v;
 #
 ##Testing a loop over string bats
@@ -54,7 +54,7 @@
 #barrier w:= bunStream(d,hs:str,ts);
 #	printf("[ %s,",hs);
 #	printf("%s]\n",ts);
-#	redo w;
+#	redo w:= bunStream(d,hs:str,ts);
 #exit w;
 #
 #
@@ -77,7 +77,7 @@ function Admin.main():int;	# 0  (main:int)
 barrier v := chopper.bunStream(b,h,t);	# 15 CHPbunStream (v:lng)<-(b:bat[:int,:int])(h:int)(t:int) jump 19
     io.printf("[ %d,",h);	# 16 IOprint_formatted_int ($37:int)<-($38:str)(h:int)
     io.printf("%d]\n",t);	# 17 IOprint_formatted_int ($39:int)<-($40:str)(t:int)
-    redo v;	# 18  (v:lng) jump 15
+    redo v := chopper.bunStream(b,h,t);	# 18 CHPbunStream (v:lng)<-(b:bat[:int,:int])(h:int)(t:int) jump 16
 exit v;	# 19  (v:lng)
     c := bbp.new(:int,:str);	# 20 CMDBATnew (c:bat[:int,:str])<-($42:int)($43:str)
     bat.insert(c,1,"hello");	# 21 BKCinsert_bun ($44:void)<-(c:bat[:int,:str])($45:int)($46:str)
@@ -91,7 +91,7 @@ exit v;	# 19  (v:lng)
 barrier v := chopper.bunStream(c,h,ts);	# 29 CHPbunStream (v:lng)<-(c:bat[:int,:str])(h:int)(ts:str) jump 33
     io.printf("[%d,",h);	# 30 IOprint_formatted_int ($65:int)<-($66:str)(h:int)
     io.printf("%s]\n",ts);	# 31 IOprint_formatted_str ($67:int)<-($68:str)(ts:str)
-    redo v;	# 32  (v:lng) jump 29
+    redo v := chopper.bunStream(c,h,ts);	# 32 CHPbunStream (v:lng)<-(c:bat[:int,:str])(h:int)(ts:str) jump 30
 exit v;	# 33  (v:lng)
     d := bbp.new(:str,:str);	# 34 CMDBATnew (d:bat[:str,:str])<-($70:str)($71:str)
     bat.insert(d,"one","red");	# 35 BKCinsert_bun ($72:void)<-(d:bat[:str,:str])($73:str)($74:str)
@@ -100,7 +100,7 @@ exit v;	# 33  (v:lng)
 barrier w := chopper.bunStream(d,hs,ts);	# 38 CHPbunStream (w:lng)<-(d:bat[:str,:str])(hs:str)(ts:str) jump 42
     io.printf("[ %s,",hs);	# 39 IOprint_formatted_str ($81:int)<-($82:str)(hs:str)
     io.printf("%s]\n",ts);	# 40 IOprint_formatted_str ($83:int)<-($68:str)(ts:str)
-    redo w;	# 41  (w:lng) jump 38
+    redo w := chopper.bunStream(d,hs,ts);	# 41 CHPbunStream (w:lng)<-(d:bat[:str,:str])(hs:str)(ts:str) jump 39
 exit w;	# 42  (w:lng)
 end main;	# 43  
 #-----------------#

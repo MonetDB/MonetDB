@@ -4,7 +4,7 @@
 barrier j:=i<3;
 	print(i);
 	i:=i+1;
-	redo j;
+	redo j:= i<3;
 exit	j;
 	print("first loop done");
 	i:=0;

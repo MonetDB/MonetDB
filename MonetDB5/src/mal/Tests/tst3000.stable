@@ -9,51 +9,22 @@
 #i{constant}:= 1;
 #j{blah} := "kk";
 #k{blah,freeze} := "whatever";
-#n{cost="12"}:= new(:int,:int);
+#n{cost}:= new(:int,:int);
 ##o{cost=12}:= new(int,int);
-#q:= 1:int{frozen};
-!ERROR: i{constant}:= 1;
-!        ^'.' or '(' expected
-!ERROR: j{blah} := "kk";
-!        ^'.' or '(' expected
-!ERROR: k{blah,freeze} := "whatever";
-!        ^'.' or '(' expected
-!ERROR: n{cost="12"}:= new(:int,:int);
-!        ^'.' or '(' expected
-!ERROR: q:= 1:int{frozen};
-!                ^operator expected
-!ERROR: # i:= 1;		{i.constant:=true;}
-!        		       ^<identifier> or <operator> expected
-!ERROR: # i:= 1;		{i.constant:=true;}
-!        		                         ^<identifier> or <operator> expected
-!ERROR: # j:= "kk"; 	{j.constant:=true;}
-!            	       ^<identifier> or <operator> expected
-!ERROR: # j:= "kk"; 	{j.constant:=true;}
-!            	                         ^<identifier> or <operator> expected
-!ERROR: # k:= "whatever"; {k.blah:=true;k.freeze:=true;}
-!                         ^<identifier> or <operator> expected
-!ERROR: # k:= "whatever"; {k.blah:=true;k.freeze:=true;}
-!                                                ^'(' expected
-!ERROR: # k:= "whatever"; {k.blah:=true;k.freeze:=true;}
-!                                                      ^<identifier> or <operator> expected
-!ERROR: # n:= new(int,int);{n.cost:=12;}
-!                          ^<identifier> or <operator> expected
-!ERROR: # n:= new(int,int);{n.cost:=12;}
-!                                						^<identifier> or <operator> expected
-function Admin.main():int;	# 0  unknown (main:int)
-    $1;	# 1  unknown ($1:any)
-    $2;	# 2  unknown ($2:any)
-    $3;	# 3  unknown ($3:any)
-    $4;	# 4  unknown ($4:any)
-    q := 1;	# 5  unknown (q:any)<-($6:int)
-    $7;	# 6  unknown ($7:any)
-    $8;	# 7  unknown ($8:any)
-    $9;	# 8  unknown ($9:any)
-    $10;	# 9  unknown ($10:any)
-    $11;	# 10  unknown ($11:any)
-    freeze();	# 11  unknown ($12:any)
-    $13;	# 12  unknown ($13:any)
-    $14;	# 13  unknown ($14:any)
-    $15;	# 14  unknown ($15:any)
-end main;	# 15  unknown 
+##q:= 1:int{frozen};
+#
+##Alternative format using post-predicates
+##default interpretation for i.prop is boolean value true
+#
+## i:= 1;		{i.constant:=true;}
+## j:= "kk"; 	{j.constant:=true;}
+## k:= "whatever"; {k.blah:=true;k.freeze:=true;}
+## n:= new(int,int);{n.cost:=12;}
+#
+function Admin.main():int;	# 0  (main:int)
+    i{constant} := 1;	# 1  (i:int)<-($2:int)
+    j{blah} := "kk";	# 2  (j:str)<-($4:str)
+    k{freeze,blah} := "whatever";	# 3  (k:str)<-($6:str)
+    n{cost} := bbp.new(:int,:int);	# 4 CMDBATnew (n:bat[:int,:int])<-($8:int)($9:int)
+end main;	# 5  
 >

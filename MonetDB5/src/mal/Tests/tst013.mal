@@ -8,6 +8,7 @@ barrier i:= 1;
 	i:= i+1;
 	print(i);
 	barrier >(i,3);	# new envelop
+		print("leave loop");
 		leave i; # leave outer envelop
 	exit;
 	redo;

@@ -1,7 +1,6 @@
 # Exception identifiers can be introduced at any place
 
-	myNewException:="new exception";
-	raise myNewException;
+	raise myNewException:= "new exception";
 	printf("should not come here\n");
 #exception block;
 catch	myNewException;

@@ -351,10 +351,7 @@ collect the buffer when in use.
 	c->debugoptimizer = 0;
 	c->errbuf = 0;
 
-	{ char buffer[1024];
-	 	getcwd(buffer,1024);
-		c->cwd= GDKstrdup(buffer);
-	}
+	c->cwd= GDKstrdup(monet_cwd);
 	c->prompt= GDKstrdup(">");
 	c->promptlength= strlen(c->prompt);
 	if( isAdministrator(c)) initClientThread(c);

@@ -28,6 +28,6 @@ barrier mloop := chopper.bunStream(t,h:int,B2:url);
 	print(h);
 	print(B2);
 	insert(rb,h,B2);
-	redo mloop;
+	redo mloop:=chopper.bunStream(t,h:int,B2:url);
 exit mloop;
 	print(rb);

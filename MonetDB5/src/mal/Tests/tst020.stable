@@ -22,7 +22,7 @@ barrier l := calc.==(r,0);	# 3 CALCcompEQintint (l:bit)<-(r:int)($5:int) jump 8
     y := r;	# 4  (y:int)<-(r:int)
     r := calc.+(r,1);	# 5 CALCbinaryADDintint (r:int)<-(r:int)($8:int)
     leave l;	# 6  (l:bit) jump 8
-    redo l;	# 7  (l:bit) jump 3
+    redo l;	# 7  (l:bit) jump 4
 exit l;	# 8  (l:bit)
 end pl;	# 9  
 #a:= "hello";

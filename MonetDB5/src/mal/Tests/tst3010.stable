@@ -10,18 +10,18 @@
 #	j:= j+i;
 #	return j{freeze};
 #end add;
-function Admin.add(i:int{read},j:int{freeze}):int;	# 0  (add:int)<-(i:int)(j:int)
-    j{freeze} := calc.+(j{freeze},i{read});	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
-    return j{freeze};	# 2  (add:int)<-(j:int)
+function Admin.add(i:int{read},j:int{freeze,read}):int;	# 0  (add:int)<-(i:int)(j:int)
+    j{freeze,read} := calc.+(j{freeze,read},i{read});	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
+    return j{freeze,read};	# 2  (j:int)
 end add;	# 3  
 #
 #function add2(i:int,j:int{read}):int{write,safe};
 #	k:= j+i;
 #	return k{freeze};
 #end ;
-function Admin.add2(i:int{read},j:int):int;	# 0  (add2:int)<-(i:int)(j:int)
-    k{freeze} := calc.+(j,i{read});	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
-    return k{freeze};	# 2  (add2:int)<-(k:int)
+function Admin.add2(i:int,j:int{read}):int;	# 0  (add2:int)<-(i:int)(j:int)
+    k{freeze} := calc.+(j{read},i);	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
+    return k{freeze};	# 2  (k:int)
 end add2;	# 3  
 #
 #i{cost}:= 23;
@@ -49,11 +49,9 @@ end add2;	# 3
 ##kk:= add2(i,i);
 #
 #
-!ERROR: i{cost}:= 23;
-!        ^'.' or '(' expected
-function Admin.main():int;	# 0  unknown (main:int)
-    $1;	# 1  unknown ($1:any)
-    z := add(i,i);	# 2  unknown (z:any)<-(i:any)(i:any)
-    kk := add2(i,i);	# 3  unknown (kk:any)<-(i:any)(i:any)
-end main;	# 4  unknown 
+function Admin.main():int;	# 0  (main:int)
+    i{cost} := 23;	# 1  (i:int)<-($2:int)
+    z := Admin.add(i{cost},i{cost});	# 2  (z:int)<-(i:int)(i:int)
+    kk := Admin.add2(i{cost},i{cost});	# 3  (kk:int)<-(i:int)(i:int)
+end main;	# 4  
 >

@@ -43,9 +43,9 @@ function Admin.main():int;	# 0  (main:int)
     bbp.close();	# 7 CMDbbpclose ($13:void)
     bbp.open();	# 8 CMDbbpopen ($14:void)
     v := bbp.take("myfirstbat");	# 9 CMDbbptake (v:bat[:any,:any])<-($11:str)
-catch MALexception;	# 10  (MALexception:str) jump 12
-    io.print(MALexception);	# 11 IOprint_val ($17:int)<-(MALexception:str)
-exit MALexception;	# 12  (MALexception:str)
+catch MALexception;	# 10  (MALexception:any) jump 12
+    io.print(MALexception);	# 11 IOprint_val ($17:int)<-(MALexception:any)
+exit MALexception;	# 12  (MALexception:any)
     io.print("v");	# 13 IOprint_val ($18:int)<-($19:str)
     io.print(v);	# 14 IOprint_val ($20:int)<-(v:bat[:any,:any])
     x := bbp.getObjects();	# 15 CMDbbpGetObjects (x:bat[:int,:str])

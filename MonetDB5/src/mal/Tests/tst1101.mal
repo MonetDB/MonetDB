@@ -18,11 +18,8 @@
 
         rb:= new(:int,:url);
 	print("start loop");
-# Drop this line and you get a segmentation fault
 barrier mloop:lng := chopper.bunStream(t,h:int,B2:url);
 	print(B2);
-	redo mloop;
+	redo mloop:=chopper.bunStream(t,h:int,B2);
 exit mloop;
-
-        print(rb);
 

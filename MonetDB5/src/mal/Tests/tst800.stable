@@ -21,7 +21,7 @@
 #	printf("%s=",nme);
 #	val:str := const.toString(nme);
 #	printf("%s\n",val);
-#	redo b;
+#	redo b:= const.iterator(nme:str);
 #exit b;
 #
 function Admin.main():int;	# 0  (main:int)
@@ -33,7 +33,7 @@ barrier b := const.iterator(nme);	# 5 CSTiterator (b:lng)<-(nme:str) jump 10
     io.printf("%s=",nme);	# 6 IOprint_formatted_str ($11:int)<-($12:str)(nme:str)
     val := const.toString(nme);	# 7 CSTtoString (val:str)<-(nme:str)
     io.printf("%s\n",val);	# 8 IOprint_formatted_str ($14:int)<-($15:str)(val:str)
-    redo b;	# 9  (b:lng) jump 5
+    redo b := const.iterator(nme);	# 9 CSTiterator (b:lng)<-(nme:str) jump 6
 exit b;	# 10  (b:lng)
 end main;	# 11  
 user=Admin

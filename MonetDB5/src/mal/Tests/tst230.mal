@@ -6,7 +6,7 @@
 	insert(b,1,"bat B");
 	print(b);
 	i:= getRefCount(b);
-	printf("refcount =%d\n",i);
+	printf("second refcount =%d\n",i);
 
 	# referenceing through mirroring
 	b5:= reverse(b);

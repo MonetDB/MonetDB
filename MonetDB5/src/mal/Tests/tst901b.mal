@@ -24,7 +24,7 @@ barrier mloop:= bunStream(b,h,t);
 catch GDKerror;
 	leave mloop;
 exit GDKerror;
-	redo mloop;
+	redo mloop:= bunStream(b,h,t);
 exit mloop;
 t3:= alarm.usec();
 #CMD000(b,b);

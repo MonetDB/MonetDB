@@ -35,6 +35,7 @@ a known location.
 #ifndef _MAL_IMPORT_H
 #define _MAL_IMPORT_H
 
+#include "mal_exception.h"
 #include "mal_client.h"
 #include "mal_session.h"
 

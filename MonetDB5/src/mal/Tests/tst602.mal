@@ -7,6 +7,6 @@ print(t);
 #barrier (nme,v):= const.iterator();
 barrier v:= const.iterator(nme:str);
 	print(nme);
-	redo v;
+	redo v:=const.iterator(nme:str);
 exit v;
 const.close();	# save the content on persistent store

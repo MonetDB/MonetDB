@@ -8,4 +8,4 @@ w:=new(:{sequence},int);
 w:bat[int,int]:=new(:int,:int);
 y:=sort(w:bat[int,int]{sorted,dense});
 print(1);
-y:int{+sorted}:=sort(w);
+y:int{sorted}:=sort(w);

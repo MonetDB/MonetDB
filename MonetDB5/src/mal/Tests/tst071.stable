@@ -9,11 +9,12 @@
 #function swap(x:int,y:int) (a:int,b:int);
 #	a:=y; b:=x;
 #	return(a,b);
+#
 #end swap;
 function Admin.swap(x:int,y:int) (:int,b:int);	# 0  (:int)(b:int)<-(x:int)(y:int)
     a := y;	# 1  (a:int)<-(y:int)
     b := x;	# 2  (b:int)<-(x:int)
-    return (a,b);	# 3  (:int)(b:int)<-(a:int)(b:int)
+    return (a,b);	# 3  (a:int)(b:int)
 end swap;	# 4  
 #
 #(x,y):= swap(1,2);
@@ -24,7 +25,7 @@ end swap;	# 4
 #
 !ERROR: 'swap' undefined in Admin.main[4]
 function Admin.main():int;	# 0  (main:int)
-    (x,y):=Admin.swap(1,2);	# 1  (x:int)(y:int)<-($3:int)($4:int)
+    (x,y):= Admin.swap(1,2);	# 1  (x:int)(y:int)<-($3:int)($4:int)
     io.print(x);	# 2 IOprint_val ($5:int)<-(x:int)
     io.print(y);	# 3 IOprint_val ($6:int)<-(y:int)
     a := swap(3,4);	# 4  unknown (a:any)<-($8:int)($9:int)

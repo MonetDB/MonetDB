@@ -12,7 +12,7 @@
 #        k:= rand();
 #        l:= int(k);
 #        insert(b,l,l);
-#        redo v;
+#        redo v:= nextElement(i,0:int,1000000:int);
 #exit v;
 ##setReadMode(b);
 #mx:= max(b);
@@ -137,7 +137,7 @@ barrier v := mal.nextElement(i,0,1000000);	# 3 intForloop (v:bit)<-(i:int)($7:in
     k := calc.rand();	# 4 CALCrandint (k:int)
     l := calc.int(k);	# 5 CALCint2int (l:int)<-(k:int)
     bat.insert(b,l,l);	# 6 BKCinsert_bun ($11:void)<-(b:bat[:int,:int])(l:int)(l:int)
-    redo v;	# 7  (v:bit) jump 3
+    redo v := mal.nextElement(i,0,1000000);	# 7 intForloop (v:bit)<-(i:int)($7:int)($8:int) jump 4
 exit v;	# 8  (v:bit)
     mx := algebra.max(b);	# 9 ALGmax_int (mx:int)<-(b:bat[:int,:int])
     io.printf("max %d",mx);	# 10 IOprint_formatted_int ($13:int)<-($14:str)(mx:int)
@@ -149,7 +149,7 @@ exit v;	# 8  (v:bit)
     d0 := calc.-(t1,t0);	# 16 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#copy %d\n",d0);	# 17 IOprint_formatted_lng ($22:int)<-($23:str)(d0:lng)
     t0 := alarm.usec();	# 18 ALARMusec (t0:lng)
-    (cidx,vrng):=crackers.new(b);	# 19 CRKnew (cidx:bat[:int,:int])(vrng:bat[:int,:int])<-(b:bat[:int,:int])
+    (cidx,vrng):= crackers.new(b);	# 19 CRKnew (cidx:bat[:int,:int])(vrng:bat[:int,:int])<-(b:bat[:int,:int])
     t1 := alarm.usec();	# 20 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 21 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#crack init %d\n",d0);	# 22 IOprint_formatted_lng ($26:int)<-($27:str)(d0:lng)
@@ -223,12 +223,12 @@ exit v;	# 8  (v:bit)
     io.printf("#select %d\n",d0);	# 90 IOprint_formatted_lng ($47:int)<-($44:str)(d0:lng)
 end main;	# 91  
 max 2147480021 min 1210
-#copy 23
-#crack init 35527
-#crack 49880
-#crack 24764
-#crack 12223
-#crack 5991
+#copy 22
+#crack init 35664
+#crack 49368
+#crack 24477
+#crack 12147
+#crack 5902
 #-------------------------#
 # h	tmp_5		  # name
 # int	int		  # type
@@ -255,10 +255,10 @@ max 2147480021 min 1210
 [ 268435003,	  536870005	  ]
 [ 19360,	  134217501	  ]
 [ 134217502,	  268435002	  ]
-#max 19289
-#min 18442
-#select 33845
-#select 27895
-#select 24886
-#select 23428
+#max 19286
+#min 18480
+#select 33707
+#select 27530
+#select 24851
+#select 23496
 >

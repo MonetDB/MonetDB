@@ -198,7 +198,15 @@ print("rb_a,tb_a,xb_a,ac_a,ec_a,gc_a,kc_a");
 #
 ## test the operations on tzones
 	id_a := setName(tzone_bat,"tzone");
+print(tzone_bat);
+print("start error");
+	x:= getRefCount(id_a);
+print(x);
 	jd_a := print(id_a);
+print("end");
+print(x);
+	x:= getRefCount(id_a);
+	print(tzone_bat);
 #print(tzone_bat.setColumn("tzone"));
 	kd_a := multiplex.script("minutes",tzone_bat);
 	ld_a := setColumn(kd_a,"minutes");

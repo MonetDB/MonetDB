@@ -27,38 +27,41 @@
 @* Monet Assembler Language
 The primary textual interface to the Monet kernel
 is a simple, assembler-like language, called MAL. 
-
 The language reflects the virtual machine architecture around the
 kernel libraries and has been designed for speed of parsing,
 ease of analysis, and ease of target compilation by query compilers.
-
 The language is not meant as a primary programming language,
 or scripting language. Such use is even discouraged.
 
-Furthermore, the program blocks are considered specifications
+Furthermore, a MAL program is considered a specification
 of intended computation and data flow behaviour. It should be
 understood that its actual evaluation depends on the execution
 paradigm choosen in the scenario. The program blocks can both
 be interpreted as ordered sequences of assembler instructions
 as a representation of a dataflow graph that should be resolved.
 
-The language uses a slightly different
-keyword connotation to make this distinction more evident.
-In particular, flow of control statements address both the
-interpretation order of a  computation as it denotes a synchronization
-point for dataflow.
+The language uses a slightly different keyword connotation 
+from programming language arena to make this distinction more evident.
+In particular, flow of control keywords identify a point to chance
+the interpretation order or denote a synchronization point
+in dataflow behavior.
+
+The first statement of a MAL block is taken up by a signature
+description. (See functions)
 
 @+ MAL instructions
 MAL instructions have a simple format. 
-For simplicty, each instruction should fit on a single line and 
-is either a dataflow assignment, a control statement,
+Each instruction should fit on a single line and 
+is either a dataflow assignment, a controlled assigment,
 or a signature. We discuss each of them.
 
-@- Assignment
-Assignments are by far the most common MAL instructions.
-They designate the consumption of a series of values
-by an operator and delivery of the result in a number of target
-variables.
+A dataflow assignments forms the core of a MAL program.
+It is syntactially represented by an assignment, where
+expression (function call) delivers results to target variables. 
+Ommission of target variables is allowed. Then the compiler
+merely assigns a temporary variable to hold the result of
+the expression. Using it, however, in the remainder then is
+prohibited.
 
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
@@ -81,11 +84,15 @@ t1 := constant;
 \end{verbatim}
 
 Each operator is defined in a (user-defined) module.
-Knowing its name simplifies subsequent implementation
-binding, but its use is optional.
-Ommission of the module initiates a search for a possible
-matching definition in a hierarchical ordered module
-sequence. (See modules)
+Knowing its name simplifies the implementation of the binding, but its use is optional.
+Ommission of the module name initiates a search for a possible
+matching definition in a hierarchical ordered scope
+structure. (See modules)
+
+Variables and literal constants can be tagged with a type
+qualifier. The literal value should fit the domain of the
+type identified, e.g. 4:lng is valid, but "1":int raises an
+error. [todo]
 
 Experience with SQL shows that often the output
 of a query processor based on an algebraic model
@@ -97,54 +104,54 @@ Only when the algebraic structure is too limited (e.g. updates),
 or the database back-end lacks feasible bulk operators,
 one has to rely on more flow of control primitives.
 But even in that case, the basic blocks to be processed
-by a MAL backend are considered large, e.g. 10s of simple
+by a MAL backend are considered large, e.g. tens of simple
 bulk assignment instructions.
 
-For implementation reasons the maximum number of parameters is a
-compile time constant. Its choice should be large enough to
-accomodate the functions you have in mind. 
-[todo, the size is known after parsing]
-
-@- Flow control
+@- Flow of control
 @T
-The flow assignments can be preceeded by one of the flow
-control keywords to change data/execution flow,
-handle exceptions, and interprocess communication.
+Flow of control can be changed using a control modifier,
+receiving an exception, and explicit interprocess communication.
 
-The primary flow control keywords are:
-{\tt barrier}, {\tt leave}, {\tt redo}, and {\tt exit}.
+The primary control flow modifiers are {\tt return}, {\tt yield},
+and {\tt end}.
+They mark the end of a function call and return one or more results
+to the calling environment. 
+The {\tt return} and {\tt yield} are followed by a target list
+or an assignement, which is executed first.
+The {\tt end} marker identifies the end of functional abstraction. 
+Its target list is the function name, whose value is returned.
+Anything beyond it is ignored.
+
+The flow of control within a MAL program block can be changed by
+tagging an assignment with either
+{\tt barrier}, {\tt leave}, {\tt redo}, or {\tt exit}.
 The {\tt barrier} and {\tt exit} mark a block
 to be interpreted when the barrier can be taken.
-All four control structures should use the same
+All four control modifiers should use the same
 target variable set.
 
-Builtin barrier controls exists for boolean and integers.
-The barrier is opened when the target variable holds
+The {\tt barrier}, {\tt leave} and {\tt redo} are conditional 
+flow modifiers, because they use the value of the first target 
+variable after the expression has been evaluated to decide
+on the action to be taken.
+Builtin barrier controls exists for booleans and integers.
+The barrier is opened when the first target variable holds
 true or when the integer value $>$=0.
-All target variables form a combined lock on the
-code block protected by the barrier.
+
+Once inside the barrier you have an option to prematurely
+{\tt leave} it at the exit statement
+or to {\tt redo} interpretation just after the corresponding
+barrier statement. (like 'break' and 'continue')
 
 The {\tt exit} marks the exit for a block. Its assignment
 can be used to re-initialize the barrier control variables
 or wrap-up any related administration.
 
-Once inside the barrier you have an option to prematurely
-leave it or to restart interpretation just after the
-barrier statement. (like 'break' and 'continue')
-In both cases  the variables are assigned their new value. Then 
-barrier control takes over and will move the program
-counter to the beginning or end of the block.
-
-Using multiple target barriers can be used to model a
-variety of strategies to adjust the dataflow
-within a guarded block.
-
 The barrier blocks can be properly nested to form
 a hierarchy of basic blocks.
 The control flow within and between blocks is
 simple enough to deal with during the optimizer stage.
-
-Note that {\tt redo} and {\tt leave} statements mark
+The {\tt redo} and {\tt leave} statements mark
 the partial end of a block. Statements within these
 blocks can be re-arranged according to the dataflow
 dependencies. The order of partial blocks can not
@@ -159,7 +166,7 @@ Consider the statement {\em for(i=1;i$<$10;i++) print(i)}.
 The (optimized) MAL block to implement this becomes:
 \begin{verbatim}
      V:= 1;
-barrier B:= true;
+barrier B:= V<10;
      print(V);
      V:= V+1;
 redo B:= V<10;
@@ -169,8 +176,8 @@ exit B;
 Translation of the statement {\em if(i$<$1) print("ok"); else print("wrong");}
 becomes:
 \begin{verbatim}
-    i:=1; b:=i<1;
-barrier b;
+    i:=1; 
+barrier b:= i<1;
     print("ok");
 exit b;
 barrier b:= not b;
@@ -178,61 +185,55 @@ barrier b:= not b;
 exit b;
 \end{verbatim}
 
-@- Exception control
-@T
-The exception handling keywords are: {\tt catch} and {\tt raise}
-The {\tt catch}  marks a point in the dataflow where
-an exception raised can be dealt with. Any statement between the
-point where it is raised and the catch block is ignored.
-Moreover, the {\tt catch} ... {\tt done} block is ignored when
-no errors have occurred in the preceeding dataflow structure.
-
-Exceptions are linked with the variables that receive it
-from functions being called. This way exceptions are bound
-to the data flow rather then the statement sequence.
-It provides more opportunities to move code around, while
-still precisely controlling the point where exceptions
-are dealt with.
-
-After an exception block has been dealt with you have
-an option to {\em leave} the block at the normal {\tt exit} or
-attempt to redo the failed instruction call using a {\tt redo}.
-
-The argument to the catch statement is a target list.
-Its variables are considered disjunctive, which means
-that all mentioned can be catched and open up the
-recovery block. The {\tt redo} and {\tt leave}
-statement in this case also interpret the list as
-a disjunction. [todo, more thought needed]
-
-The snippet below illustrates how an exception raised
-in the function X is catched using the receiving variable Y.
-
+Beware that {\tt redo} is a flow modifier attached to an instruction.
+The following snippet illustrates how an infinite loop appears, due
+to stable control variable.
 \begin{verbatim}
-    V:= io.read("password:");
-    ...
-catch V;
-    print("input error");
-done;
+barrier i:= startIterator();
+    print("found one");
+    redo i;
+exit b;
+\end{verbatim}
+The generic form of an iterator looks like
+\begin{verbatim}
+barrier i:= startIterator(T);
+    elm:= getElement(T,i);
+    print("found one");
+    redo i:= hasMoreElements(T);
+exit b;
 \end{verbatim}
 
-An exception can be raised explicitly at any time
-using the {\tt raise} control. Its expression is evaluated
-and exception values are created.
-The built-in exception mechanism casts an exception into a string
-value, which contains the module, function, and message. [check]
-
-Note that due to code re-shuffling an exception raised in one
-thread of control is invisible to others. 
-
-@- MAL signatures
+@+ Parallel processing
 @T
-The first statement of a MAL block is taken up by a signature
-description. (See functions)
-The interprocess communication keywords are:
-{\tt return}
+The MAL interpreter supports spawning parallel workers,
+who share a common stack frame. They are considered
+cooperative and no low level transaction support
+is included to align their work.
 
-@+ Block descriptor
+[Locking primitives should be provided]
+
+The thread code starts with a flow of control modifier {\tt thread}
+and ends with the corresponding {\tt exit}.
+The assignment of the {\tt thread} should produce an integer
+value initialized to 0, otherwise the thread is already considered
+running and its handle contains a process id.
+
+Example, the fragment below creates a parallel thread which
+dies after a few seconds. The parent threads awaits for this 
+event to happen. (See mal/Tests/tst2010.mal)
+\begin{verbatim}
+thread  hdl;    # should be zero to start
+        printf("#Start thread with id %d\n",hdl);
+        clkticks(2);
+        printf("About to exit child\n");
+exit    hdl;
+
+        printf("Wait for child to exit too\n");
+\end{verbatim}
+
+[show thread inspection routines]
+
+@+ MAL datastructure
 The datastructure to represent a MAL block is kept simple.
 Each descriptor carries a sequence of MAL statements 
 and a local symbol table.
@@ -279,9 +280,9 @@ used is terminated. This may require garbage collection actions.
 @-
 [Think, should beforeCall/afterCall also become part of the MAL functions?]
 @-
-The procedural abstraction comes in two forms, FUNCTION and STREAM.
+The procedural abstraction comes in two forms, FUNCTION and FACTORY.
 The former behaves as a normal function, it computes one or more results
-and terminates. Contrary, the STREAM call leads to an independent thread
+and terminates. Contrary, the FACTORY call leads to an independent thread
 of control that waits for a re-activation request. Stream operations are
 primarilly interesting within code blocks that are executed repeatedly.
 To illustrate, the program below generates a stream of random numbers.
@@ -307,6 +308,11 @@ barrier (Z,val):=random(1);
 exit Z;
 \end{verbatim}
 @{
+For implementation reasons the maximum number of parameters is a
+compile time constant. Its choice should be large enough to
+accomodate the functions you have in mind. 
+[todo, the size is known after parsing]
+
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -382,7 +388,9 @@ typedef str (*MALfcn)();
 
 typedef struct {
 	short	token;		/* instruction type */
-	short	barrier;	/* Begin-end of block indicator*/
+	short	barrier;	/* flow of control modifier takes:
+				   BARRIER, LEAVE, REDO, EXIT
+				   CATCH, RAISE, THREAD*/
 	short	typechk;	/* type check status */
 	PropertySet	props; /* associated with function def */
 @-
@@ -493,7 +501,7 @@ mal_export void		expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void		trimMalBlk(MalBlkPtr mb);
 mal_export void 	moveInstruction(MalBlkPtr mb, int pc, int target);
 mal_export void		removeInstruction(MalBlkPtr mb, int pc);
-mal_export str 		operatorName(InstrPtr p);
+mal_export str 		operatorName(int i);
 
 mal_export int		findVariable(MalBlkPtr mb, str name);
 mal_export int		findVariableLength(MalBlkPtr mb, str name,int len);
@@ -525,7 +533,6 @@ mal_export void 	printSignature(stream *fd, Symbol s, int flg);
 mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 mal_export str 		function2str(MalBlkPtr mb,int flg);
 mal_export void 	pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.c */
-mal_export void 	pushCatchDefault(MalBlkPtr mb,str nme);
 
 
 mal_export void strBeforeCall(ValPtr v,ValPtr bak);
@@ -824,19 +831,26 @@ Use the information that a variable is at least one character
 wide and terminated by a null-byte.
 This means that we can speed up search when the variables
 differ in the first two characters
+
 Furthermore, temporary variables are already assigned to a specific
 position in the variable table. This information can only be used
 under the assumption that the code base is not modified on the
 fly. Then the expensive search is started anyway.
-@c
-int findVariable(MalBlkPtr mb, str name){
-	int i;
+It also means that input which does not comply with the intended
+location of a temporary variable should be flagged as an error.
+@= chkTemporary
 	if( isTmpName(name)){
 		i= atol(name+1);
 		/* test validity*/
 		if( i< mb->vtop-1 && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
 			return i;
+		/* GDKerror("findVariable:temporary variable mis-alignment\n");*/
+		return -1;
 	} 
+@c
+int findVariable(MalBlkPtr mb, str name){
+	int i;
+	@:chkTemporary@
 	for(i=mb->vtop-1; i>=0; i--)
 	if(!isTmpVar(mb,i) && idcmp(name, getVarName(mb,i) )==0)
 		return i;
@@ -851,10 +865,7 @@ defined. This way we safe GDKmalloc/GDKfree.
 int findVariableLength(MalBlkPtr mb, str name, int len){
 	int i;
 	int j;
-	if(isTmpName(name)){
-		i= atol(name+1);
-		return i>=mb->vtop? -1:i;
-	}
+	@:chkTemporary@
 	for(i= mb->vtop-1; i>=0; i--) 
 	if( !isTmpVar(mb,i)){
 		str s = getVarName(mb,i);
@@ -904,8 +915,7 @@ int isReserved(str nme){
 		  break;
 	case 'F': case 'f': if( idcmp("false",nme)==0) return 1;
 		  if( idcmp("function",nme)==0) return 1;
-		  break;
-	case 'H': case 'h': if( idcmp("handler",nme)==0) return 1;
+		  if( idcmp("factory",nme)==0) return 1;
 		  break;
 	case 'M': case 'm': if( idcmp("module",nme)==0) return 1;
 		  break;
@@ -944,11 +954,10 @@ cheap to perform a linear search to a variable or constant.
 @c
 int newVariable(MalBlkPtr mb, str name, malType type){
         int n;
-	int atomary= FALSE;
         
 	@:makeVarSpace@
 	n= findVariable(mb,name);
-	/* check for type names */
+	/* check for redefined names */
 	if( n>=0){
 		if( type != TYPE_any){
 		    if( getVarType(mb,n) != type  &&
@@ -959,16 +968,9 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 		GDKfree(name);  /*possible error not correct, check use!!!*/
 		return n;
 	}
-@-
-If we encounter a Monet type name, it is added to the symbol table with 
-proprietary type.
-The makes analyses of patterns like bat(int,str) easier.
-@c
 	if( isReserved(name)){
 		GDKerror("'%s' is a reserved identifier\n",name);
-		GDKfree(name);
 		mb->errors++;
-		return newTmpVariable(mb,type);
 	} 
 	n = mb->vtop;
 	getVar(mb,n) = (VarPtr) GDKmalloc(sizeof(VarRecord));
@@ -977,12 +979,8 @@ The makes analyses of patterns like bat(int,str) easier.
 	mb->var[n]->props = NULL;
 	setVarType(mb,n,type);
 	getVarLiteral(mb,n)= NULL;
-	isConstant(mb,n) = atomary;
+	isConstant(mb,n) = FALSE;
 	isVarGarbage(mb,n) = FALSE;
-	if( atomary){
-		getVarConstant(mb,n).val.ival = type;
-		getVarConstant(mb,n).vtype = TYPE_int;
-	}
 	isVarUsed(mb,n) = FALSE;
 	isVarInitialized(mb,n) = FALSE;
 	mb->vtop++;
@@ -1164,12 +1162,13 @@ retryConstant:
 			vr->val.cval[3]= 0;
 			if( tonil) vr->val.cval[0] = chr_nil; 
 			break;
-	case TYPE_sht: {long l= strtol(val,NULL,0);
+	case TYPE_sht: {long l;
 			vr->vtype = type;
 			if( tonil){ 
-				if(type== TYPE_sht) vr->vtype= TYPE_int;
 				vr->val.ival = sht_nil;
-			} else
+				break;
+			} 
+			l = strtol(val,NULL,0);
 			if( l>= (1<<16) || l< -(1<<16)) {
 				if( l< INT_MIN || l> INT_MAX ){	
 					if(type== TYPE_sht)
@@ -1187,31 +1186,30 @@ retryConstant:
 				vr->val.shval= l;
 			}
 			break; }
-	case TYPE_int: {long l= strtol(val,NULL,0);
+	case TYPE_int: {long l;
 			vr->vtype = type;
 			if( tonil){ 
-				if(type==TYPE_int) vr->vtype= TYPE_int;
 				vr->val.ival = int_nil;
-			} else
+				break;
+			} 
+			l= strtol(val,NULL,0);
 			if( l> INT_MAX || l < INT_MIN){
 				if(type==TYPE_int)
 					setVarType(mb,idx, TYPE_lng);
 				vr->vtype= TYPE_lng;
 				vr->val.lval= l;
 			} else {
-				if(type==TYPE_int) vr->vtype= TYPE_int;
 				vr->val.ival= l;
 			}
 			break;}
 	case TYPE_void: 
-	case TYPE_oid: {long l= strtol(val,NULL,10);
-			if( tonil) vr->val.oval = oid_nil;
-			else {
-				/*int site= val[strlen(val)-1]-'0';*/
-			/*if(site) GDKwarning("newConstant:server id ignored\n");*/
-				vr->val.oval= l;
-			}
+	case TYPE_oid: {
 			vr->vtype= type;
+			if( tonil) {
+				vr->val.oval = oid_nil;
+				break;
+			}
+			vr->val.oval= strtol(val,NULL,10);
 			break; }
 	case TYPE_flt: {double d= strtod(val,NULL); 
 			if( tonil) vr->val.fval = flt_nil; 
@@ -1275,7 +1273,7 @@ end.
 int isaSignature(InstrPtr p){
 	switch(p->token){
 	case FUNCTIONsymbol:
-	case STREAMsymbol:
+	case FACTORYsymbol:
 	case COMMANDsymbol:
 	case PATTERNsymbol:
 		return TRUE;
@@ -1435,37 +1433,6 @@ void pushEndInstruction(MalBlkPtr mb){
 	p->retc = 0;
 	pushInstruction(mb,p);
 }
-@-
-Catching errors is a recurring situation. The block below 
-generates the default code block, ie catch it and print
-the error.
-@c
-void pushCatchDefault(MalBlkPtr mb, str nme){
-	InstrPtr p;
-	int i;
-
-	p= newInstruction(CATCHsymbol);
-	i= findVariable(mb,nme);
-	if( i< 0) i= newVariable(mb,GDKstrdup(nme),TYPE_str);
-	getDestVar(p) = i;
-	p->argc =1;
-	p->retc = 1;
-	p->barrier= CATCHsymbol;
-	pushInstruction(mb,p);
-
-	p= newInstruction(ASSIGNsymbol);
-	moduleId(p)= GDKstrdup("io");
-	functionId(p)= GDKstrdup("print");
-	pushArgumentId(mb, p, GDKstrdup(nme));
-	pushInstruction(mb,p);
-
-	p= newInstruction(EXITsymbol);
-	getDestVar(p) = findVariable(mb,GDKstrdup(nme));
-	p->argc =1;
-	p->retc = 1;
-	p->barrier= EXITsymbol;
-	pushInstruction(mb,p);
-}
 @}
 @+ Reverse programming
 Since MAL programs can be created on the fly by linked-in query
@@ -1550,15 +1517,7 @@ beginning of each line.
 		GDKfree(tpe);
 @c
 str fcnClass(InstrPtr p){
-	if( p->token== FUNCTIONsymbol)
-		return "function"; 
-	if( p->token== STREAMsymbol)
-		return "stream"; 
-	if( p->token == COMMANDsymbol)
-	 	return "command";
-	if( p->token == PATTERNsymbol)
-		return "pattern";
-	return "handler ";
+	return operatorName(p->token);
 }
 str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 	int i;
@@ -1612,27 +1571,26 @@ should be displayed.
 	advance(t);
 @c
 
-#define assignCntrl(X)    ((X)->token== ASSIGNsymbol ||\
-                          (X)->token== CMDcall ||\
-                          (X)->token== STRMcall ||\
-                          (X)->token== PATcall ||\
-                          (X)->token== FCNcall )
-
-str operatorName(InstrPtr p){
-	switch(p->token){
+str operatorName(int i){
+	switch(i){
 	case ASSIGNsymbol:	return ":=";
+	case BARRIERsymbol:	return "barrier";
 	case REDOsymbol:	return "redo";
 	case LEAVEsymbol:	return "leave";
 	case EXITsymbol:	return "exit";
 	case RETURNsymbol:	return "return";
 	case YIELDsymbol:	return "yield";
 	case CATCHsymbol:	return "catch";
-	case DONEsymbol:	return "done";
 	case RAISEsymbol:	return "raise";
 	case ENDsymbol:		return "end";
 	case ENDDEFsymbol:	return "end";
+	case FUNCTIONsymbol:	return "function";
+	case FACTORYsymbol:	return "factory";
+	case COMMANDsymbol:	return "command";
+	case PATTERNsymbol:	return "pattern";
+	case THREADsymbol:	return "thread";
 	}
-	return "operator";
+	return "Undefined";
 }
 str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	int i,len=0,tab=4;
@@ -1656,92 +1614,70 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	pstring= propertySet2str(ps,0);
 	advance(t);
 	if( p->barrier){
-		if( p->barrier== BARRIERsymbol){ sprintf(t,"barrier"); tab=1; } 
-		if( p->barrier== THREADsymbol){ sprintf(t,"thread"); tab=1; } 
-		if( p->barrier== EXITsymbol){ sprintf(t,"exit"); tab=1; }
-		if( p->barrier== LEAVEsymbol && assignCntrl(p)){
-			@:tabulate@ sprintf(t,"leave"); tab=1; }
-		if( p->barrier== REDOsymbol && assignCntrl(p)){
-			@:tabulate@ sprintf(t,"redo"); tab=1; }
-	}
-	advance(t);
+		if( p->barrier == LEAVEsymbol || 
+		    p->barrier == REDOsymbol || 
+		    p->barrier == RETURNsymbol ||
+		    p->barrier == YIELDsymbol ||
+		    p->barrier == RAISEsymbol ){
+			@:tabulate@
+		}
+		sprintf(t,"%s ",operatorName(p->barrier));
+		advance(t);
+	} else if( !functionStart(p) && !functionExit(p))
+		@:tabulate@
 	switch( p->token){
+		case NOOPsymbol:
 		case FCNcall:
-		case STRMcall:
+		case FACcall:
 		case PATcall:
 		case CMDcall:
 		case ASSIGNsymbol:
 			if( p->argc<=1 && functionId(p)==NULL){
-				@:tabulate@
 				sprintf(t,"%s%s",nme,pstring); 
-				@:propertyList@
 			} else
 			if( !getVarTmp(mb, getDestVar(p)) || isVarUsed(mb,getDestVar(p)) ){
 				if( p->retc == 1){
-					@:tabulate@
-					sprintf(t,"%s%s := ",nme,pstring); 
-					break;
-				}
-				/* display multi-assignment */
-				@:tabulate@
-				*t++ = '(';
-				for(i=0;i<p->retc;i++){
-					ps= getVar(mb,getArg(p,i))->props;
-					pstring= propertySet2str(ps,0);
-					sprintf(t,"%s%s",getArgName(mb,p,i),
-						pstring);
-					if(pstring){GDKfree(pstring);pstring=0;}
+					sprintf(t,"%s%s ",nme,pstring); 
 					advance(t);
-					if( i<p->retc-1) 
-						*t++= ',';
+					if( p->argc > p->retc || functionId(p))
+					{ 
+						sprintf(t,":= ");t+=3;
+					}
+					break;
+				} else {
+					/* display multi-assignment */
+					*t++ = '(';
+					for(i=0;i<p->retc;i++){
+						ps= getVar(mb,getArg(p,i))->props;
+						pstring= propertySet2str(ps,i);
+						sprintf(t,"%s%s",getArgName(mb,p,i),
+							pstring);
+						if(pstring){GDKfree(pstring);pstring=0;}
+						advance(t);
+						if( i<p->retc-1) 
+							*t++= ',';
+					}
+					sprintf(t,")");t++;
+					if( p->argc > p->retc || functionId(p))
+					{ 
+						sprintf(t,":= ");t+=3;
+					}
 				}
-				sprintf(t,"):=");t+=3;
-			}else{
-				@:tabulate@
 			}
 			break;
-		case REDOsymbol:
-			@:tabulate@
-			sprintf(t,"redo %s%s",nme,pstring); break;
-		case LEAVEsymbol:
-			@:tabulate@
-			sprintf(t,"leave %s%s",nme,pstring); break;
-		case RETURNsymbol:
-			@:tabulate@
-			sprintf(t,"return "); break;
-		case CATCHsymbol:
-			sprintf(t,"catch %s",nme); break;
+		case ENDsymbol:
+			sprintf(t,"%s ", operatorName(p->token)); break;
 		case ENDDEFsymbol:
 			if( isTmpVar(mb,getDestVar(p)) )
 				sprintf(t,"end %c%d", TMPMARKER,
 					getVarTmp(mb,getDestVar(p)) );
 			else sprintf(t,"end %s",mb->var[getDestVar(p)]->name);
 			break;
-		case DONEsymbol:
-			sprintf(t,"done %s%s",nme,pstring); break;
-		case ENDsymbol:
-			sprintf(t,"end %s%s",nme,pstring); break;
 		case COMMANDsymbol:
 		case FUNCTIONsymbol:
-		case STREAMsymbol:
+		case FACTORYsymbol:
 		case PATTERNsymbol:
 			return fcnDefinition(mb,p,s,flg); 
-		case RAISEsymbol:
-			@:tabulate@
-			sprintf(t,"raise %s%s",nme,pstring);
-			break;
-		case THREADsymbol:
-			@:tabulate@
-			sprintf(t,"%s%s",nme,pstring);
-			if( p->argc>1) { advance(t); sprintf(t,":=");}
-			break;
-		case BARRIERsymbol:
-			@:tabulate@
-			sprintf(t,"%s%s",nme,pstring);
-			break;
-		case EXITsymbol:
-			@:tabulate@
-			sprintf(t,"%s%s",nme,pstring); break;
 		default:
 			sprintf(t," ?%d? ",p->token); 
 	}
@@ -1750,13 +1686,9 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	low= p->retc; high= p->argc;
 	if( moduleId(p)) sprintf(t,"%s.",moduleName(p));
 	advance(t);
-	if( p->token == RETURNsymbol){
-		/* low= 0; high= p->retc;*/
-		low= p->retc; high= p->argc;
-		if( high-low>1 ) sprintf(t,"(");
-	} else if( functionId(p) ) {
+	if( functionId(p) ) {
 		sprintf(t,"%s(",functionName(p));
-	} else if( p->retc>1) sprintf(t,"(");
+	} else if( p->argc>p->retc+1) sprintf(t,"(");
 
 	for(i=low;i<high;i++){
 		ps= getVar(mb,getArg(p,i))->props;
@@ -1765,10 +1697,14 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 		if( i+1==high && p->varargs ) {sprintf(t,"...");break;}
 		if( (def=getArgDefault(mb,p,i)) != NULL){
 			if( getArgType(mb,p,i)== TYPE_str)
-				sprintf(t,"\"%s\"%s", def, pstring);
+				if( def== str_nil)
+				     sprintf(t,"nil%s", pstring);
+				else sprintf(t,"\"%s\"%s", def, pstring);
 			else
 			if( getArgType(mb,p,i)== TYPE_chr)
-				sprintf(t,"'%s'%s", def, pstring);
+				if( *def== chr_nil)
+				     sprintf(t,"nil%s", pstring);
+				else sprintf(t,"'%s'%s", def, pstring);
 			else	sprintf(t,"%s%s", def, pstring);
 		} else {
 			if( isTmpVar(mb, getArg(p,i)) ) {
@@ -1804,20 +1740,18 @@ Dump the type and value information.
 			GDKfree(d1); GDKfree(d2);
 			advance(t);
 		} else
-		if(isTypeVar(mb,getArg(p,i)) ){
-			char *tnme= getTypeName(getArgType(mb,p,i));
-			sprintf(t,":%s%s",tnme,(pstring==NULL?"":pstring));
-			GDKfree(tnme);
-			advance(t);
-		}
+                if(isTypeVar(mb,getArg(p,i)) ){
+                        char *tnme= getTypeName(getArgType(mb,p,i));
+                        sprintf(t,":%s%s",tnme,(pstring==NULL?"":pstring));
+                        GDKfree(tnme);
+                        advance(t);
+                }
+
 		if(i+1<high) sprintf(t,",");
 		if(pstring){ GDKfree(pstring); pstring=0;}
 	}
 	advance(t);
-	if( p->token == RETURNsymbol){
-		if( high-low>1 ) sprintf(t,")");
-	} else
-	if(functionId(p) || p->retc>1 ) sprintf(t,")");
+	if(functionId(p) || p->argc>p->retc+1 ) sprintf(t,")");
 	advance(t);
 	sprintf(t,";");
 	if( flg & (LIST_MAL_TYPE | LIST_MAL_BIND)){

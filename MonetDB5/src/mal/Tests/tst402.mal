@@ -3,5 +3,5 @@
 	i:= ' ':chr;
 barrier v1:= nextElement(i,'A','C');
 	v:= "do something";
-	redo v1;
+	redo v1:= nextElement(i,'A','C');
 exit	v1;

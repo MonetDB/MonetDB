@@ -25,13 +25,10 @@
 #
 #        rb:= new(:int,:url);
 #	print("start loop");
-## Drop this line and you get a segmentation fault
 #barrier mloop:lng := chopper.bunStream(t,h:int,B2:url);
 #	print(B2);
-#	redo mloop;
+#	redo mloop:=chopper.bunStream(t,h:int,B2);
 #exit mloop;
-#
-#        print(rb);
 #
 #
 function Admin.main():int;	# 0  (main:int)
@@ -56,10 +53,9 @@ function Admin.main():int;	# 0  (main:int)
     io.print("start loop");	# 19 IOprint_val ($38:int)<-($39:str)
 barrier mloop := chopper.bunStream(t,h,B2);	# 20 CHPbunStream (mloop:lng)<-(t:bat[:int,:url])(h:int)(B2:url) jump 23
     io.print(B2);	# 21 IOprint_val ($43:int)<-(B2:url)
-    redo mloop;	# 22  (mloop:lng) jump 20
+    redo mloop := chopper.bunStream(t,h,B2);	# 22 CHPbunStream (mloop:lng)<-(t:bat[:int,:url])(h:int)(B2:url) jump 21
 exit mloop;	# 23  (mloop:lng)
-    io.print(rb);	# 24 IOprint_val ($44:int)<-(rb:bat[:int,:url])
-end main;	# 25  
+end main;	# 24  
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#
 # h	tmp_4								  # name
@@ -80,8 +76,4 @@ end main;	# 25
 [ "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium" ]
 [ "http://www.edgeonline.com/" ]
 [ "http://robotics.stanford.edu/icons/ " ]
-#-----------------#
-# h	tmp_5	  # name
-# int	url	  # type
-#-----------------#
 >

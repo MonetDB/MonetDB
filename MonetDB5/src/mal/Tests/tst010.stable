@@ -53,7 +53,7 @@
 function Admin.main():int;	# 0  (main:int)
 barrier L := 1;	# 1  (L:int)<-($2:int) jump 4
     leave Z;	# 2  (Z:any)
-    redo L;	# 3  (L:int) jump 1
+    redo L;	# 3  (L:int) jump 2
 exit L;	# 4  (L:int)
     redo L;	# 5  (L:int)
     leave X;	# 6  (X:int)
@@ -74,7 +74,7 @@ exit B;	# 20  (B:int)
 exit F;	# 21  (F:any)
 barrier D := 1;	# 22  (D:int)<-($2:int) jump 25
     leave D;	# 23  (D:int) jump 25
-    redo D;	# 24  (D:int) jump 22
+    redo D;	# 24  (D:int) jump 23
 exit D;	# 25  (D:int)
 barrier D := 2;	# 26  (D:int)<-($10:int) jump 27
 exit D;	# 27  (D:int)

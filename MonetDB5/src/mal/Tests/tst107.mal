@@ -7,6 +7,6 @@ barrier	v:= true;
 exit	v;
 barrier t:= i<3;
 	i:=i+1;
-	redo t;
+	redo t:=i<3;
 exit	t;
 	i:= 0;

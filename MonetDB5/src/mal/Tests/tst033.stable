@@ -48,8 +48,8 @@ end main;	# 14
 # h	tmp_7	  # name
 # int	int	  # type
 #-----------------#
-[ 2,	  2	  ]
 [ 1,	  1	  ]
+[ 2,	  2	  ]
 #-----------------#
 # h	tmp_8	  # name
 # int	int	  # type

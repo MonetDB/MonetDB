@@ -3,8 +3,7 @@
 # which requires the exception identifier to be defined.
 
 function myException();
-	IllegalAccess:="new exception";
-	raise IllegalAccess;
+raise	IllegalAccess:="new exception";
 	print("should have left function ");
 end myException;
 
