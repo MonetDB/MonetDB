@@ -250,7 +250,7 @@ mapi_export int Mbind(Msession mid, void *ptr);
 mapi_export char *Mgetreply(Msession mid);
 mapi_export int Mdorequest(Msession mid,char *cmd);
 mapi_export Msession Mconnect(char *host, int port, char *username, char *password);
-mapi_export Msession Mdup();
+mapi_export Msession Mdup(Msession mid);
 mapi_export Msession Mnewstruct(Msession mid);
 mapi_export void Mdisconnect(Msession mid);
 mapi_export int Msend(Msession mid, char *format, ...);
@@ -317,6 +317,8 @@ char *Mmessages[]= {
 	"Monet error:",
 	0
 };
+/* Used in Mstatistics:
+   #events Mcommands[i] are counted in counts[i]: */
 char *Mcommands[]={
 	"Unknown command",
 	"Mconnect",
@@ -379,7 +381,7 @@ Msession Mnewstruct(Msession mid) {
 	return m;
 }
 
-Msession Mdup( Msession mid) {
+Msession Mdup(Msession mid) {
 	Msession m;
 	checkMid(mid,"Mdup");
 	COUNT(mid,10);
@@ -467,13 +469,21 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	strcpy(mid -> prompt,"\001>\001");
 	
 	{ char buf[200];
+	  int c;
 	  strcpy(buf,mid->username);
 	  strcat(buf,"\n");
 	  fprintf(mid->to,buf);
 	  fflush(mid->to);
           /* printf("awaiting response from server\n");
 	  fflush(stdout); */
-	  while( getc(mid->from) != 1) ;
+	  while( !(((c = getc(mid->from)) == 1) || (c == EOF)) ) ;
+	  if (c == EOF) {
+	    /* perror("! Mapi.Mconnect.connect: "); */
+	    mid->error = MMAPIERR;
+	    sprintf(mid->errortext,"Could not connect as %s.", mid->username );
+	    return(mid);
+	  }
+
 	  promptMonet(mid);
           /* printf("connection established\n");*/
           return mid;
@@ -897,8 +907,8 @@ void Mstatistics(Msession mid, FILE *fd) {
 }
 @-
 Mdorequest and Mgetreply are two low level routines. They assume
-the default synchronization prompt.
-It assumes a complete Monet statement. Including newline?
+the default synchronization prompt. It assumes a complete Monet statement
+(i.e., ending in a newline; possibly including additional newlines).
 @c
 int Mdorequest(Msession mid, char* cmd) {
 	COUNT(mid,18);
@@ -970,7 +980,7 @@ char *Mgetreply(Msession mid) {
         return mid->reply;
 }
 @-
-The routine @% Mslice@ acceps a tuple and slice out a specific
+The routine @% Mslice@ accepts a tuple and slices out a specific
 field. The attribute value is copied to a dynamically allocated piece of
 memory and terminated by a null byte. The string quotes are removed in
 the process.
