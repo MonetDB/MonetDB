@@ -300,7 +300,6 @@ def am_libs(fd, var, values, am ):
       fd.write("%s_scripts = %s\n\n" % (lib,am_list2string(SCRIPTS," ","")))
       am['BUILT_SOURCES'].append("$(" + lib + "_scripts)")
 
-
   if (values.has_key('HEADERS')):
     HDRS = []
     hdrs_ext = values['HEADERS']
@@ -335,7 +334,8 @@ output_funcs = { 'SUBDIRS': am_assignment,
 		 'LIB' : am_library,
 		 'BINS' : am_bins,
 		 'BIN' : am_binary,
- 		 'INCLUDES' : am_includes
+ 		 'INCLUDES' : am_includes,
+		 'MTSAFE' : am_mtsafe,
 		}
 
 

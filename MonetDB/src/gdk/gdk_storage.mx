@@ -723,7 +723,7 @@ int BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc){
 
 @= madvise
 	if ((@1 >=0) && (@2)->base && ((@2)->storage==STORE_MMAP)) {
-	    if (madvise((@2)->base, (@2)->free, @1)) {
+	    if (MT_madvise((@2)->base, (@2)->free, @1)) {
 		GDKsyserror("madvise on %s @1 failed.\n");
 		return -1;
 	    }

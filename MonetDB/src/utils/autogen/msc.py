@@ -23,15 +23,13 @@ def msc_assignment(fd, var, values, msc ):
     o = o + " " + v
   fd.write("%s = %s\n" % (var,o) )
 
-def msc_cflags(fd, var, values, msc ):
-  o = ""
-  for v in values:
-    o = o + " " + v
-  fd.write("CFLAGS = $(CFLAGS) %s\n" % (o) )
-
 def msc_extra_dist(fd, var, values, msc ):
   for i in values:
     msc['EXTRA_DIST'].append(i)
+
+def msc_extra_headers(fd, var, values, msc ):
+  for i in values:
+    msc['HDRS'].append(i)
 
 def msc_libdir(fd, var, values, msc ):
   msc['LIBDIR'] = values[0]
@@ -44,11 +42,17 @@ def msc_translate_dir(path,msc):
     if (string.find(path,os.sep) >= 0):
       d,rest = string.split(path,os.sep, 1) 
       if (d == "top_srcdir" or d == "top_builddir"):
-	  d = "TOPDIR"
+	  d = "$(TOPDIR)"
       elif (d == "srcdir" or d == "builddir"):
           d = "."
-      dir = "$("+d+")"+ "\\" + rest
+      dir = d+ "\\" + rest
     return regsub.gsub(os.sep, "\\", dir );
+
+def msc_list2string(l,pre,post):
+  res = ""
+  for i in l:
+    res = res + pre + i + post
+  return res
 
 def msc_space_sep_list(l):
   res = ""
@@ -84,9 +88,29 @@ def msc_find_hdrs(target,deps,hdrs):
       pf = f 
   return pf
 
+def msc_additional_libs(name,sep,type,list, msc):
+    if (type == "BIN"):
+    	add = name+"_LIBS =" 
+    else:
+    	add = "lib"+sep+name+"_LIBS =" 
+    for l in list:
+      if (l[0] == "-" or l[0] == "$"):
+      	add = add + " " + l 
+      else:
+      	add = add + " " + msc_translate_dir(l,msc) + ".lib"
+    return add + "\n"
+  
 def msc_translate_ext( f ):
 	n = regsub.gsub("\.o", ".obj", f );
 	return regsub.gsub("\.cc", ".cxx", n );
+
+def msc_deps(fd,deps,objext, msc):
+  for t,deplist in deps.items():
+    t = msc_translate_ext(t)
+    fd.write( t + ":" )
+    for d in deplist:
+      fd.write( " " + msc_translate_dir(msc_translate_ext(d),msc) )
+    fd.write("\n");
 
 def msc_binary(fd, var, binmap, msc ):
 
@@ -120,13 +144,7 @@ def msc_binary(fd, var, binmap, msc ):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   if (binmap.has_key("LIBS")):
-    ldadd = binname+"_LIBS =" 
-    for l in binmap["LIBS"]:
-      if (l[0] == "-" or l[0] == "$"):
-      	ldadd = ldadd + " " + l 
-      else:
-      	ldadd = ldadd + " " + l + ".lib"
-    fd.write(ldadd + "\n")
+    fd.write(msc_additional_libs(binname, "", "BIN", binmap["LIBS"],msc))
 	
   srcs = binname+"_OBJS ="
   for target in binmap['TARGETS']:
@@ -144,20 +162,13 @@ def msc_binary(fd, var, binmap, msc ):
 
   if (len(SCRIPTS) > 0):
     fd.write(binname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
-    msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
-  for t,d in binmap["DEPS"].items():
-    fd.write( msc_translate_ext(t) + ":" )
-    for f in d:
-      fd.write(" " + msc_translate_ext(f) )
-    fd.write("\n")
+    msc['BUILT_SOURCES'].append("$(" + binname + "_SCRIPTS)")
 
   if (binmap.has_key('HEADERS')):
-  	fd.write("%sincludedir = $(includedir)\\%s\n" % (name,name))
-  	fd.write("%sinclude_HEADERS = %s\n" % (name,msc_space_sep_list(HDRS)))
-  	fd.write("install-%s: $(%sinclude_HEADERS)\n" % (name,name))
-  	fd.write("\t$(MKDIR) $(%sincludedir)\n" % (name))
-  	fd.write("\t$(INSTALL) $(%sinclude_HEADERS) $(%sincludedir)\n" % (name,name))
-	fd.write("\n")
+    for h in HDRS:
+	msc['HDRS'].append(h)
+
+  msc_deps(fd,binmap['DEPS'],".obj",msc);
 
 def msc_bins(fd, var, binsmap, msc ):
 
@@ -183,13 +194,9 @@ def msc_bins(fd, var, binsmap, msc ):
     msc['BINS'].append(bin)
 	
     if (binsmap.has_key(bin + "_LIBS")):
-      binadd = "lib"+bin+"_LIBS =" 
-      for l in binsmap[bin + "_LIBS"]:
-        if (l[0] == "-" or l[0] == "$"):
-      	  binadd = binadd + " " + l 
-        else:
-	  binadd = binadd + " " + l + ".lib"
-      fd.write(binadd + "\n")
+      fd.write(msc_additional_libs(bin, "", "BIN", binsmap[bin + "_LIBS"],msc))
+    elif (binsmap.has_key("LIBS")):
+      fd.write(msc_additional_libs(bin, "", "BIN", binsmap["LIBS"],msc))
 
     srcs = bin+"_OBJS ="
     for target in binsmap['TARGETS']:
@@ -210,28 +217,16 @@ def msc_bins(fd, var, binsmap, msc ):
   if (len(SCRIPTS) > 0):
     fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
-  for t,d in binsmap["DEPS"].items():
-    fd.write( msc_translate_ext(t) + ":" )
-    for f in d:
-      fd.write(" " + msc_translate_ext(f) )
-    fd.write("\n")
 
   if (binsmap.has_key('HEADERS')):
-  	fd.write("%sincludedir = $(includedir)\\%s\n" % (name,name))
-  	fd.write("%sinclude_HEADERS = %s\n" % (name,msc_space_sep_list(HDRS)))
-  	fd.write("install-%s: $(%sinclude_HEADERS)\n" % (name,name))
-  	fd.write("\t$(MKDIR) $(%sincludedir)\n" % (name))
-  	fd.write("\t$(INSTALL) $(%sinclude_HEADERS) $(%sincludedir)\n" % (name,name))
-	fd.write("\n")
+    for h in HDRS:
+	msc['HDRS'].append(h)
+
+  msc_deps(fd,binsmap['DEPS'],".obj",msc);
 
 
 def msc_library(fd, var, libmap, msc ):
 
-  pref = string.upper(var[0:3])
-  sep = ''
-  if (pref == 'MOD'):
-    sep = '_'
-  
   HDRS = []
   hdrs_ext = []
   if (libmap.has_key('HEADERS')):
@@ -243,22 +238,22 @@ def msc_library(fd, var, libmap, msc ):
     scripts_ext = libmap['SCRIPTS']
 
   name = var[4:]
+  sep = ""
   if (libmap.has_key("NAME")):
     libname = libmap['NAME'][0]
   else:
     libname = name
+
+  if (libname[0] == "_"):
+     sep = "_"
+     libname = libname[1:]
+
   msc['LIBS'].append(sep+libname)
   if (libmap.has_key('MTSAFE')):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   if (libmap.has_key("LIBS")):
-    ldadd = libname+"_LIBS =" 
-    for l in libmap["LIBS"]:
-      if (l[0] == "-" or l[0] == "$"):
-      	ldadd = ldadd + " " + l 
-      else:
-      	ldadd = ldadd + " " + l + ".lib"
-    fd.write(ldadd + "\n")
+    fd.write(msc_additional_libs(libname, "sep", "LIB", libmap["LIBS"],msc))
 
   for src in libmap['SOURCES']:
     base,ext = string.split(src,".", 1) 	
@@ -277,43 +272,28 @@ def msc_library(fd, var, libmap, msc ):
         SCRIPTS.append(target)
   fd.write(srcs + "\n")
   fd.write( "lib"+sep+libname + ".dll: $(" + libname + "_OBJS) $(" +libname+ "_LIBS)\n" )
-  fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /def:%s.def\n\n" % (libname,sep,libname,libname,libname))
+  fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) \n\n" % (libname,sep,libname,libname))
 
   if (len(SCRIPTS) > 0):
     fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
-  for t,d in libmap["DEPS"].items():
-    fd.write( msc_translate_ext(t) + ":" )
-    for f in d:
-      fd.write(" " + msc_translate_ext(f) )
-    fd.write("\n")
 
   if (libmap.has_key('HEADERS')):
-  	fd.write("%sincludedir = $(includedir)\\%s\n" % (name,name))
-  	fd.write("%sinclude_HEADERS = %s\n" % (name,msc_space_sep_list(HDRS)))
-  	fd.write("install-%s: $(%sinclude_HEADERS)\n" % (name,name))
-  	fd.write("\t$(MKDIR) $(%sincludedir)\n" % (name))
-  	fd.write("\t$(INSTALL) $(%sinclude_HEADERS) $(%sincludedir)\n" % (name,name))
-	fd.write("\n")
+    for h in HDRS:
+	msc['HDRS'].append(h)
+
+  msc_deps(fd,libmap['DEPS'],".obj",msc);
 
 def msc_libs(fd, var, libsmap, msc ):
-  sep = ''
-  if (var == 'MODS'):
-    sep = '_'
 
-  HDRS = []
-  hdrs_ext = []
-  if (libsmap.has_key('HEADERS')):
-    hdrs_ext = libsmap['HEADERS']
+  if (libsmap.has_key('SEP')):
+  	sep = libsmap['SEP'][0]
 
   SCRIPTS = []
   scripts_ext = []
   if (libsmap.has_key('SCRIPTS')):
     scripts_ext = libsmap['SCRIPTS']
 
-  name = ""
-  if (libsmap.has_key("NAME")):
-     name = libsmap["NAME"][0] # use first name given
   if (libsmap.has_key('MTSAFE')):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
@@ -324,13 +304,9 @@ def msc_libs(fd, var, libsmap, msc ):
     msc['LIBS'].append(sep+lib)
 	
     if (libsmap.has_key(lib + "_LIBS")):
-      libadd = lib+"_LIBS =" 
-      for l in libsmap[lib + "_LIBS"]:
-        if (l[0] == "-" or l[0] == "$"):
-      	  libadd = libadd + " " + l 
-        else:
-	  libadd = libadd + " " + l + ".lib"
-      fd.write(libadd + "\n")
+      fd.write(msc_additional_libs(lib, sep, "LIB", libsmap[lib + "_LIBS"],msc))
+    elif (libsmap.has_key("LIBS")):
+      fd.write(msc_additional_libs(lib, sep, "LIB", libsmap["LIBS"],msc))
 
     srcs = "lib"+sep+lib+"_la_SOURCES ="
     for target in libsmap['TARGETS']:
@@ -339,31 +315,26 @@ def msc_libs(fd, var, libsmap, msc ):
         t,ext = string.split(target,".",1)
         if (ext == "o"):
           srcs = srcs + " " + t + ".obj" 
-        elif (ext in hdrs_ext):
-          HDRS.append(target)
         elif (ext in scripts_ext):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write( "lib"+sep+lib + ".dll: $(" + lib + "_OBJS) $("+lib+"_LIBS)\n" )
-    fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /def:%s.def\n\n" % (lib,sep,lib,lib,lib))
+    fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) \n\n" % (lib,sep,lib,lib))
 
   if (len(SCRIPTS) > 0):
-    fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
-    msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
-  for t,d in libsmap["DEPS"].items():
-    fd.write( msc_translate_ext(t) + ":" )
-    for f in d:
-      fd.write(" " + msc_translate_ext(f) )
-    fd.write("\n")
+    fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))
+    msc['BUILT_SOURCES'].append("$(SCRIPTS)")
 
   if (libsmap.has_key('HEADERS')):
-  	fd.write("%sincludedir = $(includedir)\\%s\n" % (name,name))
-  	fd.write("%sinclude_HEADERS = %s\n" % (name,msc_space_sep_list(HDRS)))
-  	fd.write("install-%s: $(%sinclude_HEADERS)\n" % (name,name))
-  	fd.write("\t$(MKDIR) $(%sincludedir)\n" % (name))
-  	fd.write("\t$(INSTALL) $(%sinclude_HEADERS) $(%sincludedir)\n" % (name,name))
-	fd.write("\n")
+    HDRS = []
+    hdrs_ext = libsmap['HEADERS']
+    for target in libsmap['DEPS'].keys():
+      t,ext = string.split(target,".",1)
+      if (ext in hdrs_ext):
+        msc['HDRS'].append(target)
+
+  msc_deps(fd,libsmap['DEPS'],".obj",msc);
 
 def msc_includes(fd, var, values, msc):
   incs = ""
@@ -373,6 +344,7 @@ def msc_includes(fd, var, values, msc):
 
 output_funcs = { 'SUBDIRS': msc_subdirs, 
 	 	 'EXTRA_DIST': msc_extra_dist,
+	 	 'EXTRA_HEADERS': msc_extra_headers,
 	 	 'LIBDIR': msc_libdir,
 		 'LIBS' : msc_libs,
 		 'LIB' : msc_library,
@@ -380,7 +352,6 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
 		 'BIN' : msc_binary,
  		 'INCLUDES' : msc_includes,
 		 'MTSAFE' : msc_mtsafe,
-		 'CFLAGS' : msc_cflags
 		}
 
 
@@ -491,8 +462,11 @@ CXXEXT = \\\"cxx\\\"
     for (dst,src) in msc['INSTALL']:
       fd.write("\t$(INSTALL) $(bindir)/%s $(bindir)/%s\n" % (src,dst) )
 
-  fd.write("install-data:")
-  if (len(msc['HDRS']) > 0):
-    for v in msc['HDRS']:
-      fd.write(" install-%s" % (v) )
-  fd.write("\n")
+  #fd.write("install-data:")
+  #if (len(msc['HDRS']) > 0):
+    #if (len(name) > 0): 
+      #fd.write(" install-%s" % (v) )
+      #for v in msc['HDRS']:
+      #fd.write("%sincludedir = $(includedir)/%s\n" % (name,name))
+    #fd.write("%sinclude_HEADERS = %s\n" % (name,am_list2string(am['HDRS']," ","")))
+  #fd.write("\n")

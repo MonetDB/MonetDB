@@ -1,8 +1,16 @@
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "helpers.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef DIR_SEP
+# define DIR_SEP '/'
+#endif
 
 void ErrXit (char* text1, char* text2, int num)
 {
@@ -65,16 +73,19 @@ int isalpha_ (int c)
 
 char* filename (char* path)
 {
-  char* fn=strrchr(path,(int)'/');
+  char* fn=strrchr(path,(int)DIR_SEP);
   if (fn)
     return (fn+1);
   else
     return path;
 }
 
+char* default_tmpdir = "/tmp";
+
 char* tmpdir()
 {
   char* rtrn=getenv("TMPDIR");
-  if (!rtrn) rtrn="/tmp";
+  default_tmpdir[0] = DIR_SEP;
+  if (!rtrn) rtrn=default_tmpdir;
   return rtrn;
 }

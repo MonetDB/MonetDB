@@ -13,10 +13,6 @@ functions.
 
 #include <config.h>
 
-#ifdef HAVE_MALLOC_H
-# include <malloc.h>	/* mallopt, mallinfo, and  malloc, free etc. */
-#endif
-
 #if HAVE_UNISTD_H
 # include <unistd.h>     /* io functions */
 #endif
@@ -29,40 +25,6 @@ functions.
 #ifndef HAVE_GETPGID
 #define getpgid __getpgid
 #endif 
-
-#ifndef HAVE_MADVISE
-# define madvise(x,y,z)	0
-# ifndef MADV_RANDOM
-#  define MADV_RANDOM	0
-# endif
-#endif 
-
-#define NOMALLOPT
-
-#ifdef HAVE_NOMALLINFO
-#define M_MXFAST	1  /* set size of blocks to be fast */
-#define M_NLBLKS	2  /* set number of block in a holding block */
-#define M_GRAIN		3  /* set number of sizes mapped to one, for */
-                           /* small blocks */
-#define M_KEEP		4  /* retain contents of block after a free */
-                           /* until another allocation */
-
-typedef struct mallinfo  {
-        int arena;      /* total space in arena */
-        int ordblks;    /* number of ordinary blocks */
-        int smblks;     /* number of small blocks */
-        int hblks;      /* number of holding blocks */
-        int hblkhd;     /* space in holding block headers */
-        int usmblks;    /* space in small blocks in use */
-        int fsmblks;    /* space in free small blocks */
-        int uordblks;   /* space in ordinary blocks in use */
-        int fordblks;   /* space in free ordinary blocks */
-        int keepcost;   /* cost of enabling keep option */
-} mallinfo_t;
-extern struct mallinfo mallinfo();
-
-#define mallopt(cmd,value)	0
-#endif
 
 @- pthreads Includes and Definitions
 @h

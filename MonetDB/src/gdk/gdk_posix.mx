@@ -13,7 +13,52 @@ the WIN32 native platform.
 #ifndef GDK_POSIX_H
 #define GDK_POSIX_H
 
+#ifdef HAVE_CONFIG_H 
+#include "config.h"
+#endif
+
 #include <sys/types.h>
+
+#ifdef HAVE_MALLOC_H
+# include <malloc.h>	/* mallopt, mallinfo, and  malloc, free etc. */
+#endif
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+#ifdef HAVE_NOMALLINFO
+#define M_MXFAST	1  /* set size of blocks to be fast */
+#define M_NLBLKS	2  /* set number of block in a holding block */
+#define M_GRAIN		3  /* set number of sizes mapped to one, for */
+                           /* small blocks */
+#define M_KEEP		4  /* retain contents of block after a free */
+                           /* until another allocation */
+struct mallinfo  {
+        int arena;      /* total space in arena */
+        int ordblks;    /* number of ordinary blocks */
+        int smblks;     /* number of small blocks */
+        int hblks;      /* number of holding blocks */
+        int hblkhd;     /* space in holding block headers */
+        int usmblks;    /* space in small blocks in use */
+        int fsmblks;    /* space in free small blocks */
+        int uordblks;   /* space in ordinary blocks in use */
+        int fordblks;   /* space in free ordinary blocks */
+        int keepcost;   /* cost of enabling keep option */
+};
+typedef struct mallinfo mallinfo_t;
+
+#define mallopt(cmd,value)	0
+#endif
+
+#define NOMALLOPT
 
 #ifndef WIN32
 #define DIR_SEP '/' 
@@ -47,14 +92,17 @@ extern void *MT_vmalloc(size_t size, size_t *maxsize);
 extern void  MT_vmfree(void *p, size_t size);
 extern void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize);
 
+extern struct mallinfo MT_mallinfo();
+
+#ifdef WIN32
+extern int MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
+#define gettimeofday(x,y)	MT_gettimeofday(x,y)
+#endif
+
 #endif /* GDK_POSIX_H */
 @c
 #include "gdk_posix.h"
 #include "gdk_system.h"
-
-#ifdef HAVE_CONFIG_H 
-#include "config.h"
-#endif
 
 #include <stdio.h>
 #ifdef HAVE_SYS_MMAN_H
@@ -63,6 +111,13 @@ extern void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+
+#ifndef HAVE_MADVISE
+# define madvise(x,y,z)	0
+# ifndef MADV_RANDOM
+#  define MADV_RANDOM	0
+# endif
+#endif 
 
 #define MMAP_ADVISE		7
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
@@ -165,6 +220,11 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
                 }
         }
         return p;
+}
+
+struct mallinfo 
+MT_mallinfo(){
+	return mallinfo();
 }
 
 #else /* WIN32 native */
@@ -292,6 +352,233 @@ void*   MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize) {
                 VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
         }
         return p;
+}
+
+static int nodays[12] = 
+	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };  
+
+#define LEAPYEAR(y) ((((y)%4)==0 && ((y)%100)!=0) || ((y)%400)==0)
+#define NODAYS(m,y) (((m)!=2)?nodays[(m)-1]:LEAPYEAR(y)?29:28)
+
+int MT_gettimeofday(struct timeval *tv, int *ignore_zone) {
+	unsigned int years, days, i;
+	SYSTEMTIME st;
+
+	GetSystemTime(&st);
+	years = st.wYear - 1970;
+	days = 365*years + (years+1)/4;
+
+	for(i=1; i < st.wMonth; i++)
+		days += NODAYS(i,st.wYear);
+
+	days += st.wDay;
+	tv->tv_sec = 60*(days*24*60 + st.wMinute) + st.wSecond;
+	tv->tv_usec = 1000*st.wMilliseconds;
+	return 0;
+}
+
+/* TODO */
+struct mallinfo 
+MT_mallinfo() {
+	struct mallinfo _ret; /* = mallinfo(); */
+	_ret.arena = 10;
+	return _ret; 
+}
+
+#ifndef BUFSIZ
+#define BUFSIZ 1024
+#endif
+
+#ifdef NATIVE_WIN32
+#  define STRICT			/* Strict typing, please */
+#  include <windows.h>
+#  include <direct.h>
+#  include <errno.h>
+#  include <ctype.h>
+#  ifdef _MSC_VER
+#    include <io.h>
+#  endif /* _MSC_VER */
+#endif /* NATIVE_WIN32 */
+
+int
+win_ftruncate (int  fd, unsigned int size)
+{
+  HANDLE hfile;
+  unsigned int curpos;
+
+  if (fd >= 0) return -1;
+  
+  hfile = (HANDLE) _get_osfhandle (fd);
+  curpos = SetFilePointer (hfile, 0, NULL, FILE_CURRENT);
+  if (curpos == 0xFFFFFFFF
+      || SetFilePointer (hfile, size, NULL, FILE_BEGIN) == 0xFFFFFFFF
+      || !SetEndOfFile (hfile))
+    {
+      int error = GetLastError ();
+
+      switch (error)
+	{
+	case ERROR_INVALID_HANDLE:
+	  errno = EBADF;
+	  break;
+	default:
+	  errno = EIO;
+	  break;
+	}
+
+      return -1;
+    }
+
+  return 0;
+}
+
+DIR*
+win_opendir (const char *dirname)
+{
+  DIR *result;
+  char *mask;
+  unsigned int k;
+
+  if (dirname != NULL) return NULL;
+
+  result = (DIR*)malloc(sizeof(DIR));
+  result->find_file_data = (WIN32_FIND_DATA*)malloc(sizeof(WIN32_FIND_DATA));
+  result->dir_name = strdup (dirname);
+  
+  k = strlen (result->dir_name);
+  if (k && result->dir_name[k - 1] == '\\')
+    {
+      result->dir_name[k - 1] = '\0';
+      k--;
+    }
+  mask = malloc(strlen(result->dir_name + 3));
+  sprintf( mask, "%s\\*", result->dir_name);
+
+  result->find_file_handle = (unsigned int) FindFirstFile (mask,
+					     (LPWIN32_FIND_DATA) result->find_file_data);
+  free (mask);
+
+  if (result->find_file_handle == (unsigned int) INVALID_HANDLE_VALUE)
+    {
+      int error = GetLastError ();
+
+      free (result->dir_name);
+      free (result->find_file_data);
+      free (result);
+      switch (error)
+	{
+	default:
+	  errno = EIO;
+	  return NULL;
+	}
+    }
+  result->just_opened = TRUE;
+
+  return result;
+}
+
+static
+char*
+basename (const char    *file_name)
+{
+  register char *base;
+  
+  if (file_name != NULL) return NULL;
+  
+  base = strrchr (file_name, '\\');
+  if (base)
+    return base + 1;
+
+  if (isalpha (file_name[0]) && file_name[1] == ':')
+    return (char*) file_name + 2;
+
+  return (char*) file_name;
+}
+
+
+struct direct*
+win_readdir (DIR *dir)
+{
+  static struct direct result;
+
+  if (dir != NULL) return NULL;
+
+  if (dir->just_opened)
+    dir->just_opened = FALSE;
+  else
+    {
+      if (!FindNextFile ((HANDLE) dir->find_file_handle,
+			 (LPWIN32_FIND_DATA) dir->find_file_data))
+	{
+	  int error = GetLastError ();
+
+	  switch (error)
+	    {
+	    case ERROR_NO_MORE_FILES:
+	      return NULL;
+	    default:
+	      errno = EIO;
+	      return NULL;
+	    }
+	}
+    }
+  strcpy (result.d_name, basename (((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName));
+  result.d_namelen = strlen(result.d_name);
+      
+  return &result;
+}
+
+void
+win_rewinddir (DIR *dir)
+{
+  char *mask;
+
+  if (dir != NULL) return;
+
+  if (!FindClose ((HANDLE) dir->find_file_handle))
+    printf("win_rewinddir(): FindClose() failed\n");
+
+  mask = malloc(strlen(dir->dir_name + 3));
+  sprintf (mask, "%s\\*", dir->dir_name);
+  dir->find_file_handle = (unsigned int) FindFirstFile (mask,
+					  (LPWIN32_FIND_DATA) dir->find_file_data);
+  free (mask);
+
+  if (dir->find_file_handle == (unsigned int) INVALID_HANDLE_VALUE)
+    {
+      int error = GetLastError ();
+
+      switch (error)
+	{
+	default:
+	  errno = EIO;
+	  return;
+	}
+    }
+  dir->just_opened = TRUE;
+}  
+
+int
+win_closedir (DIR *dir)
+{
+  if (dir != NULL) return -1;
+
+  if (!FindClose ((HANDLE) dir->find_file_handle))
+    {
+      int error = GetLastError ();
+
+      switch (error)
+	{
+	default:
+	  errno = EIO; return -1;
+	}
+    }
+
+  free (dir->dir_name);
+  free (dir->find_file_data);
+  free (dir);
+
+  return 0;
 }
 
 #endif

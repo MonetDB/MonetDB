@@ -504,7 +504,7 @@ lng GDKmem_heapsize() {
 #ifdef GDK_MEM_SIMPLE
 lng GDKmem_heapinuse() {
 	/* we do not keep statistics ourselves; so we ask malloinfo */
-	struct mallinfo m = mallinfo();
+	struct mallinfo m = MT_mallinfo();
         return (lng) (m.usmblks + m.uordblks);
 }
 #else 
@@ -640,7 +640,7 @@ these redirected blocks.This behavior is enabled by defining GDK\_MEM\_VMREDIREC
 @c
 static 
 void GDKmemdump() {
-	struct mallinfo m = mallinfo();
+	struct mallinfo m = MT_mallinfo();
 
 	THRprintf(GDKerr, "\n!mallinfo.arena = %d\n", m.arena);
 	THRprintf(GDKerr, "!mallinfo.ordblks = %d\n", m.ordblks);

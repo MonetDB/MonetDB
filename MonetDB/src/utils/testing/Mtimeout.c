@@ -1,7 +1,14 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <sys/types.h>
-#include <unistd.h>
-#include <sys/wait.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
 #include <signal.h>
 #include <stdlib.h>
 #include <ctype.h>
