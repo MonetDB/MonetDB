@@ -301,7 +301,7 @@ char *next_comma( char *s ){
 
 
 void mvc_insert( mvc *c, char *insert_string ){
-	char *next = insert_string + 2;
+	char *next = insert_string;
 	int nr = strtol( next, &next, 10);
 	int cnt = 0;
 
