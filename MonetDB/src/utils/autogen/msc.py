@@ -598,7 +598,7 @@ LDFLAGS = /link
 INSTALL = copy
 # TODO
 # replace this hack by something like configure ...
-CONFIGURE = copy
+CONFIGURE = $(TOPDIR)/NT/configure.py
 MKDIR = mkdir
 ECHO = echo
 CD = cd
