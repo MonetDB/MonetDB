@@ -2,7 +2,7 @@
 
 MTSAFE
 
-EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c monet_options.py.in
+EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c
 
 lib_mutils = { 
 	NAME = mutils
@@ -10,3 +10,9 @@ lib_mutils = {
 	HEADERS = h
 	LIBS = @LIBOBJS@
 }
+
+scripts_py = {
+        DIR = pkgdatadir/python
+        SOURCES = monet_options.py.in
+}
+

@@ -12,6 +12,7 @@ class BuiltinOptions:
     '''Built-in defaults.'''
     prefix = '@prefix@'
     exec_prefix = '@exec_prefix@'
+    sysconfdir = '@sysconfdir@'
     gdk_dbname = 'tst'
     gdk_dbfarm = os.path.join('@localstatedir@','@PACKAGE@')
     gdk_debug = '8'
@@ -190,7 +191,7 @@ def parse_options(argv):
         elif long == 'help':
             usage()
     if not seen_config:
-        parse_config(os.path.join('@sysconfdir@','monet.conf'), SystemOptions)
+        parse_config(os.path.join(BuiltinOptions.get(BuiltinOptions(),'sysconfdir'),'monet.conf'), SystemOptions)
     if debug:
         print_options(options)
     return options
