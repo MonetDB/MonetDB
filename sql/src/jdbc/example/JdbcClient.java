@@ -63,6 +63,9 @@ public class JdbcClient {
 		arg.put("Xblksize", value);
 		value = (ArrayList)(value.clone());
 		arg.put("Xoutput", value);
+		value = (ArrayList)(value.clone());
+		arg.put("b", value);
+		arg.put("-database", value);
 
 		// arguments which can have zero to lots of arguments
 		value = new ArrayList();
@@ -106,6 +109,7 @@ public class JdbcClient {
 		((ArrayList)(arg.get("Xbatching"))).add(null);
 		((ArrayList)(arg.get("-help"))).add(null);
 		((ArrayList)(arg.get("e"))).add(null);
+		((ArrayList)(arg.get("b"))).add("demo");
 
 		// we cannot put password in the arg map, since it would be accessable
 		// from the command line by then.
@@ -135,6 +139,8 @@ public class JdbcClient {
 					((ArrayList)(arg.get("Xmode"))).set(1, prop.getProperty("mode"));
 				if (prop.containsKey("debug"))
 					((ArrayList)(arg.get("Xdebug"))).set(1, prop.getProperty("debug"));
+				if (prop.containsKey("database"))
+					((ArrayList)(arg.get("b"))).set(1, prop.getProperty("database"));
 
 				pass = prop.getProperty("password", pass);
 			} catch (IOException e) {
@@ -231,8 +237,9 @@ public class JdbcClient {
 		if (((ArrayList)(arg.get("-help"))).get(1) != null) {
 			System.out.print(
 "Usage java -jar MonetDB_JDBC.jar [-h host[:port]] [-p port] [-f file] [-u user]\n" +
-"                              [-d [table]] [-e] [-X<opt>]\n" +
-"or using long option equivalents --host --port --file --user --dump.\n" +
+"                                 [-b [database]] [-d [table]] [-e] [-X<opt>]\n" +
+"or using long option equivalents --host --port --file --user --dump\n" +
+"--echo --database.\n" +
 "Arguments may be written directly after the option like -p45123.\n" +
 "\n" +
 "If no host and port are given, localhost and 45123 are assumed.  An .monetdb\n" +
@@ -255,6 +262,8 @@ public class JdbcClient {
 "-d --dump  Dumps the given table(s), or the complete database if none given.\n" +
 "--help     This screen.\n" +
 "-e --echo  Also outputs the contents of the input file, if any.\n" +
+"-b --database  Try to connect to the given database (only makes sense\n" +
+"           if connecting to a DatabasePool or equivalent process).\n" +
 "\n" +
 "EXTRA OPTIONS\n" +
 "-Xdebug    Writes a transmission log to disk for debugging purposes.  If a\n" +
@@ -320,12 +329,14 @@ public class JdbcClient {
 
 
 		// request a connection suitable for MonetDB from the driver manager
-		// note that the database specifier is currently not implemented, for
-		// MonetDB itself can't access multiple databases.
+		// note that the database specifier is only used when connecting to
+		// a proxy-like service, since MonetDB itself can't access multiple
+		// databases.
 		con = null;
+		String database = (String)(((ArrayList)(arg.get("b"))).get(1));
 		try {
 			con = DriverManager.getConnection(
-					"jdbc:monetdb://" + host + "/database" + attr,
+					"jdbc:monetdb://" + host + "/" + database + attr,
 					user,
 					pass
 			);
