@@ -1,0 +1,12 @@
+stdout of test 'penalty` in directory 'src/benchmarks/wisconsin` itself:
+
+
+# 15:54:58 >  
+# 15:54:58 >  Mtimeout -timeout 60 python penalty.py penalty 
+# 15:54:58 >  
+
+
+# 15:55:58 >  
+# 15:55:58 >  Done.
+# 15:55:58 >  
+
