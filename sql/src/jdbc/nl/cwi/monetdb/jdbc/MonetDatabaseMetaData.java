@@ -1461,7 +1461,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
 				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
 				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
-				"END AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
+				"END AS \"TABLE_TYPE\", \"tables\".\"query\" AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
 				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
 			"FROM \"sys\".\"tables\" AS \"tables\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 			") AS \"tables\" WHERE 1 = 1 ";

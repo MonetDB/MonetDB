@@ -543,21 +543,18 @@ public class JdbcClient {
 								if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
 									(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
 									// we found it, describe it
-									if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
-										out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
-									} else {
-										createTable(
-											out,
-											dbmd,
-											new Table(
-												tbl.getString("TABLE_CAT"),
-												tbl.getString("TABLE_SCHEM"),
-												tbl.getString("TABLE_NAME"),
-												tbl.getString("TABLE_TYPE")
-											),
-											true
-										);
-									}
+									createTable(
+										out,
+										dbmd,
+										new Table(
+											tbl.getString("TABLE_CAT"),
+											tbl.getString("TABLE_SCHEM"),
+											tbl.getString("TABLE_NAME"),
+											tbl.getString("TABLE_TYPE")
+										),
+										true
+									);
+									
 									found = true;
 									break;
 								}
@@ -774,7 +771,7 @@ public class JdbcClient {
 	) throws SQLException {
 		// hande views directly
 		if (table.getType().equals("VIEW")) {
-			String[] types = new String[0];
+			String[] types = new String[1];
 			types[0] = table.getType();
 			ResultSet tbl = dbmd.getTables(table.getCat(), table.getSchem(), table.getName(), types);
 			if (!tbl.next()) throw new SQLException("Whoops no data for " + table);
@@ -783,7 +780,8 @@ public class JdbcClient {
 			out.print("CREATE VIEW ");
 		 	out.print(fq ? table.getFqnameQ() : table.getNameQ());
 			out.print(" AS ");
-		 	out.print(tbl.getString("REMARKS").trim());
+		 	out.println(tbl.getString("REMARKS").trim());
+			return;
 		}
 
 		String comment = null;
@@ -792,11 +790,14 @@ public class JdbcClient {
 		out.print(fq ? table.getFqnameQ() : table.getNameQ()); out.println(" (");
 		// put all columns with their type in place
 		ResultSet cols = dbmd.getColumns(table.getCat(), table.getSchem(), table.getName(), null);
+		ResultSetMetaData rsmd = cols.getMetaData();
+		int width = rsmd.getColumnDisplaySize(cols.findColumn("COLUMN_NAME"));
 		for (i = 0; cols.next(); i++) {
 			int type = cols.getInt("DATA_TYPE");
 			if (i > 0) out.println(",");
 			out.print("\t\""); out.print(cols.getString("COLUMN_NAME"));
-		 	out.print("\"\t"); out.print(cols.getString("TYPE_NAME"));
+			out.print("\""); out.print(repeat(' ', width - cols.getString("COLUMN_NAME").length()));
+		 	out.print(" "); out.print(cols.getString("TYPE_NAME"));
 			int size = cols.getInt("COLUMN_SIZE");
 		 	if (size != 0 &&
 				type != Types.REAL &&
