@@ -21,9 +21,7 @@ Over..
 # 16:14:27 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < marcin3.sql
 # 16:14:27 >  
 
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -32,7 +30,6 @@ Over..
 # 1 # tuplecount
 # 0 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -41,7 +38,6 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -50,7 +46,6 @@ Over..
 # 1 # tuplecount
 # 2 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -59,9 +54,7 @@ Over..
 # 1 # tuplecount
 # 3 # id
 [ 1	]
-#-
 # 7 # querytype
-#-
 # 3 # querytype
 # nutki,	nutki # table_name
 # id,	valsum # name
@@ -71,15 +64,10 @@ Over..
 # 4,	 # id
 [ 1,	3	]
 [ 3,	7	]
-#-
 # 7 # querytype
-#-
 # 7 # querytype
-#-
 # 7 # querytype
-#-
 # 6 # querytype
-#-
 # 7 # querytype
 
 # 16:14:27 >  

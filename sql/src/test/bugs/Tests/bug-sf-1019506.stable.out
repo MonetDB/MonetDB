@@ -21,7 +21,6 @@ Over..
 # 14:06:33 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=55051  < bug-sf-1019506.sql
 # 14:06:33 >  
 
-#-
 # 3 # querytype
 # ,	s,	t,	,	,	i,	,	,	c,	,	,	,	 # table_name
 # table_cat,	table_schem,	table_name,	non_unique,	index_qualifier,	index_name,	type,	ordinal_position,	column_name,	asc_or_desc,	cardinality,	pages,	filter_condition # name

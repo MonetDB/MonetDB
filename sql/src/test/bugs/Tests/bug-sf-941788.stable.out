@@ -50,7 +50,6 @@ Over..
 [ NULL,	"sys",	"c1006238",	"TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"c1006292",	"TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"ttables",	"TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-#-
 # 3 # querytype
 # ,	,	,	,	,	,	,	,	,	 # table_name
 # TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name

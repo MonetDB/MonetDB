@@ -21,9 +21,7 @@ Over..
 # 16:14:45 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < decimal.sql
 # 16:14:45 >  
 
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -32,7 +30,6 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -41,7 +38,6 @@ Over..
 # 1 # tuplecount
 # 2 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -50,7 +46,6 @@ Over..
 # 1 # tuplecount
 # 3 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -59,7 +54,6 @@ Over..
 # 1 # tuplecount
 # 4 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -68,7 +62,6 @@ Over..
 # 1 # tuplecount
 # 5 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -77,7 +70,6 @@ Over..
 # 1 # tuplecount
 # 6 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -86,7 +78,6 @@ Over..
 # 1 # tuplecount
 # 7 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -95,7 +86,6 @@ Over..
 # 1 # tuplecount
 # 8 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -104,7 +94,6 @@ Over..
 # 1 # tuplecount
 # 9 # id
 [ 1	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -113,17 +102,11 @@ Over..
 # 1 # tuplecount
 # 10 # id
 [ 1	]
-#-
 # 7 # querytype
-#-
 # 7 # querytype
-#-
 # 7 # querytype
-#-
 # 7 # querytype
-#-
 # 7 # querytype
-#-
 # 3 # querytype
 # test # table_name
 # t1 # name
@@ -141,9 +124,7 @@ Over..
 [ -123.12	]
 [ 123.13	]
 [ -123.13	]
-#-
 # 6 # querytype
-#-
 # 7 # querytype
 
 # 16:14:45 >  

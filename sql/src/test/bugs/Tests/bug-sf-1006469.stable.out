@@ -9,29 +9,17 @@ stdout of test 'bug-sf-1006469` in directory 'src/test/bugs` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl for further information.
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
 
 printf("\nReady.\n");
@@ -45,18 +33,14 @@ Over..
 # 11:22:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54124  < bug-sf-1006469.sql
 # 11:22:05 >  
 
-#-
 # 3 # querytype
 # char_length_single_value # name
 #  # base_# mediumint # type
 # 1 # tuplecount
 # 0 # id
 [ 1	]
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # single_value # name
 #  # base_# mediumint # type

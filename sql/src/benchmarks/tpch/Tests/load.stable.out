@@ -24,7 +24,6 @@ Over..
 # 17:04:00 >  Mtimeout -timeout 540 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51291
 # 17:04:00 >  
 
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -33,7 +32,6 @@ Over..
 # 1 # tuplecount
 # 0 # id
 [ 5	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -42,7 +40,6 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 25	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -51,7 +48,6 @@ Over..
 # 1 # tuplecount
 # 2 # id
 [ 100	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -60,7 +56,6 @@ Over..
 # 1 # tuplecount
 # 3 # id
 [ 1500	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -69,7 +64,6 @@ Over..
 # 1 # tuplecount
 # 4 # id
 [ 2000	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -78,7 +72,6 @@ Over..
 # 1 # tuplecount
 # 5 # id
 [ 8000	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -87,7 +80,6 @@ Over..
 # 1 # tuplecount
 # 6 # id
 [ 15000	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -96,7 +88,6 @@ Over..
 # 1 # tuplecount
 # 7 # id
 [ 60175	]
-#-
 # 7 # querytype
 
 # 17:04:05 >  

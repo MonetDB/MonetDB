@@ -21,11 +21,8 @@ Over..
 # 16:14:51 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < joins.sql
 # 16:14:51 >  
 
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -34,7 +31,6 @@ Over..
 # 1 # tuplecount
 # 0 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -43,7 +39,6 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -52,7 +47,6 @@ Over..
 # 1 # tuplecount
 # 2 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -61,7 +55,6 @@ Over..
 # 1 # tuplecount
 # 3 # id
 [ 1	]
-#-
 # 3 # querytype
 # t_1,	t_2 # table_name
 # c_1,	c_2 # name
@@ -71,7 +64,6 @@ Over..
 # 4,	 # id
 [ 1,	1	]
 [ 2,	2	]
-#-
 # 3 # querytype
 # t_1,	t_2 # table_name
 # c_1,	c_2 # name
@@ -80,11 +72,8 @@ Over..
 # 1,	 # tuplecount
 # 5,	 # id
 [ 1,	2	]
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 7 # querytype
 
 # 16:14:51 >  

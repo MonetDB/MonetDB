@@ -21,7 +21,6 @@ Over..
 # 16:16:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < bug-sf-975308.sql
 # 16:16:05 >  
 
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -30,9 +29,7 @@ Over..
 # 1 # tuplecount
 # 0 # id
 [ 1	]
-#-
 # 7 # querytype
-#-
 # 3 # querytype
 # test,	test # table_name
 # id,	s # name
@@ -43,9 +40,7 @@ Over..
 [ 1,	"a"	]
 [ 2,	"b"	]
 [ 3,	"c"	]
-#-
 # 7 # querytype
-#-
 # 3 # querytype
 # test,	test # table_name
 # id,	s # name

@@ -21,9 +21,7 @@ Over..
 # 16:16:08 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < bug-sf-978043.sql
 # 16:16:08 >  
 
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # count_single_value # name

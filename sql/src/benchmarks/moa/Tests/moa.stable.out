@@ -21,7 +21,6 @@ Over..
 # 16:07:45 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=53186  < moa.sql
 # 16:07:45 >  
 
-#-
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
 # name,	type,	field1,	field2,	field3 # name
@@ -30,7 +29,6 @@ Over..
 # 1,	,	,	,	 # tuplecount
 # 0,	,	,	,	 # id
 [ "Video",	"match",	"ID",	"MediaInformationFK",	NULL	]
-#-
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
 # name,	type,	field1,	field2,	field3 # name
@@ -38,7 +36,6 @@ Over..
 # 0,	0,	0,	0,	0 # length
 # 0,	,	,	,	 # tuplecount
 # 1,	,	,	,	 # id
-#-
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
 # name,	type,	field1,	field2,	field3 # name
@@ -47,7 +44,6 @@ Over..
 # 1,	,	,	,	 # tuplecount
 # 2,	,	,	,	 # id
 [ "CreationCreator",	"match",	"CreationFK",	"CreatorFK",	NULL	]
-#-
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
 # name,	type,	field1,	field2,	field3 # name
@@ -55,7 +51,6 @@ Over..
 # 0,	0,	0,	0,	0 # length
 # 0,	,	,	,	 # tuplecount
 # 3,	,	,	,	 # id
-#-
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
 # name,	type,	field1,	field2,	field3 # name
@@ -64,7 +59,6 @@ Over..
 # 1,	,	,	,	 # tuplecount
 # 4,	,	,	,	 # id
 [ "Creator",	"match",	"CreatorPK",	"IndividualFK",	NULL	]
-#-
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
 # name,	type,	field1,	field2,	field3 # name
@@ -72,9 +66,7 @@ Over..
 # 0,	0,	0,	0,	0 # length
 # 0,	,	,	,	 # tuplecount
 # 5,	,	,	,	 # id
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationpk # name
@@ -83,9 +75,7 @@ Over..
 # 1 # tuplecount
 # 6 # id
 [ 1	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # count_convert_id # name
@@ -94,9 +84,7 @@ Over..
 # 1 # tuplecount
 # 7 # id
 [ 1	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationfk # name
@@ -105,9 +93,7 @@ Over..
 # 1 # tuplecount
 # 8 # id
 [ 17	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creatorpk # name
@@ -116,9 +102,7 @@ Over..
 # 1 # tuplecount
 # 9 # id
 [ 17	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_individualpk # name
@@ -127,7 +111,6 @@ Over..
 # 1 # tuplecount
 # 10 # id
 [ 17	]
-#-
 # 3 # querytype
 # _t2,	_t2,	_t2,	_t2 # table_name
 # id,	imdb,	image,	mediainformationfk # name
@@ -136,7 +119,6 @@ Over..
 # 1,	,	,	 # tuplecount
 # 11,	,	,	 # id
 [ 1,	"0120338",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif",	1	]
-#-
 # 3 # querytype
 # _t1,	_t1,	_t1 # table_name
 # creationpk,	title,	creationdate # name
@@ -145,7 +127,6 @@ Over..
 # 1,	,	 # tuplecount
 # 12,	,	 # id
 [ 1,	"Titanic",	"1997"	]
-#-
 # 3 # querytype
 # _t3,	_t3 # table_name
 # creationfk,	creatorfk # name
@@ -170,7 +151,6 @@ Over..
 [ 1,	5837	]
 [ 1,	5838	]
 [ 1,	5839	]
-#-
 # 3 # querytype
 # _t4,	_t4,	_t4 # table_name
 # creatorpk,	role,	individualfk # name
@@ -195,7 +175,6 @@ Over..
 [ 5837,	"Actor",	693	]
 [ 5838,	"Writer",	376	]
 [ 5839,	"Director",	376	]
-#-
 # 3 # querytype
 # _t5,	_t5 # table_name
 # individualpk,	personname # name
@@ -220,7 +199,6 @@ Over..
 [ 2799,	"Warner,+David"	]
 [ 2911,	"Winslet,+Kate"	]
 [ 2978,	"Zane,+Billy"	]
-#-
 # 3 # querytype
 # video,	video,	video,	video # table_name
 # id,	imdb,	image,	mediainformationfk # name
@@ -452,7 +430,6 @@ Over..
 [ 3,	"0120915",	"http%3A%2F%2Fposters.imdb.com%2FPosters%2Fs%2Fswepi1styleb1.jpg",	1	]
 [ 2,	"0076759",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6301773551.01.MZZZZZZZ.gif",	1	]
 [ 1,	"0120338",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif",	1	]
-#-
 # 3 # querytype
 # creation,	creation,	creation # table_name
 # creationpk,	title,	creationdate # name
@@ -684,7 +661,6 @@ Over..
 [ 3,	"Star Wars: Episode I - The Phantom Menace",	"1999"	]
 [ 2,	"Star Wars",	"1977"	]
 [ 1,	"Titanic",	"1997"	]
-#-
 # 3 # querytype
 # creationcreator,	creationcreator # table_name
 # creationfk,	creatorfk # name
@@ -4688,7 +4664,6 @@ Over..
 [ 224,	277	]
 [ 224,	278	]
 [ 224,	279	]
-#-
 # 3 # querytype
 # creator,	creator,	creator # table_name
 # creatorpk,	role,	individualfk # name
@@ -8692,7 +8667,6 @@ Over..
 [ 5837,	"Actor",	693	]
 [ 5838,	"Writer",	376	]
 [ 5839,	"Director",	376	]
-#-
 # 3 # querytype
 # individual,	individual # table_name
 # individualpk,	personname # name
@@ -11687,9 +11661,7 @@ Over..
 [ 2985,	"Zubernis,+Jeffry"	]
 [ 2986,	"Zucker,+Jerry"	]
 [ 2987,	"Zumwalt,+Rick"	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creatorpk # name
@@ -11698,9 +11670,7 @@ Over..
 # 1 # tuplecount
 # 21 # id
 [ 243	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationfk # name
@@ -11709,9 +11679,7 @@ Over..
 # 1 # tuplecount
 # 22 # id
 [ 243	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_individualpk # name
@@ -11720,7 +11688,6 @@ Over..
 # 1 # tuplecount
 # 23 # id
 [ 243	]
-#-
 # 3 # querytype
 # _t7,	_t7 # table_name
 # creationfk,	creatorfk # name
@@ -11971,7 +11938,6 @@ Over..
 [ 222,	333	]
 [ 223,	304	]
 [ 224,	279	]
-#-
 # 3 # querytype
 # _t6,	_t6,	_t6 # table_name
 # creatorpk,	role,	individualfk # name
@@ -12222,7 +12188,6 @@ Over..
 [ 5791,	"Director",	1637	]
 [ 5815,	"Director",	1637	]
 [ 5839,	"Director",	376	]
-#-
 # 3 # querytype
 # _t8,	_t8 # table_name
 # individualpk,	personname # name
@@ -12473,9 +12438,7 @@ Over..
 [ 2981,	"Zemeckis,+Robert"	]
 [ 2983,	"Zondag,+Ralph"	]
 [ 2986,	"Zucker,+Jerry"	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationpk # name
@@ -12484,9 +12447,7 @@ Over..
 # 1 # tuplecount
 # 27 # id
 [ 14	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # count_convert_id # name
@@ -12495,9 +12456,7 @@ Over..
 # 1 # tuplecount
 # 28 # id
 [ 14	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creatorpk # name
@@ -12506,9 +12465,7 @@ Over..
 # 1 # tuplecount
 # 29 # id
 [ 391	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationfk # name
@@ -12517,9 +12474,7 @@ Over..
 # 1 # tuplecount
 # 30 # id
 [ 391	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t12 # table_name
 # count_creationfk # name
@@ -12528,9 +12483,7 @@ Over..
 # 1 # tuplecount
 # 31 # id
 [ 25	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t11 # table_name
 # count_creatorpk # name
@@ -12539,9 +12492,7 @@ Over..
 # 1 # tuplecount
 # 32 # id
 [ 25	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_individualpk # name
@@ -12550,9 +12501,7 @@ Over..
 # 1 # tuplecount
 # 33 # id
 [ 391	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t15 # table_name
 # count_individualpk # name
@@ -12561,7 +12510,6 @@ Over..
 # 1 # tuplecount
 # 34 # id
 [ 39	]
-#-
 # 3 # querytype
 # _t10,	_t10,	_t10,	_t10 # table_name
 # id,	imdb,	image,	mediainformationfk # name
@@ -12583,7 +12531,6 @@ Over..
 [ 45,	"0117060",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305181772.01.MZZZZZZZ.gif",	1	]
 [ 19,	"0117998",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729636.01.MZZZZZZZ.gif",	1	]
 [ 9,	"0116629",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2FB00003Q43A.01.MZZZZZZZ.gif",	1	]
-#-
 # 3 # querytype
 # _t9,	_t9,	_t9 # table_name
 # creationpk,	title,	creationdate # name
@@ -12605,7 +12552,6 @@ Over..
 [ 45,	"Mission: Impossible",	"1996"	]
 [ 19,	"Twister",	"1996"	]
 [ 9,	"Independence Day",	"1996"	]
-#-
 # 3 # querytype
 # _t13,	_t13 # table_name
 # creationfk,	creatorfk # name
@@ -12638,7 +12584,6 @@ Over..
 [ 19,	5391	]
 [ 9,	5640	]
 [ 9,	5641	]
-#-
 # 3 # querytype
 # _t14,	_t14,	_t14 # table_name
 # creatorpk,	role,	individualfk # name
@@ -12671,7 +12616,6 @@ Over..
 [ 5391,	"Writer",	578	]
 [ 5640,	"Writer",	807	]
 [ 5641,	"Writer",	689	]
-#-
 # 3 # querytype
 # _t16,	_t16 # table_name
 # individualpk,	personname # name
@@ -12718,9 +12662,7 @@ Over..
 [ 2827,	"Weisberg,+David+(I)"	]
 [ 2882,	"Williamson,+Kevin"	]
 [ 2882,	"Williamson,+Kevin"	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creatorpk # name
@@ -12729,9 +12671,7 @@ Over..
 # 1 # tuplecount
 # 40 # id
 [ 243	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationfk # name
@@ -12740,9 +12680,7 @@ Over..
 # 1 # tuplecount
 # 41 # id
 [ 243	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationpk # name
@@ -12751,7 +12689,6 @@ Over..
 # 1 # tuplecount
 # 42 # id
 [ 243	]
-#-
 # 3 # querytype
 # _t17,	_t17,	_t17 # table_name
 # creatorpk,	role,	individualfk # name
@@ -13002,7 +12939,6 @@ Over..
 [ 5791,	"Director",	1637	]
 [ 5815,	"Director",	1637	]
 [ 5839,	"Director",	376	]
-#-
 # 3 # querytype
 # _t18,	_t18 # table_name
 # creationfk,	creatorfk # name
@@ -13253,7 +13189,6 @@ Over..
 [ 222,	333	]
 [ 223,	304	]
 [ 224,	279	]
-#-
 # 3 # querytype
 # _t19,	_t19,	_t19 # table_name
 # creationpk,	title,	creationdate # name
@@ -13504,9 +13439,7 @@ Over..
 [ 3,	"Star Wars: Episode I - The Phantom Menace",	"1999"	]
 [ 2,	"Star Wars",	"1977"	]
 [ 1,	"Titanic",	"1997"	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_individualpk # name
@@ -13515,9 +13448,7 @@ Over..
 # 1 # tuplecount
 # 46 # id
 [ 1	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creatorpk # name
@@ -13526,9 +13457,7 @@ Over..
 # 1 # tuplecount
 # 47 # id
 [ 243	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t21 # table_name
 # count_creatorpk # name
@@ -13537,9 +13466,7 @@ Over..
 # 1 # tuplecount
 # 48 # id
 [ 10	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t21 # table_name
 # count_creatorpk # name
@@ -13548,9 +13475,7 @@ Over..
 # 1 # tuplecount
 # 49 # id
 [ 10	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationfk # name
@@ -13559,9 +13484,7 @@ Over..
 # 1 # tuplecount
 # 50 # id
 [ 243	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t24 # table_name
 # count_creationfk # name
@@ -13570,9 +13493,7 @@ Over..
 # 1 # tuplecount
 # 51 # id
 [ 10	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creationpk # name
@@ -13581,9 +13502,7 @@ Over..
 # 1 # tuplecount
 # 52 # id
 [ 243	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t26 # table_name
 # count_creationpk # name
@@ -13592,7 +13511,6 @@ Over..
 # 1 # tuplecount
 # 53 # id
 [ 10	]
-#-
 # 3 # querytype
 # _t20,	_t20 # table_name
 # individualpk,	personname # name
@@ -13601,7 +13519,6 @@ Over..
 # 1,	 # tuplecount
 # 54,	 # id
 [ 2522,	"Spielberg,+Steven"	]
-#-
 # 3 # querytype
 # _t22,	_t22,	_t22 # table_name
 # creatorpk,	role,	individualfk # name
@@ -13619,7 +13536,6 @@ Over..
 [ 5543,	"Director",	2522	]
 [ 5743,	"Director",	2522	]
 [ 5767,	"Director",	2522	]
-#-
 # 3 # querytype
 # _t23,	_t23,	_t23 # table_name
 # creatorpk,	role,	individualfk # name
@@ -13637,7 +13553,6 @@ Over..
 [ 5543,	"Director",	2522	]
 [ 5743,	"Director",	2522	]
 [ 5767,	"Director",	2522	]
-#-
 # 3 # querytype
 # _t25,	_t25 # table_name
 # creationfk,	creatorfk # name
@@ -13655,7 +13570,6 @@ Over..
 [ 46,	4722	]
 [ 119,	2884	]
 [ 143,	2290	]
-#-
 # 3 # querytype
 # _t27,	_t27,	_t27 # table_name
 # creationpk,	title,	creationdate # name
@@ -13673,9 +13587,7 @@ Over..
 [ 13,	"Jaws",	"1975"	]
 [ 5,	"Jurassic Park",	"1993"	]
 [ 4,	"E.T. the Extra-Terrestrial",	"1982"	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_individualpk # name
@@ -13684,9 +13596,7 @@ Over..
 # 1 # tuplecount
 # 59 # id
 [ 2	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # convert_creatorpk # name
@@ -13695,9 +13605,7 @@ Over..
 # 1 # tuplecount
 # 60 # id
 [ 243	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t29 # table_name
 # count_individualpk # name
@@ -13706,9 +13614,7 @@ Over..
 # 1 # tuplecount
 # 61 # id
 [ 10	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t30 # table_name
 # count_individualpk # name
@@ -13717,9 +13623,7 @@ Over..
 # 1 # tuplecount
 # 62 # id
 [ 10	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # _t31 # table_name
 # count_individualpk # name
@@ -13728,7 +13632,6 @@ Over..
 # 1 # tuplecount
 # 63 # id
 [ 10	]
-#-
 # 3 # querytype
 # _t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32 # table_name
 # individualpk,	personname,	creatorpk,	role,	individualfk,	creationfk,	creatorfk,	creationpk,	title,	creationdate # name
@@ -13746,69 +13649,37 @@ Over..
 [ 2522,	"Spielberg,+Steven",	5543,	"Director",	2522,	13,	5543,	13,	"Jaws",	"1975"	]
 [ 2522,	"Spielberg,+Steven",	5743,	"Director",	2522,	5,	5743,	5,	"Jurassic Park",	"1993"	]
 [ 2522,	"Spielberg,+Steven",	5767,	"Director",	2522,	4,	5767,	4,	"E.T. the Extra-Terrestrial",	"1982"	]
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
 
 # 16:07:46 >  

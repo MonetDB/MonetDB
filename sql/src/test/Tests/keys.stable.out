@@ -21,15 +21,10 @@ Over..
 # 09:55:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=55137  < keys.sql
 # 09:55:34 >  
 
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 6 # querytype
-#-
 # 3 # querytype
 # idxs,	idxs,	keys,	keys # table_name
 # name,	type,	name,	type # name
@@ -41,7 +36,6 @@ Over..
 [ "allnewtriples_subject_idx",	0,	NULL,	NULL	]
 [ "allnewtriples_predicate_idx",	0,	NULL,	NULL	]
 [ "allnewtriples_object_idx",	0,	NULL,	NULL	]
-#-
 # 3 # querytype
 # idxs,	idxs,	keys,	keys # table_name
 # name,	type,	name,	type # name

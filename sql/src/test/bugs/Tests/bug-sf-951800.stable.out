@@ -21,7 +21,6 @@ Over..
 # 16:15:40 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < bug-sf-951800.sql
 # 16:15:40 >  
 
-#-
 # 3 # querytype
 #  # table_name
 # convert_single_value # name
@@ -30,9 +29,7 @@ Over..
 # 1 # tuplecount
 # 0 # id
 [ 1	]
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -41,7 +38,6 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -50,7 +46,6 @@ Over..
 # 1 # tuplecount
 # 2 # id
 [ 1	]
-#-
 # 3 # querytype
 #  # table_name
 # <_convert_i # name
@@ -60,7 +55,6 @@ Over..
 # 3 # id
 [ true	]
 [ false	]
-#-
 # 3 # querytype
 #  # table_name
 # convert_<_convert_i # name
@@ -70,7 +64,6 @@ Over..
 # 4 # id
 [ 2	]
 [ 1	]
-#-
 # 7 # querytype
 
 # 16:15:40 >  

@@ -21,9 +21,7 @@ Over..
 # 16:15:08 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < bug-sf-904025.sql
 # 16:15:08 >  
 
-#-
 # 6 # querytype
-#-
 # 4 # querytype
 # tables # table_name
 # count_name # name
@@ -32,7 +30,6 @@ Over..
 # 1 # tuplecount
 # 0 # id
 [ 25	]
-#-
 # 3 # querytype
 # tmp # table_name
 # count_name # name
@@ -41,7 +38,6 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 25	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -50,7 +46,6 @@ Over..
 # 1 # tuplecount
 # 2 # id
 [ 25	]
-#-
 # 3 # querytype
 # tmp # table_name
 # count_name # name
@@ -59,7 +54,6 @@ Over..
 # 1 # tuplecount
 # 3 # id
 [ 0	]
-#-
 # 4 # querytype
 # tables # table_name
 # count_name # name
@@ -68,7 +62,6 @@ Over..
 # 1 # tuplecount
 # 4 # id
 [ 28	]
-#-
 # 3 # querytype
 # tmp # table_name
 # count_name # name
@@ -77,7 +70,6 @@ Over..
 # 1 # tuplecount
 # 5 # id
 [ 28	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -86,7 +78,6 @@ Over..
 # 1 # tuplecount
 # 6 # id
 [ 25	]
-#-
 # 3 # querytype
 # tmp # table_name
 # count_name # name

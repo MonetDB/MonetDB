@@ -21,7 +21,6 @@ Over..
 # 01:20:33 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54544  < bug-sf-949071.sql
 # 01:20:33 >  
 
-#-
 # 3 # querytype
 # tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	t2 # table_name
 # id,	name,	schema_id,	query,	istable,	system,	clear,	temporary,	count_id # name
@@ -58,7 +57,6 @@ Over..
 [ 1006414,	"c1006413",	1005811,	"",	true,	false,	false,	1,	29	]
 [ 1006457,	"tables",	1005811,	"",	true,	false,	false,	1,	29	]
 [ 1006500,	"t2",	1005811,	"",	true,	false,	false,	1,	29	]
-#-
 # 3 # querytype
 # t2,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
 # count_id,	id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name

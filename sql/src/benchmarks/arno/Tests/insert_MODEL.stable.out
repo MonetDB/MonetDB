@@ -21,7 +21,6 @@ Over..
 # 16:01:31 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=53186  < insert_MODEL.sql
 # 16:01:31 >  
 
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -30,7 +29,6 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -39,7 +37,6 @@ Over..
 # 1 # tuplecount
 # 2 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -48,7 +45,6 @@ Over..
 # 1 # tuplecount
 # 3 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -57,7 +53,6 @@ Over..
 # 1 # tuplecount
 # 4 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -66,7 +61,6 @@ Over..
 # 1 # tuplecount
 # 5 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -75,7 +69,6 @@ Over..
 # 1 # tuplecount
 # 6 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -84,7 +77,6 @@ Over..
 # 1 # tuplecount
 # 7 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -93,7 +85,6 @@ Over..
 # 1 # tuplecount
 # 8 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -102,7 +93,6 @@ Over..
 # 1 # tuplecount
 # 9 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -111,7 +101,6 @@ Over..
 # 1 # tuplecount
 # 10 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -120,7 +109,6 @@ Over..
 # 1 # tuplecount
 # 11 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -129,7 +117,6 @@ Over..
 # 1 # tuplecount
 # 12 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -138,7 +125,6 @@ Over..
 # 1 # tuplecount
 # 13 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -147,7 +133,6 @@ Over..
 # 1 # tuplecount
 # 14 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -156,7 +141,6 @@ Over..
 # 1 # tuplecount
 # 15 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -165,7 +149,6 @@ Over..
 # 1 # tuplecount
 # 16 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -174,7 +157,6 @@ Over..
 # 1 # tuplecount
 # 17 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -183,7 +165,6 @@ Over..
 # 1 # tuplecount
 # 18 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -192,7 +173,6 @@ Over..
 # 1 # tuplecount
 # 19 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -201,7 +181,6 @@ Over..
 # 1 # tuplecount
 # 20 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -210,7 +189,6 @@ Over..
 # 1 # tuplecount
 # 21 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -219,7 +197,6 @@ Over..
 # 1 # tuplecount
 # 22 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -228,7 +205,6 @@ Over..
 # 1 # tuplecount
 # 23 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -237,7 +213,6 @@ Over..
 # 1 # tuplecount
 # 24 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -246,7 +221,6 @@ Over..
 # 1 # tuplecount
 # 25 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -255,7 +229,6 @@ Over..
 # 1 # tuplecount
 # 26 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -264,7 +237,6 @@ Over..
 # 1 # tuplecount
 # 27 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -273,7 +245,6 @@ Over..
 # 1 # tuplecount
 # 28 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -282,7 +253,6 @@ Over..
 # 1 # tuplecount
 # 29 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -291,7 +261,6 @@ Over..
 # 1 # tuplecount
 # 30 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -300,7 +269,6 @@ Over..
 # 1 # tuplecount
 # 31 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -309,7 +277,6 @@ Over..
 # 1 # tuplecount
 # 32 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -318,7 +285,6 @@ Over..
 # 1 # tuplecount
 # 33 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -327,7 +293,6 @@ Over..
 # 1 # tuplecount
 # 34 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -336,7 +301,6 @@ Over..
 # 1 # tuplecount
 # 35 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -345,7 +309,6 @@ Over..
 # 1 # tuplecount
 # 36 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -354,7 +317,6 @@ Over..
 # 1 # tuplecount
 # 37 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -363,7 +325,6 @@ Over..
 # 1 # tuplecount
 # 38 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -372,7 +333,6 @@ Over..
 # 1 # tuplecount
 # 39 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -381,7 +341,6 @@ Over..
 # 1 # tuplecount
 # 40 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -390,7 +349,6 @@ Over..
 # 1 # tuplecount
 # 41 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -399,7 +357,6 @@ Over..
 # 1 # tuplecount
 # 42 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -408,7 +365,6 @@ Over..
 # 1 # tuplecount
 # 43 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -417,7 +373,6 @@ Over..
 # 1 # tuplecount
 # 44 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -426,7 +381,6 @@ Over..
 # 1 # tuplecount
 # 45 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -435,7 +389,6 @@ Over..
 # 1 # tuplecount
 # 46 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -444,7 +397,6 @@ Over..
 # 1 # tuplecount
 # 47 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -453,7 +405,6 @@ Over..
 # 1 # tuplecount
 # 48 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -462,7 +413,6 @@ Over..
 # 1 # tuplecount
 # 49 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -471,7 +421,6 @@ Over..
 # 1 # tuplecount
 # 50 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -480,7 +429,6 @@ Over..
 # 1 # tuplecount
 # 51 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -489,7 +437,6 @@ Over..
 # 1 # tuplecount
 # 52 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -498,7 +445,6 @@ Over..
 # 1 # tuplecount
 # 53 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -507,7 +453,6 @@ Over..
 # 1 # tuplecount
 # 54 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -516,7 +461,6 @@ Over..
 # 1 # tuplecount
 # 55 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -525,7 +469,6 @@ Over..
 # 1 # tuplecount
 # 56 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -534,7 +477,6 @@ Over..
 # 1 # tuplecount
 # 57 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -543,7 +485,6 @@ Over..
 # 1 # tuplecount
 # 58 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -552,7 +493,6 @@ Over..
 # 1 # tuplecount
 # 59 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -561,7 +501,6 @@ Over..
 # 1 # tuplecount
 # 60 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -570,7 +509,6 @@ Over..
 # 1 # tuplecount
 # 61 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -579,7 +517,6 @@ Over..
 # 1 # tuplecount
 # 62 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -588,7 +525,6 @@ Over..
 # 1 # tuplecount
 # 63 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -597,7 +533,6 @@ Over..
 # 1 # tuplecount
 # 64 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -606,7 +541,6 @@ Over..
 # 1 # tuplecount
 # 65 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -615,7 +549,6 @@ Over..
 # 1 # tuplecount
 # 66 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -624,7 +557,6 @@ Over..
 # 1 # tuplecount
 # 67 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -633,7 +565,6 @@ Over..
 # 1 # tuplecount
 # 68 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -642,7 +573,6 @@ Over..
 # 1 # tuplecount
 # 69 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -651,7 +581,6 @@ Over..
 # 1 # tuplecount
 # 70 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -660,7 +589,6 @@ Over..
 # 1 # tuplecount
 # 71 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -669,7 +597,6 @@ Over..
 # 1 # tuplecount
 # 72 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -678,7 +605,6 @@ Over..
 # 1 # tuplecount
 # 73 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -687,7 +613,6 @@ Over..
 # 1 # tuplecount
 # 74 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -696,7 +621,6 @@ Over..
 # 1 # tuplecount
 # 75 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -705,7 +629,6 @@ Over..
 # 1 # tuplecount
 # 76 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -714,7 +637,6 @@ Over..
 # 1 # tuplecount
 # 77 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -723,7 +645,6 @@ Over..
 # 1 # tuplecount
 # 78 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -732,7 +653,6 @@ Over..
 # 1 # tuplecount
 # 79 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -741,7 +661,6 @@ Over..
 # 1 # tuplecount
 # 80 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -750,7 +669,6 @@ Over..
 # 1 # tuplecount
 # 81 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -759,7 +677,6 @@ Over..
 # 1 # tuplecount
 # 82 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -768,7 +685,6 @@ Over..
 # 1 # tuplecount
 # 83 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -777,7 +693,6 @@ Over..
 # 1 # tuplecount
 # 84 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -786,7 +701,6 @@ Over..
 # 1 # tuplecount
 # 85 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -795,7 +709,6 @@ Over..
 # 1 # tuplecount
 # 86 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -804,7 +717,6 @@ Over..
 # 1 # tuplecount
 # 87 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -813,7 +725,6 @@ Over..
 # 1 # tuplecount
 # 88 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -822,7 +733,6 @@ Over..
 # 1 # tuplecount
 # 89 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -831,7 +741,6 @@ Over..
 # 1 # tuplecount
 # 90 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -840,7 +749,6 @@ Over..
 # 1 # tuplecount
 # 91 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -849,7 +757,6 @@ Over..
 # 1 # tuplecount
 # 92 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -858,7 +765,6 @@ Over..
 # 1 # tuplecount
 # 93 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -867,7 +773,6 @@ Over..
 # 1 # tuplecount
 # 94 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -876,7 +781,6 @@ Over..
 # 1 # tuplecount
 # 95 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -885,7 +789,6 @@ Over..
 # 1 # tuplecount
 # 96 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -894,7 +797,6 @@ Over..
 # 1 # tuplecount
 # 97 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -903,7 +805,6 @@ Over..
 # 1 # tuplecount
 # 98 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -912,7 +813,6 @@ Over..
 # 1 # tuplecount
 # 99 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -921,7 +821,6 @@ Over..
 # 1 # tuplecount
 # 100 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -930,7 +829,6 @@ Over..
 # 1 # tuplecount
 # 101 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -939,7 +837,6 @@ Over..
 # 1 # tuplecount
 # 102 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -948,7 +845,6 @@ Over..
 # 1 # tuplecount
 # 103 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -957,7 +853,6 @@ Over..
 # 1 # tuplecount
 # 104 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -966,7 +861,6 @@ Over..
 # 1 # tuplecount
 # 105 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -975,7 +869,6 @@ Over..
 # 1 # tuplecount
 # 106 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -984,7 +877,6 @@ Over..
 # 1 # tuplecount
 # 107 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -993,7 +885,6 @@ Over..
 # 1 # tuplecount
 # 108 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1002,7 +893,6 @@ Over..
 # 1 # tuplecount
 # 109 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1011,7 +901,6 @@ Over..
 # 1 # tuplecount
 # 110 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1020,7 +909,6 @@ Over..
 # 1 # tuplecount
 # 111 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1029,7 +917,6 @@ Over..
 # 1 # tuplecount
 # 112 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1038,7 +925,6 @@ Over..
 # 1 # tuplecount
 # 113 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1047,7 +933,6 @@ Over..
 # 1 # tuplecount
 # 114 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1056,7 +941,6 @@ Over..
 # 1 # tuplecount
 # 115 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1065,7 +949,6 @@ Over..
 # 1 # tuplecount
 # 116 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1074,7 +957,6 @@ Over..
 # 1 # tuplecount
 # 117 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1083,7 +965,6 @@ Over..
 # 1 # tuplecount
 # 118 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1092,7 +973,6 @@ Over..
 # 1 # tuplecount
 # 119 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1101,7 +981,6 @@ Over..
 # 1 # tuplecount
 # 120 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1110,7 +989,6 @@ Over..
 # 1 # tuplecount
 # 121 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1119,7 +997,6 @@ Over..
 # 1 # tuplecount
 # 122 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1128,7 +1005,6 @@ Over..
 # 1 # tuplecount
 # 123 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1137,7 +1013,6 @@ Over..
 # 1 # tuplecount
 # 124 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1146,7 +1021,6 @@ Over..
 # 1 # tuplecount
 # 125 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1155,7 +1029,6 @@ Over..
 # 1 # tuplecount
 # 126 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1164,7 +1037,6 @@ Over..
 # 1 # tuplecount
 # 127 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1173,7 +1045,6 @@ Over..
 # 1 # tuplecount
 # 128 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1182,7 +1053,6 @@ Over..
 # 1 # tuplecount
 # 129 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1191,7 +1061,6 @@ Over..
 # 1 # tuplecount
 # 130 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1200,7 +1069,6 @@ Over..
 # 1 # tuplecount
 # 131 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1209,7 +1077,6 @@ Over..
 # 1 # tuplecount
 # 132 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1218,7 +1085,6 @@ Over..
 # 1 # tuplecount
 # 133 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1227,7 +1093,6 @@ Over..
 # 1 # tuplecount
 # 134 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1236,7 +1101,6 @@ Over..
 # 1 # tuplecount
 # 135 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1245,7 +1109,6 @@ Over..
 # 1 # tuplecount
 # 136 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1254,7 +1117,6 @@ Over..
 # 1 # tuplecount
 # 137 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1263,7 +1125,6 @@ Over..
 # 1 # tuplecount
 # 138 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1272,7 +1133,6 @@ Over..
 # 1 # tuplecount
 # 139 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1281,7 +1141,6 @@ Over..
 # 1 # tuplecount
 # 140 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1290,7 +1149,6 @@ Over..
 # 1 # tuplecount
 # 141 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1299,7 +1157,6 @@ Over..
 # 1 # tuplecount
 # 142 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1308,7 +1165,6 @@ Over..
 # 1 # tuplecount
 # 143 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1317,7 +1173,6 @@ Over..
 # 1 # tuplecount
 # 144 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1326,7 +1181,6 @@ Over..
 # 1 # tuplecount
 # 145 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1335,7 +1189,6 @@ Over..
 # 1 # tuplecount
 # 146 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1344,7 +1197,6 @@ Over..
 # 1 # tuplecount
 # 147 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1353,7 +1205,6 @@ Over..
 # 1 # tuplecount
 # 148 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1362,7 +1213,6 @@ Over..
 # 1 # tuplecount
 # 149 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1371,7 +1221,6 @@ Over..
 # 1 # tuplecount
 # 150 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1380,7 +1229,6 @@ Over..
 # 1 # tuplecount
 # 151 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1389,7 +1237,6 @@ Over..
 # 1 # tuplecount
 # 152 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1398,7 +1245,6 @@ Over..
 # 1 # tuplecount
 # 153 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1407,7 +1253,6 @@ Over..
 # 1 # tuplecount
 # 154 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1416,7 +1261,6 @@ Over..
 # 1 # tuplecount
 # 155 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1425,7 +1269,6 @@ Over..
 # 1 # tuplecount
 # 156 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1434,7 +1277,6 @@ Over..
 # 1 # tuplecount
 # 157 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1443,7 +1285,6 @@ Over..
 # 1 # tuplecount
 # 158 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1452,7 +1293,6 @@ Over..
 # 1 # tuplecount
 # 159 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1461,7 +1301,6 @@ Over..
 # 1 # tuplecount
 # 160 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1470,7 +1309,6 @@ Over..
 # 1 # tuplecount
 # 161 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1479,7 +1317,6 @@ Over..
 # 1 # tuplecount
 # 162 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1488,7 +1325,6 @@ Over..
 # 1 # tuplecount
 # 163 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1497,7 +1333,6 @@ Over..
 # 1 # tuplecount
 # 164 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1506,7 +1341,6 @@ Over..
 # 1 # tuplecount
 # 165 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1515,7 +1349,6 @@ Over..
 # 1 # tuplecount
 # 166 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1524,7 +1357,6 @@ Over..
 # 1 # tuplecount
 # 167 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1533,7 +1365,6 @@ Over..
 # 1 # tuplecount
 # 168 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1542,7 +1373,6 @@ Over..
 # 1 # tuplecount
 # 169 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1551,7 +1381,6 @@ Over..
 # 1 # tuplecount
 # 170 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1560,7 +1389,6 @@ Over..
 # 1 # tuplecount
 # 171 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1569,7 +1397,6 @@ Over..
 # 1 # tuplecount
 # 172 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1578,7 +1405,6 @@ Over..
 # 1 # tuplecount
 # 173 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1587,7 +1413,6 @@ Over..
 # 1 # tuplecount
 # 174 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1596,7 +1421,6 @@ Over..
 # 1 # tuplecount
 # 175 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1605,7 +1429,6 @@ Over..
 # 1 # tuplecount
 # 176 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1614,7 +1437,6 @@ Over..
 # 1 # tuplecount
 # 177 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1623,7 +1445,6 @@ Over..
 # 1 # tuplecount
 # 178 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1632,7 +1453,6 @@ Over..
 # 1 # tuplecount
 # 179 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1641,7 +1461,6 @@ Over..
 # 1 # tuplecount
 # 180 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1650,7 +1469,6 @@ Over..
 # 1 # tuplecount
 # 181 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1659,7 +1477,6 @@ Over..
 # 1 # tuplecount
 # 182 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1668,7 +1485,6 @@ Over..
 # 1 # tuplecount
 # 183 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1677,7 +1493,6 @@ Over..
 # 1 # tuplecount
 # 184 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1686,7 +1501,6 @@ Over..
 # 1 # tuplecount
 # 185 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1695,7 +1509,6 @@ Over..
 # 1 # tuplecount
 # 186 # id
 [ 1	]
-#-
 # 4 # querytype
 #  # table_name
 # single_value # name
@@ -1704,7 +1517,6 @@ Over..
 # 1 # tuplecount
 # 187 # id
 [ 1	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -1713,7 +1525,6 @@ Over..
 # 1 # tuplecount
 # 188 # id
 [ 1	]
-#-
 # 7 # querytype
 
 # 16:01:32 >  

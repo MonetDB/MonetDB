@@ -20,7 +20,6 @@ Over..
 # 06:51:12 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=55587  < wisconsin-update.sql
 # 06:51:12 >  
 
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -88,7 +87,6 @@ Over..
 # 1 # tuplecount
 # 13 # id
 [ 1	]
-#-
 # 4 # querytype
 # affected # table_name
 # rows # name
@@ -97,7 +95,6 @@ Over..
 # 1 # tuplecount
 # 14 # id
 [ 1	]
-#-
 # 7 # querytype
 
 # 22:31:50 >  

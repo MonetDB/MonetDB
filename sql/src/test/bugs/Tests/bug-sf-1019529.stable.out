@@ -21,7 +21,6 @@ Over..
 # 13:45:16 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57322  < bug-sf-1019529.sql
 # 13:45:16 >  
 
-#-
 # 3 # querytype
 # tables # table_name
 # name # name
@@ -29,7 +28,6 @@ Over..
 # 0 # length
 # 0 # tuplecount
 # 0 # id
-#-
 # 3 # querytype
 #  # table_name
 # single_value # name
@@ -37,7 +35,6 @@ Over..
 # 0 # length
 # 0 # tuplecount
 # 1 # id
-#-
 # 3 # querytype
 #  # table_name
 # single_value # name
