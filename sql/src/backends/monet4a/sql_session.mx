@@ -260,6 +260,26 @@ int connect_error(stream *in, stream *out)
 	return GDK_FAIL;
 }
 
+static void
+error(stream *out, char *str)
+{
+	char *p;
+
+	while ((p = strchr(str, '\n')) != NULL) {
+		if (*str != '!')
+			stream_write(out, "!", 1, 1);
+		stream_write(out, str, 1, p - str);
+		str = p + 1;
+	}
+	if (str && *str) {
+		if (*str != '!')
+			stream_write(out, "!", 1, 1);
+		stream_write(out, str, 1, strlen(str));
+		stream_write(out, "\n", 1, 1);
+	}
+	stream_flush(out);
+}
+
 int sqlexecute(backend * be, stream *out, Cntxt stk )
 {
 	context *c = be->context;
@@ -400,13 +420,7 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 		/* ssize_t status; */
 
 		if ((/*status =*/ mvc_status(c->mvc)) < 0){
-			char *errstr = "Error in result";
-			if ( 
-			/* !stream_writeInt( out, mvc_type(c->mvc) ) || */
-			/* !stream_writeInt( out, status ) || */
-			    stream_write( out, errstr, strlen(errstr), 1 ) != 1)
-				return -1;
-			stream_flush( out );
+			error(out, "Error in result");
   		} 
 /*		else if ( (type = mvc_type(c->mvc)) != Q_RESULT ) {
 			if (!stream_writeInt( out, type ) ||
@@ -635,11 +649,7 @@ These lines should be eaten away into the prompt is encountered.
 			err = sqlexecute(sql, out, stk);
 			if (err){ /* output error */
 				char *buf = GDKerrbuf;
-				if ( stream_write( out, sqlc->errstr, 
-					strlen(sqlc->errstr), 1 ) != 1){
-					fprintf(stderr,"mapisqlclient:error 2\n");
-					break;
-				}
+				error(out, sqlc->errstr);
 				if (buf && buf[0] &&
 					(stream_write( out, "\n", 1, 1 ) != 1 ||
 					 stream_write( out, buf, strlen(buf), 1 ) !=1)){
