@@ -363,6 +363,7 @@ Beware, this is not yet effectuated in the interpreter.
     for(i=0;i<p->retc;i++) 
     if( isaBatType(returntype[i]) || isaColType(returntype[i]) ||
         ( !isPolyType(returntype[i])  && 
+			returntype[i]>=0 && returntype[i]< TYPE_any &&
            ATOMstorage(returntype[i])== TYPE_str) ){
         garbageControl(mb,getArg(p,i)) = TRUE;
     }
