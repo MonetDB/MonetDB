@@ -649,6 +649,9 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .COMMAND radix_decluster3(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) : 
          bat[void,any::1] = radix_decluster3; ""
 
+.COMMAND radix_decluster4(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) : 
+         bat[void,any::1] = radix_decluster4; ""
+
 .COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate) : 
 	bat[any,any] = radix_join;
 "nested-loop join on radix clustered inputs"
@@ -2379,9 +2382,9 @@ price paid are two parameters to radix\_decluster.
 
 @= radix_decluster2
 {   @1 *dst = (@1*) BUNfirst(bn);
-    int prev;
+/*    int prev,all=0,bad=0; */
     while(lim < lst) {
-	prev = lim;
+/*	prev = lim; */
         lim += mult;
         yy = 0;
         while(yy < cnt) {
@@ -2403,20 +2406,26 @@ price paid are two parameters to radix\_decluster.
                     cnk[yy++].cur1 = p - src1;
                     break; /* value exceeds current limit, go to next cluster */
                 }
+/*
+		all++;
 		if (prev > cur || cur > lim)
-			printf("2 %d %d %d\n", prev, cur, lim );
+			bad++;
+*/
+/*			printf("2: %9d %9d %9d\n", prev, cur, lim ); */
 		p += xx;
                 @2_put(dst[cur], @1, BUN@3(a,r));
 		r += zz;
             }
         }
-    } break;
+    } 
+/*    if (bad) printf("2: %d/%d = %f% miss-located writes!\n",bad,all,(flt)bad/(flt)all); */
+    break;
 } 
 @= radix_decluster3
 {   @1 *dst = (@1*) BUNfirst(bn);
-    int prev;
+/*    int prev,all=0,bad=0; */
     while(lim < lst) {
-	prev = lim;
+/*	prev = lim; */
         lim += mult;
         yy = 0;
         while(yy < cnt) {
@@ -2433,8 +2442,12 @@ price paid are two parameters to radix\_decluster.
                     break; /* value exceeds current limit, go to next cluster */
                 }
                 @2_put(dst[cur], @1, BUN@3(a,r));
+/*
+		all++;
 		if (prev > cur || cur > lim)
-			printf("%d %d %d\n", prev, cur, lim );
+			bad++;
+*/
+/*			printf("3: %9d %9d %9d\n", prev, cur, lim ); */
             }
 	    /* cluster exhausted; overwrite with last; start over*/
             cnk[yyy].cur2 = r - src2;
@@ -2442,12 +2455,51 @@ price paid are two parameters to radix\_decluster.
 	    } while(nxt>=0);
 	    yy++;
         }
-    } break;
+    } 
+/*    if (bad) printf("3: %d/%d = %f% miss-located writes!\n",bad,all,(flt)bad/(flt)all); */
+    break;
+} 
+@= radix_decluster4
+{   @1 *dst = (@1*) BUNfirst(bn);
+/*    int prev,all=0,bad=0; */
+    while(lim < lst) {
+/*	prev = lim; */
+        lim += mult;
+        yy = 0;
+        while(yy < cnt) {
+            p = src1 + cnk[yy].cur1;
+            q = src1 + cnk[yy].end1;
+            r = src2 + cnk[yy].cur2;
+            cur = cnk[yy].nxt;
+	    while ((p < q) && (cur < lim)) {
+/*
+		all++;
+		if (prev > cur || cur > lim)
+			bad++;
+*/
+/*			printf("4: %9d %9d %9d\n", prev, cur, lim ); */
+                @2_put(dst[cur], @1, BUN@3(a,r));
+		p += xx;
+		r += zz;
+                cur = *(oid*) BUNtloc(b,p);
+            }
+            cnk[yy].nxt = cur;
+            cnk[yy].cur2 = r - src2;
+            cnk[yy++].cur1 = p - src1;
+        }
+    } 
+/*    if (bad) printf("4: %d/%d = %f% miss-located writes!\n",bad,all,(flt)bad/(flt)all); */
+    break;
 } 
 @c
 typedef struct {
 	int cur1, end1, cur2, nxt;
 } cnk2_t;
+
+typedef struct {
+	int cur1, end1, cur2;
+	oid nxt;
+} cnk4_t;
 
 int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     int cnt = BATcount(cnts);
@@ -2455,7 +2507,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     int any = ATOMstorage(tpe);
     int width = ATOMsize(ATOMtype(any));
     int mult = *multiplier;
-    int i, xx, yy=0, zz;
+    int xx, yy=0, zz;
     char *src1 = b->batBuns->base+b->tloc;
     char *src2 = a->batBuns->base+a->tloc;
     int offset1, offset2;
@@ -2592,14 +2644,18 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 		zz = *(int*) BUNhloc(cnts,p); /* current bit pattern */
 		pos = ++yy; /* normal increment */
 	} else {
+		int prev = -1;
 		/* look in the other chunks to find who's first */
-	        while(*(oid*) BUNhloc(b, src1+offset1) > *(oid*) BUNhloc(b, src1+cnk[pos].cur1)) { 
+	        while(*(oid*) BUNtloc(b, src1+offset1) > *(oid*) BUNtloc(b, src1+cnk[pos].cur1)) { 
+			prev = pos;
 			if ((pos = cnk[pos].nxt) < 0) break;
 		}
 		if (pos > 0) {
 			cnk[nxt = --cnt] = cnk[pos]; /* insert in chain */
 		} else {
 			pos = --cnt; /* insert at end */
+			if (prev>=0)
+				cnk[prev].nxt = pos;
 		}
 	}
         cnk[pos].cur1 = offset1; 
@@ -2635,6 +2691,93 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     case TYPE_lng:
     case TYPE_dbl: @:radix_decluster3(lng,simple,tloc)@
     default:       @:radix_decluster3(int,atom,tail)@ 
+    }
+    /* string heaps with double elimination were treated as ints */
+    if (any == TYPE_int && b->ttype == TYPE_str) {
+	BAT *bm = BATmirror(bn);
+        bm->ttype = bn->htype = tpe;
+        bm->tvarsized = bn->hvarsized = 1;
+        strcpy(bn->hatom, ATOMname(tpe));
+        HEAPcopy(&bn->hheap, &b->theap);
+    }
+    GDKfree(cnk);
+	
+    return GDK_SUCCEED;
+}
+
+int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
+    int cnt = BATcount(cnts), cntX = 0;
+    int tpe = a->ttype;
+    int any = ATOMstorage(tpe);
+    int width = ATOMsize(ATOMtype(any));
+    int mult = *multiplier;
+    int xx, yy=0, zz;
+    char *src1 = b->batBuns->base+b->tloc;
+    char *src2 = a->batBuns->base+a->tloc;
+    int offset1, offset2;
+    oid cur, lim, lst;
+    BUN p, q, r;
+    BAT *bn;
+    cnk4_t *cnk;
+
+    if ((cnts->talign&RADIX_COUNT_MASK) != (b->talign&RADIX_COUNT_MASK)) {
+	GDKerror("radix_decluster: %s is not a radix_count(%s)\n", cnts->batId, b->batId);
+	return GDK_FAIL;
+    } 
+/* TODO: propagation of tdense even when not sorted
+    if (!b->hdense) {
+	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", b->batId);
+	return GDK_FAIL;
+    }
+*/
+    if (ALIGNsynced(b,a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
+	GDKerror("radix_decluster: %s and %s are not synced and unique\n", b->batId, a->batId);
+	return GDK_FAIL;
+    }
+    /* init cluster offset arrays (byte distances) */
+    cnk = (cnk2_t*) GDKmalloc(cnt*sizeof(cnk2_t));
+    offset1 = BUNindex(b, BUNfirst(b))*BUNsize(b);
+    offset2 = BUNindex(a, BUNfirst(a))*BUNsize(a);
+    yy = zz = -1;
+    BATloopFast(cnts, p, q, xx) {
+	if (*(int*) BUNhloc(cnts,p) != zz) {
+		zz = *(int*) BUNhloc(cnts,p); /* current bit pattern */
+		cntX++; /* new "real" cluster */
+	}
+	yy++;
+	cnk[yy].nxt = *(oid*) BUNtloc(b, src1+offset1);
+        cnk[yy].cur1 = offset1; 
+        cnk[yy].cur2 = offset2; 
+	offset1 += BUNsize(b) * (*(int*) BUNtloc(cnts,p));
+	offset2 += BUNsize(a) * (*(int*) BUNtloc(cnts,p));
+        cnk[yy].end1 = offset1;
+    }
+
+    /* create destination bat and init some variables */
+    if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+	tpe = any = TYPE_int;
+    }
+
+    /* init variables for the decluster operation */
+    zz = BATcount(b);
+    bn = *res = BATnew(TYPE_void, tpe, zz);
+    bn->batBuns->free += zz*width;
+    bn->tsorted = 0;
+    BATseqbase(bn, lim = 0); /* current oid */
+    lst = lim + BATcount(b); /* highest oid */
+    mult *= cntX; /* window size */
+    xx = BUNsize(b);
+    zz = BUNsize(a);
+
+    /* do the merging work. TODO: multi-pass impl? */
+    switch(any) {
+    case TYPE_chr: @:radix_decluster4(chr,simple,tloc)@
+    case TYPE_sht: @:radix_decluster4(sht,simple,tloc)@
+    case TYPE_int: 
+    case TYPE_flt: @:radix_decluster4(int,simple,tloc)@
+    case TYPE_lng:
+    case TYPE_dbl: @:radix_decluster4(lng,simple,tloc)@
+    default:       @:radix_decluster4(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
     if (any == TYPE_int && b->ttype == TYPE_str) {
