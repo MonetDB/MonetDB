@@ -653,7 +653,6 @@ typedef struct MapiStruct {
 	char database[MAPINAMELEN];	/* to obtain from server */
 	int languageId;
 	int versionId;		/* Monet 4 or 5 */
-	char prompt[MAPINAMELEN];
 
 	int everything;		/* keep all lines received */
 	int trace;		/* Trace Mapi interaction */
@@ -1126,8 +1125,6 @@ mapi_new(void)
 	strcpy(m->mapiversion, "mapi 1.0");
 	strcpy(m->username, "anonymous");
 	strcpy(m->password, "unknown");
-	/* default prompt */
-	strcpy(m->prompt, ">");
 
 	m->cachelimit = 1000;
 	m->tracelog = NULL;
@@ -1173,7 +1170,6 @@ mapi_dup(Mapi mid)
 	strcpy(m->hostname, mid->hostname);
 	strcpy(m->username, mid->username);
 	strcpy(m->password, mid->password);
-	strcpy(m->prompt, mid->prompt);
 	m->port = mid->port;
 #ifdef HAVE_OPENSSL
 	m->secure = mid->secure;
@@ -1315,12 +1311,10 @@ promptMonet(Mapi mid)
 	assert(s);
 	*s = 0;
 	i = s - (mid->blk.buf + mid->blk.nxt);
-	if (i < sizeof(mid->prompt) - 1)
-		strncpy(mid->prompt, mid->blk.buf + mid->blk.nxt, i + 1);
 	mid->blk.nxt += i + 1;
 	mid->active = 0;
 	if (mid->trace)
-		printf("%s\n", mid->prompt);
+		printf("prompt\n");
 }
 
 @
@@ -2129,13 +2123,18 @@ static MapiMsg
 answer_lookahead(MapiHdl hdl)
 {
 	/* look ahead to detect errors */
-	int oldrd = hdl->cache.reader;
+	int oldrd;
 
 	do {
-		mapi_get_row(hdl);
-	} while (hdl->mid->error == MOK && hdl->mid->active &&
-		 hdl->cache.writer + 1 < hdl->cache.limit);
-	hdl->cache.reader = oldrd;
+		oldrd = hdl->cache.reader;
+		do {
+			mapi_get_row(hdl);
+		} while (hdl->mid->error == MOK && hdl->mid->active &&
+			 hdl->cache.writer + 1 < hdl->cache.limit);
+		hdl->cache.reader = oldrd;
+		if (hdl->mid->active)
+			mapi_extend_cache(hdl);
+	} while (hdl->mid->active);
 	if (hdl->mid->trace)
 		printf("mapi_query return:%d\n", hdl->mid->error);
 	return hdl->mid->error;
@@ -2510,10 +2509,11 @@ mapi_extend_cache(MapiHdl hdl)
 			if (hdl->cache.reader >= 0) {
 				/* flush all read entries */
 				mapi_cache_freeup_internal(hdl, hdl->cache.reader + 1);
-			} else {
-				/* increase limit */
-				hdl->cache.rowlimit += 100;
+				/* since we've made space, we can return */
+				return;
 			}
+			/* not enough space, so increase limit */
+			hdl->cache.rowlimit += 100;
 			mapi_extend_cache(hdl);	/* try again */
 			return;
 		}
@@ -2696,6 +2696,7 @@ mapi_fetch_line(MapiHdl hdl)
 		stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid,
 			      hdl->cache.first + hdl->cache.tuplecount);
 		stream_flush(hdl->mid->to);
+		answer_lookahead(hdl);
 		reply = mapi_fetch_line_internal(hdl);
 	}
 	return reply;
@@ -3354,6 +3355,7 @@ mapi_fetch_row(MapiHdl hdl)
 		stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid,
 			      hdl->cache.first + hdl->cache.tuplecount);
 		stream_flush(hdl->mid->to);
+		answer_lookahead(hdl);
 		if (mapi_get_row(hdl) == MOK)
 			return mapi_slice_row(hdl);
 	}
