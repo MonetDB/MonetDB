@@ -195,7 +195,7 @@ command isaSet( b:bat[:any,:any]) :bit
 address BKCisaSet
 comment "return whether the BAT mode is set to unique.";
 
-command setAccess( b:bat[:any$1,:any$2], mode:str) :void
+command setAccess( b:bat[:any$1,:any$2], mode:str) :bat[:any$1,:any$2]
 address BKCsetAccess
 comment "Try to change the update access priviliges 
 	to this BAT. Mode:
@@ -205,18 +205,18 @@ comment "Try to change the update access priviliges
 	BATs are updatable by default. On making a BAT read-only, 
         all subsequent updates fail with an error message.Returns 
         the BAT itself.";
-command access( b:bat[:any$1,:any$2], mode:int) :void
+command access( b:bat[:any$1,:any$2], mode:int) :bat[:any$1,:any$2]
 address BKCaccess;
 
-command setAppendMode( b:bat[:any$1,:any$2]) :void
+command setAppendMode( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address BKCsetAppendMode
 comment "Change access privilige of BAT to append only";
 
-command setReadMode( b:bat[:any$1,:any$2]) :void
+command setReadMode( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address BKCsetReadMode
 comment "Change access privilige of BAT to read only";
 
-command setWriteMode( b:bat[:any$1,:any$2]) :void
+command setWriteMode( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address BKCsetWriteMode
 comment "Change access privilige of BAT to read and write";
 
@@ -243,12 +243,12 @@ comment "Get the sequence base for the void column of a BAT.";
 command getSequenceBase( b:bat[:oid,:any]):oid 
 address BKCgetSequenceBase;
 
-command setSequenceBase( b:bat[:void,:any$1], seqbase:oid):any
+command setSequenceBase( b:bat[:void,:any$1], seqbase:oid):bat[:void,:any$1]
 address BKCsetSequenceBase
 comment "Set the sequence base for the void column of a BAT.";
-command setSequenceBase( b:bat[:oid,:any$1], seqbase:oid):any
+command setSequenceBase( b:bat[:oid,:any$1], seqbase:oid):bat[:void,:any$1]
 address BKCsetSequenceBase;
-command setSequenceBase( b:bat[:void,:any$1], seqbase:void):any
+command setSequenceBase( b:bat[:void,:any$1], seqbase:void):bat[:void,:any$1]
 address BKCsetSequenceBaseNil;
 
 
@@ -278,17 +278,17 @@ address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first. This case 
         should be removed, because it is a hack for SQL";
 
-command insert(b:bat[:any$1,:any$2], src:bat[:any$1,:any$2]) :void 
+command insert(b:bat[:any$1,:any$2], src:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first.";
 
-command insert(b:bat[:any$1,:any$2], h:any$1, t:any$2) :void 
+command insert(b:bat[:any$1,:any$2], h:any$1, t:any$2) :bat[:any$1,:any$2] 
 address BKCinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
-command insert(b:bat[:void,:any$2], h:oid, t:any$2) :void 
+command insert(b:bat[:void,:any$2], h:oid, t:any$2) :bat[:any$1,:any$2] 
 address BKCinsert_bun;
 
-command insert(b:bat[:void,:any$1], v:any$1):void 
+command insert(b:bat[:void,:any$1], v:any$1):bat[:any$1,:any$2] 
 address BKCinsert_void_bun
 comment "Insert a value in a 'void' bat";
 
@@ -296,10 +296,10 @@ command replace(b:bat[:any$1, :any$2], src:bat[:any$1,:any$2]) :bat[:any$1,:any$
 address BKCreplace_bat
 comment "Perform replace for all BUNs of the second BAT into the first.";
 
-command replace(b:bat[:any$1, :any$2], h:any$1, t:any$2) :void
+command replace(b:bat[:any$1, :any$2], h:any$1, t:any$2) :bat[:any$1,:any$2]
 address BKCreplace_bun
 comment "Replace the tail value of one BUN that has some head value.";
-command replace(b:bat[:void, :any$2], h:oid, t:any$2) :void
+command replace(b:bat[:void, :any$2], h:oid, t:any$2) :bat[:void,:any$2]
 address BKCreplace_bun;
 
 # The SQL append/replace commands
@@ -351,33 +351,29 @@ Therefore it is moved to the bbp module
 #address BKCdestroy_bat
 #comment "Schedule bat for removal upon session 
 
-command delete(b:bat[:any$1, :any$2], h:any$1, t:any$2) :void 
+command delete(b:bat[:any$1, :any$2], h:any$1, t:any$2) :bat[:any$1,:any$2] 
 address BKCdelete_bun
 comment "Delete one specific BUN.";
 
-command delete(b:bat[:void, :any$2], h:oid, t:any$2) :void 
+command delete(b:bat[:void, :any$2], h:oid, t:any$2) :bat[:any$1,:any$2] 
 address BKCdelete_bun;
 
-command delete(b:bat[:any$1, :any$2], h:any$1) :void 
+command delete(b:bat[:any$1, :any$2], h:any$1) :bat[:any$1,:any$2] 
 address BKCdelete_head
 comment "Delete all BUNs with a certain head value.";
-command delete(b:bat[:void, :any$2], h:oid) :void 
+command delete(b:bat[:void, :any$2], h:oid) :bat[:any$1,:any$2] 
 address BKCdelete_head;
 
-command clear(b:bat[:any$1, :any$2]) :void 
+command delete(b:bat[:any$1, :any$2]) :bat[:any$1,:any$2] 
 address BKCdelete_all
 comment "Delete all BUNs in a BAT.";
 
-command delete(b:bat[:any$1, :any$2]) :void 
-address BKCdelete_all
-comment "Delete all BUNs in a BAT.";
-
-command delete(b:bat[:any$1, :any$2], src:bat[:any$1,:any]) :void 
+command delete(b:bat[:any$1, :any$2], src:bat[:any$1,:any]) :bat[:any$1,:any$2] 
 address BKCdelete_bat_head
 comment "Delete from the first BAT all BUNs with a head value that 
         is in the second.";
 
-command deleteBuns(b:bat[:any$1, :any$2], src:bat[:any$1,:any$2]) :void 
+command deleteBuns(b:bat[:any$1, :any$2], src:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN 
         in the second.";
@@ -405,7 +401,7 @@ Note, we should move old-fashioned mil operator definitions
 into a separate module.
 
 @mal
-command setName ( b:bat[:any$1,:any$2] , s:str) :void
+command setName ( b:bat[:any$1,:any$2] , s:str) :bat[:any$1,:any$2]
 address BKCsetName
 comment "Give a logical name to a BAT. ";
 
@@ -413,22 +409,21 @@ command getName ( b:bat[:any,:any]) :str
 address BKCgetBBPname
 comment "Gives back the logical name of a BAT.";
 
-command setRole( b:bat[:any$1,:any$2], h:str, t:str) :void
+command setRole( b:bat[:any$1,:any$2], h:str, t:str) :bat[:any$1,:any$2]
 address BKCsetRole
 comment "Give a logical name to the columns of a BAT.";
 
-command setColumn( b:bat[:any$1,:any$2], t:str)
-	:void
+command setColumn( b:bat[:any$1,:any$2], t:str) :bat[:any$1,:any$2]
 address BKCsetColumn
 comment "Give a logical name to the tail column of a BAT.";
-command setColumn( b:bat[:any$1,:any$2], h:str, t:str) :void
+command setColumn( b:bat[:any$1,:any$2], h:str, t:str) :bat[:any$1,:any$2]
 address BKCsetColumns
 comment "Give both columns of a BAT a new name.";
 
 
 command isTransient( b:bat[:any,:any]) :bit 
 address BKCisTransient;
-command setTransient( b:bat[:any,:any]) :bit 
+command setTransient( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCsetTransient
 comment "Make the BAT transient.  Returns 
 	boolean which indicates if the
@@ -436,15 +431,15 @@ BAT administration has indeed changed.";
 
 command isPersistent( b:bat[:any,:any]) :bit 
 address BKCisPersistent;
-command persists( b:bat[:any,:any],f:bit) :bit 
+command setPersistent( b:bat[:any,:any],f:bit) :bat[:any$1,:any$2] 
 address BKCpersists
 comment "Backward compatibility";
-command setPersistent( b:bat[:any,:any]) :bit 
+command setPersistent( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCsetPersistent
 comment "Make the BAT persistent.  Returns boolean which indicates 
         if the BAT administration has indeed changed.";
 
-command save(nme:bat[:any,:any]) :bit 
+command save(nme:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCsave2;
 
 command save(nme:str) :bit 
@@ -1543,6 +1538,7 @@ str BKCinsert_void_bun(int *r, int *bid, ptr t) {
     }
 	@:derefStr(b,t,t)@
 	BUNins(b,(ptr)&h, @:batconvert(b,t)@);
+	BBPincref(*r = b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1556,6 +1552,7 @@ str BKCinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
+	BBPincref(*r=b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1588,7 +1585,7 @@ str BKCreplace_bun(int *r, int *bid, ptr h, ptr t) {
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	CMDreplace_bun(&bn,b,h,t);
-	*r = bn->batCacheid;
+	BBPincref(*r = bn->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1626,6 +1623,7 @@ str BKCdelete_bun(int *r, int *bid, ptr h, ptr t) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return throwMessage("bat.delete_buns", "GDKerror");
 }
@@ -1641,6 +1639,7 @@ str BKCdelete_head(int *r, int *bid, ptr h) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return throwMessage("bat.delete", "GDKerror");
 }
@@ -1655,6 +1654,7 @@ str BKCdelete_all(int *r, int *bid) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return throwMessage("bat.delete", "GDKerror");
 }
@@ -1674,6 +1674,7 @@ str BKCdelete_bat_bun(int *r, int *bid, int *sid){
 		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
 	return throwMessage("bat.delete_bat_buns", "GDKerror");
@@ -1694,6 +1695,7 @@ str BKCdelete_bat_head(int *r, int *bid, int *sid){
 		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
 	return throwMessage("bat.delete_bat_heads", "GDKerror");
@@ -2116,24 +2118,24 @@ str BKCgetKey(bit *ret, int *bid) {
 	return MAL_SUCCEED;
 }
 
-str BKCpersists(bit *res, int *bid, int *flg) {
+str BKCpersists(int *r, int *bid, int *flg) {
 	BAT *b ; 
-	(void) res;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("bat.setPersistence", "Cannot access descriptor");
     }
+	BBPincref(*r= b->batCacheid,TRUE);
 	if( *flg) BBPincref(b->batCacheid, TRUE);
 	else BBPdecref(b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str BKCsetPersistent(bit *res, int *bid) {
+str BKCsetPersistent(int *r, int *bid) {
 	BAT *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("bat.setPersistence", "Cannot access descriptor");
     }
 	BATmode(b,PERSISTENT);
-	*res = TRUE;
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2146,13 +2148,13 @@ str BKCisPersistent(bit *res, int *bid) {
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str BKCsetTransient(bit *res, int *bid) {
+str BKCsetTransient(int *r, int *bid) {
 	BAT *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("bat.setTransient", "Cannot access descriptor");
     }
 	BATmode(b, TRANSIENT);
-	*res= TRUE;
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2174,8 +2176,8 @@ str BKCset@1(int *res, int *bid) {
         return throwMessage("bat.set@1", "Cannot access descriptor");
     }
 	CMDsetaccess(&bn,b,&param);
+	BBPincref(*res =bn->batCacheid,TRUE);
 	BBPunfix(bn->batCacheid);
-	*res = 0;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2200,7 +2202,7 @@ str BKCaccess(int *res, int *bid, int *m) {
         return throwMessage("bat.setAccess", "Cannot access descriptor");
     }
 	CMDsetaccess(&bn,b,m);
-	*res = b->batCacheid;
+	BBPincref(*res = b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2219,7 +2221,7 @@ str BKCsetAccess(int *res, int *bid, str *param) {
 		return throwMessage("bat.setAccess", " illegal access mode");
 	}
 	CMDsetaccess(&bn,b,&m);
-	*res = b->batCacheid;
+	BBPincref(*res = b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2305,7 +2307,7 @@ str BKCsetRole(int *r, int *bid, str *hname, str *tname){
 	if(*hname== 0) return throwMessage("bat.setRole", "head name missing");
 	if(*tname== 0) return throwMessage("bat.setRole", "tail name missing");
 	BATroles(b, *hname, *tname);
-	*r= b->batCacheid;
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2316,7 +2318,7 @@ str BKCsetColumn(int *r, int *bid, str *tname){
     }
 	if(*tname==0) return throwMessage("bat.setColumn", "column name missing");
 	BATroles(b, b->hident,*tname);
-	*r= b->batCacheid;
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2326,19 +2328,21 @@ str BKCsetColumns(int *r, int *bid, str *hname, str *tname){
         return throwMessage("bat.setColumns", "Cannot access descriptor");
     }
 	BATroles(b, *hname, *tname);
-	*r= b->batCacheid;
+	BBPincref(*r= b->batCacheid,TRUE);
+	BBPunfix(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 
-str BKCsetName(bit *ret, int *bid, str *s){
+str BKCsetName(int *r, int *bid, str *s){
 	BAT *b;
-	(void) ret;
+	bit res, *rp= &res;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("bat.setName", "Cannot access descriptor");
     }
-	CMDrename(ret, b, *s);
+	CMDrename(rp, b, *s);
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2415,16 +2419,15 @@ str BKCsave(bit *res, str *input) {
 	CMDsave(res, *input);
 	return MAL_SUCCEED;
 }
-str BKCsave2(bit *res, int *bid) {
+str BKCsave2(int *r, int *bid) {
 	BAT *b;
-	(void)res; /* fool compiler */
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("bat.save", "Cannot access descriptor");
     }
 	
-	if (b && BATdirty(b)) {
-		if (BBPsave(b) == 0) *res = TRUE;
-	}
+	if (b && BATdirty(b)) 
+		BBPsave(b);
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2549,6 +2552,7 @@ str BKCsetSequenceBase(int *r, int *bid, oid* o){
         return throwMessage("bat.setSequenceBase", "Cannot access descriptor");
     }
 	BATseqbase(b, *o);
+	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
