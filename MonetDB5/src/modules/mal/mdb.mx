@@ -42,15 +42,19 @@ pattern mdb():void
 address MDBtoggle
 comment "Start interactive debugger";
 
+pattern trace():void
+address MDBtrace
+comment "Run the current function in timer trace mode";
+
 pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
 
-pattern setTrace(mod:any,fcn:any,b:bit)
+pattern setTrace(mod:str,fcn:str,b:bit)
 address MDBsetTrace2
 comment "Turn on/off trace of specific operation";
 
-pattern setBreakpoint(fcn:any)
+pattern setBreakpoint(fcn:str)
 address MDBsetBreakpoint
 comment "Turn on/off breakpoint on instruction in current operation";
 
@@ -172,6 +176,14 @@ str MDBtoggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     if( stk->up) stk->up->cmd=  b?'n':0;
     cntxt->itrace= b?'n':0;
     return MAL_SUCCEED;
+}
+str MDBtrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client cntxt= getClient();
+	cntxt->timer = GDKusec();
+	stk->cmd='T';
+	cntxt->itrace='T';
+	(void)mb; (void) p;
+	return MAL_SUCCEED;
 }
 str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     Client cntxt= getClient();
