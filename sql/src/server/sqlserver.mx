@@ -137,7 +137,8 @@ SQL client and the corresponding MIL runtime startup.
 
 @+ void bats
 To prevent void bats to convert to oid bats we need overloaded insert and
-replace commands. 
+replace commands. These operations should at a later stage be moved to the
+kernel libraries, e.g. bat.mx
 @m
  	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
 
@@ -388,6 +389,11 @@ int mvc_import_table_wrap( int *res, mvc *c, Stream *s, str tname , str sep, str
 	return GDK_SUCCEED;
 }
 
+@-
+The next collection of operators fill a hole in the Monet kernel libraries.
+It provide handy operations on void-BATs. The sole reason not to move it to
+the bat.mx module is that overall the kernel does not support bat[void,void]
+@c
 int bat_append_void_bat_wrap( BAT **res, BAT *i, BAT *u )
 {
 	*res = i;

@@ -108,11 +108,15 @@ Msql> using delimiters ',','\n';
  
 The few tuples added can be shown with
 Msql> select distinct boatname,master from voyage;
+#---------------------
+#| boatname | master |
+#---------------------
 "BRESLAU"       "Jan Kornelis Roos"
 "LES DEUX SOEURS"       "Blankman"
 "POTSDAM"       "Bernard Christiaan Muller"
 "GERECHTIGHEID" "Isaak Segon"
-SQL  4 Rows affected
+"MAGDEBURG"     "Asuerus Brinkman"
+SQL  5 Rows affected
 Msql>
 
 The VOC database in its full incarnation contains over 8 thousand
@@ -120,14 +124,58 @@ records. To retrieve part of it, you have to use selection and order
 by predicates. A few illustrative SQL statements are shown.
 
 Msql> select boatname,destination_arrival from voyage order by destination_arrival;
+#----------------------------------
+#| boatname | destination_arrival |
+#----------------------------------
 "LES DEUX SOEURS"       nil
 "BRESLAU"       1783-08-06
 "POTSDAM"       1783-08-09
+"MAGDEBURG"     1783-09-05
 "GERECHTIGHEID" 1783-11-08
-SQL  4 Rows affected
-Msql> 
+SQL  5 Rows affected
+Msql> create view R as select boatname as boot, tonnage as weight from voyage;
+Msql> select * from R;
+#-----------------
+#| boot | weight |
+#-----------------
+"BRESLAU"       1150
+"LES DEUX SOEURS"       582
+"POTSDAM"       1150
+"GERECHTIGHEID" 1150
+"MAGDEBURG"     nil
+SQL  5 Rows affected
+Msql> select boatname from voyage where tonnage between 0 and 1000;
+#------------
+#| boatname |
+#------------
+"LES DEUX SOEURS"
+SQL  1 Row affected
+Msql> select boatname from voyage where tonnage is null;
+#------------
+#| boatname |
+#------------
+"MAGDEBURG"
+SQL  1 Row affected
+Msql>
+Msql> select sum(tonnage) from voyage;
+#---------------
+#| sum_tonnage |
+#---------------
+SQL  1 Row affected
+Msql> select sum(tonnage) from voyage where tonnage is not null;
+#---------------
+#| sum_tonnage |
+#---------------
+4032
+SQL  1 Row affected
+Msql>
 
-
+Views
+=====
+The result of a query can be saved in a new table as follows:
+To avoid cluttering the database, we remove all the tuples in R
+(or simply drop the table).
+
 It expects each tuple to be represented on a separate line and
 conforms to the Monet tuple format lexical structure.
 You can specify the column value separator. The defaults is
