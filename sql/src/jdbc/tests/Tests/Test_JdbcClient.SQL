@@ -2,10 +2,16 @@
 
 ARGS="-h${HOST} -p${SQLPORT} -umonetdb"
 
-if [ -f $TSTBLDBASE/src/jdbc/MonetJDBC.jar ] ; then
+if [ -f $SQL_BUILD/src/jdbc/MonetJDBC.jar ] ; then
+	MonetJDBC=$SQL_BUILD/src/jdbc/MonetJDBC.jar
+  elif [ -f $TSTBLDBASE/src/jdbc/MonetJDBC.jar ] ; then
 	MonetJDBC=$TSTBLDBASE/src/jdbc/MonetJDBC.jar
-  else
+  elif [ -f $SQL_PREFIX/lib/MonetDB/java/MonetJDBC.jar ] ; then
 	MonetJDBC=$SQL_PREFIX/lib/MonetDB/java/MonetJDBC.jar
+  elif [ -f $MONET_PREFIX/lib/MonetDB/java/MonetJDBC.jar ] ; then
+	MonetJDBC=$MONET_PREFIX/lib/MonetDB/java/MonetJDBC.jar
+  else
+	MonetJDBC=$TSTTRGBASE/lib/MonetDB/java/MonetJDBC.jar
 fi
 
 Mlog -x "java -jar ${MonetJDBC} ${ARGS} -f $RELSRCDIR/../JdbcClient_create_tables.sql < $RELSRCDIR/../JdbcClient_monetdb"
