@@ -54,7 +54,7 @@ module 'sql_server'
 [ "mvc_drop_table(mvc, sql_schema, str, int) : void"			  ]
 [ "mvc_exit() : void"								  ]
 [ "mvc_export_result(mvc, Stream, int) : void"					  ]
-[ "mvc_export_table(mvc, Stream, int, int, int, str, str) : void"		  ]
+[ "mvc_export_table(mvc, Stream, int, int, int) : void"			  ]
 [ "mvc_import_table(mvc, Stream, str, str, str, int) : BAT[str,BAT]"		  ]
 [ "mvc_init(int) : void"							  ]
 [ "mvc_login(mvc, str, str) : str"						  ]

@@ -115,8 +115,8 @@ SQL  6 Rows affected
 #| val1 | val2 | val3 |
 #----------------------
 9	"testx"	9.1
-9	"testx"	9.1
 8	"texxst"	0.0001
+9	"testx"	9.1
 8	"texxst"	0.0001
 SQL  4 Rows affected
 
