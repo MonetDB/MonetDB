@@ -878,14 +878,12 @@ void GDKfree (void *blk) {
 			del_mem(memBat,blk);
 #endif
 	}
-#ifdef GDK_MEM_VMREDIRECT
 	if (size < 0) {
 		size_t maxsize = (size_t) s[-2];
 		size = -size;
 		MT_alloc_register(((char*) s) - 16, maxsize, 's');
 		GDKvmfree(((char*) s)- 16, (size_t) size, maxsize);
 	} else
-#endif
 #ifndef GDK_MEM_QUERYSIZE
 	if (size&1) {
 		free(((char*) s) - 4);
@@ -916,11 +914,9 @@ ptr GDKrealloc(void* blk, size_t size) {
 #else
 {       size_t cpysize, *s = (size_t*) blk;
         ssize_t oldsize = GDK_MEM_BLKSIZE(s);
-#ifdef GDK_MEM_VMREDIRECT
 	if (oldsize < 0) {
 		cpysize = MIN(size, (size_t) (-oldsize - 16));
 	} else 
-#endif
 #ifdef GDK_MEM_QUERYSIZE
 	cpysize = MIN(size, (size_t) oldsize);
 #else
