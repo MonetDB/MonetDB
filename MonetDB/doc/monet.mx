@@ -1,7 +1,7 @@
-
+@' The contents of this file are subject to the MonetDB Public
 @' License Version 1.0 (the "License"); you may not use this file
 @' except in compliance with the License. You may obtain a copy of
-@' the License at 
+@' the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 @' 
 @' Software distributed under the License is distributed on an "AS
@@ -12,7 +12,7 @@
 @' The Original Code is the Monet Database System.
 @' 
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
 @' All Rights Reserved.
 @' 
 @' Contributor(s):
@@ -761,11 +761,11 @@ the @[<a href="www/kernel.html#mod_2_4_2">debugmask()</a>@ operator.
 @T
 {\small\begin{verbatim}
 /*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -775,13 +775,14 @@ the @[<a href="www/kernel.html#mod_2_4_2">debugmask()</a>@ operator.
  * The Original Code is the Monet Database System.
  * 
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * Portions created by CWI are Copyright (C) 1997-2003 CWI.
  * All Rights Reserved.
  * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * Contributor(s):
+ * 		Martin Kersten <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz <Peter.Boncz@cwi.nl>
+ * 		Niels Nes <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
 \end{verbatim}}
