@@ -15,96 +15,74 @@ stdout of test 'mmath2` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-win32/32bit; dynamically linked.
 
-setoid(oid(20000000));
+# Monet Database Server V4.5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 module(mmath);
-sin(dbl(0)).print();
-[ 0 ]
-sin(M_PI_4).print();
-[ 0.70710678118654746 ]
-sin(M_PI_2).print();
-[ 1 ]
-sin(M_PI).print();
-[ 1.2246063538223773e-16 ]
-sin(3*M_PI_2).print();
-[ -1 ]
-cos(dbl(0)).print();
-[ 1 ]
-cos(M_PI_4).print();
-[ 0.70710678118654757 ]
-cos(M_PI_2).print();
-[ 6.1230317691118863e-17 ]
-cos(M_PI).print();
-[ -1 ]
-cos(3*M_PI_2).print();
-[ -1.8369095307335659e-16 ]
-tan(dbl(0)).print();
-[ 0 ]
-tan(M_PI_4).print();
-[ 0.99999999999999989 ]
-tan(M_PI_2).print();
-[ 16331778728383844 ]
-tan(M_PI).print();
-[ -1.2246063538223773e-16 ]
-tan(3*M_PI_2).print();
-[ 5443926242794615 ]
-asin(dbl(-1)).print();
-[ -1.5707963267948966 ]
-asin(dbl(-0.5)).print();
-[ -0.52359877559829893 ]
-asin(dbl(0)).print();
-[ 0 ]
-asin(dbl(0.5)).print();
-[ 0.52359877559829893 ]
-asin(dbl(1)).print();
-[ 1.5707963267948966 ]
-acos(dbl(-1)).print();
-[ 3.1415926535897931 ]
-acos(dbl(-0.5)).print();
-[ 2.0943951023931957 ]
-acos(dbl(0)).print();
-[ 1.5707963267948966 ]
-acos(dbl(0.5)).print();
-[ 1.0471975511965979 ]
-acos(dbl(1)).print();
-[ 0 ]
-atan(dbl(-1)).print();
-[ -0.78539816339744828 ]
-atan(dbl(-0.5)).print();
-[ -0.46364760900080609 ]
-atan(dbl(0)).print();
-[ 0 ]
-atan(dbl(0.5)).print();
-[ 0.46364760900080609 ]
-atan(dbl(1)).print();
-[ 0.78539816339744828 ]
 
-asin(sin(M_PI)).print();
-[ 1.2246063538223773e-16 ]
-acos(cos(M_PI)).print();
-[ 3.1415926535897931 ]
-atan(tan(M_PI_2)).print();
-[ 1.5707963267948966 ]
-atan(tan(M_PI_4)).print();
-[ 0.78539816339744828 ]
-sqrt(pow(dbl(2),dbl(2))).print();
-[ 2 ]
+# test parameter: what margin do we accept?
+var epsilon := dbl(0.000001);
 
-exp(dbl(10)).print();
-[ 22026.465794806718 ]
-log(dbl(10)).print();
-[ 2.3025850929940459 ]
-log10(dbl(10)).print();
-[ 1 ]
+# set up a BAT with test expressions and expected results
+var expect := bat(str, dbl);
+expect.insert("sin(dbl(0))",			dbl(0));
+expect.insert("sin(M_PI_4)",			M_SQRT1_2);
+expect.insert("sin(M_PI_2)",			dbl(1));
+expect.insert("sin(M_PI)",			dbl(0));
+expect.insert("sin(3*M_PI_2)",			dbl(-1));
+expect.insert("cos(dbl(0))",			dbl(1));
+expect.insert("cos(M_PI_4)",			M_SQRT1_2);
+expect.insert("cos(M_PI_2)",			dbl(0));
+expect.insert("cos(M_PI)",			dbl(-1));
+expect.insert("cos(3*M_PI_2)",			dbl(0));
+expect.insert("tan(dbl(0))",			dbl(0));
+expect.insert("tan(M_PI_4)",			dbl(1));
+# expect.insert("tan(M_PI_2)",			Infinite);
+expect.insert("tan(M_PI)",			dbl(0));
+# expect.insert("tan(3*M_PI_2)",		Infinite);
+expect.insert("asin(dbl(-1))",			-(M_PI_2));
+expect.insert("asin(dbl(-0.5))",		-(M_PI_2/dbl(3)));
+expect.insert("asin(dbl(0))",			dbl(0));
+expect.insert("asin(dbl(0.5))",			M_PI_2/dbl(3));
+expect.insert("asin(dbl(1))",			M_PI_2);
+expect.insert("acos(dbl(-1))",			M_PI);
+expect.insert("acos(dbl(-0.5))",		(M_PI*dbl(2))/dbl(3));
+expect.insert("acos(dbl(0))",			M_PI_2);
+expect.insert("acos(dbl(0.5))",			M_PI/dbl(3));
+expect.insert("acos(dbl(1))",			dbl(0));
+expect.insert("atan(dbl(-1))",			-(M_PI_4));
+expect.insert("atan(-(sqrt(dbl(3))/dbl(3)))",	-(M_PI/dbl(6)));
+expect.insert("atan(dbl(0))",			dbl(0));
+expect.insert("atan(dbl(1))",			M_PI_4);
+expect.insert("asin(sin(M_PI))",		dbl(0));
+expect.insert("acos(cos(M_PI))",		M_PI);
+expect.insert("atan(tan(M_PI_2))",		M_PI_2);
+expect.insert("atan(tan(M_PI_4))",		M_PI_4);
+expect.insert("sqrt(pow(dbl(2),dbl(2)))",	dbl(2));
+expect.insert("log(exp(dbl(10)))",		dbl(10));
+expect.insert("exp(log(dbl(10)))",		dbl(10));
+expect.insert("log10(dbl(10))",			dbl(1));
+expect.insert("ceil(dbl(1.2))",			dbl(2));
+expect.insert("fabs(dbl(1.2))",			dbl(1.2));
+expect.insert("floor(dbl(1.2))",		dbl(1));
+expect.insert("fmod(dbl(15.2),dbl(2.5))",	dbl(0.2));
 
-ceil(dbl(1.2)).print();
-[ 2 ]
-fabs(dbl(1.2)).print();
-[ 1.2000000476837158 ]
-floor(dbl(1.2)).print();
-[ 1 ]
-fmod(dbl(15.2),dbl(2.5)).print();
-[ 0.19999980926513672 ]
+# do the calculations and collect the results in a BAT
+var actual := bat(str, dbl);
+var v;
+expect@batloop() { eval("v := " + $h + ";"); actual.insert($h, v); }
 
+# calculate the difference
+var diff := [-](expect, actual);
+
+# print all expressions which resulted in too large an error
+# we expect an empty table
+sdiff(diff, select(diff, dbl(-(epsilon)), dbl(epsilon))).print();
+#-----------------#
+# h	tmp_32	  # name
+# str	dbl	  # type
+#-----------------#
 quit();
 
 # 17:05:14 >  
