@@ -755,7 +755,7 @@ int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q)
 	(void) mb; /* fool the compiler */
 	if( q->fcn==0 || functionId(q)== 0) return FALSE;
 	c= getClient();
-	if( c ) s= getSymbol(c->nspace,q);
+	if( c ) s= getFunctionSymbol(c->nspace,q);
 	(void) s; /* simulated some action */
 	/* check arguments for 'unsafe' property */
 	return FALSE;

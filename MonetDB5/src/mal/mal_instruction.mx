@@ -956,22 +956,6 @@ If we encounter a Monet type name, it is added to the symbol table with
 proprietary type.
 The makes analyses of patterns like bat(int,str) easier.
 @c
-/*
-	if( isTmpName(name) ) l= TYPE_any; else l = getTypeIndex(name,strlen(name));
-	if( l>= 0 && l != TYPE_any){
-		if( type != l && type != TYPE_any){
-			GDKerror("'%s' type mismatch with %d\n", name, type);
-			GDKfree(name);  
-			name = newTmpName(mb->vtop);
-		}
-		if( isaBatType(l)){
-			GDKfree(name);
-			name = getTypeName(l);
-		}
-		type = l;
-		atomary= TRUE;
-	}
-*/
 	if( isReserved(name)){
 		GDKerror("'%s' is a reserved identifier\n",name);
 		GDKfree(name);
