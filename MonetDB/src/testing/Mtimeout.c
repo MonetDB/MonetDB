@@ -44,6 +44,7 @@
 #define DEFAULT_TIMEOUT 0
 
 static int timeout = DEFAULT_TIMEOUT;
+static int quiet = 0;
 static char *progname;
 
 static pid_t exec_pid;
@@ -54,12 +55,18 @@ static int exec_timeout = 0;
 static void
 invocation(FILE *fp, char *prefix, char **argv)
 {
-    fprintf(fp, "\n!%s: %s", progname, prefix);
+	if (quiet) {
+		if (fp == stderr) {
+			fprintf(fp, "\n%s", prefix);
+		}
+	} else {
+	    fprintf(fp, "\n!%s: %s", progname, prefix);
+	}
     while(*argv) {
-	fprintf(fp, "%s ", *argv);
+	if (!quiet || fp == stderr) fprintf(fp, "%s ", *argv);
 	argv++;
     }
-    fprintf(fp, "\n");
+    if (!quiet || fp == stderr) fprintf(fp, "\n");
 }
 
 static void
@@ -113,7 +120,13 @@ limit(char **argv)
 	    return WEXITSTATUS(status);
 	} else if (WIFSIGNALED(status)) { /* Got a signal */
 	    if (exec_timeout) {
-		invocation(stderr, "Timeout: ", argv);
+			if (quiet) {
+				char *cp[1];
+				cp[0] = argv[9];	// hardwired: the test output file
+				invocation(stderr, "!Timeout: ", cp);
+			} else {
+				invocation(stderr, "Timeout: ", argv);
+			}
 		return 1;
 	    } else {
 	        int wts = WTERMSIG(status);
@@ -145,6 +158,7 @@ usage(void)
 {
     fprintf(stderr, "Usage: %s\n"
 	    "\t-timeout <seconds>\n"
+	    "\t-q\n"
 	    "\t<progname> [<arguments>]\n", progname);
     exit(EXIT_FAILURE);
 }
@@ -162,6 +176,8 @@ parse_args(int argc, char **argv)
 	    argc--; argv++;
 	    if (argc == 0) usage();
 	    timeout = atoi(argv[0]);
+	} else if (strcmp(argv[0], "-q") == 0) {
+		quiet = 1;
 	} else {
 	    usage();
 	}

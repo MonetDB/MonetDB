@@ -1652,7 +1652,10 @@ def RunTest(env, TST, BusyPorts, COND) :
             MDIFF0 = env['exe']['Mdiff'][1]
             MDIFF1 = MDIFF0+' -d'
             if env['exe']['Mtimeout'][0]:
-                MDIFF1 = env['exe']['Mtimeout'][1]+' '+MDIFF1
+                if quiet:
+                    MDIFF1 = env['exe']['Mtimeout'][1]+' -q '+MDIFF1
+                else:
+                    MDIFF1 = env['exe']['Mtimeout'][1]+' '+MDIFF1
 
             #TODO:
             #timedout = 1
