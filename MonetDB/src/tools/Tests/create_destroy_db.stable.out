@@ -1,8 +1,8 @@
 stdout of test 'create_destroy_db` in directory 'src/tools` itself:
 
-#> Mtest (20:34:36):	other create_destroy_db 5400
-#> Mtest (20:34:36):	Mtimeout -timeout 5400 ./create_destroy_db create_destroy_db
-#> Mlog (20:34:36):	Mtimeout -timeout 600 Mcreatedb -user niels -db TestDB1
+#> Mtest (11:53:16):	other create_destroy_db 5400
+#> Mtest (11:53:16):	Mtimeout -timeout 5400 ./create_destroy_db create_destroy_db
+#> Mlog (11:53:16):	Mtimeout -timeout 600 Mcreatedb -user niels -db TestDB1
 Mcreatedb: processing database 'TestDB1' in /home/niels/new/monet/Linux/dbfarm/TestDB1.
 # /home/niels/new/monet/Linux/dbfarm/TestDB1 
 # /home/niels/new/monet/Linux/dbfarm/TestDB1/bat 
@@ -12,7 +12,7 @@ Mcreatedb: processing database 'TestDB1' in /home/niels/new/monet/Linux/dbfarm/T
 # /home/niels/new/monet/Linux/dbfarm/TestDB1/users/niels 
 Mcreatedb: calling 'Mserver -db TestDB1' for the first time..
 Mcreatedb: database 'TestDB1' has been initialized succesfully!
-#> Mlog (20:34:37):	echo 'quit;' | Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db TestDB1
+#> Mlog (11:53:17):	echo 'quit;' | Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db TestDB1
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
@@ -35,11 +35,10 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
->#move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)
-
-#> Mlog (20:34:37):	Mtimeout -timeout 600 Mdestroydb -db TestDB1
+>
+#> Mlog (11:53:17):	Mtimeout -timeout 600 Mdestroydb -db TestDB1
 Mdestroydb: processing database 'TestDB1' in /home/niels/new/monet/Linux/dbfarm/TestDB1.
-#> Mlog (20:34:37):	Mtimeout -timeout 600 Mcreatedb -user niels -home /home/niels/new/monet/Linux -db TestDB2
+#> Mlog (11:53:17):	Mtimeout -timeout 600 Mcreatedb -user niels -home /home/niels/new/monet/Linux -db TestDB2
 Mcreatedb: processing database 'TestDB2' in /home/niels/new/monet/Linux/dbfarm/TestDB2.
 # /home/niels/new/monet/Linux/dbfarm/TestDB2 
 # /home/niels/new/monet/Linux/dbfarm/TestDB2/bat 
@@ -49,7 +48,7 @@ Mcreatedb: processing database 'TestDB2' in /home/niels/new/monet/Linux/dbfarm/T
 # /home/niels/new/monet/Linux/dbfarm/TestDB2/users/niels 
 Mcreatedb: calling 'Mserver -db TestDB2' for the first time..
 Mcreatedb: database 'TestDB2' has been initialized succesfully!
-#> Mlog (20:34:37):	echo 'quit;' | Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -home /home/niels/new/monet/Linux -db TestDB2
+#> Mlog (11:53:17):	echo 'quit;' | Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -home /home/niels/new/monet/Linux -db TestDB2
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
@@ -72,7 +71,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
->#move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)
-
-#> Mlog (20:34:37):	Mtimeout -timeout 600 Mdestroydb -home /home/niels/new/monet/Linux -db TestDB2
+>
+#> Mlog (11:53:17):	Mtimeout -timeout 600 Mdestroydb -home /home/niels/new/monet/Linux -db TestDB2
 Mdestroydb: processing database 'TestDB2' in /home/niels/new/monet/Linux/dbfarm/TestDB2.

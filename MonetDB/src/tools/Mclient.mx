@@ -66,7 +66,6 @@ $MONETHOME/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 /*  (Copyright) 1995-1996 M.L. Kersten, CWI, Amsterdam
 	Monet textual interface monitor.
 */
-#define GDK_NOLINK
 #include <gdk.h>
 #include  <stdio.h> 
 #include  <ctype.h> 
@@ -672,9 +671,7 @@ Check basic working of Monet interaction.
 @+ Home file
 Uses the common code from gdk_utils.mx
 @c
-#define GDK_NOLINK
 #include <gdk.h>
-#include "../gdk/gdk_utils.c"
 
 int findport(char *dbnme) {
         char *home,homefile[PATHLENGTH];

@@ -218,7 +218,7 @@ thread management.
 	} else {
 		if (monet_internet) {
 			monetInternet(); /* accept other clients */
-			MT_down_sema(monet_started, "Mserver");
+			MT_down_sema(monet_started, "Mserver monet_started");
 		} else {
 			base_nr_threads--;
 		}
@@ -243,7 +243,7 @@ At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
 @C
 	if (monet_singlethreaded == 0) {
-		MT_down_sema(monet_main, "Mserver");
+		MT_down_sema(monet_main, "Mserver monet_main");
 /*
 	    do {
 		sleep(1);

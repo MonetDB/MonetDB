@@ -572,6 +572,7 @@ so changes are not copied back to disk.
 	*line_end = 0; q++;
 @c
 int main(int argc, char**argv) { 	
+	Client c;
 	char **params = argv, *p, *q;
 	char buf[1024];
 	int line_size = 1024;
@@ -651,7 +652,8 @@ Read the Format File
 Init Monet and Load Required Extension Modules
 @c
 	argv[0] = "-single";
-	if (monet_init(k+1, argv-1) == 0) exit(0);
+	if ((c = (Client)monet_init(k+1, argv-1)) == 0) exit(0);
+	static_module_init(c,buf);
 
 	for(j=num_mods; i<argc; i+=2,j++) {
 	    if(strcmp(params[i],"-mod")) break;
