@@ -74,8 +74,8 @@ subs = [
 # values needed for the JDBC driver;
 # keep in sync with src/jdbc/build.properties and configure.ag !
     ('@JDBC_MAJOR@',        '0'),
-    ('@JDBC_MINOR@',        '8'),
-    ('@JDBC_VER_SUFFIX@',   '1.0 Release Candidate 1'),
+    ('@JDBC_MINOR@',        '9'),
+    ('@JDBC_VER_SUFFIX@',   '1.0 Release Candidate 2'),
     ('@JDBC_DEF_PORT@',     '45123'),
     ('@JDBC_DEF_BLOCKMODE@','true'),
 ]
