@@ -1,11 +1,11 @@
-stdout of test 'bug-sf-1023588` in directory 'src/test/bugs` itself:
+stdout of test 'bug-sf-1023588_trimtest` in directory 'src/test/bugs` itself:
 
 
-# 17:15:50 >  
-# 17:15:50 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=46378 --set sql_port=52970 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 17:15:50 >  
+# 14:49:46 >  
+# 14:49:46 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=46502 --set sql_port=50270 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 14:49:46 >  
 
-# Monet Database Server V4.3.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -21,11 +21,11 @@ Over..
 # 17:15:52 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=52970  < bug-sf-1023588.sql
 # 17:15:52 >  
 
-# 1 # querytype
+# 7 # querytype
 # affected # table_name
 # rows # name
-# mediumint # type
-# 0 # length
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
@@ -33,8 +33,8 @@ Over..
 # 4 # querytype
 # affected # table_name
 # rows # name
-# mediumint # type
-# 0 # length
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
@@ -57,8 +57,8 @@ Over..
 # 4 # querytype
 # affected # table_name
 # rows # name
-# mediumint # type
-# 0 # length
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
