@@ -464,7 +464,7 @@ public class JdbcClient {
 			if (!tbl.next()) throw new SQLException("Whoops no data for " + table);
 
 			out.print("CREATE VIEW ");
-		 	out.print(table.getFqname());
+		 	out.print(table.getFqnameQ());
 			out.print(" AS ");
 		 	out.print(tbl.getString("REMARKS").trim());
 		}
@@ -472,14 +472,14 @@ public class JdbcClient {
 		String comment = null;
 		int i;
 		out.print("CREATE "); out.print(table.getType()); out.print(" ");
-		out.print(table.getFqname()); out.println(" (");
+		out.print(table.getFqnameQ()); out.println(" (");
 		// put all columns with their type in place
 		ResultSet cols = dbmd.getColumns(table.getCat(), table.getSchem(), table.getName(), null);
 		for (i = 0; cols.next(); i++) {
 			int type = cols.getInt("DATA_TYPE");
 			if (i > 0) out.println(",");
-			out.print("\t"); out.print(cols.getString("COLUMN_NAME"));
-		 	out.print("\t"); out.print(cols.getString("TYPE_NAME"));
+			out.print("\t\""); out.print(cols.getString("COLUMN_NAME"));
+		 	out.print("\"\t"); out.print(cols.getString("TYPE_NAME"));
 		 	if (type != Types.REAL &&
 				type != Types.DOUBLE &&
 				type != Types.FLOAT &&
@@ -503,13 +503,13 @@ public class JdbcClient {
 		for (i = 0; cols.next(); i++) {
 			if (i == 0) {
 				out.println(","); out.println();
-				out.print("\tPRIMARY KEY (");
+				out.print("\tPRIMARY KEY (\"");
 			}
-			if (i > 0) out.print(", ");
+			if (i > 0) out.print("\", \"");
 			out.print(cols.getString("COLUMN_NAME"));
 		}
 		if (i != 0) {
-			out.print(")");
+			out.print("\")");
 			comment = cols.getString("PK_NAME");
 		}
 		cols.close();
@@ -522,19 +522,19 @@ public class JdbcClient {
 				out.print(" -- "); out.print(comment);
 			}
 			out.println();
-			out.print("\tUNIQUE ("); out.print(cols.getString("COLUMN_NAME"));
+			out.print("\tUNIQUE (\""); out.print(cols.getString("COLUMN_NAME"));
 			comment = cols.getString("INDEX_NAME");
 
 			boolean next;
 			while ((next = cols.next()) && comment != null &&
 				comment.equals(cols.getString("INDEX_NAME")))
 			{
-				out.print(", "); out.print(cols.getString("COLUMN_NAME"));
+				out.print("\", \""); out.print(cols.getString("COLUMN_NAME"));
 			}
 			// go back one
 			if (next) cols.previous();
 
-			out.print(")");
+			out.print("\")");
 		}
 		cols.close();
 
@@ -546,12 +546,12 @@ public class JdbcClient {
 				out.print(" -- "); out.print(comment);
 			}
 			out.println();
-			out.print("\tFOREIGN KEY (");
-			out.print(cols.getString("FKCOLUMN_NAME")); out.print(") ");
-			out.print("REFERENCES "); out.print(cols.getString("PKTABLE_SCHEM"));
-		 	out.print("."); out.print(cols.getString("PKTABLE_NAME"));
-			out.print("("); out.print(cols.getString("PKCOLUMN_NAME"));
-		 	out.print(")");
+			out.print("\tFOREIGN KEY (\"");
+			out.print(cols.getString("FKCOLUMN_NAME")); out.print("\") ");
+			out.print("REFERENCES \""); out.print(cols.getString("PKTABLE_SCHEM"));
+		 	out.print("\".\""); out.print(cols.getString("PKTABLE_NAME"));
+			out.print("\" (\""); out.print(cols.getString("PKCOLUMN_NAME"));
+		 	out.print("\")");
 			comment = cols.getString("FK_NAME");
 		}
 		cols.close();
@@ -572,22 +572,22 @@ public class JdbcClient {
 				continue;
 			} else {
 				out.println(",");
-				out.print("CREATE INDEX ");
+				out.print("CREATE INDEX \"");
 				out.print(cols.getString("INDEX_NAME"));
-				out.print(" ON "); out.print(cols.getString("TABLE_NAME"));
-				out.print(" ("); out.print(cols.getString("COLUMN_NAME"));
+				out.print("\" ON \""); out.print(cols.getString("TABLE_NAME"));
+				out.print("\" (\""); out.print(cols.getString("COLUMN_NAME"));
 				comment = cols.getString("INDEX_NAME");
 
 				boolean next;
 				while ((next = cols.next()) && comment != null &&
 					comment.equals(cols.getString("INDEX_NAME")))
 				{
-					out.print(", "); out.print(cols.getString("COLUMN_NAME"));
+					out.print("\", \""); out.print(cols.getString("COLUMN_NAME"));
 				}
 				// go back one
 				if (next) cols.previous();
 
-				out.print(");");
+				out.print("\");");
 			}
 		}
 		cols.close();
@@ -703,7 +703,7 @@ public class JdbcClient {
 			if (table.getType().equals("VIEW")) {
 				out.println("<!-- unable to represent VIEW " + table + " -->");
 			} else {
-				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqname());
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqnameQ());
 				ResultSetMetaData rsmd = rs.getMetaData();
 				out.println("<table name=\"" + table.getFqname()+ "\">");
 				String data;
@@ -1056,6 +1056,10 @@ class Table {
 		return(fqname);
 	}
 
+	String getFqnameQ() {
+		return("\"" + schem + "\".\"" + name + "\"");
+	}
+	
 	public String toString() {
 		return(fqname);
 	}
