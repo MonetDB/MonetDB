@@ -113,14 +113,14 @@ static void backend_destroy( backend *b )
 
 static YYSTREE milnode(int tok, int tpe, ptr valp)
 {
-        YYSTREE res = yynode(tok, tpe);
+        YYSTREE res = Myynode(tok, tpe);
         VALset(&res->yyval, tpe, valp);
         return res;
 }
 
 static YYSTREE milnode2(int tok, ValPtr valp)
 {
-        YYSTREE res = yynode(tok, valp->vtype);
+        YYSTREE res = Myynode(tok, valp->vtype);
 	res->yyval = *valp;
 	res->dealloc = 0;
         return res;
@@ -208,7 +208,7 @@ void monet4_freecode( backend_code code, backend_stack stk, int nr)
 		}
 
 		/* cleanup proc */
-		yyfree(callnode);
+		Myyfree(callnode);
 
 		snprintf(name, BUFSIZ, "sql%d", nr);
 		CNTXTclient( (Cntxt)(ptrdiff_t)stk, &client);
@@ -225,16 +225,16 @@ YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args, int *err )
 
 	v.vtype = TYPE_void;
 	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name));
- 	argtree = yynode(0,0);
+ 	argtree = Myynode(0,0);
 	if (args){
   		for (n=args->h; n; n = n->next){
 			atom *a = n->data;
 			YYSTREE arg = milnode2(TOK_CONSTANT, &a->data );
-       			argtree = yyexpand(argtree, arg);
+       			argtree = Myyexpand(argtree, arg);
 		}
 	}
-	yyexpand(callnode, argtree);
-	yyexpand(callnode, yynode(0,TYPE_int));
+	Myyexpand(callnode, argtree);
+	Myyexpand(callnode, Myynode(0,TYPE_int));
 	*err = interpret( procstk, callnode, &v);
 
 	return callnode;
