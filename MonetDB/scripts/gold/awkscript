@@ -1,8 +1,0 @@
-	{ response= response+ $2
-	 cpu= cpu + $3
-	sys= sys+ $4
-	}
-END	{ print "response", response
-	print "cpu", cpu
-	print "sys", sys
-	}

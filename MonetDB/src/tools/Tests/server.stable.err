@@ -1,4 +1,0 @@
-stderr of test 'server` in directory 'src/tools` itself:
-
-#> Mtest:	milM server milM -prelude server.prelude
-#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -home /ufs/manegold/Monet/Current/monet/src/tools/IRIX6.2 -db src_tools -prelude server.prelude server.milM

@@ -1,8 +1,0 @@
-stderr of test 'client` in directory 'src/tools` itself:
-
-#> Mtest:	milC client milC -prelude client.prelude
-#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db src_tools -background &
-#> Mtest:	sleep 9
-#> Mtest:	Mtimeout -timeout 600 Mclient -prelude client.prelude < client.milC
-#> Mtest:	Mtimeout -timeout 600 Mshutdown
-#> Mtest:	sleep 9

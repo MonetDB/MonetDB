@@ -1,9 +1,0 @@
-EXTRA_DIST = README wwwgroup wwwmake wwwmake.mil
-EXTRA_DIST_DIR = gold
-
-SUBDIRS = adm guest user
-
-scripts_mil = {
-	DIR = pkgdatadir
-	SOURCES = general.mil init.mil
-}

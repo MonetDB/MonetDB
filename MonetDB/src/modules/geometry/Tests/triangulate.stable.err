@@ -1,5 +1,0 @@
-stderr of test 'triangulate` in directory 'src/modules/geometry` itself:
-
-#> Mtest:	other triangulate
-#> Mtest:	Mtimeout -timeout 1200 ./triangulate triangulate
-#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_geometry triangulate.mil

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-NAME="$1"
-PRELUDE="$2"
-
-mserver="`echo $MSERVER' ' | sed 's| -d8 | |g'`"
-Mlog -x $mserver -db $TSTDB < Arjen_01.milM

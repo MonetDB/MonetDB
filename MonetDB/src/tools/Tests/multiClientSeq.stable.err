@@ -1,9 +1,0 @@
-stderr of test 'multiClientSeq` in directory 'src/tools` itself:
-
-#> Mtest:	milCXs multiClientSeq milC
-#> Mtest:	Mtimeout -timeout 123 Mserver -yaccsilent -d8 -db src_tools -background &
-#> Mtest:	sleep 9
-#> Mtest:	Mtimeout -timeout 123 Mclient < multiClientSeq_s00.milC
-#> Mtest:	Mtimeout -timeout 123 Mclient < multiClientSeq_s01.milC
-#> Mtest:	Mshutdown
-#> Mtest:	sleep 9

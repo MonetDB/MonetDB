@@ -1,4 +1,0 @@
-stderr of test 'str_heap` in directory 'src/gdk` itself:
-
-#> Mtest:	milM str_heap milM
-#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db src_gdk str_heap.milM

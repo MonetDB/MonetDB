@@ -1,2 +1,0 @@
-# epilogue file; executed at session end 
-printf("# end session\n");

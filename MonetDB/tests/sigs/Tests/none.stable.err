@@ -1,4 +1,0 @@
-stderr of test 'none` in directory 'tests/sigs` itself:
-
-#> Mtest:	milS none milS
-#> Mtest:	Mserver -yaccsilent -home /hosts/dbfarm/Monet/Current/monet/IRIX6.2 -db tests_sigs -single none.milS

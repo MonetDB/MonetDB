@@ -1,4 +1,0 @@
-stderr of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
-
-#> Mtest (19:36:57):	milM Arjen_02 milM
-#> Mtest (19:36:57):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_from_Twente_Bugs Arjen_02.milM

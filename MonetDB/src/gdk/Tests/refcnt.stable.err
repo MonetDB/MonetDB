@@ -1,4 +1,0 @@
-stderr of test 'refcnt` in directory 'src/gdk` itself:
-
-#> Mtest:	milM refcnt milM
-#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db src_gdk refcnt.milM

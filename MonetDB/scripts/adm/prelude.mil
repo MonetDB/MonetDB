@@ -1,2 +1,0 @@
-# prelude file; executed at session start. 
-printf("\n#You are system administrator (adm)!\n");
