@@ -967,9 +967,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		dump(sql,buf,len,-s->nr);
 		_DELETE(buf);
 	} break;
-	case st_senddata: {
-		dump(sql,"senddata(Output);\n",-1,-s->nr);
-	} break;
 	case st_export: {
 		int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 		int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);

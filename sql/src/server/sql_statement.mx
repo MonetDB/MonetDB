@@ -117,7 +117,6 @@ typedef enum stmt_type {
 
 	st_find,
 	st_bulkinsert,
-	st_senddata,
 	st_append,
 	st_insert,
 	st_replace,
@@ -301,7 +300,6 @@ extern stmt *stmt_partial_pivot(stmt *s, stmt *ptable);
 
 extern stmt *stmt_find(stmt *b, stmt *v );
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
-extern stmt *stmt_senddata();
 extern stmt *stmt_export(int id, int offset, int len);
 
 extern stmt *stmt_append(stmt *c, stmt * values);
@@ -691,9 +689,6 @@ void stmt_destroy(stmt * s)
 			if (s->op2.stval) stmt_destroy(s->op2.stval);
 			if (s->op3.stval) stmt_destroy(s->op3.stval);
 			if (s->op4.stval) stmt_destroy(s->op4.stval);
-			break;
-
-	  case st_senddata:	/* pacify compiler */
 			break;
 
 		default:
@@ -1455,11 +1450,6 @@ stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr )
 	s->op3.stval = stmt_atom_string(rsep);
 	s->op4.stval = file;
 	s->flag = nr; 
-	return s;
-}
-
-stmt *stmt_senddata(){
-	stmt *s = stmt_create(st_senddata);
 	return s;
 }
 

@@ -3977,7 +3977,6 @@ static stmt *copyfrom(mvc * sql, dlist * qname, dlist *files, dlist *seps, int n
 		return stmt_list(slist);
 	}
  	slist = create_stmt_list();
-	list_append(slist, stmt_senddata());
 	list_append(slist, sql_bulkinsert( sql, t, tsep, rsep, NULL, nr ));
 	return stmt_list(slist);
 }

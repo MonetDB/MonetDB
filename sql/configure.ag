@@ -35,7 +35,7 @@ AC_SUBST(SQL_BACKEND)
 AM_CONDITIONAL(MONET4,test "x$backend" = xmonet4)
 AM_CONDITIONAL(MONET5,test "x$backend" = xmonet5)
 
-AC_CHECK_HEADERS(termios.h limits.h malloc.h pwd.h) 
+dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h) 
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"

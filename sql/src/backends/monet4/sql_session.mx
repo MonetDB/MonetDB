@@ -390,11 +390,9 @@ int sqlexecute(backend * be, stream *out )
 
 					stream_write(be->out, v->name, 
 						strlen(v->name), 1); 
-					stream_write(be->out, " := ", 
-						4, 1); 
+					stream_write(be->out, " := ", 4, 1); 
 					atom_dump(a, be->out);
-					stream_write(be->out, ";\n", 
-						2, 1); 
+					stream_write(be->out, ";\n", 2, 1); 
 				}
 			}
 		}
@@ -916,13 +914,17 @@ int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a)
 		neg = 0;
 		s++;
 	}
-	for( i = 0; i < (t->digits-t->scale) && *s != '.'; i++, s++){
+	for( i = 0; i < (t->digits-t->scale) && *s != '.' && *s; i++, s++){
 		if (!*s || *s < '0' || *s > '9' ){
 			GDKerror("decimal wrong format (%s)", p);
 			return NULL;
 		}
 		res *= 10;
 		res += (*s-'0');
+	}
+	if (!*s && t->scale) {
+		GDKerror("decimal wrong format (%s)", p);
+		return NULL;
 	}
 	if (*s){
 		if (*s != '.'){
