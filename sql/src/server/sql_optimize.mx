@@ -243,8 +243,10 @@ stmt_push_down_head(stmt * join, stmt * select)
 		return stmt_relselect(l);
 	} else if (join->type == st_bat || join->type == st_ibat){
 		return stmt_semijoin(join, select);
+#ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: push down head %s\n", st_type2string(join->type));
+#endif
 	}
 	return stmt_semijoin(join, select);
 }
@@ -315,8 +317,10 @@ static stmt *stmt_push_down_tail(stmt * join, stmt * select){
 		*/
 		printf("st_mark\n");
 		return stmt_reverse(stmt_semijoin(stmt_reverse(join), select));
+#ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: push down tail %s\n", st_type2string(join->type));
+#endif
 	}
 	stmt_destroy(select);
 	return join;
@@ -395,8 +399,10 @@ stmt_push_join_head(stmt * s, stmt * join)
 		stmt_destroy(s);
 		stmt_destroy(join);
 		return stmt_relselect(l);
+#ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: push join head %s\n", st_type2string(s->type));
+#endif
 	}
 	stmt_destroy(join);
 	return s;
@@ -440,8 +446,10 @@ stmt_push_join_tail(stmt * s, stmt * join)
 		stmt *res = stmt_diff( stmt_dup(s->op1.stval), op2 );
 		stmt_destroy(s);
 		return res;
+#ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: push join tail %s\n", st_type2string(s->type));
+#endif
 	}
 	stmt_destroy(join);
 	return s;
@@ -465,8 +473,10 @@ static stmt *stmt_join2select(stmt * j){
 			stmt_join2select(stmt_dup(j->op2.stval)));
 		stmt_destroy(j);
 		return res;
+#ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: join2select %s\n", st_type2string(j->type));
+#endif
 	}
 	return j;
 }

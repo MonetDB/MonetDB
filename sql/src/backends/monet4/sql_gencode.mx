@@ -166,12 +166,14 @@ static void backend_dec_nr2( stmt *s )
 {
 	if (s) {
 		if (s->nr2 == int_nil) {
+			s->nr2 = s->ref.refcnt;
+#ifndef NDEBUG
 			printf("= sql_gencode.mx: backend_dec_nr2: usage count of statement %s (%d) was not initialized!\n",
 				st_type2string(s->type), (int)s->type);
-			s->nr2 = s->ref.refcnt;
 		} else if (s->nr2 == 0) {
 			printf("= sql_gencode.mx: backend_dec_nr2: (result of) statement %s (%d) is used more often than its refcnt (%d) indicates!\n",
 				st_type2string(s->type), (int)s->type, s->ref.refcnt);
+#endif
 		}
 		s->nr2--;
 	}

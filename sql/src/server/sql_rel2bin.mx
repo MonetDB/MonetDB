@@ -249,12 +249,14 @@ static int cmp_sel_oneCol( stmt *sel )
 		if (sel->op2.stval->nrcols == 0){
 			rtrn = 0;
 		}
+#ifndef NDEBUG
 	} else {
 		if (sel->type == st_reverse) {
 			printf("= TODO: sql_rel2bin: shrink_select_ranges: handle %s(%s)!\n", st_type2string(sel->type), st_type2string(sel->op1.stval->type));
 		} else {
 			printf("= TODO: sql_rel2bin: shrink_select_ranges: handle %s!\n", st_type2string(sel->type));
 		}
+#endif
 	}
 	return rtrn;
 }

@@ -601,6 +601,7 @@ void stmt_destroy(stmt * s)
 		if (s->rewritten) 
 			stmt_destroy(s->rewritten);
 
+#ifndef NDEBUG
 		if (s->nr2 > 0) {
 /*
  * happens far too often for now, hence, we keep it for debugging, only ...
@@ -616,11 +617,12 @@ NIELS: Because the optimizer rewrites partly inplace some parts of the
 			printf("= sql_statement.mx: stmt_destroy: statement %s (%d) was never executed!\n",
 				st_type2string(s->type), (int)s->type);
 
-*/
+ */
 		} else if (s->nr2 < 0) {
 			printf("= sql_statement.mx: stmt_destroy: (rssult of) statement %s (%d) was used %d times more often than its refcnt indicated!\n",
 				st_type2string(s->type), (int)s->type, -s->nr2);
 		}
+#endif
 
 		_DELETE(s);
 	}
@@ -1059,7 +1061,9 @@ stmt *stmt_intersect(stmt * op1, stmt * op2)
 	assert (!(op1->flag == cmp_equal && op2->flag == cmp_equal));
 	
 	if (op1->type == st_reljoin || op2->type == st_reljoin) {
+#ifndef NDEBUG
 printf("= TODO stmt_intersect (1)\n");
+#endif
 		/* 
 		 * could/should we do a similar rewrite here as we do below?
 		 */
@@ -1076,7 +1080,9 @@ printf("= TODO stmt_intersect (1)\n");
 		res->h = stmt_dup(op1->h);
 		res->t = stmt_dup(op1->t);
 	} else {
+#ifndef NDEBUG
 printf("= TODO stmt_intersect (2)\n");
+#endif
 		/*
 	         * need to add the mark trick as [].select(true) on tables 
 		 * without unique head identifiers + semijoin is wrong
