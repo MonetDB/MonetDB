@@ -130,7 +130,7 @@ proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 #include <ascii_io.proto.h>
 
 extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, int nr );
-extern BAT *ASCCIIinput( BAT *names, BAT *seps, BAT *types, stream *s, int nr );
+extern BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, stream *s, int nr );
 extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr );
 extern int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s );
 
@@ -648,13 +648,13 @@ BAT *ASCIIload( BAT *names, BAT *seps, BAT *types,
 		GDKerror("could not open file %s\n", datafile );
 		return NULL;
 	}
-	res = ASCCIIinput( names, seps, types, s, nr );
+	res = ASCIIinput( names, seps, types, s, nr );
 	s->close(s);
 	s->destroy(s);
 	return res;
 }
 
-BAT *ASCCIIinput( BAT *names, BAT *seps, BAT *types, stream *s, int nr ){
+BAT *ASCIIinput( BAT *names, BAT *seps, BAT *types, stream *s, int nr ){
 	BAT *bats = NULL;
 	ascii as;
 
