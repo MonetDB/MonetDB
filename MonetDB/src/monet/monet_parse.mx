@@ -123,45 +123,48 @@ void ll_flushbuffer(void) {
                          (offend >= 'a' && offend <= 'z') | (offend >= 'A' && offend <= 'Z')); }
 
 static int ll_skipcomment(void);
+static str ll_getstr(int quote, int *len);
 %}
 %p 3400
 %a 2300
 %e 2000
 %pointer
+%s idconst
 %%
-"#"		      { return ll_skipcomment();			      }
-("nil"|"NIL")	      { Vector(TOK_CONSTANT, TYPE_void, oval, void_nil, 0);   }
-("proc"|"PROC")	      { Symbol(TOK_PROCDEF);				      }
-("undef"|"UNDEF")     { Symbol(TOK_UNDEF);				      }
-("return"|"RETURN")   { Symbol(TOK_RETURN);				      }
-("break"|"BREAK")     { Symbol(TOK_BREAK);				      }
-("while"|"WHILE")     { Symbol(TOK_WHILE);				      }
-("if"|"IF")	      { Symbol(TOK_IF);					      }
-("else"|"ELSE")	      { Symbol(TOK_ELSE);				      }
-("false"|"FALSE")     { Vector(TOK_CONSTANT, TYPE_bit, cval[0], 0, 0);	      }
-("var"|"VAR")	      { Symbol(TOK_VAR);				      }
-("const"|"CONST")     { Symbol(TOK_CONST);				      }
-("true"|"TRUE")	      { Vector(TOK_CONSTANT, TYPE_bit, cval[0], 1, 0);	      }
-("trigger"|"TRIGGER") { Symbol(TOK_TRGDEF);				      }
-("event"|"EVENT")     { Symbol(TOK_EVENT);				      }
-("on"|"ON")	      { Symbol(TOK_ON);					      }
-("module"|"MODULE")   { if (!ll_modcmds) Symbol(TOK_MODULE);goto command;     }
-("any"|"ANY")	      { Vector(TOK_ANY, TYPE_int, ival, -1, 0);		      }
-"$("		      { Symbol(TOK_VARTEMP);				      }
-".."		      { Symbol(TOK_RANGETEMP);				      }
-"::"		      { Symbol(TOK_ANYNUM);				      }
-("$h"|"$H"|"$head"|"$HEAD") { Vector(TOK_ITERTEMP, TYPE_int, ival, 1, 0);     }
-("$t"|"$T"|"$tail"|"$TAIL") { Vector(TOK_ITERTEMP, TYPE_int, ival, 2, 0);     }
-"$"{D}+		      { Vector(TOK_TEMPLATE,TYPE_int,ival,atoi(yytext+1),0);  }
-":="		      { Symbol(TOK_ASSIGNMENT);				      }
-"(*"		      { Symbol(TOK_DEREF);				      }
-"[*"		      { Symbol(TOK_SETOP);				      }
-"{*"		      { Symbol(TOK_SETAGGR);				      }
-"@"		      { Symbol(TOK_ITERATION);				      }
+"#"		      { BEGIN(0); return ll_skipcomment();		      }
+("nil"|"NIL")	      { BEGIN(idconst); Vector(TOK_CONSTANT, TYPE_void, oval, void_nil, 0);   }
+("proc"|"PROC")	      { BEGIN(0); Symbol(TOK_PROCDEF);			      }
+("undef"|"UNDEF")     { BEGIN(0); Symbol(TOK_UNDEF);			      }
+("return"|"RETURN")   { BEGIN(0); Symbol(TOK_RETURN);			      }
+("break"|"BREAK")     { BEGIN(0); Symbol(TOK_BREAK);			      }
+("while"|"WHILE")     { BEGIN(0); Symbol(TOK_WHILE);			      }
+("if"|"IF")	      { BEGIN(0); Symbol(TOK_IF);			      }
+("else"|"ELSE")	      { BEGIN(0); Symbol(TOK_ELSE);			      }
+("false"|"FALSE")     { BEGIN(idconst); Vector(TOK_CONSTANT, TYPE_bit, cval[0], 0, 0);	      }
+("var"|"VAR")	      { BEGIN(0); Symbol(TOK_VAR);			      }
+("const"|"CONST")     { BEGIN(0); Symbol(TOK_CONST);			      }
+("true"|"TRUE")	      { BEGIN(idconst); Vector(TOK_CONSTANT, TYPE_bit, cval[0], 1, 0);	      }
+("trigger"|"TRIGGER") { BEGIN(0); Symbol(TOK_TRGDEF);			      }
+("event"|"EVENT")     { BEGIN(0); Symbol(TOK_EVENT);			      }
+("on"|"ON")	      { BEGIN(0); Symbol(TOK_ON);			      }
+("module"|"MODULE")   { BEGIN(0); if (!ll_modcmds) Symbol(TOK_MODULE);goto command;     }
+("any"|"ANY")	      { BEGIN(0); Vector(TOK_ANY, TYPE_int, ival, -1, 0);     }
+"$("		      { BEGIN(0); Symbol(TOK_VARTEMP);			      }
+".."		      { BEGIN(0); Symbol(TOK_RANGETEMP);		      }
+"::"		      { BEGIN(0); Symbol(TOK_ANYNUM);			      }
+("$h"|"$H"|"$head"|"$HEAD") { BEGIN(0); Vector(TOK_ITERTEMP, TYPE_int, ival, 1, 0);     }
+("$t"|"$T"|"$tail"|"$TAIL") { BEGIN(0); Vector(TOK_ITERTEMP, TYPE_int, ival, 2, 0);     }
+"$"{D}+		      { BEGIN(0); Vector(TOK_TEMPLATE,TYPE_int,ival,atoi(yytext+1),0);  }
+":="		      { BEGIN(0); Symbol(TOK_ASSIGNMENT);		      }
+"(*"		      { BEGIN(0); Symbol(TOK_DEREF);			      }
+"[*"		      { BEGIN(0); Symbol(TOK_SETOP);			      }
+"{*"		      { BEGIN(0); Symbol(TOK_SETAGGR);			      }
+"@"		      { BEGIN(0); Symbol(TOK_ITERATION);		      }
 (":"{P}+"=") |
 ({P}+) |
 ({C}*"=")	      { int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
+			BEGIN(0);
 			strcpy(t,yytext); /* copy yytext before unput */
 			if (l > 1 || (*t != '~' && *t != '?' && *t != ':')) {
 				if (ll_resolution) {
@@ -177,6 +180,7 @@ static int ll_skipcomment(void);
 ({L}({L}|{D})*)	 {
 command:	     {	int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
+			BEGIN(idconst);
 			strcpy(t,yytext); /* copy yytext before unput */
 			if (ll_resolution) {
 			    TBLSEARCH(s, t, &i, TRUE, TRUE, TRUE);
@@ -185,7 +189,7 @@ command:	     {	int i, l = (int) strlen(yytext);
 			    }
 			}
 			s = GDKstrdup(t);
-			Vector(TOK_IDENT, TYPE_str, sval, s, 0);	      }}
+			Vector(TOK_IDENT, TYPE_str, sval, s, 0);	     }}
 
 ("["{P}+"]") |
 ("["{C}*"=]") |
@@ -194,6 +198,7 @@ command:	     {	int i, l = (int) strlen(yytext);
 ("[:"{L}({L}|{D})*"=]") |
 ("{"{L}({L}|{D})*"}") {	  int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
+			BEGIN(0);
 			strcpy(t,yytext); /* copy yytext before unput */
 			if (ll_resolution) {
 			    char cb = t[l-1];  /* save bracket */
@@ -217,66 +222,77 @@ command:	     {	int i, l = (int) strlen(yytext);
 			unput((*t == '[')?']':'}');
 			while(--yyleng > 0) unput(t[yyleng]);
 			Symbol(*t);					 }
-("-")?{D}+"LL"	      { lng val, *p = &val; int l=sizeof(lng);
-			if (*yytext == '-' && (ll_lastval == TOK_IDENT ||
-					       ll_lastval == TOK_CONSTANT ||
-					       ll_lastval == ')')) REJECT;
+{D}+"@"{D}+	      { oid obj, *p=&obj; int l=sizeof(oid);
+			BEGIN(idconst);
+			OIDfromStr(yytext, &l, &p);
+			Vector(TOK_CONSTANT, TYPE_oid, oval, obj, 0);	      }
+<INITIAL>"-"{D}+"LL"  { lng val, *p = &val; int l=sizeof(lng);
+			BEGIN(idconst);
 			lngFromStr(yytext, &l, &p);
 			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
-("-")?{D}+	      { lng val, *p = &val; int l=sizeof(lng);
-			if (*yytext == '-' && (ll_lastval == TOK_IDENT ||
-					       ll_lastval == TOK_CONSTANT ||
-					       ll_lastval == ')')) REJECT;
+<INITIAL>"-"{D}+      { lng val, *p = &val; int l=sizeof(lng);
+			BEGIN(idconst);
 			lngFromStr(yytext, &l, &p);
 			if (val > ((lng) GDK_int_min) \
 			 && val <= ((lng) GDK_int_max))
 			  Vector(TOK_CONSTANT, TYPE_int, ival, ((int) val), 0);
 			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
-{D}+"@"{D}+	      { oid obj, *p=&obj; int l=sizeof(oid);
-			OIDfromStr(yytext, &l, &p);
-			Vector(TOK_CONSTANT, TYPE_oid, oval, obj, 0);	      }
-("-")?{D}+"."{D}+({E})?"LL" |
-("-")?"."{D}+({E})?"LL"	    |
-("-")?{D}+{E}"LL"     { dbl val, *p = &val; int l = sizeof(dbl);
-			if (*yytext == '-' && (ll_lastval == TOK_IDENT ||
-					       ll_lastval == TOK_CONSTANT ||
-					       ll_lastval == ')')) REJECT;
+<INITIAL>"-"{D}+"."{D}+({E})?"LL" |
+"-""."{D}+({E})?"LL" |
+"-"{D}+{E}"LL"        { dbl val, *p = &val; int l = sizeof(dbl);
+			BEGIN(idconst);
 			dblFromStr(yytext, &l, &p);
 			Vector(TOK_CONSTANT, TYPE_dbl, dval, val, 0);	      }
-("-")?{D}+"."{D}+({E})? |
-("-")?"."{D}+({E})?	|
-("-")?{D}+{E}	      { flt val, *p = &val; int l = sizeof(flt);
-			if (*yytext == '-' && (ll_lastval == TOK_IDENT ||
-					       ll_lastval == TOK_CONSTANT ||
-					       ll_lastval == ')')) REJECT;
+<INITIAL>"-"{D}+"."{D}+({E})? |
+"-""."{D}+({E})? |
+"-"{D}+{E}	      { flt val, *p = &val; int l = sizeof(flt);
+			BEGIN(idconst);
+			fltFromStr(yytext, &l, &p);
+			Vector(TOK_CONSTANT, TYPE_flt, fval, val, 0);	      }
+{D}+"LL"	      { lng val, *p = &val; int l=sizeof(lng);
+			BEGIN(idconst);
+			lngFromStr(yytext, &l, &p);
+			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
+{D}+		      { lng val, *p = &val; int l=sizeof(lng);
+			BEGIN(idconst);
+			lngFromStr(yytext, &l, &p);
+			if (val > ((lng) GDK_int_min) \
+			 && val <= ((lng) GDK_int_max))
+			  Vector(TOK_CONSTANT, TYPE_int, ival, ((int) val), 0);
+			Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
+{D}+"."{D}+({E})?"LL" |
+"."{D}+({E})?"LL"	    |
+{D}+{E}"LL"	      { dbl val, *p = &val; int l = sizeof(dbl);
+			BEGIN(idconst);
+			dblFromStr(yytext, &l, &p);
+			Vector(TOK_CONSTANT, TYPE_dbl, dval, val, 0);	      }
+{D}+"."{D}+({E})? |
+"."{D}+({E})?	|
+{D}+{E}		      { flt val, *p = &val; int l = sizeof(flt);
+			BEGIN(idconst);
 			fltFromStr(yytext, &l, &p);
 			Vector(TOK_CONSTANT, TYPE_flt, fval, val, 0);	      }
 "'"\\0{O}({O})?({O})?"'" {unsigned int i; sscanf(yytext+2, "%o", &i);
+			BEGIN(idconst);
 			Vector(TOK_CONSTANT, TYPE_chr, cval[0], i, 0);	      }
-\"[^\n"]*	      { int len, offending_chr = input();
-			str s = ll_getstr(yytext, yyleng, offending_chr);
-			if (s) {
-				len = (int) strlen(s);
-				len = strFromStr(s, &len, &s);
-				Vector(TOK_STRING, TYPE_str, sval, s, len);
-			} else {
-				unput('"');
-			}						      }
-\'[^\n\']*	      { int len, offending_chr = input();
+\"		      { int len;
+			str s = ll_getstr(*yytext, &len);
+			BEGIN(0);
+			len = strFromStr(s, &len, &s);
+			Vector(TOK_STRING, TYPE_str, sval, s, len);
+		      }
+\'		      { int len;
+			str s = ll_getstr(*yytext, &len);
 			char val, *p = &val;
-			str s = ll_getstr(yytext, yyleng, offending_chr);
-			if (s) {
-				len = (int) strlen(s);
-				chrFromStr(s, &len, (ptr)&p);
-				GDKfree(s);
-				Vector(TOK_CONSTANT, TYPE_chr, cval[0], val, 0);
-			} else {
-				unput('\'');
-			}						      }
-"{|"		      { Symbol(TOK_PARBLOCK);				      }
-"|}"		      { Symbol(TOK_PAREND);				      }
+			BEGIN(idconst);
+			len = chrFromStr(s, &len, (ptr) &p);
+			GDKfree(s);
+			Vector(TOK_CONSTANT, TYPE_chr, cval[0], val, 0);
+		      }
+"{|"		      { BEGIN(0); Symbol(TOK_PARBLOCK);			      }
+"|}"		      { BEGIN(0); Symbol(TOK_PAREND);			      }
 {S}		      ;
-.		      { Symbol(*yytext);				      }
+.		      { BEGIN(0); Symbol(*yytext);			      }
 %%
 int
 ll_skipcomment(void)
@@ -286,6 +302,37 @@ ll_skipcomment(void)
 	while ((c=input()) && (c != '\n'))
 		;
 	return yylex();
+}
+
+static str
+ll_getstr(int quote, int *len)
+{
+	str buf;
+	size_t buflen;
+	size_t i;
+	int c;
+
+	buflen = 128;
+	buf = GDKmalloc(buflen + 2);
+	i = 0;
+	buf[i++] = quote;
+
+	while ((c = input()) != 0 && c != quote) {
+		if (c == '\\') {
+			if ((c = input()) == 0)
+				break;
+			if (c == '\n')
+				continue;
+			buf[i++] = '\\';
+		}
+		if (i >= buflen)
+			buf = GDKrealloc(buf, (buflen += 128) + 2);
+		buf[i++] = c;
+	}
+	buf[i++] = quote;
+	buf[i] = 0;
+	*len = (int) i;
+	return buf;
 }
 @
 @-
@@ -520,62 +567,6 @@ ll_lastline(void)
 	}
 	*l = 0;
 	return line;
-}
-
-str
-ll_getstr(char *buf, int len, int offending)
-{
-	static int ll_buf_len, ll_border;
-	int escape = 0;
-	str p;
-
-	if (ll_nlines == 0) {	/* first call of sequence? */
-		ll_buf_len = 0;
-		ll_border = buf[0];
-	}
-
-	/* find out if the string goes on */
-	for (p = buf + len - 1; p >= buf; p--) {
-		if (*p != '\\')
-			break;
-		else
-			escape = !escape;
-	}
-	if (escape) {
-		/* it goes on; append this line to the ll_lines array */
-		ll_lines[ll_nlines++] = p = (str) GDKmalloc(len + 2);
-		if (ll_nlines >= ll_maxlines) {
-			ll_lines = (str *) GDKrealloc((int *) ll_lines, (ll_maxlines *= 2) * sizeof(str));
-		}
-		if (offending == '\n') {
-			len--;
-		} else {	/* enter border char */
-
-			buf[len++] = ll_border;
-		}
-		memcpy(p, buf + 1, len);
-		p[len - 1] = 0;
-
-		/* increment the total length of the buffer */
-		ll_buf_len += len;
-		return NULL;
-	}
-	/* concat all */
-	ll_lines[ll_nlines] = buf + 1;
-	p = buf = GDKmalloc(ll_buf_len + len + 3);
-	*p++ = ll_border;
-	for (len = 0; len < ll_nlines; len++) {
-		strcpy(p, ll_lines[len]);
-		p += strlen(ll_lines[len]);
-		GDKfree(ll_lines[len]);
-	}
-	strcpy(p, ll_lines[len]);
-	p += strlen(ll_lines[len]);
-	*p++ = ll_border;
-	*p++ = 0;
-	ll_nlines = 0;		/* ready */
-
-	return buf;		/* return concatenated string and its length */
 }
 
 @+ The Parser

@@ -405,7 +405,6 @@ capabilities depend on the malloc implementation used at run time.
 		usage(prog);
 
 	while (optind < argc) {
-		monet_listing = 1;
 		monet_script[idx] = absolute_path(av[optind]);
 		monet_script[idx + 1] = NULL;
 		optind++;

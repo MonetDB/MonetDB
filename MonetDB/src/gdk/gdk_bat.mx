@@ -1465,6 +1465,21 @@ BATroles(BAT *b, str hnme, str tnme)
 	return b;
 }
 
+BAT *
+BATcol_name(BAT *b, str tnme)
+{
+	size_t i;
+
+	BATcheck(b, "BATcol_name");
+	if ((i = strlen(tnme)) >= IDLENGTH - 1) {
+		GDKerror("BATcol_name: column name too long\n");
+		tnme[IDLENGTH - 1] = 0;
+		i = IDLENGTH - 1;
+	}
+	memcpy(b->tident, tnme, i + 1);
+	return b;
+}
+
 @}
 
 @+ BAT permissions, persistency and memory mapped heaps

@@ -1435,6 +1435,7 @@ gdk_export BAT *BATkey(BAT *b, int onoff);
 gdk_export BAT *BATset(BAT *b, int onoff);
 gdk_export BAT *BATmode(BAT *b, int onoff);
 gdk_export BAT *BATroles(BAT *b, str hnme, str tnme);
+gdk_export BAT *BATcol_name(BAT *b, str tnme);
 gdk_export int BATname(BAT *b, str nme);
 gdk_export BAT *BATseqbase(BAT *b, oid o);
 gdk_export BAT *BATsetaccess(BAT *b, int mode);

@@ -169,13 +169,13 @@ BATcommit(BAT *b)
 					(*hunfix) (h);
 				}
 				if (hatmdel) {
-					(*hatmdel) (&b->hheap, (var_t *) (h));
+					(*hatmdel) (&b->hheap, (var_t *) (p + b->hloc));
 				}
 				if (tunfix) {
 					(*tunfix) (t);
 				}
 				if (tatmdel) {
-					(*tatmdel) (&b->theap, (var_t *) (t));
+					(*tatmdel) (&b->theap, (var_t *) (p + b->tloc));
 				}
 			}
 		}

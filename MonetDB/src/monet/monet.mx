@@ -267,7 +267,6 @@ declared there.
 m_export int ll_getch(void);
 m_export void ll_init(void);
 m_export str ll_lastline(void);
-m_export str ll_getstr(char *buf, int len, int c);
 m_export void ll_clrids(void);
 m_export void ll_idconflict(str s);
 
