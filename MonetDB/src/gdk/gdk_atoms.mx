@@ -58,49 +58,49 @@ This leads to the following type descriptor table.
 extern "C" {
 #endif
 gdk_export int		voidFromStr    (str  src, int* len, void** dst);
-int		voidToStr      (str* dst, int* len, void* src);
+gdk_export int		voidToStr      (str* dst, int* len, void* src);
 
 gdk_export int		lngFromStr     (str  src, int* len, lng** dst);
-int		lngToStr       (str* dst, int* len, lng*  src);
+gdk_export int		lngToStr       (str* dst, int* len, lng*  src);
 int		lngCmp         (lng* r, lng* l);
 void 		lngConvert     (lng* s);
 unsigned int 	lngHash        (lng *l);
 
 gdk_export int		intFromStr     (str  src, int* len, int** dst);
-int		intToStr       (str* dst, int* len, int*  src);
+gdk_export int		intToStr       (str* dst, int* len, int*  src);
 int		intCmp         (int* r, int* l);
 void 		intConvert     (int* s);
 unsigned int 	intHash        (int *i);
 
 gdk_export int		batFromStr     (str  src, int* len, bat** dst);
-int		batToStr       (str* dst, int* len, bat*  src);
+gdk_export int		batToStr       (str* dst, int* len, bat*  src);
 
 gdk_export int		ptrFromStr     (str  src, int* len, ptr** dst);
-int		ptrToStr       (str* dst, int* len, ptr*  src);
+gdk_export int		ptrToStr       (str* dst, int* len, ptr*  src);
 
 gdk_export int		bitFromStr     (str  src, int* len, bit** dst);
-int		bitToStr       (str* dst, int* len, bit*  src);
+gdk_export int		bitToStr       (str* dst, int* len, bit*  src);
 
 gdk_export int		OIDfromStr     (str  src, int* len, oid** dst);
-int		OIDtoStr       (str* dst, int* len, oid*  src);
+gdk_export int		OIDtoStr       (str* dst, int* len, oid*  src);
 
 gdk_export int		shtFromStr     (str  src, int* len, sht** dst);
-int		shtToStr       (str* dst, int* len, sht*  src);
+gdk_export int		shtToStr       (str* dst, int* len, sht*  src);
 void 		shtConvert     (sht* s);
 int		shtCmp         (sht* r, sht* l);
 unsigned int	shtHash        (sht *s);
 
 gdk_export int		chrFromStr     (str  src, int* len, chr** dst);
-int		chrToStr       (str* dst, int* len, chr*  src);
+gdk_export int		chrToStr       (str* dst, int* len, chr*  src);
 int		chrCmp         (chr* r, chr* l);
 unsigned int 	chrHash        (chr *c);
 
 gdk_export int		fltFromStr     (str  src, int* len, flt** dst);
-int		fltToStr       (str* dst, int* len, flt*  src);
+gdk_export int		fltToStr       (str* dst, int* len, flt*  src);
 int		fltCmp         (flt* r, flt* l);
 
 gdk_export int		dblFromStr     (str  src, int* len, dbl** dst);
-int		dblToStr       (str* dst, int* len, dbl*  src);
+gdk_export int		dblToStr       (str* dst, int* len, dbl*  src);
 int		dblCmp         (dbl* r, dbl* l);
 
 gdk_export int		strFromStr     (str  src, int* len, str*  dst);

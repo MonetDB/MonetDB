@@ -160,7 +160,7 @@ Scan the file for db entries.
 	       	    if (*s == '\n' || *s == '#') {
 	       		*s++ = 0;
 	       		break;
-	       	    } else if (*s == ':') { 
+	       	    } else if (*s == PATH_SEP) { 
 	       		*s++ = 0; 
 			while(GDKisspace(*s)) s++;
 	       		env[n++] = s; 
@@ -219,9 +219,11 @@ Epilogue: return whether a matching entry existed, or exit on fatal error.
 
 int GDKhomeIns(str user, str db, str home) {
 	@:openhome(GDKhomeIns,"a")@
-	fprintf(fp, "%s::%s:%s:%s:\n", 
-		GDKenviron[GDKdbname], GDKenviron[GDKport], 
-		GDKenviron[GDKdir], user?user:GDKenviron[GDKowner]);
+	fprintf(fp, "%s%c%c%s%c%s%c%s%c\n", 
+		GDKenviron[GDKdbname], PATH_SEP, PATH_SEP,
+		GDKenviron[GDKport], PATH_SEP,
+		GDKenviron[GDKdir], PATH_SEP,
+		user?user:GDKenviron[GDKowner], PATH_SEP);
 	fclose(fp);
 	return 0;
 }
@@ -254,13 +256,13 @@ Delete all occurences of (db,user).
 			str s = homeline[i];
 			while(GDKisspace(*s)) s++;
 			if (strncmp(s, db, ldb)) continue;
-			if (s[ldb] != ':' || GDKisspace(s[ldb])) continue; 
+			if (s[ldb] != PATH_SEP || GDKisspace(s[ldb])) continue; 
 			if (users[j] == NULL) break;
 			for(k=0; k < 4; s++, k++)
-			    if ((s=strchr(s,':')) == NULL) continue;
+			    if ((s=strchr(s,PATH_SEP)) == NULL) continue;
 			while(GDKisspace(*s)) s++;
 			if (strncmp(s, users[j], lusr)) continue;
-			if (s[lusr]==':' || GDKisspace(s[lusr])) break; 
+			if (s[lusr]==PATH_SEP || GDKisspace(s[lusr])) break; 
 		    } while(++i < homelines);
 		    GDKfree(homeline[i]);
 		    homeline[i] = 0;
