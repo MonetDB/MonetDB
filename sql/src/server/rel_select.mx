@@ -622,13 +622,9 @@ rel_subquery_optname(mvc *sql, symbol *query)
 {
 	SelectNode *sn = (SelectNode *) query;
 	sql_rel *sq = rel_subquery(sql, NULL, query);
-	char *tname = NULL;
 
 	if (!sq)
 		return NULL;
-
-	if (sn->name && sn->name->token == SQL_NAME)
-		tname = sn->name->data.lval->h->data.sval;
 
 	return rel_table_optname(sql, sq, sn->name);
 }
