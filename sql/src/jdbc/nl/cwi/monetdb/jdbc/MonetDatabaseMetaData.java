@@ -3098,11 +3098,11 @@ class MonetVirtualResultSet extends MonetResultSet {
 		if (row < 0) row = 0;	// before first
 		else if (row > tupleCount + 1) row = tupleCount + 1;	// after last
 
-		// see if we have the row
-		if (row < 1 || row > tupleCount) return(false);
-
 		// store it
 		curRow = row;
+
+		// see if we have the row
+		if (row < 1 || row > tupleCount) return(false);
 
 		result = results[row - 1];
 
