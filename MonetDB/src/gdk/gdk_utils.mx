@@ -415,8 +415,10 @@ int BATSIGcrash() {
 
 int BATSIGinit() {
 	(void) signal(SIGINT,  (void (*)()) BATSIGabort); 
+/*
 	(void) signal(SIGBUS,  (void (*)()) BATSIGcrash); 
 	(void) signal(SIGSEGV, (void (*)()) BATSIGcrash); 
+*/
 	(void) signal(SIGPIPE, (void (*)()) BATSIGpipe); 
 	(void) signal(SIGHUP,  (void (*)()) MT_exit_thread);
 	return 0;
