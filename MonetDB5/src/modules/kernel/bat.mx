@@ -359,17 +359,17 @@ command delete(b:bat[:void, :any$2], h:oid, t:any$2) :bat[:any$1,:any$2]
 address BKCdelete_bun;
 
 command delete(b:bat[:any$1, :any$2], h:any$1) :bat[:any$1,:any$2] 
-address BKCdelete_head
+address BKCdelete
 comment "Delete all BUNs with a certain head value.";
 command delete(b:bat[:void, :any$2], h:oid) :bat[:any$1,:any$2] 
-address BKCdelete_head;
+address BKCdelete;
 
 command delete(b:bat[:any$1, :any$2]) :bat[:any$1,:any$2] 
 address BKCdelete_all
 comment "Delete all BUNs in a BAT.";
 
 command delete(b:bat[:any$1, :any$2], src:bat[:any$1,:any]) :bat[:any$1,:any$2] 
-address BKCdelete_bat_head
+address BKCdelete_bat
 comment "Delete from the first BAT all BUNs with a head value that 
         is in the second.";
 
@@ -871,7 +871,7 @@ int CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s){
 	return GDK_SUCCEED;
 } 
 
-int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
+int CMDdelete_bat(BAT **r, BAT *b, BAT *s){
 	if (BATdelHead(*r=b,s) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
@@ -1628,7 +1628,7 @@ str BKCdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	return throwMessage("bat.delete_buns", "GDKerror");
 }
 
-str BKCdelete_head(int *r, int *bid, ptr h) {
+str BKCdelete(int *r, int *bid, ptr h) {
 	BAT *b,*bn= NULL;
 	(void) r;
     if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1680,7 +1680,7 @@ str BKCdelete_bat_bun(int *r, int *bid, int *sid){
 	return throwMessage("bat.delete_bat_buns", "GDKerror");
 }
 
-str BKCdelete_bat_head(int *r, int *bid, int *sid){
+str BKCdelete_bat(int *r, int *bid, int *sid){
 	BAT *b,*s, *bn = NULL;
 	(void) r;
     if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1690,7 +1690,7 @@ str BKCdelete_bat_head(int *r, int *bid, int *sid){
 		BBPunfix(b->batCacheid);
         return throwMessage("bat.delete", "Cannot access descriptor");
     }
-	if( CMDdelete_bat_head(&bn,b,s) == GDK_SUCCEED){
+	if( CMDdelete_bat(&bn,b,s) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
@@ -1698,7 +1698,7 @@ str BKCdelete_bat_head(int *r, int *bid, int *sid){
 	BBPincref(*r= b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
-	return throwMessage("bat.delete_bat_heads", "GDKerror");
+	return throwMessage("bat.delete_bats", "GDKerror");
 }
 str BKCdestroy_bat(bit *r,str *input, bit *immediate) {
 	CMDdestroy(r, *input, immediate);

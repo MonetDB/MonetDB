@@ -49,7 +49,7 @@ barrier (k,b):= partitions.newIterator(a1);	# 10 BPTnewIterator (k:int)(b:bat[:v
 exit (k,b);	# 13  (k:int)(b:bat[:void,:int])
 end main;	# 14  
 ptop=4 plimit=1024
-[0] bid=13 pid=13 f=0, l=3 prv=0 nxt=1 cap=3
+[0] bid=13 pid=13 f=0, l=3 prv=-1 nxt=1 cap=3
 [1] bid=13 pid=14 f=3, l=6 prv=0 nxt=2 cap=3
 [2] bid=13 pid=15 f=6, l=9 prv=0 nxt=3 cap=3
 [3] bid=13 pid=16 f=9, l=10 prv=0 nxt=0 cap=3
