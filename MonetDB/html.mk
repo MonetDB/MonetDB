@@ -23,33 +23,33 @@
 
 # make rules to generate MonetDB'\''s documentation
 
-$(prefix)/doc/www/TechDocs/Core/Mx/mxdoc.tex:	$(top_srcdir)/doc/mxdoc.tex
-	-@mkdir -p $(prefix)/doc/www/TechDocs/Core/Mx
+$(prefix)/doc/MonetDB/TechDocs/Core/Mx/mxdoc.tex:	$(top_srcdir)/doc/mxdoc.tex
+	-@mkdir -p $(prefix)/doc/MonetDB/TechDocs/Core/Mx
 	cp $< $@
 
-$(prefix)/doc/www/TechDocs/Core/Mx/mxdoc.aux:	$(prefix)/doc/www/TechDocs/Core/Mx/mxdoc.tex
-	(cd $(prefix)/doc/www/TechDocs/Core/Mx; latex mxdoc.tex; latex mxdoc.tex)
+$(prefix)/doc/MonetDB/TechDocs/Core/Mx/mxdoc.aux:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/mxdoc.tex
+	(cd $(prefix)/doc/MonetDB/TechDocs/Core/Mx; latex mxdoc.tex; latex mxdoc.tex)
 
-$(prefix)/doc/www/TechDocs/Core/Mx/index.html:	$(prefix)/doc/www/TechDocs/Core/Mx/mxdoc.aux
-	(cd $(prefix); latex2html -ascii_mode -no_images -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/www/TechDocs/Core/Mx doc/www/TechDocs/Core/Mx/mxdoc.tex)
+$(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/mxdoc.aux
+	(cd $(prefix); latex2html -ascii_mode -no_images -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/MonetDB/TechDocs/Core/Mx doc/MonetDB/TechDocs/Core/Mx/mxdoc.tex)
 
-$(prefix)/doc/www/TechDocs/APIs/Mapi/Java/Documentation/index.html:	$(top_srcdir)/src/mapi/clients/java/MapiClient.java	\
+$(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html:	$(top_srcdir)/src/mapi/clients/java/MapiClient.java	\
 					$(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java	\
 					$(top_srcdir)/src/mapi/clients/java/mapi/MapiException.java
-	-@mkdir -p $(prefix)/doc/www/TechDocs/APIs/Mapi/Java/Documentation
-	lynx -source http://monetdb.cwi.nl/MonetDB.css > $(prefix)/doc/www/TechDocs/APIs/Mapi/Java/Documentation/MonetDB.css
-	javadoc -d $(prefix)/doc/www/TechDocs/APIs/Mapi/Java/Documentation -stylesheetfile $(prefix)/doc/www/TechDocs/APIs/Mapi/Java/Documentation/MonetDB.css\
+	-@mkdir -p $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation
+	lynx -source http://monetdb.cwi.nl/MonetDB.css > $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/MonetDB.css
+	javadoc -d $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation -stylesheetfile $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/MonetDB.css\
 		$(top_srcdir)/src/mapi/clients/java/MapiClient.java       	\
 	        $(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java        	\
 	        $(top_srcdir)/src/mapi/clients/java/mapi/MapiException.java
 
-html:	$(prefix)/doc/www/TechDocs/Core/Mx/index.html	\
-	$(prefix)/doc/www/TechDocs/APIs/Mapi/Java/Documentation/index.html	\
+html:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html	\
+	$(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html	\
 	$(top_srcdir)/doc/mkdoc.py
-	mv $(prefix)/doc/www/TechDocs/Core/Mx $(prefix)/doc/
-	mv $(prefix)/doc/www/TechDocs/APIs/Mapi/Java/Documentation $(prefix)/doc/
+	mv $(prefix)/doc/MonetDB/TechDocs/Core/Mx $(prefix)/doc/
+	mv $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation $(prefix)/doc/
 	python $(top_srcdir)/doc/mkdoc.py $(top_srcdir) $(MONET_BUILD) $(prefix)
-	mkdir -p $(prefix)/doc/www/TechDocs/Core $(prefix)/doc/www/TechDocs/APIs/Mapi/Java
-	mv $(prefix)/doc/Mx $(prefix)/doc/www/TechDocs/Core/
-	mv $(prefix)/doc/Documentation $(prefix)/doc/www/TechDocs/APIs/Mapi/Java/
+	mkdir -p $(prefix)/doc/MonetDB/TechDocs/Core $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java
+	mv $(prefix)/doc/Mx $(prefix)/doc/MonetDB/TechDocs/Core/
+	mv $(prefix)/doc/Documentation $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/
 
