@@ -150,15 +150,15 @@ main(int ac, char **av)
 {
 	char buf[BUFSIZ];
 	char *schema = NULL;
-	char *user = NULL, *passwd = "";
-	char *prog = *av, *host = "localhost";
-	int debug = 0, fd = 0, port = 45123;
-	int i = 0;
+	char *prog = *av, *config = NULL, *passwd = "", *user = NULL;
+	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0;
+	opt 	*set = NULL;
 	context lc;
 
 	static struct option long_options[] =
              {
                {"debug", 2, 0, 'd'},
+	       {"config", 1, 0, 'c'},
                {"host", 1, 0, 'h'},
                {"port", 1, 0, 'p'},
                {"passwd", 1, 0, 'P'},
@@ -167,10 +167,13 @@ main(int ac, char **av)
                {0, 0, 0, 0}
              };
 
+	if (!(setlen = mo_builtin_settings(&set)) )
+                usage(prog);
+
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "dh:p:s:u:o:", 
+		int c = getopt_long( ac, av, "dc:h:p:s:u:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -185,24 +188,36 @@ main(int ac, char **av)
 			printf("\n");
 			usage(prog);
 			break;
+		case 'c':
+			config = strdup(optarg);
+			break;
 		case 'd':
-			debug=2;
-			if (optarg) debug=strtol(optarg,NULL,10);
+			if (optarg){ 
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_debug", optarg );
+			} else {
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_debug", "2" );
+			}
 			break;
 		case 'h':
-			host=_strdup(optarg);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "host", optarg );
 			break;
 		case 'p':
-			port=strtol(optarg,NULL,10);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_port", optarg );
 			break;
 		case 'P':
 			passwd=strdup(optarg);
 			break;
 		case 's':
-			schema=_strdup(optarg);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_schema", optarg );
 			break;
 		case 'u':
-			user=_strdup(optarg);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_user", optarg );
 			break;
 		case '?':
 			usage(prog);
@@ -219,15 +234,26 @@ main(int ac, char **av)
 		usage(prog);
 	}
 
-	fd = client( host, port);
+	if (config){
+		setlen = mo_config_file(&set, setlen, config );
+		free(config);
+	} else {
+		if (!(setlen = mo_system_config(&set, setlen)) )
+			usage(prog);
+	}
+
+	debug = strtol(mo_find_option(set, setlen, "sql_debug"), NULL, 10);
+	port = strtol(mo_find_option(set, setlen, "sql_port"), NULL, 10);
+	fd = client( mo_find_option(set, setlen, "host"), port);
 	rs = block_stream(socket_rstream( fd, "sql client read"));
 	ws = block_stream(socket_wstream( fd, "sql client write"));
 	if (rs->errnr || ws->errnr){
 		fprintf(stderr, "sockets not opened correctly\n");
 		exit(1);
 	}
-	if (!schema) schema = _strdup("default-schema");
-	if (!user) user = _strdup("sqladmin");
+
+	schema = mo_find_option(set,setlen, "sql_schema");
+	user = mo_find_option(set,setlen, "sql_user");
 
 	i = snprintf(buf, BUFSIZ, "info(\"%s\", %d);\n", user, debug );
 	ws->write( ws, buf, i, 1 );

@@ -20,9 +20,8 @@ void usage( char *prog ){
 	fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
 	fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
-	fprintf(stderr, "\t\t -o level    | --optimize=level /* optimzation level */\n" );
 	fprintf(stderr, "\t\t -a api      | --api=api \n"); 
-	fprintf(stderr, " 	/* examples: python,sql(schema) */\n");
+	fprintf(stderr, " 	/* examples: mil,sql(schema) */\n");
 	exit(-1);
 }
 
@@ -152,27 +151,28 @@ int
 main(int ac, char **av)
 {
 	char buf[BUFSIZ];
-	char *user = NULL;
-	char *prog = *av, *host = "localhost";
-	int debug = 0, fd = 0, port = 45123;
-	int opt = 1;
-	char *api = NULL;
+	char *prog = *av, *config = NULL;
+	int debug = 0, fd = 0, port = 0, setlen = 0;
+	opt 	*set = NULL;
 
 	static struct option long_options[] =
              {
                {"debug", 2, 0, 'd'},
+	       {"config", 1, 0, 'c'},
                {"host", 1, 0, 'h'},
                {"port", 1, 0, 'p'},
                {"user", 1, 0, 'u'},
-               {"optimize", 1, 0, 'o'},
                {"api", 1, 0, 'a'},
                {0, 0, 0, 0}
              };
 
+	if (!(setlen = mo_builtin_settings(&set)) )
+                usage(prog);
+
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "a:dh:p:u:o:", 
+		int c = getopt_long( ac, av, "ac::dh:p:u:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -188,23 +188,32 @@ main(int ac, char **av)
 			usage(prog);
 			break;
 		case 'a':
-			api=_strdup(optarg);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_api", optarg );
+			break;
+		case 'c':
+			config = strdup(optarg);
 			break;
 		case 'd':
-			debug=2;
-			if (optarg) debug=strtol(optarg,NULL,10);
+			if (optarg){ 
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_debug", optarg );
+			} else {
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_debug", "2" );
+			}
 			break;
 		case 'h':
-			host=_strdup(optarg);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "host", optarg );
 			break;
 		case 'p':
-			port=strtol(optarg,NULL,10);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_port", optarg );
 			break;
 		case 'u':
-			user=_strdup(optarg);
-			break;
-		case 'o':
-			opt=strtol(optarg,NULL,10);
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "sql_user", optarg );
 			break;
 		case '?':
 			usage(prog);
@@ -213,6 +222,15 @@ main(int ac, char **av)
 			usage(prog);
 		}
 	}
+
+	if (config){
+		setlen = mo_config_file(&set, setlen, config );
+		free(config);
+	} else {
+		if (!(setlen = mo_system_config(&set, setlen)) )
+			usage(prog);
+	}
+
 	if (optind < ac){
 		printf("some arguments are not parsed by getopt\n");
 		while(optind < ac)
@@ -221,23 +239,19 @@ main(int ac, char **av)
 		usage(prog);
 	}
 
-	fd = client( host, port);
+	port = strtol(mo_find_option(set, setlen, "sql_port"), NULL, 10);
+	fd = client( mo_find_option(set, setlen, "host"), port);
 	rs = block_stream(socket_rstream( fd, "client read"));
 	ws = block_stream(socket_wstream( fd, "client write"));
 	if (rs->errnr || ws->errnr){
 		fprintf(stderr, "sockets not opened correctly\n");
 		exit(1);
 	}
-	if (!user) user = _strdup("default-user");
-	snprintf(buf, BUFSIZ, "info(\"%s\", %d, %d);\n", user, debug, opt);
+	snprintf(buf, BUFSIZ, "info(\"%s\", %d);\n", 
+			mo_find_option(set,setlen,"sql_user"), debug);
 	ws->write( ws, buf, strlen(buf), 1 );
 	ws->flush( ws );
-	if (api){
-		snprintf(buf, BUFSIZ, "%s;\n", api ); 
-	} else {
-		/* default sql */
-		snprintf(buf, BUFSIZ, "sql;\n");
-	}
+	snprintf(buf, BUFSIZ, "%s;\n", mo_find_option(set,setlen, "sql_api") ); 
 	ws->write( ws, buf, strlen(buf), 1 );
 	ws->flush( ws );
 
