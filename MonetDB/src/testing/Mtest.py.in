@@ -1251,11 +1251,10 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
         f = open(TestOut, 'a')
         f.write(Prompt(cmd))
         f.close()
-        cmd = cmd + ' >> ' + TestOut
         f = open(TestErr, 'a')
         f.write(Prompt(cmd))
         f.close()
-        cmd = cmd + ' 2>> ' + TestErr
+        cmd = '%s >> %s 2>> %s' % (cmd, TestOut, TestErr)
         pIn = os.popen(cmd, 'w')
         pOut = pErr = None
     else:
