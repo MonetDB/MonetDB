@@ -351,7 +351,7 @@ isn't).\\
 {\tt (* string-expr)(expr, ..expr..)}\\
 Invokes a command by means of its name. Command resolution will take place
 at execution time. For instance: {\tt\small (* "join")(b1,b2);}.
-For multiplexed operatiions and set aggregates (see later), MIL 
+For multiplexed operations and set aggregates (see later), MIL 
 has similar using the 
 {\small\tt [* string-expr](expr, ..expr..)} notation (multiplex)
 and the
