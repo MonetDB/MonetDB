@@ -51,6 +51,7 @@ type checked and optimized.
 @c
 #include "mal_macro.h"
 #include "mal_optimizer.h"
+#include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
 #include "sql_gencode.h"
@@ -58,29 +59,29 @@ type checked and optimized.
 
 void addQueryToCache(Client c)
 {
-    Scope cache;
-    backend *be = ((backend*)c->state[PARSER]);
+	Scope cache;
+	backend *be = ((backend*)c->state[PARSER]);
 
-    cache = findModule(c->nspace,"sql_cache");
-    if( cache == 0) {
-        return;
-    }
-    insertSymbol(cache, c->curprg);
-    trimMalBlk(c->curprg->def);
-    c->blkmode =0;
-    chkProgram(c->nspace, c->curprg->def);
+	cache = findModule(c->nspace,"sql_cache");
+	if( cache == 0) {
+	return;
+	}
+	insertSymbol(cache, c->curprg);
+	trimMalBlk(c->curprg->def);
+	c->blkmode =0;
+	chkProgram(c->nspace, c->curprg->def);
 @-
 An error in the compilation should be reported to the user.
 @c
-    if(c->curprg->def->errors){
-    showErrors(c);
-    if(c->listing )
-        printFunction(c->fdout,c->curprg->def,c->listing);
-        stream_flush(c->fdout);
-        return;
-    }
-    if (be->mvc->factory)
-        optimizeQueryInCache(c);
+	if(c->curprg->def->errors){
+	showErrors(c);
+	if(c->listing )
+	printFunction(c->fdout,c->curprg->def,c->listing);
+	stream_flush(c->fdout);
+	return;
+	}
+	if (be->mvc->factory)
+	optimizeQueryInCache(c);
 }
 @-
 The first step towards an SQL optimizer.
@@ -98,114 +99,162 @@ by removing simple assignments.
 #define TOSMALL 3
 
 str SQLoptimizer(Client c) {
-    (void) c;
+	(void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
-    printf("SQLoptimizer\n");
-        printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
-    printf("done\n");
+	printf("SQLoptimizer\n");
+	printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
+	printf("done\n");
 #endif
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 void optimizeQueryInCache(Client c) {
-        MalBlkPtr mb;
-        InstrPtr *ns,p;
-        int t,v;
-        int i,j,k,klim;
-        MALfcn setWriteMode=0;
-        Symbol s;
+	MalBlkPtr mb;
+	InstrPtr *ns,p;
+	int t,v;
+	int i,j,k,klim;
+	MALfcn setWriteMode=0;
+	Symbol s;
+/*
+	backend *be = ((backend*)c->state[PARSER]);
+	mvc *m = be? be->mvc: 0;
+	BAT *b= NULL;
+*/
 
 #ifdef _SQL_OPTIMIZER_DEBUG
-        printf("First call to SQL optimizer\n");
+	printf("First call to SQL optimizer\n");
 #endif
 @-
 Reduce the program before other optimizations take place
 @c
-        MCoptimizer(c, c->curprg->def, 0, "algebra","joinPath");
-        ARoptimizer(c, c->curprg->def, 0);
-        CXoptimizer(c, c->curprg->def, 0);
-        AMoptimizer(c, c->curprg->def, 0);
-        /*SQLsetAccessMode(c); done in libraries now */
+	MCoptimizer(c, c->curprg->def, 0, "algebra","joinPath");
+	ARoptimizer(c, c->curprg->def, 0);
+	CXoptimizer(c, c->curprg->def, 0);
+	AMoptimizer(c, c->curprg->def, 0);
+	/*SQLsetAccessMode(c); done in libraries now */
 
-        mb= c->curprg->def;
-        if( mb->stop <= TOSMALL ) return;
+	mb= c->curprg->def;
+	if( mb->stop <= TOSMALL ) return;
 
-        s= findMALSymbol("bat","setWriteMode");
-        if( s)
-            setWriteMode = getSignature(s)->fcn;
+	s= findMALSymbol("bat","setWriteMode");
+	if( s)
+		setWriteMode = getSignature(s)->fcn;
 
-        ns= (InstrPtr *) GDKmalloc( sizeof(InstrPtr) * (mb->stop+4));
-        k=1;
-        ns[0] = getInstrPtr(mb,0); /* its signature */
-        ns[0]->token = FACTORYsymbol;
-        for(i= 0; i< mb->stop; i++){
-            p= getInstrPtr(mb,i);
-            if( functionName(p) && moduleName(p) &&
-                strncmp(functionName(p),"bind",4)==0 &&
-                !strcmp(functionName(p),"bindColumn")==0 &&
-                strcmp(moduleName(p),"sql") ==0 )
-                ns[k++]= p;
-            if( setWriteMode && p->fcn == setWriteMode) {
-                for(j=0;j<k;j++)
-                if( ns[j]->fcn == setWriteMode && 
-                    ns[j]->argv[1]== p->argv[1])
-                    break;
-                else
-                if( ns[j]->argv[0] == p->argv[1]){
-                    ns[k++]= p;
-                    break;
-                }
-            }
-        }
-        klim =k;    /* remember the head */
 @-
-Inject the factory loop
+The first step is to collect all the sql bind operations and
+to extract some compiler relevant properties from the catalogue.
 @c
-        t= newConstant(mb,TYPE_bit,GDKstrdup("true"),0);
-        v= newVariable(mb,GDKstrdup("always"),TYPE_bit);
-        p= newInstruction(ASSIGNsymbol);
-        p->barrier = BARRIERsymbol;
-        p->argv[0]= v;
-        pushArgument(mb,p,t);
-        ns[k++]= p;
-        
-        for(i= 1; i< mb->stop-1; i++){
-            int doit = 0;
-            p= getInstrPtr(mb,i);
-            if( !(functionName(p) && moduleName(p) &&
-                strncmp(functionName(p),"bind",4)==0 &&
-                !strcmp(functionName(p),"bindColumn")==0 &&
-                strcmp(moduleName(p),"sql") ==0 ) )
-                doit = 1;
-            if( setWriteMode)
-            for( j=0; j<klim; j++)
-            if( ns[j] == p) doit= 0;
-            if( doit )
-                ns[k++]= p;
-        }
+	ns= (InstrPtr *) GDKmalloc( sizeof(InstrPtr) * (mb->stop*2));
+	k=1;
+	ns[0] = getInstrPtr(mb,0); /* its signature */
+	ns[0]->token = FACTORYsymbol;
+	for(i= 0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if( functionName(p) && moduleName(p) &&
+			strncmp(functionName(p),"bind",4)==0 &&
+			strcmp(moduleName(p),"sql") ==0 ) {
+				ns[k++]= p;
+@-
+At this stage of the implementation we simple look up the size
+of each significant bat. It can only be applied when the arguments
+for the bind() calls are constants.
+@c
+/* not yet active
+				if( strcmp(functionName(p),"bind")==0 && 
+					isConstant(mb,p->argv[1]) &&
+					isConstant(mb,p->argv[2]) &&
+					isConstant(mb,p->argv[3])){
+					str sname= getVarLiteral(mb, p->argv[1]);
+					str tname= getVarLiteral(mb, p->argv[2]);
+					str cname= getVarLiteral(mb, p->argv[3]);
+					int l; 
+					InstrPtr qc;
+					char bufi[BUFSIZ];
+
+					snprintf(bufi,BUFSIZ,"count{%s}",	getArgName(mb,p,0));
+					b= mvc_bind( m, sname, tname, cname, 0 );
+					if( b== NULL) continue;
+					l= BATcount(b);
+					qc= newInstruction(ASSIGNsymbol);
+					qc->argv[0]= newVariable(mb,GDKstrdup(bufi),TYPE_lng);
+					snprintf(bufi,BUFSIZ,"%d",l);
+					qc->argv[1]= newConstant(mb,TYPE_lng,_strdup(bufi),TRUE);
+					qc->argc++;
+					isVarUsed(mb,qc->argv[1])= TRUE;
+					ns[k++] = qc;
+				}
+*/
+			}
+		if( setWriteMode && p->fcn == setWriteMode) {
+			for(j=0;j<k;j++)
+			if( ns[j]->fcn == setWriteMode && 
+				ns[j]->argv[1]== p->argv[1])
+				break;
+			else
+			if( ns[j]->argv[0] == p->argv[1]){
+				ns[k++]= p;
+				break;
+			}
+		}
+	}
+	klim =k;	/* remember the head */
+@-
+The prelude code has been generated, now we can inject the remaining
+instructions, producing a syntactic correct MAL program again.
+@c
+	t= newConstant(mb,TYPE_bit,GDKstrdup("true"),0);
+	v= newVariable(mb,GDKstrdup("always"),TYPE_bit);
+	p= newInstruction(ASSIGNsymbol);
+	p->barrier = BARRIERsymbol;
+	p->argv[0]= v;
+	pushArgument(mb,p,t);
+	ns[k++]= p;
+	
+	for(i= 1; i< mb->stop-1; i++){
+		int doit = 0;
+		p= getInstrPtr(mb,i);
+		if( !(functionName(p) && moduleName(p) &&
+			strncmp(functionName(p),"bind",4)==0 &&
+			strcmp(moduleName(p),"sql") ==0 ) )
+			doit = 1;
+		if( setWriteMode)
+		for( j=0; j<klim; j++)
+		if( ns[j] == p) doit= 0;
+		if( doit )
+			ns[k++]= p;
+	}
 @-
 Finalize the factory loop
 @c
-        p= newInstruction(ASSIGNsymbol);
-        p->barrier = YIELDsymbol;
-        p->argv[0]= v;
-        ns[k++]= p;
-        p= newInstruction(ASSIGNsymbol);
-        p->barrier = REDOsymbol;
-        p->argv[0]= v;
-        ns[k++]= p;
-        p= newInstruction(ASSIGNsymbol);
-        p->barrier = EXITsymbol;
-        p->argv[0]= v;
-        ns[k++]= p;
-        ns[k++]= getInstrPtr(mb,i);
+	p= newInstruction(ASSIGNsymbol);
+	p->barrier = YIELDsymbol;
+	p->argv[0]= v;
+	ns[k++]= p;
+	p= newInstruction(ASSIGNsymbol);
+	p->barrier = REDOsymbol;
+	p->argv[0]= v;
+	ns[k++]= p;
+	p= newInstruction(ASSIGNsymbol);
+	p->barrier = EXITsymbol;
+	p->argv[0]= v;
+	ns[k++]= p;
+	ns[k++]= getInstrPtr(mb,i);
 
-        mb->stop += 4;
-        GDKfree(mb->stmt);
-        mb->stmt = ns;
-        chkProgram(c->nspace,mb);
+	mb->stop = k;
+	GDKfree(mb->stmt);
+	mb->stmt = ns;
+	chkProgram(c->nspace,mb);
+@-
+At this stage we can once call upon the optimizers to do their work.
+Static known information is known and stored in constant variables,
+which can be used by the rewrite rules.
+This all works under the assumption that the SQL layer properly invalidates
+the cache when the underlying table is changed.
+@c
+	CXoptimizer(c, c->curprg->def, 0);
+
 #ifdef _SQL_OPTIMIZER_DEBUG
-        printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
+	printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
 #endif
 }
 
@@ -221,33 +270,33 @@ In this case, we start with the mark operations, which
 will be faster when the operand is read only.
 Likewise, an append or insert requires write access.
 @= setAccess
-        if( p->fcnname && strcmp(p->fcnname,@1)==0){
-            q= newInstruction(ASSIGNsymbol);
-            q->modname= GDKstrdup("bat");
-            q->fcnname= GDKstrdup(@2);
-            q->argv[0]= newTmpVariable(mb,TYPE_any);
-            q->argv[1]= p->argv[1];
-            q->argc= 2;
-            ns[k++]= q;
-        }
+	if( p->fcnname && strcmp(p->fcnname,@1)==0){
+		q= newInstruction(ASSIGNsymbol);
+		q->modname= GDKstrdup("bat");
+		q->fcnname= GDKstrdup(@2);
+		q->argv[0]= newTmpVariable(mb,TYPE_any);
+		q->argv[1]= p->argv[1];
+		q->argc= 2;
+		ns[k++]= q;
+	}
 @c
 void SQLsetAccessMode(Client c){
-    MalBlkPtr mb;
-    InstrPtr *ns,p,q;
-    int k,i;
-    mb= c->curprg->def;
-    ns= (InstrPtr *) GDKmalloc( sizeof(InstrPtr) * mb->stop*2);
-    k =0;
-    for(i=0; i< mb->stop; i++){
-        p= getInstrPtr(mb,i);
-        @:setAccess("mark","setReadMode")@ 
-        @:setAccess("append","setWriteMode")@
-        @:setAccess("insert","setWriteMode")@
-        @:setAccess("replace","setWriteMode")@
-        ns[k++] = p;
-    }
-    mb->ssize = 2* mb->stop;
-    mb->stop = k;
-    GDKfree(mb->stmt);
-    mb->stmt = ns;
+	MalBlkPtr mb;
+	InstrPtr *ns,p,q;
+	int k,i;
+	mb= c->curprg->def;
+	ns= (InstrPtr *) GDKmalloc( sizeof(InstrPtr) * mb->stop*2);
+	k =0;
+	for(i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		@:setAccess("mark","setReadMode")@ 
+		@:setAccess("append","setWriteMode")@
+		@:setAccess("insert","setWriteMode")@
+		@:setAccess("replace","setWriteMode")@
+		ns[k++] = p;
+	}
+	mb->ssize = 2* mb->stop;
+	mb->stop = k;
+	GDKfree(mb->stmt);
+	mb->stmt = ns;
 }
