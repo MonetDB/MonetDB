@@ -172,6 +172,8 @@ Return 0 on l==r, < 0 iff l < r, >0 iff l > r
 @c
 #include "gdk.h"
 
+#include <math.h>		/* for INFINITY and NAN */
+
 int chrCmp(chr* l, chr* r) { return simple_CMP(l,r,chr); }
 int shtCmp(sht* l, sht* r) { return simple_CMP(l,r,sht); }
 int intCmp(int* l, int* r) { return simple_CMP(l,r,int); }
@@ -550,19 +552,32 @@ The current policy is to use the smallest value in any ordered domain.
 The routine atomnil returns a pointer to the nil value representation.
 @{
 @h
+#include <limits.h>		/* for *_MIN and *_MAX */
+#include <float.h>		/* for FLT_MAX and DBL_MAX */
+
+#ifndef LLONG_MAX
+#ifdef LONGLONG_MAX
+#define LLONG_MAX LONGLONG_MAX
+#define LLONG_MIN LONGLONG_MIN
+#else
+#define LLONG_MAX LL_CONSTANT(9223372036854775807)
+#define LLONG_MIN (-LL_CONSTANT(9223372036854775807) - LL_CONSTANT(1))
+#endif
+#endif
+
 #define GDK_bit_max ((bit) 1)
 #define GDK_bit_min ((bit) 0)
-#define GDK_chr_max ((chr) 127)
-#define GDK_chr_min ((chr) -128)
-#define GDK_sht_max ((sht) 32767)
-#define GDK_sht_min ((sht) -32768)
-#define GDK_int_max ((int) 2147483647)
-#define GDK_int_min ((int) (-2147483647-1))
-#define GDK_flt_max ((flt) 3.402823466E+38F)
+#define GDK_chr_max ((chr) SCHAR_MAX)
+#define GDK_chr_min ((chr) SCHAR_MIN)
+#define GDK_sht_max ((sht) SHRT_MAX)
+#define GDK_sht_min ((sht) SHRT_MIN)
+#define GDK_int_max INT_MAX
+#define GDK_int_min INT_MIN
+#define GDK_flt_max ((flt) FLT_MAX)
 #define GDK_flt_min (-GDK_flt_max)
-#define GDK_lng_max (LL_CONSTANT( 9223372036854775807))
-#define GDK_lng_min (LL_CONSTANT(-9223372036854775807)-LL_CONSTANT(1))
-#define GDK_dbl_max ((dbl) 1.7976931348623157E+308)
+#define GDK_lng_max ((lng) LLONG_MAX)
+#define GDK_lng_min ((lng) LLONG_MIN)
+#define GDK_dbl_max ((dbl) DBL_MAX)
 #define GDK_dbl_min (-GDK_dbl_max)
 /* GDK_oid_max see below */
 #define GDK_oid_min ((oid) 0)
@@ -1143,32 +1158,68 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 @:atom_io(ptr,Lng,lng)@
 #endif
 
-int dblFromStr(char* src, int* len, dbl **dst) {
+int dblFromStr(char* src, int* len, dbl **dst)
+{
 	char *p = src;
-	dbl d = strtod(src, &p); 	
+	double d;
 
 	/* alloc memory */
 	@:atommem(dbl,sizeof(dbl))@
 
-	if (p == src || d > GDK_dbl_max || d <= GDK_dbl_min) {
+	/* on overflow, strtod returns HUGE_VAL and sets errno to
+	   ERANGE; on underflow, it returns 0 and also sets errno to
+	   ERANGE.  We accept 0, but not HUGE_VAL. */
+	errno = 0;
+	d = strtod(src, &p);
+	if (p == src || (errno == ERANGE && d != 0)) {
 		**dst = dbl_nil; /* default return value is nil */
+		p = src;
 	} else {
-		**dst = d;
+		**dst = (dbl) d;
 	}
 	return (int) (p-src);
 }
 @:atomtostr(dbl,%g,double)@
 @:atom_io(dbl,Lng,lng)@
 
-int fltFromStr(char* src, int* len, flt **dst) {
+#if HAVE_STRTOF && !HAVE_DECL_STRTOF
+extern float strtof(const char *, char **);
+#endif
+
+int fltFromStr(char* src, int* len, flt **dst)
+{
 	char *p = src;
-	dbl d = strtod(src, &p); 	
+#ifdef HAVE_STRTOF
+	float d;
+#else
+	double d;
+#endif
 
 	/* alloc memory */
 	@:atommem(flt,sizeof(flt))@
 
-	if (p == src || d > GDK_flt_max || d <= GDK_flt_min) {
+	/* on overflow, strtof returns HUGE_VALF and sets errno to
+	   ERANGE; on underflow, it returns 0 and also sets errno to
+	   ERANGE.  We accept 0, but not HUGE_VALF. */
+	errno = 0;
+#ifdef HAVE_STRTOF
+	d = strtof(src, &p);
+	if (p == src || (errno == ERANGE && d != 0)
+#ifdef INFINITY
+	    || d == INFINITY
+#endif
+#ifdef NAN
+	    || d == NAN
+#endif
+		)
+#else
+	d = strtod(src, &p);
+	if (p == src || (errno == ERANGE && d != 0) ||
+	    d <= GDK_flt_min || d > GDK_flt_max)
+#endif
+	{
 		**dst = flt_nil; /* default return value is nil */
+		p = src;
 	} else {
 		**dst = (flt) d;
 	}

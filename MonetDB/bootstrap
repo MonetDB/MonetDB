@@ -68,16 +68,17 @@ _NEW_AC_VERSION=`echo $NEW_AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", 
 
 if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
 	# Old autoconf, we need to work around a few incompatibilities.
-	# This removes AH_TOP and AC_SYS_LARGEFILE and adds
+	# This removes AH_TOP, AH_BOTTOM and AC_SYS_LARGEFILE and adds
 	# definitions for AC_LIBOBJ and AC_CHECK_TYPES (the latter in a
 	# very restricted version: only one type)
 	sed '/AH_TOP/s/.*/AC_SUBST(LIBOBJS)\
 AC_DEFUN(AC_LIBOBJ,[LIBOBJS="$LIBOBJS $1.$ac_objext"])\
-AC_DEFUN(AC_CHECK_TYPES,[AC_TRY_COMPILE([$ac_includes_default],[$1 x=0;],[x=`echo $1|tr "abcdefghijklmnopqrstuvwxyz *" "ABCDEFGHIJKLMNOPQRSTUVWXYZ_P"`;AC_DEFINE_UNQUOTED(HAVE_$x)])])/;s/^AC_SYS_LARGEFILE/dnl AC_SYS_LARGEFILE/g' configure.ag > configure.in
+AC_DEFUN(AC_CHECK_TYPES,[AC_TRY_COMPILE([$ac_includes_default],[$1 x=0;],[x=`echo $1|tr "abcdefghijklmnopqrstuvwxyz *" "ABCDEFGHIJKLMNOPQRSTUVWXYZ_P"`;AC_DEFINE_UNQUOTED(HAVE_$x)])])/;s/^AH_BOTTOM/dnl &/;s/^AC_SYS_LARGEFILE/dnl &/g' configure.ag > configure.in
 	cat > acconfig.h <<EOF
 #include "sysdefs.h"
-#include "stddef.h"
 @TOP@
+@BOTTOM@
+#include "stddef.h"
 EOF
 	# the replacement for AC_CHECK_TYPES above does not add
 	# entries to config.h.in, so add them to acconfig.h
