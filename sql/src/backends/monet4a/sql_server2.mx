@@ -1,0 +1,635 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at 
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+@' All Rights Reserved.
+@' 
+@' Contributor(s):
+@' 		Martin Kersten <Martin.Kersten@cwi.nl>
+@' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
+
+@f sql_server2
+@a N.J. Nes, M.L. Kersten
+@* 
+The sql_server module contains the complete wrapper interface for the
+SQL client and the corresponding MIL runtime startup.
+
+The implementation described here is focused on using the Mapi library
+for interaction. This provides a simple textual interface to the server
+based on ascii text.
+
+It is intended to work directly with any of the MapiClient implementations.
+To avoid clashes with the default port settings, we have hardwired a number
+for the time being.
+@m
+.MODULE sql_server2;
+	.USE ascii_io; 
+
+	.ATOM mvc = ptr;
+	.END;
+	.ATOM sql_schema = ptr;
+	.END;
+	.ATOM sql_table = ptr;
+	.END;
+	.ATOM sql_column = ptr;
+	.END;
+	# the check constraints (including IS (NOT) NULL) 
+	.ATOM sql_check = ptr;
+	.END; 
+	# the primary, unique and foreign keys
+	.ATOM sql_key = ptr;
+	.END;
+	.ATOM sql_idx = ptr;
+	.END;
+	
+	.BUILTIN mapisqlclient( int sock ) = 
+		mapisqlclient;
+		"parse the next sql command and convert this to mil code"
+
+	.COMMAND mvc_init(int debug) = mvc_init_wrap; 
+		"create the global catalog"
+
+	.BUILTIN quit() = mvc_exit_wrap; 
+		"cleanup the global catalog and quit server"
+
+	.COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
+		"Create multi version catalog"
+
+	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
+		"Destroy multi version catalog"
+
+	.COMMAND mvc_login( mvc m, str user, str passwd ) : str 
+		= mvc_login_wrap; "database login"
+
+	.COMMAND mvc_status( mvc m ) : int 
+		= mvc_status_wrap; "return the status of the last mvc operation"
+
+	.COMMAND mvc_type( mvc m ) : int 
+		= mvc_type_wrap; "return the type of the last mvc operation"
+
+	.COMMAND mvc_commit( mvc m, int chain, str name ) : int = 
+		mvc_commit_wrap; "Commit transaction/savepoint and chain"
+
+	.COMMAND mvc_rollback( mvc m, int chain, str name ) : int = 
+		mvc_rollback_wrap; "Rollback transaction/savepoint and chain"
+
+	.COMMAND mvc_release( mvc m, str name ) : int = 
+		mvc_release_wrap; "Release the savepoint"
+
+	.COMMAND mvc_set_iso_level( mvc m, int level ) : int = 
+		mvc_set_iso_level_wrap; "Change the isolation level"
+
+	.COMMAND mvc_bind( mvc c, str sname, str tname, str cname, int access ) : 
+		BAT[any::1,any::2] = 
+		mvc_bind_wrap; "Bind the bat, tname.cname"
+
+	.COMMAND mvc_bind_ubat( mvc c, str sname, str tname, str cname, int acess ) : 
+		BAT[any::1,any::2] = 
+		mvc_bind_ubat_wrap; "Bind bat with the updates to tname.cname"
+
+	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
+		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
+		"Bind the table deletes bat, tname.deletes"
+
+	.COMMAND mvc_bind_ibat( mvc c, str sname, str tname, str iname, int access ) : 
+		BAT[any::1,any::2] = mvc_bind_ibat_wrap; 
+		"Bind the idx table"
+
+	.COMMAND mvc_bind_schema( mvc c, str sname ) : sql_schema = 
+		mvc_bind_schema_wrap; "Bind schema, sname"
+
+	.COMMAND mvc_bind_table( mvc c, sql_schema s, str tname ) : sql_table = 
+		mvc_bind_table_wrap; "Bind table, s.tname"
+
+	.COMMAND mvc_bind_column( mvc c, sql_table t, str cname ) : sql_column = 
+		mvc_bind_column_wrap; "Bind column, t.cname"
+
+	.COMMAND mvc_bind_key( mvc c, sql_schema s, str kname ) : sql_key = 
+		mvc_bind_key_wrap; "Bind key kname"
+
+	.COMMAND mvc_bind_idx( mvc c, sql_schema s, str iname ) : sql_idx = 
+		mvc_bind_idx_wrap; "Bind index with name, iname"
+
+	.COMMAND mvc_drop_schema( mvc c, str name ) = mvc_drop_schema_wrap;
+		"Drop schema"
+
+	.COMMAND mvc_create_schema( mvc c, str name, str auth) : sql_schema = 
+		mvc_create_schema_wrap; "Create schema"
+
+	.COMMAND mvc_drop_table( mvc c, sql_schema s, str name, int cascade ) = 
+		mvc_drop_table_wrap; "Drop table"
+
+	.COMMAND mvc_create_table( mvc c, sql_schema s, str name, int type) : 
+		sql_table = mvc_create_table_wrap; "Create table"
+
+	.COMMAND mvc_create_view( mvc c, sql_schema s, str name, str sql) :
+		sql_table = mvc_create_view_wrap; "Create view"
+
+	.COMMAND mvc_drop_column( mvc c, sql_table t, str name ) = 
+		mvc_drop_column_wrap; "Drop column"
+
+	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int type_digits, int type_scale ) : sql_column = mvc_create_column_wrap; "Create column"
+
+	.COMMAND mvc_null( mvc m, sql_column col, int flag ) : 
+		sql_column = mvc_null_wrap; "Set column null or not"
+
+	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
+		sql_column = mvc_default_wrap; "Set column default value"
+
+	.COMMAND mvc_create_key( mvc m, sql_table t, str name, int kt):
+		sql_key = mvc_create_key_wrap; "Create a unique key"
+
+	.COMMAND mvc_create_key( mvc m, sql_table t, str name, int kt, sql_key rkey ) :
+		sql_key = mvc_create_fkey_wrap; "Create a foreign key"
+
+	.COMMAND mvc_drop_key( mvc m, sql_schema s, str name ) = 
+		mvc_drop_key_wrap; "Drop a key"
+
+	.COMMAND mvc_create_kc( mvc m, sql_key k, str col ):
+		sql_key = mvc_create_kc_wrap; "Create a key column"
+
+	.COMMAND mvc_create_idx( mvc m, sql_table t, str name, int it):
+		sql_idx = mvc_create_idx_wrap; "Create a index"
+
+	.COMMAND mvc_drop_idx( mvc m, sql_schema s, str name ) = 
+		mvc_drop_idx_wrap; "Drop a idx"
+
+	.COMMAND mvc_create_ic( mvc m, sql_idx i, str col ):
+		sql_idx = mvc_create_ic_wrap; "Create a idx column"
+
+	.COMMAND mvc_create_user( mvc m, str user, str pwd, str fullname, str dschema, int id) = mvc_create_user_wrap; "Create a user"
+
+	.COMMAND mvc_result_table( mvc m, int nr_cols, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
+
+	.COMMAND mvc_result_table( mvc m, int nr_cols, BAT[oid,any] order ) : int = mvc_result_table_wrap; "Create structure to cache a table query result" 
+
+	.COMMAND mvc_result_column( mvc m, str name, str typename, int digits, int scale, any val) = mvc_result_value_wrap; "Add the value to the row query result"
+	.COMMAND mvc_result_column( mvc m, str name, str typename, int digits, int scale, BAT[oid,any] col) = mvc_result_column_wrap; "Add the colunm to the table query result"
+
+	.COMMAND mvc_export_result(mvc m, Stream s, int result_id) =
+		mvc_export_result_wrap; "export a result to stream s"
+
+	.COMMAND mvc_export_table(mvc m, Stream s, int result_id, int offset, int nr ) =
+		mvc_export_table_wrap; "export a result to stream s"
+
+	.COMMAND mvc_import_table( mvc c, Stream s, str tname, 
+					str sep, str rsep, int nr) : 
+		BAT[str,BAT] = mvc_import_table_wrap; 
+		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
+
+@+ void bats
+To prevent void bats to convert to oid bats we need overloaded insert and
+replace commands. These operations should at a later stage be moved to the
+kernel libraries, e.g. bat.mx
+@m
+ 	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
+
+ 	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
+
+ 	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
+
+ 	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
+
+ 	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
+
+ 	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
+
+	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
+
+	.COMMAND hash( any::1 v, int sh ) : int = hash_wrap; "calculate a hash value and shift left"
+
+@+
+	senddata requests the client to ship data to the server. This is
+	needed to be able to handle COPY FROM STDIN.
+@m
+	.COMMAND senddata( Stream out ) = senddata_wrap; "Request client to senddata"
+
+.END sql_server;
+
+@h
+#ifndef _SQL_SERVER_H_
+#define _SQL_SERVER_H_
+
+#ifdef _MSC_VER
+#ifndef LIBSQL_SERVER
+#define sql_server_export extern __declspec(dllimport)
+#else
+#define sql_server_export extern __declspec(dllexport)
+#endif
+#else
+#define sql_server_export extern
+#endif
+
+#include <streams.h>
+#include <ascii_io.h>
+#include <monet_context.h>
+#include "sql_mvc.h"
+#include "sql_server2.proto.h"
+
+#endif /*_SQL_SERVER_H_*/
+
+@c
+#include <sql_mem.h>
+#include "sql_server2.h"
+#include "sql_privileges.h"
+#include "sql_session.h"
+#include <algebra.h>
+
+int mvc_init_wrap( int* debug ){
+        backend_init( &monet4_freestack, &monet4_freecode );
+	mvc_init(*debug );
+	return GDK_SUCCEED;
+}
+
+int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
+	mvc_exit();
+	return CMDquit(stk, lt, res);
+}
+
+int mvc_create_wrap( mvc *res, int *debug ){
+	*(mvc**)res = mvc_create( *debug );
+	return GDK_SUCCEED;
+}
+
+int mvc_destroy_wrap( mvc *c ){
+	mvc_destroy( *(mvc**)c );
+	return GDK_SUCCEED;
+}
+
+int mvc_login_wrap( str *r, mvc *c, str user, str passwd  ){
+	*r = mvc_login( *(mvc**)c, user, passwd );
+	if (*r == NULL)
+		*r = _strdup("");
+	return GDK_SUCCEED;
+}
+
+int mvc_status_wrap( int* res, mvc* m ){
+	*res = mvc_status( *(mvc**)m );
+	return GDK_SUCCEED;
+}
+
+int mvc_type_wrap( int* res, mvc* m ){
+	*res = mvc_type( *(mvc**)m );
+	return GDK_SUCCEED;
+}
+
+
+int mvc_commit_wrap( int* res, mvc* m, int* chain, str name){
+	*res = mvc_commit( *(mvc**)m, *chain, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_rollback_wrap( int *res, mvc *m, int *chain, str name ){
+	*res = mvc_rollback( *(mvc**)m, *chain, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_release_wrap( int *res, mvc *m, str name ){
+	*res = mvc_release( *(mvc**)m, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_set_iso_level_wrap( int *res, mvc *m, int *level ){
+	*res = mvc_set_iso_level( *(mvc**)m, *level );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_wrap( BAT** res, mvc* c, str sname, str tname, str cname, int *access){
+	*res = mvc_bind( *(mvc**)c, sname, tname, cname, *access );
+	if (*res){
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int mvc_bind_ubat_wrap( BAT** res, mvc* c, str sname, str tname, str cname, int *access ){
+	*res = mvc_bind_ubat( *(mvc**)c, sname, tname, cname, *access );
+	if (*res){
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int mvc_bind_dbat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
+	*res = mvc_bind_dbat( *(mvc**)c, sname, tname, *access );
+	if (*res){
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int mvc_bind_ibat_wrap( BAT** res, mvc* c, str sname, str tname, str iname, int *access ){
+	*res = mvc_bind_ibat( *(mvc**)c, sname, tname, iname, *access );
+	if (*res){
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int mvc_bind_schema_wrap( sql_schema* res, mvc* c, str sname){
+	*(sql_schema**)res = mvc_bind_schema( *(mvc**)c, sname );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_table_wrap( sql_table* res, mvc* c, sql_schema *s, str tname){
+	*(sql_table**)res = mvc_bind_table( *(mvc**)c, *(sql_schema**)s, tname);
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_column_wrap( sql_column* res, mvc* c, sql_table *t, str col){
+	*(sql_column**)res = mvc_bind_column( *(mvc**)c, *(sql_table**)t, col);
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_schema *s, str name ){
+	*(sql_key**)res = mvc_bind_key( *(mvc**)c, *(sql_schema**)s, name);
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_idx_wrap( sql_idx* res, mvc* c, sql_schema *s, str name ){
+	*(sql_idx**)res = mvc_bind_idx( *(mvc**)c, *(sql_schema**)s, name);
+	return GDK_SUCCEED;
+}
+
+int mvc_create_schema_wrap( sql_schema *s, mvc* c, str name, str auth){
+	*(sql_schema**)s = mvc_create_schema( *(mvc**)c, name, auth );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_schema_wrap( mvc* c, str name){
+	mvc_drop_schema( *(mvc**)c, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_table_wrap( sql_table *res, mvc* c, sql_schema *s, str name, int* type){
+	*(sql_table**)res = mvc_create_table( *(mvc**)c, *(sql_schema**)s, name, (table_type)*type );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_view_wrap( sql_table *res, mvc* c, sql_schema *s, str name, str sql){
+	*(sql_table**)res = mvc_create_view( *(mvc**)c, *(sql_schema**)s, name, sql );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_table_wrap( mvc* c, sql_schema *s, str name, int* cascade){
+	mvc_drop_table( *(mvc**)c, *(sql_schema**)s, name, *cascade );
+	return GDK_SUCCEED;
+}
+
+
+int mvc_create_column_wrap( sql_column* res, mvc* c, sql_table *t, 
+		str name, str type, int *ts, int *td){
+	*(sql_column**)res = 
+	  mvc_create_column( *(mvc**)c, *(sql_table**)t, name, type, *ts, *td);
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_column_wrap( mvc* c, sql_table *t, str name){
+	mvc_drop_column( *(mvc**)c, *(sql_table**)t, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_null_wrap( sql_column* res, mvc* c, sql_column* col, int *flag){
+	*(sql_column**)res = mvc_null( *(mvc**)c, *(sql_column**)col, *flag );
+	return GDK_SUCCEED;
+}
+
+int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val)
+{
+	*(sql_column**)res = mvc_default( *(mvc**)c, *(sql_column**)col, val );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt )
+{
+	*(sql_key**)res 
+		= mvc_create_key( *(mvc**)c, *(sql_table**)t, name, (key_type)*kt, NULL);
+	return GDK_SUCCEED;
+}
+
+int mvc_create_fkey_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt, sql_key *ukey)
+{
+	mvc *m = *(mvc**)c;
+	if (!ukey)
+		return GDK_FAIL;
+	*(sql_key**)res 
+		= mvc_create_key( m, *(sql_table**)t, name, (key_type)*kt, *(sql_key**)ukey);
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_key_wrap( mvc* c, sql_schema *s, str name ){
+	mvc_drop_key( *(mvc**)c, *(sql_schema**)s, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_kc_wrap( sql_key* res, mvc* M, sql_key *K, str name )
+{
+	mvc *m = *(mvc**)M;
+	sql_key *k = *(sql_key**)K;
+	sql_column *c = mvc_bind_column( m, k->t, name );
+	*(sql_key**)res = mvc_create_kc( m, k, c );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_idx_wrap( sql_idx* res, mvc* c, sql_table *t, str name, int *it )
+{
+	*(sql_idx**)res 
+		= mvc_create_idx( *(mvc**)c, *(sql_table**)t, name, (idx_type)*it );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_idx_wrap( mvc* c, sql_schema *s, str name ){
+	mvc_drop_idx( *(mvc**)c, *(sql_schema**)s, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_ic_wrap( sql_idx* res, mvc* M, sql_idx *I, str name )
+{
+	mvc *m = *(mvc**)M;
+	sql_idx *i = *(sql_idx**)I;
+	sql_column *c = mvc_bind_column( m, i->t, name );
+	*(sql_idx**)res = mvc_create_ic( m, i, c );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_user_wrap( mvc *c, str user, str passwd, str fullname, str dschema, int *grantor)
+{
+	if (sql_create_user( *(mvc**)c, user, passwd, fullname, dschema, *grantor)){
+		return GDK_SUCCEED;
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+int mvc_result_table_wrap( int *res_id, mvc *M, int *nr_cols, BAT *order ){
+	*res_id = mvc_result_table( *(mvc**)M, *nr_cols, order);
+	if (*res_id < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+int mvc_result_row_wrap( int *res_id, mvc *M, int *nr_cols, ptr p, int p_type ){
+	(void) p; (void) p_type; /* Stefan: unused!? */
+
+	*res_id = mvc_result_row( *(mvc**)M, *nr_cols );
+	if (*res_id < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+int mvc_result_column_wrap( mvc *M, str name, str type, int *digits, int *scale, BAT *b ){
+	if (mvc_result_column( *(mvc**)M, name, type, *digits, *scale, b)) 
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+int mvc_result_value_wrap( mvc *M, str name, str type, int *digits, int *scale, ptr p, int mtype ){
+	if (mvc_result_value( *(mvc**)M, name, type, *digits, *scale, p, mtype)) 
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+int mvc_export_result_wrap( mvc *M, Stream *S, int *res_id){
+	if (mvc_export_result( *(mvc**)M, *(stream**)S, *res_id)) 
+		return GDK_FAIL;
+	
+	return GDK_SUCCEED;
+}
+int mvc_export_table_wrap( mvc *M, Stream *S, int *res_id, int *offset, int *nr){
+	if (mvc_export_table( *(mvc**)M, *(stream**)S, *res_id, *offset, *nr)) 
+		return GDK_FAIL;
+	
+	return GDK_SUCCEED;
+}
+int mvc_import_table_wrap( BAT **res, mvc *c, Stream *s, str tname , str sep, str rsep, int *sz ){
+	*res = mvc_import_table( *(mvc**)c, *(stream**)s, tname, sep, rsep, *sz );
+	if (*res == NULL)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+@-
+The next collection of operators fill a hole in the Monet kernel libraries.
+It provide handy operations on void-BATs. The sole reason not to move it to
+the bat.mx module is that overall the kernel does not support bat[void,void]
+@c
+int bat_append_void_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	*res = i;
+	void_append_bat( i, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	*res = i;
+	void_insert_bat( i, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int bat_append_oidvoid_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	*res = i;
+	assert(BATcount(i)==0 && BATcount(u) == 0);
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	BUN r,s;
+        oid o;
+	
+	assert(i->htype == TYPE_oid && u->htype == TYPE_oid);
+	BATmax(BATmirror(i),&o);
+	o++;
+	BATloop(u, r, s){
+		oid h = *(oid*)BUNhead(u,r) + o;
+		BUNins(i, &h,  BUNtail(u,r));
+        }
+	*res = i;
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int oid_bat_append_val_wrap( BAT **res, BAT *i, ptr u )
+{
+        oid o;
+
+	assert(i->htype == TYPE_oid);
+	BATmax(BATmirror(i),&o);
+	o++;
+	*res = i;
+	BUNins( i, (ptr) & o, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+
+int bat_append_val_wrap( BAT **res, BAT *i, ptr u )
+{
+	oid h = i->hseqbase + BATcount(i);
+	*res = i;
+	BUNins( i, (ptr) & h, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int bat_replace_oid_bat_wrap( BAT **res, BAT *o, BAT *d )
+{
+	*res = o;
+	void_replace_bat( o, d );
+	BBPfix(o->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int hash_wrap( int *res, ptr v, int tpe, int *sh )
+{
+	*res = (ATOMhash(tpe,v)<<(*sh))&0xEFFFFFFF;
+	return GDK_SUCCEED;
+}
+
+int senddata_wrap( Stream *Out ){
+	stream *out = *(stream**)Out;
+	(void) out; (void) Out; /* fool the compiler */
+	return GDK_SUCCEED;
+}
+
+@mil
+module(alarm);
+module(xtables);
+module(aggrX3);
+module(monettime);
+module(mmath);
+module(mkey);
+module(mapi); # mapi_listen 
+
+# low memory usage for testing unloading
+#mem_maxsize(0LL);
+#vm_maxsize(0LL);
+
+mvc_init(int(monet_environment.find("sql_debug")));
+
+proc SQLmapiclient( int sock ) := {
+	dsock := socket_dup(sock);
+	fork(mapisqlclient(dsock));
+}
+
+# temporary patch to assure that this implementation does not clash
+# with the default port
+mapi_listen(47111, 5, "SQLmapiclient").fork();
+# start a default mapi client for debugging, this should go once
+# MonetDB SQL gets stable.
+mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
+

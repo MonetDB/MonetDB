@@ -1,0 +1,1002 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at 
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+@' All Rights Reserved.
+@' 
+@' Contributor(s):
+@' 		Martin Kersten <Martin.Kersten@cwi.nl>
+@' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
+
+@f sql_session
+@a N.J. Nes
+@* 
+
+@* Session code
+
+This small module contains the code to instantiate an SQL client.
+This code strongly depends on the front-end/back-end setup.
+
+@h
+#ifndef _SQL_SESSION_H_
+#define _SQL_SESSION_H_
+
+#include "sql_server2.h"
+#include <sql_backend.h>
+#include <sql_context.h>
+#include <monet_context.h>
+#include <kernel.h>
+
+typedef struct backend {
+	int 	debug;
+	int 	trace;
+	int	reply_size;
+	context *context;
+
+	buffer *outbuf;
+	stream *out;
+} backend;
+
+extern int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
+extern int mvc_export_result( mvc *c, stream *s, int res_id );
+extern int mvc_export_table( mvc *c, stream *s, int res_id, int offset, int nr);
+extern BAT *mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rsep, int nr);
+
+extern int debug_cmd( context *c, char *cmd, stream *out, int part );
+extern void monet4_freestack( backend_stack stk );
+extern void monet4_freecode( backend_code code );
+#endif /*_SQL_SESSION_H_*/
+@c
+#include "sql_session.h"
+#include "sql_server2.h"
+#include "sql_gencode.h"	/* for backend_dumpproc() */
+#include <sql_context.h>
+#include <sql_scope.h>
+#include <sql_qc.h>
+#include <sql_parser.h>		/* for sqlparse() */
+
+@= builtin_operand
+{       int _k = interpret(stk, arg(lt, @1), res);
+        if (_k < 0) {
+                return _k;
+        }
+        @3 = VALconvert(@2, res);
+        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+                return handle_paramerror(res,@1,res->vtype,@2);
+        }
+}
+@c
+
+static backend *backend_create( int trace, int reply_size, context *c )
+{
+	backend *b = NEW(backend);
+
+	b->debug = c->debug;
+	b->context = c;
+	
+ 	b->outbuf = buffer_create( BUFSIZ );
+	b->out = buffer_wastream( b->outbuf, "SQLserver" );
+	b->trace = trace;
+	b->reply_size = reply_size;
+	return b;
+}
+
+static void backend_destroy( backend *b )
+{
+	if (b->out){
+		buffer_destroy( b->outbuf );
+		stream_close( b->out );
+		stream_destroy( b->out );
+	}
+	_DELETE(b);
+}
+	
+static YYSTREE milnode(int tok, int tpe, ptr valp) 
+{
+        YYSTREE res = yynode(tok, tpe);
+        VALset(&res->yyval, tpe, valp);
+        return res;
+}
+
+static YYSTREE milnode2(int tok, ValPtr valp) 
+{
+        YYSTREE res = yynode(tok, valp->vtype);
+	res->yyval = *valp;
+        return res;
+}
+
+int backend_parse( context *c, char *cmd, Cntxt stack )
+{
+	int err = 0;
+	(void) c; /* Stefan: unused!? */
+
+	if (cmd){
+		ValRecord v;
+
+		v.vtype = TYPE_void;
+
+		err = interpret_str( stack, cmd, &v);
+	}
+	return err;
+}
+
+Cntxt backend_newstack( Cntxt stk )
+{
+	Cntxt procstk;
+
+	procstk = CNTXTnew(stk);
+	CNTXTuse(procstk);
+	monet_cntxt[procstk].reuse = TRUE;
+
+	return procstk;
+}
+
+void monet4_freestack( backend_stack stk )
+{
+	Cntxt procstk = (Cntxt)(ptrdiff_t)stk;
+
+	monet_cntxt[procstk].reuse = FALSE;
+	CNTXTfree1(procstk);
+}
+
+void monet4_freecode( backend_code code )
+{
+	YYSTREE procnode = (YYSTREE)code;
+	if (code){
+		/* clear arguments */
+		int i;
+		int l = procnode->yysons[1]->cnt;
+		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
+
+		for (i=1; i<l; i++){
+			argv[i].vtype = TYPE_void; 
+			argv[i].len = 0; 
+		}
+	}
+}
+
+YYSTREE backend_interpret( Cntxt procstk, char *name, list *args )
+{
+	YYSTREE procnode;
+	YYSTREE argtree;
+	node *n;
+	int err = 0;
+	ValRecord v;
+
+	v.vtype = TYPE_void;
+	procnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name)); 
+ 	argtree = yynode(0,0); 
+	if (args){
+  		for (n=args->h; n; n = n->next){
+			atom *a = n->data;
+			YYSTREE arg = milnode2(TOK_CONSTANT, &a->data );
+				/* todo cleanup should first remove
+				   these nodes, without cleaning the
+				   shared values!! */
+
+       			argtree = yyexpand(argtree, arg);
+		}
+	}
+	yyexpand(procnode, argtree);
+	yyexpand(procnode, yynode(0,TYPE_int));
+	err = interpret( procstk, procnode, &v);
+
+	(void) err;	/* Stefan: unused!? */
+
+	return procnode;
+}
+
+int backend_fastpath( Cntxt procstk, YYSTREE procnode, list *args )
+{
+	int err = 0;
+	ValRecord v;
+	node *n;
+
+	v.vtype = TYPE_void;
+	if (args){
+		int i;
+
+		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
+	  	for (i=1, n=args->h; n; i++, n = n->next){
+			atom *a = n->data;
+			argv[i] = a->data;
+		}
+	}
+	err = interpret( procstk, procnode->yysons[1]->yysons[0], &v);
+	return err;
+}
+@-
+A connection error means that not only the channels to the database should
+be reset, but also this client should be terminated immediately.
+@c
+int connect_error(stream *in, stream *out, int sock)
+{
+	close_stream(in);
+	close_stream(out);
+	close(sock);
+	return GDK_FAIL;
+}
+
+int sqlexecute(backend * be, stream *out, Cntxt stk )
+{
+	context *c = be->context;
+	char *cmd = NULL, *s;
+	int i, err = 0;
+	cq *q = NULL;
+
+	cmd_init(c);
+
+	s = c->buf;
+
+	c->mvc->type = Q_PARSE;
+	c->mvc->status = 0;
+
+	if ((err = sqlparse(c)) || c->mvc->status || !c->sym) {
+		if (!err)
+			err = c->mvc->status;
+		return sqlcleanup(c, cmd, err);
+	}
+	
+	if (be->trace){
+		char *buf = s;
+
+		char old = *c->buf;
+
+		*c->buf = '\0';
+		*c->buf = old;
+
+/*		if (!stream_writeInt( out, Q_DEBUGP ) ||*/
+/*		    !stream_writeInt( out, 1 ))*/
+/*			return -1;*/
+
+		while( buf < c->buf) {
+			int i;
+			char b[BUFSIZ];
+
+		  	while( *buf != '\n' && buf < c->buf) 
+				buf++;
+			i = snprintf(b, BUFSIZ, "# %5d: ", c->cnt);
+		  	if (stream_write(out, b, 1, i) != i ||
+		  	    stream_write(out, s, 1, buf - s) != (buf-s) ||
+			    stream_write(out, "\n", 1, 1) != 1)
+				return -1;
+
+			s = ++buf;
+		}
+		c->cnt++;
+		stream_flush(out);
+	}
+	if ( !(q = qc_find(c->qc, c->sym, c->params, c->key)) ){
+		stmt *s = sql_symbol2stmt(c);
+
+		if (!s && c->mvc->status){
+			err = c->mvc->status;
+			return sqlcleanup(c, cmd, err);
+		}
+
+		backend_dumpproc( be, c->qc->id, s );
+		cmd = buffer_get_buf(be->outbuf);
+    		stream_flush( be->out );
+		stmt_destroy(s);
+	
+		if (c->debug&64){
+			err = debug_cmd(c, cmd, out, 1);
+		} else {
+			err = backend_parse( c, cmd, stk );
+		} 
+		q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
+
+		c->sym = NULL;
+		c->params = NULL;
+
+		/* beware to use free instead of _DELETE
+ 	 	 * as the stream library is build with out 
+	 	 * libbat ie. it cannot use gdkmalloc 
+	 	 * can be used */
+	        free(cmd); 
+		cmd = NULL;
+
+		if (err)
+			return sqlcleanup(c, cmd, err);
+	}
+	if (c->debug){
+		char buf[BUFSIZ];
+		node *n;
+
+		i = snprintf(buf, BUFSIZ, "sql%d (", q->id );
+		stream_write(be->out, buf, i, 1 );
+		if (c->args){
+	  		for (n=c->args->h; n; n = n->next){
+				atom *a = n->data;
+				atom_dump(a, be->out);
+				if (n->next)
+					stream_write(be->out, ",", 1, 1); 
+			}
+		}
+		stream_write(be->out, ");\n", 3, 1);
+
+		cmd = buffer_get_buf(be->outbuf);
+    		stream_flush( be->out );
+		if (c->debug&64){
+			err = debug_cmd(c, cmd, out, 0);
+		} else {
+			err = backend_parse( c, cmd, stk );
+		} 
+	} else if (!q->code){
+		char buf[BUFSIZ];
+		Cntxt procstk = backend_newstack(stk);
+		YYSTREE procnode;
+
+		snprintf( buf, BUFSIZ, "sql%d", q->id);
+
+		c->mvc->type = q->type;
+		procnode = backend_interpret( procstk, buf, c->args);
+
+		if (!err){
+			q->code = (backend_code)procnode;
+			q->stk = (backend_stack)(ptrdiff_t)procstk;
+		} else {
+			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
+		}
+	} else {
+		c->mvc->type = q->type;
+		err = backend_fastpath( (Cntxt)(ptrdiff_t)q->stk, (YYSTREE)q->code, c->args);
+	}
+	/* 
+ 	 * clear query cache after Transaction boundaries (commit/rollback)
+	 * and on schema changes 
+	 */
+	if (c->mvc->type == Q_TRANS || c->mvc->type == Q_SCHEMA){
+		if (c->qc) qc_destroy(c->qc);
+		c->qc = qc_create();
+	}
+
+	if (!err && !(c->debug&64)){
+		ssize_t status;
+
+		if ((status = mvc_status(c->mvc)) < 0){
+			char *errstr = "Error in result";
+			if ( 
+			/* !stream_writeInt( out, mvc_type(c->mvc) ) || */
+			/* !stream_writeInt( out, status ) || */
+			    stream_write( out, errstr, strlen(errstr), 1 ) != 1)
+				return -1;
+			stream_flush( out );
+  		} 
+/*		else if ( (type = mvc_type(c->mvc)) != Q_RESULT ) {
+			if (!stream_writeInt( out, type ) ||
+			    !stream_writeInt( out, status ))
+				return -1;
+			stream_flush( out );
+  		}
+*/
+	}
+	return sqlcleanup(c, cmd, err);
+}
+
+@-
+The new SQL client server works with a Mapi compliant front-end.
+The routine below is called when some-one knocks on the door for
+an SQL connection.
+
+To simplify the implementation, we will patch MAPIlisten to
+recognize the call for SQLmapiclient and adhire to the Mapi protocol
+to read an authentication line, i.e.
+<username>:<password>:blocked
+We assume that a new user-context has been set using a proper fork()
+command. This means that the SQL client runs under the authentication of
+the DBA.
+@c
+int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+	int debug = 0, trace = 0, reply_size = 100, sock, *Sock, go = TRUE;
+	ssize_t i=0;
+	char buf[BUFSIZ+1], *errbuf;
+	char *user, *passwd, *schema, *dbname;
+	int blocked=0;
+	Variable v;
+	mvc *m;
+	stream *in, *out;
+	context *sqlc;
+	backend *sql;
+	char *prompt= "\001sql>\002\n";
+	int promptlength= strlen(prompt);
+	/*int firstrequest=1;*/
+
+  	if (lt->cnt != 1) {
+        	return handle_argerror(res, lt->cnt, 1);
+  	}
+  	@:builtin_operand(0,TYPE_int,Sock)@
+	sock = *Sock;
+
+@-
+Start analysis using the mapic-client protocol.
+Use default setting for trace and reply_size.
+@c
+	in = socket_rastream(sock, "mapisqlclient-r");
+	out= NULL;
+
+	if (in == 0){
+		GDKsyserror("mapisqlclient:stream-r problems\n");
+		return connect_error(in, out, sock);
+	}
+	/* get user name */
+	memset(buf,0,BUFSIZ);
+	user= buf;
+	if( stream_read(in, user, 1, 1) <0)
+		return connect_error(in, out, sock);
+	for(i=0; i<BUFSIZ && *user != '\n'; i++){
+		user++;
+		if( stream_read(in, user, 1, 1) <0)
+			return connect_error(in, out, sock);
+	}
+	*user=0;
+	fprintf(stdout,"mapisqlclient: connection:%s!\n",buf);
+	fflush(stdout);
+	user= buf;
+	passwd= strrchr(user,':');
+	if(passwd && strncmp(passwd,":blocked",8)==0){
+		blocked = 1;
+		*passwd=0;
+		fprintf(stdout,"read in blocked mode: %s\n",user);
+	} 
+
+	passwd= strchr(user,':');
+	if( passwd){
+		*passwd= 0;
+		passwd++;
+		user= GDKstrdup(buf);
+		passwd= GDKstrdup(passwd);
+	}/* ignore for the time being the password info
+	 else {
+		fprintf(stdout,"mapisqlclient: missing identity\n");
+		return connect_error(in, out, sock);
+	} */
+	else {
+		user= GDKstrdup(buf);
+		passwd= GDKstrdup("monetdb");
+	}
+
+	if( blocked){
+		stream_destroy(in); /* don't close */
+		in= block_stream(socket_rstream(sock,"mapisqlclient read"));
+		out= block_stream(socket_wstream(sock,"mapisqlclient write"));
+	}else
+		out= socket_wastream(sock,"mapisqlclient write");
+								
+	if (out == 0){
+		GDKsyserror("mapisqlclient:stream-w problems\n");
+		GDKfree(user);
+		GDKfree(passwd);
+		return connect_error(in, out, sock);
+	}
+@-
+The server should emit an identity message, e.g. the Mserver version
+These lines should be eaten away into the prompt is encountered.
+@c
+
+	m = mvc_create(debug);
+	schema = mvc_login( m, user, passwd );
+	GDKfree(user);
+	GDKfree(passwd);
+	dbname = GDKgetenv("gdk_dbname");
+
+	if (!schema){ 
+		char *msg= "!ERROR:Schema authorization error\n";
+		fprintf(stderr,"mapisqlclient: schema authorization error %s:%s \n",user,passwd);
+		/* close the connection to the Monet server */
+		if( stream_write(out, msg, strlen(msg), i) >=0 &&
+		    stream_write(out,prompt,promptlength,1) >=0 )
+		    stream_flush(out);
+		mvc_destroy(m);
+		return connect_error(in, out, sock);
+	}
+/* Sent the profile for the client for inspection*/
+	str w= "[ \"version\",	\"4.3\"	]\n";
+	if( stream_write(out, w, 1, strlen(w))<0)
+		return connect_error(in,out,sock);
+	w= "[ \"language\",	\"sql\"	]\n";
+	if( stream_write(out, w, 1, strlen(w))<0)
+		return connect_error(in,out,sock);
+	stream_flush(out);
+
+	sqlc = sql_create_context(debug,1,m);
+        sql = backend_create( trace, reply_size, sqlc );
+
+	/* add myc and Output, Input to the stack */
+	v = VARnew(stk, "myc");
+	v->binding.vtype = TYPE_mvc;
+	v->binding.val.pval = m;
+
+	v = VARnew(stk, "Output");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = out;
+
+	v = VARnew(stk, "Input");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = in;
+
+ 	errbuf = GDKmalloc(GDKMAXERRLEN);
+	errbuf[0] = '\0';
+	GDKsetbuf(errbuf);
+
+	/*fprintf(stderr,"mapisqlclient:accept queries\n");*/
+	while(go){
+		int size = BUFSIZ + 1, err = 0;
+		char *inbuf = NEW_ARRAY(char, size ), *start = inbuf;
+		int inlen = 0;
+		ssize_t len;
+
+		if( stream_write(out,prompt,promptlength,1) != 1 ){
+			go= FALSE; break;
+		}
+		stream_flush(out);
+		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
+		if( blocked ){
+		while ((len = stream_read(in, start, 1, BUFSIZ)) == BUFSIZ){
+			inlen += BUFSIZ;
+			size += BUFSIZ;
+			inbuf = RENEW_ARRAY(char, inbuf, size); 
+			start = inbuf + size - BUFSIZ - 1;
+			*start = '\0';
+		}
+		} else { /* line mode */
+			char *s= start;
+			char *lim= start+BUFSIZ;
+			while( (len= stream_read(in,s,1,1))==1 ){
+				if(len<0) {
+					char *msg= "!ERROR:Connection terminated";
+					stream_write(out,msg,strlen(msg),1);
+					break;
+				}
+				if( *s== '\n'){
+					*(s+1)=0;
+					break;
+				}
+				s++;
+				if( s==lim){
+				/* adjust buffer */
+				}
+			}
+			if( len>0) len= s-start;
+		}
+		if( len < 0){
+			fprintf(stdout,"mapisqlclient:error 1\n");
+			go = !go;
+			break;
+		}
+		inlen += len;
+		inbuf[inlen] = '\0';
+@-
+The clients will first sent a server initialization string.
+In this case we expect something like sql(....
+To make our live easy now, we simple eat away these or the first request
+		if( firstrequest){
+			firstrequest= 0;
+			continue;
+		}
+@c
+
+		if (!inlen || inbuf[0] == EOT)
+			break;
+
+		sqlc->buf = inbuf;
+		sqlc->cur = ' ';
+		/* fprintf(stdout,"mapisqlclient:query:%s\n",sqlc->buf);*/
+
+		while( sqlc->buf && *sqlc->buf && *sqlc->buf != EOT ){
+			char *ibuf = sqlc->buf;
+
+			err = sqlexecute(sql, out, stk);
+			if (err){ /* output error */
+				char *buf = GDKerrbuf;
+				char msg[BUFSIZ];
+				snprintf(msg,BUFSIZ,"!ERROR:%d:",err);
+				if (stream_write( out, msg, strlen(msg), 1 )!= 1 ||
+				    stream_write( out, sqlc->errstr, 
+					strlen(sqlc->errstr), 1 ) != 1){
+					fprintf(stdout,"mapisqlclient:error 2\n");
+					break;
+				}
+				if (buf && (stream_write( out, "\n", 1, 1 ) != 1 ||
+					stream_write( out, buf, strlen(buf), 1 ) !=1)){
+					fprintf(stdout,"mapisqlclient:error 3\n");
+					go= FALSE;
+					break;
+				}
+				buf[0] = 0; /* reset error buf */
+	
+				/* show the buggy query */
+				if (stream_write( out, " in:\n", 5, 1) != 1){
+					fprintf(stdout,"mapisqlclient:error 4\n");
+					go= FALSE;
+					break;
+				}
+				if (ibuf != sqlc->buf)
+					sqlc->buf[-1] = '\0';
+				while (ibuf[0] == '\n') ibuf++;
+				if( stream_write( out, ibuf, strlen(ibuf), 1) != 1){
+					fprintf(stdout,"mapisqlclient:error 5\n");
+					go= FALSE;
+					break;
+				}
+				stream_flush( out );
+			}
+		}
+		if (inbuf) _DELETE(inbuf);
+	}
+	mvc_destroy(m);
+
+	_DELETE(errbuf);
+	GDKsetbuf(NULL);
+	sql_destroy_context( sqlc );
+	backend_destroy( sql );
+	close_stream(in);
+	close_stream(out);
+	close(sock);
+	/*fprintf(stderr,"mapisqlclient finished\n");*/
+	return GDK_SUCCEED;
+}
+
+@= dec_tostr
+	char buf[32];
+	@1 v = *(@1*)a;
+	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0;
+	int l;
+
+	if (v<0) v = -v;
+
+	buf[cur--] = 0;
+	if (scale){
+		for(i=0; i<scale; i++){
+			buf[cur--] = (v%10) + '0';
+			v /= 10;
+		}
+		buf[cur--] = '.';
+	}
+	while(v){
+		buf[cur--] = (v%10) + '0';
+		v /= 10;
+		done = 1;
+	}
+	if (!done)
+		buf[cur--] = '0';
+	if (neg)
+		buf[cur--] = '-';
+	l = (32-cur-1);
+	if (*len < l){
+		if (*Buf) GDKfree(*Buf);
+		*len = l+1;
+		*Buf = GDKmalloc(*len);
+	}
+	strcpy(*Buf, buf+cur+1);
+	return l-1;
+@c
+
+int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a){
+	/* support dec map to sht, int and lng */
+	if (type == TYPE_sht){
+		@:dec_tostr(sht)@
+	} else if (type == TYPE_int){
+		@:dec_tostr(int)@
+	} else if (type == TYPE_lng){
+		@:dec_tostr(lng)@
+	} else {
+		GDKwarning("Decimal cannot be mapped to %s\n", ATOMname(type));
+	}
+	return 0;
+}
+
+@= dec_frstr
+	sql_subtype *t = (sql_subtype*)extra;
+
+	int i, neg = 0;
+	char *p = s;
+	@1 *r;
+	@1 res = 0;
+	if (*s == '-'){
+		neg = 1;
+		s++;
+	} else if (*s == '+'){ 
+		neg = 0;
+		s++;
+	}
+	for( i = 0; i < (t->digits-t->scale) && *s != '.'; i++, s++){
+		if (!*s || *s < '0' || *s > '9' ){
+			GDKerror("decimal wrong format (%s)", p);
+			return NULL;
+		}
+		res *= 10;
+		res += (*s-'0');
+	}
+	if (*s){
+		if (*s != '.'){
+			GDKerror("decimal wrong format (%s)", p);
+			return NULL;
+		}
+		s++;
+		for( i = 0; *s && i < t->scale; i++, s++){
+			if (*s < '0' || *s > '9' ){
+				GDKerror("decimal wrong format (%s)", p);
+				return NULL;
+			}
+			res *= 10;
+			res += (*s-'0');
+		}
+	}
+	if (*s){
+		GDKerror("decimal wrong format (%s)", p);
+		return NULL;
+	}
+ 	r = (@1*)GDKmalloc(sizeof(@1));
+	if (neg)
+		*r = -res;
+	else
+		*r = res;
+	return (ptr*)r;
+@c
+
+ptr *dec_frstr( void *extra, int type, char *s){
+	/* support dec map to sht, int and lng */
+	if (type == TYPE_sht){
+		@:dec_frstr(sht)@
+	} else if (type == TYPE_int){
+		@:dec_frstr(int)@
+	} else if (type == TYPE_lng){
+		@:dec_frstr(lng)@
+	} else {
+		GDKwarning("Decimal cannot be mapped to %s\n", ATOMname(type));
+	}
+	return NULL;
+}
+
+BAT *mvc_import_table( mvc *m, stream *s, char *tname, 
+		char *sep, char *rsep, int sz)
+{
+	int i = 0, cnt = -1;
+	sql_trans *tr = m->trans;
+	sql_table *t = mvc_bind_table(m, tr->schema, tname);
+	node *n;
+	BAT *bats = NULL;
+	bstream *bs = bstream_create(s, 1<<10);
+	ascii as;
+        ascii_io *fmt;
+
+	if (!t){
+		GDKerror("table %s not found\n", tname );
+		m->type = -1;
+		return NULL;
+	}
+	if (!s || stream_errnr(s)){
+		GDKerror("stream not open %d\n", stream_errnr(s));
+		m->type = -1;
+		return  NULL;
+	}
+
+	if (t->columns.set){
+		as.nr_attrs = list_length(t->columns.set);
+		as.nr = sz;
+		fmt = as.format =
+                    (ascii_io*)GDKmalloc(sizeof(ascii_io) * (as.nr_attrs + 1) );
+
+		for (n = t->columns.set->h, i=0; n; n = n->next, i++) 
+		{
+			sql_column *col = n->data;
+
+			fmt[i].name = _strdup(col->base.name);
+                	fmt[i].sep = (n->next)?_strdup(sep):_strdup(rsep);
+                	fmt[i].seplen = (int) strlen( fmt[i].sep );
+                	fmt[i].type = _strdup(col->type->type->name);
+                	fmt[i].adt = ATOMindex( fmt[i].type );
+                	fmt[i].tostr = &ASCIIadt_toStr;
+                	fmt[i].frstr = &ASCIIadt_frStr;
+                	fmt[i].extra = NULL;
+			if (strcmp(col->type->type->sqlname, "decimal")==0){
+				fmt[i].tostr = &dec_tostr;
+				fmt[i].frstr = &dec_frstr;
+				fmt[i].extra = col->type;
+			}
+		}
+        	if (ASCIIcreate_bats( &as ) >= 0){
+                	if ((cnt = ASCIIload_file( &as, bs ))>=0)
+                        	bats = ASCIIcollect_bats( &as );
+        	}
+        	ASCIIdestroy_format( &as );
+	}
+	bstream_destroy(bs);
+
+	m->type = Q_UPDATE;
+	m->status = cnt;
+	return bats;
+}
+
+static res_table *find_export_table( mvc *m, int res_id ){
+	res_table *r = m->results;
+	for( ; r; r = r->next){
+		if (r->id == res_id)
+			return r;
+	}
+	return NULL;
+}
+@-
+mvc_export_result dumps the sql header information
+It should be produced in Monet format to enable mapi
+to work with it.
+@c
+int mvc_export_result( mvc *m, stream *s, int res_id )
+{
+	int i;
+	res_table *t = find_export_table(m, res_id);
+	
+	m->type = Q_RESULT;
+/*
+	stream_writeInt( s, Q_RESULT );
+	stream_writeInt( s, t->nr_cols );
+	stream_writeInt( s, t->id );
+*/
+	
+	stream_write(s, "# ", strlen("# "), 1);
+	for (i = 0; i < t->nr_cols; i++) 
+	{
+		res_col *c = t->cols+i;
+		stream_write(s, c->name, strlen(c->name), 1);
+		if(i+1< t->nr_cols)
+			stream_write(s, ",\t", 2, 1);
+/*
+		stream_write(s, c->type->type->sqlname, 
+				strlen(c->type->type->sqlname), 1);
+		stream_write(s, "\n", 1, 1);
+*/
+	}
+	stream_write(s, " # name\n", strlen(" # name\n"), 1);
+	stream_flush(s);
+	return 0;
+}
+
+static int mvc_export_row( mvc *m, stream *s, res_table *t ) 
+{
+	char *sep = ",\t";
+	char *rsep = "\t]\n";
+
+	int i;
+
+	m->type = Q_RESULT;
+/*
+	stream_writeInt( s, Q_TABLE );
+	stream_writeInt( s, 1 );
+*/
+
+	stream_write(s, "[ ", strlen("[ "), 1);
+	for (i = 0; i < t->nr_cols; i++) 
+	{
+		res_col *c = t->cols+i;
+		if (i != 0)
+			stream_write(s, sep, strlen(sep), 1);
+
+		if (c->type->type->scale == SCALE_FIX){
+			char *buf = NULL;
+			int len = 0;
+			int l = dec_tostr((void*)(ptrdiff_t)c->type->scale, &buf, &len,
+					c->mtype, c->p);
+			stream_write(s, buf, l, 1);
+			_DELETE(buf);
+		} else { 
+			char *buf = NULL;
+			int len = 0;
+			int l = (*BATatoms[c->mtype].atomToStr)(&buf, &len, c->p);
+			stream_write(s, buf, l, 1);
+			_DELETE(buf);
+		}
+	}
+	mvc_clean_result(m, t);
+	stream_write(s, rsep, strlen(rsep), 1);
+	stream_flush(s);
+	return 0;
+}
+
+int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
+{
+	char *sep = ",\t";
+	char *rsep = "\t]\n";
+
+	ascii as;
+        ascii_io *fmt;
+	res_table *t = find_export_table(m, res_id);
+	size_t i;
+	ssize_t cnt;
+	int clean = 0;
+	BAT *order = NULL;
+
+	if (!t) 
+		return -1;
+
+	if (!t->order)
+		return mvc_export_row(m, s, t );
+
+	m->type = Q_RESULT;
+	order = BATdescriptor(t->order);
+	cnt = nr;
+	if (cnt < 0){
+ 		cnt = BATcount(order);
+		clean = 1;
+	}
+	if (offset >= BATcount(order))
+		cnt = 0;
+	if (offset + cnt > BATcount(order)){
+		cnt = BATcount(order)-offset;
+		clean = 1;
+	}
+
+/*
+	stream_writeInt( s, Q_TABLE );
+	stream_writeInt( s, cnt );
+*/
+	
+	if (cnt <= 0){
+		stream_flush(s);
+		return 0;
+	}
+	as.nr_attrs = t->nr_cols +1; /* for the leader */
+	as.nr = cnt;
+	as.offset = offset;
+	fmt = as.format =
+                (ascii_io*)GDKmalloc(sizeof(ascii_io) * (as.nr_attrs+1));
+
+	memset(fmt, 0, (as.nr_attrs+1)*sizeof(ascii_io));
+
+        fmt[0].c= NULL;
+        fmt[0].sep = _strdup("[ ");
+        fmt[0].seplen = (int) strlen( fmt[0].sep );
+
+	for (i = 1; i <= t->nr_cols; i++) 
+	{
+		res_col *c = t->cols+(i-1);
+		if (!c->b) 
+			break;
+
+		fmt[i].c = BATdescriptor(c->b);
+		fmt[i].name = NULL;
+                fmt[i].sep = ((i-1)<(t->nr_cols-1))?_strdup(sep):_strdup(rsep);
+                fmt[i].seplen = (int) strlen( fmt[i].sep );
+		fmt[i].type = ATOMname(fmt[i].c->ttype);
+		fmt[i].adt = fmt[i].c->ttype;
+                fmt[i].tostr = &ASCIIadt_toStr;
+                fmt[i].frstr = &ASCIIadt_frStr;
+                fmt[i].extra = NULL;
+		if (c->type->type->scale == SCALE_FIX){
+			fmt[i].tostr = &dec_tostr;
+			fmt[i].frstr = &dec_frstr;
+			fmt[i].extra = (void*)(ptrdiff_t)c->type->scale;
+		}
+	}
+	if (i == t->nr_cols+1){
+		ASCIIoutput_file(&as, order, s);
+	}
+	BBPunfix(order->batCacheid);
+	ASCIIdestroy_format( &as );
+	stream_flush( s );
+	if (clean)
+		mvc_clean_result(m, t);
+	return 0;
+}
+int debug_cmd( context *c, char *cmd, stream *out, int part )
+{
+	(void) c; (void)part; /* fool the compiler */
+/*	stream_writeInt( out, (part)?Q_DEBUGP:Q_DEBUG ); */
+/*	stream_writeInt( out, c->debug ); */
+	stream_write( out, cmd, strlen(cmd), 1 );
+	stream_flush( out );
+	return 0;
+}
