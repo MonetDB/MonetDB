@@ -717,6 +717,7 @@ struct BlockCache {
 	char *buf;
 	int lim;
 	int nxt;
+	int end;
 	int eos;		/* end of sequence */
 };
 
@@ -1670,6 +1671,7 @@ mapi_new(void)
 	mid->blk.buf[BLOCK] = 0;
 	mid->blk.buf[0] = 0;
 	mid->blk.nxt = 0;
+	mid->blk.end = 0;
 	mid->blk.lim = BLOCK;
 
 	mid->first = NULL;
@@ -2554,69 +2556,64 @@ mapi_param_store(MapiHdl hdl)
 static char *
 read_line(Mapi mid)
 {
-	char *reply, *s;
+	char *reply;
+	char *nl;
+	char *s;		/* from where to search for newline */
 
 	if (mid->active == NULL)
 		return 0;
 
 	/* check if we need to read more blocks to get a new line */
 	mid->blk.eos = 0;
-	while (!strchr(mid->blk.buf + mid->blk.nxt, '\n') && !mid->blk.eos) {
-		char *newbuf;
-		ssize_t len;
-		int rest, n;
-
-		s = strchr(mid->blk.buf + mid->blk.nxt, '\0');
-		assert(s);
-		n = s - mid->blk.buf;
-
-		if (mid->blk.lim - n < BLOCK) {
+	s = mid->blk.buf + mid->blk.nxt;
+	while ((nl = strchr(s, '\n')) == NULL && !mid->blk.eos) {
+		if (mid->blk.lim - mid->blk.end < BLOCK) {
+			char *newbuf;
 			int len;
 
-			rest = n - mid->blk.nxt;
 			len = mid->blk.lim;
 			if (mid->blk.nxt <= BLOCK) {
 				/* extend space */
 				len += BLOCK;
 			}
 			newbuf = malloc(len + 1);
-			memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest + 1);
-			if (mid->blk.buf)
-				free(mid->blk.buf);
+			memcpy(newbuf, mid->blk.buf + mid->blk.nxt, mid->blk.end - mid->blk.nxt + 1);
+			free(mid->blk.buf);
 			mid->blk.buf = newbuf;
+			mid->blk.end -= mid->blk.nxt;
 			mid->blk.nxt = 0;
 			mid->blk.lim = len;
-			n = rest;
 		}
 
+		s = mid->blk.buf + mid->blk.end;
+
 		if (mid->blocked) {
+			ssize_t len;
+
 			/* fetch one more block */
 			if (mid->trace)
-				printf("fetch next block: start at:%d\n", n);
-			len = stream_read(mid->from, mid->blk.buf + n, 1, BLOCK);
+				printf("fetch next block: start at:%d\n", mid->blk.end);
+			len = stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 			check_stream(mid, mid->from, "Connection terminated",
 				     "read_line", (mid->blk.eos = 1, (char *) 0));
-			mid->blk.buf[n + len] = 0;
+			mid->blk.buf[mid->blk.end + len] = 0;
 			if (mid->trace) {
 				printf("got next block: length:" SSZFMT "\n",
 				       len);
-				printf("text:%s\n", mid->blk.buf + n);
+				printf("text:%s\n", mid->blk.buf + mid->blk.end);
 			}
+			mid->blk.end += len;
 		} else {
 			/* fetch one more line */
-			len = 0;
-			s = mid->blk.buf + n;
-			while (stream_read(mid->from, s, 1, 1) == 1) {
-				len++;
-				if (*s == '\n')
+			while (stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, 1) == 1) {
+				if (mid->blk.buf[mid->blk.end++] == '\n')
 					break;
-				s++;
-				if (s == mid->blk.buf + mid->blk.lim)
+				if (mid->blk.end == mid->blk.lim)
 					break;
 			}
 			check_stream(mid, mid->from, "Connection terminated",
 				     "read_line", (mid->blk.eos = 1, (char *) 0));
-			mid->blk.buf[n + len] = 0;
+			mid->blk.buf[mid->blk.end] = 0;
 		}
 	}
 	if (mid->trace) {
@@ -2625,11 +2622,10 @@ read_line(Mapi mid)
 	}
 
 	/* we have a complete line in the buffer */
-	s = strchr(mid->blk.buf + mid->blk.nxt, '\n');
-	assert(s);
-	*s++ = 0;
+	assert(nl);
+	*nl++ = 0;
 	reply = mid->blk.buf + mid->blk.nxt;
-	mid->blk.nxt = s - mid->blk.buf;
+	mid->blk.nxt = nl - mid->blk.buf;
 
 	if (mid->trace)
 		printf("read_line:%s\n", reply);
@@ -3018,6 +3014,9 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames,
 	return mid->error;
 }
 
+#define MAXQUERYSIZE	(100*1024)
+#define QUERYBLOCK	(16*1024)
+
 static MapiMsg
 mapi_execute_internal(MapiHdl hdl)
 {
@@ -3038,8 +3037,66 @@ mapi_execute_internal(MapiHdl hdl)
 		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
 	if (mid->languageId == LANG_SQL) {
-		/* indicate to server this is a SQL command */
-		stream_write(mid->to, "s", 1, 1);
+		if (size > MAXQUERYSIZE) {
+			/* If the query is large and we don't do
+			   anything about it, deadlock may occur: the
+			   client (we) blocks writing the query while
+			   the server blocks writing the initial
+			   results.  Therefore we split up large
+			   queries into smaller batches.  The split is
+			   done simplistically, but we are prepared to
+			   receive the secondary prompt.  We cache the
+			   results of all but the last batch.
+			   There is  a problem  if auto-commit is  on:
+			   the server  commits on batch boundaries, so
+			   if one of our batches  ends at the end of a
+			   (sub)query, the server commits prematurely.
+			   Another problem is when the query we
+			   received is incomplete.  We should tell the
+			   server that there is no more, but we
+			   don't. */
+			size_t i = 0;
+
+			while (i < size) {
+				mid->active = hdl;
+				stream_write(mid->to, "S", 1, 1);
+				check_stream(mid, mid->to,
+					     "write error on stream",
+					     "mapi_execute", mid->error);
+				do {
+					size_t n;
+
+					hdl->needmore = 0;
+					if ((n = QUERYBLOCK) > size - i)
+						n = size - i;
+					stream_write(mid->to, cmd + i, 1, n);
+					check_stream(mid, mid->to,
+						     "write error on stream",
+						     "mapi_execute",
+						     mid->error);
+					stream_flush(mid->to);
+					check_stream(mid, mid->to,
+						     "write error on stream",
+						     "mapi_execute",
+						     mid->error);
+					i += n;
+					if (read_into_cache(hdl, 0) != MOK)
+						return mid->error;
+					if (i >= size && hdl->needmore) {
+						hdl->needmore = 0;
+						stream_flush(mid->to);
+						check_stream(mid, mid->to,
+							     "write error on stream",
+							     "mapi_execute",
+							     mid->error);
+					}
+				} while (hdl->needmore);
+			}
+			return MOK;
+		} else {
+			/* indicate to server this is a SQL command */
+			stream_write(mid->to, "s", 1, 1);
+		}
 	}
 	stream_write(mid->to, cmd, 1, size);
 	check_stream(mid, mid->to, "write error on stream", "mapi_execute",
@@ -3058,7 +3115,7 @@ mapi_execute_internal(MapiHdl hdl)
 	check_stream(mid, mid->to, "write error on stream",
 		     "mapi_execute", mid->error);
 	mid->active = hdl;
-	return MOK;
+	return read_into_cache(hdl, 1);
 }
 
 MapiMsg
@@ -3068,8 +3125,6 @@ mapi_execute(MapiHdl hdl)
 
 	mapi_hdl_check(hdl, "mapi_execute");
 	ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
 	return ret;
 }
 
@@ -3096,8 +3151,6 @@ mapi_query(Mapi mid, const char *cmd)
 	ret = mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
 	return hdl;
 }
 
@@ -3113,8 +3166,6 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 	ret = hdl->mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
 	return ret;
 }
 
@@ -3131,8 +3182,6 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 		ret = mapi_prepare_array_internal(hdl, val);
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
 	return hdl;
 }
 
