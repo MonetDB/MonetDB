@@ -975,6 +975,7 @@ CXXEXT = \\\"cxx\\\"
     if msc['BINS']:
         for v in msc['BINS']:
             fd.write('install_bin_%s: "%s.exe"\n' % (v, v))
+            fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (v, v))
             fd.write('\tif exist "%s.exe" $(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v,v))
     if msc['INSTALL']:
         for (dst, src, ext, dir) in msc['INSTALL']:
