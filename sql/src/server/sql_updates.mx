@@ -152,12 +152,13 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 			s = stmt_binop(s, count_sum, or);
 		}
 
-		if (internal_key(k))
-			snprintf(buf, BUFSIZ, "key constraint of table %s violated", 
-				k->t->base.name ); 
-		else
-			snprintf(buf, BUFSIZ, "key constraint %s.%s violated", 
+		if (k->type == pkey) {
+			snprintf(buf, BUFSIZ, "INSERT INTO: PRIMARY KEY constraint %s.%s violated", 
 				k->t->base.name, k->base.name ); 
+		} else {
+			snprintf(buf, BUFSIZ, "INSERT INTO: UNIQUE constraint %s.%s violated", 
+				k->t->base.name, k->base.name ); 
+		}
 		res = stmt_exception( s, buf, 00001 );
 	} else { /* single column key */
 		sql_kc *c = k->columns->h->data;
@@ -165,12 +166,13 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 		stmt *s = stmt_uselect( 
 			stmt_dup(inserts[c->c->colnr]->op1.stval), h, cmp_equal);
 		/* s should be empty */
-		if (internal_key(k))
-			snprintf(buf, BUFSIZ, "key constraint of table %s violated", 
-				k->t->base.name ); 
-		else
-			snprintf(buf, BUFSIZ, "key constraint %s.%s violated", 
+		if (k->type == pkey) {
+			snprintf(buf, BUFSIZ, "INSERT INTO: PRIMARY KEY constraint %s.%s violated", 
 				k->t->base.name, k->base.name ); 
+		} else {
+			snprintf(buf, BUFSIZ, "INSERT INTO: UNIQUE constraint %s.%s violated", 
+				k->t->base.name, k->base.name ); 
+		}
 		res = stmt_exception( stmt_aggr(s, NULL, cnt), buf, 00001); 
 	}
 	return res;
@@ -202,12 +204,8 @@ insert_check_fkey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 	}
 
 	/* s should be empty */
-	if (internal_key(k))
-		snprintf(buf, BUFSIZ, "foreign key constraint of table %s violated", 
-			k->t->base.name );
-	else
-		snprintf(buf, BUFSIZ, "foreign key constraint %s.%s violated", 
-			k->t->base.name, k->base.name );
+	snprintf(buf, BUFSIZ, "INSERT INTO: FOREIGN KEY constraint %s.%s violated", 
+				k->t->base.name, k->base.name ); 
 	return stmt_exception( s, buf, 00001 );
 }
 
@@ -531,12 +529,13 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 			s = stmt_binop(s, count_sum, or);
 		}
 
-		if (internal_key(k))
-			snprintf(buf, BUFSIZ, "key constraint of table %s violated", 
-				k->t->base.name ); 
-		else
-			snprintf(buf, BUFSIZ, "key constraint %s.%s violated", 
+		if (k->type == pkey) {
+			snprintf(buf, BUFSIZ, "UPDATE: PRIMARY KEY constraint %s.%s violated", 
 				k->t->base.name, k->base.name ); 
+		} else {
+			snprintf(buf, BUFSIZ, "UPDATE: UNIQUE constraint %s.%s violated", 
+				k->t->base.name, k->base.name ); 
+		}
 		res = stmt_exception( s, buf, 00001);
 	} else { /* single column key */
 		sql_kc *c = k->columns->h->data;
@@ -546,12 +545,13 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 				stmt_dup(updates[c->c->colnr]->op2.stval));	
 		stmt *s = stmt_uselect( o, h, cmp_equal);
 		/* s should be empty */
-		if (internal_key(k))
-			snprintf(buf, BUFSIZ, "key constraint of table %s violated", 
-				k->t->base.name ); 
-		else
-			snprintf(buf, BUFSIZ, "key constraint %s.%s violated", 
+		if (k->type == pkey) {
+			snprintf(buf, BUFSIZ, "UPDATE: PRIMARY KEY constraint %s.%s violated", 
 				k->t->base.name, k->base.name ); 
+		} else {
+			snprintf(buf, BUFSIZ, "UPDATE: UNIQUE constraint %s.%s violated", 
+				k->t->base.name, k->base.name ); 
+		}
 		res = stmt_exception( stmt_aggr(s, NULL, cnt), buf, 00001); 
 	}
 	return res;
@@ -576,12 +576,8 @@ update_check_fkey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 		stmt_aggr(cur, NULL, sql_dup_aggr(cnt)), ne);
 
 	/* s should be empty */
-	if (internal_key(k))
-		snprintf(buf, BUFSIZ, "foreign key constraint of table %s violated", 
-			k->t->base.name );
-	else 
-		snprintf(buf, BUFSIZ, "foreign key constraint %s.%s violated", 
-			k->t->base.name, k->base.name );
+	snprintf(buf, BUFSIZ, "UPDATE: FOREIGN KEY constraint %s.%s violated", 
+		k->t->base.name, k->base.name );
 	return stmt_exception( s, buf, 00001 );
 }
 
@@ -764,7 +760,7 @@ stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len, int output)
  					isnil);
 			}
 			snprintf(buf, BUFSIZ, 
-				"null constraint %s.%s violated", 
+				"INSERT INTO: NOT NULL constraint violated for column %s.%s", 
 				c->t->base.name, c->base.name ); 
 			s = stmt_exception( s, buf, 00001); 
 			
@@ -1035,7 +1031,7 @@ stmt *sql_update(mvc * sql, sql_table *t, stmt **updates, list *l )
  					isnil);
 			}
 			snprintf(buf, BUFSIZ, 
-				"null constraint %s.%s violated", 
+				"UPDATE: NOT NULL constraint violated for column %s.%s", 
 				c->t->base.name, c->base.name ); 
 			s = stmt_exception( s, buf, 00001); 
 			

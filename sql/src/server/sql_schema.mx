@@ -907,47 +907,61 @@ static char *table_constraint_name(symbol* s, sql_table* t)
 	switch (s->token) {
 		case SQL_UNIQUE:
 			suffix = "_unique";
-			/* the condition below is needed for SQL shortcut
-			   id int UNIQUE because no column is given.
-			   in the normal case it is (id int, UNIQUE(id)
-			   I don't know how to figure out the column name
-			   here for the first case.
-			 */
-			if (s->data.lval)
-				nms = s->data.lval->h; /* list of columns */
+			nms = s->data.lval->h; /* list of columns */
 		break;
 		case SQL_PRIMARY_KEY:
 			suffix = "_pkey";
-			/* the condition below is needed for SQL shortcut
-			   id int PRIMARY KEY because no column is given.
-			   in the normal case it is (id int, PRIMARY KEY(id)
-			   I don't know how to figure out the column name
-			   here for the first case.
-			 */
-			if (s->data.lval)
-				nms = s->data.lval->h; /* list of columns */
+			nms = s->data.lval->h; /* list of columns */
 		break;
 		case SQL_FOREIGN_KEY:
 			suffix = "_fkey";
 			nms = s->data.lval->h->next->data.lval->h; /* list of colums */
 		break;
 		default:
-			suffix = "";
+			suffix = "_?";
 			nms = NULL;
 	}
 
-	snprintf(buf, BUFSIZ, "%c%s",
-		INTERNAL_KEY_MARKER,
-		t->base.name
-	);
+	/* copy table name */
+	strncpy(buf, t->base.name, BUFSIZ);
 	
+	/* add column name(s) */
 	for (; nms; nms = nms->next) {
 		strncat(buf, "_", BUFSIZ - strlen(buf));
 		strncat(buf, nms->data.sval, BUFSIZ - strlen(buf));
 	}
 
+	/* add suffix */
 	strncat(buf, suffix, BUFSIZ - strlen(buf));
 	
+	return buf;
+}
+
+static char* column_constraint_name(symbol* s, sql_column* sc, sql_table* t) {
+	/* create a descriptive name like table_col_pkey */
+	char* suffix; /* stores the type of this constraint */
+	static char buf[BUFSIZ];
+
+	switch (s->token) {
+		case SQL_UNIQUE:
+			suffix = "unique";
+		break;
+		case SQL_PRIMARY_KEY:
+			suffix = "pkey";
+		break;
+		case SQL_FOREIGN_KEY:
+			suffix = "fkey";
+		break;
+		default:
+			suffix = "?";
+	}
+
+	snprintf(buf, BUFSIZ, "%s_%s_%s",
+		t->base.name,
+		sc->base.name,
+		suffix
+	);
+
 	return buf;
 }
 
@@ -964,7 +978,7 @@ column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column 
 			char *opt_name = l->h->data.sval;  
 			symbol *sym = l->h->next->data.sym;
 			if (!opt_name) 
-				opt_name = table_constraint_name(sym, t);
+				opt_name = column_constraint_name(sym, cs, t);
 			res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
 		}
 		break;
@@ -1295,14 +1309,11 @@ drop_table(mvc * sql, dlist * qname, int drop_action)
 						k = l->data;
 						/* make sure it is not a self referencing key */
 						if (k->t != t) {
-							if (!internal_key(k))
-								return sql_error(sql, 02, 
-								"DROP TABLE: foreign key %s.%s depends on %s",
-									k->t->base.name, k->base.name, tname);
-							else
-								return sql_error(sql, 02, 
-								"DROP TABLE: foreign key of table"
-								" %s depends on %s", k->t->base.name, tname);
+							return sql_error(sql, 02, 
+								"DROP TABLE: FOREIGN KEY %s.%s "
+								"depends on %s",
+								k->t->base.name, k->base.name, tname
+							);
 						}
 					}
 				}
