@@ -561,7 +561,7 @@ blob *BLOBnull(){
 	return blob_null();
 }
 void BLOBconvert( blob *b, int direction){
-	return blob_convert(b,direction);
+	blob_convert(b,direction);
 }
 int BLOBlength(blob* p){
 	return blob_length(p);
