@@ -118,6 +118,13 @@ atom resultset:int;
 command populateColumn(rs:resultset,col:int,b:bat[:void,:any]):resultset
 address RSpopulateColumn
 comment "Add a BAT as column with a name to this ResultSet";
+command dePopulate(rs:resultset):resultset
+address RSdePopulate
+comment "Removes all the attached BATs and allows populating again";
+command addUnion(rs:resultset):resultset
+address RSunion
+comment "Allow populating a new set of column which is unioned to the
+previous";
 
 command setProperty(rs:resultset,col:int,nme:str,val:str):resultset
 address RSsetPropertyStr
@@ -126,9 +133,6 @@ command setProperty(rs:resultset,col:int,nme:str,val:int):resultset
 address RSsetPropertyInt
 comment "Sets the given property to the given value on the given column";
 
-command dePopulate(rs:resultset):resultset
-address RSdePopulate
-comment "Removes all the attached BATs and allows populating again";
 command writeHeader(rs:resultset):int
 address RSwriteHeader
 comment "Writes the header of this ResultSet to the given stream";
@@ -719,6 +723,7 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 	BAT* b;
 	resultset* rs;
 	columnset* cs;
+	columnset* lastcs = NULL;
 	str tmp;
 
 	resolveHandle(&rs, handle);
@@ -733,7 +738,10 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 		throwf("resultset.populateColumn", "Column index out of bounds (%d)", *colno);
 	/* find the last ResultSet block */
 	cs = &(rs->columnSet);
-	while (cs->nextSet != NULL) cs = cs->nextSet;
+	while (cs->nextSet != NULL) {
+		lastcs = cs;
+		cs = cs->nextSet;
+	}
 	if (cs->complete)
 		throw("resultset.populateColumn", "Unable to modify a complete ResultSet");
 
@@ -753,6 +761,8 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 	/* add the BAT */
 	if (cs->columns[*colno - 1]->bat != NULL)
 		BBPunfix(cs->columns[*colno - 1]->bat->batCacheid);
+	if (lastcs != NULL && b->ttype != lastcs->columns[*colno - 1]->bat->ttype)
+		throw("resultset.populateColumn", "The tail type of the to be added column does not match the previous union part");
 	cs->columns[*colno - 1]->bat = b;
 
 	*retval = *handle;
@@ -902,7 +912,6 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
  * Note that a ResultSet without column is considered to be an error.
  *
  * @param rs a resultset
- * @return the same resultset handle
  */
 static str RSsetComplete(resultset* rs) {
 	int i;
@@ -921,6 +930,39 @@ static str RSsetComplete(resultset* rs) {
 
 	cs->complete = (char)1;
 
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Unions a new (empty) column set to the last one of the
+ * given ResultSet.  Before the set is added, the previous
+ * one is first completed.
+ *
+ * @param rs a resultset
+ * @return the same resultset handle
+ */
+str RSunion(int* retval, int* handle) {
+	int j;
+	resultset* rs;
+	columnset* cs;
+	str tmp;
+
+	resolveHandle(&rs, handle);
+	cs = &(rs->columnSet);
+	while (cs->nextSet != NULL) cs = cs->nextSet;
+	
+	/* make sure the last column set is complete */
+	if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
+
+	/* add a new column set and initialise the values */
+	cs = cs->nextSet = GDKmalloc(sizeof(columnset));
+	cs->columns = GDKmalloc(sizeof(column*) * rs->columnCount);
+	memset(cs->columns, 0, sizeof(column*) * rs->columnCount);
+	for (j = 0; j < rs->columnCount; j++)
+		RSinitColumn(cs, &j);
+	cs->length = -1;
+
+	*retval = *handle;
 	return(MAL_SUCCEED);
 }
 
@@ -1165,35 +1207,68 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	int bytes = 0, bt, i;
 	column* col;
 	resultset* rs;
+	columnset* cs;
 	str tmp;
 	stream* s = GDKout;
-	int low = *lower;
+	int low = *lower, up = *upper;
 	ptr p;
 
 	resolveHandle(&rs, handle);
-	if (!rs->columnSet.complete)
-		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
-	if (*lower < 0)
-		throwf("resultset.writeBlock", "Lower index out of bounds (%d < 0)", *lower);
-	if (*upper > rs->length)
-		throwf("resultset.writeBlock", "Upper index out of bounds (%d > ResultSet length)", *upper);
-	if (*lower >= *upper)
+	if (low < 0)
+		throwf("resultset.writeBlock", "Lower index out of bounds (%d < 0)", low);
+	if (up > rs->length)
+		throwf("resultset.writeBlock", "Upper index out of bounds (%d > ResultSet length)", up);
+	if (low >= up)
 		throw("resultset.writeBlock", "Lower index should be smaller than upper index");
+
+	cs = &(rs->columnSet);
+	do {
+		if (cs->complete == 0 && (tmp = RSsetComplete(rs)) != MAL_SUCCEED)
+			return(tmp);
+		
+		/* correct lower value if necessary */
+		if (low >= cs->length) {
+			low -= cs->length;
+			up -= cs->length;
+		} else {
+			break;
+		}
+	} while ((cs = cs->nextSet) != NULL);
+	
+	if (cs == NULL)
+		throw("resultset.writeBlock", "Panic! lower value seems to be higher than the actual size!");
 
 	/* initialise all column BUN pointers */
 	for (i = 0; i < rs->columnCount; i++) {
-		col = rs->columnSet.columns[i];
-		col->bun = (BUN)((char *)BUNfirst(col->bat) + BUNsize(col->bat) * *lower);
+		col = cs->columns[i];
+		col->bun = (BUN)((char *)BUNfirst(col->bat) + BUNsize(col->bat) * low);
 	}
 	/* write the desired block of results */
-	for (; low < *upper; low++) {
+	for (; low < up; low++) {
+		/* if we run out of our BAT... */
+		if (low >= cs->length) {
+			/* ... we have to do a move again ... */
+			low -= cs->length;
+			up -= cs->length;
+			/* ... and put the next column set in place */
+			cs = cs->nextSet;
+
+			if (cs == NULL)
+				throw("resultset.writeBlock", "Panic! lower value seems to be higher than the actual size!");
+			/* initialise all column BUN pointers */
+			for (i = 0; i < rs->columnCount; i++) {
+				col = cs->columns[i];
+				col->bun = (BUN)((char *)BUNfirst(col->bat) + BUNsize(col->bat) * low);
+			}
+		}
+		
 		if ((bt = stream_printf(s, "%c", RS_LINE_TUPLE)) <= 0) {
 			bytes = 0;
 			break;
 		}
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
-			col = rs->columnSet.columns[i];
+			col = cs->columns[i];
 			/* write value */
 			p = (ptr)BUNtail(col->bat, col->bun);
 			if (!p) throw("resultset.writeBlock", "Illegal tail value pointer: NULL");
