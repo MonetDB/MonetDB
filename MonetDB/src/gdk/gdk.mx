@@ -393,7 +393,7 @@ extern "C" {
 #endif
 #define DBLOGFILE	"MonetLog"
 
-#define PATHLENGTH	128		/* maximum file pathnamde length */ 
+#define PATHLENGTH	256		/* maximum file pathname length */ 
 
 @
 @}
