@@ -49,10 +49,10 @@ b.insert(int(nil),8);
 b.insert(int(nil),9);
 b.insert(int(nil),int(nil));
 
-var c:=b.reverse.[oid].reverse;
-var d:=a.reverse;
+var c:=b.reverse().[oid]().reverse();
+var d:=a.reverse();
 
-a.print;
+a.print();
 #-----------------#
 # h	tmp_29	  # name
 # void	int	  # type
@@ -60,7 +60,7 @@ a.print;
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  nil	  ]
-d.print;
+d.print();
 #-----------------#
 # t	tmp_29	  # name
 # int	void	  # type
@@ -68,7 +68,7 @@ d.print;
 [ 0,	  0@0	  ]
 [ 1,	  1@0	  ]
 [ nil,	  2@0	  ]
-b.print;
+b.print();
 #-----------------#
 # h	tmp_30	  # name
 # int	int	  # type
@@ -106,7 +106,7 @@ b.print;
 [ nil,	  8	  ]
 [ nil,	  9	  ]
 [ nil,	  nil	  ]
-c.print;
+c.print();
 #-----------------#
 # t	tmp_28	  # name
 # oid	int	  # type
@@ -145,7 +145,7 @@ c.print;
 [ nil,	  9	  ]
 [ nil,	  nil	  ]
 
-b.semijoin(d).print;
+b.semijoin(d).print();
 #-----------------#
 # h	tmp_31	  # name
 # int	int	  # type
@@ -172,7 +172,7 @@ b.semijoin(d).print;
 [ 1,	  8	  ]
 [ 1,	  9	  ]
 [ 1,	  nil	  ]
-d.semijoin(b).print;
+d.semijoin(b).print();
 #-----------------#
 # h	tmp_31	  # name
 # int	oid	  # type
@@ -180,7 +180,7 @@ d.semijoin(b).print;
 [ 0,	  0@0	  ]
 [ 1,	  1@0	  ]
 
-c.semijoin(a).print;
+c.semijoin(a).print();
 #-----------------#
 # h	tmp_31	  # name
 # oid	int	  # type
@@ -207,7 +207,7 @@ c.semijoin(a).print;
 [ 1@0,	  8	  ]
 [ 1@0,	  9	  ]
 [ 1@0,	  nil	  ]
-a.semijoin(c).print;
+a.semijoin(c).print();
 #-----------------#
 # h	tmp_31	  # name
 # oid	int	  # type
@@ -217,16 +217,16 @@ a.semijoin(c).print;
 
 # (try to) force different semijoin implementations
 
-a:=new(int,oid).insert(1,1@0).insert(2,2@0).insert(int(nil),oid(nil)).sort;
+a:=new(int,oid).insert(1,1@0).insert(2,2@0).insert(int(nil),oid(nil)).sort();
 c:=new(int,oid).insert(int(nil),oid(nil));
 var i:=0;
 while(i < 100) {
 	i:+=1;
 	c.insert(i, oid(i));
 }
-c:=c.sort;
+c:=c.sort();
 
-a.print;
+a.print();
 #-----------------#
 # h	tmp_32	  # name
 # int	oid	  # type
@@ -234,7 +234,7 @@ a.print;
 [ nil,	  nil	  ]
 [ 1,	  1@0	  ]
 [ 2,	  2@0	  ]
-c.slice(0,1).print;
+c.slice(0,1).print();
 #-----------------#
 # h	tmp_31	  # name
 # int	oid	  # type
@@ -243,14 +243,14 @@ c.slice(0,1).print;
 [ 1,	  1@0	  ]
 
 # binsemijoin
-a.semijoin(c).print;
+a.semijoin(c).print();
 #-----------------#
 # h	tmp_31	  # name
 # int	oid	  # type
 #-----------------#
 [ 1,	  1@0	  ]
 [ 2,	  2@0	  ]
-c.semijoin(a).print;
+c.semijoin(a).print();
 #-----------------#
 # h	tmp_31	  # name
 # int	oid	  # type
@@ -262,18 +262,18 @@ a:=a.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
 c:=c.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
 
 # idxsemijoin
-var ai:=a.copy;
+var ai:=a.copy();
 ai.accbuild("index");
-var ci:=c.copy;
+var ci:=c.copy();
 ci.accbuild("index");
-ai.semijoin(ci).print;
+ai.semijoin(ci).print();
 #-----------------#
 # h	tmp_34	  # name
 # int	oid	  # type
 #-----------------#
 [ 1,	  1@0	  ]
 [ 2,	  2@0	  ]
-ci.semijoin(ai).print;
+ci.semijoin(ai).print();
 #-----------------#
 # h	tmp_34	  # name
 # int	oid	  # type
@@ -282,18 +282,18 @@ ci.semijoin(ai).print;
 [ 2,	  2@0	  ]
 
 # hash => kinsertsect & revsemijoin
-var ah:=a.copy;
+var ah:=a.copy();
 ah.accbuild("hash");
-var ch:=c.copy;
+var ch:=c.copy();
 ch.accbuild("hash");
-ah.semijoin(ch).print;
+ah.semijoin(ch).print();
 #-----------------#
 # h	tmp_36	  # name
 # int	oid	  # type
 #-----------------#
 [ 1,	  1@0	  ]
 [ 2,	  2@0	  ]
-ch.semijoin(ah).print;
+ch.semijoin(ah).print();
 #-----------------#
 # h	tmp_36	  # name
 # int	oid	  # type

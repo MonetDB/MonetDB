@@ -19,14 +19,14 @@ b.insert(oid(11), false);
 b.insert(oid(11), bit(nil));
 b.insert(oid(11), true);
 b.insert(oid(12), bit(nil));
-b.print;
+b.print();
 
-proc exist(BAT[bit,bit] b) : bit := {
+proc exist(BAT[bit,bit] b) : bit {
   return b.exist(true);
 }
 
 var x := {exist}(b);
-x.print;
+x.print();
 
 b.insert(oid(1), true);
 
@@ -105,11 +105,11 @@ bss@hashloop(oid(5)) {
   print($t);
 }
 
-bs.reverse@hashloop(true) {
+bs.reverse()@hashloop(true) {
   print($t);
 }
 
-bss.reverse@hashloop(true) {
+bss.reverse()@hashloop(true) {
   print($t);
 }
-quit;
+quit();

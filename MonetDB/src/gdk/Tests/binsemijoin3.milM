@@ -16,30 +16,30 @@ while (i<450000) { right.insert(oid(i*2),nil); i:+=1; }
 debugmask(dbgmsk);
 right.insert(0@0,nil); # make sure right is unordered.
 
-left.count.print;
-right.count.print;
+left.count().print();
+right.count().print();
 
-right.ordered.print;
-var tm0 := time;
+right.ordered().print();
+var tm0 := time();
 var res := left.semijoin(right);
-var tm1 := time;
+var tm1 := time();
 
-printf("# Done (%d results) ... elapsed time: %d ms\n", res.count, tm1 - tm0);
-res.count.print;
-res.slice(0,20).print;
+printf("# Done (%d results) ... elapsed time: %d ms\n", res.count(), tm1 - tm0);
+res.count().print();
+res.slice(0,20).print();
 
-tm0 := time;
-right.order;
-tm1 := time;
+tm0 := time();
+right.order();
+tm1 := time();
 
-printf("# %d BUNs ordered in %d ms\n", right.count, tm1 - tm0);
-right.count.print;
+printf("# %d BUNs ordered in %d ms\n", right.count(), tm1 - tm0);
+right.count().print();
 
-right.ordered.print;
-tm0 := time;
+right.ordered().print();
+tm0 := time();
 res := left.semijoin(right);
-tm1 := time;
+tm1 := time();
 
-printf("# Done (%d results) ... elapsed time: %d ms\n", res.count, tm1 - tm0);
-res.slice(0,20).print;
-res.count.print;
+printf("# Done (%d results) ... elapsed time: %d ms\n", res.count(), tm1 - tm0);
+res.slice(0,20).print();
+res.count().print();

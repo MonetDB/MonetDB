@@ -21,7 +21,7 @@ var Fhelp:=new(oid,str);Fhelp.col_name("help");
 var Fnts:=new(oid,str);
 
 var Unknown_mods:=MODULES.select("UNKNOWN").sort().copy();
-table(Unknown_mods.reverse().col_name(sprintf("%i modules",Unknown_mods.count)));
+table(Unknown_mods.reverse().col_name(sprintf("%i modules",Unknown_mods.count())));
 #-----------------#
 # 0 modules	  #
 #-----------------#
@@ -69,7 +69,7 @@ Unknown_mods@batloop {
 	Fnts.reverse().sort().reverse()@batloop {
 		FnameS.insert($h,Fname.find($h));
 	}
-	FnameS.count.print(); table(1,FnameS,Ftype,Fsig,Fhelp);
+	FnameS.count().print(); table(1,FnameS,Ftype,Fsig,Fhelp);
 
 	Fname.delete();
 	FnameS.delete();

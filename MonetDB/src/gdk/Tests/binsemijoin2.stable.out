@@ -20,7 +20,7 @@ while (i<12) { left.insert(nil,oid(i)); i:+=1; }
 i:=0;
 while (i<200) { right.insert(oid(i*2),nil); i:+=1; }
 
-left.print;
+left.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -37,7 +37,7 @@ left.print;
 [ 9@0,	  9@0	  ]
 [ 10@0,	  10@0	  ]
 [ 11@0,	  11@0	  ]
-right.print;
+right.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (void)  #
@@ -243,8 +243,8 @@ right.print;
 [ 396@0,  nil	  ]
 [ 398@0,  nil	  ]
 
-right.order;
-right.print;
+right.order();
+right.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (void)  #
@@ -450,7 +450,7 @@ right.print;
 [ 396@0,  nil	  ]
 [ 398@0,  nil	  ]
 
-left.semijoin(right).print;
+left.semijoin(right).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (oid)	  #

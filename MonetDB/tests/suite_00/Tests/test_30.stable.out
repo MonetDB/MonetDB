@@ -83,7 +83,7 @@ d.traverse(c).print();
 #-----------------#
 [ 1,	  7	  ]
 [ 1,	  5	  ]
-d.clear;
+d.clear();
 d.insert(2,3);
 d.traverse(c).print();
 #-----------------#
@@ -92,12 +92,12 @@ d.traverse(c).print();
 #-----------------#
 [ 2,	  5	  ]
 ## The alternative is to extract a subgraph
-d.clear;
+d.clear();
 d.insert(2,2);
 printf("#~BeginVariableOutput~#\n"); time.print(); var z:=d.subgraph(c); time.print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 201 ]
-[ 201 ]
+[ 1013 ]
+[ 1013 ]
 #~EndVariableOutput~#
 z.print();
 #-----------------#
@@ -109,13 +109,13 @@ z.print();
 [ 3,	  5	  ]
 [ 3,	  4	  ]
 [ 4,	  5	  ]
-d.clear;
+d.clear();
 d.insert(2,2);
 d.insert(3,3);
 printf("#~BeginVariableOutput~#\n"); time.print(); z:=d.subgraph(c); time.print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 201 ]
-[ 201 ]
+[ 1013 ]
+[ 1013 ]
 #~EndVariableOutput~#
 z.print();
 #-----------------#

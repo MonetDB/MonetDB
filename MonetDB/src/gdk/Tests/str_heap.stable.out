@@ -23,11 +23,11 @@ bat("DRUID_sample").insert(4,str("Taxes ... Health [ Xtra! ] Medicine , Drugs , 
 
 bat("DRUID_sample").insert(5,str("laune · Débats et mesures sur la sécurité · Nouvelle escalade dans le ciel irakien · Le procès Clinton · Tremblement de terre en Colombie · Open d'Australie [ Tous les titres ] EtsurYahoo! · BD: festival d'Angoulême · La sélection de la semaine · Mon Yahoo! : votre Yahoo! à vous! · Yahoo! recrute [ Tout sur Yahoo! ] Yahoo! Europe  Allemagne - Danemark - Espagne - Italie - Norvège - R.U. & Irlande - Suède Yahoo! Monde Yahoo! (US) - Asie - Australie & N.Z. - Canada - Corée - Japon - chinois -"));
 
-bat("DRUID_sample").print;
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:	  DRUID_sample																																																														  #
-# (int)	  (str)																																																															  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+bat("DRUID_sample").print();
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# h	DRUID_sample																																																																  # name
+# int	str																																																																	  # type
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ 1,	  "Medicina e salute Malattie , Medicina , Terapie ... Risorse Biblioteche , Dizionari ... Scienza e tecnologia Archeologia , Biologia , Astronomia ... Scienze umane e sociali Economia , Storia , Psicologia ... Società e culture A tavola , Religione , Ambiente ... Sport e tempo libero Calcio , Basket , Ciclismo , Viaggi ... Nelle notizie · Iraq, nuovi attacchi USA · Clandestini, sbarchi continui in Puglia · Kosovo: \"cruciale il supporto italiano\" · Europee, Paolo Rossi con AN · Terremoto in"	  ]
 [ 2,	  "Software ... Geisteswissenschaften Psychologie , Geschichte , Sprachen ... Gesellschaft & Soziales Umwelt , Religion , Museen ... Gesundheit Medizin , Krankheiten , Ernährung ... Handel & Wirtschaft Firmen , Finanzen , Jobs , Shopping ... Kunst & Kultur Kunst , Literatur , Theater ... Nachrichten & Medien Spezial , TV , Zeitschriften , Zeitungen ... Nachschlagewerke Bibliotheken , Wörterbücher , Postinfos ... Naturwissenschaft & Technik Ingenieurwesen , Astronomie , Biologie ... Sport & Freizeit"  ]
 [ 3,	  ""																																																															  ]
@@ -38,11 +38,11 @@ unload("DRUID_sample");
 
 load("DRUID_sample");
 
-bat("DRUID_sample").print;
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:	  DRUID_sample																																																														  #
-# (int)	  (str)																																																															  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+bat("DRUID_sample").print();
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# h	DRUID_sample																																																																  # name
+# int	str																																																																	  # type
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ 1,	  "Medicina e salute Malattie , Medicina , Terapie ... Risorse Biblioteche , Dizionari ... Scienza e tecnologia Archeologia , Biologia , Astronomia ... Scienze umane e sociali Economia , Storia , Psicologia ... Società e culture A tavola , Religione , Ambiente ... Sport e tempo libero Calcio , Basket , Ciclismo , Viaggi ... Nelle notizie · Iraq, nuovi attacchi USA · Clandestini, sbarchi continui in Puglia · Kosovo: \"cruciale il supporto italiano\" · Europee, Paolo Rossi con AN · Terremoto in"	  ]
 [ 2,	  "Software ... Geisteswissenschaften Psychologie , Geschichte , Sprachen ... Gesellschaft & Soziales Umwelt , Religion , Museen ... Gesundheit Medizin , Krankheiten , Ernährung ... Handel & Wirtschaft Firmen , Finanzen , Jobs , Shopping ... Kunst & Kultur Kunst , Literatur , Theater ... Nachrichten & Medien Spezial , TV , Zeitschriften , Zeitungen ... Nachschlagewerke Bibliotheken , Wörterbücher , Postinfos ... Naturwissenschaft & Technik Ingenieurwesen , Astronomie , Biologie ... Sport & Freizeit"  ]
 [ 3,	  ""																																																															  ]
@@ -50,7 +50,7 @@ bat("DRUID_sample").print;
 [ 5,	  "laune · Débats et mesures sur la sécurité · Nouvelle escalade dans le ciel irakien · Le procès Clinton · Tremblement de terre en Colombie · Open d'Australie [ Tous les titres ] EtsurYahoo! · BD: festival d'Angoulême · La sélection de la semaine · Mon Yahoo! : votre Yahoo! à vous! · Yahoo! recrute [ Tout sur Yahoo! ] Yahoo! Europe  Allemagne - Danemark - Espagne - Italie - Norvège - R.U. & Irlande - Suède Yahoo! Monde Yahoo! (US) - Asie - Australie & N.Z. - Canada - Corée - Japon - chinois -"	  ]
 
 bat("DRUID_sample").persists(false);
-quit;
+quit();
 
 # 17:04:43 >  
 # 17:04:43 >  Done.

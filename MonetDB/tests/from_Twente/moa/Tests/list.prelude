@@ -6,7 +6,7 @@ PROC he_kdiff(BAT b1, BAT b2 ): BAT {
   IF ( b2.count() = 0 )
   {
     printf( "WARNING: second BAT is empty, using special kdiff!\n" );
-    return b1.copy;
+    return b1.copy();
   }
   ELSE
   {
@@ -66,8 +66,8 @@ PROC sunion(bat[any::1,any::2] bat1, bat[any::1,any::2] bat2):
 PROC mergecast( BAT[any::1,any] bat1, BAT[any,any::2] bat2, any::2 val)
                         :BAT[any::1,any::2]
 {
-      VAR tmp := [exist](const bat2.mirror,bat1.mirror);
-      RETURN [ifthenelse](tmp,outerjoin(bat1.mirror,bat2),val);
+      VAR tmp := [exist](const bat2.mirror(),bat1.mirror());
+      RETURN [ifthenelse](tmp,outerjoin(bat1.mirror(),bat2),val);
 }
 
 PROC concat( BAT[any::1,any::2] bat1, BAT[any::1,any::2] bat2)

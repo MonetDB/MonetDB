@@ -24,7 +24,7 @@ nil
 printf("%+5.4f and %s\n", flt(nil), str(nil) );
   nil and nil
 
-quit;
+quit();
 
 # 17:06:23 >  
 # 17:06:23 >  Done.

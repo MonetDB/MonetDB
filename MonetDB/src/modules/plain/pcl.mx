@@ -186,7 +186,7 @@ pcl_events.insert( "PCL_L1DCACHE_MISSRATE",       58);
 pcl_events.insert( "PCL_L2DCACHE_MISSRATE",       59);
 pcl_events.insert( "PCL_MEM_FP_RATIO",            60);
 
-pcl_events := pcl_events.reverse;
+pcl_events := pcl_events.reverse();
 @{
 @-
 
@@ -463,8 +463,8 @@ PROC test_pcl() : void {
 
   available := pcl_query(pcl_events,1).select(0);
 
-  L1MISS_EVENTS := pcl_events.semijoin(available).reverse.semijoin(names).reverse;
-  L1MISS_EVENTS.print;
+  L1MISS_EVENTS := pcl_events.semijoin(available).reverse().semijoin(names).reverse();
+  L1MISS_EVENTS.print();
 
   events := L1MISS_EVENTS;
   pcl_start(events,1);

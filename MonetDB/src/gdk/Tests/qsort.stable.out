@@ -21,7 +21,7 @@ b.insert(8,6);
 b.insert(4,5);
 b.insert(7,7);
 b.access(BAT_READ);
-b.print;
+b.print();
 #-----------------#
 # h	tmp_29	  # name
 # int	int	  # type
@@ -36,14 +36,14 @@ b.print;
 [ 8,	  6	  ]
 [ 4,	  5	  ]
 [ 7,	  7	  ]
-var i_n := b.mark(oid(nil)).copy;
-var n_i := i_n.reverse.copy;
-var i_v := b.mark(oid(0)).copy;
-var v_i := i_v.reverse.copy;
-var i_o := b.[oid].copy;
-var o_i := i_o.reverse.copy;
+var i_n := b.mark(oid(nil)).copy();
+var n_i := i_n.reverse().copy();
+var i_v := b.mark(oid(0)).copy();
+var v_i := i_v.reverse().copy();
+var i_o := b.[oid]().copy();
+var o_i := i_o.reverse().copy();
 
-n_i.print;
+n_i.print();
 #-----------------#
 # h	tmp_30	  # name
 # void	int	  # type
@@ -58,7 +58,7 @@ n_i.print;
 [ nil,	  8	  ]
 [ nil,	  4	  ]
 [ nil,	  7	  ]
-n_i.sort.print;
+n_i.sort().print();
 #-----------------#
 # h	tmp_35	  # name
 # void	int	  # type
@@ -73,7 +73,7 @@ n_i.sort.print;
 [ nil,	  8	  ]
 [ nil,	  4	  ]
 [ nil,	  7	  ]
-n_i.copy.access(BAT_WRITE).order.print;
+n_i.copy().access(BAT_WRITE).order().print();
 #-----------------#
 # h	tmp_35	  # name
 # void	int	  # type
@@ -88,7 +88,7 @@ n_i.copy.access(BAT_WRITE).order.print;
 [ nil,	  8	  ]
 [ nil,	  4	  ]
 [ nil,	  7	  ]
-n_i.sort_rev.print;
+n_i.sort_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # void	int	  # type
@@ -103,7 +103,7 @@ n_i.sort_rev.print;
 [ nil,	  8	  ]
 [ nil,	  4	  ]
 [ nil,	  7	  ]
-n_i.copy.access(BAT_WRITE).order_rev.print;
+n_i.copy().access(BAT_WRITE).order_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # void	int	  # type
@@ -118,7 +118,7 @@ n_i.copy.access(BAT_WRITE).order_rev.print;
 [ nil,	  8	  ]
 [ nil,	  4	  ]
 [ nil,	  7	  ]
-i_n.print;
+i_n.print();
 #-----------------#
 # h	tmp_28	  # name
 # int	void	  # type
@@ -133,7 +133,7 @@ i_n.print;
 [ 8,	  nil	  ]
 [ 4,	  nil	  ]
 [ 7,	  nil	  ]
-i_n.sort.print;
+i_n.sort().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	void	  # type
@@ -148,7 +148,7 @@ i_n.sort.print;
 [ 7,	  nil	  ]
 [ 8,	  nil	  ]
 [ 9,	  nil	  ]
-i_n.copy.access(BAT_WRITE).order.print;
+i_n.copy().access(BAT_WRITE).order().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	void	  # type
@@ -163,7 +163,7 @@ i_n.copy.access(BAT_WRITE).order.print;
 [ 7,	  nil	  ]
 [ 8,	  nil	  ]
 [ 9,	  nil	  ]
-i_n.sort_rev.print;
+i_n.sort_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	void	  # type
@@ -178,7 +178,7 @@ i_n.sort_rev.print;
 [ 2,	  nil	  ]
 [ 1,	  nil	  ]
 [ 0,	  nil	  ]
-i_n.copy.access(BAT_WRITE).order_rev.print;
+i_n.copy().access(BAT_WRITE).order_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	void	  # type
@@ -193,7 +193,7 @@ i_n.copy.access(BAT_WRITE).order_rev.print;
 [ 2,	  nil	  ]
 [ 1,	  nil	  ]
 [ 0,	  nil	  ]
-v_i.print;
+v_i.print();
 #-----------------#
 # h	tmp_31	  # name
 # void	int	  # type
@@ -208,7 +208,7 @@ v_i.print;
 [ 7@0,	  8	  ]
 [ 8@0,	  4	  ]
 [ 9@0,	  7	  ]
-v_i.sort.print;
+v_i.sort().print();
 #-----------------#
 # h	tmp_35	  # name
 # void	int	  # type
@@ -223,7 +223,7 @@ v_i.sort.print;
 [ 7@0,	  8	  ]
 [ 8@0,	  4	  ]
 [ 9@0,	  7	  ]
-v_i.copy.access(BAT_WRITE).order.print;
+v_i.copy().access(BAT_WRITE).order().print();
 #-----------------#
 # h	tmp_35	  # name
 # void	int	  # type
@@ -238,7 +238,7 @@ v_i.copy.access(BAT_WRITE).order.print;
 [ 7@0,	  8	  ]
 [ 8@0,	  4	  ]
 [ 9@0,	  7	  ]
-v_i.sort_rev.print;
+v_i.sort_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # oid	int	  # type
@@ -253,7 +253,7 @@ v_i.sort_rev.print;
 [ 2@0,	  9	  ]
 [ 1@0,	  1	  ]
 [ 0@0,	  2	  ]
-v_i.copy.access(BAT_WRITE).order_rev.print;
+v_i.copy().access(BAT_WRITE).order_rev().print();
 !WARNING: Cannot reverse order on void columns.
 !WARNING: Please materialize them to oid, first.
 #-----------------#
@@ -270,7 +270,7 @@ v_i.copy.access(BAT_WRITE).order_rev.print;
 [ 7@0,	  8	  ]
 [ 8@0,	  4	  ]
 [ 9@0,	  7	  ]
-i_v.print;
+i_v.print();
 #-----------------#
 # h	tmp_32	  # name
 # int	void	  # type
@@ -285,7 +285,7 @@ i_v.print;
 [ 8,	  7@0	  ]
 [ 4,	  8@0	  ]
 [ 7,	  9@0	  ]
-i_v.sort.print;
+i_v.sort().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	oid	  # type
@@ -300,7 +300,7 @@ i_v.sort.print;
 [ 7,	  9@0	  ]
 [ 8,	  7@0	  ]
 [ 9,	  2@0	  ]
-i_v.copy.access(BAT_WRITE).order.print;
+i_v.copy().access(BAT_WRITE).order().print();
 !WARNING: void tail column will become nil during order.
 !WARNING: To keep it, please materialize it to oid, first.
 #-----------------#
@@ -317,7 +317,7 @@ i_v.copy.access(BAT_WRITE).order.print;
 [ 7,	  nil	  ]
 [ 8,	  nil	  ]
 [ 9,	  nil	  ]
-i_v.sort_rev.print;
+i_v.sort_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	oid	  # type
@@ -332,7 +332,7 @@ i_v.sort_rev.print;
 [ 2,	  0@0	  ]
 [ 1,	  1@0	  ]
 [ 0,	  6@0	  ]
-i_v.copy.access(BAT_WRITE).order_rev.print;
+i_v.copy().access(BAT_WRITE).order_rev().print();
 !WARNING: void tail column will become nil during order_rev.
 !WARNING: To keep it, please materialize it to oid, first.
 #-----------------#
@@ -349,7 +349,7 @@ i_v.copy.access(BAT_WRITE).order_rev.print;
 [ 2,	  nil	  ]
 [ 1,	  nil	  ]
 [ 0,	  nil	  ]
-o_i.print;
+o_i.print();
 #-----------------#
 # h	tmp_33	  # name
 # oid	int	  # type
@@ -364,7 +364,7 @@ o_i.print;
 [ 6@0,	  8	  ]
 [ 5@0,	  4	  ]
 [ 7@0,	  7	  ]
-o_i.sort.print;
+o_i.sort().print();
 #-----------------#
 # h	tmp_35	  # name
 # oid	int	  # type
@@ -379,7 +379,7 @@ o_i.sort.print;
 [ 7@0,	  7	  ]
 [ 8@0,	  9	  ]
 [ 9@0,	  1	  ]
-o_i.copy.access(BAT_WRITE).order.print;
+o_i.copy().access(BAT_WRITE).order().print();
 #-----------------#
 # h	tmp_35	  # name
 # oid	int	  # type
@@ -394,7 +394,7 @@ o_i.copy.access(BAT_WRITE).order.print;
 [ 7@0,	  7	  ]
 [ 8@0,	  9	  ]
 [ 9@0,	  1	  ]
-o_i.sort_rev.print;
+o_i.sort_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # oid	int	  # type
@@ -409,7 +409,7 @@ o_i.sort_rev.print;
 [ 2@0,	  5	  ]
 [ 1@0,	  0	  ]
 [ 0@0,	  3	  ]
-o_i.copy.access(BAT_WRITE).order_rev.print;
+o_i.copy().access(BAT_WRITE).order_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # oid	int	  # type
@@ -424,7 +424,7 @@ o_i.copy.access(BAT_WRITE).order_rev.print;
 [ 2@0,	  5	  ]
 [ 1@0,	  0	  ]
 [ 0@0,	  3	  ]
-i_o.print;
+i_o.print();
 #-----------------#
 # h	tmp_34	  # name
 # int	oid	  # type
@@ -439,7 +439,7 @@ i_o.print;
 [ 8,	  6@0	  ]
 [ 4,	  5@0	  ]
 [ 7,	  7@0	  ]
-i_o.sort.print;
+i_o.sort().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	oid	  # type
@@ -454,7 +454,7 @@ i_o.sort.print;
 [ 7,	  7@0	  ]
 [ 8,	  6@0	  ]
 [ 9,	  8@0	  ]
-i_o.copy.access(BAT_WRITE).order.print;
+i_o.copy().access(BAT_WRITE).order().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	oid	  # type
@@ -469,7 +469,7 @@ i_o.copy.access(BAT_WRITE).order.print;
 [ 7,	  7@0	  ]
 [ 8,	  6@0	  ]
 [ 9,	  8@0	  ]
-i_o.sort_rev.print;
+i_o.sort_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	oid	  # type
@@ -484,7 +484,7 @@ i_o.sort_rev.print;
 [ 2,	  3@0	  ]
 [ 1,	  9@0	  ]
 [ 0,	  1@0	  ]
-i_o.copy.access(BAT_WRITE).order_rev.print;
+i_o.copy().access(BAT_WRITE).order_rev().print();
 #-----------------#
 # h	tmp_35	  # name
 # int	oid	  # type

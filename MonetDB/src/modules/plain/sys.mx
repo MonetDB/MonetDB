@@ -252,7 +252,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
         }
     }
  
-    PROC help; # forward decl
+    PROC help():void{}; # forward decl
     PROC help(str fcn) : void {
 	IF (monet_fcn_nme.reverse().exist(fcn)) monet_fcn_nme.reverse()@hashloop(fcn) {
 	    help_sig($t); printf("\n");
@@ -277,7 +277,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
          "try to name a BAT and fail if it is not possible.", "sys");
 
     PROC modules() : void {
-	var b := view_modules().reverse().kunique.reverse();
+	var b := view_modules().reverse().kunique().reverse();
 	table(1,[module_name](b).reverse().sort().reverse().col_name("name"), 
 		[module_db](b).col_name("database"));
 	
@@ -287,8 +287,8 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	
     PROC loaded() : void {
         var hidden := monet_mod_nme.semijoin(monet_mod_nme.[startsWith]("_").uselect(true));
-	var mods := monet_mod_use.select(clientid).reverse().histogram();
-        var nmes := mods.mirror.join(monet_mod_nme).kdiff(hidden).access(BAT_WRITE);
+	var mods := monet_mod_use.select(clientid()).reverse().histogram();
+        var nmes := mods.mirror().join(monet_mod_nme).kdiff(hidden).access(BAT_WRITE);
         var disappeared := hidden.reverse().kdiff([+]("_",nmes).reverse()).reverse();
 	table(1, nmes.insert(disappeared).reverse().sort().reverse().col_name("module"), 
                  mods.col_name("usage_count"));
@@ -332,7 +332,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	table(1, b.reverse().sort().reverse().col_name("name"),
 		[head](b.join(nme.reverse())).col_name("htype"),	
 		[tail](b.join(nme.reverse())).col_name("ttype"),	
-		[count](b.mirror).col_name("count"),	
+		[count](b.mirror()).col_name("count"),	
 		view_bbp_heat().col_name("heat"),
 		view_bbp_dirty().col_name("dirty"),
 		view_bbp_status().col_name("status"),
@@ -342,7 +342,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     }
 
     PROC dir() : void {
-        var nme := view_bbp_name().copy.access(BAT_WRITE).col_name("name");
+        var nme := view_bbp_name().copy().access(BAT_WRITE).col_name("name");
 	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
 	dir(nme.replace(rev));
     }
@@ -356,9 +356,9 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
     proc dir_leaks() : void {
 	var b0 := view_bbp_name().access(BAT_WRITE);
-	b0.replace([*](b0.reverse.select(int(nil),-1),-1).reverse);
+	b0.replace([*](b0.reverse().select(int(nil),-1),-1).reverse());
         var b1 := [startsWith](b0,"tmp_").[ifthen](b0).access(BAT_WRITE);
-        var b2 := like(view_var_value, "tmp_");
+        var b2 := like(view_var_value(), "tmp_");
         var b3 := bat(int,str,b1.count());
         b1.delete(int(b0));
         b1@batloop() { 
@@ -401,48 +401,50 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
     PROC clients() : void { 
 	var tree := view_client_tree().access(BAT_WRITE);
-	tree.replace(clientid, "clients()");
+	tree.replace(clientid(), "clients()");
 	print(view_client_name,view_client_login,tree.col_name("mil"));
     } 
     ADDHELP("clients", "boncz", "Feb  6 1996", 
 	"list all active clients by their number.", "sys"); 
 
-    PROC vars() : void  
-	table(view_var_name().kdiff([startsWith](view_var_name, ".").uselect(true)), 
-              view_var_type, view_var_kind, view_var_constant, view_var_value);
+    PROC vars() : void  {
+	table(view_var_name().kdiff([startsWith](view_var_name(), ".").uselect(true)), 
+              view_var_type(), view_var_kind(), view_var_constant(), view_var_value());
+    }
     ADDHELP("vars", "boncz", "Feb  6 1996", 
         	"list all Monet variables and their values.", "sys"); 
 
-    PROC threads() : void print(view_gdk_thread); 
+    PROC threads() : void { print(view_gdk_thread); }
     ADDHELP("threads", "boncz", "Feb  6 1996", 
 		"list all system threads and their function.", "sys"); 
 
-    PROC env() : void print(view_gdk_env);
+    PROC env() : void { print(view_gdk_env);}
     ADDHELP("env", "boncz", "Feb  6 1996", 
 		"list the values of all environment variables", "sys"); 
 
-    PROC environment() : bat[str,str] return view_gdk_env;
+    PROC environment() : bat[str,str] { return view_gdk_env;}
     ADDHELP("environment", "boncz", "Mar 22 1998", "deprecated", "sys");
 
-    PROC cpu() : bat[str,int] RETURN view_gdk_cpu;
+    PROC cpu() : bat[str,int] { RETURN view_gdk_cpu;}
     ADDHELP("cpu", "boncz", "Mar 22 1998", "Global cpu usage info", "sys");
 
-    PROC memory() : bat[str,int] RETURN view_gdk_memory;
+    PROC memory() : bat[str,int] { RETURN view_gdk_memory;}
     ADDHELP("memory", "boncz", "Mar 22 1998", "Global memory usage info","sys");
 
-    PROC io() : bat[str,int] RETURN view_gdk_io;
+    PROC io() : bat[str,int]  { RETURN view_gdk_io;}
     ADDHELP("io", "boncz", "Mar 22 1998", "Global IO activity info", "sys");
 
-    PROC bbp() : bat[str,int] RETURN view_gdk_bbp;
+    PROC bbp() : bat[str,int] { RETURN view_gdk_bbp;}
     ADDHELP("bbp", "boncz", "Mar 22 1998", "Global BBP usage info", "sys");
 
-    PROC readonly( BAT[any::1,any::2] b, int mode) : BAT[any::1,any::2]
+    PROC readonly( BAT[any::1,any::2] b, int mode) : BAT[any::1,any::2]{
         return access(b,mode);
+    }
     ADDHELP("readonly", "boncz", "Aug  6 1998",
         "deprecated. Use 'b.access' instead.", "sys");
  
     PROC readonly( BAT[any::1,any::2] b) : int {
-        var s := b.info.find("batRestricted");
+        var s := b.info().find("batRestricted");
         if (s = "updatable") {
                 return BAT_WRITE;
         } else if (s = "read-only") {
@@ -455,12 +457,12 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     ADDHELP("readonly", "boncz", "Aug  6 1998",
         "deprecated. Use 'info.find(batRestricted)' instead.", "sys");
 
-    PROC mem_usage() : BAT[str,lng] return mem_usage(lng(100000));
-    PROC vm_usage() : BAT[str,lng] return vm_usage(lng(100000));
-    PROC mem_usage(int minsize) : BAT[str,lng] return mem_usage(lng(minsize));
-    PROC vm_usage(int minsize) : BAT[str,lng] return vm_usage(lng(minsize));
+    PROC mem_usage() : BAT[str,lng] { return mem_usage(lng(100000));}
+    PROC vm_usage() : BAT[str,lng] { return vm_usage(lng(100000));}
+    PROC mem_usage(int minsize) : BAT[str,lng] { return mem_usage(lng(minsize));}
+    PROC vm_usage(int minsize) : BAT[str,lng] { return vm_usage(lng(minsize));}
 
-    const BBPTRIM_ALL := <<(1LL, (monet_environment.find("gdk_arch").int - 2));
+    const BBPTRIM_ALL := <<(1LL, (monet_environment.find("gdk_arch").int() - 2));
 
 @{
 @* Implementation Code

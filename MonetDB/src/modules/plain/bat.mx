@@ -540,51 +540,64 @@ these 'sync' OIDs with their own propagation rules.
     CONST BAT_APPEND := 2;      # allow reads and insertions of new elements.
     CONST BAT_WRITE  := 0;      # allow reads, insertions, and updates.
 
-    PROC destroy(str s) : bit 
+    PROC destroy(str s) : bit {
         return destroy(s,true);
+	}
 
-    PROC destroy(bat[any,any] b) : bit
+    PROC destroy(bat[any,any] b) : bit{
         return destroy(str(b),true);
+	}
 
-    PROC capacity(bat[any,any] b) : lng 
+    PROC capacity(bat[any,any] b) : lng {
 	return capacity(int(b));
+	}
 
     PROC save(bat[any::1,any::2] b) : bat[any::1,any::2] {
 	save(bbpname(b));
 	return b;
     }
 
-    PROC load(str batname) : bat[any,any] 
+    PROC load(str batname) : bat[any,any] {
 	return bat(batname);
+    }
 
-    PROC cold(bat[any::1,any::2] b) : void
-	cold(b.bbpname);
+    PROC cold(bat[any::1,any::2] b) : void{
+	cold(b.bbpname());
+    }
 
-    PROC hot(bat[any::1,any::2] b) : void
-	hot(b.bbpname);
+    PROC hot(bat[any::1,any::2] b) : void {
+	hot(b.bbpname());
+    }
 
-    PROC head(bat[any,any] b) : str
+    PROC head(bat[any,any] b) : str {
 	return head(int(b));
+    }
 
-    PROC tail(bat[any,any] b) : str 
+    PROC tail(bat[any,any] b) : str  {
 	return tail(int(b));
+	}
 
-    PROC ttype(any b) : int  
-         return monet_atomtbl.find(b.tail);
+    PROC ttype(any b) : int   {
+         return monet_atomtbl.find(b.tail());
+    }
 #    ADDHELP("ttype","boncz","Apr 07 2004","Get tail-type as an integer","bat");
 
-    PROC htype(any b) : int  
-         return monet_atomtbl.find(b.head);
+    PROC htype(any b) : int   {
+         return monet_atomtbl.find(b.head());
+    }
 #    ADDHELP("htype","boncz","Apr 07 2004","Get head-type as an integer","bat");
 
-    PROC new(int ht, int tt) : bat[any,any]
+    PROC new(int ht, int tt) : bat[any,any] {
 	return bat(ht,tt);
+    }
 
-    PROC new(int ht, int tt, int cnt) : bat[any,any]
+    PROC new(int ht, int tt, int cnt) : bat[any,any] {
 	return bat(ht,tt,cnt);
+    }
 
-    PROC new(int ht, int tt, lng cnt) : bat[any,any]
+    PROC new(int ht, int tt, lng cnt) : bat[any,any] {
 	return bat(ht,tt,cnt);
+    }
 @
 @{
 @{

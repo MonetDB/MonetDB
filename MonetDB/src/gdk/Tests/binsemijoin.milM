@@ -24,16 +24,16 @@ b.insert(1,7);
 b.insert(1,8);
 b.insert(1,9);
 
-var c:=b.reverse.[oid].reverse;
-var d:=a.reverse;
+var c:=b.reverse().[oid]().reverse();
+var d:=a.reverse();
 
-a.print;
-d.print;
-b.print;
-c.print;
+a.print();
+d.print();
+b.print();
+c.print();
 
-b.semijoin(d).print;
-d.semijoin(b).print;
+b.semijoin(d).print();
+d.semijoin(b).print();
 
-c.semijoin(a).print;
-a.semijoin(c).print;
+c.semijoin(a).print();
+a.semijoin(c).print();

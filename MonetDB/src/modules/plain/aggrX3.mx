@@ -127,7 +127,7 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
     "short-cut for {count}(b,g,e,TRUE)", "aggrX3");
 
     proc size(BAT[any,bit] b) : int {
-	var h := b.histogram;
+	var h := b.histogram();
 	if (h.exist(true)) 
 	    return h.find(true);
 	return 0;
@@ -154,15 +154,15 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 @:sumprod_defaults(dbl)@ 
 
     proc card(BAT[any,any] b) : int {
-	return b.tunique.count;
+	return b.tunique().count();
     }
 
     proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
-	return {count}(b.sunique,e);
+	return {count}(b.sunique(),e);
     }
 
     proc {card}(BAT[oid,any] b, bat[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] {
-	return {count}(b.sunique,g,e);
+	return {count}(b.sunique(),g,e);
     }
 
 @{
@@ -192,7 +192,7 @@ proc aggrtst(int num, int fanout, str agg, ..str..) : void {
 	                v.insert(nil, 42);
 	                i :+= 1;
 	        }
-	        e := [oid](v.seqbase(0@0).reverse).reverse;
+	        e := [oid](v.seqbase(0@0).reverse()).reverse();
 	        if (fanout = 1) {
 	                b := bat(void,(*tpe)()).seqbase(0@0);
 	        } else {
@@ -216,8 +216,8 @@ proc aggrtst(int num, int fanout, str agg, ..str..) : void {
                 	}
 		    }
                 }
-		var gg := b.mark(0@0).reverse;
-		var bb := b.reverse.mark(0@0).reverse;
+		var gg := b.mark(0@0).reverse();
+		var bb := b.reverse().mark(0@0).reverse();
 		var bs := {toset}(b).col_name("test-set "+tail(b));
 		var ab   := (*gagg)(b).col_name(sprintf("%s(b)",gagg));
 		var abv  := (*gagg)(b,v).col_name(sprintf("%s(b,v)",gagg));
@@ -225,22 +225,22 @@ proc aggrtst(int num, int fanout, str agg, ..str..) : void {
 		var abgv := (*gagg)(bb,gg,v).col_name(sprintf("%s(bb,gg,v)",gagg));
 		var abge := (*gagg)(bb,gg,e).col_name(sprintf("%s(bb,gg,e)",gagg));
 		if (not(printed)) {
-			v.print;
-			e.print;
-			var bh := b.mark(0@0).reverse;
-			var bt := b.reverse.mark(0@0).reverse;
-			print(bh,bt,bt.[sht],bt.[int],bt.[lng],bt.[flt],bt.[dbl],[decimal]([int](bt)),bt.[str]);
+			v.print();
+			e.print();
+			var bh := b.mark(0@0).reverse();
+			var bt := b.reverse().mark(0@0).reverse();
+			print(bh,bt,bt.[sht](),bt.[int](),bt.[lng](),bt.[flt](),bt.[dbl](),[decimal]([int](bt)),bt.[str]());
 			printed := TRUE;
 		}
 		var tpe2 := tail(ab);
-		ab.access(BAT_WRITE).insert(oid(num),(*agg)(b.reverse.select(oid(num)).reverse));
+		ab.access(BAT_WRITE).insert(oid(num),(*agg)(b.reverse().select(oid(num)).reverse()));
 		bs.access(BAT_WRITE).insert(oid(num),"{  }");
         	print(bs,
-        	      ab  , ab.[str]  ,
-        	      abv , abv.[str] ,
-        	      abe , abe.[str] ,
-        	      abgv, abgv.[str],
-        	      abge, abge.[str]);
+        	      ab  , ab.[str]()  ,
+        	      abv , abv.[str]() ,
+        	      abe , abe.[str]() ,
+        	      abgv, abgv.[str](),
+        	      abge, abge.[str]());
         }
 }
 

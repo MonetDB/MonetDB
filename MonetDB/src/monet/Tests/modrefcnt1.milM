@@ -2,18 +2,18 @@ module("lock");
 module("lock");
 
 VAR test := new(int,lock);
-loaded;
-test.print;
-test.count.print;
+loaded();
+test.print();
+test.count().print();
 
 drop("lock");
-loaded;
-test.print;
-test.count.print;
+loaded();
+test.print();
+test.count().print();
 
 drop("lock");
-loaded;
-test.print;
-test.count.print;
+loaded();
+test.print();
+test.count().print();
 
-quit;
+quit();

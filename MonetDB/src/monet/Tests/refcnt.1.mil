@@ -9,5 +9,5 @@ var a:=new(int,bat);
 a.rename("a");
 a.persists(true);
 a.insert(1,b);
-commit;
-quit;   
+commit();
+quit();   

@@ -36,7 +36,7 @@ b.insert(oid(11), false);
 b.insert(oid(11), bit(nil));
 b.insert(oid(11), true);
 b.insert(oid(12), bit(nil));
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (bit)	  #
@@ -61,12 +61,12 @@ b.print;
 [ 11@0,	  true	  ]
 [ 12@0,	  nil	  ]
 
-proc exist(BAT[bit,bit] b) : bit := {
+proc exist(BAT[bit,bit] b) : bit {
   return b.exist(true);
 }
 
 var x := {exist}(b);
-x.print;
+x.print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (bit)	  #
@@ -388,7 +388,7 @@ bss@hashloop(oid(5)) {
 [ true ]
 [ false ]
 
-bs.reverse@hashloop(true) {
+bs.reverse()@hashloop(true) {
   print($t);
 }
 [ 11@0 ]
@@ -401,7 +401,7 @@ bs.reverse@hashloop(true) {
 [ 4@0 ]
 [ 1@0 ]
 
-bss.reverse@hashloop(true) {
+bss.reverse()@hashloop(true) {
   print($t);
 }
 [ 11@0 ]
@@ -413,7 +413,7 @@ bss.reverse@hashloop(true) {
 [ 4@0 ]
 [ 4@0 ]
 [ 1@0 ]
-quit;
+quit();
 
 # 17:06:20 >  
 # 17:06:20 >  Done.

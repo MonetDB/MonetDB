@@ -27,7 +27,7 @@
 # # bevattende docid, term
 # w := new( oid, str );
 # w.import( "w.bat" );
-# w.print;
+# w.print();
 # 
 # # [t_i, n_i]
 # w.histogram.print;
@@ -84,4 +84,4 @@ module("unix","ascii_io");
 # bevattende docid, term
 var w := new( oid, str );
 w.import( sprintf("%s/no.107.w.bat",getenv("TSTTRGDIR")) );
-w.print;
+w.print();

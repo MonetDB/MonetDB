@@ -85,23 +85,23 @@ module(url);
 var u:= url("http://www.cwi.nl/~mk/Acoi/index.html");
 u.print();
 [ "http://www.cwi.nl/~mk/Acoi/index.html" ]
-u.getHost.print();
+u.getHost().print();
 [ "www.cwi.nl" ]
-u.getPort.print();
+u.getPort().print();
 [ nil ]
-u.getDomain.print();
+u.getDomain().print();
 [ "nl" ]
-u.getFile.print();
+u.getFile().print();
 [ "index.html" ]
-u.getAnchor.print();
+u.getAnchor().print();
 [ nil ]
-u.getBasename.print();
+u.getBasename().print();
 [ "index" ]
-u.getProtocol.print();
+u.getProtocol().print();
 [ "http" ]
-u.getUser.print();
+u.getUser().print();
 [ "mk" ]
-u.getDirectory.print();
+u.getDirectory().print();
 #-----------------#
 # dir	name	  # name
 # int	str	  # type

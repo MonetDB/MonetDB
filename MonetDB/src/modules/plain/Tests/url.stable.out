@@ -136,7 +136,7 @@ test_url();
 [ 6,	  nil		  ]
 [ 7,	  nil		  ]
 
-quit;
+quit();
 
 # 17:05:17 >  
 # 17:05:17 >  Done.

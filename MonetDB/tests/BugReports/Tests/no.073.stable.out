@@ -125,7 +125,7 @@ var ab := new(int,str);
 ab.rename("ab");
 ab.persists(true);
 ab.commit();
-var ba := ab.reverse;
+var ba := ab.reverse();
 ba.rename("ba");
 ba.persists(true);
 ba.commit();

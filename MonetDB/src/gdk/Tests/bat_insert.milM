@@ -1,4 +1,4 @@
-PROC check_cap(BAT _b) : void := {
+PROC check_cap(BAT _b) : void {
 	VAR inserted := count(_b);
 	VAR deleted := count(delta(_b));
 	VAR cap := capacity(_b);
@@ -20,7 +20,7 @@ WHILE (i > 0) {
 	i := i - 1;
 }
 
-commit;
+commit();
 
 i := cap * 2;
 WHILE (i > 0) {
@@ -40,6 +40,6 @@ check_cap(b);
 
 b.persists(false);
 
-commit;
+commit();
 
-quit;
+quit();

@@ -21,7 +21,7 @@ commit;
 
 i := 0;
 while(true) { 
- bat("aa").info.reverse().select("theap.storage").reverse().print();
+ bat("aa").info().reverse().select("theap.storage").reverse().print();
  var e := [str]([+](d,b));
  #e := [str]([/](d,10000));
  print(b :+= 500000); 

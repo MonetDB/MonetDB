@@ -67,4 +67,4 @@ module("unix","ascii_io");
 # bevattende docid, term
 var w := new( oid, str );
 w.import( sprintf("%s/no.106.w.bat",getenv("TSTTRGDIR")) );
-w.print;
+w.print();

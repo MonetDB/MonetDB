@@ -11,15 +11,15 @@ stdout of test 'tcpip2` in directory 'src/modules/plain` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 var test1 := bat(oid, oid);
 test1.import(TSTTRGDIR + "/tcpip2.init.bat");
-test1.kunique.count.print;
+test1.kunique().count().print();
 [ 2018 ]
 c.export(test1, "test1");
 
 var test2 := import("test1", true);
-test2.kunique.count.print;
+test2.kunique().count().print();
 [ 2018 ]
 
-quit;
+quit();
 
 # 16:46:13 >  
 # 16:46:13 >  Done.

@@ -30,8 +30,8 @@ v1.print();
 [ 5@0,	  "a"	  ]
 [ 6@0,	  ""	  ]
 
-var v2 := v1.reverse.kunique.reverse;
-var v3 := v2.reverse.sort.reverse;
+var v2 := v1.reverse().kunique().reverse();
+var v3 := v2.reverse().sort().reverse();
 v3.print();
 #-----------------#
 # BAT:	  tmp_34  #
@@ -66,7 +66,7 @@ v4.print();
 
 var v5 := v4.reverse().kunique().reverse();
 var v6 := v5.reverse().sort().reverse();
-v6.print;
+v6.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (str)	  #
@@ -77,7 +77,7 @@ v6.print;
 [ nil,	  "c"	  ]
 
 var v7 := v4.reverse().mark(0@0).reverse();
-v7.print;
+v7.print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (void)  (str)	  #

@@ -730,7 +730,7 @@ Module: "sys"
 [ "environment",	  "PROC:      ",  "environment() : BAT[str,str]",							  "deprecated"																																																														  ]
 [ "exit",		  "PROC:      ",  "exit() : void",									  "quit for consultants"																																																												  ]
 [ "format_fcn_sig",	  "COMMAND:   ",  "format_fcn_sig(oid) : str",								  "print a function signature"																																																												  ]
-[ "help",		  "PROC:      ",  "help() : <predefinition>",								  "provide help for a MIL construct."																																																											  ]
+[ "help",		  "PROC:      ",  "help() : void",									  "provide help for a MIL construct."																																																											  ]
 [ "io",			  "PROC:      ",  "io() : BAT[str,int]",								  "Global IO activity info"																																																												  ]
 [ "loaded",		  "PROC:      ",  "loaded() : void",									  "list all loaded modules, and the number of active users."																																																								  ]
 [ "ls",			  "PROC:      ",  "ls() : void",									  "list all data bats. Optionally filter on name with a certain substring"																																																						  ]

@@ -88,19 +88,19 @@ PROC test_bitvector() : void {
 	b.insert(12, oid(62)); 
 
 	bv_a := [encode](a);
-	bv_a.print;
+	bv_a.print();
 
 	bv_b := [encode](b);
-	bv_b.print;
+	bv_b.print();
 
 	bv_c := [and](bv_a, bv_b);
-	bv_c.print;
+	bv_c.print();
 
 	bv_d := [or](bv_a, bv_b);
-	bv_d.print;
+	bv_d.print();
 
 	c := [decode](bv_d);
-	c.print;
+	c.print();
 }
 
 @{

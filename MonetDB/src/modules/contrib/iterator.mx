@@ -109,36 +109,36 @@ PROC test_iterator() : void {
 	# var town_reliable_CT := group(reliable_enum).group(town_enum);
 	# 
 	# # ddbench-like subhisto: count * where age=18 groupby town,reliable 
-	# var ct := age_enum.scan.select(false,"=",a18).mirror.join(town_reliable_CT).histo;
+	# var ct := age_enum.scan().select(false,"=",a18).mirror().join(town_reliable_CT).histo();
 
 	var x := new(int,int,1000);
 	var i := 0;
 	while(i < 1000) { x.insert(i,i); i :+= 1; }
 
 	# dense test 
-	a := [oid](x).reverse;
+	a := [oid](x).reverse();
 	b := [-](a);
 	c := [%](a,10);
 
-	var it := a.scan;
-	while(it.next) it.chunk.print;
+	var it := a.scan();
+	while(it.next()) it.chunk().print();
 	 
-	a.scan.collect.print;
-	a.scan.select(true, "=",10).collect.print;
-	c.scan.histo.print;
-	c.scan.aggr("min",b).print;
-	c.scan.aggr("avg",b).print;
+	a.scan().collect().print();
+	a.scan().select(true, "=",10).collect().print();
+	c.scan().histo().print();
+	c.scan().aggr("min",b).print();
+	c.scan().aggr("avg",b).print();
 
 	# non-dense test
 	x.delete(500);
-	a := [oid](x).reverse;
+	a := [oid](x).reverse();
 	b := [-](a);
 	c := [%](a,10);
 	 
-	a.scan.collect.print;
-	a.scan.select(true,"=",10).collect.print;
-	c.scan.histo.print;
-	c.scan.aggr("min",b).print;
+	a.scan().collect().print();
+	a.scan().select(true,"=",10).collect().print();
+	c.scan().histo().print();
+	c.scan().aggr("min",b).print();
 }
 
 

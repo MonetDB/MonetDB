@@ -40,7 +40,7 @@ printf("X%-3.2sX\n", "ABC");
 XAB X
 printf("X%-3.2sX\n", "ABCD");
 XAB X
-quit;
+quit();
 
 # 01:07:07 >  
 # 01:07:07 >  Done.

@@ -519,7 +519,7 @@ work only on void BATs with enum tails.
     }
 
     proc group(bat[void,any] b) : bat[oid,oid] {
-        if (isenum(b.ttype)) {
+        if (isenum(b.ttype())) {
 	    return enum_trick(b,enum_view(b));
         }
         return CTgroup(b);
@@ -530,22 +530,22 @@ work only on void BATs with enum tails.
     }
 
     proc group(bat[void,any] ct, bat[void,any] b) : bat[oid,any] {
-        if (isenum(b.ttype) and isenum(ct.ttype)) {
+        if (isenum(b.ttype()) and isenum(ct.ttype())) {
             # condition should be more generic: thin types
             var bn := enum_group(ct,b);
-            monet_atomtbl.insert(str(b.ttype.enum_table),b.ttype);
+            monet_atomtbl.insert(str(b.ttype().enum_table()),b.ttype());
             return bn;
         }
         return CTgroup(ct,b);
     }
     
     proc {count}(bat[any::1,any] b) : bat[any::1,int] {
-    	if (isenum(b.htype))
-	if (enum_ishisto(b.htype,b)) {
+    	if (isenum(b.htype()))
+	if (enum_ishisto(b.htype(),b)) {
     	    # always use histograms for enum creation!
-    	    return enum_table(b.htype);
+    	    return enum_table(b.htype());
     	}
-    	return histogram(b.reverse);
+    	return histogram(b.reverse());
     }
 
     proc not(bat[void,bit32] b) : bat[void,bit32] {
@@ -553,8 +553,8 @@ work only on void BATs with enum tails.
     }
 
     proc semijoin(bat[void,any::1] b1, bat[any,any] b2) : bat[oid,any::1] {
-	if (isenum(b2.htype))
-	if (enum_table(b2.htype).htype = oid) {
+	if (isenum(b2.htype()))
+	if (enum_table(b2.htype()).htype() = oid) {
 		return enum_semijoin(b1,b2);
 	}
 	return kintersect(b1,b2);
@@ -569,16 +569,16 @@ work only on void BATs with enum tails.
     }
 
     proc mjoin(bat[any::1,void] b1, bat[any,any::2] b2) : bat[any::1,any::2] {
-	if (isenum(b2.htype))
-	if (enum_table(b2.htype).htype = oid) {
+	if (isenum(b2.htype()))
+	if (enum_table(b2.htype()).htype() = oid) {
 		return enum_join(b1,b2);
 	}
 	return join(b1,b2);
     }
 
     proc mjoin(bat[any::1,any] b1, bat[void,any::2] b2) : bat[any::1,any::2] {
-	if (isenum(b1.ttype))
-	if (enum_table(b1.ttype).htype = oid) {
+	if (isenum(b1.ttype()))
+	if (enum_table(b1.ttype()).htype() = oid) {
 		return mirror(enum_join(mirror(b2),mirror(b1)));
 	}
 	return join(b1,b2);
@@ -588,8 +588,8 @@ work only on void BATs with enum tails.
 @mil
 
 PROC test_ddbench() : void {
-    if (view_bbp_name.reverse.exist("tpe")) {
-	tpe := tpe.destroy;
+    if (view_bbp_name.reverse().exist("tpe")) {
+	tpe := tpe.destroy();
 	commit;
     }
 
@@ -599,31 +599,31 @@ PROC test_ddbench() : void {
     a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil);
     a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil); a.insert(0@0,nil);
     a.insert(3@0,nil); a.insert(3@0,nil); a.insert(3@0,nil); a.insert(3@0,nil);
-    a.insert(a.copy);
-    aa := a.mark(0@0).reverse;
+    a.insert(a.copy());
+    aa := a.mark(0@0).reverse();
     tpe := enum_create("tpe", aa);
     aaa := tpe.[encode](aa);
 
     brsel := rng_bitselect(aaa, tpe.encode(1@0), tpe.encode(3@0));
-    aa.semijoin(brsel.tobat).print;
-    aaa.bit_subhisto(brsel).print;
+    aa.semijoin(brsel.tobat()).print();
+    aaa.bit_subhisto(brsel).print();
     
     bvsel := val_bitselect(aaa, tpe.encode(2@0));
-    aa.semijoin(bvsel.tobat).print;
-    aaa.bit_subhisto(bvsel).print;
+    aa.semijoin(bvsel.tobat()).print();
+    aaa.bit_subhisto(bvsel).print();
     
     bvvsel := val_bitselect(brsel, aaa, tpe.encode(3@0));
-    aaa.bit_subhisto(bvvsel).print;
+    aaa.bit_subhisto(bvvsel).print();
     
     brrsel := rng_bitselect(brsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
-    aaa.bit_subhisto(brrsel).print;
+    aaa.bit_subhisto(brrsel).print();
 
     brsel.access(BAT_WRITE);
     rng_bitrefine(brsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
-    aaa.bit_subhisto(brsel).print;
+    aaa.bit_subhisto(brsel).print();
 
     val_bitrefine(brsel, aaa, tpe.encode(2@0));
-    aaa.bit_subhisto(brsel).print;
+    aaa.bit_subhisto(brsel).print();
 
     bvs := vals_bitselect(aaa, tpe.encode(1@0), tpe.encode(3@0)); 
     bvs@batloop() print($t);
@@ -636,23 +636,23 @@ PROC test_ddbench() : void {
     bhs@batloop() print($t);
 
     orsel := rng_oidselect(aaa, tpe.encode(1@0), tpe.encode(3@0));
-    aaa.oid_subhisto(orsel).print;
+    aaa.oid_subhisto(orsel).print();
 
     ovsel := val_oidselect(aaa, tpe.encode(2@0));
-    aaa.oid_subhisto(ovsel).print;
+    aaa.oid_subhisto(ovsel).print();
 
     ovvsel := val_oidselect(orsel, aaa, tpe.encode(3@0));
-    aaa.oid_subhisto(ovvsel).print;
+    aaa.oid_subhisto(ovvsel).print();
 
     orrsel := rng_oidselect(orsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
-    aaa.oid_subhisto(orrsel).print;
+    aaa.oid_subhisto(orrsel).print();
 
     orsel.access(BAT_WRITE);
     rng_oidrefine(orsel, aaa, tpe.encode(1@0), tpe.encode(2@0));
-    aaa.oid_subhisto(orsel).print;
+    aaa.oid_subhisto(orsel).print();
 
     val_oidrefine(orsel, aaa, tpe.encode(2@0));
-    aaa.oid_subhisto(orsel).print;
+    aaa.oid_subhisto(orsel).print();
 
     ovs := vals_oidselect(aaa, tpe.encode(1@0), tpe.encode(3@0)); 
     ovs@batloop() print($t);
@@ -2248,16 +2248,16 @@ proc init(str nme) : void {
     var tmp := bat(nme + "_tmp");
     var tpe := enum_create(nme, tmp);
     var res := tpe.[encode](tmp);
-    tpe.enum_sethisto(res.reverse);
+    tpe.enum_sethisto(res.reverse());
     res.rename(nme + "_enum").persists(true);
     printf("save %s_enum\n",nme);
-    res.mmap(STORE_MMAP).unload;
+    res.mmap(STORE_MMAP).unload();
     printf("start %s_type\n",nme);
-    var old := [oid](tmp.reverse).reverse;
+    var old := [oid](tmp.reverse()).reverse();
     old.rename(nme + "_type").persists(true);
     printf("save %s_type\n",nme);
-    old.mmap(STORE_MMAP).unload;
-    tmp := tmp.destroy;
+    old.mmap(STORE_MMAP).unload();
+    tmp := tmp.destroy();
     printf("end %s\n",nme);
 }
 
@@ -2268,24 +2268,24 @@ proc init(str nme) : void {
 proc init(str nme) : void {
     printf("start %s_type\n",nme);
     var tmp := bat(nme + "_tmp").seqbase(nil);
-    var res := new(void, tmp.ttype, 4*tmp.count);
+    var res := new(void, tmp.ttype(), 4*tmp.count());
     var i := 0;
     while((i :+= 1) <= 10) res.insert(tmp);
-    res := [oid](res.seqbase(0@0).reverse).reverse;
+    res := [oid](res.seqbase(0@0).reverse()).reverse();
     res.rename(nme + "_type").persists(true);
     printf("save %s_type\n",nme);
-    res.mmap(STORE_MMAP).unload;
+    res.mmap(STORE_MMAP).unload();
     printf("start %s_enum\n",nme);
     var tpe := enum_create(nme, tmp);
     [*=](bat(nme).access(BAT_WRITE),10); # tricky!
     res := tpe.[encode](tmp);
-    tmp.destroy; tmp := res;
-    res := new(void, tmp.ttype, 4*tmp.count);
+    tmp.destroy(); tmp := res;
+    res := new(void, tmp.ttype(), 4*tmp.count());
     while((i :+= 1) <= 21) res.insert(tmp);
-    tpe.enum_sethisto(res.reverse);
+    tpe.enum_sethisto(res.reverse());
     res.seqbase(0@0).rename(nme + "_enum").persists(true);
     printf("save %s_enum\n",nme);
-    res.access(BAT_READ).mmap(STORE_MMAP).unload;
+    res.access(BAT_READ).mmap(STORE_MMAP).unload();
     printf("end %s\n",nme);
 }
 
@@ -2456,10 +2456,10 @@ var zipcode, spendings, town, age, marital, gender, reliable;
 |}
 
 proc conv_str(bat[void,any] b) : bat[void,any]  {
-	if (isenum(b.ttype)) {
-	    var e := enum_table(b.ttype);
-	    if (e.htype != str) {
-		var map := [str](e.reverse).reverse;
+	if (isenum(b.ttype())) {
+	    var e := enum_table(b.ttype());
+	    if (e.htype() != str) {
+		var map := [str](e.reverse()).reverse();
 		return enum_trick(b, map);
 	}   }
 	return b;
@@ -2494,8 +2494,8 @@ proc ucube(str seq, str attr) : int {
         var fp := fps.find(threadid);
         var ct := group(b);
         var t1 := time;
-        var aggr := {count}(ct.reverse);
-        fp.fprintf("!!ucube %s: %d =group %d =aggr %d =ngroups\n", seq, t1-t0, time-t1, aggr.count);
+        var aggr := {count}(ct.reverse());
+        fp.fprintf("!!ucube %s: %d =group %d =aggr %d =ngroups\n", seq, t1-t0, time-t1, aggr.count());
         seq.print_table(attr, aggr);
         assign("CT_" + attr, ct);
 	return time-t0;
@@ -2509,14 +2509,14 @@ proc bicube(str seq, str att1, str att2) : int {
         var fp := fps.find(threadid);
         var ct := group(b0,b2);
         var t1 := time;
-        var aggr := {count}(ct.reverse);
+        var aggr := {count}(ct.reverse());
 	if (cache_batch1) {
-		var tpe := b0.ttype;
+		var tpe := b0.ttype();
 		assign("CT_" + att1, ct);
 		b0 := nil;
  		if (isenum(tpe)) enum_drop(tpe);
 	}
-        fp.fprintf("!!bicube %s: %d =group %d =aggr %d =ngroups\n", seq, t1, time-t1, aggr.count);
+        fp.fprintf("!!bicube %s: %d =group %d =aggr %d =ngroups\n", seq, t1, time-t1, aggr.count());
         seq.print_table(att1, att2, aggr);
 	return time-t0;
 }
@@ -2525,11 +2525,11 @@ proc bicube(str seq, str att1, str att2) : int {
 #The output of the benchmark is organized by thread.
 threads;
 i := 0;
-view_gdk_thread.reverse@hashloop("Interpreter") {
+view_gdk_thread.reverse()@hashloop("Interpreter") {
    fps.insert($t, fopen(sprintf("%s/%s_par%d.out%d", TMP, DB, PAR, i), "w+"));
    i := i + 1;
 }
-fps.print;
+fps.print();
 
 var tot0 := 0, tot1 := 0, tot2 := 0, tot3 := 0, tot4 := 0;
 var tot5 := 0, tot6 := 0, tot7 := 0, tot8 := 0; tot9 := 0;
@@ -2550,8 +2550,8 @@ proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
         var fp := fps.find(threadid);
 	var ct := semijoin(b0,sel);
         var t1 := time;
-        var aggr := {count}(ct.reverse);
-        fp.fprintf("!!subcube %s: %d =semijoin %d =aggr %d =ngroups\n", seq, t1-t0, time-t1, aggr.count);
+        var aggr := {count}(ct.reverse());
+        fp.fprintf("!!subcube %s: %d =semijoin %d =aggr %d =ngroups\n", seq, t1-t0, time-t1, aggr.count());
         seq.print_table(att1, att2, aggr);
 	return time - t0;
 }
@@ -2572,8 +2572,8 @@ proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
         var fp := fps.find(threadid);
 	var ct := CTsubgroup(b0,b1,sel);
         var t1 := time;
-        var aggr := {count}(ct.reverse);
-        fp.fprintf("!!subcube %s: %d =CTsubgroup %d =aggr %d =ngroups\n", seq, t1-t0, time-t1, aggr.count);
+        var aggr := {count}(ct.reverse());
+        fp.fprintf("!!subcube %s: %d =CTsubgroup %d =aggr %d =ngroups\n", seq, t1-t0, time-t1, aggr.count());
         seq.print_table(att1, att2, aggr);
 	return time - t0;
 }
@@ -2590,7 +2590,7 @@ proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
         var b2 := varval(att2);
         var fp := fps.find(threadid);
         var aggr := subhisto(b0,sel);
-        fp.fprintf("!!subcube %s: %d =subhisto %d =ngroups\n", seq, time-t0, aggr.count);
+        fp.fprintf("!!subcube %s: %d =subhisto %d =ngroups\n", seq, time-t0, aggr.count());
         seq.print_table(att1, att2, aggr);
 	return time - t0;
 }
@@ -2602,17 +2602,17 @@ proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
 proc valselect(str seq, bat[any,any] b, any val) : bat[any,any] {
 	var t0 := time;
         var fp := fps.find(threadid);
-	var b1 := b.uselect(b.ttype.encode(val));
-        fp.fprintf("!!select %s: %d =uselect_val %d =ntuples\n", seq, time-t0, b1.count);
-        fp.fprintf("!!predicate: %s == %s\n", b1.str, val.str);
+	var b1 := b.uselect(b.ttype().encode(val));
+        fp.fprintf("!!select %s: %d =uselect_val %d =ntuples\n", seq, time-t0, b1.count());
+        fp.fprintf("!!predicate: %s == %s\n", b1.str(), val.str());
 	return b1;
 }
 proc rngselect(str seq, bat[any,any] b, any::1 lo, any::1 hi) : bat[any,any] {
 	var t0 := time;
         var fp := fps.find(threadid);
-	var b1 := b.uselect(b.ttype.upper(lo),b.ttype.lower(hi));
-        fp.fprintf("!!select %s: %d =uselect_rng %d =ntuples\n", seq, time-t0, b1.count);
-        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str, lo.str, hi.str);
+	var b1 := b.uselect(b.ttype().upper(lo),b.ttype().lower(hi));
+        fp.fprintf("!!select %s: %d =uselect_rng %d =ntuples\n", seq, time-t0, b1.count());
+        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str(), lo.str(), hi.str());
 	return b1;
 }
 
@@ -2623,17 +2623,17 @@ module(ddbench);
 proc valselect(str seq, bat[any,any] b, any val) : bat[any,any] {
 	var t0 := time;
         var fp := fps.find(threadid);
-	var b1 := b.val_oidselect(b.ttype.encode(val));
-        fp.fprintf("!!select %s: %d =val_oidselect %d =ntuples\n", seq, time-t0, b1.count);
-        fp.fprintf("!!predicate: %s == %s\n", b1.str, val.str);
+	var b1 := b.val_oidselect(b.ttype().encode(val));
+        fp.fprintf("!!select %s: %d =val_oidselect %d =ntuples\n", seq, time-t0, b1.count());
+        fp.fprintf("!!predicate: %s == %s\n", b1.str(), val.str());
 	return b1;
 }
 proc rngselect(str seq, bat[any,any] b, any::1 lo, any::1 hi) : bat[any,any] {
 	var t0 := time;
         var fp := fps.find(threadid);
-	var b1 := b.rng_oidselect(b.ttype.upper(lo),b.ttype.lower(hi));
-        fp.fprintf("!!select %s: %d =rng_oidselect %d ntuples\n", seq, time-t0, b1.count);
-        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str, lo.str, hi.str);
+	var b1 := b.rng_oidselect(b.ttype().upper(lo),b.ttype().lower(hi));
+        fp.fprintf("!!select %s: %d =rng_oidselect %d ntuples\n", seq, time-t0, b1.count());
+        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str(), lo.str(), hi.str());
 	return b1;
 }
 
@@ -2644,17 +2644,17 @@ module(ddbench);
 proc valselect(str seq, bat[any,any] b, any val) : bat[any,any] {
 	var t0 := time;
         var fp := fps.find(threadid);
-	var b1 := b.val_bitselect(b.ttype.encode(val));
-        fp.fprintf("!!select %s: %d =val_bitselect %d =ntuples\n", seq, time-t0, b1.count);
-        fp.fprintf("!!predicate: %s == %s\n", b1.str, val.str);
+	var b1 := b.val_bitselect(b.ttype().encode(val));
+        fp.fprintf("!!select %s: %d =val_bitselect %d =ntuples\n", seq, time-t0, b1.count());
+        fp.fprintf("!!predicate: %s == %s\n", b1.str(), val.str());
 	return b1;
 }
 proc rngselect(str seq, bat[any,any] b, any::1 lo, any::1 hi) : bat[any,any] {
 	var t0 := time;
         var fp := fps.find(threadid);
-	var b1 := b.rng_bitselect(b.ttype.upper(lo),b.ttype.lower(hi));
-        fp.fprintf("!!select %s: %d =rng_bitselect %d =ntuples\n", seq, time-t0, b1.count);
-        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str, lo.str, hi.str);
+	var b1 := b.rng_bitselect(b.ttype().upper(lo),b.ttype().lower(hi));
+        fp.fprintf("!!select %s: %d =rng_bitselect %d =ntuples\n", seq, time-t0, b1.count());
+        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str(), lo.str(), hi.str());
 	return b1;
 }
 
@@ -2667,8 +2667,8 @@ proc valselect(str seq, bat[any,any] sel, bat[any,any] b, any val) : bat[any,any
 	var t0 := time;
         var fp := fps.find(threadid);
 	var b2 := semijoin(sel,b1);
-        fp.fprintf("!!select %s: %d =semijoin %d =ntuples\n", seq, time-t0, b2.count);
-        fp.fprintf("!!predicate: %s == %s\n", b1.str, val.str);
+        fp.fprintf("!!select %s: %d =semijoin %d =ntuples\n", seq, time-t0, b2.count());
+        fp.fprintf("!!predicate: %s == %s\n", b1.str(), val.str());
 	return b2;
 }
 proc rngselect(str seq, bat[any,any] sel, bat[any,any] b, any::1 lo, any::1 hi) : bat[any,any] {
@@ -2676,8 +2676,8 @@ proc rngselect(str seq, bat[any,any] sel, bat[any,any] b, any::1 lo, any::1 hi) 
 	var t0 := time;
         var fp := fps.find(threadid);
 	var b2 := semijoin(sel,b1);
-        fp.fprintf("!!select %s: %d =semijoin %d =ntuples\n", seq, time-t0, b2.count);
-        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str, lo.str, hi.str);
+        fp.fprintf("!!select %s: %d =semijoin %d =ntuples\n", seq, time-t0, b2.count());
+        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str(), lo.str(), hi.str());
 	return b2;
 }
 
@@ -2688,17 +2688,17 @@ module(ddbench);
 proc valselect(str seq, bat[any,any] sel, bat[any,any] b, any val) : bat[any,any] {
 	var t0 := time;
         var fp := fps.find(threadid);
-	var b1 := subselect(sel, b, b.ttype.encode(val));
-        fp.fprintf("!!select %s: %d =subselect %d =ntuples\n", seq, time-t0, b1.count);
-        fp.fprintf("!!predicate: %s == %s\n", b1.str, val.str);
+	var b1 := subselect(sel, b, b.ttype().encode(val));
+        fp.fprintf("!!select %s: %d =subselect %d =ntuples\n", seq, time-t0, b1.count());
+        fp.fprintf("!!predicate: %s == %s\n", b1.str(), val.str());
 	return b1;
 }
 proc rngselect(str seq, bat[any,any] sel, bat[any,any] b, any::1 lo, any::1 hi) : bat[any,any] {
 	var t0 := time;
         var fp := fps.find(threadid);
-	var b1 := subselect(sel, b, b.ttype.upper(lo), b.ttype.lower(hi));
-        fp.fprintf("!!select %s: %d =subselect %d =ntuples\n", seq, time-t0, b1.count);
-        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str, lo.str, hi.str);
+	var b1 := subselect(sel, b, b.ttype().upper(lo), b.ttype().lower(hi));
+        fp.fprintf("!!select %s: %d =subselect %d =ntuples\n", seq, time-t0, b1.count());
+        fp.fprintf("!!predicate: %s in [%s,%s]\n", b1.str(), lo.str(), hi.str());
 	return b1;
 }
 
@@ -3138,8 +3138,8 @@ fpNice.fprintf("s/HORSCAL/%d/\n", HF);
 fpNice.fprintf("s/DBMSVERSION/Monet v%s/\n", environment.find("version"));
 fpNice.fprintf("s/OSVERSION/%s/\n", environment.find("prefix"));
 var tm := ctime;
-fpNice.fprintf("s/REPORTDATE/%s/\n", tm.string(0, tm.length - 1));
-fpNice.fclose;
+fpNice.fprintf("s/REPORTDATE/%s/\n", tm.string(0, tm.length() - 1));
+fpNice.fclose();
 
 @f scripts_config
 These are parameters in sed style that describe the machine configuration.

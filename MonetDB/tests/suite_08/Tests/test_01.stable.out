@@ -361,7 +361,7 @@ view_var_kind() = view_var_kind();
 # Pseudo bat to map variable name to constant/changeable
 view_var_constant() = view_var_constant(); 
 
-quit;
+quit();
 
 # 17:09:14 >  
 # 17:09:14 >  Done.

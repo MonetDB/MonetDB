@@ -1,7 +1,7 @@
-PROC tmp() : void := {
+PROC tmp() : void {
         var sts := view_bbp_status;
         var nme := view_bbp_name.access(BAT_WRITE).col_name("name");
-        var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+        var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
         nme.replace(rev).table(view_bbp_heat, sts.col_name("status"),
                 view_bbp_kind, view_bbp_refcnt);
 }
@@ -26,7 +26,7 @@ PROC createBAT(str name) : bat[int,int] {
 	RETURN res;
 }
 
-tmp;
+tmp();
 
 {
 
@@ -35,16 +35,16 @@ top.rename("top");
 
 addBAT(top,"one");
 addBAT(top,"two");
-tmp;
+tmp();
 
 delBAT(top,"one");
-tmp;
+tmp();
 
 VAR i := new(oid,str);
 i.insert(oid(10),"ten");
 i.insert(oid(20),"twenty");
 VAR res := [createBAT](i);
-tmp;
+tmp();
 
 top := nil;
 res := nil;
@@ -56,5 +56,5 @@ res := nil;
 #  at the delete from bat("top")
 #- bat("ten") and bat("twenty") still exist, due to creation during multiplex
 #  operation (?)
-tmp;
-quit;
+tmp();
+quit();

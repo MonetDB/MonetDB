@@ -224,7 +224,7 @@ printf("!Before multiplex operation\n");
                 res := [*](theBitsets,theBit);
 printf("!After multiplex operation\n");
         } ELSE {
-                res := new(theBitsets.htype,int);
+                res := new(theBitsets.htype(),int);
                 theBitsets@batloop() {
                         VAR b := $t*theBit;
                         res.insert($h,b);

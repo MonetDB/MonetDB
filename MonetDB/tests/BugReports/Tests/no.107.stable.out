@@ -71,7 +71,7 @@ docid.print();
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
-tid.insert( w.reverse.mark(nil).reverse );
+tid.insert( w.reverse().mark(nil).reverse() );
 tid.print();
 #---------------------------------#
 # BAT:	  tmp_29		  #

@@ -30,7 +30,7 @@ while(i < 100) {
 
 bat("a").mmap(1,1,1,1,1);
 unload("a");
-bat("a").info.reverse().select("theap.storage").reverse().print();
+bat("a").info().reverse().select("theap.storage").reverse().print();
 #-------------------------------------------------#
 # t			tmp_31			  # name
 # str			str			  # type
@@ -54,7 +54,7 @@ bat("a").insert(e);
 debugmask(9);
 
 #bat("a").mmap(1,1,1,1,1);
-bat("a").info.reverse().select("theap.storage").reverse().print();
+bat("a").info().reverse().select("theap.storage").reverse().print();
 #-----------------------------------------#
 # BAT:			  tmp_23	  #
 # (str)			  (str)		  #
@@ -70,7 +70,7 @@ bat("a").insert(e);
 #01 interpret_unpin(insert) on bat(33) refcnt = 0
 debugmask(9);
 
-bat("a").info.reverse().select("theap.storage").reverse().print();
+bat("a").info().reverse().select("theap.storage").reverse().print();
 #-----------------------------------------#
 # BAT:			  tmp_30	  #
 # (str)			  (str)		  #

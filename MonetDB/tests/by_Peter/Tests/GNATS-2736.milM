@@ -88,33 +88,33 @@ proc set_print(bat[any,any] b) :void {
 debugmask(131072);
 
 tests@batloop() {
-	printf("\n# test proc {kunique}(%s)\n", $h.bbpname);
-	{ku}($h).mset_print;
+	printf("\n# test proc {kunique}(%s)\n", $h.bbpname());
+	{ku}($h).mset_print();
 }
 
 tests@batloop() {
-	printf("\n# test proc {kunique}(%s,%s)\n", $h.bbpname, $t.bbpname);
-	{ku}($h,$t).mset_print;
+	printf("\n# test proc {kunique}(%s,%s)\n", $h.bbpname(), $t.bbpname());
+	{ku}($h,$t).mset_print();
 }
 
 tests@batloop() {
-	printf("\n# test packed {kunique}(%s)\n", $h.bbpname);
-	{kunique}($h).mset_print;
+	printf("\n# test packed {kunique}(%s)\n", $h.bbpname());
+	{kunique}($h).mset_print();
 }
 
 tests@batloop() {
-	printf("\n# test packed {max}(%s,%s)\n", $h.bbpname, $t.bbpname);
-	{max}($h,$t).set_print;
+	printf("\n# test packed {max}(%s,%s)\n", $h.bbpname(), $t.bbpname());
+	{max}($h,$t).set_print();
 }
 
 tests@batloop() {
-	printf("\n# test direct {max}(%s)\n", $h.bbpname);
-	{max}([int]($h)).set_print;
+	printf("\n# test direct {max}(%s)\n", $h.bbpname());
+	{max}([int]($h)).set_print();
 }
 
 tests@batloop() {
-	printf("\n# test direct {max}(%s,%s)\n", $h.bbpname, $t.bbpname);
-	{max}([int]($h),$t).set_print;
+	printf("\n# test direct {max}(%s,%s)\n", $h.bbpname(), $t.bbpname());
+	{max}([int]($h),$t).set_print();
 }
 
 quit();

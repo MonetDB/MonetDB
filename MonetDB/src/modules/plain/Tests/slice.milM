@@ -12,21 +12,21 @@ a.insert(nil,5);
 a.insert(nil,8);
 a.insert(nil,3);
 a.seqbase(oid(10));
-a.print;
+a.print();
 
 var b := a.copy().access(BAT_WRITE).delete(oid(15));
-b.print;
+b.print();
 
 print("simple slice");
-b.slice(2,5).print;
-a.slice(2,5).print;
+b.slice(2,5).print();
+a.slice(2,5).print();
 
 print("negative start slice");
-b.slice(-1,5).print;
-a.slice(-1,5).print;
+b.slice(-1,5).print();
+a.slice(-1,5).print();
 
 print("over end slice");
-b.slice(5,10).print;
-a.slice(5,9).print;
+b.slice(5,10).print();
+a.slice(5,9).print();
 
-quit;
+quit();

@@ -24,7 +24,7 @@ a.insert(nil,5);
 a.insert(nil,8);
 a.insert(nil,3);
 a.seqbase(oid(10));
-a.print;
+a.print();
 #-----------------#
 # BAT:	  A	  #
 # (void)  (int)	  #
@@ -46,7 +46,7 @@ print("insert tests");
 [ "insert tests" ]
 #insert in order
 a.insert(oid(20),8);
-a.print;
+a.print();
 #-----------------#
 # BAT:	  A	  #
 # (void)  (int)	  #
@@ -67,7 +67,7 @@ print("replace tests");
 [ "replace tests" ]
 # replace uncommited no need to change to oid
 a.replace(oid(15),9);
-a.print;
+a.print();
 #-----------------#
 # BAT:	  A	  #
 # (void)  (int)	  #
@@ -86,7 +86,7 @@ a.print;
 
 # replace last no need to change to oid
 a.replace(oid(20),9);
-a.print;
+a.print();
 #-----------------#
 # BAT:	  A	  #
 # (void)  (int)	  #
@@ -105,7 +105,7 @@ a.print;
 
 # replace last + 1, noting needed
 a.replace(oid(20),9);
-a.print;
+a.print();
 #-----------------#
 # BAT:	  A	  #
 # (void)  (int)	  #
@@ -136,7 +136,7 @@ a.delete(oid(13));
 a.delete(oid(12));
 a.delete(oid(11));
 # only 1 left and still void
-a.print;
+a.print();
 #-----------------#
 # BAT:	  A	  #
 # (void)  (int)	  #
@@ -152,7 +152,7 @@ print("insert tests");
 [ "insert tests" ]
 #insert in out of order
 a.insert(oid(21),8);
-a.print;
+a.print();
 #-----------------#
 # BAT:	  C	  #
 # (oid)	  (int)	  #
@@ -171,7 +171,7 @@ a.print;
 
 # use oid bat (test if its a properly made bat)
 a.delete(oid(21));
-a.reverse().join(b).print;
+a.reverse().join(b).print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -199,7 +199,7 @@ a.replace(oid(15),-3);
 a.replace(oid(19),-1);
 # replace something not there
 a.replace(oid(20),-2);
-a.print;
+a.print();
 #-----------------#
 # BAT:	  D	  #
 # (oid)	  (int)	  #
@@ -220,7 +220,7 @@ print("delete tests");
 [ "delete tests" ]
 a := b.copy().access(BAT_WRITE).rename("E");
 a.commit();
-a.print;
+a.print();
 #-----------------#
 # BAT:	  E	  #
 # (void)  (int)	  #
@@ -236,7 +236,7 @@ a.print;
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
 
-a.delete(oid(20));a.print;
+a.delete(oid(20));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (void)  (int)	  #
@@ -251,7 +251,7 @@ a.delete(oid(20));a.print;
 [ 17@0,	  5	  ]
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
-a.delete(oid(19));a.print;
+a.delete(oid(19));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
@@ -265,7 +265,7 @@ a.delete(oid(19));a.print;
 [ 16@0,	  4	  ]
 [ 17@0,	  5	  ]
 [ 18@0,	  8	  ]
-a.delete(oid(18));a.print;
+a.delete(oid(18));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
@@ -278,7 +278,7 @@ a.delete(oid(18));a.print;
 [ 15@0,	  1	  ]
 [ 16@0,	  4	  ]
 [ 17@0,	  5	  ]
-a.delete(oid(17));a.print;
+a.delete(oid(17));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
@@ -290,7 +290,7 @@ a.delete(oid(17));a.print;
 [ 14@0,	  8	  ]
 [ 15@0,	  1	  ]
 [ 16@0,	  4	  ]
-a.delete(oid(16));a.print;
+a.delete(oid(16));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
@@ -301,7 +301,7 @@ a.delete(oid(16));a.print;
 [ 13@0,	  2	  ]
 [ 14@0,	  8	  ]
 [ 15@0,	  1	  ]
-a.delete(oid(15));a.print;
+a.delete(oid(15));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
@@ -311,7 +311,7 @@ a.delete(oid(15));a.print;
 [ 12@0,	  7	  ]
 [ 13@0,	  2	  ]
 [ 14@0,	  8	  ]
-a.delete(oid(14));a.print;
+a.delete(oid(14));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
@@ -320,7 +320,7 @@ a.delete(oid(14));a.print;
 [ 11@0,	  4	  ]
 [ 12@0,	  7	  ]
 [ 13@0,	  2	  ]
-a.delete(oid(13));a.print;
+a.delete(oid(13));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
@@ -328,21 +328,21 @@ a.delete(oid(13));a.print;
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
 [ 12@0,	  7	  ]
-a.delete(oid(12));a.print;
+a.delete(oid(12));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
-a.delete(oid(11));a.print;
+a.delete(oid(11));a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 # only 1 left and still void
-a.print;
+a.print();
 #-----------------#
 # BAT:	  E	  #
 # (oid)	  (int)	  #
@@ -358,8 +358,8 @@ t1.insert(nil,1);
 t1.insert(nil,2);
 t1.insert(nil,3);
 var v1 := t1.mil_select("<in>", 2,int(nil));
-var v2 := v1.mark(0@0).reverse;
-v2.join(t1).print;
+var v2 := v1.mark(0@0).reverse();
+v2.join(t1).print();
 #-----------------#
 # BAT:	  tmp_32  #
 # (void)  (int)	  #
@@ -367,18 +367,18 @@ v2.join(t1).print;
 [ 0@0,	  3	  ]
 
 var v3 := t1.select(2, int(nil));
-v3.info.find("hseqbase").print;
+v3.info().find("hseqbase").print();
 [ "1@0" ]
-v3.info.find("hdense").print;
+v3.info().find("hdense").print();
 [ "1" ]
 v3.access(BAT_WRITE);
-v3.reverse.delete(2);
-v3.info.find("hseqbase").print;
+v3.reverse().delete(2);
+v3.info().find("hseqbase").print();
 [ "1@0" ]
-v3.info.find("hdense").print;
+v3.info().find("hdense").print();
 [ "0" ]
 
-quit;
+quit();
 
 # 16:29:54 >  
 # 16:29:54 >  Done.

@@ -291,7 +291,7 @@ PROC concat(bat[oid,any::1] a,bat[oid,any::1] b,int o) : bat[oid,any::1] {
 ADDHELP("concat", "A.R. van Ballegooij", "Sep 20 2003",
 "Adds 'offset' two second arrays indexes and merges tables", "array");
 
-if (mod = "main"){
+if (mod() = "main"){
 	print("Array module loaded...");
 }
 

@@ -9,10 +9,10 @@ var word_table:= new(oid,str);
 word_table.import(word_file);
 
 print("selecting 'nil' words. The result should be 2");
-word_table.select("nil").count.print();    # should be 2 and it is 0
+word_table.select("nil").count().print();    # should be 2 and it is 0
 
 print("selecting nil values. The result should be 0");
-word_table.select(str(nil)).count.print();    # should be 1 and it is 3
+word_table.select(str(nil)).count().print();    # should be 1 and it is 3
 
 print("the table imported");
 word_table.print();    # the "nil" words are converted to nil values     

@@ -1118,7 +1118,7 @@ typedef struct {
 
 @= varsized_commandsmiltest
 printf("Length of normalized @1s vector:\n");
-length(normalize(@1v)).print;
+length(normalize(@1v)).print();
 
 @1vecs := bat(void, @1s);
 var i := 0;
@@ -1128,7 +1128,7 @@ while(i < 10) {
 }
 
 printf("Mean vector of @1vecs:\n");
-meanvector(@1vecs,3).print;
+meanvector(@1vecs,3).print();
 @
 
 @= varsized_tests
@@ -1139,21 +1139,21 @@ vecs.insert(nil, flts_rancreate(10));
 vecs.insert(nil, flts_rancreate(10));
 vecs.seqbase(0@0);
 
-vecs.print;
+vecs.print();
 
 # project 5th dimension
-[getval](vecs,4).print;
+[getval](vecs,4).print();
 
 # range of data
 xmax:= maxrange(vecs);
 xmin:= minrange(vecs);
 
 printf("maxrange and minrange:\n");
-xmax.print;
-xmin.print;
+xmax.print();
+xmin.print();
 
 printf("L2distance for xmax and xmin:\n");
-L2distance(xmin, xmax).print;
+L2distance(xmin, xmax).print();
 
 intvbat := bat(str, ints);
 fltvbat := bat(str, flts);
@@ -1167,9 +1167,9 @@ dblv := dbls("(3:1.0,1.0,1.0)");
 @:varsized_opsmiltest(flt,flt,flt)@
 @:varsized_opsmiltest(dbl,dbl,dbl)@
 
-intv.print;
-fltv.print;
-dblv.print;
+intv.print();
+fltv.print();
+dblv.print();
 
 @:varsized_commandsmiltest(int)@
 @:varsized_commandsmiltest(flt)@

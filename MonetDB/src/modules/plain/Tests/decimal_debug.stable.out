@@ -54,36 +54,36 @@ decimal_fromstr(0.70710678118654752440) result=70710678118654752440E-20
 
 var d:=decimal("nil");
 decimal_fromstr(nil) result=nil
-d.print;
+d.print();
 [ decimal_tostr(->nil) input=nil
 nil ]
 d:=decimal(int(nil));
 decimal_from_lng(-9223372036854775808) result=nil
-d.print;
+d.print();
 [ decimal_tostr(->nil) input=nil
 nil ]
 d:=decimal("0");
 decimal_fromstr(0) result=0
-d.print;
+d.print();
 [ decimal_tostr(->0) input=0
 0 ]
 d:=decimal(0);
 decimal_from_lng(0) result=0
-d.print;
+d.print();
 [ decimal_tostr(->0) input=0
 0 ]
 d:=decimal("1");
 decimal_fromstr(1) result=1
-d.print;
+d.print();
 [ decimal_tostr(->1) input=1
 1 ]
 d:=decimal(1);
 decimal_from_lng(1) result=1
-d.print;
+d.print();
 [ decimal_tostr(->1) input=1
 1 ]
 
-quit;
+quit();
 
 # 21:27:10 >  
 # 21:27:10 >  Done.

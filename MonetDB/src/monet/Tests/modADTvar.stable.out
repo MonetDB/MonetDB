@@ -11,18 +11,18 @@ stdout of test 'modADTvar` in directory 'src/monet` itself:
 module(url);VAR u1:=new(void,url);
 u1.insert(nil,url("http://www.cwi.nl/"));
 u1.rename("u1");
-u1.print;
-#-----------------#
-# h	tmp_29	  # name
+u1.print();
+#---------------------------------#
+# h	u1			  # name
 # void	url	  # type
 #-----------------------------------------#
 [ nil,	  "http://www.cwi.nl/"		  ]
 VAR u2:=new(void,url);
 u2.rename("u2");
 u2.insert(nil,url("http://www.cwi.nl/~monet/"));
-u2.print;
-#-----------------#
-# h	tmp_29	  # name
+u2.print();
+#-----------------------------------------#
+# h	u2				  # name
 # void	url	  # type
 #-----------------------------------------#
 [ nil,	  "http://www.cwi.nl/~monet/"	  ]

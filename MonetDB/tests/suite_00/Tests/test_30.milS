@@ -27,15 +27,15 @@ count(c).print();
 var d:= new(int,int);
 d.insert(1,1);
 d.traverse(c).print();
-d.clear;
+d.clear();
 d.insert(2,3);
 d.traverse(c).print();
 ## The alternative is to extract a subgraph
-d.clear;
+d.clear();
 d.insert(2,2);
 printf("#~BeginVariableOutput~#\n"); time.print(); var z:=d.subgraph(c); time.print(); printf("#~EndVariableOutput~#\n");
 z.print();
-d.clear;
+d.clear();
 d.insert(2,2);
 d.insert(3,3);
 printf("#~BeginVariableOutput~#\n"); time.print(); z:=d.subgraph(c); time.print(); printf("#~EndVariableOutput~#\n");

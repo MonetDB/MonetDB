@@ -73,7 +73,7 @@ proc convert_val(any v, any rng) : any {
         rng@batloop() {
 		if ($t >= v) return $h;
 	}
-        return nil.cast(v.type);
+        return nil.cast(v.type());
 }
 
 # OVERALL USEABLE PROC

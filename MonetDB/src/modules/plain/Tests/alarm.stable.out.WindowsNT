@@ -13,7 +13,7 @@ test_alarm();
 [ 15 ]
 !ERROR: alarm: not implemented
 !ERROR: CMDalarm: operation failed.
-quit;
+quit();
 
 # 10:02:38 >  
 # 10:02:38 >  Done.

@@ -27,7 +27,7 @@ testje.insert(3,"drie");
 
 printf("* Example BAT\n");
 * Example BAT
-testje.print;
+testje.print();
 #-------------------------#
 # BAT:	  tmp_24	  #
 # (int)	  (str)		  #
@@ -45,14 +45,14 @@ deltest.insert(1,"one");
 printf("\n* deleteBuns: Delete the exact BUN\n");
 
 * deleteBuns: Delete the exact BUN
-deltest.print;
+deltest.print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "one"	  ]
 testje.deleteBuns(deltest);
-testje.print;
+testje.print();
 #-------------------------#
 # BAT:	  tmp_24	  #
 # (int)	  (str)		  #
@@ -70,7 +70,7 @@ deltest.insert(3,3);
 printf("\n* delete: Delete the BUNs with corresponding head values\n");
 
 * delete: Delete the BUNs with corresponding head values
-deltest.print;
+deltest.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -78,14 +78,14 @@ deltest.print;
 [ 2,	  2	  ]
 [ 3,	  3	  ]
 testje.delete(deltest);
-testje.print;
+testje.print();
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "een"	  ]
 
-quit;
+quit();
 
 # 17:05:12 >  
 # 17:05:12 >  Done.

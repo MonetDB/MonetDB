@@ -279,7 +279,7 @@ test_arith();
 [ true ]
 [ true ]
 [ 990577243 ]
-quit;
+quit();
 
 # 19:54:40 >  
 # 19:54:40 >  Done.
