@@ -132,7 +132,7 @@ typedef struct ascii_io_t {
 	char* type;
 	int   adt;
 	BAT*  c;
-	ptr   p;
+	BUN   p;
 } ascii_io;
 
 typedef struct ascii_load_t {
