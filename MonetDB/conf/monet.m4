@@ -156,7 +156,7 @@ case $CC-$CXX in
 	CXXFLAGS="$CXXFLAGS -Wall -W"
 	dnl  Be rigid; "MonetDB code is supposed to adhere to this... ;-)
 	X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
-	X_CXXFLAGS="$X_CXXFLAGS -Werror-implicit-function-declaration"
+	dnl X_CXXFLAGS="$X_CXXFLAGS -Werror-implicit-function-declaration"
 	if test "$CC-$CXX" = "gcc-g++"; then
 		dnl  Doesn't work (yet?) for arm-linux-gcc v2.95.2, due to 
 		dnl  "warning: value computed is not used" 
@@ -221,6 +221,8 @@ icc-icpc|ecc-ecpc)
 esac
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
+AC_SUBST(X_CFLAGS)
+AC_SUBST(X_CXXFLAGS)
 
 bits=32
 AC_ARG_WITH(bits,
