@@ -242,3 +242,30 @@ reported using the respective bug-tracking system at SourceFORGE (preferred;
 cf. https://sourceforge.net/tracker/?group_id=56967&atid=482468) or emailed
 to monet@cwi.nl; see also 
 http://monetdb.cwi.nl/Development/Bugtracker/index.html .
+
+
+Running MonetDB with valgrind on Linux
+======================================
+
+In case you intend (or need) to run MonetDB with the memory debugging and
+profiling tool "valgrind", you need to take care of the following steps:
+ - set option "gdk_alloc_map" to "no" (in monet.conf: "gdk_alloc_map=no",
+   resp. on the Mserver's commandline: "--set gdk_alloc_map=no")
+ - tell valgrind to use 8-byte alignment ("valgrind --alignment=8"), hence:
+   "valgrind --alignment=8 Mserver --set gdk_alloc_map=no ..."
+ - patch src/gdk/gdk_system.mx as follows and recompile MonetDB 
+========
+--- src/gdk/gdk_system.mx       28 Jan 2004 20:42:41 -0000      1.56
++++ src/gdk/gdk_system.mx       2 Mar 2004 17:42:22 -0000
+@@ -359,8 +359,8 @@
+           process (i.e. with all its threads) is replaced by the new
+           program.  If this new program does nothing, other than
+           exit, we effectively exit the server.
+-        */
+        execl(s ? "/bin/false" : "/bin/true", s ? "false" : "true", (char *) 0);
++        */
+ #endif
+        exit(s);
+ }
+========
+
