@@ -31,24 +31,22 @@ odbc.SQLExecDirect(stmt, """CREATE TABLE model (
    is_mutagen CHAR(3),
    lumo INT(11),
    logp INT(11),
+   dt DATE,
+   tm TIME,
+   ts TIMESTAMP,
    PRIMARY KEY (model_id)
 )""")
 odbc.SQLFreeHandle(odbc.SQL_HANDLE_STMT, stmt)
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
-odbc.SQLExecDirect(stmt, "INSERT INTO model (model_id, is_mutagen, lumo, logp) VALUES (1, 'T', -1, 4)")
+odbc.SQLExecDirect(stmt, "INSERT INTO model (model_id, is_mutagen, lumo, logp, dt, tm, ts) VALUES (1, 'T', -1, 4, DATE '2003-10-01', TIME '14:51:12', TIMESTAMP '2003-10-01 14:51:12')")
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
 odbc.SQLExecDirect(stmt, "SELECT * FROM model")
-for i in range(odbc.SQLNumResultCols(stmt)[1]):
-    odbc.SQLDescribeCol(stmt, i+1)
 odbc.SQLFetch(stmt)
 odbc.SQLGetData(stmt, 1, odbc.SQL_C_SLONG)
+for i in range(odbc.SQLNumResultCols(stmt)[1]):
+    d = odbc.SQLDescribeCol(stmt, i+1)
+    print d[1], odbc.SQLGetData(stmt, i+1, d[2])[1]
 
 
 Stuff missing (added to when found missing):
-
-ColumnHeader->nSQL_DESC_TYPE is not filled in by SQLExecute().  Can
-the information be derived from pszSQL_DESC_TYPE_NAME or is more info
-from the servr needed?  The info is neede by SQLColAttribute() and
-SQLDescribeCol().
-
 

@@ -83,7 +83,7 @@ int isValidEnv(ODBCEnv * env)
  *
  * Precondition: env must be valid. SQLState and errMsg may be NULL.
  */
-void addEnvError(ODBCEnv * env, char * SQLState, char * errMsg, int nativeErrCode)
+void addEnvError(ODBCEnv *env, const char *SQLState, const char *errMsg, int nativeErrCode)
 {
 	ODBCError * error = NULL;
 

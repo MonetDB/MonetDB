@@ -111,7 +111,7 @@ int isValidDbc(ODBCDbc * dbc)
  *
  * Precondition: dbc must be valid. SQLState and errMsg may be NULL.
  */
-void addDbcError(ODBCDbc * dbc, char * SQLState, char * errMsg, int nativeErrCode)
+void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nativeErrCode)
 {
 	ODBCError * error = NULL;
 

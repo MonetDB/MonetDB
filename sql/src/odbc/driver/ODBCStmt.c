@@ -111,7 +111,7 @@ int isValidStmt(ODBCStmt * stmt)
  *
  * Precondition: stmt must be valid. SQLState and errMsg may be NULL.
  */
-void addStmtError(ODBCStmt * stmt, char * SQLState, char * errMsg, int nativeErrCode)
+void addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg, int nativeErrCode)
 {
 	ODBCError * error = NULL;
 

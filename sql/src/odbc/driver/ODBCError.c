@@ -42,8 +42,79 @@
 const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver 1.0]";
 const int ODBCErrorMsgPrefixLength = sizeof(ODBCErrorMsgPrefix)-1;
 
-/* forward declaration of internal function */
-static char * getStandardSQLStateMsg(char * SQLState);
+/*
+ * Local utility function which retuns the standard ODBC/ISO error
+ * message text for a given ISO SQLState code.
+ * When no message could be found for a given SQLState a msg is
+ * printed to stderr to warn that the programmer has forgotten to
+ * add the message for the SQLState code.
+ *
+ * Precondition: SQLState is a valid string (non null, 5 chars long).
+ * Postcondition: returns a valid pointer to a string (which may be empty).
+ */
+static struct SQLStateMsg {
+	const char *SQLState;
+	const char *SQLMsg;
+} SQLStateMsg[] = {
+	{"01000", "General warning"},
+	{"01004", "String data, right truncation"},
+	{"01S07", "Fractional truncation"},
+	{"07005", "Prepared statement not a cursor-specification"},
+	{"07006", "Restricted data type attribute violation"},
+	{"07009", "Invalid descriptor index"},
+	{"08001", "Client unable to establish connection"},
+	{"08002", "Connection already in use"},
+	{"08003", "Connection does not exist"},
+	{"08S01", "Communication link failure"},
+	{"22002", "Indicator variable required but not supplied"},
+	{"22003", "Numeric value out of range"},
+	{"22007", "Invalid datetime format"},
+	{"22012", "Division by zero"},
+	{"22015", "Interval field overflow"},
+	{"22018", "Invalid character value for cast specification"},
+	{"24000", "Invalid cursor state"},
+	{"25000", "Invalid transaction state"},
+	{"HY000", "General error"},
+	{"HY001", "Memory allocation error"},
+	{"HY003", "Invalid application buffer type"},
+	{"HY004", "Invalid SQL data type"},
+	{"HY008", "Operation canceled"},
+	{"HY009", "Invalid use of null pointer"},
+	{"HY010", "Function sequence error"},
+	{"HY012", "Invalid transaction operation code"},
+	{"HY013", "Memory management error"},
+	{"HY015", "No cursor name available"},
+	{"HY090", "Invalid string or buffer length"},
+	{"HY091", "Invalid descriptor field identifier"},
+	{"HY092", "Invalid attribute/option identifier"},
+	{"HY096", "Information type out of range"},
+	{"HY097", "Column type out of range"},
+	{"HY098", "Scope type out of range"},
+	{"HY099", "Nullable type out of range"},
+	{"HY100", "Uniqueness option type out of range"},
+	{"HY101", "Accuracy option type out of range"},
+	{"HY109", "Invalid cursor position"},
+	{"HYC00", "Optional feature not implemented"},
+	{"HYT01", "Connection timeout expired"},
+	{"IM001", "Driver does not support this function"},
+	{"IM002", "Data source not found"},
+	{0, 0},
+};
+
+static const char * getStandardSQLStateMsg(const char * SQLState)
+{
+	struct SQLStateMsg *p;
+	assert(SQLState);
+
+	for (p = SQLStateMsg; p->SQLState; p++)
+		if (strcmp(p->SQLState, SQLState) == 0)
+			return p->SQLMsg;
+
+	/* Present a msg to notify the system administrator/programmer */
+	fprintf(stderr, "\nMonetDB, ODBC Driver, ODBCError.c: No message defined for SQLState: %s. Please report this error.\n", SQLState);
+
+	return SQLState;	/* always return a string */
+}
 
 
 /*
@@ -53,7 +124,7 @@ static char * getStandardSQLStateMsg(char * SQLState);
  * Precondition: none
  * Postcondition: returns a new ODBCError object
  */
-ODBCError * newODBCError(char * SQLState, char * msg, int nativeCode)
+ODBCError * newODBCError(const char *SQLState, const char *msg, int nativeCode)
 {
 	ODBCError * error = (ODBCError *)malloc(sizeof(ODBCError));
 	assert(error);
@@ -68,7 +139,7 @@ ODBCError * newODBCError(char * SQLState, char * msg, int nativeCode)
 			error->sqlState[i] = '\0';
 	}
 
-	error->message = (msg) ? strdup(msg) : NULL;
+	error->message = msg ? strdup(msg) : NULL;
 	error->nativeErrorCode = nativeCode;
 	error->next = NULL;
 
@@ -104,7 +175,7 @@ char * getMessage(ODBCError * error)
 	if (error->message == NULL) {
 		/* No error message was set, use the default error msg
 		   for the set sqlState (if a msg is available) */
-		char * SQLStateMsg = getStandardSQLStateMsg(error->sqlState);
+		const char * SQLStateMsg = getStandardSQLStateMsg(error->sqlState);
 		assert(SQLStateMsg);
 		/* check if a usefull (not empty) msg was found */
 		if (strcmp(SQLStateMsg, "") != 0) {
@@ -139,80 +210,6 @@ ODBCError * getNextError(ODBCError * error)
 {
 	assert(error);
 	return error->next;
-}
-
-
-/*
- * Local utility function which retuns the standard ODBC/ISO error
- * message text for a given ISO SQLState code.
- * When no message could be found for a given SQLState a msg is
- * printed to stderr to warn that the programmer has forgotten to
- * add the message for the SQLState code.
- *
- * Precondition: SQLState is a valid string (non null, 5 chars long).
- * Postcondition: returns a valid pointer to a string (which may be empty).
- */
-static char * getStandardSQLStateMsg(char * SQLState)
-{
-	assert(SQLState);
-
-#ifdef SQLStateEQ
-#undef SQLStateEQ
-#endif
-#define SQLStateEQ(s1) (strcmp(SQLState,s1) == 0)
-
-	switch (SQLState[0])
-	{
-	case '0':
-		if (SQLStateEQ("01000")) return "General warning";
-		if (SQLStateEQ("01004")) return "String data, right truncation";
-		if (SQLStateEQ("07005")) return "Prepared statement not a cursor-specification";
-		if (SQLStateEQ("07009")) return "Invalid descriptor index";
-		if (SQLStateEQ("08001")) return "Client unable to establish connection";
-		if (SQLStateEQ("08002")) return "Connection already in use";
-		if (SQLStateEQ("08003")) return "Connection does not exist";
-		if (SQLStateEQ("08S01")) return "Communication link failure";
-		break;
-	case '2':
-		if (SQLStateEQ("24000")) return "Invalid cursor state";
-		if (SQLStateEQ("25000")) return "Invalid transaction state";
-		break;
-	case 'H':
-		if (SQLStateEQ("HY000")) return "General error";
-		if (SQLStateEQ("HY001")) return "Memory allocation error";
-		if (SQLStateEQ("HY003")) return "Invalid application buffer type";
-		if (SQLStateEQ("HY004")) return "Invalid SQL data type";
-		if (SQLStateEQ("HY009")) return "Invalid use of null pointer";
-		if (SQLStateEQ("HY010")) return "Function sequence error";
-		if (SQLStateEQ("HY012")) return "Invalid transaction operation code";
-		if (SQLStateEQ("HY013")) return "Memory management error";
-		if (SQLStateEQ("HY015")) return "No cursor name available";
-		if (SQLStateEQ("HY090")) return "Invalid string or buffer length";
-		if (SQLStateEQ("HY091")) return "Invalid descriptor field identifier";
-		if (SQLStateEQ("HY092")) return "Invalid attribute/option identifier";
-		if (SQLStateEQ("HY096")) return "Information type out of range";
-		if (SQLStateEQ("HY097")) return "Column type out of range";
-		if (SQLStateEQ("HY098")) return "Scope type out of range";
-		if (SQLStateEQ("HY099")) return "Nullable type out of range";
-		if (SQLStateEQ("HY100")) return "Uniqueness option type out of range";
-		if (SQLStateEQ("HY101")) return "Accuracy option type out of range";
-		if (SQLStateEQ("HYC00")) return "Optional feature not implemented";
-		if (SQLStateEQ("HYT01")) return "Connection timeout expired";
-		break;
-	case 'I':
-		if (SQLStateEQ("IM001")) return "Driver does not support this function";
-		if (SQLStateEQ("IM002")) return "Data source not found";
-		break;
-	default:
-		break;
-	}
-
-#undef SQLStateEQ
-
-	/* Present a msg to notify the system administrator/programmer */
-	fprintf(stderr, "\nMonetDB, ODBC Driver, ODBCError.c: No message defined for SQLState: %s. Please report this error.\n", SQLState);
-
-	return "";	/* always return a string */
 }
 
 

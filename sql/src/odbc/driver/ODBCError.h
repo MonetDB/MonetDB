@@ -69,7 +69,7 @@ extern const int ODBCErrorMsgPrefixLength;
  * Precondition: none
  * Postcondition: returns a new ODBCError object
  */
-ODBCError * newODBCError(char * SQLState, char * msg, int nativeCode);
+ODBCError *newODBCError(const char *SQLState, const char *msg, int nativeCode);
 
 
 /*

@@ -196,6 +196,37 @@ SQLRETURN ODBCGetData(
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLDOUBLE);
 			break;
+		case SQL_C_TYPE_DATE:
+			if (pTarget != NULL)
+				if (sscanf(pSourceData, "%hd-%hu-%hu", &((SQL_DATE_STRUCT *) pTarget)->year, &((SQL_DATE_STRUCT *) pTarget)->month, &((SQL_DATE_STRUCT *) pTarget)->day) != 3) {
+					addStmtError(stmt, "07006", NULL, 0);
+					return SQL_ERROR;
+				}
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQL_DATE_STRUCT);
+			break;
+		case SQL_C_TYPE_TIME:
+			if (pTarget != NULL)
+				if (sscanf(pSourceData, "%hu:%hu:%hu", &((SQL_TIME_STRUCT *) pTarget)->hour, &((SQL_TIME_STRUCT *) pTarget)->minute, &((SQL_TIME_STRUCT *) pTarget)->second) != 3) {
+					addStmtError(stmt, "07006", NULL, 0);
+					return SQL_ERROR;
+				}
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQL_TIME_STRUCT);
+			break;
+		case SQL_C_TYPE_TIMESTAMP:
+			if (pTarget != NULL) {
+				double d;
+				if (sscanf(pSourceData, "%hd-%hu-%hu %hu:%hu:%lg", &((SQL_TIMESTAMP_STRUCT *) pTarget)->year, &((SQL_TIMESTAMP_STRUCT *) pTarget)->month, &((SQL_TIMESTAMP_STRUCT *) pTarget)->day, &((SQL_TIMESTAMP_STRUCT *) pTarget)->hour, &((SQL_TIMESTAMP_STRUCT *) pTarget)->minute, &d) != 6) {
+					addStmtError(stmt, "07006", NULL, 0);
+					return SQL_ERROR;
+				}
+				((SQL_TIMESTAMP_STRUCT *) pTarget)->second = (SQLUSMALLINT) d;
+				((SQL_TIMESTAMP_STRUCT *) pTarget)->fraction = (SQLUINTEGER) ((d - ((SQL_TIMESTAMP_STRUCT *) pTarget)->second) * 1000000000);
+			}
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQL_TIMESTAMP_STRUCT);
+			break;
 		default:
 			/* unimplemented conversion */
 			addStmtError(stmt, "07006", NULL, 0);

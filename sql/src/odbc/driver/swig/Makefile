@@ -9,4 +9,4 @@ odbc_wrap.c: odbc.i
 	$(SWIG) -python -DHAVE_LONG_LONG odbc.i
 
 clean:
-	rm -rf odbc_wrap.c odbc.py build
+	rm -rf odbc_wrap.c odbc.py odbc.pyc odbc.pyo build

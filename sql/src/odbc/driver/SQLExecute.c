@@ -86,7 +86,7 @@ struct sql_types {
 } sql_types[] = {
 	{"bit", SQL_C_BIT},
 	{"uchr", SQL_C_UTINYINT},
-	{"str", SQL_C_CHAR},
+	{"char", SQL_C_CHAR},
 	{"sht", SQL_C_SSHORT},
 	{"int", SQL_C_SLONG},
 	{"lng", SQL_C_SBIGINT},
@@ -94,8 +94,7 @@ struct sql_types {
 	{"dbl", SQL_C_DOUBLE},
 	{"date", SQL_C_TYPE_DATE},
 	{"time", SQL_C_TYPE_TIME},
-/* 	{"datetime", SQL_C_TIMESTAMP}, */
-	{"timestamp", SQL_C_TIMESTAMP},
+	{"timestamp", SQL_C_TYPE_TIMESTAMP},
 	{0, 0},			/* sentinel */
 };
 

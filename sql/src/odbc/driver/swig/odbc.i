@@ -105,13 +105,14 @@
 %apply int *OUTPUT {SQLLEN *RowCount};
 
 // SQLColAttribute
-%typemap(in, numinputs=1) (SQLUSMALLINT FieldIdentifier, SQLPOINTER CharacterAttribute, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLPOINTER NumericAttribute) (char tempbuf[1024], SQLSMALLINT buflen, int temp)
-	"$1 = ($1_ltype) PyInt_AsLong($input);
+%typemap(in, numinputs=1) (SQLUSMALLINT FieldIdentifier, SQLPOINTER CharacterAttribute, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLPOINTER NumericAttribute) (char tempbuf[1024], SQLSMALLINT buflen, int temp) {
+	$1 = ($1_ltype) PyInt_AsLong($input);
 	if (PyErr_Occurred()) SWIG_fail;
 	$2 = (SQLPOINTER) tempbuf;
 	$3 = (SQLSMALLINT) sizeof(tempbuf);
 	$4 = &buflen;
-	$5 = (SQLPOINTER) &temp;";
+	$5 = (SQLPOINTER) &temp;
+}
 %typemap(argout,fragment="t_output_helper") (SQLUSMALLINT FieldIdentifier, SQLPOINTER CharacterAttribute, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLPOINTER NumericAttribute) {
 	PyObject *o;
 	switch ($1) {
@@ -132,7 +133,7 @@
 	case SQL_DESC_UNNAMED:
 	case SQL_DESC_UNSIGNED:
 	case SQL_DESC_UPDATABLE:
-		o = PyInt_FromLong((long) $5);
+		o = PyInt_FromLong((long) * (int *) $5);
 		break;
 	default:
 		o = PyString_FromStringAndSize((char *) $2, *$4 >= $3 ? $3 - 1 : *$4);
@@ -460,13 +461,132 @@
   Generate exception for failed call
 */
 // It would be nice if we could also not return the result value
-// %exception {
-//     $action
-//     if (result < 0) {
-// 	PyErr_SetString(PyExc_RuntimeError, "error");
-// 	return NULL;
-//     }
-// }
+%{
+#define CheckResult(res,tpe,hnd)					\
+	if (res == SQL_ERROR) {			  		\
+		char msg[256];						\
+		SQLSMALLINT len;					\
+		SQLGetDiagRec(tpe, hnd, 1, NULL, NULL, msg, 256, &len);	\
+		PyErr_SetString(PyExc_RuntimeError, msg);		\
+		return NULL;						\
+	}
+%}
+%exception SQLBindCol {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLBindParam {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLCancel {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLCloseCursor {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLColAttribute {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLColumns {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLDescribeCol {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLExecDirect {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLExecute {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLFetch {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLFetchScroll {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLFreeStmt {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLGetCursorName {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLGetData {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLGetStmtAttr {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLGetStmtOption {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLGetTypeInfo {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLNumResultCols {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLParamData {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLPrepare {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLPutData {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLRowCount {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLSetCursorName {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLSetParam {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLSetStmtAttr {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLSetStmtOption {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLSpecialColumns {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLStatistics {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLTables {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
 
 %ignore __SQL_H;
 %include "/usr/include/sql.h"
