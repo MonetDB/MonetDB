@@ -1,0 +1,45 @@
+setoid(oid(20000000));
+#test ascii export/import facility.
+module("ascii_io");
+
+var b:= new(str,int);
+b.insert("the",1);
+b.insert("quick",2);
+b.insert("brown",3);
+b.insert("fox",4);
+b.insert("jumps",5);
+b.insert("over",6);
+b.insert("lazy",7);
+b.insert("dog",8);
+b.insert(str(nil),9);
+b.insert(".",10);
+b.insert("",int(nil));
+b.insert(str(nil),int(nil));
+b.print();
+b.export("monet2");
+b.clear();
+b.count().print();
+b.import("monet2");
+b.print();
+
+b:= new(int,int);
+b.insert(1,15);
+b.insert(2,4);
+b.insert(3,int(nil));
+b.insert(4,16);
+b.insert(5,25);
+b.insert(6,36);
+b.insert(7,49);
+b.insert(8,64);
+b.insert(9,int(nil));
+b.insert(int(nil),int(nil));
+b.insert(int(nil),81);
+b.print();
+b.export("monet1");
+b.clear();
+b.count().print();
+b.import("monet1");
+b.print();
+commit();
+
+quit();

@@ -1,0 +1,22 @@
+setoid(oid(20000000));
+# definition and use of Monet procs.
+# Note that complex procs should normally be prepared in block mode.
+
+unknown("hello");
+
+#simple procedure with withdrawal
+proc c() : void { "clock".print();}
+c();
+undef c;
+c();
+
+# block administration
+
+# how about variables in a block
+{ var i:=123; vars();}
+
+# and in a procedure
+proc xyz() : void {var j; j:=23; var k:=234; vars();}
+xyz();
+vars();
+quit();
