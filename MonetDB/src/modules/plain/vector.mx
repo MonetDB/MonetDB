@@ -72,6 +72,7 @@ static double get_double(const char* startp,char** endp) {
       .PUT     = atom_@1s_put;
       .LENGTH  = atom_@1s_length;
       .HEAP    = atom_@1s_heap;
+      .HASH    = atom_@1s_hash;
    .END;
 
    .COMMAND @1s_rancreate(int)   : @1s = cmd_@1s_rancreate;
@@ -390,6 +391,10 @@ typedef struct {
     int atom_@1s_heap(Heap *heap, int capacity) {
         HEAP_initialize(heap, capacity, 0, @5);
         return 0;
+    }
+
+    int atom_@1s_hash(@1s* p) {
+        return(@1ssize(p->dimension));
     }
 
     /************ Commands follow *************/
