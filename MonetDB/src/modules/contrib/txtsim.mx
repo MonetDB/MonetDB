@@ -301,7 +301,7 @@ soundex_impl (str *res, str Name)
 
 @mil
 
-proc stringdiff( str s1, str s1 ) {
+proc stringdiff( str s1, str s1 ) : int {
 	var sd1 := soundex(s1);
 	var sd2 := soundex(s2);
 	return editdistance(sd1,sd2);
