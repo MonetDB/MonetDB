@@ -1010,10 +1010,10 @@ However, in many other situations the cardinality of string columns is large,
 or the string values might even be unique. In this case, our fixed-size hash 
 table will start to overflow quickly. Therefore, after the hash table is full
 (this is measured very simplisticly by looking whether the string heap exceeds a 
-heap size = GDK_ELIMLIMIT -- done this way to keep compatability with old bat images) 
+heap size = GDK\_ELIMLIMIT -- done this way to keep compatability with old bat images) 
 we flush the hash table. If one views the string heaps as consequent chunks
-of size GDK_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
-There is a macro GDK_ELIMBASE(offset) that computes the base of the chunk in which
+of size GDK\_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
+There is a macro GDK\_ELIMBASE(offset) that computes the base of the chunk in which
 a certain byte-offset falls.
 @
 @  
@@ -1035,21 +1035,23 @@ by simply loading or mmap()ping slices of the BAT files on disk into memory.
 This is relevant in order to process a very large BAT iteratively by taking slices
 in order top reduce memory consumption. Notice that if there are few different string 
 values, the hash table has not overflowed, and the string heap size will be small 
-(ie < GDK_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
+(ie $<$ GDK\_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
 If the hash table *has* overflowed, we want to be able to only map a slice of the 
 string heap as well. Now, given that the first string in the BAT-slice is called F1 
 and its heap offset is O1 and the last string in the slice is F2 and its 
 offset is O2, then the slice we should take from the string heap is: 
 @
 @
-[ GDK_ELIMBASE(F1) .. MAX(GDK_ELIMBASE(F2)+GDK_ELIMLIMIT), O2+strlen(F2)) ]
+\begin{verbatim}
+GDK_ELIMBASE(F1) .. MAX(GDK_ELIMBASE(F2)+GDK_ELIMLIMIT), O2+strlen(F2))
+\end{verbatim}
 @
 @
 The below routine strElimDoubles() can be used to check whether all 
 strings are still being double-eliminated in the original hash-table.
 Only then, we know that unequal offset-integers in the BUN array means
 guarantee different strings in the heap. This optimization is made at some 
-points in the GDK. Make sure you check GDK_ELIMDOUBLES before assuming this!
+points in the GDK. Make sure you check GDK\_ELIMDOUBLES before assuming this!
 @c
 int strElimDoubles(Heap *h) {
 	return GDK_ELIMDOUBLES(h);
