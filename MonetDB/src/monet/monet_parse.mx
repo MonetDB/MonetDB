@@ -912,7 +912,7 @@ variable_reference:
 
 proc_definition:
         TOK_PROCDEF proc_name proc_header
-	proc_assign { ll_templates = ll_modcmds = 1; } statement
+	proc_assign { ll_templates = ll_modcmds = 1; } sequential_block
 
         {   YYSTREE sig = (YYSTREE) ($3?$3->yyval.val.pval:NULL);
             YYSTREE ret = (YYSTREE) (sig?sig->yyval.val.pval:NULL);
@@ -1167,25 +1167,27 @@ constant_expression:
     ;
 
 command_or_ident_expression:
-        builtin expression_list
+        builtin argument_list
         {   $2->token = $1->token;
             $2->yyval = $1->yyval;
             yylogkill($1); $$ = $2;                                           }
-    |   command_or_operator_or_ident expression_list
+    |   command_or_operator_or_ident argument_list
         {   $2->yyval = $1->yyval;
             $2->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
             yylogkill($1); $$ = $2;                                           }
+    | TOK_ATOM 	{ $$ = $1; }
     ;
 
 command_expression:
-        builtin expression_list
+        builtin argument_list
         {   $2->token = $1->token;
             $2->yyval = $1->yyval;
             yylogkill($1); $$ = $2;                                           }
-    |   command_or_operator expression_list
+    |   command_or_operator argument_list
         {   $2->yyval = $1->yyval;
             $2->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
             yylogkill($1); $$ = $2;                                           }
+    | TOK_ATOM 	{ $$ = $1; }
     ;
 
 operator_expression:
@@ -1229,11 +1231,15 @@ builtin:
         {   $$ = $1;                                                          }
     ;
 
-expression_list:
+argument_list:
         '(' expressions ')'
         {   $$ = $2;                                                          }
     |   '(' ')'
         {   $$ = (ptr) yysugar(ll_sugarnode);                                 }
+    ;
+
+expression_list:
+	argument_list
     |   /* empty */
         {   $$ = (ptr) yysugar(ll_sugarnode);                                 }
     ;
