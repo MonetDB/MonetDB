@@ -21,33 +21,40 @@ def rsplit_filename(f):
 	if s >= 0:
 		return (f[:s],f[s+1:])
 	return (base,ext)
+
+def cond_subdir(fd, dir, i):
+  res = ""
+  parts = string.split(dir,"?")
+  if len(parts) == 2:
+    dirs = string.split(parts[1],":")
+    fd.write("if %s\n" % (parts[0]) )
+    if (len(dirs) > 0) and (string.strip(dirs[0]) != ""):
+      fd.write("%s_%d_SUBDIR = %s\n" % (parts[0],i,dirs[0]) )
+    else:
+      fd.write("%s_%d_SUBDIR = \n" % (parts[0],i) )
+    if (len(dirs) > 1) and (string.strip(dirs[1]) != ""):
+      fd.write("else\n")
+      fd.write("%s_%d_SUBDIR = %s\n" % (parts[0],i,dirs[1]) )
+    else:
+      fd.write("else\n")
+      fd.write("%s_%d_SUBDIR = \n" % (parts[0],i) )
+    fd.write("endif\n")
+    #res = sprint("$(%s_%d_SUBDIR)" % (parts[0],i) )
+    #res = sprintf("$(%s_%d_SUBDIR)",parts[0],i)
+    res = "$(" + parts[0] + "_" + str(i) + "_SUBDIR)"
+  return res
 	
 def am_subdirs(fd, var, values, am ):
-  norm = []
-  cond = []
+  dirs = []
+  i = 0
   for dir in values:
+    i = i + 1
     if string.find(dir,"?") > -1:
-      cond.append(dir)
+      dirs.append(cond_subdir(fd,dir,i))
     else:
-      norm.append(dir)
+      dirs.append(dir)
 
-  am_assignment(fd,var,norm,am)
-
-  for dir in cond:
-    parts = string.split(dir,"?")
-    if len(parts) == 2:
-      dirs = string.split(parts[1],":")
-      fd.write("if %s\n" % (parts[0]) )
-      if (len(dirs) > 0):
-        if string.strip(dirs[0]) != "":
-          fd.write("COND_SUBDIRS += %s\n" % (dirs[0]) )
-      if (len(dirs) > 1):
-        if string.strip(dirs[1]) != "":
-          fd.write("else\n")
-          fd.write("COND_SUBDIRS += %s\n" % (dirs[1]) )
-      fd.write("endif\n")
-  if len(cond) > 0:
-    fd.write("SUBDIRS += $(COND_SUBDIRS)\n")
+  am_assignment(fd,var,dirs,am)
 
 def am_assignment(fd, var, values, am ):
   o = ""
