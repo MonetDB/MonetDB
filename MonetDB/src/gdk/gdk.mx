@@ -1229,9 +1229,9 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 #define BUNfndSTD(p,b,v)\
 	(p=BUNfnd(b,v))
 
-#define BAThtype(b)	((b->htype==TYPE_void && b->hseqbase == oid_nil)?\
+#define BAThtype(b)	(((b)->htype==TYPE_void && (b)->hseqbase == oid_nil)?\
 				TYPE_void:ATOMtype((b)->htype))
-#define BATttype(b)	((b->ttype==TYPE_void && b->tseqbase == oid_nil)?\
+#define BATttype(b)	(((b)->ttype==TYPE_void && (b)->tseqbase == oid_nil)?\
 				TYPE_void:ATOMtype((b)->ttype))
 #define BAThstore(b)	(BAThdense(b)?TYPE_void:(b)->htype)
 #define BATtstore(b)	(BATtdense(b)?TYPE_void:(b)->ttype)
@@ -1243,18 +1243,18 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 #define BUNtail(b,p)	(BUN)((b)->tvarsized?BUNtvar(b,p):BUNtloc(b,p))
 
 #define BUNsize(b)	((b)->dims.bunwidth)
-#define BUNptr(b,i)    ((BUN) (Bunbase(b) + ((b->batElmshift<0)?\
-				((i)*BUNsize(b)):((i)<<b->batElmshift))))
+#define BUNptr(b,i)    ((BUN) (Bunbase(b) + (((b)->batElmshift<0)?\
+				((i)*BUNsize(b)):((i)<<(b)->batElmshift))))
 #define BUNindex(b,p)  ((int) (((b)->batElmshift<0)?\
                         	((((BUN)p) - Bunbase(b))/BUNsize(b)):\
-                        	((((BUN)p) - Bunbase(b)) >> b->batElmshift)))
+                        	((((BUN)p) - Bunbase(b)) >> (b)->batElmshift)))
 
 #define BUNhloc(b,p)	((BUN) (((char*) p) + (b)->hloc))
 #define BUNtloc(b,p)	((BUN) (((char*) p) + (b)->tloc))
 #define BUNhvar(b,p)	((b)->htype?(Hbase(b)+*(int*)BUNhloc(b,p)):BUNhpos(b,p))
 #define BUNtvar(b,p)	((b)->ttype?(Tbase(b)+*(int*)BUNtloc(b,p)):BUNtpos(b,p))
 
-#define BUNfirst(b)	(((char*) b->batHole) + BUNsize(b))
+#define BUNfirst(b)	(((char*) (b)->batHole) + BUNsize(b))
 #define BUNlast(b)	(Bunbase(b)+ (b)->batBuns->free)
 #define BUNnext(b,p)	(p + BUNsize(b))
 #define BUNprev(b,p)	(p - BUNsize(b))
@@ -1366,7 +1366,7 @@ gdk_export int		BATgetaccess (BAT *b);
 #define BATversion(b)	(b)->GDKversion
 #define BATcapacity(b)	((int) (((b)->batElmshift<0)?\
                         	(((b)->batBuns->size)/BUNsize(b)):\
-                        	(((b)->batBuns->size) >> b->batElmshift)))
+                        	(((b)->batBuns->size) >> (b)->batElmshift)))
 @
 @}
 
@@ -2558,7 +2558,7 @@ BAT *b;
 
         BATloop(b, p, q) 
         printf("Element %3d has value %d\n", 
-                *(int*) BUNhead(b, p), *(int*) BUNtail(b, q)); 
+                *(int*) BUNhead(b, p), *(int*) BUNtail(b, p)); 
 }
 \end{verbatim}
 
@@ -2591,7 +2591,7 @@ inspect these data items.
 Again, the b is a BAT, p and q are BUNs, where p is the iteration variable.
 @h
 #define DELloop(b,	p, q, x)\
-	for(q = b->batHole, p = b->batDeleted, x=BUNsize(b); p < q; p += x)
+	for(q = (b)->batHole, p = (b)->batDeleted, x=BUNsize(b); p < q; p += x)
 
 @- hash-table supported loop over BUNs with a certain head-value 
 The first parameter 'b' is a BAT, the second ('h') should point to
@@ -2613,7 +2613,7 @@ stored in the heap. You can check this with the macro @%strElimDoubles()@
 If so, we can just compare integer index numbers instead of strings:
 @h
 #define HASHloop_fstr(b, h, hb, idx, v) \
-        for (hb = h.hash[strHash(v)&h.mask], idx = strLocate(&b->hheap,v);\
+        for (hb = h.hash[strHash(v)&h.mask], idx = strLocate(&(b)->hheap,v);\
 	     hb; hb = h.link[hb]) if (*(int*) BUNhloc(b, BUNptr(b, hb)) == idx)
 @
 The following example shows how the hashloop is used:
@@ -2627,7 +2627,7 @@ str author;
         int i; 
 
         printf("%s\n==================\n", author);
-        HASHloop(b, b->hhash, i, author) 
+        HASHloop(b, (b)->hhash, i, author) 
                  printf("%s\n", ((str) BUNtail(b, BUNptr(b,i)));
 }
 \end{verbatim}
@@ -2668,7 +2668,7 @@ speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 @:hashloop(flt,int,simple,int,hloc)@
 @:hashloop(lng,lng,simple,lng,hloc)@
 @:hashloop(dbl,lng,simple,lng,hloc)@
-@:hashloop(any,any,atom,b->htype,head)@
+@:hashloop(any,any,atom,(b)->htype,head)@
 
 @= hashloop
 #define HASHloop_@1(b,h,hb,v,w) \
@@ -2685,9 +2685,9 @@ The 's' finally is an integer denoting the bunsize, used for speed.
 @h
 #define SORTloop(b,p,q,tl,th,s)\
 	if (!(BATtordered(b)&1)) GDKerror("SORTloop: BAT not sorted.\n"); else\
-        for (p = (ATOMcmp(b->ttype,tl,ATOMnilptr(b->ttype))?\
+        for (p = (ATOMcmp((b)->ttype,tl,ATOMnilptr((b)->ttype))?\
                 SORTfndfirst(b,tl):BUNfirst(b)),\
-             q = (ATOMcmp(b->ttype,th,ATOMnilptr(b->ttype))?\
+             q = (ATOMcmp((b)->ttype,th,ATOMnilptr((b)->ttype))?\
                 SORTfndlast(b,th):BUNlast(b)),\
              s = BUNsize(b); p < q; p += s)
 
@@ -2697,8 +2697,8 @@ The 's' finally is an integer denoting the bunsize, used for speed.
 @:sortloop(flt,flt,flt,simple,&flt_nil)@
 @:sortloop(lng,lng,lng,simple,&lng_nil)@
 @:sortloop(dbl,dbl,dbl,simple,&dbl_nil)@
-@:sortloop(loc,loc,b->ttype,atom,ATOMnilptr(b->ttype))@
-@:sortloop(var,var,b->ttype,atom,ATOMnilptr(b->ttype))@
+@:sortloop(loc,loc,(b)->ttype,atom,ATOMnilptr((b)->ttype))@
+@:sortloop(var,var,(b)->ttype,atom,ATOMnilptr((b)->ttype))@
 
 @= sortloop
 #define SORTloop_@1(b,p,q,tl,th,s)\
