@@ -60,13 +60,13 @@ ls;
 #-----------------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  42,	  0,	  "clean",	  "disk", "pers", 0,	  2,		  1	  ]
+[ "MODULES",	  "str",  "str",  42,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
 
 dir;
 #-------------------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #-------------------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  42,	  0,	  "clean",	  "disk", "pers", 0,	  2,		  1	  ]
+[ "MODULES",		  "str",  "str",  42,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_environment",	  "str",  "str",  24,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
@@ -91,8 +91,6 @@ dir;
 [ "monet_mod_load",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "name",		  "int",  "str",  25,	  0,	  "clean",	  "disk", "tran", 0,	  0,		  0	  ]
-[ "tmp_27",		  "str",  "int",  0,	  0,	  "clean",	  "disk", "tran", 0,	  0,		  0	  ]
 
 table(monet_mod_nme.reverse.sort.reverse.col_name("static modules"));
 #-----------------#
