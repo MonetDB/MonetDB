@@ -1,0 +1,9 @@
+
+MTSAFE
+INCLUDES = $(MONET_INCS)
+
+lib__example = {
+	SOURCES = example.mx
+	HEADERS = h
+	LIBS = $(MONET_LIBS) 
+}

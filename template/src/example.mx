@@ -1,0 +1,56 @@
+@f example
+@a N.J. Nes
+@* The simple example module
+In this section we should explain this simple module
+
+@m
+.MODULE example;
+
+   .USE mmath; 
+
+   .COMMAND hello( str ) : str = hello; "hello world command"
+
+.END example;
+
+@+ Tutorial 
+This section explains how to use this module.
+
+@mil
+module(example);
+
+print(hello("world"));
+
+quit;
+
+@
+The module defines the following C++ functions for which you need to include 
+Vector.h.
+@h
+#ifndef __example_H__
+#define __example_H__
+
+#include <gdk.h>
+
+#include "example.proto.h"
+
+#endif /* __example_H__ */
+
+@+ Implementation Code for example module. 
+@c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+
+#include "example.h"
+#include "template_config.h"
+
+int hello( str *res, str src ){
+	int len = strlen(src) + strlen("hello ");
+	*res = GDKmalloc(len);
+	*res[0] = '\0';
+	strcat(*res, "hello ");
+	strcat(*res, src);
+	return GDK_SUCCEED;
+}

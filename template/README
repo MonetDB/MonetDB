@@ -1,0 +1,22 @@
+
+This directory contains the nessesary configure files and scripts to
+build a simple template module (src/template.mx) for the monet database engine.
+
+Before continuing find (or compile) a monet version 4.3.5 or higher.
+
+Add the bin-directory where monet-config is located to your path. 
+
+run bootstrap in the top directory
+mkdir $ARCH
+cd $ARCH
+../configure --prefix=`pwd` 
+gmake -j
+gmake install
+
+add the modules directory ($prefix/lib/example) to your monet_mod_path in
+your monet config file
+
+Read the monet manual for creating a database and starting a monet server
+
+Mserver --dbname template
+module(template);
