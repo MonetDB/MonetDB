@@ -1242,11 +1242,11 @@ RangeExpr:              range (AdditiveExpr, AdditiveExpr)
     {
         PFvar_t *v1 = new_var (0);
         PFvar_t *v2 = new_var (0);
-        PFfun_t *op_range = function (PFqname (PFns_pf, "range"));
+        PFfun_t *op_to = function (PFqname (PFns_pf, "to"));
 
         [[ $$ ]] = let (var (v1), [[ $1$ ]],
                         let (var (v2), [[ $2$ ]],
-                             APPLY (op_range, var (v1), var (v2))));
+                             APPLY (op_to, var (v1), var (v2))));
     }
     ;
 
