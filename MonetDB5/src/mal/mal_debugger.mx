@@ -284,7 +284,6 @@ str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
             for(k= p->retc; k<p->argc; k++){
                 str msg=0; 
                 ValPtr v= &stk->stk[p->argv[k]];
-				char *nme, nmebuf[1024];
 
 				if( isTmpVar(mb, getArg(p,k)) ) {
 					snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
