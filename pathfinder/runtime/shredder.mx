@@ -46,6 +46,8 @@
  *
  */
 
+/* #define DEBUG */
+
 #define USE_COMPRESSION
 #define PRINT_STAT 0
 
@@ -744,6 +746,9 @@ shred_start_document (void *xmlCtx)
 {
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
+#ifdef DEBUG
+    stream_printf(GDKout,"start_document()\n");
+#endif
     shredCtx->nnode_pre  = 0;   /* next ``node ID'' */
     shredCtx->nnode_attr = 0;   /* attribute value property ID */
     shredCtx->level      = 0;
@@ -769,6 +774,9 @@ shred_end_document (void *xmlCtx)
     /* pop document node and enter into pre|size|level|prop|kind relation */
     if ( emitnode (shredCtx,POP(shredCtx)) < 0 )
         xmlStopParser(xmlCtx);
+#ifdef DEBUG
+    stream_printf(GDKout,"end_document()\n");
+#endif
 }
 
 /**
@@ -885,6 +893,8 @@ static nat store_PfxLocNEW(
 	char *pfxloc;
 
 	if ( a_uri ) {
+	   if ( !a_pfx )
+	       a_pfx = emptyString;
 	   sprintf(shredCtx->workSpace,"%s:%s:%s",a_uri,a_pfx,a_tag);
 	   pfxloc = &shredCtx->workSpace[0];
 	} else if ( a_pfx ) {
@@ -1021,6 +1031,13 @@ shred_start_elementNEW(void *xmlCtx,
     if (shredCtx->level > shredCtx->depth)
         shredCtx->depth = shredCtx->level;
 
+#ifdef DEBUG
+    stream_printf(GDKout," start_element(");
+    if (e_uri) stream_printf(GDKout,"uri=%s,",e_uri);
+    if (e_pfx) stream_printf(GDKout,"pfx=%s,",e_pfx);
+    stream_printf(GDKout,"loc=%s",e_loc);
+    stream_printf(GDKout,")\n");
+#endif
     if ( (node.prop = store_PfxLocNEW(shredCtx,e_uri,e_pfx,e_loc)) == NIL ) {
         xmlStopParser(xmlCtx);
         return;
@@ -1038,13 +1055,19 @@ shred_start_elementNEW(void *xmlCtx,
     	    const xmlChar *a_val = atts[i+3];
     	    const xmlChar *a_end = atts[i+4];
 
+	    xmlChar qiChar = *a_end; /* remember char value */
+	    *(xmlChar*)a_end = 0; /* UGLY HACK: ignore const modifier */
+#ifdef DEBUG
+    	    stream_printf(GDKout,"  attr(");
+    	    if (a_uri) stream_printf(GDKout,"uri=%s,",a_uri);
+    	    if (a_pfx) stream_printf(GDKout,"pfx=%s,",a_pfx);
+    	    stream_printf(GDKout,"tag=%s",a_tag);
+    	    stream_printf(GDKout,",val=\"%s\"",a_val);
+    	    stream_printf(GDKout,")\n");
+#endif
             qn_id  = store_PfxLocNEW(shredCtx,a_uri,a_pfx,a_tag);
 
 	    /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
-	    if ( 0 )
-	    	stream_printf(GDKout,"*SAX2 attr[%s,%s,%s,%s,%s]\n",a_tag,a_pfx,a_uri,a_val,a_end);
-	    xmlChar qiChar = *a_end; /* remember char value */
-	    *(xmlChar*)a_end = 0; /* UGLY HACK: ignore const modifier */
             val_id = append_str2bat(shredCtx,PROP_VAL,(char*)a_val);
             /* */
             if ( 
@@ -1164,6 +1187,9 @@ shred_end_element (void *xmlCtx, const xmlChar *tag)
     /* enter element node into pre|size|level|prop|kind relation */
     if ( emitnode (shredCtx,node) < 0 )
         xmlStopParser(xmlCtx);
+#ifdef DEBUG
+    stream_printf(GDKout," end_element(%s)\n",tag);
+#endif
 }
 
 /**
