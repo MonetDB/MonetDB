@@ -1819,7 +1819,10 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
     	time.sleep(1)
 
     pIn.write(TestIn)
-    pIn.flush()
+    try:
+        pIn.flush()
+    except IOError, (IOerrNo, IOerrStr):
+        Warn("Flushing input pipe in LaunchIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     return pIn, pOut, pErr
 ### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
@@ -1914,7 +1917,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<=%d,%d,%d) ...' % (TIMEOUT,CTIMEOUT,STIMEOUT)
     STDERR.flush()
     STDOUT.write(prompt()+LogLine)
-    STDOUT.flush()
+    try:
+        STDOUT.flush()
+    except IOError, (IOerrNo, IOerrStr):
+        Warn("Flushing STDOUT in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     TSTDB = env['TSTDB']
     exe = env['exe']
     if exe['Mtimeout'][0]:
