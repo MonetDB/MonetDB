@@ -241,7 +241,7 @@ url_getDirectory(
    url         t    
 ){
         static char buf[1024];
-        char *d,*s;
+        char *s;
 	int i=0, k=0;
 	BAT *b;
 
