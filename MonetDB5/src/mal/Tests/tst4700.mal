@@ -37,4 +37,4 @@ function tst903();
     printf("#select all %d",d0);
 end tst903;
 
-MCcompiler("Admin","tst903");
+Mcc("Admin","tst903");
