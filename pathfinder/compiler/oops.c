@@ -31,6 +31,8 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -38,7 +40,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "pathfinder.h"
 #include "oops.h"
 
 #include "mem.h"

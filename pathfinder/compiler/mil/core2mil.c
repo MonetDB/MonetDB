@@ -486,11 +486,12 @@
  *
  */
 
+#include "pathfinder.h"
+
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
-#include "pathfinder.h"
 #include "core2mil.h"
 
 #include "miltype.h"

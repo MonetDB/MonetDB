@@ -75,9 +75,10 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "varscope.h"
 
 #include "variable.h"

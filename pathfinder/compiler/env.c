@@ -52,10 +52,11 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <assert.h>
 #include <stdlib.h>
 
-#include "pathfinder.h"
 #include "env.h"
 /* PFqname_t */
 #include "qname.h"

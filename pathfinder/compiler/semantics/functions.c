@@ -35,6 +35,7 @@
  * $Id$
  */
 
+#include "pathfinder.h"
 
 #include <stdlib.h>
 /* variable argument list for func_add_var() */
@@ -42,7 +43,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "functions.h"
 
 #include "func_chk.h"

@@ -43,9 +43,10 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "types.h"
 
 /* PFty_eq */

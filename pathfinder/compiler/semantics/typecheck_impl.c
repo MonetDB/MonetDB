@@ -35,9 +35,10 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "typecheck.h"
 
 #include "subtyping.h"

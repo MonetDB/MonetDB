@@ -32,10 +32,11 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <assert.h>
 #include <string.h>
 
-#include "pathfinder.h"
 #include "pfstrings.h"
 
 #include "mem.h"

@@ -39,10 +39,11 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <limits.h>
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "abssyn.h"
 
 /** twig-generated tokens (used for pattern matching) */

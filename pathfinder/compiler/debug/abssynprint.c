@@ -33,10 +33,11 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "pathfinder.h"
 #include "abssynprint.h"
 
 #include "mem.h"

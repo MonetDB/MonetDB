@@ -67,11 +67,12 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 /* CHAR_BIT */
 #include <limits.h>
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "subtyping.h"
 
 /* PFns_pf */

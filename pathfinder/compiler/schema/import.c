@@ -36,12 +36,13 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
-#include "pathfinder.h"
 #include "import.h"
 
 /* PFoops */

@@ -32,6 +32,8 @@
  * $Id$
  */
 
+#include "pathfinder.h"
+
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
@@ -39,7 +41,6 @@
 #include <ctype.h>
 #include <assert.h>
 
-#include "pathfinder.h"
 #include "prettyp.h"
 
 #include "oops.h"

@@ -57,12 +57,12 @@
  * QUOT_ATTRIBUTE_CONTENT, APOS_ATTRIBUTE_CONTENT.
  */
 
+#include "pathfinder.h"
+
 /* atoi, atof, strtoul */
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
-#include "pathfinder.h"
 
 /* import XQuery token and abstract syntax definitions */
 #include "abssyn.h"

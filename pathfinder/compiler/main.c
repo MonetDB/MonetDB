@@ -388,9 +388,7 @@
  * Netherlands</a>.
  */
 
-#if HAVE_CONFIG_H
-#include <pf_config.h>
-#endif
+#include "pathfinder.h"
 
 #include <stdlib.h>
 #ifdef HAVE_LIBGEN_H
@@ -402,8 +400,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <assert.h>
-
-#include "pathfinder.h"
 
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
 #include <getopt.h>
