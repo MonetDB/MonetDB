@@ -1,0 +1,265 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#- positional arguments, ie $1,$2,..., can not be compiled in isolation
+#
+#
+#Perhaps someone will develop a complete MIL interpreter
+#on top of the MAL kernel in the future
+function load_format(fmt:str):bat[str,bat];
+#proc load_format( str fmt ) : BAT[str,BAT] := {
+	names:= new(void,str);
+	aa_a := oid(0);
+	ba_a := bat.setSequenceBase(names,aa_a);
+#	var names := new(void,str); names.seqbase(oid(0));
+	seps:= new(void,str);
+	ca_a := oid(0);
+	da_a := bat.setSequenceBase(seps,ca_a);
+#	var seps := new(void,str); seps.seqbase(oid(0));
+	types:= new(void,str);
+	ea_a := oid(0);
+	fa_a := bat.setSequenceBase(types,ea_a);
+#	var types := new(void,str); types.seqbase(oid(0));
+	ga_a := insert(names,nil,"names");
+	ha_a := insert(seps,nil,",");
+	ia_a := insert(types,nil,"str");
+#	names.insert(nil,"names");seps.insert(nil,",");types.insert(nil,"str");
+	ja_a := insert(names,nil,"seps");
+	ka_a := insert(seps,nil,",");
+	la_a := insert(types,nil,"str");
+#	names.insert(nil,"seps");seps.insert(nil,",");types.insert(nil,"str");
+	ma_a := insert(names,nil,"types");
+	na_a := insert(seps,nil,"\n");
+	oa_a := insert(types,nil,"str");
+#	names.insert(nil,"types");seps.insert(nil,"\n");types.insert(nil,"str");
+	pa_a := load(names,seps,types,fmt,1000);
+	return pa_a;
+#	return load(names, seps, types, fmt, 1000);
+end function;
+#}
+#
+function load_data(fmt:bat[str,bat], data:str, nr:int):bat[str,bat];
+#proc load_data( BAT[str,BAT] fmt, str data, int nr ) : BAT[str,BAT] := {
+	names:= find(fmt,"names");
+#	var names := fmt.find("names");
+	seps:= find(fmt,"seps");
+#	var seps := fmt.find("seps");
+	types:= find(fmt,"types");
+#	var types := fmt.find("types");
+	qa_a := load(names,seps,types,data,nr);
+	return qa_a;
+#	return load(names, seps, types, data, nr);
+end function;
+#}
+#
+function make_persistent(bats:bat[str,bat]):void;
+#proc make_persistent( BAT[str,BAT] bats ) := {
+barrier	ra_a:= exist(bats,"key");
+#	if (bats.exist("key")){
+	keybat:= find(bats,"key");
+#		var keybat := bats.find("key");
+	sa_a := reverse(bats);
+	ta_a := select(sa_a,"key");
+	ua_a := reverse(ta_a);
+	nbats:= diff(bats,ua_a);
+#		var nbats := bats.diff(bats.reverse.select("key").reverse);
+barrier	va_a:= bunStream(nbats,va_aH,va_aT);
+#		nbats@batloop(){
+	wa_a := reverse(keybat,);
+	b:= join(wa_a,va_aT);
+#			var b := keybat.reverse().join($t);
+	xa_a := bbp.setName(b,va_aH);
+#			b.rename($h);
+	ya_a := setPersistent(b,);
+#			b.setPersistent();
+redo	va_a;
+end	va_a;
+#		}
+end	ra_a;
+barrier	ab_a:= not(ra_a);
+#	} else {
+barrier	bb_a:= bunStream(bats,bb_aH,bb_aT);
+#		bats@batloop(){
+	cb_a := bbp.setName(bb_aT,bb_aH);
+#			$t.rename($h);
+	db_a := setPersistent(bb_aT,);
+#			$t.setPersistent();
+redo	bb_a;
+end	bb_a;
+#		}
+end	ab_a;
+#	}
+end function;
+#}
+#
+function merge_data(bats:bat[str,bat]):void;
+#proc merge_data( BAT[str,BAT] bats ) := {
+barrier	eb_a:= exist(bats,"key");
+#	if (bats.exist("key")){
+	keybat:= find(bats,"key");
+#		var keybat := bats.find("key");
+	fb_a := reverse(bats);
+	gb_a := select(fb_a,"key");
+	hb_a := reverse(gb_a);
+	nbats:= diff(bats,hb_a);
+#		var nbats := bats.diff(bats.reverse.select("key").reverse);
+barrier	ib_a:= bunStream(nbats,ib_aH,ib_aT);
+#		nbats@batloop(){
+	jb_a := reverse(keybat,);
+	b:= join(jb_a,ib_aT);
+#			var b := keybat.reverse().join($t);
+	o:= bat(ib_aH);
+#			var o := bat($h);
+	kb_a := insert(o,b);
+#			o.insert(b);
+redo	ib_a;
+end	ib_a;
+#		}
+end	eb_a;
+barrier	lb_a:= not(eb_a);
+#	} else {
+barrier	mb_a:= bunStream(bats,mb_aH,mb_aT);
+#		bats@batloop(){
+	o:= bat(mb_aH);
+#			var o := bat($h);
+	nb_a := insert(o,mb_aT);
+#			o.insert($t);
+redo	mb_a;
+end	mb_a;
+#		}
+end	lb_a;
+#	}
+end function;
+#}
+#
+function dump_seps(bats:bat[void,bat]):bat[void,str];
+#proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] := {
+	seps:= new(void,str);
+	ob_a := oid(0);
+	pb_a := bat.setSequenceBase(seps,ob_a);
+#	var seps := new(void,str); seps.seqbase(oid(0));
+	id:= 0;
+#	var id := 0;
+	qb_a := count(bats);
+	cnt:= -(qb_a,1);
+#	var cnt := bats.count - 1;
+barrier	rb_a:= bunStream(bats,rb_aH,rb_aT);
+#	bats@batloop(){
+barrier	sb_a:= !=(id,cnt);
+#		if (id != cnt) {
+	tb_a := insert(seps,nil,",");
+#			seps.insert(nil,",");
+end	sb_a;
+barrier	ub_a:= not(sb_a);
+#		} else {
+	vb_a := insert(seps,nil,"\n");
+#			seps.insert(nil,"\n");
+end	ub_a;
+#		}
+	id := +(id,1);
+#		id := id+ 1;
+redo	rb_a;
+end	rb_a;
+#	}
+	return seps;
+#	return seps;
+end function;
+#}
+#
+function bat_ttype(b:bat):str;
+#proc bat_ttype( bat b ) : str := {
+	monet_atomtbl:= bbp.bind("monet_atomtbl");
+	wb_a := getTailType(b);
+	xb_a := reverse(monet_atomtbl);
+	yb_a := find(xb_a,wb_a);
+	return yb_a;
+#	return monet_atomtbl.reverse.find(b.ttype);
+end function;
+#}
+#
+function dump_format(bats:bat[void,bat], fmt:str):bat[str,bat];
+#proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] := {
+	ac_a:= nil;
+	bc_a:= fill(ac_a,bats);
+	cc_a := oid(0);
+	bats := bat.setSequenceBase(bc_a,cc_a);
+#	bats := [~bats].seqbase(oid(0));
+	names:= multiplex.tactics("bbpname",bats);
+#	var names := [bbpname](bats);
+	seps:= dump_seps(bats);
+#	var seps  := dump_seps(bats);
+	types:= multiplex.tactics("bat_ttype",bats);
+#	var types := [bat_ttype](bats);
+	fmtbats:= new(void,bat);
+	dc_a := oid(0);
+	ec_a := bat.setSequenceBase(fmtbats,dc_a);
+#	var fmtbats:= new(void,bat); fmtbats.seqbase(oid(0));
+	fc_a := insert(fmtbats,nil,names);
+#	fmtbats.insert(nil,names);
+	gc_a := insert(fmtbats,nil,seps);
+#	fmtbats.insert(nil,seps);
+	hc_a := insert(fmtbats,nil,types);
+#	fmtbats.insert(nil,types);
+#
+	names := new(void,str);
+	ic_a := oid(0);
+	jc_a := bat.setSequenceBase(names,ic_a);
+#	names := new(void,str); names.seqbase(oid(0));
+	seps := new(void,str);
+	kc_a := oid(0);
+	lc_a := bat.setSequenceBase(seps,kc_a);
+#	seps := new(void,str); seps.seqbase(oid(0));
+	mc_a := insert(names,nil,"names");
+	nc_a := insert(seps,nil,",");
+#	names.insert(nil,"names");seps.insert(nil,",");
+	oc_a := insert(names,nil,"seps");
+	pc_a := insert(seps,nil,",");
+#	names.insert(nil,"seps");seps.insert(nil,",");
+	qc_a := insert(names,nil,"types");
+	rc_a := insert(seps,nil,"\n");
+#	names.insert(nil,"types");seps.insert(nil,"\n");
+	sc_a := dump(names,seps,fmtbats,fmt,1000);
+#	dump(names, seps, fmtbats, fmt, 1000);
+	tc_a := insert(names,nil,"bats");
+#	names.insert(nil,"bats"); 
+	uc_a := insert(fmtbats,nil,bats);
+#	fmtbats.insert(nil,bats);
+	vc_a := reverse(names);
+	wc_a := join(vc_a,fmtbats);
+	return wc_a;
+#	return names.reverse.join(fmtbats);
+end function;
+#}
+#
+function dump_data(fmt:bat[str,bat], data:str, cnt:int):void;
+#proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
+	names:= find(fmt,"names");
+#	var names := fmt.find("names");
+	seps:= find(fmt,"seps");
+#	var seps := fmt.find("seps");
+#	var bats;
+barrier	xc_a:= exist(fmt,"bats");
+#	if (fmt.exist("bats")){
+	bats := find(fmt,"bats");
+#		bats := fmt.find("bats");
+end	xc_a;
+barrier	yc_a:= not(xc_a);
+#	} else {
+	bats := multiplex.tactics("load",names);
+#		bats := [load](names);
+end	yc_a;
+#	}
+	ad_a := dump(names,seps,bats,data,cnt);
+#	dump( names, seps, bats, data, cnt );
+end function;
+#}
+#
+#Identifer 'rename' mapped to 'bbp.setName'
+#Identifer 'seqbase' mapped to 'bat.setSequenceBase'
+#Identifer 'ttype' mapped to 'getTailType'

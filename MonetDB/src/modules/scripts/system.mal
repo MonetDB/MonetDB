@@ -1,0 +1,199 @@
+# This code based is manually patch from system.mx prelude code in V4.3
+
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#- positional arguments, ie $1,$2,..., can not be compiled in isolation
+#
+#
+#Perhaps someone will develop a complete MIL interpreter
+#on top of the MAL kernel in the future
+function dir(b:bat[int,str]#    proc dir(bat[int,str] b) {
+):void;
+	nme:= bbp.getNames();
+#        var nme := view_bbp_name();
+	aa_a := view_atom_names();
+	ba_a := copy(aa_a);
+	atm:= setWriteMode(ba_a,);
+#	var atm := view_atom_names().copy.setWriteMode(); 
+#	
+	ca_a := reverse(b);
+	da_a := sort(ca_a);
+	ea_a := reverse(da_a);
+	fa_a := setColumn(ea_a,"name");
+#	table(1, b.reverse.sort.reverse.setColumn("name"),
+	ja_a:= new(int,int);
+	pa_a:= new(int,int);
+	ta_a:= new(int,lng);
+barrier l:= bunStream(nme,hi:int,n:str);
+	bb:= bbp.bind(n);
+	tpe:= bat.getHeadType(bb);
+	insert(ja_a,hi,tpe);
+	tpe:= bat.getTailType(bb);
+	insert(pa_a,hi,tpe);
+	cnt:= algebra.count(bb);
+	insert(ta_a,hi,cnt);
+end l;
+	ka_a := outerjoin(ja_a,atm);
+	la_a := setColumn(ka_a,"getHeadType");
+#		[getHeadType](b.join(nme.reverse)).outerjoin(atm.reverse).setColumn("getHeadType"),	
+	qa_a := outerjoin(pa_a,atm);
+	ra_a := setColumn(qa_a,"getTailType");
+#		[getTailType](b.join(nme.reverse)).outerjoin(atm.reverse).setColumn("getTailType"),	
+	ua_a := setColumn(ta_a,"count");
+#		[count](b.mirror).setColumn("count"),	
+	va_a := bbp.getHeat();
+	wa_a := setColumn(va_a,"heat");
+#		view_bbp_heat().setColumn("heat"),
+	xa_a := bbp.getDirty();
+	ya_a := setColumn(xa_a,"dirty");
+#		view_bbp_dirty().setColumn("dirty"),
+	ab_a := bbp.getStatus();
+	bb_a := setColumn(ab_a,"status");
+#		view_bbp_status().setColumn("status"),
+	cb_a := bbp.getKind();
+	db_a := setColumn(cb_a,"kind");
+#		view_bbp_kind().setColumn("kind"), 
+	eb_a := bbp.getRefcnt();
+	fb_a := setColumn(eb_a,"refcnt");
+	gb_a := table(1,fa_a,la_a,ra_a,ua_a,wa_a,ya_a,bb_a,db_a,fb_a);
+#		view_bbp_refcnt().setColumn("refcnt"));
+end function;
+#    }
+#
+function dir():void;
+#    PROC dir() : void := {
+	hb_a := bbp.getNames();
+	ib_a := copy(hb_a);
+	jb_a := setWriteMode(ib_a,);
+	nme:= setColumn(jb_a,"name");
+#        var nme := view_bbp_name().copy.setWriteMode().setColumn("name");
+	kb_a := int(nil);
+	lb_a := reverse(nme);
+	mb_a := select(lb_a,kb_a,-1);
+	nb_a := multiplex.tactics("*",mb_a,-1);
+	rev:= reverse(nb_a);
+#	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	ob_a := replace(nme,rev);
+	pb_a := dir(ob_a);
+#	dir(nme.replace(rev));
+end function;
+#    }
+function dir(substr:str):void;
+#    PROC dir(str substr) : void := {
+	qb_a := bbp.getNames();
+	rb_a := like(qb_a,substr);
+	sb_a := setWriteMode(rb_a,);
+	nme:= setColumn(sb_a,"name");
+#        var nme := view_bbp_name().like(substr).setWriteMode().setColumn("name");
+	tb_a := int(nil);
+	ub_a := reverse(nme);
+	vb_a := select(ub_a,tb_a,-1);
+	wb_a := multiplex.tactics("*",vb_a,-1);
+	rev:= reverse(wb_a);
+#        var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	xb_a := replace(nme,rev);
+	yb_a := dir(xb_a);
+#        dir(nme.replace(rev));
+end function;
+#    }
+#
+function dir_leaks(#    proc dir_leaks() {
+):void;
+	ac_a := bbp.getNames();
+	b0:= setWriteMode(ac_a,);
+#	var b0 := view_bbp_name().setWriteMode();
+	bc_a := int(nil);
+	cc_a := reverse(b0);
+	dc_a := select(cc_a,bc_a,-1);
+	ec_a := multiplex.tactics("*",dc_a,-1);
+	fc_a := reverse(ec_a);
+	gc_a := replace(b0,fc_a);
+#	b0.replace([*](b0.reverse.select(int(nil),-1),-1).reverse);
+	hc_a := multiplex.tactics("startsWith",b0,"tmp_");
+	ic_a := ifthen(hc_a,b0);
+	b1:= setWriteMode(ic_a,);
+#        var b1 := [[startsWith](b0,"tmp_")?b0:].setWriteMode();
+	view_var_value:= bbp.bind("view_var_value");
+	b2:= like(view_var_value,"tmp_");
+#        var b2 := like(view_var_value, "tmp_");
+	jc_a := count(b1);
+	b3:= new(int,str,jc_a);
+#        var b3 := bat(int,str,b1.count);
+	kc_a := int(b0);
+	lc_a := delete(b1,kc_a);
+#        b1.delete(int(b0));
+barrier	mc_a:= bunStream(b1,mc_aH,mc_aT);
+#        b1@batloop() { 
+	pat:= +("tmp_",mc_aH);
+#            var pat := "tmp_" + $h;
+	nc_a := like(b2,pat);
+	oc_a := count(nc_a);
+barrier	pc_a:= =(oc_a,0);
+	qc_a := insert(b3,mc_aH,mc_aT);
+#            if (like(b2,pat).count = 0) b3.insert($h,$t);
+end	pc_a;
+redo	mc_a;
+end	mc_a;
+#        }
+	rc_a := dir(b3);
+#        dir(b3);
+end function;
+#    }
+#
+function ls():void;
+#    PROC ls() : void := {
+	nme:= bbp.getNames();
+#	var nme := view_bbp_name();
+	sc_a := bbp.getKind();
+	tc_a := select(sc_a,"persistent");
+	prs:= semijoin(nme,tc_a);
+#	var prs := nme.semijoin(view_bbp_kind().select("persistent"));
+	uc_a := int(nil);
+	vc_a := reverse(nme);
+	wc_a := select(vc_a,uc_a,-1);
+	xc_a := multiplex.tactics("*",wc_a,-1);
+	rev:= reverse(xc_a);
+#	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	yc_a := setWriteMode(prs,);
+	ad_a := setColumn(yc_a,"name");
+	bd_a := replace(ad_a,rev);
+	cd_a := dir(bd_a);
+#	dir(prs.setWriteMode().setColumn("name").replace(rev));
+end function;
+#    }
+function ls(substr:str):void;
+#    PROC ls(str substr) : void := {
+	dd_a := bbp.getNames();
+	nme:= like(dd_a,substr);
+#        var nme := view_bbp_name().like(substr);
+	ed_a := bbp.getKind();
+	fd_a := select(ed_a,"persistent");
+	prs:= semijoin(nme,fd_a);
+#	var prs := nme.semijoin(view_bbp_kind().select("persistent"));
+	gd_a := int(nil);
+	hd_a := reverse(nme);
+	id_a := select(hd_a,gd_a,-1);
+	jd_a := multiplex.tactics("*",id_a,-1);
+	rev:= reverse(jd_a);
+#	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	kd_a := setWriteMode(prs,);
+	ld_a := setColumn(kd_a,"name");
+	md_a := replace(ld_a,rev);
+	nd_a := dir(md_a);
+#	dir(prs.setWriteMode().setColumn("name").replace(rev));
+end function;
+#    }
+#
+#Identifer 'view_bbp_name' mapped to 'bbp.getNames'
+#Identifer 'view_bbp_refcnt' mapped to 'bbp.getRefcnt'
+#Identifer 'view_bbp_heat' mapped to 'bbp.getHeat'
+#Identifer 'view_bbp_dirty' mapped to 'bbp.getDirty'
+#Identifer 'view_bbp_status' mapped to 'bbp.getStatus'
+#Identifer 'view_bbp_kind' mapped to 'bbp.getKind'
