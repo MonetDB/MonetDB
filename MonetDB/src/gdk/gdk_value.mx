@@ -115,6 +115,10 @@ ValPtr VALcopy(ValPtr d, ValPtr s){
 		d->vtype = TYPE_str;
 		d->val.sval = GDKstrdup(s->val.sval);
 		d->len = strLen(d->val.sval);
+	} else if (s->vtype == TYPE_bit) {
+                d->vtype = s->vtype;
+                d->len = 1;
+		d->val.cval[0] =s->val.cval[0];
 	} else {
                 ptr p = s->val.pval;
                 d->vtype = s->vtype;
