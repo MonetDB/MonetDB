@@ -199,6 +199,15 @@ according to the tail value;
 	memcpy(buf, @1, BUNsize(b));
 	memcpy(@1, @2, BUNsize(b));
 	memcpy(@2, buf, BUNsize(b));
+@= exchange2
+#ifdef DEBUG
+	printf("exchange %d %d %d\n",BUNindex(b,@1),
+		BUNindex(b,@2),BUNindex(b,@3));
+#endif
+	memcpy(buf, @1, BUNsize(b));
+	memcpy(@1, @3, BUNsize(b));
+	memcpy(@3, @2, BUNsize(b));
+	memcpy(@2, buf, BUNsize(b));
 
 @- Cracking
 The key operation for the cracker infrastructure is to process a scan
@@ -230,8 +239,8 @@ str CRKcrackNaive(int *partid, int *bid,
 	int result=0, xx,yy;
 	ptr p, s, w,c,v;
 	char buf[128]; /* scratch space */
-	ptr vmax=0, vmin=0;
-	int l,h,lb,hb,i,j, pid= -1;
+	ptr vmax=0, vmin=0,vm;
+	int z,l,h,lb,hb,i,j, pid= -1;
 
 	if( *(int*) low > *(int*) hgh)
                 return throwMessage("crackers.crack","illegal range");
@@ -239,18 +248,18 @@ str CRKcrackNaive(int *partid, int *bid,
         @:getBATdescriptor(&result,cbid,cidx,new)@
         @:getBATdescriptor(&result,vbid,vrng,new)@
 @-
-Inspect the value range table to only further crack known fragments.
+Inspect the value range table to only further crack qualifying fragments.
 @c
 	
 #ifdef DEBUG
 	printf("search range %d %d\n",*(int*)low, *(int*) hgh);
 #endif
+	xx= BUNsize(b);
 	BATloopFast(vrng,v,s,yy){
-		xx= BUNsize(b);
-		w= BUNhead(vrng,v);
-		if( *(int*) w > *(int*)hgh) continue;
 		p= BUNtail(vrng,v);
 		if( *(int*) p < *(int*) low) continue;
+		w= BUNhead(vrng,v);
+		if( *(int*) w > *(int*) hgh) continue;
 		if( *(int*) low <= *(int*)w &&
 		    *(int*) hgh >= *(int*)p) {
 #ifdef DEBUG
@@ -267,21 +276,32 @@ Inspect the value range table to only further crack known fragments.
 		j= *(int*) BUNtail(cidx,BUNptr(cidx,i));
 		vmax= BUNptr(b,j)+xx;
 
-		for(p = vmin+xx; p < vmax; p += xx) {
-			w= BUNtail(b,p);
-			if( *(int *)w < *(int *)low){
+		vm= BUNtail(b,vmin+xx);
+		for(p = vmin+xx; p < vmax; p += xx, vm+=xx) {
+			if( *(int *)vm < *(int *)low){
 				/* exchange with first low*/
 				vmin+= xx;
 				if( vmin != p){
 					@:exchange(vmin,p)@
 				}
 			} else
-			if( *(int *)w > *(int *) hgh){
-				/* exchange with last */
+			if( *(int *)vm > *(int *) hgh){
+				/* exchange with qualifying tail elm */
 				vmax-= xx;
+				while( *(int*) BUNtail(b,vmax) >
+						*(int*)hgh && vmax>p) 
+					vmax -=xx;
 				if( vmax != p){
 					@:exchange(vmax,p)@
-					p-= xx;
+					p-= xx; vm-= xx;
+@-
+The choosen element could also be less then 'low' and an 
+exchange operation could be saved. It turned out that
+this optimization was not effective when a BUNtail
+test was performed. A similar remark holds for having
+an additional variable to keep track of the tail value.
+@c
+
 				}
 			}
 		}
@@ -291,8 +311,8 @@ and update the administration BATs.
 @c
 		l= BUNindex(b,vmin)+1;
 		h= BUNindex(b,vmax)-1;
-		xx= BUNindex(vrng,v);
-		c= BUNptr(cidx,xx);
+		z= BUNindex(vrng,v);
+		c= BUNptr(cidx,z);
 		lb= *(int*) BUNhead(cidx,c);
 		hb= *(int*) BUNtail(cidx,c);
 #ifdef DEBUG
