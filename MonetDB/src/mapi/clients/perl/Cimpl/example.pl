@@ -22,16 +22,16 @@ use strict;
 
 my $dbh;
 
-$dbh = mapi_connect("localhost", 45123, "monetdb", "monetdb", "sql");
+$dbh = MapiLib::mapi_connect("localhost", 45123, "monetdb", "monetdb", "sql");
 
-die mapi_error_str($dbh) if mapi_error($dbh);
+die MapiLib::mapi_error_str($dbh) if MapiLib::mapi_error($dbh);
 
-my $sth = mapi_query($dbh, "SELECT name FROM tables");
+my $sth = MapiLib::mapi_query($dbh, "SELECT name FROM tables");
 
-die mapi_error_str($dbh) if mapi_error($dbh);
+die MapiLib::mapi_error_str($dbh) if MapiLib::mapi_error($dbh);
 
-print mapi_get_name($sth, 0) . "\n------------\n";
+print MapiLib::mapi_get_name($sth, 0) . "\n------------\n";
 
-while (mapi_fetch_row($sth)) {
-  print mapi_fetch_field($sth, 0) . "\n";
+while (MapiLib::mapi_fetch_row($sth)) {
+  print MapiLib::mapi_fetch_field($sth, 0) . "\n";
 }

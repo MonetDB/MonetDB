@@ -138,14 +138,14 @@ sub connect {
 				  }, {});
     my $mapi;
     eval {
-	$mapi = mapi_connect($host, $port, $user, $password, $lang);
+	$mapi = MapiLib::mapi_connect($host, $port, $user, $password, $lang);
 	$dbh->STORE(monetdb_connection => $mapi);
     };
     if ($@) {
 	return $dbh->DBI::set_err(1, $@);
     }
-    if (mapi_error($mapi)) {
-	return $dbh->DBI::set_err(mapi_error($mapi), mapi_error_str($mapi));
+    if (MapiLib::mapi_error($mapi)) {
+	return $dbh->DBI::set_err(MapiLib::mapi_error($mapi), MapiLib::mapi_error_str($mapi));
     }
     return $dbh;
 }
@@ -217,7 +217,7 @@ sub commit {
     if ($dbh->FETCH('AutoCommit')) {
 	warn 'Commit ineffective while AutoCommit is on';
     } else {
-	mapi_query($dbh->FETCH('monetdb_connection'), "commit;");
+	MapiLib::mapi_query($dbh->FETCH('monetdb_connection'), "commit;");
     }
     1;
 }
@@ -228,7 +228,7 @@ sub rollback {
     if ($dbh->FETCH('AutoCommit')) {
 	warn 'Rollback ineffective while AutoCommit is on';
     } else {
-	mapi_query($dbh->FETCH('monetdb_connection'), ($dbh->FETCH('Language') ne "sql")?"abort;":"rollback;");
+	MapiLib::mapi_query($dbh->FETCH('monetdb_connection'), ($dbh->FETCH('Language') ne "sql")?"abort;":"rollback;");
     }
     1;
 }
@@ -241,13 +241,13 @@ sub tables {
 
     my @table_list;
 	
-    my $hdl = mapi_query($mapi, ($dbh->FETCH('Language') ne "sql")?"ls;":"SELECT name FROM tables;");
-    die mapi_error_str($mapi) if mapi_error($mapi);
+    my $hdl = MapiLib::mapi_query($mapi, ($dbh->FETCH('Language') ne "sql")?"ls;":"SELECT name FROM tables;");
+    die MapiLib::mapi_error_str($mapi) if MapiLib::mapi_error($mapi);
 
-    while (mapi_fetch_row($hdl)) {
-	push @table_list, mapi_fetch_field($hdl, 0);
+    while (MapiLib::mapi_fetch_row($hdl)) {
+	push @table_list, MapiLib::mapi_fetch_field($hdl, 0);
     }
-    return mapi_error($mapi)
+    return MapiLib::mapi_error($mapi)
       ? undef
 	: @table_list;
 }
@@ -256,7 +256,7 @@ sub tables {
 sub _ListDBs {
     my $dbh = shift;
     my @database_list;
-    push @database_list, mapi_get_dbname($dbh->FETCH('monetdb_connection'));
+    push @database_list, MapiLib::mapi_get_dbname($dbh->FETCH('monetdb_connection'));
     return @database_list;
 }
 
@@ -270,7 +270,7 @@ sub _ListTables {
 sub disconnect {
     my $dbh = shift;
     my $mapi = $dbh->FETCH('monetdb_connection');
-    mapi_disconnect($mapi);
+    MapiLib::mapi_disconnect($mapi);
     return 1;
 }
 
@@ -313,7 +313,7 @@ sub STORE {
 	my $old = $dbh->{$key} || 0;
 	if ($new != $old) {
 	    my $mapi = $dbh->FETCH('monetdb_connection');
-	    mapi_setAutocommit($mapi, $new);
+	    MapiLib::mapi_setAutocommit($mapi, $new);
 	    $dbh->{$key} = $new;
 	}
 	return 1;
@@ -329,7 +329,7 @@ sub STORE {
 sub DESTROY {
     my $dbh = shift;
     my $mapi = $dbh->FETCH('monetdb_connection');
-    mapi_destroy($mapi) if $mapi;
+    MapiLib::mapi_destroy($mapi) if $mapi;
 }
 
 
@@ -379,13 +379,13 @@ sub execute {
 
     my $result = eval {
 
-	$hdl = mapi_query($mapi, $statement);
+	$hdl = MapiLib::mapi_query($mapi, $statement);
 
 	$sth->STORE(monetdb_hdl => $hdl);
-	$sth->STORE(monetdb_errstr => mapi_result_error($hdl));
-	$sth->STORE(monetdb_err => mapi_result_error($hdl)?1:0);
-	$sth->STORE(rows => mapi_rows_affected($hdl));
-	$sth->STORE(monetdb_querytype => mapi_get_querytype($hdl));
+	$sth->STORE(monetdb_errstr => MapiLib::mapi_result_error($hdl));
+	$sth->STORE(monetdb_err => MapiLib::mapi_result_error($hdl)?1:0);
+	$sth->STORE(rows => MapiLib::mapi_rows_affected($hdl));
+	$sth->STORE(monetdb_querytype => MapiLib::mapi_get_querytype($hdl));
 
 	if ($sth->FETCH('monetdb_err') == 0) {
 	    my $first = 1;
@@ -394,15 +394,15 @@ sub execute {
 
 	    my $numfields;
 	    
-	    while (mapi_fetch_row($hdl)) {
-		$numfields =  mapi_get_field_count($hdl) if !defined($numfields);
+	    while (MapiLib::mapi_fetch_row($hdl)) {
+		$numfields =  MapiLib::mapi_get_field_count($hdl) if !defined($numfields);
 		my @row = ();
 		for (my $i=0; $i<$numfields; $i++) {
-		    push @row, mapi_fetch_field($hdl, $i);
+		    push @row, MapiLib::mapi_fetch_field($hdl, $i);
 		    if ($first) {
-			push @names, mapi_get_name($hdl, $i);
-			push @types, mapi_get_type($hdl, $i);
-			push @precisions, mapi_get_len($hdl, $i);
+			push @names, MapiLib::mapi_get_name($hdl, $i);
+			push @types, MapiLib::mapi_get_type($hdl, $i);
+			push @precisions, MapiLib::mapi_get_len($hdl, $i);
 			push @nullables, 0;
 		    }
 		}
@@ -484,7 +484,7 @@ sub STORE {
 
 sub DESTROY {
     my $sth = shift;
-    mapi_close_handle($sth->FETCH('monetdb_hdl')) if $sth->FETCH('monetdb_hdl');
+    MapiLib::mapi_close_handle($sth->FETCH('monetdb_hdl')) if $sth->FETCH('monetdb_hdl');
 }
 
 
