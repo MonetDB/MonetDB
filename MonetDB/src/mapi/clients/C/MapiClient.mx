@@ -722,7 +722,8 @@ dump_table(Mapi mid, char *tname)
 		 "SELECT \"pkt\".\"name\","		/* 0 */
 			"\"pkkc\".\"column\","		/* 1 */
 			"\"fkkc\".\"column\","		/* 2 */
-			"\"fkkc\".\"nr\""		/* 3 */
+			"\"fkkc\".\"nr\","		/* 3 */
+		 	"\"fkk\".\"name\""		/* 4 */
 		 "FROM \"tables\" \"fkt\","
 		      "\"keycolumns\" \"fkkc\","
 		      "\"keys\" \"fkk\","
@@ -746,31 +747,56 @@ dump_table(Mapi mid, char *tname)
 			mapi_explain(mid, stderr);
 		return 1;
 	}
-	cnt = 0;
-	while ((mapi_fetch_row(hdl)) != 0) {
+	cnt = mapi_fetch_row(hdl);
+	while (cnt != 0) {
 		char *c_name = mapi_fetch_field(hdl, 0);
 		char *c_pcolumn = mapi_fetch_field(hdl, 1);
 		char *c_fcolumn = mapi_fetch_field(hdl, 2);
 		char *c_nr = mapi_fetch_field(hdl, 3);
+		char *c_fkname = mapi_fetch_field(hdl, 4);
+		char **fkeys, **pkeys;
+		int nkeys = 0;
 
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 			return 1;
 		}
-		if (strcmp(c_nr, "0") == 0) {
-			if (cnt)
-				fprintf(toConsole, ")");
-			fprintf(toConsole,
-				",\n\tFOREIGN KEY (\"%s\") REFERENCES \"%s\" (",
-				c_fcolumn, c_name);
-		} else
-			fprintf(toConsole, ", ");
-		fprintf(toConsole, "\"%s\"", c_pcolumn);
-		cnt++;
-	}
-	if (cnt)
+		assert(strcmp(c_nr, "0") == 0);
+		nkeys = 1;
+		fkeys = malloc(nkeys * sizeof(*fkeys));
+		pkeys = malloc(nkeys * sizeof(*pkeys));
+		pkeys[nkeys - 1] = c_pcolumn;
+		fkeys[nkeys - 1] = c_fcolumn;
+		while ((cnt = mapi_fetch_row(hdl)) != 0 &&
+		       strcmp(mapi_fetch_field(hdl, 3), "0") != 0) {
+			nkeys++;
+			pkeys = realloc(pkeys, nkeys * sizeof(*pkeys));
+			fkeys = realloc(fkeys, nkeys * sizeof(*fkeys));
+			pkeys[nkeys - 1] = mapi_fetch_field(hdl, 1);
+			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
+		}
+		fprintf(toConsole, ",\n\t");
+		if (c_fkname &&
+		    (c_fkname[0] != 'c' ||
+		     ((unsigned) (c_fkname[1] - '0') > 9)))
+			fprintf(toConsole, "CONSTRAINT \"%s\" ", c_fkname);
+		fprintf(toConsole, "FOREIGN KEY (");
+		for (i = 0; i < nkeys; i++) {
+			if (i > 0)
+				fprintf(toConsole, ", ");
+			fprintf(toConsole, "\"%s\"", fkeys[i]);
+		}
+		fprintf(toConsole, ") REFERENCES \"%s\" (", c_name);
+		for (i = 0; i < nkeys; i++) {
+			if (i > 0)
+				fprintf(toConsole, ", ");
+			fprintf(toConsole, "\"%s\"", pkeys[i]);
+		}
 		fprintf(toConsole, ")");
+		free(fkeys);
+		free(pkeys);
+	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
