@@ -473,7 +473,7 @@ int trunc2@1( @1 *res, str val, int *d, int *sc )
 		GDKerror("decimal (%s) doesn't have format (%d,%d)", val, *d, *sc);
 		return GDK_FAIL;
 	}
-	*res = value;
+	*res = (@1) value;
 	return GDK_SUCCEED;
 }
 @c
