@@ -1,10 +1,10 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
-#> Mtest:	milS none milS
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_sigs -single none.milS
-# Monet Database Server V4.1
+#> Mtest (20:56:27):	milS none milS
+#> Mtest (20:56:27):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_sigs -single none.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue Apr 11 05:46:23 MET DST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:none.milS
 
 loaded;
@@ -40,7 +40,7 @@ loaded;
 [ "trans",	  1		  ]
 [~monet_mod_nme].reverse.sort.print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_24  #
 # (str)		  (void)  #
 #-------------------------#
 [ "algebra",	  nil	  ]
@@ -52,7 +52,7 @@ loaded;
 [ "trans",	  nil	  ]
 [~view_modules].reverse.kunique.sort.print;
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_26  #
 # (str)		  (void)  #
 #-------------------------#
 [ "aggr",	  nil	  ]
@@ -73,6 +73,7 @@ loaded;
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "malalgebra",	  nil	  ]
+[ "mapi",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mprof",	  nil	  ]
@@ -110,7 +111,7 @@ loaded;
 [ "trans",	  1		  ]
 [~monet_mod_nme].reverse.sort.print;
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_26  #
 # (str)		  (void)  #
 #-------------------------#
 [ "algebra",	  nil	  ]
@@ -129,7 +130,7 @@ loaded;
 fix:=monet_mod_nme.reverse.copy;
 [fix~].print;
 #-------------------------#
-# BAT:		  tmp_74  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "kernel",	  nil	  ]
@@ -145,7 +146,7 @@ mprof:=view_modules.select("mprof").reverse.kunique;
 others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
 [others~].print;
 #-------------------------#
-# BAT:		  tmp_76  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -165,6 +166,7 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
+[ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
@@ -208,7 +210,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_76  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -242,7 +244,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "wisc",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "wisc", nil	  ]
@@ -277,7 +279,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "vector",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "vector",	  nil	  ]
@@ -315,7 +317,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "url",	  1		  ]
 #-----------------#
-# BAT:	  tmp_76  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "url",  nil	  ]
@@ -349,7 +351,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_29  #
 # (str)	  (void)  #
 #-----------------#
 [ "unix", nil	  ]
@@ -383,7 +385,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "uchr", nil	  ]
@@ -417,7 +419,7 @@ others@batloop{
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_29  #
 # (str)	  (void)  #
 #-----------------#
 [ "tpcd", nil	  ]
@@ -451,7 +453,7 @@ others@batloop{
 [ "temporal",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_76  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "temporal",	  nil	  ]
@@ -485,7 +487,7 @@ others@batloop{
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "tcpip",	  nil	  ]
@@ -520,7 +522,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_74  #
+# BAT:		  tmp_23  #
 # (str)		  (void)  #
 #-------------------------#
 [ "stats",	  nil	  ]
@@ -554,7 +556,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_79  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "salgebra",	  nil	  ]
@@ -588,7 +590,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_76  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "radix",	  nil	  ]
@@ -627,7 +629,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_79  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "qt",		  nil	  ]
@@ -681,7 +683,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_74  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "perfex",	  nil	  ]
@@ -715,7 +717,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "oo7",  nil	  ]
@@ -749,7 +751,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_74  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
@@ -783,12 +785,46 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mmath",	  nil	  ]
 
 	dropping mmath
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading mapi
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "mapi",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_30  #
+# (str)	  (void)  #
+#-----------------#
+[ "mapi", nil	  ]
+
+	dropping mapi
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -817,7 +853,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "malalgebra",	  nil	  ]
@@ -851,7 +887,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "lock", nil	  ]
@@ -885,7 +921,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_79  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "iterator",	  nil	  ]
@@ -920,7 +956,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "io",	  nil	  ]
@@ -960,7 +996,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_80  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "enum", nil	  ]
@@ -1002,7 +1038,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_79  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "decimal",	  nil	  ]
@@ -1040,7 +1076,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ddbench",	  nil	  ]
@@ -1090,7 +1126,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "counters",	  nil	  ]
@@ -1124,7 +1160,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_31  #
 # (str)	  (void)  #
 #-----------------#
 [ "blob", nil	  ]
@@ -1160,7 +1196,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_80  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
@@ -1202,7 +1238,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_80  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitset",	  nil	  ]
@@ -1236,7 +1272,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
@@ -1270,7 +1306,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1304,7 +1340,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_43  #
+# BAT:		  tmp_41  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mprof",	  nil	  ]
