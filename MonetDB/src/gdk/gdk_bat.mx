@@ -1364,6 +1364,12 @@ BAT *BATmode(BAT *b, int mode) {
 
         if (mode != b->batPersistence) {
                 bat bid = ABS(b->batCacheid);
+
+		if (mode == PERSISTENT && (b->htype == TYPE_bat || b->ttype == TYPE_bat)) {
+			GDKerror("BATmode(%s) recursive BATs cannot be made persitent\n",
+				BBP_logical(b->batCacheid));
+			return b;
+		}
                 BBPdirty(1);
 		
 		/* a SESSION bat is a TRANSIENT with one logical reference added */
