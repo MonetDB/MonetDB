@@ -6,8 +6,14 @@ java -cp "$MONET_BUILD/src/mapi/clients/java/mapi.jar" MapiClient localhost $MAP
 	print("\303\251\303\251n");
 EOMIL
 
+elif [ -f "$MONET_PREFIX/lib/MonetDB/java/mapi.jar" ]; then
+
+java -cp "$MONET_PREFIX/lib/MonetDB/java/mapi.jar" MapiClient localhost $MAPIPORT << EOMIL
+	print("\303\251\303\251n");
+EOMIL
+
 else
 
-echo "$MONET_BUILD/src/mapi/clients/java/mapi.jar not found"
+echo "Neither $MONET_BUILD/src/mapi/clients/java/mapi.jar nor $MONET_PREFIX/lib/MonetDB/java/mapi.jar found"
 
 fi
