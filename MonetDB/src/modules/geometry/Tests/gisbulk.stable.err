@@ -1,5 +1,0 @@
-stderr of test 'gisbulk` in directory 'src/modules/geometry` itself:
-
-#> Mtest:	other gisbulk
-#> Mtest:	Mtimeout -timeout 1200 ./gisbulk gisbulk
-#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_geometry gisbulk.mil
