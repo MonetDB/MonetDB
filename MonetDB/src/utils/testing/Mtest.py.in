@@ -1269,7 +1269,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
         ln=""
-        while ( not ( pSrvrIn.closed or pSrvrOut.closed or pSrvrErr.closed ) ) and ( len(ln) < 6 or ln[:6] not in  ['Ready.','Over..'] ):
+        while len(ln) < 6 or ln[:6] not in ['Ready.','Over..']:
             ln=pSrvrOut.readline()
             SrvrOut.write(ln)
             SrvrOut.flush()
@@ -1336,20 +1336,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
         if os.path.isfile(TST+".epilogue"):
             EPILOGUE = open(TST+".epilogue",'r')
             EpiFailed = ""
-            if not pSrvrIn.closed:
-                try:
-                    pSrvrIn.writelines(EPILOGUE.readlines())
-                    pSrvrIn.flush()
-                    pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
-                    pSrvrIn.flush()
-                except IOError, (IOerrNo, IOerrStr):
-                    EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
-                    EpiFailed = EpiFailed+"\n! Probably, Mserver has died before or during. !\n"
-            else:
-                EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed as Mserver's console is already closed. !"
-                EpiFailed = EpiFailed+"\n! Mserver seems to have died before. !\n"
+            try:
+                pSrvrIn.writelines(EPILOGUE.readlines())
+                pSrvrIn.flush()
+                pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
+                pSrvrIn.flush()
+            except IOError, (IOerrNo, IOerrStr):
+                EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
+                EpiFailed = EpiFailed+"\n! Probably, Mserver has died before or during. !\n"
             ln=""
-            while ( not ( pSrvrIn.closed or pSrvrOut.closed or pSrvrErr.closed ) ) and ( len(ln) < 6 or ln[:6] not in  ['Done..','Over..'] ):
+            while len(ln) < 6 or ln[:6] not in ['Done..','Over..']:
                 ln=pSrvrOut.readline()
                 SrvrOut.write(ln)
                 SrvrOut.flush()
@@ -1363,14 +1359,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             ShwnErr = open(TST+".shutdown.err","w")
             RunIt(Shwn, "", ShwnOut, ShwnErr)
 
-        if not pSrvrIn.closed:
-            try:
-                if SERVER == "MAPI":
-                    pSrvrIn.write('printf("\\n! Mserver still running after Mshutdown. Quitting now. !\\n");\n')
-                pSrvrIn.write('quit;\n')
-                pSrvrIn.close()
-            except IOError:
-                nop = ''
+        try:
+            if SERVER == "MAPI":
+                pSrvrIn.write('printf("\\n! Mserver still running after Mshutdown. Quitting now. !\\n");\n')
+            pSrvrIn.write('quit;\n')
+            pSrvrIn.flush()
+        except IOError:
+            pass
+        pSrvrIn.close()
 
         if os.name != "nt":
             ATJOB2 = StartAt(MkillUsers)
