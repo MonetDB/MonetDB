@@ -59,7 +59,7 @@ class BuiltinOptions:
             val = getattr(self, name)
         except AttributeError:
             return default
-        changed = True
+        changed = type(val) is type('') # only do this on string args
         while changed:
             changed = False
             for var in 'prefix', 'exec_prefix':
@@ -68,7 +68,7 @@ class BuiltinOptions:
                     # variable does not occur, skip further processing
                     continue
                 # replace variable with its value (recursive call)
-                val = string.join(string.split(val, dvar), self.get(var))
+                val = string.replace(val, dvar, self.get(var))
                 changed = True
         return val
 
@@ -218,15 +218,16 @@ def parse_options(argv, cmd_options = cmd_options):
                     break
             else:
                 usage(cmd_options)
+        if long == 'config':
+            options.config = a
+            parse_config(a, ConfigOptions)
+            seen_config = True
         if gdk_opt:
             if not argument:
                 a = True
             setattr(options, gdk_opt, a)
             if long == 'debug':
                 debug = 1
-        elif long == 'config':
-            parse_config(a, ConfigOptions)
-            seen_config = True
         elif long == 'set':
             keyval = string.split(a, '=', 1)
             if len(keyval) != 2:
@@ -242,7 +243,8 @@ def parse_options(argv, cmd_options = cmd_options):
         elif long == 'help':
             usage(cmd_options)
     if not seen_config:
-        parse_config(os.path.join(BuiltinOptions.get(BuiltinOptions(),'sysconfdir'),'monet.conf'), SystemOptions)
+        options.config = os.path.join(BuiltinOptions.get(BuiltinOptions(),'sysconfdir'),'monet.conf')
+        parse_config(options.config, SystemOptions)
     if debug:
         print_options(options)
     return options, args
