@@ -213,6 +213,30 @@ You need write permissions on part of the installation directory for
 this command: it will create subdirectories var/dbfarm and Tests.
 
 
+Usage:
+======
+
+To use the MonetDB SQL front end interactively, you first need to start
+an MonetDB server ("Mserver") with sql support. To do so, first make
+sure, that your environment is set as described in "Configure and Make"
+and "Testing the Installation" above.
+
+In case the install (i.e., prefix) directories of MonetDB and
+MonetDB/SQL are identical, simply call
+
+ Mserver --dbinit="module(sql_server); sql_server_start();"
+
+In case you use different install (i.e., prefix) directories of MonetDB
+and MonetDB/SQL, call
+
+ Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<sql-prefix>/lib/MonetDB --dbinit="module(sql_server); sql_server_start();"
+
+Then, in a second shell, set up the same environment and start the
+MonetDB SQL front end by calling
+
+ MapiClient -lsql -umonetdb -Pmonetdb
+
+
 Documentation:
 ==============
 
@@ -310,28 +334,4 @@ cf. https://sourceforge.net/tracker/?group_id=56967&atid=482468) or emailed
 to monet@cwi.nl; see also
 http://monetdb.cwi.nl/Development/Bugtracker/index.html .
 Please make sure that you give a *detailed* description of your problem!
-
-
-Usage:
-======
-
-To use the MonetDB SQL front end interactively, you first need to start
-an MonetDB server ("Mserver") with sql support. To do so, first make
-sure, that your environment is set as described in "Configure and Make"
-and "Testing the Installation" above.
-
-In case the install (i.e., prefix) directories of MonetDB and
-MonetDB/SQL are identical, simply call
-
- Mserver <sql-prefix>/lib/MonetDB/sql_server.mil
-
-In case you use different install (i.e., prefix) directories of MonetDB
-and MonetDB/SQL, call
-
- Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<sql-prefix>/lib/MonetDB <sql-prefix>/lib/MonetDB/sql_server.mil
-
-Then, in a second shell, set up the same environment and start the
-MonetDB SQL front end by calling
-
- MapiClient -lsql -umonetdb -Pmonetdb
 

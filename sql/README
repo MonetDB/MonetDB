@@ -1,22 +1,8 @@
 MONETDB SQL FRONTEND
 
-Installation
-------------
-
-Install Monet, then do the usual ./bootstrap, mkdir Linux, cd Linux, ../configure,
-make, make install sequence. 
-
-Edit your MonetDB.conf to include the sql-libraries in the monet_mod_path:
-  monet_mod_path=${exec_prefix}/lib/MonetDB:${exec_prefix}/lib:${exec_prefix}/lib/sql
-
-
-Usage
------
-
-Start Mserver, and do:
-  const MONETDB_PREFIX := environment.find("exec_prefix");
-  source ( MONETDB_PREFIX + "/lib/MonetDB/sql_server.mil" );
-
-then use MapiClient for issueing SQL commands:
-  MapiClient --language=sql --user=monetdb --passwd=monetdb
+Please see files
+	"HowToStart-SQL" (Unix)
+or
+	"HowToStart-SQL-Win32.txt" (Windows) 
+for details.
 
