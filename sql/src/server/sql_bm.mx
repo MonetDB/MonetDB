@@ -222,7 +222,7 @@ void bm_save( bm *bm, FILE *fp )
 
 	    		snprintf( name_version, BUFSIZ, "%s_%d", name, version); 
 			if (bm->debug & 1 )
-				printf("bm_save %s %d\n", name_version, BATcount(b) );
+				printf("bm_save %s %ld\n", name_version, BATcount(b) );
 
 	    		BATrename(b, name_version);
 	    		BATmode(b, PERSISTENT);
@@ -316,7 +316,7 @@ void bm_commit( bm *bm, int tid )
 
 void bm_abort( bm * bm, int tid )
 {
-	BUN p,q;
+	BUN p;
 	BAT *b;
 
 	/* remove the created bats */

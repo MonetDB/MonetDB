@@ -189,7 +189,7 @@ static stmt *stmt_push_down_head(stmt * join, stmt * select){
 		res = stmt_join(
 			stmt_push_down_head( stmt_dup(join->op1.stval), select),
 			stmt_dup(join->op2.stval), 
-			join->flag);
+			(comp_type)join->flag);
 		stmt_destroy(join);
 		return res;
 	} else if (join->type == st_intersect){
@@ -224,7 +224,7 @@ static stmt *stmt_push_down_head(stmt * join, stmt * select){
 		    res = stmt_select(
 			stmt_push_down_head( stmt_dup(join->op1.stval), select),
 			stmt_push_down_head( stmt_dup(join->op2.stval), select),
-			join->flag);
+			(comp_type)join->flag);
 		    stmt_destroy(join);
 		    return res;
 		}
@@ -261,7 +261,7 @@ static stmt *stmt_push_down_tail(stmt * join, stmt * select){
 		res = stmt_join(
 			stmt_dup(join->op1.stval), 
 			stmt_push_down_tail( stmt_dup(join->op2.stval), select),
-			join->flag);
+			(comp_type)join->flag);
 		stmt_destroy(join);
 		return res;
 	} else if (join->type == st_intersect){
@@ -302,7 +302,8 @@ static stmt *stmt_push_down_tail(stmt * join, stmt * select){
 		/* for now pushin through a mark is wrong, it should
 		 * push through both sides, to keep ordered oids.
 		res = stmt_mark(stmt_push_down_tail(
-				stmt_dup(join->op1.stval), select), join->flag);
+				stmt_dup(join->op1.stval), select), 
+				(comp_type)join->flag);
 		stmt_destroy(join);
 		return res;
 		*/
@@ -329,7 +330,8 @@ static stmt *stmt_push_join_head(stmt * s, stmt * join){
 		return stmt_reljoin2(l1,l2);
 	} else if (s->type == st_join){
 		stmt *op1 = stmt_join( join, stmt_dup(s->op1.stval), cmp_equal);
-		stmt *res = stmt_join( op1, stmt_dup(s->op2.stval), s->flag );
+		stmt *res = stmt_join( op1, stmt_dup(s->op2.stval), 
+					(comp_type)s->flag );
 		stmt_destroy(s);
 		return res;
 	} else if (s->type == st_reverse){
@@ -361,7 +363,7 @@ static stmt *stmt_push_join_head(stmt * s, stmt * join){
 			stmt *jn = stmt_dup(join);
 			stmt *op1 = stmt_push_join_head( stmt_dup(s->op1.stval), jn);
 			stmt *op2 = stmt_push_join_head( stmt_dup(s->op2.stval), jn);
-			stmt *res = stmt_select( op1, op2, s->flag );
+			stmt *res = stmt_select( op1, op2, (comp_type)s->flag );
 			stmt_destroy(s);
 			return res;
 		}
@@ -393,7 +395,8 @@ static stmt *stmt_push_join_tail(stmt * s, stmt * join){
 		return stmt_reljoin2(l1,l2);
 	} else if (s->type == st_join){
 		stmt *op2 = stmt_join( stmt_dup(s->op2.stval), join, cmp_equal);
-		stmt *res = stmt_join( stmt_dup(s->op1.stval), op2, s->flag );
+		stmt *res = stmt_join( stmt_dup(s->op1.stval), op2, 
+					(comp_type)s->flag );
 		stmt_destroy(s);
 		return res;
 	} else if (s->type == st_reverse){
@@ -424,7 +427,8 @@ static stmt *stmt_join2select(stmt * j){
 
 	if (j->type == st_join){
 		stmt *res = stmt_select(stmt_dup(j->op1.stval), 
-				stmt_reverse(stmt_dup(j->op2.stval)), j->flag);
+				stmt_reverse(stmt_dup(j->op2.stval)), 
+					(comp_type)j->flag);
 		stmt_destroy(j);
 		return res;
 	} else if (j->type == st_reverse){

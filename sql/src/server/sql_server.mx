@@ -348,7 +348,7 @@ int mvc_drop_schema_wrap( mvc* c, str name){
 }
 
 int mvc_create_table_wrap( sql_table *res, mvc* c, sql_schema *s, str name, int* type){
-	*(sql_table**)res = mvc_create_table( *(mvc**)c, *(sql_schema**)s, name, *type );
+	*(sql_table**)res = mvc_create_table( *(mvc**)c, *(sql_schema**)s, name, (table_type)*type );
 	return GDK_SUCCEED;
 }
 
@@ -389,7 +389,7 @@ int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val)
 int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt )
 {
 	*(sql_key**)res 
-		= mvc_create_key( *(mvc**)c, *(sql_table**)t, name, *kt, NULL);
+		= mvc_create_key( *(mvc**)c, *(sql_table**)t, name, (key_type)*kt, NULL);
 	return GDK_SUCCEED;
 }
 
@@ -399,7 +399,7 @@ int mvc_create_fkey_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt,
 	if (!ukey)
 		return GDK_FAIL;
 	*(sql_key**)res 
-		= mvc_create_key( m, *(sql_table**)t, name, *kt, *(sql_key**)ukey);
+		= mvc_create_key( m, *(sql_table**)t, name, (key_type)*kt, *(sql_key**)ukey);
 	return GDK_SUCCEED;
 }
 

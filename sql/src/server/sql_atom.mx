@@ -126,7 +126,7 @@ char *atom2string(atom * a)
 	char buf[1024];
 	switch (a->type) {
 	case int_value:
-		sprintf(buf, "%d", a->data.ival);
+		sprintf(buf, "%lld", a->data.ival);
 		break;
 	case string_value:
 		sprintf(buf, "%s", a->data.sval);

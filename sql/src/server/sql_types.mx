@@ -620,11 +620,12 @@ static char *local_result(char *s){
 }
 
 void sqltypeinit()
-{	int i,j;
+{	
+	int i;
 
 	sql_type *ts[100];
 	sql_type **misc, **strings, **numerical, **decimals, **floats, **dates;
-	sql_type **t, *INT, *BIT, *DBL, *STR;
+	sql_type **t, *INT, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP;
 
  	t = ts;
@@ -643,7 +644,7 @@ void sqltypeinit()
 
 	*t++ = sql_create_type("TEXT", 0, 0, 0, 		"str");
 	*t++ = sql_create_type("TINYTEXT", 0, 0, 0, 	"str");
-	STR = *t++ = sql_create_type("STRING", 0, 0, 0, 	"str");
+	*t++ = sql_create_type("STRING", 0, 0, 0, 	"str");
 
 	/* INT(n) n <= 2 -> TINYINT
 		  n <= 4 -> SMALLINT

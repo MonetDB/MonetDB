@@ -1736,7 +1736,7 @@ func_ref:
 datetime_funcs:
     EXTRACT '(' datetime_field FROM scalar_exp ')' 
 				{ dlist *l = dlist_create();
-				  const char *ident = datetime_field($3);
+				  const char *ident = datetime_field((itype)$3);
   		  		  dlist_append_string(l, _strdup(ident));
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_UNOP, l ); }

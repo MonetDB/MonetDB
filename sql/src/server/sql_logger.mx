@@ -577,7 +577,7 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 
 		if (b->htype == TYPE_void && b->ttype < TYPE_str &&
 			!VIEWparent(b)){
-		   ptr t = BUNtail(b,p);
+		   ptr t = BUNtail(b, b->batInserted);
 		   wt( t, logger->log, l.nr );
 		} else {
 	    	   for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){

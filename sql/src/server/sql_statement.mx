@@ -232,9 +232,9 @@ extern stmt *stmt_basetable(sql_table *t);
 #define ptable_pivots(s) 	((s)->op2.lval)
 #define ptable_statements(s) 	((s)->op3.stval)
 
-extern stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, int type);
+extern stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type);
 extern stmt *stmt_ibat(stmt * i, stmt * basetable );
-extern stmt *stmt_tbat(sql_table * t, int access, int type);
+extern stmt *stmt_tbat(sql_table * t, int access, st_type type);
 extern stmt *stmt_kbat(sql_key *k, int access );
 
 extern stmt *stmt_temp(sql_subtype * t );
@@ -864,7 +864,7 @@ stmt *stmt_ibat(stmt * op1, stmt * basetable )
 	return s;
 }
 
-stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, int type)
+stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type)
 {
 	stmt *s = stmt_create(type);
 	s->op1.cval = c;
@@ -874,7 +874,7 @@ stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, int type)
 	return s;
 }
 
-stmt *stmt_tbat(sql_table * t, int access, int type)
+stmt *stmt_tbat(sql_table * t, int access, st_type type)
 {
 	stmt *s = stmt_create(type);
 	s->nrcols = 0;
@@ -1225,7 +1225,7 @@ printf("= TODO stmt_intersect (2)\n");
 				stmt_dup(op2->op1.stval), cmp_equal ); 
 			stmt *r = stmt_join(stmt_dup(mr), 
 				stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-			stmt *v = stmt_select( l, r, op2->flag);
+			stmt *v = stmt_select( l, r, (comp_type)op2->flag);
 			res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
 		} else { /* reverse */
 			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
@@ -1234,15 +1234,15 @@ printf("= TODO stmt_intersect (2)\n");
 				stmt_dup(op2->op1.stval), cmp_equal ); 
 			stmt *r = stmt_join(stmt_dup(ml), 
 				stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-			stmt *v = stmt_select( l, r, op2->flag);
+			stmt *v = stmt_select( l, r, (comp_type)op2->flag);
 			res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
 		}
 
 /*
 		if (!reverse){
-	 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal ), stmt_dup(op2->op1.stval), op2->flag));
+	 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal ), stmt_dup(op2->op1.stval), (comp_type)op2->flag));
 		} else {
-	 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_dup(op2->op1.stval), cmp_equal ), stmt_reverse(stmt_dup(op2->op2.stval)), op2->flag));
+	 		res = stmt_semijoin( stmt_dup(op1), stmt_select( stmt_join(op1, stmt_dup(op2->op1.stval), cmp_equal ), stmt_reverse(stmt_dup(op2->op2.stval)), (comp_type)op2->flag));
 		}
 		stmt_destroy(op2);
 */
@@ -1346,12 +1346,12 @@ stmt *stmt_ptable()
 	return s;
 }
 
-stmt *stmt_ptable_add_ppivot( stmt *ptable, stmt *piv )
+static void stmt_ptable_add_ppivot( stmt *ptable, stmt *piv )
 {
 	list_append(ptable->op1.lval, stmt_dup(piv));
 }
 
-stmt *stmt_ptable_add_pivot( stmt *ptable, stmt *piv )
+static void stmt_ptable_add_pivot( stmt *ptable, stmt *piv )
 {
 	list_append(ptable->op2.lval, stmt_dup(piv));
 }

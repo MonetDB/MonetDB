@@ -158,7 +158,6 @@ static tvar *scope_add_table_columns(context * sql, scope * scp, sql_table * t, 
 	tvar *tv = NULL;
 
 	if (t->type == tt_view){
-		int err = 0;
 		context c;
 		stmt *sq; 
 
@@ -332,7 +331,7 @@ static char *tmp_table_name()
 }
 
 static sql_table *create_table_intern(context * sql, sql_schema * schema,
-				  char *name, char *query, stmt * sq, int type)
+				  char *name, char *query, stmt * sq, table_type type)
 {
 	node *m;
 	mvc *mvc = sql->mvc;
@@ -946,7 +945,6 @@ static stmt *sql_unop(context * sql, scope * scp, symbol * se, group * grp, stmt
 		if (f->func->imp) {
 			return stmt_unop(rs, f);
 		} else {
-			int err = 0;
 			context c;
 			stmt *sq = NULL;
 
@@ -1213,7 +1211,7 @@ static stmt *sql_join_
 		s = stmt_reljoin_init();
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
-			stmt *j;
+
 			stmt *ls = find_on_column_name(sql, scp, tv1, nm);
 			stmt *rs = find_on_column_name(sql, scp, tv2, nm);
 			if (!ls || !rs) {
@@ -1244,7 +1242,6 @@ static stmt *sql_join_
 
 		s = stmt_reljoin_init();
 		for (m = matching_columns->h; m; m = m->next->next) {
-			stmt *j;
 			stmt *ls = stmt_dup(m->data);
 			stmt *rs = stmt_dup(m->next->data);
 
@@ -2754,7 +2751,6 @@ sql_subtype *find_column_type( list *columns, char *name)
 
 static stmt *create_column(context * sql, symbol * s, stmt * ss, stmt * ts, list *columns )
 {
-	mvc *mvc = sql->mvc;
 	dlist *l = s->data.lval;
 	char *cname = l->h->data.sval;
 	sql_subtype *ctype = l->h->next->data.typeval;
@@ -2835,7 +2831,6 @@ static stmt *table_foreign_key( context * sql, char *name, symbol * s, stmt * ss
 
 static stmt *table_constraint_type( context * sql, char *name, symbol * s, stmt * ss, stmt *ts, char *tname, list* columns )
 {
-	mvc *mvc = sql->mvc;
 	stmt *res = NULL;
 	switch(s->token){
 		case SQL_UNIQUE: 
@@ -3120,13 +3115,13 @@ static stmt *insert_value(context * sql, scope * scp, sql_column * c, symbol * s
 	return NULL;
 }
 
-static void cleanup_inserts(stmt **inserts, int cnt){
+static void cleanup_stmts(stmt **stmts, int cnt){
 	int i;
 	for (i=0; i<cnt; i++){
-		if (inserts[i])
-			stmt_destroy(inserts[i]);
+		if (stmts[i])
+			stmt_destroy(stmts[i]);
 	}
-	_DELETE(inserts);
+	_DELETE(stmts);
 }
 
 static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int len, list *key_inserts)
@@ -3371,7 +3366,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 				sql_column *c = m->data;
 				stmt *ins = insert_value(sql, NULL, c, n->data.sym);
 				if (!ins){
-					cleanup_inserts(inserts, len);
+					cleanup_stmts(inserts, len);
 					return NULL;
 				}
 					
@@ -3394,14 +3389,14 @@ static stmt *insert_into(context * sql, dlist * qname,
 
 		if (!s){
 			scp = scope_close(scp);
-			cleanup_inserts(inserts, len);
+			cleanup_stmts(inserts, len);
 			return NULL;
 		}
 		if (list_length(s->op1.lval) != list_length(collist)) {
 			if (s) 
 				stmt_destroy(s);
 			scp = scope_close(scp);
-			cleanup_inserts(inserts, len);
+			cleanup_stmts(inserts, len);
 			return sql_error(sql, 02, 
 				 "Inserting into table %s, query result doesn't match number of columns", tname);
 		} else {
@@ -3489,10 +3484,12 @@ static stmt *sql_update(context * sql, dlist * qname,
 	if (!t) {
 		return sql_error(sql, 02, "Updating non existing table %s", tname);
 	} else {
+		int len = 0, i = 0;
 		tvar *tv = NULL;
 		dnode *n;
 		list *l;
 		scope *scp;
+		stmt **updates;
 
 		scp = scope_open(NULL);
 		tv = scope_add_table_columns(sql, scp, t, t->name);
@@ -3511,14 +3508,19 @@ static stmt *sql_update(context * sql, dlist * qname,
 		}
 	       	l = create_stmt_list();
 
-		n = assignmentlist->h;
-		while (n) {
+		len = dlist_length(assignmentlist);
+		updates = NEW_ARRAY(stmt *, len);
+		for (i = 0; i < len; i++)
+			updates[i] = NULL;
+
+		for( n = assignmentlist->h, i=0; n; n = n->next, i++ ){
 			symbol *a = NULL;
 			stmt *v = NULL;
 			dlist *assignment = n->data.sym->data.lval;
 			char *cname = assignment->h->data.sval;
 			cvar *cl = scope_bind_column(scp, NULL, cname);
 			if (!cl) {
+				stmt_destroy(s);
 				list_destroy(l);
 				return sql_error(sql, 02, 
 				  "Updating non existing column %s.%s",
@@ -3527,8 +3529,12 @@ static stmt *sql_update(context * sql, dlist * qname,
 			a = assignment->h->next->data.sym;
 			v = sql_value_exp(sql, scp, a, NULL, s);
 
-			if (!v)
+			if (!v) {
+				stmt_destroy(s);
+				list_destroy(l);
+				cleanup_stmts(updates, len);
 				return NULL;
+			}
 
 			v = check_types(sql, tail_type(cl->s), v);
 
@@ -3537,9 +3543,9 @@ static stmt *sql_update(context * sql, dlist * qname,
 				  stmt_reverse(s ? first_subset(s) : stmt_dup(cl->s)), v);
 			}
 
-			list_append(l, stmt_replace( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_bat), v));
+			updates[i] = stmt_replace( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_bat), v);
+			list_append(l, stmt_dup(updates[i]) );
 			list_append(l, stmt_insert( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v)));
-			n = n->next;
 		}
 		if (s) stmt_destroy(s);
 		scp = scope_close(scp);
