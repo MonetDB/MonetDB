@@ -66,7 +66,7 @@ have changed since my proposal.
 	TST[.*].src  is expected to contain a single line
 	giving the original location of the test file to be used.
 	E.g.,  src/modules/plain/Tests/arith.milM.src  contains
-		$TSTBLDDIR/arith.mil
+		$TSTBLDBASE/$TSTDIR/arith.mil
 	in order to use the MIL script extracted from
 	src/modules/plain/arith.mx  as test script.
   + a MIL script to be used as prelude for Mserver
