@@ -1129,16 +1129,17 @@ usage(const char *prog)
 	fprintf(stderr, " -b t/f      | --blocked=true/false /* blocked mode */\n");
 	fprintf(stderr, " -D          | --dump           /* dump sql database */\n");
 	fprintf(stderr, " -e          | --error          /* exit on error */\n");
+	fprintf(stderr, " -H          | --history        /* load/save cmdline history (default off) */\n");
 	fprintf(stderr, " -h hostname | --host=hostname  /* host to connect to */\n");
+	fprintf(stderr, " -i          | --interactive    /* read stdin after command line args */\n");
 	fprintf(stderr, " -l language | --language=lang  /* {mal,sql,mil,xquery} */\n");
 	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
 	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, " -q          | --quiet          /* don't print welcome message */\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
-	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
 	fprintf(stderr, " -T          | --time           /* time commands */\n");
+	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
 	fprintf(stderr, " -u user     | --user=user      /* user id */\n");
-	fprintf(stderr, " -H          | --history        /* load/save cmdline history (default off) */\n");
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
 	exit(-1);
 }
@@ -1194,7 +1195,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:el:u:p:P:qHh:s:DtT?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:eil:u:p:P:qHh:s:DtT?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
@@ -1340,22 +1341,29 @@ main(int argc, char **argv)
 		return c;
 	}
 
+	c = 0;
+
+	if (command)
+		c = doRequest(mid, command);
+
 	if (optind < argc) {
 		while (optind < argc) {
-			doFile(mid, argv[optind], strcmp(language, "xquery") == 0);
+			c |= doFile(mid, argv[optind], strcmp(language, "xquery") == 0);
 			optind++;
 		}
 		if (!interactive)
-			exit(0);
+			exit(c);
 	}
+
+	if (command && !interactive)
+		exit(c);
+
 #ifdef HAVE_LIBREADLINE
 	if (strcmp(language, "xquery") != 0)
 		init_readline(mid, language, save_history);
 #endif
 
-	if (command) {
-		c = doRequest(mid, command);
-	} else {
+	{
 		struct stat statb;
 		char *prompt = NULL;
 		char promptbuf[16];
