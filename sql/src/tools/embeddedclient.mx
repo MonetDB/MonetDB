@@ -17,6 +17,21 @@
 
 @f embeddedclient
 @a K.S. Mullender
+@* Embedded MonetDB
+The purpose of this Embedded MonetDB is to illustrate how the
+code base can be easily linked with a stand-alone application.
+The current implementation uses a minimalistic approach, i.e.
+using the Mapi prototol to communicate between application thread
+and the database kernel.
+This communication is not optimized for speed. 
+
+An area that has undergone some tweaking for performance improvement
+are the large number of lock calls needed in the GDK kernel to safely run
+multiple clients against the database. 
+For direct linkage to an application we suggest to use the monet_embedded
+option, which allows just one mapi connection to be set up. This allows
+for removal of all lock calls in the kernel. This improves performance
+between 25-50%.
 @h
 #ifndef _EMBEDDEDCLIENT_H_
 #define _EMBEDDEDCLIENT_H_
@@ -104,9 +119,18 @@ Monet_init(opt *set, int setlen)
 		GDK_mem_bigsize = strtol(p, NULL, 10);
 	if ((p = GDKgetenv("gdk_vm_minsize")) != NULL)
 		GDK_vm_minsize = strtol(p, NULL, 10);
+        if (GDKgetenv_isyes("gdk_embedded")){
+                GDKembedded = 1;
+        }
 
 	if (GDKgetenv_isyes("monet_daemon"))
 		monet_daemon=1;
+        if (GDKgetenv_isyes("monet_embedded")){
+                monet_embedded = 1;
+                monet_daemon = 1;
+                GDKembedded = 1;
+        }
+
 
 	return monet_init();
 }
