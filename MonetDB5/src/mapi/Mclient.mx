@@ -268,27 +268,12 @@ int doRequest(Mapi mid, char *buf ){
 	int i;
  
 	if (mapi_query(mid, buf) != MOK){
+		mapi_explain(mid,stdout);
 		return 'q';
 	}
-/* simple client loop */
 	while(rtrn=mapi_fetch_line(mid)){
 		fprintf(toConsole, "%s\n",rtrn);
 	}
-/*	This one tests several facilities of Mapi 
-	while( (i= mapi_fetch_row(mid)) ){
-		int d= mapi_num_fields(mid);
-		int j;
-		fprintf(toConsole,"next row %d %d fields?\n",i,d);
-		fprintf(toConsole,"[ ");
-		for(j=0;j<d;j++){
-			char *s= mapi_fetch_field(mid,j);
-			fprintf(toConsole,"length %d\n",strlen(s));
-			fprintf(toConsole,"%s", s);
-			if(j<d-1) fprintf(toConsole,",\t");
-		}
-		fprintf(toConsole," ]");
-	}
-*/
 	if (mapi_error(mid)) {
 		return 'q';
 	}
