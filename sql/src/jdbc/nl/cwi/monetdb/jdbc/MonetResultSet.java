@@ -1319,7 +1319,6 @@ public class MonetResultSet implements ResultSet {
 						MonetConnection.mDate.setTimeZone(TimeZone.getDefault());
 						return(MonetConnection.mDate.parse(monetDate));
 					}
-				break;
 				case Types.TIME:
 					if (monetDate.length() == 18) { // "HH:mm:ss.SSS+00:00".length()
 						// RFC822:         Sign TwoDigitHours Minutes
