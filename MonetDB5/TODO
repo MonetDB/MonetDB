@@ -1,4 +1,7 @@
--GDK uses too many BATcounts while they are stable 
+- DD: factor out the error handling to prepare for internationalization
+- DD: strong need for partitioned tables.
+- DD: mapping BATs to external sources
+- GDK uses too many BATcounts while they are stable 
 - we limit BAT* operation as much as possible to :void headed versions
 - a generic map() operation is added to the interpreter
 - all signatures should make in/out role of parameters explicit to
