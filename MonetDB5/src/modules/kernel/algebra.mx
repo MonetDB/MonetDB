@@ -169,16 +169,16 @@ address ALGcopy
 comment "Returns physical copy of a BAT.";
 @- Sorted copy
 @mal
-command hsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command sortH( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
-command tsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command sortT( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGtsort
 comment "Returns a BAT copy sorted on the tail column.";
-command htsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command sortHT( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGhtsort
 comment "Returns a lexicographically sorted copy.";
-command thsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command sortTH( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGthsort
 comment "Returns a reverse lexicographically sorted copy.";
 
@@ -444,25 +444,25 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 
 @- Marking tables
 @mal
-command tmark( b:bat[:any$1,:any], base:void ) :bat[:any$1,:oid] 
+command markT( b:bat[:any$1,:any], base:void ) :bat[:any$1,:oid] 
 address ALGtmark
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
-command tmark( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
+command markT( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
 address ALGtmark0
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
-command tmark( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
+command markT( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in 
         the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
 
-command hmark( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
+command markH( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
 address ALGmarkHead_default
 comment "Produces a new BAT with fresh unique OIDs 
 	in the head starting at 0@0.";
 
-command hmark( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
+command markH( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
 address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
         the head that starts at base (i.e. [base,..base+b.count()-1] ).";
