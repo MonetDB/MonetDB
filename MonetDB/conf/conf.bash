@@ -181,16 +181,8 @@ if [ -d /usr/local ] ; then
 	libpath="/usr/local/lib:${libpath}"
 fi
 # "our" /soft[64] path
-if [ -d /soft/local ] ; then
-	soft32=/soft/local
-  else
-	soft32=''
-fi
-if [ -d /soft64/local ] ; then
-	soft64=/soft64/local
-  else
-	soft64=''
-fi
+soft32=/soft/local
+soft64=/soft64/local
 if [ "${BITS}" = "32" ] ; then
 	softpath=${soft32}
   else
@@ -201,7 +193,7 @@ fi
 
 if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv" ] ; then
-		if [ "${softpath}"  -a  "${what}" = "MONET" ] ; then
+		if [ -d "${softpath}"  -a  "${what}" = "MONET" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 			conf_opts="${conf_opts} --with-pcl=${softpath}"
 		fi
@@ -236,15 +228,9 @@ fi
 
 if [ "${os}" = "SunOS" ] ; then
 	# "our" /soft[64] path on apps
-	if [ "${soft32}" ] ; then
-		soft32="/var/tmp${soft32}"
-	fi
-	if [ "${soft64}" ] ; then
-		soft64="/var/tmp${soft64}"
-	fi
-	if [ "${softpath}" ] ; then
-		softpath="/var/tmp${softpath}"
-	fi
+	soft32="/var/tmp${soft32}"
+	soft64="/var/tmp${soft64}"
+	softpath="/var/tmp${softpath}"
 	# "standard" SunOS paths
 	binpath="/opt/SUNWspro/bin:/cwi/bin:/usr/java/bin:${binpath}"
 	libpath="/cwi/lib:${libpath}"
@@ -254,7 +240,7 @@ if [ "${os}" = "SunOS" ] ; then
 		# GNU ar in /usr/local/bin doesn't support 64bit
 		AR='/usr/ccs/bin/ar' ; export AR
 		AR_FLAGS='-r -cu' ; export AR_FLAGS
-		if [ "${soft32}" ] ; then
+		if [ -d "${soft32}" ] ; then
 			# libraries compiled with gcc may need the gcc libs, so
 			# at them to the LD_LIBRARY_PATH 
 			libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
@@ -275,11 +261,11 @@ fi
 if [ "${os}" = "IRIX64" ] ; then
 	# propper/extended paths on medusa
 	binpath="/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/java/bin:${binpath}"
-	if [ "${soft32}"  -a  "${BITS}" = "64" ] ; then
+	if [ -d "${soft32}"  -a  "${BITS}" = "64" ] ; then
 		# some tools are not in ${soft64} on medusa
 		binpath="${soft32}/bin:${binpath}"
 	fi
-	if [ "${soft32}"  -a  "${COMP}${BITS}" = "GNU64" ] ; then
+	if [ -d "${soft32}"  -a  "${COMP}${BITS}" = "GNU64" ] ; then
 		# our gcc/g++ on medusa is in ${soft32} (also for 64 bit)
 		libpath="${soft32}/lib/mabi=64:${libpath}"
 	fi
@@ -317,7 +303,7 @@ fi
 
 if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; then
 	# on Linux, CYGWIN, & Darwin, /soft/local is identical with /usr/local
-	if [ "${softpath}" ] ; then
+	if [ -d "${softpath}" ] ; then
 		# prepend ${softpath} to ${binpath} & ${libpath}
 		binpath="${softpath}/bin:${binpath}"
 		libpath="${softpath}/lib:${libpath}"
