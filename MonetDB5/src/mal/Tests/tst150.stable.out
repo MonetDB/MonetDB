@@ -34,9 +34,9 @@ end sample;	# 7
 #sample("hello","world");
 #sample("hello",1);
 #
-!ERROR: 'Admin.sample' undefined in Admin.main[1]
+
 function Admin.main():int;	# 0  (main:int)
-    Admin.sample("hello","world");	# 1  unknown ($1:bit)<-($2:str)($3:str)
+    sample("hello","world");	# 1  unknown ($1:bit)<-($2:str)($3:str)
     Admin.sample("hello",1);	# 2  ($4:bit)<-($2:str)($5:int)
 end main;	# 3  
 

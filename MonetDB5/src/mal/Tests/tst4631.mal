@@ -27,7 +27,7 @@ function qry1();
     V37 := algebra.kdiff(V19,V36);
     V38 := algebra.join(V18,V37);
     V39 := algebra.join(V34,V38);
-    V40 := algebra.sort_reverse(V39);
+    V40 := algebra.tsort(V39);
     V41 := sql.bind_dbat("sys","lineitem",0);
     V45 := bat.reverse(V41);
     V46 := algebra.kdiff(V26,V45);
