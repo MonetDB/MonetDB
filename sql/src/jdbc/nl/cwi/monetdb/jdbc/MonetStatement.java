@@ -629,6 +629,18 @@ public class MonetStatement implements Statement {
 			return(hdrl);
 		}
 
+		/**
+		 * Adds a new query result block request to the queue of queries that
+		 * can and should be executed.  A RawResults object is returned which
+		 * will be filled as soon as the query request is processed.
+		 *
+		 * @param hdr the Header this query block is part of
+		 * @param block the block number to fetch, index starts at 0
+		 * @return a RawResults object which will get filled as soon as the
+		 *         query is processed
+		 * @throws IllegalStateException if this thread is not alive
+		 * @see MonetStatement.RawResults
+		 */
 		RawResults addBlock(Header hdr, int block) throws IllegalStateException {
 			if (state == DEAD) throw
 				new IllegalStateException("CacheThread shutting down or not running");
@@ -651,13 +663,22 @@ public class MonetStatement implements Statement {
 
 			return(rawr);
 		}
-		
+
+		/**
+		 * Adds a result set close command to the head of the queue of queries
+		 * that can and should be executed.  Close requests are given maximum
+		 * priority because it are small quick terminating queries and release
+		 * resources on the server backend.
+		 *
+		 * @param id the table id of the result set to close
+		 * @throws IllegalStateException if this thread is not alive
+		 */
 		void closeResult(int id) throws IllegalStateException {
 			if (state == DEAD) throw
 				new IllegalStateException("CacheThread shutting down or not running");
 
 			synchronized(queryQueue) {
-				queryQueue.add(new RawResults(0, "Xclose " + id));
+				queryQueue.add(0, new RawResults(0, "Xclose " + id));
 				queryQueue.notify();
 			}
 		}
