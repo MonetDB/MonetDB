@@ -255,7 +255,7 @@ at commit-time.
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
 		IODEBUG THRprintf(GDKerr, "MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", 
-			buf, size, err);
+			PTRFMTCAST buf, size, err);
 	} else if (mode == STORE_COMPR) {
 		char extension[PATHLENGTH];
         	sprintf(extension, "%s.Z", ext); 
@@ -266,7 +266,7 @@ at commit-time.
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
 			IODEBUG THRprintf(GDKerr, "compress(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", 
-				buf, size, fileno(fp), err);
+				PTRFMTCAST buf, size, fileno(fp), err);
 	       	}  else {
 			err = -1;
 		}
@@ -285,7 +285,7 @@ at commit-time.
 				size -= ret;
 				buf = (void*)((char*)buf + ret);
 			}
-			IODEBUG THRprintf(GDKerr, "fwrite(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", buf, size, fd, err);
+			IODEBUG THRprintf(GDKerr, "fwrite(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", PTRFMTCAST buf, size, fd, err);
 	       	}  else {
 			err = -1;
 		}
@@ -329,7 +329,7 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 		for(n_expected = size; n_expected > 0; n_expected -= n){
                         n = read(fd, dst, MIN(1<<30,n_expected));
 			IODEBUG THRprintf(GDKerr, "read(dst " PTRFMT ", n_expected " SZFMT ", fd %d) = " SSZFMT "\n", 
-							(void *) dst, n_expected, fd, n);
+							PTRFMTCAST (void *) dst, n_expected, fd, n);
 			if (n <= 0) break;
 			dst += n;
 		}
@@ -353,7 +353,7 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
      		    buf = NULL;
 		}
 		IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, chunk " SZFMT ", mod %d, tpe %d, path %s, 0) = " PTRFMT "\n",
-						chunk, mod, tpe, path, (void *) buf);
+						chunk, mod, tpe, path, PTRFMTCAST (void *) buf);
 		n_expected = 0;
 	    }
 	}

@@ -337,7 +337,7 @@ Get the new information for the server socket and start listening.
 
 			sin = socket_rastream(msgsock, "mapi-r");
 			sout = socket_wastream(msgsock, "mapi-w");
-			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, sin, sout );
+			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, PTRFMTCAST sin, PTRFMTCAST sout );
 			res.vtype = TYPE_void; 
 			interpret_str( stk, buf, &res);
 		}
@@ -708,7 +708,7 @@ Get the new information for the server socket and start listening.
 
 			sin = ssl_rastream(ssl, "mapi-r");
 			sout = ssl_wastream(SSL_dup(ssl), "mapi-w");
-			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, sin, sout );
+			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, PTRFMTCAST sin, PTRFMTCAST sout );
 			THRprintf(GDKerr, "MAPIlistenSSL: %s", buf);
 			res.vtype = TYPE_void; 
 			interpret_str( stk, buf, &res);

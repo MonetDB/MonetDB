@@ -319,7 +319,7 @@ Request getRequest(Request barrier){
        	MT_set_lock(monet_critical, "getRequest");
 
 	if ( barrier) {
-		PARDEBUG THRprintf(GDKerr, "barrier search " PTRFMT "\n", (void *) barrier);
+		PARDEBUG THRprintf(GDKerr, "barrier search " PTRFMT "\n", PTRFMTCAST (void *) barrier);
 		for (q = qm_first; q; q = q->ev_next) 
 			if ( q->ev_status== EVPENDING  && q->ev_wakeup== barrier){
 				goto getReq0;
@@ -393,7 +393,7 @@ void rmRequest(Request r){
 	Request s,t;
 
 	MT_set_lock(monet_critical, "rmRequest");
-	PARDEBUG THRprintf(GDKerr, "remove dependents of " PTRFMT "\n", (void *) r);
+	PARDEBUG THRprintf(GDKerr, "remove dependents of " PTRFMT "\n", PTRFMTCAST (void *) r);
 	for ( s=r->ev_wakeup; s; s=t )  {
 		t= s->ev_wakeup;
 		unlinkRequest(s);

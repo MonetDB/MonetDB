@@ -233,7 +233,7 @@ int HEAPfree(Heap* h) {
 				GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
                 	}
                 	IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", 
-					(void *) h->base, h->maxsize, ret);
+					PTRFMTCAST (void *) h->base, h->maxsize, ret);
         	} 
         	h->base = NULL;
 	}
@@ -488,7 +488,7 @@ static void HEAP_printstatus(Heap *heap) {
       blockp = HEAP_index(heap,block,CHUNK);
       if (block == cur_free) {
           THRprintf(GDKerr, "   free block at " PTRFMT " has size " SZFMT " and next " SZFMT "\n",
-				(void *) block, blockp->size, blockp->next);
+				PTRFMTCAST (void *) block, blockp->size, blockp->next);
           cur_free = blockp->next;
           block += blockp->size;
       } else {

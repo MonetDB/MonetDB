@@ -419,7 +419,7 @@ void MT_set_lock(MT_Lock l, char *name){
     	int t = 0;
     	if (MT_debug & 1024) {
         	fprintf(MT_out,"MT_set_lock(" SZFMT "\@%s) " PTRFMT " %d\n", 
-			(size_t)MT_getpid(), name, (void *)l, t);
+			(size_t)MT_getpid(), name, PTRFMTCAST (void *)l, t);
         	fflush(MT_out);
     	}
 	(void)pthread_mutex_lock((pthread_mutex_t*)l);
@@ -429,7 +429,7 @@ void MT_unset_lock(MT_Lock l, char *name)	{
    	int t = 0;
     	if (MT_debug & 1024) {
         	fprintf(MT_out,"MT_unset_lock(" SZFMT "\@%s) " PTRFMT " %d\n", 
-			(size_t)MT_getpid(), name, (void *)l,t);
+			(size_t)MT_getpid(), name, PTRFMTCAST (void *)l,t);
         	fflush(MT_out);
 	}   
  	t = pthread_mutex_unlock((pthread_mutex_t*)l);
@@ -438,7 +438,7 @@ void MT_unset_lock(MT_Lock l, char *name)	{
 int MT_try_lock (MT_Lock l) {
 	if (MT_debug & 1024) {
 		fprintf(MT_out,"MT_try_lock:" SZFMT " " PTRFMT "\n", 
-			(size_t)MT_getpid(), (void *) l);
+			(size_t)MT_getpid(), PTRFMTCAST (void *) l);
 		fflush(MT_out);
 	}
 	if (l == NULL) return 0;
@@ -455,7 +455,7 @@ void MT_up_sema(MT_Sema s, char *name){
 	(void)sem_post((sem_t*)s);
     	if (MT_debug &  1024) {
         	fprintf(MT_out,"MT_up_sema(" SZFMT "\@%s) " PTRFMT "\n", 
-			(size_t)MT_getpid(), name, (void *)s);
+			(size_t)MT_getpid(), name, PTRFMTCAST (void *)s);
         	fflush(MT_out);
     	}
 }
@@ -464,7 +464,7 @@ void MT_down_sema(MT_Sema s, char *name){
 	(void)sem_wait((sem_t*)s);
     	if (MT_debug &  1024) {
         	fprintf(MT_out,"MT_down_sema(" SZFMT "\@%s) " PTRFMT "\n", 
-			(size_t)MT_getpid(), name, (void *)s);
+			(size_t)MT_getpid(), name, PTRFMTCAST (void *)s);
         	fflush(MT_out);
 	}   
 }
@@ -472,7 +472,7 @@ void MT_down_sema(MT_Sema s, char *name){
 int MT_try_sema (MT_Sema s){
 	if (MT_debug & 1024) {
 		fprintf(MT_out,"MT_try_sema:" SZFMT " " PTRFMT "\n", 
-			(size_t) MT_getpid(), (void *) s);
+			(size_t) MT_getpid(), PTRFMTCAST (void *) s);
 		fflush(MT_out);
 	}
 	if (s == NULL) return 0;
