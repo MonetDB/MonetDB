@@ -8,5 +8,6 @@ overview:
 	cp multiFloats.sty ../../Linux/doc
 	(cd ../../Linux/doc; \
 	latex -interaction=batchmode overview.tex ;\
+	latex -interaction=batchmode overview.tex ;\
 	dvips overview.dvi -o overview.ps ; \
 	ps2pdf overview.ps overview.pdf)

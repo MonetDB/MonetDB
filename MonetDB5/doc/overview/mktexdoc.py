@@ -78,11 +78,10 @@ def runMx(srcdir, base, dstdir, suffix='' ):
     srcfile = os.path.join(tmpdir, base + '.body.'+doctype)
     if not os.path.exists(srcfile):
         srcfile = os.path.join(tmpdir, base + '.' + doctype)
-    os.makedirs(os.path.join(dstdir, base+suffix))
+    if not os.path.exists(dstdir):
+        os.makedirs(dstdir)
     copyfile(srcfile, os.path.join(dstdir, base + '.' +doctype))
     unlink(os.path.join(tmpdir, base + '.' + doctype))
-    #unlink(os.path.join(tmpdir, base + '.index.'+doctype))
-    #unlink(os.path.join(tmpdir, base + '.body.'+doctype))
 
 def removedir(dir):
     """Remove DIR recursively."""
@@ -113,7 +112,7 @@ runMx(os.path.join(srcdir, 'src', 'gdk'), 'gdk',
   os.path.join(dstdir, 'doc', 'Services'))
 for f in ['bat.gif', 'bat1.gif', 'bat2.gif']:
    copyfile(os.path.join(srcdir, 'src', 'gdk', f),
-            os.path.join(dstdir, 'doc', 'Services', 'gdk', f))
+            os.path.join(dstdir, 'doc', 'Services', f))
 
 #these files should be linked
 for f in ['mal_atom',

@@ -3,24 +3,24 @@
 <head>
 <body>
 <!--#include virtual="MAL/mal/index.html" -->
-<!--#include virtual="MAL/mal_parser/index.html" -->
 <!--#include virtual="MAL/mal_instruction/index.html" -->
-<!--#include virtual="MAL/mal_client/index.html" -->
-<!--#include virtual="MAL/mal_session/index.html" -->
-<!--#include virtual="MAL/mal_scenario/index.html" -->
+<!--#include virtual="MAL/mal_parser/index.html" -->
 <!--#include virtual="MAL/mal_function/index.html" -->
 <!--#include virtual="MAL/mal_interpreter/index.html" -->
-<!--#include virtual="MAL/mal_import/index.html" -->
+<!--#include virtual="MAL/mal_stack/index.html" -->
 <!--#include virtual="MAL/mal_linker/index.html" -->
-<!--#include virtual="MAL/mal_optimizer/index.html" -->
+<!--#include virtual="MAL/mal_import/index.html" -->
+<!--#include virtual="MAL/mal_scenario/index.html" -->
+<!--#include virtual="MAL/mal_client/index.html" -->
+<!--#include virtual="MAL/mal_session/index.html" -->
 <!--#include virtual="MAL/mal_box/index.html" -->
 <!--#include virtual="MAL/mal_type/index.html" -->
-<!--#include virtual="MAL/mal_properties/index.html" -->
 <!--#include virtual="MAL/mal_atom/index.html" -->
 <!--#include virtual="MAL/mal_resolve/index.html" -->
+<!--#include virtual="MAL/mal_optimizer/index.html" -->
+<!--#include virtual="MAL/mal_properties/index.html" -->
 <!--#include virtual="MAL/mal_namespace/index.html" -->
 <!--#include virtual="MAL/mal_scope/index.html" -->
-<!--#include virtual="MAL/mal_stack/index.html" -->
 <!--#include virtual="MAL/mal_startup/index.html" -->
 <!--#include virtual="MAL/mal_xml/index.html" -->
 <!--#include virtual="MAL/mal_debugger/index.html" -->

@@ -25,18 +25,17 @@
 
 import sys, os, string
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 3:
     print '''\
-Usage: %s kind srcdir dstdir
+Usage: %s srcdir dstdir
 
-where kind is either html or tex
 where srcdir is the top of the MonetDB source directory tree, and
 dstdir is the top of the installation tree.''' % sys.argv[0]
     sys.exit(1)
 
-doctype= sys.argv[1]
-srcdir = sys.argv[2]
-dstdir = sys.argv[3]
+doctype= 'html'
+srcdir = sys.argv[1]
+dstdir = sys.argv[2]
 
 # Here a hack to make this work on Windows:
 # The command name cannot have any spaces, not even quoted, so we
@@ -71,10 +70,7 @@ def runMx(srcdir, base, dstdir, suffix='' ):
     cwd = os.getcwd()
     print cwd, '->', srcdir
     os.chdir(srcdir)
-    if doctype== 'html':
-	    cmd = '%s "-R%s" -H1 -w -I "%s" 2>&1' % (mx, tmpdir, base + '.mx')
-    else:
-	    cmd = '%s "-R%s" -H1 -t -I "%s" 2>&1' % (mx, tmpdir, base + '.mx')
+    cmd = '%s "-R%s" -H1 -w -B "%s" 2>&1' % (mx, tmpdir, base + '.mx')
     print cmd
     f = os.popen(cmd, 'r')
     dummy = f.read()                    # discard output
@@ -189,17 +185,8 @@ runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'MapiClient',
 #    copyfile(os.path.join(srcdir, f),
 #             os.path.join(dstdir, 'doc', 'www', f))
 
-if doctype=='html':
-	copyfile(os.path.join(srcdir, 'doc', 'design.shtml'),
-		os.path.join(dstdir, 'doc/www', 'design.shtml'))
-
-if doctype=='tex':
-	copyfile(os.path.join(srcdir, 'doc', 'design.tex'),
-	 os.path.join(dstdir, 'doc/www', 'design.tex'))
-	copyfile(os.path.join(srcdir, 'doc', 'latex8.sty'),
-	 os.path.join(dstdir, 'doc/www', 'latex8.sty'))
-	copyfile(os.path.join(srcdir, 'doc', 'multiFloats.sty'),
-	 os.path.join(dstdir, 'doc/www', 'multiFloats.sty'))
+copyfile('design.shtml',
+	os.path.join(dstdir, 'doc/www', 'design.shtml'))
 
 f = open(os.path.join(dstdir, 'doc', 'www', 'sql.html'), 'w')
 f.write('''\
