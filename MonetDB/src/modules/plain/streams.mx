@@ -404,7 +404,7 @@ io_ftable(Stream *filepp, int *orderspec, ...)
 		piv[argc] = va_arg(ap, BAT *);
 	} while (piv[argc++]);
 	va_end(ap);
-	BATmultiprintf(fp, argc, piv, FALSE, *orderspec, 1);
+	BATmultiprintf(fp, argc, piv, FALSE, *orderspec);
 	return GDK_SUCCEED;
 }
 
@@ -421,7 +421,7 @@ io_ftable_default(Stream *filepp, ...)
 		piv[argc] = va_arg(ap, BAT *);
 	} while (piv[argc++]);
 	va_end(ap);
-	BATmultiprintf(fp, argc, piv, FALSE, 0, 1);
+	BATmultiprintf(fp, argc, piv, FALSE, 0);
 	return GDK_SUCCEED;
 }
 

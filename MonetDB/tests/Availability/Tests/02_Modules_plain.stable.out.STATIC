@@ -295,10 +295,10 @@ Module: "ascii_io"
 [ "import",		  "PROC:      ",  "import(BAT[any,any], str) : BAT[any,any]",						  "not available"	  ]
 [ "input",		  "COMMAND:   ",  "input(BAT[void,str], BAT[void,str], BAT[void,str], Stream, int) : BAT[str,BAT]",	  ""			  ]
 [ "load",		  "COMMAND:   ",  "load(BAT[void,str], BAT[void,str], BAT[void,str], str, int) : BAT[str,BAT]",		  ""			  ]
-[ "load_data",		  "PROC:      ",  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",					  "Load data given Mload-style format; limit to nr elements (all if -1)"  ]
-[ "load_format",	  "PROC:      ",  "load_format(str) : BAT[str,BAT]",							  "Load Mload-style format file fmt"					  ]
-[ "make_persistent",	  "PROC:      ",  "make_persistent(BAT[str,BAT]) : void",						  "Make loaded bats persistent."					  ]
-[ "merge_data",		  "PROC:      ",  "merge_data(BAT[str,BAT]) : void",							  "Merge loaded bats with existing ones."				  ]
+[ "load_data",		  "PROC:      ",  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",					  "not available"	  ]
+[ "load_format",	  "PROC:      ",  "load_format(str) : BAT[str,BAT]",							  "not available"	  ]
+[ "make_persistent",	  "PROC:      ",  "make_persistent(BAT[str,BAT]) : void",						  "not available"	  ]
+[ "merge_data",		  "PROC:      ",  "merge_data(BAT[str,BAT]) : void",							  "not available"	  ]
 [ "output",		  "COMMAND:   ",  "output(BAT[any,any], BAT[void,str], BAT[void,BAT], Stream) : void",			  ""			  ]
 
 Module: "bat_arith"

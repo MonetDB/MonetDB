@@ -174,7 +174,6 @@ mapi\_get\_monet\_versionId()	& MonetDB version identifier\\
 mapi\_get\_monet\_version()	& MonetDB version name\\
 mapi\_get\_motd()	&	Get server welcome message\\
 mapi\_get\_row\_count()	&	Number of rows in cache or -1\\
-mapi\_get\_trace()	&	Get trace flag\\
 mapi\_get\_user()	&	Current user name\\
 mapi\_next\_result()	&	Go to next result set\\
 mapi\_ping()	&	Test server for accessibility\\
@@ -537,9 +536,6 @@ dynamically created and should be freed after use.
 \item[MapiMsg  mapi\_trace(Mapi mid, int flag)]:
 Set the trace flag to monitor interaction with the server.
 
-\item[int mapi\_get\_trace(Mapi mid)]:
-Return the current value of the trace flag.
-
 \item[MapiMsg  mapi\_trace\_log(Mapi mid, const char *fname)]:
 Log the interaction between the client and server for offline
 inspection. Beware that the log file overwrites any previous log. It
@@ -900,7 +896,6 @@ mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
-mapi_export int mapi_get_trace(Mapi mid);
 mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
 mapi_export char *mapi_result_error(MapiHdl hdl);
@@ -1193,13 +1188,6 @@ mapi_trace(Mapi mid, int flag)
 	mapi_clrError(mid);
 	mid->trace = flag;
 	return MOK;
-}
-
-int
-mapi_get_trace(Mapi mid)
-{
-	mapi_check0(mid, "mapi_get_trace");
-	return mid->trace;
 }
 
 MapiMsg
@@ -1950,13 +1938,6 @@ mapi_start_talking(Mapi mid)
 	char buf[BLOCK];
 	size_t len;
 	MapiHdl hdl;
-
-	/* consume server challenge */
-	stream_read(mid->from, buf, 1, 2);
-	len = atoi(buf);
-	assert(len <= BLOCK);
-	stream_read(mid->from, buf, 1, len);
-	/* just don't do anything with the challenge */
 
 	if (mid->blocked) {
 		snprintf(buf, BLOCK, "%s:%s:%s:blocked\n", mid->username, mid->password, mid->language);

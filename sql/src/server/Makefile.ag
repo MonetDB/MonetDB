@@ -46,10 +46,7 @@ lib_sqlserver = {
 		sql_env.mx \    
 		sql_sequence.mx \    
 		sql_privileges.mx \  
-		sql_query.mx \
-		rel_semantic.mx \
-		rel_select.mx \
-		rel_dump.mx
+		sql_query.mx
 
 	WINLIBS = ../storage/bat/libbatstore ../common/libsqlcommon -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra 
 	LIBS = $(MONETDB_LIBS)

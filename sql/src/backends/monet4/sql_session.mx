@@ -59,7 +59,6 @@ extern int mvc_sql(mvc *c, str query);
 #include "sql_result.h"
 #include "sql_gencode.h"	/* for backend_dumpproc() */
 #include <sql_semantic.h>
-#include <rel_semantic.h>
 #include <sql_optimize.h>
 #include <sql_privileges.h>
 #include <sql_rel2bin.h>
@@ -364,52 +363,14 @@ explain_cmd(mvc *c, char *cmd, stream *out)
 stmt *
 sql_symbol2stmt(mvc *c)
 {
-	stmt *s;
+	stmt *s = semantic(c, c->sym);
 
-	if (mvc_debug_on(c,16384)) {
-		sql_rel *r = rel_semantic(c, c->sym);
-		if (!r)
-			return NULL;
-	} 
-	/*
-	printf("# semantic\n");
-	*/
-	s = semantic(c, c->sym);
+	if (s) {
+		stmt *opt = optimize(c, s);
 
-	if (s){
-		stmt *opt;
-/*
-		if(i<=0){
-			i *= 10;
-			printf("\ndigraph %d {\nnode[shape=box,fontname=Helvetica];\nedge[labelfontname=Helvetica,labelfontcolor=red];\n", -i);
-			(void)stmt_stmt2dot(s, i, &i, stdout);
-			printf("}\n");
-		}
-		printf("# optimize\n");
-*/
-		opt = optimize(c, s);
 		stmt_destroy(s);
-		s = opt;
-/*
-		if(i<=0){
-			i *= 10;
-			printf("\ndigraph %d {\nnode[shape=box,fontname=Helvetica];\nedge[labelfontname=Helvetica,labelfontcolor=red];\n", -i);
-			(void)stmt_stmt2dot(s, i, &i, stdout);
-			printf("}\n");
-		}
-		printf("# rel2bin\n");
-*/
-		opt = rel2bin(c, s);
-		stmt_destroy(s);
-		s = opt;
-/*
-		if(i<=0){
-			i *= 10;
-			printf("\ndigraph %d {\nnode[shape=box,fontname=Helvetica];\nedge[labelfontname=Helvetica,labelfontcolor=red];\n", -i);
-			(void)stmt_stmt2dot(s, i, &i, stdout);
-			printf("}\n");
-		}
-*/
+		s = rel2bin(c, opt);
+		stmt_destroy(opt);
 	}
 	return s;
 }
@@ -1011,7 +972,7 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	int trace = 0, ret = GDK_SUCCEED;
 	ssize_t i = 0;
 	char buf[BUFSIZ + 1];
-	char *user, *passwd, *schema, *challenge;
+	char *user, *passwd, *schema;
 	int blocked = 0;
 
 	mvc *m;
@@ -1049,13 +1010,6 @@ Use default setting for trace.
 		GDKsyserror("mapisqlclient:stream-w problems\n");
 		return connect_error(in, out);
 	}
-	/* send challenge string, currently empty (disabled) */
-	challenge = "::mserver_sql:4\n";
-	/* temporarily misuse user variable */
-	user = GDKmalloc(sizeof(char) * 100);
-	snprintf(user, 100, "%2d%s", strlen(challenge), challenge);
-	stream_write(out, user, strlen(user), 1);
-	GDKfree(user);
 	/* get user name */
 	memset(buf, 0, BUFSIZ);
 	user = buf;

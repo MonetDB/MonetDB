@@ -647,12 +647,9 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 		fprintf(stderr, "\t\tload column %s\n", c->base.name);
 
 	if (c->bat.bid && c->bat.ubid && !t->clear) {
-		BAT *b  = bm_lbid2bat(tr->bm, c->bat.bid);
 		BAT *ub = bm_lbid2bat(tr->bm, c->bat.ubid);
 		BAT *db = bm_lbid2bat(tr->bm, t->dbid);
 
-		t->cnt = (BATcount(b)-BATcount(db));
-		bat_destroy(b);
 		if (BATcount(ub) || BATcount(db)) {
 			BAT *b = bind_bat(tr, c, UPD);
 
@@ -708,7 +705,6 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	t->pkey = NULL;
 	t->s = s;
 	t->sz = BUFSIZ;
-	t->cnt = 0;
 
 	cs_init(&t->columns, (fdestroy) &column_destroy);
 	cs_init(&t->idxs, (fdestroy) &idx_destroy);
@@ -1366,7 +1362,6 @@ create_table_intern(char *name, bit table, bit system, bit persists, bit clear)
 	t->pkey = NULL;
 	t->dbid = 0;
 	t->sz = BUFSIZ;
-	t->cnt = 0;
 	t->cleared = 0;
 	return t;
 }
@@ -1812,7 +1807,6 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 	t->s = s;
 	t->sz = ot->sz;
-	t->cnt = ot->cnt;
 	t->cleared = 0;
 
 	if (ot->columns.set)
@@ -2108,10 +2102,10 @@ rollforward_create_column(sql_trans *tr, sql_column *c)
 
 		snprintf(bname, BUFSIZ, "%s_%s", c->t->base.name, c->base.name);
 		c->bat.bid = bm_add_bat(tr->parent->bm, b->batCacheid, bname, 0);
+
 		if (tr->parent == gtrans)
 			ok = log_bat_persists(logger, b, c->bat.bid, bname);
 
-		c->t->cnt = BATcount(b);
 		bat_destroy(b);
 
 		u = bm_lbid2bat(tr->bm, c->bat.ubid);
@@ -2163,7 +2157,6 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 	if (t->table && t->persists) {
 		/* only register bats for non cleared tables */
 
-		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column);
 		if (!t->clear) {
 			char name[BUFSIZ];
 
@@ -2175,10 +2168,10 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 			if (tr->parent == gtrans)
 				ok = log_bat_persists(logger, d, t->dbid, name);
 
-			t->cnt -= BATcount(d);
 			bat_destroy(d);
 		}
 
+		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column);
 		rollforward_changeset_creates(tr, &t->idxs, (rfcfunc) &rollforward_create_idx);
 		/* bat views also need to be registered */
 	} else if (!t->table && t->persists && !t->query) {
@@ -2297,7 +2290,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	m = tt->columns.set->h;
 
 	if (ok == SQL_OK && n && m) {
-		lng deleted = 0;
 		BAT *db = bm_lbid2bat(tr->bm, ft->dbid);
 
 		if (ft->base.rtime)
@@ -2307,8 +2299,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		if (ft->cleared && ttr == gtrans)
 			ok = log_bat_clear(logger, tt->dbid);
 
-		deleted = BATcount(db);
-		tt->cnt = 0;
 		if (BUNlast(db) > db->batInserted) {
 			bm_new_bat(ttr->bm, tt->dbid, db);
 
@@ -2387,8 +2377,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 				BATsetaccess(cur, BAT_READ);
 			}
-			if (!tt->cnt)
-				tt->cnt = BATcount(cur)-deleted;
 			bat_destroy(cur);
 
 			if (cc->base.rtime)

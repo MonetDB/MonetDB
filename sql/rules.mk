@@ -137,10 +137,10 @@ HIDE=1
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.pm.c: %.pm.i
-	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o $@ $<
+	$(SWIG) -perl5 -exportall $(SWIGFLAGS) -outdir . -o $@ $<
 
 %.pm: %.pm.i
-	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dymmy.c $<
+	$(SWIG) -perl5 -exportall $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.tex: %.mx
 	$(MX) -1 -H$(HIDE) -t $< 
@@ -185,9 +185,6 @@ $(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 
 $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 	$(COMPILE) -O0 -c $<
-
-$(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
-	$(LIBTOOL) --mode=compile $(COMPILE) -O0 -c $<
 
 SUFFIXES-local: $(BUILT_SOURCES)
 

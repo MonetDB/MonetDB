@@ -33,7 +33,6 @@ extern stmt *optimize(mvc *c, stmt *s);
 
 @c
 #include "sql_optimize.h"
-#include "sql_env.h"
 #include <stdio.h>
 
 #define create_stmt_list() list_create((fdestroy)&stmt_destroy)
@@ -51,20 +50,6 @@ static int
 join_cmp_neq(stmt *jn)
 {
 	if (jn->flag != cmp_equal) {
-		return 0;
-	}
-	return -1;
-}
-
-/* ! join is join(st_bat,reverse(st_[i]bat)) ! */
-static int 
-join_cmp_htcolnr( stmt *join , int *htcolnr )
-{
-	int hcolnr = join->op1.stval->op1.cval->colnr & 65535;
-	int tcolnr = join->op2.stval->op1.stval->op1.cval->colnr & 65535;
-	int htcn = (hcolnr<<16) | tcolnr;
-
-	if (htcn == *htcolnr){
 		return 0;
 	}
 	return -1;
@@ -117,14 +102,8 @@ static int
 select_count(stmt *s)
 {
 	switch (s->type) {
-	case st_column:
-	case st_alias:
-		return 0;
-/*
-		return select_count(s->op1.stval);
-*/
 	case st_intersect:
-		return select_count(s->op1.stval ) + select_count(s->op2.stval);
+		return select_count(s->op1.stval);
 	case st_reljoin:{
 		int sc = 0;
 		node *n = NULL;
@@ -141,6 +120,9 @@ select_count(stmt *s)
 		return select_count(s->op1.stval) + select_count(s->op2.stval);
 	case st_reverse:
 		return select_count(s->op1.stval);
+		/*
+		   case st_semijoin: return 1;
+		 */
 	case st_semijoin:
 		return select_count(s->op1.stval) + select_count(s->op2.stval);
 	case st_relselect:{
@@ -152,29 +134,12 @@ select_count(stmt *s)
 		}
 		return sc;
 	}
-	case st_select: case st_uselect:
-		if (s->op2.stval->nrcols >= 1)
-			return select_count(s->op1.stval) +
-				select_count(s->op2.stval);
-		else
-			return select_count(s->op1.stval) + 3;	/* point */
-	case st_select2: case st_uselect2:
-		return select_count(s->op1.stval) + 2;		/* range */
-	case st_bat: case st_idxbat:
-	case st_pivot:
-	case st_aggr:
-	case st_group:
-	case st_group_ext:
-	case st_append:
-	case st_union:
-	case st_unop:
-	case st_binop:
-	case st_Nop:
-		return 0;
+	case st_select2:
+	case st_uselect2:
+	case st_select:
+	case st_uselect:
+		return 1;
 	default:
-#ifndef NDEBUG
-		printf("= TODO: select_count(%s)\n", st_type2string(s->type));
-#endif
 		return 0;
 	}
 }
@@ -210,77 +175,6 @@ data_cmp(void *d, void *k)
 	if (d == k)
 		return 0;
 	return -1;
-}
-
-#define TYPE_JOIN(type) 	(type == st_join || type == st_reljoin)
-
-static stmt *
-stmt_intersect(stmt *op1, stmt *op2)
-{
-	stmt *res = NULL;
-	int reverse = 0;
-
-	while (op1->type == st_reverse) {
-		stmt *r = op1;
-
-		op1 = stmt_dup(op1->op1.stval);
-		stmt_destroy(r);
-	}
-	while (op2->type == st_reverse) {
-		stmt *r = op2;
-
-		op2 = stmt_dup(op2->op1.stval);
-		stmt_destroy(r);
-	}
-	if (op1->h != op2->h) {
-		reverse = 1;
-	}
-	assert((TYPE_JOIN(op1->type)) && (TYPE_JOIN(op2->type)));
-
-	/* only keep the join, ie forget about the cross product */
-	if (TYPE_JOIN(op1->type) && op1->flag == cmp_all) {
-		stmt_destroy(op1);
-		return op2;
-	} else if (TYPE_JOIN(op2->type) && op2->flag == cmp_all) {
-		stmt_destroy(op2);
-		return op1;
-	}
-
-	/* this case should have been transformed into a proper
-	   multi-att join ("st_reljoin") by push_selects_down()
-	 */
-	assert(!(op1->flag == cmp_equal && op2->flag == cmp_equal));
-	assert(!(op1->type == st_reljoin && op2->type == st_reljoin));
-
-	/*
-	 * need to add the mark trick as [].select(true) on tables
-	 * without unique head identifiers + semijoin is wrong
-	 */
-	if (!reverse) {
-		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-		stmt *mr = stmt_mark(stmt_dup(op1), 50);
-		stmt *l = stmt_join(stmt_dup(ml),
-				    stmt_dup(op2->op1.stval), cmp_equal);
-		stmt *r = stmt_join(stmt_dup(mr),
-				    stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-		stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
-
-		res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
-	} else {		/* reverse */
-		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-		stmt *mr = stmt_mark(stmt_dup(op1), 50);
-		stmt *l = stmt_join(stmt_dup(mr),
-				    stmt_dup(op2->op1.stval), cmp_equal);
-		stmt *r = stmt_join(stmt_dup(ml),
-				    stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-		stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
-
-		res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
-	}
-
-	stmt_destroy(op1);
-	stmt_destroy(op2);
-	return res;
 }
 
 
@@ -437,7 +331,6 @@ static stmt *stmt_push_join_tail(stmt *s, stmt *join);
 static stmt *
 stmt_push_join_head(stmt *s, stmt *join)
 {
-	/* found target of push-down: a [rel]join */
 	if (s->type == st_reljoin) {
 		list *l1 = create_stmt_list();
 		list *l2 = list_dup(s->op2.lval, (fdup) &stmt_dup);
@@ -455,7 +348,6 @@ stmt_push_join_head(stmt *s, stmt *join)
 
 		stmt_destroy(s);
 		return res;
-	/* recursively proceed push-down/search for join through some operations */
 	} else if (s->type == st_reverse) {
 		stmt *res = stmt_reverse(stmt_push_join_tail(stmt_dup(s->op1.stval), stmt_reverse(join)));
 
@@ -481,8 +373,6 @@ stmt_push_join_head(stmt *s, stmt *join)
 
 		stmt_destroy(s);
 		return res;
-	/* push joins only through "head-tail" selects (i.e., "theta-intersection": h == h && t [cmp] t) */
-	/* no need to push joins through simple selects or relselects */
 	} else if (s->type == st_select) {
 		if (s->op2.stval->nrcols >= 1) {
 			stmt *jn = stmt_dup(join);
@@ -503,9 +393,7 @@ stmt_push_join_head(stmt *s, stmt *join)
 			stmt_destroy(s);
 			return res;
 		}
-	} else if (s->type == st_select2 || s->type == st_uselect2){
 	} else if (s->type == st_relselect) {
-/*
 		list *l = create_stmt_list();
 		node *n;
 
@@ -515,23 +403,18 @@ stmt_push_join_head(stmt *s, stmt *join)
 		stmt_destroy(s);
 		stmt_destroy(join);
 		return stmt_relselect(l);
-*/
-	/* known ends of recursion */
-	} else if (s->type == st_idxbat){
-	} else if (s->type == st_bat){
-	/* unknown end of recursion */
 #ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: push join head %s\n", st_type2string(s->type));
 #endif
 	}
-	return stmt_join(join, s, cmp_equal);
+	stmt_destroy(join);
+	return s;
 }
 
 static stmt *
 stmt_push_join_tail(stmt *s, stmt *join)
 {
-	/* found target of push-down: a [rel]join */
 	if (s->type == st_reljoin) {
 		list *l1 = list_dup(s->op1.lval, (fdup) &stmt_dup);
 		list *l2 = create_stmt_list();
@@ -548,12 +431,6 @@ stmt_push_join_tail(stmt *s, stmt *join)
 		stmt *res = stmt_join(stmt_dup(s->op1.stval), op2,
 				      (comp_type) s->flag);
 
-		stmt_destroy(s);
-		return res;
-	/* recursively proceed push-down/search for join through some operations */
-	} else if (s->type == st_semijoin){
-		stmt *op1 = stmt_push_join_tail( stmt_dup(s->op1.stval), join);
-		stmt *res = stmt_semijoin( op1, stmt_dup(s->op2.stval) );
 		stmt_destroy(s);
 		return res;
 	} else if (s->type == st_reverse) {
@@ -574,15 +451,13 @@ stmt_push_join_tail(stmt *s, stmt *join)
 
 		stmt_destroy(s);
 		return res;
-	/* known ends of recursion */
-	} else if (s->type == st_idxbat){
-	/* unknown end of recursion */
 #ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: push join tail %s\n", st_type2string(s->type));
 #endif
 	}
-	return stmt_join(s, join, cmp_equal);
+	stmt_destroy(join);
+	return s;
 }
 
 static stmt *
@@ -607,8 +482,6 @@ stmt_join2select(stmt *j)
 
 		stmt_destroy(j);
 		return res;
-	} else if (j->type == st_semijoin) {
-		return j;
 #ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: join2select %s\n", st_type2string(j->type));
@@ -630,73 +503,6 @@ stmt_push_down_tail_wrap(stmt *j, stmt *sel)
 	return stmt_push_down_tail(stmt_dup(j), stmt_dup(sel));
 }
 
-#define sSTMT_BAT(type) (type == st_bat || type == st_idxbat)
-int STMT_BAT(int type ) {
-	return sSTMT_BAT(type);
-}
-
-static sql_idx *
-find_fk_index(list * eqjoins, int tail, list **fkjoins)
-{
-	sql_idx *hi = NULL, *ti = NULL;
-	sql_table *htab, *ttab;
-	node *in;
-	stmt *join = eqjoins->h->data;
-
-	assert(fkjoins && *fkjoins == NULL);
-
-	if (!STMT_BAT(join->op1.stval->type) ||
-		/* assumes reverse */
-	    !STMT_BAT(join->op2.stval->op1.stval->type) )
-		return NULL;
-
-	if(tail) {
-		htab = join->t->op1.tval;
-		ttab = join->h->op1.tval;
-	} else {
-		htab = join->h->op1.tval;
-		ttab = join->t->op1.tval;
-	}
-	if(htab->idxs.set)
-	   for(in = htab->idxs.set->h; in; in = in->next){
-	    	hi = in->data;
-		if (hi->type == join_idx){
-		        ti = ((sql_fkey*)hi->key)->rkey->k.idx;
-              			if (ti->t == ttab) {
-              				node *hn, *tn;
-              				int ic = 0;
-              				*fkjoins = create_stmt_list();
-              				for(hn = hi->columns->h, tn = ti->columns->h; hn && tn; hn = hn->next, tn = tn->next, ic++){
-              					node * jn;
-              					int hcolnr = ((sql_kc*)hn->data)->c->colnr & 65535;
-              					int tcolnr = ((sql_kc*)tn->data)->c->colnr & 65535;
-              					int htcolnr;
-              					if(tail) 
-              						htcolnr = (tcolnr<<16) | hcolnr;
-              					else
-              						htcolnr = (hcolnr<<16) | tcolnr;
-              					if ((jn = list_find(eqjoins, (void*)&htcolnr, (fcmp)&join_cmp_htcolnr))) {
-              						stmt * js = jn->data;
-              						/*if (js->op1.stval->type==st_bat && js->op2.stval->op1.stval->type==st_bat)*/ {
-              							list_append(*fkjoins,stmt_dup(js));
-              						}
-              					}
-              				}
-              				if (list_length(*fkjoins) == ic) {
-              					break;
-              				} else {
-              					list_destroy(*fkjoins);
-              					*fkjoins = NULL;
-              				}
-			}
-		}
-	}
-	if(*fkjoins)
-		return hi;
-	else
-		return NULL;
-}
-
 static stmt *
 stmt_binop_and(stmt *e1, stmt *e2)
 {
@@ -712,7 +518,7 @@ stmt_binop_and(stmt *e1, stmt *e2)
  * pushed under the join. Also joins are grouped together.
  * */
 static list *
-push_selects_down(mvc *c, list *con)
+push_selects_down(list *con)
 {
 	int one = 1;
 	int two = 2;
@@ -747,109 +553,30 @@ push_selects_down(mvc *c, list *con)
 		list *ejoins = list_select(joins, n->data, (fcmp) &stmt_cmp_head_tail, (fdup) &stmt_dup);
 		stmt *join = ejoins->h->data;
 		list *eqjoins = NULL, *nqjoins = NULL;
-		stmt *reljoin = NULL, *jdx = NULL;
-		node *hsel = NULL, *tsel = NULL;
-		node * jn;
+		stmt *reljoin = NULL;
 
-		/* align joined tables */
-		for(jn = ejoins->h; jn; jn = jn->next) {
-			stmt *j = jn->data;
+		/* todo check for foreign key joins */
+		node *hsel = list_find(rsel, (void *) join, (fcmp) &cmp_sel_head);
+		node *tsel = list_find(rsel, (void *) join, (fcmp) &cmp_sel_tail);
 
-			if (!STMT_BAT(j->op1.stval->type))
-				continue;
-			assert(j->op2.stval->type==st_reverse);
-			if (!STMT_BAT(j->op2.stval->op1.stval->type))
-				continue;
-			if (j->t == join->h && j->type == st_join && j->flag == cmp_equal ) {
-				stmt *jh = stmt_dup(j->op2.stval->op1.stval);
-				stmt *jt = stmt_reverse(stmt_dup(j->op1.stval));
-				jn->data = stmt_join(jh, jt, j->flag);
-				stmt_destroy(j);
-			} else if (j->t == join->h && j->type == st_reljoin) {
-				list *l1 = list_dup(j->op1.lval, (fdup)&stmt_dup);
-				list *l2 = list_dup(j->op2.lval, (fdup)&stmt_dup);
-				jn->data = stmt_reljoin2(l2,l1);
-				stmt_destroy(j);
-			}
+		/* push select through all joins */
+		if (hsel) {
+			stmt *sel = hsel->data;
+			list *nejoins = list_map(ejoins, sel,
+						 (fmap) &stmt_push_down_head_wrap);
+
+			sel->nr++;
+			list_destroy(ejoins);
+			ejoins = nejoins;
 		}
+		if (tsel) {
+			stmt *sel = tsel->data;
+			list *nejoins = list_map(ejoins, sel,
+						 (fmap) &stmt_push_down_tail_wrap);
 
-		if (mvc_debug_on(c,32768)) {
-			/* check for foreign key joins */
-			eqjoins = list_select(ejoins, (void*)1L, (fcmp)&join_cmp_eq, (fdup)&stmt_dup );
-			if (list_length(eqjoins) > 0) {
-				list *fkjoins = NULL;
-				sql_idx *idx = NULL;
-				int tail = 0;
-
-				/* look for foreign key index */
-				if (!(idx = find_fk_index(eqjoins, tail, &fkjoins))) {
-					tail = 1;
-					idx = find_fk_index(eqjoins, tail, &fkjoins);
-				}
-
-				/* replace foreign key joins by index */
-				if (idx && fkjoins) {
-					jdx = stmt_idxbat(idx, 0);
-					jdx->nrcols = 2;
-					if(tail) {
-						jdx->h = stmt_dup(((stmt*)fkjoins->h->data)->t);
-						jdx->t = stmt_dup(((stmt*)fkjoins->h->data)->h);
-						jdx = stmt_reverse(jdx);
-					} else {
-						jdx->h = stmt_dup(((stmt*)fkjoins->h->data)->h);
-						jdx->t = stmt_dup(((stmt*)fkjoins->h->data)->t);
-					}
-	
-					/* remove joins replaced by the join idx */
-					for(jn = fkjoins->h; jn; jn = jn->next) {
-						node * nj = list_find(ejoins, jn->data, (fcmp)&data_cmp);
-						assert(nj);
-						list_remove_node(ejoins, nj);
-					}
-				}
-				if (fkjoins)
-					list_destroy(fkjoins);
-			}
-			list_destroy(eqjoins);
-		}
-
-		if (list_length(ejoins) > 0) {
-			/* push select through all remaining joins */
-			join = ejoins->h->data;
-			hsel = list_find(rsel, (void*)join, (fcmp)&cmp_sel_head);
-			tsel = list_find(rsel, (void*)join, (fcmp)&cmp_sel_tail);
-
-			if (hsel) {
-				stmt *sel = hsel->data;
-				list *nejoins = list_map(ejoins, sel,
-					 (fmap) &stmt_push_down_head_wrap);
-
-				sel->nr++;
-				list_destroy(ejoins);
-				ejoins = nejoins;
-			}
-			if (tsel) {
-				stmt *sel = tsel->data;
-				list *nejoins = list_map(ejoins, sel,
-					 (fmap) &stmt_push_down_tail_wrap);
-	
-				sel->nr++;
-				list_destroy(ejoins);
-				ejoins = nejoins;
-			}
-		} else if (jdx) {
-			hsel = list_find(rsel, (void*)jdx, (fcmp)&cmp_sel_head);
-			tsel = list_find(rsel, (void*)jdx, (fcmp)&cmp_sel_tail);
-			if (hsel){
-				stmt *sel = hsel->data;
-				jdx = stmt_semijoin(jdx, stmt_dup(sel));
-				sel->nr++;
-			}
-			if (tsel){
-				stmt *sel = tsel->data;
-				jdx = stmt_reverse(stmt_semijoin(stmt_reverse(jdx), stmt_dup(sel)));
-				sel->nr++;
-			}
+			sel->nr++;
+			list_destroy(ejoins);
+			ejoins = nejoins;
 		}
 
 		/* look for multi-att equi-join candidates */
@@ -867,12 +594,12 @@ push_selects_down(mvc *c, list *con)
 		}
 		list_destroy(eqjoins);
 
-		/* re-add fk join index and multi-att equi-join to the collection */
-		if (jdx) 
-			list_append(nqjoins, jdx);
-
-		/* changes to [].().select(TRUE) */
-		join = (stmt *) list_reduce(nqjoins, (freduce) &stmt_intersect, (fdup) &stmt_dup);
+		if (list_length(nqjoins) > 0) {
+			/* changes to [].().select(TRUE) */
+			join = (stmt *) list_reduce(nqjoins, (freduce) &stmt_intersect, (fdup) &stmt_dup);
+		} else {
+			join = NULL;
+		}
 		list_destroy(nqjoins);
 
 		if (reljoin && join) {
@@ -881,8 +608,6 @@ push_selects_down(mvc *c, list *con)
 			join = reljoin;
 		}
 
-		if (!join)
-			assert(0);
 		list_append(res, join);
 	}
 	/* find least expensive join (with head/tail selects) */
@@ -927,7 +652,6 @@ push_selects_down(mvc *c, list *con)
 	return res;
 }
 
-/* TODO: we do not need a mark on 1-1 joins, then the old head is unique */
 list *
 mk_pivot(list *pivots, stmt *st, stmt *p, int markid)
 {
@@ -1012,32 +736,17 @@ static list *pivot_sets(list *joins, int *Markid)
 */
 
 static stmt *
-set2pivot(mvc *c, list *l)
+set2pivot(list *l)
 {
-	list *lo = create_stmt_list();
 	list *pivots = create_stmt_list();
 	stmt *join, *st;
 	node *n;
 	int len = 0;
 	int markid = 0;
 
-	l = push_selects_down(c, l);
-
-	/* order l according to ascending "size" */
-	while (list_length(l)) {
-		join = (stmt*)list_reduce(l, (freduce)&stmt_smallest, (fdup)&stmt_dup);
-		assert(join);
-		n = list_find(l, (void*)join, data_cmp);
-		assert(n);
-		list_append(lo,join);
-		list_remove_node(l,n);
-	}
-	list_destroy(l);
-	l = lo;
-	/* end of order */
-
+	l = push_selects_down(l);
 	n = l->h;
-/*
+
 	join = (stmt *) list_reduce(l, (freduce) &stmt_smallest, (fdup) &stmt_dup);
 	n = list_find(l, (void *) join, data_cmp);
 	if (join)
@@ -1045,10 +754,8 @@ set2pivot(mvc *c, list *l)
 	if (!n) {
 		list_destroy(l);
 		list_destroy(pivots);
-assert(0);
 		return NULL;
 	}
-*/
 	st = n->data;
 	if (st->nrcols == 1) {
 		list_append(pivots, stmt_mark(stmt_reverse(stmt_dup(st)), markid++));
@@ -1122,16 +829,16 @@ filter_pivots(list *pivots, list *filters)
  * current version is broken, unique also remove normal doubles.
  */
 static stmt *
-sets2pivot(mvc *c, list *ll)
+sets2pivot(list *ll)
 {
 	node *n = ll->h;
 
 	if (n) {
-		stmt *pivots = set2pivot(c, n->data);
+		stmt *pivots = set2pivot(n->data);
 
 		n = n->next;
 		while (n) {
-			stmt *npivots = set2pivot(c, n->data);
+			stmt *npivots = set2pivot(n->data);
 			list *l = npivots->op1.lval;
 			list *inserts = create_stmt_list();
 
@@ -1183,18 +890,18 @@ sets2pivot(mvc *c, list *ll)
 }
 
 static stmt *
-op_stmt2pivot(mvc * c, stmt *s)
+op_stmt2pivot(stmt *s)
 {
 	if (s->type != st_set && s->type != st_sets) {
 		s = stmt_set(s);
 	}
 	if (s->type == st_sets) {
-		stmt *ns = sets2pivot(c, s->op1.lval);
+		stmt *ns = sets2pivot(s->op1.lval);
 
 		stmt_destroy(s);
 		s = ns;
 	} else {
-		stmt *ns = set2pivot(c, s->op1.lval);
+		stmt *ns = set2pivot(s->op1.lval);
 
 		stmt_destroy(s);
 		s = ns;
@@ -1418,7 +1125,7 @@ optimize(mvc *c, stmt *s)
 			return np;
 		}
 		if (ptable_statements(s)) {
-			stmt *pivots = op_stmt2pivot(c, stmt_dup(ptable_statements(s)));
+			stmt *pivots = op_stmt2pivot(stmt_dup(ptable_statements(s)));
 
 			/* also optimize the pivots */
 			stmt *np = optimize(c, pivots);

@@ -2391,6 +2391,7 @@ literal:
 		  sql_subtype *t = sql_bind_subtype("char", strlen(m->user),0);
 		  $$ = _newAtomNode( atom_string(t,sql2str(_strdup(m->user))));
 		}
+
  |  sqlINT
 		{ int digits = strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value;

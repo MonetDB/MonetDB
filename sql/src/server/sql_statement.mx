@@ -149,8 +149,6 @@ typedef struct group {
 
 extern const char *st_type2string(st_type type);
 
-extern int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp);
-
 extern stmt *stmt_none();
 extern stmt *stmt_sql(char *query);
 extern stmt *stmt_var(char *varname, sql_subtype *t);
@@ -203,6 +201,7 @@ extern stmt *stmt_join(stmt *op1, stmt *op2, comp_type cmptype);
 extern stmt *stmt_outerjoin(stmt *op1, stmt *op2, comp_type cmptype);
 
 extern stmt *stmt_diff(stmt *op1, stmt *op2);
+extern stmt *stmt_intersect(stmt *op1, stmt *op2);
 extern stmt *stmt_union(stmt *op1, stmt *op2);
 extern stmt *stmt_list(list *l);
 extern stmt *stmt_set(stmt *s1);
@@ -1216,6 +1215,74 @@ stmt_diff(stmt *op1, stmt *op2)
 }
 
 stmt *
+stmt_intersect(stmt *op1, stmt *op2)
+{
+	stmt *res = NULL;
+	int reverse = 0;
+
+	while (op1->type == st_reverse) {
+		stmt *r = op1;
+
+		op1 = stmt_dup(op1->op1.stval);
+		stmt_destroy(r);
+	}
+	while (op2->type == st_reverse) {
+		stmt *r = op2;
+
+		op2 = stmt_dup(op2->op1.stval);
+		stmt_destroy(r);
+	}
+	if (op1->h != op2->h) {
+		reverse = 1;
+	}
+	assert((op1->type == st_join || op1->type == st_reljoin) && (op2->type == st_join || op2->type == st_reljoin));
+
+	/* only keep the join, ie forget about the cross product */
+	if (op1->type == st_join && op1->flag == cmp_all) {
+		stmt_destroy(op1);
+		return op2;
+	} else if (op2->type == st_join && op2->flag == cmp_all) {
+		stmt_destroy(op2);
+		return op1;
+	}
+
+	/* this case should have been transformed into a proper
+	   multi-att join ("st_reljoin") by push_selects_down()
+	 */
+	assert(!(op1->flag == cmp_equal && op2->flag == cmp_equal));
+
+	/*
+	 * need to add the mark trick as [].select(true) on tables
+	 * without unique head identifiers + semijoin is wrong
+	 */
+	if (!reverse) {
+		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+		stmt *mr = stmt_mark(stmt_dup(op1), 50);
+		stmt *l = stmt_join(stmt_dup(ml),
+				    stmt_dup(op2->op1.stval), cmp_equal);
+		stmt *r = stmt_join(stmt_dup(mr),
+				    stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
+		stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
+
+		res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
+	} else {		/* reverse */
+		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+		stmt *mr = stmt_mark(stmt_dup(op1), 50);
+		stmt *l = stmt_join(stmt_dup(mr),
+				    stmt_dup(op2->op1.stval), cmp_equal);
+		stmt *r = stmt_join(stmt_dup(ml),
+				    stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
+		stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
+
+		res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
+	}
+
+	stmt_destroy(op1);
+	stmt_destroy(op2);
+	return res;
+}
+
+stmt *
 stmt_union(stmt *op1, stmt *op2)
 {
 	stmt *s = stmt_create(st_union);
@@ -1880,224 +1947,4 @@ grp_find_groupby_col(group *g, stmt *s)
 			return s;
 	}
 	return NULL;
-}
-
-int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
-{
-	node *n,*m;
-	int j,k;
-
-	assert(s);
-	if (s->optimized >= l) {
-		s->optimized = --(*i);
-		fprintf(fp,"id%d[label=\"%s\\n",
-			-(s->optimized), st_type2string(s->type));
-		if (s->ref.refcnt)
-			fprintf(fp," refcnt=%d", s->ref.refcnt);
-		if (s->nrcols)
-			fprintf(fp," nrcols=%d", (int)s->nrcols);
-		if (s->key)
-			fprintf(fp," key=%d", (int)s->key);
-		if (s->aggr)
-			fprintf(fp," aggr=%d", (int)s->aggr);
-		if (s->flag)
-			fprintf(fp," flag=%d", (int)s->flag);
-		if (s->nr)
-			fprintf(fp," nr=%d", (int)s->nr);
-		fprintf(fp," \\n");
-		if (s->op1.ival)
-			fprintf(fp," op1=%d", (int)s->op1.ival);
-		if (s->op2.ival)
-			fprintf(fp," op2=%d", (int)s->op2.ival);
-		if (s->op3.ival)
-			fprintf(fp," op3=%d", (int)s->op3.ival);
-		if (s->op4.ival)
-			fprintf(fp," op4=%d", (int)s->op4.ival);
-		fprintf(fp,"\" ];\n");		
-
-		switch (s->type) {
-		case st_relselect:
-		case st_reljoin:
-			if (s->op1.lval)
-			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
-				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
-			if (s->op2.lval)
-			    for (j=1, n=s->op2.lval->h; n; n=n->next, j++)
-				fprintf(fp, "id%d -> id%d [headlabel=\"2.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
-			break;
-
-		case st_sets: 
-			if (s->op1.lval)
-			   for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
-			     for (k=1, m=((list*)n->data)->h; m; m=m->next, k++)
-				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d.%d\"];\n",
-					stmt_stmt2dot(m->data, l, i, fp), -(s->optimized), j, k);
-			break;
-
-		case st_set: case st_list:
-		case st_ptable:
-			if (s->op1.lval)
-			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
-				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
-			if (s->op2.lval) 
-			    for (j=1, n=s->op2.lval->h; n; n=n->next, j++)
-				fprintf(fp, "id%d -> id%d [headlabel=\"2.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-			if (s->op4.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"4\"];\n",
-					stmt_stmt2dot(s->op4.stval, l, i, fp), -(s->optimized));
-			break;
-
-		case st_var:
-			if (s->op1.sval) {
-				fprintf(fp,"var_%s[label=\"var '%s'\",shape=ellipse];\n", s->op1.sval, s->op1.sval);
-				fprintf(fp, "var_%s -> id%d [headlabel=\"1\"];\n",
-					s->op1.sval, -(s->optimized));
-			}
-	/*
-			sql_subtype_destroy(s->op2.typeval);
-	*/
-			break;
-
-		/* reference only independently managed resources */
-		case st_basetable:
-		case st_dbat:
-			fprintf(fp,"table_%s[label=\"table '%s'\",shape=ellipse];\n", s->op1.tval->base.name, s->op1.tval->base.name);
-			fprintf(fp, "table_%s -> id%d [headlabel=\"1\"];\n",
-				s->op1.tval->base.name, -(s->optimized));
-			break;
-			
-		case st_bat:
-		case st_ubat:
-			fprintf(fp,"column_%s[label=\"column '%s'\",shape=ellipse];\n", s->op1.cval->base.name, s->op1.cval->base.name);
-			fprintf(fp, "column_%s -> id%d [headlabel=\"1\"];\n",
-				s->op1.cval->base.name, -(s->optimized));
-			fprintf(fp, "table_%s -> column_%s;\n",
-				s->op1.cval->t->base.name, s->op1.cval->base.name);
-			break;
-
-		case st_idxbat:
-			fprintf(fp,"index_%s[label=\"index '%s'\",shape=ellipse];\n", s->op1.idxval->base.name, s->op1.idxval->base.name);
-			fprintf(fp, "index_%s -> id%d [headlabel=\"1\"];\n",
-				s->op1.idxval->base.name, -(s->optimized));
-			break;
-
-		case st_none:
-			break;
-
-		/* special cases */
-		case st_temp:
-			if (s->op1.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-	/*
-			sql_subtype_destroy(s->op4.typeval);
-	*/
-			break;
-
-		case st_aggr:
-			if (s->op1.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-	/*
-			sql_subaggr_destroy(s->op4.aggrval);
-	*/
-			break;
-
-		case st_op: case st_unop: case st_binop: case st_Nop:
-			if (s->op1.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-			fprintf(fp,"func_%s[label=\"func '%s'\",shape=ellipse];\n", s->op4.funcval->func->name, s->op4.funcval->func->name);
-			fprintf(fp, "func_%s -> id%d [headlabel=\"4\"];\n",
-				s->op4.funcval->func->name, -(s->optimized));
-			break;
-
-		case st_atom:
-			if (s->op1.aval) {
-				fprintf(fp,"id%d[label=\"'%s'\",share=octagon];\n", -(--(*i)), atom2string(s->op1.aval));
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					-(*i), -(s->optimized));
-			}
-			break;
-
-
-		case st_diff: case st_intersect: case st_union:
-		case st_join: case st_outerjoin:
-		case st_derive:
-		case st_unique:
-		case st_alias:
-		case st_append: case st_insert: case st_replace:
-		case st_exception:
-		case st_pivot:
-	  	case st_find:
-		case st_sql:
-
-
-		/* simple case of statements of only statements */
-
-		case st_const: case st_mark:
-		case st_reverse: case st_mirror:
-		case st_limit: case st_order: case st_reorder:
-		case st_ordered: case st_output:
-
-		case st_group: case st_group_ext:
-
-		case st_filter:
-		case st_select: case st_select2:
-		case st_uselect: case st_uselect2:
-		case st_semijoin:
-
-		case st_bulkinsert:
-			if (s->op1.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-			if (s->op4.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"4\"];\n",
-					stmt_stmt2dot(s->op4.stval, l, i, fp), -(s->optimized));
-			break;
-
-		default:
-			printf("! TODO: stmt_stmt2dot(%d=%s) !\n",s->type,st_type2string(s->type));
-			assert(0);
-		}
-		if (s->h) 
-			fprintf(fp, "id%d -> id%d [headlabel=\"h\",color=green];\n",
-				stmt_stmt2dot(s->h, l, i, fp), -(s->optimized));
-		if (s->t) 
-			fprintf(fp, "id%d -> id%d [headlabel=\"t\",color=green];\n",
-				stmt_stmt2dot(s->t, l, i, fp), -(s->optimized));
-	}
-
-	return -(s->optimized);
 }

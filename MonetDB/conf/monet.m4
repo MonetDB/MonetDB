@@ -937,9 +937,9 @@ fi
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
 	AC_HELP_STRING([--enable-assert],
-		[enable assertions in the code [default=yes]]),
+		[enable assertions in the code [default=no]]),
 	enable_assert=$enableval,
-	enable_assert=yes)
+	enable_assert=no)
 if test "x$enable_assert" = xno; then
   AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
 fi
@@ -1295,7 +1295,7 @@ AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt,
 AC_SUBST(SOCKET_LIBS)
 
 dnl check for NetCDF io library (default /usr and /usr/local)
-have_netcdf=auto
+have_netcdf=no
 NETCDF_CFLAGS=""
 NETCDF_LIBS=""
 AC_ARG_WITH(netcdf,

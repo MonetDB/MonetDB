@@ -134,7 +134,6 @@ public class MonetConnection extends Thread implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
-		String language = props.getProperty("language");
 
 		// check input arguments
 		if (hostname == null || hostname.trim().equals(""))
@@ -147,13 +146,11 @@ public class MonetConnection extends Thread implements Connection {
 			throw new IllegalArgumentException("user should not be null or empty");
 		if (password == null || password.trim().equals(""))
 			throw new IllegalArgumentException("password should not be null or empty");
-		if (language == null || language.trim().equals("")) {
-			language = "sql";
-			addWarning("No language given, defaulting to 'sql'");
-		}
+		/** check and use the database name here... */
 
 		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
+		/** language ?!? */
 
 		try {
 			// make connection to MonetDB
@@ -197,33 +194,9 @@ public class MonetConnection extends Thread implements Connection {
 			if (blockMode) {
 				// convenience cast shortcut
 				MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
-				String challenge = null;
-
-				// read the challenge from the server
-				byte[] chal = new byte[2];
-				blkmon.read(chal);
-				int len = 0;
-				try {
-					len = Integer.parseInt(new String(chal, "UTF-8"));
-				} catch (NumberFormatException e) {
-					throw new SQLException("Server challenge length unparsable");
-				}
-				// read the challenge string
-				chal = new byte[len];
-				blkmon.read(chal);
-				
-				challenge = new String(chal, "UTF-8");
 
 				// mind the newline at the end
-				blkmon.write(getChallengeResponse(
-					challenge,
-					username,
-					password,
-					language,
-					true,
-					database
-				) + "\n");
-
+				blkmon.write(username + ":" + password + ":blocked\n");
 				// We need to send the server our byte order.  Java by itself
 				// uses network order.
 				// A short with value 1234 will be sent to indicate our
@@ -249,14 +222,7 @@ public class MonetConnection extends Thread implements Connection {
 					blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 				}
 			} else {
-				monet.writeln(getChallengeResponse(
-					monet.readLine(),
-					username,
-					password,
-					language,
-					false,
-					database
-				));
+				monet.writeln(username + ":" + password);
 			}
 			// read monet response till prompt
 			String err;
@@ -278,61 +244,6 @@ public class MonetConnection extends Thread implements Connection {
 
 		setAutoCommit(true);
 		closed = false;
-	}
-
-	/**
-	 * A little helper function that processes a challenge string, and
-	 * returns a response string for the server.  If the challenge string
-	 * is null, a challengeless response is returned.
-	 *
-	 * @param chalstring the challenge string
-	 * @param username the username to use
-	 * @param password the password to use
-	 * @param language the language to use
-	 * @param database the database to connect to
-	 */
-	private String getChallengeResponse(
-		String chalstr,
-		String username,
-		String password,
-		String language,
-		boolean blocked,
-		String database
-	) throws SQLException {
-		int version = 0;
-		String response;
-		
-		// parse the challenge string, split it on ':'
-		String[] chaltok = chalstr.split(":");
-		if (chaltok.length != 4) throw
-			new SQLException("Server challenge string unusable!");
-
-		// challenge string use as salt/key in future
-		String challenge = chaltok[1];
-		// chaltok[2]; // server type, not needed yet 
-		try {
-			version = Integer.parseInt(chaltok[3].trim());	// protocol version
-		} catch (NumberFormatException e) {
-			throw new SQLException("Protocol version unparseable: " + chaltok[3]);
-		}
-
-		/**
-		 * do something with the challenge to salt the password hash here!!!
-		 */
-		response = username + ":" + password + ":" + language + ":";
-		if (blocked) {
-			response += "blocked";
-		} else if (version >= 5) {
-			response += "line";
-		}
-		if (version < 5) {
-			// don't use database
-			addWarning("database specifier not supported on this server (" + chaltok[2] + "), protocol version " + chaltok[3]);
-		} else {
-			response += ":" + database;
-		}
-
-		return(response);
 	}
 
 	//== methods of interface Connection

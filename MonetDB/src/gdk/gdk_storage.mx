@@ -959,8 +959,6 @@ print_line(stream *s, col_format_t **l)
 			return;
 	}
 	for (c = *l; *(++l); c = *l) {
-		if (!c->format) 
-			continue;
 		if (stream_write(s, c->buf, c->len, 1) != 1)
 			return;
 		if (stream_write(s, ",", 1, 1) != 1)
@@ -1034,14 +1032,14 @@ int
 BATprint(BAT *b)
 {
 	ERRORcheck(b == NULL, "BATprint: BAT expected");
-	return BATmultiprintf(GDKstdout, 2, &b, TRUE, 0, 1);
+	return BATmultiprintf(GDKstdout, 2, &b, TRUE, 0);
 }
 
 int
 BATprintf(stream *s, BAT *b)
 {
 	ERRORcheck(b == NULL, "BATprintf: BAT expected");
-	return BATmultiprintf(s, 2, &b, TRUE, 0, 1);
+	return BATmultiprintf(s, 2, &b, TRUE, 0);
 }
 
 @+ Multi-Bat Printing
@@ -1071,8 +1069,7 @@ BATmultiprintf(stream *s,	/* output stream */
 	       int argc,	/* #ncolumns = #nbats +  */
 	       BAT *argv[],	/* the bats 2b printed */
 	       int printhead,	/* boolean: print the head column? */
-	       int order,	/* respect order of bat X (X=0 is none) */
-	       int printorder   /* boolean: print the orderby column? */
+	       int order	/* respect order of bat X (X=0 is none) */
     )
 {
 	col_format_t *c = (col_format_t *) alloca((unsigned) (argc * sizeof(col_format_t)));
@@ -1098,10 +1095,7 @@ Init the column descriptors of the tail columns.
 	}
 	for (j = 0; j < argc; j++, total += c[j].tabs) {
 		cp[j + 1] = c + (j + 1);
-		if (!printorder && order==j+1)
-			c[j + 1].format = NULL;
-		else
-			c[j + 1].format = printfcn(argv[j]);
+		c[j + 1].format = printfcn(argv[j]);
 		if (!(strcmp(argv[j]->tident, "t") && strcmp(argv[j]->tident, "h")))
 			c[j + 1].tabs = print_tabwidth(argv[j], batname(argv[j]), c + (j + 1));
 		else

@@ -54,7 +54,7 @@ subs = [
     ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
     ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
     ('@PACKAGE@',           "sql"),
-    ('@VERSION@',           "2.7.0"),
+    ('@VERSION@',           "2.6.0"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
     ('@MONETDB_BUILD@',       build),
@@ -69,7 +69,7 @@ subs = [
 # keep in sync with src/jdbc/build.properties and configure.ag !
     ('@JDBC_MAJOR@',        '1'),
     ('@JDBC_MINOR@',        '1'),
-    ('@JDBC_VER_SUFFIX@',   'Rise-'),
+    ('@JDBC_VER_SUFFIX@',   'Rise'),
     ('@JDBC_DEF_PORT@',     '45123'),
     ('@JDBC_DEF_BLOCKMODE@','true'),
 ]

@@ -1233,7 +1233,7 @@ CMDprint_bats(int argc, BAT *argv[], int order)
 {
 	stream *fp = GDKout;
 
-	BATmultiprintf(fp, argc + 1, argv, TRUE, order, 1);
+	BATmultiprintf(fp, argc + 1, argv, TRUE, order);
 	return GDK_SUCCEED;
 }
 
@@ -1291,7 +1291,7 @@ CMDprint_multitable(BAT *b)
 		piv[nbats++] = BATdescriptor(*(bat *) BUNtail(b, p));
 	}
 
-	BATmultiprintf(GDKout, nbats + 1, piv, FALSE, 0, 1);
+	BATmultiprintf(GDKout, nbats + 1, piv, FALSE, 0);
 	return GDK_SUCCEED;
 }
 
@@ -1347,7 +1347,7 @@ print_table(int *order, BAT *arg1, ...)
 		piv[argc] = va_arg(ap, BAT *);
 	} while (piv[argc++]);
 	va_end(ap);
-	BATmultiprintf(GDKout, argc, piv, FALSE, *order, 1);
+	BATmultiprintf(GDKout, argc, piv, FALSE, *order);
 	return GDK_SUCCEED;
 }
 
@@ -1369,7 +1369,7 @@ print_table_default(BAT *b, ...)
 		piv[argc] = va_arg(ap, BAT *);
 	} while (piv[argc++]);
 	va_end(ap);
-	BATmultiprintf(GDKout, argc, piv, FALSE, 0, 1);
+	BATmultiprintf(GDKout, argc, piv, FALSE, 0);
 	return GDK_SUCCEED;
 }
 @}

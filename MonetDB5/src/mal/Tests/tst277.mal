@@ -1,2 +1,0 @@
-b:= new(:void,:int);
-r:= reverse(b);

@@ -174,12 +174,10 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 	VALformat(&val, vr);
 	if (vr->vtype == TYPE_str) {
 		val[strlen(val) - 1] = 0;
-		idx = newConstant(mb, vr->vtype, _strdup(val + 1), FALSE);
+		idx = newConstant(mb, vr->vtype, _strdup(val + 1), 1);
 		GDKfree(val);
-	} else {
-		idx = newConstant(mb, vr->vtype, _strdup(val), FALSE);
-		GDKfree(val);
-	}
+	} else
+		idx = newConstant(mb, vr->vtype, _strdup(val), 1);
 	return idx;
 }
 
@@ -367,20 +365,15 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_bat:
 		case st_ubat:{
 			char *type = (s->type == st_bat) ? "" : "_ubat";
-			char *ctype = s->op1.cval->type->type->base.name;
 			char buf[256];
 			int k;
-			int ht = TYPE_void, tt;
+			int tt;
 
 			@:SQLprelude@
 			snprintf(buf, 256, "bind%s", type);
 			q = newStmt(mb, "sql", buf);
-			tt = getTypeIndex(ctype, strlen(ctype), TYPE_any);
-/*
-			if (s->type == st_ubat)
-				ht = TYPE_oid;
-*/
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			tt = getTypeIndex(tail_type(s)->type->base.name, strlen(tail_type(s)->type->base.name), TYPE_any);
+			setVarType(mb, getArg(q, 0), newBatType(TYPE_void, tt));
 			q = pushStr(mb, q, s->op1.cval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.cval->t->base.name);
 			q = pushStr(mb, q, s->op1.cval->base.name);
@@ -507,13 +500,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = backend_dumpstmt(sql, mb, s->op1.stval);
 
 			@:SQLprelude@
-			q = newStmt(mb, "bat", "reverse");
-			q = pushArgument(mb, q, l);
-			l = getDestVar(q);
-			q = newStmt(mb, "algebra", (s->flag ? "sort" : "sort_reverse"));
-			q = pushArgument(mb, q, l);
-			l = getDestVar(q);
-			q = newStmt(mb, "bat", "reverse");
+			q = newStmt(mb, "algebra", (s->flag ? "sort_reverse" : "sort"));
 			q = pushArgument(mb, q, l);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
@@ -797,7 +784,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt(mb, "bbp", "project");
 				q = pushArgument(mb, q, r);
-				q = pushArgument(mb, q, z);
+				q = pushInt(mb, q, z);
 				r = getDestVar(q);
 
 				q = newStmt(mb, "bat", "reverse");
@@ -806,7 +793,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt(mb, "bbp", "project");
 				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, z);
+				q = pushInt(mb, q, z);
 				l = getDestVar(q);
 
 				q = newStmt(mb, "algebra", "join");
@@ -846,7 +833,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op2.stval) {
-				int k2, g = backend_dumpstmt(sql, mb, s->op2.stval);
+				int k2, g = backend_dumpstmt(sql, mb, s->op2.gval->grp);
 
 				q = newStmt(mb, "group", "group");
 				q = pushArgument(mb, q, g);
@@ -857,7 +844,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, k);
 				k2 = getDestVar(q);
 
-				q = newStmt(mb, "bat", "mirror");
+				q = newStmt(mb, "algebra", "mirror");
 				q = pushArgument(mb, q, k2);
 				k2 = getDestVar(q);
 
@@ -936,8 +923,8 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ops[MAXARG];
 			node *n;
 
-			/* dump operands */
-			backend_dumpstmt(sql, mb, s->op1.stval);	
+			stmt *op1 = s->op1.lval->h->data;
+			int l = backend_dumpstmt(sql, mb, op1);
 
 			@:SQLprelude@
 			if (s->nrcols) {
@@ -956,7 +943,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 					if (!op->nrcols) {
 						q = newStmt(mb, "batcalc", "zipper");
-						q = pushArgument(mb, q, h->nr);
+						q = pushArgument(mb, q, l);
 						q = pushArgument(mb, q, n);
 						ops[opslen++] = getDestVar(q);
 					}
@@ -1008,17 +995,13 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_atom:{
-			atom *a = s->op1.aval;
-			if (atom_null(a)) {
-				q = newStmt(mb, 0, a->tpe->type->base.name);
-				q = pushNilType(mb, q, a->tpe->type->base.name);
+			if (s->op1.aval->isnull) {
+				q = newStmt(mb, 0, s->op1.aval->tpe->type->base.name);
+				q = pushNilType(mb, q, s->op1.aval->tpe->type->base.name);
+				s->nr = getDestVar(q);
 			} else {
-				int k;
-				q = newStmt(mb, "calc",a->tpe->type->base.name);
-				k = constantAtom(sql, mb, a);
-				q = pushArgument(mb, q, k);
+				s->nr = constantAtom(sql, mb, s->op1.aval);
 			}
-			s->nr = getDestVar(q);
 		}
 			break;
 		case st_insert:{
@@ -1062,15 +1045,9 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLpostlude@
 		} break;
 		case st_table_clear:{
-			sql_table *t = s->op1.tval;
-
-			@:SQLprelude@
-			q = newStmt(mb, "sql", "clear_table");
-			q = pushStr(mb, q, t->s->base.name);
-			q = pushStr(mb, q, t->base.name);
-			s->nr = getDestVar(q);
-			@:SQLpostlude@
-		} break;
+			fprintf(stderr, "time to implement table clear\n");
+		}
+			break;
 		case st_exception:{
 			int l = backend_dumpstmt(sql, mb, s->op1.stval);
 			int r = backend_dumpstmt(sql, mb, s->op2.stval);
@@ -1207,8 +1184,6 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* first rename the columns for better output */
 				dump_header(mb, s, l);
 				q = newStmt(mb, "sql", "output");
-				/* with or without order */
-				q = pushInt(mb, q, flg);
 				if (flg) {
 					q = pushArgument(mb, q, order->nr);
 				}
@@ -1311,20 +1286,19 @@ backend_call(backend *be, Client c, int id, list *args)
 	q = newStmt(mb, "sql_cache", name);
 	setVarType(mb, getArg(q, 0), TYPE_void);
 	if (args) {
-		node *n, *p;
+		node *n;
 
-		for (n = args->h, p = be->q->params->h; n && p; 
-		     n = n->next, p = p->next) {
+		for (n = args->h; n; n = n->next) {
 			atom *a = n->data;
+			int _t;
 
 			if (atom_null(a)) {
-				sql_subtype *t = p->data;
-				/* need type from the prepared argument */
-				q = pushNilType(mb, q, t->type->base.name);
-			} else {
-				int _t = constantAtom(be, mb, a);
-				q = pushArgument(mb, q, _t);
+				if (a->data.vtype == TYPE_str && a->data.val.sval == NULL) {
+					a->data.val.sval = _strdup(str_nil);
+				}
 			}
+			_t = constantAtom(be, mb, a);
+			q = pushArgument(mb, q, _t);
 		}
 	}
 }

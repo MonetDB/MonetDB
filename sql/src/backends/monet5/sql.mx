@@ -55,9 +55,9 @@ command assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 
-pattern output(order:int, a:any...)
+pattern output(a:any...)
 address SQLoutput;
-pattern output(order:int, a:bat[:any,:any]...)
+pattern output(a:bat[:any,:any]...)
 address SQLoutputBats
 comment "Overloading of the core print routines to obtain proper layout";
 
@@ -144,7 +144,7 @@ address mvc_import_table_wrap
 comment "Import a table from stream s with the 
 	given tuple and seperators (sep/rsep)";
 
-pattern hash( v:any$1, sh:int ) :int 
+command hash( v:any$1, sh:int ) :int 
 address hash_wrap 
 comment "calculate a hash value and shift left";
 
@@ -170,51 +170,10 @@ comment "round off the value v to nearests multiple of r";
 command round( v:dbl, r:dbl ) :dbl 
 address dbl_round_wrap
 comment "round off the value v to nearests multiple of r";
-
-@= mal_cast
-command cast2@1( v:str ) :@1 
-address cast2@1
-comment "cast to @1";
-command @1( v:str, digits:int ) :@1 
-address trunc2@1
-comment "cast string to @1";
-command cast2@1( v:str, digits:int, scale:int ) :@1 
-address trunc2@1
-comment "cast string to @1";
-@mal
-@:mal_cast(sht)@
-@:mal_cast(int)@
-@:mal_cast(lng)@
-@:mal_cast(flt)@
-@:mal_cast(dbl)@
-@mal
-@+ todo
-command str( v:any, digits:int ) :str 
-address str_cast
-comment "cast value to string";
-
-@= mal_cast2
-command @1( v:@2, digits:int ) :@1 
-address @2_2_@1
-comment "cast @1 to @1 and check for overflow";
-@mal
-@:mal_cast2(sht,sht)@
-@:mal_cast2(sht,int)@
-@:mal_cast2(sht,lng)@
-@:mal_cast2(sht,dbl)@
-@:mal_cast2(int,sht)@
-@:mal_cast2(int,int)@
-@:mal_cast2(int,lng)@
-@:mal_cast2(int,dbl)@
-@:mal_cast2(lng,sht)@
-@:mal_cast2(lng,int)@
-@:mal_cast2(lng,lng)@
-@:mal_cast2(lng,dbl)@
 @-
 Include the sql_cache functionality
 @mal
 include sql_cache;
-include mil_algebra_procs;
 @h
 #ifndef _SQL_H
 #define _SQL_H
@@ -690,22 +649,9 @@ mvc_export_table_wrap(stream *s, int *res_id, int *offset, int *nr)
 }
 
 str
-hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+hash_wrap(int *res, ptr v, int tpe, int *sh)
 {
-	ptr v;
-	int *res, tpe = getArgType(m,p,1);
-	int sh, shtype = getArgType(m,p,2);
-
-	if (shtype != TYPE_int) {
-		assert(0);
-		return throwMessage("sql.hash", "failed");
-	}
-
-	res= (int *) getArgReference(s,p,0);
-	v = getArgReference(s,p,1);
-	sh = *(int*)getArgReference(s,p,2);
-
-	*res = (ATOMhash(tpe, v) << (sh)) & 0xEFFFFFFF;
+	*res = (ATOMhash(tpe, v) << (*sh)) & 0xEFFFFFFF;
 	return NULL;
 }
 
@@ -735,9 +681,9 @@ str @1_dbl_round_wrap( @1 *res, @1 *v, dbl *r )
 }
 
 str
-trunc2@1( @1 *res, str *val, int *d, int *sc )
+trunc2@1( @1 *res, str val, int *d, int *sc )
 {
-	char *s = strip_extra_zeros(*val);
+	char *s = strip_extra_zeros(val);
 	char *dot = strchr(s, '.');
 	int digits = strlen(s) - 1;
 	int scale = digits - (dot-s);
@@ -745,7 +691,7 @@ trunc2@1( @1 *res, str *val, int *d, int *sc )
 
 	if (!dot) {
 		return throwException(MALEXCEPTION, "trunc2", 
-			"\"%s\" is no decimal value (doesn't contain a '.')", *val);
+			"\"%s\" is no decimal value (doesn't contain a '.')", val);
 	}
 		
 	value = decimal_from_str(s);
@@ -769,7 +715,7 @@ trunc2@1( @1 *res, str *val, int *d, int *sc )
 	}
 	if (digits > *d) {
 		return throwException(MALEXCEPTION,"trunc2", 
-		     "decimal (%s) doesn't have format (%d,%d)", *val, *d, *sc);
+		     "decimal (%s) doesn't have format (%d,%d)", val, *d, *sc);
 	}
 	*res = (@1) value;
 	return MAL_SUCCEED;
@@ -798,7 +744,7 @@ str @1_round_wrap( @1 *res, @1 *v, @1 *r )
 }
 
 str
-trunc2@1( @1 *res, str *val, int *d, int *s )
+trunc2@1( @1 *res, str val, int *d, int *s )
 {
 	ptr p = NULL;
 	int len = 0;
@@ -806,10 +752,10 @@ trunc2@1( @1 *res, str *val, int *d, int *s )
 	int digits = *d - *s;
 	lng value = 1;
 	
-	e = ATOMfromstr(TYPE_@1, &p, &len, *val);
+	e = ATOMfromstr(TYPE_@1, &p, &len, val);
 	if (e < 0 || !p || 
 	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
-	    ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0) ) {
+	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0) ) {
 		if (p)
 			GDKfree(p);
 		return throwMessage("trunc", "atom nil");
@@ -820,7 +766,7 @@ trunc2@1( @1 *res, str *val, int *d, int *s )
 	}
 	if (*(@1*)p > value) {
 		return throwException(MALEXCEPTION,"trunc", 
-			"double (%s) doesn't have format (%d,%d)", *val, *d, *s);
+			"double (%s) doesn't have format (%d,%d)", val, *d, *s);
 		
 	}
 	*res = *(@1*)p;
@@ -835,16 +781,16 @@ trunc2@1( @1 *res, str *val, int *d, int *s )
 
 @= cast
 str
-cast2@1( @1 *res, str *val )
+cast2@1( @1 *res, str val )
 {
 	ptr p = NULL;
 	int len = 0;
 	int e; 
 	
-	e = ATOMfromstr(TYPE_@1, &p, &len, *val);
+	e = ATOMfromstr(TYPE_@1, &p, &len, val);
 	if (e < 0 || !p || 
 	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
-	    ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0))
+	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0))
 	{
 		if (p)
 			GDKfree(p);
@@ -894,12 +840,12 @@ str_cast(str *res, ptr v, int tpe, int *len)
 
 @= str_cast
 str
-str2@1( @1 *res, str *v, int *len )
+str2@1( @1 *res, str v, int *len )
 {
-	int slen = strlen(*v); 
+	int slen = strlen(v); 
 
 	if (slen > *len || slen > 5) {
-		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), *v) != 0) {
+		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
 			return throwException(MALEXCEPTION, "str2@1", 
 				"value too long for type int(%d)\n",*len);
 		} else {
@@ -907,7 +853,7 @@ str2@1( @1 *res, str *v, int *len )
 			return MAL_SUCCEED;
 		}
 	}
-	if (ATOMfromstr(TYPE_@1, (ptr)res, &slen, *v) <=0 || *res == @1_nil) {
+	if (ATOMfromstr(TYPE_@1, (ptr)res, &slen, v) <=0 || *res == @1_nil) {
 		return throwException(MALEXCEPTION,"str2@1",
 			"incorrect int(%d) value\n", *len);
 	}

@@ -162,7 +162,6 @@ stream.
 		"cast to short and check for overflow"
 	.COMMAND "lng"( str v, int digits ) : lng = str2lng;
 		"cast to short and check for overflow"
-
 	.COMMAND "sht"( sht v, int digits ) : sht = sht_2_sht;
 		"cast to short and check for overflow"
 	.COMMAND "sht"( int v, int digits ) : sht = int_2_sht;
@@ -845,7 +844,7 @@ proc sql_server_start() : void {
 		mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
 		# start a default mapi client for debugging, this should go once
 		# MonetDB SQL gets stable.
-		mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
+		# mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
 	} else {
 		printf(err);
 		drop(sql_server);

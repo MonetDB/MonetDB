@@ -23,7 +23,7 @@ MTSAFE
 LIB_mnetcdf = {
 	DIR = pkglibdir
 	SEP = _
-	COND = HAVE_NETCDF
+	COND = HAVE_LIBNETCDF
 	SOURCES = mnetcdf.mx 
 	HEADERS = h proto.h m
 	WINLIBS = ../../common/libstream ../../gdk/libbat \
@@ -37,7 +37,7 @@ LIB_mnetcdf = {
 scripts_mnetcdf = {
 	EXT = mil
 	DIR = pkglibdir
-	COND = HAVE_NETCDF
+	COND = HAVE_LIBNETCDF
 	SOURCES = mnetcdf.mx 
 }
 
