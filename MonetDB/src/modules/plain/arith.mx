@@ -385,7 +385,7 @@ flt2int(int *r, flt *v)
 @:c_arith_ops(lng,flt,dbl)@
 @:c_arith_ops(lng,dbl,dbl)@
 
-#define arith_abs(s) ((s)>0)?(s):-(s)
+#define arith_abs(s) ((s)<0)?-(s):(s)
 @:arith_unop(_ABS,arith_abs,chr)@
 @:arith_unop(_ABS,arith_abs,sht)@
 @:arith_unop(_ABS,arith_abs,int)@
