@@ -1660,7 +1660,7 @@ int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
 	return 1;
 }
 str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,j,a,depth;
+{   int i,j,a,b,depth;
     InstrPtr p;
     (void) pci; (void) stk;  /* to fool compilers */
 	Client cntxt= getClient();
@@ -1687,9 +1687,10 @@ at the end of the optimization attempt.
 		if( p->argc == 3) {
 			/* binary/unary operation, check first argument */
 			v= getVar(mb, a =getArg(p,1));
+			b= getArg(p,0);
 
-			if( isaBatType(v->type) && v->endLifespan ==i && v->depth<= depth ) {
-				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
+			if( isaBatType(v->type) && (v->endLifespan ==i || a==b) && v->depth<= depth ) {
+				if( ORvalidSource(mb,a,i, v->beginLifespan) || a == b){
 #ifdef DEBUG_MAL_OPTIMIZER
 					stream_printf(GDKout,"Found binary OR candidate left\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
@@ -1698,9 +1699,10 @@ at the end of the optimization attempt.
 					for(j= p->argc-1; j>p->retc; j--)
 						p->argv[j]= p->argv[j-1];
 					p->argv[p->retc]= a;
-					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
 					p->argv[0]= newTmpVariable(mb, TYPE_void);
 					typeChecker(scope,mb,p,TRUE);
+					if( a !=b)
+						ARreplaceAlias(mb,i+1,mb->stop, b, a);
 #ifdef DEBUG_MAL_OPTIMIZER
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
@@ -1709,8 +1711,8 @@ at the end of the optimization attempt.
 			}
 			/* continue with binary version */
 			v= getVar(mb, a =getArg(p,2));
-			if( isaBatType(v->type) && v->endLifespan ==i  && v->depth<= depth) {
-				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
+			if( isaBatType(v->type) && (v->endLifespan ==i || a==b)  && v->depth<= depth) {
+				if( ORvalidSource(mb,a,i, v->beginLifespan)  || a== b){
 #ifdef DEBUG_MAL_OPTIMIZER
 					stream_printf(GDKout,"Found binary OR candidate right\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
@@ -1719,9 +1721,10 @@ at the end of the optimization attempt.
 					for(j= p->argc-1; j>p->retc; j--)
 						p->argv[j]= p->argv[j-1];
 					p->argv[p->retc]= a;
-					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
 					p->argv[0]= newTmpVariable(mb, TYPE_void);
 					typeChecker(scope,mb,p,TRUE);
+					if( a !=b)
+						ARreplaceAlias(mb,i+1,mb->stop, b, a);
 #ifdef DEBUG_MAL_OPTIMIZER
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
@@ -1732,11 +1735,11 @@ at the end of the optimization attempt.
 		if( p->argc == 2) {
 			/* binary/unary operation, check first argument  and return type*/
 			int olderr= mb->errors;
-			int oldtarget= p->argv[0];
 			v= getVar(mb, a =getArg(p,1));
+			b= getArg(p,0);
 
-			if( isaBatType(v->type) && v->endLifespan ==i ) {
-				if( ORvalidSource(mb,a,i, v->beginLifespan)  && v->depth<= depth){
+			if( isaBatType(v->type) && (v->endLifespan ==i ||a==b) && v->depth<=depth ) {
+				if( ORvalidSource(mb,a,i, v->beginLifespan)  || a == b){
 #ifdef DEBUG_MAL_OPTIMIZER
 					stream_printf(GDKout,"Found unary OR candidate\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
@@ -1746,10 +1749,11 @@ at the end of the optimization attempt.
 					typeChecker(scope,mb,p,TRUE);
 					if( p->typechk == TYPE_UNKNOWN){
 						mb->errors= olderr;
-						p->argv[0]= oldtarget;
+						p->argv[0]= b;
 						typeChecker(scope,mb,p,TRUE);
 					} else
-						ARreplaceAlias(mb,i+1,mb->stop, oldtarget, a);
+					if( a != b )
+						ARreplaceAlias(mb,i+1,mb->stop, b, a);
 				}
 			}
 		}
