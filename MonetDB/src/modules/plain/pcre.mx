@@ -71,11 +71,12 @@
 #ifndef HAVE_LIBPCRE
 
 #define pcre str
+#include "pcre.proto.h"
 
-int pcre_compile_wrap( pcre** res, str pattern) { (void)res; (void)pattern; }
-int pcre_exec_wrap( bit* res, pcre *pattern, str s) { (void)res; (void)pattern; (void)s; }
-int pcre_select( BAT **res, str *pattern, BAT *strs ) { (void)res, (void)pattern; (void)strs; }
-int pcre_uselect( BAT **res, str *pattern, BAT *strs ) { (void)res, (void)pattern; (void)strs; }
+int pcre_compile_wrap( pcre** res, str pattern) { (void)res; (void)pattern; return GDK_FAIL; }
+int pcre_exec_wrap( bit* res, pcre *pattern, str s) { (void)res; (void)pattern; (void)s; return GDK_FAIL; }
+int pcre_select( BAT **res, str pattern, BAT *strs ) { (void)res, (void)pattern; (void)strs; return GDK_FAIL; }
+int pcre_uselect( BAT **res, str pattern, BAT *strs ) { (void)res, (void)pattern; (void)strs; return GDK_FAIL; }
 
 bat* pcre_init(void){ return NULL; }
 void pcre_exit(void){ }
