@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f bbp
 @v 2.0
@@ -232,27 +226,10 @@ address CMDgetBATlrefcnt
 comment "Utility for debugging MAL interpreter";
 @-
 @{
+@include prelude.mx
 @+ Implementation section
 In most cases we pass a BAT identifier, which should be unified
 with a BAT descriptor. Upon failure we can simply abort the function.
-
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("bbp.@4","cannot access bat '@2' in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
-@= chkIdentifier
-	/* generate exception if string is not an identifier */
-        if( isIdentifier(@1))
-                return throwMessage( "bbp.@2","identifier expected");
-
-@h
 
 @c
 #include "bbp.h"
@@ -535,7 +512,7 @@ str CMDBATClone(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	(void) result;
 
 	bid= *(int *) getArgReference(s,p,3);
-        @:getBATdescriptor(&result,&bid,b,clone)@
+        @:getBATdescriptor(&result,&bid,b,bbp.new)@
         res= (int *) getArgReference(s,p,0);
         ht= getArgType(m,p,1);
         tt= getArgType(m,p,2);
@@ -563,7 +540,7 @@ str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	(void) m;
 
 	bid= *(int *) getArgReference(s,p,1);
-        @:getBATdescriptor(&res,&bid,b,clone)@
+        @:getBATdescriptor(&res,&bid,b,bbp.new)@
 	if( bid>0){
 		ht= b->htype;
 		tt= b->ttype;
@@ -599,7 +576,7 @@ str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         bid= (int*) getArgReference(stk,pci,1);
         p= (ptr*) getArgReference(stk,pci,2);
         tt=  getArgType(mb,pci,2);
-        @:getBATdescriptor(result,bid,b,project)@
+        @:getBATdescriptor(result,bid,b,bbp.project)@
         bn= BATconst(b, tt, p);
         if( bn ) {
                *result = bn->batCacheid;
@@ -610,7 +587,7 @@ str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 str CMDprojectNil(int *ret, int *bid){
         BAT *b,*bn;
-        @:getBATdescriptor(ret,bid,b,project)@
+        @:getBATdescriptor(ret,bid,b,bbp.project)@
 
         bn= BATconst(b,TYPE_void, &int_nil);
         if( bn ) {
@@ -628,7 +605,7 @@ The most interesting sysbat for end-users is the BID-> NAME mapping,
 because it provides access to the system guaranteed persistent BAT identifier.
 It may be the case that the user alread introduced a BAT with this name,
 it is simply removed first
-@= Pseudo
+@= Pseudo2
 	if (BBPindex("@1_@2") > 0) 
 		BATdelete(BBPdescriptor(BBPindex("@1_@2")));
         BATroles(b,"@1","@2");
@@ -653,7 +630,7 @@ str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 
 	ret = (int *) getArgReference(stk,pci,0);
-	@:Pseudo(bbp,objects)@
+	@:Pseudo2(bbp,objects)@
         return MAL_SUCCEED;
 }
 str CMDbbpNames( int *ret){       
@@ -674,7 +651,7 @@ str CMDbbpNames( int *ret){
 		}
 	}
 	BBPunlock("CMDbbpNames");
-	@:Pseudo(bbp,name)@
+	@:Pseudo2(bbp,name)@
         return MAL_SUCCEED;
 }
 str CMDbbpName( str *ret, int *bid){       
@@ -696,7 +673,7 @@ str CMDbbpRNames( int *ret){
 		} else 	BUNins(b, &i, BBP_logical(i));
 	}
 	BBPunlock("CMDbbpRNames");
-	@:Pseudo(bbp,revname)@
+	@:Pseudo2(bbp,revname)@
         return MAL_SUCCEED;
 }
 str CMDbbpCount( int *ret){       
@@ -717,7 +694,7 @@ str CMDbbpCount( int *ret){
 			}
 		}
 	}
-	@:Pseudo(bbp,count)@
+	@:Pseudo2(bbp,count)@
         return MAL_SUCCEED;
 }
 @-
@@ -736,7 +713,7 @@ str CMDbbpLocation(int *ret){
                 BUNins(b, &i, BBP_physical(i));
 	}
 	BBPunlock("CMDbbpLocation");
-	@:Pseudo(bbp,location)@
+	@:Pseudo2(bbp,location)@
         return MAL_SUCCEED;
 }
 
@@ -762,7 +739,7 @@ str CMDbbpHeat(int *ret){
 	    }
 	}
 	BBPunlock("CMDbbpHeat");
-	@:Pseudo(bbp,heat)@
+	@:Pseudo2(bbp,heat)@
         return MAL_SUCCEED;
 }
 
@@ -791,7 +768,7 @@ str CMDbbpDirty(int *ret){
 					"clean");
 	}}
 	BBPunlock("CMDbbpDirty");
-	@:Pseudo(bbp,status)@
+	@:Pseudo2(bbp,status)@
         return MAL_SUCCEED;
 }
 
@@ -812,7 +789,7 @@ str CMDbbpStatus(int *ret){
                 BUNins(b, &i,loc );
 	}}
 	BBPunlock("CMDbbpStatus");
-	@:Pseudo(bbp,status)@
+	@:Pseudo2(bbp,status)@
         return MAL_SUCCEED;
 }
 
@@ -835,7 +812,7 @@ str CMDbbpKind(int *ret){
 	    if (mode) BUNins(b, &i, mode);
 	}}
 	BBPunlock("CMDbbpKind");
-	@:Pseudo(bbp,kind)@
+	@:Pseudo2(bbp,kind)@
         return MAL_SUCCEED;
 }
 
@@ -854,7 +831,7 @@ str CMDbbpRefCount(int *ret){
 		BUNins(b, &i, &refs);
 	}
 	BBPunlock("CMDbbpRefCount");
-	@:Pseudo(bbp,refcnt)@
+	@:Pseudo2(bbp,refcnt)@
         return MAL_SUCCEED;
 }
 str CMDbbpLRefCount(int *ret){       
@@ -872,18 +849,18 @@ str CMDbbpLRefCount(int *ret){
 		BUNins(b, &i, &refs);
 	}
 	BBPunlock("CMDbbpLRefCount");
-	@:Pseudo(bbp,lrefcnt)@
+	@:Pseudo2(bbp,lrefcnt)@
         return MAL_SUCCEED;
 }
 str CMDgetBATrefcnt(int *res, int *bid) {
         BAT *b;
-        @:getBATdescriptor(res,bid,b,getBATrefcnt)@
+        @:getBATdescriptor(res,bid,b,bbp.getBATrefcnt)@
         *res = BBP_refs(b->batCacheid);
         return MAL_SUCCEED;
 }
 str CMDgetBATlrefcnt(int *res, int *bid) {
         BAT *b;
-        @:getBATdescriptor(res,bid,b,getBATrefcnt)@
+        @:getBATdescriptor(res,bid,b,bbp.getBATrefcnt)@
         *res = BBP_lrefs(b->batCacheid);
         return MAL_SUCCEED;
 }
@@ -905,7 +882,7 @@ str CMDbbp@2( int *ret){
 			BBPunfix(bn->batCacheid);
                 }
         }
-        @:Pseudo(bbp,@2)@
+        @:Pseudo2(bbp,@2)@
         return MAL_SUCCEED;
 }
 

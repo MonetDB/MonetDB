@@ -14,7 +14,7 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
+
 @f io
 @a N.J. Nes, M.L. Kersten
 @d 01/07/1996, 31/01/2002
@@ -498,7 +498,7 @@ applications, we use a simple import/export operation.
 
 The conversion routine assumes space in the buffer for storing the result.
 @{
-@c
+@include prelude.mx
 @-
 A BAT can be saved in Monet format using the export command.
 It is of particular use in preparing an ascii version for migration.
@@ -509,7 +509,7 @@ presented.
 str IOexport(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	stream  *s = open_wastream(*fnme);
-	@:getBATdescriptor(ret,bid,b,export)@
+	@:getBATdescriptor(ret,bid,b,io.export)@
 	if (s== NULL || stream_errnr(s) ) {
 		*ret = FALSE;
 		return throwException(MALEXCEPTION,"bat.export",
@@ -522,22 +522,9 @@ str IOexport(int *ret, int *bid, str *fnme) {
 	return MAL_SUCCEED;
 }
 
-@
+@-
 The import command reads a single BAT from an ascii file. It assumes
 a layout compatible with that produced by print or export.
-                                                                                 
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("bat.@4",
-                        "cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
 @c
 str IOimport(int *ret, int *bid, str *fnme) {
 	BAT *b;
@@ -549,7 +536,7 @@ str IOimport(int *ret, int *bid, str *fnme) {
 	int	lh = 0,	lt = 0;
 	FILE	*fp = fopen(*fnme, "r");
 
-	@:getBATdescriptor(ret,bid,b,export)@
+	@:getBATdescriptor(ret,bid,b,io.export)@
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 @-

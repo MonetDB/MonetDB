@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f tablet
 @a Niels Nes, Martin Kersten
@@ -393,6 +387,7 @@ address TABgetPage
 comment "Produce the i-th page of output";
 @-
 @{
+@include prelude.mx
 @+ Implementation
 The implementation needs the stream abstraction, which also provides
 primitives to compress/decompress files on the fly.
@@ -400,17 +395,6 @@ The file can plain ASCII, gzipped or bzipped, decided by the extention
 (none, gz or bz2). The default is plain ASCII, which is formatted to
 pre presented on the screen directly.
 
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("enum.@4","cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
 @h
 #ifndef _TABLE_IO2_H_
 #define _TABLE_IO2_H_
@@ -656,7 +640,7 @@ str TABsetPivot(int *ret, int *bid){
 	int rnr= c-mal_clients;
 	BAT *b;
 	(void) ret; /* fool compiler */
-	@:getBATdescriptor(ret,bid,b,setPivot)@
+	@:getBATdescriptor(ret,bid,b,tablet.setPivot)@
 	if( b==0)
 		return throwMessage("tablet.setPivot","Pivot bat missing");
 	tableReports[rnr]->pivot = b;
@@ -1454,9 +1438,9 @@ str CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid,
 	str *filename, int *nr){
 	BAT *names, *seps, *types, *bn;
 
-	@:getBATdescriptor(ret,nameid,names,tablet_load)@
-	@:getBATdescriptor(ret,sepid,seps,tablet_load)@
-	@:getBATdescriptor(ret,typeid,types,tablet_load)@
+	@:getBATdescriptor(ret,nameid,names,tablet.load)@
+	@:getBATdescriptor(ret,sepid,seps,tablet.load)@
+	@:getBATdescriptor(ret,typeid,types,tablet.load)@
 
 	tablet_load( &bn, names, seps, types, *filename, nr);
 	if( bn== NULL)
@@ -1469,9 +1453,9 @@ str CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids,
 	str *filename, int *nr){
 	BAT *names, *seps, *bats;
 
-	@:getBATdescriptor(ret,nameid,names,tablet_dump)@
-	@:getBATdescriptor(ret,sepid,seps,tablet_dump)@
-	@:getBATdescriptor(ret,bids,bats,tablet_dump)@
+	@:getBATdescriptor(ret,nameid,names,tablet.dump)@
+	@:getBATdescriptor(ret,sepid,seps,tablet.dump)@
+	@:getBATdescriptor(ret,bids,bats,tablet.dump)@
 
 	tablet_dump( names, seps, bats, *filename, nr);
 	return MAL_SUCCEED;
@@ -1480,9 +1464,9 @@ str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid,
 	stream *s, int *nr){
 	BAT *names, *seps, *types, *bn;
 
-	@:getBATdescriptor(ret,nameid,names,tablet_input)@
-	@:getBATdescriptor(ret,sepid,seps,tablet_input)@
-	@:getBATdescriptor(ret,typeid,types,tablet_input)@
+	@:getBATdescriptor(ret,nameid,names,tablet.input)@
+	@:getBATdescriptor(ret,sepid,seps,tablet.input)@
+	@:getBATdescriptor(ret,typeid,types,tablet.input)@
 
 	tablet_input(&bn,names, seps, types, (void **)s, nr);
 	if( bn== NULL)
@@ -1494,9 +1478,9 @@ str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid,
 str CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s){
 	BAT *names, *seps, *bats;
 
-	@:getBATdescriptor(ret,nameid,names,tablet_output)@
-	@:getBATdescriptor(ret,sepid,seps,tablet_output)@
-	@:getBATdescriptor(ret,bids,bats,tablet_output)@
+	@:getBATdescriptor(ret,nameid,names,tablet.output)@
+	@:getBATdescriptor(ret,sepid,seps,tablet.output)@
+	@:getBATdescriptor(ret,bids,bats,tablet.output)@
 	*ret= tablet_output(names, seps, bats, s );
 	return MAL_SUCCEED;
 }
@@ -1622,7 +1606,7 @@ static str bindVariable(Table *t, unsigned int anr, str nme, int tpe, ptr val, i
 		BAT *b;
 		int ret=0, bid= *(int*)val;
 		(void) ret; /* fool compiler */
-		@:getBATdescriptor(&ret,&bid,b,bindVariable)@
+		@:getBATdescriptor(&ret,&bid,b,tablet.bindVariable)@
 		c->bval=b;
 		/* the first column should take care of leader text size*/
 		if( c->bval) setTabwidth(c);

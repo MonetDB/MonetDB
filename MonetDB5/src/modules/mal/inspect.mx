@@ -193,6 +193,7 @@ comment "Start interactive debugger";
 @-
 @{
 @+ Implementation
+@include prelude.mx
 @h
 #ifdef _INSPECT_H
 #endif /* _INSPECT_H*/
@@ -208,15 +209,6 @@ comment "Start interactive debugger";
 
 @+ Variables and stack information
 The variable information can be turned into a BAT for inspection as well.
-
-@= Pseudo
-        if (BBPindex("view_@1_@2") <= 0)
-                BATname(b, "@2");
-        BATroles(b,"@1","@2");
-        BATmode(b,TRANSIENT);
-        BATfakeCommit(b);
-        *ret = b->batCacheid;
-
 @c
 
 static int getStkDepth( MalStkPtr s)
@@ -252,7 +244,7 @@ str INSPECTStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	int *ret= (int*) getArgReference(s,p,0);
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 	if (b == 0) return throwMessage("inspect.stkFrame", "failed to create BAT");
-	@:Pseudo(stk,frame)@
+	@:Pseudo(view,stk,frame)@
 	return INSPECTgetFrame(b,m,s,0);
 }
 str INSPECTStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
@@ -262,7 +254,7 @@ str INSPECTStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	n= *(int*) getArgReference(s,p,1);
 	if(n<0) return throwMessage("inspect.stkFrame", "illegal depth.");
 	if(n>=getStkDepth(s)) return throwMessage("inspect.stkFrame", "illegal depth.");
-	@:Pseudo(stk,frame)@
+	@:Pseudo(view,stk,frame)@
 	return INSPECTgetFrame(b,m,s,n);
 }
 str INSPECTStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
@@ -279,7 +271,7 @@ str INSPECTStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BUNins(b,&k, msg);
 		GDKfree(msg);
 	}
-	@:Pseudo(stk,trace)@
+	@:Pseudo(view,stk,trace)@
 	return MAL_SUCCEED;
 }
 @+ Symbol table 
@@ -298,7 +290,7 @@ str INSPECTmoduleNames(int *ret){
 	for(s=c->nspace; s; s= s->outer,i++)
 		BUNins(b,&int_nil,s->name);
 
-	@:Pseudo(scope,names)@
+	@:Pseudo(view,scope,names)@
 	return MAL_SUCCEED;
 }
 str INSPECTsymbolFind(int *ret,int kind)
@@ -322,7 +314,7 @@ str INSPECTsymbolFind(int *ret,int kind)
 		}
 		s= s->outer;
 	}
-	@:Pseudo(symbol,name)@
+	@:Pseudo(view,symbol,name)@
 	return MAL_SUCCEED;
 }
 str INSPECTfactoryNames(int *ret){ return INSPECTsymbolFind(ret,FACTORYsymbol); }
@@ -347,7 +339,7 @@ str INSPECTgetDefinition(int *ret, str *nme, str *fcn)
 		}
 		s= s->peer;
 	}
-	@:Pseudo(fcn,stmt)@
+	@:Pseudo(view,fcn,stmt)@
 	return MAL_SUCCEED;
 }
 str INSPECTcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
@@ -361,7 +353,7 @@ str INSPECTcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		BUNins(b,&i,ps);
 		GDKfree(ps);
 	}
-	@:Pseudo(fcn,stmt)@
+	@:Pseudo(view,fcn,stmt)@
 	return MAL_SUCCEED;
 }
 str INSPECTcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
@@ -376,7 +368,7 @@ str INSPECTcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		BUNins(b,&int_nil,ps);
 		GDKfree(ps);
 	}
-	@:Pseudo(fcn,stmt)@
+	@:Pseudo(view,fcn,stmt)@
 	return MAL_SUCCEED;
 }
 str INSPECTgetSignature(int *ret, str *mod, str *fcn)
@@ -410,7 +402,7 @@ str INSPECTgetSignature(int *ret, str *mod, str *fcn)
 		s= s->peer;
 	}
 
-	@:Pseudo(input,result)@
+	@:Pseudo(view,input,result)@
 	return MAL_SUCCEED;
 }
 str INSPECTsymbolType(int *ret, str *mod, str *fcn) 
@@ -431,7 +423,7 @@ str INSPECTsymbolType(int *ret, str *mod, str *fcn)
 		}
 		s= s->peer;
 	}
-	@:Pseudo(fcn,type)@
+	@:Pseudo(view,fcn,type)@
 	return MAL_SUCCEED;
 }
 
@@ -443,7 +435,7 @@ str INSPECTatom_names(int *ret)
 
 	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(i));
 
-	@:Pseudo(atom,name)@
+	@:Pseudo(view,atom,name)@
 	return MAL_SUCCEED;
 }
 str INSPECTatom_sup_names(int *ret)
@@ -454,7 +446,7 @@ str INSPECTatom_sup_names(int *ret)
 
 	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(ATOMstorage(i)));
 
-	@:Pseudo(atom,sup_name)@
+	@:Pseudo(view,atom,sup_name)@
 	return MAL_SUCCEED;
 }
 str INSPECTatom_sizes(int *ret)
@@ -469,7 +461,7 @@ str INSPECTatom_sizes(int *ret)
 		BUNins(b,&i,&s);
 	}
 
-	@:Pseudo(atom,size)@
+	@:Pseudo(view,atom,size)@
 	return MAL_SUCCEED;
 }
 @+ Display routines
@@ -509,16 +501,6 @@ str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         *ret= getArgType(mb,pci,1);
         return MAL_SUCCEED;
 }
-@-
-@= Pseudo
-        if (BBPindex("view_@1_@2") <= 0)
-                BATname(b, "@2");
-        BATroles(b,"@1","@2");
-        BATmode(b,TRANSIENT);
-        BATfakeCommit(b);
-        *ret = b->batCacheid;
-
-@c
 
 str INSPECTgetExceptionVariable(str *ret,  str *msg){
 	str tail;

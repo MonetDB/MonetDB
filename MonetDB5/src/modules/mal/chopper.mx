@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f chopper
 @v 2.0
@@ -91,17 +85,8 @@ comment "return the BUN tail value using the
 @-
 @{
 
+@include prelude.mx
 @+ BAT Iterator Implementation
-Part of the code is copied from the V 4.3 bat.mx file.
-@= getBATdescriptor
-if( *@2 < 0) {
-	/* reverse descriptor should be explicitly loaded */
-	@3=BATdescriptor(*@2); BBPunfix(*@2);
-} else @3= (BAT*) BBPgetdesc(*@2);
-if( @3 == NULL) { *@1 = 0;
-	return throwMessage("chopper.@4", 
-		"cannot access descriptor @2");
-}
 @-
 The routine VALinit is an utility routine to move
 a value from a BUN into a value record, making proper copies
@@ -142,10 +127,10 @@ str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule){
 	BAT *b, *view;
 	int ret=0;
 	size_t cnt,first;
-	@:getBATdescriptor(&ret,bid,b,newChunkIterator)@
+	@:getBATdescriptor(&ret,bid,b,chopper.newChunkIterator)@
 	(void) ret;
 	if( *vid ){
-		@:getBATdescriptor(&ret,vid,view,newIterator)@
+		@:getBATdescriptor(&ret,vid,view,chopper.newIterator)@
 		/* it has the correct type, but does it also
 		   refer to the same BAT */
 	}
@@ -168,8 +153,8 @@ str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule){
 	BAT *b, *view;
 	int ret=0;
 	size_t i;
-	@:getBATdescriptor(&ret,bid,b,hasChunkMoreElements)@
-	@:getBATdescriptor(&ret,vid,view,hasChunkMoreElements)@
+	@:getBATdescriptor(&ret,bid,b,chopper.hasChunkMoreElements)@
+	@:getBATdescriptor(&ret,vid,view,chopper.hasChunkMoreElements)@
 	(void)ret;
 	i = *res + BATcount(view);
 	if( i >= BUNindex(b,BUNlast(b)) ){
@@ -203,7 +188,7 @@ str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tail = &stk->stk[pci->argv[2]];
 	bid = (int *) getArgReference(stk,pci,3);
 
-	@:getBATdescriptor(&ret,bid,b,bunIterator)@
+	@:getBATdescriptor(&ret,bid,b,chopper.bunIterator)@
 	(void) ret;
 
 	if( BATcount(b) == 0) {
@@ -233,7 +218,7 @@ str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tail = &stk->stk[pci->argv[2]];
 	bid = (int *) getArgReference(stk,pci,3);
 
-	@:getBATdescriptor(&ret,bid,b,bunHasMoreElements)@
+	@:getBATdescriptor(&ret,bid,b,chopper.bunHasMoreElements)@
 	(void) ret;
 
 	*cursor = *cursor+1;
@@ -271,7 +256,7 @@ str CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[0]];
 
-	@:getBATdescriptor(ret,bid,b,getHead)@
+	@:getBATdescriptor(ret,bid,b,chopper.getHead)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
 		return throwMessage("mal.getHead","range error");
@@ -296,7 +281,7 @@ str CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	tail = &stk->stk[pci->argv[0]];
 
-	@:getBATdescriptor(ret,bid,b,getTail)@
+	@:getBATdescriptor(ret,bid,b,chopper.getTail)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
 		return throwMessage("mal.getTail","range error");

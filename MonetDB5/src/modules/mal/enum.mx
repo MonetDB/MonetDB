@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f enum
 @a Peter Boncz
@@ -143,22 +137,8 @@ comment "returns whether ENUMtable(tpe) is
 	a histogram on b's head column";
 @-
 @{
-@* Implementation
-Part of the code is copied from the V 4.3 bat.mx file.
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("enum.@4",
-			"cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
-
-@-
+@include prelude.mx
+@+ Implementation
 Note that we have to build the table with pre-instantiated
 function references, because there is no easy way from the GDK layer
 to access the enum administration.
@@ -315,7 +295,7 @@ str ENUMreload(int *retval, int bid) {
 	int i;
 	BAT *h;
 
-	@:getBATdescriptor(retval,&bid,h,load)@
+	@:getBATdescriptor(retval,&bid,h,enum.load)@
 	mal_set_lock(mal_contextLock, "ENUMload");
 	for(i=0; i<MAX_ENUM; i++) {
 		if (ENUMmap[i] == 0) {
@@ -352,7 +332,7 @@ str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= getArgType(mb,pci,1);
 	bid= *(int*) getArgReference(stk,pci,2);
 	name= getTypeName(tpe);
-	@:getBATdescriptor(retval,&bid,b,create)@
+	@:getBATdescriptor(retval,&bid,b,enum.create)@
 	h = BAThistogram(b);
 	nil = ATOMnilptr(b->htype);
 	BUNdelHead(h, nil);
@@ -558,7 +538,7 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:enumCheck(tpe,ENUMencode_multi)@
 	bid= *(int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:getBATdescriptor(retval,&bid,src,encode)@
+	@:getBATdescriptor(retval,&bid,src,enum.encode)@
 
 	if (src->ttype != b->htype) {
 		if(b) BBPunfix(b->batCacheid);
@@ -627,7 +607,7 @@ str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb; /* fool compiler */
 	bid= (int*) getArgReference(stk,pci,1);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:getBATdescriptor(retval,bid,src,encode)@
+	@:getBATdescriptor(retval,bid,src,enum.encode)@
 	tpe= src->ttype;
 	@:enumCheck(tpe,ENUMencode_multi)@
 	if(b) BBPunfix(b->batCacheid);
@@ -673,7 +653,7 @@ str ENUMtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str isEnum(bit *ret, int *bid){
 	BAT *b;
 	int i;
-	@:getBATdescriptor(ret,bid,b,isEnum)@
+	@:getBATdescriptor(ret,bid,b,enum.isEnum)@
 	*ret= FALSE;
 	for(i=0; i<MAX_ENUM; i++)
 		if (ENUMmap[i] == b->batCacheid) { *ret= TRUE;break;}

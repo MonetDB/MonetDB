@@ -139,23 +139,11 @@ address CRKdropView
 comment	"Garbage collect the piece representation.
 	Should be a side-effect of dropping the bat!";
 @{
+@include prelude.mx
 @* Implementation
 The implementation is geared at early experimentation
 without all the details to make the code robust and
 ultra fast.
-
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("crackers.@4",
-			"cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
 
 @-
 The relationships between a table and its cracker index

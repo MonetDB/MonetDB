@@ -116,20 +116,9 @@ int trans_clean(BAT *b, ...) {
 	return GDK_SUCCEED;
 }
 @
+@include prelude.mx
 @- Wrappers
 The remainder contains the Monet 5 wrapper code to make this all work
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("bat.@4",
-                        "cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
 @c
 #include "mal_exception.h"
 str TRNglobal_sync(int *ret){
@@ -154,7 +143,7 @@ str TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void)mb; 
 	for(i=p->retc; i<p->argc; i++){
 		bid = (int *) getArgReference(stk,p, i);
-		@:getBATdescriptor(&res,bid,b,commit)@
+		@:getBATdescriptor(&res,bid,b,transaction.commit)@
 		(void) res; /* fool compiler */
 		if( b )
 			BATclear(b);
@@ -169,7 +158,7 @@ str TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void)mb; 
 	for(i=p->retc; i<p->argc; i++){
 		bid = (int *) getArgReference(stk,p, i);
-		@:getBATdescriptor(&res,bid,b,commit)@
+		@:getBATdescriptor(&res,bid,b,transaction.commit)@
 		(void) res; /* fool compiler */
 		if( b )
 			BATundo(b);
@@ -184,7 +173,7 @@ str TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void)mb; 
 	for(i=p->retc; i<p->argc; i++){
 		bid = (int *) getArgReference(stk,p, i);
-		@:getBATdescriptor(&res,bid,b,commit)@
+		@:getBATdescriptor(&res,bid,b,transaction.commit)@
 		(void) res; /* fool compiler */
 		if( b )
 			BATcommit(b);

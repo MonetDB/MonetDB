@@ -74,6 +74,7 @@ comment "Terminate the session for this client"'
 
 @-
 @{
+@include prelude.mx
 @+ Monet client data
 Portions of the client record can be directly obtained for
 backward compatibility. The routine clientInfo provides more
@@ -89,15 +90,6 @@ or the client himself
 	if( !isAuthorized("Admin"))
 		return throwMessage("const.@1","unauthorized access to 'const' box");
 @-
-@= Pseudo
-        if (BBPindex("view_@1_@2") <= 0)
-                BATname(b, "@2");
-        BATroles(b,"@1","@2");
-        BATmode(b,TRANSIENT);
-        BATfakeCommit(b);
-        *ret = b->batCacheid;
-
-
 @c
 #include "mal.h"
 #include "mal_scenario.h"
@@ -158,7 +150,7 @@ str CLTInfo(int *ret){
 	BUNins(b,"scenario", c->scenario);
 	BUNins(b,"timer", local_itoa(c->timer));
 	BUNins(b,"trace", local_itoa(c->itrace));
-	@:Pseudo(client,info)@
+	@:Pseudo(client,info,)@
 	return MAL_SUCCEED;
 }
 str CLTLogin(int *ret){       
@@ -192,7 +184,7 @@ str CLTLogin(int *ret){
                 BUNins(b, &i, s);
         }
 
-	@:Pseudo(client,login)@
+	@:Pseudo(client,login,)@
 	return MAL_SUCCEED;
 }
 @-
@@ -206,7 +198,7 @@ str CLTusers(int *ret){
         for(i=0; i < MAL_MAXCLIENTS; i++)
         if(mal_clients[i].mode >= CLAIMED && mal_clients[i].user)
                 b= BUNins(b, &i, mal_clients[i].user);
-	@:Pseudo(client,users)@
+	@:Pseudo(client,users,)@
 	return MAL_SUCCEED;
 }
 
