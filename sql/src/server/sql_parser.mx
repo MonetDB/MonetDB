@@ -392,6 +392,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	_transaction_mode_list
 
 %type <bval>
+	opt_brackets
+
 	opt_work
 	opt_chain
 	opt_distinct
@@ -1926,8 +1928,8 @@ datetime_funcs:
  ;
 
 opt_brackets:
- 	/* empty */
- | '(' ')'
+   /* empty */	{ $$ = 0; }
+ | '(' ')'	{ $$ = 1; }
  ;
 
 string_funcs:
