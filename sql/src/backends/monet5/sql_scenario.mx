@@ -297,6 +297,10 @@ str SQLparser(Client c) {
 #endif
 	debug= SQLsetEnvironment(c);
 	be = ((backend*)c->state[PARSER]);
+        if( be == 0) {
+            GDKerror("SQL state descriptor missing\n");
+            return throwMessage("SQLparser","State decriptor missing\n");
+        }
 	m = be->mvc;
 	/* input string is copied to the SQL structure for parsing */
 	scanner_reset(&m->scanner, _strdup(c->nxt));
