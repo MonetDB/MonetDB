@@ -1,0 +1,2 @@
+var dbgmsk := debugmask();
+debugmask(and(dbgmsk,xor(INT_MAX,8+8388608)));
