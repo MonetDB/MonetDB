@@ -38,11 +38,6 @@ load the dynamic libraries before we load and run the scripts.
 #include "gdk.h"
 #include "monet.h"
 
-extern BAT *TBL_mod_load;
-
-extern int TBL_M_client_install(Client client, int mid);
-extern int TBL_M_incref(Client client, int mid);
-
 void static_module_init(Client c, char buf[]) {
 
 @include static_modules.mx
