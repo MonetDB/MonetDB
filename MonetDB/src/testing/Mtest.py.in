@@ -1471,10 +1471,10 @@ def RunTest(env, TST, BusyPorts, COND) :
         if env['exe']['Mtimeout'][0]:
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout '+str(TIMEOUT)+' '
             SetExecEnv(env['exe'],0)
-        CTIMEOUT = TIMEOUT
+        CTIMEOUT = 0
         if   CALL in ["other", "python"]:
 	    if TIMEOUT > 0:
-            	CTIMEOUT = TIMEOUT + 60
+            	CTIMEOUT = CTIMEOUT + 60
             for l in fileinput.input(TST+EXT):
                 TOm = test.match(l)
                 if TOm:
@@ -1501,7 +1501,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         ME = ""
         ATJOB1 = ""
         MkillUsers = ""
-        if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin':
+        if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin' and not env.get('NO_AT'):
             for f in TST+".KILLED.out", TST+".KILLED.err":
                 if os.path.isfile(f):
                     os.remove(f)
@@ -1538,7 +1538,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         TX = t1 - t0
         STDOUT.write(" %7.3fs " % TX)
 
-        if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin':
+        if ATJOB1:
             StopAt(ATJOB1,ME)
             os.system(WHAT.replace('\\', '').replace(" -p"+ME+" ", ' '))
         else:
@@ -2095,10 +2095,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         except IOError, (IOerrNo, IOerrStr):
             Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
-        if os.name != "nt":
+        if MkillUsers:
             ATJOB2 = StartAt(MkillUsers)
         CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
-        if os.name != "nt" and sys.platform != 'cygwin':
+        if MkillUsers:
             StopAt(ATJOB2,ME)
 
         AllOut = [SrvrOut, ClntOutFile]
@@ -2447,6 +2447,7 @@ def main(argv) :
              'default: %s' % dft['X100CLIENT']),
             ('XQUERYCLIENT', None, 'XQUERYCLIENT', '<XQuery to MIL compiler>',
              'default: %s' % dft['XQUERYCLIENT']),
+            ('no-at', None, 'no_at', None, 'Do not use at command'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -2510,6 +2511,9 @@ def main(argv) :
         a = opts.get('sql_logdir')
         if a is not None:
             env['SQL_LOGDIR'] = a
+        a = opts.get('no_at')
+        if a is not None:
+            env['NO_AT'] = a
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
