@@ -27,6 +27,7 @@
 #include <stream.h>
 #include <Mapi.h>
 #include <stdio.h>
+#include <string.h>
 
 #define die(X) (mapi_explain(X, stdout), exit(-1))
 
@@ -37,19 +38,26 @@ int main(int argc, char **argv)
 	int i;
 	char buf[40], *line;
 	int port;
+	int sql = 0;
 
-	if (argc != 2) {
-		printf("usage: smack01 <port>\n");
+	if (argc != 2 && argc != 3) {
+		printf("usage: smack01 <port> [<language>]\n");
 		exit(-1);
 	}
+	if (argc == 3)
+		sql = strcmp(argv[2], "sql") == 0;
+
 	port = atol(argv[1]);
 
 	for (i = 0; i < 1000; i++) {
 		/* printf("setup connection %d\n", i);*/
-		dbh = mapi_connect("localhost", port, "guest", 0, 0);
+		dbh = mapi_connect("localhost", port, "monetdb", "monetdb", argv[2]);
 		if (mapi_error(dbh))
 			die(dbh);
-		snprintf(buf, 40, "print(%d);", i);
+		if (sql)
+			snprintf(buf, 40, "select %d;", i);
+		else
+			snprintf(buf, 40, "print(%d);", i);
 		if ((hdl = mapi_query(dbh,buf)) == NULL)
 			die(dbh);
 		while ((line = mapi_fetch_line(hdl))) {
