@@ -16,16 +16,7 @@ load the dynamic libraries before we load and run the scripts.
 		  (ptr) _@1_Module_Install, "_@1_Module_Install" );
 }
 @= load_module
-{
-        str initscript=NULL;
-	TBL_loadmod( c, "@1", NULL, 0, &initscript );
-        if (initscript) {
-		Cntxt stk = 0;
-		ValRecord res;
-                interpret_str(stk, initscript, &res);
-		GDKfree(initscript);
-	}
-}
+	monet_exec("module(@1);");
 
 @= install_load_module
 {
@@ -38,9 +29,6 @@ load the dynamic libraries before we load and run the scripts.
 #include "gdk.h"
 #include "monet.h"
 
-void static_module_init(Client c, char buf[]) {
-
-(void) buf;
+void static_module_init() {
 @include static_modules.mx
-
 }
