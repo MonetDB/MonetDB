@@ -61,10 +61,11 @@ function constants.release(v:any):void;	# 0  (release:void)<-(v:any)
 end release;	# 3  
 #
 ## accept the definition of a new constant
-#function deposit(v:any,name:str) = space_deposit;
+!ERROR: function deposit(v:any,name:str) = space_deposit;
+!                                        ^';' expected
+function constants.deposit(v:any,name:str):void;	# 0  unknown (deposit:void)<-(v:any)(name:str)
+end deposit;	# 1  unknown 
 #
-#
-function constants.deposit(v:any,name:str):void;	# 0  (deposit:void)<-(v:any)(name:str)
 
 # 08:01:25 >  
 # 08:01:25 >  Done.

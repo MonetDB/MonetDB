@@ -131,7 +131,7 @@ stdout of test 'tst903` in directory 'src/mal` itself:
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:void,:lng);	# 1 CMDBATnew (b:bat[:void,:lng])<-($2:void)($3:lng)
 barrier (go,i):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (go:bit)(i:lng)<-($6:lng) jump 7
-    k := calc.rand();	# 3 CALCrandint (k:int)
+    k := mmath.rand();	# 3 MATHrandint (k:int)
     l := calc.lng(k);	# 4 CALCint2lng (l:lng)<-(k:int)
     bat.insert(b,nil,l);	# 5 BKCinsert_bun ($9:void)<-(b:bat[:void,:lng])($10:void)(l:lng)
     redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 6 RNGnextElement_lng (go:bit)(i:lng)<-($11:lng)($12:lng) jump 3
