@@ -1,15 +1,17 @@
-#!@BASH@
+#!/bin/sh
 
 PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
 
-PID=$$
-PPID=""
+THISPATH=${0%/*}
+THISFILE=${0##*/}
+CHILD=$$
+PARENT=""
 LOCKFILE="$$"
 while [ "${1#-}" != "$1" ] ; do
   if      [ "$1" =       -l   ] ; then  LOCKFILE="$2"      ; shift ; shift
     elif  [ "$1" != "${1#-l}" ] ; then  LOCKFILE="${1#-l}" ; shift 
-    elif  [ "$1" =       -p   ] ; then  PPID="$2"          ; shift ; shift
-    elif  [ "$1" != "${1#-p}" ] ; then  PPID="${1#-l}"     ; shift 
+    elif  [ "$1" =       -p   ] ; then  PARENT="$2"        ; shift ; shift
+    elif  [ "$1" != "${1#-p}" ] ; then  PARENT="${1#-l}"   ; shift 
   fi
 done
 LOCKFILE=/tmp/.${0##*/}.$LOCKFILE
@@ -25,12 +27,14 @@ function  LOG2  () {  LOG1 $* ; LOG1 $* >&2 ; }
 function  LOG2x () {  LOG2 $* ; "$@" ; }
 
 cpids=""
-if [ "$PPID" ] ; then
-  cpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$PPID"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$PID"' +[0-9]+ ' | sort +4.0 | awk '{printf "%s ",$2}' | sed 's|  *$||'`"
+if [ "$PARENT" ] ; then
+  cpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$PARENT"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ ' | sort +4.0 | awk '{printf "%s ",$2}' | sed 's|  *$||'`"
   if [ "$cpids" ] ; then
 	cpids="$cpids "
   fi
 fi
+
+files="$files `ls $THISPATH/* | egrep -v '/(M[a-z]*\.py(|\.bat)|'"$THISFILE"')$'`"
 
 case `uname` in
   Linux)
@@ -60,6 +64,7 @@ if [ "$pids1" ] ; then
 	LOG2x	$FUSER   $files
 	LOG2x	fuser -k $files
 	if [ "$cpids" ] ; then
+		sleep 3
 		LOG2x   kill $cpids
 	fi
 	sleep 4
