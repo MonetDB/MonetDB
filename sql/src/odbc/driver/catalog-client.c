@@ -2,6 +2,7 @@
 #include "catalog.h"
 #include "statement.h"
 #include "mem.h"
+#include "sql.h"
 
 #include <comm.h>
 #include <string.h>
@@ -195,16 +196,15 @@ void getschema( catalog *c, char *schema, char *user ){
 	tcnt = readnr(s);
 	printf("views %d\n", tcnt );
 	for(i=0;i<tcnt;i++){
-            long id = 0;
-	    char *tname, *query;
+	    char *query;
 	    char buf[BUFSIZ+1];
 	    char *start = buf, *n = readline(s, buf);
 
 	    n = strchr(start, '\t'); *n = '\0';
-	    id = strtol(start, (char**)NULL, 10);
+	    (void)strtol(start, (char**)NULL, 10);
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tname = removeQuotes(start, '"');
+	    (void)removeQuotes(start, '"');
 
 	    n = strchr(start = n+1, '\0'); *n = '\0';
 	    query = removeQuotes(start, '"');
