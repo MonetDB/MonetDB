@@ -14,13 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
-@' Contributor(s):
-@'              Martin Kersten <Martin.Kersten@cwi.nl>
-@'              Peter Boncz <Peter.Boncz@cwi.nl>
-@'              Niels Nes <Niels.Nes@cwi.nl>
-@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
-@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 
 @f mal_optimizer
 @a M. Kersten
@@ -288,43 +281,56 @@ optimizers are partly dependent and may interfere.
 
 To aid selection of the components of interest, we have grouped
 them in a preferred order of deployment.
-@T
-\begin{verbatim}
 
-Group A:
-	Code Inliner (CIoptimizer)
-	Static expression evaluator. (SXoptimizer)
-	Strength Reduction (SRoptimizer)
+@multitable @columnfractions .12 .8
+@item Group A:
+@tab    Code Inliner (CIoptimizer)
+@item 
+@tab    Static expression evaluator. (SXoptimizer)
+@item 
+@tab    Strength Reduction (SRoptimizer)
 
-Group B:
-	Common Expression Optimizer (CXoptimizer)
-	Query Evaluation Maps (QMoptimizer)
+@item Group B:
+@tab    Common Expression Optimizer (CXoptimizer)
+@item 
+@tab    Query Evaluation Maps (QMoptimizer)
 
-Group C:
-	Selection Push Down (SPoptimizer)
-	Join Path Optimizer (JPoptimizer)
-	Operator Cost Reduction (OCoptimizer)
-	Operator Sort (OSoptimizer)
-	Foreign Key handling (FKoptimizer)
-	Aggregate Groups (AGoptimizer)
-	Data Cube optimizer (DCoptimizer)
+@item Group C:
+@tab    Selection Push Down (SPoptimizer)
+@item 
+@tab    Join Path Optimizer (JPoptimizer)
+@item 
+@tab    Operator Cost Reduction (OCoptimizer)
+@item 
+@tab    Operator Sort (OSoptimizer)
+@item 
+@tab    Foreign Key handling (FKoptimizer)
+@item 
+@tab    Aggregate Groups (AGoptimizer)
+@item 
+@tab    Data Cube optimizer (DCoptimizer)
 
-group D:
-	Code Parallizer (CPoptimizer)
-	Result Cacher (RCoptimizer)
+@item group D:
+@tab    Code Parallizer (CPoptimizer)
+@item 
+@tab    Result Cacher (RCoptimizer)
 
-group E:
-	Expression Compiler (ECoptimizer)
-	Dynamic Query Scheduler (QSoptimizer)
-	Vector Execution (VEoptimizer)
-	Staged Execution (SEoptimizer)
+@item group E:
+@tab    Expression Compiler (ECoptimizer)
+@item 
+@tab    Dynamic Query Scheduler (QSoptimizer)
+@item 
+@tab    Vector Execution (VEoptimizer)
+@item 
+@tab    Staged Execution (SEoptimizer)
 
-group F:
-	Alias Removal (ARoptimizer)
-	Dead Code Removal (DCoptimizer)
-	Garbage Collector (GCoptimizer)
-
-\end{verbatim}
+@item group F:
+@tab    Alias Removal (ARoptimizer)
+@item 
+@tab    Dead Code Removal (DCoptimizer)
+@item 
+@tab    Garbage Collector (GCoptimizer)
+@end multitable
 @-
 Alias removal can be applied after each other optimization step.
 @+ Optimizer building blocks
@@ -348,11 +354,12 @@ under a given cost model turns out to result in better performance.
 A special case of flow analysis is to remove common sub-expressions.
 A recurring situation is to find operator calls which depend on the same
 argments, and whose arguments have not been changed. For example
-@T
-\begin{verbatim}
+@example
+@verbatim
 t0 := select(A,0,100);
 t2 := select(A,0,100);
-\end{verbatim}
+@end verbatim
+@end example
 @
 Evidently, T2 is an alias for t0 unless inbetween the two statements A was
 updated. A program block can be analysed for such recurring situations,
@@ -425,12 +432,12 @@ catalog management (23) and query processing (42)
 #include "mal_client.h"
 #include "mal_scenario.h"
 
-#define DEBUG_MAL_OPTIMIZER 	/* show result */
+#define DEBUG_MAL_OPTIMIZER     /* show result */
 
 #define isAlife(M,I,X)          ( (M)->var[I]->beginLifespan<=X && \
                                   (M)->var[I]->endLifespan>=X)
-#define isSinglepoint(M,I)	( (M)->var[I]->beginLifespan== \
-				  (M)->var[I]->endLifespan)
+#define isSinglepoint(M,I)  ( (M)->var[I]->beginLifespan== \
+                  (M)->var[I]->endLifespan)
 
 mal_export void debugOptimizers();
 mal_export str CXoptimizer(Client cntxt,MalBlkPtr mb, int pc);
@@ -469,60 +476,60 @@ denotes the signature and can not be removed.
 @+ Rescheduling optimizers
 @c
 #include "mal_optimizer.h"
-#include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_interpreter.h"    /* for showErrors() */
 
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 int hasSideEffects(InstrPtr p);
 
 void debugOptimizers(Client c, MalBlkPtr mb, int pc){
-	c->debugoptimizer= c->debugoptimizer?0:1;
-	if(pc) removeInstruction(mb,pc);
+    c->debugoptimizer= c->debugoptimizer?0:1;
+    if(pc) removeInstruction(mb,pc);
 }
 
 str MALoptimizer(Client c)
-{	MalBlkPtr mb= c->curprg->def;
-	InstrPtr p;
-	int pc,qot=0, oldstop;
-	str msg= NULL;
+{   MalBlkPtr mb= c->curprg->def;
+    InstrPtr p;
+    int pc,qot=0, oldstop;
+    str msg= NULL;
 
-	if( c->state[OPTIMIZE]){
-		/* prepend query with client specific optimizer scheme */
-		/* unless overruled within the block itself */
-		qot=0;
-		for(pc=0, qot=0; pc< mb->stop; pc++){
-			p= getInstrPtr(mb,pc);
-			if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0)
-				qot++;
-		}
-		if( qot==0){
-			/* preprend scheme */
-		}
-	} 
-	setLifespan(mb);
-	oldstop= mb->stop;
-	do{
-		qot=0;
-		for(pc=0; pc< mb->stop; pc++){
-			p= getInstrPtr(mb,pc);
-			if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0){
-				qot++;
-				if( p->fcn)
-					msg= (str) (*p->fcn)(mb,0,p);
-				if( msg) {
-					showErrors();
-					return msg;
-				}
-				pc--; /* optimizer statement has been removed*/
-			}
-		}
-	} while(qot);
+    if( c->state[OPTIMIZE]){
+        /* prepend query with client specific optimizer scheme */
+        /* unless overruled within the block itself */
+        qot=0;
+        for(pc=0, qot=0; pc< mb->stop; pc++){
+            p= getInstrPtr(mb,pc);
+            if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0)
+                qot++;
+        }
+        if( qot==0){
+            /* preprend scheme */
+        }
+    } 
+    setLifespan(mb);
+    oldstop= mb->stop;
+    do{
+        qot=0;
+        for(pc=0; pc< mb->stop; pc++){
+            p= getInstrPtr(mb,pc);
+            if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0){
+                qot++;
+                if( p->fcn)
+                    msg= (str) (*p->fcn)(mb,0,p);
+                if( msg) {
+                    showErrors();
+                    return msg;
+                }
+                pc--; /* optimizer statement has been removed*/
+            }
+        }
+    } while(qot);
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( c->debugoptimizer && oldstop!=mb->stop){
-	stream_printf(GDKout,"Optimizer effect %d -> %d instructions\n",
-		oldstop,mb->stop);
-	}
+    if( c->debugoptimizer && oldstop!=mb->stop){
+    stream_printf(GDKout,"Optimizer effect %d -> %d instructions\n",
+        oldstop,mb->stop);
+    }
 #endif
-	return 0;
+    return 0;
 }
 @+ Lifespan analysis
 The lifespan is calculated once at the beginning of the optimizer sequence.
@@ -532,34 +539,34 @@ of an instruction calls for either a recalculation or delta propagation.
 Unclear what will be the best strategy. For the time being we just recalc.
 @c
 void debugLifespan(MalBlkPtr mb){
-	int i;
-	for(i=0; i<mb->vtop; i++){
-		VarPtr v= getVar(mb,i);
-		if( isTmpVar(mb,i))
-		printf("%c%d %d - %d\n", TMPMARKER, v->tmpindex,
-				v->beginLifespan, v->endLifespan);
-		else
-		printf("%s %d - %d\n", v->name, 
-				v->beginLifespan, v->endLifespan);
-	}
+    int i;
+    for(i=0; i<mb->vtop; i++){
+        VarPtr v= getVar(mb,i);
+        if( isTmpVar(mb,i))
+        printf("%c%d %d - %d\n", TMPMARKER, v->tmpindex,
+                v->beginLifespan, v->endLifespan);
+        else
+        printf("%s %d - %d\n", v->name, 
+                v->beginLifespan, v->endLifespan);
+    }
 }
 void setLifespan(MalBlkPtr mb){
-	int pc,k;
-	InstrPtr p;
+    int pc,k;
+    InstrPtr p;
 
-	for(k=0;k<mb->vtop;k++){
-		VarPtr v= getVar(mb, k);
-		v->beginLifespan = v->endLifespan=0;
-	}
-	for(pc=0;pc<mb->stop; pc++){
-		p= getInstrPtr(mb,pc);
-		for(k=0;k<p->argc; k++){
-			VarPtr v= getVar(mb, p->argv[k]);
-			if( v->beginLifespan==0) v->beginLifespan= pc;
-			v->endLifespan = pc;
-		}
-	}
-	/* debugLifespan(mb); */
+    for(k=0;k<mb->vtop;k++){
+        VarPtr v= getVar(mb, k);
+        v->beginLifespan = v->endLifespan=0;
+    }
+    for(pc=0;pc<mb->stop; pc++){
+        p= getInstrPtr(mb,pc);
+        for(k=0;k<p->argc; k++){
+            VarPtr v= getVar(mb, p->argv[k]);
+            if( v->beginLifespan==0) v->beginLifespan= pc;
+            v->endLifespan = pc;
+        }
+    }
+    /* debugLifespan(mb); */
 }
 @-
 In many cases we should be assured that a variable is not used in
@@ -567,13 +574,13 @@ the instruction range identified. For, we may exchange some instructions that
 might change its content.
 @c
 int isTouched(MalBlkPtr mb, int varid, int p1, int p2){
-	int i,k;
-	for(i=p1;i<p2;i++) {
-		InstrPtr p= getInstrPtr(mb,i);
-		for(k=0; k<p->argc; k++)
-		if( p->argv[k]== varid) return TRUE;
-	}
-	return FALSE;
+    int i,k;
+    for(i=p1;i<p2;i++) {
+        InstrPtr p= getInstrPtr(mb,i);
+        for(k=0; k<p->argc; k++)
+        if( p->argv[k]== varid) return TRUE;
+    }
+    return FALSE;
 }
 @+ Flow analysis
 The flow graph plays a crucial role in many optimization steps.
@@ -588,25 +595,25 @@ the targets of pca, but which also change them (e.g. insert/delete bat)
 TODO, now more restrictive then needed.
 @c
 int flowStep(MalBlkPtr mb, int pca, int pcb){
-	InstrPtr pa,pb;
-	int i,k,l;
+    InstrPtr pa,pb;
+    int i,k,l;
 
-	if( pca >pcb) return FALSE;
-	if( pca+1 == pcb) return TRUE;
+    if( pca >pcb) return FALSE;
+    if( pca+1 == pcb) return TRUE;
 
-	pa= getInstrPtr(mb,pca);
-	for(i= pca+1; i<pcb;i++){
-		pb= getInstrPtr(mb,i);
-		for(k=0;k<pa->retc;k++)
-		for(l=0;l<pb->retc;l++)
-		if( pa->argv[k] == pb->argv[l]) return FALSE;
+    pa= getInstrPtr(mb,pca);
+    for(i= pca+1; i<pcb;i++){
+        pb= getInstrPtr(mb,i);
+        for(k=0;k<pa->retc;k++)
+        for(l=0;l<pb->retc;l++)
+        if( pa->argv[k] == pb->argv[l]) return FALSE;
 
-		/* also be aware of operators with side effects */
-		for(k=0;k<pa->retc;k++)
-		for(l=pb->retc;l<pb->argc ;l++)
-		if( pa->argv[k] == pb->argv[l] ) return FALSE;
-	}
-	return TRUE;
+        /* also be aware of operators with side effects */
+        for(k=0;k<pa->retc;k++)
+        for(l=pb->retc;l<pb->argc ;l++)
+        if( pa->argv[k] == pb->argv[l] ) return FALSE;
+    }
+    return TRUE;
 }
 
 @+ Alias Removal
@@ -625,71 +632,71 @@ During this process, we should be aware that parameters could be
 changed as part of a call. They are marked as unsafe.
 @c
 int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
-{	int i,k, blkcount=0;
-	InstrPtr p,q;
-	p= getInstrPtr(mb,pc);
-	for(i=pc+1; i< mb->stop && isAlife(mb,varid,i); i++){
-		q= getInstrPtr(mb,i);
-		for(k=0; k < q->retc; k++)
-		if( q->argv[k]== varid) {
-			return i;
-		}
-		for(;k < q->argc; k++)
-		if( q->argv[k]== varid && ! isInvariant(mb,pc,i,varid)) 
-			return i;
-		if( blockStart(p)) blkcount++;
-		if( blockExit(p)) blkcount--;
-		if( blkcount<0) return pc; /* it is part of a block */
-	}
-	return mb->stop;
+{   int i,k, blkcount=0;
+    InstrPtr p,q;
+    p= getInstrPtr(mb,pc);
+    for(i=pc+1; i< mb->stop && isAlife(mb,varid,i); i++){
+        q= getInstrPtr(mb,i);
+        for(k=0; k < q->retc; k++)
+        if( q->argv[k]== varid) {
+            return i;
+        }
+        for(;k < q->argc; k++)
+        if( q->argv[k]== varid && ! isInvariant(mb,pc,i,varid)) 
+            return i;
+        if( blockStart(p)) blkcount++;
+        if( blockExit(p)) blkcount--;
+        if( blkcount<0) return pc; /* it is part of a block */
+    }
+    return mb->stop;
 }
 void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
-{	InstrPtr p;
-	int k;
-	for(; pc<pcl; pc++) {
-		p= getInstrPtr(mb,pc);
-		for(k= p->retc; k<p->argc; k++)
-		if( p->argv[k]== src ) p->argv[k]= alias;
-	}
+{   InstrPtr p;
+    int k;
+    for(; pc<pcl; pc++) {
+        p= getInstrPtr(mb,pc);
+        for(k= p->retc; k<p->argc; k++)
+        if( p->argv[k]== src ) p->argv[k]= alias;
+    }
 }
 int ARoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
-{ 	int k,kn=0;
-	InstrPtr p;
-	p= getInstrPtr(mb,pc);
-	if( moduleId(p) || functionId(p)) return pc;
-	if( p->token != ASSIGNsymbol) return pc;
-	if( blockStart(p) || blockExit(p) || blockCntrl(p)) return pc;
+{   int k,kn=0;
+    InstrPtr p;
+    p= getInstrPtr(mb,pc);
+    if( moduleId(p) || functionId(p)) return pc;
+    if( p->token != ASSIGNsymbol) return pc;
+    if( blockStart(p) || blockExit(p) || blockCntrl(p)) return pc;
 
-	for(k=0;k<p->retc; k++){
-	   int m;
-	   m= ARnxtAssignment(mb,pc,p->argv[k]);
-	   if( m!=pc ){
-		ARreplaceAlias(mb,pc+1,m,p->argv[k], p->argv[p->retc+k]);
-		kn++;
+    for(k=0;k<p->retc; k++){
+       int m;
+       m= ARnxtAssignment(mb,pc,p->argv[k]);
+       if( m!=pc ){
+        ARreplaceAlias(mb,pc+1,m,p->argv[k], p->argv[p->retc+k]);
+        kn++;
 #ifdef DEBUG_MAL_OPTIMIZER
-		if( cntxt->debugoptimizer){
-		stream_printf(GDKout,"Delete alias assignment\n");
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-		}
+        if( cntxt->debugoptimizer){
+        stream_printf(GDKout,"Delete alias assignment\n");
+        printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+        }
 #endif
-	   }
-	}
-	/* delete the instruction if all target have been replaced */
-	if(kn == p->retc)
-	{
-		/* all target variables pushed through */
-		if(pc) removeInstruction(mb,pc);
-		return pc-1;
-	}
-	return pc;
+       }
+    }
+    /* delete the instruction if all target have been replaced */
+    if(kn == p->retc)
+    {
+        /* all target variables pushed through */
+        if(pc) removeInstruction(mb,pc);
+        return pc-1;
+    }
+    return pc;
 }
 str ARoptimizer(Client cntxt, MalBlkPtr mb, int pc)
-{ 	int i;
-	for(i=1;i< mb->stop; i++)
-		i= ARoptimizerStep(cntxt,mb,i);
-	/* remove the ARoptimizer request */
-	if(pc) removeInstruction(mb,pc);
-	return NULL;
+{   int i;
+    for(i=1;i< mb->stop; i++)
+        i= ARoptimizerStep(cntxt,mb,i);
+    /* remove the ARoptimizer request */
+    if(pc) removeInstruction(mb,pc);
+    return NULL;
 }
 
 @+ Common subexpression elimination
@@ -708,26 +715,26 @@ Function whose side-effect may be dissastrous for any variable are marked
 as 'corrupt'.
 @c
 
-int hasSameSignature(InstrPtr p, InstrPtr q){	
-	if( q->retc != p->retc && q->argc != p->argc) return FALSE;
-	if( functionId(q)==0 && functionId(p)!=0 ) return FALSE;
-	if( functionId(q)!=0 && functionId(p)==0 ) return FALSE;
-	if( functionId(q) && functionId(p) && idcmp(functionName(q),functionName(p)) ) 
-		return FALSE;
-	if( moduleId(q)==0 && moduleId(p)!=0 ) return FALSE;
-	if( moduleId(q)!=0 && moduleId(p)==0 ) return FALSE;
-	if( moduleId(q) && moduleId(p) && idcmp(moduleName(q),moduleName(p)))
-		return FALSE;
-	/* actually also check their types */
-	return TRUE;
+int hasSameSignature(InstrPtr p, InstrPtr q){   
+    if( q->retc != p->retc && q->argc != p->argc) return FALSE;
+    if( functionId(q)==0 && functionId(p)!=0 ) return FALSE;
+    if( functionId(q)!=0 && functionId(p)==0 ) return FALSE;
+    if( functionId(q) && functionId(p) && idcmp(functionName(q),functionName(p)) ) 
+        return FALSE;
+    if( moduleId(q)==0 && moduleId(p)!=0 ) return FALSE;
+    if( moduleId(q)!=0 && moduleId(p)==0 ) return FALSE;
+    if( moduleId(q) && moduleId(p) && idcmp(moduleName(q),moduleName(p)))
+        return FALSE;
+    /* actually also check their types */
+    return TRUE;
 }
 
 int hasSameArguments(InstrPtr p, InstrPtr q)
-{	int k;
-	for(k=p->retc; k<p->argc;k++)
-	if( q->argv[k]!= p->argv[k])
-		return FALSE;
-	return TRUE;
+{   int k;
+    for(k=p->retc; k<p->argc;k++)
+    if( q->argv[k]!= p->argv[k])
+        return FALSE;
+    return TRUE;
 }
 
 @-
@@ -737,11 +744,11 @@ an alias.
 @c
 int hasCommonResults(InstrPtr p, InstrPtr q)
 {
-	int k,l;
-	for(k= 0; k<p->retc; k++)
-	for(l= 0; l<q->retc; l++)
-	if( p->argv[k]== q->argv[l]) return TRUE;
-	return FALSE;
+    int k,l;
+    for(k= 0; k<p->retc; k++)
+    for(l= 0; l<q->retc; l++)
+    if( p->argv[k]== q->argv[l]) return TRUE;
+    return FALSE;
 }
 @-
 For each function it should be relatively easy to determine its
@@ -750,15 +757,15 @@ and to inspect the arguments of the signature.
 @c
 int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q)
 {
-	Symbol s=0;
-	Client c;
-	(void) mb; /* fool the compiler */
-	if( q->fcn==0 || functionId(q)== 0) return FALSE;
-	c= getClient();
-	if( c ) s= getFunctionSymbol(c->nspace,q);
-	(void) s; /* simulated some action */
-	/* check arguments for 'unsafe' property */
-	return FALSE;
+    Symbol s=0;
+    Client c;
+    (void) mb; /* fool the compiler */
+    if( q->fcn==0 || functionId(q)== 0) return FALSE;
+    c= getClient();
+    if( c ) s= getFunctionSymbol(c->nspace,q);
+    (void) s; /* simulated some action */
+    /* check arguments for 'unsafe' property */
+    return FALSE;
 }
 @-
 Instructions are unsafe is one of the arguments is also mentioned
@@ -766,13 +773,13 @@ in the result list. Alternatively, the 'unsafe' property is set
 for the function call itself.
 @c
 int isUnsafeInstruction(MalBlkPtr mb, InstrPtr q)
-{	int j,k;
-	(void) mb; /* fool compiler */
-	if( isUnsafeFunction(mb, q)) return TRUE;
-	for(j=0; j<q->retc; j++)
-	for(k=q->retc; k<q->argc; k++)
-	if( q->argv[k] == q->argv[j]) return TRUE;
-	return FALSE;
+{   int j,k;
+    (void) mb; /* fool compiler */
+    if( isUnsafeFunction(mb, q)) return TRUE;
+    for(j=0; j<q->retc; j++)
+    for(k=q->retc; k<q->argc; k++)
+    if( q->argv[k] == q->argv[j]) return TRUE;
+    return FALSE;
 }
 @-
 The routine isInvariant determines if the variable V is not
@@ -780,8 +787,8 @@ changed in the instruction sequence identified by the range [pcf,pcl].
 @c
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
 {
-	(void) mb; (void)pcf; (void) pcl; (void) varid; /*fool compiler */
-	return TRUE;
+    (void) mb; (void)pcf; (void) pcl; (void) varid; /*fool compiler */
+    return TRUE;
 }
 @-
 Any instruction may block identification of a common
@@ -789,8 +796,8 @@ subexpression. It suffices to stumble upon an unsafe function
 whose parameter lists has a non-empty intersection with the
 targeted instruction.
 To illustrate, consider the sequence
-@T
-\begin{verbatim}
+@example
+@verbatim
 L1 := f(A,B,C);
 ...
 G1 := g(D,E,F);
@@ -798,7 +805,8 @@ G1 := g(D,E,F);
 l2:= f(A,B,C);
 ...
 L2:= h()
-\end{verbatim}
+@end varbatim
+@end example
 @
 The instruction G1:=g(D,E,F) is blocking if G1 is an alias for {A,B,C}.
 Alternatively, function g() may be unsafe and {D,E,F} has a non-empty
@@ -807,65 +815,65 @@ readonly (and not be used for a function with sideeffects)
 @c
 int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
 {
-	int i,j;
-	for(j=0;j<q->retc; j++)
-	for(i=p->retc; i<p->argc;i++)
-	if( p->argv[i]== q->argv[j]) {
+    int i,j;
+    for(j=0;j<q->retc; j++)
+    for(i=p->retc; i<p->argc;i++)
+    if( p->argv[i]== q->argv[j]) {
 #ifdef DEBUG_MAL_OPTIMIZER2
-	if( cntxt->debugoptimizer){
-	stream_printf(GDKout,"Found assignment barrier for \n");
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-	}
+    if( cntxt->debugoptimizer){
+    stream_printf(GDKout,"Found assignment barrier for \n");
+    printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+    printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+    }
 #endif
-		return TRUE;
-	}
+        return TRUE;
+    }
 
-	if( isUnsafeFunction(mb,q)){
-		for(i=p->retc; i<p->argc; i++)
-		for(j=q->retc; j<q->argc; j++)
-		if( p->argv[i]== q->argv[j]) {
+    if( isUnsafeFunction(mb,q)){
+        for(i=p->retc; i<p->argc; i++)
+        for(j=q->retc; j<q->argc; j++)
+        if( p->argv[i]== q->argv[j]) {
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( cntxt->debugoptimizer){
-	stream_printf(GDKout,"Found overlapping assignment barrier for \n");
-	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-	}
+    if( cntxt->debugoptimizer){
+    stream_printf(GDKout,"Found overlapping assignment barrier for \n");
+    printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+    }
 #endif
-			/* TODO check safety property of the argument */
-			return TRUE;
-		}
-	}
-	return FALSE;
+            /* TODO check safety property of the argument */
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 int isUpdated(MalBlkPtr mb, int pc)
-{	InstrPtr p,q;
-	int j,k;
+{   InstrPtr p,q;
+    int j,k;
 
-	p= getInstrPtr(mb,pc);
-	for(pc++; pc< mb->stop; pc++){
-		q= getInstrPtr(mb,pc);
-		/* target is later assigned a new value */
-		for(j=0;j<p->retc; j++)
-		for(k=0;k<q->retc; k++)
-		if( p->argv[j]==q->argv[k]) {
-			int c=0;
+    p= getInstrPtr(mb,pc);
+    for(pc++; pc< mb->stop; pc++){
+        q= getInstrPtr(mb,pc);
+        /* target is later assigned a new value */
+        for(j=0;j<p->retc; j++)
+        for(k=0;k<q->retc; k++)
+        if( p->argv[j]==q->argv[k]) {
+            int c=0;
 
-			if( p->argc!= q->argc) return TRUE;
+            if( p->argc!= q->argc) return TRUE;
 
-			/* instruction q may not be a common expression */
-			/* TO WEAK, test stability of its arguments */
-			for(j=0;j<p->argc;j++)
-			if( p->argv[j]==q->argv[k] && 
-			    isInvariant(mb,0,pc,q->argv[k])) c++;
-			return c!= p->argc;
-		}
+            /* instruction q may not be a common expression */
+            /* TO WEAK, test stability of its arguments */
+            for(j=0;j<p->argc;j++)
+            if( p->argv[j]==q->argv[k] && 
+                isInvariant(mb,0,pc,q->argv[k])) c++;
+            return c!= p->argc;
+        }
 
-		/* result is used in an unsafe function*/
-		for(j=0; j<p->retc; j++)
-		for(k=q->retc; k<q->argc; k++)
-		if( p->argv[j]==q->argv[k] && hasSideEffects(q)) return TRUE;
-	}
-	return FALSE;
+        /* result is used in an unsafe function*/
+        for(j=0; j<p->retc; j++)
+        for(k=q->retc; k<q->argc; k++)
+        if( p->argv[j]==q->argv[k] && hasSideEffects(q)) return TRUE;
+    }
+    return FALSE;
 }
 @-
 The common subexpression optimizer locates backwards the identical 
@@ -883,46 +891,46 @@ Note, we skip the first instruction because it signifies the signature.
 The last instruction signifies the end.
 @c
 str CXoptimizer(Client cntxt, MalBlkPtr mb, int pc)
-{ 	int i,j,k;
-	InstrPtr p,q;
+{   int i,j,k;
+    InstrPtr p,q;
 
-	for(i=1; i< mb->stop-1; i++){
-		p= getInstrPtr(mb,i);
-		if( p->retc!= p->argc)
-		for(j= i-1; j>=1; j--) {
-			if( safetyBarrier(cntxt,mb,p,q=getInstrPtr(mb,j)) )
-				goto nxtCommonSubExpression;
-			if( hasSameSignature(p,q) && 
-			    hasSameArguments(p,q) &&
-			   !isUpdated(mb,i) &&
-			   !hasCommonResults(p,q) &&
-			   !hasSideEffects(p) ){
+    for(i=1; i< mb->stop-1; i++){
+        p= getInstrPtr(mb,i);
+        if( p->retc!= p->argc)
+        for(j= i-1; j>=1; j--) {
+            if( safetyBarrier(cntxt,mb,p,q=getInstrPtr(mb,j)) )
+                goto nxtCommonSubExpression;
+            if( hasSameSignature(p,q) && 
+                hasSameArguments(p,q) &&
+               !isUpdated(mb,i) &&
+               !hasCommonResults(p,q) &&
+               !hasSideEffects(p) ){
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( cntxt->debugoptimizer){
-	stream_printf(GDKout,"Found a common expression %d <-> %d\n",j,i);
-	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-	}
+    if( cntxt->debugoptimizer){
+    stream_printf(GDKout,"Found a common expression %d <-> %d\n",j,i);
+    printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+    printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+    }
 #endif
-				clrFunction(p);
-				p->token= ASSIGNsymbol;
-				p->argc= p->retc+q->retc;
-				for(k=0; k<q->retc; k++)
-				p->argv[p->retc+k]= q->argv[k];
+                clrFunction(p);
+                p->token= ASSIGNsymbol;
+                p->argc= p->retc+q->retc;
+                for(k=0; k<q->retc; k++)
+                p->argv[p->retc+k]= q->argv[k];
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( cntxt->debugoptimizer){
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-	}
+    if( cntxt->debugoptimizer){
+    printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+    }
 #endif
-				i= ARoptimizerStep(cntxt,mb,i);
-				goto nxtCommonSubExpression;
-			} 
-		}
-		nxtCommonSubExpression: ;
-	}
-	/* remove the CXoptimizer request */
-	if(pc) removeInstruction(mb,pc);
-	return NULL;
+                i= ARoptimizerStep(cntxt,mb,i);
+                goto nxtCommonSubExpression;
+            } 
+        }
+        nxtCommonSubExpression: ;
+    }
+    /* remove the CXoptimizer request */
+    if(pc) removeInstruction(mb,pc);
+    return NULL;
 }
 
 @+ Dead Coder Removal
@@ -951,87 +959,87 @@ the REDO statement may turn an instruction into a source for
 previouse ones. 
 @c
 int hasSideEffects(InstrPtr p){
-	if( blockStart(p) || blockExit(p) || blockCntrl(p)) return TRUE;
-	if(functionId(p) && strncmp("print",functionName(p),5)==0) return TRUE;
-	if(functionId(p) && strncmp("fprint",functionName(p),6)==0) return TRUE;
-	if(functionId(p) && idcmp("deposit",functionName(p))==0) return TRUE;
-	if(functionId(p) && idcmp("insert",functionName(p))==0) return TRUE;
-	if(functionId(p) && idcmp("prelude",functionName(p))==0) return TRUE;
-	if(functionId(p) && idcmp("decimal_prelude",functionName(p))==0) return TRUE;
-	return FALSE;
+    if( blockStart(p) || blockExit(p) || blockCntrl(p)) return TRUE;
+    if(functionId(p) && strncmp("print",functionName(p),5)==0) return TRUE;
+    if(functionId(p) && strncmp("fprint",functionName(p),6)==0) return TRUE;
+    if(functionId(p) && idcmp("deposit",functionName(p))==0) return TRUE;
+    if(functionId(p) && idcmp("insert",functionName(p))==0) return TRUE;
+    if(functionId(p) && idcmp("prelude",functionName(p))==0) return TRUE;
+    if(functionId(p) && idcmp("decimal_prelude",functionName(p))==0) return TRUE;
+    return FALSE;
 }
 str DCoptimizer(Client cntxt, MalBlkPtr mb, int pc)
-{	int i,j,k,dc=0,se;
-	InstrPtr p;
-	int *varused;
-	int *pcused;
-	(void) pc;	/* to fool compilers */
+{   int i,j,k,dc=0,se;
+    InstrPtr p;
+    int *varused;
+    int *pcused;
+    (void) pc;  /* to fool compilers */
 
-	varused= GDKmalloc(mb->vtop * sizeof(int));
-	for(i=0;i<mb->vtop;i++) varused[i]=0;
+    varused= GDKmalloc(mb->vtop * sizeof(int));
+    for(i=0;i<mb->vtop;i++) varused[i]=0;
 
-	pcused= GDKmalloc(mb->stop * sizeof(int));
-	for(i=0;i<mb->stop;i++) pcused[i]=0;
+    pcused= GDKmalloc(mb->stop * sizeof(int));
+    for(i=0;i<mb->stop;i++) pcused[i]=0;
 
-	for(i=mb->stop-1; i>=0; i--){
-		p= getInstrPtr(mb,i);
-		switch( p->token){
-		case FUNCTIONsymbol:
-		case COMMANDsymbol:
-		case FACTORYsymbol:
-		case ENDDEFsymbol: 
-			pcused[i]=1;
-			for(k=0; k<p->retc;k++)
-				varused[p->argv[k]]=1;
-			break;
-		case EXITsymbol:
-			stream_printf(cntxt->fdout,"#Handle DCR in iterator\n");
-		case RETURNsymbol:
-			pcused[i]=1;
-			for(k=0; k<p->retc;k++)
-				varused[p->argv[k]]=1;
-			break;
-		default:
-			se=0;
-			for(k=0; k< p->argc; k++)
-				if( varused[p->argv[k]]) se++;
-			/* do not deal with dead barrier blocks */
-			if( hasSideEffects(p) || se){
-				for(k=0; k<p->argc;k++) varused[p->argv[k]]=1;
-				pcused[i]=1;
-			} else dc++; 
-		}
-	}
+    for(i=mb->stop-1; i>=0; i--){
+        p= getInstrPtr(mb,i);
+        switch( p->token){
+        case FUNCTIONsymbol:
+        case COMMANDsymbol:
+        case FACTORYsymbol:
+        case ENDDEFsymbol: 
+            pcused[i]=1;
+            for(k=0; k<p->retc;k++)
+                varused[p->argv[k]]=1;
+            break;
+        case EXITsymbol:
+            stream_printf(cntxt->fdout,"#Handle DCR in iterator\n");
+        case RETURNsymbol:
+            pcused[i]=1;
+            for(k=0; k<p->retc;k++)
+                varused[p->argv[k]]=1;
+            break;
+        default:
+            se=0;
+            for(k=0; k< p->argc; k++)
+                if( varused[p->argv[k]]) se++;
+            /* do not deal with dead barrier blocks */
+            if( hasSideEffects(p) || se){
+                for(k=0; k<p->argc;k++) varused[p->argv[k]]=1;
+                pcused[i]=1;
+            } else dc++; 
+        }
+    }
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( cntxt->debugoptimizer){
-	if(dc){
-	stream_printf(GDKout,"Dead code variables \n");
-	for(i=0;i< mb->vtop; i++)
-		if( varused[i]==0) 
-			stream_printf(cntxt->fdout,"%s,", getVarName(mb,i));
-	stream_printf(cntxt->fdout,"\nDead code instructions \n");
-	for(i=1; i< mb->stop; i++)
-	if( pcused[i]==0)
-	printInstruction(cntxt->fdout,mb, getInstrPtr(mb,i), LIST_MAL_ALL);
-	stream_printf(cntxt->fdout,"End of DCoptimizer\n");
-	}}
+    if( cntxt->debugoptimizer){
+    if(dc){
+    stream_printf(GDKout,"Dead code variables \n");
+    for(i=0;i< mb->vtop; i++)
+        if( varused[i]==0) 
+            stream_printf(cntxt->fdout,"%s,", getVarName(mb,i));
+    stream_printf(cntxt->fdout,"\nDead code instructions \n");
+    for(i=1; i< mb->stop; i++)
+    if( pcused[i]==0)
+    printInstruction(cntxt->fdout,mb, getInstrPtr(mb,i), LIST_MAL_ALL);
+    stream_printf(cntxt->fdout,"End of DCoptimizer\n");
+    }}
 #endif
-	/* compress the code block */
-	for(i=j=1;i< mb->stop;i++){
-		if(pcused[i]){
-			mb->stmt[j]= mb->stmt[i];
-			j++;
-		} else {
-			p = getInstrPtr(mb,i);	
-			freeInstruction(p);
-		}
-	}
-	mb->stop=j; 
-	GDKfree(varused);
-	GDKfree(pcused);
-	/* remove the DCoptimizer request */
-	/* removeInstruction(mb,pc); was dead code ! */
-	return NULL;
+    /* compress the code block */
+    for(i=j=1;i< mb->stop;i++){
+        if(pcused[i]){
+            mb->stmt[j]= mb->stmt[i];
+            j++;
+        } else {
+            p = getInstrPtr(mb,i);  
+            freeInstruction(p);
+        }
+    }
+    mb->stop=j; 
+    GDKfree(varused);
+    GDKfree(pcused);
+    /* remove the DCoptimizer request */
+    /* removeInstruction(mb,pc); was dead code ! */
+    return NULL;
 }
 
 @+ Select Push Down heuristic
@@ -1040,18 +1048,17 @@ to push a selection predicate through another operator.
 This trick is rather complicated to apply to a MAL block, due to
 anomalies introduced by the binary datamodel. This leads to a rather
 complex compilation of e.g.  (tables r(a,b), s(c,d)
-@T
-\begin{verbatim}
+@example
+@verbatim
 create table r( a int, b int);
 create table s( c int, d int);
 select r.a,s.d from r,s where r.a=s.c and r.a<10 and s.d>5;
-\end{verbatim}
-The optimal code would be
-\begin{verbatim}
-\end{verbatim}
+@end verbatim
+@end example
+
+The optimal code would be [todo]
 while the code block produced by the SQL front-end generates
-\begin{verbatim}
-\end{verbatim}
+[todo]
 @-
 The approach taken is to combine multiple MAL statements in a
 single statement, or replacing/exchancing pairs based on the flow
@@ -1064,31 +1071,40 @@ The following table summarizes those considered and implementated.
 Predicates are modelled through the naming scheme.
 The combinators all assume that the flow path between both operations
 is safe.
-@T
-\begin{tabular}{l l l}
-{ y:= reverse(x); \n
-  z:= semijoin(R,x);} & z:= revsemijoin(x,R) \\
-{ y:= reverse(x); \n
-  z:= select(R,l,h);} & z:= revselect(x,R,l,h) \\
-{ y:= semijoin(R,x); \n
-  z:= select(y,l,h);} & z:= semiseselect(R,x,l,h) \\
-{ y:= revsemijoin(x,R); \n
-  z:= select(y,l,h);} & z:= revsemiselect(R,x,l,h) \\
-{ y:= join(R,S); \n
-  z:= semiselect(y,R,l,h);} & {y:= select(R,l,h):\n
-			       z:= join(y,S) \\
-{ y:= join(R,S); \n
-  z:= revsemiselect(y,S,l,h);} & {y:= select(S,l,h):\n
-			       z:= join(R,y) \\
-{ y:= join(R,S); \n
-  z:= semiselect(y,Z,l,h);} & ?????  \\
-\end{tabular}
+
+[redo]
+
+@multitable @columnfractions .2 .8
+@item y:= reverse(x); 
+@itemx z:= semijoin(R,x);
+@tab z:= revsemijoin(x,R) 
+@item y:= reverse(x); 
+@itemx z:= select(R,l,h);
+@tab z:= revselect(x,R,l,h) 
+@item y:= semijoin(R,x); 
+@itemx z:= select(y,l,h);
+@tab z:= semiseselect(R,x,l,h) 
+@item y:= revsemijoin(x,R); \n
+@itemx z:= select(y,l,h);
+@tab z:= revsemiselect(R,x,l,h) 
+@item y:= join(R,S); 
+@itemx z:= semiselect(y,R,l,h);
+@tab y:= select(R,l,h)
+@tab z:= join(y,S)
+@item y:= join(R,S);
+@itemx z:= revsemiselect(y,S,l,h);
+@tab y:= select(S,l,h):\n
+@itemx                  z:= join(R,y) 
+@item y:= join(R,S);
+@itemx z:= semiselect(y,Z,l,h);
+@end multitable
+
 @-
 During a final pass through the program, we can convert all combinators 
 back into their elementary steps.
 @= fndOperator
-	(( moduleId(@1)==0 || (@2 && idcmp(moduleName(@1),@2)==0) ) &&
-	     (functionId(@1)==0 || (@3 && idcmp(functionName(@1),@3)==0) ))
+    (( moduleId(@1)==0 || (@2 && idcmp(moduleName(@1),@2)==0) ) &&
+         (functionId(@1)==0 || (@3 && idcmp(functionName(@1),@3)==0) ))
 @-
 A more complete implementation should als push the selection through
 multiple operators. In particular, a reverse operator may obscure
@@ -1097,95 +1113,95 @@ the opportunity to perform the select push through.
 @c
 int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 {
-	InstrPtr p,q;
-	p= getInstrPtr(mb,pc1);
-	q= getInstrPtr(mb,pc2);
-	if( @:fndOperator(p,"bat","reverse")@ ){
-		if( @:fndOperator(q,"algebra","semijoin")@ ){
-			if( p->argv[0]== q->argv[2]){
-				GDKfree(p->fcnname);
-				freeModuleName(p);
-				setFunctionId(p, GDKstrdup("reverse_semijoin"));
-				p= pushArgument(mb,p,q->argv[1]);
-				removeInstruction(mb,pc2);
-				return 1;
-			}
-		}
-		if( @:fndOperator(q,"algebra","select")@ ){
-			if( p->argv[0]== q->argv[1]){
-				GDKfree(p->fcnname);
-				freeModuleName(p);
-				setFunctionId(p, GDKstrdup("reverse_select"));
-				p= pushArgument(mb,p,q->argv[1]);
-				p= pushArgument(mb,p,q->argv[2]);
-				p= pushArgument(mb,p,q->argv[3]);
-				removeInstruction(mb,pc2);
-				return 1;
-			}
-		}
-	} else
-	if( @:fndOperator(p,"algebra","semijoin")@ ){
-		if( @:fndOperator(q,"algebra","select")@ ){
-			if( p->argv[0]== q->argv[1]){
-				GDKfree(p->fcnname);
-				freeModuleName(p);
-				setFunctionId(p, GDKstrdup("semijoin_select"));
-				p= pushArgument(mb,p,q->argv[2]);
-				p= pushArgument(mb,p,q->argv[3]);
-				removeInstruction(mb,pc2);
-				return 1;
-			}
-		}
-	}
-	return 0;
+    InstrPtr p,q;
+    p= getInstrPtr(mb,pc1);
+    q= getInstrPtr(mb,pc2);
+    if( @:fndOperator(p,"bat","reverse")@ ){
+        if( @:fndOperator(q,"algebra","semijoin")@ ){
+            if( p->argv[0]== q->argv[2]){
+                GDKfree(p->fcnname);
+                freeModuleName(p);
+                setFunctionId(p, GDKstrdup("reverse_semijoin"));
+                p= pushArgument(mb,p,q->argv[1]);
+                removeInstruction(mb,pc2);
+                return 1;
+            }
+        }
+        if( @:fndOperator(q,"algebra","select")@ ){
+            if( p->argv[0]== q->argv[1]){
+                GDKfree(p->fcnname);
+                freeModuleName(p);
+                setFunctionId(p, GDKstrdup("reverse_select"));
+                p= pushArgument(mb,p,q->argv[1]);
+                p= pushArgument(mb,p,q->argv[2]);
+                p= pushArgument(mb,p,q->argv[3]);
+                removeInstruction(mb,pc2);
+                return 1;
+            }
+        }
+    } else
+    if( @:fndOperator(p,"algebra","semijoin")@ ){
+        if( @:fndOperator(q,"algebra","select")@ ){
+            if( p->argv[0]== q->argv[1]){
+                GDKfree(p->fcnname);
+                freeModuleName(p);
+                setFunctionId(p, GDKstrdup("semijoin_select"));
+                p= pushArgument(mb,p,q->argv[2]);
+                p= pushArgument(mb,p,q->argv[3]);
+                removeInstruction(mb,pc2);
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 int SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
 {
-	InstrPtr p,q;
-	p= getInstrPtr(mb,pc1);
-	q= getInstrPtr(mb,pc2);
-	(void) p; (void) q; /* do something useful later on */
-	return 0;
+    InstrPtr p,q;
+    p= getInstrPtr(mb,pc1);
+    q= getInstrPtr(mb,pc2);
+    (void) p; (void) q; /* do something useful later on */
+    return 0;
 }
 str SPoptimizer(Client cntxt, MalBlkPtr mb, int pc)
-{	int i,k,combis=0,squeeze=0;
-	InstrPtr p;
+{   int i,k,combis=0,squeeze=0;
+    InstrPtr p;
 
-	/* process the combinators */
-	for(i=0; i<mb->stop-1; i++){
-		p= getInstrPtr(mb,i);
-		for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
-		if( SPcombi000(mb,i,k)){
+    /* process the combinators */
+    for(i=0; i<mb->stop-1; i++){
+        p= getInstrPtr(mb,i);
+        for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
+        if( SPcombi000(mb,i,k)){
 #ifdef DEBUG_MAL_OPTIMIZER
-			if( cntxt->debugoptimizer){
-			stream_printf(GDKout,"Combinator found\n");
-			printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
-			}
+            if( cntxt->debugoptimizer){
+            stream_printf(GDKout,"Combinator found\n");
+            printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
+            }
 #endif
-			combis++;
-			k--; /* an instruction has been removed */
-			setLifespan(mb); /* expensive but needed */
-		}
-	}
-	/* process the squeezers */
-	for(i=0; i<mb->stop-1; i++){
-		p= getInstrPtr(mb,i);
-		for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
-		if( SPsqueezer000(mb,i,k)){
+            combis++;
+            k--; /* an instruction has been removed */
+            setLifespan(mb); /* expensive but needed */
+        }
+    }
+    /* process the squeezers */
+    for(i=0; i<mb->stop-1; i++){
+        p= getInstrPtr(mb,i);
+        for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
+        if( SPsqueezer000(mb,i,k)){
 #ifdef DEBUG_MAL_OPTIMIZER
-			if( cntxt->debugoptimizer){
-			stream_printf(GDKout,"Squeezer found\n");
-			printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
-			}
+            if( cntxt->debugoptimizer){
+            stream_printf(GDKout,"Squeezer found\n");
+            printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
+            }
 #endif
-			squeeze++;
-			k--; /* an instruction has been removed */
-		}
-	}
+            squeeze++;
+            k--; /* an instruction has been removed */
+        }
+    }
 
-	/* remove the SPoptimizer request */
-	if(pc) removeInstruction(mb,pc);
-	return NULL;
+    /* remove the SPoptimizer request */
+    if(pc) removeInstruction(mb,pc);
+    return NULL;
 }
 @-
 Pushing a selection geared at the left operand through the join operator
@@ -1207,39 +1223,39 @@ Combinations of reversals should be removed. It should be called
 whenever a new reversal is introduced.
 @c
 str RRoptimizer(Client cntxt, MalBlkPtr mb, int pc)
-{	int i,k;
-	InstrPtr q,p;
+{   int i,k;
+    InstrPtr q,p;
 
-	for(i=1; i< mb->stop; i++){
-		p = getInstrPtr(mb,i);
-		if( @:fndOperator(p,"bat","reverse")@ ){
-			for(k=i+1; k<mb->stop; k++){
-				q= getInstrPtr(mb,k);
-				if( @:fndOperator(q,"bat","reverse")@ &&
-				    p->argv[0]== q->argv[1] && 
-				   !isTouched(mb,p->argv[0],i+1,k)){
+    for(i=1; i< mb->stop; i++){
+        p = getInstrPtr(mb,i);
+        if( @:fndOperator(p,"bat","reverse")@ ){
+            for(k=i+1; k<mb->stop; k++){
+                q= getInstrPtr(mb,k);
+                if( @:fndOperator(q,"bat","reverse")@ &&
+                    p->argv[0]== q->argv[1] && 
+                   !isTouched(mb,p->argv[0],i+1,k)){
 #ifdef DEBUG_MAL_OPTIMIZER
-		if( cntxt->debugoptimizer){
-			stream_printf(GDKout,"Reverse Removal\n");
-			printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-			printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-		}
+        if( cntxt->debugoptimizer){
+            stream_printf(GDKout,"Reverse Removal\n");
+            printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+            printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+        }
 #endif
-				ARreplaceAlias(mb,i,mb->stop,
-					p->argv[0], p->argv[1]);
-				ARreplaceAlias(mb,k+1,mb->stop,
-					q->argv[0], p->argv[1]);
-				removeInstruction(mb,k);
-				if( pc>k) pc--;
-				removeInstruction(mb,i); i--;
-				if( pc>i) pc--;
-				break;
-				}
-			}
-		}
-	}
-	if(pc) removeInstruction(mb,pc);
-	return NULL;
+                ARreplaceAlias(mb,i,mb->stop,
+                    p->argv[0], p->argv[1]);
+                ARreplaceAlias(mb,k+1,mb->stop,
+                    q->argv[0], p->argv[1]);
+                removeInstruction(mb,k);
+                if( pc>k) pc--;
+                removeInstruction(mb,i); i--;
+                if( pc>i) pc--;
+                break;
+                }
+            }
+        }
+    }
+    if(pc) removeInstruction(mb,pc);
+    return NULL;
 }
 @+ Flow analysis
 For each variable we should determine its scope of stability.
@@ -1253,55 +1269,55 @@ The property `unsafe` is reserved to identify cases where this does not hold.
 Typically, a bun-insert operation is unsafe, as it changes one of the parameters.
 @c
 int showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f){
-	InstrPtr p;
-	int i,k;
-	for(i=pc+1; i<mb->stop-1; i++){
-		p= getInstrPtr(mb,i);
-		for(k=p->retc;k<p->argc;k++)
-		if( p->argv[k]==varid) {
-			stream_printf(f,"n%d -> n%d\n",pc,i);
-		}
-	}
-	return 0;
+    InstrPtr p;
+    int i,k;
+    for(i=pc+1; i<mb->stop-1; i++){
+        p= getInstrPtr(mb,i);
+        for(k=p->retc;k<p->argc;k++)
+        if( p->argv[k]==varid) {
+            stream_printf(f,"n%d -> n%d\n",pc,i);
+        }
+    }
+    return 0;
 }
 @-
 At a later stage we could extend the flow details with the status
 of crucial properties, e.g. processing time, cost, size
 @c
 void showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
-	str s,msg;
-	(void) stk; /* fool the compiler */
-	msg= instruction2str(mb,p,0);
-	stream_printf(f,"n%d [fontsize=8, shape=box, label=\"",pc);
-	for(s=msg; *s; s++)
-	if(*s =='"') stream_printf(f,"\\\""); else stream_printf(f,"%c",*s);
-	stream_printf(f,"\"];\n");
-	GDKfree(msg);
+    str s,msg;
+    (void) stk; /* fool the compiler */
+    msg= instruction2str(mb,p,0);
+    stream_printf(f,"n%d [fontsize=8, shape=box, label=\"",pc);
+    for(s=msg; *s; s++)
+    if(*s =='"') stream_printf(f,"\\\""); else stream_printf(f,"%c",*s);
+    stream_printf(f,"\"];\n");
+    GDKfree(msg);
 }
 void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
-	stream *f;
-	InstrPtr p;
-	int i,k;
-	(void) stk; /* fool the compiler */
+    stream *f;
+    InstrPtr p;
+    int i,k;
+    (void) stk; /* fool the compiler */
 
-	if(idcmp(fname,"stdout")==0) f= GDKout; else
-	f= open_wastream(fname);
-	p= getInstrPtr(mb,0);
-	stream_printf(f,"digraph %s{\n", functionName(p));
-	p= getInstrPtr(mb,0);
-	showFlowDetails(mb,stk,p,0,f);
-	for(k=p->retc;k<p->argc;k++){
-		showOutFlow(mb,0,p->argv[k],f);
-	}
-	for(i=1;i<mb->stop-1;i++){
-		p= getInstrPtr(mb,i);
-		showFlowDetails(mb,stk,p,i,f);
-		for(k=0;k<p->retc;k++){
-			showOutFlow(mb,i,p->argv[k],f);
-		}
-	}
-	stream_printf(f,"}\n");
-	if(f!= GDKout) stream_close(f);
+    if(idcmp(fname,"stdout")==0) f= GDKout; else
+    f= open_wastream(fname);
+    p= getInstrPtr(mb,0);
+    stream_printf(f,"digraph %s{\n", functionName(p));
+    p= getInstrPtr(mb,0);
+    showFlowDetails(mb,stk,p,0,f);
+    for(k=p->retc;k<p->argc;k++){
+        showOutFlow(mb,0,p->argv[k],f);
+    }
+    for(i=1;i<mb->stop-1;i++){
+        p= getInstrPtr(mb,i);
+        showFlowDetails(mb,stk,p,i,f);
+        for(k=0;k<p->retc;k++){
+            showOutFlow(mb,i,p->argv[k],f);
+        }
+    }
+    stream_printf(f,"}\n");
+    if(f!= GDKout) stream_close(f);
 }
 @
 Summarization of the data flow dependencies can be modelled as a dependency graph.
@@ -1309,16 +1325,16 @@ It can be made explicit or kept implicit using the operators needed.
 We start with the latter. The primary steps to deal with is dead code removal.
 @c
 int removeDeadSink(MalBlkPtr mb, int pc, InstrPtr p){
-	/* detect if the destination variable is not used anymor*/
-	/* return if it worked out */
-	(void) mb; (void) pc; (void)p; /* fool the compiler */
-	return FALSE;
+    /* detect if the destination variable is not used anymor*/
+    /* return if it worked out */
+    (void) mb; (void) pc; (void)p; /* fool the compiler */
+    return FALSE;
 }
 int removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p){
-	/* detect if the source variable is not used anymor*/
-	/* return if it worked out */
-	(void)mb; (void) pc; (void) p; /* fool the compiler */
-	return FALSE;
+    /* detect if the source variable is not used anymor*/
+    /* return if it worked out */
+    (void)mb; (void) pc; (void) p; /* fool the compiler */
+    return FALSE;
 }
 @+ Barrier related optimizations
 The barrier blocks provide several bottlenecks for program analysis.
@@ -1330,12 +1346,12 @@ the MAL intermediate. This include evaluation of constant expressions,
 and strength reduction, by moving possible expensive operations out of the
 loop if their are safe.
 int removeConstantExpression(MalBlkPtr mb, int pc, InstrPtr p){
-	/* simple constant expressions within barrier blocks should be avoided*/
-	/* return if it worked out */
-	return FALSE;
+    /* simple constant expressions within barrier blocks should be avoided*/
+    /* return if it worked out */
+    return FALSE;
 }
 int reduceBarrierStrength(MalBlkPtr mb, int pcfirst, int pclast){
-	return FALSE;
+    return FALSE;
 }
 @* Optimizer utilities
 Building optimizer variants require several utilities to ease the life
@@ -1353,8 +1369,8 @@ The routines for this aspect are available from in mal_instruction.mx
 
 @c
 void moveConstantsFirst(MalBlkPtr mb){
-	/* move all expression dealing with constants to the beginning */
-	/* could be used to shortcut stack initialization */
-	(void) mb; /*fool compilers */
+    /* move all expression dealing with constants to the beginning */
+    /* could be used to shortcut stack initialization */
+    (void) mb; /*fool compilers */
 }
 @}

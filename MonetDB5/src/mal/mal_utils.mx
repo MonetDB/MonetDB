@@ -18,7 +18,6 @@
 @a M. Kersten
 @v 0.0
 @+ Some basic utiliteses
-@T
 Passing strings between front-end and kernel often
 require marshalling.
 @{
@@ -27,7 +26,7 @@ require marshalling.
 #define MAL_UTILS_H
 #include "mal.h"
 
-mal_export str	quote(const char *msg, int size);
+mal_export str  quote(const char *msg, int size);
 mal_export void unquote(char *msg);
 
 #endif /* MAL_UTILS_H*/
@@ -43,109 +42,109 @@ of the unquoted part section.
 void
 unquote(char *msg)
 {
-	char *p = msg, *s;
-	/*char quote;*//* StM: not used !? */
+    char *p = msg, *s;
+    /*char quote;*//* StM: not used !? */
 
-	/* first skip over leading white space */
-	while (*p && isspace((int) *p))
-		p++;
-	/*quote = *p;*//* StM: not used !? */
-	/* get quoted string and remove trailing bracket first */
-	p++;
-	s = p;
-	while (*p ) {
-		if (*p == '\\') {
-			p++;
-			switch (*p) {
-			/* later
-			   case '0': case '1': case '2': case '3': case '4':
-			   case '5': case '6': case '7': case '8': case '9':
-			 */
-			case 'n':
-				*s = '\n';
-				break;
-			case 't':
-				*s = '\t';
-				break;
-			case 'r':
-				*s = '\r';
-				break;
-			case 'f':
-				*s = '\f';
-				break;
-			case '0': case '1': case '2': case '3':
-				/* this could be the start of
-				   an octal sequence, check it
-				   out */
-				if (p[1] && p[2] &&
-				    p[1] >= '0' && p[1] <= '7' &&
-				    p[2] >= '0' && p[2] <= '7') {
-					*s = ((p[0] - '0') << 6) |
-						((p[1] - '0') << 3) |
-						(p[2] - '0');
-					p += 2;
-					break;
-				}
-				/* fall through */
-			default:
-				*s = *p;
-				break;
-			}
-			p++;
-		} else {
-			*s = *p++;
-		}
-		s++;
-	}
-	*s = 0;		/* close string */
+    /* first skip over leading white space */
+    while (*p && isspace((int) *p))
+        p++;
+    /*quote = *p;*//* StM: not used !? */
+    /* get quoted string and remove trailing bracket first */
+    p++;
+    s = p;
+    while (*p ) {
+        if (*p == '\\') {
+            p++;
+            switch (*p) {
+            /* later
+               case '0': case '1': case '2': case '3': case '4':
+               case '5': case '6': case '7': case '8': case '9':
+             */
+            case 'n':
+                *s = '\n';
+                break;
+            case 't':
+                *s = '\t';
+                break;
+            case 'r':
+                *s = '\r';
+                break;
+            case 'f':
+                *s = '\f';
+                break;
+            case '0': case '1': case '2': case '3':
+                /* this could be the start of
+                   an octal sequence, check it
+                   out */
+                if (p[1] && p[2] &&
+                    p[1] >= '0' && p[1] <= '7' &&
+                    p[2] >= '0' && p[2] <= '7') {
+                    *s = ((p[0] - '0') << 6) |
+                        ((p[1] - '0') << 3) |
+                        (p[2] - '0');
+                    p += 2;
+                    break;
+                }
+                /* fall through */
+            default:
+                *s = *p;
+                break;
+            }
+            p++;
+        } else {
+            *s = *p++;
+        }
+        s++;
+    }
+    *s = 0;     /* close string */
 }
 
 char *
 quote(const char *msg, int size)
 {
-	char *s = malloc(strlen(msg) * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
-	char *t = s;
+    char *s = malloc(strlen(msg) * 2 + 1);  /* we absolutely don't need more than this (until we start producing octal escapes */
+    char *t = s;
 
-	/* the condition is tricky: if initially size < 0, we must
-	   continue until a NULL byte, else, size gives the number of
-	   bytes to be copied */
-	while (size < 0 ? *msg : size > 0) {
-		if (size > 0)
-			size--;
-		switch (*msg) {
-		case '"':
-			*t++ = '\\';
-			*t++ = '"';
-			break;
-		case '\n':
-			*t++ = '\\';
-			*t++ = 'n';
-			break;
-		case '\t':
-			*t++ = '\\';
-			*t++ = 't';
-			break;
-		case PLACEHOLDER:
-			*t++ = '\\';
-			*t++ = PLACEHOLDER;
-			break;
-		case '\\':
-			*t++ = '\\';
-			*t++ = '\\';
-			break;
-		case '\0':
-			*t++ = '\\';
-			*t++ = '0';
-			break;
-		default:
-			*t++ = *msg;
-			break;
-		}
-		msg++;
-		/* also deal with binaries */
-	}
-	*t = 0;
-	return s;
+    /* the condition is tricky: if initially size < 0, we must
+       continue until a NULL byte, else, size gives the number of
+       bytes to be copied */
+    while (size < 0 ? *msg : size > 0) {
+        if (size > 0)
+            size--;
+        switch (*msg) {
+        case '"':
+            *t++ = '\\';
+            *t++ = '"';
+            break;
+        case '\n':
+            *t++ = '\\';
+            *t++ = 'n';
+            break;
+        case '\t':
+            *t++ = '\\';
+            *t++ = 't';
+            break;
+        case PLACEHOLDER:
+            *t++ = '\\';
+            *t++ = PLACEHOLDER;
+            break;
+        case '\\':
+            *t++ = '\\';
+            *t++ = '\\';
+            break;
+        case '\0':
+            *t++ = '\\';
+            *t++ = '0';
+            break;
+        default:
+            *t++ = *msg;
+            break;
+        }
+        msg++;
+        /* also deal with binaries */
+    }
+    *t = 0;
+    return s;
 }
 
 @}

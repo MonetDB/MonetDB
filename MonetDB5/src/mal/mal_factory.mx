@@ -18,7 +18,6 @@
 @a M. Kersten
 @v 0.0
 @* Factories 
-@T
 A convenient programming construct is the co-routine, which
 is specified as an ordinary function, but maintains its
 own state between calls, and permits re-entry other than
@@ -37,26 +36,27 @@ Factory management is limited to its owner, which derived from the module
 in which it is placed. By default Admin is the owner of all modules.
 
 The random generator example is used to illustrate its definition and use.
-{\footnotesize
-\begin{verbatim}
+@example
+@verbatim
 FACTORY random(seed:int,limit:int):int;
-	rnd:=seed;
-	lim:= limit;
+    rnd:=seed;
+    lim:= limit;
 BARRIER lim;
-	LEAVE lim:= lim-1;
-	rnd:= rnd*125;
-	YIELD rnd:= rnd % 32676;
-	REDO lim;
+    LEAVE lim:= lim-1;
+    rnd:= rnd*125;
+    YIELD rnd:= rnd % 32676;
+    REDO lim;
 EXIT lim;
 END random;
-\end{verbatim}
-}
+@end verbatim
+@end example
+
 The first time this factory is called, a factory plant
 is created in the local system to handle the requests.
 The plant carries the stack frame and synchronizes access.
 
 In this case it initializes the generator. 
-The random number is generated and YIELDed as
+The random number is generated and @code{yield}  as
 a result of the call. The factory process is then put to sleep.
 The second call received by the factory wakes it up at the
 point where it went to sleep. In this case it will
@@ -71,31 +71,30 @@ A cooperative group of factories can be readily constructed.
 For example, assume we would like the
 random factories to respond to both random(seed,limit) and
 random(). This can be defined as follows:
-{\footnotesize
-\begin{verbatim}
+@example
+@verbatim
 FACTORY random(seed:int,limit:int):int;
-	rnd:=seed;
-	lim:= limit;
-	box.deposit(rnd);
+    rnd:=seed;
+    lim:= limit;
+    box.deposit(rnd);
 BARRIER lim;
-	LEAVE lim:= lim-1;
-	rnd:= rnd*125;
-	YIELD rnd:= rnd % 32676;
-	REDO lim;
+    LEAVE lim:= lim-1;
+    rnd:= rnd*125;
+    YIELD rnd:= rnd % 32676;
+    REDO lim;
 EXIT lim;
 END random;
 
 FACTORY random():int;
 BARRIER forever:=true;
-	YIELD random(0,0);
-	REDO forever;
+    YIELD random(0,0);
+    REDO forever;
 EXIT forever;
 END random;
-\end{verbatim}
-}
+@end verbatim
+@end example
 
 @+ Client support
-@T
 The factory produces elements for multiple clients.
 Sharing of the factory state, paralle processing,
 or even remote processing is up to the factory owner.
@@ -107,27 +106,26 @@ can keep track of a client list to differentiate
 the states.
 A possible implementation would be:
 
-{\footnotesize
-\begin{verbatim}
+@example
+@verbatim
 FACTORY random(seed:int,clientid:int):int;
-	clt:= new(:int,:int);
-	insert(clt,clientid,seed);
+    clt:= new(:int,:int);
+    insert(clt,clientid,seed);
 BARRIER always:=true;
-	rnd:= find(clt,clientid);
-CATCH	rnd; #failed to find client
-	insert(clt,clientid,seed);
-	rnd:= find(clt,clientid);
-EXIT	rnd;
-	rnd:= rnd * 125;
-	rnd:= rnd % 32676;
-	replace(clt,clientid,rnd);
-	yield rnd;
-	REDO always;
+    rnd:= find(clt,clientid);
+CATCH   rnd; #failed to find client
+    insert(clt,clientid,seed);
+    rnd:= find(clt,clientid);
+EXIT    rnd;
+    rnd:= rnd * 125;
+    rnd:= rnd % 32676;
+    replace(clt,clientid,rnd);
+    yield rnd;
+    REDO always;
 EXIT always;
 END random;
-
-\end{verbatim}
-}
+@end verbatim
+@end example
 
 The operators to built client aware factories are,
 factory.getCaller(), which returns a client index,
@@ -136,21 +134,19 @@ which returns the identity of scope enclosed.
 
 To illustrate, the client specific random generator
 can be shielded using the factory:
-{\footnotesize
-\begin{verbatim}
+@example
+@verbatim
 FACTORY random(seed:int):int;
 BARRIER always:=true;
-	clientid:= factory.getCaller();
-	YIELD random(seed, clientid);
-	REDO always;
+    clientid:= factory.getCaller();
+    YIELD random(seed, clientid);
+    REDO always;
 EXIT always;
 END random;
-
-\end{verbatim}
-}
+@end verbatim
+@end example
 
 @+ Factory control
-@T
 The predominant interaction between customer and factory
 is the ordinary call. The parameters can be used to instruct
 the factory on the actions to be taken. However, exceptional
@@ -160,13 +156,12 @@ An exception raised in any client is also
 forwarded to any factory which it would have called otherwise.
 I.e. any outstanding factory call skipped while catching the exception
 gets a copy too.
-It effectively leads to a YIELD statement raising an exception.
+It effectively leads to a @code{yield}  statement raising an exception.
 
 The state of a factory can be changed only when the system
 is awaiting a call for a new job. 
 
 @+ Complex examples 
-@T
 One interesting use of the factory scheme is to model
 a volcano-style query processor. Each node in the query
 tree is an iterator that calls upon the operands to produce
@@ -176,60 +171,60 @@ The plan does not test for all boundary conditions, it merely
 implements a nested loop. The end of a sequence is identified
 by a NIL chunk.
 
-{\footnotesize
-\begin{verbatim}
+@example
+@verbatim
 FACTORY query();
-	Left:= bind("relationA");
-	Right:= bind("relationB");
-	rc:= joinStep(Left,Right);
+    Left:= bind("relationA");
+    Right:= bind("relationB");
+    rc:= joinStep(Left,Right);
 BARRIER rc!= nil;
-	print(rc);
-	rc:= joinStep(Left,Right);
-	REDO rc!= nil;
+    print(rc);
+    rc:= joinStep(Left,Right);
+    REDO rc!= nil;
 EXIT rc;
 END query;
 
 #nested loop join
 FACTORY joinStep(Left:bat[:any,:any],Right:bat[:any,:any]):bat[:any,:any];
-	lc:= chunkStep(Left);
+    lc:= chunkStep(Left);
 BARRIER outer:= lc != nil;
-	rc:= chunkStep(Right);
-	BARRIER inner:= rc != nil;
-		chunk:= join(lc,rc);
-		YIELD chunk;
-		rc:= chunkStep(Right);
-		REDO inner:= rc != nil;
-	EXIT inner;
-	lc:= chunkStep(Left);
-	REDO outer:= lc != nil;
+    rc:= chunkStep(Right);
+    BARRIER inner:= rc != nil;
+        chunk:= join(lc,rc);
+        YIELD chunk;
+        rc:= chunkStep(Right);
+        REDO inner:= rc != nil;
+    EXIT inner;
+    lc:= chunkStep(Left);
+    REDO outer:= lc != nil;
 EXIT outer;
-	# we have seen everything
-	return nil;
+    # we have seen everything
+    return nil;
 END joinStep;
 
 #factory for left branch
 FACTORY chunkStepL(L:bat[:any,:any]):bat[:any,:any];
-	i:= 0;
-	j:= 20;
-	cnt:= count(L);
+    i:= 0;
+    j:= 20;
+    cnt:= count(L);
 BARRIER outer:= j<cnt;
-	chunk:= slice(L,i,j);
-	i:= j;
-	j:= i+ 20;
-	YIELD chunk;
-	REDO loop:= j<cnt;
+    chunk:= slice(L,i,j);
+    i:= j;
+    j:= i+ 20;
+    YIELD chunk;
+    REDO loop:= j<cnt;
 EXIT outer;
-	# sent last portion
-	chunk:= slice(L,i,cnt);
-	YIELD chunk;
-	RETURN nil;
+    # sent last portion
+    chunk:= slice(L,i,cnt);
+    YIELD chunk;
+    RETURN nil;
 END chunkStep;
 
 #factory for right leg
 FACTORY chunkStepR(L:bat[:any,:any]):bat[:any,:any];
+@end verbatim
+@end example
 
-\end{verbatim}
-}
 So far we haven;t re-used the pattern that both legs are
 identical. This could be modeled by a generic chunk factory.
 Choosing a new factory for each query steps reduces the 
@@ -240,14 +235,15 @@ all clients has disappeared?
 
 What additional control do you need? Can you throw an
 exception to a Factory? implicitly yes.
-{\footnotesize
-\begin{verbatim}
-	RAISE reset:="reset";
-	chunkStep(L);	# receives 'reset' exception
-	CATCH reset;
-	EXIT reset;
-\end{verbatim}
-}
+
+@example
+@verbatim
+    RAISE reset:="reset";
+    chunkStep(L);   # receives 'reset' exception
+    CATCH reset;
+    EXIT reset;
+@end verbatim
+@end example
 
 @{
 @h
@@ -263,11 +259,11 @@ exception to a Factory? implicitly yes.
 #include "mal_function.h"
 #include "mal_exception.h"
 
-#define POLICYimmediate	1	/* let user wait for reply */
-#define POLICYprivate	2	/* each client its own plants */
+#define POLICYimmediate 1   /* let user wait for reply */
+#define POLICYprivate   2   /* each client its own plants */
 
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, 
-		MalStkPtr stk, InstrPtr pci);
+        MalStkPtr stk, InstrPtr pci);
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
@@ -283,19 +279,19 @@ limited table for now.
 #include "mal_factory.h"
 
 typedef struct {
-	int	id;		/* unique plant number */
-	MalBlkPtr factory;
-	MalStkPtr stk;		/* private state */
-	int	pc;		/* where we are */
-	int	inuse;		/* able to handle it */
-	int	next;		/* next plant of same factory */
-	int	policy;		/* flags to control behavior */
-	str	location;	/* where the factoryMgr resides */
+    int id;     /* unique plant number */
+    MalBlkPtr factory;
+    MalStkPtr stk;      /* private state */
+    int pc;     /* where we are */
+    int inuse;      /* able to handle it */
+    int next;       /* next plant of same factory */
+    int policy;     /* flags to control behavior */
+    str location;   /* where the factoryMgr resides */
 
-	Client	client;		/* who called it */
-	MalBlkPtr caller;	/* from routine */
-	MalStkPtr env;		/* with the stack  */
-	InstrPtr pci;		/* with the instruction */
+    Client  client;     /* who called it */
+    MalBlkPtr caller;   /* from routine */
+    MalStkPtr env;      /* with the stack  */
+    InstrPtr pci;       /* with the instruction */
 } PlantRecord, *Plant;
 
 #define MAXPLANTS 256
@@ -306,70 +302,70 @@ static int plantId=1;
 mal_export Plant newPlant(MalBlkPtr mb);
 
 str callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, 
-		MalStkPtr stk, InstrPtr pci){
-	Plant u =0, pl, plim, lastone=0;
-	int i,k;
-	InstrPtr psig= getInstrPtr(mb,0);
-	ValPtr lhs,rhs;
+        MalStkPtr stk, InstrPtr pci){
+    Plant u =0, pl, plim, lastone=0;
+    int i,k;
+    InstrPtr psig= getInstrPtr(mb,0);
+    ValPtr lhs,rhs;
 #ifdef DEBUG_MAL_FACTORY
-	stream_printf(GDKout,"factoryMgr called\n");
+    stream_printf(GDKout,"factoryMgr called\n");
 #endif
-	(void) cntxt; (void) pci; 
-	(void) mbcaller;
-	plim = plants + lastPlant;
-	/* the lookup can be avoided by handing out the index
-	   upon factory definition. todo
-	*/
-	for(pl = plants; pl< plim; pl++)
-	if( pl->factory == mb )  {
-		lastone= pl;
-		if( !pl->inuse ){
-			u = pl;
-			break;
-		} else if(pl->next) pl= plants+pl->next -1;
-	}
-	if( u == 0){
-		/* initialize a new plant using the owner policy */
-		pl = newPlant(mb);
-		if( pl == NULL)
-			return throwMessage("factoryMgr",
-					"No factory space left\n");
-		if( lastone ) lastone->next = plants - pl;
-	}
-	if( pl->location)
-		return throwMessage("factoryMgr","No remote access allowed\n");
+    (void) cntxt; (void) pci; 
+    (void) mbcaller;
+    plim = plants + lastPlant;
+    /* the lookup can be avoided by handing out the index
+       upon factory definition. todo
+    */
+    for(pl = plants; pl< plim; pl++)
+    if( pl->factory == mb )  {
+        lastone= pl;
+        if( !pl->inuse ){
+            u = pl;
+            break;
+        } else if(pl->next) pl= plants+pl->next -1;
+    }
+    if( u == 0){
+        /* initialize a new plant using the owner policy */
+        pl = newPlant(mb);
+        if( pl == NULL)
+            return throwMessage("factoryMgr",
+                    "No factory space left\n");
+        if( lastone ) lastone->next = plants - pl;
+    }
+    if( pl->location)
+        return throwMessage("factoryMgr","No remote access allowed\n");
 
 @-
 We have found a factory to process the request.
 Let's call it as a synchronous action, without concern on parallelism.
 @c
-	/* remember context */
-	pl->client= cntxt;
-	pl->caller= mbcaller;
-	pl->env= stk; 
-	pl->pci = pci;
-	pl->inuse = 1;
-	mal_set_lock(stk->stklock,"callFactory");
-	/* the stack may not disappear */
-	stk->shares++; 
-	mal_unset_lock(stk->stklock,"callFactory");
-	/* inherit debugging */
-	pl->stk->cmd = stk->cmd;
+    /* remember context */
+    pl->client= cntxt;
+    pl->caller= mbcaller;
+    pl->env= stk; 
+    pl->pci = pci;
+    pl->inuse = 1;
+    mal_set_lock(stk->stklock,"callFactory");
+    /* the stack may not disappear */
+    stk->shares++; 
+    mal_unset_lock(stk->stklock,"callFactory");
+    /* inherit debugging */
+    pl->stk->cmd = stk->cmd;
 
-	/* copy the calling arguments onto the stack 
-	  of the factory */
-	i= psig->retc;
-	for(k=pci->retc; i<pci->argc; i++,k++){
-		lhs = &pl->stk->stk[psig->argv[k]];
-		/* variable arguments ? */
-		if( k== psig->argc-1) k--;
+    /* copy the calling arguments onto the stack 
+      of the factory */
+    i= psig->retc;
+    for(k=pci->retc; i<pci->argc; i++,k++){
+        lhs = &pl->stk->stk[psig->argv[k]];
+        /* variable arguments ? */
+        if( k== psig->argc-1) k--;
 
-		rhs = &pl->env->stk[pci->argv[i]];
-		VALcopy(lhs,rhs);
-	}
-	if( u == 0)
-		return runMAL(cntxt,mb,1,0,pl->stk,0);
-	return reenterMAL(cntxt, mb, pl->pc, pl->stk, 0, 0);
+        rhs = &pl->env->stk[pci->argv[i]];
+        VALcopy(lhs,rhs);
+    }
+    if( u == 0)
+        return runMAL(cntxt,mb,1,0,pl->stk,0);
+    return reenterMAL(cntxt, mb, pl->pc, pl->stk, 0, 0);
 }
 @-
 A new plant is constructed. The properties of the factory
@@ -377,20 +373,20 @@ should be known upon compile time. They are retrieved from
 the signature of the factory definition.
 @c
 Plant newPlant(MalBlkPtr mb){
-	Plant p,plim;
+    Plant p,plim;
 #ifdef DEBUG_MAL_FACTORY
-	stream_printf(GDKout,"newPlant called\n");
+    stream_printf(GDKout,"newPlant called\n");
 #endif
-	plim = plants + lastPlant;
-	for(p=plants; p<plim && p->factory; p++) ;
-	if( lastPlant == MAXPLANTS) return 0;
-	if(p == plim) lastPlant++;
-	p->factory = mb;
-	p->id = plantId++;
-	p->pc = 1;	/* where we start */
-	p->stk = newGlobalStack(mb->vsize);
-	p->stk->keepAlive= TRUE;
-	return p;
+    plim = plants + lastPlant;
+    for(p=plants; p<plim && p->factory; p++) ;
+    if( lastPlant == MAXPLANTS) return 0;
+    if(p == plim) lastPlant++;
+    p->factory = mb;
+    p->id = plantId++;
+    p->pc = 1;  /* where we start */
+    p->stk = newGlobalStack(mb->vsize);
+    p->stk->keepAlive= TRUE;
+    return p;
 }
 @-
 Upon reaching the yield operator, the factory is
@@ -399,82 +395,82 @@ The information in the target list should be delivered
 to the caller stack frame.
 @c
 Plant yieldResult(MalBlkPtr mb, InstrPtr p, int pc){
-	Plant pl, plim=plants + lastPlant;
-	ValPtr lhs, rhs;
-	int i;
+    Plant pl, plim=plants + lastPlant;
+    ValPtr lhs, rhs;
+    int i;
 
-	(void) p; (void)pc;
-	for( pl= plants; pl<plim; pl++)
-	if( pl->factory == mb){
-		for(i=0;i < p->retc; i++){
+    (void) p; (void)pc;
+    for( pl= plants; pl<plim; pl++)
+    if( pl->factory == mb){
+        for(i=0;i < p->retc; i++){
 #ifdef DEBUG_MAL_FACTORY
-				printf("lhs %d rhs %d\n", 
-					pl->pci->argv[i], p->argv[i]);
+                printf("lhs %d rhs %d\n", 
+                    pl->pci->argv[i], p->argv[i]);
 #endif
                                 rhs = &pl->stk->stk[p->argv[i]];
                                 lhs = &pl->env->stk[pl->pci->argv[i]];
                                 VALcopy(lhs,rhs);
                         }
-		return pl;
-	}
-	return NULL;
+        return pl;
+    }
+    return NULL;
 }
 str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc){
-	Plant pl;
+    Plant pl;
 
-	pl= yieldResult(mb,p,pc);
-	if(pl) {
-		pl->inuse = 0;
-		pl->pc = pc+1;
-		pl->client = NULL;
-		pl->caller = NULL;
-		pl->pci = NULL;
-		
-		mal_set_lock(pl->env->stklock,"yieldFactory");
-		pl->env->shares--; 
-		pl->env = NULL;
-		mal_unset_lock(pl->env->stklock,"yieldFactory");
-		return MAL_SUCCEED;
-	}
-	return throwMessage("yieldFactory","No factory found\n");
+    pl= yieldResult(mb,p,pc);
+    if(pl) {
+        pl->inuse = 0;
+        pl->pc = pc+1;
+        pl->client = NULL;
+        pl->caller = NULL;
+        pl->pci = NULL;
+        
+        mal_set_lock(pl->env->stklock,"yieldFactory");
+        pl->env->shares--; 
+        pl->env = NULL;
+        mal_unset_lock(pl->env->stklock,"yieldFactory");
+        return MAL_SUCCEED;
+    }
+    return throwMessage("yieldFactory","No factory found\n");
 }
 @-
 A return from a factory implies a YIELD action followed
 by closing it.
 @c
 str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc){
-	Plant pl;
+    Plant pl;
 
-	pl= yieldResult(mb,pp,pc);
-	if(pl) 
-		return finishFactory(mb,pp,pc);
-	return throwMessage("yieldFactory","No factory found\n");
+    pl= yieldResult(mb,pp,pc);
+    if(pl) 
+        return finishFactory(mb,pp,pc);
+    return throwMessage("yieldFactory","No factory found\n");
 }
 @-
 A return from a factory body implies removal of
 all state information.
 @c
 str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc){
-	Plant pl, plim;
+    Plant pl, plim;
 #ifdef DEBUG_MAL_FACTORY
-	stream_printf(GDKout,"closePlant called\n");
+    stream_printf(GDKout,"closePlant called\n");
 #endif
-	(void) pp; (void) pc;
-	plim= plants+lastPlant;
-	for(pl=plants; pl<plim;pl++)
-	if( pl->factory == mb){
-		pl->factory = 0;
-		pl->inuse = 0;
-		pl->client = NULL;
-		pl->caller = NULL;
-		pl->pci = NULL;
+    (void) pp; (void) pc;
+    plim= plants+lastPlant;
+    for(pl=plants; pl<plim;pl++)
+    if( pl->factory == mb){
+        pl->factory = 0;
+        pl->inuse = 0;
+        pl->client = NULL;
+        pl->caller = NULL;
+        pl->pci = NULL;
                 mal_set_lock(pl->env->stklock,"yieldFactory");
                 pl->env->shares--;
                 pl->env = NULL;
                 mal_unset_lock(pl->env->stklock,"yieldFactory");
 
-	}
-	return MAL_SUCCEED;
+    }
+    return MAL_SUCCEED;
 }
 @- Enquiry operations.
 All access to the plant administration is organized here.

@@ -17,14 +17,13 @@
 @a M. Kersten
 @v 0.0
 @+ Bootstrap loading 
-@T
 The server is bootstrapped by processing a MAL script with
 module definitions. For each module encountered, the object library 
-lib\_$<$modulename$>$.so is searched for in $...$/lib/MonetDB.
+lib_<modulename>.so is searched for in @dots{}/lib/MonetDB.
 The corresponding signature are defined 
-in $...$/lib/$<$modulename$>$.mal.
+in @dots{}/lib/<modulename>.mal.
 @-
-The default bootstrap script is called $...$/lib/MonetDB/mal_init.mal
+The default bootstrap script is called @dots{}/lib/MonetDB/mal_init.mal
 and it is designated in the configuration file as the mal_init property.
 The rationale for this set-up is that database administrators can
 extend/overload the bootstrap procedure without affecting the distributed
@@ -56,7 +55,7 @@ mal_export MALfcn getAddress(str fcnname);
 mal_export str loadModuleLibrary(str modnme);
 mal_export void unloadModuleLibraries();
 mal_export void initLibraries();
-mal_export int 	isPreloaded(str nme);
+mal_export int  isPreloaded(str nme);
 #endif
 @}
 @+ Function binding
@@ -70,16 +69,16 @@ the consistency of this counter.
 @{
 @c
 #include "mal_linker.h"
-#include "mal_function.h"	/* for throwException() */
-#include "mal_import.h"		/* for slash_2_dir_sep() */
+#include "mal_function.h"   /* for throwException() */
+#include "mal_import.h"     /* for slash_2_dir_sep() */
 
 static void clear_moddir();
 
 static int noDlopen;
 
 MALfcn getAddress(str fcnname){
-	void *dl;
-	MALfcn adr;
+    void *dl;
+    MALfcn adr;
 
 #ifdef DEBUG_MAL_LINKER2
         stream_printf(GDKout,"addres of %s ?\n", fcnname);
@@ -90,15 +89,15 @@ MALfcn getAddress(str fcnname){
                 exit(0);
         }
         adr= (MALfcn) dlsym(dl,fcnname);
-	if(noDlopen && adr == NULL)
-		GDKerror("address of '%s' not found\n", fcnname);
+    if(noDlopen && adr == NULL)
+        GDKerror("address of '%s' not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
-	if( adr != NULL)
+    if( adr != NULL)
         stream_printf(GDKout,"addres of %s %o %s\n", fcnname,(int) adr, 
-	(dlerror()?dlerror():""));
+    (dlerror()?dlerror():""));
 #endif
-	dlclose(dl);
-	return adr;
+    dlclose(dl);
+    return adr;
 }
 @}
 @+ Module loading
@@ -124,68 +123,68 @@ static str modulesLoaded[MAXMODULES];
 static void *handles[MAXMODULES];
 
 str loadModuleLibrary(str modnme){
-	int mode = RTLD_NOW|RTLD_GLOBAL;
-	char nme[MAXPATHLEN];
-	char errbuf[1024];
-	void *handle = NULL;
-	str fullname,s;
-	int i = 0, idx;
+    int mode = RTLD_NOW|RTLD_GLOBAL;
+    char nme[MAXPATHLEN];
+    char errbuf[1024];
+    void *handle = NULL;
+    str fullname,s;
+    int i = 0, idx;
 
-	for(idx=0;modulesLoaded[idx] && idx<MAXMODULES;idx++)
-		if( strcmp(modulesLoaded[idx],modnme)==0) return 0;
-	if( idx== MAXMODULES){
-		GDKfatal("too many modules\n");
-	}
+    for(idx=0;modulesLoaded[idx] && idx<MAXMODULES;idx++)
+        if( strcmp(modulesLoaded[idx],modnme)==0) return 0;
+    if( idx== MAXMODULES){
+        GDKfatal("too many modules\n");
+    }
 @-
 Use the search path provided in the configuration file
 @c
-	s= strrchr(modnme,DIR_SEP);
-	snprintf(nme,MAXPATHLEN,"_%s", s? s+1:modnme);
-	fullname = MSP_locate_module(nme);
+    s= strrchr(modnme,DIR_SEP);
+    snprintf(nme,MAXPATHLEN,"_%s", s? s+1:modnme);
+    fullname = MSP_locate_module(nme);
 
 /* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
 #ifdef RTLD_MEMBER
         mode |= RTLD_MEMBER;
 #endif
-	if( fullname){
-		handle = dlopen(fullname, mode);
+    if( fullname){
+        handle = dlopen(fullname, mode);
 #ifdef DEBUG_MAL_LINKER
-		stream_printf(GDKout,"load:%s:%s\n",fullname,handle==NULL?
-			(handle==NULL?errbuf:"failed"):"succeeded");
+        stream_printf(GDKout,"load:%s:%s\n",fullname,handle==NULL?
+            (handle==NULL?errbuf:"failed"):"succeeded");
 #endif
-		if(handle == NULL) {
-			strcpy(errbuf, dlerror());
-			GDKfree(fullname);
-			GDKerror("load error %s\n", errbuf);
-			return (str) throwException("loaderException",
-				"loadModuleLibrary",modnme);
-		}
-		GDKfree(fullname);
-	}
+        if(handle == NULL) {
+            strcpy(errbuf, dlerror());
+            GDKfree(fullname);
+            GDKerror("load error %s\n", errbuf);
+            return (str) throwException("loaderException",
+                "loadModuleLibrary",modnme);
+        }
+        GDKfree(fullname);
+    }
 
         mal_set_lock(mal_contextLock, "loadModule");
-	for(i=0;modulesLoaded[i] && i<127;i++);
-	if( i==MAXMODULES)
-		GDKerror("loadModule:too many modules loaded\n");
-	else {
-		modulesLoaded[i]= GDKstrdup(modnme);
-		handles[i]= handle;
-	}
+    for(i=0;modulesLoaded[i] && i<127;i++);
+    if( i==MAXMODULES)
+        GDKerror("loadModule:too many modules loaded\n");
+    else {
+        modulesLoaded[i]= GDKstrdup(modnme);
+        handles[i]= handle;
+    }
         mal_unset_lock(mal_contextLock, "loadModule");
-	return 0;
+    return 0;
 }
 @-
 For analysis of memory leaks we should cleanup the libraries before
 we exit the server
 @c
 void unloadModuleLibraries(){
-	int i;
-	for(i=0;i<MAXMODULES;i++)
-	if( handles[i]) {
-		dlclose(handles[i]);
-		GDKfree(modulesLoaded[i]);
-	}
-	(void) clear_moddir();
+    int i;
+    for(i=0;i<MAXMODULES;i++)
+    if( handles[i]) {
+        dlclose(handles[i]);
+        GDKfree(modulesLoaded[i]);
+    }
+    (void) clear_moddir();
 }
 @}
 @+ Static pre-loading
@@ -203,25 +202,25 @@ The routine below turns off dynamic loading while parsing the
 command signature files.
 @c
 static str preloaded[]={
-	"kernel/bat",
-	0 };
+    "kernel/bat",
+    0 };
 
 int isPreloaded(str nme){
-	int i;
+    int i;
 #ifdef DEBUG_MAL_LINKER
-	stream_printf(GDKout,"load:%s:preloaded?\n",nme);
+    stream_printf(GDKout,"load:%s:preloaded?\n",nme);
 #endif
-	for(i=0;preloaded[i];i++) 
-	if( strcmp(preloaded[i],nme)==0) return 1;
-	return 0;
+    for(i=0;preloaded[i];i++) 
+    if( strcmp(preloaded[i],nme)==0) return 1;
+    return 0;
 }
 void initLibraries() {
-	noDlopen = TRUE;
+    noDlopen = TRUE;
 /*
-	for(i=0;preloaded[i];i++) {
-		stream_printf(GDKout,"loading %s\n",preloaded[i]);
-		loadModuleLibrary(preloaded[i]);
-	}
+    for(i=0;preloaded[i];i++) {
+        stream_printf(GDKout,"loading %s\n",preloaded[i]);
+        loadModuleLibrary(preloaded[i]);
+    }
 */
 }
 @+ Handling of Module Search Path
@@ -260,8 +259,8 @@ char *MSP_next_module(char *);
 #include <sys/param.h>
 #endif
 
-static size_t SO_EXT_LEN = 0;	/* length of SO_EXT string, will be
-				   filled in before use */
+static size_t SO_EXT_LEN = 0;   /* length of SO_EXT string, will be
+                   filled in before use */
 
 struct moddir {
     char *path;
@@ -270,7 +269,7 @@ struct moddir {
 
 static struct moddir *moddir_list=0;
 
-#if 0				/* not used */
+#if 0               /* not used */
 static void print_moddir_list(void) {
     struct moddir *entry=moddir_list;
     while(entry)
@@ -283,37 +282,37 @@ static void print_moddir_list(void) {
 
 static void clear_moddir()
 {
-	struct moddir *entry=moddir_list, *e;
-	while(entry)
+    struct moddir *entry=moddir_list, *e;
+    while(entry)
         {
-		e= entry->next;
-		GDKfree(entry->path);
-		GDKfree(entry);
-		entry=e;
+        e= entry->next;
+        GDKfree(entry->path);
+        GDKfree(entry);
+        entry=e;
         }
 }
 
 static void
 insert_moddir_entry(const char *name)
 {
-	struct moddir *last;
-	struct moddir *newentry;
+    struct moddir *last;
+    struct moddir *newentry;
 
-	if (!name || !*name)
-		return;
-	/* printf("inserted dir %s\n",name); */
+    if (!name || !*name)
+        return;
+    /* printf("inserted dir %s\n",name); */
 
-	newentry = (struct moddir*) GDKmalloc(sizeof(struct moddir));
-	newentry->next = 0;
+    newentry = (struct moddir*) GDKmalloc(sizeof(struct moddir));
+    newentry->next = 0;
 
-	if ((last = moddir_list) != 0) {
-		while (last->next)
-			last = last->next;
-		last->next = newentry;
-	} else
-		moddir_list = newentry;
+    if ((last = moddir_list) != 0) {
+        while (last->next)
+            last = last->next;
+        last->next = newentry;
+    } else
+        moddir_list = newentry;
 
-	newentry->path = GDKstrdup(name);
+    newentry->path = GDKstrdup(name);
 }
 
 
@@ -376,7 +375,7 @@ void MSP_rewind_module_list(void) {
     dirp=0;
 }
     
-#define LIBLEN	3
+#define LIBLEN  3
 char *MSP_next_module(char *ext) {
     struct dirent *dent=0;
     char *next_module;
@@ -397,17 +396,17 @@ char *MSP_next_module(char *ext) {
                 {
                     char *suffix=0;
                     if ((suffix=strstr(dent->d_name,ext))==NULL) continue;
-		    /*
-		     * On some platforms (e.g., MacOS X/Mach-O/Darwin), 
-		     * a library's version number (e.g., ".0"/".0.0.0")
-		     * is not appended to the suffix, but rather placed
-		     * between the library's name and suffix; however,
-		     * we only want to match "lib<name><ext>", here,
-		     * but not "lib<name><version><ext>":
-		     */
-		    if (((suffix-2)>=dent->d_name) &&
-		        (suffix[-2]=='.')          &&
-		       	(suffix[-1]>='0')&&(suffix[-1]<='9')) continue; 
+            /*
+             * On some platforms (e.g., MacOS X/Mach-O/Darwin), 
+             * a library's version number (e.g., ".0"/".0.0.0")
+             * is not appended to the suffix, but rather placed
+             * between the library's name and suffix; however,
+             * we only want to match "lib<name><ext>", here,
+             * but not "lib<name><version><ext>":
+             */
+            if (((suffix-2)>=dent->d_name) &&
+                (suffix[-2]=='.')          &&
+                (suffix[-1]>='0')&&(suffix[-1]<='9')) continue; 
                     suffix[0]='\0';
                     next_module=(char *)GDKmalloc(strlen(current_entry->path)+
                                                strlen(dent->d_name)+2);
@@ -440,16 +439,16 @@ char *MSP_locate_module(char *mod_name) {
         {
             next_module=MSP_next_module(SO_EXT);
             if (!next_module) break;
-	    fulllen = strlen(next_module);
+        fulllen = strlen(next_module);
             if ( fulllen > len &&
-		 next_module[fulllen-len-1] == DIR_SEP &&
-		 !strcmp(&next_module[fulllen-len],name))
+         next_module[fulllen-len-1] == DIR_SEP &&
+         !strcmp(&next_module[fulllen-len],name))
                 {
-		    if (!SO_EXT_LEN)
-			SO_EXT_LEN = strlen(SO_EXT);
+            if (!SO_EXT_LEN)
+            SO_EXT_LEN = strlen(SO_EXT);
 #ifdef _AIX
                     fullname=(char *)GDKmalloc(fulllen+SO_EXT_LEN+1+len+7);
-		    sprintf(fullname,"%s%s(%s.so.0)",next_module, SO_EXT, name);
+            sprintf(fullname,"%s%s(%s.so.0)",next_module, SO_EXT, name);
 #else
                     fullname=(char *)GDKmalloc(fulllen+SO_EXT_LEN+1);
                     sprintf(fullname,"%s%s",next_module, SO_EXT);
@@ -458,7 +457,7 @@ char *MSP_locate_module(char *mod_name) {
                     GDKfree(name);
                     return fullname;
                 }
-	    GDKfree(next_module);
+        GDKfree(next_module);
         }
     GDKfree(name);
     return 0;
@@ -483,17 +482,17 @@ char *MSP_locate_script(char *mod_name) {
         {
             next_module=MSP_next_module(LANG_EXT);
             if (!next_module) break;
-	    fulllen = strlen(next_module);
+        fulllen = strlen(next_module);
             if ( fulllen > len &&
-		 next_module[fulllen-len-1] == DIR_SEP &&
-		 !strcmp(&next_module[fulllen-len],name))
+         next_module[fulllen-len-1] == DIR_SEP &&
+         !strcmp(&next_module[fulllen-len],name))
                 {
                     fullname=(char *)GDKmalloc(fulllen+LANG_LEN+1);
                     sprintf(fullname,"%s%s",next_module, LANG_EXT);
                     GDKfree(next_module);
                     return fullname;
                 }
-	    GDKfree(next_module);
+        GDKfree(next_module);
         }
     return 0;
 }
@@ -508,10 +507,10 @@ char *MSP_locate_scriptVersion4(char *mod_name) {
         {
             next_module=MSP_next_module(LANG_EXT);
             if (!next_module) break;
-	    fulllen = strlen(next_module);
+        fulllen = strlen(next_module);
             if ( fulllen > len &&
-		 next_module[fulllen-len-1] == DIR_SEP &&
-		 !strcmp(&next_module[fulllen-len],name))
+         next_module[fulllen-len-1] == DIR_SEP &&
+         !strcmp(&next_module[fulllen-len],name))
                 {
                     fullname=(char *)GDKmalloc(fulllen+LANG_EXT_LEN+1);
                     sprintf(fullname,"%s%s",next_module, LANG_EXT);
@@ -519,7 +518,7 @@ char *MSP_locate_scriptVersion4(char *mod_name) {
                     GDKfree(name);
                     return fullname;
                 }
-	    GDKfree(next_module);
+        GDKfree(next_module);
         }
     GDKfree(name);
     return 0;

@@ -47,13 +47,13 @@ Activation of a thread requires construction of the argument list
 to be passed by a handle.
 @h
 typedef struct{
-	Client cntxt; 
-	MalBlkPtr mb; 
-	MalStkPtr stk; 
-	int startpc; 
-	MalStkPtr env;
-	InstrPtr pcicaller;
-	InstrPtr pci;
+    Client cntxt; 
+    MalBlkPtr mb; 
+    MalStkPtr stk; 
+    int startpc; 
+    MalStkPtr env;
+    InstrPtr pcicaller;
+    InstrPtr pci;
 } malTask;
 
 /*#define DEBUG_MAL_INTERPRETER */
@@ -61,64 +61,64 @@ typedef struct{
 /*#define STACKTRACE*/
 mal_export void showErrors();
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
-		MalBlkPtr mbcaller, 
-		MalStkPtr env, InstrPtr pcicaller);
+        MalBlkPtr mbcaller, 
+        MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, 
-		int startpc, MalStkPtr stk,
-		MalStkPtr env, InstrPtr pcicaller);
+        int startpc, MalStkPtr stk,
+        MalStkPtr env, InstrPtr pcicaller);
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
 mal_export void waitForChildren(MalStkPtr stk);
 mal_export str setDynamicType(MalBlkPtr mb, 
-		VarPtr v, int tpe,int pc);
+        VarPtr v, int tpe,int pc);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, 
-		MalStkPtr stk, int forceall);
+        MalStkPtr stk, int forceall);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 
 mal_export ptr getArgValue(MalStkPtr stk, 
-		InstrPtr pci, int k);
+        InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, 
-		InstrPtr pci, int k);
+        InstrPtr pci, int k);
 
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_interpreter.h"
-#include "mal_debugger.h"	/* for mdbStep() */
-#include "mal_type.h"		/* for getGDKtype() */
+#include "mal_debugger.h"   /* for mdbStep() */
+#include "mal_type.h"       /* for getGDKtype() */
 
 ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
-	int j=0;
-	ValRecord *v;
-	ptr val = NULL;
-	int tpe ;
+    int j=0;
+    ValRecord *v;
+    ptr val = NULL;
+    int tpe ;
 
-	j = pci->argv[k];
-	v= &stk->stk[j];
-	tpe = v->vtype;
+    j = pci->argv[k];
+    v= &stk->stk[j];
+    tpe = v->vtype;
 tstagain:
-	switch(tpe){
-	/* switch(ATOMstorage(v->vtype)){ */
-	case TYPE_void: val= (ptr) & v->val.ival; break;
-	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: val= (ptr) & v->val.shval; break;
-	case TYPE_bat: val= (ptr) & v->val.br.id; break;
-	case TYPE_int: val= (ptr) & v->val.ival; break;
-	case TYPE_oid: val= (ptr) & v->val.oval; break;
-	case TYPE_ptr: val= (ptr) v->val.pval; break;/*!!*/
-	case TYPE_flt: val= (ptr) & v->val.fval; break;
-	case TYPE_dbl: val= (ptr) & v->val.dval; break;
-	case TYPE_lng: val= (ptr) & v->val.lval; break;
-	case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
-	default:
-		tpe= ATOMstorage(tpe);
-		goto tstagain;
+    switch(tpe){
+    /* switch(ATOMstorage(v->vtype)){ */
+    case TYPE_void: val= (ptr) & v->val.ival; break;
+    case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
+    case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
+    case TYPE_sht: val= (ptr) & v->val.shval; break;
+    case TYPE_bat: val= (ptr) & v->val.br.id; break;
+    case TYPE_int: val= (ptr) & v->val.ival; break;
+    case TYPE_oid: val= (ptr) & v->val.oval; break;
+    case TYPE_ptr: val= (ptr) v->val.pval; break;/*!!*/
+    case TYPE_flt: val= (ptr) & v->val.fval; break;
+    case TYPE_dbl: val= (ptr) & v->val.dval; break;
+    case TYPE_lng: val= (ptr) & v->val.lval; break;
+    case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
+    default:
+        tpe= ATOMstorage(tpe);
+        goto tstagain;
 /*
-	val= (ptr) v->val.pval; 
-	GDKerror("evalParameters:unknown value type\n");*/
-	}
-	return val;
+    val= (ptr) v->val.pval; 
+    GDKerror("evalParameters:unknown value type\n");*/
+    }
+    return val;
 } 
 @-
 Alternatively, the routines can obtain a reference to a particular
@@ -130,65 +130,65 @@ INLINE
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
 #ifdef STRUCT_ALIGNED
-	return (ptr) & stk->stk[pci->argv[k]].val.ival;
+    return (ptr) & stk->stk[pci->argv[k]].val.ival;
 #else
-	int j=0;
-	ValRecord *v=0;
-	ptr ret = NULL;
+    int j=0;
+    ValRecord *v=0;
+    ptr ret = NULL;
 
-	j = pci->argv[k];
-	v= &stk->stk[j];
+    j = pci->argv[k];
+    v= &stk->stk[j];
 
-	switch(ATOMstorage(v->vtype)){
-	case TYPE_void: ret= (ptr) & v->val.ival; break;
-	case TYPE_bit: ret= (ptr) & v->val.cval[0]; break;
-	case TYPE_chr: ret= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: ret= (ptr) & v->val.shval; break;
-	case TYPE_bat: ret= (ptr) & v->val.br.id; break;
-	case TYPE_int: ret= (ptr) & v->val.ival; break;
-	case TYPE_oid: ret= (ptr) & v->val.oval; break;
-	case TYPE_ptr: ret= (ptr) & v->val.pval; break;
-	case TYPE_flt: ret= (ptr) & v->val.fval; break;
-	case TYPE_dbl: ret= (ptr) & v->val.dval; break;
-	case TYPE_lng: ret= (ptr) & v->val.lval; break;
-	case TYPE_str: ret= (ptr) & v->val.sval; break;
-	default:
-		 ret= (ptr) & v->val.pval; 
-		/* GDKerror("eretParameters:unknown value type\n");*/
-	}
-	return ret;
+    switch(ATOMstorage(v->vtype)){
+    case TYPE_void: ret= (ptr) & v->val.ival; break;
+    case TYPE_bit: ret= (ptr) & v->val.cval[0]; break;
+    case TYPE_chr: ret= (ptr) & v->val.cval[0]; break;
+    case TYPE_sht: ret= (ptr) & v->val.shval; break;
+    case TYPE_bat: ret= (ptr) & v->val.br.id; break;
+    case TYPE_int: ret= (ptr) & v->val.ival; break;
+    case TYPE_oid: ret= (ptr) & v->val.oval; break;
+    case TYPE_ptr: ret= (ptr) & v->val.pval; break;
+    case TYPE_flt: ret= (ptr) & v->val.fval; break;
+    case TYPE_dbl: ret= (ptr) & v->val.dval; break;
+    case TYPE_lng: ret= (ptr) & v->val.lval; break;
+    case TYPE_str: ret= (ptr) & v->val.sval; break;
+    default:
+         ret= (ptr) & v->val.pval; 
+        /* GDKerror("eretParameters:unknown value type\n");*/
+    }
+    return ret;
 #endif
 } 
 void showErrors(){
-	Client cntxt= getClient();
-	int i;
-	if( cntxt->errbuf==0 ) return;
-	if( *cntxt->errbuf){
-		i= strlen(cntxt->errbuf);
-		stream_printf(cntxt->fdout,"%s",cntxt->errbuf);
-		if( cntxt->errbuf[i-1]!='\n') 
-			stream_printf(cntxt->fdout,"\n");
-		stream_flush(cntxt->fdout);
-		*cntxt->errbuf=0;
-	}
+    Client cntxt= getClient();
+    int i;
+    if( cntxt->errbuf==0 ) return;
+    if( *cntxt->errbuf){
+        i= strlen(cntxt->errbuf);
+        stream_printf(cntxt->fdout,"%s",cntxt->errbuf);
+        if( cntxt->errbuf[i-1]!='\n') 
+            stream_printf(cntxt->fdout,"\n");
+        stream_flush(cntxt->fdout);
+        *cntxt->errbuf=0;
+    }
 }
 
 str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, 
-	   MalStkPtr env, InstrPtr pcicaller){
-	MalStkPtr stk= NULL;
-	int i;
-	ValPtr lhs,rhs;
-	InstrPtr pci=0;
-	malTask	task;
-	str ret;
+       MalStkPtr env, InstrPtr pcicaller){
+    MalStkPtr stk= NULL;
+    int i;
+    ValPtr lhs,rhs;
+    InstrPtr pci=0;
+    malTask task;
+    str ret;
 
-	if( mb->errors){
-		char buf[2*PATHLENGTH];
-		showErrors();
-		sprintf(buf, "'%s.%s' contains errors\n",
-			getModName(mb),getFcnName(mb));
-		return raiseException(mb,0,"SyntaxError",buf);
-	}
+    if( mb->errors){
+        char buf[2*PATHLENGTH];
+        showErrors();
+        sprintf(buf, "'%s.%s' contains errors\n",
+            getModName(mb),getFcnName(mb));
+        return raiseException(mb,0,"SyntaxError",buf);
+    }
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
 the minimum amount of stack space needed, some slack resources
@@ -201,62 +201,62 @@ Alternatively, there is no caller but a stk to be re-used for interpretation.
 We assume here that it aligns with the variable table of the routine
 being called.
 @c
-	/* allocate space for value stack */
-	/* the global stack should be large enough */
-	if( mbcaller== NULL && env != NULL){
-		stk = env;
-		if( mb != stk->blk) 
-			GDKerror("runMAL:misalignment of symbols\n");
-		if( mb->vsize > stk->stksize) {
-			GDKerror("stack too small");
-		}
-		pci= pcicaller;
-	} else {
-		newStack(stk,mb->vsize);
-		stk->stktop= mb->vtop; 
-		stk->stksize= mb->vsize;
-		stk->blk= mb;
-		stk->cmd= cntxt->itrace; /* set debug mode */
-		if( env) {
-			stk->stkdepth= stk->stksize + env->stkdepth;
-			@:safeguardStack@
-		}
-	} 
-	if( stk->stktop>stk->stksize) GDKerror("Unexpected");
+    /* allocate space for value stack */
+    /* the global stack should be large enough */
+    if( mbcaller== NULL && env != NULL){
+        stk = env;
+        if( mb != stk->blk) 
+            GDKerror("runMAL:misalignment of symbols\n");
+        if( mb->vsize > stk->stksize) {
+            GDKerror("stack too small");
+        }
+        pci= pcicaller;
+    } else {
+        newStack(stk,mb->vsize);
+        stk->stktop= mb->vtop; 
+        stk->stksize= mb->vsize;
+        stk->blk= mb;
+        stk->cmd= cntxt->itrace; /* set debug mode */
+        if( env) {
+            stk->stkdepth= stk->stksize + env->stkdepth;
+            @:safeguardStack@
+        }
+    } 
+    if( stk->stktop>stk->stksize) GDKerror("Unexpected");
 
-	if( env && mbcaller){
-		InstrPtr pp;
-		int k;
+    if( env && mbcaller){
+        InstrPtr pp;
+        int k;
 @-
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
 the symbol table and stackframe contains the sequence 
 f,a1..an,b1..bn. This slightly complicates the implementation
 of the return statement.
 @c
-		pci= pcicaller;
-		pp = getInstrPtr(mb, 0);
-		/* set return type */
-		lhs = &stk->stk[0];
-		/* lhs->vtype =getGDKtype(getVarType(mb,0)); */
-		lhs->vtype =getVarGDKType(mb,0);
-		if(lhs->vtype <0)
-			GDKerror("unexpected type error\n");
-		/* stream_printf(GDKout,"recursive MAL "
-				"function call %s[%d]\n",
-			functionName(pci),pcicaller); */
-		i= pci->retc;
-		for(k=pp->retc; i<pci->argc; i++,k++){
-			lhs = &stk->stk[pp->argv[k]];
-			/* variable arguments ? */
-			if( k== pp->argc-1) k--; 
+        pci= pcicaller;
+        pp = getInstrPtr(mb, 0);
+        /* set return type */
+        lhs = &stk->stk[0];
+        /* lhs->vtype =getGDKtype(getVarType(mb,0)); */
+        lhs->vtype =getVarGDKType(mb,0);
+        if(lhs->vtype <0)
+            GDKerror("unexpected type error\n");
+        /* stream_printf(GDKout,"recursive MAL "
+                "function call %s[%d]\n",
+            functionName(pci),pcicaller); */
+        i= pci->retc;
+        for(k=pp->retc; i<pci->argc; i++,k++){
+            lhs = &stk->stk[pp->argv[k]];
+            /* variable arguments ? */
+            if( k== pp->argc-1) k--; 
 
-			rhs = &env->stk[pci->argv[i]];
-			VALcopy(lhs,rhs);
-			@:BATfix(rhs,1)@
-		}
-		stk->up = env;
-		env->down = stk;
-	} 
+            rhs = &env->stk[pci->argv[i]];
+            VALcopy(lhs,rhs);
+            @:BATfix(rhs,1)@
+        }
+        stk->up = env;
+        env->down = stk;
+    } 
 @-
 An optimization is to copy all constant variables used in functions immediately
 onto the value stack. Then we do not have to check for the location
@@ -272,57 +272,57 @@ we should first remove garbage. A problematic case is when
 the variable accepts any type, then we leave it up to the 
 pattern operators to deal with it.
 @c
-	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
-	if( isConstant(mb,i) && isVarUsed(mb,i) ){
-		lhs = &stk->stk[i];
-		rhs = &getVarConstant(mb,i);
-		VALcopy(lhs,rhs);
-	} else {
-		int tpe= getVarType(mb,i);
-		lhs = &stk->stk[i];
-		if( tpe != TYPE_any)
-			lhs->vtype = getGDKtype(mb,i);
-		if(env == 0 && mbcaller==0)
-			lhs->val.ival =0; 
-	}
-	/* run the program */
+    for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
+    if( isConstant(mb,i) && isVarUsed(mb,i) ){
+        lhs = &stk->stk[i];
+        rhs = &getVarConstant(mb,i);
+        VALcopy(lhs,rhs);
+    } else {
+        int tpe= getVarType(mb,i);
+        lhs = &stk->stk[i];
+        if( tpe != TYPE_any)
+            lhs->vtype = getGDKtype(mb,i);
+        if(env == 0 && mbcaller==0)
+            lhs->val.ival =0; 
+    }
+    /* run the program */
 #ifdef STACKTRACE
-	stream_printf(GDKout,"Stack before loop\n");
-	printStack(GDKout,mb,stk); fflush(GDKout);
+    stream_printf(GDKout,"Stack before loop\n");
+    printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
 
 
-	task.cntxt= cntxt; 
-	task.mb= mb; 
-	task.stk=stk; 
-	task.startpc=startpc; 
-	task.env=env;
-	task.pcicaller=pcicaller;
-	task.pci= 0;
+    task.cntxt= cntxt; 
+    task.mb= mb; 
+    task.stk=stk; 
+    task.startpc=startpc; 
+    task.env=env;
+    task.pcicaller=pcicaller;
+    task.pci= 0;
 
-	if(env && stk->cmd!='f') stk->cmd = env->cmd ;
-	ret= runMALsequence(&task);
+    if(env && stk->cmd!='f') stk->cmd = env->cmd ;
+    ret= runMALsequence(&task);
 
-	@:waitForChildren@
-	/* pass the debug mode */
-	if(env && stk->cmd!='f') env->cmd = stk->cmd; 
+    @:waitForChildren@
+    /* pass the debug mode */
+    if(env && stk->cmd!='f') env->cmd = stk->cmd; 
 #ifdef STACKTRACE
-	stream_printf(GDKout,"Stack after loop\n");
-	printStack(GDKout,mb,stk); fflush(GDKout);
+    stream_printf(GDKout,"Stack after loop\n");
+    printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-	if( !stk->keepAlive)
-		garbageCollector(mb,stk,env != stk);
-	return ret;
+    if( !stk->keepAlive)
+        garbageCollector(mb,stk,env != stk);
+    return ret;
 }
 @-
 It is possible to re-enter the interpreter at a specific place.
 This is used in the area where we need to support co-routines.
 @c
 str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, MalStkPtr stk,
-	   MalStkPtr env, InstrPtr pcicaller)
+       MalStkPtr env, InstrPtr pcicaller)
 {
-	malTask	task;
-	str ret;
+    malTask task;
+    str ret;
         task.cntxt= cntxt;
         task.mb= mb;
         task.stk=stk;
@@ -333,7 +333,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, MalStkPtr stk,
 
         if(env && stk->cmd!='f') stk->cmd = env->cmd ;
 
-	ret= runMALsequence(&task);
+    ret= runMALsequence(&task);
 
         @:waitForChildren@
         /* pass the debug mode */
@@ -342,8 +342,8 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, MalStkPtr stk,
         stream_printf(GDKout,"Stack after loop\n");
         printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-	if( !stk->keepAlive)
-		garbageCollector(mb,stk,env != stk);
+    if( !stk->keepAlive)
+        garbageCollector(mb,stk,env != stk);
         return ret;
 }
 @-
@@ -353,77 +353,77 @@ Note that the stack frame is aligned and initialized in the enclosing routine.
 This way we prepare the route for running parallel threads.
 @c
 str runMALsequence( malTask *task)
-{	
-	Client cntxt= task->cntxt; 
-	MalBlkPtr mb= task->mb; 
-	MalStkPtr stk= task->stk;
-	int startpc= task->startpc; 
-	MalStkPtr env= task->env;
-	InstrPtr pcicaller= task->pcicaller;
-	int childProcess= task->pci?getDestVar(task->pci):0;
+{   
+    Client cntxt= task->cntxt; 
+    MalBlkPtr mb= task->mb; 
+    MalStkPtr stk= task->stk;
+    int startpc= task->startpc; 
+    MalStkPtr env= task->env;
+    InstrPtr pcicaller= task->pcicaller;
+    int childProcess= task->pci?getDestVar(task->pci):0;
 
-	ValPtr lhs,rhs,v;
-	int stkpc,i,k; 
-	InstrPtr pci=0, altpci=0; 
-	int stkexception;
-	str ret=0;
-	ptr argv[MAXARG];
-	ValRecord backup;
-	@:performanceVariables@
-	backup.vtype= TYPE_int;
-	backup.val.ival= 0;
+    ValPtr lhs,rhs,v;
+    int stkpc,i,k; 
+    InstrPtr pci=0, altpci=0; 
+    int stkexception;
+    str ret=0;
+    ptr argv[MAXARG];
+    ValRecord backup;
+    @:performanceVariables@
+    backup.vtype= TYPE_int;
+    backup.val.ival= 0;
 
 MALrestart:
-	stkpc = startpc;
-	stkexception = -1;
-	while(stkpc < mb->stop ){
-		pci = getInstrPtr(mb,stkpc);
-		@:exceptionTypeTest@
-		if( stk->cmd  ) {
-			mdbStep(cntxt,mb,stk,stkpc);
-			if( stk->cmd == 'q') goto MALevalExit;
-			if( stk->cmd == 'r') {
-				stk->cmd = 'n';
-				goto MALrestart;
-			}
-		}
+    stkpc = startpc;
+    stkexception = -1;
+    while(stkpc < mb->stop ){
+        pci = getInstrPtr(mb,stkpc);
+        @:exceptionTypeTest@
+        if( stk->cmd  ) {
+            mdbStep(cntxt,mb,stk,stkpc);
+            if( stk->cmd == 'q') goto MALevalExit;
+            if( stk->cmd == 'r') {
+                stk->cmd = 'n';
+                goto MALrestart;
+            }
+        }
 
-		@:MALinterpret@
-	}
+        @:MALinterpret@
+    }
 MALevalExit:
-	@:finishChild@
-	if( stkexception >= 0) {
-		str nme= MALexception, msg;
-		if(stk->stk[stkexception].vtype== TYPE_str)
-			msg= stk->stk[stkexception].val.sval;
-		else { nme= getVarName(mb,stkexception);
-			msg= 0;
-		}
-		ret=appendException(mb,mb->stop-1,nme, " propagated", msg);
-	}
-	return ret;
+    @:finishChild@
+    if( stkexception >= 0) {
+        str nme= MALexception, msg;
+        if(stk->stk[stkexception].vtype== TYPE_str)
+            msg= stk->stk[stkexception].val.sval;
+        else { nme= getVarName(mb,stkexception);
+            msg= 0;
+        }
+        ret=appendException(mb,mb->stop-1,nme, " propagated", msg);
+    }
+    return ret;
 }
 void runMALtask(malTask *task){
-	ValPtr v;
+    ValPtr v;
 #ifdef DEBUG_MAL_PARALLEL
-	stream_printf(GDKout,"create childs in stk %d %d %d\n", 
-		(void *) task, task->stk->shares, &task->stk->shares);
-	stream_printf(GDKout," task->cntxt = %d\n",task->cntxt);
-	stream_printf(GDKout," task->mb = %d\n",task->mb);
-	stream_printf(GDKout," task->stk = %d\n",task->stk);
-	stream_printf(GDKout," task->startpc = %d\n",task->startpc);
-	stream_printf(GDKout," task->env = %d\n",task->env);
-	stream_printf(GDKout," task->pcicaller = %d\n",
-					task->pcicaller);
-	stream_printf(GDKout," task->pci = %d\n",task->pci);
-	stream_printf(GDKout,"childs sets return variable %d \n",
-		getDestVar(task->pci));
-	stream_printf(GDKout,"start parallel sequence\n");
+    stream_printf(GDKout,"create childs in stk %d %d %d\n", 
+        (void *) task, task->stk->shares, &task->stk->shares);
+    stream_printf(GDKout," task->cntxt = %d\n",task->cntxt);
+    stream_printf(GDKout," task->mb = %d\n",task->mb);
+    stream_printf(GDKout," task->stk = %d\n",task->stk);
+    stream_printf(GDKout," task->startpc = %d\n",task->startpc);
+    stream_printf(GDKout," task->env = %d\n",task->env);
+    stream_printf(GDKout," task->pcicaller = %d\n",
+                    task->pcicaller);
+    stream_printf(GDKout," task->pci = %d\n",task->pci);
+    stream_printf(GDKout,"childs sets return variable %d \n",
+        getDestVar(task->pci));
+    stream_printf(GDKout,"start parallel sequence\n");
 #endif
-	v= &task->stk->stk[ getDestVar(task->pci)];
-	v->val.ival=  (int) MT_getpid();
-	runMALsequence(task);
-	GDKfree(task);
+    v= &task->stk->stk[ getDestVar(task->pci)];
+    v->val.ival=  (int) MT_getpid();
+    runMALsequence(task);
+    GDKfree(task);
 }
 @+ Safeguarding
 The physical stack for each thread is an operating system parameter.
@@ -438,8 +438,8 @@ of by limiting the depth of a function calls.
 /* Expensive? 70 msec for 1M calls another solution is needed.*/
     if (stk->stkdepth > (size_t) 100 * 1024 && THRhighwater()) {
         GDKerror("interpret: running out of "
-		 "physical stack space!\n");
-	return raiseException(mb,0,"Interpreter","Stack overflow");
+         "physical stack space!\n");
+    return raiseException(mb,0,"Interpreter","Stack overflow");
     }
 
 @+ The interpreter loop
@@ -458,140 +458,140 @@ elements in the value stack.
 @+ The major switch
 
 @= MALinterpret
-	@:beginProfile@
-	ret = 0;
-	switch( pci->token){
-	case ASSIGNsymbol:
-		@:assignStmt@ 
-		break;
-	case PATcall: @:patterncall@ break;
-	case CMDcall: @:commandcall@ break;
-	case FACcall: @:factorycall@ break;
-	case FCNcall: @:functioncall@ break;
-	case NOOPsymbol:
-	case ENDsymbol: 
-	case COMMANDsymbol:
-	case FUNCTIONsymbol:
-	case FACTORYsymbol:
-		break;
-	case ENDDEFsymbol: 
-		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
-			ret= finishFactory(mb, pci, stkpc);
-		@:endProfile@
-		goto MALevalExit;
-	default:
-		GDKerror("ERROR:MALeval:unkown operation\n");
-		@:endProfile@
-		goto MALevalExit;
-	}
-	@:MALflowofcontrol@
-	@:garbageTypeCheck@
-	@:endProfile@
+    @:beginProfile@
+    ret = 0;
+    switch( pci->token){
+    case ASSIGNsymbol:
+        @:assignStmt@ 
+        break;
+    case PATcall: @:patterncall@ break;
+    case CMDcall: @:commandcall@ break;
+    case FACcall: @:factorycall@ break;
+    case FCNcall: @:functioncall@ break;
+    case NOOPsymbol:
+    case ENDsymbol: 
+    case COMMANDsymbol:
+    case FUNCTIONsymbol:
+    case FACTORYsymbol:
+        break;
+    case ENDDEFsymbol: 
+        if( getInstrPtr(mb,0)->token == FACTORYsymbol)
+            ret= finishFactory(mb, pci, stkpc);
+        @:endProfile@
+        goto MALevalExit;
+    default:
+        GDKerror("ERROR:MALeval:unkown operation\n");
+        @:endProfile@
+        goto MALevalExit;
+    }
+    @:MALflowofcontrol@
+    @:garbageTypeCheck@
+    @:endProfile@
 @-
 After the expression has been evaluated we should check for a
 possible change in the control flow. 
 @= MALflowofcontrol
-	switch(pci->barrier){
-	case BARRIERsymbol:
-		@:barrierControl@ stkpc++;
-		break;
-	case LEAVEsymbol:
-		@:finishChild@
-	case REDOsymbol:
-		v= &stk->stk[getDestVar(pci)];
-		/* skip to end of barrier, depending on the type */
-		switch(v->vtype){
-		case TYPE_bit:
-			if( v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
-				stkpc= pci->jump; 
-			else stkpc++;
-			break;
-		case TYPE_str:
-			if( v->len > 0 && v->val.pval!= str_nil )
-				stkpc= pci->jump; 
-			else stkpc++;
-			break;
-		case TYPE_sht:
-			if( v->val.shval >= 0 && v->val.shval!= sht_nil )
-				stkpc= pci->jump; 
-			else stkpc++;
-			break;
-		case TYPE_int:
-			if( v->val.ival >= 0 && v->val.ival!= int_nil )
-				stkpc= pci->jump; 
-			else stkpc++;
-			break;
-		case TYPE_lng:
-			if( v->val.lval >= 0 && v->val.lval!= lng_nil)
-				stkpc= pci->jump; 
-			else 
-		default:
-				stkpc++;
-		}
-		break;
-	case CATCHsymbol:
-		/* catch blocks are skipped unless 
-		   searched for explicitly*/
-		if(stkexception < 0) { 
-			stkpc= pci->jump; 
-			break;
-		}
-		stkexception = -1;
-		stkpc++; 
-		break;
-	case EXITsymbol:
-		@:finishChild@
-		if( getDestVar(pci) == stkexception) 
-			stkexception = -1; 
-		stkpc++; 
-		break;
-	case RAISEsymbol:
-		stkexception = getDestVar(pci);
-		if( getVarType(mb, getDestVar(pci))== TYPE_str){
-			ret= raiseException(mb, stkpc, 
-				getVarName(mb, getDestVar(pci)), 
-				stk->stk[getDestVar(pci)].val.sval);
-		} else
-			ret= raiseException(mb,stkpc, 
-				getVarName(mb, getDestVar(pci)), 
-				"exception raised\n");
-		@:skipToCatch(stkexception)@
-		break;
-	case THREADsymbol:
-		@:createChild@
-		stkpc++;
-		break;
-	case YIELDsymbol: /* to be defined */
-		return yieldFactory( mb, pci, stkpc);
-	case RETURNsymbol:
-		/* Return from factory involves cleanup */
+    switch(pci->barrier){
+    case BARRIERsymbol:
+        @:barrierControl@ stkpc++;
+        break;
+    case LEAVEsymbol:
+        @:finishChild@
+    case REDOsymbol:
+        v= &stk->stk[getDestVar(pci)];
+        /* skip to end of barrier, depending on the type */
+        switch(v->vtype){
+        case TYPE_bit:
+            if( v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
+                stkpc= pci->jump; 
+            else stkpc++;
+            break;
+        case TYPE_str:
+            if( v->len > 0 && v->val.pval!= str_nil )
+                stkpc= pci->jump; 
+            else stkpc++;
+            break;
+        case TYPE_sht:
+            if( v->val.shval >= 0 && v->val.shval!= sht_nil )
+                stkpc= pci->jump; 
+            else stkpc++;
+            break;
+        case TYPE_int:
+            if( v->val.ival >= 0 && v->val.ival!= int_nil )
+                stkpc= pci->jump; 
+            else stkpc++;
+            break;
+        case TYPE_lng:
+            if( v->val.lval >= 0 && v->val.lval!= lng_nil)
+                stkpc= pci->jump; 
+            else 
+        default:
+                stkpc++;
+        }
+        break;
+    case CATCHsymbol:
+        /* catch blocks are skipped unless 
+           searched for explicitly*/
+        if(stkexception < 0) { 
+            stkpc= pci->jump; 
+            break;
+        }
+        stkexception = -1;
+        stkpc++; 
+        break;
+    case EXITsymbol:
+        @:finishChild@
+        if( getDestVar(pci) == stkexception) 
+            stkexception = -1; 
+        stkpc++; 
+        break;
+    case RAISEsymbol:
+        stkexception = getDestVar(pci);
+        if( getVarType(mb, getDestVar(pci))== TYPE_str){
+            ret= raiseException(mb, stkpc, 
+                getVarName(mb, getDestVar(pci)), 
+                stk->stk[getDestVar(pci)].val.sval);
+        } else
+            ret= raiseException(mb,stkpc, 
+                getVarName(mb, getDestVar(pci)), 
+                "exception raised\n");
+        @:skipToCatch(stkexception)@
+        break;
+    case THREADsymbol:
+        @:createChild@
+        stkpc++;
+        break;
+    case YIELDsymbol: /* to be defined */
+        return yieldFactory( mb, pci, stkpc);
+    case RETURNsymbol:
+        /* Return from factory involves cleanup */
 
-		if( getInstrPtr(mb,0)->token == FACTORYsymbol){
-			ret= returnFactory(mb, pci, stkpc);
-			@:endProfile@
-			goto MALevalExit;
-		}
-		/* a fake multi-assignment */
-		if( env != NULL && pcicaller != NULL){
-			InstrPtr pp=pci;
-			@:endProfile@
-			pci= pcicaller;
-			for(i=0;i < pci->retc; i++){
-				rhs = &stk->stk[pp->argv[i]];
-				lhs = &env->stk[pci->argv[i]];
-				VALcopy(lhs,rhs);
-				@:BATfix(lhs,0)@
-			}
-			@:garbageTypeCheck@
-			goto MALevalExit;
-		} 
-		@:endProfile@
-		goto MALevalExit;
-	default:
-		if( getDestVar(pci) == stkexception) 
-			stkexception = -1; 
-		stkpc++; 
-	}
+        if( getInstrPtr(mb,0)->token == FACTORYsymbol){
+            ret= returnFactory(mb, pci, stkpc);
+            @:endProfile@
+            goto MALevalExit;
+        }
+        /* a fake multi-assignment */
+        if( env != NULL && pcicaller != NULL){
+            InstrPtr pp=pci;
+            @:endProfile@
+            pci= pcicaller;
+            for(i=0;i < pci->retc; i++){
+                rhs = &stk->stk[pp->argv[i]];
+                lhs = &env->stk[pci->argv[i]];
+                VALcopy(lhs,rhs);
+                @:BATfix(lhs,0)@
+            }
+            @:garbageTypeCheck@
+            goto MALevalExit;
+        } 
+        @:endProfile@
+        goto MALevalExit;
+    default:
+        if( getDestVar(pci) == stkexception) 
+            stkexception = -1; 
+        stkpc++; 
+    }
 
 @+ Assignment command
 The assignment statement copies values around on the stack frame,
@@ -607,23 +607,23 @@ their. They seem superflous and the way they are used will
 cause errors in multi-assignment statements.
 @-
 @= assignStmt
-{	
-	/*if( pci->beforeCall && pci->afterCall)*/
-	if( garbageControl(mb,getDestVar(pci)) )
-	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
-		lhs = &stk->stk[pci->argv[k]];
-		rhs = &stk->stk[pci->argv[i]];
-		(*pci->beforeCall)(lhs,&backup);
-		VALcopy(lhs,rhs);
-		(*pci->afterCall)(lhs,&backup);
-	}
-	else
-	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
-		lhs = &stk->stk[pci->argv[k]];
-		rhs = &stk->stk[pci->argv[i]];
-		VALcopy(lhs,rhs);
-	}
-	ret = 0;
+{   
+    /*if( pci->beforeCall && pci->afterCall)*/
+    if( garbageControl(mb,getDestVar(pci)) )
+    for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
+        lhs = &stk->stk[pci->argv[k]];
+        rhs = &stk->stk[pci->argv[i]];
+        (*pci->beforeCall)(lhs,&backup);
+        VALcopy(lhs,rhs);
+        (*pci->afterCall)(lhs,&backup);
+    }
+    else
+    for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
+        lhs = &stk->stk[pci->argv[k]];
+        rhs = &stk->stk[pci->argv[i]];
+        VALcopy(lhs,rhs);
+    }
+    ret = 0;
 }
 @-
 @}
@@ -678,66 +678,66 @@ the bind(namespace,batname,mode) operation.[todo]
 @{
 @-
 @= commandcall
-	/* if(pci->beforeCall) */
-	if( garbageControl(mb,getDestVar(pci)) )
-		(*pci->beforeCall)(&stk->stk[getDestVar(pci)],
-				   &backup);
-	/* improve performance with 20 ms/1M calls*/
-	switch(pci->argc){
-	case 7: argv[6] =(ptr) getArgReference(stk,pci,6);
-	case 6: argv[5] =(ptr) getArgReference(stk,pci,5);
-	case 5: argv[4] =(ptr) getArgReference(stk,pci,4);
-	case 4: argv[3] =(ptr) getArgReference(stk,pci,3);
-	case 3: argv[2] =(ptr) getArgReference(stk,pci,2);
-	case 2: argv[1] =(ptr) getArgReference(stk,pci,1);
-	case 1: argv[0] =(ptr) getArgReference(stk,pci,0);
-		break;
-	default:
-		ret= raiseException(mb,stkpc,MALexception,
-			"too many arguments for command call\n");
-	}
-	switch(pci->argc){
-	case 0 : ret = (str) (*pci->fcn)(); break;
-	case 1 : ret = (str) (*pci->fcn)(argv[0]); break;
-	case 2 : ret = (str) (*pci->fcn)(argv[0],argv[1]); 
-				break;
-	case 3 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-					argv[2]); 
-				break;
-	case 4 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-					argv[2], argv[3]); 
-				break;
-	case 5 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-					argv[2], argv[3], 
-					argv[4]); 
-				break;
-	case 6 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-					 argv[2],argv[3],
-					 argv[4], argv[5]); 
-				break;
-	case 7 : ret = (str) (*pci->fcn)(argv[0],argv[1],
-					 argv[2],argv[3],
-					 argv[4], argv[5],
-					 argv[6]); 
-				break;
-	default:
-		ret= raiseException(mb,stkpc,MALexception,
-			"too many arguments for command call\n");
-	}
-	@:resultParameter@
+    /* if(pci->beforeCall) */
+    if( garbageControl(mb,getDestVar(pci)) )
+        (*pci->beforeCall)(&stk->stk[getDestVar(pci)],
+                   &backup);
+    /* improve performance with 20 ms/1M calls*/
+    switch(pci->argc){
+    case 7: argv[6] =(ptr) getArgReference(stk,pci,6);
+    case 6: argv[5] =(ptr) getArgReference(stk,pci,5);
+    case 5: argv[4] =(ptr) getArgReference(stk,pci,4);
+    case 4: argv[3] =(ptr) getArgReference(stk,pci,3);
+    case 3: argv[2] =(ptr) getArgReference(stk,pci,2);
+    case 2: argv[1] =(ptr) getArgReference(stk,pci,1);
+    case 1: argv[0] =(ptr) getArgReference(stk,pci,0);
+        break;
+    default:
+        ret= raiseException(mb,stkpc,MALexception,
+            "too many arguments for command call\n");
+    }
+    switch(pci->argc){
+    case 0 : ret = (str) (*pci->fcn)(); break;
+    case 1 : ret = (str) (*pci->fcn)(argv[0]); break;
+    case 2 : ret = (str) (*pci->fcn)(argv[0],argv[1]); 
+                break;
+    case 3 : ret = (str) (*pci->fcn)(argv[0],argv[1],
+                    argv[2]); 
+                break;
+    case 4 : ret = (str) (*pci->fcn)(argv[0],argv[1],
+                    argv[2], argv[3]); 
+                break;
+    case 5 : ret = (str) (*pci->fcn)(argv[0],argv[1],
+                    argv[2], argv[3], 
+                    argv[4]); 
+                break;
+    case 6 : ret = (str) (*pci->fcn)(argv[0],argv[1],
+                     argv[2],argv[3],
+                     argv[4], argv[5]); 
+                break;
+    case 7 : ret = (str) (*pci->fcn)(argv[0],argv[1],
+                     argv[2],argv[3],
+                     argv[4], argv[5],
+                     argv[6]); 
+                break;
+    default:
+        ret= raiseException(mb,stkpc,MALexception,
+            "too many arguments for command call\n");
+    }
+    @:resultParameter@
 
 @-
 @= patterncall
-	if( pci->fcn== NULL)
-		ret= raiseException(mb,stkpc,MALexception,
-			"address of pattern missing\n");
-	else {/* patterns should take care of garbage collection themselves? */
-		if( pci->beforeCall) 
-			(*pci->beforeCall)(&stk->stk[getDestVar(pci)],
-					   &backup);
-		ret = (str) (*pci->fcn)(mb,stk,pci);
-		@:resultParameter@
-	}
+    if( pci->fcn== NULL)
+        ret= raiseException(mb,stkpc,MALexception,
+            "address of pattern missing\n");
+    else {/* patterns should take care of garbage collection themselves? */
+        if( pci->beforeCall) 
+            (*pci->beforeCall)(&stk->stk[getDestVar(pci)],
+                       &backup);
+        ret = (str) (*pci->fcn)(mb,stk,pci);
+        @:resultParameter@
+    }
 
 @-
 MAL function calls are relatively expensive, because they have to assemble
@@ -746,31 +746,31 @@ non-returned values.
 
 @-
 @= functioncall
-	 /* if( pci->beforeCall) */
-	 if( garbageControl(mb,getDestVar(pci)) )
-		(*pci->beforeCall)(&stk->stk[getDestVar(pci)],
-				   &backup);
-	if( pci->blk== NULL)
-		ret= raiseException(mb,stkpc,MALexception,
-			"reference to MAL function missing\n");
-	else {
-		stk->pcup = stkpc;
-		ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
-	}
-	@:resultParameter@
+     /* if( pci->beforeCall) */
+     if( garbageControl(mb,getDestVar(pci)) )
+        (*pci->beforeCall)(&stk->stk[getDestVar(pci)],
+                   &backup);
+    if( pci->blk== NULL)
+        ret= raiseException(mb,stkpc,MALexception,
+            "reference to MAL function missing\n");
+    else {
+        stk->pcup = stkpc;
+        ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
+    }
+    @:resultParameter@
 @-
 Factory calls are more involved. At this stage it is a synchrononous
 call to the factory manager.
 @= factorycall
-	 /* if( pci->beforeCall) */
-	 if( garbageControl(mb,getDestVar(pci)) )
-		(*pci->beforeCall)(&stk->stk[getDestVar(pci)],
-				   &backup);
-	if( pci->blk== NULL)
-		ret= raiseException(mb,stkpc,MALexception,
-			"reference to MAL function missing\n");
-	else ret= callFactory(cntxt,pci->blk,mb,stk,pci);
-	@:resultParameter@
+     /* if( pci->beforeCall) */
+     if( garbageControl(mb,getDestVar(pci)) )
+        (*pci->beforeCall)(&stk->stk[getDestVar(pci)],
+                   &backup);
+    if( pci->blk== NULL)
+        ret= raiseException(mb,stkpc,MALexception,
+            "reference to MAL function missing\n");
+    else ret= callFactory(cntxt,pci->blk,mb,stk,pci);
+    @:resultParameter@
 @-
 The type dispatching table in getArgValue can be removed if we 
 determine at compile time the address offset within a ValRecord. 
@@ -782,11 +782,11 @@ and we have to do some housekeeping, such as string length adjustment.
 
 @-
 @= resultParameter
-	@:exceptionHndlr@
-	else if( pci->afterCall) 
-	/* if( garbageControl(mb,getDestVar(pci)) )*/
-		(*pci->afterCall)(&stk->stk[getDestVar(pci)],
-				  &backup);
+    @:exceptionHndlr@
+    else if( pci->afterCall) 
+    /* if( garbageControl(mb,getDestVar(pci)) )*/
+        (*pci->afterCall)(&stk->stk[getDestVar(pci)],
+                  &backup);
 
 @+ Flow of control statements
 Each assignment (function call) may be part of the initialization
@@ -796,43 +796,43 @@ The latter is implemented as a linear scan for the corresponding
 labeled statemtent. This might be optimized later.
 
 @= barrierControl
-{ 	v= &stk->stk[getDestVar(pci)];
-	/* skip to end of barrier, depends on the type */
-	switch(v->vtype){
-	case TYPE_bit:
-		if( v->val.cval[0] == FALSE || v->val.cval[0] == bit_nil)
-			stkpc= pci->jump;
-		break;
-	case TYPE_chr:
-		if( v->val.cval[0] == chr_nil )
-			stkpc= pci->jump;
-		break;
-	case TYPE_sht:
-		if( v->val.shval < 0 || v->val.shval == sht_nil)
-			stkpc= pci->jump; 
-		break;
-	case TYPE_int:
-		if( v->val.ival < 0 || v->val.ival == int_nil)
-			stkpc= pci->jump; 
-		break;
-	case TYPE_lng:
-		if( v->val.lval < 0 || v->val.lval == lng_nil)
-			stkpc= pci->jump; 
-		break;
-	case TYPE_flt:
-	case TYPE_dbl:
-		if( v->val.dval < 0 || v->val.dval == dbl_nil)
-			stkpc= pci->jump; 
-		break;
-	case TYPE_str:
-		if( v->len == 0 || v->val.pval == str_nil)
-			stkpc= pci->jump; 
-		break;
-	default:
-		ret= raiseException(mb,stkpc,
-		    	getVarName(mb, getDestVar(pci)), 
-			"Unknown barrier type\n");
-	}
+{   v= &stk->stk[getDestVar(pci)];
+    /* skip to end of barrier, depends on the type */
+    switch(v->vtype){
+    case TYPE_bit:
+        if( v->val.cval[0] == FALSE || v->val.cval[0] == bit_nil)
+            stkpc= pci->jump;
+        break;
+    case TYPE_chr:
+        if( v->val.cval[0] == chr_nil )
+            stkpc= pci->jump;
+        break;
+    case TYPE_sht:
+        if( v->val.shval < 0 || v->val.shval == sht_nil)
+            stkpc= pci->jump; 
+        break;
+    case TYPE_int:
+        if( v->val.ival < 0 || v->val.ival == int_nil)
+            stkpc= pci->jump; 
+        break;
+    case TYPE_lng:
+        if( v->val.lval < 0 || v->val.lval == lng_nil)
+            stkpc= pci->jump; 
+        break;
+    case TYPE_flt:
+    case TYPE_dbl:
+        if( v->val.dval < 0 || v->val.dval == dbl_nil)
+            stkpc= pci->jump; 
+        break;
+    case TYPE_str:
+        if( v->len == 0 || v->val.pval == str_nil)
+            stkpc= pci->jump; 
+        break;
+    default:
+        ret= raiseException(mb,stkpc,
+                getVarName(mb, getDestVar(pci)), 
+            "Unknown barrier type\n");
+    }
 }
 
 @-
@@ -841,19 +841,19 @@ The return value should be set to pass the error automatically upon
 reaching end of function block.
 @-
 @= skipToCatch
-	/* skip to catch block or end */
-	for( ; stkpc<mb->stop; stkpc++){
-	InstrPtr l= getInstrPtr(mb,stkpc);
-	if( l->barrier == CATCHsymbol ){
-		int j= -1;
-		for(j=0;j<l->retc; j++)
-		if( getArg(l,j) == @1) break;
-		if(j>=0) break;
-	} }
-	if( stkpc== mb->stop) {
-		@:endProfile@ 
-		goto MALevalExit;
-	}
+    /* skip to catch block or end */
+    for( ; stkpc<mb->stop; stkpc++){
+    InstrPtr l= getInstrPtr(mb,stkpc);
+    if( l->barrier == CATCHsymbol ){
+        int j= -1;
+        for(j=0;j<l->retc; j++)
+        if( getArg(l,j) == @1) break;
+        if(j>=0) break;
+    } }
+    if( stkpc== mb->stop) {
+        @:endProfile@ 
+        goto MALevalExit;
+    }
 @-
 Each time we enter a barrier block, we could keep its position in the
 interpreter stack frame. It forms the starting point to issue a redo.
@@ -864,16 +864,16 @@ jumps are re-established.
 
 @-
 @= redoControl
-	stkpc = pci->jump;
-	@:endProfile@
-	pci= getInstrPtr(mb,stkpc);
-	if( pci->barrier == THREADsymbol){
-		/* restart thread body */
-		stkpc++;
-	} else
-	/* semantic validity of redo stmt has been checked already */
-	/* continue re-execution of the barrier statement */
-	continue;
+    stkpc = pci->jump;
+    @:endProfile@
+    pci= getInstrPtr(mb,stkpc);
+    if( pci->barrier == THREADsymbol){
+        /* restart thread body */
+        stkpc++;
+    } else
+    /* semantic validity of redo stmt has been checked already */
+    /* continue re-execution of the barrier statement */
+    continue;
 @-
 @}
 @+ Parallel processing
@@ -902,101 +902,101 @@ threads should be accessible.
 if(stk->shares) waitForChildren(stk);
 @c
 void waitForChildren(MalStkPtr stk){
-	int i= stk->shares;
-	while(i>0 ) { 
-		mal_set_lock(stk->stklock,"finishChild");
-		i= stk->shares;
-		mal_unset_lock(stk->stklock,"finishChild");
+    int i= stk->shares;
+    while(i>0 ) { 
+        mal_set_lock(stk->stklock,"finishChild");
+        i= stk->shares;
+        mal_unset_lock(stk->stklock,"finishChild");
 #ifdef DEBUG_MAL_PARALLEL
-		stream_printf(GDKout,"%d awaiting childs\n",
-			MT_getpid());
+        stream_printf(GDKout,"%d awaiting childs\n",
+            MT_getpid());
 #endif
-		sleep(1); 
-	}
+        sleep(1); 
+    }
 }
 @-
 Joining a process thread is controlled with a lock part of the stack frame
 
 @-
 @= createChild
-{	MT_Id pid;
-	malTask *task= (malTask*) GDKmalloc(sizeof(malTask));
-	ValPtr vp= &stk->stk[getDestVar(pci)];
+{   MT_Id pid;
+    malTask *task= (malTask*) GDKmalloc(sizeof(malTask));
+    ValPtr vp= &stk->stk[getDestVar(pci)];
 
-	if( vp->val.ival){
-		/* thread already running */
-		stkpc= pci->jump;
-		break;
-	}
-	GDKprotect();
-	if(stk->stklock== 0 && GDKprotected) stk->stklock= MT_create_lock();
-	mal_set_lock(stk->stklock,"createChild");
-	if( stk->shares == MAXSHARES){
-		ret= raiseException(mb,stkpc,MALexception,
-					"too many threads\n");
-		stkexception= findVariable(mb,"MALexception");
-		@:exceptionHndlr@
-		break; /* out of instruction switch */
-	} 
-	vp->val.ival = 1; /* already created, temporary identity */
-	stk->childs[stk->shares]= getDestVar(pci);
-	stk->shares++;
-	mal_unset_lock(stk->stklock,"createChild");
-	task->cntxt= cntxt; 
-	task->mb= mb; 
-	task->stk=stk; 
-	task->startpc=stkpc+1; 
-	task->env=env;
-	task->pcicaller=pcicaller;
-	task->pci= pci;
+    if( vp->val.ival){
+        /* thread already running */
+        stkpc= pci->jump;
+        break;
+    }
+    GDKprotect();
+    if(stk->stklock== 0 && GDKprotected) stk->stklock= MT_create_lock();
+    mal_set_lock(stk->stklock,"createChild");
+    if( stk->shares == MAXSHARES){
+        ret= raiseException(mb,stkpc,MALexception,
+                    "too many threads\n");
+        stkexception= findVariable(mb,"MALexception");
+        @:exceptionHndlr@
+        break; /* out of instruction switch */
+    } 
+    vp->val.ival = 1; /* already created, temporary identity */
+    stk->childs[stk->shares]= getDestVar(pci);
+    stk->shares++;
+    mal_unset_lock(stk->stklock,"createChild");
+    task->cntxt= cntxt; 
+    task->mb= mb; 
+    task->stk=stk; 
+    task->startpc=stkpc+1; 
+    task->env=env;
+    task->pcicaller=pcicaller;
+    task->pci= pci;
 
 #ifdef DEBUG_MAL_PARALLEL
-	stream_printf(GDKout,"started parallel thread,");
-	stream_printf(GDKout," task->cntxt = %d\n",task->cntxt);
-	stream_printf(GDKout," task->mb = %d\n",task->mb);
-	stream_printf(GDKout," task->stk = %d\n",task->stk);
-	stream_printf(GDKout," task->startpc = %d\n",
-				task->startpc);
-	stream_printf(GDKout," task->env = %d\n",task->env);
-	stream_printf(GDKout," task->pcicaller = %d\n",
-				task->pcicaller);
-	stream_printf(GDKout," task->pci = %d\n",task->pci);
-	printInstruction(GDKout, mb, pci,LIST_MAL_ALL);
+    stream_printf(GDKout,"started parallel thread,");
+    stream_printf(GDKout," task->cntxt = %d\n",task->cntxt);
+    stream_printf(GDKout," task->mb = %d\n",task->mb);
+    stream_printf(GDKout," task->stk = %d\n",task->stk);
+    stream_printf(GDKout," task->startpc = %d\n",
+                task->startpc);
+    stream_printf(GDKout," task->env = %d\n",task->env);
+    stream_printf(GDKout," task->pcicaller = %d\n",
+                task->pcicaller);
+    stream_printf(GDKout," task->pci = %d\n",task->pci);
+    printInstruction(GDKout, mb, pci,LIST_MAL_ALL);
 #endif
-	MT_create_thread(&pid, (void (*)())runMALtask, (void*) task);
-	stkpc= pci->jump; /* search end of parallel block */
+    MT_create_thread(&pid, (void (*)())runMALtask, (void*) task);
+    stkpc= pci->jump; /* search end of parallel block */
 }
 @= finishChild
-	if( childProcess && childProcess== getDestVar(pci)){
-		int j,k,lim;
-		mal_set_lock(stk->stklock,"finishChild");
+    if( childProcess && childProcess== getDestVar(pci)){
+        int j,k,lim;
+        mal_set_lock(stk->stklock,"finishChild");
 #ifdef DEBUG_MAL_PARALLEL
-	stream_printf(GDKout,"finish the child "
-		"%d %s\n",childProcess, 
-			getVarName(mb,childProcess));
+    stream_printf(GDKout,"finish the child "
+        "%d %s\n",childProcess, 
+            getVarName(mb,childProcess));
 #endif
-		lim= stk->shares;
-		for(k=j=0;j<lim;j++)
-		if( stk->childs[j]!= childProcess)
-			stk->childs[k++]= stk->childs[j];
-		else	stk->shares--;
-		childProcess=0;
-		mal_unset_lock(stk->stklock,"finishChild");
+        lim= stk->shares;
+        for(k=j=0;j<lim;j++)
+        if( stk->childs[j]!= childProcess)
+            stk->childs[k++]= stk->childs[j];
+        else    stk->shares--;
+        childProcess=0;
+        mal_unset_lock(stk->stklock,"finishChild");
 #ifdef DEBUG_MAL_PARALLEL
-	stream_printf(GDKout,"finished childs in stk "
-		"%d %d\n",stk->shares, &stk->shares);
+    stream_printf(GDKout,"finished childs in stk "
+        "%d %d\n",stk->shares, &stk->shares);
 #endif
-		if(stkexception != -1){
-			/* pass exception as GDK error */
-			GDKerror("non-catched thread exception\n");
-		}
-		goto MALevalExit;
-	}
+        if(stkexception != -1){
+            /* pass exception as GDK error */
+            GDKerror("non-catched thread exception\n");
+        }
+        goto MALevalExit;
+    }
 #ifdef DEBUG_MAL_PARALLEL
-	else
-	stream_printf(GDKout,"finish the child  ignored "
-		"%d %s\n",childProcess, 
-			getVarName(mb,childProcess));
+    else
+    stream_printf(GDKout,"finish the child  ignored "
+        "%d %s\n",childProcess, 
+            getVarName(mb,childProcess));
 #endif
 @-
 @}
@@ -1024,21 +1024,21 @@ in which it can be handled.
 @{
 @= exceptionTypeTest
 if( pci->typechk != TYPE_UNKNOWN) 
-	/* mostly true */ ;
+    /* mostly true */ ;
 else {
-	@:dynamicTypeCheck@
-	if( pci->typechk== TYPE_UNKNOWN) {
-		ret= raiseException(mb,stkpc,MALexception,
-				    "Instruction type not fixed\n");
-		@:endProfile@
-		@:garbageTypeCheck@
-		goto MALevalExit;
-	}
-	if( pci->fcn== NULL){
-		ret= raiseException(mb,stkpc,MALexception,
-			"address of function missing\n");
-		goto MALevalExit;
-	}
+    @:dynamicTypeCheck@
+    if( pci->typechk== TYPE_UNKNOWN) {
+        ret= raiseException(mb,stkpc,MALexception,
+                    "Instruction type not fixed\n");
+        @:endProfile@
+        @:garbageTypeCheck@
+        goto MALevalExit;
+    }
+    if( pci->fcn== NULL){
+        ret= raiseException(mb,stkpc,MALexception,
+            "address of function missing\n");
+        goto MALevalExit;
+    }
 }
 @-
 @}
@@ -1065,48 +1065,48 @@ starts with the exception identifer, followed by contextual details.
 
 @= exceptionHndlr
 if( ret != MAL_SUCCEED ) {
-	str msg = 0, nxt;
-	int symid= -1;
-	if(ret ) msg= strchr(ret,':');
-	if( msg) {
-		*msg= 0;
-		symid = findVariableLength(mb,ret,msg-ret);
-		*msg=':';
-	} else {
-		if( ret == MAL_SUCCEED){
-			if( cntxt->errbuf){
-				ret= msg= GDKstrdup(cntxt->errbuf);
-				*cntxt->errbuf= 0;
-			} else ret= msg = GDKstrdup("unspecified error\n");
-			symid = findVariable(mb,"GDKerror");
-		} else {
-			stkexception = getDestVar(pci);
-			stkpc++;
-			@:endProfile@
-			continue;
-		}
-	}
-	stkexception = symid; 
-	if( symid == -1){
-		@:endProfile@
-		goto MALevalExit;
-	}
-	msg++;
-	/* assure correct variable type */
-	nxt= (str) setDynamicType(mb,getVar(mb,symid),TYPE_str,stkpc);
-	if( nxt == 0){
-		v=  &stk->stk[symid];
-		if( getVarType(mb,symid) == TYPE_any)
-			setVarType(mb, symid, TYPE_str);
-		v->vtype = TYPE_str;
-		v->val.pval= GDKstrdup(locateException(mb,stkpc,ret));
-		v->len= strlen(v->val.pval);
-		GDKfree(ret);
-		ret = 0;
-	} else GDKfree(nxt);
-	/* position yourself at the catch instruction for further decisions */
-	@:skipToCatch(symid)@
-	pci= getInstrPtr(mb,stkpc);
+    str msg = 0, nxt;
+    int symid= -1;
+    if(ret ) msg= strchr(ret,':');
+    if( msg) {
+        *msg= 0;
+        symid = findVariableLength(mb,ret,msg-ret);
+        *msg=':';
+    } else {
+        if( ret == MAL_SUCCEED){
+            if( cntxt->errbuf){
+                ret= msg= GDKstrdup(cntxt->errbuf);
+                *cntxt->errbuf= 0;
+            } else ret= msg = GDKstrdup("unspecified error\n");
+            symid = findVariable(mb,"GDKerror");
+        } else {
+            stkexception = getDestVar(pci);
+            stkpc++;
+            @:endProfile@
+            continue;
+        }
+    }
+    stkexception = symid; 
+    if( symid == -1){
+        @:endProfile@
+        goto MALevalExit;
+    }
+    msg++;
+    /* assure correct variable type */
+    nxt= (str) setDynamicType(mb,getVar(mb,symid),TYPE_str,stkpc);
+    if( nxt == 0){
+        v=  &stk->stk[symid];
+        if( getVarType(mb,symid) == TYPE_any)
+            setVarType(mb, symid, TYPE_str);
+        v->vtype = TYPE_str;
+        v->val.pval= GDKstrdup(locateException(mb,stkpc,ret));
+        v->len= strlen(v->val.pval);
+        GDKfree(ret);
+        ret = 0;
+    } else GDKfree(nxt);
+    /* position yourself at the catch instruction for further decisions */
+    @:skipToCatch(symid)@
+    pci= getInstrPtr(mb,stkpc);
 }
 @-
 @}
@@ -1125,31 +1125,31 @@ should be reset.
 @{
 
 @= dynamicTypeCheck
-	altpci= pci;
-	pci= dynamicTypeChecker(getClient()->nspace,mb,stk,pci);
+    altpci= pci;
+    pci= dynamicTypeChecker(getClient()->nspace,mb,stk,pci);
 @-
 After the instruction has been executed we should
 throw away the temporary copy. Taking care of any
 substructure introduced.
 
 @= garbageTypeCheck
-	if( altpci){
-		freeInstruction(pci);
-		pci= altpci;
-		altpci=0;
-	}
+    if( altpci){
+        freeInstruction(pci);
+        pci= altpci;
+        altpci=0;
+    }
 @-
 During instruction interpretation we may have to be
 assured that the type associated with a destination variable
 is in line with the result of an operation or exceoption.
 @c
 str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
-	char buf[2*PATHLENGTH];
-	if( v->type ==tpe) return 0;
-	if( v->type == TYPE_any) return 0;
-	sprintf(buf,"variable '%s' has already type %s (!=%s)\n",
-		v->name, getTypeName(v->type), getTypeName(tpe));
-	return raiseException(mb,pc, "typeException",buf);
+    char buf[2*PATHLENGTH];
+    if( v->type ==tpe) return 0;
+    if( v->type == TYPE_any) return 0;
+    sprintf(buf,"variable '%s' has already type %s (!=%s)\n",
+        v->name, getTypeName(v->type), getTypeName(tpe));
+    return raiseException(mb,pc, "typeException",buf);
 }
 
 @-
@@ -1174,7 +1174,7 @@ Look further in mal_instruction.mx for the before/after calls.
 @{
 @= BATfix
 if(@1->vtype == TYPE_bat && @1->val.bval){
-	BBPincref(@1->val.bval,TRUE);
+    BBPincref(@1->val.bval,TRUE);
 }
 @-
 @}
@@ -1195,39 +1195,39 @@ before a function call is made.
 int nogarbage;
 #endif
 void garbageElement(ValPtr v)
-{	
+{   
 #ifdef NOGARBAGE
-	if( nogarbage++==0) 
-		stream_printf(GDKout,"NO GARBAGECOLLECT ");
-	return;
+    if( nogarbage++==0) 
+        stream_printf(GDKout,"NO GARBAGECOLLECT ");
+    return;
 #endif
-	if( v->vtype == TYPE_str) {
-		if( v->val.pval && v->val.pval != str_nil) {
-			if(v->len) GDKfree(v->val.pval);
-			v->len= 0;
-		}
-		v->val.pval= NULL;
-	}
-	if( v->vtype== TYPE_bat && v->val.bval) {
+    if( v->vtype == TYPE_str) {
+        if( v->val.pval && v->val.pval != str_nil) {
+            if(v->len) GDKfree(v->val.pval);
+            v->len= 0;
+        }
+        v->val.pval= NULL;
+    }
+    if( v->vtype== TYPE_bat && v->val.bval) {
 @-
 When the logical reference count drops to zero
 we can decrement the physical refcount as well.
 @c
-		int bid= ABS(v->val.bval);
-		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
-			bid, BBP_lrefs(bid),BBP_refs(bid));*/
-		/* logical references do not count from here*/
-		/* watch out for built-ins */
-		if( BBP_refs(bid))
-			BBPunfix(bid);
-			else
-		if( BBP_lrefs(bid) )
-			BBPdecref(bid,TRUE);
-		v->val.bval =0;
+        int bid= ABS(v->val.bval);
+        /* printf("garbage collecting: %d lrefs=%d refs=%d\n",
+            bid, BBP_lrefs(bid),BBP_refs(bid));*/
+        /* logical references do not count from here*/
+        /* watch out for built-ins */
+        if( BBP_refs(bid))
+            BBPunfix(bid);
+            else
+        if( BBP_lrefs(bid) )
+            BBPdecref(bid,TRUE);
+        v->val.bval =0;
 #ifdef DEBUG_MAL_INTERPRETER
-		else GDKerror("interpreter:bat '%d' disappeared\n",v->val.bval);
+        else GDKerror("interpreter:bat '%d' disappeared\n",v->val.bval);
 #endif
-	}
+    }
 }
 @-
 @}
@@ -1251,24 +1251,24 @@ type should be saved for variables that recide on a global
 stack frame.
 @c
 void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
-{ 	int k;
+{   int k;
 
 #ifdef STACKTRACE
-	stream_printf(GDKout,"--->stack before garbage collector,"
-			" forceall %d\n",forceall);
-	printStack(GDKout,mb,stk);
+    stream_printf(GDKout,"--->stack before garbage collector,"
+            " forceall %d\n",forceall);
+    printStack(GDKout,mb,stk);
 #endif
-	for(k=0;k<mb->vtop; k++) {
-		if(forceall || isTmpVar(mb,k)){
-			garbageElement(&stk->stk[k]);
-			stk->stk[k].vtype= TYPE_int;
-			stk->stk[k].val.ival= int_nil;
-		}
-	}
+    for(k=0;k<mb->vtop; k++) {
+        if(forceall || isTmpVar(mb,k)){
+            garbageElement(&stk->stk[k]);
+            stk->stk[k].vtype= TYPE_int;
+            stk->stk[k].val.ival= int_nil;
+        }
+    }
 #ifdef STACKTRACE
-	stream_printf(GDKout,"--->stack after garbage collector,"
-			" forceall %d\n",forceall);
-	printStack(GDKout,mb,stk);
+    stream_printf(GDKout,"--->stack after garbage collector,"
+            " forceall %d\n",forceall);
+    printStack(GDKout,mb,stk);
 #endif
 }
 @-
@@ -1278,34 +1278,34 @@ as well. The routine below performs this action in the local
 stack frame and its parents only.
 @c
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
-{ 	int k;
-	ValRecord backup;
-	backup.vtype= TYPE_int;
-	backup.val.ival= 0;
-	(void) backup.vtype;
+{   int k;
+    ValRecord backup;
+    backup.vtype= TYPE_int;
+    backup.val.ival= 0;
+    (void) backup.vtype;
 
 #ifdef STACKTRACE
-	stream_printf(GDKout,"--->release BAT %d \n", bid);
-	printStack(GDKout,mb,stk);
+    stream_printf(GDKout,"--->release BAT %d \n", bid);
+    printStack(GDKout,mb,stk);
 #endif
    do{
-	for(k=0;k<mb->vtop; k++) 
-	if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.ival)==bid) {
-		BBPdecref(bid,TRUE);
-		stk->stk[k].val.ival= 0;
-	}
-	BBPdecref(bid,TRUE);	/* one more because batAfterCall is still in progress */
-	if( BBP_lrefs(bid) == 0){
-		BBPunfix(bid);
-	}
+    for(k=0;k<mb->vtop; k++) 
+    if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.ival)==bid) {
+        BBPdecref(bid,TRUE);
+        stk->stk[k].val.ival= 0;
+    }
+    BBPdecref(bid,TRUE);    /* one more because batAfterCall is still in progress */
+    if( BBP_lrefs(bid) == 0){
+        BBPunfix(bid);
+    }
 #ifdef STACKTRACE
-	stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
-	printStack(GDKout,mb,stk);
+    stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
+    printStack(GDKout,mb,stk);
 #endif
-	if(stk->up){
-		stk= stk->up;
-		mb= stk->blk;
-	}else break;
+    if(stk->up){
+        stk= stk->up;
+        mb= stk->blk;
+    }else break;
     } while(stk);
 }
 
@@ -1320,26 +1320,26 @@ we have to keep track of essential system counter information.
 @{
 @= performanceVariables
 #ifdef MALprofiler
-	long newclk=0;
+    long newclk=0;
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if( malProfileMode == 0)
-		/* mostly true */;
-	else {
-		pci->clk= GDKusec();
-		times(&pci->timer);
-	}
+    if( malProfileMode == 0)
+        /* mostly true */;
+    else {
+        pci->clk= GDKusec();
+        times(&pci->timer);
+    }
 #endif
 @= endProfile
 #ifdef MALprofiler
-	if( malProfileMode == 0)
-		/* mostly true */;
-	else{
-		newclk= GDKusec();
-		pci->counter++;
-		pci->ticks += newclk - pci->clk;
-		profilerEvent(cntxt->nspace,mb,stk,pci);
-	}
+    if( malProfileMode == 0)
+        /* mostly true */;
+    else{
+        newclk= GDKusec();
+        pci->counter++;
+        pci->ticks += newclk - pci->clk;
+        profilerEvent(cntxt->nspace,mb,stk,pci);
+    }
 #endif
 @}

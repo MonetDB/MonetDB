@@ -16,14 +16,6 @@
 @' All Rights Reserved.
 
 @f mal
-@T
-\newpage
-\tableofcontents
-\clearpage
- \newpage
-{\tt WARNING: This documentation is in flux. It has been derived
-from the Monet V5 code base by simple insertion of the hiding levels.
-}
 @* Introduction
 The MonetDB product family consists of a large number of components
 developed within out group over the last decade. Some components have
@@ -60,47 +52,45 @@ MonetDB product family, the design considerations and
 a quick overview of the MonetDB Version 5 architecture.
 
 @+ Backward compatibility
-@T
 In the development of Version 5 the requirements of the
 following components are taken into account.
-\begin{itemize}
-\item {\em front-ends} SQL and Xquery should compile 
+@itemize
+@item @emph{ front-ends} SQL and Xquery should compile 
 directly on both old and new versions. MIL programs can
-mostly be converted to the MAL language.\footnote{
+mostly be converted to the MAL language.@footnote{
 Only those features are compiled that do not require runtime
 knowledge on the typing structure.}
-\item {\em back-ends}. Both  GDK, column buffer managers, and 
+@item @emph{ back-ends}. Both  GDK, column buffer managers, and 
 possibly the x100 kernel can targets for execution.
-\item {\em extension modules}, the key extensions to the GDK kernel
+@item @emph{ extension modules}, the key extensions to the GDK kernel
 are mostly carried over without change.
-\item{\em nested BATs} are not supported anymore, due to unnecessary
+@item @emph{ nested BATs} are not supported anymore, due to unnecessary
 complexity at the language layer. However, the concept of a BAT type
 is retained, it denotes the bat of interest with a guarantee
 that the bat was not removed after it got referenced.
-\item{\em auxiliary search paths} are not supported, due to lack
+@item @emph{ auxiliary search paths} are not supported, due to lack
 of interest in Version 4 user community.
-\end{itemize}
+@end itemize
 @+ Design considerations
-@T
 Redesign of the MonetDB software stack was driven by the need to
 reduce the Total Execution Cost (TEC) for query execution.
 The TEC is what an end-user or application program will
 notice. The TEC is composed on several cost factors:
-\begin{itemize}
-\item  API messages
-\item  Parsing and semantic analysis
-\item  Optimization and plan generation
-\item  Data access to the operands
-\item  Execution of the query terms
-\item  Result construction
-\item  Answer delivery to the application
-\end{itemize}
+@itemize
+@item  API messages
+@item  Parsing and semantic analysis
+@item  Optimization and plan generation
+@item  Data access to the operands
+@item  Execution of the query terms
+@item  Result construction
+@item  Answer delivery to the application
+@end itemize
 
 Choosing an architecture for processing database operations pre-supposes an
 intuition on where and how the cost will be distributed. In an OLTP
-setting you expect most of the cost to be in \{P,O\}, while in OLAP it will
-be \{D,E,R,A\}. In a distributed setting the components \{O,D,E\} are dominant.
-Web-applications would focus on \{A,E,R,A\}.
+setting you expect most of the cost to be in (P,O), while in OLAP it will
+be (D,E,R,A). In a distributed setting the components (O,D,E) are dominant.
+Web-applications would focus on (A,E,R,A).
 
 However, such a simple first characterization ignores the wide-spread
 differences that can be experienced at each level. To illustrate,
@@ -119,13 +109,12 @@ for a particular application domain and hardware platform.
 
 @+ Architecture overview
 The software stack for Version 5 is shown in Figure
-\figure{architecture.gif}
+ @c image{architecture}
 The top layer consists of the query language processors and their
 strategic optimizers. Moreover, each language comes with its language
 oriented catalog, which may, but need not be stored in the MonetDB database.
 
 @+ MAL Synopsis
-@T
 The target language for Version 5 is an assembler-like language,
 derived as a subset of the Monet Interface Language introduced
 previously. This language provides the textual interface to
@@ -142,7 +131,7 @@ the engines available and application needs.
 The novel container model for MAL objects is a balance between hardwired
 decisions based on the typing scheme
 and hooks to implement those as user-defined extensions.
-For example, objects can be assembled in {\em box}es, which come
+For example, objects can be assembled in @emph{ box}es, which come
 with a simple management protocol. Their implementation can be
 geared towards any management style required, e.g. delivery of
 read-only objects for query processing, transparency to external
@@ -160,19 +149,19 @@ to implement triggers and stream-based database applications.
 
 The design and implementation takes the functionality a 
 significant step further. To name a few:
-\begin{itemize}
-\item {\em strong typing}. All instructions are strongly
+@itemize
+@item @emph{ strong typing}. All instructions are strongly
 typed before being executed. However, type checking depends on
 the structure of the signature, e.g. polymorphic functions are supported. 
 They act as templates that produce strongly typed instantiations when needed.
-\item {\em function style expressions}, 
+@item @emph{ function style expressions}, 
 each assignment instruction can receives multiple target results;
 it forms a point in the dataflow graph. 
-\item {\em factories}, to support co-routines and building
+@item @emph{ factories}, to support co-routines and building
 streaming applications.
-\item {\em properties} The objects can be assigned properties
+@item @emph{ properties} The objects can be assigned properties
 for use during compilation and optimization.
-\end{itemize}
+@end itemize
 @-
 @{
 @+ Critical sections and semaphores
@@ -183,11 +172,6 @@ and when they are inspected or being modified to take decisions.
  
 In the current implementation the following list of locks and semaphores
 is used in the Monet layer:
-@T
-\begin{tabular}{|l | l | l |}\hline
-Name & Used in & Protects\\
-mal\_contextLock       & mal\_client.mx      & {\em created  }\\
-\end{tabular}
  
 @mal
 @+ Monet Basic Definitions 
@@ -265,7 +249,7 @@ in a critical section, which was known to be a performance hindrence.
 @h
 
 mal_export int             mal_debug;
-mal_export MT_Lock	mal_contextLock;
+mal_export MT_Lock  mal_contextLock;
 
 mal_export int mal_init();
 
@@ -274,9 +258,10 @@ mal_export int mal_init();
  * the only place where it is currently used. Maybe, we should concider
  * also moving the implementation there...
  */
-/* mal_export void mal_exit(Client cntxt); */	/* used in src/mal/mal_client.c */
+/* mal_export void mal_exit(Client cntxt); */   
+/* used in src/mal/mal_client.c */
 
-#define MALprofiler 1		/* activate the profiler */
+#define MALprofiler 1       /* activate the profiler */
 /* #undef MALprofiler*/
 
 
@@ -287,8 +272,8 @@ mal_export int mal_init();
 #define LIST_MAL_BIND   8       /* show binding information*/
 #define LIST_MAL_ALL    (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_BIND)
 
-#define MAL_SUCCEED	(str) 0	/* apparently no error */
-#define MALexception	"MALexception"
+#define MAL_SUCCEED (str) 0 /* apparently no error */
+#define MALexception    "MALexception"
 
 #define STRUCT_ALIGNED
 
@@ -299,13 +284,13 @@ mal_export int mal_init();
 #include "mal_session.h"
 #include "mal_parser.h"
 #include "mal_interpreter.h"
-#include "mal_namespace.h"	/* for initNamespace() */
+#include "mal_namespace.h"  /* for initNamespace() */
 
 int             mal_debug= 0;
-MT_Lock		mal_contextLock=0;
+MT_Lock     mal_contextLock=0;
 @-
 Initialization of the MAL context
-The compiler directive STRUCT\_ALIGNED tells that the
+The compiler directive STRUCT_ALIGNED tells that the
 fields in the VALrecord all start at the same offset.
 This knowledge avoids low-level type decodings, but should
 be assured at least once for each platform.
@@ -313,36 +298,36 @@ be assured at least once for each platform.
 
 void tstAligned()
 {
-	int allAligned=0;
-	ValRecord v;
-	ptr val, base;
-	base = (ptr) & v.val.ival; 
-	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.cval[0]; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.br.id; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
+    int allAligned=0;
+    ValRecord v;
+    ptr val, base;
+    base = (ptr) & v.val.ival; 
+    val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.cval[0]; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.br.id; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
+    val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
 #ifdef STRUCT_ALIGNED
-	if(allAligned<0)
-		GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
+    if(allAligned<0)
+        GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
 #else
-	if(allAligned==0)
-		GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
+    if(allAligned==0)
+        GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
 #endif
 }
 int mal_init(){
-	mal_contextLock= MT_create_lock();
-	tstAligned();
-	initNamespace();
-	initParser();
+    mal_contextLock= MT_create_lock();
+    tstAligned();
+    initNamespace();
+    initParser();
         if( malBootstrap() == 0) return -1;
-	return 0;
+    return 0;
 }
 @-
 Upon exit we should attempt to remove all allocated memory explicitly.
@@ -352,14 +337,14 @@ Unfortunately the GDK layer is does not clean-up upon exit.
 @c
 void mal_exit(Client cntxt){
 #ifdef MALprofiler
-	profileReport( cntxt->nspace,1, open_wastream("/tmp/Monet.prof"));
+    profileReport( cntxt->nspace,1, open_wastream("/tmp/Monet.prof"));
 #endif
-	freeScopeList(cntxt->nspace);
-	freeBoxes();
-	mal_scope = 0;
-	unloadModuleLibraries();
-	TMcommit();
-	finishNamespace();
-	GDKexit(1);
+    freeScopeList(cntxt->nspace);
+    freeBoxes();
+    mal_scope = 0;
+    unloadModuleLibraries();
+    TMcommit();
+    finishNamespace();
+    GDKexit(1);
 }
 @}

@@ -15,70 +15,111 @@
 @v 1.0
 @* MAL syntax summary
 The MAL syntax is summarized below in extended BNF.
-Alternative constructs are seperated by '$|$' and grouped
+Alternative constructs are seperated by '|' and grouped
 by parenthesis.
 Optional parts are marked with square brackets.
 A repetition is marked with either '+' or '*' to
 indicate at least once and many times, respectively.
 Lexical tokens are illustrated in small capitals.
-@T
 
-\begin{tabular}{l l l}
-program		& : & ( definition [helpinfo] ';' \\
-		& $|$ & statement ';' ) *\\
-
-definition	& : & moduleStmt $|$ includeStmt \\
-		& $|$ & commandStmt $|$ patternStmt \\
-		& $|$ & functionStmt $|$ factoryStmt\\
-		& $|$ & includeStmt\\
-
-moduleStmt	& : & {\sc atom} ident [':'ident]\\
-		& $|$ & {\sc module} ident \\
-
-commandStmt	& : & {\sc command } header \\
-		& & {\sc address } identifier\\
-patternStmt	& : & {\sc pattern } header \\
-		& & {\sc address } identifier\\
-
-functionStmt	& : & {\sc function } header \\
-		& & statement* \\
-		& & {\sc end } identifier\\
-factoryStmt	& : & {\sc factory } header \\
-		& & statement* \\
-		& & {\sc end } identifier\\
-
-includeStmt	& : & {\sc include} identifier \\
-		& $|$ & {\sc include} string\_literal\\
-
-helpinfo	& : & {\sc comment} string\_literal \\
-
-header		& : & hdrName '(' params ')' result \\
-hdrName		& : & [ moduleId '.'] identifier \\
-result		& : & paramType $|$ '(' params ')'\\
-params		& : & binding [',' binding]* \\
-binding		& : & identifier typeName [ props ]\\
-
-typeName	& : & scalarType $|$ collectionType \\
-		& $|$ & ':' {\sc any} [digit] \\
-scalarType	& : & ':' {\sc identifier} \\
-collectionType	& : & ':' {\sc bat} ['[' colType ',' colType ']'] \\
-colType		& : & scalarType $|$ anyType \\
-
-props	& : & ['\{' property [ ',' property]* '\}']\\
-property	& : & identifier \\
-
-statement	& : & tag varlist [':=' expr ] props\\
-tag     	& $|$ & {\sc return} $|$ {\sc barrier} $|$ {\sc catch}\\
-		& $|$ & {\sc leave} $|$ {\sc redo} $|$ \\
-varlist		& : & variable \\
-		& $|$ & '(' variable {',' variable}* ')' \\
-variable	& : & identifier propQualifier \\
-
-expr    	&: & fcncall $|$ [factor  operator] factor \\
-factor  	&: & constant $|$ var \\
-
-constant	& : & {\sc literal\_constant} $|$ {\sc nil}\\
-\end{tabular}
+@multitable @columnfractions .15 .8
+@item program		
+@tab : ( definition [helpinfo] ';' 
+@item
+@tab | & statement ';' ) *
+@item
+@item definition	
+@tab : moduleStmt | includeStmt 
+@item
+@tab | commandStmt | patternStmt 
+@item
+@tab | functionStmt | factoryStmt
+@item
+@tab | includeStmt
+@item
+@item moduleStmt	
+@tab : @code{ atom} ident [':'ident]
+@item
+@tab |  @code{ module} ident 
+@item
+@item commandStmt	
+@tab : @code{ command } header 
+@item
+@tab : @code{ address } identifier
+@item patternStmt	
+@tab : @code{ pattern } header 
+@item
+@tab : @code{ address } identifier
+@item
+@item functionStmt	
+@tab : @code{ function } header 
+@item
+@tab : statement* 
+@item
+@tab : @code{ end } identifier
+@item factoryStmt	
+@tab : @code{ factory } header 
+@item
+@tab : statement* 
+@item
+@tab : @code{ end } identifier
+@item
+@item includeStmt	
+@tab : @code{ include} identifier 
+@item
+@tab |  @code{ include} string_literal
+@item
+@item helpinfo	
+@tab : @code{ comment} string_literal 
+@item
+@item header		
+@tab : hdrName '(' params ')' result 
+@item hdrName		
+@tab : [ moduleId '.'] identifier 
+@item result		
+@tab : paramType | '(' params ')'
+@item params		
+@tab : binding [',' binding]* 
+@item binding		
+@tab : identifier typeName [ props ]
+@item
+@item typeName	
+@tab : scalarType | collectionType 
+@item
+@tab | ':' @code{ any} [digit] 
+@item scalarType	
+@tab : ':' @code{ identifier} 
+@item collectionType	
+@tab : ':' @code{ bat} ['[' colType ',' colType ']'] 
+@item colType		
+@tab : scalarType | anyType 
+@item
+@item props	
+@tab : ['@{' property [ ',' property]* '@}']
+@item property	
+@tab : identifier 
+@item
+@item statement	
+@tab : tag varlist [':=' expr ] props
+@item tag     	
+@tab |  @code{ return} | @code{ barrier} | @code{ catch}
+@item
+@tab |  @code{ leave} | @code{ redo} | 
+@item varlist		
+@tab : variable 
+@item
+@tab |  '(' variable {',' variable}* ')' 
+@item variable	
+@tab : identifier propQualifier 
+@item
+@item expr    	
+@tab: fcncall | [factor  operator] factor 
+@item factor  	
+@tab: constant | var 
+@item
+@item constant	
+@tab : @code{ literal\_constant} | @code{ nil}
+@end multitable
 
 @-
 @{

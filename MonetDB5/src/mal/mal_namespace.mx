@@ -66,53 +66,53 @@ too expensive. An alternative would be to use a BAT to handle the collection.
 #define MAXIDENTIFIERS 1024
 
 typedef struct NAMESPACE{
-	int  size;	/* amount of space available */
-	int  nmetop;
-	str  *nme;
-	int  *link;
-	int  *hit;
+    int  size;  /* amount of space available */
+    int  nmetop;
+    str  *nme;
+    int  *link;
+    int  *hit;
 } Namespace;
 
 static Namespace namespace;
 extern void initNameParser();
 
 static void expandNamespace(int incr){
-	str *nme;
-	int *link, *hit;
+    str *nme;
+    int *link, *hit;
 
-	if(incr < 0){
-		GDKwarning("expandNamespace:illegal increment\n");
-		return;
-	}
-	if(namespace.size+incr > 32000){
-		GDKwarning("Namespace becomes too large\n");
-	}
-	initNameParser();
+    if(incr < 0){
+        GDKwarning("expandNamespace:illegal increment\n");
+        return;
+    }
+    if(namespace.size+incr > 32000){
+        GDKwarning("Namespace becomes too large\n");
+    }
+    initNameParser();
 
-	nme= (str *) GDKmalloc(sizeof(str *) * namespace.nmetop+incr);
-	link= (int *) GDKmalloc(sizeof(int) * namespace.nmetop+incr);
-	hit = (int *) GDKmalloc(sizeof(int) * namespace.nmetop+incr);
-	memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
-	memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
-	memcpy(hit, namespace.hit, sizeof(int) * namespace.nmetop);
+    nme= (str *) GDKmalloc(sizeof(str *) * namespace.nmetop+incr);
+    link= (int *) GDKmalloc(sizeof(int) * namespace.nmetop+incr);
+    hit = (int *) GDKmalloc(sizeof(int) * namespace.nmetop+incr);
+    memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
+    memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
+    memcpy(hit, namespace.hit, sizeof(int) * namespace.nmetop);
 
-	namespace.size += incr;
-	namespace.nmetop+= incr;
-	GDKfree(namespace.nme); namespace.nme= nme;
-	GDKfree(namespace.link); namespace.link= link;
+    namespace.size += incr;
+    namespace.nmetop+= incr;
+    GDKfree(namespace.nme); namespace.nme= nme;
+    GDKfree(namespace.link); namespace.link= link;
 
 }
 void initNamespace() {
-	namespace.nme= (str *) GDKmalloc(sizeof(str *) * MAXIDENTIFIERS);
-	namespace.link= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
-	namespace.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
-	namespace.size = MAXIDENTIFIERS;
-	namespace.nmetop= 256; /* hash overflow */
+    namespace.nme= (str *) GDKmalloc(sizeof(str *) * MAXIDENTIFIERS);
+    namespace.link= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
+    namespace.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
+    namespace.size = MAXIDENTIFIERS;
+    namespace.nmetop= 256; /* hash overflow */
 }
 void finishNamespace() {
-	GDKfree(namespace.nme);
-	GDKfree(namespace.link);
-	GDKfree(namespace.hit);
+    GDKfree(namespace.nme);
+    GDKfree(namespace.link);
+    GDKfree(namespace.hit);
 }
 @-
 The function getName returns the pointer to the identifier representation.
@@ -126,27 +126,27 @@ The administration is initialized incrementally.
 @c
 int putName(str nme)
 {
-	int l= nme[0];
-	
-	if( namespace.nme[l]== 0){
-		namespace.nme[l]= GDKstrdup(nme);
-		namespace.link[l]= 0;
-		namespace.hit[l]= 0;
-		return l;
-	}
-	for(l= namespace.link[l]; l; l= namespace.link[l]){
-		if(idcmp(nme,namespace.nme[l])==0) {
-			namespace.hit[l]++;
-			return l;
-		}
-	}
-	if( namespace.nmetop+1== namespace.size)
-		expandNamespace(MAXIDENTIFIERS);
-	namespace.nme[namespace.nmetop]= GDKstrdup(nme);
-	namespace.link[namespace.nmetop]= 0;
-	namespace.hit[namespace.nmetop]= 0;
-	namespace.nmetop++;
-	return namespace.nmetop-1;
+    int l= nme[0];
+    
+    if( namespace.nme[l]== 0){
+        namespace.nme[l]= GDKstrdup(nme);
+        namespace.link[l]= 0;
+        namespace.hit[l]= 0;
+        return l;
+    }
+    for(l= namespace.link[l]; l; l= namespace.link[l]){
+        if(idcmp(nme,namespace.nme[l])==0) {
+            namespace.hit[l]++;
+            return l;
+        }
+    }
+    if( namespace.nmetop+1== namespace.size)
+        expandNamespace(MAXIDENTIFIERS);
+    namespace.nme[namespace.nmetop]= GDKstrdup(nme);
+    namespace.link[namespace.nmetop]= 0;
+    namespace.hit[namespace.nmetop]= 0;
+    namespace.nmetop++;
+    return namespace.nmetop-1;
 }
 @-
 The routine parseName takes a reference to a string and attempts
@@ -171,29 +171,29 @@ void initNameParser(){
 }
 
 int isOperator(str nme){
-	while(*nme)
-	if( opChar[(int)(*nme)]==0) return FALSE;
-	else nme++;
-	return TRUE;
+    while(*nme)
+    if( opChar[(int)(*nme)]==0) return FALSE;
+    else nme++;
+    return TRUE;
 }
 int parseName(str *cur){
-	int cnt=0, k=0;
-	char old, *s= *cur;
+    int cnt=0, k=0;
+    char old, *s= *cur;
 
-	if( idChar[(int)(*s)])
-		while(idChar[(int)(*s)] || isdigit((int)(*s))) { cnt++;s++;}
-	else
-	if( opChar[(int)(*s)])
-		while(opChar[(int)(*s)] ) { cnt++;s++;}
-	
-	if(cnt){
-		old= *s;
-		*s= 0;
-		k= putName(*cur);
-		*s= old;
-		*cur= s;
-	}
-	return k; /* return the internal number, or zero */
+    if( idChar[(int)(*s)])
+        while(idChar[(int)(*s)] || isdigit((int)(*s))) { cnt++;s++;}
+    else
+    if( opChar[(int)(*s)])
+        while(opChar[(int)(*s)] ) { cnt++;s++;}
+    
+    if(cnt){
+        old= *s;
+        *s= 0;
+        k= putName(*cur);
+        *s= old;
+        *cur= s;
+    }
+    return k; /* return the internal number, or zero */
 }
 @-
 The namespace may become a bottleneck when the chain of identifiers grows.
@@ -204,23 +204,23 @@ crucial information. The choice on the way to move forward is postponed.
 @c
 void dumpNamespaceStatistics(stream *f, int details)
 {
-	int i,l,cnt;
+    int i,l,cnt;
 
-	stream_printf(f,"Namespace statistics\n");
-	stream_printf(f,"nmetop = %d size= %d\n",
-		namespace.nmetop, namespace.size);
-	for(i=0;i<256; i++){
-		cnt =0;
-		stream_printf(f,"list %d ",i);
-		for(l= i; l; l= namespace.link[l]){
-			cnt++;
-			if(details) {
-				stream_printf(f,"(%s %d) ",
-				namespace.nme[l], namespace.hit[l]);
-				if( i+1 % 5 == 0) stream_printf(f,"\n");
-			}
-		}
-		if(cnt)  stream_printf(f," has %d elements",cnt);
-	}
+    stream_printf(f,"Namespace statistics\n");
+    stream_printf(f,"nmetop = %d size= %d\n",
+        namespace.nmetop, namespace.size);
+    for(i=0;i<256; i++){
+        cnt =0;
+        stream_printf(f,"list %d ",i);
+        for(l= i; l; l= namespace.link[l]){
+            cnt++;
+            if(details) {
+                stream_printf(f,"(%s %d) ",
+                namespace.nme[l], namespace.hit[l]);
+                if( i+1 % 5 == 0) stream_printf(f,"\n");
+            }
+        }
+        if(cnt)  stream_printf(f," has %d elements",cnt);
+    }
 }
 @}

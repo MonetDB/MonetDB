@@ -16,10 +16,10 @@
 @' All Rights Reserved.
 @' 
 @' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+@'      Martin Kersten <Martin.Kersten@cwi.nl>
+@'      Peter Boncz <Peter.Boncz@cwi.nl>
+@'      Niels Nes <Niels.Nes@cwi.nl>
+@'      Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @a M. Kersten
 @v 0.0
@@ -153,59 +153,59 @@ static int cachedProfiling = FALSE;
 static void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 static void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-int malProfileMode=0;	/* global flag to indicate profiling mode */
+int malProfileMode=0;   /* global flag to indicate profiling mode */
 static int profileAll=0;/* all instructions should be profiled */
 static int delayswitch=0; /* to wait before sending the profile info */
 
 @c
-#define PROFlabel	0
-#define PROFcpu		1
-#define PROFmemory	2
-#define PROFio		3
-#define PROFpc		4
-#define PROFstmt	5
+#define PROFlabel   0
+#define PROFcpu     1
+#define PROFmemory  2
+#define PROFio      3
+#define PROFpc      4
+#define PROFstmt    5
 
 static struct{
-	str name;	/* which logical counter is needed */
-	int status;	/* trace it or not */
+    str name;   /* which logical counter is needed */
+    int status; /* trace it or not */
 } profileCounter[]={
-	/*  0 */ {"tick",1},
-	/*  1 */ {"cpu",1},
-	/*  2 */ {"memory",1},
-	/*  3 */ {"io",1},
-	/*  4 */ {"pc",1},
-	/*  5 */ {"statement",1},
-	/*  6 */ {0,0}
+    /*  0 */ {"tick",1},
+    /*  1 */ {"cpu",1},
+    /*  2 */ {"memory",1},
+    /*  3 */ {"io",1},
+    /*  4 */ {"pc",1},
+    /*  5 */ {"statement",1},
+    /*  6 */ {0,0}
 };
 @-
 The counters can be set individually. The XML output uses the order of their
 definition.
 
 @= setCounter
-	int i;
-	for(i=0; profileCounter[i].name;i++)
-	if( strcmp(profileCounter[i].name,name)==0){
-		profileCounter[i].status = @1 ;
-		return 0;
-	}
-	return throwException(MALEXCEPTION, "@2",
-		"profile counter '%s' undefined",name);
+    int i;
+    for(i=0; profileCounter[i].name;i++)
+    if( strcmp(profileCounter[i].name,name)==0){
+        profileCounter[i].status = @1 ;
+        return 0;
+    }
+    return throwException(MALEXCEPTION, "@2",
+        "profile counter '%s' undefined",name);
 @c
 str activateCounter(str name){ @:setCounter(1,activateCounter)@ }
 str deactivateCounter(str name){ @:setCounter(0,deactivateCounter)@ }
 
 @-
 The parameter of getEventStream is the return value of the enclosing function:
-	profilerEvent:	none/void
-	setStartPoint:	a str
-	setEndPoint:	a str
+    profilerEvent:  none/void
+    setStartPoint:  a str
+    setEndPoint:    a str
 @= getEventStream
-	if( profileLock==0) profileLock= MT_create_lock();
-	mal_set_lock(profileLock,"profileLock");
-	if( eventstream == NULL) {
-		mal_unset_lock(profileLock,"profileLock");
-		return @1;
-	}
+    if( profileLock==0) profileLock= MT_create_lock();
+    mal_set_lock(profileLock,"profileLock");
+    if( eventstream == NULL) {
+        mal_unset_lock(profileLock,"profileLock");
+        return @1;
+    }
 @- Event dispatching
 The profiler strategy is encapsulated here
 Online- and offline-profiling are disjoint options, because they
@@ -213,9 +213,9 @@ currently share the same file descriptor in the client record.
 @c
 void profilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef MALprofiler
-	if( onlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
-	if( offlineProfiling) offlineProfilerEvent(cntxt,mb,stk,pci);
-	if( cachedProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
+    if( onlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
+    if( offlineProfiling) offlineProfilerEvent(cntxt,mb,stk,pci);
+    if( cachedProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
 #endif
 }
 
@@ -224,140 +224,140 @@ The online processing structure is the easiest. We merely have to
 produce a correct tuple format for the front-end.
 @c
 #define log(X,Y) stream_printf(eventstream,X,Y);
-#define log0(X)	stream_printf(eventstream,X);
+#define log0(X) stream_printf(eventstream,X);
 #define log2(X,Y,Z) stream_printf(eventstream,X,Y,Z);
 #define flushLog() stream_flush(eventstream);
 
 #ifdef MALprofiler
 
 void onlineProfilerHeader(){
-	@:getEventStream()@	/* profilerEvent -> void */
-	log0("# ");
-	if( profileCounter[PROFpc].status ){
-		log0("caller,\t");
-		log0("callee,\t");
-	}
-	if( profileCounter[PROFlabel].status ){
-		log0("ticks,\t");
-		log0("clock,\t");
-	}
-	if( profileCounter[PROFstmt].status ){
-		log0("stmt,\t");
-	}
-	if( profileCounter[PROFcpu].status ){
-		log0("utime,\t");
-		log0("cutime,\t");
-		log0("stime,\t");
-		log0("cstime,\t");
-	}
+    @:getEventStream()@ /* profilerEvent -> void */
+    log0("# ");
+    if( profileCounter[PROFpc].status ){
+        log0("caller,\t");
+        log0("callee,\t");
+    }
+    if( profileCounter[PROFlabel].status ){
+        log0("ticks,\t");
+        log0("clock,\t");
+    }
+    if( profileCounter[PROFstmt].status ){
+        log0("stmt,\t");
+    }
+    if( profileCounter[PROFcpu].status ){
+        log0("utime,\t");
+        log0("cutime,\t");
+        log0("stime,\t");
+        log0("cstime,\t");
+    }
 
-	if( profileCounter[PROFmemory].status ){
-		log0("maxrss,\t");
-		log0("arena,\t");
-		log0("ordblks,\t");
-		log0("smblks,\t");
-		log0("hblkhd,\t");
-		log0("hblks,\t");
-		log0("fsmblks,\t");
-		log0("uordblks,\t");
-	}
-	if( profileCounter[PROFio].status ){
-		log0("page reclaim,\t");
-		log0("page faults,\t");
-		log0("swaps,\t");
-		log0("block reads,\t");
-		log0("block writes,\t");
-		log0("context switch,\t");
-		log0("involunarty switch,\t");
-	}
-	log0("event\t# name\n");
-	flushLog();
-	mal_unset_lock(profileLock,"profileLock");
+    if( profileCounter[PROFmemory].status ){
+        log0("maxrss,\t");
+        log0("arena,\t");
+        log0("ordblks,\t");
+        log0("smblks,\t");
+        log0("hblkhd,\t");
+        log0("hblks,\t");
+        log0("fsmblks,\t");
+        log0("uordblks,\t");
+    }
+    if( profileCounter[PROFio].status ){
+        log0("page reclaim,\t");
+        log0("page faults,\t");
+        log0("swaps,\t");
+        log0("block reads,\t");
+        log0("block writes,\t");
+        log0("context switch,\t");
+        log0("involunarty switch,\t");
+    }
+    log0("event\t# name\n");
+    flushLog();
+    mal_unset_lock(profileLock,"profileLock");
 }
 
 void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	static struct mallinfo prevMalloc;
-	static struct rusage   prevUsage;
-	static int eventcounter;
-	struct tms newTms;
+    static struct mallinfo prevMalloc;
+    static struct rusage   prevUsage;
+    static int eventcounter;
+    struct tms newTms;
         struct mallinfo infoMalloc;
         struct rusage   infoUsage;
-	str stmt,c;
+    str stmt,c;
 
-	(void) cntxt; (void) stk; /* still unused */
+    (void) cntxt; (void) stk; /* still unused */
 
-	if(!profileAll && pci->trace== FALSE) return;
-	if( delayswitch >0){
-		/* first call to profiled */
-		onlineProfilerHeader();
-		delayswitch--;
-		return;
-	}
-	@:getEventStream()@	/* profilerEvent -> void */
-	if( delayswitch==0){
-		delayswitch= -1;
-	} 
-	times(&newTms);
-	infoMalloc = MT_mallinfo();
-	getrusage(RUSAGE_SELF,&infoUsage);
+    if(!profileAll && pci->trace== FALSE) return;
+    if( delayswitch >0){
+        /* first call to profiled */
+        onlineProfilerHeader();
+        delayswitch--;
+        return;
+    }
+    @:getEventStream()@ /* profilerEvent -> void */
+    if( delayswitch==0){
+        delayswitch= -1;
+    } 
+    times(&newTms);
+    infoMalloc = MT_mallinfo();
+    getrusage(RUSAGE_SELF,&infoUsage);
 
-	/* make basic profile event tuple  */
-	log0("[ ");
-	if( profileCounter[PROFpc].status ){
-		str nme= "";
-		if( stk->blk) nme= functionName(getInstrPtr(stk->blk,0)); 
+    /* make basic profile event tuple  */
+    log0("[ ");
+    if( profileCounter[PROFpc].status ){
+        str nme= "";
+        if( stk->blk) nme= functionName(getInstrPtr(stk->blk,0)); 
 
-		/* get identity of caller */
-		log2("%s.%d,\t",nme, getPC(mb,pci));
-		if( moduleId(pci) && functionId(pci)){
-			log2("\"%s.%s\",\t", moduleName(pci),functionName(pci));
-		} else {
-			log("\"%s\",\t",operatorName(pci->token));
-		}
-	}
-	if( profileCounter[PROFlabel].status ){
-		log("%d,\t", pci->ticks);
-		log("%d,\t", pci->clk);
-	}
-	if( profileCounter[PROFstmt].status ){
-		/* generate actual call statement */
-		stmt= call2str(mb,stk,getPC(mb,pci),FALSE);
-		c= stmt;
-		while(c && *c && isspace((int)*c) ) c++;
-		log(" \"%s\",\t",c);
-	}
-	if( profileCounter[PROFcpu].status ){
-		log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
-		log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
-		log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
-		log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
-	}
+        /* get identity of caller */
+        log2("%s.%d,\t",nme, getPC(mb,pci));
+        if( moduleId(pci) && functionId(pci)){
+            log2("\"%s.%s\",\t", moduleName(pci),functionName(pci));
+        } else {
+            log("\"%s\",\t",operatorName(pci->token));
+        }
+    }
+    if( profileCounter[PROFlabel].status ){
+        log("%d,\t", pci->ticks);
+        log("%d,\t", pci->clk);
+    }
+    if( profileCounter[PROFstmt].status ){
+        /* generate actual call statement */
+        stmt= call2str(mb,stk,getPC(mb,pci),FALSE);
+        c= stmt;
+        while(c && *c && isspace((int)*c) ) c++;
+        log(" \"%s\",\t",c);
+    }
+    if( profileCounter[PROFcpu].status ){
+        log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
+        log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
+        log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
+        log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
+    }
 
-	if( profileCounter[PROFmemory].status ){
-		log("%d,\t",infoUsage.ru_maxrss);
-		log("%d,\t", infoMalloc.arena-prevMalloc.arena);
-		log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
-		log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
-		log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
-		log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
-		log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
-		log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
-		prevMalloc = infoMalloc;
-	}
-	if( profileCounter[PROFio].status ){
-		log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
-		log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
-		log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
-		log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
-		log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
-		log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
-		log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
-		prevUsage = infoUsage;
-	}
-	log("%d ]\n",eventcounter);
-	eventcounter++;
-	flushLog();
-	mal_unset_lock(profileLock,"profileLock");
+    if( profileCounter[PROFmemory].status ){
+        log("%d,\t",infoUsage.ru_maxrss);
+        log("%d,\t", infoMalloc.arena-prevMalloc.arena);
+        log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
+        log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
+        log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
+        log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
+        log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
+        log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
+        prevMalloc = infoMalloc;
+    }
+    if( profileCounter[PROFio].status ){
+        log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
+        log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
+        log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
+        log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
+        log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
+        log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
+        log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
+        prevUsage = infoUsage;
+    }
+    log("%d ]\n",eventcounter);
+    eventcounter++;
+    flushLog();
+    mal_unset_lock(profileLock,"profileLock");
 }
 #endif
 @+ Cached processing
@@ -375,303 +375,303 @@ void infoHeapProfile(Heap *hp, str nme){
         while(*nme) *p++ = *nme++;
         strcpy(p, "free"); log0(buf); log("=\"%d\" ", hp->free ); 
         strcpy(p, "size"); log0(buf); log("=\"%d\" ", hp->size ); 
-	if( hp->maxsize){
+    if( hp->maxsize){
         strcpy(p, "maxsize"); log0(buf); log("=\"%d\" ", hp->maxsize );}
         strcpy(p, "storage");
-	if(hp->base){
-	log0(buf); 
-	log("=\"%s\" ", (hp->base==NULL)?"absent":(hp->storage==STORE_MMAP)?
+    if(hp->base){
+    log0(buf); 
+    log("=\"%s\" ", (hp->base==NULL)?"absent":(hp->storage==STORE_MMAP)?
                 (hp->filename?"memory mapped":"anonymous vm"):
                 (hp->storage==STORE_PRIV)?"private map":"malloced");
-	}
-	if(hp->filename){
+    }
+    if(hp->filename){
         strcpy(p, "filename");
-	log0(buf); log("=\"%s\" ", hp->filename?hp->filename:"no file");
-	}
+    log0(buf); log("=\"%s\" ", hp->filename?hp->filename:"no file");
+    }
         strcpy(p, "offset"); log0(buf); log("=\"%d\" ", hp->offset);
 }
 void HASHinfoProfile(Hash *h, str s){
-	char buf[MAXPATHLEN];
-	int i;
-	snprintf(buf,MAXPATHLEN,"%s=\"\" mask=\"", s);
-	i= strlen(buf);
-	snprintf(buf+i,MAXPATHLEN-i,"%d\" lim=\"", h->mask);
-	i= strlen(buf);
-	snprintf(buf+i,MAXPATHLEN-i,"%d\"", h->lim);
-	log0(buf);
+    char buf[MAXPATHLEN];
+    int i;
+    snprintf(buf,MAXPATHLEN,"%s=\"\" mask=\"", s);
+    i= strlen(buf);
+    snprintf(buf+i,MAXPATHLEN-i,"%d\" lim=\"", h->mask);
+    i= strlen(buf);
+    snprintf(buf+i,MAXPATHLEN-i,"%d\"", h->lim);
+    log0(buf);
 }
 void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef MALprofiler
-	struct tms newTms;
+    struct tms newTms;
         struct mallinfo infoMalloc;
         struct rusage   infoUsage;
         static struct mallinfo prevMalloc;
         static struct rusage   prevUsage;
-	str stmt,c;
-	(void) cntxt; /* still unused */
+    str stmt,c;
+    (void) cntxt; /* still unused */
 
-	if(!profileAll && pci->trace== FALSE) return;
-	if( getDestVar(pci) <=0 )return;
-	if( delayswitch >0){
-		delayswitch--;
-		return;
-	}
-	@:getEventStream()@	/* profilerEvent -> void */
-	if( delayswitch==0){
-		log0("<MonetProfile>\n");
-		delayswitch= -1;
-	} 
-	times(&newTms);
-	infoMalloc = MT_mallinfo();
-	getrusage(RUSAGE_SELF,&infoUsage);
+    if(!profileAll && pci->trace== FALSE) return;
+    if( getDestVar(pci) <=0 )return;
+    if( delayswitch >0){
+        delayswitch--;
+        return;
+    }
+    @:getEventStream()@ /* profilerEvent -> void */
+    if( delayswitch==0){
+        log0("<MonetProfile>\n");
+        delayswitch= -1;
+    } 
+    times(&newTms);
+    infoMalloc = MT_mallinfo();
+    getrusage(RUSAGE_SELF,&infoUsage);
 
-	/* make XML record */
-	log0("<event>\n");
-	if( profileCounter[PROFcpu].status ){
-	log("\t<tms utime=\"%d\" ", newTms.tms_utime - pci->timer.tms_utime);
-	log("cutime=\"%d\" ", newTms.tms_cutime - pci->timer.tms_cutime);
-	log("stime=\"%d\" ", newTms.tms_stime - pci->timer.tms_stime);
-	log("cstime=\"%d\" ", newTms.tms_cstime - pci->timer.tms_cstime);
-	log("ticks=\"%d\" ", GDKusec() - pci->clk);
-	log0("/>\n");
-	}
+    /* make XML record */
+    log0("<event>\n");
+    if( profileCounter[PROFcpu].status ){
+    log("\t<tms utime=\"%d\" ", newTms.tms_utime - pci->timer.tms_utime);
+    log("cutime=\"%d\" ", newTms.tms_cutime - pci->timer.tms_cutime);
+    log("stime=\"%d\" ", newTms.tms_stime - pci->timer.tms_stime);
+    log("cstime=\"%d\" ", newTms.tms_cstime - pci->timer.tms_cstime);
+    log("ticks=\"%d\" ", GDKusec() - pci->clk);
+    log0("/>\n");
+    }
 
-	if( profileCounter[PROFstmt].status ){
-	log0("\t<mal");
-	stmt= instruction2str(mb,pci,FALSE);
-	c= strchr(stmt,']');
-	if(c) c++; else c= stmt;
-	while(c && *c && isspace((int)*c) ) c++;
+    if( profileCounter[PROFstmt].status ){
+    log0("\t<mal");
+    stmt= instruction2str(mb,pci,FALSE);
+    c= strchr(stmt,']');
+    if(c) c++; else c= stmt;
+    while(c && *c && isspace((int)*c) ) c++;
 
-	log0(" stmt=\"");
-	for(;c && *c;c++){
-		if( *c=='#') break;
-		if( *c=='\n') break;
-		if(*c=='"') { log0("&quot;");}
-		else
-		if(*c=='&') {log0("&amp;");}
-		else
-		if(*c=='\'') {log0("&apos;");}
-		else stream_printf(eventstream,"%c",*c);
-	}
-	log0("\"");
-	
-	log(" module=\"%s\"", (moduleId(pci)?moduleName(pci):"unknown"));
-	log(" function=\"%s\"", (functionId(pci)?functionName(pci):"unknown"));
-	log(" calls=\"%d\"", pci->counter);
-	if( pci->counter){
+    log0(" stmt=\"");
+    for(;c && *c;c++){
+        if( *c=='#') break;
+        if( *c=='\n') break;
+        if(*c=='"') { log0("&quot;");}
+        else
+        if(*c=='&') {log0("&amp;");}
+        else
+        if(*c=='\'') {log0("&apos;");}
+        else stream_printf(eventstream,"%c",*c);
+    }
+    log0("\"");
+    
+    log(" module=\"%s\"", (moduleId(pci)?moduleName(pci):"unknown"));
+    log(" function=\"%s\"", (functionId(pci)?functionName(pci):"unknown"));
+    log(" calls=\"%d\"", pci->counter);
+    if( pci->counter){
                 double avg= pci->ticks/(pci->counter+0.0);
-		log(" average=\"%5.2f\"", avg);
+        log(" average=\"%5.2f\"", avg);
         } 
-	log0("/>\n");
-	}
+    log0("/>\n");
+    }
 
 @-
 The property tracing option inspects the destination variable
 and emits its key properties. This is primarilly meant to
 inspect the properties of BATs and their propagation.
 @c
-	if( profileCounter[2].status){
-	   ValPtr v;
-	   VarPtr w;
-	   str s;
-	   str mode, access;
+    if( profileCounter[2].status){
+       ValPtr v;
+       VarPtr w;
+       str s;
+       str mode, access;
 
-		v= &stk->stk[getDestVar(pci)];
-		w= getVar(mb, getDestVar(pci));
-		s= getTypeName(v->vtype);
+        v= &stk->stk[getDestVar(pci)];
+        w= getVar(mb, getDestVar(pci));
+        s= getTypeName(v->vtype);
 
-		log0("\t<prop ");
-		log("type=\"%s\" ", s); GDKfree(s);
-		if(w->isaconstant) log0("constant=\"true\" ");
-		if(w->isatypevar) log0("typevar=\"true\" ");
-		
-		log0("value=\""); 
-		if( isaBatType(w->type))
-			stream_printf(eventstream,"%s",
-				BBPdescriptor(v->val.bval)->batId);
-		else  if( w->type == TYPE_str){
-			char *t,*tt;
-			s= GDKmalloc(v->len+1);
-			for(t=s, tt= v->val.sval; *tt;tt++,t++){
-				if(*tt=='<' ) { strcpy(t,"&lt;"); t+=3;} else
-				if(*tt=='>' ) { strcpy(t,"&gt;"); t+=3;} else
-				*t =*tt;
-			}
-		} else ATOMprint(v->vtype, VALptr(v),eventstream); 
-		log0("\" "); 
-		if(isaBatType(w->type) ){
-		BAT *b= BATdescriptor(v->val.bval);
-		if(b){
-		if (b->batPersistence & PERSISTENT) mode="persistent";
-		else if (b->batPersistence & SESSION) mode="session";
-		else if (b->batPersistence & TRANSIENT) mode="transient";
-		else 	mode="unknown";
+        log0("\t<prop ");
+        log("type=\"%s\" ", s); GDKfree(s);
+        if(w->isaconstant) log0("constant=\"true\" ");
+        if(w->isatypevar) log0("typevar=\"true\" ");
+        
+        log0("value=\""); 
+        if( isaBatType(w->type))
+            stream_printf(eventstream,"%s",
+                BBPdescriptor(v->val.bval)->batId);
+        else  if( w->type == TYPE_str){
+            char *t,*tt;
+            s= GDKmalloc(v->len+1);
+            for(t=s, tt= v->val.sval; *tt;tt++,t++){
+                if(*tt=='<' ) { strcpy(t,"&lt;"); t+=3;} else
+                if(*tt=='>' ) { strcpy(t,"&gt;"); t+=3;} else
+                *t =*tt;
+            }
+        } else ATOMprint(v->vtype, VALptr(v),eventstream); 
+        log0("\" "); 
+        if(isaBatType(w->type) ){
+        BAT *b= BATdescriptor(v->val.bval);
+        if(b){
+        if (b->batPersistence & PERSISTENT) mode="persistent";
+        else if (b->batPersistence & SESSION) mode="session";
+        else if (b->batPersistence & TRANSIENT) mode="transient";
+        else    mode="unknown";
 
-		switch(b->batRestricted) {
-		case BAT_READ:         access="read-only";      break;
-		case BAT_WRITE:        access="updatable";      break;
-		case BAT_APPEND:       access="append-only";      break;
-		default:               access="unknown";
-		}
-	 
-		log( "count=\"%d\" ", BATcount(b));
-		/*log( "version=\"%d\" ", b->GDKversion);*/
-		/*log( "batId=\"%d\" ", b->batId );*/
-		/*log( "batCacheid=\"%d\" ", b->batCacheid);*/
-		/*log( "batParentid=\"%d\" ", b->batParentid);*/
-		/*log( "batSharecnt=\"%d\" ", b->batSharecnt);*/
-		/*log( "head=\"%d\" ", ATOMname(b->htype));*/
-		/*log( "tail=\"%d\" ", ATOMname(b->ttype));*/
-		log( "batPersistence=\"%s\" ", mode);
-		log( "batRestricted=\"%s\" ", access);
-		log( "batRefcnt=\"%d\" ", BBP_refs(b->batCacheid));
-		if( !BATdirty(b)) log( "batDirty=\"%s\" ", BATdirty(b)?"dirty":"clean");
-		if(b->batSet) log( "batSet=\"%d\" ", b->batSet);
-		if(b->void_tid) log( "void_tid=\"%d\" ", b->void_tid);
-		if(b->void_cnt) log( "void_cnt=\"%d\" ", b->void_cnt);
-	 
-		if(BAThordered(b)) log( "hsorted=\"%d\" ", BAThordered(b));
-		/*log( "hident",  b->hident);*/
-		if(BAThdense(b)) log( "hdense=\"%d\" ", BAThdense(b));
-		if(b->hseqbase) log( "hseqbase=\"%d\" ", b->hseqbase);
-		if(b->hkey) log( "hkey=\"%d\" ", b->hkey);
-		/*log( "hloc=\"%d\" ", b->hloc);*/
-		/* log( "hvarsized=\"%d\" ", b->hvarsized);*/
-		if(b->halign) log( "halign=\"%d\" ", b->halign);
-	 
-		/*log( "tident", b->tident);*/
-		if(BATtdense(b)) log( "tdense=\"%d\" ", BATtdense(b));
-		if(b->tseqbase) log( "tseqbase=\"%d\" ", b->tseqbase);
-		if(BATtordered(b))log( "tsorted=\"%d\" ", BATtordered(b));
-		if(b->tkey)log( "tkey=\"%d\" ", b->tkey);
-		/*log( "tloc=\"%d\" ", b->tloc);*/
-		/*log( "tvarsized=\"%d\" ", b->tvarsized);*/
-		if(b->talign)log( "talign=\"%d\" ", b->talign);
-	 
-		/*log( "batInserted=\"%d\" ", BUNindex(b, b->batInserted));*/
-		/*log( "batDeleted=\"%d\" ", BUNindex(b, b->batDeleted));*/
-		/*log( "batHole=\"%d\" ", BUNindex(b, b->batHole));*/
-		/*log( "top=\"%d\" ", BUNindex(b, (Bunbase(b) + b->batBuns->free)));*/
-		if(b->batStamp)log( "batStamp=\"%d\" ", b->batStamp);
-		log( "curStamp=\"%d\" ", BBPcurstamp());
-		if(b->batCopiedtodisk)log( "batCopiedtodisk=\"%d\" ", b->batCopiedtodisk);
-		if(b->batDirtydesc)log( "batDirtydesc=\"%s\" ", b->batDirtydesc?"dirty":"clean");
-	 
-		if(b->batDirtybuns)log( "batDirtybuns=\"%s\" ", b->batDirtybuns?"dirty":"clean");
-		infoHeapProfile(b->batBuns, "batBuns");
+        switch(b->batRestricted) {
+        case BAT_READ:         access="read-only";      break;
+        case BAT_WRITE:        access="updatable";      break;
+        case BAT_APPEND:       access="append-only";      break;
+        default:               access="unknown";
+        }
+     
+        log( "count=\"%d\" ", BATcount(b));
+        /*log( "version=\"%d\" ", b->GDKversion);*/
+        /*log( "batId=\"%d\" ", b->batId );*/
+        /*log( "batCacheid=\"%d\" ", b->batCacheid);*/
+        /*log( "batParentid=\"%d\" ", b->batParentid);*/
+        /*log( "batSharecnt=\"%d\" ", b->batSharecnt);*/
+        /*log( "head=\"%d\" ", ATOMname(b->htype));*/
+        /*log( "tail=\"%d\" ", ATOMname(b->ttype));*/
+        log( "batPersistence=\"%s\" ", mode);
+        log( "batRestricted=\"%s\" ", access);
+        log( "batRefcnt=\"%d\" ", BBP_refs(b->batCacheid));
+        if( !BATdirty(b)) log( "batDirty=\"%s\" ", BATdirty(b)?"dirty":"clean");
+        if(b->batSet) log( "batSet=\"%d\" ", b->batSet);
+        if(b->void_tid) log( "void_tid=\"%d\" ", b->void_tid);
+        if(b->void_cnt) log( "void_cnt=\"%d\" ", b->void_cnt);
+     
+        if(BAThordered(b)) log( "hsorted=\"%d\" ", BAThordered(b));
+        /*log( "hident",  b->hident);*/
+        if(BAThdense(b)) log( "hdense=\"%d\" ", BAThdense(b));
+        if(b->hseqbase) log( "hseqbase=\"%d\" ", b->hseqbase);
+        if(b->hkey) log( "hkey=\"%d\" ", b->hkey);
+        /*log( "hloc=\"%d\" ", b->hloc);*/
+        /* log( "hvarsized=\"%d\" ", b->hvarsized);*/
+        if(b->halign) log( "halign=\"%d\" ", b->halign);
+     
+        /*log( "tident", b->tident);*/
+        if(BATtdense(b)) log( "tdense=\"%d\" ", BATtdense(b));
+        if(b->tseqbase) log( "tseqbase=\"%d\" ", b->tseqbase);
+        if(BATtordered(b))log( "tsorted=\"%d\" ", BATtordered(b));
+        if(b->tkey)log( "tkey=\"%d\" ", b->tkey);
+        /*log( "tloc=\"%d\" ", b->tloc);*/
+        /*log( "tvarsized=\"%d\" ", b->tvarsized);*/
+        if(b->talign)log( "talign=\"%d\" ", b->talign);
+     
+        /*log( "batInserted=\"%d\" ", BUNindex(b, b->batInserted));*/
+        /*log( "batDeleted=\"%d\" ", BUNindex(b, b->batDeleted));*/
+        /*log( "batHole=\"%d\" ", BUNindex(b, b->batHole));*/
+        /*log( "top=\"%d\" ", BUNindex(b, (Bunbase(b) + b->batBuns->free)));*/
+        if(b->batStamp)log( "batStamp=\"%d\" ", b->batStamp);
+        log( "curStamp=\"%d\" ", BBPcurstamp());
+        if(b->batCopiedtodisk)log( "batCopiedtodisk=\"%d\" ", b->batCopiedtodisk);
+        if(b->batDirtydesc)log( "batDirtydesc=\"%s\" ", b->batDirtydesc?"dirty":"clean");
+     
+        if(b->batDirtybuns)log( "batDirtybuns=\"%s\" ", b->batDirtybuns?"dirty":"clean");
+        infoHeapProfile(b->batBuns, "batBuns");
 
-		if(b->hheapdirty)log( "hheapdirty=\"%s\" ", b->hheapdirty?"dirty":"clean");
-		infoHeapProfile(&b->hheap, "hheap");
+        if(b->hheapdirty)log( "hheapdirty=\"%s\" ", b->hheapdirty?"dirty":"clean");
+        infoHeapProfile(&b->hheap, "hheap");
 
-		if(b->theapdirty)log( "theapdirty=\"%s\" ", b->theapdirty?"dirty":"clean");
-		infoHeapProfile(&b->theap, "theap");
+        if(b->theapdirty)log( "theapdirty=\"%s\" ", b->theapdirty?"dirty":"clean");
+        infoHeapProfile(&b->theap, "theap");
 
-		if(b->hacctype)log( "hacctype=\"%s\" ", ACCname(b->hacctype));
-		if(b->haccdirty)log( "haccdirty=\"%s\" ", b->haccdirty?"dirty":"clean");
-		if(b->haccCopiedtodisk)log( "haccCopiedtodisk\"%d\" ", b->haccCopiedtodisk);
-		infoHeapProfile(&b->haccelerator, "haccelerator");
+        if(b->hacctype)log( "hacctype=\"%s\" ", ACCname(b->hacctype));
+        if(b->haccdirty)log( "haccdirty=\"%s\" ", b->haccdirty?"dirty":"clean");
+        if(b->haccCopiedtodisk)log( "haccCopiedtodisk\"%d\" ", b->haccCopiedtodisk);
+        infoHeapProfile(&b->haccelerator, "haccelerator");
 
-		if(b->tacctype)log( "tacctype=\"%s\" ", ACCname(b->tacctype));
-		if(b->taccdirty)log( "taccdirty=\"%s\" ", b->taccdirty?"dirty":"clean");
-		if(b->taccCopiedtodisk)log( "taccCopiedtodisk=\"%d\" ", b->taccCopiedtodisk);
-		infoHeapProfile(&b->taccelerator, "taccelerator");
-		if (b->hhash_heap) { HASHinfoProfile(&b->hhash, "hhash"); }
-		if (b->thash_heap) { HASHinfoProfile(&b->thash, "thash"); }
-		if (b->hidx_heap) log0("hidx_heap=\"present\"");
-		if (b->tidx_heap) log0("tidx_heap=\"present\"");
-		BBPunfix(b->batCacheid);
-		}
-		}
-		log0("/>\n");
-	 }
+        if(b->tacctype)log( "tacctype=\"%s\" ", ACCname(b->tacctype));
+        if(b->taccdirty)log( "taccdirty=\"%s\" ", b->taccdirty?"dirty":"clean");
+        if(b->taccCopiedtodisk)log( "taccCopiedtodisk=\"%d\" ", b->taccCopiedtodisk);
+        infoHeapProfile(&b->taccelerator, "taccelerator");
+        if (b->hhash_heap) { HASHinfoProfile(&b->hhash, "hhash"); }
+        if (b->thash_heap) { HASHinfoProfile(&b->thash, "thash"); }
+        if (b->hidx_heap) log0("hidx_heap=\"present\"");
+        if (b->tidx_heap) log0("tidx_heap=\"present\"");
+        BBPunfix(b->batCacheid);
+        }
+        }
+        log0("/>\n");
+     }
 
-	if( profileCounter[3].status ){
-	log0("\t<memory ");
-	log("maxrss=\"%d\" ",infoUsage.ru_maxrss);
-	log("arena=\"%d\" ", infoMalloc.arena-prevMalloc.arena);
-	log("ordblks=\"%d\" ", infoMalloc.ordblks-prevMalloc.ordblks);
-	log("smblks=\"%d\" ", infoMalloc.smblks-prevMalloc.smblks);
-	log("\n\thblkhd=\"%d\" ", infoMalloc.hblkhd-prevMalloc.hblkhd);
-	log("hblks=\"%d\" ", infoMalloc.hblks-prevMalloc.hblks);
-	log("fsmblks=\"%d\" ", infoMalloc.fsmblks-prevMalloc.fsmblks);
-	log("uordblks=\"%d\" ", infoMalloc.uordblks-prevMalloc.uordblks);
-	prevMalloc = infoMalloc;
-	log0("/>\n");
-	}
+    if( profileCounter[3].status ){
+    log0("\t<memory ");
+    log("maxrss=\"%d\" ",infoUsage.ru_maxrss);
+    log("arena=\"%d\" ", infoMalloc.arena-prevMalloc.arena);
+    log("ordblks=\"%d\" ", infoMalloc.ordblks-prevMalloc.ordblks);
+    log("smblks=\"%d\" ", infoMalloc.smblks-prevMalloc.smblks);
+    log("\n\thblkhd=\"%d\" ", infoMalloc.hblkhd-prevMalloc.hblkhd);
+    log("hblks=\"%d\" ", infoMalloc.hblks-prevMalloc.hblks);
+    log("fsmblks=\"%d\" ", infoMalloc.fsmblks-prevMalloc.fsmblks);
+    log("uordblks=\"%d\" ", infoMalloc.uordblks-prevMalloc.uordblks);
+    prevMalloc = infoMalloc;
+    log0("/>\n");
+    }
 
-	if( profileCounter[PROFio].status ){
-	log0("\t<io ");
-	log("minflt=\"%d\" ", infoUsage.ru_minflt- prevUsage.ru_minflt);
-	log("majflt=\"%d\" ", infoUsage.ru_majflt- prevUsage.ru_majflt);
-	log("nswap=\"%d\" ", infoUsage.ru_nswap- prevUsage.ru_nswap);
-	log("\n\tinblock=\"%d\" ", infoUsage.ru_inblock- prevUsage.ru_inblock);
-	log("oublock=\"%d\" ", infoUsage.ru_oublock- prevUsage.ru_oublock);
-	log("nvcsw=\"%d\" ", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
-	log("nivcsw=\"%d\" ", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
-	prevUsage = infoUsage;
-	log0("/>\n");
-	}
+    if( profileCounter[PROFio].status ){
+    log0("\t<io ");
+    log("minflt=\"%d\" ", infoUsage.ru_minflt- prevUsage.ru_minflt);
+    log("majflt=\"%d\" ", infoUsage.ru_majflt- prevUsage.ru_majflt);
+    log("nswap=\"%d\" ", infoUsage.ru_nswap- prevUsage.ru_nswap);
+    log("\n\tinblock=\"%d\" ", infoUsage.ru_inblock- prevUsage.ru_inblock);
+    log("oublock=\"%d\" ", infoUsage.ru_oublock- prevUsage.ru_oublock);
+    log("nvcsw=\"%d\" ", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
+    log("nivcsw=\"%d\" ", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
+    prevUsage = infoUsage;
+    log0("/>\n");
+    }
 
-	log0("</event>\n");
-	mal_unset_lock(profileLock,"profileLock");
-	stream_flush(eventstream);
+    log0("</event>\n");
+    mal_unset_lock(profileLock,"profileLock");
+    stream_flush(eventstream);
 #endif
 }
 
 str setLogFile(Scope cntxt,  str fname){
         (void) cntxt; /* still unused */
 #ifdef MALprofiler
-	if( profileLock==0) profileLock= MT_create_lock();
-	mal_set_lock(profileLock,"profileLock");
-	eventstream = open_wastream(fname);
-	if( eventstream == NULL){
-		return throwMessage("mal.profiler",
-			"Could not create event stream file");
-	}
-	mal_unset_lock(profileLock,"profileLock");
+    if( profileLock==0) profileLock= MT_create_lock();
+    mal_set_lock(profileLock,"profileLock");
+    eventstream = open_wastream(fname);
+    if( eventstream == NULL){
+        return throwMessage("mal.profiler",
+            "Could not create event stream file");
+    }
+    mal_unset_lock(profileLock,"profileLock");
 #else
-	stream_printf(GDKout,"# Monet not compiled for profiling\n");
+    stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
-	return MAL_SUCCEED;
+    return MAL_SUCCEED;
 }
 
 str openProfilerStream(){
-	Client c= getClient();
-	malProfileMode = TRUE;
-	eventstream = c->fdout;
-	delayswitch=1;	/* avoid an incomplete initial profile event */
-	return MAL_SUCCEED;
+    Client c= getClient();
+    malProfileMode = TRUE;
+    eventstream = c->fdout;
+    delayswitch=1;  /* avoid an incomplete initial profile event */
+    return MAL_SUCCEED;
 }
 str closeProfilerStream(){
-	Client c= getClient();
-	if( offlineProfiling) log0("</MonetProfile>\n");
-	if( eventstream != c->fdout) stream_close(eventstream);
-	malProfileMode = FALSE;
-	eventstream = NULL;
-	return MAL_SUCCEED;
+    Client c= getClient();
+    if( offlineProfiling) log0("</MonetProfile>\n");
+    if( eventstream != c->fdout) stream_close(eventstream);
+    malProfileMode = FALSE;
+    eventstream = NULL;
+    return MAL_SUCCEED;
 }
 str setStartPoint(Scope cntxt, str mod, str fcn){
-	(void) cntxt; (void) mod; (void) fcn; /* still unused */
+    (void) cntxt; (void) mod; (void) fcn; /* still unused */
 #ifdef MALprofiler
-	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
-	stream_printf(GDKout,"# start point not set\n");
-	mal_unset_lock(profileLock,"profileLock");
+    @:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
+    stream_printf(GDKout,"# start point not set\n");
+    mal_unset_lock(profileLock,"profileLock");
 #else
-	stream_printf(GDKout,"# Monet not compiled for profiling\n");
+    stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
-	return MAL_SUCCEED;
+    return MAL_SUCCEED;
 }
 str setEndPoint(Scope cntxt, str mod, str fcn){
-	(void) cntxt; (void) mod; (void) fcn; /* still unused */
+    (void) cntxt; (void) mod; (void) fcn; /* still unused */
 #ifdef MALprofiler
-	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
-	stream_printf(GDKout,"# end point not set\n");
-	mal_unset_lock(profileLock,"profileLock");
+    @:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
+    stream_printf(GDKout,"# end point not set\n");
+    mal_unset_lock(profileLock,"profileLock");
 #else
-	stream_printf(GDKout,"# Monet not compiled for profiling\n");
+    stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
-	return MAL_SUCCEED;
+    return MAL_SUCCEED;
 }
 @-
 When you receive the message to start profiling, we
@@ -679,26 +679,26 @@ should wait for the next instruction the stream
 is initiated. This is controlled by a delay-switch
 @c
 str startProfiling(){
-	if( eventstream != NULL){
-		malProfileMode= TRUE;
-		delayswitch=1;
-	}
-	return MAL_SUCCEED;
+    if( eventstream != NULL){
+        malProfileMode= TRUE;
+        delayswitch=1;
+    }
+    return MAL_SUCCEED;
 }
 str stopProfiling(){
-	stream_flush(eventstream);
-	malProfileMode= FALSE;
-	return MAL_SUCCEED;
+    stream_flush(eventstream);
+    malProfileMode= FALSE;
+    return MAL_SUCCEED;
 }
 @-
 The resetProfiler is called when the owner of the event stream
 leaves the scene. (Unclear if parallelism may cause errors)
 @c
 void resetProfiler(stream *fdout){
-	if( fdout != eventstream) return;
-	mal_set_lock(profileLock,"profileLock");
-	eventstream= 0;
-	mal_unset_lock(profileLock,"profileLock");
+    if( fdout != eventstream) return;
+    mal_set_lock(profileLock,"profileLock");
+    eventstream= 0;
+    mal_unset_lock(profileLock,"profileLock");
 }
 @-
 Performance tracing is triggered on an instruction basis
@@ -713,49 +713,49 @@ abstracted away.
 @c
 int instrFilter(InstrPtr pci, str mod, str fcn){
 #ifdef MALprofiler
-	if( functionId(pci) && (*fcn=='*' || strcmp(fcn,functionName(pci))==0) ){
-		if( moduleId(pci) && (*mod=='*' || strcmp(mod,moduleName(pci))==0))
-		return 1;
-	}
-	if( moduleId(pci) && *fcn == '*' &&
-	   ( *mod == '*' || strcmp(mod,moduleName(pci))==0) )
-		return 1;
+    if( functionId(pci) && (*fcn=='*' || strcmp(fcn,functionName(pci))==0) ){
+        if( moduleId(pci) && (*mod=='*' || strcmp(mod,moduleName(pci))==0))
+        return 1;
+    }
+    if( moduleId(pci) && *fcn == '*' &&
+       ( *mod == '*' || strcmp(mod,moduleName(pci))==0) )
+        return 1;
 #else
-	stream_printf(GDKout,"# Monet not compiled for profiling\n");
+    stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
-	return 0;
+    return 0;
 }
 
 void setFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
         int j,k,moduleOnly=0;
         Scope s=cntxt;
-	Symbol t;
-	InstrPtr p;
+    Symbol t;
+    InstrPtr p;
 
-	profileAll= strcmp(mod,"*")==0 && strcmp(fcn,"*")==0;
-	if( profileAll) return;
-	if( profileLock==0) profileLock= MT_create_lock();
-	mal_set_lock(profileLock,"profileLock");
+    profileAll= strcmp(mod,"*")==0 && strcmp(fcn,"*")==0;
+    if( profileAll) return;
+    if( profileLock==0) profileLock= MT_create_lock();
+    mal_set_lock(profileLock,"profileLock");
         while(s!= NULL){
                 if( s->subscope)
                 for(j=0;j<MAXSCOPE;j++)
                 if(s->subscope[j]){
                         for(t= s->subscope[j];t!=NULL;t=t->peer) {
-				p= getInstrPtr(t->def,0);
-				moduleOnly = moduleId(p) && strcmp(moduleName(p),mod)==0;
-				for(k=0;k<t->def->stop;k++){
-					p= getInstrPtr(t->def,k);
-					p->trace= p->trace || moduleOnly 
-						|| instrFilter(p,mod,fcn);
-				}
+                p= getInstrPtr(t->def,0);
+                moduleOnly = moduleId(p) && strcmp(moduleName(p),mod)==0;
+                for(k=0;k<t->def->stop;k++){
+                    p= getInstrPtr(t->def,k);
+                    p->trace= p->trace || moduleOnly 
+                        || instrFilter(p,mod,fcn);
+                }
                         }
                 }
                 s= s->outer;
         }
-	mal_unset_lock(profileLock,"profileLock");
+    mal_unset_lock(profileLock,"profileLock");
 #else
-	stream_printf(GDKout,"# Monet not compiled for profiling\n");
+    stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
 }
 @-
@@ -767,32 +767,32 @@ void resetFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
         int j,k;
         Scope s=cntxt;
-	Symbol t;
-	InstrPtr p;
-	(void) mod; (void) fcn; /* still unused */
+    Symbol t;
+    InstrPtr p;
+    (void) mod; (void) fcn; /* still unused */
 
-	if( profileLock==0) profileLock= MT_create_lock();
-	mal_set_lock(profileLock,"profileLock");
-	if( profileAll){
-		profileAll= FALSE;
-		return;
-	}
+    if( profileLock==0) profileLock= MT_create_lock();
+    mal_set_lock(profileLock,"profileLock");
+    if( profileAll){
+        profileAll= FALSE;
+        return;
+    }
         while(s!= NULL){
                 if( s->subscope)
                 for(j=0;j<MAXSCOPE;j++)
                 if(s->subscope[j]){
                         for(t= s->subscope[j];t!=NULL;t=t->peer) {
-				for(k=0;k<t->def->stop;k++){
-					p= getInstrPtr(t->def,k);
-					p->trace=FALSE;
-				}
+                for(k=0;k<t->def->stop;k++){
+                    p= getInstrPtr(t->def,k);
+                    p->trace=FALSE;
+                }
                         }
                 }
                 s= s->outer;
         }
-	mal_unset_lock(profileLock,"profileLock");
+    mal_unset_lock(profileLock,"profileLock");
 #else
-	stream_printf(GDKout,"# Monet not compiled for profiling\n");
+    stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
 }
 @+ Reporting
@@ -813,21 +813,21 @@ void  profileReport(Scope cntxt, int outer, stream *out)
 #ifdef MALprofiler
         int j,k;
         Scope s=cntxt;
-	Symbol t;
-	InstrPtr p;
+    Symbol t;
+    InstrPtr p;
 
-	if( malProfileMode == 0) return;
+    if( malProfileMode == 0) return;
         while(out && s!= NULL){
                 if( s->subscope)
                 for(j=0;j<MAXSCOPE;j++)
                 if(s->subscope[j])
-		for(t= s->subscope[j];t!=NULL;t=t->peer) {
-			for(k=0;k<t->def->stop;k++){
-				p= getInstrPtr(t->def,k);
-				if( p->counter) 
-				printInstruction(out, t->def,p,LIST_MAL_INSTR);
-			}
-		}
+        for(t= s->subscope[j];t!=NULL;t=t->peer) {
+            for(k=0;k<t->def->stop;k++){
+                p= getInstrPtr(t->def,k);
+                if( p->counter) 
+                printInstruction(out, t->def,p,LIST_MAL_INSTR);
+            }
+        }
                 s= s->outer;
         }
         if(outer && cntxt->outer) profileReport(cntxt->outer, outer,out);
