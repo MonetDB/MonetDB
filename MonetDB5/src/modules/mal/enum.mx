@@ -81,7 +81,7 @@ pattern create(e:any$2, src:bat[:any,:any$1])
 address ENUMcreate
 comment "Associate a value set with an enumerated type.";
 
-pattern load(map:any$1):bat[:any,:any$1] 
+pattern loadEncoding(map:any$1):bat[:any,:any$1] 
 address ENUMload
 comment "Load/activate an enumeration type.";
 

@@ -579,8 +579,8 @@ Various operations for splitting BATs into useful fragments.
 @- Hash Split
 The commands below is temporarilly postponed, because
 we don;t handle nested bats
-@mil
-command hashsplit( b:bat[:any$1,:any$2] ,
+@mal
+command hashsplit( b:bat[:any$1,:any$2],
 		   buckects:int ) 
 		:bat[:int,:bat] 
 address ALGhashsplit
@@ -597,6 +597,7 @@ address ALGuhashsplit
 comment "Same as hashsplit, but only collect the 
 	head values in the fragments";
 @- Range Split
+@mil
 command rangesplit ( b:bat[:any$1,:any$2], 
 		ranges:int ) 
 		:bat[:any$2,bat[:any$1,:any$2]] 
@@ -816,6 +817,7 @@ for each algebraic operand. Since each algebraic operands may apply
 different strategies, according to different status in its operand properties,
 each algebraic operator may have different propagation rules with these
 different situations as conditions.
+@mil
 @{
 @* Command Implementations in C
 @h

@@ -292,23 +292,18 @@ typedef struct {
 @c
 int hl_stamp = 0;
 
-void
-CTbuild_hl(
-   Heap*        hp,     /* INOUT: vector accelerator heap */
-   bat*         param,  /* an extra parameter */
-   BAT*         b       /* IN: BAT with head-column. */
-){
+static bat build_hl(Heap* hp, bat histo, BAT *b) {
         histolink *hl;
-	bat histo = param?*param:0;
         BAT *h = NULL;
+	bat created = 0;
  
         if (histo) {
                 h = BBPdescriptor(histo);
         }
         if (h == NULL) {
 		h = BATorder(BAThistogram(BATmirror(b)));
-		if (h == NULL) return;
-                histo = h->batCacheid;
+		if (h == NULL) return created;
+                created = histo = h->batCacheid;
         } else {
 		if (b->halign == 0) {
        			b->halign = OIDnew(1);
@@ -321,7 +316,7 @@ CTbuild_hl(
                 		ALIGNsetH(h,BATmirror(b));
         		}
 		} else if (BATorder(h) == NULL) {
-			return;
+			return created;
 		}
 	}
 	if (strncmp(BBPname(histo), "tmp_", 4) == 0) {
@@ -341,45 +336,74 @@ CTbuild_hl(
         	if (h->halign == 0) h->halign = OIDnew(1);
         	hl->alignment = h->halign;
         	b->hacctype = ACC_histolink;
-	} else if (!histo) {
-		BBPreclaim(h);
-	}
+		BBPincref(histo,TRUE);
+	} 
+	return created;
 }
 
+void
+CTbuild_hl(
+   Heap*        hp,     /* INOUT: vector accelerator heap */
+   bat*         param,  /* an extra parameter */
+   BAT*         b       /* IN: BAT with head-column. */
+){
+        bat created = build_hl(hp, param?*param:0, b);
+        /* always retain
+	if (created) {
+                BBPunfix(created);
+        }
+	*/
+	if(param) *param= created;
+}
+
+static void destroy_hl(Heap* hp, BAT* b, bat histo) {
+        if (histo) {
+                BBPdecref(histo, TRUE);
+                BBPunfix(histo);
+        }
+        if (hp->base) {
+                HEAPfree(hp);
+                hp->base = NULL;
+        }
+        b->hacctype = 0;
+}
+
+static bat check_hl(Heap* hp, BAT* b) {
+        histolink *hl = (histolink*) hp->base;
+        bat histo = 0;
+
+        if (hl && hl->histogram && BBPfix(hl->histogram) > 0) {
+                b = BBPdescriptor(histo = hl->histogram);
+                if (b && hl->alignment == b->halign) {
+                        return hl->histogram;
+                }
+                GDKwarning("CTcheck_hl: histogram was changed!");
+        } else {
+                GDKwarning("CTcheck_hl: histogram disappeared!");
+        }
+        destroy_hl(hp, b, histo);
+        return 0;
+}
 
 int
 CTcheck_hl(
    Heap*        hp,     /* put return BAT[oid,any] here. */
    BAT*         b       /* pointer to BAT[oid,any] record.*/
 ){
-        histolink *hl = (histolink*) hp->base;
-	BAT *h = NULL;
-	(void) b;
-
-        if (hl == 0 || hl->histogram == 0 || ABS(hl->histogram) >= BBPsize ||
-		BBP_logical(ABS(hl->histogram)) == NULL || 
-		(h=BBPdescriptor(hl->histogram)) == NULL) 
-	{
-		GDKwarning("CTcheck_hl: histogram disappeared!");
-		return GDK_FAIL;
-        } else if (hl->alignment != h->halign) {
-		GDKwarning("CTcheck_hl: histogram was changed!");
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
+        bat histo = check_hl(hp, b);
+        if (histo) {
+                BBPunfix(histo);
+                return GDK_SUCCEED;
+        }
+        return GDK_FAIL;
 }
-
 void
 CTdestroy_hl(
    Heap*        hp,     /* INOUT: accelerator heap. */
    BAT*         b       /* IN: BAT with accelerated head column. */
 ){
-        histolink *hl = (histolink*) hp->base;
-	if (CTcheck_hl(hp,b)) {
-		BBPunfix(hl->histogram);
-	}
-        HEAPfree(hp);
-        b->hacctype = 0;
+        bat histo = check_hl(hp, b);
+        destroy_hl(hp, b, histo);
 }
 
 void
@@ -398,18 +422,26 @@ CThistogram(
     BAT**	h, 
     BAT* 	b
 ){
-	if (b->tacctype && b->tacctype != ACC_histolink) {
-		/* another accelerator already exists; leave it */
-		*h = BAThistogram(b);
-		return *h?GDK_SUCCEED:GDK_FAIL;
-	} 
-	if (b->tacctype != ACC_histolink || CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) {
-		if (b->tacctype) 
-			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
-		CTbuild_hl(&b->taccelerator, NULL, BATmirror(b));
-		if (b->taccelerator.base == NULL) return GDK_FAIL;
-	}
-	*h = VIEWcreate(BBPdescriptor(((histolink*) b->taccelerator.base)->histogram));
+        bat histo = 0;
+
+        if (b->tacctype && b->tacctype != ACC_histolink) {
+                /* another accelerator already exists; leave it */
+                *h = BAThistogram(b);
+                return *h?GDK_SUCCEED:GDK_FAIL;
+        }
+        if (b->tacctype == ACC_histolink) {
+                histo = check_hl(&b->taccelerator,b);
+        }
+        if (histo == 0) {
+                if (b->tacctype) {
+                        ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
+                }
+                histo = build_hl(&b->taccelerator, 0, BATmirror(b));
+                if (histo == 0) return GDK_FAIL;
+        }
+        *h = VIEWcreate(BBP_cache(histo));
+        BBPunfix(histo);
+
 	return GDK_SUCCEED;
 }
 
@@ -418,6 +450,8 @@ CTtunique(
     BAT**       h,
     BAT*        b
 ){
+	bat histo = 0;
+
 	if (b->tacctype && b->tacctype != ACC_histolink) {
 		/* another accelerator already exists; leave it */
 		BAT *v = VIEWhead(BATmirror(b));
@@ -425,16 +459,22 @@ CTtunique(
 		BBPreclaim(v);
 		return *h?GDK_SUCCEED:GDK_FAIL;
 	} 
-        if (b->tacctype != ACC_histolink || CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) {
-
-		if (b->tacctype) 
-			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
-		CTbuild_hl(&b->taccelerator, NULL, BATmirror(b));
-		if (b->taccelerator.base == NULL) return GDK_FAIL;
+	if (b->tacctype == ACC_histolink) {
+		histo = check_hl(&b->taccelerator,b);
 	}
-	*h = VIEWhead(BBPdescriptor(((histolink*) b->taccelerator.base)->histogram));
+	if (histo == 0) {
+		if (b->tacctype) { 
+			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
+		}
+		histo = build_hl(&b->taccelerator, 0, BATmirror(b));
+		if (histo == 0) return GDK_FAIL;
+	} else {
+		histo = ((histolink*) b->taccelerator.base)->histogram;
+	}
+	*h = VIEWhead(BBP_cache(histo));
+	BBPunfix(histo);
 
-        return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 @+ Core Grouping Algorithms
@@ -647,7 +687,6 @@ bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 } 
-@-
 @c
 int tailtype(BAT *b, int str_trick) {
 	int tpe = ATOMstorage(b->ttype); /* standard type remappings */
@@ -892,7 +931,8 @@ int derive(BAT** retval, BAT** hbat, BAT* ct, BAT* b, int tt, map_T *m) {
 		if (b->hkey) BATkey(bn, TRUE);
 	}
 	if (histo) {
-		CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
+		build_hl(&bn->taccelerator, histo->batCacheid, BATmirror(bn));
+		BBPunfix(histo->batCacheid);
 		if (bn->taccelerator.base == NULL) {
 			BBPreclaim(bn);
 			return GDK_FAIL;
@@ -1054,12 +1094,16 @@ oid* sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid* dst, oi
 	oid id = *idp + 1;
 	ptr cur, val;
 
-	/* qsort works fine for small amount of tuples; with few duplicates */
-	if (reverse) {
-		GDKqsort_rev(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
-	} else {
-		GDKqsort(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+	/* StM: we don't need to sort voids, do we??? */
+	if (tpe != TYPE_void) { 
+		/* qsort works fine for small amount of tuples; with few duplicates */
+		if (reverse) { 
+			GDKqsort_rev(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+		} else {
+			GDKqsort(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+		} 
 	}
+
 	cur = base + buf->off;
 	while(buf < end) {
 		val = base + buf->off;
@@ -1152,7 +1196,6 @@ int CTrefine(BAT **res, BAT *b, BAT *a) {
 int CTrefine_rev(BAT **res, BAT *b, BAT *a) {
 	return refine(res, b, a, TRUE);
 }
-@}
 @}
 @- Wrapping
 Wrapping the version 4 xtables code base

@@ -454,6 +454,8 @@ address CALCnewoidBase
 comment "Generate a new oid. Equivalent 
 	 to newoid(0,1)";
 
+command newoid(incr:lng) :oid 
+address CALCnewoidInclng;
 command newoid(incr:int) :oid 
 address CALCnewoidInc
 comment "Reserves a range of consecutive 
@@ -1357,6 +1359,14 @@ str CALCnewoidBase(oid *res){
 	return MAL_SUCCEED;
 }
 str CALCnewoidInc(oid *res, int *inc){
+	if( *inc <=0)
+		*res= OIDnew(1);
+	else{
+		*res= OIDnew(*inc);
+	}
+	return MAL_SUCCEED;
+}
+str CALCnewoidInclng(oid *res, lng *inc){
 	if( *inc <=0)
 		*res= OIDnew(1);
 	else{

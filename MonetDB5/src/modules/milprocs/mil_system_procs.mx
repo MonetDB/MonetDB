@@ -29,6 +29,8 @@ meta-information administration. This can not easily be
 converted automatically. Instead, the PROCs supported
 are introduced selectively.
 
+The code is manually patched to reflect the different
+return values for replace()
 @mal
 module mil_sys_procs;
 
@@ -70,7 +72,7 @@ function dir():void;
 	ua_a := multiplex.tactics("*",ta_a,-1);
 	rev := reverse(ua_a);
 	va_a := replace(nme,rev);
-	wa_a := dir(va_a);
+	wa_a := dir(nme);
 end dir;
 function dir(substr:str):void;
 	xa_a := bbp.getNames();
@@ -84,7 +86,7 @@ function dir(substr:str):void;
 	eb_a := multiplex.tactics("*",db_a,-1);
 	rev := reverse(eb_a);
 	fb_a := replace(nme,rev);
-	gb_a := dir(fb_a);
+	gb_a := dir(nme);
 end dir;
 function ls():void;
 	nme := bbp.getNames();
@@ -117,7 +119,7 @@ function ls(substr:str):void;
 	yb_a := bat.setColumn(prs,"name");
 	ac_a := replace(prs,rev);
 	bc_a := like(prs,substr);
-	cc_a := dir(bc_a);
+	cc_a := dir(prs);
 end ls;
 @- Original code
 The original code has been patched to reflect the differences

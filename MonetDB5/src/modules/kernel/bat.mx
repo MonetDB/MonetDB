@@ -2316,7 +2316,6 @@ str BKCsave2(bit *res, int *bid) {
 	if (b && BATdirty(b)) {
 		if (BBPsave(b) == 0) *res = TRUE;
 	}
-	BBPunfix(*bid);
         return MAL_SUCCEED;
 }
 

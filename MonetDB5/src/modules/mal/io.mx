@@ -312,7 +312,7 @@ str IOtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int order;
 	order = *(int*) getArgReference(stk,pci,1);
 	(void) order; /* fool compiler */
-	return IOtableAll(GDKout,mb,stk,pci,1,0,FALSE);
+	return IOtableAll(GDKout,mb,stk,pci,2,order,FALSE);
 }
 
 @- Formatter print
