@@ -1150,7 +1150,8 @@ socket_open(int socket, const char *name)
 	s->flush = NULL;
 	s->stream_data.i = socket;
 
-#ifdef SO_KEEPALIVE
+	errno = 0;
+#if defined(SO_KEEPALIVE) && !defined(WIN32)
 	{
 		int opt = 0;
 		if (setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt,
@@ -1160,7 +1161,7 @@ socket_open(int socket, const char *name)
 		}
 	}
 #endif
-#ifdef IPTOS_THROUGHPUT
+#if defined(IPTOS_THROUGHPUT) && !defined(WIN32)
 	{
 		int tos = IPTOS_THROUGHPUT;
 		if (setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos,
