@@ -36,26 +36,21 @@ quit;
 
 Over..
 
-# 15:39:17 >  
-# 15:39:17 >  Mtimeout -timeout 432 sql_client --port=58607  < example.sql
-# 15:39:17 >  
+# 16:52:07 >  
+# 16:52:07 >  Mtimeout -timeout 210 sql_client --port=52771  < example.sql
+# 16:52:07 >  
 
-types 13
-aggr 5
-tables 0
-columns 0
-views 0
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 5 Rows affected
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 5 Rows affected
 
 # 15:49:54 >  
