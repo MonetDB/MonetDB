@@ -42,7 +42,8 @@ on the port number specified in the parameter file.
 @T
 \begin{verbatim}
 Mserver { [ --dbname <db-name> ] 
-	  [--dbfarm <dbfarm> ]  
+          [ --dbfarm <dbfarm> ]
+          [ --dbinit <stmt> ]
 	  [ -c|--config <config-file> ]
           [ -d|--gdk_debug [value]
 	  [ --set [option=value] set option can be given multiple times
@@ -60,6 +61,9 @@ The options have the following meaning:
 	open the database {\em db-name}.
 \item[{\tt --config $<$config-file$>$ }]
 	where to find the environment settings
+\item[{\tt --dbinit $<$stmt$>$ }]
+        execute the statement first.
+
 \end{description}
 
 @{
@@ -81,6 +85,14 @@ The options have the following meaning:
 #include "Mserver.h"
 #include "mal.h"
 
+#ifdef _CRTDBG_MAP_ALLOC
+/* Windows only:
+   our definition of new and delete clashes with the one if
+   _CRTDBG_MAP_ALLOC is defined.
+*/
+#undef _CRTDBG_MAP_ALLOC
+#endif
+
 @-
 The architecture is setup to handle multiple streams of requests.
 The first thread started represents the server. It reads from standard input
@@ -94,28 +106,12 @@ The server thread started remains in existence until all other threads die.
 The server is stopped by cntrl-D or receiving the quit command.
 @
 
-@-
-Braindamaged Sun engineers decided to use malloc for allocating an enormous
-buffer of 20 bytes in the sunos2.5.5.X thread library, making the tunable 
-malloc library totally unusable, since it requires you to do advice before any 
-use of malloc().  We hack around it, by using realloc(0,size) in 
-gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 @c
-#ifndef NOMALLOPT
 static int malloc_init=1;
-#ifdef SOLARIS
-#undef malloc
-void* malloc(size_t size) {
-	/*@:mallopt@*/
-	return realloc(0,size);
-}
-#endif
-#endif
 @c
+extern int optind;
 #ifdef NATIVE_WIN32
 #include <eh.h>
-extern int optind;
-
 void Mserver_abort() {
         fprintf(stderr,"\n! Mserver_abort() was called by terminate(). !\n");
         fflush(stderr);
@@ -170,13 +166,13 @@ void monet_init( opt *set, int setlen)
 	char *p;
 	opt *n = (opt*)malloc(setlen*sizeof(opt));
 	int i,j, nlen = 0;
-	int listing=0;
 
 	char buf[BUFSIZ];
 	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
 	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
 	char *modpath= mo_find_option(set, setlen, "monet_mod_path");
 	char *prefix= mo_find_option(set, setlen, "prefix");
+	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
 	char *pf = prefix;
 
 	if( modpath){ strcpy(buf,modpath);
@@ -198,7 +194,7 @@ void monet_init( opt *set, int setlen)
 	mo_substitute(set, setlen, buf);
 
         /* determine Monet's kernel settings. */
-	if (!GDKinit(dbname, buf,0)) return ;
+	if (!GDKinit(dbname, buf,strcasecmp(alloc_map,"yes"))) return ;
 
 @-
 Find duplicate entries in the property list and move
@@ -226,22 +222,14 @@ monet_options.mx.in
 		mo_substitute(n, nlen, buf);
 		GDKsetenv(n[i].name, buf);
 	}
-/*
-	for(i=0; i<setlen; i++){
-		strncpy(buf, set[i].value, BUFSIZ);
-		mo_substitute(set, setlen, buf);
-		GDKsetenv(set[i].name, buf);
-	}
-*/
 	free(n);
 
 	if ((p=GDKgetenv("gdk_debug")) )
 		GDKdebug = strtol(p,NULL,10);
-
-/*
-	if ((p=GDKgetenv("gdk_mmap")) )
-		GDKmem_bigsize() = strtol(p,NULL,10);
-*/
+        if ((p=GDKgetenv("gdk_mem_bigsize")) )
+                GDK_mem_bigsize = strtol(p,NULL,10);
+        if ((p=GDKgetenv("gdk_vm_minsize")) )
+                GDK_vm_minsize = strtol(p,NULL,10);
 
 	/* you don;t need the commandline arguments anymore */
 	/* mo_free_options(set,setlen); GDK library can not deal with this*/
@@ -251,22 +239,13 @@ monet_options.mx.in
 	if( mal_init(GDKstrdup(modpath),pf)) return;
 	if( pf!=prefix) free(pf);
 
-	if( GDKgetenv("mal_listing"))
-		sscanf( GDKgetenv("mal_listing"),"%d",&listing);
-        for(i=0; monet_script[i]; i++) {
-                malImport(mal_clients, monet_script[i], 0, listing);
-		GDKfree(monet_script[i]);
-		monet_script[i]=0;
-        }
-	GDKfree(monet_script);
-        initClientPrg(mal_clients,"main");
-        serveClient(mal_clients);
 }
 
 int main(int argc, char** av) {
 	char buf[BUFSIZ], *prog = *av, *config = NULL;
         opt *set = NULL;
-        int i,debug = 0, setlen = 0;
+        int i,debug = 0, setlen = 0, listing=0;
+	str dbinit;
 
 
 @-
@@ -274,27 +253,54 @@ We give malloc advice here. Main goal: prevent fragmentation.
 We do this by declaring everything below 2K as 'small'. These
 values will be drawn from a fixed pools of 400K.
 A grain size of 128 bytes is used to keep overhead low.
+
+We do this by declaring everything below 2K as 'small'. These
+values will be drawn from a fixed pools of 400K.
+A grain size of 128 bytes is used to keep overhead low.
+Trivial remark: for dynamically linked executables the mallopt
+capabilities depend on the malloc implementation used at run time.
+
+Unlike V4 we ignore the alloc_map advice, which leads to a much
+faster system start.
 @= mallopt
 	printf("malloc optimize\n");
 	if (malloc_init) {
             if (mallopt(M_MXFAST, 192)) {
-		fprintf(stderr, "monet: mallopt(M_MXFAST,8192) fails.\n");
-	    }
-            if (mallopt(M_NLBLKS, 16)) {
-		fprintf(stderr, "monet: mallopt(M_NLBLKS,10) fails.\n");
-	    }
-	    if (mallopt(M_GRAIN, 32)) {
-		fprintf(stderr, "monet: mallopt(M_GRAIN,96) fails.\n");
- 	    }
-	}
+                fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
+            }
+#ifdef M_BLKSZ
+            if (mallopt(M_BLKSZ, 8*1024)) {
+                fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+            }
+#endif
+        }
 	malloc_init=0;
+@-
+This stuff is not used anymore
+#ifndef __linux__
+/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
+/* for (Red Hat) Linux (8) unused and fails at least as of glibc-2.2.93-5 */
+            if (mallopt(M_NLBLKS, 16)) {
+                fprintf(stderr, "monet: mallopt(M_NLBLKS,16) fails.\n");
+            }
+#endif
+#ifndef __linux__
+/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
+/* for (Red Hat) Linux (8) unused and fails at least as of glibc-2.2.93-5 */
+            if (mallopt(M_GRAIN, 32)) {
+                fprintf(stderr, "monet: mallopt(M_GRAIN,32) fails.\n");
+
+            }
+#endif
+
 @c
 
-	static struct option long_options[7] =
+	static struct option long_options[8] =
              {
                {"config", 1, 0, 'c'},
                {"dbname", 1, 0, 0},
                {"dbfarm", 1, 0, 0},
+               {"dbinit", 1, 0, 0},
                {"debug", 2, 0, 'd'},
                {"help", 0, 0, '?'},
                {"set", 1, 0, 's'},
@@ -305,9 +311,10 @@ A grain size of 128 bytes is used to keep overhead low.
         set_terminate( Mserver_abort );
 #endif
 
-#ifndef NOMALLOPT
-	(void) malloc_init; /* still unused */
-	/*@:mallopt@*/
+#ifdef HAVE_MALLOPT
+        /* @:mallopt@*/
+#else
+        (void) malloc_init; /* still unused */
 #endif
 
         if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
@@ -339,6 +346,11 @@ A grain size of 128 bytes is used to keep overhead low.
 						"dbfarm") == 0){
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "gdk_dbfarm", optarg );
+				break;
+			}
+			if (strcmp(long_options[option_index].name, 
+						"dbinit") == 0){
+				dbinit = optarg;
 				break;
 			}
 			usage(prog);
@@ -401,6 +413,20 @@ A grain size of 128 bytes is used to keep overhead low.
 	else	mo_print_options(set,setlen);
 #endif
 	monet_init(set, setlen);
+
+@-
+Time to execute the script files. Start with the init command[todo]
+@c
+	if( GDKgetenv("mal_listing"))
+		sscanf( GDKgetenv("mal_listing"),"%d",&listing);
+        for(i=0; monet_script[i]; i++) {
+                malImport(mal_clients, monet_script[i], 0, listing);
+		GDKfree(monet_script[i]);
+		monet_script[i]=0;
+        }
+	GDKfree(monet_script);
+        initClientPrg(mal_clients,"main");
+        serveClient(mal_clients);
 
 	assert(0);	/* should not come here */
 	MT_global_exit(0);  
