@@ -64,21 +64,6 @@ axis step evaluation on the @1 axis from the given context."
 @:scj_cmd(anc,ancestor)@
 
 @= scj_cmd
-
-#############################################
-# The NEW XML print functions
-#
-# - print_doc(str mode, BAT[void,bat] ws, str name)
-# - print_result(str mode, BAT[void,bat] ws, BAT[void,oid] item,
-#			BAT[void,int] kind, .... the value BATs)
-#
-.COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
- "C interface to Workset print routine"
-.COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
- "C interface to Workset result print routine"
-.COMMAND dump_doc(BAT[void,bat], str) : void = xquery_dump_doc_main;
- "C interface to Workset print routine"
-
 .COMMAND scj_@1(BAT[void,int] pre_size,
                 BAT[oid,any] ctx,
                 int height,
@@ -122,6 +107,21 @@ the result for this group will be `true' as well. In any other case\n
 tuple will be in the result for this group."
 
 @m
+
+#############################################
+# The NEW XML print functions
+#
+# - print_doc(str mode, BAT[void,bat] ws, str name)
+# - print_result(str mode, BAT[void,bat] ws, BAT[void,oid] item,
+#			BAT[void,int] kind, .... the value BATs)
+#
+.COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
+ "C interface to Workset print routine"
+.COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
+ "C interface to Workset result print routine"
+.COMMAND dump_doc(BAT[void,bat], str) : void = xquery_dump_doc_main;
+ "C interface to Workset print routine"
+
 .END pathfinder;
 
 @mil
@@ -1534,49 +1534,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
    return result_scj.access(BAT_READ);
 }
 @
-
-@mil
-PROC concat (BAT[any,str] strings) : str
-{
-    var result := "";
-    strings@batloop () {
-        result :+= $t;
-    }
-    return result;
-}
-ADDHELP("concat", "tsheyar", "Aug 2004",
-"PARAMETERS:\n\
-BAT[any,str] list of strings\n\
-DESCRIPITON:\n\
-concatenates list of strings to one string",
-"pathfinder");
-
-PROC combine_string (BAT[any,str] strings) : str
-{
-    if (strings.count() = 0)
-	{ return ""; }
-
-    var result := strings.fetch(0);
-    strings.slice(1,strings.count() - 1)@batloop () {
-	result :+= " " + $t;
-    }
-    return result;
-}
-ADDHELP("combine_string", "tsheyar", "Aug 2004",
-"PARAMETERS:\n\
-BAT[any,str] list of strings\n\
-DESCRIPITON:\n\
-concatenates all strings from the bat to one string with a single space between each string.",
-"pathfinder");
-
-PROC combine_strings (BAT[oid,str] strings) : BAT[oid,str]
-{
-    return {combine_string}(strings);
-}
-ADDHELP("combine_strings", "tsheyar", "Aug 2004",
-"DESCRIPITON:\n\
-pseudonym for {combine_string}(BAT[oid,str])",
-"pathfinder");
 
 @h
 #ifndef PATHFINDER_H
