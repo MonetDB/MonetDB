@@ -344,7 +344,7 @@ BPTdeposit(int *ret, int *bid){
 	partitions[i].last=  b->hseqbase+ BATcount(b);
 	partitions[i].prev= -1;
 	partitions[i].next= -1;
-	partitions[i].cap= oid_nil;
+	partitions[i].cap= -1;
 	if(i>= ptop) {
 		ptop=i+1;
 		partitions[ptop].bid= -1;
@@ -373,7 +373,7 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 	while( partitions[idx].next >= 0)
 		idx= partitions[idx].next;
 	if( b->hseqbase < partitions[idx].last &&
-			partitions[idx].last != oid_nil){
+			partitions[idx].last != -1){
 			BBPunfix(b->batCacheid);
 			return throwMessage("partitions.deposit","Partition already known");
 	}
@@ -386,7 +386,7 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 	partitions[i].pid= *pid;
 	partitions[i].first= b->hseqbase;
 	partitions[i].last=  b->hseqbase+ BATcount(b);
-	partitions[i].cap= oid_nil;
+	partitions[i].cap= -1;
 	partitions[i].prev= idx;
 	partitions[idx].next= i;
 	if(i>= ptop) {
@@ -646,7 +646,7 @@ BPTinsert_void_bun(int *ret, int *bid, ptr val){
 	int i;
 	i= BPTgetlastindex(*bid);
 	if( i >= 0) {
-			if(partitions[i].cap != oid_nil && partitions[i].cap < getpartitionsize(i))
+			if(partitions[i].cap != -1 && partitions[i].cap < getpartitionsize(i))
 				i= addPartition(i);
 			partitions[i].last++;
 			if( i>= 0)
@@ -659,7 +659,7 @@ BPTinsert(int *ret, int *bid, ptr h, ptr t){
 	int i;
 	i= BPTgetlastindex(*bid);
 	if( i >= 0) {
-			if(partitions[i].cap != oid_nil && partitions[i].cap <= getpartitionsize(i))
+			if(partitions[i].cap != -1 && partitions[i].cap <= getpartitionsize(i))
 				i= addPartition(i);
 			if( i>= 0)
 				return BKCinsert_bun(ret, &partitions[i].pid,h,t);
