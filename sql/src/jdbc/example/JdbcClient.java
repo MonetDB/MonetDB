@@ -380,8 +380,9 @@ public class JdbcClient {
 				type != Types.TIME)
 			{
 		 		out.print("("); out.print(cols.getString("COLUMN_SIZE"));
-		 		if (cols.getInt("DATA_TYPE") == Types.DECIMAL)
+		 		if (cols.getInt("DATA_TYPE") == Types.DECIMAL) {
 					out.print(","); out.print(cols.getString("DECIMAL_DIGITS"));
+				}
 				out.print(")");
 			}
 			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
