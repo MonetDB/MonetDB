@@ -60,7 +60,7 @@ P       [-!\$%\^\*~+|?<>=/\\]
  */
 #define YYLMAX 100000
 
-#if (defined(WIN32) || !defined(FLEX_SCANNER) || defined(__CYGWIN32__))
+#if (defined(WIN32) || !defined(FLEX_SCANNER))
 extern YYSTREE yylval;
 #endif
 #define YY_NEVER_INTERACTIVE	1 /* workaround to flex bug */
