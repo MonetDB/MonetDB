@@ -45,7 +45,6 @@ This code strongly depends on the front-end/back-end setup.
 typedef struct backend {
 	int 	debug;
 	int 	trace;
-	int	reply_size;
 	context *context;
 
 	buffer *outbuf;
@@ -80,7 +79,7 @@ extern void monet4_freecode( backend_code code, backend_stack stk, int nr );
 }
 @c
 
-static backend *backend_create( int trace, int reply_size, context *c )
+static backend *backend_create( int trace, context *c )
 {
 	backend *b = NEW(backend);
 
@@ -90,7 +89,6 @@ static backend *backend_create( int trace, int reply_size, context *c )
  	b->outbuf = buffer_create( BUFSIZ );
 	b->out = buffer_wastream( b->outbuf, "SQLserver" );
 	b->trace = trace;
-	b->reply_size = reply_size;
 	return b;
 }
 
@@ -326,7 +324,8 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 	    strcmp(c->mvc->explain->val.sval, "mil") == 0) {
 		explain = 1;
 	}
-	if (explain || !(q = qc_find(c->qc, c->sym, c->params, c->key))) {
+	if (explain || !c->cache || 
+            !(q = qc_find(c->qc, c->sym, c->params, c->key))) {
 		stmt *s = sql_symbol2stmt(c);
 
 		if (!s && c->mvc->status){
@@ -337,9 +336,6 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 			explain = 0;
 
 		if (explain) {
-			/* TODO should be a normal table result, with header */
-			int nr = 1;
-
 			/* insert mil statements into a bat */
 			if (c->args && c->params){
 				node *n, *m;
@@ -359,6 +355,10 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 						2, 1); 
 				}
 			}
+		}
+
+		if (explain || !c->cache) {
+			int nr = 1;
 
 			backend_dumpstmt( s, &nr, be );
 		} else {
@@ -372,7 +372,8 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 			err = explain_cmd( c, cmd, out );
 		} else {
 			err = backend_parse( c, cmd, stk );
-			q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
+			if (c->cache)
+				q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
 		} 
 
 		c->sym = NULL;
@@ -527,7 +528,7 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 
 	sqlc = sql_create_context( debug, 1, m );
-	sql = backend_create( trace, reply_size, sqlc );
+	sql = backend_create( trace, sqlc );
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(stk, "myc");
@@ -546,6 +547,10 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	v->binding.vtype = TYPE_str;
 	v->binding.val.sval = NULL;
 	m->explain = &v->binding;
+
+	v = VARnew(stk, "reply_size");
+	v->binding.vtype = TYPE_int;
+	v->binding.val.ival = reply_size;
 
  	errbuf = GDKmalloc(GDKMAXERRLEN);
 	errbuf[0] = '\0';

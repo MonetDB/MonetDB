@@ -262,6 +262,10 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		len = snprintf( buf, BUFSIZ, "none := \"none\";\n");
 		dump(sql,buf,len,-s->nr);
 		break;
+	case st_load_module: 
+		len = snprintf( buf, BUFSIZ, "module(\"%s\");\n", s->op4.sval);
+		dump(sql,buf,len,-s->nr);
+		break;
 	case st_assign: {
 		int val = backend_dumpstmt( s->op1.stval, nr, sql );
 		len = snprintf( buf, BUFSIZ, "%s := s%d;\n",
@@ -1008,8 +1012,8 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 					-s->nr );
 			/* send first part (or all) */
 			len += snprintf( buf+len, BUFSIZ-len,
-				"mvc_export_table(myc, Output, s%d, 0, %d);\n", 
-					-s->nr, sql->reply_size );
+				"mvc_export_table(myc, Output, s%d, 0, int(reply_size));\n", 
+					-s->nr );
 			write_command(sql,buf);
 			write_part(sql,buf,len);
 			len = 0;

@@ -44,7 +44,6 @@ This code strongly depends on the front-end/back-end setup.
 typedef struct backend {
 	int 	debug;
 	int 	trace;
-	int	reply_size;
 	context *context;
 
 	buffer *outbuf;
@@ -81,7 +80,7 @@ extern void monet4_freecode( backend_code code, backend_stack stk, int nr );
 }
 @c
 
-static backend *backend_create( int trace, int reply_size, context *c )
+static backend *backend_create( int trace, context *c )
 {
 	backend *b = NEW(backend);
 
@@ -91,7 +90,6 @@ static backend *backend_create( int trace, int reply_size, context *c )
  	b->outbuf = buffer_create( BUFSIZ );
 	b->out = buffer_wastream( b->outbuf, "SQLserver" );
 	b->trace = trace;
-	b->reply_size = reply_size;
 	return b;
 }
 
@@ -307,7 +305,7 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 {
 	context *c = be->context;
 	char *cmd = NULL, *s;
-	int err = 0, explain = 0;
+	int err = 0, explain = 0, cache = 0;
 	cq *q = NULL;
 
 	cmd_init(c);
@@ -317,9 +315,11 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 	c->mvc->type = Q_PARSE;
 	c->mvc->status = 0;
 
+	cache = c->cache;
 	if ((err = sqlparse(c)) || c->mvc->status || !c->sym) {
 		if (!err)
 			err = c->mvc->status;
+		c->cache = cache;
 		return sqlcleanup(c, cmd, err);
 	}
 	
@@ -355,20 +355,19 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 	    strcmp(c->mvc->explain->val.sval, "mil") == 0) {
 		explain = 1;
 	}
-	if (explain || !(q = qc_find(c->qc, c->sym, c->params, c->key))) {
+	if (explain || !c->cache || 
+	    !(q = qc_find(c->qc, c->sym, c->params, c->key))) {
 		stmt *s = sql_symbol2stmt(c);
 
 		if (!s && c->mvc->status){
 			err = c->mvc->status;
+			c->cache = cache;
 			return sqlcleanup(c, cmd, err);
 		}
 		if (s->type == st_assign)
 			explain = 0;
 
 		if (explain) {
-			/* TODO should be a normal table result, with header */
-			int nr = 1;
-
 			/* insert mil statements into a bat */
 			if (c->args && c->params){
 				node *n, *m;
@@ -388,6 +387,10 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 						2, 1); 
 				}
 			}
+		}
+
+		if (explain || !c->cache) {
+			int nr = 1;
 
 			backend_dumpstmt( s, &nr, be );
 		} else {
@@ -401,7 +404,8 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 			err = explain_cmd( c, cmd, out);
 		} else {
 			err = backend_parse( c, cmd, stk );
-			q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
+			if (c->cache)
+				q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
 		} 
 
 		c->sym = NULL;
@@ -413,8 +417,10 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 	        free(cmd); 
 		cmd = NULL;
 
-		if (err)
+		if (err) {
+			c->cache = cache;
 			return sqlcleanup(c, cmd, err);
+		}
 	}
 	if (q && !q->code) {
 		char buf[BUFSIZ];
@@ -455,6 +461,7 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 			error(out, "Error in result");
   		} 
 	}
+	c->cache = cache;
 	return sqlcleanup(c, cmd, err);
 }
 
@@ -482,7 +489,7 @@ the DBA.
 @c
 int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	int debug = 0, trace = 0, reply_size = 100, go = TRUE;
+	int debug = 0, trace = 0, go = TRUE;
 	ssize_t i=0;
 	char buf[BUFSIZ+1], *errbuf;
 	char *user, *passwd, *schema;
@@ -495,14 +502,11 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	backend *sql;
 	char *prompt= "\001sql>\002\n";
 	int promptlength= strlen(prompt);
-<<<<<<< sql_session.mx
 	Thread sqlthread= THRget(THRgettid());
-=======
 	int language;
->>>>>>> 1.23
 
 	int size, err;
-	char *inbuf, *start;
+	char *inbuf = NULL, *start;
 	int inlen;
 	ssize_t len;
 
@@ -516,7 +520,7 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 
 @-
 Start analysis using the mapi-client protocol.
-Use default setting for trace and reply_size.
+Use default setting for trace.
 @c
 	if (in == 0){
 		GDKsyserror("mapisqlclient:stream-r problems\n");
@@ -606,7 +610,7 @@ These lines should be eaten away into the prompt is encountered.
 	stream_flush(out);
 
 	sqlc = sql_create_context(debug,1,m);
-        sql = backend_create( trace, reply_size, sqlc );
+        sql = backend_create( trace, sqlc );
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(stk, "myc");
@@ -625,6 +629,10 @@ These lines should be eaten away into the prompt is encountered.
 	v->binding.vtype = TYPE_str;
 	v->binding.val.sval = NULL;
 	m->explain = &v->binding;
+
+	v = VARnew(stk, "reply_size");
+	v->binding.vtype = TYPE_int;
+	v->binding.val.ival = 100;
 
  	errbuf = GDKmalloc(GDKMAXERRLEN);
 	errbuf[0] = '\0';
@@ -692,8 +700,11 @@ These lines should be eaten away into the prompt is encountered.
 			break;
 
 		if (language == 'X') {
+			int reply_size = 0;
 			if (sscanf(inbuf, "reply_size %d", &reply_size) == 1) {
-				sql->reply_size = reply_size;
+				Variable rs = 0;
+				if ((rs = VARfind(&stk, "reply_size")) == 0) 
+					rs->binding.val.ival = reply_size;
 				goto loop_end; /* continue */
 			}
 			error(out, "!ERROR:Unrecognized X command");
