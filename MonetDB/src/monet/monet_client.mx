@@ -260,6 +260,7 @@ Client forkClient(Cntxt stk, int thread){
 		/* also reuse father's stack */
 		if (thread){
 			monet_cntxt[son->stk].outer = nstk;
+			TBL_initclient(son);
 		} else {
         		monet_cntxt[son->stk].outer = stk;
         		monet_cntxt[son->stk].shadow = 1;

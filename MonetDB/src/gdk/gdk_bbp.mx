@@ -738,6 +738,7 @@ void BBPcacheit(BAT* b, int lock) {
                 /* filled in name indicates BAT comes from disk */
                 mode = BBPLOADED;
                 i = b->batCacheid;
+		assert(!BBP_refs(i)); /* refs should be zero */
         }
         if (i == 0) {
                 /* enter in BBP directory structures */

@@ -1219,7 +1219,6 @@ oid TBL_loadmod(Client client, str module, int level, str *initstr) {
    */
   TBLinstall inst;
   int loaded = 0;
-  int byme = 0;
   int cinstalled = 0;
 
   /* handles
@@ -1246,8 +1245,6 @@ Lets do the things in the right order, see above!
 
   mid = TBL_module_lookup(module);
   loaded = (mid != 0);
-  if(!loaded)
-	byme = 1;
   
   dlFPRINTF(GDKerr, "  loaded = %d\n", loaded);
 
@@ -1272,7 +1269,7 @@ Lets do the things in the right order, see above!
 
   TBL_M_incref(client, mid);
 
-  if (loaded && cinstalled && byme)
+  if (loaded && cinstalled)
   	TBL_M_initscript(mid, initstr);
 
  xit:
@@ -1492,10 +1489,6 @@ again:	c = lookup;
 		} else { 
 		    ret = BUNhvar(c->fcntbl, p);
 		}
-	    } else if (c->fcntbl != monet_clients->fcntbl) { 
-		/* check adm tables as well */
- 	        lookup = monet_clients;
-		goto again;
 	    }
  	} 
 @-
@@ -1547,7 +1540,7 @@ Try to resolve the function to an address.
 	TBL_set_readlock();
 	TBL_checkparams_init(&pt, argc, argv);
 
-again:  c = lookup;
+	c = lookup;
 	{   BAT *b = c->fcntbl;
 	    int	i,j, tpe;
 	    BUN p;
@@ -1587,11 +1580,6 @@ Found IT: substitute name by address.
 		} 	
 		TBL_unset_readlock();
 		return (tpe==TOK_OPERATOR)?TOK_COMMAND:tpe; /* simplify */
-	    }
-	    if (c->fcntbl != monet_clients->fcntbl) { 
-		/* check adm tables as well */
- 	        lookup = monet_clients;
-		goto again;
 	    }
 	}
 	TBL_unset_readlock();
@@ -1918,7 +1906,7 @@ void *TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv){
  
 	TBL_set_readlock();
 	TBL_checkparams_init(&pt, argc, argv);
-again:  c = lookup;
+	c = lookup;
 	(void) BATprepareHash(c->fcntbl);
 	HASHloop_str(c->fcntbl, c->fcntbl->hhash, i, name) {
 		oid fid = *BUNtailptr(oid, c->fcntbl, v, i);
@@ -1932,11 +1920,6 @@ again:  c = lookup;
 	       	    } 
 		}
  	} 
-	if (c->fcntbl != monet_clients->fcntbl) { 
-		/* check adm tables as well */
- 	        lookup = monet_clients;
-		goto again;
-	}
 	TBL_unset_readlock();
 	return (void *) 0;
 }
