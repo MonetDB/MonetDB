@@ -416,7 +416,15 @@ MERROR  & Mapi internal error.\\
 /*#define MONET5*/
 #define BLOCKED 
 
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include  <stdio.h>
+#ifdef HAVE_PWD_H
+#include  <pwd.h>
+#endif
+#include  <sys/types.h>
 #include  <stream.h>
 
 #include  <sys/types.h>
@@ -427,27 +435,25 @@ MERROR  & Mapi internal error.\\
 # include <winsock.h>
 #endif
 
-#ifdef AIX
-#define SOCKPTR struct sockaddr *
-#define SOCKLEN size_t
+
+#include  <signal.h>
+#include  <string.h>
+#include  <memory.h>
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
 #else
-#ifdef __sgi
-#define SOCKPTR void *
-#define SOCKLEN int
-#else
-#define SOCKPTR struct sockaddr *
-#if HAVE_SOCKLEN_T
-#define SOCKLEN socklen_t
-#else
-#define SOCKLEN int
-#endif
-#endif
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
 #endif
 
 #ifdef NATIVE_WIN32
-#define s_close closesocket
-#else
-#define s_close close
+char user_name = "win32";
+#define cuserid(x)      user_name
 #endif
 
 #define NAMELEN	256

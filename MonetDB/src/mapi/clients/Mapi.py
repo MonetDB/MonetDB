@@ -31,7 +31,6 @@ interactive=    0
 class server:
     def __init__(self, server, port, user):
         try:
-	    #print 'init ', port,' server', server
             self.socket = socket(AF_INET, SOCK_STREAM)
             self.socket.connect((server, port))
             self.prompt = u''
@@ -40,10 +39,8 @@ class server:
             print 'server refuses access'
 
         self.cmd_intern(user+'\n')
-	#print 'has sent first command\n'
         self.result()
-	#self.getprompt()
-	#print 'got first result\n'
+	self.getprompt()
         if trace > 0:
             print 'connected ', self.socket
 
@@ -60,11 +57,10 @@ class server:
 
     def result(self):
         result = self.getstring()
-	#print 'result:',result,'\n'
         if trace > 0:
             print result.encode('utf-8')
         if self.prompt == result :
-		return ''
+		return result
         self.getprompt()
         return result
 
@@ -79,14 +75,13 @@ class server:
                     print self.buffer
                 str = str + self.buffer
                 self.buffer = self.socket.recv(8096)
-                #print 'got:',self.buffer
                 idx = string.find(self.buffer, "\1")
 
-	    #print 'idx@end=',idx,'\n'
             str = str + self.buffer[0:idx]
             self.buffer = self.buffer[idx+1:]
-	    #print 'str=',str,'\n'
-	    #print 'self.buffer=',self.buffer,'\n'
+	    n = string.find(str,"\n");
+	    if n >= 0:
+		str = str[n+1:]
             if trace > 1:
                 print str
             try:
@@ -103,7 +98,6 @@ class server:
 
     def getprompt(self):
         self.prompt = self.getstring()
-	#print 'prompt:',self.prompt,'\n'
         if interactive:
             print self.prompt.encode('utf-8')
 
