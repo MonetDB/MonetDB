@@ -594,34 +594,39 @@ Module: "qt"
 
 Module: "radix"
 
-[ 23 ]
-[ 23 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature											| help																									  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "[integer]",		  "COMMAND: ",	  "[integer](BAT[any::1,int]) : BAT[any::1,integer]",						  "convert ints in tail to integers"																					  ]
-[ "normal",		  "COMMAND: ",	  "normal(oid, int, int, int, int) : BAT[oid,int]",						  "create a random bat of certain size, head values unique, tail values\n from a normal distribution between [0..domain].\n default values: base = 0@0, mean = size/2, stddev = size/10, domain=size."	  ]
-[ "normal",		  "PROC: ",	  "normal(int) : BAT[oid,int]",									  "not available"																							  ]
-[ "normal",		  "PROC: ",	  "normal(int, int) : BAT[oid,int]",								  "not available"																							  ]
-[ "normal",		  "PROC: ",	  "normal(int, int, int) : BAT[oid,int]",							  "not available"																							  ]
-[ "normal",		  "PROC: ",	  "normal(int, int, int, int) : BAT[oid,int]",							  "not available"																							  ]
-[ "normal",		  "PROC: ",	  "normal(oid, int, int) : BAT[oid,int]",							  "not available"																							  ]
-[ "normal",		  "PROC: ",	  "normal(oid, int, int, int) : BAT[oid,int]",							  "not available"																							  ]
-[ "phash_join",		  "COMMAND: ",	  "phash_join(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",		  "partitioned hash-join on radix clustered inputs"																			  ]
-[ "phash_join",		  "PROC: ",	  "phash_join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",			  "not available"																							  ]
-[ "phash_join_new",	  "COMMAND: ",	  "phash_join_new(BAT[any::1,any::2], BAT[any::2,any::3], int, int, bit) : BAT[any::1,any::3]",	  "partitioned hash-join on radix clustered inputs"																			  ]
-[ "phash_join_new",	  "PROC: ",	  "phash_join_new(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",		  "not available"																							  ]
-[ "radix_bits",		  "COMMAND: ",	  "radix_bits(BAT[any,any]) : int",								  "return the number of bits on which the head column is radix clustered"																  ]
-[ "radix_cluster",	  "COMMAND: ",	  "radix_cluster(BAT[any::1,any::2], flt, int, ..int..) : BAT[any::1,any::2]",			  "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters."															  ]
-[ "radix_cluster",	  "PROC: ",	  "radix_cluster(BAT[any::1,any::2], int, ..int..) : BAT[any::1,any::2]",			  "not available"																							  ]
-[ "radix_cluster_last",	  "COMMAND: ",	  "radix_cluster_last(BAT[oid,int], int, ..int..) : BAT[oid,int]",				  "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters."															  ]
-[ "radix_cluster_new",	  "COMMAND: ",	  "radix_cluster_new(BAT[oid,int], int, ..int..) : BAT[oid,int]",				  "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters."															  ]
-[ "radix_join",		  "COMMAND: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3], int, int) : BAT[any::1,any::3]",		  "nested loop join on radix clustered inputs"																				  ]
-[ "radix_join",		  "PROC: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",			  "not available"																							  ]
-[ "radix_join",		  "PROC: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",		  "not available"																							  ]
-[ "uniform",		  "COMMAND: ",	  "uniform(oid, int, int) : BAT[oid,int]",							  "create a random bat of certain size, head values unique, tail values\n perfect uniform from a certain domain (domain>size => unique tails)."								  ]
-[ "uniform",		  "PROC: ",	  "uniform(int) : BAT[oid,int]",								  "not available"																							  ]
-[ "uniform",		  "PROC: ",	  "uniform(int, int) : BAT[oid,int]",								  "not available"																							  ]
+[ 28 ]
+[ 28 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature											| help																																																			  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[integer]",		  "COMMAND: ",	  "[integer](BAT[any::1,any], int) : BAT[any::1,any]",						  "create a view that makes tail column appear as an integerX column for some width=X"																																									  ]
+[ "[integer]",		  "PROC: ",	  "[integer](BAT[any::1,int]) : BAT[any::1,integer1]",						  "not available"																																																	  ]
+[ "normal",		  "COMMAND: ",	  "normal(oid, int, int, int, int) : BAT[oid,int]",						  "create a random bat of certain size, head values unique, tail values\n from a normal distribution between [0..domain].\n default values: base = 0@0, mean = size/2, stddev = size/10, domain=size."																											  ]
+[ "normal",		  "PROC: ",	  "normal(int) : BAT[oid,int]",									  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(int, int) : BAT[oid,int]",								  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(int, int, int) : BAT[oid,int]",							  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(int, int, int, int) : BAT[oid,int]",							  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(oid, int, int) : BAT[oid,int]",							  "not available"																																																	  ]
+[ "normal",		  "PROC: ",	  "normal(oid, int, int, int) : BAT[oid,int]",							  "not available"																																																	  ]
+[ "phash_join",		  "COMMAND: ",	  "phash_join(BAT[any::1,any::2], BAT[any::2,any::3], int, int, bit) : BAT[any::1,any::3]",	  "partitioned hash-join on radix clustered inputs"																																													  ]
+[ "phash_join",		  "PROC: ",	  "phash_join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",			  "not available"																																																	  ]
+[ "phash_join_new",	  "PROC: ",	  "phash_join_new(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",		  "not available"																																																	  ]
+[ "phash_join_new",	  "PROC: ",	  "phash_join_new(BAT[any::1,any::2], BAT[any::2,any::3], int, int, bit) : BAT[any::1,any::3]",	  "not available"																																																	  ]
+[ "radix_bits",		  "COMMAND: ",	  "radix_bits(BAT[any,any]) : int",								  "return the number of bits on which the head column is radix clustered."																																										  ]
+[ "radix_cluster",	  "COMMAND: ",	  "radix_cluster(BAT[any::1,any::2], str, flt, int, ..int..) : BAT[any::1,any::2]",		  "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters.\n partial radix cluster (i.e. skipping lower significant bits) can be indicated\n by pasing a negative number of bits as last parameter. "																								  ]
+[ "radix_cluster",	  "PROC: ",	  "radix_cluster(BAT[any::1,any::2], flt, int, ..int..) : BAT[any::1,any::2]",			  "not available"																																																	  ]
+[ "radix_cluster",	  "PROC: ",	  "radix_cluster(BAT[any::1,any::2], int, ..int..) : BAT[any::1,any::2]",			  "not available"																																																	  ]
+[ "radix_cluster",	  "PROC: ",	  "radix_cluster(BAT[any::1,any::2], str, int, ..int..) : BAT[any::1,any::2]",			  "not available"																																																	  ]
+[ "radix_count",	  "COMMAND: ",	  "radix_count(BAT[oid,oid], int, int) : BAT[int,int]",						  "return a histogram [radix-pattern,bucket-size] for the tail values of some BAT b.\n the first int holds the number of radix bits, the second how many lower bits to ignore.\n notice that the bat b maybe partially radix-clustered (or not at all). the radix_count\n command just detects consecutive chunks where (1) the tail values have the same specified\n radix-bits and (2) the head values are ascending"	  ]
+[ "radix_decluster",	  "COMMAND: ",	  "radix_decluster(BAT[oid,any::1], BAT[int,int], int) : BAT[void,any::1]",			  "merge a (partially) radix-clustered dense collection of oids back to their original void\n position.  second bat *must* be result of b.radix_count(x,y). Third parameter is a multiplier\n that tells how many times the number of chunks the matching-window-size should be."																	  ]
+[ "radix_decluster",	  "PROC: ",	  "radix_decluster(BAT[oid,any::1], BAT[int,int]) : BAT[void,any::1]",				  "not available"																																																	  ]
+[ "radix_decluster2",	  "COMMAND: ",	  "radix_decluster2(BAT[any::2,oid], BAT[any::2,any::1], BAT[int,int], int) : BAT[void,any::1]",  ""																																																			  ]
+[ "radix_join",		  "COMMAND: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3], int, int) : BAT[any::1,any::3]",		  "nested-loop join on radix clustered inputs"																																														  ]
+[ "radix_join",		  "PROC: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",			  "not available"																																																	  ]
+[ "radix_join",		  "PROC: ",	  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",		  "not available"																																																	  ]
+[ "uniform",		  "COMMAND: ",	  "uniform(oid, int, int) : BAT[oid,int]",							  "create a random bat of certain size, head values unique, tail values\n perfect uniform from a certain domain (domain>size => unique tails)."																																		  ]
+[ "uniform",		  "PROC: ",	  "uniform(int) : BAT[oid,int]",								  "not available"																																																	  ]
+[ "uniform",		  "PROC: ",	  "uniform(int, int) : BAT[oid,int]",								  "not available"																																																	  ]
 
 Module: "salgebra"
 

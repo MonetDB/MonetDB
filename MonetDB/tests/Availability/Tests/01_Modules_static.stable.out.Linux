@@ -387,7 +387,7 @@ Module: "arith"
 [ "between",	  "COMMAND: ",	  "between(oid, oid, oid) : bit",						  "checks (low <= val <= high)"																																		  ]
 [ "between",	  "COMMAND: ",	  "between(sht, sht, sht) : bit",						  "checks (low <= val <= high)"																																		  ]
 [ "between",	  "COMMAND: ",	  "between(str, str, str) : bit",						  "checks (low <= val <= high)"																																		  ]
-[ "ifthenelse",	  "COMMAND: ",	  "ifthenelse(bit, any::1, any::1) : any::1",					  "boolean switch: returns b?t:f"																																	  ]
+[ "ifthenelse",	  "COMMAND: ",	  "ifthenelse(bit, any::1, any::1) : any::1",					  "boolean switch: returns b?t:f (returns error on isnil(b)"																														  ]
 [ "inv",	  "COMMAND: ",	  "inv(chr) : chr",								  "inverse value (1/x)"																																			  ]
 [ "inv",	  "COMMAND: ",	  "inv(dbl) : dbl",								  "inverse value (1/x)"																																			  ]
 [ "inv",	  "COMMAND: ",	  "inv(flt) : flt",								  "inverse value (1/x)"																																			  ]
