@@ -866,7 +866,7 @@
             "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_21F5E48E627D4F8B8E7249E66A1BE586"
             {
             "Name" = "8:odbcinstall.exe"
-            "Condition" = "8:"
+            "Condition" = "8:ODBCDRIVER"
             "Object" = "8:_9F3B9B983BD048919D9A6C1C9EB96D73"
             "FileType" = "3:2"
             "InstallAction" = "3:1"
@@ -3766,7 +3766,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB"
         "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{4BB18C93-B231-4265-990C-3EA5A0E74960}"
+        "PackageCode" = "8:{A900445E-C3FF-422F-8056-54CB33DE1487}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
