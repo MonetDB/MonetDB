@@ -169,11 +169,11 @@ comment "Map a BAT into its bbp name";
 command getCount() :bat[:int,:lng] 	
 address CMDbbpCount
 comment "Map a BAT into its cardinality";
-command getRefcnt() :bat[:int,:int] 	
-address CMDbbpRefcnt
+command getRefCount() :bat[:int,:int] 	
+address CMDbbpRefCount
 comment "Map a BAT into its (hard) reference count";
-command getLRefcnt() :bat[:int,:int] 	
-address CMDbbpLRefcnt
+command getLRefCount() :bat[:int,:int] 	
+address CMDbbpLRefCount
 comment "Map a BAT into its logical reference count";
 command getLocation() :bat[:int,:str] 	
 address CMDbbpLocation
@@ -387,7 +387,6 @@ str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb; /* fool compiler */
 	@:OpenBox(release)@
         bid = (int *) getArgValue(stk,pci,1);
-	printf("release BAT:%d\n", *bid);
 	releaseBAT(mb,stk,*bid);
 	return MAL_SUCCEED;
 }
@@ -719,39 +718,39 @@ str CMDbbpKind(int *ret){
         return MAL_SUCCEED;
 }
 
-str CMDbbpRefcnt(int *ret){       
+str CMDbbpRefCount(int *ret){       
 	BAT	 *b;
         int     i;
 
         b= BATnew(TYPE_int,TYPE_int,BBPsize);
-        if (b == 0) return throwMessage("catalog.bbpRefcnt", "failed to create BAT");
+        if (b == 0) return throwMessage("catalog.bbpRefCount", "failed to create BAT");
 
-	BBPlock("CMDbbpRefcnt");
+	BBPlock("CMDbbpRefCount");
         for(i=1; i < BBPsize; i++) 
 	if (i != b->batCacheid &&
 	    BBP_logical(i)) {
 		int refs = BBP_refs(i);
 		BUNins(b, &i, &refs);
 	}
-	BBPunlock("CMDbbpRefcnt");
+	BBPunlock("CMDbbpRefCount");
 	@:Pseudo(bbp,refcnt)@
         return MAL_SUCCEED;
 }
-str CMDbbpLRefcnt(int *ret){       
+str CMDbbpLRefCount(int *ret){       
 	BAT	 *b;
         int     i;
 
         b= BATnew(TYPE_int,TYPE_int,BBPsize);
-        if (b == 0) return throwMessage("catalog.bbpLRefcnt", "failed to create BAT");
+        if (b == 0) return throwMessage("catalog.bbpLRefCount", "failed to create BAT");
 
-	BBPlock("CMDbbpLRefcnt");
+	BBPlock("CMDbbpLRefCount");
         for(i=1; i < BBPsize; i++) 
 	if (i != b->batCacheid &&
 	    BBP_logical(i)) {
 		int refs = BBP_lrefs(i);
 		BUNins(b, &i, &refs);
 	}
-	BBPunlock("CMDbbpLRefcnt");
+	BBPunlock("CMDbbpLRefCount");
 	@:Pseudo(bbp,lrefcnt)@
         return MAL_SUCCEED;
 }

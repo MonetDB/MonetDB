@@ -587,11 +587,20 @@ str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str t
 	ptr val = (ptr) getArgReference(stk,pci,indx);
         stream *fp = GDKout;
 	if( val==NULL) {
+		if(hd) stream_printf(fp,"%s",hd);
 		ATOMprint(TYPE_str, "nil", GDKout);
+		if(tl) stream_printf(fp,"%s",tl);
 		return MAL_SUCCEED;
 	}
 	if( isaBatType(tpe)){
-		BAT *b = BATdescriptor(*(int*)val);
+		BAT *b;
+		if( *(int*)val ==0){
+			if(hd) stream_printf(fp,"%s",hd);
+			ATOMprint(TYPE_str, "nil", GDKout);
+			if(tl) stream_printf(fp,"%s",tl);
+			return MAL_SUCCEED;
+		}
+		b = BATdescriptor(*(int*)val);
 		if( b== NULL) {
 			return throwMessage("io.print","could not access descriptor");
 		}

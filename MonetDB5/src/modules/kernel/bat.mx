@@ -428,6 +428,8 @@ comment "inplace replace values on the
 
 command destroy(b:bat[:any,:any]):void
 address BKCdestroy;
+command destroy(b:bat[:any,:any],immediately:bit):void
+address BKCdestroyImmediate;
 command destroy(s:str,immediately:bit):void 
 address BKCdestroy_bat
 comment "Schedule bat for removal upon session 
@@ -1752,17 +1754,27 @@ str BKCdelete_bat_head(int *r, int *bid, int *sid){
 		return MAL_SUCCEED;
 	return throwMessage("bat.delete_bat_heads", "GDKerror");
 }
-str BKCdestroy_bat(bit *r,str *input, bit *immediately) {
-	CMDdestroy(r, *input, immediately);
+str BKCdestroy_bat(bit *r,str *input, bit *immediate) {
+	CMDdestroy(r, *input, immediate);
+	return MAL_SUCCEED;
+}
+str BKCdestroyImmediate(bit *r,int *bid, bit *immediate) {
+	BAT *b;
+	@:getBATdescriptor2(r,bid,b,destroy)@
+	*bid = 0;
+	BATmode(b, TRANSIENT);
+	if( *immediate == FALSE){
+		b->batKeeparound = 1;
+		b->batDirtydesc = 1;
+	}
 	return MAL_SUCCEED;
 }
 str BKCdestroy(bit *r,int *bid) {
-	bit immediately= TRUE;
 	BAT *b;
-	str nme;
 	@:getBATdescriptor2(r,bid,b,destroy)@
-	nme= BBPname(b->batCacheid);
-	return BKCdestroy_bat(r,&nme,&immediately);
+	*bid = 0;
+	BATmode(b, TRANSIENT);
+	return MAL_SUCCEED;
 }
 
 /* The SQL frontend uses void-head bats */
@@ -2046,6 +2058,7 @@ str BKCsetPersistent(int *res, int *bid) {
 	bit param= 1;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
 	CMDpersists(&bn,b,&param);
+	BBPunfix(bn->batCacheid);
 	*res = TRUE;
         return MAL_SUCCEED;
 }
