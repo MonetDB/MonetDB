@@ -61,9 +61,7 @@ extern "C" {
 #include "monet_process.h"
 #include "monet_options.h"
 
-#ifdef HAVE_LIBGETOPT 
 #include <getopt.h>
-#endif
 
 extern void		static_module_init(Client c, char buf[]); 
 }

@@ -1,11 +1,11 @@
 
 MTSAFE
-INCLUDES = ../gdk ../monet $(PTHREAD_INCS) $(GETOPT_INCS)
+INCLUDES = -I$(top_srcdir)/src/common ../gdk ../monet $(PTHREAD_INCS) 
 
 CXXFLAGS = $(CFLAGS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
-MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) $(GETOPT_LIBS)
+MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
 STATIC_MODS = \
 	../modules/plain/lib_kernel ../modules/plain/lib_arith \
@@ -62,8 +62,8 @@ CONFLICT_MODS =	\
 EXTRA_DIST = static_modules.mx monet-config.mx.in monet-config.bat.in
 
 bin_Mserver = {
-	SOURCES = Mserver.mx initmodules.mx monet_options.mx.in
-	LIBS = ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS)
+	SOURCES = Mserver.mx initmodules.mx 
+	LIBS = ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS) ../common/libmutils
 }
 
 bin_SCRIPTS = monet-config monet-config.bat
