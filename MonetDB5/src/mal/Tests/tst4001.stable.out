@@ -59,7 +59,7 @@ end qry;	# 4
 function Admin.main():int;	# 0  (main:int)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
     t1 := alarm.usec();	# 2 ALARMusec (t1:lng)
-    t2 := calc.-(t1,t2);	# 3 CALCbinarySUBlngdbl (t2:dbl)<-(t1:lng)(t2:dbl)
+    t2 := calc.-(t1,t0);	# 3 CALCbinarySUBlnglng (t2:lng)<-(t1:lng)(t0:lng)
     io.print("execute");	# 4 IOprint_val ($8:int)<-($9:str)
     z := Admin.qry(0.0:dbl);	# 5  (z:dbl)<-($11:dbl)
     io.print(z);	# 6 IOprint_val ($12:int)<-(z:dbl)
@@ -78,7 +78,7 @@ end qry;
 function Admin.main():int;
     t0 := alarm.usec();
     t1 := alarm.usec();
-    t2 := calc.-(t1,t2);
+    t2 := calc.-(t1,t0);
     io.print("execute");
     z := Admin.qry(0.0:dbl);
     io.print(z);

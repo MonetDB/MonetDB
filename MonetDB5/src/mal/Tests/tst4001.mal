@@ -13,7 +13,7 @@ t0:= alarm.usec();
 CXoptimizer(Admin,qry);
 ARoptimizer(Admin,qry);
 t1:= alarm.usec();
-t2:= t1-t2;
+t2:= t1-t0;
 #print(t2);
 print("execute");
 z:=qry(0.0:dbl);
