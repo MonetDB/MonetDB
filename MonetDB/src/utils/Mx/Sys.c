@@ -39,7 +39,9 @@ ofile_printf(char *format,...)
 
 /*	format = va_arg(ap, char*);*/
 	if (mx_out&1) vfprintf(ofile, format, ap);
+        va_start (ap,format);
 	if (ofile_index && (mx_out&2)) vfprintf(ofile_index, format, ap);
+        va_start (ap,format);
 	if (ofile_body && (mx_out&4)) vfprintf(ofile_body, format, ap);
         va_end (ap); 
 	somethingPrinted++;
