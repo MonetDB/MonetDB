@@ -23,7 +23,7 @@
 
 EXTRA_DIST = \
 	config.guess config.sub \
-	install-sh mkinstalldirs missing \
+	install-sh missing \
 	ltmain.sh config.h.in \
 	monet.m4 conf.bash MonetDB.conf.in
 

@@ -137,7 +137,7 @@ rm -fr $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,monetdb,monetdb) 
-%{prefix}/bin/monet-config*
+%{prefix}/bin/monetdb-config*
 %{prefix}/share/%{name}/conf/monet.m4 
 
 %{prefix}/bin/mel
