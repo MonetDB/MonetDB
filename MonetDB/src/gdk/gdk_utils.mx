@@ -918,7 +918,6 @@ ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize) {
 
 	/* check against duplicate free */
         assert((oldsize&2) == 0);
-        s[-1] |= 2; 
 
 	if (oldsize < 0) {
 		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
