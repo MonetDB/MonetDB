@@ -151,7 +151,7 @@ gdk_export int   MT_madvise(void* p, size_t len, int advise);
 
 gdk_export void *MT_vmalloc(size_t size, size_t *maxsize);
 gdk_export void  MT_vmfree(void *p, size_t size);
-gdk_export void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize);
+gdk_export void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize);
 gdk_export int   MT_path_absolute(char *path);
 
 @- Posix under WIN32 
@@ -857,37 +857,40 @@ void MT_vmfree(void *p, size_t size) {
         munmap(p, size);
 }
 
-void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize) {
+void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize) {
         char *p=(char*)voidptr;
         char *q = (char*) -1L;
 
+	/* sanitize sizes */
         oldsize = MT_PAGESIZE(oldsize);
         newsize = MT_PAGESIZE(newsize);
-        *maxsize = MT_PAGESIZE(*maxsize);
+        oldmaxsize = MT_PAGESIZE(oldmaxsize);
+        *newmaxsize = MT_PAGESIZE(*newmaxsize);
+	if (*newmaxsize < newsize) {
+		*newmaxsize = newsize;
+	}
 
         if (oldsize > newsize) {
                 munmap(p+oldsize, oldsize-newsize);
-        }
-        if (oldsize >= newsize) {
-                return p;
-        }
-        if (newsize < *maxsize) {
-                MMAP_OPEN_DEV_ZERO;
-                if (fd >= 0) {
-                        q = (char*) mmap(p+oldsize, newsize-oldsize,
-                                PROT_READ|PROT_WRITE,
-                                MMAP_FLAGS(MAP_PRIVATE|MAP_FIXED), MMAP_FD, (off_t)oldsize);
-                        MMAP_CLOSE_DEV_ZERO;
-                }
-        }
-        if (q == (char*) -1L) {
-                size_t oldmaxsize = *maxsize;
-                q = p; p = (char*) MT_vmalloc(newsize, maxsize);
-                if (p != NULL) {
-                        memcpy(p, q, oldsize);
-                        MT_vmfree(q, oldmaxsize);
-                }
-        }
+        } else if (oldsize < newsize) {
+		if (newsize < oldmaxsize) {
+                	MMAP_OPEN_DEV_ZERO;
+                	if (fd >= 0) {
+                        	q = (char*) mmap(p+oldsize, newsize-oldsize, PROT_READ|PROT_WRITE, 
+						 MMAP_FLAGS(MAP_PRIVATE|MAP_FIXED), MMAP_FD, (off_t)oldsize);
+                        	MMAP_CLOSE_DEV_ZERO;
+			}
+		}
+        	if (q == (char*) -1L) {
+			q = (char*) MT_vmalloc(newsize, newmaxsize);
+                	if (q != NULL) {
+                       		memcpy(q, p, oldsize);
+                       		MT_vmfree(p, oldmaxsize);
+				return q;
+			}
+		}
+	}
+	*newmaxsize = MAX(oldmaxsize,newsize);
         return p;
 }
 
@@ -976,32 +979,39 @@ void MT_vmfree(void *p, size_t size) {
 	fprintf(MT_out, "VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", p);
 }
 
-void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize)
-{
-	char *a, *p = (char*) v;
-	size_t oldmaxsize = *maxsize;
+void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize) {
+	char *p = (char*) v, *a = p;
 
+	/* sanitize sizes */
 	oldsize = MT_PAGESIZE(oldsize);
 	newsize = MT_PAGESIZE(newsize);
-	if(oldsize < newsize) {
-		if (*maxsize < newsize) {
-			*maxsize = newsize;
-		}
+	oldmaxsize = MT_PAGESIZE(oldmaxsize);
+	*newmaxsize = MT_PAGESIZE(*newmaxsize);
+	if (*newmaxsize < newsize) {
+		*newmaxsize = newsize;
+	}
+
+	if (oldsize > newsize) {
+ 		size_t ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
+ 		if (ret == 0) 
+			fprintf(MT_out, "VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", 
+				p+newsize, (ssize_t) (oldsize-newsize));
+        } else if (oldsize < newsize) {
  		a = (char*) VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
 		if (a != p) {
+			char *q = a;
 			if (a == NULL) {
-				a = MT_vmalloc(newsize, maxsize);
+				q = MT_vmalloc(newsize, newmaxsize);
 			}
-			if (a != NULL) {
-				memcpy(a, p, oldsize);
+			if (q != NULL) {
+				memcpy(q, p, oldsize);
 				MT_vmfree(p, oldmaxsize);
 			} 
-		} p = a;
-	} else if (oldsize > newsize) {
- 		size_t ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
- 		if (ret == 0) fprintf(MT_out, "VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", p+newsize, (ssize_t) (oldsize-newsize));
+			if (a == NULL)  return q;
+		}
 	} 
-	return p;
+	*newmaxsize = MAX(oldmaxsize,newsize);
+	return a;
 }
 
 int MT_lockf(char *filename, int mode, off_t off, off_t len) {

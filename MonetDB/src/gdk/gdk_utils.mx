@@ -1049,11 +1049,11 @@ void* GDKvmalloc(size_t size, size_t *maxsize) {
 	return ret;
 }
 
-void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize) {
-	void *ret = MT_vmrealloc(pold, oldsize, newsize, maxsize);
+void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *newmax) {
+	void *ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
         if (ret == NULL) {
                 GDKmemfail("GDKvrealloc", newsize, BBPTRIM_ALL, BBPTRIM_ALL);
-                ret = MT_vmrealloc(pold, oldsize, newsize, maxsize);
+                ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
                 if (ret == NULL) {
                         MT_alloc_print();
                         GDKfatal("GDKvrealloc failed for %u bytes (from %u)", newsize, oldsize);
@@ -1061,11 +1061,9 @@ void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, si
                         THRprintf(GDKerr, "GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
                 }
         } 
-	if (ret == pold) {
-		*maxsize = oldmax;
-	} else if (ret != NULL) {
+	if (ret != NULL) {
                 GDKmemdec(oldsize,oldmax);
-                GDKmeminc(newsize,*maxsize);
+                GDKmeminc(newsize,*newmax);
 	}
 	return ret;
 }
