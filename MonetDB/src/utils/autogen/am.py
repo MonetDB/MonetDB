@@ -123,7 +123,7 @@ def am_scripts(fd, var, scripts, am):
       fd.write("install-exec-local-%s: %s\n" % (script,script))
       fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
       fd.write("\t$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
-      fd.write("\t$(INSTALL) %s $(DESTDIR)%s/%s\n\n" % (script,sd,script))
+      fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd,script))
       fd.write("uninstall-exec-local-%s: \n" % (script))
       fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd,script))
       am['INSTALL'].append(script)
@@ -360,7 +360,8 @@ def am_translate_dir(path,am):
     if (dir == "top_srcdir" or dir == "top_builddir" or \
 	  dir == "srcdir" or dir == "builddir" or \
 	  dir == "pkglibdir" or dir == "libdir" or \
-	  dir == "pkgbindir" or dir == "bindir"):
+	  dir == "pkgbindir" or dir == "bindir" or \
+	  dir == "pkgdatadir" or dir == "datadir"):
 	dir = "$("+dir+")" 
     dir = dir + rest
     return dir
