@@ -58,10 +58,10 @@ end function;	#7:
 # BAT:	  objects	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 6,	  "mysecondbat"	  ]
+[ 3,	  "mysecondbat"	  ]
 [ "test" ]
 #-----------------#
-# BAT:	  tmp_8	  #
+# BAT:	  tmp_5	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]

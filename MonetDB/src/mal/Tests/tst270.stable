@@ -74,7 +74,7 @@ end function;	#26:
 #~EndVariableOutput~#
 # Start performance profiling
 #-----------------#
-# BAT:	  tmp_7	  #
+# BAT:	  tmp_4	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -89,7 +89,7 @@ end function;	#26:
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #---------------------------------#
-# BAT:	  tmp_7	| tmp_7	| tmp_7	  #
+# BAT:	  tmp_4	| tmp_4	| tmp_4	  #
 # (int)	  (int)	| (int)	| (int)	  #
 #---------------------------------#
 [ 1,	  15,	  15,	  15	  ]

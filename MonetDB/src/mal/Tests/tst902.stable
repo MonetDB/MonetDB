@@ -31,25 +31,25 @@
 function Admin.main():int;	#0:(main:int)
 	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
 	i := -1;	#2:(i:lng)<-($4:lng)
-barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng)
+barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
 	bat.insert(b,i,i);	#4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
-	redo v ;	#5:(v:bit)
+	redo v ;	#5:(v:bit) jump 3
 end	v;	#6:(v:bit)
 	c := algebra.copy(b);	#7:(c:bat[lng,lng])<-(b:bat[lng,lng])
 	d := mal.new(lng,lng);	#8:(d:bat[lng,lng])<-(lng:lng)(lng:lng)
-barrier	w := mal.bunStream(b,h,t);	#9:(w:lng)<-(b:bat[lng,lng])(h:lng)(t:lng)
+barrier	w := mal.bunStream(b,h,t);	#9:(w:lng)<-(b:bat[lng,lng])(h:lng)(t:lng) jump 18
 	B1 := algebra.find(b,h);	#10:(B1:lng)<-(b:bat[lng,lng])(h:lng)
 	B2 := algebra.find(c,h);	#11:(B2:lng)<-(c:bat[lng,lng])(h:lng)
 	t := calc.+(B1,B2);	#12:(t:lng)<-(B1:lng)(B2:lng)
 	bat.insert(d,h,t);	#13:($16:bat[lng,lng])<-(d:bat[lng,lng])(h:lng)(t:lng)
-	redo w ;	#14:(w:lng)
-catch	GDKerror;	#15:(GDKerror:str)
+	redo w ;	#14:(w:lng) jump 9
+catch	GDKerror;	#15:(GDKerror:str) jump 17
 end	GDKerror;	#16:(GDKerror:str)
 end	w;	#17:(w:lng)
 	io.print(d);	#18:($18:int)<-(d:bat[lng,lng])
 end function;	#19:
 #-----------------#
-# BAT:	  tmp_5	  #
+# BAT:	  tmp_6	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]

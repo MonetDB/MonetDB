@@ -28,14 +28,14 @@ function Admin.main():int;	#0:(main:int)
 	io.print(y);	#9:($15:int)<-(y:bat[chr,oid])
 end function;	#10:
 #-----------------#
-# BAT:	  tmp_9	  #
+# BAT:	  tmp_4	  #
 # (chr)	  (oid)	  #
 #-----------------#
 [ 'a',	  1@0	  ]
 [ 'a',	  2@0	  ]
 [ "result?" ]
 #-----------------#
-# BAT:	  tmp_10  #
+# BAT:	  tmp_5	  #
 # (chr)	  (oid)	  #
 #-----------------#
 [ 'a',	  1@0	  ]

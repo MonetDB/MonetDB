@@ -42,7 +42,7 @@ function Admin.main():int;	#0:(main:int)
 	bat.insert(b,1,2);	#4:($6:bat[int,int])<-(b:bat[int,int])($7:int)($8:int)
 	bbp.deposit("myfirstbat",b);	#5:($9:nil)<-($10:str)(b:bat[int,int])
 	c := bbp.take("myfirstbat");	#6:(c:bat[any,any])<-($10:str)
-catch	MALexception;	#7:(MALexception:str)
+catch	MALexception;	#7:(MALexception:str) jump 10
 	io.print(MALexception);	#8:($13:int)<-(MALexception:str)
 end	MALexception;	#9:(MALexception:str)
 	io.print(c);	#10:($14:int)<-(c:bat[any,any])
@@ -53,7 +53,7 @@ end	MALexception;	#9:(MALexception:str)
 	y := bbp.getObjects();	#15:(y:bat[int,str])
 	io.print(y);	#16:($22:int)<-(y:bat[int,str])
 	v := bbp.take("myfirstbat");	#17:(v:bat[any,any])<-($10:str)
-catch	MALexception;	#18:(MALexception:str)
+catch	MALexception;	#18:(MALexception:str) jump 21
 	io.print(MALexception);	#19:($24:int)<-(MALexception:str)
 end	MALexception;	#20:(MALexception:str)
 	io.print(v);	#21:($25:int)<-(v:bat[any,any])
@@ -63,7 +63,7 @@ end	MALexception;	#20:(MALexception:str)
 end function;	#25:
 [ "Start test" ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
@@ -73,10 +73,9 @@ end function;	#25:
 # BAT:	  objects	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 5,	  "mysecondbat"	  ]
-[ 6,	  "myfirstbat"	  ]
+[ 3,	  "myfirstbat"	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
@@ -87,8 +86,5 @@ end function;	#25:
 [ 1,	  "monet_environment"	  ]
 [ 2,	  "timezones"		  ]
 [ 3,	  "tmp_3"		  ]
-[ 4,	  "tmp_4"		  ]
-[ 5,	  "tmp_5"		  ]
-[ 6,	  "tmp_6"		  ]
-[ 7,	  "objects"		  ]
+[ 4,	  "objects"		  ]
 >

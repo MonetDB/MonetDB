@@ -21,11 +21,9 @@
 #y:bat[str,int]:= new(int,int);
 #f:flt := "wrong";
 #
-	y := new(int,int);	#7 unknown:(y:bat[str,int])<-(int:int)(int:int)
-pattern mal.new(s:str,$2:str):int;	#-1 polymorphic:(main:int)<-(s:str)($2:str)
 !ERROR: MALresolve:Admin.main[5]:type mismatch sht := lng
 !ERROR: MALresolve:Admin.main[6]:type mismatch lng := sht
-!ERROR: type conflict in statement (null).new[7]
+!ERROR: type conflict in statement .new[7]
 !ERROR: 'new' undefined in Admin.main[7]
 !ERROR: MALresolve:Admin.main[8]:type mismatch flt := str
 function Admin.main():int;	#0:(main:int)

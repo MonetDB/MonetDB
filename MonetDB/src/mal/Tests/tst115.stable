@@ -52,5 +52,4 @@ function Admin.main():int;	#0:(main:int)
 	d := doitTwice("wrong");	#6 unknown:(d:int)<-($8:str)
 end function;	#7:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
-
 >

@@ -19,11 +19,11 @@
 function Admin.pl(i:str):int;	#0:(pl:int)<-(i:str)
 	L := "something";	#1:(L:str)<-($3:str)
 	r := 0;	#2:(r:int)<-($5:int)
-barrier	l := calc.==(r,0);	#3:(l:bit)<-(r:int)($5:int)
+barrier	l := calc.==(r,0);	#3:(l:bit)<-(r:int)($5:int) jump 9
 	y := r;	#4:(y:int)<-(r:int)
 	r := calc.+(r,1);	#5:(r:int)<-(r:int)($8:int)
-	leave l;	#6:(l:bit)
-	redo l ;	#7:(l:bit)
+	leave l;	#6:(l:bit) jump 9
+	redo l ;	#7:(l:bit) jump 3
 end	l;	#8:(l:bit)
 end function;	#9:
 #a:= "hello";

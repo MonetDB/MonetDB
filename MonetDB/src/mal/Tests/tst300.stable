@@ -20,7 +20,7 @@ function Admin.main():int;	#0:(main:int)
 	myNewException := "new exception";	#1:(myNewException:str)<-($2:str)
 	raise myNewException;	#2:(myNewException:str)
 	system.printf("should not come here\n");	#3:($3:int)<-($4:str)
-catch	myNewException;	#4:(myNewException:str)
+catch	myNewException;	#4:(myNewException:str) jump 7
 	system.printf("catched exception\n");	#5:($5:int)<-($6:str)
 end	myNewException;	#6:(myNewException:str)
 end function;	#7:

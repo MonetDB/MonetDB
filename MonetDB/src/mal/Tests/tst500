@@ -1,6 +1,9 @@
 # recursive MAL calls 
 
 function simple(i:int, lim:int, s:str):flt;
+printf("i=%d ",i);
+printf("lim=%d ",lim);
+printf("str=%s\n",s);
 	i:= i+1;
 barrier	v:= i<lim;
 	z:= simple(i,lim,s);

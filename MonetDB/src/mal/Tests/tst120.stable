@@ -9,40 +9,29 @@
 ##define 2 modules and check location of routines
 #
 #use tst120a;	# lookup DBHOME/mal/tst120a.mal
-#module top;
-#function first(i:sht):sht; end function;
-function top.first(i:sht):sht;	#0:(first:sht)<-(i:sht)
-end function;	#1:
-#
 #use tst120b;
-#module bottom;
-#function first(i:str):int; c:=1; end function;
-function bottom.first(i:str):int;	#0:(first:int)<-(i:str)
-	c := 1;	#1:(c:int)<-($3:int)
-end function;	#2:
-#function second(i:str):int; end function;
-function bottom.second(i:str):int;	#0:(second:int)<-(i:str)
-end function;	#1:
-#
 #use tst120a;	# does not do anything
-#module top;
 #
 #a:= second("hh");
 #b:= first(1);
 #c:= first(1:sht);
 #d:= first("hello world");
 #e:= top.first(2:sht);
-#mdb();
 #
+!ERROR: malImport: could not open file: tst120a
+!ERROR: malImport: could not open file: tst120b
+!ERROR: malImport: could not open file: tst120a
+!ERROR: 'second' undefined in Admin.main[1]
 !ERROR: 'first' undefined in Admin.main[2]
+!ERROR: 'first' undefined in Admin.main[3]
+!ERROR: 'first' undefined in Admin.main[4]
+!ERROR: 'top.first' undefined in Admin.main[5]
 function Admin.main():int;	#0:(main:int)
-	a := bottom.second("hh");	#1:(a:int)<-($2:str)
+	a := second("hh");	#1 unknown:(a:any)<-($2:str)
 	b := first(1);	#2 unknown:(b:any)<-($4:int)
-	c := top.first(1);	#3:(c:sht)<-($6:sht)
-	d := bottom.first("hello world");	#4:(d:int)<-($8:str)
-	e := top.first(2);	#5:(e:sht)<-($10:sht)
-	mal.mdb();	#6:($11:void)
-end function;	#7:
+	c := first(1);	#3 unknown:(c:any)<-($6:sht)
+	d := first("hello world");	#4 unknown:(d:any)<-($8:str)
+	e := top.first(2);	#5 unknown:(e:any)<-($10:sht)
+end function;	#6:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
-
 >

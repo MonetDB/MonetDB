@@ -8,6 +8,6 @@
 	i:= getBATrefcnt(b);
 	printf("refcount =%d\n",i);
 
-	destroy(b);
+	bat.destroy(b);
 	i:= getBATrefcnt(b);
 	printf("after destroy refcount =%d\n",i);

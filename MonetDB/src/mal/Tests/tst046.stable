@@ -1,0 +1,67 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+##testing flt/lng/int coercions
+#
+#b:=new(int,int);
+#insert(b,1,1);
+#insert(b,2,4);
+#insert(b,3,9);
+#print(b);
+#
+#f:= flt(b);
+#print(f);
+#
+#l:=lng(b);
+#print(l);
+#
+#i:= int(f);
+#print(i);
+#
+function Admin.main():int;	#0:(main:int)
+	b := mal.new(int,int);	#1:(b:bat[int,int])<-(int:int)(int:int)
+	bat.insert(b,1,1);	#2:($3:bat[int,int])<-(b:bat[int,int])($4:int)($4:int)
+	bat.insert(b,2,4);	#3:($5:bat[int,int])<-(b:bat[int,int])($6:int)($7:int)
+	bat.insert(b,3,9);	#4:($8:bat[int,int])<-(b:bat[int,int])($9:int)($10:int)
+	io.print(b);	#5:($11:int)<-(b:bat[int,int])
+	f := batcalc.flt(b);	#6:(f:bat[int,flt])<-(b:bat[int,int])
+	io.print(f);	#7:($13:int)<-(f:bat[int,flt])
+	l := batcalc.lng(b);	#8:(l:bat[int,lng])<-(b:bat[int,int])
+	io.print(l);	#9:($15:int)<-(l:bat[int,lng])
+	i := batcalc.int(f);	#10:(i:bat[int,int])<-(f:bat[int,flt])
+	io.print(i);	#11:($17:int)<-(i:bat[int,int])
+end function;	#12:
+#-----------------#
+# BAT:	  tmp_3	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  1	  ]
+[ 2,	  4	  ]
+[ 3,	  9	  ]
+#-----------------#
+# BAT:	  tmp_4	  #
+# (int)	  (flt)	  #
+#-----------------#
+[ 1,	  1	  ]
+[ 2,	  4	  ]
+[ 3,	  9	  ]
+#-----------------#
+# BAT:	  tmp_5	  #
+# (int)	  (lng)	  #
+#-----------------#
+[ 1,	  1	  ]
+[ 2,	  4	  ]
+[ 3,	  9	  ]
+#-----------------#
+# BAT:	  tmp_6	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  1	  ]
+[ 2,	  4	  ]
+[ 3,	  9	  ]
+>

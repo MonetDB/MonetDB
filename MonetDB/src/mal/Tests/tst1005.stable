@@ -42,7 +42,7 @@ function Admin.main():int;	#0:(main:int)
 	bbp.close();	#7:($11:nil)
 	bbp.open();	#8:($12:nil)
 	v := bbp.take("myfirstbat");	#9:(v:bat[any,any])<-($8:str)
-catch	MALexception;	#10:(MALexception:str)
+catch	MALexception;	#10:(MALexception:str) jump 13
 	io.print(MALexception);	#11:($15:int)<-(MALexception:str)
 end	MALexception;	#12:(MALexception:str)
 	io.print(v);	#13:($16:int)<-(v:bat[any,any])

@@ -1,0 +1,28 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+#function test(b:bat[any::1,any::2],c:any::2):nil;
+#        reduce := batcalc./(b,c); 
+#end function;
+function Admin.test(b:bat[any::1,any::2],c:any::2):nil;	#0:(test:nil)<-(b:bat[any::1,any::2])(c:any::2)
+	reduce := batcalc./(b,c);	#1 unknown:(reduce:any)<-(b:bat[any::1,any::2])(c:any::2)
+end function;	#2:
+#function test(b:bat[any::1,any::2],c:any::1):nil;
+#        reduce := batcalc./(b,c); 
+#end function;
+function Admin.test(b:bat[any::1,any::2],c:any::1):nil;	#0:(test:nil)<-(b:bat[any::1,any::2])(c:any::1)
+	reduce := batcalc./(b,c);	#1 unknown:(reduce:any)<-(b:bat[any::1,any::2])(c:any::1)
+end function;	#2:
+#function test(b:bat[any::1,any::2]):nil;
+#        reduce := batcalc./(b,1); 
+#end function;
+function Admin.test(b:bat[any::1,any::2]):nil;	#0:(test:nil)<-(b:bat[any::1,any::2])
+	reduce := batcalc./(b,1);	#1 unknown:(reduce:any)<-(b:bat[any::1,any::2])($3:int)
+end function;	#2:
+#
+>

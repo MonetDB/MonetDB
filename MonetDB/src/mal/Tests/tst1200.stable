@@ -767,13 +767,13 @@ function Admin.main():int;	#0:(main:int)
 	kf_a := io.print(gf_a,hf_a,jf_a);	#192:(kf_a:int)<-(gf_a:bat[oid,date])(hf_a:bat[oid,date])(jf_a:bat[oid,int])
 	date_seq := mal.new(int,date);	#193:(date_seq:bat[int,date])<-(int:int)(date:date)
 	i := -375;	#194:(i:int)<-($349:int)
-barrier	lf_a := true;	#195:(lf_a:bit)<-($351:bit)
+barrier	lf_a := true;	#195:(lf_a:bit)<-($351:bit) jump 204
 	i := calc.+(i,1);	#196:(i:int)<-(i:int)($332:int)
 	of_a := calc.<(i,375);	#197:(of_a:bit)<-(i:int)($353:int)
-barrier	mf_a := of_a;	#198:(mf_a:bit)<-(of_a:bit)
+barrier	mf_a := of_a;	#198:(mf_a:bit)<-(of_a:bit) jump 203
 	pf_a := monettime.adddays(date_00,i);	#199:(pf_a:date)<-(date_00:date)(i:int)
 	qf_a := bat.insert(date_seq,i,pf_a);	#200:(qf_a:bat[int,date])<-(date_seq:bat[int,date])(i:int)(pf_a:date)
-	redo lf_a ;	#201:(lf_a:bit)
+	redo lf_a ;	#201:(lf_a:bit) jump 195
 end	mf_a;	#202:(mf_a:bit)
 end	lf_a;	#203:(lf_a:bit)
 	rf_a := bbp.setName(date_seq,"date");	#204:(rf_a:bat[int,date])<-(date_seq:bat[int,date])($358:str)
@@ -1892,7 +1892,7 @@ end function;	#328:
 [ "Mountain/USA",	  GMT-07:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01]	  ]
 [ "Alaska/USA",		  GMT-09:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01]	  ]
 #---------------------------------------------------------------------------------------------------------#
-# BAT:	  timestamp			| Wake Island	| tmp_67	| American Samoa| tmp_69	  #
+# BAT:	  timestamp			| Wake Island	| tmp_66	| American Samoa| tmp_68	  #
 # (oid)	  (timestamp)			| (date)	| (daytime)	| (date)	| (daytime)	  #
 #---------------------------------------------------------------------------------------------------------#
 [ 0@0,	  2000-01-01 23:59:59.999,	  2000-01-02,	  11:59:59.999,	  2000-01-01,	  12:59:59.999	  ]

@@ -117,7 +117,7 @@ function Admin.main():int;	#0:(main:int)
 	io.print(x,A,x4);	#58:($84:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x4:bat[oid,bit])
 end function;	#59:
 #-----------------#
-# BAT:	  tmp_11  #
+# BAT:	  tmp_5	  #
 # (oid)	  (bit)	  #
 #-----------------#
 [ 1@0,	  true	  ]
@@ -131,7 +131,7 @@ end function;	#59:
 [ "count" ]
 [ 8 ]
 #-----------------#
-# BAT:	  tmp_12  #
+# BAT:	  tmp_6	  #
 # (oid)	  (bit)	  #
 #-----------------#
 [ 1@0,	  true	  ]
@@ -139,7 +139,7 @@ end function;	#59:
 [ 3@0,	  true	  ]
 [ 4@0,	  false	  ]
 #-----------------#
-# BAT:	  tmp_13  #
+# BAT:	  tmp_7	  #
 # (oid)	  (bit)	  #
 #-----------------#
 [ 1@0,	  true	  ]
@@ -147,7 +147,7 @@ end function;	#59:
 [ 3@0,	  false	  ]
 [ 4@0,	  false	  ]
 #-------------------------#
-# BAT:	  tmp_12| tmp_14  #
+# BAT:	  tmp_6	| tmp_8	  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  true,	  false	  ]
@@ -155,7 +155,7 @@ end function;	#59:
 [ 3@0,	  true,	  false	  ]
 [ 4@0,	  false,  true	  ]
 #-------------------------#
-# BAT:	  tmp_12| tmp_15  #
+# BAT:	  tmp_6	| tmp_9	  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  true,	  true	  ]
@@ -163,7 +163,7 @@ end function;	#59:
 [ 3@0,	  true,	  false	  ]
 [ 4@0,	  false,  false	  ]
 #-------------------------#
-# BAT:	  tmp_12| tmp_16  #
+# BAT:	  tmp_6	| tmp_10  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  true,	  true	  ]
@@ -172,19 +172,19 @@ end function;	#59:
 [ 4@0,	  false,  false	  ]
 [ "ifthen group" ]
 #-------------------------#
-# BAT:	  tmp_12| tmp_17  #
+# BAT:	  tmp_6	| tmp_11  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  true,	  true	  ]
 [ 3@0,	  true,	  true	  ]
 #-------------------------#
-# BAT:	  tmp_12| tmp_18  #
+# BAT:	  tmp_6	| tmp_12  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  true,	  false	  ]
 [ 3@0,	  true,	  false	  ]
 #-----------------------------------------#
-# BAT:	  tmp_12| tmp_12| tmp_14| tmp_19  #
+# BAT:	  tmp_6	| tmp_6	| tmp_8	| tmp_13  #
 # (oid)	  (bit)	| (bit)	| (bit)	| (bit)	  #
 #-----------------------------------------#
 [ 1@0,	  true,	  true,	  false,  true	  ]
@@ -192,7 +192,7 @@ end function;	#59:
 [ 3@0,	  true,	  true,	  false,  true	  ]
 [ 4@0,	  false,  false,  true,	  true	  ]
 #---------------------------------#
-# BAT:	  tmp_12| tmp_12| tmp_20  #
+# BAT:	  tmp_6	| tmp_6	| tmp_14  #
 # (oid)	  (bit)	| (bit)	| (bit)	  #
 #---------------------------------#
 [ 1@0,	  true,	  true,	  true	  ]
@@ -200,7 +200,7 @@ end function;	#59:
 [ 3@0,	  true,	  true,	  true	  ]
 [ 4@0,	  false,  false,  true	  ]
 #-------------------------#
-# BAT:	  tmp_12| tmp_21  #
+# BAT:	  tmp_6	| tmp_15  #
 # (oid)	  (bit)	| (int)	  #
 #-------------------------#
 [ 1@0,	  true,	  1	  ]
@@ -209,7 +209,7 @@ end function;	#59:
 [ 4@0,	  false,  2	  ]
 [ "accumulators" ]
 #-------------------------#
-# BAT:	  tmp_12| tmp_12  #
+# BAT:	  tmp_6	| tmp_6	  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  false,  false	  ]
@@ -217,7 +217,7 @@ end function;	#59:
 [ 3@0,	  false,  false	  ]
 [ 4@0,	  true,	  true	  ]
 #---------------------------------#
-# BAT:	  tmp_12| tmp_13| tmp_22  #
+# BAT:	  tmp_6	| tmp_7	| tmp_16  #
 # (oid)	  (bit)	| (bit)	| (bit)	  #
 #---------------------------------#
 [ 1@0,	  false,  true,	  false	  ]
@@ -225,7 +225,7 @@ end function;	#59:
 [ 3@0,	  false,  false,  false	  ]
 [ 4@0,	  true,	  false,  false	  ]
 #---------------------------------#
-# BAT:	  tmp_12| tmp_13| tmp_23  #
+# BAT:	  tmp_6	| tmp_7	| tmp_17  #
 # (oid)	  (bit)	| (bit)	| (bit)	  #
 #---------------------------------#
 [ 1@0,	  false,  true,	  true	  ]

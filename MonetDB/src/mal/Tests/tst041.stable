@@ -1,0 +1,114 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## this sequence tests nil type management 
+#b:=nil;	print(b);
+#
+#a:=23;	print(a);
+#a:= int(nil);	print(a);
+#a:= int(13);	print(a);
+#a:= int("23");	print(a);
+#a:= int(43.0:flt);	print(a);
+#a:= int(63.0:dbl);	print(a);
+#
+#c:= true;	print(c);
+#c:= bit(nil);	print(c);
+#c:= bit(false);	print(c);
+#c:= bit(1);	print(c);
+#c:= bit("true");	print(c);
+#c:= bit(1.0:flt);	print(c);
+#c:= bit(0.0:dbl);	print(c);
+#
+#d:= 3.14:flt;	print(d);
+#d:= flt(nil);	print(d);
+#d:= flt(5);	print(d);
+#d:= flt("7.14");	print(d);
+#
+#e:= "hello";	print(e);
+#e:= str(nil);	print(e);
+#e:= str("nil");	print(e);
+#
+#f:= 'a';	print(f);
+#f:= chr(nil);	print(f);
+#f:= chr("X");	print(f);
+#
+function Admin.main():int;	#0:(main:int)
+	b := nil;	#1:(b:nil)<-($2:nil)
+	io.print(b);	#2:($3:int)<-(b:nil)
+	a := 23;	#3:(a:int)<-($5:int)
+	io.print(a);	#4:($6:int)<-(a:int)
+	a := calc.int(nil);	#5:(a:int)<-($2:nil)
+	io.print(a);	#6:($7:int)<-(a:int)
+	a := calc.int(13);	#7:(a:int)<-($8:int)
+	io.print(a);	#8:($9:int)<-(a:int)
+	a := calc.int("23");	#9:(a:int)<-($10:str)
+	io.print(a);	#10:($11:int)<-(a:int)
+	a := calc.int(43.0);	#11:(a:int)<-($12:flt)
+	io.print(a);	#12:($13:int)<-(a:int)
+	a := calc.int(63.0);	#13:(a:int)<-($14:dbl)
+	io.print(a);	#14:($15:int)<-(a:int)
+	c := true;	#15:(c:bit)<-($17:bit)
+	io.print(c);	#16:($18:int)<-(c:bit)
+	c := calc.bit(nil);	#17:(c:bit)<-($2:nil)
+	io.print(c);	#18:($19:int)<-(c:bit)
+	c := calc.bit(false);	#19:(c:bit)<-($20:bit)
+	io.print(c);	#20:($21:int)<-(c:bit)
+	c := calc.bit(1);	#21:(c:bit)<-($22:int)
+	io.print(c);	#22:($23:int)<-(c:bit)
+	c := calc.bit("true");	#23:(c:bit)<-($24:str)
+	io.print(c);	#24:($25:int)<-(c:bit)
+	c := calc.bit(1.0);	#25:(c:bit)<-($26:flt)
+	io.print(c);	#26:($27:int)<-(c:bit)
+	c := calc.bit(0.0);	#27:(c:bit)<-($28:dbl)
+	io.print(c);	#28:($29:int)<-(c:bit)
+	d := 3.14;	#29:(d:flt)<-($31:flt)
+	io.print(d);	#30:($32:int)<-(d:flt)
+	d := calc.flt(nil);	#31:(d:flt)<-($2:nil)
+	io.print(d);	#32:($33:int)<-(d:flt)
+	d := calc.flt(5);	#33:(d:flt)<-($34:int)
+	io.print(d);	#34:($35:int)<-(d:flt)
+	d := calc.flt("7.14");	#35:(d:flt)<-($36:str)
+	io.print(d);	#36:($37:int)<-(d:flt)
+	e := "hello";	#37:(e:str)<-($39:str)
+	io.print(e);	#38:($40:int)<-(e:str)
+	e := calc.str(nil);	#39:(e:str)<-($41:nil)
+	io.print(e);	#40:($42:int)<-(e:str)
+	e := str.str("nil");	#41:(e:str)<-($43:str)
+	io.print(e);	#42:($44:int)<-(e:str)
+	f := 'a';	#43:(f:chr)<-($46:chr)
+	io.print(f);	#44:($47:int)<-(f:chr)
+	f := calc.chr(nil);	#45:(f:chr)<-($41:nil)
+	io.print(f);	#46:($48:int)<-(f:chr)
+	f := calc.chr("X");	#47:(f:chr)<-($49:str)
+	io.print(f);	#48:($50:int)<-(f:chr)
+end function;	#49:
+[ nil ]
+[ 23 ]
+[ nil ]
+[ 13 ]
+[ 23 ]
+[ 43 ]
+[ 63 ]
+[ true ]
+[ nil ]
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ false ]
+[ 3.14 ]
+[ nil ]
+[ 5 ]
+[ 7.14 ]
+[ "hello" ]
+[ nil ]
+[ "nil" ]
+[ 'a' ]
+[ nil ]
+[ 'X' ]
+>

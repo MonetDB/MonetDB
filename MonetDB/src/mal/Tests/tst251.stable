@@ -51,7 +51,7 @@ function Admin.main():int;	#0:(main:int)
 	b := mal.new(int,int);	#1:(b:bat[int,int])<-(int:int)(int:int)
 	bat.insert(b,1,15);	#2:($3:bat[int,int])<-(b:bat[int,int])($4:int)($5:int)
 	bat.insert(b,2,4);	#3:($6:bat[int,int])<-(b:bat[int,int])($7:int)($8:int)
-	n0 := calc.int(nil);	#4:(n0:int)<-($10:void)
+	n0 := calc.int(nil);	#4:(n0:int)<-($10:nil)
 	bat.insert(b,3,n0);	#5:($11:bat[int,int])<-(b:bat[int,int])($12:int)(n0:int)
 	bat.insert(b,4,16);	#6:($13:bat[int,int])<-(b:bat[int,int])($8:int)($14:int)
 	bat.insert(b,5,25);	#7:($15:bat[int,int])<-(b:bat[int,int])($16:int)($17:int)
@@ -62,28 +62,28 @@ function Admin.main():int;	#0:(main:int)
 	bat.insert(b,n0,n0);	#12:($29:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
 	bat.insert(b,n0,81);	#13:($30:bat[int,int])<-(b:bat[int,int])(n0:int)($31:int)
 	io.print(b);	#14:($32:int)<-(b:bat[int,int])
-barrier	v := mal.bunStream(b,h,t);	#15:(v:lng)<-(b:bat[int,int])(h:int)(t:int)
+barrier	v := mal.bunStream(b,h,t);	#15:(v:lng)<-(b:bat[int,int])(h:int)(t:int) jump 20
 	system.printf("[ %d,",h);	#16:($36:int)<-($37:str)(h:int)
 	system.printf("%d]\n",t);	#17:($38:int)<-($39:str)(t:int)
-	redo v ;	#18:(v:lng)
+	redo v ;	#18:(v:lng) jump 15
 end	v;	#19:(v:lng)
 	c := mal.new(int,str);	#20:(c:bat[int,str])<-(int:int)(str:str)
 	bat.insert(c,1,"hello");	#21:($42:bat[int,str])<-(c:bat[int,str])($43:int)($44:str)
 	bat.insert(c,2,"brave");	#22:($45:bat[int,str])<-(c:bat[int,str])($46:int)($47:str)
 	bat.insert(c,3,"world");	#23:($48:bat[int,str])<-(c:bat[int,str])($49:int)($50:str)
 	bat.insert(c,4,"");	#24:($51:bat[int,str])<-(c:bat[int,str])($52:int)($53:str)
-	x := calc.str(nil);	#25:(x:str)<-($55:void)
+	x := calc.str(nil);	#25:(x:str)<-($55:nil)
 	bat.insert(c,5,x);	#26:($56:bat[int,str])<-(c:bat[int,str])($57:int)(x:str)
 	bat.insert(c,6,"!");	#27:($58:bat[int,str])<-(c:bat[int,str])($59:int)($60:str)
 	io.print(c);	#28:($61:int)<-(c:bat[int,str])
-barrier	v := mal.bunStream(c,h,ts);	#29:(v:lng)<-(c:bat[int,str])(h:int)(ts:str)
+barrier	v := mal.bunStream(c,h,ts);	#29:(v:lng)<-(c:bat[int,str])(h:int)(ts:str) jump 34
 	system.printf("[%d,",h);	#30:($63:int)<-($64:str)(h:int)
 	system.printf("%s]\n",ts);	#31:($65:int)<-($66:str)(ts:str)
-	redo v ;	#32:(v:lng)
+	redo v ;	#32:(v:lng) jump 29
 end	v;	#33:(v:lng)
 end function;	#34:
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_4	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -109,7 +109,7 @@ end function;	#34:
 [ nil,nil]
 [ nil,81]
 #-------------------------#
-# BAT:	  tmp_4		  #
+# BAT:	  tmp_5		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "hello"	  ]

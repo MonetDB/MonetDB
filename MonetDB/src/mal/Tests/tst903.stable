@@ -24,9 +24,9 @@
 function Admin.main():int;	#0:(main:int)
 	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
 	i := -1;	#2:(i:lng)<-($4:lng)
-barrier	v := mal.nextElement(i,0,1000000);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng)
+barrier	v := mal.nextElement(i,0,1000000);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
 	bat.insert(b,i,i);	#4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
-	redo v ;	#5:(v:bit)
+	redo v ;	#5:(v:bit) jump 3
 end	v;	#6:(v:bit)
 	c := algebra.copy(b);	#7:(c:bat[lng,lng])<-(b:bat[lng,lng])
 	t0 := system.usec();	#8:(t0:lng)

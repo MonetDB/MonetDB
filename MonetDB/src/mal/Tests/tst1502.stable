@@ -93,7 +93,7 @@ function Admin.main():int;	#0:(main:int)
 end function;	#43:
 [ "sort x" ]
 #-----------------#
-# BAT:	  tmp_9	  #
+# BAT:	  tmp_7	  #
 # (void)  (chr)	  #
 #-----------------#
 [ 1@0,	  'a'	  ]
@@ -106,7 +106,7 @@ end function;	#43:
 [ 8@0,	  'c'	  ]
 [ "sort xrev" ]
 #-----------------#
-# BAT:	  tmp_10  #
+# BAT:	  tmp_8	  #
 # (chr)	  (void)  #
 #-----------------#
 [ 'a',	  1@0	  ]

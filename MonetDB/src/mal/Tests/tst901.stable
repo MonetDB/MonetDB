@@ -33,9 +33,9 @@
 function Admin.main():int;	#0:(main:int)
 	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
 	i := -1;	#2:(i:lng)<-($4:lng)
-barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng)
+barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
 	bat.insert(b,i,i);	#4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
-	redo v ;	#5:(v:bit)
+	redo v ;	#5:(v:bit) jump 3
 end	v;	#6:(v:bit)
 	c := algebra.copy(b);	#7:(c:bat[lng,lng])<-(b:bat[lng,lng])
 	io.print(c);	#8:($10:int)<-(c:bat[lng,lng])
@@ -53,7 +53,7 @@ end	v;	#6:(v:bit)
 	io.print(z);	#20:($20:int)<-(z:bat[lng,bit])
 end function;	#21:
 #-----------------#
-# BAT:	  tmp_10  #
+# BAT:	  tmp_5	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -67,7 +67,7 @@ end function;	#21:
 [ 8,	  8	  ]
 [ 9,	  9	  ]
 #-----------------#
-# BAT:	  tmp_11  #
+# BAT:	  tmp_6	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -81,7 +81,7 @@ end function;	#21:
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# BAT:	  tmp_12  #
+# BAT:	  tmp_7	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  1	  ]
@@ -95,7 +95,7 @@ end function;	#21:
 [ 8,	  9	  ]
 [ 9,	  10	  ]
 #-----------------#
-# BAT:	  tmp_13  #
+# BAT:	  tmp_8	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -109,7 +109,7 @@ end function;	#21:
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# BAT:	  tmp_14  #
+# BAT:	  tmp_9	  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -123,7 +123,7 @@ end function;	#21:
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# BAT:	  tmp_15  #
+# BAT:	  tmp_10  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -137,7 +137,7 @@ end function;	#21:
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# BAT:	  tmp_16  #
+# BAT:	  tmp_11  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  false	  ]

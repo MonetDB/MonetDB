@@ -20,7 +20,7 @@
 function Admin.main():int;	#0:(main:int)
 	i := 0;	#1:(i:int)<-($2:int)
 	v := false;	#2:(v:bit)<-($4:bit)
-barrier	v := v;	#3:(v:bit)<-(v:bit)
+barrier	v := v;	#3:(v:bit)<-(v:bit) jump 7
 	i := 1;	#4:(i:int)<-($5:int)
 	j := 2;	#5:(j:int)<-($7:int)
 end	v;	#6:(v:bit)

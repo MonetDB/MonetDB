@@ -31,7 +31,7 @@ end function;	#4:
 function Admin.main():int;	#0:(main:int)
 	Admin.myException();	#1:($1:any)
 	io.print("should not come here");	#2:($2:int)<-($3:str)
-catch	IllegalAccess;	#3:(IllegalAccess:str)
+catch	IllegalAccess;	#3:(IllegalAccess:str) jump 6
 	system.printf("catched IllegalAccess\n");	#4:($5:int)<-($6:str)
 end	IllegalAccess;	#5:(IllegalAccess:str)
 	io.print("done");	#6:($7:int)<-($8:str)

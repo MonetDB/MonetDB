@@ -93,12 +93,12 @@ function Admin.main():int;	#0:(main:int)
 	tzone_bat := mal.new(oid,tzone);	#12:(tzone_bat:bat[oid,tzone])<-(oid:oid)(tzone:tzone)
 	bd_a := bat.insert(tzone_bat,08@0,tzone_08);	#13:(bd_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($27:oid)(tzone_08:tzone)
 	cd_a := bat.insert(tzone_bat,09@0,tzone_09);	#14:(cd_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($29:oid)(tzone_09:tzone)
-	id_a := bat.setColumn(tzone_bat,"tzone");	#15:(id_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($31:str)
+	id_a := bbp.setColumn(tzone_bat,"tzone");	#15:(id_a:bat[oid,tzone])<-(tzone_bat:bat[oid,tzone])($31:str)
 	jd_a := io.print(id_a);	#16:(jd_a:int)<-(id_a:bat[oid,tzone])
 end function;	#17:
 [ "start" ]
 #-------------------------#
-# BAT:	  tzone		  #
+# BAT:	  tmp_4		  #
 # (oid)	  (tzone)	  #
 #-------------------------#
 [ 8@0,	  GMT-23:36	  ]

@@ -1,0 +1,9 @@
+function test(b:bat[any::1,any::2],c:any::2):nil;
+        reduce := batcalc./(b,c); 
+end function;
+function test(b:bat[any::1,any::2],c:any::1):nil;
+        reduce := batcalc./(b,c); 
+end function;
+function test(b:bat[any::1,any::2]):nil;
+        reduce := batcalc./(b,1); 
+end function;

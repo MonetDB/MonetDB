@@ -16,9 +16,9 @@
 #
 function Admin.main():int;	#0:(main:int)
 	i := ' ';	#1:(i:chr)<-($2:chr)
-barrier	v1 := mal.nextElement(i,'A','C');	#2:(v1:bit)<-(i:chr)($4:chr)($5:chr)
+barrier	v1 := mal.nextElement(i,'A','C');	#2:(v1:bit)<-(i:chr)($4:chr)($5:chr) jump 6
 	v := "do something";	#3:(v:str)<-($7:str)
-	redo v1 ;	#4:(v1:bit)
+	redo v1 ;	#4:(v1:bit) jump 2
 end	v1;	#5:(v1:bit)
 end function;	#6:
 >

@@ -41,7 +41,7 @@ function Admin.main():int;	#0:(main:int)
 end function;	#17:
 [ "group x" ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_4	  #
 # (oid)	  (chr)	  #
 #-----------------#
 [ 1@0,	  'a'	  ]
@@ -54,7 +54,7 @@ end function;	#17:
 [ 8@0,	  'c'	  ]
 [ "b1 becomes" ]
 #-----------------#
-# BAT:	  tmp_7	  #
+# BAT:	  tmp_5	  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  1@0	  ]
@@ -67,7 +67,7 @@ end function;	#17:
 [ 8@0,	  7@0	  ]
 [ "hb1 becomes" ]
 #-----------------#
-# BAT:	  tmp_8	  #
+# BAT:	  tmp_6	  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 1@0,	  2	  ]

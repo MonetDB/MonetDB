@@ -18,11 +18,11 @@
 #	return bb;
 #end function; 
 function Admin.steal(bb:bat[any::1,any::2]):bat[any::1,any::2];	#0 polymorphic:(steal:bat[any::1,any::2])<-(bb:bat[any::1,any::2])
-	i := bat.getBATrefcnt(bb);	#1:(i:int)<-(bb:bat[any::1,any::2])
-	system.printf("enter function refcount =%d\n",i);	#2:($3:int)<-($4:str)(i:int)
-	loc := bb;	#3 polymorphic:(loc:any)<-(bb:bat[any::1,any::2])
-	i := bat.getBATrefcnt(bb);	#4:(i:int)<-(bb:bat[any::1,any::2])
-	system.printf("local in function refcount =%d\n",i);	#5:($6:int)<-($7:str)(i:int)
+	i := getBATrefcnt(bb);	#1 unknown:(i:any)<-(bb:bat[any::1,any::2])
+	printf("enter function refcount =%d\n",i);	#2 unknown:($3:any)<-($4:str)(i:any)
+	loc := bb;	#3 unknown:(loc:any)<-(bb:bat[any::1,any::2])
+	i := getBATrefcnt(bb);	#4 unknown:(i:any)<-(bb:bat[any::1,any::2])
+	printf("local in function refcount =%d\n",i);	#5 unknown:($6:any)<-($7:str)(i:any)
 	return bb;	#6:(bb:bat[any::1,any::2])
 end function;	#7:
 #
@@ -97,7 +97,7 @@ function Admin.main():int;	#0:(main:int)
 end function;	#28:
 refcount =1
 #-------------------------#
-# BAT:	  tmp_3		  #
+# BAT:	  tmp_4		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]
@@ -106,7 +106,7 @@ after assignment refcount =3
 after 2nd assignment refcount =4
 after 3rd assignment refcount =3
 #-------------------------#
-# BAT:	  tmp_5		  #
+# BAT:	  tmp_6		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]

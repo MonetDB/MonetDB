@@ -36,6 +36,7 @@
 #print(b);
 #print(b,b,b);
 #
+!WARNING: newConstant:int coerced to lng
 function Admin.main():int;	#0:(main:int)
 	o := calc.oid(20000000);	#1:(o:oid)<-($2:int)
 	calc.setoid(o);	#2:($3:oid)<-(o:oid)
@@ -44,7 +45,7 @@ function Admin.main():int;	#0:(main:int)
 	system.printf("#~EndVariableOutput~#\n");	#5:($8:int)<-($9:str)
 	err := bat.insert(b,1,15);	#6:(err:bat[int,int])<-(b:bat[int,int])($11:int)($12:int)
 	err := bat.insert(b,2,4);	#7:(err:bat[int,int])<-(b:bat[int,int])($13:int)($14:int)
-	n0 := calc.int(nil);	#8:(n0:int)<-($16:void)
+	n0 := calc.int(nil);	#8:(n0:int)<-($16:nil)
 	err := bat.insert(b,3,n0);	#9:(err:bat[int,int])<-(b:bat[int,int])($17:int)(n0:int)
 	err := bat.insert(b,4,16);	#10:(err:bat[int,int])<-(b:bat[int,int])($14:int)($18:int)
 	err := bat.insert(b,5,25);	#11:(err:bat[int,int])<-(b:bat[int,int])($19:int)($20:int)
@@ -60,7 +61,7 @@ end function;	#20:
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_4	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -75,7 +76,7 @@ end function;	#20:
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #---------------------------------#
-# BAT:	  tmp_3	| tmp_3	| tmp_3	  #
+# BAT:	  tmp_4	| tmp_4	| tmp_4	  #
 # (int)	  (int)	| (int)	| (int)	  #
 #---------------------------------#
 [ 1,	  15,	  15,	  15	  ]

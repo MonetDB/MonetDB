@@ -42,13 +42,13 @@ function Admin.main():int;	#0:(main:int)
 	bbp.close();	#14:($18:nil)
 end function;	#15:
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
 [ false ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]

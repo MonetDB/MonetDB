@@ -15,7 +15,7 @@
 #end function; 
 function Admin.pr(format:str,arg:any...):void;	#0:(pr:void)<-(format:str)(arg:any)
 	i := -1;	#1:(i:int)<-($4:int)
-barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any)<-(i:int)(arg:any)
+barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any)<-(i:int)(arg:any) jump 4
 end	b;	#3:(b:any)
 end function;	#4:
 #
@@ -36,7 +36,7 @@ end function;	#4:
 function Admin.prStr(format:str,arg:str...):void;	#0:(prStr:void)<-(format:str)(arg:str)
 	i := -1;	#1:(i:int)<-($4:int)
 	limit := Array.getLength(arg);	#2 unknown:(limit:any)<-(arg:str)
-barrier	b := nextElement(i,0,limit);	#3 unknown:(b:any)<-(i:int)($7:int)(limit:any)
+barrier	b := nextElement(i,0,limit);	#3 unknown:(b:any)<-(i:int)($7:int)(limit:any) jump 9
 	elm := Array.get(arg,i);	#4 unknown:(elm:any)<-(arg:str)(i:int)
 	system.printf("argument ");	#5:($9:int)<-($10:str)
 	printf(i);	#6 unknown:($11:any)<-(i:int)
@@ -48,6 +48,7 @@ end function;	#9:
 #prStr("hello",1,true);
 #prStr("hello","quick","brown","fox");
 #
+!ERROR: 'iterator.argument' undefined in Admin.pr[2]
 !ERROR: 'prStr' undefined in Admin.main[2]
 function Admin.main():int;	#0:(main:int)
 	Admin.pr("hello",1,true);	#1:($1:void)<-($2:str)($3:int)($4:bit)

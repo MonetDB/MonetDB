@@ -74,7 +74,7 @@ function Admin.main():int;	#0:(main:int)
 	io.print(b);	#30:($48:int)<-(b:bit)
 end function;	#31:
 #-------------------------#
-# BAT:	  tmp_7		  #
+# BAT:	  tmp_4		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "apples"	  ]
@@ -96,7 +96,7 @@ end function;	#31:
 [ true ]
 [ "start bulk encoding test" ]
 #-------------------------#
-# BAT:	  tmp_9		  #
+# BAT:	  tmp_6		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "apples"	  ]
@@ -108,7 +108,7 @@ end function;	#31:
 [ 7,	  "apples"	  ]
 [ "encode the bat" ]
 #-------------------------#
-# BAT:	  tmp_10	  #
+# BAT:	  tmp_7		  #
 # (int)	  (fruit)	  #
 #-------------------------#
 [ 0,	  apples	  ]
@@ -120,7 +120,7 @@ end function;	#31:
 [ 7,	  apples	  ]
 [ "decode the bat" ]
 #-------------------------#
-# BAT:	  tmp_11	  #
+# BAT:	  tmp_8		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "apples"	  ]
