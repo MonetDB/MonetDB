@@ -458,13 +458,13 @@ yes-*-linux*-x86_64*-*)
 	;;
 esac
 
-AC_ARG_ENABLE(int_oid,
-	AC_HELP_STRING([--enable-int-oid],
-		[use int as base type for oid instead of size_t]),
-	enable_int_oid=$enableval,
-	enable_int_oid=no)
-case $enable_int_oid in
-yes)	AC_DEFINE(INT_OID, 1, [Define if int should be use as base type for oid]);;
+AC_ARG_ENABLE(oid32,
+	AC_HELP_STRING([--enable-oid32],
+		[use 32 bits vor OIDs on a 64-bit architecture]),
+	enable_oid32=$enableval,
+	enable_oid32=no)
+case $enable_oid32 in
+yes)	AC_DEFINE(MONET_OID32, 1, [Define if the oid type should use 32 bits on a 64-bit architecture]);;
 esac
 
 dnl some dirty hacks
