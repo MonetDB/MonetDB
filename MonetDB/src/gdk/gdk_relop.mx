@@ -1167,6 +1167,16 @@ BAT *BATthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
 	return batthetajoin(l, r, op, estimate, TRUE);
 }
 
+BAT *BATleftthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
+	@:joincheck(BATleftthetajoin, l->ttype, r->htype)@
+	if (op == JOIN_EQ) {
+		/* exploit all equi-join optimizations */
+		ALGODEBUG THRprintf(GDKout, "BATleftthetajoin(l,r,JOIN_EQ): BATleftjoin(l, r);\n");
+		return BATleftjoin(l, r, estimate);
+	}
+	return batthetajoin(l, r, op, estimate, FALSE);
+}
+
 BAT *BATindexjoin(BAT *l, BAT *r, size_t estimate) {
         /* allows swapping of left and right input for faster processing */
 	return batthetajoin(l, r, JOIN_EQ, estimate, TRUE);
