@@ -184,11 +184,7 @@ BAT *BATnewstorage(int ht, int tt, size_t cap) {
 
 	/* alloc the main heaps */
 	hole_padding = MAX((int)sizeof(int),bn->dims.bunwidth)/bn->dims.bunwidth;
-
-	if( HEAPalloc(bn->batBuns, cap+hole_padding, bn->dims.bunwidth)){
-		BATsetaccess(bn,BAT_READ);
-		return bn;
-	}
+	HEAPalloc(bn->batBuns, cap+hole_padding, bn->dims.bunwidth);
 	ATOMheap(ht,&bn->hheap, cap);
 	ATOMheap(tt,&bn->theap, cap);
 
