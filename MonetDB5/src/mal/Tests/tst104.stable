@@ -11,11 +11,11 @@
 !ERROR: address of 'dummy' not found
 command Admin.f(a:any::1,b:bat[any::2,any::1],c:any::2):any = dummy; #0  dynamic (f:any)<-(a:any::1)(b:bat[any::2,any::1])(c:any::2)
 #
-#b:= bat(str,int);
+#b:= new(str,int);
 #a:= f(1,b,"hello");
 #
 function Admin.main():int; #0  (main:int)
-    b := bbp.bat(str,int); #1 CMDBATnew (b:bat[str,int])<-(str:str)(int:int)
+    b := bbp.new(str,int); #1 CMDBATnew (b:bat[str,int])<-(str:str)(int:int)
     a := Admin.f(1,b,"hello"); #2 dummy (a:any)<-($5:int)(b:bat[str,int])($6:str)
 end main; #3  
 !ERROR: MALexception:Admin.main[2]:address of function missing

@@ -7,7 +7,7 @@
 #bint:= new(void,int);
 #setSequenceBase(bint,0@0);
 #i:= -1;
-#barrier m:=nextElement(i,1,10);
+#barrier m:=nextElement(i,1,10,1);
 #	insert(bint,nil,i);
 #	redo m;
 #exit	m;
@@ -36,7 +36,7 @@ function Admin.main():int; #0  (main:int)
     bint := bbp.new(void,int); #1 CMDBATnew (bint:bat[void,int])<-(void:void)(int:int)
     bat.setSequenceBase(bint,0@0); #2 CMDsetSequenceBase ($4:int)<-(bint:bat[void,int])($5:oid)
     i := -1; #3  (i:int)<-($7:int)
-barrier m := mal.nextElement(i,1,10); #4 intForloop (m:bit)<-(i:int)($9:int)($10:int) jump 7
+barrier m := mal.nextElement(i,1,10,1); #4 intForloopStep (m:bit)<-(i:int)($9:int)($10:int)($9:int) jump 7
     bat.insert(bint,nil,i); #5 CMDinsert_bun ($11:bat[void,int])<-(bint:bat[void,int])($12:void)(i:int)
     redo m; #6  (m:bit) jump 4
 exit m; #7  (m:bit)

@@ -20,12 +20,12 @@
 #
 ## get them as strings
 #v:= "";
-#v:= typename(st); printf("string %s\n",v);
-#v:= typename(it); printf("int %s\n",v);
-#v:= typename(ft); printf("flt %s\n",v);
-#v:= typename(ct); printf("chr %s\n",v);
-#v:= typename(bt); printf("bit %s\n",v);
-#v:= typename(bbt); printf("bat %s\n",v);
+#v:= getTypeName(st); printf("string %s\n",v);
+#v:= getTypeName(it); printf("int %s\n",v);
+#v:= getTypeName(ft); printf("flt %s\n",v);
+#v:= getTypeName(ct); printf("chr %s\n",v);
+#v:= getTypeName(bt); printf("bit %s\n",v);
+#v:= getTypeName(bbt); printf("bat %s\n",v);
 #
 #
 function Admin.main():int; #0  (main:int)
@@ -48,17 +48,17 @@ function Admin.main():int; #0  (main:int)
     bbt := inspect.getType(bb); #17 INSPECTtype (bbt:int)<-(bb:bat[void,str])
     system.printf("bat %d\n",bbt); #18 SYSprint_formatted_int ($30:int)<-($31:str)(bbt:int)
     v := ""; #19  (v:str)<-($33:str)
-    v := mal.typename(st); #20 CMDtypename (v:str)<-(st:int)
+    v := inspect.getTypeName(st); #20 INSPECTtypename (v:str)<-(st:int)
     system.printf("string %s\n",v); #21 SYSprint_formatted_str ($34:int)<-($35:str)(v:str)
-    v := mal.typename(it); #22 CMDtypename (v:str)<-(it:int)
+    v := inspect.getTypeName(it); #22 INSPECTtypename (v:str)<-(it:int)
     system.printf("int %s\n",v); #23 SYSprint_formatted_str ($36:int)<-($37:str)(v:str)
-    v := mal.typename(ft); #24 CMDtypename (v:str)<-(ft:int)
+    v := inspect.getTypeName(ft); #24 INSPECTtypename (v:str)<-(ft:int)
     system.printf("flt %s\n",v); #25 SYSprint_formatted_str ($38:int)<-($39:str)(v:str)
-    v := mal.typename(ct); #26 CMDtypename (v:str)<-(ct:int)
+    v := inspect.getTypeName(ct); #26 INSPECTtypename (v:str)<-(ct:int)
     system.printf("chr %s\n",v); #27 SYSprint_formatted_str ($40:int)<-($41:str)(v:str)
-    v := mal.typename(bt); #28 CMDtypename (v:str)<-(bt:int)
+    v := inspect.getTypeName(bt); #28 INSPECTtypename (v:str)<-(bt:int)
     system.printf("bit %s\n",v); #29 SYSprint_formatted_str ($42:int)<-($43:str)(v:str)
-    v := mal.typename(bbt); #30 CMDtypename (v:str)<-(bbt:int)
+    v := inspect.getTypeName(bbt); #30 INSPECTtypename (v:str)<-(bbt:int)
     system.printf("bat %s\n",v); #31 SYSprint_formatted_str ($44:int)<-($45:str)(v:str)
 end main; #32  
 string 11

@@ -60,6 +60,7 @@ exit MALexception; #20  (MALexception:str)
     bbp.close(); #24 CMDbbpclose ($28:void)
 end main; #25  
 [ "Start test" ]
+bbp.take not yet fully implemented
 #-----------------#
 # BAT:	  tmp_4	  #
 # (int)	  (int)	  #
@@ -72,6 +73,7 @@ end main; #25
 # (int)	  (str)		  #
 #-------------------------#
 [ 4,	  "myfirstbat"	  ]
+bbp.take not yet fully implemented
 #-----------------#
 # BAT:	  tmp_4	  #
 # (int)	  (int)	  #

@@ -57,6 +57,7 @@ end main; #7
 # (int)	  (str)		  #
 #-------------------------#
 [ "test" ]
+bbp.take not yet fully implemented
 #-----------------#
 # BAT:	  tmp_5	  #
 # (int)	  (int)	  #

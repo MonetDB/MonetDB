@@ -1,7 +1,7 @@
 bint:= new(void,int);
 setSequenceBase(bint,0@0);
 i:= -1;
-barrier m:=nextElement(i,1,10);
+barrier m:=nextElement(i,1,10,1);
 	insert(bint,nil,i);
 	redo m;
 exit	m;

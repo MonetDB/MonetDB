@@ -11,7 +11,7 @@ function tst(A2:bat[void,int],A3:bat[void,int]):bat[void,int];
 	printf("count %d\n",lim);
 	m:= -1:lng;
 	l:= lng(lim);
-barrier mloop:=mal.nextElement(m,0:lng,l); 
+barrier mloop:=mal.nextElement(m,0:lng,l,1:lng); 
 	printf("loopindex %d\n",m);
         B2 := algebra.fetch(A2,m);       
 	printf("B2 value %d\n",B2);

@@ -22,7 +22,7 @@ end pow; #4
 #	printf("count %d\n",lim);
 #	m:= -1:lng;
 #	l:= lng(lim);
-#barrier mloop:=mal.nextElement(m,0:lng,l); 
+#barrier mloop:=mal.nextElement(m,0:lng,l,1:lng); 
 #	printf("loopindex %d\n",m);
 #        B2 := algebra.fetch(A2,m);       
 #	printf("B2 value %d\n",B2);
@@ -44,14 +44,14 @@ function Admin.tst(A2:bat[void,int],A3:bat[void,int]):bat[void,int]; #0  (tst:ba
     system.printf("count %d\n",lim); #5 SYSprint_formatted_int ($10:int)<-($11:str)(lim:int)
     m := -1; #6  (m:lng)<-($13:lng)
     l := calc.lng(lim); #7 CALCint_2_lng (l:lng)<-(lim:int)
-barrier mloop := mal.nextElement(m,0,l); #8 lngForloop (mloop:bit)<-(m:lng)($16:lng)(l:lng) jump 19
-    system.printf("loopindex %d\n",m); #9 SYSprint_formatted_lng ($17:int)<-($18:str)(m:lng)
+barrier mloop := mal.nextElement(m,0,l,1); #8 lngForloopStep (mloop:bit)<-(m:lng)($16:lng)(l:lng)($17:lng) jump 19
+    system.printf("loopindex %d\n",m); #9 SYSprint_formatted_lng ($18:int)<-($19:str)(m:lng)
     B2 := algebra.fetch(A2,m); #10 CMDfetch (B2:int)<-(A2:bat[void,int])(m:lng)
-    system.printf("B2 value %d\n",B2); #11 SYSprint_formatted_int ($20:int)<-($21:str)(B2:int)
+    system.printf("B2 value %d\n",B2); #11 SYSprint_formatted_int ($21:int)<-($22:str)(B2:int)
     B3 := algebra.fetch(A3,m); #12 CMDfetch (B3:int)<-(A3:bat[void,int])(m:lng)
-    system.printf("B3 value %d\n",B3); #13 SYSprint_formatted_int ($23:int)<-($24:str)(B3:int)
+    system.printf("B3 value %d\n",B3); #13 SYSprint_formatted_int ($24:int)<-($25:str)(B3:int)
     cr := Admin.pow(B2,B3); #14  (cr:int)<-(B2:int)(B3:int)
-    bat.insert(resB,nil,cr); #15 CMDinsert_bun ($26:bat[void,int])<-(resB:bat[void,int])($27:void)(cr:int)
+    bat.insert(resB,nil,cr); #15 CMDinsert_bun ($27:bat[void,int])<-(resB:bat[void,int])($28:void)(cr:int)
     redo mloop; #16  (mloop:bit) jump 8
 catch MALexception; #17  (MALexception:str) jump 18
 exit MALexception; #18  (MALexception:str)

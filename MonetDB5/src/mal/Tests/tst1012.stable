@@ -49,12 +49,13 @@ function Admin.main():int; #0  (main:int)
     z := bat.isTransient(b); #15 CMDisTransient (z:bit)<-(b:bat[int,int])
     io.print(x); #16 CMDprint_val ($19:int)<-(x:bit)
     io.print(z); #17 CMDprint_val ($20:int)<-(z:bit)
-    io.print(""); #18 CMDprint_val ($21:int)<-($22:str)
-    bbp.close(); #19 CMDbbpclose ($23:void)
-    bbp.open(); #20 CMDbbpopen ($24:void)
-    io.print(v); #21 CMDprint_val ($25:int)<-(v:any)
-    bbp.close(); #22 CMDbbpclose ($27:void)
+    io.print(""); #18 CMDprint_val ($21:int)<-($17:str)
+    bbp.close(); #19 CMDbbpclose ($22:void)
+    bbp.open(); #20 CMDbbpopen ($23:void)
+    io.print(v); #21 CMDprint_val ($24:int)<-(v:any)
+    bbp.close(); #22 CMDbbpclose ($26:void)
 end main; #23  
+bbp.take not yet fully implemented
 #-----------------#
 # BAT:	  tmp_4	  #
 # (int)	  (int)	  #

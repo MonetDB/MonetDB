@@ -14,10 +14,10 @@ bbt:= getType(bb); printf("bat %d\n",bbt);
 
 # get them as strings
 v:= "";
-v:= typename(st); printf("string %s\n",v);
-v:= typename(it); printf("int %s\n",v);
-v:= typename(ft); printf("flt %s\n",v);
-v:= typename(ct); printf("chr %s\n",v);
-v:= typename(bt); printf("bit %s\n",v);
-v:= typename(bbt); printf("bat %s\n",v);
+v:= getTypeName(st); printf("string %s\n",v);
+v:= getTypeName(it); printf("int %s\n",v);
+v:= getTypeName(ft); printf("flt %s\n",v);
+v:= getTypeName(ct); printf("chr %s\n",v);
+v:= getTypeName(bt); printf("bit %s\n",v);
+v:= getTypeName(bbt); printf("bat %s\n",v);
 
