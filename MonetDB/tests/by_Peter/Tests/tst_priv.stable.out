@@ -17,95 +17,67 @@ var d := new(void,int,1000);
 var i := 0;
 while(i < 1000) d.insert(nil,i :+= 1);
 d := [str](d).seqbase(0@0);
-a.seqbase(0@0).insert(d);
+bat("a").seqbase(0@0).insert(d);
 
 i := 0;
 while(i < 100) {
-    a.insert(d.seqbase(oid(a.count())));
+    bat("a").insert(d.seqbase(oid(bat("a").count())));
     i :+= 1;
 }
 
-a.mmap(1,1,1,1,1);
+bat("a").mmap(1,1,1,1,1);
 unload("a");
-a.info.reverse().select("theap.storage").reverse().print();
+bat("a").info.reverse().select("theap.storage").reverse().print();
 #-------------------------------------------------#
 # t			tmp_31			  # name
 # str			str			  # type
 #-------------------------------------------------#
 [ "theap.storage",	  "memory mapped"	  ]
 
-[int](a.mirror());
-var e := [str]([int](a.mirror()));
+[int](bat("a").mirror());
+var e := [str]([int](bat("a").mirror()));
 debugmask(49);
-a.insert(e);
-#01 pers(0) 26 (a) refs(1,1)
-#01 fix 26 (a)
-#01 unfix 26 (a)
-#01 fix 33 (tmp_33)
-#01 unfix 33 (tmp_33)
-#01 interpret_pin(insert) on bat(26) refcnt = 1
-#01 fix 26 (a)
-#01 interpret_pin(insert) => 26[1,0]
-#01 interpret_pin(insert) on bat(33) refcnt = 1
-#01 fix 33 (tmp_33)
-#01 interpret_pin(insert) => 33[1,0]
-#01 munmap(base=1146798080, size=4000012) = 0
-#01 move bat/26.buns.priv bat/26.buns = 0 (0ms)
-#01 fix 26 (a)
-# batstamp(26) = -139
-#01 pers(0) 26 (a) refs(2,1)
-#01 unfix 26 (a)
-#01 interpret_unpin(insert) on bat(26) refcnt = 0
-#01 unfix 26 (a)
-#01 interpret_unpin(insert) on bat(33) refcnt = 0
-#01 interpret_unpin(insert) => kill 33[0,1]
-#01 unfix 33 (tmp_33)
-#01 trans(0) 26 (a) refs(3,1)
-#01 trans(0) 26 (a) refs(2,1)
+bat("a").insert(e);
+#01 interpret_pin(insert) on bat(29) refcnt = 1
+#01 interpret_pin(insert) => 29[1,0]
+#01 interpret_pin(insert) on bat(32) refcnt = 1
+#01 interpret_pin(insert) => 32[1,0]
+#01 munmap(base=0xf1e59000, size=4063232) = 0
+#01 munmap(base=0xf1e07000, size=327680) = 0
+# batstamp(29) = -167
+#01 interpret_unpin(insert) on bat(29) refcnt = 0
+#01 interpret_unpin(insert) on bat(32) refcnt = 0
+#01 interpret_unpin(insert) => kill 32[0,1]
 debugmask(9);
 
-#a.mmap(1,1,1,1,1);
-a.info.reverse().select("theap.storage").reverse().print();
+#bat("a").mmap(1,1,1,1,1);
+bat("a").info.reverse().select("theap.storage").reverse().print();
 #-----------------------------------------#
 # BAT:			  tmp_23	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
 [ "theap.storage",	  "malloced"	  ]
-e := [str]([int](a.mirror()));
+e := [str]([int](bat("a").mirror()));
 debugmask(49);
-a.insert(e);
-#01 pers(0) 26 (a) refs(1,1)
-#01 fix 26 (a)
-#01 unfix 26 (a)
-#01 fix 34 (tmp_34)
-#01 unfix 34 (tmp_34)
-#01 interpret_pin(insert) on bat(26) refcnt = 1
-#01 fix 26 (a)
-#01 interpret_pin(insert) on bat(34) refcnt = 1
-#01 fix 34 (tmp_34)
-#01 fix 26 (a)
-# batstamp(26) = -139
-#01 pers(0) 26 (a) refs(2,1)
-#01 unfix 26 (a)
-#01 interpret_unpin(insert) on bat(26) refcnt = 0
-#01 unfix 26 (a)
-#01 interpret_unpin(insert) on bat(34) refcnt = 0
-#01 unfix 34 (tmp_34)
-#01 trans(0) 26 (a) refs(3,1)
-#01 trans(0) 26 (a) refs(2,1)
+bat("a").insert(e);
+#01 interpret_pin(insert) on bat(29) refcnt = 1
+#01 interpret_pin(insert) on bat(33) refcnt = 1
+# batstamp(29) = -167
+#01 interpret_unpin(insert) on bat(29) refcnt = 0
+#01 interpret_unpin(insert) on bat(33) refcnt = 0
 debugmask(9);
 
-a.info.reverse().select("theap.storage").reverse().print();
+bat("a").info.reverse().select("theap.storage").reverse().print();
 #-----------------------------------------#
 # BAT:			  tmp_30	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
 [ "theap.storage",	  "malloced"	  ]
-a.insert(nil,"make dirty..");
+bat("a").insert(nil,"make dirty..");
 commit();
 #01 #BBPdir: writing BBP.dir (34 bats).
 
-a.destroy();
+bat("a").destroy();
 commit();
 
 quit();
