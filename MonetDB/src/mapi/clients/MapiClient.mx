@@ -424,17 +424,18 @@ using its help operator '?'.
 
 void usage( char *prog )
 {
-	fprintf(stderr, "MapiClient\n");
-	fprintf(stderr, "\toptions:\n");
-	fprintf(stderr, "\t\t -d          | --debug=[level]\n");
-	fprintf(stderr, "\t\t -h hostname | --host=hostname/* host to connect to */\n");
-	fprintf(stderr, "\t\t -p portnr   | --port=portnr/* port to connect to */\n");
-	fprintf(stderr, "\t\t -l language   | --language=lang/* {mal,sql,mil} */\n");
-	fprintf(stderr, "\t\t -u user     | --user=user/* user id */\n" );
-	fprintf(stderr, "\t\t -P passwd   | --passwd=passwd/* password */\n");
-	fprintf(stderr, "\t\t -e 	| --error/* exit on error */\n");
-	fprintf(stderr, "\t\t -s stmt     | --statement=stmt/* run single statement */\n");
-	fprintf(stderr, "\t\t -t     | --trace/* trace Monet interaction */\n");
+	fprintf(stderr, "Usage: MapiClient [ options ]\n");
+	fprintf(stderr, "Options are:\n");
+	fprintf(stderr, " -d          | --debug=[level]  /* set debug level */\n");
+	fprintf(stderr, " -h hostname | --host=hostname  /* host to connect to */\n");
+	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
+	fprintf(stderr, " -l language | --language=lang  /* {mal,sql,mil} */\n");
+	fprintf(stderr, " -u user     | --user=user      /* user id */\n" );
+	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
+	fprintf(stderr, " -e          | --error          /* exit on error */\n");
+	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
+	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
+	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
 	exit(-1);
 }
 
@@ -465,7 +466,8 @@ int main(int ac, char **av)
 		{"language", 1, 0, 'l'},
 		{"error", 1, 0, 'e'},
 		{"statement", 1, 0, 's'},
-		{"trace",0, 0, 0},
+		{"trace", 0, 0, 0},
+		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
 
@@ -475,7 +477,7 @@ int main(int ac, char **av)
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:",
+		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:?",
 				long_options, &option_index);
 
 		if (c == -1)
