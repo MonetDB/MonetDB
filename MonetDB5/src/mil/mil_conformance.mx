@@ -56,6 +56,7 @@ struct{
 {"capacity",		"bat.getCapacity",0},
 {"memory",		"status.memStatistics",0},
 {"batsize",		"bat.bbpBatSize",0},
+{"mark",		"markTail",0},
 {"bbpname",		"getName",0},
 {"htype",		"getHeadType",0},
 {"ttype",		"getTailType",0},
