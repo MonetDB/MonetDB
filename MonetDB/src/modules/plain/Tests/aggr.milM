@@ -1,3 +1,0 @@
-module("aggr");
-test_aggr();
-quit;

@@ -102,7 +102,4 @@ ODBCError *getEnvError(ODBCEnv *env);
  */
 void destroyODBCEnv(ODBCEnv *env);
 
-SQLRETURN SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *pnOutputHandle);
-SQLRETURN ODBCFreeEnv_(ODBCEnv *env);
-
 #endif

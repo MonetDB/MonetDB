@@ -19,7 +19,6 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
-#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -77,23 +76,32 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 			* (int *) pnValue = rec->sql_desc_auto_unique_value;
 		break;
 	case SQL_DESC_BASE_COLUMN_NAME:
-		copyString(rec->sql_desc_base_column_name,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_base_column_name,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_base_column_name);
 		break;
 	case SQL_DESC_BASE_TABLE_NAME:
-		copyString(rec->sql_desc_base_table_name,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_base_table_name,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_base_table_name);
 		break;
 	case SQL_DESC_CASE_SENSITIVE:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_case_sensitive;
 		break;
 	case SQL_DESC_CATALOG_NAME:
-		copyString(rec->sql_desc_catalog_name,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_catalog_name,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_catalog_name);
 		break;
 	case SQL_DESC_CONCISE_TYPE:
 		if (pnValue)
@@ -113,9 +121,12 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		break;
 	case SQL_COLUMN_NAME:
 	case SQL_DESC_LABEL:
-		copyString(rec->sql_desc_label,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_label,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_label);
 		break;
 	case SQL_DESC_LENGTH:
 	case SQL_COLUMN_LENGTH:
@@ -123,24 +134,36 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 			* (int *) pnValue = rec->sql_desc_length + 20;
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
-		copyString(rec->sql_desc_literal_prefix,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_literal_prefix,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_literal_prefix);
 		break;
 	case SQL_DESC_LITERAL_SUFFIX:
-		copyString(rec->sql_desc_literal_suffix,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_literal_suffix,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_literal_suffix);
 		break;
 	case SQL_DESC_LOCAL_TYPE_NAME:
-		copyString(rec->sql_desc_local_type_name,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_local_type_name,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_local_type_name);
 		break;
 	case SQL_DESC_NAME:
-		copyString(rec->sql_desc_name,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_name,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_name);
 		break;
 	case SQL_DESC_NULLABLE:
 		if (pnValue)
@@ -163,27 +186,36 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 			* (int *) pnValue = rec->sql_desc_scale;
 		break;
 	case SQL_DESC_SCHEMA_NAME:
-		copyString(rec->sql_desc_schema_name,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_schema_name,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_schema_name);
 		break;
 	case SQL_DESC_SEARCHABLE:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_searchable;
 		break;
 	case SQL_DESC_TABLE_NAME:
-		copyString(rec->sql_desc_table_name,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_table_name,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_table_name);
 		break;
 	case SQL_DESC_TYPE:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_type;
 		break;
 	case SQL_DESC_TYPE_NAME:
-		copyString(rec->sql_desc_type_name,
-			   pszValue, nValueLengthMax, pnValueLength,
-			   addStmtError, stmt);
+		if (pszValue)
+			strncpy(pszValue,
+				(char *) rec->sql_desc_type_name,
+				nValueLengthMax);
+		if (pnValueLength)
+			*pnValueLength = strlen((char *) rec->sql_desc_type_name);
 		break;
 	case SQL_DESC_UNNAMED:
 		if (pnValue)
@@ -203,7 +235,7 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		return SQL_ERROR;
 	}
 
-	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+	return SQL_SUCCESS;
 }
 
 SQLRETURN

@@ -25,12 +25,13 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLINTEGER nOffset,
 		 SQLUINTEGER *pnRowCount, SQLUSMALLINT *pRowStatusArray)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	SQLUSMALLINT *array_status_ptr;
-	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLExtendedFetch\n");
 #endif
+
+	(void) pnRowCount;	/* Stefan: unused!? */
+	(void) pRowStatusArray;	/* Stefan: unused!? */
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
@@ -41,17 +42,9 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLINTEGER nOffset,
 	if (stmt->State != EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
-	array_status_ptr = stmt->ApplRowDescr->sql_desc_array_status_ptr;
-	stmt->ApplRowDescr->sql_desc_array_status_ptr = pRowStatusArray;
-
-	rc = SQLFetchScroll_(stmt, nOrientation, nOffset);
-
-	stmt->ApplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
-	if (pnRowCount && (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO))
-		*pnRowCount = stmt->rowSetSize;
-
-	return rc;
+	return SQLFetchScroll_(stmt, nOrientation, nOffset);
 }

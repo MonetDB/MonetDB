@@ -3,18 +3,18 @@
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-@'
+@' 
 @' Software distributed under the License is distributed on an "AS
 @' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 @' implied. See the License for the specific language governing
 @' rights and limitations under the License.
-@'
+@' 
 @' The Original Code is the Monet Database System.
-@'
+@' 
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
+@' 
 @' Contributor(s):
 @' 		Martin Kersten <Martin.Kersten@cwi.nl>
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
@@ -23,9 +23,9 @@
 
 @f sql_types
 @a N.J. Nes
-@*
+@* 
 The typing scheme of SQL is quite elaborate. The standard introduces
-several basic typs with a plethora of functions.
+several basic typs with a plethora of functions. 
 As long as we haven;t implemented a scheme to accept the
 function type signature and relate it to a C-function linked
 with the system, we have to patch the code below.
@@ -59,7 +59,7 @@ typedef struct sql_base {
 	int rtime;
 	int flag;
 	sqlid id;
-	char *name;
+	char *name; 	
 } sql_base;
 
 sql_export void base_init( sql_base *b, sqlid id, int flag, char *name );
@@ -72,7 +72,7 @@ typedef struct sql_type {
 	char *sqlname;
 	unsigned int digits;
 	unsigned int scale; /* indicates how scale is used in functions */
-	unsigned int radix;
+	unsigned int radix; 
 	int localtype; 	/* localtype, need for coersions */
 } sql_type;
 
@@ -106,7 +106,7 @@ typedef struct sql_subaggr {
 	sql_subtype *res;
 } sql_subaggr;
 
-/* sql_func need type transform rules
+/* sql_func need type transform rules 
  * types are equal if underlying types are equal +
 	scale is equal
  * if types do not mach we try type conversions
@@ -128,18 +128,18 @@ typedef struct sql_func {
 	list *ops; /* param list */
 	sql_subtype *res;
 		   /* res->scale
-		      SCALE_NOFIX/SCALE_NONE => nothing
-		      SCALE_FIX => input scale fixing,
-		      SCALE_ADD => leave inputs as is and do add scales
+		      SCALE_NOFIX/SCALE_NONE => nothing 
+		      SCALE_FIX => input scale fixing, 
+		      SCALE_ADD => leave inputs as is and do add scales 
 					example numerical multiplication
 		      SCALE_SUB => first input scale, fix with second scale
 				   result scale is equal to first input
 					example numerical division
-		      DIGITS_ADD => result digits, sum of args
+		      DIGITS_ADD => result digits, sum of args 
 					example string concat
 		    */
 	int nr;
-	int sql; /* simple sql or native implementation */
+	int sql; /* simple sql or native implementation */ 
 } sql_func;
 
 typedef struct sql_subfunc {
@@ -264,9 +264,9 @@ sql_subtype *sql_dup_subtype( sql_subtype *res )
 }
 
 sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale )
-	/* todo add approximate info
+	/* todo add approximate info 
 	 * if digits/scale == 0 and no approximate with digits/scale == 0
-	 * exists we could return the type with largest digits
+	 * exists we could return the type with largest digits 
 	 *
 	 * returning the largest when no exact match is found is now the
 	 * (wrong?) default
@@ -279,7 +279,7 @@ sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int sca
 	for ( n = types->h; n; n = n->next ) {
 		sql_type *t = n->data;
 		if (strcasecmp(t->sqlname, name) == 0){
-			if ((digits && t->digits >= digits) ||
+			if ((digits && t->digits >= digits) || 
 					(digits == t->digits)){
 				return sql_create_subtype(t, digits, scale);
 			}
@@ -289,7 +289,7 @@ sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int sca
 					break;
 				}
 				n = m;
-				if ((digits && t->digits >= digits) ||
+				if ((digits && t->digits >= digits) || 
 					(digits == t->digits)){
 					return sql_create_subtype(t, digits, scale);
 				}
@@ -317,7 +317,7 @@ void sql_subtype_destroy(sql_subtype * t)
 	if ((ref = sql_ref_dec( &(t->ref)) ) == 0){
 		_DELETE(t);
 	} else if (sql_end == END_SUBTYPE){
-		printf("= REFCOUNT of subtype %s %s is wrong %d\n",
+		printf("= REFCOUNT of subtype %s %s is wrong %d\n", 
 			t->type->base.name, t->type->sqlname, ref);
 	}
 }
@@ -355,7 +355,7 @@ int type_cmp( sql_type *t1, sql_type *t2)
 	int res = 0;
 	if (!t1 || !t2)
 		return -1;
-	/* types are only equal
+	/* types are only equal 
 		iff they map onto the same systemtype */
 	res = (t1->localtype-t2->localtype);
 	if (res) return res;
@@ -367,8 +367,8 @@ int type_cmp( sql_type *t1, sql_type *t2)
 int subtype_cmp( sql_subtype *t1, sql_subtype *t2 )
 {
 	if (!t1 || !t2)
-		return -1;
-	/* subtypes are only equal iff
+		return -1; 
+	/* subtypes are only equal iff 
 			they map onto the same systemtype */
 	return (type_cmp( t1->type, t2->type));
 }
@@ -393,7 +393,7 @@ sql_subaggr *sql_bind_aggr(char *sqlaname, sql_subtype *type)
 			/* same scale as the input */
 			if (type)
 				scale = type->scale;
-			ares -> res = sql_create_subtype(a->res->type,
+			ares -> res = sql_create_subtype(a->res->type, 
 				a->res->digits, scale);
 			if (sql_debug){
 				sql_ref_inc( &(ares->ref) );
@@ -436,7 +436,7 @@ void sql_subaggr_destroy( sql_subaggr *a )
 		_DELETE(a);
 	} else if (sql_end == END_SUBAGGR){
 		printf("= REFCOUNT of subaggr %s %s is wrong %d\n", a->aggr->name, a->aggr->imp, ref);
-	}
+	} 
 }
 
 sql_subfunc *sql_find_func(char *sqlfname, int nrargs )
@@ -482,7 +482,7 @@ sql_subfunc *sql_bind_member(char *sqlfname, sql_subtype *tp, int nrargs )
 		sql_func *f = n->data;
 		if (!f->res)
 			continue;
-		if (strcmp(f->name, name) == 0){
+		if (strcmp(f->name, name) == 0){ 
 		   if (list_length(f->ops) == nrargs &&
 		       subtype_cmp(tp, ((sql_arg*)f->ops->h->data)->type) == 0){
 			int scale = 0;
@@ -493,8 +493,8 @@ sql_subfunc *sql_bind_member(char *sqlfname, sql_subtype *tp, int nrargs )
 			fres -> func = f;
 			/* same scale as the input */
 			if (tp && tp->scale > scale)
-				scale = tp->scale;
-			fres -> res = sql_create_subtype(f->res->type,
+				scale = tp->scale; 
+			fres -> res = sql_create_subtype(f->res->type, 
 					f->res->digits, scale );
 			if (sql_debug){
 				sql_ref_inc( &(fres->ref) );
@@ -536,7 +536,7 @@ sql_subfunc *sql_bind_func_(char *sqlfname, list *ops )
 		sql_func *f = n->data;
 		if (!f->res)
 			continue;
-		if (strcmp(f->name, name) == 0){
+		if (strcmp(f->name, name) == 0){ 
 		   if (list_cmp(f->ops, ops, (fcmp)&arg_subtype_cmp) == 0){
 			unsigned int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
@@ -548,9 +548,9 @@ sql_subfunc *sql_bind_func_(char *sqlfname, list *ops )
 				sql_subtype *a = n->data;
 				/* same scale as the input */
 				if (a && a->scale > scale)
-					scale = a->scale;
+					scale = a->scale; 
 			}
-			fres -> res = sql_create_subtype(f->res->type,
+			fres -> res = sql_create_subtype(f->res->type, 
 					f->res->digits, scale );
 			if (sql_debug){
 				sql_ref_inc( &(fres->ref) );
@@ -601,9 +601,9 @@ sql_subfunc *sql_bind_func_result_(char *sqlfname, list *ops, sql_subtype *res )
 				sql_subtype *a = n->data;
 				/* same scale as the input */
 				if (a && a->scale > scale)
-					scale = a->scale;
+					scale = a->scale; 
 			}
-			fres -> res = sql_create_subtype(f->res->type,
+			fres -> res = sql_create_subtype(f->res->type, 
 					f->res->digits, scale );
 			if (sql_debug){
 				sql_ref_inc( &(fres->ref) );
@@ -689,7 +689,7 @@ void sql_create_alias( char *name, char *alias )
 		keywords_insert(a->alias, ALIAS);
 }
 
-void alias_destroy( sql_alias *a )
+void alias_destroy( sql_alias *a ) 
 {
 	_DELETE(a->name);
 	_DELETE(a->alias);
@@ -766,12 +766,12 @@ sql_func *sql_create_func(char *name, char *imp, sql_type *tpe1,
 		      sql_type *tpe2, sql_type *res, int scale_fixing )
 {
 	list *l = list_create((fdestroy)&arg_destroy);
-	if (tpe1)
+	if (tpe1) 
 		list_append(l, sql_create_arg(NULL,sql_create_subtype(tpe1, 0, 0)));
-	if (tpe2)
+	if (tpe2) 
 		list_append(l, sql_create_arg(NULL,sql_create_subtype(tpe2, 0, 0)));
 
-	return sql_create_func_(name, imp, l,
+	return sql_create_func_(name, imp, l, 
 		sql_create_subtype(res, 0, scale_fixing) );
 }
 
@@ -827,14 +827,14 @@ void parser_init(int debug)
 }
 
 /* SQL service initialization
-This C-code version initializes the
+This C-code version initializes the 
 parser catalogs with typing information. Although, in principle,
 many of the function signatures can be obtained from the underlying
 database kernel, we have chosen for this explicit scheme for one
 simple reason. The SQL standard dictates the types and we have to
 check their availability in the kernel only. The kernel itself could
 include manyfunctions for which their is no standard.
-lead to unexpected
+lead to unexpected 
 */
 
 
@@ -857,7 +857,7 @@ static char *local_result(char *s){
 	for(i = 0; type_map[i].h; i++){
 		if (strcmp(s, type_map[i].h) == 0){
 			return type_map[i].t;
-		}
+		}	
 	}
 	return NULL;
 }
@@ -866,14 +866,13 @@ The current implementation uses a hardwired type and function table.
 This routine is called once upon restart of the system.
 @c
 void sqltypeinit()
-{
+{	
 	int i;
 
 	sql_type *ts[100];
-	sql_type **misc, **strings, **numerical;
-	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *INT, *LNG, *OID, *BIT, *DBL, *T;
-	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP; 
+	sql_type **misc, **strings, **numerical, **decimals, **floats, **dates;
+	sql_type **t, *INT, *OID, *BIT, *DBL, *T;
+	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP;
 
  	t = ts;
 	*t++ = sql_create_type("TABLE", 0, 0, 0, 	 	"bat");
@@ -909,10 +908,10 @@ void sqltypeinit()
 	/*sql_type("INT", 2, 0, 2, 		"uchr"); */
 	*t++ = sql_create_type("INT", 4, 0, 2,		"sht");
 	*t++ = sql_create_type("INT", 9, 0, 2,		"int");
-	LNG = *t++ = sql_create_type("INT", 19, 0, 2,	"lng");
+	*t++ = sql_create_type("INT", 19, 0, 2,		"lng");
 
 	decimals = t;
-	/* decimal(d,s) (d indicates nr digits,
+	/* decimal(d,s) (d indicates nr digits, 
 			s scale indicates nr of digits after the dot .) */
 	/*#sql_type("DECIMAL", 2, 1, 10, 		"uchr"); */
 	T = *t++ = sql_create_type("DECIMAL", 4, 1, 10,		"sht");
@@ -942,7 +941,6 @@ void sqltypeinit()
 	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0,0, 		"timestamp");
 
 	*t++ = sql_create_type("BLOB", 0, 0, 0, "blob");
-	end = t;
 	*t = NULL;
 
 	for(i=0; ts[i]; i++){
@@ -997,8 +995,8 @@ void sqltypeinit()
 		sql_create_aggr("avg", "avg", *t, DBL);
 	}
 
-	sql_create_aggr( "count_no_nil", "count_no_nil", NULL, INT );
-	sql_create_aggr( "count", "count", NULL, INT );
+	sql_create_aggr( "count_no_nil", "count_no_nil", NULL, INT ); 
+	sql_create_aggr( "count", "count", NULL, INT ); 
 
 	for(t=misc; t < strings; t++){
 		sql_create_func("and","and", *t, *t, *t, SCALE_FIX);
@@ -1042,7 +1040,7 @@ void sqltypeinit()
 	for(t=strings; t < numerical; t++){
 	  sql_type **u;
 	  for(u=strings; u < numerical; u++){
-	    if (*t != *u)
+	    if (*t != *u) 
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
 	  }
 	}
@@ -1057,19 +1055,6 @@ void sqltypeinit()
 	      	sql_create_func("convert", buf, *t, NULL, *u, SCALE_FIX );
 	  }
 	}
-
-
-	/* convert string to temporal */
-	for(t=strings; t < numerical; t++){
-	  sql_type **u;
-	  for(u=dates; u < end; u++){
-	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
-	  }
-	  for(u=misc; u < strings; u++){
-	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
-	  }
-	}
-
 	/* convert string to decimals, these require a more complex conversion
 	   as both number of digits and precision should be checked */
 	for(t=strings; t < numerical; t++){
@@ -1078,13 +1063,13 @@ void sqltypeinit()
 		char buf[50];
 
 		snprintf(buf,50,"cast2%s", (*u)->base.name);
-	  	sql_create_func_( "convert", buf,
+	  	sql_create_func_( "convert", buf, 
 		 list_append(
-	 	   list_append(
+	 	   list_append( 
 	  	     list_append(list_create((fdestroy)&arg_destroy),
 	  	     sql_create_arg(NULL, sql_create_subtype(*t, 0, 0))),
 	 	   sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))),
- 		 sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))),
+ 		 sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), 
 	    	sql_create_subtype(*u, 0, 0));
 	  }
 	}
@@ -1098,26 +1083,25 @@ void sqltypeinit()
 	}
 	/* Add the ABS for all numericals and floats */
 	for(t=numerical; t < dates; t++){
-		sql_create_func( "abs", "abs", *t, NULL, *t, SCALE_FIX );
+		sql_create_func( "abs", "abs", *t, NULL, *t, SCALE_FIX ); 
 		sql_create_func("mod","%", *t, *t, *t, SCALE_FIX);
 	}
 	for(t=floats; t < dates; t++){
-		sql_create_func( "floor", "floor", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "ceil", "ceil", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "ceiling", "ceil", *t, NULL, *t, SCALE_FIX ); /* JDBC */
-		sql_create_func( "sin", "sin", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "cos", "cos", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "tan", "tan", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "asin", "asin", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "acos", "acos", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "atan", "atan", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "sinh", "sinh", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "cosh", "cosh", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "tanh", "tanh", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "sqrt", "sqrt", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "exp", "exp", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "log", "log", *t, NULL, *t, SCALE_FIX );
-		sql_create_func( "log10", "log10", *t, NULL, *t, SCALE_FIX );
+		sql_create_func( "floor", "floor", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "ceil", "ceil", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "sin", "sin", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "cos", "cos", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "tan", "tan", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "asin", "asin", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "acos", "acos", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "atan", "atan", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "sinh", "sinh", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "cosh", "cosh", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "tanh", "tanh", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "sqrt", "sqrt", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "exp", "exp", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "log", "log", *t, NULL, *t, SCALE_FIX ); 
+		sql_create_func( "log10", "log10", *t, NULL, *t, SCALE_FIX ); 
 	}
 
 	/* Date functions */
@@ -1127,20 +1111,11 @@ void sqltypeinit()
 	sql_create_func("convert", "date", TMESTAMP, NULL, DTE, SCALE_NONE );
 
 	sql_create_func( "current_date", "current_date", NULL, NULL, DTE, SCALE_NONE );
-/* does not work?!?
-	sql_create_func( "curdate", "current_date", NULL, NULL, DTE, SCALE_NONE ); *//* JDBC */
 	sql_create_func( "current_time", "current_time", NULL, NULL, TME, SCALE_NONE );
-/* does not work?!?
-	sql_create_func( "curtime", "current_time", NULL, NULL, TME, SCALE_NONE ); *//* JDBC */
 	sql_create_func( "current_timestamp", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE );
-/* already there?!?
-	sql_create_func( "now", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE );*/
 
 	sql_create_func( "sql_sub", "date_sub_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func( "sql_sub", "date_sub_month_interval", DTE, MONINT, DTE, SCALE_FIX);
-
-	sql_create_func( "sql_sub", "diff", DTE, DTE, INT, SCALE_FIX);
-	sql_create_func( "sql_sub", "diff", TMESTAMP, TMESTAMP, LNG, SCALE_FIX);
 
 	sql_create_func( "sql_add", "date_add_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func( "sql_add", "addmonths", DTE, MONINT, DTE, SCALE_FIX);
@@ -1161,19 +1136,17 @@ void sqltypeinit()
 	sql_create_func( "dayofyear", "dayofyear", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func( "weekofyear", "weekofyear", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func( "dayofweek", "dayofweek", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func( "dayofmonth", "day", DTE, NULL, INT, SCALE_FIX); /* JDBC */
-	sql_create_func( "week", "weekofyear", DTE, NULL, INT, SCALE_FIX); /* JDBC */
 
 
 	for(t=strings; t < numerical; t++){
 	  sql_create_func(  "substring", "substring", *t, INT, *t, SCALE_NONE);
 	  sql_create_func_( "substring", "substring",
 		list_append(
-	 	  list_append(
+	 	  list_append( 
 	  	    list_append(list_create((fdestroy)&arg_destroy),
 	  	    sql_create_arg(NULL, sql_create_subtype(*t, 0, 0))),
 	 	  sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))),
- 		sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))),
+ 		sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), 
 	    sql_create_subtype(*t, 0, 0));
 
 	  sql_create_func( "like", "like", *t, *t, BIT, SCALE_NONE);

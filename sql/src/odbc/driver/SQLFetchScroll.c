@@ -29,6 +29,11 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 {
 	int LastResultRow;
 
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
 	assert(stmt->hdl);
 
 	/* check statement cursor state, query should be executed */
@@ -40,20 +45,8 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 		return SQL_ERROR;
 	}
 
-	if ((stmt->cursorType == SQL_CURSOR_FORWARD_ONLY ||
-	     stmt->cursorScrollable == SQL_NONSCROLLABLE) &&
-	    FetchOrientation != SQL_FETCH_NEXT) {
-		/* Fetch type out of range */
-		addStmtError(stmt, "HY106", NULL, 0);
-		return SQL_ERROR;
-	}
-
 #define RowSetSize	(stmt->ApplRowDescr->sql_desc_array_size)
 	LastResultRow = mapi_get_row_count(stmt->hdl);
-	/* set currentRow to be the row number of the last row in the
-	   result set */
-	stmt->currentRow = stmt->startRow + stmt->rowSetSize;
-	stmt->rowSetSize = 0;
 
 	switch (FetchOrientation) {
 	case SQL_FETCH_NEXT:
@@ -61,72 +54,72 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 			return SQL_NO_DATA;
 		break;
 	case SQL_FETCH_FIRST:
-		stmt->startRow = 0;
+		stmt->currentRow = 0;
 		break;
 	case SQL_FETCH_LAST:
 		if (LastResultRow < RowSetSize)
-			stmt->startRow = 0;
+			stmt->currentRow = 0;
 		else
-			stmt->startRow = LastResultRow - RowSetSize;
+			stmt->currentRow = LastResultRow - RowSetSize;
 		break;
 	case SQL_FETCH_PRIOR:
-		if (stmt->startRow == 0) {
-			stmt->startRow = 0;
+		if (stmt->previousRow == 0) {
+			stmt->currentRow = 0;
 			return SQL_NO_DATA;
 		}
-		if (stmt->startRow < RowSetSize) {
+		if (stmt->previousRow < RowSetSize) {
 			addStmtError(stmt, "01S06", NULL, 0);
-			stmt->startRow = 0;
-		} else
-			stmt->startRow = stmt->startRow - RowSetSize;
+			stmt->currentRow = 0;
+		}
+		stmt->currentRow = stmt->previousRow - RowSetSize;
 		break;
 	case SQL_FETCH_RELATIVE:
 		if ((stmt->currentRow != 0 || FetchOffset <= 0) &&
 		    (stmt->currentRow != LastResultRow || FetchOffset >= 0)) {
 			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||
-			    (stmt->startRow == 0 && FetchOffset < 0) ||
-			    (stmt->startRow > 0 &&
-			     (int) stmt->startRow + FetchOffset < 0 &&
+			    (stmt->previousRow == 0 && FetchOffset < 0) ||
+			    (stmt->previousRow > 0 &&
+			     (int) stmt->previousRow + FetchOffset < 0 &&
 			     -FetchOffset > RowSetSize)) {
-				stmt->startRow = 0;
+				stmt->currentRow = 0;
 				return SQL_NO_DATA;
 			}
-			if (stmt->startRow > 0 &&
-			    (int) stmt->startRow + FetchOffset < 0) {
-				stmt->startRow = 0;
+			if (stmt->previousRow > 0 &&
+			    (int) stmt->previousRow + FetchOffset < 0) {
+				stmt->currentRow = 0;
 				addStmtError(stmt, "01S06", NULL, 0);
 				break;
 			}
-			if (stmt->startRow + FetchOffset >= LastResultRow ||
+			if (stmt->previousRow + FetchOffset >= LastResultRow ||
 			    stmt->currentRow == LastResultRow) {
-				stmt->startRow = LastResultRow;
+				stmt->currentRow = LastResultRow;
 				return SQL_NO_DATA;
 			}
-			stmt->startRow = stmt->startRow + FetchOffset;
+			stmt->currentRow = stmt->previousRow + FetchOffset;
 			break;
 		}
 		/* fall through */
 	case SQL_FETCH_ABSOLUTE:
 		if (FetchOffset < 0) {
 			if (-FetchOffset <= LastResultRow) {
-				stmt->startRow = LastResultRow + FetchOffset;
+				stmt->currentRow = LastResultRow + FetchOffset;
 				break;
 			}
-			stmt->startRow = 0;
+			stmt->currentRow = 0;
 			if (-FetchOffset > RowSetSize)
 				return SQL_NO_DATA;
 			addStmtError(stmt, "01S06", NULL, 0);
 			break;
 		}
 		if (FetchOffset == 0) {
-			stmt->startRow = 0;
+			stmt->currentRow = 0;
 			return SQL_NO_DATA;
 		}
 		if (FetchOffset > LastResultRow) {
-			stmt->startRow = LastResultRow;
+			stmt->currentRow = LastResultRow;
 			return SQL_NO_DATA;
 		}
-		stmt->startRow = FetchOffset - 1;
+		stmt->currentRow = FetchOffset - 1;
 		break;
 	case SQL_FETCH_BOOKMARK:
 		/* Optional feature not implemented */
@@ -135,6 +128,12 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 	default:
 		/* Fetch type out of range */
 		addStmtError(stmt, "HY106", NULL, 0);
+		return SQL_ERROR;
+	}
+	mapi_seek_row(stmt->hdl, stmt->currentRow, MAPI_SEEK_SET);
+	if (mapi_error(stmt->Dbc->mid)) {
+		/* Row value out of range (we assume that's the error) */
+		addStmtError(stmt, "HY107", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
 
@@ -148,11 +147,6 @@ SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT FetchOrientation,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFetchScroll\n");
 #endif
-
-	if (!isValidStmt((ODBCStmt *) hStmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors((ODBCStmt *) hStmt);
 
 	return SQLFetchScroll_((ODBCStmt *) hStmt, FetchOrientation,
 			       FetchOffset);

@@ -29,84 +29,59 @@
 #include "ODBCError.h"
 
 SQLRETURN
-SQLAllocEnv_(SQLHANDLE *pnOutputHandle)
-{
-	if (pnOutputHandle == NULL) {
-		return SQL_INVALID_HANDLE;
-	}
-	*pnOutputHandle = (SQLHANDLE *) newODBCEnv();
-	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
-}
-
-SQLRETURN
-SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *pnOutputHandle)
-{
-	if (env->sql_attr_odbc_version == 0) {
-		addEnvError(env, "HY010", NULL, 0);
-		return SQL_ERROR;
-	}
-	if (pnOutputHandle == NULL) {
-		addEnvError(env, "HY009", NULL, 0);
-		return SQL_ERROR;
-	}
-	*pnOutputHandle = (SQLHANDLE *) newODBCDbc(env);
-	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
-}
-
-SQLRETURN
-SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
-{
-	if (!dbc->Connected) {
-		addDbcError(dbc, "08003", NULL, 0);
-		return SQL_ERROR;
-	}
-	if (pnOutputHandle == NULL) {
-		addDbcError(dbc, "HY009", NULL, 0);
-		return SQL_ERROR;
-	}
-	*pnOutputHandle = (SQLHANDLE *) newODBCStmt(dbc);
-	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
-}
-
-SQLRETURN
-SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
-{
-	if (!dbc->Connected) {
-		addDbcError(dbc, "08003", NULL, 0);
-		return SQL_ERROR;
-	}
-	if (pnOutputHandle == NULL) {
-		addDbcError(dbc, "HY009", NULL, 0);
-		return SQL_ERROR;
-	}
-	*pnOutputHandle = (SQLHANDLE *) newODBCDesc(dbc);
-	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
-}
-
-SQLRETURN
 SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle,
 		SQLHANDLE *pnOutputHandle)
 {
+	/* Check parameters nHandleType and nInputHandle */
+	if (nInputHandle == NULL && nHandleType != SQL_HANDLE_ENV) {
+		/* can not set an error message because the handle is NULL */
+		return SQL_INVALID_HANDLE;
+	}
+
 	switch (nHandleType) {
 	case SQL_HANDLE_ENV:
-		if (nInputHandle != NULL)
+		/* there is no parent handle to test */
+		if (pnOutputHandle == NULL)
 			return SQL_INVALID_HANDLE;
-		return SQLAllocEnv_(pnOutputHandle);
+		*pnOutputHandle = (SQLHANDLE *) newODBCEnv();
+		return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 	case SQL_HANDLE_DBC:
 		if (!isValidEnv((ODBCEnv *) nInputHandle))
 			return SQL_INVALID_HANDLE;
 		clearEnvErrors((ODBCEnv *) nInputHandle);
-		return SQLAllocDbc_((ODBCEnv *) nInputHandle, pnOutputHandle);
+		if (((ODBCEnv *) nInputHandle)->sql_attr_odbc_version == 0) {
+			addEnvError((ODBCEnv *) nInputHandle, "HY010",
+				    NULL, 0);
+			return SQL_ERROR;
+		}
+		if (pnOutputHandle == NULL) {
+			addEnvError((ODBCEnv *) nInputHandle, "HY009",
+				    NULL, 0);
+			return SQL_ERROR;
+		}
+		*pnOutputHandle = (SQLHANDLE *) newODBCDbc((ODBCEnv *) nInputHandle);
+		return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 	case SQL_HANDLE_STMT:
-		if (!isValidDbc((ODBCDbc *) nInputHandle))
-			return SQL_INVALID_HANDLE;
-		clearDbcErrors((ODBCDbc *) nInputHandle);
-		return SQLAllocStmt_((ODBCDbc *) nInputHandle, pnOutputHandle);
 	case SQL_HANDLE_DESC:
 		if (!isValidDbc((ODBCDbc *) nInputHandle))
 			return SQL_INVALID_HANDLE;
 		clearDbcErrors((ODBCDbc *) nInputHandle);
-		return SQLAllocDesc_((ODBCDbc *) nInputHandle, pnOutputHandle);
+		if (!((ODBCDbc *) nInputHandle)->Connected) {
+			addDbcError((ODBCDbc *) nInputHandle, "08003", NULL, 0);
+			return SQL_ERROR;
+		}
+		if (pnOutputHandle == NULL) {
+			addDbcError((ODBCDbc *) nInputHandle, "HY009",
+				    NULL, 0);
+			return SQL_ERROR;
+		}
+		if (nHandleType == SQL_HANDLE_STMT) {
+			*pnOutputHandle = (SQLHANDLE *) newODBCStmt((ODBCDbc *) nInputHandle);
+			return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
+		} else {
+			*pnOutputHandle = (SQLHANDLE *) newODBCDesc((ODBCDbc *) nInputHandle);
+			return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
+		}
 	default:
 		/* we cannot set an error because we do not know
 		   the handle type of the possibly non-null handle */

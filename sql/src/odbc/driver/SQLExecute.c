@@ -59,6 +59,11 @@ SQLExecute_(ODBCStmt *stmt)
 	MapiHdl hdl;
 	MapiMsg msg;
 
+	if (!isValidStmt(stmt))
+		return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
 	/* check statement cursor state, query should be prepared */
 	if (stmt->State != PREPARED) {
 		/* 24000 = Invalid cursor state */
@@ -94,8 +99,7 @@ SQLExecute_(ODBCStmt *stmt)
 	/* initialize the Result meta data values */
 	nrCols = mapi_get_field_count(hdl);
 	stmt->currentRow = 0;
-	stmt->startRow = 0;
-	stmt->rowSetSize = 0;
+	stmt->previousRow = 0;
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
 
@@ -153,11 +157,6 @@ SQLExecute(SQLHSTMT hStmt)
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLExecute\n");
 #endif
-
-	if (!isValidStmt((ODBCStmt *) hStmt))
-		return SQL_INVALID_HANDLE;
-
-	clearStmtErrors((ODBCStmt *) hStmt);
 
 	return SQLExecute_((ODBCStmt *) hStmt);
 }

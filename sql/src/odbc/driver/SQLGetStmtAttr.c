@@ -39,33 +39,13 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	case SQL_ATTR_APP_ROW_DESC:
 		* (SQLHANDLE *) Value = stmt->ApplRowDescr;
 		return SQL_SUCCESS;
-	case SQL_ATTR_ASYNC_ENABLE:
-		* (SQLUINTEGER *) Value = SQL_ASYNC_ENABLE_OFF;
-		break;
-	case SQL_ATTR_CONCURRENCY:
-		* (SQLUINTEGER *) Value = SQL_CONCUR_READ_ONLY;
-		break;
-	case SQL_ATTR_CURSOR_SCROLLABLE:
-		* (SQLUINTEGER *) Value = stmt->cursorScrollable;
-		break;
-	case SQL_ATTR_CURSOR_SENSITIVITY:
-		* (SQLUINTEGER *) Value = SQL_INSENSITIVE;
-		break;
-	case SQL_ATTR_CURSOR_TYPE:
-		* (SQLUINTEGER *) Value = stmt->cursorType;
-		break;
 	case SQL_ATTR_IMP_PARAM_DESC:
 		* (SQLHANDLE *) Value = stmt->ImplParamDescr;
 		return SQL_SUCCESS;
 	case SQL_ATTR_IMP_ROW_DESC:
 		* (SQLHANDLE *) Value = stmt->ImplRowDescr;
 		return SQL_SUCCESS;
-	case SQL_ATTR_MAX_LENGTH:
-		* (SQLUINTEGER *) Value = 0;
-		break;
-	case SQL_ATTR_MAX_ROWS:
-		* (SQLUINTEGER *) Value = 0;
-		break;
+
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
 		return SQLGetDescField_(stmt->ApplParamDescr, 0,
 					SQL_DESC_BIND_OFFSET_PTR,
@@ -90,9 +70,6 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		return SQLGetDescField_(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_SIZE,
 					Value, BufferLength, StringLength);
-	case SQL_ATTR_RETRIEVE_DATA:
-		* (SQLUINTEGER *) Value = stmt->retrieveData;
-		break;
 	case SQL_ATTR_ROW_ARRAY_SIZE:
 		return SQLGetDescField_(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_SIZE,
@@ -105,9 +82,6 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		return SQLGetDescField_(stmt->ApplRowDescr, 0,
 					SQL_DESC_BIND_TYPE,
 					Value, BufferLength, StringLength);
-	case SQL_ATTR_ROW_NUMBER:
-		* (SQLUINTEGER *) Value = stmt->currentRow;
-		break;
 	case SQL_ATTR_ROW_OPERATION_PTR:
 		return SQLGetDescField_(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR,
@@ -122,12 +96,21 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 					Value, BufferLength, StringLength);
 
 	/* TODO: implement requested behavior */
-	case SQL_ATTR_ENABLE_AUTO_IPD:
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:
+	case SQL_ATTR_ASYNC_ENABLE:
+	case SQL_ATTR_CONCURRENCY:
+	case SQL_ATTR_CURSOR_SCROLLABLE:
+	case SQL_ATTR_CURSOR_SENSITIVITY:
+	case SQL_ATTR_CURSOR_TYPE:
+	case SQL_ATTR_ENABLE_AUTO_IPD:
 	case SQL_ATTR_KEYSET_SIZE:
+	case SQL_ATTR_MAX_LENGTH:
+	case SQL_ATTR_MAX_ROWS:
 	case SQL_ATTR_METADATA_ID:
 	case SQL_ATTR_NOSCAN:
 	case SQL_ATTR_QUERY_TIMEOUT:
+	case SQL_ATTR_RETRIEVE_DATA:
+	case SQL_ATTR_ROW_NUMBER:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* return error: Optional feature not supported */

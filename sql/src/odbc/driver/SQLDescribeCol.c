@@ -19,7 +19,6 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
-#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -30,6 +29,7 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ODBCDescRec *rec = NULL;
+	int colNameLen = 0;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLDescribeCol\n");
@@ -61,10 +61,23 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	/* OK */
 	rec = stmt->ImplRowDescr->descRec + nCol;
 
+	if (rec->sql_desc_name)
+		colNameLen = strlen((char *) rec->sql_desc_name);
+
 	/* now copy the data */
-	copyString(rec->sql_desc_name,
-		   szColName, nColNameMax, pnColNameLength,
-		   addStmtError, stmt);
+	if (szColName) {
+		if (rec->sql_desc_name) {
+			strncpy((char *) szColName, (char *) rec->sql_desc_name, nColNameMax - 1);
+			szColName[nColNameMax - 1] = 0;/* null terminate it */
+		} else if (nColNameMax > 0)
+			szColName[0] = 0; /* return empty string */
+	}
+	if (pnColNameLength)
+		*pnColNameLength = rec->sql_desc_name ? colNameLen : 0;
+	if (colNameLen >= nColNameMax) {
+		/* 01004 = String data, right truncation */
+		addStmtError(stmt, "01004", NULL, 0);
+	}
 
 	if (pnSQLDataType)
 		*pnSQLDataType = rec->sql_desc_concise_type;

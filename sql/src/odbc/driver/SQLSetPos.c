@@ -24,89 +24,40 @@ SQLRETURN
 SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation,
 	  SQLUSMALLINT nLockType)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetPos\n");
 #endif
 
-	if (!isValidStmt(stmt))
+	(void) nRow;		/* Stefan: unused!? */
+
+	if (!isValidStmt(hStmt))
 		return SQL_INVALID_HANDLE;
-	clearStmtErrors(stmt);
 
 	/* check the parameter values */
-
-	if (stmt->State != EXECUTED) {
-		/* Function sequence error */
-		addStmtError(stmt, "HY010", NULL, 0);
-		return SQL_ERROR;
-	}
-
-	if (nRow > stmt->rowSetSize) {
-		/* Row value out of range */
-		addStmtError(stmt, "HY107", NULL, 0);
-		return SQL_ERROR;
-	}
-
-	if (stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
-		/* Invalid cursor position */
-		addStmtError(stmt, "HY109", NULL, 0);
+	switch (nOperation) {
+	case SQL_POSITION:
+	case SQL_REFRESH:
+	case SQL_UPDATE:
+	case SQL_DELETE:
+	default:
+		/* return error: "Optional feature not implemented" */
+		addStmtError(hStmt, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	switch (nLockType) {
 	case SQL_LOCK_NO_CHANGE:
-		/* the only value that we support */
-		break;
 	case SQL_LOCK_EXCLUSIVE:
 	case SQL_LOCK_UNLOCK:
-		/* Optional feature not implemented */
-		addStmtError(stmt, "HYC00", NULL, 0);
-		return SQL_ERROR;
 	default:
-		/* Invalid attribute identifier */
-		addStmtError(stmt, "HY092", NULL, 0);
+		/* return error: "Optional feature not implemented" */
+		addStmtError(hStmt, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	switch (nOperation) {
-	case SQL_POSITION:
-		if (nRow == 0) {
-			/* Invalid cursor position */
-			addStmtError(stmt, "HY109", NULL, 0);
-			return SQL_ERROR;
-		}
-		stmt->currentRow = stmt->startRow + nRow - 1;
-		if (mapi_seek_row(stmt->hdl, stmt->currentRow, MAPI_SEEK_SET) != MOK) {
-			/* Invalid cursor position */
-			addStmtError(stmt, "HY109", NULL, 0);
-			return SQL_ERROR;
-		}
-		switch (mapi_fetch_row(stmt->hdl)) {
-		case MOK:
-			break;
-		case MTIMEOUT:
-			/* Connection timeout expired */
-			addStmtError(stmt, "HYT01", NULL, 0);
-			return SQL_ERROR;
-		default:
-			/* Invalid cursor position */
-			addStmtError(stmt, "HY109", NULL, 0);
-			return SQL_ERROR;
-		}
-		stmt->currentRow++;
-		break;
-	case SQL_REFRESH:
-	case SQL_UPDATE:
-	case SQL_DELETE:
-		/* Optional feature not implemented */
-		addStmtError(stmt, "HYC00", NULL, 0);
-		return SQL_ERROR;
-	default:
-		/* Invalid attribute identifier */
-		addStmtError(stmt, "HY092", NULL, 0);
-		return SQL_ERROR;
-	}
+	/* TODO: implement the requested behavior */
 
-	return SQL_SUCCESS;
+	/* for now always return error */
+	addStmtError(hStmt, "IM001", NULL, 0);
+	return SQL_ERROR;
 }

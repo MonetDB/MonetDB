@@ -106,7 +106,7 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_ENV, env, "SQLSetEnvAttr");
 
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
-	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle 1");
+	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle");
 
 	ret = SQLConnect(dbc, (SQLCHAR *) host, SQL_NTS,
 			 (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
@@ -120,7 +120,7 @@ main(int argc, char **argv)
 
 	/* create a test table to be filled with values */
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 2");
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
 
 	ret = SQLExecDirect(stmt, (SQLCHAR*)
 			    "CREATE TABLE test (\n"
@@ -130,34 +130,39 @@ main(int argc, char **argv)
 			    "   d DATE,\n"
 			    "   t TIME\n"
 			    ")", SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect 1");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect");
+
+	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle");
 
 	/* prepare for filling the test table */
 	/* we use a single statement with parameters whose values vary */
+	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
 
 	/* bind a bunch of parameters before preparing the statement */
 	ret = SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, SQL_C_SSHORT,
 			       SQL_INTEGER, 0, 0, &f1, sizeof(f1), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 1");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter");
 	ret = SQLBindParameter(stmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR,
 			       SQL_VARCHAR, 0, 0, &f2, sizeof(f2), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter");
 	ret = SQLBindParameter(stmt, 3, SQL_PARAM_INPUT, SQL_C_DOUBLE,
 			       SQL_FLOAT, 0, 0, &f3, sizeof(f3), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 3");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter");
 
 	ret = SQLPrepare(stmt, (SQLCHAR*)
 			 "INSERT INTO test VALUES (?, ?, ?, ?, ?)",
 			 SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare 1");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare");
 
 	/* bind the rest of the parameters after preparing the statement */
 	ret = SQLBindParameter(stmt, 4, SQL_PARAM_INPUT, SQL_C_TYPE_DATE,
 			       SQL_TYPE_DATE, 0, 0, &f4, sizeof(f4), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 4");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter");
 	ret = SQLBindParameter(stmt, 5, SQL_PARAM_INPUT, SQL_C_TYPE_TIME,
 			       SQL_TYPE_TIME, 0, 0, &f5, sizeof(f5), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 5");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter");
 
 	/* do the actual filling of the test table */
 	f4.year = 2003;
@@ -194,8 +199,11 @@ main(int argc, char **argv)
 			}
 		}
 		ret = SQLExecute(stmt);
-		check(ret, SQL_HANDLE_STMT, stmt, "SQLExecute 1");
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLExecute");
 	}
+
+	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle");
 
 	/* Now we are going to read back the values from the test table.
 	   We create two statment handles, one of which will be used
@@ -203,46 +211,48 @@ main(int argc, char **argv)
 	   table entries. */
 
 	/* first the handle for the even entries */
+	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
 
 	/* bind the columns before preparing the statement */
 	ret = SQLBindCol(stmt, 1, SQL_C_SSHORT, &f1, sizeof(f1), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 1");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol");
 	ret = SQLBindCol(stmt, 2, SQL_C_CHAR, &f2, sizeof(f2), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol");
 	ret = SQLBindCol(stmt, 3, SQL_C_DOUBLE, &f3, sizeof(f3), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 3");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol");
 	ret = SQLBindCol(stmt, 4, SQL_C_TYPE_DATE, &f4, sizeof(f4), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 4");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol");
 	ret = SQLBindCol(stmt, 5, SQL_C_TYPE_TIME, &f5, sizeof(f5), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 5");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol");
 
 	ret = SQLPrepare(stmt, (SQLCHAR*)"SELECT * FROM test WHERE 2*(i/2) = i", SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare");
 
 	ret = SQLExecute(stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecute 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecute");
 
 	/* now the handle for the odd entries */
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt2);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 3");
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
 
 	ret = SQLPrepare(stmt2, (SQLCHAR*)"SELECT * FROM test WHERE 2*(i/2) <> i", SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLPrepare 3");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLPrepare");
 
 	/* bind the columns after preparing the statement */
 	ret = SQLBindCol(stmt2, 1, SQL_C_SSHORT, &f1, sizeof(f1), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol 6");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
 	ret = SQLBindCol(stmt2, 2, SQL_C_CHAR, &f2, sizeof(f2), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol 7");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
 	ret = SQLBindCol(stmt2, 3, SQL_C_DOUBLE, &f3, sizeof(f3), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol 8");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
 	ret = SQLBindCol(stmt2, 4, SQL_C_TYPE_DATE, &f4, sizeof(f4), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol 9");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
 	ret = SQLBindCol(stmt2, 5, SQL_C_TYPE_TIME, &f5, sizeof(f5), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol 10");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
 
 	ret = SQLExecute(stmt2);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLExecute 3");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLExecute");
 
 	for (;;) {
 		/* Alternate fetching an even and an odd entry.  The
@@ -251,7 +261,7 @@ main(int argc, char **argv)
 		ret = SQLFetch(stmt);
 		if (ret == SQL_NO_DATA)
 			break;
-		check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch 1");
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch");
 
 		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n",
 		       f1, f2, f3, f4.year, f4.month, f4.day,
@@ -260,35 +270,38 @@ main(int argc, char **argv)
 		ret = SQLFetch(stmt2);
 		if (ret == SQL_NO_DATA)
 			break;
-		check(ret, SQL_HANDLE_STMT, stmt2, "SQLFetch 2");
+		check(ret, SQL_HANDLE_STMT, stmt2, "SQLFetch");
 
 		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n",
 		       f1, f2, f3, f4.year, f4.month, f4.day,
 		       f5.hour, f5.minute, f5.second);
 	}
 
-	ret = SQLCloseCursor(stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
-
 	/* cleanup and disconnect */
+	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle");
+
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt2);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle 1");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle");
 
 	/* drop the test table */
+	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
+
 	ret = SQLExecDirect(stmt, (SQLCHAR*) "DROP TABLE test", SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect");
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle");
 
 	ret = SQLDisconnect(dbc);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLDisconnect");
 
 	ret = SQLFreeHandle(SQL_HANDLE_DBC, dbc);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLFreeHandle 3");
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLFreeHandle");
 
 	ret = SQLFreeHandle(SQL_HANDLE_ENV, env);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle 4");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle");
 
 	return 0;
 }

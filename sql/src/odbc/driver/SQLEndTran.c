@@ -33,8 +33,8 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 {
 	ODBCEnv *env = (ODBCEnv *) nHandle;
 	ODBCDbc *dbc = (ODBCDbc *) nHandle;
-	SQLHANDLE hStmt;
-	RETCODE rc;
+	SQLHANDLE hStmt = NULL;
+	RETCODE rc = SQL_ERROR;
 
 	/* check parameters nHandleType and nHandle for validity */
 	switch (nHandleType) {
@@ -42,40 +42,38 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 		if (!isValidDbc(dbc))
 			return SQL_INVALID_HANDLE;
 		clearDbcErrors(dbc);
-		if (!dbc->Connected) {
-			/* Connection not open */
-			addDbcError(dbc, "08003", NULL, 0);
-			return SQL_ERROR;
-		}
-		env = NULL;
 		break;
 	case SQL_HANDLE_ENV:
 		if (!isValidEnv(env))
 			return SQL_INVALID_HANDLE;
 		clearEnvErrors(env);
-		dbc = NULL;
 
 		if (env->sql_attr_odbc_version == 0) {
 			addEnvError(env, "HY010", NULL, 0);
 			return SQL_ERROR;
 		}
-		break;
-	case SQL_HANDLE_STMT:
-		if (isValidStmt((ODBCStmt *) nHandle)) {
-			clearStmtErrors((ODBCStmt *) nHandle);
-			addStmtError((ODBCStmt *) nHandle, "HY092", NULL, 0);
-			return SQL_ERROR;
-		}
-		return SQL_INVALID_HANDLE;
-	case SQL_HANDLE_DESC:
-		if (isValidDesc((ODBCDesc *) nHandle)) {
-			clearDescErrors((ODBCDesc *) nHandle);
-			addDescError((ODBCDesc *) nHandle, "HY092", NULL, 0);
-			return SQL_ERROR;
-		}
-		return SQL_INVALID_HANDLE;
+
+		/* Currently commit/rollback of all connections within
+		   this environment handle is NOT implemented. */
+		/* report error HYC00 = Optional feature not implemented */
+		addEnvError(env, "HYC00", NULL, 0);
+		return SQL_ERROR;
 	default:
-		return SQL_INVALID_HANDLE;
+		/* invalid handle type */
+		/* set an error only if the handle is valid handle */
+		if (isValidDbc(dbc)) {
+			clearDbcErrors(dbc);
+			addDbcError(dbc, "HY092", NULL, 0);
+			return SQL_ERROR;
+		} else {
+			if (isValidEnv(env)) {
+				clearEnvErrors(env);
+				addEnvError(env, "HY092", NULL, 0);
+				return SQL_ERROR;
+			}
+		}
+		/* else just return error code (no msg) */
+		return SQL_ERROR;
 	}
 
 	/* check parameter nCompletionType */
@@ -88,38 +86,24 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 		return SQL_ERROR;
 	}
 
-	if (nHandleType == SQL_HANDLE_ENV) {
-		RETCODE rc1 = SQL_SUCCESS;
 
-		for (dbc = env->FirstDbc; dbc; dbc = dbc->next) {
-			assert(isValidDbc(dbc));
-			if (!dbc->Connected)
-				continue;
-			rc = SQLEndTran_(SQL_HANDLE_DBC, dbc, nCompletionType);
-			if (rc == SQL_ERROR)
-				rc1 = SQL_ERROR;
-			else if (rc == SQL_SUCCESS_WITH_INFO &&
-				 rc1 != SQL_ERROR)
-				rc1 = rc;
-		}
-		return rc1;
-	}
-
+	/* only the case SQL_HANDLE_DBC is supported, see above */
 	assert(nHandleType == SQL_HANDLE_DBC);
 
-	if (dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON) {
-		/* nothing to do if in autocommit mode */
-		return SQL_SUCCESS;
-	}
+
+	/* TODO: implement the code for case: nHandleType == SQL_HANDLE_ENV */
+	/* This could be done by calling SQLEndTran() for each dbc allocated
+	   within the env (use env->FirstDbc), test if the dbc has an open
+	   connection and then call SQLEndTran() on this dbc */
+
 
 	/* construct a statement object and excute a SQL COMMIT or ROLLBACK */
-	rc = SQLAllocStmt_(dbc, &hStmt);
+	rc = SQLAllocHandle_(SQL_HANDLE_STMT, dbc, &hStmt);
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
 		ODBCStmt *stmt = (ODBCStmt *) hStmt;
 		rc = SQLExecDirect_(stmt,
-				    nCompletionType == SQL_COMMIT ?
-					(SQLCHAR *) "commit" :
-					(SQLCHAR *) "rollback",
+				    (SQLCHAR *) (nCompletionType == SQL_COMMIT ?
+						 "commit" : "rollback"),
 				    SQL_NTS);
 		if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO) {
 			/* get the error/warning and post in on the dbc handle */
@@ -131,13 +115,12 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 					      sqlState, &nativeErrCode,
 					      msgText, sizeof(msgText), NULL);
 
-			addDbcError(dbc, (char *) sqlState,
-				    (char *) msgText + ODBCErrorMsgPrefixLength,
+			addDbcError(dbc, (char *) sqlState, (char *) msgText + ODBCErrorMsgPrefixLength,
 				    nativeErrCode);
 		}
 		/* clean up the statement handle */
 		SQLFreeStmt_(stmt, SQL_CLOSE);
-		ODBCFreeStmt_(stmt);
+		SQLFreeHandle_(SQL_HANDLE_STMT, stmt);
 	} else {
 		/* could not allocate a statement object */
 		addDbcError(dbc, "HY013", NULL, 0);

@@ -42,22 +42,15 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 
 	/* check statement cursor state, query should be executed */
 	if (stmt->State != EXECUTED) {
-		/* caller should have called SQLExecute or
-		   SQLExecDirect first */
-		/* Function sequence error */
+		/* caller should have called SQLExecute or SQLExecDirect first */
+		/* HY010 = Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (stmt->rowSetSize == 0) {
+	if (stmt->currentRow <= 0) {
 		/* caller should have called SQLFetch first */
-		/* Function sequence error */
+		/* HY010 = Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
-		return SQL_ERROR;
-	}
-	if (stmt->rowSetSize > 1 &&
-	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
-		/* Invalid cursor position */
-		addStmtError(stmt, "HY109", NULL, 0);
 		return SQL_ERROR;
 	}
 	if (nCol <= 0 || nCol > stmt->ImplRowDescr->sql_desc_count) {
@@ -82,5 +75,5 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	}
 	return ODBCFetch(stmt, nCol, nTargetType, pTarget, nTargetLength,
 			 pnLengthOrIndicator, pnLengthOrIndicator,
-			 UNAFFECTED, UNAFFECTED, UNAFFECTED, 0, 0);
+			 UNAFFECTED, UNAFFECTED, UNAFFECTED, 0);
 }

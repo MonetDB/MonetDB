@@ -19,7 +19,6 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
-#include "ODBCUtil.h"
 #include <errno.h>
 #include <time.h>
 #ifdef HAVE_STRINGS_H
@@ -321,14 +320,11 @@ SQLRETURN
 ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	  SQLPOINTER ptr, SQLINTEGER buflen, SQLINTEGER *lenp,
 	  SQLINTEGER *nullp, SQLSMALLINT precision, SQLSMALLINT scale,
-	  SQLINTEGER datetime_interval_precision, SQLINTEGER offset, int row)
+	  SQLINTEGER datetime_interval_precision, SQLINTEGER offset)
 {
 	char *data;
 	SQLSMALLINT sql_type;
 	SQLUINTEGER maxdatetimeval;
-	ODBCDesc *ard, *ird;
-	ODBCDescRec *irdrec, *ardrec;
-	SQLUINTEGER bind_type;
 
 	/* various interpretations of the input data */
 	bignum_t nval;
@@ -338,25 +334,22 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	TIME_STRUCT tval;
 	TIMESTAMP_STRUCT tsval;
 	double fval = 0;
+	ODBCDescRec *rec;
 
-	ird = stmt->ImplRowDescr;
-	ard = stmt->ApplRowDescr;
-	if (col == 0 || col > ird->sql_desc_count) {
+	if (col == 0 || col > stmt->ImplRowDescr->sql_desc_count) {
 		/* 07009: Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
-	bind_type = ard->sql_desc_bind_type;
-	irdrec = &ird->descRec[col];
-	ardrec = col <= ard->sql_desc_count ? &ard->descRec[col] : NULL;
-	sql_type = irdrec->sql_desc_concise_type;
+	rec = &stmt->ImplRowDescr->descRec[col];
+	sql_type = rec->sql_desc_concise_type;
 
 	if (ptr && offset)
 		ptr = (SQLPOINTER) ((char *) ptr + offset);
 	if (lenp && offset)
-		lenp = (SQLINTEGER *) ((char *) lenp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+		lenp = (SQLINTEGER *) ((char *) lenp + offset);
 	if (nullp && offset)
-		nullp = (SQLINTEGER *) ((char *) nullp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+		nullp = (SQLINTEGER *) ((char *) nullp + offset);
 
 	/* translate default type */
 	/* note, type can't be SQL_ARD_TYPE since when this function
@@ -382,16 +375,16 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			type = SQL_C_BIT;
 			break;
 		case SQL_TINYINT:
-			type = irdrec->sql_desc_unsigned ? SQL_C_UTINYINT : SQL_C_STINYINT;
+			type = rec->sql_desc_unsigned ? SQL_C_UTINYINT : SQL_C_STINYINT;
 			break;
 		case SQL_SMALLINT:
-			type = irdrec->sql_desc_unsigned ? SQL_C_USHORT : SQL_C_SSHORT;
+			type = rec->sql_desc_unsigned ? SQL_C_USHORT : SQL_C_SSHORT;
 			break;
 		case SQL_INTEGER:
-			type = irdrec->sql_desc_unsigned ? SQL_C_ULONG : SQL_C_SLONG;
+			type = rec->sql_desc_unsigned ? SQL_C_ULONG : SQL_C_SLONG;
 			break;
 		case SQL_BIGINT:
-			type = irdrec->sql_desc_unsigned ? SQL_C_UBIGINT : SQL_C_SBIGINT;
+			type = rec->sql_desc_unsigned ? SQL_C_UBIGINT : SQL_C_SBIGINT;
 			break;
 		case SQL_REAL:
 			type = SQL_C_FLOAT;
@@ -461,13 +454,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 
 	if (precision == UNAFFECTED || scale == UNAFFECTED ||
 	    datetime_interval_precision == UNAFFECTED) {
-		if (ardrec) {
+		if (col <= stmt->ApplRowDescr->sql_desc_count) {
+			rec = &stmt->ApplRowDescr->descRec[col];
+
 			if (precision == UNAFFECTED)
-				precision = ardrec->sql_desc_precision;
+				precision = rec->sql_desc_precision;
 			if (scale == UNAFFECTED)
-				scale = ardrec->sql_desc_scale;
+				scale = rec->sql_desc_scale;
 			if (datetime_interval_precision == UNAFFECTED)
-				datetime_interval_precision = ardrec->sql_desc_datetime_interval_precision;
+				datetime_interval_precision = rec->sql_desc_datetime_interval_precision;
 		} else {
 			if (precision == UNAFFECTED)
 				precision = type == SQL_C_NUMERIC ? 10 : 6;
@@ -606,15 +601,19 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			addStmtError(stmt, "HY090", NULL, 0);
 			return SQL_ERROR;
 		}
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
 		switch (sql_type) {
 			int sz;
 
 		default:
 		case SQL_CHAR:
-			copyString(data, ptr, buflen, lenp,
-				   addStmtError, stmt);
+			strncpy((char *) ptr, data, buflen);
+			if ((sz = strlen(data)) >= buflen) {
+				data[buflen - 1] = 0;
+				/* 01004: String data, right truncation */
+				addStmtError(stmt, "01004", NULL, 0);
+			}
+			if (lenp)
+				*lenp = sz;
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
@@ -810,8 +809,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			addStmtError(stmt, "HY090", NULL, 0);
 			return SQL_ERROR;
 		}
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
 		switch (sql_type) {
 		case SQL_CHAR:
 		case SQL_DECIMAL:
@@ -834,8 +831,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		}
 		break;
 	case SQL_C_BIT:
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
 		if (lenp)
 			*lenp = 1;
 		switch (sql_type) {
@@ -907,31 +902,23 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			maxval <<= 7;
 			if (lenp)
 				*lenp = sizeof(signed char);
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(signed char) : bind_type));
 			break;
 		case SQL_C_SSHORT:
 		case SQL_C_SHORT:
 			maxval <<= 15;
 			if (lenp)
 				*lenp = sizeof(short);
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(short) : bind_type));
 			break;
 		case SQL_C_SLONG:
 		case SQL_C_LONG:
 			maxval <<= 31;
 			if (lenp)
 				*lenp = sizeof(long);
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(long) : bind_type));
 			break;
 		case SQL_C_SBIGINT:
 			maxval <<= 63;
 			if (lenp)
 				*lenp = sizeof(SQLBIGINT);
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLBIGINT) : bind_type));
 			break;
 		}
 		switch (sql_type) {
@@ -1007,28 +994,20 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			maxval <<= 8;
 			if (lenp)
 				*lenp = sizeof(unsigned char);
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
 			break;
 		case SQL_C_USHORT:
 			maxval <<= 16;
 			if (lenp)
-				*lenp = sizeof(unsigned short);
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned short) : bind_type));
+				*lenp = sizeof(short);
 			break;
 		case SQL_C_ULONG:
 			maxval <<= 32;
 			if (lenp)
-				*lenp = sizeof(unsigned long);
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned long) : bind_type));
+				*lenp = sizeof(long);
 			break;
 		case SQL_C_UBIGINT:
 			if (lenp)
-				*lenp = sizeof(SQLUBIGINT);
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLUBIGINT) : bind_type));
+				*lenp = sizeof(SQLBIGINT);
 			break;
 		}
 		maxval--;
@@ -1091,8 +1070,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		break;
 	}
 	case SQL_C_NUMERIC:
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_NUMERIC_STRUCT) : bind_type));
 		switch (sql_type) {
 		case SQL_CHAR:
 		case SQL_DOUBLE:
@@ -1186,8 +1163,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			return SQL_ERROR;
 		}
 		if (type == SQL_C_FLOAT) {
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(float) : bind_type));
 			* (float *) ptr = (float) fval;
 			if ((double) * (float *) ptr != fval) {
 				/* 22003: Numeric value out of range */
@@ -1197,16 +1172,12 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (lenp)
 				*lenp = sizeof(float);
 		} else {
-			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(double) : bind_type));
 			* (double *) ptr = fval;
 			if (lenp)
 				*lenp = sizeof(double);
 		}
 		break;
 	case SQL_C_TYPE_DATE:
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(DATE_STRUCT) : bind_type));
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
@@ -1240,8 +1211,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			*lenp = sizeof(DATE_STRUCT);
 		break;
 	case SQL_C_TYPE_TIME:
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIME_STRUCT) : bind_type));
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
@@ -1274,8 +1243,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			*lenp = sizeof(TIME_STRUCT);
 		break;
 	case SQL_C_TYPE_TIMESTAMP:
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIMESTAMP_STRUCT) : bind_type));
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
@@ -1336,8 +1303,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	case SQL_C_INTERVAL_YEAR:
 	case SQL_C_INTERVAL_MONTH:
 	case SQL_C_INTERVAL_YEAR_TO_MONTH:
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
 		switch (sql_type) {
 		case SQL_CHAR: {
 			int n;
@@ -1429,8 +1394,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
 	case SQL_C_INTERVAL_HOUR_TO_SECOND:
 	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
-		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
 		switch (sql_type) {
 		case SQL_CHAR: {
 			int n;
@@ -1647,116 +1610,53 @@ SQLFetch_(ODBCStmt *stmt)
 {
 	ODBCDesc *desc;
 	ODBCDescRec *rec;
-	int i, row;
+	int i;
 	SQLINTEGER offset;
-	SQLUSMALLINT *statusp;
-
-	desc = stmt->ApplRowDescr;
 
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
 
-	stmt->startRow += stmt->rowSetSize;
-	stmt->rowSetSize = 0;
-	stmt->currentRow = stmt->startRow + 1;
-	if (mapi_seek_row(stmt->hdl, stmt->startRow, MAPI_SEEK_SET) != MOK) {
-		/* Row value out of range (we assume that's the error) */
-		addStmtError(stmt, "HY107", mapi_error_str(stmt->Dbc->mid), 0);
-		return SQL_ERROR;
-	}
-
-	statusp = desc->sql_desc_array_status_ptr;
-
-	if (stmt->retrieveData == SQL_RD_OFF) {
-		/* don't really retrieve the data, just do as if,
-		   updating the SQL_DESC_ARRAY_STATUS_PTR */
-		int rowcount = mapi_get_row_count(stmt->hdl);
-
-		stmt->rowSetSize = desc->sql_desc_array_size;
-		if (stmt->startRow + stmt->rowSetSize > rowcount)
-			stmt->rowSetSize = rowcount - stmt->startRow;
-		if (stmt->rowSetSize <= 0) {
-			stmt->rowSetSize = 0;
+	if (mapi_fetch_row(stmt->hdl) == 0) {
+		switch (mapi_error(stmt->Dbc->mid)) {
+		case MOK:
 			return SQL_NO_DATA;
+		case MTIMEOUT:
+			/* 08S01: Communication link failure */
+			addStmtError(stmt, "08S01",
+				     mapi_error_str(stmt->Dbc->mid), 0);
+			return SQL_ERROR;
+		default:
+			/* HY000: General error */
+			addStmtError(stmt, "HY000",
+				     mapi_error_str(stmt->Dbc->mid), 0);
+			return SQL_ERROR;
 		}
-		if (statusp) {
-			for (row = 0; row < stmt->rowSetSize; row++)
-				*statusp++ = SQL_ROW_SUCCESS;
-			for (; row < desc->sql_desc_array_size; row++)
-				*statusp++ = SQL_ROW_NOROW;
-		}
-		return SQL_SUCCESS;
 	}
 
-	for (row = 0; row < desc->sql_desc_array_size; row++) {
-		if (mapi_fetch_row(stmt->hdl) == 0) {
-			if (desc->sql_desc_rows_processed_ptr)
-				*desc->sql_desc_rows_processed_ptr = row;
-			switch (mapi_error(stmt->Dbc->mid)) {
-			case MOK:
-				if (row == 0)
-					return SQL_NO_DATA;
-				break;
-			case MTIMEOUT:
-				if (statusp)
-					*statusp = SQL_ROW_ERROR;
-				/* 08S01: Communication link failure */
-				addStmtError(stmt, "08S01",
-					     mapi_error_str(stmt->Dbc->mid),
-					     0);
-				return SQL_ERROR;
-			default:
-				if (statusp)
-					*statusp = SQL_ROW_ERROR;
-				/* HY000: General error */
-				addStmtError(stmt, "HY000",
-					     mapi_error_str(stmt->Dbc->mid),
-					     0);
-				return SQL_ERROR;
-			}
-			break;
-		}
-		if (statusp)
-			*statusp = SQL_ROW_SUCCESS;
+	stmt->previousRow = stmt->currentRow;
+	stmt->currentRow++;
 
-		stmt->rowSetSize++;
-
-		if (desc->sql_desc_bind_offset_ptr)
-			offset = *desc->sql_desc_bind_offset_ptr;
-		else
-			offset = 0;
-		for (i = 1; i <= desc->sql_desc_count; i++) {
-			rec = &desc->descRec[i];
-			if (rec->sql_desc_data_ptr == NULL)
-				continue;
-			stmt->retrieved = 0;
-			if (ODBCFetch(stmt, i,
-				      rec->sql_desc_concise_type,
-				      rec->sql_desc_data_ptr,
-				      rec->sql_desc_octet_length,
-				      rec->sql_desc_octet_length_ptr,
-				      rec->sql_desc_indicator_ptr,
-				      rec->sql_desc_precision,
-				      rec->sql_desc_scale,
-				      rec->sql_desc_datetime_interval_precision,
-				      offset,
-				      row) == SQL_ERROR) {
-				if (statusp)
-					*statusp = SQL_ROW_SUCCESS_WITH_INFO;
-			}
-		}
-		if (statusp)
-			statusp++;
-	}
-	if (desc->sql_desc_rows_processed_ptr)
-		*desc->sql_desc_rows_processed_ptr = stmt->rowSetSize;
-	if (statusp)
-		while (row++ < desc->sql_desc_array_size)
-			*statusp++ = SQL_ROW_NOROW;
-
-	if (stmt->rowSetSize > 1) {
-		mapi_seek_row(stmt->hdl, stmt->startRow, MAPI_SEEK_SET);
-		mapi_fetch_row(stmt->hdl);
+	desc = stmt->ApplRowDescr;
+	if (desc->sql_desc_bind_offset_ptr)
+		offset = *desc->sql_desc_bind_offset_ptr;
+	else
+		offset = 0;
+	for (i = 1; i <= desc->sql_desc_count; i++) {
+		rec = &desc->descRec[i];
+		if (rec->sql_desc_data_ptr == NULL)
+			continue;
+		stmt->retrieved = 0;
+		if (ODBCFetch(stmt, i,
+			      rec->sql_desc_concise_type,
+			      rec->sql_desc_data_ptr,
+			      rec->sql_desc_octet_length,
+			      rec->sql_desc_octet_length_ptr,
+			      rec->sql_desc_indicator_ptr,
+			      rec->sql_desc_precision,
+			      rec->sql_desc_scale,
+			      rec->sql_desc_datetime_interval_precision,
+			      offset) == SQL_ERROR)
+			return SQL_ERROR;
 	}
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;

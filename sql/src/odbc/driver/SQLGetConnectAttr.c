@@ -19,13 +19,20 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
-#include "ODBCUtil.h"
 
 
 SQLRETURN
 SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
+	(void) BufferLength;	/* Stefan: unused!? */
+	(void) StringLength;	/* Stefan: unused!? */
+
+	if (!isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
+
+	clearDbcErrors(dbc);
+
 	/* check input parameters */
 	if (ValuePtr == NULL) {
 		/* HY009 = Invalid use of null pointer */
@@ -67,12 +74,9 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 	case SQL_ATTR_TRACE:
 		* (SQLUINTEGER *) ValuePtr = SQL_OPT_TRACE_OFF;
 		break;
-	case SQL_ATTR_CURRENT_CATALOG:
-		copyString(dbc->DBNAME, ValuePtr, BufferLength, StringLength,
-			   addDbcError, dbc);
-		break;
 
 /* TODO: implement all the other Connection Attributes */
+	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_DISCONNECT_BEHAVIOR:
 	case SQL_ATTR_ENLIST_IN_DTC:
 	case SQL_ATTR_ENLIST_IN_XA:
@@ -91,7 +95,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 		return SQL_ERROR;
 	}
 
-	return dbc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+	return SQL_SUCCESS;
 }
 
 SQLRETURN
@@ -101,11 +105,6 @@ SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetConnectAttr\n");
 #endif
-
-	if (!isValidDbc((ODBCDbc *) hDbc))
-		return SQL_INVALID_HANDLE;
-
-	clearDbcErrors((ODBCDbc *) hDbc);
 
 	return SQLGetConnectAttr_((ODBCDbc *) hDbc, Attribute, ValuePtr,
 				  BufferLength, StringLength);

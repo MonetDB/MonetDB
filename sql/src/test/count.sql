@@ -9,16 +9,16 @@ select count(*) from test;
 -- 6
 select count(val) from test;
 -- 5
-select count(*) from test group by val;
+select count(*) as count_x from test group by val order by count_x;
+--        1 
 --        1 
 --        2 
 --        2 
---        1 
-select count(val) from test group by val;
+select count(val) as count_val from test group by val order by count_val;
 --        0 
---        2 
---        2 
 --        1 
+--        2 
+--        2 
 drop table test;
 
 commit;

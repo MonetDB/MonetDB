@@ -1,26 +1,3 @@
-@' The contents of this file are subject to the MonetDB Public
-@' License Version 1.0 (the "License"); you may not use this file
-@' except in compliance with the License. You may obtain a copy of
-@' the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-@'
-@' Software distributed under the License is distributed on an "AS
-@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-@' implied. See the License for the specific language governing
-@' rights and limitations under the License.
-@'
-@' The Original Code is the Monet Database System.
-@'
-@' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
-@' All Rights Reserved.
-@'
-@' Contributor(s):
-@'              Martin Kersten <Martin.Kersten@cwi.nl>
-@'              Peter Boncz <Peter.Boncz@cwi.nl>
-@'              Niels Nes <Niels.Nes@cwi.nl>
-@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 @f sql_gencode
 @t SQL to MAL code generation.
 @a N. Nes, M. Kersten
@@ -45,6 +22,29 @@ reduce the cost to prepare MAL statements significantly.
 A dummymodules is needed to load properly.
 @-
 @h
+
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ */
+
 #ifndef _SQL2MAL_H
 #define _SQL2MAL_H
 
@@ -54,10 +54,9 @@ A dummymodules is needed to load properly.
 #include <sql_mvc.h>
 #include <mal_function.h>
 
-sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
+sql_export int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *be);
 sql_export void backend_dumpproc( backend *be, MalBlkPtr mb, int id, stmt *s );
 
-#define _SQL_GENCODE_DEBUG
 #endif /* _SQL2MAL_H */
 @c
 #include "sql_gencode.h"
@@ -72,7 +71,6 @@ macros
 	moduleId(q)= (@1)? GDKstrdup(@1): 0;
 	functionId(q)= (@2)? GDKstrdup(@2): 0;
 	getDestVar(q)= newTmpVariable(mb,TYPE_any);
-	setVarInitialized(mb,getDestVar(q));
 	pushInstruction(mb,q);
 	s->nr= getDestVar(q);	/* might be dropped altogether */
 @= newAssignment
@@ -83,7 +81,6 @@ macros
 	moduleId(q)= (@2)? GDKstrdup(@2): 0;
 	functionId(q)= (@3)? GDKstrdup(@3): 0;
 	getDestVar(q)= newVariable(mb,@1,TYPE_any);
-	setVarInitialized(mb,getDestVar(q));
 	pushInstruction(mb,q);
 @= pushInt
 	{int _t; char bufi[BUFSIZ];
@@ -98,7 +95,7 @@ macros
 	{int _t = newConstant(mb,TYPE_bit,GDKstrdup(@1),TRUE); 
 		q = pushArgument(mb,q,_t);}
 @= pushNilType
-	{int _t = newConstant(mb,getTypeIndex(@1,strlen(@1)),GDKstrdup("nil"),TRUE); 
+	{int _t = newConstant(mb,getTypeIndex(@1),GDKstrdup("nil"),TRUE); 
 		q = pushArgument(mb,q,_t);}
 @= pushNil
 	{int _t = newConstant(mb,TYPE_any,GDKstrdup("nil"),TRUE); 
@@ -135,14 +132,7 @@ The return types should be carefully tuned. Vid types are differently handled.
 	@1= newVariable(m, @2, TYPE_any);
 @= newTmp
 	@1= newTmpVariable(m, TYPE_any);
-@-
-MAL constrol instructions
-@c
-@= newBarrier
-		q->barrier= BARRIERsymbol;
-@= newExit
-		q= newInstruction(EXITsymbol);
-		pushInstruction(mb,q);
+
 @+ MAL initialization
 Many instructions have a more or less fixed structure, therefore
 they can be assembled in a pre-compiled block. Each time we need it,
@@ -163,24 +153,19 @@ provides the handle for transaction management.
 @-
 The atoms produced by the parser should be converted back into
 MAL constants. Ideally, this should not be necessary when the
-SQL parser keeps the string representation around.
-This involves regeneration of their string as well and
-trimming the enclosing string quotes.
+parser keeps the string representation around.
+
 @c
 static
-int constantAtom(backend *sql, MalBlkPtr mb, atom *a){
+int constantAtom(MalBlkPtr mb, atom *a, backend *sql){
 	int idx;
-	ValPtr vr=  (ValPtr) &a->data;
-	char * val;
-	(void) sql;
+	ValPtr vr;
 
-	VALformat(&val,vr);
-	if( vr->vtype == TYPE_str){
-		val[strlen(val)-1]=0;
-		idx= newConstant(mb,vr->vtype,GDKstrdup(val+1),1);
-		GDKfree(val);
-	} else
-	idx= newConstant(mb,vr->vtype,val,1);
+	if( sql->debug &8) atom_dump(a, GDKout);
+
+	idx = newTypeVariable(mb, a->data.vtype);
+	vr = &getVarConstant(mb, idx);
+	VALcopy (vr, &a->data);
 	return idx;
 }
 @-
@@ -196,8 +181,7 @@ Instructions are encapsulated with time code.
 
 @= SQLpostlude
         if (sql->debug&2){
-		/* t1 := time();t1:= t1-t0; 
-		   printf(" %d ",t1);printf("%d\n",nr);*/
+		/* t1 := time();t1:= t1-t0; printf(" %d ",t1);printf("%d\n",nr);*/
 		@:newStmt("t1","alarm","usec")@
 		@:newStmtId("t1","calc","-")@
 		@:pushArgId("t1")@
@@ -234,195 +218,229 @@ void dump_header(MalBlkPtr mb, stmt *s, list *l ){
 		s->nr= old;
         }
 }
-@-
-Some utility routines to generate code
-@c
-void dump_1(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name){
-	InstrPtr q;
-	int o1 = backend_dumpstmt(sql,mb, s->op1.stval);
-	@:SQLprelude@
-	@:newStmt(mod,name)@
-	@:pushArg(o1)@
-	@:SQLpostlude@
-}
-void dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name){
-	InstrPtr q;
-	int o1 = backend_dumpstmt(sql,mb, s->op1.stval);
-	int o2 = backend_dumpstmt(sql,mb, s->op2.stval);
-	@:SQLprelude@
-	@:newStmt(mod,name)@
-	@:pushArg(o1)@
-	@:pushArg(o2)@
-	@:SQLpostlude@
-}
-@-
-The big code generation switch. The sections are aligned to the
-Monet version4 code generation block for eas of comparison.
-@c
-int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
+
+
+
+int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
     InstrPtr q;
     int k,k2;
+
+    char buf[BUFSIZ+1];
     node *n;
 
     if (s){
-    	if (s->nr > 0) 
-		return s->nr;	/* stmt already handled */
+    	if (s->nr > 0) return s->nr;	/* stmt already handled */
+
 
 	switch(s->type){
-	case st_none: 
-		break;
-	case st_sql:{
-		int o1 = backend_dumpstmt(sql,mb,s->op1.stval);
-		@:newStmt("sql","eval")@
-		@:pushArg(o1)@
-		} break;
+	case st_none: break;
         case st_var: {
-                int val = backend_dumpstmt(sql,mb, s->op2.stval);
+                int val = backend_dumpstmt(m,mb, s->op2.stval, sql);
 		@:newAssignment()@
 		@:pushArgId(s->op1.sval)@
 		@:pushArg(val)@
         }       break;
-	case st_temp: {
-		int l,r;
-		@:newStmt("calc","oid")@
+
+	case st_release: 
+		@:SQLprelude@
+		@:newStmt("sql","release")@
+		@:pushStr(s->op1.sval)@
+		@:SQLpostlude@
+		break;
+	case st_commit: {
+		char *name = s->op2.sval;
+		@:SQLprelude@
+		@:newStmt("sql","commit")@
+		@:pushInt(s->op1.ival)@
+		@:pushStr(name?name:"")@
+		@:SQLpostlude@
+	} break;
+	case st_rollback: {
+		char *name = s->op2.sval;
+		@:SQLprelude@
+		@:newStmt("sql","rollback")@
+		@:pushInt(s->op1.ival)@
+		@:pushStr(name?name:"")@
+		@:SQLpostlude@
+	} break;
+	case st_schema: {
+		@:SQLprelude@
+		sql_schema *sc = s->op1.schema;
+		@:newStmt("sql","bindSchema")@
+		@:pushStr(sc->base.name)@
+		@:SQLpostlude@
+	} break;
+	case st_table: {
+		int sc = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		sql_table *t = s->op2.tval;
+		@:SQLprelude@
+		@:newStmt("sql","bindTable")@
+		@:pushArg(sc)@
+		@:pushStr(t->base.name)@
+		@:SQLpostlude@
+	} break;
+	case st_column: {
+		int t = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		sql_column *c = s->op2.cval;
+		@:SQLprelude@
+		@:newStmt("sql","bindColumn")@
+		@:pushArg(t)@
+		@:pushStr(c->base.name)@
+		@:SQLpostlude@
+	} break;
+	case st_key: {
+		int t = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		sql_key *k = s->op2.kval;
+
+		@:SQLprelude@
+		@:newStmt("sql","bindKey")@
+		@:pushArg(t)@
+		@:pushStr(k->base.name)@
+		@:SQLpostlude@
+	} break;
+	case st_create_schema: {
+		sql_schema *schema = s->op1.schema;
+		@:SQLprelude@
+		@:newStmt("sql","createSchema")@
+		@:pushStr(schema->base.name)@
+		@:pushStr(schema->auth)@
+		@:SQLpostlude@
+	} break;
+	case st_drop_schema: {
+		@:SQLprelude@
+		@:newStmt("sql","dropSchema")@
+		@:pushStr(s->op1.schema->base.name)@
+		@:SQLpostlude@
+	} break;
+	case st_create_table: {
+		int sc = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		sql_table *t = s->op2.tval;
+		(void)sc;
+		@:SQLprelude@
+		if (t->query){
+			@:newStmt("sql","createView")@
+			@:pushStr(t->base.name)@
+			@:pushStr(t->query)@
+		} else {
+			@:newStmt("sql","createTable")@
+			@:pushStr(t->base.name)@
+			@:pushInt(t->type)@
+		}
+		@:SQLpostlude@
+	} break;
+	case st_drop_table: {
+		int sc = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		(void)sc;
+		@:SQLprelude@
+		@:newStmt("sql","dropTable")@
+		@:pushStr(s->op2.sval)@
+		@:pushBit((s->flag==0)?"false":"true")@
+		@:SQLpostlude@
+	} break;
+	case st_create_column: {
+		int t = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		sql_column *c = s->op2.cval;
+		(void)t;
+		@:SQLprelude@
+		@:newStmt("sql","createColumn")@
+		@:pushStr(c->base.name)@
+		@:pushStr(c->type->type->sqlname)@
+		@:pushInt(c->type->digits)@
+		@:pushInt(c->type->scale)@
+		@:pushInt(c->colnr)@
+		@:SQLpostlude@
+	} break;
+	case st_null: {
+		int c = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		(void)c;
+		@:SQLprelude@
+		/* the column context is already known */
+		@:newStmt("sql","setNotNull")@
 		@:pushInt(0)@
+		@:SQLpostlude@
+	} break;
+	case st_default: {
+		int c = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int d = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:SQLprelude@
+		@:newStmt("calc","str")@
+		@:pushArg(d)@
+		@:getReturn(d)@
+		@:newStmt("sql","mvc_default")@
+		@:pushArg(c)@
+		@:pushArg(d)@
+		@:SQLpostlude@
+	} break;
+	/* todo: change to simple mvc_create_key(key, list_of_string); */
+	case st_create_key: {
+		node *n;
+		sql_key *ky = s->op1.kval;
+		int r;
+		str sv;
+		@:SQLprelude@
+		@:newStmt("bbp","new")@
+		@:pushArgId("str")@
+		@:pushArgId("int")@
 		@:getReturn(r)@
-		@:newStmt("bat","new")@
-		@:pushArgId("void")@
-		@:pushArgId(s->op4.typeval->type->base.name)@
-		@:getReturn(l)@
-		@:newStmt("bat","seqbase")@
-		@:pushArg(l)@
-		@:pushArg(r)@
-	} break;
-	case st_ibat: 
-		backend_dumpstmt(sql,mb, s->op1.stval);
-		break;
-	case st_bat:
-	case st_ubat: {
-		char *type = (s->type==st_bat)?"":"_ubat";
-		char buf[256];
-		int k;
-
-		@:SQLprelude@
-		snprintf(buf,256,"bind%s",type);
-		@:newStmt("sql",buf)@
-		@:pushStr(s->op1.cval->t->s->base.name)@
-		@:pushStr(s->op1.cval->t->base.name)@
-		@:pushStr(s->op1.cval->base.name)@
-		@:pushInt(s->flag)@
-		@:getReturn(k)@
-
-		/* OLD Get type information from catalog
-		@:setReturnType(TYPE_void,s->op1.cval->type->type->localtype)@
-		*/
-                        
-		if( s->flag >RDONLY) {
-			@:newStmt("bat","setWriteMode")@
-			@:pushArg(k)@
-		} 
-		s->nr= k;
-		@:SQLpostlude@
-	} break;
-	case st_dbat: {
-		int k;
-		@:SQLprelude@
-		@:newStmt("sql","bind_dbat")@
-		@:pushStr(s->op1.tval->s->base.name)@
-		@:pushStr(s->op1.tval->base.name)@
-		@:pushInt(s->flag)@
-		@:getReturn(k)@
-		if( s->flag >RDONLY) {
-			@:newStmt("bat","setWriteMode")@
-			@:pushArg(k)@
+		for(n=ky->columns->h; n; n=n->next){
+			sql_kc *kc= n->data;
+			@:newStmt("bat","insert")@
+			@:pushArg(r)@
+			@:pushStr(kc->c->base.name)@
+			@:pushInt(kc->trunc)@
 		}
-		s->nr= k;
-		@:SQLpostlude@
-	} break;
-	case st_idxbat:{
-		int k;
-
-		@:SQLprelude@
-		@:newStmt("sql","bind_ibat")@
-		@:pushStr(s->op1.idxval->t->s->base.name)@
-		@:pushStr(s->op1.idxval->t->base.name)@
-		@:pushStr(s->op1.idxval->base.name)@
-		@:pushInt(s->flag)@
-		@:getReturn(k)@
-
-		if( s->flag >RDONLY) {
-			@:newStmt("bat","setWriteMode")@
-			@:pushArg(k)@
-		} 
-		@:SQLpostlude@
-		s->nr= k;
-		} break;
-	case st_const: {
-		dump_2(sql,mb,s,"algebra","project");
-		} break;
-	case st_mark: {
-		dump_2(sql,mb,s,"algebra","mark");
-		} break;
-	case st_reverse: {
-		dump_1(sql,mb,s,"bat","reverse");
-		} break;
-        case st_mirror: {
-		dump_1(sql,mb,s,"bat","mirror");
-		} break;
-	case st_limit: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int k;
-
-		@:SQLprelude@
-		@:newStmt("calc","-")@
-		@:pushArg(l)@
-		@:pushInt(1)@
-		@:getReturn(k)@
-
-		@:newStmt("bat","slice")@
-		@:pushInt(0)@
-		@:pushArg(k)@
-		@:SQLpostlude@
-		break;
-	}
-	case st_order: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		@:SQLprelude@
-		@:newStmt("bat","reverse")@
-		@:pushArg(l)@
-		@:getReturn(k)@
-
-		if( s->flag) {
-			@:newStmt("algebra","sort")@
+		if (s->flag == fkey){
+			int ft = backend_dumpstmt(m,mb, s->op2.stval, sql);
+			@:newStmt("sql","createKey")@
+			/* @:pushStr(ky->t->schema->base.name)@
+			@:pushStr(ky->t->base.name)@ */
+			sv= (ky->base.name)?ky->base.name:"";
+			@:pushStr(sv)@
+			@:pushInt(ky->type)@
+			@:pushArg(r)@
+			@:pushArg(ft)@
 		} else {
-			@:newStmt("algebra","sort_reverse")@
+			@:newStmt("sql","createKey")@
+			/* @:pushStr(ky->t->schema->base.name)@
+			@:pushStr(ky->t->base.name)@ */
+			sv= (ky->base.name)?ky->base.name:"";
+			@:pushStr(sv)@
+			@:pushInt(ky->type)@
+			@:pushArg(r)@
+			@:pushNil@
 		}
-		@:pushArg(k)@
-		@:getReturn(k)@
-
-		@:newStmt("bat","reverse")@
-		@:pushArg(k)@
 		@:SQLpostlude@
-	} 	break;
-	case st_reorder: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r = backend_dumpstmt(sql,mb, s->op2.stval);
+	} break;
+	case st_create_role:{
 		@:SQLprelude@
-		if( s->flag){
-			@:newStmt("group","refine")@
-		} else {
-			@:newStmt("group","refine_reverse")@
-		}
-		@:pushArg(l)@
-		@:pushArg(r)@
+		@:newStmt("sql","createRole")@
+		@:pushStr(s->op1.sval)@
+		@:pushInt(s->flag)@
 		@:SQLpostlude@
-	} 	break;
-
-	case st_uselect:
+	} break;
+	case st_drop_role:{
+		@:SQLprelude@
+		@:newStmt("sql","dropRole")@
+		@:pushStr(s->op1.sval)@
+		@:SQLpostlude@
+	} break;
+	case st_grant_role:{
+		@:SQLprelude@
+		@:newStmt("sql","grantRole")@
+		@:pushStr(s->op1.sval)@
+		@:pushStr(s->op2.sval)@
+		@:SQLpostlude@
+	} break;
+	case st_revoke_role:{
+		@:SQLprelude@
+		@:newStmt("sql","revokeRole")@
+		@:pushStr(s->op1.sval)@
+		@:pushStr(s->op2.sval)@
+		@:SQLpostlude@
+	} break;
 	case st_select: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r = backend_dumpstmt(sql,mb, s->op2.stval);
-		char *cmd = s->type == st_select? "select":"uselect";
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
 
 		@:SQLprelude@
 		if (s->op2.stval->nrcols >= 1){
@@ -447,33 +465,36 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			@:pushBit("true")@
 		} else {
 		switch(s->flag){
-		case cmp_like:{
-			@:newStmt("algebra","likeselect")@
-			@:pushArg(l)@
-			@:pushArg(r)@
-			@:SQLpostlude@
-			break;
-			}
-		case cmp_notlike:{
-			int k;
-			@:newStmt("algebra","likeselect")@
-			@:pushArg(l)@
-			@:pushArg(r)@
-			@:getReturn(k)@
-			@:newStmt("algebra"," kdiff")@
-			@:pushArg(l)@
-			@:pushArg(k)@
-			@:SQLpostlude@
-			break;
-			}
 		case cmp_equal:{
-			@:newStmt("algebra",cmd)@
+			int t1,t2;
+			@:getTailType(t1,l)@
+			@:getType(t2,r)@
+			/* change void into type */
+			if( t2==0) {
+				str nme= getTypeName(t1);
+				@:newStmt("calc",nme)@
+				@:pushArg(r)@
+				@:getReturn(r)@
+				GDKfree(nme);
+			}
+			@:newStmt("algebra","uselect")@
 			@:pushArg(l)@
 			@:pushArg(r)@
 			@:SQLpostlude@
 			break;
 			}
 		case cmp_notequal:{
+			int t1,t2;
+			@:getTailType(t1,l)@
+			@:getType(t2,r)@
+			/* change void into type */
+			if( t2==0) {
+				str nme= getTypeName(t1);
+				@:newStmt("calc",nme)@
+				@:pushArg(r)@
+				@:getReturn(r)@
+				GDKfree(nme);
+			}
 			@:newStmt("algebra","uselect")@
 			@:pushArg(l)@
 			@:pushArg(r)@
@@ -484,46 +505,100 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			break;
 		}
 		case cmp_lt:
-			@:newStmt("calc",tail_type(s)->type->base.name)@
-			@:pushNilType(tail_type(s)->type->base.name)@
+		/* rewrite [in> to expanded format */
+			@:newStmt("calc",tail_type(s)->type->name)@
+			@:pushNilType(tail_type(s)->type->name)@
 			@:getReturn(k)@
 
-			@:newStmt("algebra",cmd)@
+			@:newStmt("algebra","select")@
 			@:pushArg(l)@
 			@:pushArg(k)@
 			@:pushArg(r)@
-			@:pushBit("false")@
-			@:pushBit("false")@
+			@:getReturn(k2)@
+
+			@:newStmt("batcalc","oid")@
+			@:pushArg(k2)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","reverse")@
+			@:pushArg(k2)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","setWriteMode")@
+			@:pushArg(k2)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","delete")@
+			@:pushArg(k2)@
+			@:pushArg(k)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","delete")@
+			@:pushArg(k2)@
+			@:pushArg(r)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","reverse")@
+			@:pushArg(k2)@
+			@:getReturn(k2)@
+
 			break;
 		case cmp_lte:
-			@:newStmt("calc",tail_type(s)->type->base.name)@
-			@:pushNilType(tail_type(s)->type->base.name)@
+			@:newStmt("calc",tail_type(s)->type->name)@
+			@:pushNilType(tail_type(s)->type->name)@
 			@:getReturn(k)@
 
-			@:newStmt("algebra",cmd)@
+			@:newStmt("algebra","uselect")@
 			@:pushArg(l)@
 			@:pushArg(k)@
 			@:pushArg(r)@
 			@:SQLpostlude@
 			break;
 		case cmp_gt:
-			@:newStmt("calc",tail_type(s)->type->base.name)@
-			@:pushNilType(tail_type(s)->type->base.name)@
+		/* rewrite <in] to expanded format */
+			@:newStmt("calc",tail_type(s)->type->name)@
+			@:pushNilType(tail_type(s)->type->name)@
 			@:getReturn(k)@
 
-			@:newStmt("algebra",cmd)@
+			@:newStmt("algebra","select")@
 			@:pushArg(l)@
 			@:pushArg(r)@
 			@:pushArg(k)@
-			@:pushBit("false")@
-			@:pushBit("false")@
+			@:getReturn(k2)@
+
+			@:newStmt("batcalc","oid")@
+			@:pushArg(k2)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","reverse")@
+			@:pushArg(k2)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","setWriteMode")@
+			@:pushArg(k2)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","delete")@
+			@:pushArg(k2)@
+			@:pushArg(k)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","delete")@
+			@:pushArg(k2)@
+			@:pushArg(r)@
+			@:getReturn(k2)@
+
+			@:newStmt("bat","reverse")@
+			@:pushArg(k2)@
+			@:getReturn(k2)@
+
 			break;
 		case cmp_gte: 
-			@:newStmt("calc",tail_type(s)->type->base.name)@
-			@:pushNilType(tail_type(s)->type->base.name)@
+			@:newStmt("calc",tail_type(s)->type->name)@
+			@:pushNilType(tail_type(s)->type->name)@
 			@:getReturn(k)@
 
-			@:newStmt("algebra",cmd)@
+			@:newStmt("algebra","uselect")@
 			@:pushArg(l)@
 			@:pushArg(r)@
 			@:pushArg(k)@
@@ -534,78 +609,85 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		}
 		@:SQLpostlude@
 	} break;
-	case st_uselect2: 
 	case st_select2: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r1 = backend_dumpstmt(sql,mb, s->op2.stval);
-		int r2 = backend_dumpstmt(sql,mb, s->op3.stval);
-		char *cmd= st_uselect2== s->type? "uselect":"select";
-
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r1 = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		int r2 = backend_dumpstmt(m,mb, s->op3.stval, sql);
 		@:SQLprelude@
-		@:newStmt("algebra",cmd)@
-		@:pushArg(l)@
-		@:pushArg(r1)@
-		@:pushArg(r2)@
-
 		switch(s->flag){
-		case 0:
-			@:pushBit("false")@
-			@:pushBit("false")@
+		case cmp_equal:
+			@:newStmt("algebra","select")@
+			@:pushArg(l)@
+			@:pushArg(r1)@
+			@:pushArg(r2)@
 			break;
-		case 1:
-			@:pushBit("false")@
-			@:pushBit("true")@
-			break;
-		case 2:
-			@:pushBit("true")@
-			@:pushBit("false")@
-			break;
-		case 3:
-			@:pushBit("true")@
-			@:pushBit("true")@
+		case cmp_notequal: 
+			@:newStmt("algebra","select")@
+			@:pushArg(l)@
+			@:pushArg(r1)@
+			@:pushArg(r2)@
+			@:getReturn(k)@
+
+			@:newStmt("algebra","kdiff")@
+			@:pushArg(l)@
+			@:pushArg(k)@
 			break;
 		}
 		@:SQLpostlude@
 	} break;
 	case st_semijoin: {
-		dump_2(sql,mb,s,"algebra","semijoin");
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:SQLprelude@
+		@:newStmt("algebra","semijoin")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+		@:SQLpostlude@
 	} break;
 	case st_diff: {
-		dump_2(sql,mb,s,"algebra","kdiff");
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:SQLprelude@
+		@:newStmt("algebra","kdiff")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+		@:SQLpostlude@
+	} break;
+	case st_intersect: {
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:SQLprelude@
+		@:newStmt("algebra","sintersect")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+		@:SQLpostlude@
 	} break;
 	case st_union: {
-		dump_2(sql,mb,s,"algebra","kunion");
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:SQLprelude@
+		@:newStmt("algebra","kunion")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+		@:SQLpostlude@
 	} break;
         case st_reljoin: {
                 node *ln = NULL, *rn = NULL;
+		printf("st_reljoin code needed\n");
 		@:SQLprelude@
-		if( list_length(s->op1.lval)== 1){
-			int l = backend_dumpstmt(sql,mb, s->op1.lval->h->data);
-			int r = backend_dumpstmt(sql,mb, s->op2.lval->h->data);
-			int k;
-	
-			@:newStmt("bat","reverse")@
-			@:pushArg(r)@
-			@:getReturn(k)@
-			@:newStmt("algebra","join")@
+		@:newStmt("algebra","ds_link")@
+                for (ln = s->op1.lval->h, rn = s->op2.lval->h; ln && rn; ln = ln->next, rn = rn->next) {
+			int l = backend_dumpstmt(m,mb, ln->data, sql);
+			int r = backend_dumpstmt(m,mb, rn->data, sql);
 			@:pushArg(l)@
 			@:pushArg(r)@
-		} else {
-			@:newStmt("algebra","ds_link")@
-			for (ln = s->op1.lval->h, rn = s->op2.lval->h; 
-				ln && rn; ln = ln->next, rn = rn->next) {
-				int l = backend_dumpstmt(sql,mb, ln->data);
-				int r = backend_dumpstmt(sql,mb, rn->data);
-				@:pushArg(l)@
-				@:pushArg(r)@
-			}
-		}
+                }
 		@:SQLpostlude@
         } break;
 	case st_outerjoin:
 	case st_join: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r = backend_dumpstmt(sql,mb, s->op2.stval);
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
 		char *jt = "join";
 		@:SQLprelude@
 		if (s->type == st_outerjoin)
@@ -681,11 +763,136 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 	  	} 
 	break;
 	}
+	case st_bat:
+	case st_ubat: {
+		char *type = (s->type==st_bat)?"":"Ubat";
+		char buf[256];
+		int k;
+
+		@:SQLprelude@
+		snprintf(buf,256,"bind%s",type);
+		@:newStmt("sql",buf)@
+		@:pushStr(s->op1.cval->t->s->base.name)@
+		@:pushStr(s->op1.cval->t->base.name)@
+		@:pushStr(s->op1.cval->base.name)@
+		@:pushInt(s->flag)@
+		@:getReturn(k)@
+
+		/* Get type information from catalog */
+		@:setReturnType(TYPE_void,s->op1.cval->type->type->localtype)@
+                        
+		if( s->flag >RDONLY) {
+			@:newStmt("bat","setWriteMode")@
+			@:pushArg(k)@
+		} 
+		@:SQLpostlude@
+
+	} break;
+	case st_dbat: {
+		char type = (s->type==st_dbat)?'D':'O';
+		int k;
+		@:SQLprelude@
+		snprintf(buf,BUFSIZ,"bind%cbat", type);
+		@:newStmt("sql",buf)@
+		@:pushStr(s->op1.tval->s->base.name)@
+		@:pushStr(s->op1.tval->base.name)@
+		@:pushInt(s->flag)@
+		@:getReturn(k)@
+		if( s->flag >RDONLY) {
+			@:newStmt("bat","setWriteMode")@
+			@:pushArg(k)@
+		}
+		@:SQLpostlude@
+	} break;
+	case st_reverse: {
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		@:SQLprelude@
+		@:newStmt("bat","reverse")@
+		@:pushArg(l)@
+		@:SQLpostlude@
+	} 	break;
+        case st_mirror: {
+                int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+                @:SQLprelude@
+                @:newStmt("bat","mirror")@
+                @:pushArg(l)@
+                @:SQLpostlude@
+        }  
+	case st_const: {
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:SQLprelude@
+		@:newStmt("bat","project")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+		@:SQLpostlude@
+	} 	break;
+	case st_mark: {
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		char *tname = NULL;
+		@:SQLprelude@
+
+                if (s->t && s->t->type == st_basetable){
+                        tname = s->t->op1.tval->base.name;
+                }
+
+		@:SQLprelude@
+		if (s->op2.stval){
+			int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
+			@:newStmt("bat","reverse")@
+			@:pushArg(l)@
+			@:getReturn(k)@
+
+			@:newStmt("calc","oid");
+			@:pushArg(r)@
+			@:getReturn(k2)@
+
+			@:newStmt("algebra","mark");
+			@:pushArg(k)@
+			@:pushArg(k2)@
+			@:getReturn(k)@
+
+			@:newStmt("bat","reverse");
+			@:pushArg(k)@
+		} else if (s->flag >= 0){
+			@:newStmt("bat","reverse")@
+			@:pushArg(l)@
+			@:getReturn(k)@
+
+			@:newStmt("calc","oid");
+			@:pushInt(s->flag)@
+			@:getReturn(k2)@
+
+			@:newStmt("algebra","mark");
+			@:pushArg(k)@
+			@:pushArg(k2)@
+			@:getReturn(k)@
+
+			@:newStmt("bat","reverse");
+			@:pushArg(k)@
+		} else {
+			@:newStmt("bat","reverse")@
+			@:pushArg(l)@
+			@:getReturn(k)@
+
+			@:newStmt("algebra","mark");
+			@:pushArg(k)@
+			@:getReturn(k)@
+
+			@:newStmt("bat","reverse");
+			@:pushArg(k)@
+		}
+		@:SQLpostlude@
+	} 	break;
 	case st_group: {
-		dump_1(sql,mb,s,"group","group");
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		@:SQLprelude@
+		@:newStmt("group","group")@
+		@:pushArg(l)@
+		@:SQLpostlude@
 	} 	break;
 	case st_group_ext: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
 		@:SQLprelude@
 		@:newStmt("algebra","tunique")@
 		@:pushArg(l)@
@@ -695,13 +902,19 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLpostlude@
 	} 	break;
 	case st_derive: {
-		dump_1(sql,mb,s,"group","derive");
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:SQLprelude@
+		@:newStmt("group","group")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+		@:SQLpostlude@
 	} 	break;
 	case st_unique: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
 		@:SQLprelude@
-		if (s->op2.stval){
-			int g = backend_dumpstmt(sql,mb, s->op2.gval->grp);
+		if (s->op2.gval){
+			int g = backend_dumpstmt(m,mb, s->op2.gval->grp, sql);
 
 			@:newStmt("group","group")@
 			@:pushArg(g)@
@@ -731,6 +944,46 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		}
 		@:SQLpostlude@
 	} 	break;
+	case st_limit: {
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int k;
+
+		@:SQLprelude@
+		@:newStmt("calc","-")@
+		@:pushArg(l)@
+		@:pushInt(1)@
+		@:getReturn(k)@
+
+		@:newStmt("bat","slice")@
+		@:pushInt(0)@
+		@:pushArg(k)@
+		@:SQLpostlude@
+		break;
+	}
+	case st_order: {
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		@:SQLprelude@
+		@:newStmt("bat","reverse")@
+		@:pushArg(l)@
+		@:getReturn(k)@
+
+		@:newStmt("algebra","sort")@
+		@:pushArg(k)@
+		@:getReturn(k)@
+		@:newStmt("bat","reverse")@
+		@:pushArg(k)@
+		@:SQLpostlude@
+	} 	break;
+	case st_reorder: {
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:SQLprelude@
+		@:newStmt("group","refine")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+		@:SQLpostlude@
+		/* s->flag?"desc":"asc"); */
+	} 	break;
 	case st_op: {
 		@:SQLprelude@
 		@:newStmt(0,s->op4.funcval->func->imp)@
@@ -738,20 +991,12 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		break;
 	}
 	case st_unop: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
 		@:SQLprelude@
 		if (s->op1.stval->nrcols){
-			sql_subtype *v,*a;
-			a = tail_type(s);
-			v= tail_type(s->op1.stval);
-			if( a->type->localtype == v->type->localtype &&
-			    strcmp(s->op4.funcval->func->name,"convert")==0){
-				@:newAssignment()@
-				@:pushArg(l)@
-			} else {
-				@:newStmt(0,s->op4.funcval->func->imp)@
-				@:pushArg(l)@
-			}
+			@:newStmt("multiplex","tactics")@
+			@:pushStr(s->op4.funcval->func->imp)@
+			@:pushArg(l)@
 		} else {
 			@:newStmt(0, s->op4.funcval->func->imp)@
 			@:pushArg(l)@
@@ -759,16 +1004,30 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLpostlude@
 	} 	break;
 	case st_binop: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r = backend_dumpstmt(sql,mb, s->op2.stval);
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
 		@:SQLprelude@
 		if (s->op1.stval->nrcols || s->op2.stval->nrcols ){
+		  	if (!s->op1.stval->nrcols){
+				/* "s%d := [s%d ~ s%d];\n", n, r, l ); */
+				@:newStmt("batcalc","zipper")@
+				@:pushArg(r)@
+				@:pushArg(l)@
+				l = getDestVar(q);
+		  	}
+		  	if (!s->op2.stval->nrcols){
+				@:newStmt("batcalc","zipper")@
+				@:pushArg(l)@
+				@:pushArg(r)@
+				r = getDestVar(q);
+		  	}
 			@:newStmt("multiplex","tactics")@
 			@:pushStr(s->op4.funcval->func->imp)@
 			@:pushArg(l)@
 			@:pushArg(r)@
 		} else  {
-			@:newStmt("multiplex", s->op4.funcval->func->imp)@
+			@:newStmt("multiplex", "tactics")@
+			@:pushStr(s->op4.funcval->func->imp)@
 			@:pushArg(l)@
 			@:pushArg(r)@
 		}
@@ -780,7 +1039,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		node *n;
 
 		stmt *op1 = s->op1.lval->h->data;
-		int l = backend_dumpstmt(sql,mb, op1);
+		int l = backend_dumpstmt(m,mb, op1, sql);
 		@:SQLprelude@
 		if (s->nrcols ){
 			stmt *h;
@@ -817,12 +1076,12 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLpostlude@
 	} 	break;
 	case st_aggr: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
 
 		@:SQLprelude@
 		if (s->op3.gval){
-			int g = backend_dumpstmt(sql,mb, s->op2.stval);
-			int e = backend_dumpstmt(sql,mb, s->op3.stval);
+			int g = backend_dumpstmt(m,mb, s->op3.gval->grp, sql);
+			int e = backend_dumpstmt(m,mb, s->op3.gval->ext, sql);
 			@:newStmt("multiplex","group")@
 			@:pushStr(s->op4.aggrval->aggr->imp)@
 			@:pushArg(l)@
@@ -834,22 +1093,37 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		}
 		@:SQLpostlude@
 	} 	break;
+	case st_temp: {
+		int l,r;
+		@:newStmt("calc","oid")@
+		@:pushInt(0)@
+		@:getReturn(r)@
+		@:newStmt("bat","new")@
+		@:pushArgId("void")@
+		@:pushArgId(s->op4.typeval->type->name)@
+		@:getReturn(l)@
+		@:newStmt("bat","seqbase")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+	} break;
 	case st_atom: {
-		s->nr= constantAtom(sql,mb,s->op1.aval);
+		int k;
+		@:SQLprelude@
+		k= constantAtom(mb,s->op1.aval,sql);
+		@:newStmt(0,0)@
+		@:pushArg(k)@
+		@:SQLpostlude@
 	} break;
 	case st_insert: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r = backend_dumpstmt(sql,mb, s->op2.stval);
-		int k;
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
 		@:SQLprelude@
 		if (s->op2.stval->nrcols){
 			@:newStmt("bat","setWriteMode")@
 			@:pushArg(s->nr)@
-			k= s->nr;
 			@:newStmt("bat","insert")@
 			@:pushArg(l)@
 			@:pushArg(r)@
-			s->nr=k;
 		} else {
 			@:newStmt("bat","insert")@
 			@:pushArg(l)@
@@ -858,19 +1132,25 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLpostlude@
 	} break;
 	case st_append:{
-                int l = backend_dumpstmt(sql, mb, s->op1.stval);
-                int r = backend_dumpstmt(sql, mb, s->op2.stval );
-		@:newStmt("bat","setWriteMode")@
-		@:pushArg(l)@
-		s->nr=l;
-		@:newStmt("bat","append")@
-		@:pushArg(l)@
-		@:pushArg(r)@
-		@:SQLpostlude@
+                int l = backend_dumpstmt(m, mb, s->op1.stval, sql );
+                int r = backend_dumpstmt(m, mb, s->op2.stval, sql );
+                if (s->op2.stval->nrcols){
+                        @:newStmt("bat","setWriteMode")@
+                        @:pushArg(s->nr)@
+                        @:newStmt("bat","append")@
+                        @:pushArg(l)@
+                        @:pushArg(r)@
+                } else {
+                        @:newStmt("bat","append")@
+                        @:pushArg(l)@
+                        @:pushArg(r)@
+                }
+                @:SQLpostlude@
+
 	} break;
 	case st_replace: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r = backend_dumpstmt(sql,mb, s->op2.stval);
+		int l = backend_dumpstmt(m,mb, s->op1.stval, sql);
+		int r = backend_dumpstmt(m,mb, s->op2.stval, sql);
 		@:SQLprelude@
 		@:newStmt("bat","setWriteMode")@
 		@:pushArg(l)@
@@ -879,47 +1159,14 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:pushArg(r)@
 		@:SQLpostlude@
 	} break;
-	case st_exception:{
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r = backend_dumpstmt(sql,mb, s->op2.stval);
-		@:SQLprelude@
-		/* if(bit(l)) { error(r);}  ==raising an exception*/
-		@:newStmt("sql","error")@
-		@:pushArg(l)@
-		@:pushArg(r)@
-		@:SQLpostlude@
-		break;
-	}
-	case st_predicate:{
-		/* if(l){} else {} */
-		int pred=  backend_dumpstmt(sql,mb, s->op1.stval);
-		int def = backend_dumpstmt(sql,mb, s->op2.stval);
-		int e= backend_dumpstmt(sql,mb, s->op3.stval);
-
-		@:SQLprelude@
-		@:newStmt("sql","if")@
-		@:pushArg(pred)@
-		@:pushArg(def)@
-		@:pushArg(e)@
-		@:SQLpostlude@
-		}
-	case st_intersect: {
-		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int r = backend_dumpstmt(sql,mb, s->op2.stval);
-		@:SQLprelude@
-		@:newStmt("algebra","sintersect")@
-		@:pushArg(l)@
-		@:pushArg(r)@
-		@:SQLpostlude@
-	} break;
 	case st_alias:
 	case st_column_alias: {
-		s->nr = - backend_dumpstmt(sql,mb, s->op1.stval);
+		s->nr = - backend_dumpstmt(m,mb, s->op1.stval,sql);
 	} break;
 	case st_set: 
 	case st_list: {
 		for (n = s->op1.lval->h; n; n = n->next ){
-			backend_dumpstmt(sql,mb, n->data);
+			backend_dumpstmt(m,mb, n->data, sql);
 		}
 	} break;
 	case st_sets: {
@@ -927,21 +1174,25 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			list *l = n->data;
 			node *ml = l->h;
 			while(ml){
-				backend_dumpstmt(sql,mb, ml->data);
+				backend_dumpstmt(m,mb, ml->data,sql);
 				ml = ml->next;
 			}
 		}
 	} break;
         case st_find: {
-		dump_2(sql,mb,s,"algebra","find");
+                int b =  backend_dumpstmt(m,mb, s->op1.stval, sql);
+                int v =  backend_dumpstmt(m,mb, s->op2.stval, sql);
+		@:newStmt("bat","find")@
+		@:pushArg(b)@
+		@:pushArg(v)@
 	} break;
        case st_bulkinsert: {
                 char *tname = s->op1.stval->op1.tval->base.name;
-                int sep =  backend_dumpstmt(sql,mb, s->op2.stval);
-                int rsep = backend_dumpstmt(sql,mb, s->op3.stval);
+                int sep =  backend_dumpstmt(m,mb, s->op2.stval, sql);
+                int rsep = backend_dumpstmt(m,mb, s->op3.stval, sql);
 
                 if (s->op4.stval){
-			int file = backend_dumpstmt(sql,mb, s->op4.stval);
+			int file = backend_dumpstmt(m,mb, s->op4.stval, sql);
 			int codeset,iconv;
 			
 			@:newStmt("str","codeset")@
@@ -974,19 +1225,24 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			@:pushArg(s->flag)@
                 }
         } break;
+        case st_senddata: {
+		@:newStmt("sql","senddata")@
+		@:pushArgId("Output")@
+        } break;
         case st_filter:
-                s->nr = -backend_dumpstmt(sql,mb, s->op1.stval);
+                s->nr = -backend_dumpstmt(m,mb, s->op1.stval, sql);
                 break;
 	case st_ordered: {
-		int l =  backend_dumpstmt(sql,mb, s->op1.stval);
-		backend_dumpstmt(sql,mb, s->op2.stval);
+		int l =  backend_dumpstmt(m,mb, s->op1.stval, sql);
+		backend_dumpstmt(m,mb, s->op2.stval,sql);
 		s->nr = -l;
 	} break;
 	case st_output: {
 		stmt *order = NULL; int flg=0;
 		stmt *lst = s->op1.stval;
-		backend_dumpstmt(sql, mb, lst);
+		int nr = backend_dumpstmt(m, mb, lst, sql);
 
+		(void)nr;
 		if (lst->type == st_ordered){
 			order = lst->op1.stval; 
 			lst = lst->op2.stval; 
@@ -1018,20 +1274,33 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 
         /* todo */
         case st_basetable:
+        case st_grant:
+        case st_revoke:
         case st_ptable:
         case st_pivot:
+        case st_partial_pivot:
 	case st_relselect:
-	case st_groupby:
+
+	case st_assign: 
+	case st_ibat: 
+	case st_idxbat: 
+	case st_idx: 
+	case st_create_view: 
+	case st_create_idx: 
+	case st_create_kc:
+	case st_create_ic:
+	case st_drop_idx:
+	case st_drop_key:
+	case st_uselect: 
+	case st_uselect2: 
+	case st_exception: 
+	case st_export: 
                 printf("not implemented stmt\n");
                 assert(0);
 
 
 	}
 /*	if (s->nr == 0) s->nr = mb->stop;*/
-#ifdef _SQL_GENCODE_DEBUG	
-    } else {
-	printf("called with zero statement nr\n");
-#endif
     }
     return s->nr;
 }
@@ -1044,15 +1313,15 @@ void backend_dumpproc( backend *be, MalBlkPtr mb, int id, stmt *s )
 	
 	(void)id;
 	/* TODO change mal procs */ 
-	if (be->mvc->params){
-		for (n = be->mvc->params->h; n; n = n->next){
+	if (be->context->params){
+		for (n = be->context->params->h; n; n = n->next){
 			var_ *v = n->data;
 
 			i += snprintf(buf+i, BUFSIZ-i, "%s %s%c", 
-				v->s->op2.typeval->type->base.name,
+				v->s->op2.typeval->type->name,
 				v->name, (n->next)?',':' '
 				);
 		}
 	}
-    	backend_dumpstmt( be, mb, s);
+    	backend_dumpstmt( be->context->mvc, mb, s, be );
 }

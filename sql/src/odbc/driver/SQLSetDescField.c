@@ -121,6 +121,9 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 	struct sql_types *p;
 	struct sql_types *start, *end;
 
+	if (!isValidDesc(desc))
+		return SQL_INVALID_HANDLE;
+
 	if (isAD(desc)) {
 		start = c_types;
 		end = c_types + NC_TYPES;
@@ -141,8 +144,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 			return SQL_ERROR;
 		}
 		if (isAD(desc)) {
-			/* limit size to protect against bugs */
-			if ((SQLUINTEGER) (size_t) Value > 10000) {
+			if ((SQLUINTEGER) (size_t) Value != 1) {
 				/* driver does not support this feature */
 				addDescError(desc, "IM001", NULL, 0);
 				return SQL_ERROR;
@@ -368,11 +370,6 @@ SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetDescField %d %d\n", RecordNumber, FieldIdentifier);
 #endif
-
-	if (!isValidDesc((ODBCDesc *) DescriptorHandle))
-		 return SQL_INVALID_HANDLE;
-
-	clearDescErrors((ODBCDesc *) DescriptorHandle);
 
 	return SQLSetDescField_((ODBCDesc *) DescriptorHandle, RecordNumber,
 				FieldIdentifier, Value, BufferLength);

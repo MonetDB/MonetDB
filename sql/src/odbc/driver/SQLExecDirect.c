@@ -25,14 +25,18 @@ SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
 	RETCODE rc;
 
+	if (!isValidStmt(stmt))
+		return SQL_INVALID_HANDLE;
+
 	/* prepare SQL command */
 	rc = SQLPrepare_(stmt, szSqlStr, nSqlStr);
-	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+	if (rc == SQL_SUCCESS) {
 		/* execute prepared statement */
 		rc = SQLExecute_(stmt);
-		if (rc == SQL_SUCCESS && stmt->Error)
-			rc = SQL_SUCCESS_WITH_INFO;
 	}
+
+	/* Do not set errors here, they are set in SQLPrepare() and/or SQLExecute() */
+
 	return rc;
 }
 
@@ -42,11 +46,6 @@ SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLExecDirect\n");
 #endif
-
-	if (!isValidStmt((ODBCStmt *) hStmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors((ODBCStmt *) hStmt);
 
 	return SQLExecDirect_((ODBCStmt *) hStmt, szSqlStr, nSqlStr);
 }

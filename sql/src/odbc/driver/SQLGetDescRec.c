@@ -15,7 +15,6 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
-#include "ODBCUtil.h"
 
 SQLRETURN
 SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
@@ -69,10 +68,16 @@ SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 		*Nullable = rec->sql_desc_nullable;
 
 	if (isID(desc)) {
-		copyString(rec->sql_desc_name,
-			   Name, BufferLength, StringLength,
-			   addDescError, desc);
+		ssize_t length = strlen((char *) rec->sql_desc_name);
+		if (BufferLength > 0 && Name)
+			strncpy((char *) Name, (char *) rec->sql_desc_name, BufferLength);
+		if (StringLength)
+			*StringLength = (SQLSMALLINT) length;;
+		if (length >= BufferLength) {
+			addDescError(desc, "01004", NULL, 0);
+			return SQL_SUCCESS_WITH_INFO;
+		}
 	}
 
-	return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+	return SQL_SUCCESS;
 }
