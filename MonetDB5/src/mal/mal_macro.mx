@@ -387,11 +387,13 @@ str MACROprocessor(MalBlkPtr mb, Symbol t){
 #ifdef DEBUG_MAL_MACRO
     printf("calling the MACRO processor\n");
 #endif
+	msg= MACROvalidate(t->def);
+	if( msg )
+		return msg;
     for( i=0; i< mb->stop; i++){
         q= getInstrPtr(mb,i);
-        if( functionId(q) &&
-            idcmp(functionName(q),t->name)==0){
-            if( getSignature(t)->token == FUNCTIONsymbol ){
+        if( functionId(q) && idcmp(functionName(q),t->name)==0 &&
+            getSignature(t)->token == FUNCTIONsymbol ){
 #ifdef DEBUG_MAL_MACRO
             printf("Hit, replace macro call %s\n",t->name);
 #endif
@@ -400,14 +402,11 @@ str MACROprocessor(MalBlkPtr mb, Symbol t){
                     "duplicate macro expansion");
                 
             last= i;
-            msg= MACROvalidate(t->def);
-            if( msg == 0)
-                    i= inlineMALblock(mb,i,t->def);
+			i= inlineMALblock(mb,i,t->def);
             cnt++;
             if( cnt >MAXEXPANSION )
                 return throwMessage("optimizer.MACROoptimizer",
                     "too many macro expansions");
-            }
         }
     }
     return msg;
