@@ -2732,19 +2732,10 @@ Much used, but not necessarily kernel-operations on BATs.
 {\tt \begin{tabular}{|lll|}\hline
 BAT* & BAThistogram & (BAT *b)\\
 BAT* & BATsample& (BAT* b,size_t n)\\
-ptr & BATsum & (BAT* b, ptr sumval)\\
-ptr & BATmax & (BAT *b, ptr maxval)\\
-ptr & BATmin & (BAT *b, ptr minval)\\
 \hline\end{tabular}}
-@
-The routines @%BATmax@, @%BATmin@ (and others) provide statistical
-information on the BAT header.
 @
 The routine @%BAThistogram@ produces a new BAT with a frequency distribution
 of the tail of its operand.
-@
-The routine @%BATsum@ works only on the flt and int datatypes.
-It computes a sum over the tails.
 @
 The routine @%BATsample@ returns a random sample on n BUNs of a BAT.
 @
@@ -2755,10 +2746,7 @@ properties. They can be used to improve query processing at higher levels.
 @h
 
 gdk_export BAT*		BATsample    (BAT *b, size_t n);
-gdk_export ptr 		BATsum       (BAT *b, ptr sumval);
 gdk_export BAT*		BAThistogram (BAT *b); 
-gdk_export ptr              BATmin       (BAT *b, ptr minval);
-gdk_export ptr              BATmax       (BAT *b, ptr maxval);
 @}
 @- alignment-id transformations
 @T

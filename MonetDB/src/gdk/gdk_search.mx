@@ -574,11 +574,9 @@ dynamic check using sampling to see whether there are many doubles.
 @c
 #define IDX_MANY_DUPLICATES	4
 	    if (b->hkey == 0 && cnt > 10000 && unique == NULL) {
-		int max_equal;
 		BAT *s = BATsample(b, MIN(BATcount(b),1000));
 		BAT *v = BAThistogram(BATmirror(s));
-		BATmax(v, &max_equal);
-		if (max_equal > IDX_MANY_DUPLICATES) {
+		if (BATcount(v) * IDX_MANY_DUPLICATES < BATcount(b) ) {
 		    unique = BAThistogram(BATmirror(b));
 		} 
 		BBPreclaim(s);
