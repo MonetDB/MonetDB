@@ -42,7 +42,6 @@ gdk_export int  GDKsec       ();
 char	GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 char	GDKdbnameStr[PATHLENGTH] = { 0 };
 char	GDKdirStr[PATHLENGTH] = { 0 };
-/* TODO: use monet-config instead of MONET_PREFIX to set GDKdistrStr */
 char	GDKdistrStr[PATHLENGTH] = MONET_PREFIX;
 char	GDKmonetrcStr[PATHLENGTH] = { 0 };
 
@@ -118,9 +117,25 @@ void GDKusage(){
 
 void GDKenvironment(str db, str monetrc)
 {
-	char buf[2*PATHLENGTH];
+	static int monet_config_called=0;
+	char buf[2*PATHLENGTH], *bp;
 	char pwd[PATHLENGTH];
-	FILE *fd= NULL;
+	FILE *fd= NULL, *pd= NULL;
+	
+	if (!monet_config_called) {
+		monet_config_called = 1;
+		pd = popen("monet-config --prefix", "r");
+		if (pd && fgets(buf,2*PATHLENGTH,pd)) {
+			bp = strstr(buf, "\n");
+			if (bp) {
+				*bp = '\0';
+			}
+			if (strlen(buf) < PATHLENGTH) {
+				strcpy(GDKdistrStr, buf);
+			}
+			pclose(pd);
+		}
+	}
 
 	if( db != NULL && strchr(db,DIR_SEP) ) {
 		strcpy(GDKdbnameStr,db);
