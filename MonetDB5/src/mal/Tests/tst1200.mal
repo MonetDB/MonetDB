@@ -68,11 +68,11 @@
 #      [day](rule_bat).setColumn("day"),
 	ta_a := multiplex.script("minutes",rule_bat);
 	ua_a := setColumn(ta_a,"minutes");
-print("ma_a,oa_a,qa_a,sa_a,ua_a");
-	va_a := print(ma_a,oa_a,qa_a,sa_a,ua_a);
+print("rule_bat,na_a,pa_a,ra_a,ta_a");
+	va_a := print(rule_bat,na_a,pa_a,ra_a,ta_a);
 #      [minutes](rule_bat).setColumn("minutes"));
 #
-	wa_a := setColumn(rule_bat,"rule");
+	setColumn(rule_bat,"rule");
 #print(rule_bat.setColumn("rule"),
 	xa_a := multiplex.script("compute",rule_bat,2001);
 	ya_a := setColumn(xa_a,"2001");
@@ -80,25 +80,25 @@ print("ma_a,oa_a,qa_a,sa_a,ua_a");
 	ab_a := multiplex.script("compute",rule_bat,2001);
 	bb_a := multiplex.script("dayofweek",ab_a);
 	cb_a := multiplex.script("dayname",bb_a);
-	db_a := setColumn(cb_a,"2001");
+	setColumn(cb_a,"2001");
 #      [dayname]([dayofweek]([compute](rule_bat, 2001))).setColumn("2001"),
 	eb_a := multiplex.script("compute",rule_bat,1999);
-	fb_a := setColumn(eb_a,"1999");
+	setColumn(eb_a,"1999");
 #      [compute](rule_bat, 1999).setColumn("1999"),
 	gb_a := multiplex.script("compute",rule_bat,1999);
 	hb_a := multiplex.script("dayofweek",gb_a);
 	ib_a := multiplex.script("dayname",hb_a);
-	jb_a := setColumn(ib_a,"1999");
+	setColumn(ib_a,"1999");
 #      [dayname]([dayofweek]([compute](rule_bat, 1999))).setColumn("1999"),
 	kb_a := multiplex.script("compute",rule_bat,1992);
-	lb_a := setColumn(kb_a,"1992");
+	setColumn(kb_a,"1992");
 #      [compute](rule_bat, 1992).setColumn("1992"),
 	mb_a := multiplex.script("compute",rule_bat,1992);
 	nb_a := multiplex.script("dayofweek",mb_a);
 	ob_a := multiplex.script("dayname",nb_a);
-	pb_a := setColumn(ob_a,"1992");
-print("wa_a,ya_a,db_a,fb_a,jb_a,lb_a,pb_a");
-	qb_a := print(wa_a,ya_a,db_a,fb_a,jb_a,lb_a,pb_a);
+	setColumn(ob_a,"1992");
+print("rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a");
+	qb_a := print(rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a);
 #      [dayname]([dayofweek]([compute](rule_bat, 1992))).setColumn("1992"));
 #
 	rb_a := setColumn(rule_bat,"rule");
@@ -126,8 +126,8 @@ print("wa_a,ya_a,db_a,fb_a,jb_a,lb_a,pb_a");
 	ic_a := multiplex.script("dayofweek",hc_a);
 	jc_a := multiplex.script("dayname",ic_a);
 	kc_a := setColumn(jc_a,"-2000");
-print("rb_a,tb_a,xb_a,ac_a,ec_a,gc_a,kc_a");
-	lc_a := print(rb_a,tb_a,xb_a,ac_a,ec_a,gc_a,kc_a);
+print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
+	lc_a := print(rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a);
 #      [dayname]([dayofweek]([compute](rule_bat, -2000))).setColumn("-2000"));
 #
 #
@@ -198,25 +198,25 @@ print("rb_a,tb_a,xb_a,ac_a,ec_a,gc_a,kc_a");
 #
 ## test the operations on tzones
 	id_a := setName(tzone_bat,"tzone");
-print(tzone_bat);
-print("start error");
-	x:= getRefCount(id_a);
-print(x);
-	jd_a := print(id_a);
-print("end");
-print(x);
-	x:= getRefCount(id_a);
+#print(tzone_bat);
+#print("start error");
+	#x:= getRefCount(tzone_bat);
+#print(x);
+	#jd_a := print(tzone_bat);
+#print("end");
+#print(x);
+	#x:= getRefCount(tzone_bat);
 	print(tzone_bat);
 #print(tzone_bat.setColumn("tzone"));
 	kd_a := multiplex.script("minutes",tzone_bat);
-	ld_a := setColumn(kd_a,"minutes");
+	setColumn(kd_a,"minutes");
 #print([minutes](tzone_bat).setColumn("minutes"),
 	md_a := multiplex.script("start_dst",tzone_bat);
-	nd_a := setColumn(md_a,"start_dst");
+	setColumn(md_a,"start_dst");
 #      [start_dst](tzone_bat).setColumn("start_dst"),
 	od_a := multiplex.script("end_dst",tzone_bat);
-	pd_a := setColumn(od_a,"end_dst");
-	qd_a := print(ld_a,nd_a,pd_a);
+	setColumn(od_a,"end_dst");
+	qd_a := print(kd_a,md_a,od_a);
 #      [end_dst](tzone_bat).setColumn("end_dst"));
 #
 #
@@ -315,7 +315,7 @@ print(x);
 	we_a := multiplex.script("monthname",ve_a);
 	xe_a := multiplex.script("monthnum",we_a);
 	ye_a := setColumn(xe_a,"monthnum");
-	af_a := print(ne_a,pe_a,re_a,ue_a,ye_a);
+	af_a := print(date_bat,oe_a,qe_a,te_a,xe_a);
 #      [monthnum]([monthname]([month](date_bat))).setColumn("monthnum"));
 #
 	date_addyears:= multiplex.script("addyears",date_bat,-100);
@@ -323,22 +323,22 @@ print(x);
 	date_addmonths:= multiplex.script("addmonths",date_bat,1);
 #var date_addmonths := [addmonths](date_bat, 1);
 #
-	bf_a := setColumn(date_bat,"date");
+	setColumn(date_bat,"date");
 #print(date_bat.setColumn("date"),
-	cf_a := setColumn(date_addyears,"min100y");
+	setColumn(date_addyears,"min100y");
 #      date_addyears.setColumn("min100y"),
 	df_a := multiplex.script("diff",date_addyears,date_bat);
-	ef_a := setColumn(df_a,"diff");
-	ff_a := print(bf_a,cf_a,ef_a);
+	setColumn(df_a,"diff");
+	ff_a := print(date_bat,date_addyears,df_a);
 #      [diff](date_addyears, date_bat).setColumn("diff"));
 #
-	gf_a := setColumn(date_bat,"date");
+	setColumn(date_bat,"date");
 #print(date_bat.setColumn("date"),
-	hf_a := setColumn(date_addmonths,"plus1m");
+	setColumn(date_addmonths,"plus1m");
 #      date_addmonths.setColumn("plus1m"),
 	if_a := multiplex.script("diff",date_addmonths,date_bat);
-	jf_a := setColumn(if_a,"diff");
-	kf_a := print(gf_a,hf_a,jf_a);
+	setColumn(if_a,"diff");
+	kf_a := print(date_bat,date_addmonths,if_a);
 #      [diff](date_addmonths, date_bat).setColumn("diff"));
 #
 ## test dayofweek and weeknumber using more than two years as consecutive days
@@ -374,8 +374,8 @@ exit	lf_a;
 #      [daynum]([dayname]([dayofweek](date_seq))).setColumn("num"),
 	cg_a := multiplex.script("dayofyear",date_seq);
 	dg_a := setColumn(cg_a,"dayofyear");
-print("rf_a,tf_a,wf_a,bg_a,dg_a");
-	eg_a := print(rf_a,tf_a,wf_a,bg_a,dg_a);
+print("date_seq,sf_a,vf_a,ag_a,cg_a");
+	eg_a := print(date_seq,sf_a,vf_a,ag_a,cg_a);
 #      [dayofyear](date_seq).setColumn("dayofyear"));
 #
 #
@@ -454,21 +454,21 @@ print("rf_a,tf_a,wf_a,bg_a,dg_a");
 	insert(daytime_bat,19@0,daytime_19);
 #daytime_bat.insert(18@0, daytime_18).insert(19@0, daytime_19);
 #
-	ah_a := setColumn(daytime_bat,"daytime");
+	setColumn(daytime_bat,"daytime");
 #print(daytime_bat.setColumn("daytime"),
 	bh_a := multiplex.script("hours",daytime_bat);
-	ch_a := setColumn(bh_a,"hours");
+	setColumn(bh_a,"hours");
 #      [hours](daytime_bat).setColumn("hours"),
 	dh_a := multiplex.script("minutes",daytime_bat);
-	eh_a := setColumn(dh_a,"minutes");
+	setColumn(dh_a,"minutes");
 #      [minutes](daytime_bat).setColumn("minutes"),
 	fh_a := multiplex.script("seconds",daytime_bat);
-	gh_a := setColumn(fh_a,"seconds");
+	setColumn(fh_a,"seconds");
 #      [seconds](daytime_bat).setColumn("seconds"),
 	hh_a := multiplex.script("milliseconds",daytime_bat);
-	ih_a := setColumn(hh_a,"milliseconds");
-print("ah_a,ch_a,eh_a,gh_a,ih_a");
-	jh_a := print(ah_a,ch_a,eh_a,gh_a,ih_a);
+	setColumn(hh_a,"milliseconds");
+print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
+	jh_a := print(daytime_bat,bh_a,dh_a,fh_a,hh_a);
 #      [milliseconds](daytime_bat).setColumn("milliseconds"));
 #
 #
@@ -483,14 +483,14 @@ print("ah_a,ch_a,eh_a,gh_a,ih_a");
 ## timestamp_bat.insert(14@0, timestamp_now);
 #
 ## test the timestamp operations
-	lh_a := setColumn(timestamp_bat,"timestamp");
+	setColumn(timestamp_bat,"timestamp");
 #print(timestamp_bat.setColumn("timestamp"),
 	mh_a := multiplex.script("date",timestamp_bat,tzone_bat);
-	nh_a := setColumn(mh_a,"date");
+	setColumn(mh_a,"date");
 #      [date](timestamp_bat,tzone_bat).setColumn("date"),
 	oh_a := multiplex.script("daytime",timestamp_bat,tzone_bat);
-	ph_a := setColumn(oh_a,"daytime");
-	qh_a := print(lh_a,nh_a,ph_a);
+	setColumn(oh_a,"daytime");
+	print(timestamp_bat,mh_a,oh_a);
 #      [daytime](timestamp_bat,tzone_bat).setColumn("daytime"));
 #
 	rh_a := setColumn(timestamp_bat,"timestamp");
@@ -510,7 +510,7 @@ print("ah_a,ch_a,eh_a,gh_a,ih_a");
 #      [date](timestamp_bat,algebra.find(timezones,"American Samoa")).setColumn("American Samoa"),
 	bi_a:tzone := algebra.find(timezones,"American Samoa");
 	ci_a := multiplex.script("daytime",timestamp_bat,bi_a);
-	di_a := print(rh_a,uh_a,wh_a,ai_a,ci_a);
+	di_a := print(timestamp_bat,th_a,wh_a,yh_a,ci_a);
 #      [daytime](timestamp_bat,algebra.find(timezones,"American Samoa")));
 #
 	ei_a := *(60,1000);
@@ -536,7 +536,7 @@ print("ah_a,ch_a,eh_a,gh_a,ih_a");
 	qi_a := lng(pi_a);
 	ri_a := /(ni_a,qi_a);
 	si_a := setColumn(ri_a,"diff");
-	ti_a := print(ki_a,li_a,mi_a,si_a);
+	ti_a := print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a);
 #	[/]([diff](timestamp_plus, timestamp_minus),lng(60*60*1000)).setColumn("diff"));
 #
 	ui_a:tzone := algebra.find(timezones,"West/Europe");
@@ -563,7 +563,7 @@ print("ah_a,ch_a,eh_a,gh_a,ih_a");
 	gj_a:tzone := algebra.find(timezones,"Andes/Brazil");
 	hj_a := multiplex.script("dst",timestamp_bra,gj_a);
 	ij_a := setColumn(hj_a,"dst");
-	jj_a := print(wi_a,aj_a,bj_a,ej_a,fj_a,ij_a);
+	jj_a := print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a);
 #	[dst](timestamp_bra,algebra.find(timezones,"Andes/Brazil")).setColumn("dst"));
 #
 #quit;

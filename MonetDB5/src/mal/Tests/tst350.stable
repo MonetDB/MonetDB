@@ -109,7 +109,7 @@ end main;	# 7
 [ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  35,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 4,	  "simplemind",		  "int",  "int",	  0,	  34,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ "Search directory by name" ]
 #-------------------------#
 # h	tmp_22		  # name
@@ -120,5 +120,5 @@ end main;	# 7
 # tmp_22	tmp_19		htype	ttype	count	heat	dirty		status		kind		refcnt	  # name
 # int	str		str	str	lng	int	str		str		str		int	  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  158,	  "dirty",	  "dirty",	  "transient",	  5	  ]
+[ 4,	  "simplemind",	  "int",  "int",  0,	  156,	  "dirty",	  "dirty",	  "transient",	  5	  ]
 >

@@ -198,9 +198,9 @@ function Admin.main():int;	# 0  (main:int)
     _v26 := io.print(_v25);	# 28 IOprint_val (_v26:int)<-(_v25:int)
     _v27 := algebra.find(b,"cat");	# 29 ALGfind (_v27:int)<-(b:bat[:str,:int])($55:str)
     _v28 := io.print(_v27);	# 30 IOprint_val (_v28:int)<-(_v27:int)
-catch MALexception;	# 31  (MALexception:str) jump 33
-    io.print(MALexception);	# 32 IOprint_val ($58:int)<-(MALexception:str)
-exit MALexception;	# 33  (MALexception:str)
+catch MALexception;	# 31  (MALexception:any) jump 33
+    io.print(MALexception);	# 32 IOprint_val ($58:int)<-(MALexception:any)
+exit MALexception;	# 33  (MALexception:any)
     _v29 := bat.delete(b,"fox",4);	# 34 BKCdelete_bun (_v29:void)<-(b:bat[:str,:int])($60:str)($61:int)
     _v30 := bat.delete(b,"the",1);	# 35 BKCdelete_bun (_v30:void)<-(b:bat[:str,:int])($47:str)($63:int)
     _v31 := bat.delete(b,".",10);	# 36 BKCdelete_bun (_v31:void)<-(b:bat[:str,:int])($37:str)($38:int)

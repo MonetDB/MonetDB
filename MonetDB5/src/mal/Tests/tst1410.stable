@@ -1,9 +1,10 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## testing the basic functionality of the enum module
 ## This example illustrates use of the atomary aspect
 #
@@ -17,9 +18,9 @@
 #insert(a,6,"apples");
 #insert(a,7,"apples");
 #print(a);
-#enum.create(fruit,a);
+#enum.create(:fruit,a);
 #print("get encoding table");
-#e:= enum.getTable(fruit);
+#e:= enum.getTable(:fruit);
 #print(e);
 #print("test type for enumeration");
 #b:= enum.isEnum(e);
@@ -28,52 +29,52 @@
 #z:= copy(a);
 #print(z);
 #print("encode the bat");
-#y:= enum.encode(fruit,z);
+#y:= enum.encode(:fruit,z);
 #print(y);
 #print("decode the bat");
 #x:= enum.decode(y);
 #print(x);
 #print("set histogram on tail");
 #tt:= reverse(y);
-#setHistogram(fruit,tt);
-#b:= enum.isHistogram(fruit,tt);
+#setHistogram(:fruit,tt);
+#b:= enum.isHistogram(:fruit,tt);
 #print(b);
 #
-function Admin.main():int; #0  (main:int)
-    a := bbp.new(:int,:str); #1 CMDBATnew (a:bat[int,str])<-(int:int)(str:str)
-    bat.insert(a,0,"apples"); #2 CMDinsert_bun ($4:void)<-(a:bat[int,str])($5:int)($6:str)
-    bat.insert(a,1,"oranges"); #3 CMDinsert_bun ($7:void)<-(a:bat[int,str])($8:int)($9:str)
-    bat.insert(a,2,"grapes"); #4 CMDinsert_bun ($10:void)<-(a:bat[int,str])($11:int)($12:str)
-    bat.insert(a,3,"grapes"); #5 CMDinsert_bun ($13:void)<-(a:bat[int,str])($14:int)($12:str)
-    bat.insert(a,5,"apples"); #6 CMDinsert_bun ($15:void)<-(a:bat[int,str])($16:int)($6:str)
-    bat.insert(a,6,"apples"); #7 CMDinsert_bun ($17:void)<-(a:bat[int,str])($18:int)($6:str)
-    bat.insert(a,7,"apples"); #8 CMDinsert_bun ($19:void)<-(a:bat[int,str])($20:int)($6:str)
-    io.print(a); #9 CMDprint_val ($21:int)<-(a:bat[int,str])
-    enum.create(:fruit,a); #10 ENUMcreate ($22:bat[str,fruit])<-(fruit:fruit)(a:bat[int,str])
-    io.print("get encoding table"); #11 CMDprint_val ($24:int)<-($25:str)
-    e := enum.getTable(:fruit); #12 ENUMtable (e:bat[any,any])<-(fruit:fruit)
-    io.print(e); #13 CMDprint_val ($27:int)<-(e:bat[any,any])
-    io.print("test type for enumeration"); #14 CMDprint_val ($28:int)<-($29:str)
-    b := enum.isEnum(e); #15 isEnum (b:bit)<-(e:bat[any,any])
-    io.print(b); #16 CMDprint_val ($31:int)<-(b:bit)
-    io.print("start bulk encoding test"); #17 CMDprint_val ($32:int)<-($33:str)
-    z := algebra.copy(a); #18 CMDcopy (z:bat[int,str])<-(a:bat[int,str])
-    io.print(z); #19 CMDprint_val ($35:int)<-(z:bat[int,str])
-    io.print("encode the bat"); #20 CMDprint_val ($36:int)<-($37:str)
-    y := enum.encode(:fruit,z); #21 ENUMencode_multi (y:bat[int,fruit])<-(fruit:fruit)(z:bat[int,str])
-    io.print(y); #22 CMDprint_val ($39:int)<-(y:bat[int,fruit])
-    io.print("decode the bat"); #23 CMDprint_val ($40:int)<-($41:str)
-    x := enum.decode(y); #24 ENUMdecode_multi (x:bat[int,any])<-(y:bat[int,fruit])
-    io.print(x); #25 CMDprint_val ($43:int)<-(x:bat[int,any])
-    io.print("set histogram on tail"); #26 CMDprint_val ($44:int)<-($45:str)
-    tt := bat.reverse(y); #27 CMDreverse (tt:bat[fruit,int])<-(y:bat[int,fruit])
-    enum.setHistogram(:fruit,tt); #28 ENUMsethisto ($47:void)<-(fruit:fruit)(tt:bat[fruit,int])
-    b := enum.isHistogram(:fruit,tt); #29 ENUMishisto (b:bit)<-(fruit:fruit)(tt:bat[fruit,int])
-    io.print(b); #30 CMDprint_val ($48:int)<-(b:bit)
-end main; #31  
+function Admin.main():int;	# 0  (main:int)
+    a := bbp.new(:int,:str);	# 1 CMDBATnew (a:bat[:int,:str])<-($2:int)($3:str)
+    bat.insert(a,0,"apples");	# 2 BKCinsert_bun ($4:void)<-(a:bat[:int,:str])($5:int)($6:str)
+    bat.insert(a,1,"oranges");	# 3 BKCinsert_bun ($7:void)<-(a:bat[:int,:str])($8:int)($9:str)
+    bat.insert(a,2,"grapes");	# 4 BKCinsert_bun ($10:void)<-(a:bat[:int,:str])($11:int)($12:str)
+    bat.insert(a,3,"grapes");	# 5 BKCinsert_bun ($13:void)<-(a:bat[:int,:str])($14:int)($12:str)
+    bat.insert(a,5,"apples");	# 6 BKCinsert_bun ($15:void)<-(a:bat[:int,:str])($16:int)($6:str)
+    bat.insert(a,6,"apples");	# 7 BKCinsert_bun ($17:void)<-(a:bat[:int,:str])($18:int)($6:str)
+    bat.insert(a,7,"apples");	# 8 BKCinsert_bun ($19:void)<-(a:bat[:int,:str])($20:int)($6:str)
+    io.print(a);	# 9 IOprint_val ($21:int)<-(a:bat[:int,:str])
+    enum.create(:fruit,a);	# 10 ENUMcreate ($22:bat[:str,:fruit])<-($23:fruit)(a:bat[:int,:str])
+    io.print("get encoding table");	# 11 IOprint_val ($24:int)<-($25:str)
+    e := enum.getTable(:fruit);	# 12 ENUMtable (e:bat[:any,:any])<-($27:fruit)
+    io.print(e);	# 13 IOprint_val ($28:int)<-(e:bat[:any,:any])
+    io.print("test type for enumeration");	# 14 IOprint_val ($29:int)<-($30:str)
+    b := enum.isEnum(e);	# 15 isEnum (b:bit)<-(e:bat[:any,:any])
+    io.print(b);	# 16 IOprint_val ($32:int)<-(b:bit)
+    io.print("start bulk encoding test");	# 17 IOprint_val ($33:int)<-($34:str)
+    z := algebra.copy(a);	# 18 ALGcopy (z:bat[:int,:str])<-(a:bat[:int,:str])
+    io.print(z);	# 19 IOprint_val ($36:int)<-(z:bat[:int,:str])
+    io.print("encode the bat");	# 20 IOprint_val ($37:int)<-($38:str)
+    y := enum.encode(:fruit,z);	# 21 ENUMencode_multi (y:bat[:int,:fruit])<-($40:fruit)(z:bat[:int,:str])
+    io.print(y);	# 22 IOprint_val ($41:int)<-(y:bat[:int,:fruit])
+    io.print("decode the bat");	# 23 IOprint_val ($42:int)<-($43:str)
+    x := enum.decode(y);	# 24 ENUMdecode_multi (x:bat[:int,:any])<-(y:bat[:int,:fruit])
+    io.print(x);	# 25 IOprint_val ($45:int)<-(x:bat[:int,:any])
+    io.print("set histogram on tail");	# 26 IOprint_val ($46:int)<-($47:str)
+    tt := bat.reverse(y);	# 27 BKCreverse (tt:bat[:fruit,:int])<-(y:bat[:int,:fruit])
+    enum.setHistogram(:fruit,tt);	# 28 ENUMsethisto ($49:void)<-($50:fruit)(tt:bat[:fruit,:int])
+    b := enum.isHistogram(:fruit,tt);	# 29 ENUMishisto (b:bit)<-($51:fruit)(tt:bat[:fruit,:int])
+    io.print(b);	# 30 IOprint_val ($52:int)<-(b:bit)
+end main;	# 31  
 #-------------------------#
-# BAT:	  tmp_4		  #
-# (int)	  (str)		  #
+# h	tmp_4		  # name
+# int	str		  # type
 #-------------------------#
 [ 0,	  "apples"	  ]
 [ 1,	  "oranges"	  ]
@@ -84,8 +85,8 @@ end main; #31
 [ 7,	  "apples"	  ]
 [ "get encoding table" ]
 #-------------------------#
-# BAT:		  fruit	  #
-# (str)		  (int)	  #
+# h		fruit	  # name
+# str		int	  # type
 #-------------------------#
 [ "apples",	  4	  ]
 [ "grapes",	  2	  ]
@@ -94,8 +95,8 @@ end main; #31
 [ true ]
 [ "start bulk encoding test" ]
 #-------------------------#
-# BAT:	  tmp_6		  #
-# (int)	  (str)		  #
+# h	tmp_4		  # name
+# int	str		  # type
 #-------------------------#
 [ 0,	  "apples"	  ]
 [ 1,	  "oranges"	  ]
@@ -106,8 +107,8 @@ end main; #31
 [ 7,	  "apples"	  ]
 [ "encode the bat" ]
 #-------------------------#
-# BAT:	  tmp_7		  #
-# (int)	  (fruit)	  #
+# h	tmp_6		  # name
+# int	fruit		  # type
 #-------------------------#
 [ 0,	  apples	  ]
 [ 1,	  oranges	  ]
@@ -118,8 +119,8 @@ end main; #31
 [ 7,	  apples	  ]
 [ "decode the bat" ]
 #-------------------------#
-# BAT:	  tmp_8		  #
-# (int)	  (str)		  #
+# h	tmp_7		  # name
+# int	str		  # type
 #-------------------------#
 [ 0,	  "apples"	  ]
 [ 1,	  "oranges"	  ]

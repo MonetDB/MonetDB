@@ -12,7 +12,7 @@
 #	printf("clock tick %d\n",n);
 #	alarm.sleep(5);
 #	n:= n-1;
-#	redo b;
+#	redo b:= n>0;
 #exit	b;
 #end clkticks;
 function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
@@ -20,14 +20,17 @@ barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
     io.printf("clock tick %d\n",n);	# 2 IOprint_formatted_int ($4:int)<-($5:str)(n:int)
     alarm.sleep(5);	# 3 ALARMsleep ($6:void)<-($7:int)
     n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
-    redo b;	# 5  (b:bit) jump 1
+    redo b := calc.>(n,0);	# 5 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 2
 exit b;	# 6  (b:bit)
 end clkticks;	# 7  
 #
+#counter:=0;
 #thread 	hdl:=0;	# synchronize through a counter
-#	hdl:= hdl+1;
-#	printf("hdl %d\n",hdl);
-#barrier t:= hdl==2;
+#	print("start the child");
+#	clkticks(1);
+#	counter:= counter+1;
+#	printf("counter %d\n",counter);
+#barrier t:= counter==2;
 #	leave hdl;
 #exit	t;
 #	printf("Redo thread\n");
@@ -38,35 +41,48 @@ end clkticks;	# 7
 ## loop to wait for the child to exit
 #barrier wl:= true;
 #	printf("Wait for child to exit %d\n",hdl);
-#barrier	t0:=hdl == 2;
+#barrier	t0:=counter == 2;
 #	printf("Child died \n");
 #	leave wl;
 #exit	t0;
-#	alarm.sleep(1);
+#	alarm.sleep(10);
 #	redo wl;
 #exit	wl;
 #
-!ERROR: thread 	hdl:=0;	# synchronize through a counter
-!       	       	  ^';' expected
-function Admin.main():int;	# 0  unknown (main:int)
-thread hdl;	# 1  unknown (hdl:int)
-    hdl := +(hdl,1);	# 2  unknown (hdl:int)<-(hdl:int)($2:int)
-    printf("hdl %d\n",hdl);	# 3  unknown ($3:any)<-($4:str)(hdl:int)
-barrier t := ==(hdl,2);	# 4  unknown (t:any)<-(hdl:int)($6:int)
-    leave hdl;	# 5  unknown (hdl:int)
-exit t;	# 6  unknown (t:any)
-    printf("Redo thread\n");	# 7  unknown ($7:any)<-($8:str)
-    redo hdl;	# 8  unknown (hdl:int)
-exit hdl;	# 9  unknown (hdl:int)
-    printf("Main thread\n");	# 10  unknown ($9:any)<-($10:str)
-barrier wl := true;	# 11  unknown (wl:any)<-($12:bit)
-    printf("Wait for child to exit %d\n",hdl);	# 12  unknown ($13:any)<-($14:str)(hdl:int)
-barrier t0 := ==(hdl,2);	# 13  unknown (t0:any)<-(hdl:int)($6:int)
-    printf("Child died \n");	# 14  unknown ($16:any)<-($17:str)
-    leave wl;	# 15  unknown (wl:any)
-exit t0;	# 16  unknown (t0:any)
-    alarm.sleep(1);	# 17  unknown ($18:any)<-($2:int)
-    redo wl;	# 18  unknown (wl:any)
-exit wl;	# 19  unknown (wl:any)
-end main;	# 20  unknown 
+function Admin.main():int;	# 0  (main:int)
+    counter := 0;	# 1  (counter:int)<-($2:int)
+thread hdl := 0;	# 2  (hdl:int)<-($2:int) jump 12
+    io.print("start the child");	# 3 IOprint_val ($4:int)<-($5:str)
+    Admin.clkticks(1);	# 4  ($6:void)<-($7:int)
+    counter := calc.+(counter,1);	# 5 CALCbinaryADDintint (counter:int)<-(counter:int)($7:int)
+    io.printf("counter %d\n",counter);	# 6 IOprint_formatted_int ($8:int)<-($9:str)(counter:int)
+barrier t := calc.==(counter,2);	# 7 CALCcompEQintint (t:bit)<-(counter:int)($11:int) jump 9
+    leave hdl;	# 8  (hdl:int) jump 12
+exit t;	# 9  (t:bit)
+    io.printf("Redo thread\n");	# 10 IOprint_str ($12:int)<-($13:str)
+    redo hdl;	# 11  (hdl:int) jump 3
+exit hdl;	# 12  (hdl:int)
+    io.printf("Main thread\n");	# 13 IOprint_str ($14:int)<-($15:str)
+barrier wl := true;	# 14  (wl:bit)<-($17:bit) jump 22
+    io.printf("Wait for child to exit %d\n",hdl);	# 15 IOprint_formatted_int ($18:int)<-($19:str)(hdl:int)
+barrier t0 := calc.==(counter,2);	# 16 CALCcompEQintint (t0:bit)<-(counter:int)($11:int) jump 19
+    io.printf("Child died \n");	# 17 IOprint_str ($21:int)<-($22:str)
+    leave wl;	# 18  (wl:bit) jump 22
+exit t0;	# 19  (t0:bit)
+    alarm.sleep(10);	# 20 ALARMsleep ($23:void)<-($24:int)
+    redo wl;	# 21  (wl:bit) jump 15
+exit wl;	# 22  (wl:bit)
+end main;	# 23  
+[ "start the child" ]
+clock tick 1
+Main thread
+Wait for child to exit 1083874097
+counter 1
+Redo thread
+[ "start the child" ]
+clock tick 1
+Wait for child to exit 1083874097
+counter 2
+Wait for child to exit 1083874097
+Child died 
 >

@@ -21,7 +21,10 @@ p:= pow(1,2);
 b:=new(:int,:int);
 insert(b,1,1);
 
+print("do multiplex three test");
 z:=multiplex.tactics("three",b,2,3);
+print("do multiplex one test");
 z:=multiplex.tactics("one",b);
+print("do multiplex pow test");
 z:=multiplex.tactics("pow",b,2);
 print(z);

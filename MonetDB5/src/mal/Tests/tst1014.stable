@@ -9,17 +9,17 @@
 ## takes care of releasing the variables.
 #
 #function test();
-#print("test");
-#bbp.open();
-#x:= bbp.getObjects();
-#print(x);
-#print("test");
-#b:= new(:int,:int);
-#insert(b,1,2);
-#bbp.deposit("myfirstbat",b);
-#c:= bbp.take("myfirstbat");
-#print(c);
-#bbp.close();
+#    print("test");
+#    bbp.open();
+#    x:= bbp.getObjects();
+#    print(x);
+#    print("test");
+#    b:= new(:int,:int);
+#    insert(b,1,2);
+#    bbp.deposit("myfirstbat",b);
+#    c:= bbp.take("myfirstbat");
+#    print(c);
+#    bbp.close();
 ## at the end of the call, the BBP should have discarded
 ## the temporary bats of the user
 #end test;
@@ -40,6 +40,8 @@ end test;	# 12
 #test();
 #print("continue");
 #bbp.open();
+#x:= bbp.getObjects();
+#print(x);
 #v:= bbp.take("myfirstbat");
 #print(v);
 #bbp.close();
@@ -48,10 +50,12 @@ function Admin.main():int;	# 0  (main:int)
     Admin.test();	# 1  ($1:void)
     io.print("continue");	# 2 IOprint_val ($2:int)<-($3:str)
     bbp.open();	# 3 CMDbbpopen ($4:void)
-    v := bbp.take("myfirstbat");	# 4 CMDbbptake (v:bat[:any,:any])<-($6:str)
-    io.print(v);	# 5 IOprint_val ($7:int)<-(v:bat[:any,:any])
-    bbp.close();	# 6 CMDbbpclose ($8:void)
-end main;	# 7  
+    x := bbp.getObjects();	# 4 CMDbbpGetObjects (x:bat[:int,:str])
+    io.print(x);	# 5 IOprint_val ($6:int)<-(x:bat[:int,:str])
+    v := bbp.take("myfirstbat");	# 6 CMDbbptake (v:bat[:any,:any])<-($8:str)
+    io.print(v);	# 7 IOprint_val ($9:int)<-(v:bat[:any,:any])
+    bbp.close();	# 8 CMDbbpclose ($10:void)
+end main;	# 9  
 [ "test" ]
 #-------------------------#
 # bbp	objects		  # name
@@ -65,6 +69,11 @@ bbp.take not yet fully implemented
 #-----------------#
 [ 1,	  2	  ]
 [ "continue" ]
+#-------------------------#
+# bbp	objects		  # name
+# int	str		  # type
+#-------------------------#
+[ 5,	  "myfirstbat"	  ]
 bbp.take not yet fully implemented
 #-----------------#
 # h	tmp_5	  # name

@@ -5,9 +5,9 @@
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 # Visit http://monetdb.cwi.nl for further information.
-## parallel syntax checks
+## simple parallel with control flow
 #
-#thread b1;
+#thread b1:=0;
 #	printf("start thread\n");
 #barrier yy;
 #	leave yy;
@@ -18,15 +18,15 @@
 #	printf("end of program, wait for child\n");
 #
 function Admin.main():int;	# 0  (main:int)
-thread b1;	# 1  (b1:int) jump 8
-    io.printf("start thread\n");	# 2 IOprint_str ($2:int)<-($3:str)
+thread b1 := 0;	# 1  (b1:int)<-($2:int) jump 8
+    io.printf("start thread\n");	# 2 IOprint_str ($3:int)<-($4:str)
 barrier yy;	# 3  (yy:any) jump 6
     leave yy;	# 4  (yy:any) jump 6
-    redo yy;	# 5  (yy:any) jump 3
+    redo yy;	# 5  (yy:any) jump 4
 exit yy;	# 6  (yy:any)
-    io.printf("finish thread\n");	# 7 IOprint_str ($5:int)<-($6:str)
+    io.printf("finish thread\n");	# 7 IOprint_str ($6:int)<-($7:str)
 exit b1;	# 8  (b1:int)
-    io.printf("end of program, wait for child\n");	# 9 IOprint_str ($7:int)<-($8:str)
+    io.printf("end of program, wait for child\n");	# 9 IOprint_str ($8:int)<-($9:str)
 end main;	# 10  
 start thread
 finish thread

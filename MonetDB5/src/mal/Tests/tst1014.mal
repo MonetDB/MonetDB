@@ -2,17 +2,17 @@
 # takes care of releasing the variables.
 
 function test();
-print("test");
-bbp.open();
-x:= bbp.getObjects();
-print(x);
-print("test");
-b:= new(:int,:int);
-insert(b,1,2);
-bbp.deposit("myfirstbat",b);
-c:= bbp.take("myfirstbat");
-print(c);
-bbp.close();
+    print("test");
+    bbp.open();
+    x:= bbp.getObjects();
+    print(x);
+    print("test");
+    b:= new(:int,:int);
+    insert(b,1,2);
+    bbp.deposit("myfirstbat",b);
+    c:= bbp.take("myfirstbat");
+    print(c);
+    bbp.close();
 # at the end of the call, the BBP should have discarded
 # the temporary bats of the user
 end test;
@@ -20,6 +20,8 @@ end test;
 test();
 print("continue");
 bbp.open();
+x:= bbp.getObjects();
+print(x);
 v:= bbp.take("myfirstbat");
 print(v);
 bbp.close();

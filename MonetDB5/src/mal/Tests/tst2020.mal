@@ -1,6 +1,6 @@
-# parallel syntax checks
+# simple parallel with control flow
 
-thread b1;
+thread b1:=0;
 	printf("start thread\n");
 barrier yy;
 	leave yy;

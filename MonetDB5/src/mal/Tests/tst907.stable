@@ -43,8 +43,11 @@ end pow;	# 6
 #b:=new(:int,:int);
 #insert(b,1,1);
 #
+#print("do multiplex three test");
 #z:=multiplex.tactics("three",b,2,3);
+#print("do multiplex one test");
 #z:=multiplex.tactics("one",b);
+#print("do multiplex pow test");
 #z:=multiplex.tactics("pow",b,2);
 #print(z);
 #
@@ -54,15 +57,21 @@ function Admin.main():int;	# 0  (main:int)
     p := Admin.pow(1,2);	# 3  (p:int)<-($2:int)($4:int)
     b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
     bat.insert(b,1,1);	# 5 BKCinsert_bun ($10:void)<-(b:bat[:int,:int])($2:int)($2:int)
-    z := multiplex.script("three",b,2,3);	# 6  (z:bat[:int,:int])<-($12:str)(b:bat[:int,:int])($4:int)($5:int)
-    z := multiplex.script("one",b);	# 7  (z:bat[:int,:int])<-($13:str)(b:bat[:int,:int])
-    z := multiplex.script("pow",b,2);	# 8  (z:bat[:int,:int])<-($14:str)(b:bat[:int,:int])($4:int)
-    io.print(z);	# 9 IOprint_val ($15:int)<-(z:bat[:int,:int])
-end main;	# 10  
+    io.print("do multiplex three test");	# 6 IOprint_val ($11:int)<-($12:str)
+    z := multiplex.script("three",b,2,3);	# 7  (z:bat[:int,:int])<-($14:str)(b:bat[:int,:int])($4:int)($5:int)
+    io.print("do multiplex one test");	# 8 IOprint_val ($15:int)<-($16:str)
+    z := multiplex.script("one",b);	# 9  (z:bat[:int,:int])<-($17:str)(b:bat[:int,:int])
+    io.print("do multiplex pow test");	# 10 IOprint_val ($18:int)<-($19:str)
+    z := multiplex.script("pow",b,2);	# 11  (z:bat[:int,:int])<-($20:str)(b:bat[:int,:int])($4:int)
+    io.print(z);	# 12 IOprint_val ($21:int)<-(z:bat[:int,:int])
+end main;	# 13  
 [ 1 ]
 [ 1 ]
+[ "do multiplex three test" ]
 [ 1 ]
+[ "do multiplex one test" ]
 [ 1 ]
+[ "do multiplex pow test" ]
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type

@@ -7,12 +7,12 @@ barrier	b:= n>0;
 	printf("tick\n");
 	alarm.sleep(2);
 	n:= n-1;
-	redo b;
+	redo b:= n>0;
 exit	b;
 end clkticks;
 
-thread 	hdl;	# should not be assigned a value to get started
-	printf("#Start thread with id %d\n",hdl);
+thread 	hdl:=0;	# should not be assigned a value to get started
+	printf("#START THREAD \n");
 	clkticks(2);
 	printf("About to exit child\n");
 exit	hdl;
