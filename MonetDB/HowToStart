@@ -242,7 +242,7 @@ NOTE: the current 'make install' does not yet generate this
       'make install'.  In the top-level directory of the MonetDB build
       tree, call
 
- make html
+ make docs
 
 
 Troubleshooting:

@@ -150,21 +150,26 @@ sub ping {
     MapiLib::mapi_ping($mapi) ? 0 : 1;
 }
 
-sub quote {
-    my $dbh = shift;
-    my ($statement, $type) = @_;
-    return 'NULL' unless defined $statement;
 
-    for ($statement) {
-	s/	/\\t/g;
-	s/\\/\\\\/g;
-	s/\n/\\n/g;
-	s/\r/\\r/g;
-	s/"/\\"/g;
-	s/'/''/g;
+sub quote {
+    my ($dbh, $value, $type) = @_;
+
+    return $dbh->{monetdb_language} eq 'sql' ? 'NULL' : 'nil'
+        unless defined $value;
+
+    for ($value) {
+      s/	/\\t/g;
+      s/\\/\\\\/g;
+      s/\n/\\n/g;
+      s/\r/\\r/g;
+      s/"/\\"/g;
+      s/'/''/g;
     }
-    return "'$statement'";
+    # TODO: prefix/suffix from TypeInfo
+    my $quote = $dbh->{monetdb_language} eq 'sql' ? q(') : q(");
+    return $quote . $value . $quote;
 }
+
 
 sub _count_param {
     my @statement = split //, shift;

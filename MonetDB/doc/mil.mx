@@ -904,7 +904,7 @@ It contains a new atomic type called 'timestamp' that captures times
 in a "Day-Month-Year hour:minute" format.
 
 {\small\begin{verbatim}
->d := timestamp("14-aug-2002 16:14");
+>var d := timestamp("2002-aug-14 16:14");
 !ERROR: interpret: no matching MIL operator to 'timestamp(str)'.
 \end{verbatim}}
 
@@ -964,32 +964,32 @@ returns the number of milliseconds between 'val1' and 'val2' (!DS2.2).
 We can now create temporal values, manipulate them, and store them in BATs.
 
 {\small\begin{verbatim}
-> d := timestamp("14-aug-2002 16:14");
+> var d := timestamp("2002-aug-14 16:14");
 > d.print();
-[ 14-au-1997 16:14 ]
+[ 2002-08-14 16:14:00.000 ]
 >
-> b := bat(oid,timestamp);
-> b.insert(0@0, timestamp("13-may-1997 09:10"));
-> b.insert(1@0, timestamp("16-aug-1997 10:20"));
-> b.insert(2@0, timestamp("15-sep-1997 11:30"));
-> b.insert(3@0, timestamp("01-jan-1997 12:40"));
-> b.insert(4@0, timestamp("26-feb-1997 13:50"));
-> b.insert(5@0, timestamp("15-aug-1997 14:00"));
+> var b := bat(oid,timestamp);
+> b.insert(0@0, timestamp("2005-may-13 09:10"));
+> b.insert(1@0, timestamp("2005-aug-16 10:20"));
+> b.insert(2@0, timestamp("2005-sep-15 11:30"));
+> b.insert(3@0, timestamp("2005-jan-01 12:40"));
+> b.insert(4@0, timestamp("2005-feb-26 13:50"));
+> b.insert(5@0, timestamp("2005-aug-15 14:00"));
 >
 > b.print();
 #----------------------------------#
 # oid    | timestamp               #
 #----------------------------------#
-[ 0@0,     13-may-1997 09:10       ]
-[ 1@0,     16-aug-1997 10:20       ]
-[ 2@0,     15-sep-1997 11:30       ]
-[ 3@0,     01-jan-1997 12:40       ]
-[ 4@0,     26-feb-1997 13:50       ]
-[ 5@0,     15-aug-1997 14:00       ]
+[ 0@0,     2005-may-13 09:10       ]
+[ 1@0,     2005-aug-16 10:20       ]
+[ 2@0,     2005-sep-15 11:30       ]
+[ 3@0,     2005-jan-01 12:40       ]
+[ 4@0,     2005-feb-26 13:50       ]
+[ 5@0,     2005-aug-15 14:00       ]
 >
 > drop(monettime);
 >
-> b.insert(31165626@0, timestamp("15-aug-1997 15:10"));
+> b.insert(31165626@0, timestamp("2005-aug-15 15:10"));
 !ERROR: interpret: no matching MIL operator to 'timestamp(str)'.
 !ERROR: insert(param 3): evaluation error.
 \end{verbatim}}

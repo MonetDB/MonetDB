@@ -37,7 +37,7 @@ $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html:	$(top_sr
 	        $(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java        	\
 	        $(top_srcdir)/src/mapi/clients/java/mapi/MapiException.java
 
-html:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html	\
+docs:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html	\
 	$(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html	\
 	$(top_srcdir)/doc/mkdoc.py
 	mv $(prefix)/doc/MonetDB/TechDocs/Core/Mx $(prefix)/doc/

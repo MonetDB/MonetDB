@@ -82,6 +82,24 @@ def runMx(srcdir, base, dstdir, suffix='' ):
     unlink(os.path.join(tmpdir, base + '.index.html'))
     unlink(os.path.join(tmpdir, base + '.body.html'))
 
+def runMxTexi(srcdir, base, dstdir, suffix='' ):
+    print 'runMxTexi', srcdir, base, dstdir
+    cwd = os.getcwd()
+    print cwd, '->', srcdir
+    os.chdir(srcdir)
+    cmd = '%s "-R%s" -H1 -i "%s" 2>&1 && texi2html -nomenu -nosec_nav -subdir "%s" "%s"' % (mx, tmpdir, base + '.mx', tmpdir, base + '.texi')
+    print cmd
+    f = os.popen(cmd, 'r')
+    dummy = f.read()                    # discard output
+    f.close()
+    print srcdir, '->', cwd
+    os.chdir(cwd)
+    srcfile = os.path.join(tmpdir, base + '.html')
+    os.makedirs(os.path.join(dstdir, base+suffix))
+    copyfile(srcfile, os.path.join(dstdir, base+suffix, 'index.html'))
+    unlink(os.path.join(tmpdir, base + '.html'))
+    unlink(os.path.join(tmpdir, base + '.texi'))
+
 def removedir(dir):
     """Remove DIR recursively."""
     print 'removedir',dir
@@ -113,8 +131,8 @@ runMx(os.path.join(srcdir, 'src', 'mel'), 'mel',
       os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'mel'), '-tool')
 
 for f in ['gdk', 'gdk_atoms']:
-    runMx(os.path.join(srcdir, 'src', 'gdk'), f,
-          os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core'))
+    runMxTexi(os.path.join(srcdir, 'src', 'gdk'), f,
+              os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core'))
 for f in ['bat.gif', 'bat1.gif', 'bat2.gif']:
     copyfile(os.path.join(srcdir, 'src', 'gdk', f),
              os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'gdk', f))
@@ -168,8 +186,8 @@ os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'etc'))
 copyfile(os.path.join(blddir, 'conf', 'MonetDB.conf'),
              os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'etc', 'MonetDB.conf'))
 os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'share', 'MonetDB', 'docs', 'gdk'))
-copyfile(os.path.join(blddir, 'src', 'gdk', 'gdk_atoms.html'),
-             os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'share', 'MonetDB', 'docs', 'gdk', 'gdk_atoms.html'))
+##copyfile(os.path.join(blddir, 'src', 'gdk', 'gdk_atoms.html'),
+##             os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'share', 'MonetDB', 'docs', 'gdk', 'gdk_atoms.html'))
 
 f = open(os.path.join(dstdir, 'doc', 'MonetDB', 'sql.html'), 'w')
 f.write('''\

@@ -629,7 +629,8 @@ CMDnew_lng(BAT **ret, int *ht, int *tt, lng *cap)
 	if (*cap < 0)
 		*cap = 0;
 	*ret = BATnew(*ht, *tt, (size_t) * cap);
-	(*ret)->batDirty |= 2;
+	if (*ret)
+		(*ret)->batDirty |= 2;
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -639,7 +640,8 @@ CMDnew(BAT **ret, int *ht, int *tt, int *cap)
 	if (*cap < 0)
 		*cap = 0;
 	*ret = BATnew(*ht, *tt, (size_t) * cap);
-	(*ret)->batDirty |= 2;
+	if (*ret)
+		(*ret)->batDirty |= 2;
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
 }
 
