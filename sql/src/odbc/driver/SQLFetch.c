@@ -71,7 +71,7 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 	return 0;
 }
 #endif
-		
+
 /* Parse a number and store in a bignum_t.
    1 is returned if all is well;
    2 is returned if there is loss of precision (i.e. overflow of the value);

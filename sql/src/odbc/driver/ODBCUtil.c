@@ -42,8 +42,16 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 	return tmp;
 }
 
+/*
+ * Translate an ODBC-compatible query to one that the SQL server
+ * understands.
+ *
+ * Precondition: query != NULL
+ * Postcondition: returns a newly allocated null terminated strings.
+ */
 char *
 ODBCTranslateSQL(const SQLCHAR *query, size_t length)
 {
+	/* for now, just call dupODBCstring */
 	return dupODBCstring(query, length);
 }

@@ -22,6 +22,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -37,15 +38,6 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 	ODBCLOG("SQLProcedureColumns\n");
 #endif
 
-	(void) szCatalogName;	/* Stefan: unused!? */
-	(void) nCatalogNameLength;	/* Stefan: unused!? */
-	(void) szSchemaName;	/* Stefan: unused!? */
-	(void) nSchemaNameLength;	/* Stefan: unused!? */
-	(void) szProcName;	/* Stefan: unused!? */
-	(void) nProcNameLength;	/* Stefan: unused!? */
-	(void) szColumnName;	/* Stefan: unused!? */
-	(void) nColumnNameLength;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -57,6 +49,11 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
+
+	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
+	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);
+	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 	/* SQLProcedureColumns returns a table with the following columns:
 	   VARCHAR	procedure_cat

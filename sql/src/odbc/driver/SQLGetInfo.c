@@ -45,7 +45,7 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	     nInfoType == SQL_SERVER_NAME ||
 	     nInfoType == SQL_DATABASE_NAME ||
 	     nInfoType == SQL_USER_NAME) &&
-	    dbc->Connected != 1) {
+	    !dbc->Connected) {
 		/* 08003 = Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;

@@ -41,9 +41,6 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	ODBCLOG("SQLPrimaryKeys\n");
 #endif
 
-	(void) szCatalogName;	/* Stefan: unused!? */
-	(void) nCatalogNameLength;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -57,6 +54,7 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	}
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
+	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 

@@ -17,15 +17,16 @@
  **********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCUtil.h"
 #include "ODBCStmt.h"
 
 
 SQLRETURN
-SQLColumnPrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
-		    SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName,
-		    SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName,
-		    SQLSMALLINT nTableNameLength, SQLCHAR *szColumnName,
-		    SQLSMALLINT nColumnNameLength)
+SQLColumnPrivileges(SQLHSTMT hStmt,
+		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		    SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+		    SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -33,19 +34,15 @@ SQLColumnPrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	ODBCLOG("SQLColumnPrivileges\n");
 #endif
 
-	(void) szCatalogName;		/* Stefan: unused!? */
-	(void) nCatalogNameLength;	/* Stefan: unused!? */
-	(void) szSchemaName;		/* Stefan: unused!? */
-	(void) nSchemaNameLength;	/* Stefan: unused!? */
-	(void) szTableName;		/* Stefan: unused!? */
-	(void) nTableNameLength;	/* Stefan: unused!? */
-	(void) szColumnName;		/* Stefan: unused!? */
-	(void) nColumnNameLength;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
+
+	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
+	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 	/* check statement cursor state, no query should be prepared or executed */
 	if (stmt->State != INITED) {

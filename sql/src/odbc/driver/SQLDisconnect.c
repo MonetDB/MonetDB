@@ -35,12 +35,12 @@ SQLDisconnect(SQLHDBC hDbc)
 	clearDbcErrors(dbc);
 
 	/* check connection state, should not be connected */
-	if (dbc->Connected != 1) {
+	if (!dbc->Connected) {
 		/* 08003 = Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
 	}
-	assert(dbc->Connected == 1);
+	assert(dbc->Connected);
 
 #if 0
 	if (dbc->FirstStmt != NULL) {

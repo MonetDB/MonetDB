@@ -44,11 +44,6 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	ODBCLOG("SQLForeignKeys\n");
 #endif
 
-	(void) szPKCatalogName;	/* Stefan: unused!? */
-	(void) nPKCatalogNameLength;	/* Stefan: unused!? */
-	(void) szFKCatalogName;	/* Stefan: unused!? */
-	(void) nFKCatalogNameLength;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -62,8 +57,10 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	}
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
+	fixODBCstring(szPKCatalogName, nPKCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szPKTableName, nPKTableNameLength, addStmtError, stmt);
+	fixODBCstring(szFKCatalogName, nFKCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szFKTableName, nFKTableNameLength, addStmtError, stmt);
 

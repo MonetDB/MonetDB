@@ -50,12 +50,11 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 
 		/* TODO: implement connection attribute behavior */
 	case SQL_ATTR_ACCESS_MODE:
+	case SQL_ATTR_ASYNC_ENABLE:
 	case SQL_ATTR_CONNECTION_TIMEOUT:
 	case SQL_ATTR_CURRENT_CATALOG:
-	case SQL_ATTR_DISCONNECT_BEHAVIOR:
-	case SQL_ATTR_ENLIST_IN_DTC:
-	case SQL_ATTR_ENLIST_IN_XA:
 	case SQL_ATTR_LOGIN_TIMEOUT:
+	case SQL_ATTR_METADATA_ID:
 	case SQL_ATTR_ODBC_CURSORS:
 	case SQL_ATTR_PACKET_SIZE:
 	case SQL_ATTR_QUIET_MODE:
@@ -67,6 +66,8 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 		/* set error: Optional feature not implemented */
 		addDbcError(dbc, "HYC00", NULL, 0);
 		return SQL_ERROR;
+	case SQL_ATTR_AUTO_IPD:	/* read-only attribute */
+	case SQL_ATTR_CONNECTION_DEAD:
 	default:
 		/* set error: Invalid attribute/option */
 		addDbcError(dbc, "HY092", NULL, 0);

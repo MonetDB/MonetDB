@@ -64,7 +64,7 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 			return SQL_INVALID_HANDLE;
 
 		/* check if connection is not active */
-		if (dbc->Connected != 0) {
+		if (dbc->Connected) {
 			/* should be disconnected first */
 			addDbcError(dbc, "HY010", NULL, 0);
 			return SQL_ERROR;

@@ -151,7 +151,7 @@ void
 destroyODBCDbc(ODBCDbc *dbc)
 {
 	assert(isValidDbc(dbc));
-	assert(dbc->Connected == 0);
+	assert(!dbc->Connected);
 	assert(dbc->FirstStmt == NULL);
 
 	/* first set this object to invalid */

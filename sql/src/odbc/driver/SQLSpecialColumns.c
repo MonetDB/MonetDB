@@ -43,9 +43,6 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	ODBCLOG("SQLSpecialColumns %d ", nIdentifierType);
 #endif
 
-	(void) szCatalogName;	/* Stefan: unused!? */
-	(void) nCatalogNameLength;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 

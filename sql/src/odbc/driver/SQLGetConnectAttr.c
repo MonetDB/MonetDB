@@ -47,8 +47,17 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 	case SQL_ATTR_ASYNC_ENABLE:
 		* (SQLUINTEGER *) ValuePtr = SQL_ASYNC_ENABLE_OFF;
 		break;
+	case SQL_ATTR_AUTO_IPD:
+		/* TODO implement automatic filling of IPD
+		   See also SQLSetStmtAttr.c for SQL_ATTR_ENABLE_AUTO_IPD
+		*/
+		* (SQLUINTEGER *) ValuePtr = SQL_FALSE;
+		break;
 	case SQL_ATTR_AUTOCOMMIT:
 		* (SQLUINTEGER *) ValuePtr = dbc->sql_attr_autocommit;
+		break;
+	case SQL_ATTR_CONNECTION_DEAD:
+		* (SQLUINTEGER *) ValuePtr = dbc->mid && mapi_is_connected(dbc->mid) ? SQL_CD_FALSE : SQL_CD_TRUE;
 		break;
 	case SQL_ATTR_CONNECTION_TIMEOUT:
 		* (SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
