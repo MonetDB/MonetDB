@@ -1,10 +1,13 @@
 %define name MonetDB
 %define major_version 4
 %define minor_version 3
-%define sublevel 5
+%define sublevel 7
 %define release 1
 %define version %{major_version}.%{minor_version}.%{sublevel}
 %define prefix /usr
+
+%define monetdb_uid    85
+%define monetdb_gid    85
 
 Name: %{name}
 Version: %{version}
@@ -45,6 +48,8 @@ Requires: %{name}-client
 Add the MonetDB devel description here
 Requires: %{name}-server
 Requires: epsffit
+PreReq: /sbin/chkconfig, /sbin/service, sh-utils
+PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
 
 %prep
@@ -66,6 +71,12 @@ make install \
 
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 
+# cleanup stuff we don't want to install
+rm -rf $RPM_BUILD_ROOT%{prefix}/bin/epsffit
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/MonetDB/conf/conf.bash
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/MonetDB/general.mil
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/MonetDB/lady.gif
+
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 
@@ -73,7 +84,7 @@ find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 rm -fr $RPM_BUILD_ROOT
 
 %files client
-%defattr(-,monet,monet) 
+%defattr(-,monetdb,monetdb) 
 %{prefix}/bin/MapiClient* 
 %{prefix}/lib/libmutils.*
 %{prefix}/lib/libMapi.* 
@@ -86,9 +97,8 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/etc/monet.conf 
 
 %files server
-%defattr(-,monet,monet) 
+%defattr(-,monetdb,monetdb) 
 %{prefix}/bin/Mserver 
-%{prefix}/bin/monet-config*
 
 %{prefix}/lib/libbat.*
 %{prefix}/lib/libmonet.*
@@ -99,7 +109,8 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/share/MonetDB/tools/* 
 
 %files devel
-%defattr(-,monet,monet) 
+%defattr(-,monetdb,monetdb) 
+%{prefix}/bin/monet-config*
 %{prefix}/share/MonetDB/conf/monet.m4 
 
 %{prefix}/include/*.h
@@ -127,6 +138,13 @@ rm -fr $RPM_BUILD_ROOT
 
 %{prefix}/lib/autogen/* 
 
-%pre server
-adduser monet
-addgroup monet
+%pre 
+%{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
+%{_sbindir}/useradd -d %{_var}/lib/monetdb -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
+
+%post server
+umask 022
+
+#create monetdb init script
+#/sbin/chkconfig --add monetdb
+
