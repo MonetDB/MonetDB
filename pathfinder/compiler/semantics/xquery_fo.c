@@ -638,7 +638,7 @@
   /* FIXME: distinct-values should be changed to anyAtomicType* */       \
 , /* fn:distinct-values (atomic*) as atomic* */                          \
   { .ns = PFns_fn, .loc = "distinct-values",                             \
-    .arity = 1, .par_ty = { PFty_star (PFty_untypedAtomic ())},          \
+    .arity = 1, .par_ty = { PFty_star (PFty_string ())},                 \
     .ret_ty = PFty_star (PFty_untypedAtomic ()) }                        \
 , /* op:is-same-node (node?, node?) as boolean? */                       \
   { .ns = PFns_op, .loc = "is-same-node",                                \
