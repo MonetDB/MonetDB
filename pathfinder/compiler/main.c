@@ -495,8 +495,12 @@ static char *progname = 0;
 /* This function is created to hide the use of setjmp() for the compiler.
  * If setjmp() is used directly it starts to complain about clobbered variables.
  */
-static int hidden_setjmp(jmp_buf env) {
-	return setjmp(env);
+static int hidden_setjmp() {
+	if (setjmp(PFexitPoint) != 0) {
+                fputs(PFerrbuf, stderr);
+                return 1;
+        }
+        return 0;
 }
 
 /**
@@ -694,7 +698,6 @@ main (int argc, char *argv[])
     }
 
     if (hidden_setjmp(PFexitPoint) != 0 ) {
-        fputs(PFerrbuf, stderr);
         goto failure;
     }
 
