@@ -23,7 +23,7 @@
 
 SUBDIRS = schema debug mem parser semantics core algebra mil include
 
-INCLUDES = include $(MONET_INCS) $(LIBGC_CFLAGS)
+INCLUDES = include $(MONETDB_INCS) $(LIBGC_CFLAGS)
 
 LDFLAGS = $(LIBGC_LIBS) $(SOCKET_LIBS) $(LIBXML2_LIBS)
 

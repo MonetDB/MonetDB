@@ -28,16 +28,16 @@ builddir=`pwd`
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-MONET_PREFIX=@MONET_PREFIX@
+MONETDB_PREFIX=@MONETDB_PREFIX@
 
-if [ ! -x "${MONET_PREFIX}/bin/Mtest.py" ]
+if [ ! -x "${MONETDB_PREFIX}/bin/Mtest.py" ]
 then
 	echo "Mtest.py not found, install MonetDB first" >&2
 	exit 1
 fi
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/runtime/.libs:${MONET_PREFIX}/lib/MonetDB"
+MOD_PATH="${builddir}/runtime/.libs:${MONETDB_PREFIX}/lib/MonetDB"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -50,7 +50,7 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance PATH with Msql and MonetDB binaries
-PATH="${builddir}/compiler:${builddir}/loader:${MONET_PREFIX}/bin:$PATH"
+PATH="${builddir}/compiler:${builddir}/loader:${MONETDB_PREFIX}/bin:$PATH"
 libpath="${MOD_PATH}"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then

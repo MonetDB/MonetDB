@@ -22,7 +22,7 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = $(MONET_INCS)
+INCLUDES = $(MONETDB_INCS)
 
 lib__pathfinder = {
 	DIR = libdir/MonetDB
@@ -33,7 +33,7 @@ lib__pathfinder = {
 		levelsteps.mx
 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
-	LIBS = $(MONET_LIBS)
+	LIBS = $(MONETDB_LIBS)
 }
 
 scripts_mil = {

@@ -21,7 +21,7 @@
 #         Jens Teubner <jens.teubner@uni-konstanz.de>
 #
 
-INCLUDES = $(MONET_INCS) $(LIBXML2_CFLAGS) $(LIBDB_CFLAGS)
+INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) $(LIBDB_CFLAGS)
 
 LDFLAGS = $(LIBXML2_LIBS) $(LIBDB_LIBS)
 
