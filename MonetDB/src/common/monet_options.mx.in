@@ -399,9 +399,7 @@ int mo_add_option( opt **Set, int setlen,
 {
 	opt *set = (opt*)realloc(*Set,(setlen+1)*sizeof(opt));
 	set[setlen].kind = kind;
-	if( set[setlen].name) free(set[setlen].name);
 	set[setlen].name = strdup(name);
-	if( set[setlen].value) free(set[setlen].value);
 	set[setlen].value = strdup(value);
 	*Set = set;
 	return setlen+1;
