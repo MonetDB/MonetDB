@@ -81,13 +81,12 @@ Try: modules;                - for other modules.
 #-------------------------------------------------------------------------#
 [ "batId",		  "corelE4_1",	  "corelE4_1",	  "XX"		  ]
 [ "batCacheid",		  "23",		  "23",		  "26"		  ]
-[ "halignflushed",	  "1001772",	  "1001772",	  "1001776"	  ]
+[ "batBuns.maxsize",	  "25",		  "25",		  "424"		  ]
 [ "batInserted",	  "1",		  "1",		  "3"		  ]
 [ "batStamp",		  "0",		  "0",		  "-169"	  ]
 [ "curStamp",		  "151",	  "151",	  "170"		  ]
 [ "batCopiedtodisk",	  "1",		  "1",		  "0"		  ]
 [ "batBuns.size",	  "25",		  "25",		  "424"		  ]
-[ "batBuns.maxsize",	  "25",		  "25",		  "424"		  ]
 #---------------------------------#
 # BAT:		  tmp_31	  #
 # (dbl)		  (dbl)		  #

@@ -18,7 +18,7 @@ a.find("hdense").print;
 aa.find("tdense").print;
 x:=corelE4_1.copy.persists(true).rename("XX").commit;
 b:=XX.info;
-print(sdiff(a,b),a,b);
+print(sdiff(a,b).access(BAT_WRITE).delete("halignflushed"),a,b);
 join(corelE4_1.reverse,corelE4_1).print;
 print(XX,XX);
 print(XX,corelE4_1);
