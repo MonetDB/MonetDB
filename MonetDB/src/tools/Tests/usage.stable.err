@@ -1,32 +1,29 @@
 stderr of test 'usage` in directory 'src/tools` itself:
 
 
-# 16:15:05 >  
-# 16:15:05 >  Mtimeout -timeout 1320 ./usage usage 
-# 16:15:05 >  
+# 07:40:36 >  
+# 07:40:36 >  Mtimeout -timeout 240 ./usage usage 
+# 07:40:36 >  
 
 
-# 16:15:05 >  
-# 16:15:05 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.19480/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -?
-# 16:15:05 >  
+# 07:40:36 >  
+# 07:40:36 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.24796/monet/.GNU_64-d/IRIX646.5/etc/monet.conf -?
+# 07:40:36 >  
 
+Mserver: invalid option -- ?
+usage
+--dbname database_name
+--dbfarm database_directory
+-d or --debug [ debug_level ]
+-c or --config config_file
+-s or --set option=value
 
-# 16:15:06 >  
-# 16:15:06 >  Mtimeout -timeout 210 MapiClient -?
-# 16:15:06 >  
+# 07:40:36 >  
+# 07:40:36 >  Mtimeout -timeout 60 MapiClient -?
+# 07:40:36 >  
 
 unknown argument:-?
 Usage: MapiClient [-port host:port] [-session key] [-prelude  pfile ] [-c command] [-everything] [-debug] [-help ] 
-
-# 16:15:06 >  
-# 16:15:06 >  Mtimeout -timeout 210 Mcreatedb -?
-# 16:15:06 >  
-
-
-# 16:15:06 >  
-# 16:15:06 >  Mtimeout -timeout 210 Mdestroydb -?
-# 16:15:06 >  
-
 
 # 16:15:06 >  
 # 16:15:06 >  Mtimeout -timeout 210 Mshutdown -?

@@ -40,7 +40,7 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ "dummy",		  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 1,	  1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_environment",	  "str",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_environment",	  "str",  "str",  12,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
@@ -62,16 +62,16 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ "monet_mod_load",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_25",		  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_26",		  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_25",		  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_26",		  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "tmp_28",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 1,	  1	  ]
 [ "tmp_29",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1	  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_25>"		  ]
+[ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_25>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]

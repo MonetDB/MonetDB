@@ -253,7 +253,7 @@ Start of MIL prelude.
 # BAT:	  group	  #
 # (int)	  (int)	  #
 #-----------------#
-[ 1,	  1	  ]
+[ 1,	  2	  ]
 [ 2,	  1	  ]
 [ 3,	  1	  ]
 [ 4,	  1	  ]
@@ -509,7 +509,7 @@ Start of MIL prelude.
 #---------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_environment",	  "str",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_environment",	  "str",  "str",  12,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
@@ -974,7 +974,7 @@ view_bbp_refcnt().print();
 # BAT:	  group	  #
 # (int)	  (int)	  #
 #-----------------#
-[ 1,	  1	  ]
+[ 1,	  2	  ]
 [ 2,	  1	  ]
 [ 3,	  1	  ]
 [ 4,	  1	  ]
@@ -1237,7 +1237,7 @@ dir();
 #---------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_environment",	  "str",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_environment",	  "str",  "str",  12,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]

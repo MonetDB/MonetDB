@@ -10,34 +10,11 @@ stdout of test 'usage` in directory 'src/tools` itself:
 # 16:15:05 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.19480/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -?
 # 16:15:05 >  
 
-usage: Mserver { option }
-option:	-db <db-name>		database to open
-	-monetrc <file>		system variable settings
-	<script(s)>		execute MIL files first 
-		default is .monet.conf in current/home directory
 
 # 16:15:06 >  
 # 16:15:06 >  Mtimeout -timeout 210 MapiClient -?
 # 16:15:06 >  
 
-
-# 16:15:06 >  
-# 16:15:06 >  Mtimeout -timeout 210 Mcreatedb -?
-# 16:15:06 >  
-
-usage:
-Mcreatedb -db <name> [-monetrc <environment>]
-	the default database location is ./dbfarm/
-	the environment variables as stored in '.monet.conf'
-
-# 16:15:06 >  
-# 16:15:06 >  Mtimeout -timeout 210 Mdestroydb -?
-# 16:15:06 >  
-
-usage:
-Mdestroydb -db <name> [-monetrc <environment>]
-	the default database location is ./dbfarm/
-	the environment variables as stored in '.monet.conf'
 
 # 16:15:06 >  
 # 16:15:06 >  Mtimeout -timeout 210 Mshutdown -?

@@ -16,7 +16,7 @@ stdout of test 'test_00` in directory 'tests/suite_01` itself:
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_25>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -79,7 +79,7 @@ stdout of test 'test_00` in directory 'tests/suite_01` itself:
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
 [ "bn",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_25>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]

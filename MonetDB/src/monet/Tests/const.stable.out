@@ -13,7 +13,7 @@ stdout of test 'const` in directory 'src/monet` itself:
 # BAT:	  tmp_25	  #
 # (void)  (BAT)		  #
 #-------------------------#
-[ nil,	  <tmp_27>	  ]
+[ nil,	  <tmp_28>	  ]
 [ nil,	  <tmp_29>	  ]
 #-------------------------#
 # BAT:	  tmp_28	  #

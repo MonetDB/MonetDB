@@ -15,7 +15,7 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 2	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -42,7 +42,7 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 2	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -72,7 +72,7 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 2	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -101,7 +101,7 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 2	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -125,8 +125,8 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 [ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
-[ "two",		  0,	  "load", "tran", 0	  ]
 [ "ten",		  0,	  "load", "tran", 0	  ]
+[ "two",		  0,	  "load", "tran", 0	  ]
 [ "tmp_27",		  0,	  "load", "tran", 1	  ]
 [ "top",		  0,	  "load", "tran", 1	  ]
 [ "tmp_30",		  0,	  "load", "tran", 1	  ]
@@ -134,7 +134,7 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 2	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]

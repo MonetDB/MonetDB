@@ -17,7 +17,7 @@ stdout of test 'test_50` in directory 'tests/suite_01` itself:
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_25>	  ]
+[ 2,	  <tmp_26>	  ]
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -34,19 +34,19 @@ stdout of test 'test_50` in directory 'tests/suite_01` itself:
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_25>	  ]
+[ 2,	  <tmp_26>	  ]
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_25>	  ]
+[ 2,	  <tmp_26>	  ]
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_25>	  ]
+[ 2,	  <tmp_26>	  ]
 
 # 06:09:11 >  
 # 06:09:11 >  Done.

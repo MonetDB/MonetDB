@@ -74,7 +74,7 @@ dir;
 [ "MODULES",		  "str",  "str",  44,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_environment",	  "str",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_environment",	  "str",  "str",  12,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
