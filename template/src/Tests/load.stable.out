@@ -54,7 +54,6 @@ dropping module 'example'
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
-[ "mmath",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]

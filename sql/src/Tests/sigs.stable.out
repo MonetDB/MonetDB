@@ -21,10 +21,9 @@ module 'sqlserver'
 #---------------------------------------------------------------------------------#
 # signature									  #
 #---------------------------------------------------------------------------------#
-[ "insert(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
-[ "insert(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]"		  ]
-[ "isNil(str) : bit"								  ]
-[ "mvc_admin_login(mvc) : str"							  ]
+[ "append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
+[ "append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]"		  ]
+[ "append(BAT[void,any::1], any::1) : BAT[void,any::1]"				  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_column(mvc, sql_table, str) : sql_column"				  ]
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"			  ]
@@ -39,6 +38,7 @@ module 'sqlserver'
 [ "mvc_create_key(mvc, str, str, str, int, BAT[str,int], sql_key) : sql_key"	  ]
 [ "mvc_create_schema(mvc, str, str) : sql_schema"				  ]
 [ "mvc_create_table(mvc, sql_schema, str, int) : sql_table"			  ]
+[ "mvc_create_user(mvc, str, str, str, str, int) : void"			  ]
 [ "mvc_create_view(mvc, sql_schema, str, str) : sql_table"			  ]
 [ "mvc_default(mvc, sql_column, str) : sql_column"				  ]
 [ "mvc_destroy(mvc) : void"							  ]
@@ -48,7 +48,7 @@ module 'sqlserver'
 [ "mvc_exit() : void"								  ]
 [ "mvc_export(Stream, BAT[void,void], BAT[void,void], str, str) : void"		  ]
 [ "mvc_import_table(mvc, Stream, str, str, str, int) : int"			  ]
-[ "mvc_init(int, str) : void"							  ]
+[ "mvc_init(int) : void"							  ]
 [ "mvc_login(mvc, str, str) : str"						  ]
 [ "mvc_null(mvc, sql_column, int) : sql_column"					  ]
 [ "mvc_release(mvc, str) : int"							  ]
@@ -56,19 +56,11 @@ module 'sqlserver'
 [ "mvc_set_iso_level(mvc, int) : int"						  ]
 [ "mvc_status(mvc) : int"							  ]
 [ "mvc_type(mvc) : int"								  ]
-[ "parser_exit() : void"							  ]
-[ "parser_init(int) : void"							  ]
-[ "renumber(BAT[oid,any::1], oid) : BAT[oid,any::1]"				  ]
 [ "replace(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
-[ "socket_close(int) : void"							  ]
-[ "socket_dup(int) : int"							  ]
 [ "sql_aggr(str, str, str, str) : void"						  ]
-[ "sql_create_context(int, Stream, mvc, str, str) : context"			  ]
-[ "sql_destroy_context(context) : void"						  ]
 [ "sql_func(str, str, str, str, str, str) : void"				  ]
-[ "sql_type(str, int, int, str) : void"						  ]
-[ "sqlclient( mvc m,  context c, Stream in, Stream out ) "			  ]
-[ "sqlserver_start(int port, str cmd) "						  ]
+[ "sql_type(str, int, int, int, str) : void"					  ]
+[ "sqlclient( int sock ) "							  ]
 
 quit;
 
