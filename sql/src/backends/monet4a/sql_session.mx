@@ -255,8 +255,14 @@ be reset, but also this client should be terminated immediately.
 @c
 int connect_error(stream *in, stream *out)
 {
-	close_stream(in);
-	close_stream(out);
+	if (in) {
+		stream_close(in);
+		stream_destroy(in);
+	}
+	if (out) {
+		stream_close(out);
+		stream_destroy(out);
+	}
 	return GDK_FAIL;
 }
 
