@@ -381,7 +381,7 @@ static int mtrace = 0;
 size_t GDKvm_heapsize(void) {
 #ifdef _CYGNUS_H_
         return ((size_t) (96<<20));
-#elif defined(HW_Linux)
+#elif defined(__linux__)
         struct mallinfo m = MT_mallinfo();
 	return GDKmem_heapsize() + m.hblkhd;
 #else
