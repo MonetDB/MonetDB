@@ -73,7 +73,8 @@ def readfile(f):
     return buf
 
 def readfilepart(f,ext):
-    fn,fext = string.split(f,".", 1)
+    dir,file = os.path.split(f)
+    fn,fext = string.split(file,".", 1)
     src = open(f, 'rb')
     buf = src.read()
     src.close()
