@@ -28,12 +28,12 @@ lib_odbc = {
 	NAME = _odbc
 	SOURCES = odbc.py.i
 	LIBS = ../driver/libMonetODBC
-	DIR = pkgdatadir/python
+	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
 headers_py = {
 	HEADERS = py
 	SOURCES = odbc.py.i
 	TARGETS = odbc.py
-	DIR = pkgdatadir/python
+	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }

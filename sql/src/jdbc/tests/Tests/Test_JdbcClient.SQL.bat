@@ -1,6 +1,6 @@
 @echo off
 
-set CLASSPATH=%CLASSPATH%;%SQL_BUILD%/src/jdbc/MonetDB_JDBC.jar;%TSTBLDBASE%/src/jdbc/MonetDB_JDBC.jar;%SQL_PREFIX%/lib/MonetDB/java/MonetDB_JDBC.jar;%MONETDB_PREFIX%/lib/MonetDB/java/MonetDB_JDBC.jar;%TSTTRGBASE%/lib/MonetDB/java/MonetDB_JDBC.jar;%SQL_BUILD%/src/jdbc/tests;%TSTBLDBASE%/src/jdbc/tests;%SQL_PREFIX%/lib/sql/Tests;%MONETDB_PREFIX%/lib/sql/Tests;%TSTTRGBASE%/lib/sql/Tests
+set CLASSPATH=%CLASSPATH%;%SQL_BUILD%/src/jdbc/MonetDB_JDBC.jar;%TSTBLDBASE%/src/jdbc/MonetDB_JDBC.jar;%SQL_PREFIX%/share/MonetDB/lib/MonetDB_JDBC.jar;%MONETDB_PREFIX%/share/MonetDB/lib/MonetDB_JDBC.jar;%TSTTRGBASE%/share/MonetDB/lib/MonetDB_JDBC.jar;%SQL_BUILD%/src/jdbc/tests;%TSTBLDBASE%/src/jdbc/tests;%SQL_PREFIX%/share/sql/Tests;%MONETDB_PREFIX%/share/sql/Tests;%TSTTRGBASE%/share/sql/Tests
 
 set LANG=en_US.UTF-8
 

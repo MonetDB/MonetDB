@@ -58,7 +58,7 @@ stderr of test 'Test_Csavepoints` in directory 'src/jdbc/tests` itself:
 
 
 # 21:41:21 >  
-# 21:41:21 >  java -classpath /nfs/poseidon/Temp/monet/program/lib/sql/Tests:/nfs/poseidon/Temp/monet/program/lib/MonetDB/java/MonetJDBC.jar Test_Csavepoints jdbc:monetdb://poseidon:55966/database?user=monetdb&password=monetdb
+# 21:41:21 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Csavepoints jdbc:monetdb://poseidon:55966/database?user=monetdb&password=monetdb
 # 21:41:21 >  
 
 

@@ -58,17 +58,17 @@ stderr of test 'Test_JdbcClient` in directory 'src/jdbc/tests` itself:
 
 
 # 20:33:44 >  
-# 20:33:44 >  java -jar /nfs/poseidon/Temp/monet/program/lib/MonetDB/java/MonetJDBC.jar -hposeidon -p53093 -umonetdb -f ../../../../..//monet/src-head/sql/src/jdbc/tests/Tests/../JdbcClient_create_tables.sql
+# 20:33:44 >  java -jar /nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar -hposeidon -p53093 -umonetdb -f ../../../../..//monet/src-head/sql/src/jdbc/tests/Tests/../JdbcClient_create_tables.sql
 # 20:33:44 >  
 
 password:  
 # 20:33:44 >  
-# 20:33:44 >  java -jar /nfs/poseidon/Temp/monet/program/lib/MonetDB/java/MonetJDBC.jar -hposeidon -p53093 -umonetdb -f ../../../../..//monet/src-head/sql/src/jdbc/tests/Tests/../JdbcClient_inserts_selects.sql
+# 20:33:44 >  java -jar /nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar -hposeidon -p53093 -umonetdb -f ../../../../..//monet/src-head/sql/src/jdbc/tests/Tests/../JdbcClient_inserts_selects.sql
 # 20:33:44 >  
 
 password:  
 # 20:33:45 >  
-# 20:33:45 >  java -jar /nfs/poseidon/Temp/monet/program/lib/MonetDB/java/MonetJDBC.jar -hposeidon -p53093 -umonetdb -D
+# 20:33:45 >  java -jar /nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar -hposeidon -p53093 -umonetdb -D
 # 20:33:45 >  
 
 password:  

@@ -12,10 +12,18 @@ Source: sql-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-BuildRequires: MonetDB-devel
+BuildRequires: MonetDB-devel python
 
-%package client
-Summary: MonetDB SQL clients
+%package odbc
+Summary: MonetDB SQL odbc
+Group: System
+
+%package java
+Summary: MonetDB SQL java interface
+Group: System
+
+%package python
+Summary: MonetDB SQL python interface
 Group: System
 
 %package server
@@ -38,13 +46,22 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accellerators, SQL- and XML- frontends.
 
-%description client
-Add the MonetDB SQL client description here
+%description odbc
+Add the MonetDB SQL odbc description here
 Requires: MonetDB-client
+
+%description java
+Add the MonetDB SQL java description here
+
+%description python
+Add the MonetDB SQL python description here
+Requires: %{name}-odbc
+Requires: python
+%define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
 
 %description server
 Add the MonetDB SQL server module description here
-Requires: %{name}-client
+Requires: %{name}-odbc
 Requires: MonetDB-server
 
 %description devel
@@ -83,12 +100,18 @@ make install \
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files client
+%files odbc
 %defattr(-,monetdb,monetdb) 
 %{prefix}/lib/libMonetODBC*
-%{prefix}/lib/MonetDB/java/MonetDB_JDBC.jar
-%{prefix}/share/sql/python/odbc.py
-%{prefix}/share/sql/python/_odbc.*
+%{prefix}/share/sql/Tests/odbcsample1
+
+%files java
+%{prefix}/share/MonetDB/lib/MonetDB_JDBC.jar
+%{prefix}/share/sql/Tests/Test_*.class
+
+%files python
+%defattr(-,monetdb,monetdb) 
+%{prefix}/%{python_libdir}/*
 
 %files server
 %defattr(-,monetdb,monetdb) 
@@ -98,8 +121,6 @@ rm -rf $RPM_BUILD_ROOT
 %files devel
 %defattr(-,monetdb,monetdb) 
 %{prefix}/include/sql/*.h
-%{prefix}/lib/sql/Tests/odbcsample1
-%{prefix}/lib/sql/Tests/Test_*.class
 %{prefix}/lib/pkgconfig/MonetDB-SQL.pc
 
 %if %{DOCTOOLS}

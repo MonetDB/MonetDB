@@ -23,7 +23,7 @@ Over..
 
 
 # 21:59:12 >  
-# 21:59:12 >  java -classpath /nfs/poseidon/Temp/monet/program/lib/sql/Tests:/nfs/poseidon/Temp/monet/program/lib/MonetDB/java/MonetJDBC.jar Test_Rbooleans jdbc:monetdb://poseidon:57824/database?user=monetdb&password=monetdb
+# 21:59:12 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Rbooleans jdbc:monetdb://poseidon:57824/database?user=monetdb&password=monetdb
 # 21:59:12 >  
 
 0. false	false

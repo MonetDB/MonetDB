@@ -58,7 +58,7 @@ stderr of test 'Test_Rpositioning` in directory 'src/jdbc/tests` itself:
 
 
 # 22:23:25 >  
-# 22:23:25 >  java -classpath /nfs/poseidon/Temp/monet/program/lib/sql/Tests:/nfs/poseidon/Temp/monet/program/lib/MonetDB/java/MonetJDBC.jar Test_Rpositioning jdbc:monetdb://poseidon:52396/database?user=monetdb&password=monetdb
+# 22:23:25 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Rpositioning jdbc:monetdb://poseidon:52396/database?user=monetdb&password=monetdb
 # 22:23:25 >  
 
 

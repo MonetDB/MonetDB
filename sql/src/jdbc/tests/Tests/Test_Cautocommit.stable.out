@@ -23,7 +23,7 @@ Over..
 
 
 # 21:04:30 >  
-# 21:04:30 >  java -classpath /nfs/poseidon/Temp/monet/program/lib/sql/Tests:/nfs/poseidon/Temp/monet/program/lib/MonetDB/java/MonetJDBC.jar Test_Cautocommit jdbc:monetdb://poseidon:59882/database?user=monetdb&password=monetdb
+# 21:04:30 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Cautocommit jdbc:monetdb://poseidon:59882/database?user=monetdb&password=monetdb
 # 21:04:30 >  
 
 0. true	true

@@ -595,8 +595,7 @@ int str2@1( @1 *res, str v, int *len ){
 
 static lng max_values[20] =
 {
-	LL_CONSTANT(0),
-	LL_CONSTANT(1),
+	LL_CONSTANT(1), 				
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),
 	LL_CONSTANT(1000),
@@ -614,16 +613,20 @@ static lng max_values[20] =
 	LL_CONSTANT(1000000000000000),
 	LL_CONSTANT(10000000000000000),
 	LL_CONSTANT(100000000000000000),
-	LL_CONSTANT(1000000000000000000)
+	LL_CONSTANT(1000000000000000000),
+	LL_CONSTANT(9000000000000000000)
 };
 
 @= numcast
 int @2_2_@1( @1 *res, @2 *v, int *len ){
 	int p = *len;
+	@2 val = *v;
 
-	if (p > 19)
-		p = 19;
-	if (*v > max_values[p]){
+	if (p > 20)
+		p = 20;
+	if (val < 0)
+		val = -val;
+	if (val > max_values[p]){
 		if (*v != @2_nil) {
 			GDKerror("@2_2_@1: value to long for type int(%d)\n",p);
 			return GDK_FAIL;

@@ -39,46 +39,46 @@ MTSAFE
 CLASSPATH = ""
 
 java_Test_Cautocommit = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_Cautocommit.java
 }
 
 java_Test_Csavepoints = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_Csavepoints.java
 }
 
 java_Test_PStimedate = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_PStimedate.java
 }
 
 java_Test_PStimezone = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_PStimezone.java
 }
 
 java_Test_Rbooleans = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_Rbooleans.java
 }
 
 java_Test_Rpositioning = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_Rpositioning.java
 }
 
 java_Test_Rtimedate = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_Rtimedate.java
 }
 
 java_Test_Sbatching = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_Sbatching.java
 }
 
 java_Test_Rmetadata = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = Test_Rmetadata.java
 }

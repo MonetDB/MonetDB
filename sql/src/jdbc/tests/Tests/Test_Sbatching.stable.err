@@ -58,7 +58,7 @@ stderr of test 'Test_Sbatching` in directory 'src/jdbc/tests` itself:
 
 
 # 17:09:53 >  
-# 17:09:53 >  java -classpath /nfs/poseidon/Temp/monet/program/lib/sql/Tests:/nfs/poseidon/Temp/monet/program/lib/MonetDB/java/MonetJDBC.jar Test_Sbatching jdbc:monetdb://poseidon:54539/database?user=monetdb&password=monetdb
+# 17:09:53 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Sbatching jdbc:monetdb://poseidon:54539/database?user=monetdb&password=monetdb
 # 17:09:53 >  
 
 
