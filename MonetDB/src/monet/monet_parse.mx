@@ -869,6 +869,7 @@ proc_definition:
             $2->yyval.vtype = TYPE_int;                                       }
     |   TOK_UNDEF TOK_PROC ';'
         {   TBL_delproc(ll_client, $2->yyval.val.sval, ll_parent_module(), oid_nil, TRUE); }
+    ;
 
 proc_assign:
 	TOK_ASSIGNMENT
