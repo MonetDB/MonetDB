@@ -1,6 +1,7 @@
 # Testing the box interfaces
 # open de MIL support box and display its content
 
+include mil;
 mil.open();
 barrier (v,nme):= mil.iterator();
 	print(nme);

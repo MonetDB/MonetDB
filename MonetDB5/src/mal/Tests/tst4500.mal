@@ -5,6 +5,7 @@ CXoptimizer();
 ARoptimizer();
 DCoptimizer();
 quit();
+include sql;
 #s14 := sql.bind("sys",  "lineitem", "l_shipdate"); #lineitem
 	myc:= bbp.bind("myc");
 	s14:bat[:void,:date] := sql.bind("sys","lineitem","l_shipdate",0);
