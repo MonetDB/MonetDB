@@ -26,9 +26,11 @@ Group: System
 Summary: MonetDB SQL development package 
 Group: System 
 
+%if %{DOCTOOLS}
 %package docu
 Summary: MonetDB SQL documentation package 
 Group: System 
+%endif
 
 %description
 MonetDB is a database management system that is developed from a
@@ -50,8 +52,10 @@ Add the MonetDB devel description here
 Requires: %{name}-server
 Requires: MonetDB-devel
 
+%if %{DOCTOOLS}
 %description docu
 Add the MonetDB documentaion description here
+%endif
 
 
 %prep
@@ -95,6 +99,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/lib/sql/Tests/odbcsample1
 %{prefix}/lib/pkgconfig/MonetDB-SQL.pc
 
+%if %{DOCTOOLS}
 %files docu
 %defattr(-,monetdb,monetdb) 
 %{prefix}/share/MonetDB/docs/SQL/*.html
@@ -103,3 +108,4 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/share/MonetDB/docs/SQL/*/*.html
 %{prefix}/share/MonetDB/docs/SQL/*/*.pdf
 %{prefix}/share/MonetDB/docs/SQL/*/*.ps
+%endif
