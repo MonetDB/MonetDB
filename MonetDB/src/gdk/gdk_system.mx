@@ -239,7 +239,7 @@ gdk_export size_t _MT_pagesize;
 #include "gdk_system.h"
 #include "gdk_posix.h"
 
-#if !defined(HAVE_SYSCONF) && defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
+#if defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
 # include <sys/resource.h>
 #endif
 
