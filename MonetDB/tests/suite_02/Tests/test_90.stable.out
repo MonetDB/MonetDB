@@ -15,73 +15,73 @@ setoid(oid(2000000));
 #determine cost components of a join
 # load("k100_unique1");
 
-b:=k100_unique1.copy;
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");c:=join(b.reverse,k100_unique1);
+var b:=k100_unique1.copy;
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");var c:=join(b.reverse(),k100_unique1);
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
+[ "user",	  230	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  100	  ]
+[ "system",	  610	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  180	  ]
-[ "elapuser",	  60	  ]
-[ "system",	  110	  ]
-[ "elapsystem",	  10	  ]
+[ "user",	  270	  ]
+[ "elapuser",	  40	  ]
+[ "system",	  630	  ]
+[ "elapsystem",	  20	  ]
 #~EndVariableOutput~#
-d:=join(b.reverse,k100_unique1);
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+var d:=join(b.reverse(),k100_unique1);
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  250	  ]
-[ "elapuser",	  70	  ]
-[ "system",	  110	  ]
+[ "user",	  320	  ]
+[ "elapuser",	  50	  ]
+[ "system",	  630	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-commit;
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+commit();
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  250	  ]
+[ "user",	  320	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  120	  ]
-[ "elapsystem",	  10	  ]
+[ "system",	  630	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1077248	  ]
-[ "arena",	  1132928	  ]
-[ "ordblks",	  529		  ]
+[ "memincr",	  1585152	  ]
+[ "arena",	  1591536	  ]
+[ "ordblks",	  432		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  3284992	  ]
+[ "hblkhd",	  3211264	  ]
 [ "hblks",	  4		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  974800	  ]
-[ "fordblks",	  158128	  ]
+[ "uordblks",	  1423808	  ]
+[ "fordblks",	  167728	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -89,15 +89,15 @@ printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2721	  ]
-[ "majflt",	  510	  ]
+[ "minflt",	  3303	  ]
+[ "majflt",	  629	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-quit;
+quit();
 
 # 17:09:11 >  
 # 17:09:11 >  Done.

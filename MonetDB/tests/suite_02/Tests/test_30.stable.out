@@ -13,8 +13,8 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(2000000));
 # load a few wisconsin tables and produce histograms
-h1:= W10k_evenOnePercent.histogram;
-h1.sort.print;
+var h1:= W10k_evenOnePercent.histogram();
+h1.sort().print();
 #-----------------#
 # BAT:	  tmp_61  #
 # (int)	  (int)	  #
@@ -69,16 +69,16 @@ h1.sort.print;
 [ 94,	  200	  ]
 [ 96,	  200	  ]
 [ 98,	  200	  ]
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  80	  ]
+[ "user",	  160	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  120	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -86,16 +86,16 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1118208	  ]
-[ "arena",	  1173888	  ]
-[ "ordblks",	  523		  ]
+[ "memincr",	  1622016	  ]
+[ "arena",	  1628400	  ]
+[ "ordblks",	  432		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  991432	  ]
-[ "fordblks",	  182456	  ]
+[ "uordblks",	  1466488	  ]
+[ "fordblks",	  161912	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -103,16 +103,16 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  363	  ]
-[ "majflt",	  507	  ]
+[ "minflt",	  493	  ]
+[ "majflt",	  627	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-h2:= W10k_tenPercent.histogram;
-h2.sort.print;
+h2:= W10k_tenPercent.histogram();
+h2.sort().print();
 #-----------------#
 # BAT:	  tmp_62  #
 # (int)	  (int)	  #
@@ -127,16 +127,16 @@ h2.sort.print;
 [ 7,	  1000	  ]
 [ 8,	  1000	  ]
 [ 9,	  1000	  ]
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  90	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  120	  ]
+[ "user",	  160	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -144,16 +144,16 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  40960		  ]
-[ "arena",	  1214848	  ]
-[ "ordblks",	  520		  ]
+[ "memincr",	  36864		  ]
+[ "arena",	  1665264	  ]
+[ "ordblks",	  424		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1034920	  ]
-[ "fordblks",	  179928	  ]
+[ "uordblks",	  1510112	  ]
+[ "fordblks",	  155152	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -161,15 +161,15 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  373	  ]
-[ "majflt",	  507	  ]
+[ "minflt",	  502	  ]
+[ "majflt",	  627	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-quit;
+quit();
 
 # 17:09:06 >  
 # 17:09:06 >  Done.
