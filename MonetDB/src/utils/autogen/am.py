@@ -661,6 +661,13 @@ def am_jar(fd, var, jar, am):
     else:
         fd.write("\n%s_extra_files= \n" % name)
 
+    if jar.has_key("MANIFEST") and len(jar['MANIFEST']) == 1:
+        fd.write("\n%s_manifest_file= %s\n" % (name, jar['MANIFEST'][0]))
+	manifest_flag='m'
+    else:
+        fd.write("\n%s_s_manifest_file= \n" % name)
+	manifest_flag=''
+
     fd.write("\n%s_java_files= %s\n" % (name, am_list2string(jar['TARGETS'], " ", "")))
     fd.write("%s_class_files= $(patsubst %%.java,%%.class,$(%s_java_files))\n" % (name, name))
     fd.write("%s_inner_class_files= $(patsubst %%.java,%%\$$*.class,$(%s_java_files))\n" % (name, name))
@@ -668,8 +675,8 @@ def am_jar(fd, var, jar, am):
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
     fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
 
-    fd.write("\n%s.jar: $(%s_class_files) $(%s_extra_files)\n" % (name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf $@ $(%s_extra_files) $(%s_class_files) $(shell ls $(%s_inner_class_files) 2>/dev/null | sed -e 's|\\$$|\\\\$$|g')\n" % (name, name, name))
+    fd.write("\n%s.jar: $(%s_class_files) $(%s_extra_files) $(%s_manifest_file)\n" % (name, name, name, name))
+    fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(%s_extra_files) $(%s_class_files) $(shell ls $(%s_inner_class_files) 2>/dev/null | sed -e 's|\\$$|\\\\$$|g')\n" % (manifest_flag, name, name, name, name))
 
     fd.write("\ninstall-exec-local-%s_jar: %s.jar\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
