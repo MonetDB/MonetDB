@@ -249,6 +249,52 @@ int blob_tostr(str* tostr,int* l,blob* p)
 	return(s - *tostr);
 }
 
+/* SQL 99 compatible BLOB output string
+ * differs from the MonetDB BLOB output in that it does not start with a size
+ * no brackets and no spaces in between the hexits
+ */
+int sqlblob_tostr(str *tostr, int *l,blob *p)
+{
+	char* s;
+	size_t i;
+	size_t expectedlen;
+
+	if (p->nitems == ~(size_t)0)
+		expectedlen = 4;
+	else
+		expectedlen = 24 + (p->nitems * 3);
+	if (*l < 0 || (size_t) *l < expectedlen) {
+		if (*tostr != NULL)
+			GDKfree(*tostr);
+		*tostr = (str)GDKmalloc(expectedlen);
+		*l = (int) expectedlen;
+	}
+	if (p->nitems == ~(size_t)0) {
+		strcpy(*tostr, "nil");
+		return 3;
+	}
+
+	strcpy(*tostr, "\0");
+	s = *tostr;
+
+	for (i = 0; i < p->nitems; i++) {
+		int val = (p->data[i]>>4)&15;
+		if (val >= 10){
+			*s++ = 'A' + val - 10;
+		} else {
+			*s++ = '0' + val;
+		}
+		val = p->data[i]&15;
+		if (val >= 10){
+			*s++ = 'A' + val - 10;
+		} else {
+			*s++ = '0' + val;
+		}
+	}
+	*s = '\0';
+	return(s - *tostr);
+}
+
 int blob_fromstr(char* instr,int* l,blob** val)
 {
    size_t i;
@@ -350,6 +396,75 @@ int blob_fromstr(char* instr,int* l,blob** val)
    }
 
    return s-instr;
+}
+
+/* SQL 99 compatible BLOB input string
+ * differs from the MonetDB BLOB input in that it does not start with a size
+ * no brackets and no spaces in between the hexits
+ */
+int sqlblob_fromstr(char *instr, int *l, blob **val)
+{
+   size_t i;
+   size_t nitems;
+   size_t nbytes;
+   blob *result;
+   char *s = instr;
+
+   /* since the string is build of (only) hexits the number of bytes
+    * required for it is the length of the string divided by two
+	*/
+   i = strlen(instr);
+   if (i % 2 == 1)
+      GDKerror("sqlblob_fromstr: Illegal blob length '%d' (should be even)\n", i);
+   nitems = strlen(instr) / 2;
+   nbytes = blobsize(nitems);
+   
+   if (*val == (blob *)NULL)
+   {
+      *val = (blob *)GDKmalloc(nbytes);
+      *l = nbytes;
+   }
+   else if (*l < 0 || (size_t)*l < nbytes)
+   {
+      GDKfree(*val);
+      *val = (blob *)GDKmalloc(nbytes);
+      *l = nbytes;
+   }
+   result = *val;
+   result->nitems = nitems;
+
+   /*
+   // Read the values of the blob.
+   */
+   for (i = 0; i < nitems; ++i)
+   {
+      char res = 0;
+
+      if (*s >= '0' && *s <= '9') {
+         res = *s - '0';
+      } else if (*s >= 'A' && *s <= 'F') {
+         res = 10 + *s - 'A';
+      } else if (*s >= 'a' && *s <= 'f') {
+         res = 10 + *s - 'a';
+      } else {
+         GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
+      }
+      s++;
+      res <<= 4;
+      if (*s >= '0' && *s <= '9') {
+         res = *s - '0';
+      } else if (*s >= 'A' && *s <= 'F') {
+         res = 10 + *s - 'A';
+      } else if (*s >= 'a' && *s <= 'f') {
+         res = 10 + *s - 'a';
+      } else {
+         GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
+      }
+      
+      result->data[i] = res;
+   }
+
+   return(s - instr);
 }
 
 #else
