@@ -91,6 +91,11 @@ typedef struct stream stream;
 /* some os specific initialization */
 stream_export int stream_init(void);
 
+/* all stream_readX/stream_writeX 
+   return 
+	0 on error 
+       !0 on success
+ */
 stream_export int stream_readSht( stream *s, short *val );
 stream_export int stream_writeSht( stream *s, short val );
 stream_export int stream_readInt( stream *s, int *val );
@@ -104,6 +109,7 @@ stream_export int stream_readIntArray( stream *s, int *val, size_t cnt );
 stream_export int stream_writeIntArray( stream *s, const int *val, size_t cnt );
 stream_export int stream_readLngArray( stream *s, lng *val, size_t cnt );
 stream_export int stream_writeLngArray( stream *s, const lng *val, size_t cnt );
+
 stream_export int stream_printf( stream *s, const char *format, ...);
 stream_export ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt);
 stream_export ssize_t stream_write(stream *s, void *buf, size_t elmsize, size_t cnt);
@@ -216,11 +222,13 @@ typedef struct bstream {
 	size_t pos; /* the data cursor (ie read uptil pos) */
 	size_t len; /* len of the data (could < size but usually == size) */
 	int eof;
+	int mode;   /* 0 line mode else size for block mode */
 } bstream;
 
 stream_export bstream *bstream_create( stream *rs, size_t chunk_size );
 stream_export void bstream_destroy( bstream *s );
-stream_export size_t bstream_read( bstream *s, size_t size );
+stream_export ssize_t bstream_read( bstream *s, size_t size );
+stream_export ssize_t bstream_next( bstream *s );
 
 @+ bstream functions
 The bstream_create gets a read stream (rs) as input and the initial chunk size
@@ -1533,7 +1541,7 @@ bs_write(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		todo -= n;
 		buf = (void *) ((char *) buf + n);
 		if (s->nr == sizeof(s->buf)) {
-			if (stream_writeInt(s->s, s->nr) ||
+			if (!stream_writeInt(s->s, s->nr) ||
 			    stream_write(s->s, s->buf, 1, s->nr) != s->nr) {
 				ss->errnr = WRITE_ERROR;
 				return -1;
@@ -1562,9 +1570,9 @@ bs_flush(stream *ss)
 		   stream_writeInt) to indicate user-instigated
 		   flush */
 		if ((s->nr > 0 &&
-		     (stream_writeInt(s->s, s->nr) ||
+		     (!stream_writeInt(s->s, s->nr) ||
 		      s->s->write(s->s, s->buf, 1, s->nr) != s->nr)) ||
-		    stream_writeInt(s->s, 0)
+		    !stream_writeInt(s->s, 0)
 			) {
 			ss->errnr = WRITE_ERROR;
 			return -1;
@@ -1602,7 +1610,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			   nothing more to read in the current block,
 			   so read the count for the next block */
 			int nr;
-			if (stream_readInt(s->s, &nr) || nr < 0) {
+			if (!stream_readInt(s->s, &nr) || nr < 0) {
 				ss->errnr = READ_ERROR;
 				return -1;
 			}
@@ -1859,6 +1867,9 @@ int stream_printf( stream *s, const char *format, ...)
 bstream *bstream_create( stream *s, size_t size )
 {
 	bstream *b = (bstream*)malloc(sizeof(bstream));
+	b->mode = size;
+	if (size == 0)
+		size = BUFSIZ;
 	b->s = s;
 	b->buf = malloc(size + 1);
 	b->size = size;
@@ -1868,10 +1879,11 @@ bstream *bstream_create( stream *s, size_t size )
 	return b;
 }
 
-size_t bstream_read( bstream *s, size_t size )
+ssize_t bstream_read( bstream *s, size_t size )
 {
-	size_t len = 0, rd = 0;
-	size_t used = s->len - s->pos;
+	size_t len = 0, used = s->len - s->pos;
+	ssize_t rd = 0, res = 0;
+
 	if (s->eof)
 		return 0;
 	while( size+used > s->size){
@@ -1883,13 +1895,36 @@ size_t bstream_read( bstream *s, size_t size )
 		memmove( s->buf, s->buf + s->pos, used);
 		s->pos = 0; 
 	}
-	if ((rd = s->s->read(s->s, s->buf + used, 1, len)) < len) {
-		s->eof = 1;
+	while ((rd = s->s->read(s->s, s->buf + used, 1, len)) > 0 ) {
+		len -= rd;
+		used += rd;
+		res += rd;
 	}
+	if (rd == 0)
+		s -> eof = 1;
+	if (rd < 0)
+		return rd;
 	s->pos = 0;
-	s->len = used + rd;
+	s->len = used;
 	s->buf[s->len] = 0;	/* fill in the spare with EOS */
-	return rd;
+	return res;
+}
+
+ssize_t bstream_next( bstream *s )
+{
+	int sz = 0, rd;
+
+	if (s->mode) {
+		return bstream_read(s, s->mode);
+	} else {
+		while( (rd = bstream_read(s, 1)) == 1 && 
+			s->buf[s->pos] != '\n' ) {
+			sz += rd;
+		}
+		if (rd < 0)
+			return rd;
+		return sz;
+	}
 }
 
 void bstream_destroy( bstream *s )
