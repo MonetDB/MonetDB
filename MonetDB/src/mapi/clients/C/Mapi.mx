@@ -350,7 +350,7 @@ Bind a string variable with the n-th placeholder in the query
 template.
 No conversion takes place.
 
-\item[MapiMsg mapi_param_type(Mapi mid, int fldnr, int type, void *val)]:
+\item[MapiMsg mapi_param_type(Mapi mid, int fldnr, int ctype, int sqltype, void *val)]:
 Similar to mapi_bind_var(), but now binds a parameter.
 
 \item[MapiMsg mapi_param_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
@@ -562,11 +562,17 @@ typedef struct{
 	int  scale;
 	int  isnull;
 
-	void *inparam;		/* to application variable */
-	int  intype;
-	void *outparam;
-	int  outtype;
+	void *outparam;		/* pointer to application variable */
+	int  outtype;		/* type of application variable */
 } MapiField;
+
+typedef struct {
+	void *inparam;		/* pointer to application variable */
+	int intype;		/* type of application variable */
+	int outtype;		/* type of value */
+	int  precision;
+	int  scale;
+} MapiBinding;
 
 @-
 The row cache contains a string representation of each (non-error) line
@@ -626,6 +632,8 @@ typedef struct MapiStruct {
 	int	rows_affected;	/* mostly unknown */
 	int 	maxfields;
 	MapiField *fields;
+	int	maxbindings;
+	MapiBinding *bindings;
 	MapiRowBuf cache;
 	Mapi next;		/* circular list of Mapi's sharing streams */
 
@@ -704,7 +712,7 @@ mapi_export MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) ;
 mapi_export MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,
 	int precision, void *ptr) ;
 mapi_export MapiMsg mapi_param(Mapi mid, int fnr, char **ptr);
-mapi_export MapiMsg mapi_param_type(Mapi mid, int fnr, int type, void *ptr);
+mapi_export MapiMsg mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, void *ptr);
 mapi_export MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,
 	int precision, void *ptr);
 mapi_export Mapi mapi_mapi(char *host, int port, char *username,
@@ -782,6 +790,7 @@ static void mapi_check_query(Mapi mid);
 static void mapi_extend_cache(Mapi mid);
 static int mapi_get_row(Mapi mid) ;
 static int mapi_extend_fields(Mapi mid,int minfields);
+static int mapi_extend_bindings(Mapi mid,int minbindings);
 static int mapi_slice_row(Mapi mid);
 static int mapi_setError(Mapi mid, char *msg, char *action);
 static char * mapi_fetch_line_internal(Mapi mid);
@@ -936,6 +945,10 @@ static Mapi mapi_new(void)
 	m->fields = (MapiField *) malloc( m->maxfields * sizeof(MapiField));
 	assert(m->fields);
 	memset(m->fields, 0, m->maxfields * sizeof(MapiField));
+	m->maxbindings = 64;
+	m->bindings = (MapiBinding *) malloc(m->maxbindings * sizeof(MapiBinding));
+	assert(m->bindings);
+	memset(m->bindings, 0, m->maxbindings * sizeof(MapiBinding));
 	m->cache.rowlimit= 100;
 	m->cache.shuffle= 0;	/* derive from rowlimit */
 	m->cache.limit= 0;
@@ -1285,12 +1298,23 @@ MapiMsg mapi_reconnect(Mapi mid)
 Binding placeholders and column names provide some convenience
 for bulk interacting with a server.
 @= testField
-	mapi_check(mid,@2);
-	if( fnr <0 ){
-		mapi_setError(mid,"Illegal field number",@2);
+	mapi_check(mid, @2);
+	if (fnr < 0) {
+		mapi_setError(mid, "Illegal field number", @2);
 		return @1;
 	}
-	if( fnr >= mid->fieldcnt) mapi_extend_fields(mid,fnr);
+	if (fnr >= mid->maxfields) /* make sure there is enough space */
+		mapi_extend_fields(mid, fnr);
+	if (fnr >= mid->fieldcnt) /* record how much we've actually used */
+		mid->fieldcnt = fnr + 1;
+@= testBinding
+	mapi_check(mid, @2);
+	if (fnr < 0) {
+		mapi_setError(mid, "Illegal binding number", @2);
+		return @1;
+	}
+	if (fnr >= mid->maxbindings)
+		mapi_extend_bindings(mid, fnr);
 @c
 MapiMsg mapi_bind(Mapi mid, int fnr, char **ptr) {
 	@:testField(mid->error,"mapi_bind")@
@@ -1316,28 +1340,33 @@ MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
 	mid->fields[fnr].precision= prec;
 	return MOK;
 }
-MapiMsg mapi_param(Mapi mid, int fnr, char **ptr) {
-	@:testField(mid->error,"mapi_param")@
-	mid->fields[fnr].inparam= ptr;
-	mid->fields[fnr].intype= MAPI_AUTO;
-	return MOK;
-}
 
-MapiMsg mapi_param_type(Mapi mid, int fnr, int type, void *ptr) {
-	@:testField(mid->error,"mapi_param_type")@
-	mid->fields[fnr].inparam= ptr;
-	if( type>=0 && type < MAPI_NUMERIC)
-		mid->fields[fnr].intype= type;
+MapiMsg mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, void *ptr)
+{
+	@:testBinding(mid->error,"mapi_param_type")@
+	mid->bindings[fnr].inparam= ptr;
+	if( ctype>=0 && ctype < MAPI_NUMERIC)
+		mid->bindings[fnr].intype = ctype;
 	else
 		return mapi_setError(mid,"Illegal SQL type identifier",
 					"mapi_param_type");
+	mid->bindings[fnr].outtype = sqltype;
+	mid->bindings[fnr].scale= 0;
+	mid->bindings[fnr].precision= 0;
 	return MOK;
 }
-MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
-	if( mapi_param_type(mid,fnr, MAPI_NUMERIC,ptr) )
+
+MapiMsg mapi_param(Mapi mid, int fnr, char **ptr)
+{
+	return mapi_param_type(mid, fnr, MAPI_AUTO, MAPI_AUTO, ptr);
+}
+
+MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr)
+{
+	if (mapi_param_type(mid, fnr, MAPI_NUMERIC, MAPI_NUMERIC, ptr))
 		return mid->error;
-	mid->fields[fnr].scale= scale;
-	mid->fields[fnr].precision= prec;
+	mid->bindings[fnr].scale= scale;
+	mid->bindings[fnr].precision= prec;
 	return MOK;
 }
 @-
@@ -1465,15 +1494,13 @@ MapiMsg mapi_prepare_array_internal(Mapi mid, char *cmd, char **val)
 	int i,ret;
 	@:prepareQuery@
 	/* first get rid of previous bindings */
-	for(i=0;i<mid->fieldcnt;i++){
-		mid->fields[i].inparam= 0;
-		mid->fields[i].intype= MAPI_AUTO;
-	}
+	memset(mid->bindings, 0, mid->maxbindings * sizeof(MapiBinding));
 	for(i=0; val[i];i++){
-		if( i >= mid->maxfields)
-			mapi_extend_fields(mid, i+1);
-		mid->fields[i].inparam= val[i];
-		mid->fields[i].intype= MAPI_AUTO;
+		if( i >= mid->maxbindings)
+			mapi_extend_bindings(mid, i+1);
+		mid->bindings[i].inparam= val[i];
+		mid->bindings[i].intype= MAPI_AUTO;
+		mid->bindings[i].outtype= MAPI_AUTO;
 	}
 	return ret;
 }
@@ -1515,7 +1542,7 @@ static void mapi_param_store(Mapi mid)
 	q= strchr(mid->template,PLACEHOLDER);
 	i=0;
 	/* loop invariant: k == strlen(mid->query) */
-	while(q && i < mid->maxfields){
+	while(q && i < mid->maxbindings){
 		if( q>p && *(q-1)=='\\'){
 			q= strchr(q+1,PLACEHOLDER);
 			continue;
@@ -1525,13 +1552,13 @@ static void mapi_param_store(Mapi mid)
 		k += q - p;
 		mid->query[k]=0;
 
-		if( mid->fields[i].inparam==0) {
+		if( mid->bindings[i].inparam==0) {
 			mid->query[k++]=PLACEHOLDER;
 			mid->query[k]=0;
 		} else {
-			void *src = mid->fields[i].inparam; /* abbrev */
+			void *src = mid->bindings[i].inparam; /* abbrev */
 
-			switch(mid->fields[i].intype) {
+			switch(mid->bindings[i].intype) {
 			case MAPI_TINY:
 				@:checkSpace(5)@
 				sprintf(mid->query+k, "%d",
@@ -2435,19 +2462,24 @@ It overwrites the contents of the row buffer, because de-escaping
 only reduces the size.
 It also silently extends the field descriptor table.
 @c
+@= extend
 static
-int mapi_extend_fields(Mapi mid, int minfields)
+int mapi_extend_@1(Mapi mid, int min@1)
 {
 	/* extend the field table */
-	int nm = mid->maxfields + 32;
-	if (nm <= minfields)
-		 nm = minfields + 32;
-	mid->fields = (MapiField *) realloc(mid->fields, nm * sizeof(MapiField));
+	int nm = mid->max@1 + 32;
+	if (nm <= min@1)
+		 nm = min@1 + 32;
+	mid->@1 = (@2 *) realloc(mid->@1, nm * sizeof(@2));
 	/* clear new entries */
-	memset(mid->fields + mid->maxfields, 0,
-	       (nm - mid->maxfields) * sizeof(MapiField));
+	memset(mid->@1 + mid->max@1, 0,
+	       (nm - mid->max@1) * sizeof(@2));
+	mid->max@1 = nm;
 	return MOK;
 }
+@c
+@:extend(fields,MapiField)@
+@:extend(bindings,MapiBinding)@
 
 static
 void mapi_extend_anchor(Mapi mid)
