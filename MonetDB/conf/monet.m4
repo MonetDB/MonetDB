@@ -124,9 +124,21 @@ AC_PROG_CXX()
 AC_PROG_CPP()
 AC_PROG_GCC_TRADITIONAL()
 
-dnl if test "x$CC$CXX" = "x"; then
-dnl	CC=gcc 	CXX=g++
-dnl fi
+dnl  Set compiler switches.
+dnl  The idea/goal is to be as strict as possible, i.e., enable preferable
+dnl  *all* warnings and make them errors. This should help keeping the code
+dnl  as clean and portable as possible.
+dnl  It turned out, though, that this, especially turning all warnings into 
+dnl  errors is a bit too ambitious for configure/autoconf. Hence, we set
+dnl  the standard CFLAGS & CXXFLAGS to what configure/autoconf can cope with
+dnl  (basically everything except "-Werror"). For "-Werror" and some
+dnl  switches that disable selected warnings that haven't been sorted out,
+dnl  yet, we set X_CFLAGS & X_CXXFLAGS, which are added to the standard
+dnl  CFLAGS & CXXFLAGS once configure/autoconf are done with their job,
+dnl  i.e., at the end of the configure.m4 file that includes this monet.m4.
+dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc) are done so far.
+X_CFLAGS=''
+X_CXXFLAGS=''
 case $CC-$CXX in
 *gcc-*g++)
 	dnl  Some systems (SunOS) require these to find the right prototypes, e.g. for *time_r();
@@ -142,6 +154,33 @@ case $CC-$CXX in
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall -W"
 	CXXFLAGS="$CXXFLAGS -Wall -W"
+	dnl  Be rigid; "MonetDB code is supposed to ahear to this... ;-)
+	X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
+	X_CXXFLAGS="$X_CXXFLAGS -Werror-implicit-function-declaration"
+	if test "$CC-$CXX" = "gcc-g++"; then
+		dnl  Doesn't work (yet?) for arm-linux-gcc v2.95.2, due to 
+		dnl  "warning: value computed is not used" 
+		dnl  in src/monet/monet_context.mx:
+		dnl  #define VARfixate(X)   ((X) && ((X)->constant=(X)->frozen=TRUE)==TRUE)
+		X_CFLAGS="$X_CFLAGS -Werror"
+		X_CXXFLAGS="$X_CXXFLAGS -Werror"
+	fi
+	dnl  ... however, some things aren't solved, yet ...
+	if test "$CC-$CXX" = "gcc-g++"; then
+		dnl  Doesn't exist (yet?) for arm-linux-gcc v2.95.2.
+		X_CFLAGS="$X_CFLAGS -Wno-unused-function"
+		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function"
+	fi
+	X_CFLAGS="$X_CFLAGS -Wno-format -Wno-sign-compare"
+	X_CXXFLAGS="$X_CXXFLAGS -Wno-format -Wno-sign-compare"
+	dnl  ... and some are beyond our control:
+	dnl  In some cases, there is a (possible) uninitialized variable in bison.simple ... |-(
+	case $CC-$host_os in
+	gcc-solaris*)
+		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
+		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
+		;;
+	esac
 	;;
 icc-icpc|ecc-ecpc)
  	LDFLAGS="$LDFLAGS -i_dynamic"
@@ -152,6 +191,32 @@ icc-icpc|ecc-ecpc)
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -ansi -c99 -Wall -w2"
 	CXXFLAGS="$CXXFLAGS -ansi -c99 -Wall -w2"
+	dnl  Be rigid; "MonetDB code is supposed to ahear to this... ;-)
+	dnl  Let warning #266 "function declared implicitly" become an error.
+	X_CFLAGS="$X_CFLAGS -we266"
+	X_CXXFLAGS="$X_CXXFLAGS -we266"
+	X_CFLAGS="$X_CFLAGS -Werror"
+	X_CXXFLAGS="$X_CXXFLAGS -Werror"
+	dnl  ... however, some things aren't solved, yet:
+	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
+	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,108,188,1357"
+	X_CXXFLAGS="$X_CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,108,188,1357"
+	dnl  #1418: external definition with no prior declaration
+	dnl  #1419: external declaration in primary source file
+	dnl  # 279: controlling expression is constant
+	dnl  # 310: old-style parameter list (anachronism)
+	dnl  # 981: operands are evaluated in unspecified order
+	dnl  # 810: conversion from "." to "." may lose significant bits
+	dnl  # 444: destructor for base class "." is not virtual
+	dnl  # 193: zero used for undefined preprocessing identifier
+	dnl  # 111: statement is unreachable
+	dnl  # 177: function "." was declared but never referenced
+	dnl  # 171: invalid type conversion: "." to "."
+	dnl  # 181: argument is incompatible with corresponding format string conversion
+	dnl  # 764: nonstandard format string conversion
+	dnl  # 108: implicitly-signed bit field of length 1
+	dnl  # 188: enumerated type mixed with another type
+	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
 	;;
 esac
 AC_SUBST(CFLAGS)
@@ -254,68 +319,6 @@ AC_SUBST(JAVAC)
 AC_SUBST(JAR)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
-
-])
-
-AC_DEFUN(AM_MONET_CxxFLAGS,[
-
-dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
-case $CC-$CXX in
-*gcc-*g++)
-	dnl  Be rigid ;-) ...
-	CFLAGS="$CFLAGS -Werror-implicit-function-declaration"
-	CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
-	if test "$CC-$CXX" = "gcc-g++"; then
-		dnl  Doesn't work yet(?) for arm-linux.
-		CFLAGS="$CFLAGS -Werror"
-		CXXFLAGS="$CXXFLAGS -Werror"
-	fi
-	dnl  ... however, some things aren't solved, yet ...
-	if test "$CC-$CXX" = "gcc-g++"; then
-		dnl  Doesn't exist yet(?) for arm-linux.
-		CFLAGS="$CFLAGS -Wno-unused-function"
-		CXXFLAGS="$CXXFLAGS -Wno-unused-function"
-	fi
-	CFLAGS="$CFLAGS -Wno-format -Wno-sign-compare"
-	CXXFLAGS="$CXXFLAGS -Wno-format -Wno-sign-compare"
-	dnl  ... and some are beyond our control:
-	dnl  In some cases, there is a (possible) uninitialized variable in bison.simple ... |-(
-	case $CC-$host_os in
-	gcc-solaris*)
-		CFLAGS="$CFLAGS -Wno-uninitialized"
-		CXXFLAGS="$CXXFLAGS -Wno-uninitialized"
-		;;
-	esac
-	;;
-icc-icpc|ecc-ecpc)
-	dnl  Be rigid ;-) ...
-	dnl  Let warning #266 "function declared implicitly" become an error.
-	CFLAGS="$CFLAGS -we266"
-	CXXFLAGS="$CXXFLAGS -we266"
-	CFLAGS="$CFLAGS -Werror"
-	CXXFLAGS="$CXXFLAGS -Werror"
-	dnl  ... however, some things aren't solved, yet:
-	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	CFLAGS="$CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,108,188,1357"
-	CXXFLAGS="$CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,108,188,1357"
-	dnl  #1418: external definition with no prior declaration
-	dnl  #1419: external declaration in primary source file
-	dnl  # 279: controlling expression is constant
-	dnl  # 310: old-style parameter list (anachronism)
-	dnl  # 981: operands are evaluated in unspecified order
-	dnl  # 810: conversion from "." to "." may lose significant bits
-	dnl  # 444: destructor for base class "." is not virtual
-	dnl  # 193: zero used for undefined preprocessing identifier
-	dnl  # 111: statement is unreachable
-	dnl  # 177: function "." was declared but never referenced
-	dnl  # 171: invalid type conversion: "." to "."
-	dnl  # 181: argument is incompatible with corresponding format string conversion
-	dnl  # 764: nonstandard format string conversion
-	dnl  # 108: implicitly-signed bit field of length 1
-	dnl  # 188: enumerated type mixed with another type
-	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
-	;;
-esac
 
 ])
 
@@ -461,16 +464,18 @@ AC_ARG_ENABLE(warning,
 [  --enable-warning           enable extended compiler warnings [default=off]],
   enable_warning=$enableval, enable_warning=no)
 if test "x$enable_warning" = xyes; then
-  if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -Wall -W -ansi -std=c99 -pedantic -Wno-long-long -Wno-unused-function -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
-    CXXFLAGS="$CXXFLAGS -Wall -W -ansi -pedantic -Wno-long-long -Wno-unused-function"
-  else
-    case "$host_os" in
-    linux*) CFLAGS="$CFLAGS -w2 -Wall -ansi -c99"
-            CXXFLAGS="$CXXFLAGS -w2 -Wall -ansi -c99"
-            ;;
-    esac
-  fi
+  dnl  Basically, we disable/overule X_C[XX]FLAGS, i.e., "-Werror" and some "-Wno-*".
+  dnl  All warnings should be on by default (see above).
+  case $CC-$CXX in
+  *gcc-*g++)
+	X_CFLAGS="-pedantic"
+	X_CXXFLAGS="-pedantic"
+	;;
+  icc-icpc|ecc-ecpc)
+	X_CFLAGS=""
+	X_CXXFLAGS=""
+	;;
+  esac
 fi
 
 dnl --enable-profile
