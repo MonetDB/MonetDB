@@ -16,6 +16,8 @@ c();
 { var i:=123; print(i);}
 
 # and in a procedure
-proc xyz() : void {var j; j:=23; var k:=234; vars();}
+# we choose variables names containint 'z' since there are not
+# standard variable names that contain 'z'
+proc xyz() : void {var z1; z1:=23; var z2:=234; vars("z");}
 xyz();
 quit();

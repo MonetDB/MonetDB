@@ -8,7 +8,9 @@ qstat();
 bbp().print();
 loaded();
 procs();
-vars();
+# vars() without the value (view_var_value())
+table(view_var_name().kdiff([startsWith](view_var_name(), ".").uselect(true)), 
+              view_var_type(), view_var_kind(), view_var_constant());
 view_bbp_kind().print();
 view_bbp_location().print();
 view_bbp_name().print();
