@@ -226,7 +226,7 @@ typedef struct bstream {
 
 stream_export bstream *bstream_create(stream *rs, size_t chunk_size);
 stream_export void bstream_destroy(bstream *s);
-stream_export size_t bstream_read(bstream *s, size_t size);
+stream_export ssize_t bstream_read(bstream *s, size_t size);
 stream_export ssize_t bstream_next(bstream *s);
 
 @+ bstream functions
@@ -2100,41 +2100,44 @@ bstream_create(stream *s, size_t size)
 	return b;
 }
 
-size_t
+ssize_t
 bstream_read(bstream *s, size_t size)
 {
-	size_t len = 0, used = s->len - s->pos;
-	ssize_t rd = 0, res = 0;
+	ssize_t rd;
 
 	if (s->eof)
 		return 0;
 
-	while (size + used > s->size)
-		s->size <<= 1;
-	if ((s->buf = realloc(s->buf, s->size + 1)) == NULL) {
+	if (s->pos > 0) {
+		if (s->pos < s->len)
+			memmove(s->buf, s->buf + s->pos, s->len - s->pos);
+		s->len -= s->pos;
+		s->pos = 0;
+	}
+
+	if (s->len == s->size &&
+	    (s->buf = realloc(s->buf, (s->size <<= 1) + 1)) == NULL) {
 		s->size = 0;
 		s->len = 0;
 		s->pos = 0;
-		return 0;
+		return -1;
 	}
-	len = s->size - used;
-	if (s->pos) {
-		memmove(s->buf, s->buf + s->pos, used);
-		s->pos = 0;
-	}
-	while (len > 0 && (rd = s->s->read(s->s, s->buf + used, 1, len)) > 0 ) {
-		len -= rd;
-		used += rd;
-		res += rd;
-	}
-	if (rd == 0)
-		s -> eof = 1;
+
+	if (size > s->size - s->len)
+		size = s->size - s->len;
+
+	rd = s->s->read(s->s, s->buf + s->len, 1, size);
+
 	if (rd < 0)
 		return rd;
-	s->pos = 0;
-	s->len = used;
+
+	if (rd == 0) {
+		s->eof = 1;
+		return 0;
+	}
+	s->len += rd;
 	s->buf[s->len] = 0;	/* fill in the spare with EOS */
-	return res;
+	return rd;
 }
 
 ssize_t bstream_next( bstream *s )
@@ -2145,7 +2148,7 @@ ssize_t bstream_next( bstream *s )
 		return bstream_read(s, s->mode);
 	} else {
 		while( (rd = bstream_read(s, 1)) == 1 && 
-			s->buf[s->pos] != '\n' ) {
+			s->buf[s->pos + sz] != '\n' ) {
 			sz += rd;
 		}
 		if (rd < 0)

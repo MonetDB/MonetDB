@@ -798,7 +798,7 @@ int ASCIIload_file( ascii *as, bstream *b ){
 
 	while((b->pos < b->len || !b->eof) && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
 		char *s, *end;
-		if (b->pos >= b->len && !b->eof && bstream_read(b, b->size - (b->len - b->pos)) == 0) {
+		if (b->pos >= b->len && !b->eof && bstream_read(b, b->size - (b->len - b->pos)) <= 0) {
 			GDKerror("read error\n");
 			res = -1;
 			break;
@@ -838,7 +838,7 @@ int ASCIIload_file( ascii *as, bstream *b ){
 					if (b->pos == 0 || (b->len - b->pos >
 						b->size>>1) )
 						size <<= 4;
-					if (bstream_read(b, size) == 0) {
+					if (bstream_read(b, size) <= 0) {
 						GDKerror("read error\n");
 						res = -1;
 						break;
