@@ -1,3 +1,0 @@
-module("blob");
-test_blob();
-quit();
