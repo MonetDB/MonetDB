@@ -347,7 +347,8 @@ str MALengine(Client c){
 	oldstate.stop=0; 
 
 	/* check for unfinished blocks */
-	if( c->blkmode) return 0;
+	if( c->blkmode) 
+		return throwMessage("MALengine","block not finished\n");
 	prg= c->curprg;
 	if( prg== NULL) 
 		return throwMessage("MALengine","main function missing\n");

@@ -348,6 +348,8 @@ Let's call it as a synchronous action, without concern on parallelism.
         rhs = &pl->env->stk[pci->argv[i]];
         VALcopy(lhs,rhs);
     }
+    if( mb->errors)
+        return throwMessage("factory.call","Factory contains errors");
     if( u == 0)
         return runMAL(cntxt,mb,1,0,pl->stk,0);
     return reenterMAL(cntxt, mb, pl->pc, pl->stk, 0, 0);
