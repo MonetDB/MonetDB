@@ -380,7 +380,7 @@ int dump_line( ascii_io *fmt, stream *fd, int nr_attrs, int id ){
 static
 int load_file( ascii *as, stream *fd ){
 	int eof = 0, p = 0;
-	char *buf = GDKmalloc(SIZE);
+	char *buf = GDKmalloc(SIZE+1);
 	char *s = buf,*sep = as->format[as->nr_attrs-1].sep;
         int i = 0, seplen = as->format[as->nr_attrs-1].seplen;
 
@@ -407,7 +407,7 @@ int load_file( ascii *as, stream *fd ){
 				break;
 			}
 			i++;
-			if (ascii_io_debug && (i%1000000) == 0)
+			if (ascii_io_debug && (i%100000) == 0)
 				fprintf(GDKerr, "inserted %d\n", i);
 			if (i >= as->nr)
 				break;
