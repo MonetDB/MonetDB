@@ -559,7 +559,7 @@ dyncheck_types(mvc * sql, sql_subtype * ct, stmt * s )
 				 	stmt_atom_int(ct->digits), 
 					c), 1, 0);
 
-			res = sql_error(sql, 03, "Dynamic Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
+			res = sql_error(sql, 03, "Dynamic types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 			if (s) stmt_destroy(s);
 			return res;
 		}

@@ -873,8 +873,8 @@ void sqltypeinit()
 	/* decimal(d,s) (d indicates nr digits,
 			s scale indicates nr of digits after the dot .) */
 	/*#sql_type("DECIMAL", 2, SCALE_FIX, 10, 		"uchr"); */
-	*t++ = sql_create_type("DECIMAL",  5, SCALE_FIX, 10, 0,	"sht");
-	*t++ = sql_create_type("DECIMAL", 10, SCALE_FIX, 10, 0,	"int");
+	*t++ = sql_create_type("DECIMAL",  4, SCALE_FIX, 10, 0,	"sht");
+	*t++ = sql_create_type("DECIMAL",  9, SCALE_FIX, 10, 0,	"int");
 	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 0,	"lng");
 
 	/* float(n) (n indicates precision of atleast n digits)*/
@@ -1026,14 +1026,14 @@ void sqltypeinit()
 
 	/* convert string to numerical (excluding decimals)  */
 	for(t=strings; t < numerical; t++){
-	  sql_type **u;
-	  for(u=numerical; u < decimals; u++){
-		char buf[50];
+		sql_type **u;
+		for(u=numerical; u < decimals; u++){
+			char buf[50];
 
-		snprintf(buf,50,"cast2%s", (*u)->base.name);
-	      	sql_create_func("convert", buf, *t, NULL, *u, SCALE_FIX );
-	      	sql_create_func("convert", buf, *t, INT, *u, SCALE_FIX );
-	  }
+			snprintf(buf,50,"cast2%s", (*u)->base.name);
+			sql_create_func("convert", buf, *t, NULL, *u, SCALE_FIX );
+			sql_create_func("convert", buf, *t, INT, *u, SCALE_FIX );
+		}
 	}
 
 
