@@ -20,7 +20,7 @@ bug-sf-953545
 bug-sf-953560
 bug-sf-960166
 bug-sf-960672
-bug-sf-964165
+cast_varchar2int-bug-sf-964165
 update_where-bug-sf-976963
 primary_key-bug-sf-975308
 insert_into_select-bug-sf-978043
