@@ -2192,17 +2192,17 @@ def main(argv) :
 
     # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        mapi_mil = env['MONET_PREFIX']+path("/lib/MonetDB/mapi.mil")
+        mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
         if not os.path.isfile(mapi_mil):
-            mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
+            mapi_mil = env['MONET_PREFIX']+path("/lib/MonetDB/mapi.mil")
             if not os.path.isfile(mapi_mil):
                 mapi_mil = ''
         env['MAPI_MIL'] = mapi_mil
-        sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/sql_server.mil")
+        sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/sql_server.mil")
         if not os.path.isfile(sql_server_mil):
             sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/sql_server.mil")
             if not os.path.isfile(sql_server_mil):
-                sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/sql_server.mil")
+                sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/sql_server.mil")
                 if not os.path.isfile(sql_server_mil):
                     sql_server_mil = ''
         env['SQLSERVER_MIL'] = sql_server_mil
