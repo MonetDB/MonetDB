@@ -19,3 +19,4 @@ VAR idxbat := load(namebat, sepbat, typebat, datafile, len);
 idxbat.find("tmpdocs").count.print;
 idxbat.find("tmpterms").count.print;
 
+quit;

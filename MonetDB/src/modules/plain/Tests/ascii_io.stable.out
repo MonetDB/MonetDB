@@ -1,16 +1,16 @@
 stdout of test 'ascii_io` in directory 'src/modules/plain` itself:
 
 
-# 19:56:37 >  
-# 19:56:37 >  Mtimeout -timeout 600 Mserver -monetrc /ufs/niels/data/monet/Linux/share/Monet/monet.Mtest.conf -db Tests_src_modules_plain ascii_io.prelude < ascii_io.milM
-# 19:56:37 >  
+# 16:43:36 >  
+# 16:43:36 >  Mtimeout -timeout 600 Mserver -monetrc /home/niels/data/monet/Linux/share/Monet/monet.Mtest.conf -db Tests_src_modules_plain ascii_io.prelude < ascii_io.milM
+# 16:43:36 >  
 
 # Monet Database Server V4.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
-# dbfarm:/ufs/niels/data/monet/Linux/dbfarm
+# dbfarm:/home/niels/data/monet/Linux/dbfarm
 # dbname:Tests_src_modules_plain
-# dbdir:/ufs/niels/data/monet/Linux/dbfarm/Tests_src_modules_plain
+# dbdir:/home/niels/data/monet/Linux/dbfarm/Tests_src_modules_plain
 
 loaded;
 #---------------------------------#
@@ -51,7 +51,9 @@ idxbat.find("tmpdocs").count.print;
 idxbat.find("tmpterms").count.print;
 [ 149988 ]
 
-# 19:56:40 >  
-# 19:56:40 >  Done.
-# 19:56:40 >  
+quit;
+
+# 16:43:38 >  
+# 16:43:38 >  Done.
+# 16:43:38 >  
 

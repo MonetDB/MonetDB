@@ -2,7 +2,8 @@
 @a Niels Nes
 @* An simple interface to streams 
 This interface can be used to open 'non compressed, gzipped, bz2zipped' 
-data files.
+data files. 
+TODO add same for sockets
 @h
 #ifndef _STREAM_H_
 #define _STREAM_H_
@@ -36,10 +37,12 @@ typedef struct stream {
 
 stream *open_rstream( char *filename );
 stream *open_wstream( char *filename );
-stream *open_rastream( char *filename ); 
 /* open in ascii stream in read mode */
+stream *open_rastream( char *filename ); 
 /* open in ascii stream in write mode*/
 stream *open_wastream( char *filename ); 
+
+stream *open_socket( int sock, char *sockname );
 
 #ifdef HAVE_LIBZ
 stream *open_gzrstream( char *filename );
@@ -138,6 +141,36 @@ static stream *open_stream( char *filename, char *flags ){
 	s->error = &stream_error;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
+		return s;
+	}
+	s->errnr = OPEN_ERROR;
+	return s;
+}
+
+static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	int size = elmsize*cnt;
+	size = read( (int)s->stream_data, buf, size );
+	if (size) return size/elmsize;
+	return 0;
+}
+static int socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	int size = elmsize*cnt;
+	size = write( (int)s->stream_data, buf, size );
+	if (size) return size/elmsize;
+	return 0;
+}
+static void socket_close( stream *s ){
+	close( (int)s->stream_data); 
+}
+static stream *open_socket( int socket, char *sockname ){
+	stream *s = create_stream(sockname);
+
+	s->read  = &socket_read;
+	s->write = &socket_write;
+	s->close = &socket_close;
+	s->error = &stream_error;
+	if (socket != 0){ 
+		s->stream_data = (char*)socket;
 		return s;
 	}
 	s->errnr = OPEN_ERROR;
@@ -277,6 +310,7 @@ stream *open_wastream( char *filename ){
 		return s;
 	}
 }
+
 
 #ifdef HAVE_LIBZ
 static int stream_gzread( stream *s, char *buf, size_t elmsize, size_t cnt ){

@@ -7,3 +7,4 @@ c.export(x, "x");
 y := import("x", true);
 y.print;
 
+quit;
