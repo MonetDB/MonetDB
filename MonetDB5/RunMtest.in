@@ -37,7 +37,7 @@ then
 fi
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/mal/.libs:${MONETDB_PREFIX}/lib/MonetDB"
+MOD_PATH="${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/milprocs/.libs:${MONETDB_PREFIX}/lib/MonetDB"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
