@@ -13,12 +13,13 @@ INSTALL = copy
 MKDIR = mkdir
 ECHO = echo
 CD = cd
-PYTHON = "c:\program files\python\python.exe" 
+#PYTHON = "c:\program files\python\python.exe" 
+PYTHON = "c:\python16\python.exe" 
 
 TOPDIR = .
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
 
-CXXEXT = \"cxx\"
+CXXEXT = "cxx"
 
 all: all-msc all-recursive
 
@@ -30,7 +31,7 @@ all-recursive: src-recursive
 	cd .. && $(PYTHON) src\utils\autogen\autogen.py
 
 src-recursive: src ../makefile.msc 
-	cd src && nmake -f Makefile.msc SRCDIR=..\..\src
+	cd src && nmake /k /nologo -f Makefile.msc SRCDIR=..\..\src
 
 src:
 	if not exist src $(MKDIR) src
@@ -44,13 +45,13 @@ config.h: winconfig.h
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h
 	$(ECHO) #define UNISTD_H >> unistd.h
-	$(ECHO) #include \"io.h\" >> unistd.h
-	$(ECHO) #endif >> unistd.h\n")
+	$(ECHO) #include "io.h" >> unistd.h
+	$(ECHO) #endif >> unistd.h
 
 sys\socket.h: 
 	if not exist sys $(MKDIR) sys
 	$(ECHO) #ifndef SOCKET_H > sys\socket.h
 	$(ECHO) #define SOCKET_H >> sys\socket.h
-	$(ECHO) #include \"winsock.h\" >> sys\socket.h
+	$(ECHO) #include "winsock.h" >> sys\socket.h
 	$(ECHO) #endif >> sys\socket.h
 
