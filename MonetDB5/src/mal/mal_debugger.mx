@@ -329,13 +329,8 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		char *msg = NULL;
 
 		if (cntxt->phase[READER]) {
- 			if ((msg=(*cntxt->phase[READER])(cntxt)) ) {
-			    if(msg) {
-                                stream_printf(out,"#mdb %s\n",msg);
-                                free(msg);
-                            }
-        		break;
-			}
+ 			if ((msg=(*cntxt->phase[READER])(cntxt)) ) 
+        		    break;
 		} else if (readClient(cntxt, cntxt -> prompt) <= 0) {
         	break;
 		}

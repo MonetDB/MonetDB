@@ -323,8 +323,8 @@ Client initClient(str nme, str passwd, bstream *fin, stream *fout){
         return NULL;
     }
 
-	c->user = nme; 
-	c->password = passwd;
+    c->user = nme; 
+    c->password = passwd? GDKstrdup(passwd): NULL; /* copy needed for mapi */
     c->scenario= NULL;
     c->oldscenario = NULL;
     c->sessionkey = 0;
@@ -420,8 +420,7 @@ Client forkClient(Client father){
     if( father == NULL) return NULL;
     if (father->father != NULL) father = father->father;
     if ((son = initClient( GDKstrdup(father->user),
-        		father->password?GDKstrdup(father->password):NULL, 
-				father->fdin, father->fdout))){
+        		father->password, father->fdin, father->fdout))){
         son->fdin= NULL;
 		son->yycur=0;
         son->father = father;
@@ -498,11 +497,11 @@ void freeClient(Client c)
     c->mythread= 0;
 	if (c->user) {
     	GDKfree(c->user); 
-		c->user = NULL;
+	    c->user = NULL;
 	}
 	if (c->password) {
-    	GDKfree(c->password); 
-		c->password = NULL;
+    	    GDKfree(c->password); 
+	    c->password = NULL;
 	}
     c->mode = FREECLIENT;
 }
@@ -604,26 +603,26 @@ void cleanupClients(){
     for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
         /* if( c->nspace){ freeScopeList(c->nspace); c->nspace=0;}*/
         if( c->cwd){ 
-				GDKfree(c->cwd); 
-				c->cwd=0;
-		}
+	    GDKfree(c->cwd); 
+	    c->cwd=0;
+	}
         if( c->prompt){ 
-				GDKfree(c->prompt); 
-				c->prompt=0;
-		}
+	    GDKfree(c->prompt); 
+	    c->prompt=0;
+	}
         if( c->user){ 
-				GDKfree(c->user); 
-				c->user=0;
-		}
+	    GDKfree(c->user); 
+	    c->user=0;
+	}
         if( c->password){ 
-				GDKfree(c->password); 
-				c->password=0;
-		}
+	    GDKfree(c->password); 
+	    c->password=0;
+	}
         if( c->fdin){
-    		(void) stream_close(c->fdin->s);
-    		(void) stream_destroy(c->fdin->s); 
-    		(void) bstream_destroy(c->fdin);
-    		c->fdin= NULL;
+    	    (void) stream_close(c->fdin->s);
+    	    (void) stream_destroy(c->fdin->s); 
+    	    (void) bstream_destroy(c->fdin);
+    	    c->fdin= NULL;
         }
         if( c->fdout){
             resetProfiler(c->fdout);

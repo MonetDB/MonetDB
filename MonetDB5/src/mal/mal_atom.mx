@@ -16,12 +16,12 @@
 @' All Rights Reserved.
 @a M.L.Kersten
 @* Atomary types 
-Monet supports an extensible type system to accomodate a wide
+MonetDB supports an extensible type system to accomodate a wide
 spectrum of database kernels and application needs.
 The type administration keeps track of their properties and
 provides access to the underlying implementations.
 
-The Monet Assembler Language recognizes the definition of a new
+The MonetDB Assembler Language recognizes the definition of a new
 atom type by replacing the @code{module} keyword with @code{atom}.
 Atoms definitions require special care, because their definition and 
 properties should be communicated with the GDK kernel library.
@@ -29,14 +29,13 @@ The commands defined in an @code{atom } block are screened as of interest
 to the gdk_atom library. 
 
 @+ Predefined types
-The Monet kernel back-ends (GDK,x100) come with a set of built-in types.
 The GDK atom structure is used to administer all types known.
 A small collection of user-defined types are shipped with the sysem.
 They implement types considered essential for end-user applications,
 such as date, time, blob, and url.
 They are implemented using the type extension mechanism described below.
 As such, they provide examples for future extensions.
-A concrete example is the 'blob' datatype in the Monet 5 atom module
+A concrete example is the 'blob' datatype in the MonetDB 5 atom module
 library(see ../modules/atoms/blob.mx)
 
 @+ User defined types
@@ -62,10 +61,6 @@ It is not meant for end-users trying to intruduce record- or
 struct-like objects in the database. They better decompose
 the complex object structure and represent the components in
 different BATs.
-@+ Enumerated types
-A common class of types are the enumerated types, i.e. a type
-domain is enumerated (dynamically).
-See for more information ../modules/mal/enum.mx
 @{
 @h
 #ifndef _MAL_ATOM_H
