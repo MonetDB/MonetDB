@@ -240,8 +240,6 @@ typedef struct column_t {
 	int digits;				/* digits of this data type */
 	int scale;				/* scale of this data type */
 	int width;				/* the maximum field width of this column */
-	int(* format) (str*, int*, ptr);	/* formatting used when serialising */
-	str properties[RS_MAX_PROPERTIES];	/* an array of properties */
 	struct column_t* next;	/* the next column in this list */
 } column;
 
@@ -253,7 +251,6 @@ typedef struct resultset_t {
 	str id;					/* external reference ID of this ResultSet */
 	char complete;			/* whether this ResultSet can be serialised */
 	char type;				/* type of result */
-	str propertynames[RS_MAX_PROPERTIES];	/* an array of property names */
 } resultset;
 
 /* protocol stuff */
@@ -405,16 +402,15 @@ str RSBtake(int* retval, str* id) {
  * @param column the column to free
  */
 static str RSBfreeColumn(column* col) {
-	int i;
-	
 	if (col == NULL)
 		throw("resultset.freeColumn", "Column should NOT be NULL");
 	
 	if (col->next != NULL) RSBfreeColumn(col->next);
 	BBPunfix(col->bat->batCacheid);
 	GDKfree(col->name);
-	for (i = 0; i < RS_MAX_PROPERTIES; i++)
-		if (col->properties[i] != NULL) GDKfree(col->properties[i]);
+	GDKfree(col->table);
+	GDKfree(col->schema);
+	GDKfree(col->type);
 	GDKfree(col);
 
 	return(MAL_SUCCEED);
@@ -426,7 +422,6 @@ static str RSBfreeColumn(column* col) {
  * @param handle a resultset handle
  */
 str RSBdelete(void* retval, int* handle) {
-	int i;
 	resultset* rs;
 	str tmp;
 	(void)retval;	/* make compiler happy */
@@ -439,9 +434,6 @@ str RSBdelete(void* retval, int* handle) {
 	/* first free all columns using a recursive function */
 	RSBfreeColumn(rs->firstColumn);
 	GDKfree(rs->id);
-	for (i = 0; i < RS_MAX_PROPERTIES; i++)
-		if (rs->propertynames[i] != NULL) GDKfree(rs->propertynames[i]);
-		else break;
 	/* finally free the struct itself */
 	GDKfree(rs);
 
@@ -1021,7 +1013,7 @@ str RSfindColumn(int* retval, int* handle, str* col) {
 str RSsetComplete(int* retval, int* handle) {
 	column* col;
 	resultset* rs;
-	str tmp, es = NULL;
+	str tmp;
 	
 	resolveHandle(&rs, handle);
 	if (rs->firstColumn == NULL)
@@ -1033,10 +1025,8 @@ str RSsetComplete(int* retval, int* handle) {
 	while (col != NULL) {
 		/* name is forced to be set, so we don't have to check */
 		/* table and schema default to an empty string */
-		if (col->table == NULL)
-			col->table = (es == NULL ? es = GDKstrdup("") : es);
-		if (col->schema == NULL)
-			col->schema = (es == NULL ? es = GDKstrdup("") : es);
+		if (col->table == NULL) col->table = GDKstrdup("");
+		if (col->schema == NULL) col->schema = GDKstrdup("");
 		/* type defaults to the BAT tail type if not set */
 		if (col->type == NULL) {
 			switch (col->bat->ttype) {
