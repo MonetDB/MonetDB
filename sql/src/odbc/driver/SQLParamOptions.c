@@ -22,10 +22,10 @@ SQLParamOptions(SQLHSTMT hStmt, SQLUINTEGER nRow, SQLUINTEGER *pnRow)
 	RETCODE rc;
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	rc = SQLSetStmtAttr(hStmt, SQL_ATTR_PARAMSET_SIZE, &nRow, 0);
+	rc = SQLSetStmtAttr_(hStmt, SQL_ATTR_PARAMSET_SIZE, &nRow, 0);
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
-		rc = SQLSetStmtAttr(hStmt, SQL_ATTR_PARAMS_PROCESSED_PTR,
-				    pnRow, 0);
+		rc = SQLSetStmtAttr_(hStmt, SQL_ATTR_PARAMS_PROCESSED_PTR,
+				     pnRow, 0);
 	}
 	return rc;
 }

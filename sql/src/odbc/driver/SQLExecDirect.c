@@ -21,7 +21,7 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+SQLExecDirect_(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
 	RETCODE rc;
 
@@ -29,13 +29,19 @@ SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 		return SQL_INVALID_HANDLE;
 
 	/* prepare SQL command */
-	rc = SQLPrepare(hStmt, szSqlStr, nSqlStr);
+	rc = SQLPrepare_(hStmt, szSqlStr, nSqlStr);
 	if (rc == SQL_SUCCESS) {
 		/* execute prepared statement */
-		rc = SQLExecute(hStmt);
+		rc = SQLExecute_(hStmt);
 	}
 
 	/* Do not set errors here, they are set in SQLPrepare() and/or SQLExecute() */
 
 	return rc;
+}
+
+SQLRETURN
+SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+{
+	return SQLExecDirect_(hStmt, szSqlStr, nSqlStr);
 }

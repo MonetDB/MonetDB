@@ -22,5 +22,5 @@ SQLCancel(SQLHSTMT hStmt)
 	if (!isValidStmt(hStmt))
 		return SQL_INVALID_HANDLE;
 
-	return SQLFreeStmt(hStmt, SQL_CLOSE);
+	return SQLFreeStmt_(hStmt, SQL_CLOSE);
 }

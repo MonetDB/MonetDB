@@ -26,7 +26,7 @@
 
 
 SQLRETURN
-SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
+SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 {
 	/* Check parameter handle */
 	if (handle == NULL) {
@@ -93,7 +93,7 @@ SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
 		/* check if statement is not active */
 		if (stmt->State == EXECUTED) {
 			/* should be closed first */
-			int res = SQLFreeStmt(stmt, SQL_CLOSE);
+			int res = SQLFreeStmt_(stmt, SQL_CLOSE);
 
 			if (res != SQL_SUCCESS)
 				return res;
@@ -112,4 +112,10 @@ SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
 	}
 
 	/* not reached */
+}
+
+SQLRETURN
+SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
+{
+	return SQLFreeHandle_(handleType, handle);
 }

@@ -172,8 +172,8 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	}
 
 	/* query the MonetDb data dictionary tables */
-	rc = SQLExecDirect(hStmt, (SQLCHAR *) query,
-			   (SQLINTEGER) (query_end - query));
+	rc = SQLExecDirect_(hStmt, (SQLCHAR *) query,
+			    (SQLINTEGER) (query_end - query));
 
 	free(query);
 

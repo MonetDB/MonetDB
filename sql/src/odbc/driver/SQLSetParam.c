@@ -27,8 +27,9 @@ SQLSetParam(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 	    SQLPOINTER ParameterValue, SQLINTEGER *StrLen_or_Ind)
 {
 	/* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */
-	return SQLBindParameter(hStmt, ParameterNumber, SQL_PARAM_INPUT_OUTPUT,
-				ValueType, ParameterType, LengthPrecision,
-				ParameterScale, ParameterValue,
-				SQL_SETPARAM_VALUE_MAX, StrLen_or_Ind);
+	return SQLBindParameter_(hStmt, ParameterNumber,
+				 SQL_PARAM_INPUT_OUTPUT, ValueType,
+				 ParameterType, LengthPrecision,
+				 ParameterScale, ParameterValue,
+				 SQL_SETPARAM_VALUE_MAX, StrLen_or_Ind);
 }

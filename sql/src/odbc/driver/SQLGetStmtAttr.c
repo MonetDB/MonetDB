@@ -22,8 +22,8 @@
 
 
 SQLRETURN
-SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
-	       SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
+		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -86,4 +86,12 @@ SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	}
 
 	return SQL_SUCCESS;
+}
+
+SQLRETURN
+SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
+	       SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+	return SQLGetStmtAttr_(hStmt, Attribute, Value, BufferLength,
+			       StringLength);
 }

@@ -24,6 +24,6 @@ SQLRETURN
 SQLAllocConnect(SQLHENV hEnv, SQLHDBC *phDbc)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLAllocHandle(SQL_HANDLE_DBC, (SQLHANDLE) hEnv,
-			      (SQLHANDLE *) phDbc);
+	return SQLAllocHandle_(SQL_HANDLE_DBC, (SQLHANDLE) hEnv,
+			       (SQLHANDLE *) phDbc);
 }

@@ -22,10 +22,10 @@
 
 
 SQLRETURN
-SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
-		SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
-		SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
-		SQLPOINTER pnValue)
+SQLColAttribute_(SQLHSTMT hStmt, SQLUSMALLINT nCol,
+		 SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
+		 SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
+		 SQLPOINTER pnValue)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ColumnHeader *pColumnHeader;
@@ -236,4 +236,14 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 	}
 
 	return SQL_SUCCESS;
+}
+
+SQLRETURN
+SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
+		SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
+		SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
+		SQLPOINTER pnValue)
+{
+	return SQLColAttribute_(hStmt, nCol, nFieldIdentifier, pszValue,
+				nValueLengthMax, pnValueLength, pnValue);
 }

@@ -22,7 +22,7 @@
 
 
 SQLRETURN
-SQLFetch(SQLHSTMT hStmt)
+SQLFetch_(SQLHSTMT hStmt)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	int i;
@@ -63,4 +63,10 @@ SQLFetch(SQLHSTMT hStmt)
 	stmt->currentRow++;
 
 	return SQL_SUCCESS;
+}
+
+SQLRETURN
+SQLFetch(SQLHSTMT hStmt)
+{
+	return SQLFetch_(hStmt);
 }

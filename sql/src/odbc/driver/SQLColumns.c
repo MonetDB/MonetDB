@@ -124,8 +124,8 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */
-	rc = SQLExecDirect(hStmt, (SQLCHAR *) query,
-			   (SQLINTEGER) (query_end - query));
+	rc = SQLExecDirect_(hStmt, (SQLCHAR *) query,
+			    (SQLINTEGER) (query_end - query));
 
 	free(query);
 

@@ -34,14 +34,14 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
-		return SQLGetConnectAttr(hDbc, nOption, pvParam, 0, NULL);
+		return SQLGetConnectAttr_(hDbc, nOption, pvParam, 0, NULL);
 
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
-		return SQLGetConnectAttr(hDbc, nOption, pvParam,
-					 SQL_MAX_OPTION_STRING_LENGTH, NULL);
+		return SQLGetConnectAttr_(hDbc, nOption, pvParam,
+					  SQL_MAX_OPTION_STRING_LENGTH, NULL);
 
 	default:
 	{			/* other options (e.g. ODBC 3) are NOT valid */

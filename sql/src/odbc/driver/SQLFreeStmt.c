@@ -24,7 +24,7 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
+SQLFreeStmt_(SQLHSTMT handle, SQLUSMALLINT option)
 {
 	ODBCStmt *stmt = (ODBCStmt *) handle;
 
@@ -49,7 +49,7 @@ SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 		/* Important: do not destroy the bind parameters and columns! */
 		return SQL_SUCCESS;
 	case SQL_DROP:
-		return SQLFreeHandle(SQL_HANDLE_STMT, handle);
+		return SQLFreeHandle_(SQL_HANDLE_STMT, handle);
 	case SQL_UNBIND:
 		mapi_clear_bindings(stmt->hdl);
 		ODBCfreebindcol(stmt);
@@ -63,4 +63,10 @@ SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 	}
 
 	/* not reached */
+}
+
+SQLRETURN
+SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
+{
+	return SQLFreeStmt_(handle, option);
 }

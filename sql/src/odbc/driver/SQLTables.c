@@ -167,7 +167,7 @@ SQLTables(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 
 	/* query the MonetDb data dictionary tables */
 
-	rc = SQLExecDirect(hStmt, (SQLCHAR *) query, SQL_NTS);
+	rc = SQLExecDirect_(hStmt, (SQLCHAR *) query, SQL_NTS);
 
 	free(query);
 

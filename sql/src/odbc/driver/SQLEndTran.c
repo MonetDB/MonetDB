@@ -28,8 +28,8 @@
 
 
 SQLRETURN
-SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
-	   SQLSMALLINT nCompletionType)
+SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
+	    SQLSMALLINT nCompletionType)
 {
 	ODBCEnv *env = (ODBCEnv *) nHandle;
 	ODBCDbc *dbc = (ODBCDbc *) nHandle;
@@ -93,29 +93,29 @@ SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 
 
 	/* construct a statement object and excute a SQL COMMIT or ROLLBACK */
-	rc = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &hStmt);
+	rc = SQLAllocHandle_(SQL_HANDLE_STMT, dbc, &hStmt);
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
 		ODBCStmt *stmt = (ODBCStmt *) hStmt;
-		rc = SQLExecDirect(stmt,
-				   (SQLCHAR *) (nCompletionType == SQL_COMMIT ?
-						"COMMIT" : "ROLLBACK"),
-				   SQL_NTS);
+		rc = SQLExecDirect_(stmt,
+				    (SQLCHAR *) (nCompletionType == SQL_COMMIT ?
+						 "COMMIT" : "ROLLBACK"),
+				    SQL_NTS);
 		if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO) {
 			/* get the error/warning and post in on the dbc handle */
 			SQLCHAR sqlState[SQL_SQLSTATE_SIZE + 1];
 			SQLINTEGER nativeErrCode;
 			SQLCHAR msgText[SQL_MAX_MESSAGE_LENGTH + 1];
 
-			(void) SQLGetDiagRec(SQL_HANDLE_STMT, stmt, 1,
-					     sqlState, &nativeErrCode, msgText,
-					     sizeof(msgText), NULL);
+			(void) SQLGetDiagRec_(SQL_HANDLE_STMT, stmt, 1,
+					      sqlState, &nativeErrCode,
+					      msgText, sizeof(msgText), NULL);
 
 			addDbcError(dbc, (char *) sqlState, (char *) msgText + ODBCErrorMsgPrefixLength,
 				    nativeErrCode);
 		}
 		/* clean up the statement handle */
-		SQLFreeStmt(stmt, SQL_CLOSE);
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+		SQLFreeStmt_(stmt, SQL_CLOSE);
+		SQLFreeHandle_(SQL_HANDLE_STMT, stmt);
 	} else {
 		/* could not allocate a statement object */
 		addDbcError(dbc, "HY013", NULL, 0);
@@ -123,4 +123,11 @@ SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	}
 
 	return rc;
+}
+
+SQLRETURN
+SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
+	   SQLSMALLINT nCompletionType)
+{
+	return SQLEndTran_(nHandleType, nHandle, nCompletionType);
 }

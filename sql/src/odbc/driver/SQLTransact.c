@@ -25,7 +25,7 @@ SQLTransact(SQLHENV hEnv, SQLHDBC hDbc, UWORD fType)
 {
 	/* use mapping as described in ODBC 3 SDK Help */
 	if (hDbc != SQL_NULL_HDBC)
-		return SQLEndTran(SQL_HANDLE_DBC, hDbc, fType);
+		return SQLEndTran_(SQL_HANDLE_DBC, hDbc, fType);
 	else
-		return SQLEndTran(SQL_HANDLE_ENV, hEnv, fType);
+		return SQLEndTran_(SQL_HANDLE_ENV, hEnv, fType);
 }

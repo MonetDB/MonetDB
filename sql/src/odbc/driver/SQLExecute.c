@@ -40,7 +40,7 @@ struct sql_types {
 };
 
 SQLRETURN
-SQLExecute(SQLHSTMT hStmt)
+SQLExecute_(SQLHSTMT hStmt)
 {
 	ODBCStmt *hstmt = (ODBCStmt *) hStmt;
 	int i = 0;
@@ -122,4 +122,10 @@ SQLExecute(SQLHSTMT hStmt)
 
 	hstmt->State = EXECUTED;
 	return SQL_SUCCESS;
+}
+
+SQLRETURN
+SQLExecute(SQLHSTMT hStmt)
+{
+	return SQLExecute_(hStmt);
 }

@@ -37,13 +37,13 @@ SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
-		return SQLSetConnectAttr(hDbc, nOption, &vParam, 0);
+		return SQLSetConnectAttr_(hDbc, nOption, &vParam, 0);
 
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
-		return SQLSetConnectAttr(hDbc, nOption, &vParam, SQL_NTS);
+		return SQLSetConnectAttr_(hDbc, nOption, &vParam, SQL_NTS);
 
 	default:
 	{			/* other options (e.g. ODBC 3) are NOT valid */

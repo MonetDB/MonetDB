@@ -42,7 +42,7 @@ SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 /*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
 	case SQL_ROW_NUMBER:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLGetStmtAttr(hStmt, fOption, pvParam, 0, NULL);
+		return SQLGetStmtAttr_(hStmt, fOption, pvParam, 0, NULL);
 	default:
 	{
 		ODBCStmt *stmt = (ODBCStmt *) hStmt;

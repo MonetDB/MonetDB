@@ -24,7 +24,7 @@
 
 
 SQLRETURN
-SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
+SQLFetchScroll_(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -71,5 +71,11 @@ SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
-	return SQLFetch(stmt);
+	return SQLFetch_(stmt);
+}
+
+SQLRETURN
+SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
+{
+	return SQLFetchScroll_(hStmt, nOrientation, nOffset);
 }

@@ -42,5 +42,5 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLINTEGER nOffset,
 		return SQL_ERROR;
 	}
 
-	return SQLFetchScroll(stmt, nOrientation, nOffset);
+	return SQLFetchScroll_(stmt, nOrientation, nOffset);
 }

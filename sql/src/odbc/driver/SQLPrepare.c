@@ -23,7 +23,7 @@
 
 
 SQLRETURN
-SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+SQLPrepare_(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	char *query;
@@ -70,4 +70,10 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	/* update the internal state */
 	stmt->State = PREPARED;
 	return SQL_SUCCESS;
+}
+
+SQLRETURN
+SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+{
+	return SQLPrepare_(hStmt, szSqlStr, nSqlStrLength);
 }

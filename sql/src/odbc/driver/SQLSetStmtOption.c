@@ -40,7 +40,7 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 	case SQL_RETRIEVE_DATA:
 	case SQL_USE_BOOKMARKS:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLSetStmtAttr(hStmt, fOption, &vParam, 0);
+		return SQLSetStmtAttr_(hStmt, fOption, &vParam, 0);
 	default:
 	{
 		ODBCStmt *stmt = (ODBCStmt *) hStmt;

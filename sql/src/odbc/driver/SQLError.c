@@ -26,10 +26,10 @@ SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
 	 SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLGetDiagRec(hStmt ? SQL_HANDLE_STMT :
-			     (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
-			     hStmt ? hStmt : (hDbc ? hDbc : hEnv),
-			     1,	/* first recNumber */
-			     szSqlState, pfNativeError, szErrorMsg,
-			     nErrorMsgMax, pcbErrorMsg);
+	return SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT :
+			      (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
+			      hStmt ? hStmt : (hDbc ? hDbc : hEnv),
+			      1, /* first recNumber */
+			      szSqlState, pfNativeError, szErrorMsg,
+			      nErrorMsgMax, pcbErrorMsg);
 }

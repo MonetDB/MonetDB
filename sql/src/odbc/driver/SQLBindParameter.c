@@ -26,11 +26,11 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
-		 SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
-		 SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
-		 SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
-		 SQLINTEGER BufferLength, SQLINTEGER *StrLen_or_IndPtr)
+SQLBindParameter_(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
+		  SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
+		  SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
+		  SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
+		  SQLINTEGER BufferLength, SQLINTEGER *StrLen_or_IndPtr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	MapiMsg rc = MOK;
@@ -142,4 +142,17 @@ SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 
 	addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 	return SQL_ERROR;
+}
+
+SQLRETURN
+SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
+		 SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
+		 SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
+		 SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
+		 SQLINTEGER BufferLength, SQLINTEGER *StrLen_or_IndPtr)
+{
+	return SQLBindParameter_(hStmt, ParameterNumber, InputOutputType,
+				 ValueType, ParameterType, ColumnSize,
+				 DecimalDigits, ParameterValuePtr,
+				 BufferLength, StrLen_or_IndPtr);
 }

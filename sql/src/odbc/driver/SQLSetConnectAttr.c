@@ -22,8 +22,8 @@
 
 
 SQLRETURN
-SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
-		  SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttr_(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
@@ -71,4 +71,12 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 	}
 
 	return SQL_SUCCESS;
+}
+
+SQLRETURN
+SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
+		  SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+{
+	return SQLSetConnectAttr_(ConnectionHandle, Attribute, ValuePtr,
+				  StringLength);
 }
