@@ -2,13 +2,15 @@
 @a M. L. Kersten, P. Boncz
 
 @* Utilities
-The purpose of the homes file is to centralize all information on the
-whereabouts of the database. Detailed information for database and
-session initialization are stored within the database.
+The utility section contains functions to initialize the Monet database
+system, memory allocation details, and a basic system logging scheme.
+
 @h
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
+gdk_export void GDKenvironment(str db, str monetrc);
+gdk_export str expandFile(str fname);
 gdk_export void GDKlog       (char *format, ...);
 gdk_export void GDKlockHome  ();
 gdk_export void GDKunlockHome();
@@ -19,8 +21,6 @@ gdk_export int  GDKms        ();
 gdk_export int  GDKcsec      ();
 gdk_export int  GDKsec       ();
 
-gdk_export int GDKhomeScan(str usr, str db, str home, int dbcreate);
-
 #endif /* _GDK_UTILS_H_ */
 @c
 #ifndef GDK_NOLINK
@@ -28,29 +28,6 @@ gdk_export int GDKhomeScan(str usr, str db, str home, int dbcreate);
 #include "gdk_utils.h"
 #include "gdk_posix.h"
 
-@-
-Include the generic GDK home management code. This code can be imported
-by other utility programs without the need to link the entire gdk.
-Remap the malloc/free calls to their GDK equivalents. 
-@
-@
-@%GDKhomeScan(usr,db,home)@ scans the 'homes' file  for a (usr,db,home) entry.
-It expects an empty @%GDKenviron@ array. If dbcreate is set, however, it 
-changes to 'creation-mode', and scans the homes file for previous
-definitions for database 'db'. If it exists, it assumes that the 'user' will be 
-added to it, and keeps the stored database parameters. If it is not found,
-the values passed in @%GDKdir@ are used.
-It returns TRUE if the entry was found, FALSE if not.
-@
-@
-The @%GDKhomeIns(usr,db,home)@ inserts a database declaration for a user in
-the 'homes 'file.
-@
-@
-The @%GDKhomeDel(users,db,home)@ deletes user entries for a database in the 
-'homes' file for named users, or all entries for a database (if no user is 
-named). 
-@c
 #else /* GDK_NOLINK */
 
 #undef GDKmalloc
@@ -62,15 +39,11 @@ named).
 #define GDKfree(buf)	free(buf)
 #endif
 
+char	GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
+char	GDKdbnameStr[PATHLENGTH] = { 0 };
 char	GDKdirStr[PATHLENGTH] = { 0 };
-char	GDKownerStr[IDLENGTH] = { 0 };
-char	GDKnameStr[IDLENGTH] = { 0 };
-
-char	*GDKenviron[GDKPROP] = { 
-	GDKnameStr, GDKdirStr, GDKownerStr, 0 }; 
-
-char	*GDKenvironName[GDKPROP] = {
-	"dbname", "directory", "owner", 0 }; 
+char	GDKdistrStr[PATHLENGTH] = MONET_PREFIX;
+char	GDKmonetrcStr[PATHLENGTH] = { 0 };
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -112,174 +85,119 @@ int setenv(char *name, char *value, int overwrite) {
 #endif
 #endif
 
-int GDKhomeScan(str usr, str db, str home, int dbcreate) {
-	int	dbpresent=0;
-	char	buf[1024], *env[GDKPROP], *s;
-	int	line;
-@= openhome
-	FILE	*fp; 
-	if (!home) {
-	    fprintf(stderr, "@1: no 'homes' file specified.\n");
-	    exit(1);
-	}
-	fp = fopen(home, @2);
-	if (fp == NULL) {
-	    fprintf(stderr, "@1: could not open 'homes' file '%s'.\n", home);
-	    fprintf(stderr, "%s\n", strerror(errno));
-	    exit(1);
-	}
-@-
-Perform checks.
+@- Monet configuration file
+Parse a possible .monet.conf file lying around in the current directory,
+the home directory of the user, or passed around as the preferred one
+to extract pre-settings of system variables.
+Un-recognized parameters are simply skipped, because they  may be
+picked up by other components of the system.
+The consequence is that making a typing error in the configuration file
+may be unnoticed for a long time.
+Syntax errors are immediately flagged, though.
+
+Since the GDK kernel moves into the database directory, we need
+to keep the absolute path to the .monet.conf file for top-levels
+to access its information.
 @c
-	@:openhome(GDKhomeScan,"r")@
-	if (dbcreate && !db) {
-	    fprintf(stderr, "GDKhomeScan: cannot create NULL database.\n");
-	    exit(1);
+#define MONETRC  ".monet.conf"
+#define DIRSEP '/'
+
+str expandFile(str fname){
+static char name[PATHLENGTH];
+
+	if( strncmp(".../",fname,4)==0) {
+		sprintf(name,"%s/%s",MONET_PREFIX,fname+4);
+		return GDKstrdup(name);
+	} else return fname;
+}
+void GDKenvironment(str db, str monetrc)
+{
+	char buf[2*PATHLENGTH];
+	char pwd[PATHLENGTH];
+	FILE *fd= NULL;
+
+	if( db != NULL && strchr(db,DIRSEP) ) {
+		strcpy(GDKdbnameStr,db);
+		strcpy(GDKdirStr,db);
+		return;
 	}
-@-
-Set standard values.
-@c
-	if (usr) {
-	    strcpy(GDKownerStr, usr);
-	} else {
-	    struct passwd *pwd;
-	    pwd = getpwuid(getuid());
-	    strcpy(GDKownerStr, pwd?pwd->pw_name:"guest");
+
+	if( monetrc) {
+		fd= fopen(monetrc,"r");
+		strcpy(GDKmonetrcStr,monetrc);
 	}
-@-
-Scan the file for db entries.
-@c
-#define GDKsetenv(x)	(env[x] && *env[x])
-	for (line=1; (s=fgets(buf, 1024, fp)) != NULL; line++) {
-		int n = GDKPROP;
-		while(GDKisspace(*s)) s++;
-		if (*s == 0 || *s == '#') continue;
-		while(n > 1) env[--n] = 0; 
-	       	env[0] = s; 
-	       	while (*s && n < GDKPROP)
-	       	    if (*s == '\n' || *s == '#') {
-	       		*s++ = 0;
-	       		break;
-	       	    } else if (*s == PATH_SEP) { 
-	       		*s++ = 0; 
-			while(GDKisspace(*s)) s++;
-	       		env[n++] = s; 
-	       	    } else s++;
-@-
-Check minimum requirements for entry.
-@c
-		if (GDKsetenv(GDKdbname) == 0) {
-		    fprintf(stderr, 
-			"GDKhomeScan: %s, line %d:  database name missing.\n",
-			home, line); continue;
+	if(fd == NULL) {
+		fd = fopen(MONETRC,"r");
+		strcpy(GDKmonetrcStr,MONETRC);
+	}
+	if( fd == NULL){
+		str home= getenv("HOME");
+		if( home != NULL){
+			sprintf(buf,"%s/%s",home, MONETRC);
+			fd= fopen(buf,"r");
+			if(fd!=NULL) strcpy(GDKmonetrcStr,buf);
 		}
-		if (GDKsetenv(GDKdir) == 0) {
-		    fprintf(stderr,
-			"GDKhomeScan: %s, line %d: directory name missing.\n",
-			home, line); continue;
-		}
-	       	if (db && strcmp(db, env[GDKdbname])) {
+	}
+	while(fd!=NULL && fgets(buf,2*PATHLENGTH,fd) != NULL){
+		str s,t, val;
+
+		for(s=buf; *s && isspace(*s); s++) ;
+		if( *s=='#') continue;	/* commentary */
+		if( *s== 0) continue;   /* empty line */
+		
+		val = strchr(s,'=');
+		if( val == NULL) {
+			GDKerror("GDKenvironment:syntax error in monetrc\n");
 			continue;
 		}
-@-
-Partial match: collect info about this database.
-@c
-		dbpresent = 1;
-		strcpy(GDKnameStr, env[GDKdbname]);
-		strcpy(GDKdirStr,  env[GDKdir]);
-	       	if (GDKsetenv(GDKowner) && !strcmp(GDKownerStr,env[GDKowner])) {
-			break; /* total match */
-		}
-	}
-@-
-Epilogue: return whether a matching entry existed, or exit on fatal error.
-@c
-	(void) fclose(fp);
-	if (s) {
-	    return 1;
-	} else if (db == NULL) { 
-	    fprintf(stderr, 
-		"GDKhomeScan: user '%s' has no access to any database.\n", 
-		GDKownerStr); /* failure of unspecified db scan */ 
-	} else if (dbcreate) {
- 	    strcpy(GDKnameStr, db);
-	    return 0;
-	} else if (dbpresent) { 
-	    fprintf(stderr, 
-		"GDKhomeScan: user '%s' has no access to database '%s'.\n", 
-		GDKownerStr, db); /* db exists, but not for you */
-	} else { 
-	    fprintf(stderr, 
-		"GDKhomeScan: database '%s' not found in '%s'.\n", db, home); 
-	}
-	exit(1); /* fatal error */
-	return 1;
-}
+		*val=0;
 
-int GDKhomeIns(str user, str db, str home) {
-	@:openhome(GDKhomeIns,"a")@
-	fprintf(fp, "%s%c%s%c%s%c\n", 
-		GDKenviron[GDKdbname], PATH_SEP, 
-		GDKenviron[GDKdir], PATH_SEP,
-		user?user:GDKenviron[GDKowner], PATH_SEP);
-	fclose(fp);
-	return 0;
-}
+		for(t=s; *t && !isspace(*t); t++) ;
+		*t =0;
 
+		/* skip any leading blancs in the value part */
+		for(val++; *val && isspace(*val) ;val++) ;
+		/* search first blanc, rest is commentary */
+		for(t=val;*t;t++) if( isspace(*t) || *t=='#') break;
+		*t=0;
 
-int GDKhomeDel(str users[], str db, str home) {
-	int homelines=0, i, j=0, k, lusr = 0, ldb;
-	str homeline[1024];
-	@:openhome(GDKhomeDel,"r+")@
-@-
-Read the homes file.
-@c
-        for(homelines=0; homelines<1024; homelines++) {
-		homeline[homelines] = (str) GDKmalloc(1024);
-                if (!fgets(homeline[homelines], 1024, fp)) {
-                        homeline[homelines] = 0;
-                        break;
-                }
+		/* This list may be extended later */
+		if( strcmp(s,"gdk_debug")==0)
+			GDKdebug=atoi(val);
+		else
+		if( strcmp(s,"gdk_mmap")==0)
+			GDK_mem_bigsize =((lng) atoi(val)) << 10;
+		else
+		if( strcmp(s,"gdk_dbfarm")==0)
+			strcpy(GDKdbfarmStr, expandFile(val));
+		else
+		if( strcmp(s,"gdk_dbname")==0)
+			strcpy(GDKdbnameStr, val);
+		else
+		if( strcmp(s,"gdk_oidseed")==0)
+			OIDseed(atoi(val) << SERVERBITS);
 	}
-@-
-Delete all occurences of (db,user).
-@c
-	ldb = strlen(db);
-	do {
-		if (users[j]) {
-		    lusr = strlen(users[j]);
-		}
-		for(i=0; i < homelines; i++) {
-		    do {
-			str s = homeline[i];
-			while(GDKisspace(*s)) s++;
-			if (strncmp(s, db, ldb)) continue;
-			if (s[ldb] != PATH_SEP || GDKisspace(s[ldb])) continue; 
-			if (users[j] == NULL) break;
-			for(k=0; k < 4; s++, k++)
-			    if ((s=strchr(s,PATH_SEP)) == NULL) continue;
-			while(GDKisspace(*s)) s++;
-			if (strncmp(s, users[j], lusr)) continue;
-			if (s[lusr]==PATH_SEP || GDKisspace(s[lusr])) break; 
-		    } while(++i < homelines);
-		    GDKfree(homeline[i]);
-		    homeline[i] = 0;
-		}
-	} while(users[++j]);
-@-
-Write the homes file.
-@c
-        fseek(fp, 0, SEEK_SET);
-        for(i=0; i<homelines; i++) {
-                if (homeline[i] == NULL) {
-			continue; 
-		}
-		fputs(homeline[i], fp);
-		GDKfree(homeline[i]);
+	if( fd != NULL) (void) fclose(fd);
+	if( db == NULL && GDKdbnameStr[0]==0) {
+		fprintf(stderr,"GDKenvironment: database path missing\n");
+		exit(-1);
+	}
+	if( db != NULL) strcpy(GDKdbnameStr,db);
+
+	if( GDKdbfarmStr[0]){
+		sprintf(GDKdirStr,"%s/%s",GDKdbfarmStr,GDKdbnameStr);
+	} else	strcpy(GDKdirStr,GDKdbnameStr);
+	/* handle monetrc */
+	if( GDKmonetrcStr[0]==DIRSEP) return;
+        if (getcwd(pwd, PATHLENGTH-1)  == NULL ){
+                perror("pwd");
+                GDKfatal("GDKenvironment: could not determine current directory\n");
         }
-        fflush(fp);
-        ftruncate(fileno(fp), ftell(fp));
-	return 0;
+	sprintf(buf,"%s/%s",pwd,GDKmonetrcStr);
+	if( strlen(buf) >PATHLENGTH-1){
+		GDKfatal("GDKenvironment: path to monetrc file too long\n");
+	}
+	strcpy(GDKmonetrcStr,buf);
 }
 
 @+ System logging
@@ -421,12 +339,12 @@ the memory consumption.
 #define GDK_VM_KEEPHISTO
 #endif
 
-#if (defined(WIN32)) 
-#define GDK_MEM_BIGSIZE	LL_CONSTANT(32768)   /* very fragile malloc */
+#if (defined(WIN32))
+#define GDK_MEM_BIGSIZE LL_CONSTANT(32768)   /* very fragile malloc */
 #elif (defined(__sgi) || defined(_AIX))
-#define GDK_MEM_BIGSIZE	LL_CONSTANT(131072)  /* offload malloc fragmentation pressure */
+#define GDK_MEM_BIGSIZE LL_CONSTANT(131072)  /* offload malloc fragmentation pressure */
 #else
-#define GDK_MEM_BIGSIZE	LL_CONSTANT(33554432)/* robust malloc: use up till 32MB */ 
+#define GDK_MEM_BIGSIZE LL_CONSTANT(33554432)/* robust malloc: use up till 32MB */
 #endif
 
 #if SIZEOF_LONG==8
@@ -437,8 +355,8 @@ the memory consumption.
 #define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736) /* :-| a 32-bit OS: 1.5GB */
 #endif
 
-#define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
-#define MAX_BIT		((int) (sizeof(long)<<3))
+#define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
+#define MAX_BIT         ((int) (sizeof(long)<<3))
 @c
 	 ptr	GDK_mem_start = NULL; 
 volatile lng	GDK_mem_cursize = LL_CONSTANT(0);
@@ -630,7 +548,7 @@ void GDKmemdump() {
 		}
 	}
 #endif
-#ifdef GDK_MEM_KEEPHISTO
+#ifdef GDK_VM_KEEPHISTO
 	if (GDK_vm_histo) {	
 		BUN p,q;
 		THRprintf(GDKerr, "\n!virtual memory histogram\n");
@@ -837,23 +755,23 @@ allocations affect only the logical VM resources.
 void *GDKmmap(char* path, int mode, size_t off, size_t len, void *fixed) {
         void *ret = MT_mmap(path, mode, off, len, fixed);
         if (ret == (void*) -1) {
-		GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
-        	ret = MT_mmap(path, mode, off, len, fixed);
-        	if (ret != (void*) -1) {
-		    THRprintf(GDKerr, "GDKmmap: recovery ok. Continuing..\n");
-		}
-	}
+                GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
+                ret = MT_mmap(path, mode, off, len, fixed);
+                if (ret != (void*) -1) {
+                    THRprintf(GDKerr, "GDKmmap: recovery ok. Continuing..\n");
+                }
+        }
         if (ret != (void*) -1) {
-		MT_alloc_register(ret, len, 'M');
-        	GDKmeminc(len, len);
+                MT_alloc_register(ret, len, 'M');
+                GDKmeminc(len, len);
         }
         return (void*) ret;
 }
 
 int GDKmunmap(void* addr, size_t size) {
         int ret;
-	MT_alloc_register(addr, size, 'm');
- 	ret = MT_munmap(addr, size);
+        MT_alloc_register(addr, size, 'm');
+        ret = MT_munmap(addr, size);
         if (ret == 0) {
                 GDKmemdec(size, size);
         }
@@ -867,15 +785,15 @@ this affects both physical and logical memory resources.
 void* GDKvmalloc(size_t size, size_t *maxsize) {
 	void *ret = MT_vmalloc(size, maxsize);
         if (ret == NULL) {
-		GDKmemfail("GDKvmalloc", size, BBPTRIM_ALL, BBPTRIM_ALL);
-		ret = MT_vmalloc(size, maxsize);
+                GDKmemfail("GDKvmalloc", size, BBPTRIM_ALL, BBPTRIM_ALL);
+                ret = MT_vmalloc(size, maxsize);
                 if (ret == NULL) {
-			MT_alloc_print();
+                        MT_alloc_print();
                         GDKfatal("GDKvmalloc failed for %u bytes",size);
                 } else {
-			THRprintf(GDKerr, "GDKvmalloc(%d): recovery ok. Continuing..\n", size);
-		}
-	}
+                        THRprintf(GDKerr, "GDKvmalloc(%d): recovery ok. Continuing..\n", size);
+                }
+        }
         if (ret != NULL) {
                 GDKmeminc(size, *maxsize);
 	}
@@ -885,15 +803,15 @@ void* GDKvmalloc(size_t size, size_t *maxsize) {
 void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize) {
 	void *ret = MT_vmrealloc(pold, oldsize, newsize, maxsize);
         if (ret == NULL) {
-		GDKmemfail("GDKvrealloc", newsize, BBPTRIM_ALL, BBPTRIM_ALL);
-		ret = MT_vmrealloc(pold, oldsize, newsize, maxsize);
+                GDKmemfail("GDKvrealloc", newsize, BBPTRIM_ALL, BBPTRIM_ALL);
+                ret = MT_vmrealloc(pold, oldsize, newsize, maxsize);
                 if (ret == NULL) {
-			MT_alloc_print();
+                        MT_alloc_print();
                         GDKfatal("GDKvrealloc failed for %u bytes (from %u)", newsize, oldsize);
                 } else  {
-			THRprintf(GDKerr, "GDKvmrealloc(%d): recovery ok. Continuing..\n", newsize);
-		}
-	}
+                        THRprintf(GDKerr, "GDKvmrealloc(%d): recovery ok. Continuing..\n", newsize);
+                }
+        }
         if (ret != NULL) {
                 GDKmemdec(oldsize,oldmax);
                 GDKmeminc(newsize,*maxsize);
@@ -909,9 +827,14 @@ void GDKvmfree(void* blk, size_t size, size_t maxsize){
 @+ Session Initialization
 GDK parameters often come directly from the command line.
 Meaningful parameters are identified and processed.
-The parameter @%home@ is followed by the database home.
-The parameter @%db@ is followed by the database name.
-The parameter @%recover@ removes any pending lock file.
+The parameter @%db@ is followed by the database name relative to
+the environment variable dbfarm.
+The parameter @%recover@ removes any pending lock file and
+checks the consistency of the database files.
+The parameter @%monetrc@ tells that the system variables setting
+should be overruled by the specification given in the file argument.
+This format is only necessary to temporarely experiment with variable settings,
+without disturbing a system default setting.
 
 The interface code to the operating system is highly dependent on
 the processing environment. It can be filtered away with compiletime flags.
@@ -921,7 +844,7 @@ The kernel requires file descriptors for I/O with the user.
 They are thread specific and should be obtained by a function.
 
 The arguments relevant for the kernel are extracted from the list. 
-The remaining numner of unparsed arguments is returned.
+Their value is turned into a blanc space.
 @c
 #ifndef HAVE_TM_ZONE
 int GDKtime_zero = 0;
@@ -930,35 +853,52 @@ struct timezone GDKtime_zero = { 0 };
 #endif
 int GDKtime_startsec, GDKrecovery = 0; 
 
+#define clr(X) {int k; for(k=0;argv[X][k];k++) argv[X][k]=0;}
+
 int GDKinit(int argc, char** argv) {
 	struct timeval tp;
 	int 	i;
-	str 	usr = 0; 
 	str 	home = 0; 
 	str 	db = 0; 
+	str	dbhome, monetrc=0;
 
 	errno = 0;
 	for (i = 0; i < argc; i++) {
 		if (argv[i][0] != '-')
 			continue;
 		switch(argv[i][1]) {
-		case 'd': if (strcmp("-db", argv[i]) == 0) 
-				db = argv[++i]; 
-			break; 
-		case 'h': if (strcmp("-home", argv[i]) == 0) 
-				home = argv[++i]; 
-			break; 
-		case 'r': if (strcmp("-recover", argv[i]) == 0)
-				GDKrecovery = 1; 
+		case 'm': if ( strcmp("-monetrc",argv[i])== 0){
+				clr(i);
+				monetrc= GDKstrdup(argv[++i]);
+				clr(i);
+			}
 			break;
-		case 'u': if (strcmp("-user", argv[i]) == 0)
-				usr = argv[++i]; 
+		case 'd': if (strcmp("-db", argv[i]) == 0) {
+				clr(i);
+				db = GDKstrdup(argv[++i]); 
+				clr(i);
+			}
+			break; 
+		case 'r': if (strcmp("-recover", argv[i]) == 0){
+				GDKrecovery = 1; 
+				clr(i);
+			  }
 			break;
 		}
 	}
+	GDKenvironment(db,monetrc);
+	if (GDKdbnameStr[0] == 0) {
+	    fprintf(stderr, 
+		"GDKhomeScan: %s:  database name missing.\n",
+		home);
+	}
+	if (GDKdirStr[0] == 0) {
+	    fprintf(stderr,
+		"GDKhomeScan: %s: directory name missing.\n",
+		home); 
+	}
 	PROPDEBUG GDKdebug |= 2; 
 	MT_init_posix();
-	GDKhomeScan(usr, db, home, 0); 
 	THRinit();
 	BATSIGinit(); 
 	GDKlockHome(); 
@@ -1011,7 +951,7 @@ int GDKinit(int argc, char** argv) {
 	BATfakeCommit(GDK_vm_histo);
 	GDK_vm_nallocs = ((int*) GDK_vm_histo->batBuns->base) - 42; 
 #endif
-	return 0; 
+	return 0;
 }
 
 @- 
@@ -1066,8 +1006,8 @@ void GDKlockHome() {
 @-
 Go there and obtain the global database lock.
 @c
-	if (chdir(dbhome) < 0 ){
-	    GDKfatal("GDKlockHome: could not move to %s\n", dbhome);
+	if (chdir(GDKdirStr) < 0 ){
+	    GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
 	}
 	if (GDKrecovery  && unlink(GDKLOCK) < 0) {
 	    GDKfatal("GDKlockHome: unlock DB failed\n"); 
@@ -1096,12 +1036,6 @@ We have the lock, are the only process currently allowed in this section.
 Print the new process list in the global lockfile.
 @c
 	fseek(GDKlockFile, 0, SEEK_SET);
-/*
-	sprintf(buf, " %s:%s\n", GDKenviron[GDKserver], GDKenviron[GDKport]);
-	fputs(buf, GDKlockFile);
-	fflush(GDKlockFile);
-	ftruncate(fileno(GDKlockFile), strlen(buf));
-*/
 	ftruncate(fileno(GDKlockFile), 0);
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
@@ -1195,11 +1129,11 @@ int GDKerror(char *format, ...) {
 /*VARARGS*/
 int GDKsyserror(char *format, ...)
 {
-	char message[GDKMAXERRLEN];	
-	int len = strlen(GDKERROR);
+        char message[GDKMAXERRLEN];
+        int len = strlen(GDKERROR);
 
-	int	err = errno; 
-	va_list ap; 
+        int     err = errno;
+        va_list ap;
 
 	strcpy(message, GDKERROR);
 	va_start(ap,format); 

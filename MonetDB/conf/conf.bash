@@ -110,12 +110,14 @@ if [ ! -x bootstrap ] ; then
 	export CC="${cc}"
 	export CXX="${cxx}"
 	export PATH="${PREFIX}/bin${binpath}"
-	export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet${libpath}"
+#	export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet${libpath}"
 
-	export MONETDIST="${PREFIX}"
-	export MONET_MOD_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet"
+#	export MONETDIST="${PREFIX}"
+#	export MONET_MOD_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet"
 
 	export CONFIGURE="${base}/configure ${conf_opts} --prefix=${PREFIX}"
+
+	mkdir -p ${BUILD}
 
 	echo ""
 	echo "To compile Monet, just execute:"

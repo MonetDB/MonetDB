@@ -1,16 +1,19 @@
-@t The Monet System
-@v version 4.0 (BETA)
-@a Peter Boncz
-@d 18/11/1997
+@t An overview of the Monet Database System
+@v version 4.3 
+@a Peter Boncz, Martin Kersten
+@d 21/2/2001
 @* Introduction
 @T
 Monet is a novel database system. It distinguishes itself 
 from other database systems in its focus on exploiting efficiently
 current hardware. This translates itself in a focus on main-memory
-techniques. It furthermore is buzzword compliant: it is 
-parallel, extensible, and provides -- amongst others -- an 
-object-oriented interface, including a distributed persistent
-Java(tm) interface.
+techniques as the driving force for algorithms and storage
+structures. It furthermore is buzzword compliant: it supports
+client/server applications, parallel database processing,
+extensible user-defined type, XML-interaction,....
+In addition, it has an object-oriented interface, including 
+a distributed persistent Java(tm) interface \footnote{
+Developed and distributed by Data Distilleries}.
 
 \begin{center}
 {\epsfxsize=0.55\textwidth
@@ -19,10 +22,8 @@ Java(tm) interface.
 \end{center}
 
 For more detailed information on the why, what and how about Monet,
-we refer to the published 
-@[<a href="/~monet/papers.html">scientific papers</a>@
-on Monet, available at the 
-@[<a href="/~monet/">web site at the CWI</a>@.
+we refer to the published (scientific) papers on Monet, available at the 
+@[<a href="http://www.cwi.nl/htbin/ins1/publications">web site</a>@.
 
 @+ System Architecture
 @T
@@ -57,16 +58,8 @@ The Monet system consists of the following utilities:
 	create a Monet database, or add users to it. Administrator command.
 \item[{\bf @[<a href="man/Mcreatedb.html">Mdestroydb</a>@}]
 	destroy a Monet database, or remove users from it. Administrator command.
-\item[{\bf @[<a href="man/Mrecover.html">Mrecover</a>@}]
-	recover from a system crash. Administrator command.
-\item[{\bf @[<a href="man/Mload.html">Mload</a>@}]
-	bulk load tables from ASCII. User command.
-\item[{\bf @[<a href="man/Mdump.html">Mdump</a>@}]
-	bulk export into ASCII. User command.
 \item[{\bf @[<a href="man/Mclient.html">Mclient</a>@}]
 	open a client-session. {\bf Preferable interface for MIL interaction!} User command.
-\item[{\bf @[<a href="man/odlp.html">oldp</a>@}]
-	ODL parser that produces stubs for different Monet/ODMG language bindings. Application programmer command.
 \item[{\bf @[<a href="man/mel.html">mel</a>@}]
 	utility to parse MEL extension module specifications. Extension 
 programmer command.
@@ -74,113 +67,6 @@ programmer command.
 	code/documentation utility.
 \end{description}
 	
-@+ Monet/ODMG Application Programmer Interface
-@T
-The Monet/ODMG interface is a full-fledged object-oriented database system
-built in top of Monet. It provides natural language mappings for C,
-C++ and Java. The Monet/ODMG interface follows the Monet concept of 
-front-end/back-end design. 
-
-The motivation to work with the 
-@[<a href="http://www.odmg.org">ODMG standard</a>@
- on top of Monet is the following:
-\begin{itemize}
-\item ODMG provides a model for orthogonal persistency in a number of
-application language bindings.
-\item ODMG facilitates system integration by providing multiple
-language bindings (different applications in different
-programming languages can communicate an cooperate
-by using a shared ODMG database).
-\item We can achieve {\em data independence} by providing an
-object-oriented model at the logical level; while storing
-the data physically a la Monet in vertical decomposed format.
-\item Monet's decomposition strategy can be used to provide a competitive
-object-oriented data manipulation system, as well as a highly efficient
-analytical query processing system.
-\item ODMG has a general purpose, high level, object-oriented
-query language (OQL).
-\end{itemize}
-More information about the ODMG standard can be found at 
-the @[<a href="www.omg.org">Object Management Group</a>@ and
-the @[<a href="www.omdg.org">Object Database Management Group</a>@.
-
-@- Architecture
-@T
-Monet/ODMG is based on the ODMG1.X model (not ODMG2.0). The below 
-picture shows how the system is used: after specification of
-a common data model in ODL (Object Definition Language), a parser
-generates different language  bindings for C, C++ and Java. 
-\begin{description}
-\item[ODMG/C++]
-The C++ binding couples with C++ applications that run
-as extension modules in the Monet database server. 
-Such C++ user-code implements methods that are defined on ODL objects. 
-\item[ODMG/C]
-The C binding works similarly to the C++ binding.
-Mapping the object-oriented ODMG onto C (non object-oriented) is somewhat 
-difficult, and this results in a less natural mapping than for ODMG/C++.
-ODMG/C is provided for convenience so existing C code can easily
-take part in the integrated Monet/ODMG environment.
-\item[ODMG/Java]
-The Java language binding couples with a user application 
-written in java. Its supporting ODMG/Java libraries are {\bf "100\% pure"} 
-java, making it possible to run user applications as an applet in a Web 
-browser. Object access will transparently cause communication between the 
-ODMG/Java Run-Time System and the Monet Database. 
-\end{description}
-
- 
-begin{center}
-%{\epsfxsize=0.80\textwidth
-%\epsffile{odmg.eps}
-%{\em Distributed and heterogeneous language coupling with ODMG}}
-%\end{center}
-
-@- Reference Information
-@T
-The following {\bf reference information} is available on the
-Monet/ODMG system:
-
-\begin{description}
-\item[Monet/ODL] The definition of the Monet/ODL subset of ODL
-can be found in the {\bf @[<a href="odl.html">Monet/ODL Reference</a>@}. 
-\item[ODL parser] See the {\bf @[<a href="man/odlp.html">Manual Page</a>@}
-for the exact calling options of the ODL parser.
-\item[Standard Library] The 
-{\bf @[<a href="stdlib.html">ODMG Standard Library Reference</a>@}
-defines which standard facilities are present in ODMG, and what is their
-exact interface in the ODMG/\{Java, C, C++\} programming environments
-respectively.
-\item[Data Dictionary] The {\bf @[<a href="meta.html">ODMG Meta Model</a>@}
-shows the ODL schema of the Meta model that is used as Data Dictionary.
-\item[Language Mappings] The 
-{\bf @[<a href="Example.html">Example ODL Model</a>@}
-introduces a simple Customer-Order-Item model and shows how this
-can be accessed in the ODMG/C, ODMG/C++ and ODMG/Java environments
-through stub classes.
-\item[Programming Guide] The {\bf @[<a href="app.html">Example ODMG Application</a>@}
-uses the example ODL model (see previous point) to build a simple application 
-for internet sales, that demonstrates easily how all system components
-work and fit together.
-\item[Demo] {\bf @[<a href="/~acoi/demo/jOdmg">AMIS</a>@}
-is an National Research Project in the field of Image Databases. 
-\end{description}
-
-@[<a href="http://www.ddi.nl">Data Distilleries BV</a>@ uses the 
-ODMG system as the backbone software in their {\em three-tier} 
-Data Mining Architecture.
-
-@- Disclaimer 
-@T
-Our ODMG interface currently supports C, C++ and Java bindings.
-Though in the spirit of ODMG, they do {\bf not} adhere to the exact
-syntax as specified by either ODMG1.2 nor ODMG2.0. The OQL interface
-is under construction in the context of the MAGNUM research project.
-For the time being though; it is not ready. Ad-hoc queries {\bf are} 
-supported though via the 
-{\bf MIL} BAT algebra interface, and in the near future also via the
-{\bf MOA} query algebra interface.
-
 @+ MIL Database Interface
 @T
 The @[<a href="mil.html">MIL reference manual</a>@ contains information
@@ -263,42 +149,12 @@ of compilations of MEL specifications into header files, etc.
 We use the @[<a href="/~monet/papers/mxdoc.ps.gz">Mx utility</a>@
 to integrate our MEL specification with the C/C++ implementation code.
 This allows extraction of the documentation from the code. 
-It also allows to build a documented, cross-linked
-@[<a href="/~monet/srcdoc.html">Monet Source Code Web</a>@
+It also allows to build a documented, 
+cross-linked @[<a href="/~monet/srcdoc.html">Monet Source Code Web</a>@
 between all source files. Use it to
 browse both {\em MEL definition} and {\em implementation code}
 that belongs to all standard Monet kernel modules
-(@[<a href="WWWROOT/modules/kernel/index.html">kernel</a>@,
-@[<a href="WWWROOT/modules/sys/index.html">sys</a>@,
-@[<a href="WWWROOT/modules/bat/index.html">bat</a>@,
-@[<a href="WWWROOT/modules/algebra/index.html">algebra</a>@,
-@[<a href="WWWROOT/modules/arith/index.html">arith</a>@)
-and standard modules
-(@[<a href="WWWROOT/modules/alarm/index.html">alarm</a>@,
-@[<a href="WWWROOT/modules/blob/index.html">blob</a>@,
-@[<a href="WWWROOT/modules/cluster/index.html">cluster</a>@,
-@[<a href="WWWROOT/modules/enum/index.html">enum</a>@,
-@[<a href="WWWROOT/modules/io/index.html">io</a>@,
-@[<a href="WWWROOT/modules/lock/index.html">lock</a>@,
-@[<a href="WWWROOT/modules/mmath/index.html">mmath</a>@,
-@[<a href="WWWROOT/modules/mprof/index.html">mprof</a>@,
-@[<a href="WWWROOT/modules/oo7/index.html">oo7</a>@,
-@[<a href="WWWROOT/modules/temporal/index.html">temporal</a>@,
-@[<a href="WWWROOT/modules/wisc/index.html">wisc</a>@,
-@[<a href="WWWROOT/modules/str/index.html">str</a>@,
-@[<a href="WWWROOT/modules/tcpip/index.html">tcpip</a>@,
-@[<a href="WWWROOT/modules/tpcd/index.html">tpcd</a>@,
-@[<a href="WWWROOT/modules/trans/index.html">trans</a>@,
-@[<a href="WWWROOT/modules/url/index.html">url</a>@,
-@[<a href="WWWROOT/modules/xtables/index.html">xtables</a>@).
-You can alternatively browse glossaries of all:
-\begin{itemize}
-\item @[<a href="WWWROOT/mil\_atoms.html">atomic types</a>@
-\item @[<a href="WWWROOT/mil\_accs.html">search accelerators</a>@, and
-\item @[<a href="WWWROOT/mil\_cmds.html">algebraic commands</a>@.
-\end{itemize}
-together with their implementation code.
-
+[REDO]
 @* The Distribution
 @T
 Monet is distributed as a (GNU-)compressed tar-file. There
@@ -311,26 +167,21 @@ modules, and some script files, and header files that are
 necessary to use Monet for querying and programming goals.
 
 There are different versions of each binary distribution,
-currently available are {\tt SunOS5.5.1, IRIX5.3, IRIX6.2, IRIX6.3} 
-and {\tt Linux2.0.0}. Also available in alpha release is 
-a version for {\tt Windows NT/95} that works in cooperation
-with the @[<a href="http://www.cygnus.com/gnu-win32">GNU-Win32</a>@
-library.  The binary distribution has size of 6MB, and uncompressed needs
+currently available are {\tt SunOS5.8, IRIX6.3} , {\tt Windows NT/98},
+{\tt AIX}, and {\tt Linux2.4}.
+The binary distribution has size of 6MB, and uncompressed needs
 16MB of disk space.
 
 \item[monet-$<$version$>$.tar.Z:]
-This is the {\em source distribution}. It is for the time being
-not publically available. This does not contain any precompiled
-libraries, tools or utilities.
-The source distribution has size 1.5MB, and uncompressed needs 6MB
+This is the {\em source distribution}. 
+This does not contain any precompiled libraries, tools or utilities.
+The source distribution has size ?? MB, and uncompressed needs 6MB
 of disk space. Compiling it will cost you another 34MB. 
 
 {\bf Note:} {\em Developers checkout the sources from CWI repository with}
 \begin{verbatim}
-$ cvs -d ~monet/CVSROOT co monet
+$ cvs -d ~monet/$<$version$>$/CVSROOT co monet
 \end{verbatim}
-{\em make sure that \$MONETHOME points to the new directory, and follow 
-the instructions for the source distribution (Step 2).}
 \end{description}
 
 @+ Binary Distribution
@@ -339,25 +190,11 @@ your system.
 @- Step 0: What do we need? 
 @T
 \begin{enumerate}
-\item the compressed tarfile containing the binary Monet distribution. 
-\item a Sun Solaris, Silicon Graphics IRIX, or x86 Linux machine (beta version).
-In a more alpha state is the new WIN32 distribution for Windows NT/95 machines.
-\item as the Windows NT/95 version is built using the
-@[<a href="http://www.cygnus.com/gnu-win32">GNU-Win32</a>@ Unix programming
-environment, provided free of cost and use by 
-@[<a href="http://www.cygnus.com/">Cygnus Solutions Inc</a>@,
-users of these operating systems first need to put the  
-@[<a href="ftp://ftp.cygnus.com/pub/gnu-win32/latest/cygwin.dll">cygwin.dll</a>@
-in their WINDOWS/SYSTEM folder.
-
-If you want to compile the system or develop extension modules, you can
-do this using the GNU tools. You then must unzip and install the entire GNU-Win
-@[<a href="ftp://ftp.cygnus.com/pub/gnu-win32/latest/">distribution</a>@
-(release 18 or later). \footnote{In that case, you might also be interested in 
-the @[<a href="www.itribe.net/virtunix/files/unix95.7.zip">virtual unix</a>@ 
-collection of Unix utilities, and replacements for popular unix editors like
-@[<a href="http://www.cs.washington.edu/homes/voelker/ntemacs.html">emacs</a>@
-and @[<a href="http://www.halcyon.com/gvr/vim.html">vi</a>@}.
+\item the compressed tarfile containing the 
+@[<a href="http://www.monetsolutins.com/">binary Monet</a>@ distribution.
+\item a Sun Solaris (SUNOS_5-8), Silicon Graphics IRIX (IRIX_6-3),
+Windows NT (NT_5.0), AIX, 
+or x86 Linux machine (Linux_2-4).
 \end{enumerate}
 
 
@@ -373,64 +210,87 @@ $
 @- Step 2: Untar the Archive.
 @T
 \begin{verbatim}
-$ zcat monet<version>.<architecture>.tar.Z | tar xf -
-$
+zcat monet_4-3.Linux_2-4.tar.Z | tar xf -
 \end{verbatim}
-\begin{itemize}
-\item This will unpack a complete binary Monet-tree.  
+This will unpack a complete binary Monet-tree (version 4-3)
+for a Linux version 2.4 platform.
 The root directory where you extract this (in this example {\small\tt 
 /home/boncz/monet}) we call the 'Monet directory'.
 It contains the binaries, libraries, standard modules, header files, 
-standard MIL scripts and documentation. Together with the standard scripts
-also comes a demo database that can be loaded from ASCII, and 
-data-mining query scripts on them. All machine/OS dependent files
+MIL scripts and documentation. 
+
+All machine/OS dependent files
 are inside an OS-specific directory (e.g. SunOS5.5.1/). In this way
 you can have Monet installed on a shared filessytem between multiple
 OS architectures, without having to cope with multiple root directories.
+You may now inspect the monet/README file to see what you got
 
-\item you may now inspect the Monet/README file to see what you got
-\end{itemize}
+@- Step 3: Environment Variables
+If you intend to quickstart your first session, you do not have to
+set any variables, provided you stay in the Monet directory.
 
-@- Step 3: Set Environment Variables
-Set the following shell variables, according to your local 
-circumstances:
-@T
-\begin{description}
-\item[{\tt MONETHOME=/home/boncz/monet}]
-	{\tt MONETHOME} points to the root of the Monet directory tree.
-\item[{\tt PATH=\$PATH:\$MONETHOME/\$PREFIX/bin}]
-	this makes sure that you can find the Monet binaries.
-\item[{\tt LD\_LIBRARY\_PATH=\$MONETHOME/\$PREFIX/lib}]
-	tells the OS where the monet libraries and compiled extension
-	modules can be found.
-\item[{\tt MONET\_MOD\_PATH=/home/boncz/monet/modules//}]
-	tells Monet where to look for module objects that can be loaded
-	dynamically (every file ending {\tt .so} is considered a
-	module!). This variable can point to several directories
-	separated by a colon. For convenience, you can also use a trailing
-	double-slash, as given in the example, indicating that all 
-	subdirectories should be searched for loadable objects.
-\end{description}
+In the Monet directory you find a file called 'monet.conf'
+(linked to '.monet.conf'). 
+It contains variable settings for the Monet server instance.
+You may wish to changed the 'dbfarm' variable to a location where
+you want to group your database files. If you intend to use a single
+database, it is adviced to set the 'dbname' variable as well.
+The remaining environment variables are explained in the file and
+documentation.
+This file can be copied to your home directory to make it visible 
+in all directories where you start Mserver.
 
-Put these definitions in your .csrhc/.bashrc/.shrc/.tcshrc
+Add the Monet 'bin' subdirectory to your search path, otherwise
+your shell won't easily find the binaries. The path variable is
+typically maintained in your .csrhc/.bashrc/.shrc/.tcshrc
 or whatever initialization file your shell has! Please 
 note that your shell may work with the 'setenv X=Y' style
 shell variable assignment. If it doesn't, you still need to
-export all variables with {\tt export MONETHOME PATH LD\_LIBRARY\_PATH}.
+export all variables.
 
-The above mentioned {\tt \$PREFIX} is the {\em exact system name}
-that is composed as follows using output from the {\tt uname} utility:
+@- Step 4: Demonstrations
+Together with the standard scripts also comes with demo databases, 
+called @[<a href="http:dbfarm/VOC/www/index.html> dbfarm/VOC  </a>@
+and @[<a href="http:dbfarm/gold/www/index.html> dbfarm/gold  </a>@ .
+The former is a database for a multi-national trading company
+in the 16-18th century.
+The latter is derived from a 20th century car-insurrance company, which
+should be loaded from ASCII and comes with
+data-mining query scripts on them.
+Both applications are illustrated below.
+
+@- Step 4a: Start a Database Application
+Monet comes with a database derived from the East-Indian Trading
+Company archives. It is a small database intended to demonstrate
+the capabilities of Monet on a variety of data types.
+
+The VOC database application is accessible from the Monet web-page.
+If you haven't experience it, it is now a good time to enjoy a
+little tour back into history.
+Take your favoured web-browser (Netscape or Explorer) and 
+enter the @[<a href="http://www.monetsolutions.com/dbfarm/VOC/index.html]
+VOC web address </a>@
+
+A copy of the VOC database is included in the distribution.
+In your Monet directory start the database server by typing:
+@T
 \begin{verbatim}
-UNAME\_BASE=$(shell uname)
-UNAME\_REV=$(shell uname -r)
-PREFIX=$(UNAME\_BASE)$(UNAME\_REV)
+Mserver -db VOC
 \end{verbatim}
 
-For Solaris systems, it might be {\tt SunOS5.5.1}, for Irix systems
-it might be {\tt IRIX6.3}, etc.. Both Windows95 and Windows NT expect
-the setting {\tt PREFIX=WIN32}.
+It should respond with a welcoming message and some advice 
+on what to do next. That is, take a fresh terminal window and
+type:
+\begin{verbatim}
+Mclient -db VOC -port echolood:5050 -sql
+\end{verbatim}
 
-@- Step 4: Create a Test Database
+where 'echolood' should be replaced by the name of your machine.
+You have now started the textual front-end of the Monet server.
+It expects you to enter SQL queries, which will be executed against
+your copy of the VOC database.
+
+@- Step 4a: Create a Test Database
 @T
 Monet comes with a demonstration database mimicking a car insurance
 database. Some standard data mining query scripts are available
@@ -442,9 +302,19 @@ file contains detailed instructions.
 
 @+ Source Distribution
 
-The source distribution is available on request. The below text
-discusses the main items needed for succesfully making binaries
-wioth it.
+The source distribution is also available from the Monet web site.
+The below text discusses the main items needed for succesfully 
+making binaries with it. You can obtain a copy from the web site
+and install it in a directory of your choosing (say $PREFIX).
+
+@T
+\begin{verbatim}
+$ zcat monet<version>.tar.Z | tar xf -
+$
+\end{verbatim}
+By following the below instructions for making, you will create the
+binaries, the main libraries, the standard collection of extension modules,
+and the tools.
 
 @- The 'Mx' Tool
 @T
@@ -452,18 +322,11 @@ Monet uses the @[<a href="/~monet/doc/mxdoc.ps.gz">Mx</a>@
 utility to integrate code and documentation. All sources therefore have
 the extension {\tt .mx}. The Mx utility is included in the distribution.
 
-@- Targets
-@T
-By following the below instructions for making, you will create the main
-libraries and the standard collection of extension modules 
-located in {\tt \$MONETHOME/\$PREFIX/lib},  
-and the executable tools in {\tt \$MONETHOME/\$PREFIX/bin}.
-
 @- Directory structure
 @T
 The source system is set up in such a way that you can easily cross-compile. 
 Temporary generated files and object files are located in a separate
-directory structure, that starts at \$MONETHOME/\$PREFIX. 
+directory structure, that starts at \$PREFIX. 
 Just set a different \$PREFIX, and you can compile with completely disjunct
 settings! 
 
@@ -493,6 +356,7 @@ that stems from the GNU readline library. Note that the Mclient
 program is not an essential part of the Monet database system and
 is only provided for convenience.
 \end{itemize} 
+
 You can find the latest release of both at prep.ai.mit.edu:/pub/gnu.
 On some systems GNU make is called gmake, however, in the documentation 
 {\em we refer to it simply as {\bf make}}.
@@ -500,12 +364,12 @@ On some systems GNU make is called gmake, however, in the documentation
 @- Step 1: set things up
 @T
 First you should obtain the Monet source distribution, and unzip
-and untar in in your \$MONETHOME directory. Check that your system 
+and untar in in your \$PREFIX directory. Check that your system 
 fulflls are requirements mentioned above.
 
 @- Step 2: check it
 @T
-In the {\tt \$MONETHOME} directory, you can check the system with
+In the {\tt \$PREFIX} directory, you can check the system with
 \begin{verbatim}
 $ make check-config
 \end{verbatim}
@@ -520,16 +384,6 @@ for example
         PREFIX=SunOS5.5.1
 \end{verbatim}}
 
-At the moment a series of platforms are supported:
-\begin{itemize} 
-\item SunOS 5.5       aka Solaris 2.5
-\item SunOS 5.5.1     aka Solaris 2.5.1
-\item IRIX 5.3
-\item IRIX 6.2
-\item IRIX 6.3
-\item LINUX 2.0.0
-\item WIN32 for Windows 95 and Windows NT.
-\end{itemize} 
 
 @ 
 for a Solaris 2.5.1 system. Go to $(MONETHOME)/makefiles and
@@ -571,60 +425,32 @@ $ make -r
 make checking all built-in rules. The Monet makefiles are
 self-contained and therefore don't need any native make rules.
 @ 
-After the compilation you find all binaries and libs under
-$(MONETHOME)/$(PREFIX). In case something went wrong during
-compilation, check the output of the make procedure, that is
-logged into $(MONETHOME)/$(PREFIX)/make.log.
-
-More info on the makefiles is available on the 
-@[<a href="/~monet/intern/makefiles">CWI internal web</a>@.
-
-@- Source Code Web 
-A cross-linked Source Code Web of all Monet documentation and implementation 
-files can be created following the steps:
-@T
-\begin{itemize}
-\item a database named 'index' should be created  with 
-\begin{verbatim}
-Mcreatedb -db index -user $USER
-\end{verbatim}
-\item choose a directory where to generate the WWW tree of html-files.
-\item you must edit some directory paths both in this file 
-'@[<a href="/~monet/scripts/wwwmake">wwwmake</a>@'
-and 
-'@[<a href="/~monet/scripts/wwwmake.mil">wwwmake.mil</a>@'
-(located in the 'scripts' directory)
-\item then issue the command: 
-\begin{verbatim}
-wwwmake mkdirs empty index link extract dbgen 
-\end{verbatim}
-\item consult the comments in the 
-'@[<a href="/~monet/scripts/wwwmake">wwwmake</a>@'
-script for further details.
-\end{itemize}
-
-
 
 @* Copyright Notice
 @T
 {\small\begin{verbatim}
-ALL THE FILES IN SUBDIRECTORIES FROM THE ROOT OF THIS DISTRIBUTION ARE 
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
 
-	COPYRIGHT 1993-1997 STICHTING MATHEMATISCH CENTRUM, AND 
-	COPYRIGHT 1994-1997 NWO, THE NETHERLANDS,
-
-EXCEPT FOR THE odmg/, modules/enum/ AND modules/xtables DIRECTORIES WHICH ARE 
-
-	COPYRIGHT 1996-1997 DATA DISTILLERIES BV, AMSTERDAM.
-
-THIS SOFTWARE WAS DEVELOPED BY M.L. KERSTEN AND HIS RESEARCH GROUP 
-AT THE CENTRE FOR MATHEMATICS AND COMPUTER SCIENCE, KRUISLAAN 413 AMSTERDAM.
-
-THE SOFTWARE MAY BE FREELY COPIED FOR RESEARCH PURPOSES. ALL OTHER USE,
-INCLUDED PACKAGING, REDISTRIBUTION, COMMERCIAL EXPLOITATION IN
-ANY FORM IS STRICTLY FORBIDDEN WITHOUT WRITTEN CONSENT OF ITS OWNERS.
-
-THE DEVELOPERS AND OWNERS DO NOT ACCEPT ANY LIABILITY IN USING THE SOFTWARE.
-
-THE COPYRIGHT NOTICE SHALL NOT BE REMOVED FROM ANY SOURCE
 \end{verbatim}}

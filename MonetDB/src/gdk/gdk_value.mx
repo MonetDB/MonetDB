@@ -1,0 +1,196 @@
+@t Monet Values
+@a Martin L. Kersten & Peter Boncz
+@v 2.0 
+@* Introduction
+
+ 
+When manipulating values, Monet puts them into value records.
+The built-in types have a direct entry in the union. Others should 
+be represented as a pointer of memory in pval or as a string, which
+is basically the same. In such cases the @%len@ field indicates
+the size of this piece of memory.
+
+Monet Extenders will use value records for passing parameters to
+their new operators. Monet algebraic commands receive an 
+(argc, argv) combination, where
+argc is an integer indicating the size of the the argv array of value 
+records. On call, the first record, argv[0], is always empty. The
+routine must place its return value - if any - there. The other
+values are the parameters.
+
+@{
+Actually, the gdk value type defined here should become a built-in
+type in the kernel. Next step will be to define the corresponding
+extension module.
+@h
+#ifndef _GDK_VALUE_H_
+#define _GDK_VALUE_H_
+
+#include "gdk.h"
+
+#endif /* _GDK_VALUE_H_*/
+
+@}
+
+@{
+@+ Value operations
+The following primitives are required to manipulate value records.
+Note that binding a BAT requires upgrading its reference count.
+The receiver of the value should have been cleared or represent
+free space.
+@c
+#include "gdk_value.h"
+
+ValPtr VALnew(){
+	ValPtr v = (ValPtr) GDKmalloc(sizeof(ValRecord));
+	VALempty(v);
+	return v;
+}
+
+ValPtr VALset(ValPtr v, int t, ptr p){
+	switch(ATOMstorage(v->vtype = t)) {
+	case TYPE_chr: v->val.cval[0] = *(chr*) p; break;
+	case TYPE_sht: v->val.shval = *(sht*) p; break;
+	case TYPE_int: v->val.ival = *(int*) p; break;
+	case TYPE_flt: v->val.fval = *(flt*) p; break;
+	case TYPE_dbl: v->val.dval = *(dbl*) p; break;
+	case TYPE_lng: v->val.lval = *(lng*) p; break;
+	default:       v->val.pval = p;
+		       v->len = ATOMlen(t, p);
+	}
+	return v;
+}
+
+void *VALget(ValPtr v){
+	switch(ATOMstorage(v->vtype)) {
+	case TYPE_chr: return (void*) &v->val.cval[0];
+	case TYPE_sht: return (void *) &v->val.shval;
+	case TYPE_void:
+	case TYPE_int: return (void *) &v->val.ival;
+	case TYPE_flt: return (void *) &v->val.fval;
+	case TYPE_dbl: return (void *) &v->val.dval;
+	case TYPE_lng: return (void *) &v->val.lval;
+	case TYPE_str: return (void *) v->val.pval;
+	}
+	return NULL;
+}
+
+void VALclear(ValPtr v){
+	if (ATOMextern(v->vtype) && v->val.pval) {
+		GDKfree(v->val.pval);
+	}
+	VALempty(v);
+}
+
+void VALempty(ValPtr v){
+	v->len = 0;
+	v->val.oval = oid_nil;
+	v->vtype = TYPE_void;
+}
+
+ValPtr VALcopy(ValPtr d, ValPtr s){
+	if (ATOMextern(s->vtype) == 0) {
+		*d = *s;
+	} else if (s->val.pval == 0) {
+		GDKwarning("VALcopy: copying null %s.\n", ATOMname(s->vtype)); 
+		d->vtype = TYPE_void;
+	} else if (s->vtype == TYPE_str) {
+		d->vtype = TYPE_str;
+		d->val.sval = GDKstrdup(s->val.sval);
+		d->len = strLen(d->val.sval);
+	} else {
+		ptr p = s->val.pval;
+		d->vtype = s->vtype;
+		d->val.pval = GDKmalloc(s->len);
+		d->len = s->len;
+		memcpy(d->val.pval, p, s->len);
+	}
+	return d;
+}
+
+int VALprint(FILE *fd, ValPtr res){
+	int t = res->vtype;
+	return ATOMprint(t, VALptr(res), fd);
+}	
+
+
+int VALformat(char **buf, ValPtr res){
+	int t = res->vtype;
+	*buf = 0;
+	return ATOMformat(t, VALptr(res), buf);
+}
+
+@-
+The routine @%VALconvert@ transforms a value for interpretation
+in a certain type. It uses some standard cast conventions to do this.
+The result, a pointer to a value, is returned. If there are
+illegal values, or type combinations involved, it gives
+up with an ILLEGALVALUE.
+
+@= valconvert
+	if (dst_tpe == TYPE_chr) {
+		t->val.cval[0] = (char) @1; 
+	} else if (dst_tpe == TYPE_sht) {
+		t->val.shval = (short) @1; 
+	} else if (dst_tpe == TYPE_bat) {
+		int bid = (int) @1;
+		if (ABS(bid) > BBPsize || BBP_logical(bid) == NULL) {
+			bid = 0;
+			p = ILLEGALVALUE;
+		} else {
+			p = (ptr) BATdescriptor(bid);
+		} t->val.bval = bid; 
+	} else if (dst_tpe == TYPE_int) {
+		t->val.ival = (int) @1; 
+	} else if (dst_tpe == TYPE_flt) {
+		t->val.fval = (float) @1; 
+	} else if (dst_tpe == TYPE_lng) {
+		t->val.lval = (lng) @1; 
+	} else if (dst_tpe == TYPE_dbl) {
+		t->val.dval = (dbl) @1; 
+	}
+	warning = (sizeof(dst_tpe) < sizeof(@2));
+@c
+ptr VALconvert(int typ, ValPtr t, int silent){
+	int src_tpe = ATOMstorage(t->vtype), dst_tpe = typ, warning = 0;
+	ptr p = VALptr(t);
+
+        if (dst_tpe != TYPE_bat) {
+		dst_tpe = ATOMstorage(dst_tpe);
+	}  
+	if (src_tpe != dst_tpe && t->vtype != typ && dst_tpe != TYPE_void) { 
+		if (src_tpe >= TYPE_str || dst_tpe >= TYPE_str) { 
+			if (ATOMcmp(src_tpe, ATOMnilptr(src_tpe), p) == 0) {
+				VALclear(t);
+				VALset(t, dst_tpe, p = ATOMnil(dst_tpe));
+			} else { 
+				return ILLEGALVALUE; 
+			}
+		} else if ((t->vtype == TYPE_bat && t->val.bval == 0 ) ||
+	    	           ATOMcmp(src_tpe, ATOMnilptr(src_tpe), p) == 0) 
+		{
+			memcpy(p, ATOMnilptr(dst_tpe), ATOMsize(dst_tpe));
+		} else if (src_tpe == TYPE_chr) {
+			@:valconvert(t->val.cval[0], chr)@;
+		} else if (src_tpe == TYPE_sht) {
+			@:valconvert(t->val.shval, sht)@;
+		} else if (src_tpe == TYPE_int) {
+			@:valconvert(t->val.ival, int)@;
+		} else if (src_tpe == TYPE_flt) {
+			@:valconvert(t->val.fval, flt)@;
+		} else if (src_tpe == TYPE_lng) {
+			@:valconvert(t->val.lval, lng)@;
+		} else if (src_tpe == TYPE_dbl) {
+			@:valconvert(t->val.dval, dbl)@;
+		}
+        	if (!silent && t->vtype && warning) {
+                	GDKwarning("VALconvert: converted type '%s' to '%s'.\n",
+                        	ATOMname(t->vtype), ATOMname(typ));
+        	}
+	}
+	t->vtype = typ;
+	return p;
+}
+
+@}
+@

@@ -1,6 +1,6 @@
 EXTRA_DIST_DIR = gold
 
-SUBDIRS = adm guest user
+SUBDIRS = 
 
 scripts_mil = {
 	DIR = pkgdatadir

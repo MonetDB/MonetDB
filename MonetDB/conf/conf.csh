@@ -124,12 +124,14 @@ if ( ! -x bootstrap ) then
 	setenv CC "${cc}"
 	setenv CXX "${cxx}"
 	setenv PATH "${PREFIX}/bin${binpath}"
-	setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet${libpath}"
+#	setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet${libpath}"
 
-	setenv MONETDIST "${PREFIX}"
-	setenv MONET_MOD_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
+#	setenv MONETDIST "${PREFIX}"
+#	setenv MONET_MOD_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
 
 	setenv CONFIGURE "${base}/configure ${conf_opts} --prefix=${PREFIX}"
+
+	mkdir -p ${BUILD}
 
 	echo ""
 	echo "To compile Monet, just execute:"
