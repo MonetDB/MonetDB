@@ -64,10 +64,12 @@ PHP_FUNCTION(monetdb_escape_string);
 PHP_FUNCTION(monetdb_ping);
 PHP_FUNCTION(monetdb_info);
 
-//static void php_monetdb_fetch_row(
-//    INTERNAL_FUNCTION_PARAMETERS,
-//    const char *function_name,
-//    int type);
+/*
+static void php_monetdb_fetch_row(
+    INTERNAL_FUNCTION_PARAMETERS,
+    const char *function_name,
+    int type);
+*/
 
 /* 
   	Declare any global variables you may need between the BEGIN
