@@ -553,6 +553,9 @@ One day we should introduce the concept of locale, and hook here.
 
 	tzone_local(TIMEZONE("West/Europe"));
 
+	proc local_timezone () : lng 
+		return lng(minutes(tzone_local())*60);
+
 	proc "[date]" (bat[any::1,timestamp] t) : bat[any::1,date]
 		return [date](t, tzone_local());
 	proc "[daytime]" (bat[any::1,timestamp] t) : bat[any::1,daytime]
@@ -1378,7 +1381,7 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 	if (s <= buf || (*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
 		**ret = ts_nil;
 	} else {
-	    lng offset, sign = -1;
+	    lng offset = 0, sign = -1;
 
 	    while(GDKisspace(*s)) s++;
 	    /* incase of gmt we need to add the time zone */
@@ -1399,8 +1402,9 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 		/* if no tzone is specified; work with the local */
 		timestamp tmp = **ret;
 		offset = get_offset(&tzone_local) * (lng)-60000; 
-		if (timestamp_inside(&tmp, &tmp, &tzone_local, (lng)-3600000)) { 
+		if (timestamp_inside(&tmp, &tmp, &tzone_local, (lng)-3600000)) {
 			**ret = tmp; 
+			sign = 1;
 		}
 	    }
 	    offset *= sign;
