@@ -274,8 +274,8 @@ BAT *BATundo(BAT *b) {
 			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accInsert;
 
 		/* elements are 'inserted' => zap properties */
-		if (b->hsorted) b->hsorted = FALSE;
-		if (b->tsorted) b->tsorted = FALSE;
+		if (b->hsorted&1) b->hsorted = FALSE;
+		if (b->tsorted&1) b->tsorted = FALSE;
 		if (b->hkey) BATkey(b, FALSE);
 		if (b->tkey) BATkey(BATmirror(b), FALSE);
 

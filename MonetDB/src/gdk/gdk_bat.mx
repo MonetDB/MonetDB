@@ -799,11 +799,11 @@ bun is moved to its old place. The "hole" pointer is incremented.
 		if (p != l) {
 			idx2 = BUNindex(b, l); 
 			@:acc_move(l, p, idx2, idx1)@
-			if (b->hsorted) {
+			if (b->hsorted&1) {
 				b->hsorted = FALSE;
 				b->H->nosorted = idx1;
 			}
-			if (b->tsorted) {
+			if (b->tsorted&1) {
 				b->tsorted = FALSE;
 				b->T->nosorted = idx1;
 			}
@@ -835,11 +835,11 @@ last inserted bun (if present) is copied over it.
 		idx2 = BUNindex(b, last);
 		if (p != last) {
 			@:acc_move(last, p, idx2, idx1)@
-			if (b->hsorted) {
+			if (b->hsorted&1) {
 				b->hsorted = FALSE;
 				b->H->nosorted = idx1;
 			}
-			if (b->tsorted) {
+			if (b->tsorted&1) {
 				b->tsorted = FALSE;
 				b->T->nosorted = idx1;
 			}
@@ -929,7 +929,7 @@ explicitly.
 	@:tacc_update(del,t@1,p,pit)@
 	ATOMreplace(b->ttype, &b->theap, BUNtloc(b,p), t);
 	@:tacc_update(ins,t@1,p,pit)@
-	if (BATtordered(b)) {
+	if (BATtordered(b)&1) {
 	    int bs = BUNsize(b), tt = b->ttype;
 	    BUN prv = p - bs;
 	    BUN nxt = p + bs;
@@ -1067,7 +1067,7 @@ BUN BUNlocate(BAT *b, ptr x, ptr y) {
 
 	/* binary search */
 	@:swapif((BAThordered(b)&1) && !(BATtordered(b)&1))@
-	if (BATtordered(b)) {
+	if (BATtordered(b)&1) {
 		cmp = BATatoms[b->htype].atomCmp; 
 
 		SORTloop(b,p,q,y,y,h) {
@@ -1542,7 +1542,7 @@ check whether whatever we want need to prove was already disproven
 		b->H->nosorted = -1;
 	}}
 	if (disprove_dense) {
-	if ((b->hsorted == FALSE && disprove_sorted == FALSE) || 
+	if (((b->hsorted&1) == FALSE && disprove_sorted == FALSE) || 
 	   ((b->H->nodense > yy) && (b->H->nodense < xx) &&
 	    (*(oid*) BUNhloc(b, BUNptr(b,b->H->nodense-1))+1 != 
              *(oid*) BUNhloc(b, BUNptr(b,b->H->nodense)))))
