@@ -97,31 +97,9 @@ AC_TRY_COMPILE( [#include <time.h> ],
 [ AC_DEFINE(HAVE_CTIME_R3) ], [ ctime_r3=no ])
 AC_MSG_RESULT($ctime_r3)
 
-dnl static or shared linking
-SHARED_LIBS=''
-[
-if [ "$enable_static" = "yes" ]; then
-	CFLAGS="$CFLAGS -DSTATIC"
-	SHARED_LIBS='$(smallTOC_SHARED_LIBS)'
-	case "$host_os" in
-	aix*)	CFLAGS="$CFLAGS -DsmallTOC";;
-	*)	SHARED_LIBS="$SHARED_LIBS "'$(largeTOC_SHARED_LIBS)';;
-	esac
-	if test "x$GCC" != xyes; then
-		case "$host_os" in
-		irix*)	SHARED_LIBS="$SHARED_LIBS -lm";;
-		esac
-	fi
-fi
-]
-AC_SUBST(SHARED_LIBS)
-AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
-
 dnl Mx and mel are used during make
 MEL="$MONET_BUILD/src/mel/mel"
 AC_SUBST(MEL)
 MX="$MONET_BUILD/src/utils/Mx/Mx"
 AC_SUBST(MX)
 
-AC_SUBST(CFLAGS)
-AC_SUBST(CXXFLAGS)

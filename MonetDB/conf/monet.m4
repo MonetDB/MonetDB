@@ -303,6 +303,26 @@ if test "x$enable_instrument" = xyes; then
   fi
 fi
 
+dnl static or shared linking
+SHARED_LIBS=''
+[
+if [ "$enable_static" = "yes" ]; then
+	CFLAGS="$CFLAGS -DSTATIC"
+	SHARED_LIBS='$(smallTOC_SHARED_LIBS)'
+	case "$host_os" in
+	aix*)	CFLAGS="$CFLAGS -DsmallTOC";;
+	*)	SHARED_LIBS="$SHARED_LIBS "'$(largeTOC_SHARED_LIBS)';;
+	esac
+	if test "x$GCC" != xyes; then
+		case "$host_os" in
+		irix*)	SHARED_LIBS="$SHARED_LIBS -lm";;
+		esac
+	fi
+fi
+]
+AC_SUBST(SHARED_LIBS)
+AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
+
 ])
 
 AC_DEFUN(AM_MONET_LIBS,
@@ -570,6 +590,9 @@ AC_MSG_CHECKING([$INSTALL --backup option])
 fi ]
 AC_MSG_RESULT($INSTALL_BACKUP)
 AC_SUBST(INSTALL_BACKUP)
+
+AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
 ])
 
 AC_DEFUN(AM_MONET_CLIENT,[
