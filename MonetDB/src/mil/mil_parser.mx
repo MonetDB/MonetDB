@@ -128,10 +128,10 @@ needed for tracing the parser.
 ("while"|"WHILE")     { Symbol(TOK_WHILE);                                    }
 ("if"|"IF")           { Symbol(TOK_IF);                                       }
 ("else"|"ELSE")       { Symbol(TOK_ELSE);                                     }
-("false"|"FALSE")     { Vector(TOK_CONSTANT, TYPE_bit, "0", 1);        }
+("false"|"FALSE")     { Vector(TOK_CONSTANT, TYPE_bit, "false", 1);        }
 ("var"|"VAR")         { Symbol(TOK_VAR);                                      }
 ("const"|"CONST")     { constantdeclaration = 1; Symbol(TOK_CONST);}
-("true"|"TRUE")       { Vector(TOK_CONSTANT, TYPE_bit, "1", 1);        }
+("true"|"TRUE")       { Vector(TOK_CONSTANT, TYPE_bit, "true", 1);        }
 ("module"|"MODULE")   { Symbol(TOK_MODULE);				     }
 ("any"|"ANY")         { Vector(TOK_ANY, TYPE_int,  "-1", 2);               }
 ("bat"|"BAT")         { Vector(TOK_BAT,TYPE_bat,"bat",0);		      }
@@ -391,6 +391,7 @@ int bindId(str nme){
 	for( i=0; typeNames[i]; i++)
 	if( strcmp(typeNames[i],nme)==0){ fnd++; break;}
 	if( ismapped(nme)) return;
+	if( *nme =='$') return;
 	if(fnd==0 &&  fndId(nme) == 0 && constantdeclaration==0)
 	printf("\t%s:= bbp.bind(\"%s\");\n",nme,nme);
 }
@@ -417,7 +418,7 @@ char *bindFcn(str nme){
 		break;
 	case '{':
 		nme[strlen(nme)-1]=0;
-		sprintf(buffer,"pump.%s(", nme+1);
+		sprintf(buffer,"group.%s(", nme+1);
 		break;
 	case '(':
 		nme[strlen(nme)-1]=0;
@@ -616,11 +617,11 @@ proc_name:
 			break;
 		case '{':
 			$1.val[strlen($1.val)-1]=0;
-			printf("function %s_pump(", $1.val-1);
+			printf("function group.%s(", $1.val+1);
 			break;
 		case '(':
 			$1.val[strlen($1.val)-1]=0;
-			printf("function %s_inplace(", $1.val-1);
+			printf("function %s_inplace(", $1.val+1);
 			break;
 		default: printf("function %s(",$1.val);
 		}
@@ -772,16 +773,16 @@ multiplex_comma: ',' |  '~'
 multiplex_expression:
       multiplex_term multiplex_comma multiplex_term
 	{ $$.val= newName();
-	printf("\t%s:= M2m.batconstruct2(%s,%s);\n", $$.val, $1.val, $3.val);}
+	printf("\t%s:= fill(%s,%s);\n", $$.val, $1.val, $3.val);}
     | multiplex_term
-	{ $$.val= newName();
-	printf("\t%s:= M2m.batconstruct1(%s);\n", $$.val, $1.val);}
+	/* { $$.val= newName();
+	printf("\t%s:= M2m.batconstruct1(%s);\n", $$.val, $1.val);}*/
 
 multiplex_term:
         bat_expression
     |   expression '?' bat_expression ':' bat_expression
 	{$$.val = newName();
-	 printf("\t%s := M2m.ifthen(%s,%s,%s);\n",$$.val,
+	 printf("\t%s := ifthenelse(%s,%s,%s);\n",$$.val,
 		$1.val,$3.val,$5.val);
 	}
 
@@ -841,7 +842,7 @@ fcn_hdr:
     |  TOK_SETAGGR factor1 '}'
 	{ char stmt[1024];
 	  $2.val =emitExpr($2.val);
-	  sprintf(stmt,"mil.pump_deref(%s,",$2.val);
+	  sprintf(stmt,"mil.group_deref(%s,",$2.val);
 	  $$.val= GDKstrdup(stmt);
 	}
     |  TOK_BAT

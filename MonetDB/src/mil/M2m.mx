@@ -90,7 +90,24 @@ The files are processed as one big program
 
 mil_code_prelude(){
 	printf("# Mil compiler Version 1.0)\n");
-        printf("# Copyright (c) 1993-2001, CWI. ");
+        printf("# Copyright (c) 1993-2002, CWI. ");
         printf("All rights reserved.\n");
 	printf("\n# Predefined code segment\n");
+	advice();
+}
+/* The compiler does not compile everything */
+char *hlp[]={
+"The compiler can not guarantee an accurate compilation,",
+"because MIL unlike MAL is a dynamically typed language.",
+"A few guidelines to maximize usefullness.",
+"- make the type of variables explicit, in particular 'nil'",
+"- upon advice of M2m to remap identifiers, change it in your program directly",
+"- positional arguments, ie $1,$2,..., can not be compiled in isolation",
+"","","Perhaps someone will develop a complete MIL interpreter",
+"on top of the MAL kernel in the future",
+0
+};
+advice(){
+	int i;
+	for(i=0; hlp[i]; i++) printf("#%s\n",hlp[i]);
 }

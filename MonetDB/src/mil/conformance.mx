@@ -25,6 +25,7 @@ struct{
 	str v5name;
 	int used;
 } idmap[]={
+{"synced",		"isSynced",0},
 {"col_name",		"bbp.setColumn",0},
 {"name",		"bbp.setRole",0},
 {"rename",		"bbp.setName",0},
@@ -42,9 +43,9 @@ struct{
 {"set",			"bat.setSet,isaSet",0},
 {"access",		"bat.{setReadMode,setAppendMode,setWriteMode,setAccess}",0},
 {"access",		"bat.{hasReadMode,hasAppendMode,hasWriteMode,hasAccess}",0},
-{"ordered",		"bat.isOrdered",0},
+{"ordered",		"bat.isSorted",0},
 {"seqbase",		"bat.setSequenceBase",0},
-{"batsize",		"bat.getSize",0},
+{"batsize",		"bat.getBatSize",0},
 {"htype",		"bat.getType",0},
 {"ttype",		"bat.getType",0},
 {"enum_create",		"enum.{smallMap,largeMap,map}",0},
@@ -55,9 +56,11 @@ struct{
 {"enum_print",		"enum.printEnum",0},
 {"enum_drop",		"enum.destroy",0},
 {"isenum",		"enum.isEnum",0},
-{"and",			"&&",0},
-{"or",			"||",0},
-{"not",			"!",0},
+{"CTgroup",		"group",0},
+{"CTrefine",		"refine",0},
+{"CTderive",		"derive",0},
+{"CTregroup",		"regroup",0},
+{"CTsubhisto",		"subhisto",0},
 {0,0,0}
 };
 
