@@ -150,6 +150,8 @@ proc fetch(bat[any::1,any::2] b, bat[void,any] sel) : bat[any::1,any::2] {
 }
 
 proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) : bat[oid,oid] {
+    if ((l.count() = 0) or (r.count() = 0)) { return l.join(r); }
+
     if (not(l.ordered()) or not(r.reverse().ordered())) {
         ERROR("htordered_unique_thetajoin(): ordered l.head and r.tail columns (iters) expected.\n");
     }
