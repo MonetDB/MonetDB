@@ -37,6 +37,7 @@ m_export void 		yylogout();
 
 static oid yyid = 1, yyoid = 1;
 YYSTREE	 yyroot = NULL;
+static YYSTREE nfree = NULL;
 
 void yylogstart() { 
 	yyroot = NULL;
@@ -76,7 +77,7 @@ void checklist(YYSTREE t) {
 	    if (t2 == t) {
 		t1 = yyroot;
 		while(t1 != t2) {
-			fprintf(stderr, "%d ", (int) t1);
+			fprintf(stderr, "%ld ", (long) t1);
 			t1 = t1->next;
 		}
 		GDKerror("double present %d!!\n", t);
@@ -93,11 +94,16 @@ YYSTREE yylognode( int tok, int val) {
 	return yyroot = t;
 }
 
-
 YYSTREE yynode( int tok, int val) {
 	YYSTREE t;
 
-	t =(YYSTREE) GDKmalloc(sizeof(*t));
+  	MT_set_lock(monet_critical, "yynode");
+	t = nfree;
+	if (t)
+		nfree = t->nfree;
+	else
+		t =(YYSTREE) GDKmalloc(sizeof(*t));
+        MT_unset_lock(monet_critical, "yynode");
 	memset(t, 0, sizeof(*t));
 	t->token = tok;
 	t->yyval.vtype = val;
@@ -111,7 +117,10 @@ YYSTREE yynode( int tok, int val) {
 	{
 		GDKfree((@1)->yyval.val.pval);
 	}
-	GDKfree(@1);
+  	MT_set_lock(monet_critical, "yykill");
+	@1->nfree = nfree;
+	nfree = @1;
+        MT_unset_lock(monet_critical, "yykill");
 @
 
 @-

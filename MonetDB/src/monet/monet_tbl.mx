@@ -278,6 +278,11 @@ an entering writer goes to sleep on a semaphore ('barrier') and is woken
 up by the last reader. Crucial counter variables are protected by a 
 short-term lock ('protector').
 @c
+#define TBL_set_readlock() 					
+#define TBL_unset_readlock() 					
+#define TBL_set_writelock() 					
+#define TBL_unset_writelock() 					
+/*
 #define TBL_set_readlock() {					\
     MT_set_lock(TBL_writelock, "TBL_set_readlock(writelock)");	\
     MT_set_lock(TBL_protector, "TBL_set_readlock(protector)");	\
@@ -301,6 +306,7 @@ short-term lock ('protector').
     TBL_writer = 0;						\
     MT_unset_lock(TBL_protector, "TBL_unset_writelock(protector)");\
     MT_unset_lock(TBL_writelock, "TBL_unset_writelock");	}
+*/
 
 
 @+ Dynamic Loading  
@@ -1472,7 +1478,7 @@ xit:	if (level==0) {
 void TBL_drop(Client client, str module, int level) {
 	Client father = client;
 	char *p;
-	oid mid;
+	oid mid = TBL_module_lookup(module);
 
 	/* Go ahead with module drop: first execute the MIL exit script
          */
@@ -1492,17 +1498,22 @@ of an identifier.
 @c
 char *TBL_search(str s, int *t, int command_hint) {
 	char *assignop=NULL, *p, *v, *name = s, *ret = 0;
-	Client c, lookup = ll_client;
-	int tpe = ATOMindex(s);
+	Client c = ll_client;
 
-	if (tpe >= 0) {
-	    str atm = BATatoms[tpe].name; 
-	    strcpy(s, atm);
-	    *t = TOK_ATOM;
-	    return atm;
-	}
 	TBL_set_readlock();
-again:	c = lookup;
+	if ( name != NULL ) {
+	    p = BUNfnd(c->atomtbl, name);
+	    if (p != NULL) {
+		oid tpe = *((oid *) BUNtail(c->atomtbl, p));
+	    	str atm = BATatoms[tpe].name; 
+	    	strcpy(s, atm);
+	    	*t = TOK_ATOM;
+		TBL_unset_readlock();
+	    	return atm;
+	    }
+	}
+
+again:	
 	if ( name != NULL ) {
 	    p = BUNfnd(c->fcntbl, name);
 	    if (p != NULL) {
@@ -1532,15 +1543,16 @@ We recognize '+=' (and similar for other operators than +) as an TOK_ASSIGNOP.
 		c = ll_client;
 		goto again;
 	}
+	TBL_unset_readlock();
+
 @-
 if not found, the default is to say it is an identifier. 
 However, with the command-hint passed, we guess it is a command.
 @c
-	if (ret == NULL && command_hint && tpe < 0) {
+	if (ret == NULL && command_hint) {
 		ret = s;
 		*t = TOK_COMMAND;
 	}
-	TBL_unset_readlock();
 	return ret;
 }
 
@@ -1554,7 +1566,6 @@ int TBL_normal_resolve(str name, int argc, ValPtr argv,
                        monet_sig_t *sig, Cntxt stk)
 {
 	int	ret = -1;
-	str	v;
 	paramcheck_t pt;
         Client  c, lookup;
  
@@ -1572,8 +1583,10 @@ Try to resolve the function to an address.
 
 	    (void) BATprepareHash(b);
 	    HASHloop_str(b, b->hhash, i, name) {
+		str v;
 		oid fid = *BUNtailptr(oid, b, v, i);
 
+		(void)v;
 		BUNfndOID(p,TBL_fcn_tpe,&fid);
 		tpe = *(int*) BUNtloc(TBL_fcn_tpe,p);
 
@@ -2119,7 +2132,7 @@ given name are deleted.
 void TBL_delproc(Client client, str nme, int pid, int lock) {
    	int xx, yy = TOK_PROC;
         BAT *sb, *tb, *bb, *cb = BATmirror(client->fcntbl);
-	BUN p,q,r;
+	BUN p,q;
 
   
 	if (lock) TBL_M_lock(client);

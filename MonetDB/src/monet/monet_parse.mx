@@ -64,8 +64,11 @@ char *LEXNAME(Y)           { if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
 				THRprintf(GDKerr, "%s %s\n", LEXNAME(Y), yytext);\
 			     } return Y; }
 #ifdef FLEX_SCANNER
+/*
 #define YY_INPUT(buf,result,max_size)	{ int c = ll_getch();\
                            result = (c==0) ? YY_NULL: (buf[0] = (char)c,1);}
+*/
+#define YY_INPUT(buf,result,max_size)	{ result = ll_getstring(buf,max_size); }
 #else
 #undef input
 #define input()		(yytchar = yysptr > yysbuf?U(*--yysptr):ll_getch())
@@ -313,6 +316,40 @@ int ll_getch() {
         }
         if (ch) ll_client->cptr++;
         return ch;
+}
+int ll_getstring(char *buf, int max_size) {
+	int i = max_size;
+	char ch;
+
+	while(i > 0){
+        	if (ll_client == 0) {
+                	GDKfatal("no client for lexical.\n");
+        	}
+   		do {
+        		ch = *ll_client->cptr;
+		} while (ch == 0 && ll_pop());
+
+        	if (ch == '\n') {
+                    if (ll_client->listing) {
+                    	if (GDKdebug&16384 || !ll_stack) {
+                       		*ll_client->cptr = 0;
+                       		fputs(ll_client->cline, ll_client->fdout);
+                       		fputc('\n', ll_client->fdout);
+                       		fflush(ll_client->fdout);
+                       		*ll_client->cptr = '\n';
+		    	}
+                    }
+                    ll_client->cline = ll_client->cptr + 1;
+        	}
+		if(ch){
+	 	    ll_client->cptr++;
+		    *buf++ = ch;
+		    i--;
+		} else {
+		    break;
+		}
+	}
+	return max_size-i;
 }
 
 

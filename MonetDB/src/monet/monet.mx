@@ -175,6 +175,7 @@ typedef struct YYS {
         } free;
 	unsigned short  cnt:6, token:10;     
 	unsigned short  dealloc;
+	struct YYS *nfree;
 } yystree, *YYSTREE;
 
 #define YYDEALLOC_BAT	1
