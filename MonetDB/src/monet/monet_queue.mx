@@ -524,7 +524,7 @@ void doRequest(Thread t, Request preference){
         res.vtype= TYPE_void;
         res.val.ival = 0;
         while (status == 0) {
-                q = (Request) getRequest(preference);
+                q = getRequest(preference);
                 status = handleRequest(t, q, &res);
                 if (preference &&  q == preference) break;
         }
