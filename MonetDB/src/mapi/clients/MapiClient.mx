@@ -342,7 +342,10 @@ int main(int ac, char **av) {
 			debug=1;
 			if (optarg){ 
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "gdk_debug", optarg );
+					opt_cmdline, "mapi_debug", optarg );
+			} else {
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "mapi_debug", "1" );
 			}
 			break;
 		case 'e':
@@ -355,7 +358,7 @@ int main(int ac, char **av) {
 			break;
 		case 'p':
 			setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "port", optarg );
+					opt_cmdline, "mapi_port", optarg );
 			break;
 		case '?':
 			usage(prog);
