@@ -27,5 +27,10 @@ do
 	$jdbcclient -f $script 2>&1 \
 		| grep -v "affected row" \
 		| grep -v "Operation successful" \
+		| sed -r \
+			-e "s/^\+([-=]+\+)+$//g" \
+			-e "s/^\|(.+)\|$/\1/g" \
+			-e "/^$/d" \
+			-e "s/([0-9]+) rows/(\1 rows)\n/g" \
 		| diff -ubBw expected/`basename $script .sql`.out -
 done
