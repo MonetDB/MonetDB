@@ -199,7 +199,6 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	setFunctionId(p, GDKstrdup(name));
 	k = newVariable(m, newTmpName('M',0),TYPE_any);
 	p->argv[0]= k;
-#define DEBUG_MULTIPLEX
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug) 
 	printf("multiplex against operator %s (original %s)\n",
@@ -486,9 +485,8 @@ The algorithm consists of two phases: phase one deals with
 collecting the relevant information, phase two is the actual
 code construction.
 @= malInstr
-	q= newInstruction(ASSIGNsymbol);
-	q->argv[0]= @2 ;
-	q->barrier= EXITsymbol;
+	q= newInstruction(EXITsymbol);
+	pushReturn(m,q,@2);
 	pushInstruction(m,q);
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -547,7 +545,8 @@ in the new mal block.
 	q= newInstruction(FUNCTIONsymbol);
 	sprintf(fcnname,"multiplex%d",fcnnr++);
 	setFunctionId(q, GDKstrdup(fcnname));
-	fcnid= q->argv[0]= newVariable(m,GDKstrdup(fcnname), refType);
+	fcnid= newVariable(m,GDKstrdup(fcnname), refType);
+	pushReturn(m,q,fcnid);
 @-
 Beware, the operator constant (arg=1) is passed along as well,
 because in the end we issue a recursive function call that should
@@ -575,24 +574,19 @@ find the actual arguments at the proper place of the callee.
 	pushInstruction(m,q);
 	
 /* catch   MALexception and propagate it */
-	q= newInstruction(ASSIGNsymbol);
-	q->barrier = CATCHsymbol;
-	k= q->argv[0]= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
+	q= newInstruction(CATCHsymbol);
+	k= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
+	pushReturn(m,q,k);
 	pushInstruction(m,q);
 /* propagate exception */
-	q= newInstruction(ASSIGNsymbol);
-	q->barrier = RAISEsymbol;
-	q->argv[0]=k;
-	q->argv[1]= newConstant(m,TYPE_str,GDKstrdup("Failed to create bat"),TRUE);
-	q->argc=2;
+	q= newInstruction(RAISEsymbol);
+	pushReturn(m,q,k);
+	pushArgument(m,q, newConstant(m,TYPE_str,GDKstrdup("Failed to create bat"),TRUE));
 	pushInstruction(m,q);
 /* early exit */
-	q= newInstruction(ASSIGNsymbol);
-	q->barrier= RETURNsymbol;
-	q->argv[0]= getInstrPtr(mb,0)->argv[0];
-	q->argv[1]= resB ;
-	q->argc=2;
-	q->retc=1;
+	q= newInstruction(RETURNsymbol);
+	pushReturn(m,q, getArg(getInstrPtr(mb,0),0));
+	pushArgument(m,q,resB);
 	pushInstruction(m,q);
 /* return to caller */
 	@:malInstr(EXIT,k)@	
@@ -602,11 +596,10 @@ find the actual arguments at the proper place of the callee.
 		q= newInstruction(ASSIGNsymbol);
 		setModuleId(q, GDKstrdup("bat"));
 		setFunctionId(q, GDKstrdup("setSequenceBase"));
-		q->argv[0]= newTmpVariable(m,TYPE_any);
-		q->argv[1]= resB;
-		q->argv[2]= newConstant(m,TYPE_oid,GDKstrdup("nil"),TRUE);
+		pushReturn(m,q, newTmpVariable(m,TYPE_any));
+		pushArgument(m,q, resB);
+		pushArgument(m,q, newConstant(m,TYPE_oid,GDKstrdup("0@0"),TRUE));
 		nilVar=newConstant(m,TYPE_void,GDKstrdup("nil"),TRUE);
-		q->argc= 3;
 		pushInstruction(m,q);
 	}
 	
@@ -615,9 +608,9 @@ find the actual arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("bat"));
 	setFunctionId(q, GDKstrdup("getRole"));
-	q->argv[0]= x= newVariable(m,GDKstrdup("x"),TYPE_str);
-	q->argv[1]= resB;
-	q->argc=2;
+	x= newVariable(m,GDKstrdup("x"),TYPE_str);
+	pushReturn(m,q,x);
+	pushArgument(m,q,resB);
 	pushInstruction(m,q);
 */
 
@@ -625,26 +618,25 @@ find the actual arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("bat"));
 	setFunctionId(q, GDKstrdup("setRole"));
-	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->argv[1]= resB;
-	q->argv[2]= x;
-	q->argv[3]= newConstant(m,TYPE_str,GDKstrdup(functionName(p)),FALSE);
-	q->argc=4;
+	pushReturn(m,q newTmpVariable(m,TYPE_any));
+	pushArgument(m,q,resB);
+	pushArgument(m,q,x);
+	pushArgument(m,q, newConstant(m,TYPE_str,GDKstrdup(functionName(p)),FALSE));
 	pushInstruction(m,q);
 */
 
 	/* barrier (mloop,h,r):= newIterator(refBat); */
-	q= newInstruction(ASSIGNsymbol);
+	q= newInstruction(BARRIERsymbol);
 	setModuleId(q, GDKstrdup("chopper"));
 	setFunctionId(q, GDKstrdup("newIterator"));
-	q->barrier = BARRIERsymbol;
-	q->argv[0]= mloop= newVariable(m,GDKstrdup("mloop"),TYPE_lng);
-	hvar= q->argv[1] = newVariable(m,GDKstrdup("h"),TYPE_any);
+	mloop= newVariable(m,GDKstrdup("mloop"),TYPE_lng);
+	pushReturn(m,q,mloop);
+	hvar= newVariable(m,GDKstrdup("h"),TYPE_any);
+	pushReturn(m,q,hvar);
 	sprintf(name,"B%d",rIndex);
-	tvar= q->argv[2] = newVariable(m,GDKstrdup(name),TYPE_any);
-	q->argv[3] = refBat;
-	q->retc= 3;
-	q->argc= 4;
+	tvar= newVariable(m,GDKstrdup(name),TYPE_any);
+	pushReturn(m,q,tvar);
+	pushArgument(m,q,refBat);
 	pushInstruction(m,q);
 
 	/* $1:= bat.find(Ai,h) or constant */
@@ -652,34 +644,32 @@ find the actual arguments at the proper place of the callee.
 	if( isaBatType(l= getArgType(mb,pci,i)) && i!= rIndex){
 		q= newInstruction(ASSIGNsymbol);
 		sprintf(name,"B%d",i);
-		q->argv[0]= newVariable(m, GDKstrdup(name), getTailType(l));
+		pushReturn(m,q,newVariable(m, GDKstrdup(name), getTailType(l)));
 		setModuleId(q, GDKstrdup("algebra"));
 		sprintf(name,"A%d",i);
-		q->argv[1]= newVariable(m,GDKstrdup(name),l);
+		pushArgument(m,q, newVariable(m,GDKstrdup(name),l));
 /*
 		if( nilVar){
 			setFunctionId(q, GDKstrdup("fetch"));
-			q->argv[2]= mvar;
+			pushArgument(m,q,mvar);
 		} else 
 */ 		{ setFunctionId(q, GDKstrdup("find"));
-			q->argv[2]= hvar;
+			pushArgument(m,q,hvar);
 		}
-		q->argc=3;
 		pushInstruction(m,q);
 #ifdef TRACE_MULTIPLEX
 	q= newInstruction(ASSIGNsymbol);
-	q->argv[0]= newTmpVariable(m,TYPE_any);
+	pushReturn(m,q, newTmpVariable(m,TYPE_any));
 	setFunctionId(q, GDKstrdup("print"));
-	q->argv[1] = hvar;
-	q->argc=2;
+	pushArgument(m,q,hvar);
 	pushInstruction(m,q);
 #endif
 	}
 
-        /* cr:= mod.CMD($1,...,$n); */
+	/* cr:= mod.CMD($1,...,$n); */
 	q= newInstruction(ASSIGNsymbol);
-	cr= q->argv[0]= newVariable(m,GDKstrdup("cr"),
-			getTailType(getArgType(m,p,0)) );
+	cr= newVariable(m,GDKstrdup("cr"), getTailType(getArgType(m,p,0)) );
+	pushReturn(m,q,cr);
 	setModuleId(q, GDKstrdup(moduleName(p)));
 	setFunctionId(q, GDKstrdup(functionName(p)));
 	for(i=2;i<pci->argc;i++)
@@ -694,36 +684,33 @@ find the actual arguments at the proper place of the callee.
 
 #ifdef TRACE_MULTIPLEX
 	q= newInstruction(ASSIGNsymbol);
-	q->argv[0]= newTmpVariable(m,TYPE_any);
+	pushReturn(m,q,newTmpVariable(m,TYPE_any));
 	setFunctionId(q, GDKstrdup("print"));
-	q->argv[1] = hvar;
-	q->argc=2;
+	pushArgument(m,q,hvar);
 	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
-	q->argv[0]= newTmpVariable(m,TYPE_any);
+	pushReturn(m,q,newTmpVariable(m,TYPE_any));
 	setFunctionId(q, GDKstrdup("print"));
-	q->argv[1] = cr;
-	q->argc=2;
+	pushArgument(m,q,cr);
 	pushInstruction(m,q);
 #endif
 
 
-        /* insert(resB,h,cr); */
+	/* insert(resB,h,cr); */
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("bat"));
 	setFunctionId(q, GDKstrdup("insert"));
-	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->argv[1]= resB;
-	q->argv[2]= hvar;
-	q->argv[3]= cr;
-	q->argc=4;
+	pushReturn(m,q,newTmpVariable(m,TYPE_any));
+	pushArgument(m,q,resB);
+	pushArgument(m,q,hvar);
+	pushArgument(m,q,cr);
 	pushInstruction(m,q);
 
 
 /* catch   MALexception and ignore them */
-	q= newInstruction(ASSIGNsymbol);
-	q->barrier = CATCHsymbol;
-	k= q->argv[0]= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
+	q= newInstruction(CATCHsymbol);
+	k= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
+	pushReturn(m,q,k);
 	pushInstruction(m,q);
 
 #ifdef TRACE_MULTIPLEX
@@ -732,58 +719,49 @@ find the actual arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("io"));
 	setFunctionId(q, GDKstrdup("print"));
-	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->argv[1]= zz;
-	q->argc=2;
+	pushReturn(m,q,newTmpVariable(m,TYPE_any));
+	pushArgument(m,q,zz);
 	pushInstruction(m,q);
 	/* z:= inspect.stkFrame(); print(z) */
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("mdb"));
 	setFunctionId(q, GDKstrdup("getStackFrame"));
-	q->argv[0]= zz= newVariable(m,GDKstrdup("stkFrame"),newBatType(TYPE_str,TYPE_str));
-	q->argc=1;
+	zz= newVariable(m,GDKstrdup("stkFrame"),newBatType(TYPE_str,TYPE_str));
+	pushReturn(m,q,zz);
 	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("io"));
 	setFunctionId(q, GDKstrdup("print"));
-	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->argv[1]= zz;
-	q->argc=2;
+	pushReturn(m,q,newTmpVariable(m,TYPE_any));
+	pushArgument(m,q,zz);
 	pushInstruction(m,q);
 	}
 	
 	/* #ignore errors unless you are debugging; */
 	q= newInstruction(ASSIGNsymbol);
-	q->argv[0]= newTmpVariable(m,TYPE_any);
+	pushReturn(m,q,newTmpVariable(m,TYPE_any));
 	setFunctionId(q, GDKstrdup("raise"));
-	q->argv[1] = k;
-	q->argc=2;
+	pushArgument(m,q,k);
 	pushInstruction(m,q);
 #endif
 	@:malInstr(EXIT,k)@	
 	/* redo (mloop,h,r):= hasMoreElements(refBat); */
-	q= newInstruction(ASSIGNsymbol);
+	q= newInstruction(REDOsymbol);
 	setModuleId(q, GDKstrdup("chopper"));
 	setFunctionId(q, GDKstrdup("hasMoreElements"));
-	q->barrier = REDOsymbol;
-	q->argv[0]= mloop;
-	q->argv[1] = hvar; 
-	q->argv[2] = tvar;
-	q->retc= 3;
-	q->argv[3] = refBat;
-	q->argc= 4;
+	pushReturn(m,q,mloop);
+	pushReturn(m,q,hvar); 
+	pushReturn(m,q,tvar);
+	pushArgument(m,q,refBat);
 	pushInstruction(m,q);
 	@:malInstr(EXIT,mloop)@	/* redo mloop; */
 
-	q= newInstruction(ASSIGNsymbol);
-	q->barrier= RETURNsymbol;
-	q->argv[0]= getInstrPtr(mb,0)->argv[0];
-	q->argv[1]= resB ;
-	q->argc=2;
-	q->retc=1;
+	q= newInstruction(RETURNsymbol);
+	pushReturn(m,q,getArg(getInstrPtr(mb,0), 0));
+	pushArgument(m,q,resB);
 	pushInstruction(m,q);
 	q= newInstruction(ENDsymbol);
-	q->argv[0]=fcnid;
+	pushReturn(m,q,fcnid);
 	pushInstruction(m,q);
 @-
 It is time to type check the code and request for any optimization.
@@ -806,7 +784,6 @@ execute the new routine and to return its value.
 Upon exit, we set the return value of the enclosing instruction
 and leave it up to the interpreter to deal with exception handling.
 @c
-	/* retval=  &stk->stk[pci->argv[0]];*/
 	stk->pcup = getPC(mb,pci);
 	ret= runMAL(getClient(),m,1,mb,stk,pci);
 @-

@@ -275,7 +275,7 @@ str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	name = (str) getArgValue(stk,pci,1);
 	if( isIdentifier(name))
 			return throwMessage( "bbp.deposit","identifier expected");
-	v = &stk->stk[pci->argv[2]];
+	v = &stk->stk[getArg(pci,2)];
 	flg= findVariable(box->sym,name)>=0;
 	if(depositBox(box,name,v) ) 
 	return throwException(MALEXCEPTION,"bbp.deposit",
@@ -310,7 +310,7 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 
 	(void) mb; /* fool compiler */
-	lhs= &stk->stk[pci->argv[0]];
+	lhs= &stk->stk[getArg(pci,0)];
 	name = (str) getArgValue(stk,pci,1);
 	if( isIdentifier(name))
 			return throwMessage( "bbp.bind","identifier expected");
@@ -369,7 +369,7 @@ str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	name = (str) getArgValue(stk,pci,1);
 	if( isIdentifier(name))
 			return throwMessage( "bbp.take","identifier expected");
-	v = &stk->stk[pci->argv[0]];
+	v = &stk->stk[getArg(pci,0)];
 	if(takeBox(box,name,v, (int) getArgType(mb,pci,0)))  {
 		int bid = BBPindex(name);
 		if( bid > 0 && (v->vtype== TYPE_any || v->vtype==TYPE_bat))  {
@@ -519,10 +519,10 @@ str CMbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return throwException(MALEXCEPTION,"bbp.toString",
 			"failed to take value '%s' from box",nme);
 	v= &box->val->stk[i];
-	garbageElement(&stk->stk[pci->argv[0]]);
+	garbageElement(&stk->stk[getArg(pci,0)]);
 	if( VALconvert(TYPE_str,v) == ILLEGALVALUE) 
 	return throwMessage("bbp.toString","illegal value conversion");
-	VALcopy(&stk->stk[pci->argv[0]], v);
+	VALcopy(&stk->stk[getArg(pci,0)], v);
 	return MAL_SUCCEED;
 }
 
@@ -534,7 +534,7 @@ str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb; /* fool compiler */
 	@:OpenBox(iterator)@
 	cursor= (lng*) getArgValue(stk,pci,0);
-	v= &stk->stk[pci->argv[1]];
+	v= &stk->stk[getArg(pci,1)];
 	if( nextBoxElement(box, cursor, v))
 		return throwMessage("bbp.iterator","failed");
 	return MAL_SUCCEED;

@@ -264,10 +264,8 @@ BPTclose(){
 				partitions[i].cap);
 		}
         stream_close(f);
-        if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) {
-            GDKfree(boxfile); GDKfree(boxfilebak);
-			return throwMessage("partitions.close","failed to unlink partitions box");
-        }
+        (void) link(boxfilebak,boxfile);
+		(void) unlink(boxfilebak);
 		GDKfree(boxfile);
 		GDKfree(boxfilebak);
 	}
