@@ -444,7 +444,7 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 		BATkey(bn[k],TRUE);
 		BATkey(BATmirror(bn[k]),FALSE);
 		bn[k]->hsorted = GDK_SORTED;
-		bn[k]->tsorted = FALSE;
+		bn[k]->tsorted = ((k==0)?GDK_SORTED:FALSE);
 		bn[k]->hdense = TRUE;
 		bn[k]->tdense = FALSE;
 	}
