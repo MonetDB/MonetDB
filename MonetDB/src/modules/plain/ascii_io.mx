@@ -167,16 +167,8 @@ ptr *ADT_fromStr( int type, char *s){
 }
 
 static
-char *ADT_toStr( int type, ptr a){
-	int l = 0;
-	char *res = NULL;
-/*
-        if (type == TYPE_str)
-                res = GDKstrdup((char*)a);
-        else
-*/
-                BATatoms[type].atomToStr( &res, &l, a);
-	return res;
+int ADT_toStr( char **buf, int *len, int type, ptr a){
+        return (int)BATatoms[type].atomToStr( buf, len, a);
 }
 
 static char *sep_dup( char *sep ){
@@ -398,21 +390,19 @@ int insert_line( ascii *as, char *line ){
 }
 
 static INLINE
-int dump_line( ascii_io *fmt, stream *fd, int nr_attrs, int id ){
-	char *str;
+int dump_line( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_attrs, int id ){
 	int i;
 	for( i = 0; i<nr_attrs; i++){
-		str = ADT_toStr(fmt[i].adt, (char*)bun_tail(fmt[i].c,id));
-		(void)fd->write( fd, str, 1, strlen(str) );
+		int l =
+		 ADT_toStr(buf, len, fmt[i].adt, (char*)bun_tail(fmt[i].c,id));
+		(void)fd->write( fd, *buf, 1, l );
 		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
-		GDKfree(str);
 	}
 	return 0;
 }
 
 static INLINE
-int output_line( ascii_io *fmt, stream *fd, int nr_attrs, ptr id ){
-	char *str;
+int output_line( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_attrs, ptr id ){
 	int i;
 	for( i = 0; i<nr_attrs; i++){
 		fmt[i].p = BUNfnd( fmt[i].c, id );
@@ -421,10 +411,10 @@ int output_line( ascii_io *fmt, stream *fd, int nr_attrs, ptr id ){
 	}
 	if ( i == nr_attrs ){
 	    for( i = 0; i<nr_attrs; i++){
-		str = ADT_toStr(fmt[i].adt, (char*)BUNtail(fmt[i].c,fmt[i].p));
-		(void)fd->write( fd, str, 1, strlen(str) );
+		int l = ADT_toStr(buf, len, fmt[i].adt, 
+			(char*)BUNtail(fmt[i].c,fmt[i].p));
+		(void)fd->write( fd, *buf, 1, l );
 		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
-		GDKfree(str);
 	    }
 	}
 	return 0;
@@ -479,29 +469,39 @@ int load_file( ascii *as, stream *fd ){
 static
 int dump_file( ascii *as, stream *fd ){
         int i = 0;
+	int len = BUFSIZ;
+	char *buf = GDKmalloc(len);
 	for( i=0; i<as->nr; i++ ){
-		if (dump_line( as->format, fd, as->nr_attrs, i ) < 0)
+		if (dump_line( &buf, &len, as->format, fd, as->nr_attrs, i )<0){
+			GDKfree(buf);
 			return -1;
+		}
 		if (ascii_io_debug && (i%1000000) == 0)
 			fprintf(GDKerr, "dumped %d lines\n", i);
         } 
+	GDKfree(buf);
 	return 0;
 }
 
 static
 int output_file( ascii *as, BAT *order, stream *fd ){
+	int len = BUFSIZ; 
+	char *buf = GDKmalloc(len);
 	BUN p,q;
         int i = 0;
 	as->nr = BATcount(order);
 	
 	BATloop( order, p, q){
 		ptr h = BUNhead(order, p);
-		if (output_line( as->format, fd, as->nr_attrs, h ) < 0)
+		if(output_line( &buf, &len,as->format, fd, as->nr_attrs, h )<0){
+			GDKfree(buf);
 			return -1;
+		}
 		i++;
 		if (ascii_io_debug && (i%1000000) == 0)
 			fprintf(stderr, "dumped %d lines\n", i);
         } 
+	GDKfree(buf);
 	return i;
 }
 
