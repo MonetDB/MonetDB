@@ -139,9 +139,10 @@ static void
 timerEnd(void)
 {
 	t1 = gettime();
-	if (mark )
-		fprintf(toConsole, "%s %d usec %s\n",
-			mark, t1 - t0, mark2?mark2:"");
+	if (mark) {
+		fprintf(toConsole, "%s %d.%03d msec %s\n", mark,
+			(t1 - t0) / 1000, (t1 - t0) % 1000, mark2?mark2:"");
+	}
 }
 
 static int
@@ -159,449 +160,6 @@ doRequest(Mapi mid, const char *buf)
 		return 1;
 	}
 	mapi_close_handle(hdl);
-	return 0;
-}
-
-static void
-showCommands(void)
-{
-	fprintf(toConsole, "?\t - show this message\n");
-	fprintf(toConsole, "!\t - shell escape\n");
-	fprintf(toConsole, "<file\t - read input from file\n");
-	fprintf(toConsole, ">file\t - save response in file\n");
-	fprintf(toConsole, ">\t - response to terminal\n");
-	fprintf(toConsole, "cd\t - change directory\n");
-	/*fprintf(toConsole, "\\r\t- run the buffered command\n");*/
-	/*fprintf(toConsole, "\\c\t- clear the command buffer\n");*/
-	fprintf(toConsole, "\\l\t- line is sent immediately\n");
-	fprintf(toConsole, "\\q\t- terminate session\n");
-}
-
-static int
-doFile(Mapi mid, const char *file)
-{
-	FILE *fp;
-	char *buf = NULL;
-	size_t length;
-	MapiHdl hdl = NULL;
-	MapiMsg rc;
-	int bufsize = 0;
-
-	if ((fp = fopen(file, "r")) == NULL) {
-		fprintf(stderr, "%s: cannot open\n", file);
-		return 1;
-	}
-	timerStart();
-
-	bufsize = BUFSIZ * 64;
-	buf = malloc(bufsize);
-	if (!buf) {
-		fprintf(stderr, "cannot allocate memory for send buffer\n");
-		return 1;
-	}
-		
-	do {
-		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
-			/* end of file */
-			if (hdl == NULL) {
-				/* nothing more to do */
-				free(buf);		
-				return 0;
-			}
-			/* hdl != NULL, we should finish the current query */
-		}
-
-		if (hdl == NULL) {
-			hdl = mapi_query_prep(mid);
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				free(buf);		
-				return 1;
-			}
-		}
-		if (length > 0) {
-			assert(hdl != NULL);
-			mapi_query_part(hdl, buf, length);
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				free(buf);		
-				return 1;
-			}
-		}
-
-		assert(hdl != NULL);
-		/* If the server wants more but we're at the end of
-		   file (length == 0), notify the server that we
-		   don't have anything more.  If the server still
-		   wants more (shouldn't happen accordint to the
-		   protocol) we break out of the loop (via the
-		   continue).  The assertion at the end will then go
-		   off. */
-		if (mapi_query_done(hdl) == MMORE &&
-		    (length > 0 || mapi_query_done(hdl) == MMORE))
-			continue;	       /* get more data */
-
-		switch (mapi_error(mid)) {
-		case MOK:
-			/* everything A OK */
-			break;
-		case MERROR:
-			/* some error, but try to continue */
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			hdl = NULL;
-			continue;
-		case MTIMEOUT:
-			/* lost contact with the server */
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			hdl = NULL;
-			free(buf);		
-			return 1;
-		}
-
-		do {
-			char *reply;
-
-			if ((reply = mapi_result_error(hdl)) != NULL)
-				mapi_explain_result(hdl, stderr);
-			while ((reply = mapi_fetch_line(hdl)) != NULL)
-				fprintf(toConsole, "%s\n", reply);
-		} while ((rc = mapi_next_result(hdl)) == 1);
-		if (rc == MMORE &&
-		    (length > 0 || mapi_query_done(hdl) != MOK))
-			continue; /* get more data */
-
-		switch (mapi_error(mid)) {
-		case MOK:
-			/* everything A OK */
-			break;
-		case MERROR:
-			/* some error, but try to continue */
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			hdl = NULL;
-			continue;
-		case MTIMEOUT:
-			/* lost contact with the server */
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			hdl = NULL;
-			free(buf);		
-			return 1;
-		}
-
-		mapi_close_handle(hdl);
-		hdl = NULL;
-	} while (length > 0);
-	/* reached on end of file */
-	assert(hdl == NULL);
-
-	free(buf);		
-	return 0;
-}
-
-static int
-doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
-{
-	char *line = NULL;
-	char *buf = NULL;
-	size_t length;
-	MapiHdl hdl = NULL;
-	MapiMsg rc;
-
-#ifdef HAVE_LIBREADLINE
-	if (prompt == NULL)
-#endif
-		buf = malloc(BUFSIZ);
-
-	do {
-#ifdef HAVE_LIBREADLINE
-		if (prompt) {
-			rl_completion_func_t *func = NULL;
-			if (buf)
-				free(buf);
-			if (hdl)
-				func = suspend_completion();
-			buf = readline(hdl ? "more>" : prompt);
-			if (hdl)
-				continue_completion(func);
-			/* add a newline to the end since that makes
-			   further processing easier */
-			if (buf) {
-				add_history(buf);
-				length = strlen(buf);
-				buf = realloc(buf, length + 2);
-				buf[length++] = '\n';
-				buf[length] = 0;
-			}
-			line = buf;
-		} else
-#endif
-		{
-#ifndef HAVE_LIBREADLINE
-			if (prompt) {
-				fputs(hdl ? "more>" : prompt, stdout);
-				fflush(stdout);
-			}
-#endif
-			line = fgets(buf, BUFSIZ, fp);
-		}
-		if (line == NULL) {
-			/* end of file */
-			if (hdl == NULL) {
-				/* nothing more to do */
-				return 0;
-			}
-			/* hdl != NULL, we should finish the current query */
-			length = 0;
-		} else
-			length = strlen(line);
-
-		if (length > 0 &&
-		    (!linemode ||
-		     (hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
-			/* test for special commands */
-			while (length > 0 && isspace((int) *line)) {
-				line++;
-				length--;
-			}
-			switch (*line) {
-			case '\0':
-				/* empty line */
-				break;
-			case '\\':
-				switch (line[1]) {
-				case 'q':
-					free(buf);
-					return 0;
-				case 't':
-					mark = "Timer";
-					if (mark2)
-						free(mark2);
-					mark2 = strdup(line + 2);
-					continue;
-				case 'T':
-					mark = NULL;
-					continue;
-				case 'l':
-					linemode = 1;
-					line = "";
-					length = 0;
-					break;
-				case 'b':
-					linemode = 0;
-					continue;
-				default:
-					break;
-				}
-				break;
-			case '<':
-				/* read commands from file */
-				if (line[length - 1] == '\n')
-					line[--length] = 0;
-				if (line[length - 1] == '\r')
-					line[--length] = 0;
-				doFile(mid, line + 1);
-				continue;
-			case '>':
-				/* redirect output to file */
-				line++;
-				length--;
-				if (line[length - 1] == '\n')
-					line[--length] = 0;
-				if (line[length - 1] == '\r')
-					line[--length] = 0;
-				if (toConsole != stdout && toConsole != stderr)
-					fclose(toConsole);
-				if (length == 0 || strcmp(line, "stdout") == 0)
-					toConsole = stdout;
-				else if (strcmp(line, "stderr") == 0)
-					  toConsole = stderr;
-				else if ((toConsole = fopen(line, "w")) == NULL) {
-					toConsole = stdout;
-					fprintf(stderr, "Cannot open %s\n", line);
-				}
-				continue;
-			case 'c': /* cd command? */
-				if (line[1] == 'd' && isspace((int) line[2])) {
-					if (line[length - 1] == '\n')
-						line[--length] = 0;
-					if (line[length - 1] == '\r')
-						line[--length] = 0;
-					if (chdir(line + 3) < 0)
-						perror(line);
-					continue;
-				}
-				break;
-			case '?':
-				showCommands();
-				continue;
-			}
-		}
-
-		if (hdl == NULL) {
-			timerStart();
-			hdl = mapi_query_prep(mid);
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				return 1;
-			}
-		}
-		if (length > 0) {
-			assert(hdl != NULL);
-			mapi_query_part(hdl, line, length);
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				return 1;
-			}
-		}
-		if ((line == NULL ||
-		     (length > 0 && line[length - 1] == '\n')) &&
-		    linemode) {
-			assert(hdl != NULL);
-			/* If the server wants more but we're at the
-			   end of file (line == NULL), notify the
-			   server that we don't have anything more.
-			   If the server still wants more (shouldn't
-			   happen accordint to the protocol) we break
-			   out of the loop (via the continue).  The
-			   assertion at the end will then go off. */
-			if (mapi_query_done(hdl) == MMORE &&
-			    (line != NULL || mapi_query_done(hdl) == MMORE))
-				continue; /* get more data */
-
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				return 1;
-			}
-
-			do {
-				char *reply;
-
-				if ((reply = mapi_result_error(hdl)) != NULL)
-					mapi_explain_result(hdl, stderr);
-				while ((reply = mapi_fetch_line(hdl)) != NULL)
-					fprintf(toConsole, "%s\n", reply);
-			} while ((rc = mapi_next_result(hdl)) == 1);
-			if (rc == MMORE &&
-			    (line != NULL || mapi_query_done(hdl) != MOK))
-				continue; /* get more data */
-
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				return 1;
-			}
-
-			timerEnd();
-			mapi_close_handle(hdl);
-			hdl = NULL;
-		}
-	} while (line != NULL);
-	/* reached on end of file */
-	assert(hdl == NULL);
 	return 0;
 }
 
@@ -1144,6 +702,472 @@ dump_tables(Mapi mid)
 	return rc;
 }
 
+static int
+doFile(Mapi mid, const char *file)
+{
+	FILE *fp;
+	char *buf = NULL;
+	size_t length;
+	MapiHdl hdl = NULL;
+	MapiMsg rc;
+	int bufsize = 0;
+
+	if ((fp = fopen(file, "r")) == NULL) {
+		fprintf(stderr, "%s: cannot open\n", file);
+		return 1;
+	}
+
+	bufsize = BUFSIZ * 64;
+	buf = malloc(bufsize);
+	if (!buf) {
+		fprintf(stderr, "cannot allocate memory for send buffer\n");
+		return 1;
+	}
+
+	timerStart();
+	do {
+		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
+			/* end of file */
+			if (hdl == NULL) {
+				/* nothing more to do */
+				timerEnd();
+				free(buf);
+				return 0;
+			}
+			/* hdl != NULL, we should finish the current query */
+		}
+
+		if (hdl == NULL) {
+			hdl = mapi_query_prep(mid);
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
+				break;
+			case MERROR:
+				/* some error, but try to continue */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				timerEnd();
+				free(buf);
+				return 1;
+			}
+		}
+		if (length > 0) {
+			assert(hdl != NULL);
+			mapi_query_part(hdl, buf, length);
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
+				break;
+			case MERROR:
+				/* some error, but try to continue */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				timerEnd();
+				free(buf);
+				return 1;
+			}
+		}
+
+		assert(hdl != NULL);
+		/* If the server wants more but we're at the end of
+		   file (length == 0), notify the server that we
+		   don't have anything more.  If the server still
+		   wants more (shouldn't happen accordint to the
+		   protocol) we break out of the loop (via the
+		   continue).  The assertion at the end will then go
+		   off. */
+		if (mapi_query_done(hdl) == MMORE &&
+		    (length > 0 || mapi_query_done(hdl) == MMORE))
+			continue;	       /* get more data */
+
+		switch (mapi_error(mid)) {
+		case MOK:
+			/* everything A OK */
+			break;
+		case MERROR:
+			/* some error, but try to continue */
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			hdl = NULL;
+			continue;
+		case MTIMEOUT:
+			/* lost contact with the server */
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			hdl = NULL;
+			timerEnd();
+			free(buf);
+			return 1;
+		}
+
+		do {
+			char *reply;
+
+			if ((reply = mapi_result_error(hdl)) != NULL)
+				mapi_explain_result(hdl, stderr);
+			while ((reply = mapi_fetch_line(hdl)) != NULL)
+				fprintf(toConsole, "%s\n", reply);
+		} while ((rc = mapi_next_result(hdl)) == 1);
+		if (rc == MMORE &&
+		    (length > 0 || mapi_query_done(hdl) != MOK))
+			continue; /* get more data */
+
+		switch (mapi_error(mid)) {
+		case MOK:
+			/* everything A OK */
+			break;
+		case MERROR:
+			/* some error, but try to continue */
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			hdl = NULL;
+			continue;
+		case MTIMEOUT:
+			/* lost contact with the server */
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			hdl = NULL;
+			timerEnd();
+			free(buf);
+			return 1;
+		}
+
+		mapi_close_handle(hdl);
+		hdl = NULL;
+	} while (length > 0);
+	/* reached on end of file */
+	assert(hdl == NULL);
+	timerEnd();
+
+	free(buf);
+	return 0;
+}
+
+static void
+showCommands(void)
+{
+	fprintf(toConsole, "?\t - show this message\n");
+	fprintf(toConsole, "!\t - shell escape\n");
+	fprintf(toConsole, "<file\t - read input from file\n");
+	fprintf(toConsole, ">file\t - save response in file\n");
+	fprintf(toConsole, ">\t - response to terminal\n");
+	fprintf(toConsole, "cd\t - change directory\n");
+	fprintf(toConsole, "\\l\t- line is sent immediately\n");
+	fprintf(toConsole, "\\q\t- terminate session\n");
+	fprintf(toConsole, "\\T\t- toggle timer\n");
+	fprintf(toConsole, "\\Dtable\t- dump table\n");
+/* 	fprintf(toConsole, "\\t\t- toggle interaction trace\n"); */
+}
+
+static int
+doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
+{
+	char *line = NULL;
+	char *buf = NULL;
+	size_t length;
+	MapiHdl hdl = NULL;
+	MapiMsg rc;
+
+#ifdef HAVE_LIBREADLINE
+	if (prompt == NULL)
+#endif
+		buf = malloc(BUFSIZ);
+
+	do {
+#ifdef HAVE_LIBREADLINE
+		if (prompt) {
+			rl_completion_func_t *func = NULL;
+			if (buf)
+				free(buf);
+			if (hdl)
+				func = suspend_completion();
+			buf = readline(hdl ? "more>" : prompt);
+			if (hdl)
+				continue_completion(func);
+			/* add a newline to the end since that makes
+			   further processing easier */
+			if (buf) {
+				add_history(buf);
+				length = strlen(buf);
+				buf = realloc(buf, length + 2);
+				buf[length++] = '\n';
+				buf[length] = 0;
+			}
+			line = buf;
+		} else
+#endif
+		{
+#ifndef HAVE_LIBREADLINE
+			if (prompt) {
+				fputs(hdl ? "more>" : prompt, stdout);
+				fflush(stdout);
+			}
+#endif
+			line = fgets(buf, BUFSIZ, fp);
+		}
+		if (line == NULL) {
+			/* end of file */
+			if (hdl == NULL) {
+				/* nothing more to do */
+				return 0;
+			}
+			/* hdl != NULL, we should finish the current query */
+			length = 0;
+		} else
+			length = strlen(line);
+
+		if (length > 0 &&
+		    (!linemode ||
+		     (hdl == NULL && length > 0 && line[length - 1] == '\n'))) {
+			/* test for special commands */
+			while (length > 0 && isspace((int) *line)) {
+				line++;
+				length--;
+			}
+			switch (*line) {
+			case '\0':
+				/* empty line */
+				break;
+			case '\\':
+				switch (line[1]) {
+				case 'q':
+					free(buf);
+					return 0;
+				case 'T':
+					mark = mark ? NULL : "Timer";
+					if (mark2)
+						free(mark2);
+					mark2 = strdup(line + 2);
+					continue;
+				case 't':
+					/* toggle interaction timer */
+					break;
+				case 'l':
+					linemode = 1;
+					line = "";
+					length = 0;
+					break;
+				case 'b':
+					linemode = 0;
+					continue;
+				case 'D':
+					if (line[length - 1] == '\n')
+						line[--length] = 0;
+					if (line[length - 1] == '\r')
+						line[--length] = 0;
+					if (line[2]) {
+						dump_table(mid, line + 2);
+						fprintf(toConsole, "COMMIT\n");
+					} else {
+						dump_tables(mid);
+					}
+					continue;
+				default:
+					break;
+				}
+				break;
+			case '<':
+				/* read commands from file */
+				if (line[length - 1] == '\n')
+					line[--length] = 0;
+				if (line[length - 1] == '\r')
+					line[--length] = 0;
+				doFile(mid, line + 1);
+				continue;
+			case '>':
+				/* redirect output to file */
+				line++;
+				length--;
+				if (line[length - 1] == '\n')
+					line[--length] = 0;
+				if (line[length - 1] == '\r')
+					line[--length] = 0;
+				if (toConsole != stdout && toConsole != stderr)
+					fclose(toConsole);
+				if (length == 0 || strcmp(line, "stdout") == 0)
+					toConsole = stdout;
+				else if (strcmp(line, "stderr") == 0)
+					  toConsole = stderr;
+				else if ((toConsole = fopen(line, "w")) == NULL) {
+					toConsole = stdout;
+					fprintf(stderr, "Cannot open %s\n", line);
+				}
+				continue;
+			case 'c': /* cd command? */
+				if (line[1] == 'd' && isspace((int) line[2])) {
+					if (line[length - 1] == '\n')
+						line[--length] = 0;
+					if (line[length - 1] == '\r')
+						line[--length] = 0;
+					if (chdir(line + 3) < 0)
+						perror(line);
+					continue;
+				}
+				break;
+			case '?':
+				showCommands();
+				continue;
+			}
+		}
+
+		if (hdl == NULL) {
+			timerStart();
+			hdl = mapi_query_prep(mid);
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
+				break;
+			case MERROR:
+				/* some error, but try to continue */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				timerEnd();
+				return 1;
+			}
+		}
+		if (length > 0) {
+			assert(hdl != NULL);
+			mapi_query_part(hdl, line, length);
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
+				break;
+			case MERROR:
+				/* some error, but try to continue */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				timerEnd();
+				return 1;
+			}
+		}
+		if ((line == NULL ||
+		     (length > 0 && line[length - 1] == '\n')) &&
+		    linemode) {
+			assert(hdl != NULL);
+			/* If the server wants more but we're at the
+			   end of file (line == NULL), notify the
+			   server that we don't have anything more.
+			   If the server still wants more (shouldn't
+			   happen accordint to the protocol) we break
+			   out of the loop (via the continue).  The
+			   assertion at the end will then go off. */
+			if (mapi_query_done(hdl) == MMORE &&
+			    (line != NULL || mapi_query_done(hdl) == MMORE))
+				continue; /* get more data */
+
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
+				break;
+			case MERROR:
+				/* some error, but try to continue */
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				timerEnd();
+				return 1;
+			}
+
+			do {
+				char *reply;
+
+				if ((reply = mapi_result_error(hdl)) != NULL)
+					mapi_explain_result(hdl, stderr);
+				while ((reply = mapi_fetch_line(hdl)) != NULL)
+					fprintf(toConsole, "%s\n", reply);
+			} while ((rc = mapi_next_result(hdl)) == 1);
+			if (rc == MMORE &&
+			    (line != NULL || mapi_query_done(hdl) != MOK))
+				continue; /* get more data */
+
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
+				break;
+			case MERROR:
+				/* some error, but try to continue */
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				timerEnd();
+				return 1;
+			}
+
+			timerEnd();
+			mapi_close_handle(hdl);
+			hdl = NULL;
+		}
+	} while (line != NULL);
+	/* reached on end of file */
+	assert(hdl == NULL);
+	return 0;
+}
+
 static char *
 simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 {
@@ -1263,11 +1287,13 @@ main(int argc, char **argv)
 	Mapi mid;
 	int quiet = 0;
 	int save_history = 0;
+	int interactive = 0;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
 		{"config", 1, 0, 'c'},
 		{"debug", 2, 0, 'd'},
 		{"dump", 0, 0, 'D'},
+		{"interactive", 0, 0, 'i'},
 		{"host", 1, 0, 'h'},
 		{"language", 1, 0, 'l'},
 		{"passwd", 1, 0, 'P'},
@@ -1305,21 +1331,19 @@ main(int argc, char **argv)
 					       "config", optarg);
 			break;
 		case 'l':
+			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
-				strcmp(optarg, "sq") == 0 ||
-				strcmp(optarg, "s") == 0)
-			{
+			    strcmp(optarg, "sq") == 0 ||
+			    strcmp(optarg, "s") == 0) {
 				language = "sql";
 			} else if (strcmp(optarg, "mil") == 0 ||
-				strcmp(optarg, "mi") == 0)
-			{
+				   strcmp(optarg, "mi") == 0) {
 				language = "mil";
 			} else if (strcmp(optarg, "mal") == 0 ||
-				strcmp(optarg, "ma") == 0)
-			{	/* usage says it exists */
+				   strcmp(optarg, "ma") == 0) {
 				language = "mal";
 			} else {
-				fprintf(stderr, "language option needs to be either one of sql, mil or mal\n");
+				fprintf(stderr, "language option needs to be one of sql, mil, or mal\n");
 				exit(-1);
 			}
 			break;
@@ -1330,6 +1354,9 @@ main(int argc, char **argv)
 		case 'P':
 			guest= 0;
 			passwd = optarg;
+			break;
+		case 'i':
+			interactive = 1;
 			break;
 		case 'h':
 			host = optarg;
@@ -1432,9 +1459,13 @@ main(int argc, char **argv)
 		return c;
 	}
 
-	while (optind < argc) {
-		doFile(mid, argv[optind]);
-		optind++;
+	if (optind < argc) {
+		while (optind < argc) {
+			doFile(mid, argv[optind]);
+			optind++;
+		}
+		if (!interactive)
+			exit(0);
 	}
 
 #ifdef HAVE_LIBREADLINE
