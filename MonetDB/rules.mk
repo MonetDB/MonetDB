@@ -119,6 +119,8 @@ HIDE=1
 
 %.mal: %.mx
 	$(MX) $(MXFLAGS) -x mal $<
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 
 %: %.mx 
 	$(MX) $(MXFLAGS) -x sh $<
