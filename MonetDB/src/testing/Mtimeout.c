@@ -135,6 +135,7 @@ limit(char **argv)
     }
 
     abort();
+    return 0;			/* to silence some compilers */
 }
 
 
