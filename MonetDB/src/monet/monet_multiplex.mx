@@ -1404,6 +1404,7 @@ there are the {strings, polygons, images, etc}!
         nested_rev->H = nested->T = nested->H;
         nested_rev->htype = nested->ttype = nested->htype;
         nested_rev->hvarsized = nested->tvarsized = nested->hvarsized;
+        nested_rev->hseqbase = nested->tseqbase = nested->hseqbase;
 
 @- non-tricky? initializations
 @c
@@ -1435,6 +1436,8 @@ range in 'b' (possibly empty). We then call the execution function on 'nested'.
 	    int (*cmp)(ptr, ptr) = BATatoms[b->htype].atomCmp;
 	    oid minoid = b->hseqbase;
 	    oid maxoid = minoid + BATcount(b);
+	    oid sqb = 0;
+	    BUN pp = NULL;
 
 	    if (!(BAThordered(extent)&1)) {
 		BAT *n = BATsort(extent);
@@ -1454,7 +1457,15 @@ here we do not have an efficient execution function, so other optimizations
 are quite useless. Maybe we shouldn't even distinuish this case and do
 it with the generic hashimpl anyway.
 @c
-		if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: non-optimized sort\n");
+		if (b->ttype == TYPE_void) {
+			pp = p;
+			sqb = nested->hseqbase;
+			@:non_opt_sort((void),nested->hseqbase = nested->tseqbase = sqb + ((p-pp)/xx))@
+		} else {
+			@:non_opt_sort(,)@
+		}
+@= non_opt_sort
+		if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: non-optimized sort @1\n");
 		for(; r<s; r+=yy) { /* loop on extent */
 		    ptr last = BUNhead(extent,r);
 		    if (p<q && (*cmp)(BUNhead(b,p),last) < 0) { 
@@ -1463,6 +1474,7 @@ it with the generic hashimpl anyway.
 		    nested->batBuns->base = nested->batDeleted = 
 				nested->batHole = p - xx;
 	    	    nested->batInserted = p;
+	    	    @2;
 	    	    p = SORTfndlast(m, last); 
 	    	    nested->batBuns->size = nested->batBuns->free = 
 				p - nested->batBuns->base;
@@ -1486,6 +1498,8 @@ optimized cases that use exec_opt and hence optimize_call
 			if (last >= minoid && last < maxoid) {
 			    zz = minpos + (last-minoid);
 			    q = BUNptr(b, zz); p = q + xx;
+			    /* needed in case b->ttype == TYPE_void; shouldn't harm in other cases */
+	    		    nested->hseqbase = nested->tseqbase = last;
 			} else {
 			    q = p;
 			}
@@ -1499,7 +1513,15 @@ optimized cases that use exec_opt and hence optimize_call
 		}
 	    }
 @= getset_int
-if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: @1-optimized sort\n");
+if (b->ttype == TYPE_void) {
+	pp = p;
+	sqb = nested->hseqbase;
+	@:getset_int_(@1,-void,nested->hseqbase = nested->tseqbase = sqb + ((p-pp)/xx))@
+} else {
+	@:getset_int_(@1,,)@
+}
+@= getset_int_
+if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: @1@2-optimized sort\n");
 for(; r<s; r+=yy) { 
 	@1 last = *(@1*) BUNhead(extent,r);
 	if (*(@1*) BUNhloc(b,p) < last) {
@@ -1507,6 +1529,7 @@ for(; r<s; r+=yy) {
 	}
 	nested->batBuns->base = nested->batDeleted = nested->batHole = p - xx;
 	nested->batInserted = p;
+	@3;
 	p = SORTfndlast_@1(m, &last); 
     	nested->batBuns->size = nested->batBuns->free = p-nested->batBuns->base;
 	@:exec_opt(&last)@
