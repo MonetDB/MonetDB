@@ -910,7 +910,8 @@ int decimal_setminrepeat(int *x) {
 
 /* Format a decimal in a string a a float with a fixed number of digits before and after the comma. */
 int decimal_format(str *ret, decimal *d, str format) {
-	chr start = ' ', pad = ' ', *s = format;	
+	chr start = ' ', pad = ' ';
+	str s = format;	
 	int n1=0, n2=0, n3=0, x, y=0;
 
 	/* scan the format string */
@@ -960,13 +961,13 @@ int decimal_format(str *ret, decimal *d, str format) {
 		for(x=0; x<n1+n2-1; x++) {
 			*s++ = ' ';
 		}
-		strcpy(s, "nil");
+		strcpy((char *) s, "nil");
 	} else {
 		if (ISZERO(d) && pad == ' ') {
 			for(x=0; x<n1-1; x++) {
 				*s++ = ' ';
 			}
-			strcpy(s, "0");
+			strcpy((char *) s, "0");
 			y = 0;
 		} else {
 			*s++ = (d->negative)?'-':start;
@@ -991,7 +992,7 @@ int decimal_format(str *ret, decimal *d, str format) {
 			f[3] = 'd'; f[4] = 0;
 			*s++ = 'E';
 			*s++ = (y > 0)?'-':'+';
-			sprintf(s, f, y);
+			sprintf((char *) s, f, y);
 		} else {
 			*s = 0;
 		}
@@ -1104,7 +1105,7 @@ void decimal_del(Heap* h, int* index) {
 
 void decimal_put(Heap* h, int* bun, decimal* val) {
 	int *dst, len = TOTLEN(val->precision);
-	int *src = (unsigned int*) val;
+	int *src = (int*) val;
 	int *end = (int*) (((char*) src) + len);
 	dst = (int*) (h->base + (*bun = HEAP_malloc(h, len)));
 	while(src < end) *dst++ = *src++;

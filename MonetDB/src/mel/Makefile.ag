@@ -23,7 +23,7 @@
 
 
 YFLAGS = -d
-LDFLAGS = -all-static
+# LDFLAGS = -all-static
 
 bin_mel = {
 	SOURCES = \

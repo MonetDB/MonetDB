@@ -334,7 +334,7 @@ HistogramReport_m(StatsHistogram_t *st, FILE *out)
       
       /* Print in two steps, it seems printf is buggy when dealing
 	 with 64 bits numbers (and I didn't feel like debugging) */
-      fprintf(out, "%s.cumulative = \t%Ld\t", st->sh_stats.st_name,
+      fprintf(out, "%s.cumulative = \t%ld\t", st->sh_stats.st_name,
 	      st->sh_binlo + n * st->sh_binwidth);
       fprintf(out, "%d.%02d\n", cumulative / 100, cumulative % 100);
     }
@@ -344,7 +344,7 @@ HistogramReport_m(StatsHistogram_t *st, FILE *out)
 	  st->sh_bins[n - 1] == 0 && st->sh_bins[n + 1] == 0) 
 	continue;
       
-      fprintf(out, "%s.density = \t%Ld\t", st->sh_stats.st_name,
+      fprintf(out, "%s.density = \t%ld\t", st->sh_stats.st_name,
 	      st->sh_binlo + n * st->sh_binwidth);
       fprintf(out, "%d\n", st->sh_bins[n]);
     }

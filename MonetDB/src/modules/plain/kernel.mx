@@ -815,10 +815,8 @@ communication with the server.
 int CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client  c;
 	ptr x;
-	str s;
 	if (arg(lt, 0)) {
 		@:builtin_operand(0, TYPE_str, x)@
-		s= (str) x;
 		for( ; monet_cntxt[stk].outer >0; stk=monet_cntxt[stk].outer);
 		c= monet_clients+stk;
 		c->prompt= (char*) GDKstrdup( x);

@@ -114,7 +114,7 @@ static int unix_fork(int *inpipe, int *outpipe,char *command,va_list ap) {
    both stdin and stdout to the child process are connected to pipes
 */
     char *prog_argv[MAXARGS],*p;
-    int   status,pid,i;
+    int   pid,i;
     int   inpipes[2],outpipes[2];
 
 #ifdef  EXESSIVE_DEBUGGING

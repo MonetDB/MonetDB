@@ -39,7 +39,7 @@ caliblng checkNrCpus()
 	while(1) 
 	{	
 #ifdef CALIBRATOR_PRINT_OUTPUT
-		printf("SMP: Checking %d CPUs\n",curr);
+		printf("SMP: Checking %ld CPUs\n",curr);
 #endif
 		gettimeofday(&t0,0);
 		for(i=0;i<curr;i++) 
@@ -68,7 +68,7 @@ caliblng checkNrCpus()
 		curr*=2; /* only check for powers of 2 */
 	}
 #ifdef CALIBRATOR_PRINT_OUTPUT
-	printf("\n",curr);
+	printf("\n");
 #endif
 	return cpus;
 }

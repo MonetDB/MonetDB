@@ -250,11 +250,20 @@ atomDesc BATatoms[MAXATOMS] = {
  		0, 		0,
  		0,			0,
  		0,			0},
-  { "oid",  	TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &int_nil, 
+  { "oid",
+#if SIZEOF_OID == SIZEOF_INT
+    		TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &int_nil, 
  		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) intRead, (void (*)(void *, stream*, size_t)) intWrite,
  		(int (*)(ptr, ptr)) intCmp,		
  		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
+#else
+	  	TYPE_lng, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &lng_nil, 
+ 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
+		(void *(*)(void *, stream *, size_t)) lngRead, (void (*)(void *, stream*, size_t)) lngWrite,
+ 		(int (*)(ptr, ptr)) lngCmp,		
+ 		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,
+#endif
 		0, 		0,
  		0,			0,
  		0,			0,
@@ -554,7 +563,11 @@ gdk_export str		str_nil;
 #define ptr_nil	((ptr) int_nil)
 #endif
 #define bat_nil	((bat) int_nil)
+#if SIZEOF_OID == SIZEOF_INT
 #define oid_nil	((oid) int_nil)
+#else
+#define oid_nil	((oid) lng_nil)
+#endif
 #define void_nil	oid_nil
 @c
 chr		chr_nil = GDK_chr_min;
@@ -1557,18 +1570,18 @@ oid OIDbase(oid o){
 	MT_set_lock(MT_system_lock, "OIDbase");
 	GDKoid = o;
 	MT_unset_lock(MT_system_lock, "OIDbase");
-	return (oid) o;
+	return o;
 }
 
 oid OIDseed(unsigned int o) {
-	oid t, *p = (oid*) GDKoid;
+	oid t, p = GDKoid;
 
 	MT_set_lock(MT_system_lock, "OIDseed");
  	t = OIDrand();
 	if (o > t) t = o;
-	if ((oid)p >= t) t = (oid)p;
+	if (p >= t) t = p;
 	MT_unset_lock(MT_system_lock, "OIDseed");
-	return (oid) t;
+	return t;
 }
 @-
 Initialize a sequence of OID seeds (for a sequence of database)
@@ -1623,14 +1636,25 @@ oid OIDnew(int inc) {
 String conversion routines. 
 @c
 int OIDfromStr(char *src, int *len, oid **dst) {
-	int ui, *uip = &ui, l=sizeof(int), pos = 0;
+#if SIZEOF_OID == SIZEOF_INT
+	int ui, *uip = &ui;
+	int l = sizeof(int);
+#else
+	lng ui, *uip = &ui;
+	int l = sizeof(lng);
+#endif
+	int pos = 0;
 	str p = src;
 
 	@:atommem(oid,sizeof(oid))@
 	**dst = oid_nil;
 	while(GDKisspace(*p)) p++;
 	if (GDKisdigit(*p)) {
+#if SIZEOF_OID == SIZEOF_INT
 		pos = intFromStr(p,&l,&uip); 
+#else
+		pos = lngFromStr(p,&l,&uip); 
+#endif
 		if (pos > 0 && p[pos] == '@') {
 			while (GDKisdigit(p[pos])) pos++;
 		}
@@ -1643,14 +1667,12 @@ int OIDfromStr(char *src, int *len, oid **dst) {
 }
 
 int OIDtoStr(char** dst, int *len, oid *src) {
-	unsigned int ui;
 	@:atommem(char,oidStrlen)@
 	if (*src == oid_nil) {
 		strcpy(*dst, "nil");
 		return 3;
 	}
-	ui = *(oid*)src;
-	snprintf(*dst, *len, "%u\@0", ui);
+	snprintf(*dst, *len, "%lu@0", (unsigned long) *src);
 	return strlen(*dst);
 }
 @

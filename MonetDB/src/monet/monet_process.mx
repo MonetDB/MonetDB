@@ -110,12 +110,10 @@ This will be dropped when everything works ok.
 @c
 void monetInterpreter(void* dummy){
 	Thread	t;
-	MT_Id tid;
 
 	t = THRnew(MT_getpid(), "Interpreter");
 	MT_up_sema(monet_forksync, "monetInterpreter");
 	PARDEBUG THRprintf(GDKerr, "monetInterpreter(dummy)\n" );
-	tid = t->tid;
 	if (!monet_threads) monet_threads++;
 
 	doRequest(t,0);

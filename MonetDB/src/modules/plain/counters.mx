@@ -849,8 +849,7 @@ int start_count(counter *retval, int *event0, int *event1) {
 
 int stop_count(counter *retval, counter *c) {
     lng usec = GDKusec() - c->usec;
-    lng count0 = -1, count1 = -1, clocks = -1, noclocks = -1;
-    dbl notimer = -1.0;
+    lng count0 = -1, count1 = -1, clocks = -1;
 
     if (c->status != 1) {
         GDKerror("stop_count: counter not started or already stopped.\n");
@@ -859,6 +858,8 @@ int stop_count(counter *retval, counter *c) {
 #if defined(HWCOUNTERS)
     if ((c->event0 != NoEvent) || (c->event1 != NoEvent)) {
  #if ( defined(HW_Linux) && defined(HAVE_LIBPPERF) )
+	lng noclocks = -1;
+	dbl notimer = -1.0;
 	int rtrn;
         clocks = rdtsc() - c->clocks;
         if ((rtrn = read_counters(&count0,&count1,&notimer,&noclocks)) != 0) {

@@ -104,7 +104,7 @@ only one will be created.
 "import a value from a TCP/IP server, possibly removing it from the cache."
 
 .COMMAND rpc(int conn_id, str fcn_call, ... any ...) : any = TCPrpc;
-"remote MIL evaluation. Each argument that is represented by a \%a is
+"remote MIL evaluation. Each argument that is represented by a %a is
  inserted with succeeding values from the parameter list of the rpc call.
  Returns the remote return value."
 
@@ -439,7 +439,8 @@ int cache_bat(BAT ** retval) {
 	    cache_t *c = *(cache_t**) BUNtloc(cache_idx,p);
 	    char *val = 0, *buf, *atm = atom_name(c->tpe);
 	    if (c->tpe == TYPE_bat) {
-		ATOMformat(c->tpe, &c->val, &val);
+		int bval = (int) c->val;
+		ATOMformat(c->tpe, &bval, &val);
 	    } else {
 		ATOMformat(c->tpe, c->val, &val);
 	    }
@@ -618,7 +619,11 @@ the standard mechanism.
 		if (*errbuf) {
  			int len, fd = connections[i].sock;
 
-			sprintf(msg, "err:%s:%d\n", nm, strlen(errbuf) + 1);
+#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
+			sprintf(msg, "err:%s:%zd\n", nm, strlen(errbuf) + 1);
+#else
+			sprintf(msg, "err:%s:%u\n", nm, (unsigned int) strlen(errbuf) + 1);
+#endif
 			len = strlen(msg);
 			memcpy(msg+len, errbuf, strlen(errbuf)+1);
 	    		socket_write(fd, len+strlen(errbuf)+1, msg,"error msg");
@@ -1144,11 +1149,19 @@ TCPexport(
 #ifndef WORDS_BIGENDIAN
 	    BATconvert(b,CONV_HTON);
 #endif
-	    sprintf(buf, "bat:%s:%d*%d:%s\@%d%s%s:%s\@%d%s%s:%d:%d:", 
+#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
+	    sprintf(buf, "bat:%s:%zd*%zd:%s\@%d%s%s:%s\@%d%s%s:%zd:%zd:", 
 		name, BATcount(b), BUNsize(b), 
 		atom_name(b->htype), b->hloc, b->hsorted?"+":"", b->hkey?"k":"",
 		atom_name(b->ttype), b->tloc, b->tsorted?"+":"", b->tkey?"k":"",
 		b->hheap.base?b->hheap.free:0, b->theap.base?b->theap.free:0);
+#else
+	    sprintf(buf, "bat:%s:%lu*%lu:%s\@%d%s%s:%s\@%d%s%s:%lu:%lu:", 
+		name, (unsigned long) BATcount(b), (unsigned long) BUNsize(b), 
+		atom_name(b->htype), b->hloc, b->hsorted?"+":"", b->hkey?"k":"",
+		atom_name(b->ttype), b->tloc, b->tsorted?"+":"", b->tkey?"k":"",
+		b->hheap.base?(unsigned long)b->hheap.free:0, b->theap.base?(unsigned long)b->theap.free:0);
+#endif
 
 	    p = buf + strlen(buf);
 	    p += OIDtoStr(&p, &len, &b->halign); *p++ = ':';

@@ -390,7 +390,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
   cross_t *c;
   BUN hp, hq, sp, sq, vp, vq, p, q, last;
   int spot_lo_x, spot_lo_y, spot_hi_x, spot_hi_y, spot_w, spot_h;
-  int i, xx, level, lo_level, x, y, wh, lcolor, color, n;
+  int xx, level, lo_level, x, y, wh, lcolor, color, n;
   int hlength, vlength, hcenter, vcenter, *spotids, centerid;
   zid_t id;
   gdk_uint32 *spot;
@@ -485,7 +485,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
     printf("makecross: spot [%d, %d]->[%d, %d]\n",
 	   spot_lo_x, spot_lo_y, spot_hi_x, spot_hi_y);
 
-  for (i = 0, hp = BUNfirst(qt_hue), hq = BUNlast(qt_hue),
+  for (hp = BUNfirst(qt_hue), hq = BUNlast(qt_hue),
 	 sp = BUNfirst(qt_sat), sq = BUNlast(qt_sat),
 	 vp = BUNfirst(qt_val), vq = BUNlast(qt_val);
        hp < hq && sp < sq && vp < vq; 
@@ -666,7 +666,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
 	 BAT *r_images, BAT *r_ncolors, BAT *r_ids, int *cspace,
 	 flt *fraction)
 {
-  int nfeatures, nmatches, c_color, i, id_size, hsv_size, noid, rv;
+  int nfeatures, c_color, i, id_size, hsv_size, noid, rv;
   cross_t *c;
   gdk_int16 *quadtree;
   BUN ip, iq, hp, hq, sp, sq, vp, vq;
@@ -677,19 +677,19 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
   if (st_search) delta = now();
 
   if (debug)
-    printf("qt_match: %d, image_oid %d\n", 
-	   *(int *)BUNhead(qt_id, BUNfirst(qt_id)), *ioid);
+    printf("qt_match: %lu, image_oid %lu\n", 
+	   (unsigned long) *(oid *)BUNhead(qt_id, BUNfirst(qt_id)), (unsigned long) *ioid);
 
   /* Check the consistency of the tables */
   soid = *(oid *)BUNhead(qt_id, BUNfirst(qt_id));
   if (soid != *(oid *)BUNhead(qt_hue, BUNfirst(qt_hue)) ||
       soid != *(oid *)BUNhead(qt_sat, BUNfirst(qt_sat)) ||
       soid != *(oid *)BUNhead(qt_val, BUNfirst(qt_val))) {
-    GDKerror("[qt_match]: Heads differ %u %u %u %u\n",
-	     soid,
-	     *(oid *)BUNhead(qt_hue, BUNfirst(qt_hue)),
-	     *(oid *)BUNhead(qt_sat, BUNfirst(qt_sat)),
-	     *(oid *)BUNhead(qt_val, BUNfirst(qt_val)));
+    GDKerror("[qt_match]: Heads differ %lu %lu %lu %lu\n",
+	     (unsigned long) soid,
+	     (unsigned long) *(oid *)BUNhead(qt_hue, BUNfirst(qt_hue)),
+	     (unsigned long) *(oid *)BUNhead(qt_sat, BUNfirst(qt_sat)),
+	     (unsigned long) *(oid *)BUNhead(qt_val, BUNfirst(qt_val)));
     return GDK_FAIL;
   }
 
@@ -713,8 +713,8 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
   }
 
   if (*ioid - _ioid > BATcount(qt_ioffs)) {
-    GDKerror("[qt_match]: Image oid %d too large, BATcount %d\n",
-	     *ioid - _ioid, BATcount(qt_ioffs));
+    GDKerror("[qt_match]: Image oid %lu too large, BATcount %lu\n",
+	     (unsigned long) (*ioid - _ioid), (unsigned long) BATcount(qt_ioffs));
     return GDK_FAIL;
   }
     
@@ -724,7 +724,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
   hsv_size = BUNsize(qt_hue);
 
   if (debug)
-    printf("qt_match: soid %d, noid %d\n", soid, noid);
+    printf("qt_match: soid %lu, noid %d\n", (unsigned long) soid, noid);
   
   /* Make sure the soid and eoid are part of the tables */
   if (noid < 0 || soid >= BATcount(qt_id) || soid + noid > BATcount(qt_id)) {
@@ -792,7 +792,6 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
 
   /* process the quad tree and find matches.  start with the cross center */
   c_color  = c->c_hstring[c->c_hcenter];
-  nmatches = 0;
   
   /* Get the last used oid from the r_images table */
   assert(r_images->hsorted == TRUE);
@@ -804,7 +803,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
     soid++;
   }
   if (debug)
-    printf("match: Starting oid %d\n", soid);
+    printf("match: Starting oid %lu\n", (unsigned long) soid);
   
   for (i = nfeatures - 1; i >= 0; i--) {
     int ncolors;
@@ -875,7 +874,7 @@ match(direction_t direction, gdk_int16 *features, zid_t id,
       int *cstring, int cindex, int clength,
       BAT *r_ids, int soid, int *ncolors)
 {
-  int nid, pid, nnid, npid, color, cdelta, lcolor;
+  int nid, pid, nnid, npid, color, cdelta;
   Time t;
 
   if (debug)
@@ -897,7 +896,6 @@ match(direction_t direction, gdk_int16 *features, zid_t id,
   }
 
   /* Find the first neighbor that is colored differently. */
-  lcolor = -1;
   while (1) {
     pid = nid = neighbor(direction, id);
     if (pid < 0) return;
@@ -1003,7 +1001,6 @@ match(direction_t direction, gdk_int16 *features, zid_t id,
     }
 
     assert(features[pid] >= 0);
-    lcolor = features[pid];
     if (debug)
       printf("match: (2) Adding pid %d to matches\n", pid);
 

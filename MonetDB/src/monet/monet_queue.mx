@@ -145,8 +145,8 @@ void prRequest(stream *fp, Request p) {
 	int l = 0;
 
 	sprintf(buf,"%d", p->ev_status);
-	THRprintf(fp, "[ %6d, %9d, %9s, %9d, \"", 
-		p->ev_seqnr, (int) p->ev_process, 
+	THRprintf(fp, "[ %6d, %9ld, %9s, %9d, \"", 
+		p->ev_seqnr, (long int) p->ev_process, 
 		( p->ev_status == EVDONE ? "done":
 		( p->ev_status == EVRUNNING ? "running":
 		( p->ev_status == EVAWAIT? "waiting":
@@ -321,7 +321,7 @@ Request getRequest(Request barrier){
        	MT_set_lock(monet_critical, "getRequest");
 
 	if ( barrier) {
-		PARDEBUG THRprintf(GDKerr, "barrier search %d\n", (int) barrier % 10000);
+		PARDEBUG THRprintf(GDKerr, "barrier search %ld\n", (long int) barrier % 10000);
 		for (q = qm_first; q; q = q->ev_next) 
 		if ( q->ev_status== EVPENDING  && q->ev_wakeup== barrier){
 			goto getReq0;
@@ -395,7 +395,7 @@ void rmRequest(Request r){
 	Request s,t;
 
 	MT_set_lock(monet_critical, "rmRequest");
-	PARDEBUG THRprintf(GDKerr, "remove dependents of %d\n", ((int) r)  %100000);
+	PARDEBUG THRprintf(GDKerr, "remove dependents of %ld\n", ((long int) r)  %100000);
 	for ( s=r->ev_wakeup; s; s=t )  {
 		t= s->ev_wakeup;
 		unlinkRequest(s);

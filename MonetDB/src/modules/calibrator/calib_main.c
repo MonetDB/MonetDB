@@ -61,17 +61,17 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 
 	array = array0;
 #ifdef CALIBRATOR_PRINT_OUTPUT
-	fprintf(stderr,"\n%x %ld %ld %5ld\n",array,(caliblng)array,pgsz,(caliblng)array%pgsz);
+	fprintf(stderr,"\n%lx %ld %ld %5ld\n",(long)array,(caliblng)array,pgsz,(caliblng)array%pgsz);
 #endif
 	while (((caliblng)array % pgsz) != align) {
 #ifdef CALIBRATOR_PRINT_OUTPUT
-		fprintf(stderr,"\r%x %ld %ld %5ld",array,(caliblng)array,pgsz,(caliblng)array%pgsz);
+		fprintf(stderr,"\r%lx %ld %ld %5ld",(long)array,(caliblng)array,pgsz,(caliblng)array%pgsz);
 		fflush(stderr);
 #endif
 		array++;
 	}
 #ifdef CALIBRATOR_PRINT_OUTPUT
-	fprintf(stderr,"\n%x %ld %ld %5ld\n\n",array,(caliblng)array,pgsz,(caliblng)array%pgsz);
+	fprintf(stderr,"\n%lx %ld %ld %5ld\n\n",(long)array,(caliblng)array,pgsz,(caliblng)array%pgsz);
 	fflush(stderr);
 	
 	fprintf(stderr,"now        = %ld\n",now());

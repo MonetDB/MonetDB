@@ -1253,6 +1253,7 @@ ThreadRec 	GDKthreads[THREADS];
 void *		THRdata[THREADDATA] = { 0 };
 
 Thread THRget(MT_Id tid) {
+	/*assert(0 < tid && tid <= THREADS);*/
 	return (GDKthreads+(int)(long)tid-1);
 }
 
@@ -1296,8 +1297,13 @@ Thread THRnew(MT_Id pid, str name) {
 	s->name = name; 
 	s->cleanup = NULL;
 	s->sp = THRsp();
-	PARDEBUG THRprintf(GDKerr, "%lu sp = %lu\n", 
+#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
+	/* C99 defines p for pointer argument */
+	PARDEBUG THRprintf(GDKerr, "%p %p sp = %lu\n", s->tid, pid, s->sp); 
+#else
+	PARDEBUG THRprintf(GDKerr, "%lu %lu sp = %lu\n", 
 			(unsigned long) s->tid, (unsigned long) pid, s->sp); 
+#endif
 	PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads); 
 	GDKnrofthreads++; 
 	MT_alloc_register(&tid, 1, (char) ('0'+ ((int)tid) - 1));

@@ -1026,7 +1026,8 @@ nils are not handled properly $=>$ they are treated as normal values
 @= enum_fetch
 int @1( BAT** res, BAT* b1, BAT* b2){
 	BAT *map, *bn = BATnew(TYPE_oid, b1->ttype, BATcount(b2));
-	unsigned int off1, off2, xx = b2->htype;
+	unsigned int off1, off2;
+	int xx = b2->htype;
 	BUN p, q;
 
 	if (!BAT@2dense(b1)) {

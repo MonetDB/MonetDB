@@ -668,7 +668,7 @@ typedef struct {
         d = m1 + m2;
 
         /* Ne = n = N1*N2 / N1+N2
-        /* Qtk = Q(sqrt(Ne) + 0.155 + 0.24/sqrt(Ne) * D)
+           Qtk = Q(sqrt(Ne) + 0.155 + 0.24/sqrt(Ne) * D)
          */
         n1 = n2 = (@1) dim;
         n = ((dbl)(n1+n2)) / ((dbl)(n1+n2));

@@ -49,7 +49,12 @@ char 	name[16];
 	}
 	
 	for( it= itable; it < itable +  M_ITABLE; it++ ) {
-		sprintf(name, "Index %d", it - itable);
+#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
+		/* C99 defines t length modifier to indicate ptrdiff_t */
+		sprintf(name, "Index %td", it - itable);
+#else
+		sprintf(name, "Index %ld", (long) (it - itable));
+#endif
 		it->it_name= StrDup(name);
 		it->it_nentry= 0;
 	}

@@ -80,7 +80,7 @@ functions.
 
 typedef void    *MT_Lock;
 typedef void    *MT_Sema;
-typedef void    *MT_Id;
+typedef unsigned long MT_Id;
 
 #define THREAD_STACK_SIZE	((unsigned long)512*1024)
 
@@ -246,13 +246,17 @@ gdk_export size_t _MT_pagesize;
 # include <sys/resource.h>
 #endif
 
+#ifndef HAVE_PTRDIFF_T
+typedef int ptrdiff_t;
+#endif
+
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 
 pthread_mutex_t	MT_firstlock[MAXLOCKS];
 sem_t		MT_firstsema[MAXSEMAS];
 
 int MT_curlock=0, MT_nextlock[MAXLOCKS];
-int MT_cursema=0, MT_nextsema[MAXSEMAS];
+ptrdiff_t MT_cursema=0, MT_nextsema[MAXSEMAS];
 
 size_t     _MT_pagesize = 0;               /* variable holding memory size */
 size_t     _MT_npages = 0;                 /* variable holding page size */
@@ -308,9 +312,9 @@ void MT_init() {
 	MT_nextlock[MAXLOCKS-1] = -1;
 
 	for(i=1; i<MAXSEMAS; i++) {
-		MT_nextsema[i-1] = i;
+		MT_nextsema[i-1] = (ptrdiff_t) i;
 	}
-	MT_nextsema[MAXSEMAS-1] = -1;
+	MT_nextsema[MAXSEMAS-1] = (ptrdiff_t) -1;
 
 	MT_system_lock = (MT_Lock) &l;
 }
@@ -329,6 +333,7 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 	sigset_t new_mask, orig_mask;
 #endif
 	pthread_attr_t attr;
+	pthread_t newt;
 	int  ret;
 
 #ifdef HAVE_PTHREAD_SIGMASK
@@ -340,8 +345,8 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 #endif
         pthread_attr_setstacksize(&attr, 1024*1024);
-	ret = pthread_create((pthread_t*)t, &attr, (void*(*)(void*))f, arg);
-        if (ret == 0) (*(int*)t)++; /* use pthread-id + 1 */
+	ret = pthread_create(&newt, &attr, (void *(*)(void *)) f, arg);
+        if (ret == 0) *t = (MT_Id) (((int) newt) + 1); /* use pthread-id + 1 */
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
 #endif
@@ -459,7 +464,7 @@ int MT_try_sema (MT_Sema s){
 		fflush(MT_out);
 	}
 	if (s == NULL) return 0;
-	return (sem_trywait(s));
+	return (sem_trywait((sem_t*)s));
 }
 
 
@@ -481,7 +486,7 @@ MT_Sema	MT_create_sema (int nresources) {
 
 
 void	MT_destroy_sema (MT_Sema s) {
-	int idx = (int) (((sem_t*) s) - MT_firstsema);
+	ptrdiff_t idx = ((sem_t*) s) - MT_firstsema;
 
 	if (s == NULL) return;
 	(void)sem_destroy( s );

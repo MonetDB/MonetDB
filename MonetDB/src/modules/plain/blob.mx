@@ -438,7 +438,7 @@ int fromblob_idx(str *retval, blob *b, int *index){
 		if (*r == 0) break; 
 	}
 	*retval = s = (str) GDKmalloc(1+r-p);
-	for(p; p<r; p++, s++) 
+	for(; p<r; p++, s++) 
 		*s = *p;  
 	*s = 0;
 	return GDK_SUCCEED;

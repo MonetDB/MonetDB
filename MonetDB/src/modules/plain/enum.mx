@@ -153,7 +153,7 @@ typedef int (*fcn)();
 	     int xx;\
 	     for(xx=0; xx<MAX_ENUM; xx++)\
 		if (enum_tpe[xx] == x) break;\
-	     if ((xx>MAX_ENUM) || ((b=BATdescriptor(enum_map[xx])) == NULL)) {\
+	     if ((xx>=MAX_ENUM) || ((b=BATdescriptor(enum_map[xx])) == NULL)) {\
 	 	GDKerror("%s: illegal enum type.\n",y);\
 		return GDK_FAIL; \
 	     }

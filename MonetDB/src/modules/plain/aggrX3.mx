@@ -202,32 +202,32 @@ HASHfnd_int for void- and hash-lookups, respectively
 	/* where necessary, calculate min/max oid with minimal efford */
 	if (e->htype == TYPE_void) {
 		oid nil = oid_nil;
-		ALGODEBUG THRprintf(GDKout, "init_result(@1): e->htype == TYPE_void, e->hseqbase=%u\n", e->hseqbase);
+		ALGODEBUG THRprintf(GDKout, "init_result(@1): e->htype == TYPE_void, e->hseqbase=%lu\n", (unsigned long) e->hseqbase);
 		BATloopFast(e, p, q, xx) {
 			void@1_bunfastins_nocheck_noinc(bn, _p, &nil, &zero);
 			_p += _bunsize;
 		}
 		BATseqbase(bn,e->hseqbase);
 	} else if (BAThordered(e)&1) {
-		min = (int)(*(oid*)BUNhloc(e, BUNfirst(e)));
+		min = *(oid*)BUNhloc(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
 			int@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
 		}
-		max = (int)(*(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e)));
-		ALGODEBUG THRprintf(GDKout, "init_result(@1): BAThordered(e)&1, min=%d, max=%d\n", min,max);
+		max = *(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e));
+		ALGODEBUG THRprintf(GDKout, "init_result(@1): BAThordered(e)&1, min=%lu, max=%lu\n", (unsigned long) min, (unsigned long) max);
 	} else {
-		int i;
-		min = max = (int)(*(oid*)BUNhloc(e, BUNfirst(e)));
+		oid i;
+		min = max = *(oid*)BUNhloc(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
 			int@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
-			i = (int)(*(oid*)BUNhloc(e, p));
+			i = *(oid*)BUNhloc(e, p);
 			if (i < min) min = i;
 			else
 			if (i > max) max = i;
 		}
-		ALGODEBUG THRprintf(GDKout, "init_result(@1): min=%d, max=%d\n", min,max);
+		ALGODEBUG THRprintf(GDKout, "init_result(@1): min=%lu, max=%lu\n", (unsigned long) min, (unsigned long) max);
 	}
 	bn->batBuns->free = _p - bn->batBuns->base;
 	if (!bn->batDirty) bn->batDirty = TRUE;
@@ -283,7 +283,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 	if (@1) {
         	/* copy sums array to final result */
        		BATloopFast(bn, p, q, xx) {
-			int h = (int)(*(oid*) BUNh@4(bn,p)) - min;
+			oid h = (*(oid*) BUNh@4(bn,p)) - min;
 			*(@6*)BUNt@7(bn, p) = sums[h];
 		}
 	        GDKfree(sums);
@@ -345,7 +345,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 	if (@1) {
 		/* sums in sums-array */
 		BATloopFast(bn, p, q, xx) {
-			int h = (int)(*(oid*) BUNh@4(bn,p)) - min;
+			oid h = (*(oid*) BUNh@4(bn,p)) - min;
 			@6 *dst = (@6*) BUNt@7(bn, p);
 			if (cnt[h] == 0 || sums[h] == @6_nil) {
 				*dst = @6_nil;
@@ -380,7 +380,8 @@ int CMDaggrX3_sum_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
-	int xx, range, min, max;
+	int xx;
+	oid range, min, max;
 	oid bhsb;
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum_@1[@2](b=%s,e=%s);\n",b->batId,e->batId);
@@ -420,7 +421,9 @@ int CMDaggrX3_sum_@1(BAT **ret, BAT *b, BAT *e){
 int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
-	int *cnt, range, min, max, slots; 
+	int *cnt;
+	size_t slots; 
+	oid range, min, max;
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
 	oid bhsb;
@@ -537,7 +540,8 @@ int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	int xx, yy = 0, off = BUNindex(e,BUNfirst(e));
 	ptr *extremes;
 	BUN p, q, r;
-	int range, min, max, slots;
+	oid range, min, max;
+	size_t slots;
 	oid bhsb;
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,e=%s);\n",b->batId,e->batId);
@@ -656,7 +660,7 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 	if (@1) {
         	/* copy cnt array to final result */
        		BATloopFast(bn, p, q, xx) {
-			int h = (int)(*(oid*) BUNh@4(bn,p)) - min;
+			oid h = (*(oid*) BUNh@4(bn,p)) - min;
 			*(int*)BUNtloc(bn, p) = cnt[h];
 		}
 	        GDKfree(cnt);
@@ -684,7 +688,8 @@ int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	int zero = 0, *cnt;
 	BUN p, q, r;
-	int xx, range, min, max;
+	int xx;
+	oid range, min, max;
 	oid bhsb;
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
@@ -814,7 +819,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	if (@1) {
         	/* copy sums array to final result */
        		BATloopFast(bn, p, q, xx) {
-			int h = (int)(*(oid*) BUNh@4(bn,p)) - min;
+			oid h = (*(oid*) BUNh@4(bn,p)) - min;
 			*(@6*)BUNt@7(bn, p) = sums[h];
 		}
 	        GDKfree(sums);
@@ -884,7 +889,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	if (@1) {
 		/* sums in sums-array */
 		BATloopFast(bn, p, q, xx) {
-			int h = (int)(*(oid*) BUNh@4(bn,p)) - min;
+			oid h = (*(oid*) BUNh@4(bn,p)) - min;
 			@6 *dst = (@6*) BUNt@7(bn, p);
 			if (cnt[h] == 0 || sums[h] == @6_nil) {
 				*dst = @6_nil;
@@ -934,7 +939,8 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
-	int xx, range, min, max;
+	int xx;
+	oid range, min, max;
 	oid bhsb;
 	int base, offset, end, w;
 
@@ -994,7 +1000,8 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
-	int *cnt, range, min, max; 
+	int *cnt;
+	oid range, min, max; 
 	@1 zero = (@1) 0, *sums, slots;
 	BUN p, q, r;
 	oid bhsb;
@@ -1127,7 +1134,8 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	int xx, yy = 0, off = BUNindex(e,BUNfirst(e));
 	ptr *extremes;
 	BUN p, q, r;
-	int range, min, max, slots;
+	oid range, min, max;
+	size_t slots;
 	oid bhsb;
   	int base, offset, end, w;
 
@@ -1264,7 +1272,7 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	if (@1) {
         	/* copy cnt array to final result */
        		BATloopFast(bn, p, q, xx) {
-			int h = (int)(*(oid*) BUNh@4(bn,p)) - min;
+			oid h = (*(oid*) BUNh@4(bn,p)) - min;
 			*(int*)BUNtloc(bn, p) = cnt[h];
 		}
 	        GDKfree(cnt);
@@ -1297,7 +1305,8 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	int zero = 0, *cnt;
 	BUN p, q, r;
-	int xx, range, min, max;
+	int xx;
+	oid range, min, max;
 	oid bhsb;
   	int base, offset, end, w;
   	int btt;

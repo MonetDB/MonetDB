@@ -725,7 +725,7 @@ int strReverseStrSearch( int *res, str s, str s2 ){
 }
 
 int strChrSearch( int *res, str s, chr *c ){
-	unsigned int i = (unsigned int) *c;
+	int i = (int) *c;
         char buf[5], *p = buf;
 	RETURN_NIL_IF(strNil(s)||*c==chr_nil,TYPE_int);
 	@:UTF8_PUTCHAR(i,p)@
@@ -734,7 +734,7 @@ int strChrSearch( int *res, str s, chr *c ){
 }
 
 int strReverseChrSearch( int *res, str s, chr *c ){
-	unsigned int i = (unsigned int) *c;
+	int i = (int) *c;
         char buf[5], *p = buf;
 	RETURN_NIL_IF(strNil(s)||*c==chr_nil,TYPE_int);
 	@:UTF8_PUTCHAR(i,p)@

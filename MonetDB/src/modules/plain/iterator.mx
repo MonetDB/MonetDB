@@ -553,16 +553,16 @@ int JoinNext_@2(ITER *it) {
     int xx, yy = 0;
 
     ITERloop(outer, p, q, xx) {
-	if (it->hdl.join.hashnum <= 0) {
+	if (it->hdl.join.hashnum == 0) {
             it->hdl.join.hashnum =  
 	        it->hdl.join.hash[iterator_hash@2(@3, BUNh@4(outer->result,p), it->hdl.join.mask)];
 	}
-        while(it->hdl.join.hashnum > 0) { 
+        while(it->hdl.join.hashnum != 0) { 
             BUN t = BUNptr(it->hdl.join.inner, it->hdl.join.hashnum);
             it->hdl.join.hashnum = it->hdl.join.link[it->hdl.join.hashnum];
             if (@1_EQ(BUNt@4(outer->result, p), BUNh@4(it->hdl.join.inner,t), @3)) {
                 buncopy(it, r, BUNhead(outer->result,p), BUNtail(it->hdl.join.inner,t)); 
-                ITERbreak(outer, p+((it->hdl.join.hashnum < 0)?xx:0), ++yy);
+                ITERbreak(outer, p, ++yy);
             }
         }
     }
@@ -683,7 +683,7 @@ the aggregate function into an init-value, an add-macro and a finish-macro.
 #define aggr(idx)	BUNtloc(bn, BUNptr(bn,idx))
 #define bunfnd(r,v){ oid _id = *(oid*) v; oid *_o = &_id; BUNfndOID(r,attr,_o);\
     } if (r == NULL) {\
-        GDKerror("iter_groupby: matching problem oid=%d.\n", *(oid*) v);\
+        GDKerror("iter_groupby: matching problem oid=%lu.\n", (unsigned long) *(oid*) v);\
     } else
 #define aggr_count_add(tpe,idx,v) 
 #define aggr_max_add(tpe,idx,v) bunfnd(r,v)\

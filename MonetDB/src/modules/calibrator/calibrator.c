@@ -124,7 +124,7 @@ int main(int ac, char **av)
 	printTLB(caliInfo->TLB, MHz);
 	
 #ifdef CALIBRATOR_CHECK_SMP
-	printf("SMP: CPUs found: %d\n", caliInfo->smp.nrCpus);
+	printf("SMP: CPUs found: %ld\n", caliInfo->smp.nrCpus);
 #endif
 	
 	freeFullInfo(caliInfo);

@@ -85,7 +85,7 @@ Def*	d;
 
 void	InitDef()
 {
-    long clock;
+    time_t clock;
 
     mx_title = 0;
     time(&clock);

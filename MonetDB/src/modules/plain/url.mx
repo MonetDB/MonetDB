@@ -427,7 +427,7 @@ url_getProtocol(
    url     	t	
 ){
         static char buf[1024];
-        char *b,*d =0, *s=buf;
+        char *b,*d =0;
 	int i=0;
 	if( t == 0) return GDK_FAIL;
 	b= buf;

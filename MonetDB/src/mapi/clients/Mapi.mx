@@ -977,7 +977,7 @@ The routine Mgetreply returns with 0 upon encountering the prompt
 (MOK) or an error.
 @c
 char *Mgetreply(Msession mid) {
-	char ch;
+	int ch;
 	int n=0;        
 
 	COUNT(mid,19);
@@ -1069,9 +1069,9 @@ int Mslice(char *tuple,int fnr, void *ptr, int typ) {
 	case TYPE_int:
         case TYPE_oid:
         case TYPE_ptr:
-		return sscanf(start,"%d",ptr)==1? 0: MMAPIERR;
+		return sscanf(start,"%d",(int *)ptr)==1? 0: MMAPIERR;
         case TYPE_flt:
-                return sscanf(start,"%f",ptr)==1? 0: MMAPIERR;
+                return sscanf(start,"%f",(float *)ptr)==1? 0: MMAPIERR;
 	case TYPE_chr:
 		*(char*) ptr= *start;
 		return 0;

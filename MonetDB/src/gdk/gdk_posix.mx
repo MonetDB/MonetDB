@@ -1078,7 +1078,9 @@ second line with encodingw .=free, *=inuse, X=unusable. On Unix systems,
 *=inuse is not testable (unless with complicated signal stuff). On 64-bits
 systems, this administation is disfunctional. 
 @c
+#if SIZEOF_LONG==4
 unsigned char MT_alloc_map[49600]= { 0 };
+#endif
 
 int MT_alloc_register(void *addr, unsigned int size, char mode) {
 #if SIZEOF_LONG==4

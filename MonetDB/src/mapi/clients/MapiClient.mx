@@ -158,7 +158,7 @@ void clientAccept( Msession mid) {
 	FILE	*fp;
 	char 	*line=0, *start_cmd, *end_cmd;
 	int	n, m_size=CHUNK_SIZE, m_index=0;
-	char	cmd = 0, ch;
+	char	cmd = 0;
 
 	message = (char *) malloc(CHUNK_SIZE);
 
@@ -311,7 +311,7 @@ void usage(char *prog) {
 }
 
 int main(int ac, char **av) {
-	char 	buf[BUFSIZ], *prog = *av, *config = NULL;
+	char 	*prog = *av, *config = NULL;
 	opt 	*set = NULL;
 	int     port = 0, debug = 0, setlen = 0;
 

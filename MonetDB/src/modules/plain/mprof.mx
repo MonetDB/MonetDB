@@ -714,15 +714,17 @@ Ma_tostr(
 	char buf[1024];
 	int l = 0;
 	
-	sprintf(buf,"(%d,%d,%d,%d,%d,%d,%d,%d)",
-		M->arena,
-		M->ordblks,
-		M->smblks,
-		M->hblkhd,
-		M->hblks,
-		M->usmblks,
-		M->fsmblks,
-		M->uordblks);
+	/* need to cast to long for 64-bit SGI which uses long for
+	   these values */
+	sprintf(buf,"(%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld)",
+		(long) M->arena,
+		(long) M->ordblks,
+		(long) M->smblks,
+		(long) M->hblkhd,
+		(long) M->hblks,
+		(long) M->usmblks,
+		(long) M->fsmblks,
+		(long) M->uordblks);
 	l = strlen(buf) + 1;
 	if (*dst && *len < l ){
 		GDKfree(*dst);
@@ -745,6 +747,7 @@ Ma_fromstr(
 ){
 	int i = 0;
         Mallinfo m;
+	int arena, ordblks, smblks, hblkhd, hblks, usmblks, fsmblks, uordblks;
         char *c;
         c= strchr(src,')');
         if( c == 0 ){
@@ -753,17 +756,27 @@ Ma_fromstr(
         }
         * ++c =0;
 
+	/* can't use &m.arena etc here because on 64-bit SGI these
+	   aren't ints */
         i = sscanf( src, "(%d,%d,%d,%d,%d,%d,%d,%d)",
-		&m.arena,
-		&m.ordblks,
-		&m.smblks,
-		&m.hblkhd,
-		&m.hblks,
-		&m.usmblks,
-		&m.fsmblks,
-		&m.uordblks);
+		&arena,
+		&ordblks,
+		&smblks,
+		&hblkhd,
+		&hblks,
+		&usmblks,
+		&fsmblks,
+		&uordblks);
   
 	if( i != 8) return 0;
+	m.arena = arena;
+	m.ordblks = ordblks;
+	m.smblks = smblks;
+	m.hblkhd = hblkhd;
+	m.hblks = hblks;
+	m.usmblks = usmblks;
+	m.fsmblks = fsmblks;
+	m.uordblks = uordblks;
 	if (*M_ptr){
 	   	if (*len < sizeof(Mallinfo) ){
 			GDKfree(*M_ptr);

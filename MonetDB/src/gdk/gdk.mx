@@ -423,6 +423,7 @@ typedef signed char	bit;
 typedef signed char	chr; 		
 typedef short		sht;
 typedef unsigned int	oid; 		
+#define SIZEOF_OID	SIZEOF_INT
 typedef int		bat; 		/* Index into BBP */
 typedef void*		ptr; 		/* Internal coding of types */
 typedef float		flt; 		
@@ -1105,7 +1106,7 @@ not maintain the @%hstorted@ and @%tsorted@ flags. Beware!
 The routine @%BUNfnd@ provides fast access to a single BUN providing
 a value for the head of the binary association. 
 A very fast shortcut for @%BUNfnd@ if the selection type is known to be
-integer or OID, is procvided in the form of the macro @%BUNfndOID@.
+integer or OID, is provided in the form of the macro @%BUNfndOID@.
 @
 To select on a tail, one should use the reverse view otbained by
 @%BATmirror@.
@@ -1171,12 +1172,21 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 #define BUNfndVOID(p,b,v) {\
 	REGISTER size_t _i = BUNindex((b),BUNfirst((b))) + (*(oid*) (v) - (b)->hseqbase);\
         p = BUNptr((b), _i);  if (p < BUNfirst(b) || p >= BUNlast(b)) p = NULL; }
+#if SIZEOF_OID == SIZEOF_INT
 #define BUNfndOID(p,b,v) \
 	if (BAThdense(b)) {\
 		BUNfndVOID(p,b,v);\
 	} else {\
 		HASHfnd_int(p,b,(int*)v);\
 	}
+#else
+#define BUNfndOID(p,b,v) \
+	if (BAThdense(b)) {\
+		BUNfndVOID(p,b,v);\
+	} else {\
+		HASHfnd_lng(p,b,(lng*)v);\
+	}
+#endif
 #define BUNfndSTD(p,b,v)\
 	(p=BUNfnd(b,v))
 
@@ -2247,7 +2257,7 @@ static INLINE BAT* BATdescriptor(REGISTER int i) {
 }
 
 static INLINE ptr BUNhpos(REGISTER BAT *b, REGISTER BUN p) {
-	oid *ip = (oid*) &b->void_seq1; 
+	oid *ip = &b->void_seq1; 
 	*ip = b->hseqbase;
 	if (*ip != oid_nil) {
 		*ip += BUNgetpos(b,p);
@@ -2256,7 +2266,7 @@ static INLINE ptr BUNhpos(REGISTER BAT *b, REGISTER BUN p) {
 }
 
 static INLINE ptr BUNtpos(REGISTER BAT *b, REGISTER BUN p) {
-	oid *ip = (oid*) &b->void_seq2; 
+	oid *ip = &b->void_seq2; 
 	*ip = b->tseqbase;
 	if (*ip != oid_nil) {
 		*ip += BUNgetpos(b,p);
@@ -2616,7 +2626,11 @@ speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 @:hashloop(chr,chr,simple,chr,hloc)@
 @:hashloop(sht,sht,simple,sht,hloc)@
 @:hashloop(int,int,simple,int,hloc)@
+#if SIZEOF_OID == SIZEOF_INT
 @:hashloop(oid,int,simple,int,hloc)@ /* OIDDEPEND */
+#else
+@:hashloop(oid,lng,simple,lng,hloc)@ /* OIDDEPEND */
+#endif
 @:hashloop(bat,int,simple,int,hloc)@
 #if SIZEOF_LONG==8
 @:hashloop(ptr,lng,simple,lng,hloc)@
