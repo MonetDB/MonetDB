@@ -105,7 +105,8 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 	if (res && type == QTABLE){ 
 		list *l;
 		node *n;
-		char *buf = receive( rs ), *start = buf, *m = buf;
+		char *buf = (nRows > 0)?receive( rs ):NULL; 
+	        char *start = buf, *m = buf;
 
 		if (res->op1.stval->type == st_order){
 			l = res->op2.stval->op1.lval;

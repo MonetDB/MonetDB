@@ -2881,7 +2881,7 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss,
 			 _("Unknown column option (%ld)->token = %s\n"),
 			 (long) s, token2string(s->token));
 	}
-	return NULL;
+	return res;
 }
 
 static stmt *column_options(context * sql, dlist * opt_list, 
@@ -2914,7 +2914,7 @@ static stmt *create_column(context * sql, symbol * s, stmt * ss, stmt * ts, tabl
 		c->s = res;
 		st_attache(res, NULL);
 		res = column_options(sql, opt_list, ss, ts, res, c);
-	} 
+	}
 
 	if (!res && sql->errstr[0] == '\0') {
 		snprintf(sql->errstr, ERRSIZE,
