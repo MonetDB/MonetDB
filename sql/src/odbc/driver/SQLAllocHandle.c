@@ -44,7 +44,7 @@
 #include "ODBCError.h"
 
 
-SQLRETURN  SQLAllocHandle(
+SQLRETURN  AllocHandle(
 	SQLSMALLINT	nHandleType,	/* type to be allocated */
 	SQLHANDLE	nInputHandle,	/* type to be allocated */
 	SQLHANDLE *	pnOutputHandle )/* ptr for allocated handle struct */
@@ -153,4 +153,12 @@ SQLRETURN  SQLAllocHandle(
 	}
 
 	return SQL_INVALID_HANDLE;
+}
+
+SQLRETURN  SQLAllocHandle(
+	SQLSMALLINT	nHandleType,	/* type to be allocated */
+	SQLHANDLE	nInputHandle,	/* type to be allocated */
+	SQLHANDLE *	pnOutputHandle )/* ptr for allocated handle struct */
+{
+	AllocHandle( nHandleType, nInputHandle, pnOutputHandle );
 }
