@@ -125,6 +125,9 @@ atom *atom_general(sql_subtype * tpe, char *val)
 	atom *a;
 	ptr p = NULL;
 
+	if (atom_debug)
+		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname, val);
+
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(tpe, val);
 	a = NEW(atom);
@@ -136,9 +139,7 @@ atom *atom_general(sql_subtype * tpe, char *val)
 
 	assert(a->data.vtype >= 0);
 
-	if (atom_debug) 
-		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname,val);
-	if (val){
+	if (val) {
 		int type = a->data.vtype;
 		a->isnull = 0;
 		if (ATOMstorage(type) == TYPE_str){
@@ -146,15 +147,7 @@ atom *atom_general(sql_subtype * tpe, char *val)
 			a->data.val.sval = sql2str(val);
 			a->data.len = strlen(a->data.val.sval); 
 		} else {
-			int res;
-			if (a->tpe->scale == SCALE_FIX &&
-				strcmp(a->tpe->type->sqlname, "time") == 0){
-				daytime *d = p;
-				res = daytime_tz_fromstr(val, &a->data.len, &d);
-				p = (ptr)d;
-			} else {
-				res = ATOMfromstr(type, &p, &a->data.len, val);
-			}
+			int res = ATOMfromstr(type, &p, &a->data.len, val);
 			/* no result or nil means error (SQL has NULL not nil)*/
 			if (res <= 0 || !p ||
 			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
