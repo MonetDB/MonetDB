@@ -145,7 +145,7 @@ struct option
    differences in the consts, in stdlib.h.  To avoid compilation
    errors, only prototype getopt for the GNU C library.  */
 #ifndef HAVE_GETOPT
-mutils_export int getopt (int __argc, char *const *__argv, const char *__shortopts);
+mutils_export int getopt (int __argc__, char *const *__argv__, const char *__shortopts);
 #endif
 # else /* not __GNU_LIBRARY__ */
 #ifndef HAVE_GETOPT
@@ -154,14 +154,14 @@ mutils_export int getopt ();
 # endif /* __GNU_LIBRARY__ */
 
 # ifndef __need_getopt
-mutils_export int getopt_long (int __argc, char *const *__argv, const char *__shortopts,
+mutils_export int getopt_long (int __argc__, char *const *__argv__, const char *__shortopts,
 		        const struct option *__longopts, int *__longind);
-mutils_export int getopt_long_only (int __argc, char *const *__argv,
+mutils_export int getopt_long_only (int __argc__, char *const *__argv__,
 			     const char *__shortopts,
 		             const struct option *__longopts, int *__longind);
 
 /* Internal only.  Users should not call this directly.  */
-mutils_export int _getopt_internal (int __argc, char *const *__argv,
+mutils_export int _getopt_internal (int __argc__, char *const *__argv__,
 			     const char *__shortopts,
 		             const struct option *__longopts, int *__longind,
 			     int __long_only);
