@@ -44,7 +44,7 @@ subs = [
     ('@infodir@',           r"${prefix}\info"),
     ('@libexecdir@',        r"${prefix}\libexec"),
     ('@PACKAGE@',           r"MonetDB"),
-    ('@VERSION@',           r"4.3.16-rc03"),
+    ('@VERSION@',           r"4.3.17"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
     ('@MONET_BUILD@',       build),
