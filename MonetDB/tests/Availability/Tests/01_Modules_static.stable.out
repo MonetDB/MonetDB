@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 670 ]
+[ 673 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 670 ]
+[ 673 ]
 
 var All:=0;
 
@@ -717,8 +717,8 @@ Module: "str"
 
 Module: "sys"
 
-[ 67 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 70 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature											help																																																																												  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "bbp",		  "PROC:      ",  "bbp() : BAT[str,int]",								  "Global BBP usage info"																																																												  ]
@@ -757,14 +757,17 @@ Module: "sys"
 [ "view_atom_align",	  "COMMAND:   ",  "view_atom_align() : BAT[int,int]",						  "Global type table alignment property"																																																										  ]
 [ "view_atom_name",	  "COMMAND:   ",  "view_atom_name() : BAT[int,str]",						  "Global type table names"																																																												  ]
 [ "view_atom_size",	  "COMMAND:   ",  "view_atom_size() : BAT[int,int]",						  "Global type table sizement property"																																																											  ]
+[ "view_bbp_count",	  "COMMAND:   ",  "view_bbp_count() : BAT[int,lng]",							  "Pseudo bat to map a BAT id into its count"																																																																							  ]
 [ "view_bbp_dirty",	  "COMMAND:   ",  "view_bbp_dirty() : BAT[int,str]",							  "Pseudo bat to map a BAT id into its dirty/diffs/clean status"																																																							  ]
 [ "view_bbp_heat",	  "COMMAND:   ",  "view_bbp_heat() : BAT[int,int]",							  "Pseudo bat to map a BAT id into its name"																																																										  ]
+[ "view_bbp_htype",	  "COMMAND:   ",  "view_bbp_htype() : BAT[int,str]",							  "Pseudo bat to map a BAT id into its head type"																																																																						  ]
 [ "view_bbp_kind",	  "COMMAND:   ",  "view_bbp_kind() : BAT[int,str]",							  "Pseudo bat to map a BAT id into its type"																																																										  ]
 [ "view_bbp_location",	  "COMMAND:   ",  "view_bbp_location() : BAT[int,str]",							  "Pseudo bat to map a BAT id into its disk location"																																																									  ]
 [ "view_bbp_lrefcnt",	  "COMMAND:   ",  "view_bbp_lrefcnt() : BAT[int,int]",							  "Pseudo bat to map a BAT id into its logical reference count"																																																								  ]
 [ "view_bbp_name",	  "COMMAND:   ",  "view_bbp_name() : BAT[int,str]",							  "Pseudo bat to map a BAT id into its name"																																																										  ]
 [ "view_bbp_refcnt",	  "COMMAND:   ",  "view_bbp_refcnt() : BAT[int,int]",							  "Pseudo bat to map a BAT id into its reference count"																																																									  ]
 [ "view_bbp_status",	  "COMMAND:   ",  "view_bbp_status() : BAT[int,str]",							  "Pseudo bat to map a BAT id into its disk/load status"																																																								  ]
+[ "view_bbp_ttype",	  "COMMAND:   ",  "view_bbp_ttype() : BAT[int,str]",							  "Pseudo bat to map a BAT id into its tail type"																																																																						  ]
 [ "view_client_login",	  "COMMAND:   ",  "view_client_login() : BAT[int,str]",							  "Pseudo bat to map client identifier to its login time"																																																								  ]
 [ "view_client_name",	  "COMMAND:   ",  "view_client_name() : BAT[int,str]",							  "Pseudo bat to map client identifier to its name"																																																									  ]
 [ "view_client_tree",	  "COMMAND:   ",  "view_client_tree() : BAT[int,str]",							  "Pseudo bat to map client identifier to its current active tree"																																																							  ]
@@ -805,7 +808,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 670 ]
+[ 673 ]
 
 quit();
 

@@ -50,6 +50,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "qt",		  "contrib"	  ]
 [ "radix",	  "plain"	  ]
 [ "salgebra",	  "plain"	  ]
+[ "sql_server",	  "UNKNOWN"	  ]
 [ "stats",	  "plain"	  ]
 [ "str",	  "static"	  ]
 [ "streams",	  "plain"	  ]
@@ -70,28 +71,28 @@ ls();
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  52,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",	  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 
 dir();
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  52,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",		  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "adm_fcntbl",		  "str",  "oid",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "adm_fcntbl",		  "str",  "oid",  674,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_environment",	  "str",  "str",  30,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_aut",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dat",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  570,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_nme",	  "oid",  "str",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1668,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_aut",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  674,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_dat",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  573,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  674,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_nme",	  "oid",  "str",  674,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_sig",	  "oid",  "str",  39,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  674,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_cnt",	  "oid",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -156,6 +157,7 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "qt"			  ]
 [ "radix"		  ]
 [ "salgebra"		  ]
+[ "sql_server"		  ]
 [ "stats"		  ]
 [ "streams"		  ]
 [ "tcpip"		  ]
