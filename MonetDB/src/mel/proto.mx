@@ -43,6 +43,7 @@ class proto: public language {
 #include "ListIterator.h"
 #include "mel_tab.h"
 #include <string.h>
+#include <ctype.h>
 
 int proto::generate_code( ostream &o, Symbol *root ){
 	root->print( this, o );
@@ -50,6 +51,16 @@ int proto::generate_code( ostream &o, Symbol *root ){
 }
 
 static char mod_export[1024];
+
+char *upper(char *str){
+	int i,l = strlen(str);
+	char *res = new char[l+1];
+
+	for (i=0;i<l;i++)
+		res[i]=toupper(str[i]);	
+	res[l] = '\0';
+	return res;
+}
 
 ostream &proto::gen_module( ostream &o, const Module &d ){ 
 
@@ -59,7 +70,7 @@ ostream &proto::gen_module( ostream &o, const Module &d ){
 	o << "#include <gdk.h>\n\n";
 
 	o << "#ifdef _MSC_VER\n";
-	o << "#ifndef LIB_" << d.Name() << "\n";
+	o << "#ifndef LIB" << upper(d.Name()) << "\n";
 	o << "#define " << d.Name() << "_export extern __declspec(dllimport)\n";
 	o << "#else\n";
 	o << "#define " << d.Name() << "_export extern __declspec(dllexport)\n";

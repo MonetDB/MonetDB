@@ -25,6 +25,7 @@ class glue: public language {
 	ostream &gen_module( ostream &o, const Module &m );
     public:
 	int arg_nr;
+	Symtable *tableptr;
     	ostream &gen_command_args(ostream &o, const Command &m, char* sep="");
     	ostream &gen_operator_args(ostream &o, const Operator &m, char* sep="");
 };
@@ -129,6 +130,15 @@ class protoize: public glue {
 
 	ostream &gen_prelude( ostream &o, const Prelude &m );
 	ostream &gen_epilogue( ostream &o, const Epilogue &m );
+};
+@+ exports
+generates export definitions
+
+@C
+class exports: public glue {
+    public:
+	ostream &gen_atom( ostream &o, const Atom &m );
+	ostream &gen_acc( ostream &o, const Acc &m );
 };
 
 @+ forward 
@@ -240,8 +250,9 @@ int glue::generate_code( ostream &o, Symbol *rootptr ){
 	return 0;
 }
 
-int glue::generate_table( ostream &o, Symtable *tableptr ){
+int glue::generate_table( ostream &o, Symtable *_tableptr ){
 
+	tableptr = _tableptr;
 	o << "/*\n";
 	o << " * This module is generated using the mel -glue utility\n";
 	o << " * not intended for reading !!! \n";
@@ -255,7 +266,7 @@ int glue::generate_table( ostream &o, Symtable *tableptr ){
 	o << "#endif\n\n";
 
 	language *l = new protoize();
-	tableptr->traverse( l, o );
+	_tableptr->traverse( l, o );
 	delete(l);
 	o << "\n";
 	
@@ -337,18 +348,18 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 		o << "_Module_Install( TBLinstall *inst, str user );\n";
 	o << "int " << d.Name() << "_Module_Delete( str user );\n";
 
-	//language *l = new protoize();
-	//print_list( o, d.Defs(), l );
-	//delete(l);
-	//o << "\n";
+	language *l = new exports();
+	tableptr->traverse( l, o );
+	delete(l);
+	o << "\n";
 
 #if 0
-	language *l = new forward();
+	l = new forward();
 	print_list( o, d.Defs(), l );
 	delete(l);
 	o << "\n";
 #else
-	language *l;
+	l;
 #endif
 
 	l = new typecheck();
@@ -893,7 +904,6 @@ ostream &unpack_call::gen_var_arg( ostream &o, const VarArg &d){
 
 // the protoize language
 ostream &protoize::gen_atom( ostream &o, const Atom &d ){
-	o << "extern int TYPE_" << d.Name() << ";\n";
 	o << "typedef ";
 	if (d.top_type()) {
 		o << d.top_type()->toString();
@@ -910,9 +920,19 @@ ostream &protoize::gen_atom( ostream &o, const Atom &d ){
 	return o;
 }
 
+ostream &exports::gen_atom( ostream &o, const Atom &d ){
+	o << "extern int TYPE_" << d.Name() << ";\n";
+	return o;
+}
+
 ostream &protoize::gen_acc( ostream &o, const Acc &d ){
 	o << "extern int ACC_" << d.Name() << ";\n";
 	o << "typedef ptr " << d.Name() << ";\n";
+	return o;
+}
+
+ostream &exports::gen_acc( ostream &o, const Acc &d ){
+	o << "extern int ACC_" << d.Name() << ";\n";
 	return o;
 }
 
