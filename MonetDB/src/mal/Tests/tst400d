@@ -1,0 +1,10 @@
+# simple iterator loop test
+
+	i:= -1:lng;
+	b:= bat.new(int,int);
+barrier v:= iterator.nextElement(i,0:lng,10000:lng);
+	z:= bat.insert(b,1,1);
+	redo v;
+end	v;
+	c:= count(b);
+	z:= print(c);

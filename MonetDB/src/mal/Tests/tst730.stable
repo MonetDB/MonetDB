@@ -13,9 +13,9 @@
 #barrier  b:= iterator.argument(i,arg);
 #end b;
 #end function; 
-function pr(format:str,arg:any, malVARG:any):void;	#0:(pr:void->0)(format:str->1)(arg:any->2)( malVARG:any->3)
+function Admin.pr(format:str,arg:any, malVARG:any):void;	#0:(pr:void->0)(format:str->13)(arg:any->14)( malVARG:any->15)
 	i := -1;	#1:(i:int->16)($17:int->17)
-barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any->18)(i:int->16)(arg:any->2)
+barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any->18)(i:int->16)(arg:any->14)
 end	b;	#3:(b:any->18)
 end function;	#4:
 #
@@ -30,11 +30,11 @@ end function;	#4:
 #	printf(elm);
 #end b;
 #end function; 
-function prStr(format:str,arg:str, malVARG:any):void;	#0:(prStr:void->0)(format:str->1)(arg:str->2)( malVARG:any->3)
+function Admin.prStr(format:str,arg:str, malVARG:any):void;	#0:(prStr:void->0)(format:str->13)(arg:str->14)( malVARG:any->15)
 	i := -1;	#1:(i:int->16)($17:int->17)
-	limit := Array.getLength(arg);	#2 unknown:(limit:any->18)(arg:str->2)
+	limit := Array.getLength(arg);	#2 unknown:(limit:any->18)(arg:str->14)
 barrier	b := iterator.nextElement(i,0,limit);	#3 unknown:(b:any->19)(i:int->16)($20:int->20)(limit:any->18)
-	elm := Array.get(arg,i);	#4 unknown:(elm:any->21)(arg:str->2)(i:int->16)
+	elm := Array.get(arg,i);	#4 unknown:(elm:any->21)(arg:str->14)(i:int->16)
 	system.printf("argument ");	#5:($22:int->22)($23:str->23)
 	printf(i);	#6 unknown:($24:any->24)(i:int->16)
 	printf(elm);	#7 unknown:($25:any->25)(elm:any->21)

@@ -16,10 +16,10 @@
 #	r:= 3.14:flt;
 #	return r;
 #end function;
-function simple(i:int,lim:int,s:str):flt;	#0:(simple:flt->0)(i:int->1)(lim:int->2)(s:str->3)
-	i := arith.+(i,1);	#1:(i:int->1)(i:int->1)($16:int->16)
-barrier	v := arith.<(i,lim);	#2:(v:bit->17)(i:int->1)(lim:int->2)
-	z := Admin.simple(i,lim,s);	#3:(z:flt->18)(i:int->1)(lim:int->2)(s:str->3)
+function Admin.simple(i:int,lim:int,s:str):flt;	#0:(simple:flt->0)(i:int->13)(lim:int->14)(s:str->15)
+	i := arith.+(i,1);	#1:(i:int->13)(i:int->13)($16:int->16)
+barrier	v := arith.<(i,lim);	#2:(v:bit->17)(i:int->13)(lim:int->14)
+	z := Admin.simple(i,lim,s);	#3:(z:flt->18)(i:int->13)(lim:int->14)(s:str->15)
 end	v;	#4:(v:bit->17)
 	r := 3.14;	#5:(r:flt->19)($20:flt->20)
 	return r;	#6:(r:flt->19)

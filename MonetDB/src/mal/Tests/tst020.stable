@@ -16,7 +16,7 @@
 #	redo l;
 #end l;
 #end function;
-function pl(i:str):int;	#0:(pl:int->0)(i:str->1)
+function Admin.pl(i:str):int;	#0:(pl:int->0)(i:str->13)
 	L := "something";	#1:(L:str->14)($15:str->15)
 	r := 0;	#2:(r:int->16)($17:int->17)
 barrier	l := arith.=(r,0);	#3:(l:bit->18)(r:int->16)($17:int->17)

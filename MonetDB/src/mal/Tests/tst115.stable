@@ -11,13 +11,13 @@
 #command + (L:any::1,R:any::1):any::1 = addIntInt; 
 !ERROR: address of function addIntInt not found
 #function address for 'addIntInt' not found
-command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 unknown:(addIntInt:any::1->3)(L:any::1->1)(R:any::1->2)
+command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:(addIntInt:any::1->15)(L:any::1->13)(R:any::1->14)
 #
 #function doitOnce():int;
 #	z:= 12;
 #	return z;
 #end function;
-function doitOnce():int;	#0:(doitOnce:int->0)
+function Admin.doitOnce():int;	#0:(doitOnce:int->0)
 	z := 12;	#1:(z:int->13)($14:int->14)
 	return z;	#2:(z:int->13)
 end function;	#3:
@@ -28,11 +28,11 @@ end function;	#3:
 #	i:= j+k;
 #	return i;
 #end function;
-function doitTwice(i:int):int;	#0:(doitTwice:int->0)(i:int->1)
+function Admin.doitTwice(i:int):int;	#0:(doitTwice:int->0)(i:int->13)
 	j := 2;	#1:(j:int->14)($15:int->15)
 	k := 11111;	#2:(k:int->16)($17:int->17)
-	i := Admin.+(j,k);	#3:(i:int->1)(j:int->14)(k:int->16)
-	return i;	#4:(i:int->1)
+	i := Admin.+(j,k);	#3:(i:int->13)(j:int->14)(k:int->16)
+	return i;	#4:(i:int->13)
 end function;	#5:
 #
 #

@@ -1,0 +1,333 @@
+echo "workson Monet V5 and consumes ca 1K/session"
+echo "works on Monet V4 and also consumes about 1K/session"
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".10";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".20";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".30";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".40";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".50";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".60";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".70";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".80";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".90";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".100";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".110";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".120";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".130";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".140";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".150";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".160";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".170";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".180";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".190";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".200";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".210";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".220";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".230";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".240";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".250";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".260";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".270";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".280";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".290";MapiClient </dev/null
+ps -u mk -l |grep Mserver
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".";MapiClient </dev/null
+echo ".300";MapiClient </dev/null
+ps -u mk -l |grep Mserver

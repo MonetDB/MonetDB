@@ -1,0 +1,13 @@
+#testing the system module
+
+t0 := view_gdk_cpu(); print(t0);
+t1 := view_gdk_memory(); print(t1);
+t2 := view_gdk_io(); print(t2);
+t3 := view_gdk_bbp(); print(t3);
+t4 := mem_printmap(); print(t4);
+t5 := mem_cursize(); print(t5);
+t6 := mem_maxsize(); print(t6);
+t7 := vm_cursize(); print(t7);
+t8 := vm_maxsize(); print(t8);
+t9 := mem_usage(1000000:lng); print(t9);
+t10 := vm_usage(1000000:lng); print(t10);

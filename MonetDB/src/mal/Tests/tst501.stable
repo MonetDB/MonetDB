@@ -13,9 +13,9 @@
 #	i:= i+1;
 #	return i;
 #end function;
-function simple(i:int):int;	#0:(simple:int->0)(i:int->1)
-	i := arith.+(i,1);	#1:(i:int->1)(i:int->1)($14:int->14)
-	return i;	#2:(i:int->1)
+function Admin.simple(i:int):int;	#0:(simple:int->0)(i:int->13)
+	i := arith.+(i,1);	#1:(i:int->13)(i:int->13)($14:int->14)
+	return i;	#2:(i:int->13)
 end function;	#3:
 #
 #k:= 0;

@@ -6,6 +6,10 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-##empty test file, used to check startup problems
+#printf("hello world\n");
 #
+function Admin.main():int;	#0:(main:int->0)
+	system.printf("hello world\n");	#1:($13:int->13)($14:str->14)
+end function;	#2:
+hello world
 >
