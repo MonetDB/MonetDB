@@ -19,19 +19,19 @@
 @T
 % define titlepage
 @t The Monet Database System
-@v Version 4.2 
+@v Version 4.2
 @a Martin L. Kersten & Peter Boncz
 
-% create table of contents 
+% create table of contents
 \newpage
 \tableofcontents
 \newpage
- 
+
 @* Monet
-The Goblin Database Kernel library is complemented by a textual interface, 
-called @%Monet@.  This interface is easy to interpret, versatile and 
+The Goblin Database Kernel library is complemented by a textual interface,
+called @%Monet@.  This interface is easy to interpret, versatile and
 flexible to accommodate system debugging and application tool development.
-Although a textual interface potentially leads to a performance degradation, 
+Although a textual interface potentially leads to a performance degradation,
 our experience with earlier systems, e.g. Troll and PRISMA,
 showed that the overhead can be kept within acceptable limits.
 Moreover, a textual interface reduces the programming
@@ -43,14 +43,14 @@ effort otherwise needed to develop test and application programs.
     \end{figure}
 
 The above figure shows the different components of the Monet system. The
-{\tt processes} module offers support for multi-threading. 
+{\tt processes} module offers support for multi-threading.
 In this mode, the interpreter thread runs independent of the
 initial thread. Moreover, a thread is started to accepts requests from the
 internet. Each client can indicate the interpreter to interact with.
 For example, one can envision a thread dedicated to the parsing and execution
 of SQL statements.
 
-The {\tt queue} contains the parsed user request. It 
+The {\tt queue} contains the parsed user request. It
 synchronizes (multiple) workers by locking. The {\tt interface} module
 implements the interface to database clients. The {\tt lex/parser}
 module converts requests into parse trees.
@@ -67,7 +67,7 @@ Monet is implemented as a collection of threads. This calls for extreme
 care in coding. At several places locks and semaphores are necessary
 to achieve predictable results. In particular, after they are created
 and when they are inspected or being modified to take decisions.
- 
+
 In the current implementation the following list of locks and semaphores
 is used:
 @T
@@ -84,7 +84,7 @@ GDKcacheLock    & BBPdir        & BBPlogical, BBPphysical, BBPstatus,
                                   BBPcache, BBPsize, BBPrefs\\
                 & BBPenter      & BBPlogical, BBPphysical, BBPstatus, \\
                 &               & BBPcache, BBPsize, BBPrefs, BBPlimit,\\
- 
+
                 &               & BBPcachestore\\
                 & BBPclear      & BBPlogical, BBPphysical, BBPstatus,
                                   BBPrefs\\
@@ -110,7 +110,7 @@ monet\_available	& monet\_init    & {\em created}\\
                 & getRequest & {\em down to get request from queu} \\
                 &               & {\em up to signal available requests}\\ \hline
 \end{tabular}
- 
+
 @T
 \begin{verbatim}
 Some conclusions:
@@ -127,7 +127,7 @@ Some conclusions:
 \end{verbatim}
 
 @{
-@+ Monet Basic Definitions 
+@+ Monet Basic Definitions
 Definitions that need to included in every file of the Monet system,
 as well as in user defined module implementations.
 @h
@@ -153,7 +153,7 @@ as well as in user defined module implementations.
 MIL blocks get parsed into parse trees. The exact form is not important here,
 as programmers will not need to manipulate parse trees directly.
 @h
-#define YYMAXSONS 	11
+#define YYMAXSONS	11
 
 typedef struct YYS {
 	ValRecord yyval;
@@ -191,26 +191,26 @@ An example would be:
 @
 b@batloop() printf("[ %d %d ]\n", $1, $2);
 @
-which prints a BAT of decimal values. The MIL executing is done in the 
-Monet Interpreter. Standard iterators are @%CMDbatloop@ and  @%CMDhashloop@. 
+which prints a BAT of decimal values. The MIL executing is done in the
+Monet Interpreter. Standard iterators are @%CMDbatloop@ and  @%CMDhashloop@.
 Iterators can also be written by Monet Extenders.
 @
-Iterators often use a search accelerator for making the selection. For 
-instance, if you have developed an R-Tree, you might 
-develop also iterators that use the R-Tree to iterate over points near 
+Iterators often use a search accelerator for making the selection. For
+instance, if you have developed an R-Tree, you might
+develop also iterators that use the R-Tree to iterate over points near
 to each other.
 @
 They have the form of a loop over some selection of the BUNs of a BAT,
-which is always the first parameter. The second parameter is a PTR 
+which is always the first parameter. The second parameter is a PTR
 which points to the @%iteration-record@. The other parameters are the
 parameters passed between parentheses. For each BUN, a call
 ITERATE(head-ptr, tail-ptr, iteration-record) must be done. This will
 execute the MIL block, on the BUN, where the head-ptr is a pointer to
 the head atom of the current BUN, and tail-ptr a pointer to the tail-atom.
 @
-The iteration-record provides the necessary context information 
+The iteration-record provides the necessary context information
 that allows the Monet Interpreter to know what to execute on each call
-of ITERATE(). As mentioned, it is passed to the iterator function at 
+of ITERATE(). As mentioned, it is passed to the iterator function at
 startup in the second parameter.
 @h
 #include "yytree.h"
@@ -235,7 +235,7 @@ typedef struct {
 
 @}
 
-@+ Interface functions 
+@+ Interface functions
 @h
 #include "monet_process.h"
 #include "monet_client.h"
@@ -330,7 +330,7 @@ Ideally, they are all removed.
 #define monet_up_sema(X,Y)    if(GDKprotected) MT_up_sema(X,Y)
 #define monet_down_sema(X,Y)  if(GDKprotected) MT_down_sema(X,Y)
 #endif /* _MONET_H_ */
-@c 
+@c
 #include "monet.h"
 
 int monet_nostalgic = 0;
@@ -406,8 +406,8 @@ monet_exit(int status)
 extern BAT *TBL_mod_load;
 
 @- Monet Init
-Startup the monet server. This is the moment that modules that 
-are hardwired into the kernel are activated. The below macro is 
+Startup the monet server. This is the moment that modules that
+are hardwired into the kernel are activated. The below macro is
 provided to make inclusion of new modules a piece of cake.
 
 @= tokenvar
@@ -443,7 +443,7 @@ protectMonet(void)
 @-
 The client that notices the request for an upgrade is put on halt.
 This client could be running processing a MIL program or awaiting
-input from the user. 
+input from the user.
 @c
 void
 protectMonetClient()
@@ -578,7 +578,7 @@ executed and you get a pointer to the return value (a GDK atom) back.
 @T
 Take good notice of the below points on return values:
 \begin{itemize}
-\item if there is no return value you get a NULL pointer back! 
+\item if there is no return value you get a NULL pointer back!
 \item unless they are exited with a RETURN statement!
 \item a single MIL statement {\bf is also} a sequential block.
 \end{itemize}
@@ -643,8 +643,8 @@ containing values and their type numbers. The @%printf@() proved to be a
 great risk; people formatting badly their "%s" format strings were crashing
 the kernel. This function will prevent you from doing so.
 
-NEW implementation that repeatedly invokes sprintf => hacking the va_alist 
-for using vfsprintf proved to be too compiler-dependent (OLD approach). 
+NEW implementation that repeatedly invokes sprintf => hacking the va_alist
+for using vfsprintf proved to be too compiler-dependent (OLD approach).
 
 @= writemem
 	if (dst+@1 > buf+size) {
@@ -654,23 +654,23 @@ for using vfsprintf proved to be too compiler-dependent (OLD approach).
 		} while (dst+@1 > buf+size);
 		buf = GDKrealloc(buf, size);
 		dst = buf + offset;
-	} 
+	}
 @= sprintf
 	if (width > adds) {
-		adds = width+10; 
-		add = (str) alloca((int)adds); 
+		adds = width+10;
+		add = (str) alloca((int)adds);
 	}
 #ifndef HAVE_SNPRINTF
 	sprintf(add, meta, @1);
 #else
 	n = snprintf( add, adds, meta, @1 );
 	while (n < 0 || (size_t) n >= adds) {
-          if (n >= 0)    /* glibc 2.1 */
-             adds = n+1; /* precisely what is needed */
-          else           /* glibc 2.0 */
-             adds *= 2;  /* twice the old size */
-          add = (str) alloca ((int)adds);
-	  n = snprintf( add, adds, meta, @1 );
+		if (n >= 0)	/* glibc 2.1 */
+			adds = n+1; /* precisely what is needed */
+		else		/* glibc 2.0 */
+			adds *= 2; /* twice the old size */
+		add = (str) alloca ((int)adds);
+		n = snprintf( add, adds, meta, @1 );
 	}
 #endif /* HAVE_SNPRINTF */
 @c
@@ -874,7 +874,7 @@ monet_sprintf(str *res, str format, va_list ap)
 @- monet_syscall
 this generic function can be used to call a C function with C-like
 parameters extracted from a (argc,argv) setup.
- 
+
 This is quite tricky as we build a stack of integers by going through
 the argv[] list. This stack will be used in a totally dependent way
 by the C-routine. No checks possible.
@@ -1003,7 +1003,7 @@ monet_sigerror(str kind, str name, str extra, int argc, ValPtr argv)
 @-
 the below routine tries to derive every possible property from a
 given BAT. It should be fired off on new BATs in the MIL interpreter
-in order to achieve optimal optimization decisions being made in MIL 
+in order to achieve optimal optimization decisions being made in MIL
 algebra programs.
 @c
 static int _t3 = 0;
@@ -1024,9 +1024,9 @@ we can skip checking, as we can assume the reverse column will get checked.
 /*
  * StM: moved to CATCHVAL in yytree.mx, so it get's executed with GDKdebug=0, too.
  *
-        if (protect) {
+	if (protect) {
 		PROPDEBUG if (BATgetaccess(b) != BAT_READ)
-        		GDKwarning("monet_checkbat: setting BAT %s BAT_READ.\n",b->batId);
+		GDKwarning("monet_checkbat: setting BAT %s BAT_READ.\n",b->batId);
 		BATsetaccess(b, BAT_READ);
 	}
 */

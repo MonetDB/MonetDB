@@ -26,8 +26,8 @@ source, but ordinary telnet connections can be applied when the internet
 number of the database server is publicized.
 @-
 The number of clients permitted concurrent access is a compile time option.
-They are referenced internally by number. The console is the first and 
-should always be present. It reads from standard input and writes to 
+They are referenced internally by number. The console is the first and
+should always be present. It reads from standard input and writes to
 standard output.
 The number of clients depends on the permissible open file
 descriptors.
@@ -65,7 +65,7 @@ typedef struct CLIENT {
 	str top, limit;		/* parser pointers */
 	char *cptr;		/* parser pointers */
 	char *cline;		/* current parse line */
-	char *cleanup;		/* optional pointer to the buffer 
+	char *cleanup;		/* optional pointer to the buffer
 				   which needs garbage collection */
 	YYSTREE tree;		/* current request */
 	YYSTREE mil_accept;	/* accept request */
@@ -196,8 +196,8 @@ scheduleFile(str filename)
 		req->ev_wakeup = _tmp;			\
 		req->ev_prev  = _tmp;			\
 	}						\
-	_tmp->ev_next = req;  				\
-	req = _tmp; 					\
+	_tmp->ev_next = req;				\
+	req = _tmp;					\
 }
 
 void
@@ -247,7 +247,7 @@ The idea of such a forked client is that it has its own MIL string
 buffer, MIL parse tree, and own context management. It is typically
 used for evaluating a MIL string from within MIL. This evaluation
 takes place in a forked client, so that all MIL resources (context records)
-can be freed immediately, independent from the MIL execution context 
+can be freed immediately, independent from the MIL execution context
 of the father.
 @c
 Client
@@ -257,7 +257,7 @@ forkClient(Cntxt stk, int thread)
 
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) {
-		/* if the father itself is a temporary client, let 
+		/* if the father itself is a temporary client, let
 		 * the new child depend on the grandfather.
 		 * so: father always points to a real client session!
 		 */
@@ -430,7 +430,7 @@ closeClient(Client c, int thread)
 
 
 @-
-killClient() interrupts the MIL session abruptly, killing any executing MIL 
+killClient() interrupts the MIL session abruptly, killing any executing MIL
 interpreter threads. It is not deadlock safe nor memory leak free, and should
 be used only as a last resort to kill an out-of-control query.
 @c
@@ -464,12 +464,11 @@ killClient(Client c, int thread)
 }
 
 @-
-readClient() reads MIL from a string into the client MIL  buffer. It reads MIL (without really parsing it yet) until 
-the minimal point that something can be executed, hence it detects just when we have read one MIL statement. Notice 
+readClient() reads MIL from a string into the client MIL  buffer. It reads MIL (without really parsing it yet) until
+the minimal point that something can be executed, hence it detects just when we have read one MIL statement. Notice
 that a MIL (parallel) block counts as one statement, but may span many lines.
 @c
-static
-    void
+static void
 enlargebuffer(Client c)
 {
 	size_t i;
@@ -704,12 +703,12 @@ parseClient(Client c, int reschedule)
 }
 
 @-
-serveClient() tries to read MIL from the client input stream, and parse it. 
+serveClient() tries to read MIL from the client input stream, and parse it.
 It is typically called from the MIL queue, which basically has two kinds
 of requests: serveClient and MIL execution.
 
-It calls on parseClient(), which will again add a MIL execution request 
-containing a parsed MIL tree in to the MIL queue. 
+It calls on parseClient(), which will again add a MIL execution request
+containing a parsed MIL tree in to the MIL queue.
 
 If and end-of-stream is detected, we signal in the queue that the
 corresponding client should be terminated.

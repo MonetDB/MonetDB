@@ -18,18 +18,18 @@
 @f monet_interpreter
 @a M. L. Kersten, P. Boncz
 
-@* The Monet interpreter 
+@* The Monet interpreter
 The command interpreter executes statements taken from the Monet
 Execution queue. More than one Monet Interpreter may be simultanuously
 active.  Statements may be simple or composite. Composite statements
 include IF..THEN, WHILE, sequential blocks, and parallel blocks. The
 first two have their ususal intuitive meaning. The latter two create a
 new context stack, and put a series of new requests on the queue (one
-for each statement in the block). 
+for each statement in the block).
 @
 To provide for easy iteration over BATs, there are iterators.
 They execute a block of MIL over each BUN in a BAT, substituting
-$1 for the current head value and $2 for the current tail value. 
+$1 for the current head value and $2 for the current tail value.
 Iterators can be specified to run in parallel: in this
 case the N MIL-blocks with substituted values are taken into
 execution simultanously.
@@ -47,7 +47,7 @@ As MIL commands produce maxium one return value, garbage collection
 uses the MIL trees (a field in the tree nodes).
 @
 MIL actions are supposed to be coarse grained. The interpret, however,
-is optimized in order to be quick. A common optimization technique is 
+is optimized in order to be quick. A common optimization technique is
 run-time tree-rewriting. Expensive startup-actions in a block that is
 repeatedly executed (like function resolution) is factored out using
 this technique.
@@ -60,15 +60,15 @@ this technique.
 
 @+ signature checking
 We compress actual parameter types (argc,argv) of a command in a so-called
-'signature bitstring'. This representation is specifically targeted to 
-providing signature equality checks at very high speed. This is achieved by 
+'signature bitstring'. This representation is specifically targeted to
+providing signature equality checks at very high speed. This is achieved by
 making sure the bit string can be compared as an array of 32-bit words.
 @T
 The signatures contain, in a bit sequence, descriptions for all parameters.
 Each parameter starts with a length field of 4 bits. This can encode
 values between 0-13 (14/15 are the special values MONETSIG\_BAT/MONETSIG\_BATCONST
-that indicate a BAT-value). An integer of this number of bits that encodes the 
-type number follows. Hence we can encode type numbers up till 4095 (13 bits 
+that indicate a BAT-value). An integer of this number of bits that encodes the
+type number follows. Hence we can encode type numbers up till 4095 (13 bits
 integers); The simple case - non-BAT types - gets encoded as follows:
 \begin{verbatim}
  CONTENTS:   log(tpe)          tpe
@@ -77,8 +77,8 @@ integers); The simple case - non-BAT types - gets encoded as follows:
     NBITS:      4           log(tpe)
 \end{verbatim}
 For BATs we use the previously mentioned MONETSIG\_BAT or MONETSIG\_BATCONST
-in the length field.  After this, we place two encoded types, namely the 
-head- and tail-type of the BAT. The format of these head- and tail-type 
+in the length field.  After this, we place two encoded types, namely the
+head- and tail-type of the BAT. The format of these head- and tail-type
 packings is like described above. This yields the below picture:
 \begin{verbatim}
 BAT/BATCONST log(b->htpe)    b->htype      log(b->ttpe)      b->ttype
@@ -144,7 +144,7 @@ m_export void resetProfiler();
 #include "monet.h"
 
 @= pack_bits
- 	*wordptr |= @2 << bitoffset;
+	*wordptr |= @2 << bitoffset;
 	bitoffset += @1;
 	if (bitoffset > 32) {
 		bitoffset -= 32;
@@ -152,8 +152,10 @@ m_export void resetProfiler();
 	}
 @= pack_type
 {	int _tpe = @1, _log, _base;
-	if (_tpe < 0) _tpe = TYPE_void;
-	for(_log=0, _base=_tpe; _base; _log++) _base >>= 1;
+	if (_tpe < 0)
+		_tpe = TYPE_void;
+	for (_log = 0, _base = _tpe; _base; _log++)
+		_base >>= 1;
 	@:pack_bits(4,_log)@
 	@:pack_bits(_log,_tpe)@ }
 @c
@@ -204,14 +206,14 @@ monet_sig_eq(monet_sig_t *s1, monet_sig_t *s2)
 }
 
 @+ Run-time MIL string parsing
-Call back the interpreter to do a run-time parse of some string 
+Call back the interpreter to do a run-time parse of some string
 (that is supposed to be MIL) and execute the resulting tree.
 
 Until recently this was a quite tricky business because the parser modified
 the Client state, which interacted with the interpreter garbage
 collection which also depends on the Client record (c->maxstk etc).
 
-now we do a lightweight fork to obtain a temporary client session 
+now we do a lightweight fork to obtain a temporary client session
 
 @- interpret_str
 This forks a new subclient in order to get an independent context.
@@ -251,7 +253,7 @@ interpret_str(Cntxt stk, str buf, ValPtr res)
 }
 
 @- interpret_file
-First interpret file name, then read file, then call interpret_str(). 
+First interpret file name, then read file, then call interpret_str().
 @c
 int
 interpret_file(Cntxt stk, YYSTREE lt, ValPtr res)
@@ -293,13 +295,13 @@ interpret_file(Cntxt stk, YYSTREE lt, ValPtr res)
 @* Tree interpretation
 
 
-@- bat pinning 
+@- bat pinning
 BATs that are passed into commands must be pinned into memory,
 so the BBP trim cannot unexpectedly unload them while a
 C implementation is using this BAT handle.
 
-Here, we also solve one of the sticky problems in Monet: calling the 
-BUNhead and BUNtail macros on BATs with void columns is thread-unsafe (for 
+Here, we also solve one of the sticky problems in Monet: calling the
+BUNhead and BUNtail macros on BATs with void columns is thread-unsafe (for
 no good reason, just due to late evolution in the MIL data structures).
 
 A workaround for this problem is to create a BATview on BATs with void
@@ -308,7 +310,7 @@ access (should be) read-only, this should not pose too much hindrance
 (VIEWs are read-only and do not allow operators that modify them).
 
 The params macro above examines BATs that are used and creates VIEWs
-were appropiate. The below macro is called after execution and 
+were appropiate. The below macro is called after execution and
 cleans up the created views.
 @c
 BAT *
@@ -372,7 +374,7 @@ interpret_unpin(batrec *r, str s)
 	BBPunfix(r->id);
 }
 
-@- param execution(name,lt,argc,argv) 
+@- param execution(name,lt,argc,argv)
 this macro interprets all parameters of name={operator,function,etc} 'lt'
 placing the parameter count in  'argc' and the result values in 'argv[1..argc]'
 @c
@@ -473,7 +475,7 @@ in a persistent BAT. It can be picked up at a later time for inspection.
 This can be extended upon need to also collect the timings.
 
 To avoid problems, each time client disappears we close the profiling option.
-It should be explicitly set afterwards. 
+It should be explicitly set afterwards.
 @c
 #ifdef HAVE_TIMES
 #ifdef HAVE_SYS_TIMES_H
@@ -633,17 +635,17 @@ The information gathered is currently limited to some basic OS properties;
 It is dumped on the eventstream whenever we leave the interpreter();
 @= profileEvent
 #ifdef HAVE_TIMES
-if( profilemode){
-    long nc= GDKusec();
-    onlineProfilerEvent("@1",nc, nc-clk, &timer, lt);
-}
+	if (profilemode) {
+		long nc = GDKusec();
+		onlineProfilerEvent("@1", nc, nc - clk, &timer, lt);
+	}
 #endif
 @= profileCapture
 #ifdef HAVE_TIMES
-    if( eventstream) {
-	 clk=GDKusec();
-	 times(&timer);
-    }
+	if( eventstream) {
+		clk=GDKusec();
+		times(&timer);
+	}
 #endif
 @c
 
@@ -660,9 +662,9 @@ interpret(Cntxt stk, YYSTREE lt, ValPtr res)
 	@:profileCapture@
 #endif
 @-
-We do not want recursive programs crashing the server, so once in 
-a while we check whether we are running dangerously low on available 
-stack space. 
+We do not want recursive programs crashing the server, so once in
+a while we check whether we are running dangerously low on available
+stack space.
 @c
 	if ((stk & 31) == 31 && THRhighwater()) {
 		GDKerror("interpret: running out of physical stack space!\n");
@@ -798,8 +800,8 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 An interpreter is not just interpreting things all the time as this would
 mean that nothing could ever happen (you cannot implement smalltalk in
 smalltalk in smalltalk, etc..) Magic things must be done someday somewhere!
-That place is here for MIL. The tokens below this line call GDK/C routines. 
-They are able to produce new values in the process. The deallocation 
+That place is here for MIL. The tokens below this line call GDK/C routines.
+They are able to produce new values in the process. The deallocation
 primitives CATCH* look after garbage collecting these results.
 @c
 		case TOK_BUILTIN:
@@ -832,7 +834,7 @@ primitives CATCH* look after garbage collecting these results.
 Basic MIL functors with multiple parameters (builtins were handled separately
 above). All of which may be string derefences ((*nme)(), {*nme}(), [*nme]())
 @T
-When a functor-tree is inside a loop, it gets executed multiple times. 
+When a functor-tree is inside a loop, it gets executed multiple times.
 Evaluation of a MIL functor (be it a command, proc, set aggregate or multiplex)
 needs to go through a phase of {\em function resolution}. This involves finding
 the correct overloading of a functor, given the types of the actual parameters.
@@ -840,11 +842,11 @@ This resolution process is slow. We want to exploit the fact that often on each
 iteration, the types of the actual parameters will be equal (as MIL
 is a dynamically typed language, we can never guarantee this 100\%).
 In such cases, we factor out command resolution overhead, by using the results
-of an earlier iteration. 
+of an earlier iteration.
 
-The result of function resolution is often a tree-expansion, that contains 
+The result of function resolution is often a tree-expansion, that contains
 specific info, which depends on the mode of execution (e.g. proc, command,
-multiplex, or set-aggr execution). To accomodate these optimizations in 
+multiplex, or set-aggr execution). To accomodate these optimizations in
 a generalized setting, each functor MIL tree has the following generic
 format:
 \begin{verbatim}
@@ -860,15 +862,15 @@ format:
                       yysons[..] yysons[..]  yysons[..]
                          /|\        /\        /\
 call:                   / | \      /  \      /  \  ==> tree that evaluates
-interpret     <==  argv[1]|argv[3]/    \    /____\     to a str fcn-name 
+interpret     <==  argv[1]|argv[3]/    \    /____\     to a str fcn-name
  (stk,argv[i],res)      argv[2]  /      \                        (OPTIONAL)
-                               sig1    sigN            
-to get the param               /\      yyval.val.pval->monet_sig_t 
+                               sig1    sigN
+to get the param               /\      yyval.val.pval->monet_sig_t
           values              /  \                     'signature record'
-                             /____\ ==> e.g. expanded 
+                             /____\ ==> e.g. expanded
                                              PROC tree for sig1
 \end{verbatim}
-The sig-nodes contain a signature-bitstring, that contains a compressed 
+The sig-nodes contain a signature-bitstring, that contains a compressed
 representation of the actual parameters for which the expansion was done.
 The EXPANSION node hence is like a 'cache' in which the interpret() can
 do a quick lookup to see whether an expansion was already made in an earlier
@@ -884,8 +886,8 @@ put it into the EXPANSIONS tree.
 		monet_sig_t *sig;
 		str fcn_nme;
 
-@- 
-phase 1: resolve 'nme' in (*nme)(), {*nme}(), and [*nme]() 
+@-
+phase 1: resolve 'nme' in (*nme)(), {*nme}(), and [*nme]()
 @c
 		if (deref_fcn) {
 			i = interpret(stk, lt->yysons[2], res);
@@ -919,8 +921,8 @@ phase 1: resolve 'nme' in (*nme)(), {*nme}(), and [*nme]()
 		sig = (monet_sig_t *) buf;
 
 
-@- 
-phase 2: interpret the actual params 
+@-
+phase 2: interpret the actual params
 @c
 		if (opcache->yyval.vtype == TYPE_int) {
 			opcache->yyval.vtype = TYPE_str;
@@ -934,7 +936,7 @@ phase 2: interpret the actual params
 			return -1;
 		res->vtype = TYPE_void;
 		res->val.oval = void_nil;
-@- 
+@-
 phase 3: check if we have this already in expanded form
 @c
 		monet_sig_pack(sig, argc, argv);
@@ -1013,7 +1015,7 @@ phase 4: do resolution and expand an execution tree in op
 A function resolution error generally gives and i=TBL_RESOLVE_NOFCN result;
 
 However, sometimes there is/are an existing function(s) by this name
-and with a matching number of parameters, but the actual parameter types don't 
+and with a matching number of parameters, but the actual parameter types don't
 (fully) match a signature. If enumeration types are to be supported in the
 MIL kernel, we could now trap and any convert enumeration types present to
 their original representation (one by one, cheapest conversion first) and retry.
@@ -1022,8 +1024,8 @@ Such a conditition is identified by a return of i = TBL_RESOLVE_NOSIG
 more precisely: (i ==TBL_RESOLVE_NOSIG ||  op->token==TBL_RESOLVE_NOSIG)
 
 Finally, when a user uses a type that is not loaded by himself in an invocation,
-there is a special error code TBL_RESOLVE_NOTPE; in that case we give an 
-appropriate error message (signatures == NULL) and don't show the list of 
+there is a special error code TBL_RESOLVE_NOTPE; in that case we give an
+appropriate error message (signatures == NULL) and don't show the list of
 alternative signatures.
 @c
 				if (i != TBL_RESOLVE_NOTPE) {
@@ -1041,7 +1043,7 @@ alternative signatures.
 		}
 
 @- phase 6: expansion
-Expand a procedure tree (if fcn_nme resolved to a proc), create a new 
+Expand a procedure tree (if fcn_nme resolved to a proc), create a new
 signature record (of just the right size - `not a penny too much') and
 add it to the expansion cache.
 @c
@@ -1128,8 +1130,8 @@ Comes down to 3 cases: normal, proc, or {X}/[X] execution
 				CATCHREF(stk, opcache, res);
 			}
 		} else {
-			/* multiplex and set aggregate can execute procs in a loop!  
-			 * we must indicate this to the garbage collector. It will 
+			/* multiplex and set aggregate can execute procs in a loop!
+			 * we must indicate this to the garbage collector. It will
 			 * keep the context records around for speed.
 			 */
 			int reuse = monet_cntxt[stk].reuse;
@@ -1191,7 +1193,8 @@ interpret_while(int stk, YYSTREE lt, ValPtr res)
 		}
 	}
 	i = 0;
-      xit:CLEANUP(arg(lt, 0));
+  xit:
+	CLEANUP(arg(lt, 0));
 	if (reuse < 0) {
 		monet_cntxt[stk].reuse = reuse;
 		CNTXTfree1(stk);
@@ -1236,7 +1239,7 @@ interpret_ident(int stk, YYSTREE lt, ValPtr res)
 
 @- Variable Declaration Interpretation
 Only executed the first time. We keep the variable stacks, so
-the second time only the initialization statements are executed as 
+the second time only the initialization statements are executed as
 a sequential block.
 @c
 int
@@ -1306,7 +1309,8 @@ interpret_trigger(int stk, YYSTREE lt, ValPtr res)
 	lt->yysons[2] = definition;
 	t->cnt = 1;
 	i = TEMenable(stk, t->yysons[0], res);
-      xit:return i;
+  xit:
+	return i;
 }
 #endif
 
@@ -1403,7 +1407,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			bn->tsorted = GDK_SORTED;
 		} else if (!(BATtordered(b) & 1)
 			   || b->ttype > TYPE_lng || tpe > TYPE_lng || b->ttype == TYPE_bit || tpe == TYPE_bit || b->ttype == TYPE_bat || tpe == TYPE_bat || b->ttype == TYPE_ptr || tpe == TYPE_ptr) {
-			/* cases, where we 
+			/* cases, where we
 			 * (1) know that the result will not be sorted
 			 * (2) cannot tell, whether the result will not be sorted
 			 * (3) do not care, whether the result will not be sorted
@@ -1417,7 +1421,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			   || (b->ttype == TYPE_void && tpe >= TYPE_oid)
 #endif
 			   || (b->ttype <= TYPE_oid && tpe == TYPE_void)) {
-			/* casts with target domain larger than source domain, i.e., 
+			/* casts with target domain larger than source domain, i.e.,
 			 * no underflows/overflows can occur, and hence sortedness is always maintained */
 			/* (a bit dirty, since we silently assume that negative integers become "nil"
 			 *  when casted to oid; but since oid_nil < 0@0, sortedness is not violated ...) */
@@ -1429,15 +1433,15 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 
 			switch (tpe) {
 @= interpret_batcast_overflow_case
-	        case TYPE_@1:
-	        	overflow = (max_val > (oid)GDK_@1_max);
-	        	break;
+			case TYPE_@1:
+				overflow = (max_val > (oid)GDK_@1_max);
+				break;
 @c
-				@:interpret_batcast_overflow_case(chr)@
-				@:interpret_batcast_overflow_case(sht)@
+			@:interpret_batcast_overflow_case(chr)@
+			@:interpret_batcast_overflow_case(sht)@
 
 #if SIZEOF_OID != SIZEOF_INT
-				@:interpret_batcast_overflow_case(int)@
+			@:interpret_batcast_overflow_case(int)@
 #endif
 			default:
 				assert(0);
@@ -1478,16 +1482,16 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		}
 @= interpret_batcast_source_case
 		case TYPE_@1: {
-			@1 min_val = *(@1*)BUNtail(b,BUNfirst(b));	
+			@1 min_val = *(@1*)BUNtail(b,BUNfirst(b));
 			@1 max_val = *(@1*)BUNtail(b,BUNlast(b)-BUNsize(b));
 			if ( min_val == @1_nil ) {
-			    overflow = TRUE;
+				overflow = TRUE;
 			} else {
-			    switch (tpe) {
-			    @2
-			    default:
-			    	assert(0);
-			    }
+				switch (tpe) {
+				@2
+				default:
+					assert(0);
+				}
 			}
 			break;
 		}
@@ -1498,7 +1502,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			break;
 		}
 @c
-			@:interpret_batcast_source_switch@
+		@:interpret_batcast_source_switch@
 			bn->tsorted = (overflow ? 0 : GDK_SORTED);
 		}
 
@@ -1681,7 +1685,7 @@ into a TEMPLATE, to avoid resolving it again.
 	}
 @c
 @-
-Evaluate the expression, and assign the value. Increment refcnt, 
+Evaluate the expression, and assign the value. Increment refcnt,
 if it is a bat-expression.
 @c
 	i = interpret(stk, arg(lt, 1), res);
@@ -1738,7 +1742,8 @@ interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope)
 					goto xit;
 			}
 	}
-      xit:if (scope) {
+      xit:
+	if (scope) {
 		CNTXTclear(stk);
 		if (monet_cntxt[stk].reuse < 0)
 			CNTXTfree1(stk);
@@ -1752,7 +1757,7 @@ interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope)
 
 @}
 @- Parallel Block Interpretation
-The statements in a parallel block are synchronized by the PAREND statement, 
+The statements in a parallel block are synchronized by the PAREND statement,
 i.e. a no-op, which directly follows the parallel block.
 The sole action is to delete the context for the parallel block.
 The parallel statements are immediately taken into execution.
@@ -1793,7 +1798,7 @@ interpret_parblock(int stk, YYSTREE lt, int scope)
 	barrier = newRequest(stk, bt, 0);
 @-
 The parallel block is translated into a sequence of requests,
-which have no interdependencies, and can be scheduled 
+which have no interdependencies, and can be scheduled
 immediately.
 @c
 	for (; lt; lt = lt->overflow) {
@@ -1861,7 +1866,7 @@ pointers to value records (the syntax-tree can receive two parameters
 named "$h" and "$t", corresponding to a value-record for a head, resp.
 tail). On every iteration, the head- and tail-values of the current
 BUN are copied into those value-records by the @:ITERATE()@ routine,
-and subsequently the syntax-tree is interpreted. 
+and subsequently the syntax-tree is interpreted.
 
 Things are complicated a bit further because iterators can be
 specified to evaluate tuples in parallel. So, actually, a sequence of
@@ -1900,8 +1905,7 @@ substitution) are created.
 @:expand(f,pval)@
 
 
-static
-    void
+static void
 iterator_maketrees(Iteration handle, YYSTREE body, int parallel, int ht, int tt)
 {
 	ValPtr p;
@@ -1964,24 +1968,35 @@ interpret_fcn(int ht, int tt, int parallel)
 			@:switch_ht(fpval)@
 	}
 @= switch_ht
-	switch(ATOMstorage(tt)) {
-	case TYPE_chr: @:switch_tt(@1,fchval)@	break;
-	case TYPE_sht: @:switch_tt(@1,fshval)@	break;
+	switch (ATOMstorage(tt)) {
+	case TYPE_chr:
+		@:switch_tt(@1,fchval)@
+		break;
+	case TYPE_sht:
+		@:switch_tt(@1,fshval)@
+		break;
 #if SIZEOF_OID == SIZEOF_INT
 	case TYPE_void:
 #endif
-	case TYPE_int:	
-	case TYPE_flt: @:switch_tt(@1,fival)@	break;
+	case TYPE_int:
+	case TYPE_flt:
+		@:switch_tt(@1,fival)@
+		break;
 #if SIZEOF_OID == SIZEOF_LNG
 	case TYPE_void:
 #endif
-	case TYPE_lng: 
-	case TYPE_dbl:	@:switch_tt(@1,fdval)@	break;
-	default: if (ATOMvarsized(tt))	@:switch_tt(@1,vpval)@
-	         else			@:switch_tt(@1,fpval)@
-	} 
+	case TYPE_lng:
+	case TYPE_dbl:
+		@:switch_tt(@1,fdval)@
+		break;
+	default:
+		if (ATOMvarsized(tt))
+			@:switch_tt(@1,vpval)@
+	        else
+			@:switch_tt(@1,fpval)@
+	}
 @= switch_tt
-	addr = (ptr) ((parallel)?par_collect_@1_@2:tuple_interpret_@1_@2); 
+	addr = (ptr) ((parallel)?par_collect_@1_@2:tuple_interpret_@1_@2);
 @c
 	return addr;
 }
@@ -2048,11 +2063,11 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 		cmd = (int (*)(int, ValRecord *)) lt->yyval.val.pval;
 	}
 
-	/* Fill in handle according to current circumstances 
+	/* Fill in handle according to current circumstances
 	 */
 
 	if (parallel > handle->parcap) {
-		/* Create more trees 
+		/* Create more trees
 		 */
 		iterator_maketrees(handle, body, parallel, ht, tt);
 
@@ -2111,7 +2126,8 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 
 	/* clean up temporary space/bats, generated by parameter evaluation
 	 */
-      xit:argv[2] = argv[1];
+      xit:
+	argv[2] = argv[1];
 	argc = ABS(argc);
 	interpret_params_unpin(ABS(argc), argv + 1, "batloop");
 	CLEANUP(lt->yysons[1]);
@@ -2124,20 +2140,19 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 
 
 @- Sequential Iteration
-Directly execute the body with head and tail substituted in. 
+Directly execute the body with head and tail substituted in.
 
 @= tuple_interpret
-int tuple_interpret_@1@2_@3@4(
-	ptr head, 
-	ptr tail, 
-	Iteration handle)
+int
+tuple_interpret_@1@2_@3@4(ptr head, ptr tail, Iteration handle)
 {
 	ValRecord res;
+
 	assign_@2(handle->params[0].val, head);
 	assign_@4(handle->params[1].val, tail);
- 	len_@1@3(handle->params,handle);
+	len_@1@3(handle->params,handle);
 	handle->status = interpret(handle->stk, handle->tree, &res);
-	CATCHRET(handle->stk,handle->tree,(&res),handle->status); 
+	CATCHRET(handle->stk,handle->tree,(&res),handle->status);
 	CLEANUP(handle->tree);
 	return handle->status;
 }
@@ -2149,19 +2164,18 @@ in parallel is a way of expressing data-parallelism. We prepare a
 s = maximum number of M iteration bodies, and do M iterations to
 obtain the first M tuples. They are then put into a parallel block,
 and scheduled for execution. This step is repeated until all tuples
-have been interpreted. 
+have been interpreted.
 The M is user-defined as in: <bat-expr>@[M]<iterator><stmt>
 @c
 @= par_collect
-int par_collect_@1@2_@3@4(
-	ptr	head,
-	ptr	tail,
-	Iteration handle)
+int
+par_collect_@1@2_@3@4(ptr head, ptr tail, Iteration handle)
 {
 	ValPtr params = handle->params+handle->parcnt+handle->parcnt;
+
 	assign_@2(params[0].val, head);
 	assign_@4(params[1].val, tail);
- 	len_@1@3(params,handle);
+	len_@1@3(params,handle);
 	if (++handle->parcnt >= handle->parmax) {
 		@:par_interpret(handle)@
 		handle->parcnt = 0;
@@ -2173,18 +2187,18 @@ int par_collect_@1@2_@3@4(
 		YYSTREE t;
 		unsigned i;
 
-		for(t = @1->tree; t; t = t->overflow)
-			for(i = 0; i < t->cnt; i++)
-				t->yysons[i]->par_retval = 0; 	
-		
+		for (t = @1->tree; t; t = t->overflow)
+			for (i = 0; i < t->cnt; i++)
+				t->yysons[i]->par_retval = 0;
+
 		interpret_parblock(@1->stk, @1->tree, 0);
 
 		@1->status = 0;
-		for(t = @1->tree; t; t = t->overflow)
-			for(i = 0; i < t->cnt; i++)
+		for (t = @1->tree; t; t = t->overflow)
+			for (i = 0; i < t->cnt; i++)
 				if (t->yysons[i]->par_retval < 0)
 					@1->status = t->yysons[i]->par_retval;
-	} 
+	}
 
 
 @+ Profiler

@@ -18,8 +18,8 @@
 @f monet_tem
 @a M. L. Kersten
 @* Monet trigger-event-monitor
-The trigger model supported consists of a trigger abstraction 
-mechanism, a trigger (de-)activation mechanism, ...	
+The trigger model supported consists of a trigger abstraction
+mechanism, a trigger (de-)activation mechanism, ...
 A detailed description is given in an accompanying document.
 
 Basically the server is extended with events for all known operations.
@@ -35,7 +35,7 @@ They are shared by all users, thus they should be protected by the transaction
 manager. [later]
 The pool of events contains the (obj,eventname) pairs.
 
-Each user gets a private copy of the DBA events and triggers upon session 
+Each user gets a private copy of the DBA events and triggers upon session
 start. It is initialized for all built-in routines using their
 address as an internal id. The tables are not persistent.
 
@@ -97,7 +97,7 @@ when the event pool so requires.
 	BATfakeCommit(TEMactive);
 @-
 Some data structures are used to speed-up processing
-@c	
+@c
 	TEMsubscriptions();
 }
 
@@ -292,8 +292,8 @@ TEMdefEvent(Client c, str id)
 }
 
 @+ Event subscription
-To speed up event detection, the system uses several hash tables to 
-filter out unwanted events. The commutative filters are initialized by 
+To speed up event detection, the system uses several hash tables to
+filter out unwanted events. The commutative filters are initialized by
 the trigger instances. If need arises, the filters can be re-initialized
 explicitly using the command @%TEMsubscriptions@.
 
@@ -349,7 +349,7 @@ TEMsubscribe(int evnt, int obj)
 @-
 Whenever an event is found, the event pool should be inspected and
 the trigger instances scheduled for execution. This may involve
-suspension of the current request. The code should be copied 
+suspension of the current request. The code should be copied
 from monet_interpreter.mx.
 
 Explicit notification on (abstract) events is also possible.
@@ -436,7 +436,7 @@ TEMdefTrigger(Client client, YYSTREE hdr, YYSTREE event, YYSTREE body)
 }
 
 @-
-The trigger definitions are obtained by the lexical analyser upon 
+The trigger definitions are obtained by the lexical analyser upon
 encountering their name.
 @c
 char *
@@ -453,8 +453,8 @@ TEMsearch(str name, int *t)
 
 @-
 Trigger instances are explicitly enabled or disabled.
-Assumes proper syntax. 
-This routine is called from the interpreter directly. 
+Assumes proper syntax.
+This routine is called from the interpreter directly.
 The trigger has been byte compiled already to substitute the arguments.
 The trigger is given a private context to run in, which is made dependent
 on the session context. This also permits enabling of triggers within
@@ -486,7 +486,7 @@ TEMenable(Cntxt stk, YYSTREE lt, ValPtr result)
 @-
 The event expression should be checked.
 Update the event filters for speed.
-@c	
+@c
 	CNTXTclient(stk, &c);
 	b = TEMgetEvents(c);
 	/* add trigger to active set */
@@ -625,8 +625,8 @@ current thread. In particular, if both are run in parallel.
 	}
 }
 
-@- Event expression 
-The trigger event expression is evaluated against the pool. If it can be 
+@- Event expression
+The trigger event expression is evaluated against the pool. If it can be
 satisfied then the events used are collected in the BAT TEMconsumed for
 memory.
 The event qualifiers are saved in a local structure to simplify the common
@@ -688,7 +688,7 @@ TEMsatisfied(YYSTREE lt)
 If the event term holds then we should remember the event combination.
 This is done in a local table to speed up recovery. This assumes that we
 won't find event expressions with more then 256 terms.
-@c	
+@c
 			if (top == 256) {
 				GDKfatal("TEMsatisfied: too many event terms\n");
 			}

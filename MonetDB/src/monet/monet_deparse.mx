@@ -20,7 +20,7 @@
 
 @* Deparsing interface
 To simplify tracing and debugging it should be possible to print
-any YYSTREE in ascii. 
+any YYSTREE in ascii.
 The function tables may have to searched in reverse order to
 obtain the ascii name for functions.
 Quick programing called for a buffer to be filled by recursively

@@ -20,10 +20,10 @@
 
 @* Monet variables
 The Monet name space is a multi-level hierarchy of contexts. Each
-context contains variables. Variables are sought from the deepest 
-level upwards.s The root conext is formed by the context created at 
-server start, i.e. the administrator console (0).  The next layer is 
-bound to a client session, the lower layers correspond to the stack 
+context contains variables. Variables are sought from the deepest
+level upwards.s The root conext is formed by the context created at
+server start, i.e. the administrator console (0).  The next layer is
+bound to a client session, the lower layers correspond to the stack
 of MIL blocks in execution.
 
 The context structures are collected in a table. The first entries
@@ -38,7 +38,7 @@ duplicate identifier use in parallel blocks!
 A variable binding may become CONSTANT for the duration of its
 life time, or the type can be FROZEN.
 
-TODO: looking for a variable in a context is implemented by scanning 
+TODO: looking for a variable in a context is implemented by scanning
 the whole list.  Maybe we should switch to a hash-table here!
 One thing to have in mind, though, is intrensive MIL scripts that do
 while or batloops, only lookup a variable the first time the loop
@@ -63,8 +63,8 @@ typedef struct CNTXT {
 	Cntxt next;		/* for making chains. differs from 'outer' due to parallel execution */
 	bit shadow;		/* shadow stk; create new variables in outer */
 	bit used;		/* in use or not */
-	short reuse;		/* context record is reused (i.e. kept around) for speed among multiple loop iterations 
-				 * reuse==-1: not in a loop, reuse==stk: reused by (while/multiplex/bat)loop in 'stk' 
+	short reuse;		/* context record is reused (i.e. kept around) for speed among multiple loop iterations
+				 * reuse==-1: not in a loop, reuse==stk: reused by (while/multiplex/bat)loop in 'stk'
 				 */
 } CntxtRec;
 
@@ -158,7 +158,7 @@ CNTXTrealloc(flt factor)
 	return TRUE;
 }
 
-@- 
+@-
 find the Client who owns  a cetrain context record 'stk' (by walking upwards).
 @c
 int
@@ -174,7 +174,7 @@ CNTXTclient(Cntxt stk, Client *c)
 	return depth;
 }
 
-@- 
+@-
 Initialize a new context for a particular user. The non-used
 context records are linked through the outer field. This way
 we can get a new context in 'constant' time.
@@ -207,7 +207,7 @@ CNTXTnew(Cntxt outer)
 	return i;
 }
 
-@- 
+@-
 Deleting a context basically means deleting all its variables
 @c
 void
@@ -382,7 +382,7 @@ VARfind(Cntxt *stk, str nme)
 
 @-
 The routine @%VARlocalfind@ dereferences a name to find the variable descriptor.
-Only the local stack is inspected. 
+Only the local stack is inspected.
 @c
 Variable
 VARlocalfind(Cntxt *stk, str nme)
@@ -408,7 +408,7 @@ VARlocalfind(Cntxt *stk, str nme)
 
 @-
 In order to drop a module we must enforce that the client does not use
-anu more instances of soon-to-be-obsolete atomic types (that disappear 
+anu more instances of soon-to-be-obsolete atomic types (that disappear
 through the drop). Thus, we check the client's variable stack, and
 even better, check all variable stacks for such offending varaiables.
 

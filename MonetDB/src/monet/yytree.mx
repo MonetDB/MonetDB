@@ -98,8 +98,7 @@ Myylogout(YYSTREE t)
 	}
 }
 
-static
-    void
+static void
 checklist(YYSTREE t)
 {
 	YYSTREE t2, t1 = yyroot;
@@ -151,19 +150,18 @@ Myynode(int tok, int val)
 @= yykill
 	if ((@1)->token != TOK_TEMPLATE &&
 	    (@1)->yyval.val.pval &&
-	    ATOMextern((@1)->yyval.vtype))
-	{
+	    ATOMextern((@1)->yyval.vtype)) {
 		GDKfree((@1)->yyval.val.pval);
 		(@1)->yyval.val.pval = 0;
 	}
-  	monet_set_lock(monet_critical, "yykill");
+	monet_set_lock(monet_critical, "yykill");
 	(@1)->nfree = nfree;
 	nfree = (@1);
-        monet_unset_lock(monet_critical, "yykill");
+	monet_unset_lock(monet_critical, "yykill");
 @
 
 @-
-To avoid concurrency conflicts, all nodes are explicitly freed. 
+To avoid concurrency conflicts, all nodes are explicitly freed.
 @c
 void
 Myyfree(YYSTREE yytree)
@@ -184,10 +182,13 @@ Myyfree(YYSTREE yytree)
 }
 
 @= Myyexpand
-YYSTREE Myy@1expand( YYSTREE yytree, YYSTREE y) {
+YYSTREE
+Myy@1expand(YYSTREE yytree, YYSTREE y)
+{
 	YYSTREE n;
 
-	if (y == NULL) return yytree; 
+	if (y == NULL)
+		return yytree;
 	n = (yytree->last)?yytree->last:yytree;
 	while (n->overflow) {
 		n = n->overflow;
@@ -397,7 +398,7 @@ In this way, we do not have to interpret it. It can follow the normal route.
 		}
 	}
 @-
-rewrite the FUNCTION tree to its modern syntax with 
+rewrite the FUNCTION tree to its modern syntax with
 yysons[0]=params, yysons[1]=expansion-cache, yysons[2]=deref/NULL
 We store the parameter evaluation space size in the ival of the exec node.
 @c
@@ -465,10 +466,10 @@ At run-time, copies are drawn from it with @%yysubstitute()@. During
 this copying phase, the @%$X@ parameters are substituted by TOK_TEMPLATE
 values. @%TOK_TEMPLATE@ act as pointers in the Monet Interpreters: their
 @%yyval.val.pval@ pointers point to a variable binding. The idea is
-that on PROC invocation, an @%argv@ array of @%ValRecord@s exist, in which 
-the actual parameter values have been assembled.  The run-time copy of the 
-tree has pointers into this array, such that on repetitive PROC invocations, 
-the new values just have to be assembled in the array, without having to 
+that on PROC invocation, an @%argv@ array of @%ValRecord@s exist, in which
+the actual parameter values have been assembled.  The run-time copy of the
+tree has pointers into this array, such that on repetitive PROC invocations,
+the new values just have to be assembled in the array, without having to
 traverse the MIL tree.
 @c
 YYSTREE
@@ -550,13 +551,13 @@ Myysubstitute_iter(YYSTREE t, int argc, ValPtr argv)
 }
 
 @- Tree-guided Garbage Collection
-The Monet Interpreter (mis)uses the syntax tree structures to guide the 
+The Monet Interpreter (mis)uses the syntax tree structures to guide the
 garbage collection process. This is because:
 @T
 \begin{itemize}
-\item {\em it is possible}. MIL has call-by value parameters. Only return 
-values are a problem, from the garbage collection point of view. Functions 
-can at most have one return value, making its possible to do the job 
+\item {\em it is possible}. MIL has call-by value parameters. Only return
+values are a problem, from the garbage collection point of view. Functions
+can at most have one return value, making its possible to do the job
 without specific datastructures.
 \item {\em it is efficient}. We can avoid a garbage collection module, and
 still collect garbage at the earliest possibe time. This is of course
@@ -564,87 +565,86 @@ gained by the restrictions put in by the language.
 \end{itemize}
 @
 After invocation of a MIL statement, its MIL tree representation will
-contain references to the allocated variables and even BATs, in 
+contain references to the allocated variables and even BATs, in
 the @%free@ field. MIL has the rule that each simple statement can
-generate only one return value (all other garbage (if any) must be collected 
+generate only one return value (all other garbage (if any) must be collected
 by hand!). This return value is propagated internally in during the
 execution of the simple statement, and can only be deleted after the
-simple statement has finished executing. 
+simple statement has finished executing.
 @
 Garbage collection calls are therfore done carefully at dedicated
 places in the Monet Interpreter.
 @
 To obtain high performance, the @%CLEANUP@ macros is inserted for code
-expansion, rather than a direct function call to @%Myycleanup()@. Due 
-to the recursive nature of the trees, it will of course come to recursion 
+expansion, rather than a direct function call to @%Myycleanup()@. Due
+to the recursive nature of the trees, it will of course come to recursion
 if trees are more than 2-deep.
 @h
-#define GARBAGE(x)								   \
-	if (x->dealloc) {							   \
-	    if (x->dealloc == TYPE_bat) {					   \
-	      if (x->free.batref.id != bat_nil){				   \
-		BAT* _b;							   \
-		BBPfix(x->free.batref.id);					   \
-		_b = BBPquickdesc(ABS(x->free.batref.id),FALSE);		   \
-		if (_b == NULL) {						   \
-			GDKerror("Myyclean: BAT %d GONE\n", x->free.batref.id);	   \
-		} else if (ABS(x->free.batref.stamp) != ABS(_b->batStamp)) {	   \
+#define GARBAGE(x)							\
+	if (x->dealloc) {						\
+	    if (x->dealloc == TYPE_bat) {				\
+	      if (x->free.batref.id != bat_nil){			\
+		BAT* _b;						\
+		BBPfix(x->free.batref.id);				\
+		_b = BBPquickdesc(ABS(x->free.batref.id),FALSE);	\
+		if (_b == NULL) {					\
+			GDKerror("Myyclean: BAT %d GONE\n", x->free.batref.id);	\
+		} else if (ABS(x->free.batref.stamp) != ABS(_b->batStamp)) { \
 			GDKerror("Myyclean: BAT %d OVERWRITTEN (stamp %d != %d)\n", \
- 				x->free.batref.id,				   \
-				_b->batStamp, x->free.batref.stamp);		   \
-		} else {							   \
-			ATOMunfix(x->dealloc, &x->free.batref.id);		   \
-		}								   \
-		BBPunfix(x->free.batref.id);					   \
-	      }									   \
-	    } else {								   \
-		ATOMunfix(x->dealloc, x->free.atmref);				   \
-		if (ATOMextern(x->dealloc)) GDKfree(x->free.atmref);		   \
-	    }									   \
-	    x->dealloc = 0;							   \
+				x->free.batref.id,			\
+				_b->batStamp, x->free.batref.stamp);	\
+		} else {						\
+			ATOMunfix(x->dealloc, &x->free.batref.id);	\
+		}							\
+		BBPunfix(x->free.batref.id);				\
+	      }								\
+	    } else {							\
+		ATOMunfix(x->dealloc, x->free.atmref);			\
+		if (ATOMextern(x->dealloc)) GDKfree(x->free.atmref);	\
+	    }								\
+	    x->dealloc = 0;						\
 	}
 
-#define CLEANUP(x)	switch(((YYSTREE) x)->token) {\
-	case TOK_SEQ:        break;\
-	case TOK_SEQBLOCK:   break;\
-	case TOK_PARBLOCK:   break;\
-	case TOK_ITCOMPILED: break;\
-	case TOK_WHILE:      break;\
-	default:\
-	{       YYSTREE *cleanup_tt, cleanup_t;\
-		unsigned cleanup_j;\
-                for(cleanup_t = (YYSTREE) x; cleanup_t;\
-		    cleanup_t = cleanup_t->overflow ) {\
-                        for(cleanup_j = 0, cleanup_tt = cleanup_t->yysons;\
-			    cleanup_j < cleanup_t->cnt;\
-			    cleanup_j++, cleanup_tt++)\
-			{\
-                                if (*cleanup_tt) Myyclean(*cleanup_tt);\
-                        }\
-                }\
-         }\
-         GARBAGE(((YYSTREE) x));\
+#define CLEANUP(x)	switch(((YYSTREE) x)->token) {			\
+	case TOK_SEQ:        break;					\
+	case TOK_SEQBLOCK:   break;					\
+	case TOK_PARBLOCK:   break;					\
+	case TOK_ITCOMPILED: break;					\
+	case TOK_WHILE:      break;					\
+	default:							\
+	{       YYSTREE *cleanup_tt, cleanup_t;				\
+		unsigned cleanup_j;					\
+		for(cleanup_t = (YYSTREE) x; cleanup_t;			\
+		    cleanup_t = cleanup_t->overflow ) {			\
+			for(cleanup_j = 0, cleanup_tt = cleanup_t->yysons; \
+			    cleanup_j < cleanup_t->cnt;			\
+			    cleanup_j++, cleanup_tt++) {		\
+				if (*cleanup_tt) Myyclean(*cleanup_tt);	\
+			}						\
+		}							\
+	}								\
+	GARBAGE(((YYSTREE) x));						\
 }
-#define CATCHVAL(stk,lt,res)							\
-	if (res->vtype == TYPE_bat) {						\
-		bat bid = res->val.bval;					\
-		BAT* _b = BBPdescriptor(bid);					\
-		assert(_b != NULL);						\
-		if (_b->batStamp <= stamp) {					\
-			PROPDEBUG monet_checkbat(_b, FALSE);			\
-		} else if (_b->batStamp > 0) {					\
-			CHECKDEBUG monet_checkbat(_b, !(_b->batDirty&2));	\
-			if (!(_b->batDirty&2)) {				\
-				BATsetaccess(_b, BAT_READ);			\
-			}							\
-			_b->batDirty &= ~2;					\
-			_b->batStamp = -_b->batStamp;				\
-		}								\
-		BATDEBUG printf("# batstamp(%d) = %d\n",			\
-			 (int) _b->batCacheid, _b->batStamp);			\
-		BBPincref(bid, TRUE);						\
-		BBPunfix(bid);							\
-	}									\
+#define CATCHVAL(stk,lt,res)						\
+	if (res->vtype == TYPE_bat) {					\
+		bat bid = res->val.bval;				\
+		BAT* _b = BBPdescriptor(bid);				\
+		assert(_b != NULL);					\
+		if (_b->batStamp <= stamp) {				\
+			PROPDEBUG monet_checkbat(_b, FALSE);		\
+		} else if (_b->batStamp > 0) {				\
+			CHECKDEBUG monet_checkbat(_b, !(_b->batDirty&2)); \
+			if (!(_b->batDirty&2)) {			\
+				BATsetaccess(_b, BAT_READ);		\
+			}						\
+			_b->batDirty &= ~2;				\
+			_b->batStamp = -_b->batStamp;			\
+		}							\
+		BATDEBUG printf("# batstamp(%d) = %d\n",		\
+			 (int) _b->batCacheid, _b->batStamp);		\
+		BBPincref(bid, TRUE);					\
+		BBPunfix(bid);						\
+	}								\
 	CATCHREF(stk,lt,res)
 #define CATCHREF(stk,lt,res)						\
 	lt->dealloc = res->vtype;					\
@@ -669,10 +669,10 @@ if trees are more than 2-deep.
 	if (x == -TOK_BREAK) {\
 		x = 0;\
 	} else if ((x<0) && (res->vtype == TYPE_str) && res->val.sval) {\
-                char *s = (char*) TBL_getname(fcn);\
-                GDKerror("yytree: %s: %s.\n", s?s:"null", res->val.sval);\
-	        CLEANUP(lt); res->vtype = TYPE_void; lt->dealloc = 0;\
-        }
+		char *s = (char*) TBL_getname(fcn);			\
+		GDKerror("yytree: %s: %s.\n", s?s:"null", res->val.sval); \
+		CLEANUP(lt); res->vtype = TYPE_void; lt->dealloc = 0;	\
+	}
 #define CATCHBREAK(x) ((x==-TOK_BREAK)?0:x)
 
 #endif /* _YYTREE_H_ */

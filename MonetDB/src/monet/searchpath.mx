@@ -30,8 +30,8 @@
 #define SO_EXT ".so"
 #endif
 
-/* 
- * prototypes 
+/*
+ * prototypes
  *
  */
 
@@ -101,8 +101,7 @@ insert_moddir_entry(const char *name)
 }
 
 
-static
-    void
+static void
 insert_moddir_recursively(char *name)
 {
 	DIR *dirp;
@@ -128,8 +127,7 @@ insert_moddir_recursively(char *name)
 	closedir(dirp);
 }
 
-static
-    void
+static void
 parse_mod_path(void)
 {
 	char *mod_path = GDKstrdup(GDKgetenv("monet_mod_path"));
@@ -193,7 +191,7 @@ MSP_next_module(char *ext)
 			if ((suffix = strstr(dent->d_name, ext)) == NULL)
 				continue;
 			/*
-			 * On some platforms (e.g., MacOS X/Mach-O/Darwin), 
+			 * On some platforms (e.g., MacOS X/Mach-O/Darwin),
 			 * a library's version number (e.g., ".0"/".0.0.0")
 			 * is not appended to the suffix, but rather placed
 			 * between the library's name and suffix; however,

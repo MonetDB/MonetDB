@@ -28,7 +28,7 @@ Upon start of a server session its contents is obtained for use.
 No concurrency control is currently applied to the module database.
 
 This code is heavily used to map identifiers to internal values and
-vice versa. 
+vice versa.
 @h
 #ifndef _MONET_TBL_H
 #define _MONET_TBL_H
@@ -148,7 +148,7 @@ m_export oid TBL_Install_Function(oid mid, str name, int tpe, /* some sort of ty
 m_export void TBL_Install_Function_Vararg(oid fid, str tpe);
 
 @- function arguments
-This one would have to be called several times, once for each argument 
+This one would have to be called several times, once for each argument
 @h
 m_export void TBL_Install_Function_Arg(oid fid, str tpe); /* Called after _Function / _Vararg */
 
@@ -178,8 +178,8 @@ m_export int TBL_setaggr_resolve(str name, int argc, ValPtr Argv, monet_sig_t *s
 #define dlPRINT(text)	DLDEBUG	THRprintf(GDKerr, text)
 #define dlFPRINTF	DLDEBUG	THRprintf
 
-#define WARNING(s1,	s2)	GDKwarning((s1),(s2));
-#define FATAL(x,	y) 	GDKfatal((x),(y));
+#define WARNING(s1, s2)		GDKwarning((s1),(s2));
+#define FATAL(x, y)		GDKfatal((x),(y));
 
 #define ERROR(progname,	filename, lineno) { THRprintf(GDKerr, "Mserver: "); }
 
@@ -216,8 +216,8 @@ int TBL_readers = 0, TBL_writer = 0;
 @- read-write locking
 @T
 The function tables are concurrently read by the parser and (multiple)
-interpreter threads. When modules are loaded/dropped or procedures 
-defined, the parser thread may also write these tables. 
+interpreter threads. When modules are loaded/dropped or procedures
+defined, the parser thread may also write these tables.
 
 Reading is much more frequent than writing, and as interpreter
 threads do this possibly in parallel, we first used a read-write locking
@@ -236,7 +236,7 @@ set_writelock
 unset_writelock
 	sema_up(barrier);
 \end{verbatim}
-In this approach, the probability that a reader had to set the semaphore was 
+In this approach, the probability that a reader had to set the semaphore was
 almost 100\%. Given the fact that locks are much cheaper than semaphores (on NT),
 we switched an {\bf optimized} locking scheme, in which read-only access only
 uses mutex locking.
@@ -261,40 +261,40 @@ unset_writelock
 	wr_waiting = 0;
 	unlock(writelock)
 \end{verbatim}
-In a nutshell: there is a global writelock ('writelock') that stops 
+In a nutshell: there is a global writelock ('writelock') that stops
 readers from entering when there is a writer. If the readers are first,
 an entering writer goes to sleep on a semaphore ('barrier') and is woken
-up by the last reader. Crucial counter variables are protected by a 
+up by the last reader. Crucial counter variables are protected by a
 short-term lock ('protector').
 @c
-#define TBL_set_readlock() {					\
+#define TBL_set_readlock() {						\
     monet_set_lock(TBL_writelock, "TBL_set_readlock(writelock)");	\
     monet_set_lock(TBL_protector, "TBL_set_readlock(protector)");	\
-    TBL_readers++;						\
-    monet_unset_lock(TBL_protector, "TBL_set_readlock(protector)");\
+    TBL_readers++;							\
+    monet_unset_lock(TBL_protector, "TBL_set_readlock(protector)");	\
     monet_unset_lock(TBL_writelock, "TBL_set_readlock(writelock)");}
-#define TBL_unset_readlock() {					\
-    monet_set_lock(TBL_protector, "TBL_unset_readlock(protector)");\
-    if (--TBL_readers == 0 && TBL_writer) 			\
+#define TBL_unset_readlock() {						\
+    monet_set_lock(TBL_protector, "TBL_unset_readlock(protector)");	\
+    if (--TBL_readers == 0 && TBL_writer)				\
 		monet_up_sema(TBL_barrier, "TBL_unset_readlock");	\
     monet_unset_lock(TBL_protector, "TBL_unset_readlock(protector)");	}
-#define TBL_set_writelock() {					\
+#define TBL_set_writelock() {						\
     monet_set_lock(TBL_writelock, "TBL_set_writelock(writelock)");	\
     monet_set_lock(TBL_protector, "TBL_set_writelock(protector)");	\
-    TBL_writer = TBL_readers;					\
-    monet_unset_lock(TBL_protector, "TBL_set_writelock(protector)");\
-    if (TBL_writer) 						\
+    TBL_writer = TBL_readers;						\
+    monet_unset_lock(TBL_protector, "TBL_set_writelock(protector)");	\
+    if (TBL_writer)							\
 	monet_down_sema(TBL_barrier, "TBL_set_writelock");		}
-#define TBL_unset_writelock() {					\
+#define TBL_unset_writelock() {						\
     monet_set_lock(TBL_protector, "TBL_unset_writelock(protector)");	\
-    TBL_writer = 0;						\
-    monet_unset_lock(TBL_protector, "TBL_unset_writelock(protector)");\
+    TBL_writer = 0;							\
+    monet_unset_lock(TBL_protector, "TBL_unset_writelock(protector)");	\
     monet_unset_lock(TBL_writelock, "TBL_unset_writelock");	}
 
 
-@+ Dynamic Loading  
+@+ Dynamic Loading
 
-@- Module Filename Convention 
+@- Module Filename Convention
 The file is assumed to be in directory: module_dir (set to
 $PREFIX/lib/ ?)  The file is assumed to have either of these file
 names, searched in the following order; <module>-<database>_<user>.so,
@@ -305,9 +305,9 @@ there is no initfunction a library is loaded nothing more should be
 done. In case there is a initfunction we call it.  This function will
 install the functions etc..
 
-@- Module Loading Interface 
+@- Module Loading Interface
 The DL_ interface offers a UNIX dl* 'dynamic loading'-like interface
-that can either be implemented using dynamic loading or with static 
+that can either be implemented using dynamic loading or with static
 loading. In case of static loading, libs and functions should first
 be registered with the DL_register_* functions.
 @h
@@ -696,11 +696,11 @@ TBL_getparams(ptr imp, str argv[])
 
 @- TBL_checkparams
 @T
-This routine checks whether a set of actual parameters make a match 
+This routine checks whether a set of actual parameters make a match
 with the signature of a certain registered MIL operator. Signatures
 are registered in the {\tt monet\_fcn\_pro} system BAT, which
 contains function oids and strings. This BAT contains sequences
-of the same OIDS. 
+of the same OIDS.
 
 The sequence of strings in the tail contains the
 successive parameters of the operator. The first string identifies the
@@ -708,7 +708,7 @@ return type, the second identifies the first parameter type, the third
 its second parameter, etc.
 
 The types are denoted by their usual MIL atomic type name. BATs are
-spelled in lowercase, concatenated by two (comma separated) types for 
+spelled in lowercase, concatenated by two (comma separated) types for
 their head and tail (enclosed by square brackets). For instance
 'bat[oid,flt]' identifies a BAT withs OIDs in the head and floats
 in the tail. Wildcard types are denoted with 'any', and -- like in MEL --
@@ -720,7 +720,7 @@ This routine makes all generated and compiled type-checking routines
 unnecessary, which has two advantages:
 \begin{itemize}
 \item the code size of the compiled modules will shrink considerably
-\item at run-time, new signatures can be added. This enables the 
+\item at run-time, new signatures can be added. This enables the
       overloading mechanism to work on MIL procs as well.
 \end{itemize}
 
@@ -782,9 +782,11 @@ TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 	return 0;
 }
 
-#define same_type(s1,s2)	((strcmp(s1, s2) == 0) || (s1[0]=='v' && s1[1]=='o'\
-	 		   && s1[2]=='i' && s1[3]=='d' && !s1[4] && s2[0]=='o'\
-			   && s2[1]=='i' && s2[2]=='d' && !s2[3]))
+#define same_type(s1,s2)						\
+	(strcmp(s1, s2) == 0 ||						\
+	 (s1[0] == 'v' && s1[1] == 'o' && s1[2] == 'i' &&		\
+	  s1[3] == 'd' && s1[4] == 0 &&					\
+	  s2[0] == 'o' && s2[1] == 'i' && s2[2] == 'd' && s2[3] == 0))
 
 static INLINE int
 TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str tp2)
@@ -882,7 +884,8 @@ TBL_checkparams(paramcheck_t *pt, oid op)
 		}
 		return 0;
 	}
-      ready:if (v[0] == 'B' && v[1] == 'A' && v[2] == 'T') {
+      ready:
+	if (v[0] == 'B' && v[1] == 'A' && v[2] == 'T') {
 		return TYPE_bat;
 	}
 	i = ATOMindex(v);
@@ -994,7 +997,7 @@ in use. (That is <name>_Module_Install should not even be called.)
 @c
 size_t TBL_fcn_pro_size = 0;
 oid TBL_oid = 10000;		/* we cannot use the db oids, as the user may change
-				   the current number. This will turn around the order 
+				   the current number. This will turn around the order
 				   of the functions in the function tables, corrupting
 				   the order in which function resolution should happen */
 
@@ -1032,10 +1035,10 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 
 @- MIL Proc Ref counting
 @T
-While MIL procs are typically introduced by MIL modules, they can be typed in at anytime 
+While MIL procs are typically introduced by MIL modules, they can be typed in at anytime
 in a MIL session (not belonging to any specific module). They are represented as parsed
-MIL trees, with their root in TBL\_fcn\_imp and shared in all client fcntbl-s. As a consequence, 
-we must do indiviual refcounting for them (i.e. they cannot use the module refcnt mechanism). 
+MIL trees, with their root in TBL\_fcn\_imp and shared in all client fcntbl-s. As a consequence,
+we must do indiviual refcounting for them (i.e. they cannot use the module refcnt mechanism).
 
 The following rules apply:
 \begin{itemize}
@@ -1043,8 +1046,8 @@ The following rules apply:
 \item each module that defines the proc adds a refcnt
 \end{itemize}
 
-Thus, procs introduces by a module that are explicitly 'undef-ed' by the user keep existing. 
-Thus, a second user that loads the module (logical load only, as he is the second user) still 
+Thus, procs introduces by a module that are explicitly 'undef-ed' by the user keep existing.
+Thus, a second user that loads the module (logical load only, as he is the second user) still
 gets this proc as expected.
 @c
 void
@@ -1078,14 +1081,13 @@ TBL_decproc(oid pid)
 	}
 }
 
-@- TBL_newproc 
+@- TBL_newproc
 registers a new MIL procedure.
 @c
 #define PROC_TYPE1(t)	((sht*) (&t->yyval.len))[0]
 #define PROC_TYPE2(t)	((sht*) (&t->yyval.len))[1]
 
-static
-    int
+static int
 format_type(YYSTREE t, str *p)
 {
 	int ret = 32768;
@@ -1253,7 +1255,7 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 	TBL_M_unlock(client);
 }
 
-@- TBL_delproc 
+@- TBL_delproc
 forcedly removes it from a client fcntbl.
 
 depending on its refcnt, the proc may continue to exist for other clients
@@ -1281,8 +1283,8 @@ TBL_delproc(Client client, str nme)
 }
 
 @+ Initialization
-Most dictionary tables are created once and loaded upon system 
-restart. By keeping the reference count at one we are assured that 
+Most dictionary tables are created once and loaded upon system
+restart. By keeping the reference count at one we are assured that
 they remain fixed in memory for the duration of the session.
 @c
 static BAT *
@@ -1299,14 +1301,14 @@ TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, int t
 	if (tmode)
 		BATkey(BATmirror(b), tmode);
 
-	/* the batname is prefixed with the client user name to make in easy to spot 
-	 * in the BBP dir list. Note that this rename may fail if such a bat already 
+	/* the batname is prefixed with the client user name to make in easy to spot
+	 * in the BBP dir list. Note that this rename may fail if such a bat already
 	 * exists (very rare and contrived though)
 	 */
 	sprintf(buf, "%s_%s", user ? user : "monet", nme);
 	BBPrename(b->batCacheid, buf);
 
-	/* whereas the batname is for debugging, each client sees his bat using the 
+	/* whereas the batname is for debugging, each client sees his bat using the
 	 * alias monet_X using a MIL variable.
 	 */
 	if (user) {
@@ -1349,12 +1351,12 @@ TBL_fathercopy(Client client, Client father, str nme)
 }
 
 @- TBL_Init
-The TBL initialization creates a set of function tables. 
+The TBL initialization creates a set of function tables.
 Subsequently the starting address of all built-in functions is stored,
 (and documentary information) [Should be removed or used as a view]
 Since all code will move to modules this function will be come obsolute.
 @= TBL_create
- 	TBL_@1_@2 = TBL_create(monet_clients,"@1_@2",@5,TYPE_@3,TYPE_@4,@6,@7);
+	TBL_@1_@2 = TBL_create(monet_clients,"@1_@2",@5,TYPE_@3,TYPE_@4,@6,@7);
 @c
 void
 TBL_protect()
@@ -1390,7 +1392,7 @@ Since the BBP will no longer store these tables only creation is needed
 	@:TBL_create(fcn,pro,oid,str,2400,FALSE,FALSE)@
 	@:TBL_create(fcn,cnt,oid,int,600,BOUND2BTRUE,FALSE)@
 
-@- Look up the module table.  
+@- Look up the module table.
 @c
 	@:TBL_create(mod,nme,oid,str,40,BOUND2BTRUE,BOUND2BTRUE)@
 	@:TBL_create(mod,cnt,oid,int,40,BOUND2BTRUE,FALSE)@
@@ -1978,7 +1980,7 @@ decrease the refount of the module. we are ready if it isn't zero (LOGICAL DROP)
 @c
 	refcnt = TBL_M_decref(father, mid);
 @-
-drop will go through; 
+drop will go through;
 @c
 	if (TBL_M_clientrefs(mid, client) == 0) {
 		/* LOGICAL DROP */
@@ -2087,7 +2089,7 @@ drop will go through;
 @+ Function Resolution
 @- TBL_search
 The parser uses the routine TBL_search to locate the internal value
-of an identifier. 
+of an identifier.
 @c
 char *
 TBL_search(str s, int *t, int guess_if_notfound, int cur_is_ident, int no_command, int next_is_ident)
@@ -2151,7 +2153,7 @@ We recognize '+=' (and similar for other operators than +) as an TOK_ASSIGNOP.
 	TBL_unset_readlock();
 
 @-
-if not found, the default is to say it is an identifier. 
+if not found, the default is to say it is an identifier.
 However, with the command-hint passed, we guess it is a command.
 @c
 	if (ret == NULL && guess_if_notfound && no_command == 0 && next_is_ident == 0) {
@@ -2165,7 +2167,7 @@ However, with the command-hint passed, we guess it is a command.
 The routine TBL_normal_resolve searches the table of function definitions
 for one that matches the signature of the call. The first function that
 matches is returned.
-The type check is a function call derived from the module spec. 
+The type check is a function call derived from the module spec.
 @c
 int
 TBL_normal_resolve(str name, int argc, ValPtr argv, monet_sig_t *sig, Cntxt stk)
@@ -2179,7 +2181,7 @@ TBL_normal_resolve(str name, int argc, ValPtr argv, monet_sig_t *sig, Cntxt stk)
 	CNTXTclient(stk, &c);
 	fcntbl = c->fcntbl;
 	atomtbl = BATmirror(c->atomtbl);
-@- 
+@-
 Try to resolve the function to an address.
 @c
 	TBL_set_readlock();
@@ -2210,7 +2212,7 @@ Try to resolve the function to an address.
 		if (BUNfnd(atomtbl, &j) == NULL)
 			break;	/* matches, but return type not allowed */
 @-
-Found IT: substitute name by address.  
+Found IT: substitute name by address.
 @c
 		BUNfndOID(p, TBL_fcn_imp, &fid);
 		sig->pack_fcn = *(PackFcn *) BUNtloc(TBL_fcn_imp, p);
@@ -2302,7 +2304,7 @@ At least one BAT should be there..
 		RETURN(TBL_RESOLVE_NOSIG);
 	}
 	tpe = ATOMstorage(ATOMtype(tpe));
-@- 
+@-
 For the [A?B:C] multiplex operators, certain restrictions exist on the type
 (BIT) and number of their parameters (2 or 3).
 @c
@@ -2347,9 +2349,9 @@ constraints for assigment-multiplexing: first must be identically typed BAT
 @- optimization check
 @T
 The generic multiplex implementation fills an (argc,argv) array
-of @%ValRecord@ structures before each tuple call. That tuple call 
+of @%ValRecord@ structures before each tuple call. That tuple call
 then reconstructs the original atomic values from its (argc,argv)
-parameters. 
+parameters.
 
 We pick collection of interesting cases to optimize, and leave the
 (argc,argv) way as a generic implementation for all non-optimizwed cases.
@@ -2358,13 +2360,13 @@ These cases are:
 \item unary, binary or 3-ary operators,
 \item returning a fixed sized atomic type (BAT is forbidden too).
 \item without ANY-type overloading or varargs as actual parameters.
-\item that lookup is easy (all head columns unique and either all synced 
+\item that lookup is easy (all head columns unique and either all synced
       or all sorted).
 \end{itemize}
 The last condition can only be checked at run-time. It actually splits the
 optimizations in two classes: namely array-lookup or merge-lookup.
 Both have differnt run-time constraints. we compute now whether
-our other criteria allow for execution of thexe optimizations, 
+our other criteria allow for execution of thexe optimizations,
 and store the results in resp. sig->array\_opt and sig->merge\_opt.
 @c
 	if (sig->special) {
@@ -2387,10 +2389,11 @@ and store the results in resp. sig->array\_opt and sig->merge\_opt.
 		sig->array_opt = !ATOMvarsized(tpe);
 		sig->merge_opt = (consts == 0) && (tpe == ATOMstorage(TYPE_oid));
 	}
-@- 
+@-
 Ready With Resolution
 @c
-      ready:for (i = 1; i < argc; i++) {
+      ready:
+	for (i = 1; i < argc; i++) {
 		if (swap[i].id) {
 			argv[i].vtype = TYPE_bat;
 			argv[i].val.br.id = swap[i].id;
@@ -2610,7 +2613,7 @@ This does not add much functionality, but allows for an
 extra check on a procedure return value (TBL\_procreturn).
 
 The procedure body is a MIL block that has as yyval a string with
-the PROC name, and in the len /*HACK*/ field we find an int that is 
+the PROC name, and in the len /*HACK*/ field we find an int that is
 a concatenation of two short integers 'type1' and 'type2':
 - type1=type2=0 means 'any' (no check necessary)
 - type2=0 means an atomic type (its number in type1)
@@ -2672,11 +2675,11 @@ TBL_procreturn(int argc, ValPtr argv, ValPtr res, YYSTREE t)
 
 @+ Client Managament
 @-
-Each user gets a private function, atom, and accelerator table. They are 
-initialized with the built-in functions and atomary types. They are extended 
+Each user gets a private function, atom, and accelerator table. They are
+initialized with the built-in functions and atomary types. They are extended
 later on when the user loads a module.
 
-Both tables are session and user specific. 
+Both tables are session and user specific.
 @c
 
 #define TBL_SIZE	750
@@ -2706,7 +2709,7 @@ TBL_initclient(Client client, Client father)
 	} else {
 		client->fcntbl = TBL_create(client, "fcntbl", TBL_SIZE, TYPE_str, TYPE_oid, 0, BOUND2BTRUE);
 
-		/* Create the client acc-table, and fill it 
+		/* Create the client acc-table, and fill it
 		 * with the standard types.
 		 */
 		client->acctbl = TBL_create(client, "acctbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, BOUND2BTRUE);
@@ -2717,7 +2720,7 @@ TBL_initclient(Client client, Client father)
 		if (BUNins(client->acctbl, "index", &i) == NULL)
 			assert(0);
 
-		/* Create the client atom-table, and fill it 
+		/* Create the client atom-table, and fill it
 		 * with the standard types.
 		 */
 		client->atomtbl = TBL_create(client, "atomtbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, 0);
@@ -2768,15 +2771,15 @@ TBL_initclient(Client client, Client father)
 }
 
 @-
-We would like to deallocate all MIL proc trees.  Procs depend on functions in modules. 
-So the procs must be deleted before the (hard) module unload. However, those procs defined 
-by the module (load script) - as opposed to user procs - might well be used in the 
-module drop script. So, if we would delete the procs before the drop, the drop script 
+We would like to deallocate all MIL proc trees.  Procs depend on functions in modules.
+So the procs must be deleted before the (hard) module unload. However, those procs defined
+by the module (load script) - as opposed to user procs - might well be used in the
+module drop script. So, if we would delete the procs before the drop, the drop script
 will give syntax errors.
 
 Thus, we first execute the drop scripts of the modules to be unloaded. Then, we
-delete all procs, and finally we drop the modules (with level=1). Due to the level==1, 
-it will not execute the drop scripts again. 
+delete all procs, and finally we drop the modules (with level=1). Due to the level==1,
+it will not execute the drop scripts again.
 @c
 void
 TBL_exitclient(Client client)
@@ -2829,8 +2832,8 @@ TBL_exitclient(Client client)
 	TBL_M_unlock(NULL);
 }
 
-@- TBL_Install_Depend 
-is called from the generated code in the routine <modulename>_Module_Install. 
+@- TBL_Install_Depend
+is called from the generated code in the routine <modulename>_Module_Install.
 It is called one time for each module that it is dependent on.
 @c
 
@@ -2950,8 +2953,8 @@ TBL_Install_Function(oid mid, str name, int tpe,	/* some sort of type? fcn_table
 		assert(0);
 @-
 We want to save pointer to the real function
-for example use in a different interpreter 
-if (orig) BUNins(TBL_fcn_org, &fid, &orig); 
+for example use in a different interpreter
+if (orig) BUNins(TBL_fcn_org, &fid, &orig);
 Its done in TBL_unpacked()
 @c
 	if (pack_imp && BUNins(TBL_fcn_imp, &fid, &pack_imp) == NULL)
@@ -3019,7 +3022,7 @@ TBL_Install_Function_Vararg(oid fid, str tpe)
 }
 
 
-/* Called after _Function / _Vararg 
+/* Called after _Function / _Vararg
    This one would have to be called several times, once for each argument */
 void
 TBL_Install_Function_Arg(oid fid, str tpe)
