@@ -294,6 +294,10 @@ if [ "${os}" = "SunOS" ] ; then
 	# "standard" SunOS paths
 	binpath="/opt/SUNWspro/bin:/cwi/bin:/usr/java/bin:/usr/ccs/bin:${binpath}"
 	libpath="/cwi/lib:${libpath}"
+	if [ -x /var/tmp/soft/j2ee_sdk-1.4/jdk/bin/javac  -a  -x /var/tmp/soft/j2ee_sdk-1.4/jdk/bin/jar ] ; then
+		# java 1.4 on apps
+		binpath="/var/tmp/soft/j2ee_sdk-1.4/jdk/bin:${binpath}"
+	fi
 	if [ "${BITS}" = "64" ] ; then
 		# propper/extended LD_LIBRARY_PATH for 64bit on SunOS
 		libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
