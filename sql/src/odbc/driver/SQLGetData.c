@@ -30,7 +30,7 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetData\n");
+	ODBCLOG("SQLGetData %d %d\n", nCol, nTargetType);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -11,16 +11,6 @@
    this table.  If a field is equal to UNAFFECTED, it is not
    affected. */
 #define UNAFFECTED	(-1)
-#define NSQL_TYPES	36	/* must match size of table in ODBCDesc.c */
-extern struct sql_types {
-	int concise_type;
-	int type;
-	int code;
-	int precision;
-	int datetime_interval_precision;
-	int length;
-	int scale;
-} sql_types[NSQL_TYPES];
 
 typedef struct {
 	SQLINTEGER sql_desc_auto_unique_value;

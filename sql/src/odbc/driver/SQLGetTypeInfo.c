@@ -191,7 +191,7 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	       "0 /*min_scale*/ as minimum_scale, "
 	       "scale /*max_scale*/ as maximum_scale, "
 	       "0 /*sql_type*/ as sql_data_type, "
-	       "null as sql_datetime_sub, " /* parser complains about NULL */
+	       "null as sql_datetime_sub, "
 	       "10 as num_prec_radix, "
 	       "0 /*interval_prec*/ as interval_precision "
 	       "from types");
@@ -209,7 +209,7 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	} else {
 		/* add the ordering (only needed when all types are
 		   selected) */
-		strcat(query, " order by sql_type");
+		strcat(query, " order by sql_data_type");
 	}
 
 	/* query the MonetDb data dictionary tables */

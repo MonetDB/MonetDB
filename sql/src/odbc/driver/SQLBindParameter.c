@@ -87,8 +87,32 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 			      (SQLPOINTER) (ssize_t) ParameterType, 0);
 	if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
 		return rc;
-	apdrec->sql_desc_parameter_type = InputOutputType;
+	ipdrec->sql_desc_parameter_type = InputOutputType;
 	switch (ParameterType) {
+	case SQL_CHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_BINARY:
+	case SQL_VARBINARY:
+	case SQL_LONGVARBINARY:
+	case SQL_TYPE_DATE:
+	case SQL_TYPE_TIME:
+	case SQL_TYPE_TIMESTAMP:
+	case SQL_INTERVAL_MONTH:
+	case SQL_INTERVAL_YEAR:
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+	case SQL_INTERVAL_DAY:
+	case SQL_INTERVAL_HOUR:
+	case SQL_INTERVAL_MINUTE:
+	case SQL_INTERVAL_SECOND:
+	case SQL_INTERVAL_DAY_TO_HOUR:
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+	case SQL_INTERVAL_DAY_TO_SECOND:
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		ipdrec->sql_desc_length = ColumnSize;
+		break;
 	case SQL_DECIMAL:
 	case SQL_NUMERIC:
 	case SQL_FLOAT:
@@ -96,17 +120,19 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	case SQL_DOUBLE:
 		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
 		break;
-	default:
-		ipdrec->sql_desc_length = ColumnSize;
-		break;
 	}
 	switch (ParameterType) {
+	case SQL_TYPE_TIME:
+	case SQL_TYPE_TIMESTAMP:
+	case SQL_INTERVAL_SECOND:
+	case SQL_INTERVAL_DAY_TO_SECOND:
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		ipdrec->sql_desc_precision = DecimalDigits;
+		break;
 	case SQL_DECIMAL:
 	case SQL_NUMERIC:
 		ipdrec->sql_desc_scale = DecimalDigits;
-		break;
-	default:
-		ipdrec->sql_desc_precision = DecimalDigits;
 		break;
 	}
 	apdrec->sql_desc_data_ptr = ParameterValuePtr;
