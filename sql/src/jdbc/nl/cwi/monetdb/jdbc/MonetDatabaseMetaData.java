@@ -986,7 +986,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the maximum column name length
 	 */
 	public int getMaxColumnNameLength() {
-		return(256);
+		return(1024);
 	}
 
 	/**
@@ -1058,7 +1058,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return max cursor name length in bytes
 	 */
 	public int getMaxCursorNameLength() {
-		return(256);
+		return(1024);
 	}
 
 	/**
@@ -1081,7 +1081,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *         limit is unknown.
 	 */
 	public int getMaxSchemaNameLength() {
-		return(0);	// I don't know...
+		return(1024);
 	}
 
 	/**
@@ -1090,7 +1090,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the max name length in bytes
 	 */
 	public int getMaxProcedureNameLength() {
-		return(0);	// unknown
+		return(1024);
 	}
 
 	/**
@@ -1099,7 +1099,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the max length
 	 */
 	public int getMaxCatalogNameLength() {
-		return(0);
+		return(1024);
 	}
 
 	/**
@@ -1150,7 +1150,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return max name length in bytes
 	 */
 	public int getMaxTableNameLength() {
-		return(0);
+		return(1024);
 	}
 
 	/**
@@ -1170,7 +1170,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @exception SQLException if a database access error occurs
 	 */
 	public int getMaxUserNameLength() {
-		return(0);	// no limit
+		return(512);
 	}
 
 	/**
@@ -1221,7 +1221,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	}
 
 	/**
-	 * Are only data manipulation statements withing a transaction
+	 * Are only data manipulation statements within a transaction
 	 * supported?
 	 *
 	 * @return true if so
