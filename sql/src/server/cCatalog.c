@@ -125,6 +125,10 @@ void drop_column( mvc *c, oid id ){
 	BUNdelHead(c->column_number, 	(ptr)&id );
 	BUNdelHead(c->column_bat, 	(ptr)&id );
 	BATmode(b,TRANSIENT);
+	if (id <= c->size && c->batptrs[id]){
+		BBPunfix(b->batCacheid);
+		c->batptrs[id] = 0;
+	}
 }
 
 static
@@ -204,8 +208,10 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 
 	BATmode(b, PERSISTENT);
 
+	/*
 	snprintf(buf, BUFSIZ, "sql_%ld_%s_%ld", tid, name, cid );
 	BATrename(b, buf);
+	*/
 
 	BUNins(c->column_id, 	(ptr)&ci, (ptr)&cid );
 	BUNins(c->column_table, 	(ptr)&ci, (ptr)&tid );

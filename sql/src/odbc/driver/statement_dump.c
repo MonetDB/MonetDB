@@ -252,7 +252,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		node *n = s->op2.lval->h;
 		int k = *nr;
 		if (n){
-			char *tpe = atomtype2string(n->data.aval );
+			char *tpe = (char*)atomtype2string(n->data.aval );
 			type *t = sql->cat->bind_type( sql->cat, s->op1.sval );
 			len += snprintf( buf+len, BUFSIZ, "s%d := bat(oid,%s);\n", *nr, t->name );
 		}
