@@ -212,6 +212,10 @@ only.
 @-
 @c
 #include "mal_box.h"
+#include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
+#include "mal_client.h"		/* for getClient() */
+#include "mal_debugger.h"	/* for printStackElm() & printStack() */
+#include "mal_import.h"		/* for malImport() */
 
 #define MAXSPACES 64	/* >MAXCLIENTS+ max modules !! */
 Box box[MAXSPACES];
@@ -285,7 +289,7 @@ Box openBox(str name){
 }
 int closeBox(str name,int flag){
 	Box box;
-	if( box=findBox(name)){
+	if( (box=findBox(name))){
 		saveBox(box,flag);
 		return 0;
 	}
@@ -468,7 +472,7 @@ The box container is created if it did not yet exist.
 	}
 @c
 str boxFileName(Box box, str backup){
-	char boxfile[PATHLENGTH],*s;
+	char boxfile[PATHLENGTH];
 	int i= 0;
 
 	snprintf(boxfile,PATHLENGTH,"%s/%s/box",

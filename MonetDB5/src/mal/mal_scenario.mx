@@ -116,6 +116,9 @@ mal_export void runScenario(Client c);
 mal_export void fillScenario(Client c, Scenario scen);
 mal_export void clrScenario(Client c);
 
+mal_export str defaultScenario(Client c);	/* used in src/mal/mal_session.c */
+mal_export void exitScenario(Client c);		/* used in src/mal/mal_session.c */
+
 mal_export void showCurrentScenario();
 mal_export void showScenarioByName(stream *f, str s);
 mal_export void showScenario(stream *f, Scenario s);
@@ -126,6 +129,7 @@ mal_export str setScenario(Client c, str nme);
 @-
 @c
 #include "mal_scenario.h"
+#include "mal_linker.h"	 /* for getAddress() */
 
 struct SCENARIO scenarioRec[MAXSCEN]={
 {"mal",	0,0,0,0,0,0,0,0,
@@ -191,8 +195,6 @@ malImport also needs a scenario. To break this cycle, the system should
 call once the routine default scenario for each client first.
 @c
 str initScenario(Client c, Scenario s){
-	char buf[PATHLENGTH];
-
 	if(s->initScenario && s->initScenarioCmd==0){
 		/* prepare for conclicts */
 		MT_set_lock(mal_contextLock,"Scenario");
@@ -320,7 +322,6 @@ str setScenario(Client c, str nme){
 	int i;
 	str msg;
 	Scenario scen= scenarioRec;
-	GDKfcn start;
 
 	scen = fndScenario(nme);
 	if( scen== NULL)
@@ -349,7 +350,6 @@ str getCurrentScenario(Client c){
 }
 void resetScenario(Client c){
 	int i;
-	str msg;
 	Scenario scen= scenarioRec;
 	if( c->scenario==0) return;
 
@@ -366,7 +366,6 @@ void resetScenario(Client c){
 	c->oldscenario =0;
 }
 void exitScenario(Client c){
-	str msg;
 	Scenario scen= scenarioRec;
 	if( c->scenario==0) return;
 	scen = fndScenario(c->scenario);

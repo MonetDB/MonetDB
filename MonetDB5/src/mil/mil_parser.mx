@@ -65,6 +65,7 @@ extern void mil_flushbuffer();
 extern str mil_lastline();
 extern int mil_position();
 extern int mil_skipcomment();
+extern void mil_push(str s);	/* used in src/mil/M2m.c */
 extern int mil_getch();
 extern int yylex();
 extern char *newName();
@@ -77,6 +78,17 @@ extern int ismapped(str n);
 extern void showmappings();
 
 extern int constantdeclaration;
+
+extern void resetIds();
+extern void pushIterator(str nme);
+extern void newId(str nme);
+extern void popIterator();
+extern void pushBlock(str nme);
+extern void popBlock();
+extern str getLastIterator();
+extern char *bindFcn(str nme);
+extern void bindId(str nme);
+
 #endif /* _MIL_PARSER_H */
 @l
 /*
@@ -229,13 +241,12 @@ typedef struct _strstack_t {
 
 static strstack  *mil_stack = NULL;
 
-int mil_push(str s, int l) {
+void mil_push(str s) {
 	strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
 	sp->listing = 1;
 	sp->cptr = sp->nxtline= sp->prevline = sp->buf = s;  
 	sp->up = mil_stack;
 	mil_stack = sp;
-	return 1;
 }
 
 int mil_pop() {
@@ -400,7 +411,7 @@ void newId(str nme){
 	ids= m;
 }
 int fndId(str nme){
-	Ids n,m;
+	Ids n;
 	for(n = ids; n; n= n->peer){
 		if(strcmp(n->nme,nme)==0) return 1;
 	}
@@ -417,7 +428,7 @@ str typeNames[]={"void","bit","chr","sht","bat","int","oid","ptr",
 	"flt","dbl","lng","str","url","lock","sema","blob","fstream",
 	"decimal","bipipe","tzone","date","daytime","rule","timestamp",0};
 
-int bindId(str nme){
+void bindId(str nme){
 	int i, fnd= 0;
 	for( i=0; typeNames[i]; i++)
 	if( strcmp(typeNames[i],nme)==0){ fnd++; break;}
@@ -440,7 +451,7 @@ str multiplexOp[]={"+","++","-","--","/","*","%",">","<","<=",">=","==","!=","an
 
 char *bindFcn(str nme){
 	char buffer[1024];
-	int i;
+/*	int i;	*/
 
 	switch(*nme){
 	case '[':
@@ -1033,7 +1044,7 @@ void mil_parseError(str msg){
         GDKerror(buf);
 }
 
-static int mil_print(FILE *f, int tpe, YYSTYPE v)
+static void mil_print(FILE *f, int tpe, YYSTYPE v)
 {
 	if( v.len >0) fprintf(f," %s ", v.val);
 }

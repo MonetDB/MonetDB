@@ -261,7 +261,7 @@ mal_export void 	moveInstruction(MalBlkPtr mb, int pc, int target);
 mal_export void		removeInstruction(MalBlkPtr mb, int pc);
 
 mal_export int		findVariable(MalBlkPtr mb, str name);
-mal_export int		findVariableLenght(MalBlkPtr mb, str name,int len);
+mal_export int		findVariableLength(MalBlkPtr mb, str name,int len);
 mal_export malType	getType(MalBlkPtr mb, str nme);
 mal_export str		getVarName(MalBlkPtr mb, int i);
 mal_export int		newVariable(MalBlkPtr mb, str name,malType type);
@@ -288,6 +288,7 @@ mal_export void		promptInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
 mal_export void 	printSignature(stream *fd, Symbol s, int flg);
 mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 mal_export str 		function2str(MalBlkPtr mb,int flg);
+mal_export void 	pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.c */
 
 
 mal_export void strBeforeCall(ValPtr v,ValPtr bak);
@@ -299,6 +300,7 @@ mal_export void batAfterCall(ValPtr v,ValPtr bak);
 #endif /*  _MAL_INSTR_H*/
 @c
 #include "mal_instruction.h"
+#include "mal_function.h"	/* for getPC() */
 
 Symbol newSymbol(str nme, int kind){
 	Symbol cur;
@@ -335,7 +337,6 @@ void freeSymbolList(Symbol s){
 MalBlkPtr newMalBlk(int maxvars, int maxstmts){
 	MalBlkPtr mb;
 	VarPtr *v;
-	char *c;
 	InstrPtr *p;
 
 	v = (VarPtr *) GDKmalloc(sizeof(VarPtr) * maxvars);
@@ -560,7 +561,7 @@ to remove superflous instructions.
 
 @c
 void removeInstruction(MalBlkPtr mb, int pc){
-	int i, tmp;
+	int i;
 	InstrPtr p;
 	
 	p= getInstrPtr(mb,pc);
@@ -699,7 +700,7 @@ cheap to perform a linear search to a variable or constant.
 		GDKfatal("newVariable:variable administration\n");
 @c
 int newVariable(MalBlkPtr mb, str name, malType type){
-        int n,l;
+        int n;
 	int atomary= FALSE;
         
 	@:makeVarSpace@
@@ -764,7 +765,7 @@ Temporary variables are relatively easy to add to the symbol table.
 We have copied the code base and trimmed all that does not make sense.
 @c
 int newTmpVariable(MalBlkPtr mb, malType type){
-        int n,l;
+        int n;
         
 	@:makeVarSpace@
 	n = mb->vtop;
@@ -933,7 +934,7 @@ retryConstant:
 				vr->val.ival = sht_nil;
 			} else
 			if( l>255 || l<0) {
-				if( l<2^31 && l> -2^31){
+				if( l< 2^31 && l> -2^31 ){	
 				if(type== TYPE_sht){
 					vr->vtype= TYPE_int;
 					setVarType(mb, idx, TYPE_int);
@@ -972,7 +973,7 @@ retryConstant:
 	case TYPE_oid: {long l= strtol(val,NULL,10);
 			if( tonil) vr->val.oval = oid_nil;
 			else {
-				int site= val[strlen(val)-1]-'0';
+				/*int site= val[strlen(val)-1]-'0';*/
 			/*if(site) GDKwarning("newConstant:server id ignored\n");*/
 				vr->val.oval= l;
 			}
@@ -1163,7 +1164,6 @@ It is also the place to collect information to speed-up use later on.
 @c
 void pushInstruction(MalBlkPtr mb, InstrPtr p){
 	int i;
-	InstrPtr prev;
 
 	i= mb->stop;
 	if( i+1 >= mb->ssize){
@@ -1189,7 +1189,7 @@ variable to hold the result instead.
 	mb->stmt[i]= p;
 	mb->stop++;
 }
-mal_export void pushEndInstruction(MalBlkPtr mb){
+void pushEndInstruction(MalBlkPtr mb){
 	InstrPtr p;
 	p= newInstruction(ENDDEFsymbol);
 	getDestVar(p) = findVariable(mb,functionName(getInstrPtr(mb,0)));
@@ -1258,7 +1258,7 @@ beginning of each line.
 #ifdef MALprofiler
 	if( p->counter ){
 		double avg= (p->ticks+0.0)/p->counter;
-		sprintf(t,"[%7d, %5.2f] ",p->counter,avg);
+		sprintf(t,"[%7ld, %5.2f] ",p->counter,avg);
 	} 
 	advance(t);
 #endif

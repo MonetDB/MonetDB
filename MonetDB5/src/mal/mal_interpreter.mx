@@ -77,6 +77,8 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_interpreter.h"
+#include "mal_debugger.h"	/* for mdbStep() */
+#include "mal_type.h"		/* for getGDKtype() */
 
 ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 	int j=0;
@@ -155,10 +157,9 @@ void showErrors(Client cntxt){
 
 str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller){
 	MalStkPtr stk= NULL;
-	int i,k;
+	int i;
 	ValPtr lhs,rhs;
-	InstrPtr pci=0, altpci=0; 
-	long timer;
+	InstrPtr pci=0;
 	malTask	task;
 	str ret;
 
@@ -197,7 +198,7 @@ being called.
 
 	if( env && mbcaller){
 		InstrPtr pp;
-		int k,n=0;
+		int k;
 		env->pcup= getPC(mbcaller,pcicaller);
 @-
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
@@ -560,7 +561,7 @@ The policy implemented here is to make pin/unpin decisions part of
 the bind(namespace,batname,mode) operation.[todo]
 
 @= evalParameters
-{	int k;
+{
 	if(pci->beforeCall)
 		(*pci->beforeCall)(&stk->stk[getDestVar(pci)],&backup);
 /* improve performance with 20 ms/1M calls*/
@@ -1003,7 +1004,6 @@ Upon termination of the session, the stack should be cleared.
 @c
 void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 { 	int k;
-	ValPtr v;
 
 #ifdef STACKTRACE
 	stream_printf(GDKout,"--->stack before garbage collector, forceall %d\n",forceall);

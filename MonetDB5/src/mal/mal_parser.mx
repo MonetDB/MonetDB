@@ -63,6 +63,7 @@ html
 
 #include "mal_import.h"
 
+mal_export void initParser();	/* needed in src/mal/mal.c */
 mal_export int parseMAL(Client cntxt, Symbol curPrg);
 mal_export void debugParser(int i);
 
@@ -76,12 +77,17 @@ request and each time we encounter EOL.
 #include "mal_parser.h"
 #include "mal_resolve.h"
 #include "mal_linker.h"
+#include "mal_atom.h"		/* for malAtomDefinition(), malAtomArray(), malAtomProperty() */
+#include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_instruction.h"	/* for pushEndInstruction(), findVariableLength() */
+
+int parseError(Client cntxt, str msg);
 
 #define MAXERRORS 100
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
 
-int echoInput(Client cntxt){
+void echoInput(Client cntxt){
 	if (cntxt->listing & LIST_INPUT) { 
 		char *c= cntxt->nxt;
 		stream_printf(cntxt->fdout,"#");
@@ -99,7 +105,7 @@ INLINE
 void skipComment(Client cntxt) { 
 	char c; 
 	cntxt->nxt++;
-	while (c = currChar(cntxt)) {
+	while ((c = currChar(cntxt))) {
 		if(c== '\n') return;
 		if(c== '\r') return;
 		cntxt->nxt++;
@@ -121,6 +127,7 @@ void advance(Client cntxt, int length){
 	cntxt->nxt += length;
 	skipSpace(cntxt);
 }
+
 @-
 The most recurring situation is to recognize identifiers.
 This process is split into a few steps to simplify subsequent
@@ -135,7 +142,7 @@ conversion cost and safes about 20% on lexical analysis.
 @c
 short opCharacter[256];
 short idCharacter[256];
-int initParser(){
+void initParser(){
 	int i;
 	for(i=0;i<256;i++) idCharacter[i]= isalpha(i);
 	for(i=0;i<256;i++)
@@ -153,9 +160,9 @@ int initParser(){
 int idLength(Client cntxt){
 	int l;
 	str s= cntxt->nxt;
-	if( !idCharacter[*s] ) return 0;
+	if( !idCharacter[(int)(*s)] ) return 0;
 	l=1; s++;
-	while(idCharacter[*s] || isdigit(*s) ) { s++; l++; }
+	while(idCharacter[(int)(*s)] || isdigit(*s) ) { s++; l++; }
 	return l;
 }
 str idCopy(Client cntxt, int length){
@@ -169,14 +176,14 @@ int keyword(Client cntxt, str kw, int length){
 	int i;
 	if( currChar(cntxt) == *kw &&
 		strncmp(cntxt->nxt,kw,length)==0 &&
-		!idCharacter[cntxt->nxt[length]] ){
+		!idCharacter[(int)(cntxt->nxt[length])] ){
 		advance(cntxt,length);
 		return 1;
 	}
 	/* check for captialized versions */
 	for(i=0;i<length;i++)
 	if( tolower(cntxt->nxt[i]) != kw[i]) return 0;
-	if( !idCharacter[cntxt->nxt[length]] ){
+	if( !idCharacter[(int)(cntxt->nxt[length])] ){
 		advance(cntxt,length);
 		return 1;
 	}
@@ -253,7 +260,7 @@ int operatorLength(Client cntxt){
 	int l=0;
 	str s;
 	for( s= cntxt->nxt ; *s; s++)
-	if( opCharacter[*s] ) l++; else return l;
+	if( opCharacter[(int)(*s)] ) l++; else return l;
 	return l;
 }
 str operatorCopy(Client cntxt, int length){
@@ -289,7 +296,6 @@ void skipToEnd(Client cntxt){
 	if( c== ';') cntxt->nxt++;
 }
 void parseEndStmt(Client cntxt){
-	char c;
 	skipSpace(cntxt);
 	if( *cntxt->nxt != ';')
 		parseError(cntxt,"';' expected\n");
@@ -415,10 +421,10 @@ int typeQualifier(Client cntxt)
 				advance(cntxt,1);
 				cl= cstLength(cntxt,&tpe);
 				if( cl==0 || tpe != TYPE_int)
-				parseError("integer constant expected\n");
+				parseError(cntxt,"integer constant expected\n");
 				v=cstCopy(cntxt,cl);
 				size= (int) strtol(v,NULL,0);
-				ht= malAtomArray(ht,size);
+				ht= malAtomArray(ht,size);	/* what if ht==-1, i.e. "AtomName too long" ? */
 				if(currChar(cntxt)!=']')
 					parseError(cntxt,"array ']' expected\n");
 				nextChar(cntxt);
@@ -481,8 +487,8 @@ modname    : identifier | string \\
 @-
 An atom statement does not introduce a new module.
 @= parsePath
-	if( x = idLength(cntxt)) modname= idCopy(cntxt,x); else
-	if( y = stringLength(cntxt)) modname= strCopy(cntxt,y);
+	if( (x = idLength(cntxt))) modname= idCopy(cntxt,x); else
+	if( (y = stringLength(cntxt))) modname= strCopy(cntxt,y);
 	if( modname==0)
 		return parseError(cntxt,"<module path> expected\n");
 @c
@@ -538,9 +544,7 @@ importStmt : USE identifier \\
 	   : USE string\\
 @c
 int parseImport(Client cntxt)
-{	MalBlkPtr curBlk = 0;
-	Symbol curPrg = 0;
-	InstrPtr curInstr=0;
+{
 	str modname=0;
 	int x,y;
 
@@ -723,7 +727,6 @@ The argument to propList is the variable that owns the properties.
 		char cmd;
 		do{
 			str pname, pvalue;
-			int lt;
 			cmd= currChar(cntxt);
 			if( cmd == '+' || cmd == '-'){
 				advance(cntxt,1);
@@ -863,7 +866,7 @@ help information.
 	skipSpace(cntxt);
 	if( keyphrase(cntxt,"comment",7)){
 		skipSpace(cntxt);
-		if( l= stringLength(cntxt)){
+		if( (l= stringLength(cntxt))){
 			@1 = strCopy(cntxt,l);
 		} else parseError(cntxt,"<string> expected\n");
 	} 
@@ -881,7 +884,7 @@ instead.
 			parseError(cntxt,"'=' expected\n");
 		} else{
 			skipSpace(cntxt);
-			if( l= idLength(cntxt)){
+			if( (l= idLength(cntxt))){
 				str nme = idCopy(cntxt,l);
 				cntxt->nspace->typeChecker = getAddress(nme);
 				GDKfree(nme);
@@ -894,7 +897,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
 	int l;
-	str fnme=0, modnme=0, arg=0;
+	str fnme=0, modnme=0;
 	char ch;
 	int type;
 
@@ -942,9 +945,7 @@ error.
 int parseEnd(Client cntxt)
 {	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
-	InstrPtr curInstr=0;
-	int i,l,showit=0;
-	str v;
+	int l,showit=0;
 
 	if( keyword(cntxt,"end",3)){
 		curPrg = cntxt->curprg;
@@ -1018,7 +1019,7 @@ int parse@3(Client cntxt)
 			}
 			nextChar(cntxt); skipSpace(cntxt);
 			z++; /* parse multiple return arguments */
-			@:parseArguments@
+			@:parseArguments(0 /*? or 1 ?*/)@	/* parse@3() -> int */
 			curInstr->retc= curInstr->argc;
 			@:endparseCntrl@
 		} 
@@ -1082,7 +1083,7 @@ int parseRETURN(Client cntxt)
 			nextChar(cntxt); skipSpace(cntxt);
 			z= 1; /* funny control to parseArg */
 			curInstr->argc++;
-			@:parseArguments@
+			@:parseArguments(0 /*? or 1 ?*/)@	/* parseRETURN() -> int */
 			@:endparseCntrl@
 		} 
 		i = findVariableLength(curBlk,cntxt->nxt,l);
@@ -1133,13 +1134,13 @@ if( kind == LEAVEsymbol || kind == REDOsymbol || kind == EXITsymbol ){
 	return;
 }
 @c
-debugParse(){}
+void debugParse(){}
 void parseAssign(Client cntxt, int kind)
 {	InstrPtr curInstr;
 	MalBlkPtr curBlk;
 	Symbol curPrg;
-	int consumed =0,z=0, i=0, k=0, lt,rt,l,type=TYPE_any, varid;
-	str v, op, arg=0, r;
+	int consumed =0,z=0, i=0, lt,l,type=TYPE_any, varid;
+	str v, arg=0;
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
@@ -1244,7 +1245,7 @@ variables have been set. Next step is to parse the expression,
 which starts with an operand.
 This code is used in both positions of the expression
 @= term
-	if( i= cstLength(cntxt,&lt)){
+	if( (i= cstLength(cntxt,&lt))){
 		v= cstCopy(cntxt,i);
 		i= typeQualifier(cntxt);
 		if(i>=0) lt = i;
@@ -1259,7 +1260,7 @@ This code is used in both positions of the expression
 		curInstr= pushArgument(curBlk,curInstr,i);
 		@1;
 	} else 
-	if( i = stringLength(cntxt) ){
+	if( (i = stringLength(cntxt)) ){
 		v= strCopy(cntxt,i);
 		lt= typeQualifier(cntxt);
 		if(lt<0)lt= TYPE_str;
@@ -1269,13 +1270,19 @@ This code is used in both positions of the expression
 	}
 @-
 Get arguments for a call, assume a single result.
+(
+ The arameter of parseArguments is the return value of the enclosing function:
+	parse{CATCH,RAISE,THREAD}():	an integer
+	parseRETURN:	an integer
+	parseAssign:	none/void
+)
 @= parseArguments
 	if(z) curInstr->argc--; /* should be done differently */
 	else curInstr->argc=1;
 	while( currChar(cntxt)!= ')'){
 		int idx;
 		@:term()@ else
-		if( i= idLength(cntxt)){
+		if( (i= idLength(cntxt))){
 			if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
 				v= idCopy(cntxt,i);
 				i= typeQualifier(cntxt);
@@ -1293,7 +1300,7 @@ Get arguments for a call, assume a single result.
 			idx= 0;
 			parseError(cntxt,"<factor> expected\n");
 			pushInstruction(curBlk,curInstr);
-			return;
+			return @1;
 		}
 		if( currChar(cntxt)==',') keyphrase1(cntxt,",");
 		else 
@@ -1316,7 +1323,7 @@ of a function call.
 			/* parse multi assignment */
 			nextChar(cntxt);
 			skipSpace(cntxt);
-			@:parseArguments@
+			@:parseArguments()@	/* parseAssign() -> void */
 		} else
 		parseError(cntxt,"<identifier> or <unary operator> expected\n");
 		skipToEnd(cntxt);
@@ -1328,7 +1335,7 @@ startFCNcall:
 		{v= cntxt->nxt; advance(cntxt,l);
 		if( currChar(cntxt) != '.' &&
 		    currChar(cntxt) != '(' &&
-		    (idCharacter[*v]) ){
+		    (idCharacter[(int)(*v)]) ){
 			cntxt->nxt=v;
 			@:GETvariable@
 			curInstr= pushArgument(curBlk,curInstr,varid);
@@ -1367,9 +1374,9 @@ startFCNcall:
 			nextChar(cntxt); skipSpace(cntxt);
 			setFunctionId(curInstr, arg);
 		}
-getarguments:
+/*getarguments:*//* not used */
 
-		@:parseArguments@
+		@:parseArguments()@	/* parseAssign() -> void */
 		skipSpace(cntxt);
 		if( currChar(cntxt)!=';')
 			parseError(cntxt,"';' expected\n");
@@ -1377,10 +1384,10 @@ getarguments:
 	}
 	
 part2:	/* consume <operator><term> part of expression */
-	if( i= operatorLength(cntxt) ){
+	if( (i= operatorLength(cntxt)) ){
 		/* operator expression */
 		setFunctionId(curInstr, idCopy(cntxt,i));
-		if( l = idLength(cntxt)) {
+		if( (l = idLength(cntxt))) {
 			@:GETvariable@
 			curInstr= pushArgument(curBlk,curInstr,varid); 
 			goto part3;
@@ -1400,14 +1407,13 @@ part3:
 }
 #define BRKONERR if( curPrg->def->errors>=MAXERRORS) return curPrg->def->errors;
 int parseMAL(Client cntxt, Symbol curPrg){
-	int kind=0, i;
+	int kind=0;
 	/*Symbol curPrg= cntxt->curprg;*/
-	InstrPtr curInstr;
 	char c;
 
 	echoInput(cntxt);
 	/* here the work takes place */
-	while( c=currChar(cntxt) ){
+	while( (c=currChar(cntxt)) ){
 		switch( c){
 		case ';': case '\n': case '\r': case '\f': 
 			nextChar(cntxt);

@@ -60,9 +60,12 @@ If initialization of the server is successful, then the MAL_scope symbol
 position is being returned as the namespace entry point for the client.
 @c
 #include "mal_session.h"
+#include "mal_instruction.h"	/* for pushEndInstruction() */
+#include "mal_interpreter.h"	/* for showErrors(), runMAL(), runMALsequence(), runMALtask(), garbageElement(), garbageCollector() */
+#include "mal_linker.h"		/* for initLibraries() */
+#include "mal_parser.h"		/* for parseMAL() */
 
 int malStartupAdmin(){
-	char buf[PATHLENGTH];
 	Client c;
 	c= initClient(GDKstrdup("Admin"),NULL,0,0);
 	c->nspace= newScope(NULL, GDKstrdup("Admin"));
@@ -125,7 +128,6 @@ void scheduleClient( str command, int socket, stream *fin, stream *fout)
 	Client c;
 	int i;
 	MT_Id p;
-	Thread t;
 	/* decode first user:key:password line */
         s= strchr(command,'\n');
 	if(s) *s=0;
@@ -197,7 +199,6 @@ void 	resetInstructions(MalBlkPtr mb, int start)
 	mb->stop= start;
 }
 void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start){
-        InstrPtr p;
         int i,j;
 
 	for(i=j=start; i< mb->vtop; ){
@@ -287,7 +288,6 @@ str MALreader(Client c){
 }
 str MALparser(Client c){
 	InstrPtr p; 
-	MalBlkPtr mb;
 	MalBlkRecord oldstate;
 
 

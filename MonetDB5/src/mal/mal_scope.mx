@@ -107,9 +107,10 @@ mal_export Scope	findScope(Scope scope, str name);
 mal_export Symbol 	findSymbolInScope(Scope v, str fcn);
 mal_export Symbol 	findSymbol(str mod, str fcn);
 mal_export int	 	displayScope(stream *f, Scope v, str fcn);
-mal_export int 		showScopes(stream *f, Scope s);
+mal_export void		showScopes(stream *f, Scope s);
 mal_export void 	debugScope(stream *f, Scope v, str nme);
 mal_export void 	dumpManual(stream *f, Scope v, int recursive);
+mal_export void 	showScopeStatistics(stream *f,Scope s);	/* used in src/mal/mal_debugger.c */
 
 #define getSubScope(N)	(*(N))
 
@@ -136,6 +137,7 @@ point for the modules to be added later.
 
 @c
 #include "mal_scope.h"
+#include "mal_function.h"	/* for printFunction() */
 
 Scope mal_scope;	/* the root of the tree */
 Scope scopeJump[256][256];	/* to speedup access to correct scope */
@@ -161,7 +163,7 @@ Scope newScope(Scope scope, str nme){
 	if( scope != NULL){
 		cur->outer = scope->outer;
 		scope->outer= cur;
-		scopeJump[*nme][*(nme+1)]= cur;
+		scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur;
 	} 
 	return cur;
 }
@@ -252,7 +254,7 @@ the start of a new module scope.
 Scope findScope(Scope scope, str name){
 	if( scope->name==NULL) return NULL;
 	if( name==NULL) return scope;
-	if( scopeJump[*name][*(name+1)]) scope= scopeJump[*name][*(name+1)];
+	if( scopeJump[(int)(*name)][(int)(*(name+1))]) scope= scopeJump[(int)(*name)][(int)(*(name+1))];
         while(scope != NULL){
                 if( idcmp(name,scope->name)== 0 )
                         break;
@@ -275,7 +277,7 @@ all matching definitions.
 Symbol findSymbolInScope(Scope v, str fcn){
 	Symbol s;
 	if( v == NULL || fcn == NULL) return NULL;
-	s= v->subscope[*fcn];
+	s= v->subscope[(int)(*fcn)];
 	while(s!=NULL){
 		if( idcmp(s->name,fcn)==0 ) return s;
 		s= s->peer;
@@ -289,10 +291,10 @@ Symbol findSymbol(str mod, str fcn){
 }
 int displayScope(stream *f, Scope v, str fcn){
 	Symbol s;
-	int i,k=0;
+	int k=0;
 
 	if( v == NULL || fcn == NULL) return 0;
-	s= v->subscope[*fcn];
+	s= v->subscope[(int)(*fcn)];
 	while(s!=NULL){
 		if( idcmp(s->name,fcn)==0 ) {
 			printFunction(f,s->def,LIST_MAL_INSTR);
@@ -306,7 +308,7 @@ int displayScope(stream *f, Scope v, str fcn){
 @c
 void  printScope(stream *fd, Scope scope, int tab, int outer)
 {
-	int i,j;
+	int j;
 	Scope s=scope;
 	Symbol t;
 
@@ -332,7 +334,7 @@ void  printScope(stream *fd, Scope scope, int tab, int outer)
 	if(outer && scope->outer) printScope(fd,scope->outer,tab+1, outer);
 }
 
-int showScopes(stream *f, Scope s)
+void showScopes(stream *f, Scope s)
 {
 	for(; s; s= s->outer) {
 		stream_printf(f,"%s",s->name);
@@ -370,7 +372,7 @@ int cmpModName(Scope *f, Scope *l){
 	return strcmp((*f)->name, (*l)->name);
 }
 void dumpManual(stream *f, Scope s, int recursive){
-	int i,j;
+	int j;
 	Symbol t;
 	str ps, lnk, hlp=0, op=0, endtag=0;
 	InstrPtr sig;

@@ -386,6 +386,7 @@ mal_export void setProperty(PropertySet ps, int idx, str nme, int tpe, ptr val);
 mal_export str propertySet2str(PropertySet ps, int idx);
 @c
 #include "mal_properties.h"
+#include "mal_type.h"	/* for idcmp() */
 
 PropertySet newPropertySet()
 {	int i;

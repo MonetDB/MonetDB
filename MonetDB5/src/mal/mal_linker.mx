@@ -94,6 +94,9 @@ do;t close them until end of session it seems prudent to maintain
 the consistency of this counter.
 @c
 #include "mal_linker.h"
+#include "mal_function.h"	/* for throwException() */
+#include "mal_import.h"		/* for slash_2_dir_sep() */
+
 static int noDlopen;
 
 void *getAddress(str fcnname){
@@ -144,7 +147,6 @@ static void *handles[128];
 
 str loadModuleLibrary(str modname){
 	char buf[MAXPATHLEN];
-	char buf2[MAXPATHLEN];
 	char nme[MAXPATHLEN];
 	void *handle = NULL;
 	str path ="";
@@ -260,7 +262,6 @@ int isPreloaded(str nme){
 	return 0;
 }
 void initLibraries() {
-	int i;
 	noDlopen = TRUE;
 /*
 	for(i=0;preloaded[i];i++) {

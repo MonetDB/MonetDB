@@ -213,6 +213,16 @@ actions to obtain client records.
 @c
 #include "mal_client.h"
 
+/* This should be in src/mal/mal.h, as the function is implemented in 
+ * src/mal/mal.c; however, it cannot, as "Client" isn't known there ... |-( 
+ * For now, we move the prototype here, as it it only used here.
+ * Maybe, we should concider also moving the implementation here...
+ */
+mal_export void mal_exit(Client cntxt); /* used in src/mal/mal_client.c */
+
+int streamClient(Client c, str prompt);
+int bstreamClient(Client c, str prompt);
+
 ClientRec	mal_clients[MAL_MAXCLIENTS+1];
 
 Client newClient(){
@@ -269,7 +279,6 @@ upon return;
 @c
 Client initClient(str nme, str passwd, stream *fin, stream *fout){
 	Client 	c;
-	Thread t;
 
 	if( ( c= newClient()) == NULL) {
 		if( nme != 0) GDKfree(nme);
@@ -506,7 +515,6 @@ void killClient(Client c){
 	printf("killClient %d\n",c-mal_clients);
 #endif
         Thread victim = c->mythread;
-	MT_Id tid= victim->tid;
 	MT_Id pid= victim->pid;
 
 	if( victim == (Thread) THRgettid()){

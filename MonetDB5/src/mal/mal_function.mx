@@ -69,12 +69,13 @@ The MAL functions are constructed incrementally while parsing the source.
 The variable is used to hold the return value.
 @c
 #include "mal_function.h"
+#include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */
+#include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_client.h"		/* for getClient() */
 
 Symbol newFunction(str nme,int kind){
 	Symbol s;
 	InstrPtr p;
-	MalBlkPtr mb;
-	int i,j;
 
 	s = newSymbol(nme,kind);
 	p = newInstruction(kind);
@@ -102,7 +103,7 @@ Symbol	getSymbol(Scope scope, InstrPtr p){
 
 	for(m= findScope(scope,moduleName(p)); m; m= m->outer)
         if(idcmp(m->name, moduleName(p))==0 ) {
-                s= m->subscope[getSubScope(functionName(p))];
+                s= m->subscope[(int)(getSubScope(functionName(p)))];
                 for(; s; s= s->peer)
                 if( getSignature(s)->fcn == p->fcn) return s;
         }
@@ -159,10 +160,6 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 			((X)->token== ASSIGNsymbol && ( \
 			 (X)->barrier== LEAVEsymbol ||  \
 			 (X)->barrier== REDOsymbol  )) )
-#define assignCntrl(X)	((X)->token== ASSIGNsymbol ||\
-			  (X)->token== CMDcall ||\
-			  (X)->token== PATcall ||\
-			  (X)->token== FCNcall )
 
 @-
 Checking the control flow structure is done by a single pass over the
@@ -170,6 +167,14 @@ MAL program after the program has been type-checked.
 It should inspect all BARRIER and CATCH blocks for proper structure.
 @c
 #define DEPTH 128
+
+/* Moved from .h to .c as it conflicts with another assignCntrl() macro in mal_instructions.c.
+ * This one is only used in mal_function.c; the other one only in mal_instructions.c.
+ */
+#define assignCntrl(X)	((X)->token== ASSIGNsymbol ||\
+			  (X)->token== CMDcall ||\
+			  (X)->token== PATcall ||\
+			  (X)->token== FCNcall )
 
 void chkFlow(MalBlkPtr mb)
 {	int i,j,k, v;
@@ -285,7 +290,7 @@ Purposely, the nameless envelops searches the name of the last
 unclosed block. All others are ignored.
 @c
 int getBarrierEnvelop(MalBlkPtr mb){
-	int i,pc;
+	int pc;
 	InstrPtr p;
 	for(pc= mb->stop-2 ; pc>=0; pc--){
 		p= getInstrPtr(mb,pc);
@@ -439,7 +444,7 @@ str appendException(MalBlkPtr mb, int pc, str name, str msg,str oldmsg){
 str locateException(MalBlkPtr mb, int pc, str oldmsg){
 	str s, msg=0,name=0;
 
-	if( s= strchr(oldmsg,':')){
+	if( (s= strchr(oldmsg,':'))){
 		*s =0;
 		name= oldmsg;
 		msg= s+1;

@@ -463,6 +463,10 @@ denotes the signature and can not be removed.
 @+ Rescheduling optimizers
 @c
 #include "mal_optimizer.h"
+#include "mal_interpreter.h"	/* for showErrors() */
+
+int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
+int hasSideEffects(InstrPtr p);
 
 void debugOptimizers(Client c, MalBlkPtr mb, int pc){
 	c->debugoptimizer= c->debugoptimizer?0:1;
@@ -615,7 +619,7 @@ During this process, we should be aware that parameters could be
 changed as part of a call. They are marked as unsafe.
 @c
 int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
-{	int i,j,k, blkcount=0;
+{	int i,k, blkcount=0;
 	InstrPtr p,q;
 	p= getInstrPtr(mb,pc);
 	for(i=pc+1; i< mb->stop && isAlife(mb,varid,i); i++){
@@ -651,7 +655,7 @@ int ARoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
 	if( blockStart(p) || blockExit(p) || blockCntrl(p)) return pc;
 
 	for(k=0;k<p->retc; k++){
-	   int m,n;
+	   int m;
 	   m= ARnxtAssignment(mb,pc,p->argv[k]);
 	   if( m!=pc ){
 		ARreplaceAlias(mb,pc+1,m,p->argv[k], p->argv[p->retc+k]);
@@ -674,8 +678,7 @@ int ARoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
 	return pc;
 }
 str ARoptimizer(Client cntxt, MalBlkPtr mb, int pc)
-{ 	int i,k;
-	InstrPtr p;
+{ 	int i;
 	for(i=1;i< mb->stop; i++)
 		i= ARoptimizerStep(cntxt,mb,i);
 	/* remove the ARoptimizer request */
@@ -794,7 +797,7 @@ readonly (and not be used for a function with sideeffects)
 @c
 int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
 {
-	int i,j,res=0;
+	int i,j;
 	for(j=0;j<q->retc; j++)
 	for(i=p->retc; i<p->argc;i++)
 	if( p->argv[i]== q->argv[j]) {
@@ -809,10 +812,6 @@ int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
 	}
 
 	if( isUnsafeFunction(mb,q)){
-		Symbol s= getSymbol(getClient()->nspace,q);
-		InstrPtr sig= getSignature(s);
-		MalBlkPtr sigblk= s->def;
-
 		for(i=p->retc; i<p->argc; i++)
 		for(j=q->retc; j<q->argc; j++)
 		if( p->argv[i]== q->argv[j]) {
@@ -830,7 +829,7 @@ int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
 }
 int isUpdated(MalBlkPtr mb, int pc)
 {	InstrPtr p,q;
-	int i,j,k,pcf=pc;
+	int j,k,pcf=pc;
 
 	p= getInstrPtr(mb,pc);
 	for(pc++; pc< mb->stop; pc++){
@@ -1257,7 +1256,7 @@ int showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f){
 At a later stage we could extend the flow details with the status
 of crucial properties, e.g. processing time, cost, size
 @c
-showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
+void showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
 	str s,msg;
 	msg= instruction2str(mb,p,0);
 	stream_printf(f,"n%d [fontsize=8, shape=box, label=\"",pc);
@@ -1269,7 +1268,7 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
 void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
 	stream *f;
 	InstrPtr p;
-	int i,j,k;
+	int i,k;
 
 	if(idcmp(fname,"stdout")==0) f= GDKout; else
 	f= open_wastream(fname);

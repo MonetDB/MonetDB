@@ -129,6 +129,8 @@ by setting the routine of interest.
 @c
 #include "mal_resolve.h"
 
+int typeKind(MalBlkPtr mb, InstrPtr p, int i);
+
 #define MAXMALARG 256
 
 str traceFcnName= "____";
@@ -147,7 +149,7 @@ malType findFunctionType(Scope scope, MalBlkPtr mb, InstrPtr p){
 	Scope m;
 	Symbol s;
 	InstrPtr sig;
-	int i,j,k,l, polymorphic, unmatched = 0, s1;
+	int i,k, polymorphic, unmatched = 0, s1;
 	int foundbutwrong=0;
 	int polytype[MAXTYPEVAR];
 	int returntype[MAXMALARG];
@@ -172,7 +174,7 @@ of symbols.
 		return -3;
 	}
 	m= scope;
-	s= m->subscope[getSubScope(functionName(p))];
+	s= m->subscope[(int)(getSubScope(functionName(p)))];
 	while(s != NULL){	/* single scope element check */
 	if( idcmp(functionName(p),s->name ) ){
 		s= s->peer; continue;
@@ -517,7 +519,6 @@ void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs){
 
 void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p){
 	int s1= -1, i,k;
-	char buf[1024];
 	Scope m=0;
 @-
 A function search should inspect all modules unless a specific module
@@ -540,7 +541,7 @@ message to the user.
 #endif
 		m= findScope(scope,moduleName(p));
 		while(s1<0 && m!= NULL){
-			if( m->subscope[getSubScope(functionName(p))])
+			if( m->subscope[(int)(getSubScope(functionName(p)))])
 				s1= findFunctionType(m,mb,p);
 			if( moduleId(p)) break;
 			m= m->outer;
@@ -669,7 +670,7 @@ int fcnBinder(Scope scope, MalBlkPtr mb, InstrPtr p){
 	if( moduleId(p)== NULL || functionId(p)== NULL) return 0;
 	for(m= findScope(scope,moduleName(p)); m; m= m->outer)
 	if(idcmp(m->name, moduleName(p))==0 ) {
-		s= m->subscope[getSubScope(functionName(p))];
+		s= m->subscope[(int)(getSubScope(functionName(p)))];
 		for(; s; s= s->peer)
 		if( idcmp(functionName(p),s->name)==0 &&
 		    p->argc == getSignature(s)->argc ){
@@ -710,7 +711,6 @@ void chkProgram(Scope s, MalBlkPtr mb)
 	}
 	chkFlow(mb);
 }
-stop(){};
 @+ Polymorphic type analysis
 MAL provides for type variables of the form any::N. This feature
 supports polymorphic types, but also complicates the subsequent

@@ -63,6 +63,10 @@ Before the interpreter is allowed to proceed we give control
 to the user to alter the trace/debugger options.
 @c
 #include "mal_debugger.h"
+#include "mal_atom.h"		/* for showAtoms() */
+#include "mal_interpreter.h"	/* for getArgReference() */
+#include "mal_linker.h"		/* for getAddress() */
+#include "mal_scope.h"		/* for showScopeStatistics() */
 
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
@@ -81,10 +85,9 @@ Break points can be set on assignment to a specific variable
 or specific function name.
 @c
 void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
-	int i,j;
+	int i;
 	char *c=name;
 	InstrPtr p;
-	mdbState mdb= mdbTable + cntxt->idx;
 
 	while(*c && (isalnum(*c) || *c=='$' || *c=='_')) c++;
 	*c = 0;
@@ -510,7 +513,7 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
 	p= getInstrPtr(mb,pc);
 	switch(stk->cmd){
 	case 'c':
-		if( newcmd= isBreakpoint(cntxt,p) ){
+		if( (newcmd= isBreakpoint(cntxt,p)) ){
 			if( newcmd == 't') 
 				stream_printf(cntxt->fdout,"show value nyi \n");
 			mdbCommand(cntxt,mb,stk,p,pc);
@@ -712,7 +715,6 @@ str memProfileVector(int cells){
 	return v;
 }
 void printBBPinfo(stream *out){
-	int i;
 	str v;
 
 	stream_printf(out,"#BBP memory layout\n");

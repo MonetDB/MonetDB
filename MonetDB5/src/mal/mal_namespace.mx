@@ -98,7 +98,7 @@ The administration is initialized incrementally.
 @c
 int putName(str nme)
 {
-	int i,l= nme[0];
+	int l= nme[0];
 	
 	if( namespace.nme[l]== 0){
 		namespace.nme[l]= GDKstrdup(nme);
@@ -144,7 +144,7 @@ void initNameParser(){
 
 int isOperator(str nme){
 	while(*nme)
-	if( opChar[*nme]==0) return FALSE;
+	if( opChar[(int)(*nme)]==0) return FALSE;
 	else nme++;
 	return TRUE;
 }
@@ -152,11 +152,11 @@ int parseName(str *cur){
 	int cnt=0, k=0;
 	char old, *s= *cur;
 
-	if( idChar[*s])
-		while(idChar[*s] || isdigit(*s)) { cnt++;s++;}
+	if( idChar[(int)(*s)])
+		while(idChar[(int)(*s)] || isdigit((int)(*s))) { cnt++;s++;}
 	else
-	if( opChar[*s])
-		while(opChar[*s] ) { cnt++;s++;}
+	if( opChar[(int)(*s)])
+		while(opChar[(int)(*s)] ) { cnt++;s++;}
 	
 	if(cnt){
 		old= *s;

@@ -68,6 +68,7 @@ mal_export void malAtomDefinition(str name,int tpe);
 mal_export int malAtomProperty(MalBlkPtr mb, InstrPtr pci);
 mal_export int malAtomArray(int tpe, int idx);
 mal_export int malAtomFixed(int size, int align);
+mal_export void showAtoms(stream *fd);	/* used in src/mal/mal_debugger.c */
 
 #endif /*  _MAL_ATOM_H*/
 @+
@@ -213,7 +214,7 @@ int malAtomArray(int tpe, int size){
 	GDKfree(nme);
 	if(strlen(name) >= IDLENGTH){
 		GDKerror("Atom name '%s' too long\n", name);
-		return;
+		return -1;	/* ERROR! */
 	}
 #ifdef MAL_ATOM_DEBUG
 	stream_printf(GDKout,"new type name %s\n",name);
@@ -232,7 +233,7 @@ int malAtomArray(int tpe, int size){
 	return i;
 }
 
-showAtoms(stream *fd){
+void showAtoms(stream *fd){
 	int i;
 	for(i=0;BATatoms[i].name[0] && i<TYPE_any; i++){
 		stream_printf(fd,"%s", BATatoms[i].name);

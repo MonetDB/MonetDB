@@ -155,6 +155,13 @@ mal_export MT_Lock	mal_contextLock;
 
 mal_export int mal_init(str modpath, str prefix);
 
+/* This should be here, but cannot, as "Client" isn't known, yet ... |-(
+ * For now, we move the prototype declaration to src/mal/mal_client.c,
+ * the only place where it is currently used. Maybe, we should concider
+ * also moving the implementation there...
+ */
+/* mal_export void mal_exit(Client cntxt); */	/* used in src/mal/mal_client.c */
+
 #define MALprofiler 1		/* activate the profiler */
 /* #undef MALprofiler*/
 
@@ -179,6 +186,7 @@ mal_export int mal_init(str modpath, str prefix);
 #include "mal_session.h"
 #include "mal_parser.h"
 #include "mal_interpreter.h"
+#include "mal_namespace.h"	/* for initNamespace() */
 
 int             mal_debug= 0;
 MT_Lock		mal_contextLock=0;
@@ -236,7 +244,7 @@ This seemingly superflous action is necessary to simplify memory leakage
 problems later on.
 Unfortunately the GDK layer is does not clean-up upon exit.
 @c
-int mal_exit(Client cntxt){
+void mal_exit(Client cntxt){
 #ifdef MALprofiler
 	profileReport( cntxt->nspace,1, open_wastream("/tmp/Monet.prof"));
 #endif

@@ -109,6 +109,8 @@ mal_export str	newTmpName(int i);
 mal_export int	isTmpName(str n);
 mal_export int	isTypeName(str n);
 mal_export int	isIdentifier(str s);
+mal_export int getGDKtype(int type);	/* used in src/mal/mal_interpreter.c */
+
 #endif /* MAL_TYPE_H*/
 @-
 At any point we should be able to construct an ascii representation of
@@ -130,7 +132,7 @@ str getTypeName(malType tpe)
 			snprintf(buf,l,"bat[any::%d,", getHeadIndex(tpe));
 		} else
 		if( getHeadType(tpe) == TYPE_any) 
-			snprintf(buf,l,"bat[any,","");
+			snprintf(buf,l,"bat[any,");
 		else
 			snprintf(buf,l,"bat[%s,", ATOMname(getHeadType(tpe)));
 		l -= strlen(buf);
@@ -139,7 +141,7 @@ str getTypeName(malType tpe)
 			snprintf(s,l,"any::%d]", getTailIndex(tpe));
 		} else
 		if( getTailType(tpe) == TYPE_any) 
-			snprintf(s,l,"any]","");
+			snprintf(s,l,"any]");
 		else
 			snprintf(s,l,"%s]", ATOMname(getTailType(tpe)));
 #ifdef DEBUG_MAL_TYPE
@@ -281,7 +283,7 @@ int getGDKtype(int type){
 	return ATOMtype(type);
 }
 str newTmpName(int i){
-	char buf[PATHLENGTH],*s;
+	char buf[PATHLENGTH];
 	snprintf(buf,PATHLENGTH,"%c%d",TMPMARKER,i);
 	return GDKstrdup(buf);
 }

@@ -75,6 +75,7 @@ typedef struct MALSTK {
 
 mal_export MalStkPtr newGlobalStack(int size);
 mal_export void freeStack(MalStkPtr stk);
+mal_export void chkStack(MalStkPtr stk, int i);	/* used in src/mal/mal_box.c */
 
 #define VARfreeze(X)	if(X){X->frozen=TRUE;}
 #define VARfixate(X)	if(X){X->constant=TRUE;}

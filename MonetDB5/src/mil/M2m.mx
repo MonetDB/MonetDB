@@ -15,6 +15,11 @@ the applications at a later stage.
 @c
 #include <gdk.h>
 #include "monet_options.h"
+#include "mal_type.h"	/* for idcmp() */
+#include "mil_parser.h"	/* for mil_push() */
+
+void advice();
+void mil_code_prelude();
 
 #define MAXSCRIPT 64
 extern void showmappings();
@@ -39,13 +44,12 @@ str absolute_path(str s) {
         return GDKstrdup(s);
 }
 
-main(int argc,char ** av)
+int main(int argc,char ** av)
 {
         char *buf, *ptr, *prog = *av, *config = NULL;
         opt *set = NULL;
-        int i,debug = 0, setlen = 0, status = 1;
+        int i,debug = 0, setlen = 0;
 	int k,len,totlen;
-	char *input;
 	char *dbname, *dbfarmval, dbfarm[BUFSIZ];
 
 	static struct option long_options[] =
@@ -164,7 +168,7 @@ main(int argc,char ** av)
         strcpy(dbfarm, dbfarmval );
         mo_substitute(set, setlen, dbfarm);
 
-	if (!GDKinit(dbname, dbfarm)) return ;
+	if (!GDKinit(dbname, dbfarm)) return 1; /* ERROR? */
 @-
 The files are processed as one big program
 @c
@@ -197,9 +201,11 @@ The files are processed as one big program
 	yyparse();
 	showmappings();
 	mo_free_options(set,setlen);
+
+	return 0;
 }
 
-mil_code_prelude(){
+void mil_code_prelude(){
         printf("# Monet Mil to Mal compiler\n");
         printf("# Copyright (c) 2001-2003, CWI. ");
         printf("All rights reserved.\n");
@@ -218,7 +224,7 @@ char *hlp[]={
 "on top of the MAL kernel in the future",
 0
 };
-advice(){
+void advice(){
 	int i;
 	for(i=0; hlp[i]; i++) printf("#%s\n",hlp[i]);
 }

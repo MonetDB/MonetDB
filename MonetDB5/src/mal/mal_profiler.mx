@@ -113,7 +113,6 @@ MT_Lock profileLock = 0;
 stream *eventstream   = 0;
 #endif
 
-static Tms Tmsnullval;
 int malProfileMode;	/* global flag to indicate profiling mode */
 static int delayswitch; /* to wait before sending the profile info */
 
@@ -166,13 +165,19 @@ definition.
 str activateCounter(str name){ @:setCounter(1,activateCounter)@ }
 str deactivateCounter(str name){ @:setCounter(0,deactivateCounter)@ }
 
-#define getEventStream()	\
-	if( profileLock==0) profileLock= MT_create_lock(); \
-	MT_set_lock(profileLock,"profileLock"); \
-	if( eventstream == NULL) { \
-		MT_unset_lock(profileLock,"profileLock"); \
-		return; \
+@-
+The parameter of getEventStream is the return value of the enclosing function:
+	eventRecord:	none/void
+	setStartPoint:	a str
+	setEndPoint:	a str
+@= getEventStream
+	if( profileLock==0) profileLock= MT_create_lock();
+	MT_set_lock(profileLock,"profileLock");
+	if( eventstream == NULL) {
+		MT_unset_lock(profileLock,"profileLock");
+		return @1;
 	}
+@c
 
 #define log(X,Y) stream_printf(eventstream,X,Y)
 #define log0(X)	stream_printf(eventstream,X)
@@ -223,7 +228,7 @@ void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		delayswitch--;
 		return;
 	}
-	getEventStream();
+	@:getEventStream()@	/* eventRecord() -> void */
 	if( delayswitch==0){
 		log0("<MonetProfile>\n");
 		delayswitch= -1;
@@ -444,7 +449,6 @@ str setLogFile(Scope cntxt, str fname){
 	return MAL_SUCCEED;
 }
 
-static str clientPrompt;
 str openProfilerStream(){
 	Client c= getClient();
 	malProfileMode = TRUE;
@@ -462,7 +466,7 @@ str closeProfilerStream(){
 }
 str setStartPoint(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
-	getEventStream();
+	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
 	stream_printf(GDKout,"# start point not set\n");
 	MT_unset_lock(profileLock,"profileLock");
 #else
@@ -472,7 +476,7 @@ str setStartPoint(Scope cntxt, str mod, str fcn){
 }
 str setEndPoint(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
-	getEventStream();
+	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
 	stream_printf(GDKout,"# end point not set\n");
 	MT_unset_lock(profileLock,"profileLock");
 #else
@@ -523,7 +527,7 @@ int instrFilter(InstrPtr pci, str mod, str fcn){
 
 int eventFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
-        int i,j,k,moduleOnly=0;
+        int j,k,moduleOnly=0;
         Scope s=cntxt;
 	Symbol t;
 	InstrPtr p;
@@ -559,7 +563,7 @@ int eventFilter(Scope cntxt, str mod, str fcn){
 }
 int resetFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
-        int i,j,k;
+        int j,k;
         Scope s=cntxt;
 	Symbol t;
 	InstrPtr p;
@@ -601,7 +605,7 @@ being called at least once. The information is not sorted.
 void  profileReport(Scope cntxt, int outer, stream *out)
 {
 #ifdef MALprofiler
-        int i,j,k;
+        int j,k;
         Scope s=cntxt;
 	Symbol t;
 	InstrPtr p;
