@@ -739,7 +739,7 @@ MapiMsg mapi_trace_log(Mapi mid, char *nme)
 {
 	mapi_check(mid,"mapi_trace_log");
 	mid->tracelog= open_wastream(nme);
-	if( mid->tracelog->errnr) {
+	if( stream_errnr(mid->tracelog)) {
 		mid->tracelog= 0;
 		return mapi_setError(mid,"Could not create log file",
 				"mapi_trace+log");
@@ -918,7 +918,7 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 	}
 
 	mid->to = socket_wastream(s,"Mapi client write");
-	if (mid->to->errnr){
+	if (stream_errnr(mid->to)){
 		mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
 		return(mid);
 	}
@@ -939,8 +939,8 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 		fflush(stdout);
 	}
 	len= strlen(buf);
-	ret= mid->to->write(mid->to,buf,1,len);
-	mid->to->flush(mid->to);
+	ret= stream_write(mid->to,buf,1,len);
+	stream_flush(mid->to);
 	mid->active++;
 	if( ret != len){
 		mapi_setError(mid,"Could not send initial byte sequence",
@@ -950,7 +950,7 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 #ifdef BLOCKED
 	mid->to = block_stream(socket_wstream(s,"Mapi client write"));
 #endif
-	if( mid->to->errnr){
+	if( stream_errnr(mid->to)){
 		mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
 		return(mid);
 	}
@@ -960,7 +960,7 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 #else
 	mid->from = socket_rastream(s,"Mapi client read");
 #endif
-	if( mid->from->errnr){
+	if( stream_errnr(mid->from)){
 		mapi_setError(mid,"Cannot open socket for reading","mapi_connect");
 		return(mid);
 	}
@@ -1045,8 +1045,8 @@ static void mapi_lost_connection(Mapi mid){
 		"mapi_fetch_line");
 	mid->connected= 0;
 	/* finish channels */
-	if( mid->to){ (void) mid->to->close(mid->to); mid->to =0;}
-	if( mid->from){ (void) mid->from->close(mid->from); mid->from =0;}
+	if( mid->to){ (void) stream_close(mid->to); mid->to =0;}
+	if( mid->from){ (void) stream_close(mid->from); mid->from =0;}
 }
 
 MapiMsg mapi_disconnect(Mapi mid)
@@ -1070,8 +1070,8 @@ MapiMsg mapi_disconnect(Mapi mid)
 		return mapi_setError(mid,"Warning: multiple connections open",
 					"mapi_disconnect");
 	}
-	(void) mid->from->close(mid->from); mid->from =0;
-	(void) mid->to->close(mid->to); mid->to =0;
+	(void) stream_close(mid->from); mid->from =0;
+	(void) stream_close(mid->to); mid->to =0;
 	return mapi_setError(mid,"Connection closed", "mapi_disconnect");
 }
 MapiMsg mapi_reconnect(Mapi mid){
@@ -1395,15 +1395,15 @@ MapiMsg mapi_execute_internal(Mapi mid)
 	if (mid->trace) {
 		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
-	if (mid->from->errnr || mid->to->errnr) {
+	if (stream_errnr(mid->from) || stream_errnr(mid->to)) {
 		return mapi_setError(mid, "communication line broken",
 						"mapi_execute");
 	}
-	if( mid->to->write(mid->to,cmd,1,size) != size){
+	if( stream_write(mid->to,cmd,1,size) != size){
 		return mapi_setError(mid, "write error on stream",
 				"mapi_execute");
 	}
-	mid->to->flush(mid->to);
+	stream_flush(mid->to);
 	return MOK;
 }
 
@@ -1693,13 +1693,13 @@ char * mapi_fetch_line_internal(Mapi mid)
 			}
 		}
 
-		if (mid->from->errnr) {
+		if (stream_errnr(mid->from)) {
 			mapi_setError(mid, "Connection terminated","mapi_fetch_line");
 			return 0;
 		}
 #ifdef BLOCKED
 		/* fetch one more block */
-		len = mid->from->read(mid->from, mid->blk.buf+n,
+		len = stream_read(mid->from, mid->blk.buf+n,
 					1, BLOCK);
 		mid->blk.buf[n+len]=0;
 		@:endofsession@
@@ -1707,7 +1707,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 		/* fetch one more line */
 		len=0;
 		s=mid->blk.buf+n;
-		while( (k= mid->from->read(mid->from,s,1,1))==1 ){
+		while( (k= stream_read(mid->from,s,1,1))==1 ){
 			len++;
 			if( *s== '\n')
 				break;
@@ -1815,13 +1815,13 @@ MapiMsg mapi_quick_response(Mapi mid, FILE *fd)
 	mid->blk.eos=0;
 	mid->blk.nxt=0;
 #ifdef BLOCKED
-	while( (k= mid->from->read(mid->from,mid->blk.buf,1,BLOCK))== BLOCK){
+	while( (k= stream_read(mid->from,mid->blk.buf,1,BLOCK))== BLOCK){
 		@:handlePart(BLOCK)@
 	}
 #else
 	/* read until we find the prompt */
 	s=mid->blk.buf;
-	while( (k= mid->from->read(mid->from,s,1,1))==1 ){
+	while( (k= stream_read(mid->from,s,1,1))==1 ){
 		fwrite(s,1,1,fd);
 		if( *s == PROMPTBEG) {
 			s++;
@@ -1829,7 +1829,7 @@ MapiMsg mapi_quick_response(Mapi mid, FILE *fd)
 		}
 	}
 	if(k==1)
-		while( mid->from->read(mid->from,s,1,1)==1 ){
+		while( stream_read(mid->from,s,1,1)==1 ){
 			k++;
 			if( *s== '\n'){
 				*(s+1)=0;

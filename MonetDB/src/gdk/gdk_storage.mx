@@ -898,8 +898,8 @@ itself employs qsort() to order the Cartesian product on
 the matched tail values.
 @{
 @c
-#define LINE(s,	X)     { int n=X-1; s->write(s, "#", 1, 1); while(n-->0)\
-                                s->write(s, "-", 1, 1); \
+#define LINE(s,	X)     { int n=X-1; stream_write(s, "#", 1, 1); while(n-->0)\
+                                stream_write(s, "-", 1, 1); \
 				stream_printf(s, "#\n"); }
 #define TABS(s,	X)     { int n=X; while(n-->0) stream_printf(s, "\t");  }
 
@@ -959,22 +959,22 @@ int print_tabwidth(BAT *b, str title, col_format_t *c) {
 static 
 void print_line(stream* s, col_format_t** l) {
 	col_format_t *c = *(l++);
-        s->write(s, "[ ", 2, 1);
+        stream_write(s, "[ ", 2, 1);
         if (c->format) {
-                s->write(s, c->buf, c->len, 1);
-                s->write(s, ",", 1, 1);
+                stream_write(s, c->buf, c->len, 1);
+                stream_write(s, ",", 1, 1);
                 TABS(s, c->tabs-((c->len+3)/8));
-                if (c->tabs*8 >= c->len+3) s->write(s, " ", 1, 1);
-                s->write(s , " ", 1, 1);
+                if (c->tabs*8 >= c->len+3) stream_write(s, " ", 1, 1);
+                stream_write(s , " ", 1, 1);
         }
         for (c=*l; *(++l); c=*l) {
-                s->write(s, c->buf, c->len, 1);
-                s->write(s, ",", 1, 1);
+                stream_write(s, c->buf, c->len, 1);
+                stream_write(s, ",", 1, 1);
                 TABS(s, c->tabs-((c->len+3)/8));
-                if (c->tabs*8 >= c->len+3) s->write(s, " ", 1, 1);
-                s->write(s, " ", 1, 1);
+                if (c->tabs*8 >= c->len+3) stream_write(s, " ", 1, 1);
+                stream_write(s, " ", 1, 1);
         }
-        s->write(s, c->buf, c->len, 1);
+        stream_write(s, c->buf, c->len, 1);
         TABS(s, c->tabs-((c->len+2)/8));
         stream_printf( s, "  ]\n");
 }
@@ -988,20 +988,20 @@ void print_format(col_format_t *c, ptr v) {
 @= print_head
 	str buf = @1?argv[@2].tpe:argv[@2].buf; /* contains column title */
 	int len = (int) strlen(buf);
-	if (@1) s->write(s, "(", 1, 1);
-	s->write(s, buf, len, 1);
-	if (@1) s->write(s, ")", 1, 1);
+	if (@1) stream_write(s, "(", 1, 1);
+	stream_write(s, buf, len, 1);
+	if (@1) stream_write(s, ")", 1, 1);
 	TABS(s, argv[@2].tabs-((2+@1+len)/8));
 @= print_header
 	int k = 1; 
-	s->write(s, "# ", 2, 1);
+	stream_write(s, "# ", 2, 1);
 	if (argv[0].format) {
 		@:print_head(@1,0)@
-		s->write(s, "  ", 2, 1);
+		stream_write(s, "  ", 2, 1);
 	}
 	for (;;) {
 		@:print_head(@1,k)@
-		if (k++ < argc) s->write(s, "| ", 2, 1);
+		if (k++ < argc) stream_write(s, "| ", 2, 1);
 		else break;
         } 
 	stream_printf(s, "  #\n");
@@ -1110,7 +1110,7 @@ Print the table header and then the multijoin.
 @-
 Cleanup.
 @c
-	s->flush(s);
+	stream_flush(s);
         for(j=0; j <= argc; j++) {
 		if (c[j].buf) GDKfree(c[j].buf);
 	}

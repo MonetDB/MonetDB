@@ -882,7 +882,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 		freeClient(c);
 		monet_exit(*statusp);
 		*/
-		GDKout->destroy(GDKout);
+		stream_destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
 	q = topRequest(c);
@@ -909,10 +909,10 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	if (strcmp(c->user, GDKgetenv("monet_admin"))  )
 	{
 		stream_printf(GDKout,"No permission for shutdown; quit.\n");
-		GDKout->destroy(GDKout);
+		stream_destroy(GDKout);
 	} else if (monet_daemon == 1) {
 		stream_printf(GDKout,"Shutdown of server in progress\n");
-		GDKout->flush(GDKout);
+		stream_flush(GDKout);
 		monet_running = 0;
 		CMDquit(stk, lt, res);
 		closeClient(monet_clients, TRUE);
@@ -923,7 +923,7 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
         	if (lt->cnt > 0) { 
             	    @:builtin_operand(0, TYPE_int, statusp)@
         	}
-		GDKout->destroy(GDKout);
+		stream_destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
 	return CMDquit(stk, lt, res);
@@ -1117,9 +1117,9 @@ int CMDcall(Cntxt stk, YYSTREE lt, ValPtr res){
 @c
 int CMDprint_val(ptr val, int tpe) {
         stream *fp = GDKout;
-        fp->write(fp, "[ ", 2, 1);
+        stream_write(fp, "[ ", 2, 1);
         ATOMprint(tpe, val, fp);
-        fp->write(fp, " ]\n", 3, 1);
+        stream_write(fp, " ]\n", 3, 1);
         return GDK_SUCCEED;
 }
 
@@ -1167,7 +1167,7 @@ int print_format(str format, ...) {
 	if (ret == GDK_FAIL) {
 		return GDK_FAIL;
 	}
-	ret = GDKout->write(GDKout, s, strlen(s), 1);
+	ret = stream_write(GDKout, s, strlen(s), 1);
 	GDKfree(s);
  	if (ret < 0) {
 		GDKsyserror("printf():");

@@ -246,6 +246,7 @@ RETSIGTYPE BATSIGpipe(int nr) {
 	while (waitpid(-1, &status, WNOHANG) > 0)
 		;
 	PARDEBUG THRprintf(GDKerr, "BROKEN PIPE \n"); 
+abort();
 	(void) signal(SIGPIPE, BATSIGpipe); 
 }
 #endif
@@ -1644,8 +1645,8 @@ int THRprintf(stream *s, const char *format, ...) {
 	}
 	p += n;
 	
-	s->write(s, bf, p-bf, 1 );
-	s->flush(s);
+	stream_write(s, bf, p-bf, 1 );
+	stream_flush(s);
 	if (bf != THRprintbuf) free(bf);
 	if (MT_system_lock) {
 		MT_unset_lock(MT_system_lock, "THRprintf");

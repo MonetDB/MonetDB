@@ -267,15 +267,15 @@ Get the new information for the server socket and start listening.
 
 			assert(name);
 			memset(name,0,BLOCK);
-			if (fdin == 0 || fdin->errnr ){
+			if (fdin == 0 || stream_errnr(fdin) ){
 				GDKsyserror("CLIENTlisten:fdin problems\n");
 				continue;
 			}
 			/* get user name */
-			fdin->read(fdin, user, 1, 1);
+			stream_read(fdin, user, 1, 1);
 			for(i=0; i<BLOCK && *user != '\n'; i++){
 				user++;
-				fdin->read(fdin, user, 1, 1);
+				stream_read(fdin, user, 1, 1);
 			}
 			*user=0;
                         /* printf("mapi:Client accepted %s\n", name);*/
@@ -286,7 +286,7 @@ Get the new information for the server socket and start listening.
                                 /* printf("mapi:use blocked mode\n");*/
                                 fflush(stdout);
                                 *s=0;
-				fdin->destroy(fdin); /* don't close */
+				stream_destroy(fdin); /* don't close */
                                 fdin= block_stream(socket_rstream(msgsock,"Mserver mapi read"));
                                 fdout= block_stream(socket_wstream(msgsock,"Mserver mapi write"));
                         }else
@@ -311,10 +311,10 @@ Get the new information for the server socket and start listening.
 				stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
 
-				fdout->close(fdout);
-				fdout->destroy(fdout);
-				fdin->close(fdin);
-				fdin->destroy(fdin);
+				stream_close(fdout);
+				stream_destroy(fdout);
+				stream_close(fdin);
+				stream_destroy(fdin);
 				s_close(msgsock);
 				continue;
 			}
@@ -355,7 +355,7 @@ int stream_read_until(str *res, Stream *S , str stop){
 	int len = 0;
 	char buf[BUFSIZ + 1], *start = buf;
 
-	while (s->read(s, start, 1, 1) > 0){
+	while (stream_read(s, start, 1, 1) > 0){
 		if (((start-buf) >= (slen-1)) 
 			&& (strncmp((start-slen+1),stop,slen)==0)) {
 /*
