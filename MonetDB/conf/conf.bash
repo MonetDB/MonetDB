@@ -285,6 +285,7 @@ if [ "${os}" != "Linux" ] ; then
 		;;
 	XML)
 		conf_opts="${conf_opts} --with-expat=${softpath}"
+		conf_opts="${conf_opts} --with-pcre=${softpath}"
 		;;
 	esac
 fi
