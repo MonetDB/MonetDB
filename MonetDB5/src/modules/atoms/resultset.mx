@@ -30,7 +30,7 @@ length and :bat[:void,:any] typed, for this allows efficient
 serialisation.
 
 A new empty ResultSet can be obtained by calling the 
-new() function.  The state of that ResultSet will be
+newResultSet() function.  The state of that ResultSet will be
 `uncomplete', which means that BATs can be added as new columns
 on that ResultSet, as well as properties of such column can be
 set.
@@ -76,7 +76,7 @@ properties.
 @mal
 atom resultset;
 
-command new():resultset 
+command newResultSet():resultset 
 address RSnew
 comment "Create a new uncomplete ResultSet";
 command addColumn(rs:resultset,b:bat[:void,:any],nme:str):void
@@ -122,8 +122,14 @@ command delete(rs:resultset):void
 address RSdelete 
 comment "Release this ResultSet and all its associated resources";
 
-# fromStr and toStr are NOT supplied, as ResultSets themselves should
-# never be serialised to disk.
+# ResultSets themselves should never be serialised to disk.  The
+# fromStr and toStr functions merely exist to adhere to the interface
+command fromstr():resultset
+address RSfromString
+comment "Discards the string and does nothing (returns nil)";
+command tostr():str
+address RStoString
+comment "Returns a string indicating this is a ResultSet";
 
 @-
 @{
@@ -682,6 +688,38 @@ str RSdelete(resultset* rs) {
 	/* finally free the struct itself */
 	GDKfree(rs);
 	
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Interface requirement.  The input string is discarded and null
+ * is returned.
+ *
+ * @param val input string
+ * @return always null
+ */
+str RSfromString(str src, int *len, resultset** retval) {
+	src = NULL;	/* make compiler happy */
+	*retval = NULL;
+	*len = 0;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Interface requirement.  Returns a string indicating the given
+ * ResultSet is a ResultSet.
+ *
+ * @param rs input ResultSet
+ * @return "ResultSet"
+ */
+str RStoString(str* retval, int *len, resultset* rs) {
+	rs = NULL;	/* make compiler happy */
+	/* you can do all kinds of fancy things like telling how much
+	 * columns it has, what size it has, and stuff like that...
+	 * but that's not worth the work for now
+	 */
+	*retval = GDKstrdup("ResultSet");
+	*len = 9;
 	return(MAL_SUCCEED);
 }
 
