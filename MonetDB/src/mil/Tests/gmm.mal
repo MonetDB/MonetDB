@@ -65,7 +65,7 @@ function debug(msg:str,msg:any[]):void;
 #    fflush( GMMdebuglog );
 end function;
 #  }
-	sessionId:= take("sessionId");
+	sessionId:= bbp.bind("sessionId");
 	ta_a := debug("Starting gmm.mil session %s",sessionId);
 #  debug("Starting gmm.mil session %s", sessionId);
 #
@@ -264,7 +264,7 @@ end function;
 #  }
 function destroy_clustertype():void;
 #  PROC destroy_clustertype():void := {
-	TCluster:= take("TCluster");
+	TCluster:= bbp.bind("TCluster");
 	oc_a := enum_drop(TCluster);
 #    enum_drop( TCluster );
 	pc_a := bat("TCluster");
@@ -274,7 +274,7 @@ end function;
 #  }
 	TCluster:= init_clustertype();
 #  VAR TCluster := init_clustertype();
-	cseq:= take("cseq");
+	cseq:= bbp.bind("cseq");
 	cseq := multiplex.script("encode",TCluster,cseq);
 #  cseq := [encode](TCluster,cseq);
 #
@@ -332,7 +332,7 @@ function newCollection(cname:str, Nimg:int):bat[str,bat];
 #    res.insert( "Ix", Ix );
 	od_a := insert(res,"Iy",Iy);
 #    res.insert( "Iy", Iy );
-	N:= take("N");
+	N:= bbp.bind("N");
 	pd_a := +(cname,"_Icoeffs");
 	qd_a := new(int,bat,N);
 	coeffs:= rename(qd_a,pd_a);
@@ -365,7 +365,7 @@ end	rd_a;
 #    }
 	de_a := insert(res,"Coeffs",coeffs);
 #    res.insert( "Coeffs", coeffs );
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	ee_a := access(res,BAT_READ);
 #    res.access( BAT_READ );
 	return res;
@@ -433,7 +433,7 @@ function newGMM(Nimg:int):bat[str,bat];
 #PROC newGMM( int Nimg ): BAT[str,bat] := {
 	model:= new(str,bat);
 #  VAR model := new(str,bat);
-	C:= take("C");
+	C:= bbp.bind("C");
 	bf_a := *(Nimg,C);
 	mImgIdx:= new(oid,void,bf_a);
 #  VAR mImgIdx := new(oid,void,Nimg * C);
@@ -441,12 +441,12 @@ function newGMM(Nimg:int):bat[str,bat];
 	df_a := reverse(mImgIdx);
 	ef_a := setSequenceBase(df_a,cf_a);
 #  mImgIdx.reverse.setSequenceBase(oid(0));
-	BAT_APPEND:= take("BAT_APPEND");
+	BAT_APPEND:= bbp.bind("BAT_APPEND");
 	ff_a := access(mImgIdx,BAT_APPEND);
 #  mImgIdx.access( BAT_APPEND );
 	gf_a := insert(model,"mImgIdx",mImgIdx);
 #  model.insert("mImgIdx", mImgIdx);
-	TCluster:= take("TCluster");
+	TCluster:= bbp.bind("TCluster");
 	hf_a := *(Nimg,C);
 	mCIdx:= new(TCluster,void,hf_a);
 #  VAR mCIdx := new(TCluster,void,Nimg * C);
@@ -468,7 +468,7 @@ function newGMM(Nimg:int):bat[str,bat];
 #  prior.access( BAT_APPEND );
 	rf_a := insert(model,"Prior",prior);
 #  model.insert("Prior", prior);
-	N:= take("N");
+	N:= bbp.bind("N");
 	mean:= new(int,bat,N);
 #  VAR mean := new(int,bat,N);
 	covar:= new(int,bat,N);
@@ -509,7 +509,7 @@ redo	sf_a;
 end	tf_a;
 end	sf_a;
 #  }
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	hg_a := access(mean,BAT_READ);
 #  mean.access( BAT_READ );
 	ig_a := access(covar,BAT_READ);
@@ -561,7 +561,7 @@ function newImage(dict:bat[str,str], theUrl:str):oid;
 	ug_a := bat(tg_a);
 	vg_a := insert(ug_a,nil,theUrl);
 #    bat(dict.find("I")).insert( nil, theUrl );
-	I:= take("I");
+	I:= bbp.bind("I");
 	wg_a := max(I);
 	xg_a := reverse(I);
 	theImgId := fetch(xg_a,wg_a);
@@ -613,7 +613,7 @@ function EM_globalmodel(Niter:int):bat[str,bat];
 	coeffs:= find(EM_coll,"Coeffs");
 #  VAR coeffs   := EM_coll.find("Coeffs");
 #
-	sessionId:= take("sessionId");
+	sessionId:= bbp.bind("sessionId");
 	ah_a := +(sessionId,"_final");
 	bh_a := +("gmm",ah_a);
 	gmmfinal:= newGMM(bh_a,NImg);
@@ -621,7 +621,7 @@ function EM_globalmodel(Niter:int):bat[str,bat];
 #  
 ##line 655 "../../../src/gmm/gmm.mx"
 	ch_a := find(gmmfinal,"init_variances");
-	BAT_APPEND:= take("BAT_APPEND");
+	BAT_APPEND:= bbp.bind("BAT_APPEND");
 	dh_a := access(ch_a,BAT_APPEND);
 #  access( gmmfinal.find("init_variances"), BAT_APPEND );
 	eh_a := find(gmmfinal,"Prior");
@@ -653,7 +653,7 @@ end	oh_a;
 #  
 ##line 655 "../../../src/gmm/gmm.mx"
 	qh_a := find(gmmfinal,"init_variances");
-	STORE_MEM:= take("STORE_MEM");
+	STORE_MEM:= bbp.bind("STORE_MEM");
 	rh_a := mmap(qh_a,STORE_MEM);
 #  mmap( gmmfinal.find("init_variances"), STORE_MEM );
 	sh_a := find(gmmfinal,"Prior");
@@ -716,14 +716,14 @@ barrier	ii_a:= ji_a;
 #                  covar := [nestedop]( "dbl", covar);
 #  
 ##line 107 "../../../src/gmm/gmm.mx"
-	ki_a := htype(covar);
+	ki_a := getType(covar);
 	li_a := count(covar);
 	ivariances:= new(ki_a,bat,li_a);
-#  VAR ivariances := new(covar.htype,bat,covar.count);
+#  VAR ivariances := new(covar.getType,bat,covar.count);
 #  {
 	ivariances_lock:= lock_create();
 #    VAR ivariances_lock := lock_create();
-	Nthreads:= take("Nthreads");
+	Nthreads:= bbp.bind("Nthreads");
 barrier	mi_a:= bunStream(Nthreads,mi_aH,mi_aT);
 #    covar@ [Nthreads]batloop(){
 #      VAR _ivariances_result := [inv]($t
@@ -779,7 +779,7 @@ barrier	ri_a:= true;
 #      {
 #	{|
 barrier	si_a:= true;
-	BAT_WRITE:= take("BAT_WRITE");
+	BAT_WRITE:= bbp.bind("BAT_WRITE");
 	ti_a := *(isqrtdet_a,isqrtdet_b);
 	isqrtdet_a := access(ti_a,BAT_WRITE);
 #	   isqrtdet_a := [*](isqrtdet_a,isqrtdet_b).access(BAT_WRITE);
@@ -847,10 +847,10 @@ end	ri_a;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	aj_a := htype(coeffs);
+	aj_a := getType(coeffs);
 	bj_a := count(coeffs);
 	xs := new(aj_a,bat,bj_a);
-#  xs := new(coeffs.htype,bat,coeffs.count);
+#  xs := new(coeffs.getType,bat,coeffs.count);
 	xs_lock:= lock_create();
 #  VAR xs_lock := lock_create();
 barrier	cj_a:= bunStream(Nthreads,cj_aH,cj_aT);
@@ -989,7 +989,7 @@ end	ij_a;
 #		  ivariances := nil;
 	isdet:= join(cIdx,isqrtdet);
 #  VAR isdet    := join( cIdx, isqrtdet );
-	N:= take("N");
+	N:= bbp.bind("N");
 	act:= multiplex.script("multivariate_gaussian_pdf_diagcov",dists,isdet,N);
 #  VAR act      := [multivariate_gaussian_pdf_diagcov]( dists, isdet, N );
 	dists := nil;
@@ -1232,7 +1232,7 @@ end	im_a;
 #  
 ##line 655 "../../../src/gmm/gmm.mx"
 	on_a := find(restgmm,"init_variances");
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	pn_a := access(on_a,BAT_READ);
 #  access( restgmm.find("init_variances"), BAT_READ );
 	qn_a := find(restgmm,"Prior");
@@ -1278,10 +1278,10 @@ end	bo_a;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	do_a := htype(oldc);
+	do_a := getType(oldc);
 	eo_a := count(oldc);
 	coeffs := new(do_a,bat,eo_a);
-#  coeffs := new(oldc.htype,bat,oldc.count);
+#  coeffs := new(oldc.getType,bat,oldc.count);
 	coeffs_lock:= lock_create();
 #  VAR coeffs_lock := lock_create();
 barrier	fo_a:= bunStream(Nthreads,fo_aH,fo_aT);
@@ -1404,10 +1404,10 @@ end	ik_a;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	ip_a := htype(coeffs);
+	ip_a := getType(coeffs);
 	jp_a := count(coeffs);
 	xs := new(ip_a,bat,jp_a);
-#  xs := new(coeffs.htype,bat,coeffs.count);
+#  xs := new(coeffs.getType,bat,coeffs.count);
 	xs_lock:= lock_create();
 #  VAR xs_lock := lock_create();
 barrier	kp_a:= bunStream(Nthreads,kp_aH,kp_aT);
@@ -1444,10 +1444,10 @@ end	kp_a;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	pp_a := htype(xhc);
+	pp_a := getType(xhc);
 	qp_a := count(xhc);
 	gxhc := new(pp_a,bat,qp_a);
-#  gxhc := new(xhc.htype,bat,xhc.count);
+#  gxhc := new(xhc.getType,bat,xhc.count);
 	gxhc_lock:= lock_create();
 #  VAR gxhc_lock := lock_create();
 barrier	rp_a:= bunStream(Nthreads,rp_aH,rp_aT);
@@ -1480,10 +1480,10 @@ end	rp_a;
 #
 #   
 ##line 107 "../../../src/gmm/gmm.mx"
-	xp_a := htype(gxhc);
+	xp_a := getType(gxhc);
 	yp_a := count(gxhc);
 	newc:= new(xp_a,bat,yp_a);
-#  VAR newc := new(gxhc.htype,bat,gxhc.count);
+#  VAR newc := new(gxhc.getType,bat,gxhc.count);
 #  {
 	newc_lock:= lock_create();
 #    VAR newc_lock := lock_create();
@@ -1521,10 +1521,10 @@ end	aq_a;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	fq_a := htype(newmeans);
+	fq_a := getType(newmeans);
 	gq_a := count(newmeans);
 	means := new(fq_a,bat,gq_a);
-#  means := new(newmeans.htype,bat,newmeans.count);
+#  means := new(newmeans.getType,bat,newmeans.count);
 	means_lock:= lock_create();
 #  VAR means_lock := lock_create();
 barrier	hq_a:= bunStream(Nthreads,hq_aH,hq_aT);
@@ -1569,10 +1569,10 @@ end	hq_a;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	mq_a := htype(hdiffs);
+	mq_a := getType(hdiffs);
 	nq_a := count(hdiffs);
 	ghdiffs := new(mq_a,bat,nq_a);
-#  ghdiffs := new(hdiffs.htype,bat,hdiffs.count);
+#  ghdiffs := new(hdiffs.getType,bat,hdiffs.count);
 	ghdiffs_lock:= lock_create();
 #  VAR ghdiffs_lock := lock_create();
 barrier	oq_a:= bunStream(Nthreads,oq_aH,oq_aT);
@@ -1605,10 +1605,10 @@ end	oq_a;
 #
 #   
 ##line 107 "../../../src/gmm/gmm.mx"
-	uq_a := htype(ghdiffs);
+	uq_a := getType(ghdiffs);
 	vq_a := count(ghdiffs);
 	diffs:= new(uq_a,bat,vq_a);
-#  VAR diffs := new(ghdiffs.htype,bat,ghdiffs.count);
+#  VAR diffs := new(ghdiffs.getType,bat,ghdiffs.count);
 #  {
 	diffs_lock:= lock_create();
 #    VAR diffs_lock := lock_create();
@@ -1758,10 +1758,10 @@ barrier	mr_a:= >(Ntoosmall,0);
 #     debug("Covariance too small in %d model(s)", Ntoosmall);
 	init_variances:= find(gmm,"init_variances");
 #     VAR init_variances := gmm.find("init_variances");
-	pr_a := htype(newvars);
+	pr_a := getType(newvars);
 	qr_a := count(newvars);
 	ccovars:= new(pr_a,bat,qr_a);
-#     VAR ccovars   := new( newvars.htype, bat, newvars.count );
+#     VAR ccovars   := new( newvars.getType, bat, newvars.count );
 barrier	rr_a:= bunStream(newvars,rr_aH,rr_aT);
 #     newvars@batloop(){
 	sr_a := M2m.ifthen(covarnotsmall,rr_aT,init_variances);
@@ -1940,7 +1940,7 @@ end function;
 #    # PROC EM(bat[str,bat] EM_coll, bat[str,bat] EM_model):bat[str,bat]
 function EM_globalmodel():bat[str,bat];
 #  PROC EM_globalmodel():bat[str,bat] := {
-	Niter:= take("Niter");
+	Niter:= bbp.bind("Niter");
 	ou_a := EM_globalmodel(Niter);
 	return ou_a;
 #    RETURN EM_globalmodel(Niter);
@@ -1961,7 +1961,7 @@ end function;
 #
 function mix2g():dbl;
 #  PROC mix2g(): dbl := {
-	rand:= take("rand");
+	rand:= bbp.bind("rand");
 	pu_a := and(rand,15);
 barrier	qu_a:= >(pu_a,10);
 #    IF ( (rand and 15) > 10 ) 
@@ -2008,10 +2008,10 @@ end function;
 ##line 1591 "../../../src/gmm/gmm.mx"
 function multiplex("cumsum",xs:bat[any::1,any]):bat[any::1,lng];
 #  PROC [cumsum](BAT[any::1,any] xs): BAT[any::1,lng] := {
-	dv_a := htype(xs);
+	dv_a := getType(xs);
 	ev_a := count(xs);
 	res:= new(dv_a,lng,ev_a);
-#    VAR res := new(xs.htype,lng,xs.count);
+#    VAR res := new(xs.getType,lng,xs.count);
 	s:= lng(0);
 #    VAR s := lng(0);
 barrier	fv_a:= bunStream(xs,fv_aH,fv_aT);
@@ -2032,9 +2032,9 @@ end function;
 ##line 1605 "../../../src/gmm/gmm.mx"
 function randseq(Nsamples:int, prior:bat[int,flt]):bat[void,any::1];
 #  PROC randseq(int Nsamples, bat[int,flt] prior): bat[void,any::1] := {
-	iv_a := htype(prior);
+	iv_a := getType(prior);
 	res:= new(oid,iv_a,Nsamples);
-#    VAR res := new(oid, prior.htype,Nsamples);
+#    VAR res := new(oid, prior.getType,Nsamples);
 	jv_a := randseq(Nsamples);
 	samp:= lng(jv_a);
 #    VAR samp := [lng](randseq(Nsamples));
@@ -2066,7 +2066,7 @@ end	nv_a;
 #    }
 	uv_a := order(res);
 #    res.order;
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	vv_a := nx(res);
 	wv_a := access(vv_a,BAT_READ);
 	return wv_a;
@@ -2081,9 +2081,9 @@ end function;
 ##line 1605 "../../../src/gmm/gmm.mx"
 function randseq(Nsamples:int, prior:bat[TCluster,flt]):bat[void,any::1];
 #  PROC randseq(int Nsamples, bat[TCluster,flt] prior): bat[void,any::1] := {
-	xv_a := htype(prior);
+	xv_a := getType(prior);
 	res:= new(oid,xv_a,Nsamples);
-#    VAR res := new(oid, prior.htype,Nsamples);
+#    VAR res := new(oid, prior.getType,Nsamples);
 	yv_a := randseq(Nsamples);
 	samp:= lng(yv_a);
 #    VAR samp := [lng](randseq(Nsamples));
@@ -2115,7 +2115,7 @@ end	dw_a;
 #    }
 	kw_a := order(res);
 #    res.order;
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	lw_a := nx(res);
 	mw_a := access(lw_a,BAT_READ);
 	return mw_a;
@@ -2130,9 +2130,9 @@ end function;
 ##line 1605 "../../../src/gmm/gmm.mx"
 function randseq(Nsamples:int, prior:bat[void,flt]):bat[void,any::1];
 #  PROC randseq(int Nsamples, bat[void,flt] prior): bat[void,any::1] := {
-	nw_a := htype(prior);
+	nw_a := getType(prior);
 	res:= new(oid,nw_a,Nsamples);
-#    VAR res := new(oid, prior.htype,Nsamples);
+#    VAR res := new(oid, prior.getType,Nsamples);
 	ow_a := randseq(Nsamples);
 	samp:= lng(ow_a);
 #    VAR samp := [lng](randseq(Nsamples));
@@ -2164,7 +2164,7 @@ end	sw_a;
 #    }
 	ax_a := order(res);
 #    res.order;
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	bx_a := nx(res);
 	cx_a := access(bx_a,BAT_READ);
 	return cx_a;
@@ -2182,11 +2182,11 @@ function gmmsamp_diag(Nsamples:int, gmm:bat[str,bat]):bat[str,bat];
 #  PROC gmmsamp_diag( int Nsamples, bat[str,bat] gmm ): bat[str,bat] := {
 	res:= new(str,bat,2);
 #    VAR res := new(str,bat,2);
-	N:= take("N");
+	N:= bbp.bind("N");
 	samples:= new(int,bat,N);
 #    VAR samples := new(int,bat,N);
 #    VAR XX;
-	nseq:= take("nseq");
+	nseq:= bbp.bind("nseq");
 barrier	dx_a:= bunStream(nseq,dx_aH,dx_aT);
 #    nseq@batloop{ 
 	XX := new(void,dbl,Nsamples);
@@ -2199,7 +2199,7 @@ barrier	dx_a:= bunStream(nseq,dx_aH,dx_aT);
 redo	dx_a;
 end	dx_a;
 #    }
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	hx_a := access(samples,BAT_READ);
 #    samples.access(BAT_READ);
 #    # do it...
@@ -2209,14 +2209,14 @@ end	dx_a;
 #    VAR covar := gmm.find("Covar");
 #    
 ##line 107 "../../../src/gmm/gmm.mx"
-	ix_a := htype(covar);
+	ix_a := getType(covar);
 	jx_a := count(covar);
 	sigma:= new(ix_a,bat,jx_a);
-#  VAR sigma := new(covar.htype,bat,covar.count);
+#  VAR sigma := new(covar.getType,bat,covar.count);
 #  {
 	sigma_lock:= lock_create();
 #    VAR sigma_lock := lock_create();
-	Nthreads:= take("Nthreads");
+	Nthreads:= bbp.bind("Nthreads");
 barrier	kx_a:= bunStream(Nthreads,kx_aH,kx_aT);
 #    covar@ [Nthreads]batloop(){
 #      VAR _sigma_result := [sqrt]($t
@@ -2239,7 +2239,7 @@ end	kx_a;
 ##line 1631 "../../../src/gmm/gmm.mx"
 #
 #
-	cseq:= take("cseq");
+	cseq:= bbp.bind("cseq");
 	px_a := find(gmm,"Prior");
 	qx_a := reverse(cseq);
 	rx_a := join(qx_a,px_a);
@@ -2360,7 +2360,7 @@ function initGMM(coll:bat[str,bat]):bat[str,bat];
 	coeffs:= find(coll,"Coeffs");
 #  VAR coeffs  := coll.find("Coeffs");
 #
-	cseq:= take("cseq");
+	cseq:= bbp.bind("cseq");
 	ia_b := reverse(cseq);
 	ja_b := project(ia_b,1);
 	ka_b := reverse(ja_b);
@@ -2380,7 +2380,7 @@ function initGMM(coll:bat[str,bat]):bat[str,bat];
 #
 #
 ##line 1722 "../../../src/gmm/gmm.mx"
-	C:= take("C");
+	C:= bbp.bind("C");
 	pa_b := /(1.0,C);
 	qa_b := reverse(mImgIdx);
 	ra_b := project(qa_b,pa_b);
@@ -2435,13 +2435,13 @@ end	bb_b;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	ob_b := htype(coeffs);
+	ob_b := getType(coeffs);
 	pb_b := count(coeffs);
 	imgcoeffs := new(ob_b,bat,pb_b);
-#  imgcoeffs := new(coeffs.htype,bat,coeffs.count);
+#  imgcoeffs := new(coeffs.getType,bat,coeffs.count);
 	imgcoeffs_lock:= lock_create();
 #  VAR imgcoeffs_lock := lock_create();
-	Nthreads:= take("Nthreads");
+	Nthreads:= bbp.bind("Nthreads");
 barrier	qb_b:= bunStream(Nthreads,qb_bH,qb_bT);
 #  coeffs@ [Nthreads]batloop(){
 	_imgcoeffs_result:= join(Ib,qb_bT);
@@ -2471,10 +2471,10 @@ end	qb_b;
 #
 #  
 ##line 107 "../../../src/gmm/gmm.mx"
-	vb_b := htype(imgcoeffs);
+	vb_b := getType(imgcoeffs);
 	wb_b := count(imgcoeffs);
 	Area:= new(vb_b,bat,wb_b);
-#  VAR Area := new(imgcoeffs.htype,bat,imgcoeffs.count);
+#  VAR Area := new(imgcoeffs.getType,bat,imgcoeffs.count);
 #  {
 	Area_lock:= lock_create();
 #    VAR Area_lock := lock_create();
@@ -2506,10 +2506,10 @@ end	xb_b;
 #  VAR Ndata := Ib.reverse.histogram;
 #  
 ##line 107 "../../../src/gmm/gmm.mx"
-	ec_b := htype(Area);
+	ec_b := getType(Area);
 	fc_b := count(Area);
 	means:= new(ec_b,bat,fc_b);
-#  VAR means := new(Area.htype,bat,Area.count);
+#  VAR means := new(Area.getType,bat,Area.count);
 #  {
 	means_lock:= lock_create();
 #    VAR means_lock := lock_create();
@@ -2547,10 +2547,10 @@ end	gc_b;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	lc_b := htype(means);
+	lc_b := getType(means);
 	mc_b := count(means);
 	alignedmeans := new(lc_b,bat,mc_b);
-#  alignedmeans := new(means.htype,bat,means.count);
+#  alignedmeans := new(means.getType,bat,means.count);
 	alignedmeans_lock:= lock_create();
 #  VAR alignedmeans_lock := lock_create();
 barrier	nc_b:= bunStream(Nthreads,nc_bH,nc_bT);
@@ -2599,10 +2599,10 @@ end	nc_b;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	tc_b := htype(diffs);
+	tc_b := getType(diffs);
 	uc_b := count(diffs);
 	imgdiffs := new(tc_b,bat,uc_b);
-#  imgdiffs := new(diffs.htype,bat,diffs.count);
+#  imgdiffs := new(diffs.getType,bat,diffs.count);
 	imgdiffs_lock:= lock_create();
 #  VAR imgdiffs_lock := lock_create();
 barrier	vc_b:= bunStream(Nthreads,vc_bH,vc_bT);
@@ -2634,10 +2634,10 @@ end	vc_b;
 #
 #  
 ##line 107 "../../../src/gmm/gmm.mx"
-	bd_b := htype(imgdiffs);
+	bd_b := getType(imgdiffs);
 	cd_b := count(imgdiffs);
 	tmp:= new(bd_b,bat,cd_b);
-#  VAR tmp := new(imgdiffs.htype,bat,imgdiffs.count);
+#  VAR tmp := new(imgdiffs.getType,bat,imgdiffs.count);
 #  {
 	tmp_lock:= lock_create();
 #    VAR tmp_lock := lock_create();
@@ -2664,10 +2664,10 @@ end	dd_b;
 #
 #  
 ##line 107 "../../../src/gmm/gmm.mx"
-	id_b := htype(tmp);
+	id_b := getType(tmp);
 	jd_b := count(tmp);
 	variances:= new(id_b,bat,jd_b);
-#  VAR variances := new(tmp.htype,bat,tmp.count);
+#  VAR variances := new(tmp.getType,bat,tmp.count);
 #  {
 	variances_lock:= lock_create();
 #    VAR variances_lock := lock_create();
@@ -2736,7 +2736,7 @@ barrier	pd_b:= true;
 #      {
 #	{|
 barrier	qd_b:= true;
-	BAT_WRITE:= take("BAT_WRITE");
+	BAT_WRITE:= bbp.bind("BAT_WRITE");
 	rd_b := +(init_variances_a,init_variances_b);
 	init_variances_a := access(rd_b,BAT_WRITE);
 #	   init_variances_a := [+](init_variances_a,init_variances_b).access(BAT_WRITE);
@@ -2825,7 +2825,7 @@ end	be_b;
 	ge_b := insert(gmm,"Covar",covar);
 #  gmm.insert( "Covar", covar );
 #
-	sessionId:= take("sessionId");
+	sessionId:= bbp.bind("sessionId");
 	he_b := +(sessionId,"_init");
 	ie_b := +("gmm",he_b);
 	je_b := renameGMM(gmm,ie_b);
@@ -2845,7 +2845,7 @@ function test_EM(Nimg:int, M:int):bat[str,bat];
 #
 	ke_b := debug("Creating collection with M=%d",M);
 #  debug("Creating collection with M=%d",M);
-	sessionId:= take("sessionId");
+	sessionId:= bbp.bind("sessionId");
 	le_b := +("imgs",sessionId);
 	imgs:= newCollection(le_b,Nimg);
 #  VAR imgs := newCollection("imgs" + sessionId, Nimg);
@@ -2870,7 +2870,7 @@ end	pe_b;
 ##line 663 "../../../src/gmm/gmm.mx"
 	re_b := find(imgs,"Coeffs");
 barrier	se_b:= bunStream(re_b,se_bH,se_bT);
-	STORE_MMAP:= take("STORE_MMAP");
+	STORE_MMAP:= bbp.bind("STORE_MMAP");
 	te_b := mmap(se_bT,STORE_MMAP);
 redo	se_b;
 end	se_b;
@@ -2960,7 +2960,7 @@ end	bg_b;
 ##line 663 "../../../src/gmm/gmm.mx"
 	dg_b := find(imgs,"Coeffs");
 barrier	eg_b:= bunStream(dg_b,eg_bH,eg_bT);
-	BAT_APPEND:= take("BAT_APPEND");
+	BAT_APPEND:= bbp.bind("BAT_APPEND");
 	fg_b := access(eg_bT,BAT_APPEND);
 redo	eg_b;
 end	eg_b;
@@ -3029,13 +3029,13 @@ barrier	dh_b:= bunStream(ch_b,dh_bH,dh_bT);
 redo	dh_b;
 end	dh_b;
 #  }
-	C:= take("C");
+	C:= bbp.bind("C");
 	nh_b := randprob(C);
 	oh_b := flt(nh_b);
 	ph_b := find(src_gmm,"Prior");
 	qh_b := insert(ph_b,oh_b);
 #  src_gmm.find("Prior").insert( [flt](randprob(C)) );
-	cseq:= take("cseq");
+	cseq:= bbp.bind("cseq");
 barrier	rh_b:= bunStream(cseq,rh_bH,rh_bT);
 #  cseq@batloop(){
 #    # NOTE: was RAND_MAX + 1.0LL
@@ -3092,7 +3092,7 @@ end	rh_b;
 #  
 ##line 655 "../../../src/gmm/gmm.mx"
 	gj_b := find(src_gmm,"init_variances");
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	hj_b := access(gj_b,BAT_READ);
 #  access( src_gmm.find("init_variances"), BAT_READ );
 	ij_b := find(src_gmm,"Prior");
@@ -3133,7 +3133,7 @@ end	sj_b;
 #      imgSamples
 	xj_b := multiplex.script("insert",wj_b,imgSamples);
 #    );
-	commit:= take("commit");
+	commit:= bbp.bind("commit");
 #    commit;
 #  }
 #  
@@ -3390,10 +3390,10 @@ end	mk_b;
 ##line 1816 "../../../src/gmm/gmm.mx"
 	ro_b := debug("EM model training");
 #  debug("EM model training");
-	EM_coll:= take("EM_coll");
+	EM_coll:= bbp.bind("EM_coll");
 	EM_coll := imgs;
 #  EM_coll  := imgs;
-	EM_model:= take("EM_model");
+	EM_model:= bbp.bind("EM_model");
 	EM_model := gmm;
 #  EM_model := gmm;
 	src_gmm := nil;
@@ -3433,14 +3433,14 @@ function classify(coeffs:bat[int,bat], gmm:bat[str,bat]):bat[void,TCluster];
 #                  covar := [nestedop]( "dbl", covar);
 #  
 ##line 107 "../../../src/gmm/gmm.mx"
-	to_b := htype(covar);
+	to_b := getType(covar);
 	uo_b := count(covar);
 	ivariances:= new(to_b,bat,uo_b);
-#  VAR ivariances := new(covar.htype,bat,covar.count);
+#  VAR ivariances := new(covar.getType,bat,covar.count);
 #  {
 	ivariances_lock:= lock_create();
 #    VAR ivariances_lock := lock_create();
-	Nthreads:= take("Nthreads");
+	Nthreads:= bbp.bind("Nthreads");
 barrier	vo_b:= bunStream(Nthreads,vo_bH,vo_bT);
 #    covar@ [Nthreads]batloop(){
 #      VAR _ivariances_result := [inv]($t
@@ -3496,7 +3496,7 @@ barrier	bp_b:= true;
 #      {
 #	{|
 barrier	cp_b:= true;
-	BAT_WRITE:= take("BAT_WRITE");
+	BAT_WRITE:= bbp.bind("BAT_WRITE");
 	dp_b := *(isqrtdet_a,isqrtdet_b);
 	isqrtdet_a := access(dp_b,BAT_WRITE);
 #	   isqrtdet_a := [*](isqrtdet_a,isqrtdet_b).access(BAT_WRITE);
@@ -3564,15 +3564,15 @@ end	bp_b;
 ##line 1224 "../../../src/gmm/gmm.mx"
 #
 ##line 1240 "../../../src/gmm/gmm.mx"
-	jp_b := htype(coeffs);
+	jp_b := getType(coeffs);
 	kp_b := count(coeffs);
 	xs := new(jp_b,bat,kp_b);
-#  xs := new(coeffs.htype,bat,coeffs.count);
+#  xs := new(coeffs.getType,bat,coeffs.count);
 	xs_lock:= lock_create();
 #  VAR xs_lock := lock_create();
 barrier	lp_b:= bunStream(Nthreads,lp_bH,lp_bT);
 #  coeffs@ [Nthreads]batloop(){
-	xIdx:= take("xIdx");
+	xIdx:= bbp.bind("xIdx");
 	_xs_result:= join(xIdx,lp_bT);
 #    VAR _xs_result := join( xIdx, $t );
 	mp_b := lock_set(xs_lock);
@@ -3707,7 +3707,7 @@ end	rp_b;
 #		  ivariances := nil;
 	isdet:= join(cIdx,isqrtdet);
 #  VAR isdet    := join( cIdx, isqrtdet );
-	N:= take("N");
+	N:= bbp.bind("N");
 	act:= multiplex.script("multivariate_gaussian_pdf_diagcov",dists,isdet,N);
 #  VAR act      := [multivariate_gaussian_pdf_diagcov]( dists, isdet, N );
 	dists := nil;
@@ -3981,7 +3981,7 @@ function sampleQueries(Nqimg:int, testmodels:bat[str,bat]):bat[str,bat];
 #
 ##line 1915 "../../../src/gmm/gmm.mx"
 #
-	sessionId:= take("sessionId");
+	sessionId:= bbp.bind("sessionId");
 	cu_b := +(sessionId,"_query");
 	du_b := +("gmm",cu_b);
 	eu_b := renameGMM(qgmm,du_b);
@@ -3989,7 +3989,7 @@ function sampleQueries(Nqimg:int, testmodels:bat[str,bat]):bat[str,bat];
 #      
 ##line 655 "../../../src/gmm/gmm.mx"
 	fu_b := find(qgmm,"init_variances");
-	BAT_READ:= take("BAT_READ");
+	BAT_READ:= bbp.bind("BAT_READ");
 	gu_b := access(fu_b,BAT_READ);
 #  access( qgmm.find("init_variances"), BAT_READ );
 	hu_b := find(qgmm,"Prior");
@@ -4099,7 +4099,7 @@ barrier	fv_b:= true;
 #      {
 #	{|
 barrier	gv_b:= true;
-	BAT_WRITE:= take("BAT_WRITE");
+	BAT_WRITE:= bbp.bind("BAT_WRITE");
 	hv_b := *(det_i_a,det_i_b);
 	det_i_a := access(hv_b,BAT_WRITE);
 #	   det_i_a := [*](det_i_a,det_i_b).access(BAT_WRITE);
@@ -4440,11 +4440,11 @@ end function;
 #  # this is really a fitness-join
 function mapnearest(ma:bat[int,bat], mb:bat[int,bat]):bat[int,int];
 #  PROC mapnearest( BAT[int,bat] ma, BAT[int,bat] mb ): BAT[int,int] := {
-	TCluster:= take("TCluster");
-	C:= take("C");
+	TCluster:= bbp.bind("TCluster");
+	C:= bbp.bind("C");
 	cdist:= new(TCluster,bat,C);
 #    VAR cdist := new(TCluster,bat,C);
-	cseq:= take("cseq");
+	cseq:= bbp.bind("cseq");
 barrier	vw_b:= bunStream(cseq,vw_bH,vw_bT);
 #    cseq@batloop(){
 	csrcoid:= vw_bH;
@@ -4484,7 +4484,7 @@ end function;
 #
 function testclassify(src_gmm:bat[str,bat], gmmnew:bat[str,bat]):void;
 #  PROC testclassify( BAT[str,bat] src_gmm, BAT[str,bat] gmmnew ): void := {
-	sampleImg:= take("sampleImg");
+	sampleImg:= bbp.bind("sampleImg");
 	gx_b := find(sampleImg,"Samples");
 	c:= classify(gx_b,gmmnew);
 #    VAR c := classify( sampleImg.find("Samples"), gmmnew );
@@ -4523,7 +4523,7 @@ end function;
 #
 function mvgpdf(d:bat[void,dbl], det:dbl, Ndim:int):bat[void,dbl];
 #  PROC mvgpdf( BAT[void,dbl] d, dbl det, int Ndim ): BAT[void,dbl] := {
-	M_PI:= take("M_PI");
+	M_PI:= bbp.bind("M_PI");
 	lx_b := *(2,M_PI);
 	mx_b := dbl(Ndim);
 	nx_b := /(mx_b,2);
@@ -4550,19 +4550,19 @@ function test():void;
 ##line 2070 "../../../src/gmm/gmm.mx"
 	mu:= new(int,dbl);
 #    VAR mu := new( int, dbl );
-	mu_1:= take("mu_1");
+	mu_1:= bbp.bind("mu_1");
 	ux_b := insert(mu,1,mu_1);
 #    mu.insert( 1, mu_1 );
-	mu_2:= take("mu_2");
+	mu_2:= bbp.bind("mu_2");
 	vx_b := insert(mu,2,mu_2);
 #    mu.insert( 2, mu_2 );
 #    # ...
 	sigma:= new(int,dbl);
 #    VAR sigma := new( int, dbl );
-	sigma_1:= take("sigma_1");
+	sigma_1:= bbp.bind("sigma_1");
 	wx_b := insert(sigma,1,sigma_1);
 #    sigma.insert( 1, sigma_1 );
-	sigma_2:= take("sigma_2");
+	sigma_2:= bbp.bind("sigma_2");
 	xx_b := insert(sigma,2,sigma_2);
 #    sigma.insert( 2, sigma_2 );
 #    # ...
@@ -4594,7 +4594,7 @@ function test():void;
 	i:= 0;
 #    VAR i := 0;
 barrier	iy_b:= true;
-	Nsamples:= take("Nsamples");
+	Nsamples:= bbp.bind("Nsamples");
 	ky_b := <(i,Nsamples);
 barrier	jy_b:= ky_b;
 #    WHILE (i < Nsamples) {
@@ -4679,20 +4679,20 @@ end function;
 #
 #
 ##line 2127 "../../../src/gmm/gmm.mx"
-	coeffs:= take("coeffs");
+	coeffs:= bbp.bind("coeffs");
 	coeffs := nil;
 #  coeffs := nil;
-	mImgIdx:= take("mImgIdx");
+	mImgIdx:= bbp.bind("mImgIdx");
 	mImgIdx := nil;
 #  mImgIdx := nil;
-	mCIdx:= take("mCIdx");
+	mCIdx:= bbp.bind("mCIdx");
 	mCIdx := nil;
 #  mCIdx := nil;
 #
 ##  gmm := nil;
 ##  gmmnew := nil;
 #
-	commit:= take("commit");
+	commit:= bbp.bind("commit");
 #  commit;
 #
 #
@@ -4701,10 +4701,10 @@ end function;
 #
 	fragsize := 64;
 #  CONST fragsize := 64;
-	imgFrameNr:= take("imgFrameNr");
+	imgFrameNr:= bbp.bind("imgFrameNr");
 	Nimg:= count(imgFrameNr);
 #  VAR Nimg := imgFrameNr.count;
-	s_tdict:= take("s_tdict");
+	s_tdict:= bbp.bind("s_tdict");
 	collidx:= reverse(s_tdict);
 #  VAR collidx := s_tdict.reverse;
 #
@@ -4715,7 +4715,7 @@ end function;
 #
 ##line 2145 "../../../src/gmm/gmm.mx"
 #
-	view_bbp_name:= take("view_bbp_name");
+	view_bbp_name:= bbp.bind("view_bbp_name");
 	ra_c := multiplex.script("startsWith",view_bbp_name,"gmm_trained");
 	sa_c := uselect(ra_c,1);
 	ta_c := count(sa_c);
@@ -4764,7 +4764,7 @@ barrier	nb_c:= exist(mb_c,lb_c);
 	pb_c := insert(tmBatIds,"init_variances",ob_c);
 #    tmBatIds.insert("init_variances", "gmm_trained"+"_init_variances");
 end	nb_c;
-	nseq:= take("nseq");
+	nseq:= bbp.bind("nseq");
 barrier	qb_c:= bunStream(nseq,qb_cH,qb_cT);
 #  nseq@batloop(){
 	rb_c := str(qb_cT);
@@ -4773,7 +4773,7 @@ barrier	qb_c:= bunStream(nseq,qb_cH,qb_cT);
 	ub_c := reverse(view_bbp_name);
 barrier	vb_c:= exist(ub_c,tb_c);
 #    IF (view_bbp_name.reverse.exist("gmm_trained" + "_Mean_"  + str($t)))
-	vb_cT:= take("vb_cT");
+	vb_cT:= bbp.bind("vb_cT");
 	wb_c := str(vb_cT);
 	xb_c := +("_Mean_",wb_c);
 	yb_c := +("gmm_trained",xb_c);
@@ -4786,7 +4786,7 @@ end	vb_c;
 	ec_c := reverse(view_bbp_name);
 barrier	fc_c:= exist(ec_c,dc_c);
 #    IF (view_bbp_name.reverse.exist("gmm_trained" + "_Covar_" + str($t)))
-	fc_cT:= take("fc_cT");
+	fc_cT:= bbp.bind("fc_cT");
 	gc_c := str(fc_cT);
 	hc_c := +("_Covar_",gc_c);
 	ic_c := +("gmm_trained",hc_c);
@@ -4808,7 +4808,7 @@ barrier	kc_c:= not(ua_c);
 #    
 ##line 655 "../../../src/gmm/gmm.mx"
 	lc_c := find(trainedmodels,"init_variances");
-	BAT_APPEND:= take("BAT_APPEND");
+	BAT_APPEND:= bbp.bind("BAT_APPEND");
 	mc_c := access(lc_c,BAT_APPEND);
 #  access( trainedmodels.find("init_variances"), BAT_APPEND );
 	nc_c := find(trainedmodels,"Prior");
@@ -4869,7 +4869,7 @@ end	md_c;
 #    
 ##line 655 "../../../src/gmm/gmm.mx"
 	od_c := find(trainedmodels,"init_variances");
-	STORE_MMAP:= take("STORE_MMAP");
+	STORE_MMAP:= bbp.bind("STORE_MMAP");
 	pd_c := mmap(od_c,STORE_MMAP);
 #  mmap( trainedmodels.find("init_variances"), STORE_MMAP );
 	qd_c := find(trainedmodels,"Prior");
@@ -4975,12 +4975,12 @@ barrier	df_c:= ff_c;
 	frag_iIdx:= reverse(uf_c);
 #    VAR frag_iIdx := frag_i.mark(oid(0)).reverse.join(bat(collidx.find("imgBlock"))).reverse.mark(oid(0)).reverse;
 #
-	EM_coll:= take("EM_coll");
+	EM_coll:= bbp.bind("EM_coll");
 	EM_coll := new(str,bat);
 #    EM_coll := new(str,bat);
 	vf_c := insert(EM_coll,"I",frag_i);
 #    EM_coll.insert("I",  frag_i);
-	imgBlock:= take("imgBlock");
+	imgBlock:= bbp.bind("imgBlock");
 	wf_c := reverse(imgBlock);
 	xf_c := join(frag_iIdx,wf_c);
 	yf_c := reverse(xf_c);
@@ -5005,7 +5005,7 @@ end	bg_c;
 #    EM_coll.insert("Coeffs", coeffs);
 	coeffs := nil;
 #    		coeffs := nil;
-	EM_model:= take("EM_model");
+	EM_model:= bbp.bind("EM_model");
 	EM_model := initGMM(EM_coll);
 #    EM_model := initGMM( EM_coll );
 #
@@ -5174,7 +5174,7 @@ end	cf_c;
 #
 #
 ##line 2338 "../../../src/gmm/gmm.mx"
-	GMMdebuglog:= take("GMMdebuglog");
+	GMMdebuglog:= bbp.bind("GMMdebuglog");
 	dj_c := fflush(GMMdebuglog);
 #  fflush( GMMdebuglog );
 #  # enum_drop( TCluster );

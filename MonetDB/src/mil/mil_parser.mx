@@ -346,6 +346,8 @@ outer or named scopes. Such variables are explicitly bound by a
 function take(str nme).
 For the M2m compiler this means we have to keep track on the identifiers
 introduced in a block and issue a bind operation before using them.
+Variables that are introduced at the LHS of an assignment
+need not be bound through the BAT binding operation.
 @c
 typedef struct IDS{
 	str nme;
@@ -375,10 +377,11 @@ int fndId(str nme){
 @-
 MIL variable may refer to globals, constants, and persistent
 BATs. These cases are handled by a pattern in the MIL interpreter,
-except for the built-in types, which are expected to exist
+except for the built-in types, which are expected to exist.
 @c
 str typeNames[]={"void","bit","chr","sht","bat","int","oid","ptr",
-	"flt","dbl","lng","str",0};
+	"flt","dbl","lng","str","url","lock","sema","blob",0};
+
 int bindId(str nme){
 	int i, fnd= 0;
 	for( i=0; typeNames[i]; i++)
@@ -692,11 +695,11 @@ expression:
     constant term 
 	{ $$.val = emitExpr($2.val); }
     |   constant template TOK_ASSIGNMENT term
-	{ bindId($2.val); 
+	{ newId($2.val); 
 	  printf("\t%s := %s;\n", $2.val, $4.val); 
 	  $$=$2;}
     |   constant TOK_IDENT TOK_ASSIGNMENT term
-	{ bindId($2.val); 
+	{ newId($2.val); 
 	  printf("\t%s := %s;\n", $2.val, $4.val); 
 	  $$=$2;}
 
@@ -705,7 +708,7 @@ constant: TOK_CONST
 	
 term :
 	factor
-    |	factor TOK_OPERATOR term
+    |	factor1 TOK_OPERATOR term
 	{ char stmt[1024];
 	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
@@ -718,7 +721,7 @@ term :
 	  sprintf(stmt,"%s%s)", bindFcn($1.val),$2.val);
 	  $$.val=GDKstrdup(stmt);
 	}
-    |	factor TOK_IDENT term
+    |	factor1 TOK_IDENT term
 	{ char stmt[1024];
 	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
@@ -733,21 +736,21 @@ variable_reference:
 template:
         TOK_TEMPLATE
     |   TOK_ITERTEMP
-    |   TOK_VARTEMP factor ')'
+    |   TOK_VARTEMP factor1 ')'
 	{ char *nme= newName();
 	  printf("\t%s := mil.getVarTemp(%s);\n",nme,$2.val);
 	  $$.val= nme;
 	}
-    |   TOK_VARTEMP factor TOK_RANGETEMP ')'
+    |   TOK_VARTEMP factor1 TOK_RANGETEMP ')'
 	{ char *nme= newName();
 	  printf("\t%s := mil.getVarTempRange(%s);\n",nme,$2.val);
 	  $$.val= nme;
 	}
 
 
-factor:
-        TOK_CONSTANT
-    |   TOK_STRING
+factor: factor1  |TOK_CONSTANT
+factor1:
+       TOK_STRING
     |   TOK_BAT
     |  	variable_reference
 	{$$=$1; bindId($1.val);}
@@ -818,19 +821,19 @@ fcn_call_B:
 	  $$.val = GDKstrdup(stmt);}
 
 fcn_hdr: 
-       TOK_DEREF factor ')'  
+       TOK_DEREF factor1 ')'  
 	{ char stmt[1024];
 	  $2.val =emitExpr($2.val);
 	  sprintf(stmt,"mil.deref(%s,",$2.val);
 	  $$.val= GDKstrdup(stmt);
 	}
-    |  TOK_SETOP factor ']' 
+    |  TOK_SETOP factor1 ']' 
 	{ char stmt[1024];
 	  $2.val =emitExpr($2.val);
 	  sprintf(stmt,"mil.multiplex_deref(%s,",$2.val);
 	  $$.val= GDKstrdup(stmt);
 	}
-    |  TOK_SETAGGR factor '}'
+    |  TOK_SETAGGR factor1 '}'
 	{ char stmt[1024];
 	  $2.val =emitExpr($2.val);
 	  sprintf(stmt,"mil.pump_deref(%s,",$2.val);
