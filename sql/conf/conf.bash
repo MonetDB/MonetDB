@@ -173,6 +173,9 @@ if [ "${os}" = "SunOS" ] ; then
 		# GNU ar in /usr/local/bin doesn't support 64bit
 		AR='/usr/ccs/bin/ar' ; export AR
 		AR_FLAGS='-r -cu' ; export AR_FLAGS
+		# libraries compiled with gcc may need the gcc libs, so
+		# at them to the LD_LIBRARY_PATH 
+		libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
 	fi
 	if [ "${COMP}${BITS}${LINK}" = "ntv32d" ] ; then
 		# propper/extended LD_LIBRARY_PATH for native 32bit shared libs on SunOS
@@ -181,7 +184,6 @@ if [ "${os}" = "SunOS" ] ; then
 	if [ "${COMP}${BITS}" = "GNU64" ] ; then
 		# our gcc/g++ on apps is in ${soft32} (also for 64 bit)
 		binpath="${soft32}/bin:${binpath}"
-		libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
 	fi
 	if [ "${what}" = "SQL"  -a  "${COMP}" = "ntv" ] ; then
 		# to find ltdl.h included by src/odbc/setup/drvcfg.c via odbcinstext.h
