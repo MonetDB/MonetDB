@@ -36,11 +36,11 @@
 #include "sql_context.h"
 #include "sql_parser.h"
 
-extern stmt *semantic( context * sql, symbol * sym);
-extern void sql_add_arg( context *sql, atom *v );		/* used in src/server/sql_parser.y */
-extern void sql_add_param( context *sql, char *name, stmt *s );	/* used in src/server/sql_parser.y */
-extern void sql_destroy_params( context *sql );			/* used in src/server/sql_context.c */
-extern void sql_destroy_args( context *sql );			/* used in src/server/sql_context.c */
+sql_export stmt *semantic( context * sql, symbol * sym);
+sql_export void sql_add_arg( context *sql, atom *v );		/* used in src/server/sql_parser.y */
+sql_export void sql_add_param( context *sql, char *name, stmt *s );	/* used in src/server/sql_parser.y */
+sql_export void sql_destroy_params( context *sql );			/* used in src/server/sql_context.c */
+sql_export void sql_destroy_args( context *sql );			/* used in src/server/sql_context.c */
 
 #endif /*_SQL_SEMANTIC_H_*/
 
@@ -52,6 +52,7 @@ extern void sql_destroy_args( context *sql );			/* used in src/server/sql_contex
 #include "sql_scope.h"
 #include "sql_optimize.h"
 #include "sql_rel2bin.h"
+#include "sql_semantic.h"
 
 #include <unistd.h>
 #include <stdio.h>
