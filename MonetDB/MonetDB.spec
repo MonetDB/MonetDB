@@ -14,7 +14,7 @@ Group: System
 Source: %{name}-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
-Copyright:   MPL
+Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 
 %package client
 Summary: MonetDB clients
@@ -53,22 +53,32 @@ rm -rf $RPM_BUILD_ROOT
 %setup -q -n %{name}-%{version}
 
 %build
-./configure --prefix=$RPM_BUILD_ROOT%{prefix} 
+
+./configure --prefix=%{prefix} 
+
 make
 
 %install
-make install
+rm -rf $RPM_BUILD_ROOT
+
+make install \
+	DESTDIR=$RPM_BUILD_ROOT 
+
+find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 
 # Fixes monet config script
-perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
+#perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 
+%clean
+rm -fr $RPM_BUILD_ROOT
 
 %files client
 %defattr(-,monet,monet) 
-%{prefix}/bin/MapiClient 
-%{prefix}/lib/libmutils.so*
-%{prefix}/lib/libMapi.so* 
-%{prefix}/lib/libstream.so*
+%{prefix}/bin/MapiClient* 
+%{prefix}/lib/libmutils.*
+%{prefix}/lib/libMapi.* 
+%{prefix}/lib/libstream.*
+%{prefix}/lib/MonetDB/*jar
 
 %{prefix}/share/MonetDB/site_perl/* 
 %{prefix}/share/MonetDB/python/* 
@@ -78,12 +88,12 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %files server
 %defattr(-,monet,monet) 
 %{prefix}/bin/Mserver 
-%{prefix}/bin/Mshutdown
-%{prefix}/bin/monet-config
+%{prefix}/bin/monet-config*
 
-%{prefix}/lib/libbat.so*
-%{prefix}/lib/libmonet.so*
+%{prefix}/lib/libbat.*
+%{prefix}/lib/libmonet.*
 %{prefix}/lib/MonetDB/*.so* 
+%{prefix}/lib/MonetDB/*.la* 
 
 %{prefix}/share/MonetDB/mapi.mil 
 %{prefix}/share/MonetDB/tools/* 
@@ -101,20 +111,19 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/bin/prefixMxFile 
 %{prefix}/bin/idxmx 
 
-%{prefix}/share/MonetDB/monet.Mprofile.conf 
 %{prefix}/share/MonetDB/Mprofile-commands.lst 
-%{prefix}/share/MonetDB/monet.Mtest.conf 
 %{prefix}/share/MonetDB/quit.mil 
 
-%{prefix}/bin/prof.py
-%{prefix}/bin/Mtest.py
-%{prefix}/bin/Mapprove.py
-%{prefix}/bin/Mfilter.py
-%{prefix}/bin/Mprofile.py
-%{prefix}/bin/Mlog
-%{prefix}/bin/Mdiff
-%{prefix}/bin/Mtimeout
-%{prefix}/bin/MkillUsers
+%{prefix}/bin/prof.py*
+%{prefix}/bin/Mtest.py*
+%{prefix}/bin/Mapprove.py*
+%{prefix}/bin/Mfilter.py*
+%{prefix}/bin/Mprofile.py*
+%{prefix}/bin/Mlog*
+%{prefix}/bin/Mdiff*
+%{prefix}/bin/Mtimeout*
+%{prefix}/bin/MkillUsers*
+%{prefix}/bin/Mshutdown.py*
 
 %{prefix}/lib/autogen/* 
 
