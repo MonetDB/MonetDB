@@ -288,12 +288,25 @@ label{form}
 \label{ide}
 \subsection{Mknife}
 \label{mknife}
-A flexible graphical user interface has been designed to interact with
-the MonetDB server using any of its languages. The interaction is based
-on the Mapi protocol.
+Mknife is a 'Swiss army knife' GUI to ease the interaction with a running 
+MonetDB server. It provides a convenient setting to developed, test and 
+tune queries. Although it is possible to compose rather complex applications,
+including form-based data entry, its strength lies in supporting pre-cooked 
+query scenarios. This requirement stems from our research activities in managing 
+multimedia information in a database context. A setting where the database 
+is a priori filled with a large collection of reference material, 
+e.g. images or video keyframes, and automated tools enrich the database 
+with derived features. Mknife is used here to ease experimentation and 
+occasionally demonstrate insightful results.
 
-Its working is described in a separate document, found on the
+Mknife comes along with a few examples based on the VOC
+data. The screenshot below illustrates what you may expect.
+For more details, we refer to the Mknife manual, hosted on
+the
 MonetDB website \footnote{http://monetdb.cwi.nl/GetGoing/Usage/Mknife/index.html}.
+\begin{fig}
+include picture
+\end{fig}
 
 
 \section{Functional overview}
@@ -306,13 +319,14 @@ selectively add feature packages.
 A limited number of SQL session parameters can be set with the
 statement {\sc set} {\em variable = expression}.
 The setting can be inspected with the {\sc sql} statement
-{\sc select} * {\sc from} session, which currently includes
-the following paramters.
+{\sc select} * {\sc from} env, which currently includes
+the following parameters.
 \begin{tabular}{ll l}
-auto\_commit & boolean & toggle the auto commit transaction mode\\
-reply\_size & integer & limit the number of tuples returned by a query. (-1 implies everything being returned)\\
-explain & 'plan' & Generate the MIL query execution plan\\
-	& 'history' & keep a log of the statements executed in the history table\\
+auto\_commit & boolean & toggle auto commit transaction mode\\
+reply\_size & integer & limit tuples returned by a query.\\
+	& (-1 implies everything )\\
+explain & 'plan' & show MIL query plan\\
+	& 'history' & keep a statement log \\
 debug & integer value & toggle debugging flags inside the system. 
 See for an overview the MonetDB configuration file\\
 \end{tabular}
@@ -526,7 +540,7 @@ Strict serializability is the sole isolation level supported.
 \section{Configuration files}
 \label{configfile}
 
-\section{The todo-list}
+\section{The SQL todo-list}
 SQL'99 and its successor SQL-2003 are extensive languages.
 Several language constructs have been included/retained for
 compatibility reasons, or a vendor pressing for it.
@@ -566,7 +580,6 @@ CONNECT statement to establish connections. \\
 \end{tabular}
 
 The short term priority list for development encompasses
-
 \begin{tabular}{l}
 SQL modules and external functions \\
 GIS module re-vitalization\\
