@@ -101,10 +101,10 @@ comment "Marks this ResultSet as complete and ready for serialisation";
 command writeHeader(rs:resultset,s:stream):int
 address RSwriteHeader
 comment "Writes the header of this ResultSet to the given stream";
-command writeBlock(rs:resultset,s:stream,upper:lng,lower:lng):int
+command writeBlock(rs:resultset,s:stream,upper:int,lower:int):int
 address RSwriteBlock
 comment "Writes the results from upper to lower to the stream";
-command getLength(rs:resultset):lng
+command getLength(rs:resultset):int
 address RSgetLength
 comment "Returns the size of this ResultSet as number of rows";
 command setBlockSize(rs:resultset,size:int):void
@@ -133,23 +133,24 @@ comment "Release this ResultSet and all its associated resources";
 #include "mal_exception.h"
 
 typedef struct list_t {
-	BAT* bat,
-	str name,
-	str table,
-	str schema,
-	str digits,
-	str scale,
-	int width,
-	column* next
+	BAT* bat,		/* BAT that backs this column */
+	BUN* bun,		/* a walker variable */
+	str name,		/* name of the column */
+	str table,		/* name of the table this column belongs to */
+	str schema,		/* name of the schema this column belongs to */
+	str digits,		/* digits of this data type */
+	str scale,		/* scale of this data type */
+	int width,		/* the maximum width of this column */
+	column* next	/* the next column in this list */
 } column;
 
 typedef struct resultset_t {
-	column* firstColumn,
-	unsigned int blocksize,
-	unsigned long length,
-	unsigned long pos,
-	unsigned int id,
-	int complete
+	column* firstColumn,	/* head of the linked list of column */
+	unsigned int blocksize,	/* the number of rows per block */
+	size_t length,			/* the number of rows in this ResultSet */
+	size_t pos,				/* the current row position */
+	unsigned int id,		/* internal reference ID of this ResultSet */
+	char complete			/* whether this ResultSet can be serialised */
 } resultset;
 
 static unsigned int resultset_id_counter = 0;
@@ -222,12 +223,12 @@ str RSnew(resultset** retval) {
 	resultset* ret = GDKmalloc(sizeof(resultset));
 
 	/* initialise the values */
-	ret->complete = 0;
+	ret->complete = (char)0;
 	ret->id = resultset_id_counter++;
-	ret->pos = 0L;
-	ret->length = 0L;
+	ret->pos = 0;
+	ret->length = 0;
 	ret->blocksize = 0;
-	ret->firstcolumn = NULL;
+	ret->firstColumn = NULL;
 
 	*retval = ret;
 	return(MAL_SUCCEED);
@@ -271,6 +272,7 @@ str RSaddColumn(resultset* rs, BAT* b, str nme) {
 		col = rs->firstColumn = GDKmalloc(sizeof(column));
 	}
 	col->bat = b;
+	col->bun = NULL;
 	col->name = nme;
 	col->table = NULL;
 	col->schema = NULL;
@@ -409,7 +411,7 @@ str RSsetComplete(resultset* rs) {
 		return(throwMessage("resultset.setComplete", "ResultSet should not be NULL"));
 	if (rs->firstColumn == NULL)
 		return(throwMessage("resultset.setComplete", "ResultSet should contain at least one column"));
-	rs->complete = 1;
+	rs->complete = (char)1;
 	return(MAL_SUCCEED);
 }
 
@@ -417,6 +419,7 @@ str RSsetComplete(resultset* rs) {
  * Writes the header for the ResultSet to the given stream.  Note
  * that the ResultSet should be complete in order for this function
  * to work.
+ * This function defines the layout of the protocol.
  *
  * @param rs a resultset struct
  * @param s a stream to write to
@@ -444,6 +447,7 @@ str RSwriteHeader(int* retval, resultset* rs, stream* s) {
  * (exclusive), and will count (upper - lower) rows.  Note
  * that the ResultSet should be complete in order for this function
  * to work.
+ * This function defines the layout of the protocol.
  *
  * @param rs a resultset struct
  * @param s a stream to write to
@@ -451,18 +455,40 @@ str RSwriteHeader(int* retval, resultset* rs, stream* s) {
  * @param lower from which row of the result (inclusive)
  * @returns the number of bytes written
  */
-str RSwriteBlock(int* retval, resultset* rs, stream* s, long upper, long lower) {
+str RSwriteBlock(int* retval, resultset* rs, stream* s, int upper, int lower) {
 	int bytes = 0;
+	column* col;
 	
 	if (rs == NULL)
 		return(throwMessage("resultset.writeBlock", "ResultSet should not be NULL"));
 	if (!rs->complete)
 		return(throwMessage("resultset.writeBlock", "Unable to serialise a non-complete ResultSet"));
+	if (lower < 0)
+		return(throwMessage("resultset.writeBlock", "Lower index out of bounds (< 0)"));
+	if (upper > rs->length)
+		return(throwMessage("resultset.writeBlock", "Upper index out of bounds (> ResultSet length)"));
 	
-	/* serialise the header to the stream */
-	(void*)rs;
-	(void*)s;
-	upper = long = 0;
+	/* initialise all column BUN pointers */
+	col = rs->firstColumn;	/* setComplete forces this one to be valid */
+	while (col != NULL) {
+		col->bun = (BUN *)((char *)BUNfirst(col->bat) + BUNsize(col->bat) * lower);
+		col = col->next;
+	}
+	/* write the desired block of results */
+	for (; lower < upper; lower++) {
+		col = rs->firstColumn;
+		bytes += stream_printf(s, "[ ");
+		while (col != NULL) {
+			bytes += stream_printf(s, "%s", BUNtail(col->bat, col->bun));
+			col->bun = BUNnext(col->bat, col->bun);
+			col = col->next;
+			if (col == NULL) {
+				bytes += stream_printf(s, "\t]\n");
+			} else {
+				bytes += stream_printf(s, ",\t");
+			}
+		}
+	}
 
 	*retval = bytes;
 	return(MAL_SUCCEED);
