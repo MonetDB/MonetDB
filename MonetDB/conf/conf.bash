@@ -295,6 +295,8 @@ if [ "${os}" = "AIX" ] ; then
 	done
 	binpath="${mypath}:${binpath}"
 	unset mypath
+	# required to make mmap() work on AIX !
+	export XPG_SUS_ENV=ON
 fi
 
 ## gathered from old scripts, but not used anymore/yet

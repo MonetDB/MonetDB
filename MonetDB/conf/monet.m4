@@ -271,6 +271,14 @@ yes-irix*-64)
 	CC="$CC -$bits"
 	CXX="$CXX -$bits"
 	;;
+yes-aix*-64)
+	CC="$CC -maix$bits"
+	CXX="$CXX -maix$bits"
+	;;
+-aix*-64)
+	CC="$CC -q$bits"
+	CXX="$CXX -q$bits"
+	;;
 yes-linux*-x86_64*-64)
 	CC="$CC -m$bits"
 	CXX="$CXX -m$bits"
@@ -302,10 +310,10 @@ aix*)
     case "$GCC" in
       yes)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -mthreads"
-        MEL_LIBS="-qstaticinline"
         ;;
       *)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -qthreaded"
+        MEL_LIBS="-qstaticinline"
         ;;
     esac
     ;;
@@ -404,6 +412,12 @@ if test "x$enable_debug" = xyes; then
     CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     CFLAGS="$CFLAGS -g"
     CXXFLAGS="$CXXFLAGS -g"
+    case "$GCC-$host_os" in
+      yes-aix*)
+        CFLAGS="$CFLAGS -gxcoff"
+        CXXFLAGS="$CXXFLAGS -gxcoff"
+        ;;
+    esac
   fi
 fi
 
@@ -543,16 +557,20 @@ SHARED_LIBS=''
 [
 if [ "$enable_static" = "yes" ]; then
 	CFLAGS="$CFLAGS -DSTATIC"
-	SHARED_LIBS='$(STATIC_LIBS) $(smallTOC_SHARED_LIBS)'
+	SHARED_LIBS='$(STATIC_LIBS) $(smallTOC_SHARED_LIBS) $(largeTOC_SHARED_LIBS)'
 	case "$host_os" in
-	aix*)	CFLAGS="$CFLAGS -DsmallTOC";;
-	*)	SHARED_LIBS="$SHARED_LIBS "'$(largeTOC_SHARED_LIBS)';;
+	aix*)	
+		if test "x$GCC" = xyes; then
+			LDFLAGS="$LDFLAGS -Xlinker"
+		fi
+		LDFLAGS="$LDFLAGS -bbigtoc"
+		;;
+	irix*)
+		if test "x$GCC" != xyes; then
+			SHARED_LIBS="$SHARED_LIBS -lm"
+		fi
+		;;
 	esac
-	if test "x$GCC" != xyes; then
-		case "$host_os" in
-		irix*)	SHARED_LIBS="$SHARED_LIBS -lm";;
-		esac
-	fi
 fi
 ]
 AC_SUBST(SHARED_LIBS)
