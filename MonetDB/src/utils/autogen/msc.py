@@ -160,20 +160,20 @@ def msc_deps(fd,deps,objext, msc):
 	x,de = string.split(deplist[0],".",1)
 	if (de == 'y'):
 		fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
-		fd.write( "\tif exist y_tab.c $(DEL) y_tab.c\n" )
-		fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b))
+		fd.write( "\tif exist y.tab.c $(DEL) y.tab.c\n" )
+		fd.write( "\tif exist y.tab.h $(MV) y.tab.h %s.tab.h\n" % (b))
 	else:
 		fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) );
-		fd.write( "\tif exist y_tab.c $(DEL) y_tab.c\n" )
-		fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b))
+		fd.write( "\tif exist y.tab.c $(DEL) y.tab.c\n" )
+		fd.write( "\tif exist y.tab.h $(MV) y.tab.h %s.tab.h\n" % (b))
     if (ext == "tab.c"):
 	fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
-	fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.c\n" % (b) )
-	fd.write( "\tif exist y_tab.h $(DEL) y_tab.h\n" )
+	fd.write( "\tif exist y.tab.c $(MV) y.tab.c %s.tab.c\n" % (b) )
+	fd.write( "\tif exist y.tab.h $(DEL) y.tab.h\n" )
     if (ext == "tab.cxx"):
 	fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) );
-	fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.cxx\n" % (b) )
-	fd.write( "\tif exist y_tab.h $(DEL) y_tab.h\n" )
+	fd.write( "\tif exist y.tab.c $(MV) y.tab.c %s.tab.cxx\n" % (b) )
+	fd.write( "\tif exist y.tab.h $(DEL) y.tab.h\n" )
     if (ext == "yy.c"):
 	fd.write( "\t$(LEX) $(LFLAGS) %s.l\n" % (b) );
 	fd.write( "\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.c\n" % (b) )
