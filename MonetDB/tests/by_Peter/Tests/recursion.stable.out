@@ -20,7 +20,7 @@ stdout of test 'recursion` in directory 'tests/by_Peter` itself:
 
 module(alarm);
 proc p;
-proc p(int i) : void := { if (i < 10000) p(i+1); }
+proc p(int i) : void { if (i < 10000) p(i+1); }
 {
 p(100).fork;
 p(300).fork;
@@ -39,7 +39,7 @@ sleep(10);
 print(42);
 [ 42 ]
 
-quit;
+quit();
 
 # 17:07:47 >  
 # 17:07:47 >  Done.

@@ -17,10 +17,10 @@ stdout of test 'evenheight` in directory 'tests/by_Peter` itself:
 # this computes the weighed midpoint of a range 'low'..'high'
 # the weights are taken from the sorted histogram 'hst' 
 #
-proc compute_mid(hst, low, high) := {
-    var members := hst.reverse.select(low,high);
-    var weighed := new(int, members.ttype, members.count);
-    var mid := nil.cast(hst.htype);
+proc compute_mid(bat hst, any  low, any  high) {
+    var members := hst.reverse().select(low,high);
+    var weighed := new(int, members.ttype(), members.count());
+    var mid := nil.cast(hst.htype());
     var cum := 0;
 
     members@batloop() {
@@ -43,11 +43,11 @@ proc compute_mid(hst, low, high) := {
 # a histogram. This algorithms dynamically adapts the ideal 
 # group-size 'ideal' to obtain a nicely balanced result.
 #
-proc range_bat(b, n) := {
-    var      histo := b.histogram.sort; # sort it!
-    var     ranges := new(b.ttype, b.ttype, (n*4)/3);
+proc range_bat(bat b, int n)  {
+    var      histo := b.histogram().sort(); # sort it!
+    var     ranges := new(b.ttype(), b.ttype(), (n*4)/3);
     var    cursize := 0;
-    var items_left := b.count;
+    var items_left := b.count();
     var mid_h, last_h, first_h;
 
     histo@batloop() {
@@ -82,13 +82,15 @@ proc range_bat(b, n) := {
 }
 
 # use the range-bat to convert one value to its representative value.
-proc convert_val(v, rng) := {
-        rng@batloop() if ($t >= v) return $h;
+proc convert_val(any v, any rng) {
+        rng@batloop() {
+		if ($t >= v) return $h;
+	}
         return nil.cast(v.type);
 }
 
 # OVERALL USEABLE PROC
-proc evenheight(b, n) := {
+proc evenheight(bat b, int n) {
         var rng := range_bat(b, n);
         print(rng); # print the range (for debugging purposes)
         return [convert_val](b, const rng);
@@ -96,17 +98,17 @@ proc evenheight(b, n) := {
 
 # TESTING
 
-TheSize := 1000;
+var TheSize := 1000;
 
-def_tpe := new(int,int);
-i := 0;
+var def_tpe := new(int,int);
+var i := 0;
 while (i<TheSize) { def_tpe.insert(i,rand()); i+=1; }
 
-a := [str](def_tpe.mark(100000@0)).reverse.mirror;
-b := a.range_bat(10);
-c := [int](b.reverse.mirror);
-d := [int](b.reverse);
-print([-](c,d),b.reverse);
+var a := [str](def_tpe.mark(100000@0)).reverse().mirror();
+var b := a.range_bat(10);
+var c := [int](b.reverse().mirror());
+var d := [int](b.reverse());
+print([-](c,d),b.reverse());
 #-----------------------------------------#
 # BAT:		  tmp_31| tmp_30	  #
 # (str)		  (int)	| (str)		  #
@@ -122,7 +124,7 @@ print([-](c,d),b.reverse);
 [ "100899@0",	  50,	  "100849@0"	  ]
 [ "100999@0",	  50,	  "100949@0"	  ]
 
-aa := a.evenheight(9);
+var aa := a.evenheight(9);
 #---------------------------------#
 # BAT:		  tmp_33	  #
 # (str)		  (str)		  #
@@ -137,8 +139,8 @@ aa := a.evenheight(9);
 [ "100831@0",	  "100887@0"	  ]
 [ "100943@0",	  "100999@0"	  ]
 
-z1 := new(int,int);
-z2 := new(int,int);
+var z1 := new(int,int);
+var z2 := new(int,int);
 i := 0;
 while (i<TheSize) { z1.insert(i,rand()); z2.insert(i,i); i+=1; }
 
@@ -158,7 +160,7 @@ printf("#~BeginVariableOutput~#\n"); z1z:=z1.evenheight(8); printf("#~EndVariabl
 [ 2003980519,	  2145854098	  ]
 #~EndVariableOutput~#
 
-z2z:=z2.evenheight(8);
+var z2z:=z2.evenheight(8);
 #-----------------#
 # BAT:	  tmp_37  #
 # (int)	  (int)	  #
@@ -172,7 +174,7 @@ z2z:=z2.evenheight(8);
 [ 811,	  874	  ]
 [ 936,	  999	  ]
 
-quit;
+quit();
 
 # 17:07:36 >  
 # 17:07:36 >  Done.

@@ -3,13 +3,13 @@
 vm_minsize(lng(128*1024)); 
 
 # test memory map of string heap under append
-i := 0;
-b := 20000;
+var i := 0;
+var b := 20000;
 #BIG := new(void,int,50000000); # claim 200MB
-d := new(void,int,b).seqbase(0@0);
+var d := new(void,int,b).seqbase(0@0);
 
 # temporarily disable propmask in order to make this bearable
-m := debugmask;
+var m := debugmask();
 debugmask(2);
 while(i < b) d.insert(nil,i :+= 1);
 debugmask(m);
@@ -21,7 +21,7 @@ debugmask(m);
 
 i := 1;
 while(i < 10) { 
- aa.info.reverse.select("theap.storage").reverse.print;
+ aa.info.reverse().select("theap.storage").reverse().print();
  e := [str]([+](d,b));
  #e := [str]([/](d,10000));
  print(b :+= 20000); 
@@ -31,8 +31,8 @@ while(i < 10) {
  i :+= 1;
 }
 
-aa.info.reverse.select("theap.storage").reverse.print;
+aa.info.reverse().select("theap.storage").reverse().print();
 aa.persists(false);
-commit;
+commit();
 
-quit;
+quit();

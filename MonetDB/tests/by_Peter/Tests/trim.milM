@@ -24,8 +24,8 @@ while(i < 10) {
 	dir("b_");
         #vm_usage(100000).print;
         print("COPY");
-        var b := m1.copy.rename(sprintf("b_%d",i :+= 1));
-        b.persists(true).commit;
+        var b := m1.copy().rename(sprintf("b_%d",i :+= 1));
+        b.persists(true).commit();
 }
 
 proc countall {
@@ -42,4 +42,4 @@ countall(b_1,b_2,b_3,b_4);
 
 dir("b_");
 
-quit;
+quit();
