@@ -2240,21 +2240,13 @@ def main(argv) :
             if not os.path.isfile(mapi_mil):
                 mapi_mil = ''
         env['MAPI_MIL'] = mapi_mil
-        if env['SQLCLIENT'][:4] == "Msql":
-            sql_server = "sql_server"
-            sql_trace = "--trace"
-        else:
-            sql_server = "sql_server2"
-            sql_trace = ""
-        env['SQL_SERVER'] = sql_server
-        env['SQL_TRACE'] = sql_trace
-        sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/%s.mil" % sql_server)
+        env['SQL_SERVER'] = "sql_server"
+        env['SQL_TRACE'] = ""
+        sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/sql_server.mil")
         if not os.path.isfile(sql_server_mil):
-            sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/%s.mil" % sql_server)
-            if not os.path.isfile(sql_server_mil):
-                sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4a/%s.mil" % sql_server)
+            	sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/sql_server.mil")
                 if not os.path.isfile(sql_server_mil):
-                    sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/%s.mil" % sql_server)
+                    sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/sql_server.mil")
                     if not os.path.isfile(sql_server_mil):
                         sql_server_mil = ''
         env['SQL_SERVER_MIL'] = sql_server_mil
