@@ -220,8 +220,9 @@ public class MonetConnection extends Thread implements Connection {
 					username,
 					password,
 					language,
+					true,
 					database
-				) + ":blocked\n");
+				) + "\n");
 
 				// We need to send the server our byte order.  Java by itself
 				// uses network order.
@@ -248,14 +249,12 @@ public class MonetConnection extends Thread implements Connection {
 					blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 				}
 			} else {
-				String challenge = null;
-				challenge = monet.readLine();
-
 				monet.writeln(getChallengeResponse(
-					challenge,
+					monet.readLine(),
 					username,
 					password,
 					language,
+					false,
 					database
 				));
 			}
@@ -297,40 +296,40 @@ public class MonetConnection extends Thread implements Connection {
 		String username,
 		String password,
 		String language,
+		boolean blocked,
 		String database
 	) throws SQLException {
 		int version = 0;
 		String response;
 		
-		if (chalstr != null) {
-			// parse the challenge string, split it on ':'
-			String[] chaltok = chalstr.split(":");
-			if (chaltok.length != 4) throw
-				new SQLException("Server challenge string unusable!");
+		// parse the challenge string, split it on ':'
+		String[] chaltok = chalstr.split(":");
+		if (chaltok.length != 4) throw
+			new SQLException("Server challenge string unusable!");
 
-			// challenge string use as salt/key in future
-			String challenge = chaltok[1];
-			// chaltok[2]; // server type, not needed yet 
-			try {
-				version = Integer.parseInt(chaltok[3].trim());	// protocol version
-			} catch (NumberFormatException e) {
-				throw new SQLException("Protocol version unparseable: " + chaltok[3]);
-			}
+		// challenge string use as salt/key in future
+		String challenge = chaltok[1];
+		// chaltok[2]; // server type, not needed yet 
+		try {
+			version = Integer.parseInt(chaltok[3].trim());	// protocol version
+		} catch (NumberFormatException e) {
+			throw new SQLException("Protocol version unparseable: " + chaltok[3]);
+		}
 
-			/**
-			 * do something with the challenge to salt the password hash here!!!
-			 */
-			response = username + ":" + password + ":";
-			// act on version
-			if (version < 5) {
-				// don't use database
-				addWarning("database specifier not supported on this server (" + chaltok[2] + "), protocol version " + chaltok[3]);
-			} else {
-				response += database + ":";
-			}
-			response += language;
+		/**
+		 * do something with the challenge to salt the password hash here!!!
+		 */
+		response = username + ":" + password + ":" + language + ":";
+		if (blocked) {
+			response += "blocked";
+		} else if (version >= 5) {
+			response += "line";
+		}
+		if (version < 5) {
+			// don't use database
+			addWarning("database specifier not supported on this server (" + chaltok[2] + "), protocol version " + chaltok[3]);
 		} else {
-			response = username + ":" + password + ":" + language;
+			response += ":" + database;
 		}
 
 		return(response);
