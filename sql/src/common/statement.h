@@ -7,7 +7,6 @@
 #include "catalog.h"
 
 typedef enum statement_type {
-	st_dummy,
 	st_create_schema,
 	st_drop_schema,
 	st_create_table,

@@ -16,10 +16,6 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		len += snprintf( buf+len, BUFSIZ,"t0 := time();\n");
 
 	switch(s->type){
-	case st_dummy: {
-		len += snprintf( buf+len, BUFSIZ, "0%d\n", *nr);
-		s->nr = (*nr)++;
-	} break;
 	case st_create_schema: {
 		schema *schema = s->op1.schema;
 		len += snprintf( buf+len, BUFSIZ, 

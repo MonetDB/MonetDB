@@ -105,17 +105,10 @@ void statement_destroy( statement *s ){
 		case st_create_column: 
 		case st_column:
 
-		case st_dummy:
 			break;
 		}
 		_DELETE(s);
 	}
-}
-
-statement *statement_dummy( ){
-	statement *s = statement_create();
-	s->type = st_dummy;
-	return s;
 }
 
 statement *statement_create_schema( schema *schema ){

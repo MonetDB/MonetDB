@@ -1,4 +1,4 @@
-module(str,xtables);
+module(str);
 
 proc catalog_bat( str name, int tt ) := {
 	if (view_bbp_name.reverse.exist(name)){
@@ -78,45 +78,61 @@ if (type_sql.count() <= 0){
 }
 	
 catalog_bat("sql_aggr_name", str);
+catalog_bat("sql_aggr_imp", str);
 catalog_bat("sql_aggr_module", str);
 
 if (sql_aggr_name.count() <= 0){
 	id := 0;
 	sql_aggr_name.insert(oid(id),"min");
+	sql_aggr_imp.insert(oid(id),"min");
 	sql_aggr_module.insert(oid(id),"");
 	id := id + 1;
 	sql_aggr_name.insert(oid(id),"max");
+	sql_aggr_imp.insert(oid(id),"max");
 	sql_aggr_module.insert(oid(id),"");
 	id := id + 1;
 	sql_aggr_name.insert(oid(id),"count");
+	sql_aggr_imp.insert(oid(id),"count");
 	sql_aggr_module.insert(oid(id),"");
 	id := id + 1;
 	sql_aggr_name.insert(oid(id),"avg");
+	sql_aggr_imp.insert(oid(id),"avg");
+	sql_aggr_module.insert(oid(id),"");
+	id := id + 1;
+	sql_aggr_name.insert(oid(id),"sum");
+	sql_aggr_imp.insert(oid(id),"sum");
 	sql_aggr_module.insert(oid(id),"");
 }
 
 catalog_bat("sql_func_name", str);
+catalog_bat("sql_func_imp", str);
 catalog_bat("sql_func_module", str);
 
 if (sql_func_name.count() <= 0){
 	id := 0;
 	sql_func_name.insert(oid(id),"sub");
+	sql_func_imp.insert(oid(id),"-");
 	sql_func_module.insert(oid(id),"");
 	id := id + 1;
 	sql_func_name.insert(oid(id),"add");
+	sql_func_imp.insert(oid(id),"+");
 	sql_func_module.insert(oid(id),"");
 	id := id + 1;
 	sql_func_name.insert(oid(id),"mul");
+	sql_func_imp.insert(oid(id),"*");
 	sql_func_module.insert(oid(id),"");
 	id := id + 1;
 	sql_func_name.insert(oid(id),"div");
+	sql_func_imp.insert(oid(id),"/");
 	sql_func_module.insert(oid(id),"");
 
 	id := id + 1;
 	sql_func_name.insert(oid(id),"neg");
+	sql_func_imp.insert(oid(id),"-");
 	sql_func_module.insert(oid(id),"");
 	id := id + 1;
 	sql_func_name.insert(oid(id),"pos");
+	sql_func_imp.insert(oid(id),"+");
 	sql_func_module.insert(oid(id),"");
 }
 

@@ -39,11 +39,13 @@ typedef struct column {
 
 typedef struct aggr {
 	char *name;
+	char *imp;
 	int nr;
 } aggr;
 
 typedef struct func {
 	char *name;
+	char *imp;
 	int nr;
 } func;
 
@@ -57,26 +59,6 @@ typedef struct catalog {
 	struct list *aggrs;
 	struct list *funcs;
 
-	schema *(*bind_schema)( struct catalog *cat, char *name );
-	schema *(*create_schema)( struct catalog *cat, long id, char *name, char *auth);
-	void (*destroy_schema)( struct catalog *cat );
-
-	table *(*bind_table)( struct catalog *cat, schema *s, char *name );
-	table *(*create_table)( struct catalog *cat, long id, schema *s, char *name, int temp, char *sql );
-	void (*destroy_table)( struct catalog *cat, schema *s, char *name );
-
-	column *(*bind_column)( struct catalog *cat, table *t, char *name);
-	column *(*create_column)( struct catalog *cat, long id, table *t, char *name, char *type, char *def, int null_check, int colnr );
-
-	type *(*bind_type)( struct catalog *cat, char *name);
-	type *(*create_type)( struct catalog *cat, char *sqlname, char *name, char *cast, int nr);
-
-	aggr *(*bind_aggr)( struct catalog *cat, char *name);
-	aggr *(*create_aggr)( struct catalog *cat, char *name, int nr);
-
-	func *(*bind_func)( struct catalog *cat, char *name);
-	func *(*create_func)( struct catalog *cat, char *name, int nr);
-
 	/* set by the specific implementation (client catalog)*/
 	long (*cc_oidrange)( struct catalog *cat, int nr);
 	void (*cc_getschema)( struct catalog *cat, char *schema, char *user );
@@ -87,6 +69,30 @@ typedef struct catalog {
 
 extern catalog *default_catalog_create( );
 extern void catalog_destroy ( catalog *cat );
+
+extern	schema *cat_bind_schema( catalog *cat, char *name );
+extern	schema *cat_create_schema( catalog *cat, long id, 
+		char *name, char *auth);
+extern	void cat_destroy_schema( catalog *cat );
+
+extern	table *cat_bind_table( catalog *cat, schema *s, char *name );
+extern	table *cat_create_table( catalog *cat, long id, schema *s, 
+		char *name, int temp, char *sql );
+extern	void cat_destroy_table( catalog *cat, schema *s, char *name );
+
+extern	column *cat_bind_column( catalog *cat, table *t, char *name);
+extern	column *cat_create_column( catalog *cat, long id, table *t, 
+		char *name, char *type, char *def, int null_check, int colnr );
+
+extern	type *cat_bind_type( catalog *cat, char *name);
+extern	type *cat_create_type( catalog *cat, char *sqlname, 
+				char *name, char *cast, int nr);
+
+extern	aggr *cat_bind_aggr( catalog *cat, char *name);
+extern	aggr *cat_create_aggr( catalog *cat, char *name, char *imp, int nr);
+
+extern	func *cat_bind_func( catalog *cat, char *name);
+extern	func *cat_create_func( catalog *cat, char *name, char *imp, int nr);
 
 extern void catalog_initoid( catalog *cat );
 extern long catalog_getoid( catalog *cat );

@@ -208,7 +208,7 @@ table *table_ref( context *sql, symbol *tableref ){
 	} else {
 		tname = table_name(tableref->data.lval);
 	}
-	return sql->cat->bind_table(sql->cat, sql->cat->cur_schema, tname);
+	return cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
 }
 
 static
@@ -257,7 +257,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 	switch(se->token){
 	case SQL_BINOP: { 
 		dnode *l = se->data.lval->h;
-		func *f = sql->cat->bind_func(sql->cat, l->data.sval);
+		func *f = cat_bind_func(sql->cat, l->data.sval);
 		if (f){
 			statement *rs = scalar_exp( l->next->data.sym, 
 						sql, tables, groupby, subset);
@@ -270,7 +270,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 	} break;
 	case SQL_UNOP: {
 		dnode *l = se->data.lval->h;
-		func *f = sql->cat->bind_func(sql->cat, l->data.sval);
+		func *f = cat_bind_func(sql->cat, l->data.sval);
 		if (f){
 			statement *rs = scalar_exp( l->next->data.sym, 
 						sql, tables, groupby, subset);
@@ -297,7 +297,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 	}
 	case SQL_AMMSC: {
 		dlist *l = se->data.lval;
-		aggr *a = sql->cat->bind_aggr(sql->cat, l->h->data.sval );
+		aggr *a = cat_bind_aggr(sql->cat, l->h->data.sval );
 		int distinct = l->h->next->data.ival;
 		statement *s;
 		if (!l->h->next->next->data.sym){
@@ -1103,12 +1103,12 @@ statement *create_view( context *sql, schema *schema, dlist *qname,
 	catalog *cat = sql->cat;
 	char *name = table_name(qname);
 
-	if (cat->bind_table(cat, schema, name)){
+	if (cat_bind_table(cat, schema, name)){
 		snprintf(sql->errstr, ERRSIZE, 
 			_("Create View name %s allready in use"), name);
 		return NULL; 
 	} else {
-		table *table = cat->create_table( cat, 0, schema, name, 0, 
+		table *table = cat_create_table( cat, 0, schema, name, 0, 
 					query->sql);
 		statement *st = statement_create_table( table );
 		list *newcolumns = list_append_statement(list_create(), st );
@@ -1123,7 +1123,7 @@ statement *create_view( context *sql, schema *schema, dlist *qname,
 				char *cname = n->data.sval;
 				statement *st = m->data.stval;
 				char *ctype = (char*)column_type(st);
-				column *col = cat->create_column( cat, 0,  
+				column *col = cat_create_column( cat, 0,  
 					table, cname, ctype, "NULL", 1, seqnr);
 				list_append_statement( newcolumns, 
 				  statement_create_column(col));
@@ -1140,7 +1140,7 @@ statement *create_view( context *sql, schema *schema, dlist *qname,
 				statement *st = m->data.stval;
 				char *cname = column_name(st);
 				char *ctype = (char*)column_type(st);
-				column *col =cat->create_column( cat, 0,
+				column *col =cat_create_column( cat, 0,
 					table, cname, ctype, "NULL", 1, seqnr);
 				list_append_statement( newcolumns, 
 				  statement_create_column(col));
@@ -1190,10 +1190,10 @@ statement *create_column( catalog *cat, symbol *s, int seqnr, table *table ){
 	case SQL_COLUMN: { 
 		  dlist *l = s->data.lval;
 		  char *cname = l->h->data.sval;
-		  type *ctype = cat->bind_type( cat, l->h->next->data.sval);
+		  type *ctype = cat_bind_type( cat, l->h->next->data.sval);
 		  dlist *opt_list = l->h->next->next->data.lval;
 		  if (cname && ctype){
-		  	column *c = cat->create_column( cat, 0, table, 
+		  	column *c = cat_create_column( cat, 0, table, 
 				cname, ctype->sqlname, "NULL", 1, seqnr);
 			res = statement_create_column(c);
 		  	if (opt_list){
@@ -1222,12 +1222,12 @@ statement * create_table( context *sql, schema *schema, int temp, dlist *qname, 
 	catalog *cat = sql->cat;
 	char *name = table_name(qname);
 
-	if (cat->bind_table(cat, schema, name)){
+	if (cat_bind_table(cat, schema, name)){
 		snprintf(sql->errstr, ERRSIZE, 
 			_("Create Table name %s allready in use"), name);
 		return NULL; 
 	} else {
-		table *table = cat->create_table( cat, 0, schema, name, temp, 
+		table *table = cat_create_table( cat, 0, schema, name, temp, 
 					NULL);
 		statement *st = statement_create_table( table );
 		list *newcolumns = list_append_statement(list_create(), st );
@@ -1246,13 +1246,13 @@ statement * create_table( context *sql, schema *schema, int temp, dlist *qname, 
 static
 statement * drop_table( context *sql, dlist *qname, int drop_action ){
 	char *tname = table_name(qname);
-	table *t = sql->cat->bind_table(sql->cat, sql->cat->cur_schema, tname);
+	table *t = cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
 
 	if (!t){
 		snprintf(sql->errstr, ERRSIZE, 
 			_("Drop Table, table %s unknown"), tname);
 	} else {
-		sql->cat->destroy_table( sql->cat, sql->cat->cur_schema, tname);
+		cat_destroy_table( sql->cat, sql->cat->cur_schema, tname);
 		return statement_drop_table(t, drop_action);
 	}
 	return NULL;
@@ -1264,7 +1264,7 @@ statement * alter_table( context *sql, dlist *qname, symbol *table_element){
 	char *name = table_name(qname);
 	table *table = NULL;
 
-	if ((table = cat->bind_table(cat, sql->cat->cur_schema, name)) == NULL){
+	if ((table = cat_bind_table(cat, sql->cat->cur_schema, name)) == NULL){
 		snprintf(sql->errstr, ERRSIZE, 
 			_("Alter Table name %s doesn't exist"), name);
 		return NULL; 
@@ -1286,12 +1286,12 @@ statement * create_schema( context *sql, dlist *auth_name,
 	if (auth == NULL){
 		auth = sql->cat->cur_schema->auth;
 	}
-	if (cat->bind_schema(cat,name)){
+	if (cat_bind_schema(cat,name)){
 		snprintf(sql->errstr, ERRSIZE, 
 			_("Create Schema name %s allready in use"), name);
 		return NULL; 
 	} else {
-		schema *schema = cat->create_schema( cat, 0, name, auth );
+		schema *schema = cat_create_schema( cat, 0, name, auth );
 		statement *st = statement_create_schema( schema );
 		list *schema_objects = list_append_statement(list_create(), st);
 
@@ -1324,7 +1324,7 @@ statement *check_types( context *sql, column *c, statement *s ){
 	char *stype = (char*)column_type(s);
 
 	if (stype){
-		type *st = sql->cat->bind_type( sql->cat, stype );
+		type *st = cat_bind_type( sql->cat, stype );
 		if (st){
 			type *t1 = c->tpe;
 			type *t = st;
@@ -1369,7 +1369,7 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 			symbol *val_or_q){
 	catalog *cat = sql->cat;
 	char *tname = table_name(qname);
-	table *t = cat->bind_table( cat,  sql->cat->cur_schema, tname );
+	table *t = cat_bind_table( cat,  sql->cat->cur_schema, tname );
 	list *collist = NULL;
 
 	if (!t){
@@ -1382,7 +1382,7 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 		dnode *n = columns->h;
 		collist = list_create();
 		while(n){
-			column *c = cat->bind_column(cat, t, n->data.sval );
+			column *c = cat_bind_column(cat, t, n->data.sval );
 			if (c){
 				list_append_column( collist, c );
 			} else {
@@ -1450,7 +1450,7 @@ statement *update_set( context *sql, dlist *qname,
 {
 	statement *s = NULL;
 	char *tname = table_name(qname);
-	table *t = sql->cat->bind_table( sql->cat,  sql->cat->cur_schema, tname );
+	table *t = cat_bind_table( sql->cat,  sql->cat->cur_schema, tname );
 
 	if (!t){
 		snprintf(sql->errstr, ERRSIZE, 
@@ -1471,7 +1471,7 @@ statement *update_set( context *sql, dlist *qname,
 		n = assignmentlist->h;
 		while (n){
 			dlist *assignment = n->data.sym->data.lval;
-			column *cl = sql->cat->bind_column(
+			column *cl = cat_bind_column(
 					sql->cat, t, assignment->h->data.sval);
 			if (!cl){
 				snprintf(sql->errstr, ERRSIZE, 
@@ -1507,7 +1507,7 @@ statement *update_set( context *sql, dlist *qname,
 
 statement *delete_searched( context *sql, dlist *qname, symbol *opt_where){
 	char *tname = table_name(qname);
-	table *t = sql->cat->bind_table( sql->cat,  sql->cat->cur_schema, tname );
+	table *t = cat_bind_table( sql->cat,  sql->cat->cur_schema, tname );
 
 	if (!t){
 		snprintf(sql->errstr, ERRSIZE, 
@@ -1587,7 +1587,6 @@ statement *sql_statement( context *sql, symbol *s ){
 				l->h->next->data.lval,
 				l->h->next->next->data.sym );
 			}
-/*			ret = statement_dummy();*/
 			break;
 		case SQL_UPDATE_SET:
 			{ dlist *l = s->data.lval;

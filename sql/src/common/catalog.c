@@ -19,8 +19,7 @@ long catalog_getoid( catalog *cat ){
 	return cat->nextid++;
 }
 
-static
-schema *catalog_schema_create( catalog *cat, long id, char *name, char *auth){
+schema *cat_create_schema( catalog *cat, long id, char *name, char *auth){
 	schema *s = NEW(schema);
 	s->id = id;
 	if (id == 0) s->id = catalog_getoid( cat );
@@ -30,10 +29,7 @@ schema *catalog_schema_create( catalog *cat, long id, char *name, char *auth){
 	return s;
 }
 
-static type *catalog_resolve_type( catalog *cat, char *name);
-
-static
-table *catalog_table_create( catalog *cat, long id, schema *s, char *name, 
+table *cat_create_table( catalog *cat, long id, schema *s, char *name, 
 		int temp, char *sql){
 	table *t = NEW(table);
 	t->id = id;
@@ -78,15 +74,13 @@ void schema_destroy( schema *s ){
 	_DELETE(s);
 }
 
-static
-void catalog_schema_destroy( catalog *cat ){
+void cat_destroy_schema( catalog *cat ){
 	if (cat->cur_schema) 
 		schema_destroy( cat->cur_schema );
 	cat->cur_schema = NULL;
 }
 
-static
-void catalog_table_destroy( catalog *cat, schema *s, char *name ){
+void cat_destroy_table( catalog *cat, schema *s, char *name ){
 	node *n = s->tables->h;
 	while(n){
 		table *t = (table*)n->data.sval;
@@ -98,11 +92,10 @@ void catalog_table_destroy( catalog *cat, schema *s, char *name ){
 	}
 }
 
-static
-column *catalog_column_create( catalog *cat, long id, table *t, char *colname, char *sqltype, char *def, int null_check, int colnr ){
+column *cat_create_column( catalog *cat, long id, table *t, char *colname, char *sqltype, char *def, int null_check, int colnr ){
 	node *n = NEW(node), *cur, *p = NULL;
 	column *c = NEW(column);
-	type *tpe = catalog_resolve_type( cat, sqltype );
+	type *tpe = cat_bind_type( cat, sqltype );
 
 	assert(c && t);
 
@@ -142,15 +135,14 @@ column *catalog_column_create( catalog *cat, long id, table *t, char *colname, c
 	return c;
 }
 
-static
-type *catalog_type_create( catalog *cat, char *sqlname, char *name, char *cast, int nr ){
+type *cat_create_type( catalog *cat, char *sqlname, char *name, char *cast, int nr ){
 	type *t = NEW(type);
 
 	t->sqlname = _strdup(sqlname);
 	t->name = _strdup(name);
 	t->cast = NULL;
 	if (strlen(cast) > 0)
-		t->cast = catalog_resolve_type( cat, cast );
+		t->cast = cat_bind_type( cat, cast );
 	t->nr = nr;
 	list_append_string(cat->types, (char*)t );
 	return t;
@@ -163,11 +155,11 @@ void type_destroy( type *t ){
 	_DELETE(t);
 }
 
-static
-aggr *catalog_aggr_create( catalog *cat, char *name, int nr ){
+aggr *cat_create_aggr( catalog *cat, char *name, char *imp, int nr ){
 	aggr *t = NEW(aggr);
 
 	t->name = _strdup(name);
+	t->imp = _strdup(imp);
 	t->nr = nr;
 	list_append_string(cat->aggrs, (char*)t );
 	return t;
@@ -176,14 +168,15 @@ aggr *catalog_aggr_create( catalog *cat, char *name, int nr ){
 static
 void aggr_destroy( aggr *t ){
 	_DELETE( t->name );
+	_DELETE( t->imp );
 	_DELETE(t);
 }
 
-static
-func *catalog_func_create( catalog *cat, char *name, int nr ){
+func *cat_create_func( catalog *cat, char *name, char *imp, int nr ){
 	func *t = NEW(func);
 
 	t->name = _strdup(name);
+	t->imp = _strdup(imp);
 	t->nr = nr;
 	list_append_string(cat->funcs, (char*)t );
 	return t;
@@ -192,11 +185,11 @@ func *catalog_func_create( catalog *cat, char *name, int nr ){
 static
 void func_destroy( func *t ){
 	_DELETE( t->name );
+	_DELETE( t->imp );
 	_DELETE(t);
 }
 
-static
-schema *catalog_resolve_schema( catalog *cat, char *name ){
+schema *cat_bind_schema( catalog *cat, char *name ){
 	node *n = cat->schemas->h;
 	while(n){
 		schema *t = (schema*)n->data.sval;
@@ -207,8 +200,7 @@ schema *catalog_resolve_schema( catalog *cat, char *name ){
 	return NULL;
 }
 
-static
-table *catalog_resolve_table( catalog *cat, schema *s, char *name ){
+table *cat_bind_table( catalog *cat, schema *s, char *name ){
 	node *n = s->tables->h;
 	while(n){
 		table *t = (table*)n->data.sval;
@@ -219,8 +211,7 @@ table *catalog_resolve_table( catalog *cat, schema *s, char *name ){
 	return NULL;
 }
 
-static
-column *catalog_resolve_column( catalog *cat, table *t, char *colname){
+column *cat_bind_column( catalog *cat, table *t, char *colname){
 	node *n = t->columns->h;
 	while(n){
 		column *c = (column*)n->data.sval;
@@ -231,8 +222,7 @@ column *catalog_resolve_column( catalog *cat, table *t, char *colname){
 	return NULL;
 }
 
-static
-type *catalog_resolve_type( catalog *cat, char *sqlname){
+type *cat_bind_type( catalog *cat, char *sqlname){
 	node *n = cat->types->h;
 	while(n){
 		type *t = (type*)n->data.sval;
@@ -243,8 +233,7 @@ type *catalog_resolve_type( catalog *cat, char *sqlname){
 	return NULL;
 }
 
-static
-aggr *catalog_resolve_aggr( catalog *cat, char *name){
+aggr *cat_bind_aggr( catalog *cat, char *name){
 	node *n = cat->aggrs->h;
 	while(n){
 		aggr *t = (aggr*)n->data.sval;
@@ -255,8 +244,7 @@ aggr *catalog_resolve_aggr( catalog *cat, char *name){
 	return NULL;
 }
 
-static
-func *catalog_resolve_func( catalog *cat, char *name){
+func *cat_bind_func( catalog *cat, char *name){
 	node *n = cat->funcs->h;
 	while(n){
 		func *t = (func*)n->data.sval;
@@ -272,26 +260,6 @@ catalog *default_catalog_create(){
 
 	c->cc = NULL;
 	c->cur_schema = NULL;
-
-	c->bind_schema = catalog_resolve_schema;
-	c->create_schema = catalog_schema_create;
-	c->destroy_schema = catalog_schema_destroy;
-
-	c->bind_table = catalog_resolve_table;
-	c->create_table = catalog_table_create;
-	c->destroy_table = catalog_table_destroy;
-
-	c->bind_column = catalog_resolve_column;
-	c->create_column = catalog_column_create;
-
-	c->bind_type = catalog_resolve_type;
-	c->create_type = catalog_type_create;
-
-	c->bind_aggr = catalog_resolve_aggr;
-	c->create_aggr = catalog_aggr_create;
-
-	c->bind_func = catalog_resolve_func;
-	c->create_func = catalog_func_create;
 
 	return c;
 }

@@ -33,14 +33,18 @@ static void getfunctions( catalog *c ){
 	BAT *sql_type_cast;
 
 	BAT *sql_aggr_name;
+	BAT *sql_aggr_imp;
 	BAT *sql_func_name;
+	BAT *sql_func_imp;
 
 	sql_type_name = BATdescriptor(BBPindex("type_sql" ));
 	sql_type_monet = BATdescriptor(BBPindex("type_db" ));
 	sql_type_cast = BATdescriptor(BBPindex("type_cast" ));
 
 	sql_aggr_name = BATdescriptor(BBPindex("sql_aggr_name"));
+	sql_aggr_imp = BATdescriptor(BBPindex("sql_aggr_imp"));
 	sql_func_name = BATdescriptor(BBPindex("sql_func_name"));
+	sql_func_imp = BATdescriptor(BBPindex("sql_func_imp"));
 	 
 	c->types = list_create();
 	BATloop(sql_type_name, p, q){
@@ -48,7 +52,7 @@ static void getfunctions( catalog *c ){
 	    char *sqlname = (char*)BUNtail(sql_type_name, p);
 	    char *mntname = (char*)BUNfind(sql_type_monet, &tnr);
 	    char *cast = (char*)BUNfind(sql_type_cast, &tnr);
-	    c->create_type( c, sqlname, mntname, cast, tnr );
+	    cat_create_type( c, sqlname, mntname, cast, tnr );
 	}
 	/* TODO load proper type cast table */
 
@@ -56,14 +60,16 @@ static void getfunctions( catalog *c ){
 	BATloop(sql_aggr_name, p, q){
 	    int tnr = *(int*)BUNhead(sql_aggr_name, p );
 	    char *tname = (char*)BUNtail(sql_aggr_name, p);
-	    c->create_aggr( c, tname, tnr );
+	    char *imp = (char*)BUNfind(sql_aggr_imp, &tnr);
+	    cat_create_aggr( c, tname, imp, tnr );
 	}
 
 	c->funcs = list_create();
 	BATloop(sql_func_name, p, q){
 	    int tnr = *(int*)BUNhead(sql_func_name, p );
 	    char *tname = (char*)BUNtail(sql_func_name, p);
-	    c->create_func( c, tname, tnr );
+	    char *imp = (char*)BUNfind(sql_func_imp, &tnr);
+	    cat_create_func( c, tname, imp, tnr );
 	}
 }
 
@@ -114,7 +120,7 @@ static void getschema( catalog *c, char *schema, char *user ){
 	c->schemas = list_create();
 	lid = (oid*)BUNfind(BATmirror(schema_name), schema );
 	id = *(oid*)BUNfind(schema_id, (ptr*)lid );
-	c->cur_schema = c->create_schema( c, id, schema, user );
+	c->cur_schema = cat_create_schema( c, id, schema, user );
 	list_append_string( c->schemas, (char*) c->cur_schema );
 
 	/* bats are void-aligned */
@@ -131,7 +137,7 @@ static void getschema( catalog *c, char *schema, char *user ){
 	    if (query){
 		sqlexecute( lc, query );
 	    } else { 
-	      table *t = c->create_table( c, *tid, c->cur_schema, tname, temp, NULL );
+	      table *t = cat_create_table( c, *tid, c->cur_schema, tname, temp, NULL );
 	      BATloop( columns, v, w ){
 		oid *lid = (oid*)BUNhead(columns, v );
 		oid cid = *(oid*)BUNfind(column_id, lid);
@@ -140,7 +146,7 @@ static void getschema( catalog *c, char *schema, char *user ){
 		char *def = (char*)BUNfind(column_default, lid);
 		int nll = *(int*)BUNfind(column_null, lid);
 		int seqnr = *(int*)BUNfind(column_number, lid);
-		c->create_column( c, cid, t, cname, ctype, def, nll, seqnr );
+		cat_create_column( c, cid, t, cname, ctype, def, nll, seqnr );
 	      }
 	    }
 	    BBPreclaim(columns);

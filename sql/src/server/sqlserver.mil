@@ -4,6 +4,7 @@ module(ascii_io);
 module(str);
 module(alarm);
 module(unix);
+module(ddbench);
 module(mvc);
 
 proc default_val( myc, cid, val ) := {
@@ -24,15 +25,15 @@ proc sep():= {
 	return "\t";
 }
 
-proc load_seps( BAT[void,BAT] bats ) : BAT[void,str] := {
+proc load_seps( BAT[void,BAT] bats, str Sep ) : BAT[void,str] := {
 	var seps := new(void,str); seps.seqbase(oid(0));
 	var id := 0;
 	var cnt := bats.count - 1;
 	bats@batloop(){
 		if (id != cnt) {
-			seps.insert(nil,"\t");
+			seps.insert(nil,Sep);
 		} else {
-			seps.insert(nil,"\n");
+			seps.insert(nil,(Sep + "\n"));
 		}
 		id += 1;
 	}
@@ -40,18 +41,23 @@ proc load_seps( BAT[void,BAT] bats ) : BAT[void,str] := {
 }
 
 proc bat_name(b):= return str(b);
-proc bat_type(b):= return type(b);
+proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
 
-proc bulkload( tab, file ):= {
-	var tid := resolve_table( tab );
+proc bulkload( tab, file, Sep ):= {
+	var lid := table_name.reverse().find( tab );
+	var tid := table_id.find( lid );
         var columns := column_name.semijoin(column_table.select(tid));
 	var bats := column_bat.semijoin(columns);
 	bats := column_number.reverse().join(bats).sort();
+	bats := bats.reverse().mark(oid(0)).reverse();
 	
 	var names := [bat_name](bats);
 	var types := [bat_type](bats);
-	var seps := load_seps(bats);
-	load(names, seps, types, data, -1);
+	var seps := load_seps(bats,Sep);
+	var res := load(names, seps, types, file, -1);
+	# merge result
+	var x := bats.reverse().join(names.join(res));
+	x@batloop(){ $h.insert($t); }
 }
 Stdout := file_wastream( stdout, "test" );
 
@@ -97,10 +103,10 @@ proc ascii_export_functions(Output):= {
 	server_output( Output, type_sql, type_db, type_cast );
 
 	output_count( sql_aggr_name, Output);
-	server_output( Output, sql_aggr_name );
+	server_output( Output, sql_aggr_name, sql_aggr_imp );
 		
 	output_count( sql_func_name, Output);
-	server_output( Output, sql_func_name );
+	server_output( Output, sql_func_name, sql_func_imp );
 
 	#output_count( schema_name, Output);
 	#server_output( Output, schema_id, schema_name, schema_auth );

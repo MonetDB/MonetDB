@@ -87,7 +87,7 @@ void getfunctions( catalog *c ){
 	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    cast = removeQuotes(start, '"');
 
-	    c->create_type( c, sqlname, name, cast, i );
+	    cat_create_type( c, sqlname, name, cast, i );
 	}
 	/* TODO load proper type cast table */
 
@@ -95,23 +95,29 @@ void getfunctions( catalog *c ){
 	printf("aggr %d\n", tcnt );
 	c->aggrs = list_create();
 	for(i=0;i<tcnt;i++){
-	    char *tname;
+	    char *tname, *imp;
 
-	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    tname = removeQuotes(start, '"');
 
-	    c->create_aggr( c, tname, i );
+	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    imp = removeQuotes(start, '"');
+
+	    cat_create_aggr( c, tname, imp, i );
 	}
 
 	tcnt = strtol(n+1,&n,10); 
 	c->funcs = list_create();
 	for(i=0;i<tcnt;i++){
-	    char *tname;
+	    char *tname, *imp;
 
-	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    tname = removeQuotes(start, '"');
 
-	    c->create_func( c, tname, i );
+	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    imp = removeQuotes(start, '"');
+
+	    cat_create_func( c, tname, imp, i );
 	}
 	_DELETE(buf);
 }
@@ -122,7 +128,7 @@ void getschema( catalog *c, char *schema, char *user ){
 	int i, tcnt, schema_id;
 	char *buf, *start, *n;
 
-	if (c->cur_schema) c->destroy_schema( c );
+	if (c->cur_schema) cat_destroy_schema( c );
 
 	send_getschema(c, schema);
 
@@ -132,7 +138,7 @@ void getschema( catalog *c, char *schema, char *user ){
 	/* bats are void-aligned */
 	schema_id = strtol(n,&n,10);
 	c->schemas = list_create();
-	c->cur_schema = c->create_schema( c, schema_id, schema, user );
+	c->cur_schema = cat_create_schema( c, schema_id, schema, user );
 	list_append_string( c->schemas, (char*) c->cur_schema );
 
 	tcnt = strtol(n+1,&n,10); 
@@ -151,7 +157,7 @@ void getschema( catalog *c, char *schema, char *user ){
 	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    temp = atoi(start);
 
-	    (void)c->create_table( c, id, c->cur_schema, tname, temp, NULL );
+	    (void)cat_create_table( c, id, c->cur_schema, tname, temp, NULL );
 	}
 
 	tcnt = strtol(n+1,&n,10); 
@@ -183,8 +189,8 @@ void getschema( catalog *c, char *schema, char *user ){
 	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    seqnr = atoi(start);
 
-	    t = c->bind_table(c, c->cur_schema, tname);
-	    c->create_column( c, id, t, cname, ctype, def, nll, seqnr );
+	    t = cat_bind_table(c, c->cur_schema, tname);
+	    cat_create_column( c, id, t, cname, ctype, def, nll, seqnr );
 	}
 	/* loop over all schema's call create_schema */
 	/* loop over all table's call create_table */
@@ -210,7 +216,7 @@ void getschema( catalog *c, char *schema, char *user ){
 
 	    sqlexecute(lc, query );
 	    /* fix id */
-	    t = c->bind_table( c, c->cur_schema, tname );
+	    t = cat_bind_table( c, c->cur_schema, tname );
 	    t->id = id;
 	}
 	_DELETE(buf);
