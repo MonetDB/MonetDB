@@ -1,9 +1,9 @@
 # Beware this is not the correct TPC-1, but a merely a test
 include sql;
 setDebug();
-CXoptimizer();
-ARoptimizer();
-DCoptimizer();
+commonExpressionRemoval();
+aliasRemoval();
+deadCodeRemoval();
 quit();
 include sql;
 #s14 := sql.bind("sys",  "lineitem", "l_shipdate"); #lineitem

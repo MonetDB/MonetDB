@@ -1,7 +1,7 @@
 # The 4000 series deals with strategic optimizer constructs
 # common subexpression evaluation
 optimizer.setDebug();
-optimizer.CXoptimizer();
+optimizer.commonExpressionRemoval();
 b:= new(:str,:str);
 c:= new(:str,:str);       # identical until insert takes place
 d:= select(b,"hello","world");

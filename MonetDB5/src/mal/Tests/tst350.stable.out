@@ -123,7 +123,7 @@ end main;	# 7
 [ 10,	  "stat_id_min_lng",	  "int",  "lng",	  0,	  160,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
 [ 11,	  "stat_id_max_lng",	  "int",  "lng",	  0,	  161,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
 [ 12,	  "stat_id_histogram",	  "int",  "str",	  0,	  162,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
-[ 13,	  "simplemind",		  "int",  "int",	  0,	  93,	  "dirty",	  "dirty",	  "transient",	  0	  ]
+[ 13,	  "simplemind",		  "int",  "int",	  0,	  163,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 [ "Search directory by name" ]
 #-------------------------#
 # h	tmp_21		  # name

@@ -16,5 +16,5 @@ print(z);
 
 
 setDebug();
-SPoptimizer(Admin,qry);
+selectPushdown(Admin,qry);
 end qry;

@@ -2,20 +2,20 @@
 	b:= new(:int,:str);
 	i:= getRefCount(b);
 	printf("refcount =%d\n",i);
-	j:= getRefCount(b);
+	j:= getLRefCount(b);
 	printf("lrefcount =%d\n",j);
 
 	insert(b,1,"bat B");
 	print(b);
 	i:= getRefCount(b);
 	printf("second refcount =%d\n",i);
-	j:= getRefCount(b);
+	j:= getLRefCount(b);
 	printf("lrefcount =%d\n",j);
 
 	# referenceing through mirroring
 	b5:= reverse(b);
 	i:= getRefCount(b);
 	printf("after reverse assignment refcount =%d\n",i);
-	j:= getRefCount(b);
+	j:= getLRefCount(b);
 	printf("lrefcount =%d\n",j);
 

@@ -1,8 +1,8 @@
 # testing the library for unsafe instructions
 # bat C can still be shared with B
 optimizer.setDebug();
-CXoptimizer();
-ARoptimizer();
+commonExpressionRemoval();
+aliasRemoval();
 b:= new(:int,:int);
 c:= new(:int,:int);
 insert(b,1,1);

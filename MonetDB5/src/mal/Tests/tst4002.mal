@@ -1,5 +1,5 @@
 #testing some optimizer constructions
 
-ARoptimizer();
+aliasRemoval();
 z:= "nil";
 d:= date(z);

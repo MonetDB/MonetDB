@@ -52,14 +52,14 @@ catch MALexception;	# 15  (MALexception:any) jump 17
     io.print("bat was destroyed");	# 16 IOprint_val ($19:int)<-($20:str)
 exit MALexception;	# 17  (MALexception:any)
 end main;	# 18  
-refcount =0
+refcount =1
 lrefcount =1
 #-------------------------#
 # h	tmp_4		  # name
 # int	str		  # type
 #-------------------------#
 [ 1,	  "bat B"	  ]
-refcount =0
+refcount =1
 lrefcount =1
 [ "bat was destroyed" ]
 

@@ -127,7 +127,7 @@ end main;	# 8
 [ 10,	  "stat_id_min_lng",	  "int",  "lng",	  0,	  160,	  "dirty",	  "load", "persistent",	  1		  ]
 [ 11,	  "stat_id_max_lng",	  "int",  "lng",	  0,	  161,	  "dirty",	  "load", "persistent",	  1		  ]
 [ 12,	  "stat_id_histogram",	  "int",  "str",	  0,	  162,	  "dirty",	  "load", "persistent",	  1		  ]
-[ 13,	  "simplemind",		  "int",  "int",	  0,	  97,	  "dirty",	  "load", "transient",	  0		  ]
+[ 13,	  "simplemind",		  "int",  "int",	  0,	  163,	  "dirty",	  "load", "transient",	  0		  ]
 [ "Get second directory" ]
 #-------------------------#
 # h	tmp_6		  # name

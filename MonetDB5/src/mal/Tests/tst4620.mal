@@ -23,7 +23,7 @@ d:= select(b,0:int,49:int);
 i:= count(d);
 print(i);
 
-optimizer.MCoptimizer("algebra","joinPath");
+optimizer.macroContraction("algebra","joinPath");
 #to be detected by join inversion
 z:= join(b,c);
 zz:= join(z,d);

@@ -9,7 +9,7 @@ exit j;
     return i;
 end welcome;
 
-optimizer.MEoptimizer("Admin","welcome");
+optimizer.macroExpansion("Admin","welcome");
 
 print("test expansion");
 a:=welcome(2);

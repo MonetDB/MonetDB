@@ -11,5 +11,5 @@ t:= select(r,0,3);
 u:= select(r,0,3);	# reuse t
 print(u);
 print("done");
-CXoptimizer();
-ARoptimizer();
+commonExpressionRemoval();
+aliasRemoval();

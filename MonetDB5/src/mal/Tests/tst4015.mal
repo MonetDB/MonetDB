@@ -6,4 +6,4 @@ k:=23;
 t:= reverse(s);
 print(t);
 setDebug();
-RRoptimizer();
+reversalRemoval();

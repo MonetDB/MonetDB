@@ -8,7 +8,7 @@ function algebra.joinPath( a:bat[:any$1,:any$2],
     return zz;
 end joinPath;
 
-optimizer.MCoptimizer("algebra","joinPath");
+optimizer.macroContraction("algebra","joinPath");
 
 a:= new(:int,:int);
 b:= new(:int,:int);
