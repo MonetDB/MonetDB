@@ -124,12 +124,14 @@ void Mserver_abort() {
 #endif
 @C
 void usage( char *prog ){
-	fprintf(stderr, "usage\n");
-	fprintf(stderr, "--dbname database_name\n" );
-	fprintf(stderr, "--dbfarm database_directory\n" ); 
-	fprintf(stderr, "-d or --debug [ debug_level ]\n" );
-	fprintf(stderr, "-c or --config config_file\n" );
-	fprintf(stderr, "-s or --set option=value\n" );
+	fprintf(stderr, "usage: %s\n", prog);
+	fprintf(stderr, "[--dbname database_name ]\n" );
+	fprintf(stderr, "[--dbfarm database_directory ]\n" ); 
+	fprintf(stderr, "[-d or --debug [ debug_level ]]\n" );
+	fprintf(stderr, "[-? or --help\n" );
+	fprintf(stderr, "[-c or --config config_file ]\n" );
+	fprintf(stderr, "[-s or --set option=value ]\n" );
+	fprintf(stderr, "script+\n" );
 	exit(-1);
 }
 
@@ -207,7 +209,7 @@ static Client Monet_init( opt *set, int setlen )
 int main(int ac, char **av)
 {
 	Client c;
-	char buf[BUFSIZ], *prog = *av;
+	char buf[BUFSIZ], *prog = *av, *config = NULL;
 	opt *set = NULL;
 	int i,debug = 0, setlen = 0, status = 1;
 
@@ -262,8 +264,6 @@ A grain size of 128 bytes is used to keep overhead low.
 
 	if (!(setlen = mo_builtin_settings(&set)) )
 		usage(prog);
-	if (!(setlen = mo_system_config(&set, setlen)) )
-		usage(prog);
 
 	while(1){
 		int option_index = 0;
@@ -291,8 +291,7 @@ A grain size of 128 bytes is used to keep overhead low.
 			usage(prog);
 			break;
 		case 'c':
-			setlen = 
-			  mo_config_file(&set, setlen, optarg, opt_config);
+			config = strdup(optarg);
 			break;
 		case 'd':
 			debug=1;
@@ -324,6 +323,14 @@ A grain size of 128 bytes is used to keep overhead low.
 			    "ERROR: getopt returned character code 0%o ??\n",c);
 			usage(prog);
 		}
+	}
+
+	if (config){
+		setlen = mo_config_file(&set, setlen, config, opt_config);
+		free(config);
+	} else {
+		if (!(setlen = mo_system_config(&set, setlen)) )
+			usage(prog);
 	}
 
 	i = 0;
