@@ -381,7 +381,9 @@ PROC test_arith() : void := {
   min(dbl1,dbl2).print;
   min(lng1,lng2).print;
 
+@- oid-artihmetic is not available...
 @:mil_arith_ops(oid1,oid2)@
+@mil
   max(oid1,oid2).print;
   min(oid1,oid2).print;
 
