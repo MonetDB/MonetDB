@@ -860,14 +860,17 @@ void GDKfree (void *blk) {
 
         if (s == NULL) return;
 	size = GDK_MEM_BLKSIZE(s);
+
+	if (size > 0) {
+#ifdef GDK_MEM_KEEPHISTO
+		int idx;
+
 #if !(defined(GDK_MEM_QUERYSIZE) || defined(GDK_MEM_SIMPLE))
 	/* wdk: add check for double deletes */
         assert((size&2) == 0);
         s[-1] |= 2;
 #endif
-	if (size > 0) {
-#ifdef GDK_MEM_KEEPHISTO
-		int idx;
+
 		GDKmallidx(idx,size);
 		GDK_nmallocs[idx]--;
 /*		if (GDK_mallocs[idx]-- <= 0) {
@@ -1641,8 +1644,8 @@ int THRprintf(stream *s, const char *format, ...) {
 	}
 	p += n;
 	
-	s->write(s, bf, p-bf, 1 );
-	s->flush(s);
+	stream_write(s, bf, p-bf, 1 );
+	stream_flush(s);
 	if (bf != THRprintbuf) free(bf);
 	if (MT_system_lock) {
 		MT_unset_lock(MT_system_lock, "THRprintf");

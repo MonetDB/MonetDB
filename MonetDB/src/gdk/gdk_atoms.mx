@@ -816,17 +816,17 @@ int ATOMprint(int t, ptr p, stream* s) {
 	    if (t != TYPE_bat && t < TYPE_str) {
 		char buf[dblStrlen], *addr=buf; /* use memory from stack */
 		int sz = dblStrlen, l = (*tostr)(&addr, &sz, p);
-		s->write(s, buf, l, 1);
+		stream_write(s, buf, l, 1);
 		return l;
 	    } else {
 		str buf = 0;
 		int sz = 0, l = (*tostr)(&buf, &sz, p);
-		s->write(s, buf, l, 1);
+		stream_write(s, buf, l, 1);
 		GDKfree(buf);
 		return l;
 	    }
 	} 
-	s->write(s, "nil", 3, 1);
+	stream_write(s, "nil", 3, 1);
 	return 3;
 }
 
@@ -997,12 +997,12 @@ int chrToStr(str *dst, int *len, chr *src) {
 }
 
 chr *chrRead( chr *a, stream *s, size_t cnt) {
-	s->read(s, (char *) a, 1, cnt);
+	stream_read(s, (char *) a, 1, cnt);
 	return a;
 }
 
 void chrWrite( chr *a, stream *s, size_t cnt) {
-	s->write(s, (char *) a, 1, cnt);
+	stream_write(s, (char *) a, 1, cnt);
 }
 
 int bitFromStr(str src, int *len, bit **dst) {
@@ -1039,12 +1039,12 @@ int bitToStr(char **dst, int *len, bit *src) {
 }
 
 bit *bitRead(bit *a, stream *s, size_t cnt) {
-	s->read(s, (char *) a, 1, cnt );
+	stream_read(s, (char *) a, 1, cnt );
 	return a;
 }
 	
 void bitWrite( bit *a, stream *s, size_t cnt) {
-	s->write(s, (char *) a, 1, cnt);
+	stream_write(s, (char *) a, 1, cnt);
 }
 
 int batFromStr(char *src, int *len, bat **dst) {
@@ -1676,7 +1676,7 @@ str strRead(str a, stream *s, size_t cnt) {
 	assert(cnt==1);
 	stream_readInt(s, &len);
 	a = GDKmalloc(len+1);
-	s->read(s, a, len, 1);
+	stream_read(s, a, len, 1);
 	a[len] = 0;
 	return a;
 } 
@@ -1685,7 +1685,7 @@ void strWrite(str a, stream *s, size_t cnt) {
 	size_t len = strlen(a);
 	assert(cnt==1);
 	stream_writeInt(s, (int) len);
-	s->write(s, a, len, 1 );
+	stream_write(s, a, len, 1 );
 }
 
 @+ Unique OIDs
@@ -1753,7 +1753,7 @@ int OIDwrite(stream *s) {
 	if (GDKoid) {
 		GDKflushed = GDKoid;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
-		if (s->write(s, " ", 1, 1) == 0) ret = -1;
+		if (stream_write(s, " ", 1, 1) == 0) ret = -1;
 	}
 	MT_unset_lock(MT_system_lock, "OIDwrite");
 	return ret;

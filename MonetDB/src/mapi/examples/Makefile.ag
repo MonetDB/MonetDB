@@ -22,4 +22,4 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 MTSAFE
-SUBDIRS = C
+SUBDIRS = C java

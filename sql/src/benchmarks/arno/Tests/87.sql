@@ -1,1 +1,0 @@
-SELECT MODEL306.is_mutagen, count(distinct MODEL306.model_id ) FROM MODEL MODEL306, ATOM T1008290441690  WHERE MODEL306.model_id=T1008290441690.model_id AND MODEL306.logp='0' group by MODEL306.is_mutagen;

@@ -121,7 +121,7 @@ int yytoProlog(YYSTREE t,int cnt){
 	yylim = yybuffer + 4000;
 	yydeparse(monet_clients,t,yybuffer, yylim);
 	if( cnt<4000) yybuffer[cnt] = 0;
-	return (int) out->write(out, yybuffer, 1, strlen(yybuffer));
+	return (int) stream_write(out, yybuffer, 1, strlen(yybuffer));
 }
 
 char* yydeparse(Client c, YYSTREE t, char* buf, char* end){

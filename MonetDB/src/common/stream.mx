@@ -88,7 +88,7 @@ the various underlying storage types.
 
 typedef struct stream stream;
 
-#define BACKWARD_COMPATIBLE_STREAM_DEFINITION 1
+/* #define BACKWARD_COMPATIBLE_STREAM_DEFINITION 1 */
 #ifdef BACKWARD_COMPATIBLE_STREAM_DEFINITION
 struct stream {
 	short byteorder;
