@@ -12,7 +12,7 @@ STATIC_MODS = \
 	../modules/plain/lib_sys ../modules/plain/lib_trans \
 	../modules/plain/lib_str
 
-EXTRA_DIST = static_modules.mx libMapi.def monet-config.mx.in
+EXTRA_DIST = static_modules.mx monet-config.mx.in
 
 lib_Mapi = {
 	SOURCES = Mapi.mx 
@@ -25,17 +25,10 @@ bin_Mserver = {
 	LIBS = ../monet/libmonet STATIC_MODS ../gdk/libbat $(MONET_LIBS)
 }
 
-bin_Mload = {
-	SOURCES = Mload.mx initmodules.mx 
-	LIBS = ../monet/libmonet STATIC_MODS ../gdk/libbat $(MONET_LIBS)
-}
-
 bin_Mdestroydb = bin_Mcreatedb
 BINS = {
-	SOURCES = Mcreatedb.mx Mdump.mx Mshutdown.mx Mrecover.mx \
-		  Mcgi.mx Mclient.mx Mapiclient.mx
+	SOURCES = Mcreatedb.mx Mshutdown.mx Mapiclient.mx
 	LIBS = libMapi ../gdk/libbat $(MAPI_LIBS)
-	Mclient_LIBS = ../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS) 
 	Mapiclient_LIBS = libMapi ../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS) 
 }
 
