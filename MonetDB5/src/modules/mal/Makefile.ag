@@ -14,7 +14,7 @@ LIBS = {
 		enum.mx inspect.mx crackers.mx \
 		thread.mx clients.mx tablet.mx \
 		transaction.mx factory.mx mdb.mx  \
-		statistics.mx
+		statistics.mx rsbox.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -51,7 +51,7 @@ scripts_mal = {
 		enum.mx inspect.mx crackers.mx io.mal \
 		chopper.mx thread.mx clients.mx tablet.mx \
 		transaction.mx factory.mx mdb.mx pcre.mx \
-		statistics.mx
+		statistics.mx rsbox.mx
 }
 
 #EXTRA_DIST_DIR = Tests

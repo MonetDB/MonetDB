@@ -1,0 +1,363 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f rsbox
+@a Fabian Groffen
+@v 1.0
+@* ResultSet support box
+This module acts as a simple box of ResultSet objects.
+A ResultSet is a thin wrapper around a number of BATs that allows
+serialising the values in the BATs to the extended MAPI result
+format.  This box is able to construct new ResultSets and manages
+them from a user perspective.
+
+Normally, objects are stored into the box using {\sc deposit}
+and taken out with {\sc take}.  This box however, only knows
+{\sc create} and {\sc take}.  ResultSets cannot
+be stored, because the only way to create them is by using the
+{\sc create} function, which automatically deposits the newly
+created ResultSet in the box.  The {\sc release} function allows
+to remove a ResultSet from the box.
+
+A box should be opened before being used. It is typically used
+to set-up the list of current users and to perform authorization.
+
+The initialisation actions are encapsulated in the prelude
+routine called.
+
+The ResultSetBox will perform access control checks upon
+{\sc take} operations to ensure a user only has access to his
+own ResultSet objects.
+
+The existing functionality of mal_box allows to store and retrieve
+items somehow.  In the future we might want to switch to those
+supplied tools.  For now we stick with (documented and) simple
+elements such as structs and an array.  As a results, we are NOT
+thread safe.
+
+@mal
+module rsbox
+comment "The resultset box implementation provides a store for
+query results";
+
+pattern open():void
+address RSBopen
+comment "Locate and open the resultset box";
+pattern close():void
+address RSBclose
+comment "Close the resultset box";
+pattern destroy():void
+address RSBdestroy
+comment "Destroy the resultset box and all the resultsets it contains";
+pattern take(id:str):int
+address RSBtake
+comment "Take a resultset with the given id out of the box";
+pattern deposit(name:str,set:resultset):void 		
+address RSBdeposit
+comment "Store a new resultset into the box (only there to comply
+to the interface, throws an exception, use create instead)";
+pattern create(name:str):int
+address RSBcreate
+comment "Create a new ResultSet and deposit it in the box";
+pattern releaseAll():void
+address RSBreleaseAll
+comment "Release all resultsets for this client in the box";
+pattern release(id:str):void
+address RSBrelease
+comment "Release the resultset with the given id";
+pattern toString(id:str):str 
+address RSBtoString
+comment "Get the string representation of an element in the box";
+pattern discard(id:str):void 		
+address RSBrelease
+comment "see rsbox.release(id:str)";
+pattern iterator(nme:str):lng
+address RSBiterator
+comment "Locate next resultset in the box";
+
+@{
+@-
+@+ Implementation
+@h
+#ifndef _RSBOX_H
+#define _RSBOX_H 1
+#include <resultset.h>
+
+str RSBgetResultSet(resultset** retval, int* handle);
+
+#endif
+@c
+#include "rsbox.h"
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+
+#ifndef _RSBOX_C
+#define _RSBOX_C 1
+typedef struct rsbox_element {
+	resultset* rs;
+	int clientId;
+	/* PRIMARY KEY (rs->name, clientId) */
+} element;
+#endif
+
+/* convenience macros */
+#define throw(X, Y)		return(throwMessage(X, Y));
+#define throwf(X, Y, Z)	return(throwException(MALEXCEPTION, X, Y, Z));
+#define idMatches(X, Y)	((X)->clientId == getClient()->idx && \
+						 strcmp((X)->rs->id, Y) == 0)
+
+/** How many elements we can handle at a time */
+#define RSB_MAX_ELEMS	20
+/** Array which contains all the elements contained in this Set */
+static element* elements[RSB_MAX_ELEMS];
+
+/**
+ * Returns the resultset from an element for a given array slot.
+ * An exception is thrown if the array slot is empty or out of
+ * bounds.
+ */
+str RSBgetResultSet(resultset** retval, int* handle) {
+	if (handle == NULL)
+		throw("rsbox.getResultSet", "Handle should not be NULL");
+	if (*handle < 0 || *handle >= RSB_MAX_ELEMS)
+		throw("rsbox.getResultSet", "Handle index out of bounds");
+	if (elements[*handle] == NULL)
+		throw("rsbox.getResultSet", "Handle points to an empty slot");
+
+	*retval = elements[*handle]->rs;
+	return(MAL_SUCCEED);
+}
+
+@- Operator implementation
+@-
+@c
+/**
+ * Simply open (or create) the box.  We don't need access control, as
+ * anyone is allowed to have this box.  Access control is done later
+ * on.
+ */
+str RSBopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void)mb; (void)stk; (void)pci; /* make compiler happy */
+
+	if (openBox("rsbox") == 0)
+		throw("rsbox.open", "failed to open box");
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Closes the complete box.  This operation should check whether
+ * there are ResultSets in the box not owned by the caller.
+ */
+str RSBclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void)mb; (void)stk; (void)pci; /* make compiler happy */
+
+	/* TODO: check that there are no ResultSets that are not
+	 * owned by the caller here! */
+	if (closeBox("rsbox", TRUE) != 0)
+		throw("rsbox.close", "failed to close box");
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Destroys the complete box.
+ */
+str RSBdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	return(RSBclose(mb, stk, pci));
+}
+
+/**
+ * Deposit does not work for a ResultSet box.  Use create instead.
+ *
+ * @throws exception
+ */
+str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void)mb; (void)stk; (void)pci; /* make compiler happy */
+	throw("rsbox.deposit", "Operation not supported: use rsbox.create");
+}
+
+/**
+ * Create a new ResultSet with the given string as id.  The
+ * ResultSet is immediately deposited in the box, and its
+ * handle is returned.
+ */
+str RSBcreate(int* retval, str* name) {
+	resultset* rs;
+	int i, free = -1;
+
+	/* check the given name is a unique id (and find the first free slot) */
+	for (i = 0; i < RSB_MAX_ELEMS; i++) {
+		if (elements[i] != NULL) {
+			if (idMatches(elements[i], *name))
+				throwf(
+					"rsbox.create",
+					"A ResultSet with id '%s' already exists",
+					*name);
+		} else {
+			/* this is a free slot */
+			if (free == -1) {
+				/* somehow hide it from other threads (not safe!) */
+				elements[i] = GDKmalloc(sizeof(element));
+				elements[i]->clientId = getClient()->idx;
+				elements[i]->rs = NULL;
+				free = i;
+			}
+		}
+	}
+	if (free == -1)
+		throw("rsbox.create", "No free slots available");
+
+	rs = GDKmalloc(sizeof(resultset));
+	/* initialise the values */
+	rs->complete = (char)0;
+	rs->id = GDKstrdup(*name);
+	rs->pos = 0;
+	rs->length = 0;
+	rs->blocksize = 0;
+	rs->firstColumn = NULL;
+
+	/* store it in the backing array... */
+	elements[free]->rs = rs;
+
+	/* and return the index as handle */
+	*retval = free;
+	return(MAL_SUCCEED);
+}
+
+@-
+Access to a box calls for resolving the first parameter
+to a named box.
+Warning: we don't use the underlying box at the moment
+@= OpenBox
+	box = findBox("rsbox");
+	if (box == 0) 
+		return(throwMessage("rsbox.@1", "box is not open"));
+@-
+@c
+
+/* do we need this fancy reflection alike stuff?
+str RSBtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str name;
+	Box box;
+	ValPtr v;
+
+	@:OpenBox(take)@
+	name = (str)getArgName(mb, pci, 1);
+	v = &stk->stk[pci->argv[0]];
+	if (takeBox(box, name, v, (int)getArgType(mb, pci, 0)))
+		throwf("rsbox.take", "failed to take '%s' from box", name);
+
+	return(MAL_SUCCEED);
+}
+*/
+
+/**
+ * Returns for the given id, the corresponding ResultSet handle.
+ * Throws an exception if no such ResultSet is found.
+ * The actual int returned is the container element array position.
+ */
+str RSBtake(int* retval, str* id) {
+	int i;
+
+	for (i = 0; i < RSB_MAX_ELEMS; i++) {
+		if (elements[i] != NULL && idMatches(elements[i], *id)) {
+			*retval = i;
+			return(MAL_SUCCEED);
+		}
+	}
+	
+	throwf("rsbox.take", "No such element with id '%s'", *id);
+}
+
+str RSBrelease(str* id) {
+	int i;
+
+	for (i = 0; i < RSB_MAX_ELEMS; i++) {
+		if (elements[i] != NULL && idMatches(elements[i], *id)) {
+			resultset* rs = elements[i]->rs;
+			GDKfree(elements[i]);
+			elements[i] = NULL;
+			/* TODO: free the rs struct */
+			rs = NULL;
+			return(MAL_SUCCEED);
+		}
+	}
+	
+	throwf("rsbox.take", "No such element with id '%s'", *id);
+}
+
+str RSBreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	Box box;
+
+	(void)mb; (void)stk; (void) pci; /* fool compiler */
+	@:OpenBox(release)@
+	/* this is dirty: we don't catch any exceptions here... */
+	releaseAllBox(box);
+
+	return(MAL_SUCCEED);
+}
+
+str RSBdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str name;
+	Box box;
+
+	(void)stk; /* fool compiler */
+	@:OpenBox(discard)@
+	name = (str)getArgName(mb, pci, 1);
+	if (discardBox(box, name) == 0)
+		return throwException(MALEXCEPTION, "rsbox.discard", "failed to discard '%s' from box", name);
+
+	return(MAL_SUCCEED);
+}
+
+str RSBtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	int i,len=0;
+	ValPtr v;
+	str nme,s=0;
+
+	(void)mb; /* fool compiler */
+	@:OpenBox(toString)@
+	nme = (str) getArgValue(stk,pci,1);
+	i= findVariable(box->sym,nme);
+	if( i <0) return throwException(MALEXCEPTION,"const.toString",
+			"failed to take '%s' from box",nme);
+
+	v= &box->val->stk[i];
+	if( v->vtype== TYPE_str) s= v->val.sval;
+	else (*BATatoms[v->vtype].atomToStr)(&s,&len,v);
+	if(s== NULL) return throwMessage("const.toString","illegal value");
+	VALset(&stk->stk[pci->argv[0]], TYPE_str,s);
+	return MAL_SUCCEED;
+}
+
+str RSBiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	lng *cursor;
+	ValPtr v;
+
+	(void)mb; /* make compiler happy */
+	@:OpenBox(iterator)@
+	cursor = (lng*)getArgValue(stk,pci,0);
+	v = &stk->stk[pci->argv[2]];
+	nextBoxElement(box, cursor, v);
+
+	return(MAL_SUCCEED);
+}
+@}

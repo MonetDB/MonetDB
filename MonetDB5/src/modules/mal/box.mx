@@ -185,9 +185,9 @@ str BOXgetBoxNames(int *bid){
 
 str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
-        Box box;
-        lng *cursor;
-        ValPtr v;
+	Box box;
+	lng *cursor;
+	ValPtr v;
 
 	(void)mb; /*fool compiler */
 	@:OpenBox(iterator)@
