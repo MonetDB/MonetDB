@@ -40,7 +40,8 @@ else
   MONET_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monet,
-[  --with-monet=DIR     monet is installed in DIR], have_monet="$withval")
+	AC_HELP_STRING([--with-monet=DIR], [monet is installed in DIR]),
+	have_monet="$withval")
 if test "x$have_monet" != xno; then
   MPATH="$withval/bin:$PATH"
   AC_PATH_PROG(MONET_CONFIG,monet-config,,$MPATH)
@@ -82,7 +83,7 @@ AC_SUBST(MONET_MOD_PATH)
 AC_SUBST(MONET_PREFIX)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
-])
+]) dnl AC_DEFUN AM_MONET
 
 AC_DEFUN(AM_MONET_COMPILER,
 [
@@ -104,8 +105,8 @@ icc_ver=""
 gcc_ver=""
 
 AC_ARG_WITH(gcc,
-[  --with-gcc=<compiler>   which C compiler to use
-  --without-gcc           do not use GCC], [
+	AC_HELP_STRING([--with-gcc=<compiler>], [which C compiler to use])
+AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 	case $withval in
 	yes)	CC=gcc CXX=g++;;
 	no)	case $host_os-$host in
@@ -136,7 +137,7 @@ AC_ARG_WITH(gcc,
 	esac])
 
 AC_ARG_WITH(gxx,
-[  --with-gxx=<compiler>   which C++ compiler to use], [
+	AC_HELP_STRING([--with-gxx=<compiler>], [which C++ compiler to use]), [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
 	*)	CXX=$withval
@@ -312,7 +313,8 @@ AC_SUBST(JAVACFLAGS)
 
 bits=32
 AC_ARG_WITH(bits,
-[  --with-bits=<#bits>     specify number of bits (32 or 64)],[
+	AC_HELP_STRING([--with-bits=BITS],
+		[specify number of bits (32 or 64)]), [
 case $withval in
 32)	case "$host" in
 	ia64*)	AC_ERROR([we do not support 32 bits on $host, yet]);;
@@ -427,13 +429,15 @@ AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
 AC_SUBST(NO_OPTIMIZE_FILES)
 
-have_java=auto
 JAVA_VERSION=""
 JAVA="java"
 JAVAC="javac"
 JAR="jar"
 AC_ARG_WITH(java,
-[  --with-java=DIR     javac and jar are installed in DIR/bin], have_java="$withval")
+	AC_HELP_STRING([--with-java=DIR],
+		[javac and jar are installed in DIR/bin]),
+	have_java="$withval",
+	have_java=auto)
 if test "x$have_java" != xno; then
   JPATH=$PATH
   if test "x$have_java" != xauto; then
@@ -485,7 +489,45 @@ AC_SUBST(JAR)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 
-])
+PHP_INCS=
+AC_ARG_WITH(php,
+	AC_HELP_STRING([--with-php=DIR], [php.h is installed in DIR/include]),
+	have_php="$withval",
+	have_php=auto)
+if test "x$have_php" != xno; then
+  if test "x$have_php" != xauto; then
+    PHP_INCS="-I$withval/include"
+  fi
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $PHP_INCS"
+  AC_CHECK_HEADER(php.h, have_php=yes, have_php=no)
+  CPPFLAGS="$save_CPPFLAGS"
+fi
+if test $have_php != yes; then
+  PHP_INCS=
+fi
+AC_SUBST(PHP_INCS)
+AM_CONDITIONAL(HAVE_PHP, test $have_php = yes)
+
+AC_ARG_WITH(swig,
+	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
+	SWIG="$withval",
+	SWIG=swig)
+if test "x$SWIG" != xno; then
+  case "$SWIG" in
+  yes|auto)
+    SWIG=swig;;
+  esac
+  case `$SWIG -version 2>&1` in
+  *Version\ 1.3*)
+    ;;
+  *) SWIG=no;;
+  esac
+fi
+AC_SUBST(SWIG)
+AM_CONDITIONAL(HAVE_SWIG, test $SWIG != no)
+
+]) dnl AC_DEFUN AM_MONET_COMPILER
 
 AC_DEFUN(AM_MONET_TOOLS,[
 
@@ -553,14 +595,16 @@ AC_CHECK_TOOL(OBJC,objc)
 dnl Checks for header files.
 AC_HEADER_STDC()
 
-])
+]) dnl AC_DEFUN AM_MONET_TOOLS
 
 AC_DEFUN(AM_MONET_OPTIONS,
 [
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
-[  --enable-debug          enable full debugging [default=off]],
-  enable_debug=$enableval, enable_debug=no)
+	AC_HELP_STRING([--enable-debug],
+		[enable full debugging [default=no]]),
+	enable_debug=$enableval,
+	enable_debug=no)
 if test "x$enable_debug" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -587,8 +631,10 @@ fi
 
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
-[  --enable-assert         enable assertions in the code [default=on]],
-  enable_assert=$enableval, enable_assert=yes)
+	AC_HELP_STRING([--enable-assert],
+		[enable assertions in the code [default=yes]]),
+	enable_assert=$enableval,
+	enable_assert=yes)
 if test "x$enable_assert" = xno; then
   CPPFLAGS="$CPPFLAGS -DNDEBUG"
 fi
@@ -596,8 +642,9 @@ fi
 dnl --enable-optimize
 NO_INLINE_CFLAGS=""
 AC_ARG_ENABLE(optimize,
-[  --enable-optimize       enable extra optimization [default=off]],
-  enable_optim=$enableval, enable_optim=no)
+	AC_HELP_STRING([--enable-optimize],
+		[enable extra optimization [default=no]]),
+	enable_optim=$enableval, enable_optim=no)
 if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -694,8 +741,10 @@ AC_SUBST(NO_INLINE_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
-[  --enable-warning           enable extended compiler warnings [default=off]],
-  enable_warning=$enableval, enable_warning=no)
+	AC_HELP_STRING([--enable-warning],
+		[enable extended compiler warnings [default=no]]),
+	enable_warning=$enableval,
+	enable_warning=no)
 if test "x$enable_warning" = xyes; then
   dnl  Basically, we disable/overule X_C[XX]FLAGS, i.e., "-Werror" and some "-Wno-*".
   dnl  All warnings should be on by default (see above).
@@ -716,8 +765,9 @@ fi
 dnl --enable-profile
 need_profiling=no
 AC_ARG_ENABLE(profile,
-[  --enable-profile        enable profiling [default=off]],
-  enable_prof=$enableval, enable_prof=no)
+	AC_HELP_STRING([--enable-profile], [enable profiling [default=no]]),
+	enable_prof=$enableval,
+	enable_prof=no)
 if test "x$enable_prof" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
@@ -734,8 +784,10 @@ AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 dnl --enable-instrument
 need_instrument=no
 AC_ARG_ENABLE(instrument,
-[  --enable-instrument        enable instrument [default=off]],
-  enable_instrument=$enableval, enable_instrument=no)
+	AC_HELP_STRING([--enable-instrument],
+		[enable instrument [default=no]]),
+	enable_instrument=$enableval,
+	enable_instrument=no)
 if test "x$enable_instrument" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
@@ -776,7 +828,7 @@ fi
 AC_SUBST(SHARED_LIBS)
 AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
-])
+]) dnl AC_DEFUN AM_MONET_OPTIONS
 
 AC_DEFUN(AM_MONET_LIBS,
 [
@@ -785,8 +837,9 @@ have_pthread=auto
 PTHREAD_LIBS=""
 PTHREAD_INCS=""
 AC_ARG_WITH(pthread,
-[  --with-pthread=DIR     pthread library is installed in DIR], 
-	[have_pthread="$withval"])
+	AC_HELP_STRING([--with-pthread=DIR],
+		[pthread library is installed in DIR]), 
+	have_pthread="$withval")
 if test "x$have_pthread" != xno; then
   if test "x$have_pthread" != xauto; then
     PTHREAD_LIBS="-L$withval/lib"
@@ -827,8 +880,9 @@ have_readline=auto
 READLINE_LIBS=""
 READLINE_INCS=""
 AC_ARG_WITH(readline,
-[  --with-readline=DIR     readline library is installed in DIR], 
-	[have_readline="$withval"])
+	AC_HELP_STRING([--with-readline=DIR],
+		[readline library is installed in DIR]), 
+	have_readline="$withval")
 if test "x$have_readline" != xno; then
   if test "x$have_readline" != xauto; then
     READLINE_LIBS="-L$withval/lib"
@@ -867,8 +921,9 @@ have_openssl=no
 OPENSSL_LIBS=""
 OPENSSL_INCS=""
 AC_ARG_WITH(openssl,
-[  --with-openssl=DIR     OpenSSL library is installed in DIR], 
-	[have_openssl="$withval"])
+	AC_HELP_STRING([--with-openssl=DIR],
+		[OpenSSL library is installed in DIR]), 
+	have_openssl="$withval")
 if test "x$have_openssl" != xno; then
   if test "x$have_openssl" != xauto; then
     OPENSSL_LIBS="-L$withval/lib"
@@ -933,7 +988,9 @@ have_z=auto
 Z_CFLAGS=""
 Z_LIBS=""
 AC_ARG_WITH(z,
-[  --with-z=DIR     z library is installed in DIR], have_z="$withval")
+	AC_HELP_STRING([--with-z=DIR],
+		[z library is installed in DIR]),
+	have_z="$withval")
 if test "x$have_z" != xno; then
   if test "x$have_z" != xauto; then
     Z_CFLAGS="-I$withval/include"
@@ -966,7 +1023,9 @@ have_bz=auto
 BZ_CFLAGS=""
 BZ_LIBS=""
 AC_ARG_WITH(bz2,
-[  --with-bz2=DIR     bz2 library is installed in DIR], have_bz="$withval")
+	AC_HELP_STRING([--with-bz2=DIR],
+		[bz2 library is installed in DIR]),
+	have_bz="$withval")
 if test "x$have_bz" != xno; then
   if test "x$have_bz" != xauto; then
     BZ_CFLAGS="-I$withval/include"
@@ -1007,8 +1066,9 @@ have_hwcounters=auto
 HWCOUNTERS_LIBS=""
 HWCOUNTERS_INCS=""
 AC_ARG_WITH(hwcounters,
-[  --with-hwcounters=DIR     hwcounters library is installed in DIR], 
-	[have_hwcounters="$withval"])
+	AC_HELP_STRING([--with-hwcounters=DIR],
+		[hwcounters library is installed in DIR]), 
+	have_hwcounters="$withval")
 if test "x$have_hwcounters" != xno; then
   if test "x$have_hwcounters" != xauto; then
     HWCOUNTERS_LIBS="-L$withval/lib"
@@ -1100,7 +1160,9 @@ have_pcl=auto
 PCL_CFLAGS=""
 PCL_LIBS=""
 AC_ARG_WITH(pcl,
-[  --with-pcl=DIR     pcl library is installed in DIR], have_pcl="$withval")
+	AC_HELP_STRING([--with-pcl=DIR],
+		[pcl library is installed in DIR]),
+	have_pcl="$withval")
 if test "x$have_pcl" != xno; then
   if test "x$have_pcl" != xauto; then
     PCL_CFLAGS="-I$withval/include"
@@ -1207,7 +1269,7 @@ AC_SUBST(INSTALL_BACKUP)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
-])
+]) dnl AC_DEFUN AM_MONET_LIBS
 
 AC_DEFUN(AM_MONET_CLIENT,[
 
@@ -1217,4 +1279,4 @@ MPATH="$MONET_PREFIX/bin:$PATH"
 AC_PATH_PROG(MX,Mx$EXEEXT,,$MPATH)
 AC_PATH_PROG(MEL,mel$EXEEXT,,$MPATH)
 
-])
+]) dnl AC_DEFUN AM_MONET_CLIENT
