@@ -7,10 +7,15 @@ if os.environ.has_key('MONET_PREFIX'):
 else:
     sys.path.append('@prefix@'+os.sep+'share'+os.sep+'@PACKAGE@'+os.sep+'python')
 
-from monet_options import *
+import monet_options
 from Mapi import *
 
-opt = parse_options(sys.argv[1:])
+cmd_options = [
+    ('host',None,'host','hostname','host to connect to (default: localhost)'),
+    ('port',None,'mapi_port','port','port to connect to (default: 50000)'),
+    ]
+
+opt = monet_options.parse_options(sys.argv[1:], cmd_options)
 
 s = server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), "adm" )
 

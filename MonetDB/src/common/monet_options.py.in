@@ -6,6 +6,10 @@ except NameError:
     # provide values for old Python versions
     False, True = 0, 1
 
+class Error(Exception):
+    """Bad option."""
+    pass
+
 # By using a hierarchy of classes we can let Python do the searching
 # for the correct value.
 class BuiltinOptions:
@@ -53,29 +57,36 @@ class ConfigOptions(SystemOptions):
     '''Values from a user-supplied config file.'''
     pass
 
-# This is a list of command-line options.  For each option, we can
+# These are lists of command-line options.  For each option, we can
 # specify a short and a long form, and whether the option takes an
 # argument.  Also, if the GDK option name is given, the option will
-# automatically be recorded.
+# automatically be recorded (this should always be done for options
+# passed to parse_options).
 # The argument field is a descriptive string for the argument.  If
 # None is given, the option does not take an argument.
+# The comment is a very brief description of what the option is for.
+# default_options are always available, cmd_options are the extra
+# options that are recognized by default.  These latter can be
+# overridden by the call to parse_options.
+default_options = [
+    # long name, short name, GDK option, argument, comment
+    ('config','c',None,'config_file', 'read options from the given file'),
+    ('help','?',None,None,'print usage message'),
+    ('set','s',None,'option=value', 'set a named options'),
+    ]
 cmd_options = [
-    # long name, short name, GDK option, argument
-    ('config','c',None,'config_file'),
-    ('dbname',None,'gdk_dbname','database_name'),
-    ('dbfarm',None,'gdk_dbfarm','database_directory'),
-    ('debug','d','gdk_debug','debug_level'),
-    ('help','?',None,None),
-    ('set','s',None,'option=value'),
+    ('debug','d','gdk_debug','debug_level', None),
+    ('dbname',None,'gdk_dbname','database_name', None),
+    ('dbfarm',None,'gdk_dbfarm','database_directory', None),
     ]
 
-def usage():
-    '''usage()
+def usage(cmd_options):
+    '''usage(options)
 
     Print usage information.'''
     sys.stderr.write('Usage: %s [ options ]\n' % os.path.basename(sys.argv[0]))
     sys.stderr.write('Options are:\n')
-    for long, short, gdk_opt, argument in cmd_options:
+    for long, short, gdk_opt, argument, comment in cmd_options:
         arg = []
         if short:
             arg.append('-' + short)
@@ -84,7 +95,10 @@ def usage():
         arg = string.join(arg, ' or ')
         if argument:
             arg = arg + ' ' + argument
+        if comment:
+            arg = arg + '\n\t' + comment
         sys.stderr.write(arg+'\n')
+    raise Error('usage')
 
 def parse_config(file, options = ConfigOptions):
     '''parse_config(file)
@@ -130,19 +144,20 @@ def print_options(options):
         val = getattr(options, name)
         sys.stderr.write('%s = %s\n' % (name, val))
 
-def parse_options(argv):
+def parse_options(argv, cmd_options = cmd_options):
     '''parse_options(argv) -> options
 
     This is the main interface to this module.
 
     Parse the command line options (argv = sys.argv[1:]) and return a
     class instance describing the options settings.'''
+    cmd_options = default_options + cmd_options
     debug = 0
     options = ConfigOptions()
     seen_config = False
     getopt_short = ''
     getopt_long = []
-    for long, short, gdk_opt, argument in cmd_options:
+    for long, short, gdk_opt, argument, comment in cmd_options:
         if short:
             getopt_short = getopt_short + short
             if argument:
@@ -157,18 +172,18 @@ def parse_options(argv):
     for o, a in opts:
         if o[:2] == '--':
             o = o[2:]
-            for long, short, gdk_opt, argument in cmd_options:
+            for long, short, gdk_opt, argument, comment in cmd_options:
                 if o == long:
                     break
             else:
-                usage()
+                usage(cmd_options)
         else:
             o = o[1:]
-            for long, short, gdk_opt, argument in cmd_options:
+            for long, short, gdk_opt, argument, comment in cmd_options:
                 if o == short:
                     break
             else:
-                usage()
+                usage(cmd_options)
         if gdk_opt:
             setattr(options, gdk_opt, a)
             if long == 'debug':
@@ -189,7 +204,7 @@ def parse_options(argv):
                 else:
                     setattr(options, key, val)
         elif long == 'help':
-            usage()
+            usage(cmd_options)
     if not seen_config:
         parse_config(os.path.join(BuiltinOptions.get(BuiltinOptions(),'sysconfdir'),'monet.conf'), SystemOptions)
     if debug:
