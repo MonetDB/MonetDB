@@ -270,6 +270,10 @@ comment "Identity mapping";
 command oid(b:bat[:oid,:int]):bat[:oid,:oid] 
 address CMDconvertOIDclass
 comment "Materialize the integer into an oid";
+
+command oid(b:bat[:void,:int]):bat[:void,:oid] 
+address CMDconvertOIDclass
+comment "Materialize the integer into an oid";
 @}
 @+ Scientific routines
 The mmath functions are also overloaded to provide for
