@@ -3,6 +3,82 @@
 #include "mem.h"
 #include "statement.h"
 
+const char * st_type2string(st_type type) {
+	switch (type) {
+	case st_none:	return "st_none";
+	case st_schema:	return "st_schema";
+	case st_table:	return "st_table";
+	case st_column:	return "st_column";
+	case st_key:	return "st_key";
+	case st_basetable:	return "st_basetable";
+	case st_temp:	return "st_temp";
+	case st_bat:	return "st_bat";
+	case st_ubat:	return "st_ubat";
+	case st_ibat:	return "st_ibat";
+	case st_obat:	return "st_obat";
+	case st_dbat:	return "st_dbat";
+	case st_kbat:	return "st_kbat";
+	case st_drop_schema:	return "st_drop_schema";
+	case st_create_schema:	return "st_create_schema";
+	case st_drop_table:	return "st_drop_table";
+	case st_create_table:	return "st_create_table";
+	case st_create_column:	return "st_create_column";
+	case st_null:	return "st_null";
+	case st_default:	return "st_default";
+	case st_create_key:	return "st_create_key";
+	case st_create_role:	return "st_create_role";
+	case st_drop_role:	return "st_drop_role";
+	case st_grant:	return "st_grant";
+	case st_revoke:	return "st_revoke";
+	case st_grant_role:	return "st_grant_role";
+	case st_revoke_role:	return "st_revoke_role";
+	case st_commit:	return "st_commit";
+	case st_rollback:	return "st_rollback";
+	case st_release:	return "st_release";
+	case st_reverse:	return "st_reverse";
+	case st_atom:	return "st_atom";
+	case st_join:	return "st_join";
+	case st_semijoin:	return "st_semijoin";
+	case st_outerjoin:	return "st_outerjoin";
+	case st_diff:	return "st_diff";
+	case st_intersect:	return "st_intersect";
+	case st_union:	return "st_union";
+	case st_select:	return "st_select";
+	case st_select2:	return "st_select2";
+	case st_copyfrom:	return "st_copyfrom";
+	case st_like:	return "st_like";
+	case st_append:	return "st_append";
+	case st_insert:	return "st_insert";
+	case st_replace:	return "st_replace";
+	case st_exception:	return "st_exception";
+	case st_count:	return "st_count";
+	case st_const:	return "st_const";
+	case st_mark:	return "st_mark";
+	case st_group_ext:	return "st_group_ext";
+	case st_group:	return "st_group";
+	case st_derive:	return "st_derive";
+	case st_unique:	return "st_unique";
+	case st_ordered:	return "st_ordered";
+	case st_order:	return "st_order";
+	case st_reorder:	return "st_reorder";
+	case st_op:	return "st_op";
+	case st_unop:	return "st_unop";
+	case st_binop:	return "st_binop";
+	case st_triop:	return "st_triop";
+	case st_aggr:	return "st_aggr";
+	case st_limit:	return "st_limit";
+	case st_column_alias:	return "st_column_alias";
+	case st_alias:	return "st_alias";
+	case st_set:	return "st_set";
+	case st_sets:	return "st_sets";
+	case st_ptable:	return "st_ptable";
+	case st_pivot:	return "st_pivot";
+	case st_list:	return "st_list";
+	case st_output:	return "st_output";
+	default: return "unknown";
+	}
+}
+
 /* todo make proper traversal operations */
 static stmt *stmt_atom_string( char * s )
 {
@@ -1115,7 +1191,7 @@ sql_subtype *tail_type(stmt * st)
 		return atom_type(st->op1.aval);
 
 	default:
-		fprintf(stderr, "missing tail type %d\n", st->type );
+		fprintf(stderr, "missing tail type %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
 	}
 }
@@ -1157,7 +1233,7 @@ sql_subtype *head_type(stmt * st)
 	case st_atom:
 		return atom_type(st->op1.aval);
 	default:
-		fprintf(stderr, "missing head type %d\n", st->type );
+		fprintf(stderr, "missing head type %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
 	}
 }
@@ -1200,7 +1276,7 @@ stmt *tail_column(stmt * st)
 		return head_column(st->op1.stval);
 
 	default:
-		fprintf(stderr, "missing tail column %d\n", st->type );
+		fprintf(stderr, "missing tail column %d: %s\n", st->type, st_type2string(st->type) );
 		assert(0);
 		return NULL;
 	}
@@ -1247,7 +1323,7 @@ stmt *head_column(stmt * st)
 	case st_derive:
 		return tail_column(st->op2.stval);
 	default:
-		fprintf(stderr, "missing head column %d\n", st->type );
+		fprintf(stderr, "missing head column %d: %s\n", st->type, st_type2string(st->type) );
 		assert(0);
 		return NULL;
 	}
@@ -1311,7 +1387,7 @@ char *column_name(stmt * st)
 			return atom2string(st->op1.aval);
 		return strdup("single_value");
 	default:
-		fprintf(stderr, "missing name %d\n", st->type );
+		fprintf(stderr, "missing column name %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
 	}
 }
@@ -1351,7 +1427,7 @@ char *table_name(stmt * st)
 		assert(0);
 
 	default:
-		fprintf(stderr, "missing name %d\n", st->type );
+		fprintf(stderr, "missing table name %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
 	}
 }

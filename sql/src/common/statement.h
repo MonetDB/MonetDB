@@ -122,6 +122,8 @@ typedef struct group {
 	int refcnt;
 } group;
 
+extern const char * st_type2string(st_type type);
+
 /* since Savepoints and transactions related the 
  * stmt commit function includes the savepoint creation.
  * And rollbacks can be eigther full or until a given savepoint. 
