@@ -1,5 +1,51 @@
 stderr of test 'salgebra` in directory 'src/modules/plain` itself:
 
-#> Mtest (20:34:28):	other salgebra 1200
-#> Mtest (20:34:28):	Mtimeout -timeout 1200 ./salgebra salgebra
-#> Mlog (20:34:28):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain salgebra.mil
+
+# 12:44:23 >  
+# 12:44:23 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_modules_plain  < salgebra.milM
+# 12:44:23 >  
+
+# builtin opt 	gdk_arch = 64bitmips-sgi-irix6.5
+# builtin opt 	gdk_version = 4.3.5
+# builtin opt 	monet_pid = 8097484
+# builtin opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mmap = 32M
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_deamon = yes
+# system opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# system opt 	exec_prefix = ${prefix}
+# system opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# system opt 	gdk_dbname = demo
+# system opt 	gdk_debug = 0
+# system opt 	gdk_mmap = 33554432
+# system opt 	monet_admin = adm
+# system opt 	monet_prompt = monet>
+# system opt 	monet_welcome = yes
+# system opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# system opt 	monet_deamon = no
+# config opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_debug = 0
+# config opt 	gdk_mmap = 33554432
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = monet>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# config opt 	monet_deamon = no
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = Tests_src_modules_plain
+
+# 12:44:24 >  
+# 12:44:24 >  Done.
+# 12:44:24 >  
+

@@ -6,22 +6,66 @@ stderr of test 'multiClientSeq` in directory 'src/tools` itself:
 # 20:49:57 >  
 
 
-# 20:50:06 >  
-# 20:50:06 >  Mtimeout -timeout 210 MapiClient -everything  < multiClientSeq_s00.milC
-# 20:50:06 >  
+# 12:47:43 >  
+# 12:47:43 >  Mtimeout -timeout 240 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_tools /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/share/MonetDB/mapi.mil ; echo  ; echo Over..
+# 12:47:43 >  
+
+# builtin opt 	gdk_arch = 64bitmips-sgi-irix6.5
+# builtin opt 	gdk_version = 4.3.5
+# builtin opt 	monet_pid = 8104069
+# builtin opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mmap = 32M
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_deamon = yes
+# system opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# system opt 	exec_prefix = ${prefix}
+# system opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# system opt 	gdk_dbname = demo
+# system opt 	gdk_debug = 0
+# system opt 	gdk_mmap = 33554432
+# system opt 	monet_admin = adm
+# system opt 	monet_prompt = monet>
+# system opt 	monet_welcome = yes
+# system opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# system opt 	monet_deamon = no
+# config opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_debug = 0
+# config opt 	gdk_mmap = 33554432
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = monet>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# config opt 	monet_deamon = no
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = Tests_src_tools
+
+# 12:47:43 >  
+# 12:47:43 >  Mtimeout -timeout 60 MapiClient -everything  < multiClientSeq_s00.milC
+# 12:47:43 >  
 
 
-# 20:50:08 >  
-# 20:50:08 >  Mtimeout -timeout 210 MapiClient -everything  < multiClientSeq_s01.milC
-# 20:50:08 >  
+# 12:47:50 >  
+# 12:47:50 >  Mtimeout -timeout 60 MapiClient -everything  < multiClientSeq_s01.milC
+# 12:47:50 >  
 
 
-# 20:50:10 >  
-# 20:50:10 >  Mtimeout -timeout 210 Mshutdown
-# 20:50:10 >  
+# 12:47:56 >  
+# 12:47:56 >  Mtimeout -timeout 60 Mshutdown
+# 12:47:56 >  
 
 
-# 21:03:57 >  
-# 21:03:57 >  Done.
-# 21:03:57 >  
+# 12:47:56 >  
+# 12:47:56 >  Done.
+# 12:47:56 >  
 

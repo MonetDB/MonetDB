@@ -1,15 +1,13 @@
 stdout of test 'no.106` in directory 'tests/BugReports` itself:
 
-#> Mtest (13:34:55):	milS no.106 milS -prelude no.106.prelude
-#> Mtest (13:34:55):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single -prelude no.106.prelude no.106.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:no.106.milS
-#prelude:no.106.prelude
 
+# 12:49:44 >  
+# 12:49:44 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_tests_BugReports no.106.prelude < no.106.milS
+# 12:49:44 >  
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for mips-sgi-irix6.5/64bit; dynamically linked.
 #---------------------------------#
 # BAT:	  tmp_26		  #
 # (oid)	  (str)			  #
@@ -141,3 +139,8 @@ CTgroup( docid, tid ).print;
 [ 1013@0, 1013@0  ]
 [ 1014@0, 1014@0  ]
 quit;
+
+# 12:49:45 >  
+# 12:49:45 >  Done.
+# 12:49:45 >  
+
