@@ -2013,13 +2013,13 @@ interval_type:
 literal:
     string
 		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0 ); 
-		   $$ = _newAtomNode( atom_string(t, $1)); }
+		   $$ = _newAtomNode( atom_string(t, _strdup($1))); }
  |  USER     
 		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0);
 		   $$ = _newAtomNode( atom_string(t, _strdup($1))); }
  |  SESSION_USER     
 		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0);
-		   $$ = _newAtomNode( atom_string(t, $1)); }
+		   $$ = _newAtomNode( atom_string(t, _strdup($1))); }
 
  |  sqlINT   	{ int digits = strlen($1);
 		  long value = strtol($1,&$1,10); 
@@ -2064,7 +2064,7 @@ literal:
 		}
  |  TYPE string 
 		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
-		  atom *a = atom_general(t, $2);
+		  atom *a = atom_general(t, _strdup($2));
 		  $$ = NULL;
 	          if (a) $$ = _newAtomNode(a); 
 		  if (!$$) {

@@ -643,6 +643,9 @@ int number(mvc * c, int len)
 		}
 	}
 	yytext[yylen] = 0;
+	lc->yytext = yytext;
+	lc->yylen = yylen;
+	lc->yysize = yysz;
 	if (token) {
 		lc->yyval = token;
 	} else if (yylen == 1) {
@@ -663,9 +666,6 @@ int number(mvc * c, int len)
 		(void)sql_error( c, 2, "Unexpected symbol %c", lc->cur);
 		return LEX_ERROR;
 	}
-	lc->yytext = yytext;
-	lc->yylen = yylen;
-	lc->yysize = yysz;
 
 	lc->cur = cur;
 	return lc->yyval;
