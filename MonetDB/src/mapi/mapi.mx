@@ -267,7 +267,7 @@ Get the new information for the server socket and start listening.
 
 			assert(name);
 			memset(name,0,BLOCK);
-			if (fdin == 0){
+			if (fdin == 0 || fdin->errnr ){
 				GDKsyserror("CLIENTlisten:fdin problems\n");
 				continue;
 			}
