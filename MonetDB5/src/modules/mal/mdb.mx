@@ -88,7 +88,7 @@ the flow graph. [TODO]
 pattern showFunction():void 
 address MDBshowFunction
 comment "Dump the current routine on standard out.";
-pattern showFunction(M:any,F:any):void 
+pattern showFunction(M:str,F:str):void 
 address MDBshowFunction3
 comment "Dump the routine M.F on standard out.";
 
@@ -301,17 +301,17 @@ str MDBshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return MAL_SUCCEED;
 }
 str MDBshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str     modnme= getArgName(mb,p,1);
-	str     fcnnme= getArgName(mb,p,2);
+	str     modnme= (str) getArgValue(stk,p,1);
+	str     fcnnme= (str) getArgValue(stk,p,2);
 	Symbol s= NULL;
-        Client c= getClient();
+	Client c= getClient();
 
-        s= findMALSymbol(modnme,fcnnme);
+	s= findMALSymbol(modnme,fcnnme);
 	if( s == NULL)
 		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
 	else 
 		printFunction(c->fdout,s->def,LIST_INPUT);
-	(void) stk; /* fool compiler */
+	(void) mb; /* fool compiler */
 	return NULL;
 }
 @-

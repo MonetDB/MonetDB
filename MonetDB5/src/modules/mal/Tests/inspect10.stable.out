@@ -64,6 +64,12 @@ get function properties
 # str		str	  # type
 #---------------------------------#
 [ "i:int",	  ":void"	  ]
+function Admin.dummy(i:int):void;
+    io.print(i);
+    b := mdb.getDefinition();
+    io.print(b);
+    mdb.showFunction();
+end dummy;
 
 # 22:47:40 >  
 # 22:47:40 >  Done.

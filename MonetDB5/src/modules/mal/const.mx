@@ -59,7 +59,7 @@ comment "Destroy the box";
 pattern take(name:any):any 
 address CSTtake
 comment "Take a variable out of the box";
-pattern deposit(name:any) :void 		
+pattern deposit(name:str,val:any) :void 		
 address CSTdeposit
 comment "Enter a new variable into the box";
 
@@ -175,11 +175,12 @@ str CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
 	@:OpenBox(deposit)@
-	name = (str) getArgName(mb,pci,1);
-	v = &stk->stk[pci->argv[1]];
+	name = (str) getArgValue(stk,pci,1);
+	v = &stk->stk[pci->argv[2]];
 	if(depositBox(box,name,v) )
 		return throwException(MALEXCEPTION,"const.deposit",
 			"failed to deposit '%s' into box",name);
+	(void) mb;
 	return MAL_SUCCEED;
 }
 
@@ -189,24 +190,25 @@ str CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 
 	@:OpenBox(take)@
-	name = (str) getArgName(mb,pci,1);
+	name = (str) getArgValue(stk,pci,1);
 	v = &stk->stk[pci->argv[0]];
-	if(takeBox(box,name,v,(int) getArgType(mb,pci,0))) 
+	if( takeBox(box,name,v,(int) getArgType(mb,pci,0)) ) 
 		return throwException(MALEXCEPTION,"const.take",
 			"failed to take '%s' from box",name);
+	(void) mb;
 	return MAL_SUCCEED;
 }
 
 str CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
-	(void)stk; /* fool compiler*/
+	(void)mb; /* fool compiler*/
 
 	@:OpenBox(release)@
-        name = (str) getArgName(mb,pci,1);
-        if( releaseBox(box,name))
-		return throwException(MALEXCEPTION,"const.release",
-			"failed to release '%s' from box",name);
+	name = (str) getArgValue(stk,pci,1);
+	if( releaseBox(box,name))
+	return throwException(MALEXCEPTION,"const.release",
+		"failed to release '%s' from box",name);
 	return MAL_SUCCEED;
 }
 
@@ -223,12 +225,12 @@ str CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
-	(void)stk; /* fool compiler */
+	(void)mb; /* fool compiler */
 	@:OpenBox(discard)@
-        name = (str) getArgName(mb,pci,1);
-        if( discardBox(box,name) == 0)
-                return throwException(MALEXCEPTION,"const.discard",
-			"failed to discard '%s' from box", name);
+	name = (str) getArgValue(stk,pci,1);
+	if( discardBox(box,name) == 0)
+			return throwException(MALEXCEPTION,"const.discard",
+		"failed to discard '%s' from box", name);
 	return MAL_SUCCEED;
 }
 str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

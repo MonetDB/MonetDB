@@ -1,5 +1,6 @@
 # determine basic costs for cracking a larger table.
 b:= new(:int,:int);
+l:= 0;
 barrier (v,i):= newRange(0:int);
         k:= rand();
         l:= int(k);

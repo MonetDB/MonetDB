@@ -50,21 +50,21 @@ comment "Destroy the MIL box";
 pattern take(name:str):any 
 address MILtake
 comment "Locate and take the typed value";
-pattern deposit(name:any) :void 		
+pattern deposit(name:str,val:any) :void 		
 address MILdeposit
 comment "Enter a new value into the box";
 
 pattern releaseAll():void 
 address MILreleaseAll
 comment "Release all constants";
-pattern release(name:any) :void 		
+pattern release(name:str) :void 		
 address MILrelease
 comment "Release a new constant value";
-pattern toString(name:any):str 
+pattern toString(name:str):str 
 address MILtoString
 comment "Get the string representation 
 	of an element in the box";
-pattern discard(name:any) :void 		
+pattern discard(name:str) :void 		
 address MILdiscard
 comment "Release the const from the box";
 pattern iterator() (:lng,:str)
@@ -164,36 +164,36 @@ M_2_SQRTPI :=1.12837916709551257390LL;
 M_SQRT2 :=1.41421356237309504880LL;
 M_SQRT1_2 :=0.70710678118654752440LL;
 
-mil.deposit(EQ);
-mil.deposit(LT);
-mil.deposit(LE);
-mil.deposit(GT);
-mil.deposit(GE);
-mil.deposit(STORE_MEM);
-mil.deposit(STORE_MMAP);
-mil.deposit(STORE_COMPR);
-mil.deposit(BUF_NORMAL);
-mil.deposit(BUF_RANDOM);
-mil.deposit(BUF_SEQUENTIAL);
-mil.deposit(BUF_WILLNEED);
-mil.deposit(BUF_DONTNEED);
-mil.deposit(EBUSY);
-mil.deposit(BAT_READ);
-mil.deposit(BAT_APPEND);
-mil.deposit(BAT_WRITE);
-mil.deposit(M_E);
-mil.deposit(M_LOG2E);
-mil.deposit(M_LOG10E);
-mil.deposit(M_LN2);
-mil.deposit(M_LN10);
-mil.deposit(M_PI);
-mil.deposit(M_PI_2);
-mil.deposit(M_PI_4);
-mil.deposit(M_1_PI);
-mil.deposit(M_2_PI);
-mil.deposit(M_2_SQRTPI);
-mil.deposit(M_SQRT2);
-mil.deposit(M_SQRT1_2);
+mil.deposit("EQ",EQ);
+mil.deposit("LT",LT);
+mil.deposit("LE",LE);
+mil.deposit("GT",GT);
+mil.deposit("GE",GE);
+mil.deposit("STORE_MEM",STORE_MEM);
+mil.deposit("STORE_MMAP",STORE_MMAP);
+mil.deposit("STORE_COMPR",STORE_COMPR);
+mil.deposit("BUF_NORMAL",BUF_NORMAL);
+mil.deposit("BUF_RANDOM",BUF_RANDOM);
+mil.deposit("BUF_SEQUENTIAL",BUF_SEQUENTIAL);
+mil.deposit("BUF_WILLNEED",BUF_WILLNEED);
+mil.deposit("BUF_DONTNEED",BUF_DONTNEED);
+mil.deposit("EBUSY",EBUSY);
+mil.deposit("BAT_READ",BAT_READ);
+mil.deposit("BAT_APPEND",BAT_APPEND);
+mil.deposit("BAT_WRITE",BAT_WRITE);
+mil.deposit("M_E",M_E);
+mil.deposit("M_LOG2E",M_LOG2E);
+mil.deposit("M_LOG10E",M_LOG10E);
+mil.deposit("M_LN2",M_LN2);
+mil.deposit("M_LN10",M_LN10);
+mil.deposit("M_PI",M_PI);
+mil.deposit("M_PI_2",M_PI_2);
+mil.deposit("M_PI_4",M_PI_4);
+mil.deposit("M_1_PI",M_1_PI);
+mil.deposit("M_2_PI",M_2_PI);
+mil.deposit("M_2_SQRTPI",M_2_SQRTPI);
+mil.deposit("M_SQRT2",M_SQRT2);
+mil.deposit("M_SQRT1_2",M_SQRT1_2);
 @-
 @{
 @+ Implementation
@@ -266,6 +266,7 @@ to a named box.
 	box= findBox("mil");
 	if( box ==0) 
 	return throwMessage("mil.@1","box is not open");
+	(void) mb;
 @-
 @c
 str MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -275,8 +276,8 @@ str MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	@:authorize(@1)@
 	@:OpenBox(deposit)@
-	name = (str) getArgName(mb,pci,1);
-	v = &stk->stk[pci->argv[1]];
+	name = (str) getArgValue(stk,pci,1);
+	v = &stk->stk[pci->argv[2]];
 	if(depositBox(box,name,v) )
 		return throwException(MALEXCEPTION,"mil.deposit",
 			"failed to deposit '%s' into box",name);
@@ -312,8 +313,9 @@ str MILrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)stk; /* fool compiler*/
 
 	@:OpenBox(release)@
-        name = (str) getArgName(mb,pci,1);
-        releaseBox(box,name);
+	name = (str) getArgValue(stk,pci,1);
+	releaseBox(box,name);
+	(void) mb;
 	return MAL_SUCCEED;
 }
 
@@ -330,12 +332,12 @@ str MILdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
-	(void)stk; /* fool compiler */
+	(void)mb; /* fool compiler */
 	@:OpenBox(discard)@
-        name = (str) getArgName(mb,pci,1);
-        if( discardBox(box,name) == 0)
-                return throwException(MALEXCEPTION,"mil.discard",
-			"failed to discard '%s' from box", name);
+	name = (str) getArgValue(stk,pci,1);
+	if( discardBox(box,name) == 0)
+			return throwException(MALEXCEPTION,"mil.discard",
+		"failed to discard '%s' from box", name);
 	return MAL_SUCCEED;
 }
 str MILtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
