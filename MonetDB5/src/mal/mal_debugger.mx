@@ -313,9 +313,12 @@ void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         *s = 0;
         stream_printf(cntxt->fdout,"%s",msg);
         for(k= p->retc; k<p->argc; k++){
-            ValPtr v= &stk->stk[p->argv[k]];
-            ATOMprint(v->vtype,VALptr(v),cntxt->fdout);
-            if( k < p->argc-1 ) stream_printf(cntxt->fdout,",");
+			VarPtr v= getVar(mb, p->argv[k]);
+            ValPtr val= &stk->stk[p->argv[k]];
+			if( v->tmpindex == 0) 
+				stream_printf(cntxt->fdout,"%s=",v->name);
+            ATOMprint(val->vtype,VALptr(val),cntxt->fdout);
+            if( k < p->argc-1 ) stream_printf(cntxt->fdout,", ");
             }
         stream_printf(cntxt->fdout,")\n");
     } else stream_printf(cntxt->fdout,"%s\n",msg);
