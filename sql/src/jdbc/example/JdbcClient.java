@@ -164,6 +164,9 @@ public class JdbcClient {
 				if (dump != null && !(tbl.getString("TABLE_NAME").equalsIgnoreCase(dump) ||
 					(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(dump)))
 					continue;
+				else if (tbl.getString("TABLE_NAME").equals("history") &&
+						tbl.getString("TABLE_SCHEM").equals("sys"))
+					continue;
 
 				if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
 					System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
