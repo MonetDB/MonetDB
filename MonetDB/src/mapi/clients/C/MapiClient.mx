@@ -247,7 +247,7 @@ of the server before continuing
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#define SEND_MESSAGE(mid)	{					\
+#define SEND_MESSAGE(mid)	{				\
 	message[m_index] = 0;					\
 	cmd = doRequest(mid, message );				\
 	add_history(start_cmd);					\
@@ -456,7 +456,6 @@ void usage( char *prog )
 int main(int ac, char **av)
 {
 	char *prompt= NULL;
-	char buf[BUFSIZ];
 	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
 	char *host=NULL;
 #ifdef MONET5
@@ -631,8 +630,7 @@ int main(int ac, char **av)
 */
 
 	toConsole = stdout;
-	snprintf(buf,sizeof(buf),"%s:%d",host,port);
-	mid = mapi_connect(buf, user, passwd,0);
+	mid = mapi_connect(host, port, user, passwd, language);
 	mapi_trace(mid, trace);
 	if (mapi_error(mid)) {
 		mapi_explain(mid,toConsole);
@@ -643,7 +641,7 @@ int main(int ac, char **av)
 	if( language && strcmp(language,"mal")){
 		char lang[BUFSIZ];
 		snprintf(lang,sizeof(lang),"%s();",language);
-		doRequest(mid, lang);				\
+		doRequest(mid, lang);
 	}
 #endif
 

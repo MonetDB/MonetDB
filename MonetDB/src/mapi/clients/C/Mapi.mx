@@ -51,7 +51,7 @@ main(int argc, char *argv)
 {
 	Mapi	dbh;
 
-	dbh = mapi_connect("localhost:50001", "guest", 0, "sql");
+	dbh = mapi_connect("localhost", 50001, "guest", 0, "sql");
 	if (mapi_error(dbh))
 		die(dbh);
 
@@ -147,6 +147,7 @@ mapi_bind_numeric()	& Bind numeric C-variable to field\\
 mapi_cache_limit()	& Set the tuple cache limit\\
 mapi_connect()	&	Connect to a Mserver \\
 mapi_connect_ssl()	& Connect to a Mserver using SSL [TODO]\\
+mapi_destroy()	&	Free resources\\
 mapi_disconnect()	& Disconnect from server\\
 mapi_dup()	&	Duplicate the connection structure\\
 mapi_error()	&	Test for error occurrence\\
@@ -214,10 +215,10 @@ The side-effect is clearing the error status.
 @T
 \begin{description}
 
-\item[Mapi mapi_connect(char *host, char *username, char *password, char *lang)]:
+\item[Mapi mapi_connect(char *host, int port, char *username, char *password, char *lang)]:
 Setup a connection with a Monet server at a {\em host}:{\em port} and
 login with {\em username} and {\em password}. If host == NULL, the
-local host with a default port is accessed.
+local host is accessed.  If port == 0, a default port is used.
 If username == NULL, the username of the
 owner of the client application containing the Mapi code is used.
 If password == NULL, the password is omitted.
@@ -635,10 +636,11 @@ extern "C" {
 mapi_export MapiMsg mapi_bind(Mapi mid, int fnr, char **ptr) ;
 mapi_export MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) ;
 mapi_export MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int precision, void *ptr) ;
-mapi_export Mapi mapi_connect(char *host, char *username,
+mapi_export Mapi mapi_connect(char *host, int port, char *username,
 	 char *password, char *lang);
-mapi_export Mapi mapi_connect_ssl(char *host, char *username,
+mapi_export Mapi mapi_connect_ssl(char *host, int port, char *username,
 	char *password, char *lang);
+mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_error(Mapi mid);
 mapi_export char *mapi_error_str(Mapi mid);
@@ -826,6 +828,14 @@ static Mapi mapi_new(void)
 	return m;
 }
 
+MapiMsg mapi_destroy(Mapi mid)
+{
+	if (mid->connected > 0)
+		(void) mapi_disconnect(mid);
+	free(mid);
+	return MOK;
+}
+
 Mapi mapi_dup(Mapi mid)
 {
 	Mapi m;
@@ -843,21 +853,19 @@ Mapi mapi_dup(Mapi mid)
 	return m;
 }
 
-Mapi mapi_connect_ssl(char *host, char *username, char *password, char *lang)
+Mapi mapi_connect_ssl(char *host, int port, char *username, char *password, char *lang)
 {
-	Mapi mid = mapi_connect(host,username,password,lang);
+	Mapi mid = mapi_connect(host,port,username,password,lang);
 	mapi_setError(mid,"SSL connections not yet supported","mapi_connect_ssl");
 	return mid;
 }
 
-Mapi mapi_connect(char *host, char *username, char *password, char *lang)
+Mapi mapi_connect(char *host, int port, char *username, char *password, char *lang)
 {
 	struct hostent *hp;
 	struct sockaddr_in server;
 	int s;
-	char *c;
 	Mapi mid;
-	int port=0;
 	size_t len, ret;
 	char buf[BLOCK];
 
@@ -869,11 +877,6 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 		strncpy(mid->hostname, host, sizeof(mid->hostname));
 	else
 		strcpy(mid->hostname,"localhost");
-	c= strchr(mid->hostname,':');
-	if (c) {
-		*c = 0;
-		port = atol(c+1);
-	}
 	if(port==0){
 		char *def;
 		if((def = getenv("MAPIPORT"))!=NULL)
@@ -1076,14 +1079,14 @@ MapiMsg mapi_disconnect(Mapi mid)
 }
 MapiMsg mapi_reconnect(Mapi mid){
 	Mapi dup;
-	char buf[BLOCK];
 
 	mapi_check(mid,"mapi_reconnect");
-	snprintf(buf,BLOCK,"%s:%d",mid->hostname,mid->port);
-	dup = mapi_connect(buf, mid->username, mid->password, 
-			mid->language);
+	dup = mapi_connect(mid->hostname, mid->port, mid->username,
+			   mid->password, mid->language);
 	if( mid->connected>0) mapi_disconnect(mid);
 	memcpy(mid, dup, sizeof(*dup));
+	dup->connected = 0;
+	mapi_destroy(dup);
 	return mid->error;
 }
 @-
@@ -1358,27 +1361,20 @@ char *mapi_param_store(Mapi mid)
 	return mid->query;
 }
 
-/* copied from gdk.mx since it is not included here */
+/* code adapted from gdk.mx */
+/* define printf formats for printing size_t and ssize_t variables */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define SZFMT "%zu"
-#define SSZFMT "%zd"
-#else
-#if SIZEOF_SIZE_T == SIZEOF_INT
+#elif SIZEOF_SIZE_T == SIZEOF_INT
 #define SZFMT "%u"
-#define SSZFMT "%d"
-#else
-#if SIZEOF_SIZE_T == SIZEOF_LONG
+#elif SIZEOF_SIZE_T == SIZEOF_LONG
 #define SZFMT "%lu"
-#define SSZFMT "%ld"
+#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#define SZFMT "%llu"
+#elif SIZEOF_SIZE_T == SIZEOF___INT64
+#define SZFMT "%I64u"
 #else
-#if SIZEOF_SIZE_T == 8
-#define SZFMT ULLFMT
-#define SSZFMT LLFMT
-#else
-#error no definition for SZFMT/SSZFMT
-#endif
-#endif
-#endif
+#error no definition for SZFMT
 #endif
 
 MapiMsg mapi_execute_internal(Mapi mid)
