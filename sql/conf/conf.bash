@@ -5,14 +5,14 @@
 # as required to compile SQL.
 #
 # In order to find your Monet installation, this script requires
-# 'monet-config` to be in your PATH.
+# MONET_PREFIX to be set, or 'monet-config` to be in your PATH.
 #
 # By default, compilation will take place in SQL_BUILD=BASE/`uname` and SQL
-# will be installed in PREFIX=SQL_BUILD. You can change either directory by
+# will be installed in SQL_PREFIX=SQL_BUILD. You can change either directory by
 # setting the enviroment variables
 #	SQL_BUILD
 # and/or
-#	PREFIX
+#	SQL_PREFIX
 # appropiately before "sourcing" this script.
 #
 # To select your desired compiler ("GNU" or "ntv" (native)), your desired
@@ -30,14 +30,16 @@
 os="`uname`"
 base="${PWD}"
 
-if [ ! -x `monet-config --prefix`/bin/monet-config ] ; then
+if [ ! "${MONET_PREFIX}" ] ; then
+	MONET_PREFIX=`monet-config --prefix`
+fi
+
+if [ ! -x ${MONET_PREFIX}/bin/monet-config ] ; then
 	echo ''
 	echo 'Could not find Monet installation.'
 	echo ''
 	return 1
 fi
-
-MONET_PREFIX=`monet-config --prefix`
 
 
 if [ ! -x bootstrap ] ; then
@@ -48,7 +50,7 @@ if [ ! -x bootstrap ] ; then
 	binpath=""
 	libpath=""
 
-	# check for not or incorrectly set variables (SQL_BUILD, PREFIX, COMP, BITS, LINK)
+	# check for not or incorrectly set variables (SQL_BUILD, SQL_PREFIX, COMP, BITS, LINK)
 
 	if [ ! "${SQL_BUILD}" ] ; then
 		echo ''
@@ -56,11 +58,11 @@ if [ ! -x bootstrap ] ; then
 		echo 'Using SQL_BUILD="'${base}/${os}'" (default).'
 		SQL_BUILD="${base}/${os}"
 	fi
-	if [ ! "${PREFIX}" ] ; then
+	if [ ! "${SQL_PREFIX}" ] ; then
 		echo ''
-		echo 'PREFIX not set to specify desired target directory.'
-		echo 'Using PREFIX="'${SQL_BUILD}'" (default).'
-		PREFIX="${SQL_BUILD}"
+		echo 'SQL_PREFIX not set to specify desired target directory.'
+		echo 'Using SQL_PREFIX="'${SQL_BUILD}'" (default).'
+		SQL_PREFIX="${SQL_BUILD}"
 	fi
 
 	if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
@@ -216,7 +218,7 @@ if [ ! -x bootstrap ] ; then
 	fi
 
 	# prepend target bin-dir to PATH
-	binpath="${PREFIX}/bin:${binpath}"
+	binpath="${SQL_PREFIX}/bin:${binpath}"
 	# prepend Monet's lib dirs to LD_LIBRARY_PATH
 	libpath="${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet:${libpath}"
 	# remove trailing ':'
@@ -261,17 +263,17 @@ if [ ! -x bootstrap ] ; then
 
 #	# we shouldn't need this
 #	if [ "${LD_LIBRARY_PATH}" ] ; then
-#		export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
-#	  else	export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet"
+#		export LD_LIBRARY_PATH="${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
+#	  else	export LD_LIBRARY_PATH="${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/Monet"
 #	fi
 
 #	# this still needed for SQL
-#	export MONETDIST="${PREFIX}"
-	export MONET_MOD_PATH="${PREFIX}/lib:${PREFIX}/lib/sql:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
+#	export MONETDIST="${SQL_PREFIX}"
+	export MONET_MOD_PATH="${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/sql:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
 	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
 
 	# for convenience: store the complete configure-call in CONFIGURE
-	export CONFIGURE="${base}/configure ${conf_opts} --with-monet=${MONET_PREFIX} --prefix=${PREFIX}"
+	export CONFIGURE="${base}/configure ${conf_opts} --with-monet=${MONET_PREFIX} --prefix=${SQL_PREFIX}"
 	echo " CONFIGURE=${CONFIGURE}"
 
 	mkdir -p ${SQL_BUILD}
