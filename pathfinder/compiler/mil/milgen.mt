@@ -40,7 +40,7 @@ prologue {
 };
 
 node  serialize
-      new
+      new_
       insert_
       seqbase
       project
@@ -97,7 +97,7 @@ Prog:        serialize (BatExpr, BatExpr, BatExpr, BatExpr,
     }
     ;
 
-BatExpr:     new
+BatExpr:     new_
     =
     {
         if ($$->varname)

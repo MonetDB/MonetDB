@@ -39,7 +39,7 @@ prologue {
 };
 
 node  serialize
-      new
+      new_
       insert_
       seqbase
       project
@@ -80,7 +80,7 @@ Prog:        serialize (BatExpr, BatExpr, BatExpr, BatExpr,
     { assert (_ll);  /* avoid warning `unused parameter: _ll' */ }
     ;
 
-BatExpr:     new;
+BatExpr:     new_;
 BatExpr:     insert_ (BatExpr, AtomExpr, AtomExpr);
 BatExpr:     seqbase (BatExpr, AtomExpr);
 BatExpr:     project (BatExpr, AtomExpr);

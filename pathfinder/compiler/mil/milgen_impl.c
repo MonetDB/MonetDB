@@ -46,7 +46,7 @@
 
 static int TWIG_ID[] = {
       [ma_serialize] = serialize
-    , [ma_new]       = new
+    , [ma_new]       = new_
     , [ma_insert]    = insert_
     , [ma_seqbase]   = seqbase
     , [ma_project]   = project
@@ -78,7 +78,7 @@ static int TWIG_ID[] = {
  * MIL tree constructor functions of the same name below
  */
 #undef serialize
-#undef new
+#undef new_
 #undef insert_
 #undef seqbase
 #undef project
