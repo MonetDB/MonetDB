@@ -626,6 +626,23 @@ stmt *semantic(mvc * sql, symbol * s)
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
 		return selects(sql, s);
+
+	case SQL_PREP:
+		{
+			dnode *d;
+			list *l = create_stmt_list();
+
+			for (d = s->data.lval->h; d; d = d->next) {
+				symbol *sym = d->data.sym;
+				stmt *st = semantic( sql, sym );
+				if (!st) {
+					list_destroy(l);
+					return NULL;
+				}
+				list_append(l, st);
+			}
+			return stmt_list(l);
+		}
 	
 	default:
 		return sql_error(sql, 01, 

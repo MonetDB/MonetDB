@@ -57,6 +57,7 @@ typedef enum tokens {
 	SQL_DROP_DEFAULT,
 	SQL_DECLARE,
 	SQL_SET,
+	SQL_PREP,
 	SQL_NAME,
 	SQL_USER,
 	SQL_PATH,
@@ -300,6 +301,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	table_name
 	ref_on
 	object_name
+	prep
 	exec
 	exec_ref
 
@@ -327,6 +329,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	object_privileges
 	privileges
 	schema_name
+	sqlstmt_list
 	assignment_commalist
 	opt_column_commalist
 	column_commalist_parens
@@ -390,7 +393,6 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_grantor
 	opt_from_grantor
 	opt_column
-	opt_prep
 	grantor
 	transaction_mode
 	transaction_mode_list
@@ -488,6 +490,10 @@ SQLCODE SQLERROR UNDER WHENEVER
 sqlstmt:
    sql ';' 		{ mvc *m = (mvc*)parm; 
 			  m->sym = $$ = $1; YYACCEPT; }
+ | prep   		{ mvc *m = (mvc*)parm; 
+			  m->sym = $$ = $1; YYACCEPT; }
+ | exec ';' 		{ mvc *m = (mvc*)parm; 
+			  m->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ mvc *m = (mvc*)parm; 
 			  m->sym = $$ = NULL; YYACCEPT; }
  | ';'			{ mvc *m = (mvc*)parm; 
@@ -498,15 +504,20 @@ sqlstmt:
 			  m->sym = $$ = NULL; YYACCEPT; }
  ;
 
+sqlstmt_list:
+    sql 		{ $$ = dlist_append_symbol(dlist_create(), $1); }
+ |  sqlstmt_list ';' sql 	
+			{ $$ = dlist_append_symbol( $1, $3 ); }
+ ;
 
 	/* schema definition language */
 sql: 
-    opt_prep schema  	{ $$ = $2; }
- |  opt_prep grant  	{ $$ = $2; }
- |  opt_prep revoke  	{ $$ = $2; }
- |  opt_prep create  	{ $$ = $2; }
- |  opt_prep drop   	{ $$ = $2; }
- |  opt_prep alter   	{ $$ = $2; }
+    schema  	
+ |  grant  	
+ |  revoke  	
+ |  create  
+ |  drop   
+ |  alter 
  |  declare 
  |  set 
  ;
@@ -1150,11 +1161,11 @@ drop_action:
 	/* data manipulative stmts */
 
 sql: 
-   opt_prep transaction_stmt  	{ $$ = $2; }
- | opt_prep delete_stmt 	{ $$ = $2; }
- | opt_prep insert_stmt  	{ $$ = $2; }
- | opt_prep update_stmt  	{ $$ = $2; }
- | opt_prep copyfrom_stmt 	{ $$ = $2; }
+   transaction_stmt  
+ | delete_stmt 	
+ | insert_stmt 
+ | update_stmt 
+ | copyfrom_stmt
  ;
 
 transaction_stmt:
@@ -1456,8 +1467,7 @@ join_spec:
   ;
 
 sql: 
-    opt_prep select_stmt 	{ $$ = $2; }
- |  exec		
+    select_stmt
  ;
 
 select_stmt:
@@ -2615,11 +2625,18 @@ string:
 		{ $$ = strconcat($1,$2); _DELETE($1); _DELETE($2); }
  ;
 
-opt_prep:
-     PREPARE 	{ mvc *m = (mvc*)parm; 
+prep:
+    PREPARE sqlstmt_list ';'
+		{ mvc *m = (mvc*)parm; 
 		  m->mode = m_prepare; 
-		  $$ = (int)m_prepare; }
- | /*nothing*/  { $$ = (int)m_normal; }
+		  $$ = _symbol_create_list( SQL_PREP, $2); }
+ ;
+
+exec:
+     EXECUTE exec_ref
+		{ mvc *m = (mvc*)parm; 
+		  m->mode = m_execute; 
+		  $$ = $2; }
  ;
 
 exec_ref:
@@ -2639,14 +2656,6 @@ scalar_exp_list:
     scalar_exp 		{ $$ = dlist_append_symbol( dlist_create(), $1); }
  |  scalar_exp_list ',' scalar_exp
 			{ $$ = dlist_append_symbol( $1, $3); }
- ;
-
-
-exec:
-     EXECUTE exec_ref
-		{ mvc *m = (mvc*)parm; 
-		  m->mode = m_execute; 
-		  $$ = $2; }
  ;
 
 
@@ -2741,6 +2750,8 @@ char *token2string(int token)
 		return "Declare";
 	case SQL_SET:
 		return "Set";
+	case SQL_PREP:
+		return "Prepare";
 	case SQL_SELECT:
 		return "Select";
 	case SQL_WHERE:
