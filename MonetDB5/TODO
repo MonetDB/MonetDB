@@ -1,4 +1,9 @@
 MAL language issues
+- re-enact calling the debugger from a script
+- assignment of the form b:=multiplex.tactics("op",b,..) not safe
+  actually reference counting BATs is not stable. 
+  rethink the before/after structure for garabage collection
+  and handle it explicitly in the interpreter.
 - look into the nested (referenced) bat issues
 - check all routines for proper match return type and actual
 action.
@@ -26,6 +31,9 @@ action.
 - keep the list of profile filters in server and update after each resolve call
 
 Implementation
+- BAT calc module only works for aligned BATs. This is less
+ powerful than Monet 4. SQL relies on it, so we have to extend
+functionality
 - global resource management is not ok yet, for 10M tapestry it
 is about 5 times slower. It appears that it grows too slow,
 spending its time on copying bats all the time.
