@@ -122,16 +122,24 @@ while test $# -gt 0; do
 
     --includes)
        	echo \
-	  	-I\${MONET5_INCLUDEDIR}/mal \
+	  	-I\${MONET5_INCLUDEDIR}/atoms \
+	  	-I\${MONET5_INCLUDEDIR}/compiler \
 	  	-I\${MONET5_INCLUDEDIR}/kernel \
-	  	-I\${MONET5_INCLUDEDIR}/atoms 
+	  	-I\${MONET5_INCLUDEDIR}/mal \
+	  	-I\${MONET5_INCLUDEDIR}/mil \
+	  	-I\${MONET5_INCLUDEDIR}/optimizer \
+	  	-I\${MONET5_INCLUDEDIR}
        	;;
 
     --cflags)
        	echo \
-		-I$pkgincludedir/mal \
-		-I$pkgincludedir/kernel \
-		-I$pkgincludedir/atoms 
+	  	-I$pkgincludedir/atoms \
+	  	-I$pkgincludedir/compiler \
+	  	-I$pkgincludedir/kernel \
+	  	-I$pkgincludedir/mal \
+	  	-I$pkgincludedir/mil \
+	  	-I$pkgincludedir/optimizer \
+	  	-I$pkgincludedir
        	;;
 
     --libs)
