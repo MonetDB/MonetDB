@@ -38,6 +38,7 @@
 #include "array.h"
 #include "pfstrings.h"
 #include "oops.h"
+#include "subtyping.h"
 
 static void
 translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c);
@@ -1465,7 +1466,7 @@ loop_liftedElemConstr (FILE *f, int i)
                unless there is a thinking error */
     fprintf(f,
             "iter := iter%03u;\n"
-            "pos := roots.mark(0@0);\n"
+            "pos := roots.mark(1@0);\n"
             "item := roots;\n"
             "kind := roots.project(NODE);\n",
             i);
@@ -1577,189 +1578,7 @@ loop_liftedElemConstr (FILE *f, int i)
             "} # end of loop_liftedElemConstr (counter)\n"
            );
 }
-   
 
-/**
- * translateFunction translates the builtin functions
- *
- * @param f the Stream the MIL code is printed to
- * @param act_level the level of the for-scope
- * @param counter the actual offset of saved variables
- * @param fnQname the name of the function
- * @args the head of the argument list
- */
-static void
-translateFunction (FILE *f, int act_level, int counter, 
-                   PFqname_t fnQname, PFcnode_t *args)
-{
-    if (!PFqname_eq(fnQname,PFqname (PFns_fn,"doc")))
-    {
-        translate2MIL (f, act_level, counter, args->child[0]);
-        /* FIXME: expects strings otherwise something stupid happens */
-        fprintf(f,
-                "{ # translate fn:doc (string?) as document?\n"
-                "var docs := item.tunique.mark(0@0).reverse;\n"
-                "docs := docs.leftfetchjoin(str_values);\n"
-                "docs := docs.reverse.kdiff(ws.fetch(DOC_LOADED).reverse)"
-                        ".mark(0@0).reverse;\n"
-                "docs@batloop () {\n"
-                "ws := add_doc(ws, $t);\n"
-                "}\n"
-                "docs := nil;\n"
-                "var frag := item.leftfetchjoin(str_values);\n"
-                "frag := frag.leftjoin(ws.fetch(DOC_LOADED).reverse);\n"
-                "frag := frag.reverse.mark(0@0).reverse;\n"
-                "kind := get_kind(frag, NODE);\n"
-                "item := kind.project(0@0);\n"
-                "} # end of translate fn:doc (string?) as document?\n"
-               );
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"distinct-doc-order")))
-    {
-        translate2MIL (f, act_level, counter, args->child[0]);
-        fprintf(f,
-                "{ # translate pf:distinct-doc-order (node*) as node*\n"
-                /* FIXME: is this right? */
-                "if (kind.count != kind.get_type(NODE).count) "
-                "ERROR (\"function pf:distinct-doc-order expects only nodes\");\n"
-                /* delete duplicates */
-                "var temp_ddo := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
-                "temp_ddo := temp_ddo.tunique.mark(0@0).reverse;\n"
-                "iter := temp_ddo.leftfetchjoin(iter);\n"
-                "item := temp_ddo.leftfetchjoin(item);\n"
-                "kind := temp_ddo.leftfetchjoin(kind);\n"
-                "temp_ddo := nil;\n"
-                /* sort by iter, frag, pre */
-                "var sorting := iter.reverse.sort.reverse;\n"
-                "sorting := sorting.CTrefine(kind);"
-                "sorting := sorting.CTrefine(item);"
-                "sorting := sorting.mark(0@0).reverse;\n"
-                "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark(1@0);\n"
-                "item := sorting.leftfetchjoin(item);\n"
-                "kind := sorting.leftfetchjoin(kind);\n"
-                "sorting := nil;\n"
-                "} # end of translate pf:distinct-doc-order (node*) as node*\n"
-               );
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"count")))
-    {
-        translate2MIL (f, act_level, counter, args->child[0]);
-        fprintf(f,
-                "{ # translate fn:count (item*) as integer\n"
-                /* counts for all iters the number of items */
-                /* uses the actual loop, to collect the iters, which are translated 
-                   into empty sequences */
-                "var iter_count := {count}(iter.reverse,loop%03u.reverse);\n"
-                "iter_count := iter_count.reverse.mark(0@0).reverse;\n",
-                act_level);
-        addValues (f, "int_values", "iter_count");
-        fprintf(f,
-                "item := iter_count.reverse.mark(0@0).reverse;\n"
-                "iter_count := nil;\n"
-                "iter := loop%03u.reverse.mark(0@0).reverse;\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(INT);\n"
-                "} # end of translate fn:count (item*) as integer\n",
-                act_level);
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"empty")))
-    {
-        translate2MIL (f, act_level, counter, args->child[0]);
-        fprintf(f,
-                "{ # translate fn:empty (item*) as boolean\n"
-                "var iter_count := {count}(iter.reverse,loop%03u.reverse);\n"
-                "var iter_bool := iter_count.[=](0);\n"
-                "iter_count := nil;\n"
-                "iter_bool := iter_bool.leftjoin(bool_map);\n"
-                "iter := iter_bool.mark(0@0).reverse;\n"
-                "pos := iter.project(1@0);\n"
-                "item := iter_bool.reverse.mark(0@0).reverse;\n"
-                "kind := iter.project(BOOL);\n"
-                "iter_bool := nil;\n"
-                "} # end of translate fn:empty (item*) as boolean\n",
-                act_level);
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"not")))
-    {
-        translate2MIL (f, act_level, counter, args->child[0]);
-        fprintf(f,
-                "# translate fn:not (boolean) as boolean\n"
-                "item := item.leftfetchjoin(bool_not);\n"
-               );
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"boolean")))
-    {
-        translate2MIL (f, act_level, counter, args->child[0]);
-            
-        fprintf(f,
-                "{ # translate fn:boolean (item*) as boolean\n"
-                "iter := iter.reverse;\n"
-                "var iter_count := {count}(iter,loop%03u.reverse);\n",
-                act_level);
-        /* FIXME: rewrite stuff two use only one column instead of oid|oid */
-        fprintf(f,
-                "var test := iter_count.ord_uselect(1);\n"
-                "var trues := iter_count.[!=](0);\n"
-                "trues.access(BAT_WRITE);\n"
-                "iter_count := nil;\n"
-                "item := iter.leftfetchjoin(item);\n"
-                "kind := iter.leftfetchjoin(kind);\n"
-                "test := test.mirror;\n"
-                "test := test.leftjoin(kind);\n"
-                "var str_test := test.ord_uselect(STR);\n"
-                "var int_test := test.ord_uselect(INT);\n"
-                "var dbl_test := test.ord_uselect(DBL);\n"
-                "var dec_test := test.ord_uselect(DEC);\n"
-                "var bool_test := test.ord_uselect(BOOL);\n"
-                "test := nil;\n"
-                "str_test := str_test.mirror;\n"
-                "int_test := int_test.mirror;\n"
-                "dbl_test := dbl_test.mirror;\n"
-                "dec_test := dec_test.mirror;\n"
-                "bool_test := bool_test.mirror;\n"
-                "str_test := str_test.leftjoin(item);\n"
-                "int_test := int_test.leftjoin(item);\n"
-                "dec_test := dec_test.leftjoin(item);\n"
-                "dbl_test := dbl_test.leftjoin(item);\n"
-                "bool_test := bool_test.leftjoin(item);\n"
-                "str_test := str_test.leftfetchjoin(str_values);\n"
-                "int_test := int_test.leftfetchjoin(int_values);\n"
-                "dec_test := dec_test.leftfetchjoin(dec_values);\n"
-                "dbl_test := dbl_test.leftfetchjoin(dbl_values);\n"
-                "bool_test := bool_test.ord_uselect(0@0);\n"
-                "str_test := str_test.ord_uselect(\"\");\n"
-                "int_test := int_test.ord_uselect(0);\n"
-                "dec_test := dec_test.ord_uselect(dbl(0));\n"
-                "dbl_test := dbl_test.ord_uselect(dbl(0));\n"
-                "str_test := str_test.project(false);\n"
-                "int_test := int_test.project(false);\n"
-                "dec_test := dec_test.project(false);\n"
-                "dbl_test := dbl_test.project(false);\n"
-                "bool_test := bool_test.project(false);\n"
-                "trues.replace(str_test);\n"
-                "str_test := nil;\n"
-                "trues.replace(int_test);\n"
-                "int_test := nil;\n"
-                "trues.replace(dec_test);\n"
-                "dec_test := nil;\n"
-                "trues.replace(dbl_test);\n"
-                "dbl_test := nil;\n"
-                "trues.replace(bool_test);\n"
-                "bool_test := nil;\n"
-            
-                "trues := trues.leftjoin(bool_map);\n"
-                "iter := trues.mark(0@0).reverse;\n"
-                "pos := iter.project(1@0);\n"
-                "item := trues.reverse.mark(0@0).reverse;\n"
-                "kind := iter.project(BOOL);\n"
-                "trues := nil;\n"
-                "} # end of translate fn:boolean (item*) as boolean\n"
-               );
-            
-    }
-    else translateEmpty (f);
-}
 
 /**
  * loop-liftedAttrConstr creates new attributes which
@@ -1997,6 +1816,965 @@ translateIfThen (FILE *f, int act_level, int counter,
 }
 
 /**
+ * testCastComplete tests if the result of a Cast
+ * also contains empty sequences and produces an
+ * error if empty sequences are found
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param type_ the type to which it should be casted
+ */
+static void
+testCastComplete (FILE *f, int act_level, PFty_t type_)
+{
+    fprintf(f,
+            "if (iter.count != loop%03u.count)\n"
+            "    ERROR (\"'%s' doesn't allow empty sequences to be casted\");\n",
+            act_level, PFty_str (type_));
+}
+
+/**
+ * evaluateCastBlock casts a block from a given type to the target_type type
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param original_type is the type of the items which are casted
+ * @param table is the table where the actual item values are saved
+ * @param target_type is the type to which it is casted
+ */
+static void
+evaluateCastBlock (FILE *f, char *original_type, char *table, char *target_type)
+{
+    fprintf(f,
+            "part_val := kind.ord_uselect(%s);\n"
+            "oid_oid := part_val.mark(0@0).reverse;\n"
+            "part_val := oid_oid.leftfetchjoin(item);\n",
+            original_type);
+    if (table)
+        fprintf(f,
+                "part_val := part_val.leftfetchjoin(%s);\n",
+                table);
+    fprintf(f,
+            "part_val := part_val.%s;\n"
+            "res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
+            "oid_oid := nil;\n"
+            "part_val := nil;\n"
+            "_oid := res_mu.fetch(0);\n"
+            "_val := res_mu.fetch(1);\n",
+            target_type);
+}
+
+/**
+ * evaluateCastAttrBlock casts attributes to the given target_type type
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param target_type is the type to which it is casted
+ */
+static void
+evaluateCastAttrBlock (FILE *f, char *target_type)
+{
+    fprintf(f,
+            "var _attr := kind.get_type(ATTR);\n"
+            "oid_oid := _attr.mark(0@0).reverse;\n"
+            "_attr := oid_oid.leftfetchjoin(item);\n"
+            "frag := oid_oid.leftfetchjoin(kind).get_fragment;\n"
+            "_attr := mposjoin(mposjoin(_attr, frag, ws.fetch(ATTR_PROP)), "
+                              "mposjoin(_attr, frag, ws.fetch(ATTR_FRAG)), "
+                              "ws.fetch(PROP_VAL));\n"
+            "_attr := _attr.%s;\n"
+            "res_mu := merged_union(_oid, oid_oid, _val, _attr);\n"
+            "oid_oid := nil;\n"
+            "_attr := nil;\n"
+            "_oid := res_mu.fetch(0);\n"
+            "_val := res_mu.fetch(1);\n",
+            target_type);
+}
+
+/**
+ * evaluateCastElemBlock casts elements to the given target_type type
+ * by first applying the (inlined) typed-value function to get
+ * the values of the nodes before the actual casting
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param target_type is the type to which it is casted
+ */
+static void
+evaluateCastElemBlock (FILE *f, char *target_type)
+{
+    fprintf(f,
+            /* for elements call dm:typed-value */
+            "var _elem := kind.get_type(NODE);\n"
+            "if (_elem.count != 0)\n"
+            "{\n"
+            "oid_oid := _elem.mark(0@0).reverse;\n"
+            "_elem := oid_oid.leftfetchjoin(item);\n"
+            "frag := oid_oid.leftfetchjoin(kind).get_fragment;\n"
+            /* to get all text nodes a scj is performed */
+            "var res_scj := "
+            "loop_lifted_descendant_or_self_step_with_kind_test_unjoined"
+            "(oid_oid, _elem, frag, ws, TEXT);\n"
+            "oid_oid := nil;\n"
+            /* variables for the result of the scj */
+            "var pruned_input := res_scj.fetch(0);\n"
+            /* pruned_input comes as ctx|iter */
+            "var ctx_dn_item := res_scj.fetch(1);\n"
+            "var ctx_dn_frag := res_scj.fetch(2);\n"
+            "res_scj := nil;\n"
+            /* combine pruned_input and ctx|dn */
+            "pruned_input := pruned_input.reverse.leftjoin(ctx_dn_item.mark(0@0));\n"
+            "_elem := ctx_dn_item.reverse.mark(0@0).reverse;\n"
+            "frag := ctx_dn_frag.reverse.mark(0@0).reverse;\n"
+            "ctx_dn_item := nil;\n"
+            "ctx_dn_frag := nil;\n"
+            /* get the string values of the text nodes */
+            "_elem := mposjoin(mposjoin(_elem, frag, ws.fetch(PRE_PROP)), "
+                              "mposjoin(_elem, frag, ws.fetch(PRE_FRAG)), "
+                              "ws.fetch(PROP_TEXT));\n"
+            "frag := nil;\n"
+            /* for the result of the scj join with the string values */
+            "_elem := pruned_input.leftfetchjoin(_elem);\n"
+            "pruned_input := nil;\n"
+            /* FIXME: calls really expensive function */
+            /* per iteration the strings are concatenated */
+            "_elem := _elem.combine_strings();\n"
+            "oid_oid := _elem.mark(0@0).reverse;\n"
+            "_elem := _elem.reverse.mark(0@0).reverse;\n"
+            "_elem := _elem.%s;\n"
+
+            "res_mu := merged_union(_oid, oid_oid, _val, _elem);\n"
+            "_elem := nil;\n"
+            "_oid := res_mu.fetch(0);\n"
+            "_val := res_mu.fetch(1);\n"
+            "}\n",
+            target_type);
+}
+
+/**
+ * translateCast2INT takes an intermediate result
+ * and casts all possible types to INT. It produces
+ * an error if an iteration contains more than one
+ * value
+ *
+ * @param f the Stream the MIL code is printed to
+ */
+static void
+translateCast2INT (FILE *f)
+{
+    fprintf(f,
+            /* FIXME: is this to restrictive at this point. Can for example a sequence
+                      with two nodes, whose typed-value is empty for both casted to int? */
+            "if (iter.tunique.count != iter.count)\n"
+            "    ERROR (\"cast to integer can only transform singleton sequences\");\n"
+            "if (kind.ord_uselect(QNAME).count != 0)\n"
+            "    ERROR (\"can't cast qname to integer\");\n"
+
+            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+
+            "_oid := kind.ord_uselect(INT);\n"
+            "_oid := _oid.mark(0@0).reverse;\n"
+            "_val := _oid.leftfetchjoin(item);\n"
+            "_val := _val.leftfetchjoin(int_values);\n");
+
+    evaluateCastBlock (f, "BOOL", 0, "[int]");
+    evaluateCastBlock (f, "DEC", "dec_values", "[int]");
+    evaluateCastBlock (f, "DBL", "dbl_values", "[int]");
+    evaluateCastBlock (f, "STR", "str_values", "[int]");
+    evaluateCastAttrBlock (f, "[int]");
+    evaluateCastElemBlock (f, "[int]");
+
+    fprintf(f,
+            "if (_val.ord_uselect(int(nil)).count != 0)\n"
+            "    ERROR (\"couldn't cast all values to integer\");\n");
+
+    addValues(f, "int_values", "_val");
+    fprintf(f,
+            /* create a new void, because typed-value could have been empty 
+               and so _val, can be less than the original item values */
+            "iter := _oid.leftfetchjoin(iter);\n"
+            "pos := _oid.project(1@0);\n"
+            "item := _val.reverse.mark(0@0).reverse;\n"
+            "kind := _oid.project(INT);\n");
+}
+
+/**
+ * translateCast2DEC takes an intermediate result
+ * and casts all possible types to DEC. It produces
+ * an error if an iteration contains more than one
+ * value
+ *
+ * @param f the Stream the MIL code is printed to
+ */
+static void
+translateCast2DEC (FILE *f)
+{
+    fprintf(f,
+            /* FIXME: is this to restrictive at this point. Can for example a sequence
+                      with two nodes, whose typed-value is empty for both casted to int? */
+            "if (iter.tunique.count != iter.count)\n"
+            "    ERROR (\"cast to decimal can only transform singleton sequences\");\n"
+            "if (kind.ord_uselect(QNAME).count != 0)\n"
+            "    ERROR (\"can't cast qname to decimal\");\n"
+
+            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+
+            "_oid := kind.ord_uselect(DEC);\n"
+            "_oid := _oid.mark(0@0).reverse;\n"
+            "_val := _oid.leftfetchjoin(item);\n"
+            "_val := _val.leftfetchjoin(dec_values);\n");
+
+    evaluateCastBlock (f, "BOOL", 0, "[dbl]");
+    evaluateCastBlock (f, "INT", "int_values", "[dbl]");
+    evaluateCastBlock (f, "DBL", "dbl_values", "[dbl]");
+    evaluateCastBlock (f, "STR", "str_values", "[dbl]");
+    evaluateCastAttrBlock (f, "[dbl]");
+    evaluateCastElemBlock (f, "[dbl]");
+
+    fprintf(f,
+            "if (_val.ord_uselect(dbl(nil)).count != 0)\n"
+            "    ERROR (\"couldn't cast all values to decimal\");\n");
+
+    addValues(f, "dec_values", "_val");
+    fprintf(f,
+            /* create a new void, because typed-value could have been empty 
+               and so _val, can be less than the original item values */
+            "iter := _oid.leftfetchjoin(iter);\n"
+            "pos := _oid.project(1@0);\n"
+            "item := _val.reverse.mark(0@0).reverse;\n"
+            "kind := _oid.project(DEC);\n");
+}
+
+/**
+ * translateCast2DBL takes an intermediate result
+ * and casts all possible types to DBL. It produces
+ * an error if an iteration contains more than one
+ * value
+ *
+ * @param f the Stream the MIL code is printed to
+ */
+static void
+translateCast2DBL (FILE *f)
+{
+    fprintf(f,
+            /* FIXME: is this to restrictive at this point. Can for example a sequence
+                      with two nodes, whose typed-value is empty for both casted to int? */
+            "if (iter.tunique.count != iter.count)\n"
+            "    ERROR (\"cast to double can only transform singleton sequences\");\n"
+            "if (kind.ord_uselect(QNAME).count != 0)\n"
+            "    ERROR (\"can't cast qname to double\");\n"
+
+            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+
+            "_oid := kind.ord_uselect(DBL);\n"
+            "_oid := _oid.mark(0@0).reverse;\n"
+            "_val := _oid.leftfetchjoin(item);\n"
+            "_val := _val.leftfetchjoin(dbl_values);\n");
+
+    evaluateCastBlock (f, "BOOL", 0, "[dbl]");
+    evaluateCastBlock (f, "DEC", "dec_values", "[dbl]");
+    evaluateCastBlock (f, "INT", "int_values", "[dbl]");
+    evaluateCastBlock (f, "STR", "str_values", "[dbl]");
+    evaluateCastAttrBlock (f, "[dbl]");
+    evaluateCastElemBlock (f, "[dbl]");
+
+    fprintf(f,
+            "if (_val.ord_uselect(dbl(nil)).count != 0)\n"
+            "    ERROR (\"couldn't cast all values to double\");\n");
+
+    addValues(f, "dbl_values", "_val");
+    fprintf(f,
+            /* create a new void, because typed-value could have been empty 
+               and so _val, can be less than the original item values */
+            "iter := _oid.leftfetchjoin(iter);\n"
+            "pos := _oid.project(1@0);\n"
+            "item := _val.reverse.mark(0@0).reverse;\n"
+            "kind := _oid.project(DBL);\n");
+}
+
+/**
+ * translateCast2STR takes an intermediate result
+ * and casts all possible types to STR. It produces
+ * an error if an iteration contains more than one
+ * value
+ *
+ * @param f the Stream the MIL code is printed to
+ */
+static void
+translateCast2STR (FILE *f)
+{
+    fprintf(f,
+            /* FIXME: is this to restrictive at this point. Can for example a sequence
+                      with two nodes, whose typed-value is empty for both casted to int? */
+            "if (iter.tunique.count != iter.count)\n"
+            "    ERROR (\"cast to string can only transform singleton sequences\");\n"
+            "if (kind.ord_uselect(QNAME).count != 0)\n"
+            "    ERROR (\"can't cast qname to string\");\n"
+
+            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+
+            "_oid := kind.ord_uselect(STR);\n"
+            "_oid := _oid.mark(0@0).reverse;\n"
+            "_val := _oid.leftfetchjoin(item);\n"
+            "_val := _val.leftfetchjoin(str_values);\n");
+
+    evaluateCastBlock (f, "BOOL", 0, "[str]");
+    evaluateCastBlock (f, "DEC", "dec_values", "[str]");
+    evaluateCastBlock (f, "DBL", "dbl_values", "[str]");
+    evaluateCastBlock (f, "INT", "int_values", "[str]");
+    evaluateCastAttrBlock (f, "[str]");
+    evaluateCastElemBlock (f, "[str]");
+
+    fprintf(f,
+            "if (_val.ord_uselect(str(nil)).count != 0)\n"
+            "    ERROR (\"couldn't cast all values to string\");\n");
+
+    addValues(f, "str_values", "_val");
+    fprintf(f,
+            /* create a new void, because typed-value could have been empty 
+               and so _val, can be less than the original item values */
+            "iter := _oid.leftfetchjoin(iter);\n"
+            "pos := _oid.project(1@0);\n"
+            "item := _val.reverse.mark(0@0).reverse;\n"
+            "kind := _oid.project(STR);\n");
+}
+
+/**
+ * translateCast2BOOL takes an intermediate result
+ * and casts all possible types to BOOL. It produces
+ * an error if an iteration contains more than one
+ * value
+ *
+ * @param f the Stream the MIL code is printed to
+ */
+static void
+translateCast2BOOL (FILE *f)
+{
+    fprintf(f,
+            /* FIXME: is this to restrictive at this point. Can for example a sequence
+                      with two nodes, whose typed-value is empty for both casted to int? */
+            "if (iter.tunique.count != iter.count)\n"
+            "    ERROR (\"cast to boolean can only transform singleton sequences\");\n"
+            "if (kind.ord_uselect(QNAME).count != 0)\n"
+            "    ERROR (\"can't cast qname to boolean\");\n"
+
+            "var _oid; var _val; var oid_oid; var part_val; var frag; var res_mu;\n"
+
+            "_oid := kind.ord_uselect(BOOL);\n"
+            "_oid := _oid.mark(0@0).reverse;\n"
+            "_val := _oid.leftfetchjoin(item);\n"
+            "_val := _val.leftfetchjoin(bool_map.reverse);\n");
+
+    evaluateCastBlock (f, "INT", "int_values", "[bit]");
+    evaluateCastBlock (f, "DEC", "dec_values", "[bit]");
+    evaluateCastBlock (f, "DBL", "dbl_values", "[bit]");
+    evaluateCastBlock (f, "STR", "str_values", "[!=](\"\")");
+    evaluateCastAttrBlock (f, "[!=](\"\")");
+    evaluateCastElemBlock (f, "[!=](\"\")");
+
+    fprintf(f,
+            "if (_val.ord_uselect(bit(nil)).count != 0)\n"
+            "    ERROR (\"couldn't cast all values to boolean\");\n");
+
+    fprintf(f,
+            /* create a new void, because typed-value could have been empty 
+               and so _val, can be less than the original item values */
+            "iter := _oid.leftfetchjoin(iter);\n"
+            "pos := _oid.project(1@0);\n"
+            "item := _val.leftjoin(bool_map);\n"
+            "kind := _oid.project(BOOL);\n");
+}
+
+/**
+ * translateCast decides wether the cast can be evaluated
+ * and then calls the specific cast function
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param c the Core node containing the rest of the subtree
+ */
+static void
+translateCast (FILE *f, int act_level, PFcnode_t *c)
+{
+    PFty_t type_ = c->sem.type;
+    int optional = 0;
+    
+    type_ = PFty_defn (type_);
+
+    if (type_.type == ty_opt || type_.type == ty_star)
+    {
+        type_ = PFty_child (type_);
+        optional = 1;
+    }
+
+    switch (type_.type)
+    {
+        case ty_boolean:
+            translateCast2BOOL (f);
+            break;
+        case ty_integer:
+            translateCast2INT (f);
+            break;
+        case ty_decimal:
+            translateCast2DEC (f);
+            break;
+        case ty_double:
+            translateCast2DBL (f);
+            break;
+        case ty_untypedAtomic:
+        case ty_string:
+            translateCast2STR (f);
+            break;
+        default:
+            PFlog("cast to type '%s' ignored",
+                  PFty_str(optional?PFty_opt(type_):type_));
+            break;
+    }
+
+    if (!optional)
+        testCastComplete (f, act_level, type_);
+}
+
+/**
+ * evaluateOp evaluates a operation and gives back a new
+ * item column with the references to the updated values.
+ * It doesn't test, if the intermediate results are aligned
+ * and therefore doesn't work, if either the order of iter
+ * is not given or some rows (like in the optional case)
+ * are missing.
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param counter the actual offset of saved variables
+ * @param operator the operator which is evaluated
+ * @param table the name of the table where the values are saved
+ */
+static void
+evaluateOp (FILE *f, int counter, char *operator, char *table)
+{
+    /* FIXME: assume that both intermediate results are aligned 
+              otherwise this doesn't work */
+    fprintf(f, "item := item.leftfetchjoin(%s);\n", table);
+    fprintf(f, "item%03u := item%03u.leftfetchjoin(%s);\n",
+            counter, counter, table);
+    /* item%03u is the older (first) argument and has to be the first operand
+       for the evaluation */
+    fprintf(f, "item := item%03u.[%s](item);\n", counter, operator);
+    addValues(f, table, "item");
+    fprintf(f, "item := item.reverse.mark(0@0).reverse;\n");
+}
+
+/**
+ * evaluateOpOpt evaluates a operation and gives back a new 
+ * intermediate result. It first gets the iter values and joins
+ * the two input with their iter values, which makes it possible
+ * to evaluate operations where the operands are empty
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param counter the actual offset of saved variables
+ * @param operator the operator which is evaluated
+ * @param table the name of the table where the values are saved
+ * @param kind the type of the new intermediate result
+ */
+static void
+evaluateOpOpt (FILE *f, int counter, char *operator, char *table, char *kind)
+{
+    fprintf(f, "item := item.leftfetchjoin(%s);\n", table);
+    fprintf(f, "item := iter.reverse.leftfetchjoin(item);\n");
+    fprintf(f, "item%03u := item%03u.leftfetchjoin(%s);\n",
+            counter, counter, table);
+    fprintf(f, "item%03u := iter%03u.reverse.leftfetchjoin(item%03u);\n",
+            counter, counter, counter);
+    /* item%03u is the older (first) argument and has to be the first operand
+       for the evaluation */
+    fprintf(f, "item := item%03u.[%s](item);\n", counter, operator);
+    fprintf(f, "iter := item.mark(0@0).reverse;\n");
+    fprintf(f, "pos := iter.project(1@0);\n");
+    fprintf(f, "kind := iter.project(%s);\n", kind);
+    addValues(f, table, "item");
+    fprintf(f, "item := item.reverse.mark(0@0).reverse;\n");
+}
+
+/**
+ * translateOperation takes a operator and a core tree node
+ * containing two arguments and calls according to the input
+ * type a helper function, which evaluates the operation on
+ * the intermediate results of the input
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param operator the operator which is evaluated
+ * @args the head of the argument list
+ */
+static void
+translateOperation (FILE *f, int act_level, int counter, 
+                    char *operator, PFcnode_t *args)
+{
+    PFty_t type_ = args->type;
+
+    /* translate the subtrees */
+    translate2MIL (f, act_level, counter, args->child[0]);
+    counter++;
+    saveResult (f, counter); 
+    translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+
+    /* evaluate the operation */
+    if (PFty_eq(type_, PFty_integer()))
+    {
+        evaluateOp (f, counter, operator, "int_values");
+    }
+    else if (PFty_eq(type_, PFty_double()))
+    {
+        evaluateOp (f, counter, operator, "dbl_values");
+    }
+    else if (PFty_eq(type_, PFty_decimal()))
+    {
+        evaluateOp (f, counter, operator, "dec_values");
+    }
+    else if (PFty_eq(type_, PFty_opt(PFty_integer())))
+    {
+        evaluateOpOpt (f, counter, operator, "int_values", "INT");
+    }
+    else if (PFty_eq(type_, PFty_opt(PFty_double())))
+    {
+        evaluateOpOpt (f, counter, operator, "dbl_values", "DBL");
+    }
+    else if (PFty_eq(type_, PFty_opt(PFty_decimal())))
+    {
+        evaluateOpOpt (f, counter, operator, "dec_values", "DEC");
+    }
+    else
+        PFlog("thinking error: first argument is of type %s",
+              PFty_str(type_));
+
+    /* clear the intermediate result of the second subtree */
+    deleteResult (f, counter);
+}
+
+/**
+ * evaluateComp evaluates a comparison and gives back a new
+ * item column with the boolean values.
+ * It doesn't test, if the intermediate results are aligned
+ * and therefore doesn't work, if either the order of iter
+ * is not given or some rows (like in the optional case)
+ * are missing.
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param counter the actual offset of saved variables
+ * @param comp the comparison which is evaluated
+ * @param table the name of the table where the values are saved
+ */
+static void
+evaluateComp (FILE *f, int counter, char *operator, char *table)
+{
+    /* FIXME: assume that both intermediate results are aligned 
+              otherwise this doesn't work */
+    if (table)
+    {
+        fprintf(f, "item := item.leftfetchjoin(%s);\n", table);
+        fprintf(f, "item%03u := item%03u.leftfetchjoin(%s);\n",
+                counter, counter, table);
+    }
+    /* item%03u is the older (first) argument and has to be the first operand
+       for the evaluation */
+    fprintf(f, "item := item%03u.[%s](item);\n", counter, operator);
+    fprintf(f, "item := item.leftjoin(bool_map);\n");
+    fprintf(f, "kind := kind.project(BOOL);\n");
+}
+
+/**
+ * evaluateCompOpt evaluates a comparison and gives back a new 
+ * intermediate result. It first gets the iter values and joins
+ * the two input with their iter values, which makes it possible
+ * to evaluate comparisons where the operands are empty
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param counter the actual offset of saved variables
+ * @param comp the comparison which is evaluated
+ * @param table the name of the table where the values are saved
+ */
+static void
+evaluateCompOpt (FILE *f, int counter, char *operator, char *table)
+{
+    if (table)
+    {
+        fprintf(f, "item := item.leftfetchjoin(%s);\n", table);
+        fprintf(f, "item := iter.reverse.leftfetchjoin(item);\n");
+        fprintf(f, "item%03u := item%03u.leftfetchjoin(%s);\n",
+                counter, counter, table);
+        fprintf(f, "item%03u := iter%03u.reverse.leftfetchjoin(item%03u);\n",
+                counter, counter, counter);
+    }
+    /* item%03u is the older (first) argument and has to be the first operand
+       for the evaluation */
+    fprintf(f, "item := item%03u.[%s](item);\n", counter, operator);
+    fprintf(f,
+            "iter := item.mark(0@0).reverse;\n"
+             "pos := iter.project(1@0);\n"
+             "item := item.leftjoin(bool_map);\n"
+             "item := item.reverse.mark(0@0).reverse;\n"
+             "kind := iter.project(BOOL);\n");
+}
+
+/**
+ * translateComparison takes a operator and a core tree node
+ * containing two arguments and calls according to the input
+ * type a helper function, which evaluates the comparison on
+ * the intermediate results of the input
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param comp the comparison which is evaluated
+ * @args the head of the argument list
+ */
+static void
+translateComparison (FILE *f, int act_level, int counter, 
+                    char *comp, PFcnode_t *args)
+{
+    PFty_t type_ = args->type;
+
+    /* translate the subtrees */
+    translate2MIL (f, act_level, counter, args->child[0]);
+    counter++;
+    saveResult (f, counter); 
+    translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+
+    /* evaluate the comparison */
+    if (PFty_eq(type_, PFty_integer()))
+    {
+        evaluateComp (f, counter, comp, "int_values");
+    }
+    else if (PFty_eq(type_, PFty_double()))
+    {
+        evaluateComp (f, counter, comp, "dbl_values");
+    }
+    else if (PFty_eq(type_, PFty_decimal()))
+    {
+        evaluateComp (f, counter, comp, "dec_values");
+    }
+    else if (PFty_eq(type_, PFty_boolean()))
+    {
+        evaluateComp (f, counter, comp, 0);
+    }
+    else if (PFty_eq(type_, PFty_string()))
+    {
+        evaluateComp (f, counter, comp, "str_values");
+    }
+    else if (PFty_eq(type_, PFty_opt(PFty_integer())))
+    {
+        evaluateCompOpt (f, counter, comp, "int_values");
+    }
+    else if (PFty_eq(type_, PFty_opt(PFty_double())))
+    {
+        evaluateCompOpt (f, counter, comp, "dbl_values");
+    }
+    else if (PFty_eq(type_, PFty_opt(PFty_decimal())))
+    {
+        evaluateCompOpt (f, counter, comp, "dec_values");
+    }
+    else if (PFty_eq(type_, PFty_opt(PFty_boolean())))
+    {
+        evaluateCompOpt (f, counter, comp, 0);
+    }
+    else if (PFty_eq(type_, PFty_opt(PFty_string())))
+    {
+        evaluateCompOpt (f, counter, comp, "str_values");
+    }
+    else
+        PFlog("thinking error: first argument is of type %s",
+              PFty_str(type_));
+
+    /* clear the intermediate result of the second subtree */
+    deleteResult (f, counter);
+}
+
+/**
+ * translateFunction translates the builtin functions
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param fnQname the name of the function
+ * @args the head of the argument list
+ */
+static void
+translateFunction (FILE *f, int act_level, int counter, 
+                   PFqname_t fnQname, PFcnode_t *args)
+{
+    if (!PFqname_eq(fnQname,PFqname (PFns_fn,"doc")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        /* FIXME: expects strings otherwise something stupid happens */
+        fprintf(f,
+                "{ # translate fn:doc (string?) as document?\n"
+                "var docs := item.tunique.mark(0@0).reverse;\n"
+                "docs := docs.leftfetchjoin(str_values);\n"
+                "docs := docs.reverse.kdiff(ws.fetch(DOC_LOADED).reverse)"
+                        ".mark(0@0).reverse;\n"
+                "docs@batloop () {\n"
+                "ws := add_doc(ws, $t);\n"
+                "}\n"
+                "docs := nil;\n"
+                "var frag := item.leftfetchjoin(str_values);\n"
+                "frag := frag.leftjoin(ws.fetch(DOC_LOADED).reverse);\n"
+                "frag := frag.reverse.mark(0@0).reverse;\n"
+                "kind := get_kind(frag, NODE);\n"
+                "item := kind.project(0@0);\n"
+                "} # end of translate fn:doc (string?) as document?\n"
+               );
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"distinct-doc-order")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fprintf(f,
+                "{ # translate pf:distinct-doc-order (node*) as node*\n"
+                /* FIXME: is this right? */
+                "if (kind.count != kind.get_type(NODE).count) "
+                "ERROR (\"function pf:distinct-doc-order expects only nodes\");\n"
+                /* delete duplicates */
+                "var temp_ddo := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
+                "temp_ddo := temp_ddo.tunique.mark(0@0).reverse;\n"
+                "iter := temp_ddo.leftfetchjoin(iter);\n"
+                "item := temp_ddo.leftfetchjoin(item);\n"
+                "kind := temp_ddo.leftfetchjoin(kind);\n"
+                "temp_ddo := nil;\n"
+                /* sort by iter, frag, pre */
+                "var sorting := iter.reverse.sort.reverse;\n"
+                "sorting := sorting.CTrefine(kind);"
+                "sorting := sorting.CTrefine(item);"
+                "sorting := sorting.mark(0@0).reverse;\n"
+                "iter := sorting.leftfetchjoin(iter);\n"
+                "pos := iter.mark(1@0);\n"
+                "item := sorting.leftfetchjoin(item);\n"
+                "kind := sorting.leftfetchjoin(kind);\n"
+                "sorting := nil;\n"
+                "} # end of translate pf:distinct-doc-order (node*) as node*\n"
+               );
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"count")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fprintf(f,
+                "{ # translate fn:count (item*) as integer\n"
+                /* counts for all iters the number of items */
+                /* uses the actual loop, to collect the iters, which are translated 
+                   into empty sequences */
+                "var iter_count := {count}(iter.reverse,loop%03u.reverse);\n"
+                "iter_count := iter_count.reverse.mark(0@0).reverse;\n",
+                act_level);
+        addValues (f, "int_values", "iter_count");
+        fprintf(f,
+                "item := iter_count.reverse.mark(0@0).reverse;\n"
+                "iter_count := nil;\n"
+                "iter := loop%03u.reverse.mark(0@0).reverse;\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(INT);\n"
+                "} # end of translate fn:count (item*) as integer\n",
+                act_level);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"empty")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fprintf(f,
+                "{ # translate fn:empty (item*) as boolean\n"
+                "var iter_count := {count}(iter.reverse,loop%03u.reverse);\n"
+                "var iter_bool := iter_count.[=](0);\n"
+                "iter_count := nil;\n"
+                "iter_bool := iter_bool.leftjoin(bool_map);\n"
+                "iter := iter_bool.mark(0@0).reverse;\n"
+                "pos := iter.project(1@0);\n"
+                "item := iter_bool.reverse.mark(0@0).reverse;\n"
+                "kind := iter.project(BOOL);\n"
+                "iter_bool := nil;\n"
+                "} # end of translate fn:empty (item*) as boolean\n",
+                act_level);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"not")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fprintf(f,
+                "# translate fn:not (boolean) as boolean\n"
+                "item := item.leftfetchjoin(bool_not);\n"
+               );
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"boolean")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+            
+        fprintf(f,
+                "{ # translate fn:boolean (item*) as boolean\n"
+                "iter := iter.reverse;\n"
+                "var iter_count := {count}(iter,loop%03u.reverse);\n",
+                act_level);
+        /* FIXME: rewrite stuff two use only one column instead of oid|oid */
+        fprintf(f,
+                "var test := iter_count.ord_uselect(1);\n"
+                "var trues := iter_count.[!=](0);\n"
+                "trues.access(BAT_WRITE);\n"
+                "iter_count := nil;\n"
+                "item := iter.leftfetchjoin(item);\n"
+                "kind := iter.leftfetchjoin(kind);\n"
+                "test := test.mirror;\n"
+                "test := test.leftjoin(kind);\n"
+                "var str_test := test.ord_uselect(STR);\n"
+                "var int_test := test.ord_uselect(INT);\n"
+                "var dbl_test := test.ord_uselect(DBL);\n"
+                "var dec_test := test.ord_uselect(DEC);\n"
+                "var bool_test := test.ord_uselect(BOOL);\n"
+                "test := nil;\n"
+                "str_test := str_test.mirror;\n"
+                "int_test := int_test.mirror;\n"
+                "dbl_test := dbl_test.mirror;\n"
+                "dec_test := dec_test.mirror;\n"
+                "bool_test := bool_test.mirror;\n"
+                "str_test := str_test.leftjoin(item);\n"
+                "int_test := int_test.leftjoin(item);\n"
+                "dec_test := dec_test.leftjoin(item);\n"
+                "dbl_test := dbl_test.leftjoin(item);\n"
+                "bool_test := bool_test.leftjoin(item);\n"
+                "str_test := str_test.leftfetchjoin(str_values);\n"
+                "int_test := int_test.leftfetchjoin(int_values);\n"
+                "dec_test := dec_test.leftfetchjoin(dec_values);\n"
+                "dbl_test := dbl_test.leftfetchjoin(dbl_values);\n"
+                "bool_test := bool_test.ord_uselect(0@0);\n"
+                "str_test := str_test.ord_uselect(\"\");\n"
+                "int_test := int_test.ord_uselect(0);\n"
+                "dec_test := dec_test.ord_uselect(dbl(0));\n"
+                "dbl_test := dbl_test.ord_uselect(dbl(0));\n"
+                "str_test := str_test.project(false);\n"
+                "int_test := int_test.project(false);\n"
+                "dec_test := dec_test.project(false);\n"
+                "dbl_test := dbl_test.project(false);\n"
+                "bool_test := bool_test.project(false);\n"
+                "trues.replace(str_test);\n"
+                "str_test := nil;\n"
+                "trues.replace(int_test);\n"
+                "int_test := nil;\n"
+                "trues.replace(dec_test);\n"
+                "dec_test := nil;\n"
+                "trues.replace(dbl_test);\n"
+                "dbl_test := nil;\n"
+                "trues.replace(bool_test);\n"
+                "bool_test := nil;\n"
+            
+                "trues := trues.leftjoin(bool_map);\n"
+                "iter := trues.mark(0@0).reverse;\n"
+                "pos := iter.project(1@0);\n"
+                "item := trues.reverse.mark(0@0).reverse;\n"
+                "kind := iter.project(BOOL);\n"
+                "trues := nil;\n"
+                "} # end of translate fn:boolean (item*) as boolean\n"
+               );
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fprintf(f,
+                /* for elements call dm:typed-value */
+                "frag := kind.get_fragment;\n"
+                /* to get all text nodes a scj is performed */
+                "var res_scj := "
+                "loop_lifted_descendant_or_self_step_with_kind_test_unjoined"
+                "(iter, item, frag, ws, TEXT);\n"
+                "oid_oid := nil;\n"
+                /* variables for the result of the scj */
+                "var pruned_input := res_scj.fetch(0);\n"
+                /* pruned_input comes as ctx|iter */
+                "var ctx_dn_item := res_scj.fetch(1);\n"
+                "var ctx_dn_frag := res_scj.fetch(2);\n"
+                "res_scj := nil;\n"
+                /* combine pruned_input and ctx|dn */
+                "pruned_input := pruned_input.reverse.leftjoin(ctx_dn_item.mark(0@0));\n"
+                "item := ctx_dn_item.reverse.mark(0@0).reverse;\n"
+                "frag := ctx_dn_frag.reverse.mark(0@0).reverse;\n"
+                "ctx_dn_item := nil;\n"
+                "ctx_dn_frag := nil;\n"
+                /* get the string values of the text nodes */
+                "item := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
+                                 "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
+                                 "ws.fetch(PROP_TEXT));\n"
+                "frag := nil;\n"
+                /* for the result of the scj join with the string values */
+                "var iter_item := pruned_input.leftfetchjoin(item);\n"
+                "pruned_input := nil;\n"
+                /* FIXME: calls really expensive function */
+                /* per iteration the strings are concatenated */
+                "iter_item := iter_item.combine_strings();\n"
+                "iter := iter_item.mark(0@0).reverse;\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n"
+                "item := iter_item.reverse.mark(0@0).reverse;\n");
+        addValues (f, "str_values", "item");
+        fprintf(f, "item := item.reverse.mark(0@0).reverse;\n");
+    }
+    /* calculation functions just call an extra function with
+       their operator argument to avoid code duplication */
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"plus")))
+    {
+        translateOperation (f, act_level, counter, "+", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"minus")))
+    {
+        translateOperation (f, act_level, counter, "-", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"times")))
+    {
+        translateOperation (f, act_level, counter, "*", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"div")))
+    {
+        translateOperation (f, act_level, counter, "/", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"mod")))
+    {
+        translateOperation (f, act_level, counter, "%", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"idiv")))
+    {
+        /* the semantics of idiv are a normal div operation
+           followed by a cast to integer */
+        translateOperation (f, act_level, counter, "/", args);
+        translateCast2INT (f);
+        testCastComplete(f, act_level, PFty_integer());
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"eq")))
+    {
+        translateComparison (f, act_level, counter, "=", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"ne")))
+    {
+        translateComparison (f, act_level, counter, "!=", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"ge")))
+    {
+        translateComparison (f, act_level, counter, ">=", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"gt")))
+    {
+        translateComparison (f, act_level, counter, ">", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"le")))
+    {
+        translateComparison (f, act_level, counter, "<=", args);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"lt")))
+    {
+        translateComparison (f, act_level, counter, "<", args);
+    }
+    else 
+    {
+        PFlog("function %s is not supported and therefore ignored",
+              PFqname_str (fnQname));
+        fprintf(f,
+                "# empty intermediate result "
+                "instead of unsupported function %s\n",
+                PFqname_str (fnQname));
+        translateEmpty (f);
+    }
+}
+
+static int noConstructor (PFcnode_t *);
+static void unfold_let (PFcnode_t *, PFcnode_t *, PFvar_t *);
+
+/**
  * translate2MIL prints the MIL-expressions, for the following
  * core nodes:
  * c_var, c_seq, c_for, c_let
@@ -2011,7 +2789,7 @@ translateIfThen (FILE *f, int act_level, int counter,
  * c_nil
  * c_apply, c_arg,
  * c_typesw, c_cases, c_case, c_seqtype, c_seqcast
- * c_error, c_root, c_int_eq
+ * c_error, c_root
  *
  * @param f the Stream the MIL code is printed to
  * @param act_level the level of the for-scope
@@ -2023,6 +2801,7 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
 {
     char *ns, *loc;
     int bool_res;
+    PFty_t cast_type;
 
     assert(c);
     switch (c->kind)
@@ -2051,9 +2830,30 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             }
             break;
         case c_let:
-            translate2MIL (f, act_level, counter, c->child[1]);
             if (c->child[0]->sem.var->used)
-                insertVar (f, act_level, c->child[0]->sem.var->vid);
+            {
+                /* small optimization, which substitutes the variable
+                   of the let expression, which contains no constructors
+                   and is used only once */
+                if ((c->child[0]->sem.var->used == 1) &&
+                    noConstructor (c->child[1]))
+                {
+                    /* test if content of the let clause is only its
+                       variable bounded and substitutes let clause 
+                       completely then */
+                    if ((c->child[2] == c_var) &&
+                        (c->child[2]->sem.var == c->child[0]->sem.var))
+                        c->child[2] = c->child[1];
+                    else
+                        unfold_let (c->child[2], c->child[1], 
+                                    c->child[0]->sem.var);
+                }
+                else
+                {
+                    translate2MIL (f, act_level, counter, c->child[1]);
+                    insertVar (f, act_level, c->child[0]->sem.var->vid);
+                }
+            }
 
             translate2MIL (f, act_level, counter, c->child[2]);
             break;
@@ -2141,7 +2941,7 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
                     deleteResult (f, counter);
                     counter--;
             }
-            printf("} # end of ifthenelse-translation\n");
+            fprintf(f, "} # end of ifthenelse-translation\n");
             deleteResult (f, counter);
             break;
         case c_locsteps:
@@ -2335,18 +3135,122 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             translateEmpty (f);
             break;
         case c_seqcast:
-            /* seqcast just ignores the cast */
-            PFlog("cast to '%s' ignored",PFty_str (c->child[0]->sem.type));
             translate2MIL (f, act_level, counter, c->child[1]);
+            /* debugging information */
+            /*
+            PFlog("input type: %s",
+                  PFty_str (c->child[1]->type));
+            PFlog("cast type: %s",
+                  PFty_str (c->child[0]->sem.type));
+            */
+
+            /* throws away casts if input type is subtype of
+               cast type and cast type without quantifier is
+               the same type like the input type */
+            cast_type = c->child[0]->sem.type;
+            if (cast_type.type == ty_opt || 
+                cast_type.type == ty_star ||
+                cast_type.type == ty_plus)
+                cast_type = PFty_child (cast_type);
+            /*
+            if (PFty_subtype (c->child[1]->type, c->child[0]->sem.type) &&
+                PFty_subtype (cast_type, c->child[1]->type))
+            */
+            if (PFty_eq (c->child[1]->type, c->child[0]->sem.type) ||
+                PFty_eq (cast_type, c->child[1]->type))
+            {
+                break;
+            }
+            else if (PFty_promotable (c->child[1]->type, c->child[0]->sem.type))
+            {
+                translateCast (f, act_level, c->child[0]);
+            }
+            else
+                PFoops (OOPS_TYPECHECK,
+                        "cast from '%s' to '%s' not allowed",
+                        PFty_str (c->child[1]->type),
+                        PFty_str (c->child[0]->sem.type));
+
             break;
         case c_apply:
             translateFunction (f, act_level, counter, 
                                c->sem.fun->qname, c->child[0]);
             break;
+        case c_typesw:
+            /* prunes the typeswitches where the branch is already
+               known at compiletime and reports error otherwise */
+            cast_type = c->child[1]->child[0]->child[0]->sem.type;
+
+            if (PFty_subtype (c->child[0]->type, cast_type))
+            {
+                PFlog("typeswitch removed: ``%s'' is subtype of ``%s''",
+                      PFty_str(c->child[0]->type), PFty_str(cast_type));
+                translate2MIL (f, act_level, counter,
+                               c->child[1]->child[0]->child[1]);
+            }
+            else if (PFty_disjoint (c->child[0]->type, cast_type))
+            {
+                PFlog("typeswitch removed: ``%s'' is disjoint from ``%s''",
+                      PFty_str(c->child[0]->type), PFty_str(cast_type));
+                translate2MIL (f, act_level, counter, c->child[2]);
+            }
+            else
+                PFoops (OOPS_TYPECHECK,
+                        "couldn't solve typeswitch at compile time");
+            break;
         case c_nil:
+            PFlog("nil occured");
         default: 
             PFoops (OOPS_WARNING, "not supported feature is translated");
             break;
+    }
+}
+
+/**
+ * noConstructor tests if constructors are used in core tree
+ * and report 0 if at least one is found and 1 else
+ *
+ * @param c the core tree, which is tested on constructor containment
+ * @return 1 if no constructor is found - else 0
+ */
+static int
+noConstructor (PFcnode_t *c)
+{
+    int i;
+    if (c->kind == c_elem || c->kind == c_attr || c->kind == c_text ||
+        c->kind == c_doc || c->kind == c_comment || c->kind == c_pi)
+        return 0;
+    else 
+        for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+            if (!noConstructor (c->child[i]))
+                return 0;
+
+    return 1;
+}
+
+/**
+ * unfold_let searches through a tree c and expands every use of the
+ * variable var through the substitute tree
+ *
+ * @param c the tree, where the variable is searched
+ * @param substitute the subtree, which is inserted instead of the variable
+ * @param var the variable, which will be substituted
+ */
+static void
+unfold_let (PFcnode_t *c, PFcnode_t *substitute, PFvar_t *var)
+{
+    int i;
+    for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+    {
+        if ((c->child[i]->kind == c_var) && 
+            (c->child[i]->sem.var == var))
+        {
+            c->child[i] = substitute;
+        }
+        else
+        {
+            unfold_let (c->child[i], substitute, var);
+        }
     }
 }
 
@@ -2412,7 +3316,7 @@ append_lev (FILE *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
        /* the field used is for pruning the MIL code and
           avoid translation of variables which are later
           not used */
-       c->sem.var->used = 1;
+       c->sem.var->used += 1;
     }
 
     /* only in for and let variables can be bound */
