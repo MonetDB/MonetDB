@@ -1,7 +1,7 @@
 
 This directory ($MONETDIST/tests) contains several suites (see below) of
 tests for Monet that are not (yet) assigned to one of the source or module
-directories. See $MONETDIST/src/utils/testing/README for further details
+directories. See $MONETDIST/src/testing/README for further details
 concerning testing.
 
 test suites in this directory:
