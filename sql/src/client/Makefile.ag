@@ -12,13 +12,13 @@ INCLUDES = \
 
 bin_sql_client = {
 	SOURCES = sql_client.c catalog_client.c statement_dump.c \
-		  comm.c comm.h gdk.c 
+		  comm.c comm.h gdk.c query.h
 	LIBS = ../common/libsql \
 		-L$(MONET_PREFIX)/lib/Monet -lstream $(GETOPT_LIBS)
 }
 
 bin_Msql = {
-	SOURCES = Msql.c comm.c comm.h gdk.c 
+	SOURCES = Msql.c comm.c comm.h gdk.c query.h
 	LIBS = -L$(MONET_PREFIX)/lib/Monet -lstream \
 			$(READLINE_LIBS) $(GETOPT_LIBS) $(PTHREAD_LIBS)
 }

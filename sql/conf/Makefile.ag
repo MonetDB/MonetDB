@@ -1,6 +1,5 @@
 EXTRA_DIST = \
-	conf-medusa conf-apps conf-aix conf-linux \
 	config.guess config.sub \
-	install-sh mkinstalldirs missing depcomp \
-	ltmain.sh ltconfig    \
+	install-sh mkinstalldirs missing \
+	ltmain.sh \
 	stamp-h.in config.h.in
