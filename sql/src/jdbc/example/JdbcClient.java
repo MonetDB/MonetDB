@@ -406,7 +406,7 @@ public class JdbcClient {
 									int col = 1;
 									out.print("+----------\n| ");
 									for (; col < md.getColumnCount(); col++) {
-										System.out.print(md.getColumnName(col) + "\t");
+										out.print(md.getColumnName(col) + "\t");
 									}
 									out.println(md.getColumnName(col));
 									out.println("+----------");
@@ -706,13 +706,21 @@ public class JdbcClient {
 				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqname());
 				ResultSetMetaData rsmd = rs.getMetaData();
 				out.println("<table name=\"" + table.getFqname()+ "\">");
+				String data;
 				while (rs.next()) {
 					out.println("  <row>");
 					for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-						out.print("    ");
-						out.print("<" + rsmd.getColumnName(i) + ">");
-						out.print(rs.getString(i).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
-						out.println("</" + rsmd.getColumnName(i) + ">");
+						data = rs.getString(i);
+						if (data != null) {
+							out.print("    ");
+							out.print("<" + rsmd.getColumnName(i));
+							if (data.length() == 0) {
+								out.println(" />");
+							} else {
+								out.print(">" + data.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
+								out.println("</" + rsmd.getColumnName(i) + ">");
+							}
+						}
 					}
 					out.println("  </row>");
 				}
