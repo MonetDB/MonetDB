@@ -42,6 +42,7 @@ All_mods@batloop {
  salgebra: loading... done.
     radix: loading... done.
        qt: loading... done.
+ profiler: loading... done.
       pcl: loading... done.
       oo7: loading... done.
 monettime: loading... done.
@@ -53,17 +54,22 @@ malalgebra: loading... done.
      lock: loading... done.
    kernel: loaded.
  iterator: loading... done.
+    image: loading... done.
      enum: loading... done.
   decimal: loading... done.
   ddbench: loading... done.
  counters: loading... done.
+    color: loading... done.
   cluster: loaded.
      blob: loading... done.
 bitvector: loaded.
    bitset: loading... done.
+bat_mmath: loading... done.
+ bat_cast: loading... done.
 bat_arith: loading... done.
       bat: loaded.
  ascii_io: loading... done.
+    array: loading... done.
     arith: loaded.
   algebra: loaded.
     alarm: loading... done.
@@ -72,24 +78,29 @@ bat_arith: loading... done.
 
 table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 #-----------------#
-# 45 modules	  #
+# 50 modules	  # name
 #-----------------#
 [ "aggr"	  ]
 [ "aggrX3"	  ]
 [ "alarm"	  ]
 [ "algebra"	  ]
 [ "arith"	  ]
+[ "array"	  ]
 [ "ascii_io"	  ]
 [ "bat"		  ]
 [ "bat_arith"	  ]
+[ "bat_cast"	  ]
+[ "bat_mmath"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
 [ "cluster"	  ]
+[ "color"	  ]
 [ "counters"	  ]
 [ "ddbench"	  ]
 [ "decimal"	  ]
 [ "enum"	  ]
+[ "image"	  ]
 [ "iterator"	  ]
 [ "kernel"	  ]
 [ "lock"	  ]
@@ -102,6 +113,7 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 [ "monettime"	  ]
 [ "oo7"		  ]
 [ "pcl"		  ]
+[ "profiler"	  ]
 [ "qt"		  ]
 [ "radix"	  ]
 [ "salgebra"	  ]

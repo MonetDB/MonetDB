@@ -39,6 +39,7 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "pcl"		  ]
+[ "profiler"	  ]
 [ "radix"	  ]
 [ "salgebra"	  ]
 [ "stats"	  ]
@@ -608,8 +609,8 @@ Module: "lock"
 
 Module: "mapi"
 
-[ 20 ]
-[ 20 ]
+[ 21 ]
+[ 21 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature						| help																							  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -830,6 +831,17 @@ Module: "pcl"
 [ "pcl_stop_rates",	  "COMMAND:   ",  "pcl_stop_rates(BAT[int,any]) : BAT[int,dbl]",  "stop event counters and return the requested rates."		  ]
 [ "pcl_try",		  "COMMAND:   ",  "pcl_try(BAT[int,any], int) : bit",		  "try wheter the events could be started together on this CPU"	  ]
 [ "test_pcl",		  "PROC:      ",  "test_pcl() : void",				  "not available"						  ]
+
+Module: "profiler"
+
+[ 3 ]
+[ 3 ]
+#-----------------------------------------------------------------------------------------------------------------#
+# function			type		signature			help					  # name
+#-----------------------------------------------------------------------------------------------------------------#
+[ "setFilter",		  "COMMAND:   ",  "setFilter(str, str) : int",	  "Set the profile filter strings"	  ]
+[ "startProfiler",	  "COMMAND:   ",  "startProfiler() : int",	  "Start the event profiling stream"	  ]
+[ "stopProfiler",	  "COMMAND:   ",  "stopProfiler() : int",	  "Stop the event profiling stream"	  ]
 
 Module: "radix"
 
