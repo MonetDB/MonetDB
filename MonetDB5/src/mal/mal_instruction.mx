@@ -79,14 +79,12 @@ during parsing to the generic form.
 
 The assignment patterns recognized are illustrated below.
 @example
-@verbatim
 (t1,..,t32) := module.fcn(a1,..,a32);
 t1 := module.fcn(a1,..,a32);
 t1 := fcn(a1,..,a32);
 t1 := v1 operator v2;
 t1 := constant;
 (t1,..,tn) := (c1,..,cn);
-@end verbatim
 @end example
 
 Each operator is defined in a (user-defined) module.
@@ -150,7 +148,7 @@ variable after the expression has been evaluated to decide
 on the action to be taken.
 Built-in barrier controls exists for booleans and numeric values.
 The barrier is opened when the first target variable holds
-true, when its numeric value $>=$ 0, when it is a non-empty
+true, when its numeric value >= 0, when it is a non-empty
 string. The @code{ nil} value blocks entry in all cases.
 
 
@@ -183,23 +181,20 @@ Common guarded blocks in imperative languages are
 the for-loop and if-then-else constructs.
 They can be simulated as follows.
 
-Consider the statement @code{for(i=1;i$<$10;i++) print(i)}.
+Consider the statement @code{for(i=1;i<10;i++) print(i)}.
 The (optimized) MAL block to implement this becomes:
 @example
-@verbatim
      V:= 1;
 barrier B:= V<10;
      print(V);
      V:= V+1;
 redo B:= V<10;
 exit B;
-@end verbatim
 @end example
 
-Translation of the statement @code{if(i$<$1) print("ok"); else print("wrong");}
+Translation of the statement @code{if(i<1) print("ok"); else print("wrong");}
 becomes:
 @example
-@verbatim
     i:=1; 
 barrier ifpart:= i<1;
     print("ok");
@@ -207,17 +202,15 @@ exit ifpart;
 barrier elsepart:= i>=1;
     print("wrong");
 exit elsepart;
-@end verbatim
 @end example
 
 Note that both guarded blocks can be interchanged without
 affecting the outcome. Moreover, neither block would
-have been entered if the variable happens to be assigned @code{ nil }
+have been entered if the variable happens to be assigned @code{ nil }.
 
 Beware that @code{ redo} is a flow modifier attached to an instruction.
 The generic form of an iterator looks like
 @example
-@verbatim
 barrier i:= newIterator(T);
     elm:= getElement(T,i);
     ...
@@ -225,9 +218,7 @@ barrier i:= newIterator(T);
     ...
     redo i:= hasMoreElements(T);
 exit i:= exitIterator(T);
-@end verbatim
 @end example
-
 The semantics obeyed by the implementations should be as follows.
 The redo expression updates the target variable @emph{ i} and control
 proceeds at the first statement after the barrier when the
@@ -244,12 +235,10 @@ A recurring situation is to iterate over the elements in
 a BAT. This is supported by an iterator implementation in
 the bbp module as follows:
 @example
-@verbatim
 barrier (idx,hd,tl):= newIterator(B);
     ...
     redo (idx,hd,tl):= hasMoreElements(B);
 exit i;
-@end verbatim
 @end example
 Where idx is an integer to denote the row in the BAT,
 hd and tl denote values of the current element.
@@ -274,7 +263,6 @@ Example, the fragment below creates a parallel thread which
 dies after a few seconds. The parent threads awaits for this 
 event to happen. (See mal/Tests/tst2010.mal)
 @example
-@verbatim
 thread  hdl;    # should be zero to start
         printf("#Start thread with id %d\n",hdl);
         clkticks(2);
@@ -282,7 +270,6 @@ thread  hdl;    # should be zero to start
 exit    hdl;
 
         printf("Wait for child to exit too\n");
-@end verbatim
 @end example
 
 [show thread inspection routines]

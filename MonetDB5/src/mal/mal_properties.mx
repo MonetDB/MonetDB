@@ -209,11 +209,9 @@ the properties of the actual arguments holds. A side-effect of execution
 of the function leads to an update of the property set associated with
 the actual arguments. An example:
 @example
-@verbatim
 function fcn (A:int,B:bat[int,int],C:int):int
         ?@{A.read=true, B.count<1000@}
         @{fcn.write:=true;@}
-@end verbatim
 @end example
 
 [Try 3] Organize property management by the processor involved, e.g.
@@ -248,7 +246,6 @@ For example, the following snippet shows how properties
 are used in a code block.
 
 @example
-@verbatim
 B := new(int,int);
 I := properties.has(B,@{hsorted@}); 
 J := properties.get(B,@{cost@});
@@ -257,7 +254,6 @@ print(J);
 properties.set(B,@{cost@},2315); 
 barrier properties.has(B,@{sorted@});
 exit;
-@end verbatim
 @end example
 @-
 These example illustrate that the property manipulations are
@@ -265,12 +261,10 @@ executed throug patterns, which also accept a stack frame.
 
 Sample problem with dropping properties:
 @example
-@verbatim
     B := new(int,int);
 barrier tst:= randomChoice()
-    I := properties.drop(B,{hsorted}); 
+    I := properties.drop(B,@{hsorted@}); 
 exit	tst;
-@end verbatim
 @end example
 
 @+ The cost model problem
@@ -282,11 +276,9 @@ dataflow semantics, and
 For example, selectivity estimations can be based on a histogram associated
 with a BAT. The code for this could look like
 @example
-@verbatim
     B:= new(int,int);
-    properties.add(B,{min,max,histogram});
+    properties.add(B,@{min,max,histogram@});
     Z:= select(B,1,100);
-@end verbatim
 @end example
 Addition of a property may trigger its evaluation, provided enough
 information is available (e.g. catalog). The instruction triggers the
@@ -300,7 +292,6 @@ To study the use of properties in the complete pipeline SQL-execution
 we contrive a small SQL problem. The person table is sorted by name,
 the car table is unsorted.
 @example
-@verbatim
 create table person(name varchar not null, 
 		address varchar);
 create table car(name varchar, 
@@ -310,7 +301,6 @@ select distinct name, model, milage
 from person, car
 where car.name= person.name 
   and milage>60000;
-@end verbatim
 @end example
 @+ Implementation rules
 Properties can be associated with variables, MAL blocks, and MAL instructions.

@@ -56,6 +56,7 @@ a quick overview of the MonetDB Version 5 architecture.
 * Architecture overview::
 * MAL Synopsis::
 * MAL interpretation::
+* Session management::
 @end menu
 
 @node Backward compatibility, Design considerations, ,Top
@@ -86,6 +87,7 @@ of interest in Version 4 user community.
 * Architecture overview::
 * MAL Synopsis::
 * MAL interpretation::
+* Session management::
 @end menu
 
 @node  Design considerations, Architecture overview,Backward compatibility,Top
@@ -131,6 +133,7 @@ for a particular application domain and hardware platform.
 * Architecture overview::
 * MAL Synopsis::
 * MAL interpretation::
+* Session management::
 @end menu
 
 @node Architecture overview, MAL Synopsis, Design considerations,Top
@@ -147,6 +150,7 @@ oriented catalog, which may, but need not be stored in the MonetDB database.
 * Architecture overview::
 * MAL Synopsis::
 * MAL interpretation::
+* Session management::
 @end menu
 
 @node MAL Synopsis, MAL interpretation, Architecture overview,Top
@@ -204,6 +208,7 @@ for use during compilation and optimization.
 * Architecture overview::
 * MAL Synopsis::
 * MAL interpretation::
+* Session management::
 @end menu
 @-
 @{
@@ -295,6 +300,7 @@ in a critical section, which was known to be a performance hindrence.
 * Architecture overview::
 * MAL Synopsis::
 * MAL interpretation::
+* Session management::
 @end menu
 @{
 @h

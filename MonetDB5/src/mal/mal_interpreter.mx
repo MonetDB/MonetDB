@@ -476,7 +476,7 @@ elements in the value stack.
         break;
     case ENDDEFsymbol: 
         if( getInstrPtr(mb,0)->token == FACTORYsymbol)
-            ret= finishFactory(mb, pci, stkpc);
+            ret= shutdownFactory(mb);
         @:endProfile@
         goto MALevalExit;
     default:
@@ -1037,6 +1037,8 @@ else {
     if( pci->fcn== NULL){
         ret= raiseException(mb,stkpc,MALexception,
             "address of function missing\n");
+        printf("error, missing address");
+        printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
         goto MALevalExit;
     }
 }

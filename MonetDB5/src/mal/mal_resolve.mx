@@ -175,7 +175,7 @@ of symbols.
     m= scope;
     s= m->subscope[(int)(getSubScope(functionName(p)))];
     while(s != NULL){   /* single scope element check */
-    if( idcmp(functionName(p),s->name ) ){
+    if(functionName(p) && functionName(p) && idcmp(functionName(p),s->name ) ){
         s= s->skip; continue;
     }
 @-

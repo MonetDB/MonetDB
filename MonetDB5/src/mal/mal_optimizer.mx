@@ -355,10 +355,8 @@ A special case of flow analysis is to remove common sub-expressions.
 A recurring situation is to find operator calls which depend on the same
 argments, and whose arguments have not been changed. For example
 @example
-@verbatim
 t0 := select(A,0,100);
 t2 := select(A,0,100);
-@end verbatim
 @end example
 @
 Evidently, T2 is an alias for t0 unless inbetween the two statements A was
@@ -797,7 +795,6 @@ whose parameter lists has a non-empty intersection with the
 targeted instruction.
 To illustrate, consider the sequence
 @example
-@verbatim
 L1 := f(A,B,C);
 ...
 G1 := g(D,E,F);
@@ -805,7 +802,6 @@ G1 := g(D,E,F);
 l2:= f(A,B,C);
 ...
 L2:= h()
-@end varbatim
 @end example
 @
 The instruction G1:=g(D,E,F) is blocking if G1 is an alias for {A,B,C}.
@@ -1049,11 +1045,9 @@ This trick is rather complicated to apply to a MAL block, due to
 anomalies introduced by the binary datamodel. This leads to a rather
 complex compilation of e.g.  (tables r(a,b), s(c,d)
 @example
-@verbatim
 create table r( a int, b int);
 create table s( c int, d int);
 select r.a,s.d from r,s where r.a=s.c and r.a<10 and s.d>5;
-@end verbatim
 @end example
 
 The optimal code would be [todo]
@@ -1075,7 +1069,6 @@ is safe.
 [redo]
 
 @example
-@verbatim
 y:= reverse(x); 
 z:= semijoin(R,x);          z:= revsemijoin(x,R) 
 y:= reverse(x); 
@@ -1092,7 +1085,6 @@ z:= revsemiselect(y,S,l,h); y:= select(S,l,h):\n
 z:= join(R,y) 
 y:= join(R,S);
 z:= semiselect(y,Z,l,h);
-@end verbatim
 @end example
 
 @-

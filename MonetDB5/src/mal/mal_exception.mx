@@ -66,14 +66,12 @@ After dealing with it locally, it raises a new exception @code{ FATALerror}
 for the enclosing call.
 
 @example
-@verbatim
     io.write("Welcome");
     ...
 catch IOerror;
     print("input error on reading password");
 raise FATALerror:= "Can;t handle it";
 exit IOerror;
-@end verbatim
 @end example
 
 Since @code{ catch} is a flow control modifier it can be attached to any

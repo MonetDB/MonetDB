@@ -76,7 +76,6 @@ at a time.
 
 Example: consider the client function:
 @example
-@verbatim
 function myfcn():void;
     b:bat[:oid,:int] := bbp.take(mytable);
     c:bat[:int,:str] := sql.take("person","age");
@@ -86,7 +85,6 @@ function myfcn():void;
     print(u);
     client.release(user);
 end function;
-@end verbatim
 @end example
 
 The function obtains a copy from the local persistent bat space,
@@ -131,10 +129,8 @@ or assuming the wrong type.
 For example, the code fragment
 
 @example
-@verbatim
 M := mil.take("M_PI_2");
 b:= sin(M);
-@end verbatim
 @end example
 
 leads to a polymorphic type check for M. It is marked as TYPE\_any.
@@ -173,7 +169,6 @@ At the end of a session they are closed, which means that they are
 saved in persistent store until the next session starts.
 For example:
 @example
-@verbatim
 function m():void;
     box.open("client_name");
     box.deposit("client_name","pi",3.417:flt);
@@ -181,7 +176,6 @@ function m():void;
     print(t);
     box.close("client_name");
 end function;
-@end verbatim
 @end example
 @-
 In the namespace it is placed subordinate to any space introduced by the
@@ -208,10 +202,8 @@ This causes the following problems: 1) how to get rid of global variables
 and 2) how to deal with variables that can take 'any' type.
 It is illustrated as follows:
 @example
-@verbatim
 f:= mil.take("GT");
 print(f);
-@end verbatim
 @end example
 When executed in the context of a function, the answer will be
 simple [ 1 ]. The variable type need not be defined, because

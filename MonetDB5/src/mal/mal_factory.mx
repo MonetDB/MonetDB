@@ -37,7 +37,6 @@ in which it is placed. By default Admin is the owner of all modules.
 
 The random generator example is used to illustrate its definition and use.
 @example
-@verbatim
 FACTORY random(seed:int,limit:int):int;
     rnd:=seed;
     lim:= limit;
@@ -48,7 +47,6 @@ BARRIER lim;
     REDO lim;
 EXIT lim;
 END random;
-@end verbatim
 @end example
 
 The first time this factory is called, a factory plant
@@ -72,7 +70,6 @@ For example, assume we would like the
 random factories to respond to both random(seed,limit) and
 random(). This can be defined as follows:
 @example
-@verbatim
 FACTORY random(seed:int,limit:int):int;
     rnd:=seed;
     lim:= limit;
@@ -91,7 +88,6 @@ BARRIER forever:=true;
     REDO forever;
 EXIT forever;
 END random;
-@end verbatim
 @end example
 
 @+ Client support
@@ -107,7 +103,6 @@ the states.
 A possible implementation would be:
 
 @example
-@verbatim
 FACTORY random(seed:int,clientid:int):int;
     clt:= new(:int,:int);
     insert(clt,clientid,seed);
@@ -124,7 +119,6 @@ EXIT    rnd;
     REDO always;
 EXIT always;
 END random;
-@end verbatim
 @end example
 
 The operators to built client aware factories are,
@@ -135,7 +129,6 @@ which returns the identity of scope enclosed.
 To illustrate, the client specific random generator
 can be shielded using the factory:
 @example
-@verbatim
 FACTORY random(seed:int):int;
 BARRIER always:=true;
     clientid:= factory.getCaller();
@@ -143,7 +136,6 @@ BARRIER always:=true;
     REDO always;
 EXIT always;
 END random;
-@end verbatim
 @end example
 
 @+ Factory control
@@ -172,7 +164,6 @@ implements a nested loop. The end of a sequence is identified
 by a NIL chunk.
 
 @example
-@verbatim
 FACTORY query();
     Left:= bind("relationA");
     Right:= bind("relationB");
@@ -222,7 +213,6 @@ END chunkStep;
 
 #factory for right leg
 FACTORY chunkStepR(L:bat[:any,:any]):bat[:any,:any];
-@end verbatim
 @end example
 
 So far we haven;t re-used the pattern that both legs are
@@ -237,12 +227,10 @@ What additional control do you need? Can you throw an
 exception to a Factory? implicitly yes.
 
 @example
-@verbatim
     RAISE reset:="reset";
     chunkStep(L);   # receives 'reset' exception
     CATCH reset;
     EXIT reset;
-@end verbatim
 @end example
 
 @{
@@ -267,6 +255,7 @@ mal_export str callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
+mal_export str shutdownFactory(MalBlkPtr mb);
 #endif /*  _MAL_FACTORY_H*/
 @-
 The initial implementation is geared at a central
@@ -443,19 +432,18 @@ str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc){
 
     pl= yieldResult(mb,pp,pc);
     if(pl) 
-        return finishFactory(mb,pp,pc);
+        return shutdownFactory(mb);
     return throwMessage("yieldFactory","No factory found\n");
 }
 @-
 A return from a factory body implies removal of
 all state information.
 @c
-str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc){
+str shutdownFactory(MalBlkPtr mb){
     Plant pl, plim;
 #ifdef DEBUG_MAL_FACTORY
-    stream_printf(GDKout,"closePlant called\n");
+    stream_printf(GDKout,"shutdownFactory called\n");
 #endif
-    (void) pp; (void) pc;
     plim= plants+lastPlant;
     for(pl=plants; pl<plim;pl++)
     if( pl->factory == mb){
@@ -472,6 +460,11 @@ str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc){
     }
     return MAL_SUCCEED;
 }
+str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc){
+    (void) pp; (void) pc;
+    return shutdownFactory(mb);
+}
+
 @- Enquiry operations.
 All access to the plant administration is organized here.
 @c
