@@ -1293,6 +1293,8 @@ def RunTest(env, TST, BusyPorts, COND) :
     os.chdir(TSTSRCDIR)
     elem = None
 
+    quiet = env['QUIET']
+
     TX = 0
     EXT = CALL = SERVER = ""
     x  = isexecutable(TST)
@@ -1449,7 +1451,10 @@ def RunTest(env, TST, BusyPorts, COND) :
                     prof.prof(f, env['CMDLST'])
                     os.rename(f,f+".no_prof")
                     os.rename("prof_"+f,f)
-                    os.system('%s -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
+                    if not quiet:
+                        os.system('%s -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
+                    else:
+                        os.system('%s -q -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
 
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
@@ -1544,7 +1549,8 @@ def RunTest(env, TST, BusyPorts, COND) :
         DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME)
         t1 = time.time()
         TX = t1 - t0
-        STDOUT.write(" %7.3fs " % TX)
+        if not quiet:
+            STDOUT.write(" %7.3fs " % TX)
 
         if ATJOB1:
             StopAt(ATJOB1,ME)
@@ -1598,10 +1604,20 @@ def RunTest(env, TST, BusyPorts, COND) :
                 timeout = 1
 
         if timeout:
-            STDOUT.write("(Timeout!) ")
+            if quiet:
+                STDOUT.write("\n%s : Timeout!\n", LogLine)
+            else:
+	            STDOUT.write("(Timeout!) ")
+
         if killed:
-            STDOUT.write("(Killed!) ")
-        STDOUT.write("\n")
+            if quiet:
+                STDOUT.write("\n%s : Killed!\n", LogLine)
+            else:
+	            STDOUT.write("(Killed!) ")
+		
+        if not quiet:
+	        STDOUT.write("\n")
+
         try:
             STDOUT.flush()
         except IOError, (IOerrNo, IOerrStr):
@@ -1660,7 +1676,10 @@ def RunTest(env, TST, BusyPorts, COND) :
                 if ACCURACYout == -1:
                     MDIFF = MDIFF0
                     ACCURACYout = 0
-                timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.out.FILTERED %s.out.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
+                if not quiet:
+                    timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.out.FILTERED %s.out.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
+                else:
+                    timedout = os.system('%s -q -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.out.FILTERED %s.out.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
                 ACCURACYout = ACCURACYout - 1
 
             #TODO:
@@ -1685,7 +1704,10 @@ def RunTest(env, TST, BusyPorts, COND) :
                 if ACCURACYerr == -1:
                     MDIFF = MDIFF0
                     ACCURACYerr = 0
-                timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                if not quiet:
+                    timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                else:
+                    timedout = os.system('%s -q -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
             FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
@@ -1922,10 +1944,15 @@ def mapi_ping(port) :
 ### mapi_ping() #
 
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
+    quiet = env['QUIET']
     ATJOB2 = ""
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<=%d,%d,%d) ...' % (TIMEOUT,CTIMEOUT,STIMEOUT)
     STDERR.flush()
-    STDOUT.write(prompt()+LogLine)
+    if not quiet:
+        STDOUT.write(prompt()+LogLine)
+    else:
+        STDOUT.write(".");
+
     try:
         STDOUT.flush()
     except IOError, (IOerrNo, IOerrStr):
@@ -2162,9 +2189,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         TestErr.close()
     if SERVER in ["MAPI", "SQL"] and ( os.name == "nt" or OS == "CYGWIN" ):
         s = 2
-        STDOUT.write(" (sleeping %d secs .." % s)
+        if not quiet:
+			STDOUT.write(" (sleeping %d secs .." % s)
+
         time.sleep(s)
-        STDOUT.write(".. done) ")
+        if not quiet:
+        	STDOUT.write(".. done) ")
+			
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
 
 def Check(command, input) :
@@ -2379,7 +2410,7 @@ def main(argv) :
 
     vars = ['MONETDB_SOURCE', 'MONETDB_BUILD', 'MONETDB_PREFIX',
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
-            'SQL_PREFIX'                                   ]
+            'SQL_PREFIX' , 'QUIET'                         ]
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         vars = vars + [ 'SQLCLIENT', 'MAPICLIENT', 'X100CLIENT', 'XQUERYCLIENT']    #, 'MONETDB_MOD_PATH' ]
     if THISFILE == "Mprofile.py":
@@ -2396,6 +2427,7 @@ def main(argv) :
     dft['TSTSRCBASE']     = "env['MONETDB_SOURCE']"
     dft['TSTBLDBASE']     = "env['MONETDB_BUILD']"
     dft['TSTTRGBASE']     = "env['MONETDB_PREFIX']"   # or os.getcwd() ?
+    dft['QUIET']          = "str(False)"
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONETDB_MOD_PATH'] = "''"   #"os.path.join(env['MONETDB_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONETDB_PREFIX'],'lib','MonetDB')"
@@ -2441,6 +2473,8 @@ def main(argv) :
          'default: <MONETDB_BUILD>'),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
          'default: <MONETDB_PREFIX>'),
+        ('QUIET', None, 'QUIET', '<boolean>',
+         'default: %s' % dft['QUIET']),
         ]
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -2557,11 +2591,17 @@ def main(argv) :
         if a is not None:
             env[v] = a
 
+    try:
+        quiet = bool(env['QUIET'])
+    except KeyError:
+        quiet = False
+	
     # display par's
     STDERR.flush()
-    for v in par.keys():
-        #os.environ[v] = par[v]
-        print "%s = %s" % (v, str(par[v]))
+    if not quiet:
+        for v in par.keys():
+            #os.environ[v] = par[v]
+            print"%s = %s" % (v, str(par[v]))
     STDOUT.flush()
     #env['par'] = par
 
@@ -2588,7 +2628,7 @@ def main(argv) :
         if not env.has_key(v):
             env[v] = eval(dft[v])
             #TODO:
-            # make sure, that PATHs ar absolute
+            # make sure, that PATHs are absolute
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         if env['MONETDB_MOD_PATH']:
             env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
@@ -2722,10 +2762,15 @@ def main(argv) :
         vars_ = vars_
     for v in vars_:
         os.environ[v] = env[v]
-        print "%s = %s" % (v, env[v])
-    print "%s = %s" % ('PATH', os.environ['PATH'])
-    print "%s = %s" % ('VERSION', env['VERSION'])
+        if not quiet:
+            print "%s = %s" % (v, env[v])
+    if not quiet:
+        print "%s = %s" % ('PATH', os.environ['PATH'])
+        print "%s = %s" % ('VERSION', env['VERSION'])
     STDOUT.flush()
+
+    # fix QUIET boolean env
+    env['QUIET'] = quiet
 
     ## set/extend PATH & LD_LIBRARY_PATH
     #bp = ""        #os.path.join(env['MONETDB_PREFIX'],"bin")
@@ -2774,7 +2819,10 @@ def main(argv) :
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
-        SetExecEnv(exe,1)
+        if not quiet:
+            SetExecEnv(exe,1)
+        else:
+            SetExecEnv(exe,0)
 
         #TODO:
         #exe['JAVA']       = 'java'
@@ -2894,8 +2942,9 @@ def main(argv) :
         if GetBitsAndModsAndStatic(env):
             sys.exit(1)
         STDERR.flush()
-        print "Bits: ", env['TST_BITS']
-        print "Modules: ", env['TST_MODS']
+        if not quiet:
+            print "Bits: ", env['TST_BITS']
+            print "Modules: ", env['TST_MODS']
         STDOUT.flush()
 
         host = ''
@@ -2927,13 +2976,15 @@ def main(argv) :
             tsts = "tests "+str(testlist)
         else:
             tsts = "all tests"
-        print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
+        if not quiet:
+            print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
         t_, elem = PerformDir(env, testdirs[0], testlist, BusyPorts)
         if elem is not None:
             body.append(elem)
     else:
         testdirs.sort()
-        print "\nRunning all tests in directories %s.\n" % str(testdirs)
+        if not quiet:
+            print "\nRunning all tests in directories %s.\n" % str(testdirs)
         for d in testdirs:
             t, elem = PerformDir(env, d, [], BusyPorts)
             t_ = t_ + t
@@ -2992,12 +3043,15 @@ def main(argv) :
 """ % (how, what, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
             sys.exit(1)
         else:
-            print """\
+            if not quiet:
+                print """\
 
  No differences encountered during testing.
 
  If necessary, you can checkin your modifications, now.
 """
+            else:
+                print ""
             sys.exit(0)
 
     if THISFILE == "Mapprove.py":

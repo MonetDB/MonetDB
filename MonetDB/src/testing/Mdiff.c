@@ -44,7 +44,8 @@ void showUsage(char *name)
     printf(" -d        : change the algorithm to perhaps find a smaller set of changes;\n");
     printf("             this makes diff slower (sometimes much slower)\n");
     printf(" -t<text>  : text for caption (optional, default: empty)\n");
-    printf(" -r<rev>   : revision of old file (optinal, default: empty)\n");
+    printf(" -r<rev>   : revision of old file (optional, default: empty)\n");
+    printf(" -q        : be less verbose\n");
     printf(" <oldfile> : first file for diff\n");
     printf(" <newfile> : second file for diff\n");
     printf(" <outfile> : file for HTML output (optional, default: stdout)\n");
@@ -56,9 +57,9 @@ int main(int argc, char** argv)
   char DEFAULT[]="-I'^#'";
   char ignoreWHITE[]=" -b -B";
   char *old_fn,*new_fn,*html_fn,*caption=EMPTY,*revision=EMPTY,*ignoreEXP=DEFAULT,*ignore;
-  int LWC=1,context=1,option,mindiff=0;
+  int LWC=1,context=1,option,mindiff=0,quiet=0;
 
-  while((option=getopt(argc,argv,"hdA:C:I:t:r:"))!=EOF)
+  while((option=getopt(argc,argv,"hdqA:C:I:t:r:"))!=EOF)
    switch (option)
      {
        case 'd': mindiff=1; break;
@@ -77,6 +78,7 @@ int main(int argc, char** argv)
 		 break;
        case 't': caption=optarg; break;
        case 'r': revision=optarg; break;
+       case 'q': quiet=1; break;
        case 'h':
        default:  showUsage(argv[0]); exit(1);
      }
@@ -95,7 +97,9 @@ int main(int argc, char** argv)
 
   switch ( oldnew2html (mindiff,LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision) )
     {
-      case 0: fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn); break;
+      case 0:
+	  	if (quiet == 0) fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn);
+	  break;
       case 1: fprintf(STDERR,"%s and %s differ slightly.\n",old_fn,new_fn); break;
       case 2: fprintf(STDERR,"%s and %s differ SIGNIFICANTLY!\n",old_fn,new_fn); break;
     }
