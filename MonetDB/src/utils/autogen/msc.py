@@ -854,7 +854,7 @@ ECHO = echo
 CD = cd
 
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
-CXXFLAGS = $(CFLAGS)
+CXXFLAGS = $(CFLAGS) -EHsc
 
 CXXEXT = \\\"cxx\\\"
 
