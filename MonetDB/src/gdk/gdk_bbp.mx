@@ -1268,7 +1268,7 @@ static int BBPtrim_scan(int mem, int vm, int bbppos) {
 /* insert BATs to unload from bbptrim list into bbpunload list; rebuild bbptrimlist only with the useful leftovers */
 static 
 void BBPtrim_select(lng *memtarget, lng *vmtarget, int dirty) {
-	int bbpunloadtail, bbptrimtail=BBPMAXTRIM, next=bbptrimfirst;
+	int bbpunloadtail = 0, bbptrimtail=BBPMAXTRIM, next=bbptrimfirst;
 
 	MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: %s roundup\n", dirty?"dirty":"clean");
 
@@ -1646,6 +1646,7 @@ static BAT *dirty_bat(int i) {
 int BBPsync(int commit) {
 	int i, ret=0, bbpdirty = 0; 
 	int t0, t1 = GDKms();
+	t0 = t1;
 
 	if (!commit) { 
 		BBPlock("BBPsync");

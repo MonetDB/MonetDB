@@ -781,7 +781,7 @@ iff r->hkey) and one on l to find the matching tuples.
 
 @= revsemijoin
 {	int xx, yy;
-	BUN lp, rp, rq, rr;
+	BUN lp = 0, rp = 0, rq = 0, rr = 0;
 
 	if (merge) {
 		BATloopFast(r, rp, rq, xx) {

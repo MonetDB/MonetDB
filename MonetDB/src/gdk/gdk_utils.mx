@@ -232,7 +232,7 @@ int GDKhomeIns(str user, str db, str home) {
 
 
 int GDKhomeDel(str users[], str db, str home) {
-	int homelines=0, i, j=0, k, lusr, ldb;
+	int homelines=0, i, j=0, k, lusr = 0, ldb;
 	str homeline[1024];
 	@:openhome(GDKhomeDel,"r+")@
 @-

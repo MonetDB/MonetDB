@@ -1192,7 +1192,7 @@ void strHeapConvert(Heap *h,int dir) {
 	int *l; 
 	int i, j;
 
-	if (ELIMDOUBLES(h))
+	if (ELIMDOUBLES(h)){
 	if (dir == CONV_HTON){
 	    for(i=0; i<STRHASHTABLE; i++) {
 		for (l= htab+i; (j=*l) != 0; l=(int*) (((char*) h->base)+ j)) {
@@ -1205,11 +1205,11 @@ void strHeapConvert(Heap *h,int dir) {
 			*l = normal_int_SWAP(j);
 		}
 	    }
-	}
+	}}
 }
 
 int strPut(Heap *h, int *dst, str v) {
-	int *l, off, i = strLen(v);
+	int *l, off = 0, i = strLen(v);
 	int len = (((i-1) >> 2) + 1) << 2; /* round up to 4-byte alignment */
 
 	/* search hash-table, if double-elimination is still in place */

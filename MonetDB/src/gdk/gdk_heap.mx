@@ -102,7 +102,7 @@ The routine heap extend can be used to create a larger storage space.
 Note that you should pass the requested new size.
 @c
 int HEAPextend(Heap *h, int size) {
-        char nme[PATHLENGTH], nwext[IDLENGTH], *ext, *priv = NULL;
+        char nme[PATHLENGTH], nwext[IDLENGTH], *ext = NULL, *priv = NULL;
 
 	if (h->filename) { 
 		/* extract base and ext from heap file name */
@@ -897,7 +897,6 @@ void HEAP_initialize_compact(Heap* heap, int nbytes, int nprivate, int alignment
 
 /* reinitialize the size function after a load */
 void HEAP_init(Heap *heap, int tpe) {
-   HEADER *hheader = HEAP_index(heap,0,HEADER);
 
    if (BATatoms[tpe].atomHeapCheck == HEAP_check) {
       HEADER* hheader = HEAP_index(heap,0,HEADER);

@@ -2232,6 +2232,7 @@ gdk_export MT_Lock		GDKtrimLock;
 #define TEMDEBUG        if (GDKdebug&1024)
 #define DLDEBUG	        if (GDKdebug&2048)
 #define PERFDEBUG	if (GDKdebug&4096)
+#define DELTADEBUG	if (GDKdebug&8192)
 
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 

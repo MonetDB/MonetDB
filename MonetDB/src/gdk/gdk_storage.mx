@@ -286,7 +286,7 @@ Further initialization of the atom heaps require a separate action
 defined in their implementation.
 @c
 char *GDKload(str nme, str ext, int size, int chunk, int mode){
-        char	extension[PATHLENGTH], *buf;
+        char	extension[PATHLENGTH], *buf = NULL;
 	int 	fd = -1, n, n_expected = 0; 
 	int	varsize = mode&256;
 	int	store = mode&255;
@@ -590,13 +590,9 @@ BAT *BATload_intern(bat bid, int lock) {
 		return NULL;
 	}
 	/* LOAD bun heap */
-	if (b->batBuns->base) {
-		DELTAsave(b);
-	}
+	DELTAsave(b);
 	err = HEAPload(b->batBuns, nme, "buns");
-	if (b->batBuns->base) {
-		DELTAload(b);
-	}
+	DELTAload(b);
 
 	/* LOAD head heap */
 	if (ATOMvarsized(b->htype)) {
