@@ -15,13 +15,6 @@ In this section we should explain this simple module
 @+ Tutorial 
 This section explains how to use this module.
 
-@mil
-module(example);
-
-print(hello("world"));
-
-quit;
-
 @
 The module defines the following C++ functions for which you need to include 
 Vector.h.
@@ -53,4 +46,9 @@ int hello( str *res, str src ){
 	strcat(*res, "hello ");
 	strcat(*res, src);
 	return GDK_SUCCEED;
+}
+
+@mil
+if (mod = "main"){
+	print(hello("world"));
 }

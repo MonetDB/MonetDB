@@ -9,3 +9,8 @@ lib__example = {
 	LIBS = $(MONET_LIBS) 
 	LDFLAGS = -module
 }
+
+scripts_mil = {
+	DIR = libdir/MonetDB
+	SOURCES = example.mx
+}

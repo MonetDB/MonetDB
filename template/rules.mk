@@ -1,3 +1,26 @@
+# The contents of this file are subject to the MonetDB Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of
+# the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+# 
+# Software distributed under the License is distributed on an "AS
+# IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# rights and limitations under the License.
+# 
+# The Original Code is the Monet Database System.
+# 
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2003 CWI.
+# All Rights Reserved.
+# 
+# Contributor(s):
+# 		Martin Kersten <Martin.Kersten@cwi.nl>
+# 		Peter Boncz <Peter.Boncz@cwi.nl>
+# 		Niels Nes <Niels.Nes@cwi.nl>
+# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 #
 # ! this file should be kept identical in !
 # ! monet, sql, xml, acoi, template       !
@@ -64,17 +87,31 @@ MXFLAGS= -notouch
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
+%.mil: %.m %.tmpmil $(MEL)
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+	cat $*.tmpmil >> $@
+
+%.tmpmil: %.mx
+	$(MX) $(MXFLAGS) -l -x mil $<
+	$(MV) $*.mil $*.tmpmil
+
+%.mil: %.m $(MEL)
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
 
-%: %.mx
+%.mal: %.mx
+	$(MX) $(MXFLAGS) -x mal $<
+
+%: %.mx 
 	$(MX) $(MXFLAGS) -x sh $<
 	chmod a+x $@
 
-%.proto.h: %.m
+%.proto.h: %.m $(MEL)
 	$(MEL) $(INCLUDES) -proto $< > $@
 
-%.glue.c: %.m
+%.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
 
 %.tex: %.mx
@@ -114,3 +151,6 @@ $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 	$(COMPILE) -O0 -c $<
 
 SUFFIXES-local: $(BUILT_SOURCES)
+
+html:
+	python $(top_srcdir)/doc/mkdoc.py $(top_srcdir) $(prefix)
