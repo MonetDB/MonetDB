@@ -122,7 +122,9 @@ SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 	rc = SQLColAttributes_(stmt, nCol, nDescType, ptr, n, &n, pfDesc);
 	
 	if (ptr != pszDesc)
-		fixWcharOut(rc, ptr, n, pszDesc, nDescMax, pcbDesc, addStmtError, stmt);
+		fixWcharOut(rc, ptr, n, pszDesc, nDescMax, pcbDesc, 2, addStmtError, stmt);
+	else if (pcbDesc)
+		*pcbDesc = n;
 
 	return rc;
 }

@@ -301,8 +301,9 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	if (ptr != Value) {
 		SQLSMALLINT nn = (SQLSMALLINT) n;
 
-		fixWcharOut(rc, ptr, nn, Value, BufferLength, StringLength, addDescError, desc);
-	}
+		fixWcharOut(rc, ptr, nn, Value, BufferLength, StringLength, 2, addDescError, desc);
+	} else if (StringLength)
+		*StringLength = n;
 
 	return rc;
 }

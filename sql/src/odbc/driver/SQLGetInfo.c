@@ -758,7 +758,7 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	rc = SQLGetInfo_(dbc, nInfoType, ptr, n, &n);
 
 	if (ptr != pInfoValue)
-		fixWcharOut(rc, ptr, n, pInfoValue, nInfoValueMax, pnLength, addDbcError, dbc);
+		fixWcharOut(rc, ptr, n, pInfoValue, nInfoValueMax, pnLength, 2, addDbcError, dbc);
 	else if (pnLength)
 		*pnLength = n;
 

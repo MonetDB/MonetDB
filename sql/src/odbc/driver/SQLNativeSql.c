@@ -94,7 +94,7 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, cbSqlStrMax * 4, &n);
 
 	nn = (SQLSMALLINT) n;
-	fixWcharOut(rc, sqlout, nn, szSqlStr, cbSqlStrMax, pcbSqlStr, addStmtError, stmt);
+	fixWcharOut(rc, sqlout, nn, szSqlStr, cbSqlStrMax, pcbSqlStr, 1, addStmtError, stmt);
 
 	return rc;
 }

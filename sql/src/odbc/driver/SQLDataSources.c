@@ -101,8 +101,8 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
 			     server, BufferLength1 * 4, &length1,
 			     descr, BufferLength2 * 4, &length2);
 
-	fixWcharOut(rc, server, length1, ServerName, BufferLength1, NameLength1, addEnvError, env);
-	fixWcharOut(rc, descr, length2, Description, BufferLength2, NameLength2, addEnvError, env);
+	fixWcharOut(rc, server, length1, ServerName, BufferLength1, NameLength1, 1, addEnvError, env);
+	fixWcharOut(rc, descr, length2, Description, BufferLength2, NameLength2, 1, addEnvError, env);
 
 	return rc;
 }

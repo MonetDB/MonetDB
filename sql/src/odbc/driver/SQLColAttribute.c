@@ -271,7 +271,7 @@ SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 	rc = SQLColAttribute_(stmt, nCol, nFieldIdentifier, ptr, n, &n, pnValue);
 	
 	if (ptr != pszValue)
-		fixWcharOut(rc, ptr, n, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
+		fixWcharOut(rc, ptr, n, pszValue, nValueLengthMax, pnValueLength, 2, addStmtError, stmt);
 	else if (pnValueLength)
 		*pnValueLength = n;
 

@@ -147,7 +147,7 @@ SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
 			     &n, pnSQLDataType, pnColSize,
 			     pnDecDigits, pnNullable);
 
-	fixWcharOut(rc, colname, n, szColName, nColNameMax, pnColNameLength, addStmtError, stmt);
+	fixWcharOut(rc, colname, n, szColName, nColNameMax, pnColNameLength, 1, addStmtError, stmt);
 
 	return rc;
 }

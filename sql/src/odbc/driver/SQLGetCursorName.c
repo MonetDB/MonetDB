@@ -81,7 +81,7 @@ SQLGetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
 
 	rc = SQLGetCursorName_(stmt, cursor, nCursorMaxLength, &n);
 
-	fixWcharOut(rc, cursor, n, szCursor, nCursorMaxLength, pnCursorLength, addStmtError, stmt);
+	fixWcharOut(rc, cursor, n, szCursor, nCursorMaxLength, pnCursorLength, 1, addStmtError, stmt);
 
 	return rc;
 }

@@ -103,7 +103,7 @@ SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 		SQLSMALLINT n = strlen((char *) ptr);
 		SQLSMALLINT *nullp = NULL;
 
-		fixWcharOut(rc, ptr, n, pvParam, SQL_MAX_OPTION_STRING_LENGTH, nullp, addDbcError, dbc);
+		fixWcharOut(rc, ptr, n, pvParam, SQL_MAX_OPTION_STRING_LENGTH, nullp, 2, addDbcError, dbc);
 	}
 
 	return rc;

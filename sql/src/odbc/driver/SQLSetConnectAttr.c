@@ -115,6 +115,8 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_TRACEFILE:
 	case SQL_ATTR_TRANSLATE_LIB:
+		if (StringLength > 0) /* convert from bytes to characters */
+			StringLength /= 2;
 		fixWcharIn(ValuePtr, StringLength, ptr, addDbcError, dbc, return SQL_ERROR);
 		n = SQL_NTS;
 		break;

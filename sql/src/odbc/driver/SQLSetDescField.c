@@ -316,6 +316,8 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 	switch (FieldIdentifier) {
 	case SQL_DESC_NAME:
+		if (BufferLength > 0) /* convert from bytes to characters */
+			BufferLength /= 2;
 		fixWcharIn(Value, BufferLength, ptr, addDescError, desc, return SQL_ERROR);
 		n = SQL_NTS;
 		break;
