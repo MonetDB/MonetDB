@@ -556,7 +556,7 @@ insert_val( ascii_io *fmt, char *s, char *e, char quote )
 		s++;
 		e = rfind_quote(e, quote);
 		*e = 0;
-	} else {
+	} else if (e>s) {
 		s = lstrip(s);
 		e = rstrip(e);
 	}
@@ -818,6 +818,8 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 					break;
 				}
 				if (insert_line(as, s ) < 0){
+					s = e + seplen;
+					b->pos = (s-b->buf);
 					GDKerror("value %s not inserted\n", s);	
 					res = -1;
 					break;
@@ -826,6 +828,8 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 				done = 1;
 			} else if (b->eof && s + as->nr_attrs < end){
 				if (insert_line(as, s ) < 0){
+					s = end;
+					b->pos = (s-b->buf);
 					GDKerror("value %s not inserted\n", s);	
 					res = -1;
 					break;

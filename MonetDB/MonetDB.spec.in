@@ -75,7 +75,7 @@ make install \
 mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB/
 # insert example db here!
 
-find $RPM_BUILD_ROOT -name .incs.in | xargs rm
+find $RPM_BUILD_ROOT -name .incs.in | xargs rm -f
 
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/epsffit

@@ -1130,12 +1130,35 @@ int view_gdk_mem(BAT **retval) {
 	return GDK_SUCCEED;
 }
 
+@-
+To avoid complains about signed/unsigned comparisons between lng & size_t,
+we cast  lng *num  to  size_t sze, 
+after checking that there is no under-/overflow.
+@c
+@= num2sze
+	size_t sze;
+	if (*num < 0) {
+		GDKerror("set_@1: new size must not be < 0!\n");
+		return GDK_FAIL;
+	}
+#if SIZEOF_SIZE_T == SIZEOF_INT
+{
+	lng size_t_max = 2 * (lng)INT_MAX;
+	if (*num > size_t_max) {
+		GDKerror("set_@1: new size must not be > " LLFMT "!\n", size_t_max);
+		return GDK_FAIL;
+	}
+}
+#endif
+	sze = (size_t)*num;
+@c
 int get_mem_bigsize(lng *num) {
 	*num = GDK_mem_bigsize;
 	return GDK_SUCCEED;
 }
 int set_mem_bigsize(lng *num) {
-	GDK_mem_bigsize = MAX(32768,*num);
+	@:num2sze(mem_bigsize)@
+	GDK_mem_bigsize = MAX(32768,sze);
 	return GDK_SUCCEED;
 }
 int get_mem_cursize(lng *num) {
@@ -1147,8 +1170,9 @@ int get_mem_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_mem_maxsize(lng *num) {
-	if (*num < GDK_mem_bigsize) set_mem_bigsize(num);
-	GDK_mem_maxsize = MAX(GDK_mem_bigsize,*num);
+	@:num2sze(mem_maxsize)@
+	if (sze < GDK_mem_bigsize) set_mem_bigsize(num);
+	GDK_mem_maxsize = MAX(GDK_mem_bigsize,sze);
 	return GDK_SUCCEED;
 }
 int get_vm_cursize(lng *num) {
@@ -1160,8 +1184,9 @@ int get_vm_minsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_vm_minsize(lng *num) {
-	if (*num < GDK_mem_bigsize) set_mem_bigsize(num);
-	GDK_vm_minsize = MAX(GDK_mem_bigsize,*num);
+	@:num2sze(vm_minsize)@
+	if (sze < GDK_mem_bigsize) set_mem_bigsize(num);
+	GDK_vm_minsize = MAX(GDK_mem_bigsize,sze);
 	return GDK_SUCCEED;
 }
 int get_vm_maxsize(lng *num) {
@@ -1169,8 +1194,9 @@ int get_vm_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_vm_maxsize(lng *num) {
-	if (*num < GDK_vm_minsize) set_vm_minsize(num);
-	GDK_vm_maxsize = MAX(GDK_vm_minsize,*num);
+	@:num2sze(vm_maxsize)@
+	if (sze < GDK_vm_minsize) set_vm_minsize(num);
+	GDK_vm_maxsize = MAX(GDK_vm_minsize,sze);
 	return GDK_SUCCEED;
 }
 

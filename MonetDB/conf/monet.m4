@@ -511,6 +511,7 @@ AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
+AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)

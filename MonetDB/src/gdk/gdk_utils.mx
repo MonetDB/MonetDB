@@ -44,8 +44,6 @@ gdk_export void GDKsetstamp  (int newstamp);
 
 gdk_export BAT *GDKenv;
 
-gdk_export RETSIGTYPE BATSIGcrash(int);
-
 @c
 #ifndef GDK_NOLINK
 #include "gdk.h"
@@ -253,9 +251,10 @@ RETSIGTYPE BATSIGchild(int nr) {
 
 RETSIGTYPE BATSIGcrash(int nr) {
 	static int crash = 0;
-	(void) nr;
 	if (!crash++) {
-		GDKerror("Mserver internal error, please restart. Please make sure your disk is not full.\n");
+		GDKerror("Mserver internal error (%s), please restart.\n"
+			 "(One potential cause could be that your disk might be full...)\n",
+			 ((nr==SIGBUS)?"Bus error":((nr==SIGSEGV)?"Segmentation fault":"unknown")));
 		GDKlog(GDKCRASH);
 		MT_global_exit(1);
 	}
