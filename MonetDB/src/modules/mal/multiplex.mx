@@ -209,6 +209,7 @@ The call multiplex.script(CMD,A1,...An) introduces the following function:
 \begin{verbatim}
 function CMD000(A1,....,An):bat
 	rB:= new(headtype,tailtype);
+	setRoles(...,CMD);
 	k := -1:lng;
 barrier mloop:= batloop(k,Ai,h,t);
 	$1:= bat.find(A1,h);
@@ -233,7 +234,7 @@ collecting the relevant information, phase two is the actual
 code construction.
 @c
 int CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int i,k,l,mloop,cursor,refBat=0,resB,refType,bt=0,cr,ret= GDK_SUCCEED;
+	int i,k,l,x,mloop,cursor,refBat=0,resB,refType,bt=0,cr,ret= GDK_SUCCEED;
 	int hvar,rIndex=0;
 	int assignop = FALSE;
 	char name[128];
@@ -302,6 +303,26 @@ find the actule arguments at the proper place of the callee.
 	q->argv[1]= newVariable(m, malTypeName(getHeadType(refType)),malAnyType);
 	q->argv[2]= newVariable(m, malTypeName(getTailType(refType)),malAnyType);
 	q->argc= 3;
+	pushInstruction(m,q);
+
+	/* x:= getRole(rb) */
+	q= newInstruction(ASSIGNsymbol);
+	q->modname= GDKstrdup("bat");
+	q->fcnname= GDKstrdup("getRole");
+	q->argv[0]= x= newVariable(m,GDKstrdup("x"),TYPE_str);
+	q->argv[1]= resB;
+	q->argc=2;
+	pushInstruction(m,q);
+
+	/* setRoles(rB, ..., CMD */
+	q= newInstruction(ASSIGNsymbol);
+	q->modname= GDKstrdup("bat");
+	q->fcnname= GDKstrdup("setRole");
+	q->argv[0]= newTmpVariable(m,TYPE_any);
+	q->argv[1]= resB;
+	q->argv[2]= x;
+	q->argv[3]= newConstant(m,TYPE_str,GDKstrdup(p->fcnname));
+	q->argc=4;
 	pushInstruction(m,q);
 
 	/* barrier mloop:= bunStream(refBat,h,rIndex); */

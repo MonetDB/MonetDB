@@ -104,7 +104,7 @@ int isAuthorized(str nme){
 void insertToBox(Box box, str nme, str val){
 	ValRecord vr;
 	vr.vtype= TYPE_str;
-	vr.val.pval= GDKstrdup(val);
+	vr.val.pval= val;
 	depositBox(box,nme,&vr);
 }
 int CMDconst_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

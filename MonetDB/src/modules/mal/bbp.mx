@@ -465,14 +465,14 @@ int CMDbbp_setRoles(int *r, int *bid, str *hname, str *tname){
 	BAT *b;
 	@:batcheck(r,bid,b,"CMDbbp_setRoles")@
 	BATroles(b, *hname, *tname);
-	*r= -b->batCacheid;
+	*r= b->batCacheid;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 int CMDbbp_setColumn(int *r, int *bid, str *hname){
 	BAT *b;
 	@:batcheck(r,bid,b,"CMDbbp_setRoles")@
-	*r= -b->batCacheid;
+	*r= b->batCacheid;
 	BBPfix(b->batCacheid);
 	BATroles(b, *hname, b->tident);
 	return GDK_SUCCEED;
