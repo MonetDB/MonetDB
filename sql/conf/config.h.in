@@ -9,6 +9,10 @@
 #undef HAVE_LIBZ
 #undef HAVE_LIBBZ2
 #undef HAVE_LIBREADLINE
+#undef HAVE_LIBODBC
+
+/* Define if you have the <sql.h> header file.  */
+#undef HAVE_SQL_H
 
 /* Name of package */
 #undef PACKAGE

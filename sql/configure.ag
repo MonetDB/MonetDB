@@ -113,6 +113,41 @@ if test "x$have_readline" != xno; then
 fi
 AC_SUBST(READLINE_LIBS)
 
+dnl libodbc
+have_odbc=auto
+ODBC_LIBS=""
+AC_ARG_WITH(odbc,
+[  --with-odbc=DIR     odbc library is installed in DIR], 
+	[have_odbc="$withval"])
+if test "x$have_odbc" != xno; then
+  if test "x$have_odbc" != xauto; then
+    ODBC_LIBS="-L$withval/lib"
+    ODBC_INCS="-I$withval/include"
+  fi
+
+  save_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $ODBC_INCS"
+  AC_CHECK_HEADERS(sql.h)
+  CFLAGS="$save_CFLAGS"
+
+  save_LIBS="$LIBS"
+  LIBS="$ODBC_LIBS $LIBS"
+  AC_CHECK_LIB(odbc$libsuff, odbc, 
+	[ ODBC_LIBS="$ODBC_LIBS -lodbc$libsuff" 
+          AC_DEFINE(HAVE_LIBODBC) 
+	  have_odbc=yes ]
+	, have_odbc=no )
+  LIBS="$save_LIBS"
+
+  if test "x$have_odbc" != xyes; then
+    ODBC_LIBS=""
+    ODBC_INCS=""
+  fi
+fi
+AM_CONDITIONAL(HAVE_ODBC,test "x$have_odbc" = xyes)
+AC_SUBST(ODBC_LIBS)
+AC_SUBST(ODBC_INCS)
+
 dnl Checks for library functions.
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(CFLAGS)
