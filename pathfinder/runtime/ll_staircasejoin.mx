@@ -513,9 +513,23 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
     bit trivial = (BATcount(res) < 2);
     res->batDirty = TRUE;
     res->hdense = trivial;
+    if (trivial) {
+        if (BATcount(res) == 0) {
+            BATseqbase (res, (oid)0); /* does not really matter */
+        } else {
+            BATseqbase (res, *(oid*)BUNhead(res, BUNfirst(res)));
+        }
+    }
     res->hsorted = (trivial?GDK_SORTED:0); /*might be GDK_SORTED in some more cases... */
     BATkey(res,trivial); /* might be TRUE in some more cases... */
     res->tdense = trivial;
+    if (trivial) {
+        if (BATcount(res) == 0) {
+            BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
+        } else {
+            BATseqbase (BATmirror(res), *(oid*)BUNtail(res, BUNfirst(res)));
+        }
+    }
     res->tsorted = GDK_SORTED;
     BATkey(BATmirror(res),trivial); /* might be TRUE in some more cases... */
 }
