@@ -231,11 +231,12 @@ mal_export void		promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 
 
-mal_export void strBeforeCall(ValPtr v);
-mal_export void strAfterCall(ValPtr v);
+mal_export void strBeforeCall(ValPtr v,ValPtr bak);
+mal_export void strAfterCall(ValPtr v,ValPtr bak);
 mal_export void strFinalCall(ValPtr v);
 mal_export void batFinalCall(ValPtr v);
-mal_export void batBeforeCall(ValPtr v);
+mal_export void batBeforeCall(ValPtr v,ValPtr bak);
+mal_export void batAfterCall(ValPtr v,ValPtr bak);
 #endif /*  _MAL_INSTR_H*/
 @c
 #include "mal_instruction.h"
@@ -1200,22 +1201,40 @@ void printSignature(FILE *fd, Symbol s){
 	fprintf(fd,"%s",txt);
 	GDKfree(txt);
 }
-@+ Value management
+@+ Garbage collection
 Of particular interest is the beforeCall situations for strings and bats.
-They should may to the finalCall, because old values should be
-removed from the stack first.
+Before the interpreter calls a function, it should safeguard the
+value(s) on top of the stack for garbage collection afterwards.
+The before- and after- calls should find a scratch area on the value
+stack to keep the backup information around. Currently, we only
+garbage collect a single return value and use a fixed value record.
+
 @c 
-void strBeforeCall(ValPtr v){ strFinalCall(v);}
-void strAfterCall(ValPtr v) { v->len= ATOMlen(v->vtype,v->val.pval);}
+void strBeforeCall(ValPtr v, ValPtr bak){
+	bak->val.sval= v->val.sval;
+	bak->len = v->len;
+}
+void strAfterCall(ValPtr v, ValPtr bak) {
+	if( v->val.sval != bak->val.sval)
+		strFinalCall(bak);
+	v->len= ATOMlen(v->vtype,v->val.pval);
+}
 void strFinalCall(ValPtr v){
-        if( v->val.pval && v->val.pval != str_nil) {
+        if(v->vtype==TYPE_str && 
+	   v->val.pval && v->val.pval != str_nil) {
                 if(v->len) GDKfree(v->val.pval);
                 v->len= 0;
         }       
         v->val.pval= NULL;
 }       
 
-void batBeforeCall(ValPtr v){ batFinalCall(v);}
+void batBeforeCall(ValPtr v, ValPtr bak){
+	bak->val.bval= v->val.bval;
+}
+void batAfterCall(ValPtr v, ValPtr bak){
+	if( bak->val.bval != v->val.bval)
+		batFinalCall(bak);
+}
 void batFinalCall(ValPtr v){ 
 	if(v->val.bval)
 	{       BAT *b;                                                                        b= (BAT*) BBPgetdesc(v->val.bval);

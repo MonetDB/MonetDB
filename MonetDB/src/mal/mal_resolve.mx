@@ -331,6 +331,12 @@ an other alternative.
 	for(i=0;i<p->retc;i++) 
 		setVarType(mb,p->argv[i],returntype[i]);
 	if(p->modname == 0) p->modname= GDKstrdup(m->name);
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) {
+		printInstruction(stdout,mb,p);
+		printf("Finished matching\n");
+	}
+#endif
 	s1= returntype[0];	/* for those interested */
 	foundbutwrong = 0;
 @-
@@ -390,13 +396,21 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 	}
 @-
 Since we now know the storage type of the receiving variable, we can
-set the before/after/final-Call functions.
+set the before/after/final-Call functions. Actually, we should set
+up a call for each return value. Instead, we rely in this case
+on a user-supplied function [todo].
+@= chkMultiple
+	if( p->retc != 1)
+		GDKwarning("garbage collection not guaranteed\n");
 @c
 	if(isaBatType(s1)){
+		@:chkMultiple@
 		p->beforeCall= (GDKfcn) batBeforeCall;
+		p->afterCall= (GDKfcn) batAfterCall;
 		p->finalCall= (GDKfcn) batFinalCall;
 	}
 	else if( ATOMstorage(s1)== TYPE_str){
+		@:chkMultiple@
 		p->beforeCall= (GDKfcn)strBeforeCall;
 		p->afterCall= (GDKfcn) strAfterCall;
 		p->finalCall= (GDKfcn) strFinalCall;
@@ -593,10 +607,18 @@ and leads to flagging the function as erroneous.
 Also check general conformaty of the ML block structure.
 It should start with a signature and finish with and ENDDEFsymbol
 @c
+int chkProgramIdentifier(MalBlkPtr mb, str nme, int tpe){
+	if( ATOMindex(nme)>0) return TRUE;
+	if( tpe!= TYPE_str ){
+		GDKerror("TYPE ERROR:mod/fcn should be a string\n");
+		mb->errors++;
+	}
+	return FALSE;
+}
 void chkProgram(Scope s, MalBlkPtr mb)
 {
         InstrPtr p;
-	int i,k, signature= FALSE, kind= TYPE_FIXED, tst= TRUE;
+	int i,k, tpe,signature= FALSE, kind= TYPE_FIXED, tst= TRUE;
 
 	for(i=0;i<mb->stop;i++) {
 		p= getInstrPtr(mb,i);
@@ -608,6 +630,14 @@ However, the first instruction is always a signature
 and should be checked.
 @c
 		tst= TRUE;
+		if( p->fcnname && (k=findVariable(mb,p->fcnname)) > 0 ){
+			tpe= getVarType(mb,k);
+			tst= tst && chkProgramIdentifier(mb,p->fcnname,tpe);
+		}
+		if(tst &&  p->modname && (k=findVariable(mb,p->modname)) >0 ){
+			tpe= getVarType(mb,k);
+			tst= tst && chkProgramIdentifier(mb,p->modname,tpe);
+		}
 		for(k=p->retc;k<p->argc;k++){
 			int actual = getArgType(mb,p,k);
 			if(actual == TYPE_any ||

@@ -70,6 +70,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env){
 	MalStkPtr stk= NULL;
 	int i,k,firstNewElement=0;
 	ValPtr retval, lhs,rhs,v;
+	ValRecord backup[MAXARG], *bak = backup;
 	InstrPtr pci=0, altpci=0; 
 	int stop=0;
 	str ret=0;
@@ -302,9 +303,11 @@ is made part of the start-up procedure.
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
 		lhs = &stk->stk[pci->argv[k]];
 		rhs = &stk->stk[pci->argv[i]];
-		garbageElement(lhs);
-		@:BATfix(rhs)@
+		if( pci->beforeCall) 
+			(*pci->beforeCall)(&stk->stk[pci->argv[k]],bak+k);
 		VALcopy(lhs,rhs);
+		if( pci->afterCall) 
+			(*pci->afterCall)(&stk->stk[pci->argv[k]],bak+k);
 	}
 	ret = 0;
 }
@@ -373,10 +376,8 @@ are determined at compile time.
 		ret= raiseException(mb,stk->pc,MALexception,
 			"address of pattern missing\n");
 	else {
-		/*retval=  &stk->stk[pci->argv[0]];
-		 garbageElement(retval); todo: garbage collect all returns !*/
 		if( pci->beforeCall) 
-			(*pci->beforeCall)(&stk->stk[pci->argv[0]]);
+			(*pci->beforeCall)(&stk->stk[pci->argv[0]],bak);
 		ret = (str) (*pci->fcn)(mb,stk,pci);
 		@:resultParameter@
 	}
@@ -387,10 +388,8 @@ a new stack frame and do housekeeping, such as garbagecollection of all
 non-returned values.
 
 @= functioncall
-	/* retval=  &stk->stk[pci->argv[0]];
-	 garbageElement(retval); todo:garbage collect all returns !*/
 	if( pci->beforeCall) 
-		(*pci->beforeCall)(&stk->stk[pci->argv[0]]);
+		(*pci->beforeCall)(&stk->stk[pci->argv[0]],bak);
 	if( pci->blk== NULL)
 		ret= raiseException(mb,stk->pc,MALexception,
 			"reference to MAL function missing\n");
@@ -415,10 +414,8 @@ the bind(namespace,batname,mode) operation.[todo]
 
 @= evalParameters
 {	int k;
-	/*retval=  &stk->stk[pci->argv[0]];
-	 garbageElement(retval);*/
 	if(pci->beforeCall)
-		(*pci->beforeCall)(&stk->stk[pci->argv[0]]);
+		(*pci->beforeCall)(&stk->stk[pci->argv[0]],bak);
 /* improve performance with 20 ms/1M calls*/
 	switch(pci->argc){
 	case 7: argv[6] =(ptr) getArgReference(stk,pci,6);
@@ -449,7 +446,7 @@ Upon return of the function we may be interested in the result
 and we have to do some housekeeping, such as string length adjustment.
 @= resultParameter
 	@:exceptionHndlr@
-	if( pci->afterCall) (*pci->afterCall)(&stk->stk[pci->argv[0]]);
+	if( pci->afterCall) (*pci->afterCall)(&stk->stk[pci->argv[0]],bak);
 	if( pci->barrier==BARRIERsymbol){
 		@:barrierControl@
 	}
@@ -557,10 +554,9 @@ if( pci->typechk== TYPE_UNKNOWN){
 		@:garbageTypeCheck@
 		ret= raiseException(mb,stk->pc,MALexception,
 				    "Instruction type not fixed\n");
+		@:endProfile@
+		goto MALevalExit;
 	}
-	@:endProfile@
-	goto MALevalExit;
-	@:exceptionHndlr@
 }
 @-
 Exceptions raised within a linked-in function requires some care.
@@ -631,14 +627,42 @@ This requires an additional call to the typechecker, each time
 the instruction is encountered. Moreover, we may not store the
 type information in the program description, because the
 actual types may differ between calls.
+
+Note that the module and function name may be obtained from
+a string variable. Before we return the original values
+should be reset.
+
 @= dynamicTypeCheck
 	altpci= pci;
+#ifdef DEBUG_MAL_INTERPRETER 
 	printf("Start dynamic type check on:\n");
 	printInstruction(stdout, mb, altpci);
+#endif
 	pci = copyInstruction(pci);
+	if( pci->fcnname && (i=findVariable(mb,pci->fcnname)) != -1){
+		if( stk->stk[i].vtype != TYPE_str)
+			pci->fcnname= 0;
+		else {
+			GDKfree(pci->fcnname);
+			pci->fcnname= GDKstrdup( stk->stk[i].val.sval);
+		}
+	}
+	if( pci->modname && (i=findVariable(mb,pci->modname)) != -1){
+		if( stk->stk[i].vtype != TYPE_str)
+			pci->modname= 0;
+		else {
+			GDKfree(pci->modname);
+			pci->modname= GDKstrdup( stk->stk[i].val.sval);
+		}
+	}
+#ifdef DEBUG_MAL_INTERPRETER 
+	printInstruction(stdout,mb,pci);
+#endif
 	typeChecker(getClient()->nspace, mb,pci,TYPE_FIXED);
+#ifdef DEBUG_MAL_INTERPRETER 
 	printf("type checked version:\n");
 	printInstruction(stdout, mb, pci);
+#endif
 @-
 After the instruction has been executed we should
 throw away the temporary copy. Taking care of any
@@ -678,33 +702,16 @@ just one reference per BAT. This doesn't work, because we may
 keep bat_views around, which depend on the existence of the
 underlying BAT.
 
+Look further in mal_instruction.mx for the before/after calls.
+
 @= BATfix
 if(@1->vtype == TYPE_bat)
 { 	BAT *b;
 	b= (BAT*) BBPgetdesc(@1->val.bval);
 	if( b ) {
 		BBPfix(b->batCacheid);
-		/* printf("increment %s to %d\n",b->batId,  
-			BBP_refs(b->batCacheid)); */
 	} else raiseException(mb,stk->pc,"interpreter",
 		"Can not find bat, internal error\n");
-}
-@-
-
-@= BATunfix
-if(@1->vtype == TYPE_bat && @1->val.bval)
-{ 	BAT *b;
-	b= (BAT*) BBPgetdesc(@1->val.bval);
-	if( b ) {
-		BBPunfix(b->batCacheid);
-		/* printf("decrement %s (%d) to %d\n",b->batId, 
-			@1->val.bval,
-			BBP_refs(b->batCacheid)); */
-	}
-	@1->val.bval =0;
-#ifdef DEBUG_MAL_INTERPRETER 
-	else GDKerror("interpreter:bat '%d' disappeared\n",@1->val.bval);
-#endif
 }
 
 @+ Garbage collection
@@ -781,7 +788,6 @@ we have to keep track of essential system counter information.
 		times(&pci->timer);
 	}
 #endif
-
 @= endProfile
 #ifdef MALprofiler
 	if( malProfileMode){

@@ -147,16 +147,14 @@ short opCharacter[256];
 short idCharacter[256];
 int initParser(){
 	int i;
+	for(i=0;i<256;i++) idCharacter[i]= isalpha(i);
 	for(i=0;i<256;i++)
 	switch(i){
 	case '-': case '!': case '\\': case '$': case '%':
 	case '^': case '*': case '~': case '+': case '&':
 	case '|': case '<': case '>': case '=': case '/':
-	case ':': opCharacter[i]=1; break;
-	default: opCharacter[i]=0;
+	case ':': opCharacter[i]=1; 
 	}
-	for(i=0;i<256;i++)
-	idCharacter[i]= isalpha(i);
 	idCharacter['_']=1;
 	idCharacter[TMPMARKER]=1;
 }
@@ -259,7 +257,7 @@ int operatorLength(Client cntxt){
 	int l=0;
 	str s;
 	for( s= cntxt->nxt ; *s; s++)
-	if( opCharacter[*s]) l++; else return l;
+	if( opCharacter[*s] ) l++; else return l;
 	return l;
 }
 str operatorCopy(Client cntxt, int length){
@@ -564,8 +562,8 @@ the function definition in a particular module instead of the current one.
 		return (MalBlkPtr) parseError(cntxt,"')' expected\n");
 	}
 @= fcnHeader
-	l = idLength(cntxt);
-	if( l == 0) l = operatorLength(cntxt);
+	l = operatorLength(cntxt);
+	if( l == 0) l = idLength(cntxt);
 	if( l == 0) return (MalBlkPtr) parseError(cntxt,
 				"<identifier> |<operator> expected\n");
 
@@ -574,8 +572,8 @@ the function definition in a particular module instead of the current one.
 	if( currChar(cntxt) == '.'){
 		nextChar(cntxt);
 		modnme= fnme;
-		l= idLength(cntxt);
-		if( l == 0) l = operatorLength(cntxt);
+		l= operatorLength(cntxt);
+		if( l == 0) l = idLength(cntxt);
 		if( l == 0) return (MalBlkPtr) parseError(cntxt,
 					"<identifier> |<operator> expected\n");
 		fnme = idCopy(cntxt,l);
@@ -1201,7 +1199,7 @@ Get arguments for a call, assume a single result.
 		}
 		goto opseen;
 	}
-	if( (i= idLength(cntxt)) || (i=operatorLength(cntxt))) {
+	if( (i= operatorLength(cntxt)) || (i=idLength(cntxt))) {
 		arg= idCopy(cntxt,i);
 idseen:
 		if( currChar(cntxt) != '.' &&
