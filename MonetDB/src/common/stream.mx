@@ -2165,10 +2165,6 @@ bstream_destroy(bstream *s)
 void
 close_stream(stream *s)
 {
-	if (s && !s->errnr) {
-		s->close(s);
-		s->destroy(s);
-	} else if (s) {
-		s->destroy(s);
-	}
+	s->close(s);
+	s->destroy(s);
 }
