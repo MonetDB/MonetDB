@@ -22,6 +22,17 @@
 #include "ODBCUtil.h"
 
 
+void
+ODBCResetStmt(ODBCStmt *stmt)
+{
+	SQLFreeStmt_(stmt, SQL_CLOSE);
+	setODBCDescRecCount(stmt->ImplParamDescr, 0);
+	if (stmt->query)
+		free(stmt->query);
+	stmt->query = NULL;
+	stmt->State = INITED;
+}
+
 SQLRETURN
 SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
@@ -48,12 +59,7 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	   {fn scalar-function} etc. ) to MonetDB SQL syntax */
 	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStrLength);
 
-	SQLFreeStmt_(stmt, SQL_CLOSE);
-	setODBCDescRecCount(stmt->ImplParamDescr, 0);
-	if (stmt->query)
-		free(stmt->query);
-	stmt->query = NULL;
-	stmt->State = INITED;
+	ODBCResetStmt(stmt);
 
 	/* TODO: check (parse) the Query on correctness */
 	/* count the number of parameter markers (question mark: ?) */

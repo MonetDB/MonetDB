@@ -44,12 +44,7 @@ SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	fixODBCstring(szSqlStr, nSqlStr, addStmtError, stmt);
 	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStr);
 
-	SQLFreeStmt_(stmt, SQL_CLOSE);
-	setODBCDescRecCount(stmt->ImplParamDescr, 0);
-	if (stmt->query)
-		free(stmt->query);
-	stmt->query = NULL;
-	stmt->State = INITED;
+	ODBCResetStmt(stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLExecDirect: \"%s\"\n", query);

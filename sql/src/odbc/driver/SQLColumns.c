@@ -24,6 +24,47 @@
 #include "ODBCUtil.h"
 
 
+static const char *columnnames[] = {
+	"table_cat",
+	"table_schem",
+	"table_name",
+	"column_name",
+	"data_type",
+	"type_name",
+	"column_size",
+	"buffer_length",
+	"decimal_digits",
+	"num_prec_radix",
+	"nullable",
+	"remarks",
+	"column_def",
+	"sql_data_type",
+	"sql_datetime_sub",
+	"char_octet_length",
+	"ordinal_position",
+	"is_nullable",
+};
+static const char *columntypes[] = {
+	"varchar",
+	"varchar",
+	"varchar",
+	"varchar",
+	"smallint",
+	"varchar",
+	"integer",
+	"integer",
+	"smallint",
+	"smallint",
+	"smallint",
+	"varchar",
+	"varchar",
+	"smallint",
+	"smallint",
+	"integer",
+	"integer",
+	"varchar",
+};
+
 static SQLRETURN
 SQLColumns_(ODBCStmt *stmt,
 	    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
@@ -83,7 +124,7 @@ SQLColumns_(ODBCStmt *stmt,
 		"cast(s.\"name\" as varchar) as table_schem, "
 		"cast(t.\"name\" as varchar) as table_name, "
 		"cast(c.\"name\" as varchar) as column_name, "
-		"cast(c.\"type\" as smallint) as data_type, "
+		"cast(0 as smallint) as data_type, "
 		"cast(c.\"type\" as varchar) as type_name, "
 		"cast(c.\"type_digits\" as integer) as column_size, "
 		"cast(c.\"type_digits\" as integer) as buffer_length, "
@@ -95,9 +136,9 @@ SQLColumns_(ODBCStmt *stmt,
 		"when false then cast(%d as smallint) end as nullable, "
 		"cast('' as varchar) as remarks, "
 		"cast('' as varchar) as column_def, "
-		"cast(c.\"type\" as smallint) as sql_data_type, "
-		"cast('' as varchar) as sql_datetime_sub, "
-		"cast('' as varchar) as char_octet_length, "
+		"cast(0 as smallint) as sql_data_type, "
+		"cast(0 as smallint) as sql_datetime_sub, "
+		"case c.\"type\" when 'varchar' then cast(c.\"type_digits\" as smallint) else cast(NULL as smallint) end as char_octet_length, "
 		"cast(c.\"number\" as integer) as ordinal_position, "
 		"case c.\"null\" when true then cast('yes' as varchar) "
 		/* should this be '' instead of 'no'? */
@@ -162,6 +203,56 @@ SQLColumns_(ODBCStmt *stmt,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
+
+	if (rc == SQL_SUCCESS) {
+		const char ***tuples;
+		int i, j, n;
+		char *data;
+		int concise_type, data_type, sql_data_type, sql_datetime_sub;
+
+		n = stmt->rowcount;
+		tuples = malloc(sizeof(*tuples) * n);
+		for (i = 0; i < n; i++) {
+			mapi_fetch_row(stmt->hdl);
+			tuples[i] = malloc(sizeof(**tuples) * 18);
+			for (j = 0; j < 18; j++) {
+				data = mapi_fetch_field(stmt->hdl, j);
+				tuples[i][j] = data && j != 4 && j != 13 &&
+					j != 14 ? strdup(data) : NULL;
+			}
+			concise_type = ODBCConciseType(tuples[i][5]);
+			free((void *) tuples[i][5]);
+			tuples[i][5] = ODBCGetTypeInfo(concise_type,
+						       &data_type,
+						       &sql_data_type,
+						       &sql_datetime_sub);
+			if (tuples[i][5] != NULL) {
+				tuples[i][5] = strdup(tuples[i][5]);
+				data = malloc(7);
+				sprintf(data, "%d", data_type);
+				tuples[i][4] = data;
+				data = malloc(7);
+				sprintf(data, "%d", sql_data_type);
+				tuples[i][13] = data;
+				data = malloc(7);
+				sprintf(data, "%d", sql_datetime_sub);
+				tuples[i][14] = data;
+			}
+		}
+
+		ODBCResetStmt(stmt);
+
+		mapi_virtual_result(stmt->hdl, 18, columnnames, columntypes,
+				    NULL, n, tuples);
+		for (i = 0; i < n; i++) {
+			for (j = 0; j < 18; j++)
+				if (tuples[i][j])
+					free((void *) tuples[i][j]);
+			free(tuples[i]);
+		}
+		free(tuples);
+		return ODBCInitResult(stmt);
+	}
 
 	return rc;
 }

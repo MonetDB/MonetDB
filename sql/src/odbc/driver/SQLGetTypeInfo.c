@@ -759,6 +759,24 @@ static struct types {
 	}
 };
 
+/* find some info about a type given the concise type */
+const char *
+ODBCGetTypeInfo(int concise_type, int *data_type, int *sql_data_type,
+		int *sql_datetime_sub)
+{
+	struct types *t;
+
+	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
+		if (t->data_type == concise_type) {
+			*data_type = t->data_type;
+			*sql_data_type = t->sql_data_type;
+			*sql_datetime_sub = t->sql_datetime_sub;
+			return t->type_name;
+		}
+	}
+	return NULL;
+}
+
 static SQLRETURN
 SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 {

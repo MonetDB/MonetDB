@@ -142,14 +142,8 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 		SQLFreeStmt_(stmt, SQL_CLOSE);
 		ODBCFreeStmt_(stmt);
 
-		for (stmt = dbc->FirstStmt; stmt; stmt = stmt->next) {
-			SQLFreeStmt_(stmt, SQL_CLOSE);
-			setODBCDescRecCount(stmt->ImplParamDescr, 0);
-			if (stmt->query)
-				free(stmt->query);
-			stmt->query = NULL;
-			stmt->State = INITED;
-		}
+		for (stmt = dbc->FirstStmt; stmt; stmt = stmt->next)
+			ODBCResetStmt(stmt);
 	} else {
 		/* could not allocate a statement object */
 		/* Memory management error */
