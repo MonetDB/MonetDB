@@ -1,9 +1,0 @@
-#!/bin/bash
-# create the test files from the enclosing modules
-for f in  `ls ../*mx`
-do
-	echo "---->" $f
-	Mx -x mil $f
-	fn=`basename $f .mil`
-	#M2m $fn.mal
-done

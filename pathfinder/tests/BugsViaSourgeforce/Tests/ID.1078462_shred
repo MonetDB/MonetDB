@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-test -e ID.1078462_doc.xml || Mlog -x ln -s $RELSRCDIR/ID.1078462_doc.xml .
-
-Mlog -x pf-shred ID.1078462_doc.xml
-
