@@ -31,7 +31,6 @@
 @t staircasejoin
 
 @c
-/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
 
 /*******************************************
 * staircasejoin.c : staircase join operators
@@ -47,13 +46,17 @@ const int PF_DEBUG_RESULT_BAT = 1;  /* check size of result BAT */
 /* Parameters */
 const int PF_SOFTWARE_PREFETCH = 128;
 
+/* software prefetching is not used currently */
+#if 0
 #define prefetch_loc(addr) \
   __asm__ __volatile__ ("prefetchnta %0" \
                         : \
                         : \
                         "m" (*(((char*)(size_t)(((unsigned int)(size_t)(addr))&~0x7f)))))
                             /* StM: extended casting to pacify 64-bit compilers */
-
+#else
+#define prefetch_loc(addr)
+#endif
 
 /*******************************************************************/
 
