@@ -702,7 +702,7 @@ static nat store_NsLoc(shredCtxStruct* shredCtx, char* nsloc) {
         if ( (colon = strchr (nsloc, ':')) ) {
             nsStr  = nsloc;
             *colon = '\0';
-            locStr = ++colon; 
+            locStr = &colon[1]; 
         } else {
             nsStr  = emptyString;
             locStr = nsloc; 
@@ -720,6 +720,10 @@ static nat store_NsLoc(shredCtxStruct* shredCtx, char* nsloc) {
                 return NIL;
         }
 #endif
+	if ( colon ) {
+	    /* undo the inserted '\0' between the ns and the locName */
+	    *colon = ':';
+	}
         return res;
 }
 
@@ -910,12 +914,10 @@ shred_comment (void *xmlCtx, const xmlChar *c)
 }
 
 void 
-error (void *xmlCtx, const char *msg, ...)
+PFXMLerror (void *xmlCtx, const char *msg, ...)
 {
     va_list msgs;
     char errmsg[PFSHRED_BUFLEN];
-
-    stream_printf(GDKerr, "!ERROR (XML parser): ");
 
     va_start (msgs, msg);
     vsnprintf (errmsg, PFSHRED_BUFLEN, msg, msgs);
@@ -935,7 +937,7 @@ xmlSAXHandler shredder = {
   , .characters            = shred_characters
   , .processingInstruction = shred_pi
   , .comment               = shred_comment
-  , .error                 = error
+  , .error                 = PFXMLerror
   , .cdataBlock            = shred_cdata
   , .internalSubset        = 0
   , .isStandalone          = 0
@@ -1000,8 +1002,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile)
     /* incomplete, check if something has gone wrong durin shred */
     if (! xmlCtx->wellFormed) {
         stream_printf(GDKerr, 
-                 "!ERROR: XML input not well-formed "
-                 "(relation files probably contain garbage)\n");
+                 "!ERROR: XML input not well-formed.\n");
 
         return -1;
     }
