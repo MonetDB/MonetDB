@@ -204,6 +204,7 @@ if [ "${os}" = "Linux" ] ; then
 		fi
 		if [ "${what}" = "MONET" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
+			conf_opts="${conf_opts} --with-pcl=${softpath}"
 		fi
 	fi
 	if [ "${hw}" = "ia64" ] ; then
