@@ -64,12 +64,12 @@ operands.
     comment "(BAT,Constant) calculator function with new BAT result";
 
     command @1(a:bat[:any$1,:any$2], b:bat[:any$1,:any$2], cst:any$2)
-	:bat[:any$1,:any$2] 
+	:void
     address CMDbataccum@3cst
     comment "(BAT,Constant) calculator function with accumulator BAT result";
 
     command @1(a:bat[:any$1,:any$2], cst:any$2, b:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2] 
+	:void
     address CMDbataccum@3cst2
     comment "(BAT,Constant) calculator function with accumulator BAT result";
 
@@ -79,7 +79,7 @@ operands.
     comment "Binary BAT calculator function with new BAT result";
 
     command @1(a:bat[:any$1,:any$2], b:bat[:any$1,:any$2], c:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2] 
+	:void
     address CMDbataccum@3
     comment "Binary BAT calculator function with accumulator BAT result";
 @{
@@ -261,7 +261,7 @@ address CMDconvertstr_int
 comment "Coerce an str tail to a bat with a int tail.";
 
 command int(b:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvertOIDclass
+address CMDconvertoid_int
 comment "Materialize the oid into an int";
 
 command oid(b:bat[:void,:any$1]):bat[:oid,:any$1] 
@@ -273,7 +273,7 @@ address CMDconvertOIDclass
 comment "Identity mapping";
 
 command oid(b:bat[:oid,:int]):bat[:oid,:oid] 
-address CMDconvertOIDclass
+address CMDconvertint_oid
 comment "Materialize the integer into an oid";
 
 command oid(b:bat[:void,:int]):bat[:void,:oid] 
@@ -444,7 +444,6 @@ str CMDbataccum@1(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,left,CMDbataccum@1)@
 	@:chkSize(dst,right,CMDbataccum@1)@
 
-	*ret = dst->batCacheid;
 	return bataccum@1(dst,left,right);
 }
 str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
@@ -455,8 +454,6 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	@:getBATdescriptor(ret,r,dst,CMDbataccum@1)@
 	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
 	@:chkSize(dst,left,CMDbataccum@1)@
-	BBPincref(*ret = dst->batCacheid,TRUE);
-	BBPunfix(*ret);
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
@@ -479,6 +476,7 @@ str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l){
 str CMDbat@1cst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
 	int d;
+	str msg;
 
 	@:getBATdescriptor(ret,l,left,CMDbat@1)@
 	dst= BATcopy(left);
@@ -486,11 +484,19 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	d= dst->batCacheid;
-	return CMDbataccum@1cst(ret, &d,l,cst);
+	msg= CMDbataccum@1cst(ret, &d,l,cst);
+	if( msg){
+		BBPdecref(d,TRUE);
+		return msg;
+	}
+	BBPincref(*ret= dst->batCacheid,TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
 }
 str CMDcst@1bat(int *ret, void *cst, int *l)
 {	BAT *dst, *left;
 	int d;
+	str msg;
 
 	@:getBATdescriptor(ret,l,left,CMDbat@1)@
 	dst= BATcopy(left);
@@ -498,7 +504,14 @@ str CMDcst@1bat(int *ret, void *cst, int *l)
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	d= dst->batCacheid;
-	return CMDbataccum@1cst(ret, &d,l,cst);
+	msg= CMDbataccum@1cst(ret, &d,l,cst);
+	if( msg){
+		BBPdecref(d,TRUE);
+		return msg;
+	}
+	BBPincref(*ret= dst->batCacheid,TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
 }
 @c
 #include "batcalc.h"
@@ -987,6 +1000,10 @@ The lengthly list of coercions options could have been generated.
 	@:General(dbl,lng)@
 	@:General(dbl,flt)@ @:Enlarge(dbl,flt)@
 
+	@:General(int,oid)@
+	@:General(oid,int)@
+	@:General(lng,oid)@
+	@:General(oid,lng)@
 str CMDconvertstr_int(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
