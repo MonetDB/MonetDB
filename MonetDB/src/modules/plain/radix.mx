@@ -997,8 +997,10 @@ proc tst(bat[oid,oid] res_join, int nbits) {
         t := time; res_a1 := radix_decluster2(cl_new, cl_tmp, borders_smaller, 32);
         printf("% 6dms === % 15lld %s\n",  time - t, pcl_stop(e).mark(0@0).reverse.find(0@0), pcl_events.reverse.find($h));
     }
-    res_a1.slice(3343424,20).print;
+    res_a1.slice(3343424, 3343444).print;
 }
+
+res_join.reverse.mark(0@0).reverse.join(tab_attr).slice(3343424, 3343444).print;
 
 tst(res_join,1);
 tst(res_join,13);
