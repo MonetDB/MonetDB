@@ -156,13 +156,13 @@ such as the program counter.
 
 @= initSqueezes
 	int i,lim,top,ssize;	
-	int *new;
+	InstrPtr *new;
 @-
 @= prepareSqueeze
 	lim = getPrgSize(m);
 	top = 0;
-	ssize= m->ssize+ @1*sizeof(int);
-	new = (int*) GDKmalloc(ssize);
+	ssize= m->ssize+ @1*sizeof(InstrPtr);
+	new = (InstrPtr*) GDKmalloc(ssize);
 	if( new == NULL)
                 GDKfatal("sqzPrepare:could not allocate space\n");
 @-
@@ -237,7 +237,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		for(j=0;j<pp->argc;j++)
 		if( pp->argv[j]== symid){
 			/* insert blocking statement */
-			newstmt= newCmdCall(m,"squeezer","AccessTst");
+			newstmt= newCall(m,"squeezer","AccessTst",CMDcall);
 			setReturnArgument(newstmt, newTmpVariable(m,TYPE_int));
 			pushArgument(m,newstmt, symid);
 			pushInstruction(m,newstmt); /* add to block */

@@ -10,16 +10,15 @@
 #
 #command + (L:any::1,R:any::1):any::1 = addIntInt; 
 !ERROR: address of function addIntInt not found
-#function address for 'addIntInt' not found
-command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:(addIntInt:any::1->15)(L:any::1->13)(R:any::1->14)
+command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:(addIntInt:any::1->3)(L:any::1->1)(R:any::1->2)
 #
 #function doitOnce():int;
 #	z:= 12;
 #	return z;
 #end function;
 function Admin.doitOnce():int;	#0:(doitOnce:int->0)
-	z := 12;	#1:(z:int->13)($14:int->14)
-	return z;	#2:(z:int->13)
+	z := 12;	#1:(z:int->1)($2:int->2)
+	return z;	#2:(z:int->1)
 end function;	#3:
 #
 #function doitTwice(i:int):int;
@@ -28,11 +27,11 @@ end function;	#3:
 #	i:= j+k;
 #	return i;
 #end function;
-function Admin.doitTwice(i:int):int;	#0:(doitTwice:int->0)(i:int->13)
-	j := 2;	#1:(j:int->14)($15:int->15)
-	k := 11111;	#2:(k:int->16)($17:int->17)
-	i := Admin.+(j,k);	#3:(i:int->13)(j:int->14)(k:int->16)
-	return i;	#4:(i:int->13)
+function Admin.doitTwice(i:int):int;	#0:(doitTwice:int->0)(i:int->1)
+	j := 2;	#1:(j:int->2)($3:int->3)
+	k := 11111;	#2:(k:int->4)($5:int->5)
+	i := Admin.+(j,k);	#3:(i:int->1)(j:int->2)(k:int->4)
+	return i;	#4:(i:int->1)
 end function;	#5:
 #
 #
@@ -44,12 +43,12 @@ end function;	#5:
 #d:= doitTwice("wrong");
 #
 function Admin.main():int;	#0:(main:int->0)
-	a := 1;	#1:(a:int->13)($14:int->14)
-	b := Admin.doitOnce();	#2:(b:int->15)
-	c := 2;	#3:(c:int->16)($17:int->17)
-	d := Admin.doitTwice(3);	#4:(d:int->18)($19:int->19)
-	c := 3;	#5:(c:int->16)($19:int->19)
-	d := doitTwice("wrong");	#6 unknown:(d:int->18)($20:str->20)
+	a := 1;	#1:(a:int->1)($2:int->2)
+	b := Admin.doitOnce();	#2:(b:int->3)
+	c := 2;	#3:(c:int->4)($5:int->5)
+	d := Admin.doitTwice(3);	#4:(d:int->6)($7:int->7)
+	c := 3;	#5:(c:int->4)($7:int->7)
+	d := doitTwice("wrong");	#6 unknown:(d:int->6)($8:str->8)
 end function;	#7:
 !ERROR: MALexception:Admin.main[6]:Instruction type not fixed
 >

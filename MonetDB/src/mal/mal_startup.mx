@@ -118,8 +118,7 @@ void resetClientPrg(Client cntxt){
         mb = cntxt->curprg->def;
         p = getSignature(cntxt->curprg);
         p->modname= GDKstrdup(cntxt->nspace->name);
-        getVarType(mb,findVariable(mb,"main"))= TYPE_int;
-	initSymbolTable(mb);
+        setVarType(mb,findVariable(mb,"main"), TYPE_int);
 }
 void closeClientPrg(Client cntxt, int flag){
         InstrPtr p;
@@ -138,6 +137,7 @@ void closeClientPrg(Client cntxt, int flag){
 		if( p->token != ENDDEFsymbol)
 			pushEndInstruction(mb);
 	}
+	trimMalBlk(mb);
 	chkClientPrg(cntxt,flag);
 	resetClientPrg(cntxt);
 }
@@ -174,9 +174,6 @@ void chkClientPrg(Client cntxt,int flag)
 			break;
 		case ENDsymbol:
 			chkEnd(mb,p);
-			break;
-		case RAISEsymbol:
-			chkRaise(mb,p);
 			break;
 		case CATCHsymbol:
 			chkCatch(mb,p);
@@ -255,15 +252,16 @@ variable stack, i.e. removing at least the temporary variables,
 but maybe everything beyond a previous defined pont.
 [also clear the stack! ]
 @c
-#define MAGIC GDKatomcnt+2	/* keep at least some */
+#define MAGIC GDKatomcnt	/* keep at least some */
 
 void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
         InstrPtr p;
         int i,j;
 
-        for(i=0;i<mb->stop;i++){
+        for(i=1;i<mb->stop;i++){
                 p= getInstrPtr(mb,i); 
                 freeInstruction(p);
+		mb->stmt[i] = NULL;
         }
 	if( mb->vtop>MAGIC){
 		for(i=j=MAGIC; i< mb->vtop; ){

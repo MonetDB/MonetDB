@@ -69,19 +69,16 @@ html
 #include "mal.h"
 
 #define DEBUG_MAL_INSTR
-#define MAXARG 32
-#define MAXVARS 128
-#define MALBLKSIZE 4096
-#define MAXSTMTS 512
+#define MAXARG 16
+#define MAXSTMTS 32
+#define MAXVARS 32
 
 typedef struct SYMDEF {
         struct SYMDEF   *peer;  /* where to look next */
-        str             name;
-        str             help;   /* supportive commentary */
-	str		binding;/* related C-function */
-        int             kind;
+        str     name;
+        int	kind;
         struct MALBLK   *def;    /* the details of the MAL fcn */
-} *Symbol, SymDefinition;
+} *Symbol, SymRecord;
 
 typedef struct{
 	str     name;	/* argname or lexical value repr */
@@ -89,7 +86,7 @@ typedef struct{
         bit	isaconstant;	/* value cannot change */
 	int	isused;	/* for stack copying scope */
 	short	index;	/* offset in stack */
-	str	literal;/* initial value -> ValRecord */
+	str	literal;/* initial value string */
 	ValRecord value;
 } *VarPtr, VarRecord;
 
@@ -102,7 +99,8 @@ typedef struct{
 
 typedef struct {
 	short	token;		/* instruction type */
-	short	barrier;	/* Begin-end of block */
+	short	barrier;	/* Begin-end of block indicator*/
+	short	raise;		/* create event */
 	int	typechk;	/* type check status */
 @-
 For performance analysis we keep track of the number of calls
@@ -119,7 +117,6 @@ and the total time spent while executing the instruction.
 The MAL instruction representation. The strings should be garbage collected
 upon destruction of the definition.
 @h
-	struct SYMDEF  *sym;	/* pointer to enclosing proc symbol */
 	str	modname;	/* module context */
 	str	fcnname;	/* function name */
 	int	argc;
@@ -127,47 +124,45 @@ upon destruction of the definition.
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK{
-	struct SYMDEF  *sym;	/* pointer to enclosing proc symbol */
-	int	  vtop;		/* next free slot */
-	int	  vsize;	/* byte size of arena */
+	str	binding;/* related C-function */
+        str     help;   /* supportive commentary */
+	int	vtop;		/* next free slot */
+	int	vsize;	/* size of variable arena */
 	VarRecord  **var;	/* Variable table */
-	int	  ctop;		/* next free slot */
-	int	  csize;	/* byte size of arena */
-	char	  *code;	/* Instruction encoding */
-	int	  stop;		/* next free slot */
-	int	  ssize;	/* byte size of arena */
-	int	  *stmt;	/* Instruction location */
-	int	  errors;	/* left over errors */
+	int	stop;		/* next free slot */
+	int	ssize;	/* byte size of arena */
+	InstrPtr *stmt;	/* Instruction location */
+	int	errors;	/* left over errors */
 } *MalBlkPtr, MalBlkRecord;
 @-
 Allocation of space assumes a rather exotic number of arguments.
 @h
-#define getInstrPtr(M,I)	((InstrPtr)((M)->code + (M)->stmt[I]))
+#define getInstrPtr(M,I)	(M)->stmt[I]
 #define getSignature(S)		getInstrPtr((S)->def,0)
 #define getFcnName(M)	getInstrPtr(M,0)->fcnname
-#define getFcnArgCount(M)	getInstrPtr(M,0)->argc
+#define getArgCount(M)	getInstrPtr(M,0)->argc
 #define getModName(M)	getInstrPtr(M,0)->modname 
 #define getPrgSize(M)	(M)->stop
 
-#define getVar(M,I)	(M)->var[I]
-#define getVarName(M,I)  (M)->var[I]->name
-#define getVarType(M,I)  (M)->var[I]->type
-#define getVarIndex(M,I)  (M)->var[I]->index
-#define getVarLiteral(M,I)  (M)->var[I]->literal
-#define isVarConstant(M,I) ((M)->var[I]->isaconstant)
-#define isVarUsed(M,I) ((M)->var[I]->isused)
-#define getVarConstant(M,I)  ((M)->var[I]->value)
-#define copyVar(M,I,J)	GDKfree((M)->var[I]);(M)->var[I] = (M)->var[J];\
+#define getVar(M,I)		(M)->var[I]
+#define getVarName(M,I)  	(M)->var[I]->name
+#define getVarIndex(M,I)  	(M)->var[I]->index
+#define getVarLiteral(M,I) 	(M)->var[I]->literal
+#define isVarConstant(M,I)	((M)->var[I]->isaconstant)
+#define isVarUsed(M,I) 		((M)->var[I]->isused)
+#define getVarConstant(M,I) 	((M)->var[I]->value)
+#define copyVar(M,I,J)	freeVariable(M,I);(M)->var[I] = (M)->var[J];\
 		(M)->var[J]= NULL;
 
-#define setDestType(M,P)  getVarType((M),(P)->argv[0])
-#define getDestType(M,P)  destinationType((M),(P))
-#define getArgName(M,P,I)  getVarName((M),(P)->argv[I])
-#define getArgType(M,P,I)  getVarType((M),(P)->argv[I])
-#define getArgIndex(M,P,I)  getVarIndex((M),(P)->argv[I])
-#define getArgDefault(M,P,I)  getVarLiteral((M),(P)->argv[I])
+#define setDestType(M,P,V) 	setVarType((M),(P)->argv[0],V)
+#define getDestType(M,P) 	destinationType((M),(P))
+#define getArgName(M,P,I) 	getVarName((M),(P)->argv[I])
+#define getArgType(M,P,I) 	getVarType((M),(P)->argv[I])
+#define getArgIndex(M,P,I) 	getVarIndex((M),(P)->argv[I])
+#define getArgDefault(M,P,I)	getVarLiteral((M),(P)->argv[I])
 
 mal_export InstrPtr	newInstruction(MalBlkPtr mb, int kind);
+mal_export InstrPtr 	copyInstruction(InstrPtr p);
 mal_export void		freeInstruction(InstrPtr p);
 mal_export Symbol	newSymbol(str nme, int kind);
 mal_export void 	freeSymbol(Symbol s);
@@ -175,6 +170,8 @@ mal_export void 	freeSymbolList(Symbol s);
 mal_export MalBlkPtr	newMalBlk();
 mal_export void		freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr	copyMalBlk(MalBlkPtr);
+mal_export void		expandMalBlk(MalBlkPtr mb);
+mal_export void		trimMalBlk(MalBlkPtr mb);
 
 mal_export int		findVariable(MalBlkPtr mb, str name);
 mal_export int		findVariableLenght(MalBlkPtr mb, str name,int len);
@@ -189,6 +186,10 @@ mal_export int		isVARG(MalBlkPtr mb, InstrPtr p, int i);
 mal_export void		pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void		pushEndInstruction(MalBlkPtr mb);
 mal_export void		pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
+mal_export void 	pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
+mal_export int		getVarType(MalBlkPtr mb, int i) ;
+mal_export void		setVarType(MalBlkPtr mb, int i, int tpe);
+mal_export void		setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void		setReturnArgument(InstrPtr p, int varid);
 mal_export malType	destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export str		getDestName(MalBlkPtr mb, InstrPtr p);
@@ -205,53 +206,53 @@ Symbol newSymbol(str nme, int kind){
 	if( nme == NULL){
 		GDKfatal("@1:unexpected name (=null)\n");
 	}
-        cur = (Symbol) GDKmalloc(sizeof(SymDefinition));
+        cur = (Symbol) GDKmalloc(sizeof(SymRecord));
 	if( cur == NULL){
 		GDKfatal("@1: cannot initialize scope\n");
 	}
-	bzero((str)cur,sizeof(SymDefinition));
+	bzero((str)cur,sizeof(SymRecord));
 	cur->name = nme;
 	cur->kind = kind;
 	cur->peer = NULL;
-	cur->help = NULL;
 	cur->def = newMalBlk();
 	return cur;
 }
 void freeSymbol(Symbol s){
         if(s==NULL) return;
         if( s->name) GDKfree(s->name);
-        if( s->help) GDKfree(s->help);
         if( s->def) freeMalBlk(s->def);
         GDKfree(s);
 }
 void freeSymbolList(Symbol s){
-        if(s==NULL) return;
-        if(s->peer != NULL) freeScope(s->peer);
-        freeScope(s);
+	Symbol t= s;
+	while(s){
+		t= s->peer;
+		freeSymbol(s);
+		s=t;
+	}
 }
  
 MalBlkPtr newMalBlk(){
 	MalBlkPtr mb;
 	VarPtr *v;
 	char *c;
-	int *n;
+	InstrPtr *p;
 
 	v = (VarPtr *)GDKmalloc(sizeof(VarPtr) * MAXVARS);
 	if( v== NULL )
 		GDKfatal("newMalBlk:could not get variable storage\n");
-	c = (char *)GDKmalloc(MALBLKSIZE);
-	if( c== NULL )
-		GDKfatal("newMalBlk:could not get code storage\n");
-	n = (int *)GDKmalloc(sizeof(int) * MAXSTMTS);
-	if( n== NULL )
+	bzero(v, sizeof(VarPtr) * MAXVARS);
+	p = (InstrPtr *)GDKmalloc(sizeof(InstrPtr) * MAXSTMTS);
+	if( p== NULL )
 		GDKfatal("newMalBlk:could not get instruction storage\n");
+	bzero((char *)p, sizeof(InstrPtr) *MAXSTMTS);
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
 	if( mb== NULL )
 		GDKfatal("newMalBlk:could not get storage\n");
 
 	mb->var = v; mb->vtop = 0; mb->vsize = MAXVARS;
-	mb->code = c; mb->ctop = 0; mb->csize= MALBLKSIZE;
-	mb->stmt = n; mb->stop = 0; mb->ssize = MAXSTMTS;
+	mb->stmt = p; mb->stop = 0; mb->ssize = MAXSTMTS;
+	mb->help = mb->binding= NULL;
 	mb->errors = 0;
 	return mb;
 }
@@ -263,8 +264,9 @@ void freeMalBlk(MalBlkPtr mb){
 	for(i=0;i<mb->vtop; i++)
 		freeVariable(mb, i);
 	GDKfree(mb->stmt); mb->stop = mb->ssize = 0; mb->stmt= 0;
-	GDKfree(mb->code); mb->ctop = mb->csize = 0; mb->code= 0;
 	GDKfree(mb->var); mb->vtop = mb->vsize = 0; mb->var= 0;
+	if( mb->help) GDKfree(mb->help); mb->help = NULL;
+	if( mb->binding) GDKfree(mb->binding); mb->binding = NULL;
 	mb->errors=0;
 }
 @-
@@ -278,79 +280,99 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
 	if( mb== NULL )
 		GDKfatal("newMalBlk:could not get storage\n");
-	mb->sym= old->sym;
+	bzero((char *) mb, sizeof(MalBlkRecord));
 	mb->var = (VarPtr *)GDKmalloc(sizeof(VarPtr) * old->vsize);
-	mb->vsize = old->vsize;
-	memcpy((char*) mb->var, old->var, sizeof(VarPtr) * old->vsize);
 	if( mb->var== NULL )
 		GDKfatal("newMalBlk:could not get variable storage\n");
+	mb->vsize = old->vsize;
+	memcpy((char*) mb->var, old->var, sizeof(VarPtr) * old->vsize);
+
 	mb->vtop = 0;
-	for(i=0;i<old->vtop;i++)
+	for(i=0;i<old->vtop;i++){
 		copyVariable(mb,old,getVar(old,i));
+		mb->vtop++;
+	}
 
-	mb->code = (char *)GDKmalloc( mb->csize = old->csize);
-	mb->ctop = old->ctop;
-	memcpy((char*) mb->code, old->code, old->csize);
-	if( mb->code== NULL )
-		GDKfatal("newMalBlk:could not get code storage\n");
-
-	mb->stmt = (int *)GDKmalloc(sizeof(int) * old->ssize);
-	mb->stop = old->stop;
-	mb->ssize = old->ssize;
-	memcpy((char*) mb->stmt, old->stmt, old->ssize);
+	mb->stmt = (InstrPtr *)GDKmalloc(sizeof(InstrPtr) * old->ssize);
 	if( mb->stmt== NULL )
 		GDKfatal("newMalBlk:could not get instruction storage\n");
+	bzero((char*) mb->stmt, sizeof(InstrPtr) * old->ssize);
+	mb->stop = old->stop;
+	mb->ssize = old->ssize;
+	for(i=0; i<old->stop;i++)
+		mb->stmt[i] = copyInstruction(old->stmt[i]);
 
-	for(i=0;i<mb->stop;i++){
-		InstrPtr p= getInstrPtr(mb,i);
-		if( p->modname) p->modname= GDKstrdup(p->modname);
-		if( p->fcnname) p->fcnname= GDKstrdup(p->fcnname);
-	}
+	mb->help = old->help?GDKstrdup(old->help): NULL;
+	mb->binding = old->binding?GDKstrdup(old->binding): NULL;
 	mb->errors= old->errors;
 	return mb;
 }
+@-
+The MalBlk structures potentially consume a lot a of space, because it
+is not possible to precisely estimate the default sizes of the var and stmt
+components. The routines below provide a mechanism to handle the issue.
+
+Experience shows that trimming leads to memory fragmentation (140K lost
+after Mserver init) and is therefore turned off.
+@c
+void trimexpand(MalBlkPtr mb, int size){
+	VarRecord **v;
+	v= (VarRecord **) GDKmalloc(sizeof(ValPtr)* (mb->vtop+size));
+	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * (mb->vtop+size));
+	GDKfree(mb->var);
+	mb->var = v;
+	mb->vsize = mb->vtop+size;
+}
+void expandMalBlk(MalBlkPtr mb){
+	/* trimexpand(mb,MAXVARS);*/
+}
+void trimMalBlk(MalBlkPtr mb){
+ /* printf("safe %d %d\n",mb->vtop, (mb->vsize-mb->vtop)*sizeof(VarPtr));
+	trimexpand(mb,0); */
+}
+
 InstrPtr newInstruction(MalBlkPtr mb, int kind){
 	InstrPtr p;
 	int space;
 
-	space = MAXARG * sizeof(int)+ sizeof(InstrRecord);
-	if( mb->csize-mb->ctop <= space){
-		char *newblk= GDKmalloc(mb->csize + MALBLKSIZE);
-		/* printf("generate new code block\n");*/
-		if( newblk== NULL){
-			mb->errors++;
-			GDKerror("newInstruction:no storage left\n");
-			return getInstrPtr(mb,mb->stop-1);
-		}
-		memcpy(newblk,mb->code,mb->ctop);
-		mb->code = newblk;
-		mb->csize += MALBLKSIZE;
-	}
-	p= (InstrPtr) (mb->code+mb->ctop);
-	mb->ctop += sizeof(InstrRecord);
-
-	bzero((str)p, sizeof(InstrRecord));
-	p->sym = 0;/* mb->sym;*/
+	space = (MAXARG-1) * sizeof(int)+ sizeof(InstrRecord);
+	p = GDKmalloc(space);
 	p->token = kind;
 	p->barrier= 0;
+	p->raise= 0;
+	p->typechk = TYPE_UNKNOWN;
 	p->modname= NULL;
 	p->fcnname= NULL;
 	p->argc= 1;
-	p->argv[0] = -1;
-	p->typechk = TYPE_UNKNOWN;
+	p->argv[0] = -1;	/* watch out for direct use in variable table*/
 	return p;
 }
 
+@- 
+Copying an instruction is space conservative.
+@c
+InstrPtr copyInstruction(InstrPtr p)
+{
+	InstrPtr new;
+	int space;
+
+	space = sizeof(InstrRecord) + sizeof(int) * p->argc;
+	new = (InstrPtr) GDKmalloc(space);
+	memcpy((char*) new, (char*) p, space);
+	new->fcnname = p->fcnname? GDKstrdup(p->fcnname): NULL;
+	new->modname = p->modname? GDKstrdup(p->modname): NULL;
+	return new;
+}
 void freeInstruction(InstrPtr p){
 	if(p->modname) GDKfree(p->modname);
 	if(p->fcnname) GDKfree(p->fcnname);
-	p->modname= NULL;
-	p->fcnname= NULL;
+	bzero((char*)p, sizeof(InstrRecord)+ (p->argc-1)*sizeof(int));
+	GDKfree(p);
 }
 
 
 @-
-Beware that the first signature slot is reserved for the function
+Beware that the first argument of a signature is reserved for the function
 return type , which should be equal to the destination variable type.
 
 VarRecords are allocated on the variable stack.
@@ -385,6 +407,10 @@ int findVariableLength(MalBlkPtr mb, str name, int len){
 	}
 	return -1;
 }
+@-
+Note that getType also checks for type names directly.
+They have preference over variable names.
+@c
 malType getType(MalBlkPtr mb, str nme){
 	int i;
 	i= findVariable(mb,nme);
@@ -409,22 +435,25 @@ cheap to perform a linear search to a variable or constant.
 @c
 int newVariable(MalBlkPtr mb, str name, malType type){
         int n,l;
+	int atomary= FALSE;
         
-	if( mb->vtop+1 >= mb->vsize){
+	if( mb->vtop == mb->vsize){
 		VarPtr *new;
 		int s= mb->vtop + MAXVARS;
 		new= (VarPtr *) GDKmalloc(s * sizeof(VarPtr));
-		/*printf("generate new variable block\n");*/
+		/*printf("generate new variable block %d\n",s);fflush(stdout);*/
 		if( new== NULL ){
 			mb->errors++;
 			GDKerror("newMalBlk:no storage left\n");
 			return mb->vtop;
 		}
-		memcpy(new,mb->var, sizeof(VarPtr) * mb->vtop);
-		GDKfree(mb->var);
+		bzero(new, s * sizeof(VarPtr));
+		memcpy((char*)new, (char*)mb->var, sizeof(VarPtr) * mb->vtop);
+		GDKfree((str)mb->var);
 		mb->vsize= s;
 		mb->var= new;
-	}
+	} else if (mb->vtop >mb->vsize)
+		GDKfatal("newVariable:variable administration\n");
 	n= findVariable(mb,name);
 	/* check for type names */
 	if( n>=0){
@@ -434,18 +463,36 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 			GDKerror("'%s' type mismatch %d vs %d\n",
 				name, getVarType(mb,n),type);
 		}
-		/* GDKfree(name); not correct, check use!!!*/
+		GDKfree(name);  /* possible error not correct, check use!!!*/
 		return n;
+	}
+@-
+If we encounter a Monet type name, it is added to the symbol table with proprietary type.
+The makes analyses of patterns like bat(int,str) easier.
+@c
+	l = ATOMindex(name);
+	if( l>= 0){
+		if( type != l && type != malAnyType){
+			GDKerror("'%s' type mismatch with %d\n", name, type);
+			GDKfree(name);  
+			name = newTmpName(mb->vtop);
+		}
+		type = l;
+		atomary= TRUE;
 	}
 	n = mb->vtop;
 	getVar(mb,n) = (VarPtr) GDKmalloc(sizeof(VarRecord));
 	bzero( (str) getVar(mb,n), sizeof(VarRecord));
 	getVarName(mb,n) = name;
-	getVarType(mb,n) = type;
+	setVarType(mb,n,type);
 	getVarIndex(mb,n) = n;
 	getVarLiteral(mb,n)= NULL;
-	isVarConstant(mb,n) = 0;
-	isVarUsed(mb,n) = 0;
+	isVarConstant(mb,n) = atomary;
+	if( atomary){
+		getVarConstant(mb,n).val.ival = type;
+		getVarConstant(mb,n).vtype = TYPE_int;
+	}
+	isVarUsed(mb,n) = FALSE;
 	mb->vtop++;
 	return n;
 } 
@@ -465,15 +512,17 @@ void	copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
         w->isaconstant = v->isaconstant;
         w->isused = v->isused;
 	VALcopy(&w->value,&v->value);
-	dst->var[dst->vtop++]= w;
+	dst->var[dst->vtop]= w;
 }
 void freeVariable(MalBlkPtr mb, int varid){
 	VarPtr v;
 	v= getVar(mb,varid);
-	if( v->name ==0) return;
+	if(v== NULL ) return;
+	if(v->name ==0) return;
 	if( v->name) GDKfree(v->name); v->name = 0;
 	if( v->literal) GDKfree(v->literal); v->literal= 0;
-	VALclear(&v->value);
+	if( isVarConstant(mb,varid)) VALclear(&v->value);
+	GDKfree(getVar(mb,varid));
 	getVar(mb,varid) = NULL;
 }
 @- Constants
@@ -521,7 +570,7 @@ int newConstant(MalBlkPtr mb, malType type, str val){
 		    /* v->type == type &&*/
 		    idcmp(v->literal,val)==0 
 		  ) {
-/* printf("reused a constant variable %s\n",v->name);*/
+/*printf("reused a constant variable %s\n",v->name);*/
 			GDKfree(val);
 			return i;
 		 }
@@ -547,7 +596,7 @@ to make the user aware of this situation.
 			 /* parser guarantees true/false conversion */
 			 x= val[0]=='t' || val[0]=='T';
 			 vr->vtype= TYPE_bit;
-			 vr->val.bval= x;
+			 vr->val.ival= x;
 			 break;
 			}
 	case TYPE_chr: 
@@ -574,7 +623,7 @@ to make the user aware of this situation.
 			}
 			break; }
 	case TYPE_int: {long l= strtol(val,NULL,0);
-			if( l>= (2<<16) || l <= (-1<<16)){
+			if( l>= (1<<15) || l <= (-1<<15)){
 			GDKerror("WARNING:newConstant:int coerced to lng\n");
 				vr->vtype= TYPE_lng;
 				vr->val.lval= l;
@@ -605,7 +654,7 @@ to make the user aware of this situation.
 			break; }
 	case TYPE_str: 
 			vr->vtype= TYPE_str;
-			vr->val.sval= (str) val;
+			vr->val.sval= (str) GDKstrdup(val);
 			vr->len= strlen((str) val);
 			break;
 	default:{ 
@@ -632,26 +681,66 @@ before being assigned. Failure to obey should mark the instruction
 as type-error.
 @c
 void pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
-	/* MalBlkPtr mb= p->sym->def;*/
         int n;
         
         n = p->argc;
-        if( n == MAXARG-2){
+        if( n == MAXARG-1){
 		mb->errors++;
                 GDKerror("too many arguments\n");
 		p->argc--;
         } 
 	p->argc++;
 	p->argv[n] = varid;
-	p->argv[p->argc] = -1;
-	mb->ctop += sizeof(int);
 	isVarUsed(mb,varid) = TRUE;
 } 
-void setReturnArgument(InstrPtr p, int varid){
-	p->argv[0]= varid;
+@-
+Store the information of a destination variable in the signature structure of
+each instruction. This code is largely equivalent to pushArgument,
+but it is more efficient in searching and collecting the information.
+[todo]
+@c
+void pushArgumentId(MalBlkPtr mb, InstrPtr p,str name){
+        int v;
+
+	v= findVariable(mb,name);
+	if( v<0) v= newVariable(mb,name,getTypeIndex(name));
+	else GDKfree(name);
+	pushArgument(mb,p,v);
+}
+int getVarType(MalBlkPtr mb, int i) 
+{
+	if(i<0) return malAnyType;
+	if( i >= mb->vsize) {
+		GDKwarning("setVarType:array bound error %d %d\n",i, mb->vtop);
+		return;
+	}
+	return mb->var[i]->type;
+}
+void setVarType(MalBlkPtr mb, int i, int tpe) 
+{
+	if(i<0) return;
+	if( i >= mb->vsize) {
+		GDKwarning("setVarType:array bound error %d %d\n",i, mb->vtop);
+		return;
+	}
+	mb->var[i]->type= tpe;
+}
+void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe)
+{
+	if( p->argv[i] >=mb->vsize) {
+		GDKwarning("setArgType:array bound error\n");
+		return;
+	}
+	p->argv[0]= i;
+	mb->var[p->argv[0]]->type = tpe;
+}
+void setReturnArgument(InstrPtr p, int i)
+{
+	p->argv[0]= i;
 }
 str getDestName(MalBlkPtr mb, InstrPtr p){
-	if( p->argc>0) return getVarName(mb,p->argv[0]);
+	if( p->argv[0]>=0 && p->argv[0]<mb->vtop)
+		return getVarName(mb,p->argv[0]);
 	return "";
 }
 malType destinationType(MalBlkPtr mb, InstrPtr p){
@@ -660,13 +749,7 @@ malType destinationType(MalBlkPtr mb, InstrPtr p){
 }
 
 @-
-Instructions are simply appended to a MAL block, provided the
-end-of-function instruction has not already been seen.
-If this happens, a syntax error is reported, because all
-instructions (except top-level instructions) should be
-properly enclosed in block brackets.
-Similarly, FUNCTION and COMMAND statements can only occur as
-the first instruction in a block.
+Instructions are simply appended to a MAL block
 @c
 void pushInstruction(MalBlkPtr mb, InstrPtr p){
 	int i;
@@ -674,19 +757,21 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p){
 
 	i= mb->stop;
 	if( i+1 >= mb->ssize){
-		int *newblk= (int *) GDKmalloc( (mb->ssize + MAXSTMTS)
-						* sizeof(int));
+		int space= (mb->ssize + MAXSTMTS) * sizeof(InstrPtr);
+		InstrPtr *newblk= (InstrPtr *) GDKmalloc( space);
+/*printf("resize instruction block to %d\n",  space);*/
 		if( newblk== NULL){
 			mb->errors++;
 			GDKerror("pushInstruction:no storage left\n");
 			return;
 		}
-		memcpy(newblk,mb->stmt,mb->stop*sizeof(int));
-		mb->ssize += MAXARG;
+		bzero((char*)newblk, space);
+		memcpy(newblk,mb->stmt,mb->stop * sizeof(InstrPtr));
+		mb->ssize += MAXSTMTS;
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
 	}
-	mb->stmt[i]= ((char *) p)-((char*)mb->code);
+	mb->stmt[i]= p;
 	mb->stop++;
 }
 mal_export void pushEndInstruction(MalBlkPtr mb){
@@ -758,7 +843,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 	 	sprintf(t,"command ");
 	else if( p->token == PATTERNsymbol)
 		sprintf(t,"pattern ");
-	else sprintf(t,"ruler ");
+	else sprintf(t,"handler ");
 
 	advance(t);
 	if( p->modname) sprintf(t,"%s.",p->modname);
@@ -777,8 +862,8 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 	sprintf(t,"):%s",tpe);
 	GDKfree(tpe);
 	advance(t);
-	if(mb->sym->binding)
-		sprintf(t," = %s;",mb->sym->binding);
+	if(mb->binding)
+		sprintf(t," = %s;",mb->binding);
 	else	sprintf(t,";");
 #ifdef DEBUG_MAL_INSTR
 	if( mal_xlisting){
@@ -795,9 +880,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	int i,len=0;
 	str s,t,nme;
 
-	len = (p->modname?strlen(p->modname):0) +
-	      (p->fcnname?strlen(p->fcnname):0) +
-	      2*8196;
+	len = 8196;
 	s= GDKmalloc(len);
 	s[0]=0;
 	t=s;
@@ -807,6 +890,9 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	if( p->barrier){
 		if( p->barrier== BARRIERsymbol)
 			sprintf(t,"barrier"); 
+	} else
+	if( p->raise){
+		sprintf(t,"raise");
 	}
 	advance(t);
 	switch( p->token){
@@ -849,8 +935,8 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 		case FUNCTIONsymbol:
 		case PATTERNsymbol:
 			return fcnDefinition(mb,p,s); 
-		case BARRIERsymbol:
 		case RAISEsymbol:
+		case BARRIERsymbol:
 			sprintf(t,"\t%s",nme);
 			break;
 		default:

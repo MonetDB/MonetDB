@@ -9,7 +9,7 @@
 ## check propagation of type variables over bats
 #
 #function f(a:any::1, b:any::2):bat[any::2,any::1] ; end function;
-function Admin.f(a:any::1,b:any::2):bat[any::2,any::1];	#0 polymorphic:(f:bat[any::2,any::1]->0)(a:any::1->13)(b:any::2->14)
+function Admin.f(a:any::1,b:any::2):bat[any::2,any::1];	#0 polymorphic:(f:bat[any::2,any::1]->0)(a:any::1->1)(b:any::2->2)
 end function;	#1:
 #
 #a:= f(1,"hello");
@@ -18,9 +18,9 @@ end function;	#1:
 #d:= f(true,false);
 #
 function Admin.main():int;	#0:(main:int->0)
-	a := Admin.f(1,"hello");	#1:(a:bat[str,int]->13)($14:int->14)($15:str->15)
-	b := Admin.f(1,"world");	#2:(b:bat[str,int]->16)($14:int->14)($17:str->17)
-	c := Admin.f(1.0,-3);	#3:(c:bat[int,flt]->18)($19:flt->19)($20:int->20)
-	d := Admin.f(true,false);	#4:(d:bat[bit,bit]->21)($22:bit->22)($23:bit->23)
+	a := Admin.f(1,"hello");	#1:(a:str->1)($2:int->2)($3:str->3)
+	b := Admin.f(1,"world");	#2:(b:str->4)($2:int->2)($5:str->5)
+	c := Admin.f(1.0,-3);	#3:(c:int->6)($7:flt->7)($8:int->8)
+	d := Admin.f(true,false);	#4:(d:bit->9)($10:bit->10)($11:bit->11)
 end function;	#5:
 >

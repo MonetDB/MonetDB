@@ -316,6 +316,15 @@ signatures satisfying the pattern.
 		continue;
 	}
 	case 'r': /* reset program counter */
+		if( strncmp("records",b,3)==0){
+		/* structure sizes */
+		fprintf(out,"InstrRecord %d bytes\n", sizeof(InstrRecord));
+		fprintf(out,"VarRecord   %d bytes\n", sizeof(VarRecord));
+		fprintf(out,"ValRecord   %d bytes\n", sizeof(ValRecord));
+		fprintf(out,"SymRecord   %d bytes\n", sizeof(SymRecord));
+		fprintf(out,"MalBlkRecord %d bytes\n", sizeof(MalBlkRecord));
+		break;
+		}
 		fprintf(out,"restart with current stack\n");
 		return 'r';
 	default:
@@ -398,6 +407,7 @@ void mdbHelp(FILE *f){
 	fprintf(f,"quit -- leaver debugger\n");
 	fprintf(f,"list -- list current program block\n");
 	fprintf(f,"variables -- print variable bindings\n");
+	fprintf(f,"record  -- print record structure sizes\n");
 	fprintf(f,"where -- print stack trace\n");
 	fprintf(f,"print <var> -- display value of a variable\n");
 	fprintf(f,"run -- restart current procedure\n");

@@ -8,20 +8,21 @@
 # monetrc:/ufs/mk/.monet.conf
 ## Exceptions can be explicitly raised
 #
-#raise	IllegalAccess :="new exception";
-#	c4:= "should not come here";
+#raise	IllegalAccess:="new exception";
+#	print("should not come here");
 ##exception block;
 #catch	IllegalAccess;
-#	n0:=0;
+#	printf("catched IllegalAccess");
 #end	IllegalAccess;
-#	post:= "done";
+#	print("done");
 #
 function Admin.main():int;	#0:(main:int->0)
-	IllegalAccess;	#1:(IllegalAccess:any->13)
-	c4 := "should not come here";	#2:(c4:str->14)($15:str->15)
-catch	IllegalAccess;	#3:(IllegalAccess:any->13)
-	n0 := 0;	#4:(n0:int->16)($17:int->17)
-end	IllegalAccess;	#5:(IllegalAccess:any->13)
-	post := "done";	#6:(post:str->18)($19:str->19)
+raise	IllegalAccess := "new exception";	#1:(IllegalAccess:str->1)($2:str->2)
+	system.print("should not come here");	#2:($3:int->3)($4:str->4)
+catch	IllegalAccess;	#3:(IllegalAccess:str->1)
+	system.printf("catched IllegalAccess");	#4:($5:int->5)($6:str->6)
+end	IllegalAccess;	#5:(IllegalAccess:str->1)
+	system.print("done");	#6:($7:int->7)($8:str->8)
 end function;	#7:
+catched IllegalAccess[ "done" ]
 >

@@ -11,3 +11,4 @@ barrier	v:= k<1000000:lng;
 	k:= simple(k);
 	redo v;
 end	v;
+print(k);

@@ -901,5 +901,4 @@ int @3_binary@1(@3 *res , @3 *a, @3 *b ) {
    return(GDK_SUCCEED);
 }
 @
-
 @}

@@ -18,7 +18,7 @@
 #	c:= bat.new(int,str);
 #	rename(c,"mybat");
 #	print(c);
-#	setPersistent(c);
+#	#setPersistent(c);
 #	print(c);
 #	printf("catched anything?\n");
 #catch GDKerror;
@@ -29,20 +29,19 @@
 #	#destroy(c);
 #
 function Admin.main():int;	#0:(main:int->0)
-	b := bat.new(int,int);	#1:(b:bat[int,int]->13)(int:int->6)(int:int->6)
-	bat.rename(b,"mybat");	#2:($14:any->14)(b:bat[int,int]->13)($15:str->15)
-	bat.roles(b,"first","second");	#3:($16:int->16)(b:bat[int,int]->13)($17:str->17)($18:str->18)
-	system.print(b);	#4:($19:int->19)(b:bat[int,int]->13)
-	c := bat.new(int,str);	#5:(c:bat[int,str]->20)(int:int->6)(str:str->12)
-	bat.rename(c,"mybat");	#6:($21:any->21)(c:bat[int,str]->20)($15:str->15)
-	system.print(c);	#7:($22:int->22)(c:bat[int,str]->20)
-	bat.setPersistent(c);	#8:($23:bit->23)(c:bat[int,str]->20)
-	system.print(c);	#9:($24:int->24)(c:bat[int,str]->20)
-	system.printf("catched anything?\n");	#10:($25:int->25)($26:str->26)
-catch	GDKerror;	#11:(GDKerror:str->27)
-	system.printf("Catched the renaming exception\n");	#12:($28:int->28)($29:str->29)
-end	GDKerror;	#13:(GDKerror:str->27)
-end function;	#14:
+	b := bat.new(int,int);	#1:(b:bat[int,int]->1)(int:int->2)(int:int->2)
+	bat.rename(b,"mybat");	#2:($3:any->3)(b:bat[int,int]->1)($4:str->4)
+	bat.roles(b,"first","second");	#3:($5:int->5)(b:bat[int,int]->1)($6:str->6)($7:str->7)
+	system.print(b);	#4:($8:int->8)(b:bat[int,int]->1)
+	c := bat.new(int,str);	#5:(c:bat[int,str]->9)(int:int->2)(str:str->10)
+	bat.rename(c,"mybat");	#6:($11:any->11)(c:bat[int,str]->9)($4:str->4)
+	system.print(c);	#7:($12:int->12)(c:bat[int,str]->9)
+	system.print(c);	#8:($13:int->13)(c:bat[int,str]->9)
+	system.printf("catched anything?\n");	#9:($14:int->14)($15:str->15)
+catch	GDKerror;	#10:(GDKerror:str->16)
+	system.printf("Catched the renaming exception\n");	#11:($17:int->17)($18:str->18)
+end	GDKerror;	#12:(GDKerror:str->16)
+end function;	#13:
 #-----------------#
 # BAT:	  mybat	  #
 # (int)	  (int)	  #

@@ -41,46 +41,54 @@
 #barrier  unfinished:= 1;
 #	f:=1;
 #
+!ERROR: 1: barrier 'L' should be of type bit
 !ERROR: 2:label 'Z' not in guarded block
 !ERROR: 5:label 'L' not in guarded block
 !ERROR: 6:label 'X' not in guarded block
 !ERROR: 7:label 'A' not in guarded block
+!ERROR: 8: barrier 'X' should be of type bit
 !ERROR: 9:label 'L' not in guarded block
 !ERROR: 11:label 'L' not in guarded block
 !ERROR: 20:end-label 'B' doesnot match 'A'
+!ERROR: 13: barrier 'A' should be of type bit
+!ERROR: 14: barrier 'B' should be of type bit
+!ERROR: 17: barrier 'C' should be of type bit
 !ERROR: 21: end-label 'F' without begin-label
+!ERROR: 22: barrier 'D' should be of type bit
+!ERROR: 26: barrier 'D' should be of type bit
 !ERROR: 29: begin-label 'unfinished' without end-label
+!ERROR: 29: barrier 'unfinished' should be of type bit
 function Admin.main():int;	#0:(main:int->0)
-barrier	L := 1;	#1:(L:int->13)($14:int->14)
-	leave Z;	#2:(Z:any->15)
-	redo L ;	#3:(L:int->13)
-end	L;	#4:(L:int->13)
-	redo L ;	#5:(L:int->13)
-	leave X;	#6:(X:int->16)
-	redo A ;	#7:(A:int->17)
-barrier	X := 1;	#8:(X:int->16)($14:int->14)
-	leave L;	#9:(L:int->13)
-	leave X;	#10:(X:int->16)
-	redo L ;	#11:(L:int->13)
-end	X;	#12:(X:int->16)
-barrier	A := 1;	#13:(A:int->17)($14:int->14)
-barrier	B := 1;	#14:(B:int->18)($14:int->14)
-	redo A ;	#15:(A:int->17)
-end	B;	#16:(B:int->18)
-barrier	C := 1;	#17:(C:int->19)($14:int->14)
-	leave A;	#18:(A:int->17)
-end	C;	#19:(C:int->19)
-end	B;	#20:(B:int->18)
-end	F;	#21:(F:str->20)
-barrier	D := 1;	#22:(D:int->21)($14:int->14)
-	leave D;	#23:(D:int->21)
-	redo D ;	#24:(D:int->21)
-end	D;	#25:(D:int->21)
-barrier	D := 2;	#26:(D:int->21)($22:int->22)
-end	D;	#27:(D:int->21)
-end	A;	#28:(A:int->17)
-barrier	unfinished := 1;	#29:(unfinished:int->23)($14:int->14)
-	f := 1;	#30:(f:int->24)($14:int->14)
+barrier	L := 1;	#1:(L:int->1)($2:int->2)
+	leave Z;	#2:(Z:any->3)
+	redo L ;	#3:(L:int->1)
+end	L;	#4:(L:int->1)
+	redo L ;	#5:(L:int->1)
+	leave X;	#6:(X:int->4)
+	redo A ;	#7:(A:int->5)
+barrier	X := 1;	#8:(X:int->4)($2:int->2)
+	leave L;	#9:(L:int->1)
+	leave X;	#10:(X:int->4)
+	redo L ;	#11:(L:int->1)
+end	X;	#12:(X:int->4)
+barrier	A := 1;	#13:(A:int->5)($2:int->2)
+barrier	B := 1;	#14:(B:int->6)($2:int->2)
+	redo A ;	#15:(A:int->5)
+end	B;	#16:(B:int->6)
+barrier	C := 1;	#17:(C:int->7)($2:int->2)
+	leave A;	#18:(A:int->5)
+end	C;	#19:(C:int->7)
+end	B;	#20:(B:int->6)
+end	F;	#21:(F:str->8)
+barrier	D := 1;	#22:(D:int->9)($2:int->2)
+	leave D;	#23:(D:int->9)
+	redo D ;	#24:(D:int->9)
+end	D;	#25:(D:int->9)
+barrier	D := 2;	#26:(D:int->9)($10:int->10)
+end	D;	#27:(D:int->9)
+end	A;	#28:(A:int->5)
+barrier	unfinished := 1;	#29:(unfinished:int->11)($2:int->2)
+	f := 1;	#30:(f:int->12)($2:int->2)
 end function;	#31:
 !ERROR: SyntaxError::'Admin.main' contains errors
 >

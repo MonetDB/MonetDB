@@ -15,12 +15,12 @@
 #end l;
 #
 function Admin.main():int;	#0:(main:int->0)
-	r := 0;	#1:(r:int->13)($14:int->14)
-	l := arith.<(r,1);	#2:(l:bit->15)(r:int->13)($16:int->16)
-barrier	l;	#3:(l:bit->15)
-	r := arith.+(r,1);	#4:(r:int->13)(r:int->13)($16:int->16)
-	l := false;	#5:(l:bit->15)($17:bit->17)
-	redo l ;	#6:(l:bit->15)
-end	l;	#7:(l:bit->15)
+	r := 0;	#1:(r:int->1)($2:int->2)
+	l := arith.<(r,1);	#2:(l:bit->3)(r:int->1)($4:int->4)
+barrier	l;	#3:(l:bit->3)
+	r := arith.+(r,1);	#4:(r:int->1)(r:int->1)($4:int->4)
+	l := false;	#5:(l:bit->3)($5:bit->5)
+	redo l ;	#6:(l:bit->3)
+end	l;	#7:(l:bit->3)
 end function;	#8:
 >

@@ -27,9 +27,7 @@ end function;
 \end{verbatim}
 @-
 The function definition is polymorphic typed, it becomes a concrete
-type upon invocation. Morover, it relies on the callee to provide
-for the proper value types, but this is something we can not be
-100% sure.
+type upon invocation. 
 
 The first assignment can be type checked during parsing, i.e. TYPE_FIXED, 
 and could even lead to a frozen value. Looking up a BAT leads to
@@ -50,7 +48,6 @@ A few conclusions can be drawn. 1) Every statement should carry a
 flag to indicate whether it has been type-resolved. 
 1a) you can always postpone type checking, but then you may leave
 a computation in an inconsistent state upon encountering an error.
-1b) interpreter should consult the actual runtime stack for type resolution
 2) we have to call the type-checker potentially at every instruction
 and its result can not be retained, unless we propagate every new
 type information upon production.
@@ -65,8 +62,6 @@ A) split the function such that type analysis only occurs at the
    function call level.
 Disadvantage, it does not work for the example above.
 Moreover, you need to carry too much contextual information.
-B) ..
-The code below manages function resolution over MAL instructions. 
 
 Choicepoint. We either enforce that the Mal instructions contain the 
 relevant module or we have to provide for a controlled search through
@@ -127,7 +122,7 @@ int tracefcn;
 @-
 A function may be characterised by its module, i.e. the location to
 start the search. Ommision of the module name implies searching from
-the client layer upward.
+the client layer upward. (cost estimate 4ms/1000calls)
 After fixation of the module starting point, the argument type of
 the first parameter is used to isolate a subscope.
 @c
@@ -144,12 +139,6 @@ Within a module find the subscope to locate the element in its list
 of symbols.
 @c
 	m= scope;
-	if( m->subscope == NULL){
-		char buf[2048];
-		sprintf(buf,"subscope of %s\n",(scope?scope->name:"scope wrong"));
-		GDKfatal(buf);
-		GDKfatal("findFunction:subscope table disappeared\n");
-	}
 	s= m->subscope[lev = getSubScope(p->fcnname)];
 	while(s != NULL){	/* single scope elements */
 	if( idcmp(p->fcnname,s->name ) ){
@@ -169,16 +158,20 @@ we simple avoid an increment when running out of formal arguments.
 @c
 	sig = getSignature(s); 
 	varargs=isVARG(s->def,sig,sig->argc-1);
-	if(tracefcn) printf("%s varargs %d\n",p->fcnname,varargs);
-	if(tracefcn) printf("p->argc %d %d\n",p->argc,sig->argc);
+	if(tracefcn) {
+		printf("%s varargs %d\n",p->fcnname,varargs);
+		printf("p->argc %d %d\n",p->argc,sig->argc);
+	}
 	if( varargs){
 		if( p->argc< sig->argc-1 ) {s= s->peer; continue;}
 	} else 	if( sig->argc!= p->argc ) {s= s->peer; continue;}
 
 	polymorphic = 0;
 	unmatched = 0;
-	for(k=i=1;i<p->argc;i++,k++){
-		if(varargs>0 && k>varargs) k= varargs;
+	for(k=i=1;i<p->argc;i++){
+		int itype;
+		if( (itype=getArgType(mb,p,i)) == getArgType(s->def,sig,k) )
+			goto varargtst;
 		if( isPolymorphicArgument(s->def,sig,k) ){
 @-
 The first time we encounter a polymorphic argument in the
@@ -191,15 +184,9 @@ There are at most 2 type variables involved per argument.
 				for(l=0;l<2*p->argc;l++) polytype[l]= malAnyType;
 				polymorphic++;
 			}
-			if( j=updPolyType(getArgType(s->def,sig,i), 
-				    getArgType(mb,p,i), polytype)){
-			if(tracefcn) printf("mismatch %d test %s poly %s\n", i,
-				malTypeName(getArgType(s->def,sig,i)),
-				malTypeName(getArgType(mb,p,i)));
-				unmatched++;
-				break;
-			}
-			continue;
+			if( updPolyType(getArgType(s->def,sig,i), 
+				    itype, polytype) == 0)
+					goto varargtst;
 		}
 @-
 It is possible that you may have to coerce the value to another type.
@@ -208,14 +195,17 @@ level. (e.g. var2:= var0:int). This avoids repeated type analysis
 just before you execute a function.
 At a later stage we may automatically insert such coercion requests.
 @c
-		if( getArgType(mb,p,i) != getArgType(s->def,sig,k) ){
 		if(tracefcn) printf("mismatch %d,%d test %s poly %s\n",
-			i,k,
-			malTypeName(getArgType(mb,p,i)),
+			i,k, malTypeName(itype),
 			malTypeName(getArgType(s->def,sig,k)));
-			unmatched= i;
-			break;
-		}
+		unmatched= i;
+		break;
+@-
+Take care of variable argument lists.
+@c
+	varargtst: 
+		k++;
+		if( k == sig->argc-1 && varargs) {k--; continue;}
 	}
 	if(tracefcn) {
 		 printf("finished param test, unmatched=%d polymorphic=%d\n",
@@ -228,7 +218,7 @@ At a later stage we may automatically insert such coercion requests.
 	}
 	if( unmatched) { s= s->peer; continue; }
 	if( polymorphic){
-		/* what to do with varargs */
+		/* what to do with varirable args */
 		if( s->kind == COMMANDsymbol || s->kind==PATTERNsymbol)
 			s1= getPolyReturn(s->def,sig, polytype);
 		else {
@@ -273,7 +263,7 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 		malTypeName(s1));
 	/* watch out, the destination type may already be known */
 	if( getDestType(mb,p)== malAnyType){
-		setDestType(mb,p)= s1;
+		setDestType(mb,p,s1);
 		p->modname= GDKstrdup(m->name);
 		return s1;
 	}
@@ -376,7 +366,7 @@ procedure call without arguments and no module name.
 		}
 	}
 	if( getDestType(mb,p)== malAnyType){
-		if( p->argv[0]>=0) setDestType(mb,p)= s1;
+		if( p->argv[0]>=0) setDestType(mb,p,s1);
 		return;
 	}
 	if( getDestType(mb,p) == s1) return;
@@ -401,7 +391,7 @@ to type check the function upon each call.
 int typeKind(MalBlkPtr mb, InstrPtr p, int i){
 	malType t= getArgType(mb,p,i);
 	if( isAnyExpression(t) || t == malAnyType) {
-		if( i < getFcnArgCount(mb) )
+		if( i < getArgCount(mb) )
 			return TYPE_POLYMORPHIC;
 		return TYPE_DYNAMIC;
 	}

@@ -11,12 +11,14 @@
 #c:= 7+8;
 #b:=3.5+2.7;
 #s:= "hello world";
+#d:= +(3,1);
 #
 #
 function Admin.main():int;	#0:(main:int->0)
-	a := arith.+(3,1);	#1:(a:int->13)($14:int->14)($15:int->15)
-	c := arith.+(7,8);	#2:(c:int->16)($17:int->17)($18:int->18)
-	b := arith.+(3.5,2.7);	#3:(b:flt->19)($20:flt->20)($21:flt->21)
-	s := "hello world";	#4:(s:str->22)($23:str->23)
-end function;	#5:
+	a := arith.+(3,1);	#1:(a:int->1)($2:int->2)($3:int->3)
+	c := arith.+(7,8);	#2:(c:int->4)($5:int->5)($6:int->6)
+	b := arith.+(3.5,2.7);	#3:(b:flt->7)($8:flt->8)($9:flt->9)
+	s := "hello world";	#4:(s:str->10)($11:str->11)
+	d := arith.+(3,1);	#5:(d:int->12)($2:int->2)($3:int->3)
+end function;	#6:
 >

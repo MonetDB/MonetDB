@@ -8,18 +8,19 @@
 # monetrc:/ufs/mk/.monet.conf
 ## Exception identifiers can be introduced at any place
 #
-#raise	myNewException :="new exception";
-#	c4:= "should not come here";
+#raise	myNewException:="new exception";
+#	printf("should not come here\n");
 ##exception block;
 #catch	myNewException;
-#	n0:=0;
+#	printf("catched exception\n");
 #end	myNewException;
 #
 function Admin.main():int;	#0:(main:int->0)
-	myNewException;	#1:(myNewException:any->13)
-	c4 := "should not come here";	#2:(c4:str->14)($15:str->15)
-catch	myNewException;	#3:(myNewException:any->13)
-	n0 := 0;	#4:(n0:int->16)($17:int->17)
-end	myNewException;	#5:(myNewException:any->13)
+raise	myNewException := "new exception";	#1:(myNewException:str->1)($2:str->2)
+	system.printf("should not come here\n");	#2:($3:int->3)($4:str->4)
+catch	myNewException;	#3:(myNewException:str->1)
+	system.printf("catched exception\n");	#4:($5:int->5)($6:str->6)
+end	myNewException;	#5:(myNewException:str->1)
 end function;	#6:
+catched exception
 >

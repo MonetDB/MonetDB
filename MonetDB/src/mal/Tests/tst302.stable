@@ -9,22 +9,20 @@
 ## exception conceptual error, you can not recursively raise an exception
 ## (you should be able to pass it upwards though)
 #
-#raise	IllegalAccess:="new exception";
+#	raise IllegalAccess := "new exception";
 #	c4:= "should not come here";
 ##exception block;
 #catch	IllegalAccess;
 #	n0:=0;
-#raise	IllegalAccess :="an illegal exception raise";
+#	raise IllegalAccess:="an illegal exception raise";
 #end	IllegalAccess;
 #
-!ERROR: recursive exception 'IllegalAccess' not allowed
 function Admin.main():int;	#0:(main:int->0)
-	IllegalAccess;	#1:(IllegalAccess:any->13)
-	c4 := "should not come here";	#2:(c4:str->14)($15:str->15)
-catch	IllegalAccess;	#3:(IllegalAccess:any->13)
-	n0 := 0;	#4:(n0:int->16)($17:int->17)
-	IllegalAccess;	#5:(IllegalAccess:any->13)
-end	IllegalAccess;	#6:(IllegalAccess:any->13)
+raise	IllegalAccess := "new exception";	#1:(IllegalAccess:str->1)($2:str->2)
+	c4 := "should not come here";	#2:(c4:str->3)($4:str->4)
+catch	IllegalAccess;	#3:(IllegalAccess:str->1)
+	n0 := 0;	#4:(n0:int->5)($6:int->6)
+raise	IllegalAccess := "an illegal exception raise";	#5:(IllegalAccess:str->1)($7:str->7)
+end	IllegalAccess;	#6:(IllegalAccess:str->1)
 end function;	#7:
-!ERROR: SyntaxError::'Admin.main' contains errors
 >

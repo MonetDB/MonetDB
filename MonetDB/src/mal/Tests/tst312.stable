@@ -25,28 +25,28 @@
 #	p4:= p1;
 #
 function Admin.main():int;	#0:(main:int->0)
-	p1 := 1;	#1:(p1:int->13)($14:int->14)
-	s0 := squeezer.access("p1");	#2:(s0:int->15)($16:str->16)
-	p2 := p1;	#3:(p2:int->17)(p1:int->13)
-catch	IllegalAccess;	#4:(IllegalAccess:str->18)
-	c4 := "should not come here";	#5:(c4:str->19)($20:str->20)
-	p3 := p1;	#6:(p3:int->21)(p1:int->13)
-end	IllegalAccess;	#7:(IllegalAccess:str->18)
-	p4 := p1;	#8:(p4:int->22)(p1:int->13)
+	p1 := 1;	#1:(p1:int->1)($2:int->2)
+	s0 := squeezer.access("p1");	#2:(s0:int->3)($4:str->4)
+	p2 := p1;	#3:(p2:int->5)(p1:int->1)
+catch	IllegalAccess;	#4:(IllegalAccess:str->6)
+	c4 := "should not come here";	#5:(c4:str->7)($8:str->8)
+	p3 := p1;	#6:(p3:int->9)(p1:int->1)
+end	IllegalAccess;	#7:(IllegalAccess:str->6)
+	p4 := p1;	#8:(p4:int->10)(p1:int->1)
 end function;	#9:
-entering sqzAccess blocking 13 p1
+entering sqzAccess blocking 1 p1
 Modified stmt sequence
 function Admin.main():int;	#0:(main:int->0)
-	p1 := 1;	#1:(p1:int->13)($14:int->14)
-	squeezer.AccessTst(p1);	#2:($23:int->23)(p1:int->13)
-	p2 := p1;	#3:(p2:int->17)(p1:int->13)
-catch	IllegalAccess;	#4:(IllegalAccess:str->18)
-	c4 := "should not come here";	#5:(c4:str->19)($20:str->20)
-	squeezer.AccessTst(p1);	#6:($24:int->24)(p1:int->13)
-	p3 := p1;	#7:(p3:int->21)(p1:int->13)
-end	IllegalAccess;	#8:(IllegalAccess:str->18)
-	squeezer.AccessTst(p1);	#9:($25:int->25)(p1:int->13)
-	p4 := p1;	#10:(p4:int->22)(p1:int->13)
+	p1 := 1;	#1:(p1:int->1)($2:int->2)
+	squeezer.AccessTst(p1);	#2:($11:int->11)(p1:int->1)
+	p2 := p1;	#3:(p2:int->5)(p1:int->1)
+catch	IllegalAccess;	#4:(IllegalAccess:str->6)
+	c4 := "should not come here";	#5:(c4:str->7)($8:str->8)
+	squeezer.AccessTst(p1);	#6:($12:int->12)(p1:int->1)
+	p3 := p1;	#7:(p3:int->9)(p1:int->1)
+end	IllegalAccess;	#8:(IllegalAccess:str->6)
+	squeezer.AccessTst(p1);	#9:($13:int->13)(p1:int->1)
+	p4 := p1;	#10:(p4:int->10)(p1:int->1)
 end function;	#11:
 Entering AccessTst with argument 1
 >

@@ -41,7 +41,7 @@ end	FT;
 barrier	FTE:= booleanexpr;
 	# thenpart
 end	FTE;
-barrier FS:= ~ FTE;
+barrier FS:= not FTE;
 	#elsepart
 end	FS;
 

@@ -12,7 +12,7 @@
 #b:=c;	#c undefined
 #
 function Admin.main():int;	#0:(main:int->0)
-	a := b;	#1 dynamic:(a:any->13)(b:any->14)
-	b := c;	#2 dynamic:(b:any->14)(c:any->15)
+	a := b;	#1 dynamic:(a:any->1)(b:any->2)
+	b := c;	#2 dynamic:(b:any->2)(c:any->3)
 end function;	#3:
 >

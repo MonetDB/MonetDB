@@ -477,7 +477,7 @@ defineStmt : FUNCTION
 	curInstr->fcnname = fnme;
 	GDKfree(getVarName(curBlk,0));
 	getVarName(curBlk,0) = GDKstrdup(fnme);
-	getVarType(curBlk,0) = malAnyType;
+	setVarType(curBlk,0,malAnyType);
 
 
 	/* get parameters */
@@ -508,10 +508,10 @@ defineStmt : FUNCTION
 	skipBlanc2(cntxt);
 	if( currChar(cntxt) != ':') {
 		/* default */
-		getVarType(curBlk,0)= malAnyType;
+		setVarType(curBlk,0,malAnyType);
 	} else { nextChar(cntxt); skipBlanc2(cntxt);
 		@:melType@
-		getVarType(curBlk,0)= type;
+		setVarType(curBlk,0,type);
 	}
 	
 @-
@@ -614,9 +614,7 @@ Most functions are (dynamically) linked with the kernel.
 		curInstr->argv[0]=i;
 		curInstr->modname = GDKstrdup(cntxt->nspace->name);
 		curInstr->fcn = getAddress(nme);
-		if( curInstr->fcn == 0)
-		fprintf(GDKout,"#function address for '%s' not found\n",nme);
-		curPrg->binding = GDKstrdup(nme);
+		curBlk->binding = GDKstrdup(nme);
 		/* defAtomCommand(curInstr);*/
 	} else return (MalBlkPtr) parseError(cntxt,"'=' expected\n");
 @-
@@ -637,7 +635,7 @@ help information.
 	if( keyphrase(cntxt,"comment",7)){
 		skipBlanc2(cntxt);
 		if( l= strLength(cntxt)){
-			curPrg->help = strCopy(cntxt,l);
+			curBlk->help = strCopy(cntxt,l);
 		} else parseError("<string> expected\n");
 	} 
 	skipToEnd(cntxt);
@@ -669,7 +667,7 @@ MalBlkPtr parseFunction(Client cntxt){
 	int l;
 	str fnme=0;
 	char ch;
-	int type;
+	int type, kind= FUNCTIONsymbol;
 
 	if( ! keyword(cntxt,"function",8) ) return 0;
 	@:fcnHeader@
@@ -746,7 +744,7 @@ int parse@3(Client cntxt)
 		i= newVariable(curBlk, arg, @4);
 	} else advance(cntxt,l); 
 	curInstr->argv[0]= i;
-	curInstr->barrier= @3symbol;
+	if(@3symbol== CATCHsymbol) curInstr->barrier= CATCHsymbol;
 	pushInstruction(curBlk, curInstr);
 	skipToEnd(cntxt);
 	return 1;
@@ -756,7 +754,6 @@ int parse@3(Client cntxt)
 @:parseCntrl("redo", 4,REDO, malAnyType)@
 @:parseCntrl("return", 6,RETURN, malAnyType)@
 @:parseCntrl("leave", 5,LEAVE, malAnyType)@
-@:parseCntrl("raise", 5,RAISE, malAnyType)@
 
 @-
 Most instructions are simple assignments, possibly
@@ -811,18 +808,27 @@ void parseAssign(Client cntxt, int kind)
 	curBlk = curPrg->def;
 	curInstr = newInstruction(curBlk,ASSIGNsymbol);
 
-	curInstr->barrier = kind;
+	curInstr->barrier = kind==BARRIERsymbol? kind :0 ;
+	if( keyword(cntxt,"raise",5)){
+		curInstr->raise = TRUE;
+		skipBlanc2(cntxt);
+	}
 	i= idLength(cntxt);
 	if( i==0) {
 		parseError(cntxt,"<identifier> expected\n"); 
 		goto part3;
 	}
 	arg= idCopy(cntxt,i);
+	if( kind== RAISEsymbol ) goto idseen;
 
 	/* test destination variable or function call */
 	if( keyphrase2(cntxt,":=") ){
 		curInstr->argv[0]= newVariable(curBlk,arg,malAnyType);
 	} else {
+		if( curInstr->raise){
+			parseError(cntxt,"':=' expected\n");
+			goto part3;
+		}
 		if( curInstr->barrier) {
 			curInstr->argv[0]= newVariable(curBlk,arg,malAnyType);
 			curInstr->token= kind;
@@ -869,8 +875,20 @@ This code is used in both positions of the expression
 		goto part3;
 	}
 	if( (i=operatorLength(cntxt))) {
+		arg = idCopy(cntxt,i);
+		skipBlanc2(cntxt);
+		if( currChar(cntxt) == '('){
+			nextChar(cntxt);
+			curInstr->fcnname = arg;
+			goto getarguments;
+		}
 		if( currChar(cntxt) != '.' &&
-		    currChar(cntxt) != '(') goto part2;
+		    currChar(cntxt) != '(') {
+			skipBlanc2(cntxt);
+			curInstr->fcnname = arg;
+			goto part2b;
+		}
+		goto opseen;
 	}
 	if( (i= idLength(cntxt)) || (i=operatorLength(cntxt))) {
 		arg= idCopy(cntxt,i);
@@ -898,6 +916,7 @@ opseen:
 			}
 			if(nextChar(cntxt) != '(')
 			{ parseError(cntxt,"'(' expected\n");goto part3;}
+getarguments:
 			skipBlanc2(cntxt);
 		} else if(currChar(cntxt) != '(')
 		{
@@ -927,6 +946,7 @@ part2:
 	if( i= operatorLength(cntxt) ){
 		/* operator expression */
 		curInstr->fcnname = idCopy(cntxt,i);
+part2b:
 		if( i = idLength(cntxt)) {
 			/* test variable */
 			if( (k=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
@@ -1000,7 +1020,6 @@ int parseMal(Client cntxt){
 			  }
 			  goto allLeft;
 		case 'R': case 'r': 
-			  if( parseRAISE(cntxt)) break;
 			  if( parseREDO(cntxt)) break;
 			  if( parseRETURN(cntxt)) break;
 			  if( keyword(cntxt,"rule",4) ) {
@@ -1026,7 +1045,7 @@ we should also copy the input.
 int parseError(Client cntxt, str msg)
 {	Symbol curPrg;
 	MalBlkPtr curBlk;
-	char buf[1024];
+	char buf[10*1024];
 	char *s=buf, *t, *l = lastline(cntxt);
 	int i;
 
@@ -1037,7 +1056,7 @@ int parseError(Client cntxt, str msg)
 	/* accidental %s directives in the lastline can
 	   crash the vfsprintf later => escape them */
         for(t=l; *t && *t!='\n'; t++) {
-                if (*t == '%') *s++ = '%';
+                if (*t == '%') *s++ = '%'; 
                 *s++ = *t;
         }
         *s++ = '\n';

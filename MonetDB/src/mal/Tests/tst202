@@ -10,7 +10,7 @@
 	c:= bat.new(int,str);
 	rename(c,"mybat");
 	print(c);
-	setPersistent(c);
+	#setPersistent(c);
 	print(c);
 	printf("catched anything?\n");
 catch GDKerror;

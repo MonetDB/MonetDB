@@ -95,7 +95,7 @@ assume here that it aligns with the variable table of the routine.
 @c
 	/* allocate space for value stack */
 	if( glb== 0){
-		space= mb->vtop+8;
+		space= mb->vtop;
 		newStack(stk,space);
 		stk->stktop= mb->vtop; 
 		stk->blk= mb;
@@ -217,7 +217,6 @@ elements in the value stack.
 	case RULEsymbol:
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
-	case RAISEsymbol:
 	case ENDsymbol:
 		stk->pc++; 
 		break;
@@ -254,6 +253,11 @@ symbol table and moves it to the stackframe location.
 		rhs = &getVarConstant(mb,pci->argv[1]);
 	else */	rhs = &stk->stk[pci->argv[1]];
 	VALcopy(lhs,rhs);
+	if( pci->raise){
+		/* printf("raise exception %s\n", getVarName(mb,pci->argv[0])); 
+		fflush(stdout);*/
+		stk->exception = pci->argv[0];
+	} 
 	ret = 0;
 }
 if( pci->barrier == BARRIERsymbol){
@@ -573,7 +577,7 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
 { 	int k;
 	ValPtr v;
 
-	for(k=0;k<mb->vtop;k++) {
+	for(k=0;k<mb->vtop-1; k++) {
 		garbageElement(&stk->stk[k]);
 	}
 }

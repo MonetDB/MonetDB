@@ -9,7 +9,7 @@
 #printf("hello world\n");
 #
 function Admin.main():int;	#0:(main:int->0)
-	system.printf("hello world\n");	#1:($13:int->13)($14:str->14)
+	system.printf("hello world\n");	#1:($1:int->1)($2:str->2)
 end function;	#2:
 hello world
 >

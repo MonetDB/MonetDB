@@ -710,7 +710,7 @@ The variable information can be turned into a BAT for inspection as well.
 
 @c
 int view_var_type(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	VarPtr v = m->var;
+{	VarPtr *v = m->var;
 	ValPtr w;
 	int bid, *ret= &bid;
 	int i;
@@ -718,7 +718,7 @@ int view_var_type(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (b == 0) return GDK_FAIL;
 
 	for( ; i<s->stktop ; i++,v++)
-		BUNins(b,&i,malTypeName(v->type));
+		BUNins(b,&i,malTypeName((*v)->type));
 	@:Pseudo(var,type)@
 	/* store the result ! */
 	w = &s->stk[p->argv[0]];
@@ -726,14 +726,14 @@ int view_var_type(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return GDK_SUCCEED;
 }
 int view_var_used(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	VarPtr v = m->var;
+{	VarPtr *v = m->var;
 	ValPtr w;
 	int bid, *ret= &bid;
 	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 	if (b == 0) return GDK_FAIL;
 	for( ; i<s->stktop ; i++,v++)
-		BUNins(b,&i,(v->isused? "used":""));
+		BUNins(b,&i,((*v)->isused? "used":""));
 	@:Pseudo(var,protected)@
 	/* store the result ! */
 	w = &s->stk[p->argv[0]];
@@ -741,14 +741,14 @@ int view_var_used(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return GDK_SUCCEED;
 }
 int view_var_constant(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	VarPtr v = m->var;
+{	VarPtr *v = m->var;
 	ValPtr w;
 	int bid, *ret= &bid;
 	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 	if (b == 0) return GDK_FAIL;
 	for( ; i<s->stktop ; i++,v++)
-		BUNins(b,&i,(v->isaconstant? "constant":""));
+		BUNins(b,&i,((*v)->isaconstant? "constant":""));
 	@:Pseudo(var,constant)@
 	/* store the result ! */
 	w = &s->stk[p->argv[0]];

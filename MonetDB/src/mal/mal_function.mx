@@ -2,7 +2,7 @@
 @a M. Kersten
 @v 0.0
 @+ MAL functions
-MAL function are represented by MAL instruction lists.
+MAL functions are represented by MAL instruction lists.
 The first instruction contains the signature.
 
 The representation of the MAL functions is rather traditional,
@@ -13,13 +13,6 @@ linear scans as it comes to locating information of interest.
 
 The information maintained for each MAL function should both
 be geared towards fast execution and to ease symbolic debugging.
-
-All variables are initialized upon first assignment.
-Ignoring flow of control instructions, each variable should be
-initialized before its use.
-Beware that the function signatures contain variable declarations
-in the form of arguments. They are initialized on the runtime stack
-upon function call.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -49,20 +42,16 @@ html
 /* #define DEBUG_MAL_FCN */
 
 mal_export Symbol	newFunction(str nme);
-mal_export void 	initSymbolTable(MalBlkPtr mb);
-mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
-mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
-mal_export InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname);
 mal_export void		clearFcn(MalBlkPtr m);
-mal_export void 	pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
 mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 
 mal_export void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkEnd(MalBlkPtr mb, InstrPtr pp);
-mal_export void 	chkLabel(MalBlkPtr mb, InstrPtr p);
-mal_export Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
+mal_export void chkLabel(MalBlkPtr mb, InstrPtr p);
+mal_export InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind);
+mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
 
 mal_export str		raiseException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export str		raiseException2(str name, str msg);
@@ -77,44 +66,22 @@ mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
 #endif /*  _MAL_FCN_H*/
 @-
 The MAL functions are constructed incrementally while parsing the source.
+The variable is used to hold the return value.
 @c
 #include "mal_function.h"
-#define MAXINSTR 200
 
 Symbol newFunction(str nme){
 	Symbol s;
-	InstrPtr c;
+	InstrPtr p;
 	MalBlkPtr mb;
 	int i,j;
 
 	s = newSymbol(nme,FUNCTIONsymbol);
-	s->def->sym = s;
-	c = newInstruction(s->def, FUNCTIONsymbol);
-	c->fcnname = GDKstrdup(nme);
-	c->argv[0]= newVariable(s->def,GDKstrdup(nme),malAnyType);
-	/* there is always room at the beginning */
-	mb= s->def;
-	mb->stmt[mb->stop] = ((char *) c)-((char*)mb->code);
-        mb->stop++;
+	p = newInstruction(s->def, FUNCTIONsymbol);
+	p->fcnname = GDKstrdup(nme);
+	p->argv[0]= newVariable(s->def,GDKstrdup(nme),malAnyType);
+	pushInstruction(s->def,p);
 	return s;
-}
-@-
-Each function symbol table is initialized by system constants,
-stored directly after the paran=meter list.
-Although this increases somewhat the space, it is much cheaper
-than testing at any other occassion 
-@c
-void initSymbolTable(MalBlkPtr mb){
-	int i,j;
-
-	for(i=0;i<GDKatomcnt; i++){
-		j= newVariable(mb, GDKstrdup(ATOMname(i)), i);
-		isVarConstant(mb,j) = TRUE;
-		isVarUsed(mb,j) = FALSE;
-		getVarConstant(mb,j).val.ival = i;
-		getVarConstant(mb,j).vtype= TYPE_int; 
-	}
-	if( j!= SYMBOLFRAME) printf("initSymbolTable:assumption failed\n");
 }
 InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind){
 	InstrPtr p;
@@ -123,18 +90,9 @@ InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind){
 	p->fcnname= GDKstrdup(fcnname);
 	return p;
 }
-InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname){
-	return newCall(m,modname,fcnname, CMDcall);
-}
-InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname){
-	return newCall(m,modname,fcnname, FCNcall);
-}
-InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname){
-	return newCall(m,modname,fcnname, PATcall);
-}
 @+ Flow of control
 The nesting of BARRIER and CATCH statements with their associated
-flow of control primitives LEAVE and RETRY should form a valid
+flow of control primitives LEAVE, RETRY, and RAISE should form a valid
 hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.
 
@@ -151,59 +109,59 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 	return -1;
 }
 int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
-{	int i, v, endBlk= -1,cnt=0;
+{	int i, v, endBlk= -1;
 
 	v = pp->argv[0];
 	for(i= begBlk+1; i<mb->stop; i++){
 		InstrPtr p= getInstrPtr(mb,i);
-		if( (p->barrier == BARRIERsymbol || 
-		     p->barrier == CATCHsymbol) ) {
+		if( p->barrier==BARRIERsymbol || p->barrier==CATCHsymbol) {
 			if( p->argv[0] != v){
 				i= chkBrackets(mb,p,i);
 				continue;
 			}
-			cnt=1; break;
-		} 
+			GDKerror("%d: recursive block structure %s %d\n",
+					getPC(mb,pp),getVarName(mb,v),begBlk);
+			return i;
+		}  else if(p->barrier) printf("unexpected barrier %s\n", i);
 		if( p->token == ENDsymbol){
-			if( p->argv[0] == v) {
-				return i;
-			} else {
+			if( p->argv[0] == v) return i;
 			mb->errors++;
 			GDKerror("%d:end-label '%s' doesnot match '%s'\n",
 				/*p->pc*/i,getVarName(mb,p->argv[0]),
 				getVarName(mb,v)
 				);
 			return i;
-			}
 		} 
 	}
-	if( cnt!= 0)
-	GDKerror("%d: non-hierarchical block structure %s %d\n",
-			getPC(mb,pp),getVarName(mb,v),cnt);
-	else GDKerror("%d: begin-label '%s' without end-label\n", 
+	GDKerror("%d: begin-label '%s' without end-label\n", 
 		begBlk,getVarName(mb,v));
 	mb->errors++;
 	return i;
 }
-void chkBarrier(MalBlkPtr mb, InstrPtr pp)
-{	int i, v, begBlk = -1, endBlk = -1;
+void chkCntrl(MalBlkPtr mb, InstrPtr pp)
+{	int i, v;
 
 	v = pp->argv[0];
 	if( v>=0)
 	for(i=0; i<mb->stop;i++){
 		InstrPtr p= getInstrPtr(mb,i);
-		if( (p->barrier == BARRIERsymbol ||
-		     p->barrier == CATCHsymbol) &&
-		     p->argv[0] == v){
+		if( pp == p  && p->barrier && p->argv[0] == v){
 			i = chkBrackets(mb,pp,i);
 		} 
 	}
-
-	if( getArgType(mb,pp,0) != TYPE_bit && pp->token==BARRIERsymbol){
+}
+void chkBarrier(MalBlkPtr mb, InstrPtr pp)
+{
+	chkCntrl(mb,pp);
+	if( getArgType(mb,pp,0) != TYPE_bit ){
 		mb->errors++;
 		GDKerror("%d: barrier '%s' should be of type bit\n",
-			getPC(mb,pp),getVarName(mb,v));
+			getPC(mb,pp),getVarName(mb,pp->argv[0]));
 	}
+}
+void chkCatch(MalBlkPtr mb, InstrPtr pp)
+{
+	chkCntrl(mb,pp);
 }
 @-
 Loose END-statements should also be catched.
@@ -226,99 +184,26 @@ void chkEnd(MalBlkPtr mb, InstrPtr pp)
 		getPC(mb,pp),getVarName(mb,v));
 }
 @-
-Exception blocks start with a CATCH statement and end with the
-first occurrence of the corresponding END symbol.
-The exception variable should be of type string
-and introduced in any of the visible modules.
-@c
-void chkCatch(MalBlkPtr mb, InstrPtr pp)
-{	int i, v, begBlk = -1, endBlk = -1;
-
-	v = pp->argv[0];
-	if( v>=0)
-	for(i=0; i<mb->stop;i++){
-	InstrPtr p= getInstrPtr(mb,i);
-	if( pp==p && p->barrier ==CATCHsymbol && p->argv[0] == v){
-		begBlk = i;
-	}
-	if( p->token == ENDsymbol && p->argv[0] == v){
-		if( begBlk == -1){
-			mb->errors++;
-			GDKerror("%d: missing start of exception block '%s'\n",
-				i, getVarName(mb,v));
-			return;
-		}
-		return;
-	}
-	}
-	if( endBlk<0 && begBlk>=0){
-		mb->errors++;
-		GDKerror("CATCH '%s' without end statement\n", 
-			getVarName(mb,v));
-	}
-}
-@-
-A RAISE statement is allowed as long as it does not appear within the
-block in which it is being handled.
-@c
-void chkRaise(MalBlkPtr mb, InstrPtr pp)
-{	int i, v, begBlk = -1;
-
-	v = pp->argv[0];
-	if( v>=0)
-	for(i=0; i<mb->stop;i++){
-		InstrPtr p= getInstrPtr(mb,i);
-		if( p->barrier == CATCHsymbol && p->argv[0] == v){
-			begBlk = i;
-		}
-		if (p==pp && begBlk != -1){
-			GDKerror("recursive exception '%s' not allowed\n", 
-				getVarName(mb,v));
-			mb->errors++;
-		}
-		if( p->token == ENDsymbol && p->argv[0] == v){
-			begBlk = -1;
-		}
-	}
-}
-@-
-
 The chkLabel routine assures that REDO, LEAVEs and ENDs are
 properly contained within a single guarded- or iterator- block.
-Thus, upon encountering an error we simply introduce a new variable.
 @c
 void chkLabel(MalBlkPtr mb, InstrPtr pp)
 {	int i,k,n, begBlk = -1;
 
 	k= pp->argv[0];
+	n = getPC(mb,pp);
 	for(i=0; i<mb->stop;i++){
 		InstrPtr p= getInstrPtr(mb,i);
 		if( p->barrier == BARRIERsymbol && p->argv[0]==k){
 			begBlk = i;
 		}
 		if( p->token == ENDsymbol && p->argv[0]==k) {
-			n = getPC(mb,pp);
 			if( begBlk>=0 && n >=begBlk && n<=i) return;
 			begBlk= -1;
 		}
 	}
 	mb->errors++;
-	GDKerror("%d:label '%s' not in guarded block\n",
-		getPC(mb,pp),getVarName(mb,k));
-}
-@-
-Store the information of a destination variable in the signature structure of
-each instruction. This code is largely equivalent to pushArgument,
-but it is more efficient in searching and collecting the information.
-[todo]
-@c
-void pushArgumentId(MalBlkPtr mb, InstrPtr p,str name){
-	/*MalBlkPtr mb= p->sym->def;*/
-        int v;
-
-	v= findVariable(mb,name);
-	if( v<0) v= newVariable(mb,name,getTypeIndex(name));
-	pushArgument(mb,p,v);
+	GDKerror("%d:label '%s' not in guarded block\n", n,getVarName(mb,k));
 }
 @+ Function cloning
 MAL supports functions defined with type variables.
@@ -367,10 +252,10 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
 			x= newBatType(head,tail);
 			setAnyHeadIndex(x,hx);
 			setAnyTailIndex(x,tx);
-			getArgType(mb,p,i)=x;
+			setArgType(mb,p,i,x);
 		} else
 		if( getTailIndex(x) == v){
-			getArgType(mb,p,i) = t;
+			setArgType(mb,p,i,t);
 		} 
 	}
 }
@@ -386,7 +271,7 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 	pp = getSignature(new);
-	for(i=1;i<pp->argc;i++)
+	for(i=0;i<pp->argc;i++)
 	if( isPolymorphicArgument(new->def,pp,i) ){
 		int t = getArgType(mb,p,i);
 		int v = getArgType(new->def,pp,i);
@@ -459,8 +344,6 @@ is returned.
 malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p){
 	return malAnyType;
 }
-@- Utilities
-@c
 void printFunction(FILE *fd, MalBlkPtr mb){
 	int i;
 	for(i=0;i<mb->stop;i++)

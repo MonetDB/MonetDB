@@ -87,8 +87,6 @@ html
 typedef struct SCOPEDEF {
         struct SCOPEDEF   *outer; /* outer level in the scope tree */
         str             name;
-        str             help;   /* supportive commentary */
-        str             binding;/* related C-function */
         struct SYMDEF   **subscope; /* type dispatcher table */
 } *Scope, ScopeDefinition;
 
@@ -120,14 +118,13 @@ point for the modules to be added later.
 	if( nme == NULL){
 		GDKfatal("@1:unexpected name (=null)\n");
 	}
-        cur = (Scope) GDKmalloc(sizeof(SymDefinition));
+        cur = (Scope) GDKmalloc(sizeof(SymRecord));
 	if( cur == NULL){
 		GDKfatal("@1: cannot initialize scope\n");
 	}
-	bzero((str)cur,sizeof(SymDefinition));
+	bzero((str)cur,sizeof(SymRecord));
 	cur->name = nme;
 	cur->outer = NULL;
-	cur->help = NULL;
 	cur->subscope = NULL; 
 
 @c
@@ -183,7 +180,6 @@ void freeScope(Scope s){
 	if(s==NULL) return;
 	freeSubScope(s);
 	if( s->name) GDKfree(s->name);
-	if( s->help) GDKfree(s->help);
 	GDKfree(s);
 }
 void freeScopeList(Scope s){

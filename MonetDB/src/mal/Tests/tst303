@@ -1,9 +1,9 @@
 # Exceptions can be explicitly raised
 
-raise	IllegalAccess :="new exception";
-	c4:= "should not come here";
+raise	IllegalAccess:="new exception";
+	print("should not come here");
 #exception block;
 catch	IllegalAccess;
-	n0:=0;
+	printf("catched IllegalAccess");
 end	IllegalAccess;
-	post:= "done";
+	print("done");

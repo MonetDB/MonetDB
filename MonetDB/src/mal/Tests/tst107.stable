@@ -20,15 +20,15 @@
 #	i:= 0;
 #
 function Admin.main():int;	#0:(main:int->0)
-	i := 0;	#1:(i:int->13)($14:int->14)
-barrier	v := true;	#2:(v:bit->15)($16:bit->16)
-	leave v;	#3:(v:bit->15)
-	i := 1;	#4:(i:int->13)($17:int->17)
-end	v;	#5:(v:bit->15)
-barrier	t := arith.<(i,3);	#6:(t:bit->18)(i:int->13)($19:int->19)
-	i := arith.+(i,1);	#7:(i:int->13)(i:int->13)($17:int->17)
-	redo t ;	#8:(t:bit->18)
-end	t;	#9:(t:bit->18)
-	i := 0;	#10:(i:int->13)($14:int->14)
+	i := 0;	#1:(i:int->1)($2:int->2)
+barrier	v := true;	#2:(v:bit->3)($4:bit->4)
+	leave v;	#3:(v:bit->3)
+	i := 1;	#4:(i:int->1)($5:int->5)
+end	v;	#5:(v:bit->3)
+barrier	t := arith.<(i,3);	#6:(t:bit->6)(i:int->1)($7:int->7)
+	i := arith.+(i,1);	#7:(i:int->1)(i:int->1)($5:int->5)
+	redo t ;	#8:(t:bit->6)
+end	t;	#9:(t:bit->6)
+	i := 0;	#10:(i:int->1)($2:int->2)
 end function;	#11:
 >

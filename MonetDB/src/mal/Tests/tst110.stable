@@ -18,12 +18,12 @@
 #	k:= 3;
 #
 function Admin.main():int;	#0:(main:int->0)
-	i := 0;	#1:(i:int->13)($14:int->14)
-	v := false;	#2:(v:bit->15)($16:bit->16)
-barrier	v := v;	#3:(v:bit->15)(v:bit->15)
-	i := 1;	#4:(i:int->13)($17:int->17)
-	j := 2;	#5:(j:int->18)($19:int->19)
-end	v;	#6:(v:bit->15)
-	k := 3;	#7:(k:int->20)($21:int->21)
+	i := 0;	#1:(i:int->1)($2:int->2)
+	v := false;	#2:(v:bit->3)($4:bit->4)
+barrier	v := v;	#3:(v:bit->3)(v:bit->3)
+	i := 1;	#4:(i:int->1)($5:int->5)
+	j := 2;	#5:(j:int->6)($7:int->7)
+end	v;	#6:(v:bit->3)
+	k := 3;	#7:(k:int->8)($9:int->9)
 end function;	#8:
 >

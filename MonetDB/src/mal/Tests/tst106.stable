@@ -9,16 +9,15 @@
 ## check in-compatible polmorphic types
 #
 #command f(a:any::1,b:any::2, c:any::1) :bat[any::1,any::2] =f;
-!ERROR: address of function f not found
-#function address for 'f' not found
-command Admin.f(a:any::1,b:any::2,c:any::1):bat[any::1,any::2] = f;	#0 polymorphic:(f:bat[any::1,any::2]->0)(a:any::1->13)(b:any::2->14)(c:any::1->15)
+!ERROR: address of function  not found
+command Admin.f(a:any::1,b:any::2,c:any::1):bat[any::1,any::2] = ;	#0 polymorphic:(f:bat[any::1,any::2]->0)(a:any::1->1)(b:any::2->2)(c:any::1->3)
 #
 #b:= f(1,2,"help");
 #a:= f(1,2,1);
 #
 function Admin.main():int;	#0:(main:int->0)
-	b := f(1,2,"help");	#1 unknown:(b:any->13)($14:int->14)($15:int->15)($16:str->16)
-	a := Admin.f(1,2,1);	#2:(a:bat[int,int]->17)($14:int->14)($15:int->15)($14:int->14)
+	b := f(1,2,"help");	#1 unknown:(b:any->1)($2:int->2)($3:int->3)($4:str->4)
+	a := Admin.f(1,2,1);	#2:(a:bat[int,int]->5)($2:int->2)($3:int->3)($2:int->2)
 end function;	#3:
 !ERROR: MALexception:Admin.main[1]:Instruction type not fixed
 >

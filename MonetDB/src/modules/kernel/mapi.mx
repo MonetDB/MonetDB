@@ -32,7 +32,7 @@ command Stop(port:int):bit = MAPIstop
 	comment "Terminate a listener owned by the client";
 
 # initialization code
-function main();
+function main():void;
 	vm1:= bat.new(int,str);
 	bat.setName(vm1,"view_mapi_owner");
 	bat.setRoles(vm1,"mapi","owner");

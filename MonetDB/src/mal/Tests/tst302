@@ -1,10 +1,10 @@
 # exception conceptual error, you can not recursively raise an exception
 # (you should be able to pass it upwards though)
 
-raise	IllegalAccess:="new exception";
+	raise IllegalAccess := "new exception";
 	c4:= "should not come here";
 #exception block;
 catch	IllegalAccess;
 	n0:=0;
-raise	IllegalAccess :="an illegal exception raise";
+	raise IllegalAccess:="an illegal exception raise";
 end	IllegalAccess;

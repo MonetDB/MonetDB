@@ -10,15 +10,15 @@
 ## this should be sufficient to determine outcome
 #
 #function + (L:any::1, R:any::1):any::1 ; end function;
-function Admin.+(L:any::1,R:any::1):any::1;	#0 polymorphic:(+:any::1->0)(L:any::1->13)(R:any::1->14)
+function Admin.+(L:any::1,R:any::1):any::1;	#0 polymorphic:(+:any::1->0)(L:any::1->1)(R:any::1->2)
 end function;	#1:
 #a:=3+1;
 #b:=3.5+2.7;
 #c:= 7+8;
 #
 function Admin.main():int;	#0:(main:int->0)
-	a := Admin.+(3,1);	#1:(a:int->13)($14:int->14)($15:int->15)
-	b := Admin.+(3.5,2.7);	#2:(b:flt->16)($17:flt->17)($18:flt->18)
-	c := Admin.+(7,8);	#3:(c:int->19)($20:int->20)($21:int->21)
+	a := Admin.+(3,1);	#1:(a:int->1)($2:int->2)($3:int->3)
+	b := Admin.+(3.5,2.7);	#2:(b:flt->4)($5:flt->5)($6:flt->6)
+	c := Admin.+(7,8);	#3:(c:int->7)($8:int->8)($9:int->9)
 end function;	#4:
 >
