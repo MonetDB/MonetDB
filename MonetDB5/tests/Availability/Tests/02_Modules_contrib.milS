@@ -11,7 +11,9 @@ var Fhelp:=new(oid,str);	Fhelp.col_name("help");
 var Fnts:=new(oid,str);
 
 var Plain_mods:=MODULES.select("contrib").sort().copy();
-table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
+var x := Plain_mods.reverse();
+x.col_name(sprintf("%i modules",Plain_mods.count()));
+table(x);
 Plain_mods@batloop {
 	var The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);

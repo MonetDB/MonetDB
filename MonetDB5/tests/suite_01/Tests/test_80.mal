@@ -26,3 +26,4 @@ redo	ca_a;
 exit	ca_a;
 	mil.line("quit();");
 	ga_a := quit();
+print("test dropped: variable argument list ");

@@ -8,31 +8,101 @@ stdout of test 'test_70` in directory 'tests/suite_01` itself:
 #script:test_70.milS
 
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-setoid(oid(20000000));
-# The Monet interpreter supports type casts
-var p:=  int("21");
-p.print();
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm
+# dbname:mTests_tests_suite_01
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##include "mil_prelude";
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("# The Monet interpreter supports type casts\n");
+#	mil.line("var p:=  int(\"21\");");
+#	p := int("21");
+#	mil.line("p.print();");
+#	ca_a := print(p);
+#	mil.line("var pf:= flt(\"23\");");
+#	pf := flt("23");
+#	mil.line("pf.print();");
+#	da_a := print(pf);
+#	mil.line("var pb:= bit(1);");
+#	pb := bit(1);
+#	mil.line("pb.print();");
+#	ea_a := print(pb);
+#	mil.line("var z:= int(p);");
+#	z := int(p);
+#	mil.line("z.print();");
+#	fa_a := print(z);
+#	mil.line("var pi:= bit(0);");
+#	pi := bit(0);
+#	mil.line("pi.print();");
+#	ga_a := print(pi);
+#	mil.line("var ps:= str(1);");
+#	ps := str(1);
+#	mil.line("quit();");
+#	ha_a := quit();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("# The Monet interpreter supports type casts\n");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("var p:=  int(\"21\");");	# 5 MILline ($8:void)<-($9:str)
+    p := calc.int("21");	# 6 CALCstr2int (p:int)<-($11:str)
+    mil.line("p.print();");	# 7 MILline ($12:void)<-($13:str)
+    ca_a := io.print(p);	# 8 IOprint_val (ca_a:int)<-(p:int)
+    mil.line("var pf:= flt(\"23\");");	# 9 MILline ($15:void)<-($16:str)
+    pf := calc.flt("23");	# 10 CALCstr2flt (pf:flt)<-($18:str)
+    mil.line("pf.print();");	# 11 MILline ($19:void)<-($20:str)
+    da_a := io.print(pf);	# 12 IOprint_val (da_a:int)<-(pf:flt)
+    mil.line("var pb:= bit(1);");	# 13 MILline ($22:void)<-($23:str)
+    pb := calc.bit(1);	# 14 CALCint2bit (pb:bit)<-($25:int)
+    mil.line("pb.print();");	# 15 MILline ($26:void)<-($27:str)
+    ea_a := io.print(pb);	# 16 IOprint_val (ea_a:int)<-(pb:bit)
+    mil.line("var z:= int(p);");	# 17 MILline ($29:void)<-($30:str)
+    z := calc.int(p);	# 18 CALCint2int (z:int)<-(p:int)
+    mil.line("z.print();");	# 19 MILline ($32:void)<-($33:str)
+    fa_a := io.print(z);	# 20 IOprint_val (fa_a:int)<-(z:int)
+    mil.line("var pi:= bit(0);");	# 21 MILline ($35:void)<-($36:str)
+    pi := calc.bit(0);	# 22 CALCint2bit (pi:bit)<-($38:int)
+    mil.line("pi.print();");	# 23 MILline ($39:void)<-($40:str)
+    ga_a := io.print(pi);	# 24 IOprint_val (ga_a:int)<-(pi:bit)
+    mil.line("var ps:= str(1);");	# 25 MILline ($42:void)<-($43:str)
+    ps := calc.str(1);	# 26 CALCint2str (ps:str)<-($25:int)
+    mil.line("quit();");	# 27 MILline ($45:void)<-($46:str)
+    ha_a := clients.quit();	# 28 CLTquit (ha_a:void)
+end main;	# 29  
+#setoid(oid(20000000));
+## The Monet interpreter supports type casts
+#var p:=  int("21");
+#p.print();
 [ 21 ]
-p:= flt("23");
-p.print();
+#var pf:= flt("23");
+#pf.print();
 [ 23 ]
-p:= bit(1);
-p.print();
+#var pb:= bit(1);
+#pb.print();
 [ true ]
-var z:= int(p);
-z.print();
-[ 1 ]
-p:= bit(0);
-p.print();
+#var z:= int(p);
+#z.print();
+[ 21 ]
+#var pi:= bit(0);
+#pi.print();
 [ false ]
 
-p:= str(1);
-quit();
-
-# 17:09:02 >  
-# 17:09:02 >  Done.
-# 17:09:02 >  
+# 15:33:59 >  
+# 15:33:59 >  Done.
+# 15:33:59 >  
 

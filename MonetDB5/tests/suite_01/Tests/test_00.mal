@@ -26,3 +26,4 @@
 	ga_a := print(bn);
 	mil.line("quit();");
 	ha_a := quit();
+print("test dropped: it uses 4.4. catalogues");

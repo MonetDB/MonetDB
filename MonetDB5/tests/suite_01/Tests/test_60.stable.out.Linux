@@ -7,671 +7,294 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-setoid(oid(20000000));
-
-proc newid(any x, any y) : any {
-	return x+y;
-}
-
-#calling a function;
-var b:= new(int,int,0);
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-b.insert(int(nil),int(nil));
-b.insert(int(nil),81);
-b.rename("tenk1_unique1");
-
-proc dummy() : int { return 1; }
-
-proc p(any B, any C) : any { 
-        var local :=newid(B,C); 
-        vars(); 
-}
-
-proc s(int low, int high) : void {
-	vars(); 
-	var t := select(bat("tenk1_unique1"),low,high); 
-        t.count().print();
-}
-
-#proc echo(any x,any y) : any { vars(); z=x; vars(); return(z); }
-proc echo(any x,any y) : any { vars(); var z:=x; vars(); return(z); }
-proc New(any N,any A,any Ahsh) : void {
-        var Nh := newid(N,"_hsh"); 
-        var A := new(int,int,1); 
-        rename(A,N); 
-        var Ahsh := new(oid,int,1); 
-        rename(Ahsh,Nh); vars();
-}
-
-p("b","1");
-#-----------------------------------------------------------------------------------------#
-# tmp_32		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "local",		  "str",  "liquid",	  "changeable",	  "\"b1\""		  ]
-[ "C",			  "str",  "liquid",	  "changeable",	  "\"1\""		  ]
-[ "B",			  "str",  "liquid",	  "changeable",	  "\"b\""		  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-
-# passing parameters;
-var a:=35;
-echo(a,"hello").print();
-#-----------------------------------------------------------------------------------------#
-# tmp_34		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "y",			  "str",  "liquid",	  "changeable",	  "\"hello\""		  ]
-[ "x",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-#-----------------------------------------------------------------------------------------#
-# tmp_31		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "z",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "y",			  "str",  "liquid",	  "changeable",	  "\"hello\""		  ]
-[ "x",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-[ 35 ]
-New("r","C","Ch");
-#-----------------------------------------------------------------------------------------#
-# tmp_33		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "Ahsh",		  "BAT",  "liquid",	  "changeable",	  "<r_hsh>"		  ]
-[ "A",			  "BAT",  "liquid",	  "changeable",	  "<r>"			  ]
-[ "Nh",			  "str",  "liquid",	  "changeable",	  "\"r_hsh\""		  ]
-[ "Ahsh",		  "str",  "liquid",	  "changeable",	  "\"Ch\""		  ]
-[ "A",			  "str",  "liquid",	  "changeable",	  "\"C\""		  ]
-[ "N",			  "str",  "liquid",	  "changeable",	  "\"r\""		  ]
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-vars();
-#-----------------------------------------------------------------------------------------#
-# tmp_38		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-
-
-s(0,10);
-#-----------------------------------------------------------------------------------------#
-# tmp_30		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "high",		  "int",  "liquid",	  "changeable",	  "10"			  ]
-[ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-[ 1 ]
-s(0,11);
-#-----------------------------------------------------------------------------------------#
-# tmp_39		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "high",		  "int",  "liquid",	  "changeable",	  "11"			  ]
-[ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-[ 1 ]
-
-# errors !;
-s(0,99);
-#-----------------------------------------------------------------------------------------#
-# tmp_33		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "high",		  "int",  "liquid",	  "changeable",	  "99"			  ]
-[ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-[ 8 ]
-s(0,999);
-#-----------------------------------------------------------------------------------------#
-# tmp_28		| type	| type_status	| value_status	| value_value		  #
-#-----------------------------------------------------------------------------------------#
-[ "high",		  "int",  "liquid",	  "changeable",	  "999"			  ]
-[ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
-[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
-[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
-[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
-[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-[ 8 ]
-quit();
-
-# 18:34:03 >  
-# 18:34:03 >  Done.
-# 18:34:03 >  
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm
+# dbname:mTests_tests_suite_01
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##include "mil_prelude";
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("proc newid(any x, any y) : any {");
+#function newid(x:any, y:any):any;
+#	mil.line("\treturn x+y;");
+#	return ca_a :=+(x,y);
+#end newid;
+function Admin.newid(x:any,y:any):any;	# 0  dynamic (newid:any)<-(x:any)(y:any)
+    mil.line("\treturn x+y;");	# 1 MILline ($3:void)<-($4:str)
+    return ca_a := batcalc.+(x,y);	# 2 CMDbatADD (ca_a:bat[:any,:any])<-(x:any)(y:any)
+end newid;	# 3  
+#	mil.line("#calling a function;\n");
+#	mil.line("var b:= new(int,int,0);");
+#	b := new(nil:int,nil:int,0);
+#	mil.line("b.insert(1,15);");
+#	da_a := insert(b,1,15);
+#	mil.line("b.insert(2,4);");
+#	ea_a := insert(b,2,4);
+#	mil.line("b.insert(3,int(nil));");
+#	fa_a := int(nil);
+#	ga_a := insert(b,3,fa_a);
+#	mil.line("b.insert(4,16);");
+#	ha_a := insert(b,4,16);
+#	mil.line("b.insert(5,25);");
+#	ia_a := insert(b,5,25);
+#	mil.line("b.insert(6,36);");
+#	ja_a := insert(b,6,36);
+#	mil.line("b.insert(7,49);");
+#	ka_a := insert(b,7,49);
+#	mil.line("b.insert(8,64);");
+#	la_a := insert(b,8,64);
+#	mil.line("b.insert(9,int(nil));");
+#	ma_a := int(nil);
+#	na_a := insert(b,9,ma_a);
+#	mil.line("b.insert(int(nil),int(nil));");
+#	oa_a := int(nil);
+#	pa_a := int(nil);
+#	qa_a := insert(b,oa_a,pa_a);
+#	mil.line("b.insert(int(nil),81);");
+#	ra_a := int(nil);
+#	sa_a := insert(b,ra_a,81);
+#	mil.line("b.rename(\"tenk1_unique1\");");
+#	ta_a := bat.setName(b,"tenk1_unique1");
+#	mil.line("proc dummy() : int { return 1; }");
+#function dummy():int;
+#	return ua_a :=1;
+#end dummy;
+function Admin.dummy():int;	# 0  (dummy:int)
+    return ua_a := 1;	# 1  (ua_a:int)<-($2:int)
+end dummy;	# 2  
+#	mil.line("proc p(any B, any C) : any { ");
+#function p(B:any, C:any):any;
+#	mil.line("        var local :=newid(B,C); ");
+#	local := newid(B,C);
+#	mil.line("        vars(); ");
+#	va_a := vars();
+#end p;
+function Admin.p(B:any,C:any):any;	# 0  dynamic (p:any)<-(B:any)(C:any)
+    mil.line("        var local :=newid(B,C); ");	# 1 MILline ($3:void)<-($4:str)
+    local := Admin.newid(B,C);	# 2  (local:any)<-(B:any)(C:any)
+    mil.line("        vars(); ");	# 3 MILline ($6:void)<-($7:str)
+    va_a := vars();	# 4  unknown (va_a:any)
+end p;	# 5  
+#	mil.line("proc s(int low, int high) : void {");
+#function s(low:int, high:int):void;
+#	mil.line("\tvars(); ");
+#	wa_a := vars();
+#	mil.line("\tvar t := select(bat(\"tenk1_unique1\"),low,high); ");
+#	xa_a := new("tenk1_unique1");
+#	t := select(xa_a,low,high);
+#	mil.line("        t.count().print();");
+#	ya_a := count(t);
+#	ab_a := print(ya_a);
+#end s;
+function Admin.s(low:int,high:int):void;	# 0  (s:void)<-(low:int)(high:int)
+    mil.line("\tvars(); ");	# 1 MILline ($3:void)<-($4:str)
+    wa_a := vars();	# 2  unknown (wa_a:any)
+    mil.line("\tvar t := select(bat(\"tenk1_unique1\"),low,high); ");	# 3 MILline ($6:void)<-($7:str)
+    xa_a := new("tenk1_unique1");	# 4  unknown (xa_a:bat[:any,:int])<-($9:str)
+    t := algebra.select(xa_a,low,high);	# 5 ALGselect (t:bat[:any,:int])<-(xa_a:bat[:any,:int])(low:int)(high:int)
+    mil.line("        t.count().print();");	# 6 MILline ($11:void)<-($12:str)
+    ya_a := algebra.count(t);	# 7 ALGcount_bat (ya_a:lng)<-(t:bat[:any,:int])
+    ab_a := io.print(ya_a);	# 8 IOprint_val (ab_a:int)<-(ya_a:lng)
+end s;	# 9  
+!ERROR: 'vars' undefined in Admin.s[2]
+!ERROR: 'new' undefined in Admin.s[4]
+#	mil.line("#proc echo(any x,any y) : any { vars(); z=x; vars(); return(z); }\n");
+#	mil.line("proc echo(any x,any y) : any { vars(); var z:=x; vars(); return(z); }");
+#function echo(x:any, y:any):any;
+#	bb_a := vars();
+#	z := x;
+#	cb_a := vars();
+#	return db_a :=z;
+#end echo;
+function Admin.echo(x:any,y:any):any;	# 0  dynamic (echo:any)<-(x:any)(y:any)
+    bb_a := vars();	# 1  unknown (bb_a:any)
+    z := x;	# 2  (z:any)<-(x:any)
+    cb_a := vars();	# 3  unknown (cb_a:any)
+    return db_a := z;	# 4  (db_a:any)<-(z:any)
+end echo;	# 5  
+#	mil.line("proc New(any N,any A,any Ahsh) : void {");
+#function New(N:any, A:any, Ahsh:any):void;
+#	mil.line("        var Nh := newid(N,\"_hsh\"); ");
+#	Nh := newid(N,"_hsh");
+#	mil.line("        var A := new(int,int,1); ");
+#	A := new(nil:int,nil:int,1);
+#	mil.line("        rename(A,N); ");
+#	eb_a := bat.setName(A,N);
+#	mil.line("        var Ahsh := new(oid,int,1); ");
+#	Ahsh := new(nil:oid,nil:int,1);
+#	mil.line("        rename(Ahsh,Nh); vars();");
+#	fb_a := bat.setName(Ahsh,Nh);
+#	gb_a := vars();
+#end New;
+function Admin.New(N:any,A:any,Ahsh:any):void;	# 0  (New:void)<-(N:any)(A:any)(Ahsh:any)
+    mil.line("        var Nh := newid(N,\"_hsh\"); ");	# 1 MILline ($4:void)<-($5:str)
+    Nh := Admin.newid(N,"_hsh");	# 2  (Nh:any)<-(N:any)($7:str)
+    mil.line("        var A := new(int,int,1); ");	# 3 MILline ($8:void)<-($9:str)
+    A := bbp.new(nil,nil,1);	# 4 CMDBATnewint (A:any)<-($10:int)($10:int)($11:int)
+    mil.line("        rename(A,N); ");	# 5 MILline ($12:void)<-($13:str)
+    eb_a := bat.setName(A,N);	# 6 BKCsetName (eb_a:void)<-(A:any)(N:any)
+    mil.line("        var Ahsh := new(oid,int,1); ");	# 7 MILline ($15:void)<-($16:str)
+    Ahsh := bbp.new(nil,nil,1);	# 8 CMDBATnewint (Ahsh:any)<-($17:oid)($10:int)($11:int)
+    mil.line("        rename(Ahsh,Nh); vars();");	# 9 MILline ($18:void)<-($19:str)
+    fb_a := bat.setName(Ahsh,Nh);	# 10 BKCsetName (fb_a:void)<-(Ahsh:any)(Nh:any)
+    gb_a := vars();	# 11  unknown (gb_a:any)
+end New;	# 12  
+#	mil.line("p(\"b\",\"1\");");
+#	hb_a := p("b","1");
+#	mil.line("# passing parameters;\n");
+#	mil.line("var a:=35;");
+#	a := 35;
+#	mil.line("echo(a,\"hello\").print();");
+#	ib_a := echo(a,"hello");
+#	jb_a := print(ib_a);
+#	mil.line("New(\"r\",\"C\",\"Ch\");");
+#	kb_a := New("r","C","Ch");
+#	mil.line("vars();");
+#	lb_a := vars();
+#	mil.line("s(0,10);");
+#	mb_a := s(0,10);
+#	mil.line("s(0,11);");
+#	nb_a := s(0,11);
+#	mil.line("# errors !;\n");
+#	mil.line("s(0,99);");
+#	ob_a := s(0,99);
+#	mil.line("s(0,999);");
+#	pb_a := s(0,999);
+#	mil.line("quit();");
+#	qb_a := quit();
+##Identifer 'rename' mapped to 'bat.setName'
+#print("test dropped: it uses 4.4. catalogues");
+#
+!ERROR: 'batcalc.+' undefined in Admin.newid[2]
+!ERROR: Error in cloned function
+!ERROR: function Admin.newid(x:str,y:str):str;	# 0  (y:str)<-(x:str)(y:str)
+!ERROR:     mil.line("\treturn x+y;");	# 1 MILline ($3:void)<-($4:str)
+!ERROR:     return ca_a := batcalc.+(x,y);	# 2 CMDbatADD (ca_a:bat[:any,:any])<-(x:str)(y:str)
+!ERROR: end newid;	# 3  
+!ERROR: 'Admin.newid' undefined in Admin.p[2]
+!ERROR: 'vars' undefined in Admin.p[4]
+!ERROR: Error in cloned function
+!ERROR: function Admin.p(B:str,C:str):str;	# 0  (C:str)<-(B:str)(C:str)
+!ERROR:     mil.line("        var local :=newid(B,C); ");	# 1 MILline ($3:void)<-($4:str)
+!ERROR:     local := Admin.newid(B,C);	# 2  (local:any)<-(B:str)(C:str)
+!ERROR:     mil.line("        vars(); ");	# 3 MILline ($6:void)<-($7:str)
+!ERROR:     va_a := vars();	# 4  unknown (va_a:any)
+!ERROR: end p;	# 5  
+!ERROR: 'Admin.p' undefined in Admin.main[44]
+!ERROR: 'vars' undefined in Admin.echo[1]
+!ERROR: 'vars' undefined in Admin.echo[3]
+!ERROR: Error in cloned function
+!ERROR: function Admin.echo(x:int,y:int):int;	# 0  (y:int)<-(x:int)(y:int)
+!ERROR:     bb_a := vars();	# 1  unknown (bb_a:any)
+!ERROR:     z := x;	# 2  (z:int)<-(x:int)
+!ERROR:     cb_a := vars();	# 3  unknown (cb_a:any)
+!ERROR:     return db_a := z;	# 4  (db_a:int)<-(z:int)
+!ERROR: end echo;	# 5  
+!ERROR: 'Admin.echo' undefined in Admin.main[49]
+!ERROR: MALresolve:Admin.New[4]:type mismatch str := bat[:int,:int]
+!ERROR: 'bbp.new' undefined in Admin.New[4]
+!ERROR: 'bat.setName' undefined in Admin.New[6]
+!ERROR: MALresolve:Admin.New[8]:type mismatch str := bat[:oid,:int]
+!ERROR: 'bbp.new' undefined in Admin.New[8]
+!ERROR: 'bat.setName' undefined in Admin.New[10]
+!ERROR: 'vars' undefined in Admin.New[11]
+!ERROR: Error in cloned function
+!ERROR: function Admin.New(N:str,A:str,Ahsh:str):str;	# 0  (Ahsh:str)<-(N:str)(A:str)(Ahsh:str)
+!ERROR:     mil.line("        var Nh := newid(N,\"_hsh\"); ");	# 1 MILline ($4:void)<-($5:str)
+!ERROR:     Nh := Admin.newid(N,"_hsh");	# 2  (Nh:str)<-(N:str)($7:str)
+!ERROR:     mil.line("        var A := new(int,int,1); ");	# 3 MILline ($8:void)<-($9:str)
+!ERROR:     A := bbp.new(nil,nil,1);	# 4 CMDBATnewint unknown (A:str)<-($10:int)($10:int)($11:int)
+!ERROR:     mil.line("        rename(A,N); ");	# 5 MILline ($12:void)<-($13:str)
+!ERROR:     eb_a := bat.setName(A,N);	# 6 BKCsetName (eb_a:void)<-(A:str)(N:str)
+!ERROR:     mil.line("        var Ahsh := new(oid,int,1); ");	# 7 MILline ($15:void)<-($16:str)
+!ERROR:     Ahsh := bbp.new(nil,nil,1);	# 8 CMDBATnewint unknown (Ahsh:str)<-($17:oid)($10:int)($11:int)
+!ERROR:     mil.line("        rename(Ahsh,Nh); vars();");	# 9 MILline ($18:void)<-($19:str)
+!ERROR:     fb_a := bat.setName(Ahsh,Nh);	# 10 BKCsetName (fb_a:void)<-(Ahsh:str)(Nh:str)
+!ERROR:     gb_a := vars();	# 11  unknown (gb_a:any)
+!ERROR: end New;	# 12  
+!ERROR: 'Admin.New' undefined in Admin.main[52]
+!ERROR: 'vars' undefined in Admin.main[54]
+function Admin.main():int;	# 0  (main:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("proc newid(any x, any y) : any {");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("#calling a function;\n");	# 5 MILline ($8:void)<-($9:str)
+    mil.line("var b:= new(int,int,0);");	# 6 MILline ($10:void)<-($11:str)
+    b := bbp.new(nil,nil,0);	# 7 CMDBATnewint (b:bat[:int,:int])<-($13:int)($13:int)($14:int)
+    mil.line("b.insert(1,15);");	# 8 MILline ($15:void)<-($16:str)
+    da_a := bat.insert(b,1,15);	# 9 BKCinsert_bun (da_a:void)<-(b:bat[:int,:int])($18:int)($19:int)
+    mil.line("b.insert(2,4);");	# 10 MILline ($20:void)<-($21:str)
+    ea_a := bat.insert(b,2,4);	# 11 BKCinsert_bun (ea_a:void)<-(b:bat[:int,:int])($23:int)($24:int)
+    mil.line("b.insert(3,int(nil));");	# 12 MILline ($25:void)<-($26:str)
+    fa_a := calc.int(nil);	# 13 CALCnil2int (fa_a:int)<-($28:void)
+    ga_a := bat.insert(b,3,fa_a);	# 14 BKCinsert_bun (ga_a:void)<-(b:bat[:int,:int])($30:int)(fa_a:int)
+    mil.line("b.insert(4,16);");	# 15 MILline ($31:void)<-($32:str)
+    ha_a := bat.insert(b,4,16);	# 16 BKCinsert_bun (ha_a:void)<-(b:bat[:int,:int])($24:int)($34:int)
+    mil.line("b.insert(5,25);");	# 17 MILline ($35:void)<-($36:str)
+    ia_a := bat.insert(b,5,25);	# 18 BKCinsert_bun (ia_a:void)<-(b:bat[:int,:int])($38:int)($39:int)
+    mil.line("b.insert(6,36);");	# 19 MILline ($40:void)<-($41:str)
+    ja_a := bat.insert(b,6,36);	# 20 BKCinsert_bun (ja_a:void)<-(b:bat[:int,:int])($43:int)($44:int)
+    mil.line("b.insert(7,49);");	# 21 MILline ($45:void)<-($46:str)
+    ka_a := bat.insert(b,7,49);	# 22 BKCinsert_bun (ka_a:void)<-(b:bat[:int,:int])($48:int)($49:int)
+    mil.line("b.insert(8,64);");	# 23 MILline ($50:void)<-($51:str)
+    la_a := bat.insert(b,8,64);	# 24 BKCinsert_bun (la_a:void)<-(b:bat[:int,:int])($53:int)($54:int)
+    mil.line("b.insert(9,int(nil));");	# 25 MILline ($55:void)<-($56:str)
+    ma_a := calc.int(nil);	# 26 CALCnil2int (ma_a:int)<-($28:void)
+    na_a := bat.insert(b,9,ma_a);	# 27 BKCinsert_bun (na_a:void)<-(b:bat[:int,:int])($59:int)(ma_a:int)
+    mil.line("b.insert(int(nil),int(nil));");	# 28 MILline ($60:void)<-($61:str)
+    oa_a := calc.int(nil);	# 29 CALCnil2int (oa_a:int)<-($63:void)
+    pa_a := calc.int(nil);	# 30 CALCnil2int (pa_a:int)<-($63:void)
+    qa_a := bat.insert(b,oa_a,pa_a);	# 31 BKCinsert_bun (qa_a:void)<-(b:bat[:int,:int])(oa_a:int)(pa_a:int)
+    mil.line("b.insert(int(nil),81);");	# 32 MILline ($66:void)<-($67:str)
+    ra_a := calc.int(nil);	# 33 CALCnil2int (ra_a:int)<-($63:void)
+    sa_a := bat.insert(b,ra_a,81);	# 34 BKCinsert_bun (sa_a:void)<-(b:bat[:int,:int])(ra_a:int)($70:int)
+    mil.line("b.rename(\"tenk1_unique1\");");	# 35 MILline ($71:void)<-($72:str)
+    ta_a := bat.setName(b,"tenk1_unique1");	# 36 BKCsetName (ta_a:void)<-(b:bat[:int,:int])($74:str)
+    mil.line("proc dummy() : int { return 1; }");	# 37 MILline ($75:void)<-($76:str)
+    mil.line("proc p(any B, any C) : any { ");	# 38 MILline ($77:void)<-($78:str)
+    mil.line("proc s(int low, int high) : void {");	# 39 MILline ($79:void)<-($80:str)
+    mil.line("#proc echo(any x,any y) : any { vars(); z=x; vars(); return(z); }\n");	# 40 MILline ($81:void)<-($82:str)
+    mil.line("proc echo(any x,any y) : any { vars(); var z:=x; vars(); return(z); }");	# 41 MILline ($83:void)<-($84:str)
+    mil.line("proc New(any N,any A,any Ahsh) : void {");	# 42 MILline ($85:void)<-($86:str)
+    mil.line("p(\"b\",\"1\");");	# 43 MILline ($87:void)<-($88:str)
+    hb_a := Admin.p("b","1");	# 44  (hb_a:any)<-($90:str)($91:str)
+    mil.line("# passing parameters;\n");	# 45 MILline ($92:void)<-($93:str)
+    mil.line("var a:=35;");	# 46 MILline ($94:void)<-($95:str)
+    a := 35;	# 47  (a:int)<-($97:int)
+    mil.line("echo(a,\"hello\").print();");	# 48 MILline ($98:void)<-($99:str)
+    ib_a := Admin.echo(a,"hello");	# 49  (ib_a:any)<-(a:int)($101:str)
+    jb_a := io.print(ib_a);	# 50 IOprint_val (jb_a:int)<-(ib_a:any)
+    mil.line("New(\"r\",\"C\",\"Ch\");");	# 51 MILline ($103:void)<-($104:str)
+    kb_a := Admin.New("r","C","Ch");	# 52  (kb_a:void)<-($106:str)($107:str)($108:str)
+    mil.line("vars();");	# 53 MILline ($109:void)<-($110:str)
+    lb_a := vars();	# 54  unknown (lb_a:any)
+    mil.line("s(0,10);");	# 55 MILline ($112:void)<-($113:str)
+    mb_a := Admin.s(0,10);	# 56  (mb_a:void)<-($115:int)($116:int)
+    mil.line("s(0,11);");	# 57 MILline ($117:void)<-($118:str)
+    nb_a := Admin.s(0,11);	# 58  (nb_a:void)<-($115:int)($120:int)
+    mil.line("# errors !;\n");	# 59 MILline ($121:void)<-($122:str)
+    mil.line("s(0,99);");	# 60 MILline ($123:void)<-($124:str)
+    ob_a := Admin.s(0,99);	# 61  (ob_a:void)<-($115:int)($126:int)
+    mil.line("s(0,999);");	# 62 MILline ($127:void)<-($128:str)
+    pb_a := Admin.s(0,999);	# 63  (pb_a:void)<-($115:int)($130:int)
+    mil.line("quit();");	# 64 MILline ($131:void)<-($132:str)
+    qb_a := clients.quit();	# 65 CLTquit (qb_a:void)
+    io.print("test dropped: it uses 4.4. catalogues");	# 66 IOprint_val ($134:int)<-($135:str)
+end main;	# 67  
+>
+# 15:18:55 >  
+# 15:18:55 >  Done.
+# 15:18:55 >  
 

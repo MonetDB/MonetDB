@@ -116,3 +116,4 @@ end New;
 	mil.line("quit();");
 	qb_a := quit();
 #Identifer 'rename' mapped to 'bat.setName'
+print("test dropped: it uses 4.4. catalogues");
