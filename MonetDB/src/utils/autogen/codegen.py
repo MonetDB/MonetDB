@@ -94,6 +94,7 @@ code_gen = { 'm':       [ '.proto.h', '.glue.c' ],
             'java.in':  [ '.java' ],
             'mil.in':   [ '.mil' ],
             'py.in':    [ '.py' ],
+            'bat.in':    [ '.bat' ],
 }
 
 lib_code_gen = { 'fgr': [ '_glue.c' ], }

@@ -146,17 +146,17 @@ def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
     for l in list:
         if (l == "@LIBOBJS@"):
             add = add + " $(LIBOBJS)"
-        elif (l[0] in  ("-", "$", "@")):
+        elif (l[0] in  ("-", "$")):
             add = add + " " + l
-        else:
+        elif (l[0] not in  ("@")): 
             add = add + " " + msc_translate_dir(l,msc) + ".lib"
             deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
     for l in dlibs:
         if (l == "@LIBOBJS@"):
             add = add + " $(LIBOBJS)"
-        elif (l[0] in  ("-", "$", "@")):
+        elif (l[0] in  ("-", "$")):
             add = add + " " + l
-        else:
+        elif (l[0] not in  ("@")): 
             add = add + " " + msc_translate_dir(l,msc) + ".lib"
             deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
     if (type != "MOD"):
