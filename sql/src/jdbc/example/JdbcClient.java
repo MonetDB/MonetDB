@@ -29,7 +29,7 @@ import java.util.*;
  * Every database which has a JDBC driver should work with this client.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.0
+ * @version 1.1
  */
 
 public class JdbcClient {
@@ -87,6 +87,10 @@ public class JdbcClient {
 		value = (ArrayList)(value.clone());
 		arg.put("-help", value);
 
+		value = (ArrayList)(value.clone());
+		arg.put("e", value);
+		arg.put("-echo", value);
+
 
 		// default values, the username is prefixed with a space to identify
 		// at a later stage if it has been set via the command line
@@ -101,6 +105,7 @@ public class JdbcClient {
 		((ArrayList)(arg.get("Xdebug"))).add(null);
 		((ArrayList)(arg.get("Xbatching"))).add(null);
 		((ArrayList)(arg.get("-help"))).add(null);
+		((ArrayList)(arg.get("e"))).add(null);
 
 		// we cannot put password in the arg map, since it would be accessable
 		// from the command line by then.
@@ -226,7 +231,7 @@ public class JdbcClient {
 		if (((ArrayList)(arg.get("-help"))).get(1) != null) {
 			System.out.print(
 "Usage java -jar MonetDB_JDBC.jar [-h host[:port]] [-p port] [-f file] [-u user]\n" +
-"                              [-d [table]] [-X<opt>]\n" +
+"                              [-d [table]] [-e] [-X<opt>]\n" +
 "or using long option equivalents --host --port --file --user --dump.\n" +
 "Arguments may be written directly after the option like -p45123.\n" +
 "\n" +
@@ -249,6 +254,7 @@ public class JdbcClient {
 "-u --user  The username to use when connecting to the database.\n" +
 "-d --dump  Dumps the given table(s), or the complete database if none given.\n" +
 "--help     This screen.\n" +
+"-e --echo  Also outputs the contents of the input file, if any.\n" +
 "\n" +
 "EXTRA OPTIONS\n" +
 "-Xdebug    Writes a transmission log to disk for debugging purposes.  If a\n" +
@@ -434,6 +440,8 @@ public class JdbcClient {
 			// use the given file for reading
 			tmp = (String)(((ArrayList)(arg.get("f"))).get(1));
 			boolean hasFile = tmp != null;
+			boolean doEcho = hasFile &&
+				(((ArrayList)(arg.get("-echo"))).get(1) != null);
 			if (hasFile) {
 				int batchSize = 0;
 				// open the file
@@ -453,7 +461,7 @@ public class JdbcClient {
 					}
 					processBatch(batchSize);
 				} else {
-					processInteractive(true, user);
+					processInteractive(true, doEcho, user);
 				}
 			} else {
 				// print welcome message
@@ -465,7 +473,7 @@ public class JdbcClient {
 				out.println("Type \\q to quit, \\h for a list of available commands");
 				out.println("auto commit mode: on");
 
-				processInteractive(false, user);
+				processInteractive(false, doEcho, user);
 			}
 
 			// free resources, close the statement
@@ -495,11 +503,16 @@ public class JdbcClient {
 	 * input is done after each row that has been entered.
 	 *
 	 * @param hasFile a boolean indicating whether a file is used as input
+	 * @param doEcho a boolean indicating whether to echo the given input
 	 * @param user a String representing the username of the current user
 	 * @throws IOException if an IO exception occurs
 	 * @throws SQLException if a database related error occurs
 	 */
-	public static void processInteractive(boolean hasFile, String user)
+	public static void processInteractive(
+		boolean hasFile,
+		boolean doEcho,
+		String user
+	)
 		throws IOException, SQLException
 	{
 		// an SQL stack keeps track of ( " and '
@@ -518,6 +531,10 @@ public class JdbcClient {
 
 		// the main (interactive) process loop
 		for (int i = 1; (curLine = in.readLine()) != null; i++) {
+			if (doEcho) {
+				out.println(curLine);
+				out.flush();
+			}
 			qp = scanQuery(curLine, stack);
 			if (!qp.isEmpty()) {
 				doProcess = true;
