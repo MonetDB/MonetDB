@@ -645,6 +645,225 @@ Start of MIL script.
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'Å'"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "''"			  ]
+[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
+##------------------------------------------------------------------#
+## req      | tid      | status   | wakeup | action                 #
+##------------------------------------------------------------------#
+#[      2,         1,   running,         0, "mapi_server(get_mapi_port#"    ]
+#[      3,         2,   running,         0, "!ERROR: TBL_getname: inexistent function 0x40034208.
+unknown(0)#"                   ]
+#[     52,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40034208.
+unknown(1)#"                   ]
+#[     53,         3,   running,        52, "queue()#"                      ]
+[ 3 ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:	  name			| login				| tree					  #
+# (int)	  (str)			| (str)				| (str)					  #
+#---------------------------------------------------------------------------------------------------------#
+[ 0,	  "adm",		  "Mon Sep  1 19:43:43 2003",	  "printf(\"\\nReady.\\n\")"		  ]
+[ 1,	  "anonymous:unknown",	  "Mon Sep  1 19:43:43 2003",	  "clients()"				  ]
+[ 2,	  "adm",		  "Mon Sep  1 19:43:43 2003",	  "mapi_server(get_mapi_port(),5)"	  ]
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  10	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  10	  ]
+[ "elapsystem",	  0	  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment																																			  #
+# (str)			  (str)																																					  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"																																		  ]
+[ "gdk_version",	  "4.3.13"																																				  ]
+[ "monet_pid",		  "28284"																																				  ]
+[ "prefix",		  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "exec_prefix",	  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "gdk_dbname",		  "mTests_src_tools"																																			  ]
+[ "gdk_dbfarm",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/dbfarm"																														  ]
+[ "gdk_debug",		  "10"																																					  ]
+[ "gdk_mmap",		  "33554432"																																				  ]
+[ "monet_admin",	  "adm"																																					  ]
+[ "monet_prompt",	  ""																																					  ]
+[ "monet_welcome",	  "yes"																																					  ]
+[ "monet_mod_path",	  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/plain/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/contrib/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/calibrator/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/mapi/.libs"	  ]
+[ "monet_daemon",	  "no"																																					  ]
+[ "host",		  "localhost"																																				  ]
+[ "mapi_port",		  "56640"																																				  ]
+[ "mapi_noheaders",	  "no"																																					  ]
+[ "mapi_debug",		  "0"																																					  ]
+[ "sql_port",		  "59379"																																				  ]
+[ "sql_debug",		  "0"																																					  ]
+[ "sql_api",		  "sql(default-schema)"																																			  ]
+[ "sql_user",		  "monetdb"																																				  ]
+[ "sql_schema",		  "default-schema"																																			  ]
+[ "sql_logdir",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/log"																														  ]
+[ "gdk_config",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/conf/monet.conf"																													  ]
+[ "monet_cwd",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/mTests/src/tools"																													  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment																																			  #
+# (str)			  (str)																																					  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"																																		  ]
+[ "gdk_version",	  "4.3.13"																																				  ]
+[ "monet_pid",		  "28284"																																				  ]
+[ "prefix",		  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "exec_prefix",	  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "gdk_dbname",		  "mTests_src_tools"																																			  ]
+[ "gdk_dbfarm",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/dbfarm"																														  ]
+[ "gdk_debug",		  "10"																																					  ]
+[ "gdk_mmap",		  "33554432"																																				  ]
+[ "monet_admin",	  "adm"																																					  ]
+[ "monet_prompt",	  ""																																					  ]
+[ "monet_welcome",	  "yes"																																					  ]
+[ "monet_mod_path",	  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/plain/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/contrib/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/calibrator/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/mapi/.libs"	  ]
+[ "monet_daemon",	  "no"																																					  ]
+[ "host",		  "localhost"																																				  ]
+[ "mapi_port",		  "56640"																																				  ]
+[ "mapi_noheaders",	  "no"																																					  ]
+[ "mapi_debug",		  "0"																																					  ]
+[ "sql_port",		  "59379"																																				  ]
+[ "sql_debug",		  "0"																																					  ]
+[ "sql_api",		  "sql(default-schema)"																																			  ]
+[ "sql_user",		  "monetdb"																																				  ]
+[ "sql_schema",		  "default-schema"																																			  ]
+[ "sql_logdir",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/log"																														  ]
+[ "gdk_config",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/conf/monet.conf"																													  ]
+[ "monet_cwd",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/mTests/src/tools"																													  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  23	  ]
+[ "majflt",	  24	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  1708032	  ]
+[ "arena",	  1716540	  ]
+[ "ordblks",	  257		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  1527276	  ]
+[ "fordblks",	  189264	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+#-----------------------------------------#
+# BAT:	  login				  #
+# (int)	  (str)				  #
+#-----------------------------------------#
+[ 0,	  "Mon Sep  1 19:43:43 2003"	  ]
+[ 1,	  "Mon Sep  1 19:43:43 2003"	  ]
+[ 2,	  "Mon Sep  1 19:43:43 2003"	  ]
+#---------------------------------#
+# BAT:	  name			  #
+# (int)	  (str)			  #
+#---------------------------------#
+[ 0,	  "adm"			  ]
+[ 1,	  "anonymous:unknown"	  ]
+[ 2,	  "adm"			  ]
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  10	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  10	  ]
+[ "elapsystem",	  0	  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment																																			  #
+# (str)			  (str)																																					  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"																																		  ]
+[ "gdk_version",	  "4.3.13"																																				  ]
+[ "monet_pid",		  "28284"																																				  ]
+[ "prefix",		  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "exec_prefix",	  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "gdk_dbname",		  "mTests_src_tools"																																			  ]
+[ "gdk_dbfarm",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/dbfarm"																														  ]
+[ "gdk_debug",		  "10"																																					  ]
+[ "gdk_mmap",		  "33554432"																																				  ]
+[ "monet_admin",	  "adm"																																					  ]
+[ "monet_prompt",	  ""																																					  ]
+[ "monet_welcome",	  "yes"																																					  ]
+[ "monet_mod_path",	  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/plain/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/contrib/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/calibrator/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/mapi/.libs"	  ]
+[ "monet_daemon",	  "no"																																					  ]
+[ "host",		  "localhost"																																				  ]
+[ "mapi_port",		  "56640"																																				  ]
+[ "mapi_noheaders",	  "no"																																					  ]
+[ "mapi_debug",		  "0"																																					  ]
+[ "sql_port",		  "59379"																																				  ]
+[ "sql_debug",		  "0"																																					  ]
+[ "sql_api",		  "sql(default-schema)"																																			  ]
+[ "sql_user",		  "monetdb"																																				  ]
+[ "sql_schema",		  "default-schema"																																			  ]
+[ "sql_logdir",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/log"																														  ]
+[ "gdk_config",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/conf/monet.conf"																													  ]
+[ "monet_cwd",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/mTests/src/tools"																													  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  23	  ]
+[ "majflt",	  25	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1716540	  ]
+[ "ordblks",	  259		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  1526684	  ]
+[ "fordblks",	  189856	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+#~EndVariableOutput~#
+End of MIL script.
 
 # 12:58:33 >  
 # 12:58:33 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50660 < multiClientSeq_s01.milC
@@ -659,8 +878,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  38	  ]
-[ "tmpbats",	  38	  ]
+[ "bats",	  35	  ]
+[ "tmpbats",	  35	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -825,9 +1044,6 @@ Start of MIL script.
 [ 32,	  "tran"  ]
 [ 33,	  "tran"  ]
 [ 34,	  "tran"  ]
-[ 36,	  "tran"  ]
-[ 40,	  "tran"  ]
-[ 41,	  "tran"  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -866,9 +1082,6 @@ Start of MIL script.
 [ 32,	  "32"		  ]
 [ 33,	  "33"		  ]
 [ 34,	  "34"		  ]
-[ 36,	  "36"		  ]
-[ 40,	  "40"		  ]
-[ 41,	  "41"		  ]
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -907,9 +1120,6 @@ Start of MIL script.
 [ 32,	  "tmp_32"		  ]
 [ 33,	  "tmp_33"		  ]
 [ 34,	  "tmp_34"		  ]
-[ 36,	  "tmp_36"		  ]
-[ 40,	  "tmp_40"		  ]
-[ 41,	  "tmp_41"		  ]
 #-----------------#
 # BAT:	  refcnt  #
 # (int)	  (int)	  #
@@ -945,12 +1155,9 @@ Start of MIL script.
 [ 29,	  1	  ]
 [ 30,	  1	  ]
 [ 31,	  1	  ]
-[ 32,	  0	  ]
-[ 33,	  0	  ]
-[ 34,	  0	  ]
-[ 36,	  1	  ]
-[ 40,	  1	  ]
-[ 41,	  1	  ]
+[ 32,	  1	  ]
+[ 33,	  1	  ]
+[ 34,	  1	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -989,9 +1196,6 @@ Start of MIL script.
 [ 32,	  "load"  ]
 [ 33,	  "load"  ]
 [ 34,	  "load"  ]
-[ 36,	  "load"  ]
-[ 40,	  "load"  ]
-[ 41,	  "load"  ]
 #-------------------------------------------------#
 # BAT:	  tree					  #
 # (int)	  (str)					  #
@@ -1003,8 +1207,8 @@ Start of MIL script.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  38	  ]
-[ "tmpbats",	  38	  ]
+[ "bats",	  35	  ]
+[ "tmpbats",	  35	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -1013,20 +1217,6 @@ Start of MIL script.
 # BAT:			  tmp_52	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "monet_atomtbl",	  "constant"	  ]
-[ "monet_acctbl",	  "constant"	  ]
-[ "monet_fcntbl",	  "constant"	  ]
-[ "monet_fcntbl",	  "constant"	  ]
-[ "monet_acctbl",	  "constant"	  ]
-[ "monet_atomtbl",	  "constant"	  ]
-[ "port",		  "changeable"	  ]
-[ "nr",			  "changeable"	  ]
-[ "l",			  "changeable"	  ]
-[ "port",		  "changeable"	  ]
-[ "maxusers",		  "changeable"	  ]
-[ "port",		  "changeable"	  ]
-[ "maxusers",		  "changeable"	  ]
-[ "cmd",		  "changeable"	  ]
 [ "monet_atomtbl",	  "constant"	  ]
 [ "monet_acctbl",	  "constant"	  ]
 [ "monet_fcntbl",	  "constant"	  ]
@@ -1095,20 +1285,6 @@ Start of MIL script.
 [ "port",		  "liquid"	  ]
 [ "maxusers",		  "liquid"	  ]
 [ "cmd",		  "liquid"	  ]
-[ "monet_atomtbl",	  "frozen"	  ]
-[ "monet_acctbl",	  "frozen"	  ]
-[ "monet_fcntbl",	  "frozen"	  ]
-[ "monet_fcntbl",	  "frozen"	  ]
-[ "monet_acctbl",	  "frozen"	  ]
-[ "monet_atomtbl",	  "frozen"	  ]
-[ "port",		  "liquid"	  ]
-[ "nr",			  "liquid"	  ]
-[ "l",			  "liquid"	  ]
-[ "port",		  "liquid"	  ]
-[ "maxusers",		  "liquid"	  ]
-[ "port",		  "liquid"	  ]
-[ "maxusers",		  "liquid"	  ]
-[ "cmd",		  "liquid"	  ]
 [ "mapi_params",	  "liquid"	  ]
 [ "EOF",		  "frozen"	  ]
 [ "GE",			  "frozen"	  ]
@@ -1149,20 +1325,6 @@ Start of MIL script.
 # BAT:			  tmp_52  #
 # (str)			  (str)	  #
 #---------------------------------#
-[ "monet_atomtbl",	  "BAT"	  ]
-[ "monet_acctbl",	  "BAT"	  ]
-[ "monet_fcntbl",	  "BAT"	  ]
-[ "monet_fcntbl",	  "BAT"	  ]
-[ "monet_acctbl",	  "BAT"	  ]
-[ "monet_atomtbl",	  "BAT"	  ]
-[ "port",		  "int"	  ]
-[ "nr",			  "int"	  ]
-[ "l",			  "int"	  ]
-[ "port",		  "int"	  ]
-[ "maxusers",		  "int"	  ]
-[ "port",		  "int"	  ]
-[ "maxusers",		  "int"	  ]
-[ "cmd",		  "str"	  ]
 [ "monet_atomtbl",	  "BAT"	  ]
 [ "monet_acctbl",	  "BAT"	  ]
 [ "monet_fcntbl",	  "BAT"	  ]
@@ -1244,15 +1406,12 @@ Start of MIL script.
 [ "monet_mod_use",	  "oid",  "ptr",  70,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_var",	  "str",  "ptr",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_unicode_case",	  "int",  "int",  685,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
-[ "tmp_29",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  3		  ]
-[ "tmp_30",		  "str",  "oid",  686,	  0,	  "dirty",	  "load", "tran", 1,	  3		  ]
-[ "tmp_31",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  3		  ]
-[ "tmp_32",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_33",		  "str",  "oid",  85,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_34",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_36",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "tmp_40",		  "str",  "oid",  686,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "tmp_41",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "tmp_29",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "tmp_30",		  "str",  "oid",  686,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "tmp_31",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]
+[ "tmp_32",		  "str",  "oid",  686,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "tmp_33",		  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "tmp_34",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 #-------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-------------------------------------------------------------------------------------------------#
@@ -1294,28 +1453,11 @@ Start of MIL script.
 [ 32,	  0	  ]
 [ 33,	  0	  ]
 [ 34,	  0	  ]
-[ 36,	  0	  ]
-[ 40,	  0	  ]
-[ 41,	  0	  ]
 #~BeginVariableOutput~#
 [ 10 ]
 #-----------------------------------------------------------------------------------------#
 # type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_36>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_41>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_40>"		  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_30>"		  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_29>"		  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_31>"		  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "55056"		  ]
-[ "nr",			  "int",  "liquid",	  "changeable",	  "5"			  ]
-[ "l",			  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "55056"		  ]
-[ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "55056"		  ]
-[ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
-[ "cmd",		  "str",  "liquid",	  "changeable",	  "\"\""		  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_34>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_32>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_33>"		  ]
@@ -1354,6 +1496,225 @@ Start of MIL script.
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'Å'"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "''"			  ]
+[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
+##------------------------------------------------------------------#
+## req      | tid      | status   | wakeup | action                 #
+##------------------------------------------------------------------#
+#[      2,         1,   running,         0, "mapi_server(get_mapi_port#"    ]
+#[      3,         2,   running,         0, "!ERROR: TBL_getname: inexistent function 0x40034208.
+unknown(0)#"                   ]
+#[     88,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40034208.
+unknown(1)#"                   ]
+#[     53,         3,   running,        52, "queue()#"                      ]
+[ 3 ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:	  name			| login				| tree					  #
+# (int)	  (str)			| (str)				| (str)					  #
+#---------------------------------------------------------------------------------------------------------#
+[ 0,	  "adm",		  "Mon Sep  1 19:43:43 2003",	  "printf(\"\\nReady.\\n\")"		  ]
+[ 1,	  "anonymous:unknown",	  "Mon Sep  1 19:43:43 2003",	  "clients()"				  ]
+[ 2,	  "adm",		  "Mon Sep  1 19:43:43 2003",	  "mapi_server(get_mapi_port(),5)"	  ]
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  0	  ]
+[ "elapuser",	  -10	  ]
+[ "system",	  0	  ]
+[ "elapsystem",	  -10	  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment																																			  #
+# (str)			  (str)																																					  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"																																		  ]
+[ "gdk_version",	  "4.3.13"																																				  ]
+[ "monet_pid",		  "28284"																																				  ]
+[ "prefix",		  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "exec_prefix",	  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "gdk_dbname",		  "mTests_src_tools"																																			  ]
+[ "gdk_dbfarm",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/dbfarm"																														  ]
+[ "gdk_debug",		  "10"																																					  ]
+[ "gdk_mmap",		  "33554432"																																				  ]
+[ "monet_admin",	  "adm"																																					  ]
+[ "monet_prompt",	  ""																																					  ]
+[ "monet_welcome",	  "yes"																																					  ]
+[ "monet_mod_path",	  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/plain/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/contrib/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/calibrator/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/mapi/.libs"	  ]
+[ "monet_daemon",	  "no"																																					  ]
+[ "host",		  "localhost"																																				  ]
+[ "mapi_port",		  "56640"																																				  ]
+[ "mapi_noheaders",	  "no"																																					  ]
+[ "mapi_debug",		  "0"																																					  ]
+[ "sql_port",		  "59379"																																				  ]
+[ "sql_debug",		  "0"																																					  ]
+[ "sql_api",		  "sql(default-schema)"																																			  ]
+[ "sql_user",		  "monetdb"																																				  ]
+[ "sql_schema",		  "default-schema"																																			  ]
+[ "sql_logdir",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/log"																														  ]
+[ "gdk_config",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/conf/monet.conf"																													  ]
+[ "monet_cwd",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/mTests/src/tools"																													  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment																																			  #
+# (str)			  (str)																																					  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"																																		  ]
+[ "gdk_version",	  "4.3.13"																																				  ]
+[ "monet_pid",		  "28284"																																				  ]
+[ "prefix",		  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "exec_prefix",	  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "gdk_dbname",		  "mTests_src_tools"																																			  ]
+[ "gdk_dbfarm",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/dbfarm"																														  ]
+[ "gdk_debug",		  "10"																																					  ]
+[ "gdk_mmap",		  "33554432"																																				  ]
+[ "monet_admin",	  "adm"																																					  ]
+[ "monet_prompt",	  ""																																					  ]
+[ "monet_welcome",	  "yes"																																					  ]
+[ "monet_mod_path",	  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/plain/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/contrib/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/calibrator/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/mapi/.libs"	  ]
+[ "monet_daemon",	  "no"																																					  ]
+[ "host",		  "localhost"																																				  ]
+[ "mapi_port",		  "56640"																																				  ]
+[ "mapi_noheaders",	  "no"																																					  ]
+[ "mapi_debug",		  "0"																																					  ]
+[ "sql_port",		  "59379"																																				  ]
+[ "sql_debug",		  "0"																																					  ]
+[ "sql_api",		  "sql(default-schema)"																																			  ]
+[ "sql_user",		  "monetdb"																																				  ]
+[ "sql_schema",		  "default-schema"																																			  ]
+[ "sql_logdir",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/log"																														  ]
+[ "gdk_config",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/conf/monet.conf"																													  ]
+[ "monet_cwd",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/mTests/src/tools"																													  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  1	  ]
+[ "majflt",	  0	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  4096		  ]
+[ "arena",	  1720636	  ]
+[ "ordblks",	  254		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  1528636	  ]
+[ "fordblks",	  192000	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+#-----------------------------------------#
+# BAT:	  login				  #
+# (int)	  (str)				  #
+#-----------------------------------------#
+[ 0,	  "Mon Sep  1 19:43:43 2003"	  ]
+[ 1,	  "Mon Sep  1 19:43:43 2003"	  ]
+[ 2,	  "Mon Sep  1 19:43:43 2003"	  ]
+#---------------------------------#
+# BAT:	  name			  #
+# (int)	  (str)			  #
+#---------------------------------#
+[ 0,	  "adm"			  ]
+[ 1,	  "anonymous:unknown"	  ]
+[ 2,	  "adm"			  ]
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  0	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  0	  ]
+[ "elapsystem",	  0	  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment																																			  #
+# (str)			  (str)																																					  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"																																		  ]
+[ "gdk_version",	  "4.3.13"																																				  ]
+[ "monet_pid",		  "28284"																																				  ]
+[ "prefix",		  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "exec_prefix",	  "/var/tmp/_PREFIX_MONET_ntv_32_d_--enable-warning_"																															  ]
+[ "gdk_dbname",		  "mTests_src_tools"																																			  ]
+[ "gdk_dbfarm",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/dbfarm"																														  ]
+[ "gdk_debug",		  "10"																																					  ]
+[ "gdk_mmap",		  "33554432"																																				  ]
+[ "monet_admin",	  "adm"																																					  ]
+[ "monet_prompt",	  ""																																					  ]
+[ "monet_welcome",	  "yes"																																					  ]
+[ "monet_mod_path",	  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/plain/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/contrib/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/modules/calibrator/.libs:/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/src/mapi/.libs"	  ]
+[ "monet_daemon",	  "no"																																					  ]
+[ "host",		  "localhost"																																				  ]
+[ "mapi_port",		  "56640"																																				  ]
+[ "mapi_noheaders",	  "no"																																					  ]
+[ "mapi_debug",		  "0"																																					  ]
+[ "sql_port",		  "59379"																																				  ]
+[ "sql_debug",		  "0"																																					  ]
+[ "sql_api",		  "sql(default-schema)"																																			  ]
+[ "sql_user",		  "monetdb"																																				  ]
+[ "sql_schema",		  "default-schema"																																			  ]
+[ "sql_logdir",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/log"																														  ]
+[ "gdk_config",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/conf/monet.conf"																													  ]
+[ "monet_cwd",		  "/var/tmp/_BUILD_MONET_ntv_32_d_--enable-warning_/mTests/src/tools"																													  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  1	  ]
+[ "majflt",	  0	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1720636	  ]
+[ "ordblks",	  256		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  1528052	  ]
+[ "fordblks",	  192584	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+#~EndVariableOutput~#
+End of MIL script.
 
 # 12:58:34 >  
 # 12:58:34 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50660
