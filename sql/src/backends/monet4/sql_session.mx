@@ -70,6 +70,8 @@ extern int sqlstatement(char *cmd, Cntxt stk );
 #include <sql_parser.h>		/* for sqlparse() */
 #include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
 #include <monettime.h>
+#include <bat/bat_store.h>
+#include <bat/res_table.h>
 
 static res_table *find_export_table( mvc *m, int res_id );
 
@@ -402,6 +404,23 @@ enum ex_t {
 	ex_plan,
 	ex_performance
 };
+
+static void mvc_clean_result( mvc *m, res_table *t)
+{
+	res_table *r = m->results;
+
+	if (r == t){
+		m->results = t->next;
+	} else {
+		for( ; r; r = r->next){
+			if (r->next == t){
+				r->next = t->next;
+				break;
+			}
+		}
+	}
+	res_table_destroy(t);
+}
 
 int sqlexecute(backend * be, stream *out )
 {
@@ -833,6 +852,7 @@ sqlstatement(char *cmd, Cntxt stk )
 	backend_destroy( sql );
 	GDKfree(cmd);
 	mvc_commit(m, 0, NULL);
+	res_tables_destroy(m->results);
 	mvc_destroy(m);
 	VARdel(stk, v);
 	if (err)
@@ -1048,6 +1068,7 @@ These lines should be eaten away into the prompt is encountered.
 		if( error(out, "!ERROR:Schema authorization error") == 0 &&
 		    stream_write(out,PROMPT1,sizeof(PROMPT1)-1,1) >=0 )
 			stream_flush(out);
+		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		return connect_error(in, out);
 	}
@@ -1056,11 +1077,13 @@ These lines should be eaten away into the prompt is encountered.
 	    !sendProperty(out, "language", "sql") ||
 	    !sendProperty(out, "schema", schema) ||
 	    stream_flush(out) < 0) {
+		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		return connect_error(in, out);
 	}
 		
 	ret = sqlclient2(m, stk, rs, out, trace, 0 );
+	res_tables_destroy(m->results);
 	mvc_destroy(m);
 	/* Make sure that the write- (out-) stream is closed first,
 	 * as the related read- (in-) stream closes the shared
@@ -1096,6 +1119,7 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	if (!schema){
 		stream_printf(out, "!ERROR:Schema authorization error");
 		stream_flush(out);
+		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		return GDK_FAIL;
 	}
@@ -1105,6 +1129,7 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream_flush(out);
 
 	ret = sqlclient2(m, stk, rs, out, 0, 1 );
+	res_tables_destroy(m->results);
 	mvc_destroy(m);
 	bstream_destroy(rs);
 	return ret;
@@ -1138,6 +1163,7 @@ int mvc_destroy_wrap(mvc *m, int *commit )
 		mvc_commit(*(mvc**)m, 0, NULL);
 	else
 		mvc_rollback(*(mvc**)m, 0, NULL);
+	res_tables_destroy(m->results);
 	mvc_destroy(*(mvc**)m);
 	return GDK_SUCCEED;
 }

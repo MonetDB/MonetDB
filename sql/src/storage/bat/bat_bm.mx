@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
 
-@f sql_bm
+@f bat_bm
 @t Bat Manager
 @a N. J. Nes
 @v 1.0
@@ -71,17 +71,16 @@ extern oid bm_find_bat(struct bm *bm, char *name);
 extern BAT *bm_lbid2bat(struct bm *bm, oid lbid);
 extern char *bm_lbid2name(struct bm *bm, oid lbid);
 extern int bm_lbid2version(struct bm *bm, oid lbid);
+extern int bm_lbid2mode(struct bm *bm, oid lbid);
 
 #define BM_READ 0
 #define BM_APPEND 1
 #define BM_WRITE 2
 
-extern int bm_lbid2mode(struct bm *bm, oid lbid);
-
 #endif /*_SQL_BM_H_*/
 @c
 #include "sql_mem.h"
-#include "sql_bm.h"
+#include "bat_bm.h"
 #include "stream.h"
 
 typedef struct bm {

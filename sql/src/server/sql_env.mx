@@ -83,7 +83,6 @@ sql_export int sql_session(mvc *sql);
 
 #endif /* _SQL_ENV_H_ */
 @c
-#include <bat.h>
 #include "sql_env.h"
 #include "sql_bm.h"
 #include "sql_scope.h"
@@ -105,50 +104,55 @@ int mvc_debug_on( mvc *m, int flg)
 }
 
 char * 
-sql_get_var( mvc *sql, char *name )
+sql_get_var( mvc *m, char *name )
 {
-	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
-	BAT *v = mvc_bind( sql, "sys", "sessions", "value", 0); 
+	sql_trans *tr = m->trans;
+	sql_schema *sys = mvc_bind_schema(m, "sys");
+	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
+	sql_column *s_name = mvc_bind_column(m, sessions, "name");
+	ssize_t rid = column_find_row( tr, s_name, name, NULL );
 	char *val = NULL;
-	BUN p;
 
-	if ((p=BUNfnd(BATmirror(n), name))) {
-		val = BUNtail(v, BUNfnd(v, BUNhead(n, p)));
+	if (rid >= 0) {
+		sql_column *s_value = mvc_bind_column(m, sessions, "value");
+		val = column_find_value( tr, s_value, rid);
 	}
-	bat_destroy(n);
-	bat_destroy(v);
 	return val;
 }
 
 char * 
-sql_get_type( mvc *sql, char *name )
+sql_get_type( mvc *m, char *name )
 {
-	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
-	BAT *t = mvc_bind( sql, "sys", "sessions", "type", 0); 
+	sql_trans *tr = m->trans;
+	sql_schema *sys = mvc_bind_schema(m, "sys");
+	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
+	sql_column *s_name = mvc_bind_column(m, sessions, "name");
+	ssize_t rid = column_find_row( tr, s_name, name, NULL );
 	char *type = NULL;
-	BUN p;
 
-	if ((p=BUNfnd(BATmirror(n), name))) {
-		type = BUNtail(t, BUNfnd(t, BUNhead(n, p)));
+	if (rid >= 0) {
+		sql_column *s_type = mvc_bind_column(m, sessions, "type");
+		type = column_find_value( tr, s_type, rid);
 	}
-	bat_destroy(n);
-	bat_destroy(t);
 	return type;
 }
 
 int  
-sql_get_access( mvc *sql, char *name )
+sql_get_access( mvc *m, char *name )
 {
-	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
-	BAT *a = mvc_bind( sql, "sys", "sessions", "access", 0); 
+	sql_trans *tr = m->trans;
+	sql_schema *sys = mvc_bind_schema(m, "sys");
+	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
+	sql_column *s_name = mvc_bind_column(m, sessions, "name");
+	ssize_t rid = column_find_row( tr, s_name, name, NULL );
 	int access = -1;
-	BUN p;
 
-	if ((p=BUNfnd(BATmirror(n), name))) {
-		access = *(int*)BUNtail(a, BUNfnd(a, BUNhead(n, p)));
+	if (rid >= 0) {
+		sql_column *s_access = mvc_bind_column(m, sessions, "access");
+		int *a = (int*)column_find_value( tr, s_access, rid);
+		if (a)
+			access = *a;
 	}
-	bat_destroy(n);
-	bat_destroy(a);
 	return access;
 }
 
@@ -219,6 +223,7 @@ set_var( mvc *sql, char *name, symbol *val, char *typename )
 	st = sql_compare(sql, scope_bind(scp, NULL, "name"), 
 			 stmt_atom_string(name),"=", sql_where );
 	st = stmt_const(st, v);
+	/* TODO, need general intermediate code for updates! */
 	st = stmt_replace( stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), st);
 	scp = scope_close(scp);
 	l = create_stmt_list();
@@ -252,26 +257,26 @@ sql_set_var( mvc *sql, symbol *s )
 }
 
 int
-sql_set_var_value( mvc *sql, char *name, char *value )
+sql_set_var_value( mvc *m, char *name, char *value )
 {
 	int res = -1;
-	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
-	BAT *a = mvc_bind( sql, "sys", "sessions", "access", 0); 
-	BUN p;
 	
-	if ((p=BUNfnd(BATmirror(n), name))) {
-		oid id = *(oid*)BUNhead(n,p);
-		int access = *(int*)BUNtail(a,BUNfnd(a,&id));
+	sql_trans *tr = m->trans;
+	sql_schema *sys = mvc_bind_schema(m, "sys");
+	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
+	sql_column *s_name = mvc_bind_column(m, sessions, "name");
+	ssize_t rid = column_find_row( tr, s_name, name, NULL );
+	
+	if (rid >= 0) {
+		sql_column *s_access = mvc_bind_column(m, sessions, "access");
+		int access = *(int*)column_find_value( tr, s_access, rid );
 
 		if (access == SESSION_RW) {
-			BAT *v = mvc_bind( sql, "sys", "sessions", "value", 1); 
-			void_inplace(v, id, value);
-			res = 0;
-			bat_destroy(v);
+			sql_column *s_value = 
+					mvc_bind_column(m, sessions, "value");
+			return column_update_value( tr, s_value, rid, value);
 		}
 	}
-	bat_destroy(n);
-	bat_destroy(a);
 	return res;
 }
 
@@ -326,41 +331,30 @@ int sql_update_var(mvc *m, char *name )
 
 
 stmt *
-sql_declare_var( mvc *sql, symbol *s ) 
+sql_declare_var( mvc *m, symbol *s ) 
 {
 	if (s->token == SQL_DECLARE) {
 		int rw = SESSION_RW;
+		sql_trans *tr = m->trans;
+		sql_schema *sys = mvc_bind_schema(m, "sys");
+		sql_table *sessions = mvc_bind_table(m, sys, "sessions");
+		sql_column *s_name = mvc_bind_column(m, sessions, "name");
 		dlist *l = s->data.lval;
 		char *name = l->h->data.sval;
 		sql_subtype *ctype = l->h->next->data.typeval;
-		BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
-		BAT *t = mvc_bind( sql, "sys", "sessions", "type", 0); 
-		BAT *v = mvc_bind( sql, "sys", "sessions", "value", 0); 
-		BAT *a = mvc_bind( sql, "sys", "sessions", "access", 0); 
-		oid h;
 
-		if (BUNfnd(BATmirror(n), name)) {
-			bat_destroy(n);
-			bat_destroy(t);
+		if (column_find_row(tr, s_name, name, NULL) >= 0) {
 @-
 Any user defined variable should be added to the table.
 They don't survive session boundaries
 @c
-			return sql_error(sql, 02, 
+			return sql_error(m, 02, 
 				"Allready used session variable, %s\n",
 				name);
 		}
 
-		h = BATcount(n);
-		BUNins(n, (ptr) &h, name );
-		BUNins(v, (ptr) &h, "NULL" );
-		BUNins(t, (ptr) &h, ctype->type->sqlname);
-		BUNins(a, (ptr) &h, &rw);
-
-		bat_destroy(n);
-		bat_destroy(v);
-		bat_destroy(t);
-		bat_destroy(a);
+		table_insert( tr, sessions, name, "NULL", 
+				ctype->type->sqlname, &rw, NULL);
 		return stmt_none();
 	}
 	return NULL;
@@ -373,98 +367,47 @@ int
 sql_session( mvc *m ) 
 {
 	char buf[BUFSIZ];
-	BAT *n,*v,*T, *a;
+	sql_trans *tr = m->trans;
+	sql_schema *sys = mvc_bind_schema(m, "sys");
+	sql_table *s = mvc_bind_table(m, sys, "sessions");
 	int rw = SESSION_RW, ro = SESSION_RO;
 
-	oid h = 0;
-
-	n = mvc_bind( m, "sys", "sessions", "name", 1 );
-	v = mvc_bind( m, "sys", "sessions", "value", 1 );
-	T = mvc_bind( m, "sys", "sessions", "type", 1 );
-	a = mvc_bind( m, "sys", "sessions", "access", 1 );
-
-	BUNins(n, (ptr) &h, "debug" );
 	snprintf(buf, BUFSIZ, "%d", m->debug );
-	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "int");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
+	table_insert( tr, s, "debug", buf, "int", &rw, NULL);
 
-	BUNins(n, (ptr) &h, "reply_size" );
 	snprintf(buf, BUFSIZ, "%d", m->reply_size );
-	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "int");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
+	table_insert( tr, s, "reply_size", buf, "int", &rw, NULL);
 
-	BUNins(n, (ptr) &h, "explain" );
 	buf[0] = 0;
 	if (m->explain)
 		snprintf(buf, BUFSIZ, "%s", m->explain );
-	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "varchar");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
+	table_insert( tr, s, "explain", buf, "varchar", &rw, NULL);
 
-	BUNins(n, (ptr) &h, "auto_commit" );
 	if (m->auto_commit)
-		BUNins(v, (ptr) &h, "true");
+		table_insert( tr, s, "auto_commit", "true", "boolean", &rw, NULL);
 	else
-		BUNins(v, (ptr) &h, "false");
-	BUNins(T, (ptr) &h, "boolean");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
+		table_insert( tr, s, "auto_commit", "false", "boolean", &rw, NULL);
 
-	BUNins(n, (ptr) &h, "current_schema" );
-	BUNins(v, (ptr) &h, m->schema);
-	BUNins(T, (ptr) &h, "varchar");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
+	table_insert( tr, s, "curent_schema", m->schema, "varchar", &ro, NULL);
 
 	/* MonetDB/SQL user/current_user/session_user (authorization id) */
-	BUNins(n, (ptr) &h, "current_user" );
-	BUNins(v, (ptr) &h, m->user);
-	BUNins(T, (ptr) &h, "varchar");
-	BUNins(a, (ptr) &h, &ro);
-	h++;
+	table_insert( tr, s, "curent_user", m->user, "varchar", &ro, NULL);
 
 	/* MonetDB/SQL role/current_role/session_role */
-	BUNins(n, (ptr) &h, "current_role" );
-	BUNins(v, (ptr) &h, m->role);
-	BUNins(T, (ptr) &h, "varchar");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
+	table_insert( tr, s, "curent_role", m->role, "varchar", &rw, NULL);
 
-	BUNins(n, (ptr) &h, "current_timezone" );
 	snprintf(buf, BUFSIZ, "%d", m->timezone*60 );
-	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "sec_interval");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
+	table_insert( tr, s, "curent_timezone", buf, "sec_interval", &rw, NULL);
 
-	BUNins(n, (ptr) &h, "cache" );
 	if (m->cache)
-		BUNins(v, (ptr) &h, "true");
+		table_insert( tr, s, "cache", "true", "boolean", &rw, NULL);
 	else
-		BUNins(v, (ptr) &h, "false");
-	BUNins(T, (ptr) &h, "boolean");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
+		table_insert( tr, s, "cache", "true", "boolean", &rw, NULL);
 
-	BUNins(n, (ptr) &h, "factory" );
 	if (m->factory)
-		BUNins(v, (ptr) &h, "true");
+		table_insert( tr, s, "factory", "true", "boolean", &rw, NULL);
 	else
-		BUNins(v, (ptr) &h, "false");
-	BUNins(T, (ptr) &h, "boolean");
-	BUNins(a, (ptr) &h, &rw);
-	h++;
-
-	bat_destroy(n);
-	bat_destroy(v);
-	bat_destroy(T);
-	bat_destroy(a);
-
+		table_insert( tr, s, "factory", "false", "boolean", &rw, NULL);
 	return 0;
 }
 
@@ -472,8 +415,6 @@ int
 sql_create_sessions( mvc *m, sql_schema *s ) 
 {
 	BUN p,q;
-	BAT *n,*v;
-
 	sql_table *t;
 
 	t = mvc_create_table(m, s, "sessions", 1, 1, 1, -1 );
@@ -492,20 +433,12 @@ sql_create_sessions( mvc *m, sql_schema *s )
 	mvc_create_column_(m, t, "name", "varchar", 0);
 	mvc_create_column_(m, t, "value", "varchar", 0);
 
-	n = mvc_bind( m, "sys", "env", "name", 1 );
-	v = mvc_bind( m, "sys", "env", "value", 1 );
-	BATloop(GDKenv,p,q){
-		oid h = n->hseqbase + BATcount(n);
+	BATloop(GDKenv,p,q) {
 		char *name = BUNhead(GDKenv,p);
 		char *val = BUNtail(GDKenv,p);
 
-		BUNins(n, (ptr) &h, name);
-		BUNins(v, (ptr) &h, val);
+		table_insert( m->trans, t, name, val, NULL);
 	}
-
-	bat_destroy(n);
-	bat_destroy(v);
-
 	return 0;
 }
 @-

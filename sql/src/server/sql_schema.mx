@@ -651,6 +651,7 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 		       	"Current user %s doesn't have CREATE VIEW AS BATS privileges",
 			sql->user);
 	} else {
+		/* todo move to bat store 
 		sql_table *t = mvc_create_view(sql, ss, name, NULL, 0, 1);
 		dnode *n = column_spec->h;
 
@@ -675,6 +676,7 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 			mvc_create_column_bat(sql, t, cname, tp, b, NULL );  
 			bat_destroy(b);
 		}
+		*/
 		return stmt_none();
 	}
 	return NULL;

@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
 
-@f sql_logger
+@f bat_logger
 @t Transactions
 @a N. J. Nes
 @v 1.0
@@ -27,13 +27,10 @@ be paid when necessary. Transaction management is for this purpose
 implemented as a separate module and applications are required to
 obey the transaction policy, e.g. obtaining/releasing locks. 
 
-This module is designed to support efficient logging of [SQL?] database.
+This module is designed to support efficient logging of SQL database.
 Once loaded, the SQL compiler will insert the proper calls at
 transaction commit to include the changes in the log file.
 
-[Niels, it does not necessarily work upon recovery, because the ADT
-may require an update of the local access structure, e.g. the
-hash table in the string heap.]
 [The alternative storage structure is an ASCII dump, using a slightly
 enhanced Monet dump file format.
  +batname[hv,tv]	insert the bun
@@ -85,7 +82,7 @@ Actually, the logger should issue commit statements after each block.
 #ifndef _SQL_LOGGER_H_
 #define _SQL_LOGGER_H_
 
-#include "sql_bm.h"
+#include "bat_bm.h"
 
 extern struct logger *logger_create(int debug, char *logdir, char *dbname, int version, struct bm *bm );
 
@@ -95,6 +92,7 @@ extern int  logger_restart(struct logger *logger );
 extern int  logger_cleanup(struct logger *logger );
 
 extern int log_bat(struct logger* logger, oid lbid, BAT *b);
+extern int log_bat_clear(struct logger* logger, oid lbid);
 extern int log_bat_persists(struct logger* logger, BAT *b, oid lbid, char *n );
 extern int log_bat_transient(struct logger* logger, oid lbid );
 extern int  log_changes(struct logger *logger );
@@ -105,7 +103,7 @@ extern int log_tend(struct logger *logger);
 #endif /*_SQL_LOGGER_H_*/
 @c
 #include "sql_mem.h"
-#include "sql_logger.h"
+#include "bat_logger.h"
 #include "stream.h"
 
 @-
@@ -137,6 +135,7 @@ multiple files) has a too great performance impact.]
 #define SQL_LOG_DELETE	4
 #define SQL_LOG_CREATE 	5
 #define SQL_LOG_DESTROY	6
+#define SQL_LOG_CLEAR	7
 
 typedef struct logformat_t {
 	char flag;
@@ -191,6 +190,17 @@ static int log_write_string(logger *l, char *n)
 	    stream_write( l->log, n, 1, len) != (ssize_t)len)
 		return SQL_ERR;
 	return SQL_OK;
+}
+
+static void log_read_clear(logger *logger, char *name ){
+	oid lbid = bm_find_bat(logger->bm,name);
+	BAT *b = bm_lbid2bat(logger->bm,lbid);
+
+        if (logger->debug&1)
+		fprintf(stderr, "logger found log_read_clear %s\n", name);
+
+        if (b)
+		BATclear(b);
 }
 
 static void log_read_updates(logger *logger, logformat *l, char *name ){
@@ -374,6 +384,9 @@ static int logger_readlog( logger *logger, char *filename ){
 			break;
 		case SQL_LOG_DESTROY:
 			log_read_destroy(logger, &l, name );
+			break;
+		case SQL_LOG_CLEAR:
+			log_read_clear(logger, name );
 			break;
 		default:
 			GDKerror( "logger error %d %s\n", l.flag, name);
@@ -714,6 +727,27 @@ int log_bat(logger *logger, oid lbid, BAT *b ){
 	    	if (logger->debug)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr );
 	}
+	bm_new_version(logger->bm, lbid, logger->tid);
+	return (ok == GDK_SUCCEED)?SQL_OK:SQL_ERR;
+}
+
+int log_bat_clear(logger *logger, oid lbid ){
+	int ok = GDK_SUCCEED;
+	char *name = bm_lbid2name(logger->bm, lbid);
+	logformat l;
+
+	if (logger->debug&128){
+		/* logging is switched off */
+		bm_new_version(logger->bm, lbid, logger->tid);
+		return SQL_OK;
+	}
+
+	l.nr = 1;
+	logger->changes += l.nr;
+	l.flag = SQL_LOG_CLEAR;
+	if (log_write_format( logger, &l) == SQL_ERR ||
+	    log_write_string(logger, name) == SQL_ERR)
+		return SQL_ERR;
 	bm_new_version(logger->bm, lbid, logger->tid);
 	return (ok == GDK_SUCCEED)?SQL_OK:SQL_ERR;
 }

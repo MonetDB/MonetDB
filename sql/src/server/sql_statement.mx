@@ -28,11 +28,6 @@
 #include "sql_string.h"
 #include "sql_mvc.h"
 
-#define RDONLY 0
-#define INS 1
-#define DEL 2
-#define UPD 3
-
 #define create_stmt_list() list_create((fdestroy)&stmt_destroy)
 
 typedef enum stmt_type {
@@ -82,6 +77,7 @@ typedef enum stmt_type {
 	st_append,
 	st_insert,
 	st_replace,
+	st_table_clear,
 	st_exception,
 
 	st_group_ext,
@@ -219,6 +215,7 @@ extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr)
 extern stmt *stmt_append(stmt *c, stmt * values);
 extern stmt *stmt_insert(stmt *c, stmt * values);
 extern stmt *stmt_replace(stmt * c, stmt * values);
+extern stmt *stmt_table_clear(sql_table * t);
 
 /* raise exception incase the condition (cond) holds */
 extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
@@ -319,6 +316,7 @@ const char * st_type2string(st_type type) {
 	ST(append);
 	ST(insert);
 	ST(replace);
+	ST(table_clear);
 	ST(exception);
 
 	ST(group_ext);
@@ -512,7 +510,7 @@ void stmt_destroy(stmt * s)
 		case st_derive:
 		case st_unique:
 		case st_alias: 
-		case st_append: case st_insert: case st_replace:
+		case st_append: case st_insert: case st_replace: 
 		case st_exception: 
 		case st_pivot:
 	  	case st_find:
@@ -545,7 +543,8 @@ void stmt_destroy(stmt * s)
 
 		/* reference only independently managed resources */
 		case st_basetable: 
-			_DELETE(s->op2.sval);
+		case st_table_clear: 
+			if (s->op2.sval) _DELETE(s->op2.sval);
 		case st_bat: case st_ubat:
 		case st_dbat: case st_idxbat:
 		case st_none:
@@ -1298,6 +1297,14 @@ stmt *stmt_replace(stmt * c, stmt * b)
 	return s;
 }
 
+stmt *stmt_table_clear(sql_table * t)
+{
+	stmt *s = stmt_create(st_table_clear);
+	s->op1.tval = t;
+	s->nrcols = 0;
+	return s;
+}
+
 stmt *stmt_exception(stmt * cond, char *errstr, int errcode )
 {
 	stmt *s = stmt_create(st_exception);
@@ -1464,6 +1471,8 @@ sql_subtype *tail_type(stmt * st)
 		} else if (st->op1.idxval->type == join_idx){	
 			return sql_bind_localtype( "oid" );
 		}
+	case st_table_clear:
+		return sql_bind_localtype( "lng" );
 	case st_mirror:
 	case st_reverse:
 		return head_type(st->op1.stval);
@@ -1681,7 +1690,10 @@ char *table_name(stmt * st)
 		return table_name(st->op1.stval);
 
 	case st_basetable:
-		return _strdup(st->op2.sval);
+	case st_table_clear:
+		if (st->op2.sval)
+			return _strdup(st->op2.sval);
+		return _strdup(st->op1.tval->base.name);
 	case st_bat:
 		return table_name(st->h);
 	case st_alias:

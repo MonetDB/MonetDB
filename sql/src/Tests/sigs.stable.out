@@ -48,6 +48,7 @@ module 'sql_server'
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"		  ]
 [ "mvc_bind_idxbat(mvc, str, str, str, int) : BAT[any::1,any::2]"	  ]
 [ "mvc_bind_ubat(mvc, str, str, str, int) : BAT[any::1,any::2]"		  ]
+[ "mvc_clear_table(mvc, str, str) : lng"				  ]
 [ "mvc_destroy(mvc, int) : void"					  ]
 [ "mvc_export_result(mvc, Stream, int) : void"				  ]
 [ "mvc_export_table(mvc, Stream, int, int, int) : void"			  ]

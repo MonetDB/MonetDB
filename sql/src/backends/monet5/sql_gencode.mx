@@ -946,6 +946,9 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		s->nr= getDestVar(q);
 		@:SQLpostlude@
 	} break;
+	case st_table_clear: {
+		fprintf(stderr, "time to implement table clear\n");
+	} break;
 	case st_exception:{
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
 		int r = backend_dumpstmt(sql,mb, s->op2.stval);

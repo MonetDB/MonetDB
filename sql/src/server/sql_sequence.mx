@@ -56,13 +56,13 @@ static int
 find_seq( mvc *m, str seq )
 {
 	int res = 0;
-	BAT *seq_name = mvc_bind( m, "sys", "sequences", "name", RDONLY);
-	BUN p = BUNfnd(BATmirror(seq_name), seq);
+	sql_schema *sys = find_schema( m->trans, "sys" );
+	sql_table *seqs = find_table( sys, "sequences" );
+	sql_column *seqname = find_column( seqs, "name" );
+	ssize_t rid = column_find_row( m->trans, seqname, seq, NULL );
 	
-	if (p)
+	if (rid >= 0)
 		res = 1;
-
-	bat_destroy(seq_name);
 	return res;
 }
 

@@ -5,6 +5,17 @@
 #include <sql_list.h>
 #include <stream.h>
 
+#define PRIV_SELECT 1
+#define PRIV_UPDATE 2
+#define PRIV_INSERT 4
+#define PRIV_DELETE 8
+#define PRIV_EXECUTE 16
+#define PRIV_GRANT 32
+
+#define ROLE_PUBLIC   1
+#define ROLE_SYSADMIN 2
+#define USER_MONETDB  3
+
 #define ISO_READ_UNCOMMITED 1
 #define ISO_READ_COMMITED   2
 #define ISO_READ_REPEAT	    3
@@ -21,6 +32,11 @@
 #define TR_OLD 0
 #define TR_NEW 1
 
+#define RDONLY 0
+#define INS 1
+#define DEL 2
+#define UPD 3
+
 #define cur_user 1
 #define cur_role 2
 
@@ -35,6 +51,10 @@ typedef struct sql_base {
 	sqlid id;
 	char *name;
 } sql_base;
+
+extern void base_init( sql_base *b, sqlid id, int flag, char *name );
+extern void base_set_name( sql_base *b, char *name );
+extern void base_destroy( sql_base *b );
 
 typedef struct sql_type {
 	sql_base base;
@@ -192,6 +212,14 @@ typedef struct changeset {
 	node *nelm;
 } changeset;
 
+extern void cs_init( changeset *cs, fdestroy destroy );
+extern void cs_destroy( changeset *cs );
+extern void cs_add( changeset *cs, void *elm, int flag );
+extern void cs_del( changeset *cs, node *elm, int flag );
+extern int cs_size( changeset * cs );
+extern node * cs_find_name(changeset * cs, char *name);
+extern node * cs_first_node(changeset *cs);
+
 typedef struct sql_table {
 	sql_base base;
 	bit 	 table; 	/* table or view */
@@ -207,7 +235,8 @@ typedef struct sql_table {
 	changeset keys;
 	sql_ukey *pkey;
 
-	oid dbid;     	 /* bat with deletes */
+	int cleared;		/* cleared in the current transaction */
+	oid dbid;     	 	/* bat with deletes */
 
 	struct sql_schema *s;
 } sql_table;
@@ -267,5 +296,29 @@ typedef struct sql_trans {
 	struct sql_trans *parent; /* multilevel transaction support */
 } sql_trans;
 
+extern void module_destroy(sql_module * m);
+extern void schema_destroy(sql_schema * s);
+extern void table_destroy(sql_table * t);
+extern void column_destroy(sql_column * c);
+extern void kc_destroy(sql_kc * kc);
+extern void key_destroy(sql_key * k);
+extern void idx_destroy(sql_idx * i);
+
+extern node * list_find_name( list * l, char *name );
+extern node * find_key_node(sql_table * t, char *kname);
+extern sql_key * find_key(sql_table * t, char *kname);
+extern node * find_idx_node(sql_table * t, char *kname);
+extern sql_idx * find_idx(sql_table * t, char *kname);
+extern node * find_column_node(sql_table * t, char *cname);
+extern sql_column * find_column(sql_table * t, char *cname);
+extern node * find_table_node(sql_schema * s, char *tname);
+extern sql_table * find_table(sql_schema * s, char *tname);
+extern node * find_schema_node(sql_trans *t, char *sname);
+extern sql_schema *find_schema(sql_trans *t, char *sname);
+extern node * find_module_node(sql_trans *t, char *mname);
+extern sql_module *find_module(sql_trans *t, char *mname);
+extern node * find_type_node(sql_module * s, char *tname);
+extern sql_type * find_type(sql_module * s, char *tname);
+extern sql_type * sql_trans_bind_type(sql_trans *tr, char *name );
 
 #endif /* SQL_CATALOG_H */

@@ -15,7 +15,7 @@
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
 
-INCLUDES = ../../include ../../server $(MONETDB_INCS)
+INCLUDES = ../../include ../../common ../../storage ../../server $(MONETDB_INCS)
 
 lib__sql_server = {
 	DIR = libdir/MonetDB
@@ -24,7 +24,7 @@ lib__sql_server = {
 		sql_session.mx \
 		sql_gencode.mx 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra -l_str -l_monettime
-	LIBS = ../../server/libsqlserver $(MONETDB_LIBS)
+	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONETDB_LIBS)
 }
 
 scripts_mil = {

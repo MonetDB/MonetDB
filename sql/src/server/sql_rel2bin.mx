@@ -79,6 +79,7 @@ static stmt *tail_column(stmt * st)
 
 		return tail_column(st->op1.stval);
 
+	case st_table_clear:
 	case st_column:
 	case st_bat:
 		return st;
@@ -157,6 +158,7 @@ static stmt *head_column(stmt * st)
 	case st_reljoin:
 		return head_column(st->op1.lval->h->data);
 
+	case st_table_clear:
 	case st_column:
 	case st_bat:
 		return st;
@@ -682,6 +684,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_find: 
 	case st_bulkinsert: 
 	case st_var: case st_update_var:
+	case st_table_clear:
 
 		s->optimized = 2;
 		return stmt_dup(s);

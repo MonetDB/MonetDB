@@ -99,6 +99,12 @@ the updates to the persistent versions.
 		BAT[any::1,any::2] = mvc_bind_idxbat_wrap; 
 		"Bind the idx table"
 @-
+A special clear table function is required for an efficient DELETE ALL implementation. A table clear requires global table knowledge. 
+@m
+	.COMMAND mvc_clear_table( mvc c, str sname, str tname ) :
+		lng = mvc_clear_table_wrap;
+		"Clear table" 
+@-
 The results of the SQL queries are assembled in result sets, which
 can be shipped to the front-end for display or exported over a
 stream.
@@ -214,6 +220,9 @@ handles and returns proper error messages upon failure.
 #include "sql_mvc.h"
 #include "sql_server.proto.h"
 
+extern int mvc_result_table( mvc *m, int nr_cols, BAT *order );
+extern int mvc_result_column( mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
+
 #endif /*_SQL_SERVER_H_*/
 
 @c
@@ -224,6 +233,9 @@ handles and returns proper error messages upon failure.
 #include <sql_string.h>
 #include <sql_env.h>
 #include <algebra.h>
+#include <bat/bat_store.h>
+#include <bat/res_table.h>
+#include <bat/bat_bm.h>
 
 @-
 The code heavily depends on the (complex) data structures for
@@ -258,6 +270,7 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
 	if ( (ret = mvc_init(*Debug, (backend_stack)stk )) > 0 ){
 		#define S(q) sqlstatement(q,stk)
+		/* PUBLIC can only select on these tables! 
 		S("GRANT ALL on modules to PUBLIC with grant option;" );
 		S("GRANT ALL on schemas to PUBLIC with grant option;" );
 		S("GRANT ALL on tables to PUBLIC with grant option;" );
@@ -273,6 +286,7 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 		S("GRANT ALL on sessions to PUBLIC with grant option;" );
 		S("GRANT ALL on history to PUBLIC with grant option;" );
 		S("GRANT ALL on env to PUBLIC with grant option;" );
+		*/
 	} else if (ret < 0) {
 		return GDK_FAIL;
 	}
@@ -318,6 +332,59 @@ int mvc_login_wrap( str *r, mvc *c, str user, str passwd  ){
 	return GDK_SUCCEED;
 }
 
+static BAT *
+mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
+{
+	sql_trans *tr = m->trans;
+	BAT *b = NULL;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_column *c = mvc_bind_column(m, t, cname);
+
+	b = bind_bat(tr, c, access);
+	return b;
+}
+
+
+static BAT *
+mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access )
+{
+	sql_trans *tr = m->trans;
+	BAT *b = NULL;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_column *c = mvc_bind_column(m, t, cname);
+
+	b = bind_ubat(tr, c, access);
+	return b;
+}
+
+static BAT *
+mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
+{
+	sql_trans *tr = m->trans;
+	BAT *b = NULL;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+
+	b = bind_dbat(tr, t, access);
+	return b;
+}
+
+static BAT *
+mvc_bind_idxbat(mvc * m, char *sname, char *tname, char *iname, int access )
+{
+	sql_trans *tr = m->trans;
+	BAT *b = NULL;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_idx *i = mvc_bind_idx(m, s, iname);
+
+	(void)tname;
+	b = bind_idx(tr, i, access);
+	return b;
+}
+
+
 int mvc_bind_wrap( BAT** res, mvc* c, str sname, str tname, str cname, int *access){
 	*res = mvc_bind( *(mvc**)c, sname, tname, cname, *access );
 	if (*res){
@@ -348,6 +415,48 @@ int mvc_bind_idxbat_wrap( BAT** res, mvc* c, str sname, str tname, str iname, in
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
+}
+
+int mvc_clear_table_wrap( lng *res, mvc *c, str sname, str tname ) 
+{
+	mvc *m = *(mvc**)c;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	*res = mvc_clear_table( m, t );
+	return GDK_SUCCEED;
+}
+
+static int mvc_result_row( mvc *m, int nr_cols )
+{
+	m->results = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
+	return m->results->id;
+}
+
+
+int mvc_result_table( mvc *m, int nr_cols, BAT *order )
+{
+	res_table *t = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
+
+	t->order = order->batCacheid;
+	bat_incref(t->order, TRUE, "mvc_result_table");
+	m->results = t;
+	return t->id;
+}
+
+
+int mvc_result_column( mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b){
+	res_col *c = res_col_create( m->trans, m->results, tn, name, typename, digits, scale);
+	c->b = b->batCacheid;
+	bat_incref(c->b, TRUE, "mvc_result_column");
+	return 0;
+}
+
+static int mvc_result_value( mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype){
+	res_col *c = res_col_create( m->trans, m->results, tn, name, typename, digits, scale);
+
+	c->mtype = mtype;
+	c->p = ATOMdup(mtype,p); 
+	return 0;
 }
 
 int mvc_result_table_wrap( int *res_id, mvc *M, int *nr_cols, BAT *order ){
@@ -691,7 +800,7 @@ proc sql_server_start() : void {
 	tzone_local(TIMEZONE("GMT"));
 
 	if (isnil(err)){
-		fork(sqllogmanager());
+		#fork(sqllogmanager());
 
 		mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
 		# start a default mapi client for debugging, this should go once

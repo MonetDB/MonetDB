@@ -17,7 +17,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = ../include $(MONETDB_INCS)
+INCLUDES = ../include ../common ../storage $(MONETDB_INCS)
 
 YFLAGS = -d -p sql -v
 
@@ -30,7 +30,6 @@ lib_sqlserver = {
 		sql_string.mx \
 		sql_decimal.mx \
 		sql_scope.mx \
-		sql_types.mx \
 		sql_statement.mx \
 		sql_trans.mx \
 		sql_schema.mx \
@@ -44,13 +43,10 @@ lib_sqlserver = {
 		sql_symbol.mx \
 		sql_scan.mx \   
 		sql_parser.mx \  
-		sql_bm.mx \ 
-		sql_logger.mx \      
 		sql_mvc.mx \    
 		sql_env.mx \    
 		sql_sequence.mx \    
 		sql_privileges.mx \  
-		sql_backend.mx \
 		sql_query.mx \
 		sql_list.mx \
 		sql_mem.mx

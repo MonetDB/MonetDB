@@ -52,11 +52,7 @@ sql_export void scanner_init( struct scanner *s, bstream *rs, stream *ws );
 sql_export void scanner_reset( struct scanner *s, char *buf );
 sql_export void scanner_query_processed( struct scanner *s );
 
-extern void init_keywords();
-extern void exit_keywords();
-extern void keywords_insert(char *k, int token);
-extern int  keyword_exists(char *text);
-
+sql_export void scanner_init_keywords();
 #endif	/* _SQL_SCAN_H_ */
 
 @c
@@ -75,59 +71,11 @@ extern int  keyword_exists(char *text);
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-
-#define HASH_SIZE 512
-#define HASH_MASK (HASH_SIZE-1)
-
-typedef struct keyword {
-	char *keyword;
-	int len;
-	int token;
-	struct keyword *next;
-} keyword;
-
-static int keywords_init_done = 0;
-static keyword *keywords[HASH_SIZE];
-
-static int 
-keyword_key(char *k, int *l)
-{
-	char *s = k;
-	int h = 1;
-	while (*k) {
-		h *= (*k - 'a');
-		k++;
-	}
-	*l = k - s;
-	return (h < 0) ? -h : h;
-}
+#include <sql_keyword.h>
 
 void 
-keywords_insert(char *k, int token)
+scanner_init_keywords()
 {
-	keyword *kw = NEW(keyword);
-	int len = 0;
-	int bucket = keyword_key(k=toLower(k), &len) & HASH_MASK;
-
-	kw->keyword = k;
-	kw->len = len;
-	kw->token = token;
-	kw->next = keywords[bucket];
-	keywords[bucket] = kw;
-}
-
-void 
-init_keywords()
-{
-	int i;
-
-	if (keywords_init_done)
-		return;
-	keywords_init_done = 1;
-
-	for (i = 0; i < HASH_SIZE; i++)
-		keywords[i] = NULL;
-
 	keywords_insert("false", BOOL_FALSE);
 	keywords_insert("true", BOOL_TRUE);
 
@@ -341,49 +289,6 @@ init_keywords()
 	keywords_insert("VALUE", VALUE );
 	keywords_insert("GENERATED", GENERATED );
 	keywords_insert("IDENTITY", IDENTITY );
-}
-
-void 
-exit_keywords()
-{
-	int i;
-
-	if (keywords_init_done == 0)
-		return;
-	keywords_init_done = 0;
-
-	for (i = 0; i < HASH_SIZE; i++) {
-		keyword *k = keywords[i];
-		while (k) {
-			keyword *l = k;
-			k = k->next;
-			_DELETE(l->keyword);
-			_DELETE(l);
-		}
-	}
-}
-
-static keyword *
-find_keyword(char *text)
-{
-	int len = 0;
-	int bucket = keyword_key(mkLower(text), &len) & HASH_MASK;
-	keyword *k = keywords[bucket];
-	while (k) {
-		if (len == k->len && strcmp(k->keyword, text) == 0)
-			return k;
-		k = k->next;
-	}
-	return NULL;
-}
-
-int 
-keyword_exists(char *text)
-{
-	if (find_keyword(text)){
-		return 1;
-	}
-	return 0;
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
@@ -953,6 +858,14 @@ sqllex(YYSTYPE * yylval, void *parm)
 		yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
 	else 
 		yylval->sval = (lc->buf + lc->yysval);
+
+	/* This is needed as ALIAS and aTYPE get defined to late, see
+	   sql_keyword.mx */
+	if (token == KW_ALIAS)
+		token = ALIAS;
+
+	if (token == KW_TYPE)
+		token = aTYPE;
 
 	if (token == IDENT || token == COMPARISON || token == AGGR || 
 	    token == aTYPE || token == ALIAS || token == aMODULE )
