@@ -199,7 +199,7 @@ typedef struct {
 	int id1;		/* event id for counter 1 */
 	str unified;		/* unified event name */
 	str native;		/* native event name */
-#if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) ) )
+#if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) || defined(HW_x86_64) ) )
 	int code;		/* event code */
 	int mask;		/* unit mask for "fine-tuning" of some events */
 #endif
@@ -211,7 +211,7 @@ typedef struct {
 } event_t;
 
 event_t NO_event[1] = { {00, 00, (str) &chr_nil, (str) &chr_nil
-#if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) ) )
+#if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) || defined(HW_x86_64) ) )
 			 , 00, 00
 #endif
 #if defined(HW_SunOS)
@@ -221,7 +221,7 @@ event_t NO_event[1] = { {00, 00, (str) &chr_nil, (str) &chr_nil
 };
 event_t *event = NO_event;
 
-#if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) ) )
+#if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) || defined(HW_x86_64) ) )
 
 #if defined(HAVE_LIBPPERF)
 #include <sys/utsname.h>
@@ -2392,7 +2392,7 @@ start_count(counter *retval, int *event0, int *event1)
 		int rtrn;
 
 		if (!(Self = vperfctr_open())) {
-			GDKerror("start_count: vperfctr_open failed with return value %d, error %d.\n", (int) Self, errno);
+			GDKerror("start_count: vperfctr_open failed with error %d.\n", errno);
 			perror("! start_count/vperfctr_open");
 			return GDK_FAIL;
 		}
