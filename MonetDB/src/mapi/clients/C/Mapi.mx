@@ -720,8 +720,9 @@ struct MapiResultSet {
 	struct MapiResultSet *next;
 	struct MapiStatement *hdl;
 	int tableid;		/* SQL id of current result set */
-	int rows_affected;	/* mostly unknown */
-	int fieldcnt;		/* the table report section */
+	int querytype;		/* type of SQL query */
+	int rows_affected;
+	int fieldcnt;
 	int maxfields;
 	struct MapiColumn *fields;
 	struct MapiRowBuf cache;
@@ -906,6 +907,7 @@ mapi_export char *mapi_get_table(MapiHdl hdl,int fnr);
 mapi_export char *mapi_get_name(MapiHdl hdl,int fnr);
 mapi_export char *mapi_get_type(MapiHdl hdl,int fnr);
 mapi_export int mapi_get_len(MapiHdl hdl,int fnr);
+mapi_export int mapi_get_querytype(MapiHdl hdl);
 mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 
@@ -1195,6 +1197,7 @@ new_result(MapiHdl hdl)
 
 	result->hdl = hdl;
 	result->tableid = -1;
+	result->querytype = -1;
 
 	result->rows_affected = 0;
 
@@ -2448,18 +2451,17 @@ parse_header_line(MapiHdl hdl, char *line)
 	char **anchors;
 	struct MapiResultSet *result;
 
+	if (strcmp(line, "#-") == 0) {
+		/* start of new SQL result */
+		return new_result(hdl);
+	}
+
 	if ((result = hdl->result) == NULL)
 		result = new_result(hdl);
 	else {
 		while (result->next)
 			result = result->next;
 	}
-
-	if (strcmp(line, "#-") == 0 &&
-	    (result->fields != NULL || result->rows_affected > 0) &&
-	    (result->cache.writer != 1 || result->cache.rows[0][0] != '#' ||
-	     result->cache.rows[0][1] != '-'))
-		result = new_result(hdl);
 
 	line = strdup(line);	/* make copy we can play with */
 
@@ -2524,6 +2526,9 @@ parse_header_line(MapiHdl hdl, char *line)
 	} else if (strcmp(tag, "id") == 0) {
 		if (anchors[0])
 			result->tableid = atoi(anchors[0]);
+	} else if (strcmp(tag, "querytype") == 0) {
+		if (anchors[0])
+			result->querytype = atoi(anchors[0]);
 	}
 
 	/* clean up */
@@ -2719,7 +2724,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				hdl->active = result;
 			}
 			add_cache(result, strdup(line));
-			if (lookahead)
+			if (lookahead &&
+			    (result->querytype == -1 /* unknown (not SQL) */ ||
+			     result->querytype == 3 /* result set */))
 				return mid->error;
 			break;
 		}
@@ -3805,7 +3812,20 @@ mapi_get_len(MapiHdl hdl, int fnr)
 	if ((result = hdl->result) != 0 &&
 	    fnr >= 0 && fnr < result->fieldcnt)
 		return result->fields[fnr].columnlength;
-	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_table",
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_len",
+		      MERROR);
+	return 0;
+}
+
+int
+mapi_get_querytype(MapiHdl hdl)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check0(hdl, "mapi_get_querytype");
+	if ((result = hdl->result) != 0)
+		return result->querytype;
+	mapi_setError(hdl->mid, "No query result", "mapi_get_querytype",
 		      MERROR);
 	return 0;
 }
