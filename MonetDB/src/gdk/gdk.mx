@@ -2265,7 +2265,6 @@ gdk_export MT_Lock		GDKtmLock;
 #define ALGODEBUG	if (GDKdebug&2097152)
 #define ESTIDEBUG	if (GDKdebug&4194304)
 #define XPROPDEBUG      if (GDKdebug&8388608)
-#define HASHDEBUG	if (GDKdebug&(2+8+8388608))
 
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 
