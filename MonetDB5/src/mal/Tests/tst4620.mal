@@ -1,4 +1,11 @@
 #some join operations
+function algebra.joinPath( a:bat[:any$1,:any$2],
+                b:bat[:any$2,:any$3],
+                c:bat[:any$3,:any4]):bat[:any$1,:any$4];
+    z:= join(a,b);
+    zz:= join(z,c);
+    return zz;
+end joinPath;
 
 b:= new(:int,:int);
 barrier (k,v):= newRange(0:int);
@@ -15,18 +22,6 @@ print(i);
 d:= select(b,0:int,49:int);
 i:= count(d);
 print(i);
-
-zz:= joinPath(b,c,d);
-i:= count(zz);
-print(i);
-
-function algebra.joinPath( a:bat[:any$1,:any$2],
-                b:bat[:any$2,:any$3],
-                c:bat[:any$3,:any4]):bat[:any$1,:any$4];
-    z:= join(a,b);
-    zz:= join(z,c);
-    return zz;
-end joinPath;
 
 optimizer.MCoptimizer("algebra","joinPath");
 #to be detected by join inversion

@@ -1,14 +1,14 @@
-stderr of test 'tst2035` in directory 'src/mal` itself:
+stderr of test 'tst4030` in directory 'src/mal` itself:
 
 
-# 10:33:21 >  
-# 10:33:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45083 --set sql_port=56671 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2035.mal </dev/null
-# 10:33:21 >  
+# 21:10:22 >  
+# 21:10:22 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=49008 --set sql_port=52489 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4030.mal </dev/null
+# 21:10:22 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
-# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.19
-# builtin opt 	monet_pid = 7512
+# builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
+# builtin opt 	gdk_version = 4.5.0
+# builtin opt 	monet_pid = 4110
 # builtin opt 	prefix = /ufs/mk/opensource/MonetDB/Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -20,6 +20,7 @@ stderr of test 'tst2035` in directory 'src/mal` itself:
 # builtin opt 	monet_admin = adm
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
+# builtin opt 	monet_nostalgic = no
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # builtin opt 	monet_daemon = yes
 # builtin opt 	host = localhost
@@ -28,9 +29,8 @@ stderr of test 'tst2035` in directory 'src/mal` itself:
 # builtin opt 	mapi_debug = 0
 # builtin opt 	sql_port = 45123
 # builtin opt 	sql_debug = 0
-# builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
-# builtin opt 	sql_schema = default-schema
+# builtin opt 	sql_schema = sys
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
 # config opt 	prefix = /ufs/mk/monet5/Linux
 # config opt 	config = ${prefix}/etc/MonetDB5.conf
@@ -55,15 +55,13 @@ stderr of test 'tst2035` in directory 'src/mal` itself:
 # cmdline opt 	monet_mod_path = /ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # cmdline opt 	sql_logdir = /ufs/mk/monet5/Linux/var/MonetDB5/log
-# cmdline opt 	mapi_port = 45083
-# cmdline opt 	sql_port = 56671
+# cmdline opt 	mapi_port = 49008
+# cmdline opt 	sql_port = 52489
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	config = /ufs/mk/monet5/src/mal/Tests/All.conf
 # cmdline opt 	gdk_dbname = mTests_src_mal
 
-!Mtimeout: Timeout: Mserver --config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf --debug=10 --set monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB --set gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm --set sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log --set mapi_port=45201 --set sql_port=53796 --set monet_prompt= --trace --config=/ufs/mk/monet5/src/mal/Tests/All.conf --dbname=mTests_src_mal tst2035.mal 
-
-# 20:25:24 >  
-# 20:25:24 >  Done.
-# 20:25:24 >  
+# 21:10:22 >  
+# 21:10:22 >  Done.
+# 21:10:22 >  
 

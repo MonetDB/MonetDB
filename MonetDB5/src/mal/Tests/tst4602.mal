@@ -1,0 +1,17 @@
+# the first test for macro expansions and inversions
+# error handling
+function welcome(lim:int):int;
+    i:= 0;
+barrier j:= i<lim;
+    print("Welcome");
+    i:= i+1;
+    redo j:= i<lim;
+    return i;
+exit j;
+end welcome;
+
+optimizer.MEoptimizer("Admin","welcome");
+
+print("test expansion");
+a:=welcome(2);
+showFunction();
