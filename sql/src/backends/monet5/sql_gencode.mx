@@ -68,8 +68,8 @@ static InstrPtr
 newStmt( MalBlkPtr mb, char *module, char *name ) 
 { 
 	InstrPtr q= newInstruction(ASSIGNsymbol);
-	moduleId(q)= (module)? GDKstrdup(module): 0;
-	functionId(q)= (name)? GDKstrdup(name): 0;
+	moduleId(q)= (module)? _strdup(module): 0;
+	functionId(q)= (name)? _strdup(name): 0;
 	getDestVar(q)= newTmpVariable(mb,TYPE_any);
 	setVarInitialized(mb,getDestVar(q));
 	pushInstruction(mb,q);
@@ -80,9 +80,9 @@ static InstrPtr
 newStmtId( MalBlkPtr mb, char *id, char *module, char *name ) 
 {
 	InstrPtr q= newInstruction(ASSIGNsymbol);
-	moduleId(q)= (module)? GDKstrdup(module): 0;
-	functionId(q)= (name)? GDKstrdup(name): 0;
-	getDestVar(q)= newVariable(mb,id,TYPE_any);
+	moduleId(q)= (module)? _strdup(module): 0;
+	functionId(q)= (name)? _strdup(name): 0;
+	getDestVar(q)= newVariable(mb,_strdup(id),TYPE_any);
 	setVarInitialized(mb,getDestVar(q));
 	pushInstruction(mb,q);
 	return q;
@@ -103,21 +103,21 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 	char bufi[BUFSIZ];
 
 	snprintf(bufi,BUFSIZ,"%d",val);
-	_t= newConstant(mb,TYPE_int,GDKstrdup(bufi),TRUE); 
+	_t= newConstant(mb,TYPE_int,_strdup(bufi),TRUE); 
 	return pushArgument(mb,q,_t);
 }
 
 static InstrPtr 
 pushStr(MalBlkPtr mb, InstrPtr q, const char *val) 
 {
-	int _t = newConstant(mb,TYPE_str,GDKstrdup(val),TRUE); 
+	int _t = newConstant(mb,TYPE_str,_strdup(val),TRUE); 
 	return pushArgument(mb,q,_t);
 }
 
 static InstrPtr 
 pushBit(MalBlkPtr mb, InstrPtr q, const char *val) 
 {
-	int _t = newConstant(mb,TYPE_bit,GDKstrdup(val),TRUE); 
+	int _t = newConstant(mb,TYPE_bit,_strdup(val),TRUE); 
 	return pushArgument(mb,q,_t);
 }
 
@@ -125,7 +125,7 @@ static InstrPtr
 pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe ) 
 {	
 	int _t = newConstant(mb,
-		getTypeIndex(tpe,strlen(tpe)),GDKstrdup("nil"),TRUE); 
+		getTypeIndex(tpe,strlen(tpe)),_strdup("nil"),TRUE); 
 	return pushArgument(mb,q,_t);
 }
 
@@ -153,9 +153,9 @@ int constantAtom(backend *sql, MalBlkPtr mb, atom *a){
 	VALformat(&val,vr);
 	if( vr->vtype == TYPE_str ){
 		val[strlen(val)-1]=0;
-		idx= newConstant(mb,vr->vtype,GDKstrdup(val+1),1);
+		idx= newConstant(mb,vr->vtype,_strdup(val+1),1);
 		GDKfree(val);
-	} else	idx= newConstant(mb,vr->vtype,val,1);
+	} else	idx= newConstant(mb,vr->vtype,_strdup(val),1);
 	return idx;
 }
 @-
@@ -1055,6 +1055,7 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
         Symbol curPrg = 0;
 	InstrPtr curInstr=0;
 
+	int showit;
 	int i = 0;
 	char fnme[BUFSIZ];
 	node *n;
@@ -1063,13 +1064,16 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
  	   just create a InstrPtr using newInstruction */
 	i = snprintf( fnme, BUFSIZ, "sql%d", id);
 
+	
 	c->backup = c->curprg;
+
 	(void)id;
 	/* later we change this to a factory ? */
 	c->curprg = newFunction( fnme, FUNCTIONsymbol);
 	curPrg = c->curprg;
         curBlk = curPrg->def;
         curInstr = getInstrPtr(curBlk,0);
+	setModuleId(curInstr, "sql");
 
 	if (be->mvc->args){
 		int argc = 0;
@@ -1087,6 +1091,19 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
         }
         backend_dumpstmt( be, curBlk, s);
 
+	pushEndInstruction(curBlk);
+        insertSymbol(c->nspace, c->curprg);
+        trimMalBlk(c->curprg->def);
+        c->blkmode =0;
+        chkProgram(c->nspace, c->curprg->def);
+        if( c->backup){
+        	c->curprg = c->backup;
+                c->backup = 0;
+        }
+        showit= TRUE;
+        if(showit && c->listing)
+        	printFunction(GDKout, curBlk, c->listing);
+        showErrors();
 }
 
 void 
@@ -1106,7 +1123,7 @@ backend_call( backend *be, Client c, char *name, list *args )
 			if (atom_null(a)) {
 				if (a->data.vtype == TYPE_str && 
 				    a->data.val.sval == NULL) {
-					a->data.val.sval = GDKstrdup(str_nil);
+					a->data.val.sval = _strdup(str_nil);
 				}
 			}
 			_t = constantAtom(be, mb, a);

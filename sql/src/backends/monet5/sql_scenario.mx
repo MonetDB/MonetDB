@@ -366,6 +366,12 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 #ifdef _SQL_PARSER_DEBUG
 	else stream_printf(GDKout,"parse result %d\n",err);
 #endif
+	if( be->q ) {
+		char name[BUFSIZ];
+
+		(void)snprintf( name, BUFSIZ, "sql%d", be->q->id);
+		backend_call(be, c, name, be->mvc->args );
+	}
 @-
 In the final phase we add any debugging control
 @c
@@ -435,12 +441,6 @@ str SQLengine(Client c) {
 	backend *be= ((backend*)c->state[PARSER]);
 	lng T0;
 
-	if( be->q ) {
-		char name[BUFSIZ];
-
-		(void)snprintf( name, BUFSIZ, "sql%d", be->q->id);
-		backend_call(be, c, name, be->mvc->args );
-	}
 	if( c->curprg->def->errors)
 		return throwMessage("SQLengine","Program contains errors\n");
 #ifdef SQL_SCENARIO_DEBUG
