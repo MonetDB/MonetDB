@@ -66,7 +66,8 @@
  */
 typedef struct sql_bat {
 	oid bid;
-	oid ubid;     /* bat with updates */
+	oid ibid;	/* insert bat ! */
+	oid ubid;     	/* bat with updates */
 } sql_bat;
 
 typedef enum key_type {
@@ -563,6 +564,33 @@ static BAT *col_bind( sql_trans * tr, oid lbid, sql_column *c, int access )
 
 static BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 {
+	if (c->bat.ibid) {
+		BAT *i = temp_descriptor(c->bat.ibid);
+
+		if (access != INS) {
+			/* on all but inserts merge! */
+			BAT *b = col_bind(tr, c->bat.bid, c, INS);
+			
+			void_append_bat(b, i);
+			bat_destroy(i);
+			temp_destroy(c->bat.ibid);
+			c->bat.ibid = 0;
+			i = b;
+		}
+		return i;
+	} else {
+		if (access == INS && c->base.wtime == 0 &&
+		    c->t->persists && !c->t->clear && 
+		    c->base.flag != TR_NEW) 
+		{
+ 			int type = ATOMindex(c->type->type->base.name);
+			BAT *b = bat_new(TYPE_void, type, c->t->sz, "bind_bat");
+			 
+			BATseqbase(b,0);
+			c->bat.ibid = temp_create(b);
+			return b;
+		}
+	}
 	return col_bind(tr, c->bat.bid, c, access);
 }
 
@@ -634,6 +662,8 @@ static void column_destroy(sql_column * c)
 		temp_destroy(c->bat.bid);
 		temp_destroy(c->bat.ubid);
 	}
+	if (c->bat.ibid)
+		temp_destroy(c->bat.ibid);
 
 	base_destroy( &c->base );
 	sql_subtype_destroy(c->type);
@@ -980,6 +1010,7 @@ static sql_idx *load_idx(sql_trans *tr, BAT * idxs, BUN j, sql_table *t)
 
 	snprintf(bname, BUFSIZ, "%s_%s", t->base.name, ni->base.name);
 	ni->bat.bid = bm_find_bat(tr->bm, bname);
+	ni->bat.ibid = 0;
 
 	snprintf(bname, BUFSIZ, "U_%s_%s", t->base.name, ni->base.name);
 	ni->bat.ubid = bm_find_bat(tr->bm, bname);
@@ -1039,6 +1070,7 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	c->colnr = *(int *) bun_find(column_number, lid);
 	c->t = t;
 
+	c->bat.bid = c->bat.ibid = c->bat.ubid = 0;
 	if (t->table && !t->clear) {
 		snprintf(name, BUFSIZ, "%s_%s", t->base.name, c->base.name );
 		c->bat.bid = bm_find_bat(tr->bm, name);
@@ -1055,8 +1087,6 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 		c->bat.ubid = temp_create(u);
 		bat_destroy(b);
 		bat_destroy(u);
-	} else {
-		c->bat.bid = c->bat.ubid = 0;
 	}
 
 	if (mvc_debug)
@@ -1417,6 +1447,7 @@ static sql_idx *idx_dup(sql_trans *tr, int flag, sql_idx *i, sql_table *t)
 	ni->t = t;
 	ni->type = i->type;
 	ni->bat.bid = i->bat.bid;
+	ni->bat.ibid = 0;
 	ni->bat.ubid = i->bat.ubid;
 	ni->key = NULL;
 
@@ -1440,6 +1471,7 @@ static sql_column *column_dup(sql_trans *tr, int flag, sql_column * oc, sql_tabl
 	c->null = oc->null;
 	c->colnr = oc->colnr;
 	c->bat.bid = oc->bat.bid;
+	c->bat.ibid = 0;
 	c->bat.ubid = oc->bat.ubid;
 
 	c->t = t;
@@ -2511,7 +2543,9 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
 
-			BAT *ins = bm_lbid2bat( tr->bm, cc->bat.bid);
+			BAT *ins = cc->bat.ibid?
+					temp_descriptor(cc->bat.ibid):
+					bm_lbid2bat( tr->bm, cc->bat.bid);
 			BAT *ups = bm_lbid2bat( tr->bm, cc->bat.ubid);
 
                 	oc->base.rtime = cc->base.rtime;
@@ -2537,7 +2571,9 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			    sql_idx *oi = m->data;
 
 			    if (ci->bat.bid && ci->bat.ubid){
-				BAT *ins = bm_lbid2bat( tr->bm, ci->bat.bid);
+				BAT *ins = ci->bat.ibid?
+					temp_descriptor(ci->bat.ibid):
+					bm_lbid2bat( tr->bm, ci->bat.bid);
 				BAT *ups = bm_lbid2bat( tr->bm, ci->bat.ubid);
 
                 		oi->base.rtime = ci->base.rtime;
@@ -3824,7 +3860,7 @@ mvc_create_idx( mvc * m, sql_table *t, char *name, idx_type it )
 	ni->t = t;
 	ni->key = NULL;
 
-	ni->bat.bid = ni->bat.ubid = 0;
+	ni->bat.bid = ni->bat.ibid = ni->bat.ubid = 0;
 
 	cs_add( &t->idxs, ni, TR_NEW );
 	list_append( t->s->idxs, ni);
@@ -4095,6 +4131,7 @@ bootstrap_create_column(mvc * m, sql_table *t, char *name, char *sqltype )
 
 	snprintf(bname, BUFSIZ, "%s_%s", col->t->base.name, col->base.name );
 	col->bat.bid = bm_find_bat(tr->bm, bname);
+	col->bat.ibid = 0;
 
 	snprintf(bname, BUFSIZ, "U_%s_%s", col->t->base.name, col->base.name );
 	col->bat.ubid = bm_find_bat(tr->bm, bname);
@@ -4148,6 +4185,7 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	col->colnr = cs_size( &t->columns );
 	col->t = t;
 	col->bat.bid = 0;
+	col->bat.ibid = 0;
 	col->bat.ubid = 0;
 	cs_add( &t->columns, col, TR_NEW);
 
