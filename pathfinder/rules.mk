@@ -51,7 +51,7 @@ MXFLAGS= -n
 	$(MV) $*.yy.c $*.yy.c.tmp
 	echo '#include <config.h>' > $*.yy.c
 	grep -v '^#include.*[<"]config.h[">]' $*.yy.c.tmp >> $*.yy.c
-	rm -f $*.yy.c.tmp
+	$(RM) -f $*.yy.c.tmp
 
 %.cc: %.mx
 	$(MX) $(MXFLAGS) -x C $<
@@ -63,25 +63,25 @@ MXFLAGS= -n
 	$(LOCKFILE) waiting
 	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
-	rm -f waiting
+	$(RM) -f waiting
 
 %.tab.h: %.yy
 	$(LOCKFILE) waiting
 	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-	rm -f waiting
+	$(RM) -f waiting
 
 %.tab.c: %.y
 	$(LOCKFILE) waiting
 	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
-	rm -f waiting
+	$(RM) -f waiting
 
 %.tab.h: %.y
 	$(LOCKFILE) waiting
 	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-	rm -f waiting
+	$(RM) -f waiting
 
 %.ll: %.mx
 	$(MX) $(MXFLAGS) -x L $<
@@ -94,7 +94,7 @@ MXFLAGS= -n
 	$(MV) $*.yy.cc $*.yy.cc.tmp
 	echo '#include <config.h>' > $*.yy.cc
 	grep -v '^#include.*[<"]config.h[">]' $*.yy.cc.tmp >> $*.yy.cc
-	rm -f $*.yy.cc.tmp
+	$(RM) -f $*.yy.cc.tmp
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
@@ -162,11 +162,11 @@ MXFLAGS= -n
 	$(TWIG) -t tmp.mt
 	mv -f symbols.h $*.symbols.h
 	sed 's/^short\(.*\)=/static short\1=/' walker.c > $@
-	rm -f walker.c
-	rm -f tmp.mt
+	$(RM) -f walker.c
+	$(RM) -f tmp.mt
 
 % :: %.m4
-	rm -f $@
+	$(RM) -f $@
 	$(M4) $< >$@
 	chmod =r $@
 
@@ -181,8 +181,10 @@ MXFLAGS= -n
 # expression is the used as the sed command line argument when
 # we feed the source file through sed.
 % :: %.sed
+	$(RM) -f $@
 	sed `grep '\*!sed' $< | \
 	  sed 's/\*!sed *'\''\(.*\)'\''/\-e \1/g'` $< > $@
+	chmod =r $@
 
 $(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
 	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<

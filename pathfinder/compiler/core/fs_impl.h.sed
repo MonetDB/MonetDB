@@ -147,7 +147,6 @@ static int TWIG_ID[] = {
     [p_node_ty]      node_ty,      /* node type */
     [p_item_ty]      item_ty,      /* item type */
     [p_atom_ty]      atom_ty,      /* named atomic type */
-    [p_untyped_ty]   untyped_ty,   /* untyped type */
     [p_atomval_ty]   atomval_ty,   /* atomic value type */
     [p_named_ty]     named_ty,     /* named type */ 
     [p_req_ty]       req_ty,       /* required type */
@@ -254,7 +253,6 @@ static int TWIG_ID[] = {
 #undef node_ty      
 #undef item_ty      
 #undef atom_ty      
-#undef untyped_ty   
 #undef atomval_ty   
 #undef named_ty     
 #undef req_ty       
