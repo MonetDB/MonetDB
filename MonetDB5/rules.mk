@@ -1,7 +1,7 @@
 # The contents of this file are subject to the MonetDB Public
 # License Version 1.0 (the "License"); you may not use this file
 # except in compliance with the License. You may obtain a copy of
-# the License at 
+# the License at
 # http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 # 
 # Software distributed under the License is distributed on an "AS
@@ -12,7 +12,7 @@
 # The Original Code is the Monet Database System.
 # 
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+# Portions created by CWI are Copyright (C) 1997-2003 CWI.
 # All Rights Reserved.
 # 
 # Contributor(s):
@@ -87,20 +87,35 @@ MXFLAGS= -notouch
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
-%.mal: %.mx
-	$(MX) $(MXFLAGS) -x mal $<
+%.mil: %.m %.tmpmil $(MEL)
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+	cat $*.tmpmil >> $@
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
+
+%.tmpmil: %.mx
+	$(MX) $(MXFLAGS) -l -x mil $<
+	$(MV) $*.mil $*.tmpmil
+
+%.mil: %.m $(MEL)
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
 
-%: %.mx
+%.mal: %.mx
+	$(MX) $(MXFLAGS) -x mal $<
+
+%: %.mx 
 	$(MX) $(MXFLAGS) -x sh $<
 	chmod a+x $@
 
-%.proto.h: %.m
+%.proto.h: %.m $(MEL)
 	$(MEL) $(INCLUDES) -proto $< > $@
 
-%.glue.c: %.m
+%.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
 
 %.tex: %.mx
