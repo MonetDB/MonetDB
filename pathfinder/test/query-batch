@@ -9,6 +9,7 @@
 #     [-h]          print this help
 #     [-a]          do tests for abstract syntax tree
 #     [-n]          do tests after abstract syn tree normalization
+#     [-c]          do tests until core translation
 #     [-p]          generate postscript output
 #     [-d]          compare with reference files
 #     [-r]          create reference files
@@ -82,13 +83,13 @@ $dot_flags .=
 $dvips_flags = '-Ppdf -q1';
 
 # Hash to store command line parameters in
-%parameters = ( "h" => "", "a" => "", "n" => "", "p" => "", "d" => "",
+%parameters = ( "h" => "", "a" => "", "n" => "", "c" => "", "p" => "", "d" => "",
                 "r" => "", "b" => "Pathfinder" );
 
 # Use getopt to parse command line options
 use Getopt::Std;
 
-getopts('hanpdrb:', \%parameters);
+getopts('hancpdrb:', \%parameters);
 
 # Check parameters
 &params;
@@ -132,6 +133,7 @@ where options can be
   [-h]          print this help
   [-a]          run tests for abstract syntax tree
   [-n]          do tests after abstract syn tree normalization
+  [-c]          do tests until core translation
   [-p]          generate postscript output
   [-d]          compare with reference files
   [-r]          create reference files
@@ -178,6 +180,15 @@ END_USAGE
     $testcase_description = "Normalized Abstract Syntax Tree";
     $cmdline_pretty = "-n -P";
     $file_extension = "norm";
+  }
+
+  if ($parameters{"c"}) {
+    $number_of_tests++;
+    $testcase = "c";
+    $cmdline_dot = "-c -D";
+    $testcase_description = "Core Tree";
+    $cmdline_pretty = "-c -P";
+    $file_extension = "abssyn";
   }
 
   die "$0: you must specify exactly one test to perform\n"
