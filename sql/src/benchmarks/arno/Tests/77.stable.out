@@ -1,30 +1,33 @@
 stdout of test '77` in directory 'src/benchmarks/arno` itself:
 
 
-# 19:41:12 >  
-# 19:41:12 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/.monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_benchmarks_arno --set sql_port=51478 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil ; echo  ; echo Over..
-# 19:41:12 >  
+# 22:12:00 >  
+# 22:12:00 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_arno" --set sql_port=56954 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 22:12:00 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 printf("\nReady.\n");
 
 Ready.
-# [ 9 10 ]
 quit;
 
 Over..
 
-# 19:41:12 >  
-# 19:41:12 >  Mtimeout -timeout 60 sql_client --port=51478 < 77.sql
-# 19:41:12 >  
+# 22:12:00 >  
+# 22:12:00 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=56954 < 77.sql
+# 22:12:00 >  
 
+SQL  connected to database mTests_src_benchmarks_arno using schema sys
+#-------------------------------
+#| is_mutagen | count_model_id |
+#-------------------------------
 "F"	28
 "T"	12
 SQL  2 Rows affected
 
-# 19:41:12 >  
-# 19:41:12 >  Done.
-# 19:41:12 >  
+# 22:12:01 >  
+# 22:12:01 >  Done.
+# 22:12:01 >  
 

@@ -1,27 +1,27 @@
 stdout of test 'insert_ATOM` in directory 'src/benchmarks/arno` itself:
 
 
-# 19:39:30 >  
-# 19:39:30 >  Mtimeout -timeout 1140 Mserver --config=/ufs/niels/.monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_benchmarks_arno --set sql_port=51478 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil insert_ATOM.prologue ; echo  ; echo Over..
-# 19:39:30 >  
+# 22:08:17 >  
+# 22:08:17 >  Mtimeout -timeout 1140 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_arno" --set sql_port=56954 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" insert_ATOM.prologue ; echo ; echo Over..
+# 22:08:17 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 printf("\nReady.\n");
 
 Ready.
-# [ 9 10 ]
 quit;
 
 Over..
 
-# 19:39:30 >  
-# 19:39:30 >  Mtimeout -timeout 540 sql_client --port=51478 < insert_ATOM.sql
-# 19:39:30 >  
+# 22:08:18 >  
+# 22:08:18 >  Mtimeout -timeout 540 Msql -u monetdb -P monetdb --host=norma --port=56954 < insert_ATOM.sql
+# 22:08:18 >  
 
+SQL  connected to database mTests_src_benchmarks_arno using schema sys
 
-# 19:39:40 >  
-# 19:39:40 >  Done.
-# 19:39:40 >  
+# 22:08:24 >  
+# 22:08:24 >  Done.
+# 22:08:24 >  
 
