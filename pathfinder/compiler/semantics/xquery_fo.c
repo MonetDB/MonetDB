@@ -68,6 +68,14 @@
   { .ns = PFns_fn, .loc = "not",                                         \
     .arity = 1, .par_ty = { PFty_boolean () },                           \
     .ret_ty = PFty_boolean () }                                          \
+, /* fn:boolean (item) as boolean */                                     \
+  { .ns = PFns_fn, .loc = "boolean",                                     \
+    .arity = 1, .par_ty = { PFty_item () },                              \
+    .ret_ty = PFty_boolean () }                                          \
+, /* fn:error (item?) as none */                                         \
+  { .ns = PFns_fn, .loc = "error",                                       \
+    .arity = 1, .par_ty = { PFty_opt (PFty_item ()) },                   \
+    .ret_ty = PFty_none () }                                             \
 , /* op:or (boolean, boolean) as boolean */                              \
   { .ns = PFns_op, .loc = "or",                                          \
     .arity = 2, .par_ty = { PFty_boolean (), PFty_boolean () },          \
@@ -76,10 +84,92 @@
   { .ns = PFns_op, .loc = "and",                                         \
     .arity = 2, .par_ty = { PFty_boolean (), PFty_boolean () },          \
     .ret_ty = PFty_boolean () }                                          \
-, /* fn:boolean (item) as boolean */                                     \
-  { .ns = PFns_fn, .loc = "boolean",                                     \
-    .arity = 1, .par_ty = { PFty_item () },                              \
+, /* op:eq (atomic, atomic) as boolean */                                \
+  { .ns = PFns_op, .loc = "eq",                                          \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
     .ret_ty = PFty_boolean () }                                          \
+, /* op:ne (atomic, atomic) as boolean */                                \
+  { .ns = PFns_op, .loc = "ne",                                          \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_boolean () }                                          \
+, /* op:lt (atomic, atomic) as boolean */                                \
+  { .ns = PFns_op, .loc = "lt",                                          \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_boolean () }                                          \
+, /* op:le (atomic, atomic) as boolean */                                \
+  { .ns = PFns_op, .loc = "le",                                          \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_boolean () }                                          \
+, /* op:gt (atomic, atomic) as boolean */                                \
+  { .ns = PFns_op, .loc = "gt",                                          \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_boolean () }                                          \
+, /* op:ge (atomic, atomic) as boolean */                                \
+  { .ns = PFns_op, .loc = "ge",                                          \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_boolean () }                                          \
+, /* op:plus (atomic, atomic) as atomic */                               \
+  { .ns = PFns_op, .loc = "plus",                                        \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_atomic () }                                           \
+, /* op:minus (atomic, atomic) as atomic */                              \
+  { .ns = PFns_op, .loc = "minus",                                       \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_atomic () }                                           \
+, /* op:times (atomic, atomic) as atomic */                              \
+  { .ns = PFns_op, .loc = "times",                                       \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_atomic () }                                           \
+, /* op:div (atomic, atomic) as atomic */                                \
+  { .ns = PFns_op, .loc = "div",                                         \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_atomic () }                                           \
+, /* op:idiv (atomic, atomic) as atomic */                               \
+  { .ns = PFns_op, .loc = "idiv",                                        \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_atomic () }                                           \
+, /* op:mod (atomic, atomic) as atomic */                                \
+  { .ns = PFns_op, .loc = "mod",                                         \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_atomic () }                                           \
+, /* op:is-same-node (node?, node?) as boolean? */                       \
+  { .ns = PFns_op, .loc = "is-same-node",                                \
+    .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
+                            PFty_opt (PFty_node ())},                    \
+    .ret_ty = PFty_opt (PFty_node ()) }                                  \
+, /* op:node-before (node?, node?) as boolean? */                        \
+  { .ns = PFns_op, .loc = "node-before",                                 \
+    .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
+                            PFty_opt (PFty_node ())},                    \
+    .ret_ty = PFty_opt (PFty_node ()) }                                  \
+, /* op:node-after (node?, node?) as boolean? */                         \
+  { .ns = PFns_op, .loc = "node-after",                                  \
+    .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
+                            PFty_opt (PFty_node())},                     \
+    .ret_ty = PFty_opt (PFty_node ()) }                                  \
+, /* op:union (item*, item*) as item* */                                 \
+  { .ns = PFns_op, .loc = "union",                                       \
+    .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
+                            PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_star (PFty_item ()) }                                 \
+, /* op:intersect (item*, item*) as item* */                             \
+  { .ns = PFns_op, .loc = "intersect",                                   \
+    .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
+                            PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_star (PFty_item ()) }                                 \
+, /* op:except (item*, item*) as item* */                                \
+  { .ns = PFns_op, .loc = "except",                                      \
+    .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
+                            PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_star (PFty_item ()) }                                 \
+, /* dm:typed-value (node) as atomic */                                  \
+  { .ns = PFns_pf, .loc = "typed-value",                                 \
+    .arity = 1, .par_ty = { PFty_node () },                              \
+    .ret_ty = PFty_atomic () }                                           \
+, /* pf:range (atomic, atomic) as atomic */                              \
+  { .ns = PFns_pf, .loc = "range",                                       \
+    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
+    .ret_ty = PFty_atomic () }                                           \
 , /* pf:distinct-doc-order (node *) as node* */                          \
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
