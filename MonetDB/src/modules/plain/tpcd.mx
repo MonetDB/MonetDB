@@ -814,8 +814,8 @@ ordered like 'extent'.
 @c
 	if (b->hvarsized) {
 	    BATloopFast(b, p, q, xx) {
-		ATOMput(bn->ttype, &bn->theap, 
-			BUNptr(bn,1+vi->vector[yy]), BUNhvar(b,p));
+		ATOMput((bn)->ttype, &(bn)->theap, 
+			(int*) BUNptr(bn,1+vi->vector[yy]), BUNhvar(b,p));
 		yy++;
 	    }
 	} else if (atomsize == sizeof(int)) {
