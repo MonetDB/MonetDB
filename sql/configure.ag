@@ -14,9 +14,6 @@ AM_CONFIG_HEADER(sql_config.h:conf/config.h.in)
 CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
 
-HOST=[$target]
-AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
-
 dnl Check for Monet
 AM_MONET_COMPILER()
 AM_MONET_TOOLS()
