@@ -3332,10 +3332,18 @@ insert_check_fkey( context * sql, stmt **inserts, sql_key *k, stmt *idx_inserts 
 	sql_subfunc *ne = sql_bind_func_result("<>", it, it, bt);
 
 	(void)sql; /* unused! */
-	/* reljoin.count <> inserts[col1].count */
-	s = stmt_binop( 
-		stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
-		stmt_aggr(stmt_dup(inserts[0]->op2.stval), NULL, sql_dup_aggr(cnt)) , ne);
+
+	if (inserts[0]->op2.stval->key){
+		s = stmt_binop( 
+			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
+			stmt_atom(atom_int(it,1)), ne);
+	} else {
+		/* reljoin.count <> inserts[col1].count */
+		s = stmt_binop( 
+			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
+			stmt_aggr(stmt_dup(inserts[0]->op2.stval), NULL, 
+				sql_dup_aggr(cnt)) , ne);
+	}
 
 	/* s should be empty */
 	snprintf(buf, BUFSIZ, 
@@ -3455,7 +3463,7 @@ sql_insert_idxs(context * sql, sql_table *t, stmt **inserts, list *l)
 		} else if (i->type == join_idx){
 			is = join_idx_insert( i, inserts);
 		}
-		if (is && i->key){
+		if (i->key){
 			stmt *ckeys = sql_insert_key(sql, inserts, i->key, is);
 			list_prepend(l, ckeys);
 		}

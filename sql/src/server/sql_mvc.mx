@@ -459,6 +459,10 @@ size_t void_append_bat( BAT *b, BAT *u){
 
 static BAT *bat_lcopy(BAT *b){
 	BAT *nb = BATcopy(b);
+
+	BATkey(nb, b->hkey);
+	BATkey(BATmirror(nb), b->tkey);
+
 	bat_destroy(b);
 	BATfakeCommit(nb);
 	return nb;
@@ -2000,6 +2004,11 @@ rollforward_create_idx( sql_trans *tr, sql_idx *i )
 		snprintf(bname, BUFSIZ, "U_%s_%s", i->t->base.name, i->base.name );
 		i->bat.ubid = log_bat_persists(logger, u, bname); 
 		bat_destroy(u);
+	} else {
+		sql_kc *c = i->columns->h->data;
+		BAT *b = bind_bat(tr->parent, c->c, 0);
+		BATkey(BATmirror(b), BOUND2BTRUE);
+		bat_destroy(b);
 	}
 	return i;
 }

@@ -228,6 +228,8 @@ void bm_save( bm *bm, FILE *fp )
 
 	    		BATrename(b, name_version);
 	    		BATmode(b, PERSISTENT);
+			BATkey(b, o->hkey);
+			BATkey(BATmirror(b), o->tkey);
 			bat_destroy(b);
 			bat_destroy(o);
 	    	}
