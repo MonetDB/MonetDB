@@ -835,7 +835,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     size_t grow = (@1 - pre) + 1;
     int s = 0;
     oid idx0 = stack[s].iter_idx, idx = idx0;
-    oid iter = idx + fst_iter;
     oid p = pre;
     BUN fst_res = NULL, cur_res = NULL, lst_res = NULL, dst = NULL;
     size_t bunsize0 = BUNsize(tmp_res[idx]), bunsize = BUNsize(tmp_res[idx]);
@@ -864,7 +863,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     /* now loop over all remaining iters on the stack, ... */
     for ( s = 1 ; s < stack_top ; s++ ) {
         idx = stack[s].iter_idx;
-        iter = idx + fst_iter;
         p = pre;
         bunsize = BUNsize(tmp_res[idx]);
 
