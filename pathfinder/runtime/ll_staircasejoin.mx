@@ -576,7 +576,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     int OST_mask  = OST_bits - 1;
     int OST_shift = 0;
     
-    for (i=OST_bits; i; i>>=1) OST_shift++;
+    for (i=OST_mask; i; i>>=1) OST_shift++;
 
     /* stack for context set nodes will never grow over
        height of doc. tree times number of iters */
