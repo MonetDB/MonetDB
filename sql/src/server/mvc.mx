@@ -1049,10 +1049,8 @@ static void create_column(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_c
 	BUNins(sql_column_ubat, (ptr) & ci, (ptr) & gc->ubid);
 
 	snprintf(name, BUFSIZ, "%s_%s", gt->name, gc->name );
-	printf("%s\n", name);
 	BATrename(b, name);
 	snprintf(name, BUFSIZ, "U_%s_%s", gt->name, gc->name );
-	printf("%s\n", name);
 	BATrename(u, name);
 
 	BBPunfix(b->batCacheid);
@@ -1239,8 +1237,9 @@ static void mvc_forward_create_table(sql_trans * tr, sql_schema * ns,
 	BUNins(sql_table_isview, (ptr) & nt->id, (ptr) & view);
 	BUNins(sql_table_query, (ptr) & nt->id, (ptr) nt->query);
 	if (nt->view){
-		BUNins(sql_table_obat, (ptr) & nt->id, (ptr) & bat_nil);
-		BUNins(sql_table_dbat, (ptr) & nt->id, (ptr) & bat_nil);
+		bat bid_nil = bat_nil;
+		BUNins(sql_table_obat, (ptr) & nt->id, (ptr) & bid_nil);
+		BUNins(sql_table_dbat, (ptr) & nt->id, (ptr) & bid_nil);
 	} else {
 		char name[BUFSIZ];
 		BAT *o = mvc_descriptor(nt->obid);
@@ -1256,10 +1255,8 @@ static void mvc_forward_create_table(sql_trans * tr, sql_schema * ns,
 		BBPunfix(d->batCacheid);
 
 		snprintf(name, BUFSIZ, "O_%s", nt->name );
-		printf("%s\n", name);
 		BATrename(o, name);
 		snprintf(name, BUFSIZ, "D_%s", nt->name );
-		printf("%s\n", name);
 		BATrename(d, name);
 
 		create_columns(tr, ns, nt);
@@ -1884,7 +1881,7 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 		BATseqbase(b,0);
 		fk->bid = b->batCacheid;
 		BATmode(b,PERSISTENT);
-		BBPunfix(b);
+		BBPunfix(b->batCacheid);
 
 		fk -> rkey = uk;
 		if (!uk->keys) uk->keys = list_create(NULL);
