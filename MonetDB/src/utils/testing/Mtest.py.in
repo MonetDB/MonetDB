@@ -899,6 +899,8 @@ def RunTest(env, TST) :
 					CTIMEOUT = CTIMEOUT + TIMEOUT
 		elif CALL in ["milM", "milS", "milC", "sql"]:
 			CTIMEOUT = CTIMEOUT + TIMEOUT
+		if  CTIMEOUT < TIMEOUT:
+			CTIMEOUT = TIMEOUT
 		STIMEOUT = CTIMEOUT
 		if  SERVER in ["MAPI", "SQL"]:
 			STIMEOUT = STIMEOUT + TIMEOUT + 60
