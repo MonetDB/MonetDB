@@ -30,7 +30,7 @@ function Admin.main():int;	# 0  (main:int)
     io.print(b);	# 4 IOprint_val ($9:int)<-(b:bat[:void,:str])
     c := bat.reverse(b);	# 5 BKCreverse (c:bat[:str,:void])<-(b:bat[:void,:str])
     io.print(c);	# 6 IOprint_val ($11:int)<-(c:bat[:str,:void])
-    d := algebra.tmark(c);	# 7 ALGtmark0 (d:bat[:str,:void])<-(c:bat[:str,:void])
+    d := algebra.markT(c);	# 7 ALGtmark0 (d:bat[:str,:void])<-(c:bat[:str,:void])
     io.print(d);	# 8 IOprint_val ($13:int)<-(d:bat[:str,:void])
 end main;	# 9  
 #-------------------------#

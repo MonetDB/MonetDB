@@ -19,8 +19,6 @@ stdout of test 'tst4500` in directory 'src/mal` itself:
 #ARoptimizer();
 #DCoptimizer();
 #quit();
-#include sql;
-loaderException:Module loaded twice:sql
 ##s14 := sql.bind("sys",  "lineitem", "l_shipdate"); #lineitem
 #	myc:= bbp.bind("myc");
 #	s14:bat[:void,:date] := sql.bind("sys","lineitem","l_shipdate",0);
@@ -163,7 +161,7 @@ function Admin.main():int;	# 0  (main:int)
     s12 := bat.reverse(s13);	# 4 BKCreverse (s12:bat[:void,:void])<-(s13:bat[:void,:void])
     ba_a := calc.oid(0);	# 5 CALCint2oid (ba_a:oid)<-($12:int)
     ca_a := bat.reverse(s12);	# 6 BKCreverse (ca_a:bat[:void,:void])<-(s12:bat[:void,:void])
-    da_a := algebra.tmark(ca_a,ba_a);	# 7 ALGtmark (da_a:bat[:void,:oid])<-(ca_a:bat[:void,:void])(ba_a:oid)
+    da_a := algebra.markT(ca_a,ba_a);	# 7 ALGtmark (da_a:bat[:void,:oid])<-(ca_a:bat[:void,:void])(ba_a:oid)
     s11 := bat.reverse(da_a);	# 8 BKCreverse (s11:bat[:oid,:void])<-(da_a:bat[:void,:oid])
     s18 := sql.bind("sys","lineitem","l_returnflag",0);	# 9 mvc_bind_wrap (s18:bat[:void,:chr])<-($9:str)($10:str)($27:str)($12:int)
     s10 := algebra.join(s11,s18);	# 10 ALGjoin (s10:bat[:oid,:chr])<-(s11:bat[:oid,:void])(s18:bat[:void,:chr])

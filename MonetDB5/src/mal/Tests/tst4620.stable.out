@@ -53,7 +53,7 @@ end joinPath;	# 4
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
 barrier (k,v):= mal.newRange(0:int);	# 2 RNGnewRange_int (k:bit)(v:int)<-($6:int) jump 5
-    bat.insert(b,v,v);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:int,:int])(v:int)(v:int)
+    bat.insert(b,v,v);	# 3 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])(v:int)(v:int)
     redo (k,v):= mal.nextElement(1:int,100:int);	# 4 RNGnextElement_int (k:bit)(v:int)<-($8:int)($9:int) jump 3
 exit (k,v);	# 5  (k:bit)(v:int)
     i := algebra.count(b);	# 6 ALGcount_bat (i:lng)<-(b:bat[:int,:int])

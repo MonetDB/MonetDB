@@ -32,11 +32,11 @@ stdout of test 'tst080` in directory 'src/mal` itself:
 #	c:= z; #error
 #
 #
-!ERROR: 'dummy' may be used before being set in main[1]
-!ERROR: 'i' may be used before being set in main[6]
-!ERROR: 'j' may be used before being set in main[11]
-!ERROR: 'j' may be used before being set in main[13]
-!ERROR: 'z' may be used before being set in main[16]
+!ERROR: 'dummy' may not be used before being set in main[1]
+!ERROR: 'i' may not be used before being set in main[6]
+!ERROR: 'j' may not be used before being set in main[11]
+!ERROR: 'j' may not be used before being set in main[13]
+!ERROR: 'z' may not be used before being set in main[16]
 function Admin.main():int;	# 0  (main:int)
     io.print(dummy);	# 1 IOprint_val ($1:int)<-(dummy:any)
 barrier allways := true;	# 2  (allways:bit)<-($4:bit) jump 4

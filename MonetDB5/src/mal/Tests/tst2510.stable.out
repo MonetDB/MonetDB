@@ -32,7 +32,7 @@ barrier always := true;	# 2  (always:bit)<-($4:bit) jump 5
 exit always;	# 5  (always:bit)
 end tryme;	# 6  
 !ERROR: YIELD type mismatch at type 1
-!ERROR: 'b' may be used before being set in tryme[1]
+!ERROR: 'b' may not be used before being set in tryme[1]
 #tryme();    # shouldn;t hang when you forget the exception
 #
 function Admin.main():int;	# 0  (main:int)

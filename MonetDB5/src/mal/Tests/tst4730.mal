@@ -1,22 +1,24 @@
 #TPCH query 1
 # the basis for further optimizer tests
+#the code is actually wrong
 include sql;
 
 factory qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
-    V6{count=10000} := sql.bind("sys","lineitem","l_shipdate",0);
-    V11{count=0} := sql.bind_dbat("sys","lineitem",0);
-    V22{count=10000} := sql.bind("sys","lineitem","l_returnflag",0);
-    V29{count=10000} := sql.bind("sys","lineitem","l_linestatus",0);
-    V53{count=10000} := sql.bind("sys","lineitem","l_quantity",0);
-    V61{count=10000} := sql.bind("sys","lineitem","l_extendedprice",0);
-    V75{count=10000} := sql.bind("sys","lineitem","l_discount",0);
-    V105{count=10000} := sql.bind("sys","lineitem","l_tax",0);
+    V6:bat[:void,:date] := sql.bind("sys","lineitem","l_shipdate",0);
+    V11:bat[:void,:oid] := sql.bind_dbat("sys","lineitem",0);
+    V22:bat[:void,:bit] := sql.bind("sys","lineitem","l_returnflag",0);
+    V29:bat[:void,:bit] := sql.bind("sys","lineitem","l_linestatus",0);
+    V53:bat[:void,:int] := sql.bind("sys","lineitem","l_quantity",0);
+    V60:bat[:void,:flt] := sql.bind("sys","lineitem","l_extendedprice",0);
+    V75:bat[:void,:flt] := sql.bind("sys","lineitem","l_discount",0);
+    V105:bat[:void,:flt] := sql.bind("sys","lineitem","l_tax",0);
 barrier always := true;
     V12 := bat.reverse(V11);
     V13 := algebra.kdiff(V6,V12);
     V16 := mtime.date_sub_sec_interval(A3,A4);
-    V17 := algebra.uselect(V13,nil,V16);
-    V20 := algebra.markTail(V17,0@0);
+	a := date(nil);
+    V17 := algebra.uselect(V13,a,V16);
+    V20 := algebra.markT(V17,0@0);
     V21 := bat.reverse(V20);
     V26 := algebra.kdiff(V22,V12);
     V27 := algebra.join(V21,V26);
@@ -33,8 +35,8 @@ barrier always := true;
     V57 := algebra.kdiff(V53,V12);
     V58 := algebra.join(V21,V57);
     V59 := aggrX3.sum(V58,V35,V37);
-	V60:= new(V12);
-    V64 := algebra.kdiff(V60,V12);
+	V61:= bbp.new(V12);
+    V64 := algebra.kdiff(V61,V12);
     V65 := algebra.join(V21,V64);
     V66 := aggrX3.sum(V65,V35,V37);
     V72 := calc.lng(A0);

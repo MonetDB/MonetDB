@@ -5,7 +5,6 @@ commonExpressionRemoval();
 aliasRemoval();
 deadCodeRemoval();
 quit();
-include sql;
 #s14 := sql.bind("sys",  "lineitem", "l_shipdate"); #lineitem
 	myc:= bbp.bind("myc");
 	s14:bat[:void,:date] := sql.bind("sys","lineitem","l_shipdate",0);
@@ -23,7 +22,7 @@ include sql;
 #s11 := s12.reverse().mark(oid(0)).reverse();# lineitem
 	ba_a := oid(0);
 	ca_a := reverse(s12,);
-	da_a := tmark(ca_a,ba_a);
+	da_a := markT(ca_a,ba_a);
 	s11 := reverse(da_a,);
 #s18 := sql.bind("sys",  "lineitem", "l_returnflag"); #lineitem
 	s18:bat[:void,:chr] := sql.bind("sys","lineitem","l_returnflag",0);
@@ -44,9 +43,9 @@ include sql;
 	s6 := join(s7,s11);
 #s5 := s6.join(s18);
 	s5 := join(s6,s18);
-#s4 := s5.reverse().hsort().reverse();
+#s4 := s5.reverse().sortH().reverse();
 	fa_a := reverse(s5,);
-	ga_a := hsort(fa_a,);
+	ga_a := sortH(fa_a,);
 	s4 := reverse(ga_a,);
 #s22 := s7.join(s11);
 	s22 := join(s7,s11);

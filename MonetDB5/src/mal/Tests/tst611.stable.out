@@ -21,7 +21,7 @@ stdout of test 'tst611` in directory 'src/mal` itself:
 ##the next one should fail
 #setWriteMode(RKB);
 #
-!ERROR: 'RKB' may be used before being set in main[4]
+!ERROR: 'RKB' may not be used before being set in main[4]
 function Admin.main():int;	# 0  (main:int)
     RKA := bbp.new(:int,:int,1048576);	# 1 CMDBATnewint (RKA:bat[:int,:int])<-($2:int)($3:int)($4:int)
     bat.insert(RKA,1:int,360:int);	# 2 BKCinsert_bun ($5:bat[:int,:int])<-(RKA:bat[:int,:int])($6:int)($7:int)

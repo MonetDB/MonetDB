@@ -112,8 +112,8 @@ end main;	# 30
 # int	int		  # type
 #-------------------------#
 [ 0,	  35		  ]
-[ 1,	  10		  ]
-[ 2,	  5		  ]
+[ 1,	  11		  ]
+[ 2,	  4		  ]
 [ 3,	  4		  ]
 [ 4,	  4		  ]
 [ 5,	  4		  ]
@@ -142,8 +142,8 @@ end main;	# 30
 # int	int		str					  # type
 #-----------------------------------------------------------------#
 [ 0,	  35,		  "err := bat.insert(<tmp_13>,1,15);"	  ]
-[ 1,	  10,		  "err := bat.insert(<tmp_13>,2,4);"	  ]
-[ 2,	  5,		  "err := bat.insert(<tmp_13>,3,nil);"	  ]
+[ 1,	  11,		  "err := bat.insert(<tmp_13>,2,4);"	  ]
+[ 2,	  4,		  "err := bat.insert(<tmp_13>,3,nil);"	  ]
 [ 3,	  4,		  "err := bat.insert(<tmp_13>,4,16);"	  ]
 [ 4,	  4,		  "err := bat.insert(<tmp_13>,5,25);"	  ]
 [ 5,	  4,		  "err := bat.insert(<tmp_13>,6,36);"	  ]
