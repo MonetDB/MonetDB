@@ -534,8 +534,8 @@ cleanup:
 int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int *result_size )
 {
 	BAT *bn;
-	BUN qi, pi, pk, ps, dst;
-	int bs, bsi, bsk, bss;
+	BUN qi, pi, pk, ps;
+	int bsi, bsk, bss;
 	size_t cnt, len, strsize = 1024;
 	oid base, i0, k0;
 	str actual_str = NULL;
@@ -565,8 +565,6 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 		GDKerror("combine_text_string: BATnew(TYPE_oid, TYPE_str, %d) failed.\n", *result_size);
 		return GDK_FAIL;
 	}
-	bs = BUNsize(bn);
-	dst = BUNlast(bn);
 
 	/* do the combine_text_string */
 
