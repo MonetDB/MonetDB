@@ -132,8 +132,8 @@ int debug_cmd( context *c, char *cmd, stream *out, int part )
 {
 	stream_writeInt( out, (part)?Q_DEBUGP:Q_DEBUG );
 	stream_writeInt( out, c->debug );
-	out->write( out, cmd, strlen(cmd), 1 );
-	out->flush( out );
+	stream_write( out, cmd, strlen(cmd), 1 );
+	stream_flush( out );
 	return 0;
 }
 
@@ -173,8 +173,8 @@ void sql_init_context(context * c, int debug, int trace, int reply_size, mvc * m
 void sql_exit_context(context * c)
 {
 	if (c->out){
-		c->out->close(c->out);
-		c->out->destroy(c->out);
+		stream_close(c->out);
+		stream_destroy(c->out);
 	}
 	c->mvc = NULL;
 

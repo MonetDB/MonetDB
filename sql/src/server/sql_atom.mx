@@ -209,13 +209,13 @@ void atom_dump( atom *a, stream *s){
 	if (!a->isnull && a->data.vtype == TYPE_str){
 		ATOMprint(a->data.vtype, VALget(&a->data), s);
 	} else if (!a->isnull){
-		s->write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
-		s->write(s, "(\"", 2, 1);
+		stream_write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
+		stream_write(s, "(\"", 2, 1);
 		ATOMprint(a->data.vtype, VALget(&a->data), s);
-		s->write(s, "\")", 2, 1);
+		stream_write(s, "\")", 2, 1);
 	} else {
-		s->write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
-		s->write(s, "(nil)", 5, 1);
+		stream_write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
+		stream_write(s, "(nil)", 5, 1);
 	}
 }
 

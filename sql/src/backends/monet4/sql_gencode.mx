@@ -61,7 +61,7 @@ static void write_head( context *sql, int nr )
 	if (sql->debug&2){
 		char *t0 = "t0 := time();\n";
 		int l = strlen(t0);
-		sql->out->write( sql->out, t0, 1, l );
+		stream_write( sql->out, t0, 1, l );
 	}
 }
 
@@ -71,14 +71,14 @@ static void write_tail( context *sql, int nr)
 		char dbg[BUFSIZ];
 		int l = snprintf( dbg, BUFSIZ,
 		"t1 := time(); printf(\"%d %%d\\n\", t1 - t0);\n", nr);
-		sql->out->write( sql->out, dbg, 1, l );
+		stream_write( sql->out, dbg, 1, l );
 	}
 }
 
 static void write_part( context *sql, char *buf, int len )
 {
 	buf[len] = '\0';
-	sql->out->write( sql->out, buf, 1, len );
+	stream_write( sql->out, buf, 1, len );
 
 	if (sql->debug&8)
 		fwrite( buf, 1, len, stderr);
@@ -94,7 +94,7 @@ static void write_command( context *sql, char *buf )
 		c = s;
 		while ((c = strchr(c,'\n')))	*c = '\t';
 		l = snprintf( v, BUFSIZ, "printf(\"< %s >\\n\");\n", s );
-		sql->out->write( sql->out, v, 1, l );
+		stream_write( sql->out, v, 1, l );
 		_DELETE(s);
 	}
 }
@@ -131,7 +131,7 @@ static void write_result( context *sql, char *buf )
 			}
 			l += snprintf( v+l, BUFSIZ-l,
 				"}\n") ;
-			sql->out->write( sql->out, v, 1, l );
+			stream_write( sql->out, v, 1, l );
 			*y = z;
 			a = strchr(y,';');
 		}

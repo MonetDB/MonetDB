@@ -88,7 +88,7 @@ char *readblock( stream *s ){
 	int size = BLOCK + 1;
 	char *buf = NEW_ARRAY(char, size ), *start = buf;
 
-	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
+	while ((len = stream_read(s, start, 1, BLOCK)) == BLOCK){
 		size += BLOCK;
 		buf = RENEW_ARRAY(char, buf, size); 
 		start = buf + size - BLOCK - 1;

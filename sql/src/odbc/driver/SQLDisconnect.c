@@ -57,22 +57,22 @@ SQLDisconnect(SQLHDBC hDbc)
 
 		if (dbc->autocommit && dbc->Error == NULL) {
 			chars_printed = snprintf(buf, BUFSIZ, "COMMIT;\n");
-			ws->write(ws, buf, chars_printed, 1);
-			ws->flush(ws);
+			stream_write(ws, buf, chars_printed, 1);
+			stream_flush(ws);
 
 			simple_receive(rs, ws, debug);
 		}
 
 		/* client waves goodbye */
 		buf[0] = EOT;
-		ws->write(ws, buf, 1, 1);
-		ws->flush(ws);
+		stream_write(ws, buf, 1, 1);
+		stream_flush(ws);
 
-		rs->close(rs);
-		rs->destroy(rs);
+		stream_close(rs);
+		stream_destroy(rs);
 
-		ws->close(ws);
-		ws->destroy(ws);
+		stream_close(ws);
+		stream_destroy(ws);
 	}
 	dbc->socket = 0;
 	dbc->Mrs = NULL;

@@ -162,7 +162,7 @@ typedef struct logger {
 static int log_read_format( logger *l, logformat *data )
 {
 	int res = 1;
-	if (l->log->read(l->log, &data->flag, 1, 1) != 1)
+	if (stream_read(l->log, &data->flag, 1, 1) != 1)
 		return 0;
 	res = stream_readInt(l->log, &data->nr);
 	return res;
@@ -170,7 +170,7 @@ static int log_read_format( logger *l, logformat *data )
 
 static void log_write_format( logger *l, logformat *data )
 {
-	l->log->write(l->log, &data->flag, 1, 1);
+	stream_write(l->log, &data->flag, 1, 1);
 	stream_writeInt(l->log, data->nr);
 }
 
@@ -181,7 +181,7 @@ static char *log_read_string(logger *l)
 
 	stream_readInt(l->log, &len); 
 	buf = NEW_ARRAY(char,len);
-	l->log->read( l->log, buf, 1, len);
+	stream_read( l->log, buf, 1, len);
 	return  buf;
 }
 
@@ -189,7 +189,7 @@ static void log_write_string(logger *l, char *n)
 {
 	int len = strlen(n)+1; /* log including EOS */
 	stream_writeInt( l->log, len);
-	l->log->write( l->log, n, 1, len);
+	stream_write( l->log, n, 1, len);
 }
 
 static void log_read_updates(logger *logger, logformat *l, char *name ){
@@ -318,8 +318,8 @@ static void logger_open(logger *logger){
 static void logger_close(logger *logger){
 	stream *log = logger->log;
 
-	log->close(log);
-	log->destroy(log);
+	stream_close(log);
+	stream_destroy(log);
 }
 
 static int logger_readlog( logger *logger, char *filename ){
@@ -328,8 +328,8 @@ static int logger_readlog( logger *logger, char *filename ){
 	logger->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be readback */ 
-	if (!logger->log || logger->log->errnr){
-		if (logger->log) logger->log->destroy(logger->log);
+	if (!logger->log || stream_errnr(logger->log)){
+		if (logger->log) stream_destroy(logger->log);
 	       	return 0;
 	}
 	while( log_read_format(logger, &l) ){
@@ -531,7 +531,7 @@ oid log_bat_persists(logger *logger, BAT *b, char *name )
 	len = snprintf(buf, BUFSIZ,"%s,%s", ha, ta );
 	len++; /* include EOS */
 	stream_writeInt( logger->log, len );
-	logger->log->write( logger->log, buf, 1, len );
+	stream_write( logger->log, buf, 1, len );
 	
         if (logger->debug&1)
 		fprintf(stderr, "Logged new bat %s htype %s ttype %s\n", 
@@ -634,5 +634,5 @@ void log_tend(logger *logger )
 	l.nr = logger->tid;
 	log_write_format( logger, &l );
 
-	logger->log->flush( logger->log );
+	stream_flush( logger->log );
 }

@@ -120,8 +120,8 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 
 		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n",
 					 debug, trace);
-		ws->write(ws, buf, chars_printed, 1);
-		ws->flush(ws);
+		stream_write(ws, buf, chars_printed, 1);
+		stream_flush(ws);
 		/* read login. The returned login value is not used yet. */
 		login = readblock(rs);
 
@@ -130,8 +130,8 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 
 		chars_printed = snprintf(buf, BUFSIZ, "login(%s,%s);\n",
 					 uid, pwd);
-		ws->write(ws, buf, chars_printed, 1);
-		ws->flush(ws);
+		stream_write(ws, buf, chars_printed, 1);
+		stream_flush(ws);
 		/* read schema */
 		db = (char *) readblock(rs);
 		if (db) {

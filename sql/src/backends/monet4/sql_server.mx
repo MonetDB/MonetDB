@@ -599,7 +599,7 @@ int senddata_wrap( Stream *Out ){
 	stream *out = *(stream**)Out;
 	stream_writeInt( out, Q_DATA );
 	stream_writeInt( out, 0 );
-	out->flush( out );
+	stream_flush( out );
 	return GDK_SUCCEED;
 }
 

@@ -176,9 +176,9 @@ SQLExecute(SQLHSTMT hStmt)
 		query = Query;
 	}
 
-	dbc->Mws->write(dbc->Mws, query, 1, strlen(query));
-	dbc->Mws->write(dbc->Mws, ";\n", 1, 2);
-	dbc->Mws->flush(dbc->Mws);
+	stream_write(dbc->Mws, query, 1, strlen(query));
+	stream_write(dbc->Mws, ";\n", 1, 2);
+	stream_flush(dbc->Mws);
 
 	/* now get the result data and store it to our internal data structure */
 
@@ -286,8 +286,8 @@ SQLExecute(SQLHSTMT hStmt)
 			i = snprintf(buf, BLOCK,
 				     "mvc_export_table( myc, Output, %d, 0, -1, \"\\t\", \"\\n\");\n",
 				     id);
-			dbc->Mws->write(dbc->Mws, buf, i, 1);
-			dbc->Mws->flush(dbc->Mws);
+			stream_write(dbc->Mws, buf, i, 1);
+			stream_flush(dbc->Mws);
 		}
 		status = next_result(rs, hstmt, &type);
 		if (status == SQL_ERROR)

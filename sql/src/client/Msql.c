@@ -193,14 +193,14 @@ static int forward_data(stream *out, int trace)
 			int len = strlen(s);
 
 		       	if (len <= 1){
-				out->write(out, "\n", 1, 1);
+				stream_write(out, "\n", 1, 1);
 				if (trace)
 					fwrite("\n", 1, 1, stdout);
 				done = 1;
 				break;
 			}
-			out->write(out, s, 1, len);
-			out->write(out, "\n", 1, 1 );
+			stream_write(out, s, 1, len);
+			stream_write(out, "\n", 1, 1 );
 			if (trace){
 				fwrite(s, 1, len, stdout);
 				fwrite("\n", 1, 1, stdout);
@@ -209,7 +209,7 @@ static int forward_data(stream *out, int trace)
 		}
 		if (s) free(s);
 	}
-	out->flush(out);
+	stream_flush(out);
 	if (trace) fflush(stdout);
 
 	return receive(rs, out, trace);
@@ -358,9 +358,9 @@ int receive( stream *rs, stream *out, int trace ){
 				printf("SQL  no Rows affected\n" );
 		}
 	} else if (type != Q_END){
-		printf("type %d, %d , %d\n", type, res, rs->errnr);
+		printf("type %d, %d , %d\n", type, res, stream_errnr(rs));
 	} else {
-		printf("type Q_END, %d , %d\n", res, rs->errnr);
+		printf("type Q_END, %d , %d\n", res, stream_errnr(rs));
 	}
 	fflush(stdout);
 	return status;
@@ -439,19 +439,19 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 		if (to_utf)
 		{
 			char *converted = conv(line, to_utf);
-			ws->write( ws, converted, strlen(converted), 1 );
+			stream_write( ws, converted, strlen(converted), 1 );
 			free(converted);
 		} 
 		else 
 #endif
 		{
-			ws->write( ws, line, strlen(line), 1 );
+			stream_write( ws, line, strlen(line), 1 );
 		}
-		ws->write( ws, "\n", 1, 1 );
+		stream_write( ws, "\n", 1, 1 );
 
 		if (is_chrsp && cmdcnt){
 			ins = 0;
-			ws->flush( ws );
+			stream_flush( ws );
 
 			for (; cmdcnt > 0; cmdcnt--) {
 				int status = receive(rs, ws, trace);
@@ -461,7 +461,7 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 			cmdsum = 0;
 		} else if (strlen(line) == 0 && cmdsum){
 			ins = 0;
-			ws->flush( ws );
+			stream_flush( ws );
 
 			for (; cmdsum > 0; cmdsum--) { 
 				int status = receive(rs, ws, trace);
@@ -473,7 +473,7 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 	if (!is_chrsp){ /* receive all in one go */
 		if (cmdsum){
 			ins = 0;
-			ws->flush( ws );
+			stream_flush( ws );
 		}
 
 		for (; cmdsum > 0; cmdsum--) { 
@@ -485,14 +485,14 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 	}
 	
 	i = snprintf(buf, BUFSIZ, "COMMIT;\n" );
-	ws->write( ws, buf, i, 1 );
-	ws->flush( ws );
+	stream_write( ws, buf, i, 1 );
+	stream_flush( ws );
 	(void)receive(rs, ws, trace);
 
 	/* client waves goodbye */
 	buf[0] = EOT; 
-	ws->write( ws, buf, 1, 1 );
-	ws->flush( ws );
+	stream_write( ws, buf, 1, 1 );
+	stream_flush( ws );
 }
 
 void skip_block(stream *rs){
@@ -583,8 +583,8 @@ static int execute( stream *ws, stream *rs, const char *query, int *id)
 {
 	int type, status;
 
-	ws->write(ws, (char*)query, strlen(query), 1);
-	ws->flush(ws);
+	stream_write(ws, (char*)query, strlen(query), 1);
+	stream_flush(ws);
 
 	if (!stream_readInt(rs, &type) || type == Q_END) {
 		return -1;
@@ -990,7 +990,7 @@ main(int ac, char **av)
 
 	rs = block_stream(socket_rstream( fd, "client read"));
 	ws = block_stream(socket_wstream( fd, "client write"));
-	if (rs->errnr || ws->errnr){
+	if (stream_errnr(rs) || stream_errnr(ws)){
 		fprintf(stderr, "sockets not opened correctly\n");
 		exit(1);
 	}
@@ -1008,16 +1008,16 @@ main(int ac, char **av)
 		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
 
 	snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n", debug, trace ); 
-	ws->write( ws, buf, strlen(buf), 1 );
-	ws->flush( ws );
+	stream_write( ws, buf, strlen(buf), 1 );
+	stream_flush( ws );
 	/* read login */
 	login = readblock( rs );
 
 	if (login) free(login);
 
 	i = snprintf(buf, BUFSIZ, "login(%s,%s);\n", user, passwd );
-	ws->write( ws, buf, i, 1 );
-	ws->flush( ws );
+	stream_write( ws, buf, i, 1 );
+	stream_flush( ws );
 	/* read database, schema */
 	db = readblock( rs );
 
@@ -1056,11 +1056,11 @@ main(int ac, char **av)
 	if (prompt) free(prompt);
 
 	if (rs){
-	       	rs->close(rs);
-	       	rs->destroy(rs);
+	       	stream_close(rs);
+	       	stream_destroy(rs);
 	}
-	ws->close(ws);
-	ws->destroy(ws);
+	stream_close(ws);
+	stream_destroy(ws);
 
 	destroy_type(types);
 #ifndef NO_LOCALE 
