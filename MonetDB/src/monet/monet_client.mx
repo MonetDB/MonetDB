@@ -475,7 +475,7 @@ void enlargebuffer(Client c)
 int readClient(Client c)
 {
 	ssize_t i;
-	int doflush=0;
+	int doflush = 1;
 	char instring = 0;
 	int bracket = 0;
 	int incomment = 0;
