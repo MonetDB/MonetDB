@@ -713,7 +713,7 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	}
 	while (todo >= BLOCK){
 		s->s->readInt( s->s, &nr);
-		s->s->read( s->s, buf, 1, BLOCK);
+		s->s->read( s->s, buf, 1, nr);
 		buf += nr;
 		todo -= nr;
 		if (nr < BLOCK){
@@ -722,13 +722,21 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	} 
 	if (todo){
 		s->s->readInt( s->s, &nr);
-		s->s->read( s->s, s->in, 1, BLOCK);
-		memcpy( buf, s->in, todo );
+		s->s->read( s->s, s->in, 1, nr);
+		if (nr < todo)
+			memcpy( buf, s->in, nr );
+		else
+			memcpy( buf, s->in, todo );
 		s->itotal = nr;
-		s->inr = todo;
-		todo -= nr;
+                if (nr < todo){
+                        s->inr = nr;
+			todo -= nr;
+                } else {
+                        s->inr = todo;
+			todo = 0;
+		}
 	}
-	if (s->itotal < s->inr){
+	if (todo){
 		s->itotal = s->inr = 0;
 		return cnt - (todo/elmsize);
 	} else {
@@ -752,7 +760,7 @@ void bs_flush(stream *ss){
 	bs *s = (bs*)ss->stream_data;
 	if (s->onr){
 		s->s->writeInt( s->s, s->onr);
-		s->s->write( s->s, s->out, 1, BLOCK );
+		s->s->write( s->s, s->out, 1, s->onr );
 	}
 	s->onr = 0;
 }
