@@ -62,6 +62,13 @@ with a @[<a href="http://www.cwi.nl/~manegold/Calibrator/DB/DB.shtml">database</
   "Runs calibrator tests with given CPU clock frequency and max memory range"
 .COMMAND calib_free() : void = CMDcalib_free;
   "Frees calibrator allocated resources"
+
+@mil
+PROC calib_init(lng maxrange) : void {
+	return calib_init(0LL, maxrange);
+}
+
+@m
 .END calib;
 @-
 @T
@@ -114,8 +121,8 @@ caliblng MINTIME = 10000;
 /* #include "calib_print.c" */
 #include "calib_main.c"
 
-struct fullInfo *calibInfo=0;
-caliblng MHz,maxrange;
+static struct fullInfo *calibInfo=0;
+static caliblng MHz,maxrange;
 
 int CMDcalib_init(lng *setMHz, lng *setmaxrange)
 {
@@ -148,8 +155,10 @@ int CMDcalib_info(BAT **retval)
 	Asso=calibInfo->Asso;
 	TLB=calibInfo->TLB;
 	
-	val=MHz;
-	b=BUNins(b, "MHz", &val);
+	if (MHz!=0) {
+		val=MHz;
+		b=BUNins(b, "MHz", &val);
+	}
 	val=maxrange;
 	b=BUNins(b, "maxrange", &val);
 #ifdef CALIBRATOR_CHECK_SMP
@@ -160,12 +169,16 @@ int CMDcalib_info(BAT **retval)
 /* cpu info */
 	val=NSperIt(calibInfo->cache->latency1[0]);
 	b=BUNins(b, "cpuloop ns", &val);
-	val=cround(CYperIt(calibInfo->cache->latency1[0]));
-	b=BUNins(b, "cpuloop cc", &val);
+	if (MHz!=0) {
+		val=cround(CYperIt(calibInfo->cache->latency1[0]));
+		b=BUNins(b, "cpuloop cc", &val);
+	}
 	val=NSperIt(calibInfo->delayC);
 	b=BUNins(b, "cpu delay ns", &val);
-	val=cround(CYperIt(calibInfo->delayC));
-	b=BUNins(b, "cpu delay cc", &val);
+	if (MHz!=0) {
+		val=cround(CYperIt(calibInfo->delayC));
+		b=BUNins(b, "cpu delay cc", &val);
+	}
 /* cache info */
 	val=cache->levels;
 	b=BUNins(b, "cache levels", &val);
@@ -183,15 +196,19 @@ int CMDcalib_info(BAT **retval)
 		sprintf(fld, "cache %d miss-latency ns", l+1);
 		val=NSperIt(cache->latency2[l+1] - cache->latency2[l]);
 		b=BUNins(b, fld, &val);
-		sprintf(fld, "cache %d miss-latency cc", l+1);
-		val=cround(CYperIt(cache->latency2[l+1] - cache->latency2[l]));
-		b=BUNins(b, fld, &val);
+		if (MHz!=0) {
+			sprintf(fld, "cache %d miss-latency cc", l+1);
+			val=cround(CYperIt(cache->latency2[l+1] - cache->latency2[l]));
+			b=BUNins(b, fld, &val);
+		}
 		sprintf(fld, "cache %d replace-time ns", l+1);
 		val=NSperIt(cache->latency1[l+1] - cache->latency1[l]);
 		b=BUNins(b, fld, &val);
-		sprintf(fld, "cache %d replace-time cc", l+1);
-		val=cround(CYperIt(cache->latency1[l+1] - cache->latency1[l]));
-		b=BUNins(b, fld, &val);
+		if (MHz!=0) {
+			sprintf(fld, "cache %d replace-time cc", l+1);
+			val=cround(CYperIt(cache->latency1[l+1] - cache->latency1[l]));
+			b=BUNins(b, fld, &val);
+		}
 	}
 /* TLB info */
 	val=TLB->levels;
@@ -207,9 +224,11 @@ int CMDcalib_info(BAT **retval)
 		sprintf(fld, "TLB %d miss-latency ns", l+1);
 		val=NSperIt(TLB->latency2[l+1] - TLB->latency2[l]);
 		b=BUNins(b, fld, &val);
-		sprintf(fld, "TLB %d miss-latency cc", l+1);
-		val=cround(CYperIt(TLB->latency2[l+1] - TLB->latency2[l]));
-		b=BUNins(b, fld, &val);
+		if (MHz!=0) {
+			sprintf(fld, "TLB %d miss-latency cc", l+1);
+			val=cround(CYperIt(TLB->latency2[l+1] - TLB->latency2[l]));
+			b=BUNins(b, fld, &val);
+		}
 	}
 	return GDK_SUCCEED;
 }

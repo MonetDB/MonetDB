@@ -60,6 +60,10 @@ struct fullInfo *mainRun(caliblng MHz, caliblng maxrange, char *fname)
 #endif
 	(void) fname;
 	
+	if (MHz==0) {
+		MHz=1000; /* arbitrary. should never be printed */
+	}
+	
 	if (!(array0 = (char *)malloc(maxrange+pgsz)))
 		ErrXit("main: 'array0 = malloc(%ld)` failed", maxrange+pgsz);
 
