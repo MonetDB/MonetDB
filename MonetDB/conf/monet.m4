@@ -1561,6 +1561,7 @@ if test "x$have_pcre" != xno; then
       		have_pcre=yes
     	else
       		have_pcre=no
+      		need_pcre=no
     	fi
     	AC_MSG_RESULT($have_pcre -> $pcre_ver found)
   fi
