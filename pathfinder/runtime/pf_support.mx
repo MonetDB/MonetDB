@@ -72,6 +72,15 @@ which can be translated into a text-node again. Every other node and every new i
 A space is inserted if two strings are adjazent and no space is inserted, if a text-node is in between. 
 Empty strings are not added to the output."
 
+.COMMAND string_join( BAT[oid,str] iter_str, BAT[oid,str] separator )
+		: BAT[oid,str] = CMDstring_join;
+"PARAMETERS:
+BAT[oid,str] - sorted iters in the head, string values in the tail
+BAT[oid,str] - separator which is added between strings, within an iter
+DESCRIPITON:
+string_join constructs for each iter one strings by appending the strings
+with the separator for this iter in between."
+
 .COMMAND mposjoin( BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item )
 		: BAT[void,any] = CMDmposjoin;
 "PARAMETERS:
@@ -666,6 +675,176 @@ cleanup:
 	return GDK_FAIL;
 }
 
+int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
+{
+	BAT *bn;
+	BUN bun_iter_str, bun_sep, last_iter_str, last_sep;
+	int bs_iter_str, bs_sep;
+	size_t len, sep_len, strsize = 1024;
+	oid i, i0, sep_oid;
+	str s, sep, actual_str = NULL;
+	bit triv_prop, first_string;
+	
+	*res = NULL;
+
+	/* check arguments */
+
+	BATcheck(iter_str, "string_join");
+	BATcheck(separator, "string_join");
+
+	ERRORcheck(!(BAThordered(iter_str)&1),
+		"string_join: input BAT iter_str must be sorted on head.\n");
+	ERRORcheck(!(BAThordered(separator)&1),
+		"string_join: input BAT separator must be sorted on head.\n");
+
+	/* create result BAT */
+
+	bn = BATnew(TYPE_oid, TYPE_str, BATcount(separator));
+	if (bn == NULL) {
+		GDKerror("string_join: BATnew(TYPE_oid, TYPE_str, %d) failed.\n", BATcount(separator));
+		return GDK_FAIL;
+	}
+
+	/* do the string_join */
+
+	bs_iter_str = BUNsize(iter_str);
+	bs_sep = BUNsize(separator);
+
+	bun_iter_str = BUNfirst(iter_str);
+	last_iter_str = BUNlast(iter_str);
+	bun_sep = BUNfirst(separator);
+	last_sep = BUNlast(separator);
+
+	/* handling the empty cases */
+
+	if (bun_iter_str == last_iter_str && bun_sep == last_sep) {
+		/* ... head */
+		BATkey (bn, TRUE);
+                bn->hsorted = GDK_SORTED;
+		bn->hdense = TRUE;
+		BATseqbase (bn, (oid)0); /* does not really matter */
+		/* ... tail */
+		BATkey (BATmirror(bn), TRUE);
+                bn->tsorted = GDK_SORTED;
+		bn->tdense = FALSE;
+		*res = bn;
+ 	       	return GDK_SUCCEED;
+	}
+	else if (bun_iter_str == last_iter_str || bun_sep == last_sep) {
+		GDKerror("string_join: oids in iter_str (%i rows) and "
+			 "separator (%i rows) are not aligned.\n",
+			 BATcount(iter_str), BATcount(separator));
+		return GDK_FAIL;
+	}
+		
+@= alloc_str
+	/* allocate str buffer */
+	@1 = (str)GDKmalloc(strsize);
+	if (@1 == NULL) {
+		GDKerror("string_join: GDKmalloc(" SZFMT ") failed.\n", strsize);
+		goto cleanup;
+	}
+@c
+	@:alloc_str(actual_str)@
+	len = 0;
+	actual_str[0] = '\0';
+
+	i0 = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+	first_string = 1;
+
+@= get_next_separator
+	/* - goes to the next row in the separator bat
+	     to get the separator for the next iter value
+	   - produces an error if oids are not aligned */
+	sep_oid = *(oid*)BUNhead(separator,bun_sep);
+
+	if (i0 == sep_oid && bun_sep != last_sep) {
+		sep = (str)BUNtvar(separator,bun_sep);
+		sep_len = strlen(sep);
+	}
+	else {
+		GDKerror("string_join: oids in iter_str and separator "
+			 "are not aligned. (expected: %i@0; got: %i@0)\n",
+			 i0, sep_oid);
+		return GDK_FAIL;
+	}
+@c
+	@:get_next_separator@
+
+	for (; bun_iter_str < last_iter_str ; bun_iter_str += bs_iter_str) {
+		i = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		s = (str)BUNtvar(iter_str,bun_iter_str); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+
+		size_t l = strlen(s) + sep_len + 1;
+
+		if (i0 < i) {
+			bunfastins(bn, &i0, actual_str);
+			len = 0;
+			actual_str[0] = '\0';
+			i0 = i;
+			first_string = 1;
+
+			bun_sep += bs_sep;
+			@:get_next_separator@
+		}
+
+		if (len+l >= strsize) {
+			/* extend str buffer */
+			str new_str = NULL;
+			do {
+				strsize *= 2;
+			} while (len+l >= strsize);
+			@:alloc_str(new_str)@
+			memcpy(new_str, actual_str, len+1);
+			GDKfree(actual_str);
+			actual_str = new_str;
+		}
+
+		/* adds the separator (starting before the second string) */
+
+		if (first_string) {
+			first_string = 0;
+		}
+		else {
+			len += snprintf(actual_str+len, strsize-len, sep);
+		}
+
+		len += snprintf(actual_str+len, strsize-len, s);
+	}
+
+	/* inserts last row */
+
+	if (len > 0) {
+		bunfastins(bn, &i0, actual_str);
+	}
+
+	GDKfree(actual_str);
+
+	/* set result properties */
+
+	if (!bn->batDirty) bn->batDirty = TRUE;
+	triv_prop = (BATcount(bn) < 2);
+	BATkey(bn,TRUE);
+	BATkey(BATmirror(bn),triv_prop);
+	bn->hsorted = GDK_SORTED;
+	bn->tsorted = triv_prop;
+	bn->hdense = triv_prop;
+	bn->tdense = FALSE;
+	if (BATcount(bn) == 0) {
+		BATseqbase(bn, (oid)0);
+	} else if (BATcount(bn) == 1) {
+		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+	}
+	*res = bn;
+
+	return GDK_SUCCEED;
+bunins_failed:
+	GDKerror("string_join: bunins failed.\n");
+cleanup:
+	if (actual_str) GDKfree(actual_str);
+	BBPreclaim(bn);
+	return GDK_FAIL;
+}
 
 int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 {

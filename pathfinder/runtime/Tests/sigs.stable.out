@@ -29,6 +29,7 @@ module 'pf_support'
 [ "merged_union(BAT[void,any::1], BAT[void,any::1], ..BAT[void,any]..) : BAT[void,BAT]"	  ]
 [ "mposjoin(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,any]"		  ]
 [ "mvaljoin(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[oid,oid]"		  ]
+[ "string_join(BAT[oid,str], BAT[oid,str]) : BAT[oid,str]"				  ]
 module 'pathfinder'
 #-----------------------------------------------------------------------------------------#
 # signature										  # name
@@ -46,6 +47,8 @@ module 'pathfinder'
 [ "delete_doc(str) : void"								  ]
 [ "descendant(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[oid,oid]"		  ]
 [ "descendant_or_self(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[oid,oid]"	  ]
+[ "dump_doc(BAT[void,BAT], str) : void"													  ]
+[ "ebv(BAT[oid,bit]) : BAT[oid,bit]"													  ]
 [ "following(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[oid,oid]"		  ]
 [ "following_sibling(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[oid,oid]"	  ]
 [ "following_void(BAT[void,int], BAT[oid,any], BAT[void,oid], int, int) : BAT[oid,void]"  ]
@@ -58,6 +61,8 @@ module 'pathfinder'
 [ "preceding(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[oid,oid]"		  ]
 [ "preceding_sibling(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[oid,oid]"	  ]
 [ "preceding_void(BAT[void,int], BAT[oid,any], BAT[void,oid], int, int) : BAT[oid,void]"  ]
+[ "print_doc(str, BAT[void,BAT], str) : void"												  ]
+[ "print_result(str, BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : void"	  ]
 [ "scj_anc(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"			  ]
 [ "scj_ancorself(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"		  ]
 [ "scj_desc(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"			  ]
