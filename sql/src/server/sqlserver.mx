@@ -643,6 +643,12 @@ int bat_renumber( BAT **r, BAT *in, oid *O )
 @mil
 #module(MILsqueezer);
 
+proc add(x, y):= return x + y;
+proc sub(x, y):= return x - y;
+proc mul(x, y):= return x * y;
+proc div(x, y):= return x / y;
+proc neg(val):= return -1 * val;
+
 module(str);
 module(uchr);
 module(alarm);
@@ -792,6 +798,10 @@ proc exp(flt f):= return flt(exp(dbl(f)));
 proc log(flt f):= return flt(log(dbl(f)));
 proc log10(flt f):= return flt(log10(dbl(f)));
 
+sql_func( "current_date", "current_date", "", "", "" , "DATE" );
+sql_func( "current_time", "current_time", "", "", "" , "TIME" );
+sql_func( "current_timestamp", "current_timestamp", "", "", "" , "TIMESTAMP" );
+
 sql_func( "sub", "date_sub_sec_interval", "DATE", "SEC_INTERVAL", "", "DATE");
 sql_func( "sub", "date_sub_month_interval", "DATE", "MONTH_INTERVAL", "", "DATE");
 
@@ -803,6 +813,10 @@ sql_func( "<", "<", "DATE", "DATE", "", "BOOL");
 
 sql_func( "year", "year", "DATE", "", "", "INTEGER");
 sql_func( "month", "month", "DATE", "", "", "INTEGER");
+
+proc current_timestamp() { return timestamp(epoch()); }
+proc current_date() { return date(current_timestamp()); }
+proc current_time() { return daytime(current_timestamp()); }
 
 sql_func( "substring", "string", "STRING", "INTEGER", "INTEGER", "STRING");
 sql_func( "strconcat", "+", "STRING", "STRING", "", "STRING");
@@ -1017,12 +1031,6 @@ proc date_add_sec_interval( date d, int sec ) := {
 proc date_sub_month_interval( date d, int months ) := {
 	return d.addmonths(months);
 }
-
-proc add(x, y):= return x + y;
-proc sub(x, y):= return x - y;
-proc mul(x, y):= return x * y;
-proc div(x, y):= return x / y;
-proc neg(val):= return -1 * val;
 
 proc sep():= {
 	return "\t";

@@ -82,11 +82,12 @@ sql_func *sql_bind_func(char *sqlname, sql_subtype *tp1, sql_subtype *tp2, sql_s
 	while (n) {
 		sql_func *t = n->data;
 		if (strcmp(t->name, name) == 0 &&
-		    subtype_cmp(t->tpe1, tp1) == 0 &&
+		    ((tp1 && t->tpe1 && subtype_cmp(t->tpe1, tp1) == 0) 
+		     || (!tp1 && !t->tpe1)) && 
 		    ((tp2 && t->tpe2 && subtype_cmp(t->tpe2, tp2) == 0)
 		     || (!tp2 && !t->tpe2)) && 
-		    	((tp3 && t->tpe3 && subtype_cmp(t->tpe3, tp3) == 0)
-			|| (!tp3 && !t->tpe3))){
+		    ((tp3 && t->tpe3 && subtype_cmp(t->tpe3, tp3) == 0)
+		     || (!tp3 && !t->tpe3))){
 			_DELETE(name);
 			return t;
 		}
@@ -174,9 +175,13 @@ sql_func *sql_create_func(char *name, char *imp, char *tpe1,
 
 	t->name = toLower(name);
 	t->imp = _strdup(imp);
-	t->tpe1 = sql_create_subtype(sql_bind_type(tpe1), 0, 0);
-	assert(t->tpe1);
-	assert(t->tpe1->type);
+	if (strlen(tpe1)) {
+		t->tpe1 = sql_create_subtype(sql_bind_type(tpe1), 0, 0);
+		assert(t->tpe1);
+		assert(t->tpe1->type);
+	} else {
+		t->tpe1 = NULL;
+	}
 	if (strlen(tpe2)) {
 		t->tpe2 = sql_create_subtype(sql_bind_type(tpe2), 0, 0);
 		assert(t->tpe2);
@@ -203,7 +208,7 @@ static void func_destroy(sql_func * t)
 {
 	_DELETE(t->name);
 	_DELETE(t->imp);
-	_DELETE(t->tpe1);
+	if (t->tpe1) _DELETE(t->tpe1);
 	if (t->tpe2) _DELETE(t->tpe2);
 	if (t->tpe3) _DELETE(t->tpe3);
 	_DELETE(t->res);

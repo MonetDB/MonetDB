@@ -70,6 +70,7 @@ typedef enum tokens {
 	SQL_NOT,
 	SQL_EXISTS,
 	SQL_NOT_EXISTS,
+	SQL_OP,
 	SQL_UNOP,
 	SQL_BINOP,
 	SQL_TRIOP,

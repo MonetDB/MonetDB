@@ -66,6 +66,7 @@ typedef enum stmt_type {
 	st_ordered,
 	st_order,
 	st_reorder,
+	st_op,
 	st_unop,
 	st_binop,
 	st_triop,
@@ -195,6 +196,7 @@ extern stmt *stmt_order(stmt * s, int direction);
 extern stmt *stmt_reorder(stmt * s, stmt * t, int direction);
 extern stmt *stmt_ordered(stmt * order, stmt * res);
 
+extern stmt *stmt_op(sql_func * op);
 extern stmt *stmt_unop(stmt * op1, sql_func * op);
 extern stmt *stmt_binop(stmt * op1, stmt * op2, sql_func * op);
 extern stmt *stmt_triop(stmt * op1, stmt * op2, stmt * op3, sql_func * op);

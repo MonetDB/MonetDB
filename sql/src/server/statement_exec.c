@@ -571,6 +571,11 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		/* s->flag?"desc":"asc"); */
 		dump(sql,buf,len,-s->nr);
 	} 	break;
+	case st_op: {
+		len = snprintf( buf, BUFSIZ, 
+		   "s%d := %s();\n", -s->nr, s->op1.funcval->imp);
+		dump(sql,buf,len,-s->nr);
+	} 	break;
 	case st_unop: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		if (s->op1.stval->nrcols)

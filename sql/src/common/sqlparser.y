@@ -237,7 +237,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
 	DOUBLE PRECISION VARCHAR PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
-	CURRENT_USER CURRENT_ROLE
+	CURRENT_USER CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
 
 /*
 OPEN CLOSE FETCH 
@@ -1473,6 +1473,18 @@ datetime_funcs:
   		  		  dlist_append_string(l, _strdup(ident));
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
+ |  CURRENT_DATE 
+ 			{ dlist *l = dlist_create();
+			  dlist_append_string(l, _strdup("current_date"));
+	  		  $$ = _symbol_create_list( SQL_OP, l ); }
+ |  CURRENT_TIME 
+ 			{ dlist *l = dlist_create();
+			  dlist_append_string(l, _strdup("current_time"));
+	  		  $$ = _symbol_create_list( SQL_OP, l ); }
+ |  CURRENT_TIMESTAMP 
+ 			{ dlist *l = dlist_create();
+			  dlist_append_string(l, _strdup("current_timestamp"));
+	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  ;
 
 string_funcs:

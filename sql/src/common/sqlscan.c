@@ -239,6 +239,10 @@ void init_keywords()
 	keywords_insert("TIME", TIME);
 	keywords_insert("TIMESTAMP", TIMESTAMP);
 	keywords_insert("INTERVAL", INTERVAL);
+	keywords_insert("CURRENT_DATE", CURRENT_DATE);
+	keywords_insert("CURRENT_TIME", CURRENT_TIME);
+	keywords_insert("CURRENT_TIMESTAMP", CURRENT_TIMESTAMP);
+	keywords_insert("NOW", CURRENT_TIMESTAMP);
 
 	keywords_insert("YEAR", YEAR);
 	keywords_insert("MONTH", MONTH);

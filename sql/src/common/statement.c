@@ -856,6 +856,16 @@ stmt *stmt_delete(table * t, stmt * where)
 	return s;
 }
 
+stmt *stmt_op(sql_func * op)
+{
+	stmt *s = stmt_create();
+	s->type = st_op;
+	s->op1.funcval = op;
+	s->nrcols = 0; /* function without arguments returns single value */
+	s->key = 1;
+	return s;
+}
+
 stmt *stmt_unop(stmt * op1, sql_func * op)
 {
 	stmt *s = stmt_create();
@@ -1114,6 +1124,8 @@ sql_subtype *tail_type(stmt * st)
 
 	case st_aggr:
 		return st->op2.aggrval->res;
+	case st_op:
+		return st->op1.funcval->res;
 	case st_unop:
 		return st->op2.funcval->res;
 	case st_binop:

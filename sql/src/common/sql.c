@@ -115,6 +115,8 @@ const char *token2string(int token)
 		return "Exists";
 	case SQL_NOT_EXISTS:
 		return "Not Exists";
+	case SQL_OP:
+		return "Op";
 	case SQL_UNOP:
 		return "Unop";
 	case SQL_BINOP:
@@ -779,6 +781,20 @@ static stmt *sql_binop(context * sql, scope * scp, symbol * se, group * grp, stm
 	return NULL;
 }
 
+static stmt *sql_op(context * sql, scope * scp, symbol * se, group * grp, stmt * subset)
+{
+	dnode *l = se->data.lval->h;
+	sql_func *f = NULL;
+
+	f = sql_bind_func(l->data.sval, NULL, NULL, NULL);
+	if (f) {
+		return stmt_op(f);
+	} else {
+		return sql_error(sql, 02, "operator: %s() unknown", l->data.sval);
+	}
+	return NULL;
+}
+
 static stmt *sql_unop(context * sql, scope * scp, symbol * se, group * grp, stmt * subset)
 {
 	dnode *l = se->data.lval->h;
@@ -865,6 +881,8 @@ static stmt *sql_value_exp(context * sql, scope * scp, symbol * se, group * grp,
 		return sql_triop(sql, scp, se, grp, subset);
 	case SQL_BINOP:
 		return sql_binop(sql, scp, se, grp, subset);
+	case SQL_OP:
+		return sql_op(sql, scp, se, grp, subset);
 	case SQL_UNOP:
 		return sql_unop(sql, scp, se, grp, subset);
 	case SQL_AGGR:
