@@ -35,14 +35,14 @@ X_CFLAGS = -D_GNU_SOURCE
 lib_MapiLib = {
 	PREFIX =
 	NAME = MapiLib
-	SOURCES = MapiLib.pl.i
+	SOURCES = MapiLib.pm.i
 	LIBS = ../../C/libMapi
 	DIR = pkgdatadir/perl
 }
 
 headers_pm = {
 	HEADERS = pm
-	SOURCES = MapiLib.pl.i
+	SOURCES = MapiLib.pm.i
 	TARGETS = MapiLib.pm
 	DIR = pkgdatadir/perl
 }
