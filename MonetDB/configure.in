@@ -104,7 +104,7 @@ if test "x$have_pthread" != xno; then
           AC_DEFINE(HAVE_LIBPTHREAD) 
 	  have_pthread=yes ] , 
 	dnl sun
-	[ AC_CHECK_LIB(pthread, sem_init, 
+	[ AC_CHECK_LIB(pthread, sem_post, 
 		[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4" 
           	AC_DEFINE(HAVE_LIBPTHREAD) 
 	  	have_pthread=yes ] , [ have_pthread=no], "-lposix4" )
