@@ -1910,7 +1910,7 @@ doCMDfetch(ptr ret, BAT *b, size_t i)
 	} else {
 		int _s = ATOMsize(ATOMtype(b->ttype));
 		if (ATOMvarsized(b->ttype)) {
-			memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
+			memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtvar(b, @1), _s);
 		} else if (b->ttype == TYPE_bat) {
 			bat bid = *(bat*) BUNtloc(b, @1);
 			*(BAT**) ret = BATdescriptor(bid);
