@@ -60,7 +60,7 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
-[ "monet_environment",	  30,	  30,		  0	  ]
+[ "monet_environment",	  29,	  29,		  0	  ]
 [ "monet_fcn_fcn",	  573,	  573,		  0	  ]
 [ "monet_fcn_imp",	  673,	  673,		  0	  ]
 [ "monet_fcn_tpe",	  673,	  673,		  0	  ]

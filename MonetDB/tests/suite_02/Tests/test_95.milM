@@ -42,7 +42,6 @@ print(i5);
 print("done parallel");
 "pseudo_thread_name".print();
 printf("#~BeginVariableOutput~#\n"); view_gdk_thread().print(); printf("#~EndVariableOutput~#\n");
-printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariableOutput~#\n");
 printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 quit();
 quit();
