@@ -312,7 +312,7 @@ The similar code base is produced for dealing with a constant argument.
 @= arithmeticImpl
 str bataccum@1(BAT *dst, BAT *left, BAT *right)
 {	int s1,s2,s3;
-	str p1,p2,p3, hend;
+	ptr p1,p2,p3, hend;
 
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
@@ -359,7 +359,7 @@ str CMDbataccum@1(int *ret, int *d, int *l, int *r)
 str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	int s1,s2;
-	str p1,p2, hend;
+	ptr p1,p2, hend;
 
 	@:getBATdescriptor(ret,r,dst,CMDbataccum@1)@
 	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
@@ -405,7 +405,7 @@ the arithmeticImpl block and removing elements not required.
 @c
 str bataccumMOD(BAT *dst, BAT *left, BAT *right)
 {	int s1,s2,s3;
-	str p1,p2,p3, hend;
+	ptr p1,p2,p3, hend;
 
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
@@ -450,7 +450,7 @@ str CMDbataccumMOD(int *ret, int *d, int *l, int *r)
 str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	int s1,s2;
-	str p1,p2, hend;
+	ptr p1,p2, hend;
 
 	@:getBATdescriptor(ret,r,dst,CMDbataccumMOD)@
 	@:getBATdescriptor(ret,l,left,CMDbataccumMOD)@
@@ -490,12 +490,13 @@ str CMDbatMODcst(int *ret, int *l, void *cst)
 str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	BAT *b,*dst;
 	int s1,s2;
-	str p1,p2, hend;
+	ptr p1,p2, hend;
 	
 	@:getBATdescriptor(ret,did,dst,CMDunaryAccum@1)@
 	@:getBATdescriptor(ret,bid,b,CMDunaryAccum@1)@
 	@:batinit(1,dst)@
 	@:batinit(2,b)@
+	hend = (str) BUNlast(dst);
 	switch(BATttype(dst)){
 	case TYPE_oid: @:accumUnary(oid,@2)@ break;
 	case TYPE_sht: @:accumUnary(sht,@2)@ break;
@@ -505,6 +506,7 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
 	default: return throwMessage("CMDunaryAccumMIN:unexpected type");
 	}
+	*ret= dst->batCacheid;
 	return MAL_SUCCEED;
 }
 str CMDunary@1(int *ret, int *bid){
@@ -540,7 +542,7 @@ The structure of this code is copied from the arithmetic scheme.
 @= compareImpl
 str compareaccum@1(BAT *dst, BAT *left, BAT *right){
 	int s1,s2,s3;
-	str p1,p2,p3, hend;
+	ptr p1,p2,p3, hend;
 
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
@@ -603,7 +605,7 @@ str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	int s1,s2;
-	str p1,p2, hend;
+	ptr p1,p2, hend;
 
 	@:getBATdescriptor(ret,r,dst,CMDbataccum@1)@
 	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
@@ -679,7 +681,7 @@ The expanded code for the binary and boolean operations.
 str CMDbitbataccumNOT(int *ret, int *d, int *l)
 {	BAT *dst, *left;
 	int s1,s2;
-	str p1,p2, hend;
+	ptr p1,p2, hend;
 	bit bn= bit_nil;
 
 	@:getBATdescriptor(ret,d,dst,CMDbitbataccum@1)@

@@ -267,24 +267,44 @@ comment "Returns the union of two BATs; looking at head-columns only.
 The core of every relational engine.
 Signature Changed: Output tail type incorrect because of soid to coid switch. 
 
-@- join (projected out join columns)
+@- join(projected out join columns)
+The join collection provided by the GDK kernel.
+
 @mal
-command join ( left:bat[any::1,any::2], right:bat[any::2,any::3]) :
+command join( left:bat[any::1,any::2], right:bat[any::2,any::3]) :
                                bat[any::1,any::3] = CMDjoin
 comment "Returns all BUNs, consisting of a head-value from 'left' and
 a tail-value from 'right' for which there are BUNs in 'left'
 and 'right' with equal tail- resp. head-value (i.e. the join
 columns are projected out).";
+
+command fetchjoin ( left:BAT[any::1,any::2],right:BAT[any::2,any::3] ) :
+                    BAT[any::1,any::3] = CMDfetchjoin
+comment "Hook directly into the fetch implementation of the join.";
+
+command mergejoin (left:BAT[any::1,any::2], right:BAT[any::2,any::3]) :
+                    BAT[any::1,any::3] = CMDmergejoin
+comment "Hook directly into the merge implementation of the join.";
+
+command hashjoin ( left:BAT[any::1,any::2], right:BAT[any::2,any::3]) :
+                    BAT[any::1,any::3] = CMDhashjoin
+comment "Hook directly into the hash implementation of the join.";
+
+command indexjoin ( left:BAT[any::1,any::2], right:BAT[any::2,any::3]) :
+                    BAT[any::1,any::3] = CMDindexjoin
+comment "Hook directly into the index implementation of the join.";
+
 @- Outer Join
 @mal
-command outerjoin ( outer:bat[any::1,any::2], inner:bat[any::2,any::3]) :
+command outerjoin( outer:bat[any::1,any::2], inner:bat[any::2,any::3]) :
                                 bat[any::1,any::3] = CMDouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in
 the tail and the head-values of 'outer' whose tail-value does
 not match an head-value in 'inner'.";
+
 @- { <,<=,=,>=,> } Join
 @mal
-command thetajoin ( left:bat[any::1,any::2], right:bat[any::2,any::3], 
+command thetajoin( left:bat[any::1,any::2], right:bat[any::2,any::3], 
 		mode:int) : bat[any::1,any::3] = CMDthetajoin
 comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.
 JOIN_EQ is just the same as join(). All other options do merge
@@ -305,7 +325,7 @@ inner tuples, 'outer_result' the other two (what would have the
 result of thetajoin(l,r)).";
 @- Band Join (approximate match)
 @mal
-command bandjoin ( outer:bat[any::1,any::2], 
+command bandjoin( outer:bat[any::1,any::2], 
 		   inner:bat[any::2,any::3],
 		   minus:any::2 , plus:any::2 ) : 
 				bat[any::1,any::3] = CMDbandjoin
@@ -777,6 +797,84 @@ str CMD@1(int *result, int* bid, int *param) {
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
 
+str CMDfetchjoin(int *result, int *lid, int *rid) {
+	BAT *left, *right,*bn;
+	int rfetch,lfetch;
+
+	@:getBATdescriptor(result,lid,left,CMDfetchjoin)@
+	@:getBATdescriptor(result,rid,right,CMDfetchjoin)@
+
+	rfetch = (BAThdense(right) && ATOMstorage(left->ttype) <= TYPE_int);
+	lfetch = (BATtdense(left) && ATOMstorage(right->htype) <= TYPE_int);
+	if (lfetch && !(rfetch && BATcount(left) < BATcount(right))) {
+		bn= BATfetchjoin(left, right);
+	} else if (rfetch) 
+		bn= BATmirror(BATfetchjoin(BATmirror(right), BATmirror(left)));
+
+	if( bn ) {
+		*result = bn->batCacheid;
+		return MAL_SUCCEED;
+	}
+	return throwMessage("CMDfetchjoin:can not perform a fetchjoin");
+}
+str CMDhashjoin(int *result, int *lid, int *rid) {
+	BAT *left, *right,*bn;
+	int lsize,rsize;
+
+	@:getBATdescriptor(result,lid,left,CMDhashjoin)@
+	@:getBATdescriptor(result,rid,right,CMDhashjoin)@
+
+	lsize = left->batBuns->size + (left->hheap.base?left->hheap.size:0) +
+                                 (left->theap.base?left->theap.size:0);
+	rsize = right->batBuns->size + (right->hheap.base?right->hheap.size:0) +
+                                 (right->theap.base?right->theap.size:0);
+
+	if (rsize < lsize) 
+		bn= BATmirror(BAThashjoin(BATmirror(right), BATmirror(left)));
+	else	bn= BAThashjoin(left, right);
+
+	if( bn ) {
+		*result = bn->batCacheid;
+		return MAL_SUCCEED;
+	}
+	return throwMessage("CMDhashjoin:can not perform a hashjoin");
+}
+
+str CMDmergejoin(int *result, int *lid, int *rid) {
+	BAT *left, *right,*bn;
+	int lsize,rsize;
+
+	@:getBATdescriptor(result,lid,left,CMDmergejoin)@
+	@:getBATdescriptor(result,rid,right,CMDmergejoin)@
+	if ( !((BATtordered(left)&1)||(BAThordered(right)&1)) ) 
+		return throwMessage( 
+		"CMDmergejoin:neither left nor right bat is ordered.\n" );
+
+	if ( (left->ttype==TYPE_void) || (right->htype==TYPE_void) ) 
+		return throwMessage( 
+		"CMDmergejoin:Cannot perform mergejoin on void fields.\n" );
+	bn= BATmergejoin(left,right);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return MAL_SUCCEED;
+	}
+	return throwMessage("CMDmergejoin:can not perform a mergejoin");
+}
+
+str CMDindexjoin(int *result, int *lid, int *rid) {
+	BAT *left, *right,*bn;
+	int lsize,rsize;
+
+	@:getBATdescriptor(result,lid,left,CMDindexjoin)@
+	@:getBATdescriptor(result,rid,right,CMDindexjoin)@
+
+	bn= BATthetajoin(left,right, JOIN_EQ);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return MAL_SUCCEED;
+	}
+	return throwMessage("CMDindexjoin:can not perform a indexjoin");
+}
 str CMDtunique(int *result, int *bid) {
 	BAT *b,*bn;
 	@:getBATdescriptor(result,bid,b,CMDtunique)@
@@ -1064,4 +1162,3 @@ str CMDfind(ptr ret, int *bid, ptr val){
 	@:putTail(q)@
         return MAL_SUCCEED;
 }
-

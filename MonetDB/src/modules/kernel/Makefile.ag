@@ -13,7 +13,7 @@ LIBS = {
 	SEP = _
 	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
 		mapi.mx startup.mx mmath.mx lock.mx alarm.mx \
-		batcalc.mx group.mx aggrX3.mx
+		batcalc.mx group.mx aggrX3.mx 
 #ascii_io.mx
 
 	HEADERS = h 
