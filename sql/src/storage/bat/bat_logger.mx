@@ -469,22 +469,22 @@ logger_readlogs(logger *logger, FILE *fp, char *filename)
 	return res;
 }
 
-static void
+static int
 logger_save(logger *logger, FILE *fp)
 {
 	if (logger->debug & 1)
 		fprintf(stderr, "logger_save\n");
 
-	bm_save(logger->bm, fp);
+	return bm_save(logger->bm, fp);
 }
 
-static void
+static int
 logger_load(logger *logger, FILE *fp)
 {
 	if (logger->debug & 1)
 		fprintf(stderr, "logger_load\n");
 
-	bm_load(logger->bm, fp);
+	return bm_load(logger->bm, fp);
 }
 
 static int
@@ -531,7 +531,8 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 			 return NULL;
 
 		logger->changes++;
-		logger_load(logger, fp);
+		if (logger_load(logger, fp) < 0)
+			return NULL;
 		logger_readlogs(logger, fp, filename);
 	} else if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
@@ -542,7 +543,8 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 				 return NULL;
 
 			logger->changes++;
-			logger_load(logger, fp);
+			if (logger_load(logger, fp) < 0)
+				return NULL;
 			logger_readlogs(logger, fp, filename);
 		}
 	} else if ((fp = fopen(filename, "w")) == NULL) {
@@ -571,7 +573,9 @@ logger *
 logger_create(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 {
 	logger *logger = logger_new(debug, logdir, dbname, version, bm);
-	if (logger && logger_open(logger) == SQL_ERR) {
+	if (!logger)
+		return NULL;
+	if (logger_open(logger) == SQL_ERR) {
 		logger_destroy(logger);
 
 		return NULL;
@@ -612,7 +616,8 @@ logger_exit(logger *logger)
 		char ext[BUFSIZ];
 
 		fprintf(fp, "%06d\n", logger->version);
-		logger_save(logger, fp);
+		if (logger_save(logger, fp) < 0)
+			return SQL_ERR;
 
 		fprintf(fp, "\n");
 		logger->id ++;
