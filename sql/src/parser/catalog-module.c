@@ -20,7 +20,6 @@ ptr BUNfind_safe(BAT *b, oid *tid){
 
 catalog *catalog_create( context *lc ){
 	catalog *c = lc->cat;
-	int i, tcnt;
 	BUN p,q;
 
 	/* schema, name */
@@ -33,7 +32,9 @@ catalog *catalog_create( context *lc ){
 	BAT *table_id; /* table, id */
 	BAT *table_name; /* table, name */
 	BAT *table_temp;
+	/*
 	BAT *table_schema;
+	*/
 	BAT *table_query;
 
 	BAT *column_id; /* column, id */
@@ -60,7 +61,9 @@ catalog *catalog_create( context *lc ){
 	table_id = BATdescriptor(BBPindex("table_id"));
 	table_name = BATdescriptor(BBPindex("table_name"));
 	table_temp = BATdescriptor(BBPindex("table_temp"));
+	/*
 	table_schema = BATdescriptor(BBPindex("table_schema"));
+	*/
 	table_query = BATdescriptor(BBPindex("table_query"));
 
 	column_id = BATdescriptor(BBPindex("column_id"));
@@ -78,7 +81,6 @@ catalog *catalog_create( context *lc ){
 	sql_aggr_name = BATdescriptor(BBPindex("sql_aggr_name"));
 	sql_func_name = BATdescriptor(BBPindex("sql_func_name"));
 	 
-	tcnt = BATcount(sql_type_name);
 	c->types = list_create();
 	BATloop(sql_type_name, p, q){
 	    int tnr = *(int*)BUNhead(sql_type_name, p );
@@ -89,7 +91,6 @@ catalog *catalog_create( context *lc ){
 	}
 	/* TODO load proper type cast table */
 
-	tcnt = BATcount(sql_aggr_name);
 	c->aggrs = list_create();
 	BATloop(sql_aggr_name, p, q){
 	    int tnr = *(int*)BUNhead(sql_aggr_name, p );
@@ -97,7 +98,6 @@ catalog *catalog_create( context *lc ){
 	    c->create_aggr( c, tname, tnr );
 	}
 
-	tcnt = BATcount(sql_func_name);
 	c->funcs = list_create();
 	BATloop(sql_func_name, p, q){
 	    int tnr = *(int*)BUNhead(sql_func_name, p );
@@ -125,7 +125,7 @@ catalog *catalog_create( context *lc ){
 	      table *t = c->create_table( c, *tid, c->cur_schema, tname, temp, NULL );
 	      BATloop( columns, v, w ){
 		oid *lid = (oid*)BUNhead(columns, v );
-		oid cid = (char*)BUNfind(column_id, lid);
+		oid cid = *(oid*)BUNfind(column_id, lid);
 		char *cname = (char*)BUNfind(column_name, lid);
 		char *ctype = (char*)BUNfind(column_type, lid);
 		char *def = (char*)BUNfind(column_default, lid);

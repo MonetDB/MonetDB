@@ -8,7 +8,8 @@ INCLUDES = \
 	-I$(MONETDIST)/include \
 	-I$(MONETDIST)/include/gdk \
 	-I$(MONETDIST)/include/monet \
-	-I$(MONETDIST)/include/plain 
+	-I$(MONETDIST)/include/plain \
+	-I$(GETOPT_INCS)
 
 lib_sql = {
 	SOURCES = \
@@ -17,6 +18,7 @@ lib_sql = {
 		catalog.c catalog.h \
 		list.c list.h symbol.c symbol.h sym.h \
 		statement.c statement.h atom.c atom.h 
+	HEADERS = h tab.h
 }
 
 lib__sql = {
@@ -37,6 +39,6 @@ lib__mvc = {
 bin_sql_client = {
 	SOURCES = sql_client.c catalog-client.c statement_dump.c \
 		  comm.c comm.h gdk.c mem.h
-	LIBS = libsql \
-		-L$(MONETDIST)/lib/Monet -lstream $(READLINE_LIBS)
+	LIBS = libsql -L$(MONETDIST)/lib/Monet -lstream \
+			$(READLINE_LIBS) $(GETOPT_LIBS)
 }
