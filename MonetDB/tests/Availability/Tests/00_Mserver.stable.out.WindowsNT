@@ -57,7 +57,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "tpcd",	  "contrib"	  ]
 [ "trans",	  "static"	  ]
 [ "txtsim",	  "contrib"	  ]
-[ "uchr",	  "static"	  ]
+[ "uchr",	  "contrib"	  ]
 [ "unix",	  "plain"	  ]
 [ "url",	  "plain"	  ]
 [ "vector",	  "contrib"	  ]
@@ -116,7 +116,6 @@ table(mmn().reverse().sort().reverse().col_name("static modules"));
 [ "str"		  ]
 [ "sys"		  ]
 [ "trans"	  ]
-[ "uchr"	  ]
 
 table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().reverse().col_name("dynamic modules"));
 #-------------------------#
@@ -160,6 +159,7 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "tcpip"		  ]
 [ "tpcd"		  ]
 [ "txtsim"		  ]
+[ "uchr"		  ]
 [ "unix"		  ]
 [ "url"			  ]
 [ "vector"		  ]

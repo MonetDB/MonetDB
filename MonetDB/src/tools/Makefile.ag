@@ -31,7 +31,7 @@ STATIC_MODS = \
 	../modules/plain/lib_algebra ../modules/plain/lib_arith \
 	../modules/plain/lib_bat ../modules/plain/lib_kernel \
 	../modules/plain/lib_str ../modules/plain/lib_sys \
-	../modules/plain/lib_trans ../modules/plain/lib_uchr	
+	../modules/plain/lib_trans	
 
 smallTOC_SHARED_MODS =	\
 	../mapi/lib_mapi	\
@@ -73,6 +73,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/contrib/lib_mel	\
 	../modules/contrib/lib_mprof	\
 	../modules/contrib/lib_oo7	\
+	../modules/contrib/lib_uchr	\
 	../modules/contrib/lib_qt	\
 	../modules/contrib/lib_salgebra	\
 	../modules/contrib/lib_tpcd	\

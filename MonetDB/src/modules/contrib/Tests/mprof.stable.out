@@ -14,7 +14,7 @@ stdout of test 'mprof` in directory 'src/modules/contrib` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("mprof");
 test_mprof();
-[ 17 ]
+[ 16 ]
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # BAT:	  mprof_id	| clock	| utime_stime	  #
@@ -32,7 +32,7 @@ test_mprof();
 # BAT:	  mprof_id	| mallinfo		  #
 # (int)	  (str)		| (Mallinfo)		  #
 #-------------------------------------------------#
-[ 0,	  "abc",	  (0,0,0,0,0,0,0,0)	  ]
+[ 0,	  "abc",	  (0,-2,0,0,0,0,0,1720)	  ]
 [ 1,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -49,16 +49,16 @@ test_mprof();
 # (int)	  (str)		| (Rusage)		  #
 #-------------------------------------------------#
 [ 0,	  "abc",	  (0,0,1,0,0,0,0,0)	  ]
-[ 1,	  "pmPrint",	  (0,4,21,0,0,0,0,0)	  ]
+[ 1,	  "pmPrint",	  (0,2,20,0,0,0,0,0)	  ]
 [ 2,	  "xyz",	  (0,0,0,0,0,0,0,0)	  ]
 [ 3,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
 #---------------------------------------------------------#
 # BAT:	  mprof_id	| mallinfo			  #
 # (int)	  (str)		| (Mallinfo)			  #
 #---------------------------------------------------------#
-[ 0,	  "abc",	  (0,0,0,0,0,0,0,0)		  ]
-[ 1,	  "pmPrint",	  (16384,1,0,0,0,0,0,6936)	  ]
-[ 2,	  "xyz",	  (0,0,0,0,0,0,0,0)		  ]
+[ 0,	  "abc",	  (0,-2,0,0,0,0,0,1720)		  ]
+[ 1,	  "pmPrint",	  (8192,-20,0,0,0,0,0,26488)	  ]
+[ 2,	  "xyz",	  (0,-1,0,0,0,0,0,1152)		  ]
 [ 3,	  "pmPrint",	  (0,0,0,0,0,0,0,0)		  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -80,9 +80,9 @@ Label: pmPrint called: 2
 	stime	   0	   0	   0	   0
 	inblock	   0	   0	   0	   0
 	oublock	   0	   0	   0	   0
-	majflt	  22	  11	   1	  21
+	majflt	  22	  11	   2	  20
 	cntxsw	   0	   0	   0	   0
-	arena	16384	8192	   0	16384
+	arena	8192	4096	   0	8192
 
 Label: xyz called: 1
 		sum	avg	min	max

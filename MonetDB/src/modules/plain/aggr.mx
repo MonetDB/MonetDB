@@ -35,15 +35,7 @@ test scripts were added.
 @m
 .MODULE aggr;
 
-.USE uchr;
-
-.COMMAND {sum_uchr}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,uchr] = CMDaggr_sum_uchr_uchr; 
-	"grouped tail sum"
-.COMMAND {sum_sht}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_uchr_sht; 
-	"grouped tail sum"
 .COMMAND {sum_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_sht_sht; 
-	"grouped tail sum"
-.COMMAND {sum_int}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_uchr_sht; 
 	"grouped tail sum"
 .COMMAND {sum_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_sht_int; 
 	"grouped tail sum"
@@ -60,10 +52,6 @@ test scripts were added.
 .COMMAND {sum_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_dbl_dbl; 
 	"grouped tail sum"
 
-.COMMAND {prod_uchr}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,uchr] = CMDaggr_prod_uchr_uchr; 
-	"grouped tail product"
-.COMMAND {prod_int}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_uchr_int; 
-	"grouped tail product"
 .COMMAND {prod_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_prod_sht_sht; 
 	"grouped tail product"
 .COMMAND {prod_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_sht_int; 
@@ -81,8 +69,6 @@ test scripts were added.
 .COMMAND {prod_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_prod_dbl_dbl; 
 	"grouped tail product"
 
-.COMMAND {avg}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_uchr; 
-	"grouped tail average"
 .COMMAND {avg}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_sht; 
 	"grouped tail average"
 .COMMAND {avg}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_int; 
@@ -146,9 +132,6 @@ test scripts were added.
 	return 0;
     }
 
-    proc {sum}(BAT[oid, uchr] b, bat[oid,any] e ) : BAT[oid,uchr] {
-		return	 {sum_uchr}(b,e);
-    }
     proc {sum}(BAT[oid, sht] b, bat[oid,any] e ) : BAT[oid,sht] {
 		return	 {sum_sht}(b,e);
     }
@@ -165,9 +148,6 @@ test scripts were added.
 		return	 {sum_dbl}(b,e);
     }
 
-    proc {prod}(BAT[oid, uchr] b, bat[oid,any] e ) : BAT[oid,uchr] {
-		return	 {prod_uchr}(b,e);
-    }
     proc {prod}(BAT[oid, sht] b, bat[oid,any] e ) : BAT[oid,sht] {
 		return	 {prod_sht}(b,e);
     }
@@ -288,28 +268,12 @@ PROC test_aggr() : void {
 	aggrtst(5,9,"variance","sht","int","lng","flt","dbl");
 }
 
-PROC test_aggr_uchr() : void {
-	module("decimal");
-	var printed := FALSE;
-	aggrtst(5,9,"sum","uchr");
-	aggrtst(5,9,"sum_lng","uchr");
-	aggrtst(5,9,"prod","uchr");
-	aggrtst(5,9,"prod_lng","uchr");
-	aggrtst(5,9,"avg","uchr");
-	aggrtst(5,9,"min","uchr");
-	aggrtst(5,9,"max","uchr");
-	aggrtst(5,9,"count","uchr");
-	aggrtst(5,9,"count_no_nil","uchr");
-	aggrtst(5,9,"card","uchr");
-}
-
 @{
 @+ Implementation
 These implementations need just one scan and a simple hash-maintained data
 structure to compute a group of common aggregates. 
 @c
 #include <gdk.h>
-#include "uchr.h"
 #include "aggr.proto.h"
 
 /* 
@@ -579,10 +543,6 @@ int CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:arithsumprod(uchr,tloc,uchr)@
-@:arithsumprod(uchr,tloc,sht)@
-@:arithsumprod(uchr,tloc,int)@
-@:arithsumprod(uchr,tloc,lng)@
 @:arithsumprod(sht,tloc,sht)@
 @:arithsumprod(sht,tloc,int)@
 @:arithsumprod(sht,tloc,lng)@
@@ -644,7 +604,6 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:arithavg(uchr,tloc)@
 @:arithavg(sht,tloc)@
 @:arithavg(int,tloc)@
 @:arithavg(lng,tloc)@

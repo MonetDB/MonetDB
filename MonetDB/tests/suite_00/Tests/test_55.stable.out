@@ -45,16 +45,16 @@ h.print();
 # BAT:	  tmp_30	  #
 # (int)	  (BAT)		  #
 #-------------------------#
-[ 0,	  <tmp_28>	  ]
+[ 0,	  <tmp_30>	  ]
 [ 1,	  <tmp_31>	  ]
 [ 2,	  <tmp_32>	  ]
 dir("tmp");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "tmp_28",	  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_28",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "tmp_29",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_30",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_30",	  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "tmp_31",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "tmp_32",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 h.find(0).rename("dummy");
@@ -67,15 +67,15 @@ dir("tmp");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
+[ "tmp_28",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "tmp_29",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_30",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "tmp_31",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "tmp_32",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 vars();
 #-----------------------------------------------------------------------------------------#
 # tmp_36		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_30>"		  ]
+[ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_28>"		  ]
 [ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
 [ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
@@ -127,12 +127,12 @@ vars();
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "32767"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "287"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "284"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "278"			  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]

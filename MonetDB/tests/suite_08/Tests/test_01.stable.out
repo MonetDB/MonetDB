@@ -268,7 +268,6 @@ view_atom_name().print();
 [ 9,	  "dbl"	  ]
 [ 10,	  "lng"	  ]
 [ 11,	  "str"	  ]
-[ 12,	  "uchr"  ]
 
 # Pseudo bat with variable settings for GDK
 "view_gdk_env".print();

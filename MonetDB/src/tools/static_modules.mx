@@ -25,7 +25,6 @@
 @:install_load_module(kernel)@
 @:install_load_module(arith)@
 @:install_load_module(str)@
-@:install_load_module(uchr)@
 @:install_load_module(bat)@
 @:install_load_module(algebra)@
 @:install_load_module(sys)@
@@ -80,6 +79,7 @@
 @:install_module(txtsim)@
 @:install_module(wisc)@
 @:install_module(mel)@
+@:install_module(uchr)@
 @:install_module(qt)@
 
 #ifndef smallTOC

@@ -36,7 +36,6 @@ values as parameters, and produce new result values, but
 @m
 .MODULE algebra;
 
-.USE uchr;
 @
 We split between selections that return one value, and selections 
 that return a BAT.
@@ -437,7 +436,7 @@ Give the lowest tail value. Error on empty BATs."
 Give the highest tail value. Error on empty BATs."
 @+ Type-Specific Sum, Product, Max and Min
 @T
-For X $\in$ \{ uchr,sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
+For X $\in$ \{ sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
 macro):
 \begin{itemize}
 \item .COMMAND sum(BAT[any,X] : X, 
@@ -451,10 +450,6 @@ macro):
 @= sumprod_definition
 .COMMAND @1_@4 ( BAT[any,@2] ) : @4 = CMD@1_@2_@4; @3
 @= sumprod
-@:sumprod_definition(@1,uchr,@2,uchr)@
-@:sumprod_definition(@1,uchr,@2,sht)@
-@:sumprod_definition(@1,uchr,@2,int)@
-@:sumprod_definition(@1,uchr,@2,lng)@
 @:sumprod_definition(@1,sht,@2,sht)@
 @:sumprod_definition(@1,sht,@2,int)@
 @:sumprod_definition(@1,sht,@2,lng)@
@@ -470,7 +465,6 @@ macro):
 @= aggregate_definition
 .COMMAND @1 ( BAT[any,@2] ) : @2 = CMD@1_@2; @3
 @= aggregate
-@:aggregate_definition(@1,uchr,@2)@
 @:aggregate_definition(@1,sht,@2)@
 @:aggregate_definition(@1,int,@2)@
 @:aggregate_definition(@1,flt,@2)@
@@ -776,7 +770,6 @@ that for the moment are defined as procs.
     proc sum( bat[any,@1] b ) : @1 { return sum_@1(b); }
     proc prod( bat[any,@1] b ) : @1 { return prod_@1(b); }
 @mil
-@:milsumprod(uchr)@
 @:milsumprod(sht)@
 @:milsumprod(int)@
 @:milsumprod(lng)@
@@ -793,7 +786,6 @@ that for the moment are defined as procs.
     ADDHELP("avg", "manegold", "May 14 2003",
             "Gives the average of all tail values.", "algebra");
 @mil
-@:avg2(uchr)@
 @:avg2(sht)@
 @:avg2(int)@
 
@@ -1087,7 +1079,6 @@ int CMDprod_@1_@2(@2* res, BAT *b) {
 #ifndef ALGEBRA_H
 #define ALGEBRA_H
 
-#include "uchr.h"
 #include "algebra.proto.h"
 
 algebra_export ptr BATmax( BAT *b, ptr res );
@@ -1158,8 +1149,6 @@ ptr BAT@1(BAT *b, ptr aggr) {
 	t = b->ttype;
 	if (BATtvoid(b)) {
 	    @:aggr@1(chr,loc,simple,chr,void)@ 
-	} else if (t == TYPE_uchr) {
-	    @:aggr@1(uchr,loc,simple,uchr,atom)@ 
 	} else {
 	    switch(ATOMstorage(t)) {
 	    case TYPE_chr: @:aggr@1(chr,loc,simple,chr,atom)@ break;
@@ -1180,10 +1169,6 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:BATaggr(min)@
 @:BATaggr(max)@
 
-@:sum_implementation(uchr,uchr,0)@
-@:sum_implementation(uchr,sht,0)@
-@:sum_implementation(uchr,int,0)@
-@:sum_implementation(uchr,lng,0)@
 @:sum_implementation(sht,sht,0)@
 @:sum_implementation(sht,int,0)@
 @:sum_implementation(sht,lng,0)@
@@ -1194,10 +1179,6 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:sum_implementation(flt,dbl,0.0)@
 @:sum_implementation(dbl,dbl,0.0)@
 
-@:prod_implementation(uchr,uchr,1)@
-@:prod_implementation(uchr,sht,1)@
-@:prod_implementation(uchr,int,1)@
-@:prod_implementation(uchr,lng,1)@
 @:prod_implementation(sht,sht,1)@
 @:prod_implementation(sht,int,1)@
 @:prod_implementation(sht,lng,1)@
@@ -1208,7 +1189,6 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:prod_implementation(flt,dbl,1.0)@
 @:prod_implementation(dbl,dbl,1.0)@
 
-@:aggregate_implementation(uchr)@
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
 @:aggregate_implementation(flt)@

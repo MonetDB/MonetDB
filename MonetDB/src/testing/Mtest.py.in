@@ -1117,7 +1117,7 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
-        for m in "str", env['SQL_SERVER'], "ascii_io", "alarm", "unix", "xtables", "aggrX3", "monettime", "uchr", "mmath", "mkey", "blob", "txtsim", "bat_arith", "mapi":
+        for m in "str", env['SQL_SERVER'], "ascii_io", "alarm", "unix", "xtables", "aggrX3", "monettime", "mmath", "mkey", "blob", "txtsim", "bat_arith", "mapi":
             if m not in env['TST_MODS']:
                 missing.append(m)
     if CALL in ["x100", "x100Xs"]:

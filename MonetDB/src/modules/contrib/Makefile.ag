@@ -30,7 +30,7 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
-		mel.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
+		mel.mx oo7.mx uchr.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
 		bat_mmath.mx bat_cast.mx array.mx color.mx \
 		image.mx txtsim.mx
@@ -67,7 +67,7 @@ doc_libs = {
 	DIR = pkgdatadir/docs/contrib/
 	SOURCES = \
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
-		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
+		mel.mx mprof.mx oo7.mx uchr.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
 		bat_mmath.mx bat_cast.mx array.mx color.mx \
 		image.mx txtsim.mx
@@ -77,7 +77,7 @@ scripts_mil = {
 	DIR = pkglibdir
 	SOURCES = \
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
-		mel.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
+		mel.mx oo7.mx uchr.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
 		bat_mmath.mx bat_cast.mx array.mx color.mx \
 		image.mx txtsim.mx

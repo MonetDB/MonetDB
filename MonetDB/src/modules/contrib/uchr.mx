@@ -155,7 +155,7 @@ int uchr_tostr(char **uchrStr, int *len, uchr *c) {
 }
 @mil
 
-PROC test_uchr() : void {
+PROC test_uchr() : void := {
   var b := new(int, uchr);
   b.insert(1,uchr(1));
 }

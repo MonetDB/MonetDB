@@ -49,7 +49,6 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 @m
 .MODULE aggrX3;
 
-.USE uchr;
 
 @= sumprod_signatures
 .COMMAND {sum_@2}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum_@1_@2; 
@@ -61,10 +60,6 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 .COMMAND {prod_@2}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_prod3_@1_@2; 
 	"grouped tail prod on @1"
 @m
-@:sumprod_signatures(uchr,uchr)@
-@:sumprod_signatures(uchr,sht)@
-@:sumprod_signatures(uchr,int)@
-@:sumprod_signatures(uchr,lng)@
 @:sumprod_signatures(sht,sht)@
 @:sumprod_signatures(sht,int)@
 @:sumprod_signatures(sht,lng)@
@@ -81,7 +76,6 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 .COMMAND {avg}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggrX3_avg3_@1; 
 	"grouped tail average on @1"
 @m
-@:avg_signatures(uchr)@
 @:avg_signatures(sht)@
 @:avg_signatures(int)@
 @:avg_signatures(lng)@
@@ -153,7 +147,6 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 		return	{prod_@1}(b,g,e);
     }
 @mil
-@:sumprod_defaults(uchr)@
 @:sumprod_defaults(sht)@ 
 @:sumprod_defaults(int)@ 
 @:sumprod_defaults(lng)@ 
@@ -268,21 +261,6 @@ PROC test_aggrX3() : void {
 	aggrtst(5,9,"card","sht","int","lng","flt","dbl","decimal");
 }
 
-PROC test_aggrX3_uchr() : void {
-	module("decimal");
-	var printed := FALSE;
-	aggrtst(5,9,"sum","uchr");
-	aggrtst(5,9,"sum_lng","uchr");
-	aggrtst(5,9,"prod","uchr");
-	aggrtst(5,9,"prod_lng","uchr");
-	aggrtst(5,9,"avg","uchr");
-	aggrtst(5,9,"min","uchr");
-	aggrtst(5,9,"max","uchr");
-	aggrtst(5,9,"count","uchr");
-	aggrtst(5,9,"count_no_nil","uchr");
-	aggrtst(5,9,"card","uchr");
-}
-
 @{
 @+ Implementation
 These implementations need just one scan and a simple hash-maintained data
@@ -290,7 +268,6 @@ structure to compute a group of common aggregates.
 @c
 #include <gdk.h>
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
-#include "uchr.h"
 #include "aggrX3.proto.h"
 
 /* 
@@ -311,7 +288,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 @- Result initialization
 @c
 /*	init_result
-	@1:	tail-type:	uchr/sht/int/lng/flt/dbl / any / void
+	@1:	tail-type:	sht/int/lng/flt/dbl / any / void
 */
 @= init_result
 {	REGISTER BUN _p = BUNlast(bn);
@@ -368,7 +345,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	@5:	"BUNhloc(b,p)"  for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type		
 
-	@6:		uchr/ sht / int / lng / flt / dbl	b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl		b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
 		"var" for varsized b/bn-tail-type		(only loc used currently)
 
@@ -430,7 +407,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	@5:	"BUNhloc(b,p)"  for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type		
 
-	@6:		uchr/ sht / int / lng / flt / dbl	b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl		b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
 		"var" for varsized b/bn-tail-type		(only loc used currently)
 
@@ -491,7 +468,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	@5:	"BUNhloc(b,p)"  for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type		
 
-	@6:	uchr/ sht / int / lng / flt / dbl		b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl		b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
 		"var" for varsized b/bn-tail-type		(only loc used currently)
 
@@ -565,7 +542,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 @c
 
 /*	arithsum
-	@6:	uchr / sht / int / lng / flt / dbl	b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl	b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 	b/bn-tail-access
 		"var" for varsized b/bn-tail-type	(only loc used currently)
 	@9: 	result type
@@ -617,7 +594,7 @@ int CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 @c
 
 /*	arithprod
-	@6:	uchr / sht / int / lng / flt / dbl	b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl	b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 	b/bn-tail-access
 		"var" for varsized b/bn-tail-type	(only loc used currently)
 	@9: 	result type
@@ -669,7 +646,7 @@ int CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 @c
 
 /*	arithsumprod
-	@6:	uchr / sht / int / lng / flt / dbl	b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl	b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 	b/bn-tail-access
 		"var" for varsized b/bn-tail-type	(only loc used currently)
 	@9: 	result type
@@ -678,10 +655,6 @@ int CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 @:arithsum(@1,@2,@3)@
 @:arithprod(@1,@2,@3)@
 @c
-@:arithsumprod(uchr,loc,uchr)@
-@:arithsumprod(uchr,loc,sht)@
-@:arithsumprod(uchr,loc,int)@
-@:arithsumprod(uchr,loc,lng)@
 @:arithsumprod(sht,loc,sht)@
 @:arithsumprod(sht,loc,int)@
 @:arithsumprod(sht,loc,lng)@
@@ -693,7 +666,7 @@ int CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 @:arithsumprod(dbl,loc,dbl)@
 
 /*	arithavg
-	@6:	uchr / sht / int / lng / flt / dbl	b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl	b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 	b/bn-tail-access
 		"var" for varsized b/bn-tail-type	(only loc used currently)
 */
@@ -749,7 +722,6 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:arithavg(uchr,loc)@
 @:arithavg(sht,loc)@
 @:arithavg(int,loc)@
 @:arithavg(lng,loc)@
@@ -770,7 +742,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	@5:	"BUNhloc(b,p)"  for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type		
 
-	@6:	uchr / sht / int / lng / any			b/bn-tail-storage-type
+	@6:		sht / int / lng / any			b/bn-tail-storage-type
 	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
@@ -817,7 +789,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 /*	extreme_typed
 	@1:	min/max
 	@2:	 < / >
-	@3:	b/bn-tail-storage-type			uchr/sht/int/lng/any
+	@3:	b/bn-tail-storage-type			sht/int/lng/any
 	@7:	"loc" for fixsized b/bn-tail-type, 	b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 */
@@ -884,7 +856,6 @@ bunins_failed:
 */
 @= extreme
 @:extreme_typed(@1,@2,chr,loc)@
-@:extreme_typed(@1,@2,uchr,loc)@
 @:extreme_typed(@1,@2,sht,loc)@
 @:extreme_typed(@1,@2,int,loc)@
 @:extreme_typed(@1,@2,lng,loc)@
@@ -894,9 +865,7 @@ bunins_failed:
 int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 	int rtrn, tt = ATOMstorage(b->ttype);
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_@1[@2](b=%s,e=%s);\n",b->batId,e->batId);
-	if (tt == TYPE_uchr) {
-		rtrn = aggrX3_@1_uchr_loc(ret, b, e);
-	} else if (tt == TYPE_chr) {
+	if (tt == TYPE_chr) {
 		rtrn = aggrX3_@1_chr_loc(ret, b, e);
 	} else if (tt == TYPE_sht) {
 		rtrn = aggrX3_@1_sht_loc(ret, b, e);
@@ -1104,7 +1073,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	@5:	"BUNhloc(b,p)"  for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type		
 
-	@6:	uchr / sht / int / lng / flt / dbl		b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl		b/bn-tail-type
 	
 #	not used any more as the result-type needs an argument
 #	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
@@ -1178,7 +1147,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	@5:	"BUNhloc(b,p)"  for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type		
 
-	@6:	uchr / sht / int / lng / flt / dbl		b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl		b/bn-tail-type
 	
 #	not used any more as the result-type needs an argument
 #	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
@@ -1252,7 +1221,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	@5:	"BUNhloc(b,p)"  for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type		
 
-	@6:	uchr / sht / int / lng / flt / dbl		b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl		b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
 		"var" for varsized b/bn-tail-type		(only loc used currently)
 
@@ -1534,10 +1503,6 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 @:arithprod3(@1,@2)@
 @c
 
-@:arithsumprod3(uchr,uchr)@
-@:arithsumprod3(uchr,sht)@
-@:arithsumprod3(uchr,int)@
-@:arithsumprod3(uchr,lng)@
 @:arithsumprod3(sht,sht)@
 @:arithsumprod3(sht,int)@
 @:arithsumprod3(sht,lng)@
@@ -1549,7 +1514,7 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 @:arithsumprod3(dbl,dbl)@
 
 /*	arithavg3
-	@6:	uchr / sht / int / lng / flt / dbl	b/bn-tail-type
+	@6:		sht / int / lng / flt / dbl	b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type, 	b/bn-tail-access
 		"var" for varsized b/bn-tail-type	(only loc used currently)
 	@9:	result type
@@ -1616,7 +1581,6 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:arithavg3(uchr,loc)@
 @:arithavg3(sht,loc)@
 @:arithavg3(int,loc)@
 @:arithavg3(lng,loc)@
@@ -1766,7 +1730,6 @@ bunins_failed:
 */
 @= extreme3
 @:extreme3_typed(@1,@2,chr,loc)@
-@:extreme3_typed(@1,@2,uchr,loc)@
 @:extreme3_typed(@1,@2,sht,loc)@
 @:extreme3_typed(@1,@2,int,loc)@
 @:extreme3_typed(@1,@2,lng,loc)@
@@ -1783,9 +1746,7 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 		return CMDaggrX3_@1(ret, BATjoin(BATmirror(g),b,oid_nil), e);
 	}
 
-	if (tt == TYPE_uchr) {
-		rtrn = aggrX3_@13_uchr_loc(ret, b, g, e);
-	} else if (tt == TYPE_chr) {
+	if (tt == TYPE_chr) {
 		rtrn = aggrX3_@13_chr_loc(ret, b, g, e);
 	} else if (tt == TYPE_sht) {
 		rtrn = aggrX3_@13_sht_loc(ret, b, g, e);

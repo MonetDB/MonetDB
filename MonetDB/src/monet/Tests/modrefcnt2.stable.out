@@ -22,7 +22,6 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #---------------------------------#
 # signature			  #
 #---------------------------------#
@@ -61,7 +60,6 @@ loaded();
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 sigs("lock");
 #---------------------------------#
 # signature			  #
@@ -99,7 +97,6 @@ loaded();
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 sigs("lock");
 !ERROR: sigs: must load module first.
 ;
@@ -126,7 +123,6 @@ Over..
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #---------------------------------#
 # signature			  # name
 # str				  # type
@@ -161,7 +157,6 @@ Over..
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #---------------------------------#
 # signature			  #
 #---------------------------------#
@@ -198,7 +193,6 @@ Over..
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 
 #---------------------------------#
@@ -229,7 +223,6 @@ Over..
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #---------------------------------#
 # signature			  # name
 # str				  # type

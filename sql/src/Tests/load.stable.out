@@ -23,7 +23,6 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 mods@batloop{
 	printf("loading module '%s'\n",$t);
 	module($t);
@@ -56,7 +55,6 @@ loading module 'sql_server'
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "txtsim",	  1		  ]
-[ "uchr",	  3		  ]
 [ "xtables",	  1		  ]
 dropping module 'sql_server'
 #---------------------------------#
@@ -72,7 +70,6 @@ dropping module 'sql_server'
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 quit;
 

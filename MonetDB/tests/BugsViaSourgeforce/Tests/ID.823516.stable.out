@@ -26,7 +26,7 @@ print(b.info(),c.info());
 #-----------------------------------------------------------------#
 [ "version",			  "980714",	  "980714"	  ]
 [ "batId",			  "b",		  "c"		  ]
-[ "batCacheid",			  "29",		  "30"		  ]
+[ "batCacheid",			  "29",		  "28"		  ]
 [ "batParentid",		  "0",		  "29"		  ]
 [ "batSharecnt",		  "1",		  "1"		  ]
 [ "head",			  "oid",	  "oid"		  ]
@@ -46,8 +46,8 @@ print(b.info(),c.info());
 [ "hkey",			  "1",		  "1"		  ]
 [ "hloc",			  "0",		  "0"		  ]
 [ "hvarsized",			  "0",		  "0"		  ]
-[ "halign",			  "1002816",	  "1002816"	  ]
-[ "halignflushed",		  "1002809",	  "1002809"	  ]
+[ "halign",			  "1002713",	  "1002713"	  ]
+[ "halignflushed",		  "1002706",	  "1002706"	  ]
 [ "tident",			  "t",		  "t"		  ]
 [ "tdense",			  "0",		  "0"		  ]
 [ "tseqbase",			  "0@0",	  "0@0"		  ]
@@ -55,16 +55,16 @@ print(b.info(),c.info());
 [ "tkey",			  "1",		  "1"		  ]
 [ "tloc",			  "4",		  "4"		  ]
 [ "tvarsized",			  "0",		  "0"		  ]
-[ "talign",			  "1002815",	  "1002815"	  ]
-[ "talignflushed",		  "1002810",	  "1002810"	  ]
+[ "talign",			  "1002712",	  "1002712"	  ]
+[ "talignflushed",		  "1002707",	  "1002707"	  ]
 [ "batInserted",		  "1",		  "1"		  ]
 [ "batDeleted",			  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0"		  ]
 [ "top",			  "4",		  "4"		  ]
-[ "batStamp",			  "-169",	  "-170"	  ]
-[ "lastUsed",			  "3055",	  "3102"	  ]
+[ "batStamp",			  "-162",	  "-163"	  ]
+[ "lastUsed",			  "2978",	  "3025"	  ]
 [ "keepAround",			  "0",		  "0"		  ]
-[ "curStamp",			  "171",	  "174"		  ]
+[ "curStamp",			  "164",	  "167"		  ]
 [ "batCopiedtodisk",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean"	  ]
@@ -145,8 +145,8 @@ kdiff(pre,post).print();
 # h	tmp_29	  # name
 # int	str	  # type
 #-----------------#
+[ 28,	  "c"	  ]
 [ 29,	  "b"	  ]
-[ 30,	  "c"	  ]
 
 # the post BAT is new. correct.
 # the histogram-accellerator BAT of the view 
@@ -156,7 +156,7 @@ kdiff(post,pre).print();
 # h	tmp_29	  # name
 # int	str	  # type
 #-----------------#
-[ 28,	  "pre"		  ]
+[ 30,	  "pre"	  ]
 quit();
 
 # 17:26:11 >  

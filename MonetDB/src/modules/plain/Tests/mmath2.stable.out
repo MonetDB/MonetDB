@@ -7,10 +7,13 @@ stdout of test 'mmath2` in directory 'src/modules/plain` itself:
 # compiled for Linux2.2.12-20smp/32bit on Thu Mar 23 00:51:04 CET 2000.
 #script:mmath2.milS
 
+# 19:42:01 >  
+# 19:42:01 >   Mserver "--config=D:\TmpDir\manegold.ntv_32-d.31914\MonetDB\WindowsNT5.0\conf\monet.conf" --debug=10 --set "monet_mod_path=D:\TmpDir\manegold.ntv_32-d.31914\MonetDB\WindowsNT5.0\src\modules\plain\.libs;D:\TmpDir\manegold.ntv_32-d.31914\MonetDB\WindowsNT5.0\src\modules\contrib\.libs;D:\TmpDir\manegold.ntv_32-d.31914\MonetDB\WindowsNT5.0\src\modules\calibrator\.libs;D:\TmpDir\manegold.ntv_32-d.31914\MonetDB\WindowsNT5.0\src\mapi\.libs" --set "gdk_dbfarm=D:\TmpDir\manegold.ntv_32-d.31914\MonetDB\WindowsNT5.0\dbfarm" --set "sql_logdir=D:\TmpDir\manegold.ntv_32-d.31914\MonetDB\WindowsNT5.0\log" --set mapi_port=46706 --set sql_port=59373 --set monet_prompt= --trace --dbname=mTests_src_modules_plain  < mmath2.milS
+# 19:42:01 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.3.16-rc03
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for i686-pc-win32/32bit; dynamically linked.
 
 setoid(oid(20000000));
 module(mmath);

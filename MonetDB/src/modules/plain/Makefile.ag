@@ -78,7 +78,7 @@ LIBS = {
 		mkey.mx profiler.mx \
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx pf_support.mx \
-		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx
+		radix.mx stats.mx tcpip.mx unix.mx url.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	WINLIBS = ../../common/libstream ../../gdk/libbat \
@@ -95,7 +95,7 @@ doc_libs = {
 		mkey.mx profiler.mx \
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx pf_support.mx \
-		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx
+		radix.mx stats.mx tcpip.mx unix.mx url.mx
 }
 
 lib__counters = {
@@ -139,7 +139,7 @@ scripts_mil = {
                 mkey.mx profiler.mx \
                 aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
 		blob.mx decimal.mx enum.mx lock.mx mmath.mx \
-		monettime.mx radix.mx stats.mx tcpip.mx uchr.mx \
+		monettime.mx radix.mx stats.mx tcpip.mx \
 		unix.mx url.mx counters.mx pcl.mx pf_support.mx
 }
 

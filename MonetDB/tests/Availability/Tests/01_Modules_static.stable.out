@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop {
 }
 
 Fnts.count().print();
-[ 684 ]
+[ 670 ]
 Fnts.reverse().sort().reverse()@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 684 ]
+[ 670 ]
 
 var All:=0;
 
@@ -77,8 +77,8 @@ Static_mods@batloop {
 
 Module: ""
 
-[ 63 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 60 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																												  # name
 # str			str		str													str																																																															  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -119,7 +119,6 @@ Module: ""
 [ "prod",	  "PROC:      ",  "prod(BAT[any,int]) : int",							  "not available"																																																													  ]
 [ "prod",	  "PROC:      ",  "prod(BAT[any,lng]) : lng",							  "not available"																																																													  ]
 [ "prod",	  "PROC:      ",  "prod(BAT[any,sht]) : sht",							  "not available"																																																													  ]
-[ "prod",	  "PROC:      ",  "prod(BAT[any,uchr]) : uchr",							  "not available"																																																													  ]
 [ "project",	  "PROC:      ",  "project(BAT[any::1,any]) : BAT[any::1,void]",				  "not available"																																																													  ]
 [ "repeat",		  "PROC:      ",  "repeat(str, int) : str",										  "not available"																																																													  ]
 [ "save",	  "PROC:      ",  "save(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "not available"																																																													  ]
@@ -136,11 +135,9 @@ Module: ""
 [ "sum",	  "PROC:      ",  "sum(BAT[any,int]) : int",							  "not available"																																																													  ]
 [ "sum",	  "PROC:      ",  "sum(BAT[any,lng]) : lng",							  "not available"																																																													  ]
 [ "sum",	  "PROC:      ",  "sum(BAT[any,sht]) : sht",							  "not available"																																																													  ]
-[ "sum",	  "PROC:      ",  "sum(BAT[any,uchr]) : uchr",							  "not available"																																																													  ]
 [ "tail",	  "PROC:      ",  "tail(BAT[any,any]) : str",									  "not available"																																																													  ]
 [ "test_arith",	  "PROC:      ",  "test_arith() : void",							  "not available"																																																													  ]
 [ "test_str",	  "PROC:      ",  "test_str() : void",								  "not available"																																																													  ]
-[ "test_uchr",	  "PROC:      ",  "test_uchr() : void",								  "not available"																																																													  ]
 [ "ttype",	  "PROC:      ",  "ttype(any) : int",										  "not available"																																																													  ]
 [ "tunique",	  "PROC:      ",  "tunique(BAT[any,any::1]) : BAT[any::1,void]",				  "not available"																																																													  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage() : BAT[str,lng]",							  "not available"																																																													  ]
@@ -148,8 +145,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 116 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 105 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -159,7 +156,6 @@ Module: "algebra"
 [ "avg",	  "PROC:      ",  "avg(BAT[any,int]) : dbl",								  "Gives the average of all tail values."																																  ]
 [ "avg",	  "PROC:      ",  "avg(BAT[any,lng]) : dbl",								  "Gives the average of all tail values."																																  ]
 [ "avg",	  "PROC:      ",  "avg(BAT[any,sht]) : dbl",								  "Gives the average of all tail values."																																  ]
-[ "avg",	  "PROC:      ",  "avg(BAT[any,uchr]) : dbl",								  "Gives the average of all tail values."																																  ]
 [ "bandjoin",	  "COMMAND:   ",  "bandjoin(BAT[any::1,any::2], BAT[any::2,any::3], any::2, any::2) : BAT[any::1,any::3]", "This is a join() for which the predicate is that two BUNs match if\nthe left-tail value is within the range [right-head - minus,\nright-head + plus]\n\nWorks only for the builtin numerical types, and their derivates."										  ]
 [ "clear",	  "PROC:      ",  "clear(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Backward compatibility. Does a b.delete()"																																  ]
 [ "copy",	  "COMMAND:   ",  "copy(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Returns physical copy of a BAT."																																	  ]
@@ -196,7 +192,6 @@ Module: "algebra"
 [ "max",	  "COMMAND:   ",  "max(BAT[any,int]) : int",								  "Give the highest tail value. Error on empty BATs."																															  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any,lng]) : lng",								  "Give the highest tail value. Error on empty BATs."																															  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any,sht]) : sht",								  "Give the highest tail value. Error on empty BATs."																															  ]
-[ "max",	  "COMMAND:   ",  "max(BAT[any,uchr]) : uchr",								  "Give the highest tail value. Error on empty BATs."																															  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any::1,any::2]) : any::2",							  "\nGive the highest tail value. Error on empty BATs."																															  ]
 [ "merge",	  "COMMAND:   ",  "merge(BAT[oid,oid]) : BAT[lng,void]",						  "Merge head and tail into a single value"																																																																							  ]
 [ "mil_select",	  "PROC:      ",  "mil_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]",			  "Returns all BUNs where (*fcn)(tail,,..params..)."																															  ]
@@ -205,7 +200,6 @@ Module: "algebra"
 [ "min",	  "COMMAND:   ",  "min(BAT[any,int]) : int",								  "Give the lowest tail value. Error on empty BATs."																															  ]
 [ "min",	  "COMMAND:   ",  "min(BAT[any,lng]) : lng",								  "Give the lowest tail value. Error on empty BATs."																															  ]
 [ "min",	  "COMMAND:   ",  "min(BAT[any,sht]) : sht",								  "Give the lowest tail value. Error on empty BATs."																															  ]
-[ "min",	  "COMMAND:   ",  "min(BAT[any,uchr]) : uchr",								  "Give the lowest tail value. Error on empty BATs."																															  ]
 [ "min",	  "COMMAND:   ",  "min(BAT[any::1,any::2]) : any::2",							  "\nGive the lowest tail value. Error on empty BATs."																															  ]
 [ "neg_select",	  "PROC:      ",  "neg_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]",			  "Returns all BUNs where not (*fcn)(tail,,..params..)"																															  ]
 [ "number",	  "COMMAND:   ",  "number(BAT[any::1,any]) : BAT[any::1,int]",						  "Produces a new BAT with identical head column, and consecutively\nincreasing integers (starting with 0) in the tail column."																						  ]
@@ -217,14 +211,10 @@ Module: "algebra"
 [ "prod_flt",	  "COMMAND:   ",  "prod_flt(BAT[any,flt]) : flt",							  "Gives the product of all tail values."																																  ]
 [ "prod_int",	  "COMMAND:   ",  "prod_int(BAT[any,int]) : int",							  "Gives the product of all tail values."																																  ]
 [ "prod_int",	  "COMMAND:   ",  "prod_int(BAT[any,sht]) : int",							  "Gives the product of all tail values."																																  ]
-[ "prod_int",	  "COMMAND:   ",  "prod_int(BAT[any,uchr]) : int",							  "Gives the product of all tail values."																																  ]
 [ "prod_lng",	  "COMMAND:   ",  "prod_lng(BAT[any,int]) : lng",							  "Gives the product of all tail values."																																  ]
 [ "prod_lng",	  "COMMAND:   ",  "prod_lng(BAT[any,lng]) : lng",							  "Gives the product of all tail values."																																  ]
 [ "prod_lng",	  "COMMAND:   ",  "prod_lng(BAT[any,sht]) : lng",							  "Gives the product of all tail values."																																  ]
-[ "prod_lng",	  "COMMAND:   ",  "prod_lng(BAT[any,uchr]) : lng",							  "Gives the product of all tail values."																																  ]
 [ "prod_sht",	  "COMMAND:   ",  "prod_sht(BAT[any,sht]) : sht",							  "Gives the product of all tail values."																																  ]
-[ "prod_sht",	  "COMMAND:   ",  "prod_sht(BAT[any,uchr]) : sht",							  "Gives the product of all tail values."																																  ]
-[ "prod_uchr",	  "COMMAND:   ",  "prod_uchr(BAT[any,uchr]) : uchr",							  "Gives the product of all tail values."																																  ]
 [ "project",	  "COMMAND:   ",  "project(BAT[any::1,any], any::2) : BAT[any::1,any::2]",				  "Fill the tail column with a constant value."																																  ]
 [ "rangesplit",	  "COMMAND:   ",  "rangesplit(BAT[any::1,any::2], int) : BAT[any::2,BAT]",				  "Split a BAT on tail column in 'ranges' equally sized\nconsecutive ranges. Returns a recursive BAT, containing the\nfragments in the tail, the higher-bound of the range in the head.\nThe higher bound of the last range is 'nil'."									  ]
 [ "rev_select",	  "PROC:      ",  "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]",			  "(value OP column) select rather than (column OP value)"																														  ]
@@ -249,14 +239,10 @@ Module: "algebra"
 [ "sum_flt",	  "COMMAND:   ",  "sum_flt(BAT[any,flt]) : flt",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_int",	  "COMMAND:   ",  "sum_int(BAT[any,int]) : int",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_int",	  "COMMAND:   ",  "sum_int(BAT[any,sht]) : int",							  "Gives the sum of all tail values."																																	  ]
-[ "sum_int",	  "COMMAND:   ",  "sum_int(BAT[any,uchr]) : int",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_lng",	  "COMMAND:   ",  "sum_lng(BAT[any,int]) : lng",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_lng",	  "COMMAND:   ",  "sum_lng(BAT[any,lng]) : lng",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_lng",	  "COMMAND:   ",  "sum_lng(BAT[any,sht]) : lng",							  "Gives the sum of all tail values."																																	  ]
-[ "sum_lng",	  "COMMAND:   ",  "sum_lng(BAT[any,uchr]) : lng",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_sht",	  "COMMAND:   ",  "sum_sht(BAT[any,sht]) : sht",							  "Gives the sum of all tail values."																																	  ]
-[ "sum_sht",	  "COMMAND:   ",  "sum_sht(BAT[any,uchr]) : sht",							  "Gives the sum of all tail values."																																	  ]
-[ "sum_uchr",	  "COMMAND:   ",  "sum_uchr(BAT[any,uchr]) : uchr",							  "Gives the sum of all tail values."																																	  ]
 [ "sunion",	  "COMMAND:   ",  "sunion(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Returns the union of two BATs; looking at both columns of both BATs. \n Results in all BUNs of 'left' that are  not in 'right', plus all BUNs \n of 'right'. *no* double-elimination is done. If you want this, do: \n 'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'."	  ]
 [ "sunique",	  "COMMAND:   ",  "sunique(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Select unique tuples from the input BAT. Double elimination is done over \n BUNs as a whole (head and tail). Result is a BAT with real set() semantics."																		  ]
 [ "theta",	  "COMMAND:   ",  "theta(BAT[any::2,any::2], BAT[any::1,any::3], BAT[any::1,any::2], BAT[any::2,any::3], int) : void", "Theta join, just as simple thetajoin(l,r); the difference\nis that it returns two values, which are added to the first params\n'inner_result' and 'outer_result'; 'inner_result' gets all matching\ninner tuples, 'outer_result' the other two (what would have the\nresult of thetajoin(l,r))."	  ]
@@ -819,7 +805,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 684 ]
+[ 670 ]
 
 quit();
 
