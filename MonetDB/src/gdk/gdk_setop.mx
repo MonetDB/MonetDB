@@ -690,9 +690,9 @@ BATmaterialize_(BAT *b, size_t size)
 @:union(s)@
 
 @= bndense
-	/* r might be void, l not */
+	/* r and l maybe void */
 	bn@1dense = (BAThdense(r)&BAThdense(l)&1) && ( !hdisjunct ||
-			( ( *(@3*)BUN@2(r,BUNfirst(r)) - *(@3*)BUN@1loc(l,BUNlast(l)-BUNsize(l)) ) == (@3)1 ) );
+			( ( *(@3*)BUN@2(r,BUNfirst(r)) - *(@3*)BUN@2(l,BUNlast(l)-BUNsize(l)) ) == (@3)1 ) );
 	break;
 @= union
 BAT *
