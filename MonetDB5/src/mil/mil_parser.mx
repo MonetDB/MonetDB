@@ -1,6 +1,6 @@
 @a M. L. Kersten
 @v 2.0
-@+ Monet Interface Language 
+@+ MIL migration path
 @T
 MonetDB comes with a well-established programming language, called MIL
 (Monet Interface Language). A large collection of MIL programs exists,
@@ -9,13 +9,13 @@ Unfortunately, life isn;t that easy.
 MIL was designed as a half-backed scripting language with
 dynamic typing, variable re-use with different types,
 little support for debugging, and permissive syntax.
-The MonetDB version 4 compiler was intimately bound with the
+Furthermore, the compiler was intimately bound with the
 runtime system, e.g. an identifier was immediately resolved
 against the modules being loaded and variables being known.
 This was necessary to resolve their context dependent interpretation.
 
 In version 5.0 a cleanup of MIL has taken place which strikes
-a balance between forcing users to use MAL and
+a balance between forcing users to migrate to MAL and
 to continue using their MIL code base. 
 It is realized with a minimalistic compiler, which produces
 MAL code for a large fragment of the MIL language. It is implemented
@@ -23,34 +23,20 @@ as an off-line compiler; there is no information on the runtime
 status. In particular, it means there is no knowledge on
 pre-existing variables, type names, procedures, etc..
 
-@+ MIL4 migration path
-With a little care  most MIL programs can be compiled
+With a little care most MIL programs can be compiled
 and run against the new kernel. 
 The Monet version 4 test suites and predefined MIL proc's
-have been used to define the language boundaries to be supported
-by the compiler. The test suite contains both MIL versions.
+have been used to define the language boundary to be supported.
 
 In writing MIL code, the following rules should be kept obeyed:
 \begin{verbatim}
-\item clearly mark all MIL procedure calls with a parameterlist
-even if it is emtpy, i.e. env; -> env(); .
-\item bind an identifier to a BAT explicitly if it is the intended
-behavior, i.e. c:= copy(b) -> c:= copy(bat("b"));
 \item do not change the type of variables within their scope.
 \item do not use type identifiers as ordinary variables
 \item make the type of a 'nil' value explicity, e.g.  nil -> int(nil).
 \item {\sc while},  {\sc for}, and {\sc if} use sequential blocks
 and no single statements, e.g. if(A)B ->if(A)\{B\}.
-\item the body of a MIL proc is a sequential block.
 \end{verbatim}
-
-Aside from syntax restrictions imposed, MIL version 5
-uses function names available in the new kernel.
-They have to translated by hand, a detailed list is given below.
-
-The compiler is complemented by MIL support module,
-which implements the MAL scenario routines.
-
+@{
 @+ Implementation notes
 The parser produced is not thread safe, which means that parsing
 is encapsulated in a critical section. On single cpu systems this
@@ -68,18 +54,16 @@ The compiler can be used in both offline mode and as part of the
 MIL scenario. Defining the macro M2Moffline produces MAL code
 on standard output. Otherwise, the MAL code is directly produced
 in memory for direct optimization and execution.
-
-@+ Manual changes
+@}
+@-
 @T
-The naming for MIL 4 built-in functions has been cleaned up at
-several places.  They are translated by the compiler leaving
-a message in the code generated to check for unforeseen side
-effects.
+Aside from syntax restrictions imposed, several command
+signatures and command names have been changed.
+They have to translated partly by hand.
 
-The signatures of several key algorithms has also changed.
-In particular, the BAT update routines do not return
+For example, the BAT update routines do not return
 their target variable. This means you can not cascade a series
-of calls. For example, the MIL 4 statement
+of calls, e.g. the MIL 4 statement 
 \begin{verbatim}
  a.select(1,2).access(BAT_WRITE).rename("C");
  b.insert(0,1).insert(1,2);
@@ -89,6 +73,9 @@ should be split into multiple steps as follows:
  a.select(1,2); a.access(BAT_WRITE); a.rename("C");
  b.insert(0,1); b.insert(1,2);
 \end{verbatim}
+
+A major rewrite of the MIL program is required when
+it inspects the runtime environment.
 @{
 @- The lexical analyzer
 The lexical analyzer is generated using Flex, the preferred tool in Monet.
