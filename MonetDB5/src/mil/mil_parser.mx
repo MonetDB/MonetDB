@@ -1081,11 +1081,6 @@ char *newName(){
 	fndId(GDKstrdup(buf));
 	return GDKstrdup(buf);
 }
-char *getName(int i){
-	char buf[IDLENGTH];
-	sprintf(buf,"_v%d", i);
-	return GDKstrdup(buf);
-}
 
 char *getOperator(char *nme){
 	int l = strlen(nme);
