@@ -3079,10 +3079,14 @@ combine_strings (opt_t *f)
  * @param f the Stream the MIL code is printed to
  * @param tv the boolean indicating wether typed-value or
  *        string-value is called
+ * @param special flag changes result so that it returns
+ *        the string values instead of its references
  */
 static void
-typed_value (opt_t *f, bool tv)
+typed_value (opt_t *f, bool tv, bool special)
 {
+    char *empty_string = (special)?"\"\"":"EMPTY_STRING";
+
     /* to avoid executing to much code there are three cases:
        - only elements
        - only attributes
@@ -3226,7 +3230,14 @@ typed_value (opt_t *f, bool tv)
                 "}\n"
             "}\n");
 
-    addValues (f, str_container(), "item_str", "item");
+    if (special)
+    {
+        milprintf(f, "item := item_str;\n");
+    }
+    else
+    {
+        addValues (f, str_container(), "item_str", "item");
+    }
     milprintf(f,
             "item_str := nil_oid_str;\n"
             "item := item.reverse().mark(0@0).reverse();\n"
@@ -3236,7 +3247,7 @@ typed_value (opt_t *f, bool tv)
             "var difference := input_iter.reverse().kdiff(iter.reverse());\n"
             "difference := difference.mark(0@0).reverse();\n"
             "var res_mu := merged_union(iter, difference, item, "
-                                       "difference.project(EMPTY_STRING));\n"
+                                       "difference.project(%s));\n"
             "item := res_mu.fetch(1);\n"
             "res_mu := nil_oid_bat;\n"
             "iter := input_iter;\n"
@@ -3244,7 +3255,8 @@ typed_value (opt_t *f, bool tv)
             "input_iter := nil_oid_oid;\n"
             "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
             "kind := iter.project(STR);\n"
-            "} # end of typed-value\n");
+            "} # end of typed-value\n",
+            empty_string);
 }
 
 /**
@@ -3273,7 +3285,7 @@ fn_data (opt_t *f)
             "pos := node.leftfetchjoin(pos);\n"
             "item := node.leftfetchjoin(item);\n"
             "kind := node.leftfetchjoin(kind);\n");
-    typed_value (f, false);
+    typed_value (f, false, false);
     milprintf(f,
             /* every input row of typed-value gives back exactly
                one output row - therefore a mapping is not necessary */
@@ -3446,6 +3458,101 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "} # end of item-sequence-to-node-sequence\n",
             counter, counter, counter, counter, counter, counter);
     deleteResult (f, counter);
+}
+
+/**
+ * fn_string translates the built-in function 
+ * fn:string (item*) as string 
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param c the Core expression which is translated next
+ * @param special flag changes result so that it returns
+ *        the string values instead of its references
+ */
+static void fn_string(opt_t *f, int act_level, int counter, PFcnode_t *c, bool special)
+{
+    char *empty_string;
+    empty_string = (special)?"\"\"":"EMPTY_STRING";
+
+        translate2MIL (f, act_level, counter, c);
+        if (PFty_subtype(PFty_node(),c->type))
+        {
+            typed_value (f, false, special);
+            c->type = PFty_untypedAtomic();
+            milprintf(f,
+                    "if (iter.count() != loop%03u.count())\n"
+                    "{\n"
+                    "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                    "difference := difference.mark(0@0).reverse();\n"
+                    "var res_mu := merged_union(iter, difference, item, "
+                                               "difference.project(%s));\n"
+                    "difference := nil_oid_oid;\n"
+                    "item := res_mu.fetch(1);\n"
+                    "res_mu := nil_oid_bat;\n"
+                    "iter := loop%03u.reverse().mark(0@0).reverse();\n"
+                    "pos := iter.project(1@0);\n"
+                    "kind := iter.project(STR);\n"
+                    "}\n",
+                    act_level, act_level, empty_string, act_level);
+            return;
+        }
+        /* handle mixed data */
+        else if (!PFty_subtype(PFty_atomic(),c->type))
+        {
+            fn_data (f);
+        }
+        translateCast2STR (f, c->type);
+
+        milprintf(f,
+                "if (iter.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter, difference, item, "
+                                           "difference.project(EMPTY_STRING));\n"
+                "difference := nil_oid_oid;\n"
+                "item := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n"
+                "}\n",
+                act_level, act_level, act_level);
+
+        if (special)
+        {
+            milprintf(f, "item := item.leftfetchjoin(str_values);\n");
+        }
+}
+
+/**
+ * special string is a helper function which translates 
+ * the function fn:string differently in comparison to 
+ * every other Core expression. The different execution
+ * is indicated by the return value.
+ * (fn:string returns the string values instead of its references)
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param c the Core expression which is translated next
+ */
+static bool special_string (opt_t *f, int act_level, int counter, PFcnode_t *c)
+{
+    if (c->kind == c_apply &&
+        !PFqname_eq(c->sem.fun->qname,
+                    PFqname (PFns_fn,"string")))
+    {
+        fn_string (f, act_level, counter, c->child[0]->child[0], true);
+        return true;
+    }
+    else
+    {
+        translate2MIL (f, act_level, counter, c);
+        return false;
+    }
 }
 
 /**
@@ -4178,42 +4285,75 @@ translateFunction (opt_t *f, int act_level, int counter,
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"contains")))
     {
-        translate2MIL (f, act_level, counter, args->child[0]);
+        /* extended contains to avoid large copying effort */
+        bool fst_special = false;
+        bool snd_special = false;
+
+        fst_special = special_string (f, act_level, counter, args->child[0]);
+
         counter++;
         saveResult (f, counter);
-        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+
+        snd_special = special_string (f, act_level, counter, args->child[1]->child[0]);
+        
+        if (fst_special)
+        {
+            milprintf(f,
+                    "{ # fn:contains (string?, string?) as boolean\n"
+                    "var strings  := item%03u;\n",
+                    counter);
+        }
+        else
+        {
+            milprintf(f,
+                    "{ # fn:contains (string?, string?) as boolean\n"
+                    "var strings;\n"
+                    "if (iter%03u.count() != loop%03u.count())\n"
+                    "{\n"
+                    "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
+                    "difference := difference.mark(0@0).reverse();\n"
+                    "var res_mu := merged_union(iter%03u, difference, item%03u, "
+                                               "difference.project(EMPTY_STRING));\n"
+                    "difference := nil_oid_oid;\n"
+                    "strings := res_mu.fetch(1).leftfetchjoin(str_values);\n"
+                    "res_mu := nil_oid_bat;\n"
+                    "} "
+                    "else {\n"
+                    "strings := item%03u.leftfetchjoin(str_values);\n"
+                    "}\n",
+                    counter, act_level, 
+                    act_level, counter,
+                    counter, counter,
+                    counter);
+        }
+
+        if (snd_special)
+        {
+            milprintf(f,
+                    "var search_strs := item;\n");
+        }
+        else
+        {
+            milprintf(f,
+                    "var search_strs;\n"
+                    "if (iter.count() != loop%03u.count())\n"
+                    "{\n"
+                    "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                    "difference := difference.mark(0@0).reverse();\n"
+                    "var res_mu := merged_union(iter, difference, item, "
+                                               "difference.project(EMPTY_STRING));\n"
+                    "difference := nil_oid_oid;\n"
+                    "search_strs := res_mu.fetch(1).leftfetchjoin(str_values);\n"
+                    "res_mu := nil_oid_bat;\n"
+                    "} "
+                    "else {\n"
+                    "search_strs := item.leftfetchjoin(str_values);\n"
+                    "}\n",
+                    act_level,
+                    act_level);
+        }
+
         milprintf(f,
-                "{ # fn:contains (string?, string?) as boolean\n"
-                "var strings;\n"
-                "var search_strs;\n"
-                "if (iter%03u.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
-                "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter%03u, difference, item%03u, "
-                                           "difference.project(EMPTY_STRING));\n"
-                "difference := nil_oid_oid;\n"
-                "strings := res_mu.fetch(1).leftfetchjoin(str_values);\n"
-                "res_mu := nil_oid_bat;\n"
-                "} "
-                "else {\n"
-                "strings := item%03u.leftfetchjoin(str_values);\n"
-                "}\n"
-
-                "if (iter.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
-                "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, item, "
-                                           "difference.project(EMPTY_STRING));\n"
-                "difference := nil_oid_oid;\n"
-                "search_strs := res_mu.fetch(1).leftfetchjoin(str_values);\n"
-                "res_mu := nil_oid_bat;\n"
-                "} "
-                "else {\n"
-                "search_strs := item.leftfetchjoin(str_values);\n"
-                "}\n"
-
                 "item := strings.[search](search_strs).[!=](-1).[oid]();\n"
                 "strings := nil_oid_str;\n"
                 "search_strs := nil_oid_str;\n"
@@ -4221,12 +4361,6 @@ translateFunction (opt_t *f, int act_level, int counter,
                 "pos := iter.project(1@0);\n"
                 "kind := iter.project(BOOL);\n"
                 "} # end of fn:contains (string?, string?) as boolean\n",
-                counter, act_level, 
-                act_level, counter,
-                counter, counter,
-                counter,
-                act_level,
-                act_level,
                 act_level);
         deleteResult (f, counter);
     }
@@ -4329,12 +4463,12 @@ translateFunction (opt_t *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        typed_value (f, true);
+        typed_value (f, true, false);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"string-value")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        typed_value (f, false);
+        typed_value (f, false, false);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"data")))
     {
@@ -4343,32 +4477,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string")))
     {
-        translate2MIL (f, act_level, counter, args->child[0]);
-        if (PFty_subtype(PFty_node(),args->child[0]->type))
-        {
-            typed_value (f, false);
-        }
-        /* handle mixed data */
-        else if (!PFty_subtype(PFty_atomic(),args->child[0]->type))
-        {
-            fn_data (f);
-        }
-        translateCast2STR (f, args->child[0]->type);
-        milprintf(f,
-                "if (iter.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
-                "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, item, "
-                                           "difference.project(EMPTY_STRING));\n"
-                "difference := nil_oid_oid;\n"
-                "item := res_mu.fetch(1);\n"
-                "res_mu := nil_oid_bat;\n"
-                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n"
-                "}\n",
-                act_level, act_level, act_level);
+        fn_string (f, act_level, counter, args->child[0], false);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string-join")))
     {
