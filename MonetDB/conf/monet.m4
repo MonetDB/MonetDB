@@ -46,14 +46,15 @@ if test "x$have_monet" != xno; then
   AC_PATH_PROG(MONET_CONFIG,monet-config,,$MPATH)
 
   if test "x$MONET_CONFIG" != x; then
-    AC_MSG_CHECKING(for Monet >= $MONET_REQUIRED_VERSION) 
+    AC_MSG_CHECKING(whether MonetDB version $MONET_REQUIRED_VERSION or newer is installed) 
     MONETVERS=`$MONET_CONFIG --version`
     if test MONET_VERSION_TO_NUMBER(echo $MONETVERS) -ge MONET_VERSION_TO_NUMBER(echo $MONET_REQUIRED_VERSION); then
       have_monet=yes
+      AC_MSG_RESULT($have_monet: found version $MONETVERS)
     else
       have_monet=no
+      AC_MSG_RESULT($have_monet: found only version $MONETVERS)
     fi
-    AC_MSG_RESULT($have_monet -> $MONETVERS found)
   fi
 
   if test "x$have_monet" != xyes; then
