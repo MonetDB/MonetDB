@@ -465,6 +465,9 @@ CXXEXT = \\\"cxx\\\"
   msc['LIBDIR'] = 'lib'
   msc['TREE'] = tree
   
+  fd.write("CFLAGS = $(INCLUDES) $(CFLAGS)\n" )
+  fd.write("CXXFLAGS = $(CFLAGS)\n" )
+
   prefix = os.path.commonprefix([cwd,topdir])
   d = cwd[len(prefix):]
   reldir = "." 
@@ -485,15 +488,23 @@ CXXEXT = \\\"cxx\\\"
 	 
   for i in tree.keys():
     j = string.upper(i[0:3])
-    if (output_funcs.has_key(i)):
+    if (type(tree.value(i)) == type([])):	
+      if (output_funcs.has_key(i)):
 	output_funcs[i](fd,i,tree.value(i),msc)
-    elif (output_funcs.has_key(j)):
+      elif (output_funcs.has_key(j)):
 	output_funcs[j](fd,i,tree.value(i),msc)
-    elif (i != 'TARGETS'):
+      elif (i != 'TARGETS'):
 	msc_assignment(fd,i,tree.value(i),msc)
 
-  fd.write("CFLAGS = $(INCLUDES) $(CFLAGS)\n" )
-  fd.write("CXXFLAGS = $(CFLAGS)\n" )
+  for i in tree.keys():
+    j = string.upper(i[0:3])
+    if (type(tree.value(i)) == type({})):	
+      if (output_funcs.has_key(i)):
+	output_funcs[i](fd,i,tree.value(i),msc)
+      elif (output_funcs.has_key(j)):
+	output_funcs[j](fd,i,tree.value(i),msc)
+      elif (i != 'TARGETS'):
+	msc_assignment(fd,i,tree.value(i),msc)
 
   if (len(msc['BUILT_SOURCES']) > 0):
     fd.write("BUILT_SOURCES = ")
@@ -535,16 +546,16 @@ CXXEXT = \\\"cxx\\\"
 		))
   if (len(msc['LIBS']) > 0):
     for v in msc['LIBS']:
-      fd.write("install_dll_%s: lib%s.dll" % (v,v))
+      fd.write("install_dll_%s: lib%s.dll\n" % (v,v))
       fd.write("\t$(INSTALL) lib%s.dll $(%sdir)\n" % (v,msc['LIBDIR']) )
   if (len(msc['BINS']) > 0):
     for v in msc['BINS']:
-      fd.write("install_bin_%s: %s.exe" % (v,v))
+      fd.write("install_bin_%s: %s.exe\n" % (v,v))
       fd.write("\t$(INSTALL) %s.exe $(bindir)\n" % (v) )
   if (len(msc['INSTALL']) > 0):
     for (dst,src) in msc['INSTALL']:
-      fd.write("install_%s: %s" % (dst,src))
-      fd.write("\t$(INSTALL) $(bindir)/%s $(bindir)/%s\n" % (src,dst) )
+      fd.write("install_%s: $(bindir)\%s.exe\n" % (dst,src))
+      fd.write("\t$(INSTALL) $(bindir)\%s.exe $(bindir)\%s.exe\n" % (src,dst) )
 
   #fd.write("install-data:")
   #if (len(msc['HDRS']) > 0):
