@@ -17,7 +17,6 @@ Mrecover [-home <file>] -db <name>
 @+ Implementation 
 @c
 #include <gdk.h>
-#include <dirent.h>
 
 #define AMODE	0755 
 

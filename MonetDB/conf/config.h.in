@@ -95,8 +95,13 @@
 #undef HAVE_BOOL
 
 /* Define this if you have the readline library */
+#undef HAVE_LIBPTHREAD
+
+/* Define this if you have the readline library */
 #undef HAVE_LIBREADLINE
 
+/* Define this if you have sys_errlist */
+#undef HAVE_SYS_ERRLIST
 /* Define this if you don't have sys_errlist in <stdio.h> */
 #undef NEED_SYS_ERRLIST
 
@@ -164,9 +169,6 @@
 /* Define if you have the strtol function.  */
 #undef HAVE_STRTOL
 
-/* Define if you have the sys_errlist function.  */
-#undef HAVE_SYS_ERRLIST
-
 /* Define if you have the <dirent.h> header file.  */
 #undef HAVE_DIRENT_H
 
@@ -197,6 +199,9 @@
 /* Define if you have the <rlimit.h> header file.  */
 #undef HAVE_RLIMIT_H
 
+/* Define if you have the <semaphore.h> header file.  */
+#undef HAVE_SEMAPHORE_H
+
 /* Define if you have the <sys/dir.h> header file.  */
 #undef HAVE_SYS_DIR_H
 
@@ -226,9 +231,6 @@
 
 /* Define if you have the <sys/utime.h> header file.  */
 #undef HAVE_SYS_UTIME_H
-
-/* Define if you have the <thread.h> header file.  */
-#undef HAVE_THREAD_H
 
 /* Define if you have the <time.h> header file.  */
 #undef HAVE_TIME_H

@@ -5,5 +5,5 @@ YFLAGS = -d
 
 bin_mal = {
 	SOURCES = Mal.mx  mal_parser.mx
-	LIBS = ../gdk/libbat $(THREAD_LIBS) $(MALLOC_LIBS)
+	LIBS = ../gdk/libbat $(PTHREAD_LIBS) $(MALLOC_LIBS)
 }

@@ -92,18 +92,13 @@ The options have the following meaning:
 #ifndef _MONET_GLOBAL_H_
 #define _MONET_GLOBAL_H_
 
-#include "monet.h"
-
-
 int debugger();
-@h
 #include "monet.h"
 #include "yytree.h"
 
 #endif /* _MONET_GLOBAL_H_ */
 @C
 extern "C" {
-#include "monet.h"
 #include "Mserver.h"
 #include "monet_context.h"
 #include "monet_interpreter.h"

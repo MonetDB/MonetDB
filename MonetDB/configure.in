@@ -76,16 +76,47 @@ AC_CHECK_HEADERS(time.h sys/time.h sys/utime.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h sys/signal.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 
-THREAD=""
-THREAD_LIBS=""
-AC_CHECK_HEADERS(pthread.h, [THREAD=gdk_pthread] )
-AC_CHECK_LIB(pthread, pthread_create, [ THREAD_LIBS="-lpthread" ] )
-AC_CHECK_LIB(posix4, sched_yield, THREAD_LIBS="$THREAD_LIBS -lposix4")
-AC_CHECK_HEADERS(thread.h)
-AC_SUBST(THREAD)
-AC_SUBST(THREAD_LIBS)
+dnl libpthread
+PTHREAD_LIBS=""
+PTHREAD_INCS=""
+AC_ARG_WITH(pthread,
+[  --with-pthread=DIR     pthread library is installed in DIR], 
+	[have_pthread="$withval"])
+if test "x$have_pthread" != xno; then
+  if test "x$have_pthread" != xauto; then
+    PTHREAD_LIBS="-L$withval/lib"
+    PTHREAD_INCS="-I$withval/include"
+  fi
 
-dnl todo check if -ltermcap is needed
+  save_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $PTHREAD_INCS"
+  AC_CHECK_HEADERS(pthread.h semaphore.h) 
+  CFLAGS="$save_CFLAGS"
+
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $PTHREAD_LIBS"
+  AC_CHECK_LIB(pthread$libsuff, pthread_create, 
+	[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread$libsuff" 
+          AC_DEFINE(HAVE_LIBPTHREAD) 
+	  have_pthread=yes ] , 
+	[ AC_CHECK_LIB(pthread$libsuff, pthread_create, 
+		[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread$libsuff -lposix4" 
+          	AC_DEFINE(HAVE_LIBPTHREAD) 
+	  	have_pthread=yes ] , 
+		have_pthread=no, "-lposix4" ) 
+  	] )
+  LIBS="$save_LIBS"
+
+
+  if test "x$have_pthread" != xyes; then
+    PTHREAD_LIBS=""
+    PTHREAD_INCS=""
+  fi
+fi
+AC_SUBST(PTHREAD_LIBS)
+AC_SUBST(PTHREAD_INCS)
+
+dnl libreadline
 READLINE_LIBS=""
 AC_ARG_WITH(readline,
 [  --with-readline=DIR     readline library is installed in DIR], 
@@ -151,9 +182,15 @@ AC_FUNC_MEMCMP
 AC_CHECK_FUNCS(mkdir rmdir getcwd getopt rlimit)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtol strerror )
 AC_CHECK_FUNCS(gethostname gettimeofday putenv select getpgid)
-AC_CHECK_FUNCS(sys_errlist)
 AC_TRY_COMPILE( [#include <stdio.h> ], [ int x = sys_errlist[1]; ],
 [ AC_DEFINE(NEED_SYS_ERRLIST,0)], [ AC_DEFINE(NEED_SYS_ERRLIST,1)] )
+AC_TRY_LINK( [#include <stdio.h> ], 
+[ 
+#if (NEED_SYS_ERRLIST == 1)
+	extern char *sys_errlist[];
+#endif
+int x = sys_errlist[1]; ],
+[ AC_DEFINE(HAVE_SYS_ERRLIST,1)] )
 
 AC_CHECK_FUNCS(ctime_r)
 ctime_r3=yes

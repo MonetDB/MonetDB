@@ -70,11 +70,15 @@ The default tabulart formatting can be turned of by
 setting the variable "tabulate" to "off".
 Echoing the form request parameters can by turned off with "echo=off".
 @h
-#include <config.h>
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include <stdarg.h>
 
 
@@ -100,13 +104,15 @@ void prettyPrint();
 @-
 The Mcgi command uses a dictionary of name/value pairs.
 @C
-#include <sys/types.h>
-#include <sys/resource.h>
-#include <time.h>
-#include <signal.h>
-
 #include "Mcgi.h"
 #include "Mapi.h"
+
+#include <sys/types.h>
+#include <signal.h>
+
+#ifdef HAVE_SYS_RESOURCE_H
+# include <sys/resource.h>
+#endif
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -120,13 +126,7 @@ The Mcgi command uses a dictionary of name/value pairs.
 #endif
 
 
-#if ! defined(HAVE_PTHREAD_H) &&  ! defined(PTHREAD_KERNEL) && ! defined(__CYGWIN32__)
-#ifdef IRIX
-#include <sys/prctl.h>
-#define pthread_t                             int
-#define pthread_create(thr_id,mask,func,arg)  *(thr_id)=sproc((void (*)(void *))func,PR_SADDR,arg)
-#endif
-#else
+#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
 

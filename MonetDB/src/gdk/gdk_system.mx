@@ -33,18 +33,9 @@ functions.
 # include <sys/signal.h>
 #endif
 
-#ifdef HAVE_PTHREAD_H
-# include <pthread.h>
-# include <semaphore.h>
-#endif
-
 typedef void    *MT_Lock;
 typedef void    *MT_Sema;
 typedef void    *MT_Id;
-typedef sem_t pthread_sema_t;
-
-extern void pthread_sema_up( pthread_sema_t *s );
-extern void pthread_sema_down( pthread_sema_t *s );
 
 #define MAXLOCKS	128
 #define MAXSEMAS	64
@@ -130,24 +121,12 @@ void	MT_destroy_lock(MT_Lock l);
 @-
 Set a lock. The calling thread in this process blocks till the lock is set.
 @h
-#define MT_set_lock(x,y)	{\
-    int t = pthread_mutex_lock((pthread_mutex_t*)x);\
-    if (MT_debug & 1024) {\
-        fprintf(MT_out,"MT_set_lock(%lu\@%s) %ld %d\n", (long)MT_getpid(), y, (long)x, t);\
-        fflush(MT_out);\
-    }\
-}
- 
+void 	MT_set_lock(MT_Lock l, char *name);
  
 @-
 Unset a lock.
 @h
-#define MT_unset_lock(x,y)	{\
-    int t = pthread_mutex_unlock((pthread_mutex_t*)x);\
-    if (MT_debug & 1024) {\
-        fprintf(MT_out,"MT_unset_lock(%lu\@%s) %ld %d\n", (long)MT_getpid(), y, (long)x,t);\
-        fflush(MT_out);\
-}   }
+void 	MT_unset_lock(MT_Lock l, char *name);
  
 @-
 Try a lock. Returns error (EBUSY) if the lock was already 
@@ -176,24 +155,13 @@ void	MT_destroy_sema(MT_Sema s);
 @-
 Increment a semaphore.
 @h
-#define MT_up_sema(x,y)	{\
-    pthread_sema_up((pthread_sema_t*)x);\
-    if (MT_debug &  1024) {\
-        fprintf(MT_out,"MT_up_sema(%lu\@%s) %ld\n", (long)MT_getpid(), y, (long)x);\
-        fflush(MT_out);\
-}   }
- 
+void	MT_up_sema(MT_Sema s, char *name);
  
 @-
 Decrement a semaphore. If it already has value 0, the thread is
 blocked until a decrement is possible again.
 @h
-#define MT_down_sema(x,y)	{\
-    pthread_sema_down((pthread_sema_t*)x);\
-    if (MT_debug &  1024) {\
-        fprintf(MT_out,"MT_down_sema(%lu\@%s) %ld\n", (long)MT_getpid(), y, (long)x);\
-        fflush(MT_out);\
-}   }
+void	MT_down_sema(MT_Sema s, char *name);
 
 @-
 Try to decrement a semaphore. If it already has value 0, an error
@@ -216,7 +184,8 @@ Allocate anonymous virtual memory.
 @h
 #define MT_geterrno()		errno
 #define MT_seterrno(x)		errno=x
-#define MT_getpid()		(MT_Id)((int)pthread_self()+1)
+
+extern MT_Id MT_getpid();
 
 extern int _MT_npages;
 extern int _MT_pagesize;
@@ -230,7 +199,17 @@ extern int _MT_pagesize;
 @c
 #include "gdk_system.h"
 
+#ifdef HAVE_PTHREAD_H
+# include <pthread.h>
+# include <semaphore.h>
+#endif
+
 #include <errno.h>
+
+typedef sem_t pthread_sema_t;
+
+extern void pthread_sema_up( pthread_sema_t *s );
+extern void pthread_sema_down( pthread_sema_t *s );
 
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 
@@ -345,6 +324,24 @@ void	MT_destroy_lock (MT_Lock l) {
 	MT_unset_lock(MT_system_lock, "MT_destroy_lock");
 }
 
+void MT_set_lock(MT_Lock l, char *name){
+    	int t = pthread_mutex_lock((pthread_mutex_t*)l);
+    	if (MT_debug & 1024) {
+        	fprintf(MT_out,"MT_set_lock(%lu\@%s) %ld %d\n", 
+			(long)MT_getpid(), name, (long)l, t);
+        	fflush(MT_out);
+    	}
+}
+
+void MT_unset_lock(MT_Lock l, char *name)	{
+   	int t = pthread_mutex_unlock((pthread_mutex_t*)l);
+    	if (MT_debug & 1024) {
+        	fprintf(MT_out,"MT_unset_lock(%lu\@%s) %ld %d\n", 
+			(long)MT_getpid(), name, (long)l,t);
+        	fflush(MT_out);
+	}   
+}
+ 
 int	MT_try_lock (MT_Lock l) {
 	if (MT_debug & 1024) {
 		fprintf(MT_out,"MT_try_lock:%u %d\n", 
@@ -374,6 +371,24 @@ void pthread_sema_up( pthread_sema_t *s ) {
 
 void pthread_sema_down( pthread_sema_t *s ) {
 	(void)sem_wait(s);
+}
+
+void MT_up_sema(MT_Sema s, char *name){
+    	pthread_sema_up((pthread_sema_t*)s);
+    	if (MT_debug &  1024) {
+        	fprintf(MT_out,"MT_up_sema(%lu\@%s) %ld\n", 
+			(long)MT_getpid(), name, (long)s);
+        	fflush(MT_out);
+    	}
+}
+ 
+void MT_down_sema(MT_Sema s, char *name){
+    	pthread_sema_down((pthread_sema_t*)s);
+    	if (MT_debug &  1024) {
+        	fprintf(MT_out,"MT_down_sema(%lu\@%s) %ld\n", 
+			(long)MT_getpid(), name, (long)s);
+        	fflush(MT_out);
+	}   
 }
 
 int	MT_try_sema (MT_Sema s){
@@ -419,6 +434,9 @@ void 	MT_dump_sema (MT_Sema s, FILE *fp, char *name) {
 	fprintf(fp, "%s: MT_dump_sema() not implemented.\n",name);
 }
 
+MT_Id MT_getpid(){
+	return (MT_Id)((int)pthread_self()+1);
+}
 
 int MT_alive(pid)
 int pid;

@@ -92,6 +92,10 @@ def am_binary(fd, var, binmap, am ):
     name = var[4:]
     if (name == 'SCRIPTS'):
       fd.write("bin_SCRIPTS = %s\n" % am_list2string(binmap," ",""))
+      fd.write("install-exec-local-SCRIPTS: \n" )
+      fd.write("all-local-SCRIPTS: $(bin_SCRIPTS)\n" )
+      fd.write("%s" % am_list2string(binmap,"\tchmod a+x ","\n"))
+      am['INSTALL'].append(name)
     else: # link
       src = binmap[0][4:]
       fd.write("install-exec-local-%s: %s\n" % (name,src))
@@ -233,7 +237,7 @@ def am_library(fd, var, libmap, am ):
     fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
 
   if (libmap.has_key("LIBS")):
-    fd.write(am_additional_libs(libname, "sep", "LIB", libmap["LIBS"],am))
+    fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
 
   for src in libmap['SOURCES']:
     base,ext = string.split(src,".", 1) 	

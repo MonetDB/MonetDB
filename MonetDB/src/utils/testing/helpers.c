@@ -80,12 +80,15 @@ char* filename (char* path)
     return path;
 }
 
+#if DIR_SEP == '/'
 char* default_tmpdir = "/tmp";
+#else
+char* default_tmpdir = "\\tmp";
+#endif
 
 char* tmpdir()
 {
   char* rtrn=getenv("TMPDIR");
-  default_tmpdir[0] = DIR_SEP;
   if (!rtrn) rtrn=default_tmpdir;
   return rtrn;
 }

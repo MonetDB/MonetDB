@@ -2,8 +2,13 @@
 #undef HAVE_BOOL
 
 /* Define this if you have the readline library */
+#undef HAVE_LIBPTHREAD
+
+/* Define this if you have the readline library */
 #undef HAVE_LIBREADLINE
 
+/* Define this if you have sys_errlist */
+#undef HAVE_SYS_ERRLIST
 /* Define this if you don't have sys_errlist in <stdio.h> */
 #undef NEED_SYS_ERRLIST
 

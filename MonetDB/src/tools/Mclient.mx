@@ -313,15 +313,18 @@ void clientAccept() {
 		if (line) {
 			free(line);
 		}
-		if (!is_chrsp){
+#ifdef HAVE_LIBREADLINE
+		if (is_chrsp){
+	        	if ((line = (char *) readline(prompt)) == NULL) {
+	               		return;
+			}
+		} else 
+#endif
+		{
 		   	char *buf =(char *)malloc(CHUNK_SIZE);
 	        	if ((line =(char *)fgets(buf,CHUNK_SIZE,stdin))==NULL) {
 			   	free(buf);
 	                	return;
-			}
-		} else {
-	        	if ((line = (char *) readline(prompt)) == NULL) {
-	               		return;
 			}
 		}
 		/* find start and end of the command */

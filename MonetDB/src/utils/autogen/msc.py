@@ -253,7 +253,7 @@ def msc_library(fd, var, libmap, msc ):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   if (libmap.has_key("LIBS")):
-    fd.write(msc_additional_libs(libname, "sep", "LIB", libmap["LIBS"],msc))
+    fd.write(msc_additional_libs(libname, sep, "LIB", libmap["LIBS"],msc))
 
   for src in libmap['SOURCES']:
     base,ext = string.split(src,".", 1) 	
@@ -378,7 +378,7 @@ INSTALL = copy
 MKDIR = mkdir
 CD = cd
 
-CFLAGS = -I. -I$(TOPDIR) -I$(PTHREAD) -DHAVE_CONFIG_H
+CFLAGS = -I. -I$(TOPDIR) -DHAVE_CONFIG_H
 
 CXXEXT = \\\"cxx\\\"
 
