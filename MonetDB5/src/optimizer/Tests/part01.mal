@@ -1,0 +1,52 @@
+#testing the partition optimizer
+
+a1:= new(:void,:int);
+setSequenceBase(a1,0@0);
+a2:= new(:void,:int);
+setSequenceBase(a2,10@0);
+a3:= new(:void,:int);
+setSequenceBase(a3,20@0);
+b1:= new(:void,:int);
+setSequenceBase(b1,0@0);
+b2:= new(:void,:int);
+setSequenceBase(b2,10@0);
+b3:= new(:void,:int);
+setSequenceBase(b3,20@0);
+
+barrier (go,i):= newRange(0);
+	insert(a1,nil,i);
+	insert(a2,nil,i);
+	insert(a3,nil,i);
+	insert(b1,nil,i);
+	insert(b2,nil,i);
+	insert(b3,nil,i);
+	redo (go,i):= nextElement(1,10);
+exit (go,i);
+#print(a1);
+#print(a2);
+#print(a3);
+
+
+# add it to the BAT partition table
+partitions.deposit(a1);
+partitions.deposit(a1,a2);
+partitions.deposit(a1,a3);
+partitions.deposit(b1);
+partitions.deposit(b1,b2);
+partitions.deposit(b1,b3);
+partitions.dump();
+
+# this query is already tricky because there are
+# two sinks. A naive translation will produce
+# a double nested loop
+function qry(a:bat[:void,:any], b:bat[:void,:any]);
+	print("experiment 2");
+	print(b);
+	print(a);
+	print(b);
+end qry;
+
+optimizer.partitionedQuery("Admin","qry");
+showFunction("Admin","qry");
+print("run experiment");
+qry(a1,b1);
