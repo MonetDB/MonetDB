@@ -24,6 +24,19 @@ This document introduces a few primitives to manage the dynamic profiler
 facilities added to the kernel interpreter. The performance consequences
 are a few extra tests for each interpreter call. A substantial delay will
 be incurred when the event records should be produced as well.
+To limit the output to a subset of the events you can set a filter on
+the kind and function name. A convenient filter set is the following
+@T
+\begin{verbatim}
+setFilter("proc","*");
+setFilter("command","*");
+setFilter("setop","*");
+\end{verbatim}
+@-
+An alternative route is to collect the information in a few BATs
+and dump the accumulated information at a convenient time.
+This is supported by the routine startProfiler, which also
+sets the default filters.
 
 @* Module Definition 
 .BUILTIN view_var_name() : BAT[int,str] = view_var_name; 
@@ -33,17 +46,26 @@ be incurred when the event records should be produced as well.
 
 .USE streams;
 
-.COMMAND startProfiler(Stream output) : int = startProfilerCMD;
+.COMMAND startProfiler(): void = startProfilerCMD;
+	"Collect command and proc counts"
+.COMMAND startProfiler(Stream output) : int = startProfilerStreamCMD;
 	"Start the event profiling stream; output is sent to Stream output"
+.COMMAND startProfiler(str fname) : int = startProfilerFileCMD;
+	"Start the event profiling stream; output is sent to fname"
+
 .COMMAND stopProfiler() : int = stopProfilerCMD;
 	"Stop the event profiling stream"
 .COMMAND setFilter(str left, str right) : int = setFilterCmd;
 	"Set the profile filter strings"
 
+.COMMAND getProfilerCount(): BAT[str,int] = getProfilerCountCMD;
+	"Get a copy of the profiler summary table"
+.COMMAND resetProfilerCount(): void = resetProfilerCountCMD;
+	"Set all counters to zero again"
 .END profiler;
 
 @mil
-PROC startProfiler() : int {
+PROC profile() : int {
 	return startProfiler(stdout());
 }
 ADDHELP("startProfiler", "manegold", "Feb 05 2004",
@@ -103,15 +125,45 @@ nouse(
 
 @+ Modules
 @c
+int startProfilerCMD(int *res){
+	(void) res;
+	setProfilerMode(2);
+	return GDK_SUCCEED;
+}
 
-int startProfilerCMD(int *res, Stream *output){
+int startProfilerStreamCMD(int *res, Stream *output){
 	startProfiler(*(stream**)output);
+	*res=0;
+	return GDK_SUCCEED;
+}
+int startProfilerFileCMD(int *res, str fname){
+	stream *output;
+	output = open_wstream(fname);
+	if( output == 0){
+		GDKerror("startProfiler: could not create file\n");
+		return GDK_FAIL;
+	}
+	startProfiler(output);
 	*res=0;
 	return GDK_SUCCEED;
 }
 int stopProfilerCMD(int *res){
 	stopProfiler();
 	*res=0;
+	return GDK_SUCCEED;
+}
+int getProfilerCountCMD(BAT **res){
+	BAT *bn;
+	*res = NULL;
+	bn = getProfilerCount();
+	if( bn) {
+		BBPfix( bn->batCacheid);
+		*res= bn;
+	}
+	return GDK_SUCCEED;
+}
+int resetProfilerCountCMD(){
+	resetProfilerCount();
 	return GDK_SUCCEED;
 }
 int setFilterCmd(int *res, str left, str right){
