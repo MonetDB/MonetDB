@@ -1436,7 +1436,31 @@ static stmt *columns_exp(mvc * sql, scope * scp, symbol * column_e, group * grp,
 		}
 		stmt_destroy(foundsubset);
 		return stmt_list(columns);
+	} else if (list_length(scp->tables) == 1) {
+		tvar *tv = scp->tables->h->data;
+		node *n;
+		list *columns = create_stmt_list();
+		stmt *foundsubset = scope_first_pivot(scp);
+
+		if (grp)
+			foundsubset = stmt_join(stmt_dup(grp->ext), foundsubset, cmp_equal);
+		for (n = tv->columns->h; n; n = n->next){
+			cvar *cv = n->data;
+			if (cv->tname && strcmp(cv->tname, tname) == 0){
+				list_append(columns, 
+					stmt_join(stmt_dup(foundsubset), 
+					stmt_dup(cv->s), cmp_equal));
+			}
+		}
+		stmt_destroy(foundsubset);
+		if (list_length(columns) > 0)
+			return stmt_list(columns);
+		else
+			list_destroy(columns);
 	}
+	if (!tv) 
+		return sql_error(sql, 02, 
+			"Column expression Table %s unknown", tname);
 	return NULL;
 }
 

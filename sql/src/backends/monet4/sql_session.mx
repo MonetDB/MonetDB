@@ -344,6 +344,8 @@ int sqlcleanup( mvc *c, int err, int cache)
 			mvc_rollback(c, 0, NULL);
 		else
 			mvc_commit(c, 0, NULL);
+		if (c->qc) qc_destroy(c->qc);
+		c->qc = qc_create();
 	}
 	return err;
 }

@@ -27,11 +27,11 @@ Over..
 # 0,	 # id
 [ 1,	1	]
 
-# i,	i # name
-# mediumint,	mediumint # type
+# i # name
+# mediumint # type
 # 1,	 # tuplecount
 # 0,	 # id
-[ 1,	1	]
+[ 1	]
 
 # 14:51:31 >  
 # 14:51:31 >  Done.
