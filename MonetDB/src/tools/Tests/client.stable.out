@@ -1356,7 +1356,6 @@ End of MIL script.
 # 09:12:23 >  Mshutdown
 # 09:12:23 >  
 
-Mdorequest:shutdown;
 connection= bezaan:16916
 template= shutdown;
 query= shutdown;
