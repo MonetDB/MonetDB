@@ -614,6 +614,14 @@
     .ret_ty = PFty_opt (PFty_double ()) }                                \
                                                                          \
                                                                          \
+, /* pf:item-sequence-to-node-sequence (item*) as node* */               \
+  { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
+, /* pf:item-sequence-to-untypedAtomic (item*) as untypedAtomic */       \
+  { .ns = PFns_pf, .loc = "item-sequence-to-untypedAtomic",              \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \
+    .ret_ty = PFty_untypedAtomic () }                                    \
 , /* op:is-same-node (node?, node?) as boolean? */                       \
   { .ns = PFns_op, .loc = "is-same-node",                                \
     .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
