@@ -139,10 +139,21 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 		int i = 0;
 
 		for (; i <= SQL_SQLSTATE_SIZE; i++)
-			error->sqlState[i] = '\0';
+			error->sqlState[i] = 0;
 	}
 
-	error->message = msg ? strdup(msg) : NULL;
+	if (msg) {
+		size_t len;
+		error->message = strdup(msg);
+		/* remove trailing newlines */
+		len = strlen(error->message);
+		while (len > 0 && error->message[len - 1] == '\n') {
+			error->message[len - 1] = 0;
+			len--;
+		}
+	} else {
+		error->message = NULL;
+	}
 	error->nativeErrorCode = nativeCode;
 	error->next = NULL;
 
