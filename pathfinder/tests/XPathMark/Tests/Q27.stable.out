@@ -18,8 +18,7 @@ stdout of test 'Q27` in directory 'tests/XPathMark` itself:
 <watches>
 <watch open_auction="open_auction3"/>
 </watches>
-</person>
-<person id="person4">
+</person><person id="person4">
 <name>Mitch Koyama</name>
 <emailaddress>mailto:Koyama@imag.fr</emailaddress>
 <homepage>http://www.imag.fr/~Koyama</homepage>

@@ -861,13 +861,15 @@ PROC import_doc(str flnm, str name) : void
      }
      var pre_prop := bat("pre_prop" + docid);
      var knd := ELEMENT;
-     while ( knd <= ELEMENT ) {
         var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
         var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
         var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        prop_pre_.chk_order().persists(true).bbpname(prop_pre_name);
-        knd :+= chr(1);
-     }
+        prop_pre_.chk_order().mmap(STORE_MMAP).persists(true).bbpname(prop_pre_name);
+     var knd := PI;
+        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
+        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
+        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
+        prop_pre_.chk_order().mmap(STORE_MMAP).persists(true).bbpname(prop_pre_name);
     }
 
     # load table prop|ns|loc
@@ -1040,6 +1042,9 @@ PROC delete_doc(str name) : void
     bat("attr_qn" + docid).persists(false);
     bat("attr_prop" + docid).persists(false);
     bat("prop_val" + docid).persists(false);
+
+    bat("id_pre" + docid).persists(false);
+    bat("idref_pre" + docid).persists(false);
     {
       var knd := ELEMENT;
       while ( knd <= DOCUMENT ) {

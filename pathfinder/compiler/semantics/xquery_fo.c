@@ -93,6 +93,24 @@
     .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())),                  \
     .alg = PFbui_fn_doc }                                                \
+, /* fn:id (string*) as element* */                                      \
+  { .ns = PFns_fn, .loc = "id",                                          \
+    .arity = 1, .par_ty = { PFty_star (PFty_string ()) },                \
+    .ret_ty = PFty_star (PFty_xs_anyElement ()) }                        \
+, /* fn:id (string*, node) as element* */                                \
+  { .ns = PFns_fn, .loc = "id",                                          \
+    .arity = 2, .par_ty = { PFty_star (PFty_string ()),                  \
+                            PFty_node () },                              \
+    .ret_ty = PFty_star (PFty_xs_anyElement ()) }                        \
+, /* fn:idref (string*) as element* */                                   \
+  { .ns = PFns_fn, .loc = "idref",                                       \
+    .arity = 1, .par_ty = { PFty_star (PFty_string ()) },                \
+    .ret_ty = PFty_star (PFty_xs_anyElement ()) }                        \
+, /* fn:idref (string*, node) as element* */                             \
+  { .ns = PFns_fn, .loc = "idref",                                       \
+    .arity = 2, .par_ty = { PFty_star (PFty_string ()),                  \
+                            PFty_node () },                              \
+    .ret_ty = PFty_star (PFty_xs_anyElement ()) }                        \
 , /* fn:position () as integer */                                        \
   { .ns = PFns_fn, .loc = "position",                                    \
     .arity = 0,                                                          \

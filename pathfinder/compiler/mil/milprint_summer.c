@@ -5279,6 +5279,93 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
 }
 
 /**
+ * fn_id translates fn:id and fn:idref
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param op the string indicating which operation has to 
+ *        be evaluated
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param c the Core expression which is translated next
+ */
+static void
+fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
+{
+    char *item_ext = kind_str(STR);
+    char *idref = (op)?"REF":"";
+    int rc;
+
+    rc  = translate2MIL (f, VALUES, cur_level, counter, L(c));
+    if (!rc)
+        milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+
+    counter++;
+    saveResult_ (f, counter, STR);
+    translate2MIL (f, NORMAL, cur_level, counter, RL(c));
+
+    milprintf(f,
+            "if (iter%03u.count() != 0) { # fn:id%s\n"
+            "var strings := item%s%03u;\n"
+            "var frag := kind.get_fragment();\n"
+            "#strings := strings.[normSpace]();\n"
+            "strings := strings.ll_tokenize(strings.project(\" \"));\n"
+            "var id_str := strings.reverse().mark(0@0).reverse();\n"
+            "var oid_iter := strings.mark(0@0).reverse().leftfetchjoin(iter%03u);\n"
+            "strings := nil_oid_str;\n"
+            "#var oid_map := oid_iter.leftfetchjoin(iter.reverse());\n"
+            "var oid_map := oid_iter.leftjoin(iter.reverse());\n"
+            "frag := oid_map.leftfetchjoin(frag);\n"
+            "oid_map := nil_oid_oid;\n"
+            /* get id nodes */
+            "# var nodes := mvaljoin(id_str, frag, ws.fetch(ID%s_PRE));\n"
+            "var iterator := frag.tunique().reverse();\n"
+            "var nodes;\n"
+            "if (iterator.count() = 1) {\n"
+            "    nodes := id_str.leftjoin(ws.fetch(ID%s_PRE).fetch(iterator.fetch(0)));\n"
+            "} else {\n"
+            "    var nodes_part;\n"
+            "    var frag_part;\n"
+            "    var id_str_part;\n"
+            "    nodes := bat(oid,oid).access(BAT_WRITE);\n"
+            "    iterator@batloop () {\n"
+            "        frag_part := frag.ord_uselect($t).mirror();\n"
+            "        id_str_part := frag_part.leftfetchjoin(id_str);\n"
+            "        nodes_part := id_str_part.leftjoin(ws.fetch(ID%s_PRE)"
+                                                         ".fetch($t));\n"
+            "        nodes := nodes.insert(nodes_part);\n"
+            "    }\n"
+            "}\n"
+            "oid_map := nodes.mark(0@0).reverse();\n"
+            "kind := oid_map.leftfetchjoin(frag).set_kind(ELEM);\n"
+            "iter := oid_map.leftfetchjoin(oid_iter);\n"
+            "oid_iter := nil_oid_str;\n"
+            "item := nodes.reverse().mark(0@0).reverse();\n"
+            "nodes := nil_oid_oid;\n"
+            /* delete duplicates */
+            "var sorting := iter.reverse().sort().reverse();\n"
+            "sorting := sorting.CTrefine(kind);\n"
+            "sorting := sorting.CTrefine(item);\n"
+            "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+            "iter := sorting.leftfetchjoin(iter);\n"
+            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "item := sorting.leftfetchjoin(item);\n"
+            "kind := sorting.leftfetchjoin(kind);\n"
+            "sorting := nil_oid_oid;\n"
+            "} else {\n",
+            counter, op,
+            item_ext, counter,
+            counter,
+            idref, idref, idref);
+
+    translateEmpty (f);
+    milprintf(f,
+            "} # end of fn:id%s\n",
+            op);
+
+    deleteResult_ (f, counter, STR);
+}
+
+/**
  * eval_join_helper prepares the input arguments for the join
  * and therefore gets the values from its containers or casts 
  * them directly from the last location step (special case)
@@ -6060,6 +6147,16 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"except")))
     {
         translateIntersect (f, "diff", cur_level, counter, args);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"id")))
+    {
+        fn_id (f, NULL, cur_level, counter, args);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"idref")))
+    {
+        fn_id (f, "ref", cur_level, counter, args);
         return NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"true")))

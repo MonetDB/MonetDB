@@ -60,6 +60,23 @@ Merges pairs of bats according to the order as defined by the first pair's tails
  input."
 @)
 
+.COMMAND ll_tokenize( BAT[void,str] strs, BAT[void,str] seps )
+		: BAT[oid,str] = CMDll_strSplit;
+"PARAMETERS:
+BAT[void,str] - the strings which are going to be tokenized
+BAT[void,str] - seperators for the strings
+DESCRIPITON:
+ll_tokenize is a special version of [split](bat(void,str),bat(void,str)), which
+tokenizes a string using the aligned seperator string and adds a row for
+each substring, with the oid of the input head identifying the original boundaries."
+
+.COMMAND normSpace(str string)
+		: str = CMDnormSpace;
+"PARAMETERS:
+BAT[void,str] - the strings which are going to be normalized
+DESCRIPITON:
+normSpace normalizes the whitespaces to a single space."
+
 .COMMAND combine_text_string( BAT[void,oid] iter, BAT[void,oid] kind, BAT[void,str] str_value, int result_size )
 		: BAT[oid,str] = CMDcombine_text_string;
 "PARAMETERS:
@@ -739,6 +756,153 @@ cleanup:
 	return GDK_FAIL;
 }
 
+int
+CMDll_strSplit(BAT **res, BAT *strs, BAT *seps)
+{
+        BAT *bn;
+        BUN p_str, p_sep, last_str_row;
+        int bs_str, bs_sep;
+        size_t cnt, seplen;
+        oid base;
+        char *actual_str;
+        bit triv_prop;
+
+        /* check arguments */
+
+        BATcheck(strs, "ll_strSplit");
+        BATcheck(seps, "ll_strSplit");
+
+        cnt = BATcount(strs);
+        base = strs->hseqbase;
+        ERRORcheck(!BAThdense(strs) || !BAThdense(seps), 
+                "ll_strSplit: input BATs (strs, seps) must be void-headed with non-nil seqbase.\n");
+        ERRORcheck(BATcount(seps)!=cnt || seps->hseqbase!=base,
+                "ll_strSplit: input BATs (strs, seps) must be head-aligned.\n");
+
+        /* create result BAT */
+
+        bn = BATnew(TYPE_oid, TYPE_str, 2*cnt);
+        if (bn == NULL) {
+                GDKerror("ll_strSplit: BATnew(TYPE_oid, TYPE_str, %d) failed.\n", 2*cnt);
+                return GDK_FAIL;
+        }
+
+        /* do the ll_strSplit */
+
+        bs_str = BUNsize(strs);
+        bs_sep = BUNsize(seps);
+
+        p_str = BUNfirst(strs);
+        p_sep = BUNfirst(seps);
+
+        for (last_str_row = BUNlast(strs) ;
+             p_str < last_str_row ;
+             p_str += bs_str, p_sep += bs_sep) {
+
+                str sep = (str)BUNtvar(seps, p_sep);
+                seplen = strlen(sep);
+                actual_str = GDKstrdup((str)BUNtvar(strs, p_str));
+
+                if (!seplen)
+                {
+                        bunfastins(bn, &base, actual_str);
+                        base++;
+                        continue;
+                }
+  
+                while (actual_str) {
+                        char *e = strstr(actual_str, sep);
+  
+                        if (!e)
+                                break;
+  
+                        *e = 0;
+                        bunfastins(bn, &base, actual_str);
+                        actual_str = e + seplen;
+                }
+ 
+                if (actual_str && *actual_str)
+                        bunfastins(bn, &base, actual_str);
+                base++;
+        }
+
+        /* set result properties */
+
+        if (!bn->batDirty) bn->batDirty = TRUE;
+        triv_prop = (BATcount(bn) < 2);
+        BATkey(bn,triv_prop);
+        BATkey(BATmirror(bn),triv_prop);
+        bn->hsorted = GDK_SORTED;
+        bn->tsorted = triv_prop;
+        bn->hdense = triv_prop;
+        bn->tdense = FALSE;
+        if (BATcount(bn) == 0) {
+                BATseqbase(bn, (oid)0);
+        } else if (BATcount(bn) == 1) {
+                BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+        }
+        *res = bn;
+        return GDK_SUCCEED;
+bunins_failed:
+        GDKerror("ll_strSplit: bunins failed.\n");
+        return GDK_FAIL;
+}
+
+
+int
+CMDnormSpace(str *res, str string)
+{
+        char *ws, *norm_string, 
+             *strpointer, *token,
+             *simple_ws;
+        size_t n, last;
+        ws = " \f\n\r\t\v";
+
+        /* FIXME: probably wrong (or missing) allocation */
+        fprintf(stderr, "CMDnormSpace: this code probably kills the Mserver!!!");
+        norm_string = (char *) GDKmalloc (strlen (string) + 1);
+        if (norm_string == NULL) {
+                GDKerror("combine_text_string: GDKmalloc(" SZFMT ") failed.\n",
+                         strlen (string) + 1);
+                return GDK_FAIL;
+        }
+        norm_string[0] = '\0';
+        strpointer = string;
+        strpointer += strspn (strpointer, ws);
+        if (strpointer != string)
+        {
+                simple_ws = " ";
+                last = 1;
+        }
+        else
+        {
+                simple_ws = "";
+                last = 0;
+        }
+
+        while ((n = strcspn (strpointer, ws))) {
+            norm_string = strcat (norm_string, simple_ws);
+            /* string of length n found */
+            token = (char *) GDKmalloc (n+1);
+            memcpy(token, strpointer, n);
+            norm_string = strcat (norm_string, token);
+
+            /* skip over string and ws */
+            strpointer += n;
+            last = strspn (strpointer, ws);
+            strpointer += last;
+            simple_ws = " ";
+        }
+        if (last)
+            norm_string = strcat (norm_string, simple_ws);
+        
+        *res = norm_string;
+        return GDK_SUCCEED;
+}
+
+
+
+
 
 #define KIND_NODE (oid)1
 #define KIND_TEXT (oid)2
@@ -844,8 +1008,6 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	if (len > 0) {
 		bunfastins(bn, &base0, actual_str);
 	}
-
-	GDKfree(actual_str);
 
 	/* set result properties */
 
