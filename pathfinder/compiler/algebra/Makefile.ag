@@ -23,6 +23,9 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
+
+SUBDIRS = hskparser
+
 INCLUDES = ../include $(MONETDB_INCS)
 
 # locally disable "-Werror"

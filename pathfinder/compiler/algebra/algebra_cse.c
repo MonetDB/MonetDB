@@ -46,17 +46,21 @@ static PFalg_op_t * find_subexp (PFalg_op_t *new);
 
 static PFalg_op_t * find_lit_tbl (PFalg_op_t *new);
 static PFalg_op_t * find_doc_tbl (PFalg_op_t *new);
-static PFalg_op_t * find_union_cross (PFalg_op_t *new);
+static PFalg_op_t * find_disjunion (PFalg_op_t *new);
+static PFalg_op_t * find_cross (PFalg_op_t *new);
 static PFalg_op_t * find_difference (PFalg_op_t *new);
 static PFalg_op_t * find_eqjoin (PFalg_op_t *new);
 static PFalg_op_t * find_scjoin (PFalg_op_t *new);
 static PFalg_op_t * find_select (PFalg_op_t *new);
-static PFalg_op_t * find_negate (PFalg_op_t *new);
 static PFalg_op_t * find_type (PFalg_op_t *new);
 static PFalg_op_t * find_cast (PFalg_op_t *new);
 static PFalg_op_t * find_project (PFalg_op_t *new);
 static PFalg_op_t * find_rownum (PFalg_op_t *new);
-static PFalg_op_t * find_arithmetic (PFalg_op_t *new);
+static PFalg_op_t * find_binary (PFalg_op_t *new);
+static PFalg_op_t * find_unary (PFalg_op_t *new);
+static PFalg_op_t * find_sum (PFalg_op_t *new);
+static PFalg_op_t * find_count (PFalg_op_t *new);
+static PFalg_op_t * find_distinct (PFalg_op_t *new);
 
 static bool tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b);
 
@@ -239,7 +243,8 @@ find_doc_tbl (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-        if (old->kind != aop_doc_tbl)
+        if ((old->kind != aop_doc_tbl)
+         || strcmp (new->sem.doc_tbl.rel, old->sem.doc_tbl.rel))
             continue;
 
         return old;
@@ -256,21 +261,20 @@ find_doc_tbl (PFalg_op_t *new)
 
 
 /**
- * In case of both, a disjoint union and a cross product operator,
- * we just have to make sure that @ new has the same two children
- * as a union/cross product operator in the array of existing
- * operators.
+ * In case of a disjoint union operator, we just have to make sure
+ * that @ new has the same two children as a union operator in the
+ * array of existing operators.
  */
 PFalg_op_t *
-find_union_cross (PFalg_op_t *new)
+find_disjunion (PFalg_op_t *new)
 {
     unsigned int subex_idx;
 
     assert (new);
 
     /*
-     * search for disjoint union/cross product operator in the array
-     * of existing operators
+     * search for disjoint union operator in the array of existing
+     * operators
      */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
@@ -284,11 +288,9 @@ find_union_cross (PFalg_op_t *new)
              * i.e we try both combinations; the schema of both nodes
              * is guaranteed to be equal; as for the node kind, we only
              * have to make sure that both node kinds match; the calling
-             * routine makes sure that only union and cross product nodes
-             * can arrive here
+             * routine makes sure that only union nodes can arrive here
              */
-            if (new->kind != old->kind
-                || !((new->child[0] == old->child[0]
+            if (!((new->child[0] == old->child[0]
                       && new->child[1] == old->child[1])
                 || (new->child[0] == old->child[1]
                       && new->child[1] == old->child[0])))
@@ -299,12 +301,23 @@ find_union_cross (PFalg_op_t *new)
     }
 
     /* 
-     * the union/cross product is a new operator, so add it to the
-     * array of existing subexpressions
+     * the union is a new operator, so add it to the array of existing
+     * subexpressions
      */
     *((PFalg_op_t **) PFarray_add (subexps)) = new;
 
     return new;
+}
+
+
+/**
+ * Cross product expressions look the same as disjoint union
+ * operators. We check, if @ new has the same child nodes as
+ * another existing expression.
+ */
+static PFalg_op_t * find_cross (PFalg_op_t *new)
+{
+    return find_disjunion (new);
 }
 
 
@@ -382,8 +395,8 @@ find_eqjoin (PFalg_op_t *new)
              */
             if (new->child[0] != old->child[0]
              || new->child[1] != old->child[1]
-             || new->sem.eqjoin.att1 != old->sem.eqjoin.att1
-             || new->sem.eqjoin.att2 != old->sem.eqjoin.att2)
+	     || strcmp (new->sem.eqjoin.att1, old->sem.eqjoin.att1)
+	     || strcmp (new->sem.eqjoin.att2, old->sem.eqjoin.att2))
                 continue;
 
             /*
@@ -507,56 +520,9 @@ find_select (PFalg_op_t *new)
 }
 
 /**
- * Search the array of existing expressions for a negation that
- * inverts the value of a certain column and stores it in a new
- * column. An equivalent operator must have the same child node
- * and the same negated and result attribute.
- */
-PFalg_op_t *
-find_negate (PFalg_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for negation operator in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child and negation
-             * and result attribute
-             */
-            if (new->child[0] != old->child[0]
-                || strcmp (new->sem.negate.att, old->sem.negate.att)
-                || strcmp (new->sem.negate.res, old->sem.negate.res))
-                continue;
-
-            /*
-             * if we came until here, old and new negation must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the negation is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
  * Search the array of existing expressions for a type test that
  * compares the type of a certain column and stores the result of
- * the comparisonit in a new column. An equivalent operator must
+ * the comparison in a new column. An equivalent operator must
  * have the same child node, the same typed and result attribute,
  * and the same requested type.
  */
@@ -737,9 +703,7 @@ find_rownum (PFalg_op_t *new)
                 continue;
 
             /* see if both nodes have the same partitioning attribute */
-            if (!(new->sem.rownum.part == NULL
-                  && old->sem.rownum.part == NULL)
-                || (new->sem.rownum.part == NULL
+            if ((new->sem.rownum.part == NULL
                     && old->sem.rownum.part != NULL)
                 || (new->sem.rownum.part != NULL
                     && old->sem.rownum.part == NULL)
@@ -779,18 +743,18 @@ find_rownum (PFalg_op_t *new)
 
 
 /**
- * Check whether arithmetic expression @ new already exists in
+ * Check whether binary expression @ new already exists in
  * the array of existing expressions. It must have the same
  * child nodes, operand attributes, and result attribute.
  */
 PFalg_op_t *
-find_arithmetic (PFalg_op_t *new)
+find_binary (PFalg_op_t *new)
 {
     unsigned int subex_idx;
 
     assert (new);
 
-    /* search for arithmetic expression in the array of existing operators */
+    /* search for binary expression in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
@@ -798,18 +762,17 @@ find_arithmetic (PFalg_op_t *new)
         if (new->kind == old->kind) {
 
             /*
-             * see if the old node has the same children, operand
+             * see if the old node has the same child, operand
              * attributes, and result attribute
              */
             if (new->child[0] != old->child[0]
-             || new->child[1] != old->child[1]
              || strcmp (new->sem.arithm.att1, old->sem.arithm.att1)
              || strcmp (new->sem.arithm.att2, old->sem.arithm.att2)
              || strcmp (new->sem.arithm.res, old->sem.arithm.res))
                 continue;
             
             /*
-             * if we came until here, old and new arithmetic expression
+             * if we came until here, old and new binary expression
              * must be equal; return the existing one
              */
             return old;
@@ -817,7 +780,209 @@ find_arithmetic (PFalg_op_t *new)
     }
 
     /*
-     * the arithmetic expression is a new operator, so add it to
+     * the binary expression is a new operator, so add it to
+     * the array of existing subexpressions
+     */
+    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+
+    return new;
+}
+
+
+/**
+ * Check whether unary expression @ new already exists in
+ * the array of existing expressions. It must have the same
+ * child nodes, operand attribute, and result attribute.
+ */
+PFalg_op_t *
+find_unary (PFalg_op_t *new)
+{
+    unsigned int subex_idx;
+
+    assert (new);
+
+    /* search for unary expression in the array of existing operators */
+    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
+
+        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+
+        if (new->kind == old->kind) {
+
+            /*
+             * see if the old node has the same child, operand
+             * attribute, and result attribute
+             */
+            if (new->child[0] != old->child[0]
+             || strcmp (new->sem.unary.att, old->sem.unary.att)
+             || strcmp (new->sem.unary.res, old->sem.unary.res))
+                continue;
+            
+            /*
+             * if we came until here, old and new unary expression
+             * must be equal; return the existing one
+             */
+            return old;
+        }
+    }
+
+    /*
+     * the unary expression is a new operator, so add it to
+     * the array of existing subexpressions
+     */
+    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+
+    return new;
+}
+
+
+/**
+ * Check whether the sum expression @ new already exists in
+ * the array of existing expressions. It must have the same
+ * child node, summed-up attribute, result attribute and list
+ * of partitioning attributes.
+ */
+static PFalg_op_t * find_sum (PFalg_op_t *new)
+{
+    unsigned int subex_idx;
+    int j;
+
+    assert (new);
+
+    /* search for sum expression in the array of existing operators */
+    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
+
+        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+
+        if (new->kind == old->kind) {
+
+            /*
+             * see if the old node has the same child, summed-up
+             * attribute and result attribute
+             */
+            if (new->child[0] != old->child[0]
+             || strcmp (new->sem.sum.att, old->sem.sum.att)
+             || strcmp (new->sem.sum.res, old->sem.sum.res))
+                continue;
+
+	    /* see if partitioning attributes match */
+            if (new->sem.sum.part.count != old->sem.sum.part.count)
+		continue;
+
+            for (j = 0; j < new->sem.sum.part.count; j++)
+		if (strcmp (new->sem.sum.part.atts[j],
+			    old->sem.sum.part.atts[j]))
+		    break;
+
+            if (j != new->sem.sum.part.count)
+                continue;
+            
+            /*
+             * if we came until here, old and new sum expression
+             * must be equal; return the existing one
+             */
+            return old;
+        }
+    }
+
+    /*
+     * the sum expression is a new operator, so add it to
+     * the array of existing subexpressions
+     */
+    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+
+    return new;
+}
+
+
+/**
+ * Check whether the count expression @ new already exists in
+ * the array of existing expressions. It must have the same
+ * child node, result attribute and list of partitioning attributes.
+ */
+static PFalg_op_t * find_count (PFalg_op_t *new)
+{
+    unsigned int subex_idx;
+    int j;
+
+    assert (new);
+
+    /* search for count expression in the array of existing operators */
+    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
+
+        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+
+        if (new->kind == old->kind) {
+
+            /*
+	     * see if the old node has the same child, same partitioning
+	     * attribute and same result attribute
+	     */
+            if (new->child[0] != old->child[0]
+             || strcmp (new->sem.count.res, old->sem.count.res))
+                continue;
+
+	    /* see if partitioning attributes match */
+            if (new->sem.count.part.count != old->sem.count.part.count)
+		continue;
+
+            for (j = 0; j < new->sem.count.part.count; j++)
+		if (strcmp (new->sem.count.part.atts[j],
+			    old->sem.count.part.atts[j]))
+		   break;
+
+            if (j != new->sem.count.part.count)
+                continue;
+            
+            /*
+             * if we came until here, old and new row count expression
+             * must be equal; return the existing one
+             */
+            return old;
+        }
+    }
+
+    /*
+     * the row count expression is a new operator, so add it to
+     * the array of existing subexpressions
+     */
+    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+
+    return new;
+}
+
+
+/**
+ * Check whether the duplicate elimination expression @ new
+ * already exists in the array of existing expressions. It must
+ * have the same child node.
+ */
+static PFalg_op_t * find_distinct (PFalg_op_t *new)
+{
+    unsigned int subex_idx;
+
+    assert (new);
+
+    /* search for distinct expression in the array of existing operators */
+    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
+
+        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+
+        if (new->kind == old->kind) {
+
+            /* see if the old node has the same child */
+            if (new->child[0] != old->child[0])
+                continue;
+            
+            /*
+             * if we came until here, old and new distinct expression
+             * must be equal; return the existing one
+             */
+            return old;
+        }
+    }
+
+    /*
+     * the distinct expression is a new operator, so add it to
      * the array of existing subexpressions
      */
     *((PFalg_op_t **) PFarray_add (subexps)) = new;
@@ -841,8 +1006,10 @@ find_subexp (PFalg_op_t *new)
             return find_doc_tbl (new);
 
         case aop_disjunion:
+            return find_disjunion (new);
+
         case aop_cross:
-            return find_union_cross (new);
+            return find_cross (new);
 
         case aop_difference:
             return find_difference (new);
@@ -855,9 +1022,6 @@ find_subexp (PFalg_op_t *new)
 
         case aop_select:
             return find_select (new);
-
-        case aop_negate:
-            return find_negate (new);
 
         case aop_type:
             return find_type (new);
@@ -878,7 +1042,37 @@ find_subexp (PFalg_op_t *new)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
-            return find_arithmetic (new);
+        case aop_num_equal:
+        case aop_num_less_than:
+        case aop_num_greater_than:
+        case aop_bool_and:
+        case aop_bool_or:
+            return find_binary (new);
+
+        case aop_num_neg:
+        case aop_bool_not:
+	    return find_unary (new);
+
+        case aop_sum:
+	    return find_sum (new);
+
+        case aop_count:
+	    return find_count (new);
+
+        case aop_distinct:
+	    return find_distinct (new);
+
+	/* no common subexpression elimination performed here, since, even
+	 * if two element constructors are identical, they create two
+	 * separate instances of the element(s)
+	 */
+        case aop_element:
+	    return new;
+
+	/* the same applies to text node constructors */
+        case aop_textnode:
+	    return new;
+
     }
 
     return new;

@@ -26,6 +26,7 @@
  *  Contributors:
  *          Torsten Grust <torsten.grust@uni-konstanz.de>
  *          Jens Teubner <jens.teubner@uni-konstanz.de>
+ *          Sabine Mayer <sbnmayer@inf.uni-konstanz.de>
  *
  * $Id$
  */
@@ -179,26 +180,37 @@ typedef enum PFalg_test_t PFalg_test_t;
 
 /** algebra operator kinds */
 enum PFalg_op_kind_t {
-      aop_lit_tbl       /**< literal table */
-    , aop_disjunion     /**< union two relations with same schema */
-    , aop_difference    /**< difference of two relations with same schema */
-    , aop_cross         /**< cross product (Cartesian product) */
-    , aop_eqjoin        /**< equi-join */
-    , aop_scjoin        /**< staircase join */
-    , aop_doc_tbl       /**< document relation */
-    , aop_select        /**< selection of rows where column value != 0 */
-    , aop_negate        /**< negation */
-    , aop_type          /**< selection of rows where a column is of a
-			     certain type */
-    , aop_cast          /**< type cast of an attribute */
-    , aop_project       /**< algebra projection and renaming operator */
-    , aop_rownum        /**< consecutive number generation */
-    , aop_serialize     /**< serialize algebra expression
-                             (Placed on the very top of the tree.) */
-    , aop_num_add       /**< arithmetic plus operator */
-    , aop_num_subtract  /**< arithmetic minus operator */
-    , aop_num_multiply  /**< arithmetic times operator */
-    , aop_num_divide    /**< arithmetic divide operator */
+      aop_lit_tbl          /**< literal table */
+    , aop_disjunion        /**< union two relations with same schema */
+    , aop_difference       /**< difference of two relations with same schema */
+    , aop_cross            /**< cross product (Cartesian product) */
+    , aop_eqjoin           /**< equi-join */
+    , aop_scjoin           /**< staircase join */
+    , aop_doc_tbl          /**< document relation */
+    , aop_select           /**< selection of rows where column value != 0 */
+    , aop_type             /**< selection of rows where a column is of a
+			        certain type */
+    , aop_cast             /**< type cast of an attribute */
+    , aop_project          /**< algebra projection and renaming operator */
+    , aop_rownum           /**< consecutive number generation */
+    , aop_serialize        /**< serialize algebra expression
+                                (Placed on the very top of the tree.) */
+    , aop_num_add          /**< arithmetic plus operator */
+    , aop_num_subtract     /**< arithmetic minus operator */
+    , aop_num_multiply     /**< arithmetic times operator */
+    , aop_num_divide       /**< arithmetic divide operator */
+    , aop_num_equal        /**< numeric equal operator */
+    , aop_num_less_than    /**< numeric less-than operator */
+    , aop_num_greater_than /**< numeric greater-than operator */
+    , aop_num_neg          /**< numeric negation operator */
+    , aop_bool_and         /**< boolean AND operator */
+    , aop_bool_or          /**< boolean OR operator */
+    , aop_bool_not         /**< boolean NOT operator */
+    , aop_sum              /**< operator for (partitioned) sum of a column */
+    , aop_count            /**< (partitioned) row counting operator */
+    , aop_distinct         /**< duplicate elimination operator */
+    , aop_element          /**< element-constructing operator */
+    , aop_textnode         /**< text node-constructing operator */
 };
 /** algebra operator kinds */
 typedef enum PFalg_op_kind_t PFalg_op_kind_t;
@@ -212,6 +224,11 @@ union PFalg_op_sem_t {
         PFalg_tuple_t  *tuples;   /**< array holding the tuples */
     } lit_tbl;                    /**< semantic content for literal table
                                        constructor */
+
+    /* semantic content for document table operator */
+    struct {
+        char           *rel;      /**< (file) name of the document relation */
+    } doc_tbl;
 
     /* semantic content for projection operator */
     struct {
@@ -248,12 +265,6 @@ union PFalg_op_sem_t {
         PFalg_att_t     att;     /**< name of selected attribute */
     } select;
 
-    /* semantic content for negation operator */
-    struct {
-        PFalg_att_t     att;     /**< name of negated attribute */
-	PFalg_att_t     res;     /**< column to store negated result */
-    } negate;
-
     /* semantic content for type test operator */
     struct {
 	PFalg_att_t     att;     /**< name of type-tested attribute */
@@ -267,12 +278,31 @@ union PFalg_op_sem_t {
         PFalg_simple_type_t ty;  /**< algebra type to cast to */
     } cast;
 
-    /* semantic content for arithmetic operators */
+    /* semantic content for binary (arithmetic and boolean) operators */
     struct {
 	PFalg_att_t     att1;     /**< first operand */
 	PFalg_att_t     att2;     /**< second operand */
 	PFalg_att_t     res;      /**< attribute to hold the result */
     } arithm;
+
+    /* semantic content for unary operators */
+    struct {
+	PFalg_att_t     att;      /**< operand */
+	PFalg_att_t     res;      /**< attribute to hold the result */
+    } unary;
+
+    /* semantic content for operators for (partitioned) sum of a column */
+    struct {
+	PFalg_att_t     att;      /**< attribute to be summed up */
+	PFalg_attlist_t part;     /**< partitioning attribute(s) */
+	PFalg_att_t     res;      /**< attribute to hold the result */
+    } sum;
+
+    /* semantic content for (partitioned) row counting operator */
+    struct {
+	PFalg_attlist_t part;     /**< partitioning attribute(s) */
+	PFalg_att_t     res;      /**< attribute to hold the result */
+    } count;
 
     /* semantic content for dummy built-in function operator */
     struct {
@@ -284,7 +314,7 @@ typedef union PFalg_op_sem_t PFalg_op_sem_t;
 
 
 /** maximum number of children of a #PFalg_op_t node */
-#define PFALG_OP_MAXCHILD 2
+#define PFALG_OP_MAXCHILD 3
 
 /** algebra operator node */
 struct PFalg_op_t {
@@ -405,7 +435,7 @@ PFalg_op_t * PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni,
  * Creates a representation for the doc table if there is none
  * already. Otherwise returns the already created one.
  */
-PFalg_op_t * PFalg_doc_tbl (void);
+PFalg_op_t * PFalg_doc_tbl (char *rel);
 
 
 /**
@@ -457,13 +487,6 @@ PFalg_op_t * PFalg_rownum (PFalg_op_t *n, PFalg_att_t a,
 PFalg_op_t * PFalg_select (PFalg_op_t *n, PFalg_att_t att);
 
 /**
- * Constructor for negation of column values. Result is stored
- * in newly created column.
- */
-PFalg_op_t * PFalg_negate (PFalg_op_t *n, PFalg_att_t att,
-			   PFalg_att_t res);
-
-/**
  * Constructor for type test of column values. The result is
  * stored in newly created column.
  */
@@ -491,8 +514,53 @@ PFalg_op_t * PFalg_multiply (PFalg_op_t *n, PFalg_att_t att1,
 PFalg_op_t * PFalg_divide (PFalg_op_t *n, PFalg_att_t att1,
 			   PFalg_att_t att2, PFalg_att_t res);
 
+/** Constructor for numeric equal operators. */
+PFalg_op_t * PFalg_equal (PFalg_op_t *n, PFalg_att_t att1,
+			  PFalg_att_t att2, PFalg_att_t res);
+
+/** Constructor for numeric less-than operators. */
+PFalg_op_t * PFalg_less_than (PFalg_op_t *n, PFalg_att_t att1,
+			      PFalg_att_t att2, PFalg_att_t res);
+
+/** Constructor for numeric greater-than operators. */
+PFalg_op_t * PFalg_greater_than (PFalg_op_t *n, PFalg_att_t att1,
+				 PFalg_att_t att2, PFalg_att_t res);
+
+/** Constructor for numeric negation operators. */
+PFalg_op_t * PFalg_neg (PFalg_op_t *n, PFalg_att_t att,
+			PFalg_att_t res);
+
+/** Constructor for boolean AND operators. */
+PFalg_op_t * PFalg_and (PFalg_op_t *n, PFalg_att_t att1,
+			PFalg_att_t att2, PFalg_att_t res);
+
+/** Constructor for boolean OR operators. */
+PFalg_op_t * PFalg_or (PFalg_op_t *n, PFalg_att_t att1,
+		       PFalg_att_t att2, PFalg_att_t res);
+
+/** Constructor for boolean NOT operators. */
+PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t att,
+			PFalg_att_t res);
+
+/** Constructor for operators forming (partitioned) sum of a column. */
+PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t att,
+			PFalg_att_t res, PFalg_attlist_t part);
+
+/** Constructor for (partitioned) row counting operators. */
+PFalg_op_t * PFalg_count (PFalg_op_t *n, PFalg_att_t res,
+			  PFalg_attlist_t part);
+
+/** Constructor for duplicate elimination operators. */
+PFalg_op_t * PFalg_distinct (PFalg_op_t *n);
+
+/** Constructor for element operators. */
+PFalg_op_t * PFalg_element (PFalg_op_t *, PFalg_op_t *, PFalg_op_t *);
+
+/** Constructor for text node operators. */
+PFalg_op_t * PFalg_textnode (PFalg_op_t *, PFalg_op_t *);
+
 /** Cast nat to int. */
-PFalg_op_t * PFalg_cast_item (PFalg_op_t * o);
+PFalg_op_t * PFalg_cast_item (PFalg_op_t *);
 
 
 PFalg_op_t * PFalg_serialize (PFalg_op_t *);

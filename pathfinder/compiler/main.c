@@ -387,6 +387,7 @@
  */
 static struct option long_options[] = {
     { "print-att-dot",                 0, NULL, 'D' },
+    { "haskell",                       0, NULL, 'H' },
     { "print-mil_summer",              0, NULL, 'M' },
     { "optimize",                      0, NULL, 'O' },
     { "print-human-readable",          0, NULL, 'P' },
@@ -471,6 +472,7 @@ static const char
 #include "mem.h"
 #include "algebra_cse.h"
 #include "coreopt.h"
+#include "hsk_parser.h"
 
 /* GC_max_retries, GC_gc_no */
 #include "gc.h"
@@ -489,8 +491,8 @@ static char *phases[] = {
     [11]    "after type inference and checking",
     [12]    "after XQuery Core optimization",
     [13]    "after the Core tree has been translated to the internal algebra",
-    [14]    "after the common subexpression elimination on the algebra tree",
-    [15]    "after the algebra tree has been rewritten/optimized",
+    [14]    "after the algebra tree has been rewritten/optimized",
+    [15]    "after the common subexpression elimination on the algebra tree",
     [16]    "after the algebra has been translated to MIL",
     [17]    "after the MIL program has been serialized"
 };
@@ -510,7 +512,8 @@ PFstate_t PFstate = {
     optimize            : false,
     print_parse_tree    : false,
     print_core_tree     : false,
-    print_algebra_tree  : false
+    print_algebra_tree  : false,
+    parse_hsk           : false
 };
 
 /**
@@ -628,10 +631,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DMOPTachpqrs:t", 
+        c = getopt_long (argc, argv, "DHMOPTachpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DMOPTachpqrs:t");
+        c = getopt (argc, argv, "DHMOPTachpqrs:t");
 #endif
 
         if (c == -1)
@@ -702,6 +705,10 @@ main (int argc, char *argv[])
             PFstate.print_dot = true;
             break;
 
+        case 'H':
+            PFstate.parse_hsk = true;
+            break;
+
         case 'M':
             PFstate.summer_branch = true;
             break;
@@ -753,6 +760,13 @@ main (int argc, char *argv[])
   
     /* how often will retry GC before we report out of memory and give up? */
     GC_max_retries = 2;
+
+    /* Parsing of Haskell XQuery to Algebra output */
+    if (PFstate.parse_hsk)
+    {
+        aroot = PFhsk_parse ();
+        goto subexelim;
+    }
 
     /* compiler chain below 
      */
@@ -926,20 +940,6 @@ main (int argc, char *argv[])
 
     STOP_POINT(13);
 
-    /* 
-     * common subexpression elimination in the algebra tree
-     */
-    tm = PFtimer_start ();
-
-    aroot = PFcse_eliminate (aroot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("Common subexpression elimination in algebra tree:\t %s",
-               PFtimer_str (tm));
-
-    STOP_POINT(14);
-
     /* Rewrite/optimize algebra tree */
     tm = PFtimer_start ();
 
@@ -950,9 +950,24 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("Algebra tree rewrite/optimization:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(15);
+    STOP_POINT(14);
 
     tm = PFtimer_start ();
+
+    /* 
+     * common subexpression elimination in the algebra tree
+     */
+subexelim:
+    tm = PFtimer_start ();
+
+    aroot = PFcse_eliminate (aroot);
+
+    tm = PFtimer_stop (tm);
+    if (PFstate.timing)
+        PFlog ("Common subexpression elimination in algebra tree:\t %s",
+               PFtimer_str (tm));
+
+    STOP_POINT(15);
 
     /* Map core to MIL */
     mroot = PFmilgen (aroot);

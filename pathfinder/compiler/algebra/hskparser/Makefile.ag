@@ -1,9 +1,13 @@
+## Process this file with automake to produce Makefile.in
 #
+# Copyright Notice:
+# -----------------
+# 
 # The contents of this file are subject to the MonetDB Public
 # License Version 1.0 (the "License"); you may not use this file
 # except in compliance with the License. You may obtain a copy of
 # the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-#
+# 
 # Software distributed under the License is distributed on an "AS
 # IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 # implied. See the License for the specific language governing
@@ -16,37 +20,22 @@
 # of Konstanz. All Rights Reserved.
 #
 # Contributors:
-#         Torsten Grust <torsten.grust@uni-konstanz.de>
-#         Maurice van Keulen <M.van.Keulen@bigfoot.com>
-#         Jens Teubner <jens.teubner@uni-konstanz.de>
+#         Sabine Mayer <mayers@inf.uni-konstanz.de>
 #
 
-SUBDIRS = schema debug mem parser semantics core algebra mil include
+INCLUDES = ../../include $(MONET_INCS)
 
-INCLUDES = include $(MONETDB_INCS) $(LIBGC_CFLAGS)
+PARSERNAME = hsk
+YFLAGS = -d --name-prefix=$(PARSERNAME)
+LFLAGS = -P$(PARSERNAME)
 
-LDFLAGS = $(LIBGC_LIBS) $(SOCKET_LIBS) $(LIBXML2_LIBS)
+# locally disable "-Werror"
+X_CFLAGS =
 
-bin_pf = {
-	LIBS = \
-		schema/libschema \ 
-		debug/libdebug \ 
-		mem/libmem \
-		parser/libparser \
-		semantics/libsemantics \
-		core/libcore \
-		algebra/libalgebra \
-		mil/libmil \
-                algebra/hskparser/libhskparser \
-		$(LIBGC_LDADD) $(LIBXML2_LDADD) $(LEXLIB)
-		
+lib_hskparser = {
+	NOINST
+	DIR = libdir
 	SOURCES = \
-	     env.c \
-	     main.c \
-	     oops.c \
-	     pfstrings.c \
-	     qname.c \
-	     scope.c \
-	     timer.c \
-	     variable.c
+		hsk_parser.l \
+		hsk_parser.y
 }

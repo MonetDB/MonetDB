@@ -46,27 +46,38 @@
 
 /** Node names to print out for all the Algebra tree nodes. */
 char *a_id[]  = {
-      [aop_lit_tbl]      = "TBL"
-    , [aop_disjunion]    = "U"
-    , [aop_difference]   = "DIFF"
+      [aop_lit_tbl]          = "TBL"
+    , [aop_disjunion]        = "U"
+    , [aop_difference]       = "DIFF"             /* orange */
       /* note: dot does not like the sequence "×\nfoo", so we put spaces
        * around the cross symbol.
        */
-    , [aop_cross]        = " × "              /* yellow */
-    , [aop_eqjoin]       = "|X|"              /* green */
-    , [aop_scjoin]       = "/|"               /* light blue */
-    , [aop_doc_tbl]      = "DOC"
-    , [aop_select]       = "SEL"
-    , [aop_negate]       = "NOT"
-    , [aop_type]         = "TYPE"
-    , [aop_cast]         = "CAST"
-    , [aop_num_add]      = "num-add"
-    , [aop_num_subtract] = "num_subtr"
-    , [aop_num_multiply] = "num-mult"
-    , [aop_num_divide]   = "num-div"
-    , [aop_project]      = "¶"
-    , [aop_rownum]       = "ROW#"
-    , [aop_serialize]    = "SERIALIZE"
+    , [aop_cross]            = " × "              /* yellow */
+    , [aop_eqjoin]           "|X|"              /* green */
+    , [aop_scjoin]           "/|"               /* light blue */
+    , [aop_doc_tbl]          "DOC"
+    , [aop_select]           "SEL"
+    , [aop_type]             "TYPE"
+    , [aop_cast]             "CAST"
+    , [aop_num_add]          "num-add"
+    , [aop_num_subtract]     "num_subtr"
+    , [aop_num_multiply]     "num-mult"
+    , [aop_num_divide]       "num-div"
+    , [aop_project]          "¶"
+    , [aop_rownum]           "ROW#"              /* red */
+    , [aop_serialize]        "SERIALIZE"
+    , [aop_num_equal]        "="
+    , [aop_num_less_than]    "<"
+    , [aop_num_greater_than] ">"
+    , [aop_num_neg]          "-"
+    , [aop_bool_and ]        "AND"
+    , [aop_bool_or ]         "OR"
+    , [aop_bool_not]         "NOT"
+    , [aop_sum]              "SUM"
+    , [aop_count]            "COUNT"
+    , [aop_distinct]         "DISTINCT"         /* indian red */
+    , [aop_element]          "ELEM"             /* lawn green */
+    , [aop_textnode]         "TEXT"             /* lawn green */
 };
 
 /** string representation of algebra atomic types */
@@ -108,24 +119,35 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
     static int node_id = 1;
 
     static char *color[] = {
-        [aop_lit_tbl]      = "grey",
-        [aop_disjunion]    = "grey",
-        [aop_difference]   = "grey",
-        [aop_cross]        = "yellow",
-        [aop_eqjoin]       = "green",
-        [aop_scjoin]       = "lightblue",
-        [aop_doc_tbl]      = "grey",
-        [aop_select]       = "grey",
-        [aop_negate]       = "grey",
-        [aop_type]         = "grey",
-        [aop_cast]         = "grey",
-        [aop_project]      = "grey",
-        [aop_rownum]       = "red",
-        [aop_serialize]    = "grey",
-        [aop_num_add]      = "grey",
-        [aop_num_subtract] = "grey",
-        [aop_num_multiply] = "grey",
-        [aop_num_divide]   = "grey"
+        [aop_lit_tbl]          "grey",
+        [aop_disjunion]        "grey",
+        [aop_difference]       "orange",
+        [aop_cross]            "yellow",
+        [aop_eqjoin]           "green",
+        [aop_scjoin]           "lightblue",
+        [aop_doc_tbl]          "grey",
+        [aop_select]           "grey",
+        [aop_type]             "grey",
+        [aop_cast]             "grey",
+        [aop_project]          "grey",
+        [aop_rownum]           "red",
+        [aop_serialize]        "grey",
+        [aop_num_add]          "grey",
+        [aop_num_subtract]     "grey",
+        [aop_num_multiply]     "grey",
+        [aop_num_divide]       "grey",
+        [aop_num_equal]        "grey",
+        [aop_num_less_than]    "grey",
+        [aop_num_greater_than] "grey",
+        [aop_num_neg]          "grey",
+        [aop_bool_and ]        "grey",
+        [aop_bool_or ]         "grey",
+        [aop_bool_not]         "grey",
+        [aop_sum]              "grey",
+        [aop_count]            "grey",
+        [aop_distinct]         "indianred",
+        [aop_element]          "lawngreen",
+        [aop_textnode]         "lawngreen"
     };
 
     n->node_id = node_id;
@@ -165,7 +187,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
                         PFarray_printf (dot, "%s",
                                 n->sem.lit_tbl.tuples[0].atoms[c].val.str);
                     else if (n->sem.lit_tbl.tuples[0].atoms[c].type == aat_node)
-                        PFarray_printf (dot, "%i",
+                        PFarray_printf (dot, "@%i",
                                 n->sem.lit_tbl.tuples[0].atoms[c].val.node);
                     else if (n->sem.lit_tbl.tuples[0].atoms[c].type == aat_dec)
                         PFarray_printf (dot, "%g",
@@ -189,12 +211,8 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
             }
             break;
 
-        case aop_cross:
-            PFarray_printf (dot, "%s", a_id[n->kind]);
-            break;
-
         case aop_eqjoin:
-            PFarray_printf (dot, "%s (%s:%s)",
+            PFarray_printf (dot, "%s (%s=%s)",
                             a_id[n->kind], n->sem.eqjoin.att1,
                             n->sem.eqjoin.att2);
             break;
@@ -281,14 +299,13 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
             }
             break;
 
+        case aop_doc_tbl:
+            PFarray_printf (dot, "%s", n->sem.doc_tbl.rel);
+            break;
+
         case aop_select:
             PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                             n->sem.select.att);
-            break;
-
-        case aop_negate:
-            PFarray_printf (dot, "%s (%s:%s)", a_id[n->kind],
-                            n->sem.negate.res, n->sem.negate.att);
             break;
 
         case aop_type:
@@ -306,9 +323,43 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
-            PFarray_printf (dot, "%s (%s:%s, %s)", a_id[n->kind],
+        case aop_num_equal:
+        case aop_num_less_than:
+        case aop_num_greater_than:
+        case aop_bool_and:
+        case aop_bool_or:
+            PFarray_printf (dot, "%s %s:(%s, %s)", a_id[n->kind],
                             n->sem.arithm.res, n->sem.arithm.att1,
                             n->sem.arithm.att2);
+            break;
+
+        case aop_num_neg:
+        case aop_bool_not:
+            PFarray_printf (dot, "%s %s:(%s)", a_id[n->kind],
+                            n->sem.unary.res, n->sem.unary.att);
+	    break;
+
+        case aop_sum:
+            if (n->sem.sum.part.count == 0)
+                PFarray_printf (dot, "%s %s:(%s)", a_id[n->kind],
+                                n->sem.sum.res, n->sem.sum.att);
+            else
+                PFarray_printf (dot, "%s %s:(%s)/%s", a_id[n->kind],
+                                n->sem.sum.res, n->sem.sum.att,
+                                n->sem.sum.part.atts[0]);
+                for (c = 1; c < n->sem.sum.part.count; c++)
+                    PFarray_printf (dot, ", %s", n->sem.sum.part.atts[c]);
+            break;
+
+        case aop_count:
+            if (n->sem.count.part.count == 0)
+                PFarray_printf (dot, "%s %s", a_id[n->kind],
+                                n->sem.count.res);
+            else
+                PFarray_printf (dot, "%s %s/%s", a_id[n->kind],
+                                n->sem.count.res, n->sem.count.part.atts[0]);
+                for (c = 1; c < n->sem.count.part.count; c++)
+                    PFarray_printf (dot, ", %s", n->sem.count.part.atts[c]);
             break;
 
         case aop_project:
@@ -505,43 +556,6 @@ alg_pretty (PFalg_op_t *n)
             }
             break;
 
-        case aop_cross:
-        case aop_disjunion:
-            break;
-
-        case aop_difference:
-            break;
-
-        case aop_eqjoin:
-            break;
-
-        case aop_scjoin:
-            break;
-
-        case aop_select:
-            break;
-
-        case aop_negate:
-            break;
-
-        case aop_type:
-            break;
-
-        case aop_cast:
-            break;
-
-        case aop_num_add:
-            break;
-
-        case aop_num_subtract:
-            break;
-
-        case aop_num_multiply:
-            break;
-
-        case aop_num_divide:
-            break;
-
         case aop_project:
             PFprettyprintf (" (");
             for (i = 0; i < n->sem.proj.count; i++)
@@ -568,7 +582,32 @@ alg_pretty (PFalg_op_t *n)
             break;
 
         case aop_serialize:
+        case aop_cross:
+        case aop_disjunion:
+        case aop_difference:
+        case aop_eqjoin:
+        case aop_scjoin:
+        case aop_select:
+        case aop_type:
+        case aop_cast:
+        case aop_num_add:
+        case aop_num_subtract:
+        case aop_num_multiply:
+        case aop_num_divide:
+        case aop_num_equal:
+        case aop_num_less_than:
+        case aop_num_greater_than:
+        case aop_num_neg:
+        case aop_bool_and:
+        case aop_bool_or:
+        case aop_bool_not:
+        case aop_sum:
+        case aop_count:
+        case aop_distinct:
+        case aop_element:
+        case aop_textnode:
             break;
+
     }
 
     for (c = 0; c < PFALG_OP_MAXCHILD && n->child[c] != 0; c++) {

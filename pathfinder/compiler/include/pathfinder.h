@@ -85,6 +85,7 @@ struct PFstate_t {
     bool print_core_tree;     /**< command line switch: -c */
     bool print_algebra_tree;  /**< command line switch: -a */
     bool summer_branch;       /**< command line switch: -M */
+    bool parse_hsk;           /**< command line switch: -H */
 };
 
 /** global state of the compiler */

@@ -31,4 +31,4 @@ EXTRA_DIST = \
 	coreprint.h      core2alg.h   oops.h       subtyping.h   algebra.h \
 	                 mil.h        parser.h     timer.h       builtins.h \
 	mil_mnemonic.h   milgen.h     algopt.h     algebra_cse.h coreopt.h \
-	algebra_mnemonic.h milprint_summer.h
+	algebra_mnemonic.h milprint_summer.h hsk_parser.h

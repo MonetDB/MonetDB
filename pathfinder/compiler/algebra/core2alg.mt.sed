@@ -445,7 +445,7 @@ TypeswitchExpr:  typesw (CoreExpr,
         tDO($%2$);
 
         /* create loop3 operator */
-        loop = project (select (negate ( stm, "type", "res"), "res"),
+        loop = project (select (not ( stm, "type", "res"), "res"),
                         proj ("iter", "iter"));
 
         /* update the environment for translation of e3 */
@@ -568,9 +568,9 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
         tDO($%2$);
 
         /* create loop3 operator */
-        loop = project (select (negate ([[ $1$ ]],
-                                        "item",
-                                        "res"),
+        loop = project (select (not ([[ $1$ ]],
+                                     "item",
+                                     "res"),
                                 "res"),
                         proj ("iter", "iter"));
 
@@ -724,7 +724,7 @@ LocationSteps:   locsteps (LocationStep, CoreExpr)
         [[ $$ ]] = rownum (scjoin (project ([[ $2$ ]],
                                             proj ("iter", "iter"),
                                             proj ("item", "item")),
-                                   disjunion (doc_tbl (),
+                                   disjunion (doc_tbl (NULL),
                                               delta),
                                    [[ $1$ ]]),
                            "pos", sortby ("item"), "iter");
@@ -952,8 +952,8 @@ LiteralValue:    empty_
     {
         /*
          *  -------------------------------------------------------------
-         *                              pos | item
-         *  env, loop, delta: empty => -----+------
+         *                              iter | pos | item
+         *  env, loop, delta: empty => ------+-----+------
          * 
          */
 

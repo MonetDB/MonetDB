@@ -41,7 +41,7 @@
 #define scjoin(a,b,c)   PFalg_scjoin ((a),(b),(c))
 
 /** document table */
-#define doc_tbl()       PFalg_doc_tbl()
+#define doc_tbl(a)      PFalg_doc_tbl((a))
 
 /** disjoint union */
 #define disjunion(a,b)  PFalg_disjunion ((a),(b))
@@ -61,9 +61,6 @@
 /* selection operator */
 #define select(a,b)     PFalg_select ((a),(b))
 
-/* negation operator */
-#define negate(a,b,c)   PFalg_negate ((a),(b),(c))
-
 /** type test operator */
 #define type(a,b,c,d)   PFalg_type ((a),(b),(c),(d))
 
@@ -82,7 +79,43 @@
 /* division operator */
 #define divide(a,b,c,d)   PFalg_divide ((a),(b),(c),(d))
 
-#define cast_item(o)         PFalg_cast_item (o)
+/* numeric equal operator */
+#define equal(a,b,c,d)    PFalg_equal ((a),(b),(c),(d))
+
+/* numeric less-than operator */
+#define less_than(a,b,c,d) PFalg_less_than ((a),(b),(c),(d))
+
+/* numeric greater-than operator */
+#define greater_than(a,b,c,d) PFalg_greater_than ((a),(b),(c),(d))
+
+/* numeric negation operator */
+#define neg(a,b,c)        PFalg_neg ((a),(b),(c))
+
+/* boolean AND operator */
+#define and(a,b,c,d)      PFalg_and ((a),(b),(c),(d))
+
+/* boolean OR operator */
+#define or(a,b,c,d)       PFalg_or ((a),(b),(c),(d))
+
+/* boolean NOT operator */
+#define not(a,b,c)        PFalg_not ((a),(b),(c))
+
+/* operator forming (partitioned) sum of a column */
+#define sum(a,b,c,d)      PFalg_sum ((a),(b),(c),(d))
+
+/* (partitioned) row counting operator */
+#define count(a,b,c)      PFalg_count ((a),(b),(c))
+
+/* duplicate elimination operator */
+#define distinct(a)       PFalg_distinct ((a))
+
+/* element-constructing operator */
+#define element(a,b,c)    PFalg_element ((a),(b),(c))
+
+/* text node-constructing operator */
+#define textnode(a,b)     PFalg_textnode ((a),(b))
+
+#define cast_item(o)      PFalg_cast_item (o)
 
 /** serialization */
-#define serialize(a)    PFalg_serialize(a)
+#define serialize(a)      PFalg_serialize(a)
