@@ -242,6 +242,10 @@ str IOprintBoth(
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	if( isaColType(tpe)){
+		stream_printf(fp,"should call column pring\n");
+		return MAL_SUCCEED;
+	}
 	if (hd) stream_printf(fp, "%s", hd);
 	
 	if (ATOMstorage(tpe) == TYPE_str  || ATOMstorage(tpe) > TYPE_str)

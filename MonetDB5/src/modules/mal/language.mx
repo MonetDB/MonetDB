@@ -142,7 +142,11 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATmultiprintf(GDKout,2,&b,TRUE,0,TRUE);
 		return MAL_SUCCEED;
 	}
-        stream_printf(fp,"[ ");
+	if( isaColType(tpe)){
+		return throwMessage("mal.print","column nys");
+	}
+		
+	stream_printf(fp,"[ ");
 	if( tpe == TYPE_str)
 		ATOMprint(tpe, *(str*)val, fp);
         else  	ATOMprint(tpe, val, fp);
