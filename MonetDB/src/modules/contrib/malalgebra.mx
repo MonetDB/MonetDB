@@ -62,7 +62,7 @@ Too many bugs.
   }
   ADDHELP("{csum}", "arjen", "Jul 18 2000",
           "Choose a different implementation if b is sorted on head.", 
-          "malalgebra");
+          mod);
 @mil
 @:milsum(sht)@
 @:milsum(int)@
@@ -218,9 +218,6 @@ if (mod = "main"){
 	#
 	# Simple test of some algorithms against the baseline
 	#
-
-	module("malalgebra");
-
 	VAR Ndiff, l, r;
 
 	dj := new( void, oid ); tf := new( void, int );

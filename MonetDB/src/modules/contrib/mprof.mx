@@ -264,6 +264,8 @@ number of physical IOs.
 .COMMAND pmStart() = pmStart_impl; "Initializes the mprof bats"
 .COMMAND pmExit() = pmExit_impl; "Removes the Mprof bats"
 
+.END mprof;
+
 @mil
     pmStart();
 
@@ -348,16 +350,10 @@ number of physical IOs.
     PROC emptyMallinfo := {
 	RETURN Mallinfo("(0,0,0,0,0,0,0,0)");
     }
-@m
 
-@mil
 proc drop_mprof() := {
     pmExit();
 }
-@m
-
-.END mprof;
-
 
 @+ Old mil implementation
 USER:= environment.find("owner");
@@ -1440,7 +1436,6 @@ join(b,c).print;
 @mil
 if (mod = "main"){
 	setoid(oid(20000000));
-	module(mprof);
 
 	# A test for the performance analysis
 	pmB("abc");
@@ -1456,7 +1451,6 @@ if (mod = "main"){
 	printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
 	pmE("pmPrint");
 	printf("#~BeginVariableOutput~#\n"); pmSummary; printf("#~EndVariableOutput~#\n");
-	drop("mprof");
 	quit;
 }
 @T

@@ -416,8 +416,7 @@ extern int bitset_toInt( int* res, bitset* theBitSet ) {
 @mil
 
 if (mod = "main"){
-	module(bitset);
-	sigs("bitset");
+	sigs("_bitset"); # only signatures of dynamic lib.
 
 	printf("constructor\n");
 	b := newBitset();

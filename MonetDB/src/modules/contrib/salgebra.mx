@@ -244,27 +244,24 @@ build the cluster hash from the enum.
 .PRELUDE = salgebra_prelude;
 .EPILOGUE = salgebra_epilogue;
 
+.END salgebra;
+
 @mil
   CHinit();
 
   PROC CHdir():void :=
     print( ch_namecache, ch_refcnt, ch_cache );
   ADDHELP("CHdir", "arjen", "Jul 18 2000",
-	  "List the clusterhash dictionary.", "salgebra");
+	  "List the clusterhash dictionary.", mod);
 
   PROC select( clusterhash ch, any::1 v ): BAT[oid,any::1] :=
     RETURN [ch.uselect( v )~const v];
   ADDHELP("select", "arjen", "Jun 16 2000",
-	  "Select using a clusterhash uselect plus a cast.", "salgebra");
-@m
+	  "Select using a clusterhash uselect plus a cast.", mod);
 
-@mil
 proc drop_salgebra() := {
   CHdrop();
 }
-@m
-
-.END salgebra;
 
 @{
 @* Implementation Code
@@ -1100,7 +1097,6 @@ salgebra_epilogue(void) {
 @mil
 
 if (mod = "main"){
-	module( "salgebra" );
 
 	ti := new( void, oid );
 	ti.insert( nil, 0@0 );
@@ -1144,8 +1140,6 @@ if (mod = "main"){
 	CHdir();
 
 	ch := nil;
-	drop( "salgebra" );
-
 	quit;
 }
 
