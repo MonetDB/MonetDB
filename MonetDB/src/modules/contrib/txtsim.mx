@@ -84,9 +84,9 @@ Provides basic similarity metrics for strings.
 #define SMALLEST_OF(x,y,z) ( MYMIN(MYMIN(x,y),z) )
 #define SMALLEST_OF4(x,y,z,z2) ( MYMIN(MYMIN(MYMIN(x,y),z),z2) )
 
-//**************************************************
-// Get a pointer to the specified cell of the matrix
-//************************************************** 
+/***************************************************
+ * Get a pointer to the specified cell of the matrix
+ **************************************************/
 
 inline 
 int *levenshtein_GetCellPointer (int *pOrigin, int col, int row, int nCols)
@@ -94,9 +94,9 @@ int *levenshtein_GetCellPointer (int *pOrigin, int col, int row, int nCols)
     return pOrigin + col + (row * (nCols + 1));
 }
 
-//*****************************************************
-// Get the contents of the specified cell in the matrix 
-//*****************************************************
+/******************************************************
+ * Get the contents of the specified cell in the matrix 
+ *****************************************************/
 
 inline int 
 levenshtein_GetAt (int *pOrigin, int col, int row, int nCols)
@@ -108,9 +108,9 @@ levenshtein_GetAt (int *pOrigin, int col, int row, int nCols)
 
 }
 
-//*******************************************************
-// Fill the specified cell in the matrix with the value x
-//*******************************************************
+/********************************************************
+ * Fill the specified cell in the matrix with the value x
+ *******************************************************/
 
 inline void 
 levenshtein_PutAt (int *pOrigin, int col, int row, int nCols, int x)
@@ -121,28 +121,28 @@ levenshtein_PutAt (int *pOrigin, int col, int row, int nCols, int x)
 }
 
 
-//*****************************
-// Compute Levenshtein distance
-//*****************************
+/******************************
+ * Compute Levenshtein distance
+ *****************************/
 int 
 levenshtein_impl (int *result, str s, str t, int *insdel_cost, int *replace_cost, int *transpose_cost)
 {
-    int *d; // pointer to matrix
-    int n; // length of s
-    int m; // length of t
-    int i; // iterates through s
-    int j; // iterates through t
-    char s_i; // ith character of s
-    char t_j; // jth character of t
-    int cost; // cost
-    int cell; // contents of target cell
-    int above; // contents of cell immediately above
-    int left; // contents of cell immediately to left
-    int diag; // contents of cell immediately above and to left
-    int sz; // number of cells in matrix
+    int *d; /* pointer to matrix */
+    int n; /* length of s */
+    int m; /* length of t */
+    int i; /* iterates through s */
+    int j; /* iterates through t */
+    char s_i; /* ith character of s */
+    char t_j; /* jth character of t */
+    int cost; /* cost */
+    int cell; /* contents of target cell */
+    int above; /* contents of cell immediately above */
+    int left; /* contents of cell immediately to left */
+    int diag; /* contents of cell immediately above and to left */
+    int sz; /* number of cells in matrix */
     int diag2=0, cost2=0;
 
-    // Step 1	
+    /* Step 1 */
     n = strlen (s);
     m = strlen (t);
     if (n == 0) {
@@ -152,9 +152,9 @@ levenshtein_impl (int *result, str s, str t, int *insdel_cost, int *replace_cost
         return n;
     }
     sz = (n+1) * (m+1) * sizeof (int);
-    d = (int *) malloc (sz);
+    d = (int *) GDKmalloc (sz);
 
-    // Step 2
+    /* Step 2 */
     for (i = 0; i <= n; i++) {
         levenshtein_PutAt (d, i, 0, n, i);
     }
@@ -163,17 +163,17 @@ levenshtein_impl (int *result, str s, str t, int *insdel_cost, int *replace_cost
         levenshtein_PutAt (d, 0, j, n, j);
     }
 
-    // Step 3
+    /* Step 3 */
     for (i = 1; i <= n; i++) {
 
         s_i = s[i-1];
 
-        // Step 4
+        /* Step 4 */
         for (j = 1; j <= m; j++) {
 
             t_j = t[j-1];
 
-            // Step 5
+            /* Step 5 */
             if (s_i == t_j) {
                 cost = 0;
             }
@@ -181,13 +181,13 @@ levenshtein_impl (int *result, str s, str t, int *insdel_cost, int *replace_cost
                 cost = *replace_cost;
             }
 
-            // Step 6 
+            /* Step 6 */
             above = levenshtein_GetAt (d,i-1,j, n);
             left = levenshtein_GetAt (d,i, j-1, n);
             diag = levenshtein_GetAt (d, i-1,j-1, n);
 
             if (j >= 2 && i >= 2) {
-                // NEW: detect transpositions
+                /* NEW: detect transpositions */
                 
                 diag2 = levenshtein_GetAt (d, i-2,j-2, n);
                 if (s[i-2]==t[j-1] && s[i-1]==t[j-2]) {
@@ -203,9 +203,9 @@ levenshtein_impl (int *result, str s, str t, int *insdel_cost, int *replace_cost
         }
     }
 
-    // Step 7
+    /* Step 7 */
     *result = levenshtein_GetAt (d, n, m, n);
-    free (d);
+    GDKfree (d);
     return GDK_SUCCEED;
 }
 
@@ -231,73 +231,55 @@ levenshteinbasic2_impl (int *result, str s, str t)
  * =========================================================================
  */
 
-/****************************************************************************
-NAME    : SoundexCode
-INPUT   : char *Name --- string to be calculated
-OUTPUT  : char *Key  --- soundex code for Name
-FUNCTION: This procedure calculates a four-letter soundex code for the string 
-          Name and returns this code in the string Key.
-****************************************************************************/
 #define SoundexLen 4      /* length of a soundex code */
 #define SoundexKey "Z000" /* default key for soundex code */
 
 inline char
 SCode(unsigned char c)
 {
-  /* set letter values */
-  static int  Code[] = {0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0, 
+    /* set letter values */
+    static int  Code[] = {0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0, 
                           1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2};
 
-  if (c == 95) return(2); /* german sz */
-  return(Code[toupper(c)-'A']);
+    if (c == 95) return(2); /* german sz */
+    return(Code[toupper(c)-'A']);
 }
 
 void
 soundex_code (char *Name, char *Key)
 {
-  char LastLetter;
-  int  Index;
+    char LastLetter;
+    int  Index;
 
-  /* set default key */
-  strcpy(Key, SoundexKey);
+    /* set default key */
+    strcpy(Key, SoundexKey);
 
-  /* keep first letter */
-  Key[0] = *Name;
-  if (!isupper(Key[0])) Key[0] = toupper(Key[0]);
+    /* keep first letter */
+    Key[0] = *Name;
+    if (!isupper(Key[0])) Key[0] = toupper(Key[0]);
 
-  LastLetter = *Name;
-  Name++;
+    LastLetter = *Name;
+    Name++;
 
-  /* scan rest of string */
-  for (Index = 1; (Index < SoundexLen) && *Name; Name++)
-  {
-    /* use only letters */
-    if (isalpha(*Name))
-    {
-      /* ignore duplicate successive chars */
-      if (LastLetter != *Name)
-      {
-        /* new LastLetter */
-        LastLetter = *Name;
+    /* scan rest of string */
+    for (Index = 1; (Index < SoundexLen) && *Name; Name++) {
+	/* use only letters */
+	if (isalpha(*Name)) {
+	    /* ignore duplicate successive chars */
+	    if (LastLetter != *Name) {
+		/* new LastLetter */
+		LastLetter = *Name;
 
-        /* ignore letters with code 0 */
-        if (SCode(*Name) != 0)
-        {
-          Key[Index] = '0' + SCode(*Name);
-          Index++;
-        }
-      }
+		/* ignore letters with code 0 */
+		if (SCode(*Name) != 0) {
+		    Key[Index] = '0' + SCode(*Name);
+		    Index++;
+		}
+	    }
+	}
     }
-  }
 }
 
-
-/****************************************************************************
-NAME    : Soundex
-INPUT   : char *Name --- string to calculate soundex code for
-OUTPUT  : char *Key  --- soundex code of Name
-FUNCTION: Soundex calculates the soundex code for the string Name.
-****************************************************************************/
 
 int
 soundex_impl (str *res, str Name)
