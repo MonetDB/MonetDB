@@ -302,6 +302,8 @@ profiling tool "valgrind", you need to take care of the following steps:
    resp. on the Mserver's commandline: "--set gdk_alloc_map=no")
  - tell valgrind to use 8-byte alignment ("valgrind --alignment=8"), hence:
    "valgrind --alignment=8 Mserver --set gdk_alloc_map=no ..."
+- the newer versions assume alignment 8 already and you might try:
+valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=10 Mserver --set gdk_alloc_map=no 
  - patch src/gdk/gdk_system.mx as follows and recompile MonetDB 
 ========
 --- gdk_system.mx	29 Mar 2004 14:02:51 -0000	1.56.2.1
