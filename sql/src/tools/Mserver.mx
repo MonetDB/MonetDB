@@ -174,17 +174,18 @@ static Client Monet_init( opt *set, int setlen )
 	char dbfarm[BUFSIZ];
 	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
 	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
+	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
 
-	if (!n || !dbname || !dbfarmval){
+	if (!n || !dbname || !dbfarmval || !alloc_map){
 		if (n) GDKfree(n);
 		return NULL;
 	}
 
-	strcpy(dbfarm, dbfarmval );	
+	strcpy(dbfarm, dbfarmval );
 	mo_substitute(set, setlen, dbfarm);
 
         /* determine Monet's kernel settings. */
-	if (!GDKinit(dbname, dbfarm)){
+	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map,"yes")==0)){
 		GDKfree(n);
 		return NULL;
 	}
