@@ -137,6 +137,7 @@ test = (
                 # src/monet/monet_mod_cnt-copy_C:
                 "|" r'^\[ "(mapi_params|tmp_62)",\t* *[10],\t* *[10],\t* *0\t* *\]$'
                 # Mtest warnings:
+                "|" r'^Over\.\.$'
                 "|" r'^(quit)?;$'
                 "|" r'^(printf\("\\n)?! Mserver still running after Mshutdown\. Quitting now\. !(\\n"\);)?$'
                 "|" r"^! Socket-Check failed for (SQL|MAPI)server on <[a-zA-Z0-9]*:[0-9]+> with #[0-9]+; '.*' !$"
