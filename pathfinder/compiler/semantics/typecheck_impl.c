@@ -105,11 +105,11 @@ static int TWIG_ID[] = {
 
  /* Constructor Nodes */
  , [c_elem]               elem       /**< the element constructor */
- , [c_elem]               attr       /**< the attribute constructor */
- , [c_elem]               text       /**< the text constructor */
- , [c_elem]               doc        /**< the document constructor */
+ , [c_attr]               attr       /**< the attribute constructor */
+ , [c_text]               text       /**< the text constructor */
+ , [c_doc]                doc        /**< the document constructor */
  , [c_comment]            comment    /**< the comment constructor */
- , [c_elem]               pi         /**< the processing-instruction constructor */
+ , [c_pi]                 pi         /**< the processing-instruction constructor */
  , [c_tag]                tag        /**< the tagname for element and attribute constructors */
 
  , [c_true]               true_      /**< built-in function `fn:true ()' */
