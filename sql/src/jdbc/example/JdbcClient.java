@@ -396,7 +396,9 @@ public class JdbcClient {
 				// we now have the right order to dump tables
 				for (int i = 0; i < tables.size(); i++) {
 					// dump the table
-					doDump(out, hasXMLDump, (Table)(tables.get(i)), dbmd, stmt);
+					Table t = (Table)(tables.get(i));
+					changeSchema(t, stmt);
+					doDump(out, hasXMLDump, t, dbmd, stmt);
 				}
 			}
 
@@ -533,7 +535,8 @@ public class JdbcClient {
 												tbl.getString("TABLE_SCHEM"),
 												tbl.getString("TABLE_NAME"),
 												tbl.getString("TABLE_TYPE")
-											)
+											),
+											true
 										);
 									}
 									found = true;
@@ -743,7 +746,8 @@ public class JdbcClient {
 	private static void createTable(
 		PrintWriter out,
 		DatabaseMetaData dbmd,
-		Table table
+		Table table,
+		boolean fq
 	) throws SQLException {
 		// hande views directly
 		if (table.getType().equals("VIEW")) {
@@ -754,7 +758,7 @@ public class JdbcClient {
 
 			// This will probably only work for MonetDB
 			out.print("CREATE VIEW ");
-		 	out.print(table.getFqnameQ());
+		 	out.print(fq ? table.getFqnameQ() : table.getNameQ());
 			out.print(" AS ");
 		 	out.print(tbl.getString("REMARKS").trim());
 		}
@@ -762,7 +766,7 @@ public class JdbcClient {
 		String comment = null;
 		int i;
 		out.print("CREATE "); out.print(table.getType()); out.print(" ");
-		out.print(table.getFqnameQ()); out.println(" (");
+		out.print(fq ? table.getFqnameQ() : table.getNameQ()); out.println(" (");
 		// put all columns with their type in place
 		ResultSet cols = dbmd.getColumns(table.getCat(), table.getSchem(), table.getName(), null);
 		for (i = 0; cols.next(); i++) {
@@ -1011,13 +1015,14 @@ public class JdbcClient {
 			createTable(
 				out,
 				dbmd,
-				table
+				table,
+				false
 			);
 			out.println();
 			dumpTable(
 				out,
 				stmt,
-				table.getFqnameQ()
+				table.getNameQ()
 			);
 			out.println();
 		} else {
@@ -1047,6 +1052,28 @@ public class JdbcClient {
 				}
 				out.println("</table>");
 			}
+		}
+	}
+
+	private static Stack lastSchema;
+	private static void changeSchema(Table t, Statement stmt) {
+		if (lastSchema == null) {
+			lastSchema = new Stack();
+			lastSchema.push(null);
+		}
+
+		if (!t.getSchem().equals(lastSchema.peek())) {
+			if (!lastSchema.contains(t.getSchem())) {
+				// create schema
+				out.print("CREATE SCHEMA ");
+				out.print(t.getSchemQ());
+				out.println(";\n");
+				lastSchema.push(t.getSchem());
+			}
+		
+			out.print("SET SCHEMA ");
+			out.print(t.getSchemQ());
+			out.println(";\n");
 		}
 	}
 
@@ -1411,8 +1438,16 @@ class Table {
 		return(schem);
 	}
 
+	String getSchemQ() {
+		return("\"" + schem + "\"");
+	}
+
 	String getName() {
 		return(name);
+	}
+
+	String getNameQ() {
+		return("\"" + name + "\"");
 	}
 
 	String getType() {
