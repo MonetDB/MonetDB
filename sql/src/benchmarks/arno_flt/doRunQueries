@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-sql_client --port=$SQLPORT < queries.sql
-

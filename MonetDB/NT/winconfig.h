@@ -401,7 +401,7 @@
 #define PACKAGE "MonetDB"
 
 /* Version number of package */
-#define VERSION "4.3.6"
+#define VERSION "4.3.7"
 
 /* Host identifier */
 #define HOST "i686-pc-win32"

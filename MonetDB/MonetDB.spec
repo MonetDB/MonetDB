@@ -1,7 +1,7 @@
 %define name MonetDB
 %define major_version 4
 %define minor_version 3
-%define sublevel 6
+%define sublevel 5
 %define release 1
 %define version %{major_version}.%{minor_version}.%{sublevel}
 %define prefix /usr
