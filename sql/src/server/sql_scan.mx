@@ -585,6 +585,7 @@ int lex_string(mvc * c, int quote)
 
 	assert(lc->yylen == 0);
 
+	lc->yytext[0] = 0;
 	while ((cur = lex_getc(lc)) != EOF && (cur != quote || escape)) {
 		if (cur == '\\' && !escape)
 			escape = 1;
@@ -592,7 +593,7 @@ int lex_string(mvc * c, int quote)
 			escape = 0;
 		lex_append(lc, cur);
 	}
-	if (cur == EOF){
+	if (cur == EOF) {
 		(void)sql_error( c, 2, "Unexpected end of input" );
 		return LEX_ERROR;
 	}
