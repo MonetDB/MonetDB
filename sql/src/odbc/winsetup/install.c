@@ -40,12 +40,12 @@ ProcessErrorMessages(const char *func)
 		rc = SQLInstallerError(errnr, &errcode, errmsg,
 				       sizeof(errmsg), &errmsglen);
 		if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
-			fprintf(stderr, "%s in function %s", errmsg, func);
+			MessageBox(NULL, errmsg, func,
+				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 			func_rc = TRUE;
 		}
 		errnr++;
 	} while (rc != SQL_NO_DATA);
-
 	return func_rc;
 }
 
@@ -145,7 +145,10 @@ VersionCheckCopyFile(const char *srcpath, const char *dstpath,
 	/* else file does not exist, so copy */
 
 	if (!CopyFile(srcfile, dstfile, FALSE)) {
-		fprintf(stderr, "Unable to copy %s to %s\n", srcfile, dstfile);
+		snprintf(srcfileVersion, sizeof(srcfileVersion),
+			 "Unable to copy %s to %s\n", srcfile, dstfile);
+		MessageBox(NULL, srcfileVersion, "CopyODBCCore",
+			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		return FALSE;
 	}
 
@@ -224,14 +227,6 @@ InstallMyDriver(const char *driverpath)
 	    ProcessErrorMessages("SQLInstallDriverEx"))
 		return FALSE;
 
-	/* call SQLConfigDriver to exercise the driver's setup
-	 * functions - some drivers have their setup routines built in
-	 * and others require a seperate dll */
-	if (!SQLConfigDriver(NULL, ODBC_CONFIG_DRIVER, DriverName,
-			     "CPTimeout=60\0\0", outpath, sizeof(outpath),
-			     &outpathlen))
-		ProcessErrorMessages("SQLConfigDriver");
-
 	return TRUE;
 }
 
@@ -299,11 +294,13 @@ AddMyDSN()
 static BOOL
 RemoveMyDSN()
 {
-	char buf[300];
-	WORD len;
+	char buf[200];
+	char *p;
 
-	CreateAttributeString(buf, sizeof(buf));
-
+	snprintf(buf, sizeof(buf), "DSN=%s;", DataSourceName);
+	for (p = buf; *p; p++)
+		if (*p == ';')
+			*p = 0;
 	if (!SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, buf)) {
 		ProcessErrorMessages("SQLConfigDataSource");
 		return FALSE;
