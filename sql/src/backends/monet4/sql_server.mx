@@ -227,7 +227,7 @@ The bootstrap method for accessing an SQL database is hardwired.
 An alternative scheme is to collect these statements in an SQL boot file.
 
 ??Where and how is the catalog defined??
-?? Which not making the grants part of it??
+?? Why not making the grants part of it??
 @c
 int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 { 
