@@ -806,3 +806,121 @@ DESCRIPITON:\n\
 returns all nodes on the preceding axis of the ctx-nodes.",
 "pathfinder");
 
+
+@:loop_lifted_scj_step1(ancestor)@
+@:loop_lifted_scj_step1(ancestor_or_self)@
+@:loop_lifted_scj_step1(child)@
+@:loop_lifted_scj_step1(descendant)@
+@:loop_lifted_scj_step1(descendant_or_self)@
+@:loop_lifted_scj_step1(following)@
+@:loop_lifted_scj_step1(following_sibling)@
+@:loop_lifted_scj_step1(parent)@
+@:loop_lifted_scj_step1(preceding)@
+@:loop_lifted_scj_step1(preceding_sibling)@
+
+# expanding of the return_type
+@= jRetType
+bat[oid,oid]
+@= jReturn
+result_scj := pruned_input.reverse.join(ctx_dn);
+@= unjRetType
+bat[void,bat]
+@= unjReturn
+result_scj := bat(void,bat).insert(nil,pruned_input).insert(nil,ctx_dn);
+@ 
+# expansion of the different return types
+@= loop_lifted_scj_step1
+@:loop_lifted_scj_step2(@1,_joined,@:jRetType@,@:jReturn)@
+@:loop_lifted_scj_step2(@1,_unjoined,@:unjRetType@,@:unjReturn@)@
+@
+#==================================================================
+# expansions of the loop lifted scj
+@= comma
+,
+@
+# kind argument
+@= kind
+@:comma@chr kind
+@
+# code for kind testing
+@= kindcode
+        temp1_scj := temp1_scj.mirror.join(Tpre_kind);
+        temp1_scj := temp1_scj.[=](kind).select(true);
+@
+# tagname argument
+@= tagname
+@:comma@bat[oid, oid] propID
+@
+# code for tagname testing
+@= tagnamecode
+        temp1_scj := temp1_scj.mirror.join(Tpre_prop);
+        temp1_scj := temp1_scj.join(propID);
+        temp1_scj := temp1_scj.mirror.join(Tpre_kind);
+        temp1_scj := temp1_scj.[=](ELEMENT).select(true);
+@
+# resetting the tagname
+@= resetpropID
+propID := nil;
+@
+# expanding the scj for the different tests
+@= loop_lifted_scj_step2
+@:loop_lifted_scj_step3(@1,@2,,@3,,,@4)@
+@:loop_lifted_scj_step3(@1,_with_kind_test@2,@:kind@,@3,@:kindcode@,,@4)@
+@:loop_lifted_scj_step3(@1,_with_tagname_test@2,@:tagname@,@3,@:tagnamecode@,@:resetpropID@,@4)@
+@
+#==================================================================
+# actual definition of the scj proc
+@= loop_lifted_scj_step3
+proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item@3) : @4 :=
+{
+   var offset := 0;
+   var pruned_input := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
+   var ctx_dn := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
+
+   var sorting := iter.reverse.sort.reverse.mark(0@0).reverse;
+   iter := sorting.join(iter);
+   item := sorting.join(item);
+   sorting := nil;
+
+   var uniqueIter_count := {count}(iter.reverse, iter.tunique);
+   uniqueIter_count := uniqueIter_count.[-](1);
+
+   var temp1_scj;
+   var seqb;
+
+   uniqueIter_count@batloop ()
+   {
+   	temp1_scj := item.slice(offset, offset + int($t)).reverse.sort;
+	temp1_scj := temp1_scj.@1;
+
+	# possible test
+	@5
+
+   	seqb := count (ctx_dn);
+   	seqb := oid (seqb);
+   	temp1_scj := temp1_scj.mark(seqb).reverse;
+   	ctx_dn.insert(temp1_scj);
+
+   	temp1_scj := temp1_scj.project($h);
+   	pruned_input.insert(temp1_scj);
+
+   	offset := offset + $t + 1;
+   }
+
+   offset := nil;
+   temp1_scj := nil;
+   seqb := nil;
+   uniqueIter_count := nil;
+   iter := nil;
+   item := nil;
+   @6 # propID := nil;
+
+   ctx_dn.access(BAT_READ);
+   pruned_input.access(BAT_READ);
+
+   var result_scj;
+   @7
+   return result_scj;
+}
+@
+
