@@ -17,7 +17,7 @@
 
 @f gdk
 @T
-% define titlepage @t The Goblin Database Kernel
+@' define titlepage @t The Goblin Database Kernel
 @v Version 3.05
 @a Martin L. Kersten & Peter Boncz
 
