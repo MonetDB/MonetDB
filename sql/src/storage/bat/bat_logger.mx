@@ -595,7 +595,7 @@ logger_exit(logger *logger)
 	if ((fp = fopen(filename, "w")) != NULL) {
 		char ext[BUFSIZ];
 
-		fprintf(fp, "%06d\n\n", logger->version);
+		fprintf(fp, "%06d\n", logger->version);
 		logger_save(logger, fp);
 
 		fprintf(fp, "\n");
