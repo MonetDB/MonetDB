@@ -224,8 +224,13 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		if (s->op2.stval){
 			int r = statement_dump( s->op2.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().mark(oid(s%d)).reverse();\n", *nr, l, r);
+		} else if (s->flag >= 0){
+			len += snprintf( buf+len, BUFSIZ, 
+			  "s%d := s%d.reverse().mark(oid(%d)).reverse();\n", 
+			  *nr, l, s->flag);
 		} else {
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().mark(oid(%d)).reverse();\n", *nr, l, s->flag);
+			len += snprintf( buf+len, BUFSIZ, 
+			  "s%d := s%d.reverse().mark().reverse();\n", *nr, l);
 		}
 		s->nr = (*nr)++;
 	} 	break;
