@@ -101,7 +101,7 @@ html
 
 #include "mal_function.h"
 
-/* #define DEBUG_MAL_RESOLVE*/
+/*#define DEBUG_MAL_RESOLVE*/
 mal_export void chkProgram(Scope s, MalBlkPtr mb);
 mal_export void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level);
 mal_export int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe);
@@ -123,7 +123,7 @@ to easily recognize a second instantiation of p(...)]
 @c
 #include "mal_resolve.h"
 #ifdef DEBUG_MAL_RESOLVE
-#define DEBUGFCN "___"
+#define DEBUGFCN "____"
 int tracefcn;
 #endif
 

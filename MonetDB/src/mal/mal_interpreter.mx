@@ -669,8 +669,15 @@ The first step is to always clear the destination variable
 before a function call is made.
 
 @c
+#ifdef NOGARBAGE
+int nogarbage;
+#endif
 void garbageElement(ValPtr v)
 {	
+#ifdef NOGARBAGE
+	if( nogarbage++==0) printf("NO GARBAGECOLLECT ");
+	return;
+#endif
 	if( ATOMstorage(v->vtype) == TYPE_str){
 		if( v->val.pval && v->val.pval != str_nil) {
 		/* printf("clearing nil? %d ",v->val.pval==str_nil);
@@ -678,6 +685,7 @@ void garbageElement(ValPtr v)
 		   printf("%s\n",v->val.pval); */
 		
 			GDKfree(v->val.pval);
+			v->len= 0;
 		}
 		v->val.pval= NULL;
 	} else {

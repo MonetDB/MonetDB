@@ -90,7 +90,7 @@ ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 
 	j = pci->argv[k];
 	v= &stk->stk[j];
-	switch(v->vtype){
+	switch(ATOMstorage(v->vtype)){
 	case TYPE_void: val= (ptr) & v->val.ival; break;
 	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
 	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
@@ -127,7 +127,7 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k){
 	j = pci->argv[k];
 	v= &stk->stk[j];
 
-	switch(v->vtype){
+	switch(ATOMstorage(v->vtype)){
 	case TYPE_void: ret= (ptr) & v->val.ival; break;
 	case TYPE_bit: ret= (ptr) & v->val.cval[0]; break;
 	case TYPE_chr: ret= (ptr) & v->val.cval[0]; break;

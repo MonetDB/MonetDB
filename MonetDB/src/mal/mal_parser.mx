@@ -181,14 +181,14 @@ int keyword(Client cntxt, str kw, int length){
 	int i;
 	if( currChar(cntxt) == *kw &&
 		strncmp(cntxt->nxt,kw,length)==0 &&
-		!isalnum(*(cntxt->nxt + length)) ){
+		!idCharacter[cntxt->nxt[length]] ){
 		advance(cntxt,length);
 		return 1;
 	}
 	/* check for captialized versions */
 	for(i=0;i<length;i++)
 	if( tolower(cntxt->nxt[i]) != kw[i]) return 0;
-	if( !isalnum(cntxt->nxt[length]) ) {
+	if( !idCharacter[cntxt->nxt[length]] ){
 		advance(cntxt,length);
 		return 1;
 	}
