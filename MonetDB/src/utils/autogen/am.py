@@ -61,7 +61,7 @@ def cond_subdir(fd, dir, i):
 
 def am_sort_libs(libs, tree):
     res = []
-    for (pref,lib,sep) in libs:
+    for (pref,lib,sep,cond) in libs:
         after = -1
         # does lib depend on a other library
         if tree.has_key('lib_'+ lib):
@@ -84,7 +84,7 @@ def am_sort_libs(libs, tree):
                         pos = res.index(l)
                         if pos > after:
                             after = pos
-        res.insert(after + 1, (pref, lib, sep))
+        res.insert(after + 1, (pref, lib, sep, cond))
     return res
 
 def am_subdirs(fd, var, values, am):
@@ -992,11 +992,11 @@ CXXEXT = \\\"cc\\\"
         s = ""
         for (pref, lib, sep, cond) in am['LIBS']:
 	    if cond != '':
-            	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
-	    else:
         	fd.write("if %s\n" % (cond))
             	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
         	fd.write("endif\n")
+	    else:
+            	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
 
     if am['NLIBS']:
         fd.write("noinst_LTLIBRARIES =")
