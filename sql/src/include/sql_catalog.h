@@ -194,6 +194,41 @@ typedef struct sql_fkey {	/* fkey */
 	struct sql_ukey *rkey;	/* only set for fkey and rkey */
 } sql_fkey;
 
+/* histogram types */
+typedef enum xhistype {
+       X_EXACT,
+       X_EQUI_WIDTH,
+       X_EQUI_HEIGHT
+} xhistype;
+
+/* a single-column histogram */
+typedef struct xhisto {
+       	enum xhistype	type;		/* type of histogram */
+	int	num_buckets;	/* number of buckets (> 0) */
+	void	**min_value;	/* smallest value in this column 
+                                   (min_valuei+1 = max_valuei, min_value0 = column->min_value) */
+	void	**max_value;	/* largest value in each bucket 
+                                   (max_valuei = min_valuei+1, max_valuei-1 < max_valuei) */
+	lng	*num_values;	/* number if distinct values in each bucket 
+                           	   (0 < num_valuesi <= num_tuplesi) */
+	lng	*num_tuples;	/* total number of tuples in each bucket 
+                                   (0 < num_valuesi <= num_tuplesi)*/
+} xhisto;
+
+/* derived histogram of an (intermediate) column */
+typedef struct xhisto_instance {
+struct xhisto   *histogram;    /* the underlying base histogram; must NOT be NULL */
+	void     *min_value;    /* new smallest value in this column */
+	void     *max_value;    /* new largest value in this column */
+	dbl       sel_values;   /* selectivity factor to be applied to num_values of all buckets
+                                  of the underlying base histogram (0 < sel_values <= 1) */
+	dbl       sel_tuples;   /* selectivity factor to be applied to num_tuples of all buckets
+                                  of the underlying base histogram (0 < sel_tuples) */
+                               /* Note: sel_values & sel_tuples represent the relative changes
+                                  since the base histogram, not since the previous
+                                  derived/intermediate histogram instance ! */
+} xhisto_instance;
+
 typedef struct sql_column {
 	sql_base base;
 	sql_subtype *type;
