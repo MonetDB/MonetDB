@@ -47,7 +47,6 @@
 @:install_module(ddbench)@
 @:install_module(decimal)@
 @:install_module(enum)@
-@:install_module(io)@
 @:install_module(lock)@
 @:install_module(malalgebra)@
 @:install_module(mmath)@
