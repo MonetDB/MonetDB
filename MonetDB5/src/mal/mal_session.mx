@@ -150,7 +150,6 @@ void scheduleClient( str command, stream *fin, stream *fout)
 	char *user = command, *passwd= NULL,*s;
 	int key=0;
 	Client c;
-	int i;
 	MT_Id p;
 	/* decode first user:key:password line */
         s= strchr(command,'\n');
@@ -168,7 +167,7 @@ void scheduleClient( str command, stream *fin, stream *fout)
 	}
 	s = strchr(user,'\n');
 	if( s) *s =0;
-	c= initClient(GDKstrdup(user),NULL,fin,fout);
+	c= initClient(GDKstrdup(user),passwd,fin,fout);
 	if( c->nspace){
 		GDKfree(c->nspace->name);
 		c->nspace->name= GDKstrdup(user);
@@ -314,11 +313,10 @@ str MALparser(Client c){
 	InstrPtr p; 
 	MalBlkRecord oldstate;
 
-
+	oldstate.stop = 0;
 	c->nxt= c->input;
 	c->curprg->def->errors=0;
 	oldstate = *c->curprg->def;
-
 	
 	prepareMalBlk(c->curprg->def,c->input);
 	if( parseMAL(c,c->curprg) || c->curprg->def->errors) {

@@ -1048,6 +1048,7 @@ static void mil_print(FILE *f, /*int tpe,*//*Stefan: unused!*/ YYSTYPE v)
 {
 	if( v.len >0) fprintf(f," %s ", v.val);
 }
+/* yytname should be known
 char *lexname[] = {
  "TOK_ITERTEMP", "TOK_TEMPLATE", "TOK_VARTEMP", "TOK_RANGETEMP",
  "TOK_CONSTANT", "TOK_ASSIGNMENT", "TOK_PARBLOCK",
@@ -1058,10 +1059,11 @@ char *lexname[] = {
  "TOK_STRING", "TOK_ITERATION", "TOK_ELSE", 
  "TOK_MODULE", 
  "TOK_ANY", "TOK_UNDEF", "TOK_DEREF", "TOK_ANYNUM", 0, };
+*/
 
 const char *yylexname(int Y)           
 { 	if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
-		return lexname[Y-TOK_ITERTEMP];
+		return yytname[Y-TOK_ITERTEMP];
 	} 
 	return "char";
 }
