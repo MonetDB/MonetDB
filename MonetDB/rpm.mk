@@ -37,15 +37,23 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%tmpdir            %{_tmppath}"         >> $(rpmtopdir)/rpmmacros
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
-	#( if [ "$(DOCTOOLS_TRUE)" != "#" ] ; then \
+	#( if [ "$(DOCTOOLS_TRUE)" = "#" ] ; then \
+	#	echo "%builddoc  0"                   >> $(rpmtopdir)/rpmmacros ; \
+	# else \
 	#	echo "%builddoc  1"                   >> $(rpmtopdir)/rpmmacros ; \
 	#fi )
-	( if [ "$(HAVE_PHP)" = "#" ] ; then \
+	( if [ "$(HAVE_PHP_TRUE)" = "#" ] ; then \
 		echo "%buildphp  0"                   >> $(rpmtopdir)/rpmmacros ; \
+	 else \
+		echo "%buildphp  1"                   >> $(rpmtopdir)/rpmmacros ; \
 	fi )
-	( if [ "$(HAVE_PERL)" = "#" ] ; then \
+	( if [ "$(HAVE_PERL_TRUE)" = "#" ] ; then \
 		echo "%buildperl  0"                   >> $(rpmtopdir)/rpmmacros ; \
+	 else \
+		echo "%buildperl  1"                   >> $(rpmtopdir)/rpmmacros ; \
 	fi )
+	echo "%comp_cc  $CC"                  	>> $(rpmtopdir)/rpmmacros ; 
+	echo "%comp_cxx $CXX"                  	>> $(rpmtopdir)/rpmmacros ; 
 
 	$(RPMBUILD) --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 

@@ -20,9 +20,9 @@ Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 BuildRequires: python 
 
-%define buildphp 0
-%define buildperl 0
-%define builddoc 0
+#%define buildphp 0
+#%define buildperl 0
+#%define builddoc 0
 
 %ifarch x86_64
 %define bits 64
