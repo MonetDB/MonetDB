@@ -12,11 +12,11 @@ AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 PREFIX=[$prefix]
 AC_DEFINE_UNQUOTED(MONET_PREFIX, "$PREFIX", [directory prefix])
 
-MONET_PREFIX=`(mkdir -p $PREFIX && cd $PREFIX && pwd)`
+MONET_PREFIX=[`(mkdir -p $PREFIX && cd $PREFIX && pwd)`]
 AC_SUBST(MONET_PREFIX)
-MONET_BUILD=`pwd`
+MONET_BUILD=[`pwd`]
 AC_SUBST(MONET_BUILD)
-MONET_SOURCE=`(cd $srcdir && pwd)`
+MONET_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(MONET_SOURCE)
 
 dnl we use LEXLIB=-ll because this is usually correctly installed 
@@ -218,6 +218,12 @@ AC_SUBST(DL_LIBS)
 MALLOC_LIBS=""
 AC_CHECK_LIB(malloc, malloc, [ MALLOC_LIBS="-lmalloc" ] )
 AC_SUBST(MALLOC_LIBS)
+
+save_LIBS="$LIBS"
+LIBS="$LIBS $MALLOC_LIBS"
+AC_CHECK_FUNCS(mallopt mallinfo)
+LIBS="$save_LIBS"
+
 
 SOCKET_LIBS=""
 AC_CHECK_LIB(socket, socket, [ SOCKET_LIBS="-lsocket -lnsl" ], [], "-lnsl" )

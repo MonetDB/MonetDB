@@ -1,11 +1,11 @@
-#! /bin/sh
+#!/bin/bash
 
 # helps bootstrapping Monet, when checked out from CVS
 # requires GNU autoconf, automake and libtool
 # this is not meant to go into the distributions
 
 find . -name .cache* \-exec rm {} \;
-src/utils/autogen/autogen.py
+src/utils/autogen/autogen.py `pwd`
 cat configure.ag > configure.in
 echo "AC_OUTPUT(" >> configure.in
 cat acout.in  >> configure.in
