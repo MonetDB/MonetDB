@@ -13,6 +13,8 @@ action.
   (and multiplex routines)
 - insert(b,2) should work on bat(void,int)
 
+- The replace/insert operations for bats arguments should set the 
+  access mode themselves. 
 - a hard bug appears in the following case
   via MapiClient Tapestry_1M-2
   2nd time MapiClient tapestry_attr1 has disappeared
@@ -21,13 +23,6 @@ action.
 - reference counting BATs through assignments should not be counted.
   a BAT disappears when the first binding variable ceases to exist.
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
-
-- Realize mal.include call as a preprocessor step
-- Design a macro expansion facility (with property checks)
-- Design an inversion facility (replace multiple stmt by one)
-
-- polymorphic type bindings should be allowed throughout the block
-  they are replaced by concrete types upon cloning
 
 - printing result tables should be improved.
 - rethink position of enum types
@@ -49,11 +44,11 @@ table. This can reduce the number of malloc/free calls significantly.
   the patch into the direction of symbol table lookup made it worse
 
 API issues
+- Mapi access to sql client should be set
 - Japi should be aligned with latest Mapi 
 - The java front-end terminal and profiler should be re-vived
 - Multi-client (concurrent) access has not been tested yet
 - roll-forward Mapi packages .php, .py, .tcl
-
 
 V4 issues
 - overlay V4 database with V5 session
@@ -65,7 +60,11 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
-20041206 The first implementation of MACRO and ORCAM algorithms
+20041210 The first implementation of MACRO and ORCAM algorithms
+    Design a macro expansion facility (with property checks)
+    Design an inversion facility (replace multiple stmt by one)
+20041206 polymorphic type bindings should be allowed throughout the block
+  they are replaced by concrete types upon cloning
 20041120 Co-routine ('factory') support in the kernel. They 'yield'
   a result on each call and finish upon 'return'
   Factory cloning would then become an issue, they become first
