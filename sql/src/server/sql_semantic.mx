@@ -567,27 +567,73 @@ dyncheck_types(mvc *sql, sql_subtype *ct, stmt *s)
 
 		c = sql_bind_func_result("convert", st, it, ct);
 		if (c)
-			return fix_scale(sql, ct, stmt_binop(s, stmt_atom_int(ct->digits), c), 1, (st->type->scale == SCALE_FIX));
+			return fix_scale(
+				sql,
+				ct,
+				stmt_binop(s, stmt_atom_int(ct->digits), c),
+				1,
+				(st->type->scale == SCALE_FIX)
+			);
 	}
 	if (!t || subtype_cmp(t, ct) != 0) {
-		stmt *res = sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
+		stmt *res = sql_error(
+			sql,
+			02,
+			"types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
+			st->type->sqlname,
+			st->digits,
+			st->scale,
+			st->type->base.name,
+			ct->type->sqlname,
+			ct->digits,
+			ct->scale,
+			ct->type->base.name
+		);
 
 		if (s)
 			stmt_destroy(s);
 		return res;
 	}
 	if (st) {
-		if ((ct->digits > 0 && ct->scale == 0 && (ct->digits < st->digits || st->digits == 0)) || (ct->scale > 0 && ct->digits > 0 && ct->digits - ct->scale < st->digits - st->scale)
-		    ) {
+		if (
+			/* type with no scale and nonzero length */
+			(ct->digits > 0 &&
+			 ct->scale == 0 &&
+			 (ct->digits < st->digits || st->digits == 0)
+			) ||
+			/* scaled type */
+			(ct->scale > 0 &&
+			 ct->digits > 0 &&
+			 ct->digits - ct->scale < st->digits - st->scale
+			)
+		) {
 			stmt *res = NULL;
 			sql_subtype *it = sql_bind_localtype("lng");
 			sql_subfunc *c;
 
 			c = sql_bind_func_result("convert", st, it, ct);
 			if (c)
-				return fix_scale(sql, ct, stmt_binop(s, stmt_atom_int(ct->digits), c), 1, 0);
+				return fix_scale(
+					sql,
+					ct,
+					stmt_binop(s, stmt_atom_int(ct->digits), c),
+					1,
+					0
+				);
 
-			res = sql_error(sql, 03, "Dynamic types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
+			res = sql_error(
+				sql,
+				03,
+				"dynamic types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
+				st->type->sqlname,
+				st->digits,
+				st->scale,
+				st->type->base.name,
+				ct->type->sqlname,
+				ct->digits,
+				ct->scale,
+				ct->type->base.name
+			);
 			if (s)
 				stmt_destroy(s);
 			return res;
@@ -607,7 +653,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	if (!st) {
 		assert(0);
 		stmt_destroy(s);
-		return sql_error(sql, 02, "Statement has no type information");
+		return sql_error(sql, 02, "statement has no type information");
 	}
 
 	/* first try cheap internal (inplace) convertions ! */
@@ -662,7 +708,19 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 		t = tail_type(s);
 	}
 	if (!t || subtype_cmp(t, ct) != 0) {
-		stmt *res = sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
+		stmt *res = sql_error(
+			sql,
+			02,
+			"types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
+			st->type->sqlname,
+			st->digits,
+			st->scale,
+			st->type->base.name,
+			ct->type->sqlname,
+			ct->digits,
+			ct->scale,
+			ct->type->base.name
+		);
 
 		stmt_destroy(s);
 		return res;
@@ -673,8 +731,18 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 		 */
 		int sc = (ct->type->scale == SCALE_FIX);
 
-		if ((ct->digits > 0 && ct->scale == 0 && ct->digits < st->digits) || (sc && ct->scale > 0 && ct->digits > 0 && ct->digits - ct->scale < st->digits - st->scale)
-		    ) {
+		if (
+			/* type with no scale and nonzero length */
+			(ct->digits > 0 &&
+			 ct->scale == 0 &&
+			 ct->digits < st->digits
+			) ||
+			/* non-fixed scaled type */
+			(sc && ct->scale > 0 &&
+			 ct->digits > 0 &&
+			 ct->digits - ct->scale < st->digits - st->scale
+			)
+		) {
 			stmt *res = NULL;
 
 			if (tpe == type_dyncheck) {
@@ -688,7 +756,19 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 					return fix_scale(sql, ct, s, 1, (st->type->scale == SCALE_FIX));
 			}
 			if (s) {
-				res = sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
+				res = sql_error(
+					sql,
+					03,
+					"types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
+					st->type->sqlname,
+					st->digits,
+					st->scale,
+					st->type->base.name,
+					ct->type->sqlname,
+					ct->digits,
+					ct->scale,
+					ct->type->base.name
+				);
 				stmt_destroy(s);
 			}
 			return res;
@@ -893,7 +973,7 @@ semantic(mvc *sql, symbol *s)
 	}
 
 	default:
-		return sql_error(sql, 01, "sql_stmt Symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		return sql_error(sql, 01, "sql_stmt symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
 	return res;
 }

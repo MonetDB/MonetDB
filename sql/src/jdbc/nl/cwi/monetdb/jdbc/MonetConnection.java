@@ -1518,7 +1518,10 @@ public class MonetConnection extends Thread implements Connection {
 					if (!isSet[1]) error += "type header missing\n";
 					if (!isSet[2]) error += "tuplecount header missing\n";
 					if (!isSet[3]) error += "id header missing\n";
-				} else if (queryType == MonetStatement.Q_UPDATE) {
+				} else if (
+					queryType == MonetStatement.Q_UPDATE ||
+					queryType == MonetStatement.Q_TRANS
+				) {
 					// update count has one result: the count
 					tuplecount = 1;
 				}

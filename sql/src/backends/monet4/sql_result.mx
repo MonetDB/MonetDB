@@ -420,7 +420,8 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	if (ok)
 		ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
 
-	if (ok && t->query_type == Q_UPDATE)
+	/* skip headers for affected row counts */
+	if (ok && (t->query_type == Q_UPDATE || t->query_type == Q_TRANS))
 		return 0;
 
 	if (!ok)
