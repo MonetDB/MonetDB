@@ -942,6 +942,7 @@ def msc_java(fd, var, java, msc):
     fd.write("\n!ELSE\n\n")
 
     fd.write('%s:\n' % name)
+    fd.write('install_%s:\n' % name)
 
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
