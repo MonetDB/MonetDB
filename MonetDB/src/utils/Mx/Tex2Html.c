@@ -81,31 +81,31 @@ int bib_look(char *,char*,char**);
 #endif
 
 #define TYPE_HLINE  	0	
-#define TYPE_MBOX	32
-#define TYPE_ITEM	33
-#define TYPE_FOOTNOTE   36
-#define TYPE_WWW 	37	
-#define TYPE_THANKS     38
-#define TYPE_SECTION	39
-#define TYPE_TITLE	42
-#define TYPE_CITE	46
-#define TYPE_BIB	47
-#define TYPE_REF	48
-#define TYPE_LABEL	49
-#define TYPE_DRAWPSFIG	52
-#define TYPE_TABULAR	53
-#define TYPE_TT		55
-#define TYPE_DESC	60
-#define TYPE_VERBATIM	61
-#define TYPE_TINY       63
-#define TYPE_HUGE       72
-#define TYPE_DEF        73
-#define TYPE_UNKNOWN    76
+#define TYPE_MBOX	36
+#define TYPE_ITEM	37
+#define TYPE_FOOTNOTE   40
+#define TYPE_WWW 	41	
+#define TYPE_THANKS     42
+#define TYPE_SECTION	43
+#define TYPE_TITLE	46
+#define TYPE_CITE	50
+#define TYPE_BIB	51
+#define TYPE_REF	52
+#define TYPE_LABEL	53
+#define TYPE_DRAWPSFIG	56
+#define TYPE_TABULAR	57
+#define TYPE_TT		59
+#define TYPE_DESC	64
+#define TYPE_VERBATIM	65
+#define TYPE_TINY       67
+#define TYPE_HUGE       76
+#define TYPE_DEF        77
+#define TYPE_UNKNOWN    80
 
 char *keyword[] =  {
 	"hline", "rule", "newline", "newpage", "clearpage", "backslash", 
 	"bullet", "parallel", "cdot", "cdots", "ldots", "pounds", "copyright", 
-	"S", "not", "P", "times", "ae", "AE", " ","skip", "bigskip", "leq", 
+	"S", "not", "P", "times", "sigma", "theta", "equiv", "Join", "ae", "AE", " ","skip", "bigskip", "leq", 
 	"geq", "div", "pm", "ll", "gg", "mid", "wedge", "vee", "sim", "mbox", 
 	"item", "indent", "itemindent", "footnote", "www", "thanks", "section", 
 	"subsection", "subsubsection", "title", "date", "author", "caption", 
@@ -118,7 +118,7 @@ char *keyword[] =  {
 char *translation[] =  {
 	"<hr noshade size=1>\n", "<hr noshade size=1>\n", "<br>", "<p>\n", 
 	"<p>", "\\", "<b>&#183;</b>", "||", "&#183;", "&#183;&#183;", "..", 
-	"&#163;", "&#169;", "&#167;", "&#172;", "&#182;", "&#215;", "&#230;", 
+	"&#163;", "&#169;", "&#167;", "&#172;", "&#182;", "&#215;", "&sigma;", "&theta;", "&equiv;", "|&times;|", "&#230;", 
 	"&#189;", "&#160;", "<br><br>", "<br><p><br>", "&#60;=", "&#62;=", 
 	"&#247;", "&#177;", "&#60;&#60;", "&#62;&#62;", "|", 
 	" <i>and</i> ",
