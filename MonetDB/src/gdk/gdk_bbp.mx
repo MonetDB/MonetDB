@@ -183,7 +183,7 @@ bat		BBP_mask = 0;		/* number of buckets = & mask */
 #endif
 
 static void BBPspin(bat bid, str debug, int event);
-static int BBPfree(BAT *b);
+static int BBPfree(BAT *b, str calledFrom);
 
 
 void BBP_insert(bat i) {
@@ -900,12 +900,9 @@ void BBPcacheit(BAT* b) {
 used in BBPfree (bat swapped out) and BBPclear (bat destroyed forever).
 @c
 void BBPuncacheit(bat i, int unloaddesc) {
-	MT_Id pid = BBP_getpid();
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPuncacheit")) {
 		BAT *b = BBPcache(i);
-		if (pid != locked_by) 
-			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPuncacheit");
 		if (b) {
 			BATDEBUG {
 				THRprintf(GDKerr, "uncache %d (%s)\n", (int) i, BBP_logical(i)); 
@@ -918,8 +915,6 @@ void BBPuncacheit(bat i, int unloaddesc) {
 		}
 		BBP_cache(i) = BBP_cache(-i) = NULL; 
 		BBP_status_off(i, BBPLOADED, "BBPuncacheit");
-		if (pid != locked_by) 
-			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPuncacheit");
 	}
 }
 
@@ -1158,8 +1153,7 @@ int decref(bat i, int logical, int lock) {
 
         if (swap) {
                 b = BBPquickdesc(i, TRUE);
-                if (b) BBPfree(b); /* free memory (if loaded) and delete from disk (if transient but saved) */
-		BBP_unload_off(i, "BBPdecref");
+                if (b) BBPfree(b, "BBPdecref"); /* free memory (if loaded) and delete from disk (if transient but saved) */
 	}
 	return refs;
 }
@@ -1245,8 +1239,7 @@ int BBPreclaim(BAT* b) {
 
 	/* BBPfree potentially saves the BAT. Do this after releasing the short-term lock */
 	if (ret == 0) {
-		ret = BBPfree(b);
-		BBP_unload_off(i, "BBPreclaim");
+		ret = BBPfree(b, "BBPreclaim");
 	}
 	return ret;
 }
@@ -1483,7 +1476,7 @@ TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
 static
-int BBPfree(BAT *b) {
+int BBPfree(BAT *b, str calledFrom) {
 	int ret;
 	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
 	int destroy = BBP_lrefs(bid) == 0 && (BBP_status(bid)&BBPDELETED) == 0;
@@ -1529,11 +1522,12 @@ int BBPfree(BAT *b) {
         } else {
 		VIEWdestroy(b);
 	}
-	if (destroy) {
+	BBPuncacheit(bid, destroy || b->batMapdirty); 
+	BBP_unload_off(bid, calledFrom);
+
+	if (destroy) 
 		BBPclear(bid); /* if destroyed; de-register from BBP */
-	} else {
-		BBPuncacheit(bid, b->batMapdirty); /* just mark unloaded */
-	}
+
 	if (parent)		/* parent released when completely done with child */
 		BBPunshare(parent);
 	return 0; 
@@ -1839,8 +1833,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 					BBPname(bbptrim[i].bid));
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));
 			bats_unloaded++;
-			BBPfree(b);
-			BBP_unload_off(bbptrim[i].bid, "BBPtrim");
+			BBPfree(b, "BBPtrim");
 		} 
 		/* continue while we can scan for more candiates */
 		if (!scan) break;
