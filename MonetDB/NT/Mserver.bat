@@ -27,21 +27,26 @@ rem MONETDBDIR accordingly.
 rem if ALLUSERSPROFILE and APPDATA variables don't exist, forget about
 rem this whole exercise and use the default (i.e. %MONETDB\var\MonetDB).
 
-if "%ALLUSERSPROFILE%" == "" goto skip
 if "%APPDATA%" == "" goto skip
 
-if exist "%APPDATA%\MonetDB\VERSION" set MONETDBDIR=%APPDATA%\MonetDB
-if "%MONETDBDIR%" == "" set MONETDBDIR=%ALLUSERSPROFILE%\Application Data\MonetDB
+set MONETDBDIR=%APPDATA%\MonetDB
 
 set MONETDBFARM="--dbfarm=%MONETDBDIR%\dbfarm"
 set SQLLOGDIR=--set "sql_logdir=%MONETDBDIR%\log"
 
-rem if the database exists by the old name, move it
-if not exist "%MONETDB%\var\MonetDB" goto skip
-rem if the new path already exists, don't try moving the old to the new
 if exist "%MONETDBDIR%" goto skip
+
+rem if the database exists by the ancient name, move it
+if not exist "%MONETDB%\var\MonetDB" goto skip1
 move "%MONETDB%\var\MonetDB" "%MONETDBDIR%"
 rmdir "%MONETDB%\var"
+goto skip
+
+:skip1
+
+rem if the database exists by the old name, move it
+if not exist "%ALLUSERSPROFILE%\Application Data\MonetDB" goto skip
+move "%ALLUSERSPROFILE%\Application Data\MonetDB" "%MONETDBDIR%"
 
 :skip
 
