@@ -155,4 +155,4 @@ proc get_monet_port() := {
 	}
 	return port;
 }
-listen(get_monet_port(),5);
+fork(listen(get_monet_port(),5));

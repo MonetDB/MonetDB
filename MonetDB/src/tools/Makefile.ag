@@ -15,7 +15,7 @@ STATIC_MODS = \
 EXTRA_DIST = static_modules.mx libMapi.def monet-config.mx.in
 
 lib_Mapi = {
-	SOURCES = Mapi.mx
+	SOURCES = Mapi.mx 
 	LIBS = $(MAPI_LIBS)
 	HEADERS = h
 }
