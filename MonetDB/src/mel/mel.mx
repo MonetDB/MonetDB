@@ -525,7 +525,7 @@ YY_SPACE    	[\t\n ]*
 			    script = NULL;
 			    script_len = script_nr = 0;
 			    BEGIN INITIAL; return MEL_DROP; 		}
-<LOAD,DROP>"#line"        { char line[80], *p=line;
+<LOAD,DROP>"#line"        { char line[1024], *p=line;
                             while ((*p = yyinput()) != '\n') p++;
                             check_lineno(line); return yylex();         }
 <LOAD,DROP>"#"            { while (yyinput() != '\n'); return yylex();  }
@@ -623,7 +623,7 @@ YY_SPACE    	[\t\n ]*
 			return MEL_IDENTIFIER; 	     			}
 {YY_DIGIT}+	{	yytext[yyleng] = 0; yylval.i = (int) atoi(yytext);
 			return MEL_NUMBER;	 		     	}
-"#line"		{     char line[80], *p=line; 
+"#line"		{     char line[1024], *p=line; 
 			while ((*p = yyinput()) != '\n') p++; 
 			check_lineno(line); return yylex();	      	}
 "#"		{     while (yyinput() != '\n'); return yylex();	}
