@@ -1756,27 +1756,33 @@ private void dumpCacheStatus(){
  */
 public void sortColumn(int col){
 	if( col <0 || col > maxfields) return;
+	if( columns[col]==null) return;
 	// make sure you have all tuples in the cache
 	// and that they are properly sliced
 	fetchAllRows();
+	if(trace) 
+		System.out.println("Sort column:"+col+
+			" type:"+ columns[col].columntype);
 
 	int direction = columns[col].direction;
 	columns[col].direction = -direction;
-	if( columns[col].columntype.equals("int") ||
-	    columns[col].columntype.equals("lng") ||
-	    columns[col].columntype.equals("ptr") ||
-	    columns[col].columntype.equals("oid") ||
-	    columns[col].columntype.equals("void") ||
-	    columns[col].columntype.equals("sht") 
-	){
-		sortIntColumn(col);
-		return;
-	}
-	if( columns[col].columntype.equals("flt") ||
-	    columns[col].columntype.equals("dbl") 
-	){
-		sortDblColumn(col);
-		return;
+	if(columns[col].columntype!=null){
+		if( columns[col].columntype.equals("int") ||
+		    columns[col].columntype.equals("lng") ||
+		    columns[col].columntype.equals("ptr") ||
+		    columns[col].columntype.equals("oid") ||
+		    columns[col].columntype.equals("void") ||
+		    columns[col].columntype.equals("sht") 
+		){
+			sortIntColumn(col);
+			return;
+		}
+		if( columns[col].columntype.equals("flt") ||
+		    columns[col].columntype.equals("dbl") 
+		){
+			sortDblColumn(col);
+			return;
+		}
 	}
 	int lim= cache.tupleCount;
 	for(int i=0;i<lim; i++){
