@@ -1,0 +1,6 @@
+aclocal.m4
+acout.in
+autom4te.cache
+configure
+configure.in
+install.lst
