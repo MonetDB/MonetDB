@@ -622,6 +622,7 @@ typedef struct MapiStruct {
 	int 	maxfields;
 	MapiField *fields;
 	MapiRowBuf cache;
+	Mapi prev, next;	/* doubly linked list of Mapi's sharing streams */
 
 	stream *tracelog;		/* keep a log for inspection*/
 	stream *from, *to;
@@ -663,10 +664,13 @@ mapi_export MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int precision
 mapi_export MapiMsg mapi_param(Mapi mid, int fnr, char **ptr);
 mapi_export MapiMsg mapi_param_type(Mapi mid, int fnr, int type, void *ptr);
 mapi_export MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale, int precision, void *ptr);
+mapi_export Mapi mapi_mapi(char *host, int port, char *username,
+	 char *password, char *lang);
 mapi_export Mapi mapi_connect(char *host, int port, char *username,
 	 char *password, char *lang);
 mapi_export Mapi mapi_connect_ssl(char *host, int port, char *username,
 	char *password, char *lang);
+mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_error(Mapi mid);
@@ -854,14 +858,13 @@ static Mapi mapi_new(void)
 	if (m == NULL)
 		return NULL;
 	assert(m);
-	m->template=0;
-	m->query= 0;
 
-	m->trace = 0;
+	/* initialize everything to 0 */
+	memset(m, 0, sizeof(MapiStruct));
+
+	/* then fill in some details */
 	m->blocked = blocked;
-	m->everything = 0;
 	m->error= MOK;
-	m->errorstr= 0;
 	strcpy(m->hostname,"localhost");
 #ifdef MONET5
 	strcpy(m->language,"mal");
@@ -878,23 +881,21 @@ static Mapi mapi_new(void)
 	strcpy(m->prompt,">");
 
 	m->maxfields = 64;
-	m->fieldcnt = 0;
 	m->fields = (MapiField *) malloc( m->maxfields * sizeof(MapiField));
 	assert(m->fields);
-	memset(m->fields,0, m->maxfields * sizeof(MapiField));
+	memset(m->fields, 0, m->maxfields * sizeof(MapiField));
 	m->cache.rowlimit= 100;
 	m->cache.shuffle= 0;	/* derive from rowlimit */
 	m->cache.limit= 0;
 	m->cache.writer= 0;
 	m->cache.reader= -1;
 	m->cache.tuples= 0;
-	m->cache.rows= 0;
-	m->cache.anchors= 0;
-	m->cache.fldcnt= 0;
-	m->tracelog= 0;
-	m->active= 0;
+	m->cache.rows= NULL;
+	m->cache.anchors= NULL;
+	m->cache.fldcnt= NULL;
+	m->tracelog= NULL;
 	m->blk.eos=0;
-	m->blk.buf= (char*) malloc(BLOCK+1);
+	m->blk.buf= (char *) malloc(BLOCK + 1);
 	m->blk.buf[BLOCK]=0;
 	m->blk.buf[0]=0;
 	m->blk.nxt=0;
@@ -904,7 +905,7 @@ static Mapi mapi_new(void)
 
 MapiMsg mapi_destroy(Mapi mid)
 {
-	if (mid->connected > 0)
+	if (mid->connected)
 		(void) mapi_disconnect(mid);
 	if (mid->fields)
 		free(mid->fields);
@@ -940,10 +941,17 @@ Mapi mapi_dup(Mapi mid)
 {
 	Mapi m;
 	mapi_check0(mid,"mapi_dup");
-	mid->connected++;	/* connection is shared */
 	m= mapi_new();
 	if (m == NULL)
 		return NULL;
+	/* link into doubly linked list */
+	m->next = mid->next;
+	m->prev = mid;
+	mid->next = m;
+	if (m->next)
+		m->next->prev = m;
+
+	/* copy relevant information */
 	m->to= mid->to;
 	m->from= mid->from;
 	m->tracelog= mid->tracelog;
@@ -955,31 +963,18 @@ Mapi mapi_dup(Mapi mid)
 	return m;
 }
 
-Mapi mapi_connect_ssl(char *host, int port, char *username, char *password, char *lang)
+Mapi mapi_mapi(char *host, int port, char *username, char *password, char *lang)
 {
-	Mapi mid = mapi_connect(host,port,username,password,lang);
-	mapi_setError(mid,"SSL connections not yet supported","mapi_connect_ssl");
-	return mid;
-}
-
-Mapi mapi_connect(char *host, int port, char *username, char *password, char *lang)
-{
-	struct hostent *hp;
-	struct sockaddr_in server;
-	int s;
 	Mapi mid;
-	size_t len, ret;
-	char buf[BLOCK];
 
 	mid= mapi_new();
 	if (mid == NULL)
 		return NULL;
 
-
-	/* avoid writing into constant strings ! */
-	if( host)
-		strncpy(mid->hostname, host, sizeof(mid->hostname));
-	else
+	if( host) {
+		strncpy(mid->hostname, host, sizeof(mid->hostname) - 1);
+		mid->hostname[sizeof(mid->hostname) - 1] = 0;
+	} else
 		strcpy(mid->hostname,"localhost");
 	if(port==0){
 		char *def;
@@ -993,98 +988,29 @@ Mapi mapi_connect(char *host, int port, char *username, char *password, char *la
 		port = 50000;	/* hardwired default */
 #endif
 	}
-	if(username)
-		strncpy(mid->username, username, sizeof(mid->username));
+	if(username) {
+		strncpy(mid->username, username, sizeof(mid->username) - 1);
+		mid->username[sizeof(mid->username) - 1] = 0;
+	}
 	if(password==0)
 		password= getlogin();
-	if(password)
-		strncpy(mid->password, password, sizeof(mid->password));
+	if(password) {
+		strncpy(mid->password, password, sizeof(mid->password) - 1);
+		mid->password[sizeof(mid->password) - 1] = 0;
+	}
 
 	mid->port= port;
-	hp = gethostbyname(mid->hostname);
-	if(!hp) {
-		mapi_setError(mid,"gethostbyname failed","mapi_connect");
-		return(mid);
-	}
-	memset(&server, 0, sizeof(server));
-	memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
 
-	server.sin_family = hp->h_addrtype;
-	server.sin_port   = htons((unsigned short)(mid->port&0xFFFF));
+	if (lang == NULL) {
+#ifdef MONET5
+		lang = "mal";
+#else
+		lang = "mil";
+#endif
+	}
+	strncpy(mid->language, lang, sizeof(mid->language) - 1);
+	mid->language[sizeof(mid->language) - 1] = 0;
 
-	s=socket(AF_INET, SOCK_STREAM, 0);
-	if(s<0) {
-		mapi_setError(mid,"Open socket failed","mapi_connect");
-		return(mid);
-	}
-
-	if(connect(s,(struct sockaddr *)&server, sizeof(server))<0) {
-		perror("!ERROR mapi_connect: ");
-		mapi_setError(mid,"Setup connection failed","mapi_connect");
-		return(mid);
-	}
-
-	mid->to = socket_wastream(s,"Mapi client write");
-	if (stream_errnr(mid->to)){
-		mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
-		return(mid);
-	}
-	mid->connected=1;
-
-	/* default prompt */
-	strcpy(mid -> prompt,">");
-
-	{
-	memset(buf,0,BLOCK);
-	if( mid->blocked){
-		snprintf(buf, BLOCK,"%s:%s:blocked\n", mid->username, mid->password);
-	} else {
-		snprintf(buf, BLOCK,"%s:%s\n", mid->username, mid->password);
-	}
-	if(mid->trace){
-		printf("sending first request [%d]:%s",BLOCK,buf);
-		fflush(stdout);
-	}
-	len= strlen(buf);
-	ret= stream_write(mid->to,buf,1,len);
-	stream_flush(mid->to);
-	mid->active++;
-	if( ret != len){
-		mapi_setError(mid,"Could not send initial byte sequence",
-			"mapi_connect");
-		return(mid);
-	}
-	if( mid->blocked){
-		mid->to = block_stream(socket_wstream(s,"Mapi client write"));
-	}
-	if( stream_errnr(mid->to)){
-		mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
-		return(mid);
-	}
-
-	if( mid->blocked){
-		mid->from = block_stream(socket_rstream(s,"Mapi client read"));
-	} else {
-		mid->from = socket_rastream(s,"Mapi client read");
-	}
-	if( stream_errnr(mid->from)){
-		mapi_setError(mid,"Cannot open socket for reading","mapi_connect");
-		return(mid);
-	}
-	/* consume the welcome message from the server */
-	while(mid->error==MOK && mid->active ){
-		mapi_get_row(mid);
-		if( mapi_error(mid)) {  mapi_explain(mid,stdout); break;}
-		if( mid->cache.rows)
-		mid->versionId= strcmp("Mserver 5.0",mid->cache.rows[0])==0? 5:4;
-	}
-
-	if(mid->trace)
-		printf("connection established\n");
-	if( lang==0 || strcmp(lang,"mal")==0)
-		return mid;
-
-	strncpy(mid->language, lang, sizeof(mid->language));
 	if(strcmp(lang,"mil")==0 )
 		mid->languageId= LANG_MIL;
 	if(strcmp(lang,"mal")==0 )
@@ -1095,18 +1021,28 @@ Mapi mapi_connect(char *host, int port, char *username, char *password, char *la
 		mid->languageId= LANG_XCORE;
 	if(strcmp(lang,"xquery")==0 )
 		mid->languageId= LANG_XQUERY;
-#ifdef MONET5
-	/* start the scenario handler*/
-	snprintf(buf,BLOCK,"%s();",lang);
-	if( mapi_error(mid))
-		return mid;
-	if( mid->trace)
-		printf("send scenario initializer %s\n", buf);
-	mapi_query(mid,buf);
-#endif
+
 	return mid;
-	}
 }
+
+Mapi mapi_connect(char *host, int port, char *username, char *password, char *lang)
+{
+	Mapi mid;
+
+	mid = mapi_mapi(host, port, username, password, lang);
+	if (mid && mid->error == MOK)
+		mapi_reconnect(mid); /* actually, initial connect */
+	return mid;
+}
+
+Mapi mapi_connect_ssl(char *host, int port, char *username, char *password, char *lang)
+{
+	Mapi mid = mapi_mapi(host, port, username, password, lang);
+	mapi_setError(mid, "SSL connections not yet supported",
+		      "mapi_connect_ssl");
+	return mid;
+}
+
 @-
 Once the start of the prompt string (\0001) has been recognized, the rest should
 be eaten away. It is stored in the prompt buffer for possible subsequent display.
@@ -1175,25 +1111,121 @@ MapiMsg mapi_disconnect(Mapi mid)
 	if(mid->cache.rows)
 		(void) free(mid->cache.rows);
 	mid->cache.rows = NULL;
-	if( mid->connected >1){
-		mid->connected=0;
-		return mapi_setError(mid,"Warning: multiple connections open",
-					"mapi_disconnect");
+	/* only close streams if we're not in a linked list of Mapi's
+	   sharing the streams */
+	if (mid->next || mid->prev) {
+		if (mid->next)
+			mid->next->prev = mid->prev;
+		if (mid->prev)
+			mid->prev->next = mid->next;
+	} else {
+		(void) stream_close(mid->from);
+		(void) stream_close(mid->to);
 	}
-	(void) stream_close(mid->from); mid->from =0;
-	(void) stream_close(mid->to); mid->to =0;
-	return mapi_setError(mid,"Connection closed", "mapi_disconnect");
+	mid->next = mid->prev = NULL;
+	mid->from = mid->to = NULL;
+	return MOK;
 }
-MapiMsg mapi_reconnect(Mapi mid){
-	Mapi dup;
 
-	mapi_check(mid,"mapi_reconnect");
-	dup = mapi_connect(mid->hostname, mid->port, mid->username,
-			   mid->password, mid->language);
-	if( mid->connected>0) mapi_disconnect(mid);
-	memcpy(mid, dup, sizeof(*dup));
-	dup->connected = 0;
-	mapi_destroy(dup);
+MapiMsg mapi_reconnect(Mapi mid)
+{
+	struct hostent *hp;
+	struct sockaddr_in server;
+	int s;
+	char buf[BLOCK];
+	size_t len, ret;
+
+	hp = gethostbyname(mid->hostname);
+	if(!hp) {
+		return mapi_setError(mid, "gethostbyname failed",
+				     "mapi_reconnect");
+	}
+	memset(&server, 0, sizeof(server));
+	memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
+
+	server.sin_family = hp->h_addrtype;
+	server.sin_port   = htons((unsigned short)(mid->port&0xFFFF));
+
+	s=socket(AF_INET, SOCK_STREAM, 0);
+	if(s<0) {
+		return mapi_setError(mid, "Open socket failed",
+				     "mapi_reconnect");
+	}
+
+	if(connect(s,(struct sockaddr *)&server, sizeof(server))<0) {
+		perror("!ERROR mapi_reconnect: ");
+		return mapi_setError(mid, "Setup connection failed",
+				     "mapi_reconnect");
+	}
+
+	mid->to = socket_wastream(s,"Mapi client write");
+	if (mid->to == NULL || stream_errnr(mid->to)){
+		return mapi_setError(mid, "Cannot open socket for writing",
+				     "mapi_reconnect");
+	}
+	mid->connected=1;
+
+	if( mid->blocked){
+		snprintf(buf, BLOCK, "%s:%s:blocked\n",
+			 mid->username, mid->password);
+	} else {
+		snprintf(buf, BLOCK,"%s:%s\n", mid->username, mid->password);
+	}
+	if(mid->trace){
+		printf("sending first request [%d]:%s",BLOCK,buf);
+		fflush(stdout);
+	}
+	len= strlen(buf);
+	ret= stream_write(mid->to,buf,1,len);
+	stream_flush(mid->to);
+	mid->active++;
+	if( ret != len){
+		return mapi_setError(mid,
+				     "Could not send initial byte sequence",
+				     "mapi_reconnect");
+	}
+	if( mid->blocked){
+		mid->to = block_stream(socket_wstream(s,"Mapi client write"));
+	}
+	if( stream_errnr(mid->to)){
+		return mapi_setError(mid, "Cannot open socket for writing",
+				     "mapi_reconnect");
+	}
+
+	if( mid->blocked){
+		mid->from = block_stream(socket_rstream(s,"Mapi client read"));
+	} else {
+		mid->from = socket_rastream(s,"Mapi client read");
+	}
+	if (mid->from == NULL || stream_errnr(mid->from)) {
+		return mapi_setError(mid, "Cannot open socket for reading",
+				     "mapi_reconnect");
+	}
+	/* consume the welcome message from the server */
+	while(mid->error==MOK && mid->active ){
+		mapi_get_row(mid);
+		if( mapi_error(mid)) {
+			mapi_explain(mid,stdout);
+			break;
+		}
+		if( mid->cache.rows)
+			mid->versionId= strcmp("Mserver 5.0",mid->cache.rows[0])==0? 5:4;
+	}
+
+	if(mid->trace)
+		printf("connection established\n");
+	if (mid->languageId == LANG_MAL)
+		return mid->error;
+
+#ifdef MONET5
+	/* start the scenario handler*/
+	snprintf(buf,BLOCK,"%s();",lang);
+	if( mapi_error(mid))
+		return mid->error;
+	if( mid->trace)
+		printf("send scenario initializer %s\n", buf);
+	mapi_query(mid,buf);
+#endif
 	return mid->error;
 }
 @-
@@ -1400,7 +1432,7 @@ some care not overfloating the space allocated.
 @= checkSpace
 	if( (size=strlen(mid->query))+@1 >= lim){
 		lim = size + @1 + MAPIBLKSIZE;
-		mid->query= realloc(mid->query, lim);
+		mid->query= (char *) realloc(mid->query, lim);
 		assert(mid->query);
 	}
 @c
@@ -2099,7 +2131,7 @@ if(strncmp(@1,tag,4)==0){
 	}
 }
 @c
-	buf= malloc(strlen(mid->cache.rows[cr])+1);
+	buf= (char *) malloc(strlen(mid->cache.rows[cr])+1);
 	strcpy(buf,mid->cache.rows[cr]);
 	mapi_slice_row(mid);
 
@@ -2270,7 +2302,7 @@ int mapi_extend_fields(Mapi mid, int minfields)
 	int nm = mid->maxfields + 32;
 	if (nm <= minfields)
 		 nm = minfields + 32;
-	mid->fields = realloc(mid->fields, nm * sizeof(MapiField));
+	mid->fields = (MapiField *) realloc(mid->fields, nm * sizeof(MapiField));
 	/* clear new entries */
 	memset(mid->fields + mid->maxfields, 0,
 	       (nm - mid->maxfields) * sizeof(MapiField));
@@ -2394,7 +2426,7 @@ int mapi_slice_row(Mapi mid)
 				return mid->error;
 			mapi_extend_anchor(mid);
 		}
-		mid->cache.anchors[cr][0] = start;
+		mid->cache.anchors[cr][0] = p;
 		return 1;
 	}
 	p++;
