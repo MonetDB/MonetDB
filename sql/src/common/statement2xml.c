@@ -3,7 +3,7 @@
 #include "statement.h"
 #include <stdarg.h>
 
-extern int statement2xml( statement *s, int *nr, context *sql );
+extern int stmt2xml( stmt *s, int *nr, context *sql );
 
 static
 char *atom2xml( atom *a){
@@ -32,10 +32,9 @@ char *atom2xml_fast( atom *a){
 	case float_value: snprintf(buf, BUFSIZ, "%f", a->data.dval); break;
 	case general_value:
 			if (a->data.sval)
-			  snprintf(buf, BUFSIZ, "%s", 
-				a->tpe->name, a->data.sval );
+			  snprintf(buf, BUFSIZ, "%s", a->data.sval );
 			else 
-			  snprintf(buf, BUFSIZ, "nil", a->tpe->name );
+			  snprintf(buf, BUFSIZ, "nil" );
 			break;
 	}
 	return _strdup(buf);
@@ -109,7 +108,7 @@ void xml_field(char *fldname, char *format, ...) /* print field in 1 line */
 /* XML end 
  **********/
 
-int statement2xml( statement *s, int *nr, context *sql ){
+int stmt2xml( stmt *s, int *nr, context *sql ){
     char buf[BUFSIZ+1];
     int len = 0;
     node *n;
@@ -129,12 +128,6 @@ int statement2xml( statement *s, int *nr, context *sql ){
 
 	switch(s->type){
 	case st_none: break;
-	case st_begin: 
-		len += snprintf( buf+len, BUFSIZ, 
-			"s%d := mvc_trans_begin(myc);\n", s->nr );  
-		XNODE("mvc_trans_begin");
-		FXNODE;
-		break;
 	case st_commit: 
 		len += snprintf( buf+len, BUFSIZ, 
 			"s%d := mvc_trans_commit(myc);\n", s->nr );      
@@ -145,6 +138,12 @@ int statement2xml( statement *s, int *nr, context *sql ){
 		len += snprintf( buf+len, BUFSIZ, 
 			"s%d := mvc_trans_rollback(myc);\n", s->nr );      
 		XNODE("mvc_trans_rollback");
+		FXNODE;
+		break;
+	case st_release: 
+		len += snprintf( buf+len, BUFSIZ, 
+			"s%d := mvc_trans_release(myc);\n", s->nr );  
+		XNODE("mvc_trans_begin");
 		FXNODE;
 		break;
 	case st_create_schema: {
@@ -174,6 +173,14 @@ int statement2xml( statement *s, int *nr, context *sql ){
 			FXNODE;
 		}
 	} break;
+	case st_drop_schema: {
+		table *t = s->op1.tval;
+		len += snprintf( buf+len, BUFSIZ, 
+			"s%d := mvc_drop_schema(myc, %ld);\n", 
+			s->nr, t->id );
+		XNODE("mvc_drop_schema");
+		FXNODE;
+	} break;
 	case st_drop_table: {
 		table *t = s->op1.tval;
 		len += snprintf( buf+len, BUFSIZ, 
@@ -195,7 +202,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_not_null: {
 		int c;
 		XNODE("mvc_not_null");
-		c = statement2xml( s->op1.stval, nr, sql );
+		c = stmt2xml( s->op1.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		    "s%d := mvc_not_null(myc, s%d );\n", s->nr, c );
 		xml_field("column_var", "s%d", c);
@@ -204,8 +211,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_default: {
 		int c,d;
 		XNODE("default");
-		c = statement2xml( s->op1.stval, nr, sql );
-		d = statement2xml( s->op2.stval, nr, sql );
+		c = stmt2xml( s->op1.stval, nr, sql );
+		d = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		    "s%d := default_val(myc, s%d, s%d );\n", s->nr, c, d );
 		FXNODE;
@@ -213,13 +220,13 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_select: {
 		int l,r;
 		XNODE("select");		
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		xml_field("flag", "%d", s->flag);
 		switch(s->flag){
 		case cmp_equal:
 			if (s->op3.stval){
-			    int r2 = statement2xml( s->op3.stval, nr, sql );
+			    int r2 = stmt2xml( s->op3.stval, nr, sql );
 			    len += snprintf( buf+len, BUFSIZ, 
 				"s%d := s%d.uselect(s%d, s%d);\n", 
 				s->nr, l, r, r2 ); 
@@ -263,9 +270,9 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_select2: {
 		int l,r1,r2;
 		XNODE("select2");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r1 = statement2xml( s->op2.stval, nr, sql );
-		r2 = statement2xml( s->op3.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r1 = stmt2xml( s->op2.stval, nr, sql );
+		r2 = stmt2xml( s->op3.stval, nr, sql );
 		switch(s->flag){
 		case cmp_equal: len += snprintf( buf+len, BUFSIZ, 
 			  "s%d := s%d.select(s%d, s%d);\n", 
@@ -284,8 +291,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_like: {
 		int l,r;
 		XNODE("like");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.likeselect(s%d);\n", s->nr, l, r ); 
 		FXNODE;
@@ -293,8 +300,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_semijoin: {
 		int l,r;
 		XNODE("semijoin");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.semijoin(s%d);\n", s->nr, l, r ); 
 		FXNODE;
@@ -302,8 +309,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_diff: {
 		int l,r;
 		XNODE("diff");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.kdiff(s%d);\n", s->nr, l, r ); 
 		FXNODE;
@@ -311,8 +318,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_intersect: {
 		int l,r;
 		XNODE("intersect");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.sintersect(s%d);\n", s->nr, l, r ); 
 		FXNODE;
@@ -320,42 +327,46 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_union: {
 		int l,r;
 		XNODE("union");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.kunion(s%d);\n", s->nr, l, r ); 
 		FXNODE;
 	} break;
+	case st_outerjoin: 
 	case st_join: {
 		int l,r;
-		XNODE("join");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		char *jt = "join";
+		if (s->type != st_join)
+			jt = "outerjoin";
+		XNODE(jt);
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		xml_field("s_flag", "%d", s->flag);
 		switch(s->flag){
 		case cmp_equal:
 			len += snprintf( buf+len, BUFSIZ, 
-			  "s%d := s%d.join(s%d);\n", s->nr, l, r ); 
+			  "s%d := s%d.%s(s%d);\n", s->nr, l, jt, r ); 
 			break;
 		case cmp_notequal:
 			len += snprintf( buf+len, BUFSIZ, 
-			  "s%d := s%d.join(s%d, \"!=\");\n", s->nr, l, r ); 
+			  "s%d := s%d.%s(s%d, \"!=\");\n", s->nr, l, jt, r ); 
 			break;
 		case cmp_lt:
 			len += snprintf( buf+len, BUFSIZ, 
-			  "s%d := s%d.join(s%d, \"<\");\n", s->nr, l, r ); 
+			  "s%d := s%d.%s(s%d, \"<\");\n", s->nr, l, jt, r ); 
 			break;
 		case cmp_lte: 
 			len += snprintf( buf+len, BUFSIZ, 
-			  "s%d := s%d.join(s%d, \"<=\");\n", s->nr, l, r );
+			  "s%d := s%d.%s(s%d, \"<=\");\n", s->nr, l, jt, r );
 			break;
 		case cmp_gt: 
 			len += snprintf( buf+len, BUFSIZ, 
-			  "s%d := s%d.join(s%d, \">\" );\n", s->nr, l, r); 
+			  "s%d := s%d.%s(s%d, \">\" );\n", s->nr, l, jt, r); 
 			break;
 		case cmp_gte: 
 			len += snprintf( buf+len, BUFSIZ, 
-			  "s%d := s%d.join(s%d, \">=\" );\n", s->nr, l, r);
+			  "s%d := s%d.%s(s%d, \">=\" );\n", s->nr, l, jt, r);
 			break;
 		case cmp_all: /* aka cross table */
 			len += snprintf( buf+len, BUFSIZ, 
@@ -370,7 +381,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_column:
 		XNODE("column");
 		if (s->op1.cval->s){
-			s->nr = statement2xml( s->op1.cval->s, nr, sql );
+			s->nr = stmt2xml( s->op1.cval->s, nr, sql );
 		} else {
 			len += snprintf( buf+len, BUFSIZ, 
 			  "s%d := mvc_bind(myc, %ld); # %s.%s\n", 
@@ -382,7 +393,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_reverse: {
 		int l;
 		XNODE("reverse");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.reverse();\n", s->nr, l);
 		FXNODE;
@@ -390,7 +401,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_count: {
 		int l;
 		XNODE("count");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.count();\n", s->nr, l);
 		FXNODE;
@@ -398,8 +409,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_const: {
 		int l,r;
 		XNODE("const-project");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.project(s%d);\n", s->nr, l, r);
 		FXNODE;
@@ -407,9 +418,9 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_mark: {
 		int l;
 		XNODE("mark");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		if (s->op2.stval){
-			int r = statement2xml( s->op2.stval, nr, sql );
+			int r = stmt2xml( s->op2.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ, 
 			  "s%d := s%d.reverse().mark(oid(s%d)).reverse();\n", 
 			  s->nr, l, r);
@@ -426,7 +437,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_group: {
 		int l;
 		XNODE("group");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.group();\n", s->nr, l);
 		FXNODE;
@@ -434,8 +445,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_derive: {
 		int l,r;
 		XNODE("group-derive");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := s%d.group(s%d);\n", s->nr, l, r);
 		FXNODE;
@@ -443,9 +454,9 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_unique: {
 		int l;
 		XNODE("unique");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		if (s->op2.stval){
-			int r = statement2xml( s->op2.stval, nr, sql );
+			int r = stmt2xml( s->op2.stval, nr, sql );
 		  	len += snprintf( buf+len, BUFSIZ, 
 			"s%d := s%d.group(s%d);\n", (*nr)+1, l, r);
 		  	len += snprintf( buf+len, BUFSIZ, 
@@ -466,7 +477,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_order: {
 		int l;
 		XNODE("order");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 			"s%d := s%d.reverse().sort().reverse();\n", s->nr, l );
 		FXNODE;
@@ -474,8 +485,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_reorder: {
 		int l,r;
 		XNODE("reorder");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ, 
 			"s%d := s%d.CTrefine(s%d);\n", s->nr, l, r); 
 		/* s->flag?"desc":"asc"); */
@@ -484,7 +495,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_unop: {
 		int l;
 		XNODE("unop");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		if (s->op1.stval->nrcols)
 		  len += snprintf( buf+len, BUFSIZ, 
 		   "s%d := [%s](s%d);\n", s->nr, s->op2.funcval->imp, l );
@@ -496,8 +507,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_binop: {
 		int l,r;
 		XNODE("binop");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		if (s->op1.stval->nrcols || s->op2.stval->nrcols ){
 		  	if (!s->op1.stval->nrcols){
 				int n = (*nr)++; 
@@ -522,14 +533,14 @@ int statement2xml( statement *s, int *nr, context *sql ){
 		FXNODE;
 	} 	break;
 	case st_triop: {
-		statement *op1 = s->op1.lval->h->data.stval;
-		statement *op2 = s->op1.lval->h->next->data.stval;
-		statement *op3 = s->op1.lval->h->next->next->data.stval;
+		stmt *op1 = s->op1.lval->h->data;
+		stmt *op2 = s->op1.lval->h->next->data;
+		stmt *op3 = s->op1.lval->h->next->next->data;
 		int r1,r2,r3;
 		XNODE("triop");
-		r1 = statement2xml( op1, nr, sql );
-		r2 = statement2xml( op2, nr, sql );
-		r3 = statement2xml( op3, nr, sql );
+		r1 = stmt2xml( op1, nr, sql );
+		r2 = stmt2xml( op2, nr, sql );
+		r3 = stmt2xml( op3, nr, sql );
 		if (op1->nrcols || op2->nrcols || op3->nrcols){
 			int l = 0;
 			if (op1->nrcols) l = r1;
@@ -566,9 +577,9 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_aggr: {
 		int l ;
 		XNODE("aggr");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		if (s->op3.stval){
-			int r = statement2xml( s->op3.stval, nr, sql );
+			int r = stmt2xml( s->op3.stval, nr, sql );
 
 			if (s->op1.stval == s->op3.stval){
 				len += snprintf( buf+len, BUFSIZ, 
@@ -600,21 +611,21 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_exists: {
 		int l,k,r;
 		XNODE("exists-new");
-		l = statement2xml( s->op1.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
 		k = *nr;
 		r = 1;
 
 		n = s->op2.lval->h;
 
 		if (n){
-		  	char *a = (char*)atom_type(n->data.aval )->name;
+		  	char *a = (char*)atom_type(n->data)->name;
 			len += snprintf( buf+len, BUFSIZ, 
 				"s%d := new(%s,oid);\n", s->nr, a );
 		}
 		k++;
 		while(n){
 			len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", k, 
-				atom2xml(n->data.aval) );
+				atom2xml(n->data) );
 			len += snprintf( buf+len, BUFSIZ, 
 				"s%d.insert(s%d, oid(%d));\n", s->nr, k++, r++);
 			n = n->next;
@@ -633,8 +644,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_insert_column: {
 		int l,r;
 		XNODE("insert_column");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := insert(s%d.access(BAT_WRITE),s%d);\n", s->nr, l, r);
 		FXNODE;
@@ -642,7 +653,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_update: {
 		int r;
 		XNODE("update");
-		r = statement2xml( s->op2.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := mvc_update(myc, oid(%ld), oid(%ld), s%d);\n", 
 		    s->nr,	s->op1.cval->table->id, s->op1.cval->id, r);
@@ -651,8 +662,8 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_replace: {
 		int l,r;
 		XNODE("update");
-		l = statement2xml( s->op1.stval, nr, sql );
-		r = statement2xml( s->op2.stval, nr, sql );
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
 		  "s%d := [oid](s%d.reverse()).reverse().access(BAT_WRITE).replace(s%d);\n", 
 		  s->nr, l, r);
@@ -661,7 +672,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_delete: {
 		XNODE("delete");
 		if (s->op2.stval){
-			int l = statement2xml( s->op2.stval, nr, sql );
+			int l = stmt2xml( s->op2.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ, 
 			"s%d := mvc_delete(myc, oid(%ld), s%d);\n", 
 			s->nr, s->op1.tval->id, l);
@@ -674,23 +685,23 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	} break;
 	case st_name: 
 		XNODE("name");
-		s->nr = statement2xml( s->op1.stval, nr, sql );
+		s->nr = stmt2xml( s->op1.stval, nr, sql );
 		FXNODE;
 		break;
 	case st_set: {
 		XNODE("set");
 		for (n = s->op1.lval->h; n; n = n->next ){
-			(void)statement2xml( n->data.stval, nr, sql );
+			(void)stmt2xml( n->data, nr, sql );
 		}
 		FXNODE;
 	} break;
 	case st_sets: {
 		XNODE("sets");
-		for(n = s->op1.lval->h; n; n->next ){
-			list *l = n->data.lval;
+		for(n = s->op1.lval->h; n; n = n->next ){
+			list *l = n->data;
 			node *m = l->h;
 			while(m){
-				(void)statement2xml( m->data.stval, nr, sql );
+				(void)stmt2xml( m->data, nr, sql );
 				m = m->next;
 			}
 		}
@@ -699,7 +710,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_list: {
 		XNODE("list");
 		for( n = s->op1.lval->h; n; n = n->next ){
-			(void)statement2xml( n->data.stval, nr, sql );
+			(void)stmt2xml( n->data, nr, sql );
 		}
 		FXNODE;
 	} break;
@@ -707,13 +718,13 @@ int statement2xml( statement *s, int *nr, context *sql ){
 		XNODE("insert");
 		if (!(sql->optimize & SQL_FAST_INSERT)){
 			for( n = s->op2.lval->h ;n; n = n->next ){
-				statement2xml(n->data.stval, nr, sql);
+				stmt2xml(n->data, nr, sql);
 			}
 			len += snprintf( buf+len, BUFSIZ, 
 				"mvc_insert(myc, %ld", s->op1.tval->id );
 			for( n = s->op2.lval->h ;n; n = n->next ){
-				len += snprintf( buf+len, BUFSIZ, 
-					",s%d", n->data.stval->nr);
+				stmt *r = n->data;
+				len += snprintf( buf+len, BUFSIZ, ",s%d",r->nr);
 			}
 			len += snprintf( buf+len, BUFSIZ, ");\n" );
 		} else {
@@ -721,9 +732,9 @@ int statement2xml( statement *s, int *nr, context *sql ){
 				      s->op1.tval->id );
 			for( n = s->op2.lval->h ;n; n = n->next ){
 				char *s = NULL;
-				statement *r = n->data.stval;
+				stmt *r = n->data;
 				if (r->op3.stval){
-					statement *a = r->op3.stval;
+					stmt *a = r->op3.stval;
 					while(a->type == st_unop){ /* cast */
 						a = a->op1.stval;
 					}
@@ -742,16 +753,16 @@ int statement2xml( statement *s, int *nr, context *sql ){
 	case st_ordered: {
 		int l;
 		XNODE("ordered");
-		l =  statement2xml( s->op1.stval, nr, sql );
-		(void)statement2xml( s->op2.stval, nr, sql );
+		l =  stmt2xml( s->op1.stval, nr, sql );
+		(void)stmt2xml( s->op2.stval, nr, sql );
 		s->nr = l;
 		FXNODE;
 	} break;
 	case st_output: {
-		statement *order = NULL;
-		statement *lst = s->op1.stval;
+		stmt *order = NULL;
+		stmt *lst = s->op1.stval;
 		XNODE("output");
-		statement2xml( lst, nr, sql );
+		stmt2xml( lst, nr, sql );
 		if (lst->type == st_ordered){
 			order = lst->op1.stval; 
 			lst = lst->op2.stval; 
@@ -762,7 +773,7 @@ int statement2xml( statement *s, int *nr, context *sql ){
 			n = l->h;
 			if (n){
 			  if (!order){
-			    order = n->data.stval;
+			    order = n->data;
 			  }
 			  len += snprintf( buf+len, BUFSIZ,
 				"output_count(s%d, Output);\n", order->nr);
@@ -770,8 +781,9 @@ int statement2xml( statement *s, int *nr, context *sql ){
 			len += snprintf( buf+len, BUFSIZ,
 				"server_output(Output, s%d ", order->nr);
 			while(n){
-				len += snprintf( buf+len, BUFSIZ,
-					", s%d", n->data.stval->nr);
+				stmt *r = n->data;
+				len += snprintf( 
+					buf+len, BUFSIZ, ", s%d", r->nr);
 				n = n->next;
 			}
 			len += snprintf( buf+len, BUFSIZ,");\n");

@@ -3,270 +3,270 @@
 #include "mem.h"
 #include "scope.h"
 
-static void destroy_vars( list *vars ){
-	if (vars){
-	  	node *n = vars->h;
-	  	for( ; n; n = n->next ){
-			var *v = (var*)n->data.sval;
-			--v->refcnt;
-			if (v->refcnt <= 0){
-				if (v->type == type_statement)
-					statement_destroy(v->data.stval);
-				if (v->tname) _DELETE(v->tname);
-				if (v->cname) _DELETE(v->cname);
-				_DELETE(v);
-			}
-	  	}
-	  	list_destroy(vars);
+static void destroy_cvar(cvar *cv) 
+{
+	--cv->refcnt;
+	if (cv->refcnt <= 0) {
+		if (cv->s)
+			stmt_destroy(cv->s);
+		if (cv->tname)
+			_DELETE(cv->tname);
+		if (cv->cname)
+			_DELETE(cv->cname);
+		_DELETE(cv);
 	}
 }
 
-static void destroy_lifted( list *lifted ){
-	if (lifted){
-	  	node *n = lifted->h;
-	  	for( ; n; n = n->next ){
-			_DELETE(n->data.sval);
-	  	}
-		list_destroy( lifted);
+static void destroy_tvar(tvar *v){
+	--v->refcnt;
+	if (v->refcnt <= 0) {
+		list_destroy(v->columns);
+		if (v->s)
+			stmt_destroy(v->s);
+		if (v->tname)
+			_DELETE(v->tname);
+		_DELETE(v);
 	}
 }
 
-scope *scope_open( scope *p ){
+static void destroy_var(var * v)
+{
+	--v->refcnt;
+	if (v->refcnt <= 0) {
+		if (v->s)
+			stmt_destroy(v->s);
+		if (v->name)
+			_DELETE(v->name);
+		_DELETE(v);
+	}
+}
+
+scope *scope_open(scope * p)
+{
 	scope *s = NEW(scope);
-	s->vars = list_create();
-	s->lifted = list_create();
+	s->tables = list_create((fdestroy)&destroy_tvar);
+	s->aliases = list_create((fdestroy)&destroy_var);
+	s->lifted = list_create((fdestroy)&destroy_cvar);
 	s->p = p;
-	s->nr = (p)?p->nr:0;
 	return s;
 }
 
-scope *scope_close( scope *s ){
+scope *scope_close(scope * s)
+{
 	scope *p = s->p;
-	destroy_vars( s->vars );
-	destroy_lifted( s->lifted );
+	list_destroy(s->tables);
+	list_destroy(s->aliases);
+	list_destroy(s->lifted);
 	_DELETE(s);
 	return p;
 }
 
-var *scope_add_statement( scope *scp, statement *s, char *tname, char *cname ){
-	var *v = NEW(var);
-	v->type = type_statement;
-	v->data.stval = s; st_attache(s, NULL);
+cvar *table_add_column(tvar * t, column *c, stmt * s, 
+		char *tname, char *cname)
+{
+	cvar *v = NEW(cvar);
+	v->c = c;
+	v->s = s; if (s) st_attache(s, NULL);
+	/* dirty hack: fix the ref to the base table */
+	s->h = t; t->refcnt++;
+	v->table = t;
 	assert((!tname || strlen(tname)));
-	v->tname = (tname)?_strdup(tname):NULL;
+
+	v->tname = (tname) ? _strdup(tname) : NULL;
 	v->cname = _strdup(cname);
-	v->nr = scp->nr++;
 	v->refcnt = 1;
-	list_append_string( scp->vars, (char*)v);
+	list_append(t->columns, v);
 	return v;
 }
 
-var *scope_add_table( scope *scp, table *t, char *tname ){
-	var *v = NEW(var);
-	v->type = type_table;
-	v->data.tval = t;
+tvar *scope_add_table(scope * scp, table * t, stmt *s, char *tname)
+{
+	tvar *v = NEW(tvar);
+	v->t = t;
+	v->s = s; if (s) st_attache(s, NULL);
+	v->columns = list_create((fdestroy)&destroy_cvar);
 	assert((!tname || strlen(tname)));
-	v->tname = (tname)?_strdup(tname):NULL;
-	v->cname = NULL;
-	v->nr = scp->nr++;
+	v->tname = (tname) ? _strdup(tname) : NULL;
 	v->refcnt = 1;
-	list_append_string( scp->vars, (char*)v);
+	list_append(scp->tables, v);
 	return v;
 }
 
-static
-void scope_lift( scope *s, column *c, var *v ){
-	lifted *nw = NULL;
+var *scope_add_alias(scope * scp, stmt * s, char *name)
+{
+	var *v = NEW(var);
+	v->s = s; if (s) st_attache(s, NULL);
+	v->name = _strdup(name);
+	v->refcnt = 1;
+	list_append(scp->aliases, v);
+	return v;
+}
+
+static void scope_lift(scope * s, cvar * v)
+{
 	node *n = s->lifted->h;
-	for( ; n; n = n->next ){
-		lifted *o = (lifted*)n->data.sval;
-		if (strcmp( o->c->name, c->name ) == 0)
+	for (; n; n = n->next) {
+		cvar *o = n->data;
+		if (strcmp(o->cname, v->cname) == 0)
 			return;
 	}
-	nw = NEW(lifted);
-	nw->v = v; 
-	nw->c = c;
-	list_append_string(s->lifted, (char*)nw ); 
+	list_append(s->lifted, v); v->refcnt++;
 }
 
-/* returns a list of vars */
-list *scope_unique_lifted_vars( scope *s ){
-	list *r = list_create();
+/* returns a list of tables */
+list *scope_unique_lifted_vars(scope * s)
+{
+	list *r = list_create(NULL);
 	node *n = s->lifted->h;
-	for( ; n; n = n->next ){
+	for (; n; n = n->next) {
+		cvar *cv = n->data;
 		node *m = r->h;
 		int found = 0;
-		for(; m && !found; m = m->next ){
-			lifted *l = (lifted*)n->data.sval;
-			if (l->v == (var*)m->data.sval)
+		for (; m && !found; m = m->next) {
+			tvar *tv = m->data;
+			if (cv->table == tv)
 				found = 1;
-		}	
-		if (!found){
-			lifted *l = (lifted*)n->data.sval;
-			list_append_string(r, (char*)l->v );
 		}
+		if (!found) 
+			list_append(r, cv->table);
 	}
 	return r;
 }
 
 /* returns a list of vars */
-int scope_count_tables( scope *s ){
-	int nr = 0;
-	node *n = s->vars->h;
-	for( ; n; n = n->next ){
-		var *v = (var*)n->data.sval;
-		if (v->type == type_table)
-			nr ++;
-	}
-	return nr;
+int scope_count_tables(scope * s)
+{
+	return list_length(s->tables);
 }
 
-var *scope_bind_table( scope *scp, char *name ){
-	for( ; scp; scp = scp->p ){
-		node *n = scp->vars->h; 
-		for( ; n; n = n->next ){
-			var *v = (var*)n->data.sval;
-			if (v->type == type_table && v->tname &&
-				strcmp( v->tname, name) == 0){
-				return v;	
+tvar *scope_bind_table(scope * scp, char *name)
+{
+	for (; scp; scp = scp->p) {
+		node *n = scp->tables->h;
+		for (; n; n = n->next) {
+			tvar *v = n->data;
+			if (v->tname && strcmp(v->tname, name) == 0) {
+				return v;
 			}
 		}
 	}
 	return NULL;
 }
 
-static
-column *bind_column( list *columns, char *name ){
-	node *n = columns->h; 
-	for( ; n; n = n->next ){
-		column *c = n->data.cval;
-		if (strcmp( c->name, name) == 0){
-			return c;	
+static cvar *bind_column(list * columns, char *cname)
+{
+	node *n = columns->h;
+	for (; n; n = n->next) {
+		cvar *c = n->data;
+		if (strcmp(c->cname, cname) == 0) {
+			return c;
 		}
 	}
 	return NULL;
 }
 
-column *scope_bind_column( scope *scp, char *name, var **b ){
+cvar *scope_bind_column(scope * scp, char *tname, char *cname)
+{
 	scope *start = scp;
-	column *c = NULL;
-	for( ; scp; scp = scp->p ){
-	  node *n = scp->vars->h; 
-	  for( ; n; n = n->next ){
-	    var *v = (var*)n->data.sval;
-	    if (v->type == type_table){
-	      if ((c = bind_column(v->data.tval->columns, name)) != NULL){
-		if (start != scp)
-		  scope_lift(start, c, v );
-		*b = v;
-		return c;
-	      }
-	    }
-	  }
+	cvar *cv = NULL;
+	if (!tname){ /* TODO: return NULL, if name exists more the once */ 
+		for (; scp; scp = scp->p) {
+			node *n = scp->tables->h;
+			for (; n; n = n->next) {
+				tvar *tv = n->data;
+				if ( (cv = bind_column(tv->columns, cname)) != NULL) {
+					if (start != scp)
+						scope_lift(start, cv);
+					return cv;
+				}
+			}
+		}
+		return NULL;
+	}
+
+	/* tname != NULL */
+	for (; scp; scp = scp->p) {
+		node *n = scp->tables->h;
+		for (; n; n = n->next) {
+			tvar *tv = n->data;
+			if (tv->tname && strcmp(tv->tname, tname) == 0 &&
+			   (cv = bind_column(tv->columns, cname)) != NULL) {
+				if (start != scp)
+					scope_lift(start, cv);
+				return cv;
+			}
+		}
 	}
 	return NULL;
 }
 
-column *scope_bind_table_column( scope *scp, char *tname, char *cname, var **b){
-	scope *start = scp;
-	column *c = NULL;
-	for( ; scp; scp = scp->p ){
-	  node *n = scp->vars->h; 
-	  for( ; n; n = n->next ){
-	    var *v = (var*)n->data.sval;
-	    if (v->type == type_table){
-	      if (v->tname && strcmp(v->tname, tname) == 0)
-	       if ((c = bind_column(v->data.tval->columns, cname)) != NULL){
-		if (start != scp)
-		  scope_lift(start, c, v );
-		*b = v;
-		return c;
-	      }
-	    }
-	  }
+var *scope_bind_alias(scope * scp, char *name)
+{
+	for (; scp; scp = scp->p) {
+		node *n = scp->aliases->h;
+		for (; n; n = n->next) {
+			var *v = n->data;
+			if (strcmp(v->name, name) == 0)
+				return v;
+		}
 	}
 	return NULL;
 }
 
-statement *scope_bind_statement( scope *scp, char *tname, char *cname ){
-    if (!tname){
-	for( ; scp; scp = scp->p ){
-	  node *n = scp->vars->h; 
-	  for( ; n; n = n->next ){
-	    var *v = (var*)n->data.sval;
-	    if (v->type == type_statement){
-	      if (v->cname && strcmp(v->cname, cname) == 0){
-		return v->data.stval;
-	      }
-	    }
-	  }
+stmt *scope_bind(scope * scp, char *tname, char *cname)
+{
+	cvar *c = scope_bind_column( scp, tname, cname );
+	if (!c && !tname){
+		var *a = scope_bind_alias( scp, cname );
+		if (a) return a->s;
+		return NULL;
 	}
-    } else {
-
-	for( ; scp; scp = scp->p ){
-	  node *n = scp->vars->h; 
-	  for( ; n; n = n->next ){
-	    var *v = (var*)n->data.sval;
-	    if (v->type == type_statement){
-	      if (v->tname && strcmp(v->tname, tname) == 0 &&
-	          v->cname && strcmp(v->cname, cname) == 0){
-		return v->data.stval;
-	      }
-	    }
-	  }
-	}
-    }
-    return NULL;
+	if (c) return c->s;
+	return NULL;
 }
 
-statement *scope_first_column( scope *scp ){
-	for( ; scp; scp = scp->p ){
-	  node *n = scp->vars->h; 
-	  for( ; n; n = n->next ){
-	    var *v = (var*)n->data.sval;
-	    if (v->type == type_statement){
-              return v->data.stval;
-	    } else if (v->type == type_table){
-	      return statement_column(v->data.tval->columns->h->data.cval,v);
-	    }
-	    printf("other type statement ??\n");
-	  }
+cvar *scope_first_column(scope * scp)
+{
+	if (scope_count_tables(scp)) {
+		node *n = scp->tables->h;
+		tvar *tv = n->data;
+		if (list_length(tv->columns)){
+			node *m = tv->columns->h;
+			return m->data;
+		}
 	}
 	return NULL;
 }
 
 /* first and only table */
-var *scope_first_table( scope *scp ){
-	for( ; scp; scp = scp->p ){
-	  node *n = scp->vars->h; 
-	  for( ; n; n = n->next ){
-	    var *v = (var*)n->data.sval;
-	    if (v->type == type_statement){
-              return NULL;
-	    } else if (v->type == type_table){
-	      return v;
-	    }
-	  }
+tvar *scope_first_table(scope * scp)
+{
+	for (; scp; scp = scp->p) {
+		node *n = scp->tables->h;
+		for (; n; n = n->next) {
+			tvar *tv = n->data;
+			return tv;
+		}
 	}
 	return NULL;
 }
 
 
-void scope_dump( scope *scp ){
-	for( ; scp; scp = scp->p ){
-	  node *n = scp->vars->h; 
-	  printf("-> ");
-	  for( ; n; n = n->next ){
-	    var *v = (var*)n->data.sval;
-	    if (v->type == type_statement){
-		    if (v->tname)
-		    	printf("statement %s %s ", v->tname, v->cname );
-		    else
-		    	printf("statement %s ", v->cname );
-	    } else if (v->type == type_table){
-		    printf("table %s ", v->tname );
-	    }
-	  }
-	  printf("\n");
+void scope_dump(scope * scp)
+{
+	for (; scp; scp = scp->p) {
+		node *n = scp->tables->h;
+		printf("\t-> tables: \n");
+		for (; n; n = n->next) {
+			tvar *tv = n->data;
+			node *m = tv->columns->h;
+			printf("\t\t(%s)", tv->tname?tv->tname:"");
+			for (; m; m = m->next) {
+				cvar *cv = m->data;
+				printf("(%s.%s)", cv->tname?cv->tname:"", 
+						cv->cname);
+			}
+			printf("\n");
+		}
 	}
 }

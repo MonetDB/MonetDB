@@ -7,25 +7,37 @@
 #include "catalog.h"
 #include "var.h"
 
-typedef enum statement_type {
+typedef enum stmt_type {
 	st_none,
-	st_create_schema,
+	st_schema,
+	st_table,
+	st_column,
+	st_bat,
 	st_drop_schema,
-	st_create_table,
+	st_create_schema,
 	st_drop_table,
+	st_create_table,
 	st_create_column,
 	st_not_null,
 	st_default,
-	st_column,
+	st_key,
+	st_add_col,
+
+	st_commit,
+	st_rollback,
+	st_release,
+
 	st_reverse,
 	st_atom,
 	st_join,
 	st_semijoin,
+	st_outerjoin,
 	st_diff,
 	st_intersect,
 	st_union,
 	st_select,
 	st_select2,
+	st_copyfrom,
 	st_insert,
 	st_insert_column,
 	st_like,
@@ -35,6 +47,7 @@ typedef enum statement_type {
 	st_count,
 	st_const,
 	st_mark,
+	st_group_ext,
 	st_group,
 	st_derive,
 	st_unique,
@@ -47,13 +60,10 @@ typedef enum statement_type {
 	st_aggr,
 	st_exists,
 	st_name,
-	st_set, 
-	st_sets, 
-	st_begin,
-	st_commit,
-	st_rollback,
+	st_set,
+	st_sets,
 	/* used internally only */
-	st_list, 
+	st_list,
 	st_output
 } st_type;
 
@@ -67,102 +77,122 @@ typedef enum comp_type {
 	cmp_all
 } comp_type;
 
-typedef void (*fdestroy)(void*);
-typedef struct value {
-	void *data;
-	fdestroy destroy;
-} value;
-
-typedef struct statement {
+typedef struct stmt {
 	st_type type;
 	symdata op1;
 	symdata op2;
 	symdata op3;
+	char nrcols;
+	char key;		/* key (aka all values are unique) */
 	int flag;
-	int nrcols;
-	int nr;
-	var   *h;
-	var   *t;
+
+	int nr; 		/* variable assignement */
+	tvar *h;
+	tvar *t;
 	int refcnt;
-	list  *uses;
-	value v;
-} statement;
+	list *uses;
+} stmt;
 
-extern void st_attache(statement *st, statement *user );
-extern void st_detach(statement *st, statement *user );
+typedef struct group {
+	stmt *grp;
+	stmt *ext;
+	int refcnt;
+} group;
 
-extern statement *statement_begin( );
-extern statement *statement_commit( );
-extern statement *statement_rollback( );
+extern void st_attache(stmt * st, stmt * user);
+extern void st_detach(stmt * st, stmt * user);
 
-extern statement *statement_create_schema( schema *s );
-extern statement *statement_drop_schema( schema *s );
+/* since Savepoints and transactions related the 
+ * stmt commit function includes the savepoint creation.
+ * And rollbacks can be eigther full or until a given savepoint. 
+ * The special stmt_release can be used to release savepoints. 
+ */
+extern stmt *stmt_commit(int chain, char *name);
+extern stmt *stmt_rollback(int chain, char *name);
+extern stmt *stmt_release(char *name);
 
-extern statement *statement_create_table( table *t );
-extern statement *statement_drop_table( table *t, int drop_action );
-extern statement *statement_create_column( column *c ); 
-extern statement *statement_not_null( statement *col );
-extern statement *statement_default( statement *col, statement *def );
+extern stmt *stmt_bind_schema(schema * sc);
+extern stmt *stmt_bind_table(stmt *schema, table * t);
+extern stmt *stmt_bind_column(stmt *table, column *c);
 
-extern statement *statement_column( column *c, var *basetable );
-extern statement *statement_reverse( statement *s );
-extern statement *statement_atom( atom *op1 );
-extern statement *statement_select( statement *op1, statement *op2, comp_type cmptype );
+extern stmt *stmt_drop_schema(schema * s);
+extern stmt *stmt_create_schema(schema * s);
+extern stmt *stmt_drop_table(stmt *s, char * name, int drop_action);
+extern stmt *stmt_create_table(stmt *s, table * t);
+extern stmt *stmt_create_column(stmt *t, column * c);
+extern stmt *stmt_not_null(stmt * col);
+extern stmt *stmt_default(stmt * col, stmt * def);
+
+extern stmt *stmt_column(column * c, tvar * basetable);
+extern stmt *stmt_reverse(stmt * s);
+extern stmt *stmt_atom(atom * op1);
+extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
 /* cmp 0 ==   l <= x <= h
        1 ==   l <  x <  h
        2 == !(l <= x <= h)  => l >  x >  h
        3 == !(l <  x <  h)  => l >= x >= h
        */
-extern statement *statement_select2( statement *op1, statement *op2, statement *op3, int cmp );
+extern stmt *stmt_select2(stmt * op1, stmt * op2,
+				    stmt * op3, int cmp);
 
-extern statement *statement_like( statement *op1, statement *a );
-extern statement *statement_join( statement *op1, statement *op2, comp_type cmptype);
-extern statement *statement_semijoin( statement *op1, statement *op2 );
-extern statement *statement_diff( statement *op1, statement *op2 );
-extern statement *statement_intersect( statement *op1, statement *op2 );
-extern statement *statement_union( statement *op1, statement *op2 );
-extern statement *statement_list( list *l );
-extern statement *statement_output( statement *l );
-extern statement *statement_set( statement *s1 );
-extern statement *statement_sets( list *s1 );
+extern stmt *stmt_like(stmt * op1, stmt * a);
+extern stmt *stmt_join(stmt * op1, stmt * op2, comp_type cmptype);
+extern stmt *stmt_outerjoin(stmt * op1, stmt * op2, comp_type cmptype);
+extern stmt *stmt_semijoin(stmt * op1, stmt * op2);
+extern stmt *stmt_diff(stmt * op1, stmt * op2);
+extern stmt *stmt_intersect(stmt * op1, stmt * op2);
+extern stmt *stmt_union(stmt * op1, stmt * op2);
+extern stmt *stmt_list(list * l);
+extern stmt *stmt_output(stmt * l);
+extern stmt *stmt_set(stmt * s1);
+extern stmt *stmt_sets(list * s1);
 
-extern statement *statement_insert( table *t, list *l );
-extern statement *statement_insert_column( statement *c, statement *a );
-extern statement *statement_update( column *c, statement *values );
-extern statement *statement_replace( statement *c, statement *values );
-extern statement *statement_delete( table *t, statement *where );
+extern stmt *stmt_copyfrom(table * t, char *file, char *sep );
 
-extern statement *statement_count( statement *s );
-extern statement *statement_const( statement *s, statement *val );
-extern statement *statement_mark( statement *s, int id );
-extern statement *statement_remark( statement *s, statement *t, int id );
-extern statement *statement_group( statement *s );
-extern statement *statement_derive( statement *s, statement *t );
-extern statement *statement_unique( statement *s, statement *group );
+extern stmt *stmt_insert(table * t, list * l);
+extern stmt *stmt_insert_column(stmt * c, stmt * a);
+extern stmt *stmt_update(column * c, stmt * values);
+extern stmt *stmt_replace(stmt * c, stmt * values);
+extern stmt *stmt_delete(table * t, stmt * where);
 
-extern statement *statement_ordered( statement *order, statement *res );
-extern statement *statement_order( statement *s, int direction );
-extern statement *statement_reorder( statement *s, statement *t, int direction );
+extern stmt *stmt_count(stmt * s);
+extern stmt *stmt_const(stmt * s, stmt * val);
+extern stmt *stmt_mark(stmt * s, int id);
+extern stmt *stmt_remark(stmt * s, stmt * t, int id);
+extern stmt *stmt_unique(stmt * s, group * grp);
 
-extern statement *statement_unop( statement *op1, func *op );
-extern statement *statement_binop( statement *op1, statement *op2, func *op );
-extern statement *statement_triop( statement *op1, statement *op2, statement *op3, func *op );
-extern statement *statement_aggr( statement *op1, aggr *op, statement *group );
+extern stmt *stmt_ordered(stmt * order, stmt * res);
+extern stmt *stmt_order(stmt * s, int direction);
+extern stmt *stmt_reorder(stmt * s, stmt * t,
+				    int direction);
 
-extern statement *statement_exists( statement *op1, list *l );
+extern stmt *stmt_unop(stmt * op1, sql_func * op);
+extern stmt *stmt_binop(stmt * op1, stmt * op2, sql_func * op);
+extern stmt *stmt_triop(stmt * op1, stmt * op2, stmt * op3, sql_func * op);
+extern stmt *stmt_aggr(stmt * op1, sql_aggr * op, group * grp);
 
-extern statement *statement_name( statement *op1, char *name );
+extern stmt *stmt_exists(stmt * op1, list * l);
 
-extern type *head_type( statement *st );
-extern type *tail_type( statement *st );
+extern stmt *stmt_name(stmt * op1, char *name);
 
-extern char *column_name( statement *st );
-extern statement *head_column( statement *st );
-extern statement *tail_column( statement *st );
+extern stmt *stmt_key(stmt * t, key_type kt, stmt *rk );  
+extern stmt *stmt_key_add_column(stmt *key, stmt *col );
 
-extern int statement_dump( statement *s, int *nr, context *sql );
+extern sql_type *head_type(stmt * st);
+extern sql_type *tail_type(stmt * st);
 
-extern void statement_destroy( statement *s );
-extern void statement_reset( statement *s );
-/* reset the statement nr's */
-#endif /* _STATEMENT_H_ */
+extern char *column_name(stmt * st);
+extern stmt *head_column(stmt * st);
+extern stmt *tail_column(stmt * st);
+
+extern int stmt_dump(stmt * s, int *nr, context * sql);
+
+extern void stmt_destroy(stmt *s );
+extern void stmt_reset( stmt *s );
+
+extern group *grp_create(stmt * s, group *og );
+extern group *grp_semijoin(group *og, stmt *s );
+extern void grp_destroy(group * g);
+
+/* reset the stmt nr's */
+#endif				/* _STATEMENT_H_ */

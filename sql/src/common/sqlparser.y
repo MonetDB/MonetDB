@@ -1,6 +1,5 @@
 %{
 /* todo 
- * add TRANSACTION support
  * use table/column constrains (such as not null)
  * use primary/foreign keys
  */
@@ -60,12 +59,13 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	create
 	drop
 	sql
-	sqlstatement
+	sqlstmt
 	schema
 	opt_schema_default_char_set
 	opt_schema_path
 	schema_element
-	delete_statement_searched
+	delete_stmt
+	copyfrom_stmt
 	table_def
 	view_def
 	all_or_any_predicate
@@ -75,8 +75,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_from_clause
 	existence_test
 	in_predicate
-	insert_statement
-	transaction_statement
+	insert_stmt
+	transaction_stmt
 	like_predicate
 	opt_where_clause
 	opt_having_clause
@@ -85,9 +85,9 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	joined_table
 	join_spec
 	search_condition
-	update_statement
+	update_stmt
 	select_clause
-	select_statement
+	select_stmt
 	select_with_parens
 	select_no_parens
 	simple_select
@@ -140,6 +140,9 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	interval_type
 	grantee
 	opt_column_name
+	opt_to_savepoint
+	opt_seps
+	opt_using
 
 %type <l>
 	schema_name
@@ -193,6 +196,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 
 %type <bval>
 	opt_trans
+	opt_chain
 	opt_distinct
 	opt_with_check_option
 	opt_with_grant_option
@@ -210,7 +214,7 @@ OPEN CLOSE FETCH
 */
 %token <sval> DELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER UNIONJOIN
-%token <sval> BEGIN COMMIT ROLLBACK ABORT WORK TRANSACTION
+%token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO
 	
 %token <operation> '+' '-' '*' '/'
 %token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
@@ -259,21 +263,22 @@ UNDER WHENEVER
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 
 %token CASE WHEN THEN ELSE END NULLIF COALESCE
+%token COPY DELIMITERS
 
 %%
 
 /*
 sql_list:
-    sqlstatement 	{ context *lc = (context*)parm;
+    sqlstmt 	{ context *lc = (context*)parm;
 			  lc->l = $$ = dlist_append_symbol(dlist_create(), $1 );
-			  sql_statement_init(lc); }
- |  sql_list sqlstatement { context *lc = (context*)parm;
+			  sql_stmt_init(lc); }
+ |  sql_list sqlstmt { context *lc = (context*)parm;
 			  lc->l = $$ = dlist_append_symbol($1, $2); 
-			  sql_statement_init(lc); }
+			  sql_stmt_init(lc); }
  ;
 */
 
-sqlstatement:
+sqlstmt:
    sql ';' 		{ context *lc = (context*)parm; 
 			  lc->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ context *lc = (context*)parm; 
@@ -465,9 +470,8 @@ default:
 /* TODO add auto increment */
 default_value:
     literal 
- |  USER     { context *lc = (context*)parm;
-	       $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
-			cat_bind_type(lc->cat, "STRING" ), $1)); }
+ |  USER     { $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
+			sql_bind_type("STRING" ), $1)); }
  |  NULLX 	{ $$ = _symbol_create_atom( SQL_ATOM, NULL);  }
  ;
 	
@@ -475,7 +479,7 @@ column_constraint:
     opt_constraint_name column_constraint_type  /*opt_constraint_attributes*/
 
    	{ dlist *l = dlist_create();
-	  dlist_append_list(l, $1 );
+ 	  dlist_append_list(l, $1 );
 	  dlist_append_symbol(l, $2 );
 	  $$ = _symbol_create_list( SQL_CONSTRAINT, l ); }
  ;
@@ -517,16 +521,16 @@ table_constraint_type:
  |  FOREIGN KEY column_commalist_parens REFERENCES qname 
 
 			{ dlist *l = dlist_create();
-			  dlist_append_list(l, $3 );
 			  dlist_append_list(l, $5 );
+			  dlist_append_list(l, $3 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
 
  |  FOREIGN KEY column_commalist_parens 
     REFERENCES qname column_commalist_parens 
 
 			{ dlist *l = dlist_create();
-			  dlist_append_list(l, $3 );
 			  dlist_append_list(l, $5 );
+			  dlist_append_list(l, $3 );
 			  dlist_append_list(l, $6 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
 
@@ -543,7 +547,7 @@ column_commalist:
  ;
 
 view_def:
-    CREATE VIEW qname opt_column_commalist AS select_statement opt_with_check_option
+    CREATE VIEW qname opt_column_commalist AS select_stmt opt_with_check_option
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
@@ -586,41 +590,73 @@ drop_action:
 	/* cursor definition */
 /*
 sql: cursor_def ;
-cursor_def: DECLARE cursor CURSOR FOR select_statement opt_order_by_clause ;
-sql: close_statement | open_statement |	fetch_statement | delete_statement_positioned ;
-close_statement: CLOSE cursor		;
-open_statement: OPEN cursor		;
-delete_statement_positioned: DELETE FROM qname WHERE CURRENT OF cursor ;
-fetch_statement: FETCH cursor INTO target_commalist ;
-update_statement: UPDATE qname SET assignment_commalist CURRENT OF cursor ;
+cursor_def: DECLARE cursor CURSOR FOR select_stmt opt_order_by_clause ;
+sql: close_stmt | open_stmt |	fetch_stmt | delete_stmt_positioned ;
+close_stmt: CLOSE cursor		;
+open_stmt: OPEN cursor		;
+delete_stmt_positioned: DELETE FROM qname WHERE CURRENT OF cursor ;
+fetch_stmt: FETCH cursor INTO target_commalist ;
+update_stmt: UPDATE qname SET assignment_commalist CURRENT OF cursor ;
 cursor:	ident ;
 */
 
 
-	/* data manipulative statements */
+	/* data manipulative stmts */
 
 sql: 
-   transaction_statement 
- | delete_statement_searched 
- | insert_statement 
- | update_statement 
+   transaction_stmt 
+ | delete_stmt
+ | insert_stmt 
+ | update_stmt 
+ | copyfrom_stmt
  ;
 
-transaction_statement:
-    COMMIT opt_trans 	{ $$ = _symbol_create( SQL_COMMIT, NULL); }
- |  END opt_trans 	{ $$ = _symbol_create( SQL_COMMIT, NULL); }
- |  ABORT opt_trans 	{ $$ = _symbol_create( SQL_ROLLBACK, NULL); }
- |  ROLLBACK opt_trans 	{ $$ = _symbol_create( SQL_ROLLBACK, NULL); }
- |  BEGIN opt_trans 	{ $$ = _symbol_create( SQL_BEGIN, NULL); }
+transaction_stmt:
+    COMMIT opt_trans opt_chain 	{ $$ = _symbol_create_int( SQL_COMMIT, $3); }
+ |  SAVEPOINT ident 		{ $$ = _symbol_create( SQL_SAVEPOINT, $2); }
+ |  RELEASE SAVEPOINT ident 	{ $$ = _symbol_create( SQL_RELEASE, $3); }
+ |  ROLLBACK opt_trans opt_chain opt_to_savepoint
+		{ $$ = _symbol_create_list( SQL_ROLLBACK, 
+		   dlist_append_string(
+		   	dlist_append_int(dlist_create(), $3), $4 )); }
  ;
 
-opt_trans:
-    WORK		{ $$ = 1; }
- |  TRANSACTION		{ $$ = 1; }
- |  /* empty */		{ $$ = 1; }
+opt_trans: /* pure syntax sugar */
+    WORK		{ $$ = 0; }
+ |  /* empty */		{ $$ = 0; }
  ;
 
-delete_statement_searched:
+opt_chain:
+    AND CHAIN		{ $$ = 1; }
+ |  AND NO CHAIN	{ $$ = 0; }
+ |  /* empty */		{ $$ = 0; }
+ ;
+
+opt_to_savepoint:
+    /* empty */ 	{ $$ = NULL; }
+ |  TO SAVEPOINT ident  { $$ = $3; }
+ ;
+
+copyfrom_stmt:
+    COPY qname FROM STRING opt_seps
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $2);
+	  dlist_append_string(l, $4);
+	  dlist_append_string(l, $5);
+	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+ ;
+
+opt_seps:
+    /* empty */			{ $$ = _strdup("|"); }
+ |  opt_using DELIMITERS STRING { $$ = $3; }
+ ;
+
+opt_using:
+    /* empty */			{ $$ = NULL; }
+ |  USING			{ $$ = NULL; }
+ ;
+
+delete_stmt:
     DELETE FROM qname opt_where_clause 
 
 	{ dlist *l = dlist_create();
@@ -629,7 +665,7 @@ delete_statement_searched:
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 
-update_statement:
+update_stmt:
     UPDATE qname SET assignment_commalist opt_where_clause
 
 	{ dlist *l = dlist_create();
@@ -640,7 +676,7 @@ update_statement:
  ;
 
 
-insert_statement:
+insert_stmt:
     INSERT INTO qname values_or_query_spec
 
 	{ dlist *l = dlist_create();
@@ -661,7 +697,7 @@ insert_statement:
 values_or_query_spec:
     VALUES '(' insert_atom_commalist ')' 
 		{ $$ = _symbol_create_list( SQL_VALUES, $3); }
- |  select_statement
+ |  select_stmt
  ;
 
 insert_atom_commalist:
@@ -670,7 +706,7 @@ insert_atom_commalist:
  ;
 
 insert_atom:
-    atom	
+    scalar_exp	
  |  NULLX		{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
 
@@ -716,7 +752,7 @@ opt_where_clause:
 
 	/* query expressions */
 
-/* sql: select_statement | IF '(' predicate ')' sql ; */
+/* sql: select_stmt | IF '(' predicate ')' sql ; */
 
 joined_table:
    '(' joined_table ')' 	
@@ -787,10 +823,10 @@ join_spec:
   ;
 
 sql: 
-    select_statement 
+    select_stmt 
  ;
 
-select_statement: 
+select_stmt: 
     select_no_parens                    %prec UMINUS
  |  select_with_parens                    %prec UMINUS
  ;
@@ -1174,9 +1210,8 @@ datetime_funcs:
 
 string_funcs:
     SUBSTRING '(' scalar_exp FROM intval FOR intval ')' 
-				{ context *lc = (context*)parm;
-				  dlist *l = dlist_create();
-				  type *t = cat_bind_type(lc->cat, "INTEGER");
+				{ dlist *l = dlist_create();
+				  sql_type *t = sql_bind_type("INTEGER");
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, _symbol_create_atom(
@@ -1217,9 +1252,8 @@ opt_column_name:
 
 atom:
     literal 	
- |  USER     { context *lc = (context*)parm;
-	       $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
-			cat_bind_type(lc->cat, "STRING" ), $1)); }
+ |  USER     { $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
+			sql_bind_type("STRING" ), $1)); }
  ;
 
 /* change to set function */
@@ -1267,12 +1301,9 @@ time_persision:
  ;
 
 datetime_type:
-    DATE			{ context *lc = (context*)parm; 
-			          $$ = cat_bind_type(lc->cat,"DATE")->sqlname; }
- |  TIME time_persision tz 	{ context *lc = (context*)parm; 
-			          $$ = cat_bind_type(lc->cat,"TIME")->sqlname; }
- |  TIMESTAMP time_persision tz { context *lc = (context*)parm; 
-			     $$ = cat_bind_type(lc->cat,"TIMESTAMP")->sqlname; }
+    DATE			{ $$ = sql_bind_type("DATE")->sqlname; }
+ |  TIME time_persision tz 	{ $$ = sql_bind_type("TIME")->sqlname; }
+ |  TIMESTAMP time_persision tz { $$ = sql_bind_type("TIMESTAMP")->sqlname; }
  ;
 
 non_second_datetime_field:
@@ -1325,27 +1356,20 @@ interval_type:
  ;
 
 literal:
-    STRING   { context *lc = (context*)parm;
-	       $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
-			cat_bind_type(lc->cat, "STRING" ), $1)); }
- |  intval   { context *lc = (context*)parm;
-	       $$ = _symbol_create_atom( SQL_ATOM, atom_int( 
-			cat_bind_type(lc->cat, "INTEGER" ), $1)); }
- |  INTNUM   { context *lc = (context*)parm;
-	       $$ = _symbol_create_atom( SQL_ATOM, atom_float(
-			cat_bind_type(lc->cat, "FLOAT" ), strtod($1,&$1))); }
- |  APPROXNUM{ context *lc = (context*)parm;
-	       $$ = _symbol_create_atom( SQL_ATOM, atom_float(
-			cat_bind_type(lc->cat, "DOUBLE" ), strtod($1,&$1))); }
- |  DATE STRING { context *lc = (context*)parm;
- 	  	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-			cat_bind_type(lc->cat, "DATE" ),$2));  }
- |  TIME STRING { context *lc = (context*)parm;
- 	  	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-			cat_bind_type(lc->cat, "TIME" ),$2));  }
- |  TIMESTAMP STRING { context *lc = (context*)parm;
- 	  	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-			cat_bind_type(lc->cat, "TIMESTAMP" ),$2));  }
+    STRING   { $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
+			sql_bind_type("STRING" ), $1)); }
+ |  intval   { $$ = _symbol_create_atom( SQL_ATOM, atom_int( 
+			sql_bind_type("INTEGER" ), $1)); }
+ |  INTNUM   { $$ = _symbol_create_atom( SQL_ATOM, atom_float(
+			sql_bind_type("FLOAT" ), strtod($1,&$1))); }
+ |  APPROXNUM{ $$ = _symbol_create_atom( SQL_ATOM, atom_float(
+			sql_bind_type("DOUBLE" ), strtod($1,&$1))); }
+ |  DATE STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+			sql_bind_type("DATE" ),$2));  }
+ |  TIME STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+			sql_bind_type("TIME" ),$2));  }
+ |  TIMESTAMP STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+			sql_bind_type("TIMESTAMP" ),$2));  }
  |  INTERVAL opt_sign STRING interval_qualifier
 	{ context *lc = (context*)parm;
 	  int i,tpe;
@@ -1353,20 +1377,18 @@ literal:
 		yyerror("incorrect interval");
 		$$ = NULL;
 	  } else {
-		type *t = NULL;
+		sql_type *t = NULL;
 		if (tpe == 0){
-			t = cat_bind_type(lc->cat, "MONTH_INTERVAL");
+			t = sql_bind_type("MONTH_INTERVAL");
 		} else {
-			t = cat_bind_type(lc->cat, "SEC_INTERVAL");
+			t = sql_bind_type("SEC_INTERVAL");
 		}
 	  	$$ = _symbol_create_atom( SQL_ATOM, atom_int(t,i));
 	  }
 	}
- |  TYPE STRING 
-	{ context *lc = (context*)parm;
- 	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-			cat_bind_type(lc->cat, $1 ),$2)); 
-	  _DELETE($1); }
+ |  TYPE STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+		  sql_bind_type($1 ),$2)); 
+	  	  _DELETE($1); }
  ;
 
 	/* miscellaneous */
@@ -1399,7 +1421,7 @@ cast_exp:
 	  dlist_append_string(l, _strdup($5));
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
 
-case_exp: /* could rewrite NULLIF and COALESCE to normal CASE statements */
+case_exp: /* could rewrite NULLIF and COALESCE to normal CASE stmts */
      NULLIF '(' scalar_exp ',' scalar_exp ')' 
 		{ $$ = _symbol_create_list(SQL_NULLIF,
 		   dlist_append_symbol(
@@ -1488,6 +1510,7 @@ data_type:
 				  else $$ = "VARCHAR"; }
  | datetime_type
  | interval_type
+ | TYPE				{ $$ = $1; }
  ;
 
 column:	ident ;

@@ -3,6 +3,7 @@
 
 #include "sym.h"
 
+/*
 typedef struct node {
 	struct node *next;
 	symdata data;
@@ -14,29 +15,47 @@ typedef struct list {
 	node *t;
 	int cnt;
 } list;
+*/
 
-typedef int (*traverse_func)(char *clientdata, int seqnr, char *data);
-typedef void *(*map_func)(char *clientdata, int seqnr, char *data);
+typedef struct node {
+	struct node *next;
+	void *data;
+} node;
 
-extern list *list_create();
-extern void list_destroy(list *l);
-extern int list_length(list *l);
+typedef void (*fdestroy)(void *);
 
-extern list *list_append_string(list *l, char *data);
-extern list *list_append_list(list *l, list *data);
-extern list *list_append_int(list *l, int data);
-extern list *list_append_atom(list *l, struct atom *data);
-extern list *list_append_statement(list *l, struct statement *data);
-extern list *list_append_column(list *l, struct column *data);
-extern list *list_append_table(list *l, struct table *data);
+typedef struct list {
+	fdestroy destroy;
+	node *h;
+	node *t;
+	int cnt;
+} list;
 
-extern list *list_prepend_statement(list *l, struct statement *data);
 
-extern node *list_remove(list *l, node *n );
-extern void list_remove_statement(list *l, struct statement *s );
+typedef int (*traverse_func) (char *clientdata, int seqnr, void *data);
+typedef void *(*map_func) (char *clientdata, int seqnr, void *data);
 
-extern list *list_merge(list *l, list *data);
-extern int list_traverse(list *l, traverse_func f, char *clientdata );
-extern list *list_map(list *l, map_func f, char *clientdata );
+extern list *list_create(fdestroy destroy);
 
-#endif /* LIST_H */
+extern void list_destroy(list * l);
+extern int list_length(list * l);
+
+extern list *list_append(list * l, void *data);
+extern list *list_prepend(list * l, void *data);
+
+extern node *list_remove_node(list * l, node * n);
+extern void list_remove_data(list * l, void *data);
+extern void list_move_data(list * l, list * d, void *data);
+
+extern list *list_merge(list * l, list * data);
+extern int list_traverse(list * l, traverse_func f, char *clientdata);
+extern list *list_map(list * l, map_func f, char *clientdata);
+
+/* the compare function gets one element from the list and a key from the
+ * as input from the find function 
+ * Returns 0 if data and key are equal 
+ * */
+typedef int (*fcmp)(void *data,void *key); 
+extern node *list_find(list * l, void *key, fcmp cmp ); 
+
+#endif				/* LIST_H */

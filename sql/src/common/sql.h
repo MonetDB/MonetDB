@@ -9,6 +9,8 @@
 #include "symbol.h"
 #include "statement.h"
 
+#define D__SQL	16
+
 #define _(String) (String)
 #define N_(String) (String)
 
@@ -44,6 +46,8 @@ typedef enum tokens {
 	SQL_BEGIN,
 	SQL_COMMIT,
 	SQL_ROLLBACK,
+	SQL_SAVEPOINT,
+	SQL_RELEASE,
 	SQL_INSERT,
 	SQL_DELETE,
 	SQL_CROSS,
@@ -83,7 +87,9 @@ typedef enum tokens {
 	SQL_ATOM,
 	SQL_USING,
 	SQL_WHEN,
-	SQL_ESCAPE
+	SQL_ESCAPE,
+	SQL_COPYFROM,
+	SQL_COPYTO
 } tokens;
 
 typedef enum jt {
@@ -94,8 +100,8 @@ typedef enum jt {
 	jt_union = 4
 } jt;
 
-extern char *token2string( int token );
+extern const char *token2string(int token);
 
-extern statement *semantic( context *sql, symbol *sym );
+extern stmt *semantic(context * sql, symbol * sym);
 
 #endif /*_SQL_H_*/

@@ -6,31 +6,59 @@
 #include "statement.h"
 
 typedef struct scope {
-	list *vars;
-	list *lifted; /* list of lifted (columns,var) */
+	list *tables;		
+	list *aliases;		/* list of aliased statements */		
+	list *lifted;		/* list of lifted cvars */
 	struct scope *p;
-	int nr;
 } scope;
 
-typedef struct lifted {
-	var *v;
-	column *c;
-} lifted;
+extern scope *scope_open(scope * p);
+extern scope *scope_close(scope * s);
 
-extern scope *scope_open( scope *p );
-extern scope *scope_close( scope *s );
-extern var *scope_add_statement( scope *scp, statement *s, char *tname, char *cname );
-extern var *scope_add_table( scope *scp, table *t, char *name );
-extern var *scope_bind_table( scope *scp, char *name );
-extern column *scope_bind_column( scope *scp, char *name, var **v );
-extern column *scope_bind_table_column( scope *scp, char *tname, char *cname, var **v );
-extern statement *scope_bind_statement( scope *scp, char *tname, char *cname );
-extern statement *scope_first_column( scope *scp );
-extern var *scope_first_table( scope *scp );
+/* 
+ * table_add_column adds a column (cvar) to the table t (tname could be NULL).
+ * */
+extern cvar *table_add_column(tvar * t, column *c, stmt * s, char *tname, char *cname ); 
 
-/* returns a list of vars (one per base table) */
-extern list *scope_unique_lifted_vars( scope *s );
-extern int scope_count_tables( scope *s );
+/* 
+ * scope_add_table adds a table (tvar) to the scope scp (name could be NULL). 
+ * */
+extern tvar *scope_add_table(scope * scp, table * t, stmt *s, char *name); 
 
-extern void scope_dump(scope *s);
+/* 
+ * scope_add_alias adds a alias for a stmt.
+ * */
+extern var *scope_add_alias(scope * scp, stmt * s, char *alias ); 
+
+
+/* 
+ * scope_bind_table finds a table in the scp with the given name, only needed
+ * for name.* queries 
+ * */
+extern tvar *scope_bind_table( scope *scp, char *name ); 
+
+/* 
+ * scope_bind_column finds a column in the scp with the given tname.cname 
+ * (where tname could be NULL) 
+ * */
+extern cvar *scope_bind_column( scope *scp, char *tname, char *cname ); 
+
+/* 
+ * scope_bind_alias finds a alias in the scp with the given name 
+ * */
+extern var *scope_bind_alias( scope *scp, char *name ); 
+
+/* 
+ * scope_bind finds a colum or alias in the scp the given name 
+ * */
+extern stmt *scope_bind( scope *scp, char *tname, char *cname ); 
+
+extern cvar *scope_first_column(scope * scp);
+extern tvar *scope_first_table(scope * scp);
+
+/* returns a list of tvar (one per base table) */
+extern list *scope_unique_lifted_vars(scope * s);
+extern int scope_count_tables(scope * s);
+
+extern void scope_dump(scope * s);
 #endif /*_SCOPE_H_*/

@@ -10,7 +10,7 @@
 
 typedef struct context {
 	int cur;
-	int prev; /* previous token lr(1) is to restrictive for SQL */
+	int prev;		/* previous token lr(1) is to restrictive for SQL */
 
 	int yyval;
 	char *yytext;
@@ -18,7 +18,7 @@ typedef struct context {
 	int yysize;
 	int debug;
 	int optimize;
-	
+
 	char *sql;
 	int sqllen;
 	int sqlsize;
@@ -35,4 +35,4 @@ typedef struct context {
 	struct symbol *sym;
 } context;
 
-#endif /* _CONTEXT_H_ */
+#endif				/* _CONTEXT_H_ */

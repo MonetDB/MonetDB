@@ -6,10 +6,10 @@
 #include "context.h"
 
 typedef union symbdata {
-	int    ival;
-	char   *sval;
-	struct atom   *aval;
-	struct dlist   *lval;
+	int ival;
+	char *sval;
+	struct atom *aval;
+	struct dlist *lval;
 	struct symbol *sym;
 } symbdata;
 
@@ -26,32 +26,35 @@ typedef struct dlist {
 } dlist;
 
 extern dlist *dlist_create();
-extern void dlist_destroy(dlist *l);
-extern int dlist_length(dlist *l);
+extern void dlist_destroy(dlist * l);
+extern int dlist_length(dlist * l);
 
-extern dlist *dlist_append_string(dlist *l, char *data);
-extern dlist *dlist_append_list(dlist *l, dlist *data);
-extern dlist *dlist_append_int(dlist *l, int data);
-extern dlist *dlist_append_symbol(dlist *l, struct symbol *data);
-extern dlist *dlist_append_atom(dlist *l, struct atom *data);
+extern dlist *dlist_append_string(dlist * l, char *data);
+extern dlist *dlist_append_list(dlist * l, dlist * data);
+extern dlist *dlist_append_int(dlist * l, int data);
+extern dlist *dlist_append_symbol(dlist * l, struct symbol *data);
+extern dlist *dlist_append_atom(dlist * l, struct atom *data);
 
 typedef struct symbol {
-	int 		token;
-	char*		lexion;
-	symtype 	type;
-	symbdata	data;
+	int token;
+	char *lexion;
+	symtype type;
+	symbdata data;
 
-	int 		lineno;
-	char*		filename;
-	char*		sql;
+	int lineno;
+	char *filename;
+	char *sql;
 } symbol;
 
-extern symbol *symbol_create( struct context *c, int token, char *data);
+extern symbol *symbol_create(struct context *c, int token, char *data);
 
-extern symbol *symbol_create_list( struct context *c, int token, dlist *data);
-extern symbol *symbol_create_int( struct context *c, int token, int data);
-extern symbol *symbol_create_symbol( struct context *c, int token, symbol *data);
-extern symbol *symbol_create_atom( struct context *c, int token, atom *data);
-extern void symbol_destroy(symbol *sym);
+extern symbol *symbol_create_list(struct context *c, int token,
+				  dlist * data);
+extern symbol *symbol_create_int(struct context *c, int token, int data);
+extern symbol *symbol_create_symbol(struct context *c, int token,
+				    symbol * data);
+extern symbol *symbol_create_atom(struct context *c, int token,
+				  atom * data);
+extern void symbol_destroy(symbol * sym);
 
-#endif /*SYMBOL_H*/
+#endif				/*SYMBOL_H */

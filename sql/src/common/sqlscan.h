@@ -11,4 +11,4 @@
 extern void init_keywords();
 extern void exit_keywords();
 
-#endif /* _SQLSCAN_H_ */
+#endif	/* _SQLSCAN_H_ */
