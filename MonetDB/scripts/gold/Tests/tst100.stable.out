@@ -2,18 +2,18 @@ stdout of test 'tst100` in directory 'scripts/gold` itself:
 
 #> Mtest (15:05:03):	other tst100 1470
 #> Mtest (15:05:03):	Mtimeout -timeout 1470 ./tst100 tst100
-#> Mlog (15:05:03):	Mtimeout -timeout 210 Mcreatedb -user manegold -db scripts_gold_tst100
-Mcreatedb: processing database 'scripts_gold_tst100' in /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tst100.
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tst100 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tst100/bat 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tst100/users 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tst100/users/adm 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tst100/users/guest 
-# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/scripts_gold_tst100/users/manegold 
-Mcreatedb: calling 'Mserver -db scripts_gold_tst100' for the first time..
-Mcreatedb: database 'scripts_gold_tst100' has been initialized succesfully!
-#> Mlog (13:50:04):	Mtimeout -timeout 210 Mload test100k -db scripts_gold_tst100 -oid 30000000 -s 100000 -f format
-#> Mlog (13:50:05):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db scripts_gold_tst100 init.mil
+#> Mlog (15:05:03):	Mtimeout -timeout 210 Mcreatedb -user manegold -db Tests_scripts_gold_tst100
+Mcreatedb: processing database 'Tests_scripts_gold_tst100' in /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/Tests_scripts_gold_tst100.
+# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/Tests_scripts_gold_tst100 
+# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/Tests_scripts_gold_tst100/bat 
+# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/Tests_scripts_gold_tst100/users 
+# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/Tests_scripts_gold_tst100/users/adm 
+# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/Tests_scripts_gold_tst100/users/guest 
+# /var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/dbfarm/Tests_scripts_gold_tst100/users/manegold 
+Mcreatedb: calling 'Mserver -db Tests_scripts_gold_tst100' for the first time..
+Mcreatedb: database 'Tests_scripts_gold_tst100' has been initialized succesfully!
+#> Mlog (13:50:04):	Mtimeout -timeout 210 Mload test100k -db Tests_scripts_gold_tst100 -oid 30000000 -s 100000 -f format
+#> Mlog (13:50:05):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db Tests_scripts_gold_tst100 init.mil
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for mips-sgi-irix6.5/32bit.
@@ -37,7 +37,7 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-#> Mlog (12:07:47):	Mtimeout -timeout 210 Mserver -p -modulesilent -yaccsilent -d8 -db scripts_gold_tst100
+#> Mlog (12:07:47):	Mtimeout -timeout 210 Mserver -p -modulesilent -yaccsilent -d8 -db Tests_scripts_gold_tst100
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for mips-sgi-irix6.5/32bit.
@@ -79,7 +79,7 @@ Try: modules;                - for other modules.
 [ 60113@0,	  "no damage"	  ]
 [ 77628@0,	  "no damage"	  ]
 #~EndVariableOutput~#
-#> Mlog (15:05:56):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db scripts_gold_tst100 tst100.mil
+#> Mlog (15:05:56):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db Tests_scripts_gold_tst100 tst100.mil
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
