@@ -88,15 +88,18 @@ def main(cwd,topdir):
   p = parser()
   read_makefile(p,cwd)
   codegen(p.curvar,cwd,topdir)
-  am.output(p.curvar,cwd,topdir)
+  InstallList = am.output(p.curvar,cwd,topdir)
   msc.output(p.curvar,cwd,topdir)
   if ('SUBDIRS' in p.curvar.keys()):
     for dir in p.curvar.value('SUBDIRS'):
 	  d = cwd+os.sep+dir
 	  if (os.path.exists(d)):
 		  print(d)
-		  main(d,topdir)
+		  InstallList = InstallList + main(d,topdir)
 		  #cmd = "cd " + dir + "; " + sys.argv[0] + " " + topdir
 		  #os.system (cmd)
+  return InstallList
 
-main(topdir,topdir)
+InstallList = open("install.lst", "w")
+InstallList.writelines( main(topdir,topdir) )
+InstallList.close()
