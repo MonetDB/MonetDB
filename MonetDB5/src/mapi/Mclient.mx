@@ -487,6 +487,7 @@ void usage( char *prog ){
         fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
         fprintf(stderr, "\t\t -P passwd   | --passwd=passwd  /* password */\n");
         fprintf(stderr, "\t\t -e stmt     | --execute=stmt  /* run single statement */\n");
+        fprintf(stderr, "\t\t -t     | --trace  /* trace Monet interaction */\n");
         exit(-1);
 }
 
@@ -664,7 +665,7 @@ int main(int ac, char **av) {
 	/* fprintf(toConsole,"#connect %s:%d %s:%d\n",
 			host,port,user,skey);
 	*/
-	mid->trace = debug;
+	mid->trace = trace;
 	if (mapi_error(mid)) {
 		mapi_explain(mid,toConsole);
 		EXIT(2);

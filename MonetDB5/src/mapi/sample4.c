@@ -12,6 +12,7 @@ main(int argc, char *argv){
 	if(mapi_error(dbh)) die(dbh);
 
 	mapi_cache_limit(dbh,2);
+	mapi_trace_log(dbh,"/tmp/mapilog");
 	/* mapi_trace(dbh,1);*/
 	if( mapi_query(dbh,"create table emp(name varchar,age int)")) die(dbh);
 
