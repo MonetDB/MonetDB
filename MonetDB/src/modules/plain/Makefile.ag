@@ -48,7 +48,7 @@ LIBS = {
 		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
 		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
 		mel.mx ascii_io.mx qt.mx ddbench.mx \
-		bat_arith.mx aggrX3.mx compress.mx t1.mx
+		bat_arith.mx aggrX3.mx 
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
 	LIBS = -L. ../../common/libstream ../../gdk/libbat \
@@ -57,6 +57,7 @@ LIBS = {
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 
 }
+#compress.mx t1.mx
 
 lib__counters = {
 	DIR = pkglibdir
