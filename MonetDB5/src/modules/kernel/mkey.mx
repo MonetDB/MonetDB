@@ -264,10 +264,10 @@ proc ds_link(bat[bat,bat] keys) :bat[oid, oid]
   return res;
 }
 
-@c
-#include <gdk.h>
-
 @* Implementation
+@c
+#include <mal.h>
+
 @-
 new functionality for the low-resource-consumption ds_link. It will
 first one by one create a hash value out of the multiple attributes.
@@ -275,147 +275,192 @@ This hash value is computed by xoring and rotating individual hash
 values together. We create a hash and rotate command to do this.
 @c
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
-int CMDrotate(int *res, int *val, int *n) {
-    *res = GDK_ROTATE(*val, *n, 32 - *n, (1 << *n) - 1);
-    return GDK_SUCCEED;
+int
+CMDrotate(int *res, int *val, int *n)
+{
+	*res = GDK_ROTATE(*val, *n, 32 - *n, (1 << *n) - 1);
+	return GDK_SUCCEED;
 }
 
-int CMDhash_chr(int *res, chr* val) {
-    *res = *(chr*) val;
-    return GDK_SUCCEED;
+int
+CMDhash_chr(int *res, chr *val)
+{
+	*res = *(chr *) val;
+	return GDK_SUCCEED;
 }
 
-int CMDhash_sht(int *res, sht* val) {
-    *res = *(sht*) val;
-    return GDK_SUCCEED;
+int
+CMDhash_sht(int *res, sht *val)
+{
+	*res = *(sht *) val;
+	return GDK_SUCCEED;
 }
 
-int CMDhash_int(int *res, int* val) {
-    *res = *(int*) val;
-    return GDK_SUCCEED;
+int
+CMDhash_int(int *res, int *val)
+{
+	*res = *(int *) val;
+	return GDK_SUCCEED;
 }
 
-int CMDhash_flt(int *res, flt* val) {
-    *res = *(int*) val;
-    return GDK_SUCCEED;
+int
+CMDhash_flt(int *res, flt *val)
+{
+	*res = *(int *) val;
+	return GDK_SUCCEED;
 }
 
-int CMDhash_lng(int *res, lng* val) {
-    *res = ((int*) val)[0] ^ ((int*) val)[1];
-    return GDK_SUCCEED;
+int
+CMDhash_lng(int *res, lng *val)
+{
+	*res = ((int *) val)[0] ^ ((int *) val)[1];
+	return GDK_SUCCEED;
 }
 
-int CMDhash_dbl(int *res, dbl* val) {
-    *res = ((int*) val)[0] ^ ((int*) val)[1];
-    return GDK_SUCCEED;
+int
+CMDhash_dbl(int *res, dbl *val)
+{
+	*res = ((int *) val)[0] ^ ((int *) val)[1];
+	return GDK_SUCCEED;
 }
 
-int CMDhash_str(int *res, lng* val) {
-    hash_t code; /* 64-bits on 64 systems; we truncate it here to save space */
-    GDK_STRHASH(val, code);
-    *res = code;
-    return GDK_SUCCEED;
+int
+CMDhash_str(int *res, lng *val)
+{
+	hash_t code;		/* 64-bits on 64 systems; we truncate it here to save space */
+
+	GDK_STRHASH(val, code);
+	*res = code;
+	return GDK_SUCCEED;
 }
 
-int CMDhash(int *res, ptr val, int tpe) {
-    hash_t code; /* 64-bits on 64 systems; we truncate it here to save space */
-    switch(ATOMstorage(tpe)) {
-    case TYPE_void: code = int_nil; break;
-    case TYPE_chr:  code = *(chr*) val; break;
-    case TYPE_sht:  code = *(sht*) val; break;
-    case TYPE_int:
-    case TYPE_flt:  code = *(int*) val; break;
-    case TYPE_lng:
-    case TYPE_dbl:  code = ((int*) val)[0] ^ ((int*) val)[1]; break;
-    case TYPE_str:  GDK_STRHASH(val, code); break;
-    default:        code = (*BATatoms[tpe].atomHash)(val);
-    }
-    *res = code;
-    return GDK_SUCCEED;
-}
+int
+CMDhash(int *res, ptr val, int tpe)
+{
+	hash_t code;		/* 64-bits on 64 systems; we truncate it here to save space */
 
-int CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b) {
-    int *dst = (int*) BUNtloc(bn, BUNfirst(bn));
-    int tpe = ATOMstorage(b->ttype);
-    int lbit = *rotate;
-    int rbit = 32 - *rotate;
-    int mask = (1 << lbit) - 1;
-    int xx = BUNsize(b);
-    int yy = BUNsize(bn);
-  
-    if (!ALIGNsynced(bn, b)) { 
-	GDKerror("CMDbulk_rotate_xor_hash=](%s,%d,%s): not synced on head.\n", bn->batId, *rotate, b->batId);
-	return GDK_FAIL;
-    } else if (VIEWparent(bn) || bn->batRestricted) {
-	GDKerror("CMD_bulk_rotate_xor_hash=](%s,%d,%s): left operand not writeable.\n", bn->batId, *rotate, b->batId);
-	return GDK_FAIL;
-    } else if (*rotate < 0 || *rotate >= 32) {
-	GDKerror("CMD_bulk_rotate_xor_hash=](%s,%d,%s): illegal number of rotate bits.\n", bn->batId, *rotate, b->batId);
-	return GDK_FAIL;
-    } else if (tpe == TYPE_chr) {
-	chr *cur = (chr*) BUNtloc(b, BUNfirst(b));
-	chr *end = (chr*) BUNtloc(b, BUNlast(b));
-	while(cur < end) {
-	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ *cur;
-	    cur = (chr*) (((BUN) cur) + xx);
-	    dst = (int*) (((BUN) dst) + yy);
+	switch (ATOMstorage(tpe)) {
+	case TYPE_void:
+		code = int_nil;
+		break;
+	case TYPE_chr:
+		code = *(chr *) val;
+		break;
+	case TYPE_sht:
+		code = *(sht *) val;
+		break;
+	case TYPE_int:
+	case TYPE_flt:
+		code = *(int *) val;
+		break;
+	case TYPE_lng:
+	case TYPE_dbl:
+		code = ((int *) val)[0] ^ ((int *) val)[1];
+		break;
+	case TYPE_str:
+		GDK_STRHASH(val, code);
+		break;
+	default:
+		code = (*BATatoms[tpe].atomHash) (val);
 	}
-    } else if (tpe == TYPE_sht) {
-	sht *cur = (sht*) BUNtloc(b, BUNfirst(b));
-	sht *end = (sht*) BUNtloc(b, BUNlast(b));
-	while(cur < end) {
-	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ *cur;
-	    cur = (sht*) (((BUN) cur) + xx);
-	    dst = (int*) (((BUN) dst) + yy);
+	*res = code;
+	return GDK_SUCCEED;
+}
+
+int
+CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
+{
+	int *dst = (int *) BUNtloc(bn, BUNfirst(bn));
+	int tpe = ATOMstorage(b->ttype);
+	int lbit = *rotate;
+	int rbit = 32 - *rotate;
+	int mask = (1 << lbit) - 1;
+	int xx = BUNsize(b);
+	int yy = BUNsize(bn);
+
+	if (!ALIGNsynced(bn, b)) {
+		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", bn->batId, *rotate, b->batId);
+		return GDK_FAIL;
+	} else if (VIEWparent(bn) || bn->batRestricted) {
+		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", bn->batId, *rotate, b->batId);
+		return GDK_FAIL;
+	} else if (*rotate < 0 || *rotate >= 32) {
+		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", bn->batId, *rotate, b->batId);
+		return GDK_FAIL;
+	} else if (tpe == TYPE_chr) {
+		chr *cur = (chr *) BUNtloc(b, BUNfirst(b));
+		chr *end = (chr *) BUNtloc(b, BUNlast(b));
+
+		while (cur < end) {
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
+			cur = (chr *) (((BUN) cur) + xx);
+			dst = (int *) (((BUN) dst) + yy);
+		}
+	} else if (tpe == TYPE_sht) {
+		sht *cur = (sht *) BUNtloc(b, BUNfirst(b));
+		sht *end = (sht *) BUNtloc(b, BUNlast(b));
+
+		while (cur < end) {
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
+			cur = (sht *) (((BUN) cur) + xx);
+			dst = (int *) (((BUN) dst) + yy);
+		}
+	} else if (tpe == TYPE_int || tpe == TYPE_flt) {
+		int *cur = (int *) BUNtloc(b, BUNfirst(b));
+		int *end = (int *) BUNtloc(b, BUNlast(b));
+
+		while (cur < end) {
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
+			cur = (int *) (((BUN) cur) + xx);
+			dst = (int *) (((BUN) dst) + yy);
+		}
+	} else if (tpe == TYPE_lng || tpe == TYPE_dbl) {
+		int *cur = (int *) BUNtloc(b, BUNfirst(b));
+		int *end = (int *) BUNtloc(b, BUNlast(b));
+
+		while (cur < end) {
+			int val = cur[0] ^ cur[1];
+
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
+			cur = (int *) (((BUN) cur) + xx);
+			dst = (int *) (((BUN) dst) + yy);
+		}
+	} else if (tpe == TYPE_str) {	/* TYPE_str */
+		int *cur = (int *) BUNtloc(b, BUNfirst(b));
+		int *end = (int *) BUNtloc(b, BUNlast(b));
+		str base = b->theap.base;
+
+		while (cur < end) {
+			hash_t val;
+
+			GDK_STRHASH(base + *cur, val);
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
+			cur = (int *) (((BUN) cur) + xx);
+			dst = (int *) (((BUN) dst) + yy);
+		}
+	} else if (b->ttype == TYPE_void) {
+		BUN p, q;
+
+		BATloopFast(b, p, q, xx) {
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *(int *) BUNtail(b, p);
+			dst = (int *) (((BUN) dst) + yy);
+		}
+	} else {
+		hash_t (*hash) (ptr) = BATatoms[b->ttype].atomHash;
+		BUN p, q;
+
+		BATloopFast(b, p, q, xx) {
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ (*hash) (BUNtail(b, p));
+			dst = (int *) (((BUN) dst) + yy);
+		}
 	}
-    } else if (tpe == TYPE_int || tpe == TYPE_flt) {
-	int *cur = (int*) BUNtloc(b, BUNfirst(b));
-	int *end = (int*) BUNtloc(b, BUNlast(b));
-	while(cur < end) {
-	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ *cur;
-	    cur = (int*) (((BUN) cur) + xx);
-	    dst = (int*) (((BUN) dst) + yy);
-	}
-    } else if (tpe == TYPE_lng || tpe == TYPE_dbl) {
-	int *cur = (int*) BUNtloc(b, BUNfirst(b));
-	int *end = (int*) BUNtloc(b, BUNlast(b));
-	while(cur < end) {
-	    int val = cur[0] ^ cur[1];
-	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ val;
-	    cur = (int*) (((BUN) cur) + xx);
-	    dst = (int*) (((BUN) dst) + yy);
-	}
-    } else if (tpe == TYPE_str) { /* TYPE_str */
-	int *cur = (int*) BUNtloc(b, BUNfirst(b));
-	int *end = (int*) BUNtloc(b, BUNlast(b));
-	str base = b->theap.base;
-	while(cur < end) {
-	    hash_t val;
-	    GDK_STRHASH(base + *cur, val);
-	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ val;
-	    cur = (int*) (((BUN) cur) + xx);
-	    dst = (int*) (((BUN) dst) + yy);
-	}
-    } else if (b->ttype == TYPE_void) {
-    	BUN p, q;
-	BATloopFast(b, p, q, xx) {
-	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ *(int*) BUNtail(b,p);
-	    dst = (int*) (((BUN) dst) + yy);
-	}
-    } else {
-	hash_t (*hash)(ptr) = BATatoms[b->ttype].atomHash;
-    	BUN p, q;
-	BATloopFast(b, p, q, xx) {
-	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ (*hash)(BUNtail(b,p));
-	    dst = (int*) (((BUN) dst) + yy);
-	}
-    }
-    /* we return an already existing parameter BAT, so we must fix it */
-    *res = bn;
-    bn->tsorted = 0;
-    if (bn->tkey) BATkey(BATmirror(bn), FALSE);
-    BBPfix(bn->batCacheid);
-    return GDK_SUCCEED;
+	/* we return an already existing parameter BAT, so we must fix it */
+	*res = bn;
+	bn->tsorted = 0;
+	if (bn->tkey)
+		BATkey(BATmirror(bn), FALSE);
+	BBPfix(bn->batCacheid);
+	return GDK_SUCCEED;
 }
 @- Wrapping
 @-

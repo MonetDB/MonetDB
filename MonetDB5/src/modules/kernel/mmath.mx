@@ -213,6 +213,7 @@ quit;
 
 @* Implementation Code
 @c
+
 #include "mmath.h"
 #include <math.h>
 
@@ -226,16 +227,16 @@ extern double fabs(double x);
 #define asin_unary(x, z)      *z = asin(*x)
 #define atan_unary(x, z)      *z = atan(*x)
 #define atan2_binary(x, y, z) *z = atan2(*x,*y)
-#define cos_unary(x, z)       *z = cos(*x)
-#define sin_unary(x, z)       *z = sin(*x)
-#define tan_unary(x, z)       *z = tan(*x)
+#define cos_unary(x, z)	      *z = cos(*x)
+#define sin_unary(x, z)	      *z = sin(*x)
+#define tan_unary(x, z)	      *z = tan(*x)
 
 #define cosh_unary(x, z)       *z = cosh(*x)
 #define sinh_unary(x, z)       *z = sinh(*x)
 #define tanh_unary(x, z)       *z = tanh(*x)
 
-#define exp_unary(x, z)       *z = exp(*x)
-#define log_unary(x, z)       *z = log(*x)
+#define exp_unary(x, z)	      *z = exp(*x)
+#define log_unary(x, z)	      *z = log(*x)
 #define log10_unary(x, z)     *z = log10(*x)
 
 #define pow_binary(x, y, z)   *z = pow(*x,*y)
@@ -245,6 +246,54 @@ extern double fabs(double x);
 #define fabs_unary(x, z)      *z = fabs(*x)
 #define floor_unary(x, z)     *z = floor(*x)
 #define fmod_binary(x, y, z)  *z = fmod(*x,*y)
+
+#ifdef NATIVE_WIN32
+#include <float.h>
+/* Windows spells these differently */
+#define isnan(x)	_isnan(x)
+#define finite(x)	_finite(x)
+/* NOTE: HAVE_FPCLASS assumed... */
+#define fpclass(x)	_fpclass(x)
+#define FP_NINF		_FPCLASS_NINF
+#define FP_PINF		_FPCLASS_PINF
+#else /* !NATIVE_WIN32 */
+#ifdef HAVE_IEEEFP_H
+#include <ieeefp.h>
+#endif
+#endif
+
+#if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
+
+/* C99 interface: fpclassify */
+#define MNisinf(x)	(fpclassify(x) == FP_INFINITE)
+#define MNisnan(x)	(fpclassify(x) == FP_NAN)
+#define MNfinite(x)	(!MNisinf(x) && !MNisnan(x))
+
+#else
+
+#define MNisnan(x)	isnan(x)
+#define MNfinite(x)	finite(x)
+
+#ifdef HAVE_ISINF
+
+#define MNisinf(x)	isinf(x)
+
+#else
+
+static int
+MNisinf(double x)
+{
+#ifdef HAVE_FPCLASS
+	int cl = fpclass(x);
+
+	return ((cl == FP_NINF) || (cl == FP_PINF));
+#else
+	return 0;		/* XXX not correct if infinite */
+#endif /* HAVE_FPCLASS */
+}
+
+#endif /* HAVE_ISINF */
+#endif /* HAVE_FPCLASSIFY */
 
 @:unop(_ACOS,acos)@
 @:unop(_ASIN,asin)@
@@ -271,143 +320,126 @@ extern double fabs(double x);
 @:binop(_FMOD,fmod)@
 
 @= unop
-int math_unary@1(dbl *res , dbl *a ) {
+int
+math_unary@1(dbl *res , dbl *a )
+{
 #ifdef DEBUG
 	printf( "math_unary@1\n");
 #endif
-   if (*a == dbl_nil) {
-	*res = dbl_nil;
-   } else {
-	@2_unary( a, res );
-   }
-   return(GDK_SUCCEED);
+	if (*a == dbl_nil) {
+		*res = dbl_nil;
+	} else {
+		errno = 0;
+		@2_unary( a, res );
+		if (errno == EDOM) {
+			GDKerror("Negative argument is not allowed");
+			return GDK_FAIL;
+		}
+		if (errno == ERANGE) {
+			GDKerror("Range error");
+			return GDK_FAIL;
+		}
+		if (MNisnan(*res)) {
+			GDKerror("Negative argument is not allowed");
+			return GDK_FAIL;
+		}
+		if (!MNfinite(*res)) {
+			GDKerror("Range error");
+			return GDK_FAIL;
+		}
+	}
+	return(GDK_SUCCEED);
 }
 @
 
 @= binop
-int math_binary@1(dbl *res, dbl *a, dbl *b ) {
+int
+math_binary@1(dbl *res, dbl *a, dbl *b )
+{
 #ifdef DEBUG
 	printf( "math_binary@1\n");
 #endif
-   if (*a == dbl_nil || *b == dbl_nil) {
-	*res = dbl_nil;
-   } else {
-	@2_binary( a, b, res);
-   }
-   return(GDK_SUCCEED);
+	if (*a == dbl_nil || *b == dbl_nil) {
+		*res = dbl_nil;
+	} else {
+		@2_binary( a, b, res);
+	}
+	return(GDK_SUCCEED);
 }
 @
-The ROUND and TRUNC commands are copied from
-the SQL backend server file.
+
 @c
-int math_binary_ROUND(dbl *res, dbl *x, int *y) {
-  if(*x == dbl_nil || *y == int_nil) {
-    *res = dbl_nil;
-  } else {
-    double factor = pow(10,*y), integral;
-    double tmp = *y>0?modf(*x,&integral):*x;
-
-    tmp *= factor;
-    if(tmp>=0)
-      tmp = floor(tmp+0.5);
-    else
-      tmp = ceil(tmp-0.5);
-    tmp /= factor;
-
-    if(*y>0)
-      tmp += integral;
-
-    *res = tmp;
-  }
-
-  return(GDK_SUCCEED);
-}
-
-#ifdef NATIVE_WIN32
-#include <float.h>
-/* Windows spells these differently */
-#define isnan(x)	_isnan(x)
-#define finite(x)	_finite(x)
-/* NOTE: HAVE_FPCLASS assumed... */
-#define fpclass(x)	_fpclass(x)
-#define FP_NINF         _FPCLASS_NINF
-#define FP_PINF         _FPCLASS_PINF
-#else /* !NATIVE_WIN32 */
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>
-#endif
-#endif
-
-#if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
-
-/* C99 interface: fpclassify */
-#define MNisinf(x)	(fpclassify(x) == FP_INFINITE)
-#define MNisnan(x)	(fpclassify(x) == FP_NAN)
-#define MNfinite(x)	(!MNisinf(x) && !MNisnan(x))
-
-#else
-
-#define MNisnan(x)	isnan(x)
-#define MNfinite(x)	finite(x)
-
-#ifdef HAVE_ISINF
-
-#define MNisinf(x)	isinf(x)
-
-#else
-
-static int MNisinf(double x)
+int
+math_binary_ROUND(dbl *res, dbl *x, int *y)
 {
-#ifdef HAVE_FPCLASS
-    int cl = fpclass(x);
-    return ((cl == FP_NINF) || (cl == FP_PINF));
-#else
-    return 0;		/* XXX not correct if infinite */
-#endif	/* HAVE_FPCLASS */
+	if (*x == dbl_nil || *y == int_nil) {
+		*res = dbl_nil;
+	} else {
+		double factor = pow(10, *y), integral;
+		double tmp = *y > 0 ? modf(*x, &integral) : *x;
+
+		tmp *= factor;
+		if (tmp >= 0)
+			tmp = floor(tmp + 0.5);
+		else
+			tmp = ceil(tmp - 0.5);
+		tmp /= factor;
+
+		if (*y > 0)
+			tmp += integral;
+
+		*res = tmp;
+	}
+
+	return (GDK_SUCCEED);
 }
 
-#endif	/* HAVE_ISINF */
-#endif	/* HAVE_FPCLASSIFY */
-
-int math_unary_ISNAN(bit *res , dbl *a ) {
+int
+math_unary_ISNAN(bit *res, dbl *a)
+{
 #ifdef DEBUG
-    printf( "math_unary_ISNAN\n");
+	printf("math_unary_ISNAN\n");
 #endif
-    if (*a == dbl_nil) {
-	*res = bit_nil;
-    } else {
-	*res = MNisnan(*a);
-    }
-    return(GDK_SUCCEED);
+	if (*a == dbl_nil) {
+		*res = bit_nil;
+	} else {
+		*res = MNisnan(*a);
+	}
+	return (GDK_SUCCEED);
 }
 
-int math_unary_ISINF(int *res , dbl *a ) {
+int
+math_unary_ISINF(int *res, dbl *a)
+{
 #ifdef DEBUG
-	printf( "math_unary_ISINF\n");
+	printf("math_unary_ISINF\n");
 #endif
-   if (*a == dbl_nil) {
-	*res = int_nil;
-   } else {
-	if(MNisinf(*a)) {
-        	*res = (*a < 0.0) ? -1 : 1;
-        } else {
-        	*res = 0;
-        }
-   }
-   return(GDK_SUCCEED);
+	if (*a == dbl_nil) {
+		*res = int_nil;
+	} else {
+		if (MNisinf(*a)) {
+			*res = (*a < 0.0) ? -1 : 1;
+		} else {
+			*res = 0;
+		}
+	}
+	return (GDK_SUCCEED);
 }
 
-int math_unary_FINITE(bit *res , dbl *a ) {
+int
+math_unary_FINITE(bit *res, dbl *a)
+{
 #ifdef DEBUG
-	printf( "math_unary_FINITE\n");
+	printf("math_unary_FINITE\n");
 #endif
-   if (*a == dbl_nil) {
-	*res = bit_nil;
-   } else {
-	*res = MNfinite(*a);
-   }
-   return(GDK_SUCCEED);
+	if (*a == dbl_nil) {
+		*res = bit_nil;
+	} else {
+		*res = MNfinite(*a);
+	}
+	return (GDK_SUCCEED);
 }
+
 @- Wrapping
 Wrapping around the M4 code base
 @c

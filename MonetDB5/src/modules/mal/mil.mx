@@ -83,22 +83,6 @@ address MILline
 comment "Produce comment for tracking
 	the MIL code produced";
 
-@+ Backward compatibility
-To simplify backward compatibility we introduce here a series
-of operators that behave differently in the M5 context.
-We should keep the number low, but at the same time it
-should be understood that some of the operations carry
-an overhead that we normally do not want.
-Note that we can not simply rely on the overloading scheme,
-either way we define the resolution order 'mil'-'bat' there
-will be cases not accounted for. Therefore the compiler checks
-for the tricky case explicitly.
-@mal
-command insert(b:bat[:any$1,:any$2], h:any$1, t:any$2) :bat[:any$1,:any$2]
-address MILinsert_bun
-comment "Insert one BUN[h,t] in a BAT.";
-command insert(b:bat[:void,:any$2], h:oid, t:any$2) :bat[:oid,:any$2]
-address MILinsert_bun;
 
 mil.prelude();
 
@@ -374,19 +358,5 @@ str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	stream_printf(GDKout,"#%s%s",nme,(nme[len-1]=='\n'?"":"\n"));
         stream_flush(GDKout);
 	return MAL_SUCCEED;
-}
-@-
-Compatibility code wrappers
-@c
-extern str BKCinsert_void_bun(int *r, int *bid, ptr t);
-extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
-
-str MILinsert_void_bun(int *r, int *bid, ptr t) {
-	*r = *bid;
-	return BKCinsert_void_bun(r,bid,t);
-}
-str MILinsert_bun(int *r, int *bid, ptr h, ptr t) {
-	*r = *bid;
-	return BKCinsert_bun(r,bid,h,t);
 }
 @}
