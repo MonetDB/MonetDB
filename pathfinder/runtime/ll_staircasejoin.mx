@@ -624,6 +624,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     int OST_bits  = OST_bytes * 8;
     int OST_mask  = OST_bits - 1;
     int OST_shift = 0;
+    size_t grow = 0;
     
     for (i=OST_mask; i; i>>=1) OST_shift++;
 
@@ -808,6 +809,11 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
 
     GDKfree(stack);
 
+    grow = 0;
+    for ( i=0; i<num_iters; i++ ) {
+        grow += BATcount(tmp_res[i]);
+    }
+    PFll_check_BAT_capacity(res, grow);
     for ( i=0; i<num_iters; i++ ) {
         if (BATcount(tmp_res[i]) > 0) {
             bit trivial = (BATcount(tmp_res[i]) < 2);
