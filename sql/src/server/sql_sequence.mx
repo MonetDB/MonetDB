@@ -77,8 +77,8 @@ sql_create_seq(mvc * sql, sql_schema *ss, dlist *qname, sql_subtype *tpe,
 	(void)tpe;
 	if (find_seq( sql, name)) {
 		return sql_error(sql, 02, 
-		    	"create sequence %s failed " 
-			"as sequences allready exists", 
+		    	"CREATE SEQUENCE failed: " 
+			"name %s already in use", 
 			name);
 	} else if (!schema_privs(sql->role_id, ss)){
 		return sql_error(sql, 02, 
@@ -100,7 +100,7 @@ sql_drop_seq(mvc * sql, sql_schema *ss, dlist *qname)
 
 	if (!find_seq( sql, name)) {
 		return sql_error(sql, 02, 
-			"drop sequence %s failed as sequence does not exist", 
+			"DROP SEQUENCE failed: no such sequence %s", 
 			name);
 	} else if (!schema_privs(sql->role_id, ss)){
 		return sql_error(sql, 02, 
