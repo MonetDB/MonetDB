@@ -1,6 +1,6 @@
 
 MTSAFE
-INCLUDES = top_srcdir/src/common ../../common 
+INCLUDES = ../../common 
 
 MAPI_LIBS = $(SOCKET_LIBS) 
 

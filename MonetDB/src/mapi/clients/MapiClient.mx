@@ -370,7 +370,7 @@ int main(int ac, char **av) {
 	}
 
 	if (config){
-		setlen = mo_config_file(&set, setlen, config, opt_config);
+		setlen = mo_config_file(&set, setlen, config);
 		free(config);
 	} else {
 		if (!(setlen = mo_system_config(&set, setlen)) )
