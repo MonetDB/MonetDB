@@ -15,6 +15,8 @@ extern int sqlparse (void *);
 void sql_init_context( context *lc , stream *out, int debug, catalog *cat ){
 	init_keywords();
 
+	memset(lc,0,sizeof(context));
+
         lc->cur = ' ';
         lc->filename = NULL;
         lc->buf = NULL;

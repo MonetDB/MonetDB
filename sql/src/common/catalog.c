@@ -9,7 +9,6 @@ void catalog_initoid( catalog *cat ){
 	cat->nextid = cat->cc_oidrange( cat, cat->nr );
 }
 
-static
 long catalog_getoid( catalog *cat ){
 	if (cat->nr <= 0){
 		/* obtain new range from server */
