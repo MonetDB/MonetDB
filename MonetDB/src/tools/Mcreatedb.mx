@@ -71,6 +71,7 @@ found in the same directory.
 ./dbfarm/$DB/lib/            # database specific modules
 ./dbfarm/$DB/scripts/        # database specific scripts
 ./dbfarm/$DB/boxes/          # database specific object spaces
+./dbfarm/$DB/boxes/backup/   # backup of object spaces
 ./dbfarm/$DB/bat/            # database tables directory
 ./dbfarm/$DB/bat/BBP.dir     # database BAT directory
 \end{verbatim}
@@ -258,6 +259,7 @@ void createDB(char *home) {
 	localmkdir("include");
 	localmkdir("lib");
 	localmkdir("boxes");
+	localmkdir("boxes/backup");
 	localmkdir("mal");
 	copyfile("startup.mal","startup.mal");
 	localmkdir("mil");
