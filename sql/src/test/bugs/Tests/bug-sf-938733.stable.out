@@ -13,9 +13,9 @@ stdout of test 'bug-sf-938733` in directory 'src/test/bugs` itself:
 printf("\nReady.\n");
 
 Ready.
+quit;
 
 Over..
-
 # 21:05:08 >  
 # 21:05:08 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=56379  < bug-sf-938733.sql
 # 21:05:08 >  
