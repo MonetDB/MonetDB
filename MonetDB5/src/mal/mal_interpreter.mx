@@ -467,16 +467,17 @@ possible change in the control flow.
 			else stkpc++;
 			break;
 		case TYPE_sht:
-			if( v->val.shval > 0 && v->val.shval!= sht_nil )
+			if( v->val.shval >= 0 && v->val.shval!= sht_nil )
 				stkpc= pci->jump; 
 			else stkpc++;
 			break;
 		case TYPE_int:
-			if( v->val.shval > 0 && v->val.shval!= sht_nil )
+			if( v->val.ival >= 0 && v->val.ival!= sht_nil )
 				stkpc= pci->jump; 
 			else stkpc++;
+			break;
 		case TYPE_lng:
-			if( v->val.lval > 0 && v->val.lval!= lng_nil)
+			if( v->val.lval >= 0 && v->val.lval!= lng_nil)
 				stkpc= pci->jump; 
 			else 
 		default:
@@ -763,7 +764,7 @@ labeled statemtent. This might be optimized later.
 			stkpc= pci->jump; 
 		break;
 	case TYPE_int:
-		if( v->val.lval < 0 || v->val.lval == int_nil)
+		if( v->val.ival < 0 || v->val.ival == int_nil)
 			stkpc= pci->jump; 
 		break;
 	case TYPE_lng:
