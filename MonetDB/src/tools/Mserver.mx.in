@@ -556,7 +556,7 @@ A grain size of 128 bytes is used to keep overhead low.
 		monet_script[i] = absolute_path(av[optind]);
 		monet_script[i+1] = NULL;
 		optind++;
-		printf("monet_script[%d] %s\n", i, monet_script[i] );
+		i++;
 	}
 
 	if (debug)
