@@ -970,7 +970,8 @@ mainSHREDDER(char* xmlFile)
     assert (sizeof (char) == sizeof (xmlChar));
 
     /* allocate a buffer for TEXT nodes */
-    assert( (content_buf = (char*) malloc(PFSHRED_STRLEN_MAX)) );
+    content_buf = (char*) malloc(PFSHRED_STRLEN_MAX);
+    assert(content_buf);
 
     /* allocate XML node stack */
     if (! (lifo = (node_t *) malloc (xml_depth_max * sizeof (node_t)))) {
