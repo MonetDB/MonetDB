@@ -145,9 +145,7 @@ gdk_export int 		strLocate      (Heap *h, str v);
 @- inline comparison routines
 Return 0 on l==r, < 0 iff l < r, >0 iff l > r  
 @c
-#include "gdk_atoms.h"
-#include "gdk_bat.h"
-#include "gdk_desc.h"
+#include "gdk.h"
 
 int chrCmp(chr* l, chr* r) { return simple_CMP(l,r,chr); }
 int shtCmp(sht* l, sht* r) { return simple_CMP(l,r,sht); }
@@ -174,108 +172,108 @@ INLINE int  batUnfix(bat* b)   { return BBPtransient(*b,FALSE); }
 
 atomDesc BATatoms[MAXATOMS] = {
   { "void",  	TYPE_void, 1, 0, /* sizeof(@`void@7) */ 0, 1, (ptr) &int_nil, 
-		(int  (*)()) OIDfromStr,	(int (*)()) OIDtoStr,
- 		(int  (*)()) intCmp,		
- 		(unsigned int (*)()) intHash, 	(void (*)()) 0,
- 		(int  (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},			
+		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
+ 		(int (*)(ptr, ptr)) intCmp,
+ 		(unsigned int (*)(ptr)) intHash, 	0,
+ 		0,			0,
+ 		0,			0,
+ 		0,			0,
+ 		0,			0},			
   { "bit",  	TYPE_chr, 1, sizeof(bit), sizeof(@`bit@7), 0, (ptr) &chr_nil, 
-		(int  (*)()) bitFromStr,	(int (*)()) bitToStr,
- 		(int  (*)()) chrCmp,		
- 		(unsigned int  (*)()) chrHash,	(void (*)()) 0,		
-		(int  (*)()) 0, 		(int  (*)()) 0,
-		(void (*)()) 0,			(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+		(int (*)(str, int*, ptr*)) bitFromStr,	(int (*)(str*, int*, ptr)) bitToStr,
+ 		(int (*)(ptr, ptr)) chrCmp,
+ 		(unsigned int (*)(ptr)) chrHash,	0,
+		0, 		0,
+		0,			0,
+ 		0,			0,
+ 		0,			0},
   { "chr",  	TYPE_chr, 1, sizeof(chr), sizeof(@`chr@7), 0, (ptr) &chr_nil, 
-		(int  (*)()) @`chrFromStr@5,	(int (*)()) @`chrToStr@5,
-	 	(int  (*)()) chrCmp,		
- 		(unsigned int  (*)()) chrHash,	(void (*)()) 0,		
-		(int  (*)()) 0, 		(int  (*)()) 0,
-		(void (*)()) 0,			(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+		(int (*)(str, int*, ptr*)) @`chrFromStr@5,	(int (*)(str*, int*, ptr)) @`chrToStr@5,
+	 	(int (*)(ptr, ptr)) chrCmp,
+ 		(unsigned int (*)(ptr)) chrHash,	0,		
+		0, 		0,
+		0,			0,
+ 		0,			0,
+ 		0,			0},
   { "sht",	TYPE_sht, 1, sizeof(sht), sizeof(@`sht@7), 0, (ptr) &sht_nil,
-		(int  (*)()) @`shtFromStr@5,	(int (*)()) @`shtToStr@5,
- 		(int  (*)()) shtCmp,		
- 		(unsigned int  (*)()) shtHash, 	(void (*)()) shtConvert,
-		(int  (*)()) 0, 		(int  (*)()) 0,
-		(void (*)()) 0,			(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+		(int (*)(str, int*, ptr*)) @`shtFromStr@5,	(int (*)(str*, int*, ptr)) @`shtToStr@5,
+ 		(int (*)(ptr, ptr)) shtCmp,		
+ 		(unsigned int (*)(ptr)) shtHash, 	(void (*)(ptr, int)) shtConvert,
+		0, 		0,
+		0,			0,
+ 		0,			0,
+ 		0,			0},
   { "BAT",  	TYPE_int, 1, sizeof(bat), sizeof(@`bat@7), 0, (ptr) &int_nil,
- 		(int  (*)()) batFromStr,	(int (*)()) batToStr,
- 		(int  (*)()) intCmp, 		
- 		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,
-		(int  (*)()) batFix,		(int  (*)()) batUnfix,
- 		(void (*)()) BATpersistent,	(void (*)()) BATtransient,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+ 		(int (*)(str, int*, ptr*)) batFromStr,	(int (*)(str*, int*, ptr)) batToStr,
+ 		(int (*)(ptr, ptr)) intCmp, 		
+ 		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
+		(int (*)(ptr)) batFix,		(int (*)(ptr)) batUnfix,
+ 		(void (*)(Heap*, int*, ptr)) BATpersistent,	(void (*)(Heap*, int*)) BATtransient,
+ 		0,			0,
+ 		0,			0},
   { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, 
-		(int  (*)()) intFromStr,	(int (*)()) @`intToStr@5,
-	 	(int  (*)()) intCmp,		
- 		(unsigned int  (*)()) intHash, 	(void (*)()) intConvert,
-		(int  (*)()) 0, 		(int  (*)()) 0,
- 		(void (*)()) 0, 		(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+		(int (*)(str, int*, ptr*)) intFromStr,	(int (*)(str*, int*, ptr)) @`intToStr@5,
+	 	(int (*)(ptr, ptr)) intCmp,		
+ 		(unsigned int (*)(ptr)) intHash, 	(void (*)(ptr, int)) intConvert,
+		0, 		0,
+ 		0, 		0,
+ 		0,			0,
+ 		0,			0},
   { "oid",  	TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &int_nil, 
- 		(int  (*)()) OIDfromStr,	(int (*)()) OIDtoStr,
- 		(int  (*)()) intCmp,		
- 		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,
-		(int  (*)()) 0, 		(int  (*)()) 0,
- 		(void (*)()) 0,			(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+ 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
+ 		(int (*)(ptr, ptr)) intCmp,		
+ 		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
+		0, 		0,
+ 		0,			0,
+ 		0,			0,
+ 		0,			0},
 #if SIZEOF_LONG==8
   { "ptr",  	TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil, 
-		(int  (*)()) @`ptrFromStr@5,	(int (*)()) @`ptrToStr@5,
-	 	(int  (*)()) lngCmp,		
-		(unsigned int  (*)()) lngHash,	(void (*)()) lngConvert,	
+		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
+	 	(int (*)(ptr, ptr)) lngCmp,		
+		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,	
 #else
   { "ptr",  	TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &int_nil,
-		(int  (*)()) @`ptrFromStr@5,	(int (*)()) @`ptrToStr@5,
-	 	(int  (*)()) intCmp,		
-		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,	
+		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
+	 	(int (*)(ptr, ptr)) intCmp,		
+		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,	
 #endif
-		(int  (*)()) 0, 		(int  (*)()) 0,
-		(void (*)()) 0, 		(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+		0, 		0,
+		0, 		0,
+ 		0,			0,
+ 		0,			0},
   { "flt",  	TYPE_flt, 1, sizeof(flt), sizeof(@`flt@7), 0, (ptr) &flt_nil, 
-		(int  (*)()) @`fltFromStr@5,	(int (*)()) @`fltToStr@5,
-	 	(int  (*)()) fltCmp,		
- 		(unsigned int  (*)()) intHash, 	(void (*)()) intConvert,
-		(int  (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+		(int (*)(str, int*, ptr*)) @`fltFromStr@5,	(int (*)(str*, int*, ptr)) @`fltToStr@5,
+	 	(int (*)(ptr, ptr)) fltCmp,		
+ 		(unsigned int (*)(ptr)) intHash, 	(void (*)(ptr, int)) intConvert,
+		0,			0,
+ 		0,			0,
+ 		0,			0,
+ 		0,			0},
   { "dbl",  	TYPE_dbl, 1, sizeof(dbl), sizeof(@`dbl@7), 0, (ptr) &dbl_nil, 
-		(int  (*)()) @`dblFromStr@5,	(int (*)()) @`dblToStr@5,
-		(int  (*)()) dblCmp,		
- 		(unsigned int  (*)()) lngHash, 	(void (*)()) lngConvert,
-		(int  (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+		(int (*)(str, int*, ptr*)) @`dblFromStr@5,	(int (*)(str*, int*, ptr)) @`dblToStr@5,
+		(int (*)(ptr, ptr)) dblCmp,		
+ 		(unsigned int (*)(ptr)) lngHash, 	(void (*)(ptr, int)) lngConvert,
+		0,			0,
+ 		0,			0,
+ 		0,			0,
+ 		0,			0},
   { "lng",  	TYPE_lng, 1, sizeof(lng), sizeof(@`lng@7), 0, (ptr) &lng_nil, 
-		(int  (*)()) lngFromStr,	(int (*)()) lngToStr,
- 		(int  (*)()) lngCmp,		
- 		(unsigned int  (*)()) lngHash,	(void (*)()) lngConvert,
-		(int  (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(void (*)()) 0,
- 		(int (*)()) 0,			(int  (*)()) 0,
- 		(void (*)()) 0,			(int  (*)()) 0},
+		(int (*)(str, int*, ptr*)) lngFromStr,	(int (*)(str*, int*, ptr)) lngToStr,
+ 		(int (*)(ptr, ptr)) lngCmp,		
+ 		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,
+		0,			0,
+ 		0,			0,
+ 		0,			0,
+ 		0,			0},
   { "str",  	TYPE_str, 1, sizeof(int), sizeof(int), 1, (ptr) &chr_nil,	
-		(int  (*)()) strFromStr,	(int (*)()) strToStr,
-		(int  (*)()) strCmp,		
-	    	(unsigned int  (*)()) strHash,	(void (*)()) 0,
-		(int  (*)()) 0, 		(int  (*)()) 0,
- 		(void (*)()) strPut,		(void (*)()) 0,
- 		(int (*)()) strLen,		(int (*)()) strHeap,
- 		(void (*)()) strHeapConvert,	(int  (*)()) 0} ,
+		(int (*)(str, int*, ptr*)) strFromStr,	(int (*)(str*, int*, ptr)) strToStr,
+		(int (*)(ptr, ptr)) strCmp,		
+	    	(unsigned int (*)(ptr)) strHash,	0,
+		0, 		0,
+ 		(void (*)(Heap*, int*, ptr)) strPut,		0,
+ 		(int (*)(ptr)) strLen,		(int (*)(Heap*, int)) strHeap,
+ 		(void (*)(Heap*, int)) strHeapConvert,	0} ,
 };
 int     GDKatomcnt = TYPE_str + 1;
 @
@@ -495,6 +493,26 @@ The routine atomnil returns a pointer to the nil value representation.
 #define	GDK_lng_min (LL_CONSTANT(-9223372036854775807)-LL_CONSTANT(1))
 #define	GDK_dbl_max ((dbl) 1.7976931348623157E+308)
 #define	GDK_dbl_min (-GDK_dbl_max)
+
+/* representation of the nil */
+gdk_export chr		chr_nil; 	
+gdk_export short	sht_nil; 	
+gdk_export int		int_nil; 	
+gdk_export flt		flt_nil; 	
+gdk_export dbl		dbl_nil; 	
+gdk_export lng		lng_nil; 	
+gdk_export str		str_nil; 	
+
+/* derived NIL values - OIDDEPEND */
+#define bit_nil	((bit) chr_nil)
+#if SIZEOF_LONG==8
+#define ptr_nil	((ptr) lng_nil)
+#else
+#define ptr_nil	((ptr) int_nil)
+#endif
+#define bat_nil	((bat) int_nil)
+#define oid_nil	((oid) int_nil)
+#define void_nil	oid_nil
 @c
 chr		chr_nil = GDK_chr_min;
 sht		sht_nil = GDK_sht_min;

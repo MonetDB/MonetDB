@@ -190,6 +190,9 @@
 /* Define if you have the gettimeofday function.  */
 /* #undef HAVE_GETTIMEOFDAY */
 
+/* Define if you have the ftime function.  */
+#define HAVE_FTIME 1
+
 /* Define if you have the getuid function.  */
 /* #undef HAVE_GETUID */
 
@@ -239,6 +242,9 @@
 
 /* Define if you have the strtol function.  */
 #define HAVE_STRTOL 1
+
+/* Define if you have the sysconf function.  */
+/* #undef HAVE_SYSCONF */
 
 /* Define if you have the vsnprintf function.  */
 #define HAVE_VSNPRINTF 1
@@ -294,6 +300,9 @@
 
 /* Define if you have the <semaphore.h> header file.  */
 #define HAVE_SEMAPHORE_H 1
+
+/* Define if you have the <signal.h> header file.  */
+#define HAVE_SIGNAL_H 1
 
 /* Define if you have the <string.h> header file.  */
 #define HAVE_STRING_H 1

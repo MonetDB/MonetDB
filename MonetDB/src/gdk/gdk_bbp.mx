@@ -1978,13 +1978,8 @@ void BBPrecover() {
 		IODEBUG THRprintf(GDKerr, "unlink(%s) = %d\n", dstpath, ret);
 
 		/* move backup BBP.dir back */
-		ret = link(path,dstpath);
-		IODEBUG THRprintf(GDKerr, "link(%s,%s) = %d\n", path, dstpath, ret);
-
-		if (ret == 0) { /* if succeeded, remove from BACKUP */
-			ret = unlink(path);
-			IODEBUG THRprintf(GDKerr, "unlink(%s) = %d\n", path, ret);
-		}
+		ret = rename(path,dstpath);
+		IODEBUG THRprintf(GDKerr, "rename(%s,%s) = %d\n", path, dstpath, ret);
 	}
 
 	if (ret == 0) {

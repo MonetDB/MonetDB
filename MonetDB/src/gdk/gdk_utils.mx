@@ -33,18 +33,19 @@ system, memory allocation details, and a basic system logging scheme.
 #define _GDK_UTILS_H_
 
 gdk_export void GDKlog       (char *format, ...);
-gdk_export void GDKlockHome  ();
-gdk_export void GDKunlockHome();
-gdk_export int  GDKgetHome   ();
+gdk_export void GDKlockHome  (void);
+gdk_export void GDKunlockHome(void);
+gdk_export int  GDKgetHome   (void);
 
-gdk_export lng  GDKusec      ();
-gdk_export int  GDKms        ();
-gdk_export int  GDKcsec      ();
-gdk_export int  GDKsec       ();
+gdk_export lng  GDKusec      (void);
+gdk_export int  GDKms        (void);
+gdk_export int  GDKcsec      (void);
+gdk_export int  GDKsec       (void);
 
 gdk_export BAT *GDKenv;
 
-#endif /* _GDK_UTILS_H_ */
+gdk_export void BATSIGcrash(int);
+
 @c
 #ifndef GDK_NOLINK
 #include "gdk.h"
@@ -71,6 +72,10 @@ BAT 	*GDKenv = NULL;
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
+
+#ifdef HAVE_FTIME
+#include <sys/timeb.h>
 #endif
 
 #if TIME_WITH_SYS_TIME
@@ -154,6 +159,9 @@ static int GDKenvironment(str dbname, str dbfarm)
 	return 1;
 }
 
+@h
+gdk_export char *GDKgetenv(str name);
+@c
 char *GDKgetenv(str name){
 	BUN b = BUNfnd(GDKenv, name);
 
@@ -161,6 +169,9 @@ char *GDKgetenv(str name){
 	return NULL;
 }
 
+@h
+gdk_export int GDKgetenv_isyes(str name);
+@c
 int GDKgetenv_isyes(str name){
 	char *val = GDKgetenv(name);
 
@@ -170,6 +181,9 @@ int GDKgetenv_isyes(str name){
 	return 0;
 }
 
+@h
+gdk_export void GDKsetenv(str name, str value);
+@c
 void GDKsetenv(str name, str value){
 	BUNins(GDKenv,name,value);
         BATfakeCommit(GDKenv);
@@ -222,6 +236,9 @@ void GDKlog(char *format, ...) {
 	for(p=buf; (p=strchr(p,'\@')) != NULL; *p = ' ');
 
 	fseek(GDKlockFile, 0, SEEK_END);
+#ifndef HAVE_GETUID
+#define getuid() 0
+#endif
 	fprintf(GDKlockFile, "%s \@ USR=%d PID=%d THR=%ld TIME=%s", buf, 
 		(int) getuid(), (int) getpid(), (long) MT_getpid(), ctime(&tm));
 	fflush(GDKlockFile);
@@ -244,34 +261,39 @@ void BATSIGabort(int nr) {
 	GDKfatal("signal %d caught by thread %ld\n", nr, (long) MT_getpid()); 
 }
 
-void BATSIGpipe() {
+#ifdef SIGPIPE
+void BATSIGpipe(int nr) {
 	int	pid;
 	int	status; 
 
-	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-	(void)pid;
+	while (waitpid(-1, &status, WNOHANG) > 0)
+		;
 	PARDEBUG THRprintf(GDKerr, "BROKEN PIPE \n"); 
-	(void) signal(SIGPIPE, (void (*)()) BATSIGpipe); 
+	(void) signal(SIGPIPE, BATSIGpipe); 
 }
+#endif
 
 
-int BATSIGcrash() {
+void BATSIGcrash(int nr) {
 	static int crash = 0;
 	if (!crash++) {
 		GDKlog(GDKCRASH);
 		MT_global_exit(1);
 	}
-	return 0;
 }
 
 int BATSIGinit() {
-	(void) signal(SIGINT,  (void (*)()) BATSIGabort); 
+	(void) signal(SIGINT,  BATSIGabort); 
 /*
-	(void) signal(SIGBUS,  (void (*)()) BATSIGcrash); 
-	(void) signal(SIGSEGV, (void (*)()) BATSIGcrash); 
+	(void) signal(SIGBUS,  BATSIGcrash); 
+	(void) signal(SIGSEGV, BATSIGcrash); 
 */
-	(void) signal(SIGPIPE, (void (*)()) BATSIGpipe); 
-	(void) signal(SIGHUP,  (void (*)()) MT_exit_thread);
+#ifdef SIGPIPE
+	(void) signal(SIGPIPE, BATSIGpipe); 
+#endif
+#ifdef SIGHUP
+	(void) signal(SIGHUP,  MT_exit_thread);
+#endif
 	return 0;
 }
 
@@ -818,16 +840,15 @@ They are thread specific and should be obtained by a function.
 
 The arguments relevant for the kernel are extracted from the list. 
 Their value is turned into a blanc space.
+@h
+gdk_export int GDKrecovery;
 @c
-#ifndef HAVE_TM_ZONE
-int GDKtime_zero = 0;
-#else
-struct timezone GDKtime_zero = { 0 };
-#endif
 int GDKtime_startsec, GDKrecovery = 0; 
 
+@h
+gdk_export int GDKinit(char *dbname, char *dbfarm);
+@c
 int GDKinit(char *dbname, char *dbfarm) {
-	struct timeval tp;
 	int 	i;
 
 	errno = 0;
@@ -840,8 +861,21 @@ int GDKinit(char *dbname, char *dbfarm) {
 	GDKlockHome(); 
 
 	/* init time */
-	gettimeofday(&tp, &GDKtime_zero);
+#ifdef HAVE_GETTIMEOFDAY
+	{
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
 	GDKtime_startsec = tp.tv_sec;
+	}
+#else
+#ifdef HAVE_FTIME
+	{
+	struct timeb tb;
+	ftime(&tb);
+	GDKtime_startsec = tb.time;
+	}
+#endif
+#endif
 
 	if (GDK_mem_start == NULL) {
 		GDK_mem_start = (ptr) sbrk(0); 
@@ -903,10 +937,15 @@ int GDKinit(char *dbname, char *dbfarm) {
 Upon closing the session, all persistent BATs should be saved and
 the transcient BATs should be removed.
 The buffer pool manager takes care of this.
+@h
+gdk_export int GDKstopped;
 @c
 int GDKstopped = 1;
 
-void GDKexit() {
+@h
+gdk_export void GDKexit(void);
+@c
+void GDKexit(void) {
         if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKexit");
         if (GDKstopped == 0) {
                 GDKstopped++; /* shouldn't there be a lock here? */
@@ -1146,30 +1185,63 @@ Note that they may consume recognizable overhead.
 @c
 
 lng GDKusec() {
+#ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
-	gettimeofday(&tp, &GDKtime_zero);
-        return ((lng) (tp.tv_sec-GDKtime_startsec))*
+	gettimeofday(&tp, NULL);
+	return ((lng) (tp.tv_sec-GDKtime_startsec))*
 		LL_CONSTANT(1000000) + (lng) tp.tv_usec;
+#else
+#ifdef HAVE_FTIME
+	struct timeb tb;
+	ftime(&tb);
+	return ((lng) (tb.time-GDKtime_startsec))*LL_CONSTANT(1000000) +
+	       ((lng) tb.millitm)*LL_CONSTANT(1000);
+#endif
+#endif
 }
 
 
 int GDKms() {
+#ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
-	gettimeofday(&tp, &GDKtime_zero);
+	gettimeofday(&tp, NULL);
         return (tp.tv_sec-GDKtime_startsec)*1000 + tp.tv_usec/1000;
+#else
+#ifdef HAVE_FTIME
+	struct timeb tb;
+	ftime(&tb);
+	return (tb.time-GDKtime_startsec)*1000 + tb.millitm;
+#endif
+#endif
 }
 
 int GDKcsec() {
+#ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
-	gettimeofday(&tp, &GDKtime_zero);
+	gettimeofday(&tp, NULL);
         return (tp.tv_sec-GDKtime_startsec)*100 + tp.tv_usec/10000;
+#else
+#ifdef HAVE_FTIME
+	struct timeb tb;
+	ftime(&tb);
+	return (tb.time-GDKtime_startsec)*100 + tb.millitm/10;
+#endif
+#endif
 }
 
 
 int GDKsec() {
+#ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
-	gettimeofday(&tp, &GDKtime_zero);
+	gettimeofday(&tp, NULL);
 	return tp.tv_sec - GDKtime_startsec;
+#else
+#ifdef HAVE_FTIME
+	struct timeb tb;
+	ftime(&tb);
+	return tb.time - GDKtime_startsec;
+#endif
+#endif
 }
 
 
@@ -1367,3 +1439,5 @@ int THRprintf(stream *s, char *format, ...) {
 
 #endif
 @}
+@h
+#endif /* _GDK_UTILS_H_ */

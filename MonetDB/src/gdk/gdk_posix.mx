@@ -55,6 +55,12 @@ the WIN32 native platform.
 # endif
 #endif
 
+#ifdef NATIVE_WIN32
+#include <io.h>
+#include <direct.h>
+# define mkdir(path,mode) _mkdir(path)
+#endif
+
 #define NOMALLOPT 	/* we assume no mallopt if there is no mallinfo */
 
 #ifndef HAVE_MALLINFO
@@ -162,18 +168,6 @@ gdk_export void*	dlsym (void * __handle, const char * __name);
 gdk_export char*	dlerror (void);
 gdk_export int 		gettimeofday(struct timeval *tv, int *ignore_zone);
 
-#define _errno		win_errno
-
-#define ftruncate	win_ftruncate
-#define opendir		win_opendir
-#define readdir		win_readdir
-#define rewinddir	win_rewinddir
-#define closedir	win_closedir
-
-#define stat		win_stat
-#define mkdir		win_mkdir
-#define rmdir		win_rmdir
-
 #define NAME_MAX 255
 
 struct DIR {
@@ -189,15 +183,15 @@ struct direct {
   int   d_namelen;
 };
 
-gdk_export int *win_errno();
-gdk_export int win_ftruncate (int  fd, unsigned int size);
-gdk_export DIR* win_opendir (const char *dirname);
-gdk_export struct direct* win_readdir (DIR *dir);
-gdk_export void win_rewinddir (DIR *dir);
-gdk_export int win_closedir (DIR *dir);
-gdk_export int win_stat(const char*, struct stat *);
-gdk_export int win_rmdir(const char*);
-gdk_export int win_mkdir(const char*, const int mode);
+#ifndef HAVE_FTRUNCATE
+gdk_export int ftruncate (int  fd, off_t size);
+#endif
+#ifndef HAVE_OPENDIR
+gdk_export DIR* opendir (const char *dirname);
+gdk_export struct direct* readdir (DIR *dir);
+gdk_export void rewinddir (DIR *dir);
+gdk_export int closedir (DIR *dir);
+#endif
 
 #define GDK_MEM_QUERYSIZE(p) _msize(p)
 
@@ -206,11 +200,6 @@ gdk_export int win_mkdir(const char*, const int mode);
 #ifdef WIN32 /* but not native, hence CYGWIN specific defines */
 
 #define GDK_MEM_QUERYSIZE(p)	((unsigned int*) (p))[-1]
-#define sem_init	win_sem_init
-#define sem_destroy	win_sem_destroy
-#define sem_wait	win_sem_wait
-#define sem_trywait	win_sem_trywait
-#define sem_post	win_sem_post
 
 #endif 
 #endif 
@@ -311,28 +300,16 @@ int MT_path_absolute(char *pathname) {
 #define BUFSIZ 1024
 #endif
 
-#undef _errno		
-#undef ftruncate
-#undef opendir		
-#undef readdir		
-#undef rewinddir		
-#undef closedir		
-#undef stat		
-#undef mkdir		
-#undef rmdir		
+#undef _errno
 
 #undef NAME_MAX
 
 #include <windows.h>
 
-#include <direct.h>
 #include <ctype.h>
 #ifdef _MSC_VER
 #include <io.h>
 #endif /* _MSC_VER */
-
-#define _errno			win_errno
-
 
 #define MT_SMALLBLOCK 256
 
@@ -490,7 +467,8 @@ int MT_path_absolute(char *pathname) {
 }
 
 
-int win_ftruncate (int  fd, unsigned int size)
+#ifndef HAVE_FTRUNCATE
+int ftruncate (int  fd, off_t size)
 {
   HANDLE hfile;
   unsigned int curpos;
@@ -500,7 +478,7 @@ int win_ftruncate (int  fd, unsigned int size)
   hfile = (HANDLE) _get_osfhandle (fd);
   curpos = SetFilePointer (hfile, 0, NULL, FILE_CURRENT);
   if (curpos == 0xFFFFFFFF
-      || SetFilePointer (hfile, size, NULL, FILE_BEGIN) == 0xFFFFFFFF
+      || SetFilePointer (hfile, (LONG) size, NULL, FILE_BEGIN) == 0xFFFFFFFF
       || !SetEndOfFile (hfile))
     {
       int error = GetLastError ();
@@ -511,8 +489,10 @@ int win_ftruncate (int  fd, unsigned int size)
 
   return 0;
 }
+#endif
 
-DIR* win_opendir (const char *dirname)
+#ifndef HAVE_OPENDIR
+DIR* opendir (const char *dirname)
 {
   DIR *result = NULL;
   char *mask;
@@ -569,7 +549,7 @@ basename (const char    *file_name)
 }
 
 
-struct direct* win_readdir (DIR *dir)
+struct direct* readdir (DIR *dir)
 {
   static struct direct result;
 
@@ -596,14 +576,14 @@ struct direct* win_readdir (DIR *dir)
   return &result;
 }
 
-void win_rewinddir (DIR *dir)
+void rewinddir (DIR *dir)
 {
   char *mask;
 
   if (dir == NULL) return;
 
   if (!FindClose ((HANDLE) dir->find_file_handle))
-    printf("win_rewinddir(): FindClose() failed\n");
+    printf("rewinddir(): FindClose() failed\n");
 
   mask = malloc(strlen(dir->dir_name) + 3);
   sprintf (mask, "%s\\*", dir->dir_name);
@@ -619,7 +599,7 @@ void win_rewinddir (DIR *dir)
   dir->just_opened = TRUE;
 }  
 
-int win_closedir (DIR *dir)
+int closedir (DIR *dir)
 {
   if (dir == NULL) return -1;
 
@@ -635,6 +615,7 @@ int win_closedir (DIR *dir)
 
   return 0;
 }
+#endif /* HAVE_OPENDIR */
 
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };  
 
@@ -685,61 +666,30 @@ char *dlerror(void){
   return strerror(errno);
 }
 
-FILE *win_fdopen(int fd, char *flag){
-	int lfd;
-	if (*flag == 'r'){
-	    if ((lfd = _open_osfhandle( fd, _O_BINARY|_O_RDONLY)) == -1){
-		printf("fdopen could not open_osfhandle\n");
-		return NULL;
-            }
-	}
-	if (*flag == 'w'){
-	    if ((lfd = _open_osfhandle( fd, _O_BINARY|_O_WRONLY)) == -1){
-		printf("fdopen could not open_osfhandle\n");
-		return NULL;
-            }
-	}
-	printf("fdopen %d %d\n", fd, lfd );
-	return _fdopen(lfd, flag);
-}
-
-/* dir manipulations fail in WIN32 if file name contains trailing slashes; work around this */
-static char* reduce_dir_name(const char* src, char* dst, const int cap) {
-        int len = strlen(src);
-        char *buf = dst;
-        if (len >= cap) buf = malloc(len+1);
-        while(--len > 0 && src[len-1] != ':' && src[len] == DIR_SEP);
-        for(buf[++len]=0; --len>=0; buf[len]=src[len]);
-        return buf;
-}
-
-int win_stat(const char* pathname, struct stat *st) {
-	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
-	int ret = stat(p, st);
-	if (p != buf) free(p);
-	return ret;
-}
-
-int win_rmdir(const char* pathname) {
-	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
-	int ret = rmdir(p);
-	if (p != buf) free(p);
-	return ret;
-}
-
-int win_mkdir(const char* pathname, const int mode) {
-	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
-	int ret = mkdir(p);
-	if (p != buf) free(p);
-	return ret;
-}
-
 typedef struct {
     int w;		 /* windows version of error */
     const char *s;	 /* text of windows version */
     int e;		 /* errno version of error */
 } win_errmap_t;
 
+#ifndef EBADRQC
+#define EBADRQC 56
+#endif
+#ifndef ENODATA
+#define ENODATA 61
+#endif
+#ifndef ENONET
+#define ENONET 64
+#endif
+#ifndef ENOTUNIQ
+#define ENOTUNIQ 76
+#endif
+#ifndef ECOMM
+#define ECOMM 70
+#endif
+#ifndef ENOLINK
+#define ENOLINK 67
+#endif
 win_errmap_t win_errmap[] = {
   { ERROR_INVALID_FUNCTION, "ERROR_INVALID_FUNCTION", EBADRQC  },
   { ERROR_FILE_NOT_FOUND, "ERROR_FILE_NOT_FOUND", ENOENT  },
@@ -752,7 +702,7 @@ win_errmap_t win_errmap[] = {
   { ERROR_OUTOFMEMORY, "ERROR_OUTOFMEMORY", ENOMEM  },
   { ERROR_INVALID_DRIVE, "ERROR_INVALID_DRIVE", ENODEV  },
   { ERROR_NOT_SAME_DEVICE, "ERROR_NOT_SAME_DEVICE", EXDEV  },
-  { ERROR_NO_MORE_FILES, "ERROR_NO_MORE_FILES", ENMFILE  },
+  { ERROR_NO_MORE_FILES, "ERROR_NO_MORE_FILES", ENFILE  },
   { ERROR_WRITE_PROTECT, "ERROR_WRITE_PROTECT", EROFS  },
   { ERROR_BAD_UNIT, "ERROR_BAD_UNIT", ENODEV  },
   { ERROR_SHARING_VIOLATION, "ERROR_SHARING_VIOLATION", EACCES  },
@@ -809,7 +759,12 @@ win_errmap_t win_errmap[] = {
 
 #define GDK_WIN_ERRNO_TLS 13
 
-int *win_errno(){
+@h
+#define _errno		win_errno
+
+gdk_export int *win_errno(void);
+@c
+int *win_errno(void){
   /* get address of thread-local POSIX errno; refresh its value from WIN32 error code */
   int i, err = GetLastError() & 0xff;
   int *result = TlsGetValue(GDK_WIN_ERRNO_TLS);
@@ -1023,46 +978,29 @@ void MT_sleep_ms(unsigned int ms) {
 }
 
 
-/* this one actually has not been fixed in CYGWIN, hence we do it ourselves */
-#undef rename
-int win_rename(char* src, char* dst) {
-	char srcbuf[128], *p = reduce_dir_name(src, srcbuf, 128);
-	char dstbuf[128], *q = reduce_dir_name(src, dstbuf, 128);
-	int ret = rename(p,q);
-	if (p != srcbuf) free(p);
-	if (q != dstbuf) free(q);
-	return ret;
-}
-
 @-
 cygnus1.1.X has a bug in the semaphore routines. we work around it by directly using the WIN32 primitives.
 @c
 #ifndef NATIVE_WIN32
 
-#undef sem_init
-#undef sem_destroy
-#undef sem_wait
-#undef sem_trywait
-#undef sem_post
-
-int win_sem_init (sem_t * sem, int pshared, unsigned int value) {
+int sem_init (sem_t * sem, int pshared, unsigned int value) {
 	*sem = (sem_t) CreateSemaphore(NULL, value, 128, NULL);
 	return (*sem)?0:-1;
 }
 
-int win_sem_destroy (sem_t * sem) {
+int sem_destroy (sem_t * sem) {
 	return CloseHandle((HANDLE) *sem)?0:-1;
 }
 
-int win_sem_wait (sem_t * sem) {
+int sem_wait (sem_t * sem) {
 	return (WaitForSingleObject((HANDLE) *sem, (unsigned int) INFINITE) != WAIT_FAILED)?0:-1;
 }
 
-int win_sem_trywait (sem_t * sem) {
+int sem_trywait (sem_t * sem) {
 	return (WaitForSingleObject((HANDLE) *sem, 0) == 0)?0:EBUSY;
 }
 
-int win_sem_post (sem_t * sem) {
+int sem_post (sem_t * sem) {
 	return (ReleaseSemaphore((HANDLE) *sem, 1, NULL) == 0)?-1:0;
 }
 #endif

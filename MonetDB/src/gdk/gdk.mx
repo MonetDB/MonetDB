@@ -390,21 +390,6 @@ freed for access by other users.
 A zero is returned upon encountering an erroneous situation.
 @
 During system startup some environment variables are set.
-@{
-@h
-gdk_export int              GDKrecovery;
-gdk_export int              GDKstopped;
-
-gdk_export int     		GDKinit(char *db, char *dbfarm); 
-gdk_export void			GDKexit(); 
-
-gdk_export char			*GDKgetenv(char *var);
-gdk_export int			GDKgetenv_isyes(char *var);
-gdk_export void			GDKsetenv(char *var, char *value);
-
-@
-@}
-
 @- Definitions
 The interface definitions for the application programs are shown
 below.  The global variables should not be modified directly.
@@ -464,27 +449,6 @@ typedef char*		str;
 #elif defined(HAVE__INT64)
 #	define LL_CONSTANT(val)     (val##i64)
 #endif
-
-/* representation of the nil */
-gdk_export chr		chr_nil; 	
-gdk_export bit		bit_nil; 	
-gdk_export short	sht_nil; 	
-gdk_export int		int_nil; 	
-gdk_export flt		flt_nil; 	
-gdk_export dbl		dbl_nil; 	
-gdk_export lng		lng_nil; 	
-gdk_export str		str_nil; 	
-
-/* derived NIL values - OIDDEPEND */
-#define bit_nil	((bit) chr_nil)
-#if SIZEOF_LONG==8
-#define ptr_nil	((ptr) lng_nil)
-#else
-#define ptr_nil	((ptr) int_nil)
-#endif
-#define bat_nil	((bat) int_nil)
-#define oid_nil	((oid) int_nil)
-#define void_nil	oid_nil
 
 /* Base types for all architectures.  These types work on IRIX (64 & 32)
    and for gcc on Linux. */
@@ -900,7 +864,7 @@ typedef struct {
 
 #ifndef BAT32IMAGE
 
-typedef int (*GDKfcn)();
+typedef int (*GDKfcn)(ptr);
 
 /* macros's to hide complexity of BAT structure */
 #define batPersistence	P->persistence	
@@ -2210,6 +2174,7 @@ gdk_export int	GDKfatal    (char* format, ... );
 #include "gdk_desc.h" 
 #include "gdk_utils.h"
 #include "gdk_heap.h"
+#include "gdk_bat.h"
 
 #define BBPLOCKMASK     7
 

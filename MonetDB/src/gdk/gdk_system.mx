@@ -53,10 +53,6 @@ functions.
 #include <fcntl.h>
 #endif
 
-#ifndef HAVE_GETPGID
-#define getpgid __getpgid
-#endif 
-
 @- pthreads Includes and Definitions
 @h
 #include <sys/types.h>
@@ -243,6 +239,10 @@ gdk_export size_t _MT_pagesize;
 #include "gdk_system.h"
 #include "gdk_posix.h"
 
+#if !defined(HAVE_SYSCONF) && defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
+# include <sys/resource.h>
+#endif
+
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 
 pthread_mutex_t	MT_firstlock[MAXLOCKS];
@@ -258,22 +258,24 @@ void MT_init() {
 	static pthread_mutex_t l;
 	int i;
 
+#if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
         _MT_pagesize = sysconf(_SC_PAGESIZE);
-	if (_MT_pagesize <= 0) _MT_pagesize = 4096; /* default */ 
+	if (_MT_pagesize <= 0)
+#endif
+		_MT_pagesize = 4096;   /* default */ 
 
-#ifdef _SC_PHYS_PAGES
-                _MT_npages = sysconf(_SC_PHYS_PAGES);
+#if defined(HAVE_SYSCONFIG) && defined(_SC_PHYS_PAGES)
+	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
-        {
 #ifdef HAVE_GETRLIMIT
-#ifdef HAVE_SYS_RESOURCE_H
-                #include <sys/resource.h>
-#endif
-                struct rlimit rl;
-                getrlimit(RLIMIT_RSS, &rl);
-                _MT_npages = rl.rlim_cur / _MT_pagesize;
-#endif
+        {
+		struct rlimit rl;
+		getrlimit(RLIMIT_RSS, &rl);
+		_MT_npages = rl.rlim_cur / _MT_pagesize;
         }
+#else
+	_MT_npages = 0;		/* XXX */
+#endif
 #endif
 	
 	pthread_mutex_init(&l, 0);
@@ -339,8 +341,12 @@ void MT_exit_thread(int s) {
 
 
 int MT_kill_thread (MT_Id t) {
+#ifdef HAVE_PTHREAD_KILL
 	long id = (long)t-1;
 	return pthread_kill((pthread_t)id, SIGHUP);
+#else
+	return -1;		/* XXX */
+#endif
 }
 
 MT_Lock	MT_create_lock() {
@@ -472,7 +478,11 @@ MT_Id MT_getpid(){
 }
 
 int MT_alive(int pid) {
+#ifdef HAVE_GETPGID
 	int st = getpgid(pid);
 	return (st >= 0 && st != ESRCH);
+#else
+	return 0;		/* XXX */
+#endif
 }
 
