@@ -160,6 +160,10 @@ tst905
 tst906
 tst907
 tst908
+
+tst910
+tst911
+tst912
 #
 # no stable output available (yet?)
 #
@@ -175,27 +179,6 @@ tst908
 #tst4030
 #tst4500
 
-# performance tests
-
-#tst400a
-#tst400b
-#tst400c
-#tst400d
-#tst400e
-#tst400a2
-#tst400bHuge
-#tst400bHuge2
-#tst400cHuge
-#tst400cHuge2
-#tst400f
-#tst901a
-#tst901b
-#tst901c
-#tst901d
-#tst903a
-#tst903b
-#tst903c
-
 # Old x100 test moved to x100Tests
 #tst6000
 #tst6005
@@ -208,5 +191,4 @@ tst908
 #
 #tst1300
 #tst1550
-#tst910
 #
