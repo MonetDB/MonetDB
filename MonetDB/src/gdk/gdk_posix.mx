@@ -863,6 +863,23 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
         return p;
 }
 
+#ifndef HAVE_LOCKF
+/* Cygwin implementation: struct flock is there, but lockf() is
+   missing.
+ */
+static int lockf(int fd, int cmd, off_t len)
+{
+	struct flock l;
+	if (cmd == F_LOCK || cmd == F_TLOCK)
+		l.l_type = F_WRLCK;
+	else if (cmd == F_ULOCK)
+		l.l_type = F_UNLCK;
+	l.l_whence = SEEK_CUR;
+	l.l_start = 0;
+	l.l_len = len;
+	return fcntl(fd, cmd == F_TLOCK ? F_SETLKW : F_SETLK, &l);
+}
+#endif
 int MT_lockf(char *filename, int mode, size_t off, int len){
 	int ret, fd = open(filename, O_CREAT|O_RDWR, 0662);
 	if (fd < 0) return fd;
@@ -872,10 +889,17 @@ int MT_lockf(char *filename, int mode, size_t off, int len){
 }
 
 void MT_sleep_ms(unsigned int ms) {
+#ifdef HAVE_NANOSLEEP
         struct timespec ts;
         ts.tv_sec = ms/1000;
         ts.tv_nsec = 1000000*(ms%1000);
         while(nanosleep(&ts, &ts) == -1 && errno == EINTR);
+#else
+	struct timeval tv;
+	tv.tv_sec = ms/1000;
+	tv.tv_usec = ms % 1000;
+	(void) select(0, NULL, NULL, NULL, &tv);
+#endif
 }
 
 #else  /* WIN32 */

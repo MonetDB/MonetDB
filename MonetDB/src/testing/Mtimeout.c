@@ -121,7 +121,11 @@ limit(char **argv)
 	    } else {
 	        int wts = WTERMSIG(status);
 		char msg[1024];
+#ifdef HAVE__SYS_SIGLIST
 		snprintf(msg, 1022, "%s (%d): ", _sys_siglist[wts], wts);
+#else
+		snprintf(msg, 1022, "signal %d: ", wts);
+#endif
 		invocation(stderr, msg, argv);
 		return ((wts>0)?wts:1);
 	    }
