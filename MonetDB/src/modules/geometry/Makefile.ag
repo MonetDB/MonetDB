@@ -4,7 +4,7 @@ MTSAFE
 # install these libs in the pkglib
 LIBDIR = pkglib
 
-INCLUDES = -I../../gdk -I../../monet -I../plain
+INCLUDES = -I../../common -I../../gdk -I../../monet -I../plain
 
 lib__gis = {
 	SOURCES = \

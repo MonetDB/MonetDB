@@ -13,8 +13,12 @@ server.
 #include <config.h>
 #endif
 
+#if (defined(WIN32) && (!defined(__CYGWIN__)) && (!defined(__CYGWIN32__)))
+# define NATIVE_WIN32 1
+#endif
+
 #ifdef _MSC_VER
-#ifndef LIBOPT
+#ifndef LIBMUTILS
 #define mutils_export extern __declspec(dllimport) 
 #else
 #define mutils_export extern __declspec(dllexport) 
@@ -27,6 +31,18 @@ server.
 #define DIR_SEP '\\' 
 #else
 #define DIR_SEP '/' 
+#endif
+
+#ifndef HAVE_VSNPRINTF
+#define vsnprintf(buf,size,format,ap) vsprintf(buf,format,ap)
+#endif
+
+#ifndef HAVE_SNPRINTF
+#define snprintf(buf,size,format,ap) sprintf(buf,format,ap)
+#endif
+
+#ifndef HAVE_STRCASECMP
+#define strcasecmp(x,y) stricmp(x,y)
 #endif
 
 #endif /* _MU_H_ */

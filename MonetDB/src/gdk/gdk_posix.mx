@@ -13,10 +13,7 @@ the WIN32 native platform.
 #define GDK_POSIX_H
 
 #include "gdk_system.h"
-
-#ifdef HAVE_CONFIG_H 
-#include "config.h"
-#endif
+#include <monet_utils.h>
 
 #include <sys/types.h>
 
@@ -36,10 +33,6 @@ the WIN32 native platform.
 #endif
 
 #define NOMALLOPT 	/* we assume no mallopt if there is no mallinfo */
-
-#if (defined(WIN32) && (!defined(__CYGWIN__)) && (!defined(__CYGWIN32__)))
-# define NATIVE_WIN32 1
-#endif
 
 #ifndef HAVE_MALLINFO
 #define M_MXFAST	1  /* set size of blocks to be fast */
@@ -77,18 +70,6 @@ gdk_export struct mallinfo MT_mallinfo();
 
 gdk_export int 	MT_lockf(char *filename, int mode, size_t off, int len);
 gdk_export void MT_sleep_ms(unsigned int ms);
-
-#ifndef HAVE_VSNPRINTF
-#define vsnprintf(buf,size,format,ap) vsprintf(buf,format,ap)
-#endif
-
-#ifndef HAVE_SNPRINTF
-#define snprintf(buf,size,format,ap) sprintf(buf,format,ap)
-#endif
-
-#ifndef HAVE_STRCASECMP
-#define strcasecmp(x,y) stricmp(x,y)
-#endif
 
 @- virtual memory
 @h

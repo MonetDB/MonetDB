@@ -1,5 +1,5 @@
 
-INCLUDES = -I../../gdk -I../../monet -Istream \
+INCLUDES = -I../../common -I../../gdk -I../../monet -Istream \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS)
 MTSAFE
 

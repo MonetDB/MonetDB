@@ -1,7 +1,7 @@
 
 MTSAFE
 
-INCLUDES = $(PTHREAD_INCS)
+INCLUDES = -I../common $(PTHREAD_INCS)
 
 NO_INLINE_FILES = gdk_scanselect.mx gdk_relop.mx
 

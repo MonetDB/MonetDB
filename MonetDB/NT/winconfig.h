@@ -192,6 +192,16 @@
 /* Define if you have the <semaphore.h> header file.  */
 #define HAVE_SEMAPHORE_H 1
 
+/* Define if you have the <stdlib.h> header file.  */
+#define HAVE_STDLIB_H 1
+
+/* Define if you have the <string.h> header file.  */
+#define HAVE_STRING_H 1
+
+/* Define if you have the <strings.h> header file.  */
+/* #undef HAVE_STRINGS_H */
+
+
 /* Define if you have the <rlimit.h> header file.  */
 /* #undef HAVE_RLIMIT_H */
 

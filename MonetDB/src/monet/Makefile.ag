@@ -1,5 +1,5 @@
 
-INCLUDES = -I../gdk
+INCLUDES = -I../common -I../gdk
 
 YFLAGS = -d
 
@@ -12,7 +12,7 @@ lib_monet = {
 		monet_context.mx monet_parse.mx monet_deparse.mx \
 		monet_process.mx searchpath.mx monet.feps
 	HEADERS = h tab.h
-	LIBS = ../gdk/libbat \
+	LIBS = ../common/libmutils ../gdk/libbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 
 }

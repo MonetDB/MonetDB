@@ -130,7 +130,7 @@ def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
         add = name + " ="
     for l in list:
 	if (l == "@LIBOBJS@"):
-            add = add + " $LIBOBJS"
+            add = add + " $(LIBOBJS)"
         elif (l[0] in  ("-", "$", "@")):
             add = add + " " + l
 	else:
@@ -138,7 +138,7 @@ def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
             deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
     for l in dlibs:
 	if (l == "@LIBOBJS@"):
-            add = add + " $LIBOBJS"
+            add = add + " $(LIBOBJS)"
         elif (l[0] in  ("-", "$", "@")):
             add = add + " " + l
 	else:
@@ -189,7 +189,7 @@ def msc_deps(fd,deps,objext, msc):
                 # TODO
                 # replace this hack by something like configure ...
                 fd.write("%s: %s\n" % (x,y))
-                fd.write("\tif exist %s $(CONFIGURE) %s %s\n" % (y,y,x)) 
+                fd.write("\tif exist %s $(CONFIGURE) %s > %s\n" % (y,y,x)) 
                 msc['_IN'].append(y)
             if (ext == "tab.h"):
                 x,de = split_filename(deplist[0])
@@ -283,7 +283,7 @@ def msc_binary(fd, var, binmap, msc ):
                     # TODO
                     # replace this hack by something like configure ...
                     fd.write("%s: $(SRCDIR)\\%s.in\n" % (i,i))
-                    fd.write("\tif exist $(SRCDIR)\\%s.in $(CONFIGURE) $(SRCDIR)\\%s.in %s\n" % (i,i,i) )
+                    fd.write("\tif exist $(SRCDIR)\\%s.in $(CONFIGURE) $(SRCDIR)\\%s.in > %s\n" % (i,i,i) )
                 else:
                     fd.write("%s: $(SRCDIR)\\%s\n" % (i,i))
                     fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (i,i,i) )
@@ -457,7 +457,7 @@ def msc_library(fd, var, libmap, msc ):
     srcs = "lib" + sep + libname + "_OBJS ="
     for target in libmap['TARGETS']:
 	if (target == "@LIBOBJS@"):
-		srcs = srcs + " $LIBOBJS"
+		srcs = srcs + " $(LIBOBJS)"
 	else:
         	t,ext = split_filename(target)
         	if (ext == "o"):
