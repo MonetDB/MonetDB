@@ -515,6 +515,15 @@ void DESCclean(BAT* b) {
 	b->taccdirty = 0;
 }
 
+/* convert heaps mapped into temporary files (MMAP but .priv) that have become read-onoy into normal mapped files */
+static int heap_save(BAT *b, Heap *h, str nme, str ext) {
+	if (b->batCopiedtodisk == 0 && h->storage == STORE_MMAP && b->batRestricted == BAT_READ && h->filename)  {
+		str p = strstr(h->filename, ".priv");
+		if (p) *p = 0;
+	}
+	return HEAPsave(h, nme, ext);
+}
+
 BAT *BATsave(BAT *bd) {
 	int     err = 0, hsaved = 0, tsaved = 0;
 	char    *nme;
@@ -570,15 +579,15 @@ BAT *BATsave(BAT *bd) {
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtybuns) {
-		if (err == 0) err = HEAPsave(b->batBuns, nme, "buns");
+		if (err == 0) err = heap_save(b, b->batBuns, nme, "buns");
 	}
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->hheapdirty)
 	if (b->htype && b->hvarsized)  {
-		if (err == 0) err = HEAPsave(&b->hheap, nme, "hheap");
+		if (err == 0) err = heap_save(b, &b->hheap, nme, "hheap");
 	}
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->theapdirty) 
 	if (b->ttype && b->tvarsized) {
-		if (err == 0) err = HEAPsave(&b->theap, nme, "theap");
+		if (err == 0) err = heap_save(b, &b->theap, nme, "theap");
 	}
 	if (b->haccCopiedtodisk == 0 || b->batDirty || b->haccdirty) 
 	if (b->haccelerator.base) {
@@ -586,7 +595,7 @@ BAT *BATsave(BAT *bd) {
                 if (fcn) {
 		    strcpy(b->haccname, ACCname(b->hacctype));
                     (*fcn)(&b->haccelerator, b);
-                    if (err == 0) err = HEAPsave(&b->haccelerator, nme, "hacc");
+                    if (err == 0) err = heap_save(b, &b->haccelerator, nme, "hacc");
                     if (err == 0) hsaved = TRUE;
                 }
 	}
@@ -596,7 +605,7 @@ BAT *BATsave(BAT *bd) {
                 if (fcn) {
 		    strcpy(b->taccname, ACCname(b->tacctype));
                     (*fcn)(&b->taccelerator, b);
-                    if (err == 0) err = HEAPsave(&b->taccelerator, nme, "tacc");
+                    if (err == 0) err = heap_save(b, &b->taccelerator, nme, "tacc");
                     if (err == 0) tsaved = TRUE;
                 }
 	}
