@@ -742,10 +742,11 @@ getparams(oid fid, str argv[])
 	hash_t i;
 	int j = 0;
 	BUN p;
+	oid *fidp = &fid;
 
 	if (BATprepareHash(TBL_fcn_pro))
 		assert(0);
-	HASHloop_oid(TBL_fcn_pro, TBL_fcn_pro->hhash, i, &fid, p) {
+	HASHloop_oid(TBL_fcn_pro, TBL_fcn_pro->hhash, i, fidp, p) {
 		*(t++) = (str) BUNtvar(TBL_fcn_pro, p);
 		j++;
 	}
@@ -1591,6 +1592,7 @@ TBL_M_client_install(Client client, oid mid)
 	hash_t i;
 	int aid, j;
 	oid fid;
+	oid *midp = &mid;
 	BUN r;
 
 	dlPRINT("  TBL_M_client_install");
@@ -1599,7 +1601,7 @@ TBL_M_client_install(Client client, oid mid)
 	 */
 	if (BATprepareHash(TBL_mod_atm))
 		assert(0);
-	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, &mid, r) {
+	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, midp, r) {
 		nme = (char *) BUNtail(TBL_mod_atm, r);
 		for (j = 0; nme[j] && nme[j] != '='; j++)
 			s[j] = nme[j];
@@ -1616,7 +1618,7 @@ TBL_M_client_install(Client client, oid mid)
 	 */
 	if (BATprepareHash(TBL_mod_acc))
 		assert(0);
-	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, &mid, r) {
+	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, midp, r) {
 		nme = (char *) BUNtail(TBL_mod_acc, r);
 		for (j = 0; nme[j] && nme[j] != '='; j++)
 			s[j] = nme[j];
@@ -1634,7 +1636,7 @@ TBL_M_client_install(Client client, oid mid)
 	if (BATprepareHash(fcn_mid))
 		assert(0);
 	assert(fcn_mid->hhash_heap);
-	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
+	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, midp, r) {
 		fid = *(oid *) BUNtail(fcn_mid, r);
 		if (BUNins(client->fcntbl, BUNtailfnd(char, TBL_fcn_nme, r, &fid), &fid) == NULL)
 			assert(0);
@@ -1996,7 +1998,7 @@ TBL_unloadmod(Client client, str module, int level)
 	BAT *b, *fcntbl = BATmirror(client->fcntbl);
 	char s[80], *nme, *r;
 	int refcnt = 0;
-	oid fid, mid;
+	oid fid, *fidp = &fid, mid, *midp = &mid;
 	hash_t i;
 	int j, maccs = 80, mtpes = 80, naccs = 0, ntpes = 0;
 	int *accs = (int *) GDKmalloc(maccs * sizeof(int));
@@ -2051,7 +2053,7 @@ preparation phase (only meaningful for C-modules) */
 	/* find out which atoms and accelerators belong to it */
 	if (BATprepareHash(TBL_mod_atm))
 		assert(0);
-	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, &mid, r) {
+	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, midp, r) {
 		nme = (char *) BUNtail(TBL_mod_atm, r);
 		for (j = 0; nme[j] && nme[j] != '='; j++)
 			s[j] = nme[j];
@@ -2064,7 +2066,7 @@ preparation phase (only meaningful for C-modules) */
 	}
 	if (BATprepareHash(TBL_mod_acc))
 		assert(0);
-	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, &mid, r) {
+	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, midp, r) {
 		nme = (char *) BUNtail(TBL_mod_acc, r);
 		for (j = 0; nme[j] && nme[j] != '='; j++)
 			s[j] = nme[j];
@@ -2096,7 +2098,7 @@ drop will go through;
 				assert(0);
 			HASHloop_str(TBL_mod_proc, TBL_mod_proc->hhash, j, module) {
 				fid = *(oid *) BUNtloc(TBL_mod_proc, BUNptr(TBL_mod_proc, j));
-				BUNfndOID(r, fcntbl, &fid);
+				BUNfndOID(r, fcntbl, fidp);
 				if (r) {
 					TBL_decproc(fid);
 					if (BUNdelete(fcntbl, r) == NULL)
@@ -2114,9 +2116,9 @@ drop will go through;
 
 			if (BATprepareHash(fcn_mid))
 				assert(0);
-			HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
+			HASHloop_oid(fcn_mid, fcn_mid->hhash, i, midp, r) {
 				fid = *(oid *) BUNtail(fcn_mid, r);
-				BUNfndOID(r, fcntbl, &fid);
+				BUNfndOID(r, fcntbl, fidp);
 				if (r && BUNdelete(fcntbl, r) == NULL)
 					assert(0);
 			}
@@ -2154,7 +2156,7 @@ drop will go through;
 			/* C-module: call C epilogue, dlcose, drop dependencies and deinstall it */
 			BAT *b2 = BAT_select(TBL_fcn_mid, &mid, &mid, FALSE);
 
-			BUNfndOID(p, TBL_mod_hdl, &mid);
+			BUNfndOID(p, TBL_mod_hdl, midp);
 			if (p != NULL)
 				hdl = *(ptr *) BUNtloc(TBL_mod_hdl, p);
 
@@ -2301,15 +2303,16 @@ Try to resolve the function to an address.
 		int j = 0, tpe;
 		BUN p = BUNptr(fcntbl, i);
 		oid fid = *(oid *) BUNtail(fcntbl, p);
+		oid *fidp = &fid;
 
-		BUNfndOID(p, TBL_fcn_tpe, &fid);
+		BUNfndOID(p, TBL_fcn_tpe, fidp);
 		tpe = *(int *) BUNtloc(TBL_fcn_tpe, p);
 
 		if (tpe == TOK_ITERATOR) {
 			continue;
 		}
 
-		BUNfndOID(p, TBL_fcn_pro, &fid);
+		BUNfndOID(p, TBL_fcn_pro, fidp);
 		if (p && (j = TBL_checkparams(&pt, fid)) < 0) {
 			if (j == TBL_RESOLVE_NOSIG)
 				ret = TBL_RESOLVE_NOSIG;
@@ -2320,14 +2323,14 @@ Try to resolve the function to an address.
 @-
 Found IT: substitute name by address.
 @c
-		BUNfndOID(p, TBL_fcn_imp, &fid);
+		BUNfndOID(p, TBL_fcn_imp, fidp);
 		sig->pack_fcn = *(PackFcn *) BUNtloc(TBL_fcn_imp, p);
 		sig->ret_tpe = j;
 
 		if (tpe == TOK_PROC) {
 			sig->fast_fcn = (GDKfcn) sig->pack_fcn;
 		} else {
-			BUNfndOID(p, TBL_fcn_fcn, &fid);
+			BUNfndOID(p, TBL_fcn_fcn, fidp);
 			if (p == NULL) {
 				sig->fast_fcn = NULL;
 			} else {
@@ -2582,13 +2585,14 @@ formatsig(str s, str nme, oid fid)
 {
 	str src = s;
 	BUN p;
+	oid *fidp = &fid;
 
-	BUNfndOID(p, TBL_fcn_sig, &fid);
+	BUNfndOID(p, TBL_fcn_sig, fidp);
 	if (p) {
 		/* precooked */
 		strcpy(s, BUNtvar(TBL_fcn_sig, p));
 	} else {
-		BUNfndOID(p, TBL_fcn_pro, &fid);
+		BUNfndOID(p, TBL_fcn_pro, fidp);
 		strcpy(s, nme);
 		s += strlen(s);
 		*s++ = '(';
@@ -2666,9 +2670,10 @@ int
 TBL_formatsig(str s, oid fid)
 {
 	BUN p;
+	oid *fidp = &fid;
 
 	TBL_set_readlock();
-	BUNfndOID(p, TBL_fcn_nme, &fid);
+	BUNfndOID(p, TBL_fcn_nme, fidp);
 	if (p == NULL) {
 		TBL_unset_readlock();
 		return FALSE;
@@ -3106,10 +3111,10 @@ TBL_Deinstall_Function(oid pid)
 			assert(0);
 		}
 		BATloopFast(b, p, q, xx) {
-			oid pid = *(oid *) BUNhead(b, p);
+			oid *pidp = (oid *) BUNhead(b, p);
 
-			BUNfndOID(r, TBL_fcn_nme, &pid);
-			if (r && BUNfastins(TBL_fcn_pro, &pid, BUNtvar(b, p)) == NULL)
+			BUNfndOID(r, TBL_fcn_nme, pidp);
+			if (r && BUNfastins(TBL_fcn_pro, pidp, BUNtvar(b, p)) == NULL)
 				assert(0);
 		}
 		TBL_fcn_pro->hsorted = TBL_fcn_pro->tsorted = 0;
