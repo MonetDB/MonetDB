@@ -1,0 +1,12 @@
+
+# Exceptions can be explicitly raised in a function
+# which requires the exception identifier to be defined.
+
+function myException();
+	IllegalAccess:="new exception";
+	raise IllegalAccess;
+	print("should have left function ");
+end function;
+
+	myException();
+	print("should not come here");

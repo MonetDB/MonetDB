@@ -1,0 +1,25 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## testing ommission of target variable
+#
+#	i:= 1;
+#	print(i);
+#catch 	GDKerror;
+#	printf("GDKerror, do something\n");
+#end	GDKerror;
+#
+function Admin.main():int;	#0:void (main:int)
+	i := 1;	#1:int (i:int)($2:int)
+	system.print(i);	#2:int ($3:int)(i:int)
+catch	GDKerror;	#3:str (GDKerror:str)
+	system.printf("GDKerror, do something\n");	#4:int ($5:int)($6:str)
+end	GDKerror;	#5:str (GDKerror:str)
+end function;	#6:void 
+[ 1 ]
+>
