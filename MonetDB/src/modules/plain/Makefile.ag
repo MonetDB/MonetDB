@@ -22,13 +22,23 @@ LIBS = {
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-lib__ascii_io = {
-	SOURCES = ascii_io.mx stream.mx
+lib__stream = {
+	SOURCES = stream.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = ../../gdk/libbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 		$(Z_LIBS) $(BZ_LIBS)
 }
+
+lib__ascii_io = {
+	SOURCES = ascii_io.mx
+	HEADERS = h proto.h m
+	#SCRIPTS = mil ""
+	LIBS = ../../gdk/libbat ../../monet/libmonet lib_stream \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(Z_LIBS) $(BZ_LIBS)
+}
+
 
 EXTRA_DIST_DIR = Tests
