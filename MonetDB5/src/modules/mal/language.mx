@@ -37,8 +37,6 @@ module mal;
 
 command newRang(v:oid)(:bit,:oid)
 address RNGnewRange_oid; 
-command newRange(v:chr)(:bit,:chr)
-address RNGnewRange_chr; 
 command newRange(v:sht)(:bit,:sht)
 address RNGnewRange_sht; 
 command newRange(v:int)(:bit,:int)
@@ -54,8 +52,6 @@ comment "This routine introduces an iterator
 
 command nextElement(step:oid,last:oid)(:bit,:oid)
 address RNGnextElement_oid; 
-command nextElement(step:chr,last:chr)(:bit,:chr)
-address RNGnextElement_chr; 
 command nextElement(step:sht,last:sht)(:bit,:sht)
 address RNGnextElement_sht; 
 command nextElement(step:int,last:int)(:bit,:int)
@@ -324,7 +320,6 @@ str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 
 @:newRange(oid)@
 @:newRange(lng)@
-@:newRange(chr)@
 @:newRange(int)@
 @:newRange(sht)@
 @:newRange(flt)@
@@ -334,7 +329,6 @@ str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 @:nextElement(lng)@
 @:nextElement(int)@
 @:nextElement(sht)@
-@:nextElement(chr)@
 @:nextElement(flt)@
 @:nextElement(dbl)@
 

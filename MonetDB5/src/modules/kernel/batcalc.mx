@@ -634,9 +634,10 @@ The structure of this code is copied from the arithmetic scheme.
 @= cmpLoop
 	while( p2 < hend ){
 		/* this code is better as x?nil:y */
-		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil)
+		if (*(@1*)p2 == @1_nil || *(@1*)p3 == @1_nil)
 			*(bit*)p1= bit_nil;
-		else *(bit*)p1= * (@1*) p2 @2 *(@1 *) p3;
+		else 
+			*(bit*)p1 = ((*(@1*)p2) @2 (*(@1*)p3));
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 		p3= (ptr)( ((char *)p3) + s3);
@@ -660,7 +661,7 @@ str compareaccum@1(BAT *dst, BAT *left, BAT *right){
 	@:batinit(3,right)@
 	hend = (str) BUNlast(left);
 
-	switch(BATttype(dst)){
+	switch(BATttype(left)){
 	case TYPE_bit: @:cmpLoop(bit,@2)@ break;
 	case TYPE_flt: @:cmpLoop(flt,@2)@ break;
 	case TYPE_dbl: @:cmpLoop(dbl,@2)@ break;
