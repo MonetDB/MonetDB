@@ -16,7 +16,7 @@ LIBS = {
 		sys.mx tcpip.mx temporal.mx tpcd.mx trans.mx uchr.mx \
 		unix.mx url.mx vector.mx wisc.mx xtables.mx mapi.mx
 	HEADERS = h proto.h m
-	SCRIPTS = mil
+	SCRIPTS = mil ""
 	LIBS = ../../gdk/libbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
