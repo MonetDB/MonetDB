@@ -124,16 +124,18 @@ tagging an assignment with either
 {\tt barrier}, {\tt leave}, {\tt redo}, or {\tt exit}.
 The {\tt barrier} and {\tt exit} mark a block
 to be interpreted when the barrier can be taken.
-All four control modifiers are labelled by the same
-target variable set.
 
 The {\tt barrier}, {\tt leave} and {\tt redo} are conditional 
 flow modifiers, because they use the value of the first target 
 variable after the expression has been evaluated to decide
 on the action to be taken.
-Builtin barrier controls exists for booleans and integers.
+Builtin barrier controls exists for booleans and numeric values.
 The barrier is opened when the first target variable holds
-true or when the integer value $>$=0.
+true, when its numeric value $>=$ 0, when it is a non-empty
+string. The {\sc nil} value blocks entry in all cases.
+
+Similar, for redo and leave statements if the condition is
+met then the control action is taken.
 
 Once inside the barrier you have an option to prematurely
 {\tt leave} it at the exit statement
@@ -144,6 +146,7 @@ in C.
 The {\tt exit} marks the exit for a block. Its assignment
 can be used to re-initialize the barrier control variables
 or wrap-up any related administration.
+A control block is recognized by the same target set.
 
 The barrier blocks can be properly nested to form
 a hierarchy of basic blocks.

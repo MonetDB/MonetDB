@@ -452,26 +452,35 @@ possible change in the control flow.
 		break;
 	case LEAVEsymbol:
 		@:finishChild@
-		stkpc= pci->jump; break;
-		break;
 	case REDOsymbol:
 		v= &stk->stk[getDestVar(pci)];
 		/* skip to end of barrier, depending on the type */
 		switch(v->vtype){
 		case TYPE_bit:
-			if( v->val.cval[0] ){stkpc= pci->jump; } 
+			if( v->val.cval[0] &&  v->val.cval[0]!= bit_nil )
+				stkpc= pci->jump; 
+			else stkpc++;
+			break;
+		case TYPE_str:
+			if( v->len > 0 && v->val.pval!= str_nil )
+				stkpc= pci->jump; 
 			else stkpc++;
 			break;
 		case TYPE_sht:
-			if( v->val.shval ){ stkpc= pci->jump; } 
+			if( v->val.shval > 0 && v->val.shval!= sht_nil )
+				stkpc= pci->jump; 
 			else stkpc++;
 			break;
 		case TYPE_int:
+			if( v->val.shval > 0 && v->val.shval!= sht_nil )
+				stkpc= pci->jump; 
+			else stkpc++;
 		case TYPE_lng:
-			if( v->val.lval ){ stkpc= pci->jump; } 
+			if( v->val.lval > 0 && v->val.lval!= lng_nil)
+				stkpc= pci->jump; 
 			else 
 		default:
-			stkpc++;
+				stkpc++;
 		}
 		break;
 	case CATCHsymbol:
@@ -736,27 +745,39 @@ of a barrier- block. In that case we have to test the
 outcome of the operation and possibly skip the block altogether.
 The latter is implemented as a linear scan for the corresponding
 labeled statemtent. This might be optimized later.
-The upper layers have assured that the result variable is of type boolean.
 
 @= barrierControl
 { 	v= &stk->stk[getDestVar(pci)];
 	/* skip to end of barrier, depends on the type */
 	switch(v->vtype){
 	case TYPE_bit:
-		if( v->val.cval[0] == FALSE ){ 
-			stkpc= pci->jump; }
-		 
+		if( v->val.cval[0] == FALSE || v->val.cval[0] == bit_nil)
+			stkpc= pci->jump;
+		break;
+	case TYPE_chr:
+		if( v->val.cval[0] == chr_nil )
+			stkpc= pci->jump;
 		break;
 	case TYPE_sht:
-		if( v->val.shval == 0){ 
+		if( v->val.shval < 0 || v->val.shval == sht_nil)
 			stkpc= pci->jump; 
-		} 
 		break;
 	case TYPE_int:
-	case TYPE_lng:
-		if( v->val.lval == 0){ 
+		if( v->val.lval < 0 || v->val.lval == int_nil)
 			stkpc= pci->jump; 
-		}
+		break;
+	case TYPE_lng:
+		if( v->val.lval < 0 || v->val.lval == lng_nil)
+			stkpc= pci->jump; 
+		break;
+	case TYPE_flt:
+	case TYPE_dbl:
+		if( v->val.dval < 0 || v->val.dval == dbl_nil)
+			stkpc= pci->jump; 
+		break;
+	case TYPE_str:
+		if( v->len == 0 || v->val.pval == str_nil)
+			stkpc= pci->jump; 
 		break;
 	default:
 		ret= raiseException(mb,stkpc,
