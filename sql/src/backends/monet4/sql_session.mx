@@ -333,7 +333,7 @@ int explain_cmd( mvc *c, char *cmd, stream *out )
 	strSplit(&b, cmd, "\n");
 	BATseqbase(b, 0);
  	t_id = mvc_result_table( c, 1, b);
-	mvc_result_column( c, "", "statement", "VARCHAR", -1,-1, b);
+	mvc_result_column( c, "", "statement", "varchar", -1,-1, b);
 	BBPunfix(b->batCacheid);
 	return mvc_export_result( c, out, t_id ) ||
 		mvc_export_table( c, out, t_id, 0, -1 );
