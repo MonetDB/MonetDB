@@ -1,4 +1,11 @@
-# Monet Database Server V4.2
+stdout of test 'const` in directory 'src/monet` itself:
+
+
+# 13:33:17 >  
+# 13:33:17 >  Mtimeout -timeout 432 Mserver -p -modulesilent -yaccsilent -d8 -db Tests_src_monet  < const.milM
+# 13:33:17 >  
+
+# Monet Database Server V4.3
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
 
@@ -20,22 +27,26 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
->>>>>>#-------------------------#
-# BAT:	  tmp_23	  #
+#-------------------------#
+# BAT:	  tmp_25	  #
 # (void)  (BAT)		  #
 #-------------------------#
-[ nil,	  <tmp_24>	  ]
-[ nil,	  <tmp_25>	  ]
->>>>#-------------------------#
-# BAT:	  tmp_26	  #
-# (void)  (BAT)		  #
+[ nil,	  <tmp_26>	  ]
+[ nil,	  <tmp_27>	  ]
 #-------------------------#
-[ 0@0,	  <tmp_27>	  ]
-[ 1@0,	  <tmp_28>	  ]
->#-------------------------#
 # BAT:	  tmp_28	  #
+# (void)  (BAT)		  #
+#-------------------------#
+[ 0@0,	  <tmp_29>	  ]
+[ 1@0,	  <tmp_30>	  ]
+#-------------------------#
+# BAT:	  tmp_30	  #
 # (oid)	  (BAT)		  #
 #-------------------------#
-[ 0@0,	  <tmp_27>	  ]
-[ 1@0,	  <tmp_29>	  ]
->
+[ 0@0,	  <tmp_29>	  ]
+[ 1@0,	  <tmp_31>	  ]
+
+# 13:33:17 >  
+# 13:33:17 >  Done.
+# 13:33:17 >  
+

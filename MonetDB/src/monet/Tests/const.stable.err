@@ -1,0 +1,12 @@
+stderr of test 'const` in directory 'src/monet` itself:
+
+
+# 13:33:17 >  
+# 13:33:17 >  Mtimeout -timeout 432 Mserver -p -modulesilent -yaccsilent -d8 -db Tests_src_monet  < const.milM
+# 13:33:17 >  
+
+
+# 13:33:17 >  
+# 13:33:17 >  Done.
+# 13:33:17 >  
+
