@@ -108,6 +108,17 @@ AC_ARG_WITH(gcc,
 		aix*)		CC=xlc_r	CXX=xlC_r;;
 		*)		CC=cc	CXX=CC;;
 		esac
+		case $host_os in
+		linux*)
+		    dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
+		    dnl  and icc/icpc requires "-no-gcc" to avoid predefining
+		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
+		    icc_ver="`$CC --version 2>/dev/null`"
+		    case $icc_ver in
+		    8.*)	CC="icc -no-gcc"	CXX="icpc -no-gcc";;
+		    esac
+		    ;;
+		esac
 		;;
 	*)	CC=$withval;;
 	esac])
@@ -208,14 +219,20 @@ yes-*)
 	;;
 -linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
+	icc_ver="`$CC --version 2>/dev/null`"
  	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
 	CXXFLAGS="$CXXFLAGS -we140"
+	dnl  Version 8.0 doesn't find sigset-t when -ansi is set... !?
+	case $icc_ver in
+	8.*)	;;
+	*)	CFLAGS="$CFLAGS -ansi"	CXXFLAGS="$CXXFLAGS -ansi";
+	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -ansi -c99 -Wall -w2"
-	CXXFLAGS="$CXXFLAGS -ansi -c99 -Wall -w2"
+	CFLAGS="$CFLAGS -c99 -Wall -w2"
+	CXXFLAGS="$CXXFLAGS -c99 -Wall -w2"
 	dnl  Be rigid; "MonetDB code is supposed to ahear to this... ;-)
 	dnl  Let warning #266 "function declared implicitly" become an error.
 	X_CFLAGS="$X_CFLAGS -we266"
