@@ -1,6 +1,6 @@
-a:=new(int,int);
-b:=new(int,int);
-n:=int(nil);
+var a:=new(int,int);
+var b:=new(int,int);
+var n:=int(nil);
 a.insert( 1, 1);
 a.insert( n, 2);
 a.insert( 3, 3);

@@ -2,10 +2,10 @@ module(xtables,ascii_io);
 
 backup_dir := "";
 
-proc seqinfo(BAT b) : str := {
+proc seqinfo(BAT b) : str {
 	return b.info.find("hseqbase");
 }
-PROC grp_dump(b) : str := {
+PROC grp_dump(b) : str {
 	var bats := [~b];
 	var first := bats.find(nil);
 	if (first.htype != void){
@@ -20,7 +20,7 @@ PROC grp_dump(b) : str := {
 	dump_data( bats, file + ".dat.bz2", -1 );
 	return file;
 }
-PROC backup( str Dir ) : void := {
+PROC backup( str Dir ) : void {
 	backup_dir := Dir; 
         var nme := view_bbp_name;
         var prs := nme.semijoin(view_bbp_kind.select("pers"));

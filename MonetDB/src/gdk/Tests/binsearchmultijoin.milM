@@ -6,7 +6,7 @@
 
 VAR l, r;
 
-PROC Nseq(int N):BAT[void,int] := {
+PROC Nseq(int N):BAT[void,int] {
   VAR i := 0; VAR seq := new(void,int).seqbase(oid(0));
   WHILE (i<N) { seq.insert(nil,i); i:+=1; }
   RETURN seq;

@@ -1,9 +1,9 @@
-a:=new(void,int).seqbase(oid(0));
+var a:=new(void,int).seqbase(oid(0));
 a.insert(nil,0);
 a.insert(nil,1);
 a.insert(nil,int(nil));
 
-b:=new(int,int);
+var b:=new(int,int);
 b.insert(0,0);
 b.insert(0,1);
 b.insert(0,2);
@@ -38,8 +38,8 @@ b.insert(int(nil),8);
 b.insert(int(nil),9);
 b.insert(int(nil),int(nil));
 
-c:=b.reverse.[oid].reverse;
-d:=a.reverse;
+var c:=b.reverse.[oid].reverse;
+var d:=a.reverse;
 
 a.print;
 d.print;
@@ -56,7 +56,7 @@ a.semijoin(c).print;
 
 a:=new(int,oid).insert(1,1@0).insert(2,2@0).insert(int(nil),oid(nil)).sort;
 c:=new(int,oid).insert(int(nil),oid(nil));
-i:=0;
+var i:=0;
 while(i < 100) {
 	i:+=1;
 	c.insert(i, oid(i));
@@ -74,17 +74,17 @@ a:=a.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
 c:=c.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
 
 # idxsemijoin
-ai:=a.copy;
-ai.accbuild(index);
-ci:=c.copy;
-ci.accbuild(index);
+var ai:=a.copy;
+ai.accbuild("index");
+var ci:=c.copy;
+ci.accbuild("index");
 ai.semijoin(ci).print;
 ci.semijoin(ai).print;
 
 # hash => kinsertsect & revsemijoin
-ah:=a.copy;
-ah.accbuild(hash);
-ch:=c.copy;
-ch.accbuild(hash);
+var ah:=a.copy;
+ah.accbuild("hash");
+var ch:=c.copy;
+ch.accbuild("hash");
 ah.semijoin(ch).print;
 ch.semijoin(ah).print;

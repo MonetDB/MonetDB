@@ -8,8 +8,7 @@ bat("DRUID_sample").insert(3,str(""));
 
 bat("DRUID_sample").insert(4,str("Taxes ... Health [ Xtra! ] Medicine , Drugs , Diseases , Fitness ... News and Media [ Xtra! ] Current Events , Magazines , TV , Newspapers ... Recreation and Sports [ Xtra! ] Sports , Games , Travel , Autos , Outdoors ... Reference Libraries , Dictionaries , Phone Numbers ... Regional Countries , Regions , U.S. States ... Science CS , Biology , Astronomy , Engineering ... Social Science Anthropology , Sociology , Economics ... Society and Culture People , Environment , Religion ... What's New -"));
 
-bat("DRUID_sample");
-DRUID_sample.insert(5,str("laune · Débats et mesures sur la sécurité · Nouvelle escalade dans le ciel irakien · Le procès Clinton · Tremblement de terre en Colombie · Open d'Australie [ Tous les titres ] EtsurYahoo! · BD: festival d'Angoulême · La sélection de la semaine · Mon Yahoo! : votre Yahoo! à vous! · Yahoo! recrute [ Tout sur Yahoo! ] Yahoo! Europe  Allemagne - Danemark - Espagne - Italie - Norvège - R.U. & Irlande - Suède Yahoo! Monde Yahoo! (US) - Asie - Australie & N.Z. - Canada - Corée - Japon - chinois -"));
+bat("DRUID_sample").insert(5,str("laune · Débats et mesures sur la sécurité · Nouvelle escalade dans le ciel irakien · Le procès Clinton · Tremblement de terre en Colombie · Open d'Australie [ Tous les titres ] EtsurYahoo! · BD: festival d'Angoulême · La sélection de la semaine · Mon Yahoo! : votre Yahoo! à vous! · Yahoo! recrute [ Tout sur Yahoo! ] Yahoo! Europe  Allemagne - Danemark - Espagne - Italie - Norvège - R.U. & Irlande - Suède Yahoo! Monde Yahoo! (US) - Asie - Australie & N.Z. - Canada - Corée - Japon - chinois -"));
 
 bat("DRUID_sample").print;
 

@@ -292,7 +292,10 @@ def am_scripts(fd, var, scripts, am):
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         am['INSTALL'].append(script)
         am['UNINSTALL'].append(script)
-        am['InstallList'].append("\t"+sd+"/"+script+"\n")
+	cond = ''
+	if scripts.has_key('COND'):
+        	cond = '#' + string.join(scripts['COND'], '+')
+        am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
 
     am_find_ins(am, scripts)
     am_deps(fd, scripts['DEPS'], "\.o", am)
@@ -317,7 +320,10 @@ def am_headers(fd, var, headers, am):
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
             am['UNINSTALL'].append(header)
-            am['InstallList'].append("\t"+sd+"/"+header+"\n")
+	    cond = ''
+	    if headers.has_key('COND'):
+       	       cond = '#' + string.join(headers['COND'], '+')
+            am['InstallList'].append("\t"+sd+"/"+header+cond+"\n")
 
     am_find_ins(am, headers)
     am_deps(fd, headers['DEPS'], "\.o", am)
@@ -397,6 +403,10 @@ def am_binary(fd, var, binmap, am):
             am['ALL'].append(name)
         return
 
+    cond = ''
+    if binmap.has_key('COND'):
+       	cond = '#' + string.join(binmap['COND'], '+')
+
     SCRIPTS = []
     scripts_ext = []
     if binmap.has_key('SCRIPTS'):
@@ -408,14 +418,14 @@ def am_binary(fd, var, binmap, am):
     else:
         binname = name
 
+    bd = 'bindir'
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
-        bd = am_translate_dir(bd)
-        fd.write("%sdir = %s\n" % (binname, bd))
-        fd.write("%s_PROGRAMS =%s\n" % (binname,  binname))
-        am['InstallList'].append("\t%s/%s\n" % (bd, binname))
-    else:
-        am['BINS'].append(binname)
+    bd = am_translate_dir(bd, am)
+
+    fd.write("%sdir = %s\n" % (binname, bd))
+    fd.write("%s_PROGRAMS =%s\n" % (binname,  binname))
+    am['InstallList'].append("\t%s/%s%s\n" % (bd, binname, cond))
 
     if binmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)

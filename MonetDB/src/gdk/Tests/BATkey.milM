@@ -24,7 +24,7 @@ printf("# Here, _MMnilcast_15 gets incorrectly marked haligned with it parent _M
 printf("> _MMnilcast_15.print; \n");
 	  _MMnilcast_15.print;
 printf("> orderList1 := new(oid,int).import(ttd+\"/BATkey.z.data\").rename(\"orderList1\"); \n");
-	  orderList1 := new(oid,int).import(ttd+"/BATkey.z.data").rename("orderList1");
+	  var orderList1 := new(oid,int).import(ttd+"/BATkey.z.data").rename("orderList1");
 printf("> orderList1.print; \n");
 	  orderList1.print;
 printf("> var _MMjoin_44 := join(_MMnilcast_15,orderList1).rename(\"_MMjoin_44\"); \n");

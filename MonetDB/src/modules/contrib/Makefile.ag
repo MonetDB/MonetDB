@@ -56,6 +56,13 @@ LIB_mprof = {
 	LDFLAGS = -lm
 }
 
+scripts_mprof = {
+	EXT = mil
+	DIR = pkglibdir
+	COND = NOT_WIN32
+	SOURCES = mprof.mx 
+}
+
 doc_libs = {
 	DIR = pkgdatadir/docs/contrib/
 	SOURCES = \
@@ -70,7 +77,7 @@ scripts_mil = {
 	DIR = pkglibdir
 	SOURCES = \
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
-		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
+		mel.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
 		bat_mmath.mx bat_cast.mx array.mx color.mx \
 		image.mx txtsim.mx

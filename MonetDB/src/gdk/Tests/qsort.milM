@@ -1,4 +1,4 @@
-b := new(int,int,10);
+var b := new(int,int,10);
 b.insert(2,3);
 b.insert(1,9);
 b.insert(9,8);
@@ -11,12 +11,12 @@ b.insert(4,5);
 b.insert(7,7);
 b.access(BAT_READ);
 b.print;
-i_n := b.mark(oid(nil)).copy;
-n_i := i_n.reverse.copy;
-i_v := b.mark(oid(0)).copy;
-v_i := i_v.reverse.copy;
-i_o := b.[oid].copy;
-o_i := i_o.reverse.copy;
+var i_n := b.mark(oid(nil)).copy;
+var n_i := i_n.reverse.copy;
+var i_v := b.mark(oid(0)).copy;
+var v_i := i_v.reverse.copy;
+var i_o := b.[oid].copy;
+var o_i := i_o.reverse.copy;
 
 n_i.print;
 n_i.sort.print;

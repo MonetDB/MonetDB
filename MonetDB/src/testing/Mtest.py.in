@@ -1038,7 +1038,7 @@ def GetBitsAndModsAndStatic(env) :
             {
                 # print a list of all modules found
                 # "Modules: mod1, mod2, ..."
-                var MODs := kunion(bat("monet_mod_nme").reverse().mark(nil),view_modules.reverse().mark(nil)).kunique();
+                var MODs := kunion(bat("monet_mod_nme").reverse().mark(oid(nil)),view_modules.reverse.mark(oid(nil))).kunique;
                 printf("\\nModules: ");
                 var x := "";
                 MODs@batloop{

@@ -352,13 +352,13 @@ a.print;
 # deleting a transient value from a just void table didn't fix
 # the denseness
 
-t1 := bat(void,int);
+var t1 := bat(void,int);
 t1.seqbase(0@0);
 t1.insert(nil,1);
 t1.insert(nil,2);
 t1.insert(nil,3);
-v1 := t1.mil_select("<in>", 2,int(nil));
-v2 := v1.mark(0@0).reverse;
+var v1 := t1.mil_select("<in>", 2,int(nil));
+var v2 := v1.mark(0@0).reverse;
 v2.join(t1).print;
 #-----------------#
 # BAT:	  tmp_32  #
@@ -366,7 +366,7 @@ v2.join(t1).print;
 #-----------------#
 [ 0@0,	  3	  ]
 
-v3 := t1.select(2, int(nil));
+var v3 := t1.select(2, int(nil));
 v3.info.find("hseqbase").print;
 [ "1@0" ]
 v3.info.find("hdense").print;

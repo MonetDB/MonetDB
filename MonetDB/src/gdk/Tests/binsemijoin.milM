@@ -1,8 +1,8 @@
-a:=new(void,int).seqbase(oid(0));
+var a:=new(void,int).seqbase(oid(0));
 a.insert(nil,0);
 a.insert(nil,1);
 
-b:=new(int,int);
+var b:=new(int,int);
 b.insert(0,0);
 b.insert(0,1);
 b.insert(0,2);
@@ -24,8 +24,8 @@ b.insert(1,7);
 b.insert(1,8);
 b.insert(1,9);
 
-c:=b.reverse.[oid].reverse;
-d:=a.reverse;
+var c:=b.reverse.[oid].reverse;
+var d:=a.reverse;
 
 a.print;
 d.print;
