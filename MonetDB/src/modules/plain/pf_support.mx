@@ -34,8 +34,8 @@ implementation on to of MonetDB within the "Pathfinder" project.
 @m
 .MODULE pf_support;
 
-.COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,oid] g) : 
-				BAT[any::1,OID] = CMDmark_grp; 
+.COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,oid] g)
+		: BAT[any::1,OID] = CMDmark_grp; 
 "\"grouped mark\": Produces a new BAT with per group a locally unique dense
  ascending sequense of OIDs in the tail. The tail of the first BAT (b)
  identifies the group that each BUN of b belongs to. The second BAT (g)
@@ -43,8 +43,8 @@ implementation on to of MonetDB within the "Pathfinder" project.
  from b's tail. The tail of g gives for each group the base value for the new
  OID sequence."
 
-.COMMAND merged_union( BAT[void,any::1] left, BAT[void,any::1] right, ..BAT[void,any].. ) :
-			BAT[void,BAT] = CMDmerged_union;
+.COMMAND merged_union( BAT[void,any::1] left, BAT[void,any::1] right, ..BAT[void,any].. )
+		: BAT[void,BAT] = CMDmerged_union;
 "PARAMETERS:
 Even number of BAT[void,any] with pairs of equal tail type;
 all odd BATs must be head-aligned and all even BATs must be head-aligned;
@@ -59,10 +59,44 @@ Merges pairs of bats according to the order as defined by the first pair's tails
  input."
 @)
 
+.COMMAND combine_text_string( BAT[void,oid] iter, BAT[void,oid] kind, BAT[void,str] str_value, int result_size )
+		: BAT[oid,str] = CMDcombine_text_string;
+"PARAMETERS:
+[to be filled in by Jan R.]
+DESCRIPITON:
+[to be filled in by Jan R.]"
+
+.COMMAND mposjoin( BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item )
+		: BAT[void,any] = CMDmposjoin;
+"PARAMETERS:
+BAT[void,oid] - the values which have to be looked up
+BAT[void,oid] - the corresponding fragments in which the values have to be looked up
+BAT[void,BAT[void,any]] - the list of bats where the values are looked up
+DESCRIPITON:
+looks up the values in a list of bats. The first argument specifies the
+value to be looked up (joined) and the second one saves which bat contains
+the value (see also 'mvaljoin').
+The result is a bat with the tail values from the batlist (any) and the same
+void column like the first two arguments"
+
+.COMMAND mvaljoin( BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item )
+		: BAT[oid,oid] = CMDmvaljoin;
+"PARAMETERS:
+BAT[void,oid] - the values which have to be joined
+BAT[void,oid] - the corresponding fragments in which the values have to be looked up
+BAT[void,BAT[void,oid]] - the list of bats where the tail values are joined
+DESCRIPITON:
+joins the tail values of the first argument with the tail values of the bat
+from one bat of the third argument. Which bat from the list is chosen is
+specified by the second argument (see also 'mposjoin').
+The result is a bat with the head values of the first two arguments in the head
+and the head values from the batlist"
+
 .END pf_support;
 
 @mil
-PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int := {
+PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int := 
+{
         VAR rtrn := 0;
         VAR h0 := b.ordered();
         VAR t0 := b.reverse().ordered();
@@ -118,6 +152,12 @@ ADDHELP("chk_order", "manegold", "Jul 24 2004",
 @c
 #include "pf_support.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#if SIZEOF_OID == SIZEOF_INT
+#define oidoid_bunfastins(b,h,t) intint_bunfastins(b,h,t);
+#else
+#define oidoid_bunfastins(b,h,t) lnglng_bunfastins(b,h,t);
+#endif
+
 
 @= mark_grp_loop3
 {	BUN p, q;
@@ -164,7 +204,8 @@ ADDHELP("chk_order", "manegold", "Jul 24 2004",
 }
 
 @c
-static BAT *BATmark_grp(BAT *b, BAT *g) {
+static BAT *BATmark_grp( BAT *b, BAT *g )
+{
         BAT *bn, *gc;
 	int tsdk;
  
@@ -204,11 +245,14 @@ bunins_failed:
 	return NULL;
 }
 
-int CMDmark_grp(BAT** res, BAT *b, BAT *g){
+int CMDmark_grp( BAT** res, BAT *b, BAT *g )
+{
 	return (*res=BATmark_grp(b, g))?GDK_SUCCEED:GDK_FAIL;
 }
 
-int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
+
+int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
+{
 	BAT *b[MAXPARAMS], *bn[MAXPARAMS>>1], *BN;
 	BUN cur[MAXPARAMS], lst[MAXPARAMS], dst[MAXPARAMS>>1], DST;
 	int bs[MAXPARAMS], bns[MAXPARAMS>>1], BS;
@@ -221,8 +265,8 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 
 	/* check arguments */
 
-	BATcheck(L, "CMDmerged_union");
-	BATcheck(R, "CMDmerged_union");
+	BATcheck(L, "merged_union");
+	BATcheck(R, "merged_union");
 	ERRORcheck(BATcount(L)>1 && !(BATtordered(L)&1), "merged_union: tail of first BAT must be sorted.\n");
 	ERRORcheck(BATcount(R)>1 && !(BATtordered(R)&1), "merged_union: tail of second BAT must be sorted.\n");
 
@@ -479,5 +523,454 @@ cleanup:
 	for (k=0; k<npairs; k++) {
 		BBPreclaim(bn[k]);
 	}
+	return GDK_FAIL;
+}
+
+
+#define KIND_NODE (oid)1
+#define KIND_TEXT (oid)2
+#define KIND_STR  (oid)3
+
+int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int *result_size )
+{
+	BAT *bn;
+	BUN qi, pi, pk, ps, dst;
+	int bs, bsi, bsk, bss;
+	size_t cnt, len, strsize = 1024;
+	oid base, i0, k0;
+	str actual_str = NULL;
+	bit triv_prop;
+	
+	*res = NULL;
+
+	/* check arguments */
+
+	BATcheck(iter, "combine_text_string");
+	BATcheck(kind, "combine_text_string");
+	BATcheck(str_value, "combine_text_string");
+
+	cnt = BATcount(iter);
+	base = iter->hseqbase;
+	ERRORcheck(!BAThdense(iter) || !BAThdense(kind) || !BAThdense(str_value), 
+		"combine_text_string: all input BATs (iter, kind, str_value) must be void-headed with non-nil seqbase.\n");
+	ERRORcheck(BATcount(kind)!=cnt || BATcount(str_value)!=cnt || kind->hseqbase!=base || str_value->hseqbase!=base,
+		"combine_text_string: all input BATs (iter, kind, str_value) must be head-aligned.\n");
+	ERRORcheck(!(BATtordered(iter)&1),
+		"combine_text_string: input BAT iter must be sorted on tail.\n");
+
+	/* create result BAT */
+
+	bn = BATnew(TYPE_oid, TYPE_str, *result_size);
+	if (bn == NULL) {
+		GDKerror("combine_text_string: BATnew(TYPE_oid, TYPE_str, %d) failed.\n", *result_size);
+		return GDK_FAIL;
+	}
+	bs = BUNsize(bn);
+	dst = BUNlast(bn);
+
+	/* do the combine_text_string */
+
+	bsi = BUNsize(iter);
+	bsk = BUNsize(kind);
+	bss = BUNsize(str_value);
+
+	pi = BUNfirst(iter);
+	pk = BUNfirst(kind);
+	ps = BUNfirst(str_value);
+
+@= alloc_str
+	/* allocate str buffer */
+	@1 = (str)GDKmalloc(strsize);
+	if (@1 == NULL) {
+		GDKerror("combine_text_string: GDKmalloc(" SZFMT ") failed.\n", strsize);
+		goto cleanup;
+	}
+@c
+	@:alloc_str(actual_str)@
+	len = 0;
+	actual_str[0] = '\0';
+	k0 = oid_nil;
+	i0 = *(oid*)BUNtloc(iter,pi);
+
+	for (qi = BUNlast(iter) ; pi < qi ; pi += bsi, pk += bsk, ps += bss) {
+		oid i = *(oid*)BUNtloc(iter,pi);
+		oid k = *(oid*)BUNtloc(kind,pk);
+		str s = (str)BUNtvar(str_value,ps);
+		size_t l = strlen(s) + 1;
+		if (i0 < i) {
+			/* new iter => insert actual_str of previous iter into result */
+			bunfastins(bn, &base, actual_str);
+			len = 0;
+			actual_str[0] = '\0';
+			k0 = oid_nil;
+		}
+		if (len+l >= strsize) {
+			/* extend str buffer */
+			str new_str = NULL;
+			do {
+				strsize *= 2;
+			} while (len+l >= strsize);
+			@:alloc_str(new_str)@
+			memcpy(new_str, actual_str, len+1);
+			GDKfree(actual_str);
+			actual_str = new_str;
+		}
+		if (k0 == KIND_STR && k == KIND_STR) {
+			/* insert ' '-separator between adjacent STRs */
+			actual_str[len++] = ' ';
+			actual_str[len] = '\0';
+		}
+		len += snprintf(actual_str+len, strsize-len, s);
+		i0 = i;
+		k0 = k;
+		base++;
+	}
+
+	if (len > 0) {
+		bunfastins(bn, &base, actual_str);
+	}
+
+	GDKfree(actual_str);
+
+	/* set result properties */
+
+	if (!bn->batDirty) bn->batDirty = TRUE;
+	triv_prop = (BATcount(bn) < 2);
+	BATkey(bn,TRUE);
+	BATkey(BATmirror(bn),triv_prop);
+	bn->hsorted = GDK_SORTED;
+	bn->tsorted = triv_prop;
+	bn->hdense = triv_prop;
+	bn->tdense = FALSE;
+
+	*res = bn;
+
+	return GDK_SUCCEED;
+bunins_failed:
+	GDKerror("combine_text_string: bunins failed.\n");
+cleanup:
+	if (actual_str) GDKfree(actual_str);
+	BBPreclaim(bn);
+	return GDK_FAIL;
+}
+
+
+int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
+{
+	BAT *bn, **batlist;
+	BUN q, pp, pf, pw, dst;
+	int bs, bsp, bsf, ii = 0;
+	size_t cnt, len;
+	oid base, wl, wh;
+	bit triv_prop;
+	
+	*res = NULL;
+
+	/* check arguments */
+
+	BATcheck(pre, "mposjoin");
+	BATcheck(frag, "mposjoin");
+	BATcheck(ws_item, "mposjoin");
+
+	len = BATcount(ws_item);
+	cnt = BATcount(pre);
+	base = pre->hseqbase;
+	ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
+		"mposjoin: all input BATs (pre, frag, ws_item) must be void-headed with non-nil seqbase.\n");
+	ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
+		"mposjoin: first two input BATs (pre & frag) must be head-aligned.\n");
+	ERRORcheck(len==0,
+		"mposjoin: third input BAT (ws_item) must not be empty.\n");
+
+	batlist = (BAT**)GDKmalloc(len * sizeof(BAT*));
+	if (batlist == NULL) {
+		GDKerror("mposjoin: GDKmalloc(" SZFMT ") failed.\n", len * sizeof(BAT*));
+		return GDK_FAIL;
+	}
+
+	ii = 0;
+	BATloopFast(ws_item, pw, q, bs) {
+		bat bid = *(bat*)BUNtloc(ws_item, pw);
+		batlist[ii] = BATdescriptor(bid);
+		if (!BAThdense(batlist[ii])) {
+			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must be void-headed with non-nil seqbase.\n");
+			ii++;
+			@:free_batlist@
+			return GDK_FAIL;
+		}
+		if (batlist[0]->ttype != batlist[ii]->ttype) {
+			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have the same tail type.\n");
+			ii++;
+			@:free_batlist@
+			return GDK_FAIL;
+		}
+		ii++;
+	}	
+
+	/* create result BAT */
+
+	bn = BATnew(TYPE_void, batlist[0]->ttype, cnt);
+	if (bn == NULL) {
+		GDKerror("mposjoin: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(batlist[0]->ttype)), cnt);
+		@:free_batlist@
+		return GDK_FAIL;
+	}
+	BATseqbase(bn, base);
+	bs = BUNsize(bn);
+	dst = BUNlast(bn);
+
+	/* do the mposjoin */
+
+	wl = ws_item->hseqbase;
+	wh = wl + len - 1;
+
+	bsp = BUNsize(pre);
+	bsf = BUNsize(frag);
+
+	pp = BUNfirst(pre);
+	pf = BUNfirst(frag);
+
+@= mposjoin
+	/*  @1: ATOMstorage(batlist[0]->ttype) (chr, sht, int, flt, lng, dbl, any)
+	 *  @2: tloc, tvar, tail
+	 *  @3: simple, atom
+	 */
+	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
+		oid p = *(oid*)BUNtloc(pre,pp);
+		oid f = *(oid*)BUNtloc(frag,pf);
+		if (f >= wl && f <= wh) {
+			BAT *b = batlist[f - wl];
+			oid l = b->hseqbase;
+			oid h = l + BATcount(b) - 1;
+			if (p >= l && p <= h) {
+				void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNptr(b,p-l)));
+				dst += bs;
+			}
+		}
+	}
+	break;
+@c
+
+	switch(ATOMstorage(batlist[0]->ttype)) {
+	case TYPE_chr:	@:mposjoin(chr,tloc,simple)@
+	case TYPE_sht:	@:mposjoin(sht,tloc,simple)@
+	case TYPE_int:	@:mposjoin(int,tloc,simple)@
+	case TYPE_flt:	@:mposjoin(flt,tloc,simple)@
+	case TYPE_lng:	@:mposjoin(lng,tloc,simple)@
+	case TYPE_dbl:	@:mposjoin(dbl,tloc,simple)@
+		if (batlist[0]->tvarsized) {
+			@:mposjoin(any,tvar,atom)@
+		} else {
+			@:mposjoin(any,tloc,atom)@
+		}
+	}
+
+	/* set result properties */
+
+	bn->batBuns->free = dst - bn->batBuns->base;
+	if (!bn->batDirty) bn->batDirty = TRUE;
+	triv_prop = (BATcount(bn) < 2);
+	BATkey(bn,TRUE);
+	BATkey(BATmirror(bn),triv_prop);
+	bn->hsorted = GDK_SORTED;
+	bn->tsorted = triv_prop;
+	bn->hdense = TRUE;
+	bn->tdense = FALSE;
+
+	*res = bn;
+
+	@:free_batlist@
+
+	return GDK_SUCCEED;
+bunins_failed:
+	GDKerror("combine_text_string: bunins failed.\n");
+	BBPreclaim(bn);
+@= free_batlist
+	while (ii > 0) {
+		BBPunfix(batlist[--ii]->batCacheid);
+	}
+	GDKfree(batlist);
+@c
+	@:free_batlist@
+	return GDK_FAIL;
+}
+
+
+int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
+{
+	BAT *bn, **batlist;
+	BUN q, pp, pf, pw;
+	int bsp, bsf, bsw, ii = 0;
+	size_t cnt, len, sze;
+	oid base, wl, wh;
+	bit triv_prop, all_hash, all_sort, some_hash, some_sort;
+	
+	*res = NULL;
+
+	/* check arguments */
+
+	BATcheck(pre, "mvaljoin");
+	BATcheck(frag, "mvaljoin");
+	BATcheck(ws_item, "mvaljoin");
+
+	len = BATcount(ws_item);
+	cnt = BATcount(pre);
+	base = pre->hseqbase;
+	ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
+		"mvaljoin: all input BATs (pre, frag, ws_item) must be void-headed with non-nil seqbase.\n");
+	ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
+		"mvaljoin: first two input BATs (pre & frag) must be head-aligned.\n");
+	ERRORcheck(len==0,
+		"mvaljoin: third input BAT (ws_item) must not be empty.\n");
+
+	batlist = (BAT**)GDKmalloc(len * sizeof(BAT*));
+	if (batlist == NULL) {
+		GDKerror("mvaljoin: GDKmalloc(" SZFMT ") failed.\n", len * sizeof(BAT*));
+		return GDK_FAIL;
+	}
+
+	sze = cnt;
+	ii = 0;
+	all_hash = all_sort = TRUE;
+	some_hash = some_sort = FALSE;
+	BATloopFast(ws_item, pw, q, bsw) {
+		bit hsh, srt;
+		bat bid = *(bat*)BUNtloc(ws_item, pw);
+		batlist[ii] = BATdescriptor(bid);
+		if (!BAThdense(batlist[ii])) {
+			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must be void-headed with non-nil seqbase.\n");
+			ii++;
+			@:free_batlist@
+			return GDK_FAIL;
+		}
+		if (batlist[ii]->ttype != TYPE_oid) {
+			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have tail type OID.\n");
+			ii++;
+			@:free_batlist@
+			return GDK_FAIL;
+		}
+		hsh = (BAThash(BATmirror(batlist[ii]), NULL) != NULL);
+		srt = (BATtordered(batlist[ii])&1);
+		all_hash &= hsh;
+		all_sort &= srt;
+		some_hash |= hsh;
+		some_sort |= srt;
+		sze = MAX(sze, BATcount(batlist[ii]));
+		ii++;
+	}	
+
+	/* create result BAT */
+
+	bn = BATnew(TYPE_oid, TYPE_oid, sze);
+	if (bn == NULL) {
+		GDKerror("mvaljoin: BATnew(TYPE_oid, TYPE_oid, " SZFMT ") failed.\n", sze);
+		@:free_batlist@
+		return GDK_FAIL;
+	}
+
+	/* do the mvaljoin */
+
+	wl = ws_item->hseqbase;
+	wh = wl + len - 1;
+
+	bsp = BUNsize(pre);
+	bsf = BUNsize(frag);
+
+	pp = BUNfirst(pre);
+	pf = BUNfirst(frag);
+
+@= hash_only
+	hash_t h;
+	BUN r;
+	b = BATmirror(b);
+	HASHloop_oid(b, b->hhash, h, &p, r) {
+		oidoid_bunfastins(bn,&base,BUNtvar(b,r));
+	}
+@= sort_only
+	BUN rp, rq;
+	int bs;
+	SORTloop_oid(b, rp, rq, &p, &p, bs) {
+		oidoid_bunfastins(bn,&base,BUNhvar(b,rp));
+	}
+@= scan_only
+	BUN rp, rq;
+	int bs;
+	BATloopFast(b, rp, rq, bs) {
+		if (p == *(oid*)BUNtloc(b,rp)) {
+			oidoid_bunfastins(bn,&base,BUNhvar(b,rp));
+		}
+	}
+@= hash_scan
+	if (b->thash_heap) {
+		@:hash_only@
+	} else {
+		@:scan_only@
+	}
+@= sort_scan
+	if (BATtordered(b)&1) {
+		@:sort_only@
+	} else {
+		@:scan_only@
+	}
+@= hash_sort_scan
+	if (b->thash_heap) {
+		@:hash_only@
+	} else if (BATtordered(b)&1) {
+		@:sort_only@
+	} else {
+		@:scan_only@
+	}
+@= mvaljoin
+	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
+		oid p = *(oid*)BUNtloc(pre,pp);
+		oid f = *(oid*)BUNtloc(frag,pf);
+		if (f >= wl && f <= wh) {
+			BAT *b = batlist[f - wl];
+			@1
+		}
+		base++;
+	}
+@c
+
+	if (all_hash) {
+		@:mvaljoin(@:hash_only@)@
+	} else if (all_sort) {
+		@:mvaljoin(@:sort_only@)@
+	} else if (some_hash && some_sort) {
+		@:mvaljoin(@:hash_sort_scan@)@
+	} else if (some_hash) {
+		@:mvaljoin(@:hash_scan@)@
+	} else if (some_sort) {
+		@:mvaljoin(@:sort_scan@)@
+	} else {
+		@:mvaljoin(@:scan_only@)@
+	}
+
+	/* set result properties */
+
+	if (!bn->batDirty) bn->batDirty = TRUE;
+	triv_prop = (BATcount(bn) < 2);
+	BATkey(bn,TRUE);
+	BATkey(BATmirror(bn),triv_prop);
+	bn->hsorted = GDK_SORTED;
+	bn->tsorted = triv_prop;
+	bn->hdense = triv_prop;
+	bn->tdense = triv_prop;
+
+	*res = bn;
+
+	@:free_batlist@
+
+	return GDK_SUCCEED;
+bunins_failed:
+	GDKerror("combine_text_string: bunins failed.\n");
+	BBPreclaim(bn);
+@= free_batlist
+	while (ii > 0) {
+		BBPunfix(batlist[--ii]->batCacheid);
+	}
+	GDKfree(batlist);
+@c
+	@:free_batlist@
 	return GDK_FAIL;
 }
