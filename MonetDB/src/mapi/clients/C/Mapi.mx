@@ -1638,8 +1638,28 @@ MapiMsg mapi_explain(Mapi mid, FILE *fd)
 			fprintf(fd,"QUERY = %s", mid->query);
 		else	fprintf(fd,"QUERY = %s\n", mid->query);
 	}
-	if( mid->error)
-		fprintf(fd,"ERROR = %s\n",mid->errorstr);
+	if( mid->error) {
+		/* for multiline error messages, indent all subsequent
+		   lines with the space it takes to print "ERROR = " */
+		char *s, *p, *q;
+		s = "ERROR = ";
+		p = mid->errorstr;
+		while (p && *p) {
+			fprintf(fd, "%s", s);
+			s = "        ";
+			q = strchr(p, '\n');
+			if (q) {
+				q++; /* also print the newline */
+				fprintf(fd, "%.*s", (int) (q - p), p);
+			} else {
+				/* print bit after last newline,
+				   adding one ourselves */
+				fprintf(fd, "%s\n", p);
+				break; /* nothing more to do */
+			}
+			p = q;
+		}
+	}
 	fflush(fd);
 	mapi_clrError(mid);
 	return MOK;
