@@ -33,7 +33,7 @@ sub new {
     $self->{SERVER} = $server;
     $self->{USER} = $user;
     $self->{SOCKET} = new IO::Socket::INET( $server )
-	|| die "can't connect to $server : $!";
+	|| die "!ERROR can't connect to $server : $!";
    # binmode($self->{SOCKET},":utf8");
     bless($self,"Mapi");
     $self->{BUF} = "";
@@ -71,7 +71,7 @@ sub cmd_intern {
     my($missing) = 256 - length($cmd) % 256;
     my($blk) = $cmd . ' ' x $missing;
     $self->{SOCKET}->send( $blk ) 
-	|| die "can't send $blk: $!";
+	|| die "!ERROR can't send $blk: $!";
 }
 
 sub answer_intern {
@@ -100,7 +100,15 @@ sub result {
     $self->getprompt();
     return $res;
 }
-
+sub error{
+    my($self) = @_;
+    if( $self->{BUF} =~ "^!.*"){ return 1;}
+    return 0;
+}
+sub explain{
+    my($self) = @_;
+    print $self->{BUF};
+}
 sub cmd {
     my($self,$cmd) = @_;
     if (! ($cmd =~ /^.*\n$/)){
