@@ -13,7 +13,7 @@ load the dynamic libraries before we load and run the scripts.
 {
 	extern oid _@1_Module_Install(TBLinstall*, str);
 	DL_regfcn(DL_reglib("_@1", NULL, 40), 
-		  _@1_Module_Install, "_@1_Module_Install" );
+		  (ptr) _@1_Module_Install, "_@1_Module_Install" );
 }
 @= load_module
 {
@@ -40,6 +40,7 @@ load the dynamic libraries before we load and run the scripts.
 
 void static_module_init(Client c, char buf[]) {
 
+(void) buf;
 @include static_modules.mx
 
 }
