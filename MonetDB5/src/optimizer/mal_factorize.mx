@@ -44,6 +44,10 @@ parameters is left for the future. As the mapping of a query
 to any of the possible available factories to deal with the request.
 For the time being we simple reorganize the plan for all
 parameters
+
+Caveats. The factorize operation interferes with ORoptimizer,
+because that may overwrite the arguments.
+For the time being this is captured in a local routine.
 @{
 @h
 #ifndef _MAL_FACTORY_
@@ -67,6 +71,12 @@ Moving instruction out of the guarded block is a separate
 optimization step.
 
 @c
+int FTallowed(InstrPtr p){
+	if( moduleId(p) && strcmp(moduleId(p),"batcalc")==0){
+		if( isUnsafeInstruction(p)) return 0;
+	}
+	return 1;
+}
 str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,k,t,v, noop=0,se;
     InstrPtr p;
@@ -105,6 +115,12 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( blk== 0 ) blkstart= 0;
 			}
 		}
+
+		/* beware, none of the target variables may live
+		   before the cut point.  */
+		for( k=0; k<p->retc; k++)
+			if( getVar(mb,p->argv[k])->beginLifespan < i ||
+			    ! FTallowed(p) ) se = 0;
 
 		if( se==0 && blk==0 )
 			first[fk++]= p;

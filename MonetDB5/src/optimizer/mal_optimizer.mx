@@ -500,6 +500,7 @@ mal_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export void setLifespan(MalBlkPtr mb);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
+mal_export int isUnsafeInstruction(InstrPtr q);
 
 @+ Optimizer scenario
 The large number of query transformers calls for a flexible scheme for
@@ -899,12 +900,12 @@ Instructions are unsafe is one of the arguments is also mentioned
 in the result list. Alternatively, the 'unsafe' property is set
 for the function call itself.
 @c
-int isUnsafeInstruction(MalBlkPtr mb, InstrPtr q)
+int isUnsafeInstruction(InstrPtr q)
 {   int j,k;
     for(j=0; j<q->retc; j++)
     for(k=q->retc; k<q->argc; k++)
     if( q->argv[k] == q->argv[j]) return TRUE;
-    return isUnsafeFunction(mb, q);
+    return FALSE;
 }
 @-
 The routine isInvariant determines if the variable V is not
