@@ -828,18 +828,23 @@ Module: "pcl"
 
 Module: "profiler"
 
-[ 9 ]
-[ 9 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 14 ]
+[ 14 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature			help					  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "fclose",		  "PROC:      ",  "fclose(Stream) : void",	  "not available"							  ]
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",	  "not available"							  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",	  "not available"							  ]
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",	  "not available"							  ]
+[ "getProfilerCount",	  "COMMAND:   ",  "getProfilerCount() : BAT[str,int]",	  "Get a copy of the profiler count summary table"			  ]
+[ "getProfilerTicks",	  "COMMAND:   ",  "getProfilerTicks() : BAT[str,lng]",	  "Get a copy of the profiler ticks summary table"			  ]
+[ "profile",		  "PROC:      ",  "profile() : int",			  "not available"							  ]
+[ "resetProfiler",	  "COMMAND:   ",  "resetProfiler() : void",		  "Set all counters to zero again"					  ]
 [ "setFilter",		  "COMMAND:   ",  "setFilter(str, str) : int",	  "Set the profile filter strings"	  ]
+[ "startProfiler",	  "COMMAND:   ",  "startProfiler() : void",		  "Collect command and proc counts"					  ]
 [ "startProfiler",	  "COMMAND:   ",  "startProfiler(Stream) : int",  "Start the event profiling stream; output is sent to Stream output"	  ]
-[ "startProfiler",	  "PROC:      ",  "startProfiler() : int",	  "Start the event profiling stream; output is sent to stdout"		  ]
+[ "startProfiler",	  "COMMAND:   ",  "startProfiler(str) : int",		  "Start the event profiling stream; output is sent to fname"		  ]
 [ "stopProfiler",	  "COMMAND:   ",  "stopProfiler() : int",	  "Stop the event profiling stream"	  ]
 [ "test_streams",	  "PROC:      ",  "test_streams() : void",	  "not available"							  ]
 
