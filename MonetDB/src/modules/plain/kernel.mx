@@ -666,10 +666,11 @@ int CMDfork(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
 
 	@:builtin_args(1)@;
-	if (monet_singlethreaded) {
-		GDKerror("CMDfork: cannot execute in -single mode.\n");
+	if (monet_embedded  > 1) {
+		GDKerror("CMDfork: cannot execute twice in -embedded mode.\n");
 		return -1;
 	} 
+	if( monet_embedded==1 ) monet_embedded++;
 @-
 Create a shadow client. This is necessary in order not to mangle
 cntxt record administration between running jobs. They need to belong
@@ -705,6 +706,10 @@ enough threads to satisfy the client access [TODO]
 int CMDthreadcnt(Cntxt stk, YYSTREE lt, ValPtr res){
 	int *i;
 
+	if (monet_embedded > 1 ) {
+		GDKerror("CMDfork: cannot execute in -embedded mode.\n");
+		return -1;
+	} 
 	@:builtin_args(1)@;
 	@:builtin_operand(0, TYPE_int, i)@
 	res->vtype = TYPE_int;
@@ -867,6 +872,8 @@ int CMDstop(Cntxt stk, YYSTREE lt, ValPtr res){
 
 @+ Session control
 The quit command terminates a session of a single user. 
+If we are running in embedded mode we may accept a new
+client again.
 @c
 int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){ 
 	Request q, r; 

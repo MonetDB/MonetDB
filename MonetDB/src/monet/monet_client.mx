@@ -221,10 +221,11 @@ void scheduleClient(Client c)
 	if (c != monet_clients || monet_daemon != 1) {
 		QMADD(req, c->stk, c->mil_accept, "readCmd;");
 	} 
-	if (!req){
+	if( req) 
+		putRequest(req);
+	else
+	if( ! monet_dbinit )
 		GDKfatal("scheduleClient: Daemon mode without startup script\n");
-	}
-	putRequest(req);
 }
 
 void rescheduleClient(Client c)
@@ -441,6 +442,8 @@ void killClient(Client c, int thread)
 			THRdel(t);
 	        	MT_kill_thread(victim);
 			MT_sleep_ms(1000); /* why is this needed, isn't MTsafe*/
+			if( monet_embedded >1 )
+				monet_embedded--;
 			monetFork();
 		}
 	    	rmRequest(q);
@@ -725,6 +728,7 @@ int serveClient(Cntxt stk, YYSTREE lt, ValPtr res)
 	if (readClient(c)) {
 		parseClient(c, TRUE);
 	} else {
+		if( monet_embedded >1) monet_embedded=1;
 		Request q = thisRequest();
 		q->ev_kill = c->stk + 1;
 	}

@@ -365,6 +365,12 @@ Get the new information for the server socket and start listening.
 				stream_destroy(fdin);
 				continue;
 			}
+			/* in embedded mode we allow just one client */
+			if( monet_embedded > 1 ){
+				stream_close(fdin);
+				stream_destroy(fdin);
+				continue;
+			}
 			*user=0;
                         /* printf("mapi:Client accepted %s\n", name);fflush(stdout);*/
                         s= strrchr(name,':');

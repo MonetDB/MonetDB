@@ -400,7 +400,7 @@ stream_close(stream *s)
 #ifdef STREAM_DEBUG
 	printf("close %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	(*s->close)(s);
+	if( s ) (*s->close)(s);
 }
 
 void
@@ -409,12 +409,13 @@ stream_destroy(stream *s)
 #ifdef STREAM_DEBUG
 	printf("destroy %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	(*s->destroy)(s);
+	if( s ) (*s->destroy)(s);
 }
 
 char *
 stream_error(stream *s)
 {
+	if(s == 0) return "Connection terminated";
 	return (*s->error)(s);
 }
 
@@ -433,24 +434,28 @@ stream_flush(stream *s)
 char *
 stream_name(stream *s)
 {
+	if(s == 0) return "Connection terminated";
 	return s->name;
 }
 
 int
 stream_errnr(stream *s)
 {
+	if(s == 0) return READ_ERROR;
 	return s->errnr;
 }
 
 int
 stream_type(stream *s)
 {
+	if(s == 0) return 0;
 	return s->type;
 }
 
 int
 stream_byteorder(stream *s)
 {
+	if(s == 0) return 0;
 	return s->byteorder;
 }
 

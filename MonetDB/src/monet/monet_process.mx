@@ -78,17 +78,15 @@ The single threaded code is large copied from @%monetInterpreter@.
 int monet_threads = 0;
 
 void monetSingle(int status){
-	ValRecord res;
 	Thread t = THRget(THRgettid());
 
-        res.vtype= TYPE_void;
-        res.val.ival = 0;
-        monet_threads++;
-	while (status == 0 && QMopen() ) {
-		PARDEBUG THRprintf(GDKerr, "monetSingle(%d)\n", status);
-		PARDEBUG QMprint();
-		status = handleRequest(t, getRequest(0), &res);
-	}
+	(void) status;
+	if( t == 0) return;
+	monet_threads++;
+	PARDEBUG THRprintf(GDKerr, "monetInterpreter()\n" );
+
+	doRequest(t,0);
+	monet_threads--;
        	PARDEBUG THRprintf(GDKerr, "exit\n");
 }
 
@@ -137,27 +135,34 @@ int monetSetChannel(Thread t, stream* in, stream* out){
 
 
 @-
-New interpreters threads are added here. The instruction is ignored
-when the system is supposed to run within one thread.
+New interpreters threads are added here. 
+If the system is supposed to run with a single interpreter thread
+we simply ignore all subsequent requests.
 @c
 MT_Id monetFork(void) {
 	MT_Id p = 0;
+	int status = 0;
 
-	if (!monet_singlethreaded) {
-		int status = 0;
-		MT_set_lock(monet_critical, "monetFork");
-		/* exclusive access to monet_forksync barrier
-	 	 * and monet_threads counter. */
-		if (MT_create_thread(&p, monetInterpreter, &status) != 0) {
-			GDKsyserror("monetFork:failed\n");
+	if( monet_embedded ){
+		/* allow for console and one remote client */
+		if( monet_embedded > 1 ) {
 			p = ~ (MT_Id) 0;
-		} else {
-			MT_down_sema(monet_forksync, "monetFork");
-			if (status)
-				p = ~ (MT_Id) 0;
+			return p;
 		}
-		MT_unset_lock(monet_critical, "monetFork");
+		monet_embedded++;
 	}
+	MT_set_lock(monet_critical, "monetFork");
+	/* exclusive access to monet_forksync barrier
+	 * and monet_threads counter. */
+	if (MT_create_thread(&p, monetInterpreter, &status) != 0) {
+		GDKsyserror("monetFork:failed\n");
+		p = ~ (MT_Id) 0;
+	} else {
+		MT_down_sema(monet_forksync, "monetFork");
+		if (status)
+			p = ~ (MT_Id) 0;
+	}
+	MT_unset_lock(monet_critical, "monetFork");
 	return p;
 }
 

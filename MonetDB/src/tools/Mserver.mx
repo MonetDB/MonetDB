@@ -244,6 +244,10 @@ static Client Monet_init( opt *set, int setlen )
 	if (GDKgetenv_isyes("monet_daemon")){	
 		monet_daemon=1;
 	}
+	if (GDKgetenv_isyes("monet_embedded")){	
+		monet_embedded=1;
+		monet_daemon=1;
+	}
 
 	return monet_init();
 }
@@ -421,7 +425,10 @@ Execute scripts.
 thread management.
 @C
 	scheduleClient(c);
-	monetInterpreter((void*)&status);
+	if( monet_embedded)
+		monetSingle(0);
+	else 
+		monetInterpreter((void*)&status);
 @-
 At the end of a multi-threaded session we should wait
 for all processes to terminate properly.

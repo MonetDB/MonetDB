@@ -1,0 +1,40 @@
+<h1> Embedded MonetDB </h1>
+<p>
+The Embedded MonetDB version is optimized for running on small board computers
+as a database back-end for a single Mapi client.
+Within this context, much of the code to facilitate and protect 
+concurrent use of the kernel can be disabled. For example, locking of critical
+resource is not needed anymore, which results in significant 
+performance improvements.
+</p>
+<p>
+The embedded version can also be used as a Mserver instance
+with a single client. The server should be started as follows:
+<pre>
+ Mserver --dbinit="module(mapi);listen();" --set monet_embedded=yes&
+</pre>
+
+Thereafter a single MapiClient can connect to the server.
+
+</p>
+<p>
+The Embedded MonetDB is made available as a library to be linked 
+with the application code, a C-program. See SQL src/tools/prog.c example.
+</p>
+<p>
+The following MIL commands are disabled or conflict with the 
+embedded processing mode
+<ol>
+<li> fork, to spawn a new process thread </li>
+<li> threadcnt, in- (de-)creasing the number of threads </li>
+</ol>
+</p>
+<h3> Rationale</h3>
+<p>
+We can not support multiple MAPI connections to the embedded kernel, 
+because each connection would lead to a thread awaiting input.
+Evidently, both threads may receive MIL requests, which should be
+synchronized. Although each thread could be given exclusive access, such
+a situation quickly leads to hard to detect raise conditions and
+deadlocks in the applications.
+</p>

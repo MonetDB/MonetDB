@@ -49,6 +49,7 @@ monet_welcome=yes		#Version and copyright information
 monet_nostalgic=no		#set to yes if you don't want to type () after each operator
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
 monet_daemon=no			# default yes
+monet_embedded=no		# yes means runs on SBC, implies daemon=yes
 
 #monet_daemon =no		(yes/no) console (only Mclient)
 #monet_prompt=>			the MIL prompt character

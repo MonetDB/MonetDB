@@ -296,6 +296,7 @@ m_export int 		monet_nostalgic;	/* do not require () on empty parameters */
 m_export int		monet_listing;		/* echo input */
 m_export int		monet_daemon;		/* set server console is deaf */
 m_export int		monet_singlethreaded;	/* in singlethreaded mode? */
+m_export int		monet_embedded;		/* allow just one client */
 m_export str		*monet_script; 		/* batch of requests */
 m_export str		monet_dbinit; 		/* initialization statement */
 m_export str		monet_general ;
@@ -330,6 +331,7 @@ int 		monet_running = 0;
 char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
 int             monet_listing=0, monet_daemon=0;
 int             monet_singlethreaded=0;
+int		monet_embedded=0;
 str             *monet_script = NULL;
 str		monet_dbinit = NULL; 		
 str		monet_general =0;
