@@ -99,7 +99,7 @@ def am_extra_dist(fd, var, values, am ):
 def am_extra_dist_dir(fd, var, values, am ):
     fd.write("dist-hook:\n")
     for i in values:
-        fd.write("\tmkdir $(distdir)/%s\n" % (i))
+        fd.write("\tmkdir -p $(distdir)/%s\n" % (i))
         fd.write("\tcp -R $(srcdir)/%s/[^C]* $(distdir)/%s\n" % (i,i))
 
 def am_extra_headers(fd, var, values, am ):
