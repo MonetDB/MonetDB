@@ -668,11 +668,10 @@ int strIconv( str *res, str org, str f, str t)
 int strChrAt( chr *res, str val, int *at ){
 	int v;
 	strWChrAt(&v, val, at);
-	if (v < 0 || v > 255) {
+	if (0 <= v && v <= 127)
+		*res = (chr) v;
+	else
 		*res = chr_nil;
-	} else {
-		*res = (chr) (v & 0xFF); 
-	}
 	return GDK_SUCCEED;
 }
 
