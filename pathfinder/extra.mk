@@ -47,7 +47,7 @@
 
 %.c : %.brg
 	$(RM) -f $@
-	$(top_srcdir)/burg/burg -I -p PF$* $< -o $@
+	$(top_builddir)/burg/burg -I -p PF$* $< -o $@
 	chmod =r $@
 
 #
