@@ -231,11 +231,13 @@ thread management.
 First wait until all threads are started
 @C
 
+/*
 	if (monet_singlethreaded == 0) {
 	    do {
 		sleep(1);
 	    } while( GDKnrofthreads <= base_nr_threads);
 	}
+*/
 @-
 At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
