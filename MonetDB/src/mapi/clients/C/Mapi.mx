@@ -2006,7 +2006,7 @@ some care not overfloating the space allocated.
 #define checkSpace(len)						\
 	do {							\
 		/* note: k==strlen(hdl->query) */		\
-		if( k+len >= lim){				\
+		if (k+len >= lim) {				\
 			lim = k + len + MAPIBLKSIZE;		\
 			hdl->query= realloc(hdl->query, lim);	\
 			assert(hdl->query);			\
@@ -2309,8 +2309,9 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 }
 
 MapiHdl
-mapi_query_prep(Mapi mid) 
+mapi_query_prep(Mapi mid)
 {
+	mapi_check0(mid, "mapi_query_prep");
 	if (mid->languageId == LANG_SQL) {
 		/* indicate to server this is a SQL command */
 		stream_write(mid->to, "S", 1, 1);
@@ -2319,38 +2320,34 @@ mapi_query_prep(Mapi mid)
 }
 
 MapiMsg
-mapi_query_part(MapiHdl hdl, const char *query, size_t size )
+mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 {
 	Mapi mid;
 
-	mapi_hdl_check(hdl, "mapi_execute");
+	mapi_hdl_check(hdl, "mapi_query_part");
 	mid = hdl->mid;
 	if (mid->trace) {
-		printf("mapi_query:" SZFMT ":%s\n", size, query);
+		printf("mapi_query_part:" SZFMT ":%s\n", size, query);
 	}
 	stream_write(mid->to, (char*)query, 1, size);
-	check_stream(mid, mid->to, "write error on stream", "mapi_execute",
+	check_stream(mid, mid->to, "write error on stream", "mapi_query_part",
 		     mid->error);
-
-	check_stream(mid, mid->to, "write error on stream",
-		     "mapi_execute", mid->error);
 	return MOK;
 }
 
 MapiMsg
-mapi_query_done( MapiHdl hdl )
+mapi_query_done(MapiHdl hdl)
 {
 	int ret;
 	Mapi mid;
 
-	mapi_hdl_check(hdl, "mapi_execute");
+	mapi_hdl_check(hdl, "mapi_query_done");
+	mapi_cache_reset(hdl);
 	mid = hdl->mid;
 	stream_flush(mid->to);
-	check_stream(mid, mid->to, "write error on stream",
-		     "mapi_execute", mid->error);
+	check_stream(mid, mid->to, "write error on stream", "mapi_query_done",
+		     mid->error);
 	ret = mid->error;
-	if (ret == MOK)
-		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
 	return ret;
@@ -2838,17 +2835,17 @@ empy the row cache.
 #define handlePart(sz)							\
 	do {								\
 		s= strchr(mid->blk.buf+mid->blk.nxt,PROMPTBEG);		\
-		if( s){							\
+		if (s) {						\
 			ptrdiff_t len = s-mid->blk.buf;			\
 			fwrite(mid->blk.buf+mid->blk.nxt,1,len,fd);	\
 			mid->blk.nxt += len;				\
 			promptMonet(mid);				\
 			return MOK;					\
-		} else if( sz > 0) {					\
+		} else if (sz > 0) {					\
 			fwrite(mid->blk.buf+mid->blk.nxt,1,sz,fd);	\
 			mid->blk.nxt=0;					\
 		}							\
-		if(ferror(fd))						\
+		if (ferror(fd))						\
 			return mapi_setError(mid, "Error writing file",	\
 					     "mapi.response");		\
 	} while (0)
@@ -2995,6 +2992,8 @@ because the client may wish to perform a mapi_fetch_line();
 	if (strcmp("id", tag) == 0) {
 		char *fld;
 
+		/* TODO: need to close old id's if tableid >= 0 */
+
 		if ((fld = mapi_fetch_field(hdl, 0)) != NULL) {
 			hdl->tableid = atoi(fld);
 			if (hdl->mid->trace)
@@ -3025,7 +3024,7 @@ mapi_get_row(MapiHdl hdl)
 
 		switch (reply[0]) {
 		case '#':
-			if (!(mid->languageId >= LANG_SQL && reply[1] == '(')) {
+			if (mid->languageId < LANG_SQL || reply[1] != '(') {
 				mapi_header(hdl, reply);
 				break;
 			}
@@ -3510,8 +3509,9 @@ mapi_fetch_field_array(MapiHdl hdl)
 	int cr;
 
 	mapi_hdl_check0(hdl, "mapi_fetch_field_array");
-	if(hdl->cache.fldcnt == 0){
-		mapi_setError(hdl->mid, "Assertion error", "mapi_fetch_field_array");
+	if (hdl->cache.fldcnt == 0) {
+		mapi_setError(hdl->mid, "Assertion error",
+			      "mapi_fetch_field_array");
 		return 0;
 	}
 	cr = hdl->cache.reader;
@@ -3636,7 +3636,7 @@ mapi_get_monet_versionId(Mapi mid)
 int
 mapi_is_blocked(Mapi mid)
 {
-	mapi_check0(mid, "mapi_isBlocked");
+	mapi_check0(mid, "mapi_is_blocked");
 	return mid->blocked;
 }
 
