@@ -91,6 +91,7 @@ static int TWIG_ID[] = {
     , [c_seqtype]      seqtype    /**< a SequenceType */
     , [c_seqcast]      seqcast    /**< cast along <: */
     , [c_proof]        proof      /**< type checker only: prove <: rel.ship */
+    , [c_stattype]     stattype
 
     , [c_ifthenelse]   ifthenelse /**< if-then-else conditional */
 

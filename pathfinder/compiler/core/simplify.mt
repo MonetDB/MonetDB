@@ -77,6 +77,7 @@ node  var_
       seqtype
       seqcast
       proof
+      stattype
 
       ifthenelse
 
@@ -124,6 +125,7 @@ label Query
       CoreExpr
       BindingExpr
       TypeswitchExpr
+      SequenceType
       SequenceTypeCast
       SubtypingProof
       ConditionalExpr
@@ -232,13 +234,16 @@ BindingExpr:     let (var_, let (var_, CoreExpr, CoreExpr), CoreExpr)
 BindingExpr:     let (var_, CoreExpr, CoreExpr);
 
 TypeswitchExpr:  typesw (Atom,
-                         cases (case_ (seqtype,
+                         cases (case_ (SequenceType,
                                        CoreExpr),
                                 nil),
                          CoreExpr);
 
-SequenceTypeCast: seqcast (seqtype, CoreExpr);
-SubtypingProof:  proof (CoreExpr, seqtype, CoreExpr);
+SequenceType:    seqtype;
+SequenceType:    stattype (CoreExpr);
+
+SequenceTypeCast: seqcast (SequenceType, CoreExpr);
+SubtypingProof:  proof (CoreExpr, SequenceType, CoreExpr);
 
 ConditionalExpr: ifthenelse (Atom, CoreExpr, CoreExpr)
     =

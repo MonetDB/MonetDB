@@ -90,6 +90,7 @@ static int TWIG_ID[] = {
  , [c_seqtype]            seqtype    /**< SequenceType */
  , [c_seqcast]            seqcast    /**< cast along <: */
  , [c_proof]              proof      /**< type checker only: prove <: rel. */
+ , [c_stattype]           stattype
 
  , [c_ifthenelse]         ifthenelse /**< if-then-else conditional */
 
@@ -155,6 +156,7 @@ static int TWIG_ID[] = {
 #undef seqtype    
 #undef seqcast
 #undef proof
+#undef stattype
 #undef upcast           /* FIXME: what is upcast doing here */ 
 #undef downcast         /* FIXME: what is downcast doing here */
 #undef ifthenelse 

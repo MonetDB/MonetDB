@@ -99,6 +99,10 @@ enum PFctype_t {
   , c_seqtype                 /**< a SequenceType */
   , c_seqcast                 /**< cast along <: */
   , c_proof                   /**< typechecker only: prove <: relationship */
+  , c_stattype                /**< static type of expression. Required for
+                                   fs:convert-operand. Will be removed during
+                                   typechecking and replaced by seqtype, as
+                                   soon as types are known. */
 
   , c_ifthenelse              /**< if-then-else conditional */
 
@@ -220,6 +224,7 @@ PFcnode_t *PFcore_str (char *);
 PFcnode_t *PFcore_seqtype (PFty_t);
 PFcnode_t *PFcore_seqcast (PFcnode_t *, PFcnode_t *);
 PFcnode_t *PFcore_proof (PFcnode_t *, PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_stattype (PFcnode_t *);
 PFcnode_t *PFcore_typeswitch (PFcnode_t *, PFcnode_t *, PFcnode_t *);
 PFcnode_t *PFcore_case (PFcnode_t *, PFcnode_t *);
 PFcnode_t *PFcore_cases (PFcnode_t *, PFcnode_t *);
@@ -255,7 +260,8 @@ PFcnode_t *PFcore_apply_ (PFfun_t *, ...);
  * Expansion functions for Calculations
  */
 PFcnode_t *PFcore_fn_data (PFcnode_t *);
-PFcnode_t *PFcore_fs_convert_op (PFcnode_t *, PFty_t);
+PFcnode_t *PFcore_fs_convert_op_by_type (PFcnode_t *, PFty_t);
+PFcnode_t *PFcore_fs_convert_op_by_expr (PFcnode_t *, PFcnode_t *);
 PFcnode_t *PFcore_some (PFcnode_t *, PFcnode_t *, PFcnode_t *);
 
 /**

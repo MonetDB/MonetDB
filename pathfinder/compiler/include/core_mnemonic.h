@@ -103,6 +103,7 @@
 #define seqtype(t)            PFcore_seqtype (t)
 #define seqcast(e1,e2)        PFcore_seqcast ((e1), (e2))
 #define proof(e1,t,e2)        PFcore_proof ((e1), (t), (e2))
+#define stattype(e)           PFcore_stattype (e)
 #define typeswitch(e1,e2,e3)  PFcore_typeswitch ((e1), (e2), (e3))
 #define case_(e1,e2)          PFcore_case ((e1), (e2))
 #define cases(e1,e2)          PFcore_cases ((e1),(e2))
@@ -129,7 +130,9 @@
 #define error(s,...)          PFcore_error ((s), __VA_ARGS__)
 #define error_loc(l,s,...)    PFcore_error_loc ((l), (s), __VA_ARGS__)
                               
-#define fs_convert_op(e,t)    PFcore_fs_convert_op (e,t)
+#define fs_convert_op_by_type(e,t)    PFcore_fs_convert_op_by_type ((e), (t))
+#define fs_convert_op_by_expr(e1,e2)  PFcore_fs_convert_op_by_expr ((e1), (e2))
+
 #define fn_data(e1)           PFcore_fn_data (e1)
 #define some(v,e1,e2)         PFcore_some(v,e1,e2)
        

@@ -101,6 +101,7 @@ node  var_
       seqtype
       seqcast
       proof
+      stattype
 
       ifthenelse
 
@@ -392,6 +393,22 @@ SequenceType:    seqtype
     =
     {
         [[ $$ ]] = ($$)->sem.type;
+    }
+    ;
+
+SequenceType:    stattype (Atom)
+    =
+    {
+        /*
+         * We now know the static type of the argument expression.
+         * We can thus replace the stattype node by a seqtype node
+         * carrying the respective type.
+         * After typechecking there should be no more stattype nodes
+         * left.
+         */
+        PFcnode_t *ret = PFcore_seqtype ( [[ $1$ ]] );
+        ret->type = ret->sem.type;
+        return ret;
     }
     ;
 

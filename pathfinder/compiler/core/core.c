@@ -371,7 +371,7 @@ PFcore_seqtype (PFty_t t)
 PFcnode_t *
 PFcore_seqcast (PFcnode_t *t, PFcnode_t *e)
 {
-    assert (t && t->kind == c_seqtype);
+    assert (t && (t->kind == c_seqtype || t->kind == c_stattype));
 
     return PFcore_wire2 (c_seqcast, t, e);
 }
@@ -394,6 +394,25 @@ PFcore_proof (PFcnode_t *e1, PFcnode_t *t, PFcnode_t *e2)
     assert (t && t->kind == c_seqtype);
 
     return PFcore_wire3 (c_proof, e1, t, e2);
+}
+
+/**
+ * Create a core tree node representing the @b static type of
+ * a given expression @a e. Such a node may be used instead of
+ * a @c seqtype node. As soon as (during typechecking) @a e's
+ * type is known, the node will be replaced by an equivalent
+ * @c seqtype node.
+ *
+ * @param t SequenceType
+ * @param e expression to cast
+ * @return a core tree node representing the cast
+ */
+PFcnode_t *
+PFcore_stattype (PFcnode_t *e)
+{
+    assert (e);
+
+    return PFcore_wire1 (c_stattype, e);
 }
 
 /**
@@ -918,7 +937,7 @@ function_conversion (PFcnode_t *c)
             /* 2. step: cast untypedAtomic to expected type */
             v1 = PFcore_new_var (0);
             result = PFcore_let (PFcore_var (v1),
-                                 PFcore_fs_convert_op 
+                                 PFcore_fs_convert_op_by_type 
                                      (PFcore_fn_data (args->child[0]),
                                       expected),
                                  result);
@@ -1089,18 +1108,25 @@ PFcore_apply_ (PFfun_t *fn, ...)
 }
 
 /**
- * Helper function that expands the formal semantics function fs:convert-operand
- * as a core expression
+ * Worker to implement the formal semantics function fs:convert-operand,
+ * expanded as a core expression.
+ *
+ * @note You should not need to call this function from outside.
+ *       Use one of the two variants PFcore_fs_convert_op_by_type()
+ *       or PFcore_fs_convert_op_by_expr() instead.
+ *
  * @param n The core expression on which the typeswitch is called
- * @param cast_type The type to which n is casted if it is untyped
+ * @param t The type to which n is casted if it is untyped.
+ *          This may be a node either of kind @c seqtype or @c stattype.
  * @return A core expression with the expanded function
  */
-PFcnode_t *
-PFcore_fs_convert_op (PFcnode_t *n, PFty_t cast_type)
+static PFcnode_t *
+PFcore_fs_convert_op (PFcnode_t *n, PFcnode_t *t)
 {
     PFvar_t *v1 = PFcore_new_var (0);
     PFvar_t *v2 = PFcore_new_var (0);
     assert (n /*&& cast_type*/);
+    assert (t && (t->kind == c_seqtype || t->kind == c_stattype));
     
     return PFcore_let 
               (PFcore_var (v1), n,
@@ -1112,16 +1138,53 @@ PFcore_fs_convert_op (PFcnode_t *n, PFty_t cast_type)
                             (PFcore_case 
                                  (PFcore_seqtype 
                                       (PFty_xdt_untypedAtomic ()),
-                       /*return*/ PFcore_seqcast 
-                                      (PFcore_seqtype 
-                                           (cast_type),
-                                       PFcore_var (v2))
+                       /*return*/ PFcore_seqcast (t, PFcore_var (v2))
                                   ),
                              PFcore_nil ()
                              ),
                         PFcore_var (v2))
                    )
                );                        
+}
+
+/**
+ * Represent the formal semantics function fs:convert-operand
+ * as an equivalent core expression. The expression @a e is
+ * casted to the type @a t if it is untyped. In contrast to
+ * the W3C specification this function expects a @b type as
+ * its second argument. If you want an @b expression as the
+ * second argument (as in the specs), use PFcore_fs_convert_op_by_expr()
+ * below.
+ *
+ * @param e The core expression on which the typeswitch is called
+ * @param t The type to which n is casted if it is untyped.
+ * @return A core expression with the expanded function
+ */
+PFcnode_t *
+PFcore_fs_convert_op_by_type (PFcnode_t *e, PFty_t t)
+{
+    return PFcore_fs_convert_op (e, PFcore_seqtype (t));
+}
+
+/**
+ * Represent the formal semantics function fs:convert-operand
+ * as an equivalent core expression. The expression @a e1 is
+ * casted to the type of expression @a e2 if it is untyped.
+ * If you already know the type of @a e2 while writing your
+ * code, please use PFcore_fs_convert_op_by_type() above, as
+ * it makes your code more readable.
+ *
+ * @param e1 The core expression on which the typeswitch is called
+ * @param e2 An expression whose type defines the target type to
+ *           cast to.
+ * @return A core expression with the expanded function
+ *
+ * @see http://www.w3.org/TR/xquery-semantics/#sec_convert_operand
+ */
+PFcnode_t *
+PFcore_fs_convert_op_by_expr (PFcnode_t *e1, PFcnode_t *e2)
+{
+    return PFcore_fs_convert_op (e1, PFcore_stattype (e2));
 }
 
 /**

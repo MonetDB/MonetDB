@@ -88,6 +88,7 @@ char *c_id[]  = {
   , [c_seqtype]             "seqtype"
   , [c_seqcast]             "seqcast"
   , [c_proof]               "proof <:"
+  , [c_stattype]            "stattype"
 
   , [c_ifthenelse]          "if-then-else"
 
