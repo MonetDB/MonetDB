@@ -614,7 +614,11 @@ def ApproveOutput (env, TST) :
         stableOUTPUT = os.path.join(TSTSRCDIR,TST+".stable."+WHAT+SYSTEM)
         if os.path.isfile(testOUTPUT):
 #                       print "Approving "+testOUTPUT+" -> "+stableOUTPUT
-            print "Approving %s -> stable.%s%s" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM)
+            if os.path.isfile(stableOUTPUT):
+                oc = 'overwriting old'
+            else:
+                oc = 'creating new'
+            print "Approving %s -> stable.%s%s  (%s file)" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM, oc)
             f = open(stableOUTPUT, "w")
             for l in fileinput.input(testOUTPUT):
                 if len(l) == 0  or  l[0] != '!':        # or  filter.match(ln):
