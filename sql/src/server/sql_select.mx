@@ -2671,7 +2671,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 					list_destroy(rl);
 					sql_select_cleanup(sql, s, subset, grp);
 					return sql_error( sql, 02, "single value in column expression");
-				} else if (!cs->aggr && subset->nrcols) {
+				} else if (!cs->aggr && nrcols) {
 					stmt *ss = first_subset(subset);
 					cs = stmt_const(ss,stmt_dup(cs));
 					list_append(rl, cs);
