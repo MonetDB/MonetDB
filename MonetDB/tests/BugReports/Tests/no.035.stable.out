@@ -28,7 +28,7 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-monet_envirenment
+monet_environment
 monet_fcn_fcn
 monet_fcn_imp
 monet_fcn_tpe

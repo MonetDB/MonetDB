@@ -237,7 +237,7 @@ Start of MIL script.
 # BAT:	  name			  #
 # (int)	  (str)			  #
 #---------------------------------#
-[ 1,	  "monet_envirenment"	  ]
+[ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_fcn_fcn"	  ]
 [ 3,	  "monet_fcn_imp"	  ]
 [ 4,	  "monet_fcn_tpe"	  ]
@@ -1136,7 +1136,7 @@ Start of MIL script.
 # BAT:	  name			  #
 # (int)	  (str)			  #
 #---------------------------------#
-[ 1,	  "monet_envirenment"	  ]
+[ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_fcn_fcn"	  ]
 [ 3,	  "monet_fcn_imp"	  ]
 [ 4,	  "monet_fcn_tpe"	  ]

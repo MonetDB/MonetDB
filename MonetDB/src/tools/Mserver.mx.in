@@ -278,9 +278,28 @@ static int system_config( opt **Set, int setlen)
 static int builtin_settings(opt **Set)
 {
 	int i = 0;
-	opt *set = (opt*)GDKmalloc(sizeof(opt)*11);
+	opt *set = (opt*)GDKmalloc(sizeof(opt)*15);
 
 	if (!set) return 0;
+
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("gdk_arch");
+	set[i].value = (char*)GDKmalloc(BUFSIZ);
+        snprintf(set[i].value,BUFSIZ, "%dbit%s", sizeof(ptr)*8, monet_arch);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("gdk_version");
+	set[i].value = (char*)GDKstrdup(monet_version);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("monet_cwd");
+	set[i].value = (char*)GDKstrdup(monet_cwd);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("monet_pid");
+	set[i].value = (char*)GDKmalloc(BUFSIZ);
+        snprintf(set[i].value,BUFSIZ, "%d", getpid());
+	i++;
 
 	set[i].kind = opt_builtin;
 	set[i].name = GDKstrdup("prefix");
