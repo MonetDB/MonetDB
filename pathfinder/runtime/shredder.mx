@@ -1155,33 +1155,29 @@ void catchAttributeDef(	void *ctx,
 	}
 }
 
-void handleExtDtd(shredCtxStruct* shredCtx, xmlDtdPtr dtd) {
-	(void)shredCtx;
-	xmlHashTablePtr tab = (xmlHashTablePtr)dtd->attributes;
-	stream_printf(GDKout,"Handling DTD type=%d, name= %s\n", dtd->type, dtd->name);
-	if ( tab )
-		stream_printf(GDKout,"Handling DTD #attr=%d\n", xmlHashSize(tab) );
+int handleExternalSubset(shredCtxStruct* shredCtx, xmlDtdPtr dtd) {
 	struct _xmlNode *p = dtd->children;
 	while( p ) {
-		stream_printf(GDKout,"DTD child type=%d, name= %s\n", p->type, p->name);
-		struct _xmlNode *q = p->children;
-		while( q ) {
-			stream_printf(GDKout,"	p-child type=%d, name= %s\n", q->type, q->name);
-			q = q->next;
-		}
-		p = p->next;
-	}
+	   if ( p->type == XML_ATTRIBUTE_DECL ) {
+	   	xmlAttributePtr ap = (xmlAttributePtr)p;
 
-	xmlNode* elem = (xmlNode*)xmlGetDtdElementDesc(dtd, "edge");
-	xmlAttributeTablePtr ap = (xmlAttributeTablePtr)dtd->attributes; 
-	if ( ap )
-		stream_printf(GDKout,"Handling DTD ###attr=%d\n", ap );
-   	while (elem != NULL)
-        {
-            printf("%s\n", elem->name);
-	    elem = elem->next;
+		switch( ap->atype ) {
+		 case XML_ATTRIBUTE_ID:
+		 case XML_ATTRIBUTE_IDREF:
+		 case XML_ATTRIBUTE_IDREFS:
+		 	/* INCOMPLETE, check if NameSpaces has to be used.
+		 	 * stream_printf(GDKout,"DTD attr: %s:%s in elem: %s, atype=%d\n", 
+			 *	ap->prefix,ap->name, ap->elem, ap->atype);
+			 */
+	 		insertAttrDB(&shredCtx->specAttrDb,(char*)ap->elem,(char*)ap->name,ap->atype);
+			break;
+		 default:
+		 	break; /* ignore */
+	        }
+	    }
+	    p = p->next;
 	}
-
+	return 1;
 }
 
 void catchExternalSubset(
@@ -1189,19 +1185,25 @@ void catchExternalSubset(
 		const xmlChar * name, 
 		const xmlChar * ExternalID, 
 		const xmlChar * SystemID) {
+	(void)name;
+#ifdef ADB_DEBUG
 	stream_printf(GDKout,"catchExternalSubset(ctx,%s,%s,%s)\n",name,ExternalID,SystemID);
+#endif
 	if ( ExternalID || SystemID ) {
-		/* INCOMPLETE, this part now only works with absolute filenames or files
-	 	* located in the current working directory!
-	 	*/
-		/* if ( ! xmlParseDTD(ExternalID,SystemID) ) */
+		/* INCOMPLETE, this part only works with absolute filenames or
+		 * files located in the current working directory! A bit more
+		 * inteligence could be applied here.
+	 	 */
 		xmlDtdPtr dtd;
 
-		if ( ! (dtd=xmlParseDTD(ExternalID,SystemID)) ) {
+		if ( (dtd=xmlParseDTD(ExternalID,SystemID)) ) {
+			if ( !handleExternalSubset(SHREDCTX(ctx),dtd) )
+			    stream_printf(GDKerr,"WARNING: xmlParseDTD(\"%s\") SUBSET HANDLING FAILED, NO ID/IDREF QUERIES\n",SystemID);
+			xmlFreeDtd(dtd);
+		} else {
 			stream_printf(GDKerr,"WARNING: xmlParseDTD(\"%s\") FAILED, NO ID/IDREF QUERIES\n",SystemID);
 			stream_printf(GDKerr,"NOTE   : maybe using absolute filenames works, sorry!\n");
-		} else
-			handleExtDtd(SHREDCTX(ctx),dtd);
+		}
 	}
 }
 
@@ -1235,7 +1237,7 @@ xmlSAXHandler shredder = {
   , .warning               = 0
   , .fatalError            = 0
   , .getParameterEntity    = 0
-  /* , .externalSubset     = catchExternalSubset catch this 1 and process */
+  , .externalSubset        = catchExternalSubset /* catch this 1 and process */
   , .initialized           = 0
 };
 
@@ -1275,27 +1277,29 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile)
 
     /*
      * Attempt to make parser read an external Subset if defined. This does not
-     * have any effect! Reason not known!
+     * have any effect! Reason not known! Now use catchExternalSubset() callback
+     * in shredder to do this by hand.
      */
     /* if ( xmlCtxtUseOptions(xmlCtx,XML_PARSE_DTDLOAD) )
      *	stream_printf(GDKerr,"WARNING: XML_PARSE_DTDLOAD option failed.\n");
      */
-    /* stream_printf(GDKerr,"** xmlCtx->loadsubset = %d\n",xmlCtx->loadsubset); */
-    xmlLoadExtDtdDefaultValue = XML_DETECT_IDS;
-    xmlCtx->loadsubset = 1;
+    /* another feeble attempt to automate external subset loading. Failed too 
+     * xmlLoadExtDtdDefaultValue = XML_DETECT_IDS;
+     * xmlCtx->loadsubset = 1;
+     */
     
     /* Next statement returns NULL and does not work. Reason not known! */
     /* if (! xmlCtxtReadFile(xmlCtx,xmlFile,0,XML_PARSE_DTDLOAD) )
      	stream_printf(GDKerr,"ERROR: xmlCtxtReadFile()=%d failed.\n",xmlCtx->errNo);
      */
 
+    /* The goog old xmlParseDocument() works without complaining! */
     (void) xmlParseDocument (xmlCtx);
-    /* stream_printf(GDKerr,"** xmlCtx->loadsubset = %d\n",xmlCtx->loadsubset); */
 
     /* free the TEXT buffer */
     free(shredCtx->content_buf);
 
-    /* incomplete, check if something has gone wrong durin shred */
+    /* Check if something has gone wrong durin shred */
     if (! xmlCtx->wellFormed) {
         stream_printf(GDKerr, 
                  "!ERROR: XML input not well-formed.\n");
