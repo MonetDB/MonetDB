@@ -46,10 +46,9 @@ select id, sum(val) AS valsum from nutki group by id having val>1;
 SQL ERROR -1 2: Cannot compare sets with values, probably a aggregate function missing in:
 -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
 select id, sum(val) AS valsum from nutki group by id having val>2;
-
-#    11: 0 -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
-#    12: 1 select id, sum(val) AS valsum from nutki group by id having valsum>3;
-SQL ERROR -1 2: Identifier: valsum unknown in:
+#     8: -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
+#     8: select id, sum(val) AS valsum from nutki group by id having valsum>3;
+SQL ERROR -1 2: Identifier: valsum unknown or ambigious in:
 -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
 select id, sum(val) AS valsum from nutki group by id having valsum>3;
 
