@@ -74,7 +74,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	       "cast(s.\"name\" as varchar) as table_schem, "
 	       "cast(t.\"name\" as varchar) as table_name, "
 	       "cast(kc.\"column\" as varchar) as column_name, "
-	       "cast(k.\"type\" + 1 as smallint) as key_seq, "
+	       "cast(kc.\"nr\" + 1 as smallint) as key_seq, "
 	       "cast(k.\"name\" as varchar) as pk_name "
 	       "from sys.\"schemas\" s, sys.\"tables\" t, "
 	       "sys.\"keys\" k, sys.\"keycolumns\" kc "
