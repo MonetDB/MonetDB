@@ -119,5 +119,8 @@ void log_bat(BAT *b ){
 	    	if (logger_debug)
 			fprintf(stderr, "Logged %ld %d deletes\n", l.id, l.nr );
 	}
+/*
 	BATfakeCommit(b);
+*/
+	BATcommit(b);
 }

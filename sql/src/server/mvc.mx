@@ -389,10 +389,10 @@ static sql_key *load_key(BAT * keys, BUN j, sql_table *t)
 	cols = BATselect(kc_id, (ptr) & nk->id, (ptr) & nk->id);
 	rcols = BATsemijoin(kc_nr, cols);
 	BBPunfix(cols->batCacheid);
-	cols = BATreverse(rcols);
+	cols = BATmirror(rcols);
 	rcols = BATsort(cols);
 	BBPunfix(cols->batCacheid);
-	cols = BATreverse(rcols);
+	cols = BATmirror(rcols);
 
 	ccnt = BATcount(cols);
 	if (ccnt) {
@@ -463,10 +463,10 @@ static sql_table *load_table(BAT * tables, BUN j)
 	cols = BATselect(sql_column_table, (ptr) & t->id, (ptr) & t->id);
 	rcols = BATsemijoin(sql_column_number, cols);
 	BBPunfix(cols->batCacheid);
-	cols = BATreverse(rcols);
+	cols = BATmirror(rcols);
 	rcols = BATsort(cols);
 	BBPunfix(cols->batCacheid);
-	cols = BATreverse(rcols);
+	cols = BATmirror(rcols);
 
 	if (!t->view) {
 		BATloop (cols,p,q)
@@ -2046,7 +2046,7 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 		}
 	}
 	inss = ASCIIinput( nmes, seps, tpes, s, sz);
-	bns = BATjoin(BATreverse(bats),nmes);
+	bns = BATjoin(BATmirror(bats),nmes);
 	rbats = BATjoin(bns,inss);
 
 	
