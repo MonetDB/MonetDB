@@ -1090,7 +1090,7 @@ static int _ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
 BAT *mvc_import_table( mvc *m, bstream *bs, char *tname, 
 		char *sep, char *rsep, int sz)
 {
-	int i = 0, cnt = -1;
+	int i = 0;
 	sql_trans *tr = m->trans;
 	sql_table *t = mvc_bind_table(m, tr->schema, tname);
 	node *n;
@@ -1138,7 +1138,7 @@ BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
 			}
 		}
         	if (ASCIIcreate_bats( &as ) >= 0){
-                	if ((cnt = ASCIIload_file( &as, bs, out ))>=0)
+                	if (ASCIIload_file( &as, bs, out )>=0)
                         	bats = ASCIIcollect_bats( &as );
         	}
         	ASCIIdestroy_format( &as );
