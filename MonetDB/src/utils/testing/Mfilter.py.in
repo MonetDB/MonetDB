@@ -43,6 +43,9 @@ def mFilter (FILE, IGNORE) :
 			  + "^Mcreatedb: using default dbdir "				+ "|"	\
 			  + "^Mcreatedb: calling .Mserver .*-db .* for the first time..$"	+ "|"	\
 			  + "^Mcreatedb: database .* has been initialized succesfully!$"+ "|"	\
+			  + "^module\(mprof\);$"					+ "|"	\
+			  + "^pm([BE]\(\"[a-zA-Z0-9_]+[0-9]\"\)|Summary\(\));$"		+ "|"	\
+			  + "^printf\(\"#~BeginProfilingOutput~#\\\\n\"\);$"		+ "|"	\
 			  + "^connection= .*:[0-9]*$"					+ "|"	\
 			  + "^Connecting to server: localhost:[0-9]*$"			+ "|"	\
 			  + "^server listening on port [0-9]*$"				) ,	\
@@ -59,7 +62,7 @@ def mFilter (FILE, IGNORE) :
 	il = iw = ic = al = aw = ac = 0
 	for iline in fileinput.input(FILE):
 		oline = xline = ""
-		if iline == "#~BeginVariableOutput~#\n":
+		if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
 			ig = 1
 			n = 0
 		if ig  and  ( len(iline) == 0  or  iline[0] != "!" ):
@@ -89,6 +92,8 @@ def mFilter (FILE, IGNORE) :
 		if iline == "#~EndVariableOutput~#\n":
 			ig = 0
 			xline = "~ " + str(n) + " ~\n"
+		if iline == "#~EndProfilingOutput~#\n":
+			ig = 0
 		for ln in oline, xline:
 			if len(ln):
 				w = len(string.split(ln))

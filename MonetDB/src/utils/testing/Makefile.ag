@@ -1,5 +1,6 @@
 
-EXTRA_DIST =  Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in MkillUsers.in Mlimit.c
+EXTRA_DIST =  Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in MkillUsers.in Mlimit.c \
+		monet.Mtest.conf monet.Mprofile.conf prof.py Mprofile-commands.lst
 
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
@@ -12,6 +13,8 @@ bin_Mtimeout = {
 bin_SCRIPTS = Mtest.py Mlog Mfilter.py MkillUsers
 bin_Mapprove.py = bin_Mtest.py
 bin_Mapprove.py.bat = bin_Mtest.py.bat
+bin_Mprofile.py = bin_Mtest.py
+bin_Mprofile.py.bat = bin_Mtest.py.bat
 
 scripts_bat = {
 	DIR = bindir
@@ -20,5 +23,15 @@ scripts_bat = {
 
 scripts_conf = {
 	DIR = pkgdatadir
-	SOURCES = monet.Mtest.conf
+	SOURCES = monet.Mtest.conf monet.Mprofile.conf
+}
+
+scripts_py = {
+	DIR = bindir
+	SOURCES = prof.py
+}
+
+scripts_lst = {
+	DIR = pkgdatadir
+	SOURCES = Mprofile-commands.lst
 }
