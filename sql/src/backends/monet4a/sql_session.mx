@@ -53,7 +53,7 @@ typedef struct backend {
 extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
 extern int mvc_export_result( mvc *c, stream *s, int res_id );
 extern int mvc_export_table( mvc *c, stream *s, int res_id, int offset, int nr);
-extern BAT *mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rsep, int nr);
+extern BAT *mvc_import_table( mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
 
 extern void monet4_freestack( backend_stack stk );
 extern void monet4_freecode( backend_code code, backend_stack stk, int nr );
@@ -211,12 +211,11 @@ void monet4_freecode( backend_code code, backend_stack stk, int nr)
 	}
 }
 
-YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args )
+YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args, int *err )
 {
 	YYSTREE callnode;
 	YYSTREE argtree;
 	node *n;
-	int err = 0;
 	ValRecord v;
 
 	v.vtype = TYPE_void;
@@ -231,9 +230,7 @@ YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args )
 	}
 	yyexpand(callnode, argtree);
 	yyexpand(callnode, yynode(0,TYPE_int));
-	err = interpret( procstk, callnode, &v);
-
-	(void) err;	/* Stefan: unused!? */
+	*err = interpret( procstk, callnode, &v);
 
 	return callnode;
 }
@@ -446,7 +443,7 @@ int sqlexecute(backend * be, stream *out )
 		snprintf( buf, BUFSIZ, "sql%d", q->id);
 
 		c->type = q->type;
-		callnode = monet4_interpret( procstk, buf, c->args);
+		callnode = monet4_interpret( procstk, buf, c->args, &err);
 
 		if (!err){
 			q->code = (backend_code)callnode;
@@ -493,7 +490,7 @@ void sidestepSQL(Cntxt stk, char *cmd){
 
 @c
 int
-sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out, 
+sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, 
 	int trace, int blocked, char *prompt)
 {
 	int go = TRUE;
@@ -501,13 +498,11 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 	backend *sql;
 	Variable v;
 
-	int size, err;
-	char *inbuf = NULL, *start;
-	int inlen;
-	ssize_t len;
+	int err;
 	int promptlength = strlen(prompt);
-	int language;
+	int language = 'S';
 
+	(void)blocked;
         sql = backend_create( trace, m );
 
 	/* add myc and Output, Input to the stack */
@@ -520,7 +515,7 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 	v->binding.val.pval = out;
 
 	v = VARnew(stk, "Input");
-	v->binding.vtype = TYPE_Stream;
+	v->binding.vtype = TYPE_Bstream;
 	v->binding.val.pval = in;
 
 	v = VARnew(stk, "explain");
@@ -538,81 +533,37 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 
 	/*fprintf(stderr,"mapisqlclient:accept queries\n");*/
 	while(go){
-		size = BUFSIZ + 1;
-		err = 0;
-		start = inbuf = NEW_ARRAY(char, size);
-		inlen = 0;
-		if (stream_write(out,prompt,promptlength,1) != 1 ||
-		    stream_flush(out)) {
-			go = FALSE;
-			break;
-		}
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
-		if (stream_read(in, start, 1, 1) != 1) {
-			/*error(out, "!ERROR:Connection terminated");*/
-			break;
+		if (in->pos >= in->len) {
+			if (stream_write(out,prompt,promptlength,1) != 1 ||
+		    	    stream_flush(out)) {
+				go = FALSE;
+				break;
+			}
+			in->eof = 0;
+			if (bstream_next(in) <= 0) {
+				go= FALSE; break;
+			}
+			language = in->buf[in->pos++];
 		}
-		language = *start;
 		if (language != 'S' && language != 'X') {
 			error(out, "!ERROR:Unrecognized language prefix");
 			break;
 		}
-		if( blocked ){
-			int nsize = BUFSIZ;
-			int last;
-			len = bs_read_next(in, start, nsize, &last);
-			while (len >= 0 && !last) {
-				inlen += len;
-				nsize *= 4;
-				size += nsize;
-				inbuf = RENEW_ARRAY(char, inbuf, size); 
-				start = inbuf + inlen;
-				*start = '\0';
-				len = bs_read_next(in, start, nsize, &last);
-			}
-			if( len < 0){
-				/*fprintf(stdout,"mapisqlclient:error 1b\n"); */
-				break;
-			}
-			inlen += len;
-			inbuf[inlen] = '\0';
-		} else { /* line mode */
-			char *s= inbuf;
-			char *lim= inbuf + size;
-			while( (len= stream_read(in,s,1,1))==1 ){
-				if(len<0) {
-					error(out, "!ERROR:Connection terminated");
-					inlen=0;
-					break;
-				}
-				if( *s== '\n'){ s++; break; }
-				s++;
-				if( s+1 ==lim){
-					/* adjust buffer */
-					len= s-inbuf;
-					size += BUFSIZ;
-					inbuf = RENEW_ARRAY(char, inbuf, size); 
-					lim= inbuf+size;
-					s= inbuf+len;
-				}
-			}
-			*s= 0;
-			inlen= s-inbuf;
-		}
-		if (!inlen || inbuf[0] == EOT)
-			break;
-
+		/* remove --mil support, should be replaced with language == 'M'
+		 */
 		if (language == 'X') {
 			int n, id, off, len;
 			int reply_size = 0;
 
-			if (sscanf(inbuf, "reply_size %d", &reply_size) == 1) {
+			if (sscanf(in->buf+in->pos, "reply_size %d", &reply_size) == 1) {
 				Variable rs = 0;
 				if ((rs = VARfind(&stk, "reply_size")) != NULL) 
 					rs->binding.val.ival = reply_size;
-				goto loop_end; /* continue */
+				in->pos = in->len; /* HACK: should use parsed lenght */
+				continue; 
 			}
-			n = sscanf(inbuf, "export %d %d %d", &id, &off, &len);
+			n = sscanf(in->buf+in->pos, "export %d %d %d", &id, &off, &len);
 			if (n == 2 || n == 3) {
 				Variable rs = 0;
 				if ((rs = VARfind(&stk, "reply_size")) != 0)
@@ -620,24 +571,19 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 				else
 					reply_size = 100;
 				mvc_export_table(m, out, id, off, n == 3 ? len : reply_size);
-				goto loop_end; /* continue */
+				in->pos = in->len; /* HACK: should use parsed lenght */
+				continue; 
 			}
-			if (sscanf(inbuf, "close %d", &id) == 1) {
+			if (sscanf(in->buf+in->pos, "close %d", &id) == 1) {
 				res_table *t = find_export_table(m, id);
 				if (t) mvc_clean_result(m, t);
-				goto loop_end; /* continue */
+				in->pos = in->len; /* HACK: should use parsed lenght */
+				continue; 
 			}
 			error(out, "!ERROR:Unrecognized X command");
 			break;
 		}
 
-		m->scanner.buf = inbuf;
-		m->scanner.cur = ' ';
-		/* fprintf(stdout,"mapisqlclient:query:%s\n", m->scanner.buf);*/
-
-		while( m->scanner.buf && *m->scanner.buf && 
-			*m->scanner.buf != EOT ){
-			/*char *ibuf = m->scanner.buf;*/
 @-
 To enable tracing of SQL execution using its MIL code
 requires the same client context. This means that we should
@@ -646,84 +592,52 @@ MIL interpreter. This is accomplished with a prepend of the
 query string with "--mil ", which would be considered comment
 in the standard. 
 @c
-			if(strncmp(m->scanner.buf,"--mil ",6)==0){
-				sidestepSQL(stk,m->scanner.buf+6);
+		err = sqlexecute(sql, out);
+		if (err){ /* output error */
+			char *buf = GDKerrbuf;
+			if (error(out, m->errstr) < 0){
+				go = !go;
 				break;
 			}
-
-			err = sqlexecute(sql, out);
-			if (err){ /* output error */
-				char *buf = GDKerrbuf;
-				if (error(out, m->errstr) < 0){
-					go = !go;
-					break;
-				}
-				if (buf && buf[0] &&
-					(stream_write( out, "\n", 1, 1 ) != 1 ||
-					 stream_write( out, buf, strlen(buf), 1 ) !=1)){
+			if (buf && buf[0] &&
+		 	   (stream_write( out, "\n", 1, 1 ) != 1 ||
+			    stream_write( out, buf, strlen(buf), 1 ) !=1)){
 /*
-					fprintf(stderr,"error length:%d\n", strlen(buf));
-					fprintf(stderr,"mapisqlclient:error 3\n");
+				fprintf(stderr,"error length:%d\n", strlen(buf));
+				fprintf(stderr,"mapisqlclient:error 3\n");
 					fprintf(stderr,"buf:%s\n",buf);
 */
-					go = !go;
-					break;
-				}
-				buf[0] = 0; /* reset error buf */
+				go = !go;
+				break;
+			}
+			/* buf[0] = 0; reset error buf */
 	
 /* ignore echoding of the errorneous query
-				if (stream_write( out, " in:\n", 5, 1) != 1){
-					fprintf(stdout,"mapisqlclient:error 4\n");
-					go= FALSE;
-					break;
-				}
-				if (ibuf != m->scanner.buf)
-					m->scanner.buf[-1] = '\0';
-				while (ibuf[0] == '\n') ibuf++;
-				if( stream_write( out, ibuf, strlen(ibuf), 1) != 1){
-					fprintf(stdout,"mapisqlclient:error 5\n");
-					go= FALSE;
-					break;
-				}
-End of echo */
-				if (stream_flush(out)) {
-					go = !go;
-					break;
-				}
+			if (stream_write( out, " in:\n", 5, 1) != 1){
+				fprintf(stdout,"mapisqlclient:error 4\n");
+				go= FALSE;
+				break;
 			}
+			if (ibuf != m->scanner.buf)
+				m->scanner.buf[-1] = '\0';
+			while (ibuf[0] == '\n') ibuf++;
+			if( stream_write( out, ibuf, strlen(ibuf), 1) != 1){
+				fprintf(stdout,"mapisqlclient:error 5\n");
+				go= FALSE;
+				break;
+			}
+			if (stream_flush(out)) {
+				go = !go;
+				break;
+			}
+End of echo */
 		}
-	  loop_end:
-		if (inbuf) {
-			_DELETE(inbuf);
-			inbuf = NULL;
-		}
-	}
-	if (inbuf) {
-		_DELETE(inbuf);
-		inbuf = NULL;
 	}
 
 	_DELETE(errbuf);
 	GDKsetbuf(NULL);
 	backend_destroy( sql );
 	return GDK_SUCCEED;
-}
-
-int 
-sqlserver(Cntxt stk, YYSTREE lt, ValPtr res)
-{
-	int ret = 0;
-	mvc *m;
-
-	(void)lt; (void)res;
-	m = mvc_create(0, 0, (backend_stack)stk );
-	m->user_id = m->role_id = 0;
-	m->user = _strdup("monetdb");
-	m->trans->schema = mvc_bind_schema(m, "sys");
-
-	ret = sqlclient2(m, stk, GDKin, GDKout, 0, 0, "\001sql>\002\n");
-	mvc_destroy(m);
-	return ret;
 }
 
 int 
@@ -734,7 +648,7 @@ sqlstatement(char *cmd, Cntxt stk )
 	backend *sql;
 	Variable v;
 
-	m = mvc_create(0, 0, (backend_stack)stk );
+	m = mvc_create(0, 0, (backend_stack)stk, NULL, GDKout );
 	m->user_id = m->role_id = 0;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
@@ -779,6 +693,7 @@ mvc_sql(mvc *c, char *cmd )
 	m->cache = 0;
 	m->scanner.buf = cmd;
 	m->scanner.cur = ' ';
+	m->scanner.rs = NULL;
 	m->scanner.key = 0;
 	m->scanner.sql = NEW_ARRAY(char, BUFSIZ);
 	m->scanner.sqlsize = BUFSIZ;
@@ -822,6 +737,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	mvc *m;
 	stream **In, **Out;
 	stream *in, *out;
+	bstream *rs;
 
 	char *prompt= "\001sql>\002\n";
 	Thread sqlthread = THRget(THRgettid());
@@ -894,7 +810,8 @@ The server should emit an identity message, e.g. the Mserver version
 These lines should be eaten away into the prompt is encountered.
 @c
 
-	m = mvc_create(debug, 1, (backend_stack)stk );
+	rs = bstream_create(in, BLOCK);
+	m = mvc_create(debug, 1, (backend_stack)stk, rs, out );
 	schema = mvc_login( m, user, passwd );
 	GDKfree(user);  /* possible leakage */
 	GDKfree(passwd);
@@ -920,12 +837,13 @@ These lines should be eaten away into the prompt is encountered.
 	@:sendProperty("[ \"language\",	\"sql\"	]\n")@
 	stream_flush(out);
 
-	ret = sqlclient2(m, stk, in, out, trace, blocked, prompt );
+	ret = sqlclient2(m, stk, rs, out, trace, blocked, prompt );
 	mvc_destroy(m);
 	/* Make sure that the read- (in-) stream is closed first,
 	 * as the related write- (out-) stream closes the shared
 	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
 	 */
+	bstream_destroy(rs);
 	close_stream(in);
 	close_stream(out);
 	/*fprintf(stderr,"mapisqlclient finished\n");*/
@@ -1046,7 +964,7 @@ ptr *dec_frstr( void *extra, int type, char *s)
 	return NULL;
 }
 
-BAT *mvc_import_table( mvc *m, stream *s, char *tname, 
+BAT *mvc_import_table( mvc *m, bstream *bs, char *tname, 
 		char *sep, char *rsep, int sz)
 {
 	int i = 0, cnt = -1;
@@ -1054,7 +972,6 @@ BAT *mvc_import_table( mvc *m, stream *s, char *tname,
 	sql_table *t = mvc_bind_table(m, tr->schema, tname);
 	node *n;
 	BAT *bats = NULL;
-	bstream *bs = bstream_create(s, 1<<10);
 	ascii as;
         ascii_io *fmt;
 
@@ -1063,8 +980,8 @@ BAT *mvc_import_table( mvc *m, stream *s, char *tname,
 		m->type = -1;
 		return NULL;
 	}
-	if (!s || stream_errnr(s)){
-		GDKerror("stream not open %d\n", stream_errnr(s));
+	if (!bs || stream_errnr(bs->s)){
+		GDKerror("stream not open %d\n", stream_errnr(bs->s));
 		m->type = -1;
 		return  NULL;
 	}
@@ -1099,7 +1016,6 @@ BAT *mvc_import_table( mvc *m, stream *s, char *tname,
         	}
         	ASCIIdestroy_format( &as );
 	}
-	bstream_destroy(bs);
 
 	m->type = Q_UPDATE;
 	m->status = cnt;
@@ -1239,11 +1155,6 @@ int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
 		clean = 1;
 	}
 
-/*
-	stream_writeInt( s, Q_TABLE );
-	stream_writeInt( s, cnt );
-*/
-	
 	if (cnt <= 0){
 		stream_flush(s);
 		return 0;

@@ -39,7 +39,7 @@ module 'sql_server'
 [ "mvc_bind_table(mvc, sql_schema, str) : sql_table"				  ]
 [ "mvc_bind_ubat(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_commit(mvc, int, str) : int"						  ]
-[ "mvc_create( int debug ) : mvc "					  ]
+[ "mvc_create( int debug, Stream rs, Stream ws ) : mvc "		  ]
 [ "mvc_create_column(mvc, sql_table, str, str, int, int) : sql_column"	  ]
 [ "mvc_create_ic(mvc, sql_idx, str) : sql_idx"				  ]
 [ "mvc_create_idx(mvc, sql_table, str, int) : sql_idx"			  ]
@@ -82,7 +82,6 @@ module 'sql_server'
 [ "replace(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
 [ "senddata(Stream) : void"							  ]
 [ "sqlclient( Stream s_in, Stream s_out ) "					  ]
-[ "sqlserver() "							  ]
 
 quit;
 

@@ -458,7 +458,7 @@ int sqlexecute(backend * be, stream *out, int output )
 
 
 int 
-sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out, 
+sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, 
 	int trace, int reply_size)
 {
 	int go = TRUE;
@@ -477,9 +477,11 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 	v->binding.vtype = TYPE_Stream;
 	v->binding.val.pval = out;
 
+/*
 	v = VARnew(stk, "Input");
 	v->binding.vtype = TYPE_Stream;
 	v->binding.val.pval = in;
+*/
 
 	v = VARnew(stk, "explain");
 	v->binding.vtype = TYPE_str;
@@ -495,70 +497,38 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 	GDKsetbuf(errbuf);
 
 	while(go){
-		int nsize = BUFSIZ;
-		int size = BUFSIZ + 1, err = 0;
-		char *inbuf = NEW_ARRAY(char, size ), *start = inbuf;
-		ssize_t inlen = 0, len;
+		int err = sqlexecute(sql, out, 1 );
+		if (in->eof) 
+			in->eof = 0;
+		if (err){ /* output error */
+			char *buf = GDKerrbuf;
 
-		while ((len = stream_read(in, start, 1, nsize)) == nsize){
-			inlen += len;
-			nsize *= 4;
-			size += nsize;
-			inbuf = RENEW_ARRAY(char, inbuf, size); 
-			start = inbuf + size - nsize - 1;
-			*start = '\0';
-		}
-		if (len < 0){
-			_DELETE(inbuf);
-			go = !go;
- 			break;
-		}
-		inlen += len;
-		inbuf[inlen] = '\0';
-
-		if (!inlen || inbuf[0] == EOT) {
-			_DELETE(inbuf);
-			break;
-		}
-
-		m->scanner.buf = inbuf;
-		m->scanner.cur = ' ';
-
-		while( m->scanner.buf && *m->scanner.buf && 
-		       *m->scanner.buf != EOT ){
-			char *ibuf = m->scanner.buf;
-
-			err = sqlexecute(sql, out, 1 );
-			if (err){ /* output error */
-				char *buf = GDKerrbuf;
-
-				if (stream_errnr(out) != 0 ||
-				    !stream_writeInt( out, -1 ) ||
-				    !stream_writeInt( out, err ) ||
-				    stream_write( out, m->errstr, 
-						strlen(m->errstr), 1 ) != 1 ||
-				    (buf && stream_write( out, buf, strlen(buf), 1 ) != 1)){
-					go = !go;
-					break;
-				}
-				buf[0] = 0; /* reset error buf */
-	
-				/* show the buggy query */
-				if ( stream_write( out, " in:\n", 5, 1) != 1){
-					go = !go;
-					break;
-				}
-				if (ibuf != m->scanner.buf)
-					m->scanner.buf[-1] = '\0';
-				while (ibuf[0] == '\n') ibuf++;
-				if ( stream_write( out, ibuf, strlen(ibuf), 1) != 1 ||
-				     stream_flush( out ) < 0 ){
-					go = !go;
-					break;
-				}
+			if (stream_errnr(out) != 0 ||
+			    !stream_writeInt( out, -1 ) ||
+			    !stream_writeInt( out, err ) ||
+			    stream_write( out, m->errstr, 
+					strlen(m->errstr), 1 ) != 1 ||
+			    (buf && stream_write( out, buf, strlen(buf), 1 ) != 1)){
+				go = !go;
+				break;
 			}
+			/* buf[0] = 0; reset error buf */
+	
+			/* show the buggy query 
+			if ( stream_write( out, " in:\n", 5, 1) != 1){
+				go = !go;
+				break;
+			}
+			if (ibuf != m->scanner.buf)
+				m->scanner.buf[-1] = '\0';
+			while (ibuf[0] == '\n') ibuf++;
+			if ( stream_write( out, ibuf, strlen(ibuf), 1) != 1 ||
+			     stream_flush( out ) < 0 ){
+				go = !go;
+				break;
+			}
+			*/
 		}
-		if (inbuf) _DELETE(inbuf);
 	}
 
 	_DELETE(errbuf);
@@ -569,23 +539,6 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 
 
 int 
-sqlserver(Cntxt stk, YYSTREE lt, ValPtr res)
-{
-	int ret = 0;
-	mvc *m;
-
-	(void)lt; (void)res;
-	m = mvc_create(0, 0, (backend_stack)stk );
-	m->user_id = m->role_id = 0;
-	m->user = _strdup("monetdb");
-	m->trans->schema = mvc_bind_schema(m, "sys");
-
-	ret = sqlclient2(m, stk, GDKin, GDKout, 0, -1);
-	mvc_destroy(m);
-	return ret;
-}
-
-int 
 sqlstatement(char *cmd, Cntxt stk )
 {
 	int err = 0;
@@ -593,7 +546,7 @@ sqlstatement(char *cmd, Cntxt stk )
 	backend *sql;
 	Variable v;
 
-	m = mvc_create(0, 0, (backend_stack)stk );
+	m = mvc_create(0, 0, (backend_stack)stk, NULL, GDKout );
 	m->user_id = m->role_id = 0;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
@@ -638,6 +591,7 @@ mvc_sql(mvc *c, char *cmd )
 	m->cache = 0;
 	m->scanner.buf = cmd;
 	m->scanner.cur = ' ';
+	m->scanner.rs = NULL;
 	m->scanner.key = 0;
 	m->scanner.sql = NEW_ARRAY(char, BUFSIZ);
 	m->scanner.sqlsize = BUFSIZ;
@@ -668,6 +622,7 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	mvc *m;
 	stream **In, **Out;
 	stream *in, *out;
+	bstream *rs;
 
   	if (lt->cnt != 2) {
         	return handle_argerror(res, lt->cnt, 2);
@@ -720,7 +675,8 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	} else {
 		return connect_error(in, out);
 	}
-	m = mvc_create(debug, 1, (backend_stack)stk );
+	rs = bstream_create(in, BLOCK);
+	m = mvc_create(debug, 1, (backend_stack)stk, rs, out );
 	schema = mvc_login( m, user, passwd );
 	GDKfree(user);
 	GDKfree(passwd);
@@ -737,7 +693,7 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 		GDKfree(schema);
 	}
 
-	ret = sqlclient2(m, stk, in, out, trace, reply_size);
+	ret = sqlclient2(m, stk, rs, out, trace, reply_size);
 	mvc_destroy(m);
 	/* Make sure that the read- (in-) stream is closed first,
 	 * as the related write- (out-) stream closes the shared

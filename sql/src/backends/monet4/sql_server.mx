@@ -54,16 +54,13 @@ SQL client and the corresponding MIL runtime startup.
 	.BUILTIN sqlclient( Stream s_in, Stream s_out ) = sqlclient;
 		"parse the next sql command and convert this to mil code"
 
-	.BUILTIN sqlserver() = sqlserver;
-		"parse the next sql command and convert this to mil code"
-
 	.BUILTIN mvc_init(int debug) = mvc_init_wrap; 
 		"create the global catalog"
 
 	.BUILTIN quit() = mvc_exit_wrap; 
 		"cleanup the global catalog and quit server"
 
-	.BUILTIN mvc_create( int debug ) : mvc = mvc_create_wrap;
+	.BUILTIN mvc_create( int debug, Stream rs, Stream ws ) : mvc = mvc_create_wrap;
 		"Create multi version catalog"
 
 	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
@@ -320,11 +317,16 @@ int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 int mvc_create_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 { 
 	int *Debug = NULL;
-  	if (lt->cnt != 1) {
-        	return handle_argerror(res, lt->cnt, 1);
+	stream **Rs, **Ws;
+
+  	if (lt->cnt != 3) {
+        	return handle_argerror(res, lt->cnt, 3);
   	}
 	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
-        res->val.pval = (ptr) mvc_create( *Debug, 1, (backend_stack)stk );
+	builtin_operand( stk, lt, 1, (ptr*)&Rs, TYPE_Stream, res);
+	builtin_operand( stk, lt, 2, (ptr*)&Ws, TYPE_Stream, res);
+        res->val.pval = (ptr) mvc_create( *Debug, 1,
+			(backend_stack)stk, bstream_create(*Rs, 1), *Ws );
         res->vtype = TYPE_mvc;
 	return GDK_SUCCEED;
 }

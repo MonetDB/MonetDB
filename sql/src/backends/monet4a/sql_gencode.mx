@@ -949,12 +949,16 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		if (s->op4.stval){
 			int file =  backend_dumpstmt_( s->op4.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ-len, 
-			"var f%d := open_rastream(iconv(s%d, \"UTF-8\", codeset()));\n", file, file);
+			"var f%ds := open_rastream(iconv(s%d, \"UTF-8\", codeset()));\n", file, file);
+			len += snprintf( buf+len, BUFSIZ-len, 
+			"var f%d := bstream_create(f%ds, 1024*1024);\n", file, file);
 			len += snprintf( buf+len, BUFSIZ-len, 
 		    	"var s%d := mvc_import_table( myc, f%d, \"%s\", s%d, s%d, %d);\n",
 			-s->nr, file, tname, sep, rsep, s->flag );
 			len += snprintf( buf+len, BUFSIZ-len, 
-			"stream_close(f%d);\n", file );
+			"bstream_destroy(f%d);\n", file );
+			len += snprintf( buf+len, BUFSIZ-len, 
+			"stream_close(f%ds);\n", file );
 		} else {
 			len += snprintf( buf+len, BUFSIZ-len, 
 		        "var s%d := mvc_import_table( myc, Input, \"%s\", s%d, s%d, %d);\n",
