@@ -102,6 +102,7 @@ mutils_export void mo_free_options( opt *set, int setlen );
 @c
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "monet_options.h"
 
 #ifndef HAVE_GETOPT_LONG
@@ -181,7 +182,11 @@ int mo_config_file(opt **Set, int setlen, char *file )
 	opt *set = *Set;
 
         fd = fopen(file,"r");
-        while(fd!=NULL && fgets(buf,BUFSIZ,fd) != NULL){
+	if (fd == NULL){
+		fprintf(stderr, "Could not open file %s\n", file );
+		return setlen;
+	}
+        while(fgets(buf,BUFSIZ,fd) != NULL){
 		char *s, *t, *val;
 		int quote;
 
@@ -236,10 +241,7 @@ int mo_config_file(opt **Set, int setlen, char *file )
 		*s = 0;
 		setlen++;
         }
-	if (fd == NULL){
-		fprintf(stderr, "Could not open file %s\n", file );
-	}
-        if( fd != NULL) (void) fclose(fd);
+        (void) fclose(fd);
 	*Set = set;
 	return setlen;
 }
@@ -257,7 +259,7 @@ int mo_system_config( opt **Set, int setlen)
 int mo_builtin_settings(opt **Set)
 {
 	int i = 0;
-	opt *set = (opt*)malloc(sizeof(opt)*23);
+	opt *set = (opt*)malloc(sizeof(opt)*23 /*MUST MATCH # OPTIONS BELOW*/);
 
 	if (!set) return 0;
 
