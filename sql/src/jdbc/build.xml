@@ -37,7 +37,7 @@
         <include name="${package}/**/*.class" />
       </fileset>
 	  <manifest>
-	    <attribute name="Main-Class" value="MonetDB" />
+	    <attribute name="Main-Class" value="JdbcClient" />
 	  </manifest>
 	</jar>
   </target>
