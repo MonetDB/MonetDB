@@ -61,7 +61,7 @@ end getLng;	# 5
 #	bDirty:= get(brev,"getDirty","dirty");
 #	bStatus:= get(brev,"getStatus","status");
 #	bKind:= get(brev,"getKind","kind");
-#	bRef:= getInt(brev,"getRefcnt","refcnt");
+#	bRef:= getInt(brev,"getRefCount","refCount");
 #	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
 #end dir;
 function Admin.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
@@ -75,7 +75,7 @@ function Admin.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     bDirty := Admin.get(brev,"getDirty","dirty");	# 8  (bDirty:bat[:str,:int])<-(brev:bat[:str,:int])($18:str)($19:str)
     bStatus := Admin.get(brev,"getStatus","status");	# 9  (bStatus:bat[:str,:int])<-(brev:bat[:str,:int])($21:str)($22:str)
     bKind := Admin.get(brev,"getKind","kind");	# 10  (bKind:bat[:str,:int])<-(brev:bat[:str,:int])($24:str)($25:str)
-    bRef := Admin.getInt(brev,"getRefcnt","refcnt");	# 11  (bRef:bat[:str,:int])<-(brev:bat[:str,:int])($27:str)($28:str)
+    bRef := Admin.getInt(brev,"getRefCount","refCount");	# 11  (bRef:bat[:str,:int])<-(brev:bat[:str,:int])($27:str)($28:str)
     io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	# 12 IOttable ($29:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:any,:any])(bTail:bat[:str,:int])(bCount:bat[:any,:any])(bHeat:bat[:any,:any])(bDirty:bat[:str,:int])(bStatus:bat[:str,:int])(bKind:bat[:str,:int])(bRef:bat[:str,:int])
 end dir;	# 13  
 #
@@ -112,23 +112,23 @@ function Admin.main():int;	# 0  (main:int)
     Admin.dir("simple");	# 7  ($12:void)<-($13:str)
 end main;	# 8  
 [ "Get first directory" ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# bbp	tmp_8			htype	ttype		count	heat	dirty		status	kind		refcnt	  # name
-# int	str			str	str		lng	int	str		str	str		int	  # type
-#-------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "load", "transient",	  3	  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  3	  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  3	  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  36,	  "dirty",	  "load", "transient",	  3	  ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# bbp	tmp_8			htype	ttype		count	heat	dirty		status	kind		refCount		  # name
+# int	str			str	str		lng	int	str		str	str		int		  # type
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "load", "transient",	  3		  ]
+[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  3		  ]
+[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  3		  ]
+[ 4,	  "simplemind",		  "int",  "int",	  0,	  36,	  "dirty",	  "load", "transient",	  3		  ]
 [ "Get second directory" ]
 #-------------------------#
 # h	tmp_25		  # name
 # int	str		  # type
 #-------------------------#
 [ 4,	  "simplemind"	  ]
-#---------------------------------------------------------------------------------------------------------#
-# tmp_25	tmp_28		htype	ttype	count	heat	dirty		status	kind		refcnt	  # name
-# int	str		str	str	lng	int	str		str	str		int	  # type
-#---------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  150,	  "dirty",	  "load", "transient",	  5	  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# tmp_25	tmp_28		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
+# int	str		str	str	lng	int	str		str	str		int		  # type
+#-----------------------------------------------------------------------------------------------------------------#
+[ 4,	  "simplemind",	  "int",  "int",  0,	  150,	  "dirty",	  "load", "transient",	  5		  ]
 >

@@ -1,0 +1,42 @@
+#this test is used to monitor reference count setting
+#create a persistent bat and destroy it in the next session
+function refs():void;
+    g:=bbp.getNames();
+    gr:=bbp.getRefCount();
+    gl:=bbp.getLRefCount();
+    print(g,gr,gl);
+end refs;
+
+b:= new(:int,:int);
+insert(b,23,32);
+setName(b,"tasks");
+refs();
+setPersistent(b);
+refs();
+# it is committed 
+bbp.open();
+t:= bind("tasks");
+refs();
+print(t);
+bat.destroy(t,true);
+refs();
+# the bat is still visible, because the destroy only
+# marks it for deletion at the end of session or
+# when the reference counters drop to zero
+t:= bind("tasks");
+refs();
+print(t);
+# to really remove, we get rid of the current
+# references as well
+bbp.release(t);
+refs();
+print(t);
+# but it is still there and should
+t:=bind("tasks");
+refs();
+print(t);
+#its reference count should be dropped to 1
+c:= getRefCount(t);
+print(c);
+#however, in the next session it has disappeared
+refs();

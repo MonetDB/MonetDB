@@ -68,8 +68,8 @@ end steal;	# 7
 #	i:= getLRefCount(b);
 #	printf("return from function refcount =%d[2]\n",i);
 #
-#	z:= bbp.getRefcnt();
-#	zl:= bbp.getLRefcnt();
+#	z:= bbp.getRefCount();
+#	zl:= bbp.getLRefCount();
 #	zn:= bbp.getNames();
 #	print(zn,z,zl);
 #
@@ -104,8 +104,8 @@ function Admin.main():int;	# 0  (main:int)
     e := Admin.steal(b);	# 28  (e:bat[:int,:str])<-(b:bat[:int,:str])
     i := bbp.getLRefCount(b);	# 29 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("return from function refcount =%d[2]\n",i);	# 30 IOprint_formatted_int ($34:int)<-($35:str)(i:int)
-    z := bbp.getRefcnt();	# 31 CMDbbpRefcnt (z:bat[:int,:int])
-    zl := bbp.getLRefcnt();	# 32 CMDbbpLRefcnt (zl:bat[:int,:int])
+    z := bbp.getRefCount();	# 31 CMDbbpRefCount (z:bat[:int,:int])
+    zl := bbp.getLRefCount();	# 32 CMDbbpLRefCount (zl:bat[:int,:int])
     zn := bbp.getNames();	# 33 CMDbbpNames (zn:bat[:int,:str])
     io.print(zn,z,zl);	# 34 IOtable ($39:int)<-(zn:bat[:int,:str])(z:bat[:int,:int])(zl:bat[:int,:int])
 end main;	# 35  

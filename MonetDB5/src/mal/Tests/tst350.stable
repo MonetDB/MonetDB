@@ -33,7 +33,7 @@
 #	bkind:= bbp.getKind();
 #	bKind:= join(brev,bkind);
 #	setColumn(bKind,"kind");
-#	bref:= bbp.getRefcnt();
+#	bref:= bbp.getRefCount();
 #	bRef:= join(brev,bref);
 #	setColumn(bRef,"refcnt");
 #	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
@@ -63,7 +63,7 @@ function Admin.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     bkind := bbp.getKind();	# 22 CMDbbpKind (bkind:bat[:int,:str])
     bKind := algebra.join(brev,bkind);	# 23 ALGjoin (bKind:bat[:str,:str])<-(brev:bat[:str,:int])(bkind:bat[:int,:str])
     bat.setColumn(bKind,"kind");	# 24 BKCsetColumn ($30:void)<-(bKind:bat[:str,:str])($31:str)
-    bref := bbp.getRefcnt();	# 25 CMDbbpRefcnt (bref:bat[:int,:int])
+    bref := bbp.getRefCount();	# 25 CMDbbpRefCount (bref:bat[:int,:int])
     bRef := algebra.join(brev,bref);	# 26 ALGjoin (bRef:bat[:str,:int])<-(brev:bat[:str,:int])(bref:bat[:int,:int])
     bat.setColumn(bRef,"refcnt");	# 27 BKCsetColumn ($34:void)<-(bRef:bat[:str,:int])($35:str)
     io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	# 28 IOttable ($36:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bHeat:bat[:str,:int])(bDirty:bat[:str,:str])(bStatus:bat[:str,:str])(bKind:bat[:str,:str])(bRef:bat[:str,:int])

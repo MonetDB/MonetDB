@@ -17,8 +17,8 @@
 #c:=multiplex.tactics("+",b,7);
 #c:=multiplex.tactics("+",b,8);
 #print(c);
-#d:= bbp.getRefcnt();
-#dl:=bbp.getLRefcnt();
+#d:= bbp.getRefCount();
+#dl:=bbp.getLRefCount();
 #dn:= bbp.getNames();
 #print(dn,d,dl);
 #
@@ -35,8 +35,8 @@ function Admin.main():int;	# 0  (main:int)
     c := batcalc.+(b,7);	# 9 CMDbatADDcst (c:bat[:int,:int])<-(b:bat[:int,:int])($15:int)
     c := batcalc.+(b,8);	# 10 CMDbatADDcst (c:bat[:int,:int])<-(b:bat[:int,:int])($16:int)
     io.print(c);	# 11 IOprint_val ($17:int)<-(c:bat[:int,:int])
-    d := bbp.getRefcnt();	# 12 CMDbbpRefcnt (d:bat[:int,:int])
-    dl := bbp.getLRefcnt();	# 13 CMDbbpLRefcnt (dl:bat[:int,:int])
+    d := bbp.getRefCount();	# 12 CMDbbpRefCount (d:bat[:int,:int])
+    dl := bbp.getLRefCount();	# 13 CMDbbpLRefCount (dl:bat[:int,:int])
     dn := bbp.getNames();	# 14 CMDbbpNames (dn:bat[:int,:str])
     io.print(dn,d,dl);	# 15 IOtable ($21:int)<-(dn:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
 end main;	# 16  

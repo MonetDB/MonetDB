@@ -10,8 +10,8 @@ c:=multiplex.tactics("+",b,6);
 c:=multiplex.tactics("+",b,7);
 c:=multiplex.tactics("+",b,8);
 print(c);
-d:= bbp.getRefcnt();
-dl:=bbp.getLRefcnt();
+d:= bbp.getRefCount();
+dl:=bbp.getLRefCount();
 dn:= bbp.getNames();
 print(dn,d,dl);
 

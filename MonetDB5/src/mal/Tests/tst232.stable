@@ -38,5 +38,5 @@ refcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1
-after destroy refcount =1
+!ERROR: MALexception:bbp.getBATrefcnt:cannot access bat bid in bbp
 >

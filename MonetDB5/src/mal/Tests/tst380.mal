@@ -36,7 +36,7 @@ function dir(b:bat[:int,:str]):void;
 	bDirty:= get(brev,"getDirty","dirty");
 	bStatus:= get(brev,"getStatus","status");
 	bKind:= get(brev,"getKind","kind");
-	bRef:= getInt(brev,"getRefcnt","refcnt");
+	bRef:= getInt(brev,"getRefCount","refCount");
 	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
 end dir;
 

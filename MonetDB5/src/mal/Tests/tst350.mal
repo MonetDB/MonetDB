@@ -26,7 +26,7 @@ function dir(b:bat[:int,:str]):void;
 	bkind:= bbp.getKind();
 	bKind:= join(brev,bkind);
 	setColumn(bKind,"kind");
-	bref:= bbp.getRefcnt();
+	bref:= bbp.getRefCount();
 	bRef:= join(brev,bref);
 	setColumn(bRef,"refcnt");
 	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);

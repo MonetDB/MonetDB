@@ -53,7 +53,7 @@ end steal;
 	i:= getLRefCount(b);
 	printf("return from function refcount =%d[2]\n",i);
 
-	z:= bbp.getRefcnt();
-	zl:= bbp.getLRefcnt();
+	z:= bbp.getRefCount();
+	zl:= bbp.getLRefCount();
 	zn:= bbp.getNames();
 	print(zn,z,zl);
