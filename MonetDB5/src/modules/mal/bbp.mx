@@ -189,6 +189,9 @@ comment "Map a BAT into its persistency status";
 command getRefCount(b:bat[:any,:any]) :int
 address CMDgetBATrefcnt
 comment "Utility for debugging MAL interpreter";
+command getLRefCount(b:bat[:any,:any]) :int
+address CMDgetBATlrefcnt
+comment "Utility for debugging MAL interpreter";
 @-
 @{
 @+ Implementation section
@@ -723,8 +726,14 @@ str CMDbbpLRefcnt(int *ret){
 }
 str CMDgetBATrefcnt(int *res, int *bid) {
         BAT *b;
-        @:getBATdescriptor(res,bid,b,setSet)@
+        @:getBATdescriptor(res,bid,b,getBATrefcnt)@
         *res = BBP_refs(b->batCacheid);
+        return MAL_SUCCEED;
+}
+str CMDgetBATlrefcnt(int *res, int *bid) {
+        BAT *b;
+        @:getBATdescriptor(res,bid,b,getBATrefcnt)@
+        *res = BBP_lrefs(b->batCacheid);
         return MAL_SUCCEED;
 }
 

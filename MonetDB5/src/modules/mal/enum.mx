@@ -682,7 +682,7 @@ str ENUMsethisto( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid= *(int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
 
-	tname= getTypeName(getArgType(mb,pci,1));
+	tname= getTypeName(xx=getArgType(mb,pci,1));
         b= (BAT*) BBPgetdesc(BBPindex(tname));
         if( b == NULL)
 		return throwMessage("enum.setHisto","cannot access type table");
