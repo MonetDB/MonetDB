@@ -44,6 +44,6 @@ rpm:	MonetDB-SQL.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 
 	rm -rf $(rpmtopdir)/BUILD
