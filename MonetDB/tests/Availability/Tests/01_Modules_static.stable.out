@@ -43,12 +43,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 581 ]
+[ 590 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 581 ]
+[ 590 ]
 
 All:=0;
 
@@ -74,8 +74,8 @@ Static_mods@batloop {
 
 Module: ""
 
-[ 29 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 34 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature												| help																																																																				  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "capacity",	  "PROC:      ",  "capacity(BAT[any,any]) : lng",									  "not available"																																																																		  ]
@@ -103,6 +103,11 @@ Module: ""
 [ "new",	  "PROC:      ",  "new(int, int, lng) : BAT[any,any]",									  "not available"																																																																		  ]
 [ "project",	  "PROC:      ",  "project(BAT[any::1,any]) : BAT[any::1,void]",							  "not available"																																																																		  ]
 [ "save",	  "PROC:      ",  "save(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "not available"																																																																		  ]
+[ "sum",	  "PROC:      ",  "sum(BAT[any,dbl]) : dbl",									  "not available"																																																													  ]
+[ "sum",	  "PROC:      ",  "sum(BAT[any,flt]) : flt",									  "not available"																																																													  ]
+[ "sum",	  "PROC:      ",  "sum(BAT[any,int]) : int",									  "not available"																																																													  ]
+[ "sum",	  "PROC:      ",  "sum(BAT[any,lng]) : lng",									  "not available"																																																													  ]
+[ "sum",	  "PROC:      ",  "sum(BAT[any,sht]) : sht",									  "not available"																																																													  ]
 [ "ttype",	  "PROC:      ",  "ttype(BAT[any,any]) : int",										  "not available"																																																																		  ]
 [ "tunique",	  "PROC:      ",  "tunique(BAT[any,any::1]) : BAT[any::1,void]",							  "not available"																																																																		  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage() : BAT[str,lng]",										  "not available"																																																																		  ]
@@ -110,8 +115,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 73 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 77 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature												| help																																																																				  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "ADDHELP",	  "PROC:      ",  "ADDHELP(str, str, str, str, str) : void",								  "provide helpful info on a command (author, date, help-text)."																																																												  ]
@@ -171,11 +176,15 @@ Module: "algebra"
 [ "slice",	  "COMMAND:   ",  "slice(BAT[any::1,any::2], int, int) : BAT[any::1,any::2]",						  "Return the slice with the BUNs at position x till y."																																																													  ]
 [ "sort",	  "COMMAND:   ",  "sort(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns a sorted copy of a BAT."																																																																  ]
 [ "sort_ht",	  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "sorts a BAT according to its head (primary) and tail values (secondary).             (straight forward hack, not tuned for performance at all, just used for testing.)"																																															  ]
-[ "sum",	  "COMMAND:   ",  "sum(BAT[any,dbl]) : dbl",										  "Gives the sum of all tail values."																																																																  ]
-[ "sum",	  "COMMAND:   ",  "sum(BAT[any,flt]) : flt",										  "Gives the sum of all tail values."																																																																  ]
-[ "sum",	  "COMMAND:   ",  "sum(BAT[any,int]) : int",										  "Gives the sum of all tail values."																																																																  ]
-[ "sum",	  "COMMAND:   ",  "sum(BAT[any,lng]) : lng",										  "Gives the sum of all tail values."																																																																  ]
-[ "sum",	  "COMMAND:   ",  "sum(BAT[any,sht]) : sht",										  "Gives the sum of all tail values."																																																																  ]
+[ "sum_dbl",	  "COMMAND:   ",  "sum_dbl(BAT[any,dbl]) : dbl",									  "Gives the sum of all tail values."																																	  ]
+[ "sum_dbl",	  "COMMAND:   ",  "sum_dbl(BAT[any,flt]) : dbl",									  "Gives the sum of all tail values."																																	  ]
+[ "sum_flt",	  "COMMAND:   ",  "sum_flt(BAT[any,flt]) : flt",									  "Gives the sum of all tail values."																																	  ]
+[ "sum_int",	  "COMMAND:   ",  "sum_int(BAT[any,int]) : int",									  "Gives the sum of all tail values."																																	  ]
+[ "sum_int",	  "COMMAND:   ",  "sum_int(BAT[any,sht]) : int",									  "Gives the sum of all tail values."																																	  ]
+[ "sum_lng",	  "COMMAND:   ",  "sum_lng(BAT[any,int]) : lng",									  "Gives the sum of all tail values."																																	  ]
+[ "sum_lng",	  "COMMAND:   ",  "sum_lng(BAT[any,lng]) : lng",									  "Gives the sum of all tail values."																																	  ]
+[ "sum_lng",	  "COMMAND:   ",  "sum_lng(BAT[any,sht]) : lng",									  "Gives the sum of all tail values."																																	  ]
+[ "sum_sht",	  "COMMAND:   ",  "sum_sht(BAT[any,sht]) : sht",									  "Gives the sum of all tail values."																																	  ]
 [ "sunion",	  "COMMAND:   ",  "sunion(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Returns the union of two BATs; looking at both columns of both BATs. \n Results in all BUNs of 'left' that are  not in 'right', plus all BUNs \n of 'right'. *no* double-elimination is done. If you want this, do: \n 'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'."																																  ]
 [ "sunique",	  "COMMAND:   ",  "sunique(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Select unique tuples from the input BAT. Double elimination is done over \n BUNs as a whole (head and tail). Result is a BAT with real set() semantics."																																																	  ]
 [ "theta",	  "COMMAND:   ",  "theta(BAT[any::2,any::2], BAT[any::1,any::3], BAT[any::1,any::2], BAT[any::2,any::3], int) : void",	  "Theta join, just as simple thetajoin(l,r); the difference\nis that it returns two values, which are added to the first params\n'inner_result' and 'outer_result'; 'inner_result' gets all matching\ninner tuples, 'outer_result' the other two (what would have the\nresult of thetajoin(l,r))."																																  ]
@@ -710,7 +719,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",											  "save all persistent BATs"																																																																	  ]
 
 All.print;
-[ 581 ]
+[ 590 ]
 
 quit;
 

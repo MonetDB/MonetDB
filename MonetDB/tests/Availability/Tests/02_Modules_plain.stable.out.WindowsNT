@@ -128,10 +128,10 @@ Module: "aggr"
 [ "{sum_lng}",	  "COMMAND:   ",  "{sum_lng}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",	  "grouped tail sum"		  ]
 [ "{sum_sht}",	  "COMMAND:   ",  "{sum_sht}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",	  "grouped tail sum"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",		  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,dbl]",		  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,lng]",		  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",		  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",		  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",		  "not available"		  ]
 
 Module: "aggrX3"
 
@@ -179,14 +179,14 @@ Module: "aggrX3"
 [ "{sum_sht}",	  "COMMAND:   ",  "{sum_sht}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,sht]",	  "grouped tail sum on sht"	  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",			  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,dbl], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,dbl]",			  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,lng]",			  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",	  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",			  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,oid], BAT[oid,any]) : BAT[oid,flt]",	  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",			  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",			  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",	  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,int]",			  "not available"		  ]
-[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",			  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,sht]",	  "not available"		  ]
 
 Module: "alarm"
 

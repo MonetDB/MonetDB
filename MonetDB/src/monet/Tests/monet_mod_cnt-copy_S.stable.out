@@ -18,8 +18,8 @@ monet_mod_cnt.print;
 [ 10329@0,	  1		  ]
 [ 10352@0,	  1		  ]
 [ 10422@0,	  1		  ]
-[ 10500@0,	  1		  ]
-[ 10579@0,	  1		  ]
+[ 10509@0,	  1		  ]
+[ 10588@0,	  1		  ]
 monet_mod_cnt.copy.print;
 #-------------------------#
 # BAT:		  tmp_28  #
@@ -30,8 +30,8 @@ monet_mod_cnt.copy.print;
 [ 10329@0,	  1	  ]
 [ 10352@0,	  1	  ]
 [ 10422@0,	  1	  ]
-[ 10500@0,	  1	  ]
-[ 10579@0,	  1	  ]
+[ 10509@0,	  1	  ]
+[ 10588@0,	  1	  ]
 a:=view_bbp_name.reverse.mirror.[bat].[count];
 b:=view_bbp_name.reverse.mirror.[bat].[copy].[count];
 c:=a.[-](b);
@@ -41,17 +41,17 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
 [ "monet_environment",	  24,	  24,		  0	  ]
-[ "monet_fcn_fcn",	  517,	  517,		  0	  ]
-[ "monet_fcn_imp",	  581,	  581,		  0	  ]
-[ "monet_fcn_tpe",	  581,	  581,		  0	  ]
-[ "monet_fcn_mid",	  552,	  552,		  0	  ]
+[ "monet_fcn_fcn",	  521,	  521,		  0	  ]
+[ "monet_fcn_imp",	  590,	  590,		  0	  ]
+[ "monet_fcn_tpe",	  590,	  590,		  0	  ]
+[ "monet_fcn_mid",	  556,	  556,		  0	  ]
 [ "monet_fcn_sig",	  37,	  37,		  0	  ]
-[ "monet_fcn_dsc",	  552,	  552,		  0	  ]
-[ "monet_fcn_aut",	  552,	  552,		  0	  ]
-[ "monet_fcn_dat",	  552,	  552,		  0	  ]
-[ "monet_fcn_nme",	  581,	  581,		  0	  ]
-[ "monet_fcn_pro",	  1452,	  1452,		  0	  ]
-[ "monet_fcn_cnt",	  581,	  581,		  0	  ]
+[ "monet_fcn_dsc",	  556,	  556,		  0	  ]
+[ "monet_fcn_aut",	  556,	  556,		  0	  ]
+[ "monet_fcn_dat",	  556,	  556,		  0	  ]
+[ "monet_fcn_nme",	  590,	  590,		  0	  ]
+[ "monet_fcn_pro",	  1470,	  1470,		  0	  ]
+[ "monet_fcn_cnt",	  590,	  590,		  0	  ]
 [ "monet_mod_nme",	  7,	  7,		  0	  ]
 [ "monet_mod_cnt",	  7,	  7,		  0	  ]
 [ "monet_mod_atm",	  0,	  0,		  0	  ]
@@ -61,7 +61,7 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 [ "monet_mod_use",	  7,	  7,		  0	  ]
 [ "monet_mod_load",	  4,	  4,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
-[ "monet_fcntbl",	  581,	  581,		  0	  ]
+[ "monet_fcntbl",	  590,	  590,		  0	  ]
 [ "monet_acctbl",	  2,	  2,		  0	  ]
 [ "monet_atomtbl",	  13,	  13,		  0	  ]
 [ "monet_unicode_case",	  685,	  685,		  0	  ]
