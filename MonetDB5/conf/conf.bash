@@ -71,12 +71,9 @@ if [ ! -f configure.ag  -a  ! -x configure ] ; then
 fi
 
 # use the current directory's (base)name to guess, 
-# which of monet, sql, xml, acoi, template, ... we are;
-# allow the basename to be suffixed, e.g., by some 
-# version number (`pwd`=="monet_4-3" => wh_t=="monet", 
-# i.e., cut-off from the first non-letter till the end)
+# which of monet, sql, xml, acoi, template, ... we are.
 base="`pwd`"
-wh_t="`basename $base | perl -pe 's|^([a-zA-Z]+)([^a-zA-Z].*)?$|$1|'`"
+wh_t="`basename $base`"
 what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]'`"
 
 if [ "${what}" != "MONETDB" ] ; then
@@ -419,6 +416,10 @@ fi
 if [ "${what}" != "MONETDB" ] ; then
 	# tell configure where to find MonetDB
 	conf_opts="${conf_opts} --with-monet=${MONETDB_PREFIX}"
+	if [ "${what}" != "MONET5"  -a  "$MONET5_PREFIX" ] ; then
+		# tell configure where to find MonetDB5
+		conf_opts="${conf_opts} --with-monet5=${MONET5_PREFIX}"
+	fi
 fi
 
 # prepend target bin-dir to PATH
