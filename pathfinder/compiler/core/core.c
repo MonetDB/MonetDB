@@ -758,6 +758,9 @@ PFcore_function (PFqname_t qn)
 
     PFoops (OOPS_FATAL, "function `%s' not defined",
             PFqname_str (qn));
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 /**

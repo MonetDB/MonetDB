@@ -1607,6 +1607,9 @@ mty2ty (PFmty_simpl_t mty_ty)
     }
 
     PFoops (OOPS_FATAL, "enum value %i not handled in switch", mty_ty);
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 /**
@@ -2126,6 +2129,9 @@ atom2mil (PFcnode_t * c)
     }
 
     PFoops (OOPS_FATAL, "illegal core node type");
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 /**
@@ -2235,6 +2241,9 @@ core2mil (assgn_fn_t assgn_fn, PFvar_t * v, PFcnode_t * c)
     }
 
     PFoops (OOPS_FATAL, "illegal core tree node");
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 /** Map core expression @a c to a MIL program @a m. */

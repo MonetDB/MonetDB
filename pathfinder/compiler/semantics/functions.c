@@ -93,6 +93,9 @@ formal_args (PFpnode_t *n)
                         "illegal node kind (expecting nil/params) "
                         "in %s:formal_args", __FILE__);
     }
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 /**
@@ -119,6 +122,9 @@ actual_args (PFpnode_t *n)
             PFoops_loc (OOPS_FATAL, n->loc,
                         "illegal node kind (expecting nil/args)");
     }
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 

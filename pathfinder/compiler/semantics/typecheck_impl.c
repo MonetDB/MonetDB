@@ -239,6 +239,9 @@ overload (PFqname_t qn, PFcnode_t *args)
             "no variant of function %s accepts the given argument type(s)%s",
             PFqname_str (qn),
             (char *) PFarray_at (args_str, 0));
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 
