@@ -228,7 +228,9 @@ AC_CHECK_HEADER([gc.h],
       dnl If the gc library was not found, clear LIBGC_LDADD.
       AC_CHECK_LIB(gc, GC_malloc,
                    [LIBGC_LDADD="$LIBGC_LDADD -lgc"],
-                   [LIBGC_LDADD=""], [$LIBGC_LDADD])])
+                   [LIBGC_LDADD=""], [$LIBGC_LDADD])],
+    [ LIBGC_LDADD=""])
+
 
 LIBS="$save_LIBS"
 LDFLAGS="$save_LDFLAGS"
