@@ -656,7 +656,7 @@ that for the moment are defined as procs.
             idx := pat.search('%');
             if (idx < 0) {
                 if (pat.length > 0) {
-                    b := [endsWith](pat).[ifthen](b);
+                    b := [endsWith](b,pat).[ifthen](b);
                 } break;
             }
             s := b.[search](pat.string(0, idx)).select(0,int(nil));
