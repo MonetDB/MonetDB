@@ -1248,12 +1248,12 @@ BAT *BATset(BAT *b, int flag) {
 	@1 = STORE_PRIV; action = 2;
     } else @1 = @2.storage;
 @= mmap_read
-    if (@2.base != NULL && @2.storage == STORE_PRIV && @2.filename != NULL) {
-	if (@2.copied) {
-		action = 0;
-	} else {
-		@1 = STORE_MMAP; action = 1;
-	}
+    if (@2.base != NULL && @2.filename != NULL) {
+      str p = strstr(@2.filename, ".priv");
+      if (p || @2.storage == STORE_PRIV) {
+	if (p) *p = 0;
+        @1 = STORE_MMAP; action = 1;
+      }
     } else @1 = @2.storage;
 @c
 BAT *BATsetaccess(BAT *b, int mode) {
@@ -1261,16 +1261,11 @@ BAT *BATsetaccess(BAT *b, int mode) {
 
 	if (b->batRestricted != mode) {
    	    int action=0, m1=0, m2=0, m3=0, m4=0, m5=0;	
-/*
-	    bat bid = ABS(b->batCacheid);
-*/
- 
+	    int dirty = BATdirty(b);
+	
 	    if (VIEWparent(b) && mode != BAT_READ) {
 		VIEWreset(b);
 	    }  
-/*
-	    MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
-*/
 	    if (b->batSharecnt && mode != BAT_READ) {
 	        GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", b->batId, b->batSharecnt);
 	        b = BATsetaccess(batcopy(b,b->htype,b->ttype,TRUE),mode); 
@@ -1297,19 +1292,21 @@ BAT *BATsetaccess(BAT *b, int mode) {
 		    @:mmap_write(m5,b->haccelerator)@
 		}
 	    }
+	    if (action && b->batCopiedtodisk && dirty) {
+	        b->batDirtydesc = FALSE;
+		BBPsave(b); /* make sure any disk images are clean */
+	    }
+	    /* set new access mode */
 	    b->batRestricted = mode;
-/*
-	        MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
-*/
 	    b->batDirtydesc = TRUE;
+
 	    if (action) {
+	  	bat bid = b->batCacheid;
 		BATmmap(b, m1, m2, m3, m4, m5);
-		if (action == 2) {
-			bat bid = b->batCacheid;
-			BBPsave(b);
-			BATfree(b);
-			b = BATload_intern(bid);
-		}
+		BBPsave(b);
+		BATfree(b);
+		BBPuncacheit(bid, TRUE);
+		b = BATload_intern(bid);
 	    }
 	}
 	return b;

@@ -235,7 +235,7 @@ int BATsavedesc(BAT *b, str nme) {
         }
 	/* a saved bat could still be used so reset the delta status */
 	DELTAload(b);
-	return ret;
+	return (ret < 0)?ret:0;
 }
 
 @- BATloaddesc 

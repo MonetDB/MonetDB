@@ -1318,7 +1318,7 @@ static int file_exists(str dir, str name, str ext)
 }
 
 static int heap_move(Heap* hp, str srcdir, str dstdir, str nme, str ext) {
-	if (hp->filename && strstr(hp->filename, ".priv")) {
+	if (hp->storage == STORE_PRIV || (hp->filename && strstr(hp->filename, ".priv"))) {
 		long_str path;
 		struct stat st;
 		GDKfilepath(path, srcdir, nme, ext);

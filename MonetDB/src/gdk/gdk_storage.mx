@@ -275,13 +275,18 @@ at commit-time.
 		}
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
-			if (write(fd, buf, size) != (ssize_t) size) {
-				err = -1;
+			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)! */
+			while(size > 0)  {
+				/* circumvent problems by writing huge buffers in chunks <= 1GB */
+				err = write(fd, buf, MIN(1<<29, size));
+				if (err < 0) {
+					GDKsyserror("GDKsave: error %d on: name=%s, ext=%s, mode=%d\n", 
+							err, nme,ext?ext:"", mode );
+					break;
+				}
+				size -= err;
 			}
-			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
-				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "fwrite(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", 
-				buf, size, fd, err);
+			IODEBUG THRprintf(GDKerr, "fwrite(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", buf, size, fd, err);
 	       	}  else {
 			err = -1;
 		}
@@ -293,8 +298,7 @@ at commit-time.
 	} else if (mode != STORE_MMAP) {
                 char buf[MAXPATHLEN];
 		GDKfilepath(buf,BATDIR,nme,ext);
-		GDKerror("GDKsave: could not open: name=%s, ext=%s, mode %d\n", 
-							nme, ext?ext:"", mode);
+		GDKerror("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext?ext:"", mode);
         }
 	return err;
 }
@@ -457,13 +461,13 @@ implement heap mmap rules. return whether something changed.
 @c
 #define HEAPcurmode(x) ((x)->size?((x)->filename?(x)->storage:STORE_MEM):-1)
 
-static int HEAPcheckmode(Heap *h, char storage, int writeable) {
+static int HEAPcheckmode(Heap *h, char storage, int persistent, int writeable) {
 	if (storage != (char) -1) {	
 		if ((storage&STORE_MMAP) && h->free < GDKvm_minsize()) {
 			h->storage = STORE_MEM;  /* avoid VM memory waste with a lowerbound */
 			return 1;
 		} 
-		if (storage == STORE_MMAP && writeable) {
+		if (storage == STORE_MMAP && persistent && writeable) {
 			h->storage = STORE_PRIV; /* writable mmap needs copy-on-write */
 			return 1;
 		}
@@ -473,6 +477,8 @@ static int HEAPcheckmode(Heap *h, char storage, int writeable) {
 }
 
 static void DESCsetmodes(BAT *b, BAT *img) {
+	int pers = BBP_status(b->batCacheid)&(BBPPERSISTENT|BBPDELETED);
+
 	/* sanity check: if nothing proposed, set proposed modes to current modes */
 	if (b->batMapdirty == 0 || b->batMapbuns == (char) -1) {
 		b->batMapbuns = HEAPcurmode(b->batBuns);
@@ -491,17 +497,17 @@ static void DESCsetmodes(BAT *b, BAT *img) {
 	}
 
 	/* change modes into legal modes */
-	b->batMapdirty |= HEAPcheckmode(img->batBuns, b->batMapbuns, b->batRestricted == BAT_WRITE);
-	b->batMapdirty |= HEAPcheckmode(&img->hheap, b->batMaphheap, b->batRestricted == BAT_WRITE ||
+	b->batMapdirty |= HEAPcheckmode(img->batBuns, b->batMapbuns, pers, b->batRestricted == BAT_WRITE);
+	b->batMapdirty |= HEAPcheckmode(&img->hheap, b->batMaphheap, pers, b->batRestricted == BAT_WRITE ||
 				(b->batRestricted == BAT_APPEND && 
 	  	 		(BATatoms[b->htype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&img->hheap)) && 
 				(ATOMstorage(b->htype) != TYPE_str || GDK_ELIMDOUBLES((&b->hheap)))));
-	b->batMapdirty |= HEAPcheckmode(&img->theap, b->batMaptheap, b->batRestricted == BAT_WRITE ||
+	b->batMapdirty |= HEAPcheckmode(&img->theap, b->batMaptheap, pers, b->batRestricted == BAT_WRITE ||
 				(b->batRestricted == BAT_APPEND && 
 	  	 		(BATatoms[b->ttype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&img->theap)) && 
 				(ATOMstorage(b->ttype) != TYPE_str || GDK_ELIMDOUBLES((&b->theap)))));
-	b->batMapdirty |= HEAPcheckmode(&img->haccelerator, b->batMaphacc, b->batRestricted != BAT_READ);
-	b->batMapdirty |= HEAPcheckmode(&img->taccelerator, b->batMaptacc, b->batRestricted != BAT_READ);
+	b->batMapdirty |= HEAPcheckmode(&img->haccelerator, b->batMaphacc, pers, b->batRestricted != BAT_READ);
+	b->batMapdirty |= HEAPcheckmode(&img->taccelerator, b->batMaptacc, pers, b->batRestricted != BAT_READ);
 }
 
 void DESCclean(BAT* b) {
@@ -515,14 +521,6 @@ void DESCclean(BAT* b) {
 	b->taccdirty = 0;
 }
 
-/* convert heaps mapped into temporary files (MMAP but .priv) that have become read-onoy into normal mapped files */
-static int heap_save(BAT *b, Heap *h, str nme, str ext) {
-	if (b->batCopiedtodisk == 0 && h->storage == STORE_MMAP && b->batRestricted == BAT_READ && h->filename)  {
-		str p = strstr(h->filename, ".priv");
-		if (p) *p = 0;
-	}
-	return HEAPsave(h, nme, ext);
-}
 
 BAT *BATsave(BAT *bd) {
 	int     err = 0, hsaved = 0, tsaved = 0;
@@ -579,15 +577,15 @@ BAT *BATsave(BAT *bd) {
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtybuns) {
-		if (err == 0) err = heap_save(b, b->batBuns, nme, "buns");
+		if (err == 0) err = HEAPsave(b->batBuns, nme, "buns");
 	}
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->hheapdirty)
 	if (b->htype && b->hvarsized)  {
-		if (err == 0) err = heap_save(b, &b->hheap, nme, "hheap");
+		if (err == 0) err = HEAPsave(&b->hheap, nme, "hheap");
 	}
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->theapdirty) 
 	if (b->ttype && b->tvarsized) {
-		if (err == 0) err = heap_save(b, &b->theap, nme, "theap");
+		if (err == 0) err = HEAPsave(&b->theap, nme, "theap");
 	}
 	if (b->haccCopiedtodisk == 0 || b->batDirty || b->haccdirty) 
 	if (b->haccelerator.base) {
@@ -595,7 +593,7 @@ BAT *BATsave(BAT *bd) {
                 if (fcn) {
 		    strcpy(b->haccname, ACCname(b->hacctype));
                     (*fcn)(&b->haccelerator, b);
-                    if (err == 0) err = heap_save(b, &b->haccelerator, nme, "hacc");
+                    if (err == 0) err = HEAPsave(&b->haccelerator, nme, "hacc");
                     if (err == 0) hsaved = TRUE;
                 }
 	}
@@ -605,7 +603,7 @@ BAT *BATsave(BAT *bd) {
                 if (fcn) {
 		    strcpy(b->taccname, ACCname(b->tacctype));
                     (*fcn)(&b->taccelerator, b);
-                    if (err == 0) err = heap_save(b, &b->taccelerator, nme, "tacc");
+                    if (err == 0) err = HEAPsave(&b->taccelerator, nme, "tacc");
                     if (err == 0) tsaved = TRUE;
                 }
 	}

@@ -251,32 +251,29 @@ int HEAPfree(Heap* h) {
                 	int ret = GDKmunmap(h->base, h->maxsize);
                 	if (ret < 0) {
 				GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
+				return -1;
                 	}
 			strcpy(nme, h->filename);
 			ext = decompose_filename(nme);
                 	IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", 
 					(void *) h->base, h->maxsize, ret);
 			if (h->storage == STORE_PRIV) {
+				struct stat st;
 				/* may need to move back the file from X.priv to X */
-				size_t len = strlen(h->filename);
-                		if (len < 5 || strcmp(h->filename+len-5, ".priv")) {
-					GDKerror("HEAPfree: priv-heap has unexpected name %s\n", h->filename);
-				} else {
-					struct stat st;
-                        		strcpy(dst, h->filename);
-                        		dst[len-5] = 0; /* cut off the .priv bit */
+				GDKfilepath(dst, BATDIR, nme, ext);
+				strcat(ext, ".priv");
+				GDKfilepath(path, BATDIR, nme, ext);
 
-					GDKfilepath(path, BATDIR, dst, NULL);
-					/* dst may already exist (a newer version) */
-					if (stat(path, &st)) GDKmove(BATDIR, h->filename, NULL, BATDIR, dst, NULL); 
-
-				}
+				/* dst may already exist (a newer version) */
+				if (stat(dst, &st)) 
+					ret = GDKmove(BATDIR, path, NULL, BATDIR, dst, NULL); 
 			}
-			/* always remove priv files */
-			strcat(ext, ".priv");
-			GDKfilepath(path, BATDIR, nme, ext);
-			ret = unlink(path); 
-			IODEBUG THRprintf(GDKerr, "HEAPfree: unlink %s = %d\n", path, ret);
+			if (ret >= 0 && strstr(h->filename, ".priv")) { 
+				/* remove priv file */
+				GDKfilepath(path, BATDIR, h->filename, NULL);
+				ret = unlink(path); 
+				IODEBUG THRprintf(GDKerr, "HEAPfree: unlink %s = %d\n", path, ret);
+			}
         	} 
         	h->base = NULL;
 	}
@@ -360,7 +357,7 @@ int HEAPsave(Heap* h, str nme, str ext) {
 	if (h->base == NULL) {
 		return -1;
 	} 
-	if (p == NULL || strstr(p, ".priv")) {
+	if (p == NULL || store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM; 
 	} else if (strstr(p, ".Z")) {
