@@ -17,7 +17,7 @@ int main(int argc, char **argv){
 	if(mapi_error(dbh)) die(dbh);
 
 	/* mapi_trace(dbh,1);*/
-	mapi_cache_limit(dbh,2,-1);
+	mapi_cache_limit(dbh,2);
 	if(strcmp(argv[3],"sql")==0){
 		if( mapi_query(dbh,"create table emp(name varchar,age int)")) 
 			die(dbh);
