@@ -130,11 +130,11 @@ ODMG/Java Run-Time System and the Monet Database.
 \end{description}
 
  
-\begin{center}
-{\epsfxsize=0.80\textwidth
-\epsffile{odmg.eps}
-{\em Distributed and heterogeneous language coupling with ODMG}}
-\end{center}
+begin{center}
+%{\epsfxsize=0.80\textwidth
+%\epsffile{odmg.eps}
+%{\em Distributed and heterogeneous language coupling with ODMG}}
+%\end{center}
 
 @- Reference Information
 @T
