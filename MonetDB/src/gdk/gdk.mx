@@ -17,7 +17,7 @@
 
 @f gdk
 @T
-% define titlepage @t The Goblin Database Kernel
+@' define titlepage @t The Goblin Database Kernel
 @v Version 3.05
 @a Martin L. Kersten & Peter Boncz
 
@@ -710,13 +710,7 @@ BUNs (@strong{ Binary UNits}).  The two attributes of a BUN are called
 @strong{ head} (left) and @strong{ tail} (right) in the remainder of this
 document.
 
-@verbatim
-\begin{center}
-{\hspace{10pt}\epsfxsize=0.55\textwidth
-\epsffile{bat1.eps}
-\label{fig1}{\em The BAT}}
-\end{center}
-@end verbatim
+@image{bat1}
 
 The above figure shows what a BAT looks like. It consists of two
 columns, called head and tail, such that we have always binary tuples
@@ -834,12 +828,7 @@ in the same line, we allow @strong{ synchronized BATs} (BATs with identical
 head columns, and marked as such in the @strong{ BAT Alignment} interface) now to
 be clustered horizontally.
 
-\begin{center}
-{\hspace{10pt}\epsfxsize=0.55\textwidth
-\epsffile{bat2.eps}
-
-\label{fig2}@emph{ How the BAT is perceived, and how it is laid out in reality.}}
-\end{center}
+@image{bat2}
 @
 
 @{

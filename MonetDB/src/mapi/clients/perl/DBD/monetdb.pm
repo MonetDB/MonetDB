@@ -212,9 +212,10 @@ sub prepare {
 
 
 sub commit {
-    my $dbh = shift;
+    my($dbh) = @_;
     if ($dbh->FETCH('AutoCommit')) {
-	warn 'Commit ineffective while AutoCommit is on';
+        warn 'Commit ineffective while AutoCommit is on' if $dbh->FETCH('Warn');
+        return 0;
     } else {
         MapiLib::mapi_query($dbh->{monetdb_connection},'commit;');
     }
@@ -223,9 +224,10 @@ sub commit {
 
 
 sub rollback {
-    my $dbh = shift;
+    my($dbh) = @_;
     if ($dbh->FETCH('AutoCommit')) {
-	warn 'Rollback ineffective while AutoCommit is on';
+        warn 'Rollback ineffective while AutoCommit is on' if $dbh->FETCH('Warn');
+        return 0;
     } else {
         MapiLib::mapi_query($dbh->{monetdb_connection}, ($dbh->{monetdb_language} ne 'sql') ? 'abort;' : 'rollback;');
     }

@@ -87,7 +87,7 @@ def runMxTexi(srcdir, base, dstdir, suffix='' ):
     cwd = os.getcwd()
     print cwd, '->', srcdir
     os.chdir(srcdir)
-    cmd = '%s "-R%s" -H1 -i "%s" 2>&1 && texi2html -nomenu -nosec_nav -subdir "%s" "%s"' % (mx, tmpdir, base + '.mx', tmpdir, base + '.texi')
+    cmd = '%s "-R%s" -H1 -i "%s" 2>&1 && cd "%s" && texi2html -nomenu -nosec_nav "%s"' % (mx, tmpdir, base + '.mx', tmpdir, base + '.texi')
     print cmd
     f = os.popen(cmd, 'r')
     dummy = f.read()                    # discard output
