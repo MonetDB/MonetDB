@@ -619,7 +619,7 @@ public class JdbcClient {
 									// find the widths of the columns
 									int[] width = new int[md.getColumnCount()];
 									for (int j = 0; j < md.getColumnCount(); j++) {
-										width[j] = Math.max((md.getColumnDisplaySize(j + 1) == 0 ? 8 : md.getColumnDisplaySize(j + 1)), md.getColumnName(j + 1).length());
+										width[j] = Math.max((md.getColumnDisplaySize(j + 1) == 0 ? 8 : md.getColumnDisplaySize(j + 1)), md.getColumnLabel(j + 1).length());
 									}
 
 									out.print("+");
@@ -629,7 +629,7 @@ public class JdbcClient {
 
 									out.print("|");
 									for (int j = 0; j < width.length; j++) {
-										out.print(" " + md.getColumnName(j + 1) + repeat(' ', width[j] - md.getColumnName(j + 1).length()) +  " |");
+										out.print(" " + md.getColumnLabel(j + 1) + repeat(' ', width[j] - md.getColumnLabel(j + 1).length()) +  " |");
 									}
 									out.println();
 
@@ -1076,12 +1076,12 @@ public class JdbcClient {
 						data = rs.getString(i);
 						if (data != null) {
 							out.print("    ");
-							out.print("<" + rsmd.getColumnName(i));
+							out.print("<" + rsmd.getColumnLabel(i));
 							if (data.length() == 0) {
 								out.println(" />");
 							} else {
 								out.print(">" + data.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
-								out.println("</" + rsmd.getColumnName(i) + ">");
+								out.println("</" + rsmd.getColumnLabel(i) + ">");
 							}
 						}
 					}
