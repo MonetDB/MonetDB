@@ -64,8 +64,8 @@ with a @[<a href="http://www.cwi.nl/~manegold/Calibrator/DB/DB.shtml">database</
   "Frees calibrator allocated resources"
 
 @mil
-PROC calib_init(lng maxrange) : void {
-	return calib_init(0LL, maxrange);
+PROC calib_init(lng max_range) : void {
+	return calib_init(0LL, max_range);
 }
 
 @m
