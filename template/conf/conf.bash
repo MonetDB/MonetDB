@@ -442,7 +442,7 @@ if [ "${os}" = "IRIX64" ] ; then
 		libpath="${MONET_PREFIX}/lib/MonetDB:${libpath}"
 	fi
 fi
-if [ "${os}${COMP}${BITS}${what}" = "SunOSntv64MONET" ] ; then
+if [ "${os}${COMP}${BITS}" = "SunOSntv64" ] ; then
 	# native 64-bit version on SunOS needs this to find libmonet
 	if [ "${what}" = "MONET" ] ; then
 		libpath="${WHAT_PREFIX}/lib:${libpath}"
