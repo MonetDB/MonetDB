@@ -358,7 +358,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		return;
 	case 'm': /* display a module */
 		{
-		str modname, fcnname;
+		str modnme, fcnname;
 		Scope fsym;
 		Symbol fs;
 		int i;
@@ -371,10 +371,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		skipWord(b);
 		skipBlanc(b);
 		if(*b){
-			modname=b;
+			modnme=b;
 			fcnname= strchr(b,'.');
 			if( fcnname == NULL){
-				fsym= findScope(cntxt->nspace,modname);
+				fsym= findScope(cntxt->nspace,modnme);
 				if( fsym==0) {
 					stream_printf(out,"%smodule not found\n",
 							"#mdb ");
@@ -505,7 +505,7 @@ signatures satisfying the pattern.
 @c
 	case 'L': 
 	case 'l': /* list the current code block */
-	{	str modname, fcnname;
+	{	str modnme, fcnname;
 		Scope fsym;
 		Symbol fs;
 		int i;
@@ -513,10 +513,10 @@ signatures satisfying the pattern.
 		listing |= *b=='L'? LIST_MAL_ALL:LIST_MAL_INSTR;
 		skipWord(b);
 		if( *b!= 0){
-			modname=b;
+			modnme=b;
 			fcnname= strchr(b,'.');
 			if( fcnname == NULL){
-				fsym= findScope(cntxt->nspace,modname);
+				fsym= findScope(cntxt->nspace,modnme);
 				if( fsym==0) {
 					stream_printf(out,"%smodule not found\n",
 							"#mdb ");
@@ -533,7 +533,7 @@ signatures satisfying the pattern.
 			} 
 			*fcnname = 0;
 			fcnname ++;
-			fsym= findScope(cntxt->nspace,modname);
+			fsym= findScope(cntxt->nspace,modnme);
 			if( fsym==0) {
 				stream_printf(out,"%smodule not found\n","#mdb ");
 				continue;
@@ -541,7 +541,7 @@ signatures satisfying the pattern.
 			/* display the overloaded symbol definition */
 			if( displayScope(out,fsym,fcnname)==0){
 				stream_printf(out,"%sSymbol '%s.%s' not found\n",
-					"#mdb ",modname,fcnname);
+					"#mdb ",modnme,fcnname);
 			} 
 		} else printFunction(out,mb,listing);
 		continue;

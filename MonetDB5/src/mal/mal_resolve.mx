@@ -104,7 +104,7 @@ import K,L,M. This can be recognized by inspecting the code produced
 
 #include "mal_function.h"
 
-/* #define DEBUG_MAL_RESOLVE*/
+/*#define DEBUG_MAL_RESOLVE 1 */
 #define MAXTYPEVAR	10
 
 mal_export void chkProgram(Scope s, MalBlkPtr mb);
@@ -136,7 +136,7 @@ int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
 #define MAXMALARG 256
 
-str traceFcnName= "____";
+str traceFcnName= "_____";
 int tracefcn;
 int polyVector[MAXTYPEVAR];
 void polyInit(){
@@ -182,15 +182,6 @@ of symbols.
 	if( idcmp(functionName(p),s->name ) ){
 		s= s->peer; continue;
 	}
-#ifdef DEBUG_MAL_RESOLVE
-	if(tracefcn) {
-	stream_printf((GDKout,"-->found a candidate\n");
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-	stream_printf((GDKout,"++> against signature\n");
-	printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
-	stream_printf((GDKout,"\n");
-	}
-#endif
 @-
 Perform a strong type-check on the actual arguments. If it turns
 out to be a polymorphic MAL function, we have to clone it. 
@@ -211,9 +202,31 @@ from Bi (or type(Bi)==type(Xi)).
 	if( ! ( sig->retc == p->retc &&
 	      ( sig->argc== p->argc ||
 	      ( sig->argc<p->argc && sig->varargs))
-	  ) ) { s=s->peer; continue;}
+	  ) ) {
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) {
+	stream_printf(GDKout,"-->resolving\n");
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	stream_printf(GDKout,"-->didn't match candidate\n");
+	printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
+	stream_printf(GDKout,"sig argc %d retc %d p.argc %d p.retc %d\n",
+		sig->argc, sig->retc, p->argc, p->retc);
+	}
+#endif
+		 s=s->peer; continue;
+	}
 	polymorphic = 0;
 	unmatched = 0;
+
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) {
+	stream_printf(GDKout,"-->resolving\n");
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	stream_printf(GDKout,"++> test against signature\n");
+	printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
+	stream_printf(GDKout," %s \n", sig->polymorphic?"polymorphic":"");
+	}
+#endif
 @-
 The simple case could be taken care of separately to speedup processing
 However, it turned out not to make a big difference.
@@ -276,16 +289,17 @@ At a later stage we may automatically insert such coercion requests.
 @c
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
-		 stream_printf((GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
+		 stream_printf(GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
 			moduleName(sig), functionName(sig),
 			unmatched, polymorphic,p==sig);
 		if( polymorphic){
+			int l;
 			for(l=0;l<2*p->argc;l++) 
 			if( polytype[l] != TYPE_any)
-			stream_printf((GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
+			stream_printf(GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
 		}
 		if( unmatched)
-		stream_printf((GDKout,"mismatch test %s poly %s\n",
+		stream_printf(GDKout,"mismatch test %s poly %s\n",
 			getTypeName(getArgType(mb,p,unmatched)),
 			getTypeName(getArgType(s->def,sig,unmatched)));
 	}
@@ -419,7 +433,7 @@ on a user-supplied function [todo].
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-		stream_printf((GDKout,"Finished matching\n");
+		stream_printf(GDKout,"Finished matching\n");
 	}
 #endif
 	return s1;
@@ -457,7 +471,7 @@ int resolveType(int dsttype, int srctype){
 #ifdef DEBUG_MAL_RESOLVE
 	int i1,i2;
 	if( tracefcn){
-		stream_printf((GDKout,"resolveType dst %s (%d) %s(%d)\n",
+		stream_printf(GDKout,"resolveType dst %s (%d) %s(%d)\n",
 			getTypeName(dsttype), dsttype,
 			getTypeName(srctype),srctype);
 	}
@@ -487,7 +501,7 @@ int resolveType(int dsttype, int srctype){
 		if(t3 == -1) goto noResolution;
 #ifdef DEBUG_MAL_RESOLVE
 		if( tracefcn){
-		stream_printf((GDKout,"resolved to bat[%s,%s] bat[%s,%s]->bat[%s:%d,%s:%d]\n",
+		stream_printf(GDKout,"resolved to bat[:%s,:%s] bat[:%s,:%s]->bat[%s:%d,%s:%d]\n",
 			getTypeName(h1),getTypeName(t1),
 			getTypeName(h2),getTypeName(t2),
 			getTypeName(h3),i1,getTypeName(t3),i2
@@ -498,7 +512,7 @@ int resolveType(int dsttype, int srctype){
 	}
 noResolution:
 #ifdef DEBUG_MAL_RESOLVE
-	if(tracefcn) stream_printf((GDKout,"Can not be resolved \n");
+	if(tracefcn) stream_printf(GDKout,"Can not be resolved \n");
 #endif
 	return -1;
 }
@@ -626,8 +640,8 @@ InstrPtr dynamicTypeChecker(Scope scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int i;
 
 #ifdef DEBUG_MAL_RESOLVE
-        stream_printf((GDKout,"Start dynamic type check on:\n");
-        printInstruction(GDKout, mb, altpci,LIST_MAL_ALL);
+        stream_printf(GDKout,"Start dynamic type check on:\n");
+        /*printInstruction(GDKout, mb, altpci,LIST_MAL_ALL);*/
 #endif
 
 	pci = copyInstruction(p);
@@ -652,7 +666,7 @@ InstrPtr dynamicTypeChecker(Scope scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #endif
         typeChecker(scope, mb,pci);
 #ifdef DEBUG_MAL_RESOLVE
-        stream_printf((GDKout,"type checked version:\n");
+        stream_printf(GDKout,"type checked version:\n");
         printInstruction(GDKout, mb, pci,LIST_MAL_ALL);
 #endif
 

@@ -29,10 +29,10 @@ In line with previous versions of Monet it is possible to extend
 the functionalty with user-defined modules. The corresponding code
 is dynamically loaded when the MAL import command is encountered 
 from a specific file-system location.
-The user-defined modules reside in the library  $\ddot$/lib/MonetDB, 
-they are recognized  as lib_$<$modulename$>$.so names.
+The user-defined modules reside in the library  $...$/lib/MonetDB, 
+they are recognized  as lib\_$<$modulename$>$.so names.
 The corresponding signature files are maintained 
-in $\ddot$/etc/$<$modulepath$>$/$<$modulename$>$.mal.
+in $...$/etc/$<$modulepath$>$/$<$modulename$>$.mal.
 
 \begin{verbatim}
 [reminder for later, 
@@ -87,7 +87,7 @@ For the time being we assume that all commands are statically linked.
 /*#define DEBUG_MAL_LINKER  */
 #define MONET64 1
 mal_export MALfcn getAddress(str fcnname);
-mal_export str loadModuleLibrary(str modname);
+mal_export str loadModuleLibrary(str modnme);
 mal_export void unloadModuleLibraries();
 mal_export void initLibraries();
 mal_export int 	isPreloaded(str nme);
@@ -152,7 +152,7 @@ already loaded.
 static str modulesLoaded[128];
 static void *handles[128];
 
-str loadModuleLibrary(str modname){
+str loadModuleLibrary(str modnme){
 	char buf[MAXPATHLEN];
 	char nme[MAXPATHLEN];
 	void *handle = NULL;
@@ -160,20 +160,20 @@ str loadModuleLibrary(str modname){
 	int i = 0, idx;
 
 	for(idx=0;modulesLoaded[idx] && idx<128;idx++)
-		if( strcmp(modulesLoaded[idx],modname)==0) return 0;
+		if( strcmp(modulesLoaded[idx],modnme)==0) return 0;
 	if( idx== 128){
 		GDKfatal("too many modules\n");
 	}
-	strncpy(nme,modname,MAXPATHLEN);
+	strncpy(nme,modnme,MAXPATHLEN);
 	if( (library=strrchr(nme,DIR_SEP))  != NULL){
 		*library=0;
 		library++;
 	} else library= nme;
 
 #ifdef DEBUG_MAL_LINKER
-	stream_printf(GDKout,"load module:path=%s, library=%s\n",library,modname);
+	stream_printf(GDKout,"load module:path=%s, library=%s\n",library,modnme);
 #endif
-	if( modname[0]!='/') {
+	if( modnme[0]!='/') {
 		int i;
 		strncpy(buf,monet_mod_path,MAXPATHLEN);
 		i= strlen(buf);
@@ -220,7 +220,7 @@ str loadModuleLibrary(str modname){
 	for(i=0;modulesLoaded[i] && i<127;i++);
 	if( i==128)
 		GDKerror("loadModule:too many modules loaded\n");
-	else	modulesLoaded[i]= GDKstrdup(modname);
+	else	modulesLoaded[i]= GDKstrdup(modnme);
         MT_unset_lock(mal_contextLock, "loadModule");
 	return 0;
 }

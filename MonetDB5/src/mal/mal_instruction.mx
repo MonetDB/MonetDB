@@ -1364,7 +1364,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 		GDKfree(tpe);
 		advance(t);
 	} else {
-		sprintf(t,"):("); t+= 3;
+		sprintf(t,") ("); t+= 3;
 		for(i=0;i<p->retc;i++){ @:showParam(retc)@ }
 		*t++ = ')';
 	}
@@ -1566,14 +1566,23 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 			    d2 =getTypeName(getTailType(getArgType(mb,p,i)));
 			hprop= propertySet2str(ps,1);
 			tprop= propertySet2str(ps,2);
-			sprintf(t,"[%s,%s]%s",d1,d2,pstring);
+			if(hprop==NULL && tprop==NULL)
+				sprintf(t,"[:%s,:%s]%s",d1,d2,pstring);
+			else if(tprop==NULL)
+				sprintf(t,"[:%s%s,:%s]%s",
+					d1,hprop,d2,pstring);
+			else if(hprop==NULL)
+				sprintf(t,"[:%s,:%s%s]%s",
+					d1,d2,tprop,pstring);
+			else	sprintf(t,"[:%s%s,:%s%s]%s",
+					d1,hprop,d2,tprop,pstring);
 			GDKfree(hprop); GDKfree(tprop);
 			GDKfree(d1); GDKfree(d2);
 			advance(t);
 		} else
 		if(isTypeVar(mb,getArg(p,i)) ){
 			char *tnme= getTypeName(getArgType(mb,p,i));
-			sprintf(t,":%s%s",tnme,pstring);
+			sprintf(t,"%s:%s",tnme,pstring);
 			GDKfree(tnme);
 			advance(t);
 		}

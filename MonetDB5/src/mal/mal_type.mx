@@ -41,7 +41,7 @@ Beware the TYPE\_any is a speudo type known within MAL only.
 #define MAL_TYPE_H
 #include "mal.h"
 
-/*#define DEBUG_MAL_TYPE */
+/* #define DEBUG_MAL_TYPE 1 */
 /* #define GDKerror printf*/
 
 typedef int malType;
@@ -56,7 +56,7 @@ typedef int malType;
 #define isaBatType(X) 	((X)!=TYPE_any && (1<<16) & (X))
 #define isaVecType(X) 	((X)!=TYPE_any && (1<<16) & (X))
 @-
-Procedure type parameters may be qualified by a formal type term any::I ,
+Procedure type parameters may be qualified by a formal type term any$I ,
 where I is a small integer. 
 The malType long contains the following fields:
 anyHeadIndex (bit 25-22), anyTailIndex (bit 21-18),
@@ -66,6 +66,7 @@ batType (bit 17) headType (16-9) and tailType(8-0)
 #define setAnyHeadIndex(X,I) X |= ((I & 017)<<22);
 #define setAnyTailIndex(X,I) X |= ((I & 017)<<18);
 #define isAnyExpression(X) ((X) >> 17)
+#define isPolyType(X) (isAnyExpression(X) && (getHeadIndex(X)>0 ||getTailIndex(X)>0))
 
 #define getHeadIndex(X)  (((X)>>22) & 017)
 #define getTailIndex(X)  (((X)>>18) & 017)
@@ -125,45 +126,47 @@ the type descriptor. Including the variable references.
 
 str getTypeName(malType tpe)
 {
+	char buf[PATHLENGTH],*s;
+	int l=1024,k;
 #ifdef DEBUG_MAL_TYPE
-	stream_printf((GDKout,"maltype: %d %d %d",tpe,getHeadType(tpe),getTailType(tpe));
-	stream_printf((GDKout,"	: %d\n",isaBatType(tpe));
+	stream_printf(GDKout,"maltype: %d %d %d",tpe,getHeadType(tpe),getTailType(tpe));
+	stream_printf(GDKout," [%d,%d]",getHeadIndex(tpe),getTailIndex(tpe));
+	stream_printf(GDKout,"	: %s\n", (isaBatType(tpe)?"bat":""));
 #endif
 	if( tpe == TYPE_any ) return GDKstrdup("any");
 	if( isaBatType(tpe)){
-		char buf[1024],*s;
-		int l=1024;
-		if( getHeadIndex(tpe) ){
-			snprintf(buf,l,"bat[any::%d,", getHeadIndex(tpe));
-		} else
-		if( getHeadType(tpe) == TYPE_any) 
-			snprintf(buf,l,"bat[any,");
+		k= getHeadIndex(tpe);
+		if( k )
+			snprintf(buf,l,"bat[:any$%d,", k);
 		else
-			snprintf(buf,l,"bat[%s,", ATOMname(getHeadType(tpe)));
+		if( getHeadType(tpe) == TYPE_any) 
+			snprintf(buf,l,"bat[:any,");
+		else
+			snprintf(buf,l,"bat[:%s,", ATOMname(getHeadType(tpe)));
 		l -= strlen(buf);
 		s= buf+strlen(buf);
-		if( getTailIndex(tpe) ){
-			snprintf(s,l,"any::%d]", getTailIndex(tpe));
-		} else
-		if( getTailType(tpe) == TYPE_any) 
-			snprintf(s,l,"any]");
+		k= getTailIndex(tpe);
+		if( k )
+			snprintf(s,l,":any$%d]", k);
 		else
-			snprintf(s,l,"%s]", ATOMname(getTailType(tpe)));
+		if( getTailType(tpe) == TYPE_any) 
+			snprintf(s,l,":any]");
+		else
+			snprintf(s,l,":%s]", ATOMname(getTailType(tpe)));
 #ifdef DEBUG_MAL_TYPE
-		stream_printf((GDKout,"%s\n",buf);
+		stream_printf(GDKout,"%s\n",buf);
 #endif
 		return GDKstrdup(buf);
 	} 
 	if( isAnyExpression(tpe) ){
-		char buf[PATHLENGTH];
 		strncpy(buf,"any",PATHLENGTH);
 		if( isAnyExpression(tpe)){
-			snprintf(buf+3,PATHLENGTH-3,"::%d",getTailIndex(tpe));
+			snprintf(buf+3,PATHLENGTH-3,"$%d",getTailIndex(tpe));
 		}
 		return GDKstrdup(buf);
 	}
 #ifdef DEBUG_MAL_TYPE
-		stream_printf((GDKout,"Rely on GDK atom %s\n",ATOMname(tpe));
+		stream_printf(GDKout,"Rely on GDK atom %s\n",ATOMname(tpe));
 #endif
 	return GDKstrdup(ATOMname(tpe));
 }

@@ -1104,7 +1104,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 		if( @:fndOperator(q,"algebra","semijoin")@ ){
 			if( p->argv[0]== q->argv[2]){
 				GDKfree(p->fcnname);
-				GDKfree(p->modname); setModuleId(p, NULL);
+				freeModuleName(p);
 				setFunctionId(p, GDKstrdup("reverse_semijoin"));
 				p= pushArgument(mb,p,q->argv[1]);
 				removeInstruction(mb,pc2);
@@ -1114,7 +1114,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 		if( @:fndOperator(q,"algebra","select")@ ){
 			if( p->argv[0]== q->argv[1]){
 				GDKfree(p->fcnname);
-				GDKfree(p->modname); setModuleId(p, NULL);
+				freeModuleName(p);
 				setFunctionId(p, GDKstrdup("reverse_select"));
 				p= pushArgument(mb,p,q->argv[1]);
 				p= pushArgument(mb,p,q->argv[2]);
@@ -1128,7 +1128,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 		if( @:fndOperator(q,"algebra","select")@ ){
 			if( p->argv[0]== q->argv[1]){
 				GDKfree(p->fcnname);
-				GDKfree(p->modname); setModuleId(p, NULL);
+				freeModuleName(p);
 				setFunctionId(p, GDKstrdup("semijoin_select"));
 				p= pushArgument(mb,p,q->argv[2]);
 				p= pushArgument(mb,p,q->argv[3]);
