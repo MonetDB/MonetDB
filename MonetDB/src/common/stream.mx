@@ -390,6 +390,7 @@ int stream_flush(stream *s)
 #ifdef STREAM_DEBUG
 	printf("flush %s\n", s->name ? s->name : "<unnamed>");
 #endif
+	assert(s->access == ST_WRITE);
 	if (s->flush)
 		return (*s->flush)(s);
 	return 0;
@@ -1429,12 +1430,11 @@ stream *buffer_wastream( buffer *b, const char *name )
 
 typedef struct bs {
 	stream *s;
-	unsigned onr;
-	unsigned inr;
+	unsigned nr;
 	unsigned itotal;
+	size_t bsize;
 	int eob; 
-	char out[BLOCK];
-	char in[BLOCK];
+	char *buf;
 } bs;
 
 static
@@ -1442,10 +1442,11 @@ bs *bs_create( stream *s )
 {
 	/* should be a binary stream */
 	bs *ns = (bs*)malloc(sizeof(bs));
+	ns->bsize = BLOCK;
+	ns->buf = malloc(ns->bsize);
 	ns->s = s;
-	ns->inr = 0;
+	ns->nr = 0;
 	ns->itotal = 0;
-	ns->onr = 0;
 	ns->eob = 0;
 	return ns;
 }
@@ -1455,31 +1456,16 @@ bs_write( stream *ss, void *buf, size_t elmsize, size_t cnt )
 {
 	bs *s = (bs*)ss->stream_data.p;
 	size_t todo = cnt * elmsize;
-	if (s->onr + todo >= BLOCK){
-		size_t rest = BLOCK - s->onr;
-		memcpy( s->out+s->onr, buf, rest );
-		buf = (void *) ((char *) buf + rest);
-		todo -= rest;
 
-		if (!stream_writeInt( s->s, BLOCK) ||
-		     s->s->write( s->s, s->out, 1, BLOCK) != BLOCK){
-			ss->errnr = WRITE_ERROR;
-			return -1;
-		}
-		s->onr = 0;
-
-		while (todo >= BLOCK){
-			if (!stream_writeInt( s->s, BLOCK) ||
-			    s->s->write( s->s, buf, 1, BLOCK) != BLOCK){
-				ss->errnr = WRITE_ERROR;
-				return -1;
-			}
-			buf = (void *) ((char *) buf + BLOCK);
-			todo -= BLOCK;
-		}
+	assert(ss->access == ST_WRITE);
+	if (s->nr + todo >= s->bsize) {
+		do {
+			s->bsize += BLOCK;
+		} while (s->nr + todo >= s->bsize);
+		s->buf = realloc(s->buf, s->bsize);
 	}
-	memcpy( s->out+s->onr, buf, todo );
-	s->onr += todo;
+	memcpy(s->buf+s->nr, buf, todo);
+	s->nr += todo;
 	return cnt;
 }
 
@@ -1488,66 +1474,59 @@ bs_read( stream *ss, void *buf, size_t elmsize, size_t cnt )
 {
 	bs *s = (bs*)ss->stream_data.p;
 	unsigned nr = 0;
-
 	size_t todo = cnt * elmsize;
-	if (s->inr + todo < s->itotal) {
-		memcpy( buf, s->in + s->inr, todo );
 
-		s->inr += todo;
+	assert(ss->access == ST_READ);
+	if (s->nr + todo < s->itotal) {
+		memcpy( buf, s->buf + s->nr, todo );
+
+		s->nr += todo;
 		return cnt;
 	}
-	if (todo + s->inr >= s->itotal) {
-		size_t rest = s->itotal - s->inr;
-		memcpy( buf, s->in + s->inr, rest );
+	if (todo + s->nr >= s->itotal) {
+		size_t rest = s->itotal - s->nr;
+		memcpy( buf, s->buf + s->nr, rest );
 		buf = (void *) ((char *) buf + rest);
 		todo -= rest;
 
-		s->inr = 0;
+		s->nr = 0;
 		s->itotal = 0;
 	}
 	if (s->eob){
 		s->eob = 0;
 		return cnt - (todo/elmsize);
 	}
-	while (todo >= BLOCK){
-		if (!stream_readInt( s->s, (int *) &nr )
-		    || s->s->read( s->s, buf, 1, (size_t) nr) != nr){
+	if (todo) {
+		if (!stream_readInt( s->s, (int *) &nr)) {
 			ss->errnr = READ_ERROR;
 			return -1;
 		}
-		buf = (void *) ((char *) buf + nr);
-		todo -= nr;
-		if (nr < BLOCK){
-			s->itotal = s->inr = 0;
-			return cnt - (todo/elmsize);
+		if (nr > s->bsize) {
+			s->bsize = nr;
+			s->buf = realloc(s->buf, s->bsize);
 		}
-	} 
-	if (todo){
-		if (!stream_readInt( s->s, (int *) &nr ) ||
-		    s->s->read( s->s, s->in, 1, (size_t) nr) != nr){
+		if (s->s->read(s->s, s->buf, 1, (size_t) nr) != nr) {
 			ss->errnr = READ_ERROR;
 			return -1;
 		}
-
-		if (nr < BLOCK)
-			s->eob = 1;
+		s->eob = 1;
+		s->itotal = nr;
 
 		if (nr < todo)
-			memcpy( buf, s->in, (size_t) nr );
+			memcpy( buf, s->buf, (size_t) nr );
 		else
-			memcpy( buf, s->in, todo );
-		s->itotal = nr;
+			memcpy( buf, s->buf, todo );
                 if (nr <= todo){
-                        s->inr = nr;
+                        s->nr = nr;
 			todo -= nr;
 			s->eob = 0;
                 } else {
-                        s->inr = (int) todo; /* todo < BLOCK, i.e. will fit in int */
+                        s->nr = (int) todo; /* todo < BLOCK, i.e. will fit in int */
 			todo = 0;
 		}
 	}
 	if (todo){
-		s->itotal = s->inr = 0;
+		s->itotal = s->nr = 0;
 		return cnt - (todo/elmsize);
 	} else {
 		return cnt;
@@ -1560,12 +1539,12 @@ ssize_t bs_read_next( stream *ss, void *buf, int *last )
 	int nr = 0;
 
 	*last = 0;
-	if (s->itotal > s->inr ){
-		size_t rest = s->itotal - s->inr;
-		memcpy( buf, s->in + s->inr, rest );
+	if (s->itotal > s->nr ){
+		size_t rest = s->itotal - s->nr;
+		memcpy( buf, s->buf + s->nr, rest );
 
 		*last = (s->itotal != BLOCK);
-		s->inr = 0;
+		s->nr = 0;
 		s->itotal = 0;
 		s->eob = 0;
 		return rest;
@@ -1577,7 +1556,7 @@ ssize_t bs_read_next( stream *ss, void *buf, int *last )
 		}
 		if (nr < BLOCK){
 			*last = 1;
-			s->itotal = s->inr = 0;
+			s->itotal = s->nr = 0;
 		} 
 		return (size_t) nr;
 	} 
@@ -1587,14 +1566,16 @@ static
 int bs_flush(stream *ss)
 {
 	bs *s = (bs*)ss->stream_data.p;
-	if (s->onr){
-		if (!stream_writeInt( s->s, s->onr) ||
-			s->s->write( s->s, s->out, 1, s->onr ) != s->onr){
+
+	assert(ss->access == ST_WRITE);
+	if (ss->access == ST_WRITE && s->nr){
+		if (!stream_writeInt( s->s, s->nr) ||
+			s->s->write( s->s, s->buf, 1, s->nr ) != s->nr){
 			ss->errnr = WRITE_ERROR;
 			return -1;
 		}
 	}
-	s->onr = 0;
+	s->nr = 0;
 	return 0;
 }
 
@@ -1609,6 +1590,7 @@ void bs_destroy( stream *ss )
 {
 	bs *s = (bs*)ss->stream_data.p;
 	s->s->destroy( s->s );
+	free(s->buf);
 	free(s);
 	destroy(ss);
 }
