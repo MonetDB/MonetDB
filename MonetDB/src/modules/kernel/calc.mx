@@ -254,11 +254,33 @@ Coercion functions are typical used in multiplex calls.
 @mal
 	@:mal_coercion(lng,sht)@
 	@:mal_coercion(lng,int)@
+	@:mal_coercion(lng,flt)@
+	@:mal_coercion(lng,dbl)@
+
 	@:mal_coercion(int,sht)@
+	@:mal_coercion(int,lng)@
+	@:mal_coercion(int,flt)@
+	@:mal_coercion(int,dbl)@
+
+	@:mal_coercion(sht,int)@
+	@:mal_coercion(sht,lng)@
+	@:mal_coercion(sht,flt)@
+	@:mal_coercion(sht,dbl)@
+
 	@:mal_coercion(oid,lng)@
 	@:mal_coercion(oid,sht)@
 	@:mal_coercion(oid,int)@
+
+	@:mal_coercion(flt,dbl)@
+	@:mal_coercion(flt,sht)@
+	@:mal_coercion(flt,int)@
+	@:mal_coercion(flt,lng)@
+
 	@:mal_coercion(dbl,flt)@
+	@:mal_coercion(dbl,sht)@
+	@:mal_coercion(dbl,int)@
+	@:mal_coercion(dbl,lng)@
+
 	@:mal_coercion(str,sht)@
 	@:mal_coercion(str,int)@
 	@:mal_coercion(str,lng)@
@@ -317,10 +339,10 @@ Those accessible at the MAL command level are introduced below.
 @= convertCmd
 command @1(v:str):@1 = @1FromStrImpl;
 command str(v:@1):str = @1ToStrImpl;
+command @1(v:ni1) : @1 = CALCtonil_@1;
 
 @mal
 @:convertCmd(oid)@
-@:convertCmd(void)@
 @:convertCmd(sht)@
 @:convertCmd(int)@
 @:convertCmd(lng)@
@@ -331,6 +353,7 @@ command str(v:@1):str = @1ToStrImpl;
 @:convertCmd(bat)@
 @:convertCmd(chr)@
 
+command str(v:ni1) :str = CALCtonil_str;
 command setoid(v:int)= intSetoidImpl;
 command setoid(v:lng)= lngSetoidImpl;
 command setoid(v:oid)= oidSetoidImpl;
@@ -908,12 +931,10 @@ str CALCisnil_@1(bit *retval, @1 val) {
 	*retval = (val == @1_nil);
 	return MAL_SUCCEED;
 }
-/*
-str @1_tonil(@1 *retval, ptr val){
+str CALCtonil_@1(@1 *retval, ptr val){
 	memcpy(retval, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
 	return MAL_SUCCEED;
 }
-*/
 @c
 @:c_isnil(bit)@
 @:c_isnil(chr)@
@@ -923,7 +944,17 @@ str @1_tonil(@1 *retval, ptr val){
 @:c_isnil(flt)@
 @:c_isnil(lng)@
 @:c_isnil(dbl)@
-@:c_isnil(str)@
+@:c_isnil(ptr)@
+@:c_isnil(bat)@
+
+str CALCisnil_str(bit *retval, str *val) {
+	*retval = (*val == str_nil);
+	return MAL_SUCCEED;
+}
+str CALCtonil_str(bit *retval, str *val) {
+	*retval = (*val == 0);
+	return MAL_SUCCEED;
+}
 
 str CALCisnil_any(bit *retval, ptr *val, int tpe) {
 	ptr nilval = ATOMnilptr(tpe);
@@ -1055,11 +1086,33 @@ str CALC@2_2_@1(@1 *res, @2 *a)
 @c
 	@:mal_coercion_impl(lng,sht)@
 	@:mal_coercion_impl(lng,int)@
+	@:mal_coercion_impl(lng,flt)@
+	@:mal_coercion_impl(lng,dbl)@
+
+	@:mal_coercion_impl(sht,int)@
+	@:mal_coercion_impl(sht,lng)@
+	@:mal_coercion_impl(sht,flt)@
+	@:mal_coercion_impl(sht,dbl)@
+
 	@:mal_coercion_impl(int,sht)@
+	@:mal_coercion_impl(int,lng)@
+	@:mal_coercion_impl(int,flt)@
+	@:mal_coercion_impl(int,dbl)@
+
 	@:mal_coercion_impl(oid,lng)@
 	@:mal_coercion_impl(oid,sht)@
 	@:mal_coercion_impl(oid,int)@
+
+	@:mal_coercion_impl(flt,dbl)@
+	@:mal_coercion_impl(flt,sht)@
+	@:mal_coercion_impl(flt,int)@
+	@:mal_coercion_impl(flt,lng)@
+
 	@:mal_coercion_impl(dbl,flt)@
+	@:mal_coercion_impl(dbl,sht)@
+	@:mal_coercion_impl(dbl,int)@
+	@:mal_coercion_impl(dbl,lng)@
+
 	@:mal_coercion_impl(chr,sht)@
 	@:mal_coercion_impl(chr,int)@
 
