@@ -231,6 +231,10 @@ if [ "${os}" = "Linux" ] ; then
 			libpath="/home/niels/soft/local/lib:${libpath}"
 		fi
 	fi
+	# Java support on Gentoo systems
+	if [ -x /usr/bin/java-config ]; then
+	        binpath="`/usr/bin/java-config -O`/bin:${binpath}"
+	fi
 	domain="`domainname`"
 	if [ -x /net/lin_local/java/j2sdk1.4.2/bin/javac  -a  -x /net/lin_local/java/j2sdk1.4.2/bin/jar ] ; then
 		# java in Konstanz
