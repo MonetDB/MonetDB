@@ -50,4 +50,19 @@ extern sql_ref *sql_ref_init(sql_ref *r);
 extern int sql_ref_inc(sql_ref *r);
 extern int sql_ref_dec(sql_ref *r);
 
+typedef struct sql_allocator {
+	size_t size;
+	size_t nr;
+	char **blks;
+	size_t used; 	/* memory used in last block */
+} sql_allocator;
+
+extern sql_allocator *sa_create();
+extern char *sa_alloc( sql_allocator *sa,  size_t sz );
+extern void sa_destroy( sql_allocator *sa );
+extern char *sa_strndup( sql_allocator *sa, const char *s, int l);
+extern char *sa_strdup( sql_allocator *sa, const char *s);
+
+#define SA_NEW( sa, type ) ((type*)sa_alloc( sa, sizeof(type)) )
+
 #endif /*_MEM_H_*/

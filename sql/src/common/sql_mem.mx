@@ -50,3 +50,75 @@ sql_ref_dec(sql_ref *r)
 	assert(r->refcnt > 0);
 	return (--r->refcnt);
 }
+
+
+#define M 	(1024*1024)
+
+sql_allocator *sa_create()
+{
+	sql_allocator *sa = NEW(sql_allocator);
+	
+	sa->size = 64;
+	sa->nr = 1;
+	sa->blks = NEW_ARRAY(char*,sa->size);
+	sa->blks[0] = NEW_ARRAY(char,1024*1024);
+	sa->used = 0;
+	return sa;
+}
+
+#define round16(sz) ((sz+15)&~15)
+char *sa_alloc( sql_allocator *sa, size_t sz )
+{
+	char *r;
+	sz = round16(sz);
+	if (sz > M) {
+		char *r = GDKmalloc(sz);
+		if (sa->nr >= sa->size) {
+			sa->size *=2;
+			RENEW_ARRAY(char*,sa->blks,sa->size);
+		}
+		sa->blks[sa->nr-1] = sa->blks[sa->nr-2];
+		sa->blks[sa->nr-2] = r;
+		sa->nr ++;
+		return r;
+	}
+	if (sz > (M-sa->used)) {
+		char *r = GDKmalloc(M);
+		if (sa->nr >= sa->size) {
+			sa->size *=2;
+			RENEW_ARRAY(char*,sa->blks,sa->size);
+		}
+		sa->blks[sa->nr] = r;
+		sa->nr ++;
+		sa->used = sz;
+		return r;
+	}
+	r = sa->blks[sa->nr-1] + sa->used;
+	sa->used += sz;
+	return r;
+}
+
+void sa_destroy( sql_allocator *sa ) 
+{
+	int i ;
+
+	for (i = 0; i<sa->nr; i++) {
+		GDKfree(sa->blks[i]);
+	}
+	GDKfree(sa->blks);
+	GDKfree(sa);
+}
+
+char *sa_strndup( sql_allocator *sa, const char *s, int l) 
+{ 
+	char *r = sa_alloc(sa, l+1); 
+
+	memcpy(r, s, l); 
+	r[l] = 0; 
+	return r; 
+}
+
+char *sa_strdup( sql_allocator *sa, const char *s ) 
+{ 
+	return sa_strndup( sa, s, strlen(s));
+}
