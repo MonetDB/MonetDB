@@ -1,9 +1,9 @@
 stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 
 
-# 15:28:40 >  
-# 15:28:40 >  Mtimeout -timeout 240 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace "--dbname=mTests_src_monet" "/ufs/boncz/MonetDB/linux/lib/MonetDB/mapi.mil" modrefcnt2.prologue ; echo ; echo Over..
-# 15:28:40 >  
+# 18:26:29 >  
+# 18:26:29 >  Mtimeout -timeout 240 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace "--dbname=mTests_src_monet" "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB/mapi.mil" modrefcnt2.prologue ; echo ; echo Over..
+# 18:26:29 >  
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -31,12 +31,21 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 printf("\nReady.\n");
 
 Ready.
+# All but the first (#) and the last (\n) character of this line seem to get swallowed on/by Windows ... #
+# In case the previous line contains just a '#', all but the first and the last character got swallowed by someone ... #
+# In case the output ends after the following line, containing just a ';', Mshutdown might have been successful, #
+# but the Mserver's stdin was still open and got closed only after the first MIL command-end, i.e., ';'+'\n' is reached ... #
+;
+printf("\n! Mserver still running after Mshutdown. Quitting now. !\n");
+
+! Mserver still running after Mshutdown. Quitting now. !
+quit;
 
 Over..
 
-# 15:28:40 >  
-# 15:28:40 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=55437 < modrefcnt2_s00.milC
-# 15:28:40 >  
+# 18:26:30 >  
+# 18:26:30 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708 < modrefcnt2_s00.milC
+# 18:26:30 >  
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -59,9 +68,9 @@ Over..
 #-----------------#
 [ 0 ]
 
-# 15:28:40 >  
-# 15:28:40 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=55437 < modrefcnt2_s01.milC
-# 15:28:40 >  
+# 18:26:30 >  
+# 18:26:30 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708 < modrefcnt2_s01.milC
+# 18:26:30 >  
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -82,12 +91,12 @@ Over..
 !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
 !ERROR: print(param 1): evaluation error.
 
-# 15:28:40 >  
-# 15:28:40 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=55437
-# 15:28:40 >  
+# 18:26:30 >  
+# 18:26:30 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
+# 18:26:30 >  
 
 
-# 15:28:41 >  
-# 15:28:41 >  Done.
-# 15:28:41 >  
+# 18:26:31 >  
+# 18:26:31 >  Done.
+# 18:26:31 >  
 

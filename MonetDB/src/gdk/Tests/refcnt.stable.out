@@ -1,11 +1,11 @@
 stdout of test 'refcnt` in directory 'src/gdk` itself:
 
 
-# 11:40:32 >  
-# 11:40:32 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=57441 --set sql_port=54507 --set monet_prompt= --trace --dbname=mTests_src_gdk  < refcnt.milM
-# 11:40:32 >  
+# 18:20:32 >  
+# 18:20:32 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_src_gdk  < refcnt.milM
+# 18:20:32 >  
 
-# Monet Database Server V4.3.11
+# Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 PROC tmp() : void := {
@@ -120,39 +120,7 @@ res := nil;
 [ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
-[ "top",		  0,	  "load", "tran", 0	  ]
 [ "one",		  0,	  "load", "tran", 0	  ]
-[ "two",		  0,	  "load", "tran", 0	  ]
-#---------------------------------------------------------#
-# name			| heat	| status| kind	| refcnt  #
-#---------------------------------------------------------#
-[ "monet_environment",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
-[ "monet_fcn_cnt",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
-[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
-[ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
-[ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
-[ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
-[ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 [ "top",		  0,	  "load", "tran", 0	  ]
 [ "two",		  0,	  "load", "tran", 0	  ]
 #---------------------------------------------------------#
@@ -186,7 +154,39 @@ res := nil;
 [ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 [ "top",		  0,	  "load", "tran", 0	  ]
-[ "tmp_29",		  0,	  "load", "tran", 0	  ]
+[ "two",		  0,	  "load", "tran", 0	  ]
+#---------------------------------------------------------#
+# name			| heat	| status| kind	| refcnt  #
+#---------------------------------------------------------#
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_sig",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  0,	  "load", "tran", 1	  ]
+[ "monet_fcn_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_atm",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_acc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_dep",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
+[ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
+[ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
+[ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
+[ "tmp_28",		  0,	  "load", "tran", 0	  ]
+[ "top",		  0,	  "load", "tran", 0	  ]
 [ "two",		  0,	  "load", "tran", 0	  ]
 [ "ten",		  0,	  "load", "tran", 0	  ]
 [ "tmp_34",		  0,	  "load", "tran", 0	  ]
@@ -230,7 +230,7 @@ tmp;
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 quit;
 
-# 11:40:32 >  
-# 11:40:32 >  Done.
-# 11:40:32 >  
+# 18:20:33 >  
+# 18:20:33 >  Done.
+# 18:20:33 >  
 

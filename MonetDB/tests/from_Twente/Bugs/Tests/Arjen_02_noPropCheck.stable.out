@@ -1,27 +1,27 @@
 stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 20:02:43 >  
-# 20:02:43 >  Mtimeout -timeout 180 ./Arjen_02_noPropCheck Arjen_02_noPropCheck 
-# 20:02:43 >  
+# 18:32:01 >  
+# 18:32:01 >  Mtimeout -timeout 180 ./Arjen_02_noPropCheck Arjen_02_noPropCheck 
+# 18:32:01 >  
 
 
-# 20:02:43 >  
-# 20:02:43 >  Mtimeout -timeout 60 Mserver --config=/ufs/boncz/MonetDB/linux/etc/monet.conf --debug=10 --set monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB --set gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm --set sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs d2.mil Arjen_02.milM
-# 20:02:43 >  
+# 18:32:01 >  
+# 18:32:01 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf --debug=10 --set monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB --set gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm --set sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs d2.mil Arjen_02.milM
+# 18:32:01 >  
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_29  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_28  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -37,8 +37,8 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # (str)				  (str)		| (str)		| (str)		  #
 #---------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_28",	  "tmp_29",	  "tmp_31"	  ]
-[ "batCacheid",			  "28",		  "29",		  "31"		  ]
+[ "batId",			  "tmp_29",	  "tmp_28",	  "tmp_31"	  ]
+[ "batCacheid",			  "29",		  "28",		  "31"		  ]
 [ "batParentid",		  "0",		  "0",		  "30"		  ]
 [ "batSharecnt",		  "0",		  "0",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "oid"		  ]
@@ -72,10 +72,10 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-166",	  "-167",	  "-170"	  ]
-[ "lastUsed",			  "3988",	  "4030",	  "4049"	  ]
+[ "batStamp",			  "-164",	  "-165",	  "-168"	  ]
+[ "lastUsed",			  "3984",	  "4026",	  "4045"	  ]
 [ "keepAround",			  "0",		  "0",		  "0"		  ]
-[ "curStamp",			  "171",	  "174",	  "177"		  ]
+[ "curStamp",			  "169",	  "172",	  "175"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -136,9 +136,9 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # (str)				  (str)		| (str)		| (str)		  #
 #---------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_28",	  "tmp_34",	  "tmp_33"	  ]
-[ "batCacheid",			  "28",		  "34",		  "33"		  ]
-[ "batParentid",		  "0",		  "0",		  "29"		  ]
+[ "batId",			  "tmp_29",	  "tmp_34",	  "tmp_33"	  ]
+[ "batCacheid",			  "29",		  "34",		  "33"		  ]
+[ "batParentid",		  "0",		  "0",		  "28"		  ]
 [ "batSharecnt",		  "0",		  "0",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "oid"		  ]
 [ "tail",			  "int",	  "bit",	  "void"	  ]
@@ -171,10 +171,10 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-166",	  "-180",	  "-183"	  ]
-[ "lastUsed",			  "4032",	  "4149",	  "4169"	  ]
+[ "batStamp",			  "-164",	  "-178",	  "-181"	  ]
+[ "lastUsed",			  "4028",	  "4145",	  "4165"	  ]
 [ "keepAround",			  "0",		  "0",		  "0"		  ]
-[ "curStamp",			  "184",	  "187",	  "190"		  ]
+[ "curStamp",			  "182",	  "185",	  "188"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -235,8 +235,8 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # (str)				  (str)		| (str)		| (str)		  #
 #---------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_28",	  "tmp_32",	  "tmp_34"	  ]
-[ "batCacheid",			  "28",		  "32",		  "34"		  ]
+[ "batId",			  "tmp_29",	  "tmp_32",	  "tmp_34"	  ]
+[ "batCacheid",			  "29",		  "32",		  "34"		  ]
 [ "batParentid",		  "0",		  "0",		  "32"		  ]
 [ "batSharecnt",		  "0",		  "1",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "void"	  ]
@@ -270,10 +270,10 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-166",	  "-193",	  "-196"	  ]
-[ "lastUsed",			  "4151",	  "4270",	  "4289"	  ]
+[ "batStamp",			  "-164",	  "-191",	  "-194"	  ]
+[ "lastUsed",			  "4147",	  "4266",	  "4285"	  ]
 [ "keepAround",			  "0",		  "0",		  "0"		  ]
-[ "curStamp",			  "197",	  "200",	  "203"		  ]
+[ "curStamp",			  "195",	  "198",	  "201"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -318,7 +318,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
 
-# 20:02:43 >  
-# 20:02:43 >  Done.
-# 20:02:43 >  
+# 18:32:02 >  
+# 18:32:02 >  Done.
+# 18:32:02 >  
 

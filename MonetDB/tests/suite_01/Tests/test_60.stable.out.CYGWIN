@@ -1,9 +1,9 @@
 stdout of test 'test_60` in directory 'tests/suite_01` itself:
 
 
-# 20:03:30 >  
-# 20:03:30 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_suite_01  < test_60.milS
-# 20:03:30 >  
+# 18:34:02 >  
+# 18:34:02 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_suite_01  < test_60.milS
+# 18:34:02 >  
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -82,8 +82,8 @@ p("b","1");
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -128,8 +128,8 @@ echo(a,"hello").print;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -171,8 +171,8 @@ echo(a,"hello").print;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -217,8 +217,8 @@ New("r","C","Ch");
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -258,8 +258,8 @@ vars;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -303,8 +303,8 @@ s(0,10);
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -347,8 +347,8 @@ s(0,11);
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -393,8 +393,8 @@ s(0,99);
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -408,7 +408,7 @@ s(0,99);
 [ 8 ]
 s(0,999);
 #-----------------------------------------------------------------------------------------#
-# tmp_29		| type	| type_status	| value_status	| value_value		  #
+# tmp_28		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "high",		  "int",  "liquid",	  "changeable",	  "999"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
@@ -437,8 +437,8 @@ s(0,999);
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "þ"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
@@ -452,7 +452,7 @@ s(0,999);
 [ 8 ]
 quit;
 
-# 20:03:30 >  
-# 20:03:30 >  Done.
-# 20:03:30 >  
+# 18:34:03 >  
+# 18:34:03 >  Done.
+# 18:34:03 >  
 

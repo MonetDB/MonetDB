@@ -1,9 +1,9 @@
 stdout of test 'test_30` in directory 'tests/suite_01` itself:
 
 
-# 20:03:26 >  
-# 20:03:26 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_suite_01  < test_30.milS
-# 20:03:26 >  
+# 18:33:54 >  
+# 18:33:54 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_suite_01  < test_30.milS
+# 18:33:54 >  
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -13,13 +13,16 @@ setoid(oid(20000000));
 # Note that complex procs should normally be prepared in block mode.
 
 unknown("hello");
+!ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 
 #simple procedure with withdrawal
 proc c:= clock.print;
 c;
+!WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
 undef c;
 c;
+!WARNING: interpret: convert identifier 'c' to string.
 
 # block administration
 
@@ -52,8 +55,8 @@ c;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛Å"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
@@ -96,8 +99,8 @@ xyz;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛Å"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
@@ -135,8 +138,8 @@ vars;
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛Å"			  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
@@ -149,7 +152,7 @@ vars;
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 quit;
 
-# 20:03:26 >  
-# 20:03:26 >  Done.
-# 20:03:26 >  
+# 18:33:55 >  
+# 18:33:55 >  Done.
+# 18:33:55 >  
 

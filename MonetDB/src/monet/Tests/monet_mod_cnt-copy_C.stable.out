@@ -1,11 +1,11 @@
 stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 
 
-# 11:46:24 >  
-# 11:46:24 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=57191 --set sql_port=56858 --set monet_prompt= --trace "--dbname=mTests_src_monet" "/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB/mapi.mil" monet_mod_cnt-copy_C.prologue ; echo ; echo Over..
-# 11:46:24 >  
+# 18:26:37 >  
+# 18:26:37 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace "--dbname=mTests_src_monet" "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB/mapi.mil" monet_mod_cnt-copy_C.prologue ; echo ; echo Over..
+# 18:26:37 >  
 
-# Monet Database Server V4.3.9
+# Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #---------------------------------#
@@ -17,23 +17,23 @@ stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 [ 10002@0,	  2		  ]
 [ 10045@0,	  2		  ]
 [ 10046@0,	  2		  ]
-[ 10343@0,	  2		  ]
-[ 10344@0,	  2		  ]
-[ 10368@0,	  4		  ]
-[ 10369@0,	  4		  ]
-[ 10371@0,	  2		  ]
-[ 10372@0,	  2		  ]
-[ 10441@0,	  2		  ]
-[ 10442@0,	  2		  ]
-[ 10568@0,	  2		  ]
-[ 10569@0,	  2		  ]
-[ 10640@0,	  2		  ]
-[ 10641@0,	  2		  ]
-[ 10650@0,	  2		  ]
-[ 10651@0,	  4		  ]
-[ 10688@0,	  2		  ]
+[ 10347@0,	  2		  ]
+[ 10348@0,	  2		  ]
+[ 10372@0,	  4		  ]
+[ 10373@0,	  2		  ]
+[ 10375@0,	  2		  ]
+[ 10376@0,	  2		  ]
+[ 10447@0,	  2		  ]
+[ 10448@0,	  2		  ]
+[ 10575@0,	  2		  ]
+[ 10576@0,	  2		  ]
+[ 10653@0,	  2		  ]
+[ 10654@0,	  2		  ]
+[ 10663@0,	  2		  ]
+[ 10664@0,	  2		  ]
+[ 10701@0,	  2		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_33  #
 # (oid)		  (int)	  #
 #-------------------------#
 [ 10000@0,	  2	  ]
@@ -41,55 +41,55 @@ stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 [ 10002@0,	  2	  ]
 [ 10045@0,	  2	  ]
 [ 10046@0,	  2	  ]
-[ 10343@0,	  2	  ]
-[ 10344@0,	  2	  ]
-[ 10368@0,	  4	  ]
-[ 10369@0,	  4	  ]
-[ 10371@0,	  2	  ]
-[ 10372@0,	  2	  ]
-[ 10441@0,	  2	  ]
-[ 10442@0,	  2	  ]
-[ 10568@0,	  2	  ]
-[ 10569@0,	  2	  ]
-[ 10640@0,	  2	  ]
-[ 10641@0,	  2	  ]
-[ 10650@0,	  2	  ]
-[ 10651@0,	  4	  ]
-[ 10688@0,	  2	  ]
+[ 10347@0,	  2	  ]
+[ 10348@0,	  2	  ]
+[ 10372@0,	  4	  ]
+[ 10373@0,	  2	  ]
+[ 10375@0,	  2	  ]
+[ 10376@0,	  2	  ]
+[ 10447@0,	  2	  ]
+[ 10448@0,	  2	  ]
+[ 10575@0,	  2	  ]
+[ 10576@0,	  2	  ]
+[ 10653@0,	  2	  ]
+[ 10654@0,	  2	  ]
+[ 10663@0,	  2	  ]
+[ 10664@0,	  2	  ]
+[ 10701@0,	  2	  ]
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
 [ "monet_environment",	  26,	  26,		  0	  ]
-[ "monet_fcn_fcn",	  579,	  579,		  0	  ]
-[ "monet_fcn_imp",	  684,	  684,		  0	  ]
-[ "monet_fcn_tpe",	  684,	  684,		  0	  ]
-[ "monet_fcn_mid",	  630,	  630,		  0	  ]
+[ "monet_fcn_fcn",	  592,	  592,		  0	  ]
+[ "monet_fcn_imp",	  697,	  697,		  0	  ]
+[ "monet_fcn_tpe",	  697,	  697,		  0	  ]
+[ "monet_fcn_mid",	  643,	  643,		  0	  ]
 [ "monet_fcn_sig",	  41,	  41,		  0	  ]
-[ "monet_fcn_dsc",	  630,	  630,		  0	  ]
-[ "monet_fcn_aut",	  630,	  630,		  0	  ]
-[ "monet_fcn_dat",	  630,	  630,		  0	  ]
-[ "monet_fcn_nme",	  684,	  684,		  0	  ]
-[ "monet_fcn_pro",	  1685,	  1685,		  0	  ]
-[ "monet_fcn_cnt",	  684,	  684,		  0	  ]
+[ "monet_fcn_dsc",	  643,	  643,		  0	  ]
+[ "monet_fcn_aut",	  643,	  643,		  0	  ]
+[ "monet_fcn_dat",	  643,	  643,		  0	  ]
+[ "monet_fcn_nme",	  697,	  697,		  0	  ]
+[ "monet_fcn_pro",	  1707,	  1707,		  0	  ]
+[ "monet_fcn_cnt",	  697,	  697,		  0	  ]
 [ "monet_mod_nme",	  20,	  20,		  0	  ]
 [ "monet_mod_cnt",	  20,	  20,		  0	  ]
 [ "monet_mod_atm",	  4,	  4,		  0	  ]
 [ "monet_mod_acc",	  0,	  0,		  0	  ]
 [ "monet_mod_hdl",	  10,	  10,		  0	  ]
-[ "monet_mod_dep",	  3,	  3,		  0	  ]
-[ "monet_mod_use",	  46,	  46,		  0	  ]
+[ "monet_mod_dep",	  1,	  1,		  0	  ]
+[ "monet_mod_use",	  42,	  42,		  0	  ]
 [ "monet_mod_load",	  0,	  0,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
 [ "monet_mod_proc",	  5,	  5,		  0	  ]
-[ "monet_mod_var",	  0,	  0,		  0	  ]
-[ "adm_fcntbl",		  684,	  684,		  0	  ]
+[ "monet_mod_var",	  27,	  27,		  0	  ]
+[ "adm_fcntbl",		  697,	  697,		  0	  ]
 [ "adm_acctbl",		  2,	  2,		  0	  ]
 [ "adm_atomtbl",	  17,	  17,		  0	  ]
 [ "monet_unicode_case",	  685,	  685,		  0	  ]
+[ "tmp_28",		  2,	  2,		  0	  ]
 [ "mapi_params",	  0,	  0,		  0	  ]
-[ "tmp_29",		  2,	  2,		  0	  ]
-[ "tmp_30",		  684,	  684,		  0	  ]
+[ "tmp_30",		  697,	  697,		  0	  ]
 [ "tmp_31",		  17,	  17,		  0	  ]
 printf("\nReady.\n");
 
@@ -97,9 +97,9 @@ Ready.
 
 Over..
 
-# 11:46:25 >  
-# 11:46:25 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=57191 < monet_mod_cnt-copy_C.milC
-# 11:46:25 >  
+# 18:26:38 >  
+# 18:26:38 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708 < monet_mod_cnt-copy_C.milC
+# 18:26:38 >  
 
 #---------------------------------#
 # BAT:		  monet_mod_cnt	  #
@@ -110,23 +110,23 @@ Over..
 [ 10002@0,	  3		  ]
 [ 10045@0,	  3		  ]
 [ 10046@0,	  3		  ]
-[ 10343@0,	  3		  ]
-[ 10344@0,	  3		  ]
-[ 10368@0,	  6		  ]
-[ 10369@0,	  6		  ]
-[ 10371@0,	  3		  ]
-[ 10372@0,	  3		  ]
-[ 10441@0,	  3		  ]
-[ 10442@0,	  3		  ]
-[ 10568@0,	  3		  ]
-[ 10569@0,	  3		  ]
-[ 10640@0,	  3		  ]
-[ 10641@0,	  3		  ]
-[ 10650@0,	  3		  ]
-[ 10651@0,	  6		  ]
-[ 10688@0,	  3		  ]
+[ 10347@0,	  3		  ]
+[ 10348@0,	  3		  ]
+[ 10372@0,	  6		  ]
+[ 10373@0,	  3		  ]
+[ 10375@0,	  3		  ]
+[ 10376@0,	  3		  ]
+[ 10447@0,	  3		  ]
+[ 10448@0,	  3		  ]
+[ 10575@0,	  3		  ]
+[ 10576@0,	  3		  ]
+[ 10653@0,	  3		  ]
+[ 10654@0,	  3		  ]
+[ 10663@0,	  3		  ]
+[ 10664@0,	  3		  ]
+[ 10701@0,	  3		  ]
 #-------------------------#
-# BAT:		  tmp_59  #
+# BAT:		  tmp_63  #
 # (oid)		  (int)	  #
 #-------------------------#
 [ 10000@0,	  3	  ]
@@ -134,21 +134,21 @@ Over..
 [ 10002@0,	  3	  ]
 [ 10045@0,	  3	  ]
 [ 10046@0,	  3	  ]
-[ 10343@0,	  3	  ]
-[ 10344@0,	  3	  ]
-[ 10368@0,	  6	  ]
-[ 10369@0,	  6	  ]
-[ 10371@0,	  3	  ]
-[ 10372@0,	  3	  ]
-[ 10441@0,	  3	  ]
-[ 10442@0,	  3	  ]
-[ 10568@0,	  3	  ]
-[ 10569@0,	  3	  ]
-[ 10640@0,	  3	  ]
-[ 10641@0,	  3	  ]
-[ 10650@0,	  3	  ]
-[ 10651@0,	  6	  ]
-[ 10688@0,	  3	  ]
+[ 10347@0,	  3	  ]
+[ 10348@0,	  3	  ]
+[ 10372@0,	  6	  ]
+[ 10373@0,	  3	  ]
+[ 10375@0,	  3	  ]
+[ 10376@0,	  3	  ]
+[ 10447@0,	  3	  ]
+[ 10448@0,	  3	  ]
+[ 10575@0,	  3	  ]
+[ 10576@0,	  3	  ]
+[ 10653@0,	  3	  ]
+[ 10654@0,	  3	  ]
+[ 10663@0,	  3	  ]
+[ 10664@0,	  3	  ]
+[ 10701@0,	  3	  ]
 !WARNING: [copy]: 3 times inserted nil due to errors at tuples "name", "count", "copy.count".
 !WARNING: [copy]: first error was: !ERROR: BATcopy: BAT required.
 !ERROR: CMDcopy: operation failed.
@@ -157,50 +157,50 @@ Over..
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
 [ "monet_environment",	  26,	  26,		  0	  ]
-[ "monet_fcn_fcn",	  579,	  579,		  0	  ]
-[ "monet_fcn_imp",	  684,	  684,		  0	  ]
-[ "monet_fcn_tpe",	  684,	  684,		  0	  ]
-[ "monet_fcn_mid",	  630,	  630,		  0	  ]
+[ "monet_fcn_fcn",	  592,	  592,		  0	  ]
+[ "monet_fcn_imp",	  697,	  697,		  0	  ]
+[ "monet_fcn_tpe",	  697,	  697,		  0	  ]
+[ "monet_fcn_mid",	  643,	  643,		  0	  ]
 [ "monet_fcn_sig",	  41,	  41,		  0	  ]
-[ "monet_fcn_dsc",	  630,	  630,		  0	  ]
-[ "monet_fcn_aut",	  630,	  630,		  0	  ]
-[ "monet_fcn_dat",	  630,	  630,		  0	  ]
-[ "monet_fcn_nme",	  684,	  684,		  0	  ]
-[ "monet_fcn_pro",	  1685,	  1685,		  0	  ]
-[ "monet_fcn_cnt",	  684,	  684,		  0	  ]
+[ "monet_fcn_dsc",	  643,	  643,		  0	  ]
+[ "monet_fcn_aut",	  643,	  643,		  0	  ]
+[ "monet_fcn_dat",	  643,	  643,		  0	  ]
+[ "monet_fcn_nme",	  697,	  697,		  0	  ]
+[ "monet_fcn_pro",	  1707,	  1707,		  0	  ]
+[ "monet_fcn_cnt",	  697,	  697,		  0	  ]
 [ "monet_mod_nme",	  20,	  20,		  0	  ]
 [ "monet_mod_cnt",	  20,	  20,		  0	  ]
 [ "monet_mod_atm",	  4,	  4,		  0	  ]
 [ "monet_mod_acc",	  0,	  0,		  0	  ]
 [ "monet_mod_hdl",	  10,	  10,		  0	  ]
-[ "monet_mod_dep",	  3,	  3,		  0	  ]
-[ "monet_mod_use",	  69,	  69,		  0	  ]
+[ "monet_mod_dep",	  1,	  1,		  0	  ]
+[ "monet_mod_use",	  63,	  63,		  0	  ]
 [ "monet_mod_load",	  0,	  0,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
 [ "monet_mod_proc",	  5,	  5,		  0	  ]
-[ "monet_mod_var",	  0,	  0,		  0	  ]
-[ "adm_fcntbl",		  684,	  684,		  0	  ]
+[ "monet_mod_var",	  27,	  27,		  0	  ]
+[ "adm_fcntbl",		  697,	  697,		  0	  ]
 [ "adm_acctbl",		  2,	  2,		  0	  ]
 [ "adm_atomtbl",	  17,	  17,		  0	  ]
 [ "monet_unicode_case",	  685,	  685,		  0	  ]
+[ "tmp_28",		  2,	  2,		  0	  ]
 [ "mapi_params",	  1,	  1,		  0	  ]
-[ "tmp_29",		  2,	  2,		  0	  ]
-[ "tmp_30",		  684,	  684,		  0	  ]
+[ "tmp_30",		  697,	  697,		  0	  ]
 [ "tmp_31",		  17,	  17,		  0	  ]
 [ "name",		  0,	  0,		  0	  ]
 [ "count",		  31,	  0,		  31	  ]
 [ "diff",		  31,	  31,		  0	  ]
 [ "tmp_65",		  17,	  17,		  0	  ]
 [ "tmp_66",		  2,	  2,		  0	  ]
-[ "tmp_67",		  684,	  684,		  0	  ]
+[ "tmp_67",		  697,	  697,		  0	  ]
 [ "copy.count",		  0,	  0,		  0	  ]
 
-# 11:46:25 >  
-# 11:46:25 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=57191
-# 11:46:25 >  
+# 18:26:38 >  
+# 18:26:38 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
+# 18:26:38 >  
 
 
-# 11:46:27 >  
-# 11:46:27 >  Done.
-# 11:46:27 >  
+# 18:26:39 >  
+# 18:26:39 >  Done.
+# 18:26:39 >  
 

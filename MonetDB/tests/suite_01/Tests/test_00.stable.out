@@ -1,9 +1,9 @@
 stdout of test 'test_00` in directory 'tests/suite_01` itself:
 
 
-# 20:03:20 >  
-# 20:03:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_suite_01  < test_00.milS
-# 20:03:20 >  
+# 18:33:43 >  
+# 18:33:43 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_suite_01  < test_00.milS
+# 18:33:43 >  
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -15,7 +15,7 @@ vars;
 #-----------------------------------------------------------------------------------------#
 # tmp_32		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_28>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
 [ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
@@ -57,7 +57,7 @@ vars;
 # tmp_32		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "bn",			  "BAT",  "liquid",	  "changeable",	  "<tmp_37>"		  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_28>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
 [ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
@@ -100,7 +100,7 @@ print(bn);
 #-----------------#
 quit;
 
-# 20:03:20 >  
-# 20:03:20 >  Done.
-# 20:03:20 >  
+# 18:33:44 >  
+# 18:33:44 >  Done.
+# 18:33:44 >  
 
