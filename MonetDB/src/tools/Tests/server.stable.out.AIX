@@ -1,7 +1,10 @@
 stdout of test 'server` in directory 'src/tools` itself:
 
-#> Mtest (21:13:10):	milM server milM -prelude server.prelude
-#> Mtest (21:13:10):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_tools -prelude server.prelude server.milM
+
+# 22:58:56 >  
+# 22:58:56 >  Mtimeout -timeout 432 Mserver -p -modulesilent -yaccsilent -d8 -db src_tools -prelude server.prelude < server.milM
+# 22:58:56 >  
+
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
@@ -1294,3 +1297,8 @@ unknown(0)#"                   ]
 [ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL script.
+
+# 22:59:02 >  
+# 22:59:02 >  Done.
+# 22:59:02 >  
+
