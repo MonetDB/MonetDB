@@ -376,7 +376,7 @@ int ll_getstring(char *buf, int max_size) {
 	 	    ll_client->cptr++;
 		    *buf++ = ch;
 			
-		    if (ch == '\n')
+		    if (ch == '\n' || ch == ';')
 			break;
 		} else {
 		    break;
