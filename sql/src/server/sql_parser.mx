@@ -267,7 +267,6 @@ int yydebug=1;
 	complex_select
 	set_select
 	subquery
-	target
 	test_for_null
 	values_or_query_spec
 	grant
@@ -362,8 +361,6 @@ int yydebug=1;
 	opt_schema_element_list
 	schema_element_list
 	operation_commalist
-	target_commalist
-	opt_into
 	authid_list
 	grantee_commalist
 	column_def_opt_list
@@ -1540,16 +1537,6 @@ assignment:
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
  ;
 
-target_commalist:
-    target		{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  target_commalist ',' target
-			{ $$ = dlist_append_symbol($1, $3); }
- ;
-
-target:
-   TABLE qname		{ $$ = _symbol_create_list( SQL_TABLE, $2); }
- ;
-
 opt_where_clause:
     /* empty */			{ $$ = NULL; }
  |  WHERE search_condition	{ $$ = $2; }
@@ -1656,14 +1643,14 @@ select_with_parens:
  ;
 
 simple_select:
-    SELECT opt_distinct selection opt_into table_exp
-	{ $$ = newSelectNode( $2, $3, $4,
-		$5->h->data.sym,
-		$5->h->next->data.sym,
-		$5->h->next->next->data.sym,
-		$5->h->next->next->next->data.sym,
+    SELECT opt_distinct selection table_exp
+	{ $$ = newSelectNode( $2, $3, NULL,
+		$4->h->data.sym,
+		$4->h->next->data.sym,
+		$4->h->next->next->data.sym,
+		$4->h->next->next->next->data.sym,
 		NULL, NULL, -1, -1);
-	  dlist_destroy_keep_data($5);
+	  dlist_destroy_keep_data($4);
 	}
     ;
 
@@ -1721,11 +1708,6 @@ opt_corresponding:
 			{ $$ = dlist_create(); }
  |  CORRESPONDING BY '(' column_ref_commalist ')'
 			{ $$ = $4; }
- ;
-
-opt_into:
-   INTO target_commalist	{ $$ = $2; }
- | /* empty */			{ $$ = NULL; }
  ;
 
 selection:
