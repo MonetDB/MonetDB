@@ -145,7 +145,7 @@ public class MonetStatement implements Statement {
 
 		// save compiler some work :) `sql + ";"' will be converted to:
 		// new StringBuffer(sql).add(";")
-		batch.append(sql).append(';');
+		batch.append(sql).append(';').append('\n');
 	}
 
 	/**
