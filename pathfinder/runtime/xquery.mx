@@ -977,12 +977,16 @@ int xquery_xquery(str  mode, str q) {
                 stream_printf(GDKerr,"Unable to create tmp inputstream\n");
                 return GDK_FAIL;
         }
+        fputs("# enclosing block to kill garbage collect variables after execution\n{\n", milStream);
         /* now compile from the queryStream to the MIL stream */
         if ( !xquery_compile2MIL(queryStream, milStream, mode) ) {
                 stream_printf(GDKerr,"xquery: Compilation failed!\n");
                 return GDK_FAIL;
         }
-        fflush(milStream);
+        fputs("\n}\n", milStream);
+        fclose(milStream);
+        fclose(queryStream);
+
         /* execute the MIL code in the compiled milFile */
         if ( xquery_executeMIL(milFile) < 0 ) {
                 stream_printf(GDKerr,"xquery: Execution failed!\n");
