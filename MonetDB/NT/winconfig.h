@@ -185,6 +185,12 @@
 /* Define if you have the ctime_r function.  */
 /* #undef HAVE_CTIME_R */
 
+/* Define if you have the fpclass function.  */
+#define HAVE_FPCLASS 1
+
+/* Define if you have the fpclassify function.  */
+/* #undef HAVE_FPCLASSIFY */
+
 /* Define if you have the fstat function.  */
 #define HAVE_FSTAT 1
 
@@ -220,6 +226,9 @@
 
 /* Define if you have the getuid function.  */
 /* #undef HAVE_GETUID */
+
+/* Define if you have the isinf function.  */
+/* #undef HAVE_ISINF */
 
 /* Define if you have the mallinfo function.  */
 /* #undef HAVE_MALLINFO */
@@ -294,6 +303,9 @@
 #define HAVE_GETSYSTEMINFO
 #define HAVE_GLOBALMEMORYSTATUS
 /* #undef HAVE_GLOBALMEMORYSTATUSEX */
+
+/* Define if you have the <ieeefp.h> header file.  */
+/* #undef HAVE_IEEEFP_H */
 
 /* Define if you have the <io.h> header file.  */
 #define HAVE_IO_H 1

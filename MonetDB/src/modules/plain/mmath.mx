@@ -296,13 +296,6 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
   return(GDK_SUCCEED);
 }
 
-#ifdef HAVE_ISINF
-#ifdef HAVE_FPCLASS
-#undef HAVE_FPCLASS
-#endif
-#endif
-
-/* Hardcoded replacement for what configure should set: */
 #ifdef NATIVE_WIN32
 #include <float.h>
 /* Windows spells these differently */
@@ -312,18 +305,27 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
 #define fpclass(x)	_fpclass(x)
 #define FP_NINF         _FPCLASS_NINF
 #define FP_PINF         _FPCLASS_PINF
-#else
-#ifdef HAVE_FPCLASS
+#else /* !NATIVE_WIN32 */
+#ifdef HAVE_IEEEFP_H
 #include <ieeefp.h>
 #endif
 #endif
 
+#ifndef HAVE_ISINF
+#if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
+#define isinf(x)	(fpclassify(x) == FP_INFINITE)
+#else
+static int isinf(double x)
+{
 #ifdef HAVE_FPCLASS
-static int isinf(double x) {
     int cl = fpclass(x);
     return ((cl == FP_NINF) || (cl == FP_PINF));
+#else
+    return 0;		/* XXX not correct if infinite */
+#endif	/* HAVE_FPCLASS */
 }
-#endif
+#endif	/* HAVE_FPCLASSIFY */
+#endif	/* HAVE_ISINF */
 
 int math_unary_ISNAN(bit *res , dbl *a ) {
 #ifdef DEBUG

@@ -125,6 +125,7 @@ AC_CHECK_HEADERS(time.h sys/time.h sys/utime.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h)
+AC_CHECK_HEADERS(ieeefp.h)
 dnl We don't need to check for these two: they're only present on
 dnl Windows.  We list them here for completeness, since the
 dnl corresponding defines are used.
@@ -176,7 +177,7 @@ AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select getpgid)
 AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf)
 AC_CHECK_FUNCS(mrand48 drand48)
 AC_CHECK_FUNCS(nanosleep lockf)
-AC_CHECK_FUNCS(ctime_r isinf fpclass)
+AC_CHECK_FUNCS(ctime_r isinf fpclassify fpclass)
 ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)
 AC_TRY_COMPILE( [#include <time.h> ], 
@@ -189,4 +190,3 @@ MEL="$MONET_BUILD/src/mel/mel"
 AC_SUBST(MEL)
 MX="$MONET_BUILD/src/utils/Mx/Mx"
 AC_SUBST(MX)
-
