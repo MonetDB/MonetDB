@@ -1252,7 +1252,10 @@ ostream &install::gen_load( ostream &o, const Load &d ){
 		}
 	 	memcpy(buf,d.Name()+i,nr);
 		buf[nr] = '\0';
-	 	o << "        strncpy((s+strlen(s)),\"" << buf  << "\"," << nr << ");\n";
+		if (i != 0)
+	 	  o << "        strncpy((s+strlen(s)),\"" << buf  << "\"," << nr << ");\n";
+		else
+	 	  o << "        strncpy(s,\"" << buf  << "\"," << nr << ");\n";
 	 }
 	 o << "      TBL_Install_LoadMIL( mid, s); }\n";
 	 return o; 
