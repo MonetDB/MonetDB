@@ -551,10 +551,13 @@ static BAT *col_bind( sql_trans * tr, oid lbid, sql_column *c, int access )
 		b = bm_lbid2bat(tr->bm, lbid);
 		/* first write ie. need to copy */
 		if (access && !bm_lbid2mode(tr->bm, lbid)) {	
+			oid hseq;
 			if (mvc_debug)
 				fprintf(stderr, "new bat for column %s.%s\n", 
 					c->t->base.name, c->base.name );
+			hseq = b->hseqbase;
 			b = bat_lcopy(b, "col_bind");
+			assert(b->hseqbase == hseq);
 			c->base.wtime = c->t->base.wtime = 
 				c->t->s->base.wtime = tr->wtime = tr->stime;
 			bm_new_bat(tr->bm, lbid, b);
@@ -622,10 +625,13 @@ static BAT *tab_bind( sql_trans * tr, oid lbid, sql_table *t, int access )
 
 		/* first write ie. need to copy */
 		if (access && !bm_lbid2mode(tr->bm, lbid)) {	
+			oid hseq;
 			if (mvc_debug)
 				fprintf(stderr, "new bat for table %s\n", 
 					t->base.name);
+			hseq = b->hseqbase;
 			b = bat_lcopy(b, "tab_bind");
+			assert(b->hseqbase == hseq);
 			t->base.wtime = t->s->base.wtime = 
 				tr->wtime = tr->stime;
 			bm_new_bat(tr->bm, lbid, b);
@@ -2192,7 +2198,7 @@ mvc_logmanager()
 
 	MT_set_lock(mvc_lock, "mvc_logmanager");
 	if (!logger || log_changes(logger) < 1000) {
-		MT_unset_lock(mvc_lock, "mvc_commit");
+		MT_unset_lock(mvc_lock, "mvc_logmanager");
 		return;
 	}
 
@@ -2562,8 +2568,9 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 	if (ok == SQL_OK && n && m) {
 		BAT *db = bm_lbid2bat( tr->bm, ft->dbid );
 
-                tt->base.rtime = ft->base.rtime;
-                tt->base.wtime = ft->base.wtime;
+		if (ft->base.rtime)
+                	tt->base.rtime = tr->stime;
+                tt->base.wtime = tr->stime;
 
 		if (BUNlast(db) > db->batInserted) {
 			bm_new_bat( ttr->bm, tt->dbid, db);
@@ -2590,9 +2597,6 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 					bm_lbid2bat( tr->bm, cc->bat.bid);
 			ups = bm_lbid2bat( tr->bm, cc->bat.ubid);
 
-                	oc->base.rtime = cc->base.rtime;
-                	oc->base.wtime = cc->base.wtime;
-			
 			cur = ins;
 			if (cc->bat.ibid) {
 				BAT *ocur = bm_lbid2bat( ttr->bm, oc->bat.bid);
@@ -2603,6 +2607,23 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 					void_append_bat(cur, ins);
 					assert(cur->htype == TYPE_void);
 					bat_destroy(ins);
+				} else { 
+					bat_destroy(ocur);
+				}
+			/* write but read, ie append/update the current */
+			} else if (oc->base.wtime > cc->base.wtime) { 
+				BAT *ocur = bm_lbid2bat( ttr->bm, oc->bat.bid);
+
+				if (BATcount(ocur)){
+					BAT *i = BATalpha(ins);
+
+					printf("append\n");
+					/* void union ? */
+					cur = bat_lcopy(ocur, "rollforward");
+					void_append_bat(cur, ins);
+					assert(cur->htype == TYPE_void);
+					bat_destroy(ins);
+					bat_destroy(i);
 				} else { 
 					bat_destroy(ocur);
 				}
@@ -2635,6 +2656,11 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				bm_new_bat( ttr->bm, oc->bat.bid, cur);
 			bat_destroy(cur);
 
+			if (cc->base.rtime)
+                		oc->base.rtime = tr->stime;
+                	oc->base.wtime = tr->stime;
+			
+
 			n = n->next;
 			m = m->next;
 		} while (ok == SQL_OK && n && m);
@@ -2652,8 +2678,9 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				BAT *ups = bm_lbid2bat( tr->bm, ci->bat.ubid);
 
 			    	assert(!ci->bat.ibid);
-                		oi->base.rtime = ci->base.rtime;
-                		oi->base.wtime = ci->base.wtime;
+				if (ci->base.rtime)
+                			oi->base.rtime = tr->stime;
+                		oi->base.wtime = tr->stime;
 			
 				if (BUNlast(ins) > ins->batInserted) {
 					bm_new_bat( ttr->bm, oi->bat.bid, ins);
@@ -2885,6 +2912,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		/* write phase */
 		if (mvc_debug)
 			fprintf(stderr, "forwarding changes\n");
+		tr->stime = timestamp();
 		ok = log_tstart(logger);
 		if (ok == SQL_OK)
 			ok = rollforward_trans(tr);
@@ -2907,14 +2935,14 @@ int mvc_commit(mvc * m, int chain, char *name)
 		tr = trans_destroy(tr);
 
 	if (chain) {
-		MT_set_lock(mvc_lock, "trans_dup");
+		MT_set_lock(mvc_lock, "mvc_commit");
 		if (tr) {
 			m->trans = trans_dup(tr->stk, tr,NULL);
 			m->trans->level = level;
 			m->trans->schema = find_schema(m->trans, schema);
 			sql_session(m);
 		}
-		MT_unset_lock(mvc_lock, "trans_dup");
+		MT_unset_lock(mvc_lock, "mvc_commit");
 	} else {
 		m->trans = NULL;
 	}
@@ -2957,7 +2985,7 @@ mvc_rollback(mvc * m, int chain, char *name)
 	}
 	m->status = 0;
 	if (chain) {
-		MT_set_lock(mvc_lock, "trans_dup");
+		MT_set_lock(mvc_lock, "mvc_rollback");
 		if (tr) {
 			m->trans = trans_dup(tr->stk, tr,NULL);
 			m->trans->level = level;
@@ -2965,7 +2993,7 @@ mvc_rollback(mvc * m, int chain, char *name)
 			if (tr->parent)
 				sql_session(m); 
 		}
-		MT_unset_lock(mvc_lock, "trans_dup");
+		MT_unset_lock(mvc_lock, "mvc_rollback");
 	} else {
 		m->trans = NULL;
 	}
@@ -3127,7 +3155,9 @@ mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
 	c = find_column(t, cname);
 	b = bind_bat(tr, c, access);
 
-	c->base.rtime = t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
+	if (!access)  /* read access */
+		c->base.rtime = t->base.rtime = 
+				s->base.rtime = tr->rtime = tr->stime;
 	assert(b->htype == TYPE_void && b->hseqbase == 0);
 	return b;
 }
@@ -3150,7 +3180,8 @@ mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access )
 	c = find_column(t, cname);
 	b = bind_ubat(tr, c, access);
 
-	c->base.rtime = t->base.rtime = tr->rtime = tr->stime;
+	if (!access)  /* read access */
+		c->base.rtime = t->base.rtime = tr->rtime = tr->stime;
 	return b;
 }
 
@@ -3170,7 +3201,8 @@ mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
 	assert(t);
 	b = bind_dbat(tr, t, access);
 
-	t->base.rtime = tr->rtime = tr->stime;
+	if (!access)  /* read access */
+		t->base.rtime = tr->rtime = tr->stime;
 	assert(b->htype == TYPE_void && b->hseqbase == 0);
 	return b;
 }
@@ -3192,7 +3224,8 @@ mvc_bind_ibat(mvc * m, char *sname, char *tname, char *iname, int access )
 	assert(t);
 	b = bind_idx(tr, i, access);
 
-	i->base.rtime = t->base.rtime = tr->rtime = tr->stime;
+	if (!access)  /* read access */
+		i->base.rtime = t->base.rtime = tr->rtime = tr->stime;
 	assert(b->htype == TYPE_void && b->hseqbase == 0);
 	return b;
 }
@@ -3205,7 +3238,9 @@ mvc_bind_module(mvc * m, char *mname )
 	sql_module *s = find_module(tr, mname);
 	if (!s)
 		return NULL;
+	/*
 	s->base.rtime = tr->rtime;
+	*/
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_module %s\n", mname );
@@ -3224,7 +3259,9 @@ trans_bind_type(sql_trans *tr, char *name )
 	}
 	if (!t)
 		return NULL;
+	/*
 	t->base.rtime = tr->rtime;
+	*/
 
 	return t;
 }
@@ -3241,12 +3278,15 @@ mvc_bind_type(mvc * sql, char *name )
 sql_type *
 mod_bind_type(mvc *sql, sql_module *m, char *name) 
 {
-	sql_trans *tr = sql->trans;
 	sql_type *t = find_type(m, name);
 
+	(void)sql;
 	if (!t)
 		return NULL;
+	/*
+	sql_trans *tr = sql->trans;
 	t->base.rtime = tr->rtime;
+	*/
 
 	if (mvc_debug)
 		fprintf(stderr, "mod_bind_type %s\n", name );
@@ -3260,7 +3300,9 @@ mvc_bind_schema(mvc * m, char *sname )
 	sql_schema *s = find_schema(tr, sname);
 	if (!s)
 		return NULL;
+	/*
 	s->base.rtime = tr->rtime;
+	*/
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_schema %s\n", sname );
@@ -3276,7 +3318,9 @@ mvc_bind_table(mvc * m, sql_schema *s, char *tname )
 	(void)m;
 	if (!t)
 		return NULL;
+	/*
 	t->base.rtime = s->base.rtime;
+	*/
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_table %s.%s\n", s->base.name, tname );
@@ -3292,7 +3336,9 @@ mvc_bind_column(mvc * m, sql_table * t, char *cname )
 	(void)m;
 	if (!c)
 		return NULL;
+	/*
 	c->base.rtime = t->base.rtime;
+	*/
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_column %s.%s\n", t->base.name, cname);
@@ -3308,7 +3354,9 @@ mvc_first_column( mvc *m, sql_table *t )
 	(void)m;
 	if (!c)
 		return NULL;
+	/*
 	c->base.rtime = t->base.rtime;
+	*/
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_first_column %s.%s\n", 
