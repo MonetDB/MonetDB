@@ -5,6 +5,8 @@ This document assumes that you have installed MonetDB on a Unix system
 (e.g., Linux, IRIX, Solaris, AIX, MacOs X/Darwin, or CYGWIN), and that
 you are planning to compile and install the MonetDB SQL front end on 
 the same system.
+For compilation and installation on a native Windows system (NT, 2000, XP)
+see the instructions in the file 'HowToStart-Win32.txt'.
 
 
 Prerequisites:
@@ -74,6 +76,16 @@ information.
 Configure and Make:
 ===================
 
+Before executing the following steps, make sure that your
+shell-environment (especially variables like "PATH" and
+"LD_LIBRARY_PATH") is setup, thus that the tools listed above as well
+as MonetDB can be found.
+("Bash"-users at CWI and DD are welcome to simply 
+  "source conf/conf.bash".
+ This sets the proper environment and even provides aliases
+ "configure_sql" & "Mtest_sql" for convenience.
+ See conf/conf.bash itself for more details.)
+
 In the top-level directory of 'sql' type the command:
 
  ./bootstrap
@@ -82,8 +94,8 @@ If it responds with an error message, it means the MonetDB server
 could not be found, or less likely, you have not installed 
 MonetDB properly.
 
-Then in any directory (a new empty directory or in the sql top-level
-directory) give the command
+Then in any directory (preferably a *new empty* directory and *not* in the
+'sql' top-level directory) give the command
 
  .../configure [<options>]
 
@@ -156,24 +168,27 @@ will install in /usr/local/.  Make sure you have appropriate privileges.
 Testing the Installation:
 =========================
 
-Testing the MonetDB SQL front end is preferably done before you install the
-components in their final location.  If you install the code base in its
-default location, you can test the system as follows.
+Make sure that /usr/local/bin (respectively <monetdbprefix>/bin and
+<sqlprefix>/bin, where <monetdbprefix> and <sqlprefix> are the
+directories you specified with --prefix when calling configure for
+MonetDB and MonetDB/SQL, respectively) is in your PATH.
+
+In case you started your compilation with "source conf/conf.bash" (see 
+"Configure and Make" above), you can use the "Mtest_sql" alias, now.
 In the sql top-level directory issue the command
 
  Mtest_sql  -r
 
 It will run a large number of SQL tests to assure correct installation.
 
-If, however, you have installed the code in <prefixdir> you need to type
-more.  Let ... denote the absolute or relative path to the sql top-level
-directory.  Then, the test runs as follows from the sql top-level directory:
+In case you did not use "source conf/conf.bash", you need to type more.
+Let <srcdir>, <builddir>, and <prefixdir> denote the absolute or
+relative path to the sql top-level source directory, the directory
+where you called configure for sql, and the directory you specified as
+--prefix with sql's configure, respectively.
+Then, the test runs as follows from the sql top-level directory:
 
- Mtest.py --TSTSRCBASE=... --TSTBLDBASE=.../Linux --TSTTRGBASE=<prefixdir> -r
-
-Make sure that /usr/local/bin (respectively <prefixdir>/bin, where
-<prefixdir> is the directory you specified with --prefix when calling
-configure) is in your PATH.
+ Mtest.py --TSTSRCBASE=<srcdir> --TSTBLDBASE=<builddir> --TSTTRGBASE=<prefixdir> -r
 
 You need write permissions on part of the installation directory for
 this command: it will create subdirectories var/dbfarm and Tests.
@@ -207,4 +222,28 @@ MonetDB.  In the latter case, you need to tell configure via
 "--with-XYZ=<DIR>" where to find packages XYZ on your machine. 
 configure then looks for the respective header files in <DIR>/include,
 and for the respective libraries in <DIR>/lib.
+
+
+Usage:
+======
+
+To use the MonetDB SQL front end interactively, you first need to start
+an MonetDB server ("Mserver") with sql support. To do so, first make
+sure, that your environment is set as described in "Configure and Make"
+and "Testing the Installation" above.
+
+In case the install (i.e., prefix) directories of MonetDB and
+MonetDB/SQL are identical, simply call
+
+ Mserver <MONET_PREFIX>/lib/MonetDB/sql_server.mil
+
+In case you use different install (i.e., prefix) directories of MonetDB
+and MonetDB/SQL, call
+
+ Mserver --set monet_mod_path=<MONET_PREFIX>/lib/MonetDB:<SQL_PREFIX>/lib/MonetDB <MONET_PREFIX>/lib/MonetDB/sql_server.mil
+
+Then, in a second shell, set up the same environment and start the
+MonetDB SQL front end by calling
+
+ Msql -umonetdb -Pmonetdb
 
