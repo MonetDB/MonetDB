@@ -32,7 +32,8 @@ bin_mel = {
 	accops.mx        command.mx     html.mx      module.mx    symtable.mx \
 	any_arg.mx       debug.mx       iterator.mx  object.mx    type_arg.mx \
 	atom.mx          depend.mx      language.mx  operator.mx  use.mx \
-	atom_arg.mx      dependency.mx  link.mx      ops.mx       var_arg.mx
+	atom_arg.mx      dependency.mx  link.mx      ops.mx       var_arg.mx \
+	mil.mx
 
 	LIBS = $(MEL_LIBS)
 }
