@@ -1073,7 +1073,7 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 	curPrg = c->curprg;
         curBlk = curPrg->def;
         curInstr = getInstrPtr(curBlk,0);
-	setModuleId(curInstr, "sql");
+	setModuleId(curInstr, "sqlcache");
 
 	if (be->mvc->args){
 		int argc = 0;
@@ -1092,18 +1092,25 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
         backend_dumpstmt( be, curBlk, s);
 
 	pushEndInstruction(curBlk);
-        insertSymbol(c->nspace, c->curprg);
+        insertSymbol(findScope(c->nspace,"sqlcache"), c->curprg);
         trimMalBlk(c->curprg->def);
         c->blkmode =0;
         chkProgram(c->nspace, c->curprg->def);
+@-
+An error in the compilation should be reported to the user.
+@c
+        showit= TRUE;
+	if(showit ||  c->curprg->def->errors){
+		showErrors(c);
+		if(showit  ||  c->listing )
+			printFunction(c->fdout,c->curprg->def,c->listing);
+		stream_flush(c->fdout);
+	}
+
         if( c->backup){
         	c->curprg = c->backup;
                 c->backup = 0;
         }
-        showit= TRUE;
-        if(showit && c->listing)
-        	printFunction(GDKout, curBlk, c->listing);
-        showErrors();
 }
 
 void 
@@ -1113,7 +1120,7 @@ backend_call( backend *be, Client c, char *name, list *args )
 	InstrPtr q;
         MalBlkPtr mb = c->curprg->def;
 
-	q= newStmt(mb, "sql", name);
+	q= newStmt(mb, "sqlcache", name);
 	if (args){
 		node *n;
   		for (n=args->h; n; n = n->next){
