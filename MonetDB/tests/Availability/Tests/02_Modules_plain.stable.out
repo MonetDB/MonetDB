@@ -575,11 +575,12 @@ Module: "enum"
 
 Module: "lock"
 
-[ 10 ]
-[ 10 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help										  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 9 ]
+[ 9 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+# function		type		signature			help									  # name
+# str		str		str				str									  # type
+#-----------------------------------------------------------------------------------------------------------------------------------------#
 [ "lock_create",  "COMMAND:   ",  "lock_create() : lock",	  "create an unset lock"							  ]
 [ "lock_destroy", "COMMAND:   ",  "lock_destroy(lock) : void",	  "destroy a lock"								  ]
 [ "lock_set",	  "COMMAND:   ",  "lock_set(lock) : void",	  "try to set a lock; if set, block till it is freed"				  ]
@@ -588,7 +589,6 @@ Module: "lock"
 [ "sema_create",  "COMMAND:   ",  "sema_create(int) : sema",	  "create an unset sema, with an initial value"					  ]
 [ "sema_destroy", "COMMAND:   ",  "sema_destroy(sema) : void",	  "destroy a sema"								  ]
 [ "sema_down",	  "COMMAND:   ",  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"					  ]
-[ "sema_try",	  "COMMAND:   ",  "sema_try(sema) : int",	  "try the semaphpore, if >0 decrease and return 0, \n\t\tif not return EBUSY"	  ]
 [ "sema_up",	  "COMMAND:   ",  "sema_up(sema) : void",	  "increase the semaphore"							  ]
 
 Module: "mapi"
