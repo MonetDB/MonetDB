@@ -165,15 +165,22 @@ if ( ! -x bootstrap ) then
 
 	if ( "${os}" == "Linux" ) then
 		if ( "${COMP}" == "ntv" ) then
-			# "ntv" on Linux means IntelC++-5.0.1-beta ("icc")
-			# source /soft/IntelC++-5.0.1-beta/bin/iccvars.csh
-			setenv IA32ROOT /soft/IntelC++-5.0.1-beta/ia32
-			setenv INTEL_FLEXLM_LICENSE /soft/IntelC++-5.0.1-beta/licenses
-			set libpath = "/soft/IntelC++-5.0.1-beta/ia32/lib"
+			if ( -f /opt/intel/licenses/l_cpp.lic  &&  -f /opt/intel/compiler50/ia32/bin/iccvars.sh ) then
+				# "ntv" on Linux means IntelC++-5.0.1 ("icc")
+				# source /opt/intel/compiler50/ia32/bin/iccvars.sh
+				setenv IA32ROOT /opt/intel/compiler50/ia32
+				setenv INTEL_FLEXLM_LICENSE /opt/intel/licenses
+				set libpath = "${IA32ROOT}/lib:${libpath}"
+				set binpath = "${IA32ROOT}/bin:${binpath}"
+			  else
+				# "ntv" on Linux means IntelC++-5.0.1-beta ("icc")
+				# source /soft/IntelC++-5.0.1-beta/bin/iccvars.sh
+				setenv IA32ROOT /soft/IntelC++-5.0.1-beta/ia32
+				setenv INTEL_FLEXLM_LICENSE /soft/IntelC++-5.0.1-beta/licenses
+				set libpath = "${IA32ROOT}/lib:${libpath}"
+			endif
 			set cc = "icc"
 			set cxx = "icc"
-			# otherwise, lib_sql & sql_client do not compile/link
-			set conf_opts = "${conf_opts} --enable-debug"
 		endif
 	endif
 

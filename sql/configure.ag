@@ -109,6 +109,13 @@ if [ "$enable_static" = "yes" ]; then
 	if test "x$GCC" != xyes; then
 		case "$host_os" in
 		irix*)	SHARED_LIBS="$SHARED_LIBS -lm";;
+		linux*) CFLAGS="$CFLAGS -O0";;
+		esac
+	fi
+  else
+	if test "x$GCC" != xyes; then
+		case "$host_os" in
+		linux*) CFLAGS="$CFLAGS -O0";;
 		esac
 	fi
 fi
