@@ -693,6 +693,8 @@ diag (xoff, xlim, yoff, ylim, minimal, part)
 	      return 2 * c - 1;
 	    }
 	}
+#else
+	(void)big_snake;
 #endif /* MINUS_H_FLAG */
 
       /* Heuristic: if we've gone well beyond the call of duty, give up
@@ -970,7 +972,7 @@ int CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c,
 	oid *qbuf = (oid *) BUNtloc(qgram, BUNfirst(qgram));
 	oid *ibuf = (oid *) BUNtloc(id, BUNfirst(id));
 	int *pbuf = (int *) BUNtloc(pos, BUNfirst(pos));
-	int *lbuf = (oid *) BUNtloc(len, BUNfirst(len));
+	int *lbuf = (int *) BUNtloc(len, BUNfirst(len));
 
 	ERRORcheck((qgram->ttype!=TYPE_oid), "CMDqgramselfjoin: tail of BAT qgram must be oid.\n");
 	ERRORcheck((id->ttype!=TYPE_oid), "CMDqgramselfjoin: tail of BAT id must be oid.\n");
