@@ -33,7 +33,7 @@ interface for non-DBAs.
 @T
 The {\tt MapiClient} program provides textual
 interface to the Monet server. Unlike the Mserver console, the {\tt MapiClient}
-program is intended not only or the database administrator, but to all other
+program is intended not only for the database administrator, but to all other
 users. It is more comfortable than the console, since it provides
 a command history and automatic file name completion.
 
