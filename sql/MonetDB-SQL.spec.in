@@ -16,10 +16,21 @@ Requires: python
 
 %if !%buildsystem
 BuildRequires: MonetDB-devel 
+%define buildjava 1
+%define comp_cc gcc
+%define comp_cxx g++
 %endif
 
-#%define buildjava 1
 %define builddoc 0
+
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
+%define bits 32
+%else
+%define bits 64
+%endif
 
 %package odbc
 Summary: MonetDB SQL odbc
@@ -86,7 +97,6 @@ Requires: MonetDB-devel
 Add the MonetDB documentaion description here
 %endif
 
-
 %prep
 rm -rf $RPM_BUILD_ROOT
 
@@ -94,7 +104,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %build
 
-./configure --prefix=%{prefix} --with-monet=%{prefix}
+./configure \
+	--enable-bits=%{bits} \
+	--with-gcc="%{comp_cc}" \
+	--with-gxx="%{comp_cxx}" \
+	--prefix=%{prefix} \
+	--with-monet=%{prefix}
 
 make
 
