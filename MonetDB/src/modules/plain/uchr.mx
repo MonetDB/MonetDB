@@ -129,7 +129,7 @@ int uchr_tostr(char **uchrStr, int *len, uchr *c) {
 	printf("  = *uchrStr: %s\n",*uchrStr);
 	printf("  = *len: %d\n",*len);
 #endif
-	return 4;
+	return strlen(*uchrStr);
 }
 @mil
 
