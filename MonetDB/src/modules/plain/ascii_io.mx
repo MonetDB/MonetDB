@@ -139,7 +139,7 @@ proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] {
 		} else {
 			seps.insert(nil,"\n");
 		}
-		id += 1;
+		id :+= 1;
 	}
 	return seps;
 }
