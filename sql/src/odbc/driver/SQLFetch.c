@@ -1138,7 +1138,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		case SQL_INTEGER:
 		case SQL_BIGINT:
 		case SQL_BIT:
-			fval = (double) nval.val;
+			fval = (double) (SQLBIGINT) nval.val;
 			i = 1;
 			while (nval.scale > 0) {
 				nval.scale--;
