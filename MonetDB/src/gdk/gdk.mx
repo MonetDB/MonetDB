@@ -312,10 +312,8 @@ An error at this stage normally lead to an abort.
 # include <unistd.h>
 #endif
 
-#ifdef _AIX
-#ifndef _H_LOCALEDEF
-#define _H_LOCALEDEF
-#endif
+#if HAVE_SYS_LOCALEDEF_H
+# include <sys/localedef.h>
 #endif
 
 #include <ctype.h>      /* isspace etc. */
