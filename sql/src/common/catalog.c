@@ -48,7 +48,7 @@ static void table_destroy(table *t)
 	_DELETE(t);
 }
 
-void schema_destroy(schema * s)
+static void schema_destroy(schema * s)
 {
 	list_destroy(s->tables);
 	_DELETE(s->name);

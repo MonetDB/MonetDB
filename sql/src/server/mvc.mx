@@ -1808,6 +1808,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 	if (m->debug)
 		fprintf(stderr, "mvc_commit\n");
 
+
 	/* savepoint then simply make a copy of the current transaction */
 	if (name && name[0] != '\0'){
 		if (m->debug)
@@ -1816,7 +1817,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		return 0;
 	}
 
-	/* if there is nothing to commit reused the transaction */
+	/* if there is nothing to commit reuse the current transaction */
 	if (tr->wtime == 0) {
 		if (m->debug)
 			fprintf(stderr, "no changes\n");

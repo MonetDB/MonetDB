@@ -41,7 +41,7 @@ static void getschemas( catalog *c, char *schema, char *user ){
 			for (m = nt->columns->h; m; m = m->next ){
 				sql_column *col = m->data;
 		  		column *cx = cat_create_column( c, col->id, t, col->name, 
-						col->type, col->def, col->null );
+					sql_dup_subtype(col->type), col->def, col->null );
 			}	
 			if (nt->keys) for (m = nt->keys->h; m; m = m->next ){
 				node *p, *o = NULL;
