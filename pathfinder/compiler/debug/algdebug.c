@@ -54,6 +54,8 @@ char *a_id[]  = {
     , [aop_doc_tbl]    "DOC"
     , [aop_select]     "SEL"
     , [aop_negate]     "NOT"
+    , [aop_type]       "TYPE"
+    , [aop_cast]       "CAST"
     , [aop_add]        "PLUS"
     , [aop_subtract]   "MINUS"
     , [aop_multiply]   "TIMES"
@@ -266,6 +268,25 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
                             n->sem.negate.res, n->sem.negate.att);
             break;
 
+        case aop_type:
+            PFarray_printf (dot, "%s (%s:%s)\"", a_id[n->kind],
+                            n->sem.type.res, n->sem.type.att);
+            break;
+
+        case aop_cast:
+            PFarray_printf (dot, "%s (%s)\"", a_id[n->kind],
+                            n->sem.cast.att);
+            break;
+
+        case aop_add:
+        case aop_subtract:
+        case aop_multiply:
+        case aop_divide:
+            PFarray_printf (dot, "%s (%s:%s, %s)\"", a_id[n->kind],
+                            n->sem.arithm.res, n->sem.arithm.att1,
+                            n->sem.arithm.att2);
+            break;
+
         case aop_project:
             if (strcmp(n->sem.proj.items[0].new, n->sem.proj.items[0].old))
                 PFarray_printf (dot, "%s (%s:%s", a_id[n->kind],
@@ -467,6 +488,12 @@ alg_pretty (PFalg_op_t *n)
             break;
 
         case aop_negate:
+            break;
+
+        case aop_type:
+            break;
+
+        case aop_cast:
             break;
 
         case aop_add:

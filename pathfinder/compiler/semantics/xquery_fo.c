@@ -141,22 +141,38 @@
   { .ns = PFns_op, .loc = "plus",                                        \
     .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
                             PFty_opt (PFty_integer ()) },                \
-    .ret_ty = PFty_opt (PFty_integer ()) }                               \
+    .ret_ty = PFty_opt (PFty_integer ()),                                \
+    .alg = PFbui_op_add }                                                \
 , /* op:plus (decimal?, decimal?) as decimal? */                         \
   { .ns = PFns_op, .loc = "plus",                                        \
     .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
                             PFty_opt (PFty_decimal ()) },                \
-    .ret_ty = PFty_opt (PFty_decimal ()) }                               \
+    .ret_ty = PFty_opt (PFty_decimal ()),                                \
+    .alg = PFbui_op_add }                                                \
 , /* op:plus (double?, double?) as double? */                            \
   { .ns = PFns_op, .loc = "plus",                                        \
     .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
                             PFty_opt (PFty_double ()) },                 \
-    .ret_ty = PFty_opt (PFty_double ()) }                                \
-, /* op:minus (atomic?, atomic?) as atomic? */                           \
+    .ret_ty = PFty_opt (PFty_double ()),                                 \
+    .alg = PFbui_op_add }                                                \
+, /* op:minus (integer?, integer?) as integer? */                        \
   { .ns = PFns_op, .loc = "minus",                                       \
-    .arity = 2, .par_ty = { PFty_opt (PFty_atomic ()),                   \
-                            PFty_opt (PFty_atomic ()) },                 \
-    .ret_ty = PFty_opt (PFty_atomic ()) }                                \
+    .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
+                            PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_opt (PFty_integer ()),                                \
+    .alg = PFbui_op_subtract }                                           \
+, /* op:minus (decimal?, decimal?) as decimal? */                        \
+  { .ns = PFns_op, .loc = "minus",                                       \
+    .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
+                            PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_opt (PFty_decimal ()),                                \
+    .alg = PFbui_op_subtract }                                           \
+, /* op:minus (double?, double?) as double? */                           \
+  { .ns = PFns_op, .loc = "minus",                                       \
+    .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
+                            PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_opt (PFty_double ()),                                 \
+    .alg = PFbui_op_subtract }                                           \
 , /* op:times (atomic?, atomic?) as atomic? */                           \
   { .ns = PFns_op, .loc = "times",                                       \
     .arity = 2, .par_ty = { PFty_opt (PFty_atomic ()),                   \
@@ -214,7 +230,8 @@
 , /* pf:typed-value (node) as untypedAtomic */                           \
   { .ns = PFns_pf, .loc = "typed-value",                                 \
     .arity = 1, .par_ty = { PFty_node () },                              \
-    .ret_ty = PFty_untypedAtomic () }                                    \
+    .ret_ty = PFty_untypedAtomic (),                                     \
+    .alg = PFbui_op_tyval }                                              \
 , /* pf:distinct-doc-order (node *) as node* */                          \
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \

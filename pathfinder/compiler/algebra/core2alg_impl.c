@@ -39,6 +39,8 @@
 /** twig-generated node type identifiers */
 #include "core2alg.symbols.h"
 
+#include "array.h"
+
 /** twig: type of tree node */
 #define TWIG_NODE PFcnode_t
 
@@ -95,6 +97,14 @@ static int TWIG_ID[] = {
     , [c_kind_elem]           kind_elem
     , [c_kind_attr]           kind_attr
 
+    , [c_elem]                elem
+    , [c_attr]                attr 
+    , [c_text]                text
+    , [c_doc]                 doc 
+    , [c_comment]             comment
+    , [c_pi]                  pi  
+    , [c_tag]                 tag
+
     , [c_true]         true_      /**< Built-in function 'true' */
     , [c_false]        false_     /**< Built-in function 'false' */
     , [c_error]        error      /**< Built-in function 'error' */
@@ -147,6 +157,13 @@ static int TWIG_ID[] = {
 #undef kind_elem
 #undef kind_attr
 #undef instof 
+#undef elem
+#undef attr 
+#undef text
+#undef doc 
+#undef comment
+#undef pi  
+#undef tag
 #undef true_  
 #undef false_ 
 #undef error  
@@ -155,6 +172,47 @@ static int TWIG_ID[] = {
 #undef int_eq 
 
 #include "algebra_mnemonic.h"
+
+
+/** Constructor for environment entry */
+static PFalg_env_t enventry (PFvar_t *var, PFalg_op_t *op);
+
+
+/**
+ * Collect info on kind tests within an XPath expression.
+ */
+static PFalg_op_t *nameTest (PFqname_t  qname);
+static PFalg_op_t *nodeTest (void);
+static PFalg_op_t *commTest (void);
+static PFalg_op_t *textTest (void);
+static PFalg_op_t *piTest (void);
+static PFalg_op_t *pitarTest (char *target);
+static PFalg_op_t *docTest (void);
+static PFalg_op_t *elemTest (void);
+static PFalg_op_t *attrTest (void);
+
+/**
+ * Collect info on location steps within an XPath expression.
+ */
+static PFalg_op_t *anc (PFalg_op_t *n);
+static PFalg_op_t *anc_self (PFalg_op_t *n);
+static PFalg_op_t *attr (PFalg_op_t *n);
+static PFalg_op_t *child (PFalg_op_t *n);
+static PFalg_op_t *desc (PFalg_op_t *n);
+static PFalg_op_t *desc_self (PFalg_op_t *n);
+static PFalg_op_t *fol (PFalg_op_t *n);
+static PFalg_op_t *fol_sibl (PFalg_op_t *n);
+static PFalg_op_t *par (PFalg_op_t *n);
+static PFalg_op_t *prec (PFalg_op_t *n);
+static PFalg_op_t *prec_sibl (PFalg_op_t *n);
+static PFalg_op_t *self (PFalg_op_t *n);
+
+/** Concatenate the parameters of built-in functions. */
+static PFalg_op_t * args (PFalg_op_t *arg, PFalg_op_t *args);
+
+/** Create the tail of an argument list. */
+static PFalg_op_t * args_tail(void);
+
 
 static PFarray_t  *env = NULL;
 static PFalg_op_t *loop = NULL;
@@ -255,6 +313,17 @@ PFcore2alg (PFcnode_t *c)
 }
 
 
+/**
+ * Construct a new entry to be inserted into the variable environment.
+ * Called whenever a new variable is declared.
+ */
+static PFalg_env_t
+enventry (PFvar_t *var, PFalg_op_t *op)
+{
+    return (PFalg_env_t) { .var = var, .op = op };
+}
+
+
 /*
  * Required for XPath processing, i.e. staircase join evaluation.
  * Dummy operator that collects the kind test information during
@@ -262,7 +331,7 @@ PFcore2alg (PFcnode_t *c)
  * information will later be incorporated into the "real" staircase
  * join node.
  */
-PFalg_op_t *PFnameTest (PFqname_t qname)
+static PFalg_op_t *nameTest (PFqname_t qname)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -272,7 +341,7 @@ PFalg_op_t *PFnameTest (PFqname_t qname)
     return ret;
 }
 
-PFalg_op_t *PFnodeTest (void)
+static PFalg_op_t *nodeTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -281,7 +350,7 @@ PFalg_op_t *PFnodeTest (void)
     return ret;
 }
 
-PFalg_op_t *PFcommTest (void)
+static PFalg_op_t *commTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -290,7 +359,7 @@ PFalg_op_t *PFcommTest (void)
     return ret;
 }
 
-PFalg_op_t *PFtextTest (void)
+static PFalg_op_t *textTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -299,7 +368,7 @@ PFalg_op_t *PFtextTest (void)
     return ret;
 }
 
-PFalg_op_t *PFpiTest (void)
+static PFalg_op_t *piTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -308,7 +377,7 @@ PFalg_op_t *PFpiTest (void)
     return ret;
 }
 
-PFalg_op_t *PFpitarTest (char *target)
+static PFalg_op_t *pitarTest (char *target)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -318,7 +387,7 @@ PFalg_op_t *PFpitarTest (char *target)
     return ret;
 }
 
-PFalg_op_t *PFdocTest (void)
+static PFalg_op_t *docTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -327,7 +396,7 @@ PFalg_op_t *PFdocTest (void)
     return ret;
 }
 
-PFalg_op_t *PFelemTest (void)
+static PFalg_op_t *elemTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -336,7 +405,7 @@ PFalg_op_t *PFelemTest (void)
     return ret;
 }
 
-PFalg_op_t *PFattrTest (void)
+static PFalg_op_t *attrTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -353,88 +422,122 @@ PFalg_op_t *PFattrTest (void)
  * semantic information will later be incorporated into the "real"
  * staircase join node.
  */
-PFalg_op_t *PFanc (PFalg_op_t *n)
+static PFalg_op_t *anc (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_anc;
 
     return n;
 }
 
-PFalg_op_t *PFanc_self (PFalg_op_t *n)
+static PFalg_op_t *anc_self (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_anc_s;
 
     return n;
 }
 
-PFalg_op_t *PFattr (PFalg_op_t *n)
+static PFalg_op_t *attr (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_attr;
 
     return n;
 }
 
-PFalg_op_t *PFchild (PFalg_op_t *n)
+static PFalg_op_t *child (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_chld;
 
     return n;
 }
 
-PFalg_op_t *PFdesc (PFalg_op_t *n)
+static PFalg_op_t *desc (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_desc;
 
     return n;
 }
 
-PFalg_op_t *PFdesc_self (PFalg_op_t *n)
+static PFalg_op_t *desc_self (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_desc_s;
 
     return n;
 }
 
-PFalg_op_t *PFfol (PFalg_op_t *n)
+static PFalg_op_t *fol (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_fol;
 
     return n;
 }
 
-PFalg_op_t *PFfol_sibl (PFalg_op_t *n)
+static PFalg_op_t *fol_sibl (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_fol_s;
 
     return n;
 }
 
-PFalg_op_t *PFpar (PFalg_op_t *n)
+static PFalg_op_t *par (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_par;
 
     return n;
 }
 
-PFalg_op_t *PFprec (PFalg_op_t *n)
+static PFalg_op_t *prec (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_prec;
 
     return n;
 }
 
-PFalg_op_t *PFprec_sibl (PFalg_op_t *n)
+static PFalg_op_t *prec_sibl (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_prec_s;
 
     return n;
 }
 
-PFalg_op_t *PFself (PFalg_op_t *n)
+static PFalg_op_t *self (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_self;
 
     return n;
+}
+
+
+/**
+ * Concatenate the parameters of built-in functions. 'args'
+ * contains the arguments seen so far, 'arg' is the new
+ * argument to be concatenated to the beginning of the list
+ * (in order to maintain correct order of the incoming arguments,
+ * because they arrive at this function from last to first).
+ */
+static PFalg_op_t * args (PFalg_op_t *arg, PFalg_op_t *args)
+{
+    PFarray_t *a = PFarray (sizeof (PFalg_op_t *));
+    *((PFalg_op_t **) PFarray_add (a)) = arg;
+
+    /* check if 'arg' is very first argument to arrive here */
+    if (args->sem.builtin.args == NULL)
+        args->sem.builtin.args = a;
+    else
+        args->sem.builtin.args = PFarray_concat (a,
+                                 args->sem.builtin.args);
+
+    return args;
+}
+
+/**
+ * Create the tail of an argument list.
+ */
+static PFalg_op_t * args_tail()
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+    ret->sem.builtin.args = NULL;
+
+    return ret;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

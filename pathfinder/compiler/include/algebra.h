@@ -186,6 +186,9 @@ enum PFalg_op_kind_t {
     , aop_doc_tbl       /**< document relation */
     , aop_select        /**< selection of rows where column value != 0 */
     , aop_negate        /**< negation */
+    , aop_type          /**< selection of rows where a column is of a
+			     certain type */
+    , aop_cast          /**< type cast of an attribute */
     , aop_project       /**< algebra projection and renaming operator */
     , aop_rownum        /**< consecutive number generation */
     , aop_serialize     /**< serialize algebra expression
@@ -249,6 +252,19 @@ union PFalg_op_sem_t {
 	PFalg_att_t     res;     /**< column to store negated result */
     } negate;
 
+    /* semantic content for type test operator */
+    struct {
+	PFalg_att_t     att;     /**< name of type-tested attribute */
+	PFty_t          ty;      /**< comparison type */
+	PFalg_att_t     res;     /**< column to store result of type test */
+    } type;
+
+    /* semantic content for type cast operator */
+    struct {
+	PFalg_att_t     att;     /**< name of casted attribute */
+	PFty_t          ty;      /**< type to cast to */
+    } cast;
+
     /* semantic content for arithmetic operators */
     struct {
 	PFalg_att_t     att1;     /**< first operand */
@@ -256,6 +272,10 @@ union PFalg_op_sem_t {
 	PFalg_att_t     res;      /**< attribute to hold the result */
     } arithm;
 
+    /* semantic content for dummy built-in function operator */
+    struct {
+	PFarray_t      *args;     /**< arguments of a buit_in function */
+    } builtin;
 };
 /** semantic content in algebra operators */
 typedef union PFalg_op_sem_t PFalg_op_sem_t;
@@ -285,26 +305,6 @@ struct PFalg_op_t {
 };
 /** algebra operator node */
 typedef struct PFalg_op_t PFalg_op_t;
-
-
-
-/* ............. environment entry specification .............. */
-
-/**
- * Each entry in the (variable) environment consists of a reference to
- * the variable (pointer to PFvar_t) and the algebra operator that
- * represents the variable. The environment itself will be represented
- * by an array.
- */
-
-/** environment entry node */
-struct PFalg_env_t {
-    PFvar_t        *var;
-    PFalg_op_t     *op;
-};
-/** environment entry node */
-typedef struct PFalg_env_t PFalg_env_t;
-
 
 
 
@@ -394,9 +394,7 @@ PFalg_op_t * PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2,
 
 /**
  * Staircase join between two relations. Each such join corresponds
- * to the evaluation of an XPath location step. 'scj' is just a
- * container for the semantic information on the kind test and location
- * step represented by this join.
+ * to the evaluation of an XPath location step.
  */
 PFalg_op_t * PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni,
 			   PFalg_op_t *scj);
@@ -457,6 +455,19 @@ PFalg_op_t * PFalg_select (PFalg_op_t *n, PFalg_att_t att);
 PFalg_op_t * PFalg_negate (PFalg_op_t *n, PFalg_att_t att,
 			   PFalg_att_t res);
 
+/**
+ * Constructor for type test of column values. The result is
+ * stored in newly created column.
+ */
+PFalg_op_t * PFalg_type (PFalg_op_t *n, PFalg_att_t att,
+			 PFalg_att_t res, PFty_t ty);
+
+/**
+ * Constructor for the type cast of a column.
+ */
+PFalg_op_t * PFalg_cast (PFalg_op_t *n, PFalg_att_t att,
+			 PFty_t ty);
+
 /** Constructor for arithmetic addition operators. */
 PFalg_op_t * PFalg_add (PFalg_op_t *n, PFalg_att_t att1,
 			PFalg_att_t att2, PFalg_att_t res);
@@ -470,25 +481,14 @@ PFalg_op_t * PFalg_multiply (PFalg_op_t *n, PFalg_att_t att1,
 			     PFalg_att_t att2, PFalg_att_t res);
 
 /** Constructor for arithmetic division operators. */
-PFalg_op_t * PFalg_divide (PFalg_op_t *n1, PFalg_op_t *n2,
-			   PFalg_att_t att1, PFalg_att_t att2,
-			   PFalg_att_t res);
-
-/**
- * The four arithmetic operators have a lot in common. Do
- * common stuff here.
- */
-PFalg_op_t * PFalg_arith (PFalg_op_t * res);
+PFalg_op_t * PFalg_divide (PFalg_op_t *n, PFalg_att_t att1,
+			   PFalg_att_t att2, PFalg_att_t res);
 
 /** Cast nat to int. */
-PFalg_op_t * PFalg_cast (PFalg_op_t * o);
+PFalg_op_t * PFalg_cast_item (PFalg_op_t * o);
 
 
 PFalg_op_t * PFalg_serialize (PFalg_op_t *);
-
-
-/** Constructor for environment entry */
-PFalg_env_t PFalg_enventry (PFvar_t *var, PFalg_op_t *op);
 
 
 /**

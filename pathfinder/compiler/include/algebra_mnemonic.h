@@ -61,6 +61,12 @@
 /* negation operator */
 #define negate(a,b,c)   PFalg_negate ((a),(b),(c))
 
+/** type test operator */
+#define type(a,b,c,d)   PFalg_type ((a),(b),(c),(d))
+
+/* type cast operator */
+#define cast(a,b,c)     PFalg_cast ((a),(b),(c))
+
 /* addition operator */
 #define add(a,b,c,d)      PFalg_add ((a),(b),(c),(d))
 
@@ -73,7 +79,7 @@
 /* division operator */
 #define divide(a,b,c,d)   PFalg_divide ((a),(b),(c),(d))
 
-#define cast(o)         PFalg_cast (o)
+#define cast_item(o)         PFalg_cast_item (o)
 
 /** serialization */
 #define serialize(a)    PFalg_serialize(a)

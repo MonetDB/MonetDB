@@ -108,6 +108,14 @@ node  var_
       kind_elem
       kind_attr
 
+      elem
+      attr 
+      text
+      doc 
+      comment
+      pi  
+      tag
+
       true_
       false_
       atomize
@@ -139,6 +147,8 @@ label Query
       FunctionArgs
       BuiltIns
       LiteralValue
+      ConstructorExpr
+      TagName
 ;
 
 Query:           CoreExpr { assert ($$);};
@@ -157,8 +167,9 @@ NonAtom:         PathExpr;
 NonAtom:         ComparExpr;
 NonAtom:         FunctionAppl;
 NonAtom:         BuiltIns;
+NonAtom:         ConstructorExpr;
 
-BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr)
+BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
     {
         TOPDOWN;
     }
@@ -225,7 +236,7 @@ BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr)
 
         /* insert $v into NEW environment */
         *((PFalg_env_t *) PFarray_add (env)) =
-            PFalg_enventry ($1$->sem.var, var);
+            enventry ($1$->sem.var, var);
 
         /* save old loop operator */
         old_loop = loop;
@@ -251,16 +262,16 @@ BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr)
         if ($2$->sem.var) {
             opt_var = cross (lit_tbl (attlist ("pos"),
                                       tuple (lit_nat (1))),
-                             project (cast (rownum (map,
-                                                    "item",
-                                                    sortby ("inner"),
-                                                    "outer")),
+                             project (cast_item (rownum (map,
+                                                         "item",
+                                                         sortby ("inner"),
+                                                         "outer")),
                               proj ("iter", "inner"),
                               proj ("item", "item")));
 
             /* insert $p into NEW environment */
             *((PFalg_env_t *) PFarray_add (env)) =
-                PFalg_enventry ($2$->sem.var, opt_var);
+                enventry ($2$->sem.var, opt_var);
         }
 
         /* update all variable bindings in old environment and put
@@ -272,7 +283,7 @@ BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr)
                                proj ("pos", "pos"),
                                proj ("item", "item"));
             *((PFalg_env_t *) PFarray_add (env)) =
-                PFalg_enventry (e.var, new_bind);
+                enventry (e.var, new_bind);
         }
 
         /* translate e2 under the specified conditions (updated
@@ -324,15 +335,14 @@ BindingExpr:     let (var_, CoreExpr, CoreExpr)
          *         \  1                                                     /
          *
          */
-
         /* initiate translation of e1 */
         tDO($%1$);
 
         /* assign result of e1 to $v, i.e. add resulting binding to
          * environment
          */
-         *((PFalg_env_t *) PFarray_add (env)) = PFalg_enventry ($1$->sem.var,
-                                                                [[ $2$ ]]);
+         *((PFalg_env_t *) PFarray_add (env)) = enventry ($1$->sem.var,
+                                                          [[ $2$ ]]);
 
         /* now translate e2 in the new context */
         tDO($%2$);
@@ -350,11 +360,119 @@ TypeswitchExpr:  typesw (CoreExpr,
     }
     =
     {
+        /*
+         * CoreExpr1 is the expression to be switched. CoreExpr2 
+         * compiles one (the current) case branch. CoreExpr3 is
+         * either another typeswitch representing the next case
+         * branch or the default branch of the overall typeswitch.
+         *
+         * NB: the TYPE operator creates a new column named "type"
+         * of type boolean; it examines whether the "item" column is
+         * of type "ty"; if this is the case, it stores the value
+         * true in the "type" column and false otherwise. 
+         *
+         * env,loop,delta: e1 => q1,delta1
+         *
+         * loop2 = proj_iter (SEL type (TYPE type item ty q1))
+         *
+         * {..., $v -> 
+         *  proj_iter,pos,item (q(v) |X|(iter=iter1) (proj_iter1:iter (loop2)))
+         *
+         * env2,loop2,delta1: e2 => q2,delta2
+         *
+         *
+         * loop3 = proj_iter (SEL res (_NOT res type (TYPE type item ty q1)))
+         *
+         * {..., $v -> 
+         *  proj_iter,pos,item (q(v) |X|(iter=iter1) (proj_iter1:iter (loop3)))
+         *
+         * env3,loop3,delta2: e3 => q3,delta3
+         * ------------------------------------------------------------------
+         * env,loop,delta (q2 U q3, delta3)
+         */
+        PFalg_op_t *old_loop;
+        PFarray_t  *old_env;
+        unsigned int i;
+        PFalg_env_t e;
+        PFalg_op_t *new_bind;
 
+        /* initiate translation of e1 */
+        tDO($%1$);
+
+        /* save old loop operator */
+        old_loop = loop;
+
+        /* create loop2 operator */
+        loop = project (select (type ([[ $1$ ]], "item",
+                                      "type", $2.1.1$->sem.type),
+                                "type"),
+                        proj ("iter", "iter"));
+
+        /* save old environment */
+        old_env = env;
+
+        /* update the environment for translation of e2 */
+        env = PFarray (sizeof (PFalg_env_t));
+
+        for (i = 0; i < PFarray_last (old_env); i++) {
+            e = *((PFalg_env_t *) PFarray_at (old_env, i));
+            new_bind = project (eqjoin (e.op,
+                                        project (loop,
+                                                 proj ("iter1", "iter")),
+                                        "iter",
+                                        "iter1"),
+                                proj ("iter", "iter"),
+                                proj ("pos", "pos"),
+                                proj ("item", "item"));
+            *((PFalg_env_t *) PFarray_add (env)) =
+                enventry (e.var, new_bind);
+        }
+
+        /* translate e2 */
+        tDO($%2$);
+
+        /* create loop3 operator */
+        loop = project (select (negate ( type ([[ $1$ ]], "item",
+                                               "type", $2.1.1$->sem.type),
+                                        "type",
+                                        "res"),
+                                "res"),
+                        proj ("iter", "iter"));
+
+        /* update the environment for translation of e3 */
+        env = PFarray (sizeof (PFalg_env_t));
+
+        for (i = 0; i < PFarray_last (old_env); i++) {
+            e = *((PFalg_env_t *) PFarray_at (old_env, i));
+            new_bind = project (eqjoin (e.op,
+                                        project (loop,
+                                                 proj ("iter1", "iter")),
+                                        "iter",
+                                        "iter1"),
+                                proj ("iter", "iter"),
+                                proj ("pos", "pos"),
+                                proj ("item", "item"));
+            *((PFalg_env_t *) PFarray_add (env)) =
+                enventry (e.var, new_bind);
+        }
+
+        /* translate e3 */
+        tDO($%3$);
+
+        /* reset loop relation and environment */
+        loop = old_loop;
+        env = old_env;
+
+        [[ $$ ]] = disjunion ([[ $2.1.2$ ]], [[ $3$ ]]);
     }
     ;
 
-SequenceTypeCast: seqcast (seqtype, CoreExpr);
+SequenceTypeCast: seqcast (seqtype, CoreExpr)
+    =
+    {
+        [[ $$ ]] = cast ([[ $2$ ]], "item", $1$->sem.type);
+    }
+    ;
 SubtypingProof:  proof (CoreExpr, seqtype, CoreExpr);
 
 ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
@@ -366,12 +484,12 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
         /*
          * if e1 then e2 else e3
          *
-         * NB: sel: select those rows where column value != 0
+         * NB: SEL: select those rows where column value != 0
          *     
          *
          * {..., $v -> q(v), ...},loop,delta: e1 => q1,delta1
-         * loop2 = proj_iter (sel item q1)
-         * loop3 = proj_iter (sel res (¬ res item q1))
+         * loop2 = proj_iter (SEL item q1)
+         * loop3 = proj_iter (SEL res (NOT res item q1))
          * {..., $v -> 
          *  proj_iter,pos,item (q(v) |X|(iter=iter1) (proj_iter1:iter loop2)),
          *                      ...},loop2,delta1: e2 => (q2,delta2) 
@@ -414,7 +532,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
                                 proj ("pos", "pos"),
                                 proj ("item", "item"));
             *((PFalg_env_t *) PFarray_add (env)) =
-                PFalg_enventry (e.var, new_bind);
+                enventry (e.var, new_bind);
         }
 
         /* translate e2 */
@@ -441,7 +559,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
                                 proj ("pos", "pos"),
                                 proj ("item", "item"));
             *((PFalg_env_t *) PFarray_add (env)) =
-                PFalg_enventry (e.var, new_bind);
+                enventry (e.var, new_bind);
         }
 
         /* translate e3 */
@@ -494,73 +612,73 @@ PathExpr:        LocationStep;
 LocationStep:    ancestor (NodeTest)
     =
     {
-        [[ $$ ]] = PFanc ([[ $1$ ]]);
+        [[ $$ ]] = anc ([[ $1$ ]]);
     }
     ;
 LocationStep:    ancestor_or_self (NodeTest)
     =
     {
-        [[ $$ ]] = PFanc_self ([[ $1$ ]]);
+        [[ $$ ]] = anc_self ([[ $1$ ]]);
     }
     ;
 LocationStep:    attribute (NodeTest)
     =
     {
-        [[ $$ ]] = PFattr ([[ $1$ ]]);
+        [[ $$ ]] = attr ([[ $1$ ]]);
     }
     ;
 LocationStep:    child_ (NodeTest)
     =
     {
-        [[ $$ ]] = PFchild ([[ $1$ ]]);
+        [[ $$ ]] = child ([[ $1$ ]]);
     }
     ;
 LocationStep:    descendant (NodeTest)
     =
     {
-        [[ $$ ]] = PFdesc ([[ $1$ ]]);
+        [[ $$ ]] = desc ([[ $1$ ]]);
     }
     ;
 LocationStep:    descendant_or_self (NodeTest)
     =
     {
-        [[ $$ ]] = PFdesc_self ([[ $1$ ]]);
+        [[ $$ ]] = desc_self ([[ $1$ ]]);
     }
     ;
 LocationStep:    following (NodeTest)
     =
     {
-        [[ $$ ]] = PFfol ([[ $1$ ]]);
+        [[ $$ ]] = fol ([[ $1$ ]]);
     }
     ;
 LocationStep:    following_sibling (NodeTest)
     =
     {
-        [[ $$ ]] = PFfol_sibl ([[ $1$ ]]);
+        [[ $$ ]] = fol_sibl ([[ $1$ ]]);
     }
     ;
 LocationStep:    parent_ (NodeTest)
     =
     {
-        [[ $$ ]] = PFpar ([[ $1$ ]]);
+        [[ $$ ]] = par ([[ $1$ ]]);
     }
     ;
 LocationStep:    preceding (NodeTest)
     =
     {
-        [[ $$ ]] = PFprec ([[ $1$ ]]);
+        [[ $$ ]] = prec ([[ $1$ ]]);
     }
     ;
 LocationStep:    preceding_sibling (NodeTest)
     =
     {
-        [[ $$ ]] = PFprec_sibl ([[ $1$ ]]);
+        [[ $$ ]] = prec_sibl ([[ $1$ ]]);
     }
     ;
 LocationStep:    self (NodeTest)
     =
     {
-        [[ $$ ]] = PFself ([[ $1$ ]]);
+        [[ $$ ]] = self ([[ $1$ ]]);
     }
     ;
 
@@ -587,7 +705,7 @@ LocationSteps:   locsteps (LocationStep, CoreExpr)
 NodeTest:        namet
     =
     {
-        [[ $$ ]] = PFnameTest ($$->sem.qname);
+        [[ $$ ]] = nameTest ($$->sem.qname);
     }
     ;
 NodeTest:        KindTest;
@@ -595,59 +713,84 @@ NodeTest:        KindTest;
 KindTest:        kind_node (nil)
     =
     {
-        [[ $$ ]] = PFnodeTest ();
+        [[ $$ ]] = nodeTest ();
     }
     ;
 KindTest:        kind_comment (nil)
     =
     {
-        [[ $$ ]] = PFcommTest ();
+        [[ $$ ]] = commTest ();
     }
     ;
 KindTest:        kind_text (nil)
     =
     {
-        [[ $$ ]] = PFtextTest ();
+        [[ $$ ]] = textTest ();
     }
     ;
 KindTest:        kind_pi (nil)
     =
     {
-        [[ $$ ]] = PFpiTest ();
+        [[ $$ ]] = piTest ();
     }
     ;
 KindTest:        kind_pi (lit_str)
     =
     {
-        [[ $$ ]] = PFpitarTest ($1$->sem.str);
+        [[ $$ ]] = pitarTest ($1$->sem.str);
     }
     ;
 KindTest:        kind_doc (nil)
     =
     {
-        [[ $$ ]] = PFdocTest ();
+        [[ $$ ]] = docTest ();
     }
     ;
 KindTest:        kind_elem (nil)
     =
     {
-        [[ $$ ]] = PFelemTest ();
+        [[ $$ ]] = elemTest ();
     }
     ;
 KindTest:        kind_attr (nil)
     =
     {
-        [[ $$ ]] = PFattrTest ();
+        [[ $$ ]] = attrTest ();
     }
     ;
 
+ConstructorExpr: elem (TagName, CoreExpr);
+ConstructorExpr: attr (TagName, CoreExpr);
+ConstructorExpr: text (CoreExpr);
+ConstructorExpr: doc (CoreExpr);
+ConstructorExpr: comment (lit_str);
+ConstructorExpr: pi (lit_str);
+
+TagName:         tag;
+TagName:         CoreExpr;
+
 ComparExpr:      int_eq (Atom, Atom);
 
-FunctionAppl:    apply (FunctionArgs);
+FunctionAppl:    apply (FunctionArgs)
+    =
+    {
+        [[ $$ ]] = $$->sem.fun->alg (loop, &delta, 
+                                     [[ $1$ ]]->sem.builtin.args->base);
+    }
+    ;
 
-FunctionArgs:    arg (Atom, FunctionArgs);
-FunctionArgs:    arg (SequenceTypeCast, FunctionArgs);
-FunctionArgs:    nil;
+FunctionArgs:    arg (CoreExpr, FunctionArgs)
+    =
+    {
+        [[ $$ ]] = args([[ $1$ ]], [[ $2$ ]]);
+    }
+    ;
+FunctionArgs:    nil
+    =
+    {
+        [[ $$ ]] = args_tail();
+    }
+    ;
 
 
 Atom:            var_
@@ -754,7 +897,7 @@ LiteralValue:    true_
         [[ $$ ]] = cross (loop,
                           lit_tbl( attlist ("pos", "item"),
                                    tuple (lit_nat (1),
-                                          lit_bln ($$->sem.tru))));
+                                          lit_bln (true))));
     }
     ;
 LiteralValue:    false_
@@ -769,7 +912,7 @@ LiteralValue:    false_
         [[ $$ ]] = cross (loop,
                           lit_tbl( attlist ("pos", "item"),
                                    tuple (lit_nat (1),
-                                          lit_bln ($$->sem.tru))));
+                                          lit_bln (false))));
     }
     ;
 LiteralValue:    empty_
