@@ -331,7 +331,7 @@ void terminalInput( Mapi mid, char *prompt)
 			;
 		/* empty lines are meaningfull in some interpreters, like mdb*/
 		for(end_cmd = line + strlen(line) - 1;
-		    isspace((int)(*end_cmd));
+		    end_cmd > start_cmd && isspace((int)(*end_cmd));
 		    end_cmd--)
 			;
 		n = 1 + end_cmd - start_cmd;
@@ -499,7 +499,7 @@ int main(int ac, char **av)
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:?",
+		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:t?",
 				long_options, &option_index);
 
 		if (c == -1)
