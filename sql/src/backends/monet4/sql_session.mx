@@ -43,9 +43,9 @@ extern int mvc_export_result( mvc *c, stream *s, int res_id );
 extern int mvc_export_table( mvc *c, stream *s, int res_id, int offset, int nr);
 extern BAT *mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rsep, int nr);
 
+extern int debug_cmd( context *c, char *cmd, stream *out, int part );
 extern void monet4_freestack( backend_stack stk );
 extern void monet4_freecode( backend_code code );
-
 #endif /*_SQL_SESSION_H_*/
 @c
 #include "sql_session.h"
@@ -664,7 +664,7 @@ BAT *mvc_import_table( mvc *m, stream *s, char *tname,
 		return NULL;
 	}
 	if (!s || stream_errnr(s)){
-		GDKerror("stream not open %d\n", stream_errnr(s) );
+		GDKerror("stream not open %d\n", stream_errnr(s));
 		m->type = -1;
 		return  NULL;
 	}
@@ -853,5 +853,13 @@ int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
 	stream_flush( s );
 	if (clean)
 		mvc_clean_result(m, t);
+	return 0;
+}
+int debug_cmd( context *c, char *cmd, stream *out, int part )
+{
+	stream_writeInt( out, (part)?Q_DEBUGP:Q_DEBUG );
+	stream_writeInt( out, c->debug );
+	stream_write( out, cmd, strlen(cmd), 1 );
+	stream_flush( out );
 	return 0;
 }

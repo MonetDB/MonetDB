@@ -88,7 +88,7 @@ SQL client and the corresponding MIL runtime startup.
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
 
-	.COMMAND mvc_bind_ubat( mvc c, str sname, str tname, str cname, int acess ) : 
+	.COMMAND mvc_bind_ubat( mvc c, str sname, str tname, str cname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_ubat_wrap; "Bind bat with the updates to tname.cname"
 
