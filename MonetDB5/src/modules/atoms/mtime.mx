@@ -395,6 +395,10 @@ module mtime;
 #command lng(d:tzone):lng = MTIMEtzone_2lng;
 #command int(d:rule):int = MTIMErule_2int;
 
+command date(:void):date
+address MTIMEnil2date
+comment "generate the nil date";
+
 command tzone_local(t:tzone):void 
 address MTIMEtzone_set_local 
 comment "set the local tzone; which is used 
@@ -2414,6 +2418,11 @@ str MTIME@1_2@2(@2 *ret,@1 *src){
 @:coerce(date,lng)@
 @:coerce(daytime,lng)@
 
+str MTIMEnil2date(date *ret,int *src){
+    (void) src;
+    *ret= date_nil;
+    return MAL_SUCCEED;
+}
 @-
 The comparison implementations are relatively straightforward.
 @= compareImpl
