@@ -67,6 +67,7 @@ $MONETFARM/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 #include "Mapi.h"
 
 #include <stdio.h> 
+#include <stdlib.h> 
 #include <ctype.h> 
 #include <sys/types.h> 
 #include <sys/socket.h> 
