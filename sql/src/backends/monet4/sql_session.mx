@@ -326,12 +326,10 @@ int sqlexecute(context * c, stream *out, Cntxt stk )
 		c->mvc->type = q->type;
 		err = backend_fastpath( (Cntxt)q->stk, (YYSTREE)q->code, c->args);
 	}
-/*
-	if (qc_size(c->qc) > 10){
-		if (c->qc) qc_destroy(c->qc, stk); 
+	if (c->mvc->type == Q_TRANS){
+		if (c->qc) qc_destroy(c->qc); 
 		c->qc = qc_create();
 	}
-*/
 
 	if (!err && !(c->debug&64)){
 		ssize_t status, type;
