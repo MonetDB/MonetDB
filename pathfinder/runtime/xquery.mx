@@ -94,6 +94,7 @@ BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
         } else {
                 res = BATdescriptor(*(bat*)bbun);
         }
+        BBPunfix( BBPcacheid( batbat ) );
         return res;
 }
 
@@ -103,7 +104,8 @@ void switchWsContext(XqueryCtx* ctx, int wsID) {
 
                 if ( ctx->curFRAG >= 0 ) {
                         for(i=0; i<WS_BATS; i++) {
-                                /* INCOMPLETE close ctx->curBAT[i]; */
+                                if ( ctx->curBAT[i] )
+                                        BBPunfix( BBPcacheid( ctx->curBAT[i] ) );
                         }
                 }
                 ctx->curFRAG   = wsID;
@@ -136,8 +138,8 @@ int moreTags(XqueryCtx* ctx) {
  */
 void pushTag(XqueryCtx* ctx, oid pre, str ns, str name) {
         ctx->tagStack[ctx->stackPtr].pre  = pre;
-        ctx->tagStack[ctx->stackPtr].ns   = strdup(ns); /* incomplete */
-        ctx->tagStack[ctx->stackPtr].name = strdup(name); /* incomplete */
+        ctx->tagStack[ctx->stackPtr].ns   = strdup(ns); /* incomplete, free? */
+        ctx->tagStack[ctx->stackPtr].name = strdup(name); /* incomplete, free? */
         ctx->stackPtr++;
 }
 
@@ -402,7 +404,7 @@ void handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
  */
 void handle_comment(XqueryCtx* ctx, str comm) {
         if (ctx->saxMode ) {
-                /* INCOMPLETE */
+                /* incomplete */
         } else { /* xmlMode */
                 stream_printf(GDKout,"<!--%s-->",comm);
         }
@@ -413,7 +415,7 @@ void handle_comment(XqueryCtx* ctx, str comm) {
  */
 void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
         if (ctx->saxMode ) {
-                /* INCOMPLETE */
+                /* incomplete */
         } else { /* xmlMode */
                 stream_printf(GDKout,"<?%s %s?>",target,data);
         }
@@ -464,7 +466,9 @@ ptr IDT_FRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index) {
                         stream_printf(GDKout,"NIL BAT[%d][%d]\n",fragId,batId);
 
                 ptr res = indexedTail("tmp",b,oid_index);
-                /* INCOMPLETE, close BAT* b */
+
+                BBPunfix( BBPcacheid( b ) );
+
                 return res;
         }
 }
@@ -616,9 +620,11 @@ int ws_documentIndex(BAT* ws, str docName) {
 
                 if ( strcmp(docName,docNm) == 0 ) {
                         /* stream_printf(GDKout,"found document: %s\t(id=%d@0)\n",docNm,docId); */
+                        BBPunfix( BBPcacheid( doc_loaded ) );
                         return docId;
                 }
         }
+        BBPunfix( BBPcacheid( doc_loaded ) );
         return -1;
 }
 
@@ -834,7 +840,8 @@ int xquery_print_result_main(
                         break;
                         };
                  case NODE: {
-                        stream_printf(GDKout,"<!--node-not-impl-yet-->\n");
+                        // incomplete, suppose just ignore
+                        // stream_printf(GDKout,"<!--node-not-impl-yet-->\n");
                         break;
                         };
                  case BOOL: {
