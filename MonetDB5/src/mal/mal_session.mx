@@ -344,7 +344,8 @@ str MALreader(Client c){
 	}
 	c->mode = FINISHING;
 	c->fdin->buf[c->fdin->pos] = 0;
-	return 0;
+	/* return throwMessage("MALreader","Attempt to read beyond eof");*/
+    return MAL_SUCCEED;
 }
 str MALparser(Client c){
 	InstrPtr p; 
