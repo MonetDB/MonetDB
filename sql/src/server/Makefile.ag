@@ -13,6 +13,8 @@ INCLUDES = \
 	-I${top_srcdir}/src/client \
 	$(GETOPT_INCS)
 
+LIBDIR = pkglib
+
 lib__sqlserver = {
 	SOURCES = sqlserver.mx mvc.mx logger.mx \
 		catalog_module.c statement_exec.c
