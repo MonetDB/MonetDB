@@ -8,10 +8,28 @@ This module contains a simple interface for internet connections.
 @m
 .MODULE mapi;
 
-.COMMAND listen()  = MAPIlisten_default;
+.COMMAND _listen()  = MAPIlisten_default;
 	"start a Mapi server with the default port number."
-.COMMAND listen(int port, int maxusers) = MAPIlisten; 
+.COMMAND _listen(int port, int maxusers) = MAPIlisten; 
 	"start a Mapi server."
+
+.LOAD
+	VAR _params := nil;
+	IF (view_bbp_name.reverse.exist("mapi_params")){
+		_params := bat("mapi_params");
+	} ELSE {
+		_params := new(int,int);
+		_params.rename("mapi_params");
+	}
+	VAR mapi_params := _params;
+
+	PROC listen(int port, int maxusers) := {
+		mapi_params.insert(port,maxusers);
+		_listen(port,maxusers);
+	}
+
+	PROC listen() := listen(50000,5);
+.END;
 
 .END mapi;
 
