@@ -43,6 +43,7 @@ AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
 if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
+	AC_DEFINE(YYTEXT_POINTER, 1, [has flex, but compilation of yytext_is_pointer test fails for some reason])
 fi
 
 # MONET_BUILD and MONET_SOURCE are *only* used for monet-config
