@@ -166,15 +166,16 @@ comment "Strip whitespaces from start of a string.";
 command rtrim( s:str ) :str 
 address STRRtrim
 comment "Strip whitespaces from end of a string.";
-command substitute(s:str,src:str,dst:str,rep:bit):str 
+command substitute(s:str,src:str,dst:str,rep:bit)
+	:str 
 address STRSubstitute
-comment "Substitute first occurrence of substring
-	'src' by 'dst'.  Iff repeated = true 
-	this is repeated while 'src' can be found 
-	in the result string. In order to prevent 
+comment "Substitute first occurrence of 'src' by 
+	'dst'.  Iff repeated = true this is 
+	repeated while 'src' can be found in the 
+	result string. In order to prevent 
 	recursion and result strings of unlimited 
-	size, repeating is only done iff src is not 
-	a substring of dst.";
+	size, repeating is only done iff src is 
+	not a substring of dst.";
 
 command STRprelude()
 address STRPrelude;
@@ -330,10 +331,12 @@ One of the things that become more complex in unicode are uppercase/lowercase co
 below tables are the simple one-to-one unicode case mappings. We do not support the special casing mappings 
 (e.g. from one to two letters).
 References for simple and complex casing:
+{\tiny
 \begin{verbatim}
 http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
 http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt
 \end{verbatim}
+}
 
 The unicode case conversion implementation in Monet fills a mapping BAT of int,int combinations, 
 in which we perform high-performance hash-lookup (all code inlined).

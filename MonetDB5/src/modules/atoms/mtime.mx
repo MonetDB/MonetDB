@@ -593,7 +593,7 @@ command compute(r:rule, year:int) :date
 address compute_rule_foryear 
 comment "compute the date from a rule in a given year";
 
-@- day and month names
+@- Day and month names
 One day we should introduce the concept of locale, and hook here.
 @mal
 command monthnum(month:str) :int 
@@ -606,8 +606,8 @@ comment "Returns month name from a number
 	between [1-12], str(nil) otherwise.";
 command daynum(day:str) :int 
 address day_from_str 
-comment "Returns number of day [1-7] from a string
-	 or nil if does not match any.";
+comment "Returns number of day [1-7] from a 
+	string or nil if does not match any.";
 command dayname(day:int) :str 
 address day_to_str 
 comment "Returns day name from a number 
@@ -620,10 +620,12 @@ comment "Allow synonyms for the parse format of
 
 command olddate (format:str) :date 
 address olddate 
-comment "create a date from the old instant format.";
+comment "create a date from the old instant 
+	format.";
 command oldduration(format:str) :int 
 address oldduration 
-comment "parse the old duration format and return an (estimated) number of days.";
+comment "parse the old duration format and 
+	return an (estimated) number of days.";
 
 @+ Utilities
 The Monet V4 procs are converted into functions.

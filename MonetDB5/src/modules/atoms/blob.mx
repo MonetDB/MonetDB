@@ -60,7 +60,7 @@ Manipulation functions to extract strings from blobs and vice versa.
 Not to be confused with blob parsing and printing.
 @mal
 command tostring(v:blob) :str 
-address fromblob
+address BLOBfromblob
 comment "get the bytes from blob as a string, till 
 	the first 0 byte or the end of the blob";
 command tostring(v:blob, index:int ) :str 
@@ -69,7 +69,7 @@ comment "get the bytes from blob as a string,
 	 starting at byte 'index' till the first 
 	0 byte or the end of the blob.";
 command toblob(v:str) :blob 
-address toblob
+address BLOBtoblob
 comment "store a string as a blob.";
 command nitems(b:blob):int 
 address BLOBnitems
@@ -87,48 +87,49 @@ b2 := blob.toblob("Hello World");
 err:= print(b2);
 v1 := blob.tostring(b2);
 err:= print(v1);
+@-
 @* Implementation Code
 @h
 #ifndef __BLOB_H__
-
 #define __BLOB_H__
+
+#include "mal.h"
+#include <gdk.h>
 
 typedef struct blob
 {
-   int nitems;
+   size_t nitems;
    /*unsigned*/ char data[1];
 } blob;
 
+size_t blobsize(size_t nitems);
+
 #endif /* __BLOB_H__ */
 @c
-#include <gdk.h>
-
-#include <stdlib.h>
-#include <string.h>
-
 #include "blob.h"
-#include "mal.h"
 
-size_t blobsize(int nitems)
+size_t blobsize(size_t nitems)
 {
-   if (nitems <0)
+   if (nitems == ~(size_t)0)
       nitems = 0;
-   return (sizeof(int)+nitems);
+   return (sizeof(size_t)+nitems);
 }
 
-void BLOBput(Heap* h,int* bun,blob* val)
+var_t blob_put(Heap* h,var_t* bun,blob* val)
 {
    char* base;
 
-   *bun  = HEAP_malloc(h,blobsize(val->nitems));
+   *bun = HEAP_malloc(h,blobsize(val->nitems));
    base = h->base;
-   memcpy(&base[*bun],(char *)val,blobsize(val->nitems));
+   if (*bun) memcpy(&base[*bun],(char *)val,blobsize(val->nitems));
+   return *bun;
 }
 
-int BLOBget(Heap* h,int* bun,int* l,blob** val)
+#if 0
+int blob_get(Heap* h,int* bun,int* l,blob** val)
 {
    blob* from = HEAP_index(h,*bun,blob);
-   int size = blobsize(from->nitems);
+   size_t size = blobsize(from->nitems);
 
    if (*val == NULL)
    {
@@ -145,121 +146,144 @@ int BLOBget(Heap* h,int* bun,int* l,blob** val)
 
    return (size);
 }
+#endif
 
-int BLOBnequal(blob* l,blob*  r)
+int blob_nequal(blob* l,blob*  r)
 {
-   int len;
-   int i;
-   if (l->nitems != r->nitems)
+   size_t len = l->nitems;
+
+   if (len != r->nitems)
       return(1);
 
-   len = l->nitems;
-
-   if (len == -1)
+   if (len == ~(size_t)0)
       return(0);
 
-   for(i=0;i<len;++i)
-   {
-      if (l->data[i] != r->data[i])
-	 return(1);
-   }
-   return(0);
+   return memcmp(l->data, r->data, len) != 0;
 }
 
-void BLOBdel(Heap* h,int* index)
+void blob_del(Heap* h,var_t* index)
 {
-   HEAP_free(h,*index);
+   HEAP_free(h, *index);
 }
 
-int BLOBhash(blob* b)
+hash_t blob_hash(blob* b)
 {
-   return(b->nitems);
+   return (hash_t) b->nitems;
 }
 
-blob *BLOBnull()
+blob* blob_null(void)
 {
    static blob nullval;
-   nullval.nitems = -1;
+   nullval.nitems = ~(size_t)0;
    return(&nullval);
 }
 
-void BLOBconvert( blob *b, int direction){
-	(void) direction; /* fool compiler */
-	b->nitems = normal_int_SWAP(b->nitems);
+blob *blob_read(blob *a, stream *s, size_t cnt) {
+	int len;
+	(void) cnt;
+	assert(cnt==1);
+	if (!stream_readInt(s, &len))
+		return NULL;
+	if ((a = GDKmalloc(len)) == NULL)
+		return NULL;
+	if (stream_read(s, (char*)a, len, 1) != 1) {
+		GDKfree(a);
+		return NULL;
+	}
+	return a;
+} 
+
+void blob_write(blob *a, stream *s, size_t cnt) {
+	int len = blobsize(a->nitems);
+	(void) cnt;
+	assert(cnt==1);
+	if (stream_writeInt(s, (int) len))
+		stream_write(s, (char*)a, len, 1 );
 }
 
-int BLOBlength(blob* p)
-{ return(blobsize(p->nitems)); }
+void blob_convert( blob *b, int direction){
+	(void) direction;
+	b->nitems = normal_vart_SWAP(b->nitems);
+}
 
-
-int BLOBheap(Heap* heap, size_t capacity)
+int blob_length(blob* p)
 {
-   HEAP_initialize(heap,capacity,0,4);
-   return 0;
+   return(blobsize(p->nitems));
 }
 
-int BLOBnitems(int *ret,blob *b) {
-     *ret = b->nitems;
-     return GDK_SUCCEED;
+
+void blob_heap(Heap* heap, size_t capacity)
+{
+   HEAP_initialize(heap,capacity,0,(int)sizeof(var_t));
 }
 
 #ifndef OLDSTYLE
-int BLOBtostr(str* tostr,int* l,blob** pin)
+int blob_tostr(str* tostr,int* l,blob* p)
 {
-   blob *p= *pin;
-   char* s;
-   int i;
-   {
-      int expectedlen = 20 + (p->nitems * 4);
-      if (*l < expectedlen)
-      {
-         if (*tostr != NULL)
-            GDKfree(*tostr);
-         *tostr = (str)GDKmalloc(expectedlen);
-         *l = expectedlen;
-      }
-   }
+	char* s;
+	size_t i;
+	size_t expectedlen;
 
-   sprintf(*tostr,"(%d:", p->nitems);
-   s = *tostr + strlen(*tostr);
+	if (p->nitems == ~(size_t)0)
+		expectedlen = 4;
+	else
+		expectedlen = 24 + (p->nitems * 3);
+	if (*l < 0 || (size_t) *l < expectedlen) {
+		if (*tostr != NULL)
+			GDKfree(*tostr);
+		*tostr = (str)GDKmalloc(expectedlen);
+		*l = (int) expectedlen;
+	}
+	if (p->nitems == ~(size_t)0) {
+		strcpy(*tostr, "nil");
+		return 3;
+	}
 
-   for (i=0;i<p->nitems;++i)
-   {
-      sprintf(s,"%s%02X", ((i==0)?"":" "), (unsigned char) p->data[i]);
-      s += strlen(s);
-   }
-   *s++ = ')';
-   *s = '\0';
-   return(s - *tostr);
+	sprintf(*tostr,"(" SZFMT ":", p->nitems);
+	s = *tostr + strlen(*tostr);
+
+	for (i = 0; i < p->nitems; i++) {
+		int val = (p->data[i]>>4)&15;
+		*s++ = ' ';
+		if (val >= 10){
+			*s++ = 'A' + val - 10;
+		} else {
+			*s++ = '0' + val;
+		}
+		val = p->data[i]&15;
+		if (val >= 10){
+			*s++ = 'A' + val - 10;
+		} else {
+			*s++ = '0' + val;
+		}
+	}
+	*s++ = ')';
+	*s = '\0';
+	return(s - *tostr);
 }
 
-int BLOBfromstr(char* instr,int* l,blob** val)
+int blob_fromstr(char* instr,int* l,blob** val)
 {
-   int i;
-   int nitems;
-   int nbytes;
+   size_t i;
+   size_t nitems;
+   size_t nbytes;
    blob *result;
    char* s = instr;
 
    s = strchr(s,'(');
    if (s == NULL)
    {
-      if(strcmp(instr,"nil")==0) *val = (blob*) NULL;
-      else {
-	GDKwarning("Missing ( in blob literal string\n");
-	*val = (blob*)NULL;
-      }
+      GDKwarning("Missing ( in bob\n");
+      *val = (blob*)NULL;
       return(0);
    }
-   nitems = (int) strtol(s + 1,&s,10);
-   nbytes = blobsize(nitems);
+   nitems = (size_t) strtoul(s + 1, &s, 10);
    if (s == NULL)
    {
       GDKwarning("Missing nitems in blob\n");
       *val = (blob *)NULL;
       return(0);
    }
-
 #if SIZEOF_SIZE_T > SIZEOF_INT
    if (nitems > 0x7fffffff) {
       GDKwarning("Blob too large\n");
@@ -267,7 +291,7 @@ int BLOBfromstr(char* instr,int* l,blob** val)
       return(0);
    }
 #endif
-
+   nbytes = blobsize(nitems);
    s = strchr(s,':');
    if (s == NULL)
    {
@@ -282,11 +306,11 @@ int BLOBfromstr(char* instr,int* l,blob** val)
       *val = (blob *)GDKmalloc(nbytes);
       *l = nbytes;
    }
-   else if (*l < nbytes)
+   else if (*l < 0 || (size_t) *l < nbytes)
    {
       GDKfree(*val);
       *val = (blob *)GDKmalloc(nbytes);
-      *l = nbytes;
+      *l = (int) nbytes;
    }
    result = *val;
    result->nitems = nitems;
@@ -294,14 +318,42 @@ int BLOBfromstr(char* instr,int* l,blob** val)
    /*
    // Read the values of the blob.
    */
-   for (i = 0;i < nitems; ++i)
+   for (i = 0; i < nitems; ++i)
    {
-      result->data[i] = (char) strtol(s,&s,16);
-      if (s == 0)
-      {
-	 GDKerror("blob too short \n");
-	 break;
+      char res = 0;
+	
+      if (*s == ' ') 
+	s++; 
+
+      if (*s >= '0' && *s <= '9') {
+	res = *s - '0';
+      } else if (*s >= 'A' && *s <= 'F') {
+	res = 10 + *s - 'A';
+      } else if (*s >= 'a' && *s <= 'f') {
+	res = 10 + *s - 'a';
+      } else {
+	break;
       }
+      s++;
+      res <<= 4;
+      if (*s >= '0' && *s <= '9') {
+	res += *s - '0';
+      } else if (*s >= 'A' && *s <= 'F') {
+	res += 10 + *s - 'A';
+      } else if (*s >= 'a' && *s <= 'f') {
+	res += 10 + *s - 'a';
+      } else {
+	break;
+      }
+      s++; /* skip space */
+      
+      result->data[i] = res;
+   }
+
+   if (i < nitems)
+   {
+	 GDKerror("blob too short \n");
+	 return -1;
    }
 
    s = strchr(s,')');
@@ -314,8 +366,8 @@ int BLOBfromstr(char* instr,int* l,blob** val)
 }
 
 #else
-/* the code in this branch of the #if is not being maintained */
 
+/* the code in this branch of the #if is not being maintained */
 
 #define MAXCHAR 127
 #define LINE.LEN 80
@@ -357,9 +409,8 @@ char *blob_outdec(char* p,char* dst)
 	return dst+4;
 }
  
-int BLOBtostr(str* dst,int* size,blob** srcin)
+int blob_tostr(str* dst,int* size,blob* src)
 {
-	blob *src= *srcin;
 	int i, n, len = *(int*) src;
 	int memsize = 4 + (len*4)/3;
 	char *out, *end;
@@ -394,14 +445,14 @@ correct memsize for first and last chars of each line
 	return out - *dst;
 }
 
-str BLOBeoln(char* src,char*  end)
+str blob_eoln(char* src,char*  end)
 {
 	char *r=strchr(src,'\n');
 	if (r) return r;
 	return end;
 }
 
-int BLOBfromstr(char* src,int* size,blob** dst)
+int blob_fromstr(char* src,int* size,blob** dst)
 {
 	int l = strlen(src), memsize = sizeof(int) + 1 + (l*3)/4;
 	char *ut, *r, *end = src+l;
@@ -414,11 +465,11 @@ int BLOBfromstr(char* src,int* size,blob** dst)
 	}
 	ut = (char *)*dst + sizeof(int);
 
-	for (r=BLOBeoln(src,end); src<end; src=r, r=BLOBeoln(src,end)) {
+	for (r=blob_eoln(src,end); src<end; src=r, r=blob_eoln(src,end)) {
 		unsigned int n, c, len = r-src;
 		char buf[LINELEN], *bp;
 @-
-This code wanted to modify the source line. So we copy it.
+PETER: this code wanted to modify the source line. So we copy it.
 @c
 		memcpy(buf, src, len);
 		buf[--len] = '\0';
@@ -452,13 +503,15 @@ output all of them at the end of the file.
 			bp += 4;
 		}
 	}
+@-
+PETER: set the blob size.
+@c
 	*(int*) *dst = ut- ((char *)*dst + sizeof(int));
         return l;
 }
 #endif /* OLDSTYLE */
 
-str BLOBfromidx(str *retval, blob **binp, int *index){
-	blob *b = *binp;
+int fromblob_idx(str *retval, blob *b, int *index){
 	str s, p = b->data + *index; 
 	str r, q = b->data + b->nitems;
 	for(r=p; r<q; r++) {
@@ -468,20 +521,96 @@ str BLOBfromidx(str *retval, blob **binp, int *index){
 	for(; p<r; p++, s++) 
 		*s = *p;  
 	*s = 0;
+	return GDK_SUCCEED;
+}
+
+int fromblob(str *retval, blob *b){
+	int zero = 0;
+	return fromblob_idx(retval, b , &zero);
+}
+
+int toblob(blob **retval, str s){
+	int len = strLen(s);
+	blob *b = (blob*) GDKmalloc(blobsize(len));
+	b->nitems = len;
+	memcpy(b->data, s, len);
+	*retval = b;
+	return GDK_SUCCEED;
+}
+
+int blob_nitems(int *ret,blob *b) {
+    *ret = b->nitems;
+    return GDK_SUCCEED;
+}
+
+@- Wrapping section
+This section contains the wrappers to re-use the implementation
+section of the blob modules from MonetDB 4.3
+@-
+@c
+int BLOBnequal(blob* l,blob*  r){
+	return blob_nequal(l,r);
+}
+void BLOBdel(Heap* h,var_t* index){
+	blob_del(h,index);
+}
+hash_t BLOBhash(blob* b){
+	return blob_hash(b);
+}
+blob *BLOBnull(){
+	return blob_null();
+}
+void BLOBconvert( blob *b, int direction){
+	return blob_convert(b,direction);
+}
+int BLOBlength(blob* p){
+	return blob_length(p);
+}
+void BLOBheap(Heap* heap, size_t capacity){
+	blob_heap(heap,capacity);
+}
+var_t BLOBput(Heap* h,int* bun,blob* val){
+	return blob_put(h,bun,val);
+}
+#if 0
+int BLOBget(Heap* h,int* bun,int* l,blob** val){
+	return blob_get(h,bun,l,val);
+}
+#endif
+int BLOBnitems(int *ret,blob *b) {
+     *ret = b->nitems;
+     return GDK_SUCCEED;
+}
+
+#ifndef OLDSTYLE
+int BLOBtostr(str* tostr,int* l,blob** pin){
+	return blob_tostr(tostr,l,*pin);
+}
+int BLOBfromstr(char* instr,int* l,blob** val){
+	return blob_fromstr(instr,l,val);
+}
+#else
+int BLOBtostr(str* dst,int* size,blob** srcin){
+	return blob_tostr(dst,size,*srcin);
+}
+str BLOBeoln(char* src,char*  end){
+	return blob_eoln(src,end)
+}
+int BLOBfromstr(char* instr,int* l,blob** val){
+	return blob_fromstr(instr,l,val);
+}
+#endif /* OLDSTYLE */
+
+str BLOBfromidx(str *retval, blob **binp, int *index){
+	fromblob_idx(retval, *binp,index);
 	return MAL_SUCCEED;
 }
-
-str fromblob(str *retval, blob **b){
-	int zero = 0;
-	return BLOBfromidx(retval, b , &zero);
+str BLOBfromblob(str *retval, blob **b){
+	fromblob(retval,*b);
+	return MAL_SUCCEED;
 }
-
-str toblob(blob **retval, str *s){
-	int len = strLen(*s); 	
-	blob *b = (blob*) GDKmalloc(sizeof(int) + len);
-	b->nitems = len;
-	memcpy(b->data, *s, len);
-	*retval = b;
+str BLOBtoblob(blob **retval, str *s){
+	toblob(retval,*s);
 	return MAL_SUCCEED;
 }
 @}
