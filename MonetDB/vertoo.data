@@ -1,1 +1,1 @@
-MonetDB = major:4; minor:5; release:0;
+monetdb = major:4; minor:6; release:0_rc0;
