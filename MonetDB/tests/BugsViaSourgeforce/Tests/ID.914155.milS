@@ -16,6 +16,7 @@ if (not(view_bbp_name.reverse().exist("a"))) {
 PROC g(): void  {
 	VAR i := 0;
 	VAR b1, b2, b3, b4;
+	VAR a := bat("a");
 	WHILE(i < Li) {
 		VAR j := 0;
 		WHILE(j < Lj) {

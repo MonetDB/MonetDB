@@ -23,21 +23,21 @@
 # shouldn't they?
 
 module("unix","ascii_io");
-TTD := getenv("TSTTRGDIR");
+var TTD := getenv("TSTTRGDIR");
 
 var b:=new(oid,str);
 b.import(TTD + "/ID.642351.b.txt");
 b.print();
-c:=new(oid,oid);
+var c:=new(oid,oid);
 c.import(TTD + "/ID.642351.c.txt");
 c.print();
-d:=c.kintersect(b);
+var d:=c.kintersect(b);
 d.print();
 d@batloop { b.find($h).print(); }
 
-DBGMSK := debugmask();
+var DBGMSK := debugmask();
 debugmask(or(DBGMSK,2097152));
-e:=c.kintersect(b);
+var e:=c.kintersect(b);
 debugmask(DBGMSK);
 e.print();
 e@batloop { b.find($h).print(); }

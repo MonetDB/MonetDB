@@ -7,8 +7,9 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 
 # Monet Database Server V4.3.16_rc05
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-PROC crash()
+# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+PROC crash() : void
 {
 	print($t);
 }

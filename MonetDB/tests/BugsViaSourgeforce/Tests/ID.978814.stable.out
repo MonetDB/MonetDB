@@ -18,11 +18,11 @@ print("uses newest version of module pathfinder - summer branch");
 print("uses MonetDB V4.3.17 with module(xtables)");
 [ "uses MonetDB V4.3.17 with module(xtables)" ]
 
-var_usage := bat(oid,oid);
+var var_usage := bat(oid,oid);
 var_usage := var_usage.unique.reverse().sort();
 var_usage.access(BAT_READ);
-vu_fid := var_usage.mark(1000@0).reverse();
-vu_vid := var_usage.reverse().mark(1000@0).reverse();
+var vu_fid := var_usage.mark(1000@0).reverse();
+var vu_vid := var_usage.reverse().mark(1000@0).reverse();
 # init ()
 var loop000 := bat(void,oid).seqbase(0@0);
 loop000.insert(0@0, 1@0);
@@ -56,10 +56,10 @@ kind := iter.project('i');
 itemID := nil;
 }
 { # saveResult () : int
-iter001 := iter;
-pos001 := pos;
-item001 := item;
-kind001 := kind;
+var iter001 := iter;
+var pos001 := pos;
+var item001 := item;
+var kind001 := kind;
 iter := nil;
 pos := nil;
 item := nil;
@@ -213,9 +213,9 @@ v_kind001 := bat(void,chr).seqbase(0@0).access(BAT_APPEND);
 } # end if
 expOid := nil;
 # deleteTemp ()
-temp1 := nil;
-temp2 := nil;
-temp3 := nil;
+var temp1 := nil;
+var temp2 := nil;
+var temp3 := nil;
 {
 int_values.insert (nil,1);
 var itemID := int_values.uselect(1);
@@ -229,10 +229,10 @@ kind := iter.project('i');
 itemID := nil;
 }
 { # saveResult () : int
-iter001 := iter;
-pos001 := pos;
-item001 := item;
-kind001 := kind;
+var iter001 := iter;
+var pos001 := pos;
+var item001 := item;
+var kind001 := kind;
 iter := nil;
 pos := nil;
 item := nil;

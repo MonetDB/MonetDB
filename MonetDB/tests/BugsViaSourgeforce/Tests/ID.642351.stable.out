@@ -33,7 +33,7 @@ stdout of test 'ID.642351` in directory 'tests/BugsViaSourgeforce` itself:
 # shouldn't they?
 
 module("unix","ascii_io");
-TTD := getenv("TSTTRGDIR");
+var TTD := getenv("TSTTRGDIR");
 
 var b:=new(oid,str);
 b.import(TTD + "/ID.642351.b.txt");
@@ -399,7 +399,7 @@ b.print();
 [ 5215@0, "person14"		  ]
 [ 5218@0, "item21"		  ]
 [ 5235@0, "person0"		  ]
-c:=new(oid,oid);
+var c:=new(oid,oid);
 c.import(TTD + "/ID.642351.c.txt");
 c.print();
 #-----------------#
@@ -411,7 +411,7 @@ c.print();
 [ 4108@0, nil	  ]
 [ 4109@0, nil	  ]
 [ 4114@0, nil	  ]
-d:=c.kintersect(b);
+var d:=c.kintersect(b);
 d.print();
 #-----------------#
 # BAT:	  tmp_28  #
@@ -419,9 +419,9 @@ d.print();
 #-----------------#
 d@batloop { b.find($h).print(); }
 
-DBGMSK := debugmask();
+var DBGMSK := debugmask();
 debugmask(or(DBGMSK,2097152));
-e:=c.kintersect(b);
+var e:=c.kintersect(b);
 #BATsemijoin: BATbinsemijoin(l, r, l);
 debugmask(DBGMSK);
 e.print();

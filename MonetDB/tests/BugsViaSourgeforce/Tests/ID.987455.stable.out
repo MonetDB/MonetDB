@@ -41,8 +41,8 @@ c.seqbase().print();
 [ 1@0 ]
 d.seqbase().print();
 [ 0@0 ]
-e:=x.join(c);
-f:=x.join(d);
+var e:=x.join(c);
+var f:=x.join(d);
 e.count().print();
 [ 2 ]
 f.count().print();
