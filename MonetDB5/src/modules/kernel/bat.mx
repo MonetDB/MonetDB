@@ -316,13 +316,17 @@ command append( i:bat[:void,:any$1], u:bat[:void,:any$1] ) :bat[:void,:any$1]
 address BKCbat_append_void_bat_wrap
 comment "append the content of u to i";
 
-command append( i:bat[:void,:any$1], u:bat[:oid,:any$1]) :bat[:void,:any$1]
-address BKCbat_append_oid_bat_wrap
-comment "append the content of u to i";
-
 command append( i:bat[:void,:any$1], u:any$1) :bat[:void,:any$1]
 address BKCbat_append_val_wrap
 comment "append the value u to i";
+
+command append( i:bat[:void,:oid], u:bat[:oid,:void]) :bat[:void,:oid]
+address BKCbat_append_oid_bat_wrap
+comment "append the content of u to i";
+
+command append( i:bat[:void,:any$1], u:bat[:oid,:any$1]) :bat[:void,:any$1]
+address BKCbat_append_oid_bat_wrap
+comment "append the content of u to i";
 
 command append(i:bat[:oid,:void], u:bat[:oid,:void]) :bat[:oid,:void]
 address BKCbat_append_oidvoid_bat_wrap
