@@ -53,7 +53,6 @@ barrier (i,view):= crackers.firstPiece(b);	# 16 CRKfirstPiece (i:int)(view:bat[:
 exit i;	# 19  (i:int)
     crackers.drop(b);	# 20 CRKdropPiece ($41:void)<-(b:bat[:int,:int])
 end main;	# 21  
-crackMap created
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type

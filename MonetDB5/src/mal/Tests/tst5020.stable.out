@@ -217,7 +217,6 @@ exit v;	# 8  (v:bit)
 end main;	# 89  
 max 2147480021 min 1210
 #copy 23
-crackMap created
 #crack init 35592
 #crack 50536
 #crack 25156

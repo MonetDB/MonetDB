@@ -71,7 +71,6 @@ function Admin.main():int;	# 0  (main:int)
     io.print(i);	# 25 IOprint_val ($44:int)<-(i:int)
     crackers.drop(b);	# 26 CRKdropPiece ($45:void)<-(b:bat[:int,:int])
 end main;	# 27  
-crackMap created
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type

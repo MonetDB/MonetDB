@@ -55,7 +55,6 @@ end main;	# 16
 [ 8,	  64	  ]
 [ 4,	  16	  ]
 [ 9,	  81	  ]
-crackMap created
 # idx bid kind parent rng_max rng_min idx_first idx_last # name
 [   0   4, L, -1 2, 100, 1, 10, ]
 #-----------------#
