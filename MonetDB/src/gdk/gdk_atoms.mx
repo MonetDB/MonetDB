@@ -1697,7 +1697,7 @@ int strFromStr(char *src, int *len, char** dst)
 		p = GDKmalloc(*len = l);
 	*dst = (char *) p;
 
-	if ((res = GDKstrFromStr( *dst, start,  cur-start )) >= 0)
+	if ((res = GDKstrFromStr( (unsigned char*)*dst, start,  cur-start )) >= 0)
 		return res;
 
 error:

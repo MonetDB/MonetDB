@@ -334,7 +334,7 @@ ptr *ASCIIstrFrStr( char *s, char *e )
 	
 	if (s == e) {
 		*(char*)res = 0;
-	} else if (GDKstrFromStr( res, s, e-s ) == 0) {
+	} else if (GDKstrFromStr( res, (unsigned char*)s, e-s ) == 0) {
 		GDKfree(res);
 		return NULL;
 	}
