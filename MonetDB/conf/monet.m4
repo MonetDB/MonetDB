@@ -316,10 +316,18 @@ yes-*-*)
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
 	CXXFLAGS="$CXXFLAGS -we140"
-	dnl  Version 8.0 doesn't find sigset-t when -ansi is set... !?
+	dnl  Check for PIC does not work with Version 8.1, unless we disable
+	dnl  remark #1418: external definition with no prior declaration ... !?
+	case $icc_ver in
+	8.1*)	CFLAGS="$CFLAGS -wd1418"
+		CXXFLAGS="$CXXFLAGS -wd1418"
+		;;
+	*)	;;
+	esac
+	dnl  Version 8.* doesn't find sigset-t when -ansi is set... !?
 	case $icc_ver in
 	8.*)	;;
-	*)	CFLAGS="$CFLAGS -ansi"	CXXFLAGS="$CXXFLAGS -ansi";
+	*)	CFLAGS="$CFLAGS -ansi"	CXXFLAGS="$CXXFLAGS -ansi";;
 	esac
 	dnl Define the same settings as for gcc, as we use the same
 	dnl header files
@@ -342,6 +350,9 @@ yes-*-*)
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
 	esac
 	X_CXXFLAGS="$X_CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70"
+	case $icc_ver in
+	8.[[1-9]]*)	X_CXXFLAGS="$X_CXXFLAGS,1572" ;;
+	esac
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
 	dnl  # 279: controlling expression is constant
@@ -1003,11 +1014,11 @@ if test "x$enable_optim" = xyes; then
       case "$host-$icc_ver" in
       dnl Portland Group compiler (pgcc/pgCC) has $icc_ver=""
       *-*-*-)    ;;
-      dnl  With icc-8.0, Interprocedural (IP) Optimization does not seem to work with MonetDB:
+      dnl  With icc-8.*, Interprocedural (IP) Optimization does not seem to work with MonetDB:
       dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
       dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
-      dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.0.
-      x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
+      x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axWP   ";;
       i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
