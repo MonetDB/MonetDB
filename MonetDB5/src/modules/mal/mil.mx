@@ -234,10 +234,17 @@ str MILtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	v = &stk->stk[pci->argv[0]];
 	if(takeBox(box,name,v,tpe)) {
 		box= findBox("bbp");
-		if(box && takeBox(box,name,v,tpe)== 0)
+		if(box && takeBox(box,name,v,tpe)== 0){
+			/* also keep the copy in the variable */
+			VALcopy(&stk->stk[pci->argv[1]],v);
+			BBPincref(v->val.bval,TRUE);
 			return MAL_SUCCEED;
+		}
 		return throwException(MALEXCEPTION,"mil.take",
 			"failed to take '%s' from box",name);
+	} else {
+		/* also keep the copy in the variable */
+		VALcopy(&stk->stk[pci->argv[1]],v);
 	}
 	return MAL_SUCCEED;
 }
