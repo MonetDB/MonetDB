@@ -1103,9 +1103,12 @@ int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
         oid bs = *base;
 	int j = 0;
 	BUN p, q;
+
+	/* preset b->batBuns->free to make BATloopFast work */
+        b->batBuns->free += n*BUNsize(b);
 	/* create BUNs with uniform distribution */
 	BATloopFast(b, p, q, bunsize) {
-		* (oid *) BUNhloc(b, p) = i + bs;
+		* (oid *) BUNhloc(b, p) = bs++;
 		* (int *) BUNtloc(b, p) = j;
                 if (++j >= *domain) j = 0;
         }
@@ -1119,10 +1122,9 @@ int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
 		* (int *) BUNtloc(b, p) = * (int *) BUNtloc(b, q);
                 * (int *) BUNtloc(b, q) = val;
         }
-        b->batBuns->free += n*BUNsize(b);
         b->tsorted = FALSE;
         b->hdense = TRUE;
-        BATseqbase(b, 0);
+        BATseqbase(b, *base);
         BATkey(b, TRUE);
         *bn = b;
         return GDK_SUCCEED;
@@ -1157,9 +1159,11 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 	}
 	itab[m] += r;
 
+	/* preset b->batBuns->free to make BATloopFast work */
+        b->batBuns->free += n*BUNsize(b);
 	/* create BUNs with normal distribution */
 	BATloopFast(b, p, q, bunsize) {
-		* (oid *) BUNhloc(b, p) = i + bs;
+		* (oid *) BUNhloc(b, p) = bs++;
 		while(itab[r] == 0) r++;
 		itab[r]--;
 		* (int *) BUNtloc(b, p) = (int) r;
@@ -1176,10 +1180,9 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 		* (int *) BUNtloc(b, p) = * (int *) BUNtloc(b, q);
                 * (int *) BUNtloc(b, q) = val;
         }
-        b->batBuns->free += n*BUNsize(b);
         b->tsorted = FALSE;
         b->hdense = TRUE;
-        BATseqbase(b, 0);
+        BATseqbase(b, *base);
         BATkey(b, TRUE);
         *bn = b;
         return GDK_SUCCEED;
