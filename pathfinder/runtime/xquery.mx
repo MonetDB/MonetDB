@@ -661,38 +661,27 @@ static ptr idxTVinWSorFRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index)
  * function is only called from the xquery_node_print() function.
  */
 
-static void handle_attr_data(XqueryCtx* ctx, int nFRAG, int vFRAG, oid id, int top) {
-	/* nFRAG is the fragment where the data about the namespace is stored.
-	   This is most of the time equivalent to ctx->curFRAG.
-	*/
-	/* vFRAG is the fragment where the data about the value is stored. This
-	   value is obtained from the PRE_FRAG bat in the ws context
-	*/
-
-	int mysteryFRAG;
-	mysteryFRAG = nFRAG;
-		
-        oid prop_oid = *(oid*)idxTVinWSorFRGN(ctx,mysteryFRAG,ATTR_PROP,id);
-        int frag     = (int)*(oid*)idxTVinWSorFRGN(ctx,mysteryFRAG,ATTR_FRAG,id);
-        str val      = (str)idxTVinWSorFRGN(ctx,frag,PROP_VAL,prop_oid);
+static void process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
+        oid prop_oid = *(oid*)idxTVinWSorFRGN(ctx,frag,ATTR_PROP,id);
+        int afrag     = (int)*(oid*)idxTVinWSorFRGN(ctx,frag,ATTR_FRAG,id);
+        str val      = (str)idxTVinWSorFRGN(ctx,afrag,PROP_VAL,prop_oid);
         /* */
-        oid qn_oid = *(oid*)idxTVinWSorFRGN(ctx,nFRAG,ATTR_QN,id);
-	if (0) stream_printf(GDKout,"[|nfr=%d,vfr=%d,frag=%d,po="SZFMT"|]",nFRAG,vFRAG,frag,(size_t)prop_oid);
-        str ns     = (str)idxTVinWSorFRGN(ctx,frag,QN_NS,qn_oid);
-        str name   = (str)idxTVinWSorFRGN(ctx,frag,QN_LOC,qn_oid);
+        oid qn_oid = *(oid*)idxTVinWSorFRGN(ctx,frag,ATTR_QN,id);
+        str ns     = (str)idxTVinWSorFRGN(ctx,afrag,QN_NS,qn_oid);
+        str name   = (str)idxTVinWSorFRGN(ctx,afrag,QN_LOC,qn_oid);
         /* */
         handle_attribute(ctx,ns,name,val,top);
 }
 
-static int query_attr_print(XqueryCtx* ctx, int nFRAG, int vFRAG, oid pre, int emptyNode) {
+static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) {
         BAT *b;
 
         if ( !(b  = BATuselect(wsBAT(ctx,ATTR_OWN),&pre,&pre)) )
-                fatal_err(ctx,"query_attr_print: uselect fails\n");
+                fatal_err(ctx,"process_node_attr: uselect fails\n");
         BUN p, q; 
         BATloop(b, p, q) {
                 oid id = *(oid*)BUNhead(b, p);
-		handle_attr_data(ctx,nFRAG,vFRAG,id,0/*top*/);
+		process_attr(ctx,nFRAG,id,0/*top*/);
         }
         handle_attributeEnd(ctx,emptyNode);
         BBPunfix( BBPcacheid( b ) );
@@ -708,7 +697,6 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
 
         int vFRAG = ctx->curFRAG;
         if ( pre_frag ) {
-                /* vFRAG = (int)*(oid*)idxTVinWS(ctx,PRE_FRAG,pre); */
                 vFRAG = (int)*(oid*)idxTV(ctx,"par_pre_frag",pre_frag,pre);
 	}
 	if (0) stream_printf(GDKout,"QNP[|xpre="SZFMT",nf=%d,vf=%d|]",(size_t)pre,ctx->curFRAG,vFRAG);
@@ -718,7 +706,7 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
                         str ns   = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_NS,prop);
                         handle_startElement(ctx,ns,name);
                         int size = *(int*)idxTVinWS(ctx,PRE_SIZE,pre);
-                        query_attr_print(ctx,ctx->curFRAG,vFRAG,pre,(size==0));
+                        process_node_attr(ctx,ctx->curFRAG,pre,(size==0));
                         pushTag(ctx,pre+size,ns,name,(size==0));
                         break;
                         }
@@ -1032,7 +1020,7 @@ int xquery_print_result_main(
 
                 if ( XTRACT_KIND(cmbn_frag_kind) == ATTR ) {
                      int frag = XTRACT_FRAG(cmbn_frag_kind);
-		     handle_attr_data(ctx,frag,frag,valoid,1/* top */);
+		     process_attr(ctx,frag,valoid,1/* top */);
 		}
 	    }
 	}
@@ -1052,7 +1040,7 @@ int xquery_print_result_main(
                  case ATTR: {
 		 	if ( ctx->dmMode ) {
                             int frag = XTRACT_FRAG(cmbn_frag_kind);
-			    handle_attr_data(ctx,frag,frag,valoid,1/* top */);
+			    process_attr(ctx,frag,valoid,1/* top */);
 			}
                         break;
                         };
