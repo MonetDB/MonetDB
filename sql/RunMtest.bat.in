@@ -12,7 +12,7 @@ set srcdir=@MONET_SOURCE@
 set MOD_PATH=%builddir%\src\backends\@SQL_BACKEND@\.libs;@MONET_PREFIX@\lib\MonetDB
 
 set PATH=%builddir%\src\client;%builddir%\src\tools;@MONET_PREFIX@\bin;@MONET_PREFIX@\lib;%PATH%
-set PATH=%builddir%\src\client\.libs;%builddir%\src\server\.libs;%builddir%\src\odbc\driver\.libs;%builddir%\src\odbc\setup\.libs
+set PATH=%builddir%\src\client\.libs;%builddir%\src\server\.libs;%builddir%\src\odbc\driver\.libs;%builddir%\src\odbc\setup\.libs;%PATH%
 set PATH=%MOD_PATH%;%PATH%
 
 REM execute Mtest.py in the source directory
