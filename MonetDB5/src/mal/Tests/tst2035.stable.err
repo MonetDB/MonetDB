@@ -61,7 +61,7 @@ stderr of test 'tst2035` in directory 'src/mal` itself:
 # cmdline opt 	config = /ufs/mk/monet5/src/mal/Tests/All.conf
 # cmdline opt 	gdk_dbname = mTests_src_mal
 
-!Mtimeout: Timeout: Mserver --config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf --debug=10 --set monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB --set gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm --set sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log --set mapi_port=45201 --set sql_port=53796 --set monet_prompt= --trace --config=/ufs/mk/monet5/src/mal/Tests/All.conf --dbname=mTests_src_mal tst2035.mal 
+!Mtimeout: Timeout: Mserver --config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf --debug=10 --set monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB --set gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm --set sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log --set mapi_port=43996 --set sql_port=51027 --set monet_prompt= --trace --config=/ufs/mk/monet5/src/mal/Tests/All.conf --dbname=mTests_src_mal tst2035.mal 
 
 # 20:25:24 >  
 # 20:25:24 >  Done.

@@ -11,4 +11,12 @@ stdout of test 'tst120` in directory 'src/mal` itself:
 #include tst120a;	# lookup DBHOME/mal/tst120a.mal
 MALexception:malInclude:could not open file: tst120a
 
->
+!ERROR: 
+!							^';' expected
+function Admin.main():int;	# 0  unknown (main:int)
+end main;	# 1  unknown 
+
+# 22:44:11 >  
+# 22:44:11 >  Done.
+# 22:44:11 >  
+

@@ -104,7 +104,7 @@ exit	ia_a;
 	return ab_a :=idx;
 end find_unescaped_occurrence;
 
-function algebra.likeselect(b:bat[:any$1,:str], pat:str):bat[:any$1,:oid];
+function algebra.likeselect(b:bat[:any$1,:str], pat:str):bat[:any$1,:void];
 	pat := substitute(pat,"%_","_%",true);
 	pat := substitute(pat,"%%","%",true);
 	idxper := find_unescaped_occurrence(pat,'%');
@@ -239,7 +239,7 @@ exit	fc_a;
 redo	la_a;
 exit	ma_a;
 exit	la_a;
-	return mc_a :=mark(b,nil);
+	return mc_a :=mark(b);
 end likeselect;
 function tunique(b:bat[:any,:any$1]):bat[:any$1,:void];
 	qd_a := reverse(b);
@@ -491,7 +491,7 @@ end count_no_nil;
 #   ADDHELP("find_unescaped_occurrence", "groffen", "Sep 26 2004",
 #   "finds the first occurrence of c that is not escaped by a \\", "algebra");
 
-    PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid]  {
+    PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,:void]  {
         var s;
 		var idxper;
 		var idxund;

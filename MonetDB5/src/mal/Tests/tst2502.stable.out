@@ -47,8 +47,8 @@ function Admin.main():int;	# 0  (main:int)
     io.print(r2);	# 4 IOprint_val ($5:int)<-(r2:int)
 end main;	# 5  
 !ERROR: SyntaxError:Admin.random[0]:'Admin.random' contains errors
->
-# 22:33:27 >  
-# 22:33:27 >  Done.
-# 22:33:27 >  
+
+# 22:46:17 >  
+# 22:46:17 >  Done.
+# 22:46:17 >  
 

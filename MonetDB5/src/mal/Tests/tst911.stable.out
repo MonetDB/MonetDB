@@ -94,13 +94,13 @@ exit doit;	# 11  (doit:bit)
     Admin.choptest(b,1000:lng,base);	# 17  ($27:void)<-(b:bat[:void,:lng])($28:lng)(base:lng)
     Admin.choptest(b,100:lng,base);	# 18  ($29:void)<-(b:bat[:void,:lng])($30:lng)(base:lng)
 end main;	# 19  
-#select direct 23970 usec
-#chopped at 100000 24188 218  at 21.799999 usec
-#chopped at 10000 25387 1417  at 14.170000 usec
-#chopped at 1000 36889 12919  at 12.919000 usec
-#chopped at 100 151944 127974  at 12.797400 usec
->
-# 09:56:15 >  
-# 09:56:15 >  Done.
-# 09:56:15 >  
+#select direct 24130 usec
+#chopped at 100000 27378 3248  at 324.799988 usec
+#chopped at 10000 36317 12187  at 121.870003 usec
+#chopped at 1000 37269 13139  at 13.139000 usec
+#chopped at 100 157264 133134  at 13.313400 usec
+
+# 22:47:20 >  
+# 22:47:20 >  Done.
+# 22:47:20 >  
 

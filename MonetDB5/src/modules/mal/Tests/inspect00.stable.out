@@ -74,8 +74,8 @@ stack depth 2
 [ "tst",  "0@0"	  ]
 [ "i",	  "0@0"	  ]
 !ERROR: MALexception:inspect.stkFrame:illegal depth.
->
-# 18:11:25 >  
-# 18:11:25 >  Done.
-# 18:11:25 >  
+
+# 22:47:39 >  
+# 22:47:39 >  Done.
+# 22:47:39 >  
 

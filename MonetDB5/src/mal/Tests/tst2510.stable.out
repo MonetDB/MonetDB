@@ -36,10 +36,9 @@ end tryme;	# 6
 function Admin.main():int;	# 0  (main:int)
     Admin.tryme();	# 1  ($1:void)
 end main;	# 2  
-!ERROR: runMAL:misalignment of symbols
 !ERROR: MALexception:bat.setWriteMode:cannot access descriptor bid
->
-# 18:28:36 >  
-# 18:28:36 >  Done.
-# 18:28:36 >  
+
+# 22:46:19 >  
+# 22:46:19 >  Done.
+# 22:46:19 >  
 

@@ -61,8 +61,8 @@ function Admin.qry():void;	# 0  (qry:void)
     optimizer.SPoptimizer();	# 18 QOTSPoptimizer ($29:str)
 end qry;	# 19  
 #
->
-# 22:27:32 >  
-# 22:27:32 >  Done.
-# 22:27:32 >  
+
+# 22:47:27 >  
+# 22:47:27 >  Done.
+# 22:47:27 >  
 

@@ -165,8 +165,8 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("quit();");	# 68 MILline ($115:void)<-($116:str)
     xa_a := clients.quit();	# 69 CLTquit (xa_a:void)
 end main;	# 70  
->
-# 14:17:22 >  
-# 14:17:22 >  Done.
-# 14:17:22 >  
+
+# 22:47:45 >  
+# 22:47:45 >  Done.
+# 22:47:45 >  
 

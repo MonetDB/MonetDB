@@ -38,8 +38,8 @@ end main;	# 2
 [ 2,	  "    b := inspect.getDefinition(\"transaction\",\"help\");"	  ]
 [ 3,	  "    io.print(b);"						  ]
 [ 4,	  "end help;"							  ]
->
-# 19:53:41 >  
-# 19:53:41 >  Done.
-# 19:53:41 >  
+
+# 22:43:48 >  
+# 22:43:48 >  Done.
+# 22:43:48 >  
 

@@ -48,8 +48,8 @@ function Admin.qry():void;	# 0  (qry:void)
     optimizer.SPoptimizer(Admin,qry);	# 13 QOTSPoptimizerCALL ($16:str)<-(Admin:any)(qry:void)
 end qry;	# 14  
 #
->
-# 15:37:25 >  
-# 15:37:25 >  Done.
-# 15:37:25 >  
+
+# 22:47:25 >  
+# 22:47:25 >  Done.
+# 22:47:25 >  
 

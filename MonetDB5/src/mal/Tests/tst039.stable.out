@@ -32,8 +32,8 @@ function Admin.sample(nme:str,val:any):bit;	# 0  (sample:bit)<-(nme:str)(val:any
     return sample := true;	# 7  (sample:bit)<-($11:bit)
 end sample;	# 8  
 #
->
-# 18:26:04 >  
-# 18:26:04 >  Done.
-# 18:26:04 >  
+
+# 22:43:52 >  
+# 22:43:52 >  Done.
+# 22:43:52 >  
 

@@ -221,20 +221,20 @@ exit (v,i);	# 7  (v:bit)(i:int)
     io.printf("#select %d\n",d0);	# 87 IOprint_formatted_lng ($46:int)<-($43:str)(d0:lng)
 end main;	# 88  
 max 2147480021 min 1210
-#copy 11756
-#crack init 4634
-#crack 15358
-#crack 7709
-#crack 3848
-#crack 1912
-#max 4065
-#min 3796
-#select 14408
-#select 10130
-#select 8178
-#select 7158
->
-# 20:35:04 >  
-# 20:35:04 >  Done.
-# 20:35:04 >  
+#copy 38382
+#crack init 10566
+#crack 40671
+#crack 20169
+#crack 10352
+#crack 4799
+#max 19377
+#min 19168
+#select 36689
+#select 28998
+#select 24952
+#select 22975
+
+# 22:47:38 >  
+# 22:47:38 >  Done.
+# 22:47:38 >  
 

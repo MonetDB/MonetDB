@@ -21,8 +21,8 @@ stdout of test 'tst4002` in directory 'src/mal` itself:
 function Admin.main():int;	# 0  (main:int)
     d := mtime.date("nil");	# 1 MTIMEdate_fromstr (d:date)<-($3:str)
 end main;	# 2  
->
-# 15:37:24 >  
-# 15:37:24 >  Done.
-# 15:37:24 >  
+
+# 22:47:24 >  
+# 22:47:24 >  Done.
+# 22:47:24 >  
 

@@ -66,8 +66,8 @@ function Admin.main():int;	# 0  (main:int)
     aa_a := varval("bar");	# 17  unknown (aa_a:any)<-($34:str)
     ba_a := io.print(aa_a);	# 18 IOprint_val (ba_a:int)<-(aa_a:any)
 end main;	# 19  
->
-# 15:28:16 >  
-# 15:28:16 >  Done.
-# 15:28:16 >  
+
+# 22:47:51 >  
+# 22:47:51 >  Done.
+# 22:47:51 >  
 

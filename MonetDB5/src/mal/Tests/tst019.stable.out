@@ -105,8 +105,8 @@ function Admin.main():int;	# 0  (main:int)
     io.print(y);	# 4 IOprint_val ($4:int)<-(y:str)
     (x,y):= welcome2(1);	# 5  unknown (x:any)(y:str)<-($2:int)
 end main;	# 6  
->
-# 10:58:00 >  
-# 10:58:00 >  Done.
-# 10:58:00 >  
+
+# 22:43:47 >  
+# 22:43:47 >  Done.
+# 22:43:47 >  
 

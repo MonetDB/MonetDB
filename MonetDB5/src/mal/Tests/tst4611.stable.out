@@ -52,8 +52,8 @@ function Admin.main():int;
     h := algebra.join(g,c);
     inspect.showFunction();
 end main;
->
-# 20:31:57 >  
-# 20:31:57 >  Done.
-# 20:31:57 >  
+
+# 22:47:31 >  
+# 22:47:31 >  Done.
+# 22:47:31 >  
 

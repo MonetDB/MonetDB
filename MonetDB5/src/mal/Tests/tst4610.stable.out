@@ -46,8 +46,8 @@ function Admin.main():int;
     c := bbp.new(:int,:int);
     h := algebra.joinPath(a,b,c);
     inspect.showFunction();
->
-# 22:41:24 >  
-# 22:41:24 >  Done.
-# 22:41:24 >  
+
+# 22:47:30 >  
+# 22:47:30 >  Done.
+# 22:47:30 >  
 

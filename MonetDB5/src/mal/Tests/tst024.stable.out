@@ -30,8 +30,8 @@ function Admin.main():int;	# 0  unknown (main:int)
     $5 := 23;	# 4  unknown ($5:any)<-($6:int)
     print($5);	# 5  unknown ($8:any)<-($5:any)
 end main;	# 6  unknown 
->
-# 10:50:54 >  
-# 10:50:54 >  Done.
-# 10:50:54 >  
+
+# 22:43:48 >  
+# 22:43:48 >  Done.
+# 22:43:48 >  
 

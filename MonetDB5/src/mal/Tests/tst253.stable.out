@@ -26,8 +26,8 @@ function Admin.main():int;	# 0  (main:int)
     io.print(b);	# 4 IOprint_val ($9:int)<-(b:bat[:void,:str])
     c := bat.reverse(b);	# 5 BKCreverse (c:bat[:str,:void])<-(b:bat[:void,:str])
     io.print(c);	# 6 IOprint_val ($11:int)<-(c:bat[:str,:void])
-    d := algebra.mark(c);	# 7 ALGmark_default (d:bat[:str,:oid])<-(c:bat[:str,:void])
-    io.print(d);	# 8 IOprint_val ($13:int)<-(d:bat[:str,:oid])
+    d := algebra.mark(c);	# 7 ALGmark_default (d:bat[:str,:void])<-(c:bat[:str,:void])
+    io.print(d);	# 8 IOprint_val ($13:int)<-(d:bat[:str,:void])
 end main;	# 9  
 #-------------------------#
 # h	tmp_4		  # name
@@ -45,6 +45,10 @@ end main;	# 9
 # h		tmp_5		  # name
 # str		void		  # type
 #---------------------------------#
-[ "hello",	  1000070@0	  ]
-[ "world",	  1000071@0	  ]
->
+[ "hello",	  1000072@0	  ]
+[ "world",	  1000073@0	  ]
+
+# 22:46:21 >  
+# 22:46:21 >  Done.
+# 22:46:21 >  
+

@@ -90,8 +90,8 @@ exit (k,v);
     i := algebra.count(zz);
     io.print(i);
     inspect.showFunction();
->
-# 21:10:26 >  
-# 21:10:26 >  Done.
-# 21:10:26 >  
+
+# 22:47:32 >  
+# 22:47:32 >  Done.
+# 22:47:32 >  
 
