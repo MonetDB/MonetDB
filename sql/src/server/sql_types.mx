@@ -157,7 +157,6 @@ sql_export void parser_exit();
 
 #endif /* SQL_TYPES_H */
 @c
-#include <mem.h>
 #include "sql_types.h"
 #include "sql_symbol.h"
 #include "sql_parser.tab.h"

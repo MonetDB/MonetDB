@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = ../common $(MONET_INCS)
+INCLUDES = $(MONET_INCS)
 
 YFLAGS = -d -p sql
 
@@ -33,6 +33,6 @@ lib_sqlserver = {
 		sql_mem.mx
 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
-	LIBS = ../common/libsql $(MONET_LIBS)
+	LIBS = $(MONET_LIBS)
 }
 

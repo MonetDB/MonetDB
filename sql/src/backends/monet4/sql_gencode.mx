@@ -29,7 +29,7 @@
 #ifndef _SQL_GENCODE_H_
 #define _SQL_GENCODE_H_
 
-#include "mem.h"
+#include "sql_mem.h"
 #include "sql_statement.h"
 #include "sql_context.h"
 

@@ -212,7 +212,7 @@ kernel libraries, e.g. bat.mx
 #endif /*_SQL_SERVER_H_*/
 
 @c
-#include <mem.h>
+#include <sql_mem.h>
 #include "sql_server.h"
 #include "sql_privileges.h"
 #include "sql_session.h"

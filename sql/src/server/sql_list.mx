@@ -29,7 +29,7 @@
 #ifndef LIST_H
 #define LIST_H
 
-#include "mem.h"
+#include "sql_mem.h"
 
 typedef struct node {
 	struct node *next;
