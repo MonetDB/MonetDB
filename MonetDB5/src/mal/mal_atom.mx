@@ -180,9 +180,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 			setAtomName(pci);
 			return 1;
 		} 
-/* 64 bit issue
-		  @:chkItem("hash",atomHash,unsigned int)@ 
-*/
+/* 64 bit issue @:chkItem("hash",atomHash,unsigned int)@ */
 		if( idcmp("heapcheck",name)==0 && pci->argc==1){
 			BATatoms[tpe].atomHeapCheck= (int (*)()) pci->fcn;
 			setAtomName(pci);
