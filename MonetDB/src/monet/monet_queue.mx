@@ -218,7 +218,7 @@ int sem=0; char mybuf[16000], *myp = mybuf;
 
 void wakeupRequest(Request p){
 	p->ev_status = EVPENDING;
-	MT_up_sema(monet_available, "wakeupRequest");
+	MT_up_sema(monet_available, "wakeupRequest"); 
 }
  
 void putRequest(Request p){
@@ -319,9 +319,9 @@ Request getRequest(Request barrier){
        	MT_set_lock(monet_critical, "getRequest");
 
 	if ( barrier) {
-		PARDEBUG THRprintf(GDKerr, "barrier search " PTRFMT "\n", PTRFMTCAST (void *) barrier);
 		for (q = qm_first; q; q = q->ev_next) 
 			if ( q->ev_status== EVPENDING  && q->ev_wakeup== barrier){
+				PARDEBUG THRprintf(GDKerr, "barrier found " PTRFMT "\n", PTRFMTCAST (void *) barrier);
 				goto getReq0;
 			}
 	}
@@ -336,6 +336,11 @@ Request getRequest(Request barrier){
 		PARDEBUG QMprint();
 		MT_up_sema(monet_available, "getRequest");
 		MT_unset_lock(monet_critical, "getRequest");
+
+		/* we did not found anything because what is available is for another process */
+		MT_sleep_ms(1); /* reduce thread switching overhead by sleeping say 1ms (>2 million CPU ticks on a 2GHz machine) */
+
+		/* all because of braindead queue impl. => parallel blocks should allocate a private semaphore of course! */ 
 		return 0;
 	}
 getReq0:
@@ -502,7 +507,7 @@ A kill request is handled directly.
         q->ev_process = t->tid ; /* THRgettid(); */
         i = interpret(stk, lt, res);
         CATCHRET(stk,lt,res,i);
-        CLEANUP(lt);
+	CLEANUP(lt);
         lt->par_retval = i;
         if (q->ev_kill < 0) {
                 killClient(monet_clients-q->ev_kill, TRUE);
