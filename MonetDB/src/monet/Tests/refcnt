@@ -1,7 +1,7 @@
 #!/bin/sh
 
 NAME="$1"
-PRELUDE="$2"
+PRELUDE="$2 $3"
 
 Mlog -x $MSERVER -db $TSTDB         < $NAME.1.mil
 echo " restart gives correct refcnt b from 0 to 1 "

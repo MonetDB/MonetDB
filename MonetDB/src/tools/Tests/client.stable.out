@@ -1,7 +1,10 @@
 stdout of test 'client` in directory 'src/tools` itself:
 
-#> Mtest (21:13:12):	milC client milC -prelude client.prelude
-#> Mtest (21:13:12):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_tools -prelude /home/niels/new/monet/Linux/src/modules/plain/mapi.mil &
+
+# 09:11:45 >  
+# 09:11:45 >  Mserver -p -modulesilent -yaccsilent -d8 -db src_tools -prelude /var/tmp/manegold.GNU_32.3773/monet/.GNU_32/IRIX646.5/share/Monet/mapi.mil -background
+# 09:11:45 >  
+
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
@@ -18,6 +21,18 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+
+# 09:11:54 >  
+# 09:11:54 >  Mclient -prelude client.prelude < client.milC
+# 09:11:54 >  
+
 # start session on src_tools
 Start of MIL server prelude.
 [ 1 ]
@@ -1339,7 +1354,11 @@ unknown(1)#"                   ]
 End of MIL script.
 ! Terminating connection
 ! Connection broken
-#> Mtest (05:38:08):	Mtimeout -timeout 210 Mshutdown
+
+# 09:12:23 >  
+# 09:12:23 >  Mshutdown
+# 09:12:23 >  
+
 Shutdown of server in progress
 connection= medusa:26670
 template= shutdown;
@@ -1350,9 +1369,8 @@ Reply=
 # shutdown finished
 #> Mtest (05:38:09):	sleep 9
 
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
+# 09:12:24 >  
+# 09:12:24 >  Done.
+# 09:12:24 >  
 
 #You are system administrator (adm)!

@@ -1,8 +1,10 @@
 stdout of test 'multiClientSeq` in directory 'src/tools` itself:
 
-#> Mtest (21:13:33):	milCXs multiClientSeq milC
-#> Mtest (21:13:33):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_tools -prelude /home/niels/new/monet/Linux/src/modules/plain/mapi.mil &
-#> Mtest (21:13:33):	sleep 9
+
+# 13:28:38 >  
+# 13:28:38 >  Mserver -p -modulesilent -yaccsilent -d8 -db src_tools -prelude /var/tmp/manegold.GNU_32.30129/monet/.GNU_32/IRIX646.5/share/Monet/mapi.mil -background
+# 13:28:38 >  
+
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
@@ -19,6 +21,18 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+
+# 13:28:47 >  
+# 13:28:47 >  Mclient  < multiClientSeq_s00.milC
+# 13:28:47 >  
+
 # start session on src_tools
 Start of MIL script.
 [ 1 ]
@@ -681,8 +695,12 @@ unknown(1)#"                   ]
 End of MIL script.
 ! Terminating connection
 ! Connection broken
-#> Mtest (21:13:42):	Mtimeout -timeout 600 Mclient < multiClientSeq_s01.milC
-# start session on src_tools:50072
+
+# 13:29:12 >  
+# 13:29:12 >  Mclient  < multiClientSeq_s01.milC
+# 13:29:12 >  
+
+# start session on src_tools
 Start of MIL script.
 [ 1 ]
 [ 10 ]
@@ -1550,7 +1568,11 @@ unknown(1)#"                   ]
 End of MIL script.
 ! Terminating connection
 ! Connection broken
-#> Mtest (05:39:15):	Mtimeout -timeout 210 Mshutdown
+
+# 13:29:34 >  
+# 13:29:34 >  Mshutdown
+# 13:29:34 >  
+
 Shutdown of server in progress
 connection= medusa:26670
 template= shutdown;
@@ -1561,9 +1583,8 @@ Reply=
 # shutdown finished
 #> Mtest (05:39:16):	sleep 9
 
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
+# 13:29:35 >  
+# 13:29:35 >  Done.
+# 13:29:35 >  
 
 #You are system administrator (adm)!
