@@ -659,6 +659,13 @@ static stmt *sql_Nop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * su
 	return NULL;
 }
 
+static int digits_sum( stmt *ls, stmt *rs )
+{
+	sql_subtype *lt = tail_type(ls);
+	sql_subtype *rt = tail_type(rs);
+	return lt->digits + rt->digits;
+}
+
 static stmt *
 sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 {
@@ -684,6 +691,8 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 			ls = scale_algebra( f, ls, rs);
 		if (f->func->res->scale == SCALE_ADD)
 			ls = sum_scales( f, ls, rs);
+		if (f->func->res->scale == DIGITS_ADD) 
+			f->res->digits = digits_sum(ls, rs);
 		return stmt_binop(ls, rs, f);
 	} else {
 		if (convert_types( sql, &ls, &rs, 0) >= 0){
@@ -699,6 +708,8 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 					ls = scale_algebra( f, ls, rs);
 				if (f->func->res->scale == SCALE_ADD)
 					ls = sum_scales( f, ls, rs);
+				if (f->func->res->scale == DIGITS_ADD) 
+					f->res->digits = digits_sum(ls, rs);
 				return stmt_binop(ls, rs, f);
 			}
 		}
@@ -767,8 +778,7 @@ static stmt *sql_unop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * s
 	f = sql_bind_func(l->data.sval, rt, NULL );
 	if (f) {
 		if (f->func->imp) {
-			/* HACK ALERT: output same type as input */
-			if (f->func->res->scale == SCALE_SUB) {
+			if (f->func->res->scale == INOUT) {
 				f->res->digits = rt->digits;
 				f->res->scale = rt->scale;
 			}

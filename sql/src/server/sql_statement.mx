@@ -168,7 +168,6 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define ptable_ppivots(s) 	((s)->op1.lval)
 #define ptable_pivots(s) 	((s)->op2.lval)
 #define ptable_statements(s) 	((s)->op3.stval)
-#define ptable_filter(s) 	((s)->op4.stval)
 
 extern stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type);
 extern stmt *stmt_ibat(stmt * i, stmt * basetable );
