@@ -457,19 +457,26 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_reljoin: {
-		node *ln = NULL, *rn = NULL;
-		char x = '(';
-		len = snprintf( buf, BUFSIZ,
-		  "s%d := ds_link", -s->nr );
-		for (ln = s->op1.lval->h, rn = s->op2.lval->h; ln && rn; ln = ln->next, rn = rn->next) {
-			int l = stmt_dump( ln->data, nr, sql );
-			int r = stmt_dump( rn->data, nr, sql );
-			len += snprintf(buf +len, BUFSIZ-len,
-			  "%c s%d, s%d", x, l, r );
-			x = ',';
+		if (list_length(s->op1.lval) == 1) {
+			int l = stmt_dump( s->op1.lval->h->data, nr, sql );
+			int r = stmt_dump( s->op2.lval->h->data, nr, sql );
+			len = snprintf( buf, BUFSIZ,
+			  "s%d := join(s%d,reverse(s%d));\n", -s->nr, l, r);
+		} else {
+			node *ln = NULL, *rn = NULL;
+			char x = '(';
+			len = snprintf( buf, BUFSIZ,
+			  "s%d := ds_link", -s->nr );
+			for (ln = s->op1.lval->h, rn = s->op2.lval->h; ln && rn; ln = ln->next, rn = rn->next) {
+				int l = stmt_dump( ln->data, nr, sql );
+				int r = stmt_dump( rn->data, nr, sql );
+				len += snprintf(buf +len, BUFSIZ-len,
+				  "%c s%d, s%d", x, l, r );
+				x = ',';
+			}
+			len += snprintf(buf +len, BUFSIZ-len, 
+			  " );\n");
 		}
-		len += snprintf(buf +len, BUFSIZ-len, 
-		  " );\n");
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_outerjoin:
