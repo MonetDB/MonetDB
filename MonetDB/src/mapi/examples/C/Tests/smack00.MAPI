@@ -2,4 +2,4 @@
 
 export PATH=$MONET_BUILD/src/mapi/examples/C:$MONET_PREFIX/lib/MonetDB/Tests:$PATH
 
-smack00 $MAPIPORT
+Mlog -x smack00 $MAPIPORT
