@@ -26,12 +26,12 @@ X.insert("monet_mod_nme",monet_mod_nme.count());
 X.insert("monet_mod_use",monet_mod_use.count());
 {
 printf("\nMserver prologue: This is what Mserver says before MapiClient connects.\n");
-X.print();
-bat("adm_acctbl").print();
-bat("adm_atomtbl").print();
-bat("adm_fcntbl").mark(nil).sort().print();
-monet_acctbl.print();
-monet_atomtbl.print();
-monet_fcntbl.mark(nil).sort().print();
+# X.print();
+# bat("adm_acctbl").print();
+# bat("adm_atomtbl").print();
+# bat("adm_fcntbl").mark(nil).sort().print();
+# monet_acctbl.print();
+# monet_atomtbl.print();
+# monet_fcntbl.mark(nil).sort().print();
 }
-X := nil;
+# X := nil;

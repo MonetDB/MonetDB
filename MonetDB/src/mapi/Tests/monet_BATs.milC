@@ -26,12 +26,14 @@ Y.insert("monet_mod_nme",monet_mod_nme.count());
 Y.insert("monet_mod_use",monet_mod_use.count());
 {
 printf("\nMapiClient: This is what MapiClient says.\n");
-Y.print();
-bat("adm_acctbl").print();
-bat("adm_atomtbl").print();
-bat("adm_fcntbl").mark(nil).sort().print();
-monet_acctbl.print();
-monet_atomtbl.print();
-monet_fcntbl.mark(nil).sort().print(); 
+# Y.print();
+# bat("adm_acctbl").print();
+# bat("adm_atomtbl").print();
+# bat("adm_fcntbl").mark(nil).sort().print();
+# monet_acctbl.print();
+# monet_atomtbl.print();
+# monet_fcntbl.mark(nil).sort().print(); 
+var d := [-](Y,X);
+kdiff(d,d.uselect(0)).print();
 }
 Y := nil;
