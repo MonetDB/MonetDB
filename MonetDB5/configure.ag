@@ -28,6 +28,9 @@ if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([MonetDB-5 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 fi
 
+AC_CHECK_FUNCS(strtoll)
+AC_CHECK_DECLS([strtoll])
+
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"

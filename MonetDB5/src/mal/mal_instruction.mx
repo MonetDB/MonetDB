@@ -571,6 +571,10 @@ mal_export void batAfterCall(ValPtr v,ValPtr bak);
 #include "mal_instruction.h"
 #include "mal_function.h"   /* for getPC() */
 
+#if HAVE_STRTOLL && !HAVE_DECL_STRTOLL
+extern long long strtoll(const char *, char **, int);
+#endif
+
 Symbol newSymbol(str nme, int kind){
     Symbol cur;
     if( nme == NULL){
