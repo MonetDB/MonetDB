@@ -412,8 +412,22 @@ int parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme){
 		setFunctionId(currInstr,GDKstrdup("tactics"));
 		pushStr(currBlk, currInstr, nme+1);
 		GDKfree(nme);
-	} else
+	} else {
+@-
+Some operators require backward compatibility signatures.
+@c
+		if(strcmp(nme,"insert")==0)
+			setModuleId(currInstr,GDKstrdup("mil"));
+@-
+Others should be mapped to their new name
+@c
+		if( ismapped(nme)){
+			str n= nme;
+			nme= mapid(nme);
+			GDKfree(n);
+		}
 		setFunctionId(currInstr,nme);
+	}
 
 	varid= getDestVar(currInstr) = newTmpVariable(currBlk,TYPE_any);
 	setVarInitialized(currBlk, varid);
@@ -601,15 +615,16 @@ void parseMILstmt(Client cntxt, MalBlkPtr currBlk){
 	parseMILstmtend(cntxt,currBlk);
 }
 void parseMILblock(Client cntxt, MalBlkPtr currBlk){
-	if( keyphrase2(cntxt,"{/")){
+	if( keyphrase1(cntxt,"{") && keyphrase1(cntxt,"/")){
+		advanceMore(cntxt,1);
 		skipSpace(cntxt);
 		enterMILscope(cntxt);
-		while( !keyphrase2(cntxt,"/}") ){
+		do{
+			if( keyphrase2(cntxt,"/}") == 0)
+				break;
 			parseMILprg(cntxt,currBlk);
-			skipSpace(cntxt);
-			if(currChar(cntxt) == 0) break;
-		}
-		prevChar(cntxt);
+		} while( *CURRENT(cntxt)!='}' );
+		advance(cntxt,2);
 		leaveMILscope(cntxt);
 	} else 
 	if( currChar(cntxt)=='{'){
