@@ -1563,16 +1563,6 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 			"cannot access descriptor @2");
 	}
 	if(*@2 <0) @3 = BATmirror(@3);
-@= getBATdescriptor2
-	if( BBPcheck(*@2,"@4")== 0 )
-                return throwMessage("bat.@4", 
-			"cannot access bat @2 in bbp");
-	@3= (BAT*) BBPgetdesc(*@2);
-	if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4", 
-			"cannot access descriptor @2");
-	}
-	if(*@2 <0) @3 = BATmirror(@3);
 @-
 
 @c
@@ -1667,7 +1657,7 @@ printf("val %d seqbase %d pos %d\n", *(oid*)@1,
 str BKCinsert_void_bun(int *r, int *bid, ptr t) {
 	BAT *b;
 	oid h= oid_nil;
-	@:getBATdescriptor2(r,bid,b,insert)@
+	@:getBATdescriptor(r,bid,b,insert)@
 	@:derefStr(b,t,t)@
 	BUNins(b,(ptr)&h, @:batconvert(b,t)@);
 	return MAL_SUCCEED;
@@ -1675,7 +1665,7 @@ str BKCinsert_void_bun(int *r, int *bid, ptr t) {
 
 str BKCinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-	@:getBATdescriptor2(r,bid,b,insert)@
+	@:getBATdescriptor(r,bid,b,insert)@
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
@@ -1684,8 +1674,8 @@ str BKCinsert_bun(int *r, int *bid, ptr h, ptr t) {
 
 str BKCinsert_bat(int *r, int *bid, int *sid){
 	BAT *b, *s, *bn= NULL;
-	@:getBATdescriptor2(r,bid,b,insert)@
-	@:getBATdescriptor2(r,sid,s,insert)@
+	@:getBATdescriptor(r,bid,b,insert)@
+	@:getBATdescriptor(r,sid,s,insert)@
 	CMDinsert_bat(&bn, b,s);
 	BBPunfix(bn->batCacheid);
 	(void) bn;
@@ -1694,7 +1684,7 @@ str BKCinsert_bat(int *r, int *bid, int *sid){
 
 str BKCreplace_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b, *bn =NULL;
-	@:getBATdescriptor2(r,bid,b,replace)@
+	@:getBATdescriptor(r,bid,b,replace)@
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	CMDreplace_bun(&bn,b,h,t);
@@ -1704,8 +1694,8 @@ str BKCreplace_bun(int *r, int *bid, ptr h, ptr t) {
 
 str BKCreplace_bat(int *r, int *bid, int *sid){
 	BAT *b,*s, *bn= NULL;
-	@:getBATdescriptor2(r,bid,b,replace)@
-	@:getBATdescriptor2(r,sid,s,replace)@
+	@:getBATdescriptor(r,bid,b,replace)@
+	@:getBATdescriptor(r,sid,s,replace)@
 	return CMDreplace_bat(&bn,b,s)== GDK_SUCCEED?
 		MAL_SUCCEED:
 		throwMessage("bat.replace_bat", "GDKerror");
@@ -1713,7 +1703,7 @@ str BKCreplace_bat(int *r, int *bid, int *sid){
 str BKCdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b, *bn=NULL;
 	(void) bn;
-	@:getBATdescriptor2(r,bid,b,delete)@
+	@:getBATdescriptor(r,bid,b,delete)@
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	if(CMDdelete_bun(&bn,b,h,t) == GDK_SUCCEED)
@@ -1724,7 +1714,7 @@ str BKCdelete_bun(int *r, int *bid, ptr h, ptr t) {
 str BKCdelete_head(int *r, int *bid, ptr h) {
 	BAT *b,*bn= NULL;
 	(void) bn;
-	@:getBATdescriptor2(r,bid,b,delete)@
+	@:getBATdescriptor(r,bid,b,delete)@
 	@:derefStr(b,h,h)@
 	if( CMDdelete_head(&bn,b,h) == GDK_SUCCEED)
 		return MAL_SUCCEED;
@@ -1734,7 +1724,7 @@ str BKCdelete_head(int *r, int *bid, ptr h) {
 str BKCdelete_all(int *r, int *bid) {
 	BAT *b, *bn = NULL;
 	(void) bn;
-	@:getBATdescriptor2(r,bid,b,delete)@
+	@:getBATdescriptor(r,bid,b,delete)@
 	if( CMDdelete_all(&bn,b) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	return throwMessage("bat.delete_all", "GDKerror");
@@ -1743,8 +1733,8 @@ str BKCdelete_all(int *r, int *bid) {
 str BKCdelete_bat_bun(int *r, int *bid, int *sid){
 	BAT *b,*s, *bn = NULL;
 	(void) bn;
-	@:getBATdescriptor2(r,bid,b,delete)@
-	@:getBATdescriptor2(r,sid,s,delete)@
+	@:getBATdescriptor(r,bid,b,delete)@
+	@:getBATdescriptor(r,sid,s,delete)@
 	if( CMDdelete_bat_bun(&bn,b,s) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	return throwMessage("bat.delete_bat_buns", "GDKerror");
@@ -1753,8 +1743,8 @@ str BKCdelete_bat_bun(int *r, int *bid, int *sid){
 str BKCdelete_bat_head(int *r, int *bid, int *sid){
 	BAT *b,*s, *bn = NULL;
 	(void) bn;
-	@:getBATdescriptor2(r,bid,b,delete)@
-	@:getBATdescriptor2(r,sid,s,delete)@
+	@:getBATdescriptor(r,bid,b,delete)@
+	@:getBATdescriptor(r,sid,s,delete)@
 	if( CMDdelete_bat_head(&bn,b,s) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	return throwMessage("bat.delete_bat_heads", "GDKerror");
@@ -1766,14 +1756,14 @@ str BKCdestroy_bat(bit *r,str *input, bit *immediate) {
 str BKCdestroyImmediate(bit *r,int *bid, bit *immediate) {
 	BAT *b;
 	char buf[512];
-	@:getBATdescriptor2(r,bid,b,destroy)@
+	@:getBATdescriptor(r,bid,b,destroy)@
 	BBPlogical(b->batCacheid,buf);
 	CMDdestroy(r,buf,immediate);
 	return MAL_SUCCEED;
 }
 str BKCdestroy(bit *r,int *bid) {
 	BAT *b;
-	@:getBATdescriptor2(r,bid,b,destroy)@
+	@:getBATdescriptor(r,bid,b,destroy)@
 	*bid = 0;
 	BATmode(b, TRANSIENT);
 	return MAL_SUCCEED;
@@ -1878,8 +1868,8 @@ size_t void_append_bat( BAT *b, BAT *u){
 str BKCbat_append_void_bat_wrap( int *r, int *bid, int *uid )
 {
 	BAT *i, *u;
-	@:getBATdescriptor2(r,bid,i,append)@
-	@:getBATdescriptor2(r,uid,u,append)@
+	@:getBATdescriptor(r,bid,i,append)@
+	@:getBATdescriptor(r,uid,u,append)@
 	void_append_bat( i, u );
 	*r = i->batCacheid;
 	return MAL_SUCCEED;
@@ -1888,8 +1878,8 @@ str BKCbat_append_void_bat_wrap( int *r, int *bid, int *uid )
 str BKCbat_append_oid_bat_wrap( int *r, int *bid, int *uid )
 {
 	BAT *i, *u;
-	@:getBATdescriptor2(r,bid,i,append)@
-	@:getBATdescriptor2(r,uid,u,append)@
+	@:getBATdescriptor(r,bid,i,append)@
+	@:getBATdescriptor(r,uid,u,append)@
 	void_insert_bat( i, u );
 	*r = i->batCacheid;
 	return MAL_SUCCEED;
@@ -1898,8 +1888,8 @@ str BKCbat_append_oid_bat_wrap( int *r, int *bid, int *uid )
 str BKCbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 {
 	BAT *i, *u;
-	@:getBATdescriptor2(r,bid,i,append)@
-	@:getBATdescriptor2(r,uid,u,append)@
+	@:getBATdescriptor(r,bid,i,append)@
+	@:getBATdescriptor(r,uid,u,append)@
 	assert(BATcount(i)==0 && BATcount(u) == 0);
 	*r = i->batCacheid;
 	return MAL_SUCCEED;
@@ -1910,8 +1900,8 @@ str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 	BUN r=0,s;
         oid o;
 	BAT *i, *u;
-	@:getBATdescriptor2(r,bid,i,append)@
-	@:getBATdescriptor2(r,uid,u,append)@
+	@:getBATdescriptor(r,bid,i,append)@
+	@:getBATdescriptor(r,uid,u,append)@
 	
 	assert(i->htype == TYPE_oid && u->htype == TYPE_oid);
 	BATmax(BATmirror(i),&o);
@@ -1928,7 +1918,7 @@ str BKCoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 {
         oid o;
 	BAT *i;
-	@:getBATdescriptor2(r,bid,i,append)@
+	@:getBATdescriptor(r,bid,i,append)@
 
 	assert(i->htype == TYPE_oid);
 	BATmax(BATmirror(i),&o);
@@ -1944,7 +1934,7 @@ str BKCbat_append_val_wrap( int *r, int *bid, ptr u)
 {
 	BAT *i;
 	oid h;
-	@:getBATdescriptor2(r,bid,i,append)@
+	@:getBATdescriptor(r,bid,i,append)@
 	h = i->hseqbase + BATcount(i);
 	@:derefStr(i,t,u)@
 	BUNins( i, (ptr) & h, u );
@@ -1955,8 +1945,8 @@ str BKCbat_append_val_wrap( int *r, int *bid, ptr u)
 str BKCbat_replace_oid_bat_wrap( int *r, int *bod, int *did )
 {
 	BAT *o, *d;
-	@:getBATdescriptor2(r,bod,o,replace)@
-	@:getBATdescriptor2(r,did,d,replace)@
+	@:getBATdescriptor(r,bod,o,replace)@
+	@:getBATdescriptor(r,did,d,replace)@
 	void_replace_bat( o, d );
 	*r = o->batCacheid;
 	return MAL_SUCCEED;
@@ -2276,7 +2266,7 @@ str BKCsave(bit *res, str *input) {
 }
 str BKCsave2(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor2(res,bid,b,save)@
+	@:getBATdescriptor(res,bid,b,save)@
 	
 	if (b && BATdirty(b)) {
 		if (BBPsave(b) == 0) *res = TRUE;
