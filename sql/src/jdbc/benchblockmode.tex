@@ -128,7 +128,7 @@ client using the \textsf{-f} flag.
 For each benchmark we (re)started Mserver and ran once the to be
 run test to let the system initialise and cache whatever it liked.
 After this, initial run, we started three tests in sequence.
- 
+
 
 \subsubsection{Queries with large result sets}
 
@@ -213,9 +213,8 @@ An example of code that would request a \textsf{Connection} in line
 mode:
 \begin{verbatim}
 Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-nl.cwi.monetdb.jdbc.MonetDriver.setBlockMode(false);
 Connection con = DriverManager.getConnection(
- 	"jdbc:monetdb://localhost/test", "test", "test");
+ 	"jdbc:monetdb://localhost/test?blockmode=false", "test", "test");
 \end{verbatim}
 
 \end{document}

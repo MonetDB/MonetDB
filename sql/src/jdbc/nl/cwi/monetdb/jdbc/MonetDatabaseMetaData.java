@@ -103,7 +103,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * Are NULL values sorted low?
 	 *
 	 * @return negative of nullsAreSortedHigh()
-	 * @see nullsAreSortedHigh()
+	 * @see #nullsAreSortedHigh()
 	 */
 	public boolean nullsAreSortedLow() {
 		return(!nullsAreSortedHigh());
@@ -1264,7 +1264,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *
 	 * @param catalog - a catalog name; "" retrieves those without a
 	 *	catalog; null means drop catalog name from criteria
-	 * @param schemaParrern - a schema name pattern; "" retrieves those
+	 * @param schemaPattern - a schema name pattern; "" retrieves those
 	 *	without a schema - we ignore this parameter
 	 * @param procedureNamePattern - a procedure name pattern
 	 * @return ResultSet - each row is a procedure description
@@ -1352,7 +1352,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * returns the given string between two double quotes for usage as
 	 * exact column or table name in SQL queries.
 	 *
-	 * @param the string to quote
+	 * @param in the string to quote
 	 * @return the quoted string
 	 */
 	private static String dq(String in) {
@@ -1530,7 +1530,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results[4][0] = "TEMPORARY TABLE";
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1675,7 +1675,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1730,7 +1730,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1785,7 +1785,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1890,7 +1890,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1947,7 +1947,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -2205,13 +2205,17 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	<LI><B>PK_NAME</B> String => primary key identifier (may be null)
 	 *	</OL>
 	 *
-	 * @param catalog a catalog name; "" retrieves those without a catalog
-	 * @param schema a schema name pattern; "" retrieves those
+	 * @param pcatalog primary key catalog name; "" retrieves those without a catalog
+	 * @param pschema primary key schema name pattern; "" retrieves those
 	 * without a schema
-	 * @param table a table name
+	 * @param ptable primary key table name
+	 * @param fcatalog foreign key catalog name; "" retrieves those without a catalog
+	 * @param fschema foreign key schema name pattern; "" retrieves those
+	 * without a schema
+	 * @param ftable koreign key table name
 	 * @return ResultSet each row is a foreign key column description
-	 * @see #getImportedKeys
 	 * @throws SQLException if a database error occurs
+	 * @see #getImportedKeys
 	 */
 	public ResultSet getCrossReference(
 		String pcatalog,
@@ -2346,7 +2350,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		};
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -2492,7 +2496,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -3001,9 +3005,10 @@ class MonetVirtualResultSet extends MonetResultSet {
 	MonetVirtualResultSet(
 		String[] columns,
 		String[] types,
-		String[][] results
+		String[][] results,
+		Statement stmt
 	) throws IllegalArgumentException {
-		super(columns, types, results.length);
+		super(columns, types, results.length, stmt);
 
 		this.results = results;
 	}

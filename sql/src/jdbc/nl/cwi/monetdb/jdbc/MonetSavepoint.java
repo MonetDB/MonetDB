@@ -22,9 +22,12 @@ import java.sql.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
 public class MonetSavepoint implements Savepoint {
+	/** The id of the last created Savepoint */
 	private static int highestId = 0;
 
+	/** The name of this Savepoint */
 	private final String name;
+	/** The id of this Savepoint */
 	private final int id;
 
 	public MonetSavepoint(String name) throws IllegalArgumentException {

@@ -100,9 +100,7 @@ public class MJDBCTest {
         public static void main(String[] args) throws Exception {
                 // make sure the driver is loaded
                 Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-                // turn on debugging (disabled)
-                //nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
-                Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/notused", "monetdb", "monetdb");
+                Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/notused?debug=true", "monetdb", "monetdb");
                 Statement st = con.createStatement();
                 ResultSet rs;
 
@@ -123,7 +121,7 @@ public class MJDBCTest {
                         }
                         System.out.println("");
                 }
-                
+
                 // tell the driver to only return 5 rows, it can optimize on this
                 // value, and will not fetch any more than 5 rows.
                 st.setMaxRows(5);
@@ -137,12 +135,12 @@ public class MJDBCTest {
                         System.out.print("[" + rs.getInt("var3") + "]");
                         System.out.println("[" + rs.getString("var4") + "]");
                 }
-                
+
                 // this close is not needed, should be done by next execute(Query) call
                 // however if there can be some time between this point and the next
                 // execute call, it is from a resource perspective better to close it.
                 //rs.close();
-                
+
                 // unset the row limit; 0 means as much as the database sends us
                 st.setMaxRows(0);
                 // we only ask 10 rows
@@ -156,7 +154,7 @@ public class MJDBCTest {
                         System.out.print(rs.getString("var3") + ", ");
                         System.out.println(rs.getString("var4"));
                 }
-                
+
                 // this close is not needed, as the Statement will close the last
                 // ResultSet around when it's closed
                 // again, if that can take some time, it's nicer to close immediately

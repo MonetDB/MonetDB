@@ -25,24 +25,23 @@ public class SQLImport {
 			System.out.println("synopsis: java SQLImport filename [autocommit] [verbose]");
 			System.exit(-1);
 		}
-	
+
 		// open the file
 		BufferedReader fr = new BufferedReader(new FileReader(args[0]));
 
 		// make sure the driver is loaded
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-		// turn on debugging
-		nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
 		// request a connection suitable for Monet from the driver manager
 		// note that the database specifier is currently not implemented, for
 		// Monet itself can't access multiple databases.
-		Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
+		// turn on debugging
+		Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database?debug=true", "monetdb", "monetdb");
 
 		boolean beVerbose = false;
 		if (args.length == 3) {
 			// turn on verbose mode
 			beVerbose = true;
-		} 
+		}
 		if (args.length < 2) {
 			// disable auto commit using the driver
 			con.setAutoCommit(false);
@@ -62,7 +61,7 @@ public class SQLImport {
 				if (!beVerbose) System.out.println(query);
 			}
 		}
-		
+
 		// free resources, close the statement
 		stmt.close();
 		// close the connection with the database
