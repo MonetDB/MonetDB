@@ -1,6 +1,6 @@
 
 import string
-import regex,regsub
+import regex
 import fileinput
 import os
 import shelve

@@ -24,7 +24,6 @@ import fileinput
 import popen2
 import shutil
 import re
-import regsub
 import string
 import random
 import time
@@ -178,14 +177,11 @@ def startswith(str,pre) :
 ### startswith(str,pre) #
 
 def path(str) :
-    return regsub.gsub("/",os.sep,str)
+    return string.replace(str, '/', os.sep)
 ### path(str) #
 
 def url(str) :
-    if os.name == "nt":
-        return regsub.gsub("\\\\","/",str)
-    else:
-        return regsub.gsub(os.sep,"/",str)
+    return string.replace(str, os.sep, '/')
 ### url(str) #
 
 def CreateHtmlIndex (env) :
@@ -515,10 +511,7 @@ def PerformDir(env, testdir, testlist) :
     TSTTRGDIR = os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR)
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        if os.name == "nt":
-            TSTDB = TSTPREF+"_"+regsub.gsub("\\\\","_",TSTDIR)
-        else:
-            TSTDB = TSTPREF+"_"+regsub.gsub(os.sep,"_",TSTDIR)
+        TSTDB = TSTPREF+"_"+string.replace(TSTDIR, os.sep, '_')
     else: # THISFILE == "Mapprove.py"
         TSTDB = ""
 

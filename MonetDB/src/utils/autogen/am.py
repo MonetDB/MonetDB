@@ -1,6 +1,5 @@
 import string
 import os
-import regsub
 from codegen import find_org
 
 #automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
@@ -161,7 +160,7 @@ def am_additional_libs(name,sep,type,list, am):
 def am_deps(fd,deps,objext, am):
     if len(am['DEPS']) <= 0:
         for t,deplist in deps.items():
-            n = regsub.sub("\.o",".lo",t)
+            n = string.replace(t, '.o', '.lo', 1)
             if (t != n):
                 fd.write( n + " " )
             fd.write( t + ":" )

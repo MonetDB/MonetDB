@@ -1,5 +1,4 @@
 import string
-import regsub
 import os
 
 #automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
@@ -80,7 +79,7 @@ def msc_translate_dir(path,msc):
         dir = "$("+dir+")"
     if (len(rest) > 0):
         dir = dir+ "\\" + rest
-    return regsub.gsub("/", "\\", dir )
+    return string.replace(dir, '/', '\\')
 
 def msc_translate_file(path,msc):
     if (os.path.isfile(os.path.join(msc['cwd'], path))):
@@ -146,8 +145,8 @@ def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
     return add + "\n"
 
 def msc_translate_ext( f ):
-    n = regsub.gsub("\.o", ".obj", f )
-    return regsub.gsub("\.cc", ".cxx", n )
+    n = string.replace(f, '.o', '.obj')
+    return string.replace(n, '.cc', '.cxx')
 
 def msc_find_target(target,msc):
     tree = msc['TREE']
@@ -621,7 +620,7 @@ CXXEXT = \\\"cxx\\\"
             d,t = os.path.split(d)
 
     fd.write("TOPDIR = %s\n" % reldir)
-    fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % regsub.gsub("/", "\\", srcdir))
+    fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % string.replace(srcdir, '/', '\\'))
     fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
     if ("SUBDIRS" in tree.keys()):
         fd.write("all: all-recursive all-msc\n")

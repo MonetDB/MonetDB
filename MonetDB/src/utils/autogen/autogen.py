@@ -7,7 +7,6 @@
 import fileinput
 import string
 import re
-import regsub
 import am
 import msc
 from codegen import *

@@ -14,7 +14,7 @@
 # Mserver -db gold prof_input_file_name.mil
 # You can now observe the results....
 
-import regsub,regex,string,os
+import regex,string,os
 from sys import argv
 import os
 
@@ -85,7 +85,7 @@ for line in input_fil.readlines() :
     else :
         with_semicolon = 0
     first_time_in_loop = 1
-    for splitted_sentence in regsub.split(line,";") :
+    for splitted_sentence in string.split(line,";") :
         if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*}\([\n\t ]*\)$',splitted_sentence) != -1 :
             close_brac = 1
         if concatenate == 1 :
@@ -124,7 +124,7 @@ for line in input_fil.readlines() :
                 if (regex.search('{',splitted_sentence) == -1 and regex.search('}',splitted_sentence) == -1) :
                     temp_sentence = splitted_sentence
                     if regex.search('\n',temp_sentence) != -1 :
-                        t_sentence = regsub.split(splitted_sentence,"\n")
+                        t_sentence = string.split(splitted_sentence,"\n")
                         temp_sentence = t_sentence[0]
                     concatenate = 1
 
