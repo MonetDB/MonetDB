@@ -135,8 +135,8 @@ void scheduleClient( str command, bstream *fin, stream *fout)
 	Client c;
 	MT_Id p;
 
-	/* decode first user:key:password:lang line */
-        s = strchr(command,'\n');
+	/* decode first user:password:lang line */
+    s = strchr(command,'\n');
 	if(s) 
 		*s=0;
 	s= strrchr(command,':');
