@@ -10,12 +10,12 @@ stdout of test 'ID.1078462_run` in directory 'tests/BugsViaSourgeforce` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 <result title="Document bond-repository.xml category Corel1/Croatia:"><Category name="Corel1/Croatia">
 <Picture><DisplayName>154000</DisplayName><RelPath>Corel1/Croatia/154000.jpg</RelPath></Picture>
 <Picture><DisplayName>154099</DisplayName><RelPath>Corel1/Croatia/154099.jpg</RelPath></Picture>
 </Category></result>
-</XqueryResult>
+</XQueryResult>
 
 # 20:48:39 >  
 # 20:48:39 >  Done.

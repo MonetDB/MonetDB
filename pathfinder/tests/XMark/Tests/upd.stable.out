@@ -10,7 +10,7 @@ stdout of test 'upd` in directory 'tests/XMark` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 <v><site>
 <regions>
 <africa>
@@ -10377,7 +10377,7 @@ lowly farewell require cap dropsied <bold> tides died finisher religiously blood
 </closed_auction>
 </closed_auctions>
 </site></v>
-</XqueryResult>
+</XQueryResult>
 
 # 19:51:56 >  
 # 19:51:56 >  Done.

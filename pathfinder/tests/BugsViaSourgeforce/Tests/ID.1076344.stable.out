@@ -10,9 +10,9 @@ stdout of test 'ID.1076344` in directory 'tests/BugsViaSourgeforce` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 3 3 
-</XqueryResult>
+</XQueryResult>
 
 # 20:09:01 >  
 # 20:09:01 >  Done.

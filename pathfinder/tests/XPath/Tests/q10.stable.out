@@ -10,7 +10,7 @@ stdout of test 'q10` in directory 'tests/XPath` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 <bidder>
 <date>06/13/2001</date>
 <time>13:16:15</time>
@@ -37,7 +37,7 @@ stdout of test 'q10` in directory 'tests/XPath` itself:
 <personref person="person0"></personref>
 <increase>9.00</increase>
 </bidder>
-</XqueryResult>
+</XQueryResult>
 
 # 20:12:53 >  
 # 20:12:53 >  Done.

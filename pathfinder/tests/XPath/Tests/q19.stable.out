@@ -10,7 +10,7 @@ stdout of test 'q19` in directory 'tests/XPath` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 <open_auction id="open_auction1">
 <initial>69.64</initial>
 <reserve>398.65</reserve>
@@ -474,7 +474,7 @@ humble near make page friends nunnery doubting flow aweary grieves misty gracefu
 <end>02/04/1998</end>
 </interval>
 </open_auction>
-</XqueryResult>
+</XQueryResult>
 
 # 21:03:59 >  
 # 21:03:59 >  Done.

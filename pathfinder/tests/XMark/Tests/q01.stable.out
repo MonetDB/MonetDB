@@ -10,9 +10,9 @@ stdout of test 'q01` in directory 'tests/XMark` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 Ayonca Vijaykrishnan
-</XqueryResult>
+</XQueryResult>
 
 # 14:39:53 >  
 # 14:39:53 >  Done.

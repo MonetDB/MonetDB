@@ -10,9 +10,9 @@ stdout of test 'q05` in directory 'tests/XMark` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 30
-</XqueryResult>
+</XQueryResult>
 
 ### time for run 1: 98 msec
 ### time for run 2: 42 msec

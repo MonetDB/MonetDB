@@ -10,7 +10,7 @@ stdout of test 'q20` in directory 'tests/XPath` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 <item id="item4">
 <location>United States</location>
 <quantity>1</quantity>
@@ -34,7 +34,7 @@ causes remove adding tear often rounds underbearing tree purer kibes endless wom
 </mail>
 </mailbox>
 </item>
-</XqueryResult>
+</XQueryResult>
 
 # 21:06:08 >  
 # 21:06:08 >  Done.

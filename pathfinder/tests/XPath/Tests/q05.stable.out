@@ -10,7 +10,7 @@ stdout of test 'q05` in directory 'tests/XPath` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 <item id="item11">
 <location>United States</location>
 <quantity>1</quantity>
@@ -252,7 +252,7 @@ suff person champaign stronger swallowed vulgar difficulties prays concealing oc
 </mail>
 </mailbox>
 </item>
-</XqueryResult>
+</XQueryResult>
 
 # 18:21:10 >  
 # 18:21:10 >  Done.

@@ -10,7 +10,7 @@ stdout of test 'q12` in directory 'tests/XPath` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XqueryResult>
+<XQueryResult>
 <open_auction id="open_auction0">
 <initial>210.62</initial>
 <reserve>1540.75</reserve>
@@ -397,7 +397,7 @@ determine believe scarcity ascend well disports storm print welshman rosencrantz
 <end>12/05/2000</end>
 </interval>
 </open_auction>
-</XqueryResult>
+</XQueryResult>
 
 # 19:55:35 >  
 # 19:55:35 >  Done.
