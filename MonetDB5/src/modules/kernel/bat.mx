@@ -272,6 +272,9 @@ command insert(b:bat[any::1, any::2], h:any::1, t:any::2)
 				: void = CMDinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
 
+command insert(b:bat[void,any::1],v:any::1): void = CMDinsert_void_bun
+comment "Insert a value in a 'void' bat";
+
 command replace(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
 				: bat[any::1,any::2] = CMDreplace_bat
 comment "Perform replace for all BUNs of the second BAT into the first.";
@@ -784,6 +787,15 @@ printf("val %d seqbase %d pos %d\n", *(oid*)@1,
       return throwMessage("bat.insert", " insert non-nil values in a void column.");
 }
 @c
+str CMDinsert_void_bun(int *r, int *bid, ptr t) {
+	BAT *b;
+	oid h= oid_nil;
+	@:getBATdescriptor2(r,bid,b,insert)@
+	@:derefStr(b,t,t)@
+	BUNins(b,(ptr)&h, @:batconvert(b,t)@); 
+	return MAL_SUCCEED;
+} 
+
 str CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
 	@:getBATdescriptor2(r,bid,b,insert)@

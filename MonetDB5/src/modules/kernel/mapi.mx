@@ -42,7 +42,15 @@ They behave as views on the actual state.
 No protection is currently possible against malicious users changing them. 
 
 Authorization of access to the server is handled as part
-of the client record initialization phase.
+of the client record initialization phase. Currently this part
+is still lacking the necessary functionality.
+
+The client can use between blocked and unblocked interaction.
+The former is preferred, since it will give the best performance.
+This property is indicated in the start-up sequence by passing
+the authentiaction string  "<username>:<password>:blocked".
+An unblocked stream is obtained using "<username>:<password>",
+which is also backward compatible for older applications.
 @mal
 module mapi;
 
@@ -80,7 +88,7 @@ command trace(flag:bit):void = MAPItrace
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
 
-#define DEBUG_MAPI	1 
+/* #define DEBUG_MAPI	1 */
 
 #endif /* MAPI_H */
 @c
@@ -107,28 +115,37 @@ void MAPIlistenThread(int sock)
 				return ;
 	    		}
 		} else if (msgsock > 0) {
-			int i;
-			stream *fdin= block_stream(socket_rstream(msgsock,"Mserver mapi read"));
-			stream *fdout= block_stream(socket_wstream(msgsock,"Mserver mapi write"));
+			int i=0, blocked=0;
+			stream *fdin= socket_rastream(msgsock,"Mserver mapi read");
+			stream *fdout= NULL;
 			char *command= (char*) GDKmalloc(BLOCK),*s;
-			char *user = command, *passwd= NULL;
-			int skey=0;
 
-#ifdef DEBUG_MAPI_2
-			printf("mapi:About to read block\n");
-			fflush(stdout);
-#endif
-			/* Get at most 1 BLOCK with identity information*/
-			if( (i= fdin->read(fdin,command,1,BLOCK)) < 0){
-				GDKerror("Block size error in mapi.mx\n");
-				printf("%d [%d] bytes read:%s\n",i,BLOCK,command);
-				fflush(stdout);
+			if( fdin== NULL){
+				GDKsyserror("mapi.listen:fdin problems\n");
 				continue;
 			}
-#ifdef DEBUG_MAPI_2
+			/* Get at most 1 LINE with identity information*/
+			while( fdin->read(fdin,command+i,1,1)==1 ){
+				if( command[i]=='\n') break;
+				if( i==BLOCK-1) break;
+				i++;
+			}
+#ifdef DEBUG_MAPI
 			printf("mapi:Client accepted %s\n", command);
 			fflush(stdout);
 #endif
+			s= strrchr(command,':');
+			blocked= s && strncmp(s,":blocked",8)==0;
+			if( blocked){
+#ifdef DEBUG_MAPI
+				printf("mapi:use blocked mode\n");
+				fflush(stdout);
+#endif
+				*s=0;
+				fdin= block_stream(socket_rstream(msgsock,"Mserver mapi read"));
+				fdout= block_stream(socket_wstream(msgsock,"Mserver mapi write"));
+			}else
+				fdout= socket_wastream(msgsock,"Mserver mapi write");
 			scheduleClient(command,msgsock,fdin,fdout);
 		}
 	} while (1);

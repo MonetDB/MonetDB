@@ -10,7 +10,7 @@ LIBS = {
 	SOURCES = mal.mx mal_init.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx  streams.mx tcpip.mx inspect.mx ascii_io.mx \
-		thread.mx optimizer.mx clients.mx
+		thread.mx optimizer.mx clients.mx table_io.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -22,7 +22,7 @@ scripts_mal = {
 	SOURCES = mal_init.mal tcpip.mal thread.mal io.mal streams.mal \
 		ascii_io.mal enum.mal profiler.mal mal.mal \
 		multiplex.mal const.mal bbp.mal box.mal inspect.mal \
-		optimizer.mal clients.mal
+		optimizer.mal clients.mal table_io.mal
 }
 
 EXTRA_DIST_DIR = Tests

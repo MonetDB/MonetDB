@@ -45,6 +45,7 @@ use "mal/clients";
 use "mal/io";
 use "mal/streams";
 use "mal/ascii_io";
+use "mal/table_io";
 use "mal/enum";
 use "mal/multiplex";
 use "mal/mal";
@@ -54,8 +55,9 @@ use "mal/bbp";
 use "mal/box"; 
 use "mal/inspect";
 use "mal/optimizer";
-#use "sql/sql_server";
-#use "sql/sql";
+use "sql/sql_server";
+use "sql/sql";
+
 @-
 In practice, we have to introduce different startup for each
 client group or database.
