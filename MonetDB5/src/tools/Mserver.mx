@@ -434,7 +434,7 @@ Time to execute the script files. Start with the init command[todo]
 	if( GDKgetenv("mal_listing"))
 		sscanf( GDKgetenv("mal_listing"),"%d",&listing);
         for(i=0; monet_script[i]; i++) {
-                malImport(mal_clients, monet_script[i], 0, listing);
+                malInclude(mal_clients, monet_script[i], 0, listing);
 		GDKfree(monet_script[i]);
 		monet_script[i]=0;
         }
