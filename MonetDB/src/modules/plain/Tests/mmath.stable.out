@@ -15,10 +15,10 @@ test_mmath();
 [ -inf ]
 [ -1 ]
 [ true ]
-
-
-
-
+!ERROR: Negative argument is not allowed
+!ERROR: math_unary_LOG: operation failed.
+!ERROR: interpret_params: finite(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 quit();
 
 # 10:26:23 >  
