@@ -71,7 +71,6 @@ rm -rf $RPM_BUILD_ROOT
 %build
 
 ./configure \
-	--enable-debug \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} 
