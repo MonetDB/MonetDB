@@ -222,14 +222,14 @@ parsedate(const char *data, DATE_STRUCT *dval)
 	if (sscanf(data, "%hd-%hu-%hu%n",
 		   &dval->year, &dval->month, &dval->day, &n) < 3)
 		return 0;
+	if (dval->month == 0 || dval->month > 12 ||
+	    dval->day == 0 || dval->day > monthlengths[dval->month] ||
+	    (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
+		return 0;
 	data += n;
 	while (space(*data))
 		data++;
 	if (*data)
-		return 0;
-	if (dval->month == 0 || dval->month > 12 ||
-	    dval->day == 0 || dval->day > monthlengths[dval->month] ||
-	    (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
 		return 0;
 	return 1;
 }
@@ -243,6 +243,9 @@ parsetime(const char *data, TIME_STRUCT *tval)
 		data++;
 	if (sscanf(data, "%hu:%hu:%hu%n",
 		   &tval->hour, &tval->minute, &tval->second, &n) < 3)
+		return 0;
+	/* seconds can go up to 61(!) because of leap seconds */
+	if (tval->hour > 23 || tval->minute > 59 || tval->second > 61)
 		return 0;
 	data += n;
 	n = 1;			/* tentative return value */
@@ -271,7 +274,8 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 		return 0;
 	if (tsval->month == 0 || tsval->month > 12 ||
 	    tsval->day == 0 || tsval->day > monthlengths[tsval->month] ||
-	    (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29))
+	    (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29) ||
+	    tsval->hour > 23 || tsval->minute > 59 || tsval->second > 61)
 		return 0;
 	tsval->fraction = 0;
 	data += n;
@@ -1144,8 +1148,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 #else
 					tm = *localtime(&t);
 #endif
-					tsval.year = tm.tm_year;
-					tsval.month = tm.tm_mon;
+					tsval.year = tm.tm_year + 1900;
+					tsval.month = tm.tm_mon + 1;
 					tsval.day = tm.tm_mday;
 					tsval.hour = tval.hour;
 					tsval.minute = tval.minute;
@@ -1285,7 +1289,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (sscanf(data, "%d %u:%u:%u%n", &i,
 				   &ival.intval.day_second.hour,
 				   &ival.intval.day_second.minute,
-				   &ival.intval.day_second.second, &n)) {
+				   &ival.intval.day_second.second, &n) < 4) {
 				/* 22018: Invalid character value for
 				   cast specification */
 				addStmtError(stmt, "22018", NULL, 0);
