@@ -173,13 +173,14 @@ int localtypes_cmp( int nlt, int olt )
 
 sql_subtype *sql_bind_numeric( int localtype, unsigned int digits )
 {
+	node *m, *n;
+
 	if (localtype == TYPE_flt || localtype == TYPE_dbl) {
 		localtype = TYPE_dbl;
 	} else {
 		localtype = TYPE_lng;
 	}
 
-	node *m, *n;
 	for ( n = types->h; n; n = n->next ) {
 		sql_type *t = n->data;
 		if (localtypes_cmp(t->localtype, localtype)){
