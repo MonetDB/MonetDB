@@ -12,7 +12,10 @@ Prerequisites:
 ==============
 
 CVS
-	You need to have a working CVS.  For instructions, see
+	You need to have a working CVS. Several solutions are
+	available. We use internally WinCVS (http://www.wincvs.org)
+	and CVS under Cygwin (http://www.cygwin.com)
+	For general information about the sourceforge repository, see
 	http://sourceforge.net/docman/?group_id=1 and look under the
 	heading CVS Instructions.  Pointers to CVS implementations 
 	for Windows can be found at e.g.:
@@ -66,8 +69,8 @@ machine to be used for all subsequent CVS accesses with this server.
 
  cvs -d:pserver:anonymous@cvs.monetdb.sourceforge.net:/cvsroot/monetdb login
 
-Just type RETURN when asked for the password.
-
+Just type RETURN when asked for the password. The actual steps depend on
+your CVS tool, e.g. in WinCVS you have to set the Admin preferences.
 Then get the software by using the command:
 
  cvs -d:pserver:anonymous@cvs.monetdb.sourceforge.net:/cvsroot/monetdb checkout MonetDB
@@ -80,15 +83,18 @@ information.
 
 Compiling:
 ==========
+Open a Windows command shell or a UnxUtils shell and go to the 
+top-level directory of MonetDB.
 
-Make sure that the proper environment for MSVC++ is set
+Make sure that the proper environment for MSVC++ is set,
+otherwise call the corresponding BAT file.
 (see C:\Program Files\Microsoft Visual Studio\VC98\Bin\VCVARS32.BAT).
 
-Make sure that Python, C:\Pthreads\lib (or wherever you installed
-Pthreads), and \usr\local\wbin are in the PATH of your command shell.
+Make sure that Python, C:\Pthreads\lib, and C:\UnxUtils\usr\local\wbin 
+(or wherever you installed Python, Pthreads and UnxUtils) are 
+in the PATH of your command shell.
 
-Open a command shell and go to the top-level directory of MonetDB.
-There, you type
+When all prerequisites have been satisfied, you type
 
  cd NT
  nmake
@@ -152,3 +158,15 @@ NOTE: the current 'nmake install' does not yet generate this
       tree, call
 
  nmake html
+
+Troubleshooting:
+================
+Installation of UnxUtils may conflict with already installed software.
+For example, the 'make' utility name is also used by some Java IDEs.
+This problem can be circumvented by setting the PATH variable only
+in the UnxUtils shell.
+
+Make complaints with a "missing separator on line 9", which indicates 
+that you use the wrong make command.  Most likely the MSVC has 
+not been properly set
+
