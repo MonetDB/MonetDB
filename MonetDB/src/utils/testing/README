@@ -202,7 +202,6 @@ have changed since my proposal.
 	HOST		hostname
 	OS		`uname`
 	OSVER		`uname``uname -r`
-  	TSTDB		name of default test database, unique for each directory
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
 	MSERVER		"$MTIMEOUT Mserver -monetrc $MONETRC"
 	MAPICLIENT	"$MTIMEOUT MapiClient -everything"
@@ -210,6 +209,8 @@ have changed since my proposal.
 	MDESTROYDB	"$MTIMEOUT Mdestroydb -monetrc $MONETRC"
 	MSHUTDOWN	"$MTIMEOUT Mshutdown"
 	MDIFF		"$MTIMEOUT Mdiff"
+	TST		name of the current test
+  	TSTDB		name of default test database, unique for each directory
 	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
 	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
 	TSTBLDDIR	$TSTBLDBASE/$TSTDIR/Tests

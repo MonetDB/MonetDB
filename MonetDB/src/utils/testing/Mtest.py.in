@@ -486,8 +486,9 @@ def PerformDir(env, testdir, testlist) :
 			#TODO: set mode to umask
 			os.makedirs(TSTTRGDIR)
 
-		for t in testlist:
-			RunTest(env, t)
+		for TST in testlist:
+			os.environ['TST'] = TST
+			RunTest(env, TST)
 
 		CreateHtmlIndex(env)
 		AddSubToHtmlIndex(env, TSTDIR)
@@ -497,8 +498,8 @@ def PerformDir(env, testdir, testlist) :
 			Warn("Output directory '"+TSTTRGDIR+"` missing; skipping directory!")
 			return
 
-		for t in testlist:
-			ApproveOutput(env, t)
+		for TST in testlist:
+			ApproveOutput(env, TST)
 ### PerformDir(env, testdir, testlist) #
 
 def ApproveOutput (env, TST) :
@@ -548,21 +549,24 @@ def isexecutable(TST) :
 def GetBitsAndMods(env) :
 	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db Tests")
 	pIn.write('''\
-printf("\\n");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.kunique@batloop{printf("%s'%s'",x,$h);x:=",";}printf("\\n");quit;
+printf("\\nModules: ");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.kunique@batloop{printf("%s'%s'",x,$h);x:=",";}printf("\\n");quit;
 ''')
 	pIn.close()
 	qOut = pOut.readlines()
 	qErr = pErr.readlines()
 	pOut.close()
 	pErr.close()
-	test = re.compile("^# compiled for .*/([63][42]bit)")
 	if qOut:
+		tb = re.compile("^# compiled for .*/([63][42]bit)")
+		tm = re.compile("^Modules: (.*)$")
 		for l in qOut:
-			m = test.match(l)
-			if m:
-				env['TST_BITS'] = m.group(1)
+			b = tb.match(l)
+			if b:
+				env['TST_BITS'] = b.group(1)
 				os.environ['TST_BITS'] = env['TST_BITS']
-		env['TST_MODS'] = eval(qOut[-1])
+			m = tm.match(l)
+			if m:
+				env['TST_MODS'] = eval(m.group(1))
 	else:
 		Warn("No output from Mserver when checking for Bits & Modules!?")
 		if qErr:
@@ -592,22 +596,26 @@ def CheckMods(env, TST, EXT) :
 def CheckBATs(env, TST, TSTDB) :
 	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db "+TSTDB)
 	pIn.write('''\
-printf("\\n");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("\\n");quit;
+printf("\\nBATs: ");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("\\n");quit;
 ''')
 	pIn.close()
 	qOut = pOut.readlines()
 	qErr = pErr.readlines()
 	pOut.close()
 	pErr.close()
+	TST_BATS = []
 	if qOut:
-		TST_BATS = eval(qOut[-1])
+		tb = re.compile("^BATs: (.*)$")
+		for l in qOut:
+			b = tb.match(l)
+			if b:
+				TST_BATS = eval(b.group(1))
 	else:
 		Warn("No output from Mserver when checking for Bats!?")
 		if qErr:
 			STDERR.writelines(qErr)
 			STDERR.write("\n")
 			STDERR.flush()
-		TST_BATS = []
 
 	missing = []
 	if os.path.isfile(TST+".BATs"):
@@ -623,6 +631,7 @@ def RunTest(env, TST) :
 	TSTDIR  = env['TSTDIR']
 	TSTSRCDIR = env['TSTSRCDIR']
 	TSTTRGDIR = env['TSTTRGDIR']
+	TSTTRGBASE = env['TSTTRGBASE']
 	os.chdir(TSTSRCDIR)
 
 	EXT = "" ; CALL = ""
@@ -683,8 +692,8 @@ def RunTest(env, TST) :
 		#TODO:
 		#elif EXT == ".milC":
 		#SkipTest(env, TST, EXT, "as MapiClient-tests are temporary not supported by Mtest.")
-	elif EXT == ".milC"  and  os.name == "nt":
-		SkipTest(env, TST, EXT, "as MapiClient is currently not working on WindowsNT.")
+		##elif EXT == ".milC"  and  os.name == "nt":
+		###SkipTest(env, TST, EXT, "as MapiClient is currently not working on WindowsNT.")
 		#TODO:
 		#elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
 		#SkipTest(env, TST, EXT, "as java is not in $PATH.")
@@ -774,6 +783,11 @@ def RunTest(env, TST) :
 			pErr.close()
 			#TODO:
 			#LOG1x at -l >&2
+		elif EXT == ".milC":
+			f = open(TST+".timeout","w")
+			#f.write('module("alarm");\n{var t;t:=time;sleep('+str(XTIMEOUT+60)+');t:=time-t;printf("\\n! Timeout after %d ('+str(XTIMEOUT+60)+') secs !\\n",t/1000);}\nquit;\n')
+			f.write('module("alarm");\n{var t,i,j;j:='+str(XTIMEOUT+60)+'*160000;i:=0;t:=time;while(i<j)i:+=1;t:=time-t;printf("\\n! Timeout after %d ('+str(XTIMEOUT+60)+') secs !\\n",t/1000);}\nquit;\n')
+			f.close();
 
 		TestOut = open(TST+".test.out","w")
 		TestErr = open(TST+".test.err","w")
@@ -792,14 +806,18 @@ def RunTest(env, TST) :
 			os.system(ATRM+ATJOB)
 			#TODO:
 			#LOG1x at -l >&2
-			f = TST+".KILLED.out"
-			if  os.path.isfile(f):
+
+		n = TST+".KILLED."
+		for (x,p) in [("out",TestOut),("err",TestErr)]:
+			f = n+x
+			if os.name == "nt":
+				t = TSTTRGBASE+os.sep+f
+				if os.path.isfile(t):
+					shutil.copy(t,".")
+					os.remove(t)
+			if os.path.isfile(f):
 				for l in fileinput.input(f):
-					TestOut.write("! "+l)
-			f = TST+".KILLED.err"
-			if  os.path.isfile(f):
-				for l in fileinput.input(f):
-					TestErr.write("! "+l)
+					p.write("! "+l)
 
 		#TODO:
 		##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -896,7 +914,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr) :
 
 def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 	STDERR.flush()
-	print(env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE)
+	print(time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE)
 	STDOUT.flush()
 	TSTDB = env['TSTDB']
 	exe = env['exe']
@@ -942,6 +960,8 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 		PROLOGUE = ""
 		if os.path.isfile(TST+".prologue"):
 			PROLOGUE = " "+TST+".prologue"
+		if os.path.isfile(TST+".timeout"):
+			PROLOGUE = PROLOGUE+" "+TST+".timeout"
 
 		Srvr = MTO+str(XTO)+" "+exe['Mserver'][1]+" -db "+TSTDB+" "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+PROLOGUE
 		#-background"
@@ -1034,8 +1054,10 @@ if os.environ.has_key('HOST'):
 	HOST = os.environ['HOST']
 elif os.name != "nt":
 	HOST = os.uname()[1]
+elif os.environ.has_key('COMPUTERNAME'):
+	HOST = os.environ['COMPUTERNAME']
 else:
-	HOST = "batman"
+	HOST = "BATMAN"
 HOST = string.split(HOST,'.')[0]
 
 if os.name == "nt":
@@ -1064,8 +1086,8 @@ else:
 	HTMLTITLE = "Mtest results"+HTMLTITLE+" on "+OSVER	#"+ ("`date`")"
 
 URLPREFIX   = 'http://monetdb.cwi.nl/htbin/monet/viewcvs/viewcvs.cgi/monet/'
-URLSUFFIX_F = '?cvsroot=Monet-4.2'
-URLSUFFIX_D = '?cvsroot=Monet-4.2'
+URLSUFFIX_F = '?cvsroot=Monet-4.3&only_with_tag=Monet_4-3'
+URLSUFFIX_D = '?cvsroot=Monet-4.3&only_with_tag=Monet_4-3'
 
 par = {}
 
@@ -1387,6 +1409,14 @@ def main(argv) :
 		sys.exit(1)
 
 	if THISFILE == "Mtest.py":
+
+		if os.name == "nt":
+			n = THISPATH+os.sep+"MkillNT."
+			for x in "bat", "py":
+				f = n+x
+				if os.path.isfile(f):
+					shutil.copy(f,"D:"+os.sep+"Tools")
+
 		if os.path.exists(env['TSTTRGBASE']+os.sep+"Tests"):
 			shutil.rmtree(env['TSTTRGBASE']+os.sep+"Tests")
 		if not os.path.exists(env['GDK_DBFARM']):
