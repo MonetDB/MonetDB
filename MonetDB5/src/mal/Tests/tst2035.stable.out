@@ -1,5 +1,15 @@
 stdout of test 'tst2035` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 10:33:21 >  
+# 10:33:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45083 --set sql_port=56671 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2035.mal </dev/null
+# 10:33:21 >  
+
+
+
+
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
@@ -53,36 +63,36 @@ end clkticks;	# 7
 function Admin.main():int;	# 0  (main:int)
     counter := 0;	# 1  (counter:int)<-($2:int)
 thread hdl := 0;	# 2  (hdl:int)<-($2:int) jump 12
-    io.print("start the child");	# 3 IOprint_val ($4:int)<-($5:str)
+    io.print("#start the child");	# 3 IOprint_val ($4:int)<-($5:str)
     Admin.clkticks(1);	# 4  ($6:void)<-($7:int)
     counter := calc.+(counter,1);	# 5 CALCbinaryADDintint (counter:int)<-(counter:int)($7:int)
-    io.printf("counter %d\n",counter);	# 6 IOprint_formatted_int ($8:int)<-($9:str)(counter:int)
+    io.printf("#counter %d\n",counter);	# 6 IOprint_formatted_int ($8:int)<-($9:str)(counter:int)
 barrier t := calc.==(counter,2);	# 7 CALCcompEQintint (t:bit)<-(counter:int)($11:int) jump 9
     leave hdl;	# 8  (hdl:int) jump 12
 exit t;	# 9  (t:bit)
-    io.printf("Redo thread\n");	# 10 IOprint_str ($12:int)<-($13:str)
+    io.printf("#Redo thread\n");	# 10 IOprint_str ($12:int)<-($13:str)
     redo hdl;	# 11  (hdl:int) jump 3
 exit hdl;	# 12  (hdl:int)
-    io.printf("Main thread\n");	# 13 IOprint_str ($14:int)<-($15:str)
+    io.printf("#Main thread\n");	# 13 IOprint_str ($14:int)<-($15:str)
 barrier wl := true;	# 14  (wl:bit)<-($17:bit) jump 22
     io.printf("#Wait for child to exit %d\n",hdl);	# 15 IOprint_formatted_int ($18:int)<-($19:str)(hdl:int)
 barrier t0 := calc.==(counter,2);	# 16 CALCcompEQintint (t0:bit)<-(counter:int)($11:int) jump 19
-    io.printf("Child died \n");	# 17 IOprint_str ($21:int)<-($22:str)
+    io.printf("#Child died \n");	# 17 IOprint_str ($21:int)<-($22:str)
     leave wl;	# 18  (wl:bit) jump 22
 exit t0;	# 19  (t0:bit)
     alarm.sleep(10);	# 20 ALARMsleep ($23:void)<-($24:int)
     redo wl;	# 21  (wl:bit) jump 15
 exit wl;	# 22  (wl:bit)
 end main;	# 23  
-[ "start the child" ]
+[ "#start the child" ]
 #clock tick 1
-Main thread
-#Wait for child to exit 1083636529
-counter 1
-Redo thread
-[ "start the child" ]
+#Main thread
+#Wait for child to exit 1083439921
+#counter 1
+#Redo thread
+[ "#start the child" ]
 #clock tick 1
-counter 2
-#Wait for child to exit 1083636529
-Child died 
+#counter 2
+#Wait for child to exit 1083439921
+#Child died 
 >

@@ -109,7 +109,7 @@ stdout of test 'tst1602` in directory 'src/mal` itself:
 #	print(zinfo);
 #
 function Admin.main():int;	# 0  (main:int)
-    int_1M := bbp.new(:void,:lng,1000000);	# 1 CMDBATnewint (int_1M:bat[:void,:lng])<-($2:void)($3:lng)($4:int)
+    int_1M := bbp.new(:void,:lng,1000000);	# 1 CMDBATnew (int_1M:bat[:void,:lng])<-($2:void)($3:lng)($4:int)
     bat.setSequenceBase(int_1M,0@0);	# 2 BKCsetSequenceBase ($5:any)<-(int_1M:bat[:void,:lng])($6:oid)
     zinfo := bat.info(int_1M);	# 3 BKCinfo (zinfo:bat[:str,:str])<-(int_1M:bat[:void,:lng])
     io.print(zinfo);	# 4 IOprint_val ($8:int)<-(zinfo:bat[:str,:str])
@@ -233,7 +233,7 @@ end main;	# 94
 [ "halignflushed",		  "1000068"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
-[ "tseqbase",			  "nil"		  ]
+[ "tseqbase",			  "0@0"		  ]
 [ "tsorted",			  "1"		  ]
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "0"		  ]
@@ -325,7 +325,7 @@ end main;	# 94
 [ "halignflushed",		  "1000126"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
-[ "tseqbase",			  "nil"		  ]
+[ "tseqbase",			  "0@0"		  ]
 [ "tsorted",			  "0"		  ]
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "4"		  ]
@@ -409,7 +409,7 @@ end main;	# 94
 [ "hsorted",			  "0"		  ]
 [ "hident",			  "h"		  ]
 [ "hdense",			  "0"		  ]
-[ "hseqbase",			  "nil"		  ]
+[ "hseqbase",			  "0@0"		  ]
 [ "hkey",			  "1"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
@@ -417,7 +417,7 @@ end main;	# 94
 [ "halignflushed",		  "1000192"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
-[ "tseqbase",			  "nil"		  ]
+[ "tseqbase",			  "0@0"		  ]
 [ "tsorted",			  "0"		  ]
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "8"		  ]
