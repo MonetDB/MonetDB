@@ -804,26 +804,23 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 /* ====================                                        ================ */
 /* ============================================================================ */
 
-    /* generates a number for the row where a value can be found 
-       for a lookup in values */
-    /* FIXME: change it into insert in keyed bat and lookup */
-    static unsigned int str_count = 0;
-    static unsigned int int_count = 0;
-    static unsigned int dbl_count = 0;
-    static unsigned int dec_count = 0;
     /* saves the actual level (corresponding to the for nodes) */
     static unsigned int act_level = 0;
-    /* start 'seq_level' from a level where no name conflict can occur */
-    static unsigned int seq_level = 10;
+    /* 'counter' is the number of saved intermediate results */
+    static unsigned int counter = 0;
 
 /* different kind types */
 #define NODE 'n'
 #define ATTR 'a'
+#define QNAME 'q'
 #define BOOL 'b'
 #define INT 'i'
 #define DBL 'd'
 #define DEC 'e'
 #define STR 's'
+
+    static void
+    translate2MIL (PFcnode_t *c);
 
     static void
     init (void)
@@ -834,8 +831,10 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 
         /* for debugging purposes "foo.xml" is loaded */
         printf("doc_to_working_set(\"foo.xml\");\n");
-        printf("var TattrID_attr := Tattr_own.mark(0@0).reverse;\n");
-        printf("var TattrID_pre := Tattr_own.reverse.mark(0@0).reverse;\n");
+        printf("var TattrID_attr := Tattr_own.mirror;\n");
+        printf("TattrID_attr.access(BAT_APPEND).seqbase(0@0);\n");
+        printf("var TattrID_pre := Tattr_own;\n");
+        printf("TattrID_pre.access(BAT_APPEND).seqbase(0@0);\n");
 
         /* the first loop is initialized */
         printf("var loop000 := bat(void,oid).seqbase(0@0);\n");
@@ -847,32 +846,45 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
         printf("var v_kind000 := bat(void,chr).access(BAT_APPEND).seqbase(0@0);\n");
 
+        /* value containers */
+        printf("var str_values := bat(void,str).seqbase(0@0).access(BAT_WRITE);\n");
+        printf("str_values.reverse.key(true);\n");
+        printf("var int_values := bat(void,int).seqbase(0@0).access(BAT_WRITE);\n");
+        printf("int_values.reverse.key(true);\n");
+        printf("var dbl_values := bat(void,dbl).seqbase(0@0).access(BAT_WRITE);\n");
+        printf("dbl_values.reverse.key(true);\n");
+        printf("var dec_values := bat(void,dbl).seqbase(0@0).access(BAT_WRITE);\n");
+        printf("dec_values.reverse.key(true);\n");
+
         /* variable binding for loop-lifting of the empty sequence */
         printf("var empty_bat := bat(void,oid);\n");
+        printf("var empty_kind_bat := bat(void,chr);\n");
 
         /* working variables */
-        printf("var temp;");
+        printf("var temp1;");
         printf("var temp2;");
         printf("var temp3;");
 
         /* variables for (intermediate) results */
-        printf("var vid;");
         printf("var iter;");
         printf("var pos;");
         printf("var item;");
         printf("var kind;");
+        
+        /* variable for empty scj */
+        printf("var empty_res_bat := bat(oid,oid);\n");
 
-        /* variables for the (iterative) scj */
-        printf("var pruned_input;");
-        printf("var ctx_dn;");
-        printf("var offset;");
+        /* boolean mapping */
+        printf("var bool_map := bat(bit,oid).insert(false,0@0).insert(true,1@0);\n");
+        printf("var bool_not := bat(oid,oid).insert(0@0,1@0).insert(1@0,0@0);\n");
+
     }
 
     static void
     deleteTemp (void)
     {
         printf("# deleteTemp ()\n");
-        printf("temp := nil;\n");
+        printf("temp1 := nil;\n");
         printf("temp2 := nil;\n");
         printf("temp3 := nil;\n");
     }
@@ -886,64 +898,109 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     static void
     print_output (void)
     {
-        printf("# print_output ()\n");
+        printf("{ # print_output ()\n");
         /* the values of the different kinds are combined
-           by inserting the converted bats into 'temp' */
-        printf("temp := bat(oid, str);\n");
+           by inserting the converted bats into 'output_item' */
+        printf("var output_item := bat(oid, str);\n");
 
-        printf("temp2 := kind.select('%c');\n", STR);
-        printf("temp2 := temp2.mirror.join(item);\n");
-        printf("temp2 := temp2.join(str_values);\n");
-        printf("temp.insert(temp2);\n");
+        /* gets string values for string kind */ 
+        printf("var temp1_str := kind.select('%c');\n", STR);
+        printf("temp1_str := temp1_str.mirror.join(item);\n");
+        printf("temp1_str := temp1_str.join(str_values);\n");
+        printf("output_item.insert(temp1_str);\n");
+        printf("temp1_str := nil;\n");
 
-        printf("temp2 := kind.select('%c');\n", NODE);
-        printf("temp2 := temp2.mirror.join(item);\n");
-        printf("temp3 := [str](temp2);\n");
-        printf("temp3 := temp3.[+](\" (node) name: \");\n");
-        printf("temp3 := temp3.[+](temp2.join(Tpre_prop).join(Tprop_loc));\n");
-        printf("temp3 := temp3.[+](\"; size: \");\n");
-        printf("temp3 := temp3.[+](temp2.join(Tpre_size));\n");
-        printf("temp3 := temp3.[+](\"; level: \");\n");
-        printf("temp3 := temp3.[+]([int](temp2.join(Tpre_level)));\n");
-        printf("temp.insert(temp3);\n");
+        printf("var temp1_node := kind.select('%c');\n", NODE);
+        printf("var oid_pre := temp1_node.mirror.join(item);\n");
+        printf("temp1_node := [str](oid_pre);\n");
+        printf("temp1_node := temp1_node.[+](\" (node) name: \");\n");
+        printf("temp1_node := temp1_node.[+](oid_pre.join(Tpre_prop).join(Tprop_loc));\n");
+        printf("temp1_node := temp1_node.[+](\"; size: \");\n");
+        printf("temp1_node := temp1_node.[+](oid_pre.join(Tpre_size));\n");
+        printf("temp1_node := temp1_node.[+](\"; level: \");\n");
+        printf("temp1_node := temp1_node.[+]([int](oid_pre.join(Tpre_level)));\n");
+        printf("oid_pre := nil;\n");
+        printf("output_item.insert(temp1_node);\n");
+        printf("temp1_node := nil;\n");
 
-        printf("temp2 := kind.select('%c');\n", ATTR);
-        printf("temp2 := temp2.mirror.join(item);\n");
-        printf("temp3 := [str](temp2);\n");
-        printf("temp3 := temp3.[+](\" (attr) owned by: \");\n");
-        printf("temp3 := temp3.[+](temp2.join(TattrID_pre));\n");
-        printf("temp3 := temp3.[+](\"; \");\n");
-        printf("temp2 := temp2.join(TattrID_attr);\n");
-        printf("temp3 := temp3.[+](temp2.join(Tattr_loc));\n");
-        printf("temp3 := temp3.[+](\"='\");\n");
-        printf("temp3 := temp3.[+](temp2.join(Tattr_val));\n");
-        printf("temp3 := temp3.[+](\"'\");\n");
-        printf("temp.insert(temp3);\n");
+        printf("var temp1_attr := kind.select('%c');\n", ATTR);
+        printf("var oid_attrID := temp1_attr.mirror.join(item);\n");
+        printf("temp1_attr := [str](oid_attrID);\n");
+        printf("temp1_attr := temp1_attr.[+](\" (attr) owned by: \");\n");
+        printf("temp1_attr := temp1_attr.[+](oid_attrID.join(TattrID_pre));\n");
+        printf("temp1_attr := temp1_attr.[+](\"; \");\n");
+        printf("var oid_attr := oid_attrID.join(TattrID_attr);\n");
+        printf("oid_attrID := nil;\n");
+        printf("temp1_attr := temp1_attr.[+](oid_attr.join(Tattr_loc));\n");
+        printf("temp1_attr := temp1_attr.[+](\"='\");\n");
+        printf("temp1_attr := temp1_attr.[+](oid_attr.join(Tattr_val));\n");
+        printf("temp1_attr := temp1_attr.[+](\"'\");\n");
+        printf("oid_attr := nil;\n");
+        printf("output_item.insert(temp1_attr);\n");
+        printf("temp1_attr := nil;\n");
 
-        printf("temp2 := kind.select('%c');\n", INT);
-        printf("temp2 := temp2.mirror.join(item);\n");
-        printf("temp2 := temp2.join(int_values);\n");
-        printf("temp2 := [str](temp2);\n");
-        printf("temp.insert(temp2);\n");
+        printf("var temp1_qn := kind.select('%c');\n", QNAME);
+        printf("var oid_qnID := temp1_qn.mirror.join(item);\n");
+        printf("temp1_qn := [str](oid_qnID);\n");
+        printf("temp1_qn := temp1_qn.[+](\" (qname) '\");\n");
+        printf("temp1_qn := temp1_qn.[+](oid_qnID.join(Tprop_ns));\n");
+        printf("temp1_qn := temp1_qn.[+](\":\");\n");
+        printf("temp1_qn := temp1_qn.[+](oid_qnID.join(Tprop_loc));\n");
+        printf("temp1_qn := temp1_qn.[+](\"'\");\n");
+        printf("oid_qnID := nil;\n");
+        printf("output_item.insert(temp1_qn);\n");
+        printf("temp1_qn := nil;\n");
 
-        printf("temp2 := kind.select('%c');\n", DBL);
-        printf("temp2 := temp2.mirror.join(item);\n");
-        printf("temp2 := temp2.join(dbl_values);\n");
-        printf("temp2 := [str](temp2);\n");
-        printf("temp.insert(temp2);\n");
+        printf("var bool_strings := bat(oid,str).insert(0@0,\"false\").insert(1@0,\"true\");\n");
+        printf("var temp1_bool := kind.select('%c');\n", BOOL);
+        printf("temp1_bool := temp1_bool.mirror.join(item);\n");
+        printf("temp1_bool := temp1_bool.join(bool_strings);\n");
+        printf("bool_strings := nil;\n");
+        printf("output_item.insert(temp1_bool);\n");
+        printf("temp1_bool := nil;\n");
 
-        printf("temp2 := kind.select('%c');\n", DEC);
-        printf("temp2 := temp2.mirror.join(item);\n");
-        printf("temp2 := temp2.join(dec_values);\n");
-        printf("temp2 := [str](temp2);\n");
-        printf("temp.insert(temp2);\n");
+        printf("var temp1_int := kind.select('%c');\n", INT);
+        printf("temp1_int := temp1_int.mirror.join(item);\n");
+        printf("temp1_int := temp1_int.join(int_values);\n");
+        printf("temp1_int := [str](temp1_int);\n");
+        printf("output_item.insert(temp1_int);\n");
+        printf("temp1__int := nil;\n");
+
+        printf("var temp1_dbl := kind.select('%c');\n", DBL);
+        printf("temp1_dbl := temp1_dbl.mirror.join(item);\n");
+        printf("temp1_dbl := temp1_dbl.join(dbl_values);\n");
+        printf("temp1_dbl := [str](temp1_dbl);\n");
+        printf("output_item.insert(temp1_dbl);\n");
+        printf("temp1_dbl := nil;\n");
+
+        printf("var temp1_dec := kind.select('%c');\n", DEC);
+        printf("temp1_dec := temp1_dec.mirror.join(item);\n");
+        printf("temp1_dec := temp1_dec.join(dec_values);\n");
+        printf("temp1_dec := [str](temp1_dec);\n");
+        printf("output_item.insert(temp1_dec);\n");
+        printf("temp1_dec := nil;\n");
 
         /*
         printf("print (iter, pos, item, kind);\n");
-        printf("print (temp);\n");
+        printf("print (output_item);\n");
         */
-        printf("print (iter, pos, temp);\n");
-        deleteTemp ();
+        printf("print(\"result\");\n");
+        printf("print (iter, pos, output_item);\n");
+        printf("output_item := nil;\n");
+
+        printf("print(\"attributes\");\n");
+        printf("if (TattrID_attr.count < 100) {\n");
+        printf("        TattrID_attr.join(Tattr_loc).print(TattrID_pre, TattrID_attr);\n");
+        printf("} else {\n");
+        printf("        TattrID_attr.count.print;\n");
+        printf("}\n");
+        printf("print(\"working set\");\n");
+        printf("if (Tpre_size.count < 100) {\n");
+        printf("        Tpre_prop.join(Tprop_loc).print(Tpre_level.[int], Tpre_size);\n");
+        printf("} else {\n");
+        printf("        Tpre_size.count.print;\n");
+        printf("}\n");
+        printf("} # end of print_output ()\n");
     }
 
     static void
@@ -953,7 +1010,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("iter := empty_bat;\n");
         printf("pos := empty_bat;\n");
         printf("item := empty_bat;\n");
-        printf("kind := empty_bat;\n");
+        printf("kind := empty_kind_bat;\n");
     }
 
     static void
@@ -974,74 +1031,106 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     static void
     translateVar (PFcnode_t *c)
     {
-        printf("# translateVar (c)\n");
-        printf("vid := v_vid%03u.uselect(%i@0);\n", act_level, c->sem.var->vid);
-        printf("vid := vid.mark(0@0);\n");
-        printf("vid := vid.reverse;\n");
+        printf("{ # translateVar (c)\n");
+        printf("var vid := v_vid%03u.uselect(%i@0);\n", act_level, c->sem.var->vid);
+        printf("vid := vid.mark(0@0).reverse;\n");
         printf("iter := vid.join(v_iter%03u);\n", act_level);
         printf("pos := vid.join(v_pos%03u);\n", act_level);
         printf("item := vid.join(v_item%03u);\n", act_level);
         printf("kind := vid.join(v_kind%03u);\n", act_level);
         printf("vid := nil;\n");
+        printf("} # end of translateVar (c)\n");
     }
 
     /**
-     * save the first argument of the sequence
-     * until the second argument is completed
+     * saves a intermediate result
+     */
+    static int
+    saveResult (void)
+    {
+        counter++;
+        printf("{ # saveResult () : int\n");
+
+        printf("iter%03u := iter;\n", counter);
+        printf("pos%03u := pos;\n", counter);
+        printf("item%03u := item;\n", counter);
+        printf("kind%03u := kind;\n", counter);
+        printf("iter := nil;\n");
+        printf("pos := nil;\n");
+        printf("item := nil;\n");
+        printf("kind := nil;\n");
+
+        printf("# saveResult () : int\n");
+        return counter;
+    }
+    /**
+     * gives back a intermediate result
      */
     static void
-    saveSeqResult (int i)
+    deleteResult (void)
     {
-        printf("# saveSeqResult (seq_level)\n");
-        printf("iter%03u := iter;\n", i);
-        printf("pos%03u := pos;\n", i);
-        printf("item%03u := item;\n", i);
-        printf("kind%03u := kind;\n", i);
+        printf("# deleteResult ()\n");
+
+        printf("iter%03u := nil;\n", counter);
+        printf("pos%03u := nil;\n", counter);
+        printf("item%03u := nil;\n", counter);
+        printf("kind%03u := nil;\n", counter);
+
+        printf("} # deleteResult ()\n");
+        counter--;
     }
 
     static void
     translateSeq (int i)
     {
+        printf("if (iter.count = 0) {\n");
+        printf("        iter := iter%03u;\n", i);
+        printf("        pos := pos%03u;\n", i);
+        printf("        item := item%03u;\n", i);
+        printf("        kind := kind%03u;\n", i);
+        printf("} else if (iter%03u.count != 0)\n",i);
         /* translation follows exactly the description in the XQuery for SQL Hosts paper */
-        printf("# translateSeq (seq_level)\n");
+        printf("{ # translateSeq (counter)\n");
 
         /* bind the second argument of the sequence to xxx2 and the first argument to xxx1 */
-        printf("iter2 := iter; pos2 := pos; item2 := item; kind2 := kind;\n");
-        printf("iter1 := iter%03u; pos1 := pos%03u; item1 := item%03u; kind1 := kind%03u;\n", i, i, i, i);
+        printf("var iter2 := iter; var pos2 := pos; var item2 := item; var kind2 := kind;\n");
+        printf("var iter1 := iter%03u; var pos1 := pos%03u; var item1 := item%03u; var kind1 := kind%03u;\n", i, i, i, i);
 
-        /* add the ord column to the tables and save in temp the end of the first table */
-        printf("ord1 := iter1.project(1@0); ord2 := iter2.project(2@0); temp := count(iter1); temp := oid(temp);\n");
+        /* add the ord column to the tables and save in temp1 the end of the first table */
+        printf("var ord1 := iter1.project(1@0); var ord2 := iter2.project(2@0); var temp1 := count(iter1); temp1 := oid(temp1);\n");
 
         /* insertion of the second table in the first table (for all 5 columns) */
         printf("iter1 := iter1.reverse.mark(0@0).reverse; iter2 := iter2.reverse.mark(0@0).reverse;");
-        printf("iter2 := iter2.seqbase(temp); iter1.access(BAT_APPEND); iter1.insert(iter2); iter1.access(BAT_READ);\n");
+        printf("iter2 := iter2.seqbase(temp1); iter1.access(BAT_APPEND); iter1.insert(iter2); iter1.access(BAT_READ);\n");
 
         printf("ord1 := ord1.reverse.mark(0@0).reverse; ord2 := ord2.reverse.mark(0@0).reverse;");
-        printf("ord2 := ord2.seqbase(temp); ord1.access(BAT_APPEND); ord1.insert(ord2); ord1.access(BAT_READ);\n");
+        printf("ord2 := ord2.seqbase(temp1); ord1.access(BAT_APPEND); ord1.insert(ord2); ord1.access(BAT_READ);\n");
 
         printf("pos1 := pos1.reverse.mark(0@0).reverse; pos2 := pos2.reverse.mark(0@0).reverse;");
-        printf("pos2 := pos2.seqbase(temp); pos1.access(BAT_APPEND); pos1.insert(pos2); pos1.access(BAT_READ);\n");
+        printf("pos2 := pos2.seqbase(temp1); pos1.access(BAT_APPEND); pos1.insert(pos2); pos1.access(BAT_READ);\n");
 
         printf("item1 := item1.reverse.mark(0@0).reverse; item2 := item2.reverse.mark(0@0).reverse;");
-        printf("item2 := item2.seqbase(temp); item1.access(BAT_APPEND); item1.insert(item2); item1.access(BAT_READ);\n");
+        printf("item2 := item2.seqbase(temp1); item1.access(BAT_APPEND); item1.insert(item2); item1.access(BAT_READ);\n");
 
         printf("kind1 := kind1.reverse.mark(0@0).reverse; kind2 := kind2.reverse.mark(0@0).reverse;");
-        printf("kind2 := kind2.seqbase(temp); kind1.access(BAT_APPEND); kind1.insert(kind2); kind1.access(BAT_READ);\n");
+        printf("kind2 := kind2.seqbase(temp1); kind1.access(BAT_APPEND); kind1.insert(kind2); kind1.access(BAT_READ);\n");
 
         /* create a sorting (sort by iter, ord, pos) for the table */
-        printf("temp := iter1.reverse; temp := temp.sort; temp := temp.reverse;");
-        printf("temp := temp.CTrefine(ord1); temp := temp.CTrefine(pos1);");
-        printf("temp := temp.mark(0@0); temp := temp.reverse;\n");
+        printf("temp1 := iter1.reverse; temp1 := temp1.sort; temp1 := temp1.reverse;");
+        printf("temp1 := temp1.CTrefine(ord1); temp1 := temp1.CTrefine(pos1);");
+        printf("temp1 := temp1.mark(0@0); temp1 := temp1.reverse;\n");
 
         /* map sorting to every column */
-        printf("iter := temp.join(iter1);");
-        printf("pos := temp.mark(1@0);");
-        printf("item := temp.join(item1);");
-        printf("kind := temp.join(kind1);\n");
+        printf("iter := temp1.join(iter1);");
+        printf("pos := temp1.mark(1@0);");
+        printf("item := temp1.join(item1);");
+        printf("kind := temp1.join(kind1);\n");
 
         /* clean up the temporary variables */
-        printf("iter1 := nil; pos1 := nil; item1 := nil; ord1 := nil; iter2 := nil; pos2 := nil; item2 := nil; ord2 := nil;");
-        printf("iter%03u := nil; pos%03u := nil; item%03u := nil; temp := nil; kind1 := nil; kind2 := nil; kind%03u := nil;\n", i, i, i, i);
+        printf("iter1 := nil; pos1 := nil; item1 := nil; ord1 := nil; kind1 := nil;");
+        printf("iter2 := nil; pos2 := nil; item2 := nil; ord2 := nil; kind2 := nil;");
+        printf("temp1 := nil;\n");
+        printf("} # end of translateSeq (counter)\n");
     }
 
     /**
@@ -1051,11 +1140,17 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     project (void)
     {
         printf("# project ()\n");
-        printf("outer%03u := iter;\n", act_level);
+        printf("var outer%03u := iter;\n", act_level);
         printf("iter := iter.mark(1@0);\n");
-        printf("inner%03u := iter;\n", act_level);
+        printf("var inner%03u := iter;\n", act_level);
         printf("pos := iter.project(1@0);\n");
-        printf("loop%03u := inner%03u;\n", act_level, act_level);
+        printf("var loop%03u := inner%03u;\n", act_level, act_level);
+
+        printf("var v_vid%03u;\n", act_level);
+        printf("var v_iter%03u;\n", act_level);
+        printf("var v_pos%03u;\n", act_level);
+        printf("var v_item%03u;\n", act_level);
+        printf("var v_kind%03u;\n", act_level);
     }
 
     /**
@@ -1064,14 +1159,16 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     static void
     getExpanded (int fid)
     {
-        printf("# getExpanded (fid)\n");
-        printf("temp := vu_fid.uselect(%i@0);\n",fid);
-        printf("temp := temp.mark(10@0);\n");
-        printf("temp2 := vu_vid.reverse;\n");
-        printf("temp := temp2.join(temp);\n");
-        printf("temp := v_vid%03u.join(temp);\n", act_level - 1);
-        printf("temp := temp.mirror;\n");
-        printf("temp2 := nil;\n");
+        printf("{ # getExpanded (fid)\n");
+        printf("var vu_nil := vu_fid.uselect(%i@0);\n",fid);
+        printf("vu_nil := vu_nil.mark(10@0);\n");
+        printf("var vid_vu := vu_vid.reverse;\n");
+        printf("var oid_nil := vid_vu.join(vu_nil);\n");
+        printf("vid_vu := nil;\n");
+        printf("expOid := v_vid%03u.join(oid_nil);\n", act_level - 1);
+        printf("oid_nil := nil;\n");
+        printf("expOid := expOid.mirror;\n");
+        printf("} # end of getExpanded (fid)\n");
     }
 
     /**
@@ -1081,17 +1178,23 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     static void
     expand (void)
     {
-        printf("# expand ()\n");
-        printf("temp2 := temp.join(v_iter%03u);\n", act_level-1); 
+        printf("{ # expand ()\n");
+
+        printf("var expOid_iter := expOid.join(v_iter%03u);\n", act_level-1); 
                                                /* -1 is important */
-        printf("temp2 := temp2.reverse;\n");
-        printf("temp2 := outer%03u.join(temp2);\n", act_level);
-        printf("temp2 := temp2.reverse;\n");
-        printf("temp2 := temp2.join(inner%03u);\n", act_level);
-        printf("v_iter%03u := temp2;\n", act_level);
-        printf("temp2 := temp2.mark(0@0);\n");
-        printf("temp2 := temp2.reverse;\n");
-        printf("temp2 := temp2.join(temp);\n");
+        printf("var iter_expOid := expOid_iter.reverse;\n");
+        printf("expOid_iter := nil;\n");
+        printf("var oidMap_expOid := outer%03u.join(iter_expOid);\n", act_level);
+        printf("iter_expOid := nil;\n");
+        printf("var expOid_oidMap := oidMap_expOid.reverse;\n");
+        printf("oidMap_expOid := nil;\n");
+        printf("expOid_iter := expOid_oidMap.join(inner%03u);\n", act_level);
+        printf("expOid_oidMap := nil;\n");
+        printf("v_iter%03u := expOid_iter;\n", act_level);
+        printf("oidNew_expOid := expOid_iter.mark(0@0).reverse;\n");
+        printf("expOid_iter := nil;\n");
+
+        printf("} # end of expand ()\n");
     }
 
     /**
@@ -1103,43 +1206,53 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("# join ()\n");
         printf("v_iter%03u := v_iter%03u.reverse.mark(0@0).reverse;\n", act_level, act_level);
 
-        printf("temp3 := v_iter%03u;\n", act_level);
-        printf("v_iter%03u := bat(void,oid,count(temp3)*2).seqbase(0@0);\n", act_level);
-        printf("v_iter%03u.insert(temp3);\n", act_level);
-        printf("v_iter%03u := v_iter%03u.access(BAT_APPEND);\n", act_level, act_level);
-                                                                                                                                                        
-        printf("temp3 := temp2.join(v_vid%03u);\n", act_level - 1);
-        printf("v_vid%03u := bat(void,oid,count(temp3)*2).seqbase(0@0);\n", act_level);
-        printf("v_vid%03u.insert(temp3);\n", act_level);
-        printf("v_vid%03u := v_vid%03u.access(BAT_APPEND);\n", act_level, act_level);
+        printf("var new_v_iter := v_iter%03u;\n", act_level);
+        printf("v_iter%03u := bat(void,oid,count(new_v_iter)*2);\n", act_level);
+        printf("v_iter%03u.seqbase(0@0);\n", act_level);
+        printf("v_iter%03u.access(BAT_APPEND);\n", act_level);
+        printf("v_iter%03u.insert(new_v_iter);\n", act_level);
+        printf("new_v_iter := nil;\n");
 
-        printf("temp3 := temp2.join(v_pos%03u);\n", act_level - 1);
-        printf("v_pos%03u := bat(void,oid,count(temp3)*2).seqbase(0@0);\n", act_level);
-        printf("v_pos%03u.insert(temp3);\n", act_level);
-        printf("v_pos%03u := v_pos%03u.access(BAT_APPEND);\n", act_level, act_level);
-                                                                                                                                                        
-        printf("temp3 := temp2.join(v_item%03u);\n", act_level - 1);
-        printf("v_item%03u := bat(void,oid,count(temp3)*2).seqbase(0@0);\n", act_level);
-        printf("v_item%03u.insert(temp3);\n", act_level);
-        printf("v_item%03u := v_item%03u.access(BAT_APPEND);\n", act_level, act_level);
+        printf("var new_v_vid := oidNew_expOid.join(v_vid%03u);\n", act_level - 1);
+        printf("v_vid%03u := bat(void,oid,count(new_v_vid)*2);\n", act_level);
+        printf("v_vid%03u.seqbase(0@0);\n", act_level);
+        printf("v_vid%03u.access(BAT_APPEND);\n", act_level);
+        printf("v_vid%03u.insert(new_v_vid);\n", act_level);
+        printf("new_v_vid := nil;\n");
 
-        printf("temp3 := temp2.join(v_kind%03u);\n", act_level - 1);
-        printf("v_kind%03u := bat(void,chr,count(temp3)*2).seqbase(0@0);\n", act_level);
-        printf("v_kind%03u.insert(temp3);\n", act_level);
-        printf("v_kind%03u := v_kind%03u.access(BAT_APPEND);\n", act_level, act_level);
+        printf("var new_v_pos := oidNew_expOid.join(v_pos%03u);\n", act_level - 1);
+        printf("v_pos%03u := bat(void,oid,count(new_v_pos)*2);\n", act_level);
+        printf("v_pos%03u.seqbase(0@0);\n", act_level);
+        printf("v_pos%03u.access(BAT_APPEND);\n", act_level);
+        printf("v_pos%03u.insert(new_v_pos);\n", act_level);
+        printf("new_v_pos := nil;\n");
+
+        printf("var new_v_item := oidNew_expOid.join(v_item%03u);\n", act_level - 1);
+        printf("v_item%03u := bat(void,oid,count(new_v_item)*2);\n", act_level);
+        printf("v_item%03u.seqbase(0@0);\n", act_level);
+        printf("v_item%03u.access(BAT_APPEND);\n", act_level);
+        printf("v_item%03u.insert(new_v_item);\n", act_level);
+        printf("new_v_item := nil;\n");
+
+        printf("var new_v_kind := oidNew_expOid.join(v_kind%03u);\n", act_level - 1);
+        printf("v_kind%03u := bat(void,chr,count(new_v_kind)*2);\n", act_level);
+        printf("v_kind%03u.seqbase(0@0);\n", act_level);
+        printf("v_kind%03u.access(BAT_APPEND);\n", act_level);
+        printf("v_kind%03u.insert(new_v_kind);\n", act_level);
+        printf("new_v_kind := nil;\n");
 
         printf("# sort inside join ()\n");
-        printf("temp := v_iter%03u.reverse;\n",act_level);
-        printf("temp := temp.sort;\n");
-        printf("temp := temp.reverse;\n");
-        printf("temp := temp.CTrefine(v_pos%03u);\n",act_level);
-        printf("temp := temp.mark(0@0);\n");
-        printf("temp := temp.reverse;\n");
-        printf("v_vid%03u := temp.join(v_vid%03u).access(BAT_APPEND);\n",act_level,act_level);
-        printf("v_iter%03u := temp.join(v_iter%03u).access(BAT_APPEND);\n",act_level,act_level);
-        printf("v_pos%03u := temp.join(v_pos%03u).access(BAT_APPEND);\n",act_level,act_level);
-        printf("v_item%03u := temp.join(v_item%03u).access(BAT_APPEND);\n",act_level,act_level);
-        printf("v_kind%03u := temp.join(v_kind%03u).access(BAT_APPEND);\n",act_level,act_level);
+        printf("var temp1 := v_iter%03u.reverse;\n",act_level);
+        printf("temp1 := temp1.sort;\n");
+        printf("temp1 := temp1.reverse;\n");
+        printf("temp1 := temp1.CTrefine(v_pos%03u);\n",act_level);
+        printf("temp1 := temp1.mark(0@0);\n");
+        printf("temp1 := temp1.reverse;\n");
+        printf("v_vid%03u := temp1.join(v_vid%03u).access(BAT_APPEND);\n",act_level,act_level);
+        printf("v_iter%03u := temp1.join(v_iter%03u).access(BAT_APPEND);\n",act_level,act_level);
+        printf("v_pos%03u := temp1.join(v_pos%03u).access(BAT_APPEND);\n",act_level,act_level);
+        printf("v_item%03u := temp1.join(v_item%03u).access(BAT_APPEND);\n",act_level,act_level);
+        printf("v_kind%03u := temp1.join(v_kind%03u).access(BAT_APPEND);\n",act_level,act_level);
 
         /*
         printf("print (\"testoutput in join() expanded to level %i\");\n",act_level);
@@ -1153,16 +1266,33 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     static void
     mapBack (void)
     {
-        printf("# mapBack ()\n");
+        printf("{ # mapBack ()\n");
         /* the iters are mapped back to the next outer scope */
-        printf("temp2 := inner%03u.reverse;\n", act_level);
-        printf("temp := iter.join(temp2);\n");
-        printf("iter := temp.join(outer%03u);\n", act_level);
+        printf("var iter_oidMap := inner%03u.reverse;\n", act_level);
+        printf("var oid_oidMap := iter.join(iter_oidMap);\n");
+        printf("iter_oidMap := nil;\n");
+        printf("iter := oid_oidMap.join(outer%03u);\n", act_level);
+        printf("oid_oidMap := nil;\n");
         /* FIXME: instead of mark the partitioned mark should be used */
         printf("pos := pos.mark(1@0);\n");
         printf("item := item;\n");
         printf("kind := kind;\n");
-        deleteTemp ();
+        printf("} # end of mapBack ()\n");
+    }
+
+    /**
+      * if join is pruned the variables for the next scope have to be
+      * initialized without content instead
+      */
+    static void
+    createNewVarTable (void)
+    {
+        printf("# createNewVarTable ()\n");
+        printf("v_iter%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n", act_level);
+        printf("v_vid%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n", act_level);
+        printf("v_pos%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n", act_level);
+        printf("v_item%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n", act_level);
+        printf("v_kind%03u := bat(void,chr).seqbase(0@0).access(BAT_APPEND);\n", act_level);
     }
 
     /**
@@ -1172,14 +1302,13 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     static void
     append (char *name, int level)
     {
-        printf("# append (%s, level)\n", name);
-        printf("temp := %s.reverse.mark(nil).reverse;\n", name);
-        printf("v_%s%03u.insert(temp);\n",name, level);
-        printf("v_%s%03u := v_%s%03u.reverse.mark(0@0).reverse;\n",
-               name, level, name, level);
-        printf("v_%s%03u := v_%s%03u.access(BAT_APPEND);\n",
-               name, level, name, level);
-        printf("temp := nil;\n");
+        printf("{ # append (%s, level)\n", name);
+        printf("var seqb := oid(v_%s%03u.count);\n",name, level);
+        printf("var temp_%s := %s.reverse.mark(seqb).reverse;\n", name, name);
+        printf("seqb := nil;\n");
+        printf("v_%s%03u.insert(temp_%s);\n", name, level, name);
+        printf("temp_%s := nil;\n", name);
+        printf("} # append (%s, level)\n", name);
     }
 
     /**
@@ -1189,8 +1318,8 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     static void
     insertVar (int vid)
     {
-        printf("# insertVar (vid)\n");
-        printf("vid := iter.project(%i@0);\n", vid);
+        printf("{ # insertVar (vid)\n");
+        printf("var vid := iter.project(%i@0);\n", vid);
 
         append ("vid", act_level);
         append ("iter", act_level);
@@ -1203,19 +1332,23 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("print (\"testoutput in insertVar(%i@0) expanded to level %i\");\n", vid, act_level);
         printf("print (v_vid%03u, v_iter%03u, v_pos%03u, v_kind%03u);\n",act_level,act_level,act_level,act_level);
         */
+        printf("} # insertVar (vid)\n");
     }
 
     /**
      * loop-lifting of a Constant
+     * - before calling a variable 'itemID' with an oid
+     *   has to be bound
+     * @param kind the kind of the item
      */
     static void
-    translateConst (int valueId, char kind)
+    translateConst (char kind)
     {
-        printf("# translateConst (valueId)\n");
+        printf("# translateConst (kind)\n");
         printf("iter := loop%03u;\n",act_level);
         printf("iter := iter.reverse.mark(0@0).reverse;\n");
         printf("pos := iter.project(1@0);\n");
-        printf("item := iter.project(%i@0);\n", valueId);
+        printf("item := iter.project(itemID);\n");
         printf("kind := iter.project('%c');\n", kind);
     }
 
@@ -1223,99 +1356,191 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
      * iterative loop-lifted staircasejoin
      */
     static void
-    loop_lifted_scj (char *axis, char *kind, char *ns, char *loc)
+    loop_liftedSCJ (char *axis, char *kind, char *ns, char *loc)
     {
+        printf("# loop_liftedSCJ (axis, kind, ns, loc)\n");
+
         if (!strcmp (axis, "attribute"))
         {
-                printf("temp := iter.reverse.join(item).unique;\n");
+                printf("{ # attribute axis\n");
+                /* get all unique iter|item combinations */
+                printf("var iter_item := iter.reverse.join(item).unique;\n");
                 /* if unique destroys the order a sort is needed */
-                printf("temp := temp.sort;\n");
-
-                printf("temp2 := temp.reverse.mark(0@0).reverse;\n");
-                printf("temp := temp.mark(0@0);\n");
-
-                printf("temp3 := TattrID_pre.reverse;\n");
-                printf("temp2 := temp2.join(temp3);\n");
-                
+                printf("iter_item := iter_item.sort;\n");
+                                                                                                                                                        
+                printf("var iter_oid := iter_item.mark(0@0);\n");
+                printf("var oid_item := iter_item.reverse.mark(0@0).reverse;\n");
+                printf("iter_item := nil;\n");
+                                                                                                                                                        
+                printf("var temp1 := TattrID_pre.reverse;\n");
+                printf("var oid_attrID := oid_item.join(temp1);\n");
+                printf("temp1 := nil;\n");
+                                                                                                                                                        
+                /* kind test could be necessary if qnames are saved together
+                   (see tagname test for other axis) */
                 if (ns)
                 {
-                        printf("temp3 := temp2.join(TattrID_attr);\n");
-                        printf("temp3 := temp3.join(Tattr_ns);\n");
-                        printf("temp3 := temp3.[=](\"%s\").select(true);\n", ns);
-                        printf("temp3 := temp3.mirror;\n");
-                        printf("temp2 := temp3.join(temp2);\n");
+                        printf("temp1 := oid_attrID.join(TattrID_attr);\n");
+                        printf("temp1 := temp1.join(Tattr_ns);\n");
+                        printf("temp1 := temp1.[=](\"%s\").select(true);\n", ns);
+                        printf("temp1 := temp1.mirror;\n");
+                        printf("oid_attrID := temp1.join(oid_attrID);\n");
+                        printf("temp1 := nil;\n");
                 }
                 if (loc)
                 {
-                        printf("temp3 := temp2.join(TattrID_attr);\n");
-                        printf("temp3 := temp3.join(Tattr_loc);\n");
-                        printf("temp3 := temp3.[=](\"%s\").select(true);\n", loc);
-                        printf("temp3 := temp3.mirror;\n");
-                        printf("temp2 := temp3.join(temp2);\n");
+                        printf("temp1 := oid_attrID.join(TattrID_attr);\n");
+                        printf("temp1 := temp1.join(Tattr_loc);\n");
+                        printf("temp1 := temp1.[=](\"%s\").select(true);\n", loc);
+                        printf("temp1 := temp1.mirror;\n");
+                        printf("oid_attrID := temp1.join(oid_attrID);\n");
+                        printf("temp1 := nil;\n");
                 }
-
-                printf("temp := temp.join(temp2);\n");
-                printf("pruned_input := temp.mark(0@0).reverse;\n");
-                printf("ctx_dn := temp.reverse.mark(0@0).reverse;\n");
-                deleteTemp();
+                                                                                                                                                        
+                printf("iter_item := iter_oid.join(oid_attrID);\n");
+                printf("res_scj := iter_item;\n");
+                printf("iter_item := nil;\n");
+                printf("temp1 := nil;\n");
+                                                                                                                                                        
+                printf("} # end of attribute axis\n");
         }
         else
         {
-  
-                printf("offset := 0;\n");
-                printf("temp := iter.reverse.sort.reverse.mark(0@0).reverse;\n");
-                printf("iter := temp.join(iter);\n");
-                printf("item := temp.join(item);\n");
-         
-                /* create a bat containing the number of iter rows, with the
-                   iter as head value and the number of items (this iter has) in the tail */
-                printf("temp := {count}(iter.reverse, iter.tunique);\n");
-                printf("temp := temp.[-](1);\n");
-         
-                /* creates the two output tables, which are joined the result of the scj */
-                printf("pruned_input := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
-                printf("ctx_dn := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
-         
-                /* iterate over all iters */
-                printf("temp@batloop ()\n");
-                printf("{\n");
-                        printf("temp2 := item.slice(offset, offset + int($t)).reverse.sort;\n");
-                        printf("temp2 := temp2.%s;\n", axis);
-         
-                /* add kind and tagname test inline */        
-                if (kind) 
+                /* FIXME: in case iter is not sorted do it to be sure ?!? */
+                /* FIXME: this should be resolved by pf:distinct-doc-order */
+                printf("var sorting := iter.reverse.sort.reverse.mark(0@0).reverse;\n");
+                printf("iter := sorting.join(iter);\n");
+                printf("item := sorting.join(item);\n");
+                printf("sorting := nil;\n");
+
+                if (kind)
                 {
-                        printf("temp2 := temp2.mirror.join(Tpre_kind);\n");
-                        printf("temp2 := temp2.[=](%s).select(true);\n", kind);
+                        printf("res_scj := ");
+                        printf("loop_lifted_%s_step", axis);
+                        printf("_with_kind_test_joined(iter,item,%s);\n", kind);
                 }
-                if (ns)
+                else if (loc)
                 {
-                        printf("temp2 := temp2.mirror.join(Tpre_prop);\n");
-                        printf("temp2 := temp2.join(Tprop_ns);\n");
-                        printf("temp2 := temp2.[=](\"%s\").select(true);\n", ns);
+                        printf("var propID := Tprop_loc;\n");
+                        printf("propID := propID.uselect(\"%s\");\n", loc);
+                        if (ns)
+                        {
+                        printf("propID := propID.mirror;\n");
+                        printf("propID := propID.join(Tprop_ns);\n");
+                        printf("propID := propID.uselect(\"%s\");\n", ns);
+                        }
+                        printf("if (propID.count != 0)\n");
+                        printf("res_scj := ");
+                        printf("loop_lifted_%s_step", axis);
+                        printf("_with_tagname_test_joined(iter,item,propID);\n");
+                        
+                        printf("propID := nil;\n");
                 }
-                if (loc)
+                else if (ns)
                 {
-                        printf("temp2 := temp2.mirror.join(Tpre_prop);\n");
-                        printf("temp2 := temp2.join(Tprop_loc);\n");
-                        printf("temp2 := temp2.[=](\"%s\").select(true);\n", loc);
+                        printf("var propID := Tprop_ns;\n");
+                        printf("propID := propID.uselect(\"%s\");\n", ns);
+                        printf("if (propID.count != 0)\n");
+                        printf("res_scj := ");
+                        printf("loop_lifted_%s_step", axis);
+                        printf("_with_tagname_test_joined(iter,item,propID);\n");
+                        
+                        printf("propID := nil;\n");
                 }
-         
-                        printf("temp3 := count (ctx_dn);\n");
-                        printf("temp3 := oid (temp3);\n");
-                        printf("temp2 := temp2.mark(temp3).reverse;\n");
-                        printf("ctx_dn.insert(temp2);\n");
-         
-                        printf("temp2 := temp2.project($h);\n");
-                        printf("pruned_input.insert(temp2);\n");
-         
-                        printf("offset := offset + $t + 1;\n");
-                printf("}\n");
-         
-                printf("offset := nil;\n");
-                deleteTemp();
-                printf("ctx_dn.access(BAT_READ);\n");
-                printf("pruned_input.access(BAT_READ);\n");
+                else
+                {
+                        printf("res_scj := ");
+                        printf("loop_lifted_%s_step_joined(iter,item);\n",axis);
+                }
+
+        //      /* creates the two output tables, which are joined the result of the scj */
+        //      printf("pruned_input := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
+        //      printf("ctx_dn := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
+        //                                                                                                                                              
+        //      /* whis works only if tagnames are saved unique */
+        //      /* tagname is tested before the step:
+        //         - if name is not found, path is will not be evaluated
+        //         - else: tagnames are already looked up and only a 
+        //           node comparison (join) is needed as refinement step */
+        //      printf("var propID := Tprop_loc;\n");
+        //      if (loc)
+        //      {
+        //              printf("propID := propID.uselect(\"%s\");\n", loc);
+        //      }
+        //      if (ns)
+        //      {
+        //              printf("propID := propID.mirror;\n");
+        //              printf("propID := propID.join(Tprop_ns);\n");
+        //              printf("propID := propID.uselect(\"%s\");\n", ns);
+        //      }
+        //      if (loc || ns)
+        //      {
+        //              printf("if (propID.count != 0) { # node axis\n");
+        //      }
+        //      else
+        //              printf("{ # node axis\n");
+        //
+        //      printf("var offset := 0;\n");
+        //
+        //      /* FIXME: in case iter is not sorted do it to be sure ?!? */
+        //      printf("var sorting := iter.reverse.sort.reverse.mark(0@0).reverse;\n");
+        //      printf("iter := sorting.join(iter);\n");
+        //      printf("item := sorting.join(item);\n");
+        //      printf("sorting := nil;\n");
+        //
+        //      /* create a bat containing the number of iter rows, with the
+        //         iter as head value and the number of items (this iter has) in the tail */
+        //      printf("var uniqueIter_count := {count}(iter.reverse, iter.tunique);\n");
+        //      printf("uniqueIter_count := uniqueIter_count.[-](1);\n");
+        //
+        //      printf("var temp1_scj;\n");
+        //      printf("var seqb;\n");
+        //
+        //      /* iterate over all iters */
+        //      printf("uniqueIter_count@batloop ()\n");
+        //      printf("{\n");
+        //              /* get blocks of ctx-nodes per iter and sort them by pre value*/
+        //              printf("temp1_scj := item.slice(offset, offset + int($t)).reverse.sort;\n");
+        //              /* execute the SCJ */
+        //              printf("temp1_scj := temp1_scj.%s;\n", axis);
+        //
+        //              /* add kind and tagname test inline */
+        //              if (kind)
+        //              {
+        //                      printf("temp1_scj := temp1_scj.mirror.join(Tpre_kind);\n");
+        //                      printf("temp1_scj := temp1_scj.[=](%s).select(true);\n", kind);
+        //              }
+        //              if (ns || loc)
+        //              {
+        //                      printf("temp1_scj := temp1_scj.mirror.join(Tpre_prop);\n");
+        //                      printf("temp1_scj := temp1_scj.join(propID);\n");
+        //                      printf("temp1_scj := temp1_scj.mirror.join(Tpre_kind);\n");
+        //                      printf("temp1_scj := temp1_scj.[=](ELEMENT).select(true);\n");
+        //              }
+        //
+        //              printf("seqb := count (ctx_dn);\n");
+        //              printf("seqb := oid (seqb);\n");
+        //              printf("temp1_scj := temp1_scj.mark(seqb).reverse;\n");
+        //              printf("ctx_dn.insert(temp1_scj);\n");
+        //
+        //              printf("temp1_scj := temp1_scj.project($h);\n");
+        //              printf("pruned_input.insert(temp1_scj);\n");
+        //
+        //              printf("offset := offset + $t + 1;\n");
+        //      printf("}\n");
+        //
+        //      printf("propID := nil;\n");
+        //      printf("offset := nil;\n");
+        //      printf("temp1_scj := nil;\n");
+        //      printf("seqb := nil;\n");
+        //      printf("uniqueIter_count := nil;\n");
+        //      printf("iter := nil;\n");
+        //      printf("item := nil;\n");
+        //
+        //      printf("} # end of node axis\n");
+        //
+        //      printf("ctx_dn.access(BAT_READ);\n");
+        //      printf("pruned_input.access(BAT_READ);\n");
         }
     }
 
@@ -1326,13 +1551,17 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         char *ns, *loc;
         char *axis = (char *) PFmalloc (sizeof ("descendant_or_self"));
 
-        /* make this path step only for nodes */
-        printf("temp := kind.select('%c');\n", NODE);
-        printf("temp := temp.mark(0@0).reverse;\n");
-        printf("item := temp.join(item);\n");
-        printf("iter := temp.join(iter);\n");
+        printf("{ # translateLocsteps (c)\n");
 
-        printf("temp := nil;\n");
+        /* variable for the (iterative) scj */
+        printf("var res_scj := empty_res_bat;");
+
+        /* make this path step only for nodes */
+        printf("var sel_ls := kind.select('%c');\n", NODE);
+        printf("sel_ls := sel_ls.mark(0@0).reverse;\n");
+        printf("item := sel_ls.join(item);\n");
+        printf("iter := sel_ls.join(iter);\n");
+        printf("sel_ls := nil;\n");
 
         switch (c->kind)
         {
@@ -1392,70 +1621,745 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                     if (loc && (!strcmp(loc,"*")))
                         loc = 0;
 
-                    loop_lifted_scj (axis, 0, ns, loc); 
+                    loop_liftedSCJ (axis, 0, ns, loc); 
                     break;
                 case c_kind_node:
-                    loop_lifted_scj (axis, 0, 0, 0);
+                    loop_liftedSCJ (axis, 0, 0, 0);
                     break;
                 case c_kind_comment:
-                    loop_lifted_scj (axis, "COMMENT", 0, 0);
+                    loop_liftedSCJ (axis, "COMMENT", 0, 0);
                     break;
                 case c_kind_text:
-                    loop_lifted_scj (axis, "TEXT", 0, 0);
+                    loop_liftedSCJ (axis, "TEXT", 0, 0);
                     break;
                 case c_kind_pi:
-                    loop_lifted_scj (axis, "PI", 0, 0);
+                    loop_liftedSCJ (axis, "PI", 0, 0);
                     break;
                 case c_kind_doc:
-                    loop_lifted_scj (axis, "DOCUMENT", 0, 0);
+                    loop_liftedSCJ (axis, "DOCUMENT", 0, 0);
                     break;
                 case c_kind_elem:
-                    loop_lifted_scj (axis, "ELEMENT", 0, 0);
+                    loop_liftedSCJ (axis, "ELEMENT", 0, 0);
                     break;
                 case c_kind_attr:
-                    loop_lifted_scj (axis, "ATTRIBUTE", 0, 0);
+                    loop_liftedSCJ (axis, "ATTRIBUTE", 0, 0);
                     break;
                 default:
                     PFoops (OOPS_FATAL, "illegal node test in MIL-translation");
                     break;
         }
 
-        /* temp = iter|item bat */
-        printf("temp := pruned_input.reverse.join(ctx_dn);\n");
-
-        printf("iter := temp.mark(0@0).reverse;\n");
-        printf("pos := temp.mark(0@0).reverse.mark(1@0);\n");
-        printf("item := temp.reverse.mark(0@0).reverse;\n");
+        /* res_scj = iter|item bat */
+        printf("iter := res_scj.mark(0@0).reverse;\n");
+        printf("pos := res_scj.mark(0@0).reverse.mark(1@0);\n");
+        printf("item := res_scj.reverse.mark(0@0).reverse;\n");
         if (!strcmp (axis, "attribute"))
-                printf("kind := temp.mark(0@0).reverse.project('%c');\n", ATTR);
+                printf("kind := res_scj.mark(0@0).reverse.project('%c');\n", ATTR);
         else
-                printf("kind := temp.mark(0@0).reverse.project('%c');\n", NODE);
+                printf("kind := res_scj.mark(0@0).reverse.project('%c');\n", NODE);
 
-        printf("pruned_input := nil;");
-        printf("ctx_dn := nil;");
-        printf("offset := nil;");
+        printf("res_scj := nil;\n");
+        printf("} # end of translateLocsteps (c)\n");
     }
-    
+
+    /**
+     * changes item and inserts if needed
+     * the int values to 'int_values'
+     */
+    static void
+    createEnumeration (void)
+    {
+        printf("{ # createEnumeration ()\n");
+        /* the head of item has to be void with the seqbase 0@0 */
+        printf("var ints_cE := item.mirror.[int];\n");
+        /* the original version is replaced (see beneath) */
+        printf("int_values.insert(ints_cE);\n");
+        /* FIXME: it's not 100% sure, that order is not changed and so
+                 mark could have a negative effect and switch values */
+        printf("int_values := int_values.reverse.mark(0@0).reverse;\n");
+        /* compares the integers and gives back the ones not in
+           the int_values bat */
+        /*
+        printf("var new_ints := ints_cE.reverse.kdiff(int_values.reverse);\n");
+        printf("seqb := oid(int_values.count);\n");
+        printf("new_ints := new_ints.mark(seqb).reverse;\n");
+        printf("seqb := nil;\n");
+        */
+        /* add the new integers to the int_values bat */
+        /*
+        printf("int_values.insert(new_ints);\n");
+        printf("new_ints := nil;\n");
+        */
+        /* get the oids for the integers */
+        printf("item := ints_cE.join(int_values.reverse);\n");
+        printf("ints_cE := nil;\n");
+        /* change kind information to int */
+        printf("kind := kind.project('%c');\n", INT);
+        printf("} # end of createEnumeration ()\n");
+    }
+
+    /**
+     * loop-lifted conversion of the element name from string to 
+     * a qname (can't handle namespaces) 
+     */
+    static void
+    loop_liftedString2QName (void)
+    {
+        printf("{ # loop_liftedString2QName ()\n");
+
+        /* FIXME: is it possible to have more than one kind */
+        /* test if the name consists only of QNames */
+        printf("var qnames := kind.uselect('%c');\n", QNAME);
+        printf("var all_s2q := kind.count;\n");
+        printf("var qn_s2q := qnames.count;\n");
+        printf("if (all_s2q != qn_s2q) {\n");
+        printf("        var strings_s2q := kind.uselect('%c');\n", STR);
+        printf("        var added := strings_s2q.count + qn_s2q;\n");
+        printf("        if (all_s2q != added) ");
+        printf(                 "ERROR (\"only string and qnames can be");
+        printf(                 " used as element names\");\n");
+        printf("        all_s2q := nil;\n");
+        printf("        added := nil;\n");
+        printf("        qn_s2q := nil;\n");
+        /* end of kind testing */
+        printf("        var oid_oid := strings_s2q.mark(0@0).reverse;\n");
+        printf("        strings_s2q := nil;\n");
+        /* get all the unique strings */
+        printf("        var oid_item := oid_oid.join(item);\n");
+        printf("        var oid_item_backup := oid_item;\n");
+        printf("        oid_item := oid_item.tunique.mark(0@0).reverse;\n");
+        printf("        var oid_str := oid_item.join(str_values);\n");
+        printf("        oid_item := nil;\n");
+
+        /* string name is only translated into local name, because
+           no URIs for the namespace are available */
+        printf("        var prop_name := Tprop_ns.uselect(\"\");\n");
+        printf("        prop_name := Tprop_loc.semijoin(prop_name);\n");
+
+        /* find all strings which are not in the Tprop_loc bat */
+        printf("        var str_oid := oid_str.reverse.kdiff(prop_name.reverse);\n");
+        printf("        oid_str := nil;\n");
+        printf("        prop_name := nil;\n");
+        printf("        oid_str := str_oid.mark(oid(Tprop_loc.count)).reverse;\n");
+        printf("        str_oid := nil;\n");
+        /* add the strings as local part of the qname into the working set */
+        printf("        Tprop_loc.insert(oid_str);\n");
+        printf("        oid_str := oid_str.project(\"\");\n");
+        printf("        Tprop_ns.insert(oid_str);\n");
+        printf("        oid_str := nil;\n");
+
+        /* get all the possible matching names from the updated working set */
+        printf("        prop_name := Tprop_ns.uselect(\"\");\n");
+        printf("        prop_name := Tprop_loc.semijoin(prop_name);\n");
+
+        printf("        oid_str := oid_item_backup.join(str_values);\n");
+        printf("        oid_item_backup := nil;\n");
+        /* get property ids for each string */
+        printf("        var oid_prop := oid_str.join(prop_name.reverse);\n");
+        printf("        oid_str := nil;\n");
+        printf("        prop_name := nil;\n");
+        /* oid_prop2 now contains the items with property ids
+           which were before strings */
+        printf("        var oid_prop2 := oid_oid.reverse.join(oid_prop);\n");
+        printf("        oid_oid := nil;\n");
+        printf("        oid_prop := nil;\n");
+        /* FIXME: see fixme above: if only one kind is possible 
+           this is overhead */
+        printf("        if (qnames.count = 0)\n");
+        printf("                item := oid_prop2;\n");
+        printf("        else {\n");
+        /* with a merge union this could be translated more efficient */
+        printf("                item := qnames.join(item);\n");
+        printf("                item.insert(oid_prop2);\n");
+        printf("                item := item.sort;\n");
+        printf("                item := item.reverse.mark(0@0).reverse;\n");
+        printf("                ");
+        printf("        }\n");
+        printf("        oid_prop2 := nil;\n");
+        printf("        qnames := nil;\n");
+        printf("}\n");
+
+        printf("} # end of loop_liftedString2QName ()\n");
+    }
+
+    /**
+     * loop-lifted element construction 
+     * @param i the counter of the actual saved result (elem name)
+     */
+    static void
+    loop_liftedElemConstr (int i)
+    {
+        printf("{ # loop_liftedElemConstr (counter)\n");
+        printf("var root_level;\n");
+        printf("var root_size;\n");
+        printf("var root_kind;\n");
+        printf("var root_prop;\n");
+        printf("var preNew_preOld;\n");
+
+        /* in a first version only nodes are handled */
+        printf("var nodes := kind.uselect('%c');\n", NODE);
+        printf("var attrIDs := kind.uselect('%c');\n", ATTR);
+        printf("attrIDs := attrIDs.reverse;\n");/* head stays nil */
+        printf("attrIDs := attrIDs.join(item);\n");
+
+        /* if no nodes are found we jump right to the end and only
+           have to execute the stuff for the root construction */
+        printf("if (nodes.count != 0) {\n");
+        
+        printf("var oid_oid := nodes.mark(0@0).reverse;\n");
+        printf("nodes := nil;\n");
+        printf("item := oid_oid.join(item);\n");
+
+        /* backup iter, item and oid_oid */
+        printf("var iter_backup := iter;\n");
+        printf("var item_backup := item;\n");
+        printf("var oid_oid_backup := oid_oid;\n");
+        printf("var attrIDs_backup := attrIDs;\n");
+
+        /* set iter to a distinct list and therefore don't prune any node */
+        printf("iter := oid_oid.mirror;\n");
+        printf("oid_oid := nil;\n");
+
+        /* get all subtree copies */
+        printf("var res_scj := loop_lifted_descendant_or_self_step_unjoined(iter,item);\n");
+        /* variables for the result of the scj */
+        printf("var pruned_input := res_scj.fetch(0);\n");
+        printf("var ctx_dn := res_scj.fetch(1);\n");
+        printf("res_scj := nil;\n");
+
+        /* reassign backuped variables */
+        printf("oid_oid := oid_oid_backup;\n");
+        printf("oid_oid_backup := nil;\n");
+        printf("iter := iter_backup;\n");
+        printf("iter_backup := nil;\n");
+        printf("item := item_backup;\n");
+        printf("item_backup := nil;\n");
+        printf("attrIDs := attrIDs_backup;\n");
+        printf("attrIDs_backup := nil;\n");
+
+        /* res_ec is the iter|dn table resulting from the scj */
+        printf("var res_ec := pruned_input.reverse.join(ctx_dn);\n");
+
+        /* get the level of the content root nodes */
+        /* - unique is needed, if pruned_input has more than once an ctx value
+           - join with iter between pruned_input and item is not needed, because
+           in this case pruned_input has the void column as iter value */
+        printf("nodes := pruned_input.join(item).unique;\n");
+        printf("var contentRoot_level := nodes.join(Tpre_level);\n");
+        printf("nodes := nil;\n");
+
+        /* change the level of the subtree copies */
+        printf("var content_level := ctx_dn.join(Tpre_level);\n");
+        printf("content_level := content_level.[-](contentRoot_level);\n");
+        printf("contentRoot_level := nil;\n");
+        printf("content_level := content_level.[+](chr(1));\n");
+        /* join is made after the multiplex, because the level has to be change only
+           once for each dn-node. With the join the multiplex is automatically
+           expanded */
+        printf("content_level := pruned_input.reverse.join(content_level);\n");
+
+        /* create subtree copies for the other bats */
+        printf("var content_size := res_ec.join(Tpre_size);\n");
+        printf("var content_prop := res_ec.join(Tpre_prop);\n");
+        printf("var content_kind := res_ec.join(Tpre_kind);\n");
+        /* content_pre is needed for attribute subtree copies */
+        printf("var content_pre := res_ec;\n");
+        printf("res_ec := nil;\n");
+
+        printf("var content_void := content_level.mark(0@0).reverse;\n");
+        printf("var content_iter := content_void.join(oid_oid).join(iter);\n");
+        printf("content_void := nil;");
+
+        printf("content_level := content_level.reverse.mark(0@0).reverse;\n");
+        printf("content_size := content_size.reverse.mark(0@0).reverse;\n");
+        printf("content_prop := content_prop.reverse.mark(0@0).reverse;\n");
+        printf("content_kind := content_kind.reverse.mark(0@0).reverse;\n");
+        printf("content_pre := content_pre.reverse.mark(0@0).reverse;\n");
+
+        /* printing output for debugging purposes */
+        /*
+        printf("print(\"content\");\n");
+        printf("print(content_iter, content_size, [int](content_level), ");
+        printf("[int](content_kind), content_prop, content_pre);\n");
+        */
+                                                                                                                                                        
+        /* calculate the sizes for the root nodes */
+        printf("var contentRoot_size := item.join(Tpre_size).[+](1);\n");
+        /* following line does the same like the line above
+        printf("contentRoot_size := {count}(pruned_input.reverse.join(ctx_dn),item);\n"); */
+                                                                                                                                                        
+        printf("var size_oid := contentRoot_size.reverse;\n");
+        printf("contentRoot_size := nil;\n");
+        printf("size_oid := size_oid.join(oid_oid);\n");
+        printf("oid_oid := nil;\n");
+        printf("var size_iter := size_oid.join(iter);\n");
+        printf("size_oid := nil;\n");
+        printf("var iter_size := size_iter.reverse;\n");
+        printf("size_iter := nil;\n");
+        /* sums up all the sizes into an size for each iter */
+        printf("iter_size := {sum}(iter_size, iter.tunique);\n");
+                                                                                                                                                        
+        printf("root_level := iter_size.project(chr(0));\n");
+        printf("root_size := iter_size;\n");
+        printf("root_kind := iter_size.project(ELEMENT);\n");
+        printf("root_prop := iter%03u.reverse.join(item%03u);\n", i, i);
+                                                                                                                                                        
+        printf("root_level := root_level.reverse.mark(0@0).reverse;\n");
+        printf("root_size := root_size.reverse.mark(0@0).reverse;\n");
+        printf("root_kind := root_kind.reverse.mark(0@0).reverse;\n");
+        printf("root_prop := root_prop.reverse.mark(0@0).reverse;\n");
+        printf("var root_iter := iter_size.mark(0@0).reverse;\n");
+        printf("iter_size := nil;\n");
+        /* root_pre is a dummy needed for merge union with content_pre */
+        printf("var root_pre := root_iter.project(nil);\n");
+
+        /* printing output for debugging purposes */
+        /*
+        printf("print(\"root\");\n");
+        printf("print(root_iter, root_size, [int](root_level), [int](root_kind), root_prop);\n");
+        */
+                                                                                                                                                        
+        /* get the maximum level of the new constructed nodes
+           and set the maximum of the working set */
+        printf("{\n");
+        printf("var height := content_level.max + 1;\n");
+        printf("Theight := max(Theight, height);\n");
+        printf("height := nil;\n");
+        printf("}\n");
+                                                                                                                                                        
+  /*|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
+  /*|*/
+  /*|*/ printf("{\n");
+  /*|*/
+  /*|*/ /* merge union root and nodes */
+  /*|*/ printf("var root_ord := root_iter.project(1@0);\n");
+  /*|*/ printf("var content_ord := content_iter.project(2@0);\n");
+  /*|*/ printf("var root_pos := root_iter.mark(0@0);\n");
+  /*|*/ printf("var content_pos := content_iter.mark(0@0);\n");
+  /*|*/
+  /*|*/ /* add the ord column to the tables and save in temp_ec the end of the first table */
+  /*|*/ printf("var temp_ec := count(root_iter); temp_ec := oid(temp_ec);\n");
+  /*|*/
+  /*|*/ /* insertion of the second table in the first table (for all 5 columns) */
+  /*|*/ printf("root_iter := root_iter.reverse.mark(0@0).reverse; content_iter := content_iter.reverse.mark(0@0).reverse;");
+  /*|*/ printf("content_iter := content_iter.seqbase(temp_ec); root_iter.access(BAT_APPEND);");
+  /*|*/ printf("root_iter.insert(content_iter); root_iter.access(BAT_READ);\n");
+  /*|*/
+  /*|*/ printf("root_ord := root_ord.reverse.mark(0@0).reverse; content_ord := content_ord.reverse.mark(0@0).reverse;");
+  /*|*/ printf("content_ord := content_ord.seqbase(temp_ec); root_ord.access(BAT_APPEND);");
+  /*|*/ printf("root_ord.insert(content_ord); root_ord.access(BAT_READ);\n");
+  /*|*/
+  /*|*/ printf("root_pos := root_pos.reverse.mark(0@0).reverse; content_pos := content_pos.reverse.mark(0@0).reverse;");
+  /*|*/ printf("content_pos := content_pos.seqbase(temp_ec); root_pos.access(BAT_APPEND);");
+  /*|*/ printf("root_pos.insert(content_pos); root_pos.access(BAT_READ);\n");
+  /*|*/
+  /*|*/ printf("root_size := root_size.reverse.mark(0@0).reverse; content_size := content_size.reverse.mark(0@0).reverse;");
+  /*|*/ printf("content_size := content_size.seqbase(temp_ec); root_size.access(BAT_APPEND);");
+  /*|*/ printf("root_size.insert(content_size); root_size.access(BAT_READ);\n");
+  /*|*/
+  /*|*/ printf("root_level := root_level.reverse.mark(0@0).reverse; content_level := content_level.reverse.mark(0@0).reverse;");
+  /*|*/ printf("content_level := content_level.seqbase(temp_ec); root_level.access(BAT_APPEND);");
+  /*|*/ printf("root_level.insert(content_level); root_level.access(BAT_READ);\n");
+  /*|*/
+  /*|*/ printf("root_kind := root_kind.reverse.mark(0@0).reverse; content_kind := content_kind.reverse.mark(0@0).reverse;");
+  /*|*/ printf("content_kind := content_kind.seqbase(temp_ec); root_kind.access(BAT_APPEND);");
+  /*|*/ printf("root_kind.insert(content_kind); root_kind.access(BAT_READ);\n");
+  /*|*/
+  /*|*/ printf("root_prop := root_prop.reverse.mark(0@0).reverse; content_prop := content_prop.reverse.mark(0@0).reverse;");
+  /*|*/ printf("content_prop := content_prop.seqbase(temp_ec); root_prop.access(BAT_APPEND);");
+  /*|*/ printf("root_prop.insert(content_prop); root_prop.access(BAT_READ);\n");
+  /*|*/
+  /*|*/ printf("root_pre := root_pre.reverse.mark(0@0).reverse; content_pre := content_pre.reverse.mark(0@0).reverse;");
+  /*|*/ printf("content_pre := content_pre.seqbase(temp_ec); root_pre.access(BAT_APPEND);");
+  /*|*/ printf("root_pre.insert(content_pre); root_pre.access(BAT_READ);\n");
+  /*|*/
+  /*|*/ /* create a sorting (sort by iter, ord, pos) for the table */
+  /*|*/ printf("temp_ec := root_iter.reverse; temp_ec := temp_ec.sort; temp_ec := temp_ec.reverse;");
+  /*|*/ printf("temp_ec := temp_ec.CTrefine(root_ord); temp_ec := temp_ec.CTrefine(root_pos);");
+  /*|*/ printf("temp_ec := temp_ec.mark(0@0).reverse;\n");
+  /*|*/
+  /*|*/ printf("content_ord := nil;\n");
+  /*|*/ printf("root_ord := nil;\n");
+  /*|*/ printf("content_pos := nil;\n");
+  /*|*/ printf("root_pos := nil;\n");
+  /*|*/
+  /*|*/ /* map sorting to every column */
+  /*|*/ printf("root_size := temp_ec.join(root_size);\n");
+  /*|*/ printf("root_level := temp_ec.join(root_level);\n");
+  /*|*/ printf("root_kind := temp_ec.join(root_kind);\n");
+  /*|*/ printf("root_prop := temp_ec.join(root_prop);\n");
+  /*|*/ printf("root_pre := temp_ec.join(root_pre);\n");
+  /*|*/ printf("temp_ec := nil;\n");
+  /*|*/
+  /*|*/ /* printing output for debugging purposes */
+  /*|*/
+  /*|*/ /* printf("print(\"merged (root & content)\");\n");                             */
+  /*|*/ /* printf("print(root_size, [int](root_level), [int](root_kind), root_prop);\n");  */
+  /*|*/
+  /*|*/ printf("}\n");
+  /*|*/
+  /*|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
+        
+        printf("content_level := nil;\n");
+        printf("content_size := nil;\n");
+        printf("content_prop := nil;\n");
+        printf("content_kind := nil;\n");
+        printf("content_iter := nil;\n");
+        printf("content_pre := nil;\n");
+        printf("root_iter := nil;\n");
+        /* preNew_preOld has in the tail old pre
+           values merged with nil values */
+        printf("preNew_preOld := root_pre;\n");
+        printf("root_pre := nil;\n");
+
+        printf("} else { # if (nodes.count != 0) ...\n");
+
+        printf("root_level := item%03u.project(chr(0));\n", i);
+        printf("root_size := item%03u.project(0);\n", i);
+        printf("root_kind := item%03u.project(ELEMENT);\n", i);
+        printf("root_prop := item%03u;\n", i);
+        printf("preNew_preOld := item%03u.project(nil);\n", i);
+                                                                                                                                                        
+        printf("root_level := root_level.reverse.mark(0@0).reverse;\n");
+        printf("root_size := root_size.reverse.mark(0@0).reverse;\n");
+        printf("root_kind := root_kind.reverse.mark(0@0).reverse;\n");
+        printf("root_prop := root_prop.reverse.mark(0@0).reverse;\n");
+        printf("preNew_preOld := preNew_preOld.reverse.mark(0@0).reverse;\n");
+
+        printf("} # end of else in 'if (nodes.count != 0)'\n");
+
+                                                                                                                                                
+        printf("{\n");
+        printf("var seqb := count(Tpre_size);\n");
+        printf("seqb := oid(seqb);\n");
+                                                                                                                                                        
+        printf("root_level.seqbase(seqb);\n");
+        printf("root_size.seqbase(seqb);\n");
+        printf("root_kind.seqbase(seqb);\n");
+        printf("root_prop.seqbase(seqb);\n");
+        /* get the new pre values */
+        printf("preNew_preOld.seqbase(seqb);\n");
+        printf("}\n");
+                                                                                                                                                        
+        printf("var roots := root_level.uselect(chr(0));\n");
+        printf("roots := roots.mark(0@0).reverse;\n");
+                                                                                                                                                        
+        printf("Tpre_level.insert(root_level);\n");
+        printf("Tpre_size.insert(root_size);\n");
+        printf("Tpre_kind.insert(root_kind);\n");
+        printf("Tpre_prop.insert(root_prop);\n");
+        /* printing output for debugging purposes */
+        /*
+        printf("print(\"actual working set\");\n");
+        printf("print(Tpre_size, [int](Tpre_level), [int](Tpre_kind), Tpre_prop);\n");
+        */
+                                                                                                                                                        
+        /* resetting the temporary variables */
+        printf("root_level := nil;\n");
+        printf("root_size := nil;\n");
+        printf("root_prop := nil;\n");
+        printf("root_kind := nil;\n");
+                                                                                                                                                        
+        /* adding the new constructed roots to the Tdoc_pre table, that a
+           following (preceding) step can check the fragment boundaries */
+        printf("{\n");
+        printf("var seqb := Tdoc_pre.count;\n");
+        printf("seqb := oid(seqb);\n");
+        printf("var new_pres := roots.reverse.mark(seqb).reverse;\n");
+        printf("seqb := nil;\n");
+        printf("Tdoc_pre.insert(new_pres);\n");
+        /* Tdoc_name is also needed because, they should be aligned for
+           doc_to_working_set(str) */
+        printf("Tdoc_name.insert(new_pres.project(str(nil)));\n");
+        printf("new_pres := nil;\n");
+        printf("}\n");
+        
+        /* 1. step: add subtree copies of attributes */
+        printf("{ # create attribute subtree copies\n");
+        printf("var preOld_attrIDOld := TattrID_pre.reverse;\n");
+        printf("var preNew_attrIDOld := preNew_preOld.join(preOld_attrIDOld);\n");
+        printf("preNew_preOld := nil;\n");
+        printf("preOld_attrIDOld := nil;\n");
+        printf("var preNew_attr := preNew_attrIDOld.join(TattrID_attr);\n");
+        printf("preNew_attrIDOld := nil;\n");
+        printf("var seqb := oid(TattrID_pre.count);\n");
+        printf("var attrIDNew_preNew := preNew_attr.mark(seqb).reverse;\n");
+        printf("var attrIDNew_attr := preNew_attr.reverse.mark(seqb).reverse;\n");
+        printf("seqb := nil;\n");
+        printf("preNew_attr := nil;\n");
+        printf("TattrID_pre.insert(attrIDNew_preNew);\n");
+        printf("attrIDNew_preNew := nil;\n");
+        printf("TattrID_attr.insert(attrIDNew_attr);\n");
+        printf("attrIDNew_attr := nil;\n");
+        printf("} # end of create attribute subtree copies\n");
+        /* 2. step: add attribute bindings of new root nodes */
+        /* TODO: test uniqueness */
+        printf("{ # create attribute root entries\n");
+        printf("var seqb := oid(TattrID_pre.count);\n");
+        /* create cross-product */
+        printf("var O_attr := attrIDs.join(TattrID_attr);\n");
+        printf("attrIDs := nil;\n");
+        printf("O_attr := O_attr.reverse.project(0@0).reverse;\n");
+        printf("var pre_0 := roots.reverse.project(0@0);\n");
+        printf("var pre_attr := pre_0.join(O_attr);\n");
+        printf("pre_0 := nil;\n");
+        printf("O_attr := nil;\n");
+        /* add them to TattrID_attr and TattrID_pre */
+        printf("var seqb := oid(TattrID_pre.count);\n");
+        printf("var attrIDNew_pre := pre_attr.mark(seqb).reverse;\n");
+        printf("var attrIDNew_attr := pre_attr.reverse.mark(seqb).reverse;\n");
+        printf("seqb := nil;\n");
+        printf("pre_attr := nil;\n");
+        printf("TattrID_pre.insert(attrIDNew_pre);\n");
+        printf("attrIDNew_pre := nil;\n");
+        printf("TattrID_attr.insert(attrIDNew_attr);\n");
+        printf("attrIDNew_attr := nil;\n");
+        printf("} # end of create attribute root entries\n");
+
+        /* printing output for debugging purposes */
+        /*
+        printf("print(\"Theight\"); Theight.print;\n");
+        printf("print(\"Tdoc_pre\"); Tdoc_pre.print;\n");
+        printf("print(\"Tdoc_name\"); Tdoc_name.print;\n");
+        */
+                                                                                                                                                        
+        /* return the root elements in iter|pos|item|kind representation */
+        /* should be for each iter 1 root element
+           unless there is no thinking error */
+        printf("iter := iter%03u;\n", i);
+        printf("pos := roots.mark(0@0);\n");
+        printf("item := roots;\n");
+        printf("kind := roots.project('%c');\n", NODE);
+        printf("roots := nil;\n");
+                                                                                                                                                        
+        printf("} # end of loop_liftedElemConstr (counter)\n");
+    }
+   
+
+    /**
+     * prints to stdout MIL-expressions for the c_apply core node
+     * @param fnQname the name of the function
+     * @args the head of the argument list
+     */
+    static void
+    translateFunction (PFqname_t fnQname, PFcnode_t *args)
+    {
+        if (!PFqname_eq(fnQname,PFqname (PFns_fn,"doc")))
+        {
+                translate2MIL (args->child[0]);
+                /* FIXME: doesn't work with actual attribute representation */
+                /* FIXME: only works with strings - no error handling */
+                printf("{ # translate fn:doc (string?) as document?\n");
+                printf("var docs := item.tunique.reverse;\n");
+                printf("docs := item.join(str_values);\n");
+                printf("docs := docs.reverse.kdiff(Tdoc_name.reverse).reverse;\n");
+                printf("docs@batloop () {\n");
+                printf("doc_to_working_set($t);\n");
+                printf("}n");
+                printf("docs := nil;\n");
+                printf("item := item.join(str_values);\n");
+                printf("item := item.join(Tdoc_name.reverse);\n");
+                printf("item := item.join(Tdoc_pre);\n");
+                printf("kind := kind.project('%c');\n", NODE);
+                printf("} # end of translate fn:doc (string?) as document?\n");
+        }
+        else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"distinct-doc-order")))
+        {
+                translate2MIL (args->child[0]);
+                printf("{ # translate pf:distinct-doc-order (node*) as node*\n");
+                printf("kind := kind.uselect('%c');\n", NODE);
+                printf("item := kind.mirror.join(item);\n");
+                printf("var iter_item := iter.reverse.join(item);\n");
+                printf("iter_item := iter_item.unique;\n");
+                printf("iter := iter_item.mark(0@0).reverse;\n");
+                printf("item := iter_item.reverse.mark(0@0).reverse;\n");
+                printf("iter_item := nil;\n");
+                printf("var temp1 := iter.reverse.sort.reverse;\n");
+                printf("temp1 := temp1.CTrefine(item);");
+                printf("temp1 := temp1.mark(0@0).reverse;\n");
+                printf("iter := temp1.join(iter);\n");
+                printf("pos := iter.mark(1@0);\n");
+                printf("item := temp1.join(item);\n");
+                printf("kind := iter.project('%c');\n", NODE);
+                printf("temp1 := nil;\n");
+                printf("} # end of translate pf:distinct-doc-order (node*) as node*\n");
+        }
+        else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"count")))
+        {
+                translate2MIL (args->child[0]);
+                printf("{ # translate fn:count (item*) as integer\n");
+                /* counts for all iters the number of items */
+                /* uses the actual loop, to collect the iters, which are translated 
+                   into empty sequences */
+                printf("var iter_count := {count}(iter.reverse,loop%03u.reverse);\n", act_level);
+                printf("iter := iter_count.mark(0@0).reverse;\n");
+                printf("pos := iter.project(1@0);\n");
+                printf("int_values.insert(iter_count);\n");
+                /* FIXME: it's not 100% sure, that order is not changed and so
+                          mark could have a negative effect and switch values */
+                printf("int_values := int_values.reverse.mark(0@0).reverse;\n");
+                /* get the oids for the integers */
+                printf("item := iter_count.join(int_values.reverse);\n");
+                printf("item := item.reverse.mark(0@0).reverse;\n"); 
+                printf("kind := iter.project('%c');\n", INT);
+                printf("iter_count := nil;\n");
+                printf("} # end of translate fn:count (item*) as integer\n");
+        }
+        else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"empty")))
+        {
+                translate2MIL (args->child[0]);
+                printf("{ # translate fn:empty (item*) as boolean\n");
+                printf("var iter_count := {count}(iter.reverse,loop%03u.reverse);\n", act_level);
+                printf("var iter_bool := iter_count.[=](0);\n");
+                printf("iter_count := nil;\n");
+                printf("iter_bool := iter_bool.join(bool_map);\n");
+                printf("iter := iter_bool.mark(0@0).reverse;\n");
+                printf("pos := iter.project(1@0);\n");
+                printf("item := iter_bool.reverse.mark(0@0).reverse;\n");
+                printf("kind := iter.project('%c');\n", BOOL);
+                printf("iter_bool := nil;\n");
+                printf("} # end of translate fn:empty (item*) as boolean\n");
+        }
+        else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"not")))
+        {
+                translate2MIL (args->child[0]);
+                printf("# translate fn:not (boolean) as boolean\n");
+                printf("item := item.join(bool_not);\n");
+        }
+        else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"boolean")))
+        {
+                translate2MIL (args->child[0]);
+                
+                printf("{ # translate fn:boolean (item*) as boolean\n");
+                printf("iter := iter.reverse;\n");
+                printf("var iter_count := {count}(iter,iter.kunique);\n");
+                printf("var iter_bool := iter_count.[!=](1);\n");
+                printf("var trues := iter_count.project(true);\n");
+                printf("trues.access(BAT_WRITE);\n");
+                printf("iter_count := nil;\n");
+                printf("var test := iter_bool.uselect(false);\n");
+                printf("iter_bool := nil;\n");
+                printf("item := iter.join(item);\n");
+                printf("kind := iter.join(kind);\n");
+                printf("test := test.mirror;\n");
+                printf("test := test.join(kind);\n");
+                printf("var str_test := test.uselect('%c');\n", STR);
+                printf("var int_test := test.uselect('%c');\n", INT);
+                printf("var dbl_test := test.uselect('%c');\n", DBL);
+                printf("var dec_test := test.uselect('%c');\n", DEC);
+                printf("var bool_test := test.uselect('%c');\n", BOOL);
+                printf("test := nil;\n");
+                printf("str_test := str_test.mirror;\n");
+                printf("int_test := int_test.mirror;\n");
+                printf("dbl_test := dbl_test.mirror;\n");
+                printf("dec_test := dec_test.mirror;\n");
+                printf("bool_test := bool_test.mirror;\n");
+                printf("str_test := str_test.join(item);\n");
+                printf("int_test := int_test.join(item);\n");
+                printf("dec_test := dec_test.join(item);\n");
+                printf("dbl_test := dbl_test.join(item);\n");
+                printf("bool_test := bool_test.join(item);\n");
+                printf("str_test := str_test.join(str_values);\n");
+                printf("int_test := int_test.join(int_values);\n");
+                printf("dec_test := dec_test.join(dec_values);\n");
+                printf("dbl_test := dbl_test.join(dbl_values);\n");
+                printf("bool_test := bool_test.uselect(0@0);\n");
+                printf("str_test := str_test.uselect(\"\");\n");
+                printf("int_test := int_test.uselect(0);\n");
+                printf("dec_test := dec_test.uselect(dbl(0));\n");
+                printf("dbl_test := dbl_test.uselect(dbl(0));\n");
+                printf("str_test := str_test.project(false);\n");
+                printf("int_test := int_test.project(false);\n");
+                printf("dec_test := dec_test.project(false);\n");
+                printf("dbl_test := dbl_test.project(false);\n");
+                printf("bool_test := bool_test.project(false);\n");
+                printf("trues.replace(str_test);\n");
+                printf("str_test := nil;\n");
+                printf("trues.replace(int_test);\n");
+                printf("int_test := nil;\n");
+                printf("trues.replace(dec_test);\n");
+                printf("dec_test := nil;\n");
+                printf("trues.replace(dbl_test);\n");
+                printf("dbl_test := nil;\n");
+                printf("trues.replace(bool_test);\n");
+                printf("bool_test := nil;\n");
+                
+                printf("trues := trues.join(bool_map);\n");
+                printf("iter := trues.mark(0@0).reverse;\n");
+                printf("pos := iter.project(1@0);\n");
+                printf("item := trues.reverse.mark(0@0).reverse;\n");
+                printf("kind := iter.project('%c');\n", BOOL);
+                printf("trues := nil;\n");
+                printf("} # end of translate fn:boolean (item*) as boolean\n");
+                
+        }
+        else translateEmpty ();
+    }
+
+    /**
+     * loop-lifted attribute construction
+     * @param i the counter of the actual saved result (attr name)
+     */
+    static void
+    loop_liftedAttrConstr (int i)
+    {
+        PFlog("first short version of attribute constructor: can only handle one string or integer per iter");
+        printf("{ # loop_liftedAttrConstr (int i)\n");
+        printf("var temp_int := kind.uselect('%c');\n", INT);
+        printf("temp_int := temp_int.mirror;\n");
+        printf("temp_int := temp_int.join(item);\n");
+        printf("temp_int := temp_int.join(int_values);\n");
+        printf("temp_int := temp_int.[str];\n");
+        printf("var temp_str := kind.uselect('%c');\n", STR);
+        printf("temp_str := temp_str.mirror;\n");
+        printf("temp_str := temp_str.join(item);\n");
+        printf("temp_str := temp_str.join(str_values);\n");
+        printf("item := temp_str.union(temp_int).sort;\n");
+
+        printf("var seqb := int(TattrID_attr.max) + 1;\n");
+        printf("seqb := oid(seqb);\n");
+        printf("item := item.reverse.mark(0@0).reverse;\n");
+        printf("item.seqbase(seqb);\n");
+        printf("item%03u := item%03u.join(Tprop_loc);\n", i, i);
+        printf("item%03u.seqbase(seqb);\n");
+        printf("Tattr_loc.insert(item%03u);\n", i);
+        printf("Tattr_ns.insert(item.project(\"\"));\n");
+        printf("Tattr_val.insert(item);\n");
+        printf("item := item.mirror;\n");
+        printf("seqb := oid(TattrID_attr.count);\n");
+        printf("item.seqbase(seqb);\n");
+        printf("TattrID_attr.insert(item);\n");
+        printf("TattrID_pre.insert(item.mark(nil));\n");
+
+        printf("item := item.mirror;\n");
+        printf("item.seqbase(0@0);\n");
+        printf("kind := kind.project('%c');\n", ATTR);
+        printf("} # end of loop_liftedAttrConstr (int i)\n");
+    }
+
     /**
      * prints to stdout MIL-expressions, for the following
      * core nodes:
      * c_var, c_seq, c_for, c_let
      * c_lit_str, c_lit_dec, c_lit_dbl, c_lit_int
-     * c_empty
+     * c_empty, c_true, c_false
+     * c_locsteps, (axis: c_ancestor, ...)
+     * (tests: c_namet, c_kind_node, ...)
      *
      * the following list is not supported so far:
      * c_nil
      * c_apply, c_arg,
      * c_typesw, c_cases, c_case, c_seqtype, c_seqcast
      * c_ifthenelse,
-     * c_locsteps, (axis: c_ancestor, ...)
-     * (tests: c_namet, c_kind_node, ...)
-     * c_true, c_false, c_error, c_root, c_int_eq
-     * (constructors: c_constr_elem, ...)
+     * c_error, c_root, c_int_eq
+     * (constructors: c_elem, ...)
      */
     static void
     translate2MIL (PFcnode_t *c)
     {
+        char *ns, *loc;
+        int inter_res;
+
         assert(c);
         switch (c->kind)
         {
@@ -1473,12 +2377,12 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                         else
                         {
                                 translate2MIL (c->child[0]);
-                                saveSeqResult (seq_level);
-                                seq_level++;
-                                                                                                                                                         
+                                inter_res = saveResult ();
+
                                 translate2MIL (c->child[1]);
-                                seq_level--;
-                                translateSeq (seq_level);
+
+                                translateSeq (inter_res);
+                                deleteResult ();
                         }
                         break;
                 case c_let:
@@ -1493,60 +2397,197 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                         /* not allowed to overwrite iter,pos,item */
 
                         act_level++;
+                        printf("{\n");
                         project ();
+
+                        printf("var expOid;\n");
                         getExpanded (c->sem.num);
-                        expand ();
-                        join ();
+                        printf("if (expOid.count != 0) {\n");
+                                printf("var oidNew_expOid;\n");
+                                expand ();
+                                join ();
+                        printf("} else {\n");
+                                createNewVarTable ();
+                        printf("} # end if\n");
+                        printf("expOid := nil;\n");
+
                         deleteTemp ();
                         if (c->child[0]->sem.var->used)
                                 insertVar (c->child[0]->sem.var->vid);
                         if ((c->child[1]->kind == c_var)
                             && (c->child[1]->sem.var->used))
+                        {
+                                /* changes item and kind and inserts if needed
+                                   new int values to 'int_values' bat */
+                                createEnumeration ();
                                 insertVar (c->child[1]->sem.var->vid);
+                        }
                         /* end of not allowed to overwrite iter,pos,item */
 
                         translate2MIL (c->child[3]);
                         
                         mapBack ();
                         cleanUpLevel ();
+                        printf("}\n");
                         act_level--;
-                        break;
-                case c_lit_str:
-                        /* the string content of c is overwritten
-                           because the value oid has to be saved and
-                           the string is already saved in a bat */
-                        /* if insertion of the string would be done
-                           here a operation creating new strings
-                           could use oid which are later used a 
-                           second time (counting only at compile time) */
-                        translateConst(c->sem.num, STR);
-                        break;
-                case c_lit_int:
-                        translateConst(c->sem.num, INT);
-                        break;
-                case c_lit_dec:
-                        translateConst(c->sem.num, DEC);
-                        break;
-                case c_lit_dbl:
-                        translateConst(c->sem.num, DBL);
-                        break;
-                case c_true:
-                        translateConst(1, BOOL);
-                        break;
-                case c_false:
-                        translateConst(0, BOOL);
-                        break;
-                case c_empty:
-                        translateEmpty ();
-                        break;
-                case c_root:
-                        /* builtin function, which is only translated for 
-                           debugging purposes (with "foo.xml" - see init) */
-                        translateConst(0, NODE);
                         break;
                 case c_locsteps:
                         translate2MIL (c->child[1]);
                         translateLocsteps (c->child[0]);
+                        break;
+                case c_elem:
+                        translate2MIL (c->child[0]);
+
+                        if (c->child[0]->kind != c_tag)
+                            loop_liftedString2QName ();
+
+                        inter_res = saveResult ();
+
+                        translate2MIL (c->child[1]);
+
+                        loop_liftedElemConstr (inter_res);
+                        deleteResult ();
+                        break;
+                case c_attr:
+                        translate2MIL (c->child[0]);
+
+                        if (c->child[0]->kind != c_tag)
+                            loop_liftedString2QName ();
+
+                        inter_res = saveResult ();
+                                                                                                                                                        
+                        translate2MIL (c->child[1]);
+                                                                                                                                                        
+                        loop_liftedAttrConstr (inter_res);
+                        deleteResult ();
+                        break;
+                case c_tag:
+                        ns = c->sem.qname.ns.uri;
+                        loc = c->sem.qname.loc;
+                                                                                                                                                        
+                        /* translate missing ns as "" */
+                        if (!ns)
+                            ns = "";
+
+                        printf("{\n");
+                        printf("var propID := Tprop_ns.select(\"%s\");\n", ns);
+                        printf("temp2 := Tprop_loc.select(\"%s\");\n", loc);
+                        printf("propID := propID.semijoin(temp2);\n");
+                        printf("var itemID;\n");
+
+                        printf("if (propID.count = 0) {\n");
+                        /* perhaps max is better to get boundary then count 
+                           (if seqbase is not 0@0 or if head is not void) */
+                        printf("         itemID := oid(Tprop_loc.count);\n");
+                        printf("         Tprop_ns.insert (itemID,\"%s\");\n", ns);
+                        printf("         Tprop_loc.insert (itemID,\"%s\");\n", loc);
+                        printf("} else ");
+                        printf(         "itemID := propID.reverse.fetch(0);\n");
+                        /* translateConst needs a bound variable itemID */
+                        translateConst (QNAME);
+                        printf("propID := nil;\n");
+                        printf("itemID := nil;\n");
+                        printf("}\n");
+                        break;
+                case c_lit_str:
+                        /* the value of the string is looked up in the 
+                           str_values table. If it already exists the oid
+                           is given back else it is inserted and a new
+                           oid is created */
+                        /* old version
+                        printf("{\n");
+                        printf("var itemID := str_values.uselect(\"%s\");\n",
+                               PFesc_string (c->sem.str));
+                        printf("if (itemID.count = 0) {\n");
+                        printf("         itemID := oid(str_values.count);\n");
+                        printf("         str_values.insert (nil,\"%s\");\n",
+                                        PFesc_string (c->sem.str));
+                        printf("} else ");
+                        printf(         "itemID := itemID.reverse.fetch(0);\n");
+                        */
+                        printf("{\n");
+                        printf("str_values.insert (nil,\"%s\");\n",
+                               PFesc_string (c->sem.str));
+                        printf("var itemID := str_values.uselect(\"%s\");\n",
+                               PFesc_string (c->sem.str));
+                        printf("itemID := itemID.reverse.fetch(0);\n");
+                        /* translateConst needs a bound variable itemID */
+                        translateConst(STR);
+                        printf("itemID := nil;\n");
+                        printf("}\n");
+                        break;
+                case c_lit_int:
+                        printf("{\n");
+                        printf("int_values.insert (nil,%u);\n",
+                               c->sem.num);
+                        printf("var itemID := int_values.uselect(%u);\n",
+                               c->sem.num);
+                        printf("itemID := itemID.reverse.fetch(0);\n");
+                        /* translateConst needs a bound variable itemID */
+                        translateConst(INT);
+                        printf("itemID := nil;\n");
+                        printf("}\n");
+                        break;
+                case c_lit_dec:
+                        printf("{\n");
+                        printf("dec_values.insert (nil,dbl(%g));\n",
+                               c->sem.dec);
+                        printf("var itemID := dec_values.uselect(dbl(%g));\n",
+                               c->sem.dec);
+                        printf("itemID := itemID.reverse.fetch(0);\n");
+                        /* translateConst needs a bound variable itemID */
+                        translateConst(DEC);
+                        printf("itemID := nil;\n");
+                        printf("}\n");
+                        break;
+                case c_lit_dbl:
+                        printf("{\n");
+                        printf("dbl_values.insert (nil,dbl(%g));\n",
+                               c->sem.dbl);
+                        printf("var itemID := dbl_values.uselect(dbl(%g));\n",
+                               c->sem.dbl);
+                        printf("itemID := itemID.reverse.fetch(0);\n");
+                        /* translateConst needs a bound variable itemID */
+                        translateConst(DBL);
+                        printf("itemID := nil;\n");
+                        printf("}\n");
+                        break;
+                case c_true:
+                        printf("{\n");
+                        printf("var itemID := 1@0;\n");
+                        /* translateConst needs a bound variable itemID */
+                        translateConst(BOOL);
+                        printf("itemID := nil;\n");
+                        printf("}\n");
+                        break;
+                case c_false:
+                        printf("{\n");
+                        printf("var itemID := 0@0;\n");
+                        /* translateConst needs a bound variable itemID */
+                        translateConst(BOOL);
+                        printf("itemID := nil;\n");
+                        printf("}\n");
+                        break;
+                case c_root:
+                        /* builtin function, which is only translated for 
+                           debugging purposes (with "foo.xml" - see init) */
+                        printf("{\n");
+                        printf("var itemID := 0@0;\n");
+                        /* translateConst needs a bound variable itemID */
+                        translateConst(NODE);
+                        printf("itemID := nil;\n");
+                        printf("}\n");
+                        break;
+                case c_empty:
+                        translateEmpty ();
+                        break;
+                case c_seqcast:
+                        /* seqcast just ignores the cast */
+                        PFlog("cast to '%s' ignored",PFty_str (c->child[0]->sem.type));
+                        translate2MIL (c->child[1]);
+                        break;
+                case c_apply:
+                        translateFunction (c->sem.fun->qname, c->child[0]);
                         break;
                 case c_nil:
                 default: 
@@ -1667,50 +2708,6 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
                append_lev (c->child[2], way);
         }
 
-        else if (c->kind == c_lit_str)
-        {
-                /* !!hacky solution!! because the oid of the str is now 
-                   saved instead of str */
-                printf("str_values.insert(%i@0,\"%s\");\n",
-                       str_count,
-                       PFesc_string (c->sem.str));
-                c->sem.num = str_count;
-                str_count++;
-        }
-
-        else if (c->kind == c_lit_int)
-        {
-                /* !!hacky solution!! because the oid of the int is now 
-                   saved instead of int */
-                printf("int_values.insert(%i@0,%u);\n",
-                       int_count,
-                       c->sem.num);
-                c->sem.num = int_count;
-                int_count++;
-        }
-
-        else if (c->kind == c_lit_dbl)
-        {
-                /* !!hacky solution!! because the oid of the dbl is now 
-                   saved instead of dbl */
-                printf("dbl_values.insert(%i@0,dbl(%g));\n",
-                       dbl_count,
-                       c->sem.dbl);
-                c->sem.num = dbl_count;
-                dbl_count++;
-        }
-
-        else if (c->kind == c_lit_dec)
-        {
-                /* !!hacky solution!! because the oid of the dec is now 
-                   saved instead of dec */
-                printf("dec_values.insert(%i@0,dbl(%g));\n",
-                       dec_count,
-                       c->sem.dec);
-                c->sem.num = dec_count;
-                dec_count++;
-        }
-
         else 
         {
            for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
@@ -1739,10 +2736,6 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
            creates a var_usage table, which is later split in vu_fid
            and vu_vid */
         printf("var_usage := bat(oid,oid);\n");
-        printf("var str_values := bat(void,str).seqbase(0@0);\n");
-        printf("var int_values := bat(void,int).seqbase(0@0);\n");
-        printf("var dbl_values := bat(void,dbl).seqbase(0@0);\n");
-        printf("var dec_values := bat(void,dbl).seqbase(0@0);\n");
         append_lev (c, way);
         printf("var_usage := var_usage.unique.reverse.sort;\n");
         printf("var_usage.access(BAT_READ);\n");
@@ -1756,5 +2749,9 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 
         /* print result in iter|pos|item representation */
         print_output ();
+
+        if (counter) PFoops (OOPS_FATAL, 
+                             "wrong number of saveResult() and \
+deleteResult() calls in milprint.c");
     }
 /* vim:set shiftwidth=4 expandtab: */
