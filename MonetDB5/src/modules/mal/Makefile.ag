@@ -11,7 +11,7 @@ LIBS = {
 	SOURCES = \
 		language.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
-		enum.mx  streams.mx inspect.mx \
+		streams.mx inspect.mx \
 		thread.mx optimizer.mx clients.mx tablet.mx
 
 	HEADERS = h 
@@ -24,7 +24,7 @@ doc_mal = {
 	SOURCES = \
 		startup.mx mal_init.mx language.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
-		enum.mx  streams.mx inspect.mx \
+		streams.mx inspect.mx \
 		thread.mx optimizer.mx clients.mx tablet.mx
 }
 
@@ -32,7 +32,7 @@ scripts_mal = {
 	DIR = pkglibdir/mal
 	SOURCES = language.mx mal_init.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
-		enum.mx  streams.mx inspect.mx \
+		streams.mx inspect.mx \
 		thread.mx optimizer.mx clients.mx tablet.mx
 }
 
