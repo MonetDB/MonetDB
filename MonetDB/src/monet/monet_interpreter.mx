@@ -503,7 +503,7 @@ if( eventstream){
 /* the guts of MIL interpretation */
 int interpret(Cntxt stk, YYSTREE lt, ValPtr res) {
     int	stamp, i = res->len = 0,r=0;
-    long clk;
+    long clk = 0;
     struct tms timer;
     @:profileCapture@
 @-
