@@ -11,7 +11,7 @@ subselect_ambigious_columns-bug-sf-949071
 insert_into_groupby-bug-sf-949135
 arith-bug-sf-949228
 float_arith_cast2int-bug-sf-949255
-bug-sf-947600
+groupby_having-bug-sf-947600
 subselect_column-bug-sf-951206
 cast_bool2int-bug-sf-951800
 start_transaction-bug-sf-952755

@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-949071` in directory 'src/test/bugs` itself:
+stdout of test 'subselect_ambigious_columns-bug-sf-949071` in directory 'src/test/bugs` itself:
 
 
 # 19:25:26 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 01:20:33 >  
-# 01:20:33 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54544  < bug-sf-949071.sql
+# 01:20:33 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54544  < subselect_ambigious_columns-bug-sf-949071.sql
 # 01:20:33 >  
 
 # 3 # querytype

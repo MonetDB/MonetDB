@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-947600` in directory 'src/test/bugs` itself:
+stdout of test 'groupby_having-bug-sf-947600` in directory 'src/test/bugs` itself:
 
 
 # 15:12:34 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 00:18:47 >  
-# 00:18:47 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=localhost --port=55056  < bug-sf-947600.sql
+# 00:18:47 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=localhost --port=55056  < groupby_having-bug-sf-947600.sql
 # 00:18:47 >  
 
 # id,	id,	count_id # name
