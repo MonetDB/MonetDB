@@ -1,0 +1,6 @@
+#!/bin/sh
+
+test -e auctionG.xml || Mlog -x ln -s $RELSRCDIR/auctionG.xml .
+
+Mlog -x pf-shred auctionG.xml
+

@@ -1,0 +1,8 @@
+module("pathfinder");
+module("unix");
+
+var TSTTRGDIR := getenv("TSTTRGDIR");
+
+import_doc(TSTTRGDIR + "/" + "auctionG.xml", "auctionG.xml");
+
+commit();

@@ -1,0 +1,53 @@
+stdout of test 'q18` in directory 'tests/XMark` itself:
+
+
+# 14:30:32 >  
+# 14:30:32 >  pf -M q18.xq | Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.4.0_PREFIX_PATHFINDER_GNU_32_d_--enable-debug_/lib/MonetDB:/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/var/MonetDB/log" --set mapi_port=48862 --set sql_port=54385 --set monet_prompt= --dbname=mTests_tests_XMark   --dbinit='module(pathfinder,pf_support,ascii_io);'
+# 14:30:32 >  
+
+# Monet Database Server V4.4.3
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+858.5874531,
+330.7989081,
+259.7292606,
+1608.7303371,
+1735.3114395,
+957.1814385,
+9.7403982,
+30.3450867,
+2808.5622837,
+1337.2332651,
+178.1479164,
+269.0950281,
+382.3877592,
+1626.0074235,
+1453.2806337,
+598.6157844,
+543.3247005,
+430.164192,
+583.101666,
+414.1872945,
+3219.8847552,
+392.8553817,
+530.2787373,
+2019.479844,
+700.2068154,
+531.2704068,
+229.0976916,
+10102.3134933,
+679.5139785,
+110.9127243,
+132.3768597
+
+### time for run 1: 98 msec
+### time for run 2: 42 msec
+### time for run 3: 42 msec
+### time for serialization: 3 msec
+
+# 14:30:34 >  
+# 14:30:34 >  Done.
+# 14:30:34 >  
+
