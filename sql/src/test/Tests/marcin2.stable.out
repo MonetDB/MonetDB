@@ -100,21 +100,17 @@ SQL  9 Rows affected
 #    14: -- this one works, and I think it shouldn't
 #    14: --  postgres just sums the first column (result 9)
 #    14: select sum(*) from t3;
-SQL ERROR -1 2: Aggregate: Cannot do a sum(*) in:
--- this one works, and I think it shouldn't
---  postgres just sums the first column (result 9)
-select sum(*) from t3;
-
-
+MAPI  = monetdb@draco:53143
+ACTION= mapi_get_row
+QUERY =    select sum(*) from t3;
+ERROR = !Aggregate: Cannot do a sum(*)
 #    15: -- this one, although wrong, results in core-dump of sql_client :)
 #    15: --  postgres just sums the first column of the group (result (3,5)(3,6)(3,nil))
 #    15: select sum(*),val from t3 group by val ;
-SQL ERROR -1 2: Aggregate: Cannot do a sum(*) in:
--- this one, although wrong, results in core-dump of sql_client :)
---  postgres just sums the first column of the group (result (3,5)(3,6)(3,nil))
-select sum(*),val from t3 group by val ;
-
-
+MAPI  = monetdb@draco:53143
+ACTION= mapi_get_row
+QUERY = select sum(*),val from t3 group by val ;
+ERROR = !Aggregate: Cannot do a sum(*)
 #    16: drop table t3;
 #    17: COMMIT;
 

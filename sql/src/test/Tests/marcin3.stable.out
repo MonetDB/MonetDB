@@ -38,19 +38,22 @@ SQL  no Rows affected
 [ 3,	7	]
 SQL  2 Rows affected
 #     8: 1 select id, sum(val) AS valsum from nutki group by id having val>1;
-SQL ERROR -1 2: Cannot compare sets with values, probably a aggregate function missing in:
-select id, sum(val) AS valsum from nutki group by id having val>1;
-
+MAPI  = monetdb@draco:53143
+ACTION= mapi_get_row
+QUERY = select id, sum(val) AS valsum from nutki group by id having val>1;
+ERROR = !Cannot compare sets with values, probably a aggregate function missing
 #     9: 0 -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
 #    10: 1 select id, sum(val) AS valsum from nutki group by id having val>2;
-SQL ERROR -1 2: Cannot compare sets with values, probably a aggregate function missing in:
--- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
-select id, sum(val) AS valsum from nutki group by id having val>2;
+MAPI  = monetdb@draco:53143
+ACTION= mapi_get_row
+QUERY =  select id, sum(val) AS valsum from nutki group by id having val>2;
+ERROR = !Cannot compare sets with values, probably a aggregate function missing
 #     8: -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
 #     8: select id, sum(val) AS valsum from nutki group by id having valsum>3;
-SQL ERROR -1 2: Identifier: valsum unknown or ambigious in:
--- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
-select id, sum(val) AS valsum from nutki group by id having valsum>3;
+MAPI  = monetdb@draco:53143
+ACTION= mapi_get_row
+QUERY =  select id, sum(val) AS valsum from nutki group by id having valsum>3;
+ERROR = !Identifier: valsum unknown or ambigious
 
 #    13: 0 -- ERROR:  Attribute 'valsum' not found
 #    14: 0 
