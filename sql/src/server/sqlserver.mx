@@ -266,7 +266,6 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 				ValRecord res;
 				ptr val = &res.val.ival;
         			res.vtype = TYPE_void; 
-				printf("%d\n", cmd);
 				interpret_str( stk, cmd, &res);
 				/*TODO: we need to cleanup val */
 			}
@@ -781,7 +780,7 @@ proc SQLclient_thread( int sock ):= {
 }
 
 proc sqlexecute( str cmd, stream Output ):= {
-	printf("sqlexecute %s\n", cmd);
+	#printf("sqlexecute %s\n", cmd);
 	eval(cmd);
 }
 
