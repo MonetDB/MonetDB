@@ -2,7 +2,6 @@ package nl.cwi.monetdb.jdbc;
 
 import java.sql.*;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 /**
  * A Driver suitable for the Monet database
@@ -37,8 +36,8 @@ public class MonetDriver implements Driver {
 	private static final int PORT = @DEF_MPORT@;
 
 	// Monet prompts
-	final static Pattern prompt1 = Pattern.compile(@PROMPT1@);
-	final static Pattern prompt2 = Pattern.compile(@PROMPT2@);
+	final static String prompt1 = "" + (char)1 + (char)1;
+	final static String prompt2 = "" + (char)1 + (char)2;
 
 	// initialize this class: register it at the DriverManager
 	// Chapter 9.2 from Sun JDBC 3.0 specification

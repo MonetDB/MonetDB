@@ -2,7 +2,7 @@ package nl.cwi.monetdb.jdbc;
 
 import java.io.*;
 import java.net.*;
-import java.util.regex.*;
+//import java.util.regex.*;
 
 /**
  * A Socket for communicating with the Monet database
@@ -41,9 +41,9 @@ class MonetSocket {
 	final static int HEADER = 2;
 	/** a line starting with [ indicates RESULT */
 	final static int RESULT = 3;
-	/** a line which matches the regular expression of prompt1 is a PROMPT1 */
+	/** a line which matches the pattern of prompt1 is a PROMPT1 */
 	final static int PROMPT1 = 4;
-	/** a line which matches the regular expression of prompt2 is a PROMPT2 */
+	/** a line which matches the pattern of prompt2 is a PROMPT2 */
 	final static int PROMPT2 = 5;
 
 	MonetSocket(String host, int port) throws IOException {
@@ -140,9 +140,9 @@ class MonetSocket {
 				case '#': lineType = HEADER; break;
 				case '[': lineType = RESULT; break;
 				default:
-					if (MonetDriver.prompt1.matcher(line).matches()) {
+					if (MonetDriver.prompt1.equals(line)) {
 						lineType = PROMPT1;	// prompt1 found
-					} else if (MonetDriver.prompt2.matcher(line).matches()) {
+					} else if (MonetDriver.prompt2.equals(line)) {
 						lineType = PROMPT2;	// prompt2 found
 					} else {
 						lineType = EMPTY;	// unknown :-(

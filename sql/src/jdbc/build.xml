@@ -66,15 +66,11 @@
     <filter token="MAJORVERSION" value="${major}" />
     <filter token="MINORVERSION" value="${minor}" />
     <filter token="DEF_MPORT" value="${def_mport}" />
-	<filter token="PROMPT1" value="${prompt1}" />
-	<filter token="PROMPT2" value="${prompt2}" />
  
-     <fail unless="major" message="'major' undefined. Please follow the directions in README."/>
-     <fail unless="minor" message="'minor' undefined. Please follow the directions in README."/>
-     <fail unless="def_mport" message="'def_mport' undefined. Please follow the directions in README."/>
-     <fail unless="enable_debug" message="'enable_debug' undefined. Please follow the directions in README."/>
-     <fail unless="prompt1" message="'prompt1' undefined. Please follow the directions in README."/>
-     <fail unless="prompt1" message="'prompt2' undefined. Please follow the directions in README."/>
+     <fail unless="major" message="'major' undefined. Please follow the directions in build.properties."/>
+     <fail unless="minor" message="'minor' undefined. Please follow the directions in build.properties."/>
+     <fail unless="def_mport" message="'def_mport' undefined. Please follow the directions in build.properties."/>
+     <fail unless="enable_debug" message="'enable_debug' undefined. Please follow the directions in build.properties."/>
  
     <!-- Put a check for the current version here -->
 
