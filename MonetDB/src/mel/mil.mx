@@ -63,7 +63,6 @@ ostream &mil::gen_dependency( ostream &o, const Dependency &d ){
 ostream &mil::gen_module( ostream &o, const Module &d ){ 
 	o << "# This module is generated using the mel -mil utility\n";
 	gen_list( o, d.Deps(), "" );
-	//gen_list( o, d.Defs(), "" );
 	o << "module(_" << d.Name() << ");\n";
 	return o; 
 }

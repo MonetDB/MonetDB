@@ -47,7 +47,7 @@ extern "C" {
 
 /* Generic initialization/cleanup routines */
 m_export void  TBL_init(void);
-m_export void  TBL_initclient(Client c);
+m_export void  TBL_initclient(Client c, Client father);
 m_export void  TBL_exitclient(Client c);
 
             
@@ -1218,15 +1218,11 @@ int TBL_M_decref(Client client, oid mid) {
   return i;
 }
 
-void TBL_inc_mod_use(Client client){
-	Client father = client;
+void TBL_inc_mod_use(Client client, Client father){
 	BAT *modules_used;
 	BUN p,q;
 	int xx;
 
-	while (father->father != -1) {
-		father = monet_clients + father->father; 
-  	}
 	modules_used = BATselect(TBL_mod_use, &father, &father);
 	BATloopFast(modules_used, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(modules_used,p); 
@@ -1332,10 +1328,6 @@ Lets do the things in the right order, see above!
       mid = TBL_load_script(&inst, client, module, initstr);	
       used = 1; /* Script is now loaded, ie not need for M_initscript */
     }
-    if (parmod){
-      oid pmid = TBL_module_lookup(parmod);
-      TBL_Insert_Depend(pmid, module );
-    }
     loaded = (mid != 0);
   }
   dlFPRINTF(GDKerr, "  loaded = %d, mid = %ld\n", loaded, (long)mid);
@@ -1344,6 +1336,10 @@ Lets do the things in the right order, see above!
     goto xit;
 
   cinstalled = TBL_M_cinstalled(client, mid);
+  if (parmod){
+      oid pmid = TBL_module_lookup(parmod);
+      TBL_Insert_Depend(pmid, module );
+  }
   if (cinstalled) 
 	used = 1;
   dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
@@ -2325,7 +2321,7 @@ Both tables are session and user specific.
 
 #define TBL_SIZE	750
 
-void TBL_initclient(Client client) {
+void TBL_initclient(Client client, Client father) {
 	int	i;
 
 	if (monet_clients != client){
@@ -2333,7 +2329,8 @@ void TBL_initclient(Client client) {
 		client->acctbl = TBL_lookup(client, "acctbl"); 
 		client->atomtbl = TBL_lookup(client, "atomtbl"); 
 		TBL_incproc(client); /* inc reference counts to functions */
-		TBL_inc_mod_use(client); /* inc mod use counters */
+		if (father)
+		    TBL_inc_mod_use(client, father); /* inc mod use counters */
 	} else {
 		client->fcntbl = TBL_create(client, "fcntbl", 
 				    BATnew(TYPE_str, TYPE_oid, TBL_SIZE));

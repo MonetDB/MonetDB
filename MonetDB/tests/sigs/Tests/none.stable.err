@@ -1,14 +1,14 @@
 stderr of test 'none` in directory 'tests/sigs` itself:
 
 
-# 16:56:22 >  
-# 16:56:22 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
-# 16:56:22 >  
+# 16:53:23 >  
+# 16:53:23 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
+# 16:53:23 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.7
-# builtin opt 	monet_pid = 19333
-# builtin opt 	prefix = /export/scratch1/sjoerd/Monet
+# builtin opt 	gdk_version = 4.3.9
+# builtin opt 	monet_pid = 1891
+# builtin opt 	prefix = /ufs/niels/data/Linux-i686
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -28,7 +28,7 @@ stderr of test 'none` in directory 'tests/sigs` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /export/scratch1/sjoerd/Monet
+# config opt 	prefix = /ufs/niels/data/Linux-i686
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -40,12 +40,12 @@ stderr of test 'none` in directory 'tests/sigs` itself:
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_daemon = no
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs
-# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/src/MonetDB/build/dbfarm
+# cmdline opt 	monet_mod_path = /ufs/niels/data/Linux-i686/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/niels/data/Linux-i686/var/dbfarm
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_sigs
 
-# 16:56:24 >  
-# 16:56:24 >  Done.
-# 16:56:24 >  
+# 16:53:25 >  
+# 16:53:25 >  Done.
+# 16:53:25 >  
 

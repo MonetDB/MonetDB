@@ -176,7 +176,9 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	int port, *Port;
 	int maxusers, *Maxusers;
 	char *cmd, *Cmd;
+	Client father;
 
+        CNTXTclient(stk, &father);
 	if (lt->cnt != 3) {
 		return handle_argerror(res,lt->cnt,3);
 	}
@@ -299,7 +301,7 @@ changed setbuf to setbuffer to avoid unintentional buffer overflow.
 @c
 				c->mode = BLOCKMODE;
 				monet_cntxt[c->stk].outer = CNTXTcopy(stk);
-				TBL_initclient(c);
+				TBL_initclient(c, father);
 				(void)monetFork();
 				scheduleClient(c);
 				PARDEBUG THRprintf(GDKerr, 
@@ -374,7 +376,6 @@ proc get_mapi_port() := {
 
 proc mapi_server(int port, int nr) := {
         var l := listen(port, nr);
-        printf("!ERROR: listen(%d,%d) failed ... exiting\n", port, nr);
 	quit;
 }
 

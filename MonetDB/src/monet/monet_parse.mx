@@ -323,7 +323,7 @@ int ll_pop(void) {
 str ll_parent_module(){
 	if (ll_stack)
 		return ll_stack->mod;
-	return NULL;
+	return moduleGetClient(ll_client);
 }
 
 int ll_getch(void) {

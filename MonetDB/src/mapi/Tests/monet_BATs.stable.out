@@ -1,9 +1,9 @@
 stdout of test 'monet_BATs` in directory 'src/mapi` itself:
 
 
-# 12:56:06 >  
-# 12:56:06 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_mapi" --set mapi_port=50660 "/ufs/niels/data/Linux-i686/share/MonetDB/mapi.mil" monet_BATs.prologue ; echo ; echo Over..
-# 12:56:06 >  
+# 15:54:58 >  
+# 15:54:58 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_mapi" --set mapi_port=50263 "/ufs/niels/data/Linux-i686/lib/MonetDB/mapi.mil" monet_BATs.prologue ; echo ; echo Over..
+# 15:54:58 >  
 
 # Monet Database Server V4.3.9
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -23,8 +23,8 @@ Mserver prologue: This is what Mserver says before MapiClient connects.
 [ "monet_fcn_imp",	  646	  ]
 [ "monet_fcn_mid",	  603	  ]
 [ "monet_fcn_nme",	  646	  ]
-[ "monet_fcn_pro",	  1596	  ]
-[ "monet_fcn_sig",	  38	  ]
+[ "monet_fcn_pro",	  1592	  ]
+[ "monet_fcn_sig",	  41	  ]
 [ "monet_fcn_tpe",	  646	  ]
 [ "monet_fcntbl",	  646	  ]
 [ "monet_mod_acc",	  0	  ]
@@ -760,8 +760,8 @@ Mserver epilogue: This is what Mserver says after MapiClient has disconnected.
 [ "monet_fcn_imp",	  646	  ]
 [ "monet_fcn_mid",	  603	  ]
 [ "monet_fcn_nme",	  646	  ]
-[ "monet_fcn_pro",	  1596	  ]
-[ "monet_fcn_sig",	  38	  ]
+[ "monet_fcn_pro",	  1592	  ]
+[ "monet_fcn_sig",	  41	  ]
 [ "monet_fcn_tpe",	  646	  ]
 [ "monet_fcntbl",	  646	  ]
 [ "monet_mod_acc",	  0	  ]
@@ -1277,7 +1277,7 @@ Mserver epilogue: This is what Mserver says after MapiClient has disconnected.
 [ "count",		  10482@0	  ]
 [ "histogram",		  10483@0	  ]
 [ "{count}",		  10484@0	  ]
-[ "min",			  10485@0	  ]
+[ "min",		  10485@0	  ]
 [ "max",		  10486@0	  ]
 [ "sum_sht",		  10487@0	  ]
 [ "sum_int",		  10488@0	  ]
@@ -1457,9 +1457,9 @@ Done..
 
 Over..
 
-# 12:56:06 >  
-# 12:56:06 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50660 < monet_BATs.milC
-# 12:56:06 >  
+# 15:54:59 >  
+# 15:54:59 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50263 < monet_BATs.milC
+# 15:54:59 >  
 
 
 MapiClient: This is what MapiClient says.
@@ -1476,8 +1476,8 @@ MapiClient: This is what MapiClient says.
 [ "monet_fcn_imp",	  646	  ]
 [ "monet_fcn_mid",	  603	  ]
 [ "monet_fcn_nme",	  646	  ]
-[ "monet_fcn_pro",	  1596	  ]
-[ "monet_fcn_sig",	  38	  ]
+[ "monet_fcn_pro",	  1592	  ]
+[ "monet_fcn_sig",	  41	  ]
 [ "monet_fcn_tpe",	  646	  ]
 [ "monet_fcntbl",	  646	  ]
 [ "monet_mod_acc",	  0	  ]
@@ -1515,9 +1515,9 @@ MapiClient: This is what MapiClient says.
 [ "Bstream",	  14	  ]
 [ "Buffer",	  13	  ]
 [ "Stream",	  12	  ]
-#-------------------------------------------------#
-# BAT:				  tmp_31	  #
-# (str)				  (oid)		  #
+#-----------------------------------------#
+# BAT:			  tmp_31	  #
+# (str)			  (oid)		  #
 #-----------------------------------------#
 [ "module",		  10003@0	  ]
 [ "drop",		  10004@0	  ]
@@ -1925,7 +1925,7 @@ MapiClient: This is what MapiClient says.
 [ "save",		  10412@0	  ]
 [ "unload",		  10413@0	  ]
 [ "hot",		  10414@0	  ]
-[ "cold",			  10415@0	  ]
+[ "cold",		  10415@0	  ]
 [ "mmap",		  10416@0	  ]
 [ "madvise",		  10417@0	  ]
 [ "export",		  10418@0	  ]
@@ -2166,12 +2166,12 @@ MapiClient: This is what MapiClient says.
 [ "get_mapi_port",	  10662@0	  ]
 [ "mapi_server",	  10663@0	  ]
 
-# 12:56:06 >  
-# 12:56:06 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50660
-# 12:56:06 >  
+# 15:54:59 >  
+# 15:54:59 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50263
+# 15:54:59 >  
 
 
-# 12:56:07 >  
-# 12:56:07 >  Done.
-# 12:56:07 >  
+# 15:55:00 >  
+# 15:55:00 >  Done.
+# 15:55:00 >  
 

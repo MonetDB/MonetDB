@@ -73,13 +73,13 @@ loading and unloading new modules.
  In command-line mode, you can save typing the \" (though this often
  will collide with a MIL keyword)."
 
-.COMMAND mod() : str = CMDmodule_peek;
+.BUILTIN mod() : str = CMDmodule_peek;
 "During module loading a module stack is kept. This function returns the top module" 
 
-.COMMAND module_push(str modname) = CMDmodule_push;
+.BUILTIN module_push(str modname) = CMDmodule_enter;
 "During module loading a variable module is set to the current module name. The previous module is pushed onto a stack" 
 
-.COMMAND module_pop() = CMDmodule_pop;
+.BUILTIN module_pop() = CMDmodule_exit;
 "During module loading a variable module is set to the current module name. At the end of a module load the enclosing module is popped from a stack" 
 
 @+ Basic Value Manipulation
@@ -355,29 +355,6 @@ The @%CMDdrop@ command drops a module: functions and types defined
 by that module cease to be known for that user.
 
 @c
-typedef struct _strstack_t {
-	str buf;
-	struct _strstack_t *up;
-} strstack;
-
-static strstack  *m_stack = NULL;
-
-static void m_push(str s) {
-	strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
-	sp->buf = GDKstrdup(s);
-	sp->up = m_stack;
-	m_stack = sp;
-}
-
-static void m_pop(void) {
-	strstack *sp = m_stack;
-	if (m_stack) {
-		m_stack = sp->up;
-		GDKfree(sp->buf);
-		GDKfree(sp);
-	}
-}
-
 int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
 	int ret = 0;
 	Client c;
@@ -400,9 +377,11 @@ int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
 			   return GDK_FAIL;
  		    }
 		    mod = res1.val.sval; 
-		    initstr = moduleClient( c, mod, (m_stack)?m_stack->buf:NULL );
+		    initstr = moduleClient( c, mod, moduleGetClient(c) );
 	            if (initstr != NULL) {
+			moduleEnterClient(c, mod);
                 	ret = interpret_str(c->stk, initstr, res);
+			moduleExitClient(c);
 			GDKfree(initstr);
 	            }
                 }
@@ -420,18 +399,40 @@ int CMDdrop(Cntxt stk, YYSTREE lt, ValPtr res){
 	return dropClient(c, lt);
 }
 
-int CMDmodule_peek( str *mod ){
-	*mod = m_stack?GDKstrdup(m_stack->buf):GDKstrdup("main");
+int CMDmodule_peek(Cntxt stk, YYSTREE lt, ValPtr res){
+	str r = NULL; 
+	Client c;
+
+	CNTXTclient(stk, &c);
+	r = moduleGetClient(c);
+	if (!r) 
+		r = "main";
+
+	res->val.sval = GDKstrdup(r);
+        res->len = strLen(r);
+        res->vtype = TYPE_str;
+
 	return GDK_SUCCEED;
 }
 
-int CMDmodule_push( str mod ){
-	m_push(mod);
+int CMDmodule_enter(Cntxt stk, YYSTREE lt, ValPtr res){
+	str mod = NULL;
+	Client c;
+
+	CNTXTclient(stk, &c);
+        @:builtin_args(1)@
+        @:builtin_operand(0, TYPE_str, mod)@
+	moduleEnterClient(c, mod);
+	res->vtype = TYPE_void;
 	return GDK_SUCCEED;
 }
 
-int CMDmodule_pop( ){
-	m_pop();
+int CMDmodule_exit(Cntxt stk, YYSTREE lt, ValPtr res){
+	Client c;
+
+	CNTXTclient(stk, &c);
+	moduleExitClient(c);
+	res->vtype = TYPE_void;
 	return GDK_SUCCEED;
 }
 

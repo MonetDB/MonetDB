@@ -71,6 +71,11 @@ The input of a client may be logged on a specific file for offline inspection.
 #define FINISHING	1	
 #define CONSOLE		0
 
+typedef struct _modstack_t {
+	str mod;
+	struct _modstack_t *up;
+} modstack;
+
 typedef struct CLIENT{
 	str 		user;			/* user name. */
 	long		login;			/* session start time */
@@ -96,6 +101,7 @@ typedef struct CLIENT{
 	BAT		*acctbl;	       	/* BAT(str, type-id) */
 	BAT		*triggers;		/* BAT(str, type-id) */
 	BAT		*events;		/* BAT(str, type-id) */
+	modstack	*m_stack;		/* module stack */
 } *Client, ClientRec;
 
 m_export ClientRec monet_clients[MAXCLIENTS+1];
@@ -112,6 +118,9 @@ m_export YYSTREE	parseClient    (Client c, int reschedule);
 m_export int	serveClient    (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export str	moduleClient   (Client c, str mod, str parmod );
 m_export int	dropClient     (Client c, YYSTREE lt);
+m_export void 	moduleEnterClient   (Client c, str mod);
+m_export void 	moduleExitClient   (Client c );
+m_export str 	moduleGetClient   (Client c );
 
 m_export void lockparser(Client c);
 m_export void unlockparser(Client c);
@@ -168,6 +177,7 @@ Find an empty client slot.  The console entry is reserved.
 	c->fdout = GDKstdout;
 	c->maxstk = c->stk = (int) (c-monet_clients);
 	c->father = -1;
+	c->m_stack = NULL;
 	monet_cntxt[c->stk].used = TRUE;
 	monet_cntxt[c->stk].reuse = -1;
 	monet_cntxt[c->stk].outer = c->stk?0:-1;
@@ -287,9 +297,10 @@ Client forkClient(Cntxt stk, int thread){
         	son->father = father->stk;
 		/* also reuse father's stack */
 		if (thread){
+			son->father = -1;
 			nstk = CNTXTcopy( stk );
 			monet_cntxt[son->stk].outer = nstk;
-			TBL_initclient(son);
+			TBL_initclient(son, father);
 		} else {
         		monet_cntxt[son->stk].outer = stk;
         		monet_cntxt[son->stk].shadow = 1;
@@ -338,12 +349,6 @@ void freeClient(Client c) {
 		c->fdin->destroy(c->fdin);
 		c->fdout->close(c->fdout);
 		c->fdout->destroy(c->fdout);
-	/*
-		if (fileno(c->fdin) != 0){
-        		(void) fclose(c->fdin);
-        		(void) fclose(c->fdout);
-			if (c->stk) shutdown(c->socket, 2);
-*/
 		if (c->socket){
 			(void) close(c->socket);
 		}
@@ -721,6 +726,34 @@ int dropClient(Client c, YYSTREE lt) {
             lt = lt->overflow;
         }
 	return 1;
+}
+
+void moduleEnterClient(Client c, str mod){
+	if (mod){
+		modstack *s = (modstack*)GDKmalloc(sizeof(modstack));
+		s->mod = GDKstrdup(mod);
+		s->up = c->m_stack;
+		c->m_stack = s;
+	}
+}
+
+void moduleExitClient(Client c){
+	if (c->m_stack){
+		modstack *s = c->m_stack;
+		c->m_stack = s->up;
+		GDKfree(s->mod);
+		GDKfree(s);
+	}
+}
+
+str moduleGetClient(Client c){
+	str mod = NULL;
+	while (c && c->father >= 0 && !c->m_stack )
+		c = monet_clients + c->father;
+
+	if (c && c->m_stack)
+		mod = c->m_stack->mod; 
+	return mod;
 }
 @
 @}

@@ -1015,7 +1015,7 @@ char *Mgetreply(Msession mid) {
 		mid->reply[n++] = ch;
         }
         mid->reply[n]=0;
-        mid->error = (mid->reply[0]=='!');
+        mid->error = (mid->reply[0]=='!') || (n==0 && ch == EOF);
 
 	if( mid->trace){
 		printf("Mgetreply:%s\n", mid->reply);
@@ -1025,12 +1025,14 @@ char *Mgetreply(Msession mid) {
         if (mid->from->errnr) {
                 sprintf(mid->errortext, "!connection broken\n");
 		mid->error= MMONETERR;
-                return 0;
+                return NULL;
         }
 	if( ch == 1){
 		promptMonet(mid);
 		return 0;
 	}
+	if (mid->error)
+		return NULL;
         return mid->reply;
 }
 @-
