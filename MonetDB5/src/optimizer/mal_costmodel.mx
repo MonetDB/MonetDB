@@ -57,7 +57,6 @@ mal_export void RMcalculator( MalBlkPtr mb);
 @c
 #include "mal_macro.h"
 #include "mal_interpreter.h"
-#include "mal_optimizer.h"
 
 #define getProps(Y) mb->var[Y]->props
 

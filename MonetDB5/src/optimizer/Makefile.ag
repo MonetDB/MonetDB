@@ -9,7 +9,7 @@ LIBS = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
-	costmodel.mx mal_costmodel.mx optimizer.mx 
+	costmodel.mx mal_costmodel.mx mal_optimizer.mx optimizer.mx 
 
 	HEADERS = h 
 	SCRIPTS = mal
@@ -23,5 +23,5 @@ LIBS = {
 
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = costmodel.mx mal_costmodel.mx optimizer.mx
+	SOURCES = costmodel.mx mal_costmodel.mx mal_optimizer.mx optimizer.mx
 }

@@ -22,11 +22,15 @@
 @* MIL Scenario implementation
 The MIL scenario uses the MIL parser to built a program ready for execution.
 @mal
-module mil_scenario;
+module mil;
 
 command mil():void 
 address CMDMILsession
 comment "Switch to processing MIL statements";
+
+command line(msg:str):void
+address MILline
+comment "Echo the original MIL command";
 
 @h
 #ifndef _MIL_SCENARIO_H
@@ -59,7 +63,6 @@ str MILinit(Client cntxt){
 	stream_printf(GDKout,"#MILinit MonetDB V5\n");
 #endif
 	/* load the modules */
-	malInclude(cntxt,"mil","mil",0);
 	malInclude(cntxt,"mil_algebra_procs","mil_algebra_procs",0);
 	malInclude(cntxt,"mil_system_procs","mil_system_procs",0);
 	(void) cntxt;
@@ -305,10 +308,15 @@ str MILengine(Client c) {
 }
 
 str CMDMILsession(str *ret){
-        str msg= MAL_SUCCEED;
-        stream_printf(GDKout,"#Continue as MIL session\n");
-        msg= setScenario(getClient(),"mil");
-        *ret = 0;
-        return msg;
+	str msg= MAL_SUCCEED;
+	stream_printf(GDKout,"#Continue as MIL session\n");
+	msg= setScenario(getClient(),"mil");
+	*ret = 0;
+	return msg;
 }
 
+str MILline(int *ret, str *msg){
+	(void) ret;
+	stream_printf(GDKout,"#%s\n",*msg);
+	return MAL_SUCCEED;
+}

@@ -31,10 +31,6 @@ by receiving an empty line. This is a rather limited
 approach, but avoid building a complex MIL parser at
 this stage. Perhaps we can revamp M2m later on to be
 included as a small parser.
-@mal
-module mil;
-command mil():void = MILsession
-comment "Switch to processing MIL statements";
 
 @h
 #include "mal_function.h"
@@ -68,7 +64,7 @@ str MILreader(Client c){
 	return throwMessage("MILreader","can not create input file\n");
 	c->prompt= GDKstrdup("mil>");
 	c->promptlength= strlen(c->prompt);
-	while( c->mode > FINISHING && readClient(c,c->prompt)){
+	while( c->mode > FINISHING && readClient(c)){
 		if (currChar(c) == 0) 
 			break;
 #ifdef MIL_DEBUG
