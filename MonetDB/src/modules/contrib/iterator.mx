@@ -98,7 +98,7 @@ to pure 1-tuple-at-a-time processing.
 @* MIL Test Script
 @mil
 
-PROC test_iterator() : void := {
+PROC test_iterator() : void {
 
 	# module(ddbench)
 	#

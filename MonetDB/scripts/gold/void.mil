@@ -1,8 +1,8 @@
 module(enum,str);
 
-o := car_age.reverse.fetch(0);
+var o := car_age.reverse.fetch(0);
 
-proc maketype(title) := {
+proc maketype(str title) : bat {
     var histoname := sprintf("%s_t", title);
     if (not(view_bbp_name.reverse.exist(histoname))) {
         var batname := sprintf("car_%s", title);
@@ -20,7 +20,7 @@ var category_t := maketype("category");
 var town_t := maketype("town");
 var class_t := maketype("class");
 
-proc void_encode(tpe, title) := {
+proc void_encode(int tpe, str title) : bat {
     var b := bat(sprintf("car_%s", title));
     var bn := tpe.[encode]([~b]); 
     bn.rename(sprintf("void_%s", title));
@@ -29,7 +29,7 @@ proc void_encode(tpe, title) := {
     return bn;
 }
 
-proc void_create := {
+proc void_create() : void {
     void_encode(age_t,"age");
     void_encode(carprice_t,"carprice");
     void_encode(category_t,"category");

@@ -1,5 +1,5 @@
 setoid(oid(10000000));
-t:= car_class.select("damage");
+var t:= car_class.select("damage");
 t.persists(true);
 t.rename("car_pos");
 t.count.print;

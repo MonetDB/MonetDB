@@ -61,7 +61,7 @@ m_export int   TBL_M_incref(Client client, oid mid);
 
 /* old info functions */
 m_export ptr   TBL_unpacked(ptr imp);
-m_export char* TBL_search(str name, int *t, int command_hint);
+m_export char* TBL_search(str name, int *t, int guess_if_notfound, int cur_is_ident, int no_command, int next_is_ident);
 m_export str   TBL_getname(ptr imp);
 m_export str   TBL_fndname(ptr imp);
 m_export int   TBL_getparams(ptr imp, str argv[]);
@@ -1907,7 +1907,7 @@ drop will go through;
 The parser uses the routine TBL_search to locate the internal value
 of an identifier. 
 @c
-char *TBL_search(str s, int *t, int command_hint) {
+char* TBL_search(str s, int *t, int guess_if_notfound, int cur_is_ident, int no_command, int next_is_ident) {
 	char *assignop=NULL, *p, *v, *name = s, *ret = 0;
 	Client c = ll_client;
 
@@ -1922,6 +1922,14 @@ char *TBL_search(str s, int *t, int command_hint) {
 		TBL_unset_readlock();
 	    	return atm;
 	    }
+#ifdef MKMODS
+            p = (char*) TEMsearch(t);
+            if (p != NULL) {
+	    	*t = TOK_TRG;
+		TBL_unset_readlock();
+	    	return s;
+            }
+#endif
 	}
 
 again:	
@@ -1933,7 +1941,11 @@ again:
 
 		if (*t == TOK_BUILTIN) {
 		    ret = (char *) *BUNtailfnd(ptr, TBL_fcn_imp, v, &fid);
-		} else { 
+		} else if (no_command == 0 && (cur_is_ident == 0 || 
+		           (next_is_ident == 0 || *t == TOK_OPERATOR))) 
+		{
+		    /* we refuse only if we know the following cannot be a command
+                       or if we see a command followed by an identifier */ 
 		    ret = BUNhvar(c->fcntbl, p);
 		}
 	    }
@@ -1951,7 +1963,6 @@ We recognize '+=' (and similar for other operators than +) as an TOK_ASSIGNOP.
 	} else if (ret == NULL && name[strlen(name)-1] == '=') {
 		name = assignop = GDKstrdup(*name==':'?name+1:name);
 	        name[strlen(name)-1] = 0;
-		c = ll_client;
 		goto again;
 	}
 	TBL_unset_readlock();
@@ -1960,9 +1971,9 @@ We recognize '+=' (and similar for other operators than +) as an TOK_ASSIGNOP.
 if not found, the default is to say it is an identifier. 
 However, with the command-hint passed, we guess it is a command.
 @c
-	if (ret == NULL && command_hint) {
+	if (ret == NULL && guess_if_notfound && !no_command) {
 		ret = s;
-		*t = TOK_COMMAND;
+		*t = next_is_ident?TOK_OPERATOR:TOK_COMMAND;
 	}
 	return ret;
 }

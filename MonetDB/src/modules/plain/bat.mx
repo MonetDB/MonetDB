@@ -445,21 +445,21 @@ a list of all currently known accelarator types.
 More info on how to write new search accelerators can be found in the
 @[<a href="../../mel/index.html">MEL documentation</a>@.
 @m
-.COMMAND accbuild(BAT[any,any] b, int acctype) = CMDaccbuild_std;
+.COMMAND accbuild(BAT[any,any] b, str acctype) = CMDaccbuild_std;
 "Build an accelerator on the head column of b. The builtin accelerator
  types index and hash will be created as transient accelerators. They
  will not be saved on disk. User-defined accelerators must always be
  persistent." 
 
-.COMMAND accbuild(BAT[any,any] b, int acctype, any param) = CMDaccbuild;
+.COMMAND accbuild(BAT[any,any] b, str acctype, any param) = CMDaccbuild;
 "like accbuild(BAT[any,any] b, int acctype), but with a parameter that
  is provide to the specific accelerator build routine."
 
-.COMMAND accdestroy(BAT[any,any] b, int acctype) = CMDaccdestroy;
+.COMMAND accdestroy(BAT[any,any] b, str acctype) = CMDaccdestroy;
 "Destroy the accelerator of type 'acctype'  that is present on
  the head-type of b." 
 
-.COMMAND accpresent(BAT[any,any] b ) : int = CMDaccpresent;
+.COMMAND accpresent(BAT[any,any] b ) : str = CMDaccpresent;
 "Returns the accelerator type of the *persistent* accelerator present 
  on the head column of b. Note that index and hash accelerators are
  generally *not* persistent, and will not be returned by this function!"
@@ -487,6 +487,31 @@ these 'sync' OIDs with their own propagation rules.
 
 .END bat;
 
+@- system bats
+@mil
+    CONST monet_fcn_aut := bat("monet_fcn_aut");
+    CONST monet_fcn_cnt := bat("monet_fcn_cnt");
+    CONST monet_fcn_dat := bat("monet_fcn_dat");
+    CONST monet_fcn_dsc := bat("monet_fcn_dsc");
+    CONST monet_fcn_fcn := bat("monet_fcn_fcn");
+    CONST monet_fcn_imp := bat("monet_fcn_imp");
+    CONST monet_fcn_mid := bat("monet_fcn_mid");
+    CONST monet_fcn_nme := bat("monet_fcn_nme");
+    CONST monet_fcn_pro := bat("monet_fcn_pro");
+    CONST monet_fcn_sig := bat("monet_fcn_sig");
+    CONST monet_fcn_tpe := bat("monet_fcn_tpe");
+    CONST monet_mod_acc := bat("monet_mod_acc");
+    CONST monet_mod_atm := bat("monet_mod_atm");
+    CONST monet_mod_cnt := bat("monet_mod_cnt");
+    CONST monet_mod_dep := bat("monet_mod_dep");
+    CONST monet_mod_drop := bat("monet_mod_drop");
+    CONST monet_mod_hdl := bat("monet_mod_hdl");
+    CONST monet_mod_load := bat("monet_mod_load");
+    CONST monet_mod_nme := bat("monet_mod_nme");
+    CONST monet_mod_proc := bat("monet_mod_proc");
+    CONST monet_mod_use := bat("monet_mod_use");
+    CONST monet_mod_var := bat("monet_mod_var");
+     
 @- constants for mmap()
 @mil
     CONST STORE_MEM   := 0;     # load into GDKmalloced memory
@@ -515,7 +540,6 @@ these 'sync' OIDs with their own propagation rules.
     CONST BAT_APPEND := 2;      # allow reads and insertions of new elements.
     CONST BAT_WRITE  := 0;      # allow reads, insertions, and updates.
 
-
     PROC destroy(str s) : bit 
         return destroy(s,true);
 
@@ -526,7 +550,7 @@ these 'sync' OIDs with their own propagation rules.
 	return capacity(int(b));
 
     PROC save(bat[any::1,any::2] b) : bat[any::1,any::2] {
-	save(b.bbpname);
+	save(bbpname(b));
 	return b;
     }
 
@@ -545,11 +569,11 @@ these 'sync' OIDs with their own propagation rules.
     PROC tail(bat[any,any] b) : str 
 	return tail(int(b));
 
-    PROC ttype(any b) : int := 
+    PROC ttype(any b) : int  
          return monet_atomtbl.find(b.tail);
 #    ADDHELP("ttype","boncz","Apr 07 2004","Get tail-type as an integer","bat");
 
-    PROC htype(any b) : int := 
+    PROC htype(any b) : int  
          return monet_atomtbl.find(b.head);
 #    ADDHELP("htype","boncz","Apr 07 2004","Get head-type as an integer","bat");
 
@@ -1355,28 +1379,37 @@ int CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp,
 
 @+ Accelerator Control
 @c
-int CMDaccbuild(BAT *b, int* acc, ptr param, int dummy){
+int CMDaccbuild(BAT *b, str acc, ptr param, int dummy){
+	int acctpe = ACCindex(acc); 
 	(void) dummy;
-	ACCbuild(*acc, b, &b->haccelerator, param); 
-	return GDK_SUCCEED;
+	if (acctpe > 0) {
+		ACCbuild(acctpe, b, &b->haccelerator, param); 
+		if (b->hacctype == acctpe) return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDaccbuild_std(BAT *b, int* acc){
+int CMDaccbuild_std(BAT *b, str acc){
 	return CMDaccbuild(b, acc, NULL, 0);	
 }
 
-int CMDaccdestroy(BAT *b, int *acc) {
-	ACCdestroy(*acc, b, &b->haccelerator);
-	return GDK_SUCCEED;
+int CMDaccdestroy(BAT *b, str acc) {
+	int acctpe = ACCindex(acc); 
+	if (b->hacctype == acctpe) {
+		ACCdestroy(acctpe, b, &b->haccelerator);
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 
-int CMDaccpresent(int *retval, BAT* b) {
-	*retval = 0;
+int CMDaccpresent(str *retval, BAT* b) {
+	str nme = str_nil;
 	if (b->hacctype) {
 	    int (*check)(Heap*, BAT*) = BATaccelerators[b->hacctype].accRepair;
 	    if (check == NULL || (*check)(&b->haccelerator,b) == GDK_SUCCEED) {
-		*retval = b->hacctype;
+		nme = ACCname(b->hacctype);
  	    }
 	}
+	*retval = GDKstrdup(nme);
 	return GDK_SUCCEED;
 }
 

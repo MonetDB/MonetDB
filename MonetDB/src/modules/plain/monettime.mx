@@ -482,6 +482,8 @@ One day we should introduce the concept of locale, and hook here.
 @mil
   	module("alarm");
 
+	CONST monettime_tzones := bat("monettime_tzones");
+
 	# default time creation with zeroed secs and msecs
 	proc "daytime" (int hour) : daytime
 		return daytime(hour, 0, 0, 0);
@@ -598,17 +600,17 @@ proc milliseconds(timestamp t) : int { return milliseconds(daytime(t)); }
 # date_sub_sec_interval & date_add_sec_interval (now: date,lng) from those of
 # date_sub_month_interval & addmonth (date,int), 
 # and thus enable proper function binding in SQL.
-proc date_sub_sec_interval( date d, lng s ) : date :=
-	{ return date_sub_sec_interval( d, int(s) ); }
-proc date_add_sec_interval( date d, lng s ) : date :=
-	{ return date_add_sec_interval( d, int(s) ); }
+proc date_sub_sec_interval( date d, lng s ) : date 
+	return date_sub_sec_interval( d, int(s) );
+proc date_add_sec_interval( date d, lng s ) : date 
+	return date_add_sec_interval( d, int(s) );
 
 @+ Test Script
 
 The below tests try to be exhaustive in trying all time functionality.
 @mil
 
-PROC test_monettime() : void := {
+PROC test_monettime() : void {
 
 @- rule
 @mil

@@ -130,7 +130,7 @@ only one will be created.
 .END tcpip;
 
 @mil
-        PROC arpc := mil($(1..));  # jonas backward compatibility
+        PROC arpc(..any..) : any return mil($(1..));  # jonas backward compatibility
 
 @h
 #ifndef _TCPIP_H_

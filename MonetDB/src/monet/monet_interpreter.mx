@@ -854,6 +854,11 @@ phase 4: do resolution and expand an execution tree in op
 		if (retry > i) 
 			i = retry;  /* found something better */
 
+		if (i < 0 && opcache->token == TOK_IDENT) {
+			GDKerror("interpret: unknown variable '%s'.\n", fcn_nme);
+			return -1;
+		}
+
 		/* Function resolution error */ 
 		if (i < 0) {
 		    char *s, *signatures = NULL;
@@ -1049,20 +1054,8 @@ to the @%ValRecord@ of that variable in the context stack.
 @c
 int interpret_ident(int	stk, YYSTREE lt, ValPtr res)
 {
-	Variable v;
-	BAT *b = NULL;
-	int i=0, j;
-
-	for(i = lt->yyval.len; i > 0; i--) { /* hacky use of len as ../ depth */
-		if (stk >= 0) {
-			stk = monet_cntxt[stk].outer;
-		} else {
-               		GDKerror("interpret_ident: illegal context.\n");
-			return -1;
-		}
-	}
-	i = stk;
-       	v = VARfind(&i, lt->yyval.val.sval);
+	int i = stk;
+       	Variable v = VARfind(&i, lt->yyval.val.sval);
        	if (v != NULL) {
 		GDKfree(lt->yyval.val.sval);
 		/* resolve only once: TEMPLATE */
@@ -1072,35 +1065,13 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res)
 		*res = v->binding;
 		return 0;
 	}
-	/* resolve only once: CONSTANT */
-        lt->token = TOK_CONSTANT; 
-	i = BBPindex(lt->yyval.val.sval);
-	j = BBPfix(i); 
-	if (j == 0 || strcmp(BBP_logical(i), lt->yyval.val.sval)) {
-		if (j) BBPunfix(i);
-		lt->yyval.vtype = TYPE_str;
-		lt->yyval.len = 1+strlen(lt->yyval.val.sval);
-               	GDKwarning("interpret: convert identifier '%s' to string.\n", 
-			lt->yyval.val.sval);
-		return interpret(stk, lt, res);
-       	}
-	/* LOAD FIX: register the bat for unpinning */
-	GDKfree(lt->yyval.val.sval);
-	if (BBPincref(i, TRUE) && (b=BBPquickdesc(ABS(i), FALSE)) != NULL) {
-		lt->yyval.vtype = TYPE_bat;
-		lt->yyval.val.bval = i;
-		lt->yyval.len = 0;
-		lt->dealloc = TYPE_bat;
-		lt->free.batref.id = i;
-		lt->free.batref.stamp = b->batStamp;
-		BBPunfix(i);
-	} else {
-		/* if the BAT gives a load error, return nil */
-		lt->yyval.vtype = TYPE_void;
-		lt->yyval.val.oval = oid_nil;
-	}
-	*res = lt->yyval;
-	return 0;
+	/* resolve only once: FUNCTION without parameters nor () */
+	yyexpand(lt, yynode(0,0));
+	yyexpand(lt, yynode(TOK_IDENT,TYPE_int));
+        lt->token = TOK_FUNCTION; 
+	lt->yyval.vtype = TYPE_str;
+	lt->yyval.len = 1+strlen(lt->yyval.val.sval);
+	return interpret(stk, lt, res);
 }
 
 @- Variable Declaration Interpretation
@@ -1393,10 +1364,8 @@ int interpret_assignment(int stk, YYSTREE lt, ValPtr res)
 			}
 		}	
 		if ((act = VARfind(&s, nme)) == 0) {
-			act = VARnew(stk, nme);
-			if (!act) {
-				return -1;
-			}
+			GDKerror("interpret_assignment: unknown variable '%s'\n", nme);
+			return -1;
 		}
 		if (act->constant) {
 			GDKerror("interpret_assignment: cannot assign to constant '%s'\n", nme);

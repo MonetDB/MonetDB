@@ -587,7 +587,7 @@ work only on void BATs with enum tails.
 @* Test Script
 @mil
 
-PROC test_ddbench() : void := {
+PROC test_ddbench() : void {
     if (view_bbp_name.reverse.exist("tpe")) {
 	tpe := tpe.destroy;
 	commit;
@@ -2243,7 +2243,7 @@ sleep(1);
 @f scripts_init_enum
 @mil
 # construct [void,enum] and [oid,tpe] from [void,tpe]
-proc init(str nme) {
+proc init(str nme) : void {
     printf("start %s_enum\n",nme);
     var tmp := bat(nme + "_tmp");
     var tpe := enum_create(nme, tmp);
@@ -2265,7 +2265,7 @@ proc init(str nme) {
 @mil
 # construct [void,enum] and [oid,tpe] from [void,tpe]
 # while scaling 10 times with multiple inserts
-proc init(str nme) {
+proc init(str nme) : void {
     printf("start %s_type\n",nme);
     var tmp := bat(nme + "_tmp").seqbase(nil);
     var res := new(void, tmp.ttype, 4*tmp.count);
@@ -2395,15 +2395,6 @@ var SCR := "YY"; # value gets substituted in during script generation
 threadcnt(PAR - 1);
 sleep(1);
 
-# dummy procs for when these commands are not introduced by modules
-proc encode(t,v) := return v;
-proc upper(t,v) := return v;
-proc lower(t,v) := return v;
-proc isenum(t) := return false;
-proc conv_str(b) := return b;
-proc enum_drop(t) := true;
-proc group;
-
 # normally, we cache the binary subcubes of batch 1
 var cache_batch1 := true; 
 var CT_reliable := nil;
@@ -2412,8 +2403,10 @@ var CT_reliable := nil;
 @mil
 module(stream,alarm);
 
-proc revprint(fp,b1,b2) := fp.[fprintf]("%d\t%s\n", b2, [str](b1));
-proc revprint(fp,b1,b2,b3) := fp.[fprintf]("%d\t%s\t%s\n", b3, [str](b2), [str](b1));
+proc revprint(stream fp, bat[any,any] b1, bat[any,any] b2) : void 
+          fp.[fprintf]("%d\t%s\n", b2, [str](b1));
+proc revprint(stream fp, bat[any,any] b1, bat[any,any] b2, bat[any,any] b3) : void 
+          fp.[fprintf]("%d\t%s\t%s\n", b3, [str](b2), [str](b1));
 
 proc print_table(str seq, str att1, bat[any,any] aggr) : int {
         var t0 := time;
@@ -2445,7 +2438,7 @@ proc print_table(str seq, str att1, str att2, bat[any,any] aggr) : int {
 
 @f scripts_noprint.mil
 @mil
-proc print_table := true; 
+proc print_table() : bit return true; 
 
 @f scripts_enum
 @mil
@@ -2462,7 +2455,7 @@ var zipcode, spendings, town, age, marital, gender, reliable;
     reliable := enum_load("reliable");
 |}
 
-proc conv_str(bat[void,any] b) : bat[void,any] := {
+proc conv_str(bat[void,any] b) : bat[void,any]  {
 	if (isenum(b.ttype)) {
 	    var e := enum_table(b.ttype);
 	    if (e.htype != str) {
@@ -2472,8 +2465,8 @@ proc conv_str(bat[void,any] b) : bat[void,any] := {
 	return b;
 }
 
-proc revprint(fp,b1,b2) := enum_print(fp,b2,b1);
-proc revprint(fp,b1,b2,b3) := enum_print(fp,b3,b2,b1);
+proc revprint(fp,b1,b2) : void  enum_print(fp,b2,b1);
+proc revprint(fp,b1,b2,b3) : void enum_print(fp,b3,b2,b1);
 
 @f scripts_prelude
 @mil
@@ -2546,8 +2539,8 @@ var tot5 := 0, tot6 := 0, tot7 := 0, tot8 := 0; tot9 := 0;
 @- CT-semijoin-histogram (semijoin.mil)
 @f scripts_semijoin
 @mil
-proc group(b) := return CTgroup(b);
-proc group(a,b) := return CTgroup(a,b);
+proc group(bat[any,any] b) : bat[any,any] return CTgroup(b);
+proc group(bat[any,any] a, bat[any,any] b) : bat[any,any] return CTgroup(a,b);
 
 proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
         var t0 := time;
@@ -2568,8 +2561,8 @@ proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
 @mil
 cache_batch1 := false; # we cache batch 0 here
 
-proc group(b) := return CTgroup(b);
-proc group(a,b) := return CTgroup(a,b);
+proc group(bat[any,any] b) : bat[any,any] return CTgroup(b);
+proc group(bat[any,any] a, bat[any,any] b) : bat[any,any] return CTgroup(a,b);
 
 proc subcube(str seq, str att1, str att2, bat[any,any] sel) : int {
         var t0 := time;

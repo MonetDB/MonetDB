@@ -74,8 +74,8 @@ char *lexname[] = {
  "TOK_CONST", "TOK_BUILTIN", "TOK_CAST", "TOK_BATCAST", "TOK_BATCONV",
  "TOK_TRG", "TOK_FUNCTION", "TOK_PROC", "TOK_COMPILED", "TOK_COMMAND",
  "TOK_OPERATOR", "TOK_SETOP", "TOK_ASSIGNOP", "TOK_SETAGGR", "TOK_PROCDEF",
- "TOK_ACC", "TOK_STRING", "TOK_OBJECT", "TOK_ITERATION", "TOK_ELSE", "TOK_BAT",
- "TOK_BACK", "TOK_TRGDEF", "TOK_ON", "TOK_MODULE", "TOK_DROP", "TOK_EVENT",
+ "TOK_STRING", "TOK_OBJECT", "TOK_ITERATION", "TOK_ELSE", "TOK_BAT",
+ "TOK_TRGDEF", "TOK_ON", "TOK_MODULE", "TOK_DROP", "TOK_EVENT",
  "TOK_ANY", "TOK_UNDEF", "TOK_DEREF", "TOK_ANYNUM", 0, };
 
 char *LEXNAME(int Y)       { if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
@@ -83,9 +83,11 @@ char *LEXNAME(int Y)       { if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
                              } else {
                                 return "char";
                            } }
-#define RETURN(Y)	{ PARSEDEBUG {\
+#define RETURN(Y)	{ ll_lastval = Y;\
+                          PARSEDEBUG {\
 				THRprintf(GDKerr, "%s %s\n", LEXNAME(Y), yytext);\
-			     } return Y; }
+			   }\
+                           return Y; }
 #ifdef FLEX_SCANNER
 /*
 #define YY_INPUT(buf,result,max_size)	{ int c = ll_getch();\
@@ -117,12 +119,13 @@ void ll_flushbuffer(void) {
 #endif
 }
 
-#define TBLSEARCH(r,s,token,hint) \
-	{ char offend = ' '; \
+#define TBLSEARCH(r,s,token,cur_is_ident,guess_if_notfound,no_command) \
+	{ int offend = ' '; \
 	  while(GDKisspace(offend)) offend = input(); \
-	  unput(offend); \
-	  r = TBL_search(s, token, hint&&(offend == '(')); }
-
+	  if (offend > 0) unput(offend);\
+	  r = TBL_search(s, token, guess_if_notfound, cur_is_ident, no_command&&ll_nocommand[offend], \
+                         (offend >= 'a' && offend <= 'z') | (offend >= 'A' && offend <= 'Z')); }
+			
 static int ll_skipcomment(void);
 %}
 %p 3400
@@ -159,60 +162,51 @@ static int ll_skipcomment(void);
 "[*"                  { Symbol(TOK_SETOP);                                    }
 "{*"                  { Symbol(TOK_SETAGGR);                                  }
 "@"                   { Symbol(TOK_ITERATION);                                }
-"../"                 { Symbol(TOK_BACK);                                     }
-(":"{P}({P}|{L}|{D})*"=") |
-({P}({P}|{L}|{D})*)   { int i; char *s = yytext;
-		 	if ((!s[1]) && (*s=='~' || *s=='?' || *s==':')) {
-                            Symbol(*s);
+(":"{P}+"=") |
+({P}+)                { int i, l = (int) strlen(yytext);
+			char *s, *t = (str) alloca(l+1);
+			strcpy(t,yytext); /* copy yytext before unput */
+		 	if ((!t[1]) && (*t=='~' || *t=='?' || *t==':')) {
+                            Symbol(*t);
 	                } else {
                             if (ll_resolution) {
-                                s = TBL_search(yytext, &i, FALSE);
-				if (s != NULL){ Function(i,s); }
+                            	TBLSEARCH(s, t, &i, FALSE, TRUE, FALSE);
+				if (s != NULL) { 
+			            Function(i,s); 
+			        }
                             }
 			    REJECT
                         }                                                     }
-({P}+) |
-(":"{P}+"=") |
 (":"{L}({L}|{D})*"=") |
 ({L}({L}|{D})*"="?)  {
 command:             {  int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
 			strcpy(t,yytext); /* copy yytext before unput */
                         if (ll_resolution) {
-                            TBLSEARCH(s, t, &i, TRUE);
+                            TBLSEARCH(s, t, &i, TRUE, TRUE, TRUE);
 			    if (s != NULL) {
                                 Function(i,s);
                             }
-                            s = BUNfnd(ll_client->acctbl, t);
-			    if (s != NULL) {
-                                i = *(int *) BUNtail(ll_client->acctbl,s);
-                                Vector(TOK_ACC, TYPE_int, ival, i, 0);
-                            }
-#ifdef MKMODS
-                            s = (char*) TEMsearch(t);
-			    if (s != NULL) {
-                                Vector(TOK_TRG, TYPE_ptr, sval, s, 0);
-                            }
-#endif
                         }
 			s = GDKstrdup(t);
                         Vector(TOK_IDENT, TYPE_str, sval, s, 0);              }}
 
-("["{L}({P}|{L}|{D})*"]") |
-("[:"{L}({P}|{L}|{D})*"=]") |
+("["{P}+"]") |
+("[:"{P}+"=]") |
+("["{L}({L}|{D})*"]") |
+("[:"{L}({L}|{D})*"=]") |
 ("{"{L}({L}|{D})*"}") |
-("["{P}+"="?"]") |
 ("[:"{P}+"=]")      {   int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
 			strcpy(t,yytext); /* copy yytext before unput */
                         if (ll_resolution) {
 			    char cb = t[l-1];  /* save bracket */
-                            TBLSEARCH(s, t, &i, FALSE);
+                            TBLSEARCH(s, t, &i, TRUE, FALSE, FALSE);
                             if (s) {
                                Function(i,s);
                             }
 			    t[l-1] = 0; /*remove last bracket*/
-                            TBLSEARCH(s, t+1, &i, TRUE);
+                            TBLSEARCH(s, t+1, &i, TRUE, TRUE, FALSE);
                             if (s != NULL) {
 				if (i == TOK_BUILTIN) {
 				   GDKerror("yyparse: cannot use a %cBUILTIN%c()\n", *t, (*t=='[')?']':'}');
@@ -228,9 +222,15 @@ command:             {  int i, l = (int) strlen(yytext);
                         while(--yyleng > 0) unput(t[yyleng]);
                         Symbol(*t);                                      }
 ("-")?{D}+"LL"        { lng val, *p = &val; int l=sizeof(lng);
+                        if (*yytext == '-' && (ll_lastval == TOK_IDENT || 
+			                       ll_lastval == TOK_CONSTANT || 
+				               ll_lastval == ')')) REJECT;
 			lngFromStr(yytext, &l, &p);
 		        Vector(TOK_CONSTANT, TYPE_lng, lval, val, 0);}
 ("-")?{D}+            { lng val, *p = &val; int l=sizeof(lng);
+                        if (*yytext == '-' && (ll_lastval == TOK_IDENT || 
+			                       ll_lastval == TOK_CONSTANT || 
+				               ll_lastval == ')')) REJECT;
 			lngFromStr(yytext, &l, &p);
 			if (val > ((lng) GDK_int_min) \
 			 && val <= ((lng) GDK_int_max))
@@ -242,11 +242,17 @@ command:             {  int i, l = (int) strlen(yytext);
 ("-")?{D}+"."{D}+({E})?"LL" |
 ("-")?"."{D}+({E})?"LL"     |
 ("-")?{D}+{E}"LL"     { dbl val, *p = &val; int l = sizeof(dbl);
+                        if (*yytext == '-' && (ll_lastval == TOK_IDENT || 
+			                       ll_lastval == TOK_CONSTANT || 
+				               ll_lastval == ')')) REJECT;
 			dblFromStr(yytext, &l, &p);
 			Vector(TOK_CONSTANT, TYPE_dbl, dval, val, 0);         }
 ("-")?{D}+"."{D}+({E})? |
 ("-")?"."{D}+({E})?     |
 ("-")?{D}+{E}         { flt val, *p = &val; int l = sizeof(flt);
+                        if (*yytext == '-' && (ll_lastval == TOK_IDENT || 
+			                       ll_lastval == TOK_CONSTANT || 
+				               ll_lastval == ')')) REJECT;
 			fltFromStr(yytext, &l, &p);
 			Vector(TOK_CONSTANT, TYPE_flt, fval, val, 0);         }
 "'"\\0{O}({O})?({O})?"'" {unsigned int i; sscanf(yytext+2, "%o", &i);
@@ -282,7 +288,7 @@ int ll_skipcomment(void) { char c; while ((c=input()) && (c != '\n')); return yy
 The routine @%ll_getch@ manipulates the input buffer for the current
 client indicated by @%ll_client@.
 
-BLAC MAGIC: the parse module-stack. In order to execute module initialize scripts in the correct
+BLACK MAGIC: the parse module-stack. In order to execute module initialize scripts in the correct
 order we maintain a stack of scripts (= MIL input buffers). 
 
 In case of modules that include other modules, what happens is that the init scripts of the
@@ -306,6 +312,9 @@ Client 	   ll_client = 0;
 int	   ll_nlines=0;		  /* current number of string chunks */
 int	   ll_maxlines=0; 	  /* maximum number of string chunks */
 str*	   ll_lines=0;		  /* string chunks */
+
+char ll_nocommand[256] = { 0 };
+int ll_lastval=0;
 
 typedef struct _strstack_t {
 	str cleanup, cptr, cline, mod;
@@ -436,6 +445,32 @@ int ll_getstring(char *buf, int max_size)
 
 void ll_init(void) {
 	ll_lines = (str*) GDKmalloc((ll_maxlines=500)*sizeof(str));
+
+	/* when these chars are seen after an identifier, MIL language constructs impede it be an operator */
+	ll_nocommand[(int)';'] = 1; /* a  ; */
+	ll_nocommand[(int)','] = 1; /* fcn(a  , b) */
+	ll_nocommand[(int)')'] = 1; /* fcn(a  ) */
+	ll_nocommand[(int)'.'] = 1; /* a . fcn(..) */
+	ll_nocommand[(int)'@'] = 1; /* a @ batloop() */
+	ll_nocommand[(int)'?'] = 1; /* a ? b : c */
+
+	/* operator starter symbols (an operator cannot come after an operator) */
+        ll_nocommand[(int)':'] = 1; /* a := ..  / b ? a : c */
+	ll_nocommand[(int)'>'] = 1; /* a < .. */
+	ll_nocommand[(int)'>'] = 1; /* a > .. */
+	ll_nocommand[(int)'='] = 1; /* a = .. */
+	ll_nocommand[(int)'%'] = 1; /* a % b */
+	ll_nocommand[(int)'/'] = 1; /* a / b */
+	ll_nocommand[(int)'-'] = 1; /* a - b */
+	ll_nocommand[(int)'+'] = 1; /* a + b */
+	ll_nocommand[(int)'*'] = 1; /* a * b */
+
+	/* symbols not yet used that in the future may be first chars of operators */
+	ll_nocommand[(int)'|'] = 1; 
+	ll_nocommand[(int)'!'] = 1;
+	ll_nocommand[(int)'^'] = 1;
+	ll_nocommand[(int)'&'] = 1;
+	ll_nocommand[(int)'\\'] = 1;
 }
 
 str ll_lastline(void){
@@ -529,6 +564,8 @@ m_export int        ll_parblockdepth;
 m_export YYSTREE    ll_firstnode, ll_sugarnode;
 m_export int        ll_templates;
 m_export int        ll_argc;
+m_export char       ll_nocommand[256];
+m_export int        ll_lastval;
 m_export char       ll_ifthenelse[], ll_ifelse[], ll_ifthen[], ll_project[], ll_reverse[];
 
 #define ll_emptychar(x)	((x == 0) || GDKisspace(x))
@@ -615,15 +652,15 @@ extern YYSTREE yysugar(YYSTREE node);
 %token TOK_ITCOMPILED TOK_BREAK TOK_RETURN TOK_VAR TOK_ATOM
 %token TOK_CONST TOK_BUILTIN TOK_CAST TOK_BATCAST TOK_BATCONV TOK_TRG
 %token TOK_FUNCTION TOK_PROC TOK_COMPILED TOK_COMMAND TOK_OPERATOR
-%token TOK_SETOP TOK_ASSIGNOP TOK_SETAGGR TOK_PROCDEF TOK_ACC
+%token TOK_SETOP TOK_ASSIGNOP TOK_SETAGGR TOK_PROCDEF 
 %token TOK_STRING TOK_OBJECT TOK_ITERATION TOK_ELSE TOK_BAT
-%token TOK_BACK TOK_TRGDEF TOK_ON TOK_MODULE TOK_DROP TOK_EVENT
+%token TOK_TRGDEF TOK_ON TOK_MODULE TOK_DROP TOK_EVENT
 %token TOK_ANY TOK_UNDEF TOK_DEREF TOK_ANYNUM
 %%
 program:
-        monet_session
-	{ ll_client->tree = $1; yypostprocess(ll_client->tree);		      }
-    |   error ';' { ll_clrids(); yyerrok; yyclearin; return 1; }
+	monet_session
+	{ ll_client->tree = $1; yypostprocess(ll_client->tree); ll_lastval=0; }
+    |   error ';' { ll_clrids(); yyerrok; yyclearin; ll_lastval=0; return 1; }
     |   /* empty */
     ;
 
@@ -942,8 +979,6 @@ proc_header:
 		header->yyval.val.pval = $4;
 		header->yyval.vtype = TYPE_ptr;
             } $$ = $2;                                                        }
-    |   /* empty */
-        {   $$ = NULL;                                                        }
     ;
 
 mel_header:
@@ -1033,9 +1068,6 @@ mel_other:
         TOK_ANY mel_any
 	{ $$ = $1;
 	  if ($2) { $$->yyval = $2->yyval; yylogfree($2); }                   }
-    |   /* omitted type spec is an 'any' type without restrictions */
-	{ $$ = yylognode(TOK_ANY,TYPE_int);
-	  $$->yyval.val.ival = -1;                                            }
     ;
 
 mel_any:
@@ -1051,8 +1083,6 @@ mel_return:
 	{ if ($2->token == TOK_ANY && $2->yyval.val.ival == 0) {
 	      yylogfree($2); $2 = NULL;
           } $$ = $2;                                                          }
-    |   /* empty */
-	{ $$ = NULL;                                                          }
     ;
 
 expression:
@@ -1070,7 +1100,7 @@ blk_expression:
     ;
 
 expr_rest:
-        '.' {ll_sugarnode = ll_firstnode; } command_expression
+        '.' {ll_sugarnode = ll_firstnode; } command_or_ident_expression
         { ll_firstnode = $3; } expr_rest
         {   $$ = $5;                                                          }
     |   operator_expression { ll_firstnode = $1; } expr_rest
@@ -1137,8 +1167,6 @@ constant_expression:
         {   $$ = $1;                                                          }
     |   TOK_STRING
         {   $$ = $1; $$->token = TOK_CONSTANT;                                }
-    |   TOK_ACC
-        {   $$ = $1; $$->token = TOK_CONSTANT;                                }
     | '[' multiplex_expression ']'
 	{   $$ = $2; 							      }
     ;
@@ -1201,6 +1229,17 @@ bat_expression:
         {   $$ = yylognode(0,0);                                              }
     ;
 
+command_or_ident_expression:
+        builtin expression_list
+        {   $2->token = $1->token;
+            $2->yyval = $1->yyval;
+            yylogkill($1); $$ = $2;                                           }
+    |   command_or_operator_or_ident expression_list
+        {   $2->yyval = $1->yyval;
+            $2->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
+            yylogkill($1); $$ = $2;                                           }
+    ;
+
 command_expression:
         builtin expression_list
         {   $2->token = $1->token;
@@ -1219,6 +1258,13 @@ operator_expression:
         {   yylogexpand($1, $3);
             $1->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
             $$ = $1;                                                          }
+    ;
+
+command_or_operator_or_ident:
+	TOK_IDENT
+        {   $$ = $1;                                                          }
+    |   command_or_operator
+        {   $$ = $1;                                                          }
     ;
 
 command_or_operator:

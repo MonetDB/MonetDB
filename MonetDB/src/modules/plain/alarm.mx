@@ -277,7 +277,7 @@ int CMDtime(int *retval){
 @}
 
 @mil
-PROC test_alarm() : void := {
+PROC test_alarm() : void {
 	t0 := time();
 	sleep(15);
 	t1 := time();

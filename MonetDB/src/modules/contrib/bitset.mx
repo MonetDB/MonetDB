@@ -67,7 +67,7 @@
 		"Convert this BitSet to an integer."
 
 @mil
-		PROC bitset_toStr(theBitset) := {
+		PROC bitset_toStr(theBitset) : str {
 			return str(theBitset);
 		}
 @m
@@ -415,7 +415,7 @@ extern int bitset_toInt( int* res, bitset* theBitSet ) {
 @+ Test
 @mil
 
-PROC test_bitset() : void := {
+PROC test_bitset() : void {
 	sigs("bitset");
 
 	printf("constructor\n");

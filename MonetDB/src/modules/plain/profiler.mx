@@ -49,7 +49,7 @@ be incurred when the event records should be produced as well.
 .END profiler;
 
 @mil
-PROC startProfiler() : int := {
+PROC startProfiler() : int {
 	return startProfiler(stdout());
 }
 ADDHELP("startProfiler", "manegold", "Feb 05 2004",

@@ -93,7 +93,7 @@ possible to redefine hashing.
 
 @* Example Script
 @mil
-PROC test_url() : void := {
+PROC test_url() : void {
   setoid(oid(20000000));
   u:= url("http://www.cwi.nl/~mk/Acoi/index.html");
   u.getHost.print;

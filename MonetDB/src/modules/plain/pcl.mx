@@ -455,7 +455,7 @@ int pcl_eventname(str *result, int *event){
 
 @mil
 
-PROC test_pcl() : void := {
+PROC test_pcl() : void {
   names := bat(str,void);
   names.insert("PCL_L1CACHE_MISS",  nil);
   names.insert("PCL_L1DCACHE_MISS", nil);

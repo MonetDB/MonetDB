@@ -89,8 +89,8 @@ init_counters();
 const native_events := show_native_events();
 const unified_events := show_unified_events();
 
-PROC event_number(int evt_num) : int := { return evt_num; }
-PROC event_number(str evt_nme) : int := {
+PROC event_number(int evt_num) : int { return evt_num; }
+PROC event_number(str evt_nme) : int {
 	if (native_events.reverse.exist(evt_nme)) {
 		return native_events.reverse.find(evt_nme);
 	} else if (unified_events.reverse.exist(evt_nme)) {
@@ -103,7 +103,7 @@ ADDHELP("event_number", "manegold", "Mar 16 2002",
 	"return the number of an event given by name",
 	"counters");
 
-PROC event_name(int evt_num) : str := {
+PROC event_name(int evt_num) : str {
 	if (native_events.exist(evt_num)) {
 		return native_events.find(evt_num);
 	} else {
@@ -114,28 +114,28 @@ ADDHELP("event_name", "manegold", "Mar 16 2002",
 	"return the (native) name of an event given by number",
 	"counters");
 
-PROC start_count (int event0, str event1) : counter := {
+PROC start_count (int event0, str event1) : counter {
 	return start_count(event0, event_number(event1));
 }
 ADDHELP("start_count", "manegold", "Mar 16 2002",
 	"start counters for two events, first specified by number, second specified by name",
 	"counters");
 
-PROC start_count (str event0, int event1) : counter := {
+PROC start_count (str event0, int event1) : counter {
 	return start_count(event_number(event0), event1);
 }
 ADDHELP("start_count", "manegold", "Mar 16 2002",
 	"start counters for two events, first specified by name, second specified by number",
 	"counters");
 
-PROC start_count (str event0, str event1) : counter := {
+PROC start_count (str event0, str event1) : counter {
 	return start_count(event_number(event0), event_number(event1));
 }
 ADDHELP("start_count", "manegold", "Mar 16 2002",
 	"start counters for two events specified by name",
 	"counters");
 
-PROC profile (str cmd, event0, event1) : counter := {
+PROC profile (str cmd, event0, event1) : counter {
 	VAR cntr0, cntr1;
 	VAR e0 := str(event_number(event0));
 	VAR e1 := str(event_number(event1));
@@ -147,7 +147,7 @@ ADDHELP("profile", "manegold", "Mar 16 2002",
 	"Count events event0 & event1 while executing cmd; return the results as counter.",
 	"counters");
 
-PROC counter2str(counter c) : str := {
+PROC counter2str(counter c) : str {
 	var b := counter2bat(c);
 	if (b.count() < 8) {
 		return sprintf("%10lld us %10lld cy",
@@ -1954,7 +1954,7 @@ int show_unified_events(BAT **ret) {
 @+ Test Script	
 @mil
 
-PROC test_counters() : void := {
+PROC test_counters() : void {
 	module("alarm");
 
 	sigs("counters");

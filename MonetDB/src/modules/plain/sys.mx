@@ -1,4 +1,4 @@
-@' The contents of this file are subject to the MonetDB Public
+(@' The contents of this file are subject to the MonetDB Public
 @' License Version 1.0 (the "License"); you may not use this file
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
@@ -219,8 +219,9 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
 @+ MIL Procedure definitions
 @mil
+    CONST monet_environment := bat("monet_environment");
 
-    PROC help_tpe(int tpe) : str := {
+    PROC help_tpe(int tpe) : str {
 	IF (tpe = TOK_PROC) RETURN "PROC:      ";
 	ELSE IF (tpe = TOK_OPERATOR) RETURN "OPERATOR:  ";
 	ELSE IF (tpe = TOK_COMMAND) RETURN "COMMAND:   ";
@@ -230,7 +231,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	RETURN "UNKNOWN:   ";
     }
  
-    PROC help_sig(oid fid) : void := {
+    PROC help_sig(oid fid) : void {
 	printf("%s%s\n",
             help_tpe(monet_fcn_tpe.find(fid)), format_fcn_sig(fid));
 	if (monet_fcn_mid.exist(fid)) {
@@ -252,7 +253,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     }
  
     PROC help; # forward decl
-    PROC help(str fcn) : void := {
+    PROC help(str fcn) : void {
 	IF (monet_fcn_nme.reverse.exist(fcn)) monet_fcn_nme.reverse@hashloop(fcn) {
 	    help_sig($t); printf("\n");
 	} ELSE {
@@ -264,19 +265,19 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     ADDHELP("help", "boncz", "Feb  6 1996",
          "provide help for a MIL construct.", "sys");
 
-    PROC col_name(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] := {
+    PROC col_name(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] {
 	b.bbpname(name);
 	return b;
     }
-    PROC rename(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] := {
+    PROC rename(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] {
 	if (not(b.bbpname(name))) ERROR("rename(%s,%s): operation failed\n", str(b), name);
 	return b;
     }
     ADDHELP("rename", "boncz", "Feb  6 1996",
          "try to name a BAT and fail if it is not possible.", "sys");
 
-    PROC modules() : void := {
-	var b := view_modules.reverse.kunique.reverse;
+    PROC modules() : void {
+	var b := view_modules().reverse.kunique.reverse;
 	table(1,[module_name](b).reverse.sort.reverse.col_name("name"), 
 		[module_db](b).col_name("database"));
 	
@@ -295,12 +296,12 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     ADDHELP("loaded", "boncz", "Feb  6 1996", 
 	"list all loaded modules, and the number of active users.", "sys"); 
 
-    PROC atoms():void :={
+    PROC atoms():void {
 	table(1,view_atom_name.col_name("atom type"),
 		view_atom_size.col_name("size"),
 		view_atom_align.col_name("alignment"));
     }
-    PROC sigs(str modname) : void := {
+    PROC sigs(str modname) : void {
 	var modname2;
 	if (modname.startsWith("_")) {
 	    modname2 := string(modname,1);
@@ -325,36 +326,36 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     ADDHELP("sigs", "boncz", "Aug  2 1996",  
 	"Show all signatures of the functions in a module.", "sys");
 
-    proc dir(bat[int,str] b) {
+    proc dir(bat[int,str] b) : void {
         var nme := view_bbp_name;
 	
 	table(1, b.reverse.sort.reverse.col_name("name"),
 		[head](b.join(nme.reverse)).col_name("htype"),	
 		[tail](b.join(nme.reverse)).col_name("ttype"),	
 		[count](b.mirror).col_name("count"),	
-		view_bbp_heat.col_name("heat"),
-		view_bbp_dirty.col_name("dirty"),
-		view_bbp_status.col_name("status"),
-		view_bbp_kind.col_name("kind"), 
-		view_bbp_refcnt.col_name("refcnt"),
-		view_bbp_lrefcnt.col_name("lrefcnt"));
+		view_bbp_heat().col_name("heat"),
+		view_bbp_dirty().col_name("dirty"),
+		view_bbp_status().col_name("status"),
+		view_bbp_kind().col_name("kind"), 
+		view_bbp_refcnt().col_name("refcnt"),
+		view_bbp_lrefcnt().col_name("lrefcnt"));
     }
 
-    PROC dir() : void := {
-        var nme := view_bbp_name.copy.access(BAT_WRITE).col_name("name");
+    PROC dir() : void {
+        var nme := view_bbp_name().copy.access(BAT_WRITE).col_name("name");
 	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
 	dir(nme.replace(rev));
     }
-    PROC dir(str substr) : void := {
-        var nme := view_bbp_name.like(substr).access(BAT_WRITE).col_name("name");
+    PROC dir(str substr) : void {
+        var nme := view_bbp_name().like(substr).access(BAT_WRITE).col_name("name");
         var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
         dir(nme.replace(rev));
     }
     ADDHELP("dir", "boncz", "Feb  6 1996", 
 	"list all bats, including system bats. Optionally filter on name with a certain substring", "sys"); 
 
-    proc dir_leaks() {
-	var b0 := view_bbp_name.access(BAT_WRITE);
+    proc dir_leaks() : void {
+	var b0 := view_bbp_name().access(BAT_WRITE);
 	b0.replace([*](b0.reverse.select(int(nil),-1),-1).reverse);
         var b1 := [[startsWith](b0,"tmp_")?b0:].access(BAT_WRITE);
         var b2 := like(view_var_value, "tmp_");
@@ -367,7 +368,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
         dir(b3);
     }
 
-    PROC ls() : void := {
+    PROC ls() : void {
 	var nme := view_bbp_name;
 	var prs := nme.semijoin(view_bbp_kind.select("pers"));
 	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
@@ -376,9 +377,9 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     ADDHELP("ls", "boncz", "Feb  6 1996", 
 	"list all data bats. Optionally filter on name with a certain substring", "sys"); 
 
-    PROC ls(str substr) : void := {
+    PROC ls(str substr) : void {
         var nme := view_bbp_name;
-	var prs := nme.semijoin(view_bbp_kind.select("pers"));
+	var prs := nme.semijoin(view_bbp_kind().select("pers"));
 	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
 	prs.access(BAT_WRITE).col_name("name").replace(rev);
 	dir(prs.like(substr));
@@ -386,61 +387,61 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     ADDHELP("ls", "arjen", "Jun 12 2001", 
 	"list all data bats filtered on name with some substring", "sys"); 
 
-    PROC exit() : void := {
+    PROC exit() : void {
 	quit;
     }
     ADDHELP("exit", "boncz", "Jan 9 1998", "quit for consultants", "sys"); 
 
-    PROC procs() : void := {
+    PROC procs() : void {
 	   var a := [format_fcn_sig](monet_fcntbl.reverse.
 			semijoin(monet_fcn_tpe.select(TOK_PROC)).reverse);
 	   table(1,a.reverse.sort.reverse.col_name("MIL Procedure"));
     }
     ADDHELP("procs", "boncz", "Feb  6 1996", "list all defined procs.", "sys"); 
 
-    PROC clients() : void :=  { 
-	var tree := view_client_tree.access(BAT_WRITE);
+    PROC clients() : void { 
+	var tree := view_client_tree().access(BAT_WRITE);
 	tree.replace(clientid, "clients()");
 	print(view_client_name,view_client_login,tree.col_name("mil"));
     } 
     ADDHELP("clients", "boncz", "Feb  6 1996", 
 	"list all active clients by their number.", "sys"); 
 
-    PROC vars() : void := 
-	table(view_var_name.kdiff([startsWith](view_var_name, ".").uselect(true)), 
+    PROC vars() : void  
+	table(view_var_name().kdiff([startsWith](view_var_name, ".").uselect(true)), 
               view_var_type, view_var_kind, view_var_constant, view_var_value);
     ADDHELP("vars", "boncz", "Feb  6 1996", 
         	"list all Monet variables and their values.", "sys"); 
 
-    PROC threads() : void := print(view_gdk_thread); 
+    PROC threads() : void print(view_gdk_thread); 
     ADDHELP("threads", "boncz", "Feb  6 1996", 
 		"list all system threads and their function.", "sys"); 
 
-    PROC env() : void := print(view_gdk_env);
+    PROC env() : void print(view_gdk_env);
     ADDHELP("env", "boncz", "Feb  6 1996", 
 		"list the values of all environment variables", "sys"); 
 
-    PROC environment() : bat[str,str] := return view_gdk_env;
+    PROC environment() : bat[str,str] return view_gdk_env;
     ADDHELP("environment", "boncz", "Mar 22 1998", "deprecated", "sys");
 
-    PROC cpu() : bat[str,int] := RETURN view_gdk_cpu;
+    PROC cpu() : bat[str,int] RETURN view_gdk_cpu;
     ADDHELP("cpu", "boncz", "Mar 22 1998", "Global cpu usage info", "sys");
 
-    PROC memory() : bat[str,int] := RETURN view_gdk_memory;
+    PROC memory() : bat[str,int] RETURN view_gdk_memory;
     ADDHELP("memory", "boncz", "Mar 22 1998", "Global memory usage info","sys");
 
-    PROC io() : bat[str,int] := RETURN view_gdk_io;
+    PROC io() : bat[str,int] RETURN view_gdk_io;
     ADDHELP("io", "boncz", "Mar 22 1998", "Global IO activity info", "sys");
 
-    PROC bbp() : bat[str,int] := RETURN view_gdk_bbp;
+    PROC bbp() : bat[str,int] RETURN view_gdk_bbp;
     ADDHELP("bbp", "boncz", "Mar 22 1998", "Global BBP usage info", "sys");
 
     PROC readonly( BAT[any::1,any::2] b, int mode) : BAT[any::1,any::2]
-        := return access(b,mode);
+        return access(b,mode);
     ADDHELP("readonly", "boncz", "Aug  6 1998",
         "deprecated. Use 'b.access' instead.", "sys");
  
-    PROC readonly( BAT[any::1,any::2] b) : int := {
+    PROC readonly( BAT[any::1,any::2] b) : int {
         var s := b.info.find("batRestricted");
         if (s = "updatable") {
                 return BAT_WRITE;

@@ -306,43 +306,43 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
     const PI := 3.14;
     const E := 2.71;
 
-    proc debug := {
+    proc debug() : void {
         printf($(1..));
         printf("\n");
     }
-    proc gsum(a) := {
+    proc gsum(bat[any,any] a) : int {
         if (a.accpresent = datavector) {
             debug("!sum: on vector of %s", str(a));
             return a.vector.sum;
         }
         return a.sum;
     }
-    proc avg := { 
+    proc avg(..any..) : any { 
         return sum($1)/count($1); 
     }
-    proc "{count}" := { 
+    proc "{count}"(..any..) : int { 
         return histogram($1.reverse);
     }
-    proc uunique := {
+    proc uunique(..bat[any,any]..) : bat[any,any] {
         return $1.project.kunique($2);
     }
-    proc udiff := {
+    proc udiff(..bat[any,any]..) : bat[any,any]  {
         return $1.project.kdiff($2);
     }
-    proc uintersect := {
+    proc uintersect(..bat[any,any]..) : bat[any,any]  {
         return $1.project.kintersect($2);
     }
-    proc uunion := {
+    proc uunion(..bat[any,any]..) : bat[any,any]  {
         return $1.project.kunion($2);
     }
-    proc gorder(b) := {
+    proc gorder(bat[any,any] b) : bat[any,any] {
         if (b.count < 20000) {
             return b.order;
         }
         var h := b.reverse.histogram;
         return b.order(h);
     }
-    proc gsemijoin(a,b) := {
+    proc gsemijoin(bat[any,any] a,bat[any,any] b) : bat[any,any]  {
         if (and(a.ordered, not(b.ordered), a.count > (5 * b.count))) {
             debug("!semijoin: order b: %s", str(b));
             b.madvise(BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED);
@@ -372,7 +372,7 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
         return semijoin(a,b);
     }
     proc gjoin;
-    proc gjoin(a,b) := {
+    proc gjoin(bat[any,any] a,bat[any,any] b) : bat[any,any]  {
   	var merge := and((a.count > 200000), (b.count > 200000));
 	var ao := a.reverse.ordered;
 	var bo := b.ordered;
@@ -412,9 +412,8 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
         debug("!join: mergejoin(%s,%s)", str(a), str(b));
         return join(a,b);
     }
-    proc gselect := {
+    proc gselect(bat(any,any) b, ..any..)  : bat[any,any] {
         var lo := $2;
-        var b  := $1;
 
         if ($0 = 2) {
             return b.select(lo);
@@ -441,9 +440,8 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
         }
         return b.uselect(lo,hi);
     }
-    proc guselect := {
+    proc guselect(bat(any,any) b, ..any..)  : bat[any,any] {
         var lo := $2;
-        var b  := $1;
 
         if ($0 = 2) {
             return b.uselect(lo);

@@ -270,7 +270,7 @@ proc aggrtst(int num, int fanout, str agg, ..str..) {
         }
 }
 
-PROC test_aggr() : void := {
+PROC test_aggr() : void {
 	module("decimal");
 	var printed := FALSE;
 	aggrtst(5,9,"sum","sht","int","lng","flt","dbl");
@@ -288,7 +288,7 @@ PROC test_aggr() : void := {
 	aggrtst(5,9,"variance","sht","int","lng","flt","dbl");
 }
 
-PROC test_aggr_uchr() : void := {
+PROC test_aggr_uchr() : void {
 	module("decimal");
 	var printed := FALSE;
 	aggrtst(5,9,"sum","uchr");

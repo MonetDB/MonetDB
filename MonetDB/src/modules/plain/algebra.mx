@@ -516,9 +516,7 @@ CONST GT := 1;
 CONST GE := 2;
 
     PROC ADDHELP(str cmd, str aut, str dat, str hlp, str modname) : void {
-        #VAR fid := monet_fcn_nme.reverse.find(cmd);
-        #VAR fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.find(cmd);
-        VAR fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.min;
+        var fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.min();
         monet_fcn_dsc.insert(fid, hlp);
         monet_fcn_aut.insert(fid, aut);
         monet_fcn_dat.insert(fid, dat);
@@ -557,7 +555,7 @@ that for the moment are defined as procs.
     ADDHELP("intersect", "boncz", "Apr  6 1997",
              "backward compatibility: use sintersect() explicitly.", "algebra");
 
-    PROC union(bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2] := 
+    PROC union(bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2]  
 		return sunion(b1,b2);
     ADDHELP("union", "boncz", "Feb  6 1996",
             "backward compatibility: use sunion() explicitly.", "algebra");
@@ -644,7 +642,7 @@ that for the moment are defined as procs.
 
     # SQL like functionality, vectorized MIL implementation
     # TODO: escaped percents
-    PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid] := {
+    PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid]  {
         var s, idx := pat.search('%');
 
         if (idx = -1) {

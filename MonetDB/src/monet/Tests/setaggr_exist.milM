@@ -60,8 +60,8 @@ y.print;
 y.sort_ht.print;
 
 
-bs.accbuild(hash);
-bss.accbuild(hash);
+bs.accbuild("hash");
+bss.accbuild("hash");
 
 printf("#~BeginVariableOutput~#\n");
 bs@hashloop(oid(5)) {
@@ -87,8 +87,8 @@ bss@hashloop(oid(5)) {
   print($t);
 }
 
-bs.reverse.accbuild(hash);
-bss.reverse.accbuild(hash);
+bs.reverse.accbuild("hash");
+bss.reverse.accbuild("hash");
 
 x := {exist}(bs);
 x.print;

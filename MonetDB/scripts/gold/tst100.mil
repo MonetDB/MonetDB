@@ -1,3 +1,7 @@
+var t0_pos, t1_pos, t2_pos, t3_pos, t4_pos, t5_pos, t6_pos, t7_pos, t8_pos, t9_pos, t10_pos, t11_pos;
+var t0_neg, t1_neg, t2_neg, t3_neg, t4_neg, t5_neg, t6_neg, t7_neg, t8_neg, t9_neg, t10_neg, t11_neg;
+var tmp0, tmp1, tmp2, tmp3, tmp4;
+
 setoid(oid(20000000));
 cpu;
 load("car_age");
@@ -15,6 +19,7 @@ load("car_neg");
 # car_pos.hash;
 # car_neg.hash;
 commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+.
 t0_pos := semijoin(car_age, car_pos).histogram; t0_neg := semijoin(car_age, car_neg).histogram;
 t2_pos := semijoin(car_carprice, car_pos).histogram; t2_neg := semijoin(car_carprice, car_neg).histogram;
 t3_pos := semijoin(car_category, car_pos).histogram; t3_neg := semijoin(car_category, car_neg).histogram;

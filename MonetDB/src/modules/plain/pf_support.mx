@@ -101,7 +101,7 @@ and the head values from the batlist"
 .END pf_support;
 
 @mil
-PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int := 
+PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int 
 {
         VAR rtrn := 0;
         VAR h0 := b.ordered();

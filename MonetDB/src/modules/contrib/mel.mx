@@ -44,7 +44,7 @@ extension system.
 
 @* Example Script
 @mil
-proc mel_test ():= {
+proc mel_test() : void {
 	var m:= overloadedstr("tird string");
 	m := 1;
 }

@@ -269,7 +269,7 @@ number of physical IOs.
 @mil
     # The code below collects the differences 
     # subsequently we can print the information
-    proc pmPrint :={
+    proc pmPrint() : void {
 	var mprof_cpu := mprof_Ecpu [-] mprof_Bcpu;
 	mprof_cpu.rename("utime_stime");
 	var mprof_io  := mprof_Eio [-] mprof_Bio;
@@ -288,7 +288,7 @@ number of physical IOs.
     }
 
     # more interesting prints
-    proc pmSummary:={
+    proc pmSummary() : void {
 	var mprof_cpu := mprof_Ecpu [-] mprof_Bcpu;
 	var mprof_io  := mprof_Eio [-] mprof_Bio;
 	var mprof_mem := mprof_Emem [-] mprof_Bmem;
@@ -345,7 +345,7 @@ number of physical IOs.
 		printf("\n");
 		}
     }
-    PROC emptyMallinfo := {
+    PROC emptyMallinfo() : Mallinfo := {
 	RETURN Mallinfo("(0,0,0,0,0,0,0,0)");
     }
 
@@ -362,14 +362,14 @@ VAR perf_end_time;
 VAR perf_end_io;
 VAR perf_end_memory;
 
-proc pNew(Name, Type) :={
-	nme :=sprintf("p%s%s",USER,Name);
-	T := new(int, Type);
+proc pNew(str Name, int Type) : any {
+	var nme :=sprintf("p%s%s",USER,Name);
+	var T := new(int, Type);
 	T.rename(nme);
 	T.persists(true);
 	return T;
 }
-proc pInit := {
+proc pInit() : void {
 	perf_tag_name:= pNew("_tag_name", str);
 	perf_tag_outer:= pNew("_tag_outer", int);
 	perf_tag_size:= pNew("_tag_size", int);
@@ -382,7 +382,7 @@ proc pInit := {
 	commit;
 }
 
-proc pExit := {
+proc pExit() : void {
 	perf_tag_name.destroy;
 	perf_tag_outer.destroy;
 	perf_tag_size.destroy;
@@ -395,11 +395,10 @@ proc pExit := {
 	commit;
 }
 
-proc pBegin(Name) :={
-	var l;
-        l := perf_tag_name.count;
+proc pBegin(str Name) : any {
+        var l := perf_tag_name.count;
         perf_tag_name.insert(l,Name);
-        x:=  io.find("inblock") + io.find("oublock");
+        var x:=  io.find("inblock") + io.find("oublock");
         perf_beg_io.insert(l, x);
         perf_end_io.insert(l, 0);
         x:= memory.find("usmblks") + memory.find("uordblks");
@@ -408,59 +407,59 @@ proc pBegin(Name) :={
         perf_end_time.insert(l, 0);
         perf_tag_size.insert(l, nil);
         perf_tag_outer.insert(l, nil);
-	t:= time;
+	var t:= time;
         perf_beg_time.insert(l, t);
         return l;
 }
-proc pEnd(Tag) := {
-	t:= time;
+proc pEnd(int Tag) : void {
+	var t:= time;
         perf_end_time.replace(Tag, time);
-        x:=  io.find("inblock") + io.find("oublock");
+        var x:=  io.find("inblock") + io.find("oublock");
         perf_end_io.replace(Tag, x);
         x:= memory.find("usmblks") + memory.find("uordblks");
         perf_end_memory.replace(Tag, x);
 }
-proc pOuter(Tag, outer):={
+proc pOuter(int Tag, int outer) : void {
         perf_tag_outer.replace(Tag, Outer);
 }
-proc pSize(Tag, Res):={
+proc pSize(str Tag, bat[any,any] Res) : void {
         perf_tag_size.replace(Tag, Res.count);
 }
 
 pPenalty := 6;
 
 
-proc pPrint(Nme):={
-	tag:= perf_tag_name.select(Nme);
+proc pPrint(Nme) : void {
+	var tag:= perf_tag_name.select(Nme);
 	tag.rename("name");
-	tim:= perf_end_time [-] perf_beg_time;
+	var tim:= perf_end_time [-] perf_beg_time;
 	tim.rename("time");
-	ios:= perf_end_io [-] perf_beg_io;
+	var ios:= perf_end_io [-] perf_beg_io;
 	ios.rename("io");
-	mem:= perf_end_memory [-] perf_beg_memory;
+	var mem:= perf_end_memory [-] perf_beg_memory;
 	mem.rename("memory");
 	print(tag,tim,ios,mem, perf_tag_outer,perf_tag_size);
 }
-proc pSummary:={
-        tim:= perf_end_time [-] perf_beg_time;
+proc pSummary() : void {
+        var tim:= perf_end_time [-] perf_beg_time;
         tim.rename("time");
-        ios:= perf_end_io [-] perf_beg_io;
+        var ios:= perf_end_io [-] perf_beg_io;
         ios.rename("io");
-        mem:= perf_end_memory [-] perf_beg_memory;
+        var mem:= perf_end_memory [-] perf_beg_memory;
         mem.rename("memory");
-	names:= perf_tag_name.reverse.kunique;
+	var names:= perf_tag_name.reverse.kunique;
 	names@batloop() {
-		t:= perf_tag_name.select($h);
-		a:= tim.semijoin(t);
+		var t:= perf_tag_name.select($h);
+		var a:= tim.semijoin(t);
 		a:= a.sum/a.count;
-		b:= ios.semijoin(t);
+		var b:= ios.semijoin(t);
 		b:= b.sum/b.count;
-		c:= mem.semijoin(t);
+		var c:= mem.semijoin(t);
 		c:= c.sum/c.count;
 		printf("Tag %s average cpu %d io=%d mem=%d\n", $h,a,b,c);
 	}
 }
-proc pDump:= {
+proc pDump() : void  {
         printf("perf_tag_name\n"); perf_tag_name.print;
         printf("perf_tag_outer\n"); perf_tag_outer.print;
         printf("perf_tag_size\n"); perf_beg_time.print;
@@ -1492,14 +1491,14 @@ module(gdkmem,bulk);
 module(integer,groupFunctional);
 
 
-proc pmSummary := {
+proc pmSummary() : void {
 	mprof_cnt := mprof_interval.head(1).sort;
 	mprof_cnt := mprof_cnt.groupReduce(&int_add(int,int),0);
 	mprof_cnt.rename( "count" );
 	print( mprof_name, mprof_cnt);
 }
 
-proc pmPrint := {
+proc pmPrint() : void {
    	mprof_cpu := mprof_Ecpu [-] mprof_Bcpu;
    	mprof_io  := mprof_Eio  [-] mprof_Bio;
    	mprof_mem := mprof_Emem [-] mprof_Bmem;

@@ -259,8 +259,8 @@ y.sort_ht.print;
 [ 12@0,	  false	  ]
 
 
-bs.accbuild(hash);
-bss.accbuild(hash);
+bs.accbuild("hash");
+bss.accbuild("hash");
 
 printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -330,8 +330,8 @@ bss@hashloop(oid(5)) {
 [ true ]
 [ false ]
 
-bs.reverse.accbuild(hash);
-bss.reverse.accbuild(hash);
+bs.reverse.accbuild("hash");
+bss.reverse.accbuild("hash");
 
 x := {exist}(bs);
 x.print;

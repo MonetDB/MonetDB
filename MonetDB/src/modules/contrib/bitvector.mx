@@ -73,7 +73,7 @@ support the operations AND and OR.
 .END bitvector;
 
 @mil
-PROC test_bitvector() : void := {
+PROC test_bitvector() : void {
 
 	a := new(int,oid); 
 	a.insert(10, oid(0)); 

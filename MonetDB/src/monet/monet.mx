@@ -554,7 +554,7 @@ ptr monet_eval(str mil_script, int *ret_type){
 			return (ptr) b;
 		}
 		return (ptr) res; /* HACK: value space is first!! */
-	} else if (i < 0) {
+	} else if (i >= 0) {
 	   	*ret_type = i;
 	} else {
 	   	*ret_type = TYPE_void;

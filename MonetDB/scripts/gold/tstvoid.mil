@@ -1,3 +1,9 @@
+var t0_pos, t1_pos, t2_pos, t3_pos, t4_pos, t5_pos, t6_pos, t7_pos, t8_pos, t9_pos;
+var t10_pos, t11_pos, t12_pos, t13_pos, t14_pos, t15_pos, t16_pos, t17_pos, t18_pos, t19_pos;
+var t0_neg, t1_neg, t2_neg, t3_neg, t4_neg, t5_neg, t6_neg, t7_neg, t8_neg, t9_neg;
+var t10_neg, t11_neg, t12_neg, t13_neg, t14_neg, t15_neg, t16_neg, t17_neg, t18_neg, t19_neg;
+var tmp0, tmp1, tmp2, tmp3, tmp4;
+
 setoid(oid(20000000));
 module(enum);
 var age_t := enum_load("age_t");

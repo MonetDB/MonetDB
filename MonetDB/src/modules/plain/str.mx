@@ -141,51 +141,52 @@ The following script is used for testing the string module.
 
 @mil
 
+CONST monet_unicode_case := bat("monet_unicode_case");
+
 # extra SQL string functions, mostly needed because string positions in
 # SQL start at 1 not 0.
-
-proc ascii( str s ) {
+proc ascii( str s ) : int {
 	return unicodeAt(s,0);
 }
 
-proc substring( str s, int start, int l ) {
+proc substring( str s, int start, int l ) : str {
 	if (start < 1) start := 1;
 	return string(s, start - 1, l);
 }
-proc substring( str s, int start ) {
+proc substring( str s, int start )  : str{
 	if (start < 1) start := 1;
 	return string(s, start - 1);
 }
-proc stringleft( str s, int cnt ) {
+proc stringleft( str s, int cnt ) : str {
 	return string(s, 0, cnt );
 }
-proc stringright( str s, int cnt ) {
+proc stringright( str s, int cnt ) : str {
 	return string(s, length(s) - cnt );
 }
 # search for string s1 in s2
-proc locate( str s1, str s2 ) {
+proc locate( str s1, str s2 ) : int {
 	var p := search(s2,s1);
 	if (p >= 0) return p + 1; 
 	# return 0 on error
 	return 0;
 }
-proc locate( str s1, str s2, int start ) {
+proc locate( str s1, str s2, int start )  : int{
 	var p := search(s2,substring(s1,start));
 	if (p >= 0) return p + 1; 
 	# return 0 on error
 	return 0;
 }
-proc stringlength( str s) {
+proc stringlength( str s)  : int{
 	return length(rtrim(s));
 }
-proc stringinsert( str s, int start, int l, str s2 ) {
+proc stringinsert( str s, int start, int l, str s2 ) : str {
 	return substring(s,start,l) + s2 + substring(s,start+l);
 }
-proc stringreplace( str s1, str s2, str s3 ) {
+proc stringreplace( str s1, str s2, str s3 ) : str {
 	return substitute(s1,s2,s3, true);
 }
 # string of c times s
-proc repeat(str s, int c) {
+proc repeat(str s, int c) : str {
 	var i := 0;
 	var res := "";
 	while(i<c) {
@@ -195,7 +196,7 @@ proc repeat(str s, int c) {
 	return res;
 }
 # string of c spaces
-proc space(int c) {
+proc space(int c) : str {
 	var i := 0;
 	var res := "";
 	while(i<c) {
@@ -206,10 +207,10 @@ proc space(int c) {
 }
 
 
-PROC test_str() : void := {
+PROC test_str() : void {
   setoid(oid(20000000));
-  i1 := "This is a test";
-  i2 := "of the str atomic type";
+  var i1 := "This is a test";
+  var i2 := "of the str atomic type";
 
   (("concat an int "+1)+" with a string "+i1+(" with an dbl "+dbl(1.0))).print; 
   (("concat an int "+1) + " with a string").print; 

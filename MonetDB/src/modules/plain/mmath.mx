@@ -134,26 +134,26 @@ The constants defined in math.h are defined using the following mil code.
 	const M_SQRT2	:= 1.41421356237309504880LL;
 	const M_SQRT1_2	:= 0.70710678118654752440LL;
 
-proc floor(flt f) : flt := return flt(floor(dbl(f)));
-proc ceil(flt f) : flt := return flt(ceil(dbl(f)));
-proc sin(flt f) : flt := return flt(sin(dbl(f)));
-proc cos(flt f) : flt := return flt(cos(dbl(f)));
-proc tan(flt f) : flt := return flt(tan(dbl(f)));
-proc asin(flt f) : flt := return flt(asin(dbl(f)));
-proc acos(flt f) : flt := return flt(acos(dbl(f)));
-proc atan(flt f) : flt := return flt(atan(dbl(f)));
-proc sinh(flt f) : flt := return flt(sinh(dbl(f)));
-proc cosh(flt f) : flt := return flt(cosh(dbl(f)));
-proc tanh(flt f) : flt := return flt(tanh(dbl(f)));
-proc sqrt(flt f) : flt := return flt(sqrt(dbl(f)));
-proc exp(flt f) : flt := return flt(exp(dbl(f)));
-proc log(flt f) : flt := return flt(log(dbl(f)));
-proc log10(flt f) : flt := return flt(log10(dbl(f)));
+proc floor(flt f) : flt return flt(floor(dbl(f)));
+proc ceil(flt f) : flt  return flt(ceil(dbl(f)));
+proc sin(flt f) : flt   return flt(sin(dbl(f)));
+proc cos(flt f) : flt   return flt(cos(dbl(f)));
+proc tan(flt f) : flt   return flt(tan(dbl(f)));
+proc asin(flt f) : flt  return flt(asin(dbl(f)));
+proc acos(flt f) : flt  return flt(acos(dbl(f)));
+proc atan(flt f) : flt  return flt(atan(dbl(f)));
+proc sinh(flt f) : flt  return flt(sinh(dbl(f)));
+proc cosh(flt f) : flt  return flt(cosh(dbl(f)));
+proc tanh(flt f) : flt  return flt(tanh(dbl(f)));
+proc sqrt(flt f) : flt  return flt(sqrt(dbl(f)));
+proc exp(flt f) : flt   return flt(exp(dbl(f)));
+proc log(flt f) : flt   return flt(log(dbl(f)));
+proc log10(flt f) : flt return flt(log10(dbl(f)));
 
 @* Example Script
 @mil
 
-PROC test_mmath() : void := {
+PROC test_mmath() : void {
 	setoid(oid(20000000));
 	asin(sin(M_PI)).print;
 	acos(cos(M_PI)).print;
@@ -185,7 +185,7 @@ PROC test_mmath() : void := {
 	finite(pow(-2.0LL,5001.0LL)).print;
 }
 
-PROC test_mmath_nan() : void := {
+PROC test_mmath_nan() : void {
 	log(-1.0LL).print;
 	(log(-1.0LL)=log(-1.0LL)).print;
 	isnan(log(-1.0LL)).print;

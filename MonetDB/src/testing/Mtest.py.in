@@ -1038,9 +1038,9 @@ def GetBitsAndModsAndStatic(env) :
             {
                 # print a list of all modules found
                 # "Modules: mod1, mod2, ..."
-                MODs := kunion([~monet_mod_nme].reverse,[~view_modules].reverse).kunique;
+                var MODs := kunion([~bat("monet_mod_nme")].reverse,[~view_modules].reverse).kunique;
                 printf("\\nModules: ");
-                x := "";
+                var x := "";
                 MODs@batloop{
                     printf("%s\'%s\'",x,$h);
                     x:=",";
@@ -1140,9 +1140,9 @@ def CheckBATs(env, TST, TSTDB) :
         {
             # print a list of all persistent BATs
             # "BATs: bat1, bat2, ..."
-            BATs := view_bbp_name();
+            var BATs := view_bbp_name();
             printf("\\nBATs: ");
-            x := "";
+            var x := "";
             BATs@batloop{
                 printf("%s\'%s\'",x,$t);
                 x:=",";

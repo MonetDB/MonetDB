@@ -419,7 +419,7 @@ int io_fwrite(Stream *S, str buf, int *nbytes ){
 }
 @mil
 
-PROC test_streams() : void := {
+PROC test_streams() : void {
     s := open_wastream( "test.mil" );
     stream_write( s, "test\n" );
     stream_close( s );

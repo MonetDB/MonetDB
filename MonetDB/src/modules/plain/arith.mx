@@ -305,22 +305,22 @@ the following example script will do each operation in the
 arith module. it can be used for testing.
 
 @mil
-PROC test_arith() : void := {
+PROC test_arith() : void {
   setoid(oid(20000000));
-  sht1 := sht(2);
-  sht2 := sht(5);
-  int1 := 5;
-  int2 := 2;
-  flt1 := 2.5;
-  flt2 := 5.4;
-  dbl1 := dbl(-2.500001);	 # may also need string since float is default
-  dbl2 := dbl(54.00456789);      # real and is less significant	
-  lng1 := lng("-9000000000000"); # string needed because lng doesn't fit in an
-  lng2 := lng("5400456789");     # int
-  oid1 := oid(int1);
-  oid2 := oid(int2);
+  var sht1 := sht(2);
+  var sht2 := sht(5);
+  var int1 := 5;
+  var int2 := 2;
+  var flt1 := 2.5;
+  var flt2 := 5.4;
+  var dbl1 := dbl(-2.500001);	 # may also need string since float is default
+  var dbl2 := dbl(54.00456789);      # real and is less significant	
+  var lng1 := lng("-9000000000000"); # string needed because lng doesn't fit in an
+  var lng2 := lng("5400456789");     # int
+  var oid1 := oid(int1);
+  var oid2 := oid(int2);
 
-  sht1.print;
+  sht1.print();
   sht2.print;
   int1.print;
   int2.print;

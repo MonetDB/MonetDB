@@ -353,7 +353,7 @@ int cb(int *cb, color *c) {
 @+ Test Script
 @mil
 
-PROC test_color() : void := {
+PROC test_color() : void {
 	var c := rgb(100,101,102);
 	print(c);
 	print(red(c));

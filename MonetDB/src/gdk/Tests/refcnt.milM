@@ -8,7 +8,7 @@ PROC tmp() : void := {
 
 #NOTE: the reference counter of bat(name) is during insertion
 #      into bat(b) correctly increased
-PROC addBAT(bat b,str name) := {
+PROC addBAT(bat b,str name) : void {
 	VAR add := new(int,int);
 	add.rename(name);
 	b.insert(name,add);
@@ -16,11 +16,11 @@ PROC addBAT(bat b,str name) := {
 
 #BUG: bat(name) will not be deleted in the garbage collection
 #     because the delete doesn't decrease the reference counter
-PROC delBAT(bat b,str name) := {
+PROC delBAT(bat b,str name) : void {
 	b.delete(name);
 }
 
-PROC createBAT(str name) := {
+PROC createBAT(str name) : bat[int,int] {
 	VAR res := new(int,int);
 	res.rename(name);
 	RETURN res;

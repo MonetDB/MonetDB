@@ -1,26 +1,24 @@
 {
-VAR MMO_location := new(oid,str);
-MMO_location.rename("MMO_location");
-MMO_location.persists(true);
+VAR MMO_location := new(oid,str).rename("MMO_location").persists(true);
 
-MMO_location.insert(oid(0),"http://www.metacrawler.com/");
-MMO_location.insert(oid(1),"http://www.yahoo.com/");
-MMO_location.insert(oid(2),"http://www.altavista.com/");
-MMO_location.insert(oid(3),"http://www.searchengineshowdown.com/");
+bat("MMO_location").insert(oid(0),"http://www.metacrawler.com/");
+bat("MMO_location").insert(oid(1),"http://www.yahoo.com/");
+bat("MMO_location").insert(oid(2),"http://www.altavista.com/");
+bat("MMO_location").insert(oid(3),"http://www.searchengineshowdown.com/");
 
-MMO_location.print;
+bat("MMO_location").print;
 }
 
 commit;
 
 {
-MMO_location.delete(oid(0));
-MMO_location.delete(oid(2));
+bat("MMO_location").delete(oid(0));
+bat("MMO_location").delete(oid(2));
 
-MMO_location.insert(oid(0),"http://www.metacrawler.com/");
-MMO_location.insert(oid(2),"http://www.altavista.com/");
+bat("MMO_location").insert(oid(0),"http://www.metacrawler.com/");
+bat("MMO_location").insert(oid(2),"http://www.altavista.com/");
 
-MMO_location.print;
+bat("MMO_location").print;
 }
 
 commit;
@@ -28,9 +26,9 @@ commit;
 {
 unload("MMO_location").print;
 
-MMO_location.insert(oid(4),"http://www.ibiblio.org/javafaq/");
+bat("MMO_location").insert(oid(4),"http://www.ibiblio.org/javafaq/");
 
-MMO_location.print;
+bat("MMO_location").print;
 }
 
 quit;
