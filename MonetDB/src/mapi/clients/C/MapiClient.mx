@@ -702,7 +702,7 @@ dump_table(Mapi mid, char *tname)
 		       "\"tables\" \"t\" "
 		 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
 		       "\"k\".\"table_id\" = \"t\".\"id\" AND "
-		       "\"k\".\"rkey\" = -1 AND "
+		       "\"k\".\"type\" = 0 AND "
 		       "\"t\".\"name\" = '%s' "
 		 "ORDER BY \"nr\"",
 		 tname);
@@ -726,10 +726,61 @@ dump_table(Mapi mid, char *tname)
 		}
 		if (cnt == 0) {
 			fprintf(toConsole, ",\n\t");
-			if (k_name && k_name[0] != '~')
+			if (k_name)
 				fprintf(toConsole, "CONSTRAINT \"%s\" ",
 					k_name);
 			fprintf(toConsole, "PRIMARY KEY (");
+		} else
+			fprintf(toConsole, ", ");
+		fprintf(toConsole, "\"%s\"", c_column);
+		cnt++;
+	}
+	if (cnt)
+		fprintf(toConsole, ")");
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
+	snprintf(query, sizeof(query),
+		 "SELECT \"kc\".\"column\","		/* 0 */
+		 	"\"kc\".\"nr\", "		/* 1 */
+			"\"k\".\"name\" "		/* 2 */
+		 "FROM \"keycolumns\" \"kc\", "
+		       "\"keys\" \"k\", "
+		       "\"tables\" \"t\" "
+		 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
+		       "\"k\".\"table_id\" = \"t\".\"id\" AND "
+		       "\"k\".\"type\" = 1 AND "
+		       "\"t\".\"name\" = '%s' "
+		 "ORDER BY \"nr\"",
+		 tname);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+	cnt = 0;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		char *c_column = mapi_fetch_field(hdl, 0);
+		char *k_name = mapi_fetch_field(hdl, 2);
+
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+		if (cnt == 0) {
+			fprintf(toConsole, ",\n\t");
+			if (k_name)
+				fprintf(toConsole, "CONSTRAINT \"%s\" ",
+					k_name);
+			fprintf(toConsole, "UNIQUE (");
 		} else
 			fprintf(toConsole, ", ");
 		fprintf(toConsole, "\"%s\"", c_column);
@@ -763,7 +814,7 @@ dump_table(Mapi mid, char *tname)
 		       "\"fkk\".\"rkey\" = \"pkk\".\"id\" and"
 		       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" and"
 		       "\"fkt\".\"name\" = '%s'"
-		 "ORDER BY \"name\", \"nr\"",
+		 "ORDER BY \"fkk\".\"name\", \"nr\"",
 		 tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
@@ -804,9 +855,7 @@ dump_table(Mapi mid, char *tname)
 			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
 		}
 		fprintf(toConsole, ",\n\t");
-		if (c_fkname &&
-		    (c_fkname[0] != 'c' ||
-		     ((unsigned) (c_fkname[1] - '0') > 9)))
+		if (c_fkname)
 			fprintf(toConsole, "CONSTRAINT \"%s\" ", c_fkname);
 		fprintf(toConsole, "FOREIGN KEY (");
 		for (i = 0; i < nkeys; i++) {
