@@ -25,7 +25,7 @@
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
 
-ALL $CVSROOT/CVSROOT/changelog %s
+ALL $CVSROOT/CVSROOT/warn %s
 
 CVSROOT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} sjoerd@users.sourceforge.net
 

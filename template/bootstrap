@@ -42,9 +42,9 @@ _AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 10
 _REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
 if [ $_AM_VERSION -gt $_REQ_AM_VERSION ]; then
-	echo "automake $AM_VERSION is newer then $REQ_AM_VERSION"
+	echo "automake $AM_VERSION is newer than $REQ_AM_VERSION"
 elif [ $_AM_VERSION -lt $_REQ_AM_VERSION ]; then
-	echo "automake $AM_VERSION is older then $REQ_AM_VERSION"
+	echo "automake $AM_VERSION is older than $REQ_AM_VERSION"
 fi
 
 $AUTOGEN `pwd` $_AM_VERSION
