@@ -1725,7 +1725,7 @@ mapi_bind_numeric(MapiHdl hdl, int fnr, int scale, int prec, void *ptr)
 MapiMsg
 mapi_clear_bindings(MapiHdl hdl)
 {
-	mapi_hdl_check(hdl, "mapi_clear_params");
+	mapi_hdl_check(hdl, "mapi_clear_bindings");
 	if (hdl->fields)
 		memset(hdl->fields, 0, hdl->maxfields * sizeof(*hdl->fields));
 	return MOK;
