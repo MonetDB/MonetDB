@@ -1507,7 +1507,7 @@ int start_count(counter *retval, int *event0, int *event1) {
             perror("! start_count/vperfctr_open");
             return GDK_FAIL;
         }
-        retval->generation = (lng)Self;
+        retval->generation = (lng)((ptrdiff_t)Self);
         memset(&control,0,sizeof(control));
         control.cpu_control.tsc_on = 1;
         control.cpu_control.nractrs = 2;
@@ -1740,7 +1740,7 @@ int stop_count(counter *retval, counter *c) {
         }
  #elif ( defined(HW_Linux) && defined(HAVE_LIBPERFCTR) )
         struct perfctr_sum_ctrs after;
-        struct vperfctr *Self = (struct vperfctr *)c->generation;
+        struct vperfctr *Self = (struct vperfctr *)((ptrdiff_t)c->generation);
 	int rtrn;
         vperfctr_read_ctrs(Self,&after);
         count0 = (lng)after.pmc[0] - c->count0;
