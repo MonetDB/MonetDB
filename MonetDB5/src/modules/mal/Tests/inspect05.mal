@@ -1,15 +1,21 @@
 #Illustrate the modules loaded after start
-m:= inspect.getModules();
-print(m);
+nme:= inspect.getModuleNames();
+print(nme);
 
 printf("Patterns\n");
-p:= inspect.getPatterns();
+p:= inspect.getPatternNames();
 print(p);
 
 printf("Commands\n");
-p:= inspect.getCommands();
+p:= inspect.getCommandNames();
 print(p);
 
 printf("Functions\n");
-p:= inspect.getFunctions();
+p:= inspect.getFunctionNames();
 print(p);
+
+k:= inspect.getKind();
+m:= inspect.getModule();
+f:= inspect.getFunction();
+s:= inspect.getSignature();
+print(k,m,f,s);

@@ -21,9 +21,9 @@ stdout of test 'inspect10` in directory 'src/modules/mal` itself:
 #end dummy;
 function Admin.dummy(i:int):void;	# 0  (dummy:void)<-(i:int)
     io.print(i);	# 1 IOprint_val ($2:int)<-(i:int)
-    b := inspect.getDefinition();	# 2 INSPECTcodeDump (b:bat[:void,:str])
+    b := mdb.getDefinition();	# 2 MDBcodeDump (b:bat[:void,:str])
     io.print(b);	# 3 IOprint_val ($4:int)<-(b:bat[:void,:str])
-    inspect.showFunction();	# 4 INSPECTshowFunction ($5:void)
+    mdb.showFunction();	# 4 MDBshowFunction ($5:void)
 end dummy;	# 5  
 #
 #dummy(1);
@@ -39,7 +39,7 @@ function Admin.main():int;	# 0  (main:int)
     io.printf("get function properties\n");	# 2 IOprint_str ($3:int)<-($4:str)
     l := inspect.getSignature("Admin","dummy");	# 3 INSPECTgetSignature (l:bat[:str,:str])<-($6:str)($7:str)
     io.print(l);	# 4 IOprint_val ($8:int)<-(l:bat[:str,:str])
-    inspect.showFunction("Admin","dummy");	# 5 INSPECTshowFunction3 ($9:void)<-($6:str)($7:str)
+    mdb.showFunction("Admin","dummy");	# 5 MDBshowFunction3 ($9:void)<-($6:str)($7:str)
 end main;	# 6  
 [ 1 ]
 #-------------------------------------------------#
@@ -48,15 +48,15 @@ end main;	# 6
 #-------------------------------------------------#
 [ 0,	  "function Admin.dummy(i:int):void;"	  ]
 [ 1,	  "    io.print(i);"			  ]
-[ 2,	  "    b := inspect.getDefinition();"	  ]
+[ 2,	  "    b := mdb.getDefinition();"	  ]
 [ 3,	  "    io.print(b);"			  ]
-[ 4,	  "    inspect.showFunction();"		  ]
+[ 4,	  "    mdb.showFunction();"		  ]
 [ 5,	  "end dummy;"				  ]
 function Admin.dummy(i:int):void;
     io.print(i);
-    b := inspect.getDefinition();
+    b := mdb.getDefinition();
     io.print(b);
-    inspect.showFunction();
+    mdb.showFunction();
 end dummy;
 get function properties
 #-------------------------#

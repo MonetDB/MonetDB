@@ -1,9 +1,9 @@
 #self inspection of the code base
 function dummy(i:int);
 	print(i);
-	b:= inspect.getDefinition();
+	b:= mdb.getDefinition();
 	print(b);
-	inspect.showFunction();
+	mdb.showFunction();
 end dummy;
 
 dummy(1);
@@ -12,4 +12,4 @@ printf("get function properties\n");
 l:= inspect.getSignature("Admin","dummy");
 print(l);
 
-inspect.showFunction("Admin","dummy");
+mdb.showFunction("Admin","dummy");

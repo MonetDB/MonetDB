@@ -27,15 +27,15 @@ stdout of test 'inspect00` in directory 'src/modules/mal` itself:
 #	b1:= inspect.getStackFrame(2);
 #end tst;
 function Admin.tst():void;	# 0  (tst:void)
-    i := inspect.getStackDepth();	# 1 INSPECTStkDepth (i:int)
+    i := mdb.getStackDepth();	# 1 MDBStkDepth (i:int)
     io.printf("stack depth %d\n",i);	# 2 IOprint_formatted_int ($2:int)<-($3:str)(i:int)
-    t := inspect.getStackTrace();	# 3 INSPECTStkTrace (t:bat[:void,:str])
+    t := mdb.getStackTrace();	# 3 MDBStkTrace (t:bat[:void,:str])
     io.print(t);	# 4 IOprint_val ($5:int)<-(t:bat[:void,:str])
-    b0 := inspect.getStackFrame(0);	# 5 INSPECTStkFrameN (b0:bat[:str,:str])<-($7:int)
+    b0 := mdb.getStackFrame(0);	# 5 MDBStkFrameN (b0:bat[:str,:str])<-($7:int)
     io.print(b0);	# 6 IOprint_val ($8:int)<-(b0:bat[:str,:str])
-    b1 := inspect.getStackFrame(1);	# 7 INSPECTStkFrameN (b1:bat[:str,:str])<-($10:int)
+    b1 := mdb.getStackFrame(1);	# 7 MDBStkFrameN (b1:bat[:str,:str])<-($10:int)
     io.print(b1);	# 8 IOprint_val ($11:int)<-(b1:bat[:str,:str])
-    b1 := inspect.getStackFrame(2);	# 9 INSPECTStkFrameN (b1:bat[:str,:str])<-($12:int)
+    b1 := mdb.getStackFrame(2);	# 9 MDBStkFrameN (b1:bat[:str,:str])<-($12:int)
 end tst;	# 10  
 #
 #tst();
@@ -47,8 +47,8 @@ stack depth 2
 #---------------------------------------------------------#
 # stk	trace						  # name
 # int	str						  # type
-#---------------------------------------------------------#
-[ 0,	  "inspect.getStackTrace(); at #3 in tst"	  ]
+#-------------------------------------------------#
+[ 0,	  "mdb.getStackTrace(); at #3 in tst"	  ]
 [ 1,	  "Admin.tst(); at #1 in main"			  ]
 #-----------------------------------------#
 # stk	frame				  # name
