@@ -73,7 +73,7 @@ main(int argc, char *argv){
 
 The mapi_connect() operation establishes a communication channel
 with a running server on the local machine. The user identification
-is the ubiguitous guest, for whom we do not require a password.
+is the ubiguitous anonymous guest, for whom we do not require a password.
 The query language interface is "sql". Alternatives are the lower
 level languages "mil" and "mal". Future versions are expected to
 recognize also "xcore" and "xquery".
@@ -165,8 +165,11 @@ mapi_prepare()	&	Prepare a query for execution\\
 mapi_prepare_array()	&	Prepare a query for execution using arguments\\
 mapi_query()	&	Send a query for execution\\
 mapi_query_array()	& Send a query for execution with arguments\\
+mapi_quick_query()	&	Send a query for execution\\
+mapi_quick_query_array()	& Send a query for execution with arguments\\
 mapi_quote()	& Escape characters\\
 mapi_rows_affected()	& Obtain number of rows changed\\
+mapi_response()	&	Quick pass response to stream\\
 mapi_seek_row()	&	Move row reader to specific location in cache\\
 mapi_table()	&	Get current table name\\
 mapi_timeout()	&	Set timeout for long-running queries[TODO]\\
@@ -230,6 +233,14 @@ This routine sends the Command to the database server replacing
 the placeholders by the string arguments presented. The default placeholder
 is the question mark (?).
 
+\item[MapiMsg mapi_quick_query(Mapi mid, char *Command, FILE *fd)]:
+Similar to mapi_query, except that the response of the server is
+not analysed, but shipped immediately to the file indicated.
+
+\item[MapiMsg mapi_quick_query_array(Mapi mid, char *Command, char **argv, FILE *fd)]:
+Similar to mapi_query, except that the response of the server is
+not analysed, but shipped immediately to the file indicated.
+
 \item[int mapi_num_fields(Mapi mid)]:
 Return the number of fields in the current row.
 
@@ -255,6 +266,10 @@ All rows are cached at the client side first. Subsequent calls
 to either mapi_fetch_row() will take
 the row from the cache. The number or rows cached 
 is returned.
+
+\item[int mapi_response(Mapi mid, stream s)]:
+Read the answer to a query and pass the results verbatim
+to a stream. The result is not analysed, nor cached.
 
 \item[MapiMsg mapi_seek_row(Mapi mid, int rownr)];
 Reset the row pointer to the requested row number;
@@ -399,7 +414,7 @@ MERROR  & Mapi internal error.\\
 @h
 
 #define MONET5
-#define BLOCKED
+#define BLOCKED 		 /* currently not supported on V4.*/
 
 #include  <stdio.h>
 #include  <stream.h>
@@ -480,6 +495,7 @@ automatic type coercing between back-end and application.
 typedef struct{
 	char tablename[NAMELEN];
 	char columnname[NAMELEN];
+	char columntype[NAMELEN];
 	int  colwidth;
 	int  coltype;
 	int  precision;
@@ -588,8 +604,11 @@ mapi_export MapiMsg mapi_ping(Mapi mid);
 mapi_export MapiMsg mapi_prepare(Mapi mid,char *cmd);
 mapi_export MapiMsg mapi_prepare_array(Mapi mid,char *cmd,char **val);
 mapi_export MapiMsg mapi_query(Mapi mid,char *cmd);
+mapi_export MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd);
 mapi_export MapiMsg mapi_query_array(Mapi mid,char *cmd, char **val);
+mapi_export MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit);
+mapi_export MapiMsg mapi_response(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_stat(Mapi mid);
 mapi_export MapiMsg mapi_seek_row(Mapi mid, int rowne);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
@@ -621,7 +640,6 @@ static void mapi_extend_cache(Mapi mid);
 static int mapi_get_row(Mapi mid) ;
 static int mapi_extend_fields(Mapi mid,int minfields);
 static int mapi_slice_row(Mapi mid);
-static void mapi_unslice_row(Mapi mid);
 static int mapi_setError(Mapi mid, char *msg, char *action);
 
 #ifdef __cplusplus
@@ -717,7 +735,8 @@ Mapi mapi_new() {
 	strcpy(m->hostname,"localhost");
 	strcpy(m->language,"mal");
 	m->languageId= LANG_MAL;
-	strcpy(m->username,"guest");
+	strcpy(m->username,"anonymous");
+	strcpy(m->password,"unknown");
 	/* default prompt */
 	strcpy(m->prompt,">");
 
@@ -736,10 +755,12 @@ Mapi mapi_new() {
 	m->cache.fldcnt= 0;
 	m->tracelog= 0;
 	m->active= 0;
-	m->blk.buf=0;
-	m->blk.lim=0;
-	m->blk.nxt=0;
 	m->blk.eos=0;
+	m->blk.buf= (char*) malloc(BLOCK+1);
+	m->blk.buf[BLOCK]=0;
+	m->blk.buf[0]=0;
+	m->blk.nxt=0;
+	m->blk.lim=BLOCK;
 	return m;
 }
 
@@ -768,29 +789,33 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 	struct hostent *hp;
 	struct sockaddr_in server;
 	int s;
-	char *defport, *c;
+	char *c;
 	Mapi mid;
-	int port,len;
+	int port=0,len;
 	char buf[BLOCK];
 	int ret,i=0;
 
-	assert(host);
 	mid= mapi_new();
 
 	
-	strcpy(mid->hostname,host); 
-	c= strchr(mid->hostname,':');
+	if(host==0) host="localhost";
+	c= strchr(host,':');
 	if( c){
 		*c = 0;
-		mid->port = atol(c+1);
-	} else  mid->port = 50001;
-	
+		port = atol(c+1);
+	} 
+	if(port==0){
+                char *def;
+                if((def = getenv("MAPIPORT"))!=(char*)NULL)
+                       port=atoi(def);
+	}
+	if(port==0) port = 50001;/* hardwired default */
 	if(username) strcpy(mid->username,username);
-	else strcpy(mid->username,getlogin());
-
+	if(password==0) password= getlogin();
 	if(password) strcpy(mid->password,password);
-	else strcpy(mid->password,"");
 	
+	mid->port= port;
+	snprintf(mid->hostname,NAMELEN,"%s",host);
 	hp = gethostbyname(mid->hostname);
 	if(!hp) {
 	    mapi_setError(mid,"gethostbyname failed","mapi_connect");
@@ -814,11 +839,7 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 	    return(mid);
 	}
 	
-#ifdef BLOCKED
-	mid->to = block_stream(socket_wstream(s,"Mapi client write"));
-#else
 	mid->to = socket_wastream(s,"Mapi client write");
-#endif
 	if( mid->to->errnr){
 	    mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
 	    return(mid);
@@ -830,8 +851,11 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 	
 	{ 
 	memset(buf,0,BLOCK);
-	snprintf(buf, BLOCK,"%s:%s\n",
-	username, (password?password:""));
+#ifdef BLOCKED
+	snprintf(buf, BLOCK,"%s:%s:blocked\n", mid->username, mid->password);
+#else
+	snprintf(buf, BLOCK,"%s:%s\n", mid->username, mid->password);
+#endif
 	if(mid->trace){
 		printf("sending first request [%d]:%s",BLOCK,buf);
 		fflush(stdout);
@@ -844,6 +868,13 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 		mapi_setError(mid,"Could not send initial byte sequence",
 			"mapi_connect");
 		return(mid);
+	}
+#ifdef BLOCKED
+	mid->to = block_stream(socket_wstream(s,"Mapi client write"));
+#endif
+	if( mid->to->errnr){
+	    mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
+	    return(mid);
 	}
 
 #ifdef BLOCKED
@@ -894,7 +925,6 @@ void promptMonet(Mapi mid) {
 
 	assert(mid);
 	if( mid->trace) printf("promptMonet:");
-#ifdef BLOCKED
 	s= strchr(mid->blk.buf+mid->blk.nxt,'\n');
 	assert(s);
 	*s = 0;
@@ -903,16 +933,6 @@ void promptMonet(Mapi mid) {
 	mid->blk.nxt += i+1;
 	mid->active = 0;
 	if( mid->trace) printf("%s\n",mid->prompt);
-#else
-        while( mid->from->read(mid->from,(char*)&c,1,1) == 1) {
-		if(c==PROMPTEND) break; 
-		if( mid->trace) printf("%c", c);
-		if( i<NAMELEN-1) { mid->prompt[i]=c; i++;}
-	}
-	if( mid->trace) printf("\n");
-        mid->prompt[i] = '\0';
-	mid->active = 0;
-#endif
 }
 
 @
@@ -937,7 +957,7 @@ MapiMsg mapi_disconnect(Mapi mid) {
 	}
 	(void) mid->from->close(mid->from);
 	(void) mid->to->close(mid->to);
-	return MOK;
+	return mapi_setError(mid,"Connection closed", "mapi_disconnect");
 }
 @
 @-
@@ -989,6 +1009,21 @@ MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
 The routine mapi_check_query appends the semicolon and new line if needed.
 Furthermore, it ensures that no 'false' newlines are sent to the server,
 because this may lead to a synchronization error easily.
+@= expandQry
+	char *new= (char*)malloc(i+3);
+	strcpy(new,mid->query);
+	new[i+1]=@1;
+	new[i+2]=0;
+	free(mid->query);
+	mid->query= new;
+	if( mid->template){
+		free(mid->template);
+		mid->template= (char*) malloc( i+3);
+		assert(mid->template);
+		strcpy(mid->template,new);
+	}
+	if(mid->trace) printf("modified SQL:%s\n",mid->query);
+	i++;
 @c
 static void mapi_check_query(Mapi mid) {
 	int i;
@@ -1003,50 +1038,10 @@ static void mapi_check_query(Mapi mid) {
 		*c= ' ';
 		}
 	}
-	c--;
 	if( mid->languageId== LANG_SQL){
-		if(*c != ';'){
-			char *new= (char*)malloc(i+3);
-			strcpy(new,mid->query);
-#ifdef MONET5
-			new[i+1]=';';
-			new[i+2]=0;
-#else
-			new[i+1]=';';
-			new[i+2]='\n';
-			new[i+3]=0;
-#endif
-			free(mid->query);
-			mid->query= new;
-			if( mid->template){
-				free(mid->template);
-				mid->template= (char*) malloc( i+3);
-				assert(mid->template);
-				strcpy(mid->template,new);
-			}
-			if(mid->trace) printf("modified SQL:%s\n",mid->query);
-		}
+		if(mid->query[i] != ';'){ @:expandQry(';')@ }
 	}
-#ifndef MONET5
-	else {
-                if( *c != '\n'){
-                        char *new= (char*)malloc(i+3);
-                        strcpy(new,mid->query);
-                        new[i+1]='\n';
-                        new[i+2]=0;
-                        free(mid->query);
-                        mid->query= new;
-                        if( mid->template){
-                                free(mid->template);
-                                mid->template= (char*) malloc( i+3);
-                                assert(mid->template);
-                                strcpy(mid->template,new);
-                        }
-                        if(mid->trace) printf("modified :%s\n",mid->query);
-                }
-        }
-#endif
-	return;
+	if( mid->query[i] != '\n'){ @:expandQry('\n')@ }
 }
 
 MapiMsg mapi_timeout(Mapi mid, int time) {
@@ -1063,7 +1058,8 @@ MapiMsg mapi_explain(Mapi mid, FILE *fd) {
 	fprintf(fd,"MAPI  = %s\@%s:%d\n",
 		mid->username, mid->hostname, mid->port);
 	fprintf(fd,"ACTION= %s\n", mid->action);
-	fprintf(fd,"QUERY = %s\n", mid->query);
+	fprintf(fd,"QUERY = %s%c", mid->query, 
+		(strchr(mid->query,'\n')?'\0':'\n'));
 	if( mid->error) 
 	fprintf(fd,"ERROR = %s\n",mid->errorstr);
 /*
@@ -1280,12 +1276,38 @@ MapiMsg mapi_query_array(Mapi mid, char* cmd, char **val) {
 	return ret;
 }
 @-
-The routine mapi_fetch_line forms the basic interaction with the server.
-It simply retrieves the next line and stores it in the row cache.
-The field anchor structure is prepared for subsequent use by
-mapi_fetch_row.
-The content received is analysed further by mapi_getRow()
+To speed up interaction with a terminal front-end,
+the user can issue the quick_*() variants.
+They will not analyse the result for errors or
+header information, but simply through the output
+received from the server to the stream indicated.
 @c
+MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd) {
+	int ret;
+	@:prepareQuery@
+	if(ret == MOK) ret= mapi_execute(mid);
+	if(ret==MOK) {
+		mapi_response(mid,fd);
+		ret= mid->error;
+	}
+	if(mid->trace)
+		printf("mapi_quick_query return:%d\n",ret);
+	return ret;
+}
+MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd) {
+	int ret;
+	ret= mapi_prepare_array(mid,cmd,val);
+	if(ret == MOK) ret= mapi_execute(mid);
+	if(ret==MOK) {
+		/* look ahead to detect errors */
+		mapi_response(mid,fd);
+		ret= mid->error;
+	}
+	if(mid->trace)
+		printf("mapi_quick_query return:%d\n",ret);
+	return ret;
+}
+
 void mapi_cache_reset(Mapi mid){
 	int i;
 	mapi_finish(mid);
@@ -1382,6 +1404,20 @@ int  mapi_clear_cache(Mapi mid){
         memset(mid->cache.fldcnt,0, mid->cache.limit * sizeof(int));
         return MOK;
 }
+@-
+The routine mapi_fetch_line forms the basic interaction with the server.
+It simply retrieves the next line and stores it in the row cache.
+The field anchor structure is prepared for subsequent use by
+mapi_fetch_row.
+The content received is analysed further by mapi_getRow()
+@= endofsession
+		if( len==0){
+			mid->blk.eos=1;
+			mapi_setError(mid,"Lost connection with server",
+				"mapi_fetch_line");
+			return 0;
+		}
+@c
 
 char * mapi_fetch_line(Mapi mid){
 	char *l,*reply,*newbuf, *s;
@@ -1415,17 +1451,32 @@ char * mapi_fetch_line(Mapi mid){
 		mid->blk.lim= len;
 		n=0;
 
-		/* fetch one more block */
-		len = mid->from->read(mid->from, mid->blk.buf+mid->blk.nxt, 
-					1, BLOCK);
-		if( len != BLOCK) mid->blk.eos=1;
-		if(mid->blk.buf[0]== PROMPTBEG) break;
-		if( len >=0) mid->blk.buf[mid->blk.nxt+len]=0;
                 if (mid->from->errnr) {
                         mapi_setError(mid, "Connection terminated","mapi_fetch_line");
 			free(reply);
 			return 0;
 		}
+#ifdef BLOCKED
+		/* fetch one more block */
+		len = mid->from->read(mid->from, mid->blk.buf+mid->blk.nxt, 
+					1, BLOCK);
+		if( len != BLOCK) mid->blk.eos=1;
+		@:endofsession@
+#else
+		/* fetch one more line */
+		len=0;
+		s=mid->blk.buf+n;
+		while( (k= mid->from->read(mid->from,s,1,1))==1 ){
+			len++;
+			if( *s== '\n'){ *(s+1)=0; break;}
+			s++;
+			if(s== mid->blk.buf+mid->blk.lim) break;
+		}
+		@:endofsession@
+
+#endif
+		if(mid->blk.buf[0]== PROMPTBEG) break;
+		if( len >=0) mid->blk.buf[mid->blk.nxt+len]=0;
 	}
 	if(mid->blk.buf[n]== PROMPTBEG){
 			promptMonet(mid);
@@ -1452,6 +1503,80 @@ char * mapi_fetch_line(Mapi mid){
         return mid->cache.rows[++mid->cache.reader];
 }
 @-
+If the answer to a query should be simply passed on towards a client,
+i.e. a stream, it pays to use the mapi_response() routine.
+The stream is only checked for occurrence of an error indicator
+and the prompt.
+The best way to use this shortcut execution is calling
+mapi_quick_query(), otherwise we are forced to first
+empy the row cache.
+
+@= handlePart
+	s= strchr(mid->blk.buf+mid->blk.nxt,PROMPTBEG);
+	if( s){
+		int len = (int)(s-mid->blk.buf);
+		fwrite(mid->blk.buf+mid->blk.nxt,1,len,fd);
+		mid->blk.nxt += len;
+		promptMonet(mid);
+		return MOK;
+	} else
+	if( @1 > 0) {
+		fwrite(mid->blk.buf+mid->blk.nxt,1,@1,fd);
+		mid->blk.nxt=0;
+	}
+	if(ferror(fd))
+		return mapi_setError(mid,"Error writing file","mapi.response");
+@c
+MapiMsg mapi_response(Mapi mid, FILE *fd){
+	char *s;
+	int k;        
+
+
+	if(fd==0)
+	return mapi_setError(mid,"Destination file missing","mapi.response");
+
+	/* any left over rows in the cache? */
+	for(k= mid->cache.reader+1; k<mid->cache.writer; k++)
+		fprintf(fd,"%s\n", mid->cache.rows[k]);
+	if( mid->active == 0) return 0;
+
+	/* check if you need to sent pending information */
+	k= strlen(mid->blk.buf+mid->blk.nxt);
+	@:handlePart(k)@
+
+	mid->blk.eos=0;
+	mid->blk.nxt=0;
+#ifdef BLOCKED
+	while( (k= mid->from->read(mid->from,mid->blk.buf,1,BLOCK))== BLOCK){
+		@:handlePart(BLOCK)@
+	}
+#else
+	/* read until we find the prompt */
+	s=mid->blk.buf;
+	while( (k= mid->from->read(mid->from,s,1,1))==1 ){
+		fwrite(s,1,1,fd);
+		if( *s == PROMPTBEG) {s++;break;}
+	}
+	if(k==1)
+	while( mid->from->read(mid->from,s,1,1)==1 ){
+		k++;
+		if( *s== '\n'){ *(s+1)=0; break;}
+		s++;
+		if(s== mid->blk.buf+mid->blk.lim) break;
+	}
+#endif
+
+	if(k>0){ @:handlePart(k)@ }
+	mapi_fetch_line(mid);  /* get rid of prompt possibly extending read*/
+/*
+	if(mid->blk.buf[0]== PROMPTBEG){
+			promptMonet(mid);
+			return 0;
+	}
+*/
+	return mid->error;
+}
+@-
 The routine mapi_get_row retrieves lines from the channel until
 it finds either a valid row, or encounters an error.
 In passing, it interprets comment lines to detect table headers.
@@ -1461,26 +1586,47 @@ is reached.
 @c
 static
 void mapi_header(Mapi mid, char *line){
-	char *tag= "name", *c;
-	if( mid->trace) printf("mapi_header:%s\n",line);
-	c= strrchr(line,'#');
-	if( c == 0 || c==line ) return;
+	char *tag= "", *c, *etag;
+	char *buf;
+	int i,cr= mid->cache.reader;
 
-	*line = '['; 	/* fake a value row */
-	 *c = ']';
+	if( mid->trace) printf("mapi_header:%s\n",line);
+	etag= c= strrchr(line,'#');
+	if( c == 0 || c==line ) return;
 	
+@-
+After a header analysis, we should have restored the original line,
+because the client may wish to perform a mapi_fetch_line();
+@= keepProp
+if(strncmp(@1,tag,4)==0){
+	for(i=0; i< mid->cache.fldcnt[mid->cache.reader]; i++){
+		int len= strlen(mapi_fetch_field(mid,i));
+		len= len< NAMELEN? len: NAMELEN-1;
+		strncpy(mid->fields[i].@2, mapi_fetch_field(mid,i),len);
+		printf("got name %s\n", mapi_fetch_field(mid,i));
+	}
+}
+@c
+	i= strlen(mid->cache.rows[cr]);
+	buf= malloc(i+1);
+	strcpy(buf,mid->cache.rows[cr]);
 	mapi_slice_row(mid);
 
-	c++; while(*c && *c == ' ') c++;
+
+	*line = '['; 	/* fake a value row */
+	*c = ']';
+	c++; while(*c && (*c == ' '|| *c=='\t')) c++;
 	if(*c) tag= c;
 
-	/* await new table print format */
-	if(strcmp("name",tag)==0){
-	}
-	if(strcmp("type",tag)==0){
-	}
+	@:keepProp("name",columnname)@
+	@:keepProp("type",columntype)@
 	/* restore the markers */
-	*line= '#'; *c= '#';
+	*line= '#'; *etag= '#';
+	strcpy(mid->cache.rows[cr],buf);
+	for(i=0; i< mid->cache.fldcnt[mid->cache.reader]; i++)
+		mid->cache.anchors[cr][i]=0;
+	mid->cache.fldcnt[cr]=0;
+	free(buf);
 }
 
 static 
@@ -1713,9 +1859,6 @@ int mapi_slice_row(Mapi mid) {
 	mid->cache.fldcnt[cr]= i;
 	mapi_store_bind(mid);
 	return i;
-}
-static
-void mapi_unslice_row(Mapi mid){
 }
 
 @-

@@ -218,6 +218,13 @@ int doRequest(Mapi mid, char *buf ){
 	char *rtrn;
 	int i;
  
+/*
+	if (mapi_quick_query(mid, buf,toConsole) != MOK){
+		mapi_explain(mid,stdout);
+		return 'q';
+	}
+	fflush(toConsole);
+*/
 	if (mapi_query(mid, buf) != MOK){
 		mapi_explain(mid,stdout);
 		return 'q';
@@ -587,17 +594,18 @@ int main(int ac, char **av) {
 			prompt = _strdup(pbuf);
 		} else 	prompt = _strdup(">");
 	}
-	if (host == NULL) strcpy(host,"localhost");
 
 	fstat(fileno(stdin),&st);
 #ifdef HAVE_LIBREADLINE
 	if (S_ISCHR(st.st_mode))
 	   is_chrsp = 1;
 #endif
+/*
 	if (!user)
 		user = simple_prompt("User: ", BUFSIZ, 1 );
 	if (!passwd)
 		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
+*/
 
 	toConsole = stdout;
 	snprintf(buf,BUFSIZ,"%s:%d",host,port);
@@ -605,6 +613,7 @@ int main(int ac, char **av) {
 	mid->trace = trace;
 	if (mapi_error(mid)) {
 		mapi_explain(mid,toConsole);
+		fflush(toConsole);
 		EXIT(2);
 	}
 	if( language && strcmp(language,"mal")){
