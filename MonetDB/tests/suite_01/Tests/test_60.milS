@@ -1,4 +1,9 @@
 setoid(oid(20000000));
+
+proc newid(x,y) := {
+	return x+y;
+}
+
 #calling a function;
 b:= new(int,int,0);
 b.insert(1,15);
@@ -12,12 +17,13 @@ b.insert(8,64);
 b.insert(9,int(nil));
 b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
+b.rename("tenk1_unique1");
 
 proc dummy :={ return 1; }
 
 proc p(B,C) := { 
         local :=newid(B,C); 
-        vars; home; 
+        vars; 
 }
 
 proc s(low,high) := {
@@ -40,7 +46,7 @@ p("b","1");
 # passing parameters;
 a:=35;
 echo(a,"hello").print;
-New('r','C','Ch');
+New("r","C","Ch");
 vars;
 
 
