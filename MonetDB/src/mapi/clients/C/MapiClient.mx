@@ -223,13 +223,6 @@ int doRequest(Mapi mid, char *buf )
 	char *rtrn;
 	MapiHdl hdl;
 
-/*
-	if (mapi_quick_query(mid, buf,toConsole) != MOK){
-		mapi_explain(mid,stdout);
-		return 0;
-	}
-	fflush(toConsole);
-*/
 	if ((hdl = mapi_query(mid, buf)) == NULL){
 		mapi_explain(mid, stdout);
 		return 0;
@@ -524,6 +517,107 @@ handle_message:
 	}
 }
 
+static const char *column_format = "select name,type,type_digits,type_scale,null,default from columns c,tables t where c.table_id = t.id and '%s' = t.name order by c.number;\n"; 
+#define COLUMN 6
+#define C_NAME 0
+#define C_TYPE 1
+#define C_TYPE_DIGITS 2
+#define C_TYPE_SCALE 3
+
+static int 
+dump_table( Mapi mid, char *tname)
+{
+	int cnt = 0;
+	MapiHdl hdl;
+	char query[BUFSIZ];
+
+	char *select_count = "select count(*) from %s";
+	char *select_format = "select * from %s";
+
+	printf("CREATE TABLE %s (\n", tname );
+
+	snprintf(query, BUFSIZ, column_format, tname);
+	if ((hdl = mapi_query(mid, query)) == NULL){
+		mapi_explain(mid,stdout);
+
+		return 0;
+	}
+	while ((mapi_fetch_row(hdl)) != 0) {
+		char *c_name = mapi_fetch_field(hdl, C_NAME);
+		char *c_type = mapi_fetch_field(hdl, C_TYPE);
+		char *c_type_digits = mapi_fetch_field(hdl, C_TYPE_DIGITS);
+		char *c_type_scale = mapi_fetch_field(hdl, C_TYPE_SCALE);
+
+		if (cnt)
+			printf(",\n");
+
+		if (strcmp(c_type_digits, "0") == 0) {
+			printf("\t%s %s", c_name, c_type);
+		} else if (strcmp(c_type_scale, "0") == 0) {
+			printf("\t%s %s(%s)", c_name, c_type, c_type_digits);
+		} else {
+			printf("\t%s %s(%s,%s)", c_name, c_type, c_type_digits,
+				c_type_scale);
+		}
+		cnt ++;
+	}
+	printf("\n");
+
+	printf(");\n" );
+	mapi_close_handle(hdl);
+
+	snprintf(query, BUFSIZ, select_count, tname);
+	if ((hdl = mapi_query(mid, query)) == NULL){
+		mapi_explain(mid,stdout);
+		return 0;
+	}
+	if ((mapi_fetch_row(hdl)) != 0) {
+		const char *copystring =
+	    		"COPY %s RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n\n";
+		char *cnt = mapi_fetch_field(hdl, 0);
+		printf(copystring, cnt, tname);
+	}
+	mapi_close_handle(hdl);
+
+	snprintf(query, BUFSIZ, select_format, tname);
+	doRequest(mid, query);
+	return 0;
+}
+
+static int dump_tables( Mapi mid )
+{
+	int cnt = 0;
+	char *tables = "select name from tables where type=0"; 
+	char *views = "select name,query from tables where type=2";
+	MapiHdl hdl;
+
+	if ((hdl = mapi_query(mid, tables)) == NULL){
+		mapi_explain(mid,stdout);
+
+		return 0;
+	}
+	while (mapi_fetch_row(hdl) != 0) {
+		char *tname = mapi_fetch_field(hdl, 0);
+
+		dump_table( mid, tname );
+	}
+	mapi_close_handle(hdl);
+
+	if ((hdl = mapi_query(mid, views)) == NULL){
+		mapi_explain(mid,stdout);
+		return 0;
+	}
+	while (mapi_fetch_row(hdl) != 0) {
+		char *vname = mapi_fetch_field(hdl, 0);
+		char *query = mapi_fetch_field(hdl, 1);
+
+		printf("CREATE VIEW %s %s\n", vname, query );
+	}
+	mapi_close_handle(hdl);
+	
+	return cnt;
+}
+
 void usage( char *prog )
 {
 	(void) prog;
@@ -536,6 +630,7 @@ void usage( char *prog )
 	fprintf(stderr, " -u user     | --user=user      /* user id */\n" );
 	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
 	fprintf(stderr, " -e          | --error          /* exit on error */\n");
+	fprintf(stderr, " -D          | --dump           /* dump sql database */\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
 	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
@@ -553,7 +648,7 @@ int main(int ac, char **av)
 #else
 	char *language = _strdup("mil");
 #endif
-	int debug = 0, port = 0, setlen = 0, trace = 0;
+	int debug = 0, port = 0, setlen = 0, trace = 0, dump = 0;
 	opt *set= NULL;
 
 	char *command = NULL;
@@ -564,6 +659,7 @@ int main(int ac, char **av)
 	static struct option long_options[] = {
 		{"debug", 2, 0, 'd'},
 		{"blocked", 1, 0, 'b'},
+		{"dump", 0, 0, 'D'},
 		{"config", 1, 0, 'c'},
 		{"host", 1, 0, 'h'},
 		{"port", 1, 0, 'p'},
@@ -622,6 +718,9 @@ int main(int ac, char **av)
 				setlen = mo_add_option( &set, setlen,
 					opt_cmdline, "debug", "2" );
 			}
+			break;
+		case 'D':
+			dump = 1;
 			break;
 		case 'e':
 			exit_on_error=1;
@@ -735,12 +834,13 @@ int main(int ac, char **av)
 	fstat(fileno(stdin),&st);
 	if (S_ISCHR(st.st_mode))
 		is_chrsp = 1;
-/*
-	if (!user)
-		user = simple_prompt("User: ", BUFSIZ, 1 );
-	if (!passwd)
-		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
-*/
+
+	if(strcmp(language,"sql") == 0) {
+		if (!user)
+			user = simple_prompt("User: ", BUFSIZ, 1 );
+		if (!passwd)
+			passwd = simple_prompt("Password: ", BUFSIZ, 0 );
+	}
 
 	toConsole = stdout;
 	mid = mapi_connect(host, port, user, passwd, language);
@@ -763,6 +863,9 @@ int main(int ac, char **av)
 	}
 #endif
 	
+	if (dump && strcmp(language,"sql") == 0)
+		return dump_tables(mid);
+
 	while(optind < ac){
 		char *ifile = av[optind++];
 		FILE *fp;

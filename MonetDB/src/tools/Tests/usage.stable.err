@@ -10,7 +10,7 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
 # 16:36:12 >  
 
-usage: lt-Mserver
+usage: Mserver
 [--dbname database_name ]
 [--dbfarm database_directory ]
 [-d or --debug [debug_level] ]
@@ -32,6 +32,7 @@ Options are:
  -u user     | --user=user      /* user id */
  -P passwd   | --passwd=passwd  /* password */
  -e          | --error          /* exit on error */
+ -D          | --dump           /* dump sql database */
  -s stmt     | --statement=stmt /* run single statement */
  -t          | --trace          /* trace Monet interaction */
  -?          | --help           /* show this usage message */
