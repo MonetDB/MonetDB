@@ -283,6 +283,7 @@ void pushClientInput(Client c, bstream *new_input, int listing, char *prompt)
     c->fdin = new_input;
     c->listing = listing;
     c->prompt = GDKstrdup(prompt);
+    c->promptlength = strlen(c->prompt);
     c->yycur = 0;
 }
 
@@ -300,6 +301,7 @@ void popClientInput(Client c)
     c->yycur = x->yycur;
     c->listing = x->listing;
     c->prompt = x->prompt;
+    c->promptlength = strlen(c->prompt);
     c->bak = x->next;
     GDKfree(x);
 }
