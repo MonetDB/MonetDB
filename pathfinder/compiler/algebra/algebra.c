@@ -339,6 +339,7 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
 {
     PFalg_op_t     *ret;      /* return value we are building */
     int             i;
+    int             j;
 
     /*
      * Remember all tables we built in here. If the same table is requested
@@ -355,7 +356,6 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
     for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
 
         PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-        int         j;
 
         /* see if we have the same number of arguments */
         if (attlist.count != o->schema.count)
@@ -393,7 +393,7 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
     /* set its schema */
     ret->schema.items
         = PFmalloc (attlist.count * sizeof (*(ret->schema.items)));
-    for (int i = 0; i < attlist.count; i++) {
+    for (i = 0; i < attlist.count; i++) {
         ret->schema.items[i].name = attlist.atts[i];
         ret->schema.items[i].type = 0;
     }
@@ -411,7 +411,7 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
         ret->sem.lit_tbl.tuples[i] = tuples[i];
 
         /* add type of this tuple to schema */
-        for (int j = 0; j < tuples[i].count; j++)
+        for (j = 0; j < tuples[i].count; j++)
             ret->schema.items[j].type |= tuples[i].atoms[j].type;
     }
 

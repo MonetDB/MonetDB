@@ -82,9 +82,11 @@ static PFmil_type_t impl_types[] = {
 static void
 clear_usectr (PFalg_op_t *n)
 {
+    int i;
+
     n->usectr = 0;
 
-    for (int i = 0; i < PFALG_OP_MAXCHILD && n->child[i]; i++)
+    for (i = 0; i < PFALG_OP_MAXCHILD && n->child[i]; i++)
         clear_usectr (n->child[i]);
 }
 
@@ -96,9 +98,11 @@ clear_usectr (PFalg_op_t *n)
 static void
 zero_refctr (PFalg_op_t *n)
 {
+    int i;
+
     n->refctr = 0;
 
-    for (int i = 0; i < PFALG_OP_MAXCHILD && n->child[i]; i++)
+    for (i = 0; i < PFALG_OP_MAXCHILD && n->child[i]; i++)
         zero_refctr (n->child[i]);
 }
 
@@ -113,9 +117,11 @@ zero_refctr (PFalg_op_t *n)
 static void
 inc_refctr (PFalg_op_t *n)
 {
+    int i;
+
     n->refctr++;
 
-    for (int i = 0; i < PFALG_OP_MAXCHILD && n->child[i]; i++)
+    for (i = 0; i < PFALG_OP_MAXCHILD && n->child[i]; i++)
         inc_refctr (n->child[i]);
 }
 

@@ -24,12 +24,12 @@
 static PFmil_t *
 leaf (PFmil_kind_t k)
 {
-
+    int i;
     PFmil_t *ret = PFmalloc (sizeof (PFmil_t));
 
     ret->kind = k;
 
-    for (int i = 0; i < MIL_MAXCHILD; i++)
+    for (i = 0; i < MIL_MAXCHILD; i++)
         ret->child[i] = NULL;
 
     return ret;

@@ -165,8 +165,9 @@ static void
 print_type (PFalg_type_t t)
 {
     int count = 0;
+    PFalg_type_t i;
 
-    for (PFalg_type_t i = 1; i; i <<= 1)    /* shift bit through bit-vector */
+    for (i = 1; i; i <<= 1)    /* shift bit through bit-vector */
         if (t & i)
             PFprettyprintf ("%s%s", count++ ? "," : "", atomtype[i]);
 }
