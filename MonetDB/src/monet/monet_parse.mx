@@ -350,7 +350,8 @@ int ll_getch(void) {
         return ch;
 }
 
-int ll_getstring(char *buf, int max_size) {
+int ll_getstring(char *buf, int max_size)
+{
 	char *start = buf, *end = buf + max_size;
 	char ch;
 
@@ -362,25 +363,24 @@ int ll_getstring(char *buf, int max_size) {
         		ch = *ll_client->cptr;
 		} while (ch == 0 && ll_pop());
 
-        	if (ch == '\n') {
-                    if (ll_client->listing) {
-                    	if (GDKdebug&16384 || !ll_stack) {
-				stream *s = ll_client->fdout;
-                        	stream_write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1, 1  );
-                        	stream_flush(s);
-		    	}
-                    }
-                    ll_client->cline = ll_client->cptr + 1;
-        	}
-		if(ch){
-	 	    ll_client->cptr++;
-		    *buf++ = ch;
-			
-		    if (ch == '\n' || ch == ';')
+		if (ch == 0)
 			break;
-		} else {
-		    break;
-		}
+
+		ll_client->cptr++;
+		*buf++ = ch;
+
+        	if (ch == '\n') {
+                	ll_client->cline = ll_client->cptr;
+			break;
+        	}
+		if (ch == ';')
+			break;
+	}
+	if (ll_client->listing &&
+	    (GDKdebug&16384 || !ll_stack)) {
+		stream *s = ll_client->fdout;
+		stream_write(s, start, 1, buf - start);
+		stream_flush(s);
 	}
 	return (int) (buf-start);
 }
