@@ -60,7 +60,7 @@ The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @c
 BAT *BATins(BAT *b, BAT *n) {
-	size_t needed = 0;
+	ssize_t needed = 0;
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
@@ -83,8 +83,14 @@ BAT *BATins(BAT *b, BAT *n) {
 	}
 
 	needed = BATcount(n) - (((b)->batBuns->size - (b)->batBuns->free)/BUNsize(b));
-  	if (needed > 0)
-		BATextend(b, BATcapacity(b) + needed); /* allocation hint */ 
+  	if (needed > 0){
+		/* if needed exceeds a normal growth extend just with needed */
+		size_t ncap = BATcapacity(b) + needed;
+		size_t grows = BATgrows(b);
+		if (ncap > grows)
+			grows = ncap;
+		BATextend(b, grows); /* allocation hint */ 
+	}
 
 	if (b->hidx_heap || b->tidx_heap) {
                 IDXdestroy(b);

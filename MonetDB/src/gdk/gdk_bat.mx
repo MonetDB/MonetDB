@@ -423,7 +423,8 @@ BAT *BATclear(BAT *b) {
 	}
 
 	/* the deleted-section is made to include all stable elements */
-	memcpy(b->batHole, b->batInserted - bs, bs);
+	if (b->batHole != (b->batInserted - bs))
+		memcpy(b->batHole, b->batInserted - bs, bs);
 	b->batHole = b->batInserted - bs;
 	b->batBuns->free = b->batInserted - b->batBuns->base;
 	b->batDirty = TRUE;
