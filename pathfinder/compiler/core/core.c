@@ -777,7 +777,7 @@ PFcore_constr_elem (const PFcnode_t *e1, const PFcnode_t *e2)
  * Create a new core tree node representing attribute constructor.
  *
  * @param e1 the tag oder expression containing the name of the attribute.
- * @param e2 the content of the element.
+ * @param e2 the content of the attribute.
  * @return the core representation of the attribute constructor
  */
 PFcnode_t *
@@ -787,6 +787,22 @@ PFcore_constr_attr (const PFcnode_t *e1, const PFcnode_t *e2)
 
     return PFcore_wire2 (c_attr, e1, e2);
 }
+
+/**
+ * Construct Core tree node representing a processing-instruction constructor.
+ *
+ * @param e1 the string oder expression containing the pi target.
+ * @param e2 the content of the processing.
+ * @return the core representation of the constructor
+ */
+PFcnode_t *
+PFcore_constr_pi (const PFcnode_t *e1, const PFcnode_t *e2)
+{
+    assert (e1 && e2);
+
+    return PFcore_wire2 (c_pi, e1, e2);
+}
+
 
 /**
  * Create a new core tree node representing a text, doc, comment or
@@ -809,9 +825,6 @@ PFcore_constr (PFptype_t pkind, const PFcnode_t *e)
         break;
     case p_comment: 
         kind = c_comment; 
-        break;
-    case p_pi:    
-        kind = c_pi;    
         break;
     case p_doc:      
         kind = c_doc;      

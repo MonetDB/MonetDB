@@ -224,7 +224,7 @@ CoreExpr:           attr (TagName, CoreExpr)                    =  38 (10);
 CoreExpr:           text (CoreExpr)                             =  39 (10);
 CoreExpr:           doc (CoreExpr)                              =  40 (10);
 CoreExpr:           comment (CoreExpr)                          =  41 (10);
-CoreExpr:           pi (CoreExpr)                               =  42 (10);
+CoreExpr:           pi (Atom, Atom)                             =  42 (10);
 
 TagName:            tag                                         =  43 (10);
 TagName:            CoreExpr                                    =  44 (10);

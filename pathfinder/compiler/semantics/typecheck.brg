@@ -218,38 +218,39 @@ CoreExpr:           attr (CoreExpr, CoreExpr)                   =  38 (10);
 CoreExpr:           text (CoreExpr)                             =  39 (10);
 CoreExpr:           doc (CoreExpr)                              =  40 (10);
 CoreExpr:           comment (CoreExpr)                          =  41 (10);
-CoreExpr:           pi (CoreExpr)                               =  42 (10);
+CoreExpr:           pi (Atom, Atom)                             =  42 (10);
+CoreExpr:           pi (lit_str, Atom)                          =  43 (10);
 
-CoreExpr:           ordered (CoreExpr)                          =  43 (10);
-CoreExpr:           unordered (CoreExpr)                        =  44 (10);
+CoreExpr:           ordered (CoreExpr)                          =  44 (10);
+CoreExpr:           unordered (CoreExpr)                        =  45 (10);
 
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  45 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  46 (10);
 
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  46 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  47 (10);
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =  47 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  48 (10);
 
-Atom:               var                                         =  48 (10);
-Atom:               LiteralValue                                =  49 (10);
+Atom:               var                                         =  49 (10);
+Atom:               LiteralValue                                =  50 (10);
 
-LiteralValue:       lit_str                                     =  50 (10);
-LiteralValue:       lit_int                                     =  51 (10);
-LiteralValue:       lit_dec                                     =  52 (10);
-LiteralValue:       lit_dbl                                     =  53 (10);
-LiteralValue:       true_                                       =  54 (10);
-LiteralValue:       false_                                      =  55 (10);
-LiteralValue:       empty                                       =  56 (10);
+LiteralValue:       lit_str                                     =  51 (10);
+LiteralValue:       lit_int                                     =  52 (10);
+LiteralValue:       lit_dec                                     =  53 (10);
+LiteralValue:       lit_dbl                                     =  54 (10);
+LiteralValue:       true_                                       =  55 (10);
+LiteralValue:       false_                                      =  56 (10);
+LiteralValue:       empty                                       =  57 (10);
 
-FunctionDecls:      nil                                         =  64 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  65 (10);
+FunctionDecls:      nil                                         =  65 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  66 (10);
 
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  66 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  67 (10);
 
-ParamList:          nil                                         =  67 (10);
-ParamList:          params (FunParam, ParamList)                =  68 (10);
+ParamList:          nil                                         =  68 (10);
+ParamList:          params (FunParam, ParamList)                =  69 (10);
 
-FunctionBody:       CoreExpr                                    =  69 (10);
+FunctionBody:       CoreExpr                                    =  70 (10);
 
-FunParam:           param (SequenceType, var)                   =  70 (10);
+FunParam:           param (SequenceType, var)                   =  71 (10);
 
 %%
 
@@ -761,38 +762,49 @@ reduce (PFcnode_t * p, int goalnt)
             TY(p) = PFty_comm ();
             break;
 
-        /* CoreExpr:           pi (CoreExpr) */
+        /* CoreExpr:           pi (Atom, Atom) */
         case 42:
+            if (!PFty_promotable (TY(L(p)), PFty_string ()))
+                PFoops (OOPS_TYPECHECK,
+                        "target name in processing-instruction constructor"
+                        " has illegal type '%s'",
+                        PFty_str (TY(L(p))));
             TY(p) = PFty_pi (NULL);
             break;
 
-        /* CoreExpr:           ordered (CoreExpr) */
+        /* CoreExpr:           pi (lit_str, Atom) */
         case 43:
-            TY(p) = TY(L(p));
+            TY(L(p)) = PFty_string ();
+            TY(p) = PFty_pi (L(p)->sem.str);
             break;
 
-        /* CoreExpr:           unordered (CoreExpr) */
+        /* CoreExpr:           ordered (CoreExpr) */
         case 44:
             TY(p) = TY(L(p));
             break;
 
-        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        /* CoreExpr:           unordered (CoreExpr) */
         case 45:
+            TY(p) = TY(L(p));
+            break;
+
+        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        case 46:
             TY(p) = TY(R(p));
             break;
 
         /* OrderSpecs:         orderspecs (CoreExpr, nil) */
-        case 46:
-            /* FIXME: Are there any type constraints on the order expression? */
-            break;
-
-        /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
         case 47:
             /* FIXME: Are there any type constraints on the order expression? */
             break;
 
-        /* Atom:               var */
+        /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
         case 48:
+            /* FIXME: Are there any type constraints on the order expression? */
+            break;
+
+        /* Atom:               var */
+        case 49:
             /* W3C XQuery, 5.1.2
              *
              * E.varType(Var) = t
@@ -804,11 +816,11 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* Atom:               LiteralValue */
-        case 49:
+        case 50:
             break;
 
         /* LiteralValue:       lit_str */
-        case 50:
+        case 51:
             /* W3C XQuery, 5.1.1
              *
              * --------------------------
@@ -818,7 +830,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
      
         /* LiteralValue:       lit_int */
-        case 51:
+        case 52:
             /* W3C XQuery, 5.1.1
              *
              * ---------------------------
@@ -828,7 +840,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       lit_dec */
-        case 52:
+        case 53:
             /* W3C XQuery, 5.1.1
              *
              * ---------------------------
@@ -838,7 +850,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       lit_dbl */
-        case 53:
+        case 54:
             /* W3C XQuery, 5.1.1
              *
              * --------------------------
@@ -848,7 +860,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       true_ */
-        case 54:
+        case 55:
             /* 
              * -------------------------
              * Env |- true_ : xs:boolean
@@ -857,7 +869,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       false_ */
-        case 55:
+        case 56:
             /* 
              * --------------------------
              * Env |- false_ : xs:boolean
@@ -866,7 +878,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       empty */
-        case 56:
+        case 57:
             /*
              * ------------------
              * Env |- empty_ : ()
@@ -875,15 +887,15 @@ reduce (PFcnode_t * p, int goalnt)
             break;
      
         /* FunctionDecls:      nil */
-        case 64:
-            break;
-
-        /* FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls) */
         case 65:
             break;
 
-        /* FunctionDecl:       fun_decl (ParamList, FunctionBody) */
+        /* FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls) */
         case 66:
+            break;
+
+        /* FunctionDecl:       fun_decl (ParamList, FunctionBody) */
+        case 67:
             /*
              * See if function body matches function return type.
              */
@@ -896,19 +908,19 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* ParamList:          nil */
-        case 67:
-            break;
-
-        /* ParamList:          param (FunParam, ParamList) */
         case 68:
             break;
 
-        /* FunctionBody:       CoreExpr */
+        /* ParamList:          param (FunParam, ParamList) */
         case 69:
             break;
 
-        /* FunParam:           param (SequenceType, var) */
+        /* FunctionBody:       CoreExpr */
         case 70:
+            break;
+
+        /* FunParam:           param (SequenceType, var) */
+        case 71:
             /*
              * Bind parameter variable to the given type. We need this
              * to type-check the function body.

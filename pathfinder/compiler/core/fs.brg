@@ -546,7 +546,7 @@ TextConstructor:        text (OptExpr)                              = 190 (10);
 
 CommentConstructor:     comment (OptExpr)                           = 191 (10);
 
-PIConstructor:          pi (OptExpr)                                = 192 (10);
+PIConstructor:          pi (OptExpr, OptContentExpr)                = 192 (10);
 
 DocumentConstructor:    doc (OptExpr)                               = 193 (10);
 
@@ -2989,13 +2989,22 @@ reduce (PFpnode_t * p, int goalnt)
 
         } break;
 
-        /* PIConstructor:          pi (Expr) */
+        /* PIConstructor:          pi (OptExpr, OptContentExpr) */
         case 192:
         {
+            PFvar_t *target  = new_var (NULL);
+            PFvar_t *content = new_var (NULL);
+            PFvar_t *v       = new_var (NULL);
+
             PFfun_t *is2uA =
                 function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
 
-            C(p) = constr (p->kind, APPLY (is2uA, C(L(p))));
+            C(p) = let (
+                    letbind (var (target), C(L(p))),
+                    let (
+                        letbind (var (v), C(R(p))),
+                        let (letbind (var (content), APPLY (is2uA, var (v))),
+                             constr_pi (var (target), var (content)))));
         } break;
 
         /* DocumentConstructor:    doc (Expr) */

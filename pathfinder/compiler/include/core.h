@@ -254,6 +254,7 @@ PFcnode_t *PFcore_step (PFpaxis_t, const PFcnode_t *);
 
 PFcnode_t *PFcore_constr_elem (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_constr_attr (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_constr_pi (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_constr (PFptype_t, const PFcnode_t *);
 PFcnode_t *PFcore_tag (PFqname_t);
 PFcnode_t *PFcore_fun_decl (PFfun_t *fun, const PFcnode_t *, const PFcnode_t *);
