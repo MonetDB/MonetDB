@@ -1108,6 +1108,7 @@ stmt *stmt_reljoin1(list * joins)
 {
 	list *l1 = list_create((fdestroy)&stmt_destroy);
 	list *l2 = list_create((fdestroy)&stmt_destroy);
+	stmt *L = NULL;
 	node *n = NULL;
 	for (n = joins->h; n; n = n->next){
 		stmt *l = stmt_dup(((stmt*)(n->data))->op1.stval);
@@ -1125,9 +1126,17 @@ stmt *stmt_reljoin1(list * joins)
 		if (l->t != r->t){
 			r = stmt_reverse(r);
 		}
+		if (L == NULL) {
+			L = stmt_dup(l);
+		} else if (L->h != l->h) {
+			stmt *t = l;
+			l = r;
+			r = t;
+		}
 		l1 = list_append(l1, l);
 		l2 = list_append(l2, r);
 	}
+	if (L != NULL) stmt_destroy(L);
 	return stmt_reljoin2(l1, l2);
 }
 
