@@ -1,0 +1,110 @@
+stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
+
+
+# 15:55:37 >  
+# 15:55:37 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.18284/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 99_Modules_ALL.milS
+# 15:55:37 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+#script:99_Modules_ALL.milS
+
+  xtables: loading... done.
+     wisc: loading... done.
+   vector: loading... done.
+      url: loading... done.
+     unix: loading... done.
+     uchr: loading... done.
+    trans: loaded.
+     tpcd: loading... done.
+    tcpip: loading... done.
+      sys: loaded.
+  streams: loading... done.
+      str: loaded.
+    stats: loading... done.
+ salgebra: loading... done.
+    radix: loading... done.
+       qt: loading... done.
+   perfex: loading... done.
+      oo7: loading... done.
+    mprof: loading... done.
+monettime: loading... done.
+    mmath: loaded.
+      mel: loading... done.
+     mapi: loading... done.
+malalgebra: loading... done.
+   logger: loading... done.
+     lock: loading... done.
+   kernel: loaded.
+ iterator: loading... done.
+       io: loaded.
+     enum: loading... done.
+  decimal: loading... done.
+  ddbench: loading... done.
+ counters: loading... done.
+  cluster: loaded.
+     blob: loaded.
+bitvector: loaded.
+   bitset: loading... done.
+bat_arith: loading... done.
+      bat: loaded.
+ ascii_io: loading... done.
+    arith: loaded.
+  algebra: loaded.
+    alarm: loading... done.
+   aggrX3: loading... done.
+     aggr: loading... done.
+#-----------------#
+# 40 modules	  #
+#-----------------#
+[ "aggr"	  ]
+[ "aggrX3"	  ]
+[ "alarm"	  ]
+[ "algebra"	  ]
+[ "arith"	  ]
+[ "ascii_io"	  ]
+[ "bat"		  ]
+[ "bat_arith"	  ]
+[ "bitset"	  ]
+[ "bitvector"	  ]
+[ "blob"	  ]
+[ "cluster"	  ]
+[ "counters"	  ]
+[ "ddbench"	  ]
+[ "decimal"	  ]
+[ "enum"	  ]
+[ "io"		  ]
+[ "iterator"	  ]
+[ "kernel"	  ]
+[ "lock"	  ]
+[ "logger"	  ]
+[ "malalgebra"	  ]
+[ "mapi"	  ]
+[ "mel"		  ]
+[ "mmath"	  ]
+[ "monettime"	  ]
+[ "mprof"	  ]
+[ "oo7"		  ]
+[ "perfex"	  ]
+[ "qt"		  ]
+[ "radix"	  ]
+[ "salgebra"	  ]
+[ "stats"	  ]
+[ "str"		  ]
+[ "streams"	  ]
+[ "sys"		  ]
+[ "tcpip"	  ]
+[ "tpcd"	  ]
+[ "trans"	  ]
+[ "uchr"	  ]
+[ "unix"	  ]
+[ "url"		  ]
+[ "vector"	  ]
+[ "wisc"	  ]
+[ "xtables"	  ]
+
+# 15:55:38 >  
+# 15:55:38 >  Done.
+# 15:55:38 >  
+
