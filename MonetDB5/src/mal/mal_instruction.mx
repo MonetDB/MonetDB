@@ -436,7 +436,8 @@ for separate name space management.
 #define moduleId(P)		(P)->modname
 #define setModuleId(P,S)	(P)->modname= S
 #define moduleName(P)		(P)->modname
-#define freeModuleName(P)	{ GDKfree((P)->modname); (P)->modname=0;}
+#define freeModuleName(P)	{(P)->modname=0;}
+#define setModuleScope(P,S)	{(P)->modname= (S)==NULL?NULL: (S)->name;}
 
 #define functionId(P)		(P)->fcnname
 #define setFunctionId(P,S)	(P)->fcnname= S
@@ -785,7 +786,7 @@ void oldmoveInstruction(InstrPtr new, InstrPtr p){
 	space = sizeof(InstrRecord) + sizeof(int) * p->argc;
 	memcpy((char*) new, (char*) p, space);
 	setFunctionId(new, functionId(p)? GDKstrdup(functionName(p)): NULL);
-	setModuleId(new, moduleId(p)? GDKstrdup(moduleName(p)): NULL);
+	setModuleId(new, moduleId(p));
 }
 @-
 Query optimizers walk their way through a MAL program block.

@@ -50,7 +50,7 @@ mal_export Symbol	newFunction(str nme,int kind);
 mal_export void		clearFcn(MalBlkPtr m);
 mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 
-mal_export InstrPtr newCall(str modnme, str fcnname, int kind);
+mal_export InstrPtr newCall(Scope scope, str fcnname, int kind);
 mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
 
 mal_export Symbol	getSymbol(Scope scope, InstrPtr p);
@@ -88,10 +88,10 @@ Symbol newFunction(str nme,int kind){
 	pushInstruction(s->def,p);
 	return s;
 }
-InstrPtr newCall(str modnme, str fcnname, int kind){
+InstrPtr newCall(Scope scope, str fcnname, int kind){
 	InstrPtr p;
 	p= newInstruction(kind);
-	setModuleId(p, GDKstrdup(modnme));
+	setModuleScope(p, scope);
 	setFunctionId(p, GDKstrdup(fcnname));
 	return p;
 }

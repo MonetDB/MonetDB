@@ -119,7 +119,7 @@ void resetClientPrg(Client cntxt){
         cntxt->curprg = newFunction(GDKstrdup("main"));
         mb = cntxt->curprg->def;
         p = getSignature(cntxt->curprg);
-        setModuleId(p, GDKstrdup(cntxt->nspace->name));
+        setModuleScope(p, cntxt->nspace);
         setVarType(mb,findVariable(mb,"main"), TYPE_int);
 }
 void closeClientPrg(Client cntxt, int flag){

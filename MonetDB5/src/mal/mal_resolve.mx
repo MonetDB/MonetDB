@@ -361,7 +361,7 @@ It may happen that an argument was still untyped and as a result of
 the polymorphism matching became strongly typed. This should be
 reflected in the symbol table. 
 @c
-	if(moduleId(p) == 0) setModuleId(p, GDKstrdup(m->name));
+	if(moduleId(p) == 0) setModuleScope(p, m);
 	s1= returntype[0];	/* for those interested */
 	foundbutwrong = 0;
 @-
@@ -655,10 +655,10 @@ InstrPtr dynamicTypeChecker(Scope scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
         }
         if( moduleId(pci) && (i=findVariable(mb,moduleName(pci))) != -1){
                 if( getVarType(mb,i) != TYPE_str)
-                        setModuleId(pci, 0);
+                        setModuleId(pci, NULL);
                 else {
                         freeModuleName(pci);
-                        setModuleId(pci, GDKstrdup( stk->stk[i].val.sval));
+                        setModuleScope(pci, findScope(scope, stk->stk[i].val.sval));
                 }
         }
 #ifdef DEBUG_MAL_RESOLVE
