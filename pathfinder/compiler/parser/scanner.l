@@ -258,7 +258,7 @@ S                                {WhiteSpaceChar}+
 WhiteSpaceChar                   [\x20\x09\x0d\x0a]
 
 /* 8 bit Char http://www.w3.org/TR/REC-xml/#NT-Char */
-Char                             [\x09\x0a\x0d\x20-\xff]
+PFChar                           [\x09\x0a\x0d\x20-\xff]
 
 /* ElementContentChar */
 QuotAttrContentChar              [\x09\x0a\x0d\x20-\x21\x23-\x25\x27-\x3b\x3d\x3f-\x7a\x7c\x7e-\xff]
@@ -781,8 +781,8 @@ _                                ({S}|{ExprComment})+
 
 <XML_COMMENT>{
 "-->"                              { popState (); yield (xml_comment_end); }
-{Char}                             { pflval.chr = *yytext;
-                                     yield (Char);
+{PFChar}                           { pflval.chr = *yytext;
+                                     yield (PFChar);
                                    }
 }
 
@@ -797,15 +797,15 @@ _                                ({S}|{ExprComment})+
 
 <PROCESSING_INSTRUCTION_CONTENT>{
 "?>"                               { popState (); yield (question_mark_gt); }
-{Char}                             { pflval.chr = *yytext;
-                                     yield (Char);
+{PFChar}                           { pflval.chr = *yytext;
+                                     yield (PFChar);
                                    }
 }
 
 <CDATA_SECTION>{
 "]]>"                              { popState (); yield (cdata_end); }
-{Char}                             { pflval.chr = *yytext;
-                                     yield (Char);
+{PFChar}                           { pflval.chr = *yytext;
+                                     yield (PFChar);
                                    }
 }
 

@@ -106,7 +106,7 @@ SEL                    {return SEL;}
 TYPE                   {return TYPE;}
 TBL                    {BEGIN(ATTMODE); return TBL;}
 ELEM                   {return ELEM;}
-TEXT                   {return TEXT;}
+PFTEXT                 {return PFTEXT;}
 REL                    {BEGIN(RELMODE); return REL;}
 SUM                    {return SUM;}
 COUNT                  {return COUNT;}
@@ -136,7 +136,7 @@ ALL                    {return ALL;}
 {digits}               {/* representation of integers */
                         s = PFstrdup(hsktext);
                         hsklval.ival=atoi(s);
-                        return INT;}
+                        return PFINT;}
 "%"{digits}"."{digits} {/* representation of decimals */
                         /* Delete % character. */
                         s = PFstrndup(hsktext + 1, hskleng - 1);
@@ -180,7 +180,7 @@ self                   {return SELF;}
 attribute              {return ATTRIB;}
 "*"                    {return XMLELEM;}
 node\(\)               {return NODES;}
-text\(\)               {return TEXT;}
+text\(\)               {return PFTEXT;}
 [_a-zA-Z][_a-zA-Z0-9]* {s = PFstrdup(hsktext);
                         hsklval.sval = s;
                         return TAG;

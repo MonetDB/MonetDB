@@ -118,9 +118,25 @@ main(argc, argv) int argc __attribute__((unused)); char **argv;
 	}
 
 	if (inFileName) {
+		int count;
+		char *p;
 		if(freopen(inFileName, "r", stdin)==NULL) {
 			fprintf(stderr, "Failed opening (%s)", inFileName);
 			exit(1);
+		}
+		for (count = 0, p = inFileName; *p; p++)
+			if (*p == '\\')
+				count++;
+		if (count > 0) {
+			char *q, *r;
+			p = malloc(strlen(inFileName) + count + 1);
+			for (q = inFileName, r = p; *q; q++) {
+				*r++ = *q;
+				if (*q == '\\')
+					*r++ = '\\';
+			}
+			free(inFileName);
+			inFileName = p;
 		}
 	}
 

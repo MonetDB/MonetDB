@@ -60,7 +60,7 @@ static PFarray_t *schm_arr = NULL;
 %token <sval> TYPEREF RELREF SCHMATT SCHMTYPE STR TAG
 
 /* Tokens from the lexer (terminals) with semantic integer value. */
-%token <ival> INT NODEREF BLN NAT
+%token <ival> PFINT NODEREF BLN NAT
 
 /* Tokens from the lexer (terminals) with semantic float value. */
 %token <fval> DEC
@@ -78,8 +78,8 @@ static PFarray_t *schm_arr = NULL;
     SCJOIN CROSSPR UNION SEL TYPE TBL ELEM
     REL DESC DESCSELF ANC ANCSELF FOL PREC
     FOLSIBL PRECSIBL CHILD PARENT SELF ATTRIB
-    XMLELEM NODES TEXT SUM COUNT DIFF DIST
-    CINT CSTR CDEC CDBL TEXT SEQTY1 ALL
+    XMLELEM NODES PFTEXT SUM COUNT DIFF DIST
+    CINT CSTR CDEC CDBL PFTEXT SEQTY1 ALL
 
 /* Types of non-terminals. */
 %type <algop> query operator rownum project eqjoin
@@ -244,7 +244,7 @@ ktest   :   XMLELEM
               ret->sem.scjoin.test = aop_node;
               $$=ret;
             }
-        |   TEXT
+        |   PFTEXT
             {
               PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
               ret->sem.scjoin.test = aop_text;
@@ -450,7 +450,7 @@ atom    :   STR     {$$=lit_str ($1);}
                           $$=lit_bln(true);
                     }
         |   NAT     {$$=lit_nat ($1);}
-        |   INT     {$$=lit_int ($1);}
+        |   PFINT   {$$=lit_int ($1);}
         |   DEC     {$$=lit_dec ($1);}
         |   DBL     {$$=lit_dbl ($1);}
         ;
@@ -563,9 +563,9 @@ castdbl :   LSQBR CDBL LBRACK item RBRACK operator RSQBR
             }
         ;
 
-textnode :  LSQBR TEXT operator operator RSQBR
+textnode :  LSQBR PFTEXT operator operator RSQBR
             {
-              /* [TEXT operator operator] */
+              /* [PFTEXT operator operator] */
 	      $$=textnode ($4);
             }
         ;

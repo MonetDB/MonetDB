@@ -348,7 +348,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 
 %token AttrContentChar
 %token Attribute_QName_LBrace
-%token Char
+%token PFChar
 %token CharRef
 %token DecimalLiteral
 %token DoubleLiteral
@@ -409,7 +409,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                "}}"
                AttrContentChar
                AttributeValueContText_
-               Char
+               PFChar
                CharRef
                ElementContentChar
                ElementContentText_
@@ -1787,7 +1787,7 @@ Characters_               : Chars_
 Chars_                    : /* empty */
                             { /* initialize new dynamic array */
                               $$ = PFarray (sizeof (char)); }
-                          | Chars_ Char
+                          | Chars_ PFChar
                             { /* append one charater to array */
                               *((char *) PFarray_add ($1)) = $2;
                               $$ = $1;
@@ -2142,7 +2142,7 @@ EscapeApos                : "''"    { $$ = '\''; }
 /* [152]  !W3C: QName is a terminal */
 /* [153]  !W3C: NCName is a terminal */
 /* [154]  !W3C: S is a terminal */
-/* [155]  !W3C: Char is a terminal */
+/* [155]  !W3C: PFChar is a terminal */
 
 %%
 

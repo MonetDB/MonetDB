@@ -51,7 +51,11 @@ NATIVE_WIN32 = 1
 
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = $(PTHREAD_INCS)
+!IFDEF USE_MINGW
+SOCKET_LIBS =
+!ELSE
 SOCKET_LIBS = wsock32.lib
+!ENDIF
 
 CXX=$(CC)
 MEL="$(MONETDB_PREFIX)\bin\mel"
@@ -152,12 +156,19 @@ MONETDB_LIBS="\"/LIBPATH:$(MONETDB_PREFIX)\lib\"" "\"/LIBPATH:$(MONETDB_PREFIX)\
 .mx.ll:
 	$(MX) $(MXFLAGS) -x L $<
 
-{$(SRCDIR)}.c.obj:
+{$(SRCDIR)}.c.$O:
+	$(CC) $(CFLAGS) $(INCLUDES) -c $<
+.c.$O:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
 # needed for yacc/lex output generated under unix 
 .cc.cxx:
 	rename $< $@
 
-.SUFFIXES: .m .mx .proto_h .mil .glue_c .cxx .cc
+{$(SRCDIR)}.brg.c:
+	$(TOPDIR)\burg\burg.exe -c 1000 -d -I -p PF$* $< -o $@
+.brg.c:
+	$(TOPDIR)\burg\burg.exe -c 1000 -d -I -p PF$* $< -o $@
+
+.SUFFIXES: .m .mx .proto_h .mil .glue_c .cxx .cc .brg
 .PRECIOUS: .m 

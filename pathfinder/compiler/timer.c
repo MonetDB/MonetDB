@@ -36,12 +36,51 @@
 /* PFinfo() */
 #include "pathfinder.h"
 
-/* gettimeofday() */
-#include <sys/time.h>
+/* time functions() */
+#ifdef HAVE_FTIME
+#include <sys/timeb.h>
+#endif
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 /* sprintf() */
 #include <stdio.h>
 /* make abs() available */
 #include <stdlib.h>
+
+static long
+PFgettime ()
+{
+#ifdef NATIVE_WIN32
+    SYSTEMTIME st;
+
+    GetSystemTime(&st);
+    return (((st.wDay * 24 * 60 + st.wMinute) * 60 + st.wSecond) * 1000 +
+            (long) st.wMilliseconds) * 1000;
+#else
+#ifdef HAVE_GETTIMEOFDAY
+	struct timeval tp;
+
+	gettimeofday(&tp, NULL);
+	return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
+#else
+#ifdef HAVE_FTIME
+	struct timeb tb;
+
+	ftime(&tb);
+	return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
+#endif
+#endif
+#endif
+}
 
 /**
  * Start a new timer.  Later, when you stop and want to read off the
@@ -52,14 +91,9 @@
  * @return timer value to be passed to PFtimer_stop ()
  */
 long 
-PFtimer_start () { 
-    struct timeval now; 
-    long start;
-
-    (void) gettimeofday (&now, 0);
-    start = now.tv_sec * 1000000 + now.tv_usec;
-
-    return start;
+PFtimer_start ()
+{ 
+    return PFgettime();
 }
 
 /**
@@ -73,11 +107,9 @@ PFtimer_start () {
 long
 PFtimer_stop (long start)
 {
-    struct timeval now;
     long stop;
 
-    (void) gettimeofday (&now, 0);
-    stop = now.tv_sec * 1000000 + now.tv_usec;
+    stop = PFgettime();
 
     return abs (stop - start);
 }

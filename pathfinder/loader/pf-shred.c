@@ -130,7 +130,7 @@ int prop_postorder = 0;
  * XML node kinds
  */
 #define ELEMENT   0
-#define TEXT      1
+#define PFTEXT    1
 #define COMMENT   2
 #define PI        3
 #define DOCUMENT  4
@@ -400,6 +400,52 @@ timer_str (long elapsed)
     str += sprintf (str, "%03ldus", elapsed);
 
     return tm;
+}
+
+/* time functions() */
+#ifdef HAVE_FTIME
+#include <sys/timeb.h>
+#endif
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+/* sprintf() */
+#include <stdio.h>
+/* make abs() available */
+#include <stdlib.h>
+
+static long
+PFgettime ()
+{
+#ifdef NATIVE_WIN32
+    SYSTEMTIME st;
+
+    GetSystemTime(&st);
+    return (((st.wDay * 24 * 60 + st.wMinute) * 60 + st.wSecond) * 1000 +
+            (long) st.wMilliseconds) * 1000;
+#else
+#ifdef HAVE_GETTIMEOFDAY
+	struct timeval tp;
+
+	gettimeofday(&tp, NULL);
+	return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
+#else
+#ifdef HAVE_FTIME
+	struct timeb tb;
+
+	ftime(&tb);
+	return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
+#endif
+#endif
+#endif
 }
 
 /**
@@ -741,7 +787,7 @@ text2rel ()
         pre++;
         node.size  = 0;
         node.level = level;
-        node.kind  = TEXT;
+        node.kind  = PFTEXT;
         node.prop  = text_id;
 
         /* this text node contributes to the size of its parent */
@@ -1216,7 +1262,6 @@ main (int argc, char *argv[])
     char out[FILENAME_MAX];
 
     /* timing */
-    struct timeval now;
     long start, stop;
 
     /* buffer for file I/O status */
@@ -1351,15 +1396,13 @@ main (int argc, char *argv[])
     }
 
     /* start timer */
-    (void) gettimeofday (&now, 0);
-    start = now.tv_sec * 1000000 + now.tv_usec;
+    start = PFgettime();
 
     /* shredding... */
     shred (in, out);
 
     /* read elapsed time */
-    gettimeofday (&now, 0);
-    stop = now.tv_sec * 1000000 + now.tv_usec;
+    stop = PFgettime();
 
     /* statistics if verbose (-v) */
     if (v) {
