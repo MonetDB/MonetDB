@@ -1052,6 +1052,7 @@ cygnus1.1.X has a bug in the semaphore routines. we work around it by directly u
 #ifndef NATIVE_WIN32
 
 int sem_init (sem_t * sem, int pshared, unsigned int value) {
+	(void) pshared;
 	*sem = (sem_t) CreateSemaphore(NULL, value, 128, NULL);
 	return (*sem)?0:-1;
 }

@@ -211,7 +211,14 @@ int NumEvents = 0, NoEvent = 0;
  #endif
  } event_t;
 
- event_t NO_event[1] = { { 00 , 00 , (str) &chr_nil , (str) &chr_nil } };
+ event_t NO_event[1] = { { 00 , 00 , (str) &chr_nil , (str) &chr_nil
+ #if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) ) )
+                         , 00 , 00
+ #endif
+ #if defined(HW_SunOS)   
+                         , LIB_SunOS(0,NULL)
+ #endif
+                         } };
  event_t *event = NO_event;
 
  #if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) ) )
@@ -1469,6 +1476,8 @@ int compare_counter(counter *c1, counter* c2) {
 int start_count(counter *retval, int *event0, int *event1) {
 #ifdef HWCOUNTERS
     int e0 = *event0, e1 = *event1, ee = NoEvent;
+#else
+    (void)event0; (void)event1;
 #endif
 
     /* create the resulting counter object */

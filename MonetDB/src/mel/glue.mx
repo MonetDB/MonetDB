@@ -403,7 +403,7 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	l = new install_fcntbl();
 	o << "static TBLfcn " << modulename << "_fcns[] = {\n";
 	l->gen_list( o, d.Defs() );
-	o << "    {(NULL)}};\n";
+	o << "   { NULL, 0, NULL, NULL, NULL, NULL, NULL, { NULL },  NULL } };\n";
 	delete(l);
 
 	o << "oid _" << d.Name();

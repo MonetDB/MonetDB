@@ -82,7 +82,7 @@ caliblng now(void)
 
 /*	#define	MINTIME  10000	*/
 
-struct timeval oldtp = { 0 };
+struct timeval oldtp = { 0 , 0 };
 
 caliblng now(void)
 {

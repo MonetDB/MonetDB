@@ -140,9 +140,8 @@ case $CC-$CXX in
 		;;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -Wall"
-	CXXFLAGS="$CXXFLAGS -Wall"
-	dnl "-W"
+	CFLAGS="$CFLAGS -Wall -W"
+	CXXFLAGS="$CXXFLAGS -Wall -W"
 	;;
 icc-icpc|ecc-ecpc)
  	LDFLAGS="$LDFLAGS -i_dynamic"
@@ -277,9 +276,8 @@ case $CC-$CXX in
 		CFLAGS="$CFLAGS -Wno-unused-function"
 		CXXFLAGS="$CXXFLAGS -Wno-unused-function"
 	fi
-	CFLAGS="$CFLAGS -Wno-format"
-	CXXFLAGS="$CXXFLAGS -Wno-format"
-	dnl "-Wno-sign-compare"
+	CFLAGS="$CFLAGS -Wno-format -Wno-sign-compare"
+	CXXFLAGS="$CXXFLAGS -Wno-format -Wno-sign-compare"
 	dnl  ... and some are beyond our control:
 	dnl  In some cases, there is a (possible) uninitialized variable in bison.simple ... |-(
 	case $CC-$host_os in

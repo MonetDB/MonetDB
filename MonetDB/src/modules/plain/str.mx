@@ -637,6 +637,7 @@ int codeset( str *res ){
 	*res = GDKstrdup(codeset);
 	return GDK_SUCCEED;
 #else
+	(void) res;
 	GDKerror("MIL-`codeset()' not available as C-`nl_langinfo()' wasn't found during compilation.\n");
 	return GDK_FAIL;
 #endif
