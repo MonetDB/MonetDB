@@ -533,7 +533,6 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
         for (cur_bun = stack[stack_top-1].first;
              cur_bun <= stack[stack_top-1].last;
              cur_bun += iter_bunsize) {
-            bunfastins(res,  (oid*)BUNtail(iter_bat,cur_bun), &pre);
             *(oid*)BUNhloc(res, dst) = *(oid*)BUNtail(iter_bat,cur_bun);
             *(oid*)BUNtloc(res, dst) = pre;
             dst += bunsize;
