@@ -215,6 +215,30 @@ pattern fprintf(f:fstream,fm:str,a:any...):void
 address io_fprintf 
 comment "See:man fprintf";
 
+@- Formatted printing
+The routines that inspect the runtime setting are moved out of this area.
+                                                                                
+@mal
+command printf(format:str,val:bit):int
+address SYSprint_formatted_bit;
+command printf(format:str,val:chr):int
+address SYSprint_formatted_chr;
+command printf(format:str,val:int):int
+address SYSprint_formatted_int;
+command printf(format:str,val:sht):int
+address SYSprint_formatted_sht;
+command printf(format:str,val:oid):int
+address SYSprint_oid;
+command printf(format:str,val:lng):int
+address SYSprint_formatted_lng;
+command printf(format:str,val:flt):int
+address SYSprint_formatted_flt;
+command printf(format:str,val:dbl):int
+address SYSprint_formatted_dbl;
+command printf(val:str):int
+address SYSprint_str;
+command printf(format:str,val:str):int
+address SYSprint_formatted_str;
 @-
 @{
 @- MIL initializations 
@@ -671,4 +695,178 @@ str CMDtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return CMDtableAll(GDKout,mb,stk,pci,1,0,FALSE);
 }
 
+@- Formatter print
+The format string is scrutinized using VALsprintf in the GDK library
+to avoid that passing a wrong argument (e.g. NULL pointer) kills the server.
+The generic printf function is rather expensive. Ideally it should be
+replaced by a squeezer into a type-specific function calls.
+@-
+Formatted print statements are to be broken down into its constituents.
+This avoids repeated type checking in most cases.
+
+@= escaped
+	switch(*c){
+	case 'n': *ret =  stream_printf(fd,"\n");break;
+	case 't': *ret =  stream_printf(fd,"\t");break;
+	case 'r': *ret =  stream_printf(fd,"\r");break;
+	case '\\': *ret =  stream_printf(fd,"\\");break;
+	default : *ret = stream_printf(fd,"\\");stream_printf(fd,"%c",*c);
+	}
+@c
+str SYSprint_str(int *ret, str *s){
+	stream *fd = GDKout; 
+	str c;
+	if( strNil(*s)) stream_printf(fd,"nil");
+	else {
+		for(c= *s;*c; c++){
+			if( *c=='\\'){
+				c++;
+				@:escaped@
+			} else stream_printf(fd,"%c",*c);
+		}
+	}
+	return MAL_SUCCEED;
+}
+int formatMarker(str format){
+	int i=0;
+	str t=format;
+	while( (t=strchr(t,'%')) != NULL){
+		t++;
+		i++;
+	}
+	return i;
+}
+@-
+Printing format values is limited to a single element each.
+This to simplify error handling
+@= formatConversion
+	for(c= format;*c; c++){
+		if( *c=='\\'){
+			c++;
+			@:escaped@
+		} else 
+		if( *c== '%'){
+			char newformat[1024];
+			int i=0;
+
+			if(*(c+1)=='%'){ 
+				stream_printf(fd,"%c",*c);
+				c++; continue;
+			}
+			while(*c != '@1' && *c && i<1024)
+				 newformat[i++]= *c++;
+			newformat[i++]='@1';
+			newformat[i]=0;
+			if(*c!= '@1') 
+			return throwMessage("system.print", " format limitation");
+			else  stream_printf(fd,newformat,@2);
+		} else stream_printf(fd,"%c",*c);
+	}
+@-
+
+@= printFormatted
+str SYSprint_formatted_@1(int *ret, ptr fmt, @1 *s){
+	stream *fd = getClient()->fdout;
+	char *format;
+	str c;
+	/* TODO: check format properly !!! including sizes */
+	format= *(str *)fmt;
+	if( format== NULL) 
+		return throwMessage("system.print", "format missing");
+	if( formatMarker(format)!=1) 
+		return throwMessage("system.print", "too many %%");
+
+	if( *s == @1_nil) return SYSprint_formatted_nil(fd,* (str*) fmt, ret);
+	@:formatConversion(@2,*s)@
+	return MAL_SUCCEED;
+}
+@-
+String nil testing is slightly different.
+@c
+str SYSprint_formatted_nil(stream *fd, str format, int *ret){
+	str c;
+	for(c= format;*c; c++){
+		if( *c=='\\'){
+			c++;
+			@:escaped@
+		} else 
+		if( *c== '%'){
+			char newformat[1024];
+			int i=0;
+
+			if(*(c+1)=='%'){ 
+				stream_printf(fd,"%c",*c);
+				c++; continue;
+			}
+			while( !isalpha((int)*c) && *c && i<1024)
+				 newformat[i++]= *c++;
+			newformat[i++]='s';
+			newformat[i]=0;
+			stream_printf(fd,newformat,"nil");
+		} else stream_printf(fd,"%c",*c);
+	}
+	return MAL_SUCCEED;
+}
+str SYSprint_formatted_str(int *ret, ptr fmt, str *s){
+	stream *fd = getClient()->fdout;
+	char *format;
+	str c;
+	/* TODO: check format properly !!! including sizes */
+	format= *(str *)fmt;
+	if( format== NULL) 
+		return throwMessage("system.print", "format missing");
+	if( formatMarker(format)!=1) 
+		return throwMessage("system.print", "too many %%");
+
+	if( strNil( *s)) return SYSprint_formatted_nil(fd,* (str*) fmt, ret);
+	@:formatConversion(s,*s)@
+	return MAL_SUCCEED;
+}
+str SYSprint_oid(int *ret, ptr fmt, oid *s){
+	stream *fd = getClient()->fdout;
+	char *format;
+	str msg,c;
+	int len =50;
+	format= *(str *)fmt;
+
+	if( format== NULL) 
+		return throwMessage("system.print", "format missing");
+	if( formatMarker(format)!=1) 
+		return throwMessage("system.print", "too many %%");
+
+	if( *s == oid_nil) msg = GDKstrdup("nil");
+	else { msg = (str) GDKmalloc(len); OIDtoStr(&msg,&len,s);}
+	@:formatConversion(s,msg)@
+	GDKfree(msg);
+	if(*ret == EOF)
+		return throwMessage("system.print", "end-of-file error");
+	return MAL_SUCCEED;
+}
+str SYSprint_formatted_bit(int *ret, ptr fmt, bit *s){
+	stream *fd = getClient()->fdout;
+	char *format;
+	str msg;
+	str c;
+	/* TODO: check format properly !!! including sizes */
+	format= *(str *)fmt;
+	if( format== NULL) 
+		return throwMessage("system.print", "format missing");
+	if( formatMarker(format)!=1) 
+		return throwMessage("system.print", "too many %%");
+
+	if( *s == bit_nil) msg = "nil";
+	else if( *s ) msg="true";
+	else 	msg="false";
+	@:formatConversion(s,msg)@
+	if(*ret == EOF)
+		return throwMessage("system.print", "end-of-file error");
+	return MAL_SUCCEED;
+}
+
+ 	@:printFormatted(chr,c)@
+ 	@:printFormatted(sht,d)@
+ 	@:printFormatted(int,d)@
+ 	@:printFormatted(lng,d)@
+ 	@:printFormatted(flt,f)@
+ 	@:printFormatted(dbl,f)@
 @}

@@ -21,47 +21,22 @@
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-@f system
+@f status
 @a M.L. Kersten, P. Boncz, N.Nes
 @v 2.0
-@* System Information 
-This document introduces a series of bats that provide access
+@* System state information 
+This document introduces a series of bats  and operations that provide access
 to information stored within the Monet Version 5 internal data structures.
-In all cases, the pseudo BAT operation returns a transient BAT that
+In all cases, pseudo BAT operation returns a transient BAT that
 should be garbage collected after being used.
 
 The main performance drain would be to use a pseudo BAT directly to
 successively access it components. This can be avoided by first assigning
 the pseudo BAT to a variable.
 
-In addition, this module contains the primitives for printing on the
-client stdout channel. Additional file-directed IO is maintained in
-the io module.
-
-The system primitives have been taken over from version 4.
 @mal
-module system;
+module status;
 
-@-
-The properties of the Client record can be obtained for inspection.
-Only the listing property can be dynamically set.
-@mal
-command cwd(s:str):str
-address SYSsetCwd
-comment "Return the current working directory. 
-	Set it to a new one.";
-command quit():void
-address SYSquit
-comment "Terminate the server"'
-command exit():void
-address SYSquit
-comment "Terminate the server"'
-
-@- Kernel Performance Statistics
-The BATs created below are rather expensive views over the
-GDK kernel. They have been retained for backward compatibility.
-
-@mal
 command cpuStatistics() :bat[:str,:int] 
 address SYScpuStatistics
 comment "Global cpu usage information";
@@ -71,12 +46,9 @@ comment "Global memory usage information";
 command ioStatistics():bat[:str,:int] 
 address SYSioStatistics
 comment "Global IO activity information";
-command bbpStatistics():bat[:str,:int] 
-address SYSbbpStatistics
-comment "Global BBP usage information";
 command memMap() :void 
 address SYSmemMap
-comment "print a map of all memory that is in use";
+comment "Print a map of all memory that is in use";
 @-
 @T
 For each 64KB block in the first 3GB of the virtual memory {\tt mem\_printmap()} prints a character:
@@ -182,30 +154,6 @@ command vm_maxsize(v:lng) :void
 address SYSsetvm_maxsize
  	comment "set the maximum usable amount 
 	of physical swapspace in KB";
-@- Printing 
-The routines that inspect the runtime setting are moved out of this area.
-
-@mal
-command printf(format:str,val:bit):int 
-address SYSprint_formatted_bit;
-command printf(format:str,val:chr):int 
-address SYSprint_formatted_chr;
-command printf(format:str,val:int):int 
-address SYSprint_formatted_int;
-command printf(format:str,val:sht):int 
-address SYSprint_formatted_sht;
-command printf(format:str,val:oid):int 
-address SYSprint_oid;
-command printf(format:str,val:lng):int 
-address SYSprint_formatted_lng;
-command printf(format:str,val:flt):int 
-address SYSprint_formatted_flt;
-command printf(format:str,val:dbl):int 
-address SYSprint_formatted_dbl;
-command printf(val:str):int 
-address SYSprint_str;
-command printf(format:str,val:str):int 
-address SYSprint_formatted_str;
 @{
 @* Implementation Code
 @h
@@ -225,10 +173,7 @@ address SYSprint_formatted_str;
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
-#include "mal_stack.h"
-#include "mal_resolve.h"
 #include "mal_function.h"
-#include "mal_client.h"
 
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
@@ -240,12 +185,6 @@ address SYSprint_formatted_str;
 # endif
 #endif
  
-str SYSquit(int *ret) {
-	Client c= getClient();
-	(void) ret; /* fool compiler */
-	c->mode = FINISHING;
-	return MAL_SUCCEED;
-}
 extern lng GDKcur_cursize();
 str SYSgetmem_cursize(lng *num) {
 	*num = GDKmem_cursize();
@@ -271,198 +210,9 @@ str SYSsetvm_maxsize(lng *num) {
 	GDK_vm_maxsize= *num;
 	return MAL_SUCCEED;
 }
-str SYSsetCwd(str *ret, str *fnme){
-        Client c= getClient();
-        *ret = c->cwd;
-        c->cwd= GDKstrdup(*fnme);
-        return MAL_SUCCEED;
-}
-
-@-
-The format string is scrutinized using VALsprintf in the GDK library
-to avoid that passing a wrong argument (e.g. NULL pointer) kills the server.
-The generic printf function is rather expensive. Ideally it should be
-replaced by a squeezer into a type-specific function calls.
-@-
-Formatted print statements are to be broken down into its constituents.
-This avoids repeated type checking in most cases.
-
-@= escaped
-	switch(*c){
-	case 'n': *ret =  stream_printf(fd,"\n");break;
-	case 't': *ret =  stream_printf(fd,"\t");break;
-	case 'r': *ret =  stream_printf(fd,"\r");break;
-	case '\\': *ret =  stream_printf(fd,"\\");break;
-	default : *ret = stream_printf(fd,"\\");stream_printf(fd,"%c",*c);
-	}
-@c
-str SYSprint_str(int *ret, str *s){
-	stream *fd = GDKout; 
-	str c;
-	if( strNil(*s)) stream_printf(fd,"nil");
-	else {
-		for(c= *s;*c; c++){
-			if( *c=='\\'){
-				c++;
-				@:escaped@
-			} else stream_printf(fd,"%c",*c);
-		}
-	}
-	return MAL_SUCCEED;
-}
-int formatMarker(str format){
-	int i=0;
-	str t=format;
-	while( (t=strchr(t,'%')) != NULL){
-		t++;
-		i++;
-	}
-	return i;
-}
-@-
-Printing format values is limited to a single element each.
-This to simplify error handling
-@= formatConversion
-	for(c= format;*c; c++){
-		if( *c=='\\'){
-			c++;
-			@:escaped@
-		} else 
-		if( *c== '%'){
-			char newformat[1024];
-			int i=0;
-
-			if(*(c+1)=='%'){ 
-				stream_printf(fd,"%c",*c);
-				c++; continue;
-			}
-			while(*c != '@1' && *c && i<1024)
-				 newformat[i++]= *c++;
-			newformat[i++]='@1';
-			newformat[i]=0;
-			if(*c!= '@1') 
-			return throwMessage("system.print", " format limitation");
-			else  stream_printf(fd,newformat,@2);
-		} else stream_printf(fd,"%c",*c);
-	}
-@-
-
-@= printFormatted
-str SYSprint_formatted_@1(int *ret, ptr fmt, @1 *s){
-	stream *fd = getClient()->fdout;
-	char *format;
-	str c;
-	/* TODO: check format properly !!! including sizes */
-	format= *(str *)fmt;
-	if( format== NULL) 
-		return throwMessage("system.print", "format missing");
-	if( formatMarker(format)!=1) 
-		return throwMessage("system.print", "too many %%");
-
-	if( *s == @1_nil) return SYSprint_formatted_nil(fd,* (str*) fmt, ret);
-	@:formatConversion(@2,*s)@
-	return MAL_SUCCEED;
-}
-@-
-String nil testing is slightly different.
-@c
-str SYSprint_formatted_nil(stream *fd, str format, int *ret){
-	str c;
-	for(c= format;*c; c++){
-		if( *c=='\\'){
-			c++;
-			@:escaped@
-		} else 
-		if( *c== '%'){
-			char newformat[1024];
-			int i=0;
-
-			if(*(c+1)=='%'){ 
-				stream_printf(fd,"%c",*c);
-				c++; continue;
-			}
-			while( !isalpha((int)*c) && *c && i<1024)
-				 newformat[i++]= *c++;
-			newformat[i++]='s';
-			newformat[i]=0;
-			stream_printf(fd,newformat,"nil");
-		} else stream_printf(fd,"%c",*c);
-	}
-	return MAL_SUCCEED;
-}
-str SYSprint_formatted_str(int *ret, ptr fmt, str *s){
-	stream *fd = getClient()->fdout;
-	char *format;
-	str c;
-	/* TODO: check format properly !!! including sizes */
-	format= *(str *)fmt;
-	if( format== NULL) 
-		return throwMessage("system.print", "format missing");
-	if( formatMarker(format)!=1) 
-		return throwMessage("system.print", "too many %%");
-
-	if( strNil( *s)) return SYSprint_formatted_nil(fd,* (str*) fmt, ret);
-	@:formatConversion(s,*s)@
-	return MAL_SUCCEED;
-}
-str SYSprint_oid(int *ret, ptr fmt, oid *s){
-	stream *fd = getClient()->fdout;
-	char *format;
-	str msg,c;
-	int len =50;
-	format= *(str *)fmt;
-
-	if( format== NULL) 
-		return throwMessage("system.print", "format missing");
-	if( formatMarker(format)!=1) 
-		return throwMessage("system.print", "too many %%");
-
-	if( *s == oid_nil) msg = GDKstrdup("nil");
-	else { msg = (str) GDKmalloc(len); OIDtoStr(&msg,&len,s);}
-	@:formatConversion(s,msg)@
-	GDKfree(msg);
-	if(*ret == EOF)
-		return throwMessage("system.print", "end-of-file error");
-	return MAL_SUCCEED;
-}
-str SYSprint_formatted_bit(int *ret, ptr fmt, bit *s){
-	stream *fd = getClient()->fdout;
-	char *format;
-	str msg;
-	str c;
-	/* TODO: check format properly !!! including sizes */
-	format= *(str *)fmt;
-	if( format== NULL) 
-		return throwMessage("system.print", "format missing");
-	if( formatMarker(format)!=1) 
-		return throwMessage("system.print", "too many %%");
-
-	if( *s == bit_nil) msg = "nil";
-	else if( *s ) msg="true";
-	else 	msg="false";
-	@:formatConversion(s,msg)@
-	if(*ret == EOF)
-		return throwMessage("system.print", "end-of-file error");
-	return MAL_SUCCEED;
-}
-
- 	@:printFormatted(chr,c)@
- 	@:printFormatted(sht,d)@
- 	@:printFormatted(int,d)@
- 	@:printFormatted(lng,d)@
- 	@:printFormatted(flt,f)@
- 	@:printFormatted(dbl,f)@
-
 str memMap() {
         MT_alloc_print();
         return MAL_SUCCEED;
-}
-@-
-If we don;t have an implementation at hand, we simple generate
-an error message.
-@c
-str SYStobedefined(){
-	return throwMessage("system.tobedefined", "function not (yet) implemented");
 }
 @
 @c
@@ -476,7 +226,9 @@ str SYScpuStatistics(int *ret) {
  
  
 	b = BATnew(TYPE_str, TYPE_int, 32);
-	if ( b == 0) return throwMessage("catalog.gdkCpu", "failed to create BAT");
+	if ( b == 0) 
+		return throwMessage("catalog.gdkCpu", 
+			"failed to create BAT");
 	if( clk == 0) {
 		clk= time(0);
 		times(&state);
@@ -509,7 +261,9 @@ str SYSmemStatistics(int *ret) {
 	m = MT_mallinfo();
  
 	b = BATnew(TYPE_str, TYPE_int, 32);
-	if ( b == 0) return throwMessage("catalog.memStatistics", "failed to create BAT");
+	if ( b == 0) 
+		return throwMessage("catalog.memStatistics", 
+			"failed to create BAT");
 
 	/* store counters, ignore errors */
 	if (memincr == NULL) {
@@ -540,7 +294,9 @@ if (sz > *minsize) {
 @c
 
 str SYSmem_usage(int *ret, lng *minsize) {
-	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, n=0, sz;
+	lng buns=0, hhsh=0, thsh=0, hind=0;
+	lng tind=0, head=0, tail=0, hacc=0;
+	lng tacc=0, tot=0, n=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
 	bat i;
@@ -625,7 +381,8 @@ str SYSmemMap() {
 
 
 str SYSvm_usage(int *ret, lng *minsize) {
-	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
+	lng buns=0, hhsh=0, thsh=0, hind=0;
+	lng tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
 	bat i;
@@ -681,7 +438,7 @@ str SYSvm_usage(int *ret, lng *minsize) {
 	*ret = bn->batCacheid;
 	return MAL_SUCCEED;
 }
-
+@}
 @-
 Additional information on the process utilization is given by
 the io command. The following information is obtained.
@@ -712,7 +469,8 @@ nivcsw     &the number of times a context switch resulted due to a\\
 The resource statistics are collected in a BAT. It can then
 be queried. A default listing is produced by the command @%usagecmd@.
 (which should be moved to Monet)
- 
+
+@{
 The BAT grows. It should be compacted.
 @c
 #ifdef HAVE_SYS_RESOURCE_H
@@ -726,7 +484,9 @@ str SYSioStatistics(int *ret) {
  
 	getrusage(RUSAGE_SELF, &ru);
 	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0) return throwMessage("catalog.ioStatistics", "failed to create BAT");
+	if (b == 0) 
+		return throwMessage("catalog.ioStatistics", 
+				"failed to create BAT");
  
 	/* store counters, ignore errors */
 	i = ru.ru_maxrss; BUNins(b, "maxrss", &i); 
@@ -742,40 +502,6 @@ str SYSioStatistics(int *ret) {
 	return MAL_SUCCEED;
 }
 
-str SYSbbpStatistics(int *ret) {
-	int 	pbat = 0;
-	int	pdisk = 0;
-	int	pheat = 0; 
-	int	i,tmp=0,per=0; 
-	BAT	*b;
-
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0) return throwMessage("catalog.bbpStatistics", "failed to create BAT");
-
-	for (i = 1; i < BBPsize; i++) {
-		if (BBP_logical(i)) {
-			pbat++; 
-			if (BBP_cache(i)) {
-				pheat += BBP_lastused(i); 
-				if (BBP_cache(i)->batPersistence == PERSISTENT)
-					per++;
-				else tmp++;
-			} else {
-				pdisk++; 
-			}
-		}
-	}
-	b = BUNins(b, "bats", &pbat);
-	b = BUNins(b, "tmpbats", &tmp);
-	b = BUNins(b, "perbats", &per);
-	b = BUNins(b, "ondisk", &pdisk);
-	b = BUNins(b, "todisk", &BBPout);
-	b = BUNins(b, "fromdisk", &BBPin);
-
-	@:Pseudo(gdk,bbp)@
-	return MAL_SUCCEED;
-}
-
 str SYSgdkEnv(int *ret){
 	BAT *b = BATcopy(GDKenv);
 	@:Pseudo(gdk,env)@
@@ -787,7 +513,9 @@ str SYSgdkThread(int *ret){
         int     i;
 
         b= BATnew(TYPE_int,TYPE_str,THREADS);
-        if (b == 0) return throwMessage("catalog.gdkThread", "failed to create BAT");
+        if (b == 0) 
+		return throwMessage("catalog.gdkThread", 
+			"failed to create BAT");
 
         for(i=0; i < THREADS; i++)
 	if( GDKthreads[i].pid) {

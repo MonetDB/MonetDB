@@ -56,6 +56,11 @@ comment "Pseudo bat of client login time";
 command info( ):bat[:int,:str] 
 address CLTInfo
 comment "Pseudo bat with client attributes";
+
+command quit():void
+address CLTquit
+comment "Terminate the session"'
+
 @-
 @{
 @+ Monet client data
@@ -180,4 +185,12 @@ str CLTclearDebug(int *ret, int *flg){
 	(void)ret; (void) flg; /*fool compiler */
 	return throwMessage("clients.clearDebug","not yet implemented");
 }
+                                                                               
+str CLTquit(int *ret) {
+        Client c= getClient();
+        (void) ret; /* fool compiler */
+        c->mode = FINISHING;
+        return MAL_SUCCEED;
+}
+
 @}
