@@ -27,7 +27,7 @@ Over..
 "FRIDAY"	5	64
 "SATURDAY"	6	64
 "SUNDAY"	7	64
-7 Rows affected
+SQL  7 Rows affected
 "MONDAY"	64
 "TUESDAY"	64
 "WEDNESDAY"	64
@@ -35,12 +35,12 @@ Over..
 "FRIDAY"	64
 "SATURDAY"	64
 "SUNDAY"	64
-7 Rows affected
+SQL  7 Rows affected
 "APRIL"	"THURSDAY"
 "MAY"	"FRIDAY"
 "JUNE"	"SATURDAY"
 "JULY"	"SUNDAY"
-4 Rows affected
+SQL  4 Rows affected
 "MONDAY"	1	64
 "TUESDAY"	2	64
 "WEDNESDAY"	3	64
@@ -48,27 +48,27 @@ Over..
 "FRIDAY"	5	64
 "SATURDAY"	6	64
 "SUNDAY"	7	64
-7 Rows affected
+SQL  7 Rows affected
 278
-1 Row affected
+SQL  1 Row affected
 2
-1 Row affected
+SQL  1 Row affected
 2
-1 Row affected
+SQL  1 Row affected
 94	240	165710
-1 Row affected
+SQL  1 Row affected
 101908	101908
-1 Row affected
+SQL  1 Row affected
 "ATL"	"ATL"
-1 Row affected
+SQL  1 Row affected
 50
-1 Row affected
+SQL  1 Row affected
 94
-1 Row affected
+SQL  1 Row affected
 279
-1 Row affected
+SQL  1 Row affected
 "ATL"	"BOS"	154
-1 Row affected
+SQL  1 Row affected
 "MATL"	9
 "BBOS"	5
 "DDFW"	6
@@ -80,7 +80,7 @@ Over..
 "SSFO"	4.5
 "WWAS"	12
 "BBWI"	5
-11 Rows affected
+SQL  11 Rows affected
 3	"MATL"
 3	"BBOS"
 2	"DDFW"
@@ -93,15 +93,15 @@ Over..
 1	"WWAS"
 3	"BBWI"
 1	""
-12 Rows affected
+SQL  12 Rows affected
 "TURBOPROP"	32
 "JET"	15
 "PROPELLER"	16
-3 Rows affected
+SQL  3 Rows affected
 "TURBOPROP"	32
 "JET"	15
 "PROPELLER"	16
-3 Rows affected
+SQL  3 Rows affected
 296	2400	"Q"
 296	2400	"M"
 296	2400	"BN"
@@ -252,7 +252,7 @@ Over..
 166	2500	"B"
 166	2500	"Y"
 166	2500	"F"
-150 Rows affected
+SQL  150 Rows affected
 "PHL"	"BWI"	691	50
 "BWI"	"PHL"	691	43
 "BWI"	"PHL"	691	50
@@ -662,7 +662,7 @@ Over..
 "BWI"	"PHL"	1137	53
 "PHL"	"BWI"	1151	50
 "BWI"	"PHL"	1151	53
-409 Rows affected
+SQL  409 Rows affected
 "USA"	"CALIFORNIA"	"OAKLAND"	"SE"
 "USA"	"CALIFORNIA"	"SAN FRANCISCO"	"SE"
 "USA"	"CALIFORNIA"	"OAKLAND"	"SW"
@@ -674,7 +674,7 @@ Over..
 "USA"	"PENNSYLVANIA"	"PHILADELPHIA"	"SW"
 "USA"	"TEXAS"	"FORT WORTH"	"E"
 "USA"	"TEXAS"	"DALLAS"	"NW"
-11 Rows affected
+SQL  11 Rows affected
 "USA"	"CALIFORNIA"	"OAKLAND"	"SE"
 "USA"	"CALIFORNIA"	"SAN FRANCISCO"	"SE"
 "USA"	"CALIFORNIA"	"OAKLAND"	"SW"
@@ -686,7 +686,7 @@ Over..
 "USA"	"PENNSYLVANIA"	"PHILADELPHIA"	"SW"
 "USA"	"TEXAS"	"FORT WORTH"	"E"
 "USA"	"TEXAS"	"DALLAS"	"NW"
-11 Rows affected
+SQL  11 Rows affected
 "SFO"	"DFW"	"Y"	"NO"	328	0	"1234567"
 "SFO"	"DFW"	"B"	"NO"	328	0	"1234567"
 "SFO"	"DFW"	"YN"	"YES"	381	762	"1234567"
@@ -697,7 +697,7 @@ Over..
 "SFO"	"DFW"	"FN"	"YES"	504	1008	"1234567"
 "SFO"	"DFW"	"F"	"NO"	709	1418	"1234567"
 "SFO"	"DFW"	"F"	"NO"	717	1434	"1234567"
-10 Rows affected
+SQL  10 Rows affected
 2	"JET"	579	"PIT"	"DEN"
 2	"JET"	550	"BOS"	"PIT"
 2	"JET"	550	"BWI"	"DEN"
@@ -727,7 +727,7 @@ Over..
 3	"JET"	615	"SFO"	"BOS"
 3	"JET"	622	"DFW"	"OAK"
 4	"JET"	580	"BOS"	"SFO"
-29 Rows affected
+SQL  29 Rows affected
 
 # 21:13:11 >  
 # 21:13:11 >  Done.

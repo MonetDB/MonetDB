@@ -29,7 +29,7 @@ nil	5
 2	6
 nil	6
 1	6
-9 Rows affected
+SQL  9 Rows affected
 nil	nil
 nil	5
 nil	6
@@ -39,7 +39,7 @@ nil	6
 2	6
 2	5
 2	nil
-9 Rows affected
+SQL  9 Rows affected
 nil	nil
 1	nil
 2	nil
@@ -49,7 +49,7 @@ nil	5
 nil	6
 1	6
 2	6
-9 Rows affected
+SQL  9 Rows affected
 nil	nil
 nil	5
 nil	6
@@ -59,13 +59,13 @@ nil	6
 2	nil
 2	5
 2	6
-9 Rows affected
+SQL  9 Rows affected
 9
-1 Row affected
+SQL  1 Row affected
 3	5
 3	6
 3	nil
-3 Rows affected
+SQL  3 Rows affected
 
 # 21:05:20 >  
 # 21:05:20 >  Done.

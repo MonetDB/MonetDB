@@ -22,23 +22,23 @@ Over..
 
 "T"	125
 "F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	125
 "F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	125
 "F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	"T"	125
 "F"	"F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	-1	29
 "F"	-1	46
 "T"	-2	81
 "F"	-2	17
 "T"	-3	14
 "T"	-4	1
-6 Rows affected
+SQL  6 Rows affected
 "T"	4	35
 "F"	1	5
 "F"	2	28
@@ -53,7 +53,7 @@ Over..
 "F"	0	2
 "F"	7	2
 "F"	8	1
-14 Rows affected
+SQL  14 Rows affected
 "T"	"c"	125
 "T"	"h"	125
 "T"	"n"	125
@@ -69,7 +69,7 @@ Over..
 "T"	"br"	1
 "F"	"cl"	8
 "F"	"br"	1
-15 Rows affected
+SQL  15 Rows affected
 "T"	"22"	124
 "T"	"195"	12
 "T"	"3"	125
@@ -127,35 +127,35 @@ Over..
 "F"	"36"	1
 "F"	"94"	1
 "T"	"194"	1
-57 Rows affected
+SQL  57 Rows affected
 "T"	0	125
 "F"	0	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	125
 "F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	125
 "F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	125
 "F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	125
 "F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	125
 "F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	"T"	125
 "F"	"F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	-1	29
 "F"	-1	46
 "T"	-2	81
 "F"	-2	17
 "T"	-3	14
 "T"	-4	1
-6 Rows affected
+SQL  6 Rows affected
 "T"	4	35
 "F"	1	5
 "F"	2	28
@@ -170,7 +170,7 @@ Over..
 "F"	0	2
 "F"	7	2
 "F"	8	1
-14 Rows affected
+SQL  14 Rows affected
 "T"	"7"	125
 "T"	"1"	125
 "T"	"2"	125
@@ -180,21 +180,21 @@ Over..
 "T"	"3"	1
 "T"	"4"	2
 "T"	"5"	2
-9 Rows affected
+SQL  9 Rows affected
 "T"	"T"	125
 "F"	"F"	63
-2 Rows affected
+SQL  2 Rows affected
 "T"	125
-1 Row affected
+SQL  1 Row affected
 "T"	125
-1 Row affected
+SQL  1 Row affected
 "T"	"T"	125
-1 Row affected
+SQL  1 Row affected
 "T"	-1	29
 "T"	-2	81
 "T"	-3	14
 "T"	-4	1
-4 Rows affected
+SQL  4 Rows affected
 "T"	4	35
 "T"	5	27
 "T"	3	31
@@ -202,16 +202,16 @@ Over..
 "T"	2	12
 "T"	6	14
 "T"	1	3
-7 Rows affected
+SQL  7 Rows affected
 "F"	63
-1 Row affected
+SQL  1 Row affected
 "F"	63
-1 Row affected
+SQL  1 Row affected
 "F"	"F"	63
-1 Row affected
+SQL  1 Row affected
 "F"	-1	46
 "F"	-2	17
-2 Rows affected
+SQL  2 Rows affected
 "F"	1	5
 "F"	2	28
 "F"	4	5
@@ -219,38 +219,38 @@ Over..
 "F"	0	2
 "F"	7	2
 "F"	8	1
-7 Rows affected
+SQL  7 Rows affected
 "T"	-1	29
 "F"	-1	46
 "T"	-2	81
 "F"	-2	17
 "T"	-3	14
 "T"	-4	1
-6 Rows affected
+SQL  6 Rows affected
 "T"	14
-1 Row affected
+SQL  1 Row affected
 "T"	14
-1 Row affected
+SQL  1 Row affected
 "T"	"T"	14
-1 Row affected
+SQL  1 Row affected
 "T"	-3	14
-1 Row affected
+SQL  1 Row affected
 "T"	4	5
 "T"	2	6
 "T"	3	3
-3 Rows affected
+SQL  3 Rows affected
 "T"	81
 "F"	17
-2 Rows affected
+SQL  2 Rows affected
 "T"	81
 "F"	17
-2 Rows affected
+SQL  2 Rows affected
 "T"	"T"	81
 "F"	"F"	17
-2 Rows affected
+SQL  2 Rows affected
 "T"	-2	81
 "F"	-2	17
-2 Rows affected
+SQL  2 Rows affected
 "T"	5	19
 "F"	2	7
 "T"	4	22
@@ -263,19 +263,19 @@ Over..
 "F"	0	1
 "F"	1	1
 "F"	8	1
-12 Rows affected
+SQL  12 Rows affected
 "T"	29
 "F"	46
-2 Rows affected
+SQL  2 Rows affected
 "T"	29
 "F"	46
-2 Rows affected
+SQL  2 Rows affected
 "T"	"T"	29
 "F"	"F"	46
-2 Rows affected
+SQL  2 Rows affected
 "T"	-1	29
 "F"	-1	46
-2 Rows affected
+SQL  2 Rows affected
 "T"	4	8
 "F"	1	4
 "F"	2	21
@@ -287,7 +287,7 @@ Over..
 "F"	7	2
 "F"	0	1
 "T"	2	3
-11 Rows affected
+SQL  11 Rows affected
 "T"	4	35
 "F"	1	5
 "F"	2	28
@@ -302,135 +302,135 @@ Over..
 "F"	0	2
 "F"	7	2
 "F"	8	1
-14 Rows affected
+SQL  14 Rows affected
 "F"	1
-1 Row affected
+SQL  1 Row affected
 "F"	1
-1 Row affected
+SQL  1 Row affected
 "F"	"F"	1
-1 Row affected
+SQL  1 Row affected
 "F"	-2	1
-1 Row affected
+SQL  1 Row affected
 "F"	8	1
-1 Row affected
+SQL  1 Row affected
 "T"	3
 "F"	2
-2 Rows affected
+SQL  2 Rows affected
 "T"	3
 "F"	2
-2 Rows affected
+SQL  2 Rows affected
 "T"	"T"	3
 "F"	"F"	2
-2 Rows affected
+SQL  2 Rows affected
 "T"	-2	3
 "F"	-1	2
-2 Rows affected
+SQL  2 Rows affected
 "T"	7	3
 "F"	7	2
-2 Rows affected
+SQL  2 Rows affected
 "T"	14
-1 Row affected
+SQL  1 Row affected
 "T"	14
-1 Row affected
+SQL  1 Row affected
 "T"	"T"	14
-1 Row affected
+SQL  1 Row affected
 "T"	-2	13
 "T"	-1	1
-2 Rows affected
+SQL  2 Rows affected
 "T"	6	14
-1 Row affected
+SQL  1 Row affected
 "T"	27
-1 Row affected
+SQL  1 Row affected
 "T"	27
-1 Row affected
+SQL  1 Row affected
 "T"	"T"	27
-1 Row affected
+SQL  1 Row affected
 "T"	-2	19
 "T"	-1	8
-2 Rows affected
+SQL  2 Rows affected
 "T"	5	27
-1 Row affected
+SQL  1 Row affected
 "T"	35
 "F"	5
-2 Rows affected
+SQL  2 Rows affected
 "T"	35
 "F"	5
-2 Rows affected
+SQL  2 Rows affected
 "T"	"T"	35
 "F"	"F"	5
-2 Rows affected
+SQL  2 Rows affected
 "T"	-1	8
 "T"	-3	5
 "F"	-1	5
 "T"	-2	22
-4 Rows affected
+SQL  4 Rows affected
 "T"	4	35
 "F"	4	5
-2 Rows affected
+SQL  2 Rows affected
 "T"	31
 "F"	20
-2 Rows affected
+SQL  2 Rows affected
 "T"	31
 "F"	20
-2 Rows affected
+SQL  2 Rows affected
 "T"	"T"	31
 "F"	"F"	20
-2 Rows affected
+SQL  2 Rows affected
 "T"	-1	9
 "T"	-2	18
 "T"	-3	3
 "F"	-1	13
 "T"	-4	1
 "F"	-2	7
-6 Rows affected
+SQL  6 Rows affected
 "T"	3	31
 "F"	3	20
-2 Rows affected
+SQL  2 Rows affected
 "F"	28
 "T"	12
-2 Rows affected
+SQL  2 Rows affected
 "F"	28
 "T"	12
-2 Rows affected
+SQL  2 Rows affected
 "F"	"F"	28
 "T"	"T"	12
-2 Rows affected
+SQL  2 Rows affected
 "F"	-1	21
 "F"	-2	7
 "T"	-2	3
 "T"	-3	6
 "T"	-1	3
-5 Rows affected
+SQL  5 Rows affected
 "F"	2	28
 "T"	2	12
-2 Rows affected
+SQL  2 Rows affected
 "F"	5
 "T"	3
-2 Rows affected
+SQL  2 Rows affected
 "F"	5
 "T"	3
-2 Rows affected
+SQL  2 Rows affected
 "F"	"F"	5
 "T"	"T"	3
-2 Rows affected
+SQL  2 Rows affected
 "F"	-1	4
 "T"	-2	3
 "F"	-2	1
-3 Rows affected
+SQL  3 Rows affected
 "F"	1	5
 "T"	1	3
-2 Rows affected
+SQL  2 Rows affected
 "F"	2
-1 Row affected
+SQL  1 Row affected
 "F"	2
-1 Row affected
+SQL  1 Row affected
 "F"	"F"	2
-1 Row affected
+SQL  1 Row affected
 "F"	-2	1
 "F"	-1	1
-2 Rows affected
+SQL  2 Rows affected
 "F"	0	2
-1 Row affected
+SQL  1 Row affected
 
 # 19:41:30 >  
 # 19:41:30 >  Done.

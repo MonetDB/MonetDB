@@ -25,13 +25,13 @@ Over..
 9	"testx"	9.1
 0	"texst"	99999.1
 8	"texxst"	0.0001
-5 Rows affected
+SQL  5 Rows affected
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
 8	"texxst"	0.0001
-5 Rows affected
+SQL  5 Rows affected
 
 # 15:49:54 >  
 # 15:49:54 >  Done.

@@ -20,18 +20,18 @@ Over..
 # 15:22:54 >  
 
 "Video"	"match"	"ID"	"MediaInformationFK"	"nil"
-1 Row affected
-no Rows affected
+SQL  1 Row affected
+SQL  no Rows affected
 "CreationCreator"	"match"	"CreationFK"	"CreatorFK"	"nil"
-1 Row affected
-no Rows affected
+SQL  1 Row affected
+SQL  no Rows affected
 "Creator"	"match"	"CreatorPK"	"IndividualFK"	"nil"
-1 Row affected
-no Rows affected
+SQL  1 Row affected
+SQL  no Rows affected
 1	"0120338"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif"	1
-1 Row affected
+SQL  1 Row affected
 1	"Titanic"	"1997"
-1 Row affected
+SQL  1 Row affected
 1	5823
 1	5824
 1	5825
@@ -49,7 +49,7 @@ no Rows affected
 1	5837
 1	5838
 1	5839
-17 Rows affected
+SQL  17 Rows affected
 5823	"Actor"	2328
 5824	"Actor"	415
 5825	"Actor"	3
@@ -67,7 +67,7 @@ no Rows affected
 5837	"Actor"	693
 5838	"Writer"	376
 5839	"Director"	376
-17 Rows affected
+SQL  17 Rows affected
 2328	"Sagalevitch,+Dr.+Anatoly+M."
 415	"Cascone,+Nicholas"
 3	"Abernathy,+Lewis"
@@ -85,7 +85,7 @@ no Rows affected
 693	"DiCaprio,+Leonardo"
 376	"Cameron,+James"
 376	"Cameron,+James"
-17 Rows affected
+SQL  17 Rows affected
 224	"0112864"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305280711.01.MZZZZZZZ.gif"	1
 223	"0098067"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0783225962.01.MZZZZZZZ.gif"	1
 222	"0116583"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6304290888.01.MZZZZZZZ.gif"	1
@@ -310,7 +310,7 @@ no Rows affected
 3	"0120915"	"http%3A%2F%2Fposters.imdb.com%2FPosters%2Fs%2Fswepi1styleb1.jpg"	1
 2	"0076759"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6301773551.01.MZZZZZZZ.gif"	1
 1	"0120338"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif"	1
-224 Rows affected
+SQL  224 Rows affected
 224	"Die Hard: With a Vengeance"	"1995"
 223	"Parenthood"	"1989"
 222	"Hunchback of Notre Dame, The"	"1996/I"
@@ -535,7 +535,7 @@ no Rows affected
 3	"Star Wars: Episode I - The Phantom Menace"	"1999"
 2	"Star Wars"	"1977"
 1	"Titanic"	"1997"
-224 Rows affected
+SQL  224 Rows affected
 1	5823
 1	5824
 1	5825
@@ -4532,7 +4532,7 @@ no Rows affected
 224	277
 224	278
 224	279
-3996 Rows affected
+SQL  3996 Rows affected
 262	"Actor"	1176
 263	"Actor"	1239
 264	"Actor"	1332
@@ -8529,7 +8529,7 @@ no Rows affected
 5837	"Actor"	693
 5838	"Writer"	376
 5839	"Director"	376
-3996 Rows affected
+SQL  3996 Rows affected
 1	"Abatemarco,+Tony"
 2	"Abbott,+John+(I)"
 3	"Abernathy,+Lewis"
@@ -11517,7 +11517,7 @@ no Rows affected
 2985	"Zubernis,+Jeffry"
 2986	"Zucker,+Jerry"
 2987	"Zumwalt,+Rick"
-2987 Rows affected
+SQL  2987 Rows affected
 224	279
 223	304
 222	332
@@ -11761,7 +11761,7 @@ no Rows affected
 3	5791
 2	5815
 1	5839
-243 Rows affected
+SQL  243 Rows affected
 279	"Director"	1805
 304	"Director"	1278
 332	"Director"	2915
@@ -12005,7 +12005,7 @@ no Rows affected
 5791	"Director"	1637
 5815	"Director"	1637
 5839	"Director"	376
-243 Rows affected
+SQL  243 Rows affected
 1805	"McTiernan,+John"
 1278	"Howard,+Ron"
 2915	"Wise,+Kirk"
@@ -12249,7 +12249,7 @@ no Rows affected
 1637	"Lucas,+George"
 1637	"Lucas,+George"
 376	"Cameron,+James"
-243 Rows affected
+SQL  243 Rows affected
 214	"0116213"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729601.01.MZZZZZZZ.gif"	1
 195	"0117571"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F630521610X.01.MZZZZZZZ.gif"	1
 191	"0117333"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F630471193X.01.MZZZZZZZ.gif"	1
@@ -12264,7 +12264,7 @@ no Rows affected
 45	"0117060"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305181772.01.MZZZZZZZ.gif"	1
 19	"0117998"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729636.01.MZZZZZZZ.gif"	1
 9	"0116629"	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2FB00003Q43A.01.MZZZZZZZ.gif"	1
-14 Rows affected
+SQL  14 Rows affected
 214	"Eraser"	"1996"
 195	"Scream"	"1996"
 191	"Phenomenon"	"1996"
@@ -12279,7 +12279,7 @@ no Rows affected
 45	"Mission: Impossible"	"1996"
 19	"Twister"	"1996"
 9	"Independence Day"	"1996"
-14 Rows affected
+SQL  14 Rows affected
 214	532
 214	533
 195	1000
@@ -12305,7 +12305,7 @@ no Rows affected
 19	5391
 9	5640
 9	5641
-25 Rows affected
+SQL  25 Rows affected
 532	"Writer"	1082
 533	"Writer"	2169
 1000	"Writer"	2882
@@ -12331,7 +12331,7 @@ no Rows affected
 5391	"Writer"	578
 5640	"Writer"	807
 5641	"Writer"	689
-25 Rows affected
+SQL  25 Rows affected
 1082	"Green,+Walon"
 2169	"Puryear,+Tony"
 1099	"Grisham,+John"
@@ -12371,7 +12371,7 @@ no Rows affected
 689	"Devlin,+Dean"
 578	"Crichton,+Michael"
 578	"Crichton,+Michael"
-39 Rows affected
+SQL  39 Rows affected
 279	"Director"	1805
 304	"Director"	1278
 332	"Director"	2915
@@ -12615,7 +12615,7 @@ no Rows affected
 5791	"Director"	1637
 5815	"Director"	1637
 5839	"Director"	376
-243 Rows affected
+SQL  243 Rows affected
 224	279
 223	304
 222	332
@@ -12859,7 +12859,7 @@ no Rows affected
 3	5791
 2	5815
 1	5839
-243 Rows affected
+SQL  243 Rows affected
 224	"Die Hard: With a Vengeance"	"1995"
 223	"Parenthood"	"1989"
 222	"Hunchback of Notre Dame, The"	"1996/I"
@@ -13103,9 +13103,9 @@ no Rows affected
 3	"Star Wars: Episode I - The Phantom Menace"	"1999"
 2	"Star Wars"	"1977"
 1	"Titanic"	"1997"
-243 Rows affected
+SQL  243 Rows affected
 2522	"Spielberg,+Steven"
-1 Row affected
+SQL  1 Row affected
 2290	"Director"	2522
 2884	"Director"	2522
 4722	"Director"	2522
@@ -13116,7 +13116,7 @@ no Rows affected
 5543	"Director"	2522
 5743	"Director"	2522
 5767	"Director"	2522
-10 Rows affected
+SQL  10 Rows affected
 2290	"Director"	2522
 2884	"Director"	2522
 4722	"Director"	2522
@@ -13127,7 +13127,7 @@ no Rows affected
 5543	"Director"	2522
 5743	"Director"	2522
 5767	"Director"	2522
-10 Rows affected
+SQL  10 Rows affected
 143	2290
 119	2884
 46	4722
@@ -13138,7 +13138,7 @@ no Rows affected
 13	5543
 5	5743
 4	5767
-10 Rows affected
+SQL  10 Rows affected
 143	"Hook"	"1991"
 119	"Close Encounters of the Third Kind"	"1977"
 46	"Indiana Jones and the Temple of Doom"	"1984"
@@ -13149,7 +13149,7 @@ no Rows affected
 13	"Jaws"	"1975"
 5	"Jurassic Park"	"1993"
 4	"E.T. the Extra-Terrestrial"	"1982"
-10 Rows affected
+SQL  10 Rows affected
 2522	"Spielberg,+Steven"	2290	"Director"	2522	143	2290	143	"Hook"	"1991"
 2522	"Spielberg,+Steven"	2884	"Director"	2522	119	2884	119	"Close Encounters of the Third Kind"	"1977"
 2522	"Spielberg,+Steven"	4722	"Director"	2522	46	4722	46	"Indiana Jones and the Temple of Doom"	"1984"
@@ -13160,7 +13160,7 @@ no Rows affected
 2522	"Spielberg,+Steven"	5543	"Director"	2522	13	5543	13	"Jaws"	"1975"
 2522	"Spielberg,+Steven"	5743	"Director"	2522	5	5743	5	"Jurassic Park"	"1993"
 2522	"Spielberg,+Steven"	5767	"Director"	2522	4	5767	4	"E.T. the Extra-Terrestrial"	"1982"
-10 Rows affected
+SQL  10 Rows affected
 
 # 15:22:55 >  
 # 15:22:55 >  Done.

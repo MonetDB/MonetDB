@@ -20,9 +20,9 @@ Over..
 # 19:39:27 >  Mtimeout -timeout 60 sql_client --port=51478 < check0.sql
 # 19:39:27 >  
 
-no Rows affected
-no Rows affected
-no Rows affected
+SQL  no Rows affected
+SQL  no Rows affected
+SQL  no Rows affected
 
 # 19:39:27 >  
 # 19:39:27 >  Done.
