@@ -172,7 +172,6 @@ autoconf
 
 # patch configure to cope with Intel's C/C++ compiler for Linux ("icc")
 if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
-rm acconfig.h			# we don't need this anymore
 echo "autoconf $AC_VERSION is older than $NEW_AC_VERSION"
 grep 'ac_cv_prog_cc_g=yes' configure >/dev/null && cat << "EOF" | patch configure
 --- configure~	Wed May 23 20:46:51 2001
