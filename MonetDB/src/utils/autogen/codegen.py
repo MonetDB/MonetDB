@@ -112,7 +112,8 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'mt':       [ '.symbols.h', '.c' ],
             'cc':       [ '.o' ],
             'c':        [ '.o' ],
-            'i':        [ '_wrap.c' ],
+            'py.i':     [ '_wrap.c', '.py' ],
+            'pm.i':     [ '_wrap.c', '.pm' ],
             'glue.c':   [ '.glue.o' ],
 #            'java':     [ '.class' ],
             'tmpmil':   [ '.mil' ],
@@ -309,7 +310,7 @@ class java_parser:
     		if self.status == None and token == 'class':
 			self.status = 'class'
 		# handle simple comments
-    		if self.status == 'None' and token == '//':
+    		if self.status == None and token == '//':
 			self.status = 'line comment'
     		if self.status == 'start comment' and token == '/':
 			self.status = 'line comment'
