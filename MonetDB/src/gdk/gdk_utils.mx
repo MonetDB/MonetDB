@@ -870,7 +870,7 @@ int GDKinit(char *dbname, char *dbfarm) {
 #endif
 
 	GDKenv = BATnew(TYPE_str,TYPE_str,100);
-	BATrename(GDKenv, "monet_envirenment");
+	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
 
 	return 0;

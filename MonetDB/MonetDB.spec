@@ -72,19 +72,17 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %files server
 %defattr(-,monet,monet) 
 %{prefix}/bin/Mserver 
-%{prefix}/bin/Mdestroydb 
-%{prefix}/bin/Mcreatedb
 %{prefix}/bin/Mshutdown
 %{prefix}/bin/monet-config
 
 %{prefix}/lib/libbat.so*
 %{prefix}/lib/libmonet.so*
 %{prefix}/lib/MonetDB/*.so* 
-%{prefix}/share/MonetDB/monet.conf 
-%{prefix}/share/MonetDB/general.mil 
+
 %{prefix}/share/MonetDB/mapi.mil 
-%{prefix}/share/MonetDB/quit.mil 
 %{prefix}/share/MonetDB/tools/* 
+
+%{prefix}/etc/monet.conf 
 
 
 %files devel
@@ -103,6 +101,7 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/share/MonetDB/monet.Mprofile.conf 
 %{prefix}/share/MonetDB/Mprofile-commands.lst 
 %{prefix}/share/MonetDB/monet.Mtest.conf 
+%{prefix}/share/MonetDB/quit.mil 
 
 %{prefix}/bin/prof.py
 %{prefix}/bin/Mtest.py
