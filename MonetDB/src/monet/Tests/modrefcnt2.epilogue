@@ -1,0 +1,5 @@
+# in the global context on the Mserver konsole (after all clients are gone):
+
+loaded;
+test.print;
+test.count.print;

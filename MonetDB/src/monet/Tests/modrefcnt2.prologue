@@ -1,3 +1,7 @@
+# in the global context on the Mserver konsole (before any client connects):
+# - load module "lock"
+# - create a BAT using the "lock" atom a tail type
+
 module("lock");
 
 VAR test := new(int,lock);

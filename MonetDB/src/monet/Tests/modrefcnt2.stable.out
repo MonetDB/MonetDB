@@ -31,12 +31,68 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 printf("\nReady.\n");
 
 Ready.
+# in the global context on the Mserver konsole (after all clients are gone):
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "_mapi",	  2		  ]
+[ "algebra",	  2		  ]
+[ "arith",	  2		  ]
+[ "bat",	  2		  ]
+[ "kernel",	  2		  ]
+[ "lock",	  1		  ]
+[ "main",	  2		  ]
+[ "str",	  2		  ]
+[ "streams",	  2		  ]
+[ "sys",	  2		  ]
+[ "trans",	  2		  ]
+[ "uchr",	  4		  ]
+test.print;
+#-----------------#
+# BAT:	  test	  #
+# (int)	  (lock)  #
+#-----------------#
+test.count.print;
+[ 0 ]
+;
+printf("\nDone..\n");
+
+Done..
 
 Over..
 
-# 18:26:30 >  
-# 18:26:30 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708 < modrefcnt2_s00.milC
-# 18:26:30 >  
+# 22:59:33 >  
+# 22:59:33 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=54354 < modrefcnt2_s00.milC
+# 22:59:33 >  
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "_mapi",	  3		  ]
+[ "algebra",	  3		  ]
+[ "arith",	  3		  ]
+[ "bat",	  3		  ]
+[ "kernel",	  3		  ]
+[ "lock",	  1		  ]
+[ "main",	  3		  ]
+[ "str",	  3		  ]
+[ "streams",	  3		  ]
+[ "sys",	  3		  ]
+[ "trans",	  3		  ]
+[ "uchr",	  6		  ]
+#-----------------#
+# BAT:	  test	  #
+# (int)	  (lock)  #
+#-----------------#
+[ 0 ]
+
+
+
+# 22:59:33 >  
+# 22:59:33 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=54354 < modrefcnt2_s01.milC
+# 22:59:33 >  
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -84,12 +140,18 @@ Over..
 #-----------------#
 [ 0 ]
 
-# 18:26:30 >  
-# 18:26:30 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
-# 18:26:30 >  
+MAPI  = anonymous@draco:54354
+ACTION= mapi_get_row
+QUERY = drop("lock");
+ERROR = !ERROR: TBL_unloadmod: lock was not loaded.
 
 
-# 18:26:31 >  
-# 18:26:31 >  Done.
-# 18:26:31 >  
+# 22:59:33 >  
+# 22:59:33 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=54354
+# 22:59:33 >  
+
+
+# 22:59:34 >  
+# 22:59:34 >  Done.
+# 22:59:34 >  
 
