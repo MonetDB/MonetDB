@@ -1113,7 +1113,7 @@ Sharing of the temporary is only permitted if the type
 is a priory known and not TYPE_any.
 @c
 int newTmpVariable(MalBlkPtr mb, malType type){
-        int n;
+	int n;
         
     @:makeVarSpace@
     n = mb->vtop;

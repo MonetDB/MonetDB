@@ -94,7 +94,7 @@ initialization string. See the documentation on Scenarios.
 @h
 typedef struct CLIENT{
     int idx;        /* entry in mal_clients */
-    str     user;       /* user name. */
+    str user;       /* user name. */
     str password;   /* of user */
     int sessionkey; /* unique key addressed to session */
     int permission; /* access mode */
@@ -135,9 +135,11 @@ The monitor file descriptor can be set to trace the input received
 from a particular client. This facility is used by Mapi to trace
 the interaction on the system console (sysmon). 
 @h
-    stream  *fdin, *fdout;      /* streams from and to user. */
-    str input, output, limit;   /* IO buffers + input limit */
-    str nxt;            /* next unparsed input */
+    bstream  *fdin;
+    int      yycur;		/* the scanners current position */
+    stream   *fdout;    /* streams from and to user. */
+
+    str output; 	/* output buffer */
     str prompt;         /* acknowledge prompt */
     int promptlength;
 @-
@@ -183,7 +185,7 @@ activities. Each client runs in its own process thread. Its identity
 is retained here for access by others (=father).
 @h
     Thread      mythread;
-    str     errbuf;     /* location of GDK exceptions */
+    str     	errbuf;     /* location of GDK exceptions */
     struct CLIENT   *father;    
 @-
 Each client has a private entry point into the namespace and
@@ -192,7 +194,6 @@ Moreover, the parser needs some administration variables
 to keep track of critical elements.
 @h
     Scope       nspace;
-    Box     ospace;
     Symbol      curprg;     /* focus of parser */
     Symbol      backup;     /* save parsing context */
     MalStkPtr   glb;        /* global variable stack */
@@ -200,7 +201,7 @@ to keep track of critical elements.
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 
-mal_export Client   initClient(str nme, str passwd, stream *fin, stream *fout);
+mal_export Client   initClient(str nme, str passwd, bstream *fin, stream *fout);
 mal_export Client   forkClient     (Client c);
 mal_export Client   getClient   ();
 mal_export void     initClientThread(Client c);
@@ -243,6 +244,8 @@ actions to obtain client records.
 @{
 @c
 #include "mal_client.h"
+#include "mal_import.h"
+#include "mal_parser.h"
 
 /* This should be in src/mal/mal.h, as the function is implemented in 
  * src/mal/mal.c; however, it cannot, as "Client" isn't known there ... |-( 
@@ -310,7 +313,7 @@ Client getClient()
 The arguments are private copies, which should be garbage collected
 upon return;
 @c
-Client initClient(str nme, str passwd, stream *fin, stream *fout){
+Client initClient(str nme, str passwd, bstream *fin, stream *fout){
     Client  c;
     str prompt;
 
@@ -320,21 +323,16 @@ Client initClient(str nme, str passwd, stream *fin, stream *fout){
         return NULL;
     }
 
-        c->user = nme; 
+	c->user = nme; 
     c->scenario= NULL;
     c->oldscenario = NULL;
     c->sessionkey = 0;
     c->blkmode = 0;
 
-    c->fdin = fin? fin: GDKin;
-    if( c->input == 0) {
-        c->input = (str) GDKmalloc(BLOCK);
-        c->limit = c->input + BLOCK;
-    }
-    c->listing = 0;
-    *c->input = 0;
-    c->nxt = c->input;
+    c->fdin = fin? fin : bstream_create(GDKin,0);
+    c->yycur = 0;
 
+    c->listing = 0;
     c->fdout = fout?fout: GDKout;
     c->sysmon = mal_clients[0].sysmon?mal_clients[0].fdout:0;
     c->journal = NULL;
@@ -357,8 +355,12 @@ collect the buffer when in use.
     c->errbuf = 0;
 
     c->cwd= GDKstrdup(monet_cwd);
-    prompt= GDKgetenv("monet_prompt");
-    if( prompt== 0) prompt= ">";
+	if (!fin) {
+    	prompt= GDKgetenv("monet_prompt");
+    	if( prompt== 0) prompt= ">";
+	} else {
+		prompt= PROMPT1;
+	}
     c->prompt= GDKstrdup(prompt);
     c->promptlength= strlen(prompt);
     if( isAdministrator(c)) initClientThread(c);
@@ -384,8 +386,17 @@ the proper IO descriptors.
         GDKerror("Failed to initialize client\n");
         resetProfiler(c->fdout);
         stream_flush(c->fdout);
-        if( c->fdin) (void) stream_close(c->fdin);
-        if( c->fdout) (void) stream_close(c->fdout);
+        if( c->fdin){
+	    	/* missing protection against closing stdin stream */
+            (void) stream_close(c->fdin->s);
+            (void) stream_destroy(c->fdin->s);
+            (void) bstream_destroy(c->fdin);
+		}
+        if( c->fdout) {
+            (void) stream_flush(c->fdout); 
+            (void) stream_close(c->fdout);
+            (void) stream_destroy(c->fdout);
+		}
         /* if( c->socket) close(c->socket);*/
         return ;
     }
@@ -408,10 +419,10 @@ Client forkClient(Client father){
     if( father == NULL) return NULL;
     if (father->father != NULL) father = father->father;
     if ((son = initClient( GDKstrdup(father->user),
-        GDKstrdup(father->password), father->fdin,father->fdout))){
+        		father->password?GDKstrdup(father->password):NULL, 
+				father->fdin, father->fdout))){
         son->fdin= NULL;
-        GDKfree(son->input);
-        son->input = son->limit = NULL;
+		son->yycur=0;
         son->father = father;
         son->scenario = GDKstrdup(father->scenario);
         son->prompt = GDKstrdup(father->prompt);
@@ -420,7 +431,7 @@ Client forkClient(Client father){
         son->nspace->name= GDKstrdup("Client-child");
         son->nspace->outer = mal_scope;
     }
-        return son;
+	return son;
 }
 
 @-
@@ -450,10 +461,13 @@ void freeClient(Client c)
             (void) stream_destroy(c->fdout);
         }
         if(c->fdin){
-            (void) stream_close(c->fdin);
-            (void) stream_destroy(c->fdin);
+	    	/* missing protection against closing stdin stream */
+            (void) stream_close(c->fdin->s);
+            (void) stream_destroy(c->fdin->s);
+            (void) bstream_destroy(c->fdin);
         }
-        c->fdout= c->fdin= NULL;
+        c->fdout = NULL;
+		c->fdin= NULL;
     } 
     /* forked client also */
 
@@ -467,7 +481,7 @@ void freeClient(Client c)
         c->nspace=0;
     }
     */
-    /* re-use input/output buffers */
+    /* re-use output buffer */
     if(c->scenario) GDKfree(c->scenario); c->scenario = NULL;
     if(c->prompt) GDKfree(c->prompt); c->prompt = NULL;
     if(c->cwd) GDKfree(c->cwd); c->cwd = NULL;
@@ -546,28 +560,31 @@ work by closing them.
 @c 
 
 void killClient(Client c){
-    if (c && c->user) {
+    if (c && c->user && c->mythread) {
 #ifdef MAL_DEBUG_CLIENT
-    printf("killClient %d\n",c-mal_clients);
+    	printf("killClient %d\n",c-mal_clients);
 #endif
         Thread victim = c->mythread;
-    MT_Id pid= victim->pid;
+    	MT_Id pid= victim->pid;
 
-    GDKwarning("killClient:forcing client to stop ...\n");
-    /* the process may hang upon gaining access to the file descriptors */
-    c->mode= FINISHING;
-    (void) stream_flush(c->fdout);
-    resetProfiler(c->fdout);
-    (void) stream_close(c->fdout);
-    (void) stream_destroy(c->fdout); c->fdout= NULL;
-    (void) stream_close(c->fdin);
-    (void) stream_destroy(c->fdin); c->fdin= NULL;
+    	GDKwarning("killClient:forcing client to stop ...\n");
+    	/* the process may hang upon gaining access to the file descriptors */
+    	c->mode= FINISHING;
+    	(void) stream_flush(c->fdout);
+    	resetProfiler(c->fdout);
+    	(void) stream_close(c->fdout);
+    	(void) stream_destroy(c->fdout); 
+    	c->fdout= NULL;
+    	(void) stream_close(c->fdin->s);
+    	(void) stream_destroy(c->fdin->s); 
+    	(void) bstream_destroy(c->fdin);
+    	c->fdin= NULL;
 
-    GDKwarning("killClient:about to kill process ...\n");
-    sleep(PROCESSTIMEOUT);
-    pthread_kill((pthread_t)(pid-1),SIGKILL);
-    sleep(PROCESSTIMEOUT);
-    GDKwarning("killClient:process killed\n");
+    	GDKwarning("killClient:about to kill process ...\n");
+    	sleep(PROCESSTIMEOUT);
+    	pthread_kill((pthread_t)(pid-1),SIGKILL);
+    	sleep(PROCESSTIMEOUT);
+    	GDKwarning("killClient:process killed\n");
     }
 }
 @-
@@ -580,15 +597,18 @@ void cleanupClients(){
         /* if( c->nspace){ freeScopeList(c->nspace); c->nspace=0;}*/
         if( c->cwd){ GDKfree(c->cwd); c->cwd=0;}
         if( c->prompt){ GDKfree(c->prompt); c->prompt=0;}
-        if( c->input){ GDKfree(c->input); c->input=0;}
         if( c->user){ GDKfree(c->user); c->user=0;}
         if( c->password){ GDKfree(c->password); c->password=0;}
         if( c->fdin){
-            (void) stream_destroy(c->fdin); c->fdin= NULL;
+    		(void) stream_close(c->fdin->s);
+    		(void) stream_destroy(c->fdin->s); 
+    		(void) bstream_destroy(c->fdin);
+    		c->fdin= NULL;
         }
         if( c->fdout){
             resetProfiler(c->fdout);
-            (void) stream_destroy(c->fdout); c->fdout= NULL;
+            (void) stream_destroy(c->fdout); 
+	    	c->fdout= NULL;
         }
     }
 }
@@ -596,13 +616,14 @@ void cleanupClients(){
 An internet connection may be terminated from the server console.
 And killing the administrator this way is prohibited.
 @c
-str stopClientIndex(Client c, int id){
-        if( ! isAdministrator(c))
-                return throwMessage("stop","Only permitted from server console");
-        if( id<=0 || id>=MAL_MAXCLIENTS || mal_clients[id].mode==FREECLIENT)
-                return throwMessage("stop","Illegal client index");
-        killClient(mal_clients+id);
-    return MAL_SUCCEED;
+str stopClientIndex(Client c, int id)
+{
+	if( ! isAdministrator(c))
+		return throwMessage("stop","Only permitted from server console");
+	if( id<=0 || id>=MAL_MAXCLIENTS || mal_clients[id].mode==FREECLIENT)
+		return throwMessage("stop","Illegal client index");
+	killClient(mal_clients+id);
+	return MAL_SUCCEED;
 }
 str stopClient(Client c, str nme){
         if( ! isAdministrator(c))
@@ -684,45 +705,6 @@ any escape character needed to manipulate the string within
 the kernel.
 The buffer space is automatically expanded to accommodate new 
 information and the read pointers are adjusted.
-@c
-@c
-static 
-void enlargebuffer(Client c, int newsize){
-    int i;
-    int ln;
-    char *n;
-
-    assert(newsize>0);
-    ln = c->nxt-c->input;
-    i = c->limit - c->input + newsize;
-    n = (char *) GDKmalloc(i);
-    strcpy(n,c->input);
-    GDKfree(c->input);
-    c->input = n;
-    c->limit = c->input+i;
-    c->nxt= c->input+ln;
-}
-void appendInput(Client c, str msg){
-    int i,len;
-    char *s;
-
-    len= strlen(msg);
-    i= c->limit - c->input- len;
-    if( i < 0 ){
-        enlargebuffer(c,len);
-    }
-    for(s = c->input+strlen(c->input); *msg; msg++){
-        if( *msg == '\\')
-            switch(*++msg){
-            case 't': *s++ = '\t'; break;
-            case 'n': *s++ = '\n'; break;
-            case 'r': *s++ = '\r'; break;
-            default: *s++ = *msg;
-            }
-        else *s++= *msg;
-    }
-    *s=0;
-}
 @-
 The input is read from a (blocked) stream and stored in the client record
 input buffer. The storage area grows automatically upon need.
@@ -744,17 +726,7 @@ statementblock is recognized, it is taken into execution.
 
 To simplify misaligned communication with front-ends, we use different
 prompts structures. [think, can we avoid acks]
-@= makespace
-    if( c->limit-s <= BLOCK){
-        enlargebuffer(c, BLOCK);
-        s = c->nxt; *s = 0;
-    }
 
-@c
-int readClient(Client c,str prompt){
-    if( isa_block_stream(c->fdin)) return bstreamClient(c,prompt);
-    return streamClient(c,prompt);
-}
 @-
 The default action is to read information from an ascii-stream
 one line at a time. This is the preferred mode for reading
@@ -766,51 +738,49 @@ the front-end to issue the request.
     if(c->promptlength>=0) { 
         if(!isAdministrator(c))
             stream_printf(c->fdout,"\001");
-        if( c->blkmode) 
-            stream_printf(c->fdout,"+%s",
-                    (prompt?prompt:c->prompt));
-        else stream_printf(c->fdout,"%s",
-                    (prompt?prompt:c->prompt));
+        stream_printf(c->fdout,"%s", (prompt?prompt:c->prompt));
         if(!isAdministrator(c))
             stream_printf(c->fdout,"\002\n");
         stream_flush(c->fdout);
     }
 @c
-mal_export str malLoadScript(Client c, str name);
 
-int streamClient(Client c, str prompt){
-    int i,free,ln;
-    str  s;
- 
-    ln= c->nxt - c->input; /* left over bytes */
-    s = c->nxt; *s = 0;
-    @:makespace@
+int readClient(Client c,str prompt){
+	bstream *in = c->fdin;
 
 #ifdef MAL_CLIENT_DEBUG
     printf("# streamClient %s\n",c->user);
 #endif
-    free= c->limit - s-1;   /* reserve null byte */
-    free= free>BLOCK?BLOCK:free;
 
-    @:sentPrompt@
+	while (in->pos < in->len && 
+		  (isspace((int)(in->buf[in->pos])) ||
+		   in->buf[in->pos] == ';' || !in->buf[in->pos]))
+		in->pos++;
+
+	if (in->pos >= in->len) {
+		ssize_t rd;
+		assert(in->pos == in->len);
+
+		if (in->eof || !isa_block_stream(in->s)) {
+    		@:sentPrompt@
+			in->eof = 0;
+		}
+		if ((rd = bstream_next(in)) == 0) {
+			if (rd == 0 && in->eof && isa_block_stream(in->s)) {
+				/* we hadn't seen the EOF before, so just try again
+				(this time with prompt) */
+				return readClient(c, prompt);
+			}
+		}
 #ifdef MAL_CLIENT_DEBUG
     printf("# simple stream received:");
 #endif
-    while( (i= stream_read(c->fdin,s,1,1)) == 1){
-#ifdef MAL_CLIENT_DEBUG
-        printf("%c",*s);
-        fflush(stdout);
-#endif
-        if(*s== 13) continue; /* WIN32 */
-        if(*s== 0 || *s== '\n') { *s=0; break;}
-        s++;
-        if( s==c->limit-1) { @:makespace@ }
-    }
-    if( i<=0) {
+	}
+	if (in->pos >= in->len) {
         /* end of stream reached */
         return 0;
     }
-    *s=0;
+/*
     if( *c->nxt == '<'){
         str nme= GDKstrdup(c->nxt+1);
         nme[strlen(c->nxt+1)]=0;
@@ -818,56 +788,11 @@ int streamClient(Client c, str prompt){
         malLoadScript(c,nme);
         GDKfree(nme);
     } else
-    c->nxt= c->input+ln;
+*/
 #ifdef MAL_CLIENT_DEBUG
     printf("#finished\n");
 #endif
-    @:sysTrace(c->input)@
+    @:sysTrace(CURRENT(c))@
     return 1;
-}
-@-
-In block stream mode we repeatedly read complete blocks
-from the stream until we have encountered the last one.
-This is recognized by an empty read.
-@c
-int bstreamClient(Client c, str prompt){
-    str  s;
-        int len = 0, ln=0, size = 0;
-
-    s = c->nxt; *s = 0;
-    ln= c->nxt - c->input; /* left over bytes */
-    if( (c->limit-c->input) < 2*BLOCK){
-        enlargebuffer(c, BLOCK);
-        s = c->nxt; *s = 0;
-    }
-    @:sentPrompt@
-#ifdef MAL_CLIENT_DEBUG
-printf("bstreamClient:read block\n"); fflush(stdout);
-#endif
-
-        while ((len = stream_read(c->fdin, s, 1, BLOCK)) >0 ){
-                size += len;
-        if( (c->limit-c->input) - size < BLOCK+1){
-            enlargebuffer(c, BLOCK);
-        }
-                s= c->nxt+size;
-        *s=0;
-        }
-    if( len <0){
-        /* end of stream */
-        return 0;
-    } 
-    c->input[size]=0;
-#ifdef MAL_CLIENT_DEBUG
-    printf("ln %d len %d size %d buffer %d\n",ln,len,size,c->limit-c->input);
-#endif
-    c->nxt= c->input+ln;
-    s= strrchr(c->nxt,'\n');
-    if(s) *s=0;
-#ifdef MAL_CLIENT_DEBUG
-    printf("# block receive [%d] %s\n",size,c->input);
-#endif
-    @:sysTrace(c->input)@
-    return size >= 0;
 }
 @}

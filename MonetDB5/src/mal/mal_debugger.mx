@@ -125,6 +125,7 @@ to the user to alter the trace/debugger options.
 #include "mal_interpreter.h"    /* for getArgReference() */
 #include "mal_linker.h"     /* for getAddress() */
 #include "mal_scope.h"      /* for showModuleStatistics() */
+#include "mal_parser.h"
 
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
@@ -225,9 +226,9 @@ void mdbClrBreakpointName(Client cntxt, str name)
     mdb->brkTop = j;
 }
 
-#define skipBlanc(X)    while(*(X) && isspace((int)*X)) X++;
-#define skipNonBlanc(X) while(*(X) && !isspace((int) *X)) X++;
-#define skipWord(X) skipNonBlanc(X); skipBlanc(X);
+#define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; c->yycur++; }
+#define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; c->yycur++; }
+#define skipWord(c,X) 	  skipNonBlanc(c,X); skipBlanc(c,X);
 
 @-
 The instruction call stack is the most common command.
@@ -353,242 +354,266 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
         stream_printf(out,"#mdb ");
         printInstruction(out,mb,p,listing);
     }
-    do{
-    cntxt->nxt= cntxt->input; *cntxt->nxt=0;
-    readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001"));
-    b= cntxt->input;
-    skipBlanc(b);
-    switch(*b){
-    case 0: 
-        cntxt->nxt= cntxt->input; *cntxt->nxt=0;
-        return;
-    case 'a': if( strncmp("atoms",b,5)==0) showAtoms(out);
-        break;
-    case 'c': if( strncmp("call",b,4)==0){
-            GDKerror("call instruction not yet implemented\n");
-            break;
-         }
-         stk->cmd= 'c';
-         cntxt->nxt= cntxt->input; *cntxt->nxt=0;
-         return;
-    case 'h': mdbHelp(out); break;
-    case 'q': 
-        stk->cmd= 'q';/* return from this debugger */
-        cntxt->itrace= 0;
-        MDBstatus(0);
-        break;
-    case 'f': /* finish */
-    case 'n': /* next */
-    case 's': /* step */
-        if( strncmp("scenarios",b,3)==0){
-            showAllScenarios(out);
-        } else 
-        if( strncmp("scenario",b,3)==0){
-            showScenarioByName(out, cntxt->scenario);
-        } else 
-        if( strncmp("scope",b,3)==0){
-            showModuleStatistics(out,cntxt->nspace);
-            break;
-        } 
-        stk->cmd= *b;
-        return;
-    case 'm': /* display a module */
-        {
-        str modnme, fcnname;
-        Scope fsym;
-        Symbol fs;
-        int i;
+    do {
+    	cntxt->fdin->pos += cntxt->yycur; 
+		cntxt->yycur = 0;
+		cntxt->fdin->buf[cntxt->fdin->pos] = 0;
 
-        if( strncmp("modules",b,7)==0){
-            showModules(out, cntxt->nspace);
-            continue;
-        }
+    	readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001"));
+    	b = CURRENT(cntxt);
+    	skipBlanc(cntxt,b);
+    	switch(*b){
+    	case 0: 
+    		cntxt->fdin->pos += cntxt->yycur; 
+			cntxt->yycur = 0;
+			cntxt->fdin->buf[cntxt->fdin->pos] = 0;
+        	return;
+    	case 'a': if( strncmp("atoms",b,5)==0) showAtoms(out);
+        	break;
+    	case 'c': if( strncmp("call",b,4)==0){
+            	GDKerror("call instruction not yet implemented\n");
+            	break;
+         	}
+         	stk->cmd= 'c';
+        	skipWord(cntxt,b);
+    		cntxt->fdin->pos += cntxt->yycur; 
+			cntxt->yycur = 0;
+			cntxt->fdin->buf[cntxt->fdin->pos] = 0;
+         	return;
+    	case 'h': mdbHelp(out); break;
+    	case 'q': 
+        	stk->cmd= 'q';/* return from this debugger */
+        	cntxt->itrace= 0;
+        	MDBstatus(0);
+        	break;
+    	case 'f': /* finish */
+    	case 'n': /* next */
+    	case 's': /* step */
+        	if( strncmp("scenarios",b,3)==0){
+            	showAllScenarios(out);
+        	} else if( strncmp("scenario",b,3)==0){
+            	showScenarioByName(out, cntxt->scenario);
+        	} else if( strncmp("scope",b,3)==0){
+            	showModuleStatistics(out,cntxt->nspace);
+            	break;
+        	} 
+        	stk->cmd= *b;
+        	return;
+    	case 'm': /* display a module */
+        	{
+        		str modnme, fcnname;
+        		Scope fsym;
+        		Symbol fs;
+        		int i;
 
-        skipWord(b);
-        skipBlanc(b);
-        if(*b){
-            modnme=b;
-            fcnname= strchr(b,'.');
-            if( fcnname == NULL){
-                fsym= findModule(cntxt->nspace,modnme);
-                if( fsym==0) {
-                    stream_printf(out,"%s module not found\n", modnme);
-                    continue;
-                }
-                for(i=0;i<MAXSCOPE;i++){
-                    fs= fsym->subscope[i];
-                    while(fs != NULL){
-                        printSignature(out,fs,listing);
-                        fs= fs->peer;
-                    }
-                }
-                continue;
-            }
-        }
-        debugModule(out,cntxt->nspace,b);
-        }
-        break;
-    case 't': /* trace breakpoint */
-        if( strncmp("type",b,4)==0){
-            skipWord(b); skipBlanc(b);
-            if(strchr(b,'\n')) *strchr(b,'\n')= 0;
-            traceFcnName= GDKstrdup(b);
-        } else
-        if( strncmp("timer",b,5)==0){
-            if( cntxt->timer==0)
-                cntxt->timer = GDKusec();
-            else cntxt->timer = 0;
-        }
-        break;
-    case 'T': /* trace instruction calls */
-        printTraceCall(cntxt,mb,stk,p);
-        break;
-    case 'v':
-        printStack(out,mb,stk);
-        break;
-    case 'b':
-        if( strncmp(b,"bbp",3)==0){
-            printBBPinfo(out);
-            continue;
-        }
-        skipWord(b);
-        if(*b==0) { mdbShowBreakpoints(cntxt); continue;}
-        if( !isspace((int)*b) && *b != 0){
-            /* set breakpoints by name */
-            mdbSetBreakpointName(cntxt,mb,b,'s');
-        } else {
-            mdbSetBreakpoint(cntxt,mb,p,getArgName(mb,p,0),'s');
-        }
-        continue;
-    case 'd':
-        if( strncmp(b,"down",2)==0 && stk->down!= NULL){
-            stream_printf(out,"%sgo down the stack\n","#mdb ");
-            stk= stk->down;
-            mb = stk->blk;
-            break;
-        }
-        skipWord(b);
-        /* get rid of break point */
-        if(*b && !isspace((int)*b)){
-            mdbClrBreakpointName(cntxt,b);
-        } else {
-            mdbClrBreakpoint(cntxt,p);
-        }
-        continue;
-    case 'i':
-    {   int i; 
-        char *t;
+        		if( strncmp("modules",b,7)==0){
+            		showModules(out, cntxt->nspace);
+            		continue;
+        		}
+
+        		skipWord(cntxt,b);
+        		skipBlanc(cntxt,b);
+        		if(*b){
+            		modnme=b;
+            		fcnname= strchr(b,'.');
+            		if( fcnname == NULL){
+                		fsym= findModule(cntxt->nspace,modnme);
+                		if( fsym==0) {
+                    		stream_printf(out,"%s module not found\n", modnme);
+                    		continue;
+                		}
+                		for(i=0;i<MAXSCOPE;i++){
+                    		fs= fsym->subscope[i];
+                    		while(fs != NULL){
+                        		printSignature(out,fs,listing);
+                        		fs= fs->peer;
+                    		}
+                		}
+                		continue;
+            		}
+        		}
+        		debugModule(out,cntxt->nspace,b);
+        	}
+        	break;
+    	case 't': /* trace breakpoint */
+        	if( strncmp("type",b,4)==0){
+            	skipWord(cntxt,b); skipBlanc(cntxt,b);
+            	if(strchr(b,'\n')) 	
+					*strchr(b,'\n')= 0;
+           		traceFcnName= GDKstrdup(b);
+        	} else if( strncmp("timer",b,5)==0){
+            	if( cntxt->timer==0)
+                	cntxt->timer = GDKusec();
+            	else 
+					cntxt->timer = 0;
+        	}
+        	break;
+    	case 'T': /* trace instruction calls */
+        	printTraceCall(cntxt,mb,stk,p);
+        	break;
+    	case 'v':
+        	printStack(out,mb,stk);
+        	break;
+    	case 'b':
+        	if( strncmp(b,"bbp",3)==0){
+            	printBBPinfo(out);
+            	continue;
+        	}
+        	skipWord(cntxt,b);
+        	if(*b==0) { 
+				mdbShowBreakpoints(cntxt); 
+				continue;
+			}
+        	if( !isspace((int)*b) && *b != 0){
+            	/* set breakpoints by name */
+            	mdbSetBreakpointName(cntxt,mb,b,'s');
+        	} else {
+            	mdbSetBreakpoint(cntxt,mb,p,getArgName(mb,p,0),'s');
+        	}
+        	continue;
+    	case 'd':
+        	if( strncmp(b,"down",2)==0 && stk->down!= NULL){
+            	stream_printf(out,"%sgo down the stack\n","#mdb ");
+            	stk= stk->down;
+            	mb = stk->blk;
+            	break;
+        	}
+        	skipWord(cntxt,b);
+        	/* get rid of break point */
+        	if(*b && !isspace((int)*b)){
+            	mdbClrBreakpointName(cntxt,b);
+        	} else {
+            	mdbClrBreakpoint(cntxt,p);
+        	}
+        	continue;
+    	case 'i':
+    	{   
+			int i; 
+        	char *t;
         
-        skipWord(b);
-        t=b;
-        skipNonBlanc(t);
-        *t = 0;
-        /* search the symbol */
-        i = findVariable(mb,b);
-        if( i<0){
-            stream_printf(out,"%sSymbol not found\n","#mdb ");
-        } else{
-            printBatInfo(out,getVar(mb,i),stk->stk+i);
-        }
-        continue;
-    }
-    case 'p':
-    {   int i, size=0,first=0;
-        char *t;
+        	skipWord(cntxt,b);
+        	t=b;
+        	skipNonBlanc(cntxt,t);
+        	*t = 0;
+        	/* search the symbol */
+        	i = findVariable(mb,b);
+        	if( i<0){
+            	stream_printf(out,"%sSymbol not found\n","#mdb ");
+        	} else{
+            	printBatInfo(out,getVar(mb,i),stk->stk+i);
+        	}
+        	continue;
+    	}
+    	case 'p':
+    	{   
+			int i, size=0,first=0;
+        	char *t;
         
-        skipWord(b);
-        t=b;
-        skipNonBlanc(t);
-        *t = 0;
-        /* you can identify a start and length */
-        t++; skipBlanc(t);
-        if(isdigit((int)*t)){
-            size= atol(t);
-            skipWord(t);
-            if( isdigit((int)*t)) first= atol(t);
-        }
-        /* search the symbol */
-        i = findVariable(mb,b);
-        if( i<0){
-            stream_printf(out,"%sSymbol not found\n","#mdb ");
-            continue;
-        } 
-        printStackElm(out, mb, getVar(mb,i),stk->stk+i,i,size,first);
-        continue;
-    }
-    case 'u':
-        if( stk->up == NULL) break;
-        stream_printf(out,"%sgo up the stack\n","#mdb ");
-        stk= stk->up;
-        mb = stk->blk;
-        printCall(cntxt,mb,stk,pc);
-        continue;
-    case 'w':
-    {   MalStkPtr w;
-        MalBlkPtr mw=mb;
-        for(w=stk;w!= NULL; w=w->up){
-            mw = w->blk;
-            stream_printf(out,"#mdb ");
-            printCall(cntxt,mw,w,pc);
-        }
-        continue;
-    }
+        	skipWord(cntxt,b);
+        	t=b;
+        	skipNonBlanc(cntxt,t);
+        	*t = 0;
+        	/* you can identify a start and length */
+        	t++; 
+			skipBlanc(cntxt,t);
+        	if(isdigit((int)*t)){
+            	size= atol(t);
+            	skipWord(cntxt,t);
+            	if( isdigit((int)*t)) 
+					first= atol(t);
+        	}
+        	/* search the symbol */
+        	i = findVariable(mb,b);
+        	if( i<0){
+            	stream_printf(out,"%sSymbol not found\n","#mdb ");
+            	continue;
+        	} 
+        	printStackElm(out, mb, getVar(mb,i),stk->stk+i,i,size,first);
+        	continue;
+    	}
+    	case 'u':
+        	if( stk->up == NULL) 
+				break;
+        	stream_printf(out,"%sgo up the stack\n","#mdb ");
+        	stk= stk->up;
+        	mb = stk->blk;
+        	printCall(cntxt,mb,stk,pc);
+        	continue;
+    	case 'w':
+    	{   
+			MalStkPtr w;
+        	MalBlkPtr mw=mb;
+        	for(w=stk;w!= NULL; w=w->up){
+            	mw = w->blk;
+            	stream_printf(out,"#mdb ");
+            	printCall(cntxt,mw,w,pc);
+        	}
+        	continue;
+    	}
 @-
 While debugging it should be possible to inspect the symbol 
 table using the 'module.function' name. The default is to list all
 signatures satisfying the pattern.
 @c
-    case 'L': 
-    case 'l': /* list the current code block */
-    {   str modnme, fcnname;
-        Scope fsym;
-        Symbol fs;
-        int i, lstng;
-
-        lstng = listing | (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
-        skipWord(b);
-        if( *b!= 0){
-            modnme=b;
-            fcnname= strchr(b,'.');
-            if( fcnname == NULL){
-                fsym= findModule(cntxt->nspace,modnme);
-                if( fsym==0) {
-                    stream_printf(out,"%s module not found\n", modnme);
-                    continue;
-                }
-                for(i=0;i<MAXSCOPE;i++){
-                    fs= fsym->subscope[i];
-                    while(fs != NULL){
-                        printFunction(out,fs->def,lstng);
-                        fs= fs->peer;
-                    }
-                }
-                continue;
-            } 
-            *fcnname = 0;
-            fcnname ++;
-            fsym= findModule(cntxt->nspace,modnme);
-            if( fsym==0) {
-                stream_printf(out,"%smodule not found\n",modnme);
-                continue;
-            }
-            /* display the overloaded symbol definition */
-            if( displayModule(out,fsym,fcnname,lstng)==0){
-                stream_printf(out,"%sSymbol '%s.%s' not found\n",
-                    "#mdb ",modnme,fcnname);
-            } 
-        } else printFunction(out,mb,lstng);
-        continue;
-    }
-    case 'r': /* reset program counter */
-        stream_printf(out,"%srestart with current stack\n","#mdb ");
-        stk->cmd= 'r';
-        break;
-    default:
-        stream_printf(out,"%sdebugger command expected\n","#mdb ");
-        mdbHelp(out);
-    }
-    cntxt->nxt= cntxt->input; *cntxt->nxt=0;
+    	case 'L': 
+    	case 'l': /* list the current code block */
+    	{   
+			str modnme, fcnname;
+        	Scope fsym;
+        	Symbol fs;
+        	int i, lstng;
+	
+        	lstng = listing | (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
+        	skipWord(cntxt,b);
+        	if( *b!= 0){
+            	modnme=b;
+            	fcnname= strchr(b,'.');
+            	if( fcnname == NULL){
+                	fsym= findModule(cntxt->nspace,modnme);
+                	if( fsym==0) {
+                    	stream_printf(out,"%s module not found\n", modnme);
+                    	continue;
+                	}
+                	for(i=0;i<MAXSCOPE;i++){
+                    	fs= fsym->subscope[i];
+                    	while(fs != NULL){
+                        	printFunction(out,fs->def,lstng);
+                        	fs= fs->peer;
+                    	}
+                	}
+                	continue;
+            	} 
+            	*fcnname = 0;
+            	fcnname ++;
+            	fsym= findModule(cntxt->nspace,modnme);
+            	if( fsym==0) {
+                	stream_printf(out,"%smodule not found\n",modnme);
+                	continue;
+            	}
+            	/* display the overloaded symbol definition */
+            	if( displayModule(out,fsym,fcnname,lstng)==0){
+                	stream_printf(out,"%sSymbol '%s.%s' not found\n",
+                    	"#mdb ",modnme,fcnname);
+            	} 
+        	} else {
+				printFunction(out,mb,lstng);
+			}
+        	continue;
+    	}
+    	case 'r': /* reset program counter */
+        	stream_printf(out,"%srestart with current stack\n","#mdb ");
+        	stk->cmd= 'r';
+        	break;
+    	default:
+        	stream_printf(out,"%sdebugger command expected\n","#mdb ");
+        	mdbHelp(out);
+    	}
+	
+		/* skip until end of line */
+		while(*b) {
+			b++;
+			cntxt->yycur++;
+		}
     } while(1);
 }
 void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){

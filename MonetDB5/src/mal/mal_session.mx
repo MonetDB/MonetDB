@@ -37,7 +37,7 @@ time a user initializes a session against a database.[todo]
 mal_export int malBootstrap();
 mal_export void serveClient(void *dummy);
 mal_export void initClientPrg(Client cntxt, str nme);
-mal_export void scheduleClient(str command, stream *fin, stream *fout);
+mal_export void scheduleClient(str command, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
 mal_export str MALexitClient(Client c);
@@ -88,11 +88,12 @@ introduced.
 @c
 
 void initClientPrg(Client cntxt, str nme){
-        InstrPtr p;
-        MalBlkPtr mb;
+	InstrPtr p;
+	MalBlkPtr mb;
 
 	if( cntxt->curprg && idcmp(nme,cntxt->curprg->name)==0 &&
-	    cntxt->curprg->def->stop <=1){
+	    cntxt->curprg->def->stop <= 1){
+	    mb = cntxt->curprg->def;
 	} else {
 		cntxt->curprg = newFunction(GDKstrdup(nme),FUNCTIONsymbol);
 		mb = cntxt->curprg->def;
@@ -101,6 +102,9 @@ void initClientPrg(Client cntxt, str nme){
 		setVarType(mb,findVariable(mb,nme), TYPE_int);
 		insertSymbol(cntxt->nspace, cntxt->curprg);
 	}
+	cntxt->glb = newGlobalStack(MAXGLOBALS+mb->vsize);
+	cntxt->glb->stktop = mb->vtop;
+	cntxt->glb->blk = mb;
 }
 @}
 @+ Client authorization
@@ -119,18 +123,28 @@ The first line should represent a user. The remainder may
 be a request to be handled. This way, a single message
 can be used to issue a short (<8192byte,=BLOCK) transaction.
 @c
-void scheduleClient( str command, stream *fin, stream *fout)
+void scheduleClient( str command, bstream *fin, stream *fout)
 {
-	char *user = command, *passwd= NULL,*s;
+	char *user = command, *passwd= NULL, *lang=NULL, *s;
 	int key=0;
 	Client c;
 	MT_Id p;
-	/* decode first user:key:password line */
-        s= strchr(command,'\n');
-	if(s) *s=0;
-	s= strchr(command,':');
-	if(s){ *s= 0; passwd=s+1; }
 
+	/* decode first user:key:password:lang line */
+    s = strchr(command,'\n');
+	if(s) 
+		*s=0;
+	s= strrchr(command,':');
+	if(s){ 
+		*s= 0; 
+		lang=s+1; 
+	}
+	
+	s= strchr(command,':');
+	if(s){ 
+		*s= 0; 
+		passwd=s+1; 
+	}
 
 	s = strchr(user,':');
 	if(s && *s){
@@ -153,7 +167,14 @@ void scheduleClient( str command, stream *fin, stream *fout)
 	/* c->nspace= newScope(NULL,GDKstrdup(user));*/
 	c->nspace->outer = mal_scope;
 	c->sessionkey = key;
-	defaultScenario(c);
+
+	if (!lang) {
+		defaultScenario(c);
+	} else if ((s=setScenario(c, lang)) != NULL){
+		stream_printf(c->fdout,"setScenario: %s\n", s);
+		stream_flush(c->fdout);
+		return;
+	}
 	initClientPrg(c,"main");
 	if( !isAdministrator(c))
 		stream_printf(c->fdout,"%s\n", GDKgetenv("gdk_version"));
@@ -186,20 +207,23 @@ subsequent calls to find garbage information.
 However, this action is only required after a successful execution.
 Otherwise, garbage collection is not needed.
 @c
-void 	resetInstructions(MalBlkPtr mb, int start)
-{	int i;
+void resetInstructions(MalBlkPtr mb, int start)
+{	
+	int i;
 	InstrPtr p;
-        for(i=start; i<mb->stop; i++){
-                p= getInstrPtr(mb,i); 
-                if(p) freeInstruction(p);
+
+    for(i=start; i<mb->stop; i++){
+		p = getInstrPtr(mb,i); 
+        if(p) 
+			freeInstruction(p);
 		mb->stmt[i] = NULL;
-        }
-	
-	mb->stop= start;
+	}
+	mb->stop = start;
 }
-void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
+
+void resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 {
-        int i,j;
+	int i,j;
 
 	for(i=j=start; i< mb->vtop; ){
 		if( isTmpVar(mb,i)) {
@@ -238,7 +262,8 @@ global variables. Thereafter it is up to the scenario
 interpreter to process input.
 @c
 void serveClient(void *dummy)
-{	MalBlkPtr mb;
+{	
+	MalBlkPtr mb;
 	Client c= (Client) dummy;
 
 	if( !isAdministrator(c) ) initClientThread(c);
@@ -283,34 +308,36 @@ table may have grown in size.
 @= restoreState
 	if( c->listing) 
 		printFunction(c->fdout,c->curprg->def, c->listing);
-	resetInstructions(c->curprg->def,oldstate.stop);
+	resetInstructions(c->curprg->def, oldstate.stop);
 	resetVariables(c->curprg->def, 0, oldstate.vtop);
 @c
 str MALexitClient(Client c){
-        garbageCollector(c->curprg->def,c->glb,TRUE);
-	GDKfree(c->glb);
+	if (c->glb) {
+    	garbageCollector(c->curprg->def,c->glb,TRUE);
+		GDKfree(c->glb);
+	}
 	c->glb = 0;
 	return 0;
 }
 str MALreader(Client c){
-	c->nxt= c->input;
-	*c->nxt=0;
+	c->fdin->pos += c->yycur;
+	c->yycur = 0;
+	c->fdin->buf[c->fdin->pos] = 0;
 	if( readClient(c,c->prompt)>0 ) {
 		return 0;
 	}
 	c->mode = FINISHING;
+	c->fdin->buf[c->fdin->pos] = 0;
 	return 0;
 }
 str MALparser(Client c){
 	InstrPtr p; 
 	MalBlkRecord oldstate;
 
-	oldstate.stop = 0;
-	c->nxt= c->input;
 	c->curprg->def->errors=0;
 	oldstate = *c->curprg->def;
 	
-	prepareMalBlk(c->curprg->def,c->input);
+	prepareMalBlk(c->curprg->def, CURRENT(c));
 	if( parseMAL(c,c->curprg) || c->curprg->def->errors) {
 		/* just complete it for visibility */
 		pushEndInstruction(c->curprg->def);
@@ -320,7 +347,8 @@ str MALparser(Client c){
 		return throwMessage("MALparser","syntax errors\n");
 	}
 	/* check for unfinished blocks */
-	if( c->blkmode) return 0;
+	if( c->blkmode) 
+		return 0;
 	/* empty files should be skipped as well */
 	if( c->curprg->def->stop == 1) 
 		return 0;
@@ -353,13 +381,14 @@ str MALengine(Client c){
 	if( prg== NULL) 
 		return throwMessage("MALengine","main function missing\n");
 
-	if( prg->def->errors){
+	if (prg->def->errors){
 		showErrors();
 		@:restoreState@
 		return throwMessage("MALengine","Program contains errors\n");
 	}
-	if( prg->def->stop ==1) return 0; /* empty block */
-	if( c->glb){
+	if (prg->def->stop == 1) 
+			return 0; /* empty block */
+	if (c->glb){
 		if(prg->def && c->glb->stksize< prg->def->vsize)
 			c->glb= reallocGlobalStack(c->glb, prg->def->vsize);
 		c->glb->stktop = prg->def->vtop;
@@ -367,11 +396,13 @@ str MALengine(Client c){
 		c->glb->cmd= c->itrace?'n':0;
 	}
 
-	if( c->listing) printFunction(c->fdout,c->curprg->def, c->listing);
+	if (c->listing) 
+		printFunction(c->fdout,c->curprg->def, c->listing);
 
-	if( c->glb) c->glb->pcup =0;
+	if (c->glb) 
+			c->glb->pcup = 0;
 	msg= (str) runMAL(c,prg->def,1,0,c->glb,0);
-	if( msg ){
+	if (msg){
 		GDKerror(msg);
 		if( !c->listing) 
 			printFunction(c->fdout,c->curprg->def, c->listing);
