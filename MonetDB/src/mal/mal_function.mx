@@ -55,6 +55,7 @@ mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr
 
 mal_export str		raiseException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export str		raiseException2(str name, str msg);
+mal_export str appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
 mal_export void		showException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export void	safeFunction(Symbol proc);
 mal_export void	restoreFunction(Symbol proc);
@@ -299,6 +300,15 @@ str raiseException(MalBlkPtr mb, int pc, str name, str msg){
         if( strlen(name)+strlen(msg)+2 <1024)
                 sprintf(buf,"%s:%s.%s[%d]:%s", name, getModName(mb),
 			getFcnName(mb),pc,msg);
+        else    sprintf(buf,"%s:%s.%s[%d]",name, getModName(mb),
+			getFcnName(mb),pc);
+        return GDKstrdup(buf);
+}
+str appendException(MalBlkPtr mb, int pc, str name, str msg,str oldmsg){
+        char buf[4196];
+        if( strlen(name)+strlen(msg)+2 <2048)
+                sprintf(buf,"%s:%s.%s[%d]:%s\n%s", name, getModName(mb),
+			getFcnName(mb),pc,msg,oldmsg);
         else    sprintf(buf,"%s:%s.%s[%d]",name, getModName(mb),
 			getFcnName(mb),pc);
         return GDKstrdup(buf);
