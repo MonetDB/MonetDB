@@ -115,7 +115,8 @@ dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
 AC_C_CONST()
 case $GCC-$host_os in
--aix*)	dnl  With the native AIX/IBM compiler (xlc), 
+gcc-aix*)	
+        dnl  With the native AIX/IBM compiler (xlc), 
 	dnl  AC_C_INLINE() detects that inline is "__inline"
 	dnl  (while it detects "inline" with gcc).
 	dnl  However, system header files do use "inline",
