@@ -464,7 +464,6 @@ in the same context.
 @c
 void sidestepSQL(Cntxt stk, context *sqlc){
 	ValRecord res;
-	fprintf(stderr,"sidestep:%s",sqlc->buf);
 	res.vtype= TYPE_void;
 	interpret_str(stk, sqlc->buf+6, &res);
 }
@@ -496,7 +495,11 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	backend *sql;
 	char *prompt= "\001sql>\002\n";
 	int promptlength= strlen(prompt);
+<<<<<<< sql_session.mx
+	Thread sqlthread= THRget(THRgettid());
+=======
 	int language;
+>>>>>>> 1.23
 
 	int size, err;
 	char *inbuf, *start;
@@ -590,6 +593,8 @@ These lines should be eaten away into the prompt is encountered.
 		mvc_destroy(m);
 		return connect_error(in, out);
 	}
+/* Time to adjust the thread IO channels too */
+	monetSetChannel(sqlthread,in,out);
 /* Sent the profile for the client for inspection*/
 @-
 @= sendProperty
