@@ -2352,7 +2352,7 @@ literal:
 		  if (!a) {
 			char buf[BUFSIZ]; 
 
-			snprintf(buf, BUFSIZ, "incorrect timestamp value (%s)", $2);
+			snprintf(buf, BUFSIZ, "incorrect timestamp value (%s)", $3);
 			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
