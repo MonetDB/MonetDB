@@ -59,8 +59,8 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 	} while (0)
 
 extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg);
-extern char *ODBCutf82wchar(const SQLCHAR *s, SQLSMALLINT length,
-			    SQLWCHAR *buf, SQLSMALLINT buflen,
+extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
+			    SQLWCHAR *buf, SQLINTEGER buflen,
 			    SQLSMALLINT *buflenout);
 
 /*
