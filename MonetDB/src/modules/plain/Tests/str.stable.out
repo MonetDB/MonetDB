@@ -58,34 +58,26 @@ test_str();
 [ nil ]
 [ "A\\.B.C" ]
 [ "A\\.B\\.C" ]
-nonreversible toUpper/toLower at 181
-nonreversible toLower/toUpper at 304
-nonreversible toUpper/toLower at 305
-nonreversible toUpper/toLower at 383
-nonreversible toUpper/toLower at 452
-nonreversible toLower/toUpper at 452
-nonreversible toUpper/toLower at 455
-nonreversible toLower/toUpper at 455
-nonreversible toUpper/toLower at 458
-nonreversible toLower/toUpper at 458
-nonreversible toUpper/toLower at 497
-nonreversible toLower/toUpper at 497
-nonreversible toUpper/toLower at 837
-nonreversible toUpper/toLower at 962
-nonreversible toUpper/toLower at 976
-nonreversible toUpper/toLower at 977
-nonreversible toUpper/toLower at 981
-nonreversible toUpper/toLower at 982
-nonreversible toUpper/toLower at 1008
-nonreversible toUpper/toLower at 1009
-nonreversible toUpper/toLower at 1010
-nonreversible toLower/toUpper at 1012
-nonreversible toUpper/toLower at 1013
-nonreversible toUpper/toLower at 7835
-nonreversible toUpper/toLower at 8126
-nonreversible toLower/toUpper at 8486
-nonreversible toLower/toUpper at 8490
-nonreversible toLower/toUpper at 8491
+nonreversible toUpper/toLower at u00b5
+nonreversible toLower/toUpper at u0130
+nonreversible toUpper/toLower at u0131
+nonreversible toUpper/toLower at u017f
+nonreversible toUpper/toLower at u0345
+nonreversible toUpper/toLower at u03c2
+nonreversible toUpper/toLower at u03d0
+nonreversible toUpper/toLower at u03d1
+nonreversible toUpper/toLower at u03d5
+nonreversible toUpper/toLower at u03d6
+nonreversible toUpper/toLower at u03f0
+nonreversible toUpper/toLower at u03f1
+nonreversible toUpper/toLower at u03f2
+nonreversible toLower/toUpper at u03f4
+nonreversible toUpper/toLower at u03f5
+nonreversible toUpper/toLower at u1e9b
+nonreversible toUpper/toLower at u1fbe
+nonreversible toLower/toUpper at u2126
+nonreversible toLower/toUpper at u212a
+nonreversible toLower/toUpper at u212b
 quit;
 
 # 14:57:35 >  
