@@ -134,7 +134,7 @@ timerEnd(void)
 static int
 doRequest(Mapi mid, const char *buf)
 {
-	char *rtrn;
+	/* char *rtrn;*/
 	MapiHdl hdl;
 
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
@@ -146,9 +146,12 @@ doRequest(Mapi mid, const char *buf)
 		mapi_close_handle(hdl);
 		return 1;
 	}
+	mapi_quick_response(hdl,toConsole);
+/*
 	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
 		fprintf(toConsole, "%s\n", rtrn);
 	}
+*/
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
@@ -181,7 +184,7 @@ doFile(Mapi mid, const char *file)
 	size_t length;
 	MapiHdl hdl;
 	int rc;
-	char *rtrn;
+	/* char *rtrn;*/
 
 	if ((fp = fopen(file, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", file);
@@ -214,8 +217,11 @@ doFile(Mapi mid, const char *file)
 		return 1;
 	}
 
+	mapi_quick_response(hdl,toConsole);
+/*
 	while ((rtrn = mapi_fetch_line(hdl)) != 0)
 		fprintf(toConsole, "%s\n", rtrn);
+*/
 
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -412,7 +418,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			}
 		}
 		if ((length == 0 || line[length - 1] == '\n') && linemode) {
-			char *rtrn;
+			/* char *rtrn;*/
 
 			assert(hdl != NULL);
 			if (mapi_query_done(hdl) == MMORE)
@@ -436,8 +442,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				return 1;
 			}
 
+			mapi_quick_response(hdl,toConsole);
+/*
 			while ((rtrn = mapi_fetch_line(hdl)) != 0)
 				fprintf(toConsole, "%s\n", rtrn);
+*/
 
 			switch (mapi_error(mid)) {
 			case MOK:

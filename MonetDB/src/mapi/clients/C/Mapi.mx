@@ -2992,10 +2992,12 @@ because the client may wish to perform a mapi_fetch_line();
 	} while (0)
 
 	buf = strdup(hdl->cache.rows[cr]);
-	mapi_slice_row(hdl);
 
 	*line = '[';		/* fake a value row */
 	*c = ']';
+	hdl->cache.fldcnt[cr]=0; /* force slice */
+
+	mapi_slice_row(hdl);
 	c++;
 	while (*c && isspace((int) *c))
 		c++;
@@ -3146,14 +3148,14 @@ unquote(char *msg, char **start, char **next)
 		/* p points at first non-white space character */
 		*start = p;	/* record start of value */
 		/* find separator or terminator */
-		while (*p && *p != ',' && *p != ']')
+		while (*p && *p != ',' && *p!= '\t' && *p != ']')
 			p++;
 		/* search back over trailing white space */
 		for (s = p - 1; s > *start && isspace((int) *s); s--)
 			;
 		if (s < *start || !isspace((int) *s))	/* gone one too far */
 			s++;
-		if (*p == ',') {
+		if (*p == ',' || *p == '\t') {
 			/* there is more to come; skip over separator */
 			p++;
 		}
