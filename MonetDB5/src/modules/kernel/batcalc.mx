@@ -353,13 +353,6 @@ The common set of math functions is supported.
 	@:scienceFcnBinary(pow,dbl)@
 @-
 @}
-An expensive operation is to match a pattern against a string.
-The regexp library permits a pre-compilation.
-@mal
-command match(b:bat[:any$1,:str], 
-		pat:str):bat[:any$1,:bit] 
-address CMDmatchStr
-comment "POSIX pattern matching against a string BAT";
 @{
 @- Implementation
 @h
@@ -1767,41 +1760,6 @@ bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(ib->batCacheid);
 	BBPunfix(tb->batCacheid);
-	return MAL_SUCCEED;
-}
-str CMDmatchStr(int  *ret, int *bid, str *pat){
-        regex_t prg;
-        BAT *b, *bn;
-	int tpe,xx;
-	BUN p,q;
-	ptr nilptr;
-        int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
-        if( error<0)
-                return throwMessage("str.match",
-					"Compilation of regular expression failed");
-
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.match", "Cannot access descriptor");
-    }
-	bn= BATnew(BAThtype(b), TYPE_bit, BATcount(b));
-	@:tstBat(CMDmatchStr)@
-
-	tpe= BATttype(b);
-	nilptr= ATOMnilptr(tpe);
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		ptr t = BUNtail(b,p);
-
-		if( ATOMcmp(tpe, t, nilptr)==0 ){
-			bunfastins(bn, h, t);
-		} else {
-			bit match=  regexec(&prg,t,0,0,0)==0;
-			bunfastins(bn, h, &match);
-		}
-	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

@@ -1,0 +1,271 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f batstr
+@a M.L. Kersten
+@* String multiplexes
+The collection of routines provided here are map operations
+for the atom string primitives. 
+They have been implemented explicitly here, because
+the multiplex operator in M4 was too generic and had
+to analyse at runtime the operations required.
+
+In line with the batcalc module, we assume that
+if two bat operands are provided that they are already
+aligned on the head.
+@mal
+module batstr;
+command length( s:bat[:any$1,:str] ) :bat[:any$1,:int]
+address STRbatLength
+comment "Return the length of a string.";
+
+command match(b:bat[:any$1,:str], pat:str):bat[:any$1,:bit]
+address STRbatmatchCst
+comment "POSIX pattern matching against a string BAT";
+
+command ==( l:bat[:any$1,:str], r:str) :bat[:any$1,:str]
+address STRbatEqualCst
+comment "Equate a bat of strings against a singleton";
+
+@-
+not now
+
+command str(b:bat[:void,:str]):bat[:void,:str]
+address STRbattostr
+comment "Identity mapping for string bats";
+
+command string(b:bat[:void,:str],offset:int) :bat[:void,:str]
+address STRbatTail
+comment "Return the tail s[offset..n] of a string s[0..n].";
+
+command string(s:bat[:void,:str],offset:int,count:int):bat[:void:str]
+address STRbatSubString
+comment "Return substring s[offset..offset+count] of a string s[0..n]";
+
+command ==( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
+address STRbatEqual
+comment "Equate a bat of strings against a singleton";
+
+command +( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
+address STRbatConcat
+comment "Concatenate two strings.";
+
+
+command nbytes( s:bat[:void,:str] ) :bat[:void,:int]
+address STRbatBytes
+comment "Return the string length in bytes.";
+
+command chrAt( s:bat[:void,:str], index:int) :bat[:void,:chr]
+address STRbatChrAt
+comment "String array lookup operation.";
+
+command unicodeAt(s:bat[:void,:str], index:int) :bat[:void,:int]
+address STRWbatChrAt
+comment "get a unicode character (as an int) from a string position.";
+
+command unicode(wchar:bat[:void,:int]) :bat[:void,:str]
+address STRbatFromWChr
+comment "convert a unicode to a character.";
+
+comment "Return the locale's codeset";
+command iconv(org:bat[:void,:str],fromCs:bat[:void,:str],
+		toCs:bat[:void,:str]):bat[:void,:str]
+address STRIbatconv
+comment "String codeset conversion";
+
+command startsWith(s:bat[:void,:str],prefix:bat[:void,:str]):bat[:void,:str]
+address STRbatPrefix
+comment "Prefix check.";
+command endsWith( s:bat[:void,:str], suffix:bat[:void,:str] ) :bat[:void,:bit]
+address STRbatSuffix
+comment "Suffix check.";
+
+command toLower( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatLower
+comment "Convert a string to lower case.";
+command toUpper( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatUpper
+comment "Convert a string to upper case.";
+command search( s:bat[:void,:str], c:bat[:void,:str] ) bat[:void,:int]
+address STRbatstrSearch
+comment "Search for a substring. Returns position, -1 if not found.";
+
+command search( s:bat[:void,:str], c:bat[:void,:chr] ) :bat[:void,:int]
+address STRbatchrSearch
+comment "Search for a character. Returns position, -1 if not found.";
+command r_search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
+address STRbatReverseStrSearch
+comment "Reverse search for a substring. Returns position, -1 if not found.";
+command r_search( s:bat[:void,:str], c:bat[:void,:chr] ) :bat[:void,:int]
+address STRReverseChrSearch
+comment "Reverse search for a char. Returns position, -1 if not found.";
+
+command trim( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatStrip
+comment "Strip whitespaces around a string.";
+command ltrim( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatLtrim
+comment "Strip whitespaces from start of a string.";
+command rtrim( s:bat[:void,:str] ) :bat[:void,:str]
+address STRbatRtrim
+comment "Strip whitespaces from end of a string.";
+command substitute(s:bat[:void,:str],src:bat[:void,:str],dst:bat[:void,:str],rep:bat[:void,:bit]):bat[:void,:str]
+address STRbatSubstitute
+comment "Substitute first occurrence of 'src' by
+    'dst'.  Iff repeated = true this is
+    repeated while 'src' can be found in the
+    result string. In order to prevent
+    recursion and result strings of unlimited
+    size, repeating is only done iff src is
+    not a substring of dst.";
+
+@+ Implementation
+@c
+@h
+#ifndef __string_H__
+#define __string_H__
+
+#endif /* __string_H__ */
+@}
+
+@{
+@c
+#include <gdk.h>
+#include "ctype.h"
+#include "str.h"
+#include <string.h>
+#include "mal_exception.h"
+#include <regex.h>
+
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
+#endif
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
+@-
+Let's see how many different versions we need
+@= BATstr
+str STRbat@1(int *ret, int *l)
+{   BAT *bn, *b;
+	BUN p,q;
+	int xx;
+	@3 x;
+	@4 y;
+
+    if( (b= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+
+    bn= BATnew(b->htype,TYPE_@4,BATcount(b));
+	if( b->htype== TYPE_void)
+		BATseqbase(bn, b->hseqbase);
+    if( bn == NULL){
+        BBPunfix(b->batCacheid);
+        return throwMessage("batstr.@1", "no space available ");
+    }
+    BATloopFast(b, p, q, xx) {
+        ptr h = BUNhead(b,p);
+        x= (@3) BUNtail(b,p);
+		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
+			y= @4_nil;
+		else @2(&y,x);
+        bunfastins(bn, h, &y);
+    }
+bunins_failed:
+
+    BBPunfix(b->batCacheid);
+    BBPincref(*ret = bn->batCacheid,TRUE);
+    BBPunfix(*ret);
+    return MAL_SUCCEED;
+}
+
+@c
+	@:BATstr(Length,strLength,str,int)@
+@-
+@c
+str STRbatEqualCst(int *ret, int *l,str *cst)
+{   BAT *bn, *b;
+	BUN p,q;
+	int xx;
+	str x;
+	bit y;
+
+    if( (b= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+
+    bn= BATnew(b->htype,TYPE_bit,BATcount(b));
+	if( b->htype== TYPE_void)
+		BATseqbase(bn, b->hseqbase);
+    if( bn == NULL){
+        BBPunfix(b->batCacheid);
+        return throwMessage("batstr.==", "no space available ");
+    }
+    BATloopFast(b, p, q, xx) {
+        ptr h = BUNhead(b,p);
+        x= (str) BUNtail(b,p);
+		if(x== 0 || *x == 0 || strcmp(x,str_nil)== 0)
+			y= bit_nil;
+		else y= strcmp(x,*cst)==0;
+        bunfastins(bn, h, &y);
+    }
+bunins_failed:
+
+    BBPunfix(b->batCacheid);
+    BBPincref(*ret = bn->batCacheid,TRUE);
+    BBPunfix(*ret);
+    return MAL_SUCCEED;
+}
+@c
+
+str STRbatmatchCst(int  *ret, int *bid, str *pat){
+        regex_t prg;
+        BAT *b, *bn;
+	int tpe,xx;
+	BUN p,q;
+	ptr nilptr;
+        int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
+        if( error<0)
+                return throwMessage("str.match",
+					"Compilation of regular expression failed");
+
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.match", "Cannot access descriptor");
+    }
+	bn= BATnew(BAThtype(b), TYPE_bit, BATcount(b));
+	@:tstBat(CMDmatchStr)@
+
+	tpe= BATttype(b);
+	nilptr= ATOMnilptr(tpe);
+	BATloopFast(b, p, q, xx) {
+		ptr h = BUNhead(b,p);
+		ptr t = BUNtail(b,p);
+
+		if( ATOMcmp(tpe, t, nilptr)==0 ){
+			bunfastins(bn, h, t);
+		} else {
+			bit match=  regexec(&prg,t,0,0,0)==0;
+			bunfastins(bn, h, &match);
+		}
+	}
+bunins_failed:
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+@}

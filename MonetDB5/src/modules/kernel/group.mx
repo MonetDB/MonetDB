@@ -966,7 +966,7 @@ CThistosum(
         BAT *res = BATnew(TYPE_oid,TYPE_int, BATcount(b));
         BUN p,q, qb;
         int xx,i,*z;
-        oid ot,oh;
+        oid ot,oh, *ohp;
 	(void) c;
 	if (res == NULL) {
 		return GDK_FAIL;
@@ -1110,7 +1110,7 @@ int refine(BAT **res, BAT *b, BAT *a, int rv) {
 	struct refine *buf, *cur, *end;
 	int xx;
 	size_t size = DEFAULT_SIZE;
-	oid *dst, o, id = 0, *ohp;
+	oid *dst, o, id = 0;
 
 	/* create tmp BAT that holds one cluster; estimate required size using sampling */
 	if (BATcount(b) > DEFAULT_SIZE) { 
