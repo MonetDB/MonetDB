@@ -78,21 +78,13 @@ in an overall improvement of about factor 4.5.
 #define _GDK_SCANSELECT_H
 #include "gdk.h"
 
-BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi, int lval, int hval, int nocheck);
-
-#endif /* _GDK_SCANSELECT_H */
-
-@c
-#include "gdk_bat.h"
-#include "gdk_scanselect.h"
-
 @- "Tools"
 First, we need some tools. These are the type-expanded replacements
 for some generic marcos from gdk.mx, gdk_bat.mx, and gdk_atom.mx.
 Eventually, they should be moved there to be used in other places as well.
 
 VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
-@c
+@h
 #define VOIDput(tpe,hp,dst,src)   {}
 #define SIMPLEput(tpe,hp,dst,src) { *(tpe*) (dst) = *(tpe*) (src); }
 @-
@@ -102,7 +94,7 @@ should go to gdk.mx, and
 HT_BUNfastins 
 sould go to gdk_bat.mx 
 replacing their generic versions there.
-@c
+@h
 @= T_BUNfastins
 #define @1@4_bunfastins_nocheck_noinc(b, p, h, t) {\
             @2put(@3, &(b)->hheap, (int*) BUNhloc(b, p), h);\
@@ -122,11 +114,13 @@ replacing their generic versions there.
 	    @1@4_bunfastins_nocheck(b, _p, h, t, _bunsize);\
 	}
 
+/*
 BAT *@1@4_BUNfastins(BAT *b, ptr h, ptr t) {	
 	@1@4_bunfastins(b, h, t);
 	if (!b->batDirty) b->batDirty = TRUE;
 	return b;
 }
+*/
 @-
 Expand on tail type
 @= H_BUNfastins
@@ -138,7 +132,7 @@ Expand on tail type
 	@:T_BUNfastins(@1,@2,@3,any,ATOM,(b)->ttype)@
 @-
 Expand on head type
-@c
+@h
 @:H_BUNfastins(void,VOID,void)@
 @:H_BUNfastins(chr,SIMPLE,chr)@
 @:H_BUNfastins(sht,SIMPLE,sht)@
@@ -146,9 +140,31 @@ Expand on head type
 @:H_BUNfastins(lng,SIMPLE,lng)@
 @:H_BUNfastins(any,ATOM,(b)->htype)@
 @-
+Type-mappers for convenience
+@= HT_bunfastins_typemap
+#define @1@2_bunfastins_nocheck_noinc(b, p, h, t) @1@3_bunfastins_nocheck_noinc(b, p, h, t)
+#define @1@2_bunfastins_nocheck(b, p, h, t, s)    @1@3_bunfastins_nocheck(b, p, h, t, s)
+#define @1@2_bunfastins(b, h, t)                  @1@3_bunfastins_nocheck_noinc(b, h, t)
+#define @2@1_bunfastins_nocheck_noinc(b, p, h, t) @3@1_bunfastins_nocheck_noinc(b, p, h, t)
+#define @2@1_bunfastins_nocheck(b, p, h, t, s)    @3@1_bunfastins_nocheck(b, p, h, t, s)
+#define @2@1_bunfastins(b, h, t)                  @3@1_bunfastins_nocheck_noinc(b, h, t)
+@h
+@:HT_bunfastins_typemap(void,flt,int)@
+@:HT_bunfastins_typemap(chr,flt,int)@
+@:HT_bunfastins_typemap(sht,flt,int)@
+@:HT_bunfastins_typemap(int,flt,int)@
+@:HT_bunfastins_typemap(lng,flt,int)@
+@:HT_bunfastins_typemap(any,flt,int)@
+@:HT_bunfastins_typemap(void,dbl,int)@
+@:HT_bunfastins_typemap(chr,dbl,int)@
+@:HT_bunfastins_typemap(sht,dbl,int)@
+@:HT_bunfastins_typemap(int,dbl,int)@
+@:HT_bunfastins_typemap(lng,dbl,int)@
+@:HT_bunfastins_typemap(any,dbl,int)@
+@-
 For backward compatibility:
 (also to be move to gdk.mx and gdk_bat.mx, repectively)
-@c
+@h
 /*
 #define bunfastins_nocheck(b, p, h, t, s) anyany_bunfastins_nocheck(b, p, h, t, s)
 #define bunfastins(b, h, t)               anyany_bunfastins(b, h, t)
@@ -157,6 +173,14 @@ BAT *BUNfastins(BAT *b, ptr h, ptr t) {
 	return anyany_BUNfastins(b,h,t);
 }
 */
+
+BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi, int lval, int hval, int nocheck);
+
+#endif /* _GDK_SCANSELECT_H */
+
+@c
+#include "gdk_bat.h"
+#include "gdk_scanselect.h"
 
 @- The actual BAT_scanselect
 
