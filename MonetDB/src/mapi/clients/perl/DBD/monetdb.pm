@@ -354,34 +354,35 @@ use MapiLib;
 
 $DBD::monetdb::st::imp_data_size = 0;
 
+
 sub bind_param {
-    my $sth = shift;
-    my ($index, $value, $attr) = @_;
-    my $type = (ref $attr) ? $attr->{TYPE} : $attr;
-    my $params = $sth->FETCH('monetdb_params');
-    my $paramtype = $sth->FETCH('monetdb_types');
-    #print "converted:".$value." type:".$type."\n";
-    $params->[$index - 1] = $value;
-    $paramtype->[$index - 1] = $type;
+    my ($sth, $index, $value, $attr) = @_;
+    $sth->{monetdb_params}[$index-1] = $value;
+    $sth->{monetdb_types}[$index-1] = ref $attr ? $attr->{TYPE} : $attr;
+    return 1;
 }
+
 
 sub execute {
     my($sth, @bind_values) = @_;
     my $statement = $sth->{Statement};
     my $dbh = $sth->{Database};
-    my $mapi = $dbh->FETCH('monetdb_connection');
 
-    my $mparams = $sth->FETCH('monetdb_params');
-    my $params = (@bind_values) ?  \@bind_values : $mparams;
-    my $num_param = $sth->FETCH('NUM_OF_PARAMS');
-    if (@$params != $num_param) {
-	# ...
+    $sth->bind_param($_, $bind_values[$_-1]) or return for 1 .. @bind_values;
+
+    my $params = $sth->{monetdb_params};
+    my $num_of_params = $sth->FETCH('NUM_OF_PARAMS');
+    return $sth->set_err(-1, @$params ." values bound when $num_of_params expected")
+        unless @$params == $num_of_params;
+
+    for ( 1 .. $num_of_params ) {
+        # TODO: parameter type
+        my $quoted_param = $dbh->quote($params->[$_-1]);
+        $statement =~ s/\?/$quoted_param/;  # TODO: '?' inside quotes/comments
     }
-    for (my $i = 0; $i < $num_param; $i++) {
-	# decode the parameter type
-	my $quoted_param = $dbh->quote($params->[$i]);
-	$statement =~ s/\?/$quoted_param/;
-    }
+    $sth->trace_msg("    -- Statement: $statement\n", 5);
+
+    my $mapi = $dbh->{monetdb_connection};
     my $hdl = $sth->{monetdb_hdl};
     MapiLib::mapi_query_handle($hdl, $statement);
     my $err = MapiLib::mapi_error($mapi);
