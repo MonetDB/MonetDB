@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
 #function pow(i:int,j:int):int;
 #	z:= i+j;
@@ -106,7 +106,7 @@ B2 value 2
 B3 value 2
 result 4
 #-----------------#
-# h	tmp_6	  # name
+# h	tmp_5	  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  2	  ]

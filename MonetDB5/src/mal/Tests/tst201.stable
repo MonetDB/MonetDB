@@ -294,7 +294,7 @@ end main;	# 94
 [ "lazy",	  7	  ]
 [ "dog",	  8	  ]
 [ nil,		  9	  ]
-[ 4 ]
+[ 12 ]
 #-------------------------#
 # h		tmp_5	  # name
 # str		int	  # type
