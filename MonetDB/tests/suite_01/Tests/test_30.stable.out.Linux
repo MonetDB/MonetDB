@@ -22,7 +22,7 @@ c();
 [ "clock" ]
 undef c;
 c();
-
+!ERROR: interpret: no matching MIL operator to 'c()'.
 
 # block administration
 

@@ -22,7 +22,7 @@ c();
 [ "clock" ]
 undef c;
 c();
-
+!ERROR: interpret: no matching MIL operator to 'c()'.
 
 # redefinition of existing procedure
 proc c(){ clock.print;}
@@ -39,7 +39,7 @@ printf("#~BeginVariableOutput~#\n"); c(); printf("#~EndVariableOutput~#\n");
 [ "elapsed",	  0	  ]
 [ "user",	  140	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  690	  ]
+[ "system",	  730	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 
@@ -67,7 +67,7 @@ proc forward() { }
 forward();
 undef forward;
 forward();
-
+!ERROR: interpret: no matching MIL operator to 'forward()'.
 
 quit();
 
