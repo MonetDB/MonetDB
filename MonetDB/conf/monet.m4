@@ -819,7 +819,12 @@ AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
 
 dnl check for getopt in standard library
-AC_CHECK_FUNCS(getopt_long , , AC_LIBOBJ(getopt); AC_LIBOBJ(getopt1))
+AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
+if test x$need_getopt = xgetopt; then
+  AC_LIBOBJ(getopt)
+elif test x$need_getopt = xgetopt1; then
+  AC_LIBOBJ(getopt1)
+fi
 
 dnl hwcounters
 have_hwcounters=auto
