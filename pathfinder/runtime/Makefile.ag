@@ -29,12 +29,7 @@ lib__pathfinder = {
 	SOURCES = \
 		pathfinder.mx \
 		staircasejoin.mx \
-		pair.c \
-		ctxpropmgmt.c \
-		estimation.c \
-		levelsteps.c \
-		ctxpropmgmt.h \
-		pair.h
+		levelsteps.c
 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
 	LIBS = $(MONET_LIBS)
