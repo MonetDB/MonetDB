@@ -164,6 +164,8 @@ stream_export stream *file_wstream(FILE *fp, const char *name);
 stream_export stream *file_rastream(FILE *fp, const char *name);
 stream_export stream *file_wastream(FILE *fp, const char *name);
 
+stream_export int rendezvous_streams(stream **in, stream **out, const char *name);
+
 typedef struct buffer {
 	char *buf;
 	size_t pos;
@@ -304,23 +306,31 @@ extern char *strdup(const char *);
 int
 stream_init(void)
 {
+	static int inited = 0;
+
+	if (inited)
+		return 0;
+
 #ifdef NATIVE_WIN32
-	int sockopt = SO_SYNCHRONOUS_NONALERT;
-	WSADATA w;
+	{
+		int sockopt = SO_SYNCHRONOUS_NONALERT;
+		WSADATA w;
 
-	if (WSAStartup(0x0101, &w) != 0)
-		return -1;
+		if (WSAStartup(0x0101, &w) != 0)
+			return -1;
 
-	if (setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE,
+		if (setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE,
 			       (void *) &sockopt, sizeof(sockopt)) < 0) {
-		WSACleanup();
-		return -1;
+			WSACleanup();
+			return -1;
+		}
 	}
 #endif
 #ifdef HAVE_OPENSSL
 	SSL_load_error_strings();
 	(void) SSL_library_init();
 #endif
+	inited = 1;
 	return 0;
 }
 
@@ -444,6 +454,13 @@ stream_byteorder(stream *s)
 	return s->byteorder;
 }
 
+void
+close_stream(stream *s)
+{
+	s->close(s);
+	s->destroy(s);
+}
+
 stream *
 stream_rstream(stream *s)
 {
@@ -486,26 +503,6 @@ destroy(stream *s)
 	free(s);
 }
 
-static stream *
-create_stream(const char *name)
-{
-	stream *s;
-
-	if ((s = (stream *) malloc(sizeof(*s))) == NULL)
-		return NULL;
-	s->byteorder = 1234;
-	s->access = ST_READ;
-	s->type = ST_ASCII;
-	s->name = strdup(name);
-	s->stream_data.p = NULL;
-	s->errnr = NO__ERROR;
-	s->destroy = destroy;
-#ifdef STREAM_DEBUG
-	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
-#endif
-	return s;
-}
-
 static char *
 error(stream *s)
 {
@@ -523,6 +520,32 @@ error(stream *s)
 		return strdup(buf);
 	}
 	return strdup("Unknown error");
+}
+
+static stream *
+create_stream(const char *name)
+{
+	stream *s;
+
+	if ((s = (stream *) malloc(sizeof(*s))) == NULL)
+		return NULL;
+	s->byteorder = 1234;
+	s->access = ST_READ;
+	s->type = ST_ASCII;
+	s->name = strdup(name);
+	s->stream_data.p = NULL;
+	s->errnr = NO__ERROR;
+	s->stream_data.p = NULL;
+	s->read = NULL;
+	s->write = NULL;
+	s->close = NULL;
+	s->error = error;
+	s->destroy = destroy;
+	s->flush = NULL;
+#ifdef STREAM_DEBUG
+	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
+#endif
+	return s;
 }
 
 static ssize_t
@@ -587,7 +610,6 @@ open_stream(const char *filename, const char *flags)
 	s->read  = file_read;
 	s->write = file_write;
 	s->close = file_close;
-	s->error = error;
 	s->flush = file_flush;
 	s->stream_data.p = (void *) fp;
 	return s;
@@ -646,8 +668,6 @@ open_gzstream(const char *filename, const char *flags)
 	s->read  = stream_gzread;
 	s->write = stream_gzwrite;
 	s->close = stream_gzclose;
-	s->error = error;
-	s->destroy = destroy;
 	s->flush = stream_gzflush;
 	s->stream_data.p = (void *) fp;
 	return s;
@@ -765,8 +785,6 @@ open_bzstream(const char *filename, const char *flags)
 	s->read  = stream_bzread;
 	s->write = stream_bzwrite;
 	s->close = stream_bzclose;
-	s->error = error;
-	s->destroy = destroy;
 	s->flush = stream_bzflush;
 	s->stream_data.p = (void *) fp;
 	return s;
@@ -1097,7 +1115,6 @@ socket_open(int socket, const char *name)
 	s->read  = socket_read;
 	s->write = socket_write;
 	s->close = socket_close;
-	s->error = error;
 	s->flush = NULL;
 	s->stream_data.i = socket;
 
@@ -1474,7 +1491,6 @@ file_stream(const char *name)
 	s->read  = file_read;
 	s->write = file_write;
 	s->close = file_close;
-	s->error = error;
 	s->flush = file_flush;
 	return s;
 }
@@ -1663,7 +1679,6 @@ buffer_rastream(buffer *b, const char *name)
 	s->read  = buffer_read;
 	s->write = buffer_write;
 	s->close = buffer_close;
-	s->error = error;
 	s->flush = buffer_flush;
 	s->stream_data.p = (void *) b;
 	return s;
@@ -1683,7 +1698,6 @@ buffer_wastream(buffer *b, const char *name)
 	s->read  = buffer_read;
 	s->write = buffer_write;
 	s->close = buffer_close;
-	s->error = error;
 	s->flush = buffer_flush;
 	s->stream_data.p = (void *) b;
 	return s;
@@ -1987,7 +2001,6 @@ block_stream(stream *s)
 	ns->read  = bs_read;
 	ns->write = bs_write;
 	ns->close = bs_close;
-	ns->error = error;
 	ns->flush = bs_flush;
 	ns->destroy = bs_destroy;
 	ns->stream_data.p = (void *) bs;
@@ -2206,9 +2219,83 @@ bstream_destroy(bstream *s)
 	free(s);
 }
 
-void
-close_stream(stream *s)
+static ssize_t
+pipe_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
-	s->close(s);
-	s->destroy(s);
+	size_t size = elmsize*cnt;
+	ssize_t sz;
+
+	if (s->errnr)
+		return -1;
+	
+	if (size == 0)
+		return cnt;
+	sz = write(s->stream_data.i, buf, size);
+	if (sz > 0)
+		return sz / elmsize;
+	if (sz < 0)
+		s->errnr = WRITE_ERROR;
+	return sz;
+}
+
+static ssize_t
+pipe_read(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	ssize_t nr = 0;
+	size_t res = 0, size = elmsize*cnt;
+
+	if (s->errnr)
+		return -1;
+	
+	while (res < size &&
+	       (nr = read(s->stream_data.i, (void *) ((char *) buf + res), size-res)) > 0) {
+		res += nr;
+	}
+	if (nr < 0) {
+		s->errnr = READ_ERROR;
+		return nr;
+	}
+	if (res)
+		return res / elmsize;
+	return 0;
+}
+
+static void
+pipe_close(stream *s)
+{
+	if (s->stream_data.i >= 0)
+		close(s->stream_data.i);
+	s->stream_data.i = -1;
+}
+
+int
+rendezvous_streams(stream **in, stream **out, const char *name)
+{
+	stream *sin, *sout;
+	int pipes[2];
+
+	if ((sin = create_stream(name)) == NULL)
+		return 0;
+	if ((sout = create_stream(name)) == NULL) {
+		destroy(sin);
+		return 0;
+	}
+	if (pipe(pipes) != 0) {
+		destroy(sin);
+		destroy(sout);
+		return 0;
+	}
+	sin->access = ST_READ;
+	sin->close = pipe_close;
+	sin->read = pipe_read;
+	sin->stream_data.i = pipes[0];
+	sin->type = ST_BIN;
+	sout->access = ST_WRITE;
+	sout->close = pipe_close;
+	sout->stream_data.i = pipes[1];
+	sout->type = ST_BIN;
+	sout->write = pipe_write;
+	*in = sin;
+	*out = sout;
+	return 1;
 }

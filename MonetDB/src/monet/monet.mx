@@ -567,7 +567,7 @@ ptr monet_eval(str mil_script, int *ret_type){
 }
 
 @-
-For those who don't both about return values, there is @:monet_exec@.
+For those who don't bother about return values, there is @:monet_exec@.
 It returns <0 on error; else >= 0;
 @c
 int monet_exec(str mil_script){

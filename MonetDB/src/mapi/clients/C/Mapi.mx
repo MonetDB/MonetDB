@@ -584,7 +584,6 @@ by inspecting the field descriptor returned by mapi\_fetch\_field.
 #include  <pwd.h>
 #endif
 #include  <sys/types.h>
-#include  <stream.h>
 
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
@@ -616,6 +615,7 @@ by inspecting the field descriptor returned by mapi\_fetch\_field.
 #define _MAPI_H_INCLUDED
 
 #include <stdio.h>		/* for FILE * */
+#include <stream.h>		/* for stream */
 
 /*#define MONET5*/
 
@@ -737,7 +737,6 @@ struct MapiStruct {
 	char *mapiversion;	/* mapi version */
 	char *hostname;
 	int port;
-	char *sockfile;
 #ifdef HAVE_OPENSSL
 	int secure;
 #endif
@@ -884,11 +883,13 @@ typedef struct {		/* used by MAPI_DATETIME */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username,
 			   const char *password, const char *lang);
 mapi_export MapiMsg mapi_destroy(Mapi mid);
+mapi_export MapiMsg mapi_start_talking(Mapi mid);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username,
 			      const char *password, const char *lang);
 mapi_export Mapi mapi_connect_ssl(const char *host, int port,
 				  const char *username, const char *password,
 				  const char *lang);
+mapi_export stream **mapi_embedded_init(Mapi *midp);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_ping(Mapi mid);
@@ -1655,6 +1656,7 @@ mapi_new(void)
 	mid->blocked = blocked;
 	mid->error = MOK;
 	mid->hostname = strdup("localhost");
+	mid->server = NULL;
 #ifdef MONET5
 	mid->language = strdup("mal");
 	mid->languageId = LANG_MAL;
@@ -1730,7 +1732,6 @@ mapi_mapi(const char *host, int port, const char *username,
 	}
 
 	mid->port = port;
-	mid->sockfile = NULL;
 #ifdef HAVE_OPENSSL
 	mid->secure = 0;
 #endif
@@ -1797,83 +1798,6 @@ The first call of an application is to establish a connection with
 an already server. The username and password are sent as part of
 the initialization sequence.
 @c
-/* Create a connection handle and connect to the server using the
-   specified parameters. */
-Mapi
-mapi_connect(const char *host, int port, const char *username,
-	     const char *password, const char *lang)
-{
-	Mapi mid;
-
-	mid = mapi_mapi(host, port, username, password, lang);
-	if (mid && mid->error == MOK)
-		mapi_reconnect(mid);	/* actually, initial connect */
-	return mid;
-}
-
-/* Create a connection handle and connect to the server using the
-   specified parameters.  Use SSL (Secure Socket Layer) to encrypt all
-   data transfers with the server. */
-Mapi
-mapi_connect_ssl(const char *host, int port, const char *username,
-		 const char *password, const char *lang)
-{
-	Mapi mid = mapi_mapi(host, port, username, password, lang);
-
-#ifdef HAVE_OPENSSL
-	mid->secure = 1;
-	if (mid && mid->error == MOK)
-		mapi_reconnect(mid);	/* actually, initial connect */
-#else
-	mapi_setError(mid, "SSL connections not supported",
-		      "mapi_connect_ssl", MERROR);
-#endif
-	return mid;
-}
-
-@
-Disconnection from the server leads to removal of the
-Mapi structure. Subsequent access may lead to a crash.
-@c
-static void
-close_connection(Mapi mid)
-{
-	MapiHdl hdl;
-	struct MapiResultSet *result;
-
-	mid->connected = 0;
-	mid->active = NULL;
-	for (hdl = mid->first; hdl; hdl = hdl->next) {
-		hdl->active = NULL;
-		for (result = hdl->result; result; result = result->next)
-			result->tableid = -1;
-	}
-	/* finish channels */
-	/* Make sure that the write- (to-) stream is closed first,
-	 * as the related read- (from-) stream closes the shared
-	 * socket; see also src/common/stream.mx:socket_close .
-	 */
-	if (mid->to) {
-		stream_close(mid->to);
-		stream_destroy(mid->to);
-		mid->to = 0;
-	}
-	if (mid->from) {
-		stream_close(mid->from);
-		stream_destroy(mid->from);
-		mid->from = 0;
-	}
-}
-
-MapiMsg
-mapi_disconnect(Mapi mid)
-{
-	mapi_check(mid, "mapi_disconnect");
-
-	close_connection(mid);
-	return MOK;
-}
-
 #ifdef HAVE_OPENSSL
 static char *
 ssl_error(int err, int ret)
@@ -1929,8 +1853,8 @@ ssl_error(int err, int ret)
 #endif /* HAVE_OPENSSL */
 
 /* (Re-)establish a connection with the server. */
-MapiMsg
-mapi_reconnect(Mapi mid)
+static MapiMsg
+connect_to_server(Mapi mid)
 {
 	struct sockaddr_in server;
 #ifdef HAVE_SYS_UN_H
@@ -1939,9 +1863,6 @@ mapi_reconnect(Mapi mid)
 	struct sockaddr *serv;
 	size_t servsize;
 	int s;
-	char buf[BLOCK];
-	size_t len;
-	MapiHdl hdl;
 
 #ifdef HAVE_OPENSSL
 	SSL *ssl = NULL;
@@ -2063,12 +1984,29 @@ mapi_reconnect(Mapi mid)
 		}
 
 		mid->to = ssl_wastream(ssl, "Mapi client write");
+		mid->from = ssl_rastream(ssl, "Mapi client read");
 	} else
 #endif
+	{
 		mid->to = socket_wastream(s, "Mapi client write");
+		mid->from = socket_rastream(s, "Mapi client read");
+	}
 	check_stream(mid, mid->to, "Cannot open socket for writing",
 		     "mapi_reconnect", mid->error);
+	check_stream(mid, mid->from, "Cannot open socket for reading",
+		     "mapi_reconnect", mid->error);
+
 	mid->connected = 1;
+
+	return MOK;
+}
+
+MapiMsg
+mapi_start_talking(Mapi mid)
+{
+	char buf[BLOCK];
+	size_t len;
+	MapiHdl hdl;
 
 	if (mid->blocked) {
 		snprintf(buf, BLOCK, "%s:%s:blocked\n", mid->username,
@@ -2094,33 +2032,14 @@ mapi_reconnect(Mapi mid)
 		mid->to = block_stream(mid->to);
 		check_stream(mid, mid->to, stream_error(mid->to),
 			     "mapi_reconnect", mid->error);
+
+		mid->from = stream_rstream(mid->from);
+		check_stream(mid, mid->from, stream_error(mid->from),
+			     "mapi_reconnect", mid->error);
+		mid->from = block_stream(mid->from);
+		check_stream(mid, mid->from, stream_error(mid->from),
+			     "mapi_reconnect", mid->error);
 	}
-#ifdef HAVE_OPENSSL
-	if (mid->secure) {
-		if (mid->blocked) {
-			mid->from = ssl_rstream(ssl, "Mapi client read");
-			check_stream(mid, mid->from,
-				     "Cannot open socket for reading",
-				     "mapi_reconnect", mid->error);
-			mid->from = block_stream(mid->from);
-		} else {
-			mid->from = ssl_rastream(ssl, "Mapi client read");
-		}
-	} else
-#endif
-	{
-		if (mid->blocked) {
-			mid->from = socket_rstream(s, "Mapi client read");
-			check_stream(mid, mid->from,
-				     "Cannot open socket for reading",
-				     "mapi_reconnect", mid->error);
-			mid->from = block_stream(mid->from);
-		} else {
-			mid->from = socket_rastream(s, "Mapi client read");
-		}
-	}
-	check_stream(mid, mid->from, "Cannot open socket for reading",
-		     "mapi_reconnect", mid->error);
 
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);
@@ -2170,6 +2089,113 @@ mapi_reconnect(Mapi mid)
 	/* tell server about cachelimit */
 	mapi_cache_limit(mid, mid->cachelimit);
 	return mid->error;
+}
+
+MapiMsg
+mapi_reconnect(Mapi mid)
+{
+	MapiMsg rc;
+
+	rc = connect_to_server(mid);
+	if (rc == MOK)
+		rc = mapi_start_talking(mid);
+	return rc;
+}
+
+/* Create a connection handle and connect to the server using the
+   specified parameters. */
+Mapi
+mapi_connect(const char *host, int port, const char *username,
+	     const char *password, const char *lang)
+{
+	Mapi mid;
+
+	mid = mapi_mapi(host, port, username, password, lang);
+	if (mid && mid->error == MOK)
+		mapi_reconnect(mid);	/* actually, initial connect */
+	return mid;
+}
+
+/* Create a connection handle and connect to the server using the
+   specified parameters.  Use SSL (Secure Socket Layer) to encrypt all
+   data transfers with the server. */
+Mapi
+mapi_connect_ssl(const char *host, int port, const char *username,
+		 const char *password, const char *lang)
+{
+	Mapi mid = mapi_mapi(host, port, username, password, lang);
+
+#ifdef HAVE_OPENSSL
+	mid->secure = 1;
+	if (mid && mid->error == MOK)
+		mapi_reconnect(mid);	/* actually, initial connect */
+#else
+	mapi_setError(mid, "SSL connections not supported",
+		      "mapi_connect_ssl", MERROR);
+#endif
+	return mid;
+}
+
+stream **
+mapi_embedded_init(Mapi *midp)
+{
+	Mapi mid;
+	stream **streams;
+
+	mid = mapi_mapi(NULL, -1, "monetdb", "monetdb", "sql");
+	if (mid == NULL)
+		return NULL;
+	streams = malloc(2 * sizeof(*streams));
+	if (rendezvous_streams(&streams[0], &mid->to, "to server") == 0 ||
+	    rendezvous_streams(&mid->from, &streams[1], "from server") == 0) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	mid->connected = 1;
+	*midp = mid;
+	return streams;
+}
+@
+Disconnection from the server leads to removal of the
+Mapi structure. Subsequent access may lead to a crash.
+@c
+static void
+close_connection(Mapi mid)
+{
+	MapiHdl hdl;
+	struct MapiResultSet *result;
+
+	mid->connected = 0;
+	mid->active = NULL;
+	for (hdl = mid->first; hdl; hdl = hdl->next) {
+		hdl->active = NULL;
+		for (result = hdl->result; result; result = result->next)
+			result->tableid = -1;
+	}
+	/* finish channels */
+	/* Make sure that the write- (to-) stream is closed first,
+	 * as the related read- (from-) stream closes the shared
+	 * socket; see also src/common/stream.mx:socket_close .
+	 */
+	if (mid->to) {
+		stream_close(mid->to);
+		stream_destroy(mid->to);
+		mid->to = 0;
+	}
+	if (mid->from) {
+		stream_close(mid->from);
+		stream_destroy(mid->from);
+		mid->from = 0;
+	}
+}
+
+MapiMsg
+mapi_disconnect(Mapi mid)
+{
+	mapi_check(mid, "mapi_disconnect");
+
+	close_connection(mid);
+	return MOK;
 }
 
 @-
