@@ -117,7 +117,6 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/lib/%{name}/*.so* 
 %{prefix}/lib/%{name}/*.la* 
 %{prefix}/lib/%{name}/*.mil* 
-%{prefix}/lib/pkgconfig/MonetDB.pc
 
 %{prefix}/share/%{name}/tools/* 
 
@@ -149,6 +148,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/Mshutdown.py*
 
 %{prefix}/lib/autogen/* 
+%{prefix}/lib/pkgconfig/MonetDB.pc
 
 %{prefix}/include/%{name}/*.h
 %{prefix}/include/%{name}/*/*.[hcm]
