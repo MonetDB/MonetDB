@@ -46,6 +46,7 @@ SQLExecute_(ODBCStmt *stmt)
 	int nrCols;
 	ODBCDescRec *pCol;
 	MapiHdl hdl;
+	MapiMsg msg;
 
 	if (!isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
@@ -68,9 +69,17 @@ SQLExecute_(ODBCStmt *stmt)
 	assert(hdl);
 
 	/* Have the server execute the query */
-	if (mapi_execute(hdl) != MOK) {
+	msg = mapi_execute(hdl);
+	switch (msg) {
+	case MOK:
+		break;
+	case MTIMEOUT:
 		/* 08S01 Communication link failure */
 		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		return SQL_ERROR;
+	default:
+		/* General error */
+		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
 
