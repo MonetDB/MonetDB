@@ -1251,11 +1251,6 @@ stderr of test 'manyMapiClients` in directory 'src/mapi` itself:
 1234:
 
 # 01:08:31 >  
-# 01:08:31 >  Mtimeout -timeout 300 Mshutdown
-# 01:08:31 >  
-
-
-# 01:08:31 >  
 # 01:08:31 >  Done.
 # 01:08:31 >  
 

@@ -56,11 +56,6 @@ stderr of test 'multiClientSeq` in directory 'src/tools` itself:
 # 20:42:10 >  
 
 
-# 15:29:57 >  
-# 15:29:57 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=55437
-# 15:29:57 >  
-
-
 # 15:29:58 >  
 # 15:29:58 >  Done.
 # 15:29:58 >  

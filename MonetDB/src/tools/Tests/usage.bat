@@ -4,5 +4,4 @@
 	%MTIMEOUT% Mserver "--config=%MONET_CONF%" -?
 	%MTIMEOUT% MapiClient -?
 	%MTIMEOUT% MapiClient.py -?
-	%MTIMEOUT% Mshutdown.py -?
 

@@ -58,11 +58,6 @@ stderr of test 'sample0` in directory 'src/mapi/examples/C` itself:
 # 22:20:45 >  
 
 
-# 22:20:45 >  
-# 22:20:45 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=49241
-# 22:20:45 >  
-
-
 # 22:20:46 >  
 # 22:20:46 >  Done.
 # 22:20:46 >  

@@ -12,6 +12,7 @@ stdout of test 'ID.853867` in directory 'tests/BugsViaSourgeforce` itself:
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 

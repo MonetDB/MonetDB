@@ -11,6 +11,7 @@ stdout of test 'sample4` in directory 'src/mapi/examples/C` itself:
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -26,11 +27,6 @@ Over..
 rows received 2
 John is 23
 Mary is 22
-
-# 22:25:19 >  
-# 22:25:19 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=42910
-# 22:25:19 >  
-
 
 # 22:25:20 >  
 # 22:25:20 >  Done.

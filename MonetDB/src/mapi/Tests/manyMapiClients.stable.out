@@ -11,6 +11,7 @@ stdout of test 'manyMapiClients` in directory 'src/mapi` itself:
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -3724,11 +3725,6 @@ Over..
 [ 1234 ]
 
 done: 1234
-
-# 01:08:31 >  
-# 01:08:31 >  Mtimeout -timeout 300 Mshutdown
-# 01:08:31 >  
-
 
 # 01:08:31 >  
 # 01:08:31 >  Done.

@@ -49,11 +49,6 @@ stderr of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 # 14:24:43 >  
 
 
-# 14:24:44 >  
-# 14:24:44 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d_--enable-debug_/etc/MonetDB.conf" --host=draco --port=46067
-# 14:24:44 >  
-
-
 # 14:24:45 >  
 # 14:24:45 >  Done.
 # 14:24:45 >  

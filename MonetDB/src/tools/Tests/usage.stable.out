@@ -22,11 +22,6 @@ stdout of test 'usage` in directory 'src/tools` itself:
 
 
 # 16:36:12 >  
-# 16:36:12 >  Mtimeout -timeout 60 Mshutdown.py -?
-# 16:36:12 >  
-
-
-# 16:36:12 >  
 # 16:36:12 >  Done.
 # 16:36:12 >  
 

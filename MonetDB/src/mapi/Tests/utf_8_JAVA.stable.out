@@ -12,6 +12,7 @@ stdout of test 'utf_8_JAVA` in directory 'src/mapi` itself:
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -20,11 +21,6 @@ Over..
 # 10:31:31 >  
 
 [ "één" ]
-
-# 10:31:31 >  
-# 10:31:31 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/windhouw/src/MonetDB/Linux/etc/monet.conf" --host=ara --port=49406
-# 10:31:31 >  
-
 
 # 10:31:32 >  
 # 10:31:32 >  Done.
