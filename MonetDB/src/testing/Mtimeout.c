@@ -138,11 +138,6 @@ limit(char **argv)
 #endif
 #endif
 		invocation(stderr, msg, argv);
-	if (status & 0200) {
-		char buf[512];
-		sprintf(buf, "find \"$TSTTRGBASE\" -name core -print | while read f; do mv \"$f\" \"$f.%lu\"; done", (unsigned long) time(0));
-		system(buf);
-	}
 		return ((wts>0)?wts:1);
 	    }
 	}
