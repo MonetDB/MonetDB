@@ -24,6 +24,9 @@ monet_fcntbl.sort@batloop {
 	Tmod:="";
 	if (monet_fcn_mid.exist($t)) {
 		Tmod:=monet_mod_nme.find(monet_fcn_mid.find($t));
+		if (Tmod.startsWith("_")) {
+			Tmod := string(Tmod,1);
+		}
 	} else {
 		Tmod:="";
 	}
@@ -43,12 +46,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 590 ]
+[ 595 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 590 ]
+[ 595 ]
 
 All:=0;
 
@@ -74,8 +77,8 @@ Static_mods@batloop {
 
 Module: ""
 
-[ 34 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 36 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature												| help																																																																				  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "capacity",	  "PROC:      ",  "capacity(BAT[any,any]) : lng",									  "not available"																																																																		  ]
@@ -108,6 +111,8 @@ Module: ""
 [ "sum",	  "PROC:      ",  "sum(BAT[any,int]) : int",									  "not available"																																																													  ]
 [ "sum",	  "PROC:      ",  "sum(BAT[any,lng]) : lng",									  "not available"																																																													  ]
 [ "sum",	  "PROC:      ",  "sum(BAT[any,sht]) : sht",									  "not available"																																																													  ]
+[ "test_arith",	  "PROC:      ",  "test_arith() : void",							  "not available"																																						  ]
+[ "test_str",	  "PROC:      ",  "test_str() : void",								  "not available"																																						  ]
 [ "ttype",	  "PROC:      ",  "ttype(BAT[any,any]) : int",										  "not available"																																																																		  ]
 [ "tunique",	  "PROC:      ",  "tunique(BAT[any,any::1]) : BAT[any::1,void]",							  "not available"																																																																		  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage() : BAT[str,lng]",										  "not available"																																																																		  ]
@@ -563,8 +568,8 @@ Module: "bat"
 
 Module: "kernel"
 
-[ 32 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 42 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature										| help																																																													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "CATCH",	  "BUILTIN:   ",  "CATCH(STATEMENT) : str ",								  "Turns on buffering of error messages while executing STATEMENT.\n Error messages that occur during this execution are returned as a string.\n If no error occurrs, catch returns str(nil)."																																						  ]
@@ -582,8 +587,15 @@ Module: "kernel"
 [ "fork",	  "BUILTIN:   ",  "fork(STATEMENT) : int ",								  "Open a new client session to execute this request.  \n FUTURE: forks on remote Mservers.\n Returns new client id."																																															  ]
 [ "freeze",	  "BUILTIN:   ",  "freeze(IDENT varname, ..IDENT...) ",							  "Fix the type of a number of MIL variables; their values can still change."																																																				  ]
 [ "kill",	  "BUILTIN:   ",  "kill(int clientid) ",								  "Kills a client session. Killing the console (clientid = 0) is a system\n shutdown.\n WARNING: if BAT-modifying operations are killed, we do not\n garuantee *anything*!!"																																								  ]
+[ "mod",	  "COMMAND:   ",  "mod() : str",									  "During module loading a module stack is kept. This function returns the top module"																																																										  ]
 [ "module",	  "BUILTIN:   ",  "module(str modname, ...str...) ",							  "Loads Monet extension modules (previously installed with Minstall)\n into a running Mserver.\n After this, you will be able to use new Atoms (e.g. polygon), Search\n Accelerators (e.g. R-tree), Commands (e.g. spatjoin(A,B)), and Iterators\n (e.g. B.nearloop(rect) {}).\n You can either load modules installed by yourself or by the system\n administrator (adm)\n \n In command-line mode, you can save typing the \" (providing the\n resulting identifier does not collide with another MIL keyword)."  ]
+[ "module_pop",	  "COMMAND:   ",  "module_pop() : void",								  "During module loading a variable module is set to the current module name. At the end of a module load the enclosing module is popped from a stack"																																																		  ]
+[ "module_push",  "COMMAND:   ",  "module_push(str) : void",								  "During module loading a variable module is set to the current module name. The previous module is pushed onto a stack"																																																					  ]
 [ "newoid",	  "BUILTIN:   ",  "newoid(int range) : oid ",								  "Reserves a range of consecutive unique OIDs; returns the lowest in range."																																																				  ]
+[ "print",	  "COMMAND:   ",  "print(BAT[any::1,any], ..BAT[any::1,any]..) : void",					  "BATs are printed with '#' for legend lines, and the BUNs on seperate\n lines between brackets, containing each to comma separated values\n (head and tail).\n If multiple BATs are passed for printing, print() performs an implicit\n natural join, producing a multiattribute table."																																	  ]
+[ "print",	  "COMMAND:   ",  "print(any) : void",									  "Print a MIL value between square brackets."																																																															  ]
+[ "print",	  "COMMAND:   ",  "print(int, BAT[any::1,any], ..BAT[any::1,any]..) : void",				  "The same as normal table print, but enforces to use the order of\n  BAT number [1..argc] to do the printing."																																																						  ]
+[ "printf",	  "COMMAND:   ",  "printf(str, ..any..) : void",							  "Print a formatted string on the standard client output."																																																													  ]
 [ "prompt",	  "BUILTIN:   ",  "prompt(str prompt) ",								  "Change the MIL client prompt string."																																																								  ]
 [ "qstat",	  "BUILTIN:   ",  "qstat() ",										  "Print the MIL-queue statistics."																																																									  ]
 [ "qtrace",	  "BUILTIN:   ",  "qtrace(INT jobnumber) ",								  "Set the MIL-queue performance tracer."																																																								  ]
@@ -593,6 +605,9 @@ Module: "kernel"
 [ "setoid",	  "BUILTIN:   ",  "setoid(oid base) : oid ",								  "Sets the oid range of consecutive unique OIDs; returns the lowest in range."																																																				  ]
 [ "shutdown",	  "BUILTIN:   ",  "shutdown(int status) ",								  "Immediate database shutdown. Only to be issued by the adm or database owner."																																																			  ]
 [ "source",	  "BUILTIN:   ",  "source(str mil_file) : any ",							  "Read and evaluate a MIL-script from a file. Relative paths start from\n the database directory"																																																	  ]
+[ "sprintf",	  "COMMAND:   ",  "sprintf(str, ..any..) : str",							  "Print a formatted string on the standard client output."																																																													  ]
+[ "table",	  "COMMAND:   ",  "table(BAT[any::1,any], ..BAT[any::1,any]..) : void",					  "Print an n-ary table. Like print(n-ary) but does not print oid column"																																																											  ]
+[ "table",	  "COMMAND:   ",  "table(int, BAT[any::1,any], ..BAT[any::1,any]..) : void",				  "Print an n-ary table. Use the ordering of param [1..argc]"																																																													  ]
 [ "threadcnt",	  "BUILTIN:   ",  "threadcnt(int inc) : int ",								  "Increases or decreases the number of active interpreter threads.\n returns the number of active threads."																																																  ]
 [ "threadid",	  "BUILTIN:   ",  "threadid() : int ",									  "Returns your the id of the thread running your MIL interpreter."																																																					  ]
 [ "type",	  "BUILTIN:   ",  "type(any v) : int ",									  "Return the type of a value (expression). Returns an type number.\n TIP: use the monet_atomtbl BAT to translate type numbers to strings."																																												  ]
@@ -631,8 +646,8 @@ Module: "str"
 
 Module: "sys"
 
-[ 67 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 60 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature												| help																																																																				  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "bbp",			  "PROC:      ",  "bbp() : BAT[str,int]",										  "Global BBP usage info"																																																																	  ]
@@ -659,18 +674,11 @@ Module: "sys"
 [ "module_db",			  "COMMAND:   ",  "module_db(str) : str",										  "extract database name from module string"																																																															  ]
 [ "module_name",		  "COMMAND:   ",  "module_name(str) : str",										  "extract module name from module string"																																																															  ]
 [ "modules",			  "PROC:      ",  "modules() : void",											  "list all installed modules, plus owner and db restrictions"																																																													  ]
-[ "print",			  "COMMAND:   ",  "print(BAT[any::1,any], ..BAT[any::1,any]..) : void",							  "BATs are printed with '#' for legend lines, and the BUNs on seperate\n lines between brackets, containing each to comma separated values\n (head and tail).\n If multiple BATs are passed for printing, print() performs an implicit\n natural join, producing a multiattribute table."																																	  ]
-[ "print",			  "COMMAND:   ",  "print(any) : void",											  "Print a MIL value between square brackets."																																																															  ]
-[ "print",			  "COMMAND:   ",  "print(int, BAT[any::1,any], ..BAT[any::1,any]..) : void",						  "The same as normal table print, but enforces to use the order of\n  BAT number [1..argc] to do the printing."																																																						  ]
-[ "printf",			  "COMMAND:   ",  "printf(str, ..any..) : void",									  "Print a formatted string on the standard client output."																																																													  ]
 [ "procs",			  "PROC:      ",  "procs() : void",											  "list all defined procs."																																																																	  ]
 [ "readonly",			  "PROC:      ",  "readonly(BAT[any::1,any::2]) : int",									  "deprecated. Use 'info.find(batRestricted)' instead."																																																														  ]
 [ "readonly",			  "PROC:      ",  "readonly(BAT[any::1,any::2], int) : BAT[any::1,any::2]",						  "deprecated. Use 'b.access' instead."																																																																  ]
 [ "rename",			  "PROC:      ",  "rename(BAT[any::1,any::2], str) : BAT[any::1,any::2]",						  "try to name a BAT and fail if it is not possible."																																																														  ]
 [ "sigs",			  "PROC:      ",  "sigs(str) : void",											  "Show all signatures of the functions in a module."																																																														  ]
-[ "sprintf",			  "COMMAND:   ",  "sprintf(str, ..any..) : str",									  "Print a formatted string on the standard client output."																																																													  ]
-[ "table",			  "COMMAND:   ",  "table(BAT[any::1,any], ..BAT[any::1,any]..) : void",							  "Print an n-ary table. Like print(n-ary) but does not print oid column"																																																											  ]
-[ "table",			  "COMMAND:   ",  "table(int, BAT[any::1,any], ..BAT[any::1,any]..) : void",						  "Print an n-ary table. Use the ordering of param [1..argc]"																																																													  ]
 [ "tail",			  "PROC:      ",  "tail(BAT[any,any]) : str",								  "Get tail-type as a string"																																					  ]
 [ "threads",			  "PROC:      ",  "threads() : void",											  "list all system threads and their function."																																																															  ]
 [ "vars",			  "PROC:      ",  "vars() : void",											  "list all Monet variables and their values."																																																															  ]
@@ -719,7 +727,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",											  "save all persistent BATs"																																																																	  ]
 
 All.print;
-[ 590 ]
+[ 595 ]
 
 quit;
 

@@ -10,6 +10,8 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(20000000);
 
+PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+
 loaded;
 #---------------------------------#
 # module	| usage_count	  #
@@ -18,10 +20,11 @@ loaded;
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[~monet_mod_nme].reverse.sort.print;
+[~mmn()].reverse.sort.print;
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (void)  #
@@ -30,6 +33,7 @@ loaded;
 [ "arith",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "kernel",	  nil	  ]
+[ "main",	  nil	  ]
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
@@ -93,10 +97,11 @@ loaded;
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[~monet_mod_nme].reverse.sort.print;
+[~mmn()].reverse.sort.print;
 #-------------------------#
 # BAT:		  tmp_29  #
 # (str)		  (void)  #
@@ -106,20 +111,22 @@ loaded;
 [ "bat",	  nil	  ]
 [ "cluster",	  nil	  ]
 [ "kernel",	  nil	  ]
+[ "main",	  nil	  ]
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 
 # # module("Meta");
 # # loaded;
-# # [~monet_mod_nme].reverse.sort.print;
+# # [~mmn()].reverse.sort.print;
 
-fix:=monet_mod_nme.reverse.copy;
+fix:=mmn().reverse.copy;
 [fix~].print;
 #-------------------------#
 # BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
+[ "main",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "arith",	  nil	  ]
 [ "str",	  nil	  ]
@@ -129,8 +136,7 @@ fix:=monet_mod_nme.reverse.copy;
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
 
-mprof:=view_modules.select("mprof").reverse.kunique;
-others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
+others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE).revert;
 [others~].print;
 #-------------------------#
 # BAT:		  tmp_30  #
@@ -151,6 +157,7 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "qt",		  nil	  ]
 [ "pcl",	  nil	  ]
 [ "oo7",	  nil	  ]
+[ "mprof",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "mel",	  nil	  ]
@@ -171,13 +178,12 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "alarm",	  nil	  ]
 [ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
-[ "mprof",	  nil	  ]
 
 others@batloop{
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
 	loaded;
-	off:=kdiff(monet_mod_nme.reverse,fix);
+	off:=kdiff(mmn().reverse,fix);
 	[off~].print;
 	off@batloop{
 		printf("\n\tdropping %s\n\n",$h);
@@ -196,6 +202,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -216,6 +223,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -230,6 +238,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -250,6 +259,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -264,6 +274,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "mmath",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -289,6 +300,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -303,6 +315,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -323,6 +336,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -337,6 +351,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -357,6 +372,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -371,6 +387,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -391,6 +408,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -405,6 +423,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  2		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "tpcd",	  1		  ]
@@ -425,6 +444,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -439,6 +459,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "tcpip",	  1		  ]
@@ -460,6 +481,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -474,6 +496,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -494,6 +517,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -508,6 +532,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "stats",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -528,6 +553,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -542,6 +568,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "salgebra",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -562,6 +589,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -576,6 +604,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "radix",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -596,6 +625,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -611,6 +641,7 @@ others@batloop{
 [ "bitvector",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "qt",		  1		  ]
 [ "stats",	  1		  ]
 [ "str",	  1		  ]
@@ -645,6 +676,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -659,6 +691,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "pcl",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -679,6 +712,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -693,6 +727,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "oo7",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -713,6 +748,43 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading mprof
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "mprof",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_48  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mprof",	  nil	  ]
+
+	dropping mprof
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -727,6 +799,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "monettime",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -747,6 +820,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -761,6 +835,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "mmath",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -781,6 +856,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -795,6 +871,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "mel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -815,6 +892,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -829,6 +907,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
@@ -854,6 +933,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -868,6 +948,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "malalgebra",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -888,6 +969,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -903,6 +985,7 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -922,6 +1005,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -937,6 +1021,7 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "iterator",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -956,6 +1041,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -971,6 +1057,7 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "enum",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -995,6 +1082,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1010,6 +1098,7 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "decimal",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1029,6 +1118,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1045,6 +1135,7 @@ others@batloop{
 [ "ddbench",	  1		  ]
 [ "enum",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  2		  ]
 [ "sys",	  1		  ]
@@ -1078,6 +1169,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1093,6 +1185,7 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "counters",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1112,6 +1205,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1127,6 +1221,7 @@ others@batloop{
 [ "calib",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1146,6 +1241,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1161,6 +1257,7 @@ others@batloop{
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1180,6 +1277,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1195,6 +1293,7 @@ others@batloop{
 [ "bitvector",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1214,6 +1313,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1229,6 +1329,7 @@ others@batloop{
 [ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1248,6 +1349,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1263,6 +1365,7 @@ others@batloop{
 [ "bat_arith",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1282,6 +1385,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1297,6 +1401,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -1321,6 +1426,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1336,6 +1442,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1355,6 +1462,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1370,6 +1478,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1389,6 +1498,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1404,6 +1514,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1423,40 +1534,7 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading mprof
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "mprof",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_48  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mprof",	  nil	  ]
-
-	dropping mprof
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
+[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]

@@ -1,29 +1,30 @@
 setoid(20000000);
 
+PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+
 loaded;
-[~monet_mod_nme].reverse.sort.print;
+[~mmn()].reverse.sort.print;
 [~view_modules].reverse.kunique.sort.print;
 
 module("cluster");
 loaded;
-[~monet_mod_nme].reverse.sort.print;
+[~mmn()].reverse.sort.print;
 
 # # module("Meta");
 # # loaded;
-# # [~monet_mod_nme].reverse.sort.print;
+# # [~mmn()].reverse.sort.print;
 
-fix:=monet_mod_nme.reverse.copy;
+fix:=mmn().reverse.copy;
 [fix~].print;
 
-mprof:=view_modules.select("mprof").reverse.kunique;
-others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
+others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE).revert;
 [others~].print;
 
 others@batloop{
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
 	loaded;
-	off:=kdiff(monet_mod_nme.reverse,fix);
+	off:=kdiff(mmn().reverse,fix);
 	[off~].print;
 	off@batloop{
 		printf("\n\tdropping %s\n\n",$h);

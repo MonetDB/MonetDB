@@ -1,5 +1,7 @@
 setoid(oid(20000000));
 
+PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+
 #All_mods:=MODULES.sort.copy;
 module("cluster");
 # # module(Meta);
@@ -15,7 +17,7 @@ All_mods@batloop {
 	}
 }
 
-table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod_nme.count)));
+table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 
 ##Fname:=new(oid,str);Fname.col_name("function");
 ##FnameS:=new(oid,str);FnameS.col_name("function");

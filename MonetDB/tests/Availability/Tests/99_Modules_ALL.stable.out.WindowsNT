@@ -10,6 +10,8 @@ stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 # compiled for i686-pc-win32/32bit; dynamically linked.
 setoid(oid(20000000));
 
+PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+
 #All_mods:=MODULES.sort.copy;
 module("cluster");
 # # module(Meta);
@@ -67,7 +69,7 @@ bat_arith: loading... done.
    aggrX3: loading... done.
      aggr: loading... done.
 
-table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod_nme.count)));
+table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 #-----------------#
 # 43 modules	  #
 #-----------------#
@@ -90,6 +92,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "iterator"	  ]
 [ "kernel"	  ]
 [ "lock"	  ]
+[ "main"	  ]
 [ "malalgebra"	  ]
 [ "mapi"	  ]
 [ "mel"		  ]

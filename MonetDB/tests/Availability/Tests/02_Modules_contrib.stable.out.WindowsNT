@@ -11,7 +11,6 @@ stdout of test '02_Modules_contrib` in directory 'tests/Availability` itself:
 setoid(oid(20000000));
 
 Static_fcn:=monet_fcntbl.reverse.copy;
-Static_mod:=monet_mod_nme.reverse.copy;
 
 Fname:=new(oid,str);Fname.col_name("function");
 FnameS:=new(oid,str);FnameS.col_name("function");
@@ -41,15 +40,19 @@ Plain_mods@batloop {
 	printf("\nModule: \"%s\"\n\n",The_mod);
 	module($h);
 
-	Add_mod:=sdiff(monet_mod_nme.reverse,Static_mod).access(BAT_WRITE).delete(The_mod);
-
 	Mod_fcn:=sdiff(monet_fcntbl.reverse,Static_fcn).reverse;
 	Mod_fcn.sort@batloop {
 	    addThis:=false;
 	    if (not(monet_fcn_mid.exist($t))) {
 		addThis:=true;
-	    } else if (monet_mod_nme.find(monet_fcn_mid.find($t))=The_mod) {
-		addThis:=true;
+	    } else {
+		m:=monet_mod_nme.find(monet_fcn_mid.find($t));
+		if (m.startsWith("_")) {
+		    m:=string(m,1);
+		}
+		if (m = The_mod) {
+		    addThis:=true;
+		}
 	    }
 	    if (addThis) {
 		Tname:=$h;
@@ -69,6 +72,7 @@ Plain_mods@batloop {
 	    }
 	}
 
+	drop($h);
 	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse);
 
 	Fnts.count.print;
@@ -83,13 +87,12 @@ Plain_mods@batloop {
 	Fsig.delete;
 	Fhelp.delete;
 	Fnts.delete;
-	drop($h);
 }
 
 Module: "bitset"
 
-[ 12 ]
-[ 12 ]
+[ 13 ]
+[ 13 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature					| help							  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -105,12 +108,13 @@ Module: "bitset"
 [ "bitset_xor",		  "COMMAND:   ",  "bitset_xor(bitset, bitset) : bitset",	  "XOR this BitSet with an other BitSet."		  ]
 [ "newBitset",		  "COMMAND:   ",  "newBitset() : bitset",			  "Create a new empty BitSet."				  ]
 [ "newBitset",		  "COMMAND:   ",  "newBitset(int) : bitset",			  "Create a new BitSet from an existing integer."	  ]
+[ "test_bitset",	  "PROC:      ",  "test_bitset() : void",			  "not available"					  ]
 
 Module: "bitvector"
 
-[ 11 ]
-[ 11 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 12 ]
+[ 12 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help							  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "[allocate]",	  "COMMAND:   ",  "[allocate](int, bit) : BAT[void,lng]",		  "Allocate a new and empty bitvector"			  ]
@@ -124,6 +128,7 @@ Module: "bitvector"
 [ "[or]",	  "COMMAND:   ",  "[or](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "Logically ORs two bitvectors"			  ]
 [ "[prt]",	  "COMMAND:   ",  "[prt](BAT[void,lng]) : void",			  "Print a bitvector"					  ]
 [ "[set]",	  "COMMAND:   ",  "[set](BAT[any::1,lng], int) : void",			  "Set a bit in a bitvector"				  ]
+[ "test_bitvector",	  "PROC:      ",  "test_bitvector() : void",				  "not available"					  ]
 
 Module: "cluster"
 
@@ -138,9 +143,9 @@ Module: "cluster"
 
 Module: "iterator"
 
-[ 15 ]
-[ 15 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 16 ]
+[ 16 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help								  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "aggr",	  "COMMAND:   ",  "aggr(iter, str, BAT[oid,any::1]) : BAT[any,any::1]",	  "groupby-aggregate(attr), aggr in {max,min,sum,avg}"		  ]
@@ -158,12 +163,13 @@ Module: "iterator"
 [ "scan",	  "COMMAND:   ",  "scan(BAT[any,any]) : iter",				  "sequential-scan on bat"					  ]
 [ "select",	  "COMMAND:   ",  "select(iter, bit, str, any) : iter",			  "select on tail (fcn in {eq,=,!=,<,>,<=,>=,..})"		  ]
 [ "select",	  "COMMAND:   ",  "select(iter, bit, str, any, any) : iter",		  "select on tail (fcn in {rng,..})"				  ]
+[ "test_iterator",	  "PROC:      ",  "test_iterator() : void",				  "not available"						  ]
 
 Module: "malalgebra"
 
-[ 15 ]
-[ 15 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 16 ]
+[ 16 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature									| help								  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "fetchjoin",	  "COMMAND:   ",  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the fetch implementation of the join."	  ]
@@ -171,6 +177,7 @@ Module: "malalgebra"
 [ "indexjoin",	  "COMMAND:   ",  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the index implementation of the join."	  ]
 [ "lrhashjoin",	  "COMMAND:   ",  "lrhashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the lrhash implementation of the join."	  ]
 [ "mergejoin",	  "COMMAND:   ",  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the merge implementation of the join."	  ]
+[ "test_malalgebra",	  "PROC:      ",  "test_malalgebra() : void",							  "not available"						  ]
 [ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
 [ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]
 [ "{_csum}",	  "COMMAND:   ",  "{_csum}(BAT[oid,int]) : BAT[oid,int]",					  "grouped tail sum"						  ]
@@ -184,11 +191,13 @@ Module: "malalgebra"
 
 Module: "mel"
 
-[ 0 ]
-[ 0 ]
-#-------------------------------------------------#
+[ 2 ]
+[ 2 ]
+#---------------------------------------------------------------------------------#
 # function	| type	| signature	| help	  #
-#-------------------------------------------------#
+#---------------------------------------------------------------------------------#
+[ "mel_test",	  "PROC:      ",  "mel_test() : any",	  "not available"	  ]
+[ "test_mel",	  "PROC:      ",  "test_mel() : void",	  "not available"	  ]
 
 Module: "oo7"
 
@@ -205,8 +214,8 @@ Module: "oo7"
 
 Module: "qt"
 
-[ 8 ]
-[ 8 ]
+[ 10 ]
+[ 10 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature																					| help																																																															  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -218,6 +227,8 @@ Module: "qt"
 [ "[qt_match]",			  "COMMAND:   ",  "[qt_match](int, oid, BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,uchr], BAT[void,uchr], BAT[void,uchr], BAT[oid,oid], BAT[oid,int], BAT[oid,int], int, flt) : void", "Look for a matching color cross, which is described by the cross \n  referenced by crossid, in the ID, H, S, and V table.  The requested quad\n  tree is presented in the tables qt_ioffs and qt_inum (offset and number\n  of features, respectively) at entry image_oid.  Fill in the r_* BATS\n  with matching images, number of colors and the IDs of the matched\n  features, respectively if more than or equal to the number of different\n  colors from the spot time the fraction match in the image."	  ]
 [ "[qt_pre_select]",		  "COMMAND:   ",  "[qt_pre_select](int, int, int) : BAT[oid,oid]",																  "Select images that _may_ satisfy the cross's color transitions"																																																							  ]
 [ "[qt_stats]",			  "COMMAND:   ",  "[qt_stats](int, str) : void",																		  "Control statistics output"																																																												  ]
+[ "test_bitvector",		  "PROC:      ",  "test_bitvector() : void",																			  "not available"																																																													  ]
+[ "test_uchr",			  "PROC:      ",  "test_uchr() : void",																				  "not available"																																																													  ]
 
 Module: "tpcd"
 
@@ -263,8 +274,8 @@ Module: "tpcd"
 
 Module: "vector"
 
-[ 123 ]
-[ 123 ]
+[ 125 ]
+[ 125 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature							| help												  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -371,6 +382,8 @@ Module: "vector"
 [ "sum",			  "COMMAND:   ",  "sum(flts) : flt",						  "Calculates the sum of the vector elements."							  ]
 [ "sum",			  "COMMAND:   ",  "sum(int_vector64) : int",					  "Calculates the sum of the vector elements."							  ]
 [ "sum",			  "COMMAND:   ",  "sum(ints) : int",						  "Calculates the sum of the vector elements."							  ]
+[ "test_mmath",			  "PROC:      ",  "test_mmath() : void",					  "not available"										  ]
+[ "test_vector",		  "PROC:      ",  "test_vector() : void",					  "not available"										  ]
 [ "todbls",			  "COMMAND:   ",  "todbls(flts) : dbls",					  "Converts vectors of flts to vector of dbls"							  ]
 [ "todbls",			  "COMMAND:   ",  "todbls(ints) : dbls",					  "Converts vectors of ints to vector of dbls"							  ]
 [ "toflts",			  "COMMAND:   ",  "toflts(dbls) : flts",					  "Converts vectors of dbls to vector of flts"							  ]

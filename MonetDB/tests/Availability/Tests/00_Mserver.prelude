@@ -74,7 +74,9 @@ MODULES.replace("TransTest", "odmgTest");
 #MODULES.replace("opengis",   "geometry");
 #MODULES.replace("tdcel",     "geometry");
 
-monet_mod_nme@batloop { MODULES.replace($t,"static"); }
+PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+
+mmn()@batloop { MODULES.replace($t,"static"); }
 
 #MODULES.delete("CC_Test");
 #MODULES.delete("Test");

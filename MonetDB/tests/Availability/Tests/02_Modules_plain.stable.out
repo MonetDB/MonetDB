@@ -11,7 +11,6 @@ stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 setoid(oid(20000000));
 
 Static_fcn:=monet_fcntbl.reverse.copy;
-Static_mod:=monet_mod_nme.reverse.copy;
 
 Fname:=new(oid,str);Fname.col_name("function");
 FnameS:=new(oid,str);FnameS.col_name("function");
@@ -55,15 +54,19 @@ Plain_mods@batloop {
 	printf("\nModule: \"%s\"\n\n",The_mod);
 	module($h);
 
-	Add_mod:=sdiff(monet_mod_nme.reverse,Static_mod).access(BAT_WRITE).delete(The_mod);
-
 	Mod_fcn:=sdiff(monet_fcntbl.reverse,Static_fcn).reverse;
 	Mod_fcn.sort@batloop {
 	    addThis:=false;
 	    if (not(monet_fcn_mid.exist($t))) {
 		addThis:=true;
-	    } else if (monet_mod_nme.find(monet_fcn_mid.find($t))=The_mod) {
-		addThis:=true;
+	    } else {
+		m:=monet_mod_nme.find(monet_fcn_mid.find($t));
+		if (m.startsWith("_")) {
+		    m:=string(m,1);
+		}
+		if (m = The_mod) {
+		    addThis:=true;
+		}
 	    }
 	    if (addThis) {
 		Tname:=$h;
@@ -83,6 +86,7 @@ Plain_mods@batloop {
 	    }
 	}
 
+	drop($h);
 	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse);
 
 	Fnts.count.print;
@@ -97,19 +101,21 @@ Plain_mods@batloop {
 	Fsig.delete;
 	Fhelp.delete;
 	Fnts.delete;
-	drop($h);
 }
 
 Module: "aggr"
 
-[ 26 ]
-[ 26 ]
+[ 29 ]
+[ 29 ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature							| help				  #
 #---------------------------------------------------------------------------------------------------------------------------------#
+[ "aggrtst",	  "PROC:      ",  "aggrtst(int, int, str, ..str..) : any",			  "not available"		  ]
 [ "avg",	  "PROC:      ",  "avg(BAT[any,any::1]) : dbl",					  "not available"		  ]
 [ "card",	  "PROC:      ",  "card(BAT[any,any]) : int",					  "not available"		  ]
 [ "size",	  "PROC:      ",  "size(BAT[any,bit]) : int",					  "not available"		  ]
+[ "test_aggr",	  "PROC:      ",  "test_aggr() : void",						  "not available"		  ]
+[ "toset",	  "PROC:      ",  "toset(BAT[any,any]) : str",					  "not available"		  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
@@ -136,14 +142,17 @@ Module: "aggr"
 
 Module: "aggrX3"
 
-[ 47 ]
-[ 47 ]
+[ 50 ]
+[ 50 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature								| help				  #
 #-----------------------------------------------------------------------------------------------------------------------------------------#
+[ "aggrtst",	  "PROC:      ",  "aggrtst(int, int, str, ..str..) : any",				  "not available"		  ]
 [ "avg",	  "PROC:      ",  "avg(BAT[any,any::1]) : any::1",					  "not available"		  ]
 [ "card",	  "PROC:      ",  "card(BAT[any,any]) : int",						  "not available"		  ]
 [ "size",	  "PROC:      ",  "size(BAT[any,bit]) : int",						  "not available"		  ]
+[ "test_aggrX3",  "PROC:      ",  "test_aggrX3() : void",						  "not available"		  ]
+[ "toset",	  "PROC:      ",  "toset(BAT[any,any]) : str",						  "not available"		  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",			  "grouped tail average on dbl"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,dbl], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "grouped tail average on dbl"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,dbl]",			  "grouped tail average on flt"	  ]
@@ -205,14 +214,15 @@ Module: "alarm"
 
 Module: "ascii_io"
 
-[ 16 ]
-[ 16 ]
+[ 19 ]
+[ 19 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help			  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "ascii_io_debug",	  "COMMAND:   ",  "ascii_io_debug(int) : void",							  ""			  ]
 [ "bat_ttype",		  "PROC:      ",  "bat_ttype(BAT[any,any]) : str",						  "not available"	  ]
 [ "dump",		  "COMMAND:   ",  "dump(BAT[void,str], BAT[void,str], BAT[void,BAT], str, int) : void",		  ""			  ]
+[ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], BAT[str,BAT], str, int) : any",			  "not available"	  ]
 [ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], str, int) : any",					  "not available"	  ]
 [ "dump_format",	  "PROC:      ",  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",				  "not available"	  ]
 [ "dump_seps",		  "PROC:      ",  "dump_seps(BAT[void,BAT]) : BAT[void,str]",					  "not available"	  ]
@@ -226,6 +236,8 @@ Module: "ascii_io"
 [ "make_persistent",	  "PROC:      ",  "make_persistent(BAT[str,BAT]) : any",					  "not available"	  ]
 [ "merge_data",		  "PROC:      ",  "merge_data(BAT[str,BAT]) : any",						  "not available"	  ]
 [ "output",		  "COMMAND:   ",  "output(BAT[any,any], BAT[void,str], BAT[void,BAT], Stream) : void",		  ""			  ]
+[ "test_ascii_io",	  "PROC:      ",  "test_ascii_io() : void",							  "not available"	  ]
+[ "test_streams",	  "PROC:      ",  "test_streams() : void",							  "not available"	  ]
 
 Module: "bat_arith"
 
@@ -375,12 +387,13 @@ Module: "bat_arith"
 
 Module: "blob"
 
-[ 4 ]
-[ 4 ]
+[ 5 ]
+[ 5 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help																  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "nitems",	  "COMMAND:   ",  "nitems(blob) : int",		  "get the number of bytes stored in this blob."										  ]
+[ "test_blob",	  "PROC:      ",  "test_blob() : void",		  "not available"														  ]
 [ "toblob",	  "COMMAND:   ",  "toblob(str) : blob",		  "store a string as a blob."													  ]
 [ "tostr",	  "COMMAND:   ",  "tostr(blob) : str",		  "get the bytes from blob as a string, till the first 0 byte\n         or the end of the blob"					  ]
 [ "tostr",	  "COMMAND:   ",  "tostr(blob, int) : str",	  "get the bytes from blob as a string, starting at byte 'index'\n         till the first 0 byte or the end of the blob."	  ]
@@ -398,8 +411,8 @@ Module: "calib"
 
 Module: "counters"
 
-[ 14 ]
-[ 14 ]
+[ 15 ]
+[ 15 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature				| help											  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -408,7 +421,7 @@ Module: "counters"
 [ "event_name",		  "PROC:      ",  "event_name(int) : str",		  "return the (native) name of an event given by number"				  ]
 [ "event_number",	  "PROC:      ",  "event_number(int) : int",		  "return the number of an event given by name"						  ]
 [ "event_number",	  "PROC:      ",  "event_number(str) : int",		  "not available"									  ]
-[ "init_counters",	  "COMMAND:   ",  "init_counters() : void",		  "initialize counters module\n  (to be used in .LOAD sequence, only)"			  ]
+[ "init_counters",	  "COMMAND:   ",  "init_counters() : void",		  "initialize counters module\n  (to be used on initial load, only)"			  ]
 [ "profile",		  "PROC:      ",  "profile(str, any, any) : counter",	  "Count events event0 & event1 while executing cmd; return the results as counter."	  ]
 [ "show_native_events",	  "COMMAND:   ",  "show_native_events() : BAT[int,str]",  "all available events"								  ]
 [ "show_unified_events",  "COMMAND:   ",  "show_unified_events() : BAT[int,str]", "all unified event names"								  ]
@@ -417,11 +430,12 @@ Module: "counters"
 [ "start_count",	  "PROC:      ",  "start_count(str, int) : counter",	  "start counters for two events, first specified by name, second specified by number"	  ]
 [ "start_count",	  "PROC:      ",  "start_count(str, str) : counter",	  "start counters for two events specified by name"					  ]
 [ "stop_count",		  "COMMAND:   ",  "stop_count(counter) : counter",	  "stop the counting and retrieve the results"						  ]
+[ "test_counters",	  "PROC:      ",  "test_counters() : void",		  "not available"									  ]
 
 Module: "ddbench"
 
-[ 48 ]
-[ 48 ]
+[ 55 ]
+[ 55 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature										| help																																													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -465,11 +479,18 @@ Module: "ddbench"
 [ "subselect",		  "COMMAND:   ",  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1) : BAT[void,bit32]",		  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
 [ "subselect",		  "COMMAND:   ",  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",	  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
 [ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",				  "not available"																																											  ]
+[ "test_ddbench",	  "PROC:      ",  "test_ddbench() : void",								  "not available"																																											  ]
+[ "test_xtables",	  "PROC:      ",  "test_xtables() : void",								  "not available"																																											  ]
 [ "tobat",		  "COMMAND:   ",  "tobat(BAT[void,bit32]) : BAT[oid,void]",						  "convert a bat[void,bit32] bitmap selection into a BAT of oids"																																					  ]
 [ "val_bitselect",	  "COMMAND:   ",  "val_bitselect(BAT[oid,any::1], any::1) : BAT[void,bit32]",				  "do a range-scan equiselect, but output the result as a bitmask, partitioned\n  in 32-bits integers. "																																  ]
 [ "val_oidselect",	  "COMMAND:   ",  "val_oidselect(BAT[oid,any::1], any::1) : BAT[void,oid]",				  "uselect, optimized for enumeration types"																																								  ]
 [ "vals_bitselect",	  "COMMAND:   ",  "vals_bitselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "computes multiple bitmasks for each equi-select 'v' on 'sel'"																																					  ]
 [ "vals_oidselect",	  "COMMAND:   ",  "vals_oidselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "uselect, optimized for enum types, on multiple equi-select predicates"																																				  ]
+[ "xtable_histo_direct",  "PROC:      ",  "xtable_histo_direct(..any..) : any",							  "not available"																																											  ]
+[ "xtable_histo_remap",	  "PROC:      ",  "xtable_histo_remap(..any..) : any",							  "not available"																																											  ]
+[ "xtable_print",	  "PROC:      ",  "xtable_print(..any..) : any",							  "not available"																																											  ]
+[ "xtable_realloc",	  "PROC:      ",  "xtable_realloc(any, any) : any",							  "not available"																																											  ]
+[ "xtable_test",	  "PROC:      ",  "xtable_test(any, any, any, any) : any",						  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[any::1,any]) : BAT[any::1,int]",						  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
@@ -561,15 +582,16 @@ Module: "lock"
 
 Module: "mapi"
 
-[ 17 ]
-[ 17 ]
+[ 19 ]
+[ 19 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help																							  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "fclose",	  "PROC:      ",  "fclose(Stream) : void",				  "not available"																					  ]
 [ "fflush",	  "PROC:      ",  "fflush(Stream) : void",				  "not available"																					  ]
 [ "fopen",	  "PROC:      ",  "fopen(str, str) : Stream",				  "not available"																					  ]
 [ "fputs",	  "PROC:      ",  "fputs(str, Stream) : void",				  "not available"																					  ]
+[ "get_mapi_port",	  "PROC:      ",  "get_mapi_port() : any",				  "not available"																					  ]
 [ "listen",	  "PROC:      ",  "listen() : any",					  "Start the Mapi listener on 50000."																			  ]
 [ "listen",	  "PROC:      ",  "listen(int) : any",					  "Start the Mapi listener on <port>."																			  ]
 [ "listen",	  "PROC:      ",  "listen(int, int) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
@@ -577,6 +599,7 @@ Module: "mapi"
 [ "listen",	  "PROC:      ",  "listen(int, str) : any",				  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
 [ "listen",	  "PROC:      ",  "listen(str) : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
 [ "mapi_listen",  "BUILTIN:   ",  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : any",			  "not available"																					  ]
 [ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",			  "Read a string from <S> until a '1' character."																	  ]
 [ "socket_close",	  "COMMAND:   ",  "socket_close(int) : void",				  "close a socket"																					  ]
 [ "socket_dup",		  "COMMAND:   ",  "socket_dup(int) : int",				  "duplicate a socket"																					  ]
@@ -586,8 +609,8 @@ Module: "mapi"
 
 Module: "mmath"
 
-[ 23 ]
-[ 23 ]
+[ 24 ]
+[ 24 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help																																											  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -614,11 +637,12 @@ Module: "mmath"
 [ "sqrt",	  "COMMAND:   ",  "sqrt(dbl) : dbl",		  "The sqrt(x) function returns the non-negative square root of x."																																			  ]
 [ "tan",	  "COMMAND:   ",  "tan(dbl) : dbl",		  "The tan(x) function returns the tangent of x,\nwhere x is given in radians"																																		  ]
 [ "tanh",	  "COMMAND:   ",  "tanh(dbl) : dbl",		  "The tanh() function returns the hyperbolic tangent of x,\nwhich is defined mathematically as sinh(x) / cosh(x)."																													  ]
+[ "test_mmath",	  "PROC:      ",  "test_mmath() : void",	  "not available"																																									  ]
 
 Module: "monettime"
 
-[ 66 ]
-[ 66 ]
+[ 67 ]
+[ 67 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature														| help													  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -678,6 +702,7 @@ Module: "monettime"
 [ "rule",		  "PROC:      ",  "rule(int, str, int, int, int) : rule",										  "not available"											  ]
 [ "seconds",		  "COMMAND:   ",  "seconds(daytime) : int",												  "extracts seconds from daytime (value between 0 and 59)"						  ]
 [ "start_dst",		  "COMMAND:   ",  "start_dst(tzone) : rule",												  "extract rule that determines start of DST from tzone (!DS2.2)."					  ]
+[ "test_monettime",	  "PROC:      ",  "test_monettime() : void",												  "not available"											  ]
 [ "timestamp",		  "COMMAND:   ",  "timestamp(date, daytime) : timestamp",										  "creates a timestamp from (date,daytime) parameters (in the local timezone)."				  ]
 [ "timestamp",		  "COMMAND:   ",  "timestamp(date, daytime, tzone) : timestamp",									  "creates a timestamp from (date,daytime,tzone) parameters (!DS2.2)."					  ]
 [ "timestamp",		  "PROC:      ",  "timestamp(int) : timestamp",												  "not available"											  ]
@@ -691,8 +716,8 @@ Module: "monettime"
 
 Module: "pcl"
 
-[ 6 ]
-[ 6 ]
+[ 7 ]
+[ 7 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature					| help								  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -702,11 +727,12 @@ Module: "pcl"
 [ "pcl_stop",		  "COMMAND:   ",  "pcl_stop(BAT[int,any]) : BAT[int,lng]",	  "stop counting and return the counts for the given events."	  ]
 [ "pcl_stop_rates",	  "COMMAND:   ",  "pcl_stop_rates(BAT[int,any]) : BAT[int,dbl]",  "stop event counters and return the requested rates."		  ]
 [ "pcl_try",		  "COMMAND:   ",  "pcl_try(BAT[int,any], int) : bit",		  "try wheter the events could be started together on this CPU"	  ]
+[ "test_pcl",		  "PROC:      ",  "test_pcl() : void",				  "not available"						  ]
 
 Module: "radix"
 
-[ 139 ]
-[ 139 ]
+[ 140 ]
+[ 140 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature													| help																																																																																																									  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -846,15 +872,16 @@ Module: "radix"
 [ "radix_join",		  "COMMAND:   ",  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3], int, int) : BAT[any,any]",				  "nested-loop join on radix clustered inputs"																																																																																																				  ]
 [ "radix_join",		  "PROC:      ",  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",					  "not available"																																																																																																							  ]
 [ "radix_join",		  "PROC:      ",  "radix_join(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",				  "not available"																																																																																																							  ]
+[ "test_radix",		  "PROC:      ",  "test_radix() : void",											  "not available"																																																																																																							  ]
 [ "uniform",		  "COMMAND:   ",  "uniform(oid, int, int) : BAT[oid,int]",									  "create a random bat of certain size, head values unique, tail values\n perfect uniform from a certain domain (domain>size => unique tails)."																																																																																								  ]
 [ "uniform",		  "PROC:      ",  "uniform(int) : BAT[oid,int]",										  "not available"																																																																																																							  ]
 [ "uniform",		  "PROC:      ",  "uniform(int, int) : BAT[oid,int]",										  "not available"																																																																																																							  ]
 
 Module: "salgebra"
 
-[ 12 ]
-[ 12 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 14 ]
+[ 14 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature							| help									  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "CHbat",	  "COMMAND:   ",  "CHbat(clusterhash) : BAT[void,any]",				  "Provides access to the original bat."				  ]
@@ -863,9 +890,11 @@ Module: "salgebra"
 [ "CHinit",	  "COMMAND:   ",  "CHinit() : void",						  "Initialize the module"						  ]
 [ "clusterhash",  "COMMAND:   ",  "clusterhash(BAT[any,any]) : clusterhash",			  "Build a new or get a previously built clusterhash for the input bat."  ]
 [ "destroy",	  "COMMAND:   ",  "destroy(str) : void",					  "Destroy the clusterhash with name chname (if possible)."		  ]
+[ "drop_salgebra",	  "PROC:      ",  "drop_salgebra() : any",					  "not available"							  ]
 [ "info",	  "COMMAND:   ",  "info(clusterhash) : BAT[str,str]",				  "Return some info about the chash."					  ]
 [ "rename",	  "COMMAND:   ",  "rename(clusterhash, str) : void",				  "Try to name ch; fail upon error."					  ]
 [ "select",	  "PROC:      ",  "select(clusterhash, any::1) : BAT[oid,any::1]",		  "Select using a clusterhash uselect plus a cast."			  ]
+[ "test_salgebra",	  "PROC:      ",  "test_salgebra() : void",					  "not available"							  ]
 [ "ujoin",	  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).mark(nil) with propagated clustering."		  ]
 [ "uselect",	  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).mark(nil) with propagated clustering."		  ]
 [ "usortedjoin",  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).mark(nil).sort with propagated clustering."	  ]
@@ -954,15 +983,15 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND:   ",  "terminate() : void",			  "stop a TCP/IP server"																				  ]
 [ "terminate",	  "COMMAND:   ",  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND:   ",  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
-!WARNING: TCPepilogue: terminate 0 listeners
 
 Module: "uchr"
 
-[ 0 ]
-[ 0 ]
-#-------------------------------------------------#
+[ 1 ]
+[ 1 ]
+#---------------------------------------------------------------------------------#
 # function	| type	| signature	| help	  #
-#-------------------------------------------------#
+#---------------------------------------------------------------------------------#
+[ "test_uchr",	  "PROC:      ",  "test_uchr() : void",	  "not available"	  ]
 
 Module: "unix"
 
@@ -976,8 +1005,8 @@ Module: "unix"
 
 Module: "url"
 
-[ 18 ]
-[ 18 ]
+[ 19 ]
+[ 19 ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature				| help							  #
 #---------------------------------------------------------------------------------------------------------------------------------#
@@ -999,6 +1028,7 @@ Module: "url"
 [ "isaURL",	  "COMMAND:   ",  "isaURL(url) : bit",			  "Check conformity of the URL syntax"			  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, int, str) : url",	  "Construct a URL from protocol, host,port,and file"	  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, str) : url",	  "Construct a URL from protocol, host,and file"	  ]
+[ "test_url",	  "PROC:      ",  "test_url() : void",			  "not available"					  ]
 
 Module: "xtables"
 
