@@ -12,5 +12,10 @@ insert into like_test values ('pathfinder is fun!');
 -- issue a select with a like query, this should only match the first one!
 select * from like_test where v1 like '%math%';
 
+select * from like_test where v1 like 'a%math%';
+select * from like_test where v1 like 'a_math%';
+select * from like_test where v1 like '%m_th_a%t';
+select * from like_test where v1 like '%in%_!';
+
 -- clean up mess we made
 rollback;
