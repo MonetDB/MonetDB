@@ -737,31 +737,39 @@ str CMDmax_@1(@1* result, int *bid) {
 @:aggregate_implementation(dbl)@
 @:aggregate_implementation(lng)@
 
-int CMDminany(ptr result, BAT *b) {
+str CMDminany(ptr result, int *bid) {
+        BAT *b;
+	int res;
+        @:getBATdescriptor(&res,bid,b,minany)@
         if (!ATOMlinear(b->ttype))
-            return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n",
-                        ATOMname(b->ttype));
-        if (ATOMvarsized(b->ttype))
-            return (*(ptr*) result = BATmin(b, NULL))?GDK_SUCCEED:GDK_FAIL;
+            return throwMessage("CMDminANY","atom cannot be ordered linearly\n");
+        if (ATOMvarsized(b->ttype)){
+            *(ptr*) result = BATmin(b, NULL);
+	    return MAL_SUCCEED;
+	}
         if (BATmin(b, result)) {
             if (b->ttype == TYPE_bat)
-                *(BAT**) result = BATdescriptor(*(bat*) result);
-            return GDK_SUCCEED;
+                *(bat*) result = BBPdescriptor(*(bat*) result)->batCacheid;
+            return MAL_SUCCEED;
         }
-        return GDK_FAIL;
+        return throwMessage("algebra.min", "GDKerror");
 }
-int CMDmaxany(ptr result, BAT *b) {
+str CMDmaxany(ptr result, int *bid) {
+        BAT *b;
+	int res;
+        @:getBATdescriptor(&res,bid,b,maxany)@
         if (!ATOMlinear(b->ttype))
-            return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n",
-                        ATOMname(b->ttype));
-        if (ATOMvarsized(b->ttype))
-            return (*(ptr*) result = BATmax(b, NULL))?GDK_SUCCEED:GDK_FAIL;
+            return throwMessage("CMDminANY","atom cannot be ordered linearly\n");
+        if (ATOMvarsized(b->ttype)){
+            *(ptr*) result = BATmax(b, NULL);
+	    return MAL_SUCCEED;
+	}
         if (BATmax(b, result)) {
             if (b->ttype == TYPE_bat)
-                *(BAT**) result = BATdescriptor(*(bat*) result);
-            return GDK_SUCCEED;
+                *(bat*) result = BBPdescriptor(*(bat*) result)->batCacheid;
+            return MAL_SUCCEED;
         }
-        return GDK_FAIL;
+        return throwMessage("algebra.max", "GDKerror");
 }
 
 
@@ -817,7 +825,7 @@ str CMDBATminimum(ptr *result, int *bid) {
 	}
 	if (BATmin(b, result)) {
 		if (b->ttype == TYPE_bat) 
-			*(int*) result = BATdescriptor(*(int*) result)->batCacheid;
+			*(int*) result = BBPdescriptor(*(int*) result)->batCacheid;
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.min", "GDKerror");
@@ -837,7 +845,7 @@ str CMDBATmaximum(ptr *result, int *bid) {
 	}
 	if (BATmax(b, result)) {
 		if (b->ttype == TYPE_bat) 
-			*(int*) result = BATdescriptor(*(int*) result)->batCacheid;
+			*(int*) result = BBPdescriptor(*(int*) result)->batCacheid;
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.max", "GDKerror");

@@ -262,11 +262,11 @@ int mil_getch() {
 
         if (ch == '\n' || (ch && mil_stack->cptr == mil_stack->buf) ){
                 if (mil_stack->listing) { 
-			stream_printf(GDKout,'#');
+			printf("#");
 			for(s= mil_stack->nxtline; *s && *s!='\n'; s++)
-				stream_printf(GDKout,"%s",*s);
-                        stream_printf(GDKout,"\n");
-                        GDKout->flush(GDKout);
+				printf("%s",*s);
+                        printf("\n");
+                        fflush(stdout);
                 }
 		mil_stack->prevline= mil_stack->nxtline;
                 mil_stack->nxtline = s+1;

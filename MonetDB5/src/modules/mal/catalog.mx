@@ -773,6 +773,7 @@ str CATALOGbbpCount( int *ret){
 			if(bn){
 				l= BATcount(bn);
 				BUNins(b, &i, &l);
+				BBPunfix(bn->batCacheid);
 			}
 		}
 	}
@@ -791,7 +792,10 @@ str CATALOGbbp@2( int *ret){
         for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
         	if (BBP_logical(i)) { 
 			bn= BATdescriptor(i);
-			if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name);
+			if(bn){
+				BUNins(b, &i, BATatoms[BAT@1(bn)].name);
+				BBPunfix(bn->batCacheid);
+			}
 		}
 	}
 	@:Pseudo(bbp,@2)@

@@ -497,6 +497,7 @@ str CMDprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str 
 		}
 		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
         if(hd) stream_printf(fp,"%s",hd);
@@ -539,7 +540,7 @@ str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk,
 {
         BAT *piv[MAXPARAMS],*b;
         int nbats = 0;
-	int tpe;
+	int tpe,k=i;
 	ptr val;
 	for(; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
@@ -547,13 +548,16 @@ str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk,
 		if( !isaBatType(tpe)) 
 			return throwMessage("io.table","BAT expected");
 		b= BATdescriptor(*(int*)val);
-		if(b == NULL) 
+		if(b == NULL) {
+		for(k=0; k< nbats;k++) BBPunfix(piv[k]->batCacheid);
 		return throwMessage("io.table","could not access descriptor");
+		}
                 piv[nbats++] = b;
         } 
 	/*if(printhead)*/ nbats++;
         BATmultiprintf(f, nbats, piv, printhead, order);
 	f->flush(f);
+	for(k=0; k< nbats-1;k++) BBPunfix(piv[k]->batCacheid);
         return MAL_SUCCEED;
 }
 

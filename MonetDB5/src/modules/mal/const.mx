@@ -116,9 +116,9 @@ str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* if the box was already filled we can skip initialization */
 	if( box->sym->vtop == 0){
 		insertToBox(box,"user",getClient()->user);
-		insertToBox(box,"dbname",GDKgetenv("dbname"));
-		insertToBox(box,"dbfarm",GDKgetenv("dbfarm"));
-		insertToBox(box,"version",GDKgetenv("version"));
+		insertToBox(box,"dbname",GDKgetenv("gdk_dbname"));
+		insertToBox(box,"dbfarm",GDKgetenv("gdk_dbfarm"));
+		insertToBox(box,"version",GDKgetenv("gdk_version"));
 		insertToBox(box,"config",GDKgetenv("config"));
 	/* old bat.mx constants */
 		insertToBox(box,"STORE_MEM","0");

@@ -1740,7 +1740,7 @@ void mvc_init(int debug)
         struct bm *bm = NULL;
         mvc_debug = debug;
         char *logdir = GDKgetenv("sql_logdir");
-        char *dbname = GDKgetenv("dbname");
+        char *dbname = GDKgetenv("gdk_dbname");
 
 	if( logdir==0) logdir= GDKstrdup("log");
         assert(dbname);

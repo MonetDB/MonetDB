@@ -331,6 +331,7 @@ str ENUMdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ENUMmap[xx] = 0;
 	ENUMtpe[xx] = 0;
 	MT_unset_lock(mal_contextLock, "ENUMdestroy");
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -357,6 +358,7 @@ str ENUMencode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	dst= (ptr) getArgReference(stk,pci,0);
 	p = BUNfnd(b, src);
 	@:encoding@
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str ENUMlower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -368,8 +370,10 @@ str ENUMlower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	src= *(ptr*) getArgReference(stk,pci,2);
 	dst= (ptr) getArgReference(stk,pci,0);
 	@:enumCheck(tpe,ENUMlower)@
-	if (!ATOMlinear(b->htype))
+	if (!ATOMlinear(b->htype)){
+		BBPunfix(b->batCacheid);
 	 	return throwMessage("enum.lower"," incompatible source type.");
+	}
 	if (BAThordered(b)&1) {
 		p = SORTfndlast(BATmirror(b), src);
 		if (p && p > BUNfirst(b))  p -= BUNsize(b);
@@ -381,6 +385,7 @@ str ENUMlower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		else p = NULL;
 	}
 	@:encoding@
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 } 
 
@@ -393,9 +398,11 @@ str ENUMupper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	src= *(ptr*) getArgReference(stk,pci,2);
 	dst= (ptr) getArgReference(stk,pci,0);
 	@:enumCheck(tpe,ENUMlower)@
-	if (!ATOMlinear(b->htype))
+	if (!ATOMlinear(b->htype)){
+		if(b) BBPunfix(b->batCacheid);
 	 	return throwException(MALEXCEPTION,"enum.upper",
 			"incompatible source type.");
+	}
 	if (BAThordered(b)&1) {
 		p = SORTfndfirst(BATmirror(b), src);
 	} else {
@@ -404,6 +411,7 @@ str ENUMupper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if (p) p = *(BUN*) p;
 	}
 	@:encoding@
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 } 
 
@@ -417,8 +425,10 @@ str ENUMdecode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	dst= (ptr) getArgReference(stk,pci,0);
 	@:enumCheck(tpe,ENUMlower)@
 
-	if( b->htype != getArgType(mb,pci,0))
+	if( b->htype != getArgType(mb,pci,0)){
+		if(b) BBPunfix(b->batCacheid);
 		return throwMessage("enum.decode","incompatible source type");
+	}
 	if( ATOMstorage(tpe) == TYPE_chr){
 		if (*(chr*) src == chr_nil) p = ATOMnilptr(b->htype);
 		else p = BUNhead(b, BUNptr(b, 1 + *(unsigned char*)src));
@@ -434,6 +444,7 @@ str ENUMdecode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else {
 		memcpy(dst, p, ATOMsize(b->htype));
 	}
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -484,8 +495,10 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	retval= (int*) getArgReference(stk,pci,0);
 	@:getBATdescriptor(retval,&bid,src,encode)@
 
-	if (src->ttype != b->htype) 
+	if (src->ttype != b->htype) {
+		if(b) BBPunfix(b->batCacheid);
 	 	return throwMessage("enum.encode"," incompatible types");
+	}
 	if (ATOMstorage(tpe) == TYPE_chr) { 
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
@@ -504,6 +517,7 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else {
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
+		if(b) BBPunfix(b->batCacheid);
 		return throwMessage("enum.encode"," illegal tail type");
 	    case TYPE_chr:	@:encode(sht,short,loc,_chr)@
 	    case TYPE_sht:	@:encode(sht,short,loc,_sht)@
@@ -517,6 +531,7 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				@:encode(sht,short,loc,_loc)#
 	    }	    }
 	}
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 } 
 
@@ -549,6 +564,7 @@ str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:getBATdescriptor(retval,bid,src,encode)@
 	tpe= src->ttype;
 	@:enumCheck(tpe,ENUMencode_multi)@
+	if(b) BBPunfix(b->batCacheid);
 	if (ATOMstorage(tpe) == TYPE_chr) { 
 	    @:decode(chr,char)@
 	} else if (ATOMstorage(tpe) == TYPE_sht) { 
@@ -579,7 +595,6 @@ str ENUMtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	retval= (int*) getArgReference(stk,pci,0);
 
 	@:enumCheck(tpe, ENUMtable)@
-	BBPfix(b->batCacheid);
 	*retval = b->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -604,6 +619,7 @@ str ENUMsethisto(int *retval, int* tpe, int *bid) {
 		column->batDirtydesc = TRUE;
 	}
 	ENUMhisto[xx] = column->halign;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -618,6 +634,7 @@ str ENUMishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:enumCheck(tpe, ENUMishisto)@
 	@:getBATdescriptor(retval,bid,column,ishisto)@
 	*retval = (ENUMhisto[xx] == column->halign);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

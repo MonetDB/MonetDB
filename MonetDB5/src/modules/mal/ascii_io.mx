@@ -212,6 +212,7 @@ size_t create_dumpformat( ascii *as, BAT *names, BAT *seps, BAT *bats ){
 		fmt[p].seplen = (int) strlen( fmt[p].sep );
 		fmt[p].type = ATOMname(b->ttype);
 		fmt[p].adt = (b)->ttype;
+		BBPunfix(b->batCacheid);
 	}
 	return as->nr_attrs;
 }

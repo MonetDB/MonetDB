@@ -1397,10 +1397,12 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     }
     if (limits && (limits->htype != TYPE_int || limits->ttype != TYPE_int)) {
 	GDKerror("radix_cluster: limits %s is not of right type.\n", limits->batId);
+	BBPunfix(limits);
 	limits = NULL;
     }
     if (limits && (BATcount(limits) || limits->batRestricted == BAT_READ)) {
 	GDKerror("radix_cluster: limits %s is not empty and appendable.\n", limits->batId);
+	BBPunfix(limits);
 	limits = NULL;
     }
     radix[0] = *nbits; 

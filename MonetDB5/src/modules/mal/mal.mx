@@ -765,12 +765,13 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	if( isaBatType(tpe)){
-		BAT *b = BATdescriptor(*(int*)val);
+		BAT *b = BBPdescriptor(*(int*)val);
 		if( b== NULL) {
 			return throwMessage("mal.print","descriptor access failed");
 		}
 		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
         stream_printf(fp,"[ ");
@@ -798,7 +799,7 @@ str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
         BAT *piv[MAXPARAMS],*b;
-        int nbats = 0;
+        int nbats = 0,k;
 	int tpe,i=1,order=0;
 	ptr val;
 
@@ -809,13 +810,16 @@ str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
 	for(; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
 		val = (ptr) getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) 
+		if( !isaBatType(tpe)) {
+			for(k=0; k< nbats; k++) BBPunfix(piv[k]->batCacheid);
 			return throwMessage("mal.otable"," BAT expected");
+		}
 		b= BATdescriptor(*(int*)val);
 		if(b == NULL) return throwMessage("mal.otable","GDKerror");
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, nbats, piv, flg, order);
+	for(k=0; k< nbats; k++) BBPunfix(piv[k]->batCacheid);
 	GDKout->flush(GDKout);
         return MAL_SUCCEED;
 }
@@ -898,7 +902,7 @@ str CMDdebug(int *ret, int *flg){
 	if( *flg) GDKdebug = *flg;
 	return MAL_SUCCEED;
 }
-str CMDmanuel(int *ret, str *fname, str *mod){
+str CMDmanual(int *ret, str *fname, str *mod){
 	stream *fs;
 	fs= open_wastream(*fname);
 	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
