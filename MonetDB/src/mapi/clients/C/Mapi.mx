@@ -714,6 +714,26 @@ the error status of the Mapi structure.
 		}							\
 		mapi_clrError(X);					\
 	} while (0)
+#define mapi_hdl_check(X,C)						\
+	do {								\
+		assert(X);						\
+		assert((X)->mid);					\
+		if ((X)->mid->connected == 0) {				\
+			mapi_setError((X)->mid, "Connection lost", (C));\
+			return (X)->mid->error;				\
+		}							\
+		mapi_clrError((X)->mid);				\
+	} while (0)
+#define mapi_hdl_check0(X,C)						\
+	do {								\
+		assert(X);						\
+		assert((X)->mid);					\
+		if ((X)->mid->connected == 0) {				\
+			mapi_setError((X)->mid, "Connection lost", (C));\
+			return 0;					\
+		}							\
+		mapi_clrError((X)->mid);				\
+	} while (0)
 @h
 #ifdef __cplusplus
 extern "C" {
@@ -1619,7 +1639,7 @@ for bulk interacting with a server.
 @c
 #define testField(hdl,fnr,funcname)					\
 	do {								\
-		mapi_check(hdl->mid, funcname);				\
+		mapi_hdl_check(hdl, funcname);				\
 		if (fnr < 0) {						\
 			return mapi_setError(hdl->mid,			\
 					     "Illegal field number",	\
@@ -1635,7 +1655,7 @@ for bulk interacting with a server.
 
 #define testParam(hdl, fnr, funcname)					\
 	do {								\
-		mapi_check(hdl->mid, funcname);				\
+		mapi_hdl_check(hdl, funcname);				\
 		if (fnr < 0) {						\
 			return mapi_setError(hdl->mid,			\
 					     "Illegal param number",	\
@@ -1912,7 +1932,7 @@ mapi_prepare(Mapi mid, const char *cmd)
 MapiMsg
 mapi_prepare_handle(MapiHdl hdl, const char *cmd)
 {
-	mapi_check(hdl->mid, "mapi_prepare");
+	mapi_hdl_check(hdl, "mapi_prepare");
 	if (hdl->tableid >= 0) {
 		hdl->mid->active = 1;
 		stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid);
@@ -2134,7 +2154,7 @@ answer_lookahead(MapiHdl hdl)
 		hdl->cache.reader = oldrd;
 		if (hdl->mid->active)
 			mapi_extend_cache(hdl);
-	} while (hdl->mid->active);
+	} while (hdl->mid->error == MOK && hdl->mid->active);
 	if (hdl->mid->trace)
 		printf("mapi_query return:%d\n", hdl->mid->error);
 	return hdl->mid->error;
@@ -2185,7 +2205,7 @@ mapi_execute(MapiHdl hdl)
 {
 	int ret;
 
-	mapi_check(hdl->mid, "mapi_execute");
+	mapi_hdl_check(hdl, "mapi_execute");
 	ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
@@ -2197,7 +2217,7 @@ mapi_execute_array(MapiHdl hdl, char **val)
 {
 	int ret;
 
-	mapi_check(hdl->mid, "mapi_execute_array");
+	mapi_hdl_check(hdl, "mapi_execute_array");
 	ret = mapi_prepare_array_internal(hdl, val);
 	return ret ? ret : mapi_execute_internal(hdl);
 }
@@ -2382,7 +2402,7 @@ MapiMsg
 mapi_cache_shuffle(MapiHdl hdl, int percentage)
 {
 	/* clean out superflous space TODO */
-	mapi_check(hdl->mid, "mapi_cache_shuffle");
+	mapi_hdl_check(hdl, "mapi_cache_shuffle");
 	if (percentage < 0 || percentage > 100) {
 		return mapi_setError(hdl->mid, "Illegal percentage",
 				     "mapi_cache_shuffle");
@@ -2394,7 +2414,7 @@ mapi_cache_shuffle(MapiHdl hdl, int percentage)
 MapiMsg
 mapi_fetch_reset(MapiHdl hdl)
 {
-	mapi_check(hdl->mid, "mapi_fetch_reset");
+	mapi_hdl_check(hdl, "mapi_fetch_reset");
 	hdl->cache.reader = -1;
 	return MOK;
 }
@@ -2402,7 +2422,7 @@ mapi_fetch_reset(MapiHdl hdl)
 MapiMsg
 mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 {
-	mapi_check(hdl->mid, "mapi_seek_row");
+	mapi_hdl_check(hdl, "mapi_seek_row");
 	switch (whence) {
 	case MAPI_SEEK_SET:
 		break;
@@ -2687,7 +2707,7 @@ mapi_fetch_line(MapiHdl hdl)
 {
 	char *reply;
 
-	mapi_check0(hdl->mid, "mapi_fetch_line");
+	mapi_hdl_check0(hdl, "mapi_fetch_line");
 	reply = mapi_fetch_line_internal(hdl);
 	if (reply == NULL && hdl->mid->languageId == LANG_SQL &&
 	    !hdl->mid->active && hdl->rows_affected > 0 &&
@@ -2709,7 +2729,7 @@ It disgards all output received.
 MapiMsg
 mapi_finish_internal(MapiHdl hdl)
 {
-	mapi_check(hdl->mid, "mapi_finish");
+	mapi_hdl_check(hdl, "mapi_finish");
 	if (hdl->mid->active)
 		while (mapi_fetch_line_internal(hdl) != (char *) 0)
 			;
@@ -2719,7 +2739,7 @@ mapi_finish_internal(MapiHdl hdl)
 MapiMsg
 mapi_finish(MapiHdl hdl)
 {
-	mapi_check(hdl->mid, "mapi_finish");
+	mapi_hdl_check(hdl, "mapi_finish");
 	return mapi_finish_internal(hdl);
 }
 
@@ -3159,7 +3179,7 @@ mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *dst)
 	int cr;
 	char *val;
 
-	mapi_check(hdl->mid, "mapi_store_field");
+	mapi_hdl_check(hdl, "mapi_store_field");
 
 	if (fnr < 0 || fnr >= hdl->fieldcnt) {
 		return mapi_setError(hdl->mid, "Illegal field number",
@@ -3345,7 +3365,7 @@ simplify access later on.
 int
 mapi_fetch_row(MapiHdl hdl)
 {
-	mapi_check(hdl->mid, "mapi_fetch_row");
+	mapi_hdl_check(hdl, "mapi_fetch_row");
 	if (mapi_get_row(hdl) == MOK)
 		return mapi_slice_row(hdl);
 	if (hdl->mid->languageId == LANG_SQL && !hdl->mid->active &&
@@ -3368,7 +3388,7 @@ All rows can be cached first as well.
 int
 mapi_fetch_all_rows(MapiHdl hdl)
 {
-	mapi_check(hdl->mid, "mapi_fetch_all_rows");
+	mapi_hdl_check(hdl, "mapi_fetch_all_rows");
 	hdl->cache.rowlimit = -1;
 	while (mapi_fetch_row(hdl) > 0)
 		;
@@ -3381,7 +3401,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 {
 	int cr;
 
-	mapi_check0(hdl->mid, "mapi_fetch_field");
+	mapi_hdl_check0(hdl, "mapi_fetch_field");
 	cr = hdl->cache.reader;
 
 	if (cr < 0) {
@@ -3407,7 +3427,7 @@ mapi_fetch_field_array(MapiHdl hdl)
 {
 	int cr;
 
-	mapi_check0(hdl->mid, "mapi_fetch_field_array");
+	mapi_hdl_check0(hdl, "mapi_fetch_field_array");
 	if(hdl->cache.fldcnt == 0){
 		mapi_setError(hdl->mid, "Assertion error", "mapi_fetch_field_array");
 		return 0;
@@ -3421,21 +3441,21 @@ mapi_fetch_field_array(MapiHdl hdl)
 int
 mapi_get_field_count(MapiHdl hdl)
 {
-	mapi_check(hdl->mid, "mapi_get_field_count");
+	mapi_hdl_check(hdl, "mapi_get_field_count");
 	return hdl->fieldcnt;
 }
 
 int
 mapi_get_row_count(MapiHdl hdl)
 {
-	mapi_check(hdl->mid, "mapi_get_row_count");
+	mapi_hdl_check(hdl, "mapi_get_row_count");
 	return hdl->rows_affected;
 }
 
 char *
 mapi_get_name(MapiHdl hdl, int fnr)
 {
-	mapi_check0(hdl->mid, "mapi_get_name");
+	mapi_hdl_check0(hdl, "mapi_get_name");
 	if (fnr >= 0 && fnr < hdl->fieldcnt) {
 		if (hdl->fields[fnr].columnname[0] == 0)
 			snprintf(hdl->fields[fnr].columnname,
@@ -3450,7 +3470,7 @@ mapi_get_name(MapiHdl hdl, int fnr)
 char *
 mapi_get_type(MapiHdl hdl, int fnr)
 {
-	mapi_check0(hdl->mid, "mapi_get_type");
+	mapi_hdl_check0(hdl, "mapi_get_type");
 	if (fnr >= 0 && fnr < hdl->fieldcnt) {
 		if (hdl->fields[fnr].columntype[0] == 0)
 			return "unknown";
@@ -3463,7 +3483,7 @@ mapi_get_type(MapiHdl hdl, int fnr)
 char *
 mapi_get_table(MapiHdl hdl, int fnr)
 {
-	mapi_check0(hdl->mid, "mapi_get_table");
+	mapi_hdl_check0(hdl, "mapi_get_table");
 	if (fnr >= 0 && fnr < hdl->fieldcnt) {
 		if (hdl->fields[fnr].tablename[0] == 0)
 			snprintf(hdl->fields[fnr].tablename,
@@ -3478,7 +3498,7 @@ mapi_get_table(MapiHdl hdl, int fnr)
 int
 mapi_rows_affected(MapiHdl hdl)
 {
-	mapi_check(hdl->mid, "mapi_rows_affected");
+	mapi_hdl_check(hdl, "mapi_rows_affected");
 	return hdl->rows_affected;
 }
 
