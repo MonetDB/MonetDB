@@ -524,7 +524,7 @@ Init globals.
 
     if(global.maxbits > BITS) {
 	fprintf(stderr,
-	"input compressed with %lu bits, can only handle %d bits\n",
+	"input compressed with %u bits, can only handle %d bits\n",
 	 (unsigned int) global.maxbits, BITS);
 	return -1;
     }

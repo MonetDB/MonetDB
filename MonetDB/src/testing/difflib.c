@@ -57,8 +57,9 @@
 #endif
 #endif
 
-#define SYSTEM(cmd)	{ TRACE(fprintf(STDERR,"%s => \n",cmd));	\
-			  r = system(cmd);				\
+#define SYSTEM(cmd)	{ int r;					    \
+			  TRACE(fprintf(STDERR,"%s => \n",cmd));	    \
+			  r = system(cmd); (void) r;			    \
 			  TRACE(fprintf(STDERR,"\t => %i\n",r));	  }
 
 #ifdef DEBUG
@@ -103,7 +104,6 @@ void markNL (FILE* fp, int k)
 int oldnew2u_diff (int context, char *ignore, char *old_fn, char *new_fn, char *u_diff_fn)
 {
   char command[BUFLEN];
-  int r;
   struct stat old_fstat, new_fstat;
   FILE *u_diff_fp,*oldnew_fp;
   char c,line[BUFLEN];
@@ -114,27 +114,27 @@ int oldnew2u_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
   stat(new_fn,&new_fstat);
 
   if ((old_fstat.st_size != 0) && (new_fstat.st_size != 0)) {
-    #ifdef NATIVE_WIN32
+#ifdef NATIVE_WIN32
       sprintf(command,"%s %s %s.cp > nul",COPY,old_fn,old_fn);
       SYSTEM(command);
       sprintf(command,"%s %s %s.cp > nul",COPY,new_fn,new_fn);
       SYSTEM(command);
 
       sprintf(command,"%s %s -a -d -U%d %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
-    #else
+#else
       sprintf(command,"%s %s -a -d -U%d %s    %s    > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
-    #endif
+#endif
 
       SYSTEM(command);
 
-    #ifdef NATIVE_WIN32
-      #ifdef DEBUG
+#ifdef NATIVE_WIN32
+#ifdef DEBUG
         sprintf(command,"dir %s* %s* %s*",old_fn,new_fn,u_diff_fn);
         SYSTEM(command);
-      #endif
+#endif
       sprintf(command,"del %s.cp %s.cp",old_fn,new_fn);
       SYSTEM(command);
-    #endif
+#endif
   } else {
     u_diff_fp=Wfopen(u_diff_fn);
     fprintf(u_diff_fp,"--- %s\t%s",old_fn,ctime(&old_fstat.st_mtime));
@@ -194,7 +194,7 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
   FILE *lw_diff_fp,*wc_diff_fp,*fp[2],*pipe_fp;
   char line[BUFLEN],command[BUFLEN],pipe_ln[BUFLEN],pipe_fn[1024];
   char *ok,*fn[2];
-  int i,j,r;
+  int i,j;
   int space,alpha_,digit,l[2],k[2];
   char wc_old_fn[BUFLEN],wc_new_fn[BUFLEN];
 
@@ -259,8 +259,7 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
       sprintf(command,
               "%s -a -d -u%i %s %s | egrep -v '^(@@ \\-|\\+\\+\\+ |\\-\\-\\- |[ \\+\\-]@\\+\\-)' >> %s",
               DIFF,MAX(l[0],l[1]),fn[0],fn[1],wc_diff_fn);
-      r=system(command);
-      TRACE(fprintf(STDERR,"%s => %i\n",command,r));
+      SYSTEM(command);
 */
 
 #ifdef NATIVE_WIN32

@@ -526,8 +526,10 @@ getRobot_done:
 	if(d) strcpy(d,s);
 	*retval = d;
 	return GDK_SUCCEED;
+#if 0				/* not reached */
 	if( i>1000)  s= str_nil;
 	else strcpy(b,"/robots.txt");
+#endif
 }
 
 

@@ -8,7 +8,8 @@
 main(int argc, char **argv){
 	Mapi	dbh;
 	int i,port;
-	char buf[40], *line;
+	char buf[40];
+	/* char *line; */
 
 	if( argc != 2){
 		printf("usage:smack00 <port>\n");
@@ -22,7 +23,7 @@ main(int argc, char **argv){
 	for(i=0; i< 20000; i++){
 		snprintf(buf,40,"print(%d);",i);
 		if( mapi_query(dbh,buf)) die(dbh);
-		while( line= mapi_fetch_line(dbh)){
+		while( /*line=*/ mapi_fetch_line(dbh)){
 			/*printf("%s \n", line );*/
 		}
 	}

@@ -2162,16 +2162,16 @@ by the user. A pointer to this buffer is kept in the pseudo-variable
 
 /* Data Distilleries uses ICU for internationalization of some Monet error messages */
 #ifdef MONET_ICU_I18N
-gdk_export void   GDKvsnprintf(char *buf, int maxlen, char* format, va_list ap);
+gdk_export void   GDKvsnprintf(char *buf, int maxlen, const char* format, va_list ap);
 #else
 #define GDKvsnprintf(buf, maxlen, format, ap) vsnprintf(buf, maxlen, format, ap)
 #endif
 
 gdk_export void     GDKaddbuf   (char* msg);
-gdk_export int	GDKwarning  (char* format, ... );
-gdk_export int	GDKerror    (char* format, ... );
-gdk_export int	GDKsyserror (char* format, ... );
-gdk_export int	GDKfatal    (char* format, ... );
+gdk_export int	GDKwarning  (const char* format, ... );
+gdk_export int	GDKerror    (const char* format, ... );
+gdk_export int	GDKsyserror (const char* format, ... );
+gdk_export int	GDKfatal    (const char* format, ... );
 @
 @{
 @h
@@ -2261,7 +2261,7 @@ gdk_export int		THRcnt       (void);
 gdk_export void		THRsetdata   (int,ptr);
 gdk_export void*	THRgetdata   (int);
 gdk_export int		THRhighwater (void);
-gdk_export int		THRprintf    (stream *s, char* format, ... );
+gdk_export int		THRprintf    (stream *s, const char* format, ... );
 
 gdk_export void*    THRdata[16];
 
@@ -2278,7 +2278,7 @@ gdk_export void*    THRdata[16];
 #ifdef __cplusplus
 extern "C" {
 #endif
-static INLINE bat BBPcheck(REGISTER bat x, REGISTER str y) {
+static INLINE bat BBPcheck(REGISTER bat x, REGISTER const char *y) {
 	if (x && x != bat_nil) {
 	    REGISTER bat z = ABS(x);
 	    if (z >= BBPsize || BBP[z].nme[0] == NULL) {

@@ -1186,7 +1186,7 @@ MapiMsg mapi_prepare_array(Mapi mid, char *cmd, char **val)
 	}
 	if( mid->trace)
 		printf("mapi_prepare_array:%d\n",i);
-	return mid->error;
+	return ret;
 }
 @-
 Building the query string using replacement of values require
@@ -1823,8 +1823,10 @@ consumeErrors:		{
 		default:
 			return MOK;
 		}
+#if 0				/* not reached */
 		if( mid->everything)
 			break;
+#endif
 	}
 	return MERROR;
 }

@@ -318,8 +318,8 @@ than any other decimal (again avoiding having to treat it as a special case in t
 #include "decimal.h" 
 
 /* lookup tables that avoid having to divide and mod by 10 all the time */
-char mult_table[10*16], plus_table[10*16], minus_table[10*16], div_table[9*128];
-short val_table[10000]; /* 4-digit shorts with numbers from 0000 to 9999 */
+unsigned char mult_table[10*16], plus_table[10*16], minus_table[10*16], div_table[9*128];
+unsigned short val_table[10000]; /* 4-digit shorts with numbers from 0000 to 9999 */
 
 #define PRECISION_MAX	16384
 #define SCALE_MAX	16384
@@ -333,7 +333,7 @@ short val_table[10000]; /* 4-digit shorts with numbers from 0000 to 9999 */
 #define DIV(x,y)	div_table[(((y)-1)<<7)+(x)]
 #define NUM(d,x)	(d)->num[(x) >> 3]
 #define POS(x)		((7 - ((x) & 7)) << 2)
-#define MASK(x)		(15 << POS(x))
+#define MASK(x)		(15U << POS(x))
 #define GETNUM(d,x)	LO((NUM(d,x) & MASK(x)) >> POS(x))
 #define SETNUM(d,x,y)	NUM(d,x) = ((y) << POS(x)) | (NUM(d,x) & ~MASK(x)) 
 #define ISNIL(d)	((d)->scale > SCALE_MAX) 
@@ -436,7 +436,7 @@ void decimal_debug(decimal* d, str tag, int check) {
 			GDKerror("decimal_debug: zero has illegal scale.\n");
 		}
 		for(y = NUMLEN(precision) << 2; x < y; x++) {
-			int z = GETNUM(d,x); /* z >= 0 due to GETNUM impl. */
+			unsigned int z = GETNUM(d,x); /* z >= 0 due to GETNUM impl. */
 			if (x >= d->precision ? z != 0 : z > 9) {
 				GDKerror("decimal_debug: garbage %d at position %d.\n", z, x);
 			} 
@@ -522,7 +522,7 @@ void decimal_normalize(decimal* d, decimal *v, int offset, int fixed_precision, 
 
 	/* pad the total rest of d with zeros (for consistency) */
 	for(; x < d->precision; x++) {
-		SETNUM(d,x,0);
+		SETNUM(d,x,0U);
 	}
 
 	/* fill in the fields */	
@@ -653,7 +653,7 @@ int decimal_fromstr(str buf, int *len, decimal **ret) {
 	*ret =  decimal_alloc(precision, scale-comma, sign, *ret, len);
 	if (!ISNIL(*ret)) {
 		for(x=0; x < precision; x++) {
-			SETNUM((*ret),x,cpy[x]-'0'); 
+			SETNUM((*ret),x,(unsigned)(cpy[x]-'0')); 
 		}
 	}
 	DECIMAL_DEBUG(*ret, FORMAT("decimal_fromstr(%s) result",buf), 1);
@@ -772,14 +772,14 @@ int decimal_format(str *ret, decimal *d, str format) {
 		} else {
 			*s++ = (d->negative)?'-':start;
 			for(x=0; x<n1; x++) {
-				int num = (x<d->precision)?GETNUM(d,x):0;
+				unsigned int num = (x<d->precision)?GETNUM(d,x):0;
 				*s++ = num + '0';
 			} 
 		}
 		if (n2) {
 			*s++ = '.';
 			for(; x<n1+n2; x++) {
-				int num = (x<d->precision)?GETNUM(d,x):0;
+				unsigned int num = (x<d->precision)?GETNUM(d,x):0;
 				*s++ = num + '0';
 			}
 		}
@@ -824,14 +824,14 @@ hash_t decimal_hash(decimal *d) {
 	while(src < dst) {
 		unsigned int val = *src++;
 		if (val) {
-			unsigned int x = ((val & (15 << 28)) >> 28);
-			x = MULT10(x) + ((val & (15 << 24)) >> 24);
-			x = MULT10(x) + ((val & (15 << 20)) >> 20);
-			x = MULT10(x) + ((val & (15 << 16)) >> 16);
-			x = MULT10(x) + ((val & (15 << 12)) >> 12);
-			x = MULT10(x) + ((val & (15 << 8)) >> 8);
-			x = MULT10(x) + ((val & (15 << 4)) >> 4);
-			x = MULT10(x) + ((val & 15));
+			unsigned int x = ((val & (15U << 28)) >> 28);
+			x = MULT10(x) + ((val & (15U << 24)) >> 24);
+			x = MULT10(x) + ((val & (15U << 20)) >> 20);
+			x = MULT10(x) + ((val & (15U << 16)) >> 16);
+			x = MULT10(x) + ((val & (15U << 12)) >> 12);
+			x = MULT10(x) + ((val & (15U << 8)) >> 8);
+			x = MULT10(x) + ((val & (15U << 4)) >> 4);
+			x = MULT10(x) + ((val & 15U));
 			y ^= mix_int(x);
 		}
 	} 
@@ -927,7 +927,9 @@ bat* decimal_prelude(void) {
 				for(r=0; r < 10; r++,s++) {
 					val_table[s] = (r<<12)|(z<<8)|(y<<4)|x;
 				}
-			} z = (x<<4)+y; 
+			}
+
+			z = (x<<4)+y; 
 
 			/* mult_table contains HI and LO result of [0-9] * [0-9] */
 			r = x*y;
@@ -952,11 +954,11 @@ bat* decimal_prelude(void) {
 	decimal_nil = decimal_create(2,0,0);
 	decimal_nil->scale = 2*SCALE_MAX-1; 
 	decimal_nil->negative = 1;
-	SETNUM(decimal_nil,0,10);
+	SETNUM(decimal_nil,0,10U);
 
 	decimal_zero = decimal_create(0,0,0);
 	decimal_one = decimal_create(1,0,0);
-	SETNUM(decimal_one,0,1);
+	SETNUM(decimal_one,0,1U);
 
 	/* create decimals representing the maximum and minimum values of scalar types */
 	decimal_fromstr("-2147483648", &y, &decimal_int_min);
@@ -1051,7 +1053,7 @@ int decimal_from_lng(decimal **ret, lng* val) {
 		}
 		d = *ret = decimal_create(precision,0,sign);
 		for(precision=0; precision < d->precision; precision++) {
-			int val = (num[y] & (15<<x)) >> x;
+			unsigned int val = (num[y] & (15U<<x)) >> x;
 			SETNUM(d,precision, val); 
 			if ((x += 4) > 12) { x = 0; y--; } 
 		}
@@ -1294,19 +1296,20 @@ as follows:
 /* auxiliary function: assumes equal sign and scale and no overflow */
 static INLINE
 void decimal_simple_inc(decimal* v1, decimal* v2) {
-	int x = v1->precision, y = v2->precision, rest=0;
+	int x = v1->precision, y = v2->precision;
+	unsigned int rest=0;
 
 	DECIMAL_DEBUG(v1, "decimal_simple_inc() acc", 0);
 	DECIMAL_DEBUG(v2, "decimal_simple_inc() val", 0);
 
 	for(x--, y--; y >= 0; x--, y--) {
-		int r1 = ADD(GETNUM(v1,x),GETNUM(v2,y));
-		int r2 = ADD(LO(r1), rest);
+		unsigned int r1 = ADD(GETNUM(v1,x),GETNUM(v2,y));
+		unsigned int r2 = ADD(LO(r1), rest);
 		SETNUM(v1,x,LO(r2));
 		rest = HI(r1) + HI(r2);
 	}
 	for(; rest && x >= 0; x--) {
-		int r2 = ADD(GETNUM(v1,x), rest);
+		unsigned int r2 = ADD(GETNUM(v1,x), rest);
 		SETNUM(v1,x,LO(r2));
 		rest = HI(r2);
 	}
@@ -1316,19 +1319,20 @@ void decimal_simple_inc(decimal* v1, decimal* v2) {
 /* auxiliary function: assumes equal sign and scale and no overflow */
 static INLINE
 void decimal_simple_dec(decimal* v1, decimal* v2) {
-	int x = v1->precision, y = v2->precision, rest=0;
+	int x = v1->precision, y = v2->precision;
+	unsigned int rest=0;
 
 	DECIMAL_DEBUG(v1, "decimal_simple_dec() acc", 0);
 	DECIMAL_DEBUG(v2, "decimal_simple_dec() val", 0);
 
 	for(x--, y--; y >= 0; x--, y--) {
-		int r1 = MINUS(GETNUM(v1,x),GETNUM(v2,y));
-		int r2 = MINUS(LO(r1), rest);
+		unsigned int r1 = MINUS(GETNUM(v1,x),GETNUM(v2,y));
+		unsigned int r2 = MINUS(LO(r1), rest);
 		SETNUM(v1,x,LO(r2));
 		rest = HI(r1) + HI(r2);
 	}
 	for(; rest && x >= 0; x--) {
-		int r2 = MINUS(GETNUM(v1,x), rest);
+		unsigned int r2 = MINUS(GETNUM(v1,x), rest);
 		SETNUM(v1,x,LO(r2));
 		rest = HI(r2);
 	}
@@ -1503,7 +1507,8 @@ int decimal_multiply(decimal **ret, decimal *v1, decimal *v2) {
 	x = v1_precision;
 
 	while(--x >= 0) {
-		int z, y, f = GETNUM(v1,x), rest = 0;
+		int z, y;
+		unsigned int f = GETNUM(v1,x), rest = 0;
 		if (f == 0) {
 			continue; /* optimization: just skip zeros */
 		}
@@ -1511,12 +1516,12 @@ int decimal_multiply(decimal **ret, decimal *v1, decimal *v2) {
 		y = x + v2_precision;
 
 		while(--z > y) {
-			SETNUM(tmp, z, 0);
+			SETNUM(tmp, z, 0U);
 		}
 		y = v2_precision;
 		while(--y >= 0) {
-			int r1 = MULT(f, GETNUM(v2,y)); /* HI(r1) is at most 8 (9*9) */
-			int r2 = ADD(LO(r1), rest);     /* HI(r2) is at most 1 (9+9) */
+			unsigned int r1 = MULT(f, GETNUM(v2,y)); /* HI(r1) is at most 8 (9*9) */
+			unsigned int r2 = ADD(LO(r1), rest);     /* HI(r2) is at most 1 (9+9) */
  			SETNUM(tmp, z, LO(r2)); z--;
 			rest = HI(r1) + HI(r2); 	/* no overflow: at most 9 (8+1) */
 		}
@@ -1547,18 +1552,20 @@ void decimal_mult_table(decimal* div, decimal* mult[10]) {
 	} 
 }
 
-#define CONCAT_DIGIT(dst, src, y) { /* append a digit from src[y] to dst */\
-		int pos = y, val = (pos < src->precision)?GETNUM(src,pos):0;\
-		if (val || dst->precision) {\
-			SETNUM(dst, dst->precision, val);\
-			dst->precision++;\
+#define CONCAT_DIGIT(dst, src, y) { /* append a digit from src[y] to dst */   \
+		int pos = y;						      \
+		unsigned int val = (pos < src->precision)?GETNUM(src,pos):0U; \
+		if (val || dst->precision) {				      \
+			SETNUM(dst, dst->precision, val);		      \
+			dst->precision++;				      \
 		}}
 
 /* the guts of the "staartdeling" implementation of division */
 static INLINE
 void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mult[], int precision) {
 	decimal *chunk = mult[0];
-	int digit, factor=GETNUM(div,0), dprec, dscal, dneg, cmp, z, y, x = NUMLEN(chunk->precision); 
+	unsigned int digit, factor=GETNUM(div,0);
+	int dprec, dscal, dneg, cmp, z, y, x = NUMLEN(chunk->precision); 
 
 	/* set chunk to zero */
 	while(--x >= 0) chunk->num[x] = 0; 
@@ -1573,7 +1580,7 @@ void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mu
 		/* add digits to chunk till it has as many significant digits as div */
 		if (chunk->precision < div->precision) {
 			if (++x >= z) break;
-			SETNUM(tot, x, 0); 
+			SETNUM(tot, x, 0U); 
 			CONCAT_DIGIT(chunk, num, y++);
 			continue;
 		} 
@@ -1582,7 +1589,7 @@ void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mu
 		cmp = decimal_compare(chunk,div);
 		if (div->negative?(cmp > 0):(cmp < 0)) {
 			if (++x >= z) break;
-			SETNUM(tot, x, 0); 
+			SETNUM(tot, x, 0U); 
 			CONCAT_DIGIT(chunk, num, y++);
 			digit = GETNUM(chunk,1) + MULT10(digit); 
 		} 
@@ -1768,7 +1775,7 @@ int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
 		if (raise&1) {
 		 	factor[nfactors++] = x;
 		}
-		raise = (raise >> 1) & ~(1<<31);
+		raise = (raise >> 1) & 0X7FFFFFFF;
 	}
 	raise = factor[nfactors-1];
 

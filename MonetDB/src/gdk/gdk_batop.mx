@@ -352,7 +352,7 @@ at the time. This is encoded by the value int_nil, which cannot occur in these t
 This was now extended to record the property whether we know there is a nil value present
 by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
 @c
-#define GDK_NIL_BIT (1 << 31)
+#define GDK_NIL_BIT 0x80000000	/* (1 << 31) */
 
 /* later to evolve into a more sophisticated aggregate retention system */
 int BATgetaggr(BAT *b, int idx) {
@@ -363,7 +363,7 @@ int BATgetaggr(BAT *b, int idx) {
                 		return (aggr[2] & GDK_NIL_BIT)?TRUE:FALSE;
 }
 		} else {
-			int val = (int) (aggr[idx] & ~GDK_NIL_BIT);
+			int val = aggr[idx] & ~GDK_NIL_BIT;
 			if (val != ~GDK_NIL_BIT) {
 				return val;
 			}

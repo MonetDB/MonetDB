@@ -32,7 +32,7 @@ system, memory allocation details, and a basic system logging scheme.
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-gdk_export void GDKlog       (char *format, ...);
+gdk_export void GDKlog       (const char *format, ...);
 gdk_export void GDKlockHome  (void);
 gdk_export void GDKunlockHome(void);
 gdk_export int  GDKgetHome   (void);
@@ -138,19 +138,19 @@ static int GDKenvironment(str dbname, str dbfarm)
 }
 
 @h
-gdk_export char *GDKgetenv(str name);
+gdk_export char *GDKgetenv(const char *name);
 @c
-char *GDKgetenv(str name){
-	BUN b = BUNfnd(GDKenv, name);
+char *GDKgetenv(const char *name){
+	BUN b = BUNfnd(GDKenv, (ptr) name);
 
 	if (b) return BUNtail(GDKenv,b);
 	return NULL;
 }
 
 @h
-gdk_export int GDKgetenv_isyes(str name);
+gdk_export int GDKgetenv_isyes(const char *name);
 @c
-int GDKgetenv_isyes(str name){
+int GDKgetenv_isyes(const char *name){
 	char *val = GDKgetenv(name);
 
 	if (val && strcasecmp(val,"yes") == 0){
@@ -196,7 +196,7 @@ Single-lined comments can now be logged safely, together with process, thread
 and user ID, and the current time.
 @c
 /* VARARGS */
-void GDKlog(char *format, ...) {
+void GDKlog(const char *format, ...) {
 	va_list	ap; 
 	char	*p= 0, buf[1024];
 	int	mustopen = GDKgetHome();
@@ -1283,7 +1283,7 @@ void GDKaddbuf(char *message) {
 }
 
 /*VARARGS*/
-int GDKwarning(char *format, ...) {
+int GDKwarning(const char *format, ...) {
 	char message[GDKMAXERRLEN];	
 	size_t len = strlen(GDKWARNING);
 	va_list ap; 
@@ -1300,7 +1300,7 @@ int GDKwarning(char *format, ...) {
 
 
 /*VARARGS*/
-int GDKerror(char *format, ...) {
+int GDKerror(const char *format, ...) {
 	char message[GDKMAXERRLEN];	
 	size_t len = strlen(GDKERROR);
 	va_list ap; 
@@ -1316,7 +1316,7 @@ int GDKerror(char *format, ...) {
 }
 
 /*VARARGS*/
-int GDKsyserror(char *format, ...)
+int GDKsyserror(const char *format, ...)
 {
         char message[GDKMAXERRLEN];
         size_t len = strlen(GDKERROR);
@@ -1348,7 +1348,7 @@ int GDKsyserror(char *format, ...)
 }
 
 /*VARARGS*/
-int GDKfatal(char *format, ...) {
+int GDKfatal(const char *format, ...) {
 	char message[GDKMAXERRLEN];	
 	size_t len = strlen(GDKFATAL);
 	va_list ap; 
@@ -1597,7 +1597,7 @@ int THRgettid(void){
 static char THRprintbuf[BUFSIZ];
 
 /*VARARGS*/
-int THRprintf(stream *s, char *format, ...) {
+int THRprintf(stream *s, const char *format, ...) {
 	str bf = THRprintbuf, p = 0;
 	size_t bfsz = BUFSIZ;
 	int n = 0;

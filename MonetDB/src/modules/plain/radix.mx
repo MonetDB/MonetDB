@@ -1828,7 +1828,7 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     } else {
         if (bn->ttype == TYPE_oid) {
   	    /* now check whether we saw any higher bits; if not, its sorted! */
-    	    bn->tsorted = (total_shift >= 30) || (maxbits & ~(3 << 30)) < (1 << total_shift);
+    	    bn->tsorted = (total_shift >= 30) || (maxbits & 0x3FFFFFFF) < (1 << total_shift);
 	}
         bn->tsorted |= total_shift << 1; /* set radix bits */
     }

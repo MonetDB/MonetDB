@@ -1585,10 +1585,11 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
  * do a equi-select
  */
 int val_oidselect( BAT** res, BAT* b, ptr v){
-	oid *dst, *last;
+	oid *dst, *last = 0;
 	int val;
 	BAT *bn;
 
+	(void) last;
 	@:oidselect(val)@
 
 	*res = bn;
@@ -1600,10 +1601,11 @@ int val_oidselect( BAT** res, BAT* b, ptr v){
  * do a range-select
  */
 int rng_oidselect( BAT** res, BAT* b, ptr lo, ptr hi){
-	oid *dst, *last;
+	oid *dst, *last = 0;
 	int low, high;
 	BAT *bn;
 
+	(void) last;
 	@:oidselect(rng)@
 
 	*res = bn;
@@ -1621,6 +1623,7 @@ int vals_oidselect( BAT** res, BAT* b, ...){
         va_list ap;
 
         va_start (ap, b);
+	last[0] = 0; (void) last[0];
 	for(argc=0; TRUE; argc++) {
 	    v[argc] = va_arg (ap,int*) ;
 	    if (v[argc] == NULL) break;
@@ -1645,6 +1648,7 @@ int rngs_oidselect( BAT** res, BAT* b, ...){
         va_list ap;
 
         va_start (ap, b);
+	last[0] = 0; (void) last[0];
 	for(argc=0; TRUE; argc++) {
 	    lo[argc] = va_arg (ap,int*) ;
 	    if (lo[argc] == NULL) break;
@@ -1858,10 +1862,11 @@ int rng_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
  * do a bitselect on the subset indicated by the first BAT param
  */
 int val_oidrefine( BAT** res, BAT* sel, BAT* b, ptr v){
-	oid *dst, *last;
+	oid *dst, *last = 0;
 	int val;
 	BAT *bn;
 
+	(void) last;
 	ALIGNdel(sel, "val_oidrefine");
 	@:check_oidsel(val_oidrefine,sel)@
 	@:oidrefine(val,FALSE)@
@@ -1875,9 +1880,10 @@ int val_oidrefine( BAT** res, BAT* sel, BAT* b, ptr v){
  */
 int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 	int low, high;
-	oid *dst, *last;
+	oid *dst, *last = 0;
 	BAT *bn;
 
+	(void) last;
 	ALIGNdel(sel, "val_oidrefine");
 	@:check_oidsel(rng_oidrefine,sel)@
 	@:oidrefine(rng,FALSE)@

@@ -1631,7 +1631,7 @@ static bat BBPtrim_scan(int mem, int vm, int descs, bat bbppos, bat bbplim) {
 		GDKqsort(bbptrim, NULL, bbptrimlast, sizeof(bbptrim_t), TYPE_int, 0);
 		for(i = bbptrimfirst = 0; i < bbptrimlast; i++) {
 			MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: %11d%c %9d=%s\t(#%d)\n", BBPLASTUSED(bbptrim[i].lastused), 
-						(bbptrim[i].lastused&(1<<31))?'*':' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);   
+						(bbptrim[i].lastused&0x80000000)?'*':' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);   
 			bbptrim[i].next = i+1;
 		}
 		bbptrim[bbptrimlast-1].next = BBPMAXTRIM;

@@ -66,7 +66,7 @@ mutils_export void mo_print_options(opt *set, int setlen);
 /* mo_find_option, finds the option with the given name in the option set
 	(set,setlen). */
 
-mutils_export char *mo_find_option( opt *set, int setlen, char *name );
+mutils_export char *mo_find_option( opt *set, int setlen, const char *name );
 
 /* the option values can contain ${prefix} and ${exec_prefix}, these will
    be substituted using the mo_substitute function */
@@ -88,7 +88,7 @@ mutils_export int mo_builtin_settings( opt **Set );
 /* mo_add_option will add a single option to the option set 
    (returns new length) */
 mutils_export int mo_add_option( opt **Set, int setlen, 
-		opt_kind kind, char *name, char *value );
+		opt_kind kind, const char *name, const char *value );
 
 /* mo_free_options will free the resouces take by the options set */
 mutils_export void mo_free_options( opt *set, int setlen );
@@ -150,7 +150,7 @@ void mo_print_options(opt *set, int setlen)
 }
 
 
-char *mo_find_option( opt *set, int setlen, char *name )
+char *mo_find_option( opt *set, int setlen, const char *name )
 {
 	opt *o = NULL;
 	int i;
@@ -395,7 +395,7 @@ int mo_builtin_settings(opt **Set)
 }
 
 int mo_add_option( opt **Set, int setlen, 
-		opt_kind kind, char *name, char *value )
+		opt_kind kind, const char *name, const char *value )
 {
 	opt *set = (opt*)realloc(*Set,(setlen+1)*sizeof(opt));
 	set[setlen].kind = kind;
