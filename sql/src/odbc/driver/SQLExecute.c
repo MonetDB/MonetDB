@@ -14,17 +14,22 @@
 
 extern statement *sqlexecute( context *, char *);
 
+#define CHUNK (64*1024)
 
-static char *readline( stream *rs, char *buf ){ 
-	int more = 1;
-	char *start = buf;
-	while(rs->read(rs, start, 1, 1)){
-		if (*start == '\n' ){
-			break;
-		}
-		start ++;
+static char *readblock( stream *s ){
+	int len = 0;
+	int size = CHUNK + 1;
+	char *buf = NEW_ARRAY(char, size ), *start = buf;
+
+	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
+		size += CHUNK;
+		buf = RENEW_ARRAY(char, buf, size); 
+		start+= CHUNK;
+		*start = '\0';
 	}
-	return start;
+	start += len;
+	*start = '\0';
+	return buf;
 }
 
 SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
@@ -38,7 +43,6 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 	statement *res = NULL;
 	context *sql;
 	stream *rs;
-	char buf[BUFSIZ+1], *start = buf;
 
 	/* SANITY CHECKS */
     if( NULL == hStmt )
@@ -75,11 +79,8 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 
 	if (res){
 	    int nr = 1;
-	    char buf[2];
 	    statement_dump( res, &nr, sql );
 
-	    buf[0] = 1;
-	    sql->out->write( sql->out, buf, 1, 1 );
 	    sql->out->flush( sql->out );
 	}
 	printf("done writing\n");
@@ -96,9 +97,10 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 	if (res && res->type == st_output){
 		list *l = res->op1.stval->op1.lval;
 		node *n = l->h;
-		start = readline( rs, buf);
-		start = '\0';
-		nRows = atoi(buf);
+		char *buf = readblock( rs ), *start = buf, *m = buf;
+
+		nRows = strtol(m,&m,10);
+		m++;
 
 		hStmt->hStmtExtras->nRows = nRows; 
 
@@ -126,17 +128,20 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 		start = buf;
 	        for( nRow = 1; nRow <= nRows; nRow++){
 	 	 for( nColumn = 1; nColumn <= nCols; nColumn++){
-		  while(rs->read(rs, start, 1, 1)){
-			if (*start == '\t' || *start == '\n' ){
+		  start = m;
+		  while(*m){
+			if (*m == '\t' || *m == '\n' ){
 				break;
 			}
-			start++;
+			m++;
 		  }
-		  *start = '\0';
-		  hStmt->hStmtExtras->aResults[nRow*nCols+nColumn] = strdup(buf);
-		  start = buf;
+		  *m = '\0';
+		  hStmt->hStmtExtras->aResults[nRow*nCols+nColumn] = 
+			  strdup(start);
+		  m++; 
 		 }
 		}
+		_DELETE(buf);
 	}
 	if (res) statement_destroy(res);
 

@@ -94,8 +94,9 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 
 	fd = client( szHOST, atoi(szPORT) );
 	hDbc->hDbcExtras->fd = fd;
-	hDbc->hDbcExtras->rs = socket_rastream( fd, "sql client read");
-	out = socket_wastream( fd, "sql client write"); 
+	hDbc->hDbcExtras->rs = block_stream(
+			socket_rstream( fd, "sql client read"));
+	out = block_stream(socket_wstream( fd, "sql client write")); 
 	lc = &hDbc->hDbcExtras->lc;
 	sql_init_context( lc, out, debug, default_catalog_create() );
 	catalog_create_stream( hDbc->hDbcExtras->rs, lc );
