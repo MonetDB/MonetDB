@@ -48,16 +48,20 @@ smallTOC_SHARED_MODS =	\
 
 EXTRA_DIST = static_modules.mx mysqldump2bulkload.py
 
+lib_initmodules = {
+	SOURCES = initmodules.mx
+}
+
 bin_Mserver = {
-	SOURCES = Mserver.mx initmodules.mx 
-	LIBS = -L$(MONETDB_PREFIX)/lib -lmonet @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
+	SOURCES = Mserver.mx
+	LIBS = -L$(MONETDB_PREFIX)/lib -linitmodules -lmonet @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
 
 lib_embedded = {
-	SOURCES = embeddedclient.mx initmodules.mx
+	SOURCES = embeddedclient.mx
 }
 
 bin_prog = {
 	SOURCES = prog.c
-	LIBS = -L$(MONETDB_PREFIX)/lib -lembedded -lMapi -lmonet @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
+	LIBS = -L$(MONETDB_PREFIX)/lib -lembedded -linitmodules -lMapi -lmonet @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
