@@ -1557,7 +1557,6 @@ The patterns are interpreted in a strictly linear fashion.
 This is used to activate multiple operations on the same
 pattern.
 @c
-#define DEBUG_MAL_OPTIMIZER
 #define REMEMBER	0
 #define ALIAS_1		1
 static struct{
