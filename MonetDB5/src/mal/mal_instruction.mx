@@ -1742,9 +1742,11 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
     if( flg & (LIST_MAL_BIND | LIST_MAL_TYPE)){
         advance(t);
         hiddenInstructionArgs(mb,p,t);
+/*
 		advance(t);
 		if( mb->typefixed) sprintf(t," typefixed");
 		if( mb->flowfixed) sprintf(t," flowfixed");
+*/
     }
 #endif
     return s;
