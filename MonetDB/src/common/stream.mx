@@ -364,8 +364,6 @@ stream_init(void)
 #endif
 #endif	/* STREAM_DEBUG */
 
-/* Read at most cnt elements of size elmsize from the stream.  Returns
-   the number of elements actually read. */
 ssize_t
 stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
@@ -376,9 +374,6 @@ stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	return (*s->read)(s, buf, elmsize, cnt);
 }
 
-/* Write cnt elements of size elmsize to the stream.  Returns the
-   number of elements actually read.  If elmsize or cnt equals zero,
-   returns cnt. */
 ssize_t
 stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
@@ -553,7 +548,7 @@ file_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 			s->errnr = WRITE_ERROR;
 		return (ssize_t) rc;
 	}
-	return cnt;
+	return 0;
 }
 
 static void
@@ -616,12 +611,10 @@ static ssize_t
 stream_gzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	int size = (int) (elmsize * cnt);
-
-	if (size) {
-		size = gzwrite((gzFile *) s->stream_data.p, (void *) buf, size);
+	size = gzwrite((gzFile *) s->stream_data.p, (void *) buf, size);
+	if (size)
 		return size / elmsize;
-	}
-	return cnt;
+	return 0;
 }
 
 static void
@@ -737,11 +730,10 @@ static ssize_t
 stream_bzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	int size = (int) (elmsize * cnt);
-	if (size) {
-		size = BZ2_bzwrite((BZFILE *) s->stream_data.p, (void *) buf, size);
+	size = BZ2_bzwrite((BZFILE *) s->stream_data.p, (void *) buf, size);
+	if (size)
 		return size / elmsize;
-	}
-	return cnt;
+	return 0;
 }
 
 static void
@@ -1022,65 +1014,52 @@ append_wastream(const char *filename)
 static ssize_t
 socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
-	ssize_t nr = 0, res = 0, size = elmsize*cnt;
+	size_t size = elmsize*cnt;
+	ssize_t sz;
 
-	if (s->errnr) 
+	if (s->errnr)
 		return -1;
 	
-	if (size == 0 || elmsize == 0)
+	if (size == 0)
 		return cnt;
-
-	while (res < size && (
 #ifdef NATIVE_WIN32
-		((nr = send(s->stream_data.i, (void *) ((char *) buf + res), size-res, 0)) > 0)
+	sz = send(s->stream_data.i, buf, size, 0);
 #else
-		((nr = write(s->stream_data.i, (void *) ((char *) buf + res), size-res)) > 0)
+	sz = write(s->stream_data.i, buf, size);
 #endif
-		|| errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
-	) {
-		errno = 0;
-		if (nr > 0)
-			res += nr;
-	}
-	if (nr < 0) { 
+	if (sz > 0)
+		return sz / elmsize;
+	if (sz < 0)
 		s->errnr = WRITE_ERROR;
-		return nr;
-	}
-	if (res > 0)
-		return res / elmsize;
-	s->errnr = WRITE_ERROR;
-	return -1;
+	return sz;
 }
 
 static ssize_t
 socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
-	ssize_t nr = 0, res = 0, size = elmsize*cnt;
+	ssize_t nr = 0;
+	size_t res = 0, size = elmsize*cnt;
 
-	if (s->errnr) 
+	if (s->errnr)
 		return -1;
 	
 	while (res < size && (
 #ifdef NATIVE_WIN32
-		((nr = recv(s->stream_data.i, (void *) ((char *) buf + res), size-res, 0)) > 0)
-#else 
-
-		((nr = read(s->stream_data.i, (void *) ((char *) buf + res), size-res)) > 0)
+		(nr = recv(s->stream_data.i, (void *) ((char *) buf + res), size-res, 0)) > 0
+#else
+		(nr = read(s->stream_data.i, (void *) ((char *) buf + res), size-res)) > 0
 #endif
-		|| errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+		|| errno == EAGAIN)
 	) {
-		errno = 0;
-		if (nr > 0)
-			res += nr;
+		res += nr;
 	}
 	if (nr < 0) {
 		s->errnr = READ_ERROR;
 		return nr;
 	}
-	if (res > 0)
+	if (res)
 		return res / elmsize;
-	s->errnr = READ_ERROR;
-	return -1;
+	return 0;
 }
 
 static void
@@ -1099,8 +1078,10 @@ socket_close(stream *s)
 		 * created.
 		 */
 		if (s->access == ST_READ) {
-			shutdown(fd, SHUT_RDWR);
+			shutdown(fd, SHUT_RD);
 			close(fd);
+		} else {
+			shutdown(fd, SHUT_WR);
 		}
 	}
 	s->stream_data.i = -1;
@@ -1123,42 +1104,32 @@ socket_open(int socket, const char *name)
 #ifdef SO_KEEPALIVE
 	{
 		int opt = 0;
-		if (setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt,
-			   sizeof(opt)) < 0) {
-			s->errnr = OPEN_ERROR;
-			return s;
-		}
+		setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt,
+			   sizeof(opt));
 	}
 #endif
 #ifdef IPTOS_THROUGHPUT
 	{
 		int tos = IPTOS_THROUGHPUT;
-		if (setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos,
-			   sizeof(tos)) < 0) {
-			s->errnr = OPEN_ERROR;
-			return s;
-		}
+		setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos,
+			   sizeof(tos));
 	}
 #endif
 #ifdef TCP_NODELAY
 	{
 		int nodelay = 1;
-		if (setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay)) < 0) {
-			s->errnr = OPEN_ERROR;
-			return s;
-		}
+		setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
+			   sizeof(nodelay));
 	}
 #endif
 #ifndef NATIVE_WIN32
 	{
 		int fl = fcntl(socket, F_GETFL);
-		fl |= O_NONBLOCK;
-		if (fcntl(socket, F_SETFL, fl) < 0) {
-			s->errnr = OPEN_ERROR;
-			return s;
-		}
+		fl &= ~O_NONBLOCK;
+		fcntl(socket, F_SETFL, fl);
 	}
 #endif
+
 	return s;
 }
 
@@ -1276,7 +1247,7 @@ ssl_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	assert(s->stream_data.p);
 	ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
 	assert(ssl);
-	if (size == 0 || elmsize == 0)
+	if (size == 0)
 		return cnt;	/* nothing to do */
 	for (;;) {
 		int nr, err;
@@ -1859,7 +1830,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	if (s->itotal == 0) {
 		/* There is nothing more to read in the current block,
 		   so read the count for the next block */
-		int nr = 0;
+		int nr;
 
 		if (s->nr) {
 			/* We read the 0 count of the closing block

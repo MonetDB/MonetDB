@@ -181,11 +181,10 @@ static int
 doFile(Mapi mid, const char *file)
 {
 	FILE *fp;
-	char *buf = NULL;
+	char buf[BUFSIZ];
 	size_t length;
 	MapiHdl hdl = NULL;
 	MapiMsg rc;
-	int bufsize = 0;
 
 	if ((fp = fopen(file, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", file);
@@ -193,19 +192,11 @@ doFile(Mapi mid, const char *file)
 	}
 	timerStart();
 
-	bufsize = BUFSIZ * 64;
-	buf = malloc(bufsize);
-	if (!buf) {
-		fprintf(stderr, "cannot allocate memory for send buffer\n");
-		return 1;
-	}
-		
 	do {
-		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
+		if ((length = fread(buf, 1, sizeof(buf), fp)) == 0) {
 			/* end of file */
 			if (hdl == NULL) {
 				/* nothing more to do */
-				free(buf);		
 				return 0;
 			}
 			/* hdl != NULL, we should finish the current query */
@@ -234,7 +225,6 @@ doFile(Mapi mid, const char *file)
 					hdl = NULL;
 				} else
 					mapi_explain(mid, stderr);
-				free(buf);		
 				return 1;
 			}
 		}
@@ -262,7 +252,6 @@ doFile(Mapi mid, const char *file)
 					hdl = NULL;
 				} else
 					mapi_explain(mid, stderr);
-				free(buf);		
 				return 1;
 			}
 		}
@@ -294,7 +283,6 @@ doFile(Mapi mid, const char *file)
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 			hdl = NULL;
-			free(buf);		
 			return 1;
 		}
 
@@ -325,7 +313,6 @@ doFile(Mapi mid, const char *file)
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 			hdl = NULL;
-			free(buf);		
 			return 1;
 		}
 
@@ -335,7 +322,6 @@ doFile(Mapi mid, const char *file)
 	/* reached on end of file */
 	assert(hdl == NULL);
 
-	free(buf);		
 	return 0;
 }
 
@@ -600,11 +586,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 	return 0;
 }
 
-static const char *column_format = "SELECT \"name\",\"type\",\"type_digits\","
-	"\"type_scale\",NULL,\"default\",\"number\" "
-	"FROM \"columns\" \"c\",\"tables\" \"t\" "
-	"WHERE \"c\".\"table_id\" = \"t\".\"id\" "
-	"AND '%s' = \"t\".\"name\" ORDER BY \"number\";\n";
+static const char *column_format = "select name,type,type_digits,type_scale,"
+	"null,default,number from columns c,tables t "
+	"where c.table_id = t.id and '%s' = t.name order by number;\n";
 #define COLUMN 6
 #define C_NAME 0
 #define C_TYPE 1
@@ -618,11 +602,11 @@ dump_table(Mapi mid, char *tname)
 	MapiHdl hdl;
 	char query[BUFSIZ];
 
-	char *select_count = "SELECT count(*) FROM \"%s\"";
-	char *select_format = "SELECT * FROM \"%s\"";
+	char *select_count = "select count(*) from %s";
+	char *select_format = "select * from %s";
 	int *string;
 
-	fprintf(toConsole, "CREATE TABLE \"%s\" (\n", tname);
+	fprintf(toConsole, "CREATE TABLE %s (\n", tname);
 
 	snprintf(query, BUFSIZ, column_format, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
@@ -649,13 +633,13 @@ dump_table(Mapi mid, char *tname)
 			fprintf(toConsole, ",\n");
 
 		if (strcmp(c_type_digits, "0") == 0) {
-			fprintf(toConsole, "\t\"%s\" %s", c_name, c_type);
+			fprintf(toConsole, "\t%s %s", c_name, c_type);
 		} else if (strcmp(c_type_scale, "0") == 0) {
-			fprintf(toConsole, "\t\"%s\" %s(%s)", c_name, c_type,
+			fprintf(toConsole, "\t%s %s(%s)", c_name, c_type,
 				c_type_digits);
 		} else {
-			fprintf(toConsole, "\t\"%s\" %s(%s,%s)", c_name,
-				c_type, c_type_digits, c_type_scale);
+			fprintf(toConsole, "\t%s %s(%s,%s)", c_name, c_type,
+				c_type_digits, c_type_scale);
 		}
 		cnt++;
 	}
@@ -680,7 +664,7 @@ dump_table(Mapi mid, char *tname)
 	}
 	if (mapi_fetch_row(hdl)) {
 		char *cnt = mapi_fetch_field(hdl, 0);
-		fprintf(toConsole, "COPY %s RECORDS INTO \"%s\" FROM "
+		fprintf(toConsole, "COPY %s RECORDS INTO %s FROM "
 			"stdin USING DELIMITERS '\\t';\n", cnt, tname);
 	}
 	mapi_close_handle(hdl);
@@ -768,11 +752,8 @@ dump_table(Mapi mid, char *tname)
 static int
 dump_tables(Mapi mid)
 {
-	const char *tables = "SELECT \"name\" FROM \"ptables\" WHERE "
-		"\"istable\" = TRUE AND \"system\" = FALSE AND "
-		"\"name\" NOT LIKE 'history'";
-	const char *views = "SELECT \"name\",\"query\" FROM \"ptables\" WHERE "
-		"\"istable\" = FALSE AND \"system\" = FALSE";
+	const char *tables = "SELECT name FROM tables WHERE type = 0 AND name NOT LIKE 'history'";
+	const char *views = "select name,query from tables where type=2";
 	MapiHdl hdl;
 	int rc = 0;
 
@@ -809,7 +790,7 @@ dump_tables(Mapi mid)
 		char *vname = mapi_fetch_field(hdl, 0);
 		char *query = mapi_fetch_field(hdl, 1);
 
-		fprintf(toConsole, "CREATE VIEW \"%s\" AS %s\n", vname, query);
+		fprintf(toConsole, "CREATE VIEW %s AS %s\n", vname, query);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -941,7 +922,7 @@ main(int argc, char **argv)
 	char *command = NULL;
 	int dodump = 0;
 	int trace = 0;
-	int guest = 1;
+	int guest = 0;
 	int linemode = 1;
 	int c;
 	Mapi mid;
@@ -989,6 +970,8 @@ main(int argc, char **argv)
 					       "config", optarg);
 			break;
 		case 'l':
+			guest= !( user!= NULL || passwd!=NULL);
+			if(guest && port==0) port= SQLdefaultPort;
 			language = optarg;
 			break;
 		case 'u':

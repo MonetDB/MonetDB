@@ -332,7 +332,6 @@ unsigned short val_table[10000]; /* 4-digit shorts with numbers from 0000 to 999
 #define MASK_(x)	(15U << POS(x))
 #define GETNUM(d,x)	LO((NUM(d,x) & MASK_(x)) >> POS(x))
 #define SETNUM(d,x,y)	NUM(d,x) = ((y) << POS(x)) | (NUM(d,x) & ~MASK_(x)) 
-#define PREC(d)		((int)(sht)((d)->precision))	/* required for the PGI's compiler; otherwise precision seems to be treated as 15-bit unsigned int */
 #define SCALE(d)	((int)(sht)((d)->scale))	/* required for Sun's native compiler; otherwise scale seems to be treated as 16-bit unsigned int */
 #define ISNIL(d)	(SCALE(d) > SCALE_MAX) 
 #define ISZERO(d)	((d)->num[0] == 0) 
@@ -357,7 +356,7 @@ int decimal_minrepeat = 2000000000;
 static INLINE
 int ISTENFOLD(decimal *d) {
 	unsigned int *src = d->num;
-	unsigned int *dst = src + NUMLEN(PREC(d));
+	unsigned int *dst = src + NUMLEN(d->precision);
 	
 	if (*src == (1 << 28)) do {
 		if (++src == dst) return 1;
@@ -375,7 +374,7 @@ char decimal_global_buf[1024];
 #define FORMAT(f,s)		((sprintf(decimal_global_buf,f,s)||1)?decimal_global_buf:NULL)
 
 void decimal_debug(decimal* d, str tag, int check) {
-	int x=0, y, precision = PREC(d), scale = SCALE(d);
+	int x=0, y, precision = d->precision, scale = SCALE(d);
 
 	if (tag) {
 		printf("%s=", tag);	
@@ -390,7 +389,7 @@ void decimal_debug(decimal* d, str tag, int check) {
 	} else {
 		char buf[128], *t = buf, *s = t;
 		if (precision == 0 || precision > PRECISION_MAX) {
-			GDKerror("decimal_debug: illegal precision %d: == 0 || > %d.\n", PREC(d), PRECISION_MAX);
+			GDKerror("decimal_debug: illegal precision %d: == 0 || > %d.\n", d->precision, PRECISION_MAX);
 			if (precision) precision = 8;
 		}
 		if (scale < SCALE_MIN || scale > SCALE_MAX) {
@@ -398,7 +397,7 @@ void decimal_debug(decimal* d, str tag, int check) {
 			scale = 0;
 		}
 		if (precision+8 > 128)  {
-			t = s = (str) GDKmalloc(PREC(d)+8);
+			t = s = (str) GDKmalloc(d->precision+8);
 		}
 		if (d->negative) {
 			*s++ = '-';
@@ -414,23 +413,23 @@ void decimal_debug(decimal* d, str tag, int check) {
 		if (buf != t) GDKfree(t);
 		x = 0;
 	}
-	for(y = 0; y < PREC(d); y++) {
+	for(y = 0; y < d->precision; y++) {
 		if (GETNUM(d,0)) break;
 	}
 	/* do the checking */	
 	if (check) {
-		if (ISZERO(d) && y < PREC(d)) {
+		if (ISZERO(d) && y < d->precision) {
 			GDKerror("decimal_debug: leading zeros in nonzero value.\n");
 		}
-		if (ISZERO(d) && PREC(d) != 1) {
-			GDKerror("decimal_debug: zero has illegal precision %d.\n", PREC(d));
+		if (ISZERO(d) && d->precision != 1) {
+			GDKerror("decimal_debug: zero has illegal precision %d.\n", d->precision);
 		}
 		if (ISZERO(d) && SCALE(d) != 2*SCALE_MIN) {
 			GDKerror("decimal_debug: zero has illegal scale: %d != %d.\n",SCALE(d),2*SCALE_MIN);
 		}
 		for(y = NUMLEN(precision) << 2; x < y; x++) {
 			unsigned int z = GETNUM(d,x); /* z >= 0 due to GETNUM impl. */
-			if (x >= PREC(d) ? z != 0 : z > 9) {
+			if (x >= d->precision ? z != 0 : z > 9) {
 				GDKerror("decimal_debug: garbage %d at position %d.\n", z, x);
 			} 
 		}
@@ -469,7 +468,7 @@ decimal* decimal_alloc(int precision, int scale, int sign, decimal *d, int *size
 		d->precision = 1; 
 		d->scale = 2*SCALE_MIN; 
 		d->negative = 0; 	
-/*printf("!- 4) zero: %u, %d, %d, %d\n",d->num[0],PREC(d),SCALE(d),d->negative);*/
+/*printf("!- 4) zero: %u, %d, %d, %d\n",d->num[0],d->precision,SCALE(d),d->negative);*/
 	} else {
 		/* generate a decimal with empty number, and set fields */
 		unsigned int *src = d->num;
@@ -478,7 +477,7 @@ decimal* decimal_alloc(int precision, int scale, int sign, decimal *d, int *size
 		d->scale = scale;	
 		d->negative = sign; 
 		while(src < dst) *src++ = 0;
-/*printf("!- 5) %u, %d, %d, %d\n",d->num[0],PREC(d),SCALE(d),d->negative);*/
+/*printf("!- 5) %u, %d, %d, %d\n",d->num[0],d->precision,SCALE(d),d->negative);*/
 	}
 	return d;
 }
@@ -493,18 +492,18 @@ minimum precision parameter).
 @c
 static INLINE
 void decimal_normalize(decimal* d, decimal *v, int offset, int fixed_precision, int del_trailing){
-	int x = offset, precision, first_nonzero=0, last_nonzero=PREC(v);
+	int x = offset, precision, first_nonzero=0, last_nonzero=v->precision;
 
-	DECIMAL_DEBUG(v, "decimal_normalize() input", 1);
+	DECIMAL_DEBUG(v, "decimal_normalize() input", 0);
 
 	/* find the first nonzero digit from the start */
-	for(first_nonzero=0; first_nonzero < PREC(v); first_nonzero++) {
+	for(first_nonzero=0; first_nonzero < v->precision; first_nonzero++) {
 		if (GETNUM(v,first_nonzero) != 0) break;
 	}
 
 	/* find the last nonzero digit from the end */
 	if (del_trailing)
-	for(x=first_nonzero; x < PREC(v); x++) {
+	for(x=first_nonzero; x < v->precision; x++) {
 		if (GETNUM(v,x) != 0) last_nonzero=x+1;
 	}
 
@@ -521,7 +520,7 @@ void decimal_normalize(decimal* d, decimal *v, int offset, int fixed_precision, 
 	}
 
 	/* pad the total rest of d with zeros (for consistency) */
-	for(; x < PREC(d); x++) {
+	for(; x < d->precision; x++) {
 		SETNUM(d,x,0U);
 	}
 
@@ -529,16 +528,16 @@ void decimal_normalize(decimal* d, decimal *v, int offset, int fixed_precision, 
 	if (precision == 0) {
 		*d = *decimal_zero;
 	} else { 
-		/* PREC(d) can be > precision; rest is then padded by 0s */
+		/* d->precision can be > precision; rest is then padded by 0s */
 		d->negative = v->negative;
-		d->scale = SCALE(v) + (PREC(v) - last_nonzero);
+		d->scale = SCALE(v) + (v->precision - last_nonzero);
 		d->precision = precision;
 		if (fixed_precision > precision && !del_trailing) {
 			d->scale -= fixed_precision - precision;
 			d->precision = fixed_precision;
 		}
 	}
-	DECIMAL_DEBUG(d, "decimal_normalize() result", 1);
+	DECIMAL_DEBUG(d, "decimal_normalize() result", 0);
 }
 
 @-
@@ -661,9 +660,9 @@ int decimal_fromstr(str buf, int *len, decimal **ret) {
 }
 
 int decimal_tostr(str *buf, int *len, decimal *v) {
-	if (*len < PREC(v)+7) {
+	if (*len < v->precision+7) {
 		if (*buf) GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = PREC(v)+7);
+		*buf = (str) GDKmalloc(*len = v->precision+7);
 	} 
 	if (ISNIL(v)) {
 		strcpy(*buf, "nil");
@@ -676,7 +675,7 @@ int decimal_tostr(str *buf, int *len, decimal *v) {
 		if (v->negative) {
 			*s++ =  '-';
 		}
-		for(x = 0; x < PREC(v); x++, repeat++) {
+		for(x = 0; x < v->precision; x++, repeat++) {
 			val = GETNUM(v,x) + '0';
 			if (val != lastval) {
 				if (repeat > decimal_minrepeat) {
@@ -772,19 +771,19 @@ int decimal_format(str *ret, decimal *d, str format) {
 		} else {
 			*s++ = (d->negative)?'-':start;
 			for(x=0; x<n1; x++) {
-				unsigned int num = (x<PREC(d))?GETNUM(d,x):0;
+				unsigned int num = (x<d->precision)?GETNUM(d,x):0;
 				*s++ = num + '0';
 			} 
 		}
 		if (n2) {
 			*s++ = '.';
 			for(; x<n1+n2; x++) {
-				unsigned int num = (x<PREC(d))?GETNUM(d,x):0;
+				unsigned int num = (x<d->precision)?GETNUM(d,x):0;
 				*s++ = num + '0';
 			}
 		}
 		if (!ISZERO(d)) {
-			y = SCALE(d) + PREC(d) - n1;
+			y = SCALE(d) + d->precision - n1;
 		}
 		if (y) {
 			char f[5];
@@ -818,8 +817,8 @@ the shorter digit string to obtain the same effect.
 @c
 hash_t decimal_hash(decimal *d) {
 	unsigned int *src = d->num;
-	unsigned int *dst = src + NUMLEN(PREC(d));
-	hash_t y = PREC(d) + SCALE(d);
+	unsigned int *dst = src + NUMLEN(d->precision);
+	hash_t y = d->precision + SCALE(d);
 	
 	while(src < dst) {
 		unsigned int val = *src++;
@@ -841,8 +840,8 @@ hash_t decimal_hash(decimal *d) {
 }
 
 int decimal_compare(decimal *v1, decimal *v2) {
-	unsigned int d1 = PREC(v1) + SCALE(v1);
-	unsigned int d2 = PREC(v2) + SCALE(v2);
+	unsigned int d1 = v1->precision + SCALE(v1);
+	unsigned int d2 = v2->precision + SCALE(v2);
 	int res = 0;
 
 	if (v2->negative != v1->negative) {
@@ -852,8 +851,8 @@ int decimal_compare(decimal *v1, decimal *v2) {
 	} else {
 		unsigned int *p1 = v1->num;
 		unsigned int *p2 = v2->num; 
-		unsigned int *q1 = p1 + NUMLEN(PREC(v1));
-		unsigned int *q2 = p2 + NUMLEN(PREC(v2));
+		unsigned int *q1 = p1 + NUMLEN(v1->precision);
+		unsigned int *q2 = p2 + NUMLEN(v2->precision);
 	
 		while(p1 < q1 || p2 < q2) {
 			d1 = (p1 < q1)?*p1:0;
@@ -882,11 +881,11 @@ decimal* decimal_null(void) {
 }
 
 int decimal_length(decimal *d) {
-	return TOTLEN(PREC(d));
+	return TOTLEN(d->precision);
 }
  
 void decimal_convert(decimal *d, int dummy) {
-	int *src = (int*) d, *dst = (int*) (((char*) d) + TOTLEN(PREC(d)));
+	int *src = (int*) d, *dst = (int*) (((char*) d) + TOTLEN(d->precision));
 	short *s = (short*) d;
 	(void) dummy;
 	s[0] = short_int_SWAP(s[0]);
@@ -905,19 +904,11 @@ void decimal_del(Heap* h, var_t* index) {
 }
 
 var_t decimal_put(Heap* h, var_t* bun, decimal* val) {
-	decimal *dst;
-	int len = TOTLEN(PREC(val));
-	unsigned int *src = val->num;
-	unsigned int *end = (unsigned int*) (((char*) src) + len - sizeof(int));
-	DECIMAL_DEBUG(val, "decimal_put() input", 1);
- 	*bun = HEAP_malloc(h, len);
-	dst = (decimal*)(h->base + *bun);
-	if (*bun) {
-		 unsigned int *d = dst->num;
-		 *dst = *val;
-		 while(src < end) *d++ = *src++;
-	}
-	DECIMAL_DEBUG((decimal*)dst, "decimal_put() result", 1);
+	int *dst, len = TOTLEN(val->precision);
+	int *src = (int*) val;
+	int *end = (int*) (((char*) src) + len);
+	dst = (int*) (h->base + (*bun = HEAP_malloc(h, len)));
+	if (*bun) while(src < end) *dst++ = *src++;
 	return *bun;
 }
 
@@ -976,19 +967,19 @@ bat* decimal_prelude(void) {
 
 	/* create decimals representing the maximum and minimum values of scalar types */
 	decimal_fromstr("-2147483648", &y, &decimal_int_min);
-	decimal_int_max = decimal_copy(decimal_int_min, PREC(decimal_int_min));
+	decimal_int_max = decimal_copy(decimal_int_min, decimal_int_min->precision);
 	decimal_int_max->negative = 0;
 
 	decimal_fromstr("-3.402823466E+38F", &y, &decimal_flt_min);
-	decimal_flt_max = decimal_copy(decimal_flt_min, PREC(decimal_flt_min));
+	decimal_flt_max = decimal_copy(decimal_flt_min, decimal_flt_min->precision);
 	decimal_flt_max->negative = 0;
 
 	decimal_fromstr("-9223372036854775808", &y, &decimal_lng_min);
-	decimal_lng_max = decimal_copy(decimal_lng_min, PREC(decimal_lng_min));
+	decimal_lng_max = decimal_copy(decimal_lng_min, decimal_lng_min->precision);
 	decimal_lng_max->negative = 0;
 
 	decimal_fromstr("-1.7976931348623157E+308", &y, &decimal_dbl_min);
-	decimal_dbl_max = decimal_copy(decimal_dbl_min, PREC(decimal_dbl_min));
+	decimal_dbl_max = decimal_copy(decimal_dbl_min, decimal_dbl_min->precision);
 	decimal_dbl_max->negative = 0;
 
 	return NULL;
@@ -1066,7 +1057,7 @@ int decimal_from_lng(decimal **ret, lng* val) {
 			} 
 		}
 		d = *ret = decimal_create(precision,0,sign);
-		for(precision=0; precision < PREC(d); precision++) {
+		for(precision=0; precision < d->precision; precision++) {
 			unsigned int val = (num[y] & (15U<<x)) >> x;
 			SETNUM(d,precision, val); 
 			if ((x += 4) > 12) { x = 0; y--; } 
@@ -1132,7 +1123,7 @@ int decimal_to_lng(lng *ret, decimal *val) {
 	{
 		*ret = lng_nil;
 	} else {
-		int padding = 0, digits = PREC(val);
+		int padding = 0, digits = val->precision;
 		if (SCALE(val) < 0) {
 			digits += SCALE(val);
 		} else {
@@ -1168,9 +1159,9 @@ int decimal_to_dbl(dbl *ret, decimal *val) {
 	{
 		*ret = dbl_nil;
 	} else {
-		int scale = SCALE(val) + PREC(val) - MIN(PREC(val),18);
+		int scale = SCALE(val) + val->precision - MIN(val->precision,18);
                 int itr = ABS(scale);
-		dbl value = (dbl) long_value(val, MIN(18,PREC(val)), 0);
+		dbl value = (dbl) long_value(val, MIN(18,val->precision), 0);
                 dbl scl = pow10_table[itr&7];
 
                 for(itr>>=3; itr; itr--) {
@@ -1208,10 +1199,10 @@ int decimal_negative(decimal **ret, decimal *val) {
 	DECIMAL_DEBUG(val, "decimal_negative() val", 1);
 
 	if (ISNIL(val) || ISZERO(val)) {
-		(*ret) = decimal_copy(val, PREC(val));
+		(*ret) = decimal_copy(val, val->precision);
 	} else {
-		*ret = decimal_create(PREC(val), 0, 0);
-		decimal_normalize(*ret, val, 0, PREC(val), TRUE);
+		*ret = decimal_create(val->precision, 0, 0);
+		decimal_normalize(*ret, val, 0, val->precision, TRUE);
 		(*ret)->negative = !(*ret)->negative;
 	}
 	DECIMAL_DEBUG(*ret, "decimal_negative() result", 1);
@@ -1223,10 +1214,10 @@ int decimal_abs(decimal **ret, decimal *val) {
 	DECIMAL_DEBUG(val, "decimal_abs() val", 1);
 
 	if (ISNIL(val) || ISZERO(val)) {
-		(*ret) = decimal_copy(val, PREC(val));
+		(*ret) = decimal_copy(val, val->precision);
 	} else {
-		*ret = decimal_create(PREC(val), 0, 0);
-		decimal_normalize(*ret, val, 0, PREC(val), TRUE);
+		*ret = decimal_create(val->precision, 0, 0);
+		decimal_normalize(*ret, val, 0, val->precision, TRUE);
 		(*ret)->negative = 0;
 	}
 	DECIMAL_DEBUG(*ret, "decimal_abs() result", 1);
@@ -1238,7 +1229,7 @@ int decimal_set_scale(decimal **ret, decimal *val, int *scale) {
         int delta = (ISNIL(val) || ISZERO(val)) ? 0 : SCALE(val) - *scale;
         DECIMAL_DEBUG(val, FORMAT("decimal_set_scale(%d) input", *scale), 1);
 
-        *ret = decimal_copy(val, MAX(0, (PREC(val) + delta)));
+        *ret = decimal_copy(val, MAX(0, val->precision + delta));
 
         DECIMAL_DEBUG(*ret, FORMAT("decimal_set_scale(%d) result", *scale), 1);
         return GDK_SUCCEED;
@@ -1252,7 +1243,7 @@ int decimal_movedot(decimal **ret, decimal *val, int *delta) {
 	} else if (ISNIL(val) || (SCALE(val) + *delta) < SCALE_MIN || (SCALE(val) + *delta) > SCALE_MAX) {
 		*ret = decimal_copy(decimal_nil, 1);
 	} else {
-		*ret = decimal_copy(val, PREC(val));
+		*ret = decimal_copy(val, val->precision);
 		(*ret)->scale += *delta;
 	}
 	DECIMAL_DEBUG(*ret, FORMAT("decimal_movedot(%d) result", *delta), 1);
@@ -1280,7 +1271,7 @@ int decimal_get_scale(int *ret, decimal *val) {
 
 /* Returns the precision of this number. */
 int decimal_get_precision(int *ret, decimal *val) {
-	*ret = ISNIL(val)? int_nil : PREC(val);
+	*ret = ISNIL(val)? int_nil : val->precision;
 
 	DECIMAL_DEBUG(val, FORMAT("decimal_get_precision(precision->%d) input", *ret), 1);
 	return GDK_SUCCEED;
@@ -1310,7 +1301,7 @@ as follows:
 /* auxiliary function: assumes equal sign and scale and no overflow */
 static INLINE
 void decimal_simple_inc(decimal* v1, decimal* v2) {
-	int x = PREC(v1), y = PREC(v2);
+	int x = v1->precision, y = v2->precision;
 	unsigned int rest=0;
 
 	DECIMAL_DEBUG(v1, "decimal_simple_inc() acc", 0);
@@ -1333,7 +1324,7 @@ void decimal_simple_inc(decimal* v1, decimal* v2) {
 /* auxiliary function: assumes equal sign and scale and no overflow */
 static INLINE
 void decimal_simple_dec(decimal* v1, decimal* v2) {
-	int x = PREC(v1), y = PREC(v2);
+	int x = v1->precision, y = v2->precision;
 	unsigned int rest=0;
 
 	DECIMAL_DEBUG(v1, "decimal_simple_dec() acc", 0);
@@ -1366,10 +1357,10 @@ int decimal_plus(decimal **ret, decimal *v1, decimal *v2) {
 		*ret = decimal_copy(decimal_nil, 1);
 		return GDK_SUCCEED;
 	} else if (ISZERO(v1)) {
-		*ret = decimal_copy(v2, PREC(v2));
+		*ret = decimal_copy(v2, v2->precision);
 		return GDK_SUCCEED;
 	} else if (ISZERO(v2)) {
-		*ret = decimal_copy(v1, PREC(v1));
+		*ret = decimal_copy(v1, v1->precision);
 		return GDK_SUCCEED;
 	} 
 
@@ -1378,7 +1369,7 @@ int decimal_plus(decimal **ret, decimal *v1, decimal *v2) {
 		tmp = v2; v2 = v1; v1 = tmp;
 	}
 	if (v2->negative && !v1->negative) {
-		tmp = decimal_copy(v2, PREC(v2));
+		tmp = decimal_copy(v2, v2->precision);
 		tmp->negative = 0;		 
 		x = decimal_minus(ret, v1, tmp);
 		GDKfree(tmp);
@@ -1389,16 +1380,16 @@ int decimal_plus(decimal **ret, decimal *v1, decimal *v2) {
 		tmp = v2; v2 = v1; v1 = tmp;
 	}
 	if (SCALE(v2) > SCALE(v1)) {
-		v2 = v3 = decimal_copy(v2, PREC(v2) + SCALE(v2) - SCALE(v1) );
+		v2 = v3 = decimal_copy(v2, v2->precision + SCALE(v2) - SCALE(v1) );
 	}
-	if (PREC(v2) > PREC(v1)) {
+	if (v2->precision > v1->precision) {
 		tmp = v2; v2 = v1, v1 = tmp;
 	}
 	/* check for nil  and overflow */
-	tot = *ret = decimal_create(PREC(v1)+1, SCALE(v1), v1->negative);
+	tot = *ret = decimal_create(v1->precision+1, SCALE(v1), v1->negative);
 	if (!ISNIL(tot)) {
 		/* accumulate using simple addition */
-		decimal_normalize(tot,v1,1,PREC(v1)+1,FALSE);
+		decimal_normalize(tot,v1,1,v1->precision+1,FALSE);
 		decimal_simple_inc(tot,v2);
 		decimal_normalize(tot,tot,0,0,TRUE);
 	}
@@ -1420,11 +1411,11 @@ int decimal_minus(decimal **ret, decimal *v1, decimal *v2) {
 		*ret = decimal_copy(decimal_nil, 1);
 		return GDK_SUCCEED;
 	} else if (ISZERO(v1)) {
-		*ret = decimal_copy(v2, PREC(v2));
+		*ret = decimal_copy(v2, v2->precision);
 		(*ret)->negative = !(*ret)->negative;
 		return GDK_SUCCEED;
 	} else if (ISZERO(v2)) {
-		*ret = decimal_copy(v1, PREC(v1));
+		*ret = decimal_copy(v1, v1->precision);
 		return GDK_SUCCEED;
 	} 
 
@@ -1433,7 +1424,7 @@ int decimal_minus(decimal **ret, decimal *v1, decimal *v2) {
 		tmp = v2; v2 = v1; v1 = tmp;
 	}
 	if (v2->negative && !v1->negative) {
-		tmp = decimal_copy(v2, PREC(v2));
+		tmp = decimal_copy(v2, v2->precision);
 		tmp->negative = 0;		 
 		x = decimal_plus(ret, v1, tmp);
 		if (x == GDK_SUCCEED && negative && ISZERO(*ret)==0 && ISNIL(*ret)==0)  {
@@ -1447,14 +1438,14 @@ int decimal_minus(decimal **ret, decimal *v1, decimal *v2) {
 		tmp = v2; v2 = v1; v1 = tmp; negative = !negative;
 	}
 	if (SCALE(v2) > SCALE(v1)) {
-		v2 = v3 = decimal_copy(v2, PREC(v2) + SCALE(v2) - SCALE(v1));
+		v2 = v3 = decimal_copy(v2, v2->precision + SCALE(v2) - SCALE(v1));
 	}
 	/* minus without overflow by subtracting the smaller from the bigger number */
 	x = decimal_compare(v1,v2);
 	if ((!v1->negative && x < 0) || (v1->negative && x > 0)) {
 		tmp = v2; v2 = v1; v1 = tmp; negative = !negative;
 	}
-	*ret = decimal_copy(v1, PREC(v1));
+	*ret = decimal_copy(v1, v1->precision);
 	decimal_simple_dec(*ret,v2);
 	(*ret)->negative = negative;
 	decimal_normalize(*ret,*ret,0,0,TRUE);
@@ -1468,7 +1459,7 @@ int decimal_minus(decimal **ret, decimal *v1, decimal *v2) {
 @c
 /* Returns a decimal whose value is (val1 * val2). */
 int decimal_multiply(decimal **ret, decimal *v1, decimal *v2) {
-	int v1_precision=PREC(v1), v2_precision=PREC(v2), x;
+	int v1_precision=v1->precision, v2_precision=v2->precision, x;
 	decimal *tot, *tmp;
 
 	DECIMAL_DEBUG(v1, "decimal_multiply() left", 0);
@@ -1478,15 +1469,15 @@ int decimal_multiply(decimal **ret, decimal *v1, decimal *v2) {
 	if (ISZERO(v1) || ISZERO(v2)) {
 		*ret = decimal_create(0,0,0);
 		return GDK_SUCCEED;
-	} else if (ISTENFOLD(v1) && (SCALE(v2)+PREC(v1)+SCALE(v1)) <= SCALE_MAX) {
-		*ret = decimal_copy(v2, PREC(v2));
+	} else if (ISTENFOLD(v1) && (SCALE(v2)+v1->precision+SCALE(v1)) <= SCALE_MAX) {
+		*ret = decimal_copy(v2, v2->precision);
 		(*ret)->negative = v1->negative^v2->negative;
-		(*ret)->scale += SCALE(v1) + PREC(v1) - 1;
+		(*ret)->scale += SCALE(v1) + v1->precision - 1;
 		return GDK_SUCCEED;
-	} else if (ISTENFOLD(v2) && (SCALE(v1)+PREC(v2)+SCALE(v1)) <= SCALE_MAX) {
-		*ret = decimal_copy(v1, PREC(v1));
+	} else if (ISTENFOLD(v2) && (SCALE(v1)+v2->precision+SCALE(v1)) <= SCALE_MAX) {
+		*ret = decimal_copy(v1, v1->precision);
 		(*ret)->negative = v1->negative^v2->negative;
-		(*ret)->scale += SCALE(v2) + PREC(v2) - 1;
+		(*ret)->scale += SCALE(v2) + v2->precision - 1;
 		return GDK_SUCCEED;
 	}
 	
@@ -1499,8 +1490,8 @@ int decimal_multiply(decimal **ret, decimal *v1, decimal *v2) {
 	}
 	v1_precision++; v2_precision++;
 	tot = *ret = decimal_create(v1_precision+v2_precision,
-					(SCALE(v1)+PREC(v1)-v1_precision) + 
-					(SCALE(v2)+PREC(v2)-v2_precision), 
+					(SCALE(v1)+v1->precision-v1_precision) + 
+					(SCALE(v2)+v2->precision-v2_precision), 
 					v1->negative^v2->negative);
 	/* check for overflow */
 	if (ISNIL(v1) || ISNIL(v2) || ISNIL(tot)) {
@@ -1526,7 +1517,7 @@ int decimal_multiply(decimal **ret, decimal *v1, decimal *v2) {
 		if (f == 0) {
 			continue; /* optimization: just skip zeros */
 		}
-		z = PREC(tmp);
+		z = tmp->precision;
 		y = x + v2_precision;
 
 		while(--z > y) {
@@ -1555,10 +1546,10 @@ Uses a multiplication table containing div*1,.., div*9 to speed up matching.
 @c
 static INLINE
 void decimal_mult_table(decimal* div, decimal* mult[10]) {
-	int i, len=TOTLEN(PREC(div)+1);
+	int i, len=TOTLEN(div->precision+1);
 	char *p = (char*) GDKmalloc(i = 10*len);
 	memset(p, 0, i);
-	mult[0] = decimal_alloc(PREC(div)+1, SCALE(div), div->negative, (decimal*) p, &len);
+	mult[0] = decimal_alloc(div->precision+1, SCALE(div), div->negative, (decimal*) p, &len);
 	for(i=1; i<10; i++) {
 		decimal_simple_inc(mult[0], div);
 		mult[i] = (decimal*) (p += len);
@@ -1568,9 +1559,9 @@ void decimal_mult_table(decimal* div, decimal* mult[10]) {
 
 #define CONCAT_DIGIT(dst, src, y) { /* append a digit from src[y] to dst */   \
 		int pos = y;						      \
-		unsigned int val = (pos < PREC(src))?GETNUM(src,pos):0U; \
-		if (val || PREC(dst)) {				      \
-			SETNUM(dst, PREC(dst), val);		      \
+		unsigned int val = (pos < src->precision)?GETNUM(src,pos):0U; \
+		if (val || dst->precision) {				      \
+			SETNUM(dst, dst->precision, val);		      \
 			dst->precision++;				      \
 		}}
 
@@ -1579,12 +1570,12 @@ static INLINE
 void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mult[], int precision) {
 	decimal *chunk = mult[0];
 	unsigned int digit, factor=GETNUM(div,0);
-	int dprec, dscal, dneg, cmp, z, y, x = NUMLEN(PREC(chunk)); 
+	int dprec, dscal, dneg, cmp, z, y, x = NUMLEN(chunk->precision); 
 
 	/* set chunk to zero */
 	while(--x >= 0) chunk->num[x] = 0; 
 	chunk->precision = 0;
-	dprec = PREC(chunk);	/* backup header of chunk */
+	dprec = chunk->precision;	/* backup header of chunk */
 	dscal = SCALE(chunk);
 	dneg = chunk->negative;
 
@@ -1592,7 +1583,7 @@ void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mu
 	x = -1; y= 0; z = precision; 
 	for (;;) {
 		/* add digits to chunk till it has as many significant digits as div */
-		if (PREC(chunk) < PREC(div)) {
+		if (chunk->precision < div->precision) {
 			if (++x >= z) break;
 			SETNUM(tot, x, 0U); 
 			CONCAT_DIGIT(chunk, num, y++);
@@ -1631,8 +1622,8 @@ void decimal_divide_intern(decimal *tot, decimal *num, decimal *div, decimal* mu
 
 /* Returns a decimal whose value is (val1 / val2) (division by zero return decimal(nil)). */
 int decimal_divide(decimal **ret, decimal *num, decimal *div, int *precision) {
-	int p = MIN(MAX(0, PREC(div) + *precision),PRECISION_MAX);
-	int s = (SCALE(num)-SCALE(div)) + (PREC(num)-p); 
+	int p = MIN(MAX(0,div->precision + *precision),PRECISION_MAX);
+	int s = (SCALE(num)-SCALE(div)) + (num->precision-p); 
 	decimal *mult[10];
 	
 	DECIMAL_DEBUG(num, "decimal_divide() num", 1);
@@ -1645,11 +1636,11 @@ int decimal_divide(decimal **ret, decimal *num, decimal *div, int *precision) {
 	} else if (ISZERO(num)) {
 		*ret = decimal_copy(decimal_zero,1);
 		return GDK_SUCCEED;
-	} else if (ISTENFOLD(div) && (s-PREC(div)) > SCALE_MIN) {
+	} else if (ISTENFOLD(div) && (s-div->precision) > SCALE_MIN) {
 		*ret = decimal_copy(num, *precision); 
 		if (ISZERO(*ret) == 0 && ISNIL(*ret) == 0) {
 			(*ret)->negative = num->negative^div->negative;
-			(*ret)->scale = (PREC(num)+SCALE(num)+1)-(PREC(div)+SCALE(div)+*precision);
+			(*ret)->scale = (num->precision+SCALE(num)+1)-(div->precision+SCALE(div)+*precision);
 		}
 		return GDK_SUCCEED;
 	}
@@ -1670,7 +1661,7 @@ int decimal_divide(decimal **ret, decimal *num, decimal *div, int *precision) {
 
 /* default division measures how many times div goes into num */
 int decimal_divide_default(decimal **ret, decimal *num, decimal *div) {
-	int precision = MAX(0,(PREC(num)+SCALE(num)) - (PREC(div)+SCALE(div)));
+	int precision = MAX(0,(num->precision+SCALE(num)) - (div->precision+SCALE(div)));
 	return decimal_divide(ret, num, div, &precision);
 }
 
@@ -1692,10 +1683,10 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 	bm = BATmirror(bn);
 	/* create space for decimals */
 	if (prec) {
-		yy = MIN(PREC(div)+MAX(1,*prec)-1,PRECISION_MAX)+1;
+		yy = MIN(div->precision+MAX(1,*prec)-1,PRECISION_MAX)+1;
 	} else if (xx) {
 		decimal *d = (decimal*) BUNtvar(b,BUNfirst(b));
-		yy = TOTLEN(PREC(d)+1);
+		yy = TOTLEN(d->precision+1);
 	}
 	hp.filename = NULL;
 	HEAP_initialize_compact(&hp, MAX(10,xx)*yy, 0, 0, (int (*)(ptr)) decimal_length);
@@ -1706,7 +1697,7 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 	bn->tsorted = 0;
 	BATloopFast(b, p, q, xx) {
 		decimal *src = (decimal*) BUNtvar(b,p);
-		int divprc = prec?yy:PREC(src);
+		int divprc = prec?yy:src->precision;
 		int zero = ISZERO(src);
 		int nil = ISNIL(src);
 		int len = (zero || nil)?(int)sizeof(decimal):TOTLEN(divprc);
@@ -1725,7 +1716,7 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 		} else {
 			((int*) ((char*) dst + len))[-1] = 0; /* zero tail that may not be written */
 			dst->precision = divprc;
-			dst->scale = (SCALE(src)-SCALE(div)) + (PREC(src)-divprc); 
+			dst->scale = (SCALE(src)-SCALE(div)) + (src->precision-divprc); 
 			dst->negative = src->negative^div->negative;
 			decimal_divide_intern(dst, src, div, mult, divprc);
 		}
@@ -1753,7 +1744,7 @@ int decimal_bulkdivide_default(BAT** ret, BAT* b, decimal *div) {
 
 @- power
 @c
-#define DEC_PRECISION(d,x) { int _x = MIN(x,PREC(d)); d->scale += (PREC(d) - _x); d->precision = _x; }
+#define DEC_PRECISION(d,x) { int _x = MIN(x,d->precision); d->scale += (d->precision - _x); d->precision = _x; }
 
 /* Raises a decimal to some (integer) power. precision determines the maximum precision of the result. */
 int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
@@ -1762,11 +1753,11 @@ int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
 
 	/* handle special cases */
 	if (ISNIL(d) || raise == int_nil || precision == int_nil || 
-            ((PREC(d)+SCALE(d)) > 0 && raise*(PREC(d)+SCALE(d)) > SCALE_MAX)) 
+            ((d->precision+SCALE(d)) > 0 && raise*(d->precision+SCALE(d)) > SCALE_MAX)) 
 	{
 		*ret = decimal_copy(decimal_nil,1);
 		return GDK_SUCCEED;
-	} else if ((PREC(d)+SCALE(d)) < 0 && raise*(PREC(d)+SCALE(d)) < SCALE_MIN) { 
+	} else if ((d->precision+SCALE(d)) < 0 && raise*(d->precision+SCALE(d)) < SCALE_MIN) { 
 		*ret = decimal_copy(decimal_zero,1);
 		return GDK_SUCCEED;
 	} else if (raise == 0) {
@@ -1787,7 +1778,7 @@ int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
 	}
 
 	/* algorithm uses squaring of intermediates results; needs log2(n) multiplications */
-	dprec = PREC(d);	/* backup header of d */
+	dprec = d->precision;	/* backup header of d */
 	dscal = SCALE(d);
 	dneg = d->negative;
 
@@ -1833,7 +1824,7 @@ int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
 }
 
 int decimal_pow_default(decimal **ret, decimal *d, int *raise) {
-	int precision = PREC(d);
+	int precision = d->precision;
 	return decimal_pow(ret, d, raise, &precision); 
 }
 @}

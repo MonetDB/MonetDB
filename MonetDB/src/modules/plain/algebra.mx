@@ -638,6 +638,103 @@ that for the moment are defined as procs.
     ADDHELP("join", "boncz", "Aug  6 1998",
             "Returns [left.head,right.tail] where (*fcn)(left.tail,right.head,..params..)", "algebra");
 
+    # SQL LIKE functionality, vectorized MIL implementation
+    PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid]  {
+        var s;
+		var idxper;
+		var idxund;
+		var isper;
+		var idx;
+		
+		idxper := find_unescaped_occurrence(pat, '%');
+		idxund := find_unescaped_occurrence(pat, '_');
+
+        if ((idxper = -1) and (idxund = -1)) {
+			# no % or _ found at all, return simple selection on the given
+			# string with no hassle of fancy wildcard characters
+            return b.uselect(pat);
+		} else if (idxper = -1) {
+			idx := idxund;
+			isper := false;
+		} else if (idxund = -1) {
+			idx := idxper;
+			isper := true;
+		} else {
+			# idxper can never be equal to idxund at this point
+			if (idxper < idxund) {
+				idx := idxper;
+				isper := true;
+			} else {
+				idx := idxund;
+				isper := false;
+			}
+		}
+
+		if (idx > 0) {
+			s := b.[search](pat.string(0, idx)).select(0);
+			if (isper) {
+				b := b.[string](s, [-](b.semijoin(s).[length](), s));
+			} else {
+				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
+			}
+		}
+
+		while ((idx :+= 1) < pat.length()) {
+			# remove from the search pattern what we have matched so far
+            pat := pat.string(idx, pat.length()-idx);
+
+			# find next match for the last matching char (% or _)
+			if (isper) {
+				idxper := find_unescaped_occurrence(pat, '%');
+				# correct value of other index
+				if (idxund > 0) idxund :-= idx;
+			} else {
+				idxund := find_unescaped_occurrence(pat, '_');
+				# correct value of other index
+				if (idxper > 0) idxper :-= idx;
+			}
+				
+			if ((idxper = -1) and (idxund = -1)) {
+				idx := -1;
+			} else if (idxper = -1) {
+				idx := idxund;
+				isper := false;
+			} else if (idxund = -1) {
+				idx := idxper;
+				isper := true;
+			} else {
+				# idxper can never be equal to idxund at this point
+				if (idxper < idxund) {
+					idx := idxper;
+					isper := true;
+				} else {
+					idx := idxund;
+					isper := false;
+				}
+			}
+		
+			# is idx is smaller than 0 at this point, then both idxper and
+			# idxund are -1
+			if (idx < 0) {
+				if (pat.length() > 0) {
+					b := [endsWith](b,pat).[ifthen](b);
+				}
+				break;
+			}
+			
+			s := b.[search](pat.string(0, idx)).select(0, int(nil));
+			if (isper) {
+				b := b.[string](s, [-](b.semijoin(s).[length](), s));
+			} else {
+				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
+			}
+		}
+
+        return b.mark(nil);
+    }
+    ADDHELP("likeselect", "groffen", "Sep 26 2004",
+    "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
+    
 	proc find_unescaped_occurrence(str b, chr c) : int {
 		var idx := b.search(c);
 		var tmp;
@@ -673,139 +770,6 @@ that for the moment are defined as procs.
     ADDHELP("find_unescaped_occurrence", "groffen", "Sep 26 2004",
     "finds the first occurrence of c that is not escaped by a \\", "algebra");
 
-    # SQL LIKE functionality, vectorized MIL implementation
-    PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid]  {
-        var s;
-		var idxper;
-		var idxund;
-		var isper;
-		var idx;
-		var wasper;
-
-		# preprocess the pattern, remove redundant % and make sure
-		# %_ can be handled by replacing it with _%
-		# consider 'bla%_!': this would match anything like /bla.+!/
-		# since we match from the left, the _ is matched immediately,
-		# after which the ! might not be found.  To circumvent this
-		# problem, we replace %_ with _%.  This results in the _ being
-		# matched immediately -- which is already was -- and a variable
-		# space after it.  This substitution works for the given
-		# pattern, as it basically requires at least one char to be
-		# between bla and !.
-		pat := substitute(pat, "%_", "_%", true);
-		pat := substitute(pat, "%%", "%", true);
-		
-		idxper := find_unescaped_occurrence(pat, '%');
-		idxund := find_unescaped_occurrence(pat, '_');
-
-		# force matching without position freedom for the first part
-		wasper := false;
-
-        if ((idxper = -1) and (idxund = -1)) {
-			# no % or _ found at all, return simple selection on the given
-			# string with no hassle of fancy wildcard characters
-            return b.uselect(pat);
-		} else if (idxper = -1) {
-			idx := idxund;
-			isper := false;
-		} else if (idxund = -1) {
-			idx := idxper;
-			isper := true;
-		} else {
-			# idxper can never be equal to idxund at this point
-			if (idxper < idxund) {
-				idx := idxper;
-				isper := true;
-			} else {
-				idx := idxund;
-				isper := false;
-			}
-		}
-
-		while (idx < pat.length()) {
-			if (wasper) {
-				# do position free match
-				
-				# is idx is smaller than 0 at this point, then both idxper and
-				# idxund are -1; we only have a tail, so we should see if it
-				# matches to complete this search
-				if (idx < 0) {
-					if (pat.length() > 0) {
-						b := b.[endsWith](pat).[ifthen](b);
-					}
-					break;
-				}
-				if (isper) {
-					s := b.[search](pat.string(0, idx)).select(0, int(nil));
-					b := b.[string](s.[+](idx));
-				} else {
-					b := ((b.[length]()).[>=](idx + 1)).[ifthen](b);
-					s := b.[search](pat.string(0, idx)).select(0, int(nil));
-					b := b.[string](s.[+](idx + 1));
-				}
-			} else {
-				# do a startsWith match
-
-				# is idx is smaller than 0 at this point, then both idxper and
-				# idxund are -1; we only have a tail, so we should see if it
-				# matches to complete this search
-				if (idx < 0) {
-					b := (b.[=](pat)).[ifthen](b);
-					break;
-				}
-
-				b := (b.[startsWith](pat.string(0, idx))).[ifthen](b);
-				if (isper) {
-					# shortcut; everything matches with an empty string
-					if (idx > 0) b := b.[string](idx);
-				} else {
-					b := ((b.[length]()).[>=](idx + 1)).[ifthen](b);
-					b := b.[string](idx + 1);
-				}
-			}
-
-			wasper := isper;
-
-			# remove from the search pattern what we have matched so far
-			idx :+= 1;	# include the wilcard char!
-			pat := pat.string(idx);
-
-			# find next match for the last matching char (% or _)
-			if (isper) {
-				idxper := find_unescaped_occurrence(pat, '%');
-				# correct value of other index
-				if (idxund > 0) idxund :-= idx;
-			} else {
-				idxund := find_unescaped_occurrence(pat, '_');
-				# correct value of other index
-				if (idxper > 0) idxper :-= idx;
-			}
-
-			if ((idxper = -1) and (idxund = -1)) {
-				idx := -1;
-			} else if (idxper = -1) {
-				idx := idxund;
-				isper := false;
-			} else if (idxund = -1) {
-				idx := idxper;
-				isper := true;
-			} else {
-				# idxper can never be equal to idxund at this point
-				if (idxper < idxund) {
-					idx := idxper;
-					isper := true;
-				} else {
-					idx := idxund;
-					isper := false;
-				}
-			}
-		}
-
-        return b.mark(nil);
-    }
-    ADDHELP("likeselect", "groffen", "Sep 26 2004",
-    "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
-    
 
     PROC mil_select(bat[any::1,any::2] b, str fcn, ..any..) : bat[any::1,any::2] 
     {

@@ -27,7 +27,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("MonetDB", 4.4.3)
+AM_INIT_AUTOMAKE("MonetDB", 4.4.0)
 AM_CONFIG_HEADER(monetdb_config.h:conf/config.h.in)
 CONFIG_H=monetdb_config.h
 AC_SUBST(CONFIG_H)
@@ -114,7 +114,17 @@ dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
 AC_C_CONST()
-AC_C_INLINE()
+case $GCC-$host_os in
+-aix*)	dnl  With the native AIX/IBM compiler (xlc), 
+	dnl  AC_C_INLINE() detects that inline is "__inline"
+	dnl  (while it detects "inline" with gcc).
+	dnl  However, system header files do use "inline",
+	dnl  complain if inline is defined as "__inline".
+	dnl  Simply skipping the inline-detection
+	dnl  and using the default "inline" seems to work fine...
+	;;
+*)	AC_C_INLINE();;
+esac
 
 dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
 

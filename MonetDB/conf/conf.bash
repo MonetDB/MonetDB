@@ -231,10 +231,6 @@ if [ "${os}" = "Linux" ] ; then
 			libpath="/home/niels/soft/local/lib:${libpath}"
 		fi
 	fi
-	# Java support on Gentoo systems
-	if [ -x /usr/bin/java-config ]; then
-	        binpath="`/usr/bin/java-config -O`/bin:${binpath}"
-	fi
 	domain="`domainname`"
 	if [ -x /net/lin_local/java/j2sdk1.4.2/bin/javac  -a  -x /net/lin_local/java/j2sdk1.4.2/bin/jar ] ; then
 		# java in Konstanz
@@ -411,7 +407,7 @@ if [ "${cxx}" ] ; then
 	conf_opts="${conf_opts} --with-gxx='${cxx}'"
 fi
 if [ "${BITS}" = "64" ] ; then
-	conf_opts="${conf_opts} --enable-bits=${BITS}"
+	conf_opts="${conf_opts} --with-bits=${BITS}"
 fi
 
 if [ "${DEBUG}" ] ; then

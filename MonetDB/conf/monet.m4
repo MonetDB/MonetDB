@@ -370,16 +370,11 @@ dnl  default javac flags
 JAVACFLAGS="$JAVACFLAGS -g:none -O"
 AC_SUBST(JAVACFLAGS)
 
+bits=32
 AC_ARG_WITH(bits,
 	AC_HELP_STRING([--with-bits=BITS],
-		[obsolete: use --enable-bits instead]),
-	AC_MSG_ERROR([argument --with-bits is obsolete: use --enable-bits instead]))
-
-bits=32
-AC_ARG_ENABLE(bits,
-	AC_HELP_STRING([--enable-bits=BITS],
 		[specify number of bits (32 or 64)]), [
-case $enableval in
+case $withval in
 32)	case "$host" in
 	ia64*)	AC_ERROR([we do not support 32 bits on $host, yet]);;
 	esac
@@ -389,9 +384,9 @@ case $enableval in
 	x86_64*--icc*) AC_ERROR([$CC on $host does not support 64 bits]);;
 	esac
 	;;
-*)	AC_ERROR(--enable-bits argument must be either 32 or 64);;
+*)	AC_ERROR(--with-bits argument must be either 32 or 64);;
 esac
-bits=$enableval
+bits=$withval
 ])
 if test "$bits" = "64"; then
 	dnl  Keep in mind how to call the 32-bit compiler.

@@ -843,7 +843,6 @@ def find_test_dirs(thisdir) :
 
 def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
-    elem = None
     FdOut = -1
     FdErr = -1
     TSTSRCBASE = env['TSTSRCBASE']
@@ -877,7 +876,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                 testlist.append((tst,cond))
     if not testlist:
         Warn("No tests found in '"+TSTSRCDIR+"`; skipping directory!")
-        return td, elem
+        return td
 
     env['TSTDB']     = TSTDB
     env['TSTDIR']    = TSTDIR
@@ -899,6 +898,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
+    elem = None
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR':
             LogDBdir = os.path.join(env[LogDBvar],TSTDB)
@@ -913,14 +913,14 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                     Warn(LogDBtxt+"database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem
+                    return td
             try:
                 os.makedirs(LogDBdir)
             except:
                 Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
                 #TODO:
                 # add "something" to HTML output
-                return td, elem
+                return td
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -954,7 +954,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     else: # THISFILE == "Mapprove.py"
         if not os.path.exists(TSTTRGDIR):
             Warn("Output directory '"+TSTTRGDIR+"` missing; skipping directory!")
-            return td, elem
+            return td
 
         for TST,COND in testlist:
             td = td + ApproveOutput(env, TST)
@@ -1810,10 +1810,6 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
         TestErr.write(Prompt(cmd))
         TestErr.flush()
         pOut,pIn,pErr = popen2.popen3(cmd)
-
-    if OS == "IRIX" or OS == "IRIX64":
-    	time.sleep(1)
-
     pIn.write(TestIn)
     pIn.flush()
     return pIn, pOut, pErr
@@ -1888,23 +1884,6 @@ def Log() :
     time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### Log() #
 
-def mapi_ping(port) :
-    retry = 0
-    wait = 1
-    host = ''
-    while (retry < 3):
-	retry += 1
-    	try:
-            	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            	sock.connect((host, port))
-		sock.makefile('w').write("ping\n");
-		return True
-        except socket.error, (Serrno,Serrstr):
-            pass
-        time.sleep(wait)
-    return False
-### mapi_ping() #
-
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     ATJOB2 = ""
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
@@ -1963,17 +1942,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         Srvr = Srvr+'echo Over..'
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, '\nprintf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
-        ln="dummy"
-        while 0 < len(ln) < 6 or ln[:6] not in ['Ready.','Over..']:
+        ln=""
+        while len(ln) < 6 or ln[:6] not in ['Ready.','Over..']:
             ln=pSrvrOut.readline()
             SrvrOut.write(ln)
             SrvrOut.flush()
         if ln[:6] != 'Ready.':
             ServerReady = False
-
-	if ServerReady:
-    		port = int(env[SERVER+'PORT'])
-		ServerReady = mapi_ping(port)
 
     else:
         ClntOutFile = TestOutFile
@@ -1998,11 +1973,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             for f in d:
                 if test.match(f):
                     if CALL in ["pf", "pfXs"]:
-                        RunIt("( %s %s | %s --dbinit='module(pathfinder,pf_support,ascii_io);' )" % (exe['XQuery_Client'][1],f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
+                        RunIt("%s %s | %s --dbinit='module(pathfinder,pf_support,ascii_io);'" % (exe['XQuery_Client'][1],f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
                     elif CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     elif env['VERSION'] >= 49900:
-                        RunIt("( M2m %s | %s )" % (f,cmd), "", ClntOutFile, ClntErrFile)
+                        RunIt("M2m %s | %s" % (f,cmd), "", ClntOutFile, ClntErrFile)
                     else:
                         RunIt(cmd+"< "+f, "", ClntOutFile, ClntErrFile)
         elif CALL in ["milC", "milCXs"]:
@@ -2074,8 +2049,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             except IOError, (IOerrNo, IOerrStr):
                 EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
                 EpiFailed = EpiFailed+"\n! Probably, Mserver has died before or during. !\n"
-            ln="dummy"
-            while 0 < len(ln) < 6 or ln[:6] not in ['Done..','Over..']:
+            ln=""
+            while len(ln) < 6 or ln[:6] not in ['Done..','Over..']:
                 ln=pSrvrOut.readline()
                 SrvrOut.write(ln)
                 SrvrOut.flush()
@@ -2382,7 +2357,7 @@ def main(argv) :
         dft['SQLCLIENT']      = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
         dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
         dft['X100CLIENT']     = "'x100run_mapi'" # --port='+env['MAPIPORT']"
-        dft['XQUERYCLIENT']   = "'pf -M'" # --port='+env['MAPIPORT']"
+        dft['XQUERYCLIENT']   = "'pf'" # --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
     env = {}
