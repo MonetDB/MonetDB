@@ -75,6 +75,7 @@ SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 				 pcbDesc, pfDesc);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 		  SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
@@ -123,3 +124,4 @@ SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

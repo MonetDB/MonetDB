@@ -62,6 +62,7 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 			     cbSqlStrMax, pcbSqlStr);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	      SQLWCHAR *szSqlStr, SQLINTEGER cbSqlStrMax,
@@ -92,3 +93,4 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

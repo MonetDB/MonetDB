@@ -7,7 +7,7 @@
 /* (c) Copyright 1991- 1999 Microsoft Corporation. All rights reserved.
 /*--------------------------------------------------------------------*/
 
-#include "sql_config.h"
+#include "ODBCGlobal.h"
 #include <windows.h>
 #include <sql.h>
 #include <sqlext.h>
@@ -142,6 +142,7 @@ static BOOL
 VersionCheckCopyFile(const char *srcpath, const char *dstpath,
 		     const char *filename)
 {
+	BOOL fileexists = FALSE;
 	char srcfile[512];
 	char dstfile[512];
 	char srcfileVersion[512];
@@ -162,15 +163,44 @@ VersionCheckCopyFile(const char *srcpath, const char *dstpath,
 			return TRUE;
 		}
 		/* file exists but is not up-to-date, so copy */
+		fileexists = TRUE;
+
+		/* move the existing file out of the way */
+		/* reuse dstfileVersion as temporary file name */
+		strcpy(dstfileVersion, dstfile);
+		/* change extension */
+		dstfileVersion[strlen(dstfileVersion) - 1] = '~';
+		if (!MoveFileEx(dstfile, dstfileVersion, MOVEFILE_REPLACE_EXISTING)) {
+			snprintf(srcfileVersion, sizeof(srcfileVersion),
+				 "Unable to move %s to %s\n", dstfile, dstfileVersion);
+			MessageBox(NULL, srcfileVersion, "VersionCheckCopyFile",
+				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
+			return FALSE;
+		}
 	}
 	/* else file does not exist, so copy */
 
 	if (!CopyFile(srcfile, dstfile, FALSE)) {
 		snprintf(srcfileVersion, sizeof(srcfileVersion),
 			 "Unable to copy %s to %s\n", srcfile, dstfile);
+		if (fileexists) {
+			/* move original file back */
+			MoveFileEx(dstfileVersion, dstfile, MOVEFILE_REPLACE_EXISTING);
+		}
 		MessageBox(NULL, srcfileVersion, "VersionCheckCopyFile",
 			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		return FALSE;
+	}
+
+	if (fileexists) {
+		/* tell system to remove original file on reboot */
+		if (!MoveFileEx(dstfileVersion, NULL, MOVEFILE_DELAY_UNTIL_REBOOT)) {
+			snprintf(srcfileVersion, sizeof(srcfileVersion),
+				 "Unable to delete %s\n", dstfileVersion);
+			MessageBox(NULL, srcfileVersion, "VersionCheckCopyFile",
+				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -226,8 +256,9 @@ InstallMyDriver(const char *driverpath)
 
 	snprintf(driver, sizeof(driver),
 		 "%s;Driver=%s\\%s;Setup=%s\\%s;APILevel=1;"
-		 "ConnectFunctions=YYN;DriverODBCVer=03.51;SQLLevel=3;",
-		 DriverName, inpath, DriverDLL, inpath, DriverDLLs);
+		 "ConnectFunctions=YYN;DriverODBCVer=%s;SQLLevel=3;",
+		 DriverName, inpath, DriverDLL, inpath, DriverDLLs,
+		 MONETDB_ODBC_VER);
 
 	for (p = driver; *p; p++)
 		if (*p == ';')
@@ -270,6 +301,10 @@ RemoveMyDriver()
 	valtype = REG_DWORD;
 	rc = SHGetValue(HKEY_LOCAL_MACHINE, buf, "UsageCount", &valtype,
 			&usagecount, &valsize);
+	if (rc == ERROR_FILE_NOT_FOUND) {
+		/* not installed, do nothing */
+		exit(0);
+	}
 	if (rc != ERROR_SUCCESS) {
 		ProcessSysErrorMessage(rc, "one");
 		return FALSE;
@@ -353,10 +388,7 @@ RemoveMyDSN()
 	for (p = buf; *p; p++)
 		if (*p == ';')
 			*p = 0;
-	if (!SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, buf) &&
-	    ProcessSQLErrorMessages("SQLConfigDataSource"))
-		return FALSE;
-
+	SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, buf);
 	return TRUE;
 }
 
@@ -450,7 +482,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	if (strcmp("/Install", argv[1]) == 0) {
-		char *buf = malloc(strlen(argv[0]) + 2);
+		char *buf = malloc(strlen(argv[0]) + 6);
 		char *p;
 		strcpy(buf, argv[0]);
 		if ((p = strrchr(buf, '\\')) != 0 ||
@@ -458,11 +490,17 @@ main(int argc, char **argv)
 			*p = 0;
 		else
 			strcpy(buf, ".");
-		if (!Install(NULL, buf)) {
+		strcat(buf, "\\lib");
+		p = malloc(strlen(buf) + 10);
+		strcpy(p, buf);
+		strcat(p, "\\odbcdist");
+		if (!Install(p, buf)) {
 			MessageBox(NULL, "ODBC Install Failed", argv[0],
 				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 			exit(1);
 		}
+		free(p);
+		free(buf);
 	} else if (strcmp("/Uninstall", argv[1]) == 0) {
 		if (!Uninstall()) {
 			MessageBox(NULL, "ODBC Uninstall Failed", argv[0],

@@ -288,6 +288,7 @@ SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 				FieldIdentifier, Value, BufferLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
@@ -325,3 +326,4 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

@@ -52,6 +52,7 @@ SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	return SQLExecDirect_((ODBCStmt *) hStmt, szSqlStr, nSqlStr);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
@@ -77,3 +78,4 @@ SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStr)
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

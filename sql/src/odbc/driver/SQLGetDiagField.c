@@ -23,7 +23,7 @@
 
 #define copyDiagString(str, buf, len, lenp)				\
 		do {							\
-			size_t _l;					\
+			ssize_t _l;					\
 			if (len < 0)					\
 				return SQL_ERROR;			\
 			_l = str ? strlen((char *) str) : 0;		\
@@ -146,6 +146,7 @@ SQLGetDiagField(SQLSMALLINT HandleType, SQLHANDLE Handle,
 				DiagInfo, BufferLength, StringLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle,
 		 SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier,
@@ -189,3 +190,4 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

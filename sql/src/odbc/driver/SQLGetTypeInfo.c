@@ -227,6 +227,7 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	return SQLGetTypeInfo_(stmt, nSqlDataType);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetTypeInfoW(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 {
@@ -243,3 +244,4 @@ SQLGetTypeInfoW(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 
 	return SQLGetTypeInfo_(stmt, nSqlDataType);
 }
+#endif	/* WITH_WCHAR */

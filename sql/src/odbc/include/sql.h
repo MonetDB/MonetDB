@@ -8,10 +8,10 @@
 #define __SQL_H
 
 /****************************
- * default to 3.51 declare something else before here and you get a whole new ball of wax
+ * default to 3.52 declare something else before here and you get a whole new ball of wax
  ***************************/
 #ifndef ODBCVER
-#define ODBCVER 0x0351
+#define ODBCVER 0x0352
 #endif
 
 #include "sqltypes.h"

@@ -151,6 +151,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 			   szUID, nUIDLength, szPWD, nPWDLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLConnectW(SQLHDBC hDbc,
 	    SQLWCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
@@ -185,3 +186,4 @@ SQLConnectW(SQLHDBC hDbc,
 		free(pwd);
 	return rc;
 }
+#endif	/* WITH_WCHAR */

@@ -58,10 +58,6 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 		}							\
 	} while (0)
 
-extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg);
-extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
-			    SQLWCHAR *buf, SQLINTEGER buflen,
-			    SQLSMALLINT *buflenout);
 
 /*
   Function to translate an ODBC SQL query to native format.
@@ -90,6 +86,13 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
 			errfunc((hdl), "01004", NULL, 0);	\
 	} while (0)
 
+#ifdef WITH_WCHAR
+extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length,
+			       char **errmsg);
+extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
+			    SQLWCHAR *buf, SQLINTEGER buflen,
+			    SQLSMALLINT *buflenout);
+
 #define fixWcharIn(ws, wsl, s, errfunc, hdl, exit)		\
 	do {							\
 		char *e;					\
@@ -116,7 +119,7 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
 		}							\
 		free(s);						\
 	} while (0)
-
+#endif	/* WITH_WCHAR */
 
 /* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and
    SQL_DESC_TYPE are interdependent and setting one affects the other.

@@ -609,19 +609,9 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLINTEGER);
 		break;
 
-	case SQL_LOCK_TYPES:			/* SQLSetPos NOT supported */
-	case SQL_POS_OPERATIONS:		/* SQLSetPos NOT supported */
-	case SQL_TIMEDATE_ADD_INTERVALS:	/* INTERVALS NOT supported */
-	case SQL_TIMEDATE_DIFF_INTERVALS:	/* INTERVALS NOT supported */
-		nValue = 0;
-		len = sizeof(SQLUINTEGER);
-		break;
-
-
+	/* return default values */
 	case SQL_DATETIME_LITERALS:
 	case SQL_DDL_INDEX:
-	case SQL_DESCRIBE_PARAMETER:
-	case SQL_DM_VER:
 	case SQL_DRIVER_HDESC:
 	case SQL_DROP_ASSERTION:
 	case SQL_DROP_CHARACTER_SET:
@@ -633,17 +623,29 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_DROP_VIEW:
 	case SQL_INFO_SCHEMA_VIEWS:
 	case SQL_INSERT_STATEMENT:
+	case SQL_LOCK_TYPES:
 	case SQL_MAX_ASYNC_CONCURRENT_STATEMENTS:
-	case SQL_MAX_IDENTIFIER_LEN:
 	case SQL_OJ_CAPABILITIES:
 	case SQL_PARAM_ARRAY_ROW_COUNTS:
 	case SQL_PARAM_ARRAY_SELECTS:
+	case SQL_POS_OPERATIONS:
 	case SQL_SCHEMA_USAGE:
+	case SQL_TIMEDATE_ADD_INTERVALS:
+	case SQL_TIMEDATE_DIFF_INTERVALS:
+		nValue = 0;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_DESCRIBE_PARAMETER:
+		sValue = "N";
+		break;
+	case SQL_DM_VER:
 	case SQL_XOPEN_CLI_YEAR:
-		/* TODO: implement all the other Info Types */
-		/* HYC00 = Optional feature not implemented */
-		addDbcError(dbc, "HYC00", NULL, 0);
-		return SQL_ERROR;
+		sValue = "";
+		break;
+	case SQL_MAX_IDENTIFIER_LEN:
+		nValue = 0;
+		len = sizeof(SQLUSMALLINT);
+		break;
 
 	default:
 		/* HY096 = Information type out of range */
@@ -686,6 +688,7 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 			   pnLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
@@ -713,33 +716,37 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_CATALOG_TERM:
 	case SQL_COLLATION_SEQ:
 	case SQL_COLUMN_ALIAS:
+	case SQL_DATABASE_NAME:
 	case SQL_DATA_SOURCE_NAME:
 	case SQL_DATA_SOURCE_READ_ONLY:
-	case SQL_DATABASE_NAME:
-	case SQL_ROW_UPDATES:
-	case SQL_SERVER_NAME:
-	case SQL_SEARCH_PATTERN_ESCAPE:
 	case SQL_DBMS_NAME:
 	case SQL_DBMS_VER:
-	case SQL_PROCEDURES:
-	case SQL_EXPRESSIONS_IN_ORDERBY:
-	case SQL_IDENTIFIER_QUOTE_CHAR:
-	case SQL_MULT_RESULT_SETS:
-	case SQL_MULTIPLE_ACTIVE_TXN:
-	case SQL_OUTER_JOINS:
-	case SQL_SCHEMA_TERM:
-	case SQL_PROCEDURE_TERM:
-	case SQL_TABLE_TERM:
-	case SQL_USER_NAME:
-	case SQL_INTEGRITY:
-	case SQL_KEYWORDS:
-	case SQL_ORDER_BY_COLUMNS_IN_SELECT:
-	case SQL_SPECIAL_CHARACTERS:
-	case SQL_MAX_ROW_SIZE_INCLUDES_LONG:
-	case SQL_NEED_LONG_DATA_LEN:
-	case SQL_LIKE_ESCAPE_CLAUSE:
 	case SQL_DESCRIBE_PARAMETER:
 	case SQL_DM_VER:
+	case SQL_DRIVER_NAME:
+	case SQL_DRIVER_ODBC_VER:
+	case SQL_DRIVER_VER:
+	case SQL_EXPRESSIONS_IN_ORDERBY:
+	case SQL_IDENTIFIER_QUOTE_CHAR:
+	case SQL_INTEGRITY:
+	case SQL_KEYWORDS:
+	case SQL_LIKE_ESCAPE_CLAUSE:
+	case SQL_MAX_ROW_SIZE_INCLUDES_LONG:
+	case SQL_MULTIPLE_ACTIVE_TXN:
+	case SQL_MULT_RESULT_SETS:
+	case SQL_NEED_LONG_DATA_LEN:
+	case SQL_ODBC_VER:
+	case SQL_ORDER_BY_COLUMNS_IN_SELECT:
+	case SQL_OUTER_JOINS:
+	case SQL_PROCEDURES:
+	case SQL_PROCEDURE_TERM:
+	case SQL_ROW_UPDATES:
+	case SQL_SCHEMA_TERM:
+	case SQL_SEARCH_PATTERN_ESCAPE:
+	case SQL_SERVER_NAME:
+	case SQL_SPECIAL_CHARACTERS:
+	case SQL_TABLE_TERM:
+	case SQL_USER_NAME:
 	case SQL_XOPEN_CLI_YEAR:
 		n = nInfoValueMax * 4;
 		ptr = malloc(n);
@@ -759,3 +766,4 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

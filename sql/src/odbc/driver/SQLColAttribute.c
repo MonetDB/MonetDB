@@ -224,6 +224,7 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 				pnValue);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 		 SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
@@ -275,3 +276,4 @@ SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

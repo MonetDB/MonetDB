@@ -24,10 +24,10 @@
 #endif
 
 /****************************
- * default to the 3.51 definitions. should define ODBCVER before here if you want an older set of defines
+ * default to the 3.52 definitions. should define ODBCVER before here if you want an older set of defines
  ***************************/
 #ifndef ODBCVER
-#define ODBCVER	0x0351
+#define ODBCVER	0x0352
 #endif
 
 /*
@@ -68,7 +68,7 @@ extern "C" {
 /****************************
  * These make up for having no windows.h
  ***************************/
-#ifndef ALLREADY_HAVE_WINDOWS_TYPE
+#ifndef ALREADY_HAVE_WINDOWS_TYPE
 
 #define FAR
 #define CALLBACK
@@ -255,7 +255,7 @@ typedef void*                   SQLHWND;
 /****************************
  * more basic data types to augment what windows.h provides
  ***************************/
-#ifndef ALLREADY_HAVE_WINDOWS_TYPE
+#ifndef ALREADY_HAVE_WINDOWS_TYPE
 
 typedef unsigned char           UCHAR;
 typedef signed char             SCHAR;
@@ -432,7 +432,7 @@ typedef struct tagSQL_NUMERIC_STRUCT
 
 #if (ODBCVER >= 0x0350)
 #ifdef GUID_DEFINED
-#ifndef ALLREADY_HAVE_WINDOWS_TYPE
+#ifndef ALREADY_HAVE_WINDOWS_TYPE
 typedef GUID	SQLGUID;
 #else
 typedef struct  tagSQLGUID

@@ -73,6 +73,7 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 				 cbConnStrOutMax, pcbConnStrOut);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 		  SQLWCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
@@ -100,3 +101,4 @@ SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 		free(in);
 	return rc;
 }
+#endif	/* WITH_WCHAR */

@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sql.h>
@@ -73,7 +77,7 @@ main(int argc, char **argv)
 	SQLHANDLE env;
 	SQLHANDLE dbc;
 	SQLHANDLE stmt, stmt2;
-	char *host = "Default";
+	char *dsn = "MonetDB";
 	char *user = "monetdb";
 	char *pass = "monetdb";
 	SQLRETURN ret;
@@ -85,13 +89,13 @@ main(int argc, char **argv)
 	SQL_TIME_STRUCT f5;
 
 	if (argc > 1)
-		host = argv[1];
+		dsn = argv[1];
 	if (argc > 2)
 		user = argv[2];
 	if (argc > 3)
 		pass = argv[3];
-	if (argc > 4 || *host == '-') {
-		fprintf(stderr, "Usage: %s [ host [ user [ password ] ] ]\n",
+	if (argc > 4 || *dsn == '-') {
+		fprintf(stderr, "Usage: %s [datasource [user [password]]]\n",
 			argv[0]);
 		exit(1);
 	}
@@ -108,7 +112,7 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
 	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle 1");
 
-	ret = SQLConnect(dbc, (SQLCHAR *) host, SQL_NTS,
+	ret = SQLConnect(dbc, (SQLCHAR *) dsn, SQL_NTS,
 			 (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
 

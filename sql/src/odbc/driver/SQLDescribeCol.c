@@ -116,6 +116,7 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 			       pnDecDigits, pnNullable);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
 		SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
@@ -146,3 +147,4 @@ SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

@@ -40,7 +40,7 @@ extern "C" {
 #endif
 
 #ifndef ODBCVER
-#define ODBCVER 0x0351
+#define ODBCVER 0x0352
 #endif
 
 #ifndef WINVER

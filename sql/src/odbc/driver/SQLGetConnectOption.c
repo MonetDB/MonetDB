@@ -66,6 +66,7 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	return SQLGetConnectOption_(dbc, nOption, pvParam);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 {
@@ -105,3 +106,4 @@ SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

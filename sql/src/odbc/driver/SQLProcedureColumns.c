@@ -97,6 +97,7 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 				    szColumnName, nColumnNameLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLProcedureColumnsW(SQLHSTMT hStmt,
 		     SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
@@ -137,3 +138,4 @@ SQLProcedureColumnsW(SQLHSTMT hStmt,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

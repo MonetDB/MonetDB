@@ -180,6 +180,7 @@ SQLColumns(SQLHSTMT hStmt,
 			   szColumnName, nColumnNameLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLColumnsW(SQLHSTMT hStmt,
 	    SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
@@ -218,3 +219,4 @@ SQLColumnsW(SQLHSTMT hStmt,
 		free(column);
 	return rc;
 }
+#endif	/* WITH_WCHAR */

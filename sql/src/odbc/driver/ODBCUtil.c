@@ -24,6 +24,22 @@
 #include <float.h>
 
 
+#ifdef NATIVE_WIN32
+/* Windows seems to need this */
+BOOL WINAPI
+DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
+{
+#ifdef ODBCDEBUG
+	ODBCLOG("DllMain %d\n", reason);
+#endif
+	(void) hinstDLL;
+	(void) reason;
+	(void) reserved;
+
+	return TRUE;
+}
+#endif
+
 /*
  * Utility function to duplicate an ODBC string (with a length
  * specified, may not be null terminated) to a normal C string (null
@@ -43,6 +59,7 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 	return tmp;
 }
 
+#ifdef WITH_WCHAR
 /* Conversion to and from SQLWCHAR */
 static int utf8chkmsk[] = {
 	0x0000007f,
@@ -123,11 +140,11 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
 			if (c & utf8chkmsk[n])
 				break;
 		if (n == 0)
-			*p++ = (SQLWCHAR) c;
+			*p++ = (SQLCHAR) c;
 		else {
-			*p++ = ((c >> (n * 6)) | (0x1F80 >> n)) & 0xFF;
+			*p++ = (SQLCHAR) (((c >> (n * 6)) | (0x1F80 >> n)) & 0xFF);
 			while (--n >= 0)
-				*p++ = ((c >> (n * 6)) & 0x3F) | 0x80;
+				*p++ = (SQLCHAR) (((c >> (n * 6)) & 0x3F) | 0x80);
 		}
 	}
 	*p = 0;
@@ -199,6 +216,7 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
 	*p = 0;
 	return NULL;
 }
+#endif	/* WITH_WCHAR */
 
 /*
  * Translate an ODBC-compatible query to one that the SQL server

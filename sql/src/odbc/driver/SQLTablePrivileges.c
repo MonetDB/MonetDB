@@ -80,6 +80,7 @@ SQLTablePrivileges(SQLHSTMT hStmt,
 				   szTableName, nTableNameLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLTablePrivilegesW(SQLHSTMT hStmt,
 		    SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
@@ -116,3 +117,4 @@ SQLTablePrivilegesW(SQLHSTMT hStmt,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

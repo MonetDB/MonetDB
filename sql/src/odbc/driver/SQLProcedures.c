@@ -89,6 +89,7 @@ SQLProcedures(SQLHSTMT hStmt,
 			      szProcName, nProcNameLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLProceduresW(SQLHSTMT hStmt,
 	       SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
@@ -125,3 +126,4 @@ SQLProceduresW(SQLHSTMT hStmt,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

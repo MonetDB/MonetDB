@@ -86,6 +86,7 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	return SQLPrepare_((ODBCStmt *) hStmt, szSqlStr, nSqlStrLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
@@ -111,3 +112,4 @@ SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

@@ -179,6 +179,7 @@ SQLStatistics(SQLHSTMT hStmt,
 			      nUnique, nReserved);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLStatisticsW(SQLHSTMT hStmt,
 	       SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
@@ -216,3 +217,4 @@ SQLStatisticsW(SQLHSTMT hStmt,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

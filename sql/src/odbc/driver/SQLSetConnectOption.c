@@ -62,7 +62,7 @@ SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOption\n");
+	ODBCLOG("SQLSetConnectOption %d %lx\n", nOption, (unsigned long) vParam);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -73,6 +73,7 @@ SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	return SQLSetConnectOption_(dbc, nOption, vParam);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 {
@@ -82,7 +83,7 @@ SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOptionW\n");
+	ODBCLOG("SQLSetConnectOptionW %d %lx\n", nOption, (unsigned long) vParam);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -109,3 +110,4 @@ SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

@@ -90,6 +90,7 @@ SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 			      Scale, Nullable);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetDescRecW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	       SQLWCHAR *Name, SQLSMALLINT BufferLength,
@@ -126,3 +127,4 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

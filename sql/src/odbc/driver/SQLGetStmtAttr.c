@@ -154,6 +154,7 @@ SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 			       BufferLength, StringLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
@@ -172,3 +173,4 @@ SQLGetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	return SQLGetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value,
 			       BufferLength, StringLength);
 }
+#endif	/* WITH_WCHAR */

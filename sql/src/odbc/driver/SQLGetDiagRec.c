@@ -151,6 +151,7 @@ SQLGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle,
 			      textLengthPtr);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle,
 	       SQLSMALLINT recNumber, SQLWCHAR *sqlState,
@@ -188,3 +189,4 @@ SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

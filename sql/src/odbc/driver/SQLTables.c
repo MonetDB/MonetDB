@@ -217,6 +217,7 @@ SQLTables(SQLHSTMT hStmt,
 			  szTableType, nTableTypeLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLTablesW(SQLHSTMT hStmt,
 	   SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
@@ -257,3 +258,4 @@ SQLTablesW(SQLHSTMT hStmt,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

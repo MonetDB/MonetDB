@@ -1,8 +1,9 @@
 #include "sql_config.h"
 #include <windows.h>
+#include <stdio.h>
+#define ALREADY_HAVE_WINDOWS_TYPE
 #include <sql.h>
 #include <sqlext.h>
-#include <stdio.h>
 #ifdef EXPORT
 #undef EXPORT
 #endif
@@ -87,5 +88,13 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		return FALSE;
 	}
 	
+	return TRUE;
+}
+
+BOOL WINAPI
+DllMain(HINSTANCE hinstDLL, DWORD reason,LPVOID reserved)
+{
+	ODBCLOG("DllMain %d\n", reason);
+
 	return TRUE;
 }

@@ -232,6 +232,7 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 				 nDriverCompletion);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
 		  SQLSMALLINT nConnStrIn, SQLWCHAR *szConnStrOut,
@@ -265,3 +266,4 @@ SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
 		free(in);
 	return rc;
 }
+#endif	/* WITH_WCHAR */

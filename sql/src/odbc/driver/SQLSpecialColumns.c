@@ -223,6 +223,7 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 				  nScope, nNullable);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		   SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
@@ -261,3 +262,4 @@ SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */

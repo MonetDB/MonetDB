@@ -30,7 +30,7 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetEnvAttr %d\n", Attribute);
+	ODBCLOG("SQLSetEnvAttr %d %lx\n", Attribute, (unsigned long) (size_t) Value);
 #endif
 
 	(void) StringLength;	/* Stefan: unused!? */

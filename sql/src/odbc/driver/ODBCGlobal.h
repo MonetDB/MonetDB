@@ -27,14 +27,14 @@
 #ifdef NATIVE_WIN32
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
-#define ALLREADY_HAVE_WINDOWS_TYPE
+#define ALREADY_HAVE_WINDOWS_TYPE
 #endif
 
 /**** Define the ODBC Version this ODBC driver complies with ****/
-#define ODBCVER 0x0351		/* Important: this must be defined before include of sqlext.h */
+#define ODBCVER 0x0352		/* Important: this must be defined before include of sqlext.h */
 
 /* some general defines */
-#define MONETDB_ODBC_VER     "3.51"	/* must be synchronous with ODBCVER */
+#define MONETDB_ODBC_VER     "03.52"	/* must be synchronous with ODBCVER */
 #define MONETDB_DRIVER_NAME  "MonetDBODBClib"
 #define MONETDB_DRIVER_VER   "1.00"
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
@@ -91,7 +91,6 @@ SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,
 			 SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText,
 			 SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
 
-#define ODBCDEBUG 1
 #ifdef ODBCDEBUG
 #ifdef NATIVE_WIN32
 extern void ODBCLOG(const char *fmt, ...);

@@ -1,6 +1,7 @@
 
 INCLUDES = \
 	../include \
+	../driver \
 	../../client \
 	$(MONET_INCS)
 

@@ -182,6 +182,7 @@ SQLForeignKeys(SQLHSTMT hStmt,
 			       szFKTableName, nFKTableNameLength);
 }
 
+#ifdef WITH_WCHAR
 SQLRETURN SQL_API
 SQLForeignKeysW(SQLHSTMT hStmt,
 		SQLWCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength,
@@ -232,3 +233,4 @@ SQLForeignKeysW(SQLHSTMT hStmt,
 
 	return rc;
 }
+#endif	/* WITH_WCHAR */
