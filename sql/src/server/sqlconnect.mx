@@ -1,0 +1,141 @@
+@f sqlconnect
+@a N. Nes
+@* Connection code
+This small module contains the code to instantiate an SQL client.
+This code strongly depends on the front-end/back-end setup.
+@h
+#ifndef _SQLSERVER_H_
+#define _SQLSERVER_H_
+
+#include <streams.h>
+#include <monet_context.h>
+#include "mvc.h"
+#include "sqlserver.proto.h"
+
+#endif /*_SQLSERVER_H_*/
+
+@c
+#include "sqlserver.h"
+#include <statement.h>
+#include <sqlexecute.h>
+#include <mem.h>
+#include <context.h>
+#include <kernel.h>
+
+@= builtin_operand
+{       int _k = interpret(stk, arg(lt, @1), res);
+        if (_k < 0) {
+                return _k;
+        }
+        @3 = VALconvert(@2, res, 0);
+        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+                return handle_paramerror(res,@1,res->vtype,@2);
+        }
+}
+@c
+
+extern catalog *mvc_catalog_create( mvc *m, context *lc );
+
+int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+	buffer *bbuf = buffer_create( BUFSIZ );
+	int err = 0;
+	stmt *s = NULL;
+	char *cmd = NULL;
+	char *errbuf = GDKmalloc(GDKMAXERRLEN);
+
+	mvc **M, *m;
+	stream **In, *in, **Out, *out, *ws;
+	context *lc;
+
+  	if (lt->cnt != 3) {
+        	return handle_argerror(res, lt->cnt, 3);
+  	}
+  	@:builtin_operand(0,TYPE_mvc,M)@
+	m = *M;
+  	@:builtin_operand(1,TYPE_Stream,In)@
+	in = *In;
+  	@:builtin_operand(2,TYPE_Stream,Out)@
+	out = *Out;
+
+	lc = NEW(context);
+	ws = buffer_wastream( bbuf, "SQLserver" );
+	sql_init_context( lc, ws, m->debug, default_catalog_create() );
+	mvc_catalog_create( m, lc );
+
+	GDKsetbuf(errbuf);
+
+	while(lc->cur != EOF ){
+		s = sqlnext(lc, in, &err);
+		if (err){ /* output error */
+			stream_writeInt( out, 0 );
+			stream_writeInt( out, 0 );
+			stream_writeInt( out, -1 );
+			out->write( out, lc->errstr, strlen(lc->errstr), 1 );
+			out->flush( out );
+		} else if (s){
+	    		int nr = 1;
+	    		stmt_dump( s, &nr, lc );
+
+			cmd = buffer_get_buf(bbuf);
+	    		lc->out->flush( lc->out );
+
+			if (lc->debug&64){
+				stream_writeInt( out, 0 );
+				stream_writeInt( out, QDEBUG );
+				stream_writeInt( out, lc->debug );
+				out->write( out, cmd, strlen(cmd), 1 );
+				out->flush( out );
+			} else {
+
+			    if (s && s->op1.stval->type == st_copyfrom &&
+				!stmt_copyfrom_files(s)){
+				/*ask_for_data();*/
+				stream_writeInt( out, 0 );
+				stream_writeInt( out, QDATA );
+				stream_writeInt( out, 0 );
+				out->flush( out );
+			    }
+			
+			    {
+				int i;
+				ssize_t status;
+				ValRecord res;
+        			res.vtype = TYPE_void; 
+				i = interpret_str( stk, cmd, &res);
+
+				if (i < 0){
+					char *errstr = "Mil error";
+					char *buf = GDKerrbuf;
+					stream_writeInt( out, 0 );
+					stream_writeInt( out, mvc_type(m) );
+					stream_writeInt( out, i );
+					out->write( out, errstr, strlen(errstr), 1 );
+					out->write( out, buf, strlen(buf), 1 );
+					buf[0] = 0; /* reset error buf */
+					out->flush( out );
+				} else if ((status=mvc_status(m)) < 0){
+					char *errstr = "Error in result";
+					stream_writeInt( out, 0 );
+					stream_writeInt( out, mvc_type(m) );
+					stream_writeInt( out, status );
+					out->write( out, errstr, strlen(errstr), 1 );
+					out->flush( out );
+				} else if (s->type != st_output) {
+					stream_writeInt( out, 0 );
+					stream_writeInt( out, mvc_type(m) );
+					stream_writeInt( out, status );
+					out->flush( out );
+				}
+			    }
+			} 
+			/* BEWARE to use free instead of _DELETE
+ 			 * as the stream library is build with out libbat 
+ 			 * ie. it cannot use GDKmalloc can be used */
+			if (cmd) free(cmd);
+		}
+		if (s) stmt_destroy(s);
+	}
+	mvc_destroy(m);
+	sql_exit_context( lc );
+	return GDK_SUCCEED;
+}

@@ -649,142 +649,20 @@ proc mvc_bind_dbat_( m, schema, Table, write_access ){
 	return res;
 }
 
-proc mvc_create_role( m, auth, grantor ) {
-	auth_id := mvc_bind_( m, "sys", "auths", "id", 1);
-	auth_name := mvc_bind_( m, "sys", "auths", "name", 1);
-	auth_grantor := mvc_bind_( m, "sys", "auths", "grantor", 1);
-	auth_priv := mvc_bind_( m, "sys", "auths", "privileges", 1);
-	
-	if (auth_name.reverse.exist(auth)) {
-		return false;
-	}
-	if (auth_id.count() > 0)
-		auth_id.insert(nil, auth_id.max()+1);
-	else
-		auth_id.insert(nil, 0);
-	auth_name.insert(nil, auth);
-	auth_grantor.insert(nil, grantor);
-	auth_priv.insert(nil,0); # all privileges are off 
-	#print(auth_id,auth_name,auth_grantor,auth_priv);
-	return true;
-} 
-proc mvc_drop_role( m, auth ) {
-	auth_id := mvc_bind_( m, "sys", "auths", "id", 1);
-	auth_name := mvc_bind_( m, "sys", "auths", "name", 1);
-	auth_grantor := mvc_bind_( m, "sys", "auths", "grantor", 1);
-	auth_priv := mvc_bind_( m, "sys", "auths", "privileges", 1);
-	D_auth := mvc_bind_dbat_( m, "sys", "auths", 1);
-	
-	if (not(auth_name.reverse.exist(auth))) {
-		return;
-	}
-	id := auth_name.reverse.find(auth);
-	#print(id);
-	auth_id.replace(id, int(nil));
-	auth_name.replace(id, str(nil));
-	auth_grantor.replace(id, int(nil));
-	auth_priv.replace(id, int(nil));
-	#print(auth_id,auth_name,auth_grantor,auth_priv);
-	D_auth.insert(nil,id);
-} 
-proc mvc_grant_role( m, grantee, auth ) {
-	auth_ids := mvc_bind_( m, "sys", "auths", "id", 1);
-	auth_name := mvc_bind_( m, "sys", "auths", "id", 1);
-	login_id := mvc_bind_( m, "sys", "user_role", "login_id", 1);
-	role_id := mvc_bind_( m, "sys", "user_role", "role_id", 1);
-
-	if (not(auth_name.reverse.exist(grantee)) or
-	    not(auth_name.reverse.exist(auth))) {
-		return;
-	}
-	auth_id := auth_ids.find(auth_name.reverse.find(auth));
-	grantee_id := auth_ids.find(auth_name.reverse.find(grantee));
-	
-	login_id.insert(nil,grantee_id);
-	role_id.insert(nil,auth_id);
-} 
-
-proc mvc_revoke_role( m, grantee, auth ) {
-	auth_ids := mvc_bind_( m, "sys", "auths", "id", 1);
-	auth_name := mvc_bind_( m, "sys", "auths", "id", 1);
-	login_id := mvc_bind_( m, "sys", "user_role", "login_id", 1);
-	role_id := mvc_bind_( m, "sys", "user_role", "role_id", 1);
-	D_user_role := mvc_bind_dbat_( m, "sys", "user_role", 1);
-
-	if (not(auth_name.reverse.exist(grantee)) or 
-	    not(auth_name.reverse.exist(auth))) {
-		return;
-	}
-	auth_id := auth_ids.find(auth_name.reverse.find(auth));
-	grantee_id := auth_ids.find(auth_name.reverse.find(grantee));
-	
-	role := role_id.select(role_id);
-	logins := login_id.semijoin(role);
-	if (not(logins.reverse.exist(grantee_id)))
-		return;
-	id := logins.reverse.find(grantee_id);
-	#print(id);
-	login_id.replace(id,int(nil));
-	role_id.replace(id,int(nil));
-	D_user_role.insert(nil,id);
-} 
-
-proc mvc_create_user( m, user, passwd, fullname, schema_name, grantor ) {
-	if (not(mvc_create_role( m, user, grantor )))
-		return; 
-
-	user_name := mvc_bind_( m, "sys", "users", "name", 1);
-	user_passwd := mvc_bind_( m, "sys", "users", "passwd", 1);
-	user_fullname := mvc_bind_( m, "sys", "users", "fullname", 1);
-	user_dschema := mvc_bind_( m, "sys", "users", "default_schema", 1);
-
-	schema_ids := mvc_bind_( m, "sys", "schemas", "id", 1);
-	schema_names := mvc_bind_( m, "sys", "schemas", "name", 1);
-	schema_id := schema_ids.find(schema_names.reverse.find(schema_name));
-
-	user_name.insert(nil, user);
-	user_passwd.insert(nil, passwd);
-	user_fullname.insert(nil, fullname);
-	user_dschema.insert(nil, schema_id);
-
-	#print(user_name,user_passwd,user_fullname,user_dschema);
-} 
-
-proc mvc_drop_user( m, user) {
-	user_name := mvc_bind_( m, "sys", "users", "name", 1);
-	user_passwd := mvc_bind_( m, "sys", "users", "passwd", 1);
-	user_fullname := mvc_bind_( m, "sys", "users", "fullname", 1);
-	user_dschema := mvc_bind_( m, "sys", "users", "default_schema", 1);
-	D_user := mvc_bind_dbat_( m, "sys", "users", 1);
-
-	if (not(user_name.reverse.exist(user))) {
-		return;
-	}
-	mvc_drop_role( m, user );
-
-	id := user_name.reverse.find(user);
-	#print(id);
-	user_name.replace(id,str(nil));
-	user_passwd.replace(id,str(nil));
-	user_fullname.replace(id,str(nil));
-	user_dschema.replace(id,int(nil));
-	D_user.insert(nil,id);
-}
-
 proc initialize(int debug) {
-	# change to sql statements !!
-	var myc := mvc_create(debug);
-	var schema := mvc_admin_login(myc);
-	
-	if (schema != ""){
-		user_name := mvc_bind_( myc, schema, "users", "name", 1);
-		if (user_name.count() = 0){
-			mvc_create_user( myc, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
-			# probably needs priv's too 
-			mvc_commit( myc, 0, "");
-		}
-	}
-	mvc_destroy( myc );
+        # change to sql statements !!
+        var myc = mvc_create(debug);
+        var schema = mvc_admin_login(myc);
+
+        if (schema != ""){
+                user_name = mvc_bind_( myc, schema, "users", "name", 1);
+                if (user_name.count() = 0){
+                        mvc_create_user( myc, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
+                        # probably needs priv's too
+                        mvc_commit( myc, 0, "");
+                }
+        }
+        mvc_destroy( myc );
 }
 
 initialize(sql_debug);
