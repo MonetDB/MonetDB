@@ -255,6 +255,11 @@ gdk_export size_t _MT_pagesize;
 @c
 #include "gdk.h"
 
+/* new pthread interface, where the thread id changed to a struct */
+#ifdef PTW32_VERSION
+#define PTW32 1
+#endif
+
 #if !(defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)) && defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
 # include <sys/resource.h>
 #endif
@@ -378,7 +383,11 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg)
 	pthread_attr_setstacksize(&attr, 4 * THREAD_STACK_SIZE);
 	ret = pthread_create(&newt, &attr, (void *(*)(void *)) f, arg);
 	if (ret == 0)
+#ifdef PTW32
+		*t = (MT_Id) (((int) newt.p) + 1);	/* use pthread-id + 1 */
+#else
 		*t = (MT_Id) (((int) newt) + 1);	/* use pthread-id + 1 */
+#endif
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
 #endif
@@ -665,7 +674,11 @@ MT_destroy_cond(MT_Cond c)
 MT_Id
 MT_getpid(void)
 {
+#ifdef PTW32
+	return (MT_Id) (((size_t) pthread_self().p) + 1);
+#else
 	return (MT_Id) (((size_t) pthread_self()) + 1);
+#endif
 }
 
 int
