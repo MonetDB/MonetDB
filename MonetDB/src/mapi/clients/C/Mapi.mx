@@ -629,8 +629,8 @@ typedef struct MapiStruct {
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
 	int error;		/* Error occurred */
-	char *errorstr;	/* pointer to constant string */
-	char *action;	/* pointer to constant string */
+	char *errorstr;		/* pointer to constant string */
+	const char *action;	/* pointer to constant string */
 
 	BlockCache blk;
 	int connected;
@@ -726,12 +726,12 @@ mapi_export MapiMsg mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, v
 mapi_export MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,
 	int precision, void *ptr);
 mapi_export MapiMsg mapi_param_string(Mapi mid, int fnr, int sqltype, char *ptr, int *sizeptr);
-mapi_export Mapi mapi_mapi(char *host, int port, char *username,
-	char *password, char *lang);
-mapi_export Mapi mapi_connect(char *host, int port, char *username,
-	char *password, char *lang);
-mapi_export Mapi mapi_connect_ssl(char *host, int port, char *username,
-	char *password, char *lang);
+mapi_export Mapi mapi_mapi(const char *host, int port, const char *username,
+	const char *password, const char *lang);
+mapi_export Mapi mapi_connect(const char *host, int port, const char *username,
+	const char *password, const char *lang);
+mapi_export Mapi mapi_connect_ssl(const char *host, int port, const char *username,
+	const char *password, const char *lang);
 mapi_export Mapi mapi_dup(Mapi mid);
 mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_destroy(Mapi mid);
@@ -744,20 +744,20 @@ mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_execute(Mapi mid) ;
 mapi_export MapiMsg mapi_execute_array(Mapi mid, char **val) ;
 mapi_export MapiMsg mapi_ping(Mapi mid);
-mapi_export MapiMsg mapi_prepare(Mapi mid,char *cmd);
-mapi_export MapiMsg mapi_prepare_array(Mapi mid,char *cmd,char **val);
-mapi_export MapiMsg mapi_query(Mapi mid,char *cmd);
-mapi_export MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd);
-mapi_export MapiMsg mapi_query_array(Mapi mid,char *cmd, char **val);
-mapi_export MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd);
-mapi_export MapiMsg mapi_stream_query(Mapi mid, char* cmd, int windowsize);
+mapi_export MapiMsg mapi_prepare(Mapi mid, const char *cmd);
+mapi_export MapiMsg mapi_prepare_array(Mapi mid, const char *cmd, char **val);
+mapi_export MapiMsg mapi_query(Mapi mid, const char *cmd);
+mapi_export MapiMsg mapi_quick_query(Mapi mid, const char* cmd, FILE *fd);
+mapi_export MapiMsg mapi_query_array(Mapi mid, const char *cmd, char **val);
+mapi_export MapiMsg mapi_quick_query_array(Mapi mid, const char* cmd, char **val, FILE *fd);
+mapi_export MapiMsg mapi_stream_query(Mapi mid, const char* cmd, int windowsize);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit);
 mapi_export MapiMsg mapi_cache_shuffle(Mapi mid,int percentage);
 mapi_export MapiMsg mapi_cache_freeup(Mapi mid,int percentage);
 mapi_export MapiMsg mapi_quick_response(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_seek_row(Mapi mid, int rowne);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
-mapi_export MapiMsg mapi_trace_log(Mapi mid, char *nme);
+mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
 
 mapi_export int mapi_timeout(Mapi mid, int time);
 mapi_export int mapi_fetch_row(Mapi mid);
@@ -767,6 +767,7 @@ mapi_export int mapi_get_row_count(Mapi mid);
 mapi_export int mapi_rows_affected(Mapi mid);
 
 mapi_export char *mapi_fetch_field(Mapi mid, int fnr);
+mapi_export MapiMsg mapi_store_field(Mapi mid, int fnr, int outtype, void *outparam);
 mapi_export char **mapi_fetch_field_array(Mapi mid);
 mapi_export char * mapi_fetch_line(Mapi mid);
 mapi_export char *mapi_get_lang(Mapi mid);
@@ -779,7 +780,7 @@ mapi_export int mapi_get_monet_versionId(Mapi mid);
 mapi_export char *mapi_get_table(Mapi mid,int fnr);
 mapi_export char *mapi_get_name(Mapi mid,int fnr);
 mapi_export char *mapi_get_type(Mapi mid,int fnr);
-mapi_export char *mapi_quote(char *msg, int size);
+mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 
 mapi_export void mapi_setBlocking(int b);
@@ -803,7 +804,7 @@ static int mapi_get_row(Mapi mid) ;
 static int mapi_extend_fields(Mapi mid,int minfields);
 static int mapi_extend_bindings(Mapi mid,int minbindings);
 static int mapi_slice_row(Mapi mid);
-static int mapi_setError(Mapi mid, char *msg, char *action);
+static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action);
 static char * mapi_fetch_line_internal(Mapi mid);
 static MapiMsg mapi_finish_internal(Mapi mid);
 static void mapi_lost_connection();
@@ -861,7 +862,8 @@ To enable debugging in either blocked and line mode the user can set a global
 variable before initiating a connection.
 @c
 static int blocked = 1; /* the default */
-void mapi_setBlocking(int b){
+void mapi_setBlocking(int b)
+{
 	blocked= b!=0;
 }
 @+ Channel constructor
@@ -890,7 +892,7 @@ MapiMsg mapi_trace(Mapi mid, int flag)
 	return MOK;
 }
 
-MapiMsg mapi_trace_log(Mapi mid, char *nme)
+MapiMsg mapi_trace_log(Mapi mid, const char *nme)
 {
 	mapi_check(mid,"mapi_trace_log");
 	mid->tracelog= open_wastream(nme);
@@ -917,7 +919,7 @@ MapiMsg mapi_ping(Mapi mid)
 	return mapi_error(mid);
 }
 
-static int mapi_setError(Mapi mid, char *msg, char *action)
+static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action)
 {
 	char *c;
 	assert(msg);
@@ -1055,7 +1057,7 @@ Mapi mapi_dup(Mapi mid)
 	return m;
 }
 
-Mapi mapi_mapi(char *host, int port, char *username, char *password, char *lang)
+Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang)
 {
 	Mapi mid;
 
@@ -1126,7 +1128,7 @@ Mapi mapi_mapi(char *host, int port, char *username, char *password, char *lang)
 	return mid;
 }
 
-Mapi mapi_connect(char *host, int port, char *username, char *password, char *lang)
+Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang)
 {
 	Mapi mid;
 
@@ -1136,7 +1138,7 @@ Mapi mapi_connect(char *host, int port, char *username, char *password, char *la
 	return mid;
 }
 
-Mapi mapi_connect_ssl(char *host, int port, char *username, char *password, char *lang)
+Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang)
 {
 	Mapi mid = mapi_mapi(host, port, username, password, lang);
 #ifdef HAVE_OPENSSL
@@ -1681,43 +1683,41 @@ It sends a complete Monet statement for execution
 Interaction with the server is sped up using block based interaction.
 The query is retained in the Mapi structure to repeat shipping.
 @c
-#define prepareQuery()						\
-	do {							\
-		if( cmd==0){					\
-			/* re-use the previous query */		\
-		} else {					\
-			size_t len= strlen(cmd);		\
-			if( mid->template){			\
-				free(mid->template);		\
-				mid->template=0;		\
-			}					\
-			if( mid->query)				\
-				free(mid->query);		\
-			mid->query= malloc( len+1);		\
-			assert(mid->query);			\
-			strcpy(mid->query,cmd);			\
-			if( strchr(cmd,PLACEHOLDER)){		\
-				mid->template= malloc( len+1);	\
-				assert(mid->template);		\
-				strcpy(mid->template,cmd);	\
-			}					\
-		}						\
-		mapi_check_query(mid);				\
-		ret= mid->error;				\
-	} while (0)
-
-MapiMsg mapi_prepare(Mapi mid, char *cmd)
+static MapiMsg prepareQuery(Mapi mid, const char *cmd)
 {
-	int ret;
-	mapi_check(mid,"mapi_prepare");
-	prepareQuery();
-	return ret;
+	if (cmd) {
+		size_t len= strlen(cmd);
+
+		if (mid->template) {
+			free(mid->template);
+			mid->template = 0;
+		}
+		if (mid->query)
+			free(mid->query);
+		mid->query = malloc(len + 1);
+		assert(mid->query);
+		strcpy(mid->query, cmd);
+		if (strchr(cmd, PLACEHOLDER)) {
+			mid->template = malloc(len + 1);
+			assert(mid->template);
+			strcpy(mid->template, cmd);
+		}
+	}
+	mapi_check_query(mid);
+	return mid->error;
 }
 
-MapiMsg mapi_prepare_array_internal(Mapi mid, char *cmd, char **val)
+MapiMsg mapi_prepare(Mapi mid, const char *cmd)
+{
+	mapi_check(mid,"mapi_prepare");
+	return prepareQuery(mid, cmd);
+}
+
+static MapiMsg mapi_prepare_array_internal(Mapi mid, const char *cmd, char **val)
 {
 	int i,ret;
-	prepareQuery();
+
+	ret = prepareQuery(mid, cmd);
 	/* first get rid of previous bindings */
 	memset(mid->bindings, 0, mid->maxbindings * sizeof(MapiBinding));
 	for(i=0; val[i];i++){
@@ -1732,7 +1732,7 @@ MapiMsg mapi_prepare_array_internal(Mapi mid, char *cmd, char **val)
 	}
 	return ret;
 }
-MapiMsg mapi_prepare_array(Mapi mid, char *cmd, char **val)
+MapiMsg mapi_prepare_array(Mapi mid, const char *cmd, char **val)
 {
 	mapi_check(mid,"mapi_prepare_array");
 	return mapi_prepare_array_internal(mid,cmd,val);
@@ -1903,6 +1903,20 @@ static void mapi_param_store(Mapi mid)
 	return;
 }
 
+static MapiMsg answer_lookahead(Mapi mid)
+{
+	/* look ahead to detect errors */
+	int oldrd= mid->cache.reader;
+	do {
+		mapi_get_row(mid);
+	} while(mid->error==MOK && mid->active && 
+		mid->cache.writer+1 <mid->cache.limit);
+	mid->cache.reader= oldrd;
+	if(mid->trace)
+		printf("mapi_query return:%d\n",mid->error);
+	return mid->error;
+}
+
 static MapiMsg mapi_execute_internal(Mapi mid)
 {
 	size_t size;
@@ -1941,9 +1955,14 @@ static MapiMsg mapi_execute_internal(Mapi mid)
 
 MapiMsg mapi_execute(Mapi mid)
 {
+	int ret;
 	mapi_check(mid,"mapi_execute");
-	return mapi_execute_internal(mid);
+	ret = mapi_execute_internal(mid);
+	if(ret==MOK)
+		ret= answer_lookahead(mid);
+	return ret;
 }
+
 MapiMsg mapi_execute_array(Mapi mid, char **val)
 {
 	int ret;
@@ -1954,30 +1973,17 @@ MapiMsg mapi_execute_array(Mapi mid, char **val)
 	return ret? ret: mapi_execute_internal(mid);
 }
 
-static MapiMsg answer_lookahead(Mapi mid)
-{
-	/* look ahead to detect errors */
-	int oldrd= mid->cache.reader;
-	do {
-		mapi_get_row(mid);
-	} while(mid->error==MOK && mid->active && 
-		mid->cache.writer+1 <mid->cache.limit);
-	mid->cache.reader= oldrd;
-	if(mid->trace)
-		printf("mapi_query return:%d\n",mid->error);
-	return mid->error;
-}
-
-MapiMsg mapi_query(Mapi mid, char* cmd)
+MapiMsg mapi_query(Mapi mid, const char* cmd)
 {
 	int ret;
-	prepareQuery();
+
+	ret = prepareQuery(mid, cmd);
 	if(ret == MOK) ret= mapi_execute_internal(mid);
 	if(ret==MOK) ret= answer_lookahead(mid);
 	return ret;
 }
 
-MapiMsg mapi_query_array(Mapi mid, char* cmd, char **val)
+MapiMsg mapi_query_array(Mapi mid, const char* cmd, char **val)
 {
 	int ret;
 	ret= mapi_prepare_array_internal(mid,cmd,val);
@@ -1992,11 +1998,12 @@ They will not analyse the result for errors or
 header information, but simply through the output
 received from the server to the stream indicated.
 @c
-MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd)
+MapiMsg mapi_quick_query(Mapi mid, const char* cmd, FILE *fd)
 {
 	int ret;
+
 	mapi_check(mid,"mapi_quick_query");
-	prepareQuery();
+	ret = prepareQuery(mid, cmd);
 	if(ret == MOK) ret= mapi_execute_internal(mid);
 	if(ret==MOK) {
 		mapi_quick_response(mid,fd);
@@ -2007,7 +2014,7 @@ MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd)
 	return ret;
 }
 
-MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd)
+MapiMsg mapi_quick_query_array(Mapi mid, const char* cmd, char **val, FILE *fd)
 {
 	int ret;
 	mapi_check(mid,"mapi_quick_query_array");
@@ -2032,7 +2039,7 @@ A stream query can not rely on upfront caching.
 The stream query also ensures that the cache contains a window
 over the stream by shuffling tuples once it is filled.
 @c
-MapiMsg mapi_stream_query(Mapi mid, char* cmd, int windowsize)
+MapiMsg mapi_stream_query(Mapi mid, const char *cmd, int windowsize)
 {
 	mapi_check(mid,"mapi_stream_query");
 
@@ -2055,7 +2062,7 @@ static void mapi_cache_reset(Mapi mid)
 			mid->cache.rows[i][0]=0;
 	if( mid->cache.tupleindex)
 	for(i=0;i<mid->cache.writer; i++)
-			mid->cache.tupleindex[i]= -1;
+		mid->cache.tupleindex[i]= -1;
 	mid->cache.tuplecount= 0;
 	mid->cache.reader= -1;
 	mid->cache.tuples= 0;
@@ -2684,6 +2691,7 @@ char *mapi_unquote(char *msg)
 {
 	char *start, *next;
 	size_t size;
+
 	unquote(msg, &start,&next);
 	size= strlen(start);
 	next= malloc(size+1);
@@ -2691,7 +2699,7 @@ char *mapi_unquote(char *msg)
 	return next;
 }
 
-char *mapi_quote(char *msg, int size)
+char *mapi_quote(const char *msg, int size)
 {
 	char *s = malloc(strlen(msg) * 2 + 1); /* we absolutely don't need more than this (until we start producing octal escapes */
 	char *t = s;
@@ -2785,111 +2793,127 @@ simplifies the work for the programmers.
 extern float strtof(const char *, char **);
 #endif
 
+MapiMsg mapi_store_field(Mapi mid, int fnr, int outtype, void *dst)
+{
+	int cr;
+	char *val;
+
+	mapi_check(mid, "mapi_store_field");
+
+	if (fnr < 0 || fnr >= mid->fieldcnt) {
+		return mapi_setError(mid, "Illegal field number",
+				     "mapi_store_field");
+	}
+
+	cr = mid->cache.reader;
+	val = mid->cache.anchors[cr][fnr];
+
+	if (val == 0) {
+		return mapi_setError(mid, "Field value undefined",
+				     "mapi_store_field");
+	}
+
+	/* auto convert to C-type */
+	switch (outtype) {
+	case MAPI_TINY:
+		*(signed char *)dst = (signed char) strtol(val,NULL,0);
+		break;
+	case MAPI_UTINY:
+		*(unsigned char *)dst = (unsigned char) strtoul(val,NULL,0);
+		break;
+	case MAPI_SHORT:
+		*(short *)dst = (short) strtol(val,NULL,0);
+		break;
+	case MAPI_USHORT:
+		*(unsigned short *)dst = (unsigned short) strtoul(val,NULL,0);
+		break;
+	case MAPI_NUMERIC:
+	case MAPI_INT:
+		*(int *)dst = (int) strtol(val,NULL,0);
+		break;
+	case MAPI_UINT:
+		*(unsigned int *)dst = (unsigned int) strtoul(val,NULL,0);
+		break;
+	case MAPI_LONG:
+		*(long *)dst = strtol(val,NULL,0);
+		break;
+	case MAPI_ULONG:
+		*(unsigned long *)dst = strtoul(val,NULL,0);
+		break;
+#ifdef HAVE_STRTOLL
+	case MAPI_LONGLONG:
+		*(mapi_int64 *)dst = strtoll(val,NULL,0);
+		break;
+#endif
+#ifdef HAVE_STRTOULL
+	case MAPI_ULONGLONG:
+		*(mapi_uint64 *)dst = strtoull(val,NULL,0);
+		break;
+#endif
+	case MAPI_CHAR:
+		*(char *)dst = *val;
+		break;
+#ifdef HAVE_STRTOF
+	case MAPI_FLOAT:
+		*(float *)dst = strtof(val,NULL);
+		break;
+#endif
+#ifdef HAVE_STRTOD
+	case MAPI_DOUBLE:
+		*(double *)dst = strtod(val,NULL);
+		break;
+#endif
+	case MAPI_DATE:
+		sscanf(val, "%hd-%hu-%hu",
+		       &((MapiDate *) dst)->year,
+		       &((MapiDate *) dst)->month,
+		       &((MapiDate *) dst)->day);
+		break;
+	case MAPI_TIME:
+		sscanf(val, "%hu:%hu:%hu",
+		       &((MapiTime *) dst)->hour,
+		       &((MapiTime *) dst)->minute,
+		       &((MapiTime *) dst)->second);
+		break;
+	case MAPI_DATETIME: {
+		int n;
+		((MapiDateTime *) dst)->fraction = 0;
+		sscanf(val, "%hd-%hu-%hu %hu:%hu:%hu%n",
+		       &((MapiDateTime *) dst)->year,
+		       &((MapiDateTime *) dst)->month,
+		       &((MapiDateTime *) dst)->day,
+		       &((MapiDateTime *) dst)->hour,
+		       &((MapiDateTime *) dst)->minute,
+		       &((MapiDateTime *) dst)->second,
+		       &n);
+		if (val[n] == '.') {
+			unsigned int fac = 1000000000;
+			unsigned int nsec = 0;
+			for (n++; isdigit((int) val[n]); n++) {
+				fac /= 10;
+				nsec += (val[n] - '0') * fac;
+			}
+			((MapiDateTime *) dst)->fraction = nsec;
+		}
+		break;
+	}
+	case MAPI_AUTO:
+	case MAPI_VARCHAR:
+	default:
+		*(char **)dst = val;
+	}
+	return MOK;
+}
+
 static
 void mapi_store_bind(Mapi mid)
 {
 	int i;
-	int cr= mid->cache.reader;
 
-	for(i=0; i< mid->fieldcnt;i++)
-		if( mid->fields[i].outparam){
-			char *val= mid->cache.anchors[cr][i];
-			void *dst= mid->fields[i].outparam;
-			if( val == 0){
-				mapi_setError(mid,"Field value undefined",
-					      "mapi_store_bind");
-				continue;
-			}
-			/* auto convert to C-type */
-			switch(mid->fields[i].outtype){
-			case MAPI_TINY:
-				*(signed char *)dst = (signed char) strtol(val,NULL,0);
-				break;
-			case MAPI_UTINY:
-				*(unsigned char *)dst = (unsigned char) strtoul(val,NULL,0);
-				break;
-			case MAPI_SHORT:
-				*(short *)dst = (short) strtol(val,NULL,0);
-				break;
-			case MAPI_USHORT:
-				*(unsigned short *)dst = (unsigned short) strtoul(val,NULL,0);
-				break;
-			case MAPI_NUMERIC:
-			case MAPI_INT:
-				*(int *)dst = (int) strtol(val,NULL,0);
-				break;
-			case MAPI_UINT:
-				*(unsigned int *)dst = (unsigned int) strtoul(val,NULL,0);
-				break;
-			case MAPI_LONG:
-				*(long *)dst = strtol(val,NULL,0);
-				break;
-			case MAPI_ULONG:
-				*(unsigned long *)dst = strtoul(val,NULL,0);
-				break;
-#ifdef HAVE_STRTOLL
-			case MAPI_LONGLONG:
-				*(mapi_int64 *)dst = strtoll(val,NULL,0);
-				break;
-#endif
-#ifdef HAVE_STRTOULL
-			case MAPI_ULONGLONG:
-				*(mapi_uint64 *)dst = strtoull(val,NULL,0);
-				break;
-#endif
-			case MAPI_CHAR:
-				*(char *)dst = *val;
-				break;
-#ifdef HAVE_STRTOF
-			case MAPI_FLOAT:
-				*(float *)dst = strtof(val,NULL);
-				break;
-#endif
-#ifdef HAVE_STRTOD
-			case MAPI_DOUBLE:
-				*(double *)dst = strtod(val,NULL);
-				break;
-#endif
-			case MAPI_DATE:
-				sscanf(val, "%hd-%hu-%hu",
-				       &((MapiDate *) dst)->year,
-				       &((MapiDate *) dst)->month,
-				       &((MapiDate *) dst)->day);
-				break;
-			case MAPI_TIME:
-				sscanf(val, "%hu:%hu:%hu",
-				       &((MapiTime *) dst)->hour,
-				       &((MapiTime *) dst)->minute,
-				       &((MapiTime *) dst)->second);
-				break;
-			case MAPI_DATETIME: {
-				int n;
-				((MapiDateTime *) dst)->fraction = 0;
-				sscanf(val, "%hd-%hu-%hu %hu:%hu:%hu%n",
-				       &((MapiDateTime *) dst)->year,
-				       &((MapiDateTime *) dst)->month,
-				       &((MapiDateTime *) dst)->day,
-				       &((MapiDateTime *) dst)->hour,
-				       &((MapiDateTime *) dst)->minute,
-				       &((MapiDateTime *) dst)->second,
-				       &n);
-				if (val[n] == '.') {
-					unsigned int fac = 1000000000;
-					unsigned int nsec = 0;
-					for (n++; isdigit((int) val[n]); n++) {
-						fac /= 10;
-						nsec += (val[n] - '0') * fac;
-					}
-					((MapiDateTime *) dst)->fraction = nsec;
-				}
-				break;
-			}
-			case MAPI_AUTO:
-			case MAPI_VARCHAR:
-			default:
-				*(char **)dst = val;
-			}
-		}
+	for (i = 0; i < mid->fieldcnt; i++)
+		if (mid->fields[i].outparam)
+			mapi_store_field(mid, i, mid->fields[i].outtype,
+					 mid->fields[i].outparam);
 }
 
 static
