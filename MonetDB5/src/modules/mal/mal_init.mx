@@ -30,51 +30,52 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
-include "thread";
-include "crackers";
+include thread;
+include crackers;
 
-#include "pcl";
-include "unix";
-include "lock";
-include "alarm";
-include "mmath";
+#include pcl;
+include mdb;
+include unix;
+include lock;
+include alarm;
+include mmath;
 
-include "blob";
-include "str";
-include "url";
-include "mtime";
+include blob;
+include str;
+include url;
+include mtime;
 
-include "bat";
-#include "mkey";
-include "algebra";
-include "calc";
-include "batcalc";
-include "status";
-include "group";
-include "aggrX3";
-#include "unique";
-include "mapi";
+include bat;
+#include mkey;
+include algebra;
+include calc;
+include batcalc;
+include status;
+include group;
+include aggrX3;
+#include unique;
+include mapi;
 
-#include "x100core";
-include "clients";
-include "streams";
-include "tablet";
-include "io";
-include "enum";
-include "factory";
-include "multiplex";
-include "language";
-include "profiler";
-include "const"; 
-include "mil"; 
-include "bbp";
-include "box"; 
-include "inspect";
-include "optimizer";
-include "chopper";
-include "transaction";
-#include "sql";
-include "mil_schema";
+#include x100core;
+include clients;
+include streams;
+include tablet;
+include io;
+include enum;
+include factory;
+include multiplex;
+include language;
+include profiler;
+include const; 
+include mil; 
+include bbp;
+include box; 
+include inspect;
+include optimizer;
+include chopper;
+include transaction;
+#include sql;
+include mil_schema;
 @-
 In practice, we have to introduce different startup for each
 client group or database.

@@ -28,62 +28,55 @@ The main performance drain would be to use a pseudo BAT directly to
 successively access it components. This can be avoided by first assigning
 the pseudo BAT to a variable.
 
-@+ MAL interpreter status
-The prime scheme to inspect the MAL interpreter status is to use
-the MAL debugger. However, in case of automatic exception handling
-it helps to be able to obtain BAT versions of the critical information,
-such as stack frame table, stack trace,
-and the instruction(s) where an exception occurred.
-The inspection typically occurs in the exception handling part of the
-MAL block.
-@mal
-module inspect;
-pattern getStackDepth():int 
-address INSPECTStkDepth
-comment "Return the depth of the calling stack.";
-
-pattern getStackFrame(i:int):bat[:str,:str] 
-address INSPECTStkFrameN;
-pattern getStackFrame():bat[:str,:str] 
-address INSPECTStkFrame
-comment "Collect variable binding of current 
-	(n-th) stack frame.";
-pattern getStackTrace():bat[:void,:str]
-address INSPECTStkTrace;
-
-@+ MAL modules and scopes inspection
+@+ Module inspection
 Each module forms a separately named scope. Scopes visible to a user
 are relevant for resolving function names.
 
 @mal
-command getModules() :bat[:void,:str] 
+module inspect;
+
+command getModuleNames() :bat[:void,:str] 
 address INSPECTmoduleNames
 comment "Collect bat with all modules loaded" ;
 
-command getPatterns():bat[:str,:str] 
+command getPatternNames():bat[:str,:str] 
 address INSPECTpatternNames
 comment "Map module and pattern pairs";
-command getCommands():bat[:str,:str] 
+command getCommandNames():bat[:str,:str] 
 address INSPECTcommandNames
 comment "Map module and commands pairs";
-command getFunctions():bat[:str,:str] 
+command getFunctionNames():bat[:str,:str] 
 address INSPECTfunctionNames
 comment "Map module and function pairs";
-command getFactories():bat[:str,:str] 
+command getFactoryNames():bat[:str,:str] 
 address INSPECTfactoryNames
 comment "Map module and function pairs";
-
-pattern getDefinition():bat[:void,:str] 
-address INSPECTcodeDump
-comment "Returns a string representation 
-	of the current function 
-	with typing information attached";
 
 command getDefinition(mod:str,fcn:str)
 	:bat[:int,:str] 
 address INSPECTgetDefinition
 comment "Returns a string representation 
 	of a specific function";
+
+@-
+The symbol table can be accessed as if it was a relational
+table.
+The individual attributes should be collected together,
+since the underlying implementation assumes that the symbol
+table is static
+@mal
+command getKind():bat[:void,:str]
+address INSPECTgetkind
+comment "Obtain the instruction kind";
+command getModule():bat[:void,:str]
+address INSPECTgetmodule
+comment "Obtain the function name";
+command getFunction():bat[:void,:str]
+address INSPECTgetfunction
+comment "Obtain the function name";
+command getSignature():bat[:void,:str]
+address INSPECTgetsignature
+comment "Obtain the function name";
 
 command getSignature(mod:str,fcn:str)
 	:bat[:str,:str] 
@@ -106,40 +99,6 @@ comment "Collect a BAT with the atom names";
 command getAtomSizes():bat[:int,:int] 
 address INSPECTatom_sizes
 comment "Collect a BAT with the atom sizes";
-
-@+ Exception message
-The exception message produced by the modules
-adhere to the structure:
-<variable>:<context>:<reason>
-These components can be extracted for
-analysis.
-@mal
-command getExceptionVariable(s:str):str
-address INSPECTgetExceptionVariable
-comment "extract the variable name from
-	the exception message";
-
-command getExceptionReason(s:str):str
-address INSPECTgetExceptionReason
-comment "extract the reason from
-	the exception message";
-
-command getExceptionContext(s:str):str
-address INSPECTgetExceptionContext
-comment "extract the context string from
-	the exception message";
-
-@+ Display code
-A key tool for analysis of the MAL code is being able to dump
-any routine, module. For queries, it is also illustrative to display
-the flow graph. [TODO]
-@mal
-pattern showFunction():void 
-address INSPECTshowFunction
-comment "Dump the current routine on standard out.";
-pattern showFunction(M:any,F:any):void 
-address INSPECTshowFunction3
-comment "Dump the routine M.F on standard out.";
 
 @+ Online help system
 All procedural abstractions may contain a string with commentary text.
@@ -176,20 +135,6 @@ command manual()
 address INSPECTmanual0
 comment "Produces a XML-formatted manual 
 	over all modules loaded.";
-
-@+ The Monet Debugger interface
-To enable ease of debugging and performance monitoring, the MAL interpreter
-comes with a hardwired gdb-like text-based debugger.
-@mal
-pattern mdb(c:chr):void 
-address mdbSetCmd
-comment "Start debugger with command 'c'";
-pattern mdb(b:bit):void 
-address mdbToggle
-comment "Start/stop interactive debugger";
-pattern mdb():void 
-address mdbToggle
-comment "Start interactive debugger";
 @-
 @{
 @+ Implementation
@@ -207,73 +152,6 @@ comment "Start interactive debugger";
 #include "mal_debugger.h"
 #include "mal_interpreter.h"
 
-@+ Variables and stack information
-The variable information can be turned into a BAT for inspection as well.
-@c
-
-static int getStkDepth( MalStkPtr s)
-{
-	int i = 0;
-        while(s!= 0){
-                i++;
-                s= s->up;
-        }
-	return i;
-}
-str INSPECTStkDepth(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
-{       int *ret= (int*) getArgReference(s,p,0);
-	(void)mb; /* fool compiler */
-        *ret= getStkDepth(s);
-        return MAL_SUCCEED;
-}
-
-str INSPECTgetFrame(BAT *b, MalBlkPtr mb, MalStkPtr s,int depth){
-	ValPtr v;
-	int i;
-	char *buf=0;
-	if(depth> 0) return INSPECTgetFrame(b,mb,s->up,depth-1);
-	if( s!= 0)
-	for(i=0 ; i<s->stktop ; i++,v++){
-		v= &s->stk[i];
-		ATOMformat(v->vtype, VALget(v), &buf);
-		BUNins(b,getVarName(mb,i),buf);
-	}
-	return MAL_SUCCEED;
-}
-str INSPECTStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	int *ret= (int*) getArgReference(s,p,0);
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-	if (b == 0) return throwMessage("inspect.stkFrame", "failed to create BAT");
-	@:Pseudo(view,stk,frame)@
-	return INSPECTgetFrame(b,m,s,0);
-}
-str INSPECTStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	int n, *ret= (int*) getArgReference(s,p,0);
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-
-	n= *(int*) getArgReference(s,p,1);
-	if(n<0) return throwMessage("inspect.stkFrame", "illegal depth.");
-	if(n>=getStkDepth(s)) return throwMessage("inspect.stkFrame", "illegal depth.");
-	@:Pseudo(view,stk,frame)@
-	return INSPECTgetFrame(b,m,s,n);
-}
-str INSPECTStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	str msg;
-	int *ret= (int*) getArgReference(s,p,0);
-	int k=0;
-
-	msg= call2str(s->blk, s, getPC(m,p), 1);
-	BUNins(b,&k, msg);
-	GDKfree(msg);
-	for(s=s->up,k++; s!= NULL; s= s->up, k++){
-		msg= call2str(s->blk, s, s->pcup, 1);
-		BUNins(b,&k, msg);
-		GDKfree(msg);
-	}
-	@:Pseudo(view,stk,trace)@
-	return MAL_SUCCEED;
-}
 @+ Symbol table 
 Mal symbol table and environment analysis.
 @c
@@ -304,15 +182,15 @@ str INSPECTsymbolFind(int *ret,int kind)
 	c= getClient();
 	s= c->nspace;
 	while(s){
-		for(i=0;s && i<MAXSCOPE;i++)
-		if( s->subscope[i]){
-			for(t= s->subscope[i];t;t=t->peer){
-			InstrPtr sig= getSignature(t);
-			if( kind && kind != sig->token) continue;
-			BUNins(b,moduleName(sig),functionName(sig));
-			}
-		}
-		s= s->outer;
+        for(i=0;s && i<MAXSCOPE;i++)
+            if( s->subscope[i]){
+                for(t= s->subscope[i];t;t=t->peer){
+                InstrPtr sig= getSignature(t);
+                if( kind && kind != sig->token) continue;
+                BUNins(b,moduleName(sig),functionName(sig));
+                }
+            }
+            s= s->outer;
 	}
 	@:Pseudo(view,symbol,name)@
 	return MAL_SUCCEED;
@@ -321,6 +199,131 @@ str INSPECTfactoryNames(int *ret){ return INSPECTsymbolFind(ret,FACTORYsymbol); 
 str INSPECTfunctionNames(int *ret){ return INSPECTsymbolFind(ret,FUNCTIONsymbol); }
 str INSPECTpatternNames(int *ret){ return INSPECTsymbolFind(ret,PATTERNsymbol); }
 str INSPECTcommandNames(int *ret){ return INSPECTsymbolFind(ret,COMMANDsymbol); }
+
+@-
+Collect symbol table information in a series of BATs for analysis
+and display. Note, the elements are aligned using a counter,
+which makes it susceptable for intermediate updates
+@= getAttribute
+
+str INSPECTget@1(int *ret)
+{	Client c;
+	Scope s;
+	Symbol t;
+	int i;
+        oid k= 0;
+	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+
+        if (b == 0) 
+            return throwMessage("inspect.get@1", "failed to create BAT");
+        BATseqbase(b,k);
+	c= getClient();
+	s= c->nspace;
+	while(s){
+        for(i=0;s && i<MAXSCOPE;i++)
+            if( s->subscope[i]){
+                for(t= s->subscope[i];t;t=t->peer){
+                    InstrPtr sig= getSignature(t);
+                    BUNins(b,&k,@2(sig));
+                    k++;
+                }
+            }
+            s= s->outer;
+	}
+	@:Pseudo(view,symbol,@1)@
+	return MAL_SUCCEED;
+}
+@c
+@:getAttribute(function,functionName)@
+@:getAttribute(module,moduleName)@
+
+str INSPECTgetkind(int *ret)
+{	Client c;
+	Scope s;
+	Symbol t;
+	int i;
+        oid k= 0;
+	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+
+        if (b == 0) 
+            return throwMessage("inspect.get@1", "failed to create BAT");
+        BATseqbase(b,k);
+	c= getClient();
+	s= c->nspace;
+	while(s){
+        for(i=0;s && i<MAXSCOPE;i++)
+            if( s->subscope[i]){
+                for(t= s->subscope[i];t;t=t->peer){
+                    InstrPtr sig= getSignature(t);
+                    str kind= operatorName(sig->token);
+                    BUNins(b,&k,kind);
+                    k++;
+                }
+            }
+            s= s->outer;
+	}
+	@:Pseudo(view,symbol,kind)@
+	return MAL_SUCCEED;
+}
+
+str INSPECTgetaddress(int *ret)
+{	Client c;
+	Scope s;
+	Symbol t;
+	int i;
+        oid k= 0;
+	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+
+        if (b == 0) 
+            return throwMessage("inspect.get@1", "failed to create BAT");
+        BATseqbase(b,k);
+	c= getClient();
+	s= c->nspace;
+	while(s){
+        for(i=0;s && i<MAXSCOPE;i++)
+            if( s->subscope[i]){
+                for(t= s->subscope[i];t;t=t->peer){
+                    str kind= t->def->binding;
+                    if( kind== 0 ) kind= "";
+                    BUNins(b,&k,&kind);
+                    k++;
+                }
+            }
+            s= s->outer;
+	}
+	@:Pseudo(view,symbol,address)@
+	return MAL_SUCCEED;
+}
+
+
+str INSPECTgetsignature(int *ret)
+{	Client c;
+	Scope s;
+	Symbol t;
+	int i;
+        oid k= 0;
+	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+        char sig[4096];
+
+        if (b == 0) 
+            return throwMessage("inspect.get@1", "failed to create BAT");
+        BATseqbase(b,k);
+	c= getClient();
+	s= c->nspace;
+	while(s){
+        for(i=0;s && i<MAXSCOPE;i++)
+            if( s->subscope[i]){
+                for(t= s->subscope[i];t;t=t->peer){
+                    fcnDefinition(t->def, getSignature(t),sig,0);
+                    BUNins(b,&k,strchr(sig,'('));
+                    k++;
+                }
+            }
+            s= s->outer;
+	}
+	@:Pseudo(view,symbol,address)@
+	return MAL_SUCCEED;
+}
 
 str INSPECTgetDefinition(int *ret, str *nme, str *fcn)
 {	Symbol s;
@@ -338,35 +341,6 @@ str INSPECTgetDefinition(int *ret, str *nme, str *fcn)
 			GDKfree(ps);
 		}
 		s= s->peer;
-	}
-	@:Pseudo(view,fcn,stmt)@
-	return MAL_SUCCEED;
-}
-str INSPECTcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
-{	int i, *ret= (int*)getArgReference(stk,p,0);
-	str ps;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if(b == 0) return throwMessage("inspect.codeDump", "failed to create BAT");
-	
-	for(i=0;i<m->stop;i++){
-		ps= instruction2str(m, getInstrPtr(m,i),1);
-		BUNins(b,&i,ps);
-		GDKfree(ps);
-	}
-	@:Pseudo(view,fcn,stmt)@
-	return MAL_SUCCEED;
-}
-str INSPECTcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
-{	int i, *ret= (int*)getArgReference(stk,p,0);
-	str ps;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
-        if(b == 0) return throwMessage("inspect.currDefinition", 
-					"failed to create BAT");
-	
-	for(i=0;i<m->stop;i++){
-		ps= instruction2str(m, getInstrPtr(m,i),0);
-		BUNins(b,&int_nil,ps);
-		GDKfree(ps);
 	}
 	@:Pseudo(view,fcn,stmt)@
 	return MAL_SUCCEED;
@@ -502,48 +476,6 @@ str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         return MAL_SUCCEED;
 }
 
-str INSPECTgetExceptionVariable(str *ret,  str *msg){
-	str tail;
-	tail = strchr(*msg,':');
-	if( tail == 0)
-		return throwMessage("inspect.getExceptionVariable",
-			"Could not find it\n");
-		
-	*tail = 0;
-	*ret= GDKstrdup(*msg);
-	*tail = ':';
-	return MAL_SUCCEED;
-}
-str INSPECTgetExceptionContext(str *ret,  str *msg){
-	str tail, tail2;
-	tail = strchr(*msg,':');
-	if( tail == 0)
-		return throwMessage("inspect.getExceptionContext",
-			"Could not find it\n");
-	tail2 = strchr(tail+1,':');
-	if( tail2 == 0)
-		return throwMessage("inspect.getExceptionContext",
-			"Could not find it\n");
-		
-	*tail2 = 0;
-	*ret= GDKstrdup(tail+1);
-	*tail2 = ':';
-	return MAL_SUCCEED;
-}
-str INSPECTgetExceptionReason(str *ret,  str *msg){
-	str tail;
-	tail = strchr(*msg,':');
-	if( tail == 0)
-		return throwMessage("inspect.getExceptionReason",
-			"Could not find it\n");
-	tail = strchr(tail+1,':');
-	if( tail == 0)
-		return throwMessage("inspect.getExceptionReason",
-			"Could not find it\n");
-		
-	*ret= GDKstrdup(tail+1);
-	return MAL_SUCCEED;
-}
 str INSPECTmanual(int *ret, str *fname, str *mod,int *recursive){
 	stream *fs;
 	(void) ret; /* fool compiler */
