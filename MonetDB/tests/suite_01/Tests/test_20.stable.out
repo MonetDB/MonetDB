@@ -69,12 +69,12 @@ echo(12,13);
 [ 12 ]
 echo;
 !ERROR: yysubstitute: illegal argument '$1'.
-!ERROR: interpret: unresolved reference 5.
+!ERROR: interpret: unresolved reference.
 !ERROR: print(param 1): evaluation error.
 proc echo:= $3.print;
 echo(1);
 !ERROR: yysubstitute: illegal argument '$3'.
-!ERROR: interpret: unresolved reference 5.
+!ERROR: interpret: unresolved reference.
 !ERROR: print(param 1): evaluation error.
 echo(1,2,3);
 [ 3 ]
