@@ -608,9 +608,9 @@ void stmt_destroy(stmt * s)
 		if (s->nr2 > 0) {
 /*
  * happens far too often for now, hence, we keep it for debugging, only ...
+ */
 			printf("= sql_statement.mx: stmt_destroy: (result of) statement %s (%d) was used %d times less often than its refcnt indicated!\n",
 				st_type2string(s->type), (int)s->type, s->nr2);
-*/
 		} else if (s->nr2 == int_nil) {
 /*
  * happens far too often for now, hence, we keep it for debugging, only ...
