@@ -294,74 +294,133 @@ to the non-dense implementation.
 
 The aftermath -- property setting -- is relatively straightforward here.
 
-@= bunfastins_nocheck_
-		@3put(@2, &bn->hheap, (int*) BUNhloc(bn, dst), BUN@1(l, l_cur));
-		@6put(@5, &bn->theap, (int*) BUNtloc(bn, dst), BUN@4(r, r_cur));
 @c
-@= densefetchjoin
-	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: densefetchjoin(@1,@2,@3,@4,@5,@6);\n");
-	r_cur = BUNptr(r, offset + *(unsigned int*) BUNtail(l,BUNfirst(l)));
+#define HLATOMput(bn, dst) ATOMput(bn->htype, &bn->hheap, dst, BUNhloc(l,l_cur))
+#define HVATOMput(bn, dst) ATOMput(bn->htype, &bn->hheap, dst, BUNhvar(l,l_cur))
+#define TLATOMput(bn, dst) ATOMput(bn->ttype, &bn->theap, dst, BUNtloc(r,r_cur))
+#define TVATOMput(bn, dst) ATOMput(bn->ttype, &bn->theap, dst, BUNtvar(r,r_cur))
+
+@= SIMPLEput
+#define H@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNhloc(l,l_cur))
+#define T@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNtloc(r,r_cur))
+@c
+@:SIMPLEput(chr)@
+@:SIMPLEput(sht)@
+@:SIMPLEput(int)@
+@:SIMPLEput(lng)@
+
+@= bunfastins_nocheck_
+		H@1put(bn, (int*) BUNhloc(bn, dst));
+		T@2put(bn, (int*) BUNtloc(bn, dst));
+@c
+@= fetchjoin
+void densefetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
+	BUN l_cur, l_end, r_cur, dst;
+	int xx,yy,zz, base, offset;
+
+        zz = BUNsize(bn);
 	yy = BUNsize(r);
+        dst = BUNfirst(bn);
+        base = BUNindex(r, BUNfirst(r));
+        offset = base - r->hseqbase;
+	r_cur = BUNptr(r, offset + *(unsigned int*) BUNtail(l,BUNfirst(l)));
+
+	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: densefetchjoin(@1,@2);\n");
 	BATloopFast(l, l_cur, l_end, xx) {
-		@:bunfastins_nocheck_(@1,@2,@3,@4,@5,@6)@
+		@:bunfastins_nocheck_(@1,@2)@
 		r_cur += yy;
 		dst += zz;
 	}
 	bn->batBuns->free = dst - bn->batBuns->base;
-@c
-@= orderedfetchjoin
-        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedfetchjoin(@1,@2,@3,@4,@5,@6);\n");
+}
+void orderedfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
+	BUN l_cur, l_end, r_cur, dst;
+	int xx,yy,zz, base, offset;
+
+        zz = BUNsize(bn);
+        dst = BUNfirst(bn);
+        base = BUNindex(r, BUNfirst(r));
+        offset = base - r->hseqbase;
+
+        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedfetchjoin(@1,@2);\n");
         BATloopFast(l, l_cur, l_end, xx) {
                 yy = offset + *(unsigned int*) BUNtail(l,l_cur);
                 r_cur = BUNptr(r, yy);
-		@:bunfastins_nocheck_(@1,@2,@3,@4,@5,@6)@
+		@:bunfastins_nocheck_(@1,@2)@
                 dst += zz;
         }
         bn->batBuns->free = dst - bn->batBuns->base;
-@c
-@= defaultfetchjoin
-        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultfetchjoin(@1,@2,@3,@4,@5,@6);\n");
+}
+void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
+	BUN l_cur, l_end, r_cur, dst;
+	int xx,yy,zz, base, offset, end;
+
+        zz = BUNsize(bn);
+
+        dst = BUNfirst(bn);
+        base = BUNindex(r, BUNfirst(r));
+        offset = base - r->hseqbase;
+        end = base + BATcount(r);
+
+        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultfetchjoin(@1,@2);\n");
         BATloopFast(l, l_cur, l_end, xx) {
                 yy = offset + *(unsigned int*) BUNtail(l,l_cur);
                 if (yy < base || yy >= end) {
                         continue;
                 }
                 r_cur = BUNptr(r, yy);
-		@:bunfastins_nocheck_(@1,@2,@3,@4,@5,@6)@
+		@:bunfastins_nocheck_(@1,@2)@
                 dst += zz;
         }
 	bn->batBuns->free = dst - bn->batBuns->base;
+}
 @c
+@= fetchjoin2
+	@:fetchjoin(@1,chr)@
+	@:fetchjoin(@1,sht)@
+	@:fetchjoin(@1,int)@
+	@:fetchjoin(@1,lng)@
+	@:fetchjoin(@1,VATOM)@
+	@:fetchjoin(@1,LATOM)@
+@c
+	@:fetchjoin2(chr)@
+	@:fetchjoin2(sht)@
+	@:fetchjoin2(int)@
+	@:fetchjoin2(lng)@
+	@:fetchjoin2(VATOM)@
+	@:fetchjoin2(LATOM)@
+@c
+
 @= fetchjoin_switch_rtt
 	if (ATOMstorage(rtt) == TYPE_chr) {
-                @:@1fetchjoin(@2,@3,@4,tloc,chr,SIMPLE)@
+                @1fetchjoin_@2_chr(bn,l,r);
         } else if (ATOMstorage(rtt) == TYPE_sht) {
-                @:@1fetchjoin(@2,@3,@4,tloc,sht,SIMPLE)@
+                @1fetchjoin_@2_sht(bn,l,r);
         } else if (rtt != TYPE_bat && (ATOMstorage(rtt) == TYPE_int || ATOMstorage(rtt) == TYPE_flt || ATOMstorage(rtt) == TYPE_oid)) {
 	        /* ensure use of ATOMput for TYPE_bat */
-                @:@1fetchjoin(@2,@3,@4,tloc,int,SIMPLE)@
+                @1fetchjoin_@2_int(bn,l,r);
         } else if (ATOMstorage(rtt) == TYPE_lng || ATOMstorage(rtt) == TYPE_dbl) {
-                @:@1fetchjoin(@2,@3,@4,tloc,lng,SIMPLE)@
+                @1fetchjoin_@2_lng(bn,l,r);
         } else if (r->tvarsized) {
-                @:@1fetchjoin(@2,@3,@4,tvar,bn->ttype,ATOM)@
+                @1fetchjoin_@2_VATOM(bn,l,r);
         } else {
-                @:@1fetchjoin(@2,@3,@4,tloc,bn->ttype,ATOM)@
+                @1fetchjoin_@2_LATOM(bn,l,r);
         }
 @c
 @= fetchjoin_switch_lht
         if (ATOMstorage(lht) == TYPE_chr) {
-                @:fetchjoin_switch_rtt(@1,hloc,chr,SIMPLE)@
+                @:fetchjoin_switch_rtt(@1,chr)@
         } else if (ATOMstorage(lht) == TYPE_sht) {
-                @:fetchjoin_switch_rtt(@1,hloc,sht,SIMPLE)@
+                @:fetchjoin_switch_rtt(@1,sht)@
         } else if (lht != TYPE_bat && (ATOMstorage(lht) == TYPE_int || ATOMstorage(lht) == TYPE_flt || ATOMstorage(lht) == TYPE_oid)) {
                 /* ensure use of ATOMput for TYPE_bat */
-                @:fetchjoin_switch_rtt(@1,hloc,int,SIMPLE)@
+                @:fetchjoin_switch_rtt(@1,int)@
         } else if (ATOMstorage(lht) == TYPE_lng || ATOMstorage(lht) == TYPE_dbl) {
-                @:fetchjoin_switch_rtt(@1,hloc,lng,SIMPLE)@
+                @:fetchjoin_switch_rtt(@1,lng)@
         } else if (l->hvarsized) {
-                @:fetchjoin_switch_rtt(@1,hvar,bn->htype,ATOM)@
+                @:fetchjoin_switch_rtt(@1,VATOM)@
         } else {
-                @:fetchjoin_switch_rtt(@1,hloc,bn->htype,ATOM)@
+                @:fetchjoin_switch_rtt(@1,LATOM)@
         }
 @c
 @= densevoidfetchjoin
