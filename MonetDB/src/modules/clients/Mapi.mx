@@ -169,8 +169,10 @@ MMONETERR & Monet error.\\
 
 #define NAMELEN	256
 #define ERRLEN	1024
-#define QRYLEN	32000
-#define LINELEN	128000
+#define MAPIBLKSIZE 1024	/* minimum buffer shipped */
+#define REPLYBUFFER MAPIBLKSIZE*1024*32	/* seems large enough */
+#define QRYLEN	32*MAPIBLKSIZE 
+				
 
 #define MOK	0
 #define MEOBAT	-1
@@ -348,14 +350,15 @@ Msession Mnewstruct(Msession mid) {
 	m->querylength= (mid == 0 ? QRYLEN: mid->querylength);
         m->querytext= (char *) malloc(m->querylength);
 	m->qrytail= m->querytext;
-	m->replylength= (mid == 0 ? LINELEN: mid->replylength);
+	m->replylength= (mid == 0 ? MAPIBLKSIZE: mid->replylength);
         m->reply= (char *) malloc(m->replylength);
+	m->reply[0]=0;
         if( m->reply == 0 || m->querytext == 0 || m->tmp==0){
                 printf("Could not allocate buffer space\n");
                 exit(1);
         }
 	m -> trace = 0;
-	m -> everything = 0;
+	m -> everything = 1;
 
 	m->vars[0].ptr=0;
 	m->ptrs[0]=0;
@@ -452,12 +455,18 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 
 	strcpy(mid -> prompt,"\001>\001");
 	
-	{ char buf[200];
+	{ char buf[MAPIBLKSIZE];
 	  int c;
 	  strcpy(buf,mid->username);
 	  strcat(buf,"\n");
-	  fprintf(mid->to,buf);
+	  /* fprintf(mid->to,buf);*/
+	  c= fwrite(buf,1,MAPIBLKSIZE,mid->to);
 	  fflush(mid->to);
+	  if( c != MAPIBLKSIZE){
+	    mid->error = MMAPIERR;
+	    sprintf(mid->errortext,"Could not send initial bytes %d.",c);
+	    return(mid);
+	  }
           /* printf("awaiting response from server\n");
 	  fflush(stdout); */
 	  while( !(((c = getc(mid->from)) == 1) || (c == EOF)) ) ;
@@ -484,16 +493,20 @@ void checkMid(Msession mid, char *nme) {
 }
 @-
 Once the start of the prompt has been recognized, the rest should
-be eaten away. It is stored for no purpose at all in the reply buffer.
+be eaten away. It is stored in the prompt buffer for subsequent display.
 @c
 void promptMonet(Msession mid) {
         int i;
 
 	checkMid(mid,"promptMonet");
 	if( mid->trace) fprintf(stderr,"promptMonet.");
-        for(i=0; (mid->reply[i] = getc(mid->from)) != 1; i++);
+        for(i=0; mid->reply[i]; i++);
+        for(  ; i<mid->replylength-2 &&
+		 (mid->reply[i] = getc(mid->from)) != 1; i++);
         mid->reply[i++] = ' ';
         mid->reply[i] = '\0';
+	strcpy(mid->prompt,mid->reply);
+	mid->reply[0]=0;
 }
 
 @
@@ -893,36 +906,55 @@ void Mstatistics(Msession mid, FILE *fd) {
 Mdorequest and Mgetreply are two low level routines. They assume
 the default synchronization prompt. It assumes a complete Monet statement
 (i.e., ending in a newline; possibly including additional newlines).
+Interaction with the server is speed-up using block based interaction.
 @c
 int Mdorequest(Msession mid, char* cmd) {
+int k,size;
 	COUNT(mid,18);
 	if( cmd==0) cmd= mid->querytext;
 	else strcpy(mid->querytext,cmd);
 
+	size =strlen(cmd)+1 /* null byte */;
         if (mid->trace) {
-                printf("Mdorequest:%s", cmd);
+                printf("Mdorequest:%d:%s",size, cmd);
         }
         if (ferror(mid->from) || ferror(mid->to)) {
                 sprintf(mid->errortext, "!communication line broken\n");
 		mid->error= MMONETERR;
                 return mid->error;
         }
-        if (    fputs(cmd, mid->to) == -1 || 
+	if( size > MAPIBLKSIZE){
+		char hdr[MAPIBLKSIZE] = "#blocks:%d\n";
+		sprintf(hdr,"#blocks:%d\n", (size-1)/MAPIBLKSIZE+1);
+		if( mid->trace)
+			printf("Mdorequest:multiple blocks: %d\n",
+				 (size-1)/MAPIBLKSIZE+1);
+		if( fwrite(hdr, 1, MAPIBLKSIZE, mid->to) != MAPIBLKSIZE ||
+			fflush(mid->to) == -1) {
+			sprintf(mid->errortext, "!write error on stream\n");
+			mid->error= MMONETERR;
+			return mid->error;
+		}
+		fflush(mid->to);
+	}
+	for(k=0; k<size; k+= MAPIBLKSIZE) 
+	if( fwrite(cmd+k, 1, MAPIBLKSIZE, mid->to) != MAPIBLKSIZE ||
 		fflush(mid->to) == -1) {
                 sprintf(mid->errortext, "!write error on stream\n");
 		mid->error= MMONETERR;
                 return mid->error;
-        }
+	}
 	fflush(mid->to);
         return MOK;
 }
 
 @-
 The routine Mgetreply returns with 0 upon encountering the prompt
-(MOK) or an error.
+(MOK) or an error. The reply buffer is extended automatically to 
+the largest message received, topped by a strong limit.
 @c
 char *Mgetreply(Msession mid) {
-	char ch;
+	char ch,*newbuf;
 	int n=0;        
 
 	COUNT(mid,19);
@@ -938,9 +970,16 @@ char *Mgetreply(Msession mid) {
                         return 0;
                 }
                 if( n == mid->replylength){
-                        sprintf(mid->errortext,"!Answer too long\n");
-			mid->error=MMONETERR;
-                        return 0;
+			if( n > REPLYBUFFER){
+				sprintf(mid->errortext,"!Answer too long\n");
+				mid->error=MMONETERR;
+				return 0;
+			}
+			mid->replylength= n + MAPIBLKSIZE;
+			newbuf= (char *) malloc(mid->replylength);
+			strncpy(newbuf,mid->reply,n);
+			GDKfree(mid->reply);
+			mid->reply = newbuf;
                 }
 		mid->reply[n++] = ch;
         }
