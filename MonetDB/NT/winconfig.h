@@ -37,6 +37,7 @@
 
 #include <process.h>
 #include <windows.h>
+#include <stddef.h>
 #undef ERROR			/* too generic name defined in wingdi.h */
 
 #ifndef WIN32
@@ -243,6 +244,9 @@
 /* Define if you have the mrand48 function.  */
 /* #undef HAVE_MRAND48 */
 
+/* Define to 1 if the system has the type `ptrdiff_t'. */
+#define HAVE_PTRDIFF_T 1
+
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV 1
 #define putenv _putenv
@@ -259,6 +263,10 @@
 /* Define if you have the snprintf function.  */
 #define HAVE_SNPRINTF 1
 #define snprintf _snprintf
+
+/* Define to 1 if the system has the type `ssize_t'. */
+#define HAVE_SSIZE_T 1
+typedef int ssize_t;
 
 /* Define if you have the strcasecmp function.  */
 #define HAVE_STRCASECMP 1
