@@ -343,7 +343,10 @@ void chkDeclarations(MalBlkPtr mb){
     str nme;
 
     defs= alloca(mb->vtop * sizeof(int));
-    for(k=0;k<mb->vtop;k++) defs[k]= -1;
+    for(k=0;k<mb->vtop;k++) 
+    if( ! isVarInitialized(mb,k))
+         defs[k]= -1;
+    else  defs[k]= 0;
     blks[top] = 0;
     blks[++top]= -1;
 

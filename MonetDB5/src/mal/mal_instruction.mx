@@ -1179,17 +1179,17 @@ void    copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
     (void) src; /* fool the compiler */
     w = (VarPtr) GDKmalloc(sizeof(VarRecord));
     bzero( (str) w , sizeof(VarRecord));
-        w->name = v->name? GDKstrdup(v->name):0;
-        w->type = v->type;
-        w->gdktype = v->gdktype;
-        w->garbage = v->garbage;
-        w->fixtype = v->fixtype;
-        w->literal= v->literal? GDKstrdup(v->literal):NULL;
-        w->isaconstant = v->isaconstant;
-        w->isatypevar = v->isatypevar;
-        w->tmpindex = v->tmpindex;
-        w->isused = v->isused;
-        w->isinit = v->isinit;
+	w->name = v->name? GDKstrdup(v->name):0;
+	w->type = v->type;
+	w->gdktype = v->gdktype;
+	w->garbage = v->garbage;
+	w->fixtype = v->fixtype;
+	w->literal= v->literal? GDKstrdup(v->literal):NULL;
+	w->isaconstant = v->isaconstant;
+	w->isatypevar = v->isatypevar;
+	w->tmpindex = v->tmpindex;
+	w->isused = v->isused;
+	w->isinit = v->isinit;
     VALcopy(&w->value,&v->value);
     dst->var[dst->vtop]= w;
 }
