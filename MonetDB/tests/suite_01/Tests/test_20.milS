@@ -16,12 +16,12 @@ c();
 proc c(){ cpu.print;}
 printf("#~BeginVariableOutput~#\n"); c(); printf("#~EndVariableOutput~#\n");
 
-proc echo(){ $1.print();}
+proc echo(..any..){ $1.print();}
 echo(1);
 echo("hello");
 echo(12,13);
 echo();
-proc echo(){ $3.print();}
+proc echo(..any..){ $3.print();}
 echo(1);
 echo(1,2,3);
 

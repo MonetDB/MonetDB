@@ -16,45 +16,45 @@ unknown("hello");
 !ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 
 #simple procedure with withdrawal
-proc c:= clock.print;
-c;
+proc c(){ clock.print;}
+c();
 !WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
 undef c;
-c;
-!WARNING: interpret: convert identifier 'c' to string.
+c();
+
 
 # redefinition of existing procedure
-proc c:= clock.print;
-c;
+proc c(){ clock.print;}
+c();
 !WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
-proc c:= cpu.print;
-printf("#~BeginVariableOutput~#\n"); c; printf("#~EndVariableOutput~#\n");
+proc c(){ cpu.print;}
+printf("#~BeginVariableOutput~#\n"); c(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  140	  ]
+[ "user",	  240	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  60	  ]
+[ "system",	  1160	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 
-proc echo:= $1.print;
+proc echo(..any..){ $1.print();}
 echo(1);
 [ 1 ]
 echo("hello");
 [ "hello" ]
 echo(12,13);
 [ 12 ]
-echo;
+echo();
 !ERROR: yysubstitute: illegal argument '$1'.
 !ERROR: interpret: unresolved reference.
 !ERROR: print(param 1): evaluation error.
-proc echo:= $3.print;
+proc echo(..any..){ $3.print();}
 echo(1);
 !ERROR: yysubstitute: illegal argument '$3'.
 !ERROR: interpret: unresolved reference.
@@ -63,13 +63,13 @@ echo(1,2,3);
 [ 3 ]
 
 # handling non-complete proc definition;
-proc forward;
-forward;
+proc forward() { }
+forward();
 undef forward;
-forward;
-!WARNING: interpret: convert identifier 'forward' to string.
+forward();
 
-quit;
+
+quit();
 
 # 17:08:58 >  
 # 17:08:58 >  Done.
