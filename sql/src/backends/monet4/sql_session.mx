@@ -543,6 +543,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 
 	int err;
 	int language = 'S';
+	prot oldmode;
 
         sql = backend_create( trace, m );
 
@@ -608,7 +609,8 @@ query string with "M".
 			in->pos = in->len; /* HACK: should use parsed lenght */
 			continue;
 		}
-		if (language == 's' && m->scanner.mode != BLOCKED) {
+		oldmode = m->scanner.mode;
+		if (language == 's') {
 			language = 'S';
 			m->scanner.mode = LINE_1;
 		}
@@ -637,6 +639,7 @@ query string with "M".
 
 		pstatus = m->status ;
 		err = sqlexecute(sql, out);
+		m->scanner.mode = oldmode;
 
 		if (err){ /* output error */
 			char *buf = GDKerrbuf;
