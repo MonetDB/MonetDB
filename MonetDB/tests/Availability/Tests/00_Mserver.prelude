@@ -39,6 +39,7 @@ MODULES.replace("qt",        "plain");
 MODULES.replace("radix",     "plain");
 MODULES.replace("salgebra",  "plain");
 MODULES.replace("stats",     "plain");
+MODULES.replace("streams",   "plain");
 MODULES.replace("sys",       "plain");
 MODULES.replace("tcpip",     "plain");
 MODULES.replace("tpcd",      "plain");

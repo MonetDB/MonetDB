@@ -1,9 +1,12 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
-#> Mtest (20:56:27):	milS none milS
-#> Mtest (20:56:27):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_sigs -single none.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+
+# 15:59:11 >  
+# 15:59:11 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.18284/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
+# 15:59:11 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
 #script:none.milS
 
@@ -23,8 +26,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -78,6 +79,7 @@ Try: modules;                - for other modules.
 [ "salgebra",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "str",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "tcpip",	  nil	  ]
 [ "tpcd",	  nil	  ]
@@ -85,7 +87,6 @@ Try: modules;                - for other modules.
 [ "uchr",	  nil	  ]
 [ "unix",	  nil	  ]
 [ "url",	  nil	  ]
-[ "vector",	  nil	  ]
 [ "wisc",	  nil	  ]
 [ "xtables",	  nil	  ]
 #---------------------------------#
@@ -129,12 +130,12 @@ Try: modules;                - for other modules.
 #-------------------------#
 [ "xtables",	  nil	  ]
 [ "wisc",	  nil	  ]
-[ "vector",	  nil	  ]
 [ "url",	  nil	  ]
 [ "unix",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "tcpip",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
@@ -213,45 +214,6 @@ Try: modules;                - for other modules.
 [ "wisc", nil	  ]
 
 	dropping wisc
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading vector
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "mmath",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "vector",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (void)  #
-#-------------------------#
-[ "vector",	  nil	  ]
-[ "mmath",	  nil	  ]
-
-	dropping vector
-
-
-	dropping mmath
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -435,6 +397,50 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
+	loading streams
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_23  #
+# (str)		  (void)  #
+#-------------------------#
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
 	loading stats
 
 #---------------------------------#
@@ -450,7 +456,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "stats",	  nil	  ]
@@ -1126,9 +1132,12 @@ Try: modules;                - for other modules.
 [ "arith",	  1		  ]
 [ "ascii_io",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
+[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
@@ -1136,8 +1145,20 @@ Try: modules;                - for other modules.
 # (str)		  (void)  #
 #-------------------------#
 [ "ascii_io",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
 
 	dropping ascii_io
+
+
+	dropping streams
+
+
+	dropping io
+
+
+	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1252,3 +1273,8 @@ Try: modules;                - for other modules.
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+
+# 15:59:14 >  
+# 15:59:14 >  Done.
+# 15:59:14 >  
+

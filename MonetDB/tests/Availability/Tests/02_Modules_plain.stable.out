@@ -29,7 +29,7 @@ Try: modules;                - for other modules.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
 #-----------------#
-# 32 modules	  #
+# 35 modules	  #
 #-----------------#
 [ "aggr"	  ]
 [ "alarm"	  ]
@@ -56,6 +56,7 @@ Try: modules;                - for other modules.
 [ "radix"	  ]
 [ "salgebra"	  ]
 [ "stats"	  ]
+[ "streams"	  ]
 [ "tcpip"	  ]
 [ "tpcd"	  ]
 [ "uchr"	  ]
@@ -108,8 +109,8 @@ Module: "alarm"
 
 Module: "ascii_io"
 
-[ 10 ]
-[ 10 ]
+[ 11 ]
+[ 11 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help			  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -123,6 +124,7 @@ Module: "ascii_io"
 [ "load_data",		  "PROC: ",	  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",				  "not available"	  ]
 [ "load_format",	  "PROC: ",	  "load_format(str) : BAT[str,BAT]",						  "not available"	  ]
 [ "make_persistent",	  "PROC: ",	  "make_persistent(BAT[str,BAT]) : any",					  "not available"	  ]
+[ "output",		  "COMMAND: ",	  "output(BAT[any,any], BAT[void,str], BAT[void,BAT], stream) : void",		  ""			  ]
 
 Module: "bitset"
 
@@ -307,8 +309,8 @@ Module: "enum"
 [ "enum_ishisto",	  "COMMAND: ",	  "enum_ishisto(int, BAT[any,any]) : bit",				  "returns whether enum_table(tpe) is a histogram on b's head column"		  ]
 [ "enum_load",		  "COMMAND: ",	  "enum_load(BAT[any,int]) : int",					  "load/activate a previously created enumeration type."			  ]
 [ "enum_load",		  "PROC: ",	  "enum_load(str) : any",						  "activate an enumeration type from a histogram bat."				  ]
-[ "enum_print",		  "COMMAND: ",	  "enum_print(stream, BAT[any,int], BAT[any,any]) : void",		  "quick file print of 2 synced bats, an int and enumerated string tail"	  ]
-[ "enum_print",		  "COMMAND: ",	  "enum_print(stream, BAT[any,int], BAT[any,any], BAT[any,any]) : void",  "quick file print of 3 synced bats, and int tail and two enumerated strings"	  ]
+[ "enum_print",		  "COMMAND: ",	  "enum_print(fstream, BAT[any,int], BAT[any,any]) : void",		  "quick file print of 2 synced bats, an int and enumerated string tail"	  ]
+[ "enum_print",		  "COMMAND: ",	  "enum_print(fstream, BAT[any,int], BAT[any,any], BAT[any,any]) : void", "quick file print of 3 synced bats, and int tail and two enumerated strings"	  ]
 [ "enum_sethisto",	  "COMMAND: ",	  "enum_sethisto(int, BAT[any,any]) : void",				  "registers the fact that enum_table(tpe) is a histogram on b's head column"	  ]
 [ "enum_table",		  "COMMAND: ",	  "enum_table(int) : BAT[any,any]",					  "return the enumeration BAT of an enum type"					  ]
 [ "enum_trick",		  "PROC: ",	  "enum_trick(BAT[oid,any], BAT[any,int]) : BAT[oid,any]",		  "create a view on a BAT with a diffrent enum map."				  ]
@@ -323,30 +325,30 @@ Module: "io"
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help									  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "fclose",	  "COMMAND: ",	  "fclose(stream) : void",				  "See: man fclose"							  ]
-[ "fdpipe",	  "COMMAND: ",	  "fdpipe(bipipe, bit, str) : stream",			  "Open a stream in one direction through a pipe."			  ]
-[ "feof",	  "COMMAND: ",	  "feof(stream) : bit",					  "See: man feof"							  ]
+[ "fclose",	  "COMMAND: ",	  "fclose(fstream) : void",				  "See: man fclose"							  ]
+[ "fdpipe",	  "COMMAND: ",	  "fdpipe(bipipe, bit, str) : fstream",			  "Open a fstream in one direction through a pipe."			  ]
+[ "feof",	  "COMMAND: ",	  "feof(fstream) : bit",				  "See: man feof"							  ]
 [ "ferror",	  "COMMAND: ",	  "ferror() : str",					  "returns last error message. str(nil) if none. "			  ]
-[ "fflush",	  "COMMAND: ",	  "fflush(stream) : void",				  "See: man fflush"							  ]
-[ "fgetc",	  "COMMAND: ",	  "fgetc(stream) : chr",				  "See: man fgetc"							  ]
-[ "fgets",	  "COMMAND: ",	  "fgets(stream) : str",				  "See: man fgets"							  ]
-[ "fopen",	  "COMMAND: ",	  "fopen(str, str) : stream",				  "See: man fopen. Returns stream, or stream(nil) on failure."		  ]
-[ "fprint",	  "COMMAND: ",	  "fprint(stream, ..any..) : void",			  "Print a (comma seperated) list of arguments"				  ]
-[ "fprintf",	  "COMMAND: ",	  "fprintf(stream, str, ..any..) : void",		  "See: man fprintf"							  ]
-[ "fputc",	  "COMMAND: ",	  "fputc(int, stream) : void",				  "See: man fputs"							  ]
-[ "fputs",	  "COMMAND: ",	  "fputs(str, stream) : void",				  "See: man fputs"							  ]
-[ "fread",	  "COMMAND: ",	  "fread(stream, int) : blob",				  "See: man fread"							  ]
-[ "freopen",	  "COMMAND: ",	  "freopen(str, str, stream) : stream",			  "See: man freopen. Returns stream, or stream(nil) on failure."	  ]
-[ "fseek",	  "COMMAND: ",	  "fseek(stream, int, int) : int",			  "See: man fseek"							  ]
-[ "ftable",	  "COMMAND: ",	  "ftable(stream, ..BAT[any::1,any]..) : void",		  "Print an n-ary table to a file."					  ]
-[ "ftable",	  "COMMAND: ",	  "ftable(stream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
-[ "ftell",	  "COMMAND: ",	  "ftell(stream) : int",				  "See: man ftell"							  ]
-[ "fwrite",	  "COMMAND: ",	  "fwrite(stream, blob, int) : void",			  "See: man fwrite"							  ]
-[ "fwrite",	  "COMMAND: ",	  "fwrite(stream, str, int) : void",			  "See: man fwrite"							  ]
+[ "fflush",	  "COMMAND: ",	  "fflush(fstream) : void",				  "See: man fflush"							  ]
+[ "fgetc",	  "COMMAND: ",	  "fgetc(fstream) : chr",				  "See: man fgetc"							  ]
+[ "fgets",	  "COMMAND: ",	  "fgets(fstream) : str",				  "See: man fgets"							  ]
+[ "fopen",	  "COMMAND: ",	  "fopen(str, str) : fstream",				  "See: man fopen. Returns fstream, or fstream(nil) on failure."	  ]
+[ "fprint",	  "COMMAND: ",	  "fprint(fstream, ..any..) : void",			  "Print a (comma seperated) list of arguments"				  ]
+[ "fprintf",	  "COMMAND: ",	  "fprintf(fstream, str, ..any..) : void",		  "See: man fprintf"							  ]
+[ "fputc",	  "COMMAND: ",	  "fputc(int, fstream) : void",				  "See: man fputs"							  ]
+[ "fputs",	  "COMMAND: ",	  "fputs(str, fstream) : void",				  "See: man fputs"							  ]
+[ "fread",	  "COMMAND: ",	  "fread(fstream, int) : blob",				  "See: man fread"							  ]
+[ "freopen",	  "COMMAND: ",	  "freopen(str, str, fstream) : fstream",		  "See: man freopen. Returns fstream, or fstream(nil) on failure."	  ]
+[ "fseek",	  "COMMAND: ",	  "fseek(fstream, int, int) : int",			  "See: man fseek"							  ]
+[ "ftable",	  "COMMAND: ",	  "ftable(fstream, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file."					  ]
+[ "ftable",	  "COMMAND: ",	  "ftable(fstream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
+[ "ftell",	  "COMMAND: ",	  "ftell(fstream) : int",				  "See: man ftell"							  ]
+[ "fwrite",	  "COMMAND: ",	  "fwrite(fstream, blob, int) : void",			  "See: man fwrite"							  ]
+[ "fwrite",	  "COMMAND: ",	  "fwrite(fstream, str, int) : void",			  "See: man fwrite"							  ]
 [ "popen",	  "COMMAND: ",	  "popen() : bipipe",					  "Open a bidirectional pipe. See: man pipe"				  ]
-[ "stderr",	  "COMMAND: ",	  "stderr() : stream",					  "return the error stream for the database console"			  ]
-[ "stdin",	  "COMMAND: ",	  "stdin() : stream",					  "return the input stream to the database client"			  ]
-[ "stdout",	  "COMMAND: ",	  "stdout() : stream",					  "return the output stream for the database client"			  ]
+[ "stderr",	  "COMMAND: ",	  "stderr() : fstream",					  "return the error fstream for the database console"			  ]
+[ "stdin",	  "COMMAND: ",	  "stdin() : fstream",					  "return the input fstream to the database client"			  ]
+[ "stdout",	  "COMMAND: ",	  "stdout() : fstream",					  "return the output fstream for the database client"			  ]
 
 Module: "iterator"
 
@@ -648,6 +650,28 @@ Module: "stats"
 [ "[stats_new]",		  "COMMAND: ",	  "[stats_new](str) : ptr",				  "Construct a new statistics object."	  ]
 [ "[stats_report]",		  "COMMAND: ",	  "[stats_report](ptr, str) : void",			  "Generate results."			  ]
 
+Module: "streams"
+
+[ 14 ]
+[ 14 ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature				| help					  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "file_rastream",	  "COMMAND: ",	  "file_rastream(fstream, str) : stream", "open ascii file stream for reading"	  ]
+[ "file_rstream",	  "COMMAND: ",	  "file_rstream(fstream, str) : stream",  "open a file stream for reading"	  ]
+[ "file_wastream",	  "COMMAND: ",	  "file_wastream(fstream, str) : stream", "open ascii file stream for writing"	  ]
+[ "file_wstream",	  "COMMAND: ",	  "file_wstream(fstream, str) : stream",  "open a file stream for writing"	  ]
+[ "open_rastream",	  "COMMAND: ",	  "open_rastream(str) : stream",	  "open ascii file stream for reading"	  ]
+[ "open_rstream",	  "COMMAND: ",	  "open_rstream(str) : stream",		  "open a file stream for reading"	  ]
+[ "open_wastream",	  "COMMAND: ",	  "open_wastream(str) : stream",	  "open ascii file stream for writing"	  ]
+[ "open_wstream",	  "COMMAND: ",	  "open_wstream(str) : stream",		  "open a file stream for writing"	  ]
+[ "socket_rastream",	  "COMMAND: ",	  "socket_rastream(int, str) : stream",	  "open ascii socket stream for reading"  ]
+[ "socket_rstream",	  "COMMAND: ",	  "socket_rstream(int, str) : stream",	  "open a socket stream for reading"	  ]
+[ "socket_wastream",	  "COMMAND: ",	  "socket_wastream(int, str) : stream",	  "open ascii socket stream for writing"  ]
+[ "socket_wstream",	  "COMMAND: ",	  "socket_wstream(int, str) : stream",	  "open a socket stream for writing"	  ]
+[ "stream_close",	  "COMMAND: ",	  "stream_close(stream) : void",	  "close and destroy the stream s"	  ]
+[ "stream_write",	  "COMMAND: ",	  "stream_write(stream, str) : void",	  "write data on the stream"		  ]
+
 Module: "tcpip"
 
 [ 21 ]
@@ -767,8 +791,8 @@ Module: "url"
 
 Module: "vector"
 
-[ 78 ]
-[ 78 ]
+[ 123 ]
+[ 123 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature							| help												  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -792,11 +816,41 @@ Module: "vector"
 [ "/",				  "OPERATOR: ",	  "/(flts, flt) : flts",					  "Divide vector of flts by flt"								  ]
 [ "/",				  "OPERATOR: ",	  "/(int_vector64, int) : int_vector64",			  "Divide vector of ints by int"								  ]
 [ "/",				  "OPERATOR: ",	  "/(ints, int) : ints",					  "Divide vector of ints by int"								  ]
+[ "D1distance",			  "COMMAND: ",	  "D1distance(dbl_vector32, dbl_vector32) : dbl",		  "Calculates 'Relative' L1 distance between 2 vectors"						  ]
+[ "D1distance",			  "COMMAND: ",	  "D1distance(dbls, dbls) : dbl",				  "Calculates 'Relative' L1 distance between 2 vectors"						  ]
+[ "D1distance",			  "COMMAND: ",	  "D1distance(flts, flts) : dbl",				  "Calculates 'Relative' L1 distance between 2 vectors"						  ]
+[ "D1distance",			  "COMMAND: ",	  "D1distance(int_vector64, int_vector64) : dbl",		  "Calculates 'Relative' L1 distance between 2 vectors"						  ]
+[ "D1distance",			  "COMMAND: ",	  "D1distance(ints, ints) : dbl",				  "Calculates 'Relative' L1 distance between 2 vectors"						  ]
+[ "IDdistance",			  "COMMAND: ",	  "IDdistance(dbl_vector32, dbl_vector32) : dbl",		  "Calculates Intersection distance between 2 vectors"						  ]
+[ "IDdistance",			  "COMMAND: ",	  "IDdistance(dbls, dbls) : dbl",				  "Calculates Intersection (I) distance (D) between 2 vectors"					  ]
+[ "IDdistance",			  "COMMAND: ",	  "IDdistance(flts, flts) : dbl",				  "Calculates Intersection (I) distance (D) between 2 vectors"					  ]
+[ "IDdistance",			  "COMMAND: ",	  "IDdistance(int_vector64, int_vector64) : dbl",		  "Calculates Intersection distance between 2 vectors"						  ]
+[ "IDdistance",			  "COMMAND: ",	  "IDdistance(ints, ints) : dbl",				  "Calculates Intersection (I) distance (D) between 2 vectors"					  ]
+[ "KSdistance",			  "COMMAND: ",	  "KSdistance(dbl_vector32, dbl_vector32) : dbl",		  "Calculates Kolmogorov-Smirnov Coefficient between 2 vectors"					  ]
+[ "KSdistance",			  "COMMAND: ",	  "KSdistance(dbls, dbls) : dbl",				  "Calculates Kolmogorov-Smirnov Coefficient between 2 vectors"					  ]
+[ "KSdistance",			  "COMMAND: ",	  "KSdistance(flts, flts) : dbl",				  "Calculates Kolmogorov-Smirnov Coefficient between 2 vectors"					  ]
+[ "KSdistance",			  "COMMAND: ",	  "KSdistance(int_vector64, int_vector64) : dbl",		  "Calculates Kolmogorov-Smirnov Coefficient between 2 vectors"					  ]
+[ "KSdistance",			  "COMMAND: ",	  "KSdistance(ints, ints) : dbl",				  "Calculates Kolmogorov-Smirnov Coefficient between 2 vectors"					  ]
+[ "L1distance",			  "COMMAND: ",	  "L1distance(dbl_vector32, dbl_vector32) : dbl",		  "Calculates 'absulte difference' distance between 2 vectors"					  ]
+[ "L1distance",			  "COMMAND: ",	  "L1distance(dbls, dbls) : dbl",				  "Calculates 'absulte difference' distance between 2 vectors"					  ]
+[ "L1distance",			  "COMMAND: ",	  "L1distance(flts, flts) : dbl",				  "Calculates 'absulte difference' distance between 2 vectors"					  ]
+[ "L1distance",			  "COMMAND: ",	  "L1distance(int_vector64, int_vector64) : dbl",		  "Calculates 'absulte difference' distance between 2 vectors"					  ]
+[ "L1distance",			  "COMMAND: ",	  "L1distance(ints, ints) : dbl",				  "Calculates 'absulte difference' distance between 2 vectors"					  ]
 [ "L2distance",			  "COMMAND: ",	  "L2distance(dbl_vector32, dbl_vector32) : dbl",		  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
 [ "L2distance",			  "COMMAND: ",	  "L2distance(dbls, dbls) : dbl",				  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
 [ "L2distance",			  "COMMAND: ",	  "L2distance(flts, flts) : dbl",				  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
 [ "L2distance",			  "COMMAND: ",	  "L2distance(int_vector64, int_vector64) : dbl",		  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
 [ "L2distance",			  "COMMAND: ",	  "L2distance(ints, ints) : dbl",				  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
+[ "YLdistance",			  "COMMAND: ",	  "YLdistance(dbl_vector32, dbl_vector32) : dbl",		  "Calculates Yakimovsky Likelihood ratio between 2 vectors"					  ]
+[ "YLdistance",			  "COMMAND: ",	  "YLdistance(dbls, dbls) : dbl",				  "Calculates Yakimovsky Likelihood ratio between 2 vectors"					  ]
+[ "YLdistance",			  "COMMAND: ",	  "YLdistance(flts, flts) : dbl",				  "Calculates Yakimovsky Likelihood ratio between 2 vectors"					  ]
+[ "YLdistance",			  "COMMAND: ",	  "YLdistance(int_vector64, int_vector64) : dbl",		  "Calculates Yakimovsky Likelihood ratio between 2 vectors"					  ]
+[ "YLdistance",			  "COMMAND: ",	  "YLdistance(ints, ints) : dbl",				  "Calculates Yakimovsky Likelihood ratio between 2 vectors"					  ]
+[ "average",			  "COMMAND: ",	  "average(dbl_vector32) : dbl",				  "Calculates the average value of the vector elements."					  ]
+[ "average",			  "COMMAND: ",	  "average(dbls) : dbl",					  "Calculates the average value of the vector elements."					  ]
+[ "average",			  "COMMAND: ",	  "average(flts) : dbl",					  "Calculates the average value of the vector elements."					  ]
+[ "average",			  "COMMAND: ",	  "average(int_vector64) : dbl",				  "Calculates the average value of the vector elements."					  ]
+[ "average",			  "COMMAND: ",	  "average(ints) : dbl",					  "Calculates the average value of the vector elements."					  ]
 [ "centroid",			  "COMMAND: ",	  "centroid(dbl_vector32) : dbl",				  "Computes the centroid of the given vector"							  ]
 [ "centroid",			  "COMMAND: ",	  "centroid(dbls) : dbl",					  "Computes the centroid of the given vector"							  ]
 [ "centroid",			  "COMMAND: ",	  "centroid(flts) : dbl",					  "Computes the centroid of the given vector"							  ]
@@ -840,6 +894,11 @@ Module: "vector"
 [ "normalize",			  "COMMAND: ",	  "normalize(dbls) : dbls",					  "Normalizes vector"										  ]
 [ "normalize",			  "COMMAND: ",	  "normalize(flts) : flts",					  "Normalizes vector"										  ]
 [ "normalize",			  "COMMAND: ",	  "normalize(ints) : flts",					  "Normalizes vector"										  ]
+[ "sum",			  "COMMAND: ",	  "sum(dbl_vector32) : dbl",					  "Calculates the sum of the vector elements."							  ]
+[ "sum",			  "COMMAND: ",	  "sum(dbls) : dbl",						  "Calculates the sum of the vector elements."							  ]
+[ "sum",			  "COMMAND: ",	  "sum(flts) : flt",						  "Calculates the sum of the vector elements."							  ]
+[ "sum",			  "COMMAND: ",	  "sum(int_vector64) : int",					  "Calculates the sum of the vector elements."							  ]
+[ "sum",			  "COMMAND: ",	  "sum(ints) : int",						  "Calculates the sum of the vector elements."							  ]
 [ "todbls",			  "COMMAND: ",	  "todbls(flts) : dbls",					  "Converts vectors of flts to vector of dbls"							  ]
 [ "todbls",			  "COMMAND: ",	  "todbls(ints) : dbls",					  "Converts vectors of ints to vector of dbls"							  ]
 [ "toflts",			  "COMMAND: ",	  "toflts(dbls) : flts",					  "Converts vectors of dbls to vector of flts"							  ]
@@ -850,6 +909,16 @@ Module: "vector"
 [ "twonormdiff",		  "COMMAND: ",	  "twonormdiff(dbls, dbls) : dbls",				  "Calculates 2norm difference between 2 vectors"						  ]
 [ "twonormdiff",		  "COMMAND: ",	  "twonormdiff(flts, flts) : flts",				  "Calculates 2norm difference between 2 vectors"						  ]
 [ "twonormdiff",		  "COMMAND: ",	  "twonormdiff(ints, ints) : flts",				  "Calculates 2norm difference between 2 vectors"						  ]
+[ "variance",			  "COMMAND: ",	  "variance(dbl_vector32) : dbl",				  "Calculates the variance of the vector elements."						  ]
+[ "variance",			  "COMMAND: ",	  "variance(dbls) : dbl",					  "Calculates the variance of the vector elements."						  ]
+[ "variance",			  "COMMAND: ",	  "variance(flts) : dbl",					  "Calculates the variance of the vector elements."						  ]
+[ "variance",			  "COMMAND: ",	  "variance(int_vector64) : dbl",				  "Calculates the variance of the vector elements."						  ]
+[ "variance",			  "COMMAND: ",	  "variance(ints) : dbl",					  "Calculates the variance of the vector elements."						  ]
+[ "variance2",			  "COMMAND: ",	  "variance2(dbl_vector32) : dbl",				  "Calculates the squared variance of the vector elements."					  ]
+[ "variance2",			  "COMMAND: ",	  "variance2(dbls) : dbl",					  "Calculates the squared variance of the vector elements."					  ]
+[ "variance2",			  "COMMAND: ",	  "variance2(flts) : dbl",					  "Calculates the squared variance of the vector elements."					  ]
+[ "variance2",			  "COMMAND: ",	  "variance2(int_vector64) : dbl",				  "Calculates the squared variance of the vector elements."					  ]
+[ "variance2",			  "COMMAND: ",	  "variance2(ints) : dbl",					  "Calculates the squared variance of the vector elements."					  ]
 
 Module: "wisc"
 

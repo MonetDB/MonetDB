@@ -1,9 +1,12 @@
 stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 
-#> Mtest (20:45:34):	milS 00_Mserver milS -prelude 00_Mserver.prelude
-#> Mtest (20:45:34):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single -prelude 00_Mserver.prelude 00_Mserver.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+
+# 15:55:27 >  
+# 15:55:27 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.18284/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_Availability 00_Mserver.prelude < 00_Mserver.milS
+# 15:55:27 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
 #script:00_Mserver.milS
 #prelude:00_Mserver.prelude
@@ -24,8 +27,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #---------------------------------#
 # BAT:		  tmp_26	  #
 # (str)		  (str)		  #
@@ -61,6 +62,7 @@ Try: modules;                - for other modules.
 [ "salgebra",	  "plain"	  ]
 [ "stats",	  "plain"	  ]
 [ "str",	  "static"	  ]
+[ "streams",	  "plain"	  ]
 [ "sys",	  "static"	  ]
 [ "tcpip",	  "plain"	  ]
 [ "tpcd",	  "plain"	  ]
@@ -77,13 +79,13 @@ ls;
 #-----------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-----------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  41,	  0,	  "clean",	  "load", "pers", 1	  ]
+[ "MODULES",	  "str",  "str",  42,	  0,	  "clean",	  "load", "pers", 1	  ]
 
 dir;
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  41,	  0,	  "clean",	  "load", "pers", 1	  ]
+[ "MODULES",		  "str",  "str",  42,	  0,	  "clean",	  "load", "pers", 1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -149,6 +151,7 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "radix"		  ]
 [ "salgebra"		  ]
 [ "stats"		  ]
+[ "streams"		  ]
 [ "tcpip"		  ]
 [ "tpcd"		  ]
 [ "uchr"		  ]
@@ -161,3 +164,8 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 commit;
 
 quit;
+
+# 15:55:27 >  
+# 15:55:27 >  Done.
+# 15:55:27 >  
+
