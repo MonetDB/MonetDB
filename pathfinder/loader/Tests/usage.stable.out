@@ -13,7 +13,7 @@ stdout of test 'usage` in directory 'loader` itself:
 Pathfinder XML Shredder ($Revision$, $Date$)
 (c) University of Konstanz, DBIS group
 
-Usage: pf-shred [-h] [-v] [-c] [-d <n>] [-o OUTPUT] [FILE]
+= Usage: pf-shred [-h] [-v] [-c] [-d <n>] [-o OUTPUT] [FILE]
 
      Reads from standard input if FILE is omitted.
 
