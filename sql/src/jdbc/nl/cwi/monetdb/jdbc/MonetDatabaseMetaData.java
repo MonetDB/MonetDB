@@ -1589,7 +1589,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"10 AS NUM_PREC_RADIX, \"null\" AS nullable, null AS REMARKS, " +
 			"columns.default AS COLUMN_DEF, 0 AS SQL_DATA_TYPE, " +
 			"0 AS SQL_DATETIME_SUB, 0 AS CHAR_OCTET_LENGTH, " +
-			"columns.number + 1 AS ORDINAL_POSITION, null AS SCOPE_CATALOG, " +
+			"columns.\"number\" + 1 AS ORDINAL_POSITION, null AS SCOPE_CATALOG, " +
 			"null AS SCOPE_SCHEMA, null AS SCOPE_TABLE " +
 				"FROM columns, tables, schemas " +
 				"WHERE columns.table_id = tables.id " +
@@ -2432,7 +2432,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"tables.name AS TABLE_NAME, idxs.type as nonunique, " +
 			"null AS INDEX_QUALIFIER, idxs.name AS INDEX_NAME, " +
 			DatabaseMetaData. tableIndexOther + " AS TYPE, " +
-			"columns.number AS ORDINAL_POSITION, columns.name AS COLUMN_NAME, " +
+			"columns.\"number\" AS ORDINAL_POSITION, columns.name AS COLUMN_NAME, " +
 			"null AS ASC_OR_DESC, 0 AS PAGES, " +
 			"null AS FILTER_CONDITION " +
 				"FROM idxs, columns, keycolumns, tables, schemas " +
