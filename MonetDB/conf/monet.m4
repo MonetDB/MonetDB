@@ -263,14 +263,23 @@ if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xno; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
-      case "$host" in
-      i*86-*-cygwin)  CFLAGS="$CFLAGS -O6                      -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations                     -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
-                      dnl  The combination of "-On -fomit-frame-pointer" with n>1 
-                      dnl  does not seem to produce stable/correct? binaries under CYGWIN
-                      dnl  (Mdiff and Mserver crash with segmentation faults);
-                      dnl  the same hold for, the combination of "-On -funroll-all-loops" with n>1
+      gcc_ver="`gcc --version | head -1 | sed 's|[^0-9]*\([0-9][0-9\.]*[0-9]\)[^0-9].*|\1|'`"
+      case "$host-$gcc_ver" in
+      i*86-*-*-3.2)   CFLAGS="$CFLAGS -O6"
+                      case "$host" in
+                      i*86-*-cygwin) 
+                           dnl  With gcc 3.2, the combination of "-On -fomit-frame-pointer" (n>1)
+                           dnl  does not seem to produce stable/correct? binaries under CYGWIN
+                           dnl  (Mdiff and Mserver crash with segmentation faults);
+                           dnl  hence, we omit -fomit-frame-pointer, here.
+                           ;;
+                      *)   CFLAGS="$CFLAGS -fomit-frame-pointer";;
+                      esac
+                      CFLAGS="$CFLAGS                          -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations                     -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
+                      dnl  With gcc 3.2, the combination of "-On -funroll-all-loops" (n>1)
+                      dnl  does not seem to produce stable/correct? binaries
                       dnl  (Mserver produces tons of incorrect BATpropcheck warnings);
-                      dnl  hence, we omit -fomit-frame-pointer and -funroll-all-loops, here.
+                      dnl  hence, we omit -funroll-all-loops, here.
                       ;;
       i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
