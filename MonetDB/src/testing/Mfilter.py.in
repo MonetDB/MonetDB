@@ -174,8 +174,8 @@ test = (
 ##                # src/mapi/monet_BATs (on Linux2.4.26.ntv_32-d):
 ##                    r'^\[ "monet_mod_use",\t* *(?:44|66)\t* *\]$',
 ##                # Tokens & messages depend on flex/bison
-##                    r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
-##                    r'^ERROR = !ERROR (?:syntax|parse) error at token \([0-9]+\) in statement: ',
+                    r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
+                    r'^ERROR = !ERROR (?:syntax|parse) error at token \([0-9]+\) in statement: ',
 ##                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
 ##                    r'^IPO: using IR for .*$',
 ##                    r'^IPO: performing single-file optimizations$',
