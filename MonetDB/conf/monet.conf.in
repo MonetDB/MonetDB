@@ -30,7 +30,7 @@ exec_prefix=@exec_prefix@
 
 # GDK Section
 #============
-gdk_dbfarm=@localstatedir@/dbfarm	# origin of the database store
+gdk_dbfarm=@localstatedir@@DIRSEP@dbfarm	# origin of the database store
 gdk_dbname=demo			# default database to open
 gdk_debug=0			# debug
 gdk_mmap=33554432		# memory chucks of size >= 32M will be mmaped
@@ -68,7 +68,7 @@ gdk_mmap=33554432		# memory chucks of size >= 32M will be mmaped
 monet_admin=adm			#administrator user name 
 monet_prompt=monet>		#prompt 
 monet_welcome=yes		#Version and copyright information
-monet_mod_path=@libdir@/@PACKAGE@
+monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
 monet_deamon=no			# default yes
 
 #monet_clients = 32		number of concurrent Mclient listeners

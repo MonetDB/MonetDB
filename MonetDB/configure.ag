@@ -48,8 +48,8 @@ AC_ARG_WITH(bits,
 [  --with-bits=<#bits>     specify number of bits (32 or 64)],[
 case $withval in
 32)	;;
-64)	case "$host_os" in
-	linux*)	AC_ERROR([Linux does not support 64 bits]);;
+64)	case "$host" in
+	i?86*)	AC_ERROR([$host does not support 64 bits]);;
 	esac
 	;;
 *)	AC_ERROR(--with-bits argument must be either 32 or 64);;
@@ -78,6 +78,14 @@ yes-irix*-64)
 	CXX="$CXX -$bits"
 	;;
 esac
+
+DIRSEP="/"
+case "$host_os" in
+mac*)	DIRSEP=":"; 
+	AC_ERROR([mac not support yet])
+	;;
+esac
+AC_SUBST(DIRSEP)
 
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
