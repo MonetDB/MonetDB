@@ -520,7 +520,7 @@ mal_export void     expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void     trimMalBlk(MalBlkPtr mb);
 mal_export void     moveInstruction(MalBlkPtr mb, int pc, int target);
 mal_export void     insertInstruction(MalBlkPtr mb, InstrPtr p, int pc);
-mal_export void     removeInstruction(MalBlkPtr mb, int pc);
+mal_export void     removeInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void     removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str      operatorName(int i);
 
@@ -848,15 +848,15 @@ void oldmoveInstruction(InstrPtr new, InstrPtr p){
 Query optimizers walk their way through a MAL program block.
 They require some primitives to move instructions around and
 to remove superflous instructions. 
-
+The removal is based on the assumption that indeed the instruction
+belonged to the block.
 @c
-void removeInstruction(MalBlkPtr mb, int pc){
+void removeInstruction(MalBlkPtr mb, InstrPtr p){
     int i;
-    InstrPtr p;
     
-    p= getInstrPtr(mb,pc);
-     
-    for(i=pc; i<mb->stop-1; i++)
+    for(i=0; i<mb->stop-1; i++)
+	if( mb->stmt[i] == p) break;
+    for(; i<mb->stop-1; i++)
         mb->stmt[i]= mb->stmt[i+1];
     mb->stop--;
     mb->stmt[i]=0;
