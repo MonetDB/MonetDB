@@ -77,13 +77,13 @@ Last updated: @value{UPDATED}
 @end menu
 @end ifnottex
 
-@node Introduction V5, Alarm module,About this manual, Top
+@node Introduction V5, BAT buffer pool ,About this manual, Top
 @include Assets/About_this_manual_gdk
 
-@node Atom definitions , BAT buffer pool, Introduction V5 ,  Top
-@include atoms.bdy.texi
+@ @node Atom definitions , BAT buffer pool, Introduction V5 ,  Top
+@ @include atoms.bdy.texi
 
-@node BAT buffer pool , Box definition , Atom definitions ,  Top
+@node BAT buffer pool , Box definition , Introduction V5 ,  Top
 @include bbp.bdy.texi
 
 @node Box definition, Client management, BAT buffer pool ,  Top
@@ -120,7 +120,7 @@ Last updated: @value{UPDATED}
 @include multiplex.bdy.texi
 
 @node Optimizer support , Profiler , Multiplexed operations ,  Top
-@include profiler.bdy.texi
+@include optimizer.bdy.texi
 
 @node Profiler , Stream module , Optimizer support ,  Top
 @include profiler.bdy.texi
