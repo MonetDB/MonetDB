@@ -3415,13 +3415,9 @@ mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *dst)
 	val = hdl->cache.anchors[cr][fnr];
 
 	if (val == 0) {
-		return mapi_setError(hdl->mid, "Field value undefined",
+		return mapi_setError(hdl->mid, "Field value undefined or nil",
 				     "mapi_store_field", MERROR);
 	}
-
-	if (strcmp(val, "nil") == 0)
-		return mapi_setError(hdl->mid, "Field value is nil",
-				     "mapi_store_field", MERROR);
 
 	/* auto convert to C-type */
 	switch (outtype) {
@@ -3571,8 +3567,13 @@ mapi_slice_row(MapiHdl hdl)
 				return hdl->mid->error;
 			mapi_extend_anchor(hdl);
 		}
-		unquote(p, &start, &p);
-		hdl->cache.anchors[cr][i++] = start;
+		if (!unquote(p, &start, &p) &&
+		    (hdl->mid->languageId == LANG_SQL ?
+		     strcmp(start, "NULL") == 0 : strcmp(start, "nil") == 0)) {
+			/* indicate NULL/nil with NULL pointer */
+			hdl->cache.anchors[cr][i++] = NULL;
+		} else
+			hdl->cache.anchors[cr][i++] = start;
 		while (*p && isspace((int) *p))
 			p++;
 	} while (*p && *p != ']');
