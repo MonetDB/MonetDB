@@ -448,7 +448,7 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 		if (!lt->yyval.val.pval || (lt->yyval.vtype == TYPE_int &&
 		  (lt->yyval.val.ival > 0) && (lt->yyval.val.ival < MAXPARAMS)))
 		{
-		      	GDKerror("interpret: unresolved reference %d.\n", lt->yyval.vtype);
+		      	GDKerror("interpret: unresolved reference vtype %d ival %d.\n", lt->yyval.vtype, lt->yyval.val.ival);
 		      	return -1;
 		}
 		*res = *((ValPtr) lt->yyval.val.pval);
