@@ -9,6 +9,7 @@ Additional modules can be selectively loaded later.
 
 @mal
 use "atoms/startup";
+use "kernel/io";
 use "kernel/unix";
 use "kernel/lock";
 use "kernel/mmath";

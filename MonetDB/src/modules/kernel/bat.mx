@@ -125,9 +125,14 @@ comment "return true if to this BAT is read only.";
 
 
 command getSequenceBase( b:bat[void,any::1]): oid = CMDgetSequenceBase
+comment "Get the sequence base for the void column of a BAT.";
+command getSequenceBase( b:bat[oid,any::1]): oid = CMDgetSequenceBase;
+
 command setSequenceBase( b:bat[void,any::1], seqbase:oid):int 
 			= CMDsetSequenceBase
-comment "Set the sequence base for the void vcolumn of a BAT.";
+comment "Set the sequence base for the void column of a BAT.";
+command setSequenceBase( b:bat[oid,any::1], seqbase:oid):int 
+			= CMDsetSequenceBase;
 
 command setSorted(b:bat[any,any]) : bit = CMDsetSorted
 comment "Assure BAT is ordered on head.";
