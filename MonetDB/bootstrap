@@ -300,7 +300,7 @@ fi # [ "$_AM_VERSION" -lt "$_NEW_AM_VERSION" ]
 
 
 autoheader
-automake -a -c
+automake -a -c --foreign
 
 #autoupdate
 autoconf
