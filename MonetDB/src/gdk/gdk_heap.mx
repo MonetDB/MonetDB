@@ -109,6 +109,10 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	h->maxsize = h->size = MAX(1, nitems) * itemsize;
 	h->offset = h->free = 0;
 
+	/* check for overflow */
+	if (nitems > (h->size/itemsize)) 
+		return -1;
+
 	/* when using anonymous vm we malloc we need 64K chunks, also we
 	 * 20% extra malloc */
 	if (h->size > GDK_mem_bigsize) {
@@ -299,7 +303,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 		h->maxsize = MAX(minsize, h->maxsize);
 	}
 	IODEBUG {
-		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=" SZFMT ",free=" SZFMT ",size=" SZFMT ") = %d\n", nme, ext, h->storage, h->offset, h->free, h->size);
+		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=" SZFMT ",free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->offset, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
 	 * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv 
