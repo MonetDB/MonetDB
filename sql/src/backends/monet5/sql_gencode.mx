@@ -318,6 +318,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLprelude@
 		snprintf(buf,256,"bind%s",type);
 		q= newStmt(mb,"sql",buf);
+                /* setVarType(mb,getArg(q,0),newBatType(TYPE_void,XXXX)); */
 		q= pushStr(mb,q,s->op1.cval->t->s->base.name);
 		q= pushStr(mb,q,s->op1.cval->t->base.name);
 		q= pushStr(mb,q,s->op1.cval->base.name);
@@ -335,6 +336,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		int k;
 		@:SQLprelude@
 		q= newStmt(mb,"sql","bind_dbat");
+                /* setVarType(mb,getArg(q,0),newBatType(TYPE_void,XXXX));*/
 		q= pushStr(mb,q,s->op1.tval->s->base.name);
 		q= pushStr(mb,q,s->op1.tval->base.name);
 		q= pushInt(mb,q,s->flag);
@@ -352,6 +354,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 
 		@:SQLprelude@
 		q= newStmt(mb,"sql","bind_ibat");
+                /* setVarType(mb,getArg(q,0),newBatType(TYPE_void,XXXX));*/
 		q= pushStr(mb,q,s->op1.idxval->t->s->base.name);
 		q= pushStr(mb,q,s->op1.idxval->t->base.name);
 		q= pushStr(mb,q,s->op1.idxval->base.name);
@@ -1103,7 +1106,6 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
         backend_dumpstmt( be, curBlk, s);
 
 	pushEndInstruction(curBlk);
-        chkProgram(c->nspace,curBlk);
         addQueryToCache(c);
         if( c->backup){
         	c->curprg = c->backup;
