@@ -15,14 +15,20 @@ char **sql_completion (const char *text, int start, int end);
 char *sql_tablename_generator (const char *text, int state);
 char *sql_command_generator (const char *text, int state);
 
-#endif
-#endif
+#endif /* HAVE_LIBREADLINE */
+#endif /* READLINETOOLS_H_INCLUDED */
 @c
 /*
  * Readline specific stuff
  */
 #include "ReadlineTools.h"
+
 #ifdef HAVE_LIBREADLINE
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>		/* for strncasecmp */
+#endif
+
 #define PATHLENGTH	256		/* maximum file pathname length. */ 
 
 const char *SQL_COMMANDS[] = {	"SELECT", "INSERT", "UPDATE", "SET", "DELETE", "COMMIT", "ROLLBACK", 
@@ -140,4 +146,4 @@ char *sql_command_generator (const char *text, int state) {
 	return NULL;
 }
 
-#endif
+#endif /* HAVE_LIBREADLINE */
