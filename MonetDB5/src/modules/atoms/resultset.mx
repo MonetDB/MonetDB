@@ -170,19 +170,34 @@ static str RSsetPropertyInternal(int* retval, column* col, str nme, str val) {
 	/* the allowed properties are controlled hardcoded here,
 	 * because they are stored explicitly in the struct */
 	if (strcmp(nme, "name") == 0) {
-		*retval = col->name != NULL;
+		if (col->name != NULL) {
+			*retval = 1;
+			GDKfree(col->name);
+		}
 		col->name = val;
 	} else if (strcmp(nme, "table") == 0) {
-		*retval = col->table != NULL;
+		if (col->table != NULL) {
+			*retval = 1;
+			GDKfree(col->table);
+		}
 		col->table = val;
 	} else if (strcmp(nme, "schema") == 0) {
-		*retval = col->schema != NULL;
+		if (col->schema != NULL) {
+			*retval = 1;
+			GDKfree(col->schema);
+		}
 		col->schema = val;
 	} else if (strcmp(nme, "digits") == 0) {
-		*retval = col->digits != NULL;
+		if (col->digits != NULL) {
+			*retval = 1;
+			GDKfree(col->digits);
+		}
 		col->digits = val;
 	} else if (strcmp(nme, "scale") == 0) {
-		*retval = col->scale != NULL;
+		if (col->scale != NULL) {
+			*retval = 1;
+			GDKfree(col->scale);
+		}
 		col->scale = val;
 	} else {
 		/* throw exception  */
