@@ -22,7 +22,7 @@ bug-sf-960166
 bug-sf-960672
 bug-sf-964165
 update_where-bug-sf-976963
-bug-sf-975308
+primary_key-bug-sf-975308
 insert_into_select-bug-sf-978043
 union-bug-sf-978045
 object_name-bug-sf-985242
