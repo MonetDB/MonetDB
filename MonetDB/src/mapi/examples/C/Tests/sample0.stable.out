@@ -74,14 +74,14 @@ text:#-----------------#
 mapi_fetch_line:#-----------------#
 mapi_header:#-----------------#
 got complete block: 
-text:# BAT:	  tmp_36  #
+text:# BAT:	  tmp_35  #
 # (str)	  (int)	  #
 #-----------------#
 [ "John", 23	  ]
 [ "Mary", 23	  ]
 
-mapi_fetch_line:# BAT:	  tmp_36  #
-mapi_header:# BAT:	  tmp_36  #
+mapi_fetch_line:# BAT:	  tmp_35  #
+mapi_header:# BAT:	  tmp_35  #
 got complete block: 
 text:# (str)	  (int)	  #
 #-----------------#
@@ -116,7 +116,7 @@ text:
 promptMonet:
 mapi_query return:0
 mapi_header:#-----------------#
-mapi_header:# BAT:	  tmp_36  #
+mapi_header:# BAT:	  tmp_35  #
 mapi_header:# (str)	  (int)	  #
 mapi_header:#-----------------#
 John is 23
