@@ -508,6 +508,23 @@ statement *sql_search_case( context *sql, scope *scp, dlist *when_search_list,
 	for(n = conds->h, m = results->h; n && m; n = n->next, m = m->next){
 		statement *cond = n->data.stval;
 		statement *result = m->data.stval;
+		
+		/* need more semantic tests here */
+		if (cond->type == st_pearl){
+			node *k = cond->op1.lval->h; 
+			statement *cur = NULL;
+
+			if (k){ 
+				cur = k->data.lval->h->data.stval;
+				k = k->next;
+				for( ;k ; k = k->next){
+					statement *st = 
+						k->data.lval->h->data.stval;
+					cur = statement_union( cur, st );
+				}
+				cond = cur;
+			}
+		}
 		if (result->nrcols <= 0)
 			result = statement_const( cond, result );
 		else
@@ -1580,20 +1597,19 @@ static
 statement *pearl2pivot( context *sql, list *ll ){
 	node *n = ll->h;
 	if(n){
-		int markid = 1000; /* 1000 offset to easily see the difference
-				      with normal marks */
 		statement *pivots = diamond2pivot(sql, n->data.lval);
 		list *cur = pivots->op1.lval;
 		n = n->next;
+		/*
+		statement *g = NULL;
+		*/
 		while(n){
 			statement *npivots = diamond2pivot(sql, n->data.lval);
 			list *l = npivots->op1.lval;
 			list *inserts = list_create();
-			/*
-			statement *g = NULL;
-			*/
 
 			node *m = l->h;
+
 			while(m){
 				node *c = cur->h;
 				while(c){
@@ -1601,41 +1617,36 @@ statement *pearl2pivot( context *sql, list *ll ){
 					    m->data.stval->t){
 					    list_append_statement( inserts,
 					      statement_insert_column(
-					       c->data.stval,
-					     	statement_remark( 
-					         m->data.stval, 
-						 statement_count(c->data.stval),
-						 markid
-						 )));
+					       c->data.stval, m->data.stval ));
 				    	}
 				    	c = c->next;
 				}
 				m = m->next;
 			}
+			/* TODO: cleanup the old cur(rent) and npivots */
 			cur = inserts;
-			/*
-			m = inserts->h;
-			while(m){
-				if (g){
-					g = statement_derive(m->data.stval, g);
-				} else {
-					g = statement_group(m->data.stval);
-				}
-				m = m->next;
-			}
-			g = statement_reverse( statement_unique( 
-				statement_reverse( g )));
-			m = inserts->h;
-			cur = list_create();
-			while(m){
-				list_append_statement( cur, 
-				  statement_semijoin( m->data.stval, g));
-				m = m->next;
-			}
-			*/
 			n = n->next;
-			markid ++;
 		}
+		/* no double elimination jet 
+		m = inserts->h;
+		while(m){
+			if (g){
+				g = statement_derive(m->data.stval, g);
+			} else {
+				g = statement_group(m->data.stval);
+			}
+			m = m->next;
+		}
+		g = statement_reverse( statement_unique( 
+			statement_reverse( g )));
+		m = inserts->h;
+		cur = list_create();
+		while(m){
+			list_append_statement( cur, 
+			  statement_semijoin( m->data.stval, g));
+			m = m->next;
+		}
+		*/
 		return statement_list(cur);
 	}
 	return NULL;
