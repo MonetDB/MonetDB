@@ -148,10 +148,12 @@ atom *atom_general(sql_subtype * tpe, char *val)
 			a->data.val.sval = sql2str(val);
 			a->data.len = strlen(a->data.val.sval); 
 		} else {
-			ATOMfromstr(a->data.vtype, &p, &a->data.len, val);
-			if (!p){
+			int res = ATOMfromstr(a->data.vtype, &p, &a->data.len, val);
+			if (res <= 0 || !p){
 				_DELETE(val);
 				_DELETE(a);
+				if (p)
+					GDKfree(p);
 				return NULL;
 			}
 			VALset(&a->data, a->data.vtype, p);

@@ -251,6 +251,7 @@ typedef struct mvc {
 
 sql_export int mvc_init(int debug, backend_stack stk );
 sql_export void mvc_exit();
+sql_export void mvc_logmanager();
 
 sql_export mvc *mvc_create( int cache, backend_stack stk, 
 			    bstream *rs, stream *ws );
@@ -2008,19 +2009,35 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 
 void mvc_exit()
 {
-
 	if (mvc_debug)
 		fprintf(stderr, "mvc_exit\n");
 
+	MT_set_lock(mvc_lock, "mvc_commit");
 	logger_exit(logger); 
 	logger_destroy(logger); 
 
 	trans_destroy(gtrans);
+	MT_unset_lock(mvc_lock, "mvc_commit");
 
 	parser_exit();
 }
 
-ssize_t mvc_status( mvc *m ){
+void 
+mvc_logmanager()
+{
+/*
+	if (log_changes(logger) < 100)
+		return;
+	MT_set_lock(mvc_lock, "mvc_commit");
+	logger_restart(logger);
+	MT_unset_lock(mvc_lock, "mvc_commit");
+	logger_cleanup(logger);
+*/
+}
+
+ssize_t 
+mvc_status( mvc *m )
+{
 	int res = m->status;
 
 	m->status = 0;

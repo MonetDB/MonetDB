@@ -68,7 +68,7 @@ SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 		*Nullable = rec->sql_desc_nullable;
 
 	if (isID(desc)) {
-		size_t length = strlen((char *) rec->sql_desc_name);
+		ssize_t length = strlen((char *) rec->sql_desc_name);
 		if (BufferLength > 0 && Name)
 			strncpy((char *) Name, (char *) rec->sql_desc_name, BufferLength);
 		if (StringLength)

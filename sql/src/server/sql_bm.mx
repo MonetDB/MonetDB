@@ -345,8 +345,8 @@ void bm_cleanup( bm *bm )
 			}
 	    	}
 		bat_destroy(bm->bat_oversion);
-		bm->bat_oversion = bat_copy(bm->bat_version, "bm_cleanup");
 	}
+	bm->bat_oversion = bat_copy(bm->bat_version, "bm_cleanup");
 }
 
 void bm_load( bm *bm, FILE *fp )

@@ -519,7 +519,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT type,
 			addStmtError(stmt, "HY090", NULL, 0);
 			return SQL_ERROR;
 		} else {
-			size_t length = strlen(data);
+			ssize_t length = strlen(data);
 			SQLRETURN rc = SQL_SUCCESS;
 
 			length -= stmt->retrieved;

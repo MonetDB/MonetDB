@@ -97,10 +97,12 @@ extern struct logger *logger_create(int debug, char *logdir, char *dbname, struc
 extern void logger_destroy(struct logger *logger);
 extern void logger_exit(struct logger *logger);
 extern void logger_restart(struct logger *logger );
+extern int logger_cleanup(struct logger *logger );
 
 extern void log_bat(struct logger* logger, oid lbid, BAT *b);
 extern oid log_bat_persists(struct logger* logger, BAT *b, char *n );
 extern void log_bat_transient(struct logger* logger, oid lbid );
+extern int  log_changes(struct logger *logger );
 
 /* for now only one level of transactions is supported */
 /* later log_tstart/tend could be replaced by log_begin/log_commit/log_abort */
@@ -152,6 +154,7 @@ typedef struct logformat_t {
 
 typedef struct logger {
 	int 	debug;
+	int 	changes;
 	int	id;
 	int	tid;
 	char*	dir;
@@ -427,6 +430,7 @@ logger *logger_new(int debug, char *logdir, char *dbname, struct bm *bm){
 	char bak[BUFSIZ];
 
 	logger->debug = debug;
+	logger->changes = 0;
 	logger->id = 1;
 	logger->tid = 0;
 	snprintf(filename, BUFSIZ,"%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
@@ -490,17 +494,22 @@ void logger_exit(logger *logger) {
 	
 	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
 	if ( (fp = fopen(filename, "w")) != NULL){
+		char ext[BUFSIZ];
+
 		logger_save(logger, fp);
 		fprintf(fp, "\n" );
 		logger->id++;
 		fprintf(fp, "%d\n", logger->id);
 		fclose(fp);
-		TMcommit();
+		TMcommit();	/* save new bats */
 
-		GDKunlink( logger->dir, LOGFILE, "bak" );
-
+		/* atomic action, switch to new log, keep old for later 
+		   cleanup actions 
+		 */
+		snprintf(ext, BUFSIZ, "bak-%d", logger->id);
+		GDKmove( logger->dir, LOGFILE, "bak", logger->dir, LOGFILE, ext ); 
 		bm_cleanup(logger->bm);
-		TMcommit();
+		TMcommit();	/* cleanup old bats */
 	} else {
 		fprintf(stderr, "logger could not open %s\n", filename );
 	}
@@ -509,7 +518,43 @@ void logger_exit(logger *logger) {
 void logger_restart(logger *logger) {
 	logger_close(logger);
 	logger_exit(logger);
+	/* TODO add cleanup of old log files */
 	logger_open(logger);
+}
+
+int logger_cleanup(logger *logger) {
+	char buf[BUFSIZ];
+	int res = 0;
+	char id[BUFSIZ];
+	FILE *fp = NULL;
+
+
+	snprintf(buf, BUFSIZ,"%s%s.bak-%d", logger->dir, LOGFILE, logger->id);
+	printf(buf);
+        if (logger->debug&1)
+		fprintf(stderr, "logger_cleanup %s\n", buf);
+
+	if ( (fp = fopen(buf, "r")) != NULL)
+		return res;
+
+	printf(buf);
+	/* skip catalog */
+	while(fgets(id, BUFSIZ, fp) != NULL && id[0] != '\n')
+		;
+
+	while(fgets(id, BUFSIZ, fp) != NULL){
+		printf("(%s.%s)\n", LOGFILE, id);
+		GDKunlink( logger->dir, LOGFILE, id ); 
+	}
+	fclose(fp);
+	snprintf(buf, BUFSIZ, "bak-%d", logger->id);
+	GDKunlink( logger->dir, LOGFILE, buf ); 
+	return res;
+}
+
+int log_changes( logger *logger )
+{
+	return logger->changes;
 }
 
 @-
@@ -528,6 +573,7 @@ oid log_bat_persists(logger *logger, BAT *b, char *name )
 	oid lbid = bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
 	l.flag = SQL_LOG_CREATE;
 	l.nr = 0;
+	logger->changes++;
 	log_write_format( logger, &l );
 	log_write_string(logger, name);
 	ha = ATOMname(b->htype);
@@ -557,6 +603,7 @@ void log_bat_transient(logger *logger, oid lbid ){
 
 	l.flag = SQL_LOG_DESTROY;
 	l.nr = 0;
+	logger->changes++;
 	log_write_format( logger, &l );
 	log_write_string(logger, name);
 	
@@ -576,6 +623,7 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 	}
 
 	l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
+	logger->changes += l.nr;
 	if (l.nr){
 		void (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
 		void (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
@@ -600,6 +648,7 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr );
 	}
 	l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
+	logger->changes += l.nr;
 	if (l.nr){
 		void (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
 		void (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;

@@ -42,13 +42,13 @@ struct scanner {
 	bstream *rs;
 	stream 	*ws;
 
-	int yysval;		/* start of current token */
-	int yyval;		/* current token */
-	int yycur;		/* next char in the queue */
-	char yybak;		/* sometimes its needed to write an EOS marker */
-	int as;			/* start of query part of view's etc */
+	int yysval;	/* start of current token */
+	int yyval;	/* current token */
+	int yycur;	/* next char in the queue */
+	char yybak;	/* sometimes its needed to write an EOS marker */
+	int as;		/* start of query part of view's etc */
 	int key;
-	prot mode; 		/* which mode (line (1,N), blocked) */
+	prot mode; 	/* which mode (line (1,N), blocked) */
 };
 
 #define QUERY(scanner) ((scanner.rs)?(scanner.rs->buf+scanner.rs->pos):scanner.buf)
@@ -282,6 +282,9 @@ init_keywords()
 	   keywords_insert("UNDER", UNDER );
 	 */
 	keywords_insert("UNION", UNION);
+	keywords_insert("EXCEPT", EXCEPT);
+	keywords_insert("INTERSECT", INTERSECT);
+	keywords_insert("CORRESPONDING", CORRESPONDING);
 	keywords_insert("UNIQUE", UNIQUE);
 	keywords_insert("USING", USING);
 	keywords_insert("VALUES", VALUES);
@@ -335,7 +338,6 @@ init_keywords()
 	keywords_insert("RETURNS", RETURNS );
 	keywords_insert("EXTERNAL", EXTERNAL );
 	keywords_insert("NAME", sqlNAME );
-	keywords_insert("EXPORT", EXPORT );
 	keywords_insert("EXECUTE", EXECUTE );
 
 	keywords_insert("INDEX", INDEX );
@@ -645,7 +647,7 @@ scanner_string_bs(mvc * c, int quote)
 	int escape = 0;
 
 	while (cur != EOF) {
-		int pos = rs->pos + lc->yycur;
+		unsigned int pos = rs->pos + lc->yycur;
 
 		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur &&
 		       (cur != quote || escape)) 
@@ -656,6 +658,12 @@ scanner_string_bs(mvc * c, int quote)
 				escape = !escape;
 		}
 		lc->yycur = pos - rs->pos;
+		/* check for quote escaped quote: Obsuce SQL Rule */
+		if (cur == quote && rs->buf[pos] == quote) { 
+			rs->buf[pos-1] = '\\';
+			lc->yycur++;
+			continue;
+		}
 		assert(pos <= rs->len+1);
 		if (cur == quote && !escape) {
 			return scanner_token_bs(lc, STRING);
@@ -676,20 +684,29 @@ static int
 scanner_string_s(mvc * c, int quote)
 {
 	struct scanner *lc = &c->scanner;
-	int cur = 0;
+	int cur = quote;
 	int escape = 0;
 
-	while ((cur = scanner_getc_s(lc)) != EOF && (cur != quote || escape)) {
-		if (cur == '\\' && !escape)
-			escape = 1;
-		else
-			escape = 0;
+	while(cur != EOF) {
+		while ((cur = scanner_getc_s(lc)) != EOF && 
+			(cur != quote || escape)) {
+			if (cur == '\\' && !escape)
+				escape = 1;
+			else
+				escape = 0;
+		}
+		/* check for quote escaped quote: Obsuce SQL Rule */
+		if (cur == quote && lc->buf[lc->yycur] == quote) { 
+			lc->yycur++;
+			continue;
+		} 
+		if (cur == quote)
+			return scanner_token_s(lc, STRING);
 	}
 	if (cur == EOF) {
 		(void)sql_error( c, 2, "Unexpected end of input" );
-		return LEX_ERROR;
 	}
-	return scanner_token_s(lc, STRING);
+	return LEX_ERROR;
 }
 
 @= scanner

@@ -17,7 +17,7 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 
 	switch (SQLGetDiagRec(tpe, hnd, 1, state, &errnr, msg, sizeof(msg), &msglen)) {
 	case SQL_SUCCESS_WITH_INFO:
-		if (msglen >= sizeof(msg))
+		if (msglen >= (signed int)sizeof(msg))
 			fprintf(stderr, "(message truncated)\n");
 	case SQL_SUCCESS:
 		fprintf(stderr,

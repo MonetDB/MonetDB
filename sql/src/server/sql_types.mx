@@ -119,16 +119,16 @@ typedef struct sql_subfunc {
 	sql_subtype res;
 } sql_subfunc;
 
-sql_export sql_subtype *sql_bind_subtype( char *name, int digits, int scale );
+sql_export sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale );
 sql_export sql_subtype *sql_bind_localtype( char *name );
-sql_export sql_subtype *sql_create_subtype( sql_type *t, int s, int d );
+sql_export sql_subtype *sql_create_subtype( sql_type *t, unsigned int s, unsigned int d );
 sql_export sql_subtype *sql_dup_subtype( sql_subtype *t );
 sql_export void sql_subtype_destroy( sql_subtype *t );
 
 sql_export int type_cmp( sql_type *t1, sql_type *t2);
 sql_export int subtype_cmp( sql_subtype *t1, sql_subtype *t2);
 
-sql_export sql_type *sql_create_type(char *sqlname, int digits, int scale, int radix, char *name );
+sql_export sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned int radix, char *name );
 
 sql_export sql_arg *sql_create_arg( char *name, sql_subtype *t );
 sql_export void arg_destroy( sql_arg *a );
@@ -183,7 +183,7 @@ static list *subfuncs = NULL;
 
 static void sqltypeinit();
 
-sql_subtype *sql_create_subtype( sql_type *t, int digits, int scale )
+sql_subtype *sql_create_subtype( sql_type *t, unsigned int digits, unsigned int scale )
 {
 	sql_subtype *res = NEW(sql_subtype);
 
@@ -205,7 +205,7 @@ sql_subtype *sql_dup_subtype( sql_subtype *res )
 	return res;
 }
 
-sql_subtype *sql_bind_subtype( char *name, int digits, int scale )
+sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale )
 	/* todo add approximate info 
 	 * if digits/scale == 0 and no approximate with digits/scale == 0
 	 * exits we could return the type with largest digits 
@@ -548,7 +548,7 @@ void sql_subfunc_destroy( sql_subfunc *f )
 }
 
 
-sql_type *sql_create_type(char *sqlname, int digits, int scale, int radix, char *name)
+sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned int radix, char *name)
 {
 	sql_type *t = NEW(sql_type);
 

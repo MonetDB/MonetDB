@@ -692,7 +692,7 @@ static int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 			/* first find super type */
 			char *tpe = r->type->sqlname;
 			int digits = 0;
-			int scale = sql_max(i->scale,r->scale);
+			unsigned int scale = sql_max(i->scale,r->scale);
 			sql_subtype *super;
 			if (lt->type->nr > rt->type->nr)
 				tpe = i->type->sqlname;
@@ -734,8 +734,13 @@ static int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 			ls = fix_scale( sql, r, ls, 0, 0);
 			rs = fix_scale( sql, i, rs, 0, 0);
 		}
-		if (!ls || !rs)
+		if (!ls || !rs) {
+			if (ls)
+				*L = ls;
+			if (rs)
+				*R = rs;
 			return -1;
+		}
 		*L = ls;
 		*R = rs;
 		return 0;
@@ -1007,9 +1012,10 @@ static stmt *sql_binop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * 
 		}
 	}
 	res = sql_error(sql, 02, "Binary operator: %s(%s,%s) unknown", l->data.sval, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
-	if (ls) stmt_destroy(ls);
-	if (rs) stmt_destroy(rs);
-
+	if (ls) 
+		stmt_destroy(ls);
+	if (rs) 
+		stmt_destroy(rs);
 	return res;
 }
 
@@ -1054,6 +1060,7 @@ static stmt *sql_unop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * s
 		}
 	} else {
 		char *type = tail_type(rs)->type->sqlname;
+
 		stmt_destroy(rs);
 		return sql_error(sql, 02, "Unary operator: %s(%s) unknown", l->data.sval, type);
 	}
@@ -1409,6 +1416,56 @@ static stmt *sql_join(mvc * sql, scope * scp, symbol * q)
 	return sql_join_(sql, scp, tab_ref1, natural, jointype, tab_ref2, joinspec);
 }
 
+static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int all, dlist *cols, symbol *t2)
+{
+	stmt *res;
+	node *n, *m;
+
+	scope *nscp = scope_open(scp);
+	tvar *tv1 = table_ref(sql, nscp, t1);
+	tvar *tv2 = table_ref(sql, nscp, t2);
+	list *unions = NULL;
+
+	if (!tv1 || !tv2) {
+		return NULL;
+	}
+
+	if (list_length(tv1->columns) != list_length(tv2->columns)) {
+		return sql_error(sql, 02, "Cannot union different ordinality queryes");
+	}
+	unions = create_stmt_list();
+	if (!cols) {
+		for (n = tv1->columns->h, m = tv2->columns->h;
+			n && m; 
+			n = n->next, m = m->next) {
+				cvar *lc = n->data;
+				cvar *rc = m->data;
+	
+				list_append(unions, 
+				stmt_append(stmt_dup(lc->s), stmt_dup(rc->s)));
+		}
+	/* TODO cols length 0 see natural join
+	        cols length > 0 see union join, join on name */
+	}
+	if (!all) {
+		/* TODO double elimination */
+	}
+	res = stmt_list(unions);
+	scp = scope_close(nscp);
+	return res;
+}
+
+static stmt *sql_union(mvc * sql, scope * scp, symbol * q)
+{
+
+	dnode *n = q->data.lval->h;
+	symbol *tab_ref1 = n->data.sym;
+	int all = n->next->data.ival;
+	dlist *corresponding = n->next->next->data.lval;
+	symbol *tab_ref2 = n->next->next->next->data.sym;
+	return sql_union_(sql, scp, tab_ref1, all, corresponding, tab_ref2 );
+}
+
 static stmt *sql_cross(mvc * sql, scope * scp, symbol * q)
 {
 
@@ -1428,9 +1485,11 @@ static stmt *sql_cross(mvc * sql, scope * scp, symbol * q)
 	cv1 = tv1->columns->h->data;
 	cv2 = tv2->columns->h->data;
 
+	/* cross product */
 	ct = stmt_join(stmt_dup(cv1->s), stmt_reverse(stmt_dup(cv2->s)), cmp_all);
 
 	if (ct) {
+		/* add the columns */
 		list *rl = create_stmt_list();
 		node *nv;
 
@@ -1443,9 +1502,14 @@ static stmt *sql_cross(mvc * sql, scope * scp, symbol * q)
 
 			for (n = tv->columns->h; n; n = n->next) {
 				cvar *cs = n->data;
-				list_append(rl, stmt_join (foundsubset, stmt_dup(cs->s), cmp_equal));
+				list_append(rl, 
+					stmt_join (
+						stmt_dup(foundsubset), 
+						stmt_dup(cs->s), cmp_equal));
 			}
+			stmt_destroy(foundsubset);
 		}
+		stmt_destroy(ct);
 		return stmt_list(rl);
 	}
 	return NULL;
@@ -2137,6 +2201,10 @@ static group *query_groupby(mvc * sql, scope * scp, symbol * groupby, stmt * sub
 	while (o) {
 		symbol *grp = o->data.sym;
 		stmt *c = sql_column_ref(sql, scp, grp);
+		if (!c) {
+			if (cur) grp_destroy(cur);
+			return NULL;
+		}
 		cur = query_groupby_inner(sql, scp, c, subset, cur);
 		o = o->next;
 	}
@@ -2361,6 +2429,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 		}
 
 		if (s && list_length(scp->outers) > 0) {
+			assert(!grp);
 			grp = query_groupby_outers(sql, scp, s);
 			if (!grp) {
 				assert(0);
@@ -3292,7 +3361,6 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 {
 	char buf[BUFSIZ];
 	stmt *res;
-	group *g = NULL;
 
 	sql_subtype *it = sql_bind_localtype( "int" );
 	sql_subtype *lt = sql_bind_localtype( "lng" );
@@ -3335,6 +3403,7 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 
 		/* 2e stage: find out if inserted are unique */
 		if (idx_inserts->nrcols){ /* insert columns not atoms */
+			group *g = NULL;
 		    	stmt *ss;
 			sql_subfunc *or = sql_bind_func_result("or", bt, bt, bt);
 		    	for(m = k->columns->h; m; m = m->next){
@@ -3343,6 +3412,7 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 					stmt_dup(inserts[c->c->colnr]->op2.stval),g);
 			}
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt));
+			grp_destroy(g);
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr("sum", tail_type(ss));
 			count_sum = stmt_binop( 
@@ -3556,7 +3626,6 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 {
 	char buf[BUFSIZ];
 	stmt *res;
-	group *g = NULL;
 
 	sql_subtype *it = sql_bind_localtype( "int" );
 	sql_subaggr *cnt = sql_bind_aggr("count", NULL);
@@ -3598,6 +3667,7 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 
 		/* 2e stage: find out if updated are unique */
 		if (idx_updates->nrcols){ /* update columns not atoms */
+			group *g = NULL;
 		    	stmt *ss;
 			sql_subfunc *or = sql_bind_func_result("or", bt, bt, bt);
 		    	for(m = k->columns->h; m; m = m->next){
@@ -3617,6 +3687,7 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 				g = grp_create(upd,g);
 			}
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt));
+			grp_destroy(g);
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr("sum", tail_type(ss));
 			count_sum = stmt_binop( 
@@ -5059,6 +5130,13 @@ static stmt *sql_stmt(mvc * sql, symbol * s)
 		break;
 	case SQL_CROSS:
 		ret = sql_cross(sql, NULL, s);
+		/* add output stmt */
+		if (ret) 
+			ret = stmt_output(ret);
+		sql->type = Q_TABLE;
+		break;
+	case SQL_UNION:
+		ret = sql_union(sql, NULL, s);
 		/* add output stmt */
 		if (ret) 
 			ret = stmt_output(ret);

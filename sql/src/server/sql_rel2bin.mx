@@ -109,7 +109,7 @@ static int cmp_sel_val( stmt *sel, stmt *key )
 
 static int cmp_sel_comp_type( stmt *sel, comp_type *flg )
 {
-	if ((sel->type == st_select || sel->type == st_uselect) && sel->flag == *flg){
+	if ((sel->type == st_select || sel->type == st_uselect) && (comp_type)sel->flag == *flg){
 		return 0;
 	}
 	return -1;

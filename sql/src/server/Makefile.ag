@@ -2,7 +2,7 @@
 
 INCLUDES = $(MONET_INCS)
 
-YFLAGS = -d -p sql
+YFLAGS = -d -p sql -v
 
 lib_sqlserver = {
 	NOINST

@@ -58,8 +58,15 @@ for the time being.
 	.ATOM sql_check = ptr;
 	.END; 
 	
+
 	.BUILTIN sqlclient( Stream s_in, Stream s_out ) = sqlclient;
-		"parse the next sql command and convert this to mil code"
+	"Read sql statements from s_in and output results on s_out"
+
+	.BUILTIN sqlconsole( ) = sqlconsole;
+	"Read sql statements from stdin and output results on stdout"
+
+	.COMMAND logmanager() = logmanager;
+		"The log manager takes care off keeping the logs small, ie. it merges the changs into bats and abands the logs"
 
 	.BUILTIN mvc_init(int debug) = mvc_init_wrap; 
 		"create the global catalog"
@@ -73,7 +80,7 @@ for the time being.
 	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
 		"Destroy multi version catalog"
 
-	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql;
+	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql_wrap;
 		"execute a sql query"
 
 	.COMMAND mvc_login( mvc m, str user, str passwd ) : str 
@@ -292,6 +299,7 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
 	if ( mvc_init(*Debug, (backend_stack)stk ) ){
+		sqlstatement("CREATE TABLE history (start TIMESTAMP, query VARCHAR, parse MEDIUMINT, mil MEDIUMINT, exec MEDIUMINT, total MEDIUMINT, user_id MEDIUMINT);", stk);
 		sqlstatement("GRANT ALL on modules to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on schemas to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on tables to monetdb with grant option with hierarchy option;", stk);
@@ -306,6 +314,14 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 		sqlstatement("GRANT ALL on privileges to monetdb with grant option with hierarchy option;", stk);
 	}
 	return GDK_SUCCEED;
+}
+
+int logmanager() {
+	/* try log cleanup every minute */
+	while(1) {
+		MT_sleep_ms(60000); 
+		mvc_logmanager();
+	}
 }
 
 int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
@@ -342,6 +358,11 @@ int mvc_destroy_wrap( mvc *c ){
 	mvc_destroy( *(mvc**)c );
 	return GDK_SUCCEED;
 }
+
+int mvc_sql_wrap( mvc *c, str cmd ){
+	return mvc_sql( *(mvc**)c, cmd );
+}
+
 
 int mvc_login_wrap( str *r, mvc *c, str user, str passwd  ){
 	*r = mvc_login( *(mvc**)c, user, passwd );
@@ -781,6 +802,7 @@ module(mapi); # mapi_listen
 #vm_maxsize(0LL);
 
 mvc_init(int(monet_environment.find("sql_debug")));
+fork(logmanager);
 
 proc SQLclient( Stream s_in, Stream s_out ) := {
 	fork(sqlclient(s_in, s_out));
