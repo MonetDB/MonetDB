@@ -1269,7 +1269,7 @@ it with the generic hashimpl anyway.
 		if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: non-optimized sort\n");
 		for(; r<s; r+=yy) { /* loop on extent */
 		    ptr last = BUNhead(extent,r);
-		    if ((*cmp)(BUNhead(b,p),last) < 0) { 
+		    if (p<q && (*cmp)(BUNhead(b,p),last) < 0) { 
 	       		 p = SORTfndfirst(m, last); 
 	    	    } 
 		    nested->batBuns->base = nested->batDeleted = 
