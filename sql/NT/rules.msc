@@ -160,10 +160,10 @@ MONET4=yes
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
 {$(SRCDIR)}.cxx.$O:
-	$(CXX) $(CFLAGS) $(INCLUDES) -c $<
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
 
 .cxx.$O:
-	$(CXX) $(CFLAGS) $(INCLUDES) -c $<
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
 
 # needed for yacc/lex output generated under unix 
 .cc.cxx:
