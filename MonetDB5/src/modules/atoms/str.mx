@@ -886,8 +886,7 @@ int codeset( str *res )
 	*res = GDKstrdup(codeset);
 	return GDK_SUCCEED;
 #else
-	(void) res;
-	GDKerror("MIL-`codeset()' not available as C-`nl_langinfo()' wasn't found during compilation.\n");
+	*res = GDKstrdup("UTF-8");
 	return GDK_FAIL;
 #endif
 }
@@ -902,22 +901,25 @@ int strIconv( str *res, str org, str f, str t)
 	ICONV_CONST char *from = org;
 
 	if (!cd){
-		GDKerror("Cannot convert strings from (%s) to (%s)\n", f, t);
+		GDKerror("strIconv:Cannot convert strings from (%s) to (%s)\n", f, t);
 		return GDK_FAIL;
 	}
 	*res = r = GDKmalloc(size); 
 	if (iconv(cd, &from, &len, &r, &size) == (size_t) -1){
 		GDKfree(*res);
 		*res = NULL;
-		GDKerror("String conversion failed from (%s) to (%s)\n", f, t);
+		GDKerror("strIconv:String conversion failed from (%s) to (%s)\n", f, t);
 		return GDK_FAIL;
 	}
 	*r = 0;
 	iconv_close(cd);
 	return GDK_SUCCEED;
 #else
-	(void)res; (void)org; (void)f; (void)t; /* fool the compiler */
-	GDKerror("MIL-`iconv()' not available as C-`iconv()' wasn't found during compilation.\n");
+        *res = NULL;
+        if (strcmp(f,t) == 0) {
+                *res = GDKstrdup(org);
+                return GDK_SUCCEED;
+        }
 	return GDK_FAIL;
 #endif
 }
