@@ -248,12 +248,12 @@ Installation" above.
 In case the install- (i.e., prefix-) directories of MonetDB and
 Pathfinder are identical, simply call
 
- Mserver --dbinit='module("pathfinder");' <monetdb-prefix>/lib/MonetDB/mapi.mil
+ Mserver --dbinit="module(pathfinder,mapi); mapi_start();'
 
 In case you use different install- (i.e., prefix-) directories for MonetDB
 and Pathfinder, call
 
- Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<pathfinder-prefix>/lib/MonetDB --dbinit='module("pathfinder");' <monetdb-prefix>/lib/MonetDB/mapi.mil
+ Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<pathfinder-prefix>/lib/MonetDB --dbinit="module(pathfinder,mapi); mapi_start();"
 
 Then, in a second shell, set up the same environment to prepare the following steps:
 
@@ -301,17 +301,17 @@ running Mserver.)
 
 - To type and run a single XQuery query interactively, start
 
-   pf -M | MapiClient
+   pf | MapiClient
 
   type your query followed by a newline (enter/return) and a "Ctrl-D".
 
 - You can also echo your XQuery query into pf:
 
-   echo 'for $a in (1,2) return $a' | pf -M | MapiClient
+   echo 'for $a in (1,2) return $a' | pf | MapiClient
 
 - Or read you XQuery query from a file MyQuery.xq:
 
-   pf -M MyQuery.xq | MapiClient
+   pf MyQuery.xq | MapiClient
 
 - ...
 
@@ -320,9 +320,6 @@ See
  pf -h
 
 for more information about the XQuery compiler.
-
-Note, for now, only the "summer version" produces executeable MIL code,
-hence, the "-M" option is mandatory to execute XQuery queries.
 
 
 Troubleshooting:
