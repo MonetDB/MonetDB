@@ -202,16 +202,15 @@ BAT *BATmergejoin(BAT *l, BAT *r) {
 	}
 
 	/* propagate properties */
-	bn->hsorted = bn->tsorted = FALSE;
+	bn->hsorted = BAThordered(l);
+	bn->tsorted = (BATtordered(r) && BATtordered(l) && (BATtkey(l) || BAThkey(r)));
 	if (BAThkey(r)) {
-	    bn->hsorted = BAThordered(l);
 	    if (BAThkey(l)) BATkey(bn, TRUE);
 	    if (BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l);
 	    }
 	} 
 	if (BATtkey(l)) {
-	    bn->tsorted = BATtordered(r);
 	    if (BATtkey(r)) BATkey(BATmirror(bn), TRUE);
 	    if (BATcount(bn) == BATcount(r)) {
 		ALIGNsetT(bn, r);
