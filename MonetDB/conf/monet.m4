@@ -1,7 +1,6 @@
 AC_DEFUN(AM_MONET_OPTIONS,
 [
 dnl --enable-debug
-dnl CFLAGS="$CFLAGS"
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable full debugging [default=off]],
   enable_debug=$enableval, enable_debug=no)
@@ -95,10 +94,10 @@ if test "x$have_pthread" != xno; then
     PTHREAD_INCS="-I$withval/include"
   fi
 
-  save_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $PTHREAD_INCS"
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
   AC_CHECK_HEADERS(pthread.h semaphore.h) 
-  CFLAGS="$save_CFLAGS"
+  CPPFLAGS="$save_CPPFLAGS"
 
   save_LIBS="$LIBS"
   LIBS="$LIBS $PTHREAD_LIBS"
@@ -135,8 +134,8 @@ if test "x$have_readline" != xno; then
 
   save_LIBS="$LIBS"
   LIBS="$LIBS $READLINE_LIBS"
-  AC_CHECK_LIB(readline$libsuff, readline, 
-	[ READLINE_LIBS="$READLINE_LIBS -lreadline$libsuff -ltermcap" 
+  AC_CHECK_LIB(readline, readline, 
+	[ READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap" 
           AC_DEFINE(HAVE_LIBREADLINE) 
 	  have_readline=yes ]
 	, have_readline=no, "-ltermcap" )
@@ -245,10 +244,10 @@ if test "x$have_getopt" != xno; then
     GETOPT_INCS="-I$withval/include"
   fi
 
-  save_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $GETOPT_INCS"
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $GETOPT_INCS"
   AC_CHECK_HEADERS(getopt.h) 
-  CFLAGS="$save_CFLAGS"
+  CPPFLAGS="$save_CPPFLAGS"
 
   save_LIBS="$LIBS"
   LIBS="$LIBS $GETOPT_LIBS"

@@ -137,6 +137,13 @@ if [ ! -x bootstrap ] ; then
 		# our "fake" /soft/local/bin on apps
 		binpath="/var/tmp/local/bin:${binpath}"
 		libpath="/var/tmp/local/lib:${libpath}"
+		if [ "${BITS}" = "64" ] ; then
+			conf_opts="${conf_opts} --with-readline=/var/tmp/soft64/local"
+			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft64/local"
+		else
+			conf_opts="${conf_opts} --with-readline=/var/tmp/soft/local"
+			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft/local"
+		fi
 	fi
 
 	if [ "${os}" = "IRIX64" ] ; then
@@ -158,8 +165,14 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -64"
 			cxx="${cxx} -64"
 		fi
-		# 32 & 64 bit libreadline for IRIX64 are in /ufs/monet/lib
-		conf_opts="${conf_opts} --with-readline=/ufs/monet"
+		# 32 & 64 bit libreadline for IRIX64 are in /soft${BITS}/local"
+		if [ "${BITS}" = "64" ] ; then
+			conf_opts="${conf_opts} --with-readline=/soft64/local"
+			conf_opts="${conf_opts} --with-getopt=/soft64/local"
+		else
+			conf_opts="${conf_opts} --with-readline=/soft/local"
+			conf_opts="${conf_opts} --with-getopt=/soft/local"
+		fi
 	fi
 
 	# prepend target bin-dir to PATH
