@@ -149,7 +149,7 @@ This module contains a simple interface for internet connections.
 #endif
 #endif
 
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 #define s_close closesocket
 #else
 #define s_close close
@@ -368,7 +368,7 @@ int socket_close_wrap( int *s ){
 }
 
 int socket_dup_wrap( int *res, int *s ){
-#ifdef WIN32
+#ifdef NATIVE_WIN32
   	HANDLE process = GetCurrentProcess();
   	DuplicateHandle(process, 
 	       (HANDLE) *s, process,
