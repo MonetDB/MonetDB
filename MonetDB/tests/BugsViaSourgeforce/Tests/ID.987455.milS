@@ -1,0 +1,17 @@
+a:=new(oid,int).insert(0@0,0).access(BAT_READ);
+b:=new(oid,int).insert(1@0,1).access(BAT_READ);
+x:=new(oid,int).insert(a).insert(b).access(BAT_READ).reverse;
+c:=b.kunion(a);
+d:=a.kunion(b);
+x.print;
+c.print;
+d.print;
+x.reverse.seqbase.print;
+c.seqbase.print;
+d.seqbase.print;
+e:=x.join(c);
+f:=x.join(d);
+e.count.print;
+f.count.print;
+e.print;
+f.print;
