@@ -2827,14 +2827,27 @@ Its output is clustered inline on left head-oid in a single pass and consists of
 (synced on void head) bats, one with the attribute values, the other with the other table oids.
 
 @= jivejoin0
-if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
+if (@6 || proj->ttype != TYPE_void) {
 	long off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
-	BATloopFast(proj, p, q, xx) {
-		oid curoid = *(oid*) BUN@3(proj,p);
-		int clusterid = (curoid&yy) >> zz;
-		r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
-		@2put(@1, &bn->theap, BUNptr(bn,cluster[clusterid]), @5); 
-		cluster[clusterid]++;
+	if (proj->htype == TYPE_oid) {
+		BATloopFast(proj, p, q, xx) {
+			oid curoid = *(oid*) BUN@3(proj,p);
+			int clusterid = (curoid&yy) >> zz;
+			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
+			s = BUNptr(bn,cluster[clusterid]);
+			*(oid*) BUNhloc(bn,s) = *(oid*) BUNhloc(proj,p);
+			@2put(@1, &bn->theap, BUNtloc(bn,s), @5); 
+			cluster[clusterid]++;
+		}
+	} else {
+		BATloopFast(proj, p, q, xx) {
+			oid curoid = *(oid*) BUN@3(proj,p);
+			int clusterid = (curoid&yy) >> zz;
+			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
+			s = BUNptr(bn,cluster[clusterid]);
+			@2put(@1, &bn->theap, s, @5); 
+			cluster[clusterid]++;
+		}
 	} break;
 }
 @c
@@ -2843,10 +2856,10 @@ if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
 int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
 	int any = attr->ttype;
-	BAT *bn = *res = BATnew(TYPE_void, any, BATcount(proj));
+	BAT *bn = *res = BATnew(proj->htype, any, BATcount(proj));
 	int xx, yy = 1 << *nbits, zz = *shift;
 	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
-	BUN p, q, r;
+	BUN p, q, r, s;
 
 	if (bn == NULL || cluster == NULL) {
 		GDKerror("jivejoin0: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
@@ -2886,9 +2899,14 @@ int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int
 
 	/* restore normality in destination bats */
 	bn->batBuns->free += BATcount(proj)*BUNsize(bn);
+	if (proj->htype == TYPE_oid) {
+		bn->hsorted = 0;
+		if (proj->hkey) BATkey(bn, TRUE); 
+	} else {
+		BATseqbase(bn, 0);
+	}
 	bn->tsorted = 0;
 	if (proj->tkey && attr->tkey) BATkey(BATmirror(bn), TRUE); 
-	BATseqbase(bn, 0);
 	return GDK_SUCCEED;
 } 
 

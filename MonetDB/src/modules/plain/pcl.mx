@@ -216,7 +216,7 @@ int pcl_start(BAT *event, int *mode){
 	}
 	BATloop(event,p,q){
 		clist[i] = *(int*)BUNtloc(event,p);
-		printf("event %d\n", clist[i]);
+		/* printf("event %d\n", clist[i]); */
 		i++;
 	}
 	res = PCLstart(pcl_desc, clist, i, *mode);
