@@ -250,9 +250,9 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     {
         err = FALSE;
     }
-    if (b1) BBPreclaim(b1);
-    if (b2) BBPreclaim(b2);
-    if (b3) BBPreclaim(b3);
+    if (b1) BBPunfix(b1->batCacheid);
+    if (b2) BBPunfix(b2->batCacheid);
+    if (b3) BBPunfix(b3->batCacheid);
     if (err)
     {
         @:ll_return(GDK_FAIL)@
@@ -321,15 +321,15 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         iter_tmp = iter_chunk = BATslice(iter_bat, fst_idx, lst_idx);
         ctx_tmp  = ctx_chunk  = BATslice(ctx_bat,  fst_idx, lst_idx);
         @:ll_sort_2(ctx_chunk, iter_chunk)@
-        BBPreclaim(iter_tmp);
-        BBPreclaim(ctx_tmp);
+        BBPunfix(iter_tmp->batCacheid);
+        BBPunfix(ctx_tmp->batCacheid);
 
         if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, doc_height, fst_iter, lst_iter, self) == GDK_FAIL)
         {
             @:ll_return(GDK_FAIL)@
         }
-        BBPreclaim(ctx_chunk);
-        BBPreclaim(iter_chunk);
+        BBPunfix(ctx_chunk->batCacheid);
+        BBPunfix(iter_chunk->batCacheid);
         ctx_chunk = iter_chunk = NULL;
 
         fst_BUN  = lst_BUN;
@@ -348,8 +348,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     iter_tmp = iter_chunk;
     ctx_tmp = ctx_chunk;
     @:ll_sort_2(iter_chunk, ctx_chunk)@
-    BBPreclaim(iter_tmp);
-    BBPreclaim(ctx_tmp);
+    BBPunfix(iter_tmp->batCacheid);
+    BBPunfix(ctx_tmp->batCacheid);
 
     @:ll_merge_bats(iter_chunk, ctx_chunk, res)@
 }
@@ -368,9 +368,9 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     if (res && (@1 == GDK_FAIL))
         BBPreclaim(res);
     if (iter_chunk && (iter_chunk != iter_bat))
-        BBPreclaim(iter_chunk);
+        BBPunfix(iter_chunk->batCacheid);
     if (ctx_chunk && (ctx_chunk != ctx_bat))
-        BBPreclaim(ctx_chunk);
+        BBPunfix(ctx_chunk->batCacheid);
     if (pre_size_bat)
         BBPunfix(pre_size_bat->batCacheid);
     if (pre_size_frag)
