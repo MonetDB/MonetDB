@@ -562,6 +562,7 @@ int main(int ac, char **av)
 		{"statement", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
 		{"help", 0, 0, '?'},
+		{"set", 1, 0, 'S'},
 		{0, 0, 0, 0}
 	};
 
@@ -643,6 +644,21 @@ int main(int ac, char **av)
 		case 'u':
 			user = _strdup(optarg);
 			break;
+		case 'S':
+		{
+			/* should add option to a list */
+			char *tmp = strchr(optarg, '=');
+
+			if (tmp){
+				*tmp = '\0';
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, optarg, tmp+1 );
+			} else {
+				fprintf(stderr, "ERROR: wrong format %s\n", 
+					optarg);
+			}
+			break;
+		}
 		case '?':
 			usage(prog);
 		default:
