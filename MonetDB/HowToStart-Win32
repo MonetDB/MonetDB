@@ -14,7 +14,11 @@ Prerequisites:
 CVS
 	You need to have a working CVS.  For instructions, see
 	http://sourceforge.net/docman/?group_id=1 and look under the
-	heading CVS Instructions.
+	heading CVS Instructions.  Pointers to CVS implementations 
+	for Windows can be found at e.g.:
+	http://www.cvshome.org/cyclic/cvs/windows.html
+	http://www.wincvs.org/
+	http://www.componentsoftware.com/products/CVS/
 
 Python
 	MonetDB uses Python (version 2.0.0 or better) during
@@ -29,11 +33,12 @@ Pthreads for Win32
 
 UnxUtils for Win32
 	(http://UnxUtils.sourceforge.net/)
-	UnxUtils must be installed in the root directory of the drive
-	where you what to compile MonetDB.
-	(Next to some tools used during testing, UnxUtils also provide
-	the lexical analyzer generator "flex" and the parser generator
-	"bison", which are required to compile MonetDB.)
+	UnxUtils must be installed in the root directory ("\", i.e., without
+	the default "\UnxUtils\" prefix) of the drive where you what to
+	compile MonetDB.
+	Next to some tools used by Mtest.py for testing MonetDB (see below),
+	UnxUtils provide the lexical analyzer generator "flex" and the
+	parser generator "bison", which are required to compile MonetDB.
 	
 Microsoft Visual C++
 	You need Microsoft Visual C++ 5 or higher.
