@@ -1207,17 +1207,4 @@ int print_table_default(BAT *b, ...) {
 	BATmultiprintf(GDKout, argc, piv, FALSE, 0);
 	return GDK_SUCCEED;
 }
-
-int format_fcn_sig(str *sig, oid *fid){
-	if (TBL_formatsig(*sig = (str) GDKmalloc(1024), *fid)) {
-		return GDK_SUCCEED;
-	}
-	GDKfree(*sig);
-	return GDK_FAIL;
-}
-
-int print_mem_map() {
-        MT_alloc_print();
-        return GDK_SUCCEED;
-}
 @}
