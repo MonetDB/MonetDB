@@ -41,13 +41,13 @@ if [ ! -x bootstrap ] ; then
 		echo ''
 		echo 'MONET_BUILD not set to specify desired compilation directory.'
 		echo 'Using MONET_BUILD="'${base}/${os}'" (default).'
-		MONET_BUILD="${base}/${os}"
+		export MONET_BUILD="${base}/${os}"
 	fi
 	if [ ! "${MONET_PREFIX}" ] ; then
 		echo ''
 		echo 'MONET_PREFIX not set to specify desired target directory.'
 		echo 'Using MONET_PREFIX="'${MONET_BUILD}'" (default).'
-		MONET_PREFIX="${MONET_BUILD}"
+		export MONET_PREFIX="${MONET_BUILD}"
 	fi
 
 	if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
