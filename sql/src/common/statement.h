@@ -63,7 +63,8 @@ typedef enum comp_type {
 	cmp_lt,
 	cmp_lte,
 	cmp_gt,
-	cmp_gte
+	cmp_gte,
+	cmp_all
 } comp_type;
 
 typedef void (*fdestroy)(void*);
@@ -162,4 +163,6 @@ extern statement *tail_column( statement *st );
 extern int statement_dump( statement *s, int *nr, context *sql );
 
 extern void statement_destroy( statement *s );
+extern void statement_reset( statement *s );
+/* reset the statement nr's */
 #endif /* _STATEMENT_H_ */

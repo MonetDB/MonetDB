@@ -4,7 +4,7 @@
 #include "statement.h"
 
 void st_attache( statement *st, statement *user ){
-	/*if (user) list_append_statement(st->uses, user);*/
+	if (user) list_append_statement(st->uses, user);
 	st->refcnt++;
 }
 
@@ -184,6 +184,87 @@ void statement_destroy( statement *s ){
 		list_destroy(s->uses);
 		_DELETE(s);
 	}
+}
+void statement_reset( statement *s ){
+    	node *n;
+
+	if (s->nr == 0) return;
+
+	s->nr = 0;
+	switch(s->type){
+		/* statement_reset  op1 */
+	case st_not_null: case st_reverse: case st_count: case st_group: 
+	case st_order: case st_unop: case st_name: case st_output: 
+	case st_exists:
+
+		statement_reset(s->op1.stval);
+		break;
+
+	case st_replace: case st_default: case st_like: case st_semijoin: 
+	case st_diff: case st_intersect: case st_union: case st_join: 
+	case st_const: case st_derive: case st_ordered: case st_reorder: 
+	case st_binop: case st_insert_column: 
+
+		statement_reset(s->op1.stval);
+		statement_reset(s->op2.stval);
+		break;
+	case st_update: case st_delete: 
+
+		if (s->op2.stval)
+			statement_reset(s->op2.stval);
+		break;
+	case st_mark: case st_unique: 
+
+		statement_reset(s->op1.stval);
+		if (s->op2.stval)
+			statement_reset(s->op2.stval);
+		break;
+	case st_select: case st_select2: 
+
+		statement_reset(s->op1.stval);
+		statement_reset(s->op2.stval);
+		if (s->op3.stval)
+			statement_reset(s->op3.stval);
+		break;
+	case st_aggr: 
+		statement_reset(s->op1.stval);
+		if (s->op3.stval)
+			statement_reset(s->op3.stval);
+		break;
+	case st_set: case st_list: case st_triop: 
+		for (n = s->op1.lval->h; n; n = n->next ){
+			statement_reset( n->data.stval );
+		}
+		break;
+	case st_insert: 
+		for (n = s->op2.lval->h; n; n = n->next ){
+			statement_reset( n->data.stval );
+		}
+		break;
+	case st_sets: {
+		for(n = s->op1.lval->h; n; n->next ){
+			list *l = n->data.lval;
+			node *m = l->h;
+			while(m){
+				statement_reset( m->data.stval );
+			}
+		}
+	} break;
+
+	case st_column:
+		if (s->op1.cval->s){
+			statement_reset( s->op1.cval->s );
+		}
+		break;
+	case st_atom: 
+	case st_create_schema: case st_drop_schema: 
+	case st_create_table: case st_drop_table: 
+	case st_begin: case st_commit: case st_rollback:
+	case st_create_column: case st_none:
+		break;
+	}
+	for (n = s->uses->h; n; n = n->next)
+		statement_reset( n->data.stval );
 }
 
 statement *statement_begin( ){
