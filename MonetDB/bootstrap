@@ -20,6 +20,8 @@ test -f conf/ltmain.sh || libtoolize -c -f;
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
 perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
 aclocal -I . -I conf
+# patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
+# (just adding -IPA to LDFLAGS somehow doesn't help ...)
 perl -i.bak -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
 autoheader
 automake -a -c
@@ -30,6 +32,30 @@ perl -i.bak -p -e  's/tab\.hh/tab.h/g' src/mel/Makefile.in
 
 #autoupdate
 autoconf
+
+# patch configure to cope with Intel's C/C++ compiler for Linux ("icc")
+cat << "EOF" | patch configure
+--- configure~	Wed May 23 20:46:51 2001
++++ configure	Wed May 23 20:49:57 2001
+@@ -1075,7 +1075,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.c
+-if test -z "`${CC-cc} -g -c conftest.c 2>&1`"; then
++if test -z "`${CC-cc} -g -c conftest.c 2>&1 | grep -v '^conftest.c:$'`"; then
+   ac_cv_prog_cc_g=yes
+ else
+   ac_cv_prog_cc_g=no
+@@ -1218,7 +1218,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.cc
+-if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
++if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | grep -v '^conftest.cc:$'`"; then
+   ac_cv_prog_cxx_g=yes
+ else
+   ac_cv_prog_cxx_g=no
+EOF
 
 exit 0
 
