@@ -1750,7 +1750,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 {
 	stmt *rs, *ls;
 
-	if (lo->token == SQL_SELECT) {
+	if (lo->token == SQL_SELECT) { /* swap subquery to the right handside */
 		symbol *tmp = lo;
 
 		lo = ro;
@@ -2282,6 +2282,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		break;
 	case SQL_NULL:
 	case SQL_NOT_NULL:
+	/* is (NOT) NULL */
 	{
 		symbol *cr = sc->data.sym;
 		stmt *res = sql_value_exp(sql, scp, cr, grp, subset, f);
