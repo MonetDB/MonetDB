@@ -295,7 +295,7 @@ public class JdbcClient {
 
 		// request a connection suitable for MonetDB from the driver manager
 		// note that the database specifier is currently not implemented, for
-		// Monet itself can't access multiple databases.
+		// MonetDB itself can't access multiple databases.
 		con = null;
 		try {
 			con = DriverManager.getConnection(
