@@ -42,6 +42,7 @@ struct scanner {
 	bstream *rs;
 	stream 	*ws;
 
+	int yynext;	/* next token, lr(1) isn't powerfull enough for sql */
 	int yysval;	/* start of current token */
 	int yyval;	/* current token */
 	int yycur;	/* next char in the queue */
@@ -234,7 +235,6 @@ init_keywords()
 	keywords_insert("NATURAL", NATURAL);
 	keywords_insert("NOT", NOT);
 	keywords_insert("NULL", NULLX);
-	keywords_insert("NUMERIC", NUMERIC);
 	/*
 	   keywords_insert("OF", OF );
 	 */
@@ -264,7 +264,6 @@ init_keywords()
 	keywords_insert("CURRENT_ROLE", CURRENT_ROLE);
 	keywords_insert("SESSION_USER", SESSION_USER);
 
-	keywords_insert("REAL", REAL);
 	keywords_insert("RIGHT", RIGHT);
 	keywords_insert("SCHEMA", SCHEMA);
 	keywords_insert("SELECT", SELECT);
@@ -345,7 +344,7 @@ init_keywords()
 	keywords_insert("SIZE", sqlSIZE);
 
 	keywords_insert("MODULE", MODULE );
-	keywords_insert("TYPE", sqlTYPE );
+	keywords_insert("TYPE", TYPE );
 	keywords_insert("PROCEDURE", PROCEDURE );
 	keywords_insert("FUNCTION", FUNCTION );
 	keywords_insert("RETURNS", RETURNS );
@@ -419,6 +418,7 @@ scanner_init( struct scanner *s, bstream *rs, stream *ws )
 	s->rs = rs;
 	s->ws = ws;
 
+	s->yynext = 0;
 	s->yyval = 0;
 	s->yybak = 0; /* keep backup of char replaced by EOS */
 	s->yycur = 0;
@@ -434,6 +434,7 @@ scanner_reset( struct scanner *s, char *query )
 	s->buf = query;
 	s->rs = NULL;
 
+	s->yynext = 0;
 	s->yyval = 0;
 	s->yybak = 0; 	/* keep backup of char replaced by EOS */
 	s->yycur = 0;
@@ -464,6 +465,7 @@ scanner_query_processed( struct scanner *s )
 		assert( s->rs->pos <= s->rs->len);
 		s->yycur = 0;
 	}
+	s->key = 0;	/* keep a hask key of the query */
 }
 
 static int 
@@ -932,6 +934,12 @@ sqllex(YYSTYPE * yylval, void *parm)
 	mvc *c = (mvc *) parm;
 	struct scanner *lc = &c->scanner;
 
+	if (lc->yynext) {
+		int next = lc->yynext;
+		lc->yynext = 0;
+		return next;
+	}
+
 	if (lc->yybak) {
 		if (lc->rs) {
 			lc->rs->buf [ lc->rs->pos + lc->yycur ] = lc->yybak;
@@ -951,13 +959,28 @@ sqllex(YYSTYPE * yylval, void *parm)
 		yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
 	else 
 		yylval->sval = (lc->buf + lc->yysval);
+
+	if (token == ALIAS) {
+		yylval->sval = sql_bind_alias(yylval->sval);
+		if (yylval->sval)
+			token = aTYPE;
+	}
+
 	if (token == IDENT || token == COMPARISON ||
-	    token == AGGR || token == TYPE)
+	    token == AGGR || token == aTYPE || token == aMODULE )
 		yylval->sval = _strdup(yylval->sval);
 	if (token == STRING) {
 		if (*yylval -> sval == '"')
 			token = IDENT;
 		yylval->sval = sql_strdup(yylval->sval);
+	}
+
+	if (token == UNION) {
+		int next = sqllex(yylval, parm);
+		if (token == JOIN)
+			token = UNIONJOIN; 
+		else
+			lc->yynext = next;
 	}
 
 	lc->key ^= token;

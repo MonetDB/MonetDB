@@ -213,7 +213,7 @@ typedef struct res_table {
 typedef struct mvc {
 	char 	errstr[ERRSIZE];
 
-	int	cache;  /* some queries should not be cached ! */
+	int	cache;  	/* some queries should not be cached ! */
 	struct  qc  *qc;
 	backend_stack stk;
 	struct  scanner scanner;
@@ -376,9 +376,14 @@ static void temp_destroy( oid b )
 	BBPdecref(b,TRUE);
 }
 
+static void temp_dup( oid b )
+{
+	BBPincref(b,TRUE);
+}
+
 static oid temp_create( BAT *b )
 {
-	BBPincref(b->batCacheid,TRUE);
+	temp_dup(b->batCacheid);
 	return b->batCacheid;
 }
 
@@ -1451,6 +1456,11 @@ static sql_column *column_dup(sql_trans *tr, int flag, sql_column * oc, sql_tabl
 
 	c->t = t;
 	c->st = NULL;
+
+	if (c->t->type == tt_session) {
+		temp_dup(c->bat.bid);
+		temp_dup(c->bat.ubid);
+	}
 	return c;
 }
 
@@ -1470,6 +1480,8 @@ static sql_table *table_dup(sql_trans *tr, int flag, sql_table * ot, sql_schema 
 	t->pkey = NULL;
 
 	t->dbid = ot->dbid;
+	if (t->type == tt_session)
+		temp_dup(t->dbid);
 
 	t->s = s;
 	t->st = NULL;
@@ -1942,7 +1954,7 @@ int mvc_init(int debug, backend_stack stk)
 		bootstrap_create_column(m, t, "type_scale", "MEDIUMINT", 0, 0);
 		bootstrap_create_column(m, t, "table_id", "MEDIUMINT", 0, 0);
 		bootstrap_create_column(m, t, "default", "VARCHAR", 0, 0);
-		bootstrap_create_column(m, t, "null", "BOOL", 0, 0);
+		bootstrap_create_column(m, t, "null", "BOOLEAN", 0, 0);
 		bootstrap_create_column(m, t, "number", "MEDIUMINT", 0, 0);
 
 		t = bootstrap_create_table(m, s, "keys", tt_system);

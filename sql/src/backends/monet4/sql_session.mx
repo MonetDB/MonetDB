@@ -310,7 +310,7 @@ int explain_cmd( mvc *c, char *cmd, stream *out )
 	strSplit(&b, cmd, "\n");
 	BATseqbase(b, 0);
  	t_id = mvc_result_table( c, 1, b);
-	mvc_result_column( c, "statement", "STRING", -1,-1, b);
+	mvc_result_column( c, "statement", "VARCHAR", -1,-1, b);
 	BBPunfix(b->batCacheid);
 	return mvc_export_result( c, out, t_id ) ||
 		mvc_export_table( c, out, t_id, 0, -1 );
@@ -327,11 +327,13 @@ stmt *sql_symbol2stmt( mvc *c ){
 	return s;
 }
 
-int sqlcleanup( mvc *c, int err)
+int sqlcleanup( mvc *c, int err, int cache)
 {
 	sql_destroy_params(c);
 	sql_destroy_args(c);
 
+	/* some statements dynamically disable caching */
+	c->cache = cache;
 	if (c->sym) {
 		symbol_destroy(c->sym);
 		c->sym = NULL;
@@ -370,23 +372,21 @@ int sqlexecute(backend * be, stream *out )
 
 	if (c->explain)
 	{
-	    if (strcmp(c->explain, "mil") == 0)
-		explain = ex_mil;
-	    else if (strcmp(c->explain, "sql") == 0)
-		explain = ex_sql;
+	    	if (strcmp(c->explain, "mil") == 0)
+			explain = ex_mil;
+	    	else if (strcmp(c->explain, "sql") == 0)
+			explain = ex_sql;
 	}
 
 	if (explain == ex_sql)
 		T0 = GDKusec();
 
 	if ((err = sqlparse(c)) ||
-	    /* Forget old errors on transaction boundaries */
+	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
-		scanner_query_processed(&(c->scanner));
 		if (!err)
 			err = mvc_status(c);
-		c->cache = cache;
-		return sqlcleanup(c, err);
+		return sqlcleanup(c, err, cache);
 	}
 
 	if (explain == ex_sql)
@@ -399,8 +399,7 @@ int sqlexecute(backend * be, stream *out )
 
 		if (!s && mvc_status(c)){
 			err = mvc_status(c);
-			c->cache = cache;
-			return sqlcleanup(c, err);
+			return sqlcleanup(c, err, cache);
 		}
 		assert(s);
 
@@ -452,10 +451,8 @@ int sqlexecute(backend * be, stream *out )
 	 	 * libbat i.e. it cannot use gdkmalloc */
 	        free(cmd);
 
-		if (err) {
-			c->cache = cache;
-			return sqlcleanup(c, err);
-		}
+		if (err) 
+			return sqlcleanup(c, err, cache);
 	}
 
 	if (explain == ex_sql) {
@@ -478,8 +475,10 @@ int sqlexecute(backend * be, stream *out )
 			q->code = (backend_code)callnode;
 			q->stk = (backend_stack)(ptrdiff_t)procstk;
 		} else {
+			c->status = err;
 			monet4_freecode( callnode, (backend_stack)(ptrdiff_t)procstk, q->id);
 			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
+			
 		}
 	} else if (q) {
 		c->type = q->type;
@@ -516,8 +515,7 @@ int sqlexecute(backend * be, stream *out )
 		if (mvc_status(c) < 0)
 			error(out, "Error in result");
 	}
-	c->cache = cache;
-	return sqlcleanup(c, err);
+	return sqlcleanup(c, err, cache);
 }
 
 @-

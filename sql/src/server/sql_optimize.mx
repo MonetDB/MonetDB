@@ -729,6 +729,8 @@ static stmt *set2pivot(list * l)
 	if (!n) {
 		list_destroy(l);
 		list_destroy(pivots);
+		if (pred) /* simple selects with where could have a predicate */
+			return pred;
 		return NULL;
 	}
 	st = n->data;
@@ -937,7 +939,7 @@ stmt *optimize( mvc *c, stmt *s ){
 	case st_dbat: case st_basetable: case st_idxbat:
 
 	case st_atom: 
-	case st_find: case st_exist: 
+	case st_find: 
 	case st_bulkinsert:
 	case st_var:
 

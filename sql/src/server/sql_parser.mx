@@ -408,9 +408,9 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval> 
-	IDENT TYPE AGGR sqlINT INTNUM APPROXNUM USING
+	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST
-	CHARACTER VARYING NUMERIC sqlDECIMAL sqlFLOAT REAL
+	CHARACTER VARYING sqlDECIMAL sqlFLOAT 
 	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
@@ -423,7 +423,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED REPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE
 	
-%token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
+%token <sval> ASYMMETRIC SYMMETRIC ORDER BY
+%token <sval> LIKE BETWEEN 
 %token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX 
 %token <operation> FROM FOR MATCH
 
@@ -431,8 +432,9 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %token <operation> EXTRACT
 
 	/* operators */
-%left UNION EXCEPT INTERSECT CORRESPONDING
+%left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
+%left LIKE BETWEEN sqlIN WITH
 %left <operation> OR
 %left <operation> AND
 %left <operation> NOT
@@ -445,7 +447,6 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %right UMINUS
 
 	/* literal keyword tokens */
-
 /*
 CONTINUE CURRENT CURSOR DECLARE FOUND GOTO GO LANGUAGE 
 SQLCODE SQLERROR UNDER WHENEVER 
@@ -454,7 +455,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TEMPORARY 
 %token<sval> AS ASC DESC AUTHORIZATION 
 %token CHECK CONSTRAINT CREATE 
-%token MODULE sqlTYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME EXECUTE
+%token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN 
 %token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO 
@@ -1040,7 +1041,7 @@ module_end:
 */
 
 type_def:
-    CREATE sqlTYPE qname
+    CREATE TYPE qname
     EXTERNAL sqlNAME ident
 			{ dlist *f = dlist_create();
 	  		  	dlist_append_list(f, $3);
@@ -1376,13 +1377,13 @@ joined_table:
 	  dlist_append_symbol(l, $1);
 	  dlist_append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_CROSS, l); }
- |  table_ref UNION JOIN table_ref join_spec 
+ |  table_ref UNIONJOIN table_ref join_spec 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
 	  dlist_append_int(l, 0);
 	  dlist_append_int(l, 4);
+	  dlist_append_symbol(l, $3);
 	  dlist_append_symbol(l, $4);
-	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_UNIONJOIN, l); }
  |  table_ref JOIN table_ref join_spec 
 	{ dlist *l = dlist_create();
@@ -1703,10 +1704,10 @@ predicate:
  |  all_or_any_predicate 
  |  existence_test 
  |  BOOL_FALSE  
-		{ sql_subtype *t = sql_bind_subtype("BOOL", 0, 0 );
+		{ sql_subtype *t = sql_bind_subtype("BOOLEAN", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, _strdup("false"))); }
  |  BOOL_TRUE  
-		{ sql_subtype *t = sql_bind_subtype("BOOL", 0, 0 );
+		{ sql_subtype *t = sql_bind_subtype("BOOLEAN", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, _strdup("true"))); }
  ;
 
@@ -1965,7 +1966,7 @@ string_funcs:
 		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
-  		  		  dlist_append_string(l, _strdup("strconcat"));
+  		  		  dlist_append_string(l, _strdup("concat"));
   		  		  dlist_append_symbol(l, $1);
   		  		  dlist_append_symbol(l, $3);
 		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -2144,12 +2145,12 @@ user:
 
 literal:
     string
-		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0 ); 
+		{  sql_subtype *t = sql_bind_subtype("CHARACTER", strlen($1), 0 ); 
 		   $$ = _newAtomNode( atom_string(t, $1)); }
 
  |  user 
 		{  mvc *m = (mvc*)parm;
-		   sql_subtype *t = sql_bind_subtype("CHAR", strlen(m->user),0);
+		   sql_subtype *t = sql_bind_subtype("CHARACTER", strlen(m->user),0);
 		   $$ = _newAtomNode( atom_string(t, _strdup(m->user))); }
 
  |  sqlINT   	{ int digits = strlen($1);
@@ -2219,7 +2220,7 @@ literal:
 	  		$$ = _newAtomNode( atom_int(t,i));
 	  	  }
 		}
- |  TYPE string 
+ |  aTYPE string 
 		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
 		  atom *a = atom_general(t, $2);
 		  $$ = NULL;
@@ -2352,21 +2353,6 @@ data_type:
     CHARACTER opt_var	{ $$ = sql_bind_subtype("CHARACTER", 0, 0); }
  |  CHARACTER  opt_var'(' nonzero ')'	
 			{ $$ = sql_bind_subtype("CHARACTER", $3, 0); }
- |  NUMERIC		{ $$ = sql_bind_subtype("NUMERIC", 0, 0); }
- |  NUMERIC '(' nonzero ')'	
-			{ $$ = sql_bind_subtype("NUMERIC", $3, 0); }
- |  NUMERIC '(' intval ',' intval ')' 
-			{ if ($5 >= $3) {
-				char buf[BUFSIZ]; 
-
-				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
-				yyerror(buf);
-				$$ = NULL;
-				YYABORT;
-			  } else {
-			        $$ = sql_bind_subtype("NUMERIC", $3, $5); 
-			  }
-			}
  |  sqlDECIMAL		{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
  |  sqlDECIMAL '(' nonzero ')'	
 			{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
@@ -2397,7 +2383,6 @@ data_type:
 				$$ = sql_bind_subtype("FLOAT", $3, $5); 
 			  }
 			}
- |  REAL		{ $$ = sql_bind_subtype("REAL", 0, 0); }
  |  sqlDOUBLE 		{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  |  sqlDOUBLE '(' intval ',' intval ')' 	
 			{ if ($5 >= $3) {
@@ -2414,8 +2399,8 @@ data_type:
  |  sqlDOUBLE PRECISION	{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  | datetime_type
  | interval_type		
- | TYPE			{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
- | TYPE '(' nonzero ')'	{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
+ | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
+ | aTYPE '(' nonzero ')'{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
  ;
 
 opt_var:
@@ -2429,17 +2414,16 @@ authid: 		ident ;
 
 ident: 
     IDENT	{ $$ = $1; }	
- |  TYPE	{ $$ = $1; }
+ |  aTYPE	{ $$ = $1; }
+ |  aMODULE	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
  |  non_reserved_word		
  ;
 
 non_reserved_word: 
   CHARACTER 	{ $$ = _strdup("character"); }
-| NUMERIC 	{ $$ = _strdup("numeric"); }
 | sqlDECIMAL 	{ $$ = _strdup("decimal"); }
 | sqlFLOAT 	{ $$ = _strdup("float"); }
-| REAL 		{ $$ = _strdup("real"); }
 | sqlDOUBLE 	{ $$ = _strdup("double"); }
 | PRECISION 	{ $$ = _strdup("precision"); }
 | sqlDATE 	{ $$ = _strdup("date"); }
@@ -2456,7 +2440,8 @@ non_reserved_word:
 | SECOND	{ $$ = _strdup("second"); }
 | ZONE		{ $$ = _strdup("zone"); }
 | sqlNAME	{ $$ = _strdup("name"); }
-| sqlTYPE	{ $$ = _strdup("type"); }
+| TYPE		{ $$ = _strdup("type"); }
+| MODULE	{ $$ = _strdup("module"); }
 | PRIVILEGES	{ $$ = _strdup("privileges"); }
 | START		{ $$ = _strdup("start"); }
 ;

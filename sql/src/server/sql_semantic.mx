@@ -139,7 +139,7 @@ void sql_destroy_args( mvc *sql )
 
 
 static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel );
-static stmt *sql_simple_select(mvc * sql, scope * scp, dlist * selection);
+static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * selection);
 static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset);
 static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op );
 
@@ -217,10 +217,12 @@ tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname
 
 	if (t->type == tt_view){
 
-		if (!t->st){
+		if (t->st) {
+			 stmt_reset(t->st);
+		} else {
 			stmt *sq = sqlparse_intern(sql, t->query);
 
-			t -> st = sq;
+			t->st = sq;
 			for ( n = t->columns.set->h, m = sq->op1.lval->h;
 					n && m; n = n->next, m = m->next) {
 				sql_column *c = n->data;
@@ -230,10 +232,14 @@ tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname
 				c->st = stmt_ibat(sc, stmt_dup(sq));
 			}
 		}
+		/* could be use allready, ie need to reset output/optimize
+		   settings */
 		tv = scope_add_table(scp, stmt_dup(t->st), tname);
 		for ( n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
 			stmt *sc = stmt_dup(c->st);
+			if (sc->nr)
+				stmt_reset(sc);
 			table_add_column(tv, sc, NULL, c->base.name);
 		}
 	} else {
@@ -324,7 +330,7 @@ stmt *sql_subquery(mvc * sql, scope * scp, symbol * sq)
 
 	} else if (toplevel) {	/* only on top level query */
 		scp = scope_open(scp);
-		res = sql_simple_select(sql, scp, sn->selection);
+		res = sql_simple_select(sql, scp, sn->where, sn->selection);
 		scp = scope_close(scp);
 		return res;
 	}
@@ -2045,41 +2051,55 @@ static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, s
 		}
 	case SQL_LIKE:
 	case SQL_NOT_LIKE:
-		{
-			stmt *res = NULL;
-			symbol *lo = sc->data.lval->h->data.sym;
-			symbol *ro = sc->data.lval->h->next->data.sym;
-			stmt *ls = sql_value_exp(sql, scp, lo, grp, subset);
-			stmt *a = NULL, *e = NULL;
-			sql_subtype *st = sql_bind_localtype("str");
-			comp_type cmp = (sc->token == SQL_LIKE ? cmp_like : cmp_notlike);
+	{
+		stmt *res = NULL;
+		symbol *lo = sc->data.lval->h->data.sym;
+		symbol *ro = sc->data.lval->h->next->data.sym;
+		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset);
+		stmt *a = NULL, *e = NULL;
+		sql_subtype *st = sql_bind_localtype("str");
 
-			if (!ls)
-				return NULL;
+		if (!ls)
+			return NULL;
 
-			lo = ro->data.lval->h->data.sym;
-			a = sql_value_exp(sql, scp, lo, grp, subset);
+		lo = ro->data.lval->h->data.sym;
+		a = sql_value_exp(sql, scp, lo, grp, subset);
 	
-			if (!a){
-				stmt_destroy(ls);
-				return NULL;
-			}
-			if (dlist_length(ro->data.lval) == 2) {
-				symbol *es = ro->data.lval->h->next->data.sym;
-				e = sql_value_exp(sql, scp, es, grp, subset );
-				if (!check_types(sql, st, e) ){
-					return sql_error(sql, 02, "Wrong type used with LIKE ESCAPE statment, should be string" );
-				}
-			}
-			if (e) {
-				return sql_error(sql, 02, "Time to implement LIKE escapes");
-			}
-			if (!check_types(sql, st, a) ){
-				return sql_error(sql, 02, "Wrong type used with LIKE stmt, should be string" );
-			}
-			res = stmt_select(ls, a, cmp);
-			return res;
+		if (!a){
+			stmt_destroy(ls);
+			return NULL;
 		}
+		if (dlist_length(ro->data.lval) == 2) {
+			symbol *es = ro->data.lval->h->next->data.sym;
+			e = sql_value_exp(sql, scp, es, grp, subset );
+			if (!check_types(sql, st, e) ){
+				return sql_error(sql, 02, 
+					"Wrong type used with LIKE ESCAPE statment, should be string" );
+			}
+		}
+		if (e) {
+			return sql_error(sql, 02, 
+			    "LIKE with escapes, is currently not supported");
+		}
+		if (!check_types(sql, st, a) ){
+			return sql_error(sql, 02, 
+			    "Wrong type used with LIKE stmt, should be string");
+		}
+		if (ls->nrcols == 0) {
+			sql_subtype *bt = sql_bind_localtype( "bit" );
+			sql_subtype *s = sql_bind_localtype( "str" );
+			char *l = (sc->token == SQL_LIKE ? 
+					"like" : "not_like");
+			sql_subfunc *like = sql_bind_func_result( l, s, s, bt);
+
+			res = stmt_binop(ls, a, like);
+		} else {
+			comp_type cmp = (sc->token == SQL_LIKE ? 
+					cmp_like : cmp_notlike);
+			res = stmt_select(ls, a, cmp);
+		}
+		return res;
+	}
 	case SQL_IN:
 	case SQL_NOT_IN:
 		/*
@@ -2212,10 +2232,16 @@ static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, s
 				/* EXIST non empty result means AND TRUE */
 				/* NOT EXIST non empty result means AND FALSE */
 				stmt *res, *s = ls->op1.lval->h->data; 
-				sql_subaggr *cnt = sql_bind_aggr("count", NULL);
+				sql_subaggr *cnt;
 				sql_subtype *bt = sql_bind_localtype( "bit" );
 				sql_subtype *it = sql_bind_localtype( "int" );
 
+				if (s->nrcols == 0) {
+					s = stmt_append(
+						stmt_temp(tail_type(s)),
+						stmt_dup(s));
+				}
+ 				cnt = sql_bind_aggr("count", NULL);
 				res = stmt_dup(s);
 				res = stmt_aggr(res, NULL, cnt);
 				if (sc->token == SQL_EXISTS){
@@ -2449,41 +2475,64 @@ static stmt *query_orderby(mvc * sql, symbol * orderby, stmt * s )
 	return cur;
 }
 
-static stmt *sql_simple_select(mvc * sql, scope * scp, dlist * selection)
+static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * selection)
 {
 	stmt *s = NULL;
-	list *rl = create_stmt_list();
+	list *rl;
+	dnode *n = selection->h;
 
-	if (selection) {
-		dnode *n = selection->h;
-		while (n) {
-			stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL);
-
-			if (!cs) {
-				list_destroy(rl);
-				return NULL;
-			}
-
-			/* t1.* */
-			if (cs->type == st_list && n->data.sym->token == SQL_TABLE) {
-				list_merge(rl, cs->op1.lval, (fdup)&stmt_dup);
-				stmt_destroy(cs);
-			} else if (cs->type == st_list) {	/* subquery */
-				if (list_length(cs->op1.lval) == 1){ 
-					list_append(rl, stmt_dup(cs->op1.lval->h->data));
-				} else {
-					stmt_destroy(cs);
-					return sql_error( sql, 02, "Subquery should return a single value");
-				}
-			/*
-			} else if (cs->nrcols == 0){
-				list_append(rl, cs);
-			*/
-			} else {
-				list_append(rl, cs);
-			}
-			n = n->next;
+	if (where) {
+		s = sql_logical_exp(sql, scp, where, NULL, NULL);
+		if (!s) 
+			return NULL;
+		if (s->type != st_set && s->type != st_sets) {
+			s = stmt_set(s);
 		}
+		s = stmt2pivot(scp, s);
+	}	
+ 	rl = create_stmt_list();
+	while (n) {
+		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL);
+
+		if (!cs) {
+			list_destroy(rl);
+			return NULL;
+		}
+
+		/* t1.* */
+		if (cs->type == st_list && n->data.sym->token == SQL_TABLE) {
+			list_merge(rl, cs->op1.lval, (fdup)&stmt_dup);
+			stmt_destroy(cs);
+		} else if (cs->type == st_list) {	/* subquery */
+			if (list_length(cs->op1.lval) == 1){ 
+				list_append(rl, stmt_dup(cs->op1.lval->h->data));
+			} else {
+				stmt_destroy(cs);
+				return sql_error( sql, 02, "Subquery should return a single value");
+			}
+		/*
+		} else if (cs->nrcols == 0){
+			list_append(rl, cs);
+		*/
+		} else {
+			list_append(rl, cs);
+		}
+		n = n->next;
+	}
+	if (s) {
+		list *nl = create_stmt_list();
+		node *n;
+
+		for( n = rl->h; n; n = n->next ) {
+			stmt *v = n->data;
+			stmt *t = stmt_temp(sql_dup_subtype(tail_type(v)));
+
+			t = stmt_predicate( stmt_dup(s), t, stmt_dup(v));
+			list_append(nl, t);
+		}
+		stmt_destroy(s);
+		list_destroy(rl);
+		rl = nl;
 	}
 	s = stmt_list(rl);
 
@@ -2500,8 +2549,8 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	stmt *order = NULL, *subset = NULL;
 	group *grp = NULL;
 
-	if (!sn->from && !sn->where)
-		return sql_simple_select(sql, scp, sn->selection);
+	if (!sn->from)
+		return sql_simple_select(sql, scp, sn->where, sn->selection);
 
 	if (sn->where) {
 		node *n;
@@ -3085,8 +3134,8 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 			}
 			stmt_destroy(missing);
 			s = stmt_union(s, stmt_const(cur, stmt_atom( 
-				atom_general( sql_dup_subtype(tail_type(s)), 
-				NULL ))));
+				atom_general( sql_dup_subtype(
+				sql_bind_localtype("oid")), NULL ))));
 		}
 		s = stmt_reverse(stmt_order(stmt_reverse(s), 0));
 		
@@ -3368,8 +3417,8 @@ join_idx_update( sql_idx *i, stmt **updates, int updcol )
 	/* add missing nulls */
 	if (nulls) 
 		s = stmt_union(s, stmt_const(null, 
-			stmt_atom(atom_general( sql_dup_subtype(tail_type(s)), 
-			NULL ))));
+			stmt_atom(atom_general( sql_dup_subtype(
+				sql_bind_localtype("oid")), NULL ))));
 
 	stmt_destroy(ts);
 	stmt_destroy(rts);

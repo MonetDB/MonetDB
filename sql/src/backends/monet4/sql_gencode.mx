@@ -45,48 +45,6 @@ sql_server_export void backend_dumpproc( backend *be, int id, stmt *s );
 #include <sql_env.h>
 #include <string.h>
 
-void stmt_reset( stmt *s )
-{
-	s->nr = 0;
-	switch (s->type) {
-		case st_diff: case st_intersect: case st_union:
-		case st_join: case st_outerjoin:
-		case st_derive:
-		case st_unique:
-		case st_alias: case st_column_alias:
-		case st_append: case st_insert: case st_replace:
-		case st_exception: case st_predicate:
-		case st_partial_pivot: case st_pivot:
-	  	case st_find:
-	  	case st_exist:
-		case st_sql:
-		case st_temp:
-		case st_aggr:
-		case st_op: case st_unop: case st_binop: case st_Nop:
-
-		case st_const: case st_mark:
-		case st_reverse: case st_mirror:
-		case st_limit: case st_order: case st_reorder:
-		case st_ordered: case st_output:
-
-		case st_ibat:
-		case st_group: case st_group_ext:
-
-		case st_filter:
-		case st_select: case st_select2:
-		case st_uselect: case st_uselect2:
-		case st_semijoin:
-
-		case st_bulkinsert:
-
-		if (s->op1.stval) stmt_reset(s->op1.stval);
-		if (s->op2.stval) stmt_reset(s->op2.stval);
-		if (s->op3.stval) stmt_reset(s->op3.stval);
-		default:
-			break;
-	}
-}
-
 sql_server_export int backend_dumpstmt_( stmt *s, int *nr, backend *sql );
 @(
 		if (mvc_debug_on(c->mvc,8192)) {
@@ -947,9 +905,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 	}
 	case st_find: 
 		dump_2( sql, s, "find", nr );
-		break;
-	case st_exist: 
-		dump_2( sql, s, "exist", nr );
 		break;
 	case st_bulkinsert: {
 		char *tname = s->op1.stval->op1.tval->base.name;

@@ -477,7 +477,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_dbat: case st_basetable: case st_idxbat:
 
 	case st_atom: 
-	case st_find: case st_exist: 
+	case st_find: 
 	case st_bulkinsert: 
 	case st_var:
 

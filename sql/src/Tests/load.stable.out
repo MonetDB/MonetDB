@@ -37,7 +37,7 @@ loading module 'sql_server'
 # module	| usage_count	  #
 #---------------------------------#
 [ "aggrX3",	  1		  ]
-[ "alarm",	  1		  ]
+[ "alarm",	  2		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "ascii_io",	  1		  ]
