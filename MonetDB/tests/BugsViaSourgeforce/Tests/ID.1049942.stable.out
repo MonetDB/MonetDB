@@ -20,7 +20,9 @@ fork(listen());
 VAR id := open("localhost");
 VAR result := id.rpc("f();");
 done...
+result.count().print();
 [ 100000 ]
+quit();
 
 # 17:14:30 >  
 # 17:14:30 >  Done.
