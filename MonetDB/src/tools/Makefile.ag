@@ -1,6 +1,6 @@
 
 MTSAFE
-INCLUDES = -I$(top_srcdir)/src/common ../gdk ../monet $(PTHREAD_INCS) 
+INCLUDES = -I$(top_srcdir)/src/common ../common ../gdk ../monet $(PTHREAD_INCS) 
 
 CXXFLAGS = $(CFLAGS)
 
