@@ -304,9 +304,9 @@ Module: "iterator"
 
 Module: "malalgebra"
 
-[ 19 ]
-[ 19 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 25 ]
+[ 25 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																													  # name
 # str			str		str										str																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -318,6 +318,12 @@ Module: "malalgebra"
 [ "leftjoin",		  "COMMAND:   ",  "leftjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'leftjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."		  ]
 [ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'leftmergejoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."	  ]
 [ "mergejoin",		  "COMMAND:   ",  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'mergejoin' implementation of the join."																						  ]
+[ "ord_select",		  "COMMAND:   ",  "ord_select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]",			  "Like standard 'select(b, value);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
+[ "ord_select",		  "COMMAND:   ",  "ord_select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]",		  "Like standard 'select(b, low, high);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
+[ "ord_select",		  "COMMAND:   ",  "ord_select(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,any::2]",	  "Like standard 'select(b, low, high, l_in, h_in);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."								  ]
+[ "ord_uselect",	  "COMMAND:   ",  "ord_uselect(BAT[any::1,any::2], any::2) : BAT[any::1,void]",				  "Like standard 'uselect(b, value);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
+[ "ord_uselect",	  "COMMAND:   ",  "ord_uselect(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,void]",			  "Like standard 'uselect(b, low, high);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
+[ "ord_uselect",	  "COMMAND:   ",  "ord_uselect(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,void]",	  "Like standard 'uselect(b, low, high, l_in, h_in);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."								  ]
 [ "test_malalgebra",	  "PROC:      ",  "test_malalgebra() : void",							  "not available"						  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]

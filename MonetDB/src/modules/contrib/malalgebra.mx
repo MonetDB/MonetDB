@@ -22,9 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f malalgebra
-@a Arjen P. de Vries
+@a Arjen P. de Vries, S. Manegold
 @v 1.0
-@t Work around internal join algorithm selection
+@t Work around internal select and join algorithm selection
 @* Introduction
 @T
 Too many bugs.
@@ -51,6 +51,27 @@ Too many bugs.
 @:leftjoin(fetch)@
 @:leftjoin(merge)@
 @:leftjoin(hash)@
+
+
+@= select
+.COMMAND ord_@1select ( BAT[any::1,any::2] b, any::2 low, any::2 high) : 
+				BAT[any::1, @2] = CMDord_@1select; 
+"Like standard '@1select(b, low, high);', but preserves the order of the input BAT;
+ (for the time being) this means, only the scan-based select algorithm is used."
+
+.COMMAND ord_@1select ( BAT[any::1,any::2] b, any::2 low, any::2 high, bit l_in, bit h_in) : 
+				BAT[any::1, @2] = CMDord_@1select_; 
+"Like standard '@1select(b, low, high, l_in, h_in);', but preserves the order of the input BAT;
+ (for the time being) this means, only the scan-based select algorithm is used."
+
+.COMMAND ord_@1select ( BAT[any::1,any::2] b, any::2 value) :
+                                BAT[any::1, @2] = CMDord_@1select1; 
+"Like standard '@1select(b, value);', but preserves the order of the input BAT;
+ (for the time being) this means, only the scan-based select algorithm is used."
+@m
+@:select(,any::2)@
+@:select(u,void)@
+
 
 @= sum
 .COMMAND {_csum}(BAT[oid,@1] b) : BAT[oid,@1] = CMDclustered_sum_@1; 
@@ -195,7 +216,31 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
 @:joincmd(lefthash)@
 @:joincmd(index)@
 
-@}
+
+@= selectcmd
+int CMDord_@1select1(BAT **result, BAT* b, ptr value) {
+	return (*result = BAT_select_(b, value, 0, TRUE, TRUE, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+}
+int CMDord_@1select(BAT **result, BAT *b, ptr low, ptr high) {
+	return (*result = BAT_select_(b, low, high, TRUE, TRUE, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+}
+int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
+	int tt = b->ttype;
+	ptr nil = ATOMnilptr(tt);
+	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
+		GDKerror("ord_@1select: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+		return GDK_FAIL;
+	}
+	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
+		GDKerror("ord_@1select: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+		return GDK_FAIL;
+	}
+	return (*result = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+}
+@c
+@:selectcmd(,TRUE)@
+@:selectcmd(u,FALSE)@
+
 
 @= sumcmd
 int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
@@ -232,6 +277,8 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 @:sumcmd(lng)@
 @:sumcmd(flt)@
 @:sumcmd(dbl)@
+
+@}
 
 @= jointest_void
 VAR @1result_void := @1join( l, r );
