@@ -491,7 +491,6 @@ MERROR  & Mapi internal error.\\
 # include <winsock.h>
 #endif
 
-
 #include  <signal.h>
 #include  <string.h>
 #include  <memory.h>
@@ -514,7 +513,6 @@ MERROR  & Mapi internal error.\\
 #include <stdio.h>		/* for FILE * */
 
 /*#define MONET5*/
-
 
 #define MAPINAMELEN	256
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
@@ -972,7 +970,6 @@ mapi_setError(Mapi mid, const char *msg, const char *action)
 	mid->action = action;
 	return mid->error;
 }
-
 
 static Mapi
 mapi_new(void)
@@ -2350,8 +2347,8 @@ mapi_extend_cache(Mapi mid)
 }
 
 /* Make space in the cache for new tuples, ignore the read pointer */
-int
-mapi_clear_freeup(Mapi mid, int percentage)
+MapiMsg
+mapi_cache_freeup(Mapi mid, int percentage)
 {
 	int i, k = 0;
 
@@ -2445,7 +2442,6 @@ mapi_fetch_line_internal(Mapi mid)
 	char *reply, *s;
 	ssize_t k;
 
-
 	if (mid->cache.writer > 0 && mid->cache.reader + 1 < mid->cache.writer)
 		return mid->cache.rows[++mid->cache.reader];
 
@@ -2537,7 +2533,6 @@ mapi_fetch_line_internal(Mapi mid)
 	if (mid->cache.writer >= mid->cache.limit)
 		mapi_extend_cache(mid);
 
-
 	mid->cache.rows[mid->cache.writer] = reply;
 	mid->cache.tuplerev[mid->cache.writer] = mid->cache.tuplecount;
 	mid->cache.tuplerev[mid->cache.writer + 1] = mid->cache.tuplecount + 1;
@@ -2613,7 +2608,6 @@ mapi_quick_response(Mapi mid, FILE *fd)
 	char *s;
 	int i;
 	ssize_t k;
-
 
 	mapi_check(mid, "mapi_quick_response");
 	if (fd == 0)
@@ -2723,7 +2717,6 @@ because the client may wish to perform a mapi_fetch_line();
 
 	buf = strdup(mid->cache.rows[cr]);
 	mapi_slice_row(mid);
-
 
 	*line = '[';		/* fake a value row */
 	*c = ']';
