@@ -489,7 +489,7 @@ ConstructorExpr: elem (CoreExpr, CoreExpr)
 
         if (!PFty_promotable ([[ $1$ ]], PFty_string ()))
             PFoops (OOPS_TYPECHECK,
-                    "tagname in element construction can't be of type '%s'",
+                    "tag name in computed element constructor has illegal type `%s'",
                     PFty_str ([[ $1$ ]]));
 
         [[ $$ ]] = *PFty_simplify (PFty_elem (wild, t1));
