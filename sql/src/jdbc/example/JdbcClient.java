@@ -603,7 +603,6 @@ public class JdbcClient {
 				// we already covered this one as UNIQUE
 				continue;
 			} else {
-				out.println(",");
 				out.print("CREATE INDEX \"");
 				out.print(cols.getString("INDEX_NAME"));
 				out.print("\" ON \""); out.print(cols.getString("TABLE_NAME"));
@@ -619,7 +618,7 @@ public class JdbcClient {
 				// go back one
 				if (next) cols.previous();
 
-				out.print("\");");
+				out.println("\");");
 			}
 		}
 		cols.close();

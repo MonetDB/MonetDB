@@ -1280,7 +1280,14 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String procedureNamePattern
 	) throws SQLException
 	{
-		return(null);
+		String query =
+			"SELECT null AS \"PROCEDURE_CAT\", null AS \"PROCEDURE_SCHEM\", " +
+				"'' AS \"PROCEDURE_NAME\", null AS \"Field4\", " +
+				"null AS \"Field5\", null AS \"Field6\", " +
+				"'' AS \"REMARKS\", 0 AS \"PROCEDURE_TYPE\" " +
+			"WHERE 1 = 0";
+
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -1298,7 +1305,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * description with the following fields:
 	 * <ol>
 	 * <li><b>PROCEDURE_CAT</b> String => procedure catalog (may be null)
-	 * <li><b>PROCEDURE_SCHE</b>M String => procedure schema (may be null)
+	 * <li><b>PROCEDURE_SCHEM</b> String => procedure schema (may be null)
 	 * <li><b>PROCEDURE_NAME</b> String => procedure name
 	 * <li><b>COLUMN_NAME</b> String => column/parameter name
 	 * <li><b>COLUMN_TYPE</b> Short => kind of column/parameter:
@@ -1336,7 +1343,16 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String columnNamePattern
 	) throws SQLException
 	{
-		return(null);
+		String query =
+			"SELECT null AS \"PROCEDURE_CAT\", null AS \"PROCEDURE_SCHEM\", " +
+				"'' AS \"PROCEDURE_NAME\", '' AS \"COLUMN_NAME\", " +
+				"0 AS \"COLUMN_TYPE\", 0 AS \"DATA_TYPE\", " +
+				"'' AS \"TYPE_NAME\", 0 AS \"PRECISION\", " +
+				"0 AS \"LENGTH\", 0 AS \"SCALE\", 0 AS \"RADIX\", " +
+				"0 AS \"NULLABLE\", '' AS \"REMARKS\" " +
+			"WHERE 1 = 0";
+
+		return(getStmt().executeQuery(query));
 	}
 
 	//== this is a helper method which does not belong to the interface
@@ -1640,11 +1656,15 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"CASE \"null\" " +
 				"WHEN true THEN " + ResultSetMetaData.columnNullable + " " +
 				"WHEN false THEN " + ResultSetMetaData.columnNoNulls + " " +
-			"END AS \"nullable\", null AS \"REMARKS\", " +
+			"END AS \"NULLABLE\", null AS \"REMARKS\", " +
 			"\"columns\".\"default\" AS \"COLUMN_DEF\", 0 AS \"SQL_DATA_TYPE\", " +
 			"0 AS \"SQL_DATETIME_SUB\", 0 AS \"CHAR_OCTET_LENGTH\", " +
 			"\"columns\".\"number\" + 1 AS \"ORDINAL_POSITION\", null AS \"SCOPE_CATALOG\", " +
-			"null AS \"SCOPE_SCHEMA\", null AS \"SCOPE_TABLE\", " + ((MonetDriver)driver).getJavaType("other") + " AS \"SOURCE_DATA_TYPE\" " +
+			"null AS \"SCOPE_SCHEMA\", null AS \"SCOPE_TABLE\", " + ((MonetDriver)driver).getJavaType("other") + " AS \"SOURCE_DATA_TYPE\", " +
+			"CASE \"null\" " +
+				"WHEN true THEN CAST ('YES' AS varchar) " +
+				"WHEN false THEN CAST ('NO' AS varchar) " +
+			"END AS \"IS_NULLABLE\" " +
 				"FROM ( " +
 					"SELECT * FROM \"columns\" " +
 					"UNION ALL " +
@@ -2005,9 +2025,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	}
 
 	final static String keyQuery =
-		"SELECT null AS \"PKTABLE_CAT\", \"pkschema\".\"name\" AS \"PKTABLE_SCHEM\", " +
+		", \"pkschema\".\"name\" AS \"PKTABLE_SCHEM\", " +
 		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", \"pkkeycol\".\"column\" AS \"PKCOLUMN_NAME\", " +
-		"null AS \"FKTABLE_CAT\", \"fkschema\".\"name\" AS \"FKTABLE_SCHEM\", " +
+		"\"fkschema\".\"name\" AS \"FKTABLE_SCHEM\", " +
 		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", \"fkkeycol\".\"column\" AS \"FKCOLUMN_NAME\", " +
 		"\"fkkey\".\"type\" AS \"KEY_SEQ\", " + DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
 		"" + DatabaseMetaData.importedKeyNoAction + " AS \"DELETE_RULE\", " +
@@ -2028,6 +2048,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"\"fkkey\".\"id\" = \"fkkeycol\".\"id\" AND \"pkkey\".\"id\" = \"pkkeycol\".\"id\" AND " +
 			"\"fkschema\".\"id\" = \"fktable\".\"schema_id\" AND \"pkschema\".\"id\" = \"pktable\".\"schema_id\" AND " +
 			"\"fkkey\".\"rkey\" > -1 AND \"fkkey\".\"rkey\" = \"pkkey\".\"id\" ";
+
+	static String keyQuery(String cat) {
+		return("SELECT '" + cat + "' AS \"PKTABLE_CAT\", '" + cat + "' AS \"FKTABLE_CAT\"" + keyQuery);
+	}
 
 	/**
 	 * Get a description of the primary key columns that are
@@ -2084,7 +2108,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	public ResultSet getImportedKeys(String catalog, String schema, String table)
 		throws SQLException
 	{
-		String query = keyQuery;
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String query = keyQuery(cat);
 
 		if (schema != null) {
 			query += "AND \"fkschema\".\"name\" LIKE '" + escapeQuotes(schema) + "' ";
@@ -2153,7 +2178,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	public ResultSet getExportedKeys(String catalog, String schema, String table)
 		throws SQLException
 	{
-		String query = keyQuery;
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String query = keyQuery(cat);
 
 		if (schema != null) {
 			query += "AND \"pkschema\".\"name\" LIKE '" + escapeQuotes(schema) + "' ";
@@ -2237,7 +2263,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String ftable
 	) throws SQLException
 	{
-		String query = keyQuery;
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String query = keyQuery(cat);
 
 		if (pschema != null) {
 			query += "AND \"pkschema\".\"name\" LIKE '" + escapeQuotes(pschema) + "' ";
@@ -2426,42 +2453,50 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		boolean approximate
 	) throws SQLException
 	{
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
 		String query =
-			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
-			"\"tables\".\"name\" AS \"TABLE_NAME\", CASE \"keys\".\"name\" WHEN NULL " +
-			"THEN true ELSE false END AS \"NON_UNIQUE\", " +
-			"null AS \"INDEX_QUALIFIER\", \"idxs\".\"name\" AS \"INDEX_NAME\", " +
-			DatabaseMetaData. tableIndexOther + " AS \"TYPE\", " +
-			"\"columns\".\"number\" AS \"ORDINAL_POSITION\", \"columns\".\"name\" AS \"COLUMN_NAME\", " +
-			"null AS \"ASC_OR_DESC\", 0 AS \"PAGES\", " +
-			"null AS \"FILTER_CONDITION\" " +
-				"FROM \"idxs\" LEFT JOIN \"keys\" ON \"idxs\".name = \"keys\".name, ( " +
+			"SELECT * FROM ( " +
+			"SELECT '" + cat + "' AS \"TABLE_CAT\", " +
+				"\"idxs\".\"name\" AS \"INDEX_NAME\", " +
+				"\"tables\".\"name\" AS \"TABLE_NAME\", " +
+				"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
+				"CASE WHEN \"keys\".\"name\" IS NULL THEN true ELSE false END AS \"NON_UNIQUE\", " +
+				"CASE \"idxs\".\"type\" WHEN 0 THEN " + DatabaseMetaData. tableIndexHashed + " ELSE " + DatabaseMetaData. tableIndexOther + " END AS \"TYPE\", " +
+				"\"keycolumns\".\"nr\" AS \"ORDINAL_POSITION\", " +
+				"\"columns\".\"name\" as \"COLUMN_NAME\", " +
+				"null AS \"INDEX_QUALIFIER\", " +
+				"null AS \"ASC_OR_DESC\", " +
+				"0 AS \"PAGES\", " +
+				"null AS \"FILTER_CONDITION\" " +
+			"FROM \"idxs\" LEFT JOIN \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", \"schemas\", \"keycolumns\", ( " +
 					"SELECT * FROM \"columns\" " +
 					"UNION ALL " +
 					"SELECT * FROM \"tmp_columns\" " +
-					") AS \"columns\", ( " +
+				") AS \"columns\", ( " +
 					"SELECT * FROM \"tables\" " +
 					"UNION ALL " +
 					"SELECT * FROM \"tmp_tables\" " +
-					") AS \"tables\", \"keycolumns\", \"schemas\" " +
-				"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
-					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
-					"AND \"keycolumns\".\"id\" = \"idxs\".\"id\" " +
-					"AND \"columns\".\"name\" = \"keycolumns\".\"column\" " +
-					"AND \"columns\".\"table_id\" = \"tables\".\"id\" " +
-					"AND \"idxs\".\"name\" NOT IN (SELECT \"name\" FROM \"keys\" WHERE \"type\" <> 1) ";
+				") AS \"tables\" " +
+			"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
+				"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
+				"AND \"idxs\".\"id\" = \"keycolumns\".\"id\" " +
+				"AND \"tables\".\"id\" = \"columns\".\"table_id\" " +
+				"AND \"keycolumns\".\"column\" = \"columns\".\"name\" " +
+				"AND (\"keys\".\"type\" IS NULL OR \"keys\".\"type\" = 1) " +
+			") AS jdbcquery " +
+				"WHERE 1 = 1 ";
 
 		if (schema != null) {
-			query += "AND \"schemas\".\"name\" LIKE '" + escapeQuotes(schema) + "' ";
+			query += "AND \"TABLE_SCHEM\" LIKE '" + escapeQuotes(schema) + "' ";
 		}
 		if (table != null) {
-			query += "AND \"tables\".\"name\" LIKE '" + escapeQuotes(table) + "' ";
+			query += "AND \"TABLE_NAME\" LIKE '" + escapeQuotes(table) + "' ";
 		}
 		if (unique) {
-			query += "AND \"idxs\".\"type\" = 0 ";
+			query += "AND \"NON_UNIQUE\" = false ";
 		}
 
-		query += "ORDER BY \"nonunique\", \"TYPE\", \"INDEX_NAME\", \"ORDINAL_POSITION\"";
+		query += "ORDER BY \"NON_UNIQUE\", \"TYPE\", \"INDEX_NAME\", \"ORDINAL_POSITION\"";
 
 		String columns[] = {
 			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE",
@@ -2620,8 +2655,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		int[] types
 	) throws SQLException
 	{
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
 		String query =
-			"SELECT null AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
+			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'java.lang.Object' AS \"CLASS_NAME\", 0 AS \"DATA_TYPE\", " +
 			"'' AS \"REMARKS\", 0 AS \"BASE_TYPE\" WHERE 1 = 0";
 
@@ -2739,8 +2775,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String typeNamePattern
 	) throws SQLException
 	{
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
 		String query =
-			"SELECT '' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
+			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'' AS \"SUPERTYPE_CAT\", '' AS \"SUPERTYPE_SCHEM\", " +
 			"'' AS \"SUPERTYPE_NAME\" WHERE 1 = 0";
 
@@ -2785,8 +2822,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String tableNamePattern
 	) throws SQLException
 	{
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
 		String query =
-			"SELECT '' AS \"TABLE_CAT\", '' AS \"TABLE_SCHEM\", '' AS \"TABLE_NAME\", " +
+			"SELECT '" + cat + "' AS \"TABLE_CAT\", '' AS \"TABLE_SCHEM\", '' AS \"TABLE_NAME\", " +
 			"'' AS \"SUPERTABLE_NAME\" WHERE 1 = 0";
 
 		return(getStmt().executeQuery(query));
@@ -2868,8 +2906,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String attributeNamePattern
 	) throws SQLException
 	{
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
 		String query =
-			"SELECT '' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
+			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'' AS \"ATTR_NAME\", '' AS \"ATTR_TYPE_NAME\", 0 AS \"ATTR_SIZE\", " +
 			"0 AS \"DECIMAL_DIGITS\", 0 AS \"NUM_PREC_RADIX\", 0 AS \"NULLABLE\", " +
 			"'' AS \"REMARKS\", '' AS \"ATTR_DEF\", 0 AS \"SQL_DATA_TYPE\", " +
@@ -2891,6 +2930,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @see Connection
 	 */
 	public boolean supportsResultSetHoldability(int holdability) {
+		// we don't close ResultSets at commit; and we don't do updateable
+		// result sets, so comes closest to hold cursors over commit
 		return(holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
