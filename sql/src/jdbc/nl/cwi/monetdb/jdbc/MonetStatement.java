@@ -144,7 +144,7 @@ public class MonetStatement implements Statement {
 		if (batch == null) batch = new StringBuffer(60000);
 
 		// save compiler some work :) `sql + ";"' will be converted to:
-		// new StringBuffer(sql).add(";")
+		// new StringBuffer(sql).append(";")
 		batch.append(sql).append(';').append('\n');
 	}
 

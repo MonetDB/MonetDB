@@ -202,8 +202,8 @@ public class MonetResultSet implements ResultSet {
 
 		// extract separate fields by examining string, char for char
 		boolean inString = false, escaped = false;
-		int cursor = 2, column = 0, i = 2;
-		for (; i < tmpLine.length() - 2; i++) {
+		int cursor = 2, column = 0, i = 2, len = tmpLine.length();
+		for (; i < len; i++) {
 			switch(tmpLine.charAt(i)) {
 				case '\\':
 					escaped = !escaped;
@@ -236,11 +236,69 @@ public class MonetResultSet implements ResultSet {
 				break;
 				case '\t':
 					if (!inString &&
-						(i > 0 && tmpLine.charAt(i - 1) == ','))
+						(i > 0 && tmpLine.charAt(i - 1) == ',') ||
+						(i + 1 == len - 1 && tmpLine.charAt(++i) == ']')) // dirty
 					{
 						// split!
-						result[column++] =
-							tmpLine.substring(cursor, i - 1);
+						if (tmpLine.charAt(cursor) == '"' &&
+							tmpLine.charAt(i - 2) == '"')
+						{
+							StringBuffer uesc = new StringBuffer();
+							for (int pos = cursor + 1; pos < i - 2; pos++) {
+								char cur = tmpLine.charAt(pos);
+								if (cur == '\\' && pos + 1 < i - 2) {
+									cur = tmpLine.charAt(++pos);
+									// strToStr and strFromStr in gdk_atoms.mx only
+									// support \t \n \\ \" and \377
+									switch (cur) {
+										case '\\':
+											uesc.append('\\');
+										break;
+										case 'n':
+											uesc.append('\n');
+										break;
+										case 't':
+											uesc.append('\t');
+										break;
+										case '"':
+											uesc.append('"');
+										break;
+										case '0': case '1': case '2': case '3':
+											// this could be an octal number, let's check it out
+											if (pos + 2 < i - 2 &&
+												tmpLine.charAt(pos + 1) >= '0' && tmpLine.charAt(pos + 1) <= '7' &&
+												tmpLine.charAt(pos + 2) >= '0' && tmpLine.charAt(pos + 2) <= '7'
+											) {
+												// we got the number!
+												try {
+													uesc.append((char)(Integer.parseInt("" + cur + tmpLine.charAt(pos + 1) + tmpLine.charAt(pos + 2), 8)));
+													pos += 2;
+													break;
+												} catch (NumberFormatException e) {
+													// hmmm, this point should never be reached actually...
+												}
+											}
+											// do default action if number seems not to be correct
+										default:
+											// this is wrong, just ignore the escape, and print the char
+											uesc.append(cur);
+										break;
+									}
+								} else {
+									uesc.append(cur);
+								}
+							}
+
+							// put the unescaped string in the right place
+							result[column++] = uesc.toString();
+						} else if ((i - 1) - cursor == 4 &&
+								tmpLine.indexOf("NULL", cursor) == cursor)
+						{
+							result[column++] = null;
+						} else {
+							result[column++] =
+								tmpLine.substring(cursor, i - 1);
+						}
 						cursor = i + 1;
 					}
 
@@ -249,68 +307,8 @@ public class MonetResultSet implements ResultSet {
 				break;
 			}
 		}
-		// put the left over (if any) in the next column (should be there!!!)
-		if (i - cursor > 0)
-			result[column++] =
-				tmpLine.substring(cursor, tmpLine.length() - 2);
 		// check if this result is of the size we expected it to be
 		if (column != columns.length) throw new AssertionError("Illegal result length: " + column + "\nlast read: " + result[column - 1]);
-		// trim spaces off all columns and unquote + unescape if they are quoted
-		for (i = 0; i < result.length; i++) {
-			if (result[i].equals("NULL")) {
-				result[i] = null;
-			} else 	if (result[i].startsWith("\"") && result[i].endsWith("\"")) {
-				StringBuffer uesc = new StringBuffer();
-				int len = result[i].length();
-				for (int pos = 1; pos < len - 1; pos++) {
-					char cur = result[i].charAt(pos);
-					if (cur == '\\' && pos + 1 < len) {
-						cur = result[i].charAt(++pos);
-						// strToStr and strFromStr in gdk_atoms.mx only
-						// support \t \n \\ \" and \377
-						switch (cur) {
-							case '\\':
-								uesc.append('\\');
-							break;
-							case 'n':
-								uesc.append('\n');
-							break;
-							case 't':
-								uesc.append('\t');
-							break;
-							case '"':
-								uesc.append('"');
-							break;
-							case '0': case '1': case '2': case '3':
-								// this could be an octal number, let's check it out
-								if (pos + 2 < len &&
-									result[i].charAt(pos + 1) >= '0' && result[i].charAt(pos + 1) <= '7' &&
-									result[i].charAt(pos + 2) >= '0' && result[i].charAt(pos + 2) <= '7'
-								) {
-									// we got the number!
-									try {
-										uesc.append((char)(Integer.parseInt("" + cur + result[i].charAt(pos + 1) + result[i].charAt(pos + 2), 8)));
-										pos += 2;
-										break;
-									} catch (NumberFormatException e) {
-										// hmmm, this point should never be reached actually...
-									}
-								}
-								// do default action if number seems not to be correct
-							default:
-								// this is wrong, just ignore the escape, and print the char
-								uesc.append(cur);
-							break;
-						}
-					} else {
-						uesc.append(cur);
-					}
-				}
-
-				// put the unescaped string in the right place
-				result[i] = uesc.toString();
-			}
-		}
 
 		// reset lastColumnRead
 		lastColumnRead = -1;
