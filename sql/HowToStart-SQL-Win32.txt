@@ -175,7 +175,7 @@ Documentation:
 ==============
 
 Some initial documention of the MonetDB SQL front end is available in
-SQLfeatures.tex and SQLsessionDemo.
+SQLfeatures.tex and SQLsessionDemo.html.
 
 
 Usage:

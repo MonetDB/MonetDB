@@ -23,9 +23,9 @@
 
 # make rules to generate sql's documentation
 
-$(prefix)/doc/SQLsessionDemo:	$(top_srcdir)/SQLsessionDemo
+$(prefix)/doc/SQLsessionDemo.html:	$(top_srcdir)/SQLsessionDemo.html
 	-@mkdir -p $(prefix)/doc
-	cp $(top_srcdir)/SQLsessionDemo $(prefix)/doc
+	cp $(top_srcdir)/SQLsessionDemo.html $(prefix)/doc
 
 $(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures.tex
 	-@mkdir -p $(prefix)/doc/SQLfeatures
@@ -34,6 +34,6 @@ $(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures.tex
 $(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures.tex
 	(cd $(prefix)/doc/SQLfeatures; latex SQLfeatures.tex; latex SQLfeatures.tex)
 
-html:	$(prefix)/doc/SQLsessionDemo $(prefix)/doc/SQLfeatures/SQLfeatures.aux
+html:	$(prefix)/doc/SQLsessionDemo.html $(prefix)/doc/SQLfeatures/SQLfeatures.aux
 	(cd $(prefix); latex2html -ascii_mode -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex)
 
