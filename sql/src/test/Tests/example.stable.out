@@ -1,13 +1,13 @@
 stdout of test 'example` in directory 'src/test` itself:
 
 
-# 16:14:11 >  
-# 16:14:11 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX__GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX__GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/log" --set mapi_port=45373 --set sql_port=50816 --set monet_prompt= --trace "--dbname=mTests_src_test" "/var/tmp/_BUILD_SQL_GNU_32_d__/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 16:14:11 >  
+# 13:19:55 >  
+# 13:19:55 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=42732 --set sql_port=53464 --set monet_prompt= --trace "--dbname=mTests_src_test" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 13:19:55 >  
 
-# Monet Database Server V4.3.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,9 +17,9 @@ quit();
 
 Over..
 
-# 16:14:12 >  
-# 16:14:12 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < example.sql
-# 16:14:12 >  
+# 13:19:56 >  
+# 13:19:56 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53464  < example.sql
+# 13:19:56 >  
 
 # 6 # querytype
 # 6 # querytype
@@ -27,31 +27,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -59,17 +59,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -78,10 +78,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -89,7 +89,7 @@ Over..
 [ 8,	"texxst",	0.0001	]
 # 7 # querytype
 
-# 16:14:12 >  
-# 16:14:12 >  Done.
-# 16:14:12 >  
+# 13:19:56 >  
+# 13:19:56 >  Done.
+# 13:19:56 >  
 

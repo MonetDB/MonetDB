@@ -5,9 +5,9 @@ stdout of test 'big-example` in directory 'src/test` itself:
 # 16:14:32 >  Mtimeout -timeout 1560 Mserver "--config=/var/tmp/_PREFIX__GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX__GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/log" --set mapi_port=45373 --set sql_port=50816 --set monet_prompt= --trace "--dbname=mTests_src_test" "/var/tmp/_BUILD_SQL_GNU_32_d__/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
 # 16:14:32 >  
 
-# Monet Database Server V4.3.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -27,31 +27,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -59,17 +59,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -78,10 +78,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -97,31 +97,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -129,17 +129,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 10,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -153,10 +153,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 10,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -176,10 +176,10 @@ Over..
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 6,	,	 # tuplecount
-# 0,	,	 # id
+# 1,	,	 # id
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 8,	"texxst",	0.0001	]
@@ -189,10 +189,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 4,	,	 # tuplecount
-# 1,	,	 # id
+# 2,	,	 # id
 [ 9,	"testx",	9.0999999999999996	]
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -216,31 +216,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -248,17 +248,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -267,10 +267,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -285,30 +285,30 @@ Over..
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 0,	,	 # id
+# 1,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 1 # id
+# 2 # id
 [ 3	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	5,	0 # length
+# int,	varchar,	double # type
+# 11,	5,	22 # length
 # 2,	,	 # tuplecount
-# 2,	,	 # id
+# 3,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 0,	"texst",	99999.100000000006	]
 # 7 # querytype
@@ -331,31 +331,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -363,17 +363,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -382,10 +382,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -400,67 +400,67 @@ Over..
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 0,	,	 # id
+# 1,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 1 # id
+# 2 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 4,	,	 # tuplecount
-# 2,	,	 # id
+# 3,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 3 # id
+# 4 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 3,	,	 # tuplecount
-# 4,	,	 # id
+# 5,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 5 # id
+# 6 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	5,	0 # length
+# int,	varchar,	double # type
+# 11,	5,	22 # length
 # 2,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 0,	"texst",	99999.100000000006	]
 # 7 # querytype
@@ -483,31 +483,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -515,17 +515,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -534,10 +534,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -552,30 +552,30 @@ Over..
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 0,	,	 # id
+# 1,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 1 # id
+# 2 # id
 [ 2	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	5,	0 # length
+# int,	varchar,	double # type
+# 11,	5,	22 # length
 # 3,	,	 # tuplecount
-# 2,	,	 # id
+# 3,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 0,	"texst",	99999.100000000006	]
@@ -599,31 +599,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -631,17 +631,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -650,10 +650,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -668,30 +668,30 @@ Over..
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 0,	,	 # id
+# 1,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 1 # id
+# 2 # id
 [ 3	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 2,	,	 # id
+# 3,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	-1	]
 [ 9,	"testx",	-1	]
@@ -717,31 +717,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -749,17 +749,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -768,10 +768,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -786,70 +786,70 @@ Over..
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 0,	,	 # id
+# 1,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 1 # id
+# 2 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 2,	,	 # id
+# 3,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ -5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 3 # id
+# 4 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 4,	,	 # id
+# 5,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ -5,	"xtest",	0.90000000000000002	]
 [ -5,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 5 # id
+# 6 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ -5,	"xtest",	0.90000000000000002	]
 [ -5,	"testx",	9.0999999999999996	]
@@ -875,31 +875,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -907,17 +907,17 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -926,10 +926,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -944,30 +944,30 @@ Over..
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 0,	,	 # id
+# 1,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 0,	"texst",	99999.100000000006	]
 [ 8,	"texxst",	0.0001	]
 # 4 # querytype
-#  # table_name
-# count_convert_val1 # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 1 # id
+# 2 # id
 [ 2	]
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	7,	0 # length
+# int,	varchar,	double # type
+# 11,	7,	22 # length
 # 5,	,	 # tuplecount
-# 2,	,	 # id
+# 3,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"updated",	9.0999999999999996	]
@@ -993,31 +993,31 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 3 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
@@ -1025,7 +1025,7 @@ Over..
 # affected # table_name
 # rows # name
 # int # type
-# 0 # length
+# 10 # length
 # 1 # tuplecount
 # 5 # id
 [ 1	]
@@ -1033,10 +1033,10 @@ Over..
 # 3 # querytype
 # example,	example,	example # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 5,	,	 # id
+# 6,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
@@ -1045,10 +1045,10 @@ Over..
 # 3 # querytype
 # example_view,	example_view,	example_view # table_name
 # val1,	val2,	val3 # name
-# mediumint,	varchar,	float # type
-# 0,	6,	0 # length
+# int,	varchar,	double # type
+# 11,	6,	22 # length
 # 5,	,	 # tuplecount
-# 6,	,	 # id
+# 7,	,	 # id
 [ 1,	"test",	0.10000000000000001	]
 [ 5,	"xtest",	0.90000000000000002	]
 [ 9,	"testx",	9.0999999999999996	]
