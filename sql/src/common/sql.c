@@ -807,15 +807,17 @@ static stmt *sql_aggrop(context * sql, scope * scp, symbol * se, group * grp, st
 		}
 		cv = scope_first_column(scp);
 		if (cv && subset) {
-			stmt *foundsubset = find_subset(subset, cv->s);
+			stmt *foundsubset = find_subset(subset, cv->s->h);
 
+				assert(foundsubset);
+			if (!foundsubset) {
+				return sql_error(sql, 02, "Aggregate: Cannot find subset for column %s\n", cv->cname) ;
+			}
 			s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
 		}
 	} else {
 		s = sql_value_exp(sql, scp, l->h->next->next->data.sym, grp, subset);
 	}
-	if (!s)
-		return NULL;
 
 	if (s && distinct) {
 		s = stmt_unique(s,grp_dup(grp));
@@ -2409,7 +2411,7 @@ static stmt *sql_simple_select(context * sql, scope * scp, dlist * selection)
 				printf("subquery in simple_select\n");
 				stmt_destroy(cs);
 				return NULL;
-			} else if (cs->key == 1){
+			} else if (cs->nrcols == 0){
 				printf("single value\n");
 			} else {
 				list_append(rl, cs);
@@ -2589,7 +2591,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					list_append(rl, stmt_outerjoin( stmt_outerjoin(ss, stmt_reverse (ids), cmp_equal), stmt_dup(cs->op1.lval->h->data), cmp_equal));
 					stmt_destroy(cs);
 				}
-			} else if (!grp && cs->key == 1){
+			} else if (cs->nrcols == 0){
 				stmt *ss = first_subset(subset);
 				cs = stmt_const(ss,cs);
 				list_append(rl, cs);

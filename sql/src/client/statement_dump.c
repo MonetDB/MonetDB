@@ -321,8 +321,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			len = snprintf( buf, BUFSIZ, 
 					"error impossible\n");
 	  	} 
-		dump(sql,buf,len,-s->nr);
 		}
+		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_select2: {
 		int l = stmt_dump( s->op1.stval, nr, sql );

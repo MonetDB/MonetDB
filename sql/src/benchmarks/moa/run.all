@@ -8,3 +8,5 @@ echo "loading"
 $SQL < load1.sql  
 echo "queries"
 $SQL < moa1.sql
+echo "dropping"
+$SQL < drop.sql
