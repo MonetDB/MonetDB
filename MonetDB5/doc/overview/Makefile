@@ -1,13 +1,20 @@
-#This makefile should be converted to Makefile.ag 
-overview:
-	rm -rf ../../Linux/doc
-	mkdir ../../Linux/doc
-	python mktexdoc.py ../.. ../../Linux/
-	cp overview.tex  ../../Linux/doc
-	cp latex8.sty  ../../Linux/doc
-	cp multiFloats.sty ../../Linux/doc
-	(cd ../../Linux/doc; \
+#This Makefile can be used to generate the documentation
+#for off-line printing and creates a webstructure for
+#inclusion in the MonetDB website
+ps,pdf:
+	cp overview.tex *.sty  ../../Linux/share/MonetDB
+	(cd ../../Linux/share/MonetDB/; \
 	latex -interaction=batchmode overview.tex ;\
 	latex -interaction=batchmode overview.tex ;\
 	dvips overview.dvi -o overview.ps ; \
 	ps2pdf overview.ps overview.pdf)
+
+web:
+	rm -rf ../../Linux/share/MonetDB/Web
+	mkdir ../../Linux/share/MonetDB/web
+	cp overview.shtml ../../Linux/share/MonetDB/web
+	(cd ../../Linux/share/MonetDB/; \
+	mkdir web/mal; cp docs/mal/*html web/mal; \
+	mkdir web/gdk; cp docs/gdk/*html web/gdk; \
+	)
+	echo "Web created"
