@@ -17,12 +17,12 @@
 #	raise IllegalAccess:="an illegal exception raise";
 #end	IllegalAccess;
 #
-function Admin.main():int;	#0:(main:int->0)
-raise	IllegalAccess := "new exception";	#1:(IllegalAccess:str->1)($2:str->2)
-	c4 := "should not come here";	#2:(c4:str->3)($4:str->4)
-catch	IllegalAccess;	#3:(IllegalAccess:str->1)
-	n0 := 0;	#4:(n0:int->5)($6:int->6)
-raise	IllegalAccess := "an illegal exception raise";	#5:(IllegalAccess:str->1)($7:str->7)
-end	IllegalAccess;	#6:(IllegalAccess:str->1)
+function Admin.main():int;	#0:(main:int)
+raise	IllegalAccess := "new exception";	#1:(IllegalAccess:str)($2:str)
+	c4 := "should not come here";	#2:(c4:str)($4:str)
+catch	IllegalAccess;	#3:(IllegalAccess:str)
+	n0 := 0;	#4:(n0:int)($6:int)
+raise	IllegalAccess := "an illegal exception raise";	#5:(IllegalAccess:str)($7:str)
+end	IllegalAccess;	#6:(IllegalAccess:str)
 end function;	#7:
 >

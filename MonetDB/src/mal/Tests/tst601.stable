@@ -15,12 +15,12 @@
 #f := flt(3.4);
 #j := sht("1");
 #
-function Admin.main():int;	#0:(main:int->0)
-	o := atoms.oid("999@0");	#1:(o:oid->1)($2:str->2)
-	os := atoms.str(o);	#2:(os:str->3)(o:oid->1)
-	i := atoms.sht(1);	#3:(i:sht->4)($5:int->5)
-	l := atoms.lng(2);	#4:(l:lng->6)($7:int->7)
-	f := atoms.flt(3.4);	#5:(f:flt->8)($9:flt->9)
-	j := atoms.sht(1);	#6:(j:sht->10)($5:int->5)
+function Admin.main():int;	#0:(main:int)
+	o := atoms.oid("999@0");	#1:(o:oid)($2:str)
+	os := atoms.str(o);	#2:(os:str)(o:oid)
+	i := atoms.sht(1);	#3:(i:sht)($5:int)
+	l := atoms.lng(2);	#4:(l:lng)($7:int)
+	f := atoms.flt(3.4);	#5:(f:flt)($9:flt)
+	j := atoms.sht(1);	#6:(j:sht)($5:int)
 end function;	#7:
 >

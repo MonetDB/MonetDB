@@ -13,44 +13,42 @@
 #barrier  b:= iterator.argument(i,arg);
 #end b;
 #end function; 
-!ERROR: 2: barrier 'b' should be of type bit
-function Admin.pr(format:str,arg:any, malVARG:any):void;	#0:(pr:void->0)(format:str->1)(arg:any->2)( malVARG:any->3)
-	i := -1;	#1:(i:int->4)($5:int->5)
-barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any->6)(i:int->4)(arg:any->2)
-end	b;	#3:(b:any->6)
+function Admin.pr(format:str,arg:any, malVARG:any):void;	#0:(pr:void)(format:str)(arg:any)( malVARG:any)
+	i := -1;	#1:(i:int)($5:int)
+barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any)(i:int)(arg:any)
+end	b;	#3:(b:any)
 end function;	#4:
 #
 ## how to iterator through a variable list
 #function prStr(format:str,arg:str[]):void;
 #	i:= -1;
 #	limit:= Array.getLength(arg);
-#barrier  b:= iterator.nextElement(i,0,limit);	#elm:= arg[i]
+#barrier  b:= nextElement(i,0,limit);	#elm:= arg[i]
 #	elm:= Array.get(arg,i);  #elm:= arg[i]
 #	printf("argument ");
 #	printf(i);
 #	printf(elm);
 #end b;
 #end function; 
-!ERROR: 3: barrier 'b' should be of type bit
-function Admin.prStr(format:str,arg:str, malVARG:any):void;	#0:(prStr:void->0)(format:str->1)(arg:str->2)( malVARG:any->3)
-	i := -1;	#1:(i:int->4)($5:int->5)
-	limit := Array.getLength(arg);	#2 unknown:(limit:any->6)(arg:str->2)
-barrier	b := iterator.nextElement(i,0,limit);	#3 unknown:(b:any->7)(i:int->4)($8:int->8)(limit:any->6)
-	elm := Array.get(arg,i);	#4 unknown:(elm:any->9)(arg:str->2)(i:int->4)
-	system.printf("argument ");	#5:($10:int->10)($11:str->11)
-	printf(i);	#6 unknown:($12:any->12)(i:int->4)
-	printf(elm);	#7 unknown:($13:any->13)(elm:any->9)
-end	b;	#8:(b:any->7)
+function Admin.prStr(format:str,arg:str, malVARG:any):void;	#0:(prStr:void)(format:str)(arg:str)( malVARG:any)
+	i := -1;	#1:(i:int)($5:int)
+	limit := Array.getLength(arg);	#2 unknown:(limit:any)(arg:str)
+barrier	b := nextElement(i,0,limit);	#3 unknown:(b:any)(i:int)($8:int)(limit:any)
+	elm := Array.get(arg,i);	#4 unknown:(elm:any)(arg:str)(i:int)
+	system.printf("argument ");	#5:($10:int)($11:str)
+	printf(i);	#6 unknown:($12:any)(i:int)
+	printf(elm);	#7 unknown:($13:any)(elm:any)
+end	b;	#8:(b:any)
 end function;	#9:
 #
 #pr("hello",1,true);
 #prStr("hello",1,true);
 #prStr("hello","quick","brown","fox");
 #
-function Admin.main():int;	#0:(main:int->0)
-	Admin.pr("hello",1,true);	#1:($1:int->1)($2:str->2)($3:int->3)($4:bit->4)
-	prStr("hello",1,true);	#2 unknown:($5:any->5)($2:str->2)($3:int->3)($4:bit->4)
-	Admin.prStr("hello","quick","brown","fox");	#3:($6:void->6)($2:str->2)($7:str->7)($8:str->8)($9:str->9)
+function Admin.main():int;	#0:(main:int)
+	Admin.pr("hello",1,true);	#1:($1:int)($2:str)($3:int)($4:bit)
+	prStr("hello",1,true);	#2 unknown:($5:any)($2:str)($3:int)($4:bit)
+	Admin.prStr("hello","quick","brown","fox");	#3:($6:void)($2:str)($7:str)($8:str)($9:str)
 end function;	#4:
 !ERROR: MALexception:Admin.main[2]:Instruction type not fixed
 >

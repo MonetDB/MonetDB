@@ -1,8 +1,13 @@
-@f iterator
-@t Iterator primitives
+@t MAL extensions
 @a Martin Kersten
 @v 0.1
-@* Introduction
+@* MAL extensions
+This module contains enhances to the MAL interpreter layer, such as
+iterators over ranges and bats, access to the debugger, ....
+This module is loaded directly after the kernel modules and provides
+a first abstraction layer.
+
+@+ Iterator primitives
 This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few paramaters,
 e.g. a lower/upper bound, or a bat. An iterator is initialized in the first
@@ -12,7 +17,7 @@ collection.
 @mal
 # The routines below are linked with the kernel by default
 
-module iterator;
+module mal;
 
 command nextElement(i:lng, first:lng, last:lng):bit = lngForloop; 
 command nextElement(i:int, first:int, last:int):bit = intForloop; 
@@ -51,6 +56,14 @@ command batloop(b:bat[any,any], cursor:lng):bit = batloopStep comment "";
 	@:fetch(str)@
 	@:fetch(flt)@
 	@:fetch(dbl)@
+@-
+@+ The Monet Debugger interface
+To enable ease of debugging and performance monitoring, the MAL interpreter
+comes with a hardwired gdb-like text-based debugger.
+@mal
+pattern mdb():void = MDBmdb
+	comment "Start interactive debugger";
+
 @+ Dummy code 
 @h
 /*

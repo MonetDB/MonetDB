@@ -1,8 +1,7 @@
-@f startup
 @t Mal Startup file
 @a Martin Kersten
 @* Introduction
-Upon starting the Mal server we need to initialize the symbol table.
+Upon starting the Monet/MAL server we need to initialize the symbol table.
 This encompasses loading the signatures of several key modules.
 They are listed below. 
 
@@ -15,17 +14,10 @@ the function resolution scheme.
 
 
 @mal
-use "kernel/unix";
-use "kernel/bat";
-use "kernel/arith";
-use "kernel/atoms";
+use "kernel/startup";
 use "atoms/blob";
-use "kernel/algebra";
-use "kernel/system";
-use "kernel/mapi";
-use "mal/mdb";
-use "mal/iterator";
+use "mal/mal";
 use "mal/squeezer"; 
 @-
 In practice, we have to introduce different startup for each
-client group.
+client group or database.

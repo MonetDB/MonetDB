@@ -9,7 +9,7 @@
 ## more complex typechecking, it should not complain at compile time
 #command lookup(nme:str):bat[str,str] = CMDlookup;
 !ERROR: address of function 'CMDlookup' not found
-command Admin.lookup(nme:str):bat[str,str] = CMDlookup;	#0:(lookup:bat[str,str]->0)(nme:str->1)
+command Admin.lookup(nme:str):bat[str,str] = CMDlookup;	#0:(lookup:bat[str,str])(nme:str)
 #function sample(nme:str, val:any):bit;
 #   b := lookup(nme); #find a bat
 #   h := select(b,val,val);
@@ -17,12 +17,12 @@ command Admin.lookup(nme:str):bat[str,str] = CMDlookup;	#0:(lookup:bat[str,str]-
 #   x := print(t);
 #   y := print(val);
 #end function;
-function Admin.sample(nme:str,val:any):bit;	#0:(sample:bit->0)(nme:str->1)(val:any->2)
-	b := Admin.lookup(nme);	#1:(b:bat[str,str]->3)(nme:str->1)
-	h := select(b,val,val);	#2 unknown:(h:any->4)(b:bat[str,str]->3)(val:any->2)(val:any->2)
-	t := count(h);	#3 unknown:(t:any->5)(h:any->4)
-	x := system.print(t);	#4:(x:int->6)(t:any->5)
-	y := system.print(val);	#5:(y:int->7)(val:any->2)
+function Admin.sample(nme:str,val:any):bit;	#0:(sample:bit)(nme:str)(val:any)
+	b := Admin.lookup(nme);	#1:(b:bat[str,str])(nme:str)
+	h := select(b,val,val);	#2 unknown:(h:any)(b:bat[str,str])(val:any)(val:any)
+	t := count(h);	#3 unknown:(t:any)(h:any)
+	x := system.print(t);	#4:(x:int)(t:any)
+	y := system.print(val);	#5:(y:int)(val:any)
 end function;	#6:
 #
 >

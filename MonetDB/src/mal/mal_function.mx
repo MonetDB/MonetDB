@@ -153,8 +153,7 @@ void chkCntrl(MalBlkPtr mb, InstrPtr pp)
 void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 {
 	chkCntrl(mb,pp);
-	if( getArgType(mb,pp,0) != TYPE_bit ){
-		mb->errors++;
+	if( getArgType(mb,pp,0) != TYPE_bit && getArgType(mb,pp,0)!= malAnyType ){
 		GDKerror("%d: barrier '%s' should be of type bit\n",
 			getPC(mb,pp),getVarName(mb,pp->argv[0]));
 	}

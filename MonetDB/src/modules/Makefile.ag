@@ -1,3 +1,2 @@
-
-SUBDIRS = kernel atoms mal clients
+SUBDIRS = kernel atoms mal mil sql clients
 #geometry 

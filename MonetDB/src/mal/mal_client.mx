@@ -53,6 +53,7 @@ are located in mal_startup.
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
 #include "mal_function.h"
+#include "mal_objectspace.h"
 #include "mal.h"
 
 #define MAL_MAXCLIENTS	32
@@ -120,12 +121,13 @@ is retained here for access by others (=father).
 	Thread		mythread;
 	struct CLIENT	*father;	
 @-
-Each client has a private entry point into the namespace. 
-(See mal_symbols.mx)
+Each client has a private entry point into the namespace and
+object space (the global variables).
 Moreover, the parser needs some administration variables
 to keep track of critical elements.
 @h
 	Scope		nspace;
+	OBJspace	ospace;
 	Symbol		curprg;		/* focus of parser */
 } *Client, ClientRec;
 

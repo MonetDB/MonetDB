@@ -55,38 +55,32 @@
 #
 #
 #
-!ERROR: 1: barrier 'H' should be of type bit
-!ERROR: 5: barrier 'L' should be of type bit
-!ERROR: 11: barrier 'M' should be of type bit
-!ERROR: 20: barrier 'FT' should be of type bit
-!ERROR: 22: barrier 'FTE' should be of type bit
-!ERROR: 24: barrier 'FS' should be of type bit
-function Admin.main():int;	#0:(main:int->0)
-barrier	H := batoperatie;	#1 dynamic:(H:any->1)(batoperatie:any->2)
-	Tail := bat.fetch(b,H);	#2 unknown:(Tail:any->3)(b:any->4)(H:any->1)
-	redo H ;	#3:(H:any->1)
-end	H;	#4:(H:any->1)
-barrier	L := bat.hasMoreElements(b);	#5 unknown:(L:any->5)(b:any->4)
-	H := bat.head(b);	#6 unknown:(H:any->1)(b:any->4)
-	v := bat.nextElement(b);	#7 unknown:(v:any->6)(b:any->4)
-	redo L ;	#8:(L:any->5)
-end	L;	#9:(L:any->5)
-	entry := true;	#10:(entry:bit->7)($8:bit->8)
-barrier	M := entry_or_exittest;	#11 dynamic:(M:any->9)(entry_or_exittest:any->10)
-	entry := false;	#12:(entry:bit->7)($11:bit->11)
-	redo M ;	#13:(M:any->9)
-end	M;	#14:(M:any->9)
-	i := 1;	#15:(i:int->12)($13:int->13)
-barrier	N := arith.<(i,10);	#16:(N:bit->14)(i:int->12)($15:int->15)
-	i := arith.+(i,1);	#17:(i:int->12)(i:int->12)($13:int->13)
-	redo N ;	#18:(N:bit->14)
-end	N;	#19:(N:bit->14)
-barrier	FT := booleanexpr;	#20 dynamic:(FT:any->16)(booleanexpr:any->17)
-end	FT;	#21:(FT:any->16)
-barrier	FTE := booleanexpr;	#22 dynamic:(FTE:any->18)(booleanexpr:any->17)
-end	FTE;	#23:(FTE:any->18)
-barrier	FS := not;	#24 dynamic:(FS:any->19)(not:any->20)
-end	FS;	#25:(FS:any->19)
+function Admin.main():int;	#0:(main:int)
+barrier	H := batoperatie;	#1 dynamic:(H:any)(batoperatie:any)
+	Tail := bat.fetch(b,H);	#2 unknown:(Tail:any)(b:any)(H:any)
+	redo H ;	#3:(H:any)
+end	H;	#4:(H:any)
+barrier	L := bat.hasMoreElements(b);	#5 unknown:(L:any)(b:any)
+	H := bat.head(b);	#6 unknown:(H:any)(b:any)
+	v := bat.nextElement(b);	#7 unknown:(v:any)(b:any)
+	redo L ;	#8:(L:any)
+end	L;	#9:(L:any)
+	entry := true;	#10:(entry:bit)($8:bit)
+barrier	M := entry_or_exittest;	#11 dynamic:(M:any)(entry_or_exittest:any)
+	entry := false;	#12:(entry:bit)($11:bit)
+	redo M ;	#13:(M:any)
+end	M;	#14:(M:any)
+	i := 1;	#15:(i:int)($13:int)
+barrier	N := arith.<(i,10);	#16:(N:bit)(i:int)($15:int)
+	i := arith.+(i,1);	#17:(i:int)(i:int)($13:int)
+	redo N ;	#18:(N:bit)
+end	N;	#19:(N:bit)
+barrier	FT := booleanexpr;	#20 dynamic:(FT:any)(booleanexpr:any)
+end	FT;	#21:(FT:any)
+barrier	FTE := booleanexpr;	#22 dynamic:(FTE:any)(booleanexpr:any)
+end	FTE;	#23:(FTE:any)
+barrier	FS := not;	#24 dynamic:(FS:any)(not:any)
+end	FS;	#25:(FS:any)
 end function;	#26:
-!ERROR: SyntaxError::'Admin.main' contains errors
+!ERROR: MALexception:Admin.main[2]:Instruction type not fixed
 >

@@ -65,9 +65,17 @@ typedef struct MALSTK {
 	
 #define newFrame(S,Ssize,Top,Cnt) S= reallocStack(S,&(Ssize),Top,Cnt)
 
+mal_export MalStkPtr newGlobalStack(int size);
+mal_export void freeStack(MalStkPtr stk);
 
 #define VARfreeze(X)	if(X){X->frozen=TRUE;}
 #define VARfixate(X)	if(X){X->constant=TRUE;}
+
+#define getStkRecord(S,P,I)	&(S)->stk[(P)->argv[I]]
+#define getStkValue(S,P,I)	( getStkType(S,P,I)== TYPE_str? \
+				  getStkRecord(S,P,I)->val.sval :\
+				  getStkRecord(S,P,I)->val.pval )
+#define getStkType(S,P,I)	(S)->stk[(P)->argv[I]].vtype
 
 #endif /* _MAL_STACK_H_ */
 @-
@@ -78,6 +86,15 @@ it may happen that entries are never set to a real value.
 This can be recognized by the vtype component
 @c
 #include "mal_stack.h"
+
+MalStkPtr newGlobalStack(int size){
+	MalStkPtr s;
+	s= (MalStkPtr) GDKmalloc(stackSize(size)+sizeof(MalStack));
+	if( s== NULL)
+		GDKfatal("newGlobalStack:can not obtain memory\n");
+	bzero((char*)s, stackSize(size)+sizeof(MalStack));
+	return s;
+}
 
 MalStkPtr reallocStack(MalStkPtr s, int cnt){
 	int k= s->stksize;
@@ -90,6 +107,9 @@ MalStkPtr reallocStack(MalStkPtr s, int cnt){
 	s->stksize = k;
 	GDKfree(old);
 	return s;
+}
+void freeStack(MalStkPtr stk){
+	GDKfree(stk);
 }
 void clearStack(MalStkPtr s){
 	ValPtr v;

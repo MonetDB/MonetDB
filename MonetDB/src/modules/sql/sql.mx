@@ -1,0 +1,24 @@
+@t SQL Object Management
+@a M.Kersten, N.Nes
+@* SQL
+This module contains the enhancements to the MAL interpreter
+to support an SQL interaction. The key primitives required
+for the interpretation are catalog managements.
+
+@mal
+module sql;
+
+function bind(tnme:str, cnmae:str):bat;
+	# check against catalog first
+	dbname:= bind("schema");
+	s:= +(tnme,"_");
+	t:= +(s,cname);
+	b:= mil.bind(t);
+	return b;
+end function;
+
+function release(b:bat):void;
+	nme := bat.name(b);
+	printf("releasing %s\n",nme);
+	mil.release(b);
+end function;

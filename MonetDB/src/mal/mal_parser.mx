@@ -83,6 +83,8 @@ request and each time we encounter EOL.
 @c
 #include "mal_parser.h"
 
+#define MAXERRORS 100
+#define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
 
 int echoInput(Client cntxt){
@@ -203,7 +205,7 @@ A similar approach is used for string literals.
 Beware, string lengths returned include the
 brackets. They are eaten away in strCopy.
 @c
-int strLength(Client cntxt){
+int stringLength(Client cntxt){
 	int l=0;
 	str s= cntxt->nxt;
 	if( *s != '"') return 0;
@@ -391,7 +393,7 @@ modname    : identifier | string \\
 @-
 @= parsePath
 	if( x = idLength(cntxt)) modname= idCopy(cntxt,x); else
-	if( y = strLength(cntxt)) modname= strCopy(cntxt,y);
+	if( y = stringLength(cntxt)) modname= strCopy(cntxt,y);
 	if( modname==0)
 		return parseError(cntxt,"<module path> expected\n");
 @c
@@ -399,9 +401,6 @@ int parseModule(Client cntxt)
 {	int atomary;
 	str modname=0;
 	int x,y;
-	MalBlkPtr curBlk = 0;
-	Scope s = 0;
-	InstrPtr curInstr=0;
 
 	atomary = keyword(cntxt,"atom",4);
 	if( ! keyword(cntxt,"module",6) ){
@@ -412,9 +411,9 @@ int parseModule(Client cntxt)
 	@:parsePath@
 
 	if( atomary ) malAtomDef(modname);
-	if( (s= findScope(cntxt->nspace,modname)) != NULL){
-		GDKerror("duplicate module\n");
-		cntxt->nspace = s;
+	if( findScope(cntxt->nspace,modname) != NULL){
+		GDKerror("duplicate module '%s'\n",modname);
+		cntxt->curprg->def->errors  = FATALINPUT;
 	} else	cntxt->nspace = fixateScope(cntxt->nspace, modname);
 	skipToEnd(cntxt);
 	return 1;
@@ -637,7 +636,7 @@ help information.
 	skipBlanc2(cntxt);
 	if( keyphrase(cntxt,"comment",7)){
 		skipBlanc2(cntxt);
-		if( l= strLength(cntxt)){
+		if( l= stringLength(cntxt)){
 			curBlk->help = strCopy(cntxt,l);
 		} else parseError("<string> expected\n");
 	} 
@@ -779,7 +778,7 @@ factor	: constant | var | type'('constant')'\\
 		if(i) lt = i; else lt= TYPE_chr;
 		idx= newConstant(curBlk,lt,v);
 	} else
-	if( i = strLength(cntxt) ){
+	if( i = stringLength(cntxt) ){
 		idx= newConstant(curBlk,TYPE_str,strCopy(cntxt,i));
 	} else
 	if( i= idLength(cntxt)){
@@ -864,7 +863,7 @@ This code is used in both positions of the expression
 		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	} 
-	if( i = strLength(cntxt) ){
+	if( i = stringLength(cntxt) ){
 		lt = TYPE_str;
 		i= newConstant(curBlk,lt,strCopy(cntxt,i));
 		pushArgument(curBlk,curInstr,i);
@@ -974,7 +973,7 @@ int parseMal(Client cntxt){
 	echoInput(cntxt);
 	/* here the work takes place */
 	skipBlanc(cntxt);
-	while( currChar(cntxt)){
+	while( currChar(cntxt) && curPrg->def->errors<MAXERRORS){
 		switch( currChar(cntxt)){
 		case '\n': case '\r': case '\f': 
 			nextChar(cntxt);

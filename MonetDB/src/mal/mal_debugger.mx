@@ -51,7 +51,7 @@ mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export char mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd);
 mal_export char mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd);
 mal_export void mdbHelp(FILE *f);
-mal_export void printStackElm(FILE *f, MalBlkPtr mb,VarPtr n, ValPtr v);
+mal_export void printStackElm(FILE *f, MalBlkPtr mb,VarPtr n, ValPtr v,int index);
 mal_export void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s);
 
 mal_export void mdbToggle(Client c, int v);
@@ -242,7 +242,7 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 		if( i<0){
 			fprintf(out,"Symbol not found\n");
 		} else{
-			printStackElm(out,mb,getVar(mb,i),stk->stk+i);
+			printStackElm(out,mb,getVar(mb,i),stk->stk+i,i);
 		}
 		continue;
 	}
@@ -376,13 +376,13 @@ void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
 
         fprintf(f,"Stack pc=%d size=%d top=%d\n",s->pc,s->stksize,s->stktop);
         for( ; i<mb->vtop ; i++){
-		printStackElm(f, mb, getVar(mb,i), s->stk+i);
+		printStackElm(f, mb, getVar(mb,i), s->stk+i,i);
         }
 }
 
-void printStackElm(FILE *f, MalBlkPtr mb, VarPtr n, ValPtr v){
+void printStackElm(FILE *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index){
 	str nme;
-	fprintf(f,"[%d] %s\t= ",n->index,n->name);
+	fprintf(f,"[%d] %s\t= ",index,n->name);
 	if( n->isaconstant) {
 		VALprint(f,&n->value);
 	} else {

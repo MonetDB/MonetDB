@@ -97,6 +97,8 @@ Only the listing property can be dynamically set.
 @mal
 command set_client_listing(b:bit):void= CMDsetListing
 	comment "Turn on/off echoing of MAL instructions";
+command quit():void= CMDquit
+	comment "Terminate the server"'
 @- MAL interpreter status
 The prime scheme to inspect the MAL interpreter status is to use
 the MAL debugger. However, in case of automatic exception handling
@@ -699,10 +701,17 @@ int view_client_login(int *ret){
 	@:Pseudo(client,login)@
 	return GDK_FAIL;
 }
-CMDsetListing(int *ret, int *flag) {
+int CMDsetListing(int *ret, int *flag) {
 	Client c;
 	c= getClient();
 	c->listing = *flag >0;
+	return GDK_SUCCEED;
+}
+int CMDquit(int *ret) {
+	Client c;
+	c= getClient();
+	fclose(c->fdin);
+	c->mode = FINISHING;
 	return GDK_SUCCEED;
 }
 @+ Variables and stack information

@@ -1,0 +1,206 @@
+@t MAL object binding
+@a M.L. Kersten
+@* MAL object management
+The key objects managed by Monet are the persistent BATs, which
+call for an efficient scheme to make them accessible for manipulation
+in the MAL procedures taking into account a possibly hostile
+parallel access.
+
+Most kernel routines produce BATs as a result, which will be referenced 
+from the runtime stack. They should be garbage collected as soon as
+deemed possible to free-up space. By default, temporary results are
+garbage collected before returning from a MAL function.
+
+Furthermore, clients sessions often come with a global scope of
+variable settings, which are garbage collected only at the end
+of a session. Access to these global variables should be easy,
+but they should also provide protection against concurrent update
+when the client wishes to perform parallel processing.
+
+Finally, databases, languages, etc. may define constants and variables
+accessible to all hierarchical related clients.
+
+All these cases require a multi-level variable management, which
+encompasses a symbol table, stack with current values, and routines
+to manage them. 
+
+The approach taken is to mimick a hierarchical organized 
+collection of object spaces. Copies can be obtain using the
+function 'bind' and modifications made to the private copy
+are synchronized with the external version upon a call to 'release'.
+All objects are automatically released upon a transaction commit.
+
+Example: consider the client function:
+@T
+function myfcn():void;
+	b:= mil.bind(bat,"mytable");
+	c:= sql.bind(bat[int,str], "person","age");
+	d:= intersect(b,c);
+	print(d);
+	u:= bind(str,"user");
+	print(u);
+	release(user);
+end function;
+@-
+The type parameters in the bind() calls enable early type checking
+of the MAL procedures. Conformity of the bounded object is mandatory.
+For example, sql.bind(bat,"person","age") resolves to
+a single BAT of the required type. Failure to find such a table
+leads to an exception.
+The variable 'user' should exist in the visible object spaces
+as a string variable. Likewise, the bat 'mytable' should exist
+in the database. A reference is obtained, which assures it
+becomes loaded upon access and retains in memory as long as there
+is space available.
+
+The type indicator for a bind instruction can be ommitted, but
+this defers type resolution to execution time.
+
+@+ BAT reference counting
+A key issue is to deal with temporary BATs in an efficient way.
+Consider the following routine:
+@T
+function fcn():bat[int,str];
+	b:= mil.bind(bat[int,str],"mytable");
+	r:= select(b,1,5);
+	s:= select(b,6,9);
+	t:= select(b,10,19);
+	u:= t;
+	release(t);
+	return s;
+end function;
+@
+The bat 'r' should reclaimed upon exit and we should avoid a double
+reclaim due to the assignment u:=t. The solution implemented is to
+mark a variable as garbage as soon as it receives its first assignment
+that is not a result of a simple assignment. This precludes functions 
+in the algebra that return one of their arguments!
+Furthermore, the bat 't' can not be used after it has been released
+and s is released by the callee.
+@-
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
+#ifndef _MAL_BIND_H
+#define _MAL_BIND_H
+#include "mal_instruction.h"
+#include "mal_stack.h"
+
+typedef struct OBJSPACE{        /* see objectspace.mx */
+        MT_Lock lock;           /* provide exclusive access */
+        MalBlkPtr sym;		
+        MalStkPtr stk;
+        struct OBJSPACE *outer;
+} *OBJspace, ObjectSpaceRecord;
+
+mal_export void initObjectSpace();
+mal_export OBJspace newObjectSpace(OBJspace outer);
+mal_export void freeObjectSpace(OBJspace obj);
+mal_export void deleteObjectSpace(OBJspace obj);
+
+mal_export void printSomeObjectSpace(FILE *fd, int k);
+mal_export void printObjectSpace(FILE *fd, OBJspace obj);
+#endif /* _MAL_BIND_H */
+@-
+The hierarchy of object spaces ends at the root of the tree.
+This is a dummy element and should contain system-wide objects
+only.
+@= newOBJ
+	obj= (OBJspace) GDKmalloc(sizeof(ObjectSpaceRecord));
+	bzero((char*) obj, sizeof(ObjectSpaceRecord));
+	obj->sym= newMalBlk();
+	obj->stk = newGlobalStack(MAXVARS);
+@-
+@c
+#include "mal_objectspace.h"
+
+#define MAXSPACES 64	/* >MAXCLIENTS !! */
+OBJspace objSpace[MAXSPACES];
+
+void initObjectSpace()
+{
+	OBJspace obj;
+	@:newOBJ@
+	objSpace[0]= obj;
+}
+
+OBJspace newObjectSpace(OBJspace outer){
+	OBJspace obj;
+	int i;
+        MT_set_lock(mal_contextLock, "deleteObjectSpace");
+	@:newOBJ@
+	obj->outer = outer;
+
+	for(i=0; i<MAXSPACES; i++)
+	if( objSpace[i]== NULL) {
+		objSpace[i]= obj;
+		break;
+	}
+	if( i== MAXSPACES)
+		GDKerror("too many object spaces\n");
+        MT_unset_lock(mal_contextLock, "deleteObjectSpace");
+	return obj;
+
+}
+void freeObjectSpace(OBJspace obj){
+	freeMalBlk(obj->sym);
+	freeStack(obj->stk);
+}
+void deleteObjectSpace(OBJspace obj){
+	int i,j;
+        MT_set_lock(mal_contextLock, "deleteObjectSpace");
+	for(i=j=0;i<MAXSPACES;i++){
+		if( objSpace[j] == obj)
+			freeObjectSpace(obj);
+		else objSpace[i] = objSpace[j++];
+	}
+        MT_unset_lock(mal_contextLock, "deleteObjectSpace");
+
+}
+@- Binding 
+Each time a user wishes to access a global variable, it
+should call the binding routine.
+The default implementation is given below, we expect 
+different versions to emerge.
+@c
+int bindObject(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	return GDK_SUCCEED;
+}
+int releaseObject(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	return GDK_SUCCEED;
+}
+@-
+Utilities for the debugger permit dumping of all the object
+spaces.
+@c
+void printObjectSpace(FILE *fd, OBJspace obj)
+{ printStack(fd,obj->sym,obj->stk); }
+
+void printSomeObjectSpace(FILE *fd, int k)
+{
+	if( objSpace[k]== 0){
+		GDKerror("printSomeObjectSpace:illegal space id\n");
+	} else printObjectSpace(fd,objSpace[k]);
+}

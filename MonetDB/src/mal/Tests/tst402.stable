@@ -9,16 +9,16 @@
 ## testing the simple iterators on builtin types
 #
 #	i:= ' ':chr;
-#barrier v1:= iterator.nextElement(i,'A','C');
+#barrier v1:= nextElement(i,'A','C');
 #	v:= "do something";
 #	redo v1;
 #end	v1;
 #
-function Admin.main():int;	#0:(main:int->0)
-	i := ' ';	#1:(i:chr->1)($2:chr->2)
-barrier	v1 := iterator.nextElement(i,'A','C');	#2:(v1:bit->3)(i:chr->1)($4:chr->4)($5:chr->5)
-	v := "do something";	#3:(v:str->6)($7:str->7)
-	redo v1 ;	#4:(v1:bit->3)
-end	v1;	#5:(v1:bit->3)
+function Admin.main():int;	#0:(main:int)
+	i := ' ';	#1:(i:chr)($2:chr)
+barrier	v1 := mal.nextElement(i,'A','C');	#2:(v1:bit)(i:chr)($4:chr)($5:chr)
+	v := "do something";	#3:(v:str)($7:str)
+	redo v1 ;	#4:(v1:bit)
+end	v1;	#5:(v1:bit)
 end function;	#6:
 >

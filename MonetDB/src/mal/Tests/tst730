@@ -10,7 +10,7 @@ end function;
 function prStr(format:str,arg:str[]):void;
 	i:= -1;
 	limit:= Array.getLength(arg);
-barrier  b:= iterator.nextElement(i,0,limit);	#elm:= arg[i]
+barrier  b:= nextElement(i,0,limit);	#elm:= arg[i]
 	elm:= Array.get(arg,i);  #elm:= arg[i]
 	printf("argument ");
 	printf(i);

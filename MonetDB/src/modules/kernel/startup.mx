@@ -1,0 +1,18 @@
+@t Monet Startup file
+@a Martin Kersten
+@* Introduction
+The Monet kernel needs a minimal set of modules to work properly.
+They are loaded using one operation, namely 'use "kernel/startup"'
+
+Additional modules can be selectively loaded later.
+
+@mal
+use "kernel/unix";
+use "kernel/bat";
+use "kernel/arith";
+use "kernel/atoms";
+use "kernel/algebra";
+use "kernel/system";
+use "kernel/mapi";
+use "kernel/str";
+@-
