@@ -11,15 +11,15 @@ public class Test_Cautocommit {
 		//DatabaseMetaData dbmd = con.getMetaData();
 
 		// >> true: auto commit should be on by default
-		System.out.println("true\t" + con1.getAutoCommit());
-		System.out.println("true\t" + con2.getAutoCommit());
+		System.out.println("0. true\t" + con1.getAutoCommit());
+		System.out.println("0. true\t" + con2.getAutoCommit());
 
 		// test commit by checking if a change is visible in another connection
 		try {
-			System.out.print("create...");
+			System.out.print("1. create...");
 			stmt1.executeUpdate("CREATE TABLE table_Test_Cautocommit ( id int )");
 			System.out.println("passed :)");
-			System.out.print("select...");
+			System.out.print("2. select...");
 			rs = stmt2.executeQuery("SELECT * FROM table_Test_Cautocommit");
 			System.out.println("passed :)");
 		} catch (SQLException e) {
@@ -36,30 +36,26 @@ public class Test_Cautocommit {
 		con2.setAutoCommit(false);
 
 		// >> false: we just disabled it
-		System.out.println("false\t" + con1.getAutoCommit());
-		System.out.println("false\t" + con2.getAutoCommit());
+		System.out.println("3. false\t" + con1.getAutoCommit());
+		System.out.println("4. false\t" + con2.getAutoCommit());
 
 		// a change would not be visible now
 		try {
-			System.out.print("drop...");
+			System.out.print("5. drop...");
 			stmt2.executeUpdate("DROP TABLE table_Test_Cautocommit");
 			System.out.println("passed :)");
-			System.out.print("select...");
+			System.out.print("6. select...");
 			rs = stmt1.executeQuery("SELECT * FROM table_Test_Cautocommit");
 			System.out.println("passed :)");
-			System.out.print("commit...");
+			System.out.print("7. commit...");
 			con2.commit();
 			System.out.println("passed :)");
-			System.out.print("select...");
+			System.out.print("8. select...");
 			rs = stmt1.executeQuery("SELECT * FROM table_Test_Cautocommit");
 			System.out.println("passed :)");
-			System.out.print("commit...");
-			try {
-				con1.commit();
-				System.out.println("PASSED :(");
-			} catch (SQLException e) {
-				System.out.println("failed :)");
-			}
+			System.out.print("9. commit...");
+			con1.commit();
+			System.out.println("passed :)");
 		} catch (SQLException e) {
 			// this means we failed (table not there perhaps?)
 			System.out.println("FAILED :(");
