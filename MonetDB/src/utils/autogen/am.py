@@ -286,11 +286,20 @@ def am_scripts(fd, var, scripts, am):
             fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd, script))
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
-        am['INSTALL'].append(script)
-        am['UNINSTALL'].append(script)
-        cond = ''
-        if scripts.has_key('COND'):
+
+	cond = ''
+	s = script
+	if scripts.has_key('COND'):
+            condname = scripts['COND']
+            fd.write("C_%s = \n" % (script))
+            fd.write("ifdef $(%s)\n" % (condname))
+            fd.write("	C_%s = %s\n" % (script,script))
+            fd.write("endif\n")
             cond = '#' + string.join(scripts['COND'], '+')
+	    s = "$(C_" + s + ")"
+		
+        am['INSTALL'].append(s)
+        am['UNINSTALL'].append(s)
         am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
 
     am_find_ins(am, scripts)
@@ -577,15 +586,24 @@ def am_library(fd, var, libmap, am):
     if libmap.has_key('SCRIPTS'):
         scripts_ext = libmap['SCRIPTS']
 
+    cname = libname
+    cond = ''
+    condname = ''
+    if libmap.has_key('COND'):
+        condname = string.join(libmap['COND'], '+')
+        cond = '#' + condname
+        fd.write("C_%s = \n" % (libname))
+        fd.write("ifdef $(%s)\n" % (condname))
+        fd.write("	C_%s = %s\n" % (libname,libname))
+        fd.write("endif\n")
+	cname = "$(C_" + cname + ")"
+
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
     if libmap.has_key('NOINST'):
         am['NLIBS'].append((pref, libname, sep))
     else:
         am['LIBS'].append((pref, libname, sep))
-        cond = ''
-        if libmap.has_key('COND'):
-            cond = '#' + string.join(libmap['COND'], '+')
         am['InstallList'].append("\t%s/%s%s%s.so%s\n" % (ld, pref, sep, libname, cond))
 
     if libmap.has_key('MTSAFE'):
@@ -624,7 +642,7 @@ def am_library(fd, var, libmap, am):
         fd.write("%s_scripts = %s\n" % (libname, am_list2string(SCRIPTS, " ", "")))
         am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
         fd.write("all-local-%s: $(%s_scripts)\n" % (libname, libname))
-        am['ALL'].append(libname)
+        am['ALL'].append(cname)
 
     am_find_hdrs(am, libmap)
     am_find_ins(am, libmap)
