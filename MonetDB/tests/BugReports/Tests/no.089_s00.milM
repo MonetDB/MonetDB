@@ -63,10 +63,14 @@
 
 module(url);
 new(oid,url).persists(true).rename("Server");
+new(oid,url).persists(true).rename("Server2");
 commit;
 Server.insert(oid(1),url("http://www.cwi.nl/")); 
+Server2.insert(oid(1),url("http://www.cwi.nl/")); 
 Server.print;
+Server2.print;
 unload("Server");
 abort;
 Server.print;
+Server2.print;
 quit;
