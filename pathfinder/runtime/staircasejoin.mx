@@ -56,26 +56,79 @@ const int PF_SOFTWARE_PREFETCH = 128;
 
 /*******************************************************************/
 
-#define PF_INCL_BOUNDARY
-	@:scj_void(_descorself)
-#undef PF_INCL_BOUNDARY
-	@:scj_void(_desc)
+/* DESCENDANT STEP */
+@:scj_head(_desc)
+    int max_post;
+@:scj_specialcases
 
-@= scj_void
+@:scj_init
+    max_post = -1;
+@:scj_desc(pre_cur++;)
+
+@:scj_end
+
+
+
+/* DESCENDANT-OR-SELF STEP */
+@:scj_head(_descorself)
+    int max_post;
+    
+@:scj_specialcases
+
+@:scj_init
+    max_post = -1;
+    
+@:scj_desc()
+
+@:scj_end
+
+
+
+/* ANCESTOR STEP */
+@:scj_head(_anc)
+    oid ctx_pre, post;
+    
+@:scj_specialcases
+
+@:scj_init
+    pre_cur = *(oid*)BUNhead(pre_size, BUNfirst(pre_size));
+
+@:scj_anc(<)
+
+@:scj_end
+
+
+
+/* ANCESTOR-OR-SELF STEP */
+@:scj_head(_ancorself)
+    oid ctx_pre, post;
+
+@:scj_specialcases
+
+@:scj_init
+    pre_cur = *(oid*)BUNhead(pre_size, BUNfirst(pre_size));
+
+@:scj_anc(<=)
+
+@:scj_end
+
+
+
+@= scj_head
 int
-PFscj_void@1(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound)
+PFscj@1_void(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound)
 {
     /* --------------------------- declaration ----------------------------- */
 
-    char *name = "PFscj_void@1";
+    char *name = "PFscj@1_void";
     BUN ctx_cur, ctx_last;
     oid pre_cur, *res_cur;
-    int max_post, ctx_bunsize, *size;
+    int ctx_bunsize, *size;
     
     /* result bat allocation. for result size use upperbound parameter */
     BAT *res = BATnew(TYPE_oid, TYPE_void, *upperbound);
 
-
+@= scj_specialcases
     /* --------------------------- special cases --------------------------- */
     if (!(BAThordered(ctx) & 1))
     {
@@ -93,11 +146,11 @@ PFscj_void@1(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound
         return GDK_FAIL;
     }
 
+@= scj_init
     /* ----------------- initialization of table cursors ------------------- */
 
     res_cur = (oid*)BUNfirst(res);
-    max_post = -1;
-
+    
     /* definition for "array-like" access on size values of given nodes */
     size = ((int*) BUNfirst(pre_size)) - pre_size->hseqbase;
 
@@ -105,6 +158,30 @@ PFscj_void@1(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound
         THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns, height %u\n",
                           name, BATcount(pre_size), BATcount(ctx), *height);
 
+@= scj_anc
+    /* ---------------------------- main part ----------------------------- 
+     * - the outer loop traverses all context nodes
+     * - the inner loop writes ancestors to the result but skips preceding nodes
+     *   and their descendants
+     */
+
+    BATloopFast (ctx, ctx_cur, ctx_last, ctx_bunsize)
+    {
+        ctx_pre = *(oid*)BUNhead(ctx, ctx_cur);
+        post = pre_cur + size[pre_cur];
+        
+        while (pre_cur @1 ctx_pre)
+        {
+            if (post >= ctx_pre)
+                *res_cur++ = pre_cur++;
+            else   
+                /* skip preceding node and its descendants */
+                pre_cur = post + 1;
+            post = pre_cur + size[pre_cur];
+        }
+    }
+
+@= scj_desc
     /* ---------------------------- main part ----------------------------- 
      * - the outer loop traverses all context nodes
      * - the inner loop writes all descendants to result 
@@ -117,16 +194,14 @@ PFscj_void@1(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound
         /* on-the-fly pruning of the context set */
         if ((int)pre_cur > max_post)
         {
-            max_post = pre_cur + size[pre_cur];
-#ifndef PF_INCL_BOUNDARY
-            pre_cur++;
-#endif
+            max_post = size[pre_cur] + pre_cur;
+            @1
             while ((int)pre_cur <= max_post)
                 *res_cur++ = pre_cur++;
         }
     }
-    
 
+@= scj_end
     /* ---------------------------- end of main part --------------------------
      * tidy up and propagate result properties
      */
@@ -144,4 +219,5 @@ PFscj_void@1(BAT **result, BAT *pre_size, BAT *ctx, int *height, int *upperbound
     return GDK_SUCCEED;
 }
 
+@c
 /* vim:set shiftwidth=4 expandtab: */
