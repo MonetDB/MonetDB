@@ -46,12 +46,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 661 ]
+[ 665 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 661 ]
+[ 665 ]
 
 All:=0;
 
@@ -135,7 +135,7 @@ Module: ""
 
 Module: "algebra"
 
-[ 112 ]
+[ 116 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
@@ -162,6 +162,8 @@ Module: "algebra"
 [ "fetch",	  "COMMAND:   ",  "fetch(BAT[any::1,any::2], BAT[int,any]) : BAT[any::1,any::2]",			  "Returns a positional selection of b by the integer head values of s"																													  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(BAT[any::1,any::2], BAT[oid,any]) : BAT[any::1,any::2]",			  "Returns a positional selection of b by the oid head values of s"																													  ]
 [ "find",	  "COMMAND:   ",  "find(BAT[any::1,any::2], any::1) : any::2",						  "Returns the tail value 't' for which some [h,t] BUN exists in b.\n If no such BUN exists, an error occurs."																								  ]
+[ "find_higher",  "COMMAND:   ",  "find_higher(BAT[any::1,void], any::1) : oid",					  "find the value equal to or (of not exists) greater than the searched value"																																																																			  ]
+[ "find_lower",	  "COMMAND:   ",  "find_lower(BAT[any::1,void], any::1) : oid",						  "find the value equal to or (of not exists) smaller than the searched value"																																																																			  ]
 [ "fragment",	  "COMMAND:   ",  "fragment(BAT[any::1,any::2], any::1, any::1, any::2, any::2) : BAT[any::1,any::2]",	  "Select both on head and tail range."																																	  ]
 [ "group",	  "COMMAND:   ",  "group(BAT[any::1,any], int, int, int) : BAT[any::1,int]",				  "Produces a new BAT with identical head column, and in the tail column groups of equally valued \nintegers within each group. Parameters: a start group value, group number increment, group size."													  ]
 [ "hashsplit",	  "COMMAND:   ",  "hashsplit(BAT[any::1,any::2], int) : BAT[int,BAT]",					  "Split a BAT on tail column according (hash-value MOD buckets).\nReturns a recursive BAT, containing the fragments in the tail,\ntheir bucket number in the head."																	  ]
@@ -183,6 +185,7 @@ Module: "algebra"
 [ "max",	  "COMMAND:   ",  "max(BAT[any,sht]) : sht",								  "Give the highest tail value. Error on empty BATs."																															  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any,uchr]) : uchr",								  "Give the highest tail value. Error on empty BATs."																															  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any::1,any::2]) : any::2",							  "\nGive the highest tail value. Error on empty BATs."																															  ]
+[ "merge",	  "COMMAND:   ",  "merge(BAT[oid,oid]) : BAT[lng,void]",						  "Merge head and tail into a single value"																																																																							  ]
 [ "mil_select",	  "PROC:      ",  "mil_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]",			  "Returns all BUNs where (*fcn)(tail,,..params..)."																															  ]
 [ "min",	  "COMMAND:   ",  "min(BAT[any,dbl]) : dbl",								  "Give the lowest tail value. Error on empty BATs."																															  ]
 [ "min",	  "COMMAND:   ",  "min(BAT[any,flt]) : flt",								  "Give the lowest tail value. Error on empty BATs."																															  ]
@@ -227,6 +230,7 @@ Module: "algebra"
 [ "sort",	  "COMMAND:   ",  "sort(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on ascending head values."																				  ]
 [ "sort_ht",	  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "sorts a BAT according to its head (primary) and tail values (secondary).             (straight forward hack, not tuned for performance at all, just used for testing.)"																  ]
 [ "sort_rev",	  "COMMAND:   ",  "sort_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on descending head values."																				  ]
+[ "split",	  "COMMAND:   ",  "split(BAT[lng,void]) : BAT[oid,oid]",						  "Split head into two values"																																																																									  ]
 [ "sum_dbl",	  "COMMAND:   ",  "sum_dbl(BAT[any,dbl]) : dbl",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_dbl",	  "COMMAND:   ",  "sum_dbl(BAT[any,flt]) : dbl",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_flt",	  "COMMAND:   ",  "sum_flt(BAT[any,flt]) : flt",							  "Gives the sum of all tail values."																																	  ]
@@ -794,7 +798,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print;
-[ 661 ]
+[ 665 ]
 
 quit;
 
