@@ -157,6 +157,7 @@ command r_search( s:str, s2:str ) :int
 address STRReverseStrSearch
 comment "Reverse search for a substring. 
 	Returns position, -1 if not found.";
+
 command trim( s:str ) :str 
 address STRStrip
 comment "Strip whitespaces around a string.";

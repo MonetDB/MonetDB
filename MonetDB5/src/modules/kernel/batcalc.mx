@@ -214,7 +214,7 @@ address CMDifThen
 comment "Ifthen operation to assemble a 
 	conditional result ";
 
-command ifthenelse(b:bat[:any$1,:bit], 
+command ifthenelse(b:bat[:any,:bit], 
 		t:bat[:any$1,:any$2], 
 		e:bat[:any$1,:any$2])
 	:bat[:any$1,:any$2] 
