@@ -1,5 +1,4 @@
-INCLUDES = -I$(top_builddir)/src/gdk -I$(top_builddir)/src/monet \
-	-I$(top_builddir)/src/modules/plain/stream \
+INCLUDES = -I../../gdk -I../../monet -I../plain/stream \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS)
 MTSAFE
 

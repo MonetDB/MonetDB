@@ -4,17 +4,16 @@ MTSAFE
 # install these libs in the pkglib
 LIBDIR = pkglib
 
-INCLUDES = -I$(top_builddir)/src/gdk -I$(top_builddir)/src/monet \
-	   -I$(top_builddir)/src/modules/plain
+INCLUDES = -I../../gdk -I../../monet -I../plain
 
 lib__gis = {
 	SOURCES = \
 		geometry.mx baserelate.mx precision.mx reader.mx direction.mx \
 		interval.mx point.mx box.mx segment.mx triangle.mx circle.mx \
 		polystruct.mx polyline.mx polygon.mx cpolygon.mx multipoint.mx \
-   		distance.mx overlap.mx inside.mx triangulate.mx \
+		distance.mx overlap.mx inside.mx triangulate.mx \
 		tri_construct.mx tri_misc.mx tri_monotone.mx tri_tri.mx \
-   		varray.mx varlen.mx varheap.mx chull.mx minitree.mx point3d.mx \
+		varray.mx varlen.mx varheap.mx chull.mx minitree.mx point3d.mx \
 		triangle3d.mx box3d.mx Array.mx Pqueue.mx Set.mx gis.mx
 	HEADERS = h m
 	SCRIPTS = mil

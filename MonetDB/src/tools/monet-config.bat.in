@@ -6,7 +6,6 @@
 	set source=
 REM	set prefix=@MONET_SOURCE@
 REM	set prefix=@MONET_BUILD@
-REM	set prefix=@MONET_PREFIX@
 REM	set prefix=@prefix@
 
 if "%1" == "--prefix"	goto prefix

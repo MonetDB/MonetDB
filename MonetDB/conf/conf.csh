@@ -283,6 +283,14 @@ if ( ! -x bootstrap ) then
 	echo " CFLAGS=${CFLAGS}"
 	setenv CXXFLAGS ""
 	echo " CXXFLAGS=${CXXFLAGS}"
+
+	if ( "${cc}" != "gcc" ) then
+		set conf_opts = "${conf_opts} --with-gcc='${cc}'"
+	endif
+	if ( "${cxx}" != "g++" ) then
+		set conf_opts = "${conf_opts} --with-gxx='${cxx}'"
+	endif
+
 	if ( ${%binpath} ) then
 		if ( ${?PATH} ) then
 			# prepend new binpath to existing PATH, if PATH doesn't contain binpath, yet

@@ -1,5 +1,5 @@
 
-INCLUDES = -I$(top_builddir)/src/gdk
+INCLUDES = -I../gdk
 
 YFLAGS = -d
 

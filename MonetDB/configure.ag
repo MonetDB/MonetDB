@@ -1,3 +1,5 @@
+dnl -*- mode: autoconf -*-
+
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/utils/Mx/Mx.h)
 AC_CONFIG_AUX_DIR(conf)
@@ -9,15 +11,27 @@ AC_CANONICAL_HOST
 
 HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
-PREFIX=[$prefix]
-AC_DEFINE_UNQUOTED(MONET_PREFIX, "$PREFIX", [directory prefix])
+AC_DEFINE_UNQUOTED(MONET_PREFIX, "$prefix", [directory prefix])
 
-MONET_PREFIX=[`(mkdir -p $PREFIX && cd $PREFIX && pwd)`]
-AC_SUBST(MONET_PREFIX)
+# MONET_BUILD and MONET_SOURCE are *only* used for monet-config
+# MONET_SOURCE is the absolute path name of the source directory
+# (srcdir can be relative)
 MONET_BUILD=[`pwd`]
 AC_SUBST(MONET_BUILD)
 MONET_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(MONET_SOURCE)
+
+dnl check for compiler
+AC_ARG_WITH(gcc,
+[  --with-gcc=<compiler>   which C compiler to use
+  --without-gcc           do not use GCC], [
+	case $withval in
+	no)	CC=cc CXX=CC;;
+	yes)	CC=gcc CXX=g++;;
+	*)	CC=$withval;;
+	esac])
+
+AC_PROG_CC
 
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
@@ -44,11 +58,21 @@ thread_safe_flag_spec="-D_REENTRANT"
 esac ]
 AC_SUBST(MEL_LIBS)
 
+dnl systems checks
+AC_AIX
+
 dnl Checks for programs.
-AC_PROG_CC
+
+AC_ARG_WITH(cxx,
+[  --with-cxx=<compiler>   which C++ compiler to use], [
+	case $withval in
+	yes|no)	AC_ERROR(must supply a compiler when using --with-cxx);;
+	*)	CXX=$withval;;
+	esac])
+
 AC_PROG_CXX
 AC_PROG_CPP
-AC_PROG_GCC_TRADITIONAL
+dnl AC_PROG_GCC_TRADITIONAL
 AC_PROG_INSTALL
 AM_PROG_LEX
 AC_PROG_YACC
@@ -90,9 +114,6 @@ dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
 dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
 AM_MONET_OPTIONS
-
-dnl systems checks
-AC_AIX
 
 
 dnl Checks for header files.

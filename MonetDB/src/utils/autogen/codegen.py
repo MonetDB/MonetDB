@@ -385,7 +385,7 @@ def read_depsfile(incdirs, cwd, topdir):
                 dir = os.path.join(topdir, rest)
             elif d == "srcdir" or d == "builddir":
                 dir = rest
-        if dir[0:2] == "..":
+        if os.path.isabs(dir):
             f = os.path.join(cwd, dir, ".cache")
         else:
             f = os.path.join(dir, ".cache")
@@ -395,7 +395,7 @@ def read_depsfile(incdirs, cwd, topdir):
             for d in cache.keys():
                 inc = []
                 for dep in cache[d]:
-                    if string.find(dep,os.sep) < 0:
+                    if not os.path.isabs(dep):
                         dep = os.path.join(i,dep)
                     inc.append(dep)
                 includes[os.path.join(i,d)] = inc

@@ -1,8 +1,5 @@
 
-INCLUDES = -I$(top_builddir)/src/gdk -I$(top_builddir)/src/monet \
-	   -I$(top_builddir)/src/modules/plain \
-	   -I$(top_builddir)/src/modules/plain/stream 
-		
+INCLUDES = -I../gdk -I../monet -I../modules/plain -I../modules/plain/stream 
 
 SUBDIRS = clients
 

@@ -1,5 +1,5 @@
 
-INCLUDES = -I$(top_builddir)/src/gdk -I$(top_builddir)/src/monet \
+INCLUDES = -I../../../gdk -I../../../monet \
 	$(Z_CFLAGS) $(BZ_CFLAGS)
 MTSAFE
 

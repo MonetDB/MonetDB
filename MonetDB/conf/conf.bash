@@ -270,6 +270,14 @@ if [ ! -x bootstrap ] ; then
 	CXXFLAGS=""
 	export CXXFLAGS
 	echo " CXXFLAGS=${CXXFLAGS}"
+	case ${cc} in
+	gcc)	;;
+	*)	conf_opts="${conf_opts} --with-gcc='${cc}'";;
+	esac
+	case ${cxx} in
+	g++)	;;
+	*)	conf_opts="${conf_opts} --with-gxx='${cxx}'";;
+	esac
 	if [ "${binpath}" ] ; then
 		if [ "${PATH}" ] ; then
 			# prepend new binpath to existing PATH, if PATH doesn't contain binpath, yet
@@ -327,7 +335,7 @@ if [ ! -x bootstrap ] ; then
 
 	# for convenience: store the complete configure-call in MONET_CONFIGURE
 	MONET_CONFIGURE="${base}/configure ${conf_opts} --prefix=${MONET_PREFIX}"
-	export MONET_CONFIGURE
+# 	export MONET_CONFIGURE
 	echo " MONET_CONFIGURE=${MONET_CONFIGURE}"
 
 	mkdir -p ${MONET_BUILD}
