@@ -33,12 +33,12 @@ lib_mutils = {
 	HEADERS = h
 }
 
-INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) 
+INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) $(OPENSSL_INCS)
 
 lib_stream  =  {
 	SOURCES = stream.mx dummy_gdk_utils.mx
 	HEADERS = h
-	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) 
+	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS)
 }
 
 scripts_py = {

@@ -688,6 +688,47 @@ fi
 AC_SUBST(READLINE_LIBS)
 AC_SUBST(READLINE_INCS)
 
+dnl OpenSSL
+have_openssl=no
+OPENSSL_LIBS=""
+OPENSSL_INCS=""
+AC_ARG_WITH(openssl,
+[  --with-openssl=DIR     OpenSSL library is installed in DIR], 
+	[have_openssl="$withval"])
+if test "x$have_openssl" != xno; then
+  if test "x$have_openssl" != xauto; then
+    OPENSSL_LIBS="-L$withval/lib"
+    OPENSSL_INCS="-I$withval/include"
+  fi
+
+  save_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS $OPENSSL_LIBS"
+  AC_CHECK_LIB(ssl, SSL_read, 
+	[ OPENSSL_LIBS="$OPENSSL_LIBS -lssl" 
+	  have_openssl=yes ]
+	, have_openssl=no )
+  LDFLAGS="$save_LDFLAGS"
+
+  if test "x$have_openssl" = xyes; then
+    AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), ,
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
+	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
+		AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
+		have_openssl=no))
+	CPPFLAGS="$save_CPPFLAGS"
+  fi
+
+  if test "x$have_openssl" = xyes; then
+    AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
+  else
+    OPENSSL_LIBS=""
+    OPENSSL_INCS=""
+  fi
+fi
+AC_SUBST(OPENSSL_LIBS)
+AC_SUBST(OPENSSL_INCS)
+
 DL_LIBS=""
 AC_CHECK_LIB(dl, dlopen, [ DL_LIBS="-ldl" ] )
 AC_SUBST(DL_LIBS)

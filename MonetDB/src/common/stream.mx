@@ -164,6 +164,13 @@ stream_export stream *socket_wstream( int socket, const char *name );
 stream_export stream *socket_rastream( int socket, const char *name );
 stream_export stream *socket_wastream( int socket, const char *name );
 
+#ifdef HAVE_OPENSSL
+stream_export stream *ssl_rstream(int socket, const char *name, const char *keyfile, const char *certfile);
+stream_export stream *ssl_wstream(int socket, const char *name, const char *keyfile, const char *certfile);
+stream_export stream *ssl_rastream(int socket, const char *name, const char *keyfile, const char *certfile);
+stream_export stream *ssl_wastream(int socket, const char *name, const char *keyfile, const char *certfile);
+#endif
+
 stream_export stream *file_rstream( FILE *fp, const char *name );
 stream_export stream *file_wstream( FILE *fp, const char *name );
 stream_export stream *file_rastream( FILE *fp, const char *name );
@@ -273,6 +280,11 @@ typedef enum stream_errors {
 #include <io.h>
 #endif
 
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#endif
+
 #ifndef BACKWARD_COMPATIBLE_STREAM_DEFINITION
 struct stream {
 	short byteorder;
@@ -315,6 +327,10 @@ int stream_init(void)
 		WSACleanup();
 		return -1;
 	}
+#endif
+#ifdef HAVE_OPENSSL
+	SSL_load_error_strings();
+	(void) SSL_library_init();
 #endif
 	return 0;
 }
@@ -888,6 +904,269 @@ stream *socket_wastream( int socket, const char *name ){
 	s->type = ST_ASCII;
 	return s;
 }
+
+#ifdef HAVE_OPENSSL
+struct ssl_data {
+	int socket;
+	int error;
+	int ret;
+	SSL_CTX *ctx;
+	SSL *ssl;
+	X509 *server_cert;
+	BIO *sbio;
+	char server[256];
+	char issuer[256];
+};
+
+static ssize_t ssl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	SSL *ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
+	size_t res = 0, size = elmsize * cnt;
+
+	assert(!s->errnr);
+	while (res < size) {
+		int nr, err;
+
+		nr = SSL_read(ssl, (void *) ((char *) buf + res),
+			      (int) (size - res));
+		err = SSL_get_error(ssl, nr);
+		switch (err) {
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+		case SSL_ERROR_WANT_CONNECT:
+		case SSL_ERROR_WANT_ACCEPT:
+		case SSL_ERROR_WANT_X509_LOOKUP:
+			/* try again with the same args */
+			continue;
+		case SSL_ERROR_NONE:
+			/* successful read */
+			res += nr;
+			break;
+		default:
+			/* some error occurred */
+			s->errnr = READ_ERROR;
+			((struct ssl_data *) s->stream_data.p)->error = err;
+			((struct ssl_data *) s->stream_data.p)->ret = nr;
+			return -1;
+		}
+	}
+	return res / elmsize;
+}
+
+static ssize_t ssl_write(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	SSL *ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
+	int size = (int) (elmsize * cnt);
+
+	for (;;) {
+		int nr, err;
+
+		nr = SSL_write(ssl, buf, size);
+		err = SSL_get_error(ssl, nr);
+		switch (err) {
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+		case SSL_ERROR_WANT_CONNECT:
+		case SSL_ERROR_WANT_ACCEPT:
+		case SSL_ERROR_WANT_X509_LOOKUP:
+			/* try again with the same args */
+			continue;
+		case SSL_ERROR_NONE:
+			/* successful write */
+			return cnt;
+		default:
+			/* some error occurred */
+			s->errnr = READ_ERROR;
+			((struct ssl_data *) s->stream_data.p)->error = err;
+			((struct ssl_data *) s->stream_data.p)->ret = nr;
+			return -1;
+		}
+	}
+}
+
+static void ssl_flush(stream *s)
+{
+	/* not needed */
+	(void) s;
+}
+
+static void ssl_close(stream *s)
+{
+	struct ssl_data *ssl_data = (struct ssl_data *) s->stream_data.p;
+
+	if (ssl_data->server_cert)
+		X509_free(ssl_data->server_cert);
+	if (ssl_data->ssl)
+		SSL_free(ssl_data->ssl);
+	if (ssl_data->ctx)
+		SSL_CTX_free(ssl_data->ctx);
+	if (s->access == ST_READ)
+		shutdown(ssl_data->socket, 0);
+	else
+		shutdown(ssl_data->socket, 1);
+	free(ssl_data);
+}
+
+static char *ssl_error(stream *s)
+{
+	char *errstr;
+	char buf[120];
+	unsigned long e;
+
+	switch (((struct ssl_data *) s->stream_data.p)->error) {
+	case SSL_ERROR_ZERO_RETURN:
+		errstr = "TLS/SSL connection has been closed";
+		break;
+	case SSL_ERROR_WANT_READ:
+		errstr = "The operation did not complete (read)";
+		break;
+	case SSL_ERROR_WANT_WRITE:
+		errstr = "The operation did not complete (write)";
+		break;
+	case SSL_ERROR_WANT_X509_LOOKUP:
+		errstr = "The operation did not complete (X509 lookup)";
+		break;
+	case SSL_ERROR_WANT_CONNECT:
+		errstr = "The operation did not complete (connect)";
+		break;
+	case SSL_ERROR_SYSCALL:
+		e = ERR_get_error();
+		if (e == 0) {
+			if (((struct ssl_data *) s->stream_data.p)->ret == 0) {
+				errstr = "EOF occurred in violation of protocol";
+			} else if (((struct ssl_data *) s->stream_data.p)->ret == -1) {
+				/* the underlying BIO reported an I/O error */
+				errstr = "I/O error";
+			} else {  /* possible? */
+				errstr = "Some I/O error occurred";
+			}
+		} else {
+			errstr = ERR_error_string(e, buf);
+		}
+		break;
+	case SSL_ERROR_SSL:
+		e = ERR_get_error();
+		if (e != 0) 
+			errstr = ERR_error_string(e, buf);
+		else { /* possible? */
+			errstr = "A failure in the SSL library occurred";
+		}
+		break;
+	default:
+		errstr = "Invalid error code";
+	}
+	return strdup(errstr);
+}
+
+stream *ssl_open(int socket, const char *name, const char *keyfile, const char *certfile)
+{
+	struct ssl_data *ssl_data;
+	stream *s = create_stream(name);
+
+	s->read = ssl_read;
+	s->write = ssl_write;
+	s->close = ssl_close;
+	s->error = ssl_error;
+	s->flush = ssl_flush;
+
+	if ((keyfile && !certfile) || (!keyfile && certfile)) {
+		s->errnr = OPEN_ERROR;
+		return s;
+	}
+
+	ssl_data = malloc(sizeof(struct ssl_data));
+	memset(ssl_data, 0, sizeof(struct ssl_data));
+	ssl_data->ctx = SSL_CTX_new(SSLv23_method());
+	if (ssl_data->ctx == 0) {
+		s->errnr = OPEN_ERROR;
+		free(ssl_data);
+		return s;
+	}
+	if (keyfile) {
+		if (SSL_CTX_use_PrivateKey_file(ssl_data->ctx, keyfile, SSL_FILETYPE_PEM) < 1 ||
+		    SSL_CTX_use_certificate_chain_file(ssl_data->ctx, certfile) < 1) {
+			s->errnr = OPEN_ERROR;
+			SSL_CTX_free(ssl_data->ctx);
+			free(ssl_data);
+			return s;
+		}
+	}
+	SSL_CTX_set_verify(ssl_data->ctx, SSL_VERIFY_NONE, NULL);
+	ssl_data->ssl = SSL_new(ssl_data->ctx);
+
+#ifdef SO_KEEPALIVE
+	{ int opt = 0; 
+	setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt,
+			                   sizeof(opt)); }
+#endif
+#ifdef IPTOS_THROUGHPUT
+	{ int tos = IPTOS_THROUGHPUT; 
+    	setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos)); }
+#endif
+#ifdef TCP_NODELAY
+	{ int nodelay = 1;
+    	setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
+		                         sizeof(nodelay)); }
+#endif
+#ifndef NATIVE_WIN32
+	{ int fl = fcntl(socket, F_GETFL);
+	fl &= ~O_NONBLOCK;
+	fcntl(socket, F_SETFL, fl ); }
+#endif
+
+	SSL_set_fd(ssl_data->ssl, socket);
+	ssl_data->socket = socket;
+	SSL_set_connect_state(ssl_data->ssl);
+
+	s->stream_data.p = (void *) ssl_data;
+
+	for (;;) {
+		int ret, err;
+
+		ret = SSL_connect(ssl_data->ssl);
+		err = SSL_get_error(ssl_data->ssl, ret);
+		switch (err) {
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+			/* try again */
+			continue;
+		case SSL_ERROR_NONE:
+			/* successful connect */
+			break;
+		case SSL_ERROR_WANT_CONNECT:
+		case SSL_ERROR_WANT_ACCEPT:
+		case SSL_ERROR_WANT_X509_LOOKUP:
+		default:
+			/* some error occurred */
+			s->errnr = OPEN_ERROR;
+			ssl_data->error = err;
+			ssl_data->ret = ret;
+			return s;
+		}
+		break;
+	}
+
+	if ((ssl_data->server_cert = SSL_get_peer_certificate(ssl_data->ssl)) != NULL) {
+		X509_NAME_oneline(X509_get_subject_name(ssl_data->server_cert),
+				  ssl_data->server, sizeof(ssl_data->server));
+		X509_NAME_oneline(X509_get_issuer_name(ssl_data->server_cert),
+				  ssl_data->issuer, sizeof(ssl_data->issuer));
+	}
+
+	return s;
+}
+
+stream *ssl_rstream(int socket, const char *name, const char *keyfile, const char *certfile)
+{
+	stream *s = ssl_open(socket, name, keyfile, certfile);
+	s->access = ST_READ;
+	s->type = ST_BIN;
+	if (s->errnr == NO__ERROR) {
+		stream_read(s, (void*)&s->byteorder, sizeof(short), 1);
+	}
+	return s;
+}
+#endif	/* HAVE_OPENSSL */
 
 stream *file_stream( const char *name ){
 	stream *s = create_stream(name);
