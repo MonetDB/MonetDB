@@ -1,7 +1,7 @@
 
 
-#include "Msql.h"
 #include "mem.h"
+#include "Msql.h"
 #include <monet_options.h>
 #include <comm.h>
 #include <sys/stat.h>
