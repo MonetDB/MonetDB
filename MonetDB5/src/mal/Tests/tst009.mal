@@ -1,0 +1,3 @@
+call("print(1);");
+call("print(\"hello\");");
+call("s:=\"goodbye\";print(s);");

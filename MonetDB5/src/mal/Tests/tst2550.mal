@@ -1,0 +1,12 @@
+# Stream functions seem to provide a better control structure
+
+stream random(seed:int):(noes:bit,val:int);
+	i:= seed;
+barrier L:= true;
+	i:= 125 *i;
+	i:= i % 32767;
+	return (true,i);
+	redo L;
+exit L;
+	return (false,seed);
+end;

@@ -1,0 +1,7 @@
+#propagate INT exception
+	IllegalAccess := 1234;
+	raise IllegalAccess;
+	print("should not come here\n");
+catch IllegalAccess;
+	printf("catched %d\n",IllegalAccess);
+exit IllegalAccess;

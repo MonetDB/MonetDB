@@ -1,0 +1,13 @@
+#Testing a loop over string bats
+
+b:= new(:str,:str);
+insert(b,"one","red");
+insert(b,"two","green");
+print(b);
+barrier v:= bunStream(b,h:str,t:str);
+	printf("[ %s,",h);
+	printf("%s]\n",t);
+	redo v;
+exit v;
+
+

@@ -1,0 +1,14 @@
+# incomplete barrier blocks. Resolve them when unambigous
+
+barrier z:= true;
+	leave;
+exit;
+
+barrier i:= 1;
+	i:= i+1;
+	print(i);
+	barrier >(i,3);	# new envelop
+		leave i; # leave outer envelop
+	exit;
+	redo;
+exit;

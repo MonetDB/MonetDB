@@ -1,0 +1,11 @@
+# parallel syntax checks
+
+thread b1;
+	printf("start thread\n");
+barrier yy;
+	leave yy;
+	redo yy;	
+exit	yy;
+	printf("finish thread\n");
+exit b1;
+	printf("end of program, wait for child\n");

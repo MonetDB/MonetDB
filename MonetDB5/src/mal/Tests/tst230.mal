@@ -1,0 +1,15 @@
+# a test checking BAT reference counting under various situations
+	b:= new(:int,:str);
+	i:= getBATrefcnt(b);
+	printf("refcount =%d\n",i);
+
+	insert(b,1,"bat B");
+	print(b);
+	i:= getBATrefcnt(b);
+	printf("refcount =%d\n",i);
+
+	# referenceing through mirroring
+	b5:= reverse(b);
+	i:= getBATrefcnt(b);
+	printf("after reverse assignment refcount =%d\n",i);
+
