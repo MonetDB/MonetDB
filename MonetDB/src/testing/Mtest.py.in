@@ -2235,9 +2235,9 @@ def main(argv) :
         env['SQL_TRACE'] = sql_trace
         sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/%s.mil" % sql_server)
         if not os.path.isfile(sql_server_mil):
-            sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4a/%s.mil" % sql_server)
+            sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/%s.mil" % sql_server)
             if not os.path.isfile(sql_server_mil):
-                sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/%s.mil" % sql_server)
+                sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4a/%s.mil" % sql_server)
                 if not os.path.isfile(sql_server_mil):
                     sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/%s.mil" % sql_server)
                     if not os.path.isfile(sql_server_mil):
