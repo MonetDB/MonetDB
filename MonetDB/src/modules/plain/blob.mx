@@ -38,6 +38,8 @@ Not to be confused with blob parsing and printing.
          till the first 0 byte or the end of the blob."
    .COMMAND toblob(str) : blob = toblob;
 	"store a string as a blob."
+   .COMMAND nitems(blob) : int = blob_nitems;
+        "get the number of bytes stored in this blob."
 
 .END blob;
 
@@ -433,4 +435,10 @@ int toblob(blob **retval, str s){
 	*retval = b;
 	return GDK_SUCCEED;
 }
+
+int blob_nitems(int *ret,blob *b) {
+    *ret = b->nitems;
+    return GDK_SUCCEED;
+}
+
 @}
