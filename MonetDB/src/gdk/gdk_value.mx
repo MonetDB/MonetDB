@@ -126,16 +126,18 @@ ValPtr VALinit(ValPtr d, int tpe, ptr s){
 	if (s == 0) {
 		GDKwarning("VALcopy: copying null %s.\n", ATOMname(tpe)); 
 		d->vtype = TYPE_void;
-	} else if( tpe == TYPE_str) {
+	} else if( ATOMstorage(tpe) == TYPE_str) {
 		d->vtype = TYPE_str;
 		d->val.sval = GDKstrdup(s);
 		d->len = strLen(s);
 	} else {
+/*
 		if( ATOMstorage(tpe)== TYPE_str){
 			d->vtype = tpe;
 			d->val.sval = GDKstrdup(*(str*)s);
 			d->len = strLen(*(str*)s);
 		} else
+*/
 		GDKwarning("VALcopy: not yet supported %s.\n", ATOMname(tpe)); 
 	}
 	return d;
