@@ -316,5 +316,7 @@ void	CodeLine()
 		ofile_printf("\n#line %d \"%s\"\n", mx_line, mx_file);
 		break;
 	}
+    } else {
+    	ofile_printf("\n");
     }
 }
