@@ -3,6 +3,7 @@
 @:install_load_module(kernel)@
 @:install_load_module(arith)@
 @:install_load_module(str)@
+@:install_load_module(uchr)@
 @:install_load_module(bat)@
 @:install_load_module(algebra)@
 @:install_load_module(sys)@
@@ -22,11 +23,9 @@
 @:install_module(blob)@
 @:install_module(enum)@
 @:install_module(xtables)@
-@:install_module(ddbench)@
 @:install_module(decimal)@
 @:install_module(mmath)@
 @:install_module(monettime)@
-@:install_module(uchr)@
 @:install_module(unix)@
 @:install_module(ascii_io)@
 

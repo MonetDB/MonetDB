@@ -8,7 +8,7 @@ GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
 STATIC_MODS = -L$(MONET_PREFIX)/lib/MonetDB \
-	-l_kernel -l_arith -l_bat -l_algebra -l_sys -l_trans -l_str
+	-l_kernel -l_arith -l_bat -l_algebra -l_sys -l_trans -l_str -l_uchr
 
 smallTOC_SHARED_MODS =	\
 	-l_mapi	\
@@ -19,13 +19,11 @@ smallTOC_SHARED_MODS =	\
 	-l_ascii_io	\
 	-l_bat_arith	\
 	-l_blob	\
-	-l_ddbench	\
 	-l_decimal	\
 	-l_enum	\
 	-l_mmath	\
 	-l_monettime	\
 	-l_streams	\
-	-l_uchr	\
 	-l_unix	\
 	-l_xtables	\
 	\
