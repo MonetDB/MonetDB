@@ -37,11 +37,15 @@
 #include <sql_list.h>
 #include <sql_types.h>
 #include <sql_backend.h>
+#include <stream.h>
 
 #define ISO_READ_UNCOMMITED 1
 #define ISO_READ_COMMITED   2
 #define ISO_READ_REPEAT	    3
 #define ISO_SERIALIZABLE    4
+
+#define TR_OLD 0
+#define TR_NEW 1
 
 typedef int sqlid;
 
@@ -228,6 +232,9 @@ struct scanner {
 
 	int 	lineno;
 	char*	buf;
+
+	bstream 	*rs;
+	stream 	*ws;
 };
 
 #define ERRSIZE 1024
@@ -266,7 +273,8 @@ typedef struct mvc {
 sql_export int mvc_init(int debug, backend_stack stk );
 sql_export void mvc_exit();
 
-sql_export mvc *mvc_create( int debug, int cache, backend_stack stk );
+sql_export mvc *mvc_create( int debug, int cache, backend_stack stk, 
+			    bstream *rs, stream *ws );
 sql_export void mvc_destroy( mvc *c );
 
 sql_export char *mvc_login( mvc *c, char *user, char *passwd );
@@ -357,9 +365,6 @@ sql_export void mvc_clean_result( mvc *m, res_table *t);
 #include "sql_statement.h"
 #include "sql_types.h"
 #include "sql_privileges.h"
-
-#define TR_OLD 0
-#define TR_NEW 1
 
 static int 		mvc_debug = 0;
 static MT_Lock 	  	mvc_lock = NULL;
@@ -1854,7 +1859,7 @@ int mvc_init(int debug, backend_stack stk)
 	if (!find_schema(gtrans, "sys")){
 		sql_schema *s;
 		sql_table *t;
-		mvc *m = mvc_create(mvc_debug, 0, stk);
+		mvc *m = mvc_create(mvc_debug, 0, stk, NULL, NULL);
 
 		res = 1;
 
@@ -2621,7 +2626,7 @@ void mvc_clean_result( mvc *m, res_table *t)
 	clean_table_result(t);
 }
 
-mvc *mvc_create(int debug, int cache, backend_stack stk)
+mvc *mvc_create(int debug, int cache, backend_stack stk, bstream *rs, stream *ws)
 {
 	mvc *m = NEW(mvc);
 
@@ -2653,6 +2658,8 @@ mvc *mvc_create(int debug, int cache, backend_stack stk)
 	m->scanner.prev = 0;
 	m->scanner.cur = ' ';
 	m->scanner.buf = NULL;
+	m->scanner.rs = rs;
+	m->scanner.ws = ws;
 
 	m->scanner.cnt = 0;
 	m->scanner.lineno = 1;

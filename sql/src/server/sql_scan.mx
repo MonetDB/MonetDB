@@ -434,11 +434,66 @@ utf8_getchar(unsigned char **sp)
 	return EOF;
 }
 
+static int
+utf8_getchar_bstream(bstream *b)
+{
+	unsigned char *s = NULL;
+	int c;
+	int n, m, mask;
+
+	if (b->pos >= b->len)
+		if (bstream_next( b ) == 0)
+			return EOF;
+
+	s = b->buf + b->pos++;
+	if (((c = *s) & 0x80) == 0) {
+		/* 7-bit char */
+		return c;
+	}
+	for (n = 0, m = 0x40; c & m; n++, m >>= 1)
+		;
+	/* n now is number of 10xxxxxx bytes that should follow */
+	if (n == 0 || n >= 6 || (b->pos + n) > b->len) {
+		/* incorrect UTF-8 sequence */
+		/* n==0: c == 10xxxxxx */
+		/* n>=6: c == 1111111x */
+		goto error;
+	}
+
+	mask = utf8chkmsk[n];
+	c &= ~(0xFFC0 >> n);	/* remove non-x bits */
+	while (--n >= 0) {
+		c <<= 6;
+		b->pos ++;
+		if (((m = *s++) & 0xC0) != 0x80) {
+			/* incorrect UTF-8 sequence: byte is not 10xxxxxx */
+			/* this includes end-of-string (m == 0) */
+			goto error;
+		}
+		c |= m & 0x3F;
+	}
+	if ((c & mask) == 0) {
+		/* incorrect UTF-8 sequence: not shortest possible */
+		goto error;
+	}
+	return c;
+
+  error:
+	if (b->pos < b->len) 	/* skip bogus char */
+		b->pos++;
+	return EOF;
+}
+
 static int lex_getc(struct scanner * lc)
 {
 	int c = EOF;
-	assert(lc->buf);
-	if (*lc->buf) {
+
+	if (lc->rs) {
+		c = utf8_getchar_bstream(lc->rs);
+		if (c == EOF) {
+			/* error: Incorrect UTF-8 sequence */
+		}
+	} else if (*lc->buf) {
 		c = utf8_getchar((unsigned char**)&lc->buf);
 		if (c == EOF) {
 			/* error: Incorrect UTF-8 sequence */

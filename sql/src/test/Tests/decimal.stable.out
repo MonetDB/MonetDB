@@ -24,22 +24,22 @@ Over..
 # 19:57:49 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=aquila --port=50774  < decimal.sql
 # 19:57:49 >  
 
-MAPI  = monetdb@aquila:50774
+MAPI  = monetdb@stem:50469
 ACTION= mapi_get_row
 QUERY =    insert into test values (1234);
-
-MAPI  = monetdb@aquila:50774
+ERROR = !Types int(4,0) (sht) and decimal(5,2) (int) are not equal
+MAPI  = monetdb@stem:50469
 ACTION= mapi_get_row
 QUERY =  insert into test values (-1234);
-
-MAPI  = monetdb@aquila:50774
+ERROR = !Types int(4,0) (sht) and decimal(5,2) (int) are not equal
+MAPI  = monetdb@stem:50469
 ACTION= mapi_get_row
 QUERY =  insert into test values (1234.1);
-
-MAPI  = monetdb@aquila:50774
+ERROR = !Types decimal(5,1) (int) and decimal(5,2) (int) are not equal
+MAPI  = monetdb@stem:50469
 ACTION= mapi_get_row
 QUERY = insert into test values (-1234.1);
-
+ERROR = !Types decimal(5,1) (int) and decimal(5,2) (int) are not equal
 # t1 # name
 # decimal # type
 # 10 # tuplecount

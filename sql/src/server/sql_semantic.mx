@@ -189,6 +189,7 @@ sqlparse_intern(mvc *m, char *query)
 	m->scanner.sql = NEW_ARRAY(char, BUFSIZ);
 	m->scanner.sqlsize = BUFSIZ;
 	m->scanner.sql[0] = '\0';
+	m->scanner.rs = NULL;
 
 	m->params = NULL;
 	m->args = NULL;
@@ -646,11 +647,14 @@ static stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 			sql_subfunc *c = 
 				sql_bind_func_result("convert",st,NULL,ct);
 			if (c){ 
-				if (ct->digits > 0){
-					if (ct->digits < st->digits){
+				if ((ct->digits > 0 && ct->scale == 0 && 
+					ct->digits < st->digits) ||
+		    		    (ct->scale > 0 && ct->digits > 0 && 
+					ct->digits-ct->scale < 
+						st->digits-st->scale) 
+				) {
 						sql_subfunc_destroy(c);
 						return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
-					}
 				}
 				return fix_scale(sql, ct, stmt_unop(s, c), 1,
 					(st->type->scale == SCALE_FIX));
@@ -662,6 +666,15 @@ static stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 	} else {
 		assert(0);
 		return sql_error(sql, 02, "Statement has no type information");
+	}
+	if (st) {
+		if ((ct->digits > 0 && ct->scale == 0 
+			&& ct->digits < st->digits) ||
+		    (ct->scale > 0 && ct->digits > 0 
+			&& ct->digits-ct->scale < st->digits-st->scale) 
+		){
+			return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
+		}
 	}
 	return fix_scale(sql, ct, s, 1, 0);
 }
@@ -689,8 +702,24 @@ static int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 			sql_subtype *super;
 			if (lt->type->nr > rt->type->nr)
 				tpe = i->type->sqlname;
-			if (i->digits && r->digits)
-				digits = sql_max(i->digits,r->digits);
+			if (i->digits && r->digits) {
+				if (i->digits > r->digits) {
+					digits = i->digits;
+					if (i->scale < scale)
+						digits += scale-i->scale;	
+				} else if (i->digits < r->digits) {
+					digits = r->digits;
+					if (r->scale < scale)
+						digits += scale-r->scale;	
+				} else {
+					/* same number of digits */
+					digits = i->digits;
+					if (i->scale < r->scale) 
+						digits += r->scale - i->scale;	
+					else 
+						digits += i->scale - r->scale;	
+				}
+			}
 
 			super = sql_bind_subtype(tpe,digits,scale);
 			if (scale_fixing){
@@ -711,9 +740,10 @@ static int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 			ls = fix_scale( sql, r, ls, 0, 0);
 			rs = fix_scale( sql, i, rs, 0, 0);
 		}
-		assert(ls && rs);
 		*L = ls;
 		*R = rs;
+		if (!ls || !rs)
+			return -1;
 		return 0;
 	}
 	return -1;
@@ -1008,12 +1038,19 @@ static stmt *sql_unop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * s
 {
 	dnode *l = se->data.lval->h;
 	sql_subfunc *f = NULL;
+	sql_subtype *rt = NULL;
 	stmt *rs = sql_value_exp(sql, scp, l->next->data.sym, grp, subset);
 	if (!rs)
 		return NULL;
-	f = sql_bind_func(l->data.sval, tail_type(rs), NULL );
+	rt = tail_type(rs);
+	f = sql_bind_func(l->data.sval, rt, NULL );
 	if (f) {
 		if (f->func->imp) {
+			/* output same type as input */
+			if (f->func->res->scale == SCALE_SUB) {
+				f->res.digits = rt->digits;
+				f->res.scale = rt->scale;
+			}
 			return stmt_unop(rs, f);
 		} else {
 			sql_arg *a = f->func->ops->h->data;
@@ -1678,6 +1715,8 @@ static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, sy
 			}
 			cmp = sql_compare(sql, ls, cmp, compare_op);
 			stmt_destroy(rs);
+			if (!cmp)
+				return NULL;
 			return stmt_filter(cmp);
 		}
 	}
@@ -3196,8 +3235,10 @@ static stmt *insert_value(mvc * sql, scope * scp, sql_column * c, symbol * s)
 	} else {
 		stmt *n = NULL;
 		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL);
-		if (!a || !(n = check_types(sql, c->type, a)))
+		if (!a || !(n = check_types(sql, c->type, a))) {
+			if (a) stmt_destroy(a);
 			return NULL;
+		}
 		return n;
 	}
 	return NULL;
@@ -4064,7 +4105,12 @@ static stmt *update_table(mvc * sql, dlist * qname,
 			c = basecolumn(cl->s);
 			updates[c->colnr] = stmt_replace( stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), v);
 			list_append(l, updates[c->colnr] );
-			list_append(l, stmt_insert( stmt_cbat(c, stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v)));
+			if (t->base.flag != TR_NEW) {
+				list_append(l, stmt_insert( 
+					stmt_cbat(c, 
+					          stmt_dup(tv->s), 
+						  UPD, st_ubat), stmt_dup(v)));
+			}
 			/* TODO rows = count(stmt_dup(v)) */
 		}
 		if (s) stmt_destroy(s);

@@ -4,7 +4,7 @@ set -x
 PWD=`pwd`
 echo $PWD
 
-SQL='Msql -u monetdb -P monetdb'
+SQL='MapiClient -lsql -u monetdb -P monetdb'
 if [ $# -eq 1 ]; then
 	SQL="$1"
 fi

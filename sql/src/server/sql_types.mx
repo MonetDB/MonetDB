@@ -857,14 +857,14 @@ void sqltypeinit()
 		sql_create_func("and","and", *t, *t, *t, SCALE_FIX);
 		sql_create_func("or","or", *t, *t, *t, SCALE_FIX);
 		sql_create_func("xor","xor", *t, *t, *t, SCALE_FIX);
-		sql_create_func("sql_neg","-", *t, NULL, *t, SCALE_FIX);
+		sql_create_func("sql_neg","-", *t, NULL, *t, SCALE_SUB);
 	}
 
 	/* scale fixing for all numbers */
 	for(t=numerical; t < dates; t++){
 		sql_subtype *lt = sql_bind_localtype( (*t)->name );
 	      	sql_create_func("scale_up", "*", *t, lt->type, *t, SCALE_NONE );
-	      	sql_create_func("scale_down", "/", *t, lt->type, *t, SCALE_NONE );
+	      	sql_create_func("scale_down", "round", *t, lt->type, *t, SCALE_NONE );
 	}
 
 	/* convert numericals */
