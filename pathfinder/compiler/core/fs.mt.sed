@@ -1875,12 +1875,6 @@ StepExpr:               pred (PathExpr, Expr)
 
         PFfun_t *fn_eq = function (PFqname (PFns_op, "eq"));
 
-        PFvar_t *v6 = new_var (0);
-        PFvar_t *v7 = new_var (0);
-        PFcnode_t *empty_or_ebv;
-        PFfun_t *fn_empty = function (PFqname (PFns_fn, "empty"));
-        PFfun_t *fn_not = function (PFqname (PFns_fn, "not"));
-
         tDO ($%1$);
 
         /* save $fs:dot, establish new context item */
@@ -1888,25 +1882,6 @@ StepExpr:               pred (PathExpr, Expr)
         fs_dot = new_var ("dot");
 
         tDO ($%2$);
-
-        /* we have to handle the node existence different
-           then any expression - ebv(node) != empty(node) */
-        empty_or_ebv = typeswitch
-                           (var (v2),
-                            cases
-                              (case_
-                                 (seqtype (PFty_star (PFty_node ())),
-                                  let (var (v6),
-                                       apply (fn_not,
-                                              arg (let (var (v7),
-                                                        apply (fn_empty,
-                                                               arg (var (v2),
-                                                                    nil ())),
-                                                        var (v7)),
-                                                   nil())),
-                                       var (v6))),
-                               nil ()),
-                            ebv (var (v2)));
 
         [[ $$ ]] = 
         let (var (v1), [[ $1$ ]],
@@ -1928,7 +1903,7 @@ StepExpr:               pred (PathExpr, Expr)
                                                                    nil ()))),
                                                   var (v4)))),
                                      nil ()),
-                                  empty_or_ebv),
+                                  ebv (var (v2))),
                              ifthenelse (var (v3), 
                                          var (fs_dot), empty ())))));
 
