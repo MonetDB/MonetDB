@@ -1663,8 +1663,8 @@ int parseMAL(Client cntxt, Symbol curPrg){
             echoInput(cntxt);
             continue;
         case ';': case '\t': case ' ': 
-              nextChar(cntxt);
-        case  0 : continue;
+            nextChar(cntxt);
+			continue;
         case '#': skipComment(cntxt);
               continue;
         case 'A': case 'a':
