@@ -12,15 +12,15 @@ stdout of test 'q22` in directory 'tests/XPath` itself:
 <?xml version="1.0" encoding="utf-8"?>
 <XqueryResult>
 <closed_auction>
-<seller person="person12"/>
-<buyer person="person14"/>
-<itemref item="item11"/>
+<seller person="person12"></seller>
+<buyer person="person14"></buyer>
+<itemref item="item11"></itemref>
 <price>19.59</price>
 <date>06/22/2000</date>
 <quantity>1</quantity>
 <type>Featured</type>
 <annotation>
-<author person="person6"/>
+<author person="person6"></author>
 <description>
 <parlist>
 <listitem>
@@ -42,17 +42,16 @@ notorious rash pinion trumpeters wrongs caitiff justices eleanor deserves solici
 </description>
 <happiness>3</happiness>
 </annotation>
-</closed_auction>
-<closed_auction>
-<seller person="person12"/>
-<buyer person="person12"/>
-<itemref item="item15"/>
+</closed_auction><closed_auction>
+<seller person="person12"></seller>
+<buyer person="person12"></buyer>
+<itemref item="item15"></itemref>
 <price>9.41</price>
 <date>07/03/2001</date>
 <quantity>1</quantity>
 <type>Featured</type>
 <annotation>
-<author person="person7"/>
+<author person="person7"></author>
 <description>
 <parlist>
 <listitem>
@@ -83,17 +82,16 @@ wipe shillings hovers whipp tenderly artist fire sinful jaunce imagin order term
 </description>
 <happiness>7</happiness>
 </annotation>
-</closed_auction>
-<closed_auction>
-<seller person="person14"/>
-<buyer person="person8"/>
-<itemref item="item18"/>
+</closed_auction><closed_auction>
+<seller person="person14"></seller>
+<buyer person="person8"></buyer>
+<itemref item="item18"></itemref>
 <price>21.75</price>
 <date>01/14/2000</date>
 <quantity>1</quantity>
 <type>Featured</type>
 <annotation>
-<author person="person3"/>
+<author person="person3"></author>
 <description>
 <text>
 alone paltry idea collatinus baboon truly cleomenes direful handkerchief sounds muscovites awe palace marjoram gods little monument also visitation hector flints commend strength drift 
