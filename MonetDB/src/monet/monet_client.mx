@@ -141,7 +141,7 @@ Client initClient(str nme, str prompt, int thread){
 		GDKerror("Out of client slots\n");
 		return 0;
 	}
-	if (thread && (int)monetFork() < 0) {
+	if (thread && monetFork() == ~ (MT_Id) 0) {
 		return 0; /* cannot create required MIL interpreter thread */
 	}
        	c->user = GDKstrdup(nme);
@@ -288,7 +288,7 @@ Client forkClient(Cntxt stk, int thread){
 		MT_unset_lock(monet_contextLock, "forkClient");
 
 		if (thread)
-			if ((int)monetFork() < 0) return 0;
+			if (monetFork() == ~ (MT_Id) 0) return 0;
 	}
         return son;
 }

@@ -156,11 +156,11 @@ MT_Id monetFork(void) {
 	 	 * and monet_threads counter. */
 		if (MT_create_thread(&p, monetInterpreter, &status) != 0) {
 			GDKsyserror("monetFork:failed\n");
-			p = (MT_Id)-1;
+			p = ~ (MT_Id) 0;
 		} else {
 			MT_down_sema(monet_forksync, "monetFork");
 			if (status)
-				p = (MT_Id)-1;
+				p = ~ (MT_Id) 0;
 		}
 		MT_unset_lock(monet_critical, "monetFork");
 	}
@@ -174,7 +174,7 @@ int monetAdjustThreads(int i){
 		putkillRequest();
 	}
 	for (; i > 0; i--) {
-		if ((int)monetFork() < 0) {
+		if (monetFork() == ~ (MT_Id) 0) {
 			return monet_threads;
 		}
        	}
