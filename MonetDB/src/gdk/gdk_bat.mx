@@ -1120,6 +1120,31 @@ size_t BATcount (BAT *b) {
 	return (l - f);
 }
 @-
+The top-N elements can be easily obtained by trimming the
+space. The auxillary index structures are removed.
+For non-variable size BATs it merely requires
+adjustment of the free space labels. Other BATs require
+a loop through the tuples to be deleted. [todo]
+@c
+size_t BATtopN(BAT *b, size_t topN){
+	BATcheck(b,"BATtopN");
+	if( topN > BATcount(b)) {
+		GDKerror("BATtrim not enough tuples in target\n");
+	} else
+	if( topN * BUNsize(b) > b->batBuns->size) {
+		GDKerror("BATtrim not enough capacity\n");
+	} else
+	if( b->dims.headvarsized || b->dims.tailvarsized ){
+		HASHremove(b);
+		while( BATcount(b)> topN)
+			BUNdelete(b,BUNlast(b));
+	} else { 
+		HASHremove(b);
+		b->batBuns->free= BUNptr(b,topN+1)- Bunbase(b);
+	}
+	return 0;
+}
+@-
 The alternative routine is @%BATbuncount@, which calculates the
 total buns in use.
 @c
