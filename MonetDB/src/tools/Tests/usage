@@ -1,6 +1,6 @@
 #!/bin/sh
 
-Mlog -x $MTIMEOUT Mserver --config=$MONETRC -?
+Mlog -x $MTIMEOUT Mserver --config=$MONET_CONF -?
 Mlog -x $MTIMEOUT MapiClient -?
 Mlog -x $MTIMEOUT Mshutdown -?
 
