@@ -259,8 +259,6 @@ changed setbuf to setbuffer to avoid unintentional buffer overflow.
 				snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
 				interpret_str( stk, buf, res);
 			}
-		} else {
-			printf(" nothing to accept\n");
 		}
 	} while (monet_running);
 	return GDK_SUCCEED;
