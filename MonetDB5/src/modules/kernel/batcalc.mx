@@ -194,11 +194,11 @@ comment "If-then-else operation to assemble a conditional result ";
 
 @-
 @= ifthenGrp
-command zipper(v:@1,b:bat[:any,:any$1]) :bat[:@1,:any$1] 
-address CMDfillhead_@1
+command project(v:@1,b:bat[:any,:any$1]) :bat[:@1,:any$1] 
+address CMDprojecthead_@1
 comment "Fill the head with a constant, e.g. [0~b]";
 
-command zipper(b:bat[:any$1,:any], v:@1) :bat[:any$1,:@1] 
+command project(b:bat[:any$1,:any], v:@1) :bat[:any$1,:@1] 
 address CMDfilltail_@1
 comment "Fill the tail with a constant, eg [b~0].";
 
@@ -1150,12 +1150,12 @@ bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDfillhead_@1(int *ret,ptr *val, int *iid){
+str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
 	BAT *ib, *bn;
 	int xx;
 	BUN p,q;
 
-	@:getBATdescriptor(ret,iid,ib,CMDfillhead_@1)@
+	@:getBATdescriptor(ret,iid,ib,CMDprojecthead_@1)@
 
 	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
 	@:tstBat(fillhead_@1)@
