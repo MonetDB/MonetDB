@@ -118,8 +118,6 @@ typedef struct {
 	int words[1];		/* allocate the rest dynamically */
 } monet_sig_t; 
 
-#include "monet.h"
-
 m_export int interpret           (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_while     (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_ident     (Cntxt stk, YYSTREE lt, ValPtr res);

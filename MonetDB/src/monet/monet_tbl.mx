@@ -33,7 +33,6 @@ vice versa.
 #ifndef _MONET_TBL_H
 #define _MONET_TBL_H
 
-#include "monet.h"
 #include <assert.h>
 
 #define BUNtailfnd(tp,  bt, bn, vl)	((bn=BUNfnd(bt, vl))?(tp *) BUNtail(bt,bn):0)

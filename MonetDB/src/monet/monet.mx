@@ -239,8 +239,16 @@ typedef struct {
 
 @+ Interface functions 
 @h
+#include "monet_process.h"
+#include "monet_client.h"
+#include "monet_context.h"
+#include "monet_interpreter.h"
+#include "monet_tbl.h"
+#include "monet_multiplex.h"
+#include "monet_queue.h"
+
 m_export int 	monet_running;
-m_export ptr	monet_init	(void);
+m_export Client	monet_init	(void);
 m_export str	monet_load_script(str file, str module);
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
@@ -281,13 +289,6 @@ The input file for commands is standard input.
 See the MonetDB.conf file for additional system variable settings
 @
 @h
-#include "monet_process.h"
-#include "monet_client.h"
-#include "monet_context.h"
-#include "monet_interpreter.h"
-#include "monet_tbl.h"
-#include "monet_multiplex.h"
-#include "monet_queue.h"
 #define MAXSCRIPT 64
 
 m_export char		monet_cwd[PATHLENGTH];	/* where the server started */
@@ -404,7 +405,7 @@ provided to make inclusion of new modules a piece of cake.
 }
 
 @c
-ptr monet_init(void){
+Client monet_init(void){
         Client  c;
 
 	monet_running = 1;
@@ -445,7 +446,7 @@ Install all link-in modules.
 @c
 
         c->listing = monet_listing;
-	return (ptr) c;
+	return c;
 }
 @- Monet load MIL script
 

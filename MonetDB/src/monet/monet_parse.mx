@@ -548,7 +548,6 @@ str ll_getstr(char *buf, int len, int offending) {
 #define _MONET_PARSE_H
 
 #include "monet.h"
-#include "monet_client.h"
 
 #define YY_NEVER_INTERACTIVE	1		/* bison brain damage evasion */
 
@@ -621,7 +620,6 @@ parses the grammar, executing the inlined C statements along the way.
 #endif
 
 #include "monet_parse.h"	/* includes monet.h */
-#include "monet_client.h"
 
 
 #define YYDEBUG	0

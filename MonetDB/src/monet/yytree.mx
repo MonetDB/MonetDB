@@ -25,8 +25,6 @@ within a YACC environment.
 #ifndef _YYTREE_H_
 #define _YYTREE_H_
 
-#include "monet.h"
-
 #define par_retval	free.batref.id
 #define old_cntxt	yyval.len
 
@@ -47,7 +45,7 @@ m_export YYSTREE 		Myysubstitute_iter(YYSTREE, int, ValPtr);
 m_export int 		Myypostprocess(YYSTREE);
 m_export void 		Myylogout(YYSTREE);
 @c
-#include "yytree.h"
+#include "monet.h"
 #include <stdio.h> 
 #include <ctype.h> 
 #include "monet_parse.h"

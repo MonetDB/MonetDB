@@ -36,7 +36,6 @@ descriptors.
 @h
 #ifndef _MONET_CLIENT_H_
 #define _MONET_CLIENT_H_
-#include "monet.h"
 
 #define MAXCLIENTS	512
 #define BLOCKMODE	32

@@ -70,7 +70,6 @@ executes CMD(argv[]) and inserts the outcome into the result BAT.
 @h
 #ifndef _MONET_SETOP_H_
 #define _MONET_SETOP_H_
-#include "monet.h"
 
 @+ Exported Functions
 @- {Y}() set aggregate implementation 

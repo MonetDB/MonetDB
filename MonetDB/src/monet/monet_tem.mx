@@ -29,14 +29,6 @@ in which the event was detected.
 
 The code should be (re)structured to become a Monet kernel extension.
 Can not be done, because it requires enhancements within the interpreter.
-@h
-#ifndef _MONET_TRIGGER_H
-#define _MONET_TRIGGER_H
-#include "monet.h"
-
-
-#endif /* _MONET_TRIGGER_H */
-
 @-
 The Monet server contains a few global tables for trigger management.
 They are shared by all users, thus they should be protected by the transaction
@@ -50,7 +42,7 @@ address as an internal id. The tables are not persistent.
 Session dependent BATs are marked as non-dirty after creation. This means that
 only after they become used their content is saved on disk.
 @c
-#include "monet_tem.h"
+#include "monet.h"
 #define TEMSIZE	2000
 
 void scheduleTrigger();

@@ -57,7 +57,6 @@ information (htop,hot). The events are sorted by starting time.
 @h
 #ifndef _MONET_QUEUE_H_
 #define _MONET_QUEUE_H_
-#include "monet.h"
 
 #define EVDONE		-9
 #define EVRUNNING	-7
@@ -127,7 +126,6 @@ This counter is decremented when a requests is finished or forcefully removed fr
 processing. 
 @{
 @c
-#include "monet.h"
 #include "monet_deparse.h"
 
 int		QMclock;
