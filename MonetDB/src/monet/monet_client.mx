@@ -244,7 +244,7 @@ Client forkClient(Cntxt stk, int thread){
 		father = monet_clients + father->father;
 	}
 	if (father && thread){
-		nstk = CNTXTcopy( nstk );
+		nstk = CNTXTcopy( stk );
 	}
 	if (father && (son=initClient(father->user, father->prompt, thread))) {
 	        /* reuse all crucial table information from father */
