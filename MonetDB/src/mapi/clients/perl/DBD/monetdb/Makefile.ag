@@ -17,10 +17,8 @@
 
 MTSAFE
 
-SUBDIRS = monetdb
-
 scripts_perl = {
-	EXT = pl pm
-	DIR = pkgdatadir/perl/DBD
-	SOURCES = monetdb.pm monetdbPP.pm
+	EXT = pm
+	DIR = pkgdatadir/perl/DBD/monetdb
+	SOURCES = GetInfo.pm
 }
