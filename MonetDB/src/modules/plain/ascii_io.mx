@@ -556,14 +556,19 @@ insert_val( ascii_io *fmt, char *s, char *e, char quote )
 	if (quote){
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
-		if (!s) 
+		if (!s) {
+			GDKwarning("quote '%c' expected but not found in \"%s\"\n", quote, s);
 			return 1;
+		}
 		s++;
 		e = rfind_quote(e, quote);
 		*e = 0;
 	} else if (e>s) {
 		s = lstrip(s);
 		e = rstrip(e);
+	}
+	if (e<s) {
+		e = s;
 	}
 	adt = fmt->frstr( fmt->extra, fmt->adt, s, e );
 	
@@ -820,7 +825,7 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 			char *e = strstr( s, sep );
 			if (e){
 				*e = '\0';
-				if ((e-s) <= 1){ /* empty line indicates eof */
+				if ((e-s) < 1){ /* empty line indicates eof */
 					b->eof = 1;
 					break;
 				}
