@@ -1011,7 +1011,7 @@ Create the result BAT and execute the select algorithm.
 	    	ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_indexselect(b=%s, bn=%s, tl, th);\n",
 	    	                            b->batId, b->batId, bn->batId);
 	    	bn = BAT_indexselect(b, bn, tl, th, li, hi, equi);
-	    } else if (equi && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDK_mem_maxsize/4)) { 
+	    } else if (equi && ATOMsize(b->ttype) > 1 && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDK_mem_maxsize/4)) { 
 	        /* Build a hash-table on the fly for equi-select if the selectivity is low
                  * and it is not too big */
  	        ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n",

@@ -15,6 +15,9 @@ char **sql_completion (const char *text, int start, int end);
 char *sql_tablename_generator (const char *text, int state);
 char *sql_command_generator (const char *text, int state);
 
+char **mil_completion (const char *text, int start, int end);
+char *mil_batname_generator (const char *text, int state);
+
 #endif /* HAVE_LIBREADLINE */
 #endif /* READLINETOOLS_H_INCLUDED */
 @c
@@ -48,7 +51,7 @@ init_readline(Mapi mid, const char *language, int save_history)
 	if (strcmp(language, "sql")==0) {
 		rl_attempted_completion_function = sql_completion;
 	} else {
-		/* FIXME: mil completion */
+		rl_attempted_completion_function = mil_completion;
 	}
 
 	if (save_history) {
@@ -83,6 +86,7 @@ sql_completion (const char *text, int start, int end)
 
 	if (start==0 || end == 0) {
 	}	
+	/* FIXME: Nice, context-sensitive completion strategy should go here */
 	if (start == 0) {
 		matches = rl_completion_matches (text, sql_command_generator);
 	} else {
@@ -109,6 +113,7 @@ char *sql_tablename_generator (const char *text, int state) {
 				mapi_explain(_mid, stderr);
 			return NULL;
 		}
+		mapi_fetch_all_rows(table_hdl);
 		rowcount = mapi_get_row_count(table_hdl);
     	}
 
@@ -145,5 +150,55 @@ char *sql_command_generator (const char *text, int state) {
 
 	return NULL;
 }
+
+char **
+mil_completion (const char *text, int start, int end)
+{
+	char **matches;
+
+	matches = (char **)NULL;
+
+	if (start==0 || end == 0) {
+	}
+
+	/* FIXME: Nice, context-sensitive completion strategy should go here */
+	matches = rl_completion_matches (text, mil_batname_generator);
+
+	return (matches);
+}
+
+char *mil_batname_generator (const char *text, int state) {
+
+	static int seekpos, len, rowcount;
+	static MapiHdl table_hdl;
+	char *name;
+
+	if (!state) {
+		seekpos = 0;
+      		len = strlen (text);
+		if ((table_hdl = mapi_query(_mid, "ls;"))==NULL || mapi_error(_mid)) {
+			if (table_hdl) {
+				mapi_explain_query(table_hdl, stderr);
+				mapi_close_handle(table_hdl);
+			} else
+				mapi_explain(_mid, stderr);
+			return NULL;
+		}
+		mapi_fetch_all_rows(table_hdl);
+		rowcount = mapi_get_row_count(table_hdl);
+    	} else {
+	}
+
+	while (seekpos < rowcount) {
+		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
+		mapi_fetch_row(table_hdl);
+		name = mapi_fetch_field(table_hdl, 0);
+		if (strncmp(name, text, len) == 0) 
+			return strdup(name);
+	}
+
+	return NULL;
+}
+
 
 #endif /* HAVE_LIBREADLINE */
