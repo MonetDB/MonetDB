@@ -150,16 +150,6 @@ replace commands.
 
 	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
-	.LOAD
-		# dirty hack for comments ask menzo
-		PROC renameFUNC(str OLD,str NEW) : void := {
- 			VAR funcs := monet_fcn_nme.select(OLD);
- 			funcs := [funcs~NEW];
- 			monet_fcn_nme.replace(funcs);
- 			monet_fcntbl.reverse.replace(funcs);
-		}
-	.END;
-
 .END sqlserver;
 
 @h
@@ -556,10 +546,17 @@ module(alarm);
 module(xtables);
 module(aggrX3);
 module(monettime);
-module(sqlserver);
 module(mmath);
 module(decimal);
 module(mapi); # mapi_listen 
+
+# dirty hack for comments ask menzo
+PROC renameFUNC(str OLD,str NEW) : void := {
+ 	VAR funcs := monet_fcn_nme.select(OLD);
+ 	funcs := [funcs~NEW];
+ 	monet_fcn_nme.replace(funcs);
+ 	monet_fcntbl.reverse.replace(funcs);
+}
 
 var sql_debug := int(monet_environment.find("sql_debug"));
 parser_init(sql_debug);
@@ -568,11 +565,8 @@ sql_type("OID", 0, 0, 	  	"oid");
 sql_type("BOOL", 0, 0,	  	"bit");
 sql_type("BOOLEAN", 0, 0,	"bit");
 
-# cannot map char(1) to chr as utf8 may use up to 4 chr's per char(1)
-#sql_type("CHAR", 1, 0, 	  	"chr");
 sql_type("CHAR", 0, 0,  	"str"); # defined as a fixed length string 
 sql_type("CHARACTER", 0, 0, 	"str");
-#sql_type("VARCHAR", 1, 0, 	"chr");
 sql_type("VARCHAR", 0, 0, 	"str");
 
 sql_type("TEXT", 0, 0, 		"str");
