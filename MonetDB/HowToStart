@@ -94,10 +94,13 @@ need to call  configure --prefix=<prefixdir>.
 A sample of other useful configure options is:
   --enable-debug          enable full debugging default=off
   --enable-optimize       enable extra optimization default=off
-  --enable-warning           enable extended compiler warnings default=off
+  --enable-warning        enable extended compiler warnings default=off
   --enable-profile        enable profiling default=off
-  --enable-instrument        enable instrument default=off
+  --enable-instrument     enable instrument default=off
   --with-gcc=<compiler>   which C compiler to use
+                          ("yes" = gcc/g++, 
+                           "no"  = system-specific C/C++ compiler,
+                           <other-compiler-name>)
   --with-gxx=<compiler>   which C++ compiler to use
   --with-bits=<#bits>     specify number of bits (32 or 64)
 Use the --help option of configure to find out more about configure
