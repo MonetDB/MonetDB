@@ -1,0 +1,78 @@
+RELEASE NOTES
+MonetDB JDBC driver version 0.3 beta
+Fabian Groffen <Fabian.Groffen@cwi.nl>
+
+Release date: 2004-03-03
+
+This JDBC driver for MonetDB is a second working implementation of a JDBC driver
+for the Monet Main Memory Database. See http://monetdb.cwi.nl/ for more info
+regarding this database.
+
+This release is far from a complete implementation of the JDBC interface. This
+implementation also doesn't follow the JDBC specification at all points. Below
+the current state of this driver is listed. Please read before you decide to use
+this driver.
+
+- Currently implemented are:
+  * java.sql.Driver interface
+    . acceptsURL(java.lang.String url)
+    . connect(java.lang.String url, java.util.Properties info)
+    . getMajorVersion()
+    . getMinorVersion()
+    . jdbcCompliant()
+    . driver works with Java's DriverManager
+  * java.sql.Connection interface
+    . close()
+    . commit()
+    . createStatement()
+    . createStatement(int resultSetType, int resultSetConcurrency)
+      (do not use it)
+    . getAutoCommit()
+    . rollback()
+    . setAutoCommit(boolean autoCommit)
+  * java.sql.Statement interface
+    . close()
+    . executeQuery(java.lang.String sql)
+    . executeUpdate(java.lang.String sql)
+      WARNING, does NOT return affected rows!!!
+    . getConnection()
+    . getFetchDirection()
+    . getFetchSize()
+    . getMaxRows()
+    . getResultSetConcurrency()
+    . getResultSetType()
+    . setFetchDirection(int direction)
+      (do not use this)
+    . setFetchSize(int rows)
+    . setMaxRows(int max)
+  * java.sql.ResultSet interface
+    . close()
+    . findColumn(java.lang.String columnName)
+    . getBoolean(int columnIndex)
+    . getBoolean(java.lang.String columnName)
+    . getDouble(int columnIndex)
+    . getDouble(java.lang.String columnName)
+    . getFetchSize()
+    . getFloat(int columnIndex)
+    . getFloat(java.lang.String columnName)
+    . getInt(int columnIndex)
+    . getInt(java.lang.String columnName)
+    . getLong(int columnIndex)
+    . getLong(java.lang.String columnName)
+    . getMetaData()
+    . getShort(int columnIndex)
+    . getShort(java.lang.String columnName)
+    . getStatement()
+    . getString(int columnIndex)
+    . getString(java.lang.String columnName)
+    . next()
+    . wasNull()
+  * java.sql.ResultSetMetaData interface
+    . getColumnCount()
+    . isCaseSensitive(int column)
+    . getColumnLabel(int column)
+    . getColumnName(int column)
+    . getColumnType(int column)
+    . getColumnTypeName(int column)
+- Note that Statement's executeUpdate is implemented via executeQuery and does
+  NOT return the number of affected rows.
