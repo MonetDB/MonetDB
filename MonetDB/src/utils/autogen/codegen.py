@@ -127,6 +127,7 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'c.sed':    [ '.c' ],
             'h.sed':    [ '.h' ],
             'xsl.in':   [ '.xsl' ],
+            'pc.in':    [ '.pc' ],
 }
 
 lib_code_gen = { 'fgr': [ '_glue.c' ], }
@@ -551,8 +552,7 @@ def codegen(tree, cwd, topdir, incdirsmap):
             for f in v["SOURCES"]:
                 base,ext = split_filename(f)
                 do_code_extract(f,base,ext, targets, deps, cwd)
-            if i[0:8] != "headers_":
-                targets = do_code_gen(targets,deps,code_gen)
+            targets = do_code_gen(targets,deps,code_gen)
             if i[0:4] == "lib_" or i == "LIBS":
                 targets = do_code_gen(targets,deps,lib_code_gen)
             if i[0:4] == "bin_" or i == "BINS":
