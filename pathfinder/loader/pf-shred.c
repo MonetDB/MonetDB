@@ -35,120 +35,73 @@
  * $Id$
  *
  * 
- * The mapping process writes the following collection of (ASCII represented)
- * 13 Monet BAT files which may be subsequently imported into Monet.  The
- * head column of all BATs is dense.
+ * The mapping process writes the following collection of (ASCII
+ * represented) relation files which may be subsequently imported into
+ * Monet (via the ascii_io facility).  
  *
- *    BAT (w/ suffix)    schema      encodes
+ * NB: The first column of all relations is dense, i.e., the pre, prop, @
+ *     columns are _not_ actually written to the relation files 
+ *     (during import, Monet creates the necessary void head columns)
+ *
+ *    relation  schema                    encodes
  *    --------------------------------------------------------------------
- *    .pre               pre|size    preorder rank and subtree size for 
- *                                   element/text/comment/p-i nodes
- *    .level             pre|level   preorder rank and node level for 
- *                                   element/text/comment/p-i nodes
- *    .prop              pre|prop    preorder rank and node property ID for
- *                                   element/text/comment/p-i nodes
- *
- *    .ns                prop|ns     property ID and namespace prefix for
- *                                   element nodes
- *    .loc               prop|loc    property ID and local part of tag name for
- *                                   element nodes
- *    .text              prop|text   property ID and text content for
- *                                   text nodes
- *    .com               prop|com    property ID and comment content for
- *                                   comment nodes
- *    .tgt               prop|tgt    property ID and proc.ins. target for
- *                                   processing instruction nodes
- *    .ins               prop|ins    property ID and proc. instruction for
- *                                   processing instruction nodes
- *
- *    .@own              @|own       attribute ID and preorder rank of 
- *                                   owning element for attribute nodes
- *    .@ns               @|ns        attribute ID and namespace prefix for
- *                                   attriute nodes
- *    .@loc              @|loc       attribute ID and local part of attribute
- *                                   name for attriute nodes
- *    .@val              @|val       attribute ID and attribute value 
- *                                   for attribute nodes
- *
- * NB: the following assumes a 32-bit Monet host.
+ *    .pre      pre|size|level|prop|kind  preorder rank, subtree size,
+ *                                        node level, property ID, node kind
+ *                                        for document/element/text/comment/p-i
+ *                                        nodes
+ *    .tag      prop|ns|loc               property ID, namespace prefix, local
+ *                                        part for element nodes
+ *    .text     prop|text                 property ID, text content for
+ *                                        text nodes
+ *    .com      prop|com                  property ID, comment content for
+ *                                        comment nodes
+ *    .pi       prop|tgt|ins              property ID, target, instruction for
+ *                                        p-i nodes
+ *    .@        @|own|ns|loc|val          attribute ID, owner, namespace
+ *                                        prefix, local part, value for
+ *                                        attribute nodes
  */
 
-/*
- * Include all the information we got from the configure script
- */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+
+#if HAVE_CONFIG_H
+#include <pf_config.h>
 #endif
 
 typedef unsigned int nat;
 
-/*
- * - Encoding preorder ranks (pre columns)
- *
- *   Preorder ranks (node IDs) span a 30-bit wide domain:
- *
- *   used by Monet
- *   |
- *   X0bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
- *    |
- *    this is an element/text/com/p-i node
+/**
+ * next preorder rank to assign
  */
-#define NODE 0x00000000
-
 nat pre;
 
-#define NODE_ID(id) (NODE | (id))
-
-/*
- * - Encoding attribute IDs (@ columns)
- *
- *   Attribute IDs span a 30-bit wide domain:
- *
- *   used by Monet
- *   |
- *   X1bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
- *    |
- *    this is an attribute
+/**
+ * next node property IDs to assign
  */
-#define ATTRIBUTE 0x4000000
-
-nat attribute_id;
-
-#define ATTRIBUTE_ID(id) (ATTRIBUTE | (id))
-
-/* - Encoding property IDs (prop columns)
- *
- *   Property IDs span a 29-bit wide domain. We distinguish four
- *   property types:
- *
- *   used by Monet
- *   |
- *   X00bbbbbbbbbbbbbbbbbbbbbbbbbbbbb   ns/loc of element node tag name
- *   X01bbbbbbbbbbbbbbbbbbbbbbbbbbbbb   content of text node
- *   X10bbbbbbbbbbbbbbbbbbbbbbbbbbbbb   content of comment node
- *   X11bbbbbbbbbbbbbbbbbbbbbbbbbbbbb   tgt/ins of proc. ins. node
- *    \/
- *    property type
- */
-#define NSLOC  0x00000000
-#define TEXT   0x20000000
-#define COM    0x40000000
-#define TGTINS 0x60000000 
-
 nat nsloc_id;
 nat text_id;
 nat com_id;
 nat tgtins_id;
 
-#define NSLOC_ID(id)  (NSLOC  | (id))
-#define TEXT_ID(id)   (TEXT   | (id))
-#define COM_ID(id)    (COM    | (id))
-#define TGTINS_ID(id) (TGTINS | (id))
+/**
+ * Monet's representation of oid(nil) on a 32-bit Monet host
+ *
+ */
+#define NIL 0x80000000
+
+/**
+ * XML node kinds
+ */
+#define ELEMENT   0
+#define TEXT      1
+#define COMMENT   2
+#define PI        3
+#define DOCUMENT  4
 
 
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdarg.h>
+#include <signal.h>
 #include <assert.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -164,18 +117,17 @@ nat tgtins_id;
 
 #if HAVE_LIBDB
 /* Berkeley DB interface (libdb) */
+
+#if !HAVE_U_LONG
+/**
+ * Berkeley DB blindly assumes the BSDism u_long to be defined
+ */
+typedef unsigned long u_long;
+#endif /* !HAVE_U_LONG */
+
 #include <db.h>
-#endif
 
-
-typedef enum {
-   nsloc_db
- , text_db
- , com_db
- , tgtins_db } db_id_t;
-
-#if HAVE_LIBDB
-/*
+/**
  *   Property IDs are ``reused'' if possible:
  *   
  *   - element nodes with identical ns and loc share a property ID
@@ -187,13 +139,20 @@ typedef enum {
  * DB files.
  */
 
-/* DB handling 
+/**
+ * Berkeley DB handling 
  */
 typedef struct db_t db_t;
 struct db_t {
     DB  *dbp;                    /**< DB handle */
     char file[FILENAME_MAX];     /**< DB file name */
 };
+
+typedef enum {
+   nsloc_db
+ , text_db
+ , com_db
+ , tgtins_db } db_id_t;
 
 db_t dbs[] = {
     /* db id  handle file name  */
@@ -202,9 +161,12 @@ db_t dbs[] = {
   , [com_db]    { 0, "com_dbXXXXXX"    } 
   , [tgtins_db] { 0, "tgtins_dbXXXXXX" }
 };
-#endif
 
-/* do we allow duplicate node properties? */
+#endif /* HAVE_LIBDB */
+
+/**
+ * do we allow duplicate node properties (default: yes)? 
+ */
 int prop_dup = 1;
 
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
@@ -259,7 +221,10 @@ typedef struct node_t node_t;
 struct node_t {
     nat  pre;                   /**< preorder rank */
     nat  size;                  /**< size of subtree below node */
-    nat  level;                 /**< tree level of parent (0 if root) */
+    int  level;                 /**< tree level of parent 
+                                     (0 if root, -1 if document node) */
+    nat  prop;                  /**< property ID */
+    nat  kind;                  /**< node kind */
 };
 
 
@@ -277,64 +242,71 @@ nat sp = 0;
 #define TOP()   (assert (sp > 0), lifo[sp - 1])
 
 /** 
- * BAT handling 
+ * relation handling
  */
-typedef struct bat_t bat_t;
-struct bat_t {
-    int fd;                     /**< file descriptor of BAT file */
-    char sufx[FILENAME_MAX];    /**< suffix of Unix BAT file name */
-    char head[8];               /**< name of BAT head column */
-    char tail[8];               /**< name of BAT tail column */
-    nat  bytes;                 /**< bytes/BUN in this BAT */
+typedef struct rel_t rel_t;
+struct rel_t {
+    int  fd;                    /**< file descriptor of relation file */
+    char sufx[FILENAME_MAX];    /**< suffix of Unix relation file name */
+    nat  bytes;                 /**< bytes/tuple in Monet BAT representation */
 };
 
-typedef enum { 
-   presize
- , prelevel
- , preprop
- , propns
- , proploc
+typedef enum {
+   presizelevelpropkind
+ , propnsloc
  , proptext
  , propcom
- , proptgt
- , propins
- , attown
- , attns 
- , attloc 
- , attval } bat_id_t;
-
-bat_t bats[] = {
-  /* bat id    fd  sufx       head    tail      bytes (0: variable) */
-    [presize] { 0, "pre",     "pre",  "size",   sizeof (int) }
-  , [prelevel]{ 0, "level",   "pre",  "level",  sizeof (int) }  
-  , [preprop] { 0, "prop",    "pre",  "prop",   sizeof (int) }  
-  , [propns]  { 0, "ns",      "prop", "ns",     0            }  
-  , [proploc] { 0, "loc",     "prop", "loc",    0            }  
-  , [proptext]{ 0, "text",    "prop", "text",   0            }  
-  , [propcom] { 0, "com",     "prop", "com",    0            }  
-  , [proptgt] { 0, "tgt",     "prop", "tgt",    0            }  
-  , [propins] { 0, "ins",     "prop", "ins",    0            }  
-  , [attown]  { 0, "@own",    "@",    "own",    sizeof (int) }  
-  , [attns]   { 0, "@ns",     "@",    "ns",     0            }  
-  , [attloc]  { 0, "@loc",    "@",    "loc",    0            }  
-  , [attval]  { 0, "@val",    "@",    "val",    0            }  
-};
-
-/* format and size of a BUN/BAT head */
-#define BUN        "[ %10u@0, %10u@0 ]\n"
-#define BATHEAD    "#----------------------------#\n# %-12s| %-12s #\n#----------------------------#\n"
-#define PRESIZEBUN "[ %10u@0, %10u   ]\n"
-
-nat presize_buns;
-nat bat_heads;
-
-/** 
- * Seek into pre|size table. 
- */
-#define PRESIZEOFFS(n) (bat_heads + presize_buns * (n))
+ , proptgtins
+ , attownnslocval
+} rel_id_t;
 
 /**
- * Convert ms timing value into string.
+ * size of Monet's atom representation
+ * (_var: variable-sized atom on the Monet heap)
+ */
+#define _void 0
+#define _oid  4
+#define _int  4
+#define _sht  2
+#define _var  4
+
+rel_t rels[] = {
+    [presizelevelpropkind] 
+    /*               pre|size      pre|level       pre|prop       pre|kind */
+    { 0, "pre",   _void + _int + _void + _sht + _void + _oid + _void + _sht }
+  , [propnsloc]
+    /*              prop|ns        prop|loc                                */
+    { 0, "tag",   _void + _var + _void + _var }
+  , [proptext]
+    /*              prop|text                                              */
+    { 0, "text",  _void + _var }
+  , [propcom]
+    /*              prop|com                                               */
+    { 0, "com",   _void + _var }
+  , [proptgtins]
+    /*              prop|tgt       prop|ins                                */
+    { 0, "pi",    _void + _var + _void + _var }
+  , [attownnslocval]
+    /*                 @|own          @|ns           @|loc          @|val  */
+    { 0, "@",     _void + _oid + _void + _var + _void + _var + _void + _var }
+};
+
+/**
+ * format and size of a pre|size|level|prop|kind tuple 
+ *
+ *               size  level prop  kind  
+ *                  |    |   |      |         */
+#define PRETUPLE   "%10u,%5d,%10u@0,%5u\n"
+ 
+nat pretuples;
+
+/** 
+ * seek into pre|size|level|prop|kind relation
+ */
+#define PRETUPLEOFFS(n) (pretuples * (n))
+
+/**
+ * convert ms timing value into string
  */
 char *
 timer_str (long elapsed)
@@ -369,10 +341,11 @@ timer_str (long elapsed)
 }
 
 /**
- * Extract namespace prefix ns from QName ns:loc
- * (returns "" if QName is of the form loc).
+ * extract namespace prefix ns from QName ns:loc
+ * (returns "" if QName is of the form loc)
  */
-char *only_ns (char *qn)
+char 
+*only_ns (char *qn)
 {
     char *ns;
     char *colon;
@@ -389,9 +362,10 @@ char *only_ns (char *qn)
 }
 
 /**
- * Extract local part loc from QName ns:loc.
+ * extract local part loc from QName ns:loc
  */
-char *only_loc (char *qn)
+char 
+*only_loc (char *qn)
 {
     char *colon;
 
@@ -404,52 +378,46 @@ char *only_loc (char *qn)
 }
 
 /** 
- * Closing a BAT identified by BAT id.
+ * closing a relation identified by relation id
+ * (halt on error if err != 0)
  */
-void close_bat (bat_id_t bat)
+void 
+close_rel (rel_id_t rel, int err)
 {
-    if (close (bats[bat].fd) < 0) {
+    if (close (rels[rel].fd) < 0 && err) {
         fprintf (stderr, 
-                 "!ERROR: could not close %s BAT: %s\n",
-                 bats[bat].sufx, strerror (errno));
+                 "!ERROR: could not close %s relation: %s\n",
+                 rels[rel].sufx, strerror (errno));
 
         exit (EXIT_FAILURE);
     }
 }
 
 /**
- * Opening a BAT identified by BAT id (also writes BAT header).
+ * opening a relation identified by relation id
  */
-void open_bat (const char *out, bat_id_t bat)
+void 
+open_rel (const char *out, rel_id_t rel)
 {
     char fn[FILENAME_MAX];
-    char hd[100];
 
-    nat hds;
-
-    snprintf (fn, sizeof (fn), "%s.%s", out, bats[bat].sufx);
+    snprintf (fn, sizeof (fn), "%s.%s", out, rels[rel].sufx);
     
-    if ((bats[bat].fd = open (fn, O_CREAT | O_TRUNC | O_WRONLY, 0644)) < 0) {
+    if ((rels[rel].fd = open (fn, O_CREAT | O_TRUNC | O_WRONLY, 0644)) < 0) {
         fprintf (stderr, 
                  "!ERROR: could not open `%s': %s\n",
                  fn, strerror (errno));
 
         exit (EXIT_FAILURE);
     }
-
-    hds = snprintf (hd, sizeof (hd), BATHEAD,
-                    bats[bat].head, bats[bat].tail);
-
-    assert (hds == bat_heads);
-
-    write (bats[bat].fd, hd, hds);
 }
 
 #if HAVE_LIBDB
 /**
- * Create and open a BTree-organized DB identified by DB id
+ * create and open a BTree-organized DB identified by DB id
  */
-void open_db (db_id_t db)
+void 
+open_db (db_id_t db)
 {
     int err;
 
@@ -479,31 +447,34 @@ void open_db (db_id_t db)
 }
 
 /**
- * Close a DB identified by DB id
+ * close a DB identified by DB id
+ * (and emit warning(s) if warn != 0)
  */
-void close_db (db_id_t db)
+void 
+close_db (db_id_t db, int warn)
 {
     int err;
     
     assert (dbs[db].dbp);
 
-    if ((err = dbs[db].dbp->close (dbs[db].dbp, DB_NOSYNC)))
+    if ((err = dbs[db].dbp->close (dbs[db].dbp, DB_NOSYNC)) && warn)
         dbs[db].dbp->err (dbs[db].dbp, err,
                           "!WARNING: could not close DB `%s'", dbs[db].file); 
 
-    if (unlink (dbs[db].file))
+    if (unlink (dbs[db].file) && warn)
         fprintf (stderr, 
                  "!WARNING: could not unlink DB file `%s': %s\n",
                  dbs[db].file, strerror (errno));
 }
 
 /**
- * Duplicate key check in DB identified by DB id.
- * No duplicate found: return 0, and enter key with prop_id into DB
- * Duplicate found:    return 1, nothing entered in DB, prop_id
+ * duplicate key check in DB identified by DB id.
+ * no duplicate found: return 0, and enter key with prop_id into DB
+ * duplicate found:    return 1, nothing entered in DB, prop_id
  *                     modified 
  */
-int duplicate (db_id_t db, char *buf, nat len, nat *prop_id)
+int 
+duplicate (db_id_t db, char *buf, nat len, nat *prop_id)
 {
     DBT key, data;
     int err;
@@ -550,18 +521,21 @@ int duplicate (db_id_t db, char *buf, nat len, nat *prop_id)
         exit (EXIT_FAILURE);
     }        
 }
-#else
-/* Dummy if we don't have BerkeleyDB support */
-#define duplicate(a,b,c,d) 0
-#endif
 
+#else
+/**
+ * No Berkeley DB support: assume no duplicates
+ */
+#define duplicate(db, buf, len, prop_id) 0
+#endif /* HAVE_LIBDB */
 
 /**
- * Write character content buffer to BAT, escape non-printable characters
- * via \xxx.  Writes a maximum of MONET_STRLEN_MAX characters.  Returns
+ * write character content buffer to relation, escape non-printable characters
+ * via \xxx; writes a maximum of MONET_STRLEN_MAX characters; returns
  * actual number of characters written.
  */
-nat content2bat (bat_id_t bat, char *buf, nat len)
+nat 
+content2rel (rel_id_t rel, char *buf, nat len)
 {   
     nat p;
     char c;
@@ -582,10 +556,10 @@ nat content2bat (bat_id_t bat, char *buf, nat len)
                 oct[1] = ((c >> 6) & 7) | '0';
                 oct[2] = ((c >> 3) & 7) | '0';
                 oct[3] = (c        & 7) | '0';
-                write (bats[bat].fd, oct, 4);
+                write (rels[rel].fd, oct, 4);
             }
             else
-                write (bats[bat].fd, &c, sizeof (char));
+                write (rels[rel].fd, &c, sizeof (char));
         else
             fprintf (stderr, 
                      "!WARNING: skipping non-UTF-8 character with code %u\n",
@@ -594,11 +568,38 @@ nat content2bat (bat_id_t bat, char *buf, nat len)
     return len;
 }
 
-void shred_start_document (void *ctx)
+/**
+ * enter new XML node into pre|size|level|prop|kind relation
+ */
+void
+node2rel (node_t node)
 {
-    (void)ctx;
+    char tuple[MONET_STRLEN_MAX];
+    int  tuples;
+    
+    tuples = snprintf (tuple, sizeof (tuple), PRETUPLE,
+                       node.size, 
+                       node.level, 
+                       node.prop, 
+                       node.kind);
+    
+    /* write pre|size|level|prop|kind relation in document order: 
+     * seek to offset determined by pre
+     */
+    assert ((nat) tuples == pretuples);
+    
+    lseek (rels[presizelevelpropkind].fd, 
+           PRETUPLEOFFS (node.pre), SEEK_SET);
+    write (rels[presizelevelpropkind].fd, tuple, tuples);
+    encoded += rels[presizelevelpropkind].bytes;        
+}
+
+void 
+shred_start_document (void *ctx)
+{
+    (void) ctx;
+
     pre          = 0;   /* next ``node ID'' */
-    attribute_id = 0;   /*      attribute ID */
     nsloc_id     = 0;   /*      element tag property ID */
     text_id      = 0;   /*      text content property ID */
     com_id       = 0;   /*      comment content property ID */
@@ -616,101 +617,83 @@ void shred_start_document (void *ctx)
 
     content = 0;
 
-    /* establish virtual root above XML document (virtual parent for root) */
-    PUSH (((node_t) { .pre   = -1, 
+    /* push document node */
+    PUSH (((node_t) { .pre   = 0, 
                       .size  = 0, 
-                      .level = 0 
+                      .level = -1,
+                      .prop  = NIL,
+                      .kind  = DOCUMENT
                     }));
+
+    pre++;
 }
 
-void shred_end_document (void *ctx)
+
+void 
+shred_end_document (void *ctx)
 {
-    /* dispose virtual root */
-    (void)ctx;
-    (void) POP ();
+    (void) ctx;
+
+    /* pop document node and enter into pre|size|level|prop|kind relation */
+    node2rel (POP ());
 }
 
 /**
- * Write buffered text content (if any) to prop|text BAT.
+ * write buffered text content (if any) to prop|text relation
  */
-void text2bat ()
+void 
+text2rel ()
 {
     node_t node;
 
-    char bun[MONET_STRLEN_MAX];
-    int  buns;
-
     int dup;
-    nat prop_id;
 
     /* is there any buffered text content? */
     if (content) {
         text_nodes++;
 
-        node.pre   = NODE_ID (pre);
+        node.pre   = pre;
         pre++;
         node.size  = 0;
         node.level = level;
-        
+        node.kind  = TEXT;
+        node.prop  = text_id;
+
         /* this text node contributes to the size of its parent */
         TOP ().size++;
-        
-        /* enter text node into pre|size BAT */
-        buns = snprintf (bun, sizeof (bun), PRESIZEBUN,
-                         node.pre, node.size);
-        
-        /* write pre|size table in document order: seek to offset
-         * determined by pre
-         */
-        assert ((nat) buns == presize_buns);
-        
-        lseek (bats[presize].fd, PRESIZEOFFS (node.pre), SEEK_SET);
-        write (bats[presize].fd, bun, buns);
-        encoded += bats[presize].bytes;
-        
-        /* enter text node into pre|level BAT */
-        buns = snprintf (bun, sizeof (bun), "[ %10u@0, %10u   ]\n",
-                         node.pre, node.level);
-        write (bats[prelevel].fd, bun, buns);
-        encoded += bats[prelevel].bytes;
-        
-        /* enter text node into pre|prop BAT */
-        prop_id = TEXT_ID (text_id);
-        dup = duplicate (text_db, content_buf, content, &prop_id);
 
-        buns = snprintf (bun, sizeof (bun), BUN,
-                         node.pre, prop_id);
-        write (bats[preprop].fd, bun, buns);
-        encoded += bats[preprop].bytes;
+        /* is this duplicate text content? */
+        dup = duplicate (text_db, content_buf, content, &(node.prop));
 
+        /* if not, enter text node content into prop|text relation */
         if (! dup) {
             text_id++;
             
-            /* enter text node content into prop|text BAT */
-            buns = snprintf (bun, sizeof (bun), "[ %10u@0, \"",
-                             prop_id);            
-            
-            write (bats[proptext].fd, bun, buns);
-            content = content2bat (proptext, content_buf, content);        
-            write (bats[proptext].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-            encoded += bats[proptext].bytes + content;
+            write (rels[proptext].fd, "\"", sizeof ("\"") - 1);
+            content = content2rel (proptext, content_buf, content);        
+            write (rels[proptext].fd, "\"\n", sizeof ("\"\n") - 1);
+
+            encoded += rels[proptext].bytes + content;
         }
-            
+
+        /* enter text node into pre|size|level|prop|kind relation */
+        node2rel (node);
     }
-    
+
     content = 0;
 }
 
 /**
- * SAX callback, invoked whenever `<t ...>' is seen.
+ * SAX callback, invoked whenever `<t ...>' is seen
  */
-void shred_start_element (void *ctx, 
-                          const xmlChar *t, const xmlChar **atts)
+void 
+shred_start_element (void *ctx, 
+                     const xmlChar *t, const xmlChar **atts)
 {
     node_t node;
 
-    char bun[MONET_STRLEN_MAX + 16];
-    int  buns;
+    char tuple[MONET_STRLEN_MAX + 16];
+    int  tuples;
  
     char *ns;
     char *loc;
@@ -718,18 +701,20 @@ void shred_start_element (void *ctx,
     nat len;
 
     int dup;
-    nat prop_id;
+
+    (void) ctx;
 
     elem_nodes++;
 
-    text2bat ();
+    text2rel ();
 
-    (void)ctx;
-    /* (1) assign preorder rank (document order), size and level */
-    node.pre   = NODE_ID (pre);
+    /* (1) assign preorder rank (document order), size, level, and kind */
+    node.pre   = pre;
     pre++;
     node.size  = 0;
     node.level = level;
+    node.kind  = ELEMENT;
+    node.prop  = nsloc_id;
 
     /* descend one level */
     level++;
@@ -738,39 +723,25 @@ void shred_start_element (void *ctx,
     if (level > depth)
         depth = level;
 
-    /* enter element node into pre|level BAT */
-    buns = snprintf (bun, sizeof (bun), "[ %10u@0, %10u   ]\n",
-                     node.pre, node.level);
-    write (bats[prelevel].fd, bun, buns);
-    encoded += bats[prelevel].bytes;
+    /* does this element have a duplicate tag name? */
+    dup = duplicate (nsloc_db, (char *) t, strlen (t), &(node.prop));
 
-    /* enter element node into pre|prop BAT */
-    prop_id = NSLOC_ID (nsloc_id);
-    dup = duplicate (nsloc_db, (char *) t, strlen (t), &prop_id);
-
-    buns = snprintf (bun, sizeof (bun), BUN,
-                     node.pre, prop_id);
-    write (bats[preprop].fd, bun, buns);
-    encoded += bats[preprop].bytes;
-
+    /* if not, enter element tag name ns:loc 
+     * into prop|ns|loc relation
+     */
     if (! dup) {
         nsloc_id++;
         
-        /* enter element tag name ns:loc 
-         * into prop|ns and prop|loc BATs
-         */
         ns  = only_ns ((char *)t);
         loc = only_loc ((char *)t);
         
-        buns = snprintf (bun, sizeof (bun), "[ %10u@0, \"",
-                         prop_id);            
-        write (bats[propns].fd, bun, buns);
-        write (bats[proploc].fd, bun, buns);
-        len =  content2bat (propns, ns, strlen (ns));        
-        len += content2bat (proploc, loc, strlen (loc));        
-        write (bats[propns].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-        write (bats[proploc].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-        encoded += bats[propns].bytes + bats[proploc].bytes + len;
+        write (rels[propnsloc].fd, "\"", sizeof ("\"") - 1);
+        len =  content2rel (propnsloc, ns, strlen (ns));        
+        write (rels[propnsloc].fd, "\",\"", sizeof ("\",\"") - 1);
+        len += content2rel (propnsloc, loc, strlen (loc));        
+        write (rels[propnsloc].fd, "\"\n", sizeof ("\"\n") - 1);
+
+        encoded += rels[propnsloc].bytes + len;
 
         free (loc);
         free (ns);
@@ -784,61 +755,45 @@ void shred_start_element (void *ctx,
         while (*atts) {            
             attr_nodes++;
 
-            /* add attribute to @|own BAT */
-            buns = snprintf (bun, sizeof (bun), BUN,
-                             ATTRIBUTE_ID (attribute_id), node.pre);
+            /* add attribute to @|own|ns|loc|val BAT */
+            tuples = snprintf (tuple, sizeof (tuple), "%10u@0,", 
+                               node.pre);
+            write (rels[attownnslocval].fd, tuple, tuples);
 
-            write (bats[attown].fd, bun, buns);
-            encoded += bats[attown].bytes;
-
-            /* enter attribute name ns:loc 
-             * into @|ns and @|loc BATs
-             */
             ns  = only_ns ((char *) *atts);
             loc = only_loc ((char *) *atts);
-            
-            buns = snprintf (bun, sizeof (bun), "[ %10u@0, \"",
-                             ATTRIBUTE_ID (attribute_id));            
-            write (bats[attns].fd, bun, buns);
-            write (bats[attloc].fd, bun, buns);
-            len =  content2bat (attns, ns, strlen (ns));        
-            len += content2bat (attloc, loc, strlen (loc));        
-            write (bats[attns].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-            write (bats[attloc].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-            encoded += bats[attns].bytes + bats[attloc].bytes + len;
+
+            write (rels[attownnslocval].fd, "\"", sizeof ("\"") - 1);
+            len =  content2rel (attownnslocval, ns, strlen (ns));   
+            write (rels[attownnslocval].fd, "\",\"", sizeof ("\",\"") - 1);
+            len += content2rel (attownnslocval, loc, strlen (loc));
+            write (rels[attownnslocval].fd, "\",\"", sizeof ("\",\"") - 1);
+            len += content2rel (attownnslocval, (char *) *(atts + 1), 
+                                strlen (*(atts + 1)));
+            write (rels[attownnslocval].fd, "\"\n", sizeof ("\"\n") - 1);
+
+            encoded += rels[attownnslocval].bytes + len;
 
             free (loc);
             free (ns);
-
-            /* add attribute to @|val table */
-            buns = snprintf (bun, sizeof (bun), "[ %10u@0, \"",
-                             ATTRIBUTE_ID (attribute_id));            
-            write (bats[attval].fd, bun, buns);
-            len = content2bat (attval, (char *) *(atts + 1), 
-                               strlen (*(atts + 1)));
-            write (bats[attval].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-            encoded += bats[attval].bytes + len;
-
-            /* new attribute ID */
-            attribute_id++;
-
+        
             /* process next attribute */
             atts += 2;
         }
 }
 
 /** 
- * SAX callback invoked whenever `</t>' is seen.
+ * SAX callback invoked whenever `</t>' is seen
  */
-void shred_end_element (void *ctx, const xmlChar *tag)
+void 
+shred_end_element (void *ctx, const xmlChar *tag)
 {
     node_t node;
 
-    char bun[XML_TAG_MAX + 16];
-    int  buns;
+    (void) ctx;
+    (void) tag;
 
-    (void)ctx; (void)tag;
-    text2bat ();
+    text2rel ();
 
     node = POP ();
 
@@ -850,30 +805,21 @@ void shred_end_element (void *ctx, const xmlChar *tag)
      */
     TOP ().size += node.size + 1;
 
-    /* enter element node into pre|size table */
-    buns = snprintf (bun, sizeof (bun), PRESIZEBUN,
-                     node.pre, node.size);
-
-    /* write pre|size BAT in document order: seek to offset
-     * determined by pre
-     */
-    assert ((nat) buns == presize_buns);
-
-    lseek (bats[presize].fd, PRESIZEOFFS (node.pre), SEEK_SET);
-    write (bats[presize].fd, bun, buns);
-
-    encoded += bats[presize].bytes;
+    /* enter element node into pre|size|level|prop|kind relation */
+    node2rel (node);
 }
 
 /**
- * SAX callback invoked whenever text node content is seen.
- * Simply buffer the content here.
+ * SAX callback invoked whenever text node content is seen,
+ * simply buffer the content here
  */
-void shred_characters (void *ctx, const xmlChar *cs, int n)
+void 
+shred_characters (void *ctx, const xmlChar *cs, int n)
 {
     int l = MIN (MONET_STRLEN_MAX - (int) content, n);
-    
-    (void)ctx;
+
+    (void) ctx;
+
     memcpy (&(content_buf[content]), cs, l);
     content += l;
 
@@ -885,156 +831,118 @@ void shred_characters (void *ctx, const xmlChar *cs, int n)
 }
 
 /**
- * SAX callback invoked whenever `<![CDATA[...]]>' is seen.
+ * SAX callback invoked whenever `<![CDATA[...]]>' is seenx
  */
-void shred_cdata (void *ctx, const xmlChar *cdata, int n)
+void 
+shred_cdata (void *ctx, const xmlChar *cdata, int n)
 {
     shred_characters (ctx, cdata, n);
 }
 
 /** 
- * SAX callback invoked whenever `<?target ins?>' is seen.
+ * SAX callback invoked whenever `<?target ins?>' is seen
  */
-void shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
+void 
+shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
 {
     node_t node;
 
-    char bun[MONET_STRLEN_MAX * 2 + 1];
-    int  buns;
+    char pi[MONET_STRLEN_MAX * 2 + 1];
+    int  pis;
     
     nat len;
 
     int dup;
-    nat prop_id;
 
-    (void)ctx;
+    (void) ctx;
+
     pi_nodes++;
 
-    text2bat ();
+    text2rel ();
 
-    node.pre   = NODE_ID (pre);
+    node.pre   = pre;
     pre++;
     node.size  = 0;
     node.level = level;
-    
+    node.kind  = PI;
+    node.prop  = tgtins_id;
+
     /* this comment p-i contributes to the size of its parent */
     TOP ().size++;
         
-    /* enter p-i node into pre|size BAT */
-    buns = snprintf (bun, sizeof (bun), PRESIZEBUN,
-                     node.pre, node.size);
-        
-    /* write pre|size BAT in document order: seek to offset
-     * determined by pre
-     */
-    assert ((nat) buns == presize_buns);
-    
-    lseek (bats[presize].fd, PRESIZEOFFS (node.pre), SEEK_SET);
-    write (bats[presize].fd, bun, buns);
-    encoded += bats[presize].bytes;
-        
-    /* enter p-i node into pre|level BAT */
-    buns = snprintf (bun, sizeof (bun), "[ %10u@0, %10u   ]\n",
-                     node.pre, node.level);
-    write (bats[prelevel].fd, bun, buns);
-    encoded += bats[prelevel].bytes;
-
     /* build "tgt ins" as a key for the p-i DB */
-    buns = snprintf (bun, MONET_STRLEN_MAX * 2 + 1, "%s %s", tgt, ins);
+    pis = snprintf (pi, MONET_STRLEN_MAX * 2 + 1, "%s %s", tgt, ins);
 
-    /* enter p-i node into pre|prop BAT */
-    prop_id = TGTINS_ID (tgtins_id);
-    dup = duplicate (tgtins_db, bun, buns, &prop_id);
+    /* does this p-i have a duplicate target/instruction pair? */
+    dup = duplicate (tgtins_db, pi, pis, &(node.prop));
 
-    buns = snprintf (bun, sizeof (bun), BUN,
-                     node.pre, prop_id);
-    write (bats[preprop].fd, bun, buns);
-    encoded += bats[preprop].bytes;
-
+    /* if not, enter p-i target/instruction 
+     * into prop|tgt|ins relation 
+     */
     if (! dup) {
             tgtins_id++;
+       
+            write (rels[proptgtins].fd, "\"", sizeof ("\"") - 1);
+            len =  content2rel (proptgtins, (char *) tgt, strlen (tgt));
+            write (rels[proptgtins].fd, "\",\"", sizeof ("\",\"") - 1);
+            len += content2rel (proptgtins, (char *) ins, strlen (ins));
+            write (rels[proptgtins].fd, "\"\n", sizeof ("\"\n") - 1);
 
-            /* enter p-i target/instruction into prop|tgt and prop|ins BATs */
-            buns = snprintf (bun, sizeof (bun), "[ %10u@0, \"",
-                             prop_id);            
-            write (bats[proptgt].fd, bun, buns);
-            write (bats[propins].fd, bun, buns);
-            len =  content2bat (proptgt, (char *) tgt, strlen (tgt));        
-            len += content2bat (propins, (char *) ins, strlen (ins));        
-            write (bats[proptgt].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-            write (bats[propins].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-            encoded += bats[proptgt].bytes + bats[propins].bytes + len;
+            encoded += rels[proptgtins].bytes + len;
     }
+    
+    /* enter p-i node into pre|size|level|prop|kind relation */
+    node2rel (node);
 }
 
-void shred_comment (void *ctx, const xmlChar *c)
+void 
+shred_comment (void *ctx, const xmlChar *c)
 {
     node_t node;
 
-    char bun[MONET_STRLEN_MAX];
-    int  buns;
-    
     nat len;
 
     int dup;
-    nat prop_id;
 
-    (void)ctx;
+    (void) ctx;
+
     com_nodes++;
 
-    text2bat ();
+    text2rel ();
 
-    node.pre   = NODE_ID (pre);
+    node.pre   = pre;
     pre++;
     node.size  = 0;
     node.level = level;
-    
+    node.kind  = COMMENT;
+    node.prop  = com_id;
+
     /* this comment node contributes to the size of its parent */
     TOP ().size++;
+
+    /* does this comment have duplicate comment content? */
+    dup = duplicate (com_db, (char *) c, strlen (c), &(node.prop));
         
-    /* enter comment node into pre|size BAT */
-    buns = snprintf (bun, sizeof (bun), PRESIZEBUN,
-                     node.pre, node.size);
-        
-    /* write pre|size BAT in document order: seek to offset
-     * determined by pre
+    /* if not, enter comment node content 
+     * into prop|com relation 
      */
-    assert ((nat) buns == presize_buns);
-    
-    lseek (bats[presize].fd, PRESIZEOFFS (node.pre), SEEK_SET);
-    write (bats[presize].fd, bun, buns);
-    encoded += bats[presize].bytes;
-        
-    /* enter comment node into pre|level BAT */
-    buns = snprintf (bun, sizeof (bun), "[ %10u@0, %10u   ]\n",
-                     node.pre, node.level);
-    write (bats[prelevel].fd, bun, buns);
-    encoded += bats[prelevel].bytes;
-    
-    /* enter comment node into pre|prop BAT */
-    prop_id = COM_ID (com_id);
-    dup = duplicate (com_db, (char *) c, strlen (c), &prop_id);
-
-    buns = snprintf (bun, sizeof (bun), BUN,
-                     node.pre, prop_id);
-    write (bats[preprop].fd, bun, buns);
-    encoded += bats[preprop].bytes;
-
     if (! dup) {
         com_id++;
 
-        /* enter comment node content into prop|com BAT */
-        buns = snprintf (bun, sizeof (bun), "[ %10u@0, \"",
-                         prop_id);            
-        write (bats[propcom].fd, bun, buns);
-        len = content2bat (propcom, (char *) c, strlen (c));        
-        write (bats[propcom].fd, "\" ]\n", sizeof ("\" ]\n") - 1);
-        encoded += bats[propcom].bytes + len;
+        write (rels[propcom].fd, "\"", sizeof ("\"") - 1);
+        len = content2rel (propcom, (char *) c, strlen (c));        
+        write (rels[propcom].fd, "\"\n", sizeof ("\"\n") - 1);
+
+        encoded += rels[propcom].bytes + len;
     }
+
+    /* enter comment node into pre|size|level|prop|kind relation */
+    node2rel (node);
 }
 
 
-void error (xmlParserCtxtPtr ctx, const char *msg, ...)
+void 
+error (void *ctx, const char *msg, ...)
 {
     va_list msgs;
     char errmsg[MONET_STRLEN_MAX];
@@ -1054,38 +962,49 @@ void error (xmlParserCtxtPtr ctx, const char *msg, ...)
  * SAX callback table.
  */
 xmlSAXHandler shredder = {
-        0                                       /* internalSubset        */
-  ,	0			                /* isStandalone          */
-  ,	0			                /* hasInternalSubset     */
-  ,	0			                /* hasExternalSubset     */
-  ,	0			                /* resolveEntity         */
-  ,	0			                /* getEntity             */
-  ,	0			                /* entityDecl            */
-  ,	0			                /* notationDecl          */
-  ,	0			                /* attributeDecl         */
-  ,	0			                /* elementtDecl          */
-  ,	0			                /* unparsedEntityDecl    */  
-  ,	0			                /* setDocumentLocator    */
-  ,	shred_start_document                    /* startDocument         */
-  ,	shred_end_document  	                /* endDocument           */
-  ,	shred_start_element                     /* startElement          */  
-  ,	shred_end_element               	/* endElement            */
-  ,	0			                /* reference             */
-  ,	shred_characters                        /* characters            */
-  ,	0			                /* ignorableWhitespace   */
-  ,	shred_pi	                        /* processingInstruction */  
-  ,     shred_comment                           /* comment               */
-  ,	0			                /* warning               */
-  ,     (errorSAXFunc) error                    /* error                 */  
-  ,     (errorSAXFunc) error                    /* fatalError            */
-  ,	0			                /* getParameterEntity    */
-  ,	0                                       /* cdataBlock            */
-  ,	0			                /* externalSubset        */  
-  ,     0                                       /* initialized           */
+    .startDocument         = shred_start_document
+  , .endDocument           = shred_end_document
+  , .startElement          = shred_start_element
+  , .endElement            = shred_end_element
+  , .characters            = shred_characters
+  , .processingInstruction = shred_pi
+  , .comment               = shred_comment
+  , .error                 = error
+  , .cdataBlock            = shred_cdata
 };
 
+/**
+ * handle interruption (SIGINT) of this process:
+ * close relation files and remove Berkeley DB garbage
+ */
+void 
+interrupt (int sig)
+{
+    (void) sig;
 
-void shred (const char *in, const char *out)
+    /* close relation files */
+    close_rel (attownnslocval, 0);
+    close_rel (proptgtins, 0);
+    close_rel (propcom, 0);
+    close_rel (proptext, 0);
+    close_rel (propnsloc, 0);
+    close_rel (presizelevelpropkind, 0);
+    
+#if HAVE_LIBDB
+   /* close and remove DB files */
+    close_db (tgtins_db, 0);
+    close_db (com_db, 0);
+    close_db (text_db, 0);
+    close_db (nsloc_db, 0);
+#endif
+
+    fprintf (stderr, "interrupted\n");
+
+    exit (EXIT_FAILURE);
+}
+
+void 
+shred (const char *in, const char *out)
 {
     xmlParserCtxtPtr ctx;
 
@@ -1097,20 +1016,15 @@ void shred (const char *in, const char *out)
     open_db (tgtins_db);
 #endif
 
-    /* open BAT files */
-    open_bat (out, presize);
-    open_bat (out, prelevel);
-    open_bat (out, preprop);
-    open_bat (out, propns);
-    open_bat (out, proploc);
-    open_bat (out, proptext);
-    open_bat (out, propcom);
-    open_bat (out, proptgt);
-    open_bat (out, propins);
-    open_bat (out, attown);
-    open_bat (out, attns);
-    open_bat (out, attloc);
-    open_bat (out, attval);
+    /* open relation files */
+    open_rel (out, presizelevelpropkind);
+    open_rel (out, propnsloc);
+    open_rel (out, proptext);
+    open_rel (out, propcom);
+    open_rel (out, proptgtins);
+    open_rel (out, attownnslocval);
+
+    signal (SIGINT, interrupt);
 
     /* parse XML input (receive SAX events) */
     ctx = xmlCreateFileParserCtxt (in);
@@ -1118,40 +1032,33 @@ void shred (const char *in, const char *out)
     
     (void) xmlParseDocument (ctx);
 
-    /* close BAT files */
-    close_bat (attval);
-    close_bat (attloc);
-    close_bat (attns);
-    close_bat (attown);
-    close_bat (propins);
-    close_bat (proptgt);
-    close_bat (propcom);
-    close_bat (proptext);
-    close_bat (proploc);
-    close_bat (propns);
-    close_bat (preprop);
-    close_bat (prelevel);
-    close_bat (presize);
+    /* close relation files */
+    close_rel (attownnslocval, 1);
+    close_rel (proptgtins, 1);
+    close_rel (propcom, 1);
+    close_rel (proptext, 1);
+    close_rel (propnsloc, 1);
+    close_rel (presizelevelpropkind, 1);
 
-    
-#if HAVE_LIBDB
+#if HAVE_LIBDB    
     /* close and remove DB files */
-    close_db (tgtins_db);
-    close_db (com_db);
-    close_db (text_db);
-    close_db (nsloc_db);
+    close_db (tgtins_db, 1);
+    close_db (com_db, 1);
+    close_db (text_db, 1);
+    close_db (nsloc_db, 1);
 #endif
 
     if (! ctx->wellFormed) {
         fprintf (stderr, 
                  "!ERROR: XML input not well-formed "
-                 "(BAT files probably contain garbage)\n");
+                 "(relation files probably contain garbage)\n");
 
         exit (EXIT_FAILURE);
     }
 }
 
-int main (int argc, char *argv[])
+int 
+main (int argc, char *argv[])
 {
     /* we read the XML input from standard input by default */
     char in[FILENAME_MAX] = "/dev/stdin";
@@ -1180,12 +1087,10 @@ int main (int argc, char *argv[])
     
     while (1) {
 #if HAVE_LIBDB
-        /* only allow -c if we have BerkeleyDB available */
         c = getopt (argc, argv, "o:d:hvc");
 #else
         c = getopt (argc, argv, "o:d:hv");
 #endif
-
         if (c == -1)
             break;
 
@@ -1216,16 +1121,20 @@ int main (int argc, char *argv[])
 
         case 'h':
             fprintf (stderr,
-"Usage: %s [-h] [-v] [-c] [-d <n>] [-o <output>] [<XML input>]\n"
-"     processes <XML input> (if present) or stdin\n"
+"Usage: %s [-h] [-v]"
+#if HAVE_LIBDB
+" [-c]" 
+#endif
+" [-d <n>] [-o OUTPUT] [FILE]\n"
+"     processes FILE (if present) or stdin\n"
 "     -v: be verbose\n" 
 #if HAVE_LIBDB
 "     -c: compress node properties (40%% encoding speed)\n"
 #endif
 "     -d: set XML node stack depth to <n> (default %d)\n"
-"     -o: write BATs to <output>.<bat> instead of <XML input>.<bat>\n"
+"     -o: write relations to OUTPUT.<rel> instead of FILE.<rel>\n"
 "         (mandatory if we read from stdin)\n"
-"         <bat> = { pre,level,prop,ns,loc,text,com,tgt,ins,@own,@ns,@loc,@val }\n"
+"         <rel> = { pre,tag,text,com,pi,@ }\n"
 "\n",
                      argv[0], XML_DEPTH_MAX);
 
@@ -1272,11 +1181,10 @@ int main (int argc, char *argv[])
         exit (EXIT_FAILURE);
     }
 
-    /* compute BAT head size as well as pre|size BUN size
-     * (we seek in the pre|size table)
+    /* compute tuple size in pre|size|level|prop|kind relation
+     * (we seek in the relation file)
      */
-    bat_heads    = snprintf (0, 0, BATHEAD, "", "");
-    presize_buns = snprintf (0, 0, PRESIZEBUN, 0, 0);
+    pretuples = snprintf (0, 0, PRETUPLE, 0, 0, 0, 0);
 
     /* start timer */
     (void) gettimeofday (&now, 0);
@@ -1291,20 +1199,27 @@ int main (int argc, char *argv[])
 
     /* statistics if verbose (-v) */
     if (v) {
-        nodes = elem_nodes + attr_nodes + text_nodes + com_nodes + pi_nodes;
+        /* + 1: document node */
+        nodes = elem_nodes + attr_nodes + text_nodes + com_nodes + pi_nodes
+            + 1;
 
         printf ("document size (serialized)     %lu byte(s)\n", 
                 statbuf.st_size);
         printf ("document size (encoded)        %u byte(s)", encoded);
+
         if (statbuf.st_size) {
             double grow;
 
             grow = (double) encoded / statbuf.st_size;
-            printf (", ~ %.2gx %s", grow, grow > 1.0 ? "larger" : "smaller");
+            if (grow > 1.0)
+                printf (", ~ %.2gx larger\n", grow);
+            else
+                printf (", ~ %.2gx smaller\n", 1 / grow);
         }
-        putchar ('\n');
+
         printf ("document depth                 %u\n" , depth);
-        printf ("  element nodes                %u" , elem_nodes);
+        printf ("  document nodes               1\n");
+        printf ("+ element nodes                %u" , elem_nodes);
         if (prop_dup)
             putchar ('\n');
         else
