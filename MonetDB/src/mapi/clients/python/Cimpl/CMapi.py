@@ -37,37 +37,37 @@ class Mapi:
 
     def explain(self, f):
         ret = MapiLib.mapi_explain(self.__mid, f)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def trace(self, flag):
         ret = MapiLib.mapi_trace(self.__mid, flag)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def trace_log(self, nme):
         ret = MapiLib.mapi_trace_log(self.__mid, nme)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def ping(self):
         ret = MapiLib.mapi_ping(self.__mid)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def setAutocommit(self, autocommit):
         ret = MapiLib.mapi_setAutocommit(self.__mid, autocommit)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def new_handle(self):
@@ -78,23 +78,23 @@ class Mapi:
 
     def disconnect(self):
         ret = MapiLib.mapi_disconnect(self.__mid)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def reconnect(self):
         ret = MapiLib.mapi_reconnect(self.__mid)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def timeout(self, time):
         ret = MapiLib.mapi_timeout(self.__mid, time)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def prepare(self, cmd):
@@ -171,9 +171,9 @@ class Mapi:
 
     def cache_limit(self, limit):
         ret = MapiLib.mapi_cache_limit(self.__mid, limit)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.error_str())
 
     def get_dbname(self):
@@ -248,9 +248,9 @@ class MapiQuery:
 
     def query_handle(self, cmd):
         ret = MapiLib.mapi_query_handle(self.__hdl, cmd)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
     query = query_handle
 
@@ -261,18 +261,18 @@ class MapiQuery:
         return ret
 
     def explain_query(self, f):
-        ret = MapiLib.mapi_explain_query(self.__mid, f)
-        if ret == MERROR:
+        ret = MapiLib.mapi_explain_query(self.__hdl, f)
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
     explain = explain_query
 
     def explain_result(self, f):
-        ret = MapiLib.mapi_explain_result(self.__mid, f)
-        if ret == MERROR:
+        ret = MapiLib.mapi_explain_result(self.__hdl, f)
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def result_error(self):
@@ -295,66 +295,66 @@ class MapiQuery:
 
     def prepare_handle(self, cmd):
         ret = MapiLib.mapi_prepare_handle(self.__hdl, cmd)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
     prepare = prepare_handle
 
     def execute(self):
         ret = MapiLib.mapi_execute(self.__hdl)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def execute_array(self, argv):
         ret = MapiLib.mapi_execute_array(self.__hdl, argv)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def query_part(self, cmd):
         ret = MapiLib.mapi_query_part(self.__hdl, cmd)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def query_done(self):
         ret = MapiLib.mapi_query_done(self.__hdl)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def cache_shuffle(self, percentage):
         ret = MapiLib.mapi_cache_shuffle(self.__hdl, percentage)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def fetch_reset(self):
         ret = MapiLib.mapi_fetch_reset(self.__hdl)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def seek_row(self, rowne, whence):
         ret = MapiLib.mapi_seek_row(self.__hdl, rowne, whence)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def cache_freeup(self, percentage):
         ret = MapiLib.mapi_cache_freeup(self.__hdl, percentage)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def fetch_line(self):
@@ -365,16 +365,16 @@ class MapiQuery:
 
     def finish(self):
         ret = MapiLib.mapi_finish(self.__hdl)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def quick_response(self, fd):
         ret = MapiLib.mapi_quick_response(self.__hdl, fd)
-        if ret == MERROR:
+        if ret == MapiLib.MERROR:
             raise RuntimeError(self.__mid.error_str())
-        if ret == MTIMEOUT:
+        if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
     def fetch_row(self):
