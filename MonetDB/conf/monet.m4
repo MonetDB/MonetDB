@@ -768,6 +768,57 @@ esac
 
 AC_DEFUN([AM_MONETDB_OPTIONS],
 [
+dnl --enable-noexpand
+AC_ARG_ENABLE(noexpand,
+	AC_HELP_STRING([--enable-noexpand],
+		[do not expand the comma-separated list of MIL types given as argument, or "all" if no expansion should be done [default=]]),
+	enable_noexpand=$enableval,
+	enable_noexpand=)
+case $enable_noexpand in
+bat|bat,*|*,bat|*,bat,*|all)
+	AC_DEFINE(NOEXPAND_BAT, 1, [Define if you don't want to expand the bat type]);;
+esac
+case $enable_noexpand in
+bit|bit,*|*,bit|*,bit,*|all)
+	AC_DEFINE(NOEXPAND_BIT, 1, [Define if you don't want to expand the bit type]);;
+esac
+case $enable_noexpand in
+chr|chr,*|*,chr|*,chr,*|all)
+	AC_DEFINE(NOEXPAND_CHR, 1, [Define if you don't want to expand the chr type]);;
+esac
+case $enable_noexpand in
+dbl|dbl,*|*,dbl|*,dbl,*|all)
+	AC_DEFINE(NOEXPAND_DBL, 1, [Define if you don't want to expand the dbl type]);;
+esac
+case $enable_noexpand in
+flt|flt,*|*,flt|*,flt,*|all)
+	AC_DEFINE(NOEXPAND_FLT, 1, [Define if you don't want to expand the flt type]);;
+esac
+case $enable_noexpand in
+int|int,*|*,int|*,int,*|all)
+	AC_DEFINE(NOEXPAND_INT, 1, [Define if you don't want to expand the int type]);;
+esac
+case $enable_noexpand in
+lng|lng,*|*,lng|*,lng,*|all)
+	AC_DEFINE(NOEXPAND_LNG, 1, [Define if you don't want to expand the lng type]);;
+esac
+case $enable_noexpand in
+oid|oid,*|*,oid|*,oid,*|all)
+	AC_DEFINE(NOEXPAND_OID, 1, [Define if you don't want to expand the oid type]);;
+esac
+case $enable_noexpand in
+ptr|ptr,*|*,ptr|*,ptr,*|all)
+	AC_DEFINE(NOEXPAND_PTR, 1, [Define if you don't want to expand the ptr type]);;
+esac
+case $enable_noexpand in
+sht|sht,*|*,sht|*,sht,*|all)
+	AC_DEFINE(NOEXPAND_SHT, 1, [Define if you don't want to expand the sht type]);;
+esac
+case $enable_noexpand in
+str|str,*|*,str|*,str,*|all)
+	AC_DEFINE(NOEXPAND_STR, 1, [Define if you don't want to expand the str type]);;
+esac
+
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
 	AC_HELP_STRING([--enable-debug],
@@ -1486,7 +1537,7 @@ AC_ARG_WITH(php,
 	AC_HELP_STRING([--with-php=<value>], [PHP support (yes/no/auto)]),
 	have_php="$withval",
 	have_php=auto)
-AC_ARG_WITH(php-config, AC_HELP_STRING([  --with-php-config=FILE], [Path to php-config script]),
+AC_ARG_WITH(php-config, AC_HELP_STRING([--with-php-config=FILE], [Path to php-config script]),
 	PHP_CONFIG="$withval",
 	PHP_CONFIG=php-config)
 

@@ -26,7 +26,7 @@ This module contains the following BAT algebra operations:
 \item[oid column manipulations] mark, number and split.
 \item[bat selections] select, slice, sample, fragment and restrict.
 	Note: non hash-/index-supported scanselects have been "outsourced"
-	to gdk\_scanselect.mx as the fully expanded code grows to large to be
+	to gdk\_scanselect.mx as the fully expanded code grows too large to be
 	(conveniently) compiled in a single file.
 \item[bat partitioning] hash partition, range partitioning
 \end{description}
@@ -54,7 +54,8 @@ The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @c
 #define bunins(b,h,t) if (BUNins(b,h,t) == NULL) return NULL;
-BAT *BATins(BAT *b, BAT *n) {
+BAT *BATins(BAT *b, BAT *n)
+{
 	ssize_t needed = 0;
 	int fastpath = 0;
 
@@ -193,7 +194,8 @@ bunins_failed:
 	return NULL;
 }
 
-BAT *BATdel(BAT *b, BAT *n) {
+BAT *BATdel(BAT *b, BAT *n)
+{
 	ERRORcheck(b == NULL, "set:BAT required\n");
 	ERRORcheck(n == NULL, "set:BAT required\n");
 	if (BATcount(n) == 0) {
@@ -207,7 +209,8 @@ BAT *BATdel(BAT *b, BAT *n) {
 }
 
 #define bundelhead(b,h,t) BUNdelHead(b,h)
-BAT *BATdelHead(BAT *b, BAT *n) {
+BAT *BATdelHead(BAT *b, BAT *n)
+{
 	ERRORcheck(b == NULL, "set:BAT required\n");
 	ERRORcheck(n == NULL, "set:BAT required\n");
 	if (BATcount(n) == 0) {
@@ -223,7 +226,8 @@ The last in this series is a BATreplace, which replaces all the
 buns mentioned.
 @c
 #define bunreplace(b,h,t) if (BUNreplace(b,h) == NULL) return NULL;
-BAT *BATreplace(BAT *b, BAT *n) {
+BAT *BATreplace(BAT *b, BAT *n)
+{
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
 	}
@@ -239,7 +243,8 @@ BAT *BATreplace(BAT *b, BAT *n) {
 The @%BATmark@ operation is normally used to prepare a class of query
 results. Likewise, @%BATnumber@ is heavily used in the SQL front-end.
 @c
-BAT *BATmark(BAT *b, oid oid_base) {
+BAT *BATmark(BAT *b, oid oid_base)
+{
         BAT     *bn;
  
         BATcheck(b, "BATmark");
@@ -256,7 +261,8 @@ BAT *BATmark(BAT *b, oid oid_base) {
 }
 
 #define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, yy); r += yy; i++;
-BAT *BATnumber(BAT *b) {
+BAT *BATnumber(BAT *b)
+{
         int     i = 0, yy;
         BAT     *bn;
 	BUN	r;
@@ -278,7 +284,8 @@ bunins_failed:
 	return NULL;
 }
 
-BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
+BAT *BATgroup(BAT *b, int start, int incr, int grpsize)
+{
         BUN p, q, r;
         int ngroups = 1, i = 0, xx, yy;
         BAT *bn;
@@ -305,7 +312,8 @@ bunins_failed:
 	return NULL;
 }
 
-BAT* BATconst(BAT *b, int tailtype, ptr v) {
+BAT* BATconst(BAT *b, int tailtype, ptr v)
+{
         BAT *bn;
         BUN p, q, r;
         int xx, yy;
@@ -370,7 +378,8 @@ by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
 #define GDK_NIL_BIT 0x80000000	/* (1 << 31) */
 
 /* later to evolve into a more sophisticated aggregate retention system */
-int BATgetaggr(BAT *b, int idx) {
+int BATgetaggr(BAT *b, int idx)
+{
         int *aggr;
 
         BATcheck(b, "BATgetaggr");
@@ -390,7 +399,8 @@ int BATgetaggr(BAT *b, int idx) {
         return (idx == GDK_AGGR_HASNIL)?((int) bit_nil):int_nil;
 }
 
-int BATsetaggr(BAT *b, int idx, int val) {
+int BATsetaggr(BAT *b, int idx, int val)
+{
         int *aggr;
 
         BATcheck(b, "BATsetaggr");
@@ -429,16 +439,19 @@ There are now separate versions for each type, and for each a
 hash- and a merge-algorithms. 
 
 @= histoloop_inner
-	if (b->tkey) { yy=1;
+	if (b->tkey) {
+		yy=1;
 		BATloopFast(b, p, q, xx) 
 			bunfastins(bn, BUNt@1(b,p), &yy);
 	} else if (!(BATtordered(b)&1)) {
 		BATloopFast(b, p, q, xx) {
 			ptr v =  (ptr) BUNt@1(b,p);
-			if (BATprepareHash(bn)) goto bunins_failed;
+			if (BATprepareHash(bn))
+				goto bunins_failed;
 			HASHloop@2(bn, bn->hhash, tt, v, r)
 				goto found@3@2; 
-			if (BUNins(bn, v, &yy) == NULL) goto bunins_failed;
+			if (BUNins(bn, v, &yy) == NULL)
+				goto bunins_failed;
 			r = BUNlast(bn) - BUNsize(bn);
 found@3@2:		(*(int*) BUNtloc(bn,r))++;
 		}
@@ -455,27 +468,46 @@ found@3@2:		(*(int*) BUNtloc(bn,r))++;
 			} prev = v;
 		} 
 		bunfastins(bn, prev, &yy);
-	} break;
+	}
 @= histoloop
 {	hash_t tt;
 	int xx, yy=0;
 	BUN p, q, r;
 
 	switch(ATOMstorage(tt=bn->htype)) {
-	case TYPE_chr:	@:histoloop_inner(loc,_chr,simple,chr)@
-	case TYPE_sht:  @:histoloop_inner(loc,_sht,simple,sht)@
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:histoloop_inner(loc,_chr,simple,chr)@
+		break;
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:histoloop_inner(loc,_sht,simple,sht)@
+		break;
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
-	case TYPE_flt:	@:histoloop_inner(loc,_int,simple,int)@
+	case TYPE_flt:
+		@:histoloop_inner(loc,_int,simple,int)@
+		break;
+#endif
+#if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
 	case TYPE_lng: 
-	case TYPE_dbl:  @:histoloop_inner(loc,_lng,simple,lng)@
-	default: if (bn->hvarsized) {
+	case TYPE_dbl:
+		@:histoloop_inner(loc,_lng,simple,lng)@
+		break;
+#endif
+	default:
+		if (bn->hvarsized) {
 			@:histoloop_inner(var,var,atom,tt)@
-        	 } else {
+		} else {
 			@:histoloop_inner(loc,loc,atom,tt)@
-        	 }
+        	}
+		break;
 }	}
 @c
-BAT *BAThistogram(BAT *b) {
+BAT *BAThistogram(BAT *b)
+{
 	BAT *bn; 
 	int 	tricky = 0;
 	
@@ -498,7 +530,8 @@ by bulk copying the heap as well
 	if (tricky) {
 		BAT *bm;
 		if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
-bunins_failed:		BBPreclaim(bn);
+bunins_failed:
+			BBPreclaim(bn);
 			return NULL;
 		}
 		bm = BATmirror(bn);
@@ -531,9 +564,9 @@ The @%BATcount_no_nil@ function counts all BUN in a BAT that have a non-nil tail
 			cnt++;
 		}
 	}
-	break;
 @c
-size_t BATcount_no_nil(BAT *b) {
+size_t BATcount_no_nil(BAT *b)
+{
 	size_t cnt = (size_t)0;
 	BUN p,q;
 	int xx;
@@ -544,17 +577,43 @@ size_t BATcount_no_nil(BAT *b) {
 	tt = b->ttype;
 	nil = ATOMnilptr(tt);
 	switch(ATOMstorage(tt)) {
-	case TYPE_chr:  @:cntloop(simple,loc,chr)@
-	case TYPE_sht:  @:cntloop(simple,loc,sht)@
-	case TYPE_int:  @:cntloop(simple,loc,int)@
-	case TYPE_flt:  @:cntloop(simple,loc,flt)@
-	case TYPE_lng:  @:cntloop(simple,loc,lng)@
-	case TYPE_dbl:  @:cntloop(simple,loc,dbl)@
-	default: if (b->hvarsized) {
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:cntloop(simple,loc,chr)@
+		break;
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:cntloop(simple,loc,sht)@
+		break;
+#endif
+#ifndef NOEXPAND_INT
+	case TYPE_int:
+		@:cntloop(simple,loc,int)@
+		break;
+#endif
+#ifndef NOEXPAND_FLT
+	case TYPE_flt:
+		@:cntloop(simple,loc,flt)@
+		break;
+#endif
+#ifndef NOEXPAND_LNG
+	case TYPE_lng:
+		@:cntloop(simple,loc,lng)@
+		break;
+#endif
+#ifndef NOEXPAND_DBL
+	case TYPE_dbl:
+		@:cntloop(simple,loc,dbl)@
+		break;
+#endif
+	default:
+		if (b->hvarsized) {
 			@:cntloop(atom,var,tt)@
-        	 } else {
+        	} else {
 			@:cntloop(atom,loc,tt)@
-        	 }
+        	}
+		break;
 	}
 	return cnt;
 }
@@ -584,7 +643,8 @@ are semijoined).
 
 NOTE new semantics, the selected range is excluding the high value.
 @c
-BAT *BATslice(BAT *b, size_t l, size_t h) {
+BAT *BATslice(BAT *b, size_t l, size_t h)
+{
 	size_t low = l;
         int xx;
 	BAT *bn;
@@ -651,49 +711,84 @@ through is the "isnil" predicate). So we implement it here.
 
 @= valselect
         HASHloop@2(b, b->hhash, i, tl, p) {
-	    if (q < r) bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
-	    q += bs;
-        } break;
+		if (q < r)
+			bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
+		q += bs;
+        }
 @= stringselect
 	if (strElimDoubles(&b->hheap)) {
-	    HASHloop_fstr(b, b->hhash, i, j, tl) {
-		p = BUNptr(b, i);
-		if (q < r) bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
-		q += bs;
-	    }
+		size_t j;
+		HASHloop_fstr(b, b->hhash, i, j, tl) {
+			p = BUNptr(b, i);
+			if (q < r)
+				bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
+			q += bs;
+		}
 	} else {
-            HASHloop_str(b, b->hhash, i, tl) { 
-		p = BUNptr(b, i);
-		if (q < r) bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
-		q += bs;
-	    }
-	} break;
+		HASHloop_str(b, b->hhash, i, tl) { 
+			p = BUNptr(b, i);
+			if (q < r)
+				bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
+			q += bs;
+		}
+	}
 @= hashselect
 	switch(ATOMstorage(b->htype)) {
-	case TYPE_chr: @:valselect(@1,_chr)@
-	case TYPE_sht: @:valselect(@1,_sht)@
-	case TYPE_int: @:valselect(@1,_int)@
-	case TYPE_flt: @:valselect(@1,_flt)@
-	case TYPE_dbl: @:valselect(@1,_dbl)@
-	case TYPE_lng: @:valselect(@1,_lng)@
-	case TYPE_str: @:stringselect(@1)@
-	default:    if (b->hvarsized) {
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:valselect(@1,_chr)@
+		break;
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:valselect(@1,_sht)@
+		break;
+#endif
+#ifndef NOEXPAND_INT
+	case TYPE_int:
+		@:valselect(@1,_int)@
+		break;
+#endif
+#ifndef NOEXPAND_FLT
+	case TYPE_flt:
+		@:valselect(@1,_flt)@
+		break;
+#endif
+#ifndef NOEXPAND_DBL
+	case TYPE_dbl:
+		@:valselect(@1,_dbl)@
+		break;
+#endif
+#ifndef NOEXPAND_LNG
+	case TYPE_lng:
+		@:valselect(@1,_lng)@
+		break;
+#endif
+#ifndef NOEXPAND_STR
+	case TYPE_str:
+		@:stringselect(@1)@
+		break;
+#endif
+	default:
+		if (b->hvarsized) {
 			@:valselect(@1,var)@
-		    } else {
+		} else {
 			@:valselect(@1,loc)@
-		    }
+		}
+		break;
 	}
 @c
-BAT *BAT_hashselect(BAT *b, BAT *bn, ptr tl) {
+BAT *BAT_hashselect(BAT *b, BAT *bn, ptr tl)
+{
 	int ht = bn->htype, tt = bn->ttype;
 	size_t size = BATcount(bn);
 	hash_t i;
-	size_t j;
 
 	BATcheck(b, "BAT_hashselect");
 	BATflipflop(b);
 	if (BATprepareHash(b)) {
-bunins_failed:	BBPreclaim(bn);
+bunins_failed:
+		BBPreclaim(bn);
 		return NULL;
 	}
 	while(bn) {
@@ -744,33 +839,62 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
 	    }
 	} break;
 @c
-BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi) {
+BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi)
+{
 	BAT *m = BATmirror(b);
 	BUN *x, *y;
         ptr nil = ATOMnilptr(b->ttype);
         int t = b->ttype; 
         
 	if (b->tidx_heap == NULL) {
-bunins_failed:	BBPreclaim(bn);
+bunins_failed:
+		BBPreclaim(bn);
 		return NULL;
 	}
 	switch(ATOMstorage(b->ttype)) {
-	case TYPE_chr:	@:indexselect(chr,loc,simple)@ 
-	case TYPE_sht:	@:indexselect(sht,loc,simple)@ 
-	case TYPE_int:	@:indexselect(int,loc,simple)@
-	case TYPE_flt:	@:indexselect(flt,loc,simple)@ 
-	case TYPE_dbl:	@:indexselect(dbl,loc,simple)@ 
-	case TYPE_lng:	@:indexselect(lng,loc,simple)@ 
-	default:    if (b->tvarsized) {
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:indexselect(chr,loc,simple)@ 
+		break;
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:indexselect(sht,loc,simple)@ 
+		break;
+#endif
+#ifndef NOEXPAND_INT
+	case TYPE_int:
+		@:indexselect(int,loc,simple)@
+		break;
+#endif
+#ifndef NOEXPAND_FLT
+	case TYPE_flt:
+		@:indexselect(flt,loc,simple)@ 
+		break;
+#endif
+#ifndef NOEXPAND_DBL
+	case TYPE_dbl:
+		@:indexselect(dbl,loc,simple)@ 
+		break;
+#endif
+#ifndef NOEXPAND_LNG
+	case TYPE_lng:
+		@:indexselect(lng,loc,simple)@ 
+		break;
+#endif
+	default:
+		if (b->tvarsized) {
 	    		@:indexselect(t,var,atom)@
-	    	    } else {
+		} else {
 			@:indexselect(t,loc,atom)@
-		    }
+		}
+		break;
 	}
 	return bn;
 }
 
-BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit preserve_order) {
+BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit preserve_order)
+{
 	int	hval, lval, equi, t, ht, tt;
 	size_t 	offset, batcnt, estimate = 0;
 	ptr	nil;
@@ -788,8 +912,10 @@ Examine type, and values for lower- and higher-bound.
 	lval = ATOMcmp(t, tl, nil) || (th == NULL);
 	equi = ((th == NULL) || (lval && !ATOMcmp(t,tl,th)));
 	if (equi) {
-		if (th == NULL) hi = li;
-		th = tl; hval = 1; /* equi-select */
+		if (th == NULL)
+			hi = li;
+		th = tl;
+		hval = 1;	       /* equi-select */
 	} else {
 		hval = ATOMcmp(t, th, nil);
 	}
@@ -960,23 +1086,28 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 	return bn; 
 }
 
-BAT* BAT_select(BAT *b, ptr h, ptr t, bit tail) {
+BAT* BAT_select(BAT *b, ptr h, ptr t, bit tail)
+{
 	return BAT_select_(b, h, t, TRUE, TRUE, tail, FALSE);
 }
 
-BAT* BATselect_(BAT *b, ptr h, ptr t, bit li, bit hi) {
+BAT* BATselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
+{
 	return BAT_select_(b, h, t, li, hi, TRUE, FALSE);
 }
 
-BAT* BATuselect_(BAT *b, ptr h, ptr t, bit li, bit hi) {
+BAT* BATuselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
+{
 	return BAT_select_(b, h, t, li, hi, FALSE, FALSE);
 }
 
-BAT* BATselect(BAT *b, ptr h, ptr t) {
+BAT* BATselect(BAT *b, ptr h, ptr t)
+{
 	return BAT_select_(b, h, t, TRUE, TRUE, TRUE, FALSE);
 }
 
-BAT* BATuselect(BAT *b, ptr h, ptr t) {
+BAT* BATuselect(BAT *b, ptr h, ptr t)
+{
 	return BAT_select_(b, h, t, TRUE, TRUE, FALSE, FALSE);
 }
 
@@ -988,7 +1119,8 @@ For non-variable size BATs it merely requires
 adjustment of the free space labels. Other BATs require
 a loop through the tuples to be deleted. [todo]
 @c
-size_t BATtopN(BAT *b, size_t topN){
+size_t BATtopN(BAT *b, size_t topN)
+{
 	BATcheck(b,"BATtopN");
 	if( topN > BATcount(b)) {
 		GDKerror("BATtopN: not enough tuples in target\n");
@@ -1008,7 +1140,8 @@ size_t BATtopN(BAT *b, size_t topN){
 }
 @- Random Selections 
 @c
-BAT* BATsample(BAT *b, size_t size) {
+BAT* BATsample(BAT *b, size_t size)
+{
 	size_t cnt, i, r = 0, n, j;
 	size_t *choice, *dst;
 	BAT *bn; 
@@ -1095,7 +1228,8 @@ bunins_failed:
 
 @- Horizontal Fragmentation 
 @c
-BAT *BATfragment(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
+BAT *BATfragment(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
+{
 	BATcheck(b, "BATfragment:BAT required\n"); 
 	if ((hl == NULL) && (hh == NULL)) {
 		return BATselect(b, tl, th); 
@@ -1128,52 +1262,48 @@ An index is exploited when possible.
 			*m++ = p; 
 		}
 		BATflipflop(b);
-		break;
-	} 
-{	int lval = !@1_EQ(ATOMnilptr(t),hl,@2);
-	int hval = !@1_EQ(ATOMnilptr(t),hh,@2);
-	if (hval && lval && @1_GT(hl,hh,@2)) {
-		GDKerror("BATrestrict: illegal head range.\n");
-		break;
-	}
-	if (b->hidx_heap && lval && hval) {
-		BUN	*x, *y;
+	} else {
+		int lval = !@1_EQ(ATOMnilptr(t),hl,@2);
+		int hval = !@1_EQ(ATOMnilptr(t),hh,@2);
+		if (hval && lval && @1_GT(hl,hh,@2)) {
+			GDKerror("BATrestrict: illegal head range.\n");
+		} else if (b->hidx_heap && lval && hval) {
+			BUN *x, *y;
 
-		IDXrng(b, hl, hh, &x, &y); 
-		IDXloop(b, x, y) {
-			*m++ = p; 
-		}
-		break;
-	} 
-{	int xx;
-	BATloopFast(b, p, l, xx) {
-		if ((!lval || @1_LE(hl, BUNh@3(b, p),@2)) &&
-		    (!hval || @1_LE(BUNh@3(b, p), hh,@2)))
-	       	{
-			*m++ = p; 
+			IDXrng(b, hl, hh, &x, &y); 
+			IDXloop(b, x, y) {
+				*m++ = p; 
+			}
+		} else {
+			int xx;
+			BATloopFast(b, p, l, xx) {
+				if ((!lval || @1_LE(hl, BUNh@3(b, p),@2)) &&
+				    (!hval || @1_LE(BUNh@3(b, p), hh,@2))) {
+					*m++ = p; 
+				}
+			}
 		}
 	}
-}}
-break;
 @
 @= restrict2
 {	tl = @1_EQ(ATOMnilptr(t),tl,@2)?0:tl;
 	th = @1_EQ(ATOMnilptr(t),th,@2)?0:th;
 	if (th && tl && @1_GT(tl,th,@2)) {
 		GDKerror("BATrestrict: illegal tail range.\n");
-		break;
-	}
-	for (; i < m; i++) {
-		ptr v = BUNt@4(b, *i); 
-		if ((!tl || @1_LE(tl, v, @2)) && (!th || @1_LE(v, th, @2)))
-		{
-			bunfastins(bn, BUNh@3(b, *i), v); 
+	} else {
+		for (; i < m; i++) {
+			ptr v = BUNt@4(b, *i); 
+			if ((!tl || @1_LE(tl, v, @2)) &&
+			    (!th || @1_LE(v, th, @2))) {
+				bunfastins(bn, BUNh@3(b, *i), v); 
+			}
 		}
 	}
 }
 break;
 @c
-BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
+BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
+{
 	BAT	*bn; 
 	BUN	p = NULL, l; 
 	BUN	*mark, *m, *i; 
@@ -1203,59 +1333,132 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 	m = mark;
 	i = mark; 
 	switch(ATOMstorage(t = b->htype)) {
-	case TYPE_chr: @:restrict1(simple,chr,loc)@
-	case TYPE_sht: @:restrict1(simple,sht,loc)@
-	case TYPE_int: @:restrict1(simple,int,loc)@
-	case TYPE_flt: @:restrict1(simple,flt,loc)@ 
-	case TYPE_dbl: @:restrict1(simple,dbl,loc)@ 
-	case TYPE_lng: @:restrict1(simple,lng,loc)@ 
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:restrict1(simple,chr,loc)@
+		break;
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:restrict1(simple,sht,loc)@
+		break;
+#endif
+#ifndef NOEXPAND_INT
+	case TYPE_int:
+		@:restrict1(simple,int,loc)@
+		break;
+#endif
+#ifndef NOEXPAND_FLT
+	case TYPE_flt:
+		@:restrict1(simple,flt,loc)@ 
+		break;
+#endif
+#ifndef NOEXPAND_DBL
+	case TYPE_dbl:
+		@:restrict1(simple,dbl,loc)@ 
+		break;
+#endif
+#ifndef NOEXPAND_LNG
+	case TYPE_lng:
+		@:restrict1(simple,lng,loc)@ 
+		break;
+#endif
 	default:
 		if (b->hvarsized) {
 			@:restrict1(atom,t,var)@
 		} else {
 			@:restrict1(atom,t,loc)@
 		}	
+		break;
 	}
 
 	/* second phase */
 	if (b->hvarsized) {
-		switch(ATOMstorage(t = b->ttype)) {
-		case TYPE_chr: @:restrict2(simple,chr,var,loc)@
-		case TYPE_sht: @:restrict2(simple,sht,var,loc)@
-		case TYPE_int: @:restrict2(simple,int,var,loc)@
-		case TYPE_flt: @:restrict2(simple,flt,var,loc)@ 
-		case TYPE_dbl: @:restrict2(simple,dbl,var,loc)@ 
-		case TYPE_lng: @:restrict2(simple,lng,var,loc)@ 
+		switch (ATOMstorage(t = b->ttype)) {
+#ifndef NOEXPAND_CHR
+		case TYPE_chr:
+			@:restrict2(simple,chr,var,loc)@
+			break;
+#endif
+#ifndef NOEXPAND_SHT
+		case TYPE_sht:
+			@:restrict2(simple,sht,var,loc)@
+			break;
+#endif
+#ifndef NOEXPAND_INT
+		case TYPE_int:
+			@:restrict2(simple,int,var,loc)@
+			break;
+#endif
+#ifndef NOEXPAND_FLT
+		case TYPE_flt:
+			@:restrict2(simple,flt,var,loc)@ 
+			break;
+#endif
+#ifndef NOEXPAND_DBL
+		case TYPE_dbl:
+			@:restrict2(simple,dbl,var,loc)@ 
+			break;
+#endif
+#ifndef NOEXPAND_LNG
+		case TYPE_lng:
+			@:restrict2(simple,lng,var,loc)@ 
+			break;
+#endif
 		default:
-		    if (b->tvarsized) {
-			@:restrict2(atom,t,var,var)@
-		    } else {
-			@:restrict2(atom,t,var,loc)@
-		    }
+			if (b->tvarsized) {
+				@:restrict2(atom,t,var,var)@
+			} else {
+				@:restrict2(atom,t,var,loc)@
+			}
+			break;
        		}
 	} else {
-		switch(ATOMstorage(t = b->ttype)) {
-		case TYPE_chr: @:restrict2(simple,chr,loc,loc)@
-		case TYPE_sht: @:restrict2(simple,sht,loc,loc)@
-		case TYPE_int: @:restrict2(simple,int,loc,loc)@
-		case TYPE_flt: @:restrict2(simple,flt,loc,loc)@ 
+		switch (ATOMstorage(t = b->ttype)) {
+#ifndef NOEXPAND_CHR
+		case TYPE_chr:
+			@:restrict2(simple,chr,loc,loc)@
+			break;
+#endif
+#ifndef NOEXPAND_SHT
+		case TYPE_sht:
+			@:restrict2(simple,sht,loc,loc)@
+			break;
+#endif
+#ifndef NOEXPAND_INT
+		case TYPE_int:
+			@:restrict2(simple,int,loc,loc)@
+			break;
+#endif
+#ifndef NOEXPAND_FLT
+		case TYPE_flt:
+			@:restrict2(simple,flt,loc,loc)@ 
+			break;
+#endif
+#if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
 		case TYPE_dbl: 
-		case TYPE_lng: @:restrict2(simple,lng,loc,loc)@ 
+		case TYPE_lng:
+			@:restrict2(simple,lng,loc,loc)@ 
+			break;
+#endif
 		default:
-		    if (b->tvarsized) {
-			@:restrict2(atom,t,loc,var)@
-		    } else {
-			@:restrict2(atom,t,loc,loc)@
-		    }
+			if (b->tvarsized) {
+				@:restrict2(atom,t,loc,var)@
+			} else {
+				@:restrict2(atom,t,loc,loc)@
+			}
+			break;
        		}
 	}
 	GDKfree(mark); 
 
 	/* propagate alignment info */
-	if (BATcount(bn)==BATcount(b)) ALIGNset(bn,b);
+	if (BATcount(bn)==BATcount(b))
+		ALIGNset(bn,b);
 
   	ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: " SZFMT "\n",BATcount(bn));
-	return bn; 
+	return bn;
+
 bunins_failed:
 	GDKfree(mark); 
 	BBPreclaim(bn);
@@ -1265,11 +1468,6 @@ bunins_failed:
 
 @+ BAT Sorting
 @{
-@= idxloop
-IDXloop(b, p, q) {
-        if (*p) bunfastins(c, BUNh@1(b, (*p)), BUNt@2(b, (*p)));
-}
-@
 @- sorting 
 @%BATsort@ returns a sorted copy. @%BATorder@ sorts the BAT itself. 
 @c
@@ -1277,13 +1475,15 @@ IDXloop(b, p, q) {
 @:sort(GDK_SORTED,_REV,_rev,)@
 
 @= sort
-int BATordered@3(BAT *b) {
+int BATordered@3(BAT *b)
+{
 	BATcheck(b, "BATordered@3: BAT"); 
 	PROPDEBUG BATpropcheck(b, BATPROPS_QUICK);
 	return (BAThordered(b)&(@1@2));
 }
 
-BAT *BATsort@3(BAT *b) {
+BAT *BATsort@3(BAT *b)
+{
 	BAT *bn;
 	int tt = b->ttype;
 
@@ -1323,7 +1523,8 @@ BAT *BATsort@3(BAT *b) {
 	return BATorder@3(bn);
 }
 
-BAT *BATorder@3(BAT *b) {
+BAT *BATorder@3(BAT *b)
+{
 	BATcheck(b, "BATorder@3: BAT"); 
 	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
 		/* b's head is void-nil, hence we return b as is */
@@ -1632,46 +1833,79 @@ BATloopFast(b, r, s, xx) {
 		yy = (lo+hi)/2;
 		if (yy < n-1 && @1_GT(val, seps[yy], @3)) {
 			lo = yy + 1;
-			if (lo >= hi) { yy = hi; break; }
+			if (lo >= hi) {
+				yy = hi;
+				break;
+			}
 		} else if (yy > 0 && @1_LE(val, seps[yy-1], @3)) {
 			hi = yy - 1;
-			if (hi <= lo) { yy = lo; break; }
+			if (hi <= lo) {
+				yy = lo;
+				break;
+			}
 		} else {
 			break;
 		}
 	} 
 	bunfastins(bats[yy], BUNhead(b,r), val);
-} break;
+}
 @c
 	} else {
-            BAT **bats = (BAT**) GDKmalloc(n*sizeof(BAT*));
-	    for(yy=0; yy<n; yy++) {
-		bats[yy] = part_bat(bn,BAThtype(bn),bn->ttype,sizes[yy],TRUE);
-		if (bats[yy] == NULL) {
-			BBPreclaim(metabat);
-			return NULL;
+		BAT **bats = (BAT**) GDKmalloc(n*sizeof(BAT*));
+		for (yy = 0; yy < n; yy++) {
+			bats[yy] = part_bat(bn, BAThtype(bn), bn->ttype, sizes[yy], TRUE);
+			if (bats[yy] == NULL) {
+				BBPreclaim(metabat);
+				return NULL;
+			}
+			if (BUNins(metabat, seps[yy], &bats[yy]->batCacheid) == NULL)
+				goto bunins_failed;
 		}
-		if (BUNins(metabat, seps[yy], &bats[yy]->batCacheid) == NULL) goto bunins_failed;
-	    }
-            switch(tpe = ATOMstorage(b->ttype)) {
-            case TYPE_chr:  @:rangesplit(simple,loc,chr)@
-            case TYPE_sht:  @:rangesplit(simple,loc,sht)@
-            case TYPE_int:  @:rangesplit(simple,loc,int)@
-            case TYPE_flt:  @:rangesplit(simple,loc,flt)@
-            case TYPE_dbl:  @:rangesplit(simple,loc,dbl)@
-            case TYPE_lng:  @:rangesplit(simple,loc,lng)@
-            default:if (b->tvarsized) {
-                            @:rangesplit(atom,var,tpe)@
-                    } else {
-                            @:rangesplit(atom,loc,tpe)@
-                    }
-        
-	    }
-	    for(yy=0; yy<n; yy++)
-		BBPunfix(bats[yy]->batCacheid);
-            GDKfree(bats);
+		switch (tpe = ATOMstorage(b->ttype)) {
+#ifndef NOEXPAND_CHR
+		case TYPE_chr:
+			@:rangesplit(simple,loc,chr)@
+			break;
+#endif
+#ifndef NOEXPAND_SHT
+		case TYPE_sht:
+			@:rangesplit(simple,loc,sht)@
+			break;
+#endif
+#ifndef NOEXPAND_INT
+		case TYPE_int:
+			@:rangesplit(simple,loc,int)@
+			break;
+#endif
+#ifndef NOEXPAND_FLT
+		case TYPE_flt:
+			@:rangesplit(simple,loc,flt)@
+			break;
+#endif
+#ifndef NOEXPAND_DBL
+		case TYPE_dbl:
+			@:rangesplit(simple,loc,dbl)@
+			break;
+#endif
+#ifndef NOEXPAND_LNG
+		case TYPE_lng:
+			@:rangesplit(simple,loc,lng)@
+			break;
+#endif
+		default:
+			if (b->tvarsized) {
+				@:rangesplit(atom,var,tpe)@
+			} else {
+				@:rangesplit(atom,loc,tpe)@
+			}
+
+			break;
+		}
+		for (yy = 0; yy < n; yy++)
+			BBPunfix(bats[yy]->batCacheid);
+		GDKfree(bats);
 	}
-	for(yy=0; yy<(n-1); yy++)
+	for (yy = 0; yy < n - 1; yy++)
 		GDKfree(seps[yy]);
         GDKfree(seps);
         GDKfree(sizes);
