@@ -1658,7 +1658,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             SrvrOut.flush()
             EPILOGUE.close()
 
-        if SERVER == "MAPI":
+        if SERVER == "MAPI" and os.name != "nt":
             Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
             ShwnOutFile = TST+".shutdown.out"
             ShwnErrFile = TST+".shutdown.err"
@@ -1668,7 +1668,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             time.sleep(1)             # give it time to actually shut down
 
         try:
-            if SERVER == "MAPI":
+            if SERVER == "MAPI" and os.name != "nt":
                 pSrvrIn.write("# All but the first (#) and the last (\\n) character of this line seem to get swallowed on/by Windows ... #\n")
                 pSrvrIn.write("# In case the previous line contains just a '#', all but the first and the last character got swallowed by someone ... #\n")
                 pSrvrIn.write("# In case the output ends after the following line, containing just a ';', Mshutdown might have been successful, #\n")
@@ -1690,7 +1690,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if os.name != "nt" and sys.platform != 'cygwin':
             StopAt(ATJOB2,ME)
 
-        if SERVER == "MAPI":
+        if SERVER == "MAPI" and os.name != "nt":
             AllOut = [SrvrOut, ClntOutFile, ShwnOutFile]
             AllErr = [SrvrErr, ClntErrFile, ShwnErrFile]
         else:
