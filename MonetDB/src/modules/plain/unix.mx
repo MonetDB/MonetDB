@@ -19,9 +19,9 @@ Provides access to some of the C stdlib.h functions.
   .COMMAND setenv(str,str) : bit = unix_setenv;
     "Set the environment variable string."
   .COMMAND system(str) : int = unix_system;
-    "execute a command and give back the return value"
+    "Execute a command and give back the return value"
   .COMMAND run(blob,str,...str...) : blob = unix_run;
-    "execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caughed and returned as a blob."
+    "Execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caught and returned as a blob."
 
 .END unix;
 
