@@ -10,83 +10,56 @@ stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 {
-monet_mod_cnt.print();
-monet_mod_cnt.copy().print();
+table(monet_mod_nme.reverse().sort().reverse(), monet_mod_cnt);
+table(monet_mod_nme.reverse().sort().reverse(), monet_mod_cnt.copy());
 var x:=view_bbp_name();
 var a:=x.reverse().mirror().[bat]().[count]();
 var b:=x.reverse().mirror().[bat]().[copy]().[count]();
 var c:=a.[-](b);
-print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
+kdiff(c,c.uselect(0)).col_name("diff").print();
 }
 #---------------------------------#
 # BAT:		  monet_mod_cnt	  #
 # (oid)		  (int)		  #
 #---------------------------------#
-[ 10000@0,	  1		  ]
-[ 10001@0,	  1		  ]
-[ 10002@0,	  1		  ]
-[ 10045@0,	  1		  ]
-[ 10046@0,	  1		  ]
-[ 10349@0,	  1		  ]
-[ 10350@0,	  1		  ]
-[ 10387@0,	  1		  ]
-[ 10388@0,	  1		  ]
-[ 10468@0,	  1		  ]
-[ 10469@0,	  1		  ]
-[ 10594@0,	  1		  ]
-[ 10595@0,	  1		  ]
-[ 10679@0,	  1		  ]
-[ 10680@0,	  1		  ]
+[ "_algebra",	  1		  ]
+[ "_arith",	  1		  ]
+[ "_bat",	  1		  ]
+[ "_kernel",	  1		  ]
+[ "_str",	  1		  ]
+[ "_sys",	  1		  ]
+[ "_trans",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_29  #
 # (oid)		  (int)	  #
 #-------------------------#
-[ 10000@0,	  1	  ]
-[ 10001@0,	  1	  ]
-[ 10002@0,	  1	  ]
-[ 10045@0,	  1	  ]
-[ 10046@0,	  1	  ]
-[ 10349@0,	  1	  ]
-[ 10350@0,	  1	  ]
-[ 10387@0,	  1	  ]
-[ 10388@0,	  1	  ]
-[ 10468@0,	  1	  ]
-[ 10469@0,	  1	  ]
-[ 10594@0,	  1	  ]
-[ 10595@0,	  1	  ]
-[ 10679@0,	  1	  ]
-[ 10680@0,	  1	  ]
-#---------------------------------------------------------#
-# BAT:			  count	| copy.count	| diff	  #
-# (str)			  (int)	| (int)		| (int)	  #
-#---------------------------------------------------------#
-[ "monet_environment",	  29,	  29,		  0	  ]
-[ "monet_fcn_fcn",	  573,	  573,		  0	  ]
-[ "monet_fcn_imp",	  674,	  674,		  0	  ]
-[ "monet_fcn_tpe",	  674,	  674,		  0	  ]
-[ "monet_fcn_mid",	  614,	  614,		  0	  ]
-[ "monet_fcn_sig",	  39,	  39,		  0	  ]
-[ "monet_fcn_dsc",	  614,	  614,		  0	  ]
-[ "monet_fcn_aut",	  614,	  614,		  0	  ]
-[ "monet_fcn_dat",	  614,	  614,		  0	  ]
-[ "monet_fcn_nme",	  674,	  674,		  0	  ]
-[ "monet_fcn_pro",	  1672,	  1672,		  0	  ]
-[ "monet_fcn_cnt",	  674,	  674,		  0	  ]
-[ "monet_mod_nme",	  15,	  15,		  0	  ]
-[ "monet_mod_cnt",	  15,	  15,		  0	  ]
-[ "monet_mod_atm",	  0,	  0,		  0	  ]
-[ "monet_mod_acc",	  0,	  0,		  0	  ]
-[ "monet_mod_hdl",	  7,	  7,		  0	  ]
-[ "monet_mod_dep",	  7,	  7,		  0	  ]
-[ "monet_mod_use",	  15,	  15,		  0	  ]
-[ "monet_mod_load",	  0,	  0,		  0	  ]
-[ "monet_mod_drop",	  0,	  0,		  0	  ]
-[ "monet_mod_proc",	  101,	  101,		  0	  ]
-[ "monet_mod_var",	  50,	  50,		  0	  ]
-[ "adm_fcntbl",		  674,	  674,		  0	  ]
-[ "adm_acctbl",		  2,	  2,		  0	  ]
-[ "adm_atomtbl",	  13,	  13,		  0	  ]
-[ "monet_unicode_case",	  732,	  732,		  0	  ]
+[ "_algebra",	  1	  ]
+[ "_arith",	  1	  ]
+[ "_bat",	  1	  ]
+[ "_kernel",	  1	  ]
+[ "_str",	  1	  ]
+[ "_sys",	  1	  ]
+[ "_trans",	  1	  ]
+[ "algebra",	  1	  ]
+[ "arith",	  1	  ]
+[ "bat",	  1	  ]
+[ "kernel",	  1	  ]
+[ "main",	  1	  ]
+[ "str",	  1	  ]
+[ "sys",	  1	  ]
+[ "trans",	  1	  ]
+#-----------------#
+# h	diff	  # name
+# str	int	  # type
+#-----------------#
 quit();
 
 # 18:26:35 >  
