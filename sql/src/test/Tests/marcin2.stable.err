@@ -53,11 +53,11 @@ stderr of test 'marcin2` in directory 'src/test` itself:
 
 MAPI  = monetdb@spin:58772
 ACTION= mapi_get_row
-QUERY = -- this one works, and I think it shouldn't
+QUERY = select sum(*) from t3;
 ERROR = !Aggregate: Cannot do a sum(*)
 MAPI  = monetdb@spin:58772
 ACTION= mapi_get_row
-QUERY = -- this one, although wrong, results in core-dump of sql_client :)
+QUERY = select sum(*),val from t3 group by val ;
 ERROR = !Aggregate: Cannot do a sum(*)
 
 # 20:07:33 >  

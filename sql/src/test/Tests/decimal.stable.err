@@ -59,15 +59,15 @@ stderr of test 'decimal` in directory 'src/test` itself:
 
 MAPI  = monetdb@spin:58772
 ACTION= mapi_get_row
-QUERY = 
+QUERY = insert into test values (1234);
 ERROR = !Types int(4,0) (sht) and decimal(5,2) (int) are not equal
 MAPI  = monetdb@spin:58772
 ACTION= mapi_get_row
-QUERY = -- a '.00' decimal part is assumed for the next value 
+QUERY = insert into test values (-1234);
 ERROR = !Types int(4,0) (sht) and decimal(5,2) (int) are not equal
 MAPI  = monetdb@spin:58772
 ACTION= mapi_get_row
-QUERY = -- a '.00' decimal part is assumed for the next value 
+QUERY = insert into test values (1234.1);
 ERROR = !Types decimal(5,1) (int) and decimal(5,2) (int) are not equal
 MAPI  = monetdb@spin:58772
 ACTION= mapi_get_row

@@ -57,11 +57,11 @@ QUERY = select id, sum(val) AS valsum from nutki group by id having val>1;
 ERROR = !Cannot compare sets with values, probably a aggregate function missing
 MAPI  = monetdb@spin:58772
 ACTION= mapi_get_row
-QUERY = -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
+QUERY = select id, sum(val) AS valsum from nutki group by id having val>2;
 ERROR = !Cannot compare sets with values, probably a aggregate function missing
 MAPI  = monetdb@spin:58772
 ACTION= mapi_get_row
-QUERY = -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
+QUERY = select id, sum(val) AS valsum from nutki group by id having valsum>3;
 ERROR = !Identifier: valsum unknown or ambigious
 
 # 20:07:35 >  
