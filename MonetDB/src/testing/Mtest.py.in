@@ -2546,8 +2546,6 @@ def main(argv) :
         sys.exit(1)
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
-#    print(">>> recursive is " + str(par['RECURSIVE']))
-#    print(">>> quiet is " + str(par['QUIET']))
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         par['IGNORE'] = opts.get('ignore', dftIGNORE)
         par['CONTEXT'] = '-C%d' % int(opts.get('context', 1))
@@ -2593,7 +2591,7 @@ def main(argv) :
         if a is not None:
             env[v] = a
 
-	quiet = par['QUIET']
+    quiet = par['QUIET']
 	
     # display par's
     STDERR.flush()
