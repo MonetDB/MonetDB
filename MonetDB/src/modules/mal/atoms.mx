@@ -5,7 +5,7 @@
 @* Introduction
 Monet supports definitions of user-defined types. 
 This feature is of particular interest to system experts. 
-It is not meant for end-users trying to intruduce record- or 
+It is not meant for end-users trying to introduce record- or 
 struct-like objects in the database. They better decompose
 the complex object structure and represent the components in
 different BATs.
@@ -31,16 +31,16 @@ A concrete example is the 'blob' datatype (see blob.mx)
 @mal
 module atoms;
 
-pattern tostr(nme:str):int   = atoms_tostr;
-pattern fromstr(nme:str):int = atoms_fromstr;
-pattern nequal(nme:str):int  = atoms_nequal;
-pattern hash(nme:str):int    = atoms_hash;
-pattern null(nme:str):int    = atoms_null;
-pattern convert(nme:str):int = atoms_convert;
-pattern put(nme:str):int     = atoms_put;
-pattern del(nme:str):int     = atoms_del;
-pattern length(nme:str):int  = atoms_length;
-pattern heap(nme:str):int    = atoms_heap;
+pattern tostr(nme:str):int   = atomsToStr;
+pattern fromstr(nme:str):int = atomsFromStr;
+pattern nequal(nme:str):int  = atomsNequal;
+pattern hash(nme:str):int    = atomsHash;
+pattern null(nme:str):int    = atomsNull;
+pattern convert(nme:str):int = atomsConvert;
+pattern put(nme:str):int     = atomsPut;
+pattern del(nme:str):int     = atomsDel;
+pattern length(nme:str):int  = atomsLength;
+pattern heap(nme:str):int    = atomsHeap;
 
 @c
 @+ The Module implementation
@@ -80,43 +80,33 @@ pattern heap(nme:str):int    = atoms_heap;
 
 @c
 #include "atoms.h"
-str atoms_tostr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_tostr:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsToStr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.ToStr", "not yet implemented\n");
 }
-str atoms_fromstr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_fromstr:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsFromStr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.fromStr", "not yet implemented\n");
 }
-str atoms_nequal(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_nequal:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsNequal(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.nequal", "not yet implemented\n");
 }
-str atoms_hash(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_hash:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsHash(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.hash", "not yet implemented\n");
 }
-str atoms_null(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_null:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsNull(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.null", "not yet implemented\n");
 }
-str atoms_convert(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_convert:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsConvert(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.convert", "not yet implemented\n");
 }
-str atoms_put(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_put:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsPut(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.put", "not yet implemented\n");
 }
-str atoms_del(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_del:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsDel(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.del", "not yet implemented\n");
 }
-str atoms_heap(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_heap:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsheap(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.heap", "not yet implemented\n");
 }
-str atoms_length(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	GDKerror("ERROR:atoms_length:not yet implemented\n");
-	return MAL_SUCCEED;
+str atomsLength(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return throwMessage("atoms.length", "not yet implemented\n");
 }

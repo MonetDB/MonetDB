@@ -37,9 +37,6 @@ command up(s:sema) = SEMAup
 	comment "Increment the semaphore";
 command destroy(s:sema) = SEMAdestroy
 	comment "Destroy a semaphore";
-
-@mil
-	CONST EBUSY := 16;
 @{
 @* Implementation
 @c

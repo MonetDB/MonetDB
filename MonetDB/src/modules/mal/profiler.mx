@@ -118,25 +118,25 @@ its generates a noticable overhead.
 Using the Monet Performance Profiler is contrainted by the mal_profiler.
 @= checkProfiler
 #ifndef MALprofiler
-	return throwMessage("Monet not compiled for performance monitoring");
+	return throwMessage("profiler.@1:Monet not compiled for performance monitoring");
 #endif
 @c
 #include "profiler.h"
 
 str CMDactivateProfiler(int *res, str *name){
-	@:checkProfiler@
+	@:checkProfiler(activate)@
 	activateCounter(*name);
 	return MAL_SUCCEED;
 }
 
 str CMDdeactivateProfiler(int *res, str *name){
-	@:checkProfiler@
+	@:checkProfiler(deactivate)@
 	deactivateCounter(*name);
 	return MAL_SUCCEED;
 }
 
 str CMDsetFilterProfiler(int *res, str *mod, str *fcn){
-	@:checkProfiler@
+	@:checkProfiler(setFilter)@
 	eventFilter(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
@@ -147,7 +147,7 @@ str CMDsetAllProfiler(int *res){
 	return CMDsetFilterProfiler(res, &x, &y);
 }
 str CMDclrFilterProfiler(int *res, str *mod, str *fcn){
-	@:checkProfiler@
+	@:checkProfiler(clrFilter)@
 	resetFilter(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
@@ -158,33 +158,33 @@ str CMDclrAllProfiler(int *res){
 }
 
 str CMDsetProfilerStream(int *res, str *fnme){
-	@:checkProfiler@
+	@:checkProfiler(setProfiler)@
 	setLogFile(getClient()->nspace, *fnme);
 	return MAL_SUCCEED;
 }
 
 str CMDstartPointProfiler(int *res, str *mod, str *fcn){
-	@:checkProfiler@
+	@:checkProfiler(startPoint)@
 	setStartPoint(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str CMDendPointProfiler(int *res, str *mod, str *fcn){
-	@:checkProfiler@
+	@:checkProfiler(endPoint)@
 	setStartPoint(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str CMDstopProfiler(int *res){
 	Client c= getClient();
-	@:checkProfiler@
+	@:checkProfiler(stop)@
 	fprintf(c->fdout,"# Performance profiling stopped\n");
 	stopProfiling();
 	return MAL_SUCCEED;
 }
 str CMDstartProfiler(int *res){
 	Client c= getClient();
-	@:checkProfiler@
+	@:checkProfiler(start)@
 	fprintf(c->fdout,"# Start performance profiling\n");
 	startProfiling();
 	return MAL_SUCCEED;

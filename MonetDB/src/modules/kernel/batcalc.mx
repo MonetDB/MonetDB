@@ -287,10 +287,10 @@ This has been left out.
 The following utility extracts the BATdescriptor
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("@4:cannot access bat @2 in bbp");
+		return throwMessage("batcalc.@4", "cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0; 
-		return throwMessage("@4:cannot access descriptor @2");
+		return throwMessage("batcalc.@4", "cannot access descriptor @2");
 	}
         if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
 @-
@@ -299,10 +299,10 @@ head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
-	return throwMessage("@3 requires bats of identical size");
+	return throwMessage("batcalc.@3", "requires bats of identical size");
 @= tstBat
 if( bn== NULL) {*ret= 0; 
-	return throwMessage("@1:can not create bat");}
+	return throwMessage("batcalc.@1", "can not create bat");}
 @-
 @c
 @-
@@ -328,7 +328,7 @@ str bataccum@1(BAT *dst, BAT *left, BAT *right)
 	case TYPE_sht: @:accum(sht,@2)@ break;
 	case TYPE_int: @:accum(int,@2)@ break;
 	case TYPE_lng: @:accum(lng,@2)@ break;
-	default: throwMessage("bataccum@1:unexpected type");
+	default: throwMessage("batcalc.@1", "unexpected type");
 	}
 	return MAL_SUCCEED;
 }
@@ -379,7 +379,7 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	case TYPE_sht: @:accumCst(sht,@2)@ break;
 	case TYPE_int: @:accumCst(int,@2)@ break;
 	case TYPE_lng: @:accumCst(lng,@2)@ break;
-	default: return throwMessage("bataccum@1:unexpected type");
+	default: return throwMessage("batcalc.@1", "unexpected type");
 	}
 	return MAL_SUCCEED;
 }
@@ -419,7 +419,7 @@ str bataccumMOD(BAT *dst, BAT *left, BAT *right)
 	case TYPE_sht: @:accum(sht,%)@ break;
 	case TYPE_int: @:accum(int,%)@ break;
 	case TYPE_lng: @:accum(lng,%)@ break;
-	default: return throwMessage("bataccumMOD:unexpected type");
+	default: return throwMessage("batcalc.MOD", "unexpected type");
 	}
 	return MAL_SUCCEED;
 }
@@ -468,7 +468,7 @@ str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
 	case TYPE_sht: @:accumCst(sht,%)@ break;
 	case TYPE_int: @:accumCst(int,%)@ break;
 	case TYPE_lng: @:accumCst(lng,%)@ break;
-	default: return throwMessage("bataccumMod:unexpected type");
+	default : return throwMessage("batcalc.Mod", "unexpected type");
 	}
 	return MAL_SUCCEED;
 }
@@ -510,7 +510,7 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	case TYPE_lng: @:accumUnary(lng,@2)@ break;
 	case TYPE_flt: @:accumUnary(flt,@2)@ break;
 	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
-	default: return throwMessage("CMDunaryAccumMIN:unexpected type");
+	default: return throwMessage("batcalc.MIN", "unexpected type");
 	}
 	*ret= dst->batCacheid;
 	return MAL_SUCCEED;
@@ -563,7 +563,7 @@ str compareaccum@1(BAT *dst, BAT *left, BAT *right){
 	case TYPE_sht: @:cmpLoop(sht,@2)@ break;
 	case TYPE_int: @:cmpLoop(int,@2)@ break;
 	case TYPE_lng: @:cmpLoop(lng,@2)@ break;
-	default: return throwMessage("compareaccum@1:unexpected type");
+	default: return throwMessage("batcalc.@1", "unexpected type");
 	}
 	return MAL_SUCCEED;
 }
@@ -629,7 +629,7 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 	case TYPE_sht: @:cmpLoopCst(sht,@2)@ break;
 	case TYPE_int: @:cmpLoopCst(int,@2)@ break;
 	case TYPE_lng: @:cmpLoopCst(lng,@2)@ break;
-	default: return throwMessage("CMDcmpaccum@1cst:unexpected type");
+	default :return throwMessage("batcalc.@1","unexpected type");
 	}
 	return MAL_SUCCEED;
 }

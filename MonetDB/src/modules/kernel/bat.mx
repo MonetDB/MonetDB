@@ -149,7 +149,7 @@ comment "Returns whether a BAT is ordered on head or not.";
 command getBatSize(b:bat[any,any]) : int = CMDbatsize
 comment "A version of BATsize that does not require loading the BAT.";
 
-command getBATrefcnt(b:bat) : int = CMDgetBATrefcnt
+command getBATrefcnt(b:bat) : int = getBATrefcnt
 comment "Utility for debugging MAL interpreter";
 
 @- BAT updates
@@ -197,10 +197,10 @@ command deleteBuns(b:bat[any::1, any::2], src:bat[any::1,any::2])
 				: bat[any::1,any::2] = CMDdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN in the second.";
 
-command getAlpha(b:bat[any::1,any::2]):bat[any::1,any::2] 
-	= CMDgetAlpha;
-command getDelta(b:bat[any::1,any::2]):bat[any::1,any::2] 
-	= CMDgetDelta;
+command getAlpha(b:bat[any::1,any::2]):bat[any::1,any::2] = CMDgetAlpha
+comment "Obtain the list of BUNs added";
+command getDelta(b:bat[any::1,any::2]):bat[any::1,any::2] = CMDgetDelta
+comment "Obtain the list of BUNs deleted";
 @- BAT I/O, Persistency
 @T
 The BAT Buffer Pool (BBP) manages all known BATs. It administers
@@ -443,18 +443,18 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 
 @= getBATdescriptor
 	if( BBPcheck(*@2,"@4")==0) 
-                return throwMessage("@4:cannot access bat @2 in bbp");
+                return throwMessage("bat.@4", "cannot access bat @2 in bbp");
 	@3= (BAT*) BBPgetdesc(*@2);
 	if( @3 == NULL) { *@1 = 0;
-                return throwMessage("@4:cannot access descriptor @2");
+                return throwMessage("bat.@4", "cannot access descriptor @2");
 	}
 	if(*@2 <0) @3 = BATmirror(@3);
 @= getBATdescriptor2
 	if( BBPcheck(*@2,"@4")== 0 ) 
-                return throwMessage("@4:cannot access bat @2 in bbp");
+                return throwMessage("bat.@4", "cannot access bat @2 in bbp");
 	@3= (BAT*) BBPgetdesc(*@2);
 	if( @3 == NULL) { *@1 = 0;
-                return throwMessage("@4:cannot access descriptor @2");
+                return throwMessage("bat.@4", "cannot access descriptor @2");
 	}
 	if(*@2 <0) @3 = BATmirror(@3);
 @-
@@ -470,14 +470,14 @@ str CMDnewBat2(int *res, int *ht, int *tt, int *cap){
 
 	if( *ht<0 || *ht >= GDKatomcnt ||
 	    *tt<0 || *tt >= GDKatomcnt){
-		return throwMessage("CMDnewBat:type values out of range");
+		return throwMessage("bat.new", "type values out of range");
 	}
 	b = BATnew(*ht,*tt,*cap);
 	if( b){
 		*res= b->batCacheid;
 		return MAL_SUCCEED;
 	}
-	return  throwMessage("CMDnewBat:GDKerror");
+	return  throwMessage("bat.new", "GDKerror");
 }
 str CMDnewBat(int *res, int *ht, int *tt){
 	int cap=0;
@@ -486,7 +486,7 @@ str CMDnewBat(int *res, int *ht, int *tt){
 
 str CMDreverse(int *ret, int *bid){
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDreverse)@
+	@:getBATdescriptor(ret,bid,b,reverse)@
 	*ret= -b->batCacheid;
 	BBPfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -494,7 +494,7 @@ str CMDreverse(int *ret, int *bid){
 
 str CMDmirror(int *ret, int *bid){
 	BAT *b, *v;
-	@:getBATdescriptor(ret,bid,b,CMDmirror)@
+	@:getBATdescriptor(ret,bid,b,mirror)@
 	v = VIEWcombine(b);
 	if (b->batRestricted == BAT_WRITE) {
 		BAT *bc = BATrcopy(v);
@@ -507,12 +507,12 @@ str CMDmirror(int *ret, int *bid){
 		return MAL_SUCCEED;
 	}
 	*ret = 0;
-	return throwMessage("CMDmirror:GDKerror");
+	return throwMessage("bat.mirror", "GDKerror");
 }
 
 str CMDconvert(int *ret, int *bid){
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDconvert)@
+	@:getBATdescriptor(ret,bid,b,convert)@
 	BATconvert(b,CONV_HTON);
 	BBPfix(b->batCacheid);
 	*ret = b->batCacheid;
@@ -521,7 +521,7 @@ str CMDconvert(int *ret, int *bid){
 
 str CMDrevert(int *ret, int *bid){
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDrevert)@
+	@:getBATdescriptor(ret,bid,b,revert)@
 	BATrevert(b);
 	BBPfix(b->batCacheid);
 	*ret = b->batCacheid;
@@ -530,7 +530,7 @@ str CMDrevert(int *ret, int *bid){
 
 str CMDorder(int *ret, int *bid){
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDorder)@
+	@:getBATdescriptor(ret,bid,b,order)@
 	BATorder(b);
 	BBPfix(b->batCacheid);
 	*ret = b->batCacheid;
@@ -546,13 +546,13 @@ if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
 {
 printf("val %d seqbase %d pos %d\n", *(oid*)@1,
 	b->@1seqbase,  BUNgetpos(b, BUNlast(b)) );
-      return throwMessage("CMDinsert: insert non-nil values in a void column.");
+      return throwMessage("bat.insert", " insert non-nil values in a void column.");
 }
 @c
 str CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
 	/*int l;*/
-	@:getBATdescriptor2(r,bid,b,CMDinsert_bun)@
+	@:getBATdescriptor2(r,bid,b,insert)@
 	@:void_insertbun(h)@
 	@:void_insertbun(t)@
 	@:derefStr(b,h,h)@
@@ -567,8 +567,8 @@ str CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 
 str CMDinsert_bat(int *r, int *bid, int *sid){
 	BAT *b, *s;
-	@:getBATdescriptor2(r,bid,b,CMDinsert_bat)@
-	@:getBATdescriptor2(r,sid,s,CMDinsert_bat)@
+	@:getBATdescriptor2(r,bid,b,insert)@
+	@:getBATdescriptor2(r,sid,s,insert)@
 	BATins(b,s);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -579,17 +579,18 @@ str CMDinsert_bat(int *r, int *bid, int *sid){
 	if ((b->hseqbase != oid_nil && b->htype == TYPE_void) ||
 	    (b->tseqbase != oid_nil && b->ttype == TYPE_void))
 	{
-		return throwException("@1: %s[%s,%s] is append-only.", 
+		return throwException(MALEXCEPTION,"bat.@1",
+			"%s[%s,%s] is append-only.", 
 			BBPname(b->batCacheid), 
 			ATOMname(b->htype), ATOMname(b->ttype));
 	}
 @c
 str CMDreplace_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-	@:getBATdescriptor2(r,bid,b,CMDreplace_bat)@
+	@:getBATdescriptor2(r,bid,b,replace)@
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	@:void_append_only(CMDreplace_bun)@
+	@:void_append_only(CMDreplace)@
 	BUNreplace(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -598,9 +599,9 @@ str CMDreplace_bun(int *r, int *bid, ptr h, ptr t) {
 
 str CMDreplace_bat(int *r, int *bid, int *sid){
 	BAT *b,*s;
-	@:getBATdescriptor2(r,bid,b,CMDreplace_bat)@
-	@:getBATdescriptor2(r,sid,s,CMDreplace_bat)@
-	@:void_append_only(CMDreplace_bat)@
+	@:getBATdescriptor2(r,bid,b,replace)@
+	@:getBATdescriptor2(r,sid,s,replace)@
+	@:void_append_only(CMDreplace)@
 	BATreplace(b,s);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -609,21 +610,21 @@ str CMDreplace_bat(int *r, int *bid, int *sid){
 
 str CMDdestroy_bat(int *r, int *bid) {
 	BAT *b;
-	@:getBATdescriptor2(r,bid,b,CMDdelete_bun)@
+	@:getBATdescriptor2(r,bid,b,delete)@
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	BATmode(b, TRANSIENT);
 	if( BATdestroy(b))
-		return throwException("CMDdestroy_bat:failed in bbp\n");
+		return throwMessage("bat.destroy", "failed in bbp");
 	*r = TRUE;
 	return MAL_SUCCEED;
 } 
 str CMDdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-	@:getBATdescriptor2(r,bid,b,CMDdelete_bun)@
+	@:getBATdescriptor2(r,bid,b,delete)@
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	@:void_append_only(CMDdelete_bun)@
+	@:void_append_only(CMDdelete)@
 	BUNdel(b,h,t);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -632,9 +633,9 @@ str CMDdelete_bun(int *r, int *bid, ptr h, ptr t) {
 
 str CMDdelete_head(int *r, int *bid, ptr h) {
 	BAT *b;
-	@:getBATdescriptor2(r,bid,b,CMDdelete_head)@
+	@:getBATdescriptor2(r,bid,b,delete)@
 	@:derefStr(b,h,h)@
-	@:void_append_only(CMDdelete_head)@
+	@:void_append_only(CMDdelete)@
 	BUNdelHead(b, @:batconvert(b,h)@);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -643,7 +644,7 @@ str CMDdelete_head(int *r, int *bid, ptr h) {
 
 str CMDdelete_all(int *r, int *bid) {
 	BAT *b;
-	@:getBATdescriptor2(r,bid,b,CMDdelete_all)@
+	@:getBATdescriptor2(r,bid,b,delete)@
 	BATclear(b);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -652,9 +653,9 @@ str CMDdelete_all(int *r, int *bid) {
 
 str CMDdelete_bat_bun(int *r, int *bid, int *sid){
 	BAT *b,*s;
-	@:getBATdescriptor2(r,bid,b,CMDdelete_bat_bun)@
-	@:getBATdescriptor2(r,sid,s,CMDdelete_bat_bun)@
-	@:void_append_only(CMDdelete_bat_bun)@
+	@:getBATdescriptor2(r,bid,b,delete)@
+	@:getBATdescriptor2(r,sid,s,delete)@
+	@:void_append_only(CMDdelete)@
 	BATdel(b,s);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -663,9 +664,9 @@ str CMDdelete_bat_bun(int *r, int *bid, int *sid){
 
 str CMDdelete_bat_head(int *r, int *bid, int *sid){
 	BAT *b,*s;
-	@:getBATdescriptor2(r,bid,b,CMDdelete_bat_head)@
-	@:getBATdescriptor2(r,sid,s,CMDdelete_bat_head)@
-	@:void_append_only(CMDdelete_bat_head)@
+	@:getBATdescriptor2(r,bid,b,delete)@
+	@:getBATdescriptor2(r,sid,s,delete)@
+	@:void_append_only(CMDdelete)@
 	BATdelHead(b,s);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -674,7 +675,7 @@ str CMDdelete_bat_head(int *r, int *bid, int *sid){
 
 str CMDgetAlpha(int *r, int *bid) {
 	BAT *b,*c;
-	@:getBATdescriptor(r,bid,b,CMDgetInserted)@
+	@:getBATdescriptor(r,bid,b,getInserted)@
 	BBPfix(b->batCacheid);
 	c= BATalpha(b);
 	*r = c->batCacheid;
@@ -682,7 +683,7 @@ str CMDgetAlpha(int *r, int *bid) {
 } 
 str CMDgetDelta(int *r, int *bid) {
 	BAT *b,*c;
-	@:getBATdescriptor(r,bid,b,CMDgetInserted)@
+	@:getBATdescriptor(r,bid,b,getInserted)@
 	BBPfix(b->batCacheid);
 	c= BATdelta(b);
 	*r = c->batCacheid;
@@ -692,33 +693,33 @@ str CMDgetDelta(int *r, int *bid) {
 @c
 str CMDgetCapacity(lng *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDgetCapacity)@
+	@:getBATdescriptor(res,bid,b,getCapacity)@
 	*res = BATcapacity(b);
 	return MAL_SUCCEED;
 }
 
 str CMDgetHeadType(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDgetHeadType)@
+	@:getBATdescriptor(res,bid,b,getHeadType)@
 	*res = (*bid > 0)?BAThtype(b):BATttype(b);
 	return MAL_SUCCEED;
 }
 str CMDgetTailType(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDgetTailType)@
+	@:getBATdescriptor(res,bid,b,getTailType)@
 	*res = (*bid > 0)?BATttype(b):BAThtype(b);
 	return MAL_SUCCEED;
 }
 str CMDgetRole(str *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDgetType)@
+	@:getBATdescriptor(res,bid,b,getType)@
 	*res = GDKstrdup((*bid > 0)?b->hident:b->tident);
 	return MAL_SUCCEED;
 }
 
 str CMDsetkey(int *res, int *bid, bit *param) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDsetkey)@
+	@:getBATdescriptor(res,bid,b,setkey)@
 	BATkey(b, *param?BOUND2BTRUE:FALSE);
 	BBPfix(b->batCacheid);
 	*res = b->batCacheid;
@@ -727,7 +728,7 @@ str CMDsetkey(int *res, int *bid, bit *param) {
 
 str CMDsetset(int *res, int *bid, bit *param) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDsetset)@
+	@:getBATdescriptor(res,bid,b,setset)@
 	BATset(b, *param?BOUND2BTRUE:FALSE);
 	BBPfix(b->batCacheid);
 	*res = b->batCacheid;
@@ -735,21 +736,21 @@ str CMDsetset(int *res, int *bid, bit *param) {
 }
 str CMDisaSet(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDsetset)@
+	@:getBATdescriptor(res,bid,b,setset)@
 	*res = b->batSet;
         return MAL_SUCCEED;
 }
 
 str CMDsetSorted(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDisSorted)@
+	@:getBATdescriptor(res,bid,b,isSorted)@
 	BATorder(b);
         *res = BATordered(b)?1:0;
         return MAL_SUCCEED;
 }
 str CMDisSorted(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDisSorted)@
+	@:getBATdescriptor(res,bid,b,isSorted)@
         *res = BATordered(b)?1:0;
         return MAL_SUCCEED;
 }
@@ -761,7 +762,7 @@ a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
 
 str CMDgetkey(bit *ret, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDgetkey)@
+	@:getBATdescriptor(ret,bid,b,getkey)@
 	if (BATcount(b) <= 1) {
 		*ret = TRUE;
 	} else {
@@ -775,7 +776,7 @@ str CMDgetkey(bit *ret, int *bid) {
 
 str CMDsetPersistent(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDsetPersistence)@
+	@:getBATdescriptor(res,bid,b,setPersistence)@
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	BATmode(b, PERSISTENT);
@@ -784,7 +785,7 @@ str CMDsetPersistent(int *res, int *bid) {
 }
 str CMDisPersistent(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDsetPersistence)@
+	@:getBATdescriptor(res,bid,b,setPersistence)@
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	BATmode(b, PERSISTENT);
@@ -793,14 +794,14 @@ str CMDisPersistent(int *res, int *bid) {
 }
 str CMDsetTransient(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDsetTransient)@
+	@:getBATdescriptor(res,bid,b,setTransient)@
 	BATmode(b, TRANSIENT);
 	*res= TRUE;
         return MAL_SUCCEED;
 }
 str CMDisTransient(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDsetTransient)@
+	@:getBATdescriptor(res,bid,b,setTransient)@
 	*res= b->batPersistence & TRANSIENT;
         return MAL_SUCCEED;
 }
@@ -809,7 +810,7 @@ str CMDisTransient(bit *res, int *bid) {
 @= accessMode
 str CMDset@1(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDset@1)@
+	@:getBATdescriptor(res,bid,b,set@1)@
 	BATsetaccess(b, @2);
 	BBPfix(b->batCacheid);
 	*res = b->batCacheid;
@@ -817,7 +818,7 @@ str CMDset@1(int *res, int *bid) {
 }
 str CMDhas@1(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDset@1)@
+	@:getBATdescriptor(res,bid,b,set@1)@
 	*res = BATgetaccess(b)=='@3';
         return MAL_SUCCEED;
 }
@@ -830,14 +831,14 @@ str CMDhas@1(bit *res, int *bid) {
 str CMDsetAccess(int *res, int *bid, str *param) {
 	BAT *b;
 	int m;
-	@:getBATdescriptor(res,bid,b,CMDsetAccess)@
+	@:getBATdescriptor(res,bid,b,setAccess)@
 	switch(*param[0]){
 	case 'r': m= 1; break;
 	case 'a': m= 2; break;
 	case 'w': m= 0; break;
 	default: 
 		*res = 0;
-		return throwMessage("CMDsetAccess: illegal access mode");
+		return throwMessage("bat.setAccess", " illegal access mode");
 	}
 	BATsetaccess(b, m);
 	BBPfix(b->batCacheid);
@@ -847,7 +848,7 @@ str CMDsetAccess(int *res, int *bid, str *param) {
 
 str CMDgetAccess(char *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDgetAccess)@
+	@:getBATdescriptor(res,bid,b,getAccess)@
 	switch(BATgetaccess(b)){
 	case 1: *res= 'r'; break;
 	case 2: *res= 'a'; break;
@@ -855,9 +856,9 @@ str CMDgetAccess(char *res, int *bid) {
 	}
         return MAL_SUCCEED;
 }
-str CMDgetBATrefcnt(int *res, int *bid) {
+str getBATrefcnt(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDsetset)@
+	@:getBATdescriptor(res,bid,b,setset)@
 	*res = BBP_refs(b->batCacheid);
         return MAL_SUCCEED;
 }
@@ -865,7 +866,7 @@ str CMDgetBATrefcnt(int *res, int *bid) {
 char* pre(str s1,str s2){
 	static char buf[64];
 	if( strlen(s1)+strlen(s2) >=64){
-		return throwMessage("pre: buffer space (64) too small");
+		return throwMessage("bat.pre", " buffer space (64) too small");
 	} else { strcpy(buf,s1); strcat(buf,s2); }
 	return buf;
 }
@@ -939,7 +940,7 @@ str CMDinfo(int *retval, int *bid){
 	char mode[1024], *access;
  
 	if (!(bn = BATnew(TYPE_str,TYPE_str, 128)))
-		return throwMessage("CMDinfo:GDKerror");
+		return throwMessage("bat.info", "GDKerror");
 	*retval = bn->batCacheid;
  
 	b= BATdescriptor(*bid);
@@ -1043,7 +1044,7 @@ str CMDbatsize(int *tot, int *bid){
 	int blksize = MT_pagesize();
 	int size = ROUND_UP(sizeof(BATstore),blksize);
 
-	@:getBATdescriptor(tot,bid,b,CMDbatsize)@
+	@:getBATdescriptor(tot,bid,b,batsize)@
 	if (!VIEWparent(b)) {
 		int cnt = BATcapacity(b);
 		size += ROUND_UP(b->batBuns->size, blksize);
@@ -1064,8 +1065,8 @@ str CMDbatsize(int *tot, int *bid){
 @c
 str CMDisSynced(bit *ret, int *bid1, int *bid2){
 	BAT *b1, *b2;
-	@:getBATdescriptor(ret,bid1,b1,CMDisSynced)@
-	@:getBATdescriptor(ret,bid2,b2,CMDisSynced)@
+	@:getBATdescriptor(ret,bid1,b1,isSynced)@
+	@:getBATdescriptor(ret,bid2,b2,isSynced)@
 	*ret = ALIGNsynced(b1,b2)?1:0;
 	return MAL_SUCCEED;
 }
@@ -1074,9 +1075,9 @@ str CMDisSynced(bit *ret, int *bid1, int *bid2){
 @c
 str CMDsetRole(int *r, int *bid, str *hname, str *tname){
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,CMDsetRole)@
-	if(*hname== 0) return throwMessage("CMDsetRole:head name missing");
-	if(*tname== 0) return throwMessage("CMDsetRole:tail name missing");
+	@:getBATdescriptor(r,bid,b,setRole)@
+	if(*hname== 0) return throwMessage("bat.setRole", "head name missing");
+	if(*tname== 0) return throwMessage("bat.setRole", "tail name missing");
 	BATroles(b, *hname, *tname);
 	*r= b->batCacheid;
 	BBPfix(b->batCacheid);
@@ -1084,8 +1085,8 @@ str CMDsetRole(int *r, int *bid, str *hname, str *tname){
 }
 str CMDsetColumn(int *r, int *bid, str *tname){
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,CMDsetColumn)@
-	if(*tname==0) return throwMessage("CMDsetColumn:column name missing");
+	@:getBATdescriptor(r,bid,b,setColumn)@
+	if(*tname==0) return throwMessage("bat.setColumn", "column name missing");
 	BBPfix(b->batCacheid);
 	BATroles(b, b->hident,*tname);
 	*r= b->batCacheid;
@@ -1095,31 +1096,35 @@ str CMDsetColumn(int *r, int *bid, str *tname){
 str CMDsetName(int *retval, int *bid, str *s){
 	BAT *b;
 	int ret;
-	@:getBATdescriptor(retval,bid,b,CMDsetName)@
-	if(*s== 0) return throwMessage("CMDsetName:name missing");
+	@:getBATdescriptor(retval,bid,b,setName)@
+	if(*s== 0) return throwMessage("bat.setName", "name missing");
 	ret = BATname(b,*s);
 	*retval = *bid;;
         if (ret == 1)
-                return throwException("CMDsetName: identifier expected: %s",*s);
+                return throwException(MALEXCEPTION,"bat.setName",
+			"identifier expected: %s",*s);
         else if (ret == BBPRENAME_ILLEGAL) 
-                return throwException("CMDsetName: illegal temporary name: '%s'", *s);
+                return throwException(MALEXCEPTION,"bat.setName",
+			"illegal temporary name: '%s'", *s);
         else if (ret == BBPRENAME_LONG) 
-                return throwException("CMDsetName: name too long: '%s'", *s);
+                return throwException(MALEXCEPTION,"bat.setName",
+			"name too long: '%s'", *s);
         else /* if (ret == BBPRENAME_ALREADY) 
-                return throwException("CMDsetName: rename already"); */
+                return throwException(MALEXCEPTION,"bat.setName",
+			"rename already"); */
 	return MAL_SUCCEED;
 }
 
 str CMDbbpname(str *retval, int *bid){
 	BAT *b;
-	@:getBATdescriptor(retval,bid,b,CMDbbpname)@
+	@:getBATdescriptor(retval,bid,b,bbpname)@
 	*retval = GDKstrdup(BBPname(b->batCacheid));
 	return MAL_SUCCEED;
 }
 
 str CMDunload(bit *res, str *input) {
         int bid;
-	if( *input==0) return throwMessage("CMDunload: file name missing");
+	if( *input==0) return throwMessage("bat.unload", " file name missing");
         bid = ABS(BBPindex(*input));
 	*res = FALSE;
         if (bid > 0) {
@@ -1130,15 +1135,15 @@ str CMDunload(bit *res, str *input) {
 }
 str CMDisCached(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDisCached)@
+	@:getBATdescriptor(res,bid,b,isCached)@
 	*res = 0;
-	return throwMessage("CMDisCached:not yet implemented");
+	return throwMessage("bat.isCached", "not yet implemented");
 }
 str CMDload(int *res, str *input) {
 	int bid= BBPindex(*input);
 	*res = bid;
         if( bid) return MAL_SUCCEED;
-	return throwMessage("CMDunload: file name missing");
+	return throwMessage("bat.unload", " file name missing");
 }
 
 str CMDhot(int *res, str *input) {
@@ -1152,13 +1157,13 @@ str CMDcold(int *res, str *input) {
 }
 str CMDcoldBAT(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDisCached)@
+	@:getBATdescriptor(res,bid,b,isCached)@
 	BBPcold(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDhotBAT(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDisCached)@
+	@:getBATdescriptor(res,bid,b,isCached)@
 	BBPhot(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1179,7 +1184,7 @@ str CMDsave(bit *res, str *input) {
 }
 str CMDsave2(bit *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor2(res,bid,b,CMDsave)@
+	@:getBATdescriptor2(res,bid,b,save)@
 	if (b && BATdirty(b)) { 
 		if (BBPsave(b) == 0) *res = TRUE;
 	}
@@ -1200,7 +1205,7 @@ str CMDsave2(bit *res, int *bid) {
 str CMDmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 			int *hacc, int *tacc)
 {	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDmmap)@
+	@:getBATdescriptor(res,bid,b,mmap)@
 	@:change_heap(bns,(*b->batBuns))@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
@@ -1211,7 +1216,7 @@ str CMDmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 		return MAL_SUCCEED;
 	}
 	*res= FALSE;
-	return throwMessage("CMDmmap: failed");
+	return throwMessage("bat.mmap", " failed");
 }
 str CMDmmap2(int *res, int *bid, int *bns){
 	return CMDmmap(res,bid,bns,bns,bns,bns,bns);
@@ -1220,12 +1225,12 @@ str CMDmmap2(int *res, int *bid, int *bns){
 str CMDmadvise(int *res, int *bid, int *bns, int *hhp, int *thp, 
 		 	        int *hacc, int *tacc)
 {	BAT *b;
-	@:getBATdescriptor(res,bid,b,CMDmadvice)@
+	@:getBATdescriptor(res,bid,b,madvice)@
 	*res= BATmadvise(b, (*bns==int_nil)?-1:*bns, 
 		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp, 
 		(*hacc==int_nil)?-1:*hacc, 
 		(*tacc==int_nil)?-1:*tacc);
-	if( *res) return throwMessage("CMDmadvise: failed");
+	if( *res) return throwMessage("bat.madvise", " failed");
 	return MAL_SUCCEED;
 }
 str CMDmadvise2(int *res,  int *bid, int *mode){
@@ -1249,10 +1254,11 @@ presented.
 str CMDexport(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	FILE	*f = fopen(*fnme, "w");
-	@:getBATdescriptor(ret,bid,b,CMDexport)@
+	@:getBATdescriptor(ret,bid,b,export)@
 	if (f == NULL) {
 		*ret = FALSE;
-		return throwException("CMDexport: could not open %s",*fnme);
+		return throwException(MALEXCEPTION,"bat.export",
+			"could not open %s",*fnme);
 	}
 	BATprintf(f,b);
 	fclose(f);
@@ -1274,14 +1280,15 @@ str CMDimport(int *ret, int *bid, str *fnme) {
 	int	lh = 0,	lt = 0;
 	FILE	*fp = fopen(*fnme, "r");
 
-	@:getBATdescriptor(ret,bid,b,CMDimport)@
+	@:getBATdescriptor(ret,bid,b,import)@
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 @-
 Open the file. Memory map it to minimize buffering problems.
 @c
         if (fp == NULL)
-	return throwException("CMDimport: could not open file %s",fnme);
+	return throwException(MALEXCEPTION,"bat.import",
+		"could not open file %s",fnme);
 	else {
 	    	struct stat st;
             	fstat(fileno(fp), &st);
@@ -1328,7 +1335,8 @@ Parse the line, and insert a BUN.
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
        		if (*p == 0){
 			*ret= FALSE;
-		       	return throwException("CMDimport: error in %s",buf);
+		       	return throwException(MALEXCEPTION,"bat.import",
+				"error in %s",buf);
        		}
        		p += @1(p, @3, @4);			
 @c
@@ -1361,7 +1369,7 @@ Cleanup and exit. Return the filled BAT.
 @c
 str CMDaccbuild(int *ret, int *bid, int* acc, ptr *param){
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDaccbuild)@
+	@:getBATdescriptor(ret,bid,b,accbuild)@
 	ACCbuild(*acc, b, &b->haccelerator, *param); 
 	*ret= TRUE;
 	return MAL_SUCCEED;
@@ -1373,7 +1381,7 @@ str CMDaccbuild_std(int *ret, int *bid, int* acc){
 
 str CMDaccdestroy(int *ret, int *bid, int *acc) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDaccdestroy)@
+	@:getBATdescriptor(ret,bid,b,accdestroy)@
 	ACCdestroy(*acc, b, &b->haccelerator);
 	*ret = TRUE;
 	return MAL_SUCCEED;
@@ -1381,7 +1389,7 @@ str CMDaccdestroy(int *ret, int *bid, int *acc) {
 
 str CMDaccpresent(int *ret, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDaccpresent)@
+	@:getBATdescriptor(ret,bid,b,accpresent)@
 	*ret = 0;
 	if (b->hacctype) {
 	    int (*check)() = BATaccelerators[b->hacctype].accRepair;
@@ -1394,37 +1402,37 @@ str CMDaccpresent(int *ret, int *bid) {
 
 str CMDhasHash(bit *ret, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDhasHash)@
+	@:getBATdescriptor(ret,bid,b,hasHash)@
 	*ret = b->hacctype == 1;
 	return MAL_SUCCEED;
 }
 str CMDsetHash(bit *ret, int *bid, bit *prop) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDsetHash)@
+	@:getBATdescriptor(ret,bid,b,setHash)@
 	BAThash(b,0);
 	return MAL_SUCCEED;
 }
 str CMDhasIndex(bit *ret, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDhasIndex)@
+	@:getBATdescriptor(ret,bid,b,hasIndex)@
 	*ret = b->hacctype == 2;
-	return throwMessage("CMDhasIndex: not yet implemented");
+	return throwMessage("bat.hasIndex", " not yet implemented");
 }
 str CMDsetIndex(bit *ret, int *bid, bit *prop) {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDsetIndex)@
-	return throwMessage("CMDsetIndex: not yet implemented");
+	@:getBATdescriptor(ret,bid,b,setIndex)@
+	return throwMessage("bat.setIndex", " not yet implemented");
 }
 
 str CMDsetSequenceBase(int *r, int *bid, oid* o){
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,CMDseqbase)@
+	@:getBATdescriptor(r,bid,b,seqbase)@
 	BATseqbase(b, *o);
 	return MAL_SUCCEED;
 }
 str CMDgetSequenceBase(oid *r, int *bid){
 	BAT *b;
-	@:getBATdescriptor(r,bid,b,CMDseqbase)@
+	@:getBATdescriptor(r,bid,b,seqbase)@
 	*r = b->hseqbase;
 	return MAL_SUCCEED;
 }

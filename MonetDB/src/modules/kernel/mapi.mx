@@ -163,7 +163,7 @@ str MAPIlisten(int *ret, int *port, int *maxusers){
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
-		return throwMessage("MAPIlisten: creation of socket failed");
+		return throwMessage("mapi.listen", "creation of socket failed");
 	}
 @-
 Set server port and allow internet connections from any workstation.
@@ -184,18 +184,19 @@ The port id is obtained from the Monet configuration file.
 
 	length = sizeof(server);
 	if (bind(sock, (SOCKPTR)&server, length) < 0) {
-		return throwException("binding to socket (%d) failed", *port);
+		return throwException(MALEXCEPTION,"mapi.listen",
+			"binding to socket (%d) failed", *port);
 	}
 @-
 Get the new information for the server socket and start listening.
 @c
 	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
-		return throwMessage("MAPIlisten: getting socket name");
+		return throwMessage("mapi.listen", "error getting socket name");
 	}
 	listen(sock, *maxusers); 
 
 	if( MT_create_thread((MT_Id)&pid, MAPIlistenThread, (void*) sock) <0){
-		return throwMessage("MAPIlisten: start internet thread failed");
+		return throwMessage("mapi.listen", "starting thread failed");
 	}
 	if( DEBUG_MAPI)
 		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);

@@ -188,7 +188,7 @@ quit;
 
 @= fileCheck
 #define FILEP_CHECK(fp) if (!fp) \
-		return throwMessage( "@1:Incorrect file pointer"); 
+		return throwMessage( "io.@1:Incorrect file pointer"); 
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -240,16 +240,16 @@ str io_stderr(fstream *ret) { *ret = stderr; return MAL_SUCCEED; }
 
 str io_fclose(int *ret, fstream* filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(io_fclose)@
+   @:fileCheck(fclose)@
    if (fclose(fp) < 0) {
-	return throwMessage("io_fclose: failed");
+	return throwMessage("io.fclose: failed");
    }
    return MAL_SUCCEED;
 }
 
 str io_fflush(int *ret, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(io_fflush)@;
+   @:fileCheck(fflush)@;
    (void)fflush(fp);
    return MAL_SUCCEED;
 }
@@ -258,18 +258,18 @@ str io_popen(bipipe **retval){
    if(*retval) GDKfree(*retval);
    *retval= (bipipe*) GDKmalloc(sizeof(bipipe));
    if (pipe((int*) *retval) < 0)
-	return throwMessage("io_popen: failed");
+	return throwMessage("io.popen: failed");
    return MAL_SUCCEED;
 }
 str io_fdpipe(fstream *retval, bipipe* p, bit *up, str *mode){
    *retval = (fstream) fdopen(up?p->up:p->down, *mode);
    if (*retval == 0) return MAL_SUCCEED;
-   return throwMessage("io_fdpipe: failed");
+   return throwMessage("io.fdpipe: failed");
 }
 
 str io_feof( bit *res, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(io_feof)@;
+   @:fileCheck(feof)@;
    *res = feof(fp)?TRUE:FALSE;
    return MAL_SUCCEED;
 }
@@ -282,7 +282,7 @@ str io_fopen( fstream *res, str *name, str *mode ){
 
 str io_freopen( fstream *res, str *name, str *mode, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(io_freopen)@;
+   @:fileCheck(freopen)@;
    *res = freopen(*name,*mode,fp);
    if (!*res) *res = *(fstream*) ATOMnilptr(TYPE_ptr);
    return MAL_SUCCEED;
@@ -302,14 +302,14 @@ str io_fread( blob **res, fstream *filepp, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int err = -1;
    str buf;
-   @:fileCheck(io_fread)@;
+   @:fileCheck(fread)@;
    buf = (str) GDKmalloc( sizeof(int) + *nbytes );
    if ((*res = (blob*) buf) != NULL){
    	err = fread(buf+sizeof(int),1,*nbytes,fp);
    }
    if (err<0){
       if (*res) GDKfree(*res);
-      return throwMessage("io_fread: failed");
+      return throwMessage("io.fread: failed");
    }
    (**res).nitems= err;
    return MAL_SUCCEED;
@@ -318,10 +318,10 @@ str io_fread( blob **res, fstream *filepp, int *nbytes ){
 str io_fwrite_str(int *ret, fstream *filepp, str *buf, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = strlen(*buf); 
-   @:fileCheck(io_fwrite_str)@;
+   @:fileCheck(fwrite_str)@;
    if (*nbytes < n) n = *nbytes;
    if (fwrite(*buf,1,n,fp) < (size_t) n) {
-      return throwMessage("io_fwrite_str: failed");
+      return throwMessage("io.fwrite_str: failed");
    }
    return MAL_SUCCEED;
 }
@@ -330,33 +330,33 @@ str io_fwrite(int *ret, fstream *filepp, blob **b, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = *nbytes;
    str buf = (str) *b;
-   @:fileCheck(io_fwrite)@;
+   @:fileCheck(fwrite)@;
    if (n> (**b).nitems) {
 	n = MAX(0,(**b).nitems);
 	GDKerror("io_fwrite: blob contains only %d bytes.\n", (**b).nitems);
    }
    if (fwrite(buf+sizeof(int),1,n,fp) < (size_t) n) {
-      return throwMessage("io_fwrite: failed");
+      return throwMessage("io.fwrite: failed");
    }
    return MAL_SUCCEED;
 }
 
 str io_fseek(int *res, fstream *filepp, int *pos, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(io_fseek)@;
+   @:fileCheck(fseek)@;
    *res = fseek(fp, (long)*pos, *nbytes);
    if (*res < 0) {
-      return throwMessage("io_fseek: failed");
+      return throwMessage("io.fseek: failed");
    }
    return MAL_SUCCEED;
 }
 
 str io_ftell(int *res, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(io_ftell)@;
+   @:fileCheck(ftell)@;
    *res = ftell(fp);
    if (*res < 0) {
-      throwMessage("io_ftell: failed");
+      throwMessage("io.ftell: failed");
    }
    return MAL_SUCCEED;
 }
@@ -376,7 +376,7 @@ str io_fsize(int* res, str *filename){
 
 
 str io_fprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return throwMessage("io_fprintf: not yet defined in version-5\n");
+	return throwMessage("io.fprintf: not yet defined in version-5\n");
 }
 /*
 int io_fprintf(fstream *filepp, str format,  ...){
@@ -389,11 +389,11 @@ int io_fprintf(fstream *filepp, str format,  ...){
         ret = monet_sprintf(&s, format, ap);
         va_end(ap);
         if (ret == 0) {
-                return throwMessage("io_printf:failed");
+                return throwMessage("io.printf:failed");
         }
         if (fputs(s, *filepp) < 0) {
                 GDKfree(s);
-                return throwMessage("io_fprintf:failed");
+                return throwMessage("io.fprintf:failed");
         }
 	GDKfree(s);
         return MAL_SUCCEED;
@@ -443,22 +443,22 @@ int io_fprint(fstream *filepp, ...){
 str io_fputs(int *ret, str *s, fstream *filepp ){
    FILEP_CHECK(*filepp);
    if (fputs(*s,*(FILE**)filepp) < 0) {
-      return throwMessage("io_fputs: failed");
+      return throwMessage("io.fputs: failed");
    }
    return MAL_SUCCEED;
 }
 
 str io_fputc(int *ret,int *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(io_fputc)@;
+   @:fileCheck(fputc)@;
    if (fputc(*c, fp) < 0)
-      return throwMessage("io_fputs: failed");
+      return throwMessage("io.fputs: failed");
    return MAL_SUCCEED;
 }
 
 str io_fgets( str *s, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   @:fileCheck(io_fgets)@;
+   @:fileCheck(fgets)@;
    *s = GDKmalloc( BUFSIZ );
    **s = 0;
    if (fgets(*s, BUFSIZ, fp) <= (char *) 0) {
@@ -466,7 +466,7 @@ str io_fgets( str *s, fstream *filepp ){
         **s = 0;
       	return MAL_SUCCEED;
       }
-      return throwMessage("io_fgets: failed");
+      return throwMessage("io.fgets: failed");
    }
    return MAL_SUCCEED;
 }
@@ -474,10 +474,10 @@ str io_fgets( str *s, fstream *filepp ){
 str io_fgetc( chr *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
    int ret;
-   @:fileCheck(io_fgetc)@;
+   @:fileCheck(fgetc)@;
    ret = (int)fgetc(fp);
    if (ret <= 0) 
-      return throwMessage("io_fgetc: failed");
+      return throwMessage("io.fgetc: failed");
    *c = ret;
    return MAL_SUCCEED;
 }
@@ -503,7 +503,7 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( isaBatType(tpe)){
 		BAT *b = BATdescriptor(*(int*)val);
 		if( b== NULL) {
-			return throwMessage("CMDprint_val:could not access descriptor");
+			return throwMessage("io.print:could not access descriptor");
 		}
 		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
@@ -545,10 +545,10 @@ str CMDtableAll(FILE *f, MalBlkPtr mb, MalStkPtr stk,
 		tpe = getArgType(mb,pci,i);
 		val = (ptr) getArgReference(stk,pci,i);
 		if( !isaBatType(tpe)) 
-			return throwMessage("CMDtableAll:BAT expected");
+			return throwMessage("io.table:BAT expected");
 		b= BATdescriptor(*(int*)val);
 		if(b == NULL) 
-		return throwMessage("CMDtableAll:could not access descriptor");
+		return throwMessage("io.table:could not access descriptor");
                 piv[nbats++] = b;
         } 
 	/*if(printhead)*/ nbats++;

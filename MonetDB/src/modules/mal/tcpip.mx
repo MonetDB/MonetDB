@@ -101,10 +101,10 @@ command TCPepilogue():void= TPCepilogue;
 @-
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("@4:cannot access bat @2 in bbp");
+                return throwMessage("tcpip.@4:cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0;
-                return throwMessage("@4:cannot access descriptor @2");
+                return throwMessage("tcpip.@4:cannot access descriptor @2");
         }
         if(*@2 <0) @3= BATmirror(@3);
 @h
@@ -874,7 +874,7 @@ Administrate yourself
 create the socket
 @c
 	if (sock < 0) {
-		return throwMessage("TCPserve: creation of stream socket failed\n");
+		return throwMessage("tcp.serve: creation of stream socket failed\n");
 	}
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
@@ -889,9 +889,11 @@ create the socket
 	(size_t*)
 #endif
 	&length) < 0) 
-	    return throwException("TCPlisten(%d): getting socket name.\n", *port);
+	    return throwException(MALEXCEPTION,"tcp.listen",
+		"(%d) getting socket name.\n", *port);
 	if (listen(sock, 5) < 0)
-	    return throwException("TCPlisten(%d): getting socket name\n", *port);
+	    return throwException(MALEXCEPTION,"tcp.listen",
+		"(%d): getting socket name\n", *port);
 	while ((msgsock = accept(sock, (SOCKPTR)0, 
 #ifdef AIX
 	(size_t *)
@@ -950,7 +952,7 @@ str TCPterminate(int *ret, int	*port){
 	    return MAL_SUCCEED;
 	}
 	socket_close(fd);
-	return throwMessage("TCPterminate:failed to send 'stop'");
+	return throwMessage("tcp.terminate:failed to send 'stop'");
 }
 
 str TCPterminate_default(int *ret){
@@ -1005,7 +1007,7 @@ In the meantime, the other way round might have gotten through.  If so, use it.
 	    *retval = i;
 	} else if (fd == 0) {
 	    MT_unset_lock(TCPlock, "TCPopen");
-	    return throwMessage("TCPopen:failed to get socket");
+	    return throwMessage("tcp.open:failed to get socket");
 	} else {
 	    char buf[64];
 @-
@@ -1016,7 +1018,7 @@ We really initiated a new connection
 	    if (send(fd, buf, strlen(buf), 0) != (int) strlen(buf)) {
 		conn_delete(*retval);
 		MT_unset_lock(TCPlock, "TCPopen");
-		return throwMessage("TCPopen: could not communicate.");
+		return throwMessage("tcp.open: could not communicate.");
 	    }
 	}
 	MT_unset_lock(TCPlock, "TCPopen");
@@ -1053,7 +1055,7 @@ str TCPexport(int *retval, int *conn_id, ptr val, int *tpeinput, str *nameinput)
 	str ret = MAL_SUCCEED;
 
 	if (*conn_id<0 || *conn_id>=MAX_CONN || !connections[*conn_id].me)
-	    return throwMessage("TCPexport: invalid connection.");
+	    return throwMessage("tcp.export: invalid connection.");
  	fd = connections[*conn_id].sock;
 	if (tpe == TYPE_bat) {
 @- bat:<name>:<cnt>*<width>:<htype>\@<off>[+][k]:<ttype>\@<off>[+][k]:
@@ -1100,14 +1102,14 @@ Small BATs are written in one go, large ones in parts.
 		    totlen += b->theap.free;
 		}
 		if (socket_write(fd, totlen, buf, "small BAT") == 0)
-			return throwMessage("TCPexport:can not write socket");
+			return throwMessage("tcp.export:can not write socket");
 	    } else if (socket_write(fd, strlen(buf), buf, "meta info") == 0 ||
 		socket_write(fd, len, BUNfirst(b), "BUN heap") == 0 ||
 	        (b->hheap.base && socket_write(fd, 
 			b->hheap.free, b->hheap.base, "head heap") == 0) ||
 	        (b->theap.base && socket_write(fd, 
 			b->theap.free, b->theap.base, "tail heap") == 0))
-		return throwMessage("TCPexport:can not write socket");
+		return throwMessage("tcp.export:can not write socket");
 #ifndef WORDS_BIGENDIAN
 	    BATconvert(b,CONV_NTOH);
 #endif
@@ -1127,16 +1129,16 @@ Small BATs are written in one go, large ones in parts.
 Writing all data at once is a lot faster!
 @c
 		    if (socket_write(fd, hdrlen+len, buf, "atom data") == 0)
-			return throwMessage("TCPexport:can not atom data");
+			return throwMessage("tcp.export:can not atom data");
 	    } else {
 @-
 NOTE: some atoms can be very big (jarray, image).
 don't copy them to the buffer.
 @c
 		    if (socket_write(fd, hdrlen, buf, "header") == 0)
-			return throwMessage("TCPexport:can not write header");
+			return throwMessage("tcp.export:can not write header");
 		    if (socket_write(fd, len, val, "atom data") == 0)
-			return throwMessage("TCPexport:can not atom data");
+			return throwMessage("tcp.export:can not atom data");
 	    }
 #ifndef WORDS_BIGENDIAN
             ATOMconvert(tpe, val, CONV_NTOH);
@@ -1191,7 +1193,7 @@ check whether we really have a value
 	if (c->conn == -1 || c->val == NULL) {
 	    if (c->locked == 0) cache_free(c);
 	    MT_unset_lock(TCPlock, "TCPimport");
-	    return throwMessage("TCPimport:connection lost");
+	    return throwMessage("tcp.import:connection lost");
 	}
 @-
 Copy from the cache into the return value.
@@ -1231,7 +1233,7 @@ This code is obsolete and should be transferred into TCPmal/TCPSQL
 str TCPmil( int *ret, int *conn_id, str *sinput){
 	str s= *sinput;
 	if (*conn_id<0 || *conn_id>=MAX_CONN || !connections[*conn_id].me) {
-	    return throwMessage("TCPmil: invalid connection.");
+	    return throwMessage("tcp.mil: invalid connection.");
 	} else {
 	    char *q, *buf = (str) GDKmalloc(strlen(s)+32);
 	    int ok, fd = connections[*conn_id].sock; 
@@ -1251,13 +1253,13 @@ just send it to the other end
 @c
 	    ok = socket_write(fd, q-buf, buf, "MIL script");
 	    GDKfree(buf);
-	    if (!ok) return throwMessage("TCPmil:failed to write");
+	    if (!ok) return throwMessage("tcp.mil:failed to write");
 @-
 Import the resulting expression using the standard mechanism.
 @c
 	    return MAL_SUCCEED;
 	}
-	return throwMessage("TCPmil:failed to write");
+	return throwMessage("tcp.mil:failed to write");
 }
 
 @+ rpc(int, str, ...any...) : any
@@ -1293,7 +1295,7 @@ It move the cmd pointer to the "current" position.
 	str fcn_cur;
     
 	if (*conn_id<0 || *conn_id>=MAX_CONN || !connections[*conn_id].me)
-	    return throwMessage("TCP@1: invalid connection.");
+	    return throwMessage("tcp.@1: invalid connection.");
 	else {
 	    int eval_id, ok = 0, nparam = 0, totlen = 0, buflen = 4096;
 	    char *buf = (char*) GDKmalloc(buflen), *cmd=buf;
@@ -1393,7 +1395,7 @@ It move the cmd pointer to the "current" position.
 	     */
 	    ok = socket_write(fd, strlen(buf), buf, "MIL command");
 fail:	    GDKfree(buf);
-	    if (!ok) return throwMessage("TCPmil:socket write failed");
+	    if (!ok) return throwMessage("tcp.mil:socket write failed");
 	}
 }
 

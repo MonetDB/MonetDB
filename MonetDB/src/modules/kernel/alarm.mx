@@ -104,7 +104,7 @@ MT_Sema CLKalarm(int t, str action){
  
 	TRGDEBUG THRprintf(GDKerr, "CLKalarm: push %d \n", t); 
         if (timerTop == MAXtimer) {
-                return throwMessage("CLKalarm: timer stack overflow"); 
+                return throwMessage("alarm.alarm", "timer stack overflow"); 
         }
         for (j = 0; j < timerTop; j++) {
                 if (timer[j].alarm_time > t) break; 
@@ -182,7 +182,7 @@ str CLKusec(int *ret){
 str CLKsleep(int *res,int *secs){
 
         if (*secs < 0) {
-                return throwMessage("CLKsleep: negative delay");
+                return throwMessage("alarm.sleep", "negative delay");
         } else {
 		sleep(*secs);
 /*
@@ -198,7 +198,7 @@ str CLKsleep(int *res,int *secs){
  
 str CLKsetalarm(int *res, int *secs, str *action){
         if (*secs < 0) {
-                return throwMessage("CLKsetalarm: negative delay");
+                return throwMessage("alarm.setalarm", "negative delay");
         } else {
                 (void) CLKalarm(*secs+time(0), *action);
         }

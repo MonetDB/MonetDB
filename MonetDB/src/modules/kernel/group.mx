@@ -183,58 +183,6 @@ old stuff
 	return {count}(b.sunique,e);
     }
 
-@- 
-Old stuff to be (re)moved
-.LOAD
-     PROC CTorderby(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
-         if (not(b.reverse.ordered)) {
-                b := b.reverse.sort.reverse;
-         }
-         return CTrefine(b,a);
-     }
-
-     PROC CTsubgroup(BAT[oid,oid] ct, BAT[oid,any] b, BAT[oid,any] sel) : BAT[oid,oid] 
-     		return ct.CTgroup(b.semijoin(sel));
-
-     PROC {count}(BAT[oid,bit] sel, BAT[oid,oid] ct, BAT[oid,int] dom) : BAT[oid,int] 
-		return {count}([sel?ct:], dom);
-
-     PROC {count}(BAT[void,bit] sel, BAT[void,oid] ct, BAT[oid,int] dom) : BAT[oid,int] 
-		return CTsubhisto(sel, ct, dom);
-
-     proc orderby_table(str fcn, str spec, ..bat[any::1,any]..) {
-             var meta := new(str,str,$0);
-             var first := int(spec) + 2;
-             var b := $(first);
-             var s := b.reverse.sort.reverse;
-     
-             while(true) {   
-                     var idx := spec.search(',');
-                     if (idx < 0) break;
-                     spec := spec.string(idx + 1);   
-                     s := s.CTrefine($(int(spec) + 2));
-             }
-             var bb := s.mirror.outerjoin(b);
-             var i := 2;
-             meta.insert("int", str(first - 2));
-             while((i :+= 1) <= $0) {
-                     if (i = first) {
-                         meta.insert("BAT", str(bb));
-                     } else {
-                         meta.insert("BAT", str($(i)));
-                     }
-             }
-             call(fcn, meta);
-     }
-     
-     proc table(str spec, bat[any::1,any] b, ..bat[any::1,any]..) {
-             orderby_table("table", $(1..));
-     }
-     
-     proc print(str spec, bat[any::1,any] b, ..bat[any::1,any]..) {
-             orderby_table("print", $(1..));
-     }
-
 @* Implementation Code
 The xtables modules relies on further initialization of the
 GDK atom table with the primitives to deal with mapentries en
@@ -246,11 +194,11 @@ static int TYPE_idxentry;
 @-
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("@4:cannot access bat @2 in bbp");
+		return throwMessage("group.@4", "cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) {
                 *@1 = 0;
-		return throwMessage("@4:cannot access descriptor @2");
+		return throwMessage("group.@4", "cannot access descriptor @2");
         }
 	if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
 @-
@@ -258,7 +206,7 @@ Recall that we only support void- and oid- typed heads.
 This is captured as a runtime check in the implementation.
 @= chkHeader
 	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
-		return throwException("@2:(v)oid head required\n");
+		return throwMessage("group.@2", "(v)oid head required\n");
 @+ Core Grouping Algorithms
 @T
 We use hash-grouping all the way. This implementation employs
@@ -535,7 +483,7 @@ str CTgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
         declare_mask_@1 
 	BAT *histo= 0, *bn=0;
 	BAT *b;
-	@:getBATdescriptor(retbid,bid,b,CTgroup)@
+	@:getBATdescriptor(retbid,bid,b,group)@
 	@:chkHeader(b,CTgroup)@
 	bn = BATnew(b->htype, TYPE_oid, BATcount(b));
 
@@ -714,9 +662,9 @@ str CTregroup(int* retid, int* ctid, int* bid) {
 	BAT** retval, *dummy, * ct, * b;
 	str ret;
 
-	@:getBATdescriptor(retid,ctid,ct,CTderive)@
+	@:getBATdescriptor(retid,ctid,ct,derive)@
 	@:chkHeader(ct,CTregroup)@
-	@:getBATdescriptor(retid,bid,b,CTderive)@
+	@:getBATdescriptor(retid,bid,b,derive)@
 	@:chkHeader(b,CTregroup)@
 	BBPfix(ct->batCacheid);
 	retval= & dummy;
@@ -730,9 +678,9 @@ str CTderive(int* mapid, int* retid, int  *ctid, int* bid) {
 	BAT *bn = NULL;
 	str ret;
 
-	@:getBATdescriptor(retid,ctid,ct,CTderive)@
+	@:getBATdescriptor(retid,ctid,ct,derive)@
 	@:chkHeader(ct,CTregroup)@
-	@:getBATdescriptor(retid,bid,b,CTderive)@
+	@:getBATdescriptor(retid,bid,b,derive)@
 	@:chkHeader(b,CTregroup)@
 	if (tailtype(ct, TRUE) != TYPE_int) {
 		int rethisto,retbid, bid= ct->batCacheid;
@@ -766,10 +714,10 @@ str CTsubhisto(int *retid, int *selid, int *grpid, int *domid) {
         BUN p, q;
 	BAT *bn;
 
-	@:getBATdescriptor(retid,selid,sel,CTsubhisto)@
-	@:getBATdescriptor(retid,grpid,grp,CTsubhisto)@
+	@:getBATdescriptor(retid,selid,sel,subhisto)@
+	@:getBATdescriptor(retid,grpid,grp,subhisto)@
 	@:chkHeader(grp,CTsubhisto)@
-	@:getBATdescriptor(retid,domid,dom,CTsubhisto)@
+	@:getBATdescriptor(retid,domid,dom,subhisto)@
 
 	filter = (bit*) BUNtloc(sel,BUNfirst(sel));
         size=BATcount(dom); yy=3; zz=BUNsize(sel);
@@ -848,9 +796,9 @@ str CTrefine(int *retid, int *bid, int *aid) {
     BAT *b, *a;
     BAT *bn;
 
-    @:getBATdescriptor(retid,bid,b,CTrefine)@
+    @:getBATdescriptor(retid,bid,b,refine)@
     @:chkHeader(b,CTrefine)@
-    @:getBATdescriptor(retid,aid,a,CTrefine)@
+    @:getBATdescriptor(retid,aid,a,refine)@
     @:chkHeader(a,CTrefine)@
 
     if (b->tkey) { /* if key, no further refinements can take place */
@@ -1096,9 +1044,9 @@ str CTsum_@1(int *retval, int *bid,int  *eid){
 	BUN p, q, r;
 	int xx,i,range,min,max;
 
-	@:getBATdescriptor(retval,bid,b,CTsum)@
+	@:getBATdescriptor(retval,bid,b,sum)@
 	@:chkHeader(b,CTsum_@1)@
-	@:getBATdescriptor(retval,eid,e,CTsum)@
+	@:getBATdescriptor(retval,eid,e,sum)@
 	@:chkHeader(e,CTsum_@1)@
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
@@ -1141,9 +1089,9 @@ str CTavg_@1(int *retval, int *bid,int  *eid){
 	@1 zero = (@1) 0;
 	BUN p, q, r;
 
-	@:getBATdescriptor(retval,bid,b,CTavg)@
+	@:getBATdescriptor(retval,bid,b,avg)@
 	@:chkHeader(b,CTsum_@1)@
-	@:getBATdescriptor(retval,eid,e,CTavg)@
+	@:getBATdescriptor(retval,eid,e,avg)@
 	@:chkHeader(e,CTsum_@1)@
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
@@ -1201,9 +1149,9 @@ str CT@1(int *retval, int *bid,int  *eid){
 	ptr *extremes;
 	BUN p, q, r;
 
-	@:getBATdescriptor(retval,bid,b,CT@1)@
+	@:getBATdescriptor(retval,bid,b,@1)@
 	@:chkHeader(b,CT@1)@
-	@:getBATdescriptor(retval,eid,e,CT@1)@
+	@:getBATdescriptor(retval,eid,e,@1)@
 	@:chkHeader(e,CT@1)@
 
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));	
@@ -1293,9 +1241,9 @@ str CTcount(int *retval, int *bid,int  *eid){
         ptr bt_nil;
 
 
-	@:getBATdescriptor(retval,bid,b,CTcount)@
+	@:getBATdescriptor(retval,bid,b,count)@
 	@:chkHeader(e,CTcount@1)@
-	@:getBATdescriptor(retval,eid,e,CTcount)@
+	@:getBATdescriptor(retval,eid,e,count)@
 	@:chkHeader(e,CTcount@1)@
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	btt = b->ttype;
@@ -1342,9 +1290,9 @@ str CTsize(int *retval, int *bid,int  *eid){
 	BUN p, q, r;
 	int xx;
 
-	@:getBATdescriptor(retval,bid,b,CTsize)@
+	@:getBATdescriptor(retval,bid,b,size)@
 	@:chkHeader(b,CTsize)@
-	@:getBATdescriptor(retval,eid,e,CTsize)@
+	@:getBATdescriptor(retval,eid,e,size)@
 	@:chkHeader(e,CTsize)@
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	/* init: set all sums to zero */

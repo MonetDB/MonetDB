@@ -108,8 +108,6 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
 #include "mal_squeezer.h"
 #include "mal_client.h"
 
-#define throwMessage(M) throwException("%s",M)
-
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
 #endif
@@ -130,7 +128,7 @@ str SYSsetPrompt(int *ret, str *prompt) {
 str SYSkill(int *ret, int *k) {
 	Client c;
 	c= getClient();
-	return throwException("SYSkill:not yet implemented");
+	return throwMessage("system.kill", "not yet implemented");
 }
 str SYSquit(int *ret) {
 	Client c;
@@ -233,7 +231,7 @@ This to simplify error handling
 			newformat[i++]='@1';
 			newformat[i]=0;
 			if(*c!= '@1') 
-			return throwMessage("ERROR: format limitation");
+			return throwMessage("system.print", " format limitation");
 			else  fprintf(fd,newformat,@2);
 		} else fputc(*c,fd);
 	}
@@ -247,9 +245,9 @@ str SYSprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	/* TODO: check format properly !!! including sizes */
 	format= *(str *)fmt;
 	if( format== NULL) 
-		return throwMessage("SYSprint_formatted:format missing");
+		return throwMessage("system.print", "format missing");
 	if( formatMarker(format)!=1) 
-		return throwMessage("SYSprint_formatted:too many %%");
+		return throwMessage("system.print", "too many %%");
 
 	if( *s == @1_nil) return SYSprint_formatted_nil(fd,* (str*) fmt, ret);
 	@:formatConversion(@2,*s)@
@@ -289,9 +287,9 @@ str SYSprint_formatted_str(int *ret, ptr fmt, str *s){
 	/* TODO: check format properly !!! including sizes */
 	format= *(str *)fmt;
 	if( format== NULL) 
-		return throwMessage("SYSprint_formatted_str:format missing");
+		return throwMessage("system.print", "format missing");
 	if( formatMarker(format)!=1) 
-		return throwMessage("SYSprint_formatted_str:too many %%");
+		return throwMessage("system.print", "too many %%");
 
 	if( strNil( *s)) return SYSprint_formatted_nil(fd,* (str*) fmt, ret);
 	@:formatConversion(s,*s)@
@@ -305,16 +303,16 @@ str SYSprint_oid(int *ret, ptr fmt, oid *s){
 	format= *(str *)fmt;
 
 	if( format== NULL) 
-		return throwMessage("SYSprint_oid:format missing");
+		return throwMessage("system.print", "format missing");
 	if( formatMarker(format)!=1) 
-		return throwMessage("SYSprint_oid:too many %%");
+		return throwMessage("system.print", "too many %%");
 
 	if( *s == oid_nil) msg = GDKstrdup("nil");
 	else { msg = (str) GDKmalloc(len); OIDtoStr(&msg,&len,s);}
 	@:formatConversion(s,msg)@
 	GDKfree(msg);
 	if(*ret == EOF)
-		return throwMessage("SYSprint_oid:end-of-file error");
+		return throwMessage("system.print", "end-of-file error");
 	return MAL_SUCCEED;
 }
 str SYSprint_formatted_bit(int *ret, ptr fmt, bit *s){
@@ -325,16 +323,16 @@ str SYSprint_formatted_bit(int *ret, ptr fmt, bit *s){
 	/* TODO: check format properly !!! including sizes */
 	format= *(str *)fmt;
 	if( format== NULL) 
-		return throwMessage("SYSprint_formatted_bit:format missing");
+		return throwMessage("system.print", "format missing");
 	if( formatMarker(format)!=1) 
-		return throwMessage("SYSprint_formatted_bit:too many %%");
+		return throwMessage("system.print", "too many %%");
 
 	if( *s == bit_nil) msg = "nil";
 	else if( *s ) msg="true";
 	else 	msg="false";
 	@:formatConversion(s,msg)@
 	if(*ret == EOF)
-		return throwMessage("SYSprint_oid:end-of-file error");
+		return throwMessage("system.print", "end-of-file error");
 	return MAL_SUCCEED;
 }
 
@@ -354,7 +352,7 @@ If we don;t have an implementation at hand, we simple generate
 an error message.
 @c
 str SYStobedefined(){
-	return throwMessage("SYStobedefined:function not (yet) implemented");
+	return throwMessage("system.tobedefined", "function not (yet) implemented");
 }
 @
 @}

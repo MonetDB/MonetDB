@@ -80,14 +80,14 @@ str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	name = (str) getArgValue(stk,pci,1);
 	if(openBox(name) != 0) return MAL_SUCCEED;
-	return throwMessage("BOXopen: failed to open box");
+	return throwMessage("box.open: failed to open box");
 }
 
 str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	name = (str) getArgValue(stk,pci,1);
 	if( closeBox(name,FALSE) ==0) return MAL_SUCCEED;
-	return throwMessage("BOXclose: failed to close box");
+	return throwMessage("box.close: failed to close box");
 }
 str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
@@ -103,7 +103,7 @@ to a named box.
 	name = (str) getArgValue(stk,pci,1);
 	box= findBox(name);
 	if( box ==0) 
-	return throwMessage("@1: box is not open");
+	return throwMessage("box.@1: box is not open");
 @-
 @c
 str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -115,7 +115,8 @@ str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	name = (str) getArgValue(stk,pci,2);
 	v = &stk->stk[pci->argv[3]];
 	if(depositBox(box,name,v) )
-		return throwException("BOXdeposit:%s:failed to deposit box",name);
+		return throwException(MALEXCEPTION,"box.deposit",
+			"failed to deposit '%s' into box",name);
 	return MAL_SUCCEED;
 }
 
@@ -128,7 +129,8 @@ str BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	name = (str) getArgValue(stk,pci,2);
 	v = &stk->stk[pci->argv[0]];
 	if(takeBox(box,name,v))
-		return throwException("BOXtake:%s:failed to take from box",name);
+		return throwException(MALEXCEPTION,"box.take",
+			"failed to take '%s' from box",name);
 	return MAL_SUCCEED;
 }
 
@@ -157,7 +159,8 @@ str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:OpenBox(BOXdiscard)@
 	name = (str) getArgValue(stk,pci,2);
 	if( discardBox(box,name) )
-		return throwException("BOXdiscard:failed to discard '%s' from box '%s'",
+		return throwException(MALEXCEPTION,"box.discard",
+			"failed to discard '%s' from box '%s'",
 			name, box->name);
 	return MAL_SUCCEED;
 }

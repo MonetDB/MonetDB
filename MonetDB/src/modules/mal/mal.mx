@@ -41,10 +41,26 @@ comment "Creates a new empty BAT, directly allocating for 'size' elements.";
 @+ Algebraic operators
 Those that rely on knowledge of the runtime environment
 @mal
+command project(b:bat[any::1,any]):bat[any::1,void]= CMDprojectNil
+comment "Extract the head of a BAT.";
 pattern project( b:bat[any::1,any], val:any::2) :
 			bat[any::1, any::2] = CMDproject
 comment "Fill the tail column with a constant value.";
 
+@+ Calculation
+Coercion of values at the MAL level is supported by the cast
+operation.
+@mal
+command cast(v:any, w:str):str= CMDcast_str
+comment "Cast a value to another built-in type.";
+command cast(v:any, w:int):int= CMDcast;
+command cast(v:any, w:lng):lng= CMDcast;
+command cast(v:any, w:sht):sht= CMDcast;
+command cast(v:any, w:flt):flt= CMDcast;
+command cast(v:any, w:dbl):dbl= CMDcast;
+command cast(v:any, w:chr):chr= CMDcast;
+command cast(v:any, w:oid):oid= CMDcast;
+command cast(v:any, w:bit):bit= CMDcast;
 @+ Iterator primitives
 This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few paramaters,
@@ -134,6 +150,127 @@ comment "Return the type of a value (expression). Returns an type number.";
 
 command typename(v:int): str = CMDtypename;
 
+@- Monet module code
+
+The time module provides a few abstractions that rely on
+knowledge of basic operators such as /(int,int), which
+are not known upon load time.
+@mal
+function timestamp(secs:lng):timestamp;
+        d1:=epoch();
+        d2:= secs *1000:lng;
+        d3:= d1+d2;
+        return d3
+end function;
+function epoch():timestamp
+        comment "unix-time (epoch) support: seconds since 1-jan-1970 GMT";
+        d0:= date(1970,1,1);
+        d1:=daytime(0,0,0,0);
+        d2:=tzone("GMT");
+        d4:=timestamp(d0,d1,d2);
+end function;
+#inline
+function epoch(t:timestamp):lng;
+        e := epoch();
+        t0:= lng(t);
+        e0:= lng(e);
+        d0:= t0/e0;
+        d1:= t0/1000:lng;
+        return d1;
+end function;
+# rule creation synonyms
+function rule(m:int,d:int,w:int,h:int,min:int):rule;
+        d0:= h*60;
+        d1:= d0+min;
+        r:= rule(m,d,w,d1);
+        return r;
+end function;
+function rule(m:int,d:str,w:int,h:int,min:int):rule;
+        dy:= daynum(d);
+        d0:= h*60:int;
+        d1:= d0+min;
+        r:= rule(m,dy,w,d1);
+        return r;
+end function;
+function rule(m:int,d:str,w:int,min:int):rule;
+        dy:= daynum(d);
+        r:= rule(m,dy,w,min);
+        return r;
+end function;
+
+@-
+Some compiled old module load stuff from decimal:
+@mal
+function divide(b:bat[any::1,decimal], div:decimal, prec:int):bat[any::1,decimal];
+#proc divide(bat[any::1,decimal] b, decimal div, int prec) : bat[any::1,decimal] {
+	DECIMAL_ZERO:= decimal(0);
+	aa_a := =(div,DECIMAL_ZERO);
+	ba:= int(div);
+	ba_a := isnil(ba);
+	ca_a := isnil(prec);
+	da_a := or(ba_a,ca_a);
+barrier	ea_a:= or(aa_a,da_a);
+#        if ((div = DECIMAL_ZERO) or isnil(div) or isnil(prec)) {
+	DECIMAL_NIL:= decimal(nil);
+	fa_a := project(b,DECIMAL_NIL);
+	return fa_a;
+#                return project(b, DECIMAL_NIL);
+end	ea_a;
+barrier	ga_a:= not(ea_a);
+barrier	ha_a:= istenfold(div);
+#        } else if (istenfold(div)) {
+	ia_a := getprecision(div);
+	ja_a := getscale(div);
+	ka_a := +(ia_a,ja_a);
+	dec:= -(1,ka_a);
+#                var dec := 1 - (getprecision(div) + getscale(div));
+	la_a := multiplex.tactics("addscale",b,dec);
+	ma_a := multiplex.tactics("setprecision",la_a,prec);
+	return ma_a;
+#                return [setprecision]([addscale](b,dec),prec);
+#        }
+end	ha_a;
+end	ga_a;
+	na_a := bulkdivide(b,div,prec);
+	return na_a;
+#        return bulkdivide(b, div, prec); 
+end function;
+#    }
+# 
+function divide(b:bat[any::1,decimal], div:decimal):bat[any::1,decimal];
+#    proc divide(bat[any::1,decimal] b, decimal div) : bat[any::1,decimal] {
+	DECIMAL_ZERO:= decimal(0);
+	oa_a := =(div,DECIMAL_ZERO);
+	pa_a := isnil(div);
+barrier	qa_a:= or(oa_a,pa_a);
+#        if ((div = DECIMAL_ZERO) or isnil(div)) {
+	DECIMAL_NIL:= decimal(nil);
+	ra_a := project(b,DECIMAL_NIL);
+	return ra_a;
+#                return project(b, DECIMAL_NIL);
+end	qa_a;
+barrier	sa_a:= not(qa_a);
+barrier	ta_a:= istenfold(div);
+#        } else if (istenfold(div)) {
+	ua_a := getprecision(div);
+	va_a := getscale(div);
+	wa_a := +(ua_a,va_a);
+	dec:= -(1,wa_a);
+#                var dec := 1 - (getprecision(div) + getscale(div));
+	xa_a := multiplex.tactics("addscale",b,dec);
+	ya_a := multiplex.tactics("setscale",xa_a,0);
+	return ya_a;
+#                return [setscale]([addscale](b,dec),0);
+#        } 
+end	ta_a;
+end	sa_a;
+	ab_a := bulkdivide(b,div);
+	return ab_a;
+#        return bulkdivide(b, div);
+end function;
+#    }
+#
+
 @+ Session control
 Redirected script evaluations.
 @mal
@@ -177,8 +314,6 @@ pattern source(f:str):void= CMDevalFile
 #include "mal_function.h"
 #include "monet.h"
 
-#define throwMessage(M) throwException("%s",M)
-
 @+ BAT declarations
 @c
 str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
@@ -200,6 +335,20 @@ str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);
 	return GDKstrdup(*msg);
 }
+str CMDcast_str(str *new, str *src){
+	ValRecord vr;
+	vr.len=0; vr.vtype=0;
+	VALconvert(TYPE_str,&vr,FALSE);
+	*new = vr.val.sval;
+	return MAL_SUCCEED;
+}
+str CMDcast(int *new, int *src){
+	ValRecord vr;
+	vr.len=0; vr.vtype=0;
+	VALconvert(TYPE_str,&vr,FALSE);
+	memcpy(new,&vr,sizeof(vr.val.lval));
+	return MAL_SUCCEED;
+}
 @+
 Algebraic operators
 @c
@@ -212,23 +361,34 @@ str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid= (int*) getArgReference(stk,pci,1);
 	p= (ptr*) getArgReference(stk,pci,2);
 	tt=  getArgType(mb,pci,2);
-        @:getBATdescriptor(result,bid,b,CMDproject)@
+        @:getBATdescriptor(result,bid,b,project)@
         bn= BATconst(b, tt, p);
         if( bn ) {
                *result = bn->batCacheid;
                 return MAL_SUCCEED;
         }
-        return throwMessage("CMDproject:GDKerror");
+        return throwMessage("mal.project","GDKerror");
 }
 
+str CMDprojectNil(int *ret, int *bid){
+	BAT *b,*bn;
+        @:getBATdescriptor(ret,bid,b,project)@
+
+	bn= BATconst(b,TYPE_void, &int_nil);
+        if( bn ) {
+               *ret = bn->batCacheid;
+                return MAL_SUCCEED;
+        }
+        return throwMessage("mal.project","GDKerror");
+}
 @+ BAT Iterator Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("@4:cannot access bat @2 in bbp");
+		return throwMessage("mal.@4","cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0; 
-                return throwMessage("@4:cannot access descriptor @2");
+                return throwMessage("mal.@4","cannot access descriptor @2");
 	}
 	if(*@2 <0) @3= BATmirror(@3);
 @-
@@ -244,8 +404,8 @@ Part of the code is copied from the V 4.3 bat.mx file.
 str CMDhashloop(int *ret, lng *cursor, int *bid)
 {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
-	return throwMessage("CMDhashloop:not yet implemented");
+	@:getBATdescriptor(ret,bid,b,nextElement)@
+	return throwMessage("mal.hashloop","not yet implemented");
 }
 
 @-
@@ -255,7 +415,7 @@ str CMDnextElement_@1(bit *ret, @1 *cursor, int *bid)
 {
 	BAT *b;
 	int limit;
-	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
+	@:getBATdescriptor(ret,bid,b,nextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor <0)
 		*cursor = BUNindex(b,BUNfirst(b));
@@ -283,7 +443,7 @@ str CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	head = &stk->stk[pci->argv[3]];
 	tail = &stk->stk[pci->argv[4]];
 
-	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
+	@:getBATdescriptor(ret,bid,b,nextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 
 	if( *cursor <0)
@@ -323,7 +483,7 @@ str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[2]];
 	tail = &stk->stk[pci->argv[3]];
-	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
+	@:getBATdescriptor(ret,bid,b,nextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 
 	if( *cursor >=limit){
@@ -347,13 +507,13 @@ str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 str CMDbatstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return throwMessage("CMDbatstream: not yet implemented");
+	return throwMessage("mal.batstream"," not yet implemented");
 }
 
 str CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
 {
 	BAT *b;
-	@:getBATdescriptor(ret,bid,b,CMDnextSlice)@
+	@:getBATdescriptor(ret,bid,b,nextSlice)@
 	if( *cursor > *high){
 		*ret = FALSE;
 	} else 
@@ -383,10 +543,10 @@ str CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[0]];
 
-	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
+	@:getBATdescriptor(ret,bid,b,nextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
-		return throwMessage("getHead:range error");
+		return throwMessage("mal.getHead","range error");
 	}
 
 	/* get head = ... */
@@ -408,10 +568,10 @@ str CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	tail = &stk->stk[pci->argv[0]];
 
-	@:getBATdescriptor(ret,bid,b,CMDnextElement)@
+	@:getBATdescriptor(ret,bid,b,nextElement)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
-		return throwMessage("getTail:range error");
+		return throwMessage("mal.getTail","range error");
 	}
 
 	/* get head = ... */
@@ -454,7 +614,7 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( isaBatType(tpe)){
 		BAT *b = BATdescriptor(*(int*)val);
 		if( b== NULL) {
-			return throwMessage("CMDprint_val:descriptor access failed");
+			return throwMessage("mal.print","descriptor access failed");
 		}
 		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
@@ -495,9 +655,9 @@ str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
 		tpe = getArgType(mb,pci,i);
 		val = (ptr) getArgReference(stk,pci,i);
 		if( !isaBatType(tpe)) 
-			return throwMessage("CMDotable: BAT expected");
+			return throwMessage("mal.otable"," BAT expected");
 		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return throwMessage("CMDotable:GDKerror");
+		if(b == NULL) return throwMessage("mal.otable","GDKerror");
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, nbats, piv, flg, order);
@@ -524,9 +684,9 @@ str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		tpe = getArgType(mb,pci,i);
 		val = (ptr) getArgReference(stk,pci,i);
 		if( !isaBatType(tpe)) 
-			return throwMessage("CMDprint_table_default:BAT expected");
+			return throwMessage("mal.print_table_default","BAT expected");
 		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return throwMessage("CMDprint_table_default:GDKerror");
+		if(b == NULL) return throwMessage("mal.print_table_default","GDKerror");
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
@@ -564,7 +724,7 @@ str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	s= (str) getArgValue(stk,p,1);
 	if( strlen(s)+strlen(c->cwd)+2>=1024){
-		return throwException("CMDsetCwd:buffer too small\n");
+		return throwMessage("mal.setCwd","buffer too small");
 	}
 	buffer[0]=0;
 	if( *s != '/'){

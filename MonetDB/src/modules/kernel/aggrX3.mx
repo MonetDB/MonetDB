@@ -187,10 +187,10 @@ HASHfnd_int for void- and hash-lookups, respectively
 @- Result initialization
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("@4:cannot access bat @2 in bbp");
+		return throwMessage("aggrX3.@4:cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0; 
-		return throwMessage("@4:cannot access descriptor @2");
+		return throwMessage("aggrX3.@4:cannot access descriptor @2");
 	}
 	if(*@2 < 0) @3 = BATmirror(@3);
 
@@ -389,8 +389,8 @@ str CMDaggrX3_sum_@1(int *retid, int *bid, int *eid){
 	int xx, range, min, max;
 	oid bhsb;
 
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_sum_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_sum_@1)@
+	@:getBATdescriptor(retid,bid,b,sum)@
+	@:getBATdescriptor(retid,eid,e,sum)@
 
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	zero = (@1) 0;
@@ -438,8 +438,8 @@ str CMDaggrX3_avg_@1(int *retid, int *bid, int *eid){
 	oid bhsb;
 
 
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_sum_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_sum_@1)@
+	@:getBATdescriptor(retid,bid,b,sum)@
+	@:getBATdescriptor(retid,eid,e,sum)@
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	off = BUNindex(bn,BUNfirst(bn));
 
@@ -559,8 +559,8 @@ str aggrX3_@1_@3_@4(int *retid, int *bid, int *eid){
 	int range, min, max, slots;
 	oid bhsb;
 
-	@:getBATdescriptor(retid,bid,b,aggrX3_@1_@3_@4)@
-	@:getBATdescriptor(retid,eid,e,aggrX3_@1_@3_@4)@
+	@:getBATdescriptor(retid,bid,b,@1)@
+	@:getBATdescriptor(retid,eid,e,@1)@
 
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));	
@@ -622,8 +622,8 @@ str CMDaggrX3_@1(int *retid, int *bid, int *eid){
 	BAT *b, *e;
 	str rtrn; int tt;
 
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_@1)@
+	@:getBATdescriptor(retid,bid,b,@1)@
+	@:getBATdescriptor(retid,eid,e,@1)@
 	tt = ATOMstorage(b->ttype);
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_@1[@2](b=%s,e=%s);\n",b->batId,e->batId);
@@ -727,8 +727,8 @@ str CMDaggrX3_count(int *retid, int *bid, int *eid){
 	int btt;
 	ptr bt_nil;
 
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_@1)@
+	@:getBATdescriptor(retid,bid,b,@1)@
+	@:getBATdescriptor(retid,eid,e,@1)@
 
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	bt_nil = ATOMnilptr(b->ttype);
@@ -776,8 +776,8 @@ str CMDaggrX3_size(int *retid, int *bid, int *eid){
 	BUN p, q, r;
 	int xx;
 
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_@1)@
+	@:getBATdescriptor(retid,bid,b,@1)@
+	@:getBATdescriptor(retid,eid,e,@1)@
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 
 	/* init: set all sums to zero */
@@ -988,9 +988,9 @@ str CMDaggrX3_sum3_@1(int *retid,int *bid, int *gid, int *eid){
 	oid bhsb;
 	int base, offset, end, w;
 
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_sum3_@1)@
-	@:getBATdescriptor(retid,gid,g,CMDaggrX3_sum3_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_sum3_@1)@
+	@:getBATdescriptor(retid,bid,b,sum)@
+	@:getBATdescriptor(retid,gid,g,sum)@
+	@:getBATdescriptor(retid,eid,e,sum)@
 	bn = BATnew(e->htype, BATttype(g), BATcount(e));	
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
@@ -1058,9 +1058,9 @@ str CMDaggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	oid bhsb;
   	int base, offset, end, w;
   	
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_sum3_@1)@
-	@:getBATdescriptor(retid,gid,g,CMDaggrX3_sum3_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_sum3_@1)@
+	@:getBATdescriptor(retid,bid,b,avg)@
+	@:getBATdescriptor(retid,gid,g,avg)@
+	@:getBATdescriptor(retid,eid,e,avg)@
 
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	off = BUNindex(bn,BUNfirst(bn));
@@ -1256,9 +1256,9 @@ str CMDaggrX3_@13(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e;
 	str rtrn; int tt;
 
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_sum3_@1)@
-	@:getBATdescriptor(retid,gid,g,CMDaggrX3_sum3_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_sum3_@1)@
+	@:getBATdescriptor(retid,bid,b,sum)@
+	@:getBATdescriptor(retid,gid,g,sum)@
+	@:getBATdescriptor(retid,eid,e,sum)@
 	tt = ATOMstorage(b->ttype);
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
@@ -1377,9 +1377,9 @@ str CMDaggrX3_count3(int *retid,int *bid, int *gid, int *eid){
   	int btt;
 	ptr bt_nil;
 
-	@:getBATdescriptor(retid,bid,b,CMDaggrX3_sum3_@1)@
-	@:getBATdescriptor(retid,gid,g,CMDaggrX3_sum3_@1)@
-	@:getBATdescriptor(retid,eid,e,CMDaggrX3_sum3_@1)@
+	@:getBATdescriptor(retid,bid,b,count)@
+	@:getBATdescriptor(retid,gid,g,count)@
+	@:getBATdescriptor(retid,eid,e,count)@
 
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	bt_nil = ATOMnilptr(b->ttype);

@@ -1244,14 +1244,14 @@ str @1From@2Impl(@1 *res, @2 *val){
 str shtFromlngImpl(sht *res, lng *val){
 	/* perform a range check !! */
 	if( *val<0 ||*val >255)
-		return throwException("MALexception:error lng->sht");
+		return throwMessage("calc.coercion", "error lng->sht");
 	*res = *val;
 	return MAL_SUCCEED;
 }
 str shtFromintImpl(sht *res, int *val){
 	/* perform a range check !! */
 	if( *val<0 ||*val >255)
-		return throwException("MALexception:error int->sht");
+		return throwMessage("calc.coercion", "error int->sht");
 	*res = *val;
 	return MAL_SUCCEED;
 }

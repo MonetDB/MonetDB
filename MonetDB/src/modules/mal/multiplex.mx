@@ -354,7 +354,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* perform type analysis  and function resolution */
 	i= multiplexType(getClient()->nspace,mb,pci,m1,p);
 	if( i<0)
-		return throwMessage("CMDmultiplexScript:type error");
+		return throwMessage("multiplex.script", "type error");
 	/* get result type of multiplexed operation */
 	refType = getArgType(m1,p,0);
 
@@ -537,10 +537,6 @@ find the actule arguments at the proper place of the callee.
 	q->argc=4;
 	pushInstruction(m,q);
 
-	/* redo mloop; */
-	q= newInstruction(REDOsymbol);
-	q->argv[0]= mloop;
-	pushInstruction(m,q);
 
 	/* catch   MALexception; */
 	q= newInstruction(CATCHsymbol);
@@ -548,18 +544,55 @@ find the actule arguments at the proper place of the callee.
 	k= q->argv[0]= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
 	pushInstruction(m,q);
 
+#ifdef TRACE_MULTIPLEX
+	/* z:= catalog.symbolDefinition(); print(z); */
+	{ int zz;
+	q= newInstruction(ASSIGNsymbol);
+	q->modname= GDKstrdup("catalog");
+	q->fcnname= GDKstrdup("symbolDump");
+	q->argv[0]= zz= newTmpVariable(m,newBatType(TYPE_void,TYPE_str));
+	q->argc=1;
+	pushInstruction(m,q);
+	q= newInstruction(ASSIGNsymbol);
+	q->modname= GDKstrdup("io");
+	q->fcnname= GDKstrdup("print");
+	q->argv[0]= newTmpVariable(m,TYPE_any);
+	q->argv[1]= zz;
+	q->argc=2;
+	pushInstruction(m,q);
+	/* z:= catalog.stkFrame(); print(z) */
+	q= newInstruction(ASSIGNsymbol);
+	q->modname= GDKstrdup("catalog");
+	q->fcnname= GDKstrdup("stkFrame");
+	q->argv[0]= zz= newTmpVariable(m,newBatType(TYPE_str,TYPE_str));
+	q->argc=1;
+	pushInstruction(m,q);
+	q= newInstruction(ASSIGNsymbol);
+	q->modname= GDKstrdup("io");
+	q->fcnname= GDKstrdup("print");
+	q->argv[0]= newTmpVariable(m,TYPE_any);
+	q->argv[1]= zz;
+	q->argc=2;
+	pushInstruction(m,q);
+	}
+	
 	/* #ignore errors unless you are debugging; */
-/* debugging: print(MALexception) */
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= newTmpVariable(m,TYPE_any);
 	q->fcnname= GDKstrdup("raise");
 	q->argv[1] = k;
 	q->argc=2;
 	pushInstruction(m,q);
+#endif
 
 	/* end     MALexception; */
 	q= newInstruction(ENDsymbol);
 	q->argv[0]= k;
+	pushInstruction(m,q);
+
+	/* redo mloop; */
+	q= newInstruction(REDOsymbol);
+	q->argv[0]= mloop;
 	pushInstruction(m,q);
 
 	/* end mloop; */

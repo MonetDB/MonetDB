@@ -103,25 +103,8 @@ comment "The round(n, m) returns n rounded to m places to the right of the
 decimal point; if m is omitted, to 0 places. m can be negative to
 round off digits left of the decimal point. m must be an integer.";
 
-@
-The constants defined in math.h are defined using the following mil code.
-@mil
-.LOAD
-	const M_E 	:= 2.7182818284590452354LL;
-	const M_LOG2E 	:= 1.4426950408889634074LL;
-	const M_LOG10E 	:= 0.43429448190325182765LL;
-	const M_LN2 	:= 0.69314718055994530942LL;
-	const M_LN10 	:= 2.30258509299404568402LL;
-	const M_PI	:= 3.14159265358979323846LL;
-	const M_PI_2	:= 1.57079632679489661923LL;
-	const M_PI_4	:= 0.78539816339744830962LL;
-	const M_1_PI	:= 0.31830988618379067154LL;
-	const M_2_PI	:= 0.63661977236758134308LL;
-	const M_2_SQRTPI:= 1.12837916709551257390LL;
-	const M_SQRT2	:= 1.41421356237309504880LL;
-	const M_SQRT1_2	:= 0.70710678118654752440LL;
-.END;
-
+@-
+The constants defined in math.h are defined in const.mx
 @* Example Script
 @mil
 module(mmath);

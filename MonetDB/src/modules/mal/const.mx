@@ -88,7 +88,7 @@ const.prelude();
 The content of this box my only be changed by the Administrator.
 @= authorize
 	if( !isAuthorized("Admin"))
-		return throwMessage(":unauthorized access to 'const' box");
+		return throwMessage("const.@1:unauthorized access to 'const' box");
 @c
 #include "const.h"
 #include "mal.h"
@@ -103,10 +103,10 @@ int isAuthorized(str nme){
 str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	ValRecord vr;
-	@:authorize@
+	@:authorize(prelude)@
 	box= openBox("const");
 	if( box== 0) 
-		return throwMessage("CONSTprelude:failed to open box");
+		return throwMessage("const.prelude:failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if( box->sym->vtop == 0){
 		insertToBox(box,"user",getClient()->user);
@@ -146,19 +146,19 @@ str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @- Operator implementation
 @c
 str CONSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:authorize@
-	if(openBox("const") != 0) return MAL_SUCCEED;
-	return throwMessage("CONSTopen:failed to open box");
+	@:authorize(open)@
+	if(openBox("const.open") != 0) return MAL_SUCCEED;
+	return throwMessage("const.open:failed to open box");
 }
 
 str CONSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:authorize@
+	@:authorize(close)@
 	if( closeBox("const",TRUE) ==0) return MAL_SUCCEED;
-	return throwMessage("CONSTclose:failed to close box");
+	return throwMessage("const.close:failed to close box");
 }
 str CONSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
-	@:OpenBox(CONSTdestroy)@
+	@:OpenBox(destroy)@
 	destroyBox("const");
 	return MAL_SUCCEED;
 }
@@ -166,10 +166,10 @@ str CONSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 Access to a box calls for resolving the first parameter
 to a named box.
 @= OpenBox
-	@:authorize@
+	@:authorize(@1)@
 	box= findBox("const");
 	if( box ==0) 
-	return throwMessage("@1:box is not open");
+	return throwMessage("const.@1:box is not open");
 @-
 @c
 str CONSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -177,11 +177,12 @@ str CONSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 	Box box;
 
-	@:OpenBox(CONSTdeposit)@
+	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk,pci,1);
 	v = &stk->stk[pci->argv[2]];
 	if(depositBox(box,name,v) )
-		return throwException("CONSTdeposit:%s:failed to deposit box",name);
+		return throwException(MALEXCEPTION,"const.deposit",
+			"failed to deposit '%s' into box",name);
 	return MAL_SUCCEED;
 }
 
@@ -190,11 +191,12 @@ str CONSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	ValPtr v;
 
-	@:OpenBox(CONSTtake)@
+	@:OpenBox(take)@
 	name = (str) getArgValue(stk,pci,1);
 	v = &stk->stk[pci->argv[0]];
 	if(takeBox(box,name,v)) 
-		return throwException("CONSTtake:%s:failed to take from box",name);
+		return throwException(MALEXCEPTION,"const.take",
+			"failed to take '%s' from box",name);
 	return MAL_SUCCEED;
 }
 
@@ -202,7 +204,7 @@ str CONSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
-	@:OpenBox(CONSTrelease)@
+	@:OpenBox(release)@
         name = (str) getArgValue(stk,pci,1);
         releaseBox(box,name);
 	return MAL_SUCCEED;
@@ -211,7 +213,7 @@ str CONSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CONSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
-	@:OpenBox(CONSTrelease)@
+	@:OpenBox(release)@
 	releaseAllBox(box);
 	return MAL_SUCCEED;
 }
@@ -220,10 +222,11 @@ str CONSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
-	@:OpenBox(CONSTdiscard)@
+	@:OpenBox(discard)@
         name = (str) getArgValue(stk,pci,1);
         if( discardBox(box,name) == 0)
-                return throwException("CONSTdiscard: failed to discard '%s'", name);
+                return throwException(MALEXCEPTION,"const.discard",
+			"failed to discard '%s' from box", name);
 	return MAL_SUCCEED;
 }
 str CONSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -232,21 +235,22 @@ str CONSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 	str nme,s=0;
 
-	@:OpenBox(CONSTtoString)@
+	@:OpenBox(toString)@
 	nme = (str) getArgValue(stk,pci,1);
 	i= findVariable(box->sym,nme);
-	if( i <0) return throwException("CONSTtostring:%s:failed to take",nme);
+	if( i <0) return throwException(MALEXCEPTION,"const.toString",
+			"failed to take '%s' from box",nme);
 
 	v= &box->val->stk[i];
 	garbageElement(&stk->stk[pci->argv[0]]);
 
 	if( v->vtype== TYPE_str) s= v->val.sval;
 	else (*BATatoms[v->vtype].atomToStr)(&s,&len,v);
-	if(s== NULL) return throwMessage("CONSTtoString:illegal value");
+	if(s== NULL) return throwMessage("const.toString:illegal value");
 	VALset(&stk->stk[pci->argv[0]], TYPE_str,s);
 
 	/* if( VALconvert(TYPE_str,v, TRUE) == ILLEGALVALUE) 
-		return throwMessage("CONSTtoString:illegal value");
+		return throwMessage("const.toString:illegal value");
 	VALcopy(&stk->stk[pci->argv[0]], v); */
 	return MAL_SUCCEED;
 }
@@ -256,7 +260,7 @@ str CONSTiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *cursor;
 	ValPtr v;
 
-	@:OpenBox(CONSTiterator)@
+	@:OpenBox(iterator)@
 	cursor= (lng*) getArgValue(stk,pci,0);
 	v= &stk->stk[pci->argv[1]];
 	nextBoxElement(box, cursor, v);

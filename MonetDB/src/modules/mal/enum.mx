@@ -91,28 +91,15 @@ comment "registers the fact that ENUMtable(tpe) is a histogram on b's head colum
 pattern isHistogram(tpe:any,b:BAT[any,any]) : bit = ENUMishisto
 comment "returns whether ENUMtable(tpe) is a histogram on b's head column";
 
-@- 
-oldstuff
-
-    proc ENUMtrick(bat[oid,any] b, BAT[any,int] map) : bat[oid,any] {
-        var nme := sprintf("ENUM%d", abs(int(map)));
-        map.rename(nme);
-        var tpe := ENUMload(nme);
-        ENUMsethisto(tpe, b.reverse);
-        return [*nme](b);
-    }
-    ADDHELP("ENUMtrick", "boncz", "Dec  5 1998",
-         "create a view on a BAT with a diffrent enum map.", "enum");
-
 @{
 @* Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("@4:cannot access bat @2 in bbp");
+		return throwMessage("enum.@4:cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0; 
-		return throwMessage("@4:cannot access descriptor @2");
+		return throwMessage("enum.@4:cannot access descriptor @2");
         }
 	if( *@2 <0) @3= BATmirror(@3);
 @-
@@ -123,7 +110,7 @@ to access the enum administration.
      for(xx=0; xx<MAX_ENUM; xx++)\
 	if (ENUMtpe[xx] == @1) break;\
      if ((xx>MAX_ENUM) || ((b=BATdescriptor(ENUMmap[xx])) == NULL)) {\
-	return throwException("@2: illegal enum type.");\
+	return throwException(MALEXCEPTION,"enum.@2","illegal enum type.");\
      }
 @c
 #include "gdk.h"
@@ -258,7 +245,7 @@ str ENUMreload(int *retval, int bid) {
 	int i;
 	BAT *h;
 
-	@:getBATdescriptor(retval,&bid,h,ENUMload)@
+	@:getBATdescriptor(retval,&bid,h,load)@
 	MT_set_lock(mal_contextLock, "ENUMload");
 	for(i=0; i<MAX_ENUM; i++) {
 		if (ENUMmap[i] == 0) {
@@ -281,7 +268,7 @@ str ENUMreload(int *retval, int bid) {
 		}
 	}
 	MT_unset_lock(mal_contextLock, "ENUMload");
-	return throwMessage("ENUMload: too many active enum types.");
+	return throwMessage("enum.load: too many active enum types.");
 }
 
 str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -295,7 +282,7 @@ str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= getArgType(mb,pci,1);
 	bid= *(int*) getArgReference(stk,pci,2);
 	name= malTypeName(tpe);
-	@:getBATdescriptor(retval,&bid,b,ENUMcreate)@
+	@:getBATdescriptor(retval,&bid,b,create)@
 	h = BAThistogram(b);
 	nil = ATOMnilptr(b->htype);
 	BUNdelHead(h, nil);
@@ -322,7 +309,7 @@ str ENUMload(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	retval= (int*) getArgReference(stk,pci,0);
 	*retval= BBPindex(name);
 	if( *retval ==0)
-		return throwMessage("ENUMload: encoding BAT does not exist.");
+		return throwMessage("enum.load: encoding BAT does not exist.");
 	ret= ENUMreload(retval,*retval);
 	GDKfree(name);
 	return ret;
@@ -380,7 +367,7 @@ str ENUMlower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	dst= (ptr) getArgReference(stk,pci,0);
 	@:enumCheck(tpe,ENUMlower)@
 	if (!ATOMlinear(b->htype))
-	 	return throwMessage("ENUMlower@1Map: incompatible source type.");
+	 	return throwMessage("enum.lower: incompatible source type.");
 	if (BAThordered(b)&1) {
 		p = SORTfndlast(BATmirror(b), src);
 		if (p && p > BUNfirst(b))  p -= BUNsize(b);
@@ -405,7 +392,8 @@ str ENUMupper(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	dst= (ptr) getArgReference(stk,pci,0);
 	@:enumCheck(tpe,ENUMlower)@
 	if (!ATOMlinear(b->htype))
-	 	return throwException("ENUMupper@1Map: incompatible source type.");
+	 	return throwException(MALEXCEPTION,"enum.upper",
+			"incompatible source type.");
 	if (BAThordered(b)&1) {
 		p = SORTfndfirst(BATmirror(b), src);
 	} else {
@@ -428,7 +416,7 @@ str ENUMdecode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:enumCheck(tpe,ENUMlower)@
 
 	if( b->htype != getArgType(mb,pci,0))
-		return throwMessage("ENUMdecode:incompatible source type");
+		return throwMessage("enum.decode:incompatible source type");
 	if( ATOMstorage(tpe) == TYPE_chr){
 		if (*(chr*) src == chr_nil) p = ATOMnilptr(b->htype);
 		else p = BUNhead(b, BUNptr(b, 1 + *(unsigned char*)src));
@@ -492,14 +480,14 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:enumCheck(tpe,ENUMencode_multi)@
 	bid= *(int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:getBATdescriptor(retval,&bid,src,ENUMencode_multi)@
+	@:getBATdescriptor(retval,&bid,src,encode)@
 
 	if (src->ttype != b->htype) 
-	 	return throwMessage("ENUMencode_multi: incompatible types");
+	 	return throwMessage("enum.encode: incompatible types");
 	if (ATOMstorage(tpe) == TYPE_chr) { 
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		return throwMessage("ENUMencode_multi: illegal tail type");
+		return throwMessage("enum.encode: illegal tail type");
 	    case TYPE_chr:	@:encode(chr,char,loc,_chr)@
 	    case TYPE_sht:	@:encode(chr,char,loc,_sht)@
 	    case TYPE_int:	@:encode(chr,char,loc,_int)@
@@ -514,7 +502,7 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else {
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		return throwMessage("ENUMencode_multi: illegal tail type");
+		return throwMessage("enum.encode: illegal tail type");
 	    case TYPE_chr:	@:encode(sht,short,loc,_chr)@
 	    case TYPE_sht:	@:encode(sht,short,loc,_sht)@
 	    case TYPE_int:	@:encode(sht,short,loc,_int)@
@@ -556,7 +544,7 @@ str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	bid= (int*) getArgReference(stk,pci,1);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:getBATdescriptor(retval,bid,src,ENUMencode_multi)@
+	@:getBATdescriptor(retval,bid,src,encode)@
 	tpe= src->ttype;
 	@:enumCheck(tpe,ENUMencode_multi)@
 	if (ATOMstorage(tpe) == TYPE_chr) { 
@@ -564,7 +552,7 @@ str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else if (ATOMstorage(tpe) == TYPE_sht) { 
 	    @:decode(sht,short)@
 	} else
-	    return throwMessage("ENUMdecode_multi: illegal tail type.");
+	    return throwMessage("enum.decode: illegal tail type.");
 	return MAL_SUCCEED;
 }
 
@@ -608,7 +596,7 @@ str ENUMsethisto(int *retval, int* tpe, int *bid) {
 	BAT *b,*column;
 	int xx;
 	@:enumCheck(*tpe, ENUMsethisto)@
-	@:getBATdescriptor(retval,bid,column,ENUMsethisto)@
+	@:getBATdescriptor(retval,bid,column,sethisto)@
 	if (column->halign == 0) {
 		column->halign = OIDnew(1);
 		column->batDirtydesc = TRUE;
@@ -626,7 +614,7 @@ str ENUMishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid= (int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
 	@:enumCheck(tpe, ENUMishisto)@
-	@:getBATdescriptor(retval,bid,column,ENUMishisto)@
+	@:getBATdescriptor(retval,bid,column,ishisto)@
 	*retval = (ENUMhisto[xx] == column->halign);
 	return MAL_SUCCEED;
 }
