@@ -1,12 +1,12 @@
 stdout of test 'test_60` in directory 'tests/suite_00` itself:
 
 
-# 11:44:24 >  
-# 11:44:24 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_suite_00  < test_60.milS
-# 11:44:24 >  
+# 15:33:39 >  
+# 15:33:39 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  < test_60.milS
+# 15:33:39 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 # For distributed processing it should be possible
@@ -120,26 +120,26 @@ xx@batloop() $t.print;
 # BAT:	  tmp_43  #
 # (int)	  (chr)	  #
 #-----------------#
-[ 1,	  'a'	  ]
-[ 2,	  'a'	  ]
-[ 3,	  'b'	  ]
-[ 4,	  'b'	  ]
-[ 5,	  'b'	  ]
-[ 6,	  'b'	  ]
+[ 1,	  a	  ]
+[ 2,	  a	  ]
+[ 3,	  b	  ]
+[ 4,	  b	  ]
+[ 5,	  b	  ]
+[ 6,	  b	  ]
 #-----------------#
 # BAT:	  tmp_44  #
 # (int)	  (chr)	  #
 #-----------------#
-[ 7,	  'c'	  ]
-[ 8,	  'c'	  ]
+[ 7,	  c	  ]
+[ 8,	  c	  ]
 #-----------------#
 # BAT:	  tmp_45  #
 # (int)	  (chr)	  #
 #-----------------#
-[ 3,	  'b'	  ]
-[ 4,	  'b'	  ]
-[ 5,	  'b'	  ]
-[ 6,	  'b'	  ]
+[ 3,	  b	  ]
+[ 4,	  b	  ]
+[ 5,	  b	  ]
+[ 6,	  b	  ]
 
 # other values;
 x:= new(int,str);
@@ -193,7 +193,7 @@ xx@batloop() $t.print;
 [ 6,	  "b"	  ]
 quit;
 
-# 11:44:24 >  
-# 11:44:24 >  Done.
-# 11:44:24 >  
+# 15:33:39 >  
+# 15:33:39 >  Done.
+# 15:33:39 >  
 

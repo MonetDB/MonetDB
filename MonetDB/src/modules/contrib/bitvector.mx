@@ -282,7 +282,7 @@ bitvector_print(BAT *b_src)
 
   BATloopFast(b_src, p, q, xx) {
     lng v = *(lng *)BUNtail(b_src, p);
-    printf("x%08lx%08lx\n", (unsigned long)(v >> 32), (unsigned long)v);
+    printf("x%08x%08x\n", (unsigned int)(v >> 32), (unsigned int)v);
   }
   return GDK_SUCCEED;
 }

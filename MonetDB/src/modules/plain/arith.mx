@@ -148,12 +148,12 @@ The {\tt mel\_arith\_ops} Mx macro implements the mel interface to the
 arithmetic operations.  The macro expects three parameters, two input
 atomic types and a result type. 
 @m
-	.OPERATOR (chr) "%"  (int) : int = chrint_binary_MOD;	"modulo"
-	.OPERATOR (sht) "%"  (int) : int = shtint_binary_MOD;	"modulo"
-	.OPERATOR (int) "%"  (int) : int = intint_binary_MOD;	"modulo"
-	.OPERATOR (lng) "%"  (int) : int = lngint_binary_MOD;	"modulo"
-	.OPERATOR (int) "%"  (chr) : chr = intchr_binary_MOD;	"modulo"
-	.OPERATOR (int) "%"  (sht) : sht = intsht_binary_MOD;	"modulo"
+	.OPERATOR (chr) "%"  (int) : int = chrint_checkbinary_MOD;	"modulo"
+	.OPERATOR (sht) "%"  (int) : int = shtint_checkbinary_MOD;	"modulo"
+	.OPERATOR (int) "%"  (int) : int = intint_checkbinary_MOD;	"modulo"
+	.OPERATOR (lng) "%"  (int) : int = lngint_checkbinary_MOD;	"modulo"
+	.OPERATOR (int) "%"  (chr) : chr = intchr_checkbinary_MOD;	"modulo"
+	.OPERATOR (int) "%"  (sht) : sht = intsht_checkbinary_MOD;	"modulo"
 @= mel_arith_ops
 	.OPERATOR (@1) "+" (@2) : @3 = @1@2_binary_ADD; 	"addition"
 	.OPERATOR (@1) "-" (@2) : @3 = @1@2_binary_SUB;		"substraction"
@@ -274,7 +274,14 @@ array. Specific operations work with this interpretation.
 @= limit_definition
 .COMMAND get@1_MAX (): @2 = CMDget@1_MAX; "Get maximum value of ordered type @2"
 .COMMAND get@1_MIN (): @2 = CMDget@1_MIN; "Get minimum value of ordered type @2"
+
+@- hard casts  
+Casts without value conversion. Used for compressing experiments with IEEE floating point numbers 
 @m
+.COMMAND lng2dbl(lng v) : dbl = lng2dbl; "keep binary representation (!DS2.2)"
+.COMMAND dbl2lng(dbl v) : lng = dbl2lng; "keep binary representation (!DS2.2)"
+.COMMAND int2flt(int v) : flt = int2flt; "keep binary representation (!DS2.2)"
+.COMMAND flt2int(flt v) : int = flt2int; "keep binary representation (!DS2.2)"
 
 .END arith;
 
@@ -323,6 +330,14 @@ PROC test_arith() : void := {
   lng2.print;
   oid1.print;
   oid2.print;
+ 
+  # DD/Bug 6389: (i%0) should return nil instead of crashing the server
+  (chr(1)%int(0)).print;
+  (sht(1)%int(0)).print;
+  (int(1)%sht(0)).print;
+  (int(1)%chr(0)).print;
+  (int(1)%int(0)).print;
+  (lng(1)%int(0)).print;
   
 @:mil_comp_ops('a','z')@
 @:mil_comp_ops(sht1,sht2)@
@@ -450,6 +465,11 @@ operations.  It gets two parameters which are the operants for the operations.
 #include "arith.h"
 #include "stdlib.h"
 
+int lng2dbl(dbl *r, lng* v) { *r = *(dbl*) v; return GDK_SUCCEED; } 
+int dbl2lng(lng *r, dbl* v) { *r = *(lng*) v; return GDK_SUCCEED; } 
+int int2flt(flt *r, int* v) { *r = *(flt*) v; return GDK_SUCCEED; } 
+int flt2int(int *r, flt* v) { *r = *(int*) v; return GDK_SUCCEED; } 
+
 /* third param indicates return value if one of the params is nil */ 
 @:c_comp_ops(<,LT)@
 @:c_comp_ops(<=,LE)@
@@ -536,12 +556,12 @@ operations.  It gets two parameters which are the operants for the operations.
 @:arith_macrobinop(_MIN,arith_min,dbl)@
 @:arith_macrobinop(_MIN,arith_min,lng)@
 
-@:arith_binop(_MOD,%,chr,int,int)@
-@:arith_binop(_MOD,%,sht,int,int)@
-@:arith_binop(_MOD,%,int,int,int)@
-@:arith_binop(_MOD,%,lng,int,int)@
-@:arith_binop(_MOD,%,int,chr,chr)@
-@:arith_binop(_MOD,%,int,sht,sht)@
+@:check_binop(_MOD,%,chr,int,int)@
+@:check_binop(_MOD,%,sht,int,int)@
+@:check_binop(_MOD,%,int,int,int)@
+@:check_binop(_MOD,%,lng,int,int)@
+@:check_binop(_MOD,%,int,chr,chr)@
+@:check_binop(_MOD,%,int,sht,sht)@
 
 @:c_bitwise_ops(chr)@
 @:c_bitwise_ops(sht)@

@@ -1,15 +1,12 @@
 stdout of test 'test_00` in directory 'tests/suite_00` itself:
 
-#> Mtest (21:36:14):	milS test_00 milS
-#> Mtest (21:36:14):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_00.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_00.milS
 
+# 15:33:18 >  
+# 15:33:18 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  < test_00.milS
+# 15:33:18 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 #test basic functionality of the BAT library.
@@ -21,12 +18,12 @@ b:= new(int,int);
 printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------------------------------#
-# BAT:				  tmp_23	  #
+# BAT:				  tmp_29	  #
 # (str)				  (str)		  #
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
-[ "batId",			  "tmp_26"	  ]
-[ "batCacheid",			  "26"		  ]
+[ "batId",			  "tmp_28"	  ]
+[ "batCacheid",			  "28"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "int"		  ]
@@ -60,8 +57,10 @@ printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
-[ "batStamp",			  "-139"	  ]
-[ "curStamp",			  "140"		  ]
+[ "batStamp",			  "-162"	  ]
+[ "lastUsed",			  "3980"	  ]
+[ "keepAround",			  "0"		  ]
+[ "curStamp",			  "163"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -120,7 +119,7 @@ b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
 b.print;
 #-----------------#
-# BAT:	  tmp_24  #
+# BAT:	  tmp_28  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -155,7 +154,7 @@ b.delete(1,15);
 b.delete(int(nil),81);
 b.print;
 #-----------------#
-# BAT:	  tmp_24  #
+# BAT:	  tmp_28  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  nil	  ]
@@ -174,7 +173,7 @@ b.count.print;
 [ 11 ]
 b.print;
 #-----------------#
-# BAT:	  tmp_24  #
+# BAT:	  tmp_28  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  nil	  ]
@@ -192,7 +191,7 @@ b.print;
 # Lets cut out a few sections
 b.select(25,64).print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  25	  ]
@@ -201,32 +200,32 @@ b.select(25,64).print;
 [ 8,	  64	  ]
 b.select(4,15).print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 [ 1,	  15	  ]
 b.select(4,4).print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 # This should cause an error
 b.select(4,3).print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 b.select(81,int(nil)).print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  81	  ]
 b.select(int(nil),int(nil)).print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
@@ -241,21 +240,21 @@ b.select(int(nil),int(nil)).print;
 # A 2-dimensional cut
 bn:=b.fragment(1,5,4,15);bn.print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 [ 1,	  15	  ]
 b.fragment(1,5,16,int(nil)).print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  25	  ]
 [ 4,	  16	  ]
 b.fragment(1,int(nil),16,int(nil)).print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  25	  ]
@@ -265,7 +264,7 @@ b.fragment(1,int(nil),16,int(nil)).print;
 [ 4,	  16	  ]
 b.fragment(int(nil),int(nil),16,int(nil)).print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  25	  ]
@@ -278,7 +277,7 @@ b.fragment(int(nil),int(nil),16,int(nil)).print;
 bn:= b.join(bn.reverse);
 bn.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  2	  ]
@@ -287,7 +286,7 @@ bn.print;
 bn:= b.semijoin(bn.reverse);
 bn.print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
@@ -297,7 +296,7 @@ bn.print;
 c:= b.copy;
 bandjoin(b,c,4,4).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_31  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
@@ -312,7 +311,7 @@ bandjoin(b,c,4,4).print;
 #and theta joins?
 b.thetajoin(c,LT,lng(nil)).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_31  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  25	  ]
@@ -322,7 +321,7 @@ b.thetajoin(c,LT,lng(nil)).print;
 [ 2,	  nil	  ]
 quit;
 
-# 17:08:40 >  
-# 17:08:40 >  Done.
-# 17:08:40 >  
+# 15:33:19 >  
+# 15:33:19 >  Done.
+# 15:33:19 >  
 

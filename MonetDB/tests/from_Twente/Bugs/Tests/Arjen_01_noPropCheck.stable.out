@@ -1,16 +1,16 @@
 stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 17:42:16 >  
-# 17:42:16 >  Mtimeout -timeout 180 ./Arjen_01_noPropCheck Arjen_01_noPropCheck 
-# 17:42:16 >  
+# 20:02:40 >  
+# 20:02:40 >  Mtimeout -timeout 180 ./Arjen_01_noPropCheck Arjen_01_noPropCheck 
+# 20:02:40 >  
 
 
-# 17:42:16 >  
-# 17:42:16 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=51972 --set sql_port=57382 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs d2.mil Arjen_01.milM
-# 17:42:16 >  
+# 20:02:40 >  
+# 20:02:40 >  Mtimeout -timeout 60 Mserver --config=/ufs/boncz/MonetDB/linux/etc/monet.conf --debug=10 --set monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB --set gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm --set sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs d2.mil Arjen_01.milM
+# 20:02:40 >  
 
-# Monet Database Server V4.3.11
+# Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------#
@@ -129,8 +129,10 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "top",			  "5",		  "5",		  "8",		  "4",		  "8",		  "4",		  "3",		  "3",		  "3",		  "3",		  "3"		  ]
-[ "batStamp",			  "-162",	  "-163",	  "-164",	  "-167",	  "-168",	  "-170",	  "-171",	  "-172",	  "-174",	  "-172",	  "-176"	  ]
-[ "curStamp",			  "177",	  "180",	  "183",	  "186",	  "189",	  "192",	  "195",	  "198",	  "201",	  "204",	  "207"		  ]
+[ "batStamp",			  "-166",	  "-167",	  "-168",	  "-171",	  "-172",	  "-174",	  "-175",	  "-176",	  "-178",	  "-176",	  "-180"	  ]
+[ "lastUsed",			  "4087",	  "4124",	  "4141",	  "4158",	  "4175",	  "4192",	  "4209",	  "4226",	  "4243",	  "4260",	  "4277"	  ]
+[ "keepAround",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "curStamp",			  "181",	  "184",	  "187",	  "190",	  "193",	  "196",	  "199",	  "202",	  "205",	  "208",	  "211"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
@@ -173,7 +175,7 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "taccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "taccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 
-# 17:42:16 >  
-# 17:42:16 >  Done.
-# 17:42:16 >  
+# 20:02:40 >  
+# 20:02:40 >  Done.
+# 20:02:40 >  
 

@@ -1,19 +1,19 @@
 stderr of test 'refcnt2` in directory 'src/monet` itself:
 
 
-# 18:31:57 >  
-# 18:31:57 >  Mtimeout -timeout 300 ./refcnt2 refcnt2 
-# 18:31:57 >  
+# 15:28:48 >  
+# 15:28:48 >  Mtimeout -timeout 300 ./refcnt2 refcnt2 
+# 15:28:48 >  
 
 
-# 18:31:57 >  
-# 18:31:57 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/etc/monet.conf --debug=10 --set monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/lib/MonetDB --set gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/dbfarm --set sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/log --set mapi_port=57256 --set sql_port=59549 --set monet_prompt= --trace --dbname=mTests_src_monet
-# 18:31:57 >  
+# 15:28:48 >  
+# 15:28:48 >  Mtimeout -timeout 60 Mserver --config=/ufs/boncz/MonetDB/linux/etc/monet.conf --debug=10 --set monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB --set gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm --set sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_src_monet
+# 15:28:48 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.11
-# builtin opt 	monet_pid = 11111
-# builtin opt 	prefix = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_
+# builtin opt 	gdk_version = 4.3.13
+# builtin opt 	monet_pid = 7097
+# builtin opt 	prefix = /ufs/boncz/MonetDB/linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -34,7 +34,7 @@ stderr of test 'refcnt2` in directory 'src/monet` itself:
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_
+# config opt 	prefix = /ufs/boncz/MonetDB/linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
@@ -46,23 +46,24 @@ stderr of test 'refcnt2` in directory 'src/monet` itself:
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_daemon = no
 # config opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	gdk_config = /ufs/boncz/MonetDB/linux/etc/monet.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/log
-# cmdline opt 	mapi_port = 57256
-# cmdline opt 	sql_port = 59549
+# cmdline opt 	monet_mod_path = /ufs/boncz/MonetDB/linux/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /ufs/boncz/MonetDB/linux/var/MonetDB/log
+# cmdline opt 	mapi_port = 55437
+# cmdline opt 	sql_port = 50559
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_monet
 
-# 18:31:58 >  
-# 18:31:58 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/etc/monet.conf --debug=10 --set monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/lib/MonetDB --set gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/dbfarm --set sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/log --set mapi_port=57256 --set sql_port=59549 --set monet_prompt= --trace --dbname=mTests_src_monet
-# 18:31:58 >  
+# 15:28:48 >  
+# 15:28:48 >  Mtimeout -timeout 60 Mserver --config=/ufs/boncz/MonetDB/linux/etc/monet.conf --debug=10 --set monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB --set gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm --set sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_src_monet
+# 15:28:48 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.11
-# builtin opt 	monet_pid = 11118
-# builtin opt 	prefix = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_
+# builtin opt 	gdk_version = 4.3.13
+# builtin opt 	monet_pid = 7105
+# builtin opt 	prefix = /ufs/boncz/MonetDB/linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -83,7 +84,7 @@ stderr of test 'refcnt2` in directory 'src/monet` itself:
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_
+# config opt 	prefix = /ufs/boncz/MonetDB/linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
@@ -95,16 +96,17 @@ stderr of test 'refcnt2` in directory 'src/monet` itself:
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_daemon = no
 # config opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	gdk_config = /ufs/boncz/MonetDB/linux/etc/monet.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/log
-# cmdline opt 	mapi_port = 57256
-# cmdline opt 	sql_port = 59549
+# cmdline opt 	monet_mod_path = /ufs/boncz/MonetDB/linux/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /ufs/boncz/MonetDB/linux/var/MonetDB/log
+# cmdline opt 	mapi_port = 55437
+# cmdline opt 	sql_port = 50559
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_monet
 
-# 18:31:58 >  
-# 18:31:58 >  Done.
-# 18:31:58 >  
+# 15:28:49 >  
+# 15:28:49 >  Done.
+# 15:28:49 >  
 

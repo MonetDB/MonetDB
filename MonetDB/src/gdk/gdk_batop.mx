@@ -898,9 +898,9 @@ Create the result BAT and execute the select algorithm.
 	    	ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_indexselect(b=%s, bn=%s, tl, th);\n",
 	    	                            b->batId, b->batId, bn->batId);
 	    	bn = BAT_indexselect(b, bn, tl, th, li, hi, equi);
-	    } else if (equi && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDKmem_inuse() - GDK_mem_maxsize)) { 
+	    } else if (equi && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDK_mem_maxsize/4)) { 
 	        /* Build a hash-table on the fly for equi-select if the selectivity is low
-                 * and there is sufficient memory available */
+                 * and it is not too big */
  	        ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n",
  	                                    b->batId, b->batId, bn->batId);
 	        bn = BAT_hashselect(b, bn, tl);
@@ -1225,44 +1225,43 @@ IDXloop(b, p, q) {
         if (*p) BUNfastins(c, BUNh@1(b, (*p)), BUNt@2(b, (*p)));
 }
 @
-@- check on order
+@- sorting 
+@%BATsort@ returns a sorted copy. @%BATorder@ sorts the BAT itself. 
 @c
-int BATordered(BAT *b) {
-	BATcheck(b, "BATordered: BAT"); 
+@:sort(1)@
+@:sort(GDK_SORTED,_REV,_rev)@
+
+@= sort
+int BATordered@3(BAT *b) {
+	BATcheck(b, "BATordered@3: BAT"); 
 	PROPDEBUG BATpropcheck(b, BATPROPS_QUICK);
-	return (BAThordered(b)&1);
+	return (BAThordered(b)&(@1@2));
 }
 
-@- return a sorted copy
-@c
-BAT *BATsort(BAT *b) {
+BAT *BATsort@3(BAT *b) {
 	int tt = b->ttype;
 
-	BATcheck(b, "BATsort: BAT"); 
-	if (BATordered(b)) {
+	BATcheck(b, "BATsort@3: BAT"); 
+	if (BATordered@3(b)) {
 		return BATrcopy(b);
         } 
 	/* a void tail column 0,1,2,3,... must be materialized to oid before sorting */
 	if (tt == TYPE_void && b->tseqbase != oid_nil) {
 		tt = TYPE_oid;
 	}
-	return BATorder(batcopy(b, b->htype, tt, TRUE));
+	return BATorder@3(batcopy(b, b->htype, tt, TRUE));
 }
 
-
-@- sort in place
-@%BATorder@ sorts the BAT itself. 
-@c
-BAT *BATorder(BAT *b) {
-	BATcheck(b, "BATorder: BAT"); 
-        if (BATordered(b)) {
+BAT *BATorder@3(BAT *b) {
+	BATcheck(b, "BATorder@3: BAT"); 
+        if (BATordered@3(b)) {
 		return b;
 	}
 	b->tseqbase = oid_nil; /* ignore the void case here */
-	GDKqsort(BUNfirst(b), b->hheap.base, BATcount(b), BUNsize(b), b->htype, b->hloc); 
+	GDKqsort@3(BUNfirst(b), b->hheap.base, BATcount(b), BUNsize(b), b->htype, b->hloc); 
         ACCremoveall(b);
-        ALIGNdel(b, "BATorder");
-	b->hsorted = GDK_SORTED;
+        ALIGNdel(b, "BATorder@3");
+	b->hsorted = GDK_SORTED@2;
 	b->tsorted = FALSE;
 	b->hdense = FALSE;
 	b->batDirtydesc = b->batDirtybuns = TRUE;
@@ -1430,8 +1429,7 @@ Use the histogram to determine good split boundaries on b.
 	seps[yy] = nilval;
         BBPreclaim(histo);
 	if (n != yy +1) {
-		GDKwarning("rangesplit: delivering %ld instead of %ld fragments\n"
-				,(long) (yy+1), (long) n); 
+		GDKwarning("rangesplit: delivering %lu instead of %lu fragments\n", yy+1, n); 
 		n = yy + 1;
 	}
 
@@ -1480,7 +1478,7 @@ achieve totally sorted chunks at the same time.
 			} else {
 				q = IDXfndlast(m, seps[yy]);
 			}
-	    		bf = part_bat(bn,BAThtype(bn),BATttype(bn),(size_t)(q-p),FALSE);
+	    		bf = part_bat(bn, BAThtype(bn), BATttype(bn), (size_t)(q-p),FALSE);
 			if (bf == NULL) {
 				BBPreclaim(metabat);
 				return NULL;

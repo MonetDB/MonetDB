@@ -145,9 +145,15 @@ int TMabort(void) {
 	}
 	for (i = 1; i < BBPsize; i++) { 
 		if (BBP_status(i) & (BBPPERSISTENT|BBPDELETED|BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i, TRUE);
-			ALIGNundo(b);
-			BATundo(b); 
+			BAT *b = BBPquickdesc(i, TRUE); 
+			if (b == NULL) continue;
+	
+			BBPfix(i);
+			if (BATdirty(b)) {
+ 				/* BUN move-backes need a real BAT! */ 
+				b = BBPdescriptor(i);
+				BATundo(b); 
+			}
 			if (BBP_status(i)&BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
 				if (b->batPersistence != PERSISTENT)
@@ -155,6 +161,7 @@ int TMabort(void) {
 				b->batPersistence = PERSISTENT;
 				b->batDirtydesc = 1;
 			}					
+			BBPunfix(i);
 		}
 		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMabort");
 	}

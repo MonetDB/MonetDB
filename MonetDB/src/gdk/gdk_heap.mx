@@ -130,8 +130,8 @@ int HEAPextend(Heap *h, size_t size) {
 					h->filename); goto error;
 		}
 
-		if ((long) totsize > st.st_size) {
-                	fseek(fp, (long) totsize, SEEK_SET);
+		if (totsize > st.st_size) {
+                	fseek(fp, totsize, SEEK_SET);
                 	fputc('\n',fp), fflush(fp);
 		}
 @-
@@ -275,9 +275,8 @@ int HEAPfree(Heap* h) {
                 if (ret < 0) {
                         GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
                 }
-                IODEBUG THRprintf(GDKerr, "munmap(base=%lu, size=%lu) = %d\n", 
-				(unsigned long)h->base,
-				(unsigned long) h->maxsize, ret);
+                IODEBUG THRprintf(GDKerr, "munmap(base=%lx, size=%lu) = %d\n", 
+				(size_t) h->base, h->maxsize, ret);
 		if (h->storage == STORE_PRIV) {
 			/* may need to move back the file from X.priv to X */
 			size_t len = strlen(h->filename);
@@ -325,8 +324,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
         }
 	IODEBUG {
 		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=%lu,free=%lu,size=%lu) = %d\n", 
-			nme, ext, h->storage, (unsigned long) h->offset,
-			(unsigned long) h->free, (unsigned long) h->size);
+			nme, ext, h->storage, h->offset, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
          * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv 
@@ -358,7 +356,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 		if (fp) {
 			ret = ftruncate(fileno(fp), (off_t) ((double)h->free*1.05));
 			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s, size=%lu) = %d\n", 
-                                                h->filename, (unsigned long) h->maxsize, ret);
+                                                h->filename, h->maxsize, ret);
 			fclose(fp);
 			if (ret == 0) {
 				h->size = h->maxsize = (size_t) ((double)h->free*1.05);
@@ -392,9 +390,7 @@ int HEAPsave(Heap* h, str nme, str ext) {
 	}
 	IODEBUG {
 		THRprintf(GDKerr, "HEAPsave(%s.%s,storage=%d,offset=%lu,free=%lu,size=%lu)\n", 
-			nme, ext, h->storage,
-			(unsigned long) h->offset, (unsigned long) h->free,
-			(unsigned long) h->size);
+			nme, ext, h->storage, h->offset, h->free, h->size);
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
 }
@@ -493,26 +489,23 @@ static void HEAP_printstatus(Heap *heap) {
    CHUNK* blockp;
 
    THRprintf(GDKerr, "HEAP has head %lu and alignment %d and size %lu\n",
-		(unsigned long) hheader->head, hheader->alignment,
-		(unsigned long) heap->free);
+		hheader->head, hheader->alignment, heap->free);
 
    /*
    // Walk the blocklist;
    */
    block = hheader->firstblock;
 
-   while(((size_t) block) < heap->free) {
+   while(block < heap->free) {
       blockp = HEAP_index(heap,block,CHUNK);
       if (block == cur_free) {
           THRprintf(GDKerr, "   free block at %lu has size %lu and next %lu\n",
-			(unsigned long) block, (unsigned long) blockp->size,
-			(unsigned long) blockp->next);
+				block, blockp->size, (size_t) blockp->next);
           cur_free = blockp->next;
           block += blockp->size;
       } else {
 	  size_t size = blocksize(hheader,blockp);
-          THRprintf(GDKerr, "   block at %lu with size %lu\n",
-			(unsigned long) block, (unsigned long) size);
+          THRprintf(GDKerr, "   block at %lu with size %lu\n", block, size);
           block += size;
       }
    }
@@ -585,7 +578,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
 
 #ifdef TRACE
-   THRprintf(GDKerr, "Enter malloc with %lu bytes\n", (unsigned long) nbytes);
+   THRprintf(GDKerr, "Enter malloc with %lu bytes\n", nbytes);
 #endif
 
    /* add space for size field */
@@ -612,8 +605,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
       blockp = HEAP_index(heap,block,CHUNK);
 
 #ifdef TRACE
-   THRprintf(GDKerr, "block %lu is %lu bytes\n", (unsigned long) block,
-			(unsigned long) blockp->size);
+   THRprintf(GDKerr, "block %lu is %lu bytes\n", block, blockp->size);
 #endif
       if ((trail != 0) && (block <= trail))
 	 GDKfatal("Free list is not orderered in Heapalloc\n");
@@ -648,8 +640,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
       trailp = HEAP_index(heap,trail,CHUNK);
 
 #ifdef TRACE
-      THRprintf(GDKerr, "New block made at pos %lu with size %lu\n",
-		(unsigned long) block, (unsigned long) (heap->size - block));
+      THRprintf(GDKerr, "New block made at pos %lu with size %lu\n", block, heap->size - block);
 #endif
 
       blockp->next = 0;
@@ -838,7 +829,7 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
 
       if ((block <= prevblock) && (block != 0)) {
 	 GDKerror("Freelist is not ordered\n");
-      } else if (block <= 0 || ((size_t) block) > heap->free) {
+      } else if (block <= 0 || block > heap->free) {
 	 GDKerror("Entry freelist corrupt: block %d not in heap\n",block);
       } else {
 	 freemask[pos] |= mask;
@@ -851,7 +842,7 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    // Walk the blocklist; register in validmask/eliminate from freemask
    */
    block = hheader->firstblock;
-   while(((size_t) block) < heap->free) {
+   while(block < heap->free) {
       size_t idx = block >> alignshift;
       size_t pos = idx >> 5;
       size_t mask = 1 << (idx&31);
@@ -865,7 +856,7 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
          block += blocksize(hheader,blockp);
       }
    }
-   if (((size_t) block) != heap->free) {
+   if (block != heap->free) {
       GDKerror("Something wrong with heap\n");
       goto xit;
    }

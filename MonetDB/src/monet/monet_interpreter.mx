@@ -306,7 +306,7 @@ BAT *interpret_pin(batrec *r, str s) {
 		return NULL;
 	} else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
 		BAT *_b = BBP_cache(ABS(r->id));
-		int tid = (int) THRgettid();
+		int tid = THRgettid();
 		MT_set_lock(monet_voidLock, "pin");
 		if (_b->void_cnt && _b->void_tid != tid) {
 			BAT *v = VIEWcreate(b);
@@ -369,6 +369,10 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 	    YYSTREE tt = *t;
 	    int inc = 1, param_range = 0;
 
+	    if (argc >= (1+MAXPARAMS)) {
+		GDKerror("%s(parameters out of range): [0,%d]).\n", fcn_nme, MAXPARAMS-1);
+		return -argc;
+	    }
 	    if (tt->token == TOK_RANGETEMP) {
 		tt = tt->yysons[0];
 		param_range = 1;
@@ -385,7 +389,7 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 		    return -argc;
 		}
 	    }
-	    if ((inc > 0) && ((argc+inc) < MAXPARAMS)) while(inc--) {
+	    if ((inc > 0) && ((argc+inc) < (1+MAXPARAMS))) while(inc--) {
 	        if (argv->vtype == TYPE_bat) {  
 		    if (BBPcheck(argv->val.bval,"interpret_params") == 0) {
    			GDKerror("%s(param %d): invalid BAT.\n", fcn_nme, j+1);
@@ -399,10 +403,6 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 	        }
 		*val_array++ = *argv++; 
 		argc++;
-	    }
-	    if (argc >= MAXPARAMS) {
-		GDKerror("%s(parameters out of range): [0,%d]).\n", fcn_nme, MAXPARAMS-1); 
-		return -argc;
 	    }
 	}
     }
@@ -668,7 +668,7 @@ phase 2: interpret the actual params
 	if (opcache->yyval.vtype == TYPE_int) {
 	    opcache->yyval.vtype = TYPE_str;
 	    /* opcache->yyval.len = opcache->yyval.val.ival; */
-	    opcache->yyval.len = MAXPARAMS*sizeof(ValRecord);
+	    opcache->yyval.len = (1+MAXPARAMS)*sizeof(ValRecord);
 	    opcache->yyval.val.pval = GDKmalloc(opcache->yyval.len);
 	}
 	argv = opcache->yyval.val.pval; 
@@ -696,14 +696,15 @@ phase 4: do resolution and expand an execution tree in op
 	sig->token = i = TBL_normal_resolve(fcn_nme,argc,argv,sig,stk);
 	if (i < 0) {
 		char *alt_nme = (char*) alloca(128), p = *fcn_nme;
+		int retry = i;	
 
 		if (p == '{' || p == '[') {
 		    strcpy(alt_nme, fcn_nme+1);
 		    alt_nme[strlen(alt_nme)-1] = 0; 
 
 		    if (p == '{') {
-			i = TBL_setaggr_resolve(alt_nme,argc,argv,sig,stk);
-		        sig->token = TOK_SETAGGR;
+			retry = TBL_setaggr_resolve(alt_nme,argc,argv,sig,stk);
+			sig->token = TOK_SETAGGR;
 		    } else {
 			sig->assignop = (lt->yyval.len == -TOK_ASSIGNOP);
 			sig->special = 0;
@@ -716,44 +717,55 @@ phase 4: do resolution and expand an execution tree in op
 				sig->special = 3;
 			    }
 			}
-			i = TBL_multiplex_resolve(alt_nme,argc,argv,sig,stk);
+			retry = TBL_multiplex_resolve(alt_nme,argc,argv,sig,stk);
 		        sig->token = TOK_SETOP;
-			if (i < 0 && argc == 2 && argv[1].vtype == TYPE_bat &&
-		            (i=ATOMindex(alt_nme)) >= 0) 
-			{
-			    fcn_nme = BATatoms[i].name;
+			if (retry < 0 && argc == 2 && argv[1].vtype == TYPE_bat && (retry=ATOMindex(alt_nme)) >= 0) {
+			    fcn_nme = BATatoms[retry].name;
 			    sig->token = i = TOK_BATCAST;
 			}
 		    }
 		} else {
 		    alt_nme = fcn_nme;
-		    if (i < 0 && argc <= 2 && (i=ATOMindex(alt_nme)) >= 0) {
-			fcn_nme = BATatoms[i].name;
+		    if (argc <= 2 && (retry=ATOMindex(alt_nme)) >= 0) {
+			fcn_nme = BATatoms[retry].name;
 			sig->token = i = TOK_CAST;
 		    }
 		}
+		if (retry > i) 
+			i = retry;  /* found something better */
+
 		/* Function resolution error */ 
 		if (i < 0) {
+		    char *s, *signatures = NULL;
 
-@- phase 5: type remappings (FUTURE)
-This happens when there is/are an existing function(s) by this name
+@- phase 5: function resolution error
+
+A function resolution error generally gives and i=TBL_RESOLVE_NOFCN result;
+
+However, sometimes there is/are an existing function(s) by this name
 and with a matching number of parameters, but the actual parameter types don't 
-(fully) match a signature. In this case we have a return of i = -2 
-more precisely: (i ==-2 ||  op->token==-2)
-If things are more seriously wrong, we have i=-1;
+(fully) match a signature. If enumeration types are to be supported in the
+MIL kernel, we could now trap and any convert enumeration types present to
+their original representation (one by one, cheapest conversion first) and retry.
 
-We might retry after remappings (enum->orig, bitvector->bat). 
-For now we just give up.
+Such a conditition is identified by a return of i = TBL_RESOLVE_NOSIG
+more precisely: (i ==TBL_RESOLVE_NOSIG ||  op->token==TBL_RESOLVE_NOSIG)
+
+Finally, when a user uses a type that is not loaded by himself in an invocation,
+there is a special error code TBL_RESOLVE_NOTPE; in that case we give an 
+appropriate error message (signatures == NULL) and don't show the list of 
+alternative signatures.
 @c
-			char *s, *signatures = (char*) alloca(8192);
+		    if (i != TBL_RESOLVE_NOTPE) {
+			signatures = (char*) alloca(8192);
 			TBL_printsigs(signatures, stk, fcn_nme);
 			if (p == '{' || p == '[') { 
 			    for(s=signatures; *s; s++);
 			    TBL_printsigs(s, stk, alt_nme);
 			}
-			monet_sigerror("MIL operator", fcn_nme,  
-					signatures, argc, argv);
-			return -1;
+		    }
+		    monet_sigerror("MIL operator", fcn_nme,  signatures, argc, argv);
+		    return -1;
 		}
 	}
 
@@ -909,6 +921,7 @@ to the @%ValRecord@ of that variable in the context stack.
 @c
 int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 	Variable v;
+	BAT *b = NULL;
 	int i=0, j;
 
 	for(i = lt->yyval.len; i > 0; i--) { /* hacky use of len as ../ depth */
@@ -944,14 +957,19 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
        	}
 	/* LOAD FIX: register the bat for unpinning */
 	GDKfree(lt->yyval.val.sval);
-	lt->yyval.vtype = TYPE_bat;
-	lt->yyval.val.bval = i;
-	lt->yyval.len = 0;
-	lt->dealloc = TYPE_bat;
-	lt->free.batref.id = i;
-	lt->free.batref.stamp = BBPquickdesc(ABS(i), FALSE)->batStamp;
-	BBPincref(i, TRUE);
-	BBPunfix(i);
+	if (BBPincref(i, TRUE) && (b=BBPquickdesc(ABS(i), FALSE)) != NULL) {
+		lt->yyval.vtype = TYPE_bat;
+		lt->yyval.val.bval = i;
+		lt->yyval.len = 0;
+		lt->dealloc = TYPE_bat;
+		lt->free.batref.id = i;
+		lt->free.batref.stamp = b->batStamp;
+		BBPunfix(i);
+	} else {
+		/* if the BAT gives a load error, return nil */
+		lt->yyval.vtype = TYPE_void;
+		lt->yyval.val.oval = oid_nil;
+	}
 	*res = lt->yyval;
 	return 0;
 }
@@ -1004,7 +1022,7 @@ A copy of the trigger definition is used and scheduled for execution.
 @c
 #ifdef MKMODS
 int interpret_trigger(int stk, YYSTREE lt, ValPtr res){
-	ValPtr argv = (ValPtr) GDKmalloc(MAXPARAMS*sizeof(ValRecord));
+	ValPtr argv = (ValPtr) GDKmalloc((1+MAXPARAMS)*sizeof(ValRecord));
 	YYSTREE definition = (YYSTREE) lt->yyval.val.pval;
 	YYSTREE	t,expr;
 	int argc,i=0;
@@ -1328,7 +1346,7 @@ The parallel statements are immediately taken into execution.
 @c
 int interpret_parblock(int stk, YYSTREE lt, ValPtr res, int scope){
 	int	reuse = monet_cntxt[stk].reuse;
-	MT_Id	tid = THRgettid();
+	int	tid = THRgettid();
 	Thread	t = THRget(tid);
 	YYSTREE	bt;
 	Request barrier;

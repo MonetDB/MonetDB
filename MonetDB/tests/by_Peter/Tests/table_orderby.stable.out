@@ -1,15 +1,12 @@
 stdout of test 'table_orderby` in directory 'tests/by_Peter` itself:
 
-#> Mtest:	milM table_orderby milM
-#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter table_orderby.milM
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Sat Feb  5 04:39:19 MET 2000.
-#script:table_orderby.milM
 
+# 15:31:53 >  
+# 15:31:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_by_Peter  < table_orderby.milM
+# 15:31:53 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module(xtables);
 
@@ -25,7 +22,7 @@ c := a.copy.seqbase(0@0);
 b := [str](c);
 print(c,b);
 #-------------------------#
-# BAT:	  tmp_25| tmp_27  #
+# BAT:	  tmp_29| tmp_30  #
 # (void)  (str)	| (str)	  #
 #-------------------------#
 [ 0@0,	  "the",  "the"	  ]
@@ -38,18 +35,18 @@ print(c,b);
 d := c.mark(10000@0);
 print("1",c,d);
 #---------------------------------#
-# BAT:	  tmp_32| tmp_28	  #
+# BAT:	  tmp_35| tmp_31	  #
 # (oid)	  (str)	| (void)	  #
 #---------------------------------#
 [ 1@0,	  "cat",  10001@0	  ]
 [ 5@0,	  "mat",  10005@0	  ]
 [ 3@0,	  "on",	  10003@0	  ]
 [ 2@0,	  "sat",  10002@0	  ]
-[ 0@0,	  "the",  10000@0	  ]
 [ 4@0,	  "the",  10004@0	  ]
+[ 0@0,	  "the",  10000@0	  ]
 print("2",c,d);
 #---------------------------------#
-# BAT:	  tmp_25| tmp_31	  #
+# BAT:	  tmp_29| tmp_36	  #
 # (void)  (str)	| (oid)		  #
 #---------------------------------#
 [ 0@0,	  "the",  10000@0	  ]
@@ -65,7 +62,7 @@ f := a.copy.access(BAT_WRITE).insert(a).insert(a).insert(a).seqbase(0@0);
 g := [>]([int](f.mirror),12);
 print("1",e,f,g);
 #-----------------------------------------#
-# BAT:	  tmp_36	| tmp_32| tmp_34  #
+# BAT:	  tmp_41	| tmp_32| tmp_39  #
 # (void)  (oid)		| (str)	| (bit)	  #
 #-----------------------------------------#
 [ 0@0,	  10000@0,	  "the",  false	  ]
@@ -94,7 +91,7 @@ print("1",e,f,g);
 [ 23@0,	  20010@0,	  "mat",  true	  ]
 print("1,2",e,f,g);
 #-----------------------------------------#
-# BAT:	  tmp_35	| tmp_32| tmp_34  #
+# BAT:	  tmp_42	| tmp_32| tmp_39  #
 # (oid)	  (oid)		| (str)	| (bit)	  #
 #-----------------------------------------#
 [ 1@0,	  10000@0,	  "cat",  false	  ]
@@ -123,36 +120,36 @@ print("1,2",e,f,g);
 [ 22@0,	  20010@0,	  "the",  true	  ]
 print("2",e,f,g);
 #-----------------------------------------#
-# BAT:	  tmp_30	| tmp_33| tmp_34  #
+# BAT:	  tmp_33	| tmp_43| tmp_39  #
 # (void)  (oid)		| (str)	| (bit)	  #
 #-----------------------------------------#
-[ 1@0,	  10000@0,	  "cat",  false	  ]
 [ 19@0,	  20006@0,	  "cat",  true	  ]
 [ 13@0,	  20000@0,	  "cat",  true	  ]
 [ 7@0,	  10003@0,	  "cat",  false	  ]
+[ 1@0,	  10000@0,	  "cat",  false	  ]
 [ 23@0,	  20010@0,	  "mat",  true	  ]
-[ 5@0,	  10002@0,	  "mat",  false	  ]
 [ 17@0,	  20004@0,	  "mat",  true	  ]
 [ 11@0,	  10005@0,	  "mat",  false	  ]
-[ 15@0,	  20002@0,	  "on",	  true	  ]
+[ 5@0,	  10002@0,	  "mat",  false	  ]
 [ 21@0,	  20008@0,	  "on",	  true	  ]
+[ 15@0,	  20002@0,	  "on",	  true	  ]
 [ 9@0,	  10004@0,	  "on",	  false	  ]
 [ 3@0,	  10001@0,	  "on",	  false	  ]
-[ 8@0,	  10004@0,	  "sat",  false	  ]
 [ 20@0,	  20008@0,	  "sat",  true	  ]
 [ 14@0,	  20002@0,	  "sat",  true	  ]
+[ 8@0,	  10004@0,	  "sat",  false	  ]
 [ 2@0,	  10001@0,	  "sat",  false	  ]
-[ 12@0,	  20000@0,	  "the",  false	  ]
-[ 4@0,	  10002@0,	  "the",  false	  ]
-[ 6@0,	  10003@0,	  "the",  false	  ]
-[ 10@0,	  10005@0,	  "the",  false	  ]
-[ 0@0,	  10000@0,	  "the",  false	  ]
-[ 16@0,	  20004@0,	  "the",  true	  ]
-[ 18@0,	  20006@0,	  "the",  true	  ]
 [ 22@0,	  20010@0,	  "the",  true	  ]
+[ 18@0,	  20006@0,	  "the",  true	  ]
+[ 16@0,	  20004@0,	  "the",  true	  ]
+[ 0@0,	  10000@0,	  "the",  false	  ]
+[ 10@0,	  10005@0,	  "the",  false	  ]
+[ 6@0,	  10003@0,	  "the",  false	  ]
+[ 4@0,	  10002@0,	  "the",  false	  ]
+[ 12@0,	  20000@0,	  "the",  false	  ]
 print("2,1",e,f,g);
 #-----------------------------------------#
-# BAT:	  tmp_30	| tmp_35| tmp_34  #
+# BAT:	  tmp_33	| tmp_44| tmp_39  #
 # (void)  (oid)		| (str)	| (bit)	  #
 #-----------------------------------------#
 [ 1@0,	  10000@0,	  "cat",  false	  ]
@@ -181,7 +178,7 @@ print("2,1",e,f,g);
 [ 22@0,	  20010@0,	  "the",  true	  ]
 print("3,1,2",e,f,g);
 #-----------------------------------------#
-# BAT:	  tmp_30	| tmp_32| tmp_36  #
+# BAT:	  tmp_33	| tmp_32| tmp_45  #
 # (void)  (oid)		| (str)	| (bit)	  #
 #-----------------------------------------#
 [ 1@0,	  10000@0,	  "cat",  false	  ]
@@ -211,7 +208,7 @@ print("3,1,2",e,f,g);
 
 quit;
 
-# 17:07:48 >  
-# 17:07:48 >  Done.
-# 17:07:48 >  
+# 15:31:53 >  
+# 15:31:53 >  Done.
+# 15:31:53 >  
 

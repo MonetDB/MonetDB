@@ -700,7 +700,7 @@ int CMDthreadcnt(Cntxt stk, YYSTREE lt, ValPtr res){
 int CMDthreadid(Cntxt stk, YYSTREE lt, ValPtr res){
 	res->vtype = TYPE_int;
 /* res->val.ival = (int) MT_getpid(); */
-	res->val.ival = (int) THRgettid();
+	res->val.ival = THRgettid();
 	return 0;
 }
 
@@ -859,7 +859,9 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 	while (c->father >= 0) {
 		c = monet_clients + c->father;
 	}
+/* non-DD semantics! 
 	TMcommit();
+*/
 	if (c == monet_clients) {
 		int status = 0, *statusp = &status;
         	if (lt->cnt > 0) { 

@@ -67,18 +67,25 @@ relationship} between two atomic types.
 The association can be defined over:
 @T
 \begin{description}
-\item[void:] A dummy type to identify a unary association.
+\item[void:] virtual-OIDs: a densely ascending column of OIDs (takes zero-storage).
+            Values start from the "seqbase" (usually 0@0). A nil seqbase makes the 
+            entire column nil.  Monet's BUN accessmethods BUNhead(b,p)/BUNtail(b,p) 
+            instantiate a value on-the-fly by looking at the position p in BAT b.
 \item[bit:] Booleans, implemented as one byte values.
-\item[chr:] A single character.
-\item[sht:] Short integers (half-sized {\tt integer}s).
-\item[int:] This is the C {\tt integer} type (4 byte). 
-\item[oid:] Unique {\tt long int} values uses as object identifier.
-\item[ptr:] Memory pointer values.
-\item[flt:] The C {\tt float} type.
-\item[dbl:] The C {\tt double} type.
-\item[lng:] Longs: the C {\tt long long} type.
-\item[str:] The C-style character strings. 
-\item[bat:] Bat descriptor. This allows for recursive tables.
+\item[chr:] A single character (8 bits {\tt integer}s). 
+            DEPRECATED: for storing text (Unicode not supported).
+\item[sht:] Short integers (16-bit {\tt integer}s).
+\item[int:] This is the C {\tt int} type (32-bit). 
+\item[oid:] Unique {\tt long int} values uses as object identifier. Highest bit cleared always.
+	    Thus, oids-s are 31-bit numbers on 32-bit systems, and 63-bit numbers on 64-bit systems.
+\item[ptr:] Memory pointer values. DEPRECATED.
+            CAN ONLY BE STORED IN TRANSIENT BATs (pointers are supposed to be transient).
+\item[flt:] The IEEE {\tt float} type.
+\item[dbl:] The IEEE {\tt double} type.
+\item[lng:] Longs: the C {\tt long long} type (64-bit integers).
+\item[str:] UTF-8 strings (Unicode). A zero-terminated byte sequence.
+\item[bat:] Bat descriptor. This allows for recursive tables. 
+            CAN ONLY BE STORED IN TRANSIENT BATs (not to complicate transaction mgmt).
 \end{description}
 @T 
 This model can be used as a backend model underlying other -- higher
@@ -442,7 +449,7 @@ below.  The global variables should not be modified directly.
 typedef signed char	bit; 		
 typedef signed char	chr; 		
 typedef short		sht;
-typedef unsigned long	oid; 		
+typedef size_t		oid; 		
 #define SIZEOF_OID	SIZEOF_LONG
 typedef int		bat; 		/* Index into BBP */
 typedef void*		ptr; 		/* Internal coding of types */
@@ -832,8 +839,8 @@ typedef struct {
 	back, expecting this to be reversed in the enhanced 64-bit release spring '03
 
 */
-	long 		void_tid;	/* thread that reads this bat */
-	long 		void_cnt;	/* nr of reads */
+	ssize_t 	void_tid;	/* thread that reads this bat */
+	ssize_t		void_cnt;	/* nr of reads */
 #endif
 	int 		void_tid;	/* thread that reads this bat */
 	int 		void_cnt;	/* nr of reads */
@@ -1491,7 +1498,9 @@ gdk_export int	BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, in
 @T
 {\tt \begin{tabular}{|lll|}\hline
 BAT * & BATsort & (BAT *b)\\
+BAT * & BATsort_rev & (BAT *b)\\
 BAT * & BATorder & (BAT *b)\\
+BAT * & BATorder_rev & (BAT *b)\\
 BAT * & BATrevert & (BAT *b)\\
 int & BATordered & (BAT *b)\\
 \hline\end{tabular}}
@@ -1516,12 +1525,16 @@ BUNs of a BAT in reverse order. It just reverses the sequence, so
 this does not mean that they are sorted in reverse order! 
 @{
 @h
+#define 		GDK_SORTED_REV	128 /* reversely sorted */
 #define 		GDK_SORTED	65 /* 65 = (32 bits radix_clustered)<<1 + 1 */
 
 gdk_export BAT*		BATsort          (BAT *b); 
+gdk_export BAT*		BATsort_rev      (BAT *b); 
 gdk_export BAT*		BATorder         (BAT *b); 
+gdk_export BAT*		BATorder_rev     (BAT *b); 
 gdk_export BAT*		BATrevert        (BAT *b); 
 gdk_export int		BATordered       (BAT *b); 
+gdk_export int		BATordered_rev   (BAT *b); 
 
 gdk_export void GDKqsort (void *a, void* base, size_t n, int width, int tpe, int loc);
 
@@ -1619,6 +1632,8 @@ gdk_export BBPrec*       	BBP;
 #define BBPrefs(i)	 (BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	 (BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
 #define BBPname(i)	 (BBPcheck((i),"BBPname")?((i) > 0 || BBP_logical(i))?BBP_logical(i):BBP_logical(-(i)):"")
+#define BBPfix(i) 	 BBPincref(i, FALSE)
+#define BBPunfix(i) 	 BBPdecref(i, FALSE)
  
 #define BBPRENAME_ALREADY	-1
 #define BBPRENAME_ILLEGAL	-2
@@ -1627,8 +1642,6 @@ gdk_export BBPrec*       	BBP;
 gdk_export void BBPlock       (str s);
 
 gdk_export int  BBPrename     (bat b, str s);
-gdk_export int  BBPfix        (bat b);
-gdk_export int  BBPunfix      (bat b);
 gdk_export int  BBPincref     (bat b, int logical);
 gdk_export int  BBPdecref     (bat b, int logical);
 gdk_export void BBPhot        (bat b);
@@ -1818,6 +1831,8 @@ gdk_export int 		GDKatomcnt;
 gdk_export void ATOMdelete    (int id);
 gdk_export void ATOMproperty  (char* nme, char *property, GDKfcn fcn);
 gdk_export int  ATOMindex     (char* nme);
+gdk_export int  ATOMstorage   (int id);
+gdk_export int  ATOMisdescendant (int id, int parentid);
 gdk_export int  ATOMdump      (void);
 
 gdk_export void ATOMheap      (int id, Heap *hp, size_t cap); 
@@ -2060,26 +2075,37 @@ Compiled with -DMEMLEAKS the GDK memory management log their activities,
 and are checked on inconsistent frees and memory leaks.
 @{
 @h
+#define GDK_HISTO_MAX_BIT             ((int) (sizeof(size_t)<<3))
+
 /* we prefer to use vm_alloc routines on size > GDKmmap */
 gdk_export void *GDKmmap(char* path, int mode, off_t off, size_t len, void *fixed);
 gdk_export int	GDKmunmap(void* addr, size_t len);
 
-gdk_export      ptr     GDK_mem_start;          /* sbrk(0) at start of the program */
-gdk_export	size_t 	GDK_mem_maxsize;	/* max allowed size of committed memory */
-gdk_export	size_t 	GDK_mem_bigsize;	/* size after which we use VM rather than heap memory */
-gdk_export	size_t 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
-gdk_export	size_t 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
-gdk_export	size_t  GDK_heap_cursize;       /* bytes in use in the malloc heap */
+gdk_export      	ptr     GDK_mem_start;          /* sbrk(0) at start of the program */
+gdk_export		size_t 	GDK_mem_maxsize;	/* max allowed size of committed memory */
+gdk_export		size_t 	GDK_mem_bigsize;	/* size after which we use VM rather than heap */
+gdk_export		size_t 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
+gdk_export		size_t 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
+gdk_export volatile 	size_t  GDK_heap_cursize;       /* bytes in use in the malloc heap */
 gdk_export volatile	size_t 	GDK_mem_cursize;	/* committed bytes outside the heap */
 gdk_export volatile	size_t 	GDK_vm_cursize;		/* reserved vm in bytes */
+#ifdef GDK_MEM_KEEPHISTO
+gdk_export volatile	size_t	GDK_nmallocs[];         /* memory histogram */
+#endif
+#ifdef GDK_VM_KEEPHISTO
+gdk_export volatile	size_t	GDK_vm_nallocs[];       /* virtual memory histogram */
+#endif
 
-#define GDKvm_maxsize()		GDK_vm_maxsize
-#define GDKvm_minsize()		GDK_vm_minsize
-#define GDKmem_bigsize()	GDK_mem_bigsize
-#define GDKmem_maxsize()	GDK_mem_maxsize
+#define GDKvm_maxsize()		GDK_vm_maxsize		/* BBPunload threshold for VM address space usage */
+#define GDKvm_minsize()		GDK_vm_minsize		/* minimum size for a VM heap */
+#define GDKmem_bigsize()	GDK_mem_bigsize		/* see above */
+#define GDKmem_maxsize()	GDK_mem_maxsize		/* see above */
 #define GDKmem_inuse()		(GDK_mem_cursize + GDKmem_heapinuse())
+							/* RAM/swapmem that Monet is really using now */
 #define GDKmem_cursize()	(GDK_mem_cursize + GDKmem_heapsize())
+							/* RAM/swapmem that Monet has claimed from OS */
 #define GDKvm_cursize()		(GDK_vm_cursize + GDKvm_heapsize())
+							/* current Monet VM address space usage */
 
 gdk_export size_t GDKvm_heapsize(void);
 gdk_export size_t GDKmem_heapsize(void);
@@ -2213,28 +2239,28 @@ thread. This speeds up access to tid and file descriptors.
 #define THREADDATA	16
 
 typedef struct threadStruct{
-	MT_Id		tid; 
-	MT_Id		pid; 
+	int		tid; /* logical ID by Monet; val == index into this array + 1 (0 is invalid) */ 
+	MT_Id		pid; /* physical thread id (pointer-sized) from the OS thread library */
 	str		name; 
 	ptr		data[THREADDATA];
-	unsigned long	sp;
+	size_t		sp;
 	void		(*cleanup)(ptr thr);
 } ThreadRec, *Thread; 
 
 
 gdk_export ThreadRec        GDKthreads[THREADS];
 
-gdk_export MT_Id	THRgettid    (void);
-gdk_export Thread  THRget       (MT_Id tid);
-gdk_export Thread  THRnew       (MT_Id pid, str name);
-gdk_export void    THRdel       (Thread t);
-gdk_export int 	THRinit      (void);
-gdk_export int     THRexit      (str nme);
-gdk_export int     THRcnt       (void);
-gdk_export void    THRsetdata   (int,ptr);
-gdk_export void*   THRgetdata   (int);
-gdk_export int     THRhighwater (void);
-gdk_export int	THRprintf    (stream *s, char* format, ... );
+gdk_export int		THRgettid    (void);
+gdk_export Thread	THRget       (int tid);
+gdk_export Thread	THRnew       (MT_Id pid, str name);
+gdk_export void		THRdel       (Thread t);
+gdk_export int		THRinit      (void);
+gdk_export int		THRexit      (str nme);
+gdk_export int		THRcnt       (void);
+gdk_export void		THRsetdata   (int,ptr);
+gdk_export void*	THRgetdata   (int);
+gdk_export int		THRhighwater (void);
+gdk_export int		THRprintf    (stream *s, char* format, ... );
 
 gdk_export void*    THRdata[16];
 

@@ -76,7 +76,7 @@ typedef struct MEVENT {
 	Cntxt		ev_stk;
 	int		ev_status;
 	int		ev_kill;
-	MT_Id		ev_process;
+	int		ev_process;
 	struct MEVENT	*ev_wakeup;
 	struct MEVENT	*ev_next;
 	struct MEVENT	*ev_prev;
@@ -86,44 +86,44 @@ typedef struct MEVENT {
 } *Request, RequestRec;
 
 /* request management */
-m_export Request	   newRequest  (Cntxt stk, YYSTREE data, int barrier);
-m_export void    putkillRequest  (void);
-m_export void	wakeupRequest  (Request p, MT_Id tid);
-m_export void	   putRequest  (Request p);
-m_export void	   nxtRequest  (Request p);
-m_export Request	   getRequest  (Request barrier);
-m_export void	unlinkRequest  (Request q);
-m_export void  	   clrRequest  (Request q);	
-m_export void         rmRequest  (Request r);
-m_export int	handleRequest  (Thread t, Request q, ValPtr res);
-m_export void	    doRequest  (Thread t, Request preference);
-m_export void	    prRequest  (stream *fp, Request p);
-m_export Request	  thisRequest  (void);
-m_export Request	   topRequest  (Client c);
+m_export Request	newRequest(Cntxt stk, YYSTREE data, int barrier);
+m_export void		putkillRequest(void);
+m_export void		wakeupRequest(Request p);
+m_export void		putRequest(Request p);
+m_export void		nxtRequest(Request p);
+m_export Request	getRequest(Request barrier);
+m_export void		unlinkRequest(Request q);
+m_export void		clrRequest(Request q);	
+m_export void		rmRequest(Request r);
+m_export int		handleRequest  (Thread t, Request q, ValPtr res);
+m_export void		doRequest(Thread t, Request preference);
+m_export void		prRequest(stream *fp, Request p);
+m_export Request	thisRequest(void);
+m_export Request	topRequest(Client c);
 
 m_export Request	qm_first;
 m_export Request	qm_last;
 m_export Request	qm_top;
 m_export Request	qm_bot;
-m_export int	qm_profile;
+m_export int		qm_profile;
 
 /* QM queue management */
-m_export int	QMenqueue     (Cntxt stk, YYSTREE data, int bar, int kill);
-m_export Request	QMrequest     (int qkey);
-m_export Request	QMclient      (Request start, Client c);
-m_export void	QMwakeup      (int qkey);
-m_export int	QMbefore      (int qkey1, int qkey2);
-m_export void	QMprint       (void);
-m_export int	QMopen	      (void);
+m_export int		QMenqueue(Cntxt stk, YYSTREE data, int bar, int kill);
+m_export Request	QMrequest(int qkey);
+m_export Request	QMclient(Request start, Client c);
+m_export void		QMwakeup(int qkey);
+m_export int		QMbefore(int qkey1, int qkey2);
+m_export void		QMprint(void);
+m_export int		QMopen(void);
 
 /* QM statistics */
-m_export void 	QMtrace       (int flag);
-m_export void 	QMmessage     (Request q, str msg);
-m_export void 	QMenqueueStat (Request q);
-m_export void 	QMexecStat    (Request q);
-m_export void 	QMdequeueStat (Request q);
-m_export void 	QMprintStat   (void);
-m_export void 	QMclearStat   (void);
+m_export void 		QMtrace(int flag);
+m_export void 		QMmessage(Request q, str msg);
+m_export void 		QMenqueueStat(Request q);
+m_export void 		QMexecStat(Request q);
+m_export void 		QMdequeueStat(Request q);
+m_export void 		QMprintStat(void);
+m_export void 		QMclearStat(void);
 
 #endif /* _MONET_QUEUE_H_ */
 @}
@@ -145,8 +145,8 @@ void prRequest(stream *fp, Request p) {
 	int l = 0;
 
 	sprintf(buf,"%d", p->ev_status);
-	THRprintf(fp, "[ %6d, %9ld, %9s, %9d, \"", 
-		p->ev_seqnr, (long int) p->ev_process, 
+	THRprintf(fp, "[ %6d, %9d, %9s, %9d, \"", 
+		p->ev_seqnr, p->ev_process, 
 		( p->ev_status == EVDONE ? "done":
 		( p->ev_status == EVRUNNING ? "running":
 		( p->ev_status == EVAWAIT? "waiting":
@@ -216,7 +216,7 @@ All code should pass the wakeupRequest point.
 @c
 int sem=0; char mybuf[16000], *myp = mybuf;
 
-void wakeupRequest(Request p, MT_Id tid){
+void wakeupRequest(Request p){
 	p->ev_status = EVPENDING;
 	MT_up_sema(monet_available, "wakeupRequest");
 }
@@ -224,7 +224,6 @@ void wakeupRequest(Request p, MT_Id tid){
 void putRequest(Request p){
 	Request last, op = p;
 	int cnt = 0;
-	MT_Id tid = THRgettid();
 
 	if ( p == NULL ) {
 		GDKerror("putRequest: nil request received\n");
@@ -255,7 +254,7 @@ are eligable for execution. Their state is set accordingly.
 	for( ; p ; p = p->ev_next)
 	if ( p->ev_status==0)
 	{
-		wakeupRequest(p,tid);
+		wakeupRequest(p);
 	}
 
 	PARDEBUG {
@@ -269,7 +268,7 @@ are eligable for execution. Their state is set accordingly.
 	
 void nxtRequest(Request p){
 	Request q;
-	MT_Id tid = THRgettid();
+	int tid = THRgettid();
 
 	if (p == 0 ||  p->ev_next != 0 || p->ev_prev != 0) {
 		GDKerror("nxtRequest: single request expected\n");
@@ -315,12 +314,12 @@ The flag barrier searches requests that lower the barrier request first.
 @c
 Request getRequest(Request barrier){
 	Request	q;
-	MT_Id tid= THRgettid();
+	int tid= THRgettid();
        	MT_down_sema(monet_available, "getRequest");
        	MT_set_lock(monet_critical, "getRequest");
 
 	if ( barrier) {
-		PARDEBUG THRprintf(GDKerr, "barrier search %ld\n", (long int) barrier % 10000);
+		PARDEBUG THRprintf(GDKerr, "barrier search %lx\n", (size_t) barrier);
 		for (q = qm_first; q; q = q->ev_next) 
 		if ( q->ev_status== EVPENDING  && q->ev_wakeup== barrier){
 			goto getReq0;
@@ -360,7 +359,7 @@ this routine need not be placed in a critical section.
 @c
 Request thisRequest(void){
 	Request	q; 
-	MT_Id 	tid = THRgettid();
+	int tid = THRgettid();
 
 	for (q = qm_last; q; q = q->ev_prev) {
 		if (q->ev_process == tid) {
@@ -394,7 +393,7 @@ void rmRequest(Request r){
 	Request s,t;
 
 	MT_set_lock(monet_critical, "rmRequest");
-	PARDEBUG THRprintf(GDKerr, "remove dependents of %ld\n", ((long int) r)  %100000);
+	PARDEBUG THRprintf(GDKerr, "remove dependents of %lx\n", (size_t) r);
 	for ( s=r->ev_wakeup; s; s=t )  {
 		t= s->ev_wakeup;
 		unlinkRequest(s);
@@ -605,7 +604,7 @@ void QMwakeup(int qkey){
 			GDKwarning("QMwakeup: request already awake %d\n",qkey);
 		} else {
 			p->ev_status = 0;
-			wakeupRequest(p, THRgettid());
+			wakeupRequest(p);
 		}
 		MT_unset_lock(monet_critical, "QMwakeup");
 		return;
@@ -663,8 +662,8 @@ The history of event records is cleared as soon as the qtrace option
 is turned off.
 
 @= QMstatistics
-	MT_Id	qm_puttid, qm_gettid;
-	long	qm_enter, qm_start, qm_finish;
+	int	qm_puttid, qm_gettid;
+	ssize_t	qm_enter, qm_start, qm_finish;
 	char	qm_cmd[IDLENGTH];
 @
 @c
@@ -689,7 +688,7 @@ void QMmessage(Request q, str msg){
 void QMenqueueStat(Request q){
 	if( qm_profile == 0 ) return;
 	q->qm_puttid = THRgettid();
-	q->qm_enter = GDKms();
+	q->qm_enter = (ssize_t) GDKms();
 }
 
 void QMexecStat(Request q){
@@ -722,14 +721,14 @@ void QMprintStat(void) {
 	THRprintf(fd, "# key   | put   | get  | wakeup  | enter | start | duration | action     #\n"); 
 	THRprintf(fd, "#------------------------------------------------------------------------#\n"); 
 	for (q = qm_top; q; q = q->ev_next) {
-		THRprintf(fd, "[ %5d, %6d, %6d, %6d, %7d, %7d, %7d, \"%s\"]\n",
+		THRprintf(fd, "[ %5d, %6d, %6d, %6d, %7ld, %7ld, %7ld, \"%s\"]\n",
 		q->ev_seqnr,
 		q->qm_puttid,
 		q->qm_gettid,
 		(q->ev_wakeup ? q->ev_wakeup->ev_seqnr: 0),
-		(int) q->qm_enter,
-		(int) q->qm_start,
-		(int) q->qm_finish,
+		q->qm_enter,
+		q->qm_start,
+		q->qm_finish,
 		q->qm_cmd);
 	}
 }

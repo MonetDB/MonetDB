@@ -130,8 +130,11 @@ typedef struct {
 	if ((n) > 0) tpe_SWAP(TYPE, a, b, n)
 
 @T
-qsort is macro expanded in three dimensions:
+qsort is macro expanded in four dimensions:
 \begin{description}
+\item[direction:2] 
+	L: from lesser to greater is standard.
+	G: from greater to lesser is the _rev version of quicksort.
 \item[type:7] 
 	in order to factor out a type-specific check, or a function call for each 
 	value comparison, we separate different qsort implementations by the comparision 
@@ -150,66 +153,65 @@ qsort is macro expanded in three dimensions:
 	One often-occurring special case is when the entry width is 8 (two integers). These 
 	can be copied by one long integer load and store; without the loop overhead.
 \end{description}
-Thus, there are 7 * 2 * 2 = 28 GDKqsort implementation routines.
+Thus, there are 2 * 7 * 2 * 2 = 56 GDKqsort implementation routines.
 @c
 #define offset(p) 		(buf->offst + *(var_t*) (p))
 #define direct(p) 		(p)
 
-#define any_CMP(a,b)		(buf->cmp)(a,b)
-#define any_MED3(a,b,c,A,B,C)				\
-	(buf->cmp)(a,b) < 0 ?				\
-		((buf->cmp)(b,c) < 0 ?			\
+#define any_LE(a,b)		((buf->cmp)(a,b) <= 0)
+#define any_LT(a,b)		((buf->cmp)(a,b) < 0)
+#define any_GE(a,b)		((buf->cmp)(a,b) >= 0)
+#define any_GT(a,b)		((buf->cmp)(a,b) > 0)
+
+typedef chr any;
+@:qsort_L_or_G_direction(any)@
+@:qsort_cmpdef(chr)@
+@:qsort_cmpdef(sht)@
+@:qsort_cmpdef(int)@
+@:qsort_cmpdef(flt)@
+@:qsort_cmpdef(dbl)@
+@:qsort_cmpdef(lng)@
+
+@= qsort_cmpdef
+#define @1_LE(a,b) (*(@1*) (a) <= *(@1*) (b))
+#define @1_LT(a,b) (*(@1*) (a) <  *(@1*) (b))
+#define @1_GT(a,b) (*(@1*) (a) >= *(@1*) (b))
+#define @1_GE(a,b) (*(@1*) (a) >  *(@1*) (b))
+
+@:qsort_L_or_G_direction(@1)@
+
+@= qsort_L_or_G_direction
+@:qsort_direct_or_offset_storage(@1,L)@
+@:qsort_direct_or_offset_storage(@1,G,_rev)@
+
+@= qsort_direct_or_offset_storage
+#define @1_@2MED3(a,b,c,A,B,C)				\
+	@1_@2T(a,b) ?					\
+		(@1_@2T(b,c) ?				\
 			(B):				\
-			((buf->cmp)(a,c) < 0 ?		\
+			(@1_@2T(a,c) ?			\
 				(C):			\
 				(A))):			\
-		((buf->cmp)(c,b) < 0 ?			\
+		(@1_@2T(c,b) ?				\
 			(B):				\
-			((buf->cmp)(a,c) < 0 ?		\
+			(@1_@2T(a,c) ?			\
 				(A):			\
 				(C)))
-typedef chr any;
-@:qsort_storage(any)@
-@:qsort_cmptype(chr)@
-@:qsort_cmptype(sht)@
-@:qsort_cmptype(int)@
-@:qsort_cmptype(flt)@
-@:qsort_cmptype(dbl)@
-@:qsort_cmptype(lng)@
 
-@= qsort_cmptype
-#define @1_CMP(a,b)                                     \
-	((*(@1*) (a) < *(@1*) (b))?                     \
- 		-1:                                     \
-		(*(@1*) (a) != *(@1*) (b)))
-#define @1_MED3(a,b,c,A,B,C)                            \
-	((*(@1*) (a) < *(@1*) (b))?                     \
-		((*(@1*) (b) < *(@1*) (c))?             \
-			(B):                            \
-			((*(@1*) (a) < *(@1*) (c))?     \
-				(C):                    \
-				(A))):                  \
-		((*(@1*) (c) < *(@1*) (b))?             \
-			(B):                            \
-			((*(@1*) (a) < *(@1*) (c))?     \
-				(A):                    \
-				(C))))
-@:qsort_storage(@1)@
+@:qsort_register_or_iterate_swapmethod(direct,@1,@2,@3)@
+@:qsort_register_or_iterate_swapmethod(offset,@1,@2,@3)@
 
-@= qsort_storage
-@:qsort_swap(direct,@1)@
-@:qsort_swap(offset,@1)@
+@= qsort_register_or_iterate_swapmethod
+#define @1_@2_@3MED3(a,b,c,buf)	@2_@3MED3(@1(a),@1(b),@1(c),a,b,c)
+#define @1_@2_@3T(a,b)		@2_@3T(@1(a),@1(b))
+#define @1_@2_@3E(a,b)		@2_@3E(@1(a),@1(b))
 
-@= qsort_swap
-#define @1_@2_MED3(a,b,c,buf)	@2_MED3(@1(a),@1(b),@1(c),a,b,c)
-#define @1_@2_CMP(a,b)		@2_CMP(@1(a),@1(b))
-
-@:qsort_algo(register,@1,@2)@
-@:qsort_algo(iterate,@1,@2)@
+@:qsort_algo(register,@1,@2,@3,@4)@
+@:qsort_algo(iterate,@1,@2,@3,@4)@
 
 @= qsort_algo
 static 
-void GDKqsort_@1_@2_@3(char *a, size_t n, buf_t *buf) {
+void GDKqsort_@1_@2_@3@5(char *a, size_t n, buf_t *buf) {
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
 	size_t r;
 	int swap_cnt;
@@ -218,7 +220,7 @@ void GDKqsort_@1_@2_@3(char *a, size_t n, buf_t *buf) {
 loop:	swap_cnt = 0;
 	if (n < 7) {
 		for (pm = (char *) a + buf->width; pm < (char *) a + MULT_WIDTH(n); pm += buf->width)
-			for (pl = pm; pl > (char *) a && @2_@3_CMP(pl - buf->width, pl) > 0;
+			for (pl = pm; pl > (char *) a && @2_@3_@4E(pl, pl - buf->width);
 			     pl -= buf->width)
 				@1_SWAP(@3, pl, pl - buf->width);
 		return;
@@ -230,11 +232,11 @@ loop:	swap_cnt = 0;
 		if (n > 40) {
 			size_t d;
 			d = MULT_WIDTH(n >> 3);
-			pl = @2_@3_MED3(pl, pl + d, pl + 2 * d, buf);
-			pm = @2_@3_MED3(pm - d, pm, pm + d, buf);
-			pn = @2_@3_MED3(pn - 2 * d, pn - d, pn, buf);
+			pl = @2_@3_@4MED3(pl, pl + d, pl + 2 * d, buf);
+			pm = @2_@3_@4MED3(pm - d, pm, pm + d, buf);
+			pn = @2_@3_@4MED3(pn - 2 * d, pn - d, pn, buf);
 		}
-		pm = @2_@3_MED3(pl, pm, pn, buf);
+		pm = @2_@3_@4MED3(pl, pm, pn, buf);
 	}
 	@1_SWAP(@3, a, pm);
 	pa = pb = (char *) a + buf->width;
@@ -242,7 +244,7 @@ loop:	swap_cnt = 0;
 
 	for (;;) {
 		int r;
-		while (pb <= pc && (r = @2_@3_CMP(pb, a)) <= 0) {
+		while (pb <= pc && (r = @2_@3_@4E(pb, a))) {
 			if (r == 0) {
 				swap_cnt = 1;
 				@1_SWAP(@3, pa, pb);
@@ -250,7 +252,7 @@ loop:	swap_cnt = 0;
 			}
 			pb += buf->width;
 		}
-		while (pb <= pc && (r = @2_@3_CMP(pc, a)) >= 0) {
+		while (pb <= pc && (r = @2_@3_@4T(a, pc))) {
 			if (r == 0) {
 				swap_cnt = 1;
 				@1_SWAP(@3, pc, pd);
@@ -269,7 +271,7 @@ loop:	swap_cnt = 0;
 	}
 	if (swap_cnt == 0) {  /* Switch to insertion sort */
 		for (pm = (char *) a + buf->width; pm < (char *) a + MULT_WIDTH(n); pm += buf->width)
-			for (pl = pm; pl > (char *) a && @2_@3_CMP(pl - buf->width, pl) > 0; 
+			for (pl = pm; pl > (char *) a && @2_@3_@4E(pl, pl - buf->width); 
 			     pl -= buf->width)
 				@1_SWAP(@3, pl, pl - buf->width);
 		return;
@@ -281,7 +283,7 @@ loop:	swap_cnt = 0;
 	r = MIN(pd - pc, pn - pd - buf->width);
 	multi_SWAP(@3, pb, pn - r, r);
 	if ((r = pb - pa) > buf->width)
-		GDKqsort_@1_@2_@3(a, DIV_WIDTH(r), buf);
+		GDKqsort_@1_@2_@3@5(a, DIV_WIDTH(r), buf);
 	if ((r = pd - pc) > buf->width) { 
 		/* Iterate rather than recurse to save stack space */
 		a = pn - r;
@@ -290,23 +292,24 @@ loop:	swap_cnt = 0;
 	}
 }
 
-@= call_qsort2
+@= call_offset_or_direct_storage
 /* factorization by storage mode */
 if (base) {
-	GDKqsort_@2_offset_@1(((char*) a)+loc, n, &buf); /* array of var_t, that are byte-offsets from some base */
+	GDKqsort_@3_offset_@2@1(((char*) a)+loc, n, &buf); /* array of var_t, that are byte-offsets from some base */
 } else {
-	GDKqsort_@2_direct_@1(((char*) a)+loc, n, &buf); /* array of fixed-size values */
+	GDKqsort_@3_direct_@2@1(((char*) a)+loc, n, &buf); /* array of fixed-size values */
 } 
 
-@= call_qsort1
+@= call_iterate_or_register_swapmethod
 /* factorization by array swap implementation */
-if ((((long) a)&7) || width != 8) {
-	@:call_qsort2(@1,iterate)@	/* array is non-aligned or entries are not one 64-bit integer wide */
+if ((((size_t) a)&7) || width != 8) {
+	@:call_offset_or_direct_storage(@1,@2,iterate)@	/* array is non-aligned or entries are not one 64-bit integer wide */
 } else {
-	@:call_qsort2(@1,register)@	/* we can swap array entries by one 64-bit integer swap */
+	@:call_offset_or_direct_storage(@1,@2,register)@	/* we can swap array entries by one 64-bit integer swap */
 } break;
-@c
-void GDKqsort(void *a, void* base, size_t n, int width, int tpe, int loc) {
+
+@= qsort
+void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc) {
 	int i = 0;
 	buf_t buf;
 
@@ -325,15 +328,18 @@ void GDKqsort(void *a, void* base, size_t n, int width, int tpe, int loc) {
 
 	/* factorization by comparsion type */
 	switch(ATOMstorage(tpe)) {
-	case TYPE_chr: @:call_qsort1(chr)@
-	case TYPE_sht: @:call_qsort1(sht)@
-	case TYPE_int: @:call_qsort1(int)@
-	case TYPE_flt: @:call_qsort1(flt)@
-	case TYPE_lng: @:call_qsort1(lng)@
-	case TYPE_dbl: @:call_qsort1(dbl)@
-	default:       @:call_qsort1(any)@
+	case TYPE_chr: @:call_iterate_or_register_swapmethod(@1,chr)@
+	case TYPE_sht: @:call_iterate_or_register_swapmethod(@1,sht)@
+	case TYPE_int: @:call_iterate_or_register_swapmethod(@1,int)@
+	case TYPE_flt: @:call_iterate_or_register_swapmethod(@1,flt)@
+	case TYPE_lng: @:call_iterate_or_register_swapmethod(@1,lng)@
+	case TYPE_dbl: @:call_iterate_or_register_swapmethod(@1,dbl)@
+	default:       @:call_iterate_or_register_swapmethod(@1,any)@
 	}
 }
+@c
+@:qsort()@
+@:qsort(_rev)@
 
 @ test
 main(int argc, char** argv) {

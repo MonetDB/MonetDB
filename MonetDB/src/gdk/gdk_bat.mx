@@ -355,6 +355,7 @@ BAT *BATclear(BAT *b) {
 	int hacc, tacc, bs=BUNsize(b);
 	BUN p, q;
 	int voidbat = 0;
+	BAT *bm = BATmirror(b);
 
         if (BAThdense(b) && b->htype == TYPE_void){
 		voidbat = 1;
@@ -376,13 +377,13 @@ BAT *BATclear(BAT *b) {
 		IDXremove(b);
 	}
 	if (b->tidx_heap) {
-		IDXremove(BATmirror(b));
+		IDXremove(bm);
 	}
 	if (b->hhash_heap) {
 		HASHremove(b);
 	}
 	if (b->thash_heap) {
-		HASHremove(BATmirror(b));
+		HASHremove(bm);
 	}
 	if ((hacc = b->hacctype) > 0) {
 		ACCdestroy(b->hacctype, b, &b->haccelerator);
@@ -1367,16 +1368,38 @@ BAT *BATroles(BAT *b, str hnme,str tnme) {
 	return b;
 }
 
+@- change bat mode (persistent,session,transient)
+@T
+In the past, we prevented BATS with certain types from being saved at all:
+- BATs of BATs, as having recursive bats creates cascading complexities in commits/aborts. 
+- any atom with refcounts, as the BBP has no overview of such user-defined refcounts.
+- pointer types, as the values they point to are bound to be transient.
+
+However, nowadays we do allow such saves, as the BBP swapping mechanism was altered
+to be able to save transient bats temporarily to disk in order to make room.
+Thus, we must be able to save any transient BAT to disk. 
+
+What we don't allow is to make such bats persistent.
+
+@= check_type
+        if (ATOMisdescendant(@1, TYPE_ptr) || ATOMisdescendant(@1, TYPE_bat) ||	
+	    BATatoms[@1].atomUnfix || BATatoms[@1].atomFix) 
+	{
+                GDKerror("BATmode: %s type implies that %s[%s,%s] cannot be made persistent.\n",
+			ATOMname(@1), BBP_logical(b->batCacheid),
+			ATOMname(b->htype), ATOMname(b->ttype));
+                return b;
+        }
+@c
 BAT *BATmode(BAT *b, int mode) {
         BATcheck(b, "BATmode");
 
         if (mode != b->batPersistence) {
                 bat bid = ABS(b->batCacheid);
 
-		if (mode == PERSISTENT && (b->htype == TYPE_bat || b->ttype == TYPE_bat)) {
-			GDKerror("BATmode(%s) recursive BATs cannot be made persitent\n",
-				BBP_logical(b->batCacheid));
-			return b;
+		if (mode == PERSISTENT) {
+			@:check_type(b->htype)@
+			@:check_type(b->ttype)@
 		}
                 BBPdirty(1);
 		

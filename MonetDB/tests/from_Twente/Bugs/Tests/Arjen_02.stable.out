@@ -1,11 +1,11 @@
 stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 17:42:17 >  
-# 17:42:17 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=51972 --set sql_port=57382 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_02.milM
-# 17:42:17 >  
+# 20:02:41 >  
+# 20:02:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_02.milM
+# 20:02:41 >  
 
-# Monet Database Server V4.3.11
+# Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #
@@ -86,8 +86,10 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-162",	  "-163",	  "-166"	  ]
-[ "curStamp",			  "167",	  "172",	  "175"		  ]
+[ "batStamp",			  "-166",	  "-167",	  "-170"	  ]
+[ "lastUsed",			  "3988",	  "4030",	  "4049"	  ]
+[ "keepAround",			  "0",		  "0",		  "0"		  ]
+[ "curStamp",			  "171",	  "176",	  "179"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -189,8 +191,10 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-162",	  "-178",	  "-181"	  ]
-[ "curStamp",			  "182",	  "187",	  "190"		  ]
+[ "batStamp",			  "-166",	  "-182",	  "-185"	  ]
+[ "lastUsed",			  "4036",	  "4153",	  "4173"	  ]
+[ "keepAround",			  "0",		  "0",		  "0"		  ]
+[ "curStamp",			  "186",	  "191",	  "194"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -294,8 +298,10 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-162",	  "-193",	  "-196"	  ]
-[ "curStamp",			  "197",	  "202",	  "205"		  ]
+[ "batStamp",			  "-166",	  "-197",	  "-200"	  ]
+[ "lastUsed",			  "4159",	  "4278",	  "4297"	  ]
+[ "keepAround",			  "0",		  "0",		  "0"		  ]
+[ "curStamp",			  "201",	  "206",	  "209"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -344,7 +350,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 
 quit;
 
-# 17:42:17 >  
-# 17:42:17 >  Done.
-# 17:42:17 >  
+# 20:02:42 >  
+# 20:02:42 >  Done.
+# 20:02:42 >  
 

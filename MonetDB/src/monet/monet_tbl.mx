@@ -188,6 +188,10 @@ m_export void TBL_Install_MilVar(Client client, str mod, ptr v);
 
 @- function resolution
 @h
+#define TBL_RESOLVE_NOFCN -3 /* no function with this name and # params exists */
+#define TBL_RESOLVE_NOSIG -2 /* no function with this exact signature exists */
+#define TBL_RESOLVE_NOTPE -1 /* actual parameters contain illegal (no-loaded) type */
+
 m_export int 
 TBL_normal_resolve(
   str name, 
@@ -708,21 +712,21 @@ typedef struct {
         /* basic info about the params */
 	int argc;               /* number of actual params + 1 */
         ValPtr argv;            /* array with actual params */
-        str tps[MAXPARAMS];     /* string type names of actual params */
-        str htps[MAXPARAMS];    /* (if tps[i]==bat) string head type name */
-        str ttps[MAXPARAMS];    /* (if tps[i]==bat) string tail type name */
+        str tps[1+MAXPARAMS];     /* string type names of actual params */
+        str htps[1+MAXPARAMS];    /* (if tps[i]==bat) string head type name */
+        str ttps[1+MAXPARAMS];    /* (if tps[i]==bat) string tail type name */
         
         /* any resolution handling */
 	int anynums;		/* number of instantiated any vars */
-	int anynum[MAXPARAMS];  /* tag number of the any var */
-	str anyval[MAXPARAMS];  /* instantiated type of any var */
+	int anynum[1+MAXPARAMS];  /* tag number of the any var */
+	str anyval[1+MAXPARAMS];  /* instantiated type of any var */
 } paramcheck_t;
 
-#define ATOM_LOOKUP(nme, tpe, atomtbl) {	\
-	int _tpe = tpe;				\
-	BUN _p = BUNfnd(atomtbl, &_tpe);	\
-	if (_p == NULL) return -1;		\
-	nme = (str) BUNtail(atomtbl, _p);	\
+#define ATOM_LOOKUP(nme, tpe, atomtbl) {		\
+	int _tpe = tpe;					\
+	BUN _p = BUNfnd(atomtbl, &_tpe);		\
+	if (_p == NULL) return TBL_RESOLVE_NOTPE;	\
+	nme = (str) BUNtail(atomtbl, _p);		\
 }
 
 int TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl) {
@@ -790,7 +794,7 @@ int TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str tp2) {
 }
 
 int TBL_checkparams(paramcheck_t *pt, oid op){
-	str params[MAXPARAMS+1], v;
+	str params[1+MAXPARAMS], v;
 	int i, j, nparams = getparams(op, params);
 
 	pt->anynums = 0;
@@ -805,10 +809,10 @@ int TBL_checkparams(paramcheck_t *pt, oid op){
 				params[nparams++] = v; /* fill other params */
 		}
 	} else if (pt->argc > nparams) {
-		return -1; 
+		return TBL_RESOLVE_NOFCN; 
 	}
 	if (pt->argc < nparams) {
-		return -1;
+		return TBL_RESOLVE_NOFCN;
 	}
 	
 	/* do the check between signature and actual params */    
@@ -819,22 +823,22 @@ int TBL_checkparams(paramcheck_t *pt, oid op){
 		{
 			char tpe[IDLENGTH];
 			if (pt->htps[i] == NULL) 
-				return -2; /* quick bat check */
+				return TBL_RESOLVE_NOSIG; /* quick bat check */
 
 			for(v=tpe, j=4; param[j] != ','; j++, v++)
 				*v = param[j];
 			*v = 0; 
 			if (!TBL_checkparam(pt, NULL, pt->htps[i], tpe)) {
-				return -2;
+				return TBL_RESOLVE_NOSIG;
 			}
 			for(v=tpe, j++; param[j] != ']'; j++, v++)
 				*v = param[j];
 			*v = 0;
 			if (!TBL_checkparam(pt, NULL, pt->ttps[i], tpe)) {
-				return -2;  
+				return TBL_RESOLVE_NOSIG;  
 			}
 		} else if (!TBL_checkparam(pt, pt->argv+i, pt->tps[i], param)) {
-			return -2;  
+			return TBL_RESOLVE_NOSIG;  
 		}
 	}
 
@@ -870,7 +874,7 @@ str TBL_getname(ptr imp) {
 	if ((fid = BUNtailfnd(oid, b, bun, &imp)) == 0) {
 	    GDKerror("TBL_getname: inexistent function %p.\n", imp);
 	} else if ((s = BUNtailfnd(char, TBL_fcn_nme, bun, fid)) == 0) {
-	    GDKerror("TBL_getname: no name for function %ld.\n", (long) *fid);
+	    GDKerror("TBL_getname: no name for function %lu.\n", *fid);
 	}
 	TBL_unset_readlock();
 	return s;
@@ -935,7 +939,7 @@ oid /* An oid is generated */
 TBL_Install_Info( TBLinstall *inst, str owner, str name) {
 	oid mid = 0;
 
-	dlFPRINTF(GDKerr, "  TBL_Install_Info(%s, %s) = %ld\n", owner, name, (long) mid);
+	dlFPRINTF(GDKerr, "  TBL_Install_Info(%s, %s) = %lu\n", owner, name, mid);
 @-
 if it is already loaded then we delete it, this implies
 that the TBL_Install_Info is the same as reload (delete)
@@ -1172,19 +1176,26 @@ int TBL_M_client_install(Client client, oid mid) {
 	return 1;
 }
 
+static int countusage(Client client, oid mid) {
+	int xx, yy=0;
+	BUN p, q;
+	BATloopFast(TBL_mod_use, p, q, xx) 
+		if (*(oid*)BUNhloc(TBL_mod_use,p) == mid && 
+	    		*(Client*)BUNtloc(TBL_mod_use,p) == client) yy++;
+	return yy;
+}
+
 int TBL_M_directloaded(Client client, oid mid, str module) {
 	int xx, yy=0, zz=0;
 	BUN p, q;
 
-	/* count the number of *our* dependencies to 'module' */
-	BATloopFast(TBL_mod_dep, p, q, xx) 
-		if (strCmp(module,BUNtvar(TBL_mod_dep,p)) == 0 &&
-  	    		BUNlocate(TBL_mod_use,BUNhloc(TBL_mod_dep,p),&client) != NULL) yy++;
+	/* count the number of times we reference the module */
+	zz = countusage(client, mid);
 
-	/* count the number of times we ourselves have loaded 'module' */
-	BATloopFast(TBL_mod_use, p, q, xx) 
-		if (*(oid*)BUNhloc(TBL_mod_use,p) == mid && 
-	    		*(Client*)BUNtloc(TBL_mod_use,p) == client) zz++;
+	/* count the number of references stemming from dependencies */
+	BATloopFast(TBL_mod_dep, p, q, xx) 
+		if (strCmp(module,BUNtvar(TBL_mod_dep,p)) == 0)
+			yy += countusage(client, *(oid*) BUNhloc(TBL_mod_dep,p));
 
 	if (zz > yy) 
 		return TRUE; 
@@ -1216,7 +1227,7 @@ int TBL_M_countref(oid mid) {
 
 	/*debug*/
 	if (xx != yy) 
-		GDKwarning("TBL_M_countref: mod(%ld) refcnt %d: should be %d.\n",(long)mid,xx,yy);
+		GDKwarning("TBL_M_countref: mod(%lu) refcnt %d: should be %d.\n",mid,xx,yy);
 
 	return yy;
 }
@@ -1236,7 +1247,7 @@ int TBL_M_decref(Client client, oid mid) {
 	int i = TBL_M_countref(mid);
 
 	if (i <= 0) {
-		GDKwarning("TBL_M_incref: mod(%ld) cannot decrease refcnt\n", (long)mid);
+		GDKwarning("TBL_M_incref: mod(%lu) cannot decrease refcnt\n", mid);
 	} else {
 		BUN p = BUNlocate(TBL_mod_use, &mid, &client);
 		BUNdelete(TBL_mod_use, p);
@@ -1328,8 +1339,16 @@ Lets do the things in the right order, see above!
 			mid = TBL_load_script(&inst, client, module, initstr);	
 		}
 		loaded = (mid != 0);
+	} else {
+		/* load the (already known) dependency modules, just to add fcns, atoms and accelerators to the parsing tables */
+		BAT *b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE); 	
+		BUN p, q;
+		BATloop(b, p, q) {
+			TBL_loadmod(client, (str) BUNhvar(b,p), parmod, level+1, initstr);
+		}
+		BBPreclaim(b);
 	}
-	dlFPRINTF(GDKerr, "  loaded = %d, mid = %ld\n", loaded, (long)mid);
+	dlFPRINTF(GDKerr, "  loaded = %d, mid = %lu\n", loaded, mid);
 
 	if (loaded) {
 		cinstalled = TBL_M_cinstalled(client, mid);
@@ -1486,7 +1505,13 @@ Look up the module.
 @c
   	mid = TBL_module_lookup(module);
   	if (mid == 0) {
-		GDKerror("TBL_unloadmod: module %s does not exist.\n", module); 
+		snprintf(s, 80, "_%s", module);
+  		mid = TBL_module_lookup(s);
+  		if (mid && BUNlocate(TBL_mod_use, &mid, &father)) 
+			GDKerror("TBL_unloadmod: module %s does not exist (maybe you mean %s?).\n", module, s); 
+		else
+			GDKerror("TBL_unloadmod: module %s does not exist.\n", module); 
+
 		return unloadmod_exit(0, level?NULL:father, accs, tpes);
 	}
 @-
@@ -1544,9 +1569,9 @@ drop will go through; delete all the C-modules's atoms, accelerators and functio
 @c
 	if (TBL_M_clientrefs(mid, client) == 0) {
 		for(j=0; j<ntpes; j++)
-			BUNdelHead(father->atomtbl, tpes+j);
+			BUNdelHead(BATmirror(father->atomtbl), tpes+j);
 		for(j=0; j<naccs; j++)
-			BUNdelHead(father->atomtbl, accs+j);
+			BUNdelHead(BATmirror(father->acctbl), accs+j);
 
 		(void) BATprepareHash(fcn_mid);
 		HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
@@ -1556,56 +1581,56 @@ drop will go through; delete all the C-modules's atoms, accelerators and functio
 			BUNdelete(fcntbl, r);
 		}
 	}
-	if (refcnt > 0) 
-		return unloadmod_exit(level, level?NULL:father, accs, tpes);
-@- 
-PHYSICAL DROP
-@c
-	if (*module != '_') {
-		/* MIL-modules drop the procs they introduced as well as the load-script variables */	
-		BATloop(TBL_mod_proc, p, q) {
-			oid pid = *(oid*) BUNtloc(TBL_mod_proc,p);
-			r = BUNfnd(TBL_fcn_nme, &pid);
-			if (r) TBL_delproc(client, BUNtvar(TBL_fcn_nme,r), module, pid, 0);
-		} 
-		BATloop(TBL_mod_var, p, q) {
-			VARdel(client->stk, *(ptr*) BUNtloc(TBL_mod_var,p));
-		}
-		BUNdelHead(TBL_mod_proc, module);
-		BUNdelHead(TBL_mod_var, module);
-	} else {
-		/* C-module: call C epilogue, dlcose, drop dependencies and deinstall it */
-		b = BAT_select(TBL_fcn_mid, &mid, &mid, FALSE);
-		BUNfndOID(p,TBL_mod_hdl,&mid);
-		if (p != NULL) hdl = *(ptr*) BUNtloc(TBL_mod_hdl,p);
+	b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE);
+	if (refcnt == 0) { 
+		/* PHYSICAL DROP */
+		if (*module != '_') {
+			/* MIL-modules drop the procs they introduced as well as the load-script variables */	
+			BATloop(TBL_mod_proc, p, q) {
+				oid pid = *(oid*) BUNtloc(TBL_mod_proc,p);
+				r = BUNfnd(TBL_fcn_nme, &pid);
+				if (r) TBL_delproc(client, BUNtvar(TBL_fcn_nme,r), module, pid, 0);
+			} 
+			BATprepareHash(TBL_mod_var);
+			HASHloop_str(TBL_mod_var, TBL_mod_var->hhash, j, module) {
+				p = BUNptr(TBL_mod_var, j);
+				VARdel(client->stk, *(ptr*) BUNtloc(TBL_mod_var,p));
+			}
+			BUNdelHead(TBL_mod_proc, module);
+			BUNdelHead(TBL_mod_var, module);
+	    	} else {
+			/* C-module: call C epilogue, dlcose, drop dependencies and deinstall it */
+			BAT *b2 = BAT_select(TBL_fcn_mid, &mid, &mid, FALSE);
+			BUNfndOID(p,TBL_mod_hdl,&mid);
+			if (p != NULL) hdl = *(ptr*) BUNtloc(TBL_mod_hdl,p);
 
-		/* Call the internal deletion routine, and dlclose.  */
-		if (hdl != NULL) {
-			char mod_del_name[PATHLENGTH];
-			sprintf(mod_del_name, "%s_Module_Delete", module);
-			addr = (int (*)(void)) DL_sym(hdl, mod_del_name);
-			if (addr != NULL) (*addr)();
-			BUNdelete(TBL_mod_hdl, p);
-			DL_close(hdl);
-		}		
+			/* Call the internal deletion routine, and dlclose.  */
+			if (hdl != NULL) {
+				char mod_del_name[PATHLENGTH];
+				sprintf(mod_del_name, "%s_Module_Delete", module);
+				addr = (int (*)(void)) DL_sym(hdl, mod_del_name);
+				if (addr != NULL) (*addr)();
+				BUNdelete(TBL_mod_hdl, p);
+				DL_close(hdl);
+			}		
 
-		/* delete all function references in the TBL_ bats */
-		BATloop(b, p, q) {
-			TBL_Deinstall_Function(*(oid*) BUNhloc(b,p));
+			/* delete all function references in the TBL_ bats */
+			BATloop(b2, p, q) {
+				TBL_Deinstall_Function(*(oid*) BUNhloc(b2,p));
+			}
+			BBPreclaim(b2);
 		}
-		BBPreclaim(b);
+		BUNdelHead(TBL_mod_dep, &mid);
 	}
 
 	/* drop all dependency modules */
-	b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE);
-	BUNdelHead(TBL_mod_dep, &mid);
 	BATloop(b,p,q) {
 	    if (TBL_unloadmod(client, BUNhead(b,p),level+1) == 0)
 		GDKwarning("TBL_unloadmod: module %s: dependencies.\n", module);
 	}
 	BBPreclaim(b);
 
-	/* physical drop succeeded */
+	/* drop succeeded */
 	return unloadmod_exit(1, level?NULL:father, accs, tpes); 
 }
 
@@ -1684,7 +1709,7 @@ int TBL_normal_resolve(str name, int argc, ValPtr argv,
                        monet_sig_t *sig, Cntxt stk)
 {
 	hash_t i;
-	int ret = -1;
+	int ret = TBL_RESOLVE_NOFCN;
 	paramcheck_t pt;
         Client  c;
 	BAT *atomtbl, *fcntbl;
@@ -1697,9 +1722,11 @@ Try to resolve the function to an address.
 @c
 	TBL_set_readlock();
 	(void) BATprepareHash(fcntbl);
-	if (TBL_checkparams_init(&pt, argc, argv, atomtbl) >= 0)
-	    HASHloop_str(fcntbl, fcntbl->hhash, i, name) 
-	{
+	if (TBL_checkparams_init(&pt, argc, argv, atomtbl) < 0) {
+		TBL_unset_readlock();
+		return TBL_RESOLVE_NOTPE;
+	}
+	HASHloop_str(fcntbl, fcntbl->hhash, i, name) {
 		int j=0, tpe;
 		BUN p = BUNptr(fcntbl, i);
 		oid fid = * (oid *) BUNtail(fcntbl, p);
@@ -1713,7 +1740,7 @@ Try to resolve the function to an address.
 
 		BUNfndOID(p, TBL_fcn_pro, &fid);
 		if (p && (j=TBL_checkparams(&pt,fid)) < 0) {
-			if (j == -2) ret = -2;
+			if (j == TBL_RESOLVE_NOSIG) ret = TBL_RESOLVE_NOSIG;
 			continue;
 		}
 		if (BUNfnd(atomtbl, &j) == NULL)
@@ -1756,16 +1783,16 @@ int TBL_multiplex_resolve(str name, int argc, ValPtr argv,
 			  monet_sig_t *sig, Cntxt stk)
 {
 	int optimize = FALSE, optimize_true = TRUE;
-	int consts = 0, i=0, tok=TOK_COMMAND, tpe = -1;
-        lng swap[MAXPARAMS];
+	int consts = 0, i=0, tok=TOK_COMMAND, tpe = TBL_RESOLVE_NOFCN;
+        lng swap[1+MAXPARAMS];
         BAT *assignbat = NULL;
  
         if (argc <= 1) {
                 GDKerror("interpret: 0 param multiplex operator.\n");
-		return -1;
+		return TBL_RESOLVE_NOFCN;
         }
         sig->array_opt = sig->merge_opt = 0;
-	sig->ret_tpe = -1; 
+	sig->ret_tpe = TBL_RESOLVE_NOFCN; 
         for(i=1; i < argc; i++) {
             swap[i] = 0;
             if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
@@ -1792,7 +1819,7 @@ int TBL_multiplex_resolve(str name, int argc, ValPtr argv,
             	    }
                 } else if (ATOMtype(tpe) != ATOMtype(b->htype)) {
 		    argc = i+1;
-		    RETURN(-2);
+		    RETURN(TBL_RESOLVE_NOSIG);
                 }
 		BBPunfix(b->batCacheid);
 	    } else {
@@ -1805,7 +1832,7 @@ At least one BAT should be there..
         if (tpe < 0) {
             GDKerror("[%s%s]: needs at least one BAT param.\n", name,
 							sig->assignop?"=":"");
-	    RETURN(-2);
+	    RETURN(TBL_RESOLVE_NOSIG);
         }
         tpe = ATOMstorage(ATOMtype(tpe));
 @- 
@@ -1816,15 +1843,15 @@ For the [A?B:C] multiplex operators, certain restrictions exist on the type
             if (argv[1].vtype != TYPE_bit) {
                 GDKerror("[%s%s]: first param must be a BIT vector.\n", name, 
 							sig->assignop?"=":"");
-	        RETURN(-2);
+	        RETURN(TBL_RESOLVE_NOSIG);
             }
             if ((sig->special==1)?(argc != 4):(argc != 3)) {
                 GDKerror("[%s%s]: wrong number of params.\n", name, 
 						sig->assignop?"=":"");
-	        RETURN(-2);
+	        RETURN(TBL_RESOLVE_NOSIG);
 	    }
             if ((sig->special==1) && ATOMtype(argv[3].vtype) != ATOMtype(argv[2].vtype)) {
-	        RETURN(-2);
+	        RETURN(TBL_RESOLVE_NOSIG);
             }
             sig->ret_tpe = ATOMtype(argv[2].vtype); /* store return type here */
 	    if (sig->special == 1) {
@@ -1846,12 +1873,12 @@ constraints for assigment-multiplexing: first must be identically typed BAT
         if (sig->assignop) {
 	    if (assignbat == NULL) {
                 GDKerror("[%s=]: assignment to non-bat parameter.\n", name);
-		RETURN (-1);
+		RETURN (TBL_RESOLVE_NOFCN);
 	    } else if (assignbat->ttype != sig->ret_tpe) {
                 GDKerror("[%s=]: assignment of bat[%s,%s] to bat[% s,%s]\n", 
 		    name, ATOMname(assignbat->htype), ATOMname(sig->ret_tpe), 
 		    ATOMname(assignbat->htype), ATOMname(assignbat->ttype));
-		RETURN (-1);
+		RETURN (TBL_RESOLVE_NOFCN);
 	    }
         }
 @- optimization check
@@ -1883,7 +1910,7 @@ and store the results in resp. sig->array\_opt and sig->merge\_opt.
 		(BATatoms[sig->ret_tpe].atomFix == NULL) &&
 	        sig->ret_tpe != TYPE_void && ATOMvarsized(sig->ret_tpe) == 0)
 	{
-		str t_argv[MAXPARAMS+1];
+		str t_argv[1+MAXPARAMS];
         	int t_argc = TBL_getparams((ptr)sig->pack_fcn, t_argv);
 
         	for(i=1; i<t_argc; i++) {
@@ -1927,33 +1954,33 @@ int TBL_setaggr_resolve(str nme, int argc, ValPtr argv,
  
         if (argc > 3  || argc < 2){
 		GDKerror("{%s}(Y):  1 or 2 params expected.\n", nme); 
-		return TBL_setaggr_cleanup(-1, b, extent);
+		return TBL_setaggr_cleanup(TBL_RESOLVE_NOFCN, b, extent);
         }
         if (argv[1].vtype != TYPE_bat || !(b=BATdescriptor(argv[1].val.bval))){
                 GDKerror("{%s}(Y): must have BAT params\n", nme); 
-		return TBL_setaggr_cleanup(-2, b, extent);
+		return TBL_setaggr_cleanup(TBL_RESOLVE_NOSIG, b, extent);
         }
         if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
 		GDKerror("{%s}(Y): void tailtype not allowed.\n", nme); 
-		return TBL_setaggr_cleanup(-1, b, extent);
+		return TBL_setaggr_cleanup(TBL_RESOLVE_NOFCN, b, extent);
         }
         if (argc == 3) {
             if (argv[2].vtype != TYPE_bat ||
                 !(extent=BATdescriptor(argv[2].val.bval)))
             {
                 GDKerror("{%s}(Y): must have BAT params\n", nme); 
-		return TBL_setaggr_cleanup(-2, b, extent);
+		return TBL_setaggr_cleanup(TBL_RESOLVE_NOSIG, b, extent);
             }
             if (TYPEerror(b->htype, extent->htype)) {
                 GDKerror("{%s}(Y): incompatible extent.\n", nme); 
-		return TBL_setaggr_cleanup(-2, b, extent);
+		return TBL_setaggr_cleanup(TBL_RESOLVE_NOSIG, b, extent);
             }
             if (extent->hkey == FALSE) {
 		BATpropcheck(extent, BATPROPS_ALL); /* try to derive hkey */
 	    }
             if (extent->hkey == FALSE) {
                 GDKerror("{%s}(Y): extent must contain unique values.\n", nme);
-		return TBL_setaggr_cleanup(-1, b, extent);
+		return TBL_setaggr_cleanup(TBL_RESOLVE_NOFCN, b, extent);
             }
         }
         tmp = BATnew(BATttype(b), BATttype(b), 1);
@@ -1966,7 +1993,7 @@ int TBL_setaggr_resolve(str nme, int argc, ValPtr argv,
 	    
 	if (sig->ret_tpe == 0) {
                 GDKerror("{%s}(Y): 'any' return types not allowed.\n", nme);
-		return TBL_setaggr_cleanup(-1, b, extent);
+		return TBL_setaggr_cleanup(TBL_RESOLVE_NOFCN, b, extent);
 	}
 	return TBL_setaggr_cleanup(tok, b, extent);
 }
@@ -1990,7 +2017,7 @@ static ptrdiff_t formatsig(str s, str nme, oid fid){
 			strcpy(s, "..any..) : any"); s += strlen(s); 
 		} else {
 			/* construct signature on the fly */
-			str argv[MAXPARAMS+1];
+			str argv[1+MAXPARAMS];
 			int k, argc = getparams(fid, argv);
 			for(k=1; k<argc; k++) {
 				str param = argv[k];
@@ -2577,7 +2604,7 @@ TBL_Install_Function(
 	int zero = 0;
 	oid fid = TBL_oid++;
 
-	dlFPRINTF(GDKerr, "  TBL_Install_Function(%ld,%s) = %ld\n", (long) mid, name, (long) fid);
+	dlFPRINTF(GDKerr, "  TBL_Install_Function(%lu,%s) = %lu\n", mid, name, fid);
 
 	if (name[0] == 'b' && name[1] =='a' && name[2] == 't' && name[3] == 0) {
 		name = "BAT"; /* sorry */ 
@@ -2635,7 +2662,7 @@ void TBL_Deinstall_Function(oid pid) {
 
 /* Called after _Function */
 void TBL_Install_Function_Vararg(oid fid, str tpe) {
-	dlFPRINTF(GDKerr, "    TBL_Install_Function_Vararg(%ld,%s)\n", (long) fid, tpe);
+	dlFPRINTF(GDKerr, "    TBL_Install_Function_Vararg(%lu,%s)\n", fid, tpe);
 	BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
@@ -2643,13 +2670,13 @@ void TBL_Install_Function_Vararg(oid fid, str tpe) {
 /* Called after _Function / _Vararg 
    This one would have to be called several times, once for each argument */
 void TBL_Install_Function_Arg(oid fid, str tpe) {
-	dlFPRINTF(GDKerr, "    TBL_Install_Function_Arg(%ld,%s)\n", (long) fid, tpe);
+	dlFPRINTF(GDKerr, "    TBL_Install_Function_Arg(%lu,%s)\n", fid, tpe);
 	BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
 /* After _Arg */
 void TBL_Install_Function_Res(oid fid, str tpe) {
-	dlFPRINTF(GDKerr, "    TBL_Install_Function_Res(%ld,%s)\n", (long) fid, tpe);
+	dlFPRINTF(GDKerr, "    TBL_Install_Function_Res(%lu,%s)\n", fid, tpe);
 	BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
@@ -2658,7 +2685,7 @@ void TBL_Install_DropRefs(oid mid, bat* batrefs) {
 	if (batrefs == NULL)
 		return;
 	while(*batrefs) {
-		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(%ld,%s)\n", (long) mid, BBP_logical(*batrefs));
+		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(%lu,%s)\n", mid, BBP_logical(*batrefs));
 		BUNins(TBL_mod_drop, &mid, batrefs); 
 		batrefs++;
 	}

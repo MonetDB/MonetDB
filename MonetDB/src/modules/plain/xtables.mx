@@ -133,6 +133,12 @@ CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
          values of a second bat 'a' (where the heads of a and b match 1-1).  
          The effect of this is similar to (hash-based) CTderive, with the 
 	 distinction that the group ids respect the ordering of the group values."
+
+.COMMAND CTrefine_rev(BAT[oid,any] b, BAT[oid,any] a) : BAT[oid,oid] = CTrefine_rev;
+	"reverse sorting version of CTrefine"
+@-
+histogram support. during group computation we already compute histograms
+for quick re-use. They are attached to the CT by means of a histolink.
 @-
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the CT by means of a histolink.
@@ -160,25 +166,6 @@ for quick re-use. They are attached to the CT by means of a histolink.
 .COMMAND CThistosum(BAT[oid,oid] ct, BAT[oid,int] histo) : BAT[oid,int] = CThistosum;
         "Produce sum over old histogram table"
 
-@- 
-multi-group: groupings on different bats that produce the same encodings. these
-can be used for multi-attribute join.
-@m
-.COMMAND CTmultigroup(BAT[any::1,any]) : BAT[BAT[oid,oid],void] = CTmultigroup;
-	"Group multiple BATs passed in the head of the first parameter.
-         Passing is either direct thourgh nested BATs or as string (identified by name); 
-         This multi-BAT CTgroup guarantees same group oids for same values"
-
-.COMMAND CTmultiderive(BAT[any::1,any::2]) : BAT[BAT[oid,oid],void] = CTmultiderive;
-	"Group multiple BATs passed in the head (ct) and tail (attr) of the first parameter, 
-         Passing is either direct thourgh nested BATs or as string (identified by name); 
-         This multi-BAT CTderive guarantees same group oids for same values"
-
-.COMMAND CTmultiregroup(BAT[any::1,any::2]) : BAT[BAT[oid,oid],void] = CTmultiregroup;
-	"Re-group multiple BATs passed in the head (ct) and tail (attr) of the first parameter, 
-         Passing is either direct thourgh nested BATs or as string (identified by name); 
-         This multi-BAT CTregroup guarantees same group oids for same values"
-
 .END xtables;
 
 @mil
@@ -188,6 +175,13 @@ can be used for multi-attribute join.
                 b := b.reverse.sort.reverse;
          }
          return CTrefine(b,a);
+     }
+
+     PROC CTorderby_rev(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
+         if (not(b.reverse.ordered)) {
+                b := b.reverse.sort.reverse;
+         }
+         return CTrefine_rev(b,a);
      }
 
      PROC CTsubgroup(BAT[oid,oid] ct, BAT[oid,any] b, BAT[oid,any] sel) : BAT[oid,oid] 
@@ -316,21 +310,6 @@ proc xtable_test(title, x, y, z) := {
     # test regroup
     CTregroup(b1,z);
     xtable_histo_direct("regroup(x,y,z)", b1, x, y, z);
-
-    # test multigroup
-    b1 := CTmultigroup(new(bat,void).insert(y,nil).insert(yy,nil)).reverse;
-    xtable_histo_remap("multigroup(y)", b1.fetch(0), y); 
-    xtable_histo_remap("multigroup(yy)", b1.fetch(1), yy); 
-
-    # test multiderive
-    b1 := CTmultiderive(new(bat,bat).insert(y,x).insert(yy,x)).reverse;
-    xtable_histo_remap("multigroup(y,x)", b1.fetch(0), y, x); 
-    xtable_histo_remap("multigroup(yy,x)", b1.fetch(1), yy, x); 
-
-    # test multiregroup
-    b1 := CTmultiregroup(project(b1.reverse,z)).reverse;
-    xtable_histo_remap("multiregroup(y,x)", b1.fetch(0), y, x, z); 
-    xtable_histo_remap("multiregroup(yy,x)", b1.fetch(1), yy, x, z); 
 }
 
 PROC test_xtables() : void := {
@@ -675,34 +654,6 @@ typedef struct {
 	entry.cnt = 1;							\
 	mapsize = BUNindex(map, BUNlast(map));
 @c
-
-map_T map_multigroup(size_t size, size_t heap, int tt) {
-	hash_t xx, yy;
-	map_T m;
-
-	/* trick: use idxentry instead of mapentry as multigroup does not use last 2 fields */
-	m.map = BATnew(TYPE_idxentry, tt, 100); 
-
-	/* trick: very carefully alloc the map BAT to exactly the right size */
-	DELTAsave(m.map);
-	HEAPextend(m.map->batBuns, size*BUNsize(m.map));
-	if (m.map->theap.base) {
-		HEAPextend(&m.map->theap, heap);
-	}
-	DELTAload(m.map);
-
-	/* init the hash table */
-	for(xx=1; (xx+xx) < size; xx+=xx);
-	HEAPalloc(&m.hp, xx, sizeof(hash_t));
-	m.mask = xx-1;
-	m.hash = (hash_t*) m.hp.base;
-
-	for(yy=0; yy<xx; yy++) {
-		m.hash[yy] = 0;
-	}
-	return m;
-}
-
 void map_free(map_T m) {
 	BBPreclaim(m.map);
 	HEAPfree(&m.hp);
@@ -761,7 +712,6 @@ domain-specific extension of the higher-level language) knows the
 properties of the data, especially for IR in which the standard grouping
 settings differ significantly from the original datamining application.
 @c
-
 #define group_params_STANDARD /* fixed */
 #define group_params_CUSTOM   hash_t custom_MASK, int custom_rng,
 
@@ -836,21 +786,19 @@ int tailtype(BAT *b, int str_trick) {
 @:group(int,tloc,simple,@1,@2)@
 @:group(lng,tloc,simple,@1,@2)@
 @:group(any,tail,atom,@1,@2)@
-@c
 
 /* Generate both 'normal' CTgroup and parameterized CTgroups */
 @= wrappedgroupouter
 @:wrappedgroupinner(unclustered,@1)@
 @:wrappedgroupinner(clustered,@1)@
-@c
 
+@c
 @:wrappedgroupouter(STANDARD)@
 @:wrappedgroupouter(CUSTOM)@
 
 @= returnvalue
         @1 =
 @c
-
 #define declare_mask_STANDARD	/* fixed */
 #define declare_mask_CUSTOM 	hash_t mask = (1 << *N) - 1;
 
@@ -889,7 +837,6 @@ CTgroup_custom(
 	CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
 	*retval = bn;
 	return GDK_SUCCEED;
-@c
 
 @= choosegroupSTANDARD
 	/* Choose appropriate @4 CTgroup implementation */
@@ -900,7 +847,6 @@ CTgroup_custom(
 	case TYPE_lng: @?@5:returnvalue(@5)@ CTgroup_lng_@4_STANDARD(b,@2,@3); break;
 	default:       @?@5:returnvalue(@5)@ CTgroup_any_@4_STANDARD(b,@2,@3);
 	}
-@c
 
 @= choosegroupCUSTOM
 	/* Choose appropriate @4 CTgroup implementation */
@@ -920,108 +866,6 @@ CTgroup_custom(
 	default:       
 	  @?@5:returnvalue(@5)@ CTgroup_any_@4_CUSTOM(mask,*rng,b,@2,@3);
 	}
-@c
-
-static str batsig(BAT *b, str nme) {
-	if (b) {
-		sprintf(nme, "%s[%s,%s]", b->batId, ATOMname(b->htype), ATOMname(b->ttype)); 
-	} else {
-		strcpy(nme, "null");
-	}
-	return nme;
-}
-
-int
-CTmultigroup(
-   BAT**        retval, /* put pointer to BAT[oid,oid] record here. */
-   BAT*         bm   /* pointer to BAT[BAT,any] record.*/
-)
-{		
-	size_t maxsize = 0;
-	int error, xx, t, tt=-1;
-	size_t maxheap = 0;
-	char nme[128];
- 	BAT *b, *bn, *ct;
-	map_T m;
-        BUN p,q;
-	bat bid;
-
-	if (bm->htype != TYPE_str && bm->htype != TYPE_bat) {
-		GDKerror("CTmultigroup: meta-bat %s should have BAT or str head column.\n", batsig(bm,nme)); 
-		return GDK_FAIL;
-	}
-        BATloopFast(bm, p, q, xx) {
-		if (bm->htype == TYPE_str) {
-			bid = BBPindex((str)BUNhead(bm,p));
-		} else {
-			bid = *(bat*)BUNhloc(bm,p);
-		}
-		b = BATdescriptor(bid);
-
-		error = (b == NULL || ATOMtype(b->htype) != TYPE_oid);
-		if (!error) {
-			if (b && tt < 0) {
-				t = b->ttype;
-				tt = tailtype(b, FALSE);
-			}
-			maxsize = MAX(maxsize,BATcount(b));
-			maxheap = MAX(maxheap,b->theap.free);
-			error = (b->ttype != t);
-		}
-		BBPunfix(bid);
-		if (error) {
-			GDKerror("CTmultigroup: illegal param %d (%s)\n", 
-				1 + BUNindex(bm,p) - BUNindex(bm,BUNfirst(bm)), batsig(b,nme));
-			return GDK_FAIL;
-		}
-        }
-        *retval = bn = BATnew(TYPE_bat, TYPE_void, BATcount(bm));
-	if (tt != ATOMstorage(TYPE_oid)) {
-		m = map_multigroup(maxsize+1, maxheap, tt);
-	} 
-        BATloopFast(bm, p, q, xx) {
-		if (bm->htype == TYPE_str) {
-			bid = BBPindex((str)BUNhead(bm,p));
-		} else {
-			bid = *(bat*)BUNhloc(bm,p);
-		}
-		b = BATdescriptor(bid);
-		if (tt != ATOMstorage(TYPE_oid)) {
-			ct = BATnew(b->htype, TYPE_oid, BATcount(b));
-			/* Poor man's clustered test: sorted & !keyed => clustered  */
-			if ( (b->tsorted) && !(b->tkey) ) {
-			  @:choosegroupSTANDARD(tt,ct,&m,clustered)@
-			} else {
-			  @:choosegroupSTANDARD(tt,ct,&m,unclustered)@
-			}
-		} else {
-			if (t == TYPE_oid
-#if SIZEOF_OID == SIZEOF_INT
-			    || t == TYPE_int
-#else
-#if SIZEOF_OID == SIZEOF_LONG
-			    || t == TYPE_lng
-#endif
-#endif
-			    ) {
-				ct = b; BBPfix(b->batCacheid);
-			} else {
-				ct = VIEWcreate_(b, TRUE);
-			}
-			ct->ttype = BATmirror(ct)->htype = TYPE_oid;
-			ct->tvarsized = BATmirror(ct)->hvarsized = FALSE;
-			ct->theap.base = NULL;
-			strcpy(ct->tatom, "oid");
-		}
-		BUNins(bn, &ct->batCacheid, NULL);
-		BBPunfix(ct->batCacheid);
-		BBPunfix(bid);
-	}
-	if (tt != ATOMstorage(TYPE_oid)) {
-		map_free(m);
-	}
-	return GDK_SUCCEED;
-}
 
 @= derive
 BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) { 
@@ -1105,7 +949,6 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	default:       histo = CTderive_@1_any_@2(ct,b,bn,m);
 	}
 @c
-
 int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 	BAT *histo, *bn = *retval;
 	int synced = ALIGNsynced(ct,b);
@@ -1172,122 +1015,6 @@ int CTderive(BAT** retval, BAT* ct, BAT* b) {
 	ret = derive(retval, ct, b, tailtype(b, TRUE), NULL);
 	if (bn) BBPreclaim(bn);
 	return ret;
-}
-
-
-BAT *multiderive(BAT* bm, int overwrite) {
-	int error, ctready = TRUE;
-	char nme1[128], nme2[128]; 
-        size_t maxsize = 0;
-	int xx, yy, t, tt=-1;
-	size_t maxheap = 0;
-        BAT *tmp, *b, *ct, *ret=NULL;
-	map_T m;
-        BUN p, q, r;
-	bat bid, cid;
-
-	if (bm->htype != TYPE_str && bm->htype != TYPE_bat) {
-		GDKerror("CTmultiderive: meta-bat %s should have BAT or str head column.\n", batsig(bm,nme1));
-	}
-	if (bm->ttype != TYPE_str && bm->ttype != TYPE_bat) {
-		GDKerror("CTmultiderive: meta-bat %s should have BAT or str tail column.\n", batsig(bm,nme1));
-	}
-        BATloopFast(bm, p, q, xx) {
-		if (bm->htype == TYPE_str) {
-			cid = BBPindex((str)BUNhead(bm,p));
-		} else {
-			cid = *(bat*)BUNhloc(bm,p);
-		}
-		if (bm->ttype == TYPE_str) {
-			bid = BBPindex((str)BUNtail(bm,p));
-		} else {
-			bid = *(bat*)BUNtloc(bm,p);
-		}
-		ct = BATdescriptor(cid);
-		b = BATdescriptor(bid);
-
-		error = (ct == NULL || ATOMtype(ct->htype) != TYPE_oid ||
- 		          b == NULL || ATOMtype(b->htype) != TYPE_oid); 
-		if (!error) {
-			if (b && tt < 0) {
-				t = b->ttype;
-				tt = tailtype(b, FALSE);
-			}
-			error = (b->ttype != t);
-			if (ATOMstorage(ct->ttype) != ATOMstorage(TYPE_oid)) {
-				ctready = FALSE;
-			}
-			maxsize = MAX(maxsize, MIN(BATcount(b),BATcount(ct)));
-			maxheap = MAX(maxheap, b->theap.free);
-		}
-		BBPunfix(bid);
-		BBPunfix(cid);
-		if (error) {
-			GDKerror("CTmultiderive: illegal params %d (%s, %s)\n", 
-				1 + BUNindex(bm,p) - BUNindex(bm,BUNfirst(bm)), 
-				batsig(ct,nme1), batsig(b,nme2));
-			return NULL;
-		}
-        }
-
-	/* enforce ct tailtype into oid (gratis if already so) */
-	if (ctready) {
-		tmp = bm;
-	} else if (CTmultigroup(&tmp, bm) == GDK_FAIL) {
-		return NULL;
-	} 
-
-	/* perform binary hash grouping on all bats */
-        ret = BATnew(TYPE_bat, TYPE_void, BATcount(bm)); 
-	m = map_multigroup(maxsize+1, maxheap, tt);
-	yy = BUNsize(tmp);
-	r = BUNfirst(tmp);
-
-        BATloopFast(bm, p, q, xx) {
-		BAT *bn = NULL;
-		if (ctready && bm->htype == TYPE_str) {
-			cid = BBPindex((str)BUNhead(bm,p));
-		} else {
-			cid = *(bat*)BUNhloc(tmp,r);
-		}
-		if (bm->ttype == TYPE_str) {
-			bid = BBPindex((str)BUNtail(bm,p));
-		} else {
-			bid = *(bat*)BUNtloc(bm,p);
-		}
-		ct = BATdescriptor(cid);
-		b = BATdescriptor(bid);
-
-		error = !(overwrite?regroup(&bn, ct, b, tt, &m):
-			  	    derive(&bn, ct, b, tt, &m)); 
-		BBPunfix(bid);
-		BBPunfix(cid);
-		if (error) {
-			BBPreclaim(ret); 
-			ret = NULL; 
-			break;
-		}
-		BUNins(ret, &bn->batCacheid, NULL);
-		if (!overwrite) {
-			BBPunfix(bn->batCacheid);
-		}
-		r += yy;
-	}
-	map_free(m);
-	if (!ctready) {
-		BBPreclaim(tmp);
-	}
-	return ret;
-}
-
-int CTmultiderive(BAT** retval, BAT* bm) {
-	*retval = multiderive(bm, FALSE);
-	return (*retval)?GDK_SUCCEED:GDK_FAIL;
-}
-
-int CTmultiregroup(BAT** retval, BAT* bm) {
-	*retval = multiderive(bm, TRUE);
-	return (*retval)?GDK_SUCCEED:GDK_FAIL;
 }
 
 @-
@@ -1401,14 +1128,18 @@ struct refine {
 };
 
 static INLINE
-oid* sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid* dst, oid *idp) {
+oid* sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid* dst, oid *idp, int reverse) {
 	int (*cmp)(ptr,ptr) = BATatoms[tpe].atomCmp;
 	struct refine *end = buf + size; 
 	oid id = *idp + 1;
 	ptr cur, val;
 
 	/* qsort works fine for small amount of tuples; with few duplicates */
-	GDKqsort(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+	if (reverse) {
+		GDKqsort_rev(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+	} else {
+		GDKqsort(buf, base, size, (int)sizeof(struct refine), tpe, offsetof(struct refine, off));
+	}
 	cur = base + buf->off;
 	while(buf < end) {
 		val = base + buf->off;
@@ -1421,7 +1152,8 @@ oid* sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid* dst, oi
 	return dst;
 }
 
-int CTrefine(BAT **res, BAT *b, BAT *a) {
+static
+int refine(BAT **res, BAT *b, BAT *a, int rv) {
     BAT *bn;
     if (b->tkey) { /* if key, no further refinements can take place */
 	bn = BATmark(b, 0);
@@ -1455,7 +1187,7 @@ int CTrefine(BAT **res, BAT *b, BAT *a) {
   	/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
 	BATloopFast(b, p, q, xx) {
 		if ((*cmp)(BUNtail(b,last), BUNtail(b,p))) {
-			dst = sort_flush(buf, (size_t) (cur-buf), a->ttype, base?base:a->theap.base, dst, &id);
+			dst = sort_flush(buf, (size_t) (cur-buf), a->ttype, base?base:a->theap.base, dst, &id, rv);
 		    	last = p; cur = buf;
 		}
 		o = *(oid*) BUNhead(b,p);
@@ -1476,12 +1208,20 @@ int CTrefine(BAT **res, BAT *b, BAT *a) {
 		cur->o = o;
 		cur++;
 	} 
-	dst = sort_flush(buf, (size_t) (cur-buf), a->ttype, base?base:a->theap.base, dst, &id);
+	dst = sort_flush(buf, (size_t) (cur-buf), a->ttype, base?base:a->theap.base, dst, &id, rv);
 	GDKfree(buf);
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	bn->tsorted = 1;
     } *res = bn;
     return GDK_SUCCEED;
+}
+
+int CTrefine(BAT **res, BAT *b, BAT *a) {
+	return refine(res, b, a, FALSE);
+}
+
+int CTrefine_rev(BAT **res, BAT *b, BAT *a) {
+	return refine(res, b, a, TRUE);
 }
 @}
 @}

@@ -1,15 +1,12 @@
 stdout of test 'test_02` in directory 'tests/suite_00` itself:
 
-#> Mtest (20:57:15):	milS test_02 milS
-#> Mtest (20:57:15):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_02.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_02.milS
 
+# 15:33:21 >  
+# 15:33:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  < test_02.milS
+# 15:33:21 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 s:= new(str,int);
@@ -26,12 +23,12 @@ insert(s,"hello",8);
 printf("#~BeginVariableOutput~#\n"); info(s).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------------------------------#
-# BAT:				  tmp_23	  #
+# BAT:				  tmp_29	  #
 # (str)				  (str)		  #
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
-[ "batId",			  "tmp_26"	  ]
-[ "batCacheid",			  "26"		  ]
+[ "batId",			  "tmp_28"	  ]
+[ "batCacheid",			  "28"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "str"		  ]
@@ -65,8 +62,10 @@ printf("#~BeginVariableOutput~#\n"); info(s).print; printf("#~EndVariableOutput~
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "9"		  ]
-[ "batStamp",			  "-139"	  ]
-[ "curStamp",			  "147"		  ]
+[ "batStamp",			  "-162"	  ]
+[ "lastUsed",			  "3980"	  ]
+[ "keepAround",			  "0"		  ]
+[ "curStamp",			  "170"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -116,7 +115,7 @@ print(find(s,"cello"));
 delete(s,"cello",3);
 print(s);
 #-------------------------#
-# BAT:		  tmp_24  #
+# BAT:		  tmp_28  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "hello",	  1	  ]
@@ -129,7 +128,7 @@ print(s);
 sn:= select(s,1,5);
 print(sn);
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_29  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "hello",	  1	  ]
@@ -139,7 +138,7 @@ print(sn);
 sn:= semijoin(s.reverse,sn.reverse);
 print(sn);
 #-------------------------#
-# BAT:	  tmp_25	  #
+# BAT:	  tmp_30	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "hello"	  ]
@@ -149,7 +148,7 @@ print(sn);
 x:= join(s,sn);
 print(x);
 #---------------------------------#
-# BAT:		  tmp_23	  #
+# BAT:		  tmp_29	  #
 # (str)		  (str)		  #
 #---------------------------------#
 [ "hello",	  "hello"	  ]
@@ -158,7 +157,7 @@ print(x);
 [ "eello",	  "eello"	  ]
 quit;
 
-# 17:08:42 >  
-# 17:08:42 >  Done.
-# 17:08:42 >  
+# 15:33:22 >  
+# 15:33:22 >  Done.
+# 15:33:22 >  
 

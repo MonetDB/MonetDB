@@ -68,6 +68,9 @@ can be found in this module.
 .COMMAND order(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDorder;
 "Sorts the BAT itself, in place. Returns b."
 
+.COMMAND order_rev(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDorder_rev;
+"Sorts the BAT itself, in place. Returns b."
+
 .COMMAND revert(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDrevert;
 "Puts all BUNs in a BAT in reverse order. Returns b."
 
@@ -259,6 +262,10 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 
 .COMMAND ordered(BAT[any,any]) : bit = CMDordered;
 "Returns whether a BAT is ordered on head or not."
+
+.COMMAND ordered_rev(BAT[any,any]) : bit = CMDordered_rev;
+"Returns whether a BAT is ordered on head or not."
+
 
 .COMMAND batsize(str batname) : int = CMDbatsize_str;
 "A version of BATsize that does not require loading the BAT."
@@ -589,6 +596,12 @@ int CMDorder(BAT **ret, BAT *b){
 	return GDK_SUCCEED;
 }
 
+int CMDorder_rev(BAT **ret, BAT *b){
+	BATorder_rev(*ret = b);
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
 int CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t) {
 	BUNins(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@);
 	BBPfix(b->batCacheid);
@@ -726,6 +739,11 @@ int CMDordered(bit *result, BAT *input) {
         return GDK_SUCCEED;
 }
 
+int CMDordered_rev(bit *result, BAT *input) {
+        *result = BATordered_rev(input)?1:0;
+        return GDK_SUCCEED;
+}
+
 int CMDgetkey(bit *ret, BAT *b) {
 	/* we must take care of the special case of a nil column (TYPE_void,seqbase=nil) 
          * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
@@ -791,12 +809,12 @@ static char* pre(str s1,str s2){
 	snprintf(buf, 64, "%s%s", s1, s2);
 	return buf;
 }
-static char* local_itoa(long i){
+static char* local_itoa(ssize_t i){
 	static char buf[32];
 	snprintf(buf, 32, "%ld", i);
 	return buf;
 }
-static char* local_utoa(unsigned long i){
+static char* local_utoa(size_t i){
 	static char buf[32];
 	snprintf(buf, 32, "%lu", i);
 	return buf;
@@ -836,7 +854,7 @@ void HASHinfo(BAT *bn, Hash *h, str s){
 	if( cnt[i]) {
 		BUNins(bn, pre(s,local_utoa(i)), local_utoa(cnt[i]));
 	}
-	snprintf(buf, 32, "%lu on %lu", (unsigned long) largetot, (unsigned long) largebuckets);
+	snprintf(buf, 32, "%lu on %lu", largetot, largebuckets);
 	BUNins(bn, pre(s,"collision"), buf);
 }
 
@@ -933,7 +951,9 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)));
         BUNins(bn, "batHole", local_utoa(BUNindex(b, b->batHole)));
         BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))));
-	BUNins(bn, "batStamp", local_itoa(b->batStamp));
+        BUNins(bn, "batStamp", local_itoa(b->batStamp));
+        BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)));
+        BUNins(bn, "keepAround", local_itoa(b->batKeeparound));
 	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()));
         BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk));
         BUNins(bn, "batDirtydesc", b->batDirtydesc?"dirty":"clean");
@@ -1048,7 +1068,10 @@ int CMDunload(bit *res, str input) {
 		BAT *b;
 		BBPfix(bid);
 		b = BBP_cache(bid);
-		if (b && b->batPersistence == SESSION) BATmode(b, TRANSIENT);
+		if (b) {
+			if (b->batPersistence == SESSION) BATmode(b, TRANSIENT);
+			BBPcold(bid); /* will trigger unload of also persistent bats */
+		}
 		*res = BBPunfix(bid) == 0;
 	}
         return GDK_SUCCEED;

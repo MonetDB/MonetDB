@@ -68,7 +68,7 @@ search function locates the possition of first occurence of the string s2
 in string s. All search functions return -1 when the search failed.
 Otherwise the position is returned.
 
-All string functions fail when an incorrect string (.NULL pointer) is given.
+All string functions fail when an incorrect string (NULL pointer) is given.
 In the current implementation, a fail is signaled by returning nil, since
 this facilitates the use of the string module in bulk operations.
 
@@ -587,15 +587,19 @@ int strTail( str *res, str s, int *offset){
 int strSubString( str *res, str s, int *offset, int *length ){
 	int len, off = *offset;
 	RETURN_NIL_IF(strNil(s)||off==int_nil||*length==int_nil,TYPE_str);
-	if (*length < 0) {
-		*res = GDKstrdup("");
-		return GDK_SUCCEED;
-	}
 	if (off < 0) {
 		len = UTF8_strlen(s);
 		RETURN_NIL_IF(len==int_nil, TYPE_str);
 		off = len + off;
-	} 
+		if (off < 0) {
+			*length += off;
+			off = 0;
+		}
+	}
+	if (*length < 0) {
+		*res = GDKstrdup("");
+		return GDK_SUCCEED;
+	}
    	s = UTF8_strtail(s, MAX(0,off));
 	len = UTF8_strtail(s, *length) - s;
 	if (off < 0) { 

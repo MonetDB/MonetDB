@@ -1,14 +1,14 @@
 stderr of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 17:42:17 >  
-# 17:42:17 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=51972 --set sql_port=57382 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_02.milM
-# 17:42:17 >  
+# 20:02:41 >  
+# 20:02:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_02.milM
+# 20:02:41 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.11
-# builtin opt 	monet_pid = 20099
-# builtin opt 	prefix = /ufs/sjoerd/Monet
+# builtin opt 	gdk_version = 4.3.13
+# builtin opt 	monet_pid = 23267
+# builtin opt 	prefix = /ufs/boncz/MonetDB/linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -29,7 +29,7 @@ stderr of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /ufs/sjoerd/Monet
+# config opt 	prefix = /ufs/boncz/MonetDB/linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
@@ -41,16 +41,17 @@ stderr of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_daemon = no
 # config opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	gdk_config = /ufs/boncz/MonetDB/linux/etc/monet.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs
-# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm
-# cmdline opt 	sql_logdir = /ufs/sjoerd/src/MonetDB/monet-merge/build/log
-# cmdline opt 	mapi_port = 51972
-# cmdline opt 	sql_port = 57382
+# cmdline opt 	monet_mod_path = /ufs/boncz/MonetDB/linux/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /ufs/boncz/MonetDB/linux/var/MonetDB/log
+# cmdline opt 	mapi_port = 52330
+# cmdline opt 	sql_port = 54357
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_from_Twente_Bugs
 
-# 17:42:17 >  
-# 17:42:17 >  Done.
-# 17:42:17 >  
+# 20:02:42 >  
+# 20:02:42 >  Done.
+# 20:02:42 >  
 

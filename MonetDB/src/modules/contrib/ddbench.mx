@@ -1031,7 +1031,7 @@ int @1( BAT** res, BAT* b1, BAT* b2){
 		GDKerror("@1: first param not BAT@2dense.\n");
 		return GDK_FAIL;
 	}	
-	if ((!enum_table(&map, &xx)) || map->htype != TYPE_oid) {
+	if ((!enum_table(&map, (int*) &xx)) || map->htype != TYPE_oid) {
 		GDKerror("@1: head of second BAT should be enumerated oid.\n");
 		return GDK_FAIL;
 	}

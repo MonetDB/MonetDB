@@ -528,6 +528,7 @@ typedef struct {
 	int	me;		/* port number of the local listening thread
 				 * to which was connected by the remote party; 
 				 * -1 if the connection was initiated locally */
+	int     valid;          /* is the connection still valid */
 	char	hostname[128];	/* remote hostname */ 
 	int	port;		/* remote listening thread port; -1 if none */ 
 	int	sock;		/* socket number */	
@@ -535,7 +536,7 @@ typedef struct {
 			     	 * connection */
 } conn_t;
 
-conn_t connections[MAX_CONN] = { {0, "", 0, 0, (Thread) 0}, }; 
+conn_t connections[MAX_CONN] = { {0, 0, "", 0, 0, (Thread) 0}, }; 
 
 @- look for a certain connection
 @c
@@ -555,8 +556,8 @@ int conn_find(str host, int port)
 {
 	int i;
 	for(i=0; i < MAX_CONN; i++) 
-	    if (connections[i].port == port &&
-		connections[i].me == -1 &&
+	    if (connections[i].me &&
+		connections[i].port == port &&
 		strcmp(connections[i].hostname, host) == 0) break;
 	return i;
 }
@@ -566,8 +567,12 @@ also involves killing the associated waiter.
 @c
 int conn_delete(int i)
 {
+	if (GDKdebug&65536) {
+		THRprintf(GDKerr, "Delete connection record %d (%d %d)\n", i, connections[i].port, connections[i].me);
+	}
 	if (connections[i].me) {
 	    connections[i].me = 0; 
+	    connections[i].valid = 0;
 	    connections[i].port = 0;
 	    socket_close(connections[i].sock);
 	    return 1;
@@ -586,13 +591,27 @@ int conn_kill(int i)
 	return 0;
 }
 
+int conn_invalidate(int i) 
+{
+	if (GDKdebug&65536) {
+		THRprintf(GDKerr, "Invalidate connection record %d (%d %d)\n", i, connections[i].port, connections[i].me);
+	}
+	if (connections[i].me) {
+		connections[i].valid = 0;
+		return 1;
+	}
+	return 0;
+}
+
 
 int conn_write(int conn_id, int len, char *src, char *msg)
 {
+	if (!connections[conn_id].valid) return FALSE;
+
 	if(socket_write(connections[conn_id].sock,len,src,msg))
 		return TRUE;
 	MT_set_lock(TCPlock, "TCPopen");
-	conn_delete(conn_id);
+	conn_invalidate(conn_id);
 	MT_unset_lock(TCPlock, "TCPopen");
 	return FALSE;
 }
@@ -673,7 +692,7 @@ void conn_waiter(void * vi)
         monetClient->socket = -1;
         monetClient->login = time(0);
 
-	while(socket_gets(fd, &line, &lineLength)) {
+	while(connections[i].valid && socket_gets(fd, &line, &lineLength)) {
 	     char *p, *r, *q, *tp = line;
 	     int tpe = TYPE_bat;
 	     cache_t *c; 
@@ -726,7 +745,7 @@ the standard mechanism.
  			size_t len;
 			int fd = connections[i].sock;
 
-			snprintf(msg, 16384, "err:%s:%lu\n", nm, (unsigned long) strlen(errbuf) + 1);
+			snprintf(msg, 16384, "err:%s:%lu\n", nm, strlen(errbuf) + 1);
 			len = strlen(msg);
 			memcpy(msg+len, errbuf, strlen(errbuf)+1);
 	    		socket_write(fd, len+strlen(errbuf)+1, msg,"error msg");
@@ -927,13 +946,19 @@ int conn_insert(str host, int port, int me, int sock)
             i = -1;
 	} else {
 	    MT_Id t = 0;
+
+	    if (GDKdebug&65536) {
+		THRprintf(GDKerr, "Allocate connection record %d (%d, %d)\n", i, port, me);
+	    }
 	    connections[i].me = me;
+	    connections[i].valid = 1;
 	    connections[i].port = port;
 	    connections[i].sock = sock;
             connections[i].waiter = (Thread)0;
 	    strcpy(connections[i].hostname, host);
 	    if (me != -1 && MT_create_thread(&t, conn_waiter, (void*)i) != 0) {
                 connections[i].me = 0;
+	    	connections[i].valid = 0;
                 i = -1;
             }
 	}
@@ -1036,10 +1061,11 @@ Start a TCP/IP server
 int
 TCPlisten(int *port)
 {
-	struct sockaddr_in server;
+	struct sockaddr_in server, client;
 	int msgsock = -1, sock = socket(AF_INET, SOCK_STREAM, 0);
 	int port_no=0, i, on=1;
-	SOCKLEN length = (SOCKLEN) sizeof(server);
+	SOCKLEN server_len = (SOCKLEN) sizeof(server);
+	SOCKLEN client_len = (SOCKLEN) sizeof(client);
 	int lineLength = MAX_LINE;
 	char *p, *line = GDKmalloc(lineLength);
 
@@ -1064,13 +1090,13 @@ create the socket
 	for (i=0;i<8;i++)
 	    server.sin_zero[i]=0;
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
-	if (bind(sock, (SOCKPTR) &server, length) < 0) {
+	if (bind(sock, (SOCKPTR) &server, server_len) < 0) {
 	    GDKsyserror("TCPlisten(%d): binding to socket failed.\n", *port);
-	} else if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
+	} else if (getsockname(sock, (SOCKPTR) &server, &server_len) < 0) {
 	    GDKsyserror("TCPlisten(%d): getting socket name.\n", *port);
 	} else if (listen(sock, 5) < 0) {
 	    GDKsyserror("TCPlisten(%d): getting socket name\n", *port);
-	} else while ((msgsock = accept(sock, (SOCKPTR)0, (SOCKLEN *) 0)) > 0) {
+	} else while ((msgsock = accept(sock, (SOCKPTR) &client, &client_len)) > 0) {
 @- 
 the listener heard something...
 @c
@@ -1105,7 +1131,7 @@ This is the special command to shut down the listener.
 a new connection is born 
 @c
 	    MT_set_lock(TCPlock, "TCPlisten");
-	    conn_insert(line, -1, *port, msgsock);
+	    conn_insert(line, client.sin_port, *port, msgsock);
 	    MT_unset_lock(TCPlock, "TCPlisten");
 	}
 	MT_set_lock(TCPlock, "TCPlisten");
@@ -1277,10 +1303,10 @@ TCPexport(
 	    BATconvert(b,CONV_HTON);
 #endif
 	    sprintf(buf, "bat:%s:%lu*%lu:%s\@%d%s%s:%s\@%d%s%s:%lu:%lu:", 
-		name, (unsigned long) BATcount(b), (unsigned long) BUNsize(b), 
+		name, BATcount(b), (size_t) BUNsize(b), 
 		atom_name(b->htype), b->hloc, b->hsorted?"+":"", b->hkey?"k":"",
 		atom_name(b->ttype), b->tloc, b->tsorted?"+":"", b->tkey?"k":"",
-		b->hheap.base?(unsigned long)b->hheap.free:0, b->theap.base?(unsigned long)b->theap.free:0);
+		b->hheap.base?b->hheap.free:0, b->theap.base?b->theap.free:0);
 
 	    p = buf + strlen(buf);
 	    p += OIDtoStr(&p, &len, &b->halign); *p++ = ':';

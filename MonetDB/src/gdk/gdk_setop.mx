@@ -141,7 +141,7 @@ next@2@3@5:;
 	} else {
 		@:hashelim(@1,@2,loc,@3)@
 	} 
-	return (((int)(long)cmp) && 0); /* fooling the stupid compiler */
+	return (((int)(ssize_t)cmp) && 0); /* fooling the stupid compiler */
 }
 @= elim_doubles
 	switch(ATOMstorage(b->htype)) {

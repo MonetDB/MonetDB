@@ -78,9 +78,9 @@ functions.
 
 typedef void    *MT_Lock;
 typedef void    *MT_Sema;
-typedef unsigned long MT_Id;
+typedef size_t	MT_Id;
 
-#define THREAD_STACK_SIZE	((unsigned long)512*1024)
+#define THREAD_STACK_SIZE	((size_t)512*1024)
 
 #define MAXLOCKS	256
 #define MAXSEMAS	64
@@ -400,8 +400,8 @@ void MT_destroy_lock (MT_Lock l) {
 void MT_set_lock(MT_Lock l, char *name){
     	int t = 0;
     	if (MT_debug & 1024) {
-        	fprintf(MT_out,"MT_set_lock(%lu\@%s) %ld %d\n", 
-			(long)MT_getpid(), name, (long)l, t);
+        	fprintf(MT_out,"MT_set_lock(%lx\@%s) %lx %d\n", 
+			(size_t)MT_getpid(), name, (size_t)l, t);
         	fflush(MT_out);
     	}
 	(void)pthread_mutex_lock((pthread_mutex_t*)l);
@@ -410,8 +410,8 @@ void MT_set_lock(MT_Lock l, char *name){
 void MT_unset_lock(MT_Lock l, char *name)	{
    	int t = 0;
     	if (MT_debug & 1024) {
-        	fprintf(MT_out,"MT_unset_lock(%lu\@%s) %ld %d\n", 
-			(long)MT_getpid(), name, (long)l,t);
+        	fprintf(MT_out,"MT_unset_lock(%lx\@%s) %lx %d\n", 
+			(size_t)MT_getpid(), name, (size_t)l,t);
         	fflush(MT_out);
 	}   
  	t = pthread_mutex_unlock((pthread_mutex_t*)l);
@@ -419,8 +419,8 @@ void MT_unset_lock(MT_Lock l, char *name)	{
  
 int MT_try_lock (MT_Lock l) {
 	if (MT_debug & 1024) {
-		fprintf(MT_out,"MT_try_lock:%lu %ld\n", 
-			(long)MT_getpid(), (long) l);
+		fprintf(MT_out,"MT_try_lock:%lx %lx\n", 
+			(size_t)MT_getpid(), (size_t) l);
 		fflush(MT_out);
 	}
 	if (l == NULL) return 0;
@@ -435,8 +435,8 @@ void MT_dump_lock (MT_Lock l, FILE *fp, char* name) {
 void MT_up_sema(MT_Sema s, char *name){
 	(void)sem_post((sem_t*)s);
     	if (MT_debug &  1024) {
-        	fprintf(MT_out,"MT_up_sema(%lu\@%s) %ld\n", 
-			(long)MT_getpid(), name, (long)s);
+        	fprintf(MT_out,"MT_up_sema(%lx\@%s) %lx\n", 
+			(size_t)MT_getpid(), name, (size_t)s);
         	fflush(MT_out);
     	}
 }
@@ -444,16 +444,16 @@ void MT_up_sema(MT_Sema s, char *name){
 void MT_down_sema(MT_Sema s, char *name){
 	(void)sem_wait((sem_t*)s);
     	if (MT_debug &  1024) {
-        	fprintf(MT_out,"MT_down_sema(%lu\@%s) %ld\n", 
-			(long)MT_getpid(), name, (long)s);
+        	fprintf(MT_out,"MT_down_sema(%lx\@%s) %lx\n", 
+			(size_t)MT_getpid(), name, (size_t)s);
         	fflush(MT_out);
 	}   
 }
 
 int MT_try_sema (MT_Sema s){
 	if (MT_debug & 1024) {
-		fprintf(MT_out,"MT_try_sema:%lu %ld\n", 
-			(long) MT_getpid(), (long) s);
+		fprintf(MT_out,"MT_try_sema:%lx %lx\n", 
+			(size_t) MT_getpid(), (size_t) s);
 		fflush(MT_out);
 	}
 	if (s == NULL) return 0;
@@ -495,7 +495,7 @@ void 	MT_dump_sema (MT_Sema s, FILE *fp, char *name) {
 }
 
 MT_Id MT_getpid(void){
-	return (MT_Id)((long)pthread_self()+1);
+	return (MT_Id)(((size_t)pthread_self())+1);
 }
 
 int MT_alive(int pid) {

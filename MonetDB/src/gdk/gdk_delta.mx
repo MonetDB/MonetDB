@@ -50,13 +50,13 @@ This optimizes processing on such BATs (DDBENCH).
 	(P1)->batInserted = BUNlast((P1));				      \
 	(P1)->batElmshift = BATelmshift((P1));				      \
 	DELTAprintf(							      \
-	 	"#DELTAinit %s free %lu ins %lu del %lu hole %lu base %lu\n", \
+	 	"#DELTAinit %s free %lu ins %lx del %lx hole %lx base %lx\n", \
 		(P1)->batId,						      \
-		(unsigned long) (P1)->batBuns->free,			      \
-		(unsigned long) (P1)->batInserted,			      \
-		(unsigned long) (P1)->batDeleted,			      \
-		(unsigned long) (P1)->batHole,				      \
-		(unsigned long) (P1)->batBuns->base );			      \
+		(P1)->batBuns->free,			      \
+		(size_t) (P1)->batInserted,			      \
+		(size_t) (P1)->batDeleted,			      \
+		(size_t) (P1)->batHole,				      \
+		(size_t) (P1)->batBuns->base );			      \
 	memset((P1)->batHole, 0, BUNsize(P1));				      \
 }
 @
@@ -74,24 +74,24 @@ and convert them back into pointers upon reload.
 		(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole);	      \
 	}								      \
 	DELTAprintf(							      \
-	 	"#DELTAsave %s free %lu ins %lu del %lu hole %lu base %lu\n", \
+	 	"#DELTAsave %s free %lu ins %lx del %lx hole %lx base %lx\n", \
 		(P1)->batId,						      \
-		(unsigned long) (P1)->batBuns->free,			      \
-		(unsigned long) (P1)->batInserted,			      \
-		(unsigned long) (P1)->batDeleted,			      \
-		(unsigned long) (P1)->batHole,				      \
-		(unsigned long) (P1)->batBuns->base );			      \
+		(P1)->batBuns->free,			      \
+		(size_t) (P1)->batInserted,			      \
+		(size_t) (P1)->batDeleted,			      \
+		(size_t) (P1)->batHole,				      \
+		(size_t) (P1)->batBuns->base );			      \
 }
 
 #define DELTAload(P1)	{						      \
 	DELTAprintf(							      \
-		"#DELTAload %s free %lu ins %lu del %lu hole %lu base %lu\n", \
+		"#DELTAload %s free %lu ins %lx del %lx hole %lx base %lx\n", \
 		(P1)->batId,						      \
-		(unsigned long) (P1)->batBuns->free,			      \
-		(unsigned long) (P1)->batInserted,			      \
-		(unsigned long) (P1)->batDeleted,			      \
-		(unsigned long) (P1)->batHole,				      \
-		(unsigned long) (P1)->batBuns->base );			      \
+		(P1)->batBuns->free,			      \
+		(size_t) (P1)->batInserted,			      \
+		(size_t) (P1)->batDeleted,			      \
+		(size_t) (P1)->batHole,				      \
+		(size_t) (P1)->batBuns->base );			      \
 	if ((P1)->batBuns->base) {					      \
 		(P1)->batInserted = BUNptr((P1), (size_t) (P1)->batInserted); \
 		(P1)->batDeleted = BUNptr((P1), (size_t) (P1)->batDeleted);   \
@@ -155,10 +155,10 @@ batcommit really forgets the atoms guarded for an undo; we just need to free the
 @c
 BAT *BATcommit(BAT *b) {
 	DELTAprintf(
-		"#BATcommit1 %s free %lu ins %lu del %lu hole %lu base %lu\n", 
-		b->batId, (unsigned long) b->batBuns->free,
-		(unsigned long) b->batInserted, (unsigned long) b->batDeleted,
-		(unsigned long) b->batHole, (unsigned long) b->batBuns->base);
+		"#BATcommit1 %s free %lu ins %lx del %lx hole %lx base %lx\n", 
+		b->batId, b->batBuns->free,
+		(size_t) b->batInserted, (size_t) b->batDeleted,
+		(size_t) b->batHole, (size_t) b->batBuns->base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batHole  && BBP_cache(b->batCacheid)) {
 		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
@@ -200,10 +200,10 @@ BAT *BATcommit(BAT *b) {
 		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
 	}
 	DELTAprintf(
-		"#BATcommit2 %s free %lu ins %lu del %lu hole %lu base %lu\n", 
-		b->batId, (unsigned long) b->batBuns->free,
-		(unsigned long) b->batInserted, (unsigned long) b->batDeleted,
-		(unsigned long) b->batHole, (unsigned long) b->batBuns->base);
+		"#BATcommit2 %s free %lu ins %lx del %lx hole %lx base %lx\n", 
+		b->batId, b->batBuns->free,
+		(size_t) b->batInserted, (size_t) b->batDeleted,
+		(size_t) b->batHole, (size_t) b->batBuns->base);
 	return b; 
 }
 @-
@@ -293,7 +293,6 @@ BAT *BATundo(BAT *b) {
 		}}
 	}
 	b->batBuns->free = (char *) b->batInserted - (char *) Bunbase(b);
-	memcpy(b->batHole, b->batDeleted, bunsize);
 
 	bunfirst = b->batDeleted+bunsize;
 	bunlast = b->batHole;
@@ -303,6 +302,8 @@ BAT *BATundo(BAT *b) {
 			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accInsert;
 		void (*taccins)(Heap*,size_t,BAT*,ptr) = 
 			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accInsert;
+
+		memcpy(b->batHole, b->batDeleted, bunsize);
 
 		/* elements are 'inserted' => zap properties */
 		if (b->hsorted&1) b->hsorted = FALSE;

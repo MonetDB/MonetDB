@@ -836,7 +836,7 @@ hash_t decimal_hash(decimal *d) {
 		}
 	} 
 	if (d->negative) y = ~y;
-	DECIMAL_DEBUG(d, FORMAT("decimal_hash(->%ld) input", (long) y), 1);
+	DECIMAL_DEBUG(d, FORMAT("decimal_hash(->%ld) input", (ssize_t) y), 1);
 	return y;
 }
 
@@ -1167,7 +1167,7 @@ int decimal_to_dbl(dbl *ret, decimal *val) {
                 }
 		*ret = value;
 	}
-	DECIMAL_DEBUG(val, FORMAT("decimal_to_dbl(->%f) result", *ret), 1);
+	DECIMAL_DEBUG(val, FORMAT("decimal_to_dbl(->%g) result", *ret), 1);
 	return GDK_SUCCEED;
 }
 
@@ -1433,7 +1433,7 @@ int decimal_minus(decimal **ret, decimal *v1, decimal *v2) {
 	}
 	/* minus without overflow by subtracting the smaller from the bigger number */
 	x = decimal_compare(v1,v2);
-	if ((v1->negative == 0 && x < 0) || (v1->negative != 0 && x > 0)) {
+	if ((!v1->negative && x < 0) || (v1->negative && x > 0)) {
 		tmp = v2; v2 = v1; v1 = tmp; negative = !negative;
 	}
 	*ret = decimal_copy(v1, v1->precision);

@@ -59,7 +59,7 @@ typedef struct _modstack_t {
 
 typedef struct CLIENT{
 	str 		user;			/* user name. */
-	long		login;			/* session start time */
+	ssize_t		login;			/* session start time */
 	int		permission;		/* not yet used. */
 	stream		*fdin, *fdout;		/* streams from and to user. */
 	stream		*bkin, *bkout;		/* backup stream storage */
@@ -421,7 +421,7 @@ be used only as a last resort to kill an out-of-control query.
 @c
 void killClient(Client c, int thread){
     if (c && c->user) {
-        MT_Id   me = THRgettid();
+        int   me = THRgettid();
 	Request	r,q=QMclient(0,c);
 
 	if (q) do {
@@ -484,7 +484,7 @@ int readClient(Client c){
 		}
  		s = c->top; *s = 0;
 		while ((i = c->fdin->read(c->fdin, c->top, 1, 1)) > 0) {
-			PARSEDEBUG THRprintf(GDKerr, "%c (%lu)", *c->top, (unsigned long) i);
+			PARSEDEBUG THRprintf(GDKerr, "%c (%lu)", *c->top, i);
 #ifdef WIN32
 			if (*c->top == 13) { /* filter out ^M */
                                 i--;

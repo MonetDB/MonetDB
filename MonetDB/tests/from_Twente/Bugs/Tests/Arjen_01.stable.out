@@ -1,11 +1,11 @@
 stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 17:42:14 >  
-# 17:42:14 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=51972 --set sql_port=57382 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_01.milM
-# 17:42:14 >  
+# 20:02:38 >  
+# 20:02:38 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_01.milM
+# 20:02:38 >  
 
-# Monet Database Server V4.3.11
+# Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #
@@ -177,8 +177,10 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 [ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "top",			  "5",		  "5",		  "8",		  "4",		  "8",		  "4",		  "3",		  "3",		  "3",		  "3",		  "3"		  ]
-[ "batStamp",			  "-162",	  "-163",	  "-164",	  "-167",	  "-168",	  "-170",	  "-171",	  "-172",	  "-174",	  "-172",	  "-176"	  ]
-[ "curStamp",			  "177",	  "184",	  "187",	  "190",	  "193",	  "196",	  "199",	  "202",	  "205",	  "208",	  "211"		  ]
+[ "batStamp",			  "-166",	  "-167",	  "-168",	  "-171",	  "-172",	  "-174",	  "-175",	  "-176",	  "-178",	  "-176",	  "-180"	  ]
+[ "lastUsed",			  "4087",	  "4132",	  "4149",	  "4166",	  "4183",	  "4200",	  "4217",	  "4234",	  "4251",	  "4268",	  "4285"	  ]
+[ "keepAround",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "curStamp",			  "181",	  "188",	  "191",	  "194",	  "197",	  "200",	  "203",	  "206",	  "209",	  "212",	  "215"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
@@ -223,7 +225,7 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 
 quit;
 
-# 17:42:15 >  
-# 17:42:15 >  Done.
-# 17:42:15 >  
+# 20:02:39 >  
+# 20:02:39 >  Done.
+# 20:02:39 >  
 

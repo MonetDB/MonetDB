@@ -697,17 +697,15 @@ Ma_tostr(
 	char buf[1024];
 	int l = 0;
 	
-	/* need to cast to long for 64-bit SGI which uses long for
-	   these values */
 	sprintf(buf,"(%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld)",
-		(long) M->arena,
-		(long) M->ordblks,
-		(long) M->smblks,
-		(long) M->hblkhd,
-		(long) M->hblks,
-		(long) M->usmblks,
-		(long) M->fsmblks,
-		(long) M->uordblks);
+		(ssize_t) M->arena,
+		(ssize_t) M->ordblks,
+		(ssize_t) M->smblks,
+		(ssize_t) M->hblkhd,
+		(ssize_t) M->hblks,
+		(ssize_t) M->usmblks,
+		(ssize_t) M->fsmblks,
+		(ssize_t) M->uordblks);
 	l = (int) strlen(buf) + 1;
 	if (*dst && *len < l ){
 		GDKfree(*dst);
@@ -890,7 +888,7 @@ extern "C" {
 
 
 int Rusage_size(void){ return sizeof(Rusage); }
-int Rusage_align(void){ return sizeof(long); }
+int Rusage_align(void){ return sizeof(ssize_t); }
 
 int
 Ru_tostr(

@@ -687,7 +687,7 @@ the aggregate function into an init-value, an add-macro and a finish-macro.
 #define aggr(idx)	BUNtloc(bn, BUNptr(bn,idx))
 #define bunfnd(r,v){ oid _id = *(oid*) v; oid *_o = &_id; BUNfndOID(r,attr,_o);\
     } if (r == NULL) {\
-        GDKerror("iter_groupby: matching problem oid=%lu.\n", (unsigned long) *(oid*) v);\
+        GDKerror("iter_groupby: matching problem oid=%lu.\n", *(oid*) v);\
     } else
 #define aggr_count_add(tpe,idx,v) 
 #define aggr_max_add(tpe,idx,v) bunfnd(r,v)\

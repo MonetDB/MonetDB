@@ -512,7 +512,7 @@ int insert_val( ascii_io *fmt, char *s, char *e ){
 	adt = fmt->frstr( fmt->extra, fmt->adt, strip(s,e) );
 	
 	if (!adt){
-		GDKerror("%ld not inserted %s\n", (long)adt, s);
+		GDKerror("%lx not inserted %s\n", (size_t)adt, s);
 		return 1;
 	}
 
@@ -802,7 +802,7 @@ void output_file_default( ascii *as, BAT *order, stream *fd ){
 		}
 		i++;
 		if (ascii_io_debug && (i%1000000) == 0)
-			stream_printf(GDKerr, "dumped %lu lines\n", (unsigned long) i);
+			stream_printf(GDKerr, "dumped %lu lines\n", i);
         } 
 	GDKfree(buf);
 }
@@ -819,7 +819,7 @@ void output_file_dense( ascii *as, stream *fd ){
 			return;
 		}
 		if (ascii_io_debug && (i%1000000) == 0)
-			stream_printf(GDKerr, "dumped %lu lines\n", (unsigned long) i);
+			stream_printf(GDKerr, "dumped %lu lines\n", i);
         } 
 	GDKfree(buf);
 }
@@ -841,7 +841,7 @@ void output_file_ordered( ascii *as, BAT *order, stream *fd, oid base ){
 			return;
 		}
 		if (ascii_io_debug && (i%1000000) == 0)
-			stream_printf(GDKerr, "dumped %lu lines\n", (unsigned long) i);
+			stream_printf(GDKerr, "dumped %lu lines\n", i);
         } 
 	GDKfree(buf);
 }

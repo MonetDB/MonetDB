@@ -1,14 +1,14 @@
 stderr of test '01_Modules_static` in directory 'tests/Availability` itself:
 
 
-# 15:57:46 >  
-# 15:57:46 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 01_Modules_static.milS
-# 15:57:46 >  
+# 15:30:03 >  
+# 15:30:03 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 01_Modules_static.milS
+# 15:30:03 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.9
-# builtin opt 	monet_pid = 20249
-# builtin opt 	prefix = /ufs/niels/data/Linux-i686
+# builtin opt 	gdk_version = 4.3.13
+# builtin opt 	monet_pid = 7603
+# builtin opt 	prefix = /ufs/boncz/MonetDB/linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -28,9 +28,10 @@ stderr of test '01_Modules_static` in directory 'tests/Availability` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/Linux-i686
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	prefix = /ufs/boncz/MonetDB/linux
 # config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
 # config opt 	gdk_debug = 0
 # config opt 	gdk_mmap = 33554432
@@ -39,13 +40,18 @@ stderr of test '01_Modules_static` in directory 'tests/Availability` itself:
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_daemon = no
+# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	gdk_config = /ufs/boncz/MonetDB/linux/etc/monet.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/niels/data/Linux-i686/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /ufs/niels/data/Linux-i686/var/dbfarm
+# cmdline opt 	monet_mod_path = /ufs/boncz/MonetDB/linux/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /ufs/boncz/MonetDB/linux/var/MonetDB/log
+# cmdline opt 	mapi_port = 55437
+# cmdline opt 	sql_port = 50559
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_Availability
 
-# 15:57:47 >  
-# 15:57:47 >  Done.
-# 15:57:47 >  
+# 15:30:04 >  
+# 15:30:04 >  Done.
+# 15:30:04 >  
 

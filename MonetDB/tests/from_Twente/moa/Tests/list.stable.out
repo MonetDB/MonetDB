@@ -1,12 +1,12 @@
 stdout of test 'list` in directory 'tests/from_Twente/moa` itself:
 
 
-# 17:08:35 >  
-# 17:08:35 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/MonetDB/_PREFIX_d_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB" --dbfarm "/var/tmp/MonetDB/_PREFIX_d_/var/dbfarm" --set monet_prompt= /ufs/manegold/tmp/Tests-d10/Tests/trace.mil --dbname=Tests_tests_from_Twente_moa list.prelude < list.milM
-# 17:08:35 >  
+# 15:33:06 >  
+# 15:33:06 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_moa list.prelude < list.milM
+# 15:33:06 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 indexA  := new(oid,oid);
 valuesA := new(oid,int);
@@ -138,7 +138,7 @@ orderList2.insert(103@0,1);
 
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_55  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -160,7 +160,7 @@ valuesA.find(2@0).print;
 
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -182,7 +182,7 @@ valuesA.find(0@0).print;
 
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -204,7 +204,7 @@ valuesA.find(2@0).print;
 
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -227,7 +227,7 @@ valuesA.find(0@0).print;
 _MMreverse_2 := reverse(indexA);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -237,7 +237,7 @@ indexA.print;
 [ 0@0,	  0@0	  ]
 reverse(select(reverse(indexB),4@0)).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  404@0	  ]
@@ -254,12 +254,12 @@ valuesB.find(401@0).print;
 [ 1000 ]
 reverse(select(reverse(indexB),3@0)).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 reverse(select(reverse(indexB),2@0)).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  407@0	  ]
@@ -273,7 +273,7 @@ valuesB.find(405@0).print;
 [ 5000 ]
 reverse(select(reverse(indexB),1@0)).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
@@ -281,7 +281,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(select(reverse(indexB),0@0)).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
@@ -292,7 +292,7 @@ valuesB.find(409@0).print;
 _MMreverse_2 := reverse(indexA);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -302,7 +302,7 @@ indexA.print;
 [ 0@0,	  0@0	  ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),4@0))))).print;
 #-----------------#
-# BAT:	  tmp_55  #
+# BAT:	  tmp_58  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  402@0	  ]
@@ -319,12 +319,12 @@ valuesB.find(404@0).print;
 [ 4000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),3@0))))).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),2@0))))).print;
 #-----------------#
-# BAT:	  tmp_53  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  405@0	  ]
@@ -338,7 +338,7 @@ valuesB.find(407@0).print;
 [ 7000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),1@0))))).print;
 #-----------------#
-# BAT:	  tmp_55  #
+# BAT:	  tmp_53  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
@@ -346,7 +346,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),0@0))))).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_58  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
@@ -356,7 +356,7 @@ valuesB.find(409@0).print;
 
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB))).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_53  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  402@0	  ]
@@ -390,7 +390,7 @@ valuesB.find(409@0).print;
 
 indexB.print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_32  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
@@ -425,7 +425,7 @@ valuesB.find(401@0).print;
 _MMreverse_2 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-----------------#
-# BAT:	  tmp_51  #
+# BAT:	  tmp_55  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -435,7 +435,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0	  ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),4@0))))).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  402@0	  ]
@@ -452,7 +452,7 @@ valuesB.find(404@0).print;
 [ 4000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),1@0))))).print;
 #-----------------#
-# BAT:	  tmp_55  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
@@ -460,7 +460,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),0@0))))).print;
 #-----------------#
-# BAT:	  tmp_51  #
+# BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
@@ -468,12 +468,12 @@ valuesB.find(409@0).print;
 [ 9000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),3@0))))).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),2@0))))).print;
 #-----------------#
-# BAT:	  tmp_53  #
+# BAT:	  tmp_55  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  405@0	  ]
@@ -490,7 +490,7 @@ valuesB.find(407@0).print;
 _MMreverse_2 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -500,7 +500,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0	  ]
 reverse(select(reverse(indexB),4@0)).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  404@0	  ]
@@ -517,7 +517,7 @@ valuesB.find(401@0).print;
 [ 1000 ]
 reverse(select(reverse(indexB),1@0)).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
@@ -525,7 +525,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(select(reverse(indexB),0@0)).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
@@ -533,12 +533,12 @@ valuesB.find(409@0).print;
 [ 9000 ]
 reverse(select(reverse(indexB),3@0)).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 reverse(select(reverse(indexB),2@0)).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  407@0	  ]
@@ -555,7 +555,7 @@ valuesB.find(405@0).print;
 _MMreverse_2 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-----------------#
-# BAT:	  tmp_48  #
+# BAT:	  tmp_53  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -565,7 +565,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0	  ]
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA)))),4@0))))).print;
 #-----------------#
-# BAT:	  tmp_51  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -573,7 +573,7 @@ valuesA.find(4@0).print;
 [ 50 ]
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA)))),1@0))))).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  1@0	  ]
@@ -581,7 +581,7 @@ valuesA.find(1@0).print;
 [ 20 ]
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA)))),0@0))))).print;
 #-----------------#
-# BAT:	  tmp_48  #
+# BAT:	  tmp_52  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -589,7 +589,7 @@ valuesA.find(0@0).print;
 [ 10 ]
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA)))),3@0))))).print;
 #-----------------#
-# BAT:	  tmp_51  #
+# BAT:	  tmp_53  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 3@0,	  3@0	  ]
@@ -597,7 +597,7 @@ valuesA.find(3@0).print;
 [ 40 ]
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA)))),2@0))))).print;
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_54  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  2@0	  ]
@@ -610,7 +610,7 @@ _MMreverse_3 := reverse(_MMcopy_2);
 _MMnumber_4 := number(_MMreverse_3);
 reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(indexA))).print;
 #-----------------#
-# BAT:	  tmp_54  #
+# BAT:	  tmp_52  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -636,7 +636,7 @@ _MMnumber_4 := number(_MMreverse_3);
 _MMreverse_5 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-----------------#
-# BAT:	  tmp_53  #
+# BAT:	  tmp_58  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -646,7 +646,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(indexB)))),4@0))))).print;
 #-----------------#
-# BAT:	  tmp_57  #
+# BAT:	  tmp_60  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  404@0	  ]
@@ -663,7 +663,7 @@ valuesB.find(401@0).print;
 [ 1000 ]
 reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(indexB)))),1@0))))).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_59  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
@@ -671,7 +671,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(indexB)))),0@0))))).print;
 #-----------------#
-# BAT:	  tmp_50  #
+# BAT:	  tmp_53  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
@@ -679,12 +679,12 @@ valuesB.find(409@0).print;
 [ 9000 ]
 reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(indexB)))),3@0))))).print;
 #-----------------#
-# BAT:	  tmp_55  #
+# BAT:	  tmp_59  #
 # (oid)	  (oid)	  #
 #-----------------#
 reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMnumber_4))),reverse(indexB)))),2@0))))).print;
 #-----------------#
-# BAT:	  tmp_48  #
+# BAT:	  tmp_58  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  407@0	  ]
@@ -700,7 +700,7 @@ valuesB.find(405@0).print;
 
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -723,7 +723,7 @@ valuesA.find(0@0).print;
 _MMreverse_2 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_59  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -733,7 +733,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0	  ]
 reverse(select(reverse(indexB),4@0)).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_59  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  404@0	  ]
@@ -750,7 +750,7 @@ valuesB.find(401@0).print;
 [ 1000 ]
 reverse(select(reverse(indexB),1@0)).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_59  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
@@ -758,7 +758,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(select(reverse(indexB),0@0)).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_59  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
@@ -766,12 +766,12 @@ valuesB.find(409@0).print;
 [ 9000 ]
 reverse(select(reverse(indexB),3@0)).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_59  #
 # (oid)	  (oid)	  #
 #-----------------#
 reverse(select(reverse(indexB),2@0)).print;
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_59  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  407@0	  ]
@@ -827,7 +827,7 @@ _MMjoin_40 := join(_MMreverse_33,_MMoper_39);
 _MMsunion_41 := sunion(_MMjoin_32,_MMjoin_40);
 reverse(copy_order(reverse(sort(reverse(_MMsunion_41))),reverse(_MMsunion_18))).print;
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_83  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  4@0	  ]
@@ -968,7 +968,7 @@ _MMjoin_92 := join(_MMreverse_91,_MMjoin_22);
 _MMsunion_93 := sunion(_MMjoin_90,_MMjoin_92);
 _MMnilcast_8.print;
 #-----------------#
-# BAT:	  tmp_53  #
+# BAT:	  tmp_51  #
 # (void)  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -976,7 +976,7 @@ _MMnilcast_8.print;
 [ 2@0,	  2@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMsunion_88))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMsunion_88))),reverse(_MMsunion_34)))),0@0))))).print;
 #-------------------------#
-# BAT:	  tmp_148	  #
+# BAT:	  tmp_149	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
@@ -990,7 +990,7 @@ _MMnilcast_42.find(4@0).print;
 [ 20 ]
 reverse(copy_order(reverse(sort(reverse(_MMsunion_88))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMsunion_88))),reverse(_MMsunion_34)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_144	  #
+# BAT:	  tmp_148	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  3@0		  ]
@@ -1004,7 +1004,7 @@ _MMnilcast_42.find(6@0).print;
 [ 22 ]
 reverse(copy_order(reverse(sort(reverse(_MMsunion_88))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMsunion_88))),reverse(_MMsunion_34)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_142	  #
+# BAT:	  tmp_146	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  2@0		  ]
@@ -1018,8 +1018,8 @@ _MMnilcast_42.find(7@0).print;
 _MMCTOgroup_2 := CTOgroup(valuesA);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_142	  #
-# (oid)	  (void)	  #
+# BAT:	  tmp_147	  #
+# (void)  (oid)		  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
 [ 1@0,	  1@0		  ]
@@ -1042,7 +1042,7 @@ _MMoper_2 := [-](50,valuesA);
 _MMCTOgroup_3 := CTOgroup(_MMoper_2);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_3))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_143	  #
+# BAT:	  tmp_142	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -1066,7 +1066,7 @@ _MMCTOgroup_2 := CTOgroup(valuesA);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexA))).print;
 #-------------------------#
 # BAT:	  tmp_144	  #
-# (oid)	  (void)	  #
+# (void)  (oid)		  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
 [ 1@0,	  1@0		  ]
@@ -1104,7 +1104,7 @@ _MMmergecast_17 := mergecast(_MMreverse_2,_MMstr_concat_16,"");
 _MMCTOgroup_18 := CTOgroup(_MMmergecast_17);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_18))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_152	  #
+# BAT:	  tmp_159	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 3@0,	  3@0		  ]
@@ -1114,12 +1114,12 @@ reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_18))),reverse(indexA))).prin
 [ 0@0,	  0@0		  ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_159	  #
+# BAT:	  tmp_158	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_161	  #
+# BAT:	  tmp_162	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  402@0		  ]
@@ -1136,7 +1136,7 @@ valuesB.find(404@0).print;
 [ 4000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_158	  #
+# BAT:	  tmp_161	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  405@0		  ]
@@ -1158,7 +1158,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),0@0))))).print;
 #-------------------------#
-# BAT:	  tmp_161	  #
+# BAT:	  tmp_158	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  409@0		  ]
@@ -1175,7 +1175,7 @@ _MMmergecast_7 := mergecast(_MMreverse_2,_MMstr_concat_6,"");
 _MMCTOgroup_8 := CTOgroup(_MMmergecast_7);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_8))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_159	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 3@0,	  3@0		  ]
@@ -1185,12 +1185,12 @@ reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_8))),reverse(indexA))).print
 [ 0@0,	  0@0		  ]
 reverse(select(reverse(indexB),3@0)).print;
 #-------------------------#
-# BAT:	  tmp_159	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(select(reverse(indexB),4@0)).print;
 #-------------------------#
-# BAT:	  tmp_159	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  404@0		  ]
@@ -1207,7 +1207,7 @@ valuesB.find(401@0).print;
 [ 1000 ]
 reverse(select(reverse(indexB),2@0)).print;
 #-------------------------#
-# BAT:	  tmp_159	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  407@0		  ]
@@ -1221,7 +1221,7 @@ valuesB.find(405@0).print;
 [ 5000 ]
 reverse(select(reverse(indexB),1@0)).print;
 #-------------------------#
-# BAT:	  tmp_159	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  408@0		  ]
@@ -1229,7 +1229,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(select(reverse(indexB),0@0)).print;
 #-------------------------#
-# BAT:	  tmp_159	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  409@0		  ]
@@ -1240,7 +1240,7 @@ valuesB.find(409@0).print;
 _MMCTOgroup_2 := CTOgroup(valuesList1);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList1))).print;
 #-------------------------#
-# BAT:	  tmp_164	  #
+# BAT:	  tmp_159	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 10@0,	  100@0		  ]
@@ -1262,7 +1262,7 @@ _MMCTOgroup_3 := CTOgroup(valuesList2);
 _MMCTOgroup_last_4 := CTOgroup_last(_MMCTOgroup_2,_MMCTOgroup_3);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(indexList1))).print;
 #-------------------------#
-# BAT:	  tmp_165	  #
+# BAT:	  tmp_166	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 10@0,	  100@0		  ]
@@ -1294,7 +1294,7 @@ _MMCTOgroup_5 := CTOgroup(valuesList3);
 _MMCTOgroup_last_6 := CTOgroup_last(_MMCTOgroup_4,_MMCTOgroup_5);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_6))),reverse(indexList1))).print;
 #-------------------------#
-# BAT:	  tmp_168	  #
+# BAT:	  tmp_169	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 10@0,	  100@0		  ]
@@ -1336,7 +1336,7 @@ _MMCTOgroup_7 := CTOgroup(valuesList4);
 _MMCTOgroup_last_8 := CTOgroup_last(_MMCTOgroup_6,_MMCTOgroup_7);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_8))),reverse(indexList1))).print;
 #-------------------------#
-# BAT:	  tmp_172	  #
+# BAT:	  tmp_173	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 10@0,	  100@0		  ]
@@ -1380,7 +1380,7 @@ valuesList4.find(103@0).print;
 _MMCTOgroup_2 := CTOgroup(valuesList1);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList1))).print;
 #-------------------------#
-# BAT:	  tmp_165	  #
+# BAT:	  tmp_159	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 10@0,	  100@0		  ]
@@ -1424,7 +1424,7 @@ valuesList4.find(102@0).print;
 _MMCTOgroup_2 := CTOgroup(valuesList4);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList1))).print;
 #-------------------------#
-# BAT:	  tmp_169	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (void)	  #
 #-------------------------#
 [ 10@0,	  100@0		  ]
@@ -1474,7 +1474,7 @@ _MMCTOgroup_7 := CTOgroup(valuesList1);
 _MMCTOgroup_last_8 := CTOgroup_last(_MMCTOgroup_6,_MMCTOgroup_7);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_8))),reverse(indexList1))).print;
 #-------------------------#
-# BAT:	  tmp_173	  #
+# BAT:	  tmp_176	  #
 # (oid)	  (void)	  #
 #-------------------------#
 [ 10@0,	  100@0		  ]
@@ -1543,14 +1543,14 @@ _MMnilcast_26 := _MMunion_25.reverse.mark(0@0).reverse;
 _MMCTOgroup_27 := CTOgroup(_MMnilcast_26);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_27))),reverse(_MMsunion_18))).print;
 #-------------------------#
-# BAT:	  tmp_176	  #
+# BAT:	  tmp_180	  #
 # (oid)	  (oid)		  #
 #-------------------------#
-[ 5@0,	  5@0		  ]
 [ 4@0,	  0@0		  ]
-[ 6@0,	  8@0		  ]
+[ 5@0,	  5@0		  ]
 [ 5@0,	  6@0		  ]
 [ 7@0,	  7@0		  ]
+[ 6@0,	  8@0		  ]
 [ 3@0,	  1@0		  ]
 [ 2@0,	  2@0		  ]
 [ 1@0,	  3@0		  ]
@@ -1579,7 +1579,7 @@ _MMCTOgroup_2 := CTOgroup(valuesB);
 _MMreverse_3 := reverse(indexA);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -1589,8 +1589,8 @@ indexA.print;
 [ 0@0,	  0@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_182	  #
-# (oid)	  (oid)		  #
+# BAT:	  tmp_185	  #
+# (oid)	  (void)	  #
 #-------------------------#
 [ 4@0,	  401@0		  ]
 [ 4@0,	  402@0		  ]
@@ -1606,13 +1606,13 @@ valuesB.find(404@0).print;
 [ 4000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_179	  #
+# BAT:	  tmp_182	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_180	  #
-# (oid)	  (oid)		  #
+# BAT:	  tmp_183	  #
+# (oid)	  (void)	  #
 #-------------------------#
 [ 2@0,	  405@0		  ]
 [ 2@0,	  406@0		  ]
@@ -1625,18 +1625,18 @@ valuesB.find(407@0).print;
 [ 7000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_182	  #
+# BAT:	  tmp_184	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  408@0		  ]
 valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),0@0))))).print;
-#-----------------#
-# BAT:	  tmp_63  #
-# (oid)	  (oid)	  #
-#-----------------#
-[ 0@0,	  409@0	  ]
+#-------------------------#
+# BAT:	  tmp_181	  #
+# (oid)	  (oid)		  #
+#-------------------------#
+[ 0@0,	  409@0		  ]
 valuesB.find(409@0).print;
 [ 9000 ]
 # {[ 1000 ,  2000 ,  3000 ,  4000 ], [], [ 5000 ,  6000 ,  7000 ], [ 8000 ], [ 9000 ]}
@@ -1645,7 +1645,7 @@ _MMCTOgroup_2 := CTOgroup(valuesB);
 _MMreverse_3 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_165	  #
+# BAT:	  tmp_185	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -1655,7 +1655,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0		  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_178	  #
+# BAT:	  tmp_180	  #
 # (oid)	  (void)	  #
 #-------------------------#
 [ 4@0,	  401@0		  ]
@@ -1672,33 +1672,33 @@ valuesB.find(404@0).print;
 [ 4000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_173	  #
+# BAT:	  tmp_159	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  408@0		  ]
 valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),0@0))))).print;
-#-----------------#
-# BAT:	  tmp_63  #
-# (oid)	  (oid)	  #
-#-----------------#
-[ 0@0,	  409@0	  ]
+#-------------------------#
+# BAT:	  tmp_182	  #
+# (oid)	  (oid)		  #
+#-------------------------#
+[ 0@0,	  409@0		  ]
 valuesB.find(409@0).print;
 [ 9000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_161	  #
+# BAT:	  tmp_184	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),2@0))))).print;
-#-----------------#
-# BAT:	  tmp_66  #
-# (oid)	  (void)  #
-#-----------------#
-[ 2@0,	  405@0	  ]
-[ 2@0,	  406@0	  ]
-[ 2@0,	  407@0	  ]
+#-------------------------#
+# BAT:	  tmp_177	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 2@0,	  405@0		  ]
+[ 2@0,	  406@0		  ]
+[ 2@0,	  407@0		  ]
 valuesB.find(405@0).print;
 [ 5000 ]
 valuesB.find(406@0).print;
@@ -1711,7 +1711,7 @@ _MMCTOgroup_2 := CTOgroup(valuesList1);
 _MMreverse_3 := reverse(indexSet1);
 indexSet1.print;
 #-----------------#
-# BAT:	  tmp_34  #
+# BAT:	  tmp_37  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  10@0	  ]
@@ -1719,29 +1719,29 @@ indexSet1.print;
 [ 2@0,	  12@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList2)))),10@0))))).print;
 #-------------------------#
-# BAT:	  tmp_182	  #
+# BAT:	  tmp_183	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 10@0,	  100@0		  ]
 valuesList1.find(100@0).print;
 [ 10 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList2)))),11@0))))).print;
-#-----------------#
-# BAT:	  tmp_66  #
-# (oid)	  (oid)	  #
-#-----------------#
-[ 11@0,	  101@0	  ]
-[ 11@0,	  102@0	  ]
+#-------------------------#
+# BAT:	  tmp_159	  #
+# (oid)	  (oid)		  #
+#-------------------------#
+[ 11@0,	  101@0		  ]
+[ 11@0,	  102@0		  ]
 valuesList1.find(101@0).print;
 [ 11 ]
 valuesList1.find(102@0).print;
 [ 11 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList2)))),12@0))))).print;
-#-----------------#
-# BAT:	  tmp_63  #
-# (oid)	  (oid)	  #
-#-----------------#
-[ 12@0,	  103@0	  ]
+#-------------------------#
+# BAT:	  tmp_182	  #
+# (oid)	  (oid)		  #
+#-------------------------#
+[ 12@0,	  103@0		  ]
 valuesList1.find(103@0).print;
 [ 11 ]
 # {[< 10 >], [< 11 >, < 11 >], [< 11 >]}
@@ -1752,25 +1752,25 @@ _MMCTOgroup_last_4 := CTOgroup_last(_MMCTOgroup_2,_MMCTOgroup_3);
 _MMreverse_5 := reverse(indexSet1);
 indexSet1.print;
 #-----------------#
-# BAT:	  tmp_34  #
+# BAT:	  tmp_37  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  10@0	  ]
 [ 1@0,	  11@0	  ]
 [ 2@0,	  12@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(indexList2)))),10@0))))).print;
-#-------------------------#
-# BAT:	  tmp_173	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 10@0,	  100@0		  ]
+#-----------------#
+# BAT:	  tmp_67  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 10@0,	  100@0	  ]
 valuesList1.find(100@0).print;
 [ 10 ]
 valuesList2.find(100@0).print;
 [ 20 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(indexList2)))),11@0))))).print;
 #-------------------------#
-# BAT:	  tmp_179	  #
+# BAT:	  tmp_183	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 11@0,	  102@0		  ]
@@ -1785,7 +1785,7 @@ valuesList2.find(101@0).print;
 [ 22 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(indexList2)))),12@0))))).print;
 #-------------------------#
-# BAT:	  tmp_183	  #
+# BAT:	  tmp_143	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 12@0,	  103@0		  ]
@@ -1803,18 +1803,18 @@ _MMCTOgroup_last_6 := CTOgroup_last(_MMCTOgroup_4,_MMCTOgroup_5);
 _MMreverse_7 := reverse(indexSet1);
 indexSet1.print;
 #-----------------#
-# BAT:	  tmp_34  #
+# BAT:	  tmp_37  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  10@0	  ]
 [ 1@0,	  11@0	  ]
 [ 2@0,	  12@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_6))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_6))),reverse(indexList2)))),10@0))))).print;
-#-------------------------#
-# BAT:	  tmp_181	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 10@0,	  100@0		  ]
+#-----------------#
+# BAT:	  tmp_67  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 10@0,	  100@0	  ]
 valuesList1.find(100@0).print;
 [ 10 ]
 valuesList2.find(100@0).print;
@@ -1823,7 +1823,7 @@ valuesList3.find(100@0).print;
 [ 30 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_6))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_6))),reverse(indexList2)))),11@0))))).print;
 #-------------------------#
-# BAT:	  tmp_167	  #
+# BAT:	  tmp_182	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 11@0,	  102@0		  ]
@@ -1842,7 +1842,7 @@ valuesList3.find(101@0).print;
 [ 31 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_6))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_6))),reverse(indexList2)))),12@0))))).print;
 #-------------------------#
-# BAT:	  tmp_168	  #
+# BAT:	  tmp_149	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 12@0,	  103@0		  ]
@@ -1864,18 +1864,18 @@ _MMCTOgroup_last_8 := CTOgroup_last(_MMCTOgroup_6,_MMCTOgroup_7);
 _MMreverse_9 := reverse(indexSet1);
 indexSet1.print;
 #-----------------#
-# BAT:	  tmp_34  #
+# BAT:	  tmp_37  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  10@0	  ]
 [ 1@0,	  11@0	  ]
 [ 2@0,	  12@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_8))),reverse(indexList2)))),10@0))))).print;
-#-------------------------#
-# BAT:	  tmp_166	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 10@0,	  100@0		  ]
+#-----------------#
+# BAT:	  tmp_67  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 10@0,	  100@0	  ]
 valuesList1.find(100@0).print;
 [ 10 ]
 valuesList2.find(100@0).print;
@@ -1886,7 +1886,7 @@ valuesList4.find(100@0).print;
 [ 40 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_8))),reverse(indexList2)))),11@0))))).print;
 #-------------------------#
-# BAT:	  tmp_159	  #
+# BAT:	  tmp_181	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 11@0,	  102@0		  ]
@@ -1909,7 +1909,7 @@ valuesList4.find(101@0).print;
 [ 41 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_8))),reverse(indexList2)))),12@0))))).print;
 #-------------------------#
-# BAT:	  tmp_172	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 12@0,	  103@0		  ]
@@ -1927,15 +1927,15 @@ _MMmax_2 := max(orderA);
 _MMcastval_3 := castval(orderA,_MMmax_2);
 _MMoper_4 := [-](_MMcastval_3,orderA);
 reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(indexA))).print;
-#-------------------------#
-# BAT:	  tmp_173	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 2@0,	  2@0		  ]
-[ 3@0,	  3@0		  ]
-[ 0@0,	  0@0		  ]
-[ 1@0,	  1@0		  ]
-[ 4@0,	  4@0		  ]
+#-----------------#
+# BAT:	  tmp_67  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 4@0,	  4@0	  ]
 valuesA.find(2@0).print;
 [ 30 ]
 valuesA.find(3@0).print;
@@ -1954,7 +1954,7 @@ _MMcastval_4 := castval(orderA,_MMmax_3);
 _MMoper_5 := [-](_MMcastval_4,orderA);
 reverse(copy_order(reverse(sort(reverse(_MMoper_5))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_181	  #
+# BAT:	  tmp_166	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  2@0		  ]
@@ -1964,7 +1964,7 @@ reverse(copy_order(reverse(sort(reverse(_MMoper_5))),reverse(indexA))).print;
 [ 4@0,	  4@0		  ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_186	  #
+# BAT:	  tmp_185	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  405@0		  ]
@@ -1978,12 +1978,12 @@ valuesB.find(407@0).print;
 [ 7000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_183	  #
+# BAT:	  tmp_166	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),0@0))))).print;
 #-------------------------#
-# BAT:	  tmp_181	  #
+# BAT:	  tmp_179	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  409@0		  ]
@@ -1991,7 +1991,7 @@ valuesB.find(409@0).print;
 [ 9000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_186	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  408@0		  ]
@@ -1999,7 +1999,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(orderB))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(orderB))),reverse(indexB)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_180	  #
+# BAT:	  tmp_185	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  402@0		  ]
@@ -2022,7 +2022,7 @@ _MMoper_4 := [-](_MMcastval_3,orderB);
 _MMreverse_5 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_160	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -2032,7 +2032,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0		  ]
 reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(indexB)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_183	  #
+# BAT:	  tmp_166	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  404@0		  ]
@@ -2049,7 +2049,7 @@ valuesB.find(402@0).print;
 [ 2000 ]
 reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(indexB)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_186	  #
+# BAT:	  tmp_179	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  408@0		  ]
@@ -2057,7 +2057,7 @@ valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(indexB)))),0@0))))).print;
 #-------------------------#
-# BAT:	  tmp_160	  #
+# BAT:	  tmp_183	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  409@0		  ]
@@ -2065,12 +2065,12 @@ valuesB.find(409@0).print;
 [ 9000 ]
 reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(indexB)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_183	  #
+# BAT:	  tmp_179	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(indexB)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_181	  #
+# BAT:	  tmp_165	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  407@0		  ]
@@ -2096,7 +2096,7 @@ _MMreverse_10 := reverse(_MMmirror_6);
 _MMjoin_11 := join(_MMreverse_10,orderA);
 reverse(copy_order(reverse(sort(reverse(_MMjoin_11))),reverse(_MMjoin_7))).print;
 #-------------------------#
-# BAT:	  tmp_188	  #
+# BAT:	  tmp_187	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -2132,7 +2132,7 @@ _MMreverse_23 := reverse(_MMmirror_9);
 _MMjoin_24 := join(_MMreverse_23,_MMnumber_4);
 reverse(copy_order(reverse(sort(reverse(_MMjoin_24))),reverse(_MMjoin_10))).print;
 #-------------------------#
-# BAT:	  tmp_200	  #
+# BAT:	  tmp_197	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -2140,7 +2140,7 @@ reverse(copy_order(reverse(sort(reverse(_MMjoin_24))),reverse(_MMjoin_10))).prin
 [ 2@0,	  2@0		  ]
 reverse(select(reverse(_MMcastnil_16),4@0)).print;
 #-------------------------#
-# BAT:	  tmp_200	  #
+# BAT:	  tmp_197	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  0@0		  ]
@@ -2148,12 +2148,12 @@ _MMjoin_20.find(1@0).print;
 [ 30 ]
 reverse(select(reverse(_MMcastnil_16),3@0)).print;
 #-------------------------#
-# BAT:	  tmp_200	  #
+# BAT:	  tmp_197	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(select(reverse(_MMcastnil_16),2@0)).print;
 #-------------------------#
-# BAT:	  tmp_200	  #
+# BAT:	  tmp_197	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  1@0		  ]
@@ -2194,7 +2194,7 @@ _MMreverse_31 := reverse(_MMuselect_6);
 _MMjoin_32 := join(_MMreverse_31,orderA);
 reverse(copy_order(reverse(sort(reverse(_MMjoin_32))),reverse(_MMjoin_7))).print;
 #-------------------------#
-# BAT:	  tmp_217	  #
+# BAT:	  tmp_213	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  0@0		  ]
@@ -2203,7 +2203,7 @@ reverse(copy_order(reverse(sort(reverse(_MMjoin_32))),reverse(_MMjoin_7))).print
 [ 2@0,	  1@0		  ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(_MMjoin_24)))),0@0))))).print;
 #-------------------------#
-# BAT:	  tmp_220	  #
+# BAT:	  tmp_216	  #
 # (void)  (oid)		  #
 #-------------------------#
 [ 0@0,	  1@0		  ]
@@ -2211,7 +2211,7 @@ _MMjoin_27.find(7@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(_MMjoin_24)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_216	  #
+# BAT:	  tmp_211	  #
 # (void)  (oid)		  #
 #-------------------------#
 [ 2@0,	  7@0		  ]
@@ -2219,17 +2219,14 @@ _MMjoin_27.find(1@0).print;
 [ 2000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(_MMjoin_24)))),3@0))))).print;
 #-----------------#
-# BAT:	  tmp_93  #
+# BAT:	  tmp_98  #
 # (void)  (oid)	  #
 #-----------------#
 [ 3@0,	  8@0	  ]
 _MMjoin_27.find(0@0).print;
-!ERROR: CMDfind: value not found.
-!ERROR: CMDfind: operation failed.
-!ERROR: print(param 1): evaluation error.
 reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(_MMjoin_24)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_214	  #
+# BAT:	  tmp_210	  #
 # (void)  (oid)		  #
 #-------------------------#
 [ 1@0,	  4@0		  ]
@@ -2263,8 +2260,8 @@ _MMjoin_11 := join(_MMnilcast_10,valuesB);
 _MMjoin_12 := join(_MMnilcast_10,orderB);
 reverse(copy_order(reverse(sort(reverse(_MMjoin_12))),reverse(_MMcastnil_9))).print;
 #-------------------------#
-# BAT:	  tmp_227	  #
-# (oid)	  (oid)		  #
+# BAT:	  tmp_223	  #
+# (oid)	  (void)	  #
 #-------------------------#
 [ 1@0,	  0@0		  ]
 _MMjoin_11.find(0@0).print;
@@ -2286,7 +2283,7 @@ _MMjoin_13 := join(indexB,_MMmirror_12);
 _MMjoin_14 := join(_MMjoin_13,valuesB);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_232	  #
+# BAT:	  tmp_230	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -2301,9 +2298,6 @@ _MMjoin_14.find(1@0).print;
 _MMjoin_14.find(0@0).print;
 [ 9000 ]
 _MMjoin_14.find(3@0).print;
-!ERROR: CMDfind: value not found.
-!ERROR: CMDfind: operation failed.
-!ERROR: print(param 1): evaluation error.
 _MMjoin_14.find(2@0).print;
 [ 5000 ]
 # [ 2000 ,  8000 ,  9000 , ERROR: CMDfind: value not found,  5000 ]
@@ -2320,7 +2314,7 @@ _MMnilcast_10 := _MMjoin_8.reverse.mark(0@0).reverse;
 _MMjoin_11 := join(_MMnilcast_10,valuesB);
 _MMcastnil_9.print;
 #-------------------------#
-# BAT:	  tmp_214	  #
+# BAT:	  tmp_210	  #
 # (oid)	  (void)	  #
 #-------------------------#
 [ 1@0,	  0@0		  ]
@@ -2362,7 +2356,7 @@ _MMnilcast_14 := _MMjoin_13.reverse.mark(0@0).reverse;
 _MMfind_15 := find(_MMnilcast_14,oid(0));
 reverse(copy_order(reverse(sort(reverse(_MMjoin_12))),reverse(_MMcastnil_9))).print;
 #-------------------------#
-# BAT:	  tmp_236	  #
+# BAT:	  tmp_232	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 101@0,  1@0		  ]
@@ -2392,7 +2386,7 @@ _MMreverse_5 := reverse(_MMuselect_3);
 _MMjoin_6 := join(_MMreverse_5,valuesA);
 _MMjoin_4.print;
 #-------------------------#
-# BAT:	  tmp_233	  #
+# BAT:	  tmp_228	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
@@ -2409,8 +2403,8 @@ _MMreverse_7 := reverse(_MMuselect_3);
 _MMjoin_8 := join(_MMreverse_7,orderA);
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4))).print;
 #-------------------------#
-# BAT:	  tmp_240	  #
-# (oid)	  (oid)		  #
+# BAT:	  tmp_236	  #
+# (oid)	  (void)	  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
 _MMjoin_6.find(0@0).print;
@@ -2428,7 +2422,7 @@ _MMreverse_9 := reverse(_MMcastnil_7);
 _MMjoin_10 := join(_MMreverse_9,valuesA);
 _MMjoin_8.print;
 #-------------------------#
-# BAT:	  tmp_242	  #
+# BAT:	  tmp_238	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  1@0		  ]
@@ -2450,7 +2444,7 @@ _MMreverse_9 := reverse(_MMuselect_5);
 _MMjoin_10 := join(_MMreverse_9,orderA);
 reverse(copy_order(reverse(sort(reverse(_MMjoin_10))),reverse(_MMjoin_6))).print;
 #-------------------------#
-# BAT:	  tmp_246	  #
+# BAT:	  tmp_242	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  1@0		  ]
@@ -2469,7 +2463,7 @@ _MMjoin_6 := join(_MMreverse_5,valuesB);
 _MMreverse_7 := reverse(indexA);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -2479,7 +2473,7 @@ indexA.print;
 [ 0@0,	  0@0	  ]
 reverse(select(reverse(_MMjoin_4),4@0)).print;
 #-------------------------#
-# BAT:	  tmp_239	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  5@0		  ]
@@ -2493,12 +2487,12 @@ _MMjoin_6.find(7@0).print;
 [ 2000 ]
 reverse(select(reverse(_MMjoin_4),3@0)).print;
 #-------------------------#
-# BAT:	  tmp_239	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(select(reverse(_MMjoin_4),2@0)).print;
 #-------------------------#
-# BAT:	  tmp_239	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  2@0		  ]
@@ -2512,7 +2506,7 @@ _MMjoin_6.find(4@0).print;
 [ 5000 ]
 reverse(select(reverse(_MMjoin_4),1@0)).print;
 #-------------------------#
-# BAT:	  tmp_239	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  1@0		  ]
@@ -2520,7 +2514,7 @@ _MMjoin_6.find(1@0).print;
 [ 8000 ]
 reverse(select(reverse(_MMjoin_4),0@0)).print;
 #-------------------------#
-# BAT:	  tmp_239	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
@@ -2536,7 +2530,7 @@ _MMjoin_6 := join(_MMreverse_5,valuesB);
 _MMreverse_7 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_142	  #
+# BAT:	  tmp_238	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -2546,7 +2540,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0		  ]
 reverse(select(reverse(_MMjoin_4),4@0)).print;
 #-------------------------#
-# BAT:	  tmp_142	  #
+# BAT:	  tmp_238	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  5@0		  ]
@@ -2560,7 +2554,7 @@ _MMjoin_6.find(7@0).print;
 [ 2000 ]
 reverse(select(reverse(_MMjoin_4),1@0)).print;
 #-------------------------#
-# BAT:	  tmp_142	  #
+# BAT:	  tmp_238	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  1@0		  ]
@@ -2568,7 +2562,7 @@ _MMjoin_6.find(1@0).print;
 [ 8000 ]
 reverse(select(reverse(_MMjoin_4),0@0)).print;
 #-------------------------#
-# BAT:	  tmp_142	  #
+# BAT:	  tmp_238	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
@@ -2576,12 +2570,12 @@ _MMjoin_6.find(0@0).print;
 [ 9000 ]
 reverse(select(reverse(_MMjoin_4),3@0)).print;
 #-------------------------#
-# BAT:	  tmp_142	  #
+# BAT:	  tmp_238	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(select(reverse(_MMjoin_4),2@0)).print;
 #-------------------------#
-# BAT:	  tmp_142	  #
+# BAT:	  tmp_238	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  2@0		  ]
@@ -2605,7 +2599,7 @@ _MMjoin_8 := join(_MMreverse_7,orderA);
 _MMreverse_9 := reverse(indexA);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -2615,7 +2609,7 @@ indexA.print;
 [ 0@0,	  0@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_172	  #
+# BAT:	  tmp_241	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  3@0		  ]
@@ -2623,23 +2617,23 @@ _MMjoin_6.find(3@0).print;
 [ 50 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_185	  #
+# BAT:	  tmp_240	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 3@0,	  2@0		  ]
 _MMjoin_6.find(2@0).print;
 [ 40 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),2@0))))).print;
-#-------------------------#
-# BAT:	  tmp_241	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 2@0,	  1@0		  ]
+#-----------------#
+# BAT:	  tmp_58  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 2@0,	  1@0	  ]
 _MMjoin_6.find(1@0).print;
 [ 30 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_289	  #
+# BAT:	  tmp_234	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  0@0		  ]
@@ -2647,7 +2641,7 @@ _MMjoin_6.find(0@0).print;
 [ 20 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),0@0))))).print;
 #-----------------#
-# BAT:	  tmp_47  #
+# BAT:	  tmp_58  #
 # (oid)	  (oid)	  #
 #-----------------#
 # {[ 50 ], [ 40 ], [ 30 ], [ 20 ], []}
@@ -2662,7 +2656,7 @@ _MMjoin_8 := join(_MMreverse_7,orderA);
 _MMreverse_9 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_236	  #
+# BAT:	  tmp_234	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -2672,7 +2666,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0		  ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_231	  #
+# BAT:	  tmp_241	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  3@0		  ]
@@ -2680,7 +2674,7 @@ _MMjoin_6.find(3@0).print;
 [ 50 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_226	  #
+# BAT:	  tmp_240	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  0@0		  ]
@@ -2688,12 +2682,12 @@ _MMjoin_6.find(0@0).print;
 [ 20 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),0@0))))).print;
 #-------------------------#
-# BAT:	  tmp_236	  #
+# BAT:	  tmp_241	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_231	  #
+# BAT:	  tmp_232	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 3@0,	  2@0		  ]
@@ -2701,7 +2695,7 @@ _MMjoin_6.find(2@0).print;
 [ 40 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_172	  #
+# BAT:	  tmp_234	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  1@0		  ]
@@ -2719,7 +2713,7 @@ _MMjoin_8 := join(_MMreverse_7,orderB);
 _MMreverse_9 := reverse(indexA);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -2729,7 +2723,7 @@ indexA.print;
 [ 0@0,	  0@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_247	  #
+# BAT:	  tmp_243	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  7@0		  ]
@@ -2743,12 +2737,12 @@ _MMjoin_6.find(5@0).print;
 [ 4000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_289	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_276	  #
+# BAT:	  tmp_240	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  4@0		  ]
@@ -2762,7 +2756,7 @@ _MMjoin_6.find(2@0).print;
 [ 7000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_245	  #
+# BAT:	  tmp_231	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  1@0		  ]
@@ -2770,7 +2764,7 @@ _MMjoin_6.find(1@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),0@0))))).print;
 #-------------------------#
-# BAT:	  tmp_236	  #
+# BAT:	  tmp_243	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
@@ -2788,7 +2782,7 @@ _MMjoin_8 := join(_MMreverse_7,orderB);
 _MMreverse_9 := reverse(indexA);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_246	  #
+# BAT:	  tmp_231	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -2798,7 +2792,7 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 2@0,	  2@0		  ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),4@0))))).print;
 #-------------------------#
-# BAT:	  tmp_234	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  7@0		  ]
@@ -2812,7 +2806,7 @@ _MMjoin_6.find(5@0).print;
 [ 4000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),1@0))))).print;
 #-------------------------#
-# BAT:	  tmp_187	  #
+# BAT:	  tmp_240	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 1@0,	  1@0		  ]
@@ -2820,7 +2814,7 @@ _MMjoin_6.find(1@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),0@0))))).print;
 #-------------------------#
-# BAT:	  tmp_237	  #
+# BAT:	  tmp_233	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 0@0,	  0@0		  ]
@@ -2828,12 +2822,12 @@ _MMjoin_6.find(0@0).print;
 [ 9000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),3@0))))).print;
 #-------------------------#
-# BAT:	  tmp_231	  #
+# BAT:	  tmp_240	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),2@0))))).print;
 #-------------------------#
-# BAT:	  tmp_239	  #
+# BAT:	  tmp_231	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 2@0,	  4@0		  ]
@@ -2855,7 +2849,7 @@ _MMoper_6 := {count}(_MMjoin_5);
 _MMmergecast_7 := mergecast(_MMreverse_2,_MMoper_6,0);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -2883,7 +2877,7 @@ _MMoper_6 := {count}(_MMjoin_5);
 _MMmergecast_7 := mergecast(_MMreverse_2,_MMoper_6,0);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 4@0,	  4@0	  ]
@@ -2911,7 +2905,7 @@ _MMoper_6 := {count}(_MMjoin_5);
 _MMmergecast_7 := mergecast(_MMreverse_2,_MMoper_6,0);
 reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 #-------------------------#
-# BAT:	  tmp_152	  #
+# BAT:	  tmp_174	  #
 # (oid)	  (oid)		  #
 #-------------------------#
 [ 4@0,	  4@0		  ]
@@ -2933,7 +2927,7 @@ _MMmergecast_7.find(2@0).print;
 
 quit;
 
-# 05:09:20 >  
-# 05:09:20 >  Done.
-# 05:09:20 >  
+# 15:33:07 >  
+# 15:33:07 >  Done.
+# 15:33:07 >  
 

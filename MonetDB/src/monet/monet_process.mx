@@ -85,8 +85,7 @@ int monet_threads = 0;
 
 void monetSingle(int status){
 	ValRecord res;
-	MT_Id tid = THRgettid();
-	Thread t = THRget(tid);
+	Thread t = THRget(THRgettid());
 
         res.vtype= TYPE_void;
         res.val.ival = 0;
@@ -155,7 +154,7 @@ MT_Id monetFork(void) {
 		MT_set_lock(monet_critical, "monetFork");
 		/* exclusive access to monet_forksync barrier
 	 	 * and monet_threads counter. */
-		if (MT_create_thread(&p, monetInterpreter, &status) < 0) {
+		if (MT_create_thread(&p, monetInterpreter, &status) != 0) {
 			GDKsyserror("monetFork:failed\n");
 			p = (MT_Id)-1;
 		} else {

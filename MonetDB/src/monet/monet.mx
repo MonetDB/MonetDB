@@ -172,8 +172,7 @@ typedef struct YYS {
                 batrec  batref;
 		oid	yyid;
         } free;
-	unsigned int  cnt:6, token:10;     
-	unsigned int  dealloc:16;
+	unsigned int  cnt:6, token:10, dealloc:16;
 	struct YYS *nfree;
 } yystree, *YYSTREE;
 
@@ -374,7 +373,7 @@ void monet_hello(void) {
         printf("# Copyright (c) 1993-2003, CWI. ");
         printf("All rights reserved.\n");
         printf("# compiled for %s/%lubit; %s linked.\n", 
-			monet_arch, (unsigned long) (sizeof(ptr)*8), linkinfo );
+			monet_arch, (size_t) (sizeof(ptr)*8), linkinfo );
     }
 }
 
@@ -788,7 +787,7 @@ Unsafe to call:  BE SURE TO PASS WHAT THE 'addr' ROUTINE EXPECTS
 @c
 int monet_syscall(GDKfcn addr, int argc, ValPtr argv) {
         int i,j;
-	long v[MAXPARAMS*2];
+	ssize_t v[MAXPARAMS*2];
 @-
 Convert all parameter values to integers.
 @c
@@ -881,7 +880,11 @@ int monet_sigerror(str kind, str name, str extra, int argc, ValPtr argv){
                 }
         }
         *(p++) = ')'; *p = 0;
-        GDKerror("interpret: no matching %s to '%s'.\n%s", kind, buf, extra);
+	if (extra) {
+        	GDKerror("interpret: no matching %s to '%s'.\n%s", kind, buf, extra);
+	} else {
+        	GDKerror("interpret: %s invocation of '%s' with illegal types.\n", kind, buf);
+	}
         return 0;
 }
 

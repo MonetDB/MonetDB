@@ -916,7 +916,7 @@ void MT_sleep_ms(unsigned int ms) {
 #ifdef HAVE_NANOSLEEP
         struct timespec ts;
         ts.tv_sec = (time_t) (ms/1000);
-        ts.tv_nsec = (long) (1000000*(ms%1000));
+        ts.tv_nsec = 1000000*(ms%1000);
         while(nanosleep(&ts, &ts) == -1 && errno == EINTR);
 #else
 	struct timeval tv;
@@ -954,7 +954,7 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 	}
 	p = (void*) VirtualAlloc(a, size, MEM_COMMIT|mode, PAGE_READWRITE);
 	if (p == NULL) {
-		fprintf(MT_out, "VirtualAlloc(%lx,%ld,MEM_COMMIT,PAGE_READWRITE): failed\n", (unsigned long) a, (long) size);
+		fprintf(MT_out, "VirtualAlloc(%lx,%lu,MEM_COMMIT,PAGE_READWRITE): failed\n", (size_t) a, size);
 	}
 	return p; 
 }
@@ -962,9 +962,9 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 
 void MT_vmfree(void *p, size_t size) {
 	if (VirtualFree(p, size, MEM_DECOMMIT) == 0)
-	fprintf(MT_out, "VirtualFree(%lx,%ld,MEM_DECOMMIT): failed\n", (unsigned long) p, (long) size);
+	fprintf(MT_out, "VirtualFree(%lx,%lu,MEM_DECOMMIT): failed\n", (size_t) p, size);
 	if (VirtualFree(p, 0, MEM_RELEASE) == 0)
-	fprintf(MT_out, "VirtualFree(%lx,0,MEM_RELEASE): failed\n", (unsigned long) p);
+	fprintf(MT_out, "VirtualFree(%lx,0,MEM_RELEASE): failed\n", (size_t) p);
 }
 
 void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize)
@@ -990,7 +990,7 @@ void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize)
 		} p = a;
 	} else if (oldsize > newsize) {
  		size_t ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
- 		if (ret == 0) fprintf(MT_out, "VirtualFree(%lx,%ld,MEM_DECOMMIT): failed\n", (unsigned long) p+newsize, (long) (oldsize-newsize));
+ 		if (ret == 0) fprintf(MT_out, "VirtualFree(%lx,%ld,MEM_DECOMMIT): failed\n", (size_t) p+newsize, (ssize_t) (oldsize-newsize));
 	} 
 	return p;
 }

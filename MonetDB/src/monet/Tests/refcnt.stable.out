@@ -1,17 +1,17 @@
 stdout of test 'refcnt` in directory 'src/monet` itself:
 
 
-# 09:44:46 >  
-# 09:44:46 >  Mtimeout -timeout 300 ./refcnt refcnt 
-# 09:44:46 >  
+# 15:28:46 >  
+# 15:28:46 >  Mtimeout -timeout 300 ./refcnt refcnt 
+# 15:28:46 >  
 
 
-# 09:44:46 >  
-# 09:44:46 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_monet
-# 09:44:46 >  
+# 15:28:46 >  
+# 15:28:46 >  Mtimeout -timeout 60 Mserver --config=/ufs/boncz/MonetDB/linux/etc/monet.conf --debug=10 --set monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB --set gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm --set sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_src_monet
+# 15:28:46 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # restart gives correct refcnt b from 0 to 1 
 # since b is part of a and persistent expected refcnt should be 2
@@ -21,19 +21,19 @@ b.persists(true);
 a:=new(int,bat);
 a.rename("a");
 a.persists(true);
-!ERROR: BATmode(a) recursive BATs cannot be made persitent
+!ERROR: BATmode: BAT type implies that a[int,BAT] cannot be made persistent.
 a.insert(1,b);
 commit;
 quit;   
  restart gives correct refcnt b from 0 to 1 
  since b is part of a and persistent expected refcnt should be 2 
 
-# 09:44:46 >  
-# 09:44:46 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_monet
-# 09:44:46 >  
+# 15:28:47 >  
+# 15:28:47 >  Mtimeout -timeout 60 Mserver --config=/ufs/boncz/MonetDB/linux/etc/monet.conf --debug=10 --set monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB --set gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm --set sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_src_monet
+# 15:28:47 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 ls;
 #-------------------------------------------------------------------------------------------------#
@@ -58,7 +58,7 @@ b.persists(false);
 commit;
 quit;   
 
-# 17:06:21 >  
-# 17:06:21 >  Done.
-# 17:06:21 >  
+# 15:28:47 >  
+# 15:28:47 >  Done.
+# 15:28:47 >  
 

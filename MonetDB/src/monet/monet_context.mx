@@ -287,7 +287,10 @@ void CNTXTcopy(Cntxt stk, Client c){
 }
 
 ptr CNTXTregvars(Client c) {
-        Variable n, r =  monet_cntxt[c->stk].var;
+        Variable n, r;
+	Cntxt stk = c->stk;
+	while(monet_cntxt[stk].shadow) stk = monet_cntxt[stk].outer;
+ 	r = monet_cntxt[stk].var;
         if (c->m_stack)
                 for(n=r; n != c->m_stack->var; n = n->next)
                         TBL_Install_MilVar(c, c->m_stack->mod, (ptr) n);

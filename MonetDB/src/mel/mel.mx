@@ -256,6 +256,14 @@ List *dirs = NULL;
 
 language *l = NULL;
 
+#if defined(EXPLICIT_TEMPLATES) && !defined(CYGWIN32)
+template class List<char>;
+template class List<Symbol>;
+template class ListIterator<char>;
+template class ListIterator<Symbol>;
+#endif
+
+
 const char *token2str( int token ){
         switch (token){
         case MEL_MODULE     : return "module";

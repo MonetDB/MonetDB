@@ -83,8 +83,8 @@ are met:
 #include <ctype.h>
 #include <stdlib.h>
 
-typedef long int	code_int;
-typedef long int	count_int;
+typedef int	code_int;
+typedef int	count_int;
 typedef	unsigned char	char_type;
 
 @-
@@ -127,10 +127,10 @@ typedef struct {
     count_int      htab[HSIZE];      /* hash table */
     unsigned short codetab[HSIZE];   /* hash table */
     code_int       free_ent;	     /* first unused entry */
-    long int       in_count;	     /* length of input */
-    long int       bytes_out;	     /* length of compressed output */
+    int      in_count;	     /* length of input */
+    int      bytes_out;	     /* length of compressed output */
     int            clear_flg;
-    long int       ratio;
+    int      ratio;
     size_t         offset;
     size_t         size;
     count_int      checkpoint;
@@ -261,7 +261,7 @@ void cl_block(globals_t *, FILE *);
 
 ssize_t compress(char_type *ptr, char_type *end_ptr, FILE *fp_out)
 {
-    register long fcode;
+    register int fcode;
     register code_int i = 0;
     register int c;
     register code_int ent;
@@ -313,7 +313,7 @@ Clear hash table.
     while (++ptr < end_ptr) {
 	c = *ptr;
 	global.in_count++;
-	fcode = (long) (((long) c << global.maxbits) + ent);
+	fcode = (int) (((int) c << global.maxbits) + ent);
 @-
 We use xor hashing.
 @c
@@ -322,7 +322,7 @@ We use xor hashing.
 	if ( htabof (i) == fcode ) {
 	    ent = codetabof (i);
 	    continue;
-	} else if ( (long)htabof (i) < 0 )
+	} else if ( (int)htabof (i) < 0 )
 @-
 Empty slot.
 @c
@@ -341,7 +341,7 @@ probe:
 	    ent = codetabof (i);
 	    continue;
 	}
-	if ( (long)htabof (i) > 0 ) 
+	if ( (int)htabof (i) > 0 ) 
 	    goto probe;
 @-
 Make a new entry in the hash table.
@@ -371,14 +371,14 @@ Put out the final code.
 @- output()
 
 Inputs:	code:	A n_bits-bit integer.  If == -1, then EOF.  This assumes
-		that n_bits =< (long)wordsize - 1.
+		that n_bits =< (int)wordsize - 1.
 
 Outputs:	Outputs code to the file.
 
 Assumptions:    Chars are 8 bits long.
 
 Algorithm:
-	Maintain a BITS character long buffer (so that 8 codes will
+	Maintain a BITS character int buffer (so that 8 codes will
 fit in it exactly). When the buffer fills up empty it and start over.
 @c
 static void 
@@ -525,7 +525,7 @@ Init globals.
     if(global.maxbits > BITS) {
 	fprintf(stderr,
 	"input compressed with %lu bits, can only handle %d bits\n",
-	 (unsigned long) global.maxbits, BITS);
+	 (unsigned int) global.maxbits, BITS);
 	return -1;
     }
 @-
@@ -663,7 +663,7 @@ void writeerr(char *str)
 
 void cl_block(globals_t *global, FILE *fp_out)
 {
-    register long int rat;
+    register int rat;
 
     global->checkpoint = global->in_count + CHECK_GAP;
 
@@ -699,8 +699,8 @@ void cl_block(globals_t *global, FILE *fp_out)
 void cl_hash(globals_t *global, count_int hsize)
 {
 	register count_int *htab_p = global->htab+hsize;
-	register long i;
-	register long m1 = -1;
+	register int i;
+	register int m1 = -1;
 
 @-
 An efficient? way to clear the hash table.
@@ -751,7 +751,7 @@ main(int argc, char **argv)
 	size = 5*st.st_size;
  	if (!(ptr=GDKmalloc(size))) {
 		fprintf(stderr, "fatal: could not malloc %ld bytes.\n", 
-			(long)size);
+			(int)size);
 		exit(1);
 	} 
 	if (strcmp(argv[0],"zip")) {

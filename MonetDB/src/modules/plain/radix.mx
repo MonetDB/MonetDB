@@ -2949,7 +2949,7 @@ int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int
 	if (xx != BATcount(proj)) {
 		BBPreclaim(bn);
 		GDKerror("jivejoin0: total cluster entries %lu in %s does not match size %lu of %s.\n",
-			(unsigned long) xx, BBP_logical(radix_count->batCacheid), (unsigned long) BATcount(proj), BBP_logical(proj->batCacheid));
+			xx, BBP_logical(radix_count->batCacheid), BATcount(proj), BBP_logical(proj->batCacheid));
 		return GDK_FAIL;
 	}
 	yy = (yy-1) << zz; /* yy is mask, zz is shift */

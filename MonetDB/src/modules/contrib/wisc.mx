@@ -132,7 +132,7 @@ void WISCinitUniq(int cnt)
 		src[i] = i;
 	}
 	for (i = 0; i != cnt; i++, top--) {
-		long idx = rand()%top;
+		ssize_t idx = rand()%top;
 		rnd[i] = src[idx];
 		src[idx] = src[top-1];
 	}
@@ -140,7 +140,7 @@ void WISCinitUniq(int cnt)
 }
 
 /*
-long gen, prime, seed;
+ssize_t gen, prime, seed;
 
 WISCinitUniq(int cnt)
 {
@@ -169,7 +169,7 @@ WISCinitUniq(int cnt)
 	seed = gen;
 }
 
-long wiscrand(long seed, long limit)
+ssize_t wiscrand(ssize_t seed, ssize_t limit)
 {
 	do {
 		seed = (gen * seed)%prime;

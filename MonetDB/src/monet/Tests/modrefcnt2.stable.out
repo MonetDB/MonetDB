@@ -1,12 +1,12 @@
 stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 
 
-# 09:44:51 >  
-# 09:44:51 >  Mtimeout -timeout 240 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_monet --set mapi_port=59367 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil modrefcnt2.prologue ; echo  ; echo Over..
-# 09:44:51 >  
+# 15:28:40 >  
+# 15:28:40 >  Mtimeout -timeout 240 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace "--dbname=mTests_src_monet" "/ufs/boncz/MonetDB/linux/lib/MonetDB/mapi.mil" modrefcnt2.prologue ; echo ; echo Over..
+# 15:28:40 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #---------------------------------#
 # module	| usage_count	  #
@@ -17,8 +17,8 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 [ "bat",	  2		  ]
 [ "kernel",	  2		  ]
 [ "lock",	  1		  ]
-[ "main",	  2	  ]
-[ "str",	  2	  ]
+[ "main",	  2		  ]
+[ "str",	  2		  ]
 [ "streams",	  2		  ]
 [ "sys",	  2		  ]
 [ "trans",	  2		  ]
@@ -31,27 +31,36 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 printf("\nReady.\n");
 
 Ready.
+# All but the first (#) and the last (\n) character of this line seem to get swallowed on/by Windows ... #
+# In case the previous line contains just a '#', all but the first and the last character got swallowed by someone ... #
+# In case the output ends after the following line, containing just a ';', Mshutdown might have been successful, #
+# but the Mserver's stdin was still open and got closed only after the first MIL command-end, i.e., ';'+'\n' is reached ... #
+;
+printf("\n! Mserver still running after Mshutdown. Quitting now. !\n");
+
+! Mserver still running after Mshutdown. Quitting now. !
+quit;
 
 Over..
 
-# 00:36:39 >  
-# 00:36:39 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/monet.GNU_32-d.18879/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf" --host=draco --port=58803 < modrefcnt2_s00.milC
-# 00:36:39 >  
+# 15:28:40 >  
+# 15:28:40 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=55437 < modrefcnt2_s00.milC
+# 15:28:40 >  
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
 [ "_mapi",	  3		  ]
-[ "algebra",	  3	  ]
-[ "arith",	  3	  ]
-[ "bat",	  3	  ]
-[ "kernel",	  3	  ]
+[ "algebra",	  3		  ]
+[ "arith",	  3		  ]
+[ "bat",	  3		  ]
+[ "kernel",	  3		  ]
 [ "lock",	  2		  ]
-[ "main",	  3	  ]
-[ "str",	  3	  ]
-[ "streams",	  3	  ]
-[ "sys",	  3	  ]
-[ "trans",	  3	  ]
+[ "main",	  3		  ]
+[ "str",	  3		  ]
+[ "streams",	  3		  ]
+[ "sys",	  3		  ]
+[ "trans",	  3		  ]
 [ "uchr",	  6		  ]
 #-----------------#
 # BAT:	  test	  #
@@ -59,37 +68,35 @@ Over..
 #-----------------#
 [ 0 ]
 
-# 00:36:39 >  
-# 00:36:39 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/monet.GNU_32-d.18879/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf" --host=draco --port=58803 < modrefcnt2_s01.milC
-# 00:36:39 >  
+# 15:28:40 >  
+# 15:28:40 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=55437 < modrefcnt2_s01.milC
+# 15:28:40 >  
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
 [ "_mapi",	  3		  ]
-[ "algebra",	  3	  ]
-[ "arith",	  3	  ]
-[ "bat",	  3	  ]
-[ "kernel",	  3	  ]
+[ "algebra",	  3		  ]
+[ "arith",	  3		  ]
+[ "bat",	  3		  ]
+[ "kernel",	  3		  ]
 [ "lock",	  1		  ]
-[ "main",	  3	  ]
-[ "str",	  3	  ]
-[ "streams",	  3	  ]
-[ "sys",	  3	  ]
-[ "trans",	  3	  ]
+[ "main",	  3		  ]
+[ "str",	  3		  ]
+[ "streams",	  3		  ]
+[ "sys",	  3		  ]
+[ "trans",	  3		  ]
 [ "uchr",	  6		  ]
-#-----------------#
-# BAT:	  test	  #
-# (int)	  (lock)  #
-#-----------------#
-[ 0 ]
+!ERROR: interpret: MIL operator invocation of 'print(BAT[int,lock])' with illegal types.
+!ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
+!ERROR: print(param 1): evaluation error.
 
-# 09:44:52 >  
-# 09:44:52 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=59367
-# 09:44:52 >  
+# 15:28:40 >  
+# 15:28:40 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=55437
+# 15:28:40 >  
 
 
-# 09:44:52 >  
-# 09:44:52 >  Done.
-# 09:44:52 >  
+# 15:28:41 >  
+# 15:28:41 >  Done.
+# 15:28:41 >  
 

@@ -232,39 +232,6 @@ int BATsavedesc(BAT *b, str nme) {
         int ret = 0;
 
 	DELTAsave(b);
-
-@- restrictions on what can be saved
-Ptr cause a problem when trying to share a repository between 32 and
-64 bits systems. As pointers should be transient objects anyway, we do
-not allow them to be saved.
-
-Bat values (meaning recursive bats) have specific restrictions. At
-system startup, all recursive bats *must* be loaded to check and count
-their references. At that point; no user-defined types are
-loaded. Hence we prohibit recursive bats to be saved, if they have an
-extension type in their other column.
-@c
-	if (b->htype == TYPE_ptr) {
-		b->htype = ATOMstorage(TYPE_ptr);
-		GDKwarning("BATsave(%s): convert ptr-htype (transient type) to %s.", 
-			b->batId, ATOMname(b->htype)); 
-	} else if (b->htype == TYPE_bat && b->ttype > TYPE_str) {
-		b->htype = ATOMstorage(TYPE_bat);
-		GDKwarning("BATsave(%s): convert bat-htype (cannot be used with %s ttype) to int.", 
-			b->batId, ATOMname(b->ttype)); 
-	}
-	if (b->ttype == TYPE_ptr) {
-		b->ttype = ATOMstorage(TYPE_ptr);
-		GDKwarning("BATsave(%s): convert ptr-htype (transient type) to %s.", 
-			b->batId, ATOMname(b->ttype)); 
-	} else if (b->ttype == TYPE_bat && b->htype > TYPE_str) {
-		b->ttype = ATOMstorage(TYPE_bat);
-		GDKwarning("BATsave(%s): convert bat-htype (cannot be used with %s ttype) to int.", 
-			b->batId, ATOMname(b->htype)); 
-	}
-	if (b->ttype == TYPE_bat || b->htype == TYPE_bat) {
-		b->hacctype = b->tacctype = 0;
-	}
 	if (b->GDKversion == GDKLIBRARY) {
 		ret = GDKsave(nme, "desc", (void *) bs, sizeof(BATstore), STORE_MEM);
         }
