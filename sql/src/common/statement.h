@@ -64,7 +64,8 @@ typedef enum stmt_type {
 	st_sets,
 	/* used internally only */
 	st_list,
-	st_output
+	st_output, /* return table */
+	st_result  /* return status */
 } st_type;
 
 typedef enum comp_type {
@@ -144,6 +145,7 @@ extern stmt *stmt_intersect(stmt * op1, stmt * op2);
 extern stmt *stmt_union(stmt * op1, stmt * op2);
 extern stmt *stmt_list(list * l);
 extern stmt *stmt_output(stmt * l);
+extern stmt *stmt_result(stmt * l);
 extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
 

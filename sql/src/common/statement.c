@@ -141,6 +141,7 @@ void stmt_destroy(stmt * s)
 		case st_unop:
 		case st_name:
 		case st_output:
+		case st_result:
 			st_detach(s->op1.stval, s);
 			break;
 		case st_drop_table:
@@ -252,7 +253,7 @@ void stmt_reset( stmt *s ){
 	case st_not_null: case st_reverse: case st_count: 
 	case st_group: case st_group_ext: 
 	case st_order: case st_unop: case st_name: case st_output: 
-	case st_exists: 
+	case st_result: case st_exists: 
 	case st_table: case st_create_table: case st_drop_table: 
 
 		stmt_reset(s->op1.stval);
@@ -779,6 +780,15 @@ stmt *stmt_output(stmt * l)
 {
 	stmt *s = stmt_create();
 	s->type = st_output;
+	s->op1.stval = l;
+	st_attache(l, s);
+	return s;
+}
+
+stmt *stmt_result(stmt * l)
+{
+	stmt *s = stmt_create();
+	s->type = st_result;
 	s->op1.stval = l;
 	st_attache(l, s);
 	return s;

@@ -259,7 +259,9 @@ static stmt *sql_column_ref(context * sql, scope * scp, symbol * column_r)
 		if (!(cs = scope_bind(scp, NULL, name))) {
 			snprintf(sql->errstr, ERRSIZE,
 				 _("Column: %s unknown"), name);
+			/*
 			scope_dump(scp);
+			*/
 		}
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
@@ -268,7 +270,9 @@ static stmt *sql_column_ref(context * sql, scope * scp, symbol * column_r)
 		if (!(cs = scope_bind(scp, tname, cname))) {
 			snprintf(sql->errstr, ERRSIZE,
 				 _("Column: %s.%s unknown"), tname, cname);
+			/*
 			scope_dump(scp);
+			*/
 		}
 	} else if (dlist_length(l) >= 3) {
 		snprintf(sql->errstr, ERRSIZE,
@@ -3530,6 +3534,9 @@ static stmt *sql_stmt(context * sql, symbol * s)
 			 _("sql_stmt Symbol(%ld)->token = %s"),
 			 (long) s, token2string(s->token));
 	}
+	if (ret && ret->type != st_output){
+		ret = stmt_result(ret);
+	}
 	return ret;
 }
 
@@ -3538,10 +3545,14 @@ stmt *semantic(context * s, symbol * sym)
 {
 	stmt *res = NULL;
 
+		/*
 	if (sym && (res = sql_stmt(s, sym)) == NULL) {
 		fprintf(stderr, "Semantic error: %s\n", s->errstr);
 		fprintf(stderr, "in %s line %d: %s\n",
 			sym->filename, sym->lineno, sym->sql);
+			*/
+	if (sym){
+		res = sql_stmt(s, sym);
 	}
 	return res;
 }

@@ -67,13 +67,13 @@ stmt *sqlnext(context * lc, stream * in, int *err)
 
 	if (lc->cur != EOF && !(*err = sqlparse(lc))) {
 		res = semantic(lc, lc->sym);
+		if (!res && lc->errstr[0]){
+			*err = 1;
+		}
 	}
 	if (lc->sym) {
 		symbol_destroy(lc->sym);
 		lc->sym = NULL;
-	}
-	if (*err) {
-		fprintf(stderr, "%s\n", lc->errstr);
 	}
 	return res;
 }
