@@ -9,7 +9,7 @@ exit (v,i);
 t1:= alarm.usec();
 c:= copy(b);
 t2:= alarm.usec();
-x:= +(b,c);
+x:= +(b,b,c);
 t3:= alarm.usec();
 d1:= t1-t0;
 d2:= t3-t2;
