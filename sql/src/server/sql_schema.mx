@@ -145,7 +145,7 @@ sql_insert_priv( mvc *sql, int auth_id, int obj_id,
 	inserts[4] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
  			stmt_atom_int(grantable));
 	stmt_destroy(pts);
-	res = sql_insert(sql, pt, inserts, 5);
+	res = sql_insert(sql, pt, inserts, 5, 0);
 	cleanup_stmts(inserts, 5);
 	return res;
 }
@@ -377,7 +377,7 @@ sql_delete_priv( mvc *sql, int auth_id, int obj_id,
 		stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat),
  			stmt_atom_int(obj_id), cmp_equal));
 	
-	s = sql_delete(sql, ptv, pt, s, 0);
+	s = sql_delete(sql, ptv, pt, s, 0, 0);
 	scope_close(scp);
 	return s;
 }

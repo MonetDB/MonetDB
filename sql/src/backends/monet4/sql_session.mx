@@ -1279,6 +1279,11 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	int i;
 	res_table *t = find_export_table(m, res_id);
 
+
+	stream_write(s, "#-\n", 3, 1);
+	stream_printf(s, "# " SZFMT, t->query_type);
+	stream_write(s, " # querytype\n", 13, 1);
+
 	m->type = Q_RESULT;
 
 	stream_write(s, "# ", 2, 1);

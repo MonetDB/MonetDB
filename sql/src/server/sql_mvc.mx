@@ -197,6 +197,7 @@ typedef struct res_col {
 
 typedef struct res_table {
 	int id; 
+	int query_type;
 	int nr_cols; 
 	int cur_col;
 	res_col *cols;
@@ -4381,6 +4382,7 @@ static res_table *mvc_result_table_( mvc *m, int nr_cols )
 	int res_id = m->result_id++;
 	res_table *t = NEW(res_table);
 	t->id = res_id;
+	t->query_type = m->type;
 	t->nr_cols = nr_cols;
 	t->cur_col = 0;
 	t->cols = NEW_ARRAY(res_col,nr_cols);

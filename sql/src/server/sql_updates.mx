@@ -40,8 +40,8 @@
 sql_export stmt *updates( mvc * sql, symbol * sym);
 
 sql_export void cleanup_stmts(stmt **stmts, int cnt);
-sql_export stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len);
-sql_export stmt *sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all );
+sql_export stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len, int output);
+sql_export stmt *sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all, int output );
 
 #endif /*_SQL_UPDATES_H_*/
 @c
@@ -53,6 +53,11 @@ sql_export stmt *sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all 
 #include "sql_semantic.h"
 #include "sql_select.h"
 #include "sql_privileges.h"
+
+static stmt *output_value(stmt *s )
+{
+	return stmt_output(stmt_list( list_append( create_stmt_list(), s)));
+}
 
 static stmt *insert_value(mvc * sql, scope * scp, sql_column * c, symbol * s)
 {
@@ -673,13 +678,14 @@ sql_update_idxs(mvc * sql, sql_table *t, stmt **updates, list *l)
 	return res;
 }
 
-stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len)
+stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len, int output)
 {
 	char buf[BUFSIZ];
 	int i;
 	list *l = create_stmt_list();
 	node *n;
 	sql_subaggr *cnt = sql_bind_aggr("count", NULL);
+	stmt *s = NULL;
 
 	if (!sql_insert_idxs(sql, t, inserts, l)){
 		return sql_error(sql, 02, 
@@ -723,6 +729,16 @@ stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len)
 	sql_subaggr_destroy( cnt );
 	for (i = 0; i < len; i++) 
 		list_append(l, stmt_dup(inserts[i]));
+
+	if (output){
+		if (inserts[0]->op2.stval->nrcols == 0) {
+			s = stmt_atom_int(1);
+		} else {
+			s = stmt_aggr(stmt_dup(inserts[0]->op2.stval), NULL, 
+		    	sql_bind_aggr("count", NULL));
+		}
+		list_append(l, output_value(s));
+	}
 	return stmt_list(l);
 }
 
@@ -877,7 +893,7 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 	}
 	if (collist != t->columns.set)
 		list_destroy(collist);
-	res = sql_insert(sql, t, inserts, len);
+	res = sql_insert(sql, t, inserts, len, 1);
 	scp = scope_close(scp);
 	cleanup_stmts(inserts, len);
 	return res;
@@ -909,7 +925,7 @@ static stmt *sql_bulkinsert(mvc * sql, sql_table *t, char *tsep, char *rsep, cha
 				_strdup(c->base.name)))));
 	}
 	stmt_destroy(bats);
-	res = sql_insert(sql, t, inserts, len);
+	res = sql_insert(sql, t, inserts, len, 1);
 	scp = scope_close(scp);
 	cleanup_stmts(inserts, len);
 	return res;
@@ -1075,10 +1091,11 @@ static stmt *update_table(mvc * sql, dlist * qname,
 					          stmt_dup(tv->s), 
 						  UPD, st_ubat), stmt_dup(v)));
 			}
-			/* TODO rows = count(stmt_dup(v)) */
 		}
-		if (s) stmt_destroy(s);
-	
+		list_append(l, output_value(
+			stmt_aggr(first_subset(s), NULL, sql_bind_aggr("count", NULL))));
+		stmt_destroy(s);
+
 		if ((s = sql_update( sql, t, updates, l)) == NULL){
 			list_destroy(l);
 			cleanup_stmts(updates, len);
@@ -1123,16 +1140,17 @@ sql_delete_idxs(mvc * sql, sql_table *t, stmt *vals, list *l)
 
 
 stmt *
-sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all )
+sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all, int output )
 {
 	node *n;
 	list *l = create_stmt_list();
 	sql_subtype *to;
 	stmt *v;
 
-	if (all && !t->idxs.set && (t->base.flag == TR_NEW || 
-	    !t->persists || t->clear) ){
+	if (all && !t->idxs.set && (t->base.flag == TR_NEW || !t->persists || t->clear) ){
 		BAT *d;
+		int cnt=0;
+
 		for(n = t->columns.set->h; n; n = n->next){
 			sql_column *c = n->data;
 			BAT *b = mvc_bind(sql, c->t->s->base.name,
@@ -1142,6 +1160,7 @@ sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all )
 					       c->t->base.name,
 					       c->base.name, 1);
 			if (b){ 	
+				cnt = BATcount(b); 
 				BATclear(b);
 				bat_destroy(b);
 			}
@@ -1154,29 +1173,37 @@ sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all )
 		d = mvc_bind_dbat( sql, t->s->base.name, t->base.name, 1);
 		BATclear(d);
 		bat_destroy(d);
-	}
-
-	to = sql_bind_subtype("OID", 0, 0);
- 	v = stmt_const( stmt_reverse(first_subset(s)), 
+		if (output) {
+			s = stmt_atom_int(cnt);
+			list_append(l, output_value(s));
+		}
+	} else {
+		to = sql_bind_subtype("OID", 0, 0);
+ 		v = stmt_const( stmt_reverse(first_subset(s)), 
 				stmt_atom(atom_general(to, NULL)));
-	list_append(l, stmt_append(
+		list_append(l, stmt_append(
 			stmt_tbat(basetable_table(tv->s), INS ),
 			stmt_reverse(v)));
-	for(n = t->columns.set->h; n; n = n->next){
-		sql_column *c = n->data;
-		stmt *v = stmt_const( stmt_reverse( first_subset(s)), 
-			stmt_atom(atom_general(sql_dup_subtype(c->type), NULL)));
-		list_append(l, stmt_replace( stmt_cbat(c, stmt_dup(tv->s), DEL, st_bat), v));
-	}
-	/* TODO rows = count(stmt_dup(v)) */
 
-	if (t->idxs.set && !sql_delete_idxs(sql, t, s, l )){
-		list_destroy(l);
-		return sql_error(sql, 02, 
-			"Deleting from indexes failed for table %s",
-			t->base.name);
+		for(n = t->columns.set->h; n; n = n->next){
+			sql_column *c = n->data;
+			stmt *v = stmt_const( stmt_reverse( first_subset(s)), 
+				stmt_atom(atom_general(sql_dup_subtype(c->type), NULL)));
+			list_append(l, stmt_replace( stmt_cbat(c, stmt_dup(tv->s), DEL, st_bat), v));
+		}
+		if (output) {
+			s = stmt_aggr(first_subset(s), NULL, 
+				sql_bind_aggr("count", NULL) );
+			list_append(l, output_value(s));
+		}
+
+		if (t->idxs.set && !sql_delete_idxs(sql, t, s, l )){
+			list_destroy(l);
+			return sql_error(sql, 02, 
+				"Deleting from indexes failed for table %s",
+				t->base.name);
+		}
 	}
-	stmt_destroy(s);
 	return stmt_list(l);
 }
 
@@ -1215,7 +1242,7 @@ static stmt *delete_table(mvc * sql, dlist * qname, symbol * opt_where)
 		}
 
 		assert (isbasetable(tv->s));
-		s = sql_delete(sql, tv, t, s, all);
+		s = sql_delete(sql, tv, t, s, all, 1);
 
 		scp = scope_close(scp);
 		return s;
