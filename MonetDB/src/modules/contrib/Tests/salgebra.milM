@@ -1,3 +1,0 @@
-module("salgebra");
-test_salgebra();
-quit();

@@ -300,7 +300,9 @@ sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int sca
 	return NULL;
 }
 
+#ifndef NDEBUG
 static int sql_end = 0;
+#endif
 
 static void type_destroy(sql_type * t)
 {
@@ -319,6 +321,8 @@ void sql_subtype_destroy(sql_subtype * t)
 	} else if (sql_end == END_SUBTYPE){
 		printf("= REFCOUNT of subtype %s %s is wrong %d\n",
 			t->type->base.name, t->type->sqlname, ref);
+#else
+	(void)ref; /* pacify picky compilers... */
 #endif
 	}
 }
@@ -420,6 +424,8 @@ static void aggr_destroy(sql_aggr * t)
 #ifndef NDEBUG
 	} else if (sql_end == END_AGGR){
 		printf("= REFCOUNT of aggr %s %s is wrong %d\n", t->name, t->imp, ref);
+#else
+	(void)ref; /* pacify picky compilers... */
 #endif
 	}
 }
@@ -440,6 +446,8 @@ void sql_subaggr_destroy( sql_subaggr *a )
 #ifndef NDEBUG
 	} else if (sql_end == END_SUBAGGR){
 		printf("= REFCOUNT of subaggr %s %s is wrong %d\n", a->aggr->name, a->aggr->imp, ref);
+#else
+	(void)ref; /* pacify picky compilers... */
 #endif
 	}
 }
@@ -670,6 +678,8 @@ static void func_destroy(sql_func * t)
 #ifndef NDEBUG
 	} else if (sql_end == END_AGGR){
 		printf("= REFCOUNT of func %s %s is wrong %d\n", t->name, t->imp, ref);
+#else
+	(void)ref; /* pacify picky compilers... */
 #endif
 	}
 }
@@ -690,6 +700,8 @@ void sql_subfunc_destroy( sql_subfunc *f )
 #ifndef NDEBUG
 	} else if (sql_end == END_SUBAGGR){
 		printf("= REFCOUNT of subfunc %s %s is wrong %d\n", f->func->name, f->func->imp, ref);
+#else
+	(void)ref; /* pacify picky compilers... */
 #endif
 	}
 }
@@ -1276,25 +1288,33 @@ void sqltypeinit()
 
 void parser_exit()
 {
+#ifndef NDEBUG
 	sql_end = END_SUBAGGR;
+#endif
 
 	if (sql_debug){
 		list_destroy(subaggrs);
 		list_destroy(subfuncs);
 	}
 
+#ifndef NDEBUG
 	sql_end = END_AGGR;
+#endif
 
 	list_destroy(aggrs);
 	list_destroy(funcs);
 
 	list_destroy(localtypes);
 
+#ifndef NDEBUG
 	sql_end = END_SUBTYPE;
+#endif
 	if (sql_debug)
 		list_destroy(subtypes);
 
+#ifndef NDEBUG
 	sql_end = END_TYPE;
+#endif
 	list_destroy(aliases);
 	list_destroy(types);
 
