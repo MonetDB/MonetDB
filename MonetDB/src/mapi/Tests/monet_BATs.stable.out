@@ -1,9 +1,9 @@
 stdout of test 'monet_BATs` in directory 'src/mapi` itself:
 
 
-# 16:44:14 >  
-# 16:44:14 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_mapi --set mapi_port=59658 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil monet_BATs.prologue ; echo  ; echo Over..
-# 16:44:14 >  
+# 08:58:04 >  
+# 08:58:04 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_mapi --set mapi_port=54201 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil monet_BATs.prologue ; echo  ; echo Over..
+# 08:58:04 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -694,17 +694,17 @@ Mserver prologue: This is what Mserver says before MapiClient connects.
 [ "buffer_wastream",	  10634@0	  ]
 [ "mapi_listen",	  10635@0	  ]
 [ "stream_until",	  10636@0	  ]
-[ "listen",		  10637@0	  ]
-[ "listen",		  10638@0	  ]
+[ "get_mapi_port",	  10637@0	  ]
+[ "mapi_server",	  10638@0	  ]
 [ "listen",		  10639@0	  ]
 [ "listen",		  10640@0	  ]
 [ "listen",		  10641@0	  ]
 [ "listen",		  10642@0	  ]
-[ "stream_strip",	  10643@0	  ]
-[ "stream_read",	  10644@0	  ]
-[ "stream_line",	  10645@0	  ]
-[ "get_mapi_port",	  10646@0	  ]
-[ "mapi_server",	  10647@0	  ]
+[ "listen",		  10643@0	  ]
+[ "listen",		  10644@0	  ]
+[ "stream_strip",	  10645@0	  ]
+[ "stream_read",	  10646@0	  ]
+[ "stream_line",	  10647@0	  ]
 printf("\nReady.\n");
 
 Ready.
@@ -1424,17 +1424,17 @@ Mserver epilogue: This is what Mserver says after MapiClient has disconnected.
 [ "buffer_wastream",	  10634@0	  ]
 [ "mapi_listen",	  10635@0	  ]
 [ "stream_until",	  10636@0	  ]
-[ "listen",		  10637@0	  ]
-[ "listen",		  10638@0	  ]
+[ "get_mapi_port",	  10637@0	  ]
+[ "mapi_server",	  10638@0	  ]
 [ "listen",		  10639@0	  ]
 [ "listen",		  10640@0	  ]
 [ "listen",		  10641@0	  ]
 [ "listen",		  10642@0	  ]
-[ "stream_strip",	  10643@0	  ]
-[ "stream_read",	  10644@0	  ]
-[ "stream_line",	  10645@0	  ]
-[ "get_mapi_port",	  10646@0	  ]
-[ "mapi_server",	  10647@0	  ]
+[ "listen",		  10643@0	  ]
+[ "listen",		  10644@0	  ]
+[ "stream_strip",	  10645@0	  ]
+[ "stream_read",	  10646@0	  ]
+[ "stream_line",	  10647@0	  ]
 Z := nil;
 ;
 printf("\nDone..\n");
@@ -1443,9 +1443,9 @@ Done..
 
 Over..
 
-# 16:44:15 >  
-# 16:44:15 >  Mtimeout -timeout 60 MapiClient --port=59658 --config=/ufs/niels/data/monet/Linux/etc/monet.conf < monet_BATs.milC
-# 16:44:15 >  
+# 08:58:05 >  
+# 08:58:05 >  Mtimeout -timeout 60 MapiClient --port=54201 --config=/ufs/niels/data/monet/Linux/etc/monet.conf < monet_BATs.milC
+# 08:58:05 >  
 
 
 MapiClient: This is what MapiClient says.
@@ -2133,24 +2133,24 @@ MapiClient: This is what MapiClient says.
 [ "buffer_wastream",		  10634@0	  ]
 [ "mapi_listen",		  10635@0	  ]
 [ "stream_until",		  10636@0	  ]
-[ "listen",			  10637@0	  ]
-[ "listen",			  10638@0	  ]
+[ "get_mapi_port",		  10637@0	  ]
+[ "mapi_server",		  10638@0	  ]
 [ "listen",			  10639@0	  ]
 [ "listen",			  10640@0	  ]
 [ "listen",			  10641@0	  ]
 [ "listen",			  10642@0	  ]
-[ "stream_strip",		  10643@0	  ]
-[ "stream_read",		  10644@0	  ]
-[ "stream_line",		  10645@0	  ]
-[ "get_mapi_port",		  10646@0	  ]
-[ "mapi_server",		  10647@0	  ]
+[ "listen",			  10643@0	  ]
+[ "listen",			  10644@0	  ]
+[ "stream_strip",		  10645@0	  ]
+[ "stream_read",		  10646@0	  ]
+[ "stream_line",		  10647@0	  ]
 
-# 16:44:15 >  
-# 16:44:15 >  Mtimeout -timeout 60 Mshutdown.py --config=/ufs/niels/data/monet/Linux/etc/monet.conf --set mapi_port=59658
-# 16:44:15 >  
+# 08:58:05 >  
+# 08:58:05 >  Mtimeout -timeout 60 Mshutdown.py --config=/ufs/niels/data/monet/Linux/etc/monet.conf --set mapi_port=54201
+# 08:58:05 >  
 
 
-# 16:44:15 >  
-# 16:44:15 >  Done.
-# 16:44:15 >  
+# 08:58:05 >  
+# 08:58:05 >  Done.
+# 08:58:05 >  
 
