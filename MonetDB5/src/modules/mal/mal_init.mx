@@ -82,8 +82,10 @@ include costmodel;
 include optimizer;
 include chopper;
 include transaction;
+include partitions;	# beware for overloading
 @-
 In practice, we have to introduce different startup for each
 client group or database.
 @c
+
 @-

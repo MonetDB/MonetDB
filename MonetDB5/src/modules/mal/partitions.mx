@@ -35,7 +35,7 @@ of type :bat[:void,:any] and the partition represents
 a dense oid range. Moreover, all partitions in a group are 
 considered pairwise disjoint.
 
-
+BEWARE, it is not protected against concurrent access yet.
 @mal
 module partitions;
 
@@ -107,6 +107,34 @@ command getRange(b:bat[:void,:any$1])(first:oid,last:oid)
 address BPTgetRange
 comment "Obtain the oid range for a partition";
 
+@-
+The insert/delete/replace operations on the BATs are overloaded for
+the partitioned version. Insertions are added to the last partition.
+Deletion takes place in all versions and will actually shrink
+the oid range. 
+Rebalancing the partitions content is considered a separate action,
+currently not supported.
+
+The partition capacity can be set to limit the number
+of insertions. As soon as the capacity is exhausted,
+a new bat is allocated.
+
+@mal
+command setCapacity(b:bat[:void,:any$1], s:int):void
+address BPTsetCapacity
+comment "Limit the content of all remaining BATs";
+
+command insert(b:bat[:void,:any$1],h:void,t:any$1):bat[:void,:any$1]
+address BPTinsert
+comment "Add a tuple to the last partition";
+command insert(b:bat[:void,:any$1],t:any$1):bat[:void,:any$1]
+address BPTinsert_void_bun
+comment "Add a tuple to the last partition";
+
+command insert(b:bat[:void,:any$1],p:bat[:void,:any$1]):bat[:void,:any$1]
+address BPTinsertBAT
+comment "Add a BAT as a partition to the end of the list.";
+
 command dump()
 address BPTdump;
 
@@ -126,16 +154,28 @@ mis-represented information.
 The datastructures for the partition table are dynamic arrays
 indexed by an integer, which is also returned to the environment
 as a handle.
-@c
+@h
+#ifndef _MAL_BPT
+#define _MAL_BPT
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+
+mal_export int BPTfindGrp(int bid);
+
+#endif
+@c
+#include "partitions.h"
+extern str BKCinsert_void_bun(int *r, int *bid, ptr t) ;
+extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t) ;
 
 typedef struct{
 	int bid;	/* group bat identifier */
 	int pid;	/* group element identifier */
 	oid first;	/* lowest oid stored */
 	oid last;	/* largest oid stored or nil */
+	int next;	/* next one in the list */
+	int cap;	/* maximum capacity */
 } Partition;
 
 static Partition *partitions;
@@ -161,11 +201,13 @@ str BPTdump(){
 	int i;
 	stream_printf(fd,"ptop=%d plimit=%d\n",ptop,plimit);
 	for(i=0;i<ptop; i++)
-	stream_printf(fd,"[%d] bid=%d pid=%d f=%d, l=%d\n",i,
+	stream_printf(fd,"[%d] bid=%d pid=%d f=%d, l=%d nxt=%d cap=%d\n",i,
 		partitions[i].bid,
 		partitions[i].pid,
 		partitions[i].first,
-		partitions[i].last);
+		partitions[i].last,
+		partitions[i].next,
+		partitions[i].cap);
 	return MAL_SUCCEED;
 }
 @- Box administration
@@ -176,12 +218,16 @@ access.
 str
 BPTprelude(int *ret){
     Box box;
+	Scope s;
+	(void) ret;
     box= openBox("partitions");
     if( box== 0)
         return throwMessage("partitions.prelude","failed to open box");
     BPTresize(INCREMENT);
+	/* exclude this module from inheritance */
+	s= findModule(getClient()->nspace,"partitions");
+	if(s) s->inheritance=0;
 	/* later do a  reload */
-	(void) ret;
     return MAL_SUCCEED;
 }
 
@@ -251,7 +297,9 @@ BPTdeposit(int *ret, int *bid){
 	partitions[i].bid= *bid;
 	partitions[i].pid= *bid;
 	partitions[i].first= b->hseqbase;
-	partitions[i].last= oid_nil;
+	partitions[i].last=  b->hseqbase+ BATcount(b);
+	partitions[i].next= 0;
+	partitions[i].cap= oid_nil;
 	if(i>= ptop) {
 		ptop=i+1;
 		partitions[ptop].bid= -1;
@@ -274,10 +322,9 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 		return throwMessage("partitions.deposit","Partition integrity violation");
 	if( idx != -1)
 		return throwMessage("partitions.deposit","Partition already known");
-	for(i=0; i<ptop; i++)
-	if( partitions[i].bid== *bid &&
-		partitions[i].last== oid_nil){
-		partitions[i].last= b->hseqbase-1; 
+	for(idx=ptop-1; idx>=0; idx--)
+	if( partitions[idx].bid== *bid &&
+		partitions[idx].next== 0){
 		break;
 	}
 
@@ -288,7 +335,9 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 	partitions[i].bid= *bid;
 	partitions[i].pid= *pid;
 	partitions[i].first= b->hseqbase;
-	partitions[i].last= oid_nil;
+	partitions[i].last=  b->hseqbase+ BATcount(b);
+	partitions[i].cap= oid_nil;
+	partitions[idx].next= i;
 	if(i>= ptop) {
 		ptop=i+1;
 		partitions[ptop].bid= -1;
@@ -313,7 +362,7 @@ BPTgetLastPartition(int *ret, int *bid){
 	int i;
 	for(i=0;i<ptop; i++)
 	if( partitions[i].bid== *bid &&
-		partitions[i].last== oid_nil){
+		partitions[i].next== 0){
 			*ret = partitions[i].pid;
 			return MAL_SUCCEED;
 	}
@@ -408,12 +457,10 @@ BPTnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *last){
 }
 str 
 BPThasMoreElements(int *res, int *pid, int *bid){
-	int i;
-
-	for(i= *res+1;i<ptop; i++)
-	if( partitions[i].bid == *bid ){
-		*res = i;
-		*pid= partitions[i].pid;
+	if( partitions[*res].next != 0 &&
+		partitions[*res].bid== *bid){
+		*res = partitions[*res].next;
+		*pid= partitions[*res].pid;
 		BBPincref(*pid,TRUE);
 		return MAL_SUCCEED;
 	}
@@ -436,3 +483,92 @@ BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last){
 	*res = -1;
 	return MAL_SUCCEED;
 }
+
+@-
+Data management of the partitioned BATs.
+@c
+static int getlastindex(int bid){
+	int i;
+	for(i=0;i<ptop; i++)
+	if( partitions[i].bid== bid &&
+		partitions[i].next== 0)
+			return i;
+	return -1;
+}
+static int
+getpartitionsize(int idx){
+	return (int)partitions[idx].last - (int) partitions[idx].first+1;
+}
+static int addPartition(int idx){
+	int i;
+	BAT *b, *bn;
+	b= BATdescriptor(partitions[idx].pid);
+	if(b == 0) return -1;
+	bn= BATnew(b->htype,b->ttype, BATcount(b));
+	if(bn == 0) return -1;
+
+	partitions[idx].last= partitions[idx].first+BATcount(b);
+	for(i=0; i<=ptop; i++)
+	if( partitions[i].bid == -1) break;
+	partitions[i].bid= partitions[idx].bid;
+	partitions[i].pid= bn->batCacheid;
+	partitions[i].last= 
+	partitions[i].first= partitions[idx].last;
+	partitions[i].cap= partitions[idx].cap;
+	partitions[i].next= 0;
+
+	if(i>= ptop) {
+		ptop=i+1;
+		partitions[ptop].bid= -1;
+	}
+
+	partitions[idx].next= i;
+
+	BATseqbase(bn, partitions[i].first);
+	BBPincref(bn->batCacheid,TRUE);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	return i;
+}
+str
+BPTsetCapacity(int *ret, int *bid, int *val){
+	int i;
+	(void) ret;
+	i= getlastindex(*bid);
+	if( i >= 0){
+		partitions[i].cap = *val;
+		return MAL_SUCCEED;
+	}
+	return throwMessage("partitions.setCapacity","BAT group not found");
+}
+str
+BPTinsert_void_bun(int *ret, int *bid, ptr val){
+	int i;
+	i= getlastindex(*bid);
+	if( i >= 0) {
+			if(partitions[i].cap != oid_nil && partitions[i].cap < getpartitionsize(i))
+				i= addPartition(i);
+			partitions[i].last++;
+			if( i>= 0)
+				return BKCinsert_void_bun(ret, &partitions[i].pid,val);
+	}
+	return throwMessage("partitions.insert","BAT group not found");
+}
+str
+BPTinsert(int *ret, int *bid, ptr h, ptr t){
+	int i;
+	i= getlastindex(*bid);
+	if( i >= 0) {
+			if(partitions[i].cap != oid_nil && partitions[i].cap <= getpartitionsize(i))
+				i= addPartition(i);
+			if( i>= 0)
+				return BKCinsert_bun(ret, &partitions[i].pid,h,t);
+	}
+	return throwMessage("partitions.insert","BAT group not found");
+}
+str
+BPTinsertBAT(int *ret, int *bid, int *bnid){
+	(void) ret; (void) bid; (void) bnid;
+	return throwMessage("partitions.insert","BAT insert not yet implemented");
+}
+@}
