@@ -367,7 +367,9 @@ int sqlexecute(backend * be, stream *out )
 	if (explain == ex_sql)
 		T0 = GDKusec();
 
-	if ((err = sqlparse(c)) || mvc_status(c) || !c->sym) {
+	if ((err = sqlparse(c)) || 
+	    /* Forget old errors on transaction boundaries */
+	    (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
 		scanner_query_processed(&(c->scanner));
 		if (!err)
 			err = mvc_status(c);

@@ -233,6 +233,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	in_predicate
 	insert_stmt
 	transaction_stmt
+	_transaction_stmt
 	like_predicate
 	opt_where_clause
 	opt_having_clause
@@ -1136,21 +1137,23 @@ sql:
  ;
 
 transaction_stmt:
+   _transaction_stmt 
+	{ mvc *m = (mvc*)parm;
+	  $$ = $1;
+	  m->type = Q_TRANS; 					}
+ ;
+
+_transaction_stmt:
     COMMIT opt_trans opt_chain 	
-
-		{ mvc *m = (mvc*)parm;
-		  $$ = _symbol_create_int( SQL_COMMIT, $3); 
-		  m->status = 0; 					}
-
- |  SAVEPOINT ident 		{ $$ = _symbol_create( SQL_SAVEPOINT, $2); }
- |  RELEASE SAVEPOINT ident 	{ $$ = _symbol_create( SQL_RELEASE, $3); }
+		{ $$ = _symbol_create_int( SQL_COMMIT, $3);  }
+ |  SAVEPOINT ident 		
+		{ $$ = _symbol_create( SQL_SAVEPOINT, $2); }
+ |  RELEASE SAVEPOINT ident 	
+		{ $$ = _symbol_create( SQL_RELEASE, $3); }
  |  ROLLBACK opt_trans opt_chain opt_to_savepoint
-
-		{ mvc *m = (mvc*)parm;
-		  $$ = _symbol_create_list( SQL_ROLLBACK, 
+		{ $$ = _symbol_create_list( SQL_ROLLBACK, 
 		   dlist_append_string(
-		   	dlist_append_int(dlist_create(), $3), $4 )); 
-		  m->status = 0; 					}
+		   	dlist_append_int(dlist_create(), $3), $4 )); }
  ;
 
 opt_trans: /* pure syntax sugar */
@@ -1645,8 +1648,21 @@ opt_asc_desc:
  |  DESC		{ $$ = FALSE; }
  ;
 
-predicate: comparison_predicate | between_predicate | like_predicate
- |  test_for_null | in_predicate | all_or_any_predicate | existence_test ;
+predicate: 
+    comparison_predicate 
+ |  between_predicate 
+ |  like_predicate
+ |  test_for_null 
+ |  in_predicate  
+ |  all_or_any_predicate 
+ |  existence_test 
+ |  BOOL_FALSE  
+		{ sql_subtype *t = sql_bind_subtype("BOOL", 0, 0 );
+		  $$ = _newAtomNode( atom_general(t, _strdup("false"))); }
+ |  BOOL_TRUE  
+		{ sql_subtype *t = sql_bind_subtype("BOOL", 0, 0 );
+		  $$ = _newAtomNode( atom_general(t, _strdup("true"))); }
+ ;
 
 comparison_predicate:
     scalar_exp COMPARISON scalar_exp	 
@@ -1824,7 +1840,6 @@ scalar_exp:
 	  			  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '(' scalar_exp ')' 		{ $$ = $2; }
  |  subquery			%prec UMINUS
-/* scalar value is true or false */
  |  predicate			
  ;
 
@@ -2069,7 +2084,7 @@ interval_type:
  ;
 
 user:
- |  USER     
+    USER     
  |  SESSION_USER     
  |  CURRENT_USER     
  ;
@@ -2079,7 +2094,7 @@ literal:
 		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0 ); 
 		   $$ = _newAtomNode( atom_string(t, $1)); }
 
- | user 
+ |  user 
 		{  mvc *m = (mvc*)parm;
 		   sql_subtype *t = sql_bind_subtype("CHAR", strlen(m->user),0);
 		   $$ = _newAtomNode( atom_string(t, _strdup(m->user))); }
@@ -2147,12 +2162,6 @@ literal:
 		  }
 	  	  _DELETE($1); 
 		}
- |  BOOL_FALSE  
-		{ sql_subtype *t = sql_bind_subtype("BOOL", 0, 0 );
-		  $$ = _newAtomNode( atom_general(t, _strdup("false"))); }
- |  BOOL_TRUE  
-		{ sql_subtype *t = sql_bind_subtype("BOOL", 0, 0 );
-		  $$ = _newAtomNode( atom_general(t, _strdup("true"))); }
  ;
 
 	/* miscellaneous */
@@ -2367,6 +2376,7 @@ non_reserved_word:
 | ZONE		{ $$ = _strdup("zone"); }
 | sqlNAME	{ $$ = _strdup("name"); }
 | sqlTYPE	{ $$ = _strdup("type"); }
+| PRIVILEGES	{ $$ = _strdup("privileges"); }
 ;
 
 name_commalist:

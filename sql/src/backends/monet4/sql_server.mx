@@ -305,7 +305,6 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
 	if ( mvc_init(*Debug, (backend_stack)stk ) ){
-		sqlstatement("CREATE TABLE history (start TIMESTAMP, query VARCHAR, parse MEDIUMINT, mil MEDIUMINT, exec MEDIUMINT, total MEDIUMINT, \"user\" VARCHAR);", stk);
 		sqlstatement("GRANT ALL on modules to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on schemas to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on tables to monetdb with grant option with hierarchy option;", stk);
@@ -318,6 +317,7 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 		sqlstatement("GRANT ALL on user_role to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on auths to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on privileges to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("CREATE TABLE history (start TIMESTAMP, query VARCHAR, parse MEDIUMINT, mil MEDIUMINT, exec MEDIUMINT, total MEDIUMINT, \"user\" VARCHAR);", stk);
 	}
 	return GDK_SUCCEED;
 }
