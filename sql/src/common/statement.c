@@ -499,6 +499,7 @@ const char *head_type( statement *st ){
 	case st_binop: return column_type(st->op1.stval);
 	case st_atom: return atomtype2string(st->op1.aval);
 	case st_cast: return st->op1.sval;
+	case st_unique: return column_type(st->op1.stval);
 	default:
 		fprintf( stderr, "missing head type %d\n", st->type);
 		return NULL;
@@ -516,6 +517,7 @@ const char *column_type( statement *st ){
 	case st_binop: return column_type(st->op1.stval);
 	case st_atom: return atomtype2string(st->op1.aval);
 	case st_cast: return st->op1.sval;
+	case st_unique: return column_type(st->op1.stval);
 	default:
 		fprintf( stderr, "missing type %d\n", st->type);
 		return NULL;
@@ -534,6 +536,7 @@ column *_basecolumn( statement *st ){
 	case st_atom: 
 	case st_cast: return NULL;
 	case st_name: return _basecolumn(st->op1.stval);
+	case st_unique: return _basecolumn(st->op1.stval);
 	default:
 		fprintf( stderr, "missing base column type %d\n", st->type);
 		return NULL;
@@ -552,6 +555,7 @@ column *basecolumn( statement *st ){
 	case st_atom: 
 	case st_cast: return NULL;
 	case st_name: return basecolumn(st->op1.stval);
+	case st_unique: return basecolumn(st->op1.stval);
 	default:
 		fprintf( stderr, "missing base column %d\n", st->type);
 		return NULL;
@@ -580,6 +584,7 @@ char *column_name( statement *st ){
 	case st_aggr: return aggr_name( st->op2.aggrval->name, 
 				column_name( st->op1.stval ));
 	case st_name: return st->op2.sval;
+	case st_unique: return column_name(st->op1.stval);
 	default:
 		fprintf( stderr, "missing name %d\n", st->type);
 		return NULL;

@@ -669,7 +669,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 			statement *r1 = statement_reverse(ls);
 			statement *rs = subquery(sql, l->h->next->data.sym);
 			statement *r2 = statement_reverse( rs );
-			statement *s = statement_semijoin(r2,r1);
+			statement *s = statement_semijoin(r1,r2);
 			return statement_reverse(s);
 		} else {
 			snprintf(sql->errstr, ERRSIZE, 
@@ -903,7 +903,7 @@ statement *query_groupby( context *sql, list *tables, symbol *groupby, statement
 	    o = o->next;
 	}
 	p = st->op1.lval->h;
-	while(o){
+	while(p){
 		statement *s = p->data.stval;
 		list_append_statement(l, statement_join( cur, s, cmp_equal ));
 		p = p->next;

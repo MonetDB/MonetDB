@@ -579,7 +579,8 @@ int sqllex( YYSTYPE *yylval, void *parm ){
 	context *lc = (context*)parm;
 	int token = tokenize(lc);
 	yylval->sval = lc->yytext;
-	if (token == NAME || token == COMPARISON || token == STRING)
+	if (token == NAME || token == COMPARISON || token == STRING ||
+		token == AMMSC)
 		yylval->sval = _strdup(lc->yytext);
 	sql_statement_add(lc, lc->yytext);
 	return token;

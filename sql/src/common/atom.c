@@ -50,13 +50,13 @@ char *atom2string( atom *a){
 	return _strdup(buf);
 }
 
-char *atomtype2string( atom *a){
+const char *atomtype2string( atom *a){
 	switch (a->type){
-	case string_value: return _strdup("STRING");
-	case int_value: return _strdup("INTEGER");
-	case float_value: return _strdup("DOUBLE");
+	case string_value: return ("STRING");
+	case int_value: return ("INTEGER");
+	case float_value: return ("DOUBLE");
 	}
-	return _strdup("");
+	return ("");
 }
 
 atom *atom_dup( atom *a ){

@@ -58,19 +58,23 @@ list *list_create(){
 	return l;
 }
 
+void node_destroy( node *n, int type ){
+	if (n->data.sval){
+		if (type == type_statement)
+			statement_destroy( n->data.stval );
+		else if (type == type_atom)
+			atom_destroy( n->data.aval );
+	}
+	_DELETE(n);
+}
+
 void list_destroy(list *l){
 	if (l){
 	    node *n = l->h;
 	    while(n){
 		node *t = n;
 		n = n->next;
-		if (t->data.sval){
-			if (l->type == type_statement)
-				statement_destroy( t->data.stval );
-			else if (l->type == type_atom)
-				atom_destroy( t->data.aval );
-		}
-		_DELETE(t);
+		node_destroy(t,l->type);
 	    }
 	    _DELETE(l);
 	}
@@ -185,7 +189,7 @@ node *list_remove( list *l, node *n){
 		p->next = n->next;
 	}
 	if (n == l->t) l->t = p;
-	_DELETE(n);
+	node_destroy(n,l->type);
 	l->cnt--;
 	return p;
 }

@@ -31,7 +31,7 @@ extern atom *atom_float( double val );
 extern atom *atom_dup( atom *a );
 
 extern char *atom2string(atom *a);
-extern char *atomtype2string(atom *a);
+extern const char *atomtype2string(atom *a);
 
 extern void atom_destroy( atom *a );
 #endif /* _ATOM_H_ */
