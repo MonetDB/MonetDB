@@ -1012,6 +1012,7 @@ public class MonetConnection extends Thread implements Connection {
 						hdrl.rstype,
 						hdrl.rsconcur
 					);
+					if (rawr != null) rawr.finish();
 					rawr = null;
 				} else if (monet.getLineType() == MonetSocket.HEADER) {
 					if (hdr == null) throw
@@ -1033,6 +1034,11 @@ public class MonetConnection extends Thread implements Connection {
 					hdrl.addError("Protocol violation: unknown linetype for line: " + tmpLine);
 				}
 			} while ((lastState = monet.getLineType()) != MonetSocket.PROMPT1);
+			// Tell the RawResults object there is nothing going to be
+			// added right now.  We need to do this because MonetDB
+			// sometimes plays games with us and just doesn't send what
+			// it promises.
+			if (rawr != null) rawr.finish();
 			// catch resultless headers
 			if (hdr != null) {
 				hdr.complete();
@@ -1090,6 +1096,11 @@ public class MonetConnection extends Thread implements Connection {
 						rawr.addError("Protocol violation, unknown line type for line: " + tmpLine);
 					}
 				} while (monet.getLineType() != MonetSocket.PROMPT1);
+				// Tell the RawResults object there is nothing going to be
+				// added right now.  We need to do this because MonetDB
+				// sometimes plays games with us and just doesn't send what
+				// it promises.
+				rawr.finish();
 			} catch (IOException e) {
 				rawr.addError("Unexpected end of stream, Mserver still alive? " + e.toString());
 			}
@@ -1153,6 +1164,17 @@ public class MonetConnection extends Thread implements Connection {
 		}
 
 		/**
+		 * finish marks this RawResult as complete.  In most cases this
+		 * is a redundant operation because the data array is full.
+		 * However... it can happen that this is NOT the case!
+		 */
+		void finish() {
+			if ((pos + 1) != data.length) {
+				addError("Inconsistent state detected!  Current block capacity: " + data.length + ", block usage: " + (pos + 1) + ".  Did MonetDB sent what it promised to send?");
+			}
+		}
+
+		/**
 		 * Retrieves the required row. If the row is not present, this method will
 		 * block until the row is available. <br />
 		 * <b>Do *NOT* use multiple threads synchronously on this method</b>
@@ -1169,10 +1191,12 @@ public class MonetConnection extends Thread implements Connection {
 				throw new IllegalArgumentException("Cannot get row outside data range (" + line + ")");
 
 			while (setWatch(line)) {
+				// re-check for errors
+				if (error != "") throw new SQLException(error);
 				try {
 					this.wait();
 				} catch (InterruptedException e) {
-					// recheck if we got the desired row
+					// re-check if we got the desired row
 				}
 			}
 			return(data[line]);
@@ -1192,8 +1216,11 @@ public class MonetConnection extends Thread implements Connection {
 		 *
 		 * @param error the error string to add
 		 */
-		void addError(String error) {
+		synchronized void addError(String error) {
 			this.error += error + "\n";
+			// notify listener for our lock object; maybe this is bad news
+			// that must be heard...
+			this.notify();
 		}
 
 
