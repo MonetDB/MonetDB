@@ -32,16 +32,16 @@ stdout of test 'tst901` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
-    i := -1;	# 2  (i:lng)<-($5:lng)
-barrier (v,i):= mal.newRange(0);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-($7:lng) jump 6
+    i := -1:lng;	# 2  (i:lng)<-($5:lng)
+barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-($7:lng) jump 6
     bat.insert(b,i,i);	# 4 BKCinsert_bun ($8:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1,10);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-($9:lng)($10:lng) jump 4
+    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-($9:lng)($10:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
     c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
     io.print(c);	# 8 IOprint_val ($12:int)<-(c:bat[:lng,:lng])
     x := batcalc.+(b,c);	# 9 CMDbatADD (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
     io.print(x);	# 10 IOprint_val ($14:int)<-(x:bat[:lng,:lng])
-    x := batcalc.+(b,1);	# 11 CMDbatADDcst (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])($9:lng)
+    x := batcalc.+(b,1:lng);	# 11 CMDbatADDcst (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])($9:lng)
     io.print(x);	# 12 IOprint_val ($15:int)<-(x:bat[:lng,:lng])
     x := batcalc.*(b,c);	# 13 CMDbatMUL (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
     io.print(x);	# 14 IOprint_val ($16:int)<-(x:bat[:lng,:lng])

@@ -27,7 +27,7 @@ function Admin.simple(i:int,lim:int,s:str):flt;	# 0  (simple:flt)<-(i:int)(lim:i
 barrier v := calc.<(i,lim);	# 5 CALCcompLTintint (v:bit)<-(i:int)(lim:int) jump 7
     z := Admin.simple(i,lim,s);	# 6  (z:flt)<-(i:int)(lim:int)(s:str)
 exit v;	# 7  (v:bit)
-    r := 3.14;	# 8  (r:flt)<-($14:flt)
+    r := 3.14:flt;	# 8  (r:flt)<-($14:flt)
     return r;	# 9  (r:flt)
 end simple;	# 10  
 #

@@ -17,7 +17,7 @@ stdout of test 'tst040` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     str := "hello";	# 1  (str:str)<-($2:str)
-    int := 1;	# 2  (int:sht)<-($4:sht)
+    int := 1:sht;	# 2  (int:sht)<-($4:sht)
     flt := "wrong";	# 3  (flt:str)<-($6:str)
     i := true;	# 4  (i:bit)<-($8:bit)
 end main;	# 5  

@@ -34,11 +34,11 @@ end perftst;	# 5
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
-barrier (v,i):= mal.newRange(0);	# 2 RNGnewRange_lng (v:bit)(i:lng)<-($6:lng) jump 5
+barrier (v,i):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (v:bit)(i:lng)<-($6:lng) jump 5
     bat.insert(b,i,i);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1,10);	# 4 RNGnextElement_lng (v:bit)(i:lng)<-($8:lng)($9:lng) jump 3
+    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 4 RNGnextElement_lng (v:bit)(i:lng)<-($8:lng)($9:lng) jump 3
 exit (v,i);	# 5  (v:bit)(i:lng)
-    Admin.perftst(b,1);	# 6  ($10:void)<-(b:bat[:lng,:lng])($8:lng)
+    Admin.perftst(b,1:lng);	# 6  ($10:void)<-(b:bat[:lng,:lng])($8:lng)
 end main;	# 7  
 [ "perftst" ]
 [ 1 ]

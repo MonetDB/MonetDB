@@ -31,9 +31,9 @@ function Admin.main():int;	# 0  (main:int)
     j := calc.sht("1");	# 6 CALCstr2sht (j:sht)<-($11:str)
     d0 := calc.dbl(1.0);	# 7 CALCflt2dbl (d0:dbl)<-($13:flt)
     d1 := calc.dbl(2.0);	# 8 CALCflt2dbl (d1:dbl)<-($15:flt)
-    z := calc.<(d0,2.0);	# 9 CALCcompLTdbldbl (z:bit)<-(d0:dbl)($17:dbl)
+    z := calc.<(d0,2.0:dbl);	# 9 CALCcompLTdbldbl (z:bit)<-(d0:dbl)($17:dbl)
     io.print(z);	# 10 IOprint_val ($18:int)<-(z:bit)
-    z := calc.<(d1,2.0);	# 11 CALCcompLTdbldbl (z:bit)<-(d1:dbl)($17:dbl)
+    z := calc.<(d1,2.0:dbl);	# 11 CALCcompLTdbldbl (z:bit)<-(d1:dbl)($17:dbl)
     io.print(z);	# 12 IOprint_val ($19:int)<-(z:bit)
 end main;	# 13  
 [ true ]

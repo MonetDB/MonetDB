@@ -30,9 +30,9 @@ function Admin.main():int;	# 0  (main:int)
     f0 := 11;	# 3  (f0:int)<-($5:int)
     io.print(f0);	# 4 IOprint_val ($6:int)<-(f0:int)
     io.print("conversions");	# 5 IOprint_val ($7:int)<-($8:str)
-    e1 := 13;	# 6  (e1:enum)<-($10:enum)
+    e1 := 13:enum;	# 6  (e1:enum)<-($10:enum)
     io.print(e1);	# 7 IOprint_val ($11:int)<-(e1:enum)
-    f1 := 14;	# 8  (f1:fruit)<-($13:fruit)
+    f1 := 14:fruit;	# 8  (f1:fruit)<-($13:fruit)
     io.print(f1);	# 9 IOprint_val ($14:int)<-(f1:fruit)
 end main;	# 10  
 [ 12 ]

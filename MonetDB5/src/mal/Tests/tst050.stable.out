@@ -28,11 +28,11 @@ stdout of test 'tst050` in directory 'src/mal` itself:
 !ERROR: MALresolve:Admin.main[8]:type mismatch flt := str
 function Admin.main():int;	# 0  (main:int)
     s := "hello";	# 1  (s:str)<-($2:str)
-    i := 1;	# 2  (i:sht)<-($4:sht)
+    i := 1:sht;	# 2  (i:sht)<-($4:sht)
     b := true;	# 3  (b:bit)<-($6:bit)
     z := bbp.new(:int,:int);	# 4 CMDBATnew (z:bat[:int,:int])<-($8:int)($9:int)
-    j := 1;	# 5  unknown (j:sht)<-($11:lng)
-    k := 1;	# 6  unknown (k:lng)<-($4:sht)
+    j := 1:lng;	# 5  unknown (j:sht)<-($11:lng)
+    k := 1:sht;	# 6  unknown (k:lng)<-($4:sht)
     y := new(:int,:int);	# 7  unknown (y:bat[:str,:int])<-($14:int)($15:int)
     f := "wrong";	# 8  unknown (f:flt)<-($17:str)
 end main;	# 9  

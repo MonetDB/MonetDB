@@ -16,10 +16,10 @@ stdout of test 'tst401` in directory 'src/mal` itself:
 #exit	v1;
 #
 function Admin.main():int;	# 0  (main:int)
-barrier (v1,i):= mal.newRange(0.0);	# 1 RNGnewRange_flt (v1:bit)(i:flt)<-($3:flt) jump 5
+barrier (v1,i):= mal.newRange(0.0:flt);	# 1 RNGnewRange_flt (v1:bit)(i:flt)<-($3:flt) jump 5
     io.print(i);	# 2 IOprint_val ($4:int)<-(i:flt)
     v := "do something";	# 3  (v:str)<-($6:str)
-    redo (v1,i):= mal.nextElement(1.3,2.5);	# 4 RNGnextElement_flt (v1:bit)(i:flt)<-($7:flt)($8:flt) jump 2
+    redo (v1,i):= mal.nextElement(1.3:flt,2.5:flt);	# 4 RNGnextElement_flt (v1:bit)(i:flt)<-($7:flt)($8:flt) jump 2
 exit (v1,i);	# 5  (v1:bit)(i:flt)
 end main;	# 6  
 [ 0 ]
