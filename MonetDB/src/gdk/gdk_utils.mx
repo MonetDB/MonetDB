@@ -9,7 +9,6 @@ system, memory allocation details, and a basic system logging scheme.
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-gdk_export void GDKenvironment(str db, str monetrc);
 gdk_export str expandFile(str fname);
 gdk_export void GDKlog       (char *format, ...);
 gdk_export void GDKlockHome  ();
@@ -20,6 +19,8 @@ gdk_export lng  GDKusec      ();
 gdk_export int  GDKms        ();
 gdk_export int  GDKcsec      ();
 gdk_export int  GDKsec       ();
+
+gdk_export BAT *GDKenv;
 
 #endif /* _GDK_UTILS_H_ */
 @c
@@ -47,6 +48,13 @@ char	GDKmonetrcStr[PATHLENGTH] = { 0 };
 char    GDKarchStr[PATHLENGTH]= HOST;
 char    GDKversionStr[PATHLENGTH]=VERSION;
 
+BAT 	*GDKenv = NULL;
+@-
+Was Mserver called with -initonly, 
+i.e., by Mcreatedb just to initialize the database?
+@c
+int	GDKinitonly = 0;
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -64,10 +72,6 @@ char    GDKversionStr[PATHLENGTH]=VERSION;
 
 #ifdef HAVE_PWD_H
 # include <pwd.h>
-#endif
-
-#ifdef __CYGWIN32__
-extern int gethostname(char *s, int len);
 #endif
 
 #ifndef HAVE_SETENV
@@ -105,14 +109,12 @@ to access its information.
 
 str expandFile(str fname){
 	static char name[PATHLENGTH];
-	char buffer[PATHLENGTH];
 
-	strcpy(name,fname);
-	SLASH_2_DIR_SEP(name);
-	if( strncmp("...",name,3)==0 && name[3]==DIR_SEP ) {
-		sprintf(buffer,"%s%s",GDKdistrStr,name+3);
-		return GDKstrdup(buffer);
-	} else return GDKstrdup(name);
+	SLASH_2_DIR_SEP(fname);
+	if( strncmp("...",fname,3)==0 && fname[3]==DIR_SEP ) {
+		sprintf(name,"%s%s",GDKdistrStr,fname+3);
+		return GDKstrdup(name);
+	} else return fname;
 }
 void GDKusage(){
 	fprintf(stderr,"usage: <program> [-db <db_name>] [-monetrc <file>]\n");
@@ -126,10 +128,10 @@ void GDKusage(){
 void GDKenvironment(str db, str monetrc)
 {
 	static int monet_config_called=0;
-	char buf[2*PATHLENGTH],*bp;
+	char buf[2*PATHLENGTH], *bp;
 	char pwd[PATHLENGTH];
 	FILE *fd= NULL, *pd= NULL;
- 
+	
 	if (!monet_config_called) {
 		monet_config_called = 1;
 		pd = popen("monet-config --prefix", "r");
@@ -139,17 +141,26 @@ void GDKenvironment(str db, str monetrc)
 				*bp = '\0';
 			}
 			if (strlen(buf) < PATHLENGTH) {
-			       strcpy(GDKdistrStr, buf);
+				strcpy(GDKdistrStr, buf);
 			}
 			pclose(pd);
 		}
 	}
 
-
-	if( db != NULL && strchr(db,DIR_SEP) ) {
-		strcpy(GDKdbnameStr,db);
-		strcpy(GDKdirStr,db);
-		return;
+@-
+If Mserver is called with -initonly and an absolute path for -db,
+i.e., by Mcreatedb just to initialize the database,
+we don't need to parse the monetrc file.
+@c
+	if ( GDKinitonly ) {
+		if( db != NULL && MT_path_absolute(db) ) {
+			strcpy(GDKdbnameStr,db);
+			strcpy(GDKdirStr,db);
+			return;
+		} else {
+			GDKerror("GDKenvironment: -initonly requires a -db with an absolute path.\n");
+			exit(-1);
+		}
 	}
 
 	if( monetrc) {
@@ -198,11 +209,9 @@ void GDKenvironment(str db, str monetrc)
 		if( strcmp(s,"gdk_mmap")==0)
 			GDK_mem_bigsize =((lng) atoi(val)) << 10;
 		else
-		if( strcmp(s,"gdk_dbfarm")==0){
-			str f= expandFile(val);
-			strcpy(GDKdbfarmStr, f);
-			GDKfree(f);
-		} else
+		if( strcmp(s,"gdk_dbfarm")==0)
+			strcpy(GDKdbfarmStr, expandFile(val));
+		else
 		if( strcmp(s,"gdk_dbname")==0)
 			strcpy(GDKdbnameStr, val);
 		else
@@ -217,10 +226,13 @@ void GDKenvironment(str db, str monetrc)
 	}
 	if( db != NULL) strcpy(GDKdbnameStr,db);
 
-	if( GDKdbfarmStr[0]){
+	if( GDKdbfarmStr[0] && !MT_path_absolute(GDKdbnameStr) ){
 		sprintf(GDKdirStr,"%s%c%s",GDKdbfarmStr,DIR_SEP,GDKdbnameStr);
-	} else	strcpy(GDKdirStr,GDKdbnameStr);
+	} else {
+		strcpy(GDKdirStr,GDKdbnameStr);
+	}
 	/* handle monetrc */
+
 	if( MT_path_absolute(GDKmonetrcStr)) return; /* absolute path */
 	/* make relative path absolute */
         if (getcwd(pwd, PATHLENGTH-1)  == NULL ){
@@ -232,6 +244,45 @@ void GDKenvironment(str db, str monetrc)
 		GDKfatal("GDKenvironment: path to monetrc file too long\n");
 	}
 	strcpy(GDKmonetrcStr,buf);
+}
+
+void GDKenvironment_rescan(str monetrc)
+{
+	char buf[2*PATHLENGTH];
+	FILE *fd= NULL;
+	
+	GDKenv = BATnew(TYPE_str,TYPE_str,100);
+	BATrename(GDKenv, "monet_environment");
+	BATmode(GDKenv, TRANSIENT);
+
+	fd = fopen(GDKmonetrcStr,"r");
+	while(fd!=NULL && fgets(buf,2*PATHLENGTH,fd) != NULL){
+		str s,t, val;
+
+		for(s=buf; *s && isspace(*s); s++) ;
+		if( *s=='#') continue;	/* commentary */
+		if( *s== 0) continue;   /* empty line */
+		
+		val = strchr(s,'=');
+		if( val == NULL) {
+			GDKerror("GDKenvironment:syntax error in monetrc\n");
+			continue;
+		}
+		*val=0;
+
+		for(t=s; *t && !isspace(*t); t++) ;
+		*t =0;
+
+		/* skip any leading blancs in the value part */
+		for(val++; *val && isspace(*val) ;val++) ;
+		/* search first blanc, rest is commentary */
+		for(t=val;*t;t++) if( isspace(*t) || *t=='#') break;
+		*t=0;
+
+		BUNins( GDKenv, s, val );
+	}
+	if( fd != NULL) (void) fclose(fd);
+        BATfakeCommit(GDKenv);
 }
 
 @+ System logging
@@ -511,7 +562,7 @@ fragmentation and greatly help enhance performance.
 The only "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the standard OS
 primitives is that the GDK versions try to do recovery from failure to malloc by 
 initiating a BBPtrim (to unload BAts and make space in the memory). This basic 
-behaviour is obtained by defining GDK\MEM\_SIMPLE. 
+behaviour is obtained by defining GDK\_MEM\_SIMPLE. 
 
 A number of different strategies are available using different switches, however:
 \begin{description}
@@ -643,7 +694,6 @@ void GDKmemfail(str s, int len, lng memtarget, lng vmtarget) {
 		s = (long*) (p + 8); /* place 8 bytes before it */ 	\
 		s[-1] = realsize;					\
 	}								\
-/*printf("%d malloc %d\n",s,realsize);*/\
 }
 #endif
 
@@ -702,7 +752,6 @@ void GDKfree (void *blk) {
 
         if (s == NULL) return;
 	size = GDK_MEM_BLKSIZE(s);
-/*printf("%d free %d\n",s,size); fflush(stdout)*/;
 	if (size > 0) {
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
@@ -916,9 +965,18 @@ int GDKinit(int argc, char** argv) {
 				clr(i);
 			  }
 			break;
+		case 'i': if (strcmp("-initonly", argv[i]) == 0){
+				GDKinitonly = 1; 
+				clr(i);
+			  }
+			break;
 		}
 	}
 	GDKenvironment(db,monetrc);
+
+	if (monetrc) GDKfree(monetrc);
+	if (db) GDKfree(db);
+
 	if (GDKdbnameStr[0] == 0) {
 	    fprintf(stderr, 
 		"GDKhomeScan: %s:  database name missing.\n",
@@ -929,6 +987,7 @@ int GDKinit(int argc, char** argv) {
 		"GDKhomeScan: %s: directory name missing.\n",
 		home); 
 	}
+	XPROPDEBUG GDKdebug |= 8; 
 	PROPDEBUG GDKdebug |= 2; 
 	MT_init_posix();
 	THRinit();
@@ -951,6 +1010,7 @@ int GDKinit(int argc, char** argv) {
 	}
 	GDKcacheLock = MT_create_lock(); 
 	GDKtrimLock = MT_create_lock(); 
+	GDKtmLock = MT_create_lock(); 
 
 	/* Mserver intends to rob 85% of all memory as a default */
  	GDK_mem_maxsize = ((lng) MT_npages()) * ((lng) MT_pagesize())*0.85; 
@@ -970,7 +1030,7 @@ int GDKinit(int argc, char** argv) {
 #endif
 #ifdef GDK_VM_KEEPHISTO
 #ifdef WIN32
-#ifndef WIN32_NATIVE
+#ifndef NATIVE_WIN32
 	GDKmallidx(i, 67108864);
 	GDK_vm_nallocs[i]++; 
 #endif
@@ -985,6 +1045,7 @@ int GDKinit(int argc, char** argv) {
 	BATfakeCommit(GDK_vm_histo);
 	GDK_vm_nallocs = ((int*) GDK_vm_histo->batBuns->base) - 42; 
 #endif
+	GDKenvironment_rescan(monetrc);
 	return 0;
 }
 
@@ -1022,6 +1083,7 @@ MT_Lock		GDKswapLock[BBPLOCKMASK+1];
 MT_Lock		GDKidxLock[BBPLOCKMASK+1]; 
 MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
 MT_Lock		GDKcacheLock, GDKtrimLock; 
+MT_Lock		GDKtmLock; 
 
 @+ Concurrency control
 Concurrency control requires actions at several levels of the system.
@@ -1142,6 +1204,7 @@ int GDKwarning(char *format, ...) {
 
 	return 0;
 }
+
 
 /*VARARGS*/
 int GDKerror(char *format, ...) {
@@ -1383,12 +1446,8 @@ int THRcnt() {
 
 int THRhighwater() {
 	unsigned long c = THRsp();
-	Thread s;
-	unsigned long diff;
-
-	s = GDK_find_thread(MT_getpid());
-	if (s== NULL) return 0;
-	diff = (c<s->sp)?s->sp-c:c-s->sp;
+	Thread s = GDK_find_thread(MT_getpid());
+	unsigned long diff = (c<s->sp)?s->sp-c:c-s->sp;
 	if (diff > (THREAD_STACK_SIZE-2048)){
 		return 1;
 	}
@@ -1458,7 +1517,8 @@ int THRprintf(FILE *fp, char *format, ...) {
 }
 
 int THRputs(FILE *fp, char *message){
-	fputs(message, fp);
-	fflush(fp);
+        fputs(message, fp);
+        fflush(fp);
 }
+
 #endif

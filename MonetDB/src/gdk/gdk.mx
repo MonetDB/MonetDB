@@ -269,6 +269,8 @@ extern "C" {
 #include <stdio.h>      /* NULL, printf etc. */
 #include <stdlib.h>     
 
+
+
 /* AIX requires this to be the first thing in the file.  */
 #ifndef __GNUC__
 # if HAVE_ALLOCA_H
@@ -282,6 +284,22 @@ char *alloca ();
 #   endif
 #  endif
 # endif
+#endif
+
+@T
+When using alloca(3) in a shared library, Intel's "C++ Compiler for 32-bit
+applications, Version 5.0.1 Beta Build 010528D0" seems to require another
+reference to alloca(3) in the file that contains the main(), otherwise it
+complains about an "undefined reference to `\_alloca\_probe'" when linking
+the shared library to the executable.
+Hence, we define this FAKE\_ALLOCA\_CALL and call it in the respective
+main()s just before the final return.
+@h
+#if ( defined(__INTEL_COMPILER) && (!defined(STATIC)) )
+# include <alloca.h>
+# define FAKE_ALLOCA_CALL (void)alloca(0);
+#else
+# define FAKE_ALLOCA_CALL ;
 #endif
 
 #include <ctype.h>      /* isspace etc. */
@@ -357,7 +375,7 @@ extern int setenv(char *name, char *value, int overwrite);
 
 #define GDKPROP		6	/*	use one spare! */
 #define MONETHOME	"MONETHOME"
-#ifndef WIN32_NATIVE
+#ifndef NATIVE_WIN32
 #define BATDIR          "bat/"
 #define DELDIR          "bat/DELETE_ME/"
 #define BAKDIR          "bat/BACKUP/"
@@ -378,8 +396,13 @@ gdk_export char 	GDKdbfarmStr[PATHLENGTH];
 gdk_export char 	GDKdirStr[PATHLENGTH];
 gdk_export char 	GDKdistrStr[PATHLENGTH];
 gdk_export char 	GDKmonetrcStr[PATHLENGTH];
-gdk_export char		GDKarchStr[PATHLENGTH];
-gdk_export char		GDKversionStr[PATHLENGTH];
+gdk_export char         GDKarchStr[PATHLENGTH];
+gdk_export char         GDKversionStr[PATHLENGTH];
+@-
+Was Mserver called with -initonly, 
+i.e., by Mcreatedb just to initialize the database?
+@h
+gdk_export int		GDKinitonly;
 
 @
 @}
@@ -1254,8 +1277,8 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 
 #define BUNhloc(b,p)	((BUN) (((char*) p) + (b)->hloc))
 #define BUNtloc(b,p)	((BUN) (((char*) p) + (b)->tloc))
-#define BUNhvar(b,p)	((b)->htype?(Hbase(b)+*(int*)BUNhloc(b,p)):BUNhpos(b,p))
-#define BUNtvar(b,p)	((b)->ttype?(Tbase(b)+*(int*)BUNtloc(b,p)):BUNtpos(b,p))
+#define BUNhvar(b,p)	((b)->htype?(Hbase(b)+*(int*)BUNhloc(b,p)):(BUN)BUNhpos(b,p))
+#define BUNtvar(b,p)	((b)->ttype?(Tbase(b)+*(int*)BUNtloc(b,p)):(BUN)BUNtpos(b,p))
 
 #define BUNfirst(b)	(((char*) (b)->batHole) + BUNsize(b))
 #define BUNlast(b)	(Bunbase(b)+ (b)->batBuns->free)
@@ -1413,6 +1436,7 @@ gdk_export BAT* 		BATcopy   (BAT *b);
 gdk_export BAT* 		BATrcopy  (BAT *b); 
 gdk_export BAT*		BATmark   (BAT *b, oid base); 
 gdk_export BAT*		BATnumber (BAT *b); 
+gdk_export BAT*		BATgroup (BAT *b, int start, int incr, int grpsize); 
 @-
 Retain old-style source-level funcionality where the BAT reversal 
 induced a state change of the BAT parameter to it.
@@ -1546,8 +1570,7 @@ allow that Monet's main-memory oriented algorithms work efficient  also
 in such a disk-oriented context.
 @
 The @%BATsort@ functions returns a copy of the input BAT, sorted
-in ascending order on the head column. @%BATsort_ht@ sorts
-a bat lexicographic on head and tail column. @%BATordered@ starts a 
+in ascending order on the head column. @%BATordered@ starts a 
 check on the head values to see if their are ordered. The result
 is returned and stored in the @%hsorted@ field of the BAT. 
 @%BATorder@ is similar to @%BATsort@, but sorts the BAT itself, rather
@@ -1560,7 +1583,6 @@ this does not mean that they are sorted in reverse order!
 #define 		GDK_SORTED	65 /* 65 = (32 bits radix_clustered)<<1 + 1 */
 
 gdk_export BAT*		BATsort          (BAT *b); 
-gdk_export BAT*		BATsort_ht       (BAT *b); 
 gdk_export BAT*		BATsort_insert   (BAT *r, BAT *b);
 gdk_export BAT*		BATorder         (BAT *b); 
 gdk_export BAT*		BATrevert        (BAT *b); 
@@ -1629,6 +1651,7 @@ typedef struct {
         BATstore *cache;	/* cached header info */
         str     path;		/* dir + basename for storage */ 
         int     refs;		/* number of batrefs */
+	int	plevel;		/* number of times the bat is made persistent */
         volatile int status;	/* always available bat info */
 } BBPrec;
 
@@ -1646,6 +1669,7 @@ gdk_export BBPrec*       	BBP;
 #define BBP_physical(i) BBP[ABS(i)].path
 #define BBP_desc(i)	BBP[ABS(i)].cache
 #define BBP_refs(i)     BBP[ABS(i)].refs
+#define BBP_plevel(i)   BBP[ABS(i)].plevel
 #define BBP_status(i)   BBP[ABS(i)].status
 
 /* macros that nicely check parameters */
@@ -2222,6 +2246,7 @@ gdk_export MT_Lock		GDKidxLock[BBPLOCKMASK+1];
 gdk_export MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
 gdk_export MT_Lock		GDKcacheLock; 
 gdk_export MT_Lock		GDKtrimLock; 
+gdk_export MT_Lock		GDKtmLock; 
 
 #define CHECKDEBUG      if (GDKdebug&2)
 #define MEMDEBUG        if (GDKdebug&4)
@@ -2238,6 +2263,16 @@ gdk_export MT_Lock		GDKtrimLock;
 #define DELTADEBUG	if (GDKdebug&8192)
 #define LOADDEBUG	if (GDKdebug&16384)
 #define YACCDEBUG	if (GDKdebug&32768)
+/*
+#define ?tcpip?		if (GDKdebug&65536)
+#define ?monet_multiplex?	if (GDKdebug&131072)
+#define ?ddbench?	if (GDKdebug&262144)
+#define ?ddbench?	if (GDKdebug&524288)
+#define ?ddbench?	if (GDKdebug&1048576)
+*/
+#define ALGODEBUG	if (GDKdebug&2097152)
+#define ESTIDEBUG	if (GDKdebug&4194304)
+#define XPROPDEBUG      if (GDKdebug&8388608)
 
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 
@@ -2295,11 +2330,8 @@ extern "C" {
 static INLINE int BBPcheck(REGISTER int x, REGISTER str y) {
 	if (x && x != int_nil) {
 	    REGISTER int z = ABS(x);
-	    if (z > BBPsize ){
-		GDKwarning("%s: bat range error %d\n", y, x);
-	    } else 
-	    if (BBP[z].nme[0] == NULL) {
-		GDKwarning("%s: bat name missing %d\n", y,x);
+	    if (z > BBPsize || BBP[z].nme[0] == NULL) {
+		GDKwarning("%s: range error %d\n", y, x);
 	    } else  {
 		return z;
 	    }
@@ -2892,6 +2924,7 @@ look at the head column:@%BATkunion@, @%BATkdiff@, and
 #define JOIN_LE	-2
 #define JOIN_GT	1
 #define JOIN_GE	2
+#define JOIN_BAND 3
 
 gdk_export BAT*	BATfragment  (BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
 gdk_export BAT*	BATselect    (BAT *b, ptr tl, ptr th); 
@@ -2973,6 +3006,7 @@ typedef struct {
 	int 		vtype;
 	int 	       	len;
 } *ValPtr, ValRecord;
+
 #endif /* BAT32IMAGE */
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
@@ -2983,14 +3017,11 @@ gdk_export ValPtr	VALnew		();
 gdk_export ptr	VALconvert	(int typ, ValPtr t, int silent);
 gdk_export int	VALformat	(char **buf, ValPtr res);
 gdk_export int	VALprint	(FILE *fd, ValPtr res);
-gdk_export ValPtr VALcopy		(ValPtr dst, ValPtr src);
+gdk_export ValPtr	VALcopy		(ValPtr dst, ValPtr src);
 gdk_export void	VALempty	(ValPtr v);
 gdk_export void	VALclear	(ValPtr v);
-gdk_export ValPtr VALset		(ValPtr v, int t, ptr p);
-gdk_export ValPtr VALinit(ValPtr d, int tpe, ptr s);
+gdk_export ValPtr	VALset		(ValPtr v, int t, ptr p);
 gdk_export void	*VALget		(ValPtr v);
-gdk_export int   VALsprintf   (str *dst, str format, va_list ap);
-
 
 #define ILLEGALVALUE	((ptr)-1)
 #define MAXPARAMS	32

@@ -12,17 +12,17 @@ It allocates memory using some user-space memory management library
 from the sbrk() region.
 \item[STORE\_MMAP: read-only mapped region]
 this is a file on disk that is mapped into virtual memory.   
-This is normally done MAP_SHARED, so we can use msync() to commit dirty 
+This is normally done MAP\_SHARED, so we can use msync() to commit dirty 
 data using the OS virtual memory management.
 \item[STORE\_PRIV: read-write mapped region]
 in order to preserve ACID properties, we use a different memory mapping
 on virtual memory that is writeable, This is because in case of a crash
 on a dirty STORE\_MMAP heap, the OS may have written some of the dirty pages
 to disk and other not (but it is impossible to determine which).  The OS 
-MAP_PRIVATE mode does not modify the file on which is being mapped, rather 
+MAP\_PRIVATE mode does not modify the file on which is being mapped, rather 
 creates substitute pages dynamically taken from the swap file when modifications 
 occur. This is the only way to make writing to mmap()-ed regions safe.
-\item[STORE\_MMAP & filename==NULL: anonymous virtual memory]
+\item[STORE\_MMAP \& filename==NULL: anonymous virtual memory]
 Anonymous virtual memory is virtual memory that is not mapped to a disk file.  
 Its physical backing store comes from the swap-file (just like malloc()) but 
 the address regions returned are outise the (sbrk) Heap region of the process.
@@ -410,7 +410,7 @@ Due to non-careful design, the HEADER field was found to be 32/64-bit dependent.
 As we do not (yet) want to change the BAT image on disk, This is now fixed by 
 switching on-the-fly between two representations. We ensure that the 64-bit memory 
 representation is just as long as the 32-bits version (20 bytes) so the rest of 
-the heap never needs to shift. The function HEAP_checkformat converts at load 
+the heap never needs to shift. The function HEAP\_checkformat converts at load 
 time dynamically between the layout found on disk and the memory format.
 Recognition of the header mode is done by looking at the first two ints: 
 alignment must be 4 or 8, and head can never be 4 or eight. 

@@ -472,7 +472,7 @@ void DESCclean(BAT* b) {
 }
 
 #define PERSISTENT_TYPE(fcn, col, tpe)\
-	if (tpe != TYPE_bat && (BATatoms[tpe].atomFix||BATatoms[tpe].atomUnfix)) {\
+	if (tpe != TYPE_bat && (BATatoms[tpe].atomUnfix||BATatoms[tpe].atomFix)) {\
 		GDKerror("%s: %s[%s,%s] has transient %s type.\n", \
 		    fcn, b->batId, ATOMname(b->htype), ATOMname(b->ttype), col);\
 		return b;\
@@ -705,7 +705,7 @@ Changing the storage status of heaps in a BAT is done in @:BATmmap@.
 The new semantics is that the mapping only takes effect the next time 
 the bat is loaded. 
 
-This makes the BATmmap safer&simpler as it is now
+This makes the BATmmap safer \& simpler as it is now
 incorporated in the normal bat loading and saving mechanism.
 
 It also makes the mmap faster as when through caching you

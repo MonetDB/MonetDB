@@ -98,27 +98,31 @@ void TMkill(int *kills){
 int TMcommit() {
 	int i, ret = 0, *kills = NULL;
 
-	/* Acquire BBP locks */
-	BBPlock("TMcommit");
-
+	/* Acquire commit lock */
+	MT_set_lock(GDKtmLock, "TMcommit"); 
+	
         /* commit the delta status of each BAT */
         for (i = 1; i < BBPsize; i++)  
 	if (BBP_status(i) & BBPPERSISTENT) {
-		BAT *b = BBPcache(i);
+		BAT *b;
+		BBPfix(i);
+		b = BBPcache(i);
 		if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
-			b = BBPquickdesc(i, TRUE);
+			b = BBPquickdesc(i, FALSE);
 			if (b == NULL) { 
 				ret = 1; 
+				BBPunfix(i);
 				break; 
 			}
 		}
 		if (b) BATcommit(b);
+		BBPunfix(i);
 	}
 
         /* atomic write of all dirty BATs and BBP.dir */
 	if (ret == 0) ret = BBPsync(TRUE);
 	if (ret == 0) kills = TMfakeCommit();
-	BBPunlock("TMcommit");
+	MT_unset_lock(GDKtmLock, "TMcommit"); 
 	/* outside the lock: now kill all ex-persistent bats */
 	if (ret == 0) TMkill(kills);
 	return ret;
@@ -134,7 +138,7 @@ persistent again.
 int TMabort() {
 	int i; 
 
-	BBPlock("TMabort");
+	MT_set_lock(GDKtmLock, "TMabort"); 
 	for (i = 1; i < BBPsize; i++) { 
 		if (BBP_status(i) & BBPNEW) {
 			BAT *b = BBPcache(i);
@@ -142,8 +146,7 @@ int TMabort() {
 				b = BATload_intern(i);
 			}
 			if (b) {
-				b->batPersistence &= ~PERSISTENT;
-				b->batPersistence |= TRANSIENT;
+				BBP_plevel(i) = 0; 
 				b->batDirtydesc = 1;
 			}
 		}
@@ -157,15 +160,14 @@ int TMabort() {
 			ALIGNundo(b);
 			BATundo(b); 
 			if (BBP_status(i)&BBPDELETED) {
-				b->batPersistence &= ~TRANSIENT;
 				BBP_status_on(i, BBPEXISTING, "TMabort");
-				b->batPersistence |= PERSISTENT;
+				BBP_plevel(i) = 1; 
 				b->batDirtydesc = 1;
 			}					
 		}
 		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMabort");
 	}
-	BBPunlock("TMabort");
+	MT_unset_lock(GDKtmLock, "TMabort"); 
 	return 0; 
 }
 @}

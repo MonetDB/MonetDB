@@ -1,5 +1,5 @@
 @f gdk_batop
-@a M. L. Kersten, P. Boncz
+@a M. L. Kersten, P. Boncz, S. Manegold
 @* Common BAT Operations
 @T
 This module contains the following BAT algebra operations:
@@ -8,6 +8,9 @@ This module contains the following BAT algebra operations:
 \item[common aggregates] min, max and histogram
 \item[oid column manipulations] mark, number and split.
 \item[bat selections] select, slice, sample, fragment and restrict.
+	Note: non hash-/index-supported scanselects have been "outsourced"
+	to gdk\_scanselect.mx as the fully expanded code grows to large to be
+	(conveniently) compiled in a single file.
 \item[bat partitioning] hash partition, range partitioning
 \end{description}
 @h
@@ -27,6 +30,7 @@ of the srcbat, but testing only once where they reside.
 @c
 #include "gdk_bat.h"
 #include "gdk_batop.h"
+#include "gdk_scanselect.h"
 
 @= updateloop
 {	BUN p, q; 
@@ -227,6 +231,29 @@ BAT *BATnumber(BAT *b) {
         return bn;
 }
 
+BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
+        BUN p, q;
+        int i = 0, xx;
+        BAT *bn;
+
+        BATcheck(b, "BATgroup");
+        bn = BATnew(b->htype, TYPE_int, BATcount(b));
+        if (bn == NULL) {
+                return NULL;
+        }
+
+        ALIGNsetH(bn,b);
+   
+        BATloopFast(b, p, q, xx) {
+            BUNfastins(bn, BUNhead(b, p), (ptr)&start);
+            if(i == grpsize-1) { start += incr; i = 0; } else { i++; }
+        }
+
+        bn->hsorted = BAThordered(b);
+        bn->tsorted = GDK_SORTED;
+        return bn;
+}
+
 BAT* BATconst(BAT *b, int tailtype, ptr v) {
         BAT *bn;
         BUN p,q;
@@ -244,7 +271,7 @@ BAT* BATconst(BAT *b, int tailtype, ptr v) {
 		v = &((BAT*) v)->batCacheid;
 	} else if (tailtype == TYPE_void && b->htype == TYPE_void) {
 		tailtype = TYPE_oid;
-		v = (ptr) oid_nil;
+		v = ATOMnilptr(TYPE_oid);
 	}
         bn = BATnew(b->htype, tailtype, BATcount(b));
 	if (bn == NULL) {
@@ -645,95 +672,47 @@ to indicate this (this is somewhat confusing). Note, however, that
 through the definition of MIL we do not want the nils to appear in
 the result (as (nil {<,=,>} ANY) = bit(nil) != true).
 
-@= bunins_notnil
-	if (@3_CMP(nil, v, @1)) BUNfastins(bn, @2, v);
-@= select
-        if (b->tidx_heap) {
-	    BAT *m = BATmirror(b);
-            BUN *x, *y;
-            IDXrng(m, tl, th, &x, &y);
-	    if (equi == 0) {
-		while(x < y && @4_EQ(nil, BUNt@3(b, *x), @1)) {
-			x++; /* if this is a range-select, we skip nil */
-		}
+@= indexselect
+	IDXrng(m, tl, th, &x, &y);
+	if (equi == 0) {
+	    while(x < y && @3_EQ(nil, BUNt@2(b, *x), @1)) {
+	    	x++; /* if this is a range-select, we skip nil */
 	    }
-            IDXloop(m, x, y) {
-		BUNfastins(bn, BUNh@2(b, *x), BUNt@3(b, *x)); 
-            }
-	} else if (equi == 0) { /* here we always skip nil */
-            int xx;
-	    if (BAThvoid(b)) {
-		oid yy = b->hseqbase;
-                BATloopFast(b, p, q, xx) {
-                    ptr v = BUNt@3(b, p); 
-                    if ((!lval || @4_LE(tl,v,@1)) && (!hval || @4_LE(v,th,@1)))
-		    	@:bunins_notnil(@1,&yy,@4)@
-		    /* avoid computing BUNpos many times over */
-		    if (yy != oid_nil) yy++; 
-                }
-	    } else {
-                BATloopFast(b, p, q, xx) {
-                    ptr v = BUNt@3(b, p); 
-                    if ((!lval || @4_LE(tl,v,@1)) && (!hval || @4_LE(v,th,@1)))
-		    	@:bunins_notnil(@1,BUNh@2(b,p),@4)@
-                }
-            }
-	/* Build a hash-table on the fly for equi-select if the selectivity is low
-         * and there is sufficient memory available */
-	} else if (equi && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDKmem_inuse() - GDK_mem_maxsize)) { 
-	    bn = BAT_hashselect(b, bn, tl);
-	} else 
-@-
-Single-valued sequential scans for strings are optimized when double
-elemination is in effect, by scanning for the correct integer index value.
-
-@= scanstr
-	if (@1 == TYPE_str && strElimDoubles(&b->theap)) {
-	    int xx, yy = strLocate(&b->theap, tl);
-	    BATloopFast(b, p, q, xx)
-		if (*(int*) BUNtloc(b,p) == yy) 
-		    BUNfastins(bn, BUNh@2(b, p), tl);
-	} else 
-@= scaneq
-{	int xx; 
-	if (BAThvoid(b)) {
-		oid yy = b->hseqbase; 
-            	BATloopFast(b, p, q, xx) {
-		    if (@4_EQ(tl, BUNt@3(b,p), @1))
-		        BUNfastins(bn, (ptr) &yy, tl);
-		    /* increment instead of compute BUNpos */
-		    if (yy != oid_nil) yy++; 
-	        }
+	}
+	if (b->hvarsized) {
+	    IDXloop(m, x, y) {
+	        BUNfastins(bn, BUNhvar(b, *x), BUNt@2(b, *x)); 
+	    }
 	} else {
-            	BATloopFast(b, p, q, xx) 
-		    if (@4_EQ(tl, BUNt@3(b,p), @1))
-		        BUNfastins(bn, BUNh@2(b, p), tl);
-}	}
-@-
-General select macro(type, hloc/hvar, tloc/tvar, simple/atom, HASHloop): 
-uses the atom comparison macros from gdk_search.mx. 
-
-@= stdselect
-	@:select(@1,@2,@3,@4)@ 
-      	@:scaneq(@1,@2,@3,@4)@
-	break;
-@= rangeselect
-	switch(ATOMstorage(t)) {
-	case TYPE_chr:	@:stdselect(chr,@1,loc,simple)@ 
-	case TYPE_sht:	@:stdselect(sht,@1,loc,simple)@ 
-	case TYPE_int:	@:stdselect(int,@1,loc,simple)@ 
-	case TYPE_flt:	@:stdselect(flt,@1,loc,simple)@ 
-	case TYPE_dbl:	@:stdselect(dbl,@1,loc,simple)@ 
-	case TYPE_lng:	@:stdselect(lng,@1,loc,simple)@ 
+	    IDXloop(m, x, y) {
+	        BUNfastins(bn, BUNhloc(b, *x), BUNt@2(b, *x)); 
+	    }
+	} break;
+@c
+BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi) {
+	BAT *m = BATmirror(b);
+	BUN *x, *y;
+        ptr nil = ATOMnilptr(b->ttype);
+        int t = b->ttype; 
+        
+        FATALcheck(b->tidx_heap == NULL, "BAT_indexselect: tail-tree expected"); 
+		
+	switch(ATOMstorage(b->ttype)) {
+	case TYPE_chr:	@:indexselect(chr,loc,simple)@ 
+	case TYPE_sht:	@:indexselect(sht,loc,simple)@ 
+	case TYPE_int:	@:indexselect(int,loc,simple)@
+	case TYPE_flt:	@:indexselect(flt,loc,simple)@ 
+	case TYPE_dbl:	@:indexselect(dbl,loc,simple)@ 
+	case TYPE_lng:	@:indexselect(lng,loc,simple)@ 
 	default:    if (b->tvarsized) {
-	    		@:select(t,@1,var,atom)@
-			@:scanstr(t,@1)@ /* try strLocate().. */
-			@:scaneq(t,@1,var,atom)@
+	    		@:indexselect(t,var,atom)@
 	    	    } else {
-			@:stdselect(t,@1,loc,atom)@
+			@:indexselect(t,loc,atom)@
 		    }
 	}
-@c
+	return bn;
+}
+
 BAT *BAT_select(BAT *b, ptr tl, ptr th, int tail) {
 	int	hval, lval, equi, offset, t, ht, tt;
 	int 	batcnt, estimate = 0;
@@ -766,6 +745,7 @@ Examine type, and values for lower- and higher-bound.
 
         if (hval && (ATOMcmp(t, tl,th) > 0)) {
 	    /* empty range */
+ 	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): empty range;\n",b->batId);
 	    return BATnew(ht, tt, 10);
 	}
 
@@ -807,6 +787,8 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		    high = BUNindex(b,q) - (offset+1);
 		}
 	    }
+	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BATslice(v=%s, low=%d, high%d);\n",
+	                                b->batId, v->batId, low, high);
 	    bn = BATslice(v, &low, &high);
 	    if (!tail) {
 		BBPreclaim(v);
@@ -820,9 +802,15 @@ BAT_hashselect code already ensures a good allocation estimate.
 @c
 	if (batcnt > 10000 && (equi == 0 || b->thash_heap == NULL)) {
             int _lo = batcnt/2, _hi = _lo + 104;
-            BAT *tmp1 = BATslice(b, &_lo, &_hi); /* slice keeps all parent properties */
+	    BAT *tmp1;
+	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%d, _hi=%d);\n",
+	                                b->batId, b->batId, _lo, _hi);
+            tmp1 = BATslice(b, &_lo, &_hi); /* slice keeps all parent properties */
             if (tmp1) {
-                BAT *tmp2 = BAT_select(tmp1, tl, th, tail);
+		BAT *tmp2;
+	        ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp2 = BAT_select(tmp1=%s, tl, th, tail);\n",
+	                                    b->batId, tmp1->batId);
+                tmp2 = BAT_select(tmp1, tl, th, tail);
                 if (tmp2) {
 		    /* reserve 105% of what has been estimated */
                     estimate = (((lng) BATcount(tmp2)) * (lng) batcnt)/LL_CONSTANT(100);
@@ -837,12 +825,25 @@ Create the result BAT and execute the select algorithm.
 @c
         bn = BATnew(ht, tt, estimate);
 	if (bn) {
+	    int nocheck = (estimate >= batcnt);
 	    if (equi && b->thash_heap) {
+ 	        ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n",
+		                            b->batId, b->batId, bn->batId);
 	    	bn = BAT_hashselect(b, bn, tl);
-	    } else if (b->hvarsized) {
-		@:rangeselect(var)@
+	    } else if (b->tidx_heap) {
+	    	ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BAT_indexselect(b=%s, bn=%s, tl, th);\n",
+	    	                            b->batId, b->batId, bn->batId);
+	    	bn = BAT_indexselect(b, bn, tl, th, equi);
+	    } else if (equi && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDKmem_inuse() - GDK_mem_maxsize)) { 
+	        /* Build a hash-table on the fly for equi-select if the selectivity is low
+                 * and there is sufficient memory available */
+ 	        ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n",
+ 	                                    b->batId, b->batId, bn->batId);
+	        bn = BAT_hashselect(b, bn, tl);
 	    } else {
-		@:rangeselect(loc)@
+                ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BAT_scanselect(b=$s, bn=$s, tl, th, equi=%d, lval=%d, hval=%d, nocheck=%d);\n",
+                                            b->batId, b->batId, bn->batId, equi, lval, hval, nocheck);
+		bn = BAT_scanselect(b, bn, tl, th, equi, lval, hval, nocheck);
 	    }
 	}
 	if (bn == NULL) {
@@ -865,6 +866,10 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
             bn->hsorted = BAThordered(b);
             bn->tsorted = BATtordered(b);
 	}
+	ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n",
+	                            b->batId, bn->batId, bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
+	ESTIDEBUG THRprintf(GDKout, "BAT_select(b=%s): resultsize: estimated %d, got %d.\n",
+	                            b->batId,estimate,BATcount(bn));
 	return bn; 
 }
 
@@ -1045,6 +1050,7 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 	BATcheck(tl,"BATrestrict:tl is null");
 	BATcheck(th,"BATrestrict:th is null");
 	bn = BATnew(BAThtype(b), BATttype(b), BATguess(b));
+  	ESTIDEBUG THRprintf(GDKout, "BATrestrict: estimated resultsize: %d\n",BATguess(b));
 	if (bn == NULL) {
 		return NULL; 
 	}
@@ -1055,6 +1061,7 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 
 	t = BATcount(b); 
 	if (t == 0) {
+  		ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: %d\n",BATcount(bn));
 		return bn; 
 	}
 	mark = (BUN*) GDKmalloc((unsigned) t*sizeof(BUN)); 
@@ -1112,6 +1119,7 @@ BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 	/* propagate alignment info */
 	if (BATcount(bn)==BATcount(b)) ALIGNset(bn,b);
 
+  	ESTIDEBUG THRprintf(GDKout, "BATrestrict: actual resultsize: %d\n",BATcount(bn));
 	return bn; 
 }
 
@@ -1132,8 +1140,6 @@ int BATordered(BAT *b) {
 }
 
 @- return a sorted copy
-The sort operation just looks at the head column.
-To request a lexicgraphic sort on both columns call sort-ht.
 @c
 BAT *BATsort(BAT *b) {
 	int tt = b->ttype;
@@ -1147,23 +1153,6 @@ BAT *BATsort(BAT *b) {
 		tt = TYPE_oid;
 	}
 	return BATorder(batcopy(b, b->htype, tt, TRUE));
-}
-BAT *BATsort_ht(BAT *b) {
-	BAT *bks,*bs,*rn;
-	int tt = b->ttype;
-	ptr h,t;
-
-	BATcheck(b, "BATsort_ht: BAT"); 
-	rn = BATnew(BAThtype(b), BATttype(b), BATcount(b));
-	bks = BATkunique(BATsort(b));
-
-printf("BATsort_ht not yet implemented\n");
-/* TO BE DONE
-        BATloopFast(bks, h, t, xx) {
-		bs= BATselect(bks, h, h);
-	}
-*/
-	return rn;
 }
 
 
@@ -1196,8 +1185,21 @@ BAT* BATrevert(BAT *b) {
         BUN p,q;
      
         BATcheck(b, "BATrevorder");
+	if (BAThvoid(b)) {
+	  /* otherwise, tail would be placed in reverse order of head */
+	  GDKwarning( "Cannot reverse order on void head.\n" );
+	  return b;
+	}
         ALIGNdel(b, "BATrevorder");
-	BATorder(b);
+	if (BATordered(b)) {
+	  /* ignore the void case here as well */
+	  b->tseqbase = oid_nil;
+	} else {
+	  /* NOTE: a GDK_revorder property would be handy;
+	     now, an already reverse ordered BAT is first going to be ordered,
+	     and then reverse ordered once more! */
+	  BATorder(b);
+	}
         xx = BUNsize(b);
         buf = (char*) GDKmalloc(xx);
         for(p=BUNlast(b)-xx, q=BUNfirst(b); p > q; p -=xx, q+=xx) {
@@ -1252,7 +1254,7 @@ memory advice for sequental access (sequential inserts).
 @- hash partitioning
 @c
 #define BUNhash(bx,hx,tx)\
-	i = HASHprobe(&h,tx);if ((r = BUNfnd(bx, &i)) != NULL)\
+	i = HASHprobe(&h,tx)%n; if ((r = BUNfnd(bx, &i)) != NULL)\
 		BUNfastins(BBPcache(*(bat*) BUNtloc(bx,r)), hx, tx);
 
 BAT *BAThashsplit(BAT *b, int n, int unary) {
@@ -1267,7 +1269,8 @@ BAT *BAThashsplit(BAT *b, int n, int unary) {
 	if (n <= 1) {
 	    BUNins(metabat, &i, &bn->batCacheid);
 	} else {
-            h.mask = n;
+	    for (i=2; i<n; i*=2);
+            h.mask = i-1;
             h.type = BATttype(b);
 	    cnt = BATMARGIN*BATbuncount(b)/n; 
 	    for (i = 0; i < n; i++) {
@@ -1450,12 +1453,11 @@ BATloopFast(b, r, s, xx) {
             BAT **bats = (BAT**) GDKmalloc(n*sizeof(BAT*));
 	    for(yy=0; yy<n; yy++) {
 		bats[yy] = part_bat(bn,BAThtype(bn),bn->ttype,sizes[yy],TRUE);
-		if (bf == NULL) {
+		if (bats[yy] == NULL) {
 			BBPreclaim(metabat);
 			return NULL;
 		}
 		BUNins(metabat, seps[yy], &bats[yy]->batCacheid);
-		GDKfree(seps[yy]);
 	    }
             switch(tpe = ATOMstorage(b->ttype)) {
             case TYPE_chr:  @:rangesplit(simple,loc,chr)@
@@ -1473,6 +1475,8 @@ BATloopFast(b, r, s, xx) {
 	    }
             GDKfree(bats);
 	}
+	for(yy=0; yy<(n-1); yy++)
+		GDKfree(seps[yy]);
         GDKfree(seps);
         GDKfree(sizes);
 
