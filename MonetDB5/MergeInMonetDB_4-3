@@ -9,9 +9,9 @@ SharedDirs="conf src/common src/gdk src/testing src/utils src/mapi/clients src/m
 if [ ! "$1" ] ; then
 	echo ''
 	echo 'Usage: $0 <SF-username>'
-	echo ' <SF-username>: your username at SourceFORGE.net,  '
-	echo '                or "anonymous", in case you are no '
-	echo '                registered user at SourceFORGE.net.'
+	echo ' <SF-username>: your username at SourceForge.net,'
+	echo '                or "anonymous", in case you are not a'
+	echo '                registered user at SourceForge.net.'
 	echo ''
 	exit 1
 fi
