@@ -682,12 +682,11 @@ signatures satisfying the pattern.
 }
 void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
     InstrPtr p;
-    char newcmd;
 
     p= getInstrPtr(mb,pc);
     switch(stk->cmd){
     case 'c':
-        if( (newcmd= isBreakpoint(cntxt,p)) ){
+        if( isBreakpoint(cntxt,p) ){
             mdbCommand(cntxt,mb,stk,p,pc);
         } 
         break;
@@ -799,7 +798,7 @@ void printBatInfo(stream *f, VarPtr n, ValPtr v){
         int ret;
         MALfcn fcn;
 
-        fcn = getAddress("CMDinfo",0);
+        fcn = getAddress("BKCinfo",0);
         if(fcn){
             BAT *b;
             bid = v->val.ival;

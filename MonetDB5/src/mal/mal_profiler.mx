@@ -877,7 +877,7 @@ void cachedProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     /* static struct rusage   prevUsage;*/
     static int eventcounter;
     struct tms newTms;
-	struct mallinfo infoMalloc;
+	/* struct mallinfo infoMalloc;*/
 	struct rusage   infoUsage;
     str stmt,c;
 	int evnt;
@@ -895,15 +895,14 @@ void cachedProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         delayswitch= -1;
     } 
     times(&newTms);
-    infoMalloc = MT_mallinfo();
+    /* infoMalloc = MT_mallinfo();*/
     getrusage(RUSAGE_SELF,&infoUsage);
     mal_set_lock(profileLock,"profileLock");
 	evnt= (int) BATcount(TRACE_id_ticks);
 
     /* update the Trace tables */
     if( profileCounter[PROFpc].status ){
-        str nme= ""; char buf[1024];
-        if( stk->blk) nme= functionName(getInstrPtr(stk->blk,0)); 
+        char buf[1024];
 		snprintf(buf,1024,"%s.%s[%d]", 
 			moduleName(getInstrPtr(mb,0)), functionName(getInstrPtr(mb,0)),
 			getPC(mb,pci));
