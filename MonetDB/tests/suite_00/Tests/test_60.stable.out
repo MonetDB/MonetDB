@@ -13,10 +13,10 @@ setoid(oid(20000000));
 # split and re-distribute BATs.
 # This is supported by hashsplit, rangesplit,  and groupby operations.
 
-PROC groupby(bat b, bat  rng) {
+PROC groupby(bat b, bat  rng) : bat {
  VAR r := rng.reverse().number().reverse();
  VAR l := rng.number().reverse();
- RETURN [select]([l~const b],l,r);
+ RETURN [select](l.project(b),l,r);
 }
 
 

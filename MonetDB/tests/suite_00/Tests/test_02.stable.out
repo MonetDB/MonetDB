@@ -44,7 +44,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "hsorted",			  "0"		  ]
 [ "hident",			  "h"		  ]
 [ "hdense",			  "0"		  ]
-[ "hseqbase",			  "nil"		  ]
+[ "hseqbase",			  "0@0"		  ]
 [ "hkey",			  "0"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "1"		  ]
@@ -52,7 +52,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "halignflushed",		  "20000000"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
-[ "tseqbase",			  "nil"		  ]
+[ "tseqbase",			  "0@0"		  ]
 [ "tsorted",			  "65"		  ]
 [ "tkey",			  "1"		  ]
 [ "tloc",			  "4"		  ]
@@ -64,7 +64,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "batHole",			  "0"		  ]
 [ "top",			  "9"		  ]
 [ "batStamp",			  "-167"	  ]
-[ "lastUsed",			  "3822"	  ]
+[ "lastUsed",			  "3051"	  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "175"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
@@ -146,7 +146,7 @@ print(s2);
 [ 2,	  "bello"	  ]
 [ 4,	  "dello"	  ]
 [ 5,	  "eello"	  ]
-x:= join(s,s2);
+var x:= join(s,s2);
 print(x);
 #---------------------------------#
 # BAT:		  tmp_29	  #

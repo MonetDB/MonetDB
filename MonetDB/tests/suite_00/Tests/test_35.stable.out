@@ -82,7 +82,7 @@ z.print();
 [ 4,	  4	  ]
 
 # String management
-b:= new(oid,str);
+var b:= new(oid,str);
 b.insert(oid(1),"hello");
 b.insert(oid(2),"world");
 b.insert(oid(3),"..");

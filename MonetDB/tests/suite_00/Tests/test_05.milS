@@ -60,6 +60,6 @@ var b2:= b.semijoin(b1);
 b2.print();
 
 # band join experiment
-c:= b.copy;
+var c:= b.copy;
 bandjoin(b,c,4.5,4.5).print();
 quit();

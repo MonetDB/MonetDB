@@ -16,9 +16,9 @@ b.insert("",int(nil));
 b.insert(str(nil),int(nil));
 b.print();
 
-c:= mark(b,oid(20000050));
+var c:= mark(b,oid(20000050));
 print(c);
 
-d:=number(b);
+var d:=number(b);
 print(d);
 quit();

@@ -16,9 +16,9 @@ setoid(oid(20000000));
 module("oo7");
 module("alarm");
 
-proc fill(int size) {
+proc fill(int size) : BAT[int,int] {
     var c:= new(int,int);
-    i := 1;
+    var i := 1;
     while(i < size) {
       insert(c,i,i:=i+1);
     }
@@ -450,7 +450,7 @@ d.insert(2,2);
 var z:= time();
 var e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 1 ms on 400
+subgraph in 0 ms on 400
 #~EndVariableOutput~#
 d.clear();
 d.insert(2,2);
@@ -468,7 +468,7 @@ d.insert(5,5);
 z:= time(); 
 e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 0 ms cnt 400
+subgraph in 1 ms cnt 400
 #~EndVariableOutput~#
 
 ## LARGE TEST
@@ -479,9 +479,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  200	  ]
+[ "user",	  190	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  610	  ]
+[ "system",	  550	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 d.clear();
@@ -499,7 +499,7 @@ z:= time();
 e:=d.subgraph(clo); 
 printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 0 ms cnt 400
+subgraph in 1 ms cnt 400
 #~EndVariableOutput~#
 d.clear();
 ##d.insert(2,2);
@@ -519,9 +519,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  200	  ]
+[ "user",	  190	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  610	  ]
+[ "system",	  550	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 quit();

@@ -191,7 +191,7 @@ b2.print();
 [ 1.20000005,	  15.6000004	  ]
 
 # band join experiment
-c:= b.copy;
+var c:= b.copy;
 bandjoin(b,c,4.5,4.5).print();
 #---------------------------------#
 # h		tmp_33		  # name

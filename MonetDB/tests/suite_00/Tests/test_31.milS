@@ -3,9 +3,9 @@ setoid(oid(20000000));
 module("oo7");
 module("alarm");
 
-proc fill(int size) {
+proc fill(int size) : BAT[int,int] {
     var c:= new(int,int);
-    i := 1;
+    var i := 1;
     while(i < size) {
       insert(c,i,i:=i+1);
     }

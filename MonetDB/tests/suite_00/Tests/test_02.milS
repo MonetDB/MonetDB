@@ -17,6 +17,6 @@ var sn:= select(s,1,5);
 print(sn);
 var s2:= semijoin(s.reverse(),sn.reverse());
 print(s2);
-x:= join(s,s2);
+var x:= join(s,s2);
 print(x);
 quit();

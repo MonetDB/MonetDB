@@ -45,7 +45,7 @@ b.print();
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
 
-c:= mark(b,oid(20000050));
+var c:= mark(b,oid(20000050));
 print(c);
 #---------------------------------#
 # BAT:		  tmp_23	  #
@@ -64,7 +64,7 @@ print(c);
 [ "",		  20000060@0	  ]
 [ nil,		  20000061@0	  ]
 
-d:=number(b);
+var d:=number(b);
 print(d);
 #-------------------------#
 # BAT:		  tmp_25  #
