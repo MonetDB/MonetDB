@@ -2897,7 +2897,6 @@ def main(argv) :
 
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:
-        	print "removing " + (os.path.join(env['GDK_DBFARM'],TSTPREF));
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'],TSTPREF))
             except:
                 ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
