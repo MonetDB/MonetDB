@@ -26,26 +26,25 @@ static struct msql_types {
 	int concise_type;
 } msql_types[] = {
 	{"bigint", SQL_BIGINT},
+	{"blob", SQL_BINARY},
 	{"boolean", SQL_BIT},
-	{"character", SQL_CHAR},
+	{"char", SQL_CHAR},
+	{"clob", SQL_CHAR},
 	{"date", SQL_TYPE_DATE},
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
-	{"float", SQL_FLOAT},
 	{"int", SQL_INTEGER},
-	{"mediumint", SQL_INTEGER},
 	{"month_interval", SQL_INTERVAL_MONTH},
+	{"oid", SQL_GUID},
+	{"real", SQL_REAL},
 	{"sec_interval", SQL_INTERVAL_SECOND},
 	{"smallint", SQL_SMALLINT},
+	{"table", 0},
 	{"time", SQL_TYPE_TIME},
 	{"timestamp", SQL_TYPE_TIMESTAMP},
-	{"tinyint", SQL_TINYINT},
+/* 	{"tinyint", SQL_TINYINT}, */
+/* 	{"ubyte", SQL_TINYINT}, */
 	{"varchar", SQL_VARCHAR},
-	{"blob", SQL_BINARY},
-	{"datetime", SQL_TYPE_TIMESTAMP},
-	{"oid", SQL_GUID},
-	{"table", 0},
-	{"ubyte", SQL_TINYINT},
 	{0, 0},			/* sentinel */
 };
 

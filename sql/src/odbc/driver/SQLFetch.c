@@ -532,7 +532,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			parsemonthinterval(&nval, &ival);
 		break;
 	case SQL_DOUBLE:
-	case SQL_FLOAT:
+	case SQL_REAL:
 		if (!parsedouble(data, &fval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
@@ -666,7 +666,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		}
 		case SQL_DOUBLE:
-		case SQL_FLOAT: {
+		case SQL_REAL: {
 			int i;
 			data = (char *) ptr;
 			for (i = 0; i < 18; i++) {
@@ -849,7 +849,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-		case SQL_FLOAT:
+		case SQL_REAL:
 		case SQL_DOUBLE:
 		case SQL_BIT:
 		case SQL_TYPE_DATE:
@@ -877,7 +877,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				return SQL_ERROR;
 			}
 			/* fall through */
-		case SQL_FLOAT:
+		case SQL_REAL:
 		case SQL_DOUBLE:
 			if (fval < 0 || fval >= 2) {
 				/* Numeric value out of range */
@@ -967,7 +967,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		switch (sql_type) {
 		case SQL_CHAR:
 		case SQL_DOUBLE:
-		case SQL_FLOAT:
+		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!parseint(data, &nval)) {
 				/* Invalid character value for cast
@@ -1065,7 +1065,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		switch (sql_type) {
 		case SQL_CHAR:
 		case SQL_DOUBLE:
-		case SQL_FLOAT:
+		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!parseint(data, &nval)) {
 				/* Invalid character value for cast
@@ -1126,7 +1126,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		switch (sql_type) {
 		case SQL_CHAR:
 		case SQL_DOUBLE:
-		case SQL_FLOAT:
+		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!(i = parseint(data, &nval))) {
 				/* Invalid character value for cast
@@ -1186,7 +1186,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			}
 			break;
 		case SQL_DOUBLE:
-		case SQL_FLOAT:
+		case SQL_REAL:
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:

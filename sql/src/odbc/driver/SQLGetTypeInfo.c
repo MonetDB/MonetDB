@@ -343,7 +343,7 @@ static struct types {
 	{
 		"float",	/* type_name */
 		SQL_FLOAT,	/* data_type */
-		FLT_MANT_DIG,	/* column_size */
+		DBL_MANT_DIG,	/* column_size */
 		NULL,		/* literal_prefix */
 		NULL,		/* literal_suffix */
 		NULL,		/* create_params */
