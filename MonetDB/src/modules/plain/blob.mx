@@ -335,7 +335,7 @@ int blob_fromstr(char* instr,int* l,blob** val)
       } else {
 	break;
       }
-      s++;
+      s++; /* skip space */
       
       result->data[i] = res;
    }
