@@ -74,8 +74,8 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 @= joinbat
 {       int _estimate = 0;
         @:joinestimate(@1, @2, _estimate)@
-        bn = BATnew(BAThtype(l), BATttype(r), _estimate);
         ESTIDEBUG THRprintf(GDKout, "%s.joinbat: estimated resultsize: %d\n",@3,_estimate);
+        bn = BATnew(BAThtype(l), BATttype(r), _estimate);
         if (bn == NULL) {
                 return bn;
         }
@@ -340,9 +340,9 @@ The aftermath -- property setting -- is relatively straightforward here.
         } else if (ATOMstorage(rtt) == TYPE_lng || ATOMstorage(rtt) == TYPE_dbl) {
                 @:@1fetchjoin(@2,@3,@4,tloc,lng,SIMPLE)@
         } else if (r->tvarsized) {
-                @:@1fetchjoin(@2,@3,@4,tvar,rtt,ATOM)@
+                @:@1fetchjoin(@2,@3,@4,tvar,bn->ttype,ATOM)@
         } else {
-                @:@1fetchjoin(@2,@3,@4,tloc,rtt,ATOM)@
+                @:@1fetchjoin(@2,@3,@4,tloc,bn->ttype,ATOM)@
         }
 @c
 @= fetchjoin_switch_lht
@@ -356,9 +356,9 @@ The aftermath -- property setting -- is relatively straightforward here.
         } else if (ATOMstorage(lht) == TYPE_lng || ATOMstorage(lht) == TYPE_dbl) {
                 @:fetchjoin_switch_rtt(@1,hloc,lng,SIMPLE)@
         } else if (l->hvarsized) {
-                @:fetchjoin_switch_rtt(@1,hvar,lht,ATOM)@
+                @:fetchjoin_switch_rtt(@1,hvar,bn->htype,ATOM)@
         } else {
-                @:fetchjoin_switch_rtt(@1,hloc,lht,ATOM)@
+                @:fetchjoin_switch_rtt(@1,hloc,bn->htype,ATOM)@
         }
 @c
 @= densevoidfetchjoin
@@ -451,11 +451,14 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                 oid l_lo = *(oid*) BUNtail(l, BUNfirst(l));
                 oid l_hi = *(oid*) BUNtail(l, BUNlast(l)-BUNsize(l));
 	        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATtordered(l)&1\n");
+		ALGODEBUG THRprintf(GDKout, "r_lo=%u, r_hi=%u, l_lo=%u, l_hi=%u.\n", r_lo, r_hi, l_lo, l_hi);
                 if (r_lo > l_lo || r_hi < l_hi) {
+			ALGODEBUG THRprintf(GDKout, "shrinking!\n");
 	        	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
                         l = BATselect(l, &r_lo, &r_hi); /* sorted, so it will be a slice */
                 }
         }
+	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: 1\n");
         base = BUNindex(r, BUNfirst(r));
         offset = base - r->hseqbase;
         end = base + BATcount(r);
@@ -466,7 +469,9 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
         @:joinestimate(JOIN_EQ, BATfetchjoin(l,r), estimate)@
 @c
 
+	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: 2\n");
         if (!BAThvoid(l)) {
+		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l)\n");
                 /* default case: no void column to propagate */
                 lht = l->htype;
                 rtt = r->ttype;
@@ -493,6 +498,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                 /* propagation of void columns in the result */
 		int nondense = 0;
                 int tpe = r->ttype;
+		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
                 if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(&r->theap)) {
                         tpe = TYPE_int; /* insert double-eliminated strings as ints */
                 }
@@ -927,8 +933,8 @@ instead of l, and semijoin using binary search in r.
 	if (bn == NULL) {
 		return bn; 
 	}
-	BATkey(bn, BAThkey(l));
-	BATkey(BATmirror(bn), BATtkey(l));
+	BATkey(bn, BAThkey(@1));
+	BATkey(BATmirror(bn), BATtkey(@1));
 	bn->hsorted = @2;
 	bn->tsorted = @3;
 
