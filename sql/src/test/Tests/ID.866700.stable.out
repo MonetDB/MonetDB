@@ -12,12 +12,8 @@ stdout of test 'ID.866700` in directory 'src/test` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
-Over..
 
-# 14:29:44 >  
-# 14:29:44 >  Mtimeout -timeout 60 MapiClient -u monetdb -P monetdb "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=41441 < ID.866700.milC
-# 14:29:44 >  
+Over..
 
 #-------------------------------------------------------------------------------------------------#
 # name	htype	ttype	count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
