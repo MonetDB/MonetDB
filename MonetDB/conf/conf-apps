@@ -1,3 +1,0 @@
-CC='cc' CXX=CC configure --disable-static --with-readline=/opt/gnu
-#configure --disable-static --with-readline=/opt/gnu
-

@@ -1,6 +1,0 @@
-stderr of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
-
-#> Mtest:	other Arjen_01_noPropCheck
-#> Mtest:	Mtimeout -timeout 1200 ./Arjen_01_noPropCheck Arjen_01_noPropCheck
-#> Mlog:	Mtimeout -timeout 600 Mserver -yaccsilent
-#> Mlog:	Mtimeout -timeout 600 Mserver -yaccsilent -db tests_from_Twente_Bugs Arjen_01.milM

@@ -1,7 +1,0 @@
-This directory contains scripts to initialize databases and part of
-the Monet documentation tree.
-
-In particular, the following files should be adjusted according to
-the local circumstances.
-	wwwmake.mil : to take care of the WWW directory where the
-		entire tree is to be generated.

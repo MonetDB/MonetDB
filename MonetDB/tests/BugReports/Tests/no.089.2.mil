@@ -1,3 +1,0 @@
-module(url);
-Server.print;
-quit;

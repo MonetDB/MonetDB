@@ -1,3 +1,0 @@
-CC='cc -64' CXX='CC -64' configure --disable-static --with-readline=/ufs/monet
-#CC='cc -n32' CXX='CC -n32' configure --disable-static --with-readline=/ufs/monet
-#configure --disable-static --with-readline=/ufs/monet

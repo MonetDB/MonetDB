@@ -1,9 +1,0 @@
-
-INCLUDES = top_builddir/src/gdk
-
-YFLAGS = -d
-
-bin_mal = {
-	SOURCES = Mal.mx  mal_parser.mx
-	LIBS = ../gdk/libbat $(THREAD_LIBS) $(MALLOC_LIBS)
-}

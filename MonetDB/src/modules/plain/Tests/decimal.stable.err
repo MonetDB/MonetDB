@@ -1,5 +1,0 @@
-stderr of test 'decimal` in directory 'src/modules/plain` itself:
-
-#> Mtest:	other decimal
-#> Mtest:	Mtimeout -timeout 1200 ./decimal decimal
-#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_plain decimal.mil

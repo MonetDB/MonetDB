@@ -1,8 +1,0 @@
-#!/bin/sh
-
-NAME="$1"
-PRELUDE="$2"
-
-Mlog -x $MSERVER -db $TSTDB         $NAME.1.mil
-Mlog -x $MSERVER -db $TSTDB         $NAME.2.mil
-

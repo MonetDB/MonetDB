@@ -1,4 +1,0 @@
-stderr of test '00_Mserver` in directory 'tests/Availability` itself:
-
-#> Mtest:	milS 00_Mserver milS -prelude 00_Mserver.prelude
-#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_Availability -single -prelude 00_Mserver.prelude 00_Mserver.milS

@@ -1,5 +1,0 @@
-stderr of test 'str` in directory 'src/modules/plain` itself:
-
-#> Mtest:	other str
-#> Mtest:	Mtimeout -timeout 600 ./str str
-#> Mlog:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db modules_plain str.mil

@@ -1,6 +1,0 @@
-
-SUBDIRS = src conf doc scripts tests
-
-EXTRA_DIST = rules.mk bootstrap deps lady.gif
-
-EXTRA_HEADERS = config.h

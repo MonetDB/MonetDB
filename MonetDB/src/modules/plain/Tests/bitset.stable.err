@@ -1,5 +1,0 @@
-stderr of test 'bitset` in directory 'src/modules/plain` itself:
-
-#> Mtest:	other bitset
-#> Mtest:	Mtimeout -timeout 1200 ./bitset bitset
-#> Mlog:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db modules_plain bitset.mil
