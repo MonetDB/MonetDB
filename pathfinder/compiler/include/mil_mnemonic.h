@@ -64,8 +64,11 @@
 /** shortcut for MIL variable `unused' */
 #define unused() PFmil_unused ()
 
-/** assignment statements */
+/** assignment statement, combined with variable declaration */
 #define assgn(a,b) PFmil_assgn ((a),(b))
+
+/** assignment statement */
+#define reassgn(a,b) PFmil_reassgn ((a),(b))
 
 /** construct new BAT */
 #define new(a,b) PFmil_new ((a),(b))
@@ -97,8 +100,14 @@
 /** set access restrictions to a BAT */
 #define access(a,b) PFmil_access((a), (b))
 
+/** cross() operator */
+#define cross(a,b) PFmil_cross((a), (b))
+
 /** join() operator */
 #define join(a,b) PFmil_join((a), (b))
+
+/** leftjoin() operator */
+#define leftjoin(a,b) PFmil_leftjoin((a), (b))
 
 /** reverse() operator */
 #define reverse(a) PFmil_reverse(a)
@@ -108,6 +117,9 @@
 
 /** kunique() operator */
 #define kunique(a) PFmil_kunique(a)
+
+/** kunion() operator */
+#define kunion(a,b) PFmil_kunion((a),(b))
 
 /** copy() operator */
 #define copy(a) PFmil_copy(a)

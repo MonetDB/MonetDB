@@ -299,7 +299,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
 
         case aop_cast:
             PFarray_printf (dot, "%s (%s,%s)", a_id[n->kind],
-                            n->sem.cast.att, PFty_str (n->sem.cast.ty));
+                            n->sem.cast.att, atomtype[n->sem.cast.ty]);
             break;
 
         case aop_num_add:

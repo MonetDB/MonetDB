@@ -170,6 +170,13 @@ PROC serialize (str prefix,
                 bit has_node_part, bit has_dec_part, bit has_dbl_part,
                 bit has_bln_part) : void :=
 {
+    if (not (has_nat_part) and not (has_int_part) and not (has_str_part)
+        and not (has_node_part) and not (has_dec_part) and not (has_dbl_part)
+        and not (has_bln_part)) {
+        print ("<empty result>");
+        return;
+    }
+
     var pos_oid := varval (prefix + "_pos_nat");
     var values := new (void, BAT);
 
@@ -185,7 +192,7 @@ PROC serialize (str prefix,
     pos_oid := pos_oid.reverse.sort.reverse;
 
     pos_oid@batloop {
-        curr_oid := $h;
+        var curr_oid := $h;
 
         values@batloop {
             $t.reverse.select (curr_oid).reverse@batloop {

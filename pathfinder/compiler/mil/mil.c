@@ -210,8 +210,8 @@ PFmil_type (PFmil_type_t t)
 }
 
 /**
- * Construct a MIL variable assignment (Assign result of expression
- * @a e to variable @a v).
+ * Construct a combined variable declaration and its assignment.
+ * (Declare variable @a v and assign result of @a e to it.)
  *
  * @param v The variable in the assignment. Must be of kind #m_var.
  * @param e Expression to assign to @a v.
@@ -223,6 +223,22 @@ PFmil_assgn (const PFmil_t *v, const PFmil_t *e)
     assert (v->kind == m_var);
 
     return wire2 (m_assgn, v, e);
+}
+
+/**
+ * Construct a MIL variable assignment (Assign result of expression
+ * @a e to variable @a v).
+ *
+ * @param v The variable in the assignment. Must be of kind #m_var.
+ * @param e Expression to assign to @a v.
+ */
+PFmil_t *
+PFmil_reassgn (const PFmil_t *v, const PFmil_t *e)
+{
+    /* left hand side of an assignment must be a variable */
+    assert (v->kind == m_var);
+
+    return wire2 (m_reassgn, v, e);
 }
 
 /** MIL new() statement */
@@ -339,12 +355,30 @@ PFmil_access (const PFmil_t *bat, PFmil_access_t restriction)
 }
 
 /**
+ * Monet cross product operator
+ */
+PFmil_t *
+PFmil_cross (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_cross, a, b);
+}
+
+/**
  * Monet join operator
  */
 PFmil_t *
 PFmil_join (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_join, a, b);
+}
+
+/**
+ * Monet join operator
+ */
+PFmil_t *
+PFmil_leftjoin (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_leftjoin, a, b);
 }
 
 /**
@@ -372,6 +406,15 @@ PFmil_t *
 PFmil_kunique (const PFmil_t *a)
 {
     return wire1 (m_kunique, a);
+}
+
+/**
+ * Monet kunion operator
+ */
+PFmil_t *
+PFmil_kunion (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_kunion, a, b);
 }
 
 /**

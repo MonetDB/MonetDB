@@ -33,7 +33,9 @@ enum PFmil_kind_t {
 
     , m_seq          /**< Sequence of two MIL statements */
 
-    , m_assgn        /**< MIL assignment statement (`:=') */
+    , m_assgn        /**< assignment statement + declaration (`var ... :=') */
+    , m_reassgn      /**< assignment statement alone (`:=') */
+
     , m_new          /**< MIL new() operator (creates new BATs) */
     , m_seqbase      /**< MIL seqbase() function */
     , m_insert       /**< MIL insert() function to insert single BUNs */
@@ -44,11 +46,16 @@ enum PFmil_kind_t {
     , m_mark         /**< MIL mark() function */
     , m_mark_grp     /**< MIL mark_grp() function */
     , m_access       /**< change access restrictions to a BAT */
+
+    , m_cross        /**< MIL join operator */
     , m_join         /**< MIL join operator */
+    , m_leftjoin     /**< MIL leftjoin operator */
+
     , m_reverse      /**< MIL reverse operator, swap head/tail */
     , m_mirror       /**< MIL mirror() operator, mirror head into tail */
     , m_copy         /**< MIL copy, returns physical copy of a BAT */
     , m_kunique      /**< MIL kunique() operator, make BAT unique in head */
+    , m_kunion       /**< MIL kunion() operator */
 
     , m_sort         /**< MIL sort function */
     , m_ctrefine     /**< MIL ctrefine function */
@@ -164,8 +171,14 @@ PFmil_t * PFmil_nil (void);
 /** MIL new() statement */
 PFmil_t * PFmil_new (const PFmil_t *, const PFmil_t *);
 
-/** assignment statement: assign expression e to variable v */
+/**
+ * Assignment statement including declaration:
+ * Declare variable v and assign expression e to it.
+ */
 PFmil_t * PFmil_assgn (const PFmil_t *v, const PFmil_t *e);
+
+/** assignment statement: assign expression e to variable v */
+PFmil_t * PFmil_reassgn (const PFmil_t *v, const PFmil_t *e);
 
 /** MIL seqbase() function */
 PFmil_t * PFmil_seqbase (const PFmil_t *, const PFmil_t *);
@@ -191,8 +204,14 @@ PFmil_t * PFmil_mark_grp (const PFmil_t *, const PFmil_t *);
 /** Set access restrictions for a BAT */
 PFmil_t * PFmil_access (const PFmil_t *, PFmil_access_t);
 
+/** MIL cross() operator */
+PFmil_t * PFmil_cross (const PFmil_t *, const PFmil_t *);
+
 /** MIL join() operator */
 PFmil_t * PFmil_join (const PFmil_t *, const PFmil_t *);
+
+/** MIL leftjoin() operator ensures ordering by left operand */
+PFmil_t * PFmil_leftjoin (const PFmil_t *, const PFmil_t *);
 
 /** MIL reverse() function, swap head/tail */
 PFmil_t * PFmil_reverse (const PFmil_t *);
@@ -202,6 +221,9 @@ PFmil_t * PFmil_mirror (const PFmil_t *);
 
 /** MIL kunique() function, make BAT unique in head */
 PFmil_t * PFmil_kunique (const PFmil_t *);
+
+/** MIL kunion() function */
+PFmil_t * PFmil_kunion (const PFmil_t *, const PFmil_t *);
 
 /** MIL copy operator, returns physical copy of a BAT */
 PFmil_t * PFmil_copy (const PFmil_t *);

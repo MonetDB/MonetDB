@@ -52,6 +52,7 @@ node  lit_tbl      /* literal table */
       num_subtract /* arithmetic minus operator */
       num_multiply /* arithmetic times operator */
       num_divide   /* arithmetic divide operator */
+      cast         /* cast algebra data types */
       ;
 
 
@@ -92,6 +93,50 @@ AlgExpr:  num_add (AlgExpr);
 AlgExpr:  num_subtract (AlgExpr);
 AlgExpr:  num_multiply (AlgExpr);
 AlgExpr:  num_divide (AlgExpr);
+AlgExpr:  cast (AlgExpr);
+
+AlgExpr:  cross (AlgExpr, lit_tbl)
+    {
+        /*
+         * The cross product with one operand being a literal table
+         * with just one tuple is particularly easy: it means just
+         * adding one or more columns to the table. This rule normalizes
+         * this situation and puts the one-tuple literal table to the
+         * left, so we will only have to catch it in that order when
+         * generating MIL code.
+         *
+         * (But only do it if the left operand is not a literal table
+         * with exactly one tuple. Otherwise we'd end up with an
+         * infinite loop.)
+         */
+        if (($1$->kind != aop_lit_tbl || $1$->sem.lit_tbl.count != 1)
+            && $2$->sem.lit_tbl.count == 1)
+            REWRITE;
+        else
+            ABORT;
+    }
+    =
+    {
+        return cross ($2$, $1$);
+    }
+    ;
+AlgExpr:  cast (AlgExpr)
+    {
+        /*
+         * If an algebra expression already has the requested
+         * type, remove the cast.
+         */
+        int i;
+        for (i = 0; i < $1$->schema.count; i++)
+            if (!strcmp ($$->sem.cast.att, $1$->schema.items[i].name)) {
+                if ($$->sem.cast.ty == $1$->schema.items[i].type)
+                    REWRITE;
+                else
+                    ABORT;
+            }
+    }
+    =
+    { return $1$;};
 
 AlgExpr:  disjunion (EmptyExpr, AlgExpr)
     { REWRITE; }
@@ -140,5 +185,6 @@ EmptyExpr: num_subtract (EmptyExpr);
 EmptyExpr: num_multiply (EmptyExpr);
 EmptyExpr: num_divide (EmptyExpr);
 
+EmptyExpr: cast (EmptyExpr);
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

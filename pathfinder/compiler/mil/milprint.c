@@ -10,7 +10,8 @@
    statements       : statements statements                    <m_seq>
                     | statement ';'                            <otherwise>
 
-   statement        : Variable ':=' expression                 <m_assgn>
+   statement        : 'var' Variable ':=' expression           <m_assgn>
+                    | Variable ':=' expression                 <m_reassgn>
                     | expr '.insert (' expr ',' expr ')'       <m_insert>
                     | expr '.insert (' expr ')'                <m_binsert>
                     | expr '.access (' restriction ')'         <m_access>
@@ -24,7 +25,10 @@
                     | expression '.project (' expression ')'   <m_project>
                     | expression '.mark (' expression ')'      <m_mark>
                     | expression '.mark_grp (' expression ')'  <m_mark_grp>
+                    | expression '.cross (' expression ')'     <m_cross>
                     | expression '.join (' expression ')'      <m_join>
+                    | expression '.leftjoin (' expression ')'  <m_leftjoin>
+                    | expression '.kunion (' expression ')'    <m_kunion>
                     | expression '.kunique'                    <m_kunique>
                     | expression '.reverse'                    <m_reverse>
                     | expression '.mirror'                     <m_mirror>
@@ -89,31 +93,34 @@
 
 static char *ID[] = {
 
-      [m_new]        "new"
-    , [m_seqbase]    "seqbase"
-    , [m_order]      "order"
-    , [m_insert]     "insert"
-    , [m_binsert]    "insert"
-    , [m_project]    "project"
-    , [m_mark]       "mark"
-    , [m_mark_grp]   "mark_grp"
-    , [m_access]     "access"
-    , [m_join]       "join"
-    , [m_reverse]    "reverse"
-    , [m_mirror]     "mirror"
-    , [m_copy]       "copy"
-    , [m_kunique]    "kunique"
+      [m_new]      = "new"
+    , [m_seqbase]  = "seqbase"
+    , [m_order]    = "order"
+    , [m_insert]   = "insert"
+    , [m_binsert]  = "insert"
+    , [m_project]  = "project"
+    , [m_mark]     = "mark"
+    , [m_mark_grp] = "mark_grp"
+    , [m_access]   = "access"
+    , [m_cross]    = "cross"
+    , [m_join]     = "join"
+    , [m_leftjoin] = "leftjoin"
+    , [m_reverse]  = "reverse"
+    , [m_mirror]   = "mirror"
+    , [m_copy]     = "copy"
+    , [m_kunique]  = "kunique"
+    , [m_kunion]   = "kunion"
 
-    , [m_sort]       "sort"
-    , [m_ctrefine]   "CTrefine"
+    , [m_sort]     = "sort"
+    , [m_ctrefine] = "CTrefine"
 
-    , [m_add]        "+"
-    , [m_madd]       "[+]"
-    , [m_msub]       "[-]"
-    , [m_mmult]      "[*]"
-    , [m_mdiv]       "[/]"
+    , [m_add]      = "+"
+    , [m_madd]     = "[+]"
+    , [m_msub]     = "[-]"
+    , [m_mmult]    = "[*]"
+    , [m_mdiv]     = "[/]"
 
-    , [m_max]        "max"
+    , [m_max]      = "max"
 
 };
 
@@ -182,8 +189,12 @@ print_statement (PFmil_t * n)
 {
     switch (n->kind) {
 
-        /* statement : variable ':=' expression */
+        /* statement : 'var' variable ':=' expression
+         *           | variable ':=' expression           */
         case m_assgn:
+            milprintf ("var ");
+            /* fall through */
+        case m_reassgn:
             print_variable (n->child[0]);
             milprintf (" := ");
             print_expression (n->child[1]);
@@ -273,10 +284,16 @@ print_expression (PFmil_t * n)
         case m_mark:
         /* expression : expression '.mark_grp (' expression ')' */
         case m_mark_grp:
+        /* expression : expression '.cross (' expression ')' */
+        case m_cross:
         /* expression : expression '.join (' expression ')' */
         case m_join:
+        /* expression : expression '.leftjoin (' expression ')' */
+        case m_leftjoin:
         /* expression : expression '.CTrefine (' expression ')' */
         case m_ctrefine:
+        /* expression : expression '.kunion (' expression ')' */
+        case m_kunion:
             print_expression (n->child[0]);
             milprintf (".%s (", ID[n->kind]);
             print_expression (n->child[1]);

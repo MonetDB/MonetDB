@@ -62,6 +62,7 @@ static int TWIG_ID[] = {
     , [aop_num_subtract] = num_subtract /**< arithmetic plus operator */
     , [aop_num_multiply] = num_multiply /**< arithmetic plus operator */
     , [aop_num_divide]   = num_divide   /**< arithmetic plus operator */
+    , [aop_cast]         = cast         /**< algebra cast operator */
 };
 
 /** twig: setup twig */
@@ -81,6 +82,7 @@ static int TWIG_ID[] = {
 #undef num_subtract
 #undef num_multiply
 #undef num_divide
+#undef cast
 
 /* ----------------------- End of twig setup -------------------- */
 
@@ -343,9 +345,9 @@ deallocate (PFalg_op_t *n, int count)
         for (i = 0; i < n->schema.count; i++)
             for (t = 1; t; t <<= 1)
                 if (t & n->schema.items[i].type)
-                    execute (assgn (var (bat (n->bat_prefix,
-                                              n->schema.items[i].name,
-                                              t)),
+                    execute (reassgn (var (bat (n->bat_prefix,
+                                                n->schema.items[i].name,
+                                                t)),
                              unused ()));
 
         /* clear the bat_prefix field, so we won't

@@ -169,6 +169,7 @@ static int TWIG_ID[] = {
 #undef empty_ 
 
 #include "algebra_mnemonic.h"
+#include "subtyping.h"
 
 
 /* Constructor for environment entry */

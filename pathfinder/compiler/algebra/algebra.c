@@ -401,7 +401,7 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
 
 #ifndef NDEBUG
     { /* sanity checks. Do arguments match schema? */
-        int att, tup;
+        int tup;
         for (tup = 0; tup < count; tup++) {
             if (ret->sem.lit_tbl.tuples[tup].count != ret->schema.count)
                 PFoops (OOPS_FATAL,
@@ -779,12 +779,12 @@ PFalg_op_t * PFalg_difference (PFalg_op_t *n1, PFalg_op_t *n2)
  * relational algebra.
  */
 PFalg_op_t *
-PFalg_rownum (PFalg_op_t *n, PFalg_att_t a,
-              PFalg_attlist_t s, PFalg_att_t p)
+PFalg_rownum (PFalg_op_t *n, PFalg_att_t a, PFalg_attlist_t s, PFalg_att_t p)
 {
     PFalg_op_t *ret = alg_op_wire1 (aop_rownum, n);
     int i;
     int j;
+    PFalg_simple_type_t t;
 
     /* copy parameters into semantic content of return node */
     ret->sem.rownum.attname = strcpy (PFmalloc (strlen (a)+1), a);
@@ -831,6 +831,13 @@ PFalg_rownum (PFalg_op_t *n, PFalg_att_t a,
             PFoops (OOPS_FATAL,
                     "could not find sort attribute `%s'",
                     ret->sem.rownum.sortby.atts[i]);
+
+        for (t = 1; t; t <<= 1)
+            if (t == n->schema.items[j].type)
+                break;
+        if (t == 0)
+            PFoops (OOPS_FATAL,
+                    "sort criterion for rownum must be monomorphic");
 
         if (ret->sem.rownum.part
             && !strcmp (ret->sem.rownum.sortby.atts[i], ret->sem.rownum.part))
@@ -1001,7 +1008,7 @@ PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
  * must be casted to type @a ty.
  */
 PFalg_op_t *
-PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFty_t ty)
+PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFalg_simple_type_t ty)
 {
     PFalg_op_t  *ret;
     int          i;
@@ -1021,7 +1028,8 @@ PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFty_t ty)
     /* create new type cast node */
     ret = alg_op_wire1 (aop_cast, n);
 
-    /* insert semantic value (type-tested attribute and its type)
+    /*
+     * insert semantic value (type-tested attribute and its type)
      * into the result
      */
     ret->sem.cast.att = att;
@@ -1033,9 +1041,14 @@ PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFty_t ty)
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* copy schema from 'n' argument */
+    /* Copy schema from argument, changing type of `att' appropriately. */
     for (i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
+        if (!strcmp (n->schema.items[i].name, att)) {
+            ret->schema.items[i].name = n->schema.items[i].name;
+            ret->schema.items[i].type = ty;
+        }
+        else
+            ret->schema.items[i] = n->schema.items[i];
 
     return ret;
 }

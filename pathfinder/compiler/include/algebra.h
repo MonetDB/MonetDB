@@ -264,7 +264,7 @@ union PFalg_op_sem_t {
     /* semantic content for type cast operator */
     struct {
 	PFalg_att_t     att;     /**< name of casted attribute */
-	PFty_t          ty;      /**< type to cast to */
+        PFalg_simple_type_t ty;  /**< algebra type to cast to */
     } cast;
 
     /* semantic content for arithmetic operators */
@@ -473,8 +473,7 @@ PFalg_op_t * PFalg_type (PFalg_op_t *n, PFalg_att_t att,
 /**
  * Constructor for the type cast of a column.
  */
-PFalg_op_t * PFalg_cast (PFalg_op_t *n, PFalg_att_t att,
-			 PFty_t ty);
+PFalg_op_t * PFalg_cast (PFalg_op_t *, PFalg_att_t, PFalg_simple_type_t);
 
 /** Constructor for arithmetic addition operators. */
 PFalg_op_t * PFalg_add (PFalg_op_t *n, PFalg_att_t att1,

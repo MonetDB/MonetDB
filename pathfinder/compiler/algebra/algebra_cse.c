@@ -628,7 +628,7 @@ find_cast (PFalg_op_t *new)
              */
             if (new->child[0] != old->child[0]
                 || strcmp (new->sem.cast.att, old->sem.cast.att)
-                || !PFty_eq (new->sem.cast.ty, old->sem.cast.ty))
+                || new->sem.cast.ty != old->sem.cast.ty)
                 continue;
             
             /*

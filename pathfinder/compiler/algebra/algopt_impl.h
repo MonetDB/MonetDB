@@ -59,6 +59,8 @@ static int TWIG_ID[] = {
     , [aop_num_subtract] = num_subtract /**< arithmetic plus operator */
     , [aop_num_multiply] = num_multiply /**< arithmetic plus operator */
     , [aop_num_divide]   = num_divide   /**< arithmetic plus operator */
+    
+    , [aop_cast]         = cast         /**< algebra cast operator */
 };
 
 /** twig: setup twig */
@@ -78,10 +80,12 @@ static int TWIG_ID[] = {
 #undef num_subtract
 #undef num_multiply
 #undef num_divide
+#undef cast
 
 /* ----------------------- End of twig setup -------------------- */
 
 #include "algebra_mnemonic.h"
+#include "string.h"
 
 /**
  * Rewrite/optimize algebra expression tree. Returns modified tree.

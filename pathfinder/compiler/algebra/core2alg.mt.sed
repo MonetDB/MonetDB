@@ -231,8 +231,7 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
         env = PFarray (sizeof (PFalg_env_t));
 
         /* insert $v into NEW environment */
-        *((PFalg_env_t *) PFarray_add (env)) =
-            enventry ($1$->sem.var, var);
+        *((PFalg_env_t *) PFarray_add (env)) = enventry ($1$->sem.var, var);
 
         /* save old loop operator */
         old_loop = loop;
@@ -248,7 +247,8 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
                  proj ("outer", "iter"),
                  proj ("inner", "inner"));
 
-        /* handle optional variable ($p); we need map operator
+        /*
+         * handle optional variable ($p); we need map operator
          * for this purpose
          * note that the rownum () routine is used to create
          * the 'item' column of $p's operator; since this
@@ -258,12 +258,20 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
         if ($2$->sem.var) {
             opt_var = cross (lit_tbl (attlist ("pos"),
                                       tuple (lit_nat (1))),
+                             cast (project (rownum (map, "item",
+                                                    sortby ("inner"),
+                                                    "outer"),
+                                            proj ("iter", "inner"),
+                                            proj ("item", "item")),
+                                   "item", aat_int));
+            /*
                              project (cast_item (rownum (map,
                                                          "item",
                                                          sortby ("inner"),
                                                          "outer")),
                               proj ("iter", "inner"),
                               proj ("item", "item")));
+                              */
 
             /* insert $p into NEW environment */
             *((PFalg_env_t *) PFarray_add (env)) =
@@ -471,7 +479,26 @@ TypeswitchExpr:  typesw (CoreExpr,
 SequenceTypeCast: seqcast (seqtype, CoreExpr)
     =
     {
-        [[ $$ ]] = cast ([[ $2$ ]], "item", $1$->sem.type);
+        if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_integer ())))
+            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_int);
+        else if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_decimal ())))
+            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_dec);
+        else if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_double ())))
+            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_dbl);
+        else if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_boolean ())))
+            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_bln);
+        else if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_string ())))
+            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_str);
+        else {
+            PFinfo (OOPS_WARNING,
+                    "Don't know how to cast to `%s'.",
+                    PFty_str ($1$->sem.type));
+            PFinfo (OOPS_WARNING,
+                    "Please fix the seqcast rule in core2alg.mt.sed.");
+            PFinfo (OOPS_WARNING,
+                    "For now, I will just leave the operand unchanged.");
+            [[ $$ ]] = [[ $2$ ]];
+        }
     }
     ;
 
