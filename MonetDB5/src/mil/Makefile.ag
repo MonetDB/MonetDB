@@ -17,8 +17,9 @@ INCLUDES = $(MONETDB_INCS) ../mal
 #		mil_commands.mx mil_scenario.mx
 #}
 lib_mil_scenario = {
-	NAME = _mil_scenario
 	DIR = pkglibdir
+	SEP = _
+	NAME = mil_scenario
 	SOURCES = mil_parser.mx mil_scenario.mx mil_conformance.mx  \
 	mil_commands.mx
 

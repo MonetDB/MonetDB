@@ -130,8 +130,8 @@ into an exception and aborts the scenario.
 
 typedef struct SCENARIO{
     str     name;
-    str initScenario;   MALfcn initScenarioCmd;
-    str exitScenario;   MALfcn exitScenarioCmd;
+    str initSystem;   MALfcn initSystemCmd;
+    str exitSystem;   MALfcn exitSystemCmd;
     str initClient; MALfcn initClientCmd;
     str exitClient; MALfcn exitClientCmd;
     str reader;     MALfcn readerCmd;   void *readerState;
@@ -234,17 +234,17 @@ call once the routine default scenario for each client first.
 @c
 str initScenario(Client c, Scenario s){
     str msg =0;
-    if(s->initScenario && s->initScenarioCmd==0){
+    if(s->initSystem && s->initSystemCmd==0){
         /* prepare for conclicts */
         mal_set_lock(mal_contextLock,"Scenario");
-        s->initScenarioCmd= (MALfcn)getAddress( s->initScenario);
-        if(s->initScenarioCmd) {
-            msg = (*s->initScenarioCmd)(c);
+        s->initSystemCmd= (MALfcn)getAddress( s->initSystem);
+        if(s->initSystemCmd) {
+            msg = (*s->initSystemCmd)(c);
         }
         mal_unset_lock(mal_contextLock,"Scenario");
     }
     if( msg) return msg;
-    @:initScen(s,exitScenario)@
+    @:initScen(s,exitSystem)@
     @:initScen(s,initClient)@
     @:initScen(s,exitClient)@
     @:initScen(s,reader)@
@@ -270,8 +270,8 @@ defined.
 @c
 void showScenario(stream *f, Scenario scen){
     stream_printf(f,"[ \"%s\",", scen->name);
-    @:scenarioCommand(initScenario)@
-    @:scenarioCommand(exitScenario)@
+    @:scenarioCommand(initSystem)@
+    @:scenarioCommand(exitSystem)@
     @:scenarioCommand(initClient)@
     @:scenarioCommand(exitClient)@
     @:scenarioCommand(parser)@
@@ -411,8 +411,8 @@ void exitScenario(Client c){
     Scenario scen= scenarioRec;
     if( c->scenario==0) return;
     scen = fndScenario(c->scenario);
-    if( scen->exitScenarioCmd)
-        (*scen->exitScenarioCmd)(c);
+    if( scen->exitSystemCmd)
+        (*scen->exitSystemCmd)(c);
 }
 @}
 @-
