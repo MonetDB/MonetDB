@@ -199,13 +199,6 @@ int CMDsleep(int *secs){
         	return GDK_FAIL;
         } else {
 		MT_sleep_ms(*secs*1000);
-/*
-		MT_Sema s = CLKalarm(*secs+time(0), 0);
-		(void)CLKprelude();
-                MT_down_sema(s, "CLKsleep"); */ /* block on this */
-/*
-		MT_destroy_sema(s);
-*/
         }
         return GDK_SUCCEED;
 }
@@ -282,3 +275,17 @@ int CMDtime(int *retval){
 	return GDK_SUCCEED;
 }
 @}
+
+@mil
+PROC test_alarm() : void := {
+	sleep(15);
+	alarm(15, "print(\"alarm went off\");" );
+	printf("#~BeginVariableOutput~#\n");
+	timers().print;
+	time.print;
+	usec.print;
+	epoch.print;
+	ctime.print;
+	printf("#~EndVariableOutput~#\n");
+	sleep(15); # wait for alarm
+}
