@@ -615,8 +615,8 @@ Module: "mel"
 
 Module: "mmath"
 
-[ 20 ]
-[ 20 ]
+[ 23 ]
+[ 23 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help																																											  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -629,8 +629,11 @@ Module: "mmath"
 [ "cosh",	  "COMMAND:   ",  "cosh(dbl) : dbl",		  "The cosh() function  returns the hyperbolic cosine of x,\nwhich is defined mathematically as (exp(x) + exp(-x)) / 2."																												  ]
 [ "exp",	  "COMMAND:   ",  "exp(dbl) : dbl",		  "The exp(x) function returns the value of e\n(the base of natural logarithms) raised to the power of x."																														  ]
 [ "fabs",	  "COMMAND:   ",  "fabs(dbl) : dbl",		  "The fabs(x) function  returns  the  absolute value of the \nfloating-point number x."																																  ]
+[ "finite",	  "COMMAND:   ",  "finite(dbl) : bit",		  "The finite(x) function returns true if x is neither infinite nor a 'not-a-number' (NaN) value, and false otherwise."																													  ]
 [ "floor",	  "COMMAND:   ",  "floor(dbl) : dbl",		  "The floor(x) function rounds x downwards to the nearest integer."																																			  ]
 [ "fmod",	  "COMMAND:   ",  "fmod(dbl, dbl) : dbl",	  "The fmod(x,y) function computes the remainder of dividing x by y.\nThe return value is x - n * y, where n is the quotient of x / y,\nrounded towards zero to an integer."																						  ]
+[ "isinf",	  "COMMAND:   ",  "isinf(dbl) : int",		  "The isinf(x) function returns -1 if x represents negative infinity, 1 if x represents positive infinity, and 0 otherwise."																												  ]
+[ "isnan",	  "COMMAND:   ",  "isnan(dbl) : bit",		  "The isnan(x) function returns true if x is 'not-a-number' (NaN), and false otherwise."																																  ]
 [ "log",	  "COMMAND:   ",  "log(dbl) : dbl",		  "The log(x) function returns the natural logarithm of x."																																				  ]
 [ "log10",	  "COMMAND:   ",  "log10(dbl) : dbl",		  "The log10(x) function returns the base-10 logarithm of x."																																				  ]
 [ "pow",	  "COMMAND:   ",  "pow(dbl, dbl) : dbl",	  "The pow(x,y) function  returns the value of x raised to the power of y."																																		  ]
