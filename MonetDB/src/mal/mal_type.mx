@@ -104,6 +104,7 @@ mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
 mal_export int	idcmp(str n, str m);
 mal_export str	newTmpName(int i);
+mal_export int isIdentifier(str s);
 #endif /* MAL_TYPE_H*/
 @-
 At any point we should be able to construct an ascii representation of
@@ -267,4 +268,11 @@ str newTmpName(int i){
 	char buf[PATHLENGTH];
 	snprintf(buf,PATHLENGTH,"%c%d",TMPMARKER,i);
 	return GDKstrdup(buf);
+}
+int isIdentifier(str s)
+{
+	if( ! isalpha(*s) ) return -1;
+	for( ;s && *s; s++)
+	if( ! isalnum(*s) && *s !='_') return -1;
+	return 0;
 }

@@ -42,7 +42,7 @@ A box can be extended with a new object using the function
 deposit(nme:str,v:any). The basic implementation silently
 accepts any new definition of the box.
 
-A copy of an object can be obtained using the
+A local copy of an object can be obtained using the
 pattern 'take(nme:str):any', where 'nme' denotes the object
 of interest. The type of the receiving variable should
 match the one known for the object.
@@ -166,7 +166,7 @@ i.e. the directory <GDKdirStr>/boxes
 #include "mal_stack.h"
 #include "mal_instruction.h"
 
-/*#define DEBUG_MAL_BOX*/
+/*#define DEBUG_MAL_BOX */
 
 typedef struct BOX{        
         MT_Lock lock;     /* provide exclusive access */
@@ -186,6 +186,7 @@ mal_export void loadBox(str nme);
 
 mal_export int depositBox(Box box, str name, ValPtr val);
 mal_export int takeBox(Box box, str name, ValPtr val);
+mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
 mal_export str getName(Box box, lng i);
@@ -335,8 +336,37 @@ int takeBox(Box box, str name, ValPtr val){
 		return GDK_FAIL;
 	}
 	VALcopy(val, &box->val->stk[i]);
+	if( val->vtype == TYPE_bat){
+		BAT *b;
+		b= (BAT*) BBPgetdesc(val->val.bval);
+		if( b ) BBPfix(b->batCacheid);
+		else return GDK_FAIL;
+	}
 #ifdef DEBUG_MAL_BOX
 	printf("takeBox:'%s' from '%s'\n",name,box->name);
+#endif
+	return GDK_SUCCEED;
+}
+
+@-
+The function bindBAT relates a logical BAT name with a physical
+representation. The bind commands are typically found in the boxes,
+which provide users a partial view over the BAT storage area.
+That is, all bats bound can be taken out of the box upon need.
+A variable can be rebound to another BAT at any time.
+@c
+int bindBAT(Box box, str name, str location){
+	int i;
+	ValPtr v;
+	i= findVariable(box->sym, name);
+	if( i<0) i= newVariable(box->sym,GDKstrdup(name),TYPE_any);
+	v= &box->val->stk[i];
+	v->val.br.id = BBPindex(location);
+	if( v->val.br.id == 0) return GDK_FAIL;
+	v->vtype= TYPE_bat;
+#ifdef DEBUG_MAL_BOX
+	printf("bindBox:'%s' to '%s' [%d] in '%s'\n",
+		name,location,v->val.br.id,box->name);
 #endif
 	return GDK_SUCCEED;
 }
@@ -404,11 +434,11 @@ The storage is explicitly in terms of MAL operations.
 For BAT objects, the corresponding object is made persistent.
 Note that the user can not control these operations directly.
 @c
-str boxFileName(Box box, str extension){
+str boxFileName(Box box, str backup){
 	char boxfile[PATHLENGTH];
-	if(extension)
-		snprintf(boxfile,PATHLENGTH,"%s/boxes/%s.%s",
-			GDKdirStr,box->name,extension);
+	if(backup)
+		snprintf(boxfile,PATHLENGTH,"%s/boxes/%s/%s.box",
+			GDKdirStr,backup,box->name);
 	else	snprintf(boxfile,PATHLENGTH,"%s/boxes/%s.box",
 			GDKdirStr,box->name);
 	return GDKstrdup(boxfile);
@@ -420,17 +450,30 @@ int saveBox(Box box,int flag){
 	str boxfile, boxfilebak;
 
 	boxfile = boxFileName(box,0);
-	boxfilebak = boxFileName(box,"bak");
+	boxfilebak = boxFileName(box,"backup");
 
 #ifdef DEBUG_MAL_BOX
-	printf("saveBox:reference %s\n",boxfile);
+	printf("saveBox:%s\n",boxfile);
 #endif
 	if( access(boxfile,R_OK) == 0){
-		if( unlink(boxfilebak) || link(boxfile,boxfilebak)) {
-			GDKerror("saveBox:can not make backup\n");
+		if(access(boxfilebak,R_OK)==0  && unlink(boxfilebak) ) {
+#ifdef DEBUG_MAL_BOX
+			printf("saveBox:can not unlink %s\n",boxfilebak);
+#endif
+			GDKerror("saveBox:can not unlink backup\n");
+			GDKfree(boxfile); GDKfree(boxfilebak);
+			return 1;
+		} 
+
+		if( link(boxfile,boxfilebak)) {
+#ifdef DEBUG_MAL_BOX
+			printf("saveBox:%s \n-> %s\n",boxfile,boxfilebak);
+#endif
+			GDKerror("saveBox:can not link backup\n");
 			GDKfree(boxfile); GDKfree(boxfilebak);
 			return 1;
 		}
+		unlink(boxfile);
 	} 
 
 	f= fopen(boxfile,"w");
@@ -439,22 +482,24 @@ int saveBox(Box box,int flag){
 	printf("saveBox:created %s\n",boxfile);
 #endif
 		chmod(boxfile, (S_IRUSR | S_IWUSR));
+		/*
 		if( flag) fprintf(f,"%s.open();\n",box->name);
 		else fprintf(f,"box.open(\"%s\");\n",box->name);
+		*/
 		for(i=0;i<box->sym->vtop; i++){
-		if( flag) 
-			fprintf(f,"%s.deposit(\"%s\",", 
-				box->name, getVarName(box->sym,i));
-		else fprintf(f,"box.deposit(\"%s\",\"%s\",", 
-				box->name, getVarName(box->sym,i));
 			v= &box->val->stk[i];
-			if( isaBatType(getVarType(box->sym,i) )){
-				fprintf(f,"%s", BBPname(v->val.br.id));
-			} else {
+			if( v->vtype == TYPE_bat ) {
+			BAT *b= (BAT*)BBPgetdesc(v->val.br.id);
+			if( b && b->batPersistence & PERSISTENT)
+			fprintf(f,"%s.bind(\"%s\",\"%s\");\n", 
+				box->name, getVarName(box->sym,i),
+				BBPname(v->val.br.id));
+			} else{
+				fprintf(f,"%s.deposit(\"%s\",", 
+					box->name, getVarName(box->sym,i));
 				VALprint(f,v);
-				fprintf(f,":%s", malTypeName(v->vtype));
+				fprintf(f,":%s);\n", malTypeName(v->vtype));
 			}
-			fprintf(f,");\n");
 		}
 	} else {
 		GDKerror("saveBox:can not create box file\n");
@@ -494,3 +539,4 @@ void printSomeBox(FILE *fd, int k)
 		GDKerror("printSomeBox:illegal space id\n");
 	} else printBox(fd,boxes[k]);
 }
+

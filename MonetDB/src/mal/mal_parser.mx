@@ -294,6 +294,13 @@ void skipToEnd(Client cntxt){
 	while ((c = *cntxt->nxt) && c != ';') nextChar(cntxt); 
 	if( c== ';') cntxt->nxt++;
 }
+void parseEndStmt(Client cntxt){
+	char c;
+	skipBlanc(cntxt);
+	if( *cntxt->nxt != ';')
+		parseError(cntxt,"';' expected\n");
+	skipToEnd(cntxt);
+}
 @-
 The lexical analyser for numeric constants is a little more complex.
 Aside from getting its length, we need an indication of its type.
@@ -987,6 +994,8 @@ for bat[T1,T2] this is a little tricky to parse.
 	} else { 
 		idx= 0;
 		parseError(cntxt,"<factor> expected\n");
+		pushInstruction(curBlk,curInstr);
+		return;
 	}
 @-
 The assignment expression is the most complex term recognized.
@@ -1018,7 +1027,8 @@ void parseAssign(Client cntxt, int kind)
 			i= idLength(cntxt);
 			if( i==0) {
 				parseError(cntxt,"<identifier> expected\n"); 
-				goto part3;
+				pushInstruction(curBlk,curInstr);
+				return;
 			}
 			arg= idCopy(cntxt,i);
 			type = malAnyType;
@@ -1041,7 +1051,8 @@ void parseAssign(Client cntxt, int kind)
 		i= idLength(cntxt);
 		if( i==0) {
 			parseError(cntxt,"<identifier> expected\n"); 
-			goto part3;
+			pushInstruction(curBlk,curInstr);
+			return;
 		}
 		arg= idCopy(cntxt,i);
 @-
@@ -1061,7 +1072,8 @@ Every target variable may be typed immediately.
 	} else {
 		if( curInstr->raise){
 			parseError(cntxt,"':=' expected\n");
-			goto part3;
+			pushInstruction(curBlk,curInstr);
+			return;
 		}
 		if( curInstr->barrier) {
 			curInstr->argv[z]= newVariable(curBlk,arg,malAnyType);
@@ -1073,7 +1085,8 @@ Every target variable may be typed immediately.
 		    currChar(cntxt) != '(' ){
 				GDKfree(arg);
 				parseError(cntxt,"'.' or '(' expected\n");
-				goto part3;
+				pushInstruction(curBlk,curInstr);
+				return;
 		}
 		goto idseen;
 	}
@@ -1122,6 +1135,11 @@ Get arguments for a call, assume a single result.
 @c
 	@:term(part2)@
 	if( idLength(cntxt)==0 && operatorLength(cntxt)==0) {
+		if( currChar(cntxt)== '('){
+			nextChar(cntxt);
+			skipBlanc2(cntxt);
+			@:parseArguments@
+		} else
 		parseError(cntxt,"<identifier> or <unary operator> expected\n");
 		goto part3;
 	}
@@ -1163,15 +1181,21 @@ opseen:
 				curInstr->fcnname = idCopy(cntxt,i);
 			else {
 				parseError(cntxt,"<functionname> expected\n");
-				goto part3;
+				pushInstruction(curBlk,curInstr);
+				return;
 			}
 			if(nextChar(cntxt) != '(')
-			{ parseError(cntxt,"'(' expected\n");goto part3;}
+			{ 	parseError(cntxt,"'(' expected\n");
+				pushInstruction(curBlk,curInstr);
+				return;
+			}
 getarguments:
 			skipBlanc2(cntxt);
 		} else if(currChar(cntxt) != '(')
 		{
-			parseError(cntxt,"'(' expected\n");goto part3;
+			parseError(cntxt,"'(' expected\n");
+			pushInstruction(curBlk,curInstr);
+			return;
 		} else { nextChar(cntxt);
 			curInstr->fcnname = arg;
 		}
@@ -1196,6 +1220,8 @@ part2b:
 		} 
 		@:term(part3)@
 		parseError(cntxt,"<term> expected\n");
+		pushInstruction(curBlk,curInstr);
+		return;
 	} else  {
 		skipBlanc2(cntxt);
 		if( *cntxt->nxt != ';' && *cntxt->nxt!='#')

@@ -89,7 +89,8 @@ FILE *malOpenSource(str fname){
 }
 
 void malImportDirect(str fname){
-	malImport(getClient(),fname,0);
+	Client c= getClient();
+	malImport(c,fname,0);
 }
 void malImport(Client c, str fname,int listing){
 	FILE *fd;
@@ -140,22 +141,21 @@ resolving addresses.
 	resetClientPrg(c);
 	expandMalBlk(c->curprg->def,lines);
 	c->nxt= c->input;
-	parseMal(c);
+	if( parseMal(c)) {
+		/* catch errors*/
+		showErrors(c);
+		goto endImport;
+	}
+	/* empty files should be skipped as well */
+	if( c->curprg->def->stop == 1) goto endImport;
+
 	/* printf("%s:statements %d",fname, c->curprg->def->stop);
 	printf(" variables %d\n",c->curprg->def->vtop); */
-	closeClientPrg(c);
+	closeClientPrg(c,TRUE);
+	/* locate the main procedure for the imported file */
 	prg = findSymbolInScope(c->nspace,"main");
-	showErrors(c);
 	if( prg && listing) printFunction(c->fdout,prg->def);
 	
-	/* reset the input buffer */
-	GDKfree(c->input);
-	c->listing = oldlisting;
-	c->input= oldinput;
-	c->limit= oldlimit;
-	c->nxt = oldnxt;
-	c->nspace= oldscope;
-
 	if( prg){
 		str msg;
 		msg= (str) runMAL(c,prg->def,0,0);
@@ -164,8 +164,26 @@ resolving addresses.
 			GDKfree(msg);
 			showErrors(c);
 		}
+		resetMalBlk(prg->def,0);
 	} 
+endImport:
+	/* restore the context */
+	GDKfree(c->input);
+	c->listing = oldlisting;
+	c->input= oldinput;
+	c->limit= oldlimit;
+	c->nxt = oldnxt;
+	c->nspace= oldscope;
+	if(oldprg) stop();
+	if( c->curprg && oldprg) {
+		if(c->curprg->def->stop >1 )
+		printf("assertion violation, no instructions expected %d\n",
+			c->curprg->def->stop);
+		freeSymbol(c->curprg);
+	}
+	c->curprg = oldprg;
 }
+stop(){}
 @+ File and input processing
 A recurring situation is to execute a stream of simple MAL instructions
 stored on a file or comes from standard input. We parse one MAL 
@@ -188,9 +206,10 @@ void processInput(Client c,MalStkPtr glb)
 	MalBlkPtr mb;
 
 	mb= c->curprg->def;
-	while(c->mode > FINISHING && readClient(c)){
+	while(c->mode > FINISHING && readClient(c,c->prompt)){
 		c->nxt= c->input;
-		if( parseMal(c,0)) {
+		if( parseMal(c)) {
+			showErrors(c);
 			resetMalBlk(c->curprg->def,glb);
 			continue;
 		}
@@ -208,7 +227,8 @@ void processInput(Client c,MalStkPtr glb)
 			}
 		} 
 		showErrors(c);
-		resetMalBlk(c->curprg->def,glb);
+		resetMalBlk(mb,glb);
+		glb->cmd=0;
 	}
 }
 @-
@@ -234,7 +254,7 @@ void runScript(Client c, str fname, int listing)
 	c->fdin = fd;
 	c->listing = listing;
 	c->blkmode = 0;
-	c->prompt = "";
+	c->prompt = "";	/* do not produce visible prompts */
 	resetClientPrg(c);
 
 	newStack(glb,MAXGLOBALS);

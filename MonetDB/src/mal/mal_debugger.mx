@@ -34,6 +34,7 @@ html
 #include "mal_client.h"
 
 #define MAXBREAKS 32
+#define MDBmarker "#mdb "
 
 typedef struct {
 	MalBlkPtr 	brkBlock[MAXBREAKS];
@@ -43,15 +44,15 @@ typedef struct {
 	int		brkTop;
 } mdbStateRecord, *mdbState;
 
-mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, char cmd);
+mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name,char cmd);
 mal_export void mdbShowBreakpoints(Client cntxt);
-mal_export char mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd);
-mal_export char mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd);
+mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void mdbHelp(FILE *f);
 mal_export void printStackElm(FILE *f, MalBlkPtr mb,VarPtr n, ValPtr v,int index);
 mal_export void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s);
 
-mal_export void mdbToggle(Client c, int v);
+mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
@@ -67,10 +68,16 @@ char isBreakpoint(Client cntxt, InstrPtr p){
 
 	/* printf("test breakpoint %d\n", p->argv[0]);*/
 	for(i=0;i<mdbTable[cntxt->idx].brkTop;i++)
-	if( p->argv[0]== mdbTable[cntxt->idx].brkVar[i])
+	if( p->argv[0]== mdbTable[cntxt->idx].brkVar[i] ||
+	    (p->fcnname && 
+	     strcmp(p->fcnname, mdbTable[cntxt->idx].brkVarName[i])==0))
 		return mdbTable[cntxt->idx].brkCmd[i];
 	return 0;
 }
+@-
+Break points can be set on assignment to a specific variable
+or specific function name.
+@c
 void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
 	int i,j;
 	char *c=name;
@@ -81,23 +88,19 @@ void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
 	*c = 0;
 	for(i=0;i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		for(j=0;j<p->retc;j++)
-		if( strcmp(getVarName(mb,p->argv[j]),name) == 0){
-			mdbSetBreakpoint(cntxt,mb,p,cmd);
+		if( (p->fcnname && strcmp(p->fcnname,name) == 0) ||
+		    strcmp(getVarName(mb,0),name) == 0){
+			mdbSetBreakpoint(cntxt,mb,p,name,cmd);
 			return;
 		}
 	}
 }
 
-@-
-Break points can be set on assignment to a specific variable
-or they can be set to a specific module.function call.[todo]
-@c
-void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, char cmd)
+void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name, char cmd)
 {	mdbState mdb= mdbTable + cntxt->idx;
 	mdb->brkBlock[mdb->brkTop] = mb;
 	mdb->brkVar[mdb->brkTop] = p->argv[0];
-	mdb->brkVarName[mdb->brkTop] = getVarName(mb,0);
+	mdb->brkVarName[mdb->brkTop] = name;
 	mdb->brkCmd[mdb->brkTop] =cmd;
 	if( mdb->brkTop+1< MAXBREAKS) 
 		mdb->brkTop++;
@@ -120,6 +123,19 @@ void mdbClrBreakpoint(Client cntxt, InstrPtr p)
 		mdb->brkCmd[j]= mdb->brkCmd[i];
 		mdb->brkBlock[j]= mdb->brkBlock[i];
 		if( mdb->brkVar[i] != p->argv[0]) j++;
+	}
+	mdb->brkTop = j;
+}
+void mdbClrBreakpointName(Client cntxt, str name)
+{	int i,j=0;
+	mdbState mdb= mdbTable + cntxt->idx;
+
+	for(i=0;i<mdb->brkTop;i++){
+		mdb->brkVar[j]= mdb->brkVar[i];
+		mdb->brkVarName[j]= mdb->brkVarName[i];
+		mdb->brkCmd[j]= mdb->brkCmd[i];
+		mdb->brkBlock[j]= mdb->brkBlock[i];
+		if( strcmp(mdb->brkVarName[i],name) ) j++;
 	}
 	mdb->brkTop = j;
 }
@@ -150,11 +166,16 @@ The following routines are available for inclusion also in MAL programs.
 Either one set is sufficient to produce the required action.
 
 @c
-int MDBmdb(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	Client c =getClient();
-	c->itrace = ( c->itrace)?0:1; 
-	fprintf(c->fdout,"#Monet Debugger %s\n", (c->itrace?"on":"off"));
-	mdbStep(c, mb, stk, p,'n');
+#define MDBstatus(X) fprintf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
+
+int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client cntxt= getClient();
+	int b;
+	if( p->argc >1){
+		b= *(int *) getArgReference(stk,p,1);
+	} else b= stk->cmd; 
+	if( stk->cmd == 0) stk->cmd= b?'n':0;
+	MDBstatus(b);
 	return GDK_SUCCEED;
 }
 
@@ -163,39 +184,42 @@ The debugger structure is inherited from GDB.
 The routine mdbCommand is called with p=0 after finishing a mal- function call
 and before continuing at the next level of invocation.
 The commands are self-explanatory.
+
+The prompt string sent to the user indicates the debugger mode.
 @c
-char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
+void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	char *b;
 	FILE *out = cntxt->fdout;
 
 	if( p != NULL){
-		fprintf(out,"mdb> ");
+		fprintf(out,MDBmarker);
 		printInstruction(out,mb,p);
 	}
-	if( cntxt->itrace==1) cntxt->itrace=2;
 	do{
-	fprintf(out,"mdb"); 
-	if( readClient(cntxt)==0){
-		cntxt->itrace= 0;
-		return 'q';
+	if( readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001"))==0){
+		fprintf(stdout,"Client %s disappeared\n",cntxt->user);
+		return;
 	}
 	b= cntxt->input;
 	skipBlanc(b);
 	switch(*b){
-	case 0: return cmd;
+	case 0: return;
 	case 'c': if( strncmp("call",b,4)==0){
 			GDKerror("call instruction not yet implemented\n");
+			break;
 		 }
-		 return 'c';
+		 stk->cmd= 'c';
+		 return;
 	case 'h': mdbHelp(out); break;
 	case 'q': 
-		cntxt->itrace= 0;
-		fprintf(cntxt->fdout,"#Monet Debugger %s\n", 
-				(cntxt->itrace?"on":"off"));
-		return 'q';/* return from this debugger */
+		stk->cmd= 'q';/* return from this debugger */
+		MDBstatus(0);
+		return;
+	case 'f': /* finish */
 	case 'n': /* next */
-	case 's': /* next */
-		return *b;
+	case 's': /* step */
+		stk->cmd= *b;
+		return;
 	case 'm': /* display a module */
 		skipWord(b);
 		skipBlanc(b);
@@ -207,6 +231,7 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 				cntxt->timer = GDKusec();
 			else cntxt->timer = 0;
 		}
+		break;
 	case 'b':
 		skipWord(b);
 		if(*b==0) { mdbShowBreakpoints(cntxt); continue;}
@@ -214,20 +239,20 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 			/* set breakpoints by name */
 			mdbSetBreakpointName(cntxt,mb,b,*b);
 		} else {
-			mdbSetBreakpoint(cntxt,mb,p,*b);
+			mdbSetBreakpoint(cntxt,mb,p,getArgName(mb,p,0),*b);
 		}
 		continue;
 	case 'd':
 		/* get rid of break point */
 		if( strncmp(b,"do",2)==0 && stk->down!= NULL){
-			fprintf(out,"go down the stack\n");
+			fprintf(out,"%sgo down the stack\n",MDBmarker);
 			stk= stk->down;
 			mb = stk->blk;
 			break;
 		}
 		skipWord(b);
 		if(*b && !isspace(*b)){
-			fprintf(out,"breakpoint (not yet) deleted\n");
+			mdbClrBreakpointName(cntxt,b);
 		} else {
 			mdbClrBreakpoint(cntxt,p);
 		}
@@ -242,7 +267,7 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 		/* search the symbol */
 		i = findVariable(mb,b);
 		if( i<0){
-			fprintf(out,"Symbol not found\n");
+			fprintf(out,"%sSymbol not found\n",MDBmarker);
 		} else{
 			printStackElm(out,mb,getVar(mb,i),stk->stk+i,i);
 		}
@@ -250,7 +275,7 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 	}
 	case 'u':
 		if( stk->up == NULL) break;
-		fprintf(out,"go up the stack\n");
+		fprintf(out,"%sgo up the stack\n",MDBmarker);
 		stk= stk->up;
 		mb = stk->blk;
 		printCall(cntxt,mb,stk);
@@ -263,6 +288,7 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 		MalBlkPtr mw=mb;
 		for(w=stk;w!= NULL; w=w->up){
 			mw = w->blk;
+			fprintf(out,MDBmarker);
 			printCall(cntxt,mw,w);
 		}
 		continue;
@@ -282,13 +308,13 @@ signatures satisfying the pattern.
 		mal_xlisting= *b=='L';
 		skipWord(b);
 		if( *b!= 0){
-			b[strlen(b)-1] =0;
 			modname=b;
 			fcnname= strchr(b,'.');
 			if( fcnname == NULL){
 				fsym= findScope(cntxt->nspace,modname);
 				if( fsym==0) {
-					fprintf(out,"scope not found\n");
+					fprintf(out,"%sscope not found\n",
+							MDBmarker);
 					continue;
 				}
 				for(i=0;i<MAXSCOPE;i++){
@@ -304,56 +330,47 @@ signatures satisfying the pattern.
 			fcnname ++;
 			fsym= findScope(cntxt->nspace,modname);
 			if( fsym==0) {
-				fprintf(out,"scope not found\n");
+				fprintf(out,"%sscope not found\n",MDBmarker);
 				continue;
 			}
 			/* display the overloaded symbol definition */
 			if( displayScope(out,fsym,fcnname)==0){
-				fprintf(out,"Symbol '%s.%s' not found\n",
-					modname,fcnname);
+				fprintf(out,"%sSymbol '%s.%s' not found\n",
+					MDBmarker,modname,fcnname);
 			} 
 		} else printFunction(out,mb);
 		continue;
 	}
 	case 'r': /* reset program counter */
-		if( strncmp("records",b,3)==0){
-		/* structure sizes */
-		fprintf(out,"InstrRecord %d bytes\n", sizeof(InstrRecord));
-		fprintf(out,"VarRecord   %d bytes\n", sizeof(VarRecord));
-		fprintf(out,"ValRecord   %d bytes\n", sizeof(ValRecord));
-		fprintf(out,"SymRecord   %d bytes\n", sizeof(SymRecord));
-		fprintf(out,"MalBlkRecord %d bytes\n", sizeof(MalBlkRecord));
-		break;
-		}
-		fprintf(out,"restart with current stack\n");
-		return 'r';
+		fprintf(out,"%srestart with current stack\n",MDBmarker);
+		stk->cmd= 'r';
+		return;
 	default:
-		fprintf(out,"debugger command expected\n");
+		fprintf(out,"%sdebugger command expected\n",MDBmarker);
 		mdbHelp(out);
 	}
 	} while(1);
-	return 0;
 }
-char mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,char cmd){
+void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	char newcmd;
 
-	switch(cmd){
+	switch(stk->cmd){
 	case 'c':
 		if( newcmd= isBreakpoint(cntxt,p) ){
 			/* printf("stop at line %d\n",stk->pc);*/
 			if( newcmd == 't') fprintf(cntxt->fdout,"show value nyi \n");
-			cmd= mdbCommand(cntxt,mb,stk,p,newcmd);
+			mdbCommand(cntxt,mb,stk,p);
 		} 
 		break;
 	case 's': case 'n':
 		if( cntxt->timer){
 			long n= GDKusec();
 			long l= n - cntxt->timer;
-			fprintf(cntxt->fdout,"[%-3d usec] ",l);
+			fprintf(cntxt->fdout,"%s[%-3d usec]\n",MDBmarker,l);
 		}
-		cmd= mdbCommand(cntxt,mb,stk,p,cmd);
+		mdbCommand(cntxt,mb,stk,p);
 		break;
-	case 'r': cmd = 'n';
+	case 'r': stk->cmd = 'n';
 		if( cntxt->timer){
 			long l= GDKusec() - cntxt->timer;
 			fprintf(cntxt->fdout,"[%d usec]",l);
@@ -361,8 +378,6 @@ char mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,char cmd){
 	}
 	if( cntxt->timer) cntxt->timer = GDKusec();
 	fflush(cntxt->fdout);
-	return cmd;
-
 }
 @+ Utilities
 DUmping a stack on a file is primarilly used for debugging.
@@ -374,6 +389,7 @@ Instead, it has been zeroed upon creation.
 void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
         int i = 0;
 
+	fprintf(f,MDBmarker);
         fprintf(f,"Stack pc=%d size=%d top=%d\n",s->pc,s->stksize,s->stktop);
         for( ; i<mb->vtop ; i++){
 		printStackElm(f, mb, getVar(mb,i), s->stk+i,i);
@@ -403,10 +419,10 @@ void mdbHelp(FILE *f){
 	fprintf(f,"break <var> -- break on assignment to <var>\n");
 	fprintf(f,"step -- advance to next MAL instruction\n");
 	fprintf(f,"module -- display the module [scopes] \n");
-	fprintf(f,"quit -- leaver debugger\n");
+	fprintf(f,"finish -- finish current call\n");
+	fprintf(f,"quit -- leave debugger\n");
 	fprintf(f,"list -- list current program block\n");
 	fprintf(f,"variables -- print variable bindings\n");
-	fprintf(f,"record  -- print record structure sizes\n");
 	fprintf(f,"where -- print stack trace\n");
 	fprintf(f,"print <var> -- display value of a variable\n");
 	fprintf(f,"run -- restart current procedure\n");

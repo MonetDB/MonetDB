@@ -960,6 +960,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 	int i,len=0;
 	str s,t,nme;
+	int low,high;
 
 	len = 8196;
 	s= GDKmalloc(len);
@@ -1008,7 +1009,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 		case LEAVEsymbol:
 			sprintf(t,"\tleave %s",nme); break;
 		case RETURNsymbol:
-			sprintf(t,"\treturn %s",nme); break;
+			sprintf(t,"\treturn "); break;
 		case CATCHsymbol:
 			sprintf(t,"catch\t%s",nme); break;
 		case ENDDEFsymbol:
@@ -1039,12 +1040,19 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 			sprintf(t," ?%d? ",p->token); 
 	}
 	advance(t);
+	low= p->retc; high= p->argc;
 	if( p->modname) sprintf(t,"%s.",p->modname);
 	advance(t);
-	if( p->fcnname) sprintf(t,"%s(",p->fcnname);
-	for(i=p->retc;i<p->argc;i++){
+	if( p->token == RETURNsymbol){
+		low= 0; high= p->retc;
+		if( high-low>1 ) sprintf(t,"(");
+	} else if( p->fcnname ) {
+		sprintf(t,"%s(",p->fcnname);
+	} else if( p->retc>1) sprintf(t,"(");
+
+	for(i=low;i<high;i++){
 		advance(t);
-		if( i+1<p->argc && isVARG(mb,p,i+1)) {sprintf(t,"...");break;}
+		if( i+1<high && isVARG(mb,p,i+1)) {sprintf(t,"...");break;}
 		if( getArgDefault(mb,p,i) != NULL){
 			if( getArgType(mb,p,i)== TYPE_str)
 				sprintf(t,"\"%s\"", getArgDefault(mb,p,i));
@@ -1061,10 +1069,13 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 			GDKfree(d1); GDKfree(d2);
 			advance(t);
 		}
-		if(i<p->argc-1) sprintf(t,",");
+		if(i+1<high) sprintf(t,",");
 	}
 	advance(t);
-	if(p->fcnname) sprintf(t,")");
+	if( p->token == RETURNsymbol){
+		if( high-low>1 ) sprintf(t,")");
+	} else
+	if(p->fcnname || p->retc>1 ) sprintf(t,")");
 	advance(t);
 	sprintf(t,";");
 	if( hidden){

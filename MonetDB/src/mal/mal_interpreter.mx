@@ -64,12 +64,11 @@ void showErrors(Client cntxt){
 
 str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env){
 	MalStkPtr stk= NULL;
-	int i;
+	int i,k;
 	ValPtr retval, lhs,rhs,v;
 	InstrPtr pci=0; 
 	int stop=0;
 	str ret=0;
-	char 	cmd='n';	/* debugger command */
 	ptr argv[MAXARG];
 	static MalStkPtr oldstk;	/* experiment */
 	static int oldspace;
@@ -98,7 +97,6 @@ being called.
 	/* allocate space for value stack */
 	if( mbcaller== NULL && env != NULL){
 		stk = env;
-		cmd = env->cmd;
 		if( mb != stk->blk) 
 			GDKerror("runMAL:misalignment of symbols\n");
 		pci= getInstrPtr(mb,env->pc);
@@ -106,6 +104,7 @@ being called.
 		newStack(stk,mb->vtop);
 		stk->stktop= mb->vtop; 
 		stk->blk= mb;
+		stk->cmd= cntxt->itrace?'n':0; /* set debug mode */
 		@:safeguardStack@
 	} 
 
@@ -131,7 +130,6 @@ of the return statement.
 		}
 		stk->up = env;
 		env->down = stk;
-		cmd = env->cmd;
 	} 
 @-
 An optimization is to copy all constant variables used in functions immediately
@@ -165,15 +163,20 @@ MALrestart:
 	while(stk->pc < stop ){
 		pci = getInstrPtr(mb,stk->pc);
 		@:exceptionTest@
-		if( cntxt->itrace  ) {
-			cmd = mdbStep(cntxt,mb,stk,pci,cmd);
-			if( cmd == 'q') goto MALevalExit;
-			if( cmd == 'r') goto MALrestart;
+		if( stk->cmd  ) {
+			mdbStep(cntxt,mb,stk,pci);
+			if( stk->cmd == 'q') goto MALevalExit;
+			if( stk->cmd == 'r') {
+				stk->cmd = 'n';
+				goto MALrestart;
+			}
 		}
 
 		@:MALinterpret@
 	}
 MALevalExit:
+	/* pass the debug mode */
+	if(env && stk->cmd!='f') env->cmd = stk->cmd; 
 	/* garbage collect and return */
 	if( env != stk ) garbageCollector(mb,stk);
 	if( stk->exception >= 0) 
@@ -222,22 +225,18 @@ elements in the value stack.
 		@:barrierControl@ break;
 	case RLRcall:
 	case PATcall:
-		stk->cmd= cmd;
 		@:patterncall@ 
-		cmd = stk->cmd;
 		stk->pc++; break;
 	case CMDcall:
 		@:commandcall@ 
 		stk->pc++; break;
 	case FCNcall:
-		stk->cmd= cmd;
 		@:functioncall@ stk->pc++; 
-		cmd = stk->cmd;
 		break;
+	case ENDsymbol:
 	case RULEsymbol:
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
-	case ENDsymbol:
 		if( pci->argv[0] == stk->exception) stk->exception = -1; 
 		stk->pc++; 
 		break;
@@ -260,7 +259,6 @@ elements in the value stack.
 				VALcopy(lhs,rhs);
 				@:BATfix(lhs)@
 			}
-			if(env) env->cmd = cmd; /* save debugger command */
 			goto MALevalExit;
 		}
 	case ENDDEFsymbol: 
@@ -274,17 +272,22 @@ elements in the value stack.
 	@:endProfile@
 
 @+ Assignment command
-The assignment statement copies values around on the stack frame.
+The assignment statement copies values around on the stack frame,
+including multiple assignments.
+
 Pushing constants/initial values onto the stack is a separate operation.
 It takes the constant value discovered at compile time and stored in the
-symbol table and moves it to the stackframe location.
+symbol table and moves it to the stackframe location. This activity
+is made part of the start-up procedure.
 @= assignStmt
 {	
-	lhs = &stk->stk[pci->argv[0]];
-	rhs = &stk->stk[pci->argv[1]];
-	garbageElement(lhs);
-	@:BATfix(rhs)@
-	VALcopy(lhs,rhs);
+	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
+		lhs = &stk->stk[pci->argv[k]];
+		rhs = &stk->stk[pci->argv[i]];
+		garbageElement(lhs);
+		@:BATfix(rhs)@
+		VALcopy(lhs,rhs);
+	}
 	if( pci->raise){
 		/* printf("raise exception %s\n", getVarName(mb,pci->argv[0])); 
 		fflush(stdout);*/
@@ -644,7 +647,10 @@ if(@1->vtype == TYPE_bat && @1->val.bval)
 		/* printf("decrement %s (%d) to %d\n",b->batId, 
 			@1->val.bval,
 			BBP_refs(b->batCacheid)); */
-	} else GDKerror("interpreter:bat '%d' disappeared\n",@1->val.bval);
+	}
+#ifdef DEBUG_MAL_INTERPRETER 
+	else GDKerror("interpreter:bat '%d' disappeared\n",@1->val.bval);
+#endif
 }
 
 @+ Garbage collection

@@ -82,15 +82,11 @@ void startupPrelude(Client c, str fnme1, str fnme2)
 
 int malStartupAdmin(int listing){
 	Client c;
-	int oldtrace;
 	c= initClient(GDKstrdup("Admin"),NULL,0);
-        oldtrace = c->itrace;    /* no debugging in startup ! */
-        c->itrace =0;
 	c->nspace= newScope(NULL, GDKstrdup("Admin"));
 	initLibraries();
 	startupPrelude(c,SRVINIT,SRVORIGIN);
 	mal_scope = c->nspace->outer;
-        c->itrace = oldtrace;
 	/* showScopeTrail(stdout,c->nspace);*/
 	return 1;
 }
@@ -213,12 +209,12 @@ void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
 	for(i=j=0; i< mb->vtop; ){
 		if(getVarName(mb,i)[0]==TMPMARKER ) {
 			freeVariable(mb,i);
-			garbageElement(&glb->stk[i]);
+			if(glb) garbageElement(&glb->stk[i]);
 			i++;
 		} else {
 			if(i!=j){
 				copyVar(mb,j,i);
-				glb->stk[j]= glb->stk[i];
+				if(glb) glb->stk[j]= glb->stk[i];
 			}
 			i++; j++;
 		}
@@ -250,8 +246,7 @@ A stack frame is initialized to keep track of global variables.
 		if( isAdministrator(c)){
 			OIDflushdelta =0;
 			TMcommit();
-			closeClient(c);
 		}
-		closeClient(c);
 	}
+	closeClient(c);
 }

@@ -260,14 +260,8 @@ build separately first, because we may encounter an error later on.
 	for(i=0; s1 >= 0 && i < p->retc; i++){
 		int itype = getArgType(mb,p,i);
 		k = isPolymorphicArgument(s->def,sig,i);
-/*
-		if( sig->polymorphic && isPolymorphicArgument(s->def,sig,i) &&
-		    updPolyType(getArgType(s->def,sig,k), itype, polytype) ) {
-			s1= -1; break;
-		}
-*/
 		if( k)	s1= getPolyType(s->def,sig,i, polytype);
-		else 	s1= getArgType(s->def,sig,i);
+		else    s1= getArgType(s->def,sig,i);
 
 		if( itype == s1 ) returntype[i] = s1;
 		else
@@ -387,7 +381,7 @@ functions. Errors are simply ignored at this point of the game,
 because they may be resolved as part of the calling sequence.
 @c
 void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level){
-	int s1= -1, i;
+	int s1= -1, i,k;
 	char buf[1024];
 	Scope m;
 @-
@@ -397,7 +391,7 @@ If we can not find the function, the type check returns unsuccesfully,
 setting the state as TYPE_UNKNOWN. In this case we should issue an error
 message to the user.
 @c
-	if(p->token == FUNCTIONsymbol || p->token==COMMANDsymbol) {
+	if( isaSignature(p) ) {
 		p->typechk = typeKind(mb,p,0);
 		return;
 	}
@@ -411,7 +405,6 @@ type checking to a later stage in the process.
 @c
 		for(i=p->retc; i<p->argc; i++)
 		if(getArgType(mb,p,i)== malAnyType) {
-			if( isaSignature(p)) break;
 			p->typechk= TYPE_UNKNOWN;
 			return;
 		}
@@ -451,41 +444,31 @@ is being called, we end up with a TYPE_DYNAMIC case.
 	}
 	if( p->typechk < level) return;
 @-
-When we arrive here the operator is either an assignment or
-procedure call without arguments and no module name.
-The language does not yet recognize (a,b):=(1,2);
+When we arrive here the operator is an assignment.
+The language should also recognize (a,b):=(1,2);
+This is achieved by propagation of the rhs types to the lhs
+variables.
 @c
-	if( p->argc == 1)
-		s1 = getDestType(mb,p);
-	else
-	if( p->argc == 2){
-		s1= getArgType(mb,p,1);
-	} 
-	/* REDO and LEAVE have precise one argument */
-	if( s1== malAnyType && p->argc - p->retc>1 ){
-		p->typechk = TYPE_UNKNOWN;
-		if( level <= TYPE_UNKNOWN){
-			snprintf(buf,1024,"unknown operator '%s'\n", 
-				p->fcnname);
+	p->typechk= TYPE_FIXED;
+	for(k=0,i= p->retc; k<p->retc && i<p->argc; i++,k++){
+		int rhs = getArgType(mb,p,i);
+		int lhs = getArgType(mb,p,k);
+
+		if( p->argv[k]<0) {printf("ASSUMPTION VIOLATION\n");abort();}
+		if( lhs == malAnyType)
+			setVarType(mb,p->argv[k],rhs);
+		else
+		if( lhs != rhs ){
+			str n1 = malTypeName(lhs);
+			str n2 = malTypeName(rhs);
+			snprintf(buf,1024,"type mismatch %s := %s\n",n1,n2);
 			showException(mb,getPC(mb,p),"MALresolve",buf);
+			GDKfree(n1); GDKfree(n2);
 			mb->errors++;
+			p->typechk= TYPE_UNKNOWN;
 			return;
 		}
 	}
-	if( getDestType(mb,p)== malAnyType){
-		if( p->argv[0]>=0) setDestType(mb,p,s1);
-		return;
-	}
-	if( getDestType(mb,p) == s1) return;
-	if( p->argc <=1) return;
-
-	{ str n1 = malTypeName(s1);
-	  str n2 = malTypeName(getDestType(mb,p));
-	  snprintf(buf,1024,"type mismatch %s := %s\n",n2,n1);
-	  showException(mb,getPC(mb,p),"MALresolve",buf);
-	  mb->errors++;
-	}
-	p->typechk= TYPE_UNKNOWN;
 }
 @-
 After the parser finishes, we have to look for semantic errors,
