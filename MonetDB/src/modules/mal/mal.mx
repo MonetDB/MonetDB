@@ -31,30 +31,6 @@ command nextElement(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep;
 command nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep; 
 command nextElement(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep; 
 
-@+ Object management
-
-BATs are always identified by their reference number in the BAT buffer pool.
-We assume that these references are 'safe', i.e. they denote the intended
-BAT. This means that front-ends should not destroy/remove temporary BATS
-without garbage collection of the references held. The alternative way
-is to call for a fresh reference to a BAT using its (hopefully) unique
-with the bind() command. A reference can be released using the
-release(), but it is up to the buffer pool to actually release the
-storage held.
-
-@mal
-command bind(typevar:any, name:str):any::1 = CMDbind
-comment "Locates the typed variable in the object space";
-
-command bind(nme:str): bat[any,any] = CMDbind
-comment "Locates the variable in the object space";
-
-command bind(typevar:bat[any::1,any::2],nme:str): bat[any::1,any::2] = CMDbind2
-comment "Locates the bat in the object space ";
-
-command release(b:bat[any,any]):void = CMDrelease
-comment "Release the BAT from the client pool";
-
 @-
 A BATloop construct uses an integer cursor to keep track of its
 position in the underlying table. To avoid side-effects, the access mode
@@ -117,16 +93,3 @@ pattern mdb():void = MDBmdb
 #include "monet.h"
 
 int batloopStep(int *ret){ return 0;}
-
-int CMDbind(int *ret, str *nme){
-        GDKerror("bind() not yet implemented\n");
-        return GDK_SUCCEED;
-}
-int CMDbind2(int *ret, str *dict, str *nme){
-        GDKerror("bind() not yet implemented\n");
-        return GDK_SUCCEED;
-}
-int CMDrelease(int *ret, str *nme){
-        GDKerror("release() not yet implemented\n");
-        return GDK_SUCCEED;
-}

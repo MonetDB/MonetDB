@@ -47,7 +47,7 @@ command reverse(b:bat[any::1,any::2]) : bat[any::2,any::1] = CMDreverse
 comment "Returns the reverse view of a BAT (head is tail and tail is head).
  BEWARE:  no copying is involved; input and output refer to the same object!";
 
-command mirror(b:bat[any::1,any]) : bat[any::1,any::1] = CMDmirror
+command mirror(b:bat[any::1,any::2]) : bat[any::2,any::1] = CMDmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 
 command convert(b:bat[any::1,any::2] ) : int = CMDconvert
@@ -80,6 +80,9 @@ command replace(b:bat[any::1, any::2], src:bat[any::1,any::2])
 				: int = CMDreplace_bat
 comment "Perform replace for all BUNs of the second BAT into the first.";
 
+command destroy(b:bat):void = CMDdestroy_bat
+comment "Schedule bat for removal upon session commit\n";
+
 command delete(b:bat[any::1, any::2], h:any::1, t:any::2) 
 				: int = CMDdelete_bun
 comment "Delete one specific BUN.";
@@ -103,7 +106,7 @@ comment "Delete from the first BAT all BUNs with a corresponding BUN in the seco
 @- BAT properties 
 Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
-RETHINK position of BatID
+
 @mal
 command capacity ( bid:int ) : int = CMDcapacity
 comment "Returns the current allocation size (in max number of elements) of a BAT.";
@@ -166,6 +169,9 @@ comment "A version of BATsize that does not require loading the BAT.";
 
 command getBATSize(b:bat[any,any]) : int = CMDbatsize
 comment "A version of BATsize that does not require loading the BAT.";
+
+command getBATrefcnt(b:bat) : int = CMDgetBATrefcnt
+comment "Utility for debugging MAL interpreter";
 
 @- BUN Access
 The BAT-loop iterator contructs take on a different flavour in MAL.
@@ -446,6 +452,7 @@ int CMDreverse(int *ret, int *bid){
 	BAT *b;
 	@:batcheck(ret,bid,b,"CMDreverse")@
 	*ret= -b->batCacheid;
+	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
@@ -459,6 +466,7 @@ int CMDmirror(int *ret, int *bid){
 		v = bc;
 	}
 	if(v) {
+		BBPfix(b->batCacheid);
 		*ret = v->batCacheid;
 		return GDK_SUCCEED;
 	}
@@ -549,6 +557,14 @@ int CMDreplace_bat(int *r, int *bid, int *sid){
 	return *r= GDK_SUCCEED;
 } 
 
+int CMDdestroy_bat(int *r, int *bid) {
+	BAT *b;
+	@:batcheck2(r,bid,b,"CMDdelete_bun")@
+	BATpropcheck(b);
+	BATpropcheck(BATmirror(b));
+	BATmode(b, TRANSIENT);
+	return *r= GDK_SUCCEED;
+} 
 int CMDdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
 	@:batcheck2(r,bid,b,"CMDdelete_bun")@
@@ -717,6 +733,12 @@ int CMDgetAccess(char *res, int *bid) {
 	case 2: *res= 'a'; break;
 	case 0: *res= 'w'; break;
 	}
+        return GDK_SUCCEED;
+}
+int CMDgetBATrefcnt(int *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDsetset")@
+	*res = BBP_refs(b->batCacheid);
         return GDK_SUCCEED;
 }
 

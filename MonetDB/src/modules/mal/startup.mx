@@ -18,6 +18,7 @@ use "kernel/startup";
 use "atoms/blob";
 use "mal/mal";
 use "mal/squeezer"; 
+use "mal/space"; 
 @-
 In practice, we have to introduce different startup for each
 client group or database.
