@@ -768,7 +768,7 @@ def am_jar(fd, var, jar, am):
     fd.write("uninstall-local-%s_jar:\n" % name)
     fd.write("all-local-%s_jar:\n" % name)
 
-    fd.write("\nendif #HAVE_JAVA\n\n")
+    fd.write("\nendif !HAVE_JAVA\n\n")
 
     am['INSTALL'].append(name+"_jar")
     am['UNINSTALL'].append(name+"_jar")
@@ -814,7 +814,7 @@ def am_java(fd, var, java, am):
     fd.write("uninstall-local-%s_class:\n" % name)
     fd.write("all-local-%s_class:\n" % name)
 
-    fd.write("\nendif #HAVE_JAVA\n\n")
+    fd.write("\nendif !HAVE_JAVA\n\n")
 
     am['INSTALL'].append(name+"_class")
     am['UNINSTALL'].append(name+"_class")
