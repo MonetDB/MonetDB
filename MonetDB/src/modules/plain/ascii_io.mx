@@ -532,9 +532,13 @@ int output_line( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_attrs, 
 	    for( i = 0; i<nr_attrs; i++){
 		if (fmt[i].adt == TYPE_str){
 			char *s = (char*)BUNtail(fmt[i].c, fmt[i].p);
-			int l = strlen(s);
 			(void)fd->write( fd, "\"", 1, 1 );
-			(void)fd->write( fd, s, 1, l );
+			if (GDK_STRNIL(s))
+				(void)fd->write( fd, "nil", 1, 3 );
+			else {
+				int l = strlen(s);
+				(void)fd->write( fd, s, 1, l );
+			}
 			(void)fd->write( fd, "\"", 1, 1 );
 		} else {
 			int l = ADT_toStr(buf, len, fmt[i].adt, 
@@ -553,9 +557,13 @@ int output_line_dense( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_a
 	for( i = 0; i<nr_attrs; i++){
 		char *p = BUNtail(fmt[i].c, fmt[i].p);
 		if (fmt[i].adt == TYPE_str){
-			int l = strlen(p);
 			(void)fd->write( fd, "\"", 1, 1 );
-			(void)fd->write( fd, p, 1, l );
+			if (GDK_STRNIL(p))
+				(void)fd->write( fd, "nil", 1, 3 );
+			else {
+				int l = strlen(p);
+				(void)fd->write( fd, p, 1, l );
+			}
 			(void)fd->write( fd, "\"", 1, 1 );
 		} else {
 			int l = ADT_toStr(buf, len, fmt[i].adt, p);
@@ -574,9 +582,13 @@ int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_
 		char *p = BUNtail(fmt[i].c, BUNptr(fmt[i].c,id+BUNindex(fmt[i].c,BUNfirst(fmt[i].c))));
 		if (fmt[i].adt == TYPE_str){
 			char *s = (char*)p;
-			int l = strlen(s);
 			(void)fd->write( fd, "\"", 1, 1 );
-			(void)fd->write( fd, s, 1, l );
+			if (GDK_STRNIL(s))
+				(void)fd->write( fd, "nil", 1, 3 );
+			else {
+				int l = strlen(s);
+				(void)fd->write( fd, s, 1, l );
+			}
 			(void)fd->write( fd, "\"", 1, 1 );
 		} else {
 			int l = ADT_toStr(buf, len, fmt[i].adt, p);
