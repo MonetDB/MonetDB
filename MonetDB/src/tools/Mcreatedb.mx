@@ -263,6 +263,7 @@ void dbargs(int argc,char **argv) {
  	int i, usr=0; 
 	char *s=0;
 	char *db=0, *monetrc=0;
+	FILE *rc = NULL;
 
 	prog = argv[0];
 	/* find tail of command name */
@@ -287,15 +288,25 @@ void dbargs(int argc,char **argv) {
 		exit(0);
         }
 	GDKenvironment(db,monetrc);
-	if(monetrc) printf("# monetrc=%s\n",monetrc);
+
+	printf("# monetrc=%s\n",GDKmonetrcStr);
+	rc = fopen(GDKmonetrcStr,"r");
+	if (!rc) {
+		fprintf(stderr,"Monet configuration file missing\n");
+		exit(-1);
+	} else
+		fclose(rc);
+
 	printf("# dbfarm=%s\n",GDKdbfarmStr);
 	printf("# dbname=%s\n",GDKdbnameStr);
-	printf("# dbdir=%s\n",GDKdirStr);
-	printf("# distr=%s\n",GDKdistrStr);
-	strcpy(dbhome,GDKdirStr);
+
 	if( GDKdirStr == NULL){
 		fprintf(stderr,"Database directory name missing\n");
 		exit(-1);
 	}
+	printf("# dbdir=%s\n",GDKdirStr);
+	strcpy(dbhome,GDKdirStr);
+
+	printf("# distr=%s\n",GDKdistrStr);
 }
 @}
