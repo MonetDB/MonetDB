@@ -210,7 +210,7 @@ Get the new information for the server socket and start listening.
 		} else if (retval) {
 			if (STREQ(cmd,"")) {
 				int i;
-				char *name = (char*) alloca(BUFSIZ), *user = name;
+				char *name = (char*) GDKmalloc(BUFSIZ), *user = name;
 				FILE *fdin = fdopen(msgsock, "r");
 				FILE *fdout = fdopen(msgsock, "w");
 				Client c;
@@ -232,12 +232,14 @@ Get the new information for the server socket and start listening.
 				c = initClient(GDKstrdup(name), GDKstrdup(monet_prompt), TRUE);
 				if (c == 0) {
 					fprintf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
+					GDKfree(name);
 					fflush(fdout);
 					(void) fclose(fdin);
 					(void) fclose(fdout);
 					close(msgsock);
 					continue;
 				}
+				GDKfree(name);
 				c->login = time(0);
 				c->listing = 0;
 				c->socket = msgsock;
