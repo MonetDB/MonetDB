@@ -919,8 +919,6 @@ def RunTest(env, TST, BusyPorts) :
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
         #SkipTest(env, TST, EXT, "as java is not in $PATH.")
-    elif SERVER == "SQL" and  not env['CATALOG_MIL']:
-        SkipTest(env, TST, EXT, "as catalog.mil is not available.")
     elif SERVER == "SQL" and  not env['SQLSERVER_MIL']:
         SkipTest(env, TST, EXT, "as sqlserver.mil is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_client'][0]:
@@ -1374,7 +1372,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
         if SERVER == "MAPI":
             Srvr = Srvr+" "+env['MAPI_MIL']
         else:
-            Srvr = Srvr+" "+env['CATALOG_MIL']
             Srvr = Srvr+" "+env['SQLSERVER_MIL']
         Srvr = Srvr+PROLOGUE
         #-background"
@@ -1947,14 +1944,6 @@ def main(argv) :
             if not os.path.isfile(mapi_mil):
                 mapi_mil = ''
         env['MAPI_MIL'] = mapi_mil
-        catalog_mil = env['SQL_PREFIX']+path("/share/sql/catalog.mil")
-        if not os.path.isfile(catalog_mil):
-            catalog_mil = env['TSTBLDBASE']+path("/src/server/catalog.mil")
-            if not os.path.isfile(catalog_mil):
-                catalog_mil = env['TSTSRCBASE']+path("/src/server/catalog.mil")
-                if not os.path.isfile(catalog_mil):
-                    catalog_mil = ''
-        env['CATALOG_MIL'] = catalog_mil
         sqlserver_mil = env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")
         if not os.path.isfile(sqlserver_mil):
             sqlserver_mil = env['TSTBLDBASE']+path("/src/server/sqlserver.mil")
@@ -1965,7 +1954,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','CATALOG_MIL','SQLSERVER_MIL'] 
+        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQLSERVER_MIL'] 
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
