@@ -34,7 +34,7 @@ Start of MIL prelude.
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  1		  ]
+[ "uchr",	  2		  ]
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -536,12 +536,12 @@ Start of MIL prelude.
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
-[ "monet_mod_dep",	  "oid",  "str",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
+[ "monet_mod_dep",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_hdl",	  "oid",  "ptr",  8,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_unicode_case",	  "int",  "int",  685,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
@@ -806,7 +806,7 @@ loaded();
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  1		  ]
+[ "uchr",	  2		  ]
 procs();
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
@@ -1321,12 +1321,12 @@ dir();
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
-[ "monet_mod_dep",	  "oid",  "str",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
+[ "monet_mod_dep",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_hdl",	  "oid",  "ptr",  8,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_unicode_case",	  "int",  "int",  685,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 ls();
 #---------------------------------------------------------------------------------------------------------#

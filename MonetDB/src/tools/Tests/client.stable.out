@@ -46,7 +46,7 @@ Start of MIL script.
 [ "streams",	  3	  ]
 [ "sys",	  3	  ]
 [ "trans",	  3	  ]
-[ "uchr",	  3		  ]
+[ "uchr",	  6		  ]
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -571,12 +571,12 @@ Start of MIL script.
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  2,	  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  20,	  0,	  "dirty",	  "load", "tran", 1,	  2,	  0	  ]
-[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  2,	  0	  ]
+[ "monet_mod_dep",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1,	  2,	  0	  ]
 [ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
 [ "monet_mod_hdl",	  "oid",  "ptr",  10,	  0,	  "dirty",	  "load", "tran", 1,	  2,	  0	  ]
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  20,	  0,	  "dirty",	  "load", "tran", 1,	  2,	  0	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  66,	  0,	  "dirty",	  "load", "tran", 1,	  2,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  69,	  0,	  "dirty",	  "load", "tran", 1,	  2,	  0	  ]
 [ "monet_unicode_case",	  "int",  "int",  685,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "tmp_26",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "tmp_28",		  "str",  "oid",  654,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]

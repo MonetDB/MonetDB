@@ -22,7 +22,7 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 [ "streams",	  2		  ]
 [ "sys",	  2		  ]
 [ "trans",	  2		  ]
-[ "uchr",	  2		  ]
+[ "uchr",	  4		  ]
 #-----------------#
 # BAT:	  test	  #
 # (int)	  (lock)  #
@@ -52,7 +52,7 @@ Over..
 [ "streams",	  3	  ]
 [ "sys",	  3	  ]
 [ "trans",	  3	  ]
-[ "uchr",	  3		  ]
+[ "uchr",	  6		  ]
 #-----------------#
 # BAT:	  test	  #
 # (int)	  (lock)  #
@@ -77,7 +77,7 @@ Over..
 [ "streams",	  3	  ]
 [ "sys",	  3	  ]
 [ "trans",	  3	  ]
-[ "uchr",	  3		  ]
+[ "uchr",	  6		  ]
 #-----------------#
 # BAT:	  test	  #
 # (int)	  (lock)  #

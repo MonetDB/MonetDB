@@ -92,7 +92,7 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  1		  ]
+[ "uchr",	  2		  ]
 
 {
 printf("\nloading '%s' ... ","enum");
@@ -120,7 +120,7 @@ loading 'enum' ... done.
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  1		  ]
+[ "uchr",	  2		  ]
 
 dropping 'enum' ... done.
 
@@ -135,7 +135,7 @@ dropping 'enum' ... done.
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  1		  ]
+[ "uchr",	  2		  ]
 
 quit;
 
