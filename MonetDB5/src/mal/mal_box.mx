@@ -26,7 +26,7 @@ accessible, e.g. relational schemas, to a selected user group.
 
 The approach taken is to rely on persistent object spaces
 as pioniered in Lynda and -later- JavaSpaces.
-They are called boxes in Monet and act as managed containers 
+They are called boxes in MonetDB and act as managed containers 
 for persistent variables.
 
 Before a client program  can interact with a box, it
@@ -184,7 +184,7 @@ user, language, database, port, and any other session parameter.
 The boxes are all collected in the context of the database directory,
 i.e. the directory <dbfarm>/box
 @+ Garbage collection
-The key objects managed by Monet are the persistent BATs, which
+The key objects managed by MonetDB are the persistent BATs, which
 call for an efficient scheme to make them accessible for manipulation
 in the MAL procedures taking into account a possibly hostile
 parallel access.
@@ -233,11 +233,11 @@ the arglist.
 
 /*#define DEBUG_MAL_BOX */
 
-typedef struct BOX{        
-        MT_Lock lock;     /* provide exclusive access */
-    str name;
-        MalBlkPtr sym;      
-        MalStkPtr val;
+typedef struct BOX {        
+	MT_Lock lock;     /* provide exclusive access */
+	str name;
+	MalBlkPtr sym;      
+	MalStkPtr val;
 } *Box, BoxRecord;
 
 mal_export Box newBox(str name);
