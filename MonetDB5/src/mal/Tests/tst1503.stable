@@ -87,12 +87,12 @@ function Admin.main():int;	# 0  (main:int)
     jf_a := bat.insert(z,8@0,"a");	# 35 CMDinsert_bun (jf_a:void)<-(z:bat[:oid,:str])($66:oid)($53:str)
     io.print("group x");	# 36 CMDprint_val ($67:int)<-($68:str)
     io.print(x,y,z);	# 37 CMDtable ($69:int)<-(x:bat[:oid,:chr])(y:bat[:oid,:dbl])(z:bat[:oid,:str])
-    (zb1,b1):=group.group(x);	# 38 CTgroup (zb1:bat[:chr,:int])(b1:bat[:oid,:oid])<-(x:bat[:oid,:chr])
+    (zb1,b1):=group.group(x);	# 38 GRPgroup (zb1:bat[:chr,:int])(b1:bat[:oid,:oid])<-(x:bat[:oid,:chr])
     io.print("b1 becomes");	# 39 CMDprint_val ($72:int)<-($73:str)
     io.print(b1);	# 40 CMDprint_val ($74:int)<-(b1:bat[:oid,:oid])
     io.print("zb1 becomes");	# 41 CMDprint_val ($75:int)<-($76:str)
     io.print(zb1);	# 42 CMDprint_val ($77:int)<-(zb1:bat[:chr,:int])
-    b2 := group.group(b1,y);	# 43 CTderive2 (b2:bat[:oid,:oid])<-(b1:bat[:oid,:oid])(y:bat[:oid,:dbl])
+    b2 := group.group(b1,y);	# 43 GRPderive2 (b2:bat[:oid,:oid])<-(b1:bat[:oid,:oid])(y:bat[:oid,:dbl])
     io.print("b2 becomes");	# 44 CMDprint_val ($79:int)<-($80:str)
     io.print(b2);	# 45 CMDprint_val ($81:int)<-(b2:bat[:oid,:oid])
 end main;	# 46  
@@ -123,13 +123,13 @@ end main;	# 46
 [ 7@0,	  7@0	  ]
 [ 8@0,	  7@0	  ]
 [ "zb1 becomes" ]
-#-----------------#
-# h	tmp_8	  # name
-# oid	int	  # type
-#-----------------#
-[ 1@0,	  2	  ]
-[ 3@0,	  4	  ]
-[ 7@0,	  2	  ]
+#-------------------------#
+# h	histo_tmp_7	  # name
+# oid	int		  # type
+#-------------------------#
+[ 1@0,	  2		  ]
+[ 3@0,	  4		  ]
+[ 7@0,	  2		  ]
 [ "b2 becomes" ]
 #-----------------#
 # h	tmp_9	  # name
