@@ -119,12 +119,12 @@ static stmt *revoke_roles(mvc * sql, sql_schema *schema,
 
 static stmt *
 sql_insert_priv( mvc *sql, int auth_id, int obj_id, 
-	int privilege, int grantor, int grantable, int hierarchy)
+	int privilege, int grantor, int grantable )
 {
 	sql_schema *ss = mvc_bind_schema( sql, "sys");
 	sql_table *pt = mvc_bind_table( sql, ss, "privileges" );
 	node *n = pt->columns.set->h;
-	stmt *res, **inserts = NEW_ARRAY(stmt*,6);
+	stmt *res, **inserts = NEW_ARRAY(stmt*,5);
 	stmt *pts = stmt_basetable( pt );
 
 	inserts[0] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
@@ -141,27 +141,24 @@ sql_insert_priv( mvc *sql, int auth_id, int obj_id,
 	n = n->next;
 	inserts[4] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
  			stmt_atom_int(grantable));
-	n = n->next;
-	inserts[5] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
- 			stmt_atom_int(hierarchy));
 	stmt_destroy(pts);
-	res = sql_insert(sql, pt, inserts, 6);
-	cleanup_stmts(inserts, 6);
+	res = sql_insert(sql, pt, inserts, 5);
+	cleanup_stmts(inserts, 5);
 	return res;
 }
 
 void
 sql_insert_all_privs( mvc *sql, int auth_id, int obj_id, 
-			int grantor, int grantable, int hierarchy, list *l) 
+			int grantor, int grantable, list *l) 
 {
 	list_append(l, sql_insert_priv( sql, auth_id, obj_id, PRIV_SELECT, 
-		grantor, grantable, hierarchy ));
+		grantor, grantable ));
 	list_append(l, sql_insert_priv( sql, auth_id, obj_id, PRIV_UPDATE, 
-		grantor, grantable, hierarchy ));
+		grantor, grantable ));
 	list_append(l, sql_insert_priv( sql, auth_id, obj_id, PRIV_INSERT, 
-		grantor, grantable, hierarchy ));
+		grantor, grantable ));
 	list_append(l, sql_insert_priv( sql, auth_id, obj_id, PRIV_DELETE, 
-		grantor, grantable, hierarchy ));
+		grantor, grantable ));
 }
 
 const char *
@@ -179,7 +176,7 @@ priv2string( int priv )
 
 static stmt *
 grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,  
-	dlist *grantees, int grant, int hierarchy, int grantor )
+	dlist *grantees, int grant, int grantor )
 {
 	dnode *gn;
 	sql_table *t = mvc_bind_table( sql, cur, tname );
@@ -212,7 +209,7 @@ grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 				return sql_error(sql, 02,
 					"User/Role %s unknown", grantee);
 			}
-			sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant, hierarchy, l);
+			sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant, l);
 		}
 		return stmt_list(l);
 	}
@@ -281,7 +278,7 @@ grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 		     			list_append(l, sql_insert_priv( 
 						sql, grantee_id, 
 						c->base.id, priv, 
-						grantor, grant, hierarchy ));
+						grantor, grant ));
 				}
 			} else {
 				int allowed = sql_grantable( sql, grantor, 
@@ -298,7 +295,7 @@ grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 
 				list_append(l, sql_insert_priv( sql, 
 					grantee_id, t->base.id, priv, 
-					grantor, grant, hierarchy ));
+					grantor, grant ));
 			}
 		}
 	}
@@ -307,7 +304,7 @@ grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 
 static stmt *
 grant_func( mvc *sql, sql_schema *cur, dlist *privs, char *fname,  
-	dlist *grantees, int grant, int hierarchy, int grantor )
+	dlist *grantees, int grant, int grantor )
 {
 /* todo */
 	(void)sql;
@@ -316,7 +313,6 @@ grant_func( mvc *sql, sql_schema *cur, dlist *privs, char *fname,
 	(void)fname;
 	(void)grantees;
 	(void)grant;
-	(void)hierarchy;
 	(void)grantor;
 	return NULL;
 }
@@ -324,7 +320,7 @@ grant_func( mvc *sql, sql_schema *cur, dlist *privs, char *fname,
 
 static stmt *grant_privs(mvc *sql, sql_schema *cur, 
 	dlist *privs, dlist *grantees, 
-	int grant, int hierarchy, int grantor )
+	int grant, int grantor )
 {
 	dlist *obj_privs = privs->h->data.lval;
 	symbol *obj      = privs->h->next->data.sym;
@@ -338,11 +334,11 @@ static stmt *grant_privs(mvc *sql, sql_schema *cur,
 	case SQL_TABLE:
 		return
 		grant_table( sql, cur, obj_privs, obj->data.sval, grantees,
-				grant, hierarchy, grantor );
+				grant, grantor );
 	case SQL_NAME:
 		return
 		grant_func( sql, cur, obj_privs, obj->data.sval, grantees,
-				grant, hierarchy, grantor );
+				grant, grantor );
 	default: 
 		return sql_error(sql, 02, "Grant: unknown token %d", token );
 	}
@@ -351,7 +347,7 @@ static stmt *grant_privs(mvc *sql, sql_schema *cur,
 	
 static stmt *
 sql_delete_priv( mvc *sql, int auth_id, int obj_id, 
-	int privilege, int grantor, int grantable, int hierarchy)
+	int privilege, int grantor, int grantable )
 {
 	sql_schema *ss = mvc_bind_schema( sql, "sys");
 	sql_table *pt = mvc_bind_table( sql, ss, "privileges" );
@@ -364,7 +360,6 @@ sql_delete_priv( mvc *sql, int auth_id, int obj_id,
 
 	(void)grantor;
 	(void)grantable;
-	(void)hierarchy;
 
 	stmt_relselect_fill( s, stmt_uselect(
 		stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat),
@@ -385,7 +380,7 @@ sql_delete_priv( mvc *sql, int auth_id, int obj_id,
 
 static stmt *
 revoke_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,  
-	dlist *grantees, int grant, int hierarchy, int grantor )
+	dlist *grantees, int grant, int grantor )
 {
 	dnode *gn;
 	sql_table *t = mvc_bind_table( sql, cur, tname );
@@ -399,9 +394,7 @@ revoke_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 	/* TODO 
 	if (grant)
 		do update !
-	if (hierarchy)
-		do update !
-	if (grant || hierarchy)
+	if (grant)
 		return
 	 */
  	l = create_stmt_list();
@@ -417,19 +410,13 @@ revoke_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 			}
 
 		     	list_append(l, sql_delete_priv( sql, grantee_id, 
-				t->base.id, PRIV_SELECT, grantor, grant, 
-				hierarchy ));
+				t->base.id, PRIV_SELECT, grantor, grant));
 		     	list_append(l, sql_delete_priv( sql, grantee_id, 
-				t->base.id, PRIV_UPDATE, grantor, grant, 
-				hierarchy ));
+				t->base.id, PRIV_UPDATE, grantor, grant));
 		     	list_append(l, sql_delete_priv( sql, grantee_id, 
-				t->base.id, PRIV_INSERT, grantor, grant, 
-				hierarchy ));
+				t->base.id, PRIV_INSERT, grantor, grant));
 		     	list_append(l, sql_delete_priv( sql, grantee_id, 
-				t->base.id, PRIV_DELETE, grantor, grant,
-				hierarchy ));
-			/* TODO if hierarchy also delete all sub objects 
-				(ie columns) with these privs */
+				t->base.id, PRIV_DELETE, grantor, grant));
 		}
 		return stmt_list(l);
 	}
@@ -480,12 +467,12 @@ revoke_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 		     			list_append(l, sql_delete_priv( 
 						sql, grantee_id, 
 						c->base.id, priv, 
-						grantor, grant, hierarchy ));
+						grantor, grant ));
 				}
 			} else {
 				list_append(l, sql_delete_priv( sql, 
 					grantee_id, t->base.id, priv, 
-					grantor, grant, hierarchy ));
+					grantor, grant ));
 			}
 		}
 	}
@@ -494,7 +481,7 @@ revoke_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 
 static stmt *
 revoke_func( mvc *sql, sql_schema *cur, dlist *privs, char *fname,  
-	dlist *grantees, int grant, int hierarchy, int grantor )
+	dlist *grantees, int grant, int grantor )
 {
 /* todo */
 	(void)sql;
@@ -503,14 +490,12 @@ revoke_func( mvc *sql, sql_schema *cur, dlist *privs, char *fname,
 	(void)fname;
 	(void)grantees;
 	(void)grant;
-	(void)hierarchy;
 	(void)grantor;
 	return NULL;
 }
 
 static stmt *revoke_privs(mvc *sql, sql_schema *cur, 
-	dlist *privs, dlist *grantees, 
-	int grant, int hierarchy, int grantor )
+	dlist *privs, dlist *grantees, int grant, int grantor )
 {
 	dlist *obj_privs = privs->h->data.lval;
 	symbol *obj      = privs->h->next->data.sym;
@@ -524,11 +509,11 @@ static stmt *revoke_privs(mvc *sql, sql_schema *cur,
 	case SQL_TABLE:
 		return
 		revoke_table( sql, cur, obj_privs, obj->data.sval, grantees,
-				grant, hierarchy, grantor );
+				grant, grantor );
 	case SQL_NAME:
 		return
 		revoke_func( sql, cur, obj_privs, obj->data.sval, grantees,
-				grant, hierarchy, grantor );
+				grant, grantor );
 	default: 
 		return sql_error(sql, 02, "Grant: unknown token %d", token );
 	}
@@ -655,7 +640,7 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 		}
 		stmt_destroy(sq);
 
-		snprintf(buf, BUFSIZ, "grant select on \"%s\" to \"%s\" with grant option with hierarchy option;", name, sql->user);
+		snprintf(buf, BUFSIZ, "grant select on \"%s\" to \"%s\" with grant option;", name, sql->user);
 		return stmt_sql(buf);
 	}
 	return NULL;
@@ -937,9 +922,20 @@ create_column(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, int alter )
 		}
 		if (alter) { 
 			if (cs->def) {
+				atom *a = NULL;
 				if (!cs->null && strcmp(cs->def,"NULL") == 0) {
 					return sql_error(sql, 02, 
 			 			"Default value is NULL, but column has NOT NULL constraint\n" );
+				}
+				if (cs->null && strcmp(cs->def,"NULL") == 0) {
+				      a = atom_general( sql_dup_subtype(cs->type),
+						NULL );
+				} else {
+				      a = atom_general( sql_dup_subtype(cs->type),
+						_strdup(cs->def) );
+				}
+				if (!a) {
+					return sql_error(sql, 02, "Failed to create default value for alter table add (%s)\n", cs->def );
 				}
 				res = stmt_append(
 				  stmt_cbat(cs, stmt_basetable(t), 1, st_bat),
@@ -947,10 +943,7 @@ create_column(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, int alter )
 				    stmt_cbat(
 				      mvc_first_column(sql, t), 
 				      stmt_basetable(t), 0, st_bat), 
-				    stmt_atom(
-				      atom_general(
-					sql_dup_subtype(cs->type),
-					_strdup(cs->def) ))));
+					stmt_atom(a) ));
 			} else {
 				return sql_error(sql, 02, "No Default value for alter table add\n" );
 			}
@@ -1163,7 +1156,7 @@ create_table(mvc * sql, sql_schema * ss,
 			}
 			list_append_stmt(new_columns, te );
 		}
-		snprintf(buf, BUFSIZ, "grant all on \"%s\" to \"%s\" with grant option with hierarchy option;", name, sql->user);
+		snprintf(buf, BUFSIZ, "grant all on \"%s\" to \"%s\" with grant option;", name, sql->user);
 		list_append( new_columns, stmt_sql(buf));
 		return list2stmt(new_columns);
 	}
@@ -1438,8 +1431,7 @@ schema(mvc * sql, symbol * s)
 			    l->h->data.lval,		/* privileges */
 			    l->h->next->data.lval,	/* grantees */
 			    l->h->next->next->data.ival, /* grant ? */
-			    l->h->next->next->next->data.ival, /* hierarchy ? */
-			    l->h->next->next->next->next->data.ival?
+			    l->h->next->next->next->data.ival?
 				sql->user_id:sql->role_id); 
 				/* grantor ? */
 			sql->type = Q_SCHEMA;
@@ -1451,8 +1443,7 @@ schema(mvc * sql, symbol * s)
 			    l->h->data.lval,		/* privileges */
 			    l->h->next->data.lval,	/* grantees */
 			    l->h->next->next->data.ival, /* grant ? */
-			    l->h->next->next->next->data.ival, /* hierarchy ? */
-			    l->h->next->next->next->next->data.ival?
+			    l->h->next->next->next->data.ival?
 				sql->user_id:sql->role_id); 
 				/* grantor ? */
 			sql->type = Q_SCHEMA;

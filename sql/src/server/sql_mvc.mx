@@ -2010,7 +2010,6 @@ int mvc_init(int debug, backend_stack stk)
 		mvc_create_column(m, t, "privileges", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "grantor", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "grantable", "MEDIUMINT",0,0);
-		mvc_create_column(m, t, "hierarchy", "MEDIUMINT",0,0);
 
 		/* add monetdb user */
 		sql_create_user(m, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
@@ -3321,8 +3320,9 @@ static void sys_drop_table(sql_trans * tr, sql_table *t)
 	sys_drop_idxs(tr, t);
 
 	if (t->type != tt_view) {
-		if (t->base.flag == TR_NEW) 
+		if (t->base.flag == TR_NEW) {
 			bm_del_bat( tr->bm, t->dbid );
+		}
 		sys_drop_columns(tr, t);
 	}
 
@@ -3493,6 +3493,8 @@ sql_schema *mvc_create_schema(mvc * m, char *name, char *auth)
 
 
 	cs_add( &tr->schemas, s, TR_NEW);
+	/* switch to the new schema */
+	tr->schema = s;
 
 	b = bind_bat(tr, find_column(sysschema, "id"), 1);
 	rid = BATcount(b);

@@ -691,6 +691,9 @@ void stmt_reset(stmt * s)
 		if (s->op4.stval) stmt_reset(s->op4.stval);
 		break;
 
+	case st_var:
+		break;
+
 	default:
 		printf("! TODO: stmt_reset(%d=%s) !\n",s->type,st_type2string(s->type));
 	}

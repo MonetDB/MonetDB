@@ -203,18 +203,18 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
 	if ( (ret = mvc_init(*Debug, (backend_stack)stk )) > 0 ){
-		sqlstatement("GRANT ALL on modules to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on schemas to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on tables to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on columns to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on keys to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on idxs to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on keycolumns to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on types to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on users to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on user_role to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on auths to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("GRANT ALL on privileges to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on modules to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on schemas to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on tables to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on columns to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on keys to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on idxs to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on keycolumns to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on types to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on users to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on user_role to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on auths to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on privileges to monetdb with grant option;", stk);
 	} else if (ret < 0) {
 		return GDK_FAIL;
 	}

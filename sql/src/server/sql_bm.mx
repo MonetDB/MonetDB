@@ -559,6 +559,15 @@ oid bm_add_bat(bm *bm, oid bid, char *name, int version)
 void bm_del_bat(bm *bm, oid lbid)
 {
 	oid vid = bm_lbid2vid(bm, lbid);
+	BUN p = BUNfnd(bm->bat_bid, &vid);
+
+	/* Only bats created in this session, can be destroyed directly.
+	   Others should be handled by the bm_{commit,abort,destroy} 
+	 */
+	if (p >= bm->bat_bid->batInserted) {
+		bat bid = *(oid*)BUNtail(bm->bat_bid,p);
+		bat_decref(bid, TRUE);
+	}
 	BUNdelHead(bm->bat_version, &vid);
 	BUNdelHead(bm->bat_name, &vid);
 	BUNdelHead(bm->bat_bid, &vid);
@@ -566,8 +575,6 @@ void bm_del_bat(bm *bm, oid lbid)
 	BUNdelHead(bm->bat_mode, &vid);
 	if (bm->bat_oversion)
 		BUNdelHead(bm->bat_oversion, &vid);
-	/* no bat_decref(bid, TRUE); here as this needs to be done 
-	 *  by the bm_{commit,abort,destroy} */
 }
 
 oid bm_find_bat(bm* bm, char *name)

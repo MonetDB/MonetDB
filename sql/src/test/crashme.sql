@@ -1,4 +1,5 @@
 -- all queries from crash-me until the server crashes:
+set auto_commit = true;
 drop table crash_me;
 drop table crash_me cascade;
 create table crash_me (a integer not null);

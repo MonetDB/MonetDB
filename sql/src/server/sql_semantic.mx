@@ -872,7 +872,7 @@ static stmt *sql_case(mvc * sql, scope * scp, symbol *opt_cond, dlist * when_sea
 			return sql_error(sql, 02, "Subset not found for case stmt");
 		}
 	} else {
-		printf("Case in query not handled jet\n");
+		return sql_error(sql, 02, "Case in query currently not supported");
 	}
 	if (opt_else) {
 		stmt *result = sql_value_exp(sql, scp, opt_else, grp, subset);
@@ -1507,7 +1507,7 @@ stmt *distinct( stmt * s)
 	return s;
 }
 
-static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int all, dlist *cols, symbol *t2)
+static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int dist, dlist *cols, symbol *t2)
 {
 	stmt *res;
 	node *n, *m;
@@ -1547,7 +1547,7 @@ static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int all, dlist *cols, 
 	        cols length > 0 see union join, join on name */
 	}
 	res = stmt_list(unions);
-	if (!all) {
+	if (dist) {
 		res = distinct(res);
 	}
 	scp = scope_close(nscp);
@@ -1559,10 +1559,10 @@ static stmt *sql_union(mvc * sql, scope * scp, symbol * q)
 
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
-	int all = n->next->data.ival;
+	int dist = n->next->data.ival;
 	dlist *corresponding = n->next->next->data.lval;
 	symbol *tab_ref2 = n->next->next->next->data.sym;
-	return sql_union_(sql, scp, tab_ref1, all, corresponding, tab_ref2 );
+	return sql_union_(sql, scp, tab_ref1, dist, corresponding, tab_ref2 );
 }
 
 static stmt *sql_cross(mvc * sql, scope * scp, symbol * q)

@@ -395,7 +395,6 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_with_check_option
 
 	opt_with_grant
-	opt_with_hierarchy
 	opt_with_admin
 	opt_admin_for
 	opt_grant_for
@@ -460,7 +459,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token FOREIGN 
 %token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO 
 %token IS KEY ON OPTION OPTIONS
-%token PATH PRIMARY PRIVILEGES HIERARCHY
+%token PATH PRIMARY PRIVILEGES 
 %token<sval> PUBLIC REFERENCES SCHEMA SET 
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH 
@@ -568,14 +567,12 @@ grantor:
  ;
 
 grant:
-    GRANT privileges TO grantee_commalist opt_with_grant
-	 opt_with_hierarchy opt_from_grantor
+    GRANT privileges TO grantee_commalist opt_with_grant opt_from_grantor
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $2);
 	  dlist_append_list(l, $4);
 	  dlist_append_int(l, $5);
 	  dlist_append_int(l, $6);
-	  dlist_append_int(l, $7);
 	$$ = _symbol_create_list( SQL_GRANT, l); 
 	}
 
@@ -600,11 +597,6 @@ opt_with_grant:
  |	WITH GRANT OPTION		{ $$ = 1; }
  ;
 
-opt_with_hierarchy:
- 	/* emtpy */		{ $$ = 0; }
- | 	WITH HIERARCHY OPTION	{ $$ = 1; }
- ;
-
 opt_with_admin:
  	/* emtpy */		{ $$ = 0; }
  | 	WITH ADMIN OPTION	{ $$ = 1; }
@@ -624,15 +616,6 @@ revoke:
 	  dlist_append_int(l, $2); /* GRANT OPTION FOR */ 
 	  dlist_append_int(l, 0);
 	  dlist_append_int(l, $6);
-	$$ = _symbol_create_list( SQL_REVOKE, l); }
- |   REVOKE HIERARCHY OPTION FOR privileges FROM grantee_commalist 
-	opt_from_grantor
-	{ dlist *l = dlist_create();
-	  dlist_append_list(l, $5);
-	  dlist_append_list(l, $7);
-	  dlist_append_int(l, 0);
-	  dlist_append_int(l, 1); /* HIERARCHY OPTION */
-	  dlist_append_int(l, $8);
 	$$ = _symbol_create_list( SQL_REVOKE, l); }
  |   REVOKE opt_admin_for authid_list FROM grantee_commalist 
 	opt_from_grantor
@@ -1582,9 +1565,15 @@ simple_table:
 table_ref:
     simple_table
  |  select_with_parens table_name	
-				{ SelectNode *sn = (SelectNode*)$1;
+				{
 				  $$ = $1; 
-				  sn->name = $2; }
+				  if ($$->token == SQL_SELECT) {
+				  	SelectNode *sn = (SelectNode*)$1;
+				  	sn->name = $2; 
+				  } else {
+				  	dlist_append_symbol($1->data.lval, $2); 
+				  }
+				}
  |  select_with_parens error	
 				{ $$ = NULL;
 				  symbol_destroy($1);
