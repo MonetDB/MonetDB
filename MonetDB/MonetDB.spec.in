@@ -1,7 +1,10 @@
 %define name MonetDB
 %define release 1
 %define version @VERSION@
+
 %define prefix /usr
+%define sysconfdir /etc
+%define localstatedir /var
 
 %define monetdb_uid    85
 %define monetdb_gid    85
@@ -56,7 +59,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %build
 
-./configure --prefix=%{prefix} 
+./configure \
+	--prefix=%{prefix} \
+	--sysconfdir=%{sysconfdir} \
+	--localstatedir=%{localstatedir} 
 
 make
 
@@ -93,7 +99,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/share/MonetDB/perl/* 
 %{prefix}/share/MonetDB/python/* 
 
-%{prefix}/etc/monet.conf 
+%{sysconfdir}/monet.conf 
 
 %pre client 
 %{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
