@@ -646,7 +646,7 @@ is turned off.
 @
 @c
 Request		qm_top, qm_bot;
-int		qm_profile;
+int		qm_profile = 0;
 
 void QMtrace(int flag) {	
 	qm_profile = flag;

@@ -277,6 +277,7 @@ void 	MT_global_exit(int s) {
 	(void) kill(0, SIGHUP);
 	pthread_kill_other_threads_np();
 #endif
+	printf("MT_global_exit\n");
 	exit(s);
 }
 

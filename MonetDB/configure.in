@@ -37,9 +37,6 @@ thread_safe_flag_spec="-D_REENTRANT"
   aix*)
     thread_safe_flag_spec="-D_THREAD_SAFE $thread_safe_flag_spec"
     ;;
-  cygwin*)
-    thread_safe_flag_spec="-mno-cygwin $thread_safe_flag_spec"
-    ;;
 esac ]
 
 dnl Checks for programs.

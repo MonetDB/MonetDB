@@ -1406,6 +1406,7 @@ int THRexit(str nme) {
 	Thread	t;
 	Thread	s; 
 
+	printf("THRexit\n", nme );
 	for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 		if (t->pid && t->name && strcmp(t->name, nme) == 0) {
 			MT_Id victim = t->pid; 
@@ -1421,13 +1422,15 @@ int THRcnt() {
 	return GDKnrofthreads; 
 }
 
-#define THREAD_STACK_SIZE	((unsigned long) 1024*1024)
+#define THREAD_STACK_SIZE	((unsigned long)1024*1024)
 
 int THRhighwater() {
 	unsigned long c = THRsp();
 	Thread s = GDK_find_thread(MT_getpid());
 	unsigned long diff = (c<s->sp)?s->sp-c:c-s->sp;
-	if (diff > 0.9*THREAD_STACK_SIZE);
+	if (diff > (THREAD_STACK_SIZE-1024)){
+		return 1;
+	}
 	return 0;
 }
 

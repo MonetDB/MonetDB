@@ -130,7 +130,8 @@
 #define HAVE_MKDIR 1
 
 /* Define if you have the putenv function.  */
-#define HAVE_PUTENV 1
+#define HAVE_SETENV 1
+#undef HAVE_PUTENV 
 
 /* Define if you have the rlimit function.  */
 /* #undef HAVE_RLIMIT */
