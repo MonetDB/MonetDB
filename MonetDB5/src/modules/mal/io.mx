@@ -190,43 +190,52 @@ str io_stdin (stream *ret) { *(stream**)ret = GDKin;  return MAL_SUCCEED; }
 str io_stdout(stream *ret) { *(stream**)ret = GDKout; return MAL_SUCCEED; }
 str io_stderr(stream *ret) { *(stream**)ret = GDKerr; return MAL_SUCCEED; }
 
-str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl)
-{
-	int tpe = getArgType(mb,pci,indx);
-	ptr val = (ptr) getArgReference(stk,pci,indx);
-        stream *fp = GDKout;
-	if( tpe == TYPE_any)
-		tpe= stk->stk[pci->argv[indx]].vtype;
+str IOprintBoth(
+	MalBlkPtr mb,
+	MalStkPtr stk,
+	InstrPtr pci,
+	int indx,
+	str hd,
+	str tl
+) {
+	int tpe = getArgType(mb, pci, indx);
+	ptr val = (ptr)getArgReference(stk, pci, indx);
+	stream *fp = GDKout;
 	(void)mb;
-	if( val==NULL) {
-		if(hd) stream_printf(fp,"%s",hd);
+	
+	if (tpe == TYPE_any) tpe = stk->stk[pci->argv[indx]].vtype;
+	if (val == NULL) {
+		if (hd) stream_printf(fp, "%s", hd);
 		ATOMprint(TYPE_str, "nil", GDKout);
-		if(tl) stream_printf(fp,"%s",tl);
+		if (tl) stream_printf(fp, "%s", tl);
 		return MAL_SUCCEED;
 	}
-	if( isaBatType(tpe) || tpe== TYPE_bat){
+	if (isaBatType(tpe) || tpe == TYPE_bat) {
 		BAT *b;
-		if( *(int*)val ==0){
-			if(hd) stream_printf(fp,"%s",hd);
+		if (*(int*)val == 0) {
+			if (hd) stream_printf(fp, "%s", hd);
 			ATOMprint(TYPE_str, "nil", GDKout);
-			if(tl) stream_printf(fp,"%s",tl);
+			if (tl) stream_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
 		b = BATdescriptor(*(int*)val);
-		if( b== NULL) {
+		if (b == NULL) {
 			return throwMessage("io.print","could not access descriptor");
 		}
-		BATmultiprintf(GDKout,2,&b,TRUE,0);
+		BATmultiprintf(GDKout, 2, &b, TRUE, 0);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-        if(hd) stream_printf(fp,"%s",hd);
-	if( ATOMstorage(tpe) == TYPE_str  || ATOMstorage(tpe)> TYPE_str)
+	if (hd) stream_printf(fp, "%s", hd);
+	
+	if (ATOMstorage(tpe) == TYPE_str  || ATOMstorage(tpe) > TYPE_str)
 		ATOMprint(tpe, *(str*)val, fp);
-        else  	ATOMprint(tpe, val, fp);
-        if(tl) stream_printf(fp,"%s",tl);
+	else
+		ATOMprint(tpe, val, fp);
+
+	if (tl) stream_printf(fp, "%s", tl);
 	stream_flush(fp);
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 str IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
