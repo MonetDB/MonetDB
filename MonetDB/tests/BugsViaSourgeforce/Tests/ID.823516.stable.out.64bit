@@ -19,7 +19,7 @@ b.access(BAT_READ);
 # Create a view bat
 var c := b.select(int(nil), int(nil)).rename("c");
 
-print(b.info,c.info);
+print(b.info(),c.info());
 #-----------------------------------------------------------------#
 # BAT:				  tmp_30	| tmp_31	  #
 # (str)				  (str)		| (str)		  #
@@ -46,17 +46,17 @@ print(b.info,c.info);
 [ "hkey",			  "1",		  "1"		  ]
 [ "hloc",			  "0",		  "0"		  ]
 [ "hvarsized",			  "0",		  "0"		  ]
-[ "halign",			  "1002600",	  "1002600"	  ]
-[ "halignflushed",		  "1002593",	  "1002593"	  ]
+[ "halign",			  "1002768",	  "1002768"	  ]
+[ "halignflushed",		  "1002761",	  "1002761"	  ]
 [ "tident",			  "t",		  "t"		  ]
 [ "tdense",			  "0",		  "0"		  ]
-[ "tseqbase",			  "nil",	  "nil"		  ]
+[ "tseqbase",			  "0@0",	  "0@0"		  ]
 [ "tsorted",			  "65",		  "65"		  ]
 [ "tkey",			  "1",		  "1"		  ]
 [ "tloc",			  "8",		  "8"		  ]
 [ "tvarsized",			  "0",		  "0"		  ]
-[ "talign",			  "1002599",	  "1002599"	  ]
-[ "talignflushed",		  "1002594",	  "1002594"	  ]
+[ "talign",			  "1002767",	  "1002767"	  ]
+[ "talignflushed",		  "1002762",	  "1002762"	  ]
 [ "batInserted",		  "1",		  "1"		  ]
 [ "batDeleted",			  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0"		  ]
@@ -110,11 +110,11 @@ print(b.info,c.info);
 [ "tail_index",			  "absent",	  "absent"	  ]
 
 # save the list of BATs
-var pre  := view_bbp_name.copy.rename("pre");
+var pre  := view_bbp_name.copy().rename("pre");
 
 # build a histogram (accellerator) 
 # on both the original BAT and the view BAT
-b.histogram.print;
+b.histogram().print();
 #-----------------#
 # BAT:	  tmp_32  #
 # (int)	  (int)	  #
@@ -122,7 +122,7 @@ b.histogram.print;
 [ 1,	  1	  ]
 [ 2,	  1	  ]
 [ 3,	  1	  ]
-c.histogram.print;
+c.histogram().print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (int)	  (int)	  #
@@ -136,11 +136,11 @@ c := 0;
 b := 0;
 
 # check, which BATs still exist
-var post := view_bbp_name.copy.rename("post");
+var post := view_bbp_name.copy().rename("post");
 
 # both the original BAT and the view BAT
 # are gone. correct.
-kdiff(pre,post).print;
+kdiff(pre,post).print();
 #-----------------#
 # h	tmp_29	  # name
 # int	str	  # type
@@ -151,11 +151,11 @@ kdiff(pre,post).print;
 # the post BAT is new. correct.
 # the histogram-accellerator BAT of the view 
 # didn't get removed and is still there. Wrong!
-kdiff(post,pre).print;
-#-------------------------#
-# BAT:	  tmp_29	  #
-# (int)	  (str)		  #
-#-------------------------#
+kdiff(post,pre).print();
+#-----------------#
+# h	tmp_29	  # name
+# int	str	  # type
+#-----------------#
 [ 28,	  "pre"		  ]
 quit();
 
