@@ -967,8 +967,6 @@ int CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c,
 	unsigned int i, j;
 	BAT *bn;
 
-	(void) c;
-
 	oid *qbuf = (oid *) BUNtloc(qgram, BUNfirst(qgram));
 	oid *ibuf = (oid *) BUNtloc(id, BUNfirst(id));
 	int *pbuf = (int *) BUNtloc(pos, BUNfirst(pos));
