@@ -1,2 +1,0 @@
-Mapi Java
-Java binding of the simple Monet API (Mapi) for MIL/SQL database interaction
