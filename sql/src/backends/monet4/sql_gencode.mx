@@ -172,12 +172,12 @@ static void dump_nil( backend *sql, stmt *s )
 {
 	if (s) {
 		if (s->nr2 > 0 && --s->nr2 == 0) {
-			size_t buflen = 31;
-			char buf[buflen+1];
+			size_t buflen = 32;
+			char buf[buflen];
 			size_t len = 0;
-			len = snprintf( buf, buflen,
+			len = snprintf( buf, buflen-1,
 				"s%d := nil;\n", s->nr);
-			assert(len <= buflen);
+			assert(len < buflen);
 			buf[len] = '\0';
 			write_command(sql,buf);
 			write_part(sql,buf,len);
