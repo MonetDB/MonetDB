@@ -986,13 +986,14 @@ static struct tms state;
 
 int view_gdk_cpu(BAT **retval) {
 #ifndef NATIVE_WIN32
-	int     i;
 	struct tms newst;
+#endif
+	int     i;
 	BAT *b;
- 
  
 	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
 	if ( b == 0) return GDK_FAIL;
+#ifndef NATIVE_WIN32
 	if( clk == 0) {
 		clk= time(0);
 		times(&state);
@@ -1011,8 +1012,11 @@ int view_gdk_cpu(BAT **retval) {
 	b = BUNins(b, "elapsystem", &i);
 
 	state = newst; 
-	@:Pseudo(gdk,cpu)@
+#else
+	i = -1;
+	b = BUNins(b, "no CPU info on Win32 (yet?)", &i);
 #endif
+	@:Pseudo(gdk,cpu)@
 	return GDK_SUCCEED;
 }
 @-
@@ -1256,13 +1260,17 @@ The BAT grows. It should be compacted.
 int view_gdk_io(BAT **retval) {
 #ifndef NATIVE_WIN32
 	struct rusage ru;
+#endif
 	int i;
 	BAT *b;
  
+#ifndef NATIVE_WIN32
 	getrusage(RUSAGE_SELF, &ru);
+#endif
 	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0) return GDK_FAIL;
  
+#ifndef NATIVE_WIN32
 	/* store counters, ignore errors */
 	i = ru.ru_maxrss; BUNins(b, "maxrss", &i); 
 	i = ru.ru_minflt; BUNins(b, "minflt", &i);
@@ -1272,9 +1280,11 @@ int view_gdk_io(BAT **retval) {
 	i = ru.ru_oublock; BUNins(b, "oublock", &i);
 	i = ru.ru_nvcsw; BUNins(b, "nvcsw", &i);
 	i = ru.ru_nivcsw; BUNins(b, "ninvcsw", &i);
+#else
+	i = -1;	BUNins(b, "no I/O info on Win32 (yet?)", &i);
+#endif 
 
 	@:Pseudo(gdk,io)@
-#endif 
 	return GDK_SUCCEED;
 }
 
