@@ -260,6 +260,7 @@ int	i;
 		case T_CODE:
 			PrFontStr(t->t_str, t->t_dir);
 			break;
+		case T_POSCOND:
 		case T_TEX:
 			PrModeStr(t->t_str, t->t_dir);
 			break;
