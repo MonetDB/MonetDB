@@ -26,5 +26,5 @@ catch	MALexception;	#5:(MALexception:str) jump 8
 	io.print(MALexception);	#6:($7:int)<-(MALexception:str)
 end	MALexception;	#7:(MALexception:str)
 end function;	#8:
-[ "MALexception:Admin.main[2]:CMDbbptake:myfirstbat:failed to take from box\n" ]
+[ "MALexception:Admin.main[2]:bbp.take:failed to take 'myfirstbat' from box\n" ]
 >

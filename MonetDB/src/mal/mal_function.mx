@@ -54,10 +54,11 @@ mal_export void chkLabel(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr newCall(str modname, str fcnname, int kind);
 mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
 
-#define throwMessage(M)	throwException("%s",M)
+#define MALEXCEPTION "MALexception"
+#define throwMessage(Fcn,Msg)	throwException(MALEXCEPTION,Fcn,"%s",Msg)
 
 /*VARARGS*/
-mal_export str throwException(char *format, ...);
+mal_export str throwException(str nme, str fcn, char *format, ...);
 mal_export str	raiseException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export str appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
 mal_export str locateException(MalBlkPtr mb, int pc, str oldmsg);
@@ -365,7 +366,7 @@ str appendException(MalBlkPtr mb, int pc, str name, str msg,str oldmsg){
 	i= strlen(buf);
 	if(name) snprintf(buf+i,4196-i,"%s:", name);
 	i= strlen(buf);
-	snprintf(buf+i,4196-i,"%s.",s);
+	if(s) snprintf(buf+i,4196-i,"%s.",s);
 	i= strlen(buf);
 	snprintf(buf+i,4196-i,"%s",fcn);
 	i= strlen(buf);
@@ -392,13 +393,13 @@ an erroneous situation. It takes the name of MAL exception name
 to be raised.
 @c
 /*VARARGS*/
-str throwException(char *format, ...){
+str throwException(str nme, str fcn, char *format, ...){
         char message[GDKMAXERRLEN];
         int len = strlen(MALexception)+1;
         va_list ap;
 
-        strcpy(message, MALexception);
-	strcat(message,":");
+	sprintf(message,"%s:%s:",nme,fcn);
+	len= strlen(message);
         va_start(ap, format);
         vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap);
         va_end(ap);

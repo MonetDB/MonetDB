@@ -283,7 +283,7 @@ end function;	#94:
 [ 1 ]
 [ 4 ]
 [ nil ]
-[ "MALexception:Admin.main[29]:CMDfind: value not found.\n" ]
+[ "MALexception:Admin.main[29]:algebra.find:value not found\n" ]
 #-------------------------#
 # BAT:		  tmp_4	  #
 # (str)		  (int)	  #

@@ -6,7 +6,7 @@
 function get(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
 	b:= catalog.nme();
 	z:= join(br,b);
-	setName(z,title);
+	setColumn(z,title);
 	return z;
 end function;
 # Note the type of the variables will be fixed during the first call
@@ -16,13 +16,13 @@ end function;
 function getInt(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
 	b:= catalog.nme();
 	z:= join(br,b);
-	setName(z,title);
+	setColumn(z,title);
 	return z;
 end function;
 function getLng(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
 	b:= catalog.nme();
 	z:= join(br,b);
-	setName(z,title);
+	setColumn(z,title);
 	return z;
 end function;
 function dir(b:bat[int,str]):void;
@@ -47,7 +47,7 @@ function dir(s:str):void;
 	dir(tn);
 end function;
 b:=new(int,int);
-setName(b,"simplemind");
+setColumn(b,"simplemind");
 
 z:= catalog.bbpNames();
 dir(z);

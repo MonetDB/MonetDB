@@ -31,7 +31,7 @@
 function Admin.main():int;	#0:(main:int)
 	b := mal.new(int,int);	#1:(b:bat[int,int])<-(int:int)(int:int)
 	bbp.setName(b,"mybat");	#2:($3:bat[int,int])<-(b:bat[int,int])($4:str)
-	bbp.setRole(b,"first","second");	#3:($5:bat[int,int])<-(b:bat[int,int])($6:str)($7:str)
+	bat.setRole(b,"first","second");	#3:($5:bat[int,int])<-(b:bat[int,int])($6:str)($7:str)
 	io.print(b);	#4:($8:int)<-(b:bat[int,int])
 	c := mal.new(int,str);	#5:(c:bat[int,str])<-(int:int)(str:str)
 	bbp.setName(c,"mybat");	#6:($11:bat[int,str])<-(c:bat[int,str])($4:str)

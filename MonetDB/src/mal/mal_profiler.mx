@@ -154,7 +154,8 @@ definition.
 		profileCounter[i].status = @1 ;
 		return 0;
 	}
-	return throwException("@2:profile counter '%s' undefined",name);
+	return throwException(MALEXCEPTION, "@2",
+		"profile counter '%s' undefined",name);
 @c
 str activateCounter(str name){ @:setCounter(1,activateCounter)@ }
 str deactivateCounter(str name){ @:setCounter(0,deactivateCounter)@ }
@@ -425,7 +426,8 @@ str setLogFile(Scope cntxt, str fname){
 	MT_set_lock(profileLock,"profileLock");
 	eventstream = fopen(fname,"w");
 	if( eventstream == NULL){
-		return throwMessage("Could not create event stream file");
+		return throwMessage("mal.profiler",
+			"Could not create event stream file");
 	}
 	MT_unset_lock(profileLock,"profileLock");
 #else

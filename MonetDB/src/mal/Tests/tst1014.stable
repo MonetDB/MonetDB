@@ -66,5 +66,5 @@ end function;	#7:
 #-----------------#
 [ 1,	  2	  ]
 [ "continue" ]
-!ERROR: MALexception:CMDbbptake:myfirstbat:failed to take from box
+!ERROR: MALexception:bbp.take:failed to take 'myfirstbat' from box
 >

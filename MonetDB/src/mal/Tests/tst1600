@@ -222,7 +222,7 @@
 #print(dec_bat1.col_name("decimal1"),
 	id_a := bbp.setColumn(dec_bat2,"decimal2");
 #      dec_bat2.col_name("decimal2"),
-	jd_a := *(dec_bat1,dec_bat2);
+	jd_a := multiplex.tactics("*",dec_bat1,dec_bat2);
 	kd_a := bbp.setColumn(jd_a,"*");
 	ld_a := print(hd_a,id_a,kd_a);
 #      [*](dec_bat1,dec_bat2).col_name("*"));
@@ -231,7 +231,7 @@
 #print(dec_bat1.col_name("decimal1"),
 	nd_a := bbp.setColumn(dec_bat2,"decimal2");
 #      dec_bat2.col_name("decimal2"),
-	od_a := /(dec_bat1,dec_bat2);
+	od_a := multiplex.tactics("/",dec_bat1,dec_bat2);
 	pd_a := bbp.setColumn(od_a,"/");
 	qd_a := print(md_a,nd_a,pd_a);
 #      [/](dec_bat1,dec_bat2).col_name("/"));

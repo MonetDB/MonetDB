@@ -28,5 +28,5 @@ function Admin.main():int;	#0:(main:int)
 	const.release("roomnumber",v);	#7:($10:void)<-($6:str)(v:int)
 end function;	#8:
 User bound to Admin
-!ERROR: MALexception:CONSTtake:roomnumber:failed to take from box
+!ERROR: MALexception:const.take:failed to take 'roomnumber' from box
 >

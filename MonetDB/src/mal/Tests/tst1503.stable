@@ -51,6 +51,7 @@
 #print("b2 becomes"); print(b2);
 #
 #
+!WARNING: garbage collection not guaranteed
 function Admin.main():int;	#0:(main:int)
 	x := mal.new(oid,chr);	#1:(x:bat[oid,chr])<-(oid:oid)(chr:chr)
 	de_a := bat.insert(x,1@0,'a');	#2:(de_a:bat[oid,chr])<-(x:bat[oid,chr])($5:oid)($6:chr)
@@ -100,7 +101,7 @@ function Admin.main():int;	#0:(main:int)
 end function;	#46:
 [ "group x" ]
 #---------------------------------#
-# BAT:	  tmp_4	| tmp_5	| tmp_6	  #
+# BAT:	  t	| t	| t	  #
 # (oid)	  (chr)	| (dbl)	| (str)	  #
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]

@@ -55,7 +55,7 @@ end function;	#17:
 # (int)	  (int)		  #
 #-------------------------#
 [ 1,	  2		  ]
-[ "MALexception:Admin.main[9]:CMDbbptake:myfirstbat:failed to take from box\n" ]
-!ERROR: MALexception:Admin.main[13]:CMDprint_val:could not access descriptor
+[ "MALexception:Admin.main[9]:bbp.take:failed to take 'myfirstbat' from box\n" ]
+!ERROR: MALexception:Admin.main[13]:unknown:io.print:could not access descriptor
 MALexception:Admin.main[17]: propagated
 >

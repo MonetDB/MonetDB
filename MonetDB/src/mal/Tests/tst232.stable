@@ -40,5 +40,5 @@ refcount =1
 [ 1,	  "bat B"	  ]
 refcount =2
 #BBPreclaim: bat(4) view=0 mod=0 ref=2 stat=129
-!ERROR: MALexception:CMDdestroy_bat:failed in bbp
+!ERROR: MALexception:bat.destroy:failed in bbp
 >
