@@ -2278,7 +2278,7 @@ def main(argv) :
         exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
-        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
         exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s --trace' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''

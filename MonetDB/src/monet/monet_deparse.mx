@@ -41,6 +41,8 @@ Care is taken not to overload the buffer.
 
 m_export int yytoProlog (YYSTREE t,int cnt);
 m_export char* yydeparse(Client c, YYSTREE t, char *buf, char* end);
+m_export char* yydeparseFunction(Client c, YYSTREE t, char* buf, char* end);
+m_export char* yydeparseCall(Client c, YYSTREE t, char* buf, char* end);
 
 #endif /* _MONET_DEPARSE_H */
 @-
@@ -77,7 +79,7 @@ static int lex_name(Client c, char* buf, char *end, YYSTREE t, ValPtr v){
 	case TOK_ITCOMPILED:
 		*(buf++) = '@';
 	case TOK_BUILTIN:
-		if (p) nme = (str) TBL_getname(p);
+		if (p) nme = (str) TBL_fndname(p);
 		if (nme) sprintf(buf, "%s", nme);
 		else sprintf(buf, "unknown");
 		break;
@@ -195,6 +197,114 @@ char* yydeparse(Client c, YYSTREE t, char* buf, char* end){
 	case TOK_PARBLOCK: 
 		*buf++ =']'; *buf = 0; 
 	}
+	return buf;
+}
+@-
+The remainder of this module profile primitives to
+generate information for the performance monitor.
+@c
+char* yydeparseCall(Client c, YYSTREE t, char* buf, char* end){
+	int	i,tk;
+	char	*s=buf; /*,*s1=s;*/
+
+	*buf=0;
+	if (t == NULL || buf > end) {
+		end[-1] = 0;
+		return end;
+	}
+	if (t->token == TOK_ASSIGNMENT) {
+		buf = yydeparseCall(c, t->yysons[0], buf, end); 
+		if (buf < end) {
+			*buf++ = ':'; *buf++ = '='; *buf = 0;
+			buf = yydeparseCall(c, t->yysons[1], buf, end); 
+			if (buf < end) {
+				*buf = 0;
+			}
+		}
+		return buf;
+	} else {
+		tk = lex_name(c, buf, end, t, &t->yyval);
+	}
+	while (*buf) {
+		buf++;
+	}
+	switch( tk ){
+	case TOK_COMMAND:
+	case TOK_OPERATOR:
+	case TOK_SETAGGR:
+	case TOK_SETOP:
+	case TOK_FUNCTION:
+		t = t->yysons[0];
+	case TOK_BUILTIN:	
+		*buf++ ='('; *buf = 0; 
+		break;
+	case TOK_SEQBLOCK: 
+		*buf++ ='{'; 
+	case TOK_SEQ:	   
+		*buf = 0; break;
+	case TOK_PARBLOCK:	
+		*buf++ ='['; *buf = 0; 
+	}
+	for ( ; t; t= t->overflow )
+	for (i=0; (i < YYMAXSONS) && t->yysons[i];) {
+		lex_name(c, buf, end, t->yysons[i], &t->yysons[i]->yyval);
+		while (*buf) {
+			  buf++;
+		}
+		if (t->token == TOK_ITERATOR || t->token == TOK_ITCOMPILED) break;
+		i++;
+		if (t->yysons[i]) { 
+			if( tk == TOK_SEQBLOCK || tk == TOK_PARBLOCK || tk == TOK_SEQ )
+/*
+				*buf++ = ';';
+*/			;
+			else *buf++ = ',';
+			*buf = 0;
+		}
+	}
+	switch( tk ){
+	case TOK_COMMAND:
+	case TOK_OPERATOR:
+	case TOK_SETAGGR:
+	case TOK_SETOP:
+	case TOK_FUNCTION:
+	case TOK_BUILTIN: 
+		*buf++ =')'; *buf = 0; 
+		break;
+	case TOK_SEQBLOCK: 
+		*buf++ ='}'; 
+	case TOK_SEQ:	
+		*buf = 0; break;
+	case TOK_PARBLOCK: 
+		*buf++ =']'; *buf = 0; 
+	}
+	for(;s<buf;s++) 
+	if( *s=='\n') *s= ' '; else
+	if( *s=='\t') *s= ' '; 
+	return buf;
+}
+char* yydeparseFunction(Client c, YYSTREE t, char* buf, char* end){
+	int	tk;
+	char	*s=buf;
+
+	if (t == NULL || buf > end) {
+		end[-1] = 0;
+		return end;
+	}
+	if (t->token == TOK_ASSIGNMENT) {
+		buf = yydeparseFunction(c, t->yysons[0], buf, end); 
+		if (buf < end) {
+			*buf++ = ':'; *buf++ = '='; *buf = 0;
+			buf = yydeparseFunction(c, t->yysons[1], buf, end); 
+			if( buf<end) *buf=0;
+		}
+		return buf;
+	} else {
+		tk = lex_name(c, buf, end, t, &t->yyval);
+	}
+	for(;s<buf;s++) 
+	if( *s=='\n') *s= ' '; else
+	if( *s=='\t') *s= ' '; 
 	return buf;
 }
 @

@@ -63,6 +63,7 @@ m_export int   TBL_M_incref(Client client, oid mid);
 m_export ptr   TBL_unpacked(ptr imp);
 m_export char* TBL_search(str name, int *t, int command_hint);
 m_export str   TBL_getname(ptr imp);
+m_export str   TBL_fndname(ptr imp);
 m_export int   TBL_getparams(ptr imp, str argv[]);
 m_export BAT*  TBL_getdir(void);
 m_export char* TBL_atomname(int atm);
@@ -883,9 +884,25 @@ str TBL_getname(ptr imp) {
 
 	TBL_set_readlock();
 	if ((fid = BUNtailfnd(oid, b, bun, &imp)) == 0) {
-	    GDKerror("TBL_getname: inexistent function %p.\n", imp);
+	    GDKerror("TBL_getname: non-existing function %p.\n", imp);
 	} else if ((s = BUNtailfnd(char, TBL_fcn_nme, bun, fid)) == 0) {
 	    GDKerror("TBL_getname: no name for function %lu.\n", *fid);
+	}
+	TBL_unset_readlock();
+	return s;
+}
+/* used in lex_name() */
+str TBL_fndname(ptr imp) {
+	BAT 	*b = BATmirror(TBL_fcn_imp);
+	BUN	bun;
+	oid	*fid;
+	str 	s=0;
+
+	TBL_set_readlock();
+	if ((fid = BUNtailfnd(oid, b, bun, &imp)) == 0) {
+	    ;
+	} else if ((s = BUNtailfnd(char, TBL_fcn_nme, bun, fid)) == 0) {
+	    ;
 	}
 	TBL_unset_readlock();
 	return s;

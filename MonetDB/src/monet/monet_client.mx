@@ -327,6 +327,9 @@ void freeClient(Client c) {
 		/* tmp client resus parent so misses some epilogue work */
 		c->father = monet_cntxt[c->stk].outer = -1;
 	} else {
+		/* remove possible profiler channel */
+		closeProfiler((void*)c->fdout);
+
 		/* normal client  */
 		Thread t = THRget(THRgettid()); 
 		stream *bkin = t->data[1], *bkout = t->data[0];

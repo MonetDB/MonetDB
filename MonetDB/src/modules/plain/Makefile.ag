@@ -68,7 +68,7 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
-		mkey.mx \
+		mkey.mx profiler.mx \
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
 		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx
@@ -111,7 +111,7 @@ scripts_mil = {
 	DIR = pkglibdir
 	SOURCES = streams.mx str.mx xtables.mx \
          	algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
-                mkey.mx \
+                mkey.mx profiler.mx \
                 aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
 		blob.mx decimal.mx enum.mx lock.mx mmath.mx \
 		monettime.mx radix.mx stats.mx tcpip.mx uchr.mx \
