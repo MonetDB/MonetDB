@@ -350,7 +350,6 @@ void tstAligned()
 #endif
 }
 int mal_init(){
-	GDKprotect();
 	mal_contextLock= MT_create_lock();
 	tstAligned();
 	initNamespace();

@@ -164,6 +164,7 @@ void showErrors(){
 		stream_printf(cntxt->fdout,"%s",cntxt->errbuf);
 		if( cntxt->errbuf[i-1]!='\n') 
 			stream_printf(cntxt->fdout,"\n");
+		stream_flush(cntxt->fdout);
 		*cntxt->errbuf=0;
 	}
 }
@@ -877,6 +878,7 @@ Joining a process thread is controlled with a lock part of the stack frame
 		stkpc= pci->jump;
 		break;
 	}
+	GDKprotect();
 	if(stk->stklock== 0 && GDKprotected) stk->stklock= MT_create_lock();
 	mal_set_lock(stk->stklock,"createChild");
 	if( stk->shares == MAXSHARES){

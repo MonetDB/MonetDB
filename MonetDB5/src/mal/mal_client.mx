@@ -251,6 +251,8 @@ ClientRec	mal_clients[MAL_MAXCLIENTS+1];
 
 Client newClient(){
 	Client 	c;
+	if( mal_clients[CONSOLE].user)
+		GDKprotect();
 	mal_set_lock(mal_contextLock, "newClient");
 	if( mal_clients[CONSOLE].user &&
 	    mal_clients[CONSOLE].mode == FINISHING){
