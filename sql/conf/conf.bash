@@ -232,8 +232,8 @@ if [ ! -x bootstrap ] ; then
 
 	# the following is still needed for SQL
 	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
-	modpath="${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/sql"
-	libpath="${modpath}:${libpath}"
+	modpath="${SQL_PREFIX}/lib/sql"
+	libpath="${SQL_PREFIX}/lib:${modpath}:${libpath}"
 
 	# remove trailing ':'
 	binpath=`echo "${binpath}" | sed 's|:$||'`
@@ -298,7 +298,7 @@ if [ ! -x bootstrap ] ; then
 	echo "To compile SQL, just execute:"
 	echo -e "\t./bootstrap"
 	echo -e "\tcd ${SQL_BUILD}"
-	echo -e "\t${CONFIGURE}"
+	echo -e "\t${SQL_CONFIGURE}"
 	echo -e "\tmake"
 	echo -e "\tmake install"
 	echo ""
