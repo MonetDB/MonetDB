@@ -27,115 +27,91 @@
 
 %{
 #include "Mapi.h"
+
+#ifndef PL_na
+#define PL_na na
+#endif
 %}
 
 // don't care for the guard symbol
 %ignore _MAPI_H_INCLUDED;
 
-// unimplementable in Python
-/* %ignore mapi_bind; */
-/* %ignore mapi_bind_var; */
-/* %ignore mapi_bind_numeric; */
-/* %ignore mapi_clear_bindings; */
-/* %ignore mapi_param; */
-/* %ignore mapi_param_type; */
-/* %ignore mapi_param_numeric; */
-/* %ignore mapi_param_string; */
-/* %ignore mapi_clear_params; */
-/* %ignore mapi_store_field; */
-/* %ignore mapi_quote; */
-/* %ignore mapi_unquote; */
+// unimplementable in Perl
+%ignore mapi_bind;
+%ignore mapi_bind_var;
+%ignore mapi_bind_numeric;
+%ignore mapi_clear_bindings;
+%ignore mapi_param;
+%ignore mapi_param_type;
+%ignore mapi_param_numeric;
+%ignore mapi_param_string;
+%ignore mapi_clear_params;
+%ignore mapi_store_field;
+%ignore mapi_quote;
+%ignore mapi_unquote;
 
-/* %apply (char *STRING, int LENGTH) {(const char *cmd, size_t size)};  */
+%apply (char *STRING, int LENGTH) {(const char *cmd, size_t size)};
 
-/* %typemap(in) (char **val) { */
-/* 	int i, n; */
-/* 	if (!PyList_Check($input)) { */
-/* 		PyErr_SetString(PyExc_ValueError, "Expecting a list"); */
-/* 		return NULL; */
-/* 	} */
-/* 	n = PyList_Size($input); */
-/* 	$1 = (char **) malloc((n + 1) * sizeof(char *)); */
-/* 	for (i = 0; i < n; i++) { */
-/* 		PyObject *s = PyList_GetItem($input, i); */
-/* 		if (!PyString_Check(s)) { */
-/* 			free($1); */
-/* 			PyErr_SetString(PyExc_ValueError, "List items must be strings"); */
-/* 			return NULL; */
-/* 		} */
-/* 		$1[i] = PyString_AsString(s); */
-/* 	} */
-/* 	$1[i] = 0; */
-/* } */
-/* %typemap(freearg) (char **val) { */
-/* 	if ($1) */
-/* 		free($1); */
-/* } */
+// This tells SWIG to treat char ** as a special case 
+%typemap(perl5,in) char ** { 
+    AV *tempav; 
+    I32 len; int i; 
+    SV **tv; 
+    if (!SvROK($source)) 
+	croak("$source is not a reference."); 
+    if (SvTYPE(SvRV($source)) != SVt_PVAV) 
+	croak("$source is not an array."); 
+    tempav = (AV*)SvRV($source); 
+    len = av_len(tempav); 
+    $target = (char **) malloc((len+2)*sizeof(char *)); 
+    for (i = 0; i <= len; i++) { 
+	tv = av_fetch(tempav, i, 0); 
+	$target[i] = (char *) SvPV(*tv,PL_na); 
+    } 
+    $target[i] = 0;
 
-/* %typemap(in) (FILE *fd) { */
-/* 	if (!PyFile_Check($input)) { */
-/* 		PyErr_SetString(PyExc_ValueError, "Expecting a file"); */
-/* 		return NULL; */
-/* 	} */
-/* 	$1 = PyFile_AsFile($input); */
-/* } */
+}; 
 
-/* // options string arg, i.e. arg can be a string or NULL (in Python: None). */
-/* %typemap(in,parse="z") char *OPTSTRING ""; */
+// This cleans up our char ** array after the function call 
+%typemap(perl5,freearg) char ** { 
+    free($source); 
+} 
 
-/* %apply char *OPTSTRING {char *lang}; */
-/* %apply char *OPTSTRING {char *password}; */
-/* %apply char *OPTSTRING {char *username}; */
-/* %apply char *OPTSTRING {char *host}; */
+// Creates a new Perl array and places a char ** into it 
+%typemap(perl5,out) char ** { 
+    AV *myav; 
+    SV **svs; 
+    int i = 0,len = 0; 
 
-/* %apply char *OPTSTRING {char *cmd}; */
+    /* Figure out how many elements we have */ 
+    while ($source[len]) len++; 
+    svs = (SV **) malloc(len*sizeof(SV *)); 
+    for (i = 0; i < len ; i++) { 
+	svs[i] = sv_newmortal(); 
+	sv_setpv((SV*)svs[i],$source[i]); 
+    };
+    myav = av_make(len,svs); 
+    free(svs); 
+    $target = newRV((SV*)myav); 
+    sv_2mortal($target); 
+}
 
-/* // %typemap(out) MapiMsg { */
-/* // 	switch ($1) { */
-/* // 	case MOK: */
-/* // 		$result = Py_None; */
-/* // 		Py_INCREF(Py_None); */
-/* // 		break; */
-/* // 	case MERROR: */
-/* // 		SWIG_exception(SWIG_RuntimeError, arg1?mapi_error_str(arg1):"function returned MERROR"); */
-/* // 		break; */
-/* // 	case MTIMEOUT: */
-/* // 		SWIG_exception(SWIG_IOError, "function returned MTIMEOUT"); */
-/* // 		break; */
-/* // 	default: */
-/* // 		$result = PyLong_FromLong((long) $1); */
-/* // 		break; */
-/* // 	} */
-/* // } */
+%typemap(memberin) char [ANY] { strncpy($target,$source,$dim0); }
 
-/* %typemap(out) char * { */
-/* 	if ($1) { */
-/* 		$result = PyString_FromString($1); */
-/* 	} else { */
-/* 		$result = Py_None; */
-/* 		Py_INCREF(Py_None); */
-/* 	} */
-/* } */
+// options string arg, i.e. arg can be a string or NULL.
+// %typemap(in,parse="z") char *OPTSTRING "";
 
-/* %typemap(out) char ** { */
-/* 	if ($1) { */
-/* 		int i; */
-/* 		for (i = 0; $1[i]; i++) */
-/* 			; */
-/* 		$result = PyList_New(i); */
-/* 		if (!$result) SWIG_fail; */
-/* 		for (i = 0; $1[i]; i++) { */
-/* 			PyList_SetItem($result, i, PyString_FromString($1[i])); */
-/* 		} */
-/* 		if (PyErr_Occurred()) { */
-/* 			Py_DECREF($result); */
-/* 			$result = 0; */
-/* 			SWIG_fail; */
-/* 		} */
-/* 	} else { */
-/* 		$result = Py_None; */
-/* 		Py_INCREF(Py_None); */
-/* 	} */
-/* } */
+// %apply char *OPTSTRING {char *lang};
+// %apply char *OPTSTRING {char *password};
+// %apply char *OPTSTRING {char *username};
+// %apply char *OPTSTRING {char *host};
+// %apply char *OPTSTRING {char *cmd};
+
+// TODO:
+// %typemap(out) char * { }
+
+%typemap(perl5,in) FILE * {
+    $target = IoIFP(sv_2io($source));
+}
 
 %include "Mapi.h"
