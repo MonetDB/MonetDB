@@ -313,18 +313,25 @@ Module: "cluster"
 
 Module: "counters"
 
-[ 7 ]
-[ 7 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature				| help													  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "check_cpu",		  "COMMAND:   ",  "check_cpu() : void",			  "on Linux systems: check, whether CPU is P5, P6, or K7\n  (to be used in .LOAD sequence, only)"	  ]
-[ "create_counter",	  "COMMAND:   ",  "create_counter(int, int) : counter",	  "start counters for two events specified by number"							  ]
-[ "create_counter",	  "COMMAND:   ",  "create_counter(str, str) : counter",	  "start counters for two events specified by name"							  ]
-[ "get_counter",	  "COMMAND:   ",  "get_counter(counter) : counter",	  "stop the counting and retrieve the results"								  ]
-[ "read_counter",	  "COMMAND:   ",  "read_counter(counter) : BAT[str,lng]", "store the retrieved results in a BAT"								  ]
-[ "show_native_events",	  "COMMAND:   ",  "show_native_events() : BAT[int,str]",  "all available events"										  ]
-[ "show_unified_events",  "COMMAND:   ",  "show_unified_events() : BAT[int,str]", "all unified event names"										  ]
+[ 14 ]
+[ 14 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature				| help											  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "counter2bat",	  "COMMAND:   ",  "counter2bat(counter) : BAT[str,lng]",  "store the retrieved results in a BAT"						  ]
+[ "counter2str",	  "PROC:      ",  "counter2str(counter) : str",		  "cast counter to string."								  ]
+[ "event_name",		  "PROC:      ",  "event_name(int) : str",		  "return the (native) name of an event given by number"				  ]
+[ "event_number",	  "PROC:      ",  "event_number(int) : int",		  "return the number of an event given by name"						  ]
+[ "event_number",	  "PROC:      ",  "event_number(str) : int",		  "not available"									  ]
+[ "init_counters",	  "COMMAND:   ",  "init_counters() : void",		  "initialize counters module\n  (to be used in .LOAD sequence, only)"			  ]
+[ "profile",		  "PROC:      ",  "profile(str, any, any) : counter",	  "Count events event0 & event1 while executing cmd; return the results as counter."	  ]
+[ "show_native_events",	  "COMMAND:   ",  "show_native_events() : BAT[int,str]",  "all available events"								  ]
+[ "show_unified_events",  "COMMAND:   ",  "show_unified_events() : BAT[int,str]", "all unified event names"								  ]
+[ "start_count",	  "COMMAND:   ",  "start_count(int, int) : counter",	  "start counters for two events specified by number"					  ]
+[ "start_count",	  "PROC:      ",  "start_count(int, str) : counter",	  "start counters for two events, first specified by number, second specified by name"	  ]
+[ "start_count",	  "PROC:      ",  "start_count(str, int) : counter",	  "start counters for two events, first specified by name, second specified by number"	  ]
+[ "start_count",	  "PROC:      ",  "start_count(str, str) : counter",	  "start counters for two events specified by name"					  ]
+[ "stop_count",		  "COMMAND:   ",  "stop_count(counter) : counter",	  "stop the counting and retrieve the results"						  ]
 
 Module: "ddbench"
 
