@@ -2184,15 +2184,15 @@ BAT *
 BATcross(BAT *l, BAT *r)
 {
 	BAT *bn;
-	size_t lc, rc, estimate;
+	size_t lc, rc, sz;
 
 	ERRORcheck(l == NULL, "BATcross: invalid left operand");
 	ERRORcheck(r == NULL, "BATcross: invalid right operand");
 	lc = BATcount(l);
 	rc = BATcount(r);
-	estimate = lc * rc;
+	sz = lc * rc;
 
-	if (estimate > 0) {
+	if (sz > 0) {
 		/* try to keep void columns where possible */
 		if (rc == 1)
 			return BATconst(l, BATttype(r), BUNtail(r, BUNfirst(r)));
@@ -2200,8 +2200,11 @@ BATcross(BAT *l, BAT *r)
 			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(l, BUNfirst(l))));
 	}
 
-	@:joinbat(0,0,estimate)@
-	if (estimate == 0)
+	bn = BATnew(BAThtype(l), BATttype(r), sz);
+	if (bn == NULL) {
+		return bn;
+	}
+	if (sz == 0)
 		return bn;
 
 	BATmmap_pin(r);
