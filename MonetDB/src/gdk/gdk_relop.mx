@@ -654,8 +654,9 @@ static BAT* batfetchjoin(BAT *l, BAT *r, size_t estimate, int swap) {
 	} else {
 		ERRORcheck(!BAThdense(r), "BATleftfetchjoin: head column of right input must be dense");
 	}
-        if (BATtordered(l)&1) {
+        if ((BATcount(l)>0)&&(BATcount(r)>0)&&(BATtordered(l)&1)) {
                 /* optimization to be able to carry over more void head columns */
+                /* (only needed if neither operand is empty) */
                 ssize_t r_lo = *(ssize_t*) BUNhead(r, BUNfirst(r));
                 ssize_t r_hi = *(ssize_t*) BUNhead(r, BUNlast(r)-BUNsize(r));
                 ssize_t l_lo = *(ssize_t*) BUNtail(l, BUNfirst(l));
