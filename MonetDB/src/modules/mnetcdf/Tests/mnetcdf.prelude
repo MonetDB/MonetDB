@@ -1,0 +1,5 @@
+module("unix");
+module("mnetcdf");
+
+VAR TSTTRGDIR := getenv("TSTTRGDIR");
+

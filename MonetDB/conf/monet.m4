@@ -1147,6 +1147,42 @@ AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt,
 #AC_CHECK_LIB(setsockopt, socket, [ SOCKET_LIBS="-lsocket -lnsl" ], [], "-lnsl" )
 AC_SUBST(SOCKET_LIBS)
 
+dnl check for NetCDF io library (default /usr and /usr/local)
+have_z=auto
+NETCDF_CFLAGS=""
+NETCDF_LIBS=""
+AC_ARG_WITH(netcdf,
+	AC_HELP_STRING([--with-netcdf=DIR],
+		[netcdf library is installed in DIR]),
+	have_netcdf="$withval")
+if test "x$have_netcdf" != xno; then
+  if test "x$have_netcdf" != xauto; then
+    NETCDF_CFLAGS="-I$withval/include"
+    NETCDF_LIBS="-L$withval/lib"
+  fi
+
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $NETCDF_CFLAGS"
+  AC_CHECK_HEADER(netcdf.h, have_netcdf=yes, have_netcdf=no)
+  CPPFLAGS="$save_CPPFLAGS"
+
+  if test "x$have_netcdf" = xyes; then
+	AM_CONDITIONAL(HAVE_NETCDF, true)
+  	save_LDFLAGS="$LDFLAGS"
+  	LDFLAGS="$LDFLAGS $NETCDF_LIBS"
+  	AC_CHECK_LIB(netcdf, nc_open, NETCDF_LIBS="$NETCDF_LIBS -lnetcdf"
+        	AC_DEFINE(HAVE_LIBNETCDF, 1, [Define if you have the netcdf library]) have_netcdf=yes, have_netcdf=no)
+  	LDFLAGS="$save_LDFLAGS"
+  fi
+
+  if test "x$have_netcdf" != xyes; then
+    NETCDF_CFLAGS=""
+    NETCDF_LIBS=""
+  fi
+fi
+AC_SUBST(NETCDF_CFLAGS)
+AC_SUBST(NETCDF_LIBS)
+
 dnl check for z (de)compression library (default /usr and /usr/local)
 have_z=auto
 Z_CFLAGS=""

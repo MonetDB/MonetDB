@@ -15,5 +15,5 @@
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
 
-SUBDIRS = plain contrib NOT_WIN32?calibrator
+SUBDIRS = plain contrib NOT_WIN32?calibrator HAVE_NETCDF?mnetcdf
 #geometry 
