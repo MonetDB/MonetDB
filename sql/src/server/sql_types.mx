@@ -1072,12 +1072,6 @@ void sqltypeinit()
 		sql_create_func( "log10", "log10", *t, NULL, *t, SCALE_FIX ); 
 	}
 
-	/* Date functions */
-
-	/* Convert timestamp -> time and timestamp -> date */
-	sql_create_func("convert", "daytime", TMESTAMP, NULL, TME, SCALE_NONE );
-	sql_create_func("convert", "date", TMESTAMP, NULL, DTE, SCALE_NONE );
-
 	sql_create_func( "current_date", "current_date", NULL, NULL, DTE, SCALE_NONE );
 	sql_create_func( "current_time", "current_time", NULL, NULL, TME, SCALE_NONE );
 	sql_create_func( "current_timestamp", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE );
@@ -1090,21 +1084,6 @@ void sqltypeinit()
 
 	sql_create_func( "year", "year", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func( "month", "month", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func( "day", "day", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func( "hour", "hours", TME, NULL, INT, SCALE_FIX);
-	sql_create_func( "minute", "minutes", TME, NULL, INT, SCALE_FIX);
-	sql_create_func( "second", "seconds", TME, NULL, INT, SCALE_FIX);
-	sql_create_func( "year", "year", TMESTAMP, NULL, INT, SCALE_FIX);
-	sql_create_func( "month", "month", TMESTAMP, NULL, INT, SCALE_FIX);
-	sql_create_func( "day", "day", TMESTAMP, NULL, INT, SCALE_FIX);
-	sql_create_func( "hour", "hours", TMESTAMP, NULL, INT, SCALE_FIX);
-	sql_create_func( "minute", "minutes", TMESTAMP, NULL, INT, SCALE_FIX);
-	sql_create_func( "second", "seconds", TMESTAMP, NULL, INT, SCALE_FIX);
-
-	sql_create_func( "dayofyear", "dayofyear", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func( "weekofyear", "weekofyear", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func( "dayofweek", "dayofweek", DTE, NULL, INT, SCALE_FIX);
-
 
 	for(t=strings; t < numerical; t++){
 	  sql_create_func(  "substring", "substring", *t, INT, *t, SCALE_NONE);
