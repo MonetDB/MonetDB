@@ -176,8 +176,10 @@ test = (
                 "|" r'^ERROR = (communication line broken|Connection lost)$'
                 # sql/src/benchmarks/arno_flt/Tests/init:
                 "|" r'\t2.7445021260064(099|1)e\-06\t'
+                # Broken sql error messages:
+                "|" r'^QUERY = (\-\-|select|insert|INSERT) '
                 # pathfinder: loader/usage (without BerkeleyDB):
-                "|" r'^     -c: compress node properties (40% encoding speed)$'
+                "|" r'^     -c: compress node properties \(40% encoding speed\)$'
                 # Mtest warnings:
                 "|" r'^Over\.\.$'
                 "|" r'^(quit\(\))?;$'

@@ -1,7 +1,0 @@
-# exit value of a barrier
-barrier k:=12;
-	print(k);
-	leave k;
-	print("not possible");
-exit 	k:=11;
-	print(k);

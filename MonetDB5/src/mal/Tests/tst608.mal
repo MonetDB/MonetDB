@@ -1,9 +1,0 @@
-# Testing global consts defined for all users
-print("Content of the 'mil' box");
-mil.open();
-barrier b:= mil.iterator(n:str);
-	printf("%s=",n);
-	val:str := mil.toString(n);
-	printf("%s\n",val);
-	redo b:= mil.iterator(n:str);
-exit b;
