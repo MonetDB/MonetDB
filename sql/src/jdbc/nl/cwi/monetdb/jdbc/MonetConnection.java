@@ -725,7 +725,7 @@ public class MonetConnection extends Thread implements Connection {
 	void sendIndependantCommand(String command) throws SQLException {
 		String error;
 		HeaderList hdrl =
-			addQuery(command, 20, 0, 0, 0);
+			addQuery(command, 0, 0, 0, 0);
 		
 		while (hdrl.getNextHeader() != null);
 	}
@@ -930,7 +930,7 @@ public class MonetConnection extends Thread implements Connection {
 				int size =
 					hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, hdrl.cachesize) : hdrl.cachesize;
 				// don't do work if it's not needed
-				if (size != curReplySize) {
+				if (size != 0 && size != curReplySize) {
 					monet.writeln("SSET reply_size = " + size + ";");
 
 					String error = monet.waitForPrompt();
@@ -998,7 +998,7 @@ public class MonetConnection extends Thread implements Connection {
 					// complete the header info and add to list
 					if (lastState == MonetSocket.HEADER) {
 						hdr.complete();
-						rawr = new RawResults(Math.min(hdrl.cachesize, hdr.getTupleCount()), null);
+						rawr = new RawResults(hdrl.cachesize != 0 ? Math.min(hdrl.cachesize, hdr.getTupleCount()) : hdr.getTupleCount(), null);
 						hdr.addRawResults(0, rawr);
 						// a RawResults must be in hdr at this point!!!
 						hdrl.addHeader(hdr);
