@@ -45,7 +45,7 @@ HIDE=1
 	$(MV) $*.yy.c $*.yy.c.tmp
 	echo '#include <'"$(CONFIG_H)"'>' > $*.yy.c
 	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.c.tmp >> $*.yy.c
-	$(RM) -f $*.yy.c.tmp
+	$(RM) $*.yy.c.tmp
 
 %.cc: %.mx
 	$(MX) $(MXFLAGS) -x C $<
@@ -55,27 +55,27 @@ HIDE=1
 
 %.tab.cc: %.yy
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $< || { $(RM) -f waiting ; exit 1 ; }
+	$(YACC) $(YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
-	$(RM) -f waiting
+	$(RM) waiting
 
 %.tab.h: %.yy
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $< || { $(RM) -f waiting ; exit 1 ; } 
+	$(YACC) $(YFLAGS) $< || { $(RM) waiting ; exit 1 ; } 
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-	$(RM) -f waiting
+	$(RM) waiting
 
 %.tab.c: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $< || { $(RM) -f waiting ; exit 1 ; }
+	$(YACC) $(YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
-	$(RM) -f waiting
+	$(RM) waiting
 
 %.tab.h: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $< || { $(RM) -f waiting ; exit 1 ; }
+	$(YACC) $(YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-	$(RM) -f waiting
+	$(RM) waiting
 
 %.ll: %.mx
 	$(MX) $(MXFLAGS) -x L $<
@@ -88,7 +88,7 @@ HIDE=1
 	$(MV) $*.yy.cc $*.yy.cc.tmp
 	echo '#include <'"$(CONFIG_H)"'>' > $*.yy.cc
 	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.cc.tmp >> $*.yy.cc
-	$(RM) -f $*.yy.cc.tmp
+	$(RM) $*.yy.cc.tmp
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
@@ -137,10 +137,10 @@ HIDE=1
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.pm.c: %.pm.i
-	$(SWIG) -perl5 -exportall $(SWIGFLAGS) -outdir . -o $@ $<
+	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o $@ $<
 
 %.pm: %.pm.i
-	$(SWIG) -perl5 -exportall $(SWIGFLAGS) -outdir . -o dymmy.c $<
+	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.tex: %.mx
 	$(MX) -1 -H$(HIDE) -t $< 
@@ -160,7 +160,7 @@ HIDE=1
 	# .tex file to the local build dir.
 	if [ "$<" != "$(<F)" ] ; then $(LN_S) $< $(<F) ; fi
 	$(LATEX2HTML) -split 0 -no_images -info 0 -no_subdir  $(<F)
-	if [ "$<" != "$(<F)" ] ; then $(RM) -f $(<F) ; fi
+	if [ "$<" != "$(<F)" ] ; then $(RM) $(<F) ; fi
 
 %.pdf: %.tex
 	$(PDFLATEX) $< 
@@ -185,6 +185,9 @@ $(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 
 $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 	$(COMPILE) -O0 -c $<
+
+$(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
+	$(LIBTOOL) --mode=compile $(COMPILE) -O0 -c $<
 
 SUFFIXES-local: $(BUILT_SOURCES)
 
