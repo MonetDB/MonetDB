@@ -2017,7 +2017,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 			comp_type cmp = (sc->token == SQL_LIKE ? 
 					cmp_like : cmp_notlike);
 			/* default to the '\' char for escape */
-			if (es == NULL || strcmp(es, "") == 0)
+			if (es == NULL)
 				e = stmt_atom_string(_strdup(""));
 			res = stmt_likeselect(ls, a, e, cmp);
 		}
