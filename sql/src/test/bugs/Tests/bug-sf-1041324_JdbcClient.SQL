@@ -12,8 +12,21 @@ if [ -f $SQL_BUILD/src/jdbc/MonetDB_JDBC.jar ] ; then
 	JAR="`$CYGPATH_WP "$TSTTRGBASE/lib/MonetDB/java/MonetDB_JDBC.jar"`"
 fi
 
-# requires ".monetdb" file in the user's home that contains "user=monetdb" and "password=monetdb"
+if [ -f ~/.monetdb ] ; then
+	mv ~/.monetdb ~/._monetdb_
+fi
+
+cat << EOF > ~/.monetdb
+user=monetdb
+password=monetdb
+EOF
 
 Mlog   "$MTIMEOUT java -jar \"$JAR\" -p $SQLPORT -f $RELSRCDIR/../bug-sf-1041324_weird-char.sql"
 	$MTIMEOUT java -jar  "$JAR"  -p $SQLPORT -f $RELSRCDIR/../bug-sf-1041324_weird-char.sql 
+
+rm -f ~/.monetdb
+
+if [ -f ~/._monetdb_ ] ; then
+	mv ~/._monetdb_ ~/.monetdb
+fi
 
