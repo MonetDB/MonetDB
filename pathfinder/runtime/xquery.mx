@@ -39,7 +39,28 @@
 
 #define MAXTAGDEPTH        1024
 
+#define PRE_SIZE     0
+#define PRE_LEVEL    1
+#define PRE_PROP     2
+#define PRE_KIND     3
+#define PRE_FRAG     4
+#define QN_NS        5
+#define QN_LOC       6
+#define PROP_TEXT    7
+#define PROP_COM     8
+#define PROP_INS     9
+#define PROP_TGT    10
+#define ATTR_OWN    11
+#define ATTR_QN     12
+#define ATTR_PROP   13
+#define ATTR_FRAG   14
+#define PROP_VAL    15
+#define DOC_LOADED  16
+#define FRAG        17
+#define WS_FRAG     18
+#define HEIGHT      19
 
+#define WS_BATS     19
 /**
  *
  * I. THE CONTEXT NODE DEFINITION AND USAGE PART
@@ -52,24 +73,8 @@
 typedef struct {
         int     saxMode;        /* Flag, true if printing a Sax-O-Phone stream */
         BAT*    ws;             /* working set BAT */
-        int     curFrag;        /* current fragment used by working set */
-        BAT*    Tpre_size;      /* Start of the document BATs */
-        BAT*    Tpre_kind;
-        BAT*    Tpre_prop;
-        BAT*    Tprop_ns;
-        BAT*    Tprop_loc;
-        BAT*    Tprop_text;
-        BAT*    Tprop_com;
-        BAT*    Tprop_tgt;
-        BAT*    Tprop_ins;
-        BAT*    Tattr_own;
-        BAT*    Tattr_ns;
-        BAT*    Tattr_loc;
-        BAT*    Tattr_val;
-        /*  */
-        BAT*    Tattr_prop;
-        BAT*    Tprop_val;
-        BAT*    Tattr_qn;
+        int     curFRAG;        /* current fragment used by working set */
+        BAT*    curBAT[WS_BATS];/* The BAT's of the current fragment*/
         /* */
         /**
          * Next elements is a stack used during printing to store the 
@@ -94,73 +99,44 @@ typedef struct {
  * initializes all other data structures.
  */
 
-#define PRE_SIZE     0
-#define PRE_LEVEL    1
-#define PRE_PROP     2
-#define PRE_KIND     3
-#define PRE_FRAG     4
-#define QN_NS        5
-#define QN_LOC       6
-#define PROP_TEXT    7
-#define PROP_COM     8
-#define PROP_INS     9
-#define PROP_TGT    10
-#define ATTR_OWN    11
-#define ATTR_QN     12
-#define ATTR_PROP   13
-#define ATTR_FRAG   14
-#define PROP_VAL    15
-#define DOC_LOADED  16
-#define FRAG        17
-#define WS_FRAG     18
-#define HEIGHT      19
-
 BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
         /* stream_printf(GDKout,"# FTECH WS[%d][%d] \n",batID,wsID); */
         BUN bun = BUNfnd(ws,&batID);
         if ( !bun )
-                stream_printf(GDKout,"# NOT FOUND BAT[%d] in WS!!!!\n",batID);
+              stream_printf(GDKout,"# NOT FOUND BAT[%d] in WS!!!!\n",batID);
         BAT* batbat = BATdescriptor(*(bat*)bun);
 
         BUN bbun = BUNfnd(batbat,&wsID);
-        if ( !bbun )
-                stream_printf(GDKout,"# NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID);
-        BAT* res = BATdescriptor(*(bat*)bbun);
-
+        BAT *res;
+        if ( !bbun ) {
+                res = 0;
+                /* stream_printf(GDKout,"# NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID); */
+        } else {
+                res = BATdescriptor(*(bat*)bbun);
+        }
         return res;
 }
 
 void switchWsContext(XqueryCtx* ctx, int wsID) {
-        if ( ctx->curFrag != wsID ) {
-                if ( ctx->curFrag >= 0 ) {
-                        /* INCOMPLETE, close current BATS */
+        if ( ctx->curFRAG != wsID ) {
+                int i;
+
+                if ( ctx->curFRAG >= 0 ) {
+                        for(i=0; i<WS_BATS; i++) {
+                                /* INCOMPLETE close ctx->curBAT[i]; */
+                        }
                 }
-                ctx->curFrag   = wsID;
-                ctx->Tpre_size = fetchWsContextBAT(ctx->ws,PRE_SIZE,wsID);
-                ctx->Tpre_kind = fetchWsContextBAT(ctx->ws,PRE_KIND,wsID);
-                ctx->Tpre_prop = fetchWsContextBAT(ctx->ws,PRE_PROP,wsID);
-                ctx->Tprop_ns  = fetchWsContextBAT(ctx->ws,QN_NS,wsID);
-                ctx->Tprop_loc = fetchWsContextBAT(ctx->ws,QN_LOC,wsID);
-                ctx->Tprop_text= fetchWsContextBAT(ctx->ws,PROP_TEXT,wsID);
-                ctx->Tprop_com = fetchWsContextBAT(ctx->ws,PROP_COM,wsID);
-                ctx->Tprop_tgt = fetchWsContextBAT(ctx->ws,PROP_TGT,wsID);
-                ctx->Tprop_ins = fetchWsContextBAT(ctx->ws,PROP_INS,wsID);
-                /* */
-                ctx->Tattr_own = fetchWsContextBAT(ctx->ws,ATTR_OWN,wsID);
-                ctx->Tattr_ns  = fetchWsContextBAT(ctx->ws,ATTR_QN,wsID);
-                ctx->Tattr_loc = 0;
-                ctx->Tattr_val = 0;
-                /* */
-                ctx->Tattr_prop= fetchWsContextBAT(ctx->ws,ATTR_PROP,wsID);
-                ctx->Tprop_val = fetchWsContextBAT(ctx->ws,PROP_VAL,wsID);
-                ctx->Tattr_qn  = fetchWsContextBAT(ctx->ws,ATTR_QN,wsID);
+                ctx->curFRAG   = wsID;
+                for(i=0; i<WS_BATS; i++) {
+                        ctx->curBAT[i] = fetchWsContextBAT(ctx->ws,i,wsID);
+                }
         }
 }
 
 void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
         ctx->saxMode   = (strcmp(mode,"sax")==0);
         ctx->ws        = ws;
-        ctx->curFrag   = -1; /* empty, no frag loaded */
+        ctx->curFRAG   = -1; /* empty, no frag loaded */
         /* */
         if ( wsID >= 0 )
                 switchWsContext(ctx, wsID);
@@ -490,23 +466,46 @@ ptr indexedTail(str name, BAT* b, oid oid_index) {
         return res;
 }
 
+ptr IDT(XqueryCtx* ctx, int batId, oid oid_index) {
+        BAT* b = ctx->curBAT[batId];
+        if ( !b ) 
+                stream_printf(GDKout,"NIL ctx->curBAT[%d]\n",batId);
+        ptr res = indexedTail("tmp",b,oid_index);
+        return res;
+}
+
+ptr IDT_FRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index) {
+        if ( ctx->curFRAG == fragId ) 
+                return IDT(ctx,batId,oid_index);
+        else {
+                BAT* b = fetchWsContextBAT(ctx->ws, batId, fragId);
+
+                if ( !b )
+                        stream_printf(GDKout,"NIL BAT[%d][%d]\n",fragId,batId);
+
+                ptr res = indexedTail("tmp",b,oid_index);
+                /* INCOMPLETE, close BAT* b */
+                return res;
+        }
+}
+
 /**
  * Handle the generation of the attributes of the node with oid 'pre'. This
  * function is only called from the xquery_node_print() function.
  */
 void query_attr_print(XqueryCtx* ctx, oid pre) {
-        BAT* b = BATuselect(ctx->Tattr_own,&pre,&pre);
+        BAT* b = BATuselect(ctx->curBAT[ATTR_OWN],&pre,&pre);
 
         BUN p, q; 
         BATloop(b, p, q) {
                 oid id = *(oid*)BUNhead(b, p);
                 /* */
-                oid poid = *(oid*)indexedTail("pre_prop",ctx->Tattr_prop, id);
-                str val = (str)indexedTail("prop_val",ctx->Tprop_val, poid);
+                oid poid = *(oid*)IDT(ctx,ATTR_PROP,id);
+                str val = (str)IDT(ctx,PROP_VAL,poid);
                 /* */
-                oid qoid = *(oid*)indexedTail("pre_prop",ctx->Tattr_qn, id);
-                str ns   = (str)indexedTail("prop_ns",ctx->Tprop_ns, qoid);
-                str name = (str)indexedTail("attr_qn",ctx->Tprop_loc, qoid);
+                oid qoid = *(oid*)IDT(ctx,ATTR_QN,id);
+                str ns   = (str)IDT(ctx,QN_NS,qoid);
+                str name = (str)IDT(ctx,QN_LOC,qoid);
                 /* */
                 handle_attribute(ctx,ns,name,val);
         }
@@ -517,42 +516,41 @@ void query_attr_print(XqueryCtx* ctx, oid pre) {
 /**
  * Handle the generation of the node with oid 'pre'.
  */
-void xquery_node_print(XqueryCtx* ctx, oid pre) {
-        chr kind = *(chr*)indexedTail("pre_kind",ctx->Tpre_kind,pre);
-        oid prop = *(oid*)indexedTail("pre_prop",ctx->Tpre_prop,pre);
+void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag) {
+        chr kind = *(chr*)IDT(ctx,PRE_KIND,pre);
+        oid prop = *(oid*)IDT(ctx,PRE_PROP,pre);
 
-        /* stream_printf(GDKout,"XQNP(pre=%d,kind=%d) START\n",pre,(int)kind); */
+        int valueFRAG = ctx->curFRAG;
+        if ( pre_frag )
+                valueFRAG = *(int*)IDT(ctx,PRE_FRAG,pre);
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
-                        /* str name = "XXNAME"; */
-                        str name = (str)indexedTail("prop_loc",ctx->Tprop_loc,prop);
-                        /* str ns   = ""; */
-                        str ns   = (str)indexedTail("prop_ns",ctx->Tprop_ns,prop);
+                        str name = (str)IDT_FRGN(ctx,valueFRAG,QN_LOC,prop);
+                        str ns   = (str)IDT_FRGN(ctx,valueFRAG,QN_NS,prop);
                         handle_startElement(ctx,ns,name);
                         query_attr_print(ctx,pre);
 
-                        oid size = *(oid*)indexedTail("pre_size",ctx->Tpre_size,pre);
-                        /* stream_printf(GDKout,"NODEEL(pre=%d,size=%d)\n",pre,size); */
+                        oid size = *(oid*)IDT(ctx,PRE_SIZE,pre);
                         pushTag(ctx,pre+size,ns,name);
                         break;
                         }
                 case (char)1: {/* TEXT */
-                        handle_characters(ctx,(str)indexedTail("prop_text",ctx->Tprop_text,prop));
+                        handle_characters(ctx,(str)IDT_FRGN(ctx,valueFRAG,PROP_TEXT,prop));
                         break;
                         }
                 case (char)2: {/* COMMENT */
-                        handle_comment(ctx,(str)indexedTail("prop_com",ctx->Tprop_com,prop));
+                        handle_comment(ctx,(str)IDT_FRGN(ctx,valueFRAG,PROP_COM,prop));
                         break;
                         }
                 case (char)3: {/* PI */
-                        str target = (str)indexedTail("prop_tgt",ctx->Tprop_tgt,prop);
-                        str data   = (str)indexedTail("prop_ins",ctx->Tprop_ins,prop);
+                        str target = (str)IDT_FRGN(ctx,valueFRAG,PROP_TGT,prop);
+                        str data   = (str)IDT_FRGN(ctx,valueFRAG,PROP_INS,prop);
                         handle_processingInstruction(ctx,target,data);
                         break;
                         }
                 case (char)4: {/* DOCUMENT */
                         /* The node represents an entire document */
-                        oid offset = *(oid*)indexedTail("pre_size",ctx->Tpre_size,pre);
+                        oid offset = *(oid*)IDT(ctx,PRE_SIZE,pre);
                         pushTag(ctx,pre+offset,"","");
                         break;
                         }
@@ -586,7 +584,7 @@ void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
         for(q = BUNlast(b); p<q; p = BUNnext(b, p)) {
                 oid pre = *(oid*)BUNhead(b, p);
                 do {
-                        xquery_node_print(ctx, pre);
+                        xquery_node_print(ctx, pre, 0 /* pre_frag */);
                         xquery_endtag_print(ctx,++pre);
                 } while( moreTags(ctx) && (pre<to) );
         }
@@ -596,12 +594,12 @@ void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
         }
 }
 
-void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to) {
+void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag) {
         oid pre = from;
 
         do {
                 if (0) stream_printf(GDKout,"[pb%dp]",pre);
-                xquery_node_print(ctx, pre);
+                xquery_node_print(ctx, pre,pre_frag);
                 xquery_endtag_print(ctx,++pre);
                 if (0) stream_printf(GDKout,"[pe%dp]",pre);
         } while( moreTags(ctx) && (pre<=to) );
@@ -619,14 +617,14 @@ void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to) {
  * Main XML document printing routine
  */
 
-#define DEBUG_BAT       0
-
 int ws_documentIndex(BAT* ws, str docName) {
         int doc_loaded_idx = DOC_LOADED;
 
         BUN b = BUNfnd(ws,&doc_loaded_idx);
-        if ( !b )
-                stream_printf(GDKout,"NOT FOUND DOCBAT!!!!\n");
+        /*
+         * if ( !b )
+         *       stream_printf(GDKout,"NOT FOUND DOCBAT!!!!\n");
+         */
         BAT* doc_loaded = BATdescriptor(*(bat*)b);
 
         BATprintf(GDKout,doc_loaded);
@@ -645,9 +643,8 @@ int ws_documentIndex(BAT* ws, str docName) {
 }
 
 void doDump(str docName, XqueryCtx* ctx) {
-        stream_printf(GDKout,"# dump of document \"%s\", frag=%d\n",docName,ctx->curFrag);
+        stream_printf(GDKout,"# dump of document \"%s\", frag=%d\n",docName,ctx->curFRAG);
         stream_printf(GDKout,"# ********pre_size********:\n");
-        BATprintf(GDKout, ctx->Tpre_size);
 
 }
 
@@ -677,7 +674,7 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
         createWsContext(ctx,ws,docIndex,mode);
         /* */
         handle_startDocument(ctx);
-        xquery_pre_range(ctx,ctx->Tpre_size,0/*start*/,1 /* first is doc ? */);
+        xquery_pre_range(ctx,ctx->curBAT[PRE_SIZE],0/*start*/,1 /* first is doc ? */);
         handle_endDocument(ctx);
         /* */
         return GDK_SUCCEED;
@@ -721,21 +718,10 @@ void  seqEnd(XqueryCtx* ctx) {
 /**
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
  */
-void  seqEmitNode(XqueryCtx* ctx, oid preVal) {
-        if ( ! ctx->saxMode ) {
-                if ( ctx->nAttrOnLine > 0 ) {
-                        stream_printf(GDKout,"\n");
-                        ctx->nAttrOnLine = 0;
-                }
-        }
-        /* */
-        int size = *(int*)indexedTail("pre_size",ctx->Tpre_size,preVal);
+void  seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag) {
+        int size = *(int*)IDT(ctx,PRE_SIZE,preVal);
         /* stream_printf(GDKout,"Emit NODE: %d, size = %d\n",preVal,size); */
-        MY_xquery_pre_range(ctx,preVal,preVal+size);
-        /* */
-        if ( ! ctx->saxMode ) {
-                stream_printf(GDKout,"\n");
-        }
+        MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag);
 }
 
 /**
@@ -825,6 +811,8 @@ void  seqEmitStr(XqueryCtx* ctx, str sv) {
 #define ELEM  33
 #define ATTR  34
 
+#define DEBUG_BAT       0
+
 int xquery_print_result_main(
                 str  mode,
                 BAT* ws,
@@ -850,9 +838,9 @@ int xquery_print_result_main(
         BATloop(item, p, q) {
                 oid pre = *(oid*)BUNhead(item, p);
                 oid valoid = *(oid*)BUNtail(item, p);
-                chr cmbn_frag_kind = *(chr*)indexedTail("kind",kind,pre);
+                int cmbn_frag_kind = *(int*)indexedTail("kind",kind,pre);
                 if ( DEBUG_BAT )
-                        stream_printf(GDKout,"# %d\t%c\t%d\t",pre,cmbn_frag_kind,valoid);
+                        stream_printf(GDKout,"## pre=%d\tcbn=%d\tkind=%d\tv_oid=%d\t",pre,cmbn_frag_kind,XTRACT_KIND(cmbn_frag_kind),valoid);
                 switch( XTRACT_KIND(cmbn_frag_kind) ) {
                  case ATTR: {
                         stream_printf(GDKout,"<!--attr-not-impl-yet-->\n");
@@ -860,10 +848,9 @@ int xquery_print_result_main(
                         };
                  case ELEM: {
                         int frag = XTRACT_FRAG(cmbn_frag_kind);
-                        if (DEBUG_BAT) stream_printf(GDKout,"ELEM(%d,%d)\n",frag, valoid);
-                        /*stream_printf(GDKout,"ELEM(%d,%d)\n",frag, valoid);*/
+                        if (DEBUG_BAT) stream_printf(GDKout,"ELEM(frag=%d,v_oid=%d)\n",frag, valoid);
                         switchWsContext(ctx,frag);
-                        seqEmitNode(ctx, valoid);
+                        seqEmitNode(ctx, valoid, ctx->curBAT[PRE_FRAG]);
                         break;
                         };
                  case NODE: {
