@@ -1026,7 +1026,7 @@ typedef __int64 mapi_int64;
 #endif
 #endif
 /* define printf formats for printing size_t and ssize_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(__CYGWIN32__)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(__CYGWIN32__) && !defined(__sgi)
 #define SZFMT "%zu"
 #define SSZFMT "%zd"
 #elif SIZEOF_SIZE_T == SIZEOF_INT

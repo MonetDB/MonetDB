@@ -350,7 +350,7 @@ stream_init(void)
 #ifdef STREAM_DEBUG
 /* code adapted from gdk.mx */
 /* define printf formats for printing size_t and ssize_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(__CYGWIN32__)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(__CYGWIN32__) && !defined(__sgi)
 #define SZFMT "%zu"
 #elif SIZEOF_SIZE_T == SIZEOF_INT
 #define SZFMT "%u"
