@@ -1949,12 +1949,13 @@ static void mvc_init_type( struct bm *bm )
 	if (BATcount(type_sqlname) == 0) for (n = types->h; n; n = n->next) {
 		oid nil = oid_nil;
 		sql_type *t = n->data;
+		int radix = t->radix;
 
 		BUNins(type_id, &nil, &t->base.id);
 		BUNins(type_sqlname, &nil, t->sqlname);
 		BUNins(type_digits, &nil, &t->digits);
 		BUNins(type_scale, &nil, &t->scale);
-		BUNins(type_radix, &nil, &t->radix);
+		BUNins(type_radix, &nil, &radix);
 		BUNins(type_module_id, &nil, &zero);
 		BUNins(type_systemname, &nil, t->base.name);
 	}
@@ -2023,107 +2024,107 @@ int mvc_init(int debug, backend_stack stk)
 
 		s = bootstrap_create_schema(m, "sys", ROLE_SYSADMIN);
 		t = bootstrap_create_table (m, s, "modules", 0);
-		bootstrap_create_column(m, t, "id", "INT", 9);
-		bootstrap_create_column(m, t, "name", "VARCHAR", 0);
+		bootstrap_create_column(m, t, "id", "int", 9);
+		bootstrap_create_column(m, t, "name", "varchar", 0);
 
 		t = bootstrap_create_table (m, s, "schemas", 0);
-		bootstrap_create_column(m, t, "id", "INT", 9);
-		bootstrap_create_column(m, t, "name", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "authorization", "INT", 9);
+		bootstrap_create_column(m, t, "id", "int", 9);
+		bootstrap_create_column(m, t, "name", "varchar", 0);
+		bootstrap_create_column(m, t, "authorization", "int", 9);
 
 		t = bootstrap_create_table(m, s, "ptables", 0);
-		bootstrap_create_column(m, t, "id", "INT", 9);
-		bootstrap_create_column(m, t, "name", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "schema_id", "INT", 9);
-		bootstrap_create_column(m, t, "query", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "istable", "BOOLEAN", 0);
-		bootstrap_create_column(m, t, "system", "BOOLEAN", 0);
-		bootstrap_create_column(m, t, "clear", "BOOLEAN", 0);
+		bootstrap_create_column(m, t, "id", "int", 9);
+		bootstrap_create_column(m, t, "name", "varchar", 0);
+		bootstrap_create_column(m, t, "schema_id", "int", 9);
+		bootstrap_create_column(m, t, "query", "varchar", 0);
+		bootstrap_create_column(m, t, "istable", "boolean", 0);
+		bootstrap_create_column(m, t, "system", "boolean", 0);
+		bootstrap_create_column(m, t, "clear", "boolean", 0);
 
 		t = bootstrap_create_table(m, s, "pcolumns", 0);
-		bootstrap_create_column(m, t, "id", "INT", 9);
-		bootstrap_create_column(m, t, "name", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "type", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "type_digits", "INT", 9);
-		bootstrap_create_column(m, t, "type_scale", "INT", 9);
-		bootstrap_create_column(m, t, "table_id", "INT", 9);
-		bootstrap_create_column(m, t, "default", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "null", "BOOLEAN", 0);
-		bootstrap_create_column(m, t, "number", "INT", 9);
+		bootstrap_create_column(m, t, "id", "int", 9);
+		bootstrap_create_column(m, t, "name", "varchar", 0);
+		bootstrap_create_column(m, t, "type", "varchar", 0);
+		bootstrap_create_column(m, t, "type_digits", "int", 9);
+		bootstrap_create_column(m, t, "type_scale", "int", 9);
+		bootstrap_create_column(m, t, "table_id", "int", 9);
+		bootstrap_create_column(m, t, "default", "varchar", 0);
+		bootstrap_create_column(m, t, "null", "boolean", 0);
+		bootstrap_create_column(m, t, "number", "int", 9);
 
 		t = bootstrap_create_table(m, s, "keys", 0);
-		bootstrap_create_column(m, t, "id", "INT", 9);
-		bootstrap_create_column(m, t, "table_id", "INT", 9);
-		bootstrap_create_column(m, t, "type", "INT", 9);
-		bootstrap_create_column(m, t, "name", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "rkey", "INT", 9);
+		bootstrap_create_column(m, t, "id", "int", 9);
+		bootstrap_create_column(m, t, "table_id", "int", 9);
+		bootstrap_create_column(m, t, "type", "int", 9);
+		bootstrap_create_column(m, t, "name", "varchar", 0);
+		bootstrap_create_column(m, t, "rkey", "int", 9);
 
 		t = bootstrap_create_table(m, s, "idxs", 0);
-		bootstrap_create_column(m, t, "id", "INT", 9);
-		bootstrap_create_column(m, t, "table_id", "INT", 9);
-		bootstrap_create_column(m, t, "type", "INT", 9);
-		bootstrap_create_column(m, t, "name", "VARCHAR", 0);
+		bootstrap_create_column(m, t, "id", "int", 9);
+		bootstrap_create_column(m, t, "table_id", "int", 9);
+		bootstrap_create_column(m, t, "type", "int", 9);
+		bootstrap_create_column(m, t, "name", "varchar", 0);
 
 		t = bootstrap_create_table(m, s, "keycolumns", 0);
-		bootstrap_create_column(m, t, "id", "INT", 9);
-		bootstrap_create_column(m, t, "column", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "trunc", "INT", 9);
-		bootstrap_create_column(m, t, "nr", "INT", 9);
+		bootstrap_create_column(m, t, "id", "int", 9);
+		bootstrap_create_column(m, t, "column", "varchar", 0);
+		bootstrap_create_column(m, t, "trunc", "int", 9);
+		bootstrap_create_column(m, t, "nr", "int", 9);
 
 		t = bootstrap_create_table (m, s, "types", 0);
-		bootstrap_create_column(m, t, "id", "INT", 9);
-		bootstrap_create_column(m, t, "systemname", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "sqlname", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "digits", "INT", 9);
-		bootstrap_create_column(m, t, "scale", "INT", 9);
-		bootstrap_create_column(m, t, "radix", "INT", 9);
-		bootstrap_create_column(m, t, "module_id", "INT", 9);
+		bootstrap_create_column(m, t, "id", "int", 9);
+		bootstrap_create_column(m, t, "systemname", "varchar", 0);
+		bootstrap_create_column(m, t, "sqlname", "varchar", 0);
+		bootstrap_create_column(m, t, "digits", "int", 9);
+		bootstrap_create_column(m, t, "scale", "int", 9);
+		bootstrap_create_column(m, t, "radix", "int", 9);
+		bootstrap_create_column(m, t, "module_id", "int", 9);
 
 		t = mvc_create_table(m, s, "ttables", 1, 1, 1, -1);
-		mvc_create_column_(m, t, "id", "INT", 9);
-		mvc_create_column_(m, t, "name", "VARCHAR", 0);
-		mvc_create_column_(m, t, "schema_id", "INT", 9);
-		mvc_create_column_(m, t, "query", "VARCHAR", 0);
-		mvc_create_column_(m, t, "istable", "BOOLEAN", 0);
-		mvc_create_column_(m, t, "system", "BOOLEAN", 0);
-		mvc_create_column_(m, t, "clear", "BOOLEAN", 0);
+		mvc_create_column_(m, t, "id", "int", 9);
+		mvc_create_column_(m, t, "name", "varchar", 0);
+		mvc_create_column_(m, t, "schema_id", "int", 9);
+		mvc_create_column_(m, t, "query", "varchar", 0);
+		mvc_create_column_(m, t, "istable", "boolean", 0);
+		mvc_create_column_(m, t, "system", "boolean", 0);
+		mvc_create_column_(m, t, "clear", "boolean", 0);
 
 		t = mvc_create_table(m, s, "tcolumns", 1, 1, 1, -1);
-		mvc_create_column_(m, t, "id", "INT", 9 );
-		mvc_create_column_(m, t, "name", "VARCHAR", 0 );
-		mvc_create_column_(m, t, "type", "VARCHAR", 0 );
-		mvc_create_column_(m, t, "type_digits", "INT", 9 );
-		mvc_create_column_(m, t, "type_scale", "INT", 9 );
-		mvc_create_column_(m, t, "table_id", "INT", 9 );
-		mvc_create_column_(m, t, "default", "VARCHAR", 0 );
-		mvc_create_column_(m, t, "null", "BOOLEAN", 0 );
-		mvc_create_column_(m, t, "number", "INT", 9 );
+		mvc_create_column_(m, t, "id", "int", 9 );
+		mvc_create_column_(m, t, "name", "varchar", 0 );
+		mvc_create_column_(m, t, "type", "varchar", 0 );
+		mvc_create_column_(m, t, "type_digits", "int", 9 );
+		mvc_create_column_(m, t, "type_scale", "int", 9 );
+		mvc_create_column_(m, t, "table_id", "int", 9 );
+		mvc_create_column_(m, t, "default", "varchar", 0 );
+		mvc_create_column_(m, t, "null", "boolean", 0 );
+		mvc_create_column_(m, t, "number", "int", 9 );
 
 		/* now the authorisation related tables */
 		t = mvc_create_table(m, s, "db_users", 1, 1, 0, -1 );
-		mvc_create_column_(m, t, "name", "VARCHAR", 0);
-		mvc_create_column_(m, t, "passwd", "VARCHAR", 0);
-		mvc_create_column_(m, t, "fullname", "VARCHAR", 0);
-		mvc_create_column_(m, t, "default_schema", "INT", 9);
+		mvc_create_column_(m, t, "name", "varchar", 0);
+		mvc_create_column_(m, t, "passwd", "varchar", 0);
+		mvc_create_column_(m, t, "fullname", "varchar", 0);
+		mvc_create_column_(m, t, "default_schema", "int", 9);
 
 		t = mvc_create_table(m, s, "user_role", 1, 1, 0, -1 );
-		mvc_create_column_(m, t, "login_id", "INT", 9);
-		mvc_create_column_(m, t, "role_id", "INT", 9);
-		mvc_create_column_(m, t, "grantor", "INT", 9);
-		mvc_create_column_(m, t, "admin", "INT", 9);
+		mvc_create_column_(m, t, "login_id", "int", 9);
+		mvc_create_column_(m, t, "role_id", "int", 9);
+		mvc_create_column_(m, t, "grantor", "int", 9);
+		mvc_create_column_(m, t, "admin", "int", 9);
 
 		/* all roles and users are in the auths table */
 		t = mvc_create_table(m, s, "auths", 1, 1, 0, -1 );
-		mvc_create_column_(m, t, "id", "INT", 9);
-		mvc_create_column_(m, t, "name", "VARCHAR", 0);
-		mvc_create_column_(m, t, "grantor", "INT", 9);
+		mvc_create_column_(m, t, "id", "int", 9);
+		mvc_create_column_(m, t, "name", "varchar", 0);
+		mvc_create_column_(m, t, "grantor", "int", 9);
 
 		t = mvc_create_table(m, s, "privileges", 1, 1, 0, -1 );
-		mvc_create_column_(m, t, "obj_id", "INT", 9);
-		mvc_create_column_(m, t, "auth_id", "INT", 9);
-		mvc_create_column_(m, t, "privileges", "INT", 9);
-		mvc_create_column_(m, t, "grantor", "INT", 9);
-		mvc_create_column_(m, t, "grantable", "INT", 9);
+		mvc_create_column_(m, t, "obj_id", "int", 9);
+		mvc_create_column_(m, t, "auth_id", "int", 9);
+		mvc_create_column_(m, t, "privileges", "int", 9);
+		mvc_create_column_(m, t, "grantor", "int", 9);
+		mvc_create_column_(m, t, "grantable", "int", 9);
 
 		/* add monetdb user */
 		sql_create_role(m, "public", 0); 	/* ROLE_PUBLIC 0 */
@@ -2134,30 +2135,30 @@ int mvc_init(int debug, backend_stack stk)
 		sql_create_sequences(m, s);
 
 		t = mvc_create_view(m, s, "tables", "select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;", 1, 1);
-		mvc_create_column_(m, t, "id", "INT", 9);
-		mvc_create_column_(m, t, "name", "VARCHAR", 0);
-		mvc_create_column_(m, t, "schema_id", "INT", 9);
-		mvc_create_column_(m, t, "query", "VARCHAR", 0);
-		mvc_create_column_(m, t, "istable", "BOOLEAN", 0);
-		mvc_create_column_(m, t, "system", "BOOLEAN", 0);
-		mvc_create_column_(m, t, "clear", "BOOLEAN", 0);
-		mvc_create_column_(m, t, "temporary", "INT", 4 );
+		mvc_create_column_(m, t, "id", "int", 9);
+		mvc_create_column_(m, t, "name", "varchar", 0);
+		mvc_create_column_(m, t, "schema_id", "int", 9);
+		mvc_create_column_(m, t, "query", "varchar", 0);
+		mvc_create_column_(m, t, "istable", "boolean", 0);
+		mvc_create_column_(m, t, "system", "boolean", 0);
+		mvc_create_column_(m, t, "clear", "boolean", 0);
+		mvc_create_column_(m, t, "temporary", "int", 4 );
 
 		t = mvc_create_view(m, s, "columns", "select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;", 1, 1);
-		mvc_create_column_(m, t, "id", "INT", 9 );
-		mvc_create_column_(m, t, "name", "VARCHAR", 0 );
-		mvc_create_column_(m, t, "type", "VARCHAR", 0 );
-		mvc_create_column_(m, t, "type_digits", "INT", 9 );
-		mvc_create_column_(m, t, "type_scale", "INT", 9 );
-		mvc_create_column_(m, t, "table_id", "INT", 9 );
-		mvc_create_column_(m, t, "default", "VARCHAR", 0 );
-		mvc_create_column_(m, t, "null", "BOOLEAN", 0 );
-		mvc_create_column_(m, t, "number", "INT", 9 );
+		mvc_create_column_(m, t, "id", "int", 9 );
+		mvc_create_column_(m, t, "name", "varchar", 0 );
+		mvc_create_column_(m, t, "type", "varchar", 0 );
+		mvc_create_column_(m, t, "type_digits", "int", 9 );
+		mvc_create_column_(m, t, "type_scale", "int", 9 );
+		mvc_create_column_(m, t, "table_id", "int", 9 );
+		mvc_create_column_(m, t, "default", "varchar", 0 );
+		mvc_create_column_(m, t, "null", "boolean", 0 );
+		mvc_create_column_(m, t, "number", "int", 9 );
 
 		t = mvc_create_view(m, s, "users", "select name, fullname, default_schema from sys.db_users;", 1, 1);
-		mvc_create_column_(m, t, "name", "VARCHAR", 0);
-		mvc_create_column_(m, t, "fullname", "VARCHAR", 0);
-		mvc_create_column_(m, t, "default_schema", "INT", 9);
+		mvc_create_column_(m, t, "name", "varchar", 0);
+		mvc_create_column_(m, t, "fullname", "varchar", 0);
+		mvc_create_column_(m, t, "default_schema", "int", 9);
 
 		m->trans->schema = s;
 		if (mvc_commit(m, 0, NULL) <0){

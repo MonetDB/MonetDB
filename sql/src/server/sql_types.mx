@@ -277,14 +277,14 @@ sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int sca
 	node *m, *n;
 	for ( n = types->h; n; n = n->next ) {
 		sql_type *t = n->data;
-		if (strcasecmp(t->sqlname, name) == 0){
+		if (strcmp(t->sqlname, name) == 0){
 			if ((digits && t->digits >= digits) ||
 					(digits == t->digits)){
 				return sql_create_subtype(t, digits, scale);
 			}
 			for (m = n->next; m; m = m->next ) {
 				t = m->data;
-				if (strcasecmp(t->sqlname, name) != 0){
+				if (strcmp(t->sqlname, name) != 0){
 					break;
 				}
 				n = m;

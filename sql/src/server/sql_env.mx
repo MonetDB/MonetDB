@@ -474,10 +474,10 @@ sql_create_sessions( mvc *m, sql_schema *s )
 	sql_table *t;
 
 	t = mvc_create_table(m, s, "sessions", 1, 1, 1, -1 );
-	mvc_create_column_(m, t, "name", "VARCHAR", 0);
-	mvc_create_column_(m, t, "value", "VARCHAR", 0);
-	mvc_create_column_(m, t, "type", "VARCHAR", 0);
-	mvc_create_column_(m, t, "access", "INT", 9);
+	mvc_create_column_(m, t, "name", "varchar", 0);
+	mvc_create_column_(m, t, "value", "varchar", 0);
+	mvc_create_column_(m, t, "type", "varchar", 0);
+	mvc_create_column_(m, t, "access", "int", 9);
 	/* access 0 	read/write
 		  1	via sql_privileges (role/user) 	
 				ie set session authorization bla
@@ -486,8 +486,8 @@ sql_create_sessions( mvc *m, sql_schema *s )
 	 */
 
 	t = mvc_create_table(m, s, "env", 1, 1, 0, -1 );
-	mvc_create_column_(m, t, "name", "VARCHAR", 0);
-	mvc_create_column_(m, t, "value", "VARCHAR", 0);
+	mvc_create_column_(m, t, "name", "varchar", 0);
+	mvc_create_column_(m, t, "value", "varchar", 0);
 
 	n = mvc_bind( m, "sys", "env", "name", 1 );
 	v = mvc_bind( m, "sys", "env", "value", 1 );
@@ -516,13 +516,13 @@ sql_create_history( mvc *m, sql_schema *s )
 {
 	sql_table *t = mvc_create_table(m, s, "history", 1, 1, 0, -1 );
 
-	mvc_create_column_(m, t, "start", "TIMESTAMP", 0);
-	mvc_create_column_(m, t, "query", "VARCHAR", 0);
-	mvc_create_column_(m, t, "parse", "INT", 9);
-	mvc_create_column_(m, t, "optimize", "INT", 9);
-	mvc_create_column_(m, t, "exec", "INT", 9);
-	mvc_create_column_(m, t, "total", "INT", 9);
-	mvc_create_column_(m, t, "user", "VARCHAR", 0);
+	mvc_create_column_(m, t, "start", "timestamp", 0);
+	mvc_create_column_(m, t, "query", "varchar", 0);
+	mvc_create_column_(m, t, "parse", "int", 9);
+	mvc_create_column_(m, t, "optimize", "int", 9);
+	mvc_create_column_(m, t, "exec", "int", 9);
+	mvc_create_column_(m, t, "total", "int", 9);
+	mvc_create_column_(m, t, "user", "varchar", 0);
 
 	return 0;
 }

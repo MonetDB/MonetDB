@@ -43,12 +43,12 @@ sql_create_sequences( mvc *m, sql_schema *s )
 	sql_table *t;
 
 	t = mvc_create_table(m, s, "sequences", 1, 1, 0, -1 );
-	mvc_create_column_(m, t, "name", "VARCHAR", 0);
-	mvc_create_column_(m, t, "curvalue", "INT", 18);
-	mvc_create_column_(m, t, "increment", "INT", 4);
-	mvc_create_column_(m, t, "minvalue", "INT", 18);
-	mvc_create_column_(m, t, "maxvalue", "INT", 18);
-	mvc_create_column_(m, t, "cycle", "BOOLEAN", 0);
+	mvc_create_column_(m, t, "name", "varchar", 0);
+	mvc_create_column_(m, t, "curvalue", "int", 18);
+	mvc_create_column_(m, t, "increment", "int", 4);
+	mvc_create_column_(m, t, "minvalue", "int", 18);
+	mvc_create_column_(m, t, "maxvalue", "int", 18);
+	mvc_create_column_(m, t, "cycle", "boolean", 0);
 	return 0;
 }
 

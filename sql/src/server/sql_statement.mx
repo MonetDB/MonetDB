@@ -346,19 +346,19 @@ const char * st_type2string(st_type type) {
 stmt *stmt_atom_string( char * S )
 {
 	char *s = sql2str(_strdup(S));
-	sql_subtype *t = sql_bind_subtype("VARCHAR", strlen(s), 0);
+	sql_subtype *t = sql_bind_subtype("varchar", strlen(s), 0);
 	return stmt_atom( atom_string(t, s) );
 }
 
 stmt *stmt_atom_int( int i )
 {
-	sql_subtype *t = sql_bind_subtype("INT", 9, 0);
+	sql_subtype *t = sql_bind_subtype("int", 9, 0);
 	return stmt_atom( atom_int(t, i) );
 }
 
 stmt *stmt_bool( int b )
 {
-	sql_subtype *t = sql_bind_subtype("BOOLEAN", 0, 0);
+	sql_subtype *t = sql_bind_subtype("boolean", 0, 0);
 
 	if (b){
 		return stmt_atom( atom_general(t, _strdup("true")));
@@ -369,7 +369,7 @@ stmt *stmt_bool( int b )
 
 static stmt *stmt_atom_oid( int i )
 {
-	sql_subtype *t = sql_bind_subtype("OID", 0, 0);
+	sql_subtype *t = sql_bind_subtype("oid", 0, 0);
 	return stmt_atom( atom_int(t, i) );
 }
 

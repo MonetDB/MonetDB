@@ -93,9 +93,9 @@ static int
 keyword_key(char *k, int *l)
 {
 	char *s = k;
-	int h = 0;
+	int h = 1;
 	while (*k) {
-		h += tolower(*k) - 'a';
+		h *= (*k - 'a');
 		k++;
 	}
 	*l = k - s;
@@ -107,9 +107,9 @@ keywords_insert(char *k, int token)
 {
 	keyword *kw = NEW(keyword);
 	int len = 0;
-	int bucket = keyword_key(k, &len) & HASH_MASK;
+	int bucket = keyword_key(k=toLower(k), &len) & HASH_MASK;
 
-	kw->keyword = toLower(k);
+	kw->keyword = k;
 	kw->len = len;
 	kw->token = token;
 	kw->next = keywords[bucket];
@@ -364,10 +364,8 @@ find_keyword(char *text)
 	int bucket = keyword_key(mkLower(text), &len) & HASH_MASK;
 	keyword *k = keywords[bucket];
 	while (k) {
-		if (len == k->len) {
-			if (strcmp(k->keyword, text) == 0)
-				return k;
-		}
+		if (len == k->len && strcmp(k->keyword, text) == 0)
+			return k;
 		k = k->next;
 	}
 	return NULL;
@@ -405,6 +403,8 @@ scanner_init( struct scanner *s, bstream *rs, stream *ws )
 void
 scanner_reset( struct scanner *s, char *query )
 {
+	if (s->buf) 
+		_DELETE(s->buf);
 	s->buf = query;
 	s->rs = NULL;
 

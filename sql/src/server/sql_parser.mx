@@ -552,28 +552,28 @@ set:
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET sqlSESSION AUTHORIZATION ident	
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($4), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 ); 
 			dlist_append_string(l, _strdup("current_user") );
 			dlist_append_symbol(l, 
 				_newAtomNode( atom_string(t,sql2str($4))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET SCHEMA ident	
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($3), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("char", strlen($3), 0 ); 
 			dlist_append_string(l, _strdup("current_schema") );
 			dlist_append_symbol(l, 
 				_newAtomNode( atom_string(t,sql2str($3))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET user '=' ident	
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($4), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 ); 
 			dlist_append_string(l, _strdup("current_user") );
 			dlist_append_symbol(l, 
 				_newAtomNode( atom_string(t,sql2str($4))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET ROLE ident	
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($3), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("char", strlen($3), 0 ); 
 			dlist_append_string(l, _strdup("current_role") );
 			dlist_append_symbol(l, 
 				_newAtomNode( atom_string(t,sql2str($3))) );
@@ -1235,7 +1235,7 @@ func_def:
  ;
 
 func_data_type:
-    TABLE		{ $$ = sql_bind_subtype("TABLE", 0, 0); }
+    TABLE		{ $$ = sql_bind_subtype("table", 0, 0); }
  |  data_type
  ;
 
@@ -1870,10 +1870,10 @@ predicate:
  |  all_or_any_predicate 
  |  existence_test 
  |  BOOL_FALSE  
-		{ sql_subtype *t = sql_bind_subtype("BOOLEAN", 0, 0 );
+		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, _strdup("false"))); }
  |  BOOL_TRUE  
-		{ sql_subtype *t = sql_bind_subtype("BOOLEAN", 0, 0 );
+		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, _strdup("true"))); }
  ;
 
@@ -2262,9 +2262,9 @@ time_persision:
  ;
 
 datetime_type:
-    sqlDATE			{ $$ = sql_bind_subtype("DATE", 0, 0); }
- |  TIME time_persision tz 	{ $$ = sql_bind_subtype("TIME", $2, $3); }
- |  TIMESTAMP time_persision tz { $$ = sql_bind_subtype("TIMESTAMP", $2, $3); }
+    sqlDATE			{ $$ = sql_bind_subtype("date", 0, 0); }
+ |  TIME time_persision tz 	{ $$ = sql_bind_subtype("time", $2, $3); }
+ |  TIMESTAMP time_persision tz { $$ = sql_bind_subtype("timestamp", $2, $3); }
  ;
 
 non_second_datetime_field:
@@ -2324,9 +2324,9 @@ interval_type:
 			YYABORT;
 	  	} else {
 			if (tpe == 0){
-				$$ = sql_bind_subtype("MONTH_INTERVAL", 0, 0);
+				$$ = sql_bind_subtype("month_interval", 0, 0);
 			} else {
-				$$ = sql_bind_subtype("SEC_INTERVAL", 0, 0);
+				$$ = sql_bind_subtype("sec_interval", 0, 0);
 			}
 	  	}
 	}
@@ -2342,11 +2342,11 @@ literal:
     string
 		{ char *s = sql2str($1);
 		  int len = strlen(s);
-		  sql_subtype *t = sql_bind_subtype("CHAR", len, 0 ); 
+		  sql_subtype *t = sql_bind_subtype("char", len, 0 ); 
 		  $$ = _newAtomNode( atom_string(t, s)); }
  |  user 
 		{ mvc *m = (mvc*)parm;
-		  sql_subtype *t = sql_bind_subtype("CHAR", strlen(m->user),0);
+		  sql_subtype *t = sql_bind_subtype("char", strlen(m->user),0);
 		  $$ = _newAtomNode( atom_string(t,sql2str(_strdup(m->user))));
 		}
 
@@ -2355,7 +2355,7 @@ literal:
 		  sql_subtype *t = NULL;
 
 		  if (digits <= 19)
-		  	t = sql_bind_subtype("INT", digits, 0 );
+		  	t = sql_bind_subtype("int", digits, 0 );
 		  else 
 			err = 1;
 
@@ -2381,14 +2381,14 @@ literal:
 
 		  if (*s == '+' || *s == '-')
 			digits --;
-		  t = sql_bind_subtype("DECIMAL", digits, scale );
+		  t = sql_bind_subtype("decimal", digits, scale );
 		  $$ = _newAtomNode( atom_int(t, value)); }
  |  APPROXNUM
-		{ sql_subtype *t = sql_bind_subtype("DOUBLE", 51, 0 );
+		{ sql_subtype *t = sql_bind_subtype("double", 51, 0 );
 		  double val = strtod($1,NULL);
 		  $$ = _newAtomNode( atom_float(t, val)); }
  |  sqlDATE string 
-		{ sql_subtype *t = sql_bind_subtype("DATE", 0, 0 );
+		{ sql_subtype *t = sql_bind_subtype("date", 0, 0 );
 		  atom *a = atom_general(t, $2); 
 		  if (!a) {
 			char buf[BUFSIZ]; 
@@ -2401,7 +2401,7 @@ literal:
 		  	$$ = _newAtomNode(a); 
 		} }
  |  TIME tz string 
-		{ sql_subtype *t = sql_bind_subtype("TIME", 0, $2 );
+		{ sql_subtype *t = sql_bind_subtype("time", 0, $2 );
 		  atom *a = atom_general(t, $3); 
 		  if (!a) {
 			char buf[BUFSIZ]; 
@@ -2414,7 +2414,7 @@ literal:
 		  	$$ = _newAtomNode(a); 
 		} }
  |  TIMESTAMP tz string 
-		{ sql_subtype *t = sql_bind_subtype("TIMESTAMP", 0, $2 );
+		{ sql_subtype *t = sql_bind_subtype("timestamp", 0, $2 );
 		  atom *a = atom_general(t, $3); 
 		  if (!a) {
 			char buf[BUFSIZ]; 
@@ -2495,9 +2495,9 @@ interval_expression:
 	  	  } else {
 			sql_subtype *t = NULL; 
 			if (tpe == 0){
-				t = sql_bind_subtype("MONTH_INTERVAL", 0, 0);
+				t = sql_bind_subtype("month_interval", 0, 0);
 			} else {
-				t = sql_bind_subtype("SEC_INTERVAL", 0, 0);
+				t = sql_bind_subtype("sec_interval", 0, 0);
 			}
 	  		$$ = _newAtomNode( atom_int(t,i));
 	  	  }
@@ -2630,20 +2630,20 @@ nonzero:
 	;
 
 data_type:
-    CHARACTER opt_var	{ $$ = sql_bind_subtype("VARCHAR", 0, 0); }
+    CHARACTER opt_var	{ $$ = sql_bind_subtype("varchar", 0, 0); }
  |  CHARACTER opt_var '(' nonzero ')'	
 			{ if ($2)
-				$$ = sql_bind_subtype("VARCHAR", $4, 0); 
+				$$ = sql_bind_subtype("varchar", $4, 0); 
 			  else
-				$$ = sql_bind_subtype("CHAR", $4, 0); 
+				$$ = sql_bind_subtype("char", $4, 0); 
 			}
- |  TINYINT		{ $$ = sql_bind_subtype("INT", 2, 0); }
- |  SMALLINT		{ $$ = sql_bind_subtype("INT", 4, 0); }
- |  MEDIUMINT		{ $$ = sql_bind_subtype("INT", 9, 0); }
- |  BIGINT		{ $$ = sql_bind_subtype("INT", 19, 0); }
- |  sqlDECIMAL		{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
+ |  TINYINT		{ $$ = sql_bind_subtype("int", 2, 0); }
+ |  SMALLINT		{ $$ = sql_bind_subtype("int", 4, 0); }
+ |  MEDIUMINT		{ $$ = sql_bind_subtype("int", 9, 0); }
+ |  BIGINT		{ $$ = sql_bind_subtype("int", 19, 0); }
+ |  sqlDECIMAL		{ $$ = sql_bind_subtype("decimal", 0, 0); }
  |  sqlDECIMAL '(' nonzero ')'	
-			{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
+			{ $$ = sql_bind_subtype("decimal", $3, 0); }
  |  sqlDECIMAL '(' intval ',' intval ')' 
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ]; 
@@ -2653,12 +2653,12 @@ data_type:
 				$$ = NULL;
 				YYABORT;
 			  } else {
-				$$ = sql_bind_subtype("DECIMAL", $3, $5); 
+				$$ = sql_bind_subtype("decimal", $3, $5); 
 			  }
 			}
- |  sqlFLOAT		{ $$ = sql_bind_subtype("FLOAT", 0, 0); }
+ |  sqlFLOAT		{ $$ = sql_bind_subtype("float", 0, 0); }
  |  sqlFLOAT '(' nonzero ')'	
-			{ $$ = sql_bind_subtype("FLOAT", $3, 0); }
+			{ $$ = sql_bind_subtype("float", $3, 0); }
  |  sqlFLOAT '(' intval ',' intval ')'	
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ]; 
@@ -2668,10 +2668,10 @@ data_type:
 				$$ = NULL;
 				YYABORT;
 			  } else {
-				$$ = sql_bind_subtype("FLOAT", $3, $5); 
+				$$ = sql_bind_subtype("float", $3, $5); 
 			  }
 			}
- |  sqlDOUBLE 		{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
+ |  sqlDOUBLE 		{ $$ = sql_bind_subtype("double", 0, 0); }
  |  sqlDOUBLE '(' intval ',' intval ')' 	
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ]; 
@@ -2681,10 +2681,10 @@ data_type:
 				$$ = NULL;
 				YYABORT;
 			  } else {
-				$$ = sql_bind_subtype("DOUBLE", $3, $5); 
+				$$ = sql_bind_subtype("double", $3, $5); 
 			  }
 			}
- | sqlDOUBLE PRECISION	{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
+ | sqlDOUBLE PRECISION	{ $$ = sql_bind_subtype("double", 0, 0); }
  | datetime_type
  | interval_type		
  | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }

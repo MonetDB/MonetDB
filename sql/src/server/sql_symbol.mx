@@ -86,11 +86,6 @@ typedef struct SelectNode {
 	symbol * name;
 } SelectNode;
 
-typedef struct ListNode {
-	symbol s;
-	struct dlist *l;
-} ListNode;
-
 typedef struct AtomNode {
 	symbol s;
 	struct atom  *a;
@@ -212,13 +207,13 @@ void symbol_destroy(symbol * s)
 			break;
 		case type_int:
 			/* not used types */
+			break;
 		case type_stmt:
 		case type_column:
 		case type_table:
 		case type_schema:
 		case type_aggr:
 		case type_func:
-			break;
 		case type_atom:
 			assert(0);
 		}
@@ -244,13 +239,13 @@ void dnode_destroy(dnode * s)
 			break;
 		case type_int:
 			/* not used types */
+			break;
 		case type_stmt:
 		case type_column:
 		case type_table:
 		case type_schema:
 		case type_aggr:
 		case type_func:
-			break;
 		case type_atom:
 			assert(0);
 		}
