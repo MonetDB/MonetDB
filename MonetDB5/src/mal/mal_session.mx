@@ -46,7 +46,7 @@ html
 mal_export int malStartupAdmin();
 mal_export void serveClient(void *dummy);
 mal_export void initClientPrg(Client cntxt, str nme);
-mal_export void scheduleClient(str user, str passwd, int msocket, stream *fin, stream *fout);
+mal_export void scheduleClient(str command, int msocket, stream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
 mal_export str MALparser(Client c);
@@ -112,27 +112,36 @@ No encryption scheme is performed yet.
 
 An example initialization string would be "guest:23" which indicates access
 of the client named 'guest' to a session previously started under identity 23.
+
+The scheduleClient receives a single block from the API.
+The first line should represent a user. The remainder may
+be a request to be handled. This way, a single message
+can be used to issue a short (<8192byte) transaction.
 @c
-void scheduleClient(str user, str passwd, int socket, stream *fin, stream *fout)
+void scheduleClient( str command, int socket, stream *fin, stream *fout)
 {
-	str mode;
+	char *user = command, *passwd= NULL,*s;
 	int key=0;
 	Client c;
 	int i;
 	MT_Id p;
 	Thread t;
+	/* decode first user:key:password line */
+        s= strchr(command,'\n');
+	if(s) *s=0;
+	s= strchr(command,':');
+	if(s){ *s= 0; passwd=s+1; }
 
-	mode = strchr(user,':');
-	if(mode && *mode){
-		*mode= 0;
-		mode++;
-		mode= strchr(mode,':');
-		if( mode){
-			key= atol(mode+1);
-		}
+
+	s = strchr(user,':');
+	if(s && *s){
+		*s= 0;
+		s++;
+		s= strchr(s,':');
+		if( s){ key= atol(s+1); }
 	}
-	mode = strchr(user,'\n');
-	if( mode) *mode =0;
+	s = strchr(user,'\n');
+	if( s) *s =0;
 	c= initClient(GDKstrdup(user),NULL,fin,fout);
 	if( c->nspace){
 		GDKfree(c->nspace->name);
@@ -151,6 +160,7 @@ void scheduleClient(str user, str passwd, int socket, stream *fin, stream *fout)
 	if( !isAdministrator(c))
 		stream_printf(c->fdout,"%s\n", GDKgetenv("gdk_version"));
 
+	GDKfree(command);
 	if( (i= MT_create_thread(&p, serveClient, (void *)c)) < 0) {
 		GDKerror("initClient: can not fork new client\n");
 		return;

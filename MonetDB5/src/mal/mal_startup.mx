@@ -86,7 +86,7 @@ void startupPrelude(Client c, str fnme1, str fnme2)
 
 int malStartupAdmin(int listing){
 	Client c;
-	c= initClient(GDKstrdup("Admin"),NULL,0);
+	c= initClient(GDKstrdup("Admin"),NULL,0,0);
 	c->nspace= newScope(NULL, GDKstrdup("Admin"));
 	initLibraries();
 	startupPrelude(c,SRVINIT,SRVORIGIN);
