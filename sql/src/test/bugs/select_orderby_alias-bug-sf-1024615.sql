@@ -1,4 +1,3 @@
-
 SELECT * FROM "sys"."keys" AS "keys", "sys"."keycolumns" AS
 "keycolumns", "sys"."tables" AS "tables",
 "sys"."schemas" AS "schemas" WHERE "keys"."id" =
