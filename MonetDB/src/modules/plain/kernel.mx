@@ -731,7 +731,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 	TMcommit();
 	if (c == monet_clients) {
 		fflush(GDKout);
-		MT_global_exit(1);
+		MT_global_exit(0);
 	}
 #endif
 	q = topRequest(c);
