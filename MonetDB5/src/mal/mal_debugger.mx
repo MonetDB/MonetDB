@@ -412,8 +412,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
             if( fcnname == NULL){
                 fsym= findModule(cntxt->nspace,modnme);
                 if( fsym==0) {
-                    stream_printf(out,"%smodule not found\n",
-                            "#mdb ");
+                    stream_printf(out,"%s module not found\n", modnme);
                     continue;
                 }
                 for(i=0;i<MAXSCOPE;i++){
@@ -554,8 +553,7 @@ signatures satisfying the pattern.
             if( fcnname == NULL){
                 fsym= findModule(cntxt->nspace,modnme);
                 if( fsym==0) {
-                    stream_printf(out,"%smodule not found\n",
-                            "#mdb ");
+                    stream_printf(out,"%s module not found\n", modnme);
                     continue;
                 }
                 for(i=0;i<MAXSCOPE;i++){
@@ -571,7 +569,7 @@ signatures satisfying the pattern.
             fcnname ++;
             fsym= findModule(cntxt->nspace,modnme);
             if( fsym==0) {
-                stream_printf(out,"%smodule not found\n","#mdb ");
+                stream_printf(out,"%smodule not found\n",modnme);
                 continue;
             }
             /* display the overloaded symbol definition */

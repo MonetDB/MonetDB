@@ -147,9 +147,9 @@ void mccValue(stream *f, MalBlkPtr mb, int i){
     ValPtr val;
 
     val= &getVarConstant(mb,i);
-    if( val->vtype == TYPE_str)
-        stream_printf(f,"%s",val->val.sval);
-    else {
+    if( val->vtype == TYPE_str){
+        stream_printf(f,"\"%s\"",val->val.sval);
+    } else {
         tostr= BATatoms[val->vtype].atomToStr;
         l = (*tostr)(&buf,&sz,VALptr(val));
         c= strchr(buf,'@');
@@ -348,11 +348,12 @@ void mccMultiplex(stream *f, MalBlkPtr mb, InstrPtr p){
     typeChecker(getClient()->nspace,mb,pn);
 
     stream_printf(f,"{\tlng mloop;\n\tptr h,t;\n");
-    stream_printf(f,"MULTIPLEX_BEGIN_%d:\n",pc);
+    stream_printf(f,"init todo\n");
+    stream_printf(f,"\tif(mloop>0)\n\tdo{\n");
     stream_printf(f,"TODO\n");
     mccInstruction(f,mb,pn,pc,0,0);
-    stream_printf(f,"if(mloop > 0 ) goto MULTIPLEX_BEGIN_%d:\n",pc);
-    stream_printf(f,"MULTIPLEX_EXIT_%d: ;\n}\n",pc);
+    stream_printf(f,"\t} while(mloop > 0 );\n");
+    stream_printf(f,"}\n");
 
     freeInstruction(pn);
 }

@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f mtime
 @a Peter Boncz, Martin van Dinther
@@ -230,18 +224,6 @@ address date_fromstr;
 command tostr() :str 
 address date_tostr;
 @:compareGrp(date)@
-@-
-A few interval operations.
-@mal
-command date_sub_sec_interval(t:date,s:lng):date 
-address MTIMEdate_sub_sec_interval_wrap
-comment "Subtract seconds from a date";
-command MTIMEdate_add_sec_interval(t:date,s:int):date 
-address MTIMEdate_add_sec_interval_wrap
-comment "Add seconds to a date";
-command date_add_month_interval(t:date,s:int):date 
-address MTIMEdate_add_month_interval_wrap
-comment "Add months to a date";
 @+ Daytime atom
 @T
 A valid time of day to the detail of milliseconds, like 23:59:59:000
@@ -388,6 +370,15 @@ comment "Introduce a synomym timezone rule.";
 
 
 module mtime;
+command date_sub_sec_interval(t:date,s:lng):date 
+address MTIMEdate_sub_sec_interval_wrap
+comment "Subtract seconds from a date";
+command date_add_sec_interval(t:date,s:int):date 
+address MTIMEdate_add_sec_interval_wrap
+comment "Add seconds to a date";
+command date_add_month_interval(t:date,s:int):date 
+address MTIMEdate_add_month_interval_wrap
+comment "Add months to a date";
 
 #command int(d:date):int = MTIMEdate_2int;
 #command int(d:daytime):int = MTIMEdaytime_2int;
@@ -2955,4 +2946,5 @@ str MTIMEcurrent_time(daytime *t)
 	MTIMEtimestamp_extract_daytime_default(t, &stamp);
 	return MAL_SUCCEED;
 }
+
 @}
