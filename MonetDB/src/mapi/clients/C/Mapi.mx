@@ -306,10 +306,9 @@ This can be analyzed in using mapi_error().
 Move the query to the connection structure. Possibly interact with the
 back-end to prepare the query for execution.
 
-\item[int mapi_execute(Mapi mid, char *Command)];
+\item[int mapi_execute(Mapi mid)];
 The command is shipped to the backend for execution. A single answer
-is pre-fetched to detect any runtime error. A NULL command is
-interpreted as taking the previous query. MOK is returned upon success.
+is pre-fetched to detect any runtime error. MOK is returned upon success.
 
 \item[int mapi_execute_array(Mapi mid, char **argv)];
 Similar to mapi_execute but replacing the placeholders for the
@@ -644,7 +643,6 @@ mapi_export MapiMsg mapi_query_array(Mapi mid,char *cmd, char **val);
 mapi_export MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit);
 mapi_export MapiMsg mapi_quick_response(Mapi mid, FILE *fd);
-mapi_export MapiMsg mapi_stat(Mapi mid);
 mapi_export MapiMsg mapi_seek_row(Mapi mid, int rowne);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace_log(Mapi mid, char *nme);
@@ -852,7 +850,7 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 
 	/* avoid writing into constant strings ! */
 	if( host)
-		snprintf(mid->hostname,sizeof(mid->hostname),"%s",host);
+		strncpy(mid->hostname, host, sizeof(mid->hostname));
 	else
 		strcpy(mid->hostname,"localhost");
 	c= strchr(mid->hostname,':');
@@ -873,11 +871,11 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 #endif
 	}
 	if(username)
-		strcpy(mid->username,username);
+		strncpy(mid->username, username, sizeof(mid->username));
 	if(password==0)
 		password= getlogin();
 	if(password)
-		strcpy(mid->password,password);
+		strncpy(mid->password, password, sizeof(mid->password));
 
 	mid->port= port;
 	hp = gethostbyname(mid->hostname);
@@ -963,7 +961,7 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 	if( lang==0 || strcmp(lang,"mal")==0)
 		return mid;
 
-	strcpy(mid->language,lang);
+	strncpy(mid->language, lang, sizeof(mid->language));
 	if(strcmp(lang,"mil")==0 )
 		mid->languageId= LANG_MIL;
 	if(strcmp(lang,"mal")==0 )
