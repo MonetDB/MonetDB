@@ -1879,14 +1879,16 @@ int date_addmonths(date * ret, date *v, int *delta) {
 		fromdate(*(int*) v, &d, &m, &y); 
 		*ret = *v;
 		while (z > 0) {
-			z--; if (++m == 13) m = 1; 
+			z--; 
 			x = MONTHDAYS(m,y);
+			if (++m == 13) m = 1; 
 			date_adddays(ret, ret, &x);
 		} 
 		while (z < 0) {
+			z++; 
+			if (--m == 0) m = 12; 
 			x = -MONTHDAYS(m,y);
 			date_adddays(ret, ret, &x);
-			z++; if (--m == 0) m = 12; 
 		} 
 	}
 	return GDK_SUCCEED;
