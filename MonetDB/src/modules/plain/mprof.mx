@@ -520,20 +520,17 @@ Tms_tostr(
 		sprintf(buf,"(%d,%d)", 
 			(int)(T->tms_utime+T->tms_cutime), 
 			(int)(T->tms_stime+T->tms_cstime));
-	l = strlen(buf)+1;
-	
-	if (*dst){
-	   	if (*len < l ){
-			GDKfree(*dst);
-			*dst = NULL;
-		}
+	l = strlen(buf) + 1;
+	if (*dst && *len < l ){
+		GDKfree(*dst);
+		*dst = NULL;
 	}
-	if (!*dst)
+	if (!*dst){
 		*dst = (char *) GDKmalloc(l);
+		*len = l;
+	}
 	if (*dst) strcpy(*dst, buf);
-	*len = l-1;
-	
-	return *len;
+	return l-1;
 }
 
 int
@@ -704,17 +701,16 @@ Ma_tostr(
 		M->fsmblks,
 		M->uordblks);
 	l = strlen(buf) + 1;
-	if (*dst){
-	   	if (*len < l ){
-			GDKfree(*dst);
-			*dst = NULL;
-		}
+	if (*dst && *len < l ){
+		GDKfree(*dst);
+		*dst = NULL;
 	}
-	if (!*dst)
+	if (!*dst){
 		*dst = (char *) GDKmalloc(l);
+		*len = l;
+	}
 	if (*dst) strcpy(*dst, buf);
-	*len = l-1;
-	return *len;
+	return l-1;
 }
  
 
@@ -896,17 +892,16 @@ Ru_tostr(
 		R->ru_nvcsw,
 		R->ru_nivcsw);
 	l = strlen(buf) + 1;
-	if (*dst){
-	   	if (*len < l ){
-			GDKfree(*dst);
-			*dst = NULL;
-		}
+	if (*dst && *len < l ){
+		GDKfree(*dst);
+		*dst = NULL;
 	}
-	if (!*dst)
+	if (!*dst){
 		*dst = (char *) GDKmalloc(l);
+		*len = l;
+	}
 	if (*dst) strcpy(*dst, buf);
-	*len = l-1;
-	return *len;
+	return l-1;
 }
  
 

@@ -1,7 +1,16 @@
 EXTRA_DIST = \
-	mel.fig mel.eps mel.mx mil.mx monet.mx monet.eps  \
-	odmg.fig odmg_odl.eps odmg.eps  odmg_meta.fig  \
+	odmg.fig odmg_odl.eps odmg_meta.fig  \
 	Example.mx        model.eps  odmg_app.eps      odmg_odl.fig \
 	meta.mx  model.fig  odmg_app.fig    odmg_stdlib.eps \
 	odmg_example.eps  odmg_stdlib.fig app.mx          odmg_example.fig \
 	arch.eps          odl.mx     odmg_meta.eps     stdlib.mx
+
+doc_mel = {
+	SOURCES = mel.mx mel.fig 
+}
+doc_mil = {
+	SOURCES = mil.mx
+}
+doc_monet = {
+	SOURCES = monet.mx monet.feps odmg.fig
+}

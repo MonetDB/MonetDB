@@ -67,13 +67,19 @@ def msc_mtsafe(fd, var, values, msc ):
 
 def msc_translate_dir(path,msc):
     dir = path
+    rest = ""
     if (string.find(path,'/') >= 0):
-      d,rest = string.split(path,'/', 1) 
-      if (d == "top_srcdir" or d == "top_builddir"):
-	  d = "$(TOPDIR)"
-      elif (d == "srcdir" or d == "builddir"):
-          d = "."
-      dir = d+ "\\" + rest
+      dir,rest = string.split(path,'/', 1) 
+    if (dir == "top_srcdir" or dir == "top_builddir"):
+        dir = "$(TOPDIR)"
+    elif (dir == "srcdir" or dir == "builddir"):
+        dir = "."
+    elif (dir == "pkglibdir" or dir == "libdir" or \
+	  dir == "pkgbindir" or dir == "bindir" or \
+	  dir == "pkgdatadir" or dir == "datadir"):
+        dir = "$("+dir+")"
+    if (len(rest) > 0):
+        dir = dir+ "\\" + rest
     return regsub.gsub("/", "\\", dir );
 
 def msc_translate_file(path,msc):
@@ -157,7 +163,8 @@ def msc_find_target(target,msc):
  
 
 def msc_deps(fd,deps,objext, msc):
-  for tar,deplist in deps.items():
+  if len(msc['DEPS']) <= 0:
+   for tar,deplist in deps.items():
     t = msc_translate_ext(tar)
     b,ext = split_filename(t)
     tf = msc_translate_file(t,msc)
@@ -206,6 +213,26 @@ def msc_deps(fd,deps,objext, msc):
 	  elif (dext == "cc"):
 	    fd.write( "\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s -c %s\n" \
 		% (name,msc_translate_ext(deplist[0])) );
+  msc['DEPS'].append("DONE");
+
+# list of scripts to install
+def msc_scripts(fd, var, scripts, msc):
+
+  sd = "SCRIPTSDIR"
+  if (scripts.has_key("DIR")):
+    sd = scripts["DIR"][0] # use first name given
+  sd = msc_translate_dir(sd,msc)
+  
+  for script in scripts['TARGETS']:
+      fd.write("%s: $(SRCDIR)\\%s\n" % (script,script))
+      #fd.write("\t$(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script) )
+      fd.write("\tif not exist %s if exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script,script) )
+      msc['INSTALL'].append((script,script,'',sd))
+
+  #msc_deps(fd,scripts['DEPS'],"\.o",msc);
+
+def msc_doc(fd, var, docmap, msc ):
+  docmap['TARGETS']=[]
 
 def msc_binary(fd, var, binmap, msc ):
 
@@ -213,10 +240,10 @@ def msc_binary(fd, var, binmap, msc ):
     name = var[4:]
     if (name == 'SCRIPTS'):
       for i in binmap:
-        msc['INSTALL'].append((i,i))
+        msc['INSTALL'].append((i,i,'.exe','$(bindir)'))
     else: # link
       src = binmap[0][4:]
-      msc['INSTALL'].append((name,src))
+      msc['INSTALL'].append((name,src,'.exe','$(bindir)'))
     return
   
   HDRS = []
@@ -484,7 +511,8 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
 		 'LIB' : msc_library,
 		 'BINS' : msc_bins,
 		 'BIN' : msc_binary,
-		 'SCRIPTS' : msc_dummy,
+		 'DOC' : msc_doc,
+		 'SCRIPTS' : msc_scripts,
  		 'INCLUDES' : msc_includes,
 		 'MTSAFE' : msc_mtsafe,
 		 'CFLAGS' : msc_cflags,
@@ -532,6 +560,7 @@ CXXEXT = \\\"cxx\\\"
   msc['LIBDIR'] = 'lib'
   msc['TREE'] = tree
   msc['cwd'] = cwd
+  msc['DEPS'] = []
   
   fd.write("CFLAGS = $(CFLAGS) $(INCLUDES)\n" )
   fd.write("CXXFLAGS = $(CFLAGS)\n" )
@@ -606,7 +635,7 @@ CXXEXT = \\\"cxx\\\"
 
   fd.write("install-msc: install-exec install-data\n")
   l = []
-  for (x,y) in msc['INSTALL']:
+  for (x,y,u,v) in msc['INSTALL']:
 	l.append(x);		
   fd.write("install-exec: %s %s %s\n" % ( \
 		msc_list2string(msc['LIBS'], "install_dll_"," "), \
@@ -622,9 +651,15 @@ CXXEXT = \\\"cxx\\\"
       fd.write("install_bin_%s: %s.exe\n" % (v,v))
       fd.write("\t$(INSTALL) %s.exe $(bindir)\n" % (v) )
   if (len(msc['INSTALL']) > 0):
-    for (dst,src) in msc['INSTALL']:
-      fd.write("install_%s: $(bindir)\%s.exe\n" % (dst,src))
-      fd.write("\t$(INSTALL) $(bindir)\%s.exe $(bindir)\%s.exe\n" % (src,dst) )
+    for (dst,src,ext,dir) in msc['INSTALL']:
+      fd.write("install_%s: %s%s %s\n" % (dst,src,ext,dir))
+      fd.write("\t$(INSTALL) %s%s %s\\%s%s\n" % (src,ext,dir,dst,ext) )
+    td = []
+    for (x,y,u,dir) in msc['INSTALL']:
+      if (td.count(dir) == 0):
+        fd.write("%s:\n" % (dir))
+        fd.write("\tif not exist %s $(MKDIR) %s\n" % (dir,dir) )
+	td.append(dir)
 
   #fd.write("install-data:")
   #if (len(msc['HDRS']) > 0):

@@ -1493,6 +1493,7 @@ while(algo) {
 	/* Single Hash lookup
 	 */
     	} else if (BAThkey(n->b)) {
+printf("using hash\n");
     		BUNfnd@2(n->cur, b, h);
     		if (!n->cur) break; /* NOT FOUND */
     		n->lo = n->cur; 
@@ -1500,8 +1501,10 @@ while(algo) {
 	/* Multiple Hash lookup
 	 */
     	} else {
+printf("fall back using hash\n");
     		n->nhits = 0;
     		HASHloop@3(b, b->hhash, j, h, r) {
+printf("fall back using hash %d %d\n", j, h);
     			REALLOCBUNS(n, n->nhits+1);
     			n->hit[n->nhits++] = r;
     		}

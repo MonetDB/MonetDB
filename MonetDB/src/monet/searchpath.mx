@@ -107,20 +107,19 @@ void insert_moddir_recursively(char *name) {
     closedir(dirp);
 }
 
-
-char empty_path = 0;
-
 static 
 void parse_mod_path() {
-    char *mod_path, *dirbegin;
-    int pos=0,len;
+    char *mod_path = getenv(MONET_MSP);
+    char *default_path = alloca(strlen(MONET_PREFIX)+32);
     
-    mod_path=getenv(MONET_MSP);
+    sprintf(default_path, "%s%clib%cMonet", MONET_PREFIX, DIR_SEP, DIR_SEP);
+/*
     if (!mod_path) mod_path = getenv("LD_LIBRARY_PATH");
-    if (!mod_path) mod_path = &empty_path;
-    len=strlen(mod_path);
-    dirbegin=mod_path;
-    do
+*/
+    if (mod_path){
+      int pos=0, len=strlen(mod_path);
+      char *dirbegin=mod_path;
+      do
         {
             while(mod_path[pos]!='\0' && mod_path[pos]!=PATH_SEP) pos++;
             mod_path[pos]='\0';
@@ -133,7 +132,9 @@ void parse_mod_path() {
             if (pos==len) break;
             dirbegin = mod_path + (++pos);
         }
-    while(1);
+      while(1);
+    }
+    insert_moddir_entry(default_path);
 }
 
 static struct moddir *current_entry=0;

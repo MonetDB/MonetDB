@@ -144,6 +144,12 @@ For further details look in the code.
 
 #include <stdlib.h>
 
+#ifdef NATIVE_WIN32
+#define DIR_SEP '\\' 
+#else
+#define DIR_SEP '/' 
+#endif 
+
 typedef union {
         int i;		// integer
         char *s;	// string

@@ -288,7 +288,7 @@ typedef struct {
 
 @+ Interface functions 
 @h
-m_export ptr	monet_init	(int argc, char** argv);
+m_export ptr	monet_init	(int argc, char** argv );
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
 m_export void	monet_exit	();
@@ -501,11 +501,10 @@ than to Monet.
                         monet_prelude = absolute_path(argv[++i]);
                     } else {
 			if ( argv[i][2] != 0 ) {
-			    monet_prompt[0] = '\1';
+			    monet_prompt = strdup("\1\1\1");
 			    monet_prompt[1] = argv[i][2];
-			    monet_prompt[2] = '\1';
 			} else {
-			    monet_prompt = "\1\1";
+			    monet_prompt = strdup("\1\1");
 			}
 		    }
 
@@ -586,7 +585,7 @@ provided to make inclusion of new modules a piece of cake.
 }
 
 @c
-ptr monet_init(int argc, char **argv){
+ptr monet_init(int argc, char **argv ){
 	static char monet_home_str[] = "-home";
 	static char monet_db_str[] = "-db";
 	static char monet_ver_str[] = "-version";
@@ -599,7 +598,6 @@ ptr monet_init(int argc, char **argv){
                 GDKfatal("monet_init: could not determine current directory\n");
         }
         monet_db = (char *) getenv("MONETDB");
-        getoptions(argc, argv);
 
         /* determine Monet's administration dir. */
         if (monet_dir == NULL) {
@@ -608,6 +606,11 @@ ptr monet_init(int argc, char **argv){
         if (monet_dir == NULL) {
 		monet_dir = (char*) getenv(MONET_ENV2);
 	}
+        getoptions(argc, argv);
+        if (monet_dir == NULL) {
+		monet_dir = MONET_PREFIX;
+	}
+
         if (monet_dir ==NULL) {
                 fprintf(stderr, "FATAL: environment variable %s or %s not defined.\n", MONET_ENV1, MONET_ENV2);
                 exit(1);

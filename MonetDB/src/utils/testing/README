@@ -25,16 +25,27 @@ have changed since my proposal.
 - Each test named TST consists of
   + a test script which is ONE of the following:
     * an arbitrary executable (e.g. a shell script)        (TST)
-    * a MIL script to be executed by Mserver               (TST.milM)
-    * a MIL script to be executed by Mserver -single       (TST.milS)
-    * a MIL script to be executed by Mclient               (TST.milC) (^)
-    * a JAVA program to be compiled & executed by java -cs (TST.java) (^)
+    * a MIL script to be executed by Mserver               (TST.milM) (',^)
+    * a MIL script to be executed by Mserver -single       (TST.milS) (',^)
+    * a MIL script to be executed by Mclient               (TST.milC) (",^)
+    * a JAVA program to be compiled & executed by java -cs (TST.java) (")
     * some ODMG stuff ?                                    (TST.odmg?)
-   (^) for Mclient & java if several files are present named
-       (1) TST_sXX.(milC|java) (XX={00,01,...,99})
-           these are executed subsequently using the same Mserver
-       (2) TST_pXX.(milC|java) (XX={00,01,...,99})
-           these are executed cuncurrently using the same Mserver
+   (') For Mserver, if several files are present named
+        TST_sXX.mil(M|S) (XX={00,01,...,99})
+        these are executed by subsequently calling Mserver
+   (") For Mclient & java, if several files are present named
+        (1) TST_sXX.(milC|java) (XX={00,01,...,99})
+            these are executed subsequently using the same Mserver
+        (2) TST_pXX.(milC|java) (XX={00,01,...,99})
+            these are executed cuncurrently using the same Mserver
+   (^) For single-script Mserver- & Mclient- tests, if a file called
+	TST.mil(M|C|S).src  exists instead of a  TST.mil(M|S|C),
+	TST.mil(M|C|S).src  is expected to contain a single line
+	giving the original location of the MIL script to be used.
+	E.g.,  src/modules/plain/Tests/arith.milM.src  contains
+		$RELTRGDIR/arith.mil
+	in order to use the MIL script extracted from
+	src/modules/plain/arith.mx  as test script.
   + a MIL script to be used as prelude for Mserver/Mclient
      (optional)                                            (TST.prelude)
   + a file that contains a list of modules (one per line)

@@ -367,23 +367,24 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 		atomset(BATatoms[t].atomConvert, (void (*)()) arg); 
 	    } else if (strcmp("put", property) == 0) {
 		atomset(BATatoms[t].atomPut, (void (*)()) arg); 
+	    } else if (strcmp("null", property) == 0) {
+		ptr atmnull = ((ptr (*)())arg)();
+		atomset(BATatoms[t].atomNull, atmnull); 
 	    }
 	    if (oldval) goto out; 
 
 	    /* these ADT functions *must* be equal for overloaded types */
 	    if (strcmp("cmp", property) == 0) {
 		atomset(BATatoms[t].atomCmp, (int (*)()) arg); 
-	    } else if (strcmp("null", property) == 0) {
-		atomset(BATatoms[t].atomNull, (ptr) (*arg)()); 
 	    } else if (strcmp("hash", property) == 0) {
 		atomset(BATatoms[t].atomHash, (unsigned int (*)()) arg); 
 	    } else if (strcmp("length", property) == 0) {
 		atomset(BATatoms[t].atomLen, (int (*)()) arg); 
 	    }
-/*
     if (BATatoms[t].storage != t)
     GDKerror("ATOMproperty(%s): overload of %s violates inheritance from %s.\n",
 		ATOMname(t), property, ATOMname(BATatoms[t].storage));
+/*
 */
 	    BATatoms[t].storage = t;  /* critical redefine: undo remapping */
 	}

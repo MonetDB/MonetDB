@@ -14,10 +14,10 @@ Java(tm) interface.
 
 \begin{center}
 {\epsfxsize=0.55\textwidth
-\epsffile{monet.eps}\\
+\epsffile{monet.eps}
 \label{fig1}{\em Front-end/Back-end Architecture}}
 \end{center}
-\\
+
 For more detailed information on the why, what and how about Monet,
 we refer to the published 
 @[<a href="/~monet/papers.html">scientific papers</a>@
@@ -81,7 +81,7 @@ built in top of Monet. It provides natural language mappings for C,
 C++ and Java. The Monet/ODMG interface follows the Monet concept of 
 front-end/back-end design. 
 
-\\The motivation to work with the 
+The motivation to work with the 
 @[<a href="http://www.odmg.org">ODMG standard</a>@
  on top of Monet is the following:
 \begin{itemize}
@@ -188,16 +188,16 @@ about its syntax and semantics. MIL is a {\bf modular language}.
 All its primitives are contained in modules. A collection of
 these modules can be loaded, which yields a particular 'dialect'of MIL. 
 Loading a module is done with the
-@[<a href="../scw/monet/monet_cmd/8/module_index.html"><tt>module()</tt></a>@
+@[<a href="../scw/monet/monet\_cmd/8/module\_index.html"><tt>module()</tt></a>@
 command, and it can be deactivated with the
-@[<a href="../scw/monet/monet_cmd/8/drop_index.html"><tt>drop()</tt></a>@ command.
+@[<a href="../scw/monet/monet\_cmd/8/drop\_index.html"><tt>drop()</tt></a>@ command.
 
 There is a core of {\bf kernel modules} that is hardwired into the kernel:
 
 \begin{description}
 \item[{\bf @[<a href="stdlib/kernel.html">kernel</a>@}]
 these are the builtin system primitives.  They cannot be overloaded.
-\item[{\bf @[<a href="stdlib/bat.html">bat</a>@]
+\item[{\bf @[<a href="stdlib/bat.html">bat</a>@}]
 basic commands to create and manipulate BATs.
 \item[{\bf @[<a href="stdlib/algebra.html">algebra</a>@}]
 relational core of BAT commands (select, join, etc).
@@ -293,9 +293,9 @@ and standard modules
 @[<a href="WWWROOT/modules/xtables/index.html">xtables</a>@).
 You can alternatively browse glossaries of all:
 \begin{itemize}
-\item @[<a href="WWWROOT/mil_atoms.html">atomic types</a>@
-\item @[<a href="WWWROOT/mil_accs.html">search accelerators</a>@, and
-\item @[<a href="WWWROOT/mil_cmds.html">algebraic commands</a>@.
+\item @[<a href="WWWROOT/mil\_atoms.html">atomic types</a>@
+\item @[<a href="WWWROOT/mil\_accs.html">search accelerators</a>@, and
+\item @[<a href="WWWROOT/mil\_cmds.html">algebraic commands</a>@.
 \end{itemize}
 together with their implementation code.
 
@@ -421,9 +421,9 @@ export all variables with {\tt export MONETHOME PATH LD\_LIBRARY\_PATH}.
 The above mentioned {\tt \$PREFIX} is the {\em exact system name}
 that is composed as follows using output from the {\tt uname} utility:
 \begin{verbatim}
-UNAME_BASE=$(shell uname)
-UNAME_REV=$(shell uname -r)
-PREFIX=$(UNAME_BASE)$(UNAME_REV)
+UNAME\_BASE=$(shell uname)
+UNAME\_REV=$(shell uname -r)
+PREFIX=$(UNAME\_BASE)$(UNAME\_REV)
 \end{verbatim}
 
 For Solaris systems, it might be {\tt SunOS5.5.1}, for Irix systems
