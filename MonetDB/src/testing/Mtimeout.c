@@ -122,7 +122,7 @@ limit(char **argv)
 	    if (exec_timeout) {
 			if (quiet) {
 				char *cp[1];
-				cp[0] = argv[9];	// hardwired: the test output file
+				cp[0] = argv[9];	/* hardwired: the test output file */
 				invocation(stderr, "!Timeout: ", cp);
 			} else {
 				invocation(stderr, "Timeout: ", argv);
