@@ -1,7 +1,8 @@
 @f unix
 @t Unix standard library calls
-@a Tim Ruhl
-@v 0.1
+@a Tim Ruhl, A.R. van Ballegooij
+@d 06/06/2001
+@v 0.2
 
 @T 
 @* Unix stdlib
@@ -11,44 +12,234 @@ Provides access to some of the C stdlib.h functions.
 @* Module Definition
 @m
 .MODULE unix;
+  .USE blob;
 
-.COMMAND getenv(str) : str = unix_getenv;
-  "Get the environment variable string."
-.COMMAND setenv(str,str) : bit = unix_setenv;
-  "Set the environment variable string."
-.COMMAND system(str) : int = unix_system;
-  "execute a command and give back the return value"
+  .COMMAND getenv(str) : str = unix_getenv;
+    "Get the environment variable string."
+  .COMMAND setenv(str,str) : bit = unix_setenv;
+    "Set the environment variable string."
+  .COMMAND system(str) : int = unix_system;
+    "execute a command and give back the return value"
+  .COMMAND run(blob,str,...str...) : blob = unix_run;
+    "execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caughed and returned as a blob."
 
 .END unix;
 
 @c
+
+#include "blob.h"
 #include "unix.proto.h"
+
+#include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
-int 
-unix_getenv(str *res, str varname)
-{
-	char *p = getenv(varname);
-	if (p) {
-		*res = GDKstrdup(p);
-	} else {
-		*res = GDKstrdup("");
-	}
-	return GDK_SUCCEED;
+#ifndef MAXARGS
+#define MAXARGS 16
+#endif
+
+#define INITIAL_BLOBSIZE (64*1024) /* 64k */
+/* #define EXCESSIVE_DEBUGGING */  /* Uncomment for lots of debug messages */
+
+/*----------------------------------------------------------------------------
+ * The Basic UNIX commands.
+ */
+
+int unix_getenv(str *res, str varname) {
+    char *p = getenv(varname);
+    if(p) *res = GDKstrdup(p);
+    else  *res = GDKstrdup("");
+    return GDK_SUCCEED;
 }
 
-int 
-unix_setenv(bit *res, str varname, str valname)
-{
-	*res = setenv(varname, valname, TRUE);
-	return GDK_SUCCEED;
+int unix_setenv(bit *res, str varname, str valname) {
+    *res = setenv(varname, valname, TRUE);
+    return GDK_SUCCEED;
 }
 
-int 
-unix_system(int *res, str command)
-{
-	*res = system(command);
-	return GDK_SUCCEED;
+int unix_system(int *res, str command) {
+    *res = system(command);
+    return GDK_SUCCEED;
+}
+
+/*----------------------------------------------------------------------------
+ * The 'RUN' command and it's helper functions.
+ */
+
+static int unix_fork(int *inpipe, int *outpipe,char *command,va_list ap) {
+/* This function forks, and executes a given command,
+   both stdin and stdout to the child process are connected to pipes
+*/
+    char *prog_argv[MAXARGS],*p;
+    int   status,pid,i;
+    int   inpipes[2],outpipes[2];
+
+#ifdef  EXESSIVE_DEBUGGING
+    fprintf(stderr,"[SINGLE] Constructing argument vector...\n");
+#endif
+    prog_argv[0] = command;
+    i = 1;
+    while((p = va_arg(ap,char*)) != NULL) {
+        prog_argv[i++] = p;
+#ifdef  EXESSIVE_DEBUGGING
+        if(i==MAXARGS) {
+            fprintf(stderr,"[ERROR] Too many arguments, failed...\n");
+            return -1;
+        }
+#endif
+    }
+    prog_argv[i] = NULL;
+
+#ifdef  EXESSIVE_DEBUGGING
+    fprintf(stderr,"[SINGLE] Creating pipes...\n");
+#endif
+    if(pipe(inpipes) <0 ) {
+        fprintf(stderr,"[ERROR] pipe(inpipes) failed...\n");
+        return -1;
+    }
+
+    if(pipe(outpipes) <0 ) {
+        fprintf(stderr,"[ERROR] pipe(outpipes) failed...\n");
+        return -1;
+    }
+
+#ifdef  EXESSIVE_DEBUGGING
+    fprintf(stderr,"[SINGLE] Forking...\n");
+#endif
+    pid = fork();
+    if(pid < 0) {
+        fprintf(stderr,"[ERROR] fork() failed...\n");
+        return -1;
+    } else if(pid == 0){
+#ifdef  EXESSIVE_DEBUGGING
+        fprintf(stderr,"[CHILD] Born...\n");
+#endif
+
+#ifdef  EXESSIVE_DEBUGGING
+        fprintf(stderr,"[CHILD] Setting stdin to pipe...\n");
+#endif
+        close(inpipes[1]);
+        dup2 (inpipes[0],0);
+        close(inpipes[0]);
+
+#ifdef  EXESSIVE_DEBUGGING
+        fprintf(stderr,"[CHILD] Setting stdout to pipe...\n");
+#endif
+        close(outpipes[0]);
+        dup2 (outpipes[1],1);
+        close(outpipes[1]);
+
+#ifdef  EXESSIVE_DEBUGGING
+        fprintf(stderr,"[CHILD] Calling execvp(\"%s\")...\n",command);
+#endif
+        execvp(command,prog_argv);
+        fprintf(stderr,"[CHILD][ERROR] exec() failed...\n");
+        close(inpipes[0]);
+        close(outpipes[1]);
+        exit(-1);
+    }
+
+#ifdef  EXESSIVE_DEBUGGING
+    fprintf(stderr,"[PARENT] Closing other end of pipes...\n");
+#endif
+    close(inpipes[0]);
+    *inpipe = inpipes[1];
+    close(outpipes[1]);
+    *outpipe = outpipes[0];
+
+#ifdef  EXESSIVE_DEBUGGING
+    fprintf(stderr,"[PARENT] Done...\n");
+#endif
+    return pid;
+}
+
+/*----------*/
+
+static void unix_waitpid(int pid,int inpipe,int outpipe) {
+/* This function closes the pipes and waits for the child process to exit 
+   NOTE, a timeout construction may be a good idea. */
+#ifdef  EXESSIVE_DEBUGGING
+    fprintf(stderr,"[PARENT] Closing local end of pipes...\n");
+#endif
+    if(inpipe >=0) close(inpipe);
+    if(outpipe>=0) close(outpipe);
+
+#ifdef  EXESSIVE_DEBUGGING
+    fprintf(stderr,"[PARENT] Waiting for child process...\n");
+#endif
+    waitpid(pid,NULL,0);
+}
+
+/*----------*/
+
+int unix_run(blob **output,blob *input,str command,...) {
+    va_list ap;
+    int   pid,inpipe,outpipe;
+    int   got,size;
+
+    va_start(ap,command);
+    pid = unix_fork(&inpipe,&outpipe,command,ap);
+    va_end(ap);
+    if(pid < 0) {
+        GDKerror("Failed to fork child process.\n");
+        return(GDK_FAIL);
+        return -1;
+    }
+
+#ifdef EXESSIVE_DEBUGGING
+    fprintf(stderr,"[MAIN] Writing %d bytes...\n",input->nitems);
+#endif
+    if(write(inpipe,input->data,input->nitems) != input->nitems) {
+        unix_waitpid(pid,inpipe,outpipe);
+        GDKerror("Error writing to process pipe.\n");
+        return(GDK_FAIL);
+    }
+
+#ifdef EXESSIVE_DEBUGGING
+    fprintf(stderr,"[MAIN] Closing pipe...\n");
+#endif
+    close(inpipe); inpipe = -1;
+
+    size = INITIAL_BLOBSIZE;
+#ifdef EXESSIVE_DEBUGGING
+    fprintf(stderr,"[MAIN] GDKmalloc(%d)...\n",blobsize(size));
+#endif
+    if((*output = GDKmalloc(blobsize(size))) == NULL) {
+        unix_waitpid(pid,inpipe,outpipe);
+        GDKerror("Not enough memory.\n");
+        return(GDK_FAIL);
+    }
+    (*output)->nitems = 0;
+
+#ifdef EXESSIVE_DEBUGGING
+    fprintf(stderr,"[MAIN] Reading stuff from pipe...\n");
+#endif
+    while((got = read(outpipe,&((*output)->data[(*output)->nitems]),
+                              (size - (*output)->nitems))) > 0) {
+        (*output)->nitems += got;
+#ifdef EXESSIVE_DEBUGGING
+        fprintf(stderr,"[MAIN] Got %d Bytes\n",got);
+#endif
+        if((*output)->nitems == size) {
+            blob *tmp;
+            size *= 2;
+#ifdef EXESSIVE_DEBUGGING
+            fprintf(stderr,"[MAIN] GDKrealloc(%d)\n",blobsize(size));
+#endif
+            tmp = GDKrealloc(*output,size);
+            if(tmp == NULL) {
+                GDKfree(*output);
+                *output = NULL;
+                unix_waitpid(pid,inpipe,outpipe);
+                GDKerror("Not enough memory.\n");
+                return(GDK_FAIL);
+            }
+            *output = tmp;
+        }
+    }
+
+    unix_waitpid(pid,inpipe,outpipe);
+    return GDK_SUCCEED;
 }
 
 
