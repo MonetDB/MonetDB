@@ -22,6 +22,9 @@ MONET_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(MONET_SOURCE)
 
 AM_MONET_COMPILER()
+AM_MONET_TOOLS()
+AM_MONET_OPTIONS()
+AM_MONET_LIBS()
 
 DIRSEP="/"
 case "$host_os" in
@@ -32,32 +35,13 @@ esac
 AC_SUBST(DIRSEP)
 
 dnl systems checks
-AC_AIX
-
-dnl Checks for programs.
-AC_PROG_INSTALL()
-AM_PROG_LEX()
-AC_PROG_YACC()
-dnl AC_PROG_CC_STDC
-
-AC_PROG_LN_S()
-AC_CHECK_PROG(RM,rm,rm -f)
-AC_CHECK_PROG(MV,mv,mv -f)
-AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
-AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
-
-dnl to shut up automake (.m files are used for mel not for objc)
-AC_CHECK_TOOL(OBJC,objc)
-
-#AM_DEPENDENCIES(CC)
-#AM_DEPENDENCIES(CXX)
+AC_AIX()
 
 dnl AC_CHECK_PROG(CP,cp,cp -f)
 dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
 dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
-AM_MONET_OPTIONS()
 
 dnl Checks for header files.
 AC_HEADER_STDC()
@@ -68,8 +52,6 @@ AC_CHECK_HEADERS(time.h sys/time.h sys/utime.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h sys/signal.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h)
-
-AM_MONET_LIBS()
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST()
