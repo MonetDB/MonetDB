@@ -10,16 +10,6 @@
 @' rights and limitations under the License.
 @' 
 @' The Original Code is the Monet Database System.
-@' 
-@' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
-@' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @a M. L. Kersten
 @v 1.1
@@ -33,7 +23,7 @@ is avoided where possible. At the same time the language
 remains 'readable' to enable ease of debugging.
 
 The syntax layout of a MAL program consists of a module name,
-a list of import commands, a list of function/ pattern/ command/ stream
+a list of import commands, a list of function/ pattern/ command/ factory
 definitions and concludes with the statements to be executed as
 the main body of the program.  All components are optional.
 A commentary may appear anywhere a statement is expected.
@@ -42,11 +32,11 @@ This parser assumes availability of a complete MAL block upfront
 as a string to be parsed and executed on behalf of a client. 
 Module management operations are considered global commands.
 
+@{
 @+ The lexical analyzer
 The implementation of the lexical analyzer is straightforward:
 the input is taken from a client input buffer. It is assumed that
 this buffer contains the complete MIL structure to be parsed.
-@{
 @h
 #ifndef _MAL_PARSER_H
 #define _MAL_PARSER_H
@@ -371,22 +361,29 @@ parseTFN:
 }
 INLINE
 str cstCopy(Client cntxt, int i){ return idCopy(cntxt,i);}
-
+@}
 @- Type qualifier
-Type qualifiers are recognized as identifiers preceded by a colon.
+Types are recognized as identifiers preceded by a colon.
 They may be extended with a property list
 and 'any' types can be marked with an alias.
 The type qualifier parser returns the encoded type 
 as a short 32-bit integer. 
 The syntax structure is
 
-:IDENT['{' props '}']
-:BAT['[' params ']']['{' props '}']
-:ANY[alias]['{' props '}']
+@T
+\begin{tabular}{l l l}
+typeQualifier   & : & typeName propQualifier \\
+typeName        & : & scalarType | collectionType | anyType\\
+scalarType      & : & ':' {\sc identifier} \\
+collectionType  & : & ':' {\sc bat} ['[' colType ',' colType ']'] \\
+anyType         & : & ':' {\sc any} [typeAlias] \\
+colType         & : & scalarType | anyType \\
+propQualifier   & : & ['\{' property '\}']\\
+\end{tabular}
 
 The type ANY matches any type specifier.
 Appending it with an alias turns it into a type variable.
-The type alias is $DIGIT and can be used to relate types
+The type alias is \$DIGIT and can be used to relate types
 by type equality. They are currently limited to a single
 instruction, in particular, the signature.
 
@@ -396,11 +393,11 @@ identify the structure of the underlying association.
 Additional information, such as a repetition factor,
 encoding tables, or type dependency should be modelled as properties.
 
-Compound structures are limited to BATs. 
 @-
 The type variable should be defined within the context of a function
 scope. Currently limited to 10 and known within the signature
 instruction only.
+@{
 @c
 int typeAlias(Client cntxt){
 	int t;
@@ -433,6 +430,7 @@ int simpleTypeId(Client cntxt){
 	skipSpace(cntxt);
 	return tpe;
 }
+
 int typeId(Client cntxt)
 {	int i= TYPE_any, ht,tt,kh=0,kt=0;
 
@@ -468,6 +466,7 @@ int typeId(Client cntxt)
 	parseError(cntxt,"<type identifier> expected\n");
 	return -1;
 }
+
 int typeElm(Client cntxt){
 	int type= typeId(cntxt);
 	int k;
@@ -553,10 +552,6 @@ str parseModule(Client cntxt, int atomary)
 Atom storage may be defined in terms of an existing type.
 @c
 	if( atomary ) { 
-		if( strrchr(modnme,'/') ){
-			GDKfree(modnme);
-			return parseError(cntxt,"<atom name> expected\n");
-		}
 		tpe= typeId(cntxt);
 		tpe= tpe<0 ?TYPE_int:tpe;
 		malAtomDefinition(modnme,tpe);
@@ -571,17 +566,19 @@ Atom storage may be defined in terms of an existing type.
 	@:helpInfo(cntxt->nspace->help)@
 	return "";
 }
-@- Import statement
-An import statement is immediately taken into effect. This
+@- Include statement
+An include statement is immediately taken into effect. This
 calls for temporary switching the input for a particular client.
 The administration for this is handled by malImport.
 No listing is produced, because module sources are assumed to
 be debugged upfront already.
 @T
-importStmt : USE identifier \\
-	   : USE string\\
+\begin{tabular}{l l l}
+includeStmt     & : & {\sc include} identifier \\
+                & | & {\sc include} string\_literal\\
+\end{tabular}
 @c
-str parseImport(Client cntxt)
+str parseInclude(Client cntxt)
 {
 	str modnme=0;
 	int x,y;
@@ -600,8 +597,16 @@ The definition statements share a lot in common, which calls for factoring
 out the code in a few text macros. Upon encountering a definition, we
 initialize a MAL instruction container. We should also check for
 non-terminated definitions.
+
 @T
-defineStmt : {FUNCTION COMMAND PATTERN FACTORY} functionHdr [COMMENT string] ';'
+\begin{tabular}{l l l}
+program         & : & ( definition [helpinfo] | statement ) *\\
+
+definition      & : & moduleStmt | includeStmt \\
+                & | & commandStmt | patternStmt \\
+                & | & functionStmt | factoryStmt\\
+		& | & includeStmt\\
+\end{tabular}
 
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
 the symbol table and stackframe contains the sequence
@@ -631,7 +636,6 @@ the function definition in a particular module instead of the current one.
 		if( l == 0) return (MalBlkPtr) parseError(cntxt,
 					"<identifier> |<operator> expected\n");
 		fnme = idCopy(cntxt,l);
-		/*parseError(cntxt,"module redirection nyi\n");*/
 	}
 	if( nextChar(cntxt) != '(') {
 		GDKfree(fnme);
@@ -726,7 +730,13 @@ during the final phase reshuffle the return values to the beginning (?)
 @-
 The common theme in definitions is to parse the argument list.
 @T
-functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
+\begin{tabular}{l l l}
+header          & : & hdrName '(' params ')' result \\
+result          & : & paramType | '(' params ')'\\
+params          & : & binding [',' binding]* \\
+binding         & : & identifier typeName [propQualifier]\\
+
+\end{tabular}
 @
 @= binding
 	l = idLength(cntxt);
@@ -744,6 +754,7 @@ functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
 	setVarType(curBlk,varid,type);
 	skipSpace(cntxt);
 @-
+@}
 MAL variables are statically/dynamically typed.
 Function and procedure arguments should always be typed.
 We do not permit polymorphism at this interpretation level.
@@ -754,30 +765,13 @@ may be replaced once during execution of a MAL instruction
 typically as a side-effect of calling a bat-returning function.
 
 We should also allow for variable argument lists. However, they
-may only appear in rules, because the calling context is necessary
+may only appear in patterns, because the calling context is necessary
 to resolve the actual argument list. Furthermore, we can not 
-assume much about the resulting type structure.
+assume much about its type structure.
 @-
-Variables will later be extended with a property list to enable
-optimizers to make decisions. An example is A:int{key, notnull} for
-a column of a BAT. 
-The argument to propList is the variable that owns the properties.
-Properties used in the calling list of a function are considered
-pre-requisites, e.g they call (key.get(cntxt,A), key.notnull(cntxt,A)).
-If one of the property functions return false, the instruction
-is turned into a no-op.
-Alternatively, the functions may raise an property exception.
-Properties used at the left-hand side initiate a state change
-of the corresponding property, e.g. key.set(context) is
-called in the above example.
-
-Furthermore, properties can be changed dynamically using
-Note, however, that such dynamic properties can not be
-used for optimization.
-@T
-	B:= new(:int,:int)
-	bat.notnull(B,true);
-	i:= bat.estimate(B);
+Variables are extended with a property list to enable
+optimizers to make decisions. (See the section on properties).
+@{
 @-
 @= propList
 	if( keyphrase1(cntxt,"{")) {
@@ -802,7 +796,7 @@ Most functions are (dynamically) linked with the kernel.
 Once we encounter an external function, the block mode
 for reading unfinished definitions is also terminated.
 @= externalFcn
-	if( keyphrase1(cntxt,"=") || keyphrase(cntxt,"address",7)){
+	if( keyphrase(cntxt,"address",7)){
 		str nme;
 		int i;
 		skipSpace(cntxt);
@@ -908,20 +902,19 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 }
 
 @-
-Commands, functions, rulers, barriers and catch blocks all end
-with a labeled end-statement. The routine below checks for
-misalignment of the closing statements.
+Functions and  factoriesend with a labeled end-statement. 
+The routine below checks for misalignment of the closing statements.
 Any instruction parsed after the function block is considered an
 error.
 @c
-int parseEndDone(Client cntxt)
+int parseEnd(Client cntxt)
 {	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	int l,showit=0;
 	char ch= *cntxt->nxt;
 
 	(void) ch;
-	if( keyword(cntxt,"end",3) || keyword(cntxt,"done",4)){
+	if( keyword(cntxt,"end",3) ){
 		curPrg = cntxt->curprg;
 		curBlk = curPrg->def;	
 		l = idLength(cntxt);
@@ -963,21 +956,19 @@ int parseEndDone(Client cntxt)
 Most instructions are simple assignments, possibly
 modified with a barrier/catch tag.
 @T
-stmt	: tag idlist [':=' expr [':'typeId]['{' proplist'}']]\\
-	| RETURN expr [':'typeId]['{' proplist'}']
-tag	: BARRIER | CATCH | LEAVE | REDO | \\
-expr	: fcncall | [factor  operator] factor \\
-factor	: constant | var | type'('constant')'\\
+\begin{tabular}{l l l}
+statement       & : & tag varlist [':=' expr ] propQualifier\\
+tag             & : & {\sc return} | {\sc barrier} | {\sc catch}\\
+                & | & {\sc leave} | {\sc redo} | \\
+expr            & : & fcncall | [factor  operator] factor \\
+varlist         & : & variable \\
+                & | & '(' variable {',' variable}* ')' \\
+variable        & : & identifier propQualifier \\
+factor          & : & constant | var \\
+\end{tabular}
 
 The basic types are also predefined as a variable.
 This makes it easier to communicate types to MAL patterns.
-@-
-The assignment expression is the most complex term recognized.
-@T
-assign	: [identifier ':='] expr\\
-assign	: '(' identifier {',' identifier} ')' ':=' expr\\
-expr	: factor \{ operator factor \}\\
-factor	: fcn_call | variable | constant\\
 
 @= GETvariable
 if( (varid=findVariableLength(curBlk,cntxt->nxt,l)) == -1){
@@ -1036,7 +1027,8 @@ void parseAssign(Client cntxt, int cntrl)
 			/* we haven't seen an identifier nor an operator */
 			/* flow of control statements may end here.
 			   the control variable can be looked up */
-			if( cntrl == LEAVEsymbol || cntrl == REDOsymbol || cntrl == EXITsymbol ){
+			if( cntrl == LEAVEsymbol || cntrl == REDOsymbol 
+			 || cntrl == EXITsymbol ){
 				pushInstruction(curBlk,curInstr);
 				curInstr->argv[0]= getBarrierEnvelop(curBlk);
 				skipToEnd(cntxt);
@@ -1146,13 +1138,7 @@ This code is used in both positions of the expression
 		@1;
 	}
 @-
-Get arguments for a call, assume a single result.
-(
- The arameter of parseArguments is the return value of the enclosing function:
-	parse{CATCH,RAISE,THREAD}():	an integer
-	parseRETURN:	an integer
-	parseAssign:	none/void
-)
+The parameter of parseArguments is the return value of the enclosing function.
 @= parseArguments
 	while( currChar(cntxt)!= ')'){
 		int idx;
@@ -1328,9 +1314,6 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				cntrl = BARRIERsymbol; 
 			  }
 			  goto allLeft;
-		case 'D': case 'd':
-			  if( parseEndDone(cntxt)) break;
-			  goto allLeft;
 		case 'C': case 'c': 
 			  if( keyword(cntxt,"command",7) ) {
 				parseCommandPattern(cntxt, COMMANDsymbol);
@@ -1346,7 +1329,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				if(cntxt->blkmode>0) cntxt->blkmode--;
 				cntrl= EXITsymbol;
 			  } else
-			  if( parseEndDone(cntxt)) break;
+			  if( parseEnd(cntxt)) break;
 			  goto allLeft;
 		case 'F': case 'f': 
 			  if( keyword(cntxt,"function",8) ){
@@ -1359,10 +1342,9 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  { skipToEnd(cntxt); 
 			    cntxt->blkmode++;
 			    break; }
-		case 'i': if( parseImport(cntxt)) continue;
+		case 'i': if( parseInclude(cntxt)) continue;
 			goto allLeft;
-		case 'L':
-		case 'l': /* if( parseLEAVE(cntxt)) break;*/
+		case 'L': case 'l': 
 			  if( keyword(cntxt,"leave",5))
 				cntrl= LEAVEsymbol;
 			  goto allLeft;

@@ -257,7 +257,7 @@ int idcmp(str n, str m)
 }
 @-
 The ATOMindex routine is pretty slow, because it performs a
-linear search through the table. This code should actually
+linear search through the type table. This code should actually
 be integrated with the kernel.  
 @c
 #define qt(x) (nme[1]==x[1] && nme[2]==x[2] && x[3]==0)

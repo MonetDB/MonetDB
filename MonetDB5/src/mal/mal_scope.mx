@@ -99,6 +99,7 @@ mal_export Scope	fixateScope(Scope scope, str nme, int len);
 mal_export void         freeScope(Scope cur);
 mal_export void         freeScopeList(Scope cur);
 mal_export void		insertSymbol(Scope scope, Symbol prg);
+mal_export void		deleteSymbol(Scope scope, Symbol prg);
 mal_export Scope	findScope(Scope scope, str name);
 mal_export Scope	findScopeL(Scope scope, str name, int l);
 mal_export Symbol 	findSymbolInScope(Scope v, str fcn);
@@ -257,6 +258,41 @@ void insertSymbol(Scope scope, Symbol prg){
 			prg->skip = prg->peer->skip;
 		else	prg->skip = prg->peer;
                 scope->subscope[t] = prg;
+        }
+}
+@-
+Removal of elements from the symbol table should be
+done with care. For, it should be assured that
+there are no references to the definition at the
+moment of removal. This situation can not easily
+checked at runtime, without tremendous overhead.
+@c
+void deleteSymbol(Scope scope, Symbol prg){
+        InstrPtr sig;
+        int t;
+
+        sig = getSignature(prg);
+	if(moduleId(sig) && idcmp(moduleName(sig),scope->name) != 0){
+		/* move the definition to the proper place */
+		Scope c= findScope(scope,moduleName(sig));
+		if(c == NULL){
+			GDKwarning("deleteSymbol:undefined module\n");
+		} else scope = c;
+	}
+        t = getSubScope(functionName(sig));
+	if( scope->subscope[t] == prg){
+		scope->subscope[t] = scope->subscope[t]->peer;
+	} else {
+		Symbol nxt = scope->subscope[t];
+		while( nxt->peer != NULL){
+			if( nxt->peer == prg){
+				Symbol old = nxt->peer;
+				nxt->peer = old->peer;
+				freeSymbol(old);
+				return;
+			}
+			nxt = nxt->peer;
+		}
         }
 }
 

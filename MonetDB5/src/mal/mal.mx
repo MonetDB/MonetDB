@@ -119,9 +119,7 @@ for a particular application domain and hardware platform.
 
 @+ Architecture overview
 The software stack for Version 5 is shown in Figure
-@fgr
 \figure{architecture.gif}
-@-
 The top layer consists of the query language processors and their
 strategic optimizers. Moreover, each language comes with its language
 oriented catalog, which may, but need not be stored in the MonetDB database.
