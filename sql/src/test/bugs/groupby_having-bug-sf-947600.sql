@@ -9,7 +9,7 @@ WHERE    a.id < b.id AND
 	 b."system" = true 
 GROUP BY a.name, b.name
 HAVING COUNT(*) >= 1
-ORDER BY b.name, a.name;
+ORDER BY a.name, b.name;
 
 select name from tables where "istable" = true and "system" = true having 1=1;
 select name from tables where "istable" = true and "system" = true having 1=0;
