@@ -1,6 +1,9 @@
 
 SUBDIRS = conf src
 
-EXTRA_DIST = rules.mk 
+EXTRA_DIST = rules.mk RunMtest.in
 
 EXTRA_HEADERS = template_config.h
+
+TESTS = RunMtest
+TESTS_ENVIRONMENT = $(SHELL)
