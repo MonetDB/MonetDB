@@ -360,7 +360,7 @@ void MT_global_exit(int s) {
            correctly without losing the proper image, so in that case we 
 	   don't apply this Hack.
 	 */
-	if (GDKgetenv_isyes("gdk_alloc_map")) { 
+	if (gdk_alloc_map) { 
 		if (s)
 			execl("/bin/false", "false", (char *) 0);
 		else

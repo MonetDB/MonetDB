@@ -36,6 +36,7 @@ gdk_export int  GDKms        (void);
 gdk_export int  GDKstamp     (void);
 gdk_export void GDKsetstamp  (int newstamp);
 
+gdk_export int gdk_alloc_map;
 gdk_export BAT *GDKenv;
 
 @c
@@ -55,6 +56,7 @@ gdk_export BAT *GDKenv;
 #define GDKcalloc(nmemb,size) calloc(nmemb,size);
 #endif
 
+int 	gdk_alloc_map = 1;
 char	GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 char	GDKdbnameStr[PATHLENGTH] = { 0 };
 
@@ -1163,6 +1165,7 @@ gdk_export int GDKinit(char *dbname, char *dbfarm, int alloc_map);
 int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 	int 	i;
 
+	gdk_alloc_map = alloc_map;
 	errno = 0;
 	if (!GDKenvironment(dbname, dbfarm))
 		return 0;
