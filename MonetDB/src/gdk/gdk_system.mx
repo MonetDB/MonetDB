@@ -47,7 +47,7 @@ typedef void    *MT_Lock;
 typedef void    *MT_Sema;
 typedef void    *MT_Id;
 
-#define THREAD_STACK_SIZE	((unsigned long)1024*1024)
+#define THREAD_STACK_SIZE	((unsigned long)512*1024)
 
 #define MAXLOCKS	128
 #define MAXSEMAS	64
@@ -79,6 +79,11 @@ The routines that are available for use for thread and process management.
 Init the package. Must be called once before any of the other operations.
 @h
 gdk_export void 	MT_init ();
+
+@-
+Set which signals should be blocked, ignores  SIGINT, SIGQUIT, SIGALRM
+@h
+gdk_export void MT_thread_sigmask( sigset_t *new_mask, sigset_t *orig_mask );
 
 @-
 Create a new thread executing 'function' with single parameter 'arg'. 
@@ -257,25 +262,27 @@ void MT_init() {
 	MT_system_lock = (MT_Lock) &l;
 }
 
+void 	MT_thread_sigmask( sigset_t *new_mask, sigset_t *orig_mask ){
+        (void)sigdelset(new_mask, SIGINT);
+        (void)sigdelset(new_mask, SIGQUIT);
+        (void)sigdelset(new_mask, SIGALRM); /* else sleep doesn't work */
+        (void)pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
+}
+
 int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 	sigset_t new_mask, orig_mask;
 	pthread_attr_t attr;
 	int  ret;
 
         (void)sigfillset(&new_mask);
-        (void)sigdelset(&new_mask, SIGINT);
-        (void)sigdelset(&new_mask, SIGQUIT);
-#ifndef __sgi
-        (void)sigdelset(&new_mask, SIGALRM); /* else sleep doesn't work */
-#endif
-        (void)pthread_sigmask(SIG_SETMASK, &new_mask, &orig_mask);
+	MT_thread_sigmask(&new_mask, &orig_mask);
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
         pthread_attr_setstacksize(&attr, 1024*1024);
         pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);  
 	ret = pthread_create((pthread_t*)t, &attr, (void*(*)(void*))f, arg);
         if (ret == 0) (*(int*)t)++; /* use pthread-id + 1 */
-        (void)pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
+	MT_thread_sigmask(&orig_mask, NULL);
 	return ret;
 }
 
