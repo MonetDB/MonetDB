@@ -2295,10 +2295,11 @@ CMDxquery(char *mode, char* xquery) {
 #else
     err = "xquery disabled. Please configure & compile MonetDB with --enable-gc=DIR\n";
 #endif
-    if (err && *mapi) {
+    if (err) {
+      len = strlen(err);
+      if (*mapi) {
 	/* put ! before error lines */
 	char *p = err, *q = err;
-	len = strlen(err);
 	while(*p) { if (*p++ == '\n') len++; }
 	err = (char*) alloca(len+3);
 	*err = '!'; 
@@ -2311,6 +2312,7 @@ CMDxquery(char *mode, char* xquery) {
   	else if (p[-1] == '!') p--;  
 	p[1] = 0;
 	len = p - err;
+      }
     }
     MT_unset_lock(pathfinder_lock, "CMDxquery");
 
