@@ -242,6 +242,7 @@ static backend *backend_create( context *c )
 	backend *b = NEW(backend);
 
 	b->debug = c->debug;
+	b->trace = 0;
 	b->context = c;
 	b->currSchema = NULL;
 	b->currTable = NULL;
@@ -423,32 +424,27 @@ int SQLsetEnvironment(Client c){
 int sqlexecute(backend * be, MalBlkPtr mb, char *cmd)
 {
 	context *c = be->context;
-	char *s;
 	int err = 0;
 	cq *q = NULL;
 
 	cmd_init(c);
 
-	s = c->buf = cmd;
+	c->buf = cmd;
 	c->mvc->type = Q_PARSE;
 	c->mvc->status = 0;
 
 	if ((err = sqlparse(c)) || c->mvc->status || !c->sym) {
 		if (!err)
 			err = c->mvc->status;
-		return sqlcleanup(c, cmd, err);
+		return sqlcleanup(c, NULL, err);
 	}
 	
-	if (be->trace){
-		printf("currently no tracing implemented\n");
-	}
-
 	if ( !(q = qc_find(c->qc, c->sym, c->params, c->key)) ){
 		stmt *s = sql_symbol2stmt(c);
 
 		if (!s && c->mvc->status){
 			err = c->mvc->status;
-			return sqlcleanup(c, cmd, err);
+			return sqlcleanup(c, NULL, err);
 		}
 
 		backend_dumpproc( be, mb, c->qc->id, s );
@@ -459,15 +455,8 @@ int sqlexecute(backend * be, MalBlkPtr mb, char *cmd)
 		c->sym = NULL;
 		c->params = NULL;
 
-		/* beware to use free instead of _DELETE
- 	 	 * as the stream library is build with out 
-	 	 * libbat ie. it cannot use gdkmalloc 
-	 	 * can be used */
-	        free(cmd); 
-		cmd = NULL;
-
 		if (err)
-			return sqlcleanup(c, cmd, err);
+			return sqlcleanup(c, NULL, err);
 	}
 	/* 
  	 * clear query cache after Transaction boundaries (commit/rollback)
@@ -477,7 +466,7 @@ int sqlexecute(backend * be, MalBlkPtr mb, char *cmd)
 		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
-	return sqlcleanup(c, cmd, err);
+	return sqlcleanup(c, NULL, err);
 }
 
 
@@ -493,14 +482,14 @@ str SQLparser(Client c) {
 #endif
 	debug= SQLsetEnvironment(c);
 	be = ((backend*)c->state[PARSER]);
-	while ( !(err = sqlexecute(be, c->curprg->def, c->nxt)) ){
+	if ( (err = sqlexecute(be, c->curprg->def, c->nxt)) ){
 #ifdef _SQL_SCENARIO_DEBUG
 		printf("continue parser from:%s", w);
 #endif
+		stream_printf(c->fdout,"#%s\n", be->context->errstr);
+		*be->context->errstr=0;
+		msg= throwMessage("SQLparser","Parser errors\n");
 	}
-	stream_printf(c->fdout,"#%s\n", be->context->errstr);
-	*be->context->errstr=0;
-	msg= throwMessage("SQLparser","Parser errors\n");
 
 	/* turn off debugger */
 	if(debug){

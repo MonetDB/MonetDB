@@ -158,55 +158,15 @@ parser keeps the string representation around.
 @c
 static
 int constantAtom(MalBlkPtr mb, atom *a, backend *sql){
-	char buf[BUFSIZ];
-	int tp;
+	int idx;
+	ValPtr vr;
 
-	switch (a->tpe->type->localtype){
-	case TYPE_sht: snprintf(buf, BUFSIZ, "%d", a->data.val.shval); 
-		tp= TYPE_int;
-		break;
-	case TYPE_int: snprintf(buf, BUFSIZ, "%d", a->data.val.ival); 
-		tp= TYPE_int;
-		break;
-	case TYPE_lng: snprintf(buf, BUFSIZ, "%lld", a->data.val.lval); 
-		tp= TYPE_lng;
-		break;
-	case TYPE_dbl: 
-		snprintf(buf, BUFSIZ, "%E", a->data.val.dval); 
-			/* float/double requires string as 
-			 * else dbl(0.1), will first be a float and
-			 * then converted to dbl, which results in the
-			 * wrong value */ 
-		tp= TYPE_flt;
-		break;
-	case TYPE_str: 
-@-
-General values are easy to deal with. They require the underlying type
-library to be loaded, which always contains a routine to convert
-a string value to its internal represenation. We merely have to re-introduce
-the enclosing brackets expected by the MAL layer and deal with possible
-overflow.
-@c
-		if (a->data.val.sval){
-			int len = a->data.len+4;
-			if( len > BUFSIZ-4){
-			    str buf2= (str) GDKmalloc(len);
-			    snprintf(buf2,len,"\"%s\"", a->data.val.sval);
-			    len= newConstant(mb,TYPE_str,buf2,TRUE);
-			    GDKfree(buf2);
-			    return len;
-			}
-			snprintf(buf, BUFSIZ, "\"%s\"", a->data.val.sval );
-			tp = TYPE_str;
-		} else {
-			snprintf(buf, BUFSIZ, "nil");
-			tp = TYPE_void;
-		}
-		break;
-	}
-	if( sql->debug &8) fwrite( buf, 1, strlen(buf), stderr);
+	if( sql->debug &8) atom_dump(a, GDKout);
 
-	return newConstant(mb, tp, GDKstrdup(buf), TRUE);
+	idx = newTypeVariable(mb, a->data.vtype);
+	vr = &getVarConstant(mb, idx);
+	VALcopy (vr, &a->data);
+	return idx;
 }
 @-
 Instructions are encapsulated with time code.
@@ -241,6 +201,7 @@ void dump_header(MalBlkPtr mb, stmt *s, list *l ){
         node *n;
 	InstrPtr q;
 	int old;
+
 
         for (n=l->h; n; n = n->next){
                 char *name ;
@@ -1200,9 +1161,10 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 	} break;
 	case st_alias:
 	case st_column_alias: {
-		s->nr = backend_dumpstmt(m,mb, s->op1.stval,sql);
+		s->nr = - backend_dumpstmt(m,mb, s->op1.stval,sql);
 	} break;
-	case st_set: {
+	case st_set: 
+	case st_list: {
 		for (n = s->op1.lval->h; n; n = n->next ){
 			backend_dumpstmt(m,mb, n->data, sql);
 		}
@@ -1273,12 +1235,12 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 	case st_ordered: {
 		int l =  backend_dumpstmt(m,mb, s->op1.stval, sql);
 		backend_dumpstmt(m,mb, s->op2.stval,sql);
-		s->nr = l;
+		s->nr = -l;
 	} break;
 	case st_output: {
 		stmt *order = NULL; int flg=0;
 		stmt *lst = s->op1.stval;
-		int nr= backend_dumpstmt(m,mb, lst, sql);
+		int nr = backend_dumpstmt(m, mb, lst, sql);
 
 		(void)nr;
 		if (lst->type == st_ordered){
@@ -1300,20 +1262,13 @@ int backend_dumpstmt(mvc *m, MalBlkPtr mb, stmt *s, backend *sql){
 			@:newStmt("sql","output")@
 			if( flg){ @:pushArg(order->nr)@ }
 
-			while(n){
-				stmt *r;
-				r = n->data;
+			for(; n; n = n->next){
+				stmt *r = n->data;
 				@:pushArg(r->nr)@
-				n = n->next;
 			}
 		} else {
 			@:newStmt("sql","print")@
 			@:pushStr("not a valid output list\n")@
-		}
-	} break;
-	case st_list: {
-		for( n = s->op1.lval->h; n; n = n->next ){
-			backend_dumpstmt(m,mb, n->data, sql);
 		}
 	} break;
 
@@ -1355,8 +1310,9 @@ void backend_dumpproc( backend *be, MalBlkPtr mb, int id, stmt *s )
 	int i = 0;
 	char buf[BUFSIZ];
 	node *n;
-
-	i = snprintf( buf, BUFSIZ, "proc sql%d (", id);
+	
+	(void)id;
+	/* TODO change mal procs */ 
 	if (be->context->params){
 		for (n = be->context->params->h; n; n = n->next){
 			var_ *v = n->data;
@@ -1367,12 +1323,5 @@ void backend_dumpproc( backend *be, MalBlkPtr mb, int id, stmt *s )
 				);
 		}
 	}
-	i += snprintf(buf+i, BUFSIZ-i, ") : void {\n");
-	//stream_write(be->out, buf, i, 1); 
-
     	backend_dumpstmt( be->context->mvc, mb, s, be );
-
-	//stream_write(be->out, "}\n", 2, 1);
 }
-	
-
