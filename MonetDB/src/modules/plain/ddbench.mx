@@ -679,8 +679,6 @@ static int (*local_enum_table)(BAT **, int *);
 static int (*local_enum_chktpe)(int);
 static int (*local_enum_sethisto)(int *, BAT *);
 #include "monet_tbl.h"
-m_export ptr TBL_module_handle(int);
-m_export int TBL_module_lookup(str);
 
 void ddbench_prelude(void)
 {

@@ -90,6 +90,10 @@ m_export BAT *TBL_mod_dep;
 m_export BAT *TBL_mod_use;
 m_export BAT *TBL_mod_load;
 m_export BAT *TBL_mod_drop;
+
+m_export ptr TBL_module_handle(int);
+m_export int TBL_module_lookup(str);
+m_export void *DL_sym(void *, const char *);
 @
 Declarations of Installing interface for modules.
 @h

@@ -264,8 +264,6 @@ static int (*local_bitvector_decode)(BAT **, BAT *);
 static int (*local_bitvector_print)(BAT *);
 static int (*local_bitvector_set)(BAT *, int *);
 #include "monet_tbl.h"
-m_export ptr TBL_module_handle(int);
-m_export int TBL_module_lookup(str);
 
 void
 qt_prelude(void)
