@@ -695,7 +695,8 @@ dump_table(Mapi mid, char *tname)
 	mapi_close_handle(hdl);
 	snprintf(query, sizeof(query),
 		 "SELECT \"kc\".\"column\","		/* 0 */
-		 	"\"kc\".\"nr\" "		/* 1 */
+		 	"\"kc\".\"nr\", "		/* 1 */
+			"\"k\".\"name\" "		/* 2 */
 		 "FROM \"keycolumns\" \"kc\", "
 		       "\"keys\" \"k\", "
 		       "\"tables\" \"t\" "
@@ -716,15 +717,20 @@ dump_table(Mapi mid, char *tname)
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		char *c_column = mapi_fetch_field(hdl, 0);
+		char *k_name = mapi_fetch_field(hdl, 2);
 
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 			return 1;
 		}
-		if (cnt == 0)
-			fprintf(toConsole, ",\n\tPRIMARY KEY (");
-		else
+		if (cnt == 0) {
+			fprintf(toConsole, ",\n\t");
+			if (k_name && k_name[0] != '~')
+				fprintf(toConsole, "CONSTRAINT \"%s\" ",
+					k_name);
+			fprintf(toConsole, "PRIMARY KEY (");
+		} else
 			fprintf(toConsole, ", ");
 		fprintf(toConsole, "\"%s\"", c_column);
 		cnt++;
