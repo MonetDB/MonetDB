@@ -2704,7 +2704,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ]; 
 
-				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "Precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
@@ -2717,7 +2717,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ]; 
 
-				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "Precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
