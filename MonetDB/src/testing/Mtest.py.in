@@ -661,8 +661,22 @@ def GetBitsAndModsAndStatic(env) :
     TSTPREF = env['TSTPREF']
     pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" --dbname="+TSTPREF)
     pIn.write('''\
-MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModules: ");x:="";MODs@batloop{printf("%s\'%s\'",x,$h);x:=",";}printf("\\n");quit;
-''')
+        loaded;
+        help("sunion");
+        {
+            # print a list of all modules found
+            # "Modules: mod1, mod2, ..."
+            MODs := sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;
+            printf("\\nModules: ");
+            x := "";
+            MODs@batloop{
+                printf("%s\'%s\'",x,$h);
+                x:=",";
+            }
+            printf("\\n");
+        }
+        quit;
+    ''')
     ##module("NoModule");
     pIn.close()
     qOut, qErr = ReadMultiple([pOut, pErr])
@@ -729,8 +743,20 @@ def CheckMods(env, TST, SERVER) :
 def CheckBATs(env, TST, TSTDB) :
     pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" --dbname="+TSTDB)
     pIn.write('''\
-BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s\'%s\'",x,$t);x:=",";}printf("\\n");quit;
-''')
+        {
+            # print a list of all persisten BATs
+            # "BATs: bat1, bat2, ..."
+            BATs := view_bbp_name;
+            printf("\\nBATs: ");
+            x := "";
+            BATs@batloop{
+                printf("%s\'%s\'",x,$t);
+                x:=",";
+            }
+            printf("\\n");
+        }
+        quit;
+    ''')
     pIn.close()
     qOut, qErr = ReadMultiple([pOut, pErr])
     TST_BATS = []
