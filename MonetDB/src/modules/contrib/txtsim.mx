@@ -60,7 +60,7 @@ Provides basic similarity metrics for strings.
   .COMMAND qgramnormalize(str): str = CMDqgramnormalize;
     "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space"
   
-  .COMMAND qgramselfjoin(bat[void, oid] qgramid, bat[void,oid] id, bat[void, int] pos, bat[void, int] len, flt c, int k) : bat[oid, oid] = CMDqgramselfjoin;
+  .COMMAND qgramselfjoin(bat[void, oid] qgramid, bat[void, int] id, bat[void, int] pos, bat[void, int] len, flt c, int k) : bat[int, int] = CMDqgramselfjoin;
     "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions"
 
 .END txtsim;
@@ -968,16 +968,16 @@ int CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c,
 	BAT *bn;
 
 	oid *qbuf = (oid *) BUNtloc(qgram, BUNfirst(qgram));
-	oid *ibuf = (oid *) BUNtloc(id, BUNfirst(id));
+	int *ibuf = (int *) BUNtloc(id, BUNfirst(id));
 	int *pbuf = (int *) BUNtloc(pos, BUNfirst(pos));
 	int *lbuf = (int *) BUNtloc(len, BUNfirst(len));
 
 	ERRORcheck((qgram->ttype!=TYPE_oid), "CMDqgramselfjoin: tail of BAT qgram must be oid.\n");
-	ERRORcheck((id->ttype!=TYPE_oid), "CMDqgramselfjoin: tail of BAT id must be oid.\n");
+	ERRORcheck((id->ttype!=TYPE_int), "CMDqgramselfjoin: tail of BAT id must be int.\n");
 	ERRORcheck((pos->ttype!=TYPE_int), "CMDqgramselfjoin: tail of BAT pos must be int.\n");
 	ERRORcheck((len->ttype!=TYPE_int), "CMDqgramselfjoin: tail of BAT len must be int.\n");
 
-	ERRORcheck( (BATcount(qgram)>1 && !(BATtordered(qgram)&1)), "CMDqgramselfjoin: tail of qgram must be sorted.\n");
+	/* ERRORcheck( (BATcount(qgram)>1 && !(BATtordered(qgram)&1)), "CMDqgramselfjoin: tail of qgram must be sorted.\n"); */
 
 	ERRORcheck( (ALIGNsynced(qgram, id)==0), "CMDqgramselfjoin: qgram and id are not synced");
 	ERRORcheck( (ALIGNsynced(qgram, pos)==0), "CMDqgramselfjoin: qgram and pos are not synced");
@@ -988,12 +988,12 @@ int CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c,
 	ERRORcheck( (BUNsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
 	ERRORcheck( (BUNsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
 
-	*res = bn = BATnew(TYPE_oid, TYPE_oid, n);
+	*res = bn = BATnew(TYPE_int, TYPE_int, n);
 
 	for (i = 0; i<n-1; i++) {
 		for (j = i+1; (j<n && qbuf[j]==qbuf[i] && pbuf[j] <= (pbuf[i]+(*k+*c*MYMIN(lbuf[i],lbuf[j])))); j++) {
 			if (ibuf[i]!=ibuf[j] && abs(lbuf[i]-lbuf[j])<=(*k+*c*MYMIN(lbuf[i],lbuf[j]))) {
-				bunfastins(bn, ibuf+i, ibuf+j);		
+				bunfastins(bn, ibuf+i, ibuf+j);
 			}
 		}
 	}	
@@ -1017,22 +1017,18 @@ proc stringdiff( str s1, str s1 ) : int {
 
 proc str2qgrams(str s) : bat[oid,str]
 {
+    s := qgramnormalize(s);
+
     var len := s.length();
     var b := bat(str,void,len+4);
     var i := 0;
     var last := " ";
 
-    s := toUpper(s);
     b.insert("#",nil);
     b.insert("#",nil);
     while(i < len) {
-        var c := s.string(i,1);
-        if (not(and(c >= "A", c <= "Z") or and(c >= "0", c <= "9"))) c := " ";
-        if ((c != " ") or (last != " ")) {
-            b.insert(c, nil);
-  	      if (b.count() > 32764) break; # ignore suffix of >32KB strings
-        }
-        last := c;
+        b.insert(s.string(i,1), nil);
+        if (b.count() > 32764) break; # ignore suffix of >32KB strings
         i :+= 1;
     }
     b.insert("$",nil);
@@ -1115,7 +1111,9 @@ proc qgramselect(bat[void,oid] qgrams_strings,
   var res_hit := res.reverse().mark(0@0).reverse().[>>](16);
   res_strings := [>](res_hit, res_lim).[ifthen](res_strings);
   res_hit := [flt](res_hit).access(BAT_WRITE).[:/=](flt(len));
-  return res_hit.reverse().join(res_strings).access(BAT_WRITE).order_rev().access(BAT_READ);
+  # we do not need to order on hit just yet because we will process all candidates with edit distance anyway.
+  # return res_hit.reverse().join(res_strings).access(BAT_WRITE).order_rev().access(BAT_READ);
+  return res_hit.reverse().join(res_strings).access(BAT_READ);
 }
 
 
