@@ -678,7 +678,7 @@ def isexecutable(TST) :
 
 def GetBitsAndModsAndStatic(env) :
     TSTPREF = env['TSTPREF']
-    pOut,pIn,pErr = popen2.popen3('%s%s --dbname=%s "%s"' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF, env['TRACE_MIL']))
+    pOut,pIn,pErr = popen2.popen3('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF))
     pIn.write('''\
         loaded;
         help("kunion");
@@ -760,7 +760,7 @@ def CheckMods(env, TST, SERVER) :
 ### CheckMods(env, TST, SERVER) #
 
 def CheckBATs(env, TST, TSTDB) :
-    pOut,pIn,pErr = popen2.popen3('%s%s --dbname=%s "%s"' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB, env['TRACE_MIL']))
+    pOut,pIn,pErr = popen2.popen3('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB))
     pIn.write('''\
         {
             # print a list of all persisten BATs
@@ -1383,7 +1383,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if os.path.isfile(TST+".prologue"):
             PROLOGUE = " "+TST+".prologue"
 
-        Srvr = '%s%s %s "--dbname=%s" --set %s_port=%s "%s"' % (MTO, str(STO), exe['Mserver'][1], TSTDB, string.lower(SERVER), env[SERVER+'PORT'], env['TRACE_MIL'])
+        Srvr = '%s%s %s "--dbname=%s" --set %s_port=%s' % (MTO, str(STO), exe['Mserver'][1], TSTDB, string.lower(SERVER), env[SERVER+'PORT'])
         if SERVER == "MAPI":
             Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
         else:
@@ -1424,7 +1424,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
         RunIt(cmd, "", ClntOutFile, ClntErrFile)
     elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
-        cmd = '%s%s %s --dbname=%s "%s" %s < ' % (MTO, str(TOT), exe['Mserver'][1], TSTDB, env['TRACE_MIL'], PRELUDE)
+        cmd = '%s%s %s --dbname=%s %s < ' % (MTO, str(TOT), exe['Mserver'][1], TSTDB, PRELUDE)
         if CALL in ["milM", "milS"]:
             X=""
         else:
@@ -1996,7 +1996,6 @@ def main(argv) :
             if not os.path.isfile(sqlserver_mil):
                 sqlserver_mil = ''
         env['SQLSERVER_MIL'] = sqlserver_mil
-        env['TRACE_MIL'] = os.path.join(env['TSTTRGBASE'],TSTPREF,"trace.mil")
 
     # export and display env
     STDERR.flush()
@@ -2045,7 +2044,7 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt=' % (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt= --trace' % (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
         exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
@@ -2166,8 +2165,7 @@ def main(argv) :
             ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
 
         os.makedirs(os.path.join(env['TSTTRGBASE'],TSTPREF))
-        open(env['TRACE_MIL'],"w").close()
-        if Check('%s%s --dbname=%s "%s"' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF, env['TRACE_MIL']), "quit;\n"):
+        if Check('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF), "quit;\n"):
             sys.exit(1)
         GetBitsAndModsAndStatic(env)
         STDERR.flush()
