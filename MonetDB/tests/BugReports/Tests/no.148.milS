@@ -158,14 +158,14 @@ module(xtables);
 # - xtable_test(str title, bat x, bat y, bat z)
 #	 major test script on xtable functionality
  
-proc xtable_print := {
+proc xtable_print() : void {
         var histo := $1.histogram;
         printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
                 $2, $1.count, histo.count, $1.batsize);
         table(histo.col_name("count"), $(3..));
 }
  
-proc xtable_realloc(b,cap) := {
+proc xtable_realloc(bat b,int cap) : bat {
         var inf := b.info;
         var ht := monet_atomtbl.find(inf.find("head"));
         var tt := monet_atomtbl.find(inf.find("tail"));
@@ -176,7 +176,7 @@ proc xtable_realloc(b,cap) := {
         return bn;
 }
  
-proc xtable_test(title, x, y, z) := {
+proc xtable_test(str title, bat x, bat y, bat z) : void {
     printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
                 title, x.count, x.batsize + y.batsize + z.batsize);
     x.col_name("x"); y.col_name("y"); z.col_name("z");

@@ -103,7 +103,7 @@
 
 setoid(oid(20000000));
 
-proc tst(BAT[any, int] b) 
+proc tst(BAT[any, int] b) : bat
 {  
   var i;
 

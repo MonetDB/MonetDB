@@ -71,14 +71,14 @@ test.insert(oid(1),1);
 test.insert(oid(2),2);
 test.insert(oid(3),3);
 
-PROC addNr(any theNrs, any theNr) {
+PROC addNr(any theNrs, any theNr) : any {
         printf("add Nr: %d\n",theNr);
         VAR r := [+](theNrs,theNr);
         r.print();
         return r;
 }
 
-PROC loopTest(any theBAT,any theMax)  {
+PROC loopTest(any theBAT,any theMax) : void {
         VAR i := 0;
         WHILE (i < theMax) {
                 addNr(theBAT,i);

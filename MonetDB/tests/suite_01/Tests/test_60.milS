@@ -1,6 +1,6 @@
 setoid(oid(20000000));
 
-proc newid(any x, any y)  {
+proc newid(any x, any y) : any {
 	return x+y;
 }
 
@@ -19,22 +19,22 @@ b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
 b.rename("tenk1_unique1");
 
-proc dummy() { return 1; }
+proc dummy() : int { return 1; }
 
-proc p(any B, any C) { 
+proc p(any B, any C) : any { 
         local :=newid(B,C); 
         vars(); 
 }
 
-proc s(int low, int high) := {
+proc s(int low, int high) : void {
 	vars(); 
 	var t := select(tenk1_unique1,low,high); 
         t.count().print();
 }
 
-#proc echo(any x,any y) { vars(); z=x; vars(); return(z); }
-proc echo(any x,any y) { vars(); z:=x; vars(); return(z); }
-proc New(any N,any A,any Ahsh) {
+#proc echo(any x,any y) : any { vars(); z=x; vars(); return(z); }
+proc echo(any x,any y) : any { vars(); z:=x; vars(); return(z); }
+proc New(any N,any A,any Ahsh) : void {
         var Nh := newid(N,"_hsh"); 
         var A := new(int,int,1); 
         rename(A,N); 

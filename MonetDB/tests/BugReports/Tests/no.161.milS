@@ -43,11 +43,11 @@
 
 setoid(oid(20000000));
 
-PROC test_inner(any in) {
+PROC test_inner(any in) : void {
    printf("test_inner.in: %s\n",str(in));
 }
  
-PROC test_outer(any in) {
+PROC test_outer(any in) : void {
    printf("test_outer.in: %s\n",str(in));
    test_inner(in);
 }

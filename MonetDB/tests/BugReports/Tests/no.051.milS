@@ -35,7 +35,7 @@
 # !ERROR: interpret command/proc: 2nd param: invalid BAT.
 # [ nil ]
 
-proc create(bat b) {
+proc create(bat b) : bat {
         var a := new (oid,flt);
         b@batloop(){
                 if (a.count() = 0)

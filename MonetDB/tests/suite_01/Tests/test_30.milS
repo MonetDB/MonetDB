@@ -16,7 +16,7 @@ c();
 { i:=123; vars();}
 
 # and in a procedure
-proc xyz() {var j; j:=23; k:=234; vars();}
+proc xyz() : void {var j; j:=23; k:=234; vars();}
 xyz();
 vars();
 quit();

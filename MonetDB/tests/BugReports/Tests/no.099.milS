@@ -49,7 +49,7 @@
 # left equals right
 
 setoid(oid(20000000));
-PROC comp(any left, any right) {
+PROC comp(any left, any right) : any {
   IF (left = right) {
     printf("left equals right\n");
   } ELSE {
