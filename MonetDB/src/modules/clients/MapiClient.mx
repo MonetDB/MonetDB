@@ -397,6 +397,7 @@ int main(int argc, char **argv) {
 	}
 
 	mid = Mconnect(address,i,user,NULL);
+	fprintf(toConsole,"#connect to %s %d %s\n",address,i,user);
 	mid->trace = debug;
 	if( sessionkey) {
 		sprintf(user,"%s:%d\n",user,sessionkey);
