@@ -1,7 +1,5 @@
 MAL language issues
 - look into the nested (referenced) bat issues
-- see if it makes sense to have in/out variables mentioned twice 
-  in an assignment statement to ease analysis
 - check all routines for proper match return type and actual
 action.
 - Modules should make the expections being thrown explicit
@@ -9,12 +7,8 @@ action.
 
 - consider type catalog at MAL layer only.
 - derive multiplex implementations variants automatically?
-- C-code generator for mal blocks to speed up expensive functions
-  (and multiplex routines)
 - insert(b,2) should work on bat(void,int)
 
-- The replace/insert operations for bats arguments should set the 
-  access mode themselves. 
 - a hard bug appears in the following case
   via MapiClient Tapestry_1M-2
   2nd time MapiClient tapestry_attr1 has disappeared
@@ -60,6 +54,13 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20041220 Split inpection module into mdb+inspect
+20041216 A function may carry an address, to enable JIT
+20041216 The replace/insert operations for bats arguments should set the 
+  access mode themselves. 
+20041212 Implementation of the first MAL C-Compiler
+ C-code generator for mal blocks to speed up expensive functions
+  (and multiplex routines)
 20041210 The first implementation of MACRO and ORCAM algorithms
     Design a macro expansion facility (with property checks)
     Design an inversion facility (replace multiple stmt by one)
