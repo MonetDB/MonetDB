@@ -445,19 +445,10 @@ KindTest:        kind_elem (nil);
 KindTest:        kind_attr (nil);
 
 FunctionAppl:    apply (FunctionArgs)
-    { TOPDOWN; }
     =
     {
-        PFvar_t *v1 = new_var (0);
-        PFvar_t *v2 = new_var (0);
         PFty_t t;
         PFcnode_t *core;
-        
-        /* pass 1: collect actual argument types 
-         */
-        *(PFty_t **) PFarray_add (par_ty) = 0;
-        tDO ($%1$);
-        PFarray_del (par_ty);
         
         /* resolve overloading,
          * any type errors will be detected during resolution
@@ -469,79 +460,24 @@ FunctionAppl:    apply (FunctionArgs)
          */
         t = specific (($$)->sem.fun, ($1$));
         
-        core = let (var (v1), 
-                    apply (($$)->sem.fun, ($1$)),
-                    let (var (v2), 
-                         seqcast (seqtype (t), var (v1)),
-                         var (v2)));
+        core = apply (($$)->sem.fun, ($1$));
         
         /* type the above piece of core */
-        [[ core->child[0] ]]                     = 
-        [[ core->child[0]->sem.var ]]            =
-        [[ core->child[2]->child[1]->child[1] ]] = 
-        [[ core->child[1] ]]                     = ($$)->sem.fun->ret_ty;
-        
-        [[ core ]]                               =
-        [[ core->child[2] ]]                     =
-        [[ core->child[2]->child[0] ]]           =
-        [[ core->child[2]->child[0]->sem.var ]]  =            
-        [[ core->child[2]->child[1] ]]           =                        
-        [[ core->child[2]->child[1]->child[0] ]] =                        
-        [[ core->child[2]->child[2] ]]           = t;
-        
-        /* pass 2: insert `seqcast's to cast actual promotable argument types
-         * to expected formal parameter types
-         */
-        *(PFty_t **) PFarray_add (par_ty) = ($$)->sem.fun->par_ty;
-        tDO ($%1$);
-        PFarray_del (par_ty);
+        [[ core ]] = t; 
         
         return core;
     }
     ;
 
 FunctionArgs:    arg (FunctionArg, FunctionArgs)
-    { TOPDOWN; }
     =
     {
-        tDO ($%1$);
-
-        /* process next expected formal parameter */
-        if (*(PFty_t **) PFarray_top (par_ty))
-            (*(PFty_t **) PFarray_top (par_ty))++;
-
-        tDO ($%2$);
-
         [[ $$ ]] = [[ $1$ ]];
     }
     ;
 FunctionArgs:    nil;
 
-FunctionArg:     Atom
-    =
-    {
-        PFty_t expected;
-        PFcnode_t *core;
-
-
-        if (*(PFty_t **) PFarray_top (par_ty)) {
-            expected = **(PFty_t **) PFarray_top (par_ty);
-
-            /* insert `seqcast' to cast argument to expected
-             * formal parameter type
-             */
-            core = seqcast (seqtype (expected), ($$));
-
-            [[ core ]]           = 
-            [[ core->child[0] ]] = expected;
-
-            PFlog ("typing arg");
-
-            return core;
-        }
-    }
-    ;
-FunctionArg:     SequenceTypeCast;
+FunctionArg:     Atom;
     
 ConstructorExpr: elem (tag, CoreExpr)
     =

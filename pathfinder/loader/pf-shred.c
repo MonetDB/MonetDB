@@ -69,9 +69,11 @@
 #include <pf_config.h>
 #endif
 
-/* we need this for BerkeleyDB */
+/**
+ * required by Berkeley DB 
+ */
 #if HAVE_SYS_TYPES_H
-# include <sys/types.h>
+#include <sys/types.h>
 #endif
 
 typedef unsigned int nat;
@@ -145,7 +147,7 @@ typedef unsigned long u_long;
  *   - comment nodes with identical content share a property ID
  *   - p-i nodes with identical tgt and ins share a property ID
  *
- * We maintain already seen node properties and their IDs in four
+ * We maintain already seen node properties and their IDs in five
  * DB files.
  */
 
