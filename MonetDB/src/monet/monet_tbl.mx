@@ -705,14 +705,18 @@ void TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv) {
 		pt->htps[i] = pt->ttps[i] = NULL;
 
 		if (argv[i].vtype == TYPE_bat) { 
-			BBPfix(argv[i].val.bval);
-
-		     	b = BBPquickdesc(argv[i].val.bval,FALSE); 
+                        bat bid = argv[i].val.bval;
+			BBPfix(bid);
+		     	b = BBPquickdesc(bid,FALSE); 
 			if(b) {
-				pt->htps[i] = ATOMname(b->htype);
-				pt->ttps[i] = ATOMname(b->ttype);
+                                /* swap head/tail types in case of 
+                                   mirrored bats.                  */
+				pt->htps[i] = ATOMname((bid>0)?
+                                                       (b->htype):(b->ttype));
+				pt->ttps[i] = ATOMname((bid>0)?
+                                                       (b->ttype):(b->htype));
 			}
-			BBPunfix(argv[i].val.bval);
+			BBPunfix(bid);
 		}
 	} 
 }
