@@ -206,7 +206,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	create
 	drop
 	set
-	export
 	sql
 	sqlstmt
 	schema
@@ -485,23 +484,8 @@ sqlstmt:
 
 
 	/* schema definition language */
-sql: schema | grant | revoke | create | drop | set | export;
+sql: schema | grant | revoke | create | drop | alter | set ;
 	
-export:
-	EXPORT intval intval '-' intval
-			{ dlist *l = dlist_create();
-			  dlist_append_int(l, $2);
-			  dlist_append_int(l, $3);
-			  dlist_append_int(l, -$5);
-			  $$ = _symbol_create_list( SQL_EXPORT, l); }
- |	EXPORT intval intval intval
-			{ dlist *l = dlist_create();
-			  dlist_append_int(l, $2);
-			  dlist_append_int(l, $3);
-			  dlist_append_int(l, $4);
-			  $$ = _symbol_create_list( SQL_EXPORT, l); }
- ;
-
 set: 
 	SET ident '=' scalar_exp	
 				{ dlist *l = dlist_create();
@@ -563,7 +547,7 @@ schema_element_list:
  |  schema_element_list schema_element 	{ $$ = dlist_append_symbol( $1, $2 ); }
  ;
 
-schema_element: grant | create | drop | alter;
+schema_element: grant | revoke | create | drop | alter ;
 /* | add */
 
 

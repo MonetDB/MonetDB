@@ -814,6 +814,7 @@ static stmt *sql_case(mvc * sql, scope * scp, symbol *opt_cond, dlist * when_sea
 			list_destroy(results);
 			return sql_error(sql, 02, "Error: result type missing");
 		}
+		/* TODO keep super type */
 		if (subtype_cmp(restype, tpe) != 0) {
 			list_destroy(conds);
 			list_destroy(results);
@@ -833,12 +834,11 @@ static stmt *sql_case(mvc * sql, scope * scp, symbol *opt_cond, dlist * when_sea
 	if (opt_else) {
 		stmt *result = sql_value_exp(sql, scp, opt_else, grp, subset);
 
-		if (!result) {
+		if (!result || !(result = check_types(sql, restype, result))) {
 			list_destroy(conds);
 			list_destroy(results);
 			return NULL;
 		}
-		result = check_types(sql, restype, result);
 		if (result->nrcols <= 0) {
 			res = stmt_const(res, result);
 		} else {
@@ -2912,8 +2912,11 @@ static stmt *create_column(mvc * sql, symbol * s, stmt * ss, stmt * ts, list *co
 	dlist *l = s->data.lval;
 	char *cname = l->h->data.sval;
 	sql_subtype *ctype = l->h->next->data.typeval;
-	dlist *opt_list = l->h->next->next->data.lval;
+	dlist *opt_list = NULL; 
 	stmt *res = NULL;
+
+	if (l->h->next->next)
+		opt_list = l->h->next->next->data.lval;
 
 	if (cname && ctype) {
 		list *l = create_stmt_list();
@@ -2937,6 +2940,7 @@ static stmt *table_foreign_key( mvc * sql, char *name, symbol * s, stmt * ss, st
 	stmt *res = NULL;
 	dnode *n = s->data.lval->h;
 	char *rtname = qname_table(n->data.lval);
+	sql_table *t = mvc_bind_table( sql, cur_schema(sql), tname );
 	sql_table *ft = mvc_bind_table( sql, cur_schema(sql), rtname );
 
 	if (!ft){
@@ -2969,8 +2973,14 @@ static stmt *table_foreign_key( mvc * sql, char *name, symbol * s, stmt * ss, st
 
 		for(fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next){
 			char *nm = nms->data.sval;
+			/* use tmp columns to find col nm */
 			stmt *c = find_column_stmt(columns, nm );
 
+			if (!c && t) {
+				/* if table allready exists use it to find nm */
+				if (mvc_bind_column(sql, t, nm))
+				    c = stmt_bind_column( stmt_dup(ts), nm );
+			}
 			if (!c){
 				if (res) stmt_destroy(res);
 				return sql_error(sql, 02, "Table %s has no column %s\n", tname, nm);
@@ -3158,9 +3168,9 @@ static stmt *alter_table(mvc * sql, stmt *ss, dlist * qname, symbol * te)
 		return sql_error(sql, 02, 
 			 "Alter Table name %s doesn't exist", name);
 	} else {
-		stmt *ts = stmt_bind_table(ss, table->base.name);
+		stmt *ts = stmt_bind_table(stmt_dup(ss), table->base.name);
 		list *tmp_columns = list_create((fdestroy)&destroy_tmp_col);
-		stmt *c = create_column(sql, te, ss, ts, tmp_columns );
+		stmt *c = table_element(sql, te, ss, ts, name, tmp_columns );
 		list_destroy(tmp_columns);
 		return c;
 	}
