@@ -180,7 +180,7 @@ public class MonetConnection extends Thread implements Connection {
 			// we're debugging here... uhm, should be off in real life
 			if (debug) {
 				String fname = props.getProperty("logfile", "monet_" +
-					(new java.util.Date()).getTime() + ".log");
+					System.currentTimeMillis() + ".log");
 				File f = new File(fname);
 				int ext = fname.lastIndexOf(".");
 				if (ext < 0) ext = fname.length();
