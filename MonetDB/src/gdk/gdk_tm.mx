@@ -165,6 +165,8 @@ int TMabort(void) {
 		if (BBP_status(i) & BBPNEW) {
 			BAT *b = BBPquickdesc(i, FALSE);
 			if (b) {
+				if (b->batPersistence == PERSISTENT)
+					BBPdecref(i, TRUE);
 				b->batPersistence = TRANSIENT;
 				b->batDirtydesc = 1;
 			}
@@ -177,6 +179,8 @@ int TMabort(void) {
 			BATundo(b); 
 			if (BBP_status(i)&BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
+				if (b->batPersistence != PERSISTENT)
+					BBPincref(i, TRUE);
 				b->batPersistence = PERSISTENT;
 				b->batDirtydesc = 1;
 			}					
