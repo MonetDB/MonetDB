@@ -1338,13 +1338,16 @@ that the 'reverse' view applies. This should be taken into
 account while resolving them.
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("algebra.@4", "cannot access bat @2 in bbp");
-        @3= (BAT*) BBPgetdesc(*@2);
+                return throwMessage("algebra.@4", 
+			"cannot access bat @2 in bbp");
+        if( *@2 < 0) {
+                /* reverse descriptor should be explicitly loaded */
+                @3=BATdescriptor(*@2); BBPunfix(*@2);
+        } else @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0;
-                return throwMessage("algebra.@4", "cannot access descriptor @2");
-	}
-	/* reverse descriptor should be loaded */
-	if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
+                return throwMessage("bat.@4",
+                        "cannot access descriptor @2");
+        }
 @+ BAT sum operation
 The sum aggregate only works for int and float fields.
 The routines below assumes that the caller knows what type

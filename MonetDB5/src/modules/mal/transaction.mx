@@ -127,13 +127,14 @@ The remainder contains the Monet 5 wrapper code to make this all work
         if( BBPcheck(*@2,"@4")==0)
                 return throwMessage("bat.@4",
                         "cannot access bat @2 in bbp");
-        @3= (BAT*) BBPgetdesc(*@2);
+        if( *@2 < 0) {
+                /* reverse descriptor should be explicitly loaded */
+                @3=BATdescriptor(*@2); BBPunfix(*@2);
+        } else @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0;
                 return throwMessage("bat.@4",
                         "cannot access descriptor @2");
         }
-        /* reverse descriptor should be loaded */
-        if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
 @c
 #include "mal_exception.h"
 str TRNglobal_sync(int *ret){

@@ -216,12 +216,14 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
 		return throwMessage("bbp.@4","cannot access bat @2 in bbp");
-        @3=(BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;  
-		return throwMessage("bbp.@4","cannot access descriptor @2");
+        if( *@2 < 0) {
+                /* reverse descriptor should be explicitly loaded */
+                @3=BATdescriptor(*@2); BBPunfix(*@2);
+        } else @3= (BAT*) BBPgetdesc(*@2);
+        if( @3 == NULL) { *@1 = 0;
+                return throwMessage("bat.@4",
+                        "cannot access descriptor @2");
         }
-        /* reverse descriptor should be loaded */
-        if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
 @= chkIdentifier
 	/* generate exception if string is not an identifier */
         if( isIdentifier(@1))
@@ -333,12 +335,14 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if(i == 0)
 		return throwException(MALEXCEPTION,"bbp.bind",
 					"failed to find '%s' in box",name);
-	b= (BAT*) BBPgetdesc(i);
+	/* make sure you load the descriptors and heaps */
+	b= (BAT*) BATdescriptor(i);
 	if( b == 0 ) {
 		/* Simple ignore the binding if you can;t find the bat */
 		return throwException(MALEXCEPTION,"bbp.bind",
 					"failed to find '%s' in box",name);
 	}
+	BBPunfix(i);
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval= i;
 	return MAL_SUCCEED;

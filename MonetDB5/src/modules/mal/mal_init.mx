@@ -37,6 +37,7 @@ the function resolution scheme.
 
 @mal
 use "mal/thread";
+use "mal/crackers";
 use "kernel/kernel_init";
 #use "x100/x100core";
 use "mal/clients";
@@ -53,7 +54,6 @@ use "mal/box";
 use "mal/inspect";
 use "mal/optimizer";
 use "mal/chopper";
-use "mal/crackers";
 use "mal/transaction";
 use "sql/sql_server";
 use "sql/sql";
