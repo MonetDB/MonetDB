@@ -33,23 +33,24 @@ stdout of test 'tst256` in directory 'src/mal` itself:
 #print(cr);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    err := bat.insert(b,1,15);	# 2 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($5:int)($6:int)
-    err := bat.insert(b,2,4);	# 3 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($7:int)($8:int)
-    err := bat.insert(b,4,16);	# 4 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($8:int)($9:int)
-    err := bat.insert(b,5,25);	# 5 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($10:int)($11:int)
-    err := bat.insert(b,6,36);	# 6 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($12:int)($13:int)
-    err := bat.insert(b,7,49);	# 7 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($14:int)($15:int)
-    err := bat.insert(b,8,64);	# 8 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($16:int)($17:int)
-    err := bat.insert(b,n0,81);	# 9 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)($19:int)
-    io.print(b);	# 10 IOprint_val ($20:int)<-(b:bat[:int,:int])
-    mx := algebra.max(b);	# 11 ALGmax_int (mx:int)<-(b:bat[:int,:int])
-    io.print(mx);	# 12 IOprint_val ($22:int)<-(mx:int)
-    mi := algebra.min(b);	# 13 ALGmin_int (mi:int)<-(b:bat[:int,:int])
-    io.print(mi);	# 14 IOprint_val ($24:int)<-(mi:int)
-    cr := algebra.card(b);	# 15 ALGcard (cr:lng)<-(b:bat[:int,:int])
-    io.print(cr);	# 16 IOprint_val ($26:int)<-(cr:lng)
-end main;	# 17  
+    n0 := 0;	# 1  (n0:int)<-($2:int)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
+    err := bat.insert(b,1,15);	# 3 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($7:int)($8:int)
+    err := bat.insert(b,2,4);	# 4 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($9:int)($10:int)
+    err := bat.insert(b,4,16);	# 5 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($10:int)($11:int)
+    err := bat.insert(b,5,25);	# 6 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($12:int)($13:int)
+    err := bat.insert(b,6,36);	# 7 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($14:int)($15:int)
+    err := bat.insert(b,7,49);	# 8 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($16:int)($17:int)
+    err := bat.insert(b,8,64);	# 9 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($18:int)($19:int)
+    err := bat.insert(b,n0,81);	# 10 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)($20:int)
+    io.print(b);	# 11 IOprint_val ($21:int)<-(b:bat[:int,:int])
+    mx := algebra.max(b);	# 12 ALGmax_int (mx:int)<-(b:bat[:int,:int])
+    io.print(mx);	# 13 IOprint_val ($23:int)<-(mx:int)
+    mi := algebra.min(b);	# 14 ALGmin_int (mi:int)<-(b:bat[:int,:int])
+    io.print(mi);	# 15 IOprint_val ($25:int)<-(mi:int)
+    cr := algebra.card(b);	# 16 ALGcard (cr:lng)<-(b:bat[:int,:int])
+    io.print(cr);	# 17 IOprint_val ($27:int)<-(cr:lng)
+end main;	# 18  
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type

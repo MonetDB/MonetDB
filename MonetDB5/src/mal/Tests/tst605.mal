@@ -1,10 +1,10 @@
 # Testing global consts defined for all users
 # It should travers the nested spaces looking for the correct variable
 # take a local copy
-	v:str := const.take(version);
-	u:str := const.take(user);
-	db:str:= const.take(dbname);
-	df:str:= const.take(dbfarm);
+	version:str := const.take("version");
+	user:str := const.take("user");
+	dbname:str:= const.take("dbname");
+	dbfarm:str:= const.take("dbfarm");
 #	dd:str:= const.take(distribution);
 #	bb:bat[void,str] := const.take(environment);
 

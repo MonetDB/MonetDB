@@ -64,8 +64,8 @@ function Admin.main():int;	# 0  (main:int)
     z := Admin.qry(0.0:dbl);	# 5  (z:dbl)<-($11:dbl)
     io.print(z);	# 6 IOprint_val ($12:int)<-(z:dbl)
     io.print("done");	# 7 IOprint_val ($13:int)<-($14:str)
-    mdb.showFunction(Admin,qry);	# 8 MDBshowFunction3 ($15:void)<-(Admin:any)(qry:any)
-    mdb.showFunction(Admin,main);	# 9 MDBshowFunction3 ($16:void)<-(Admin:any)(main:int)
+    mdb.showFunction("Admin","qry");	# 8 MDBshowFunction3 ($15:void)<-($3:str)($4:str)
+    mdb.showFunction("Admin","main");	# 9 MDBshowFunction3 ($16:void)<-($3:str)($17:str)
 end main;	# 10  
 [ "execute" ]
 [ 0.8414709848078965 ]
@@ -83,8 +83,8 @@ function Admin.main():int;
     z := Admin.qry(0.0:dbl);
     io.print(z);
     io.print("done");
-    mdb.showFunction(Admin,qry);
-    mdb.showFunction(Admin,main);
+    mdb.showFunction("Admin","qry");
+    mdb.showFunction("Admin","main");
 end main;
 #
 

@@ -28,29 +28,16 @@ stdout of test 'tst655` in directory 'src/mal` itself:
 #tablet.display(b1,b2);
 #
 function Admin.main():int;	# 0  (main:int)
-    mdb.setTrace(true);	# 1 MDBsetTrace ($1:void)<-($2:bit)
-    b1 := bbp.new(:void,:int);	# 2 CMDBATnew (b1:bat[:void,:int])<-($4:void)($5:int)
-    bat.insert(b1,42);	# 3 BKCinsert_void_bun ($6:void)<-(b1:bat[:void,:int])($7:int)
-    bat.insert(b1,49);	# 4 BKCinsert_void_bun ($8:void)<-(b1:bat[:void,:int])($9:int)
-    b2 := bbp.new(:void,:str);	# 5 CMDBATnew (b2:bat[:void,:str])<-($11:void)($12:str)
-    bat.insert(b2,"hello world");	# 6 BKCinsert_void_bun ($13:void)<-(b2:bat[:void,:str])($14:str)
-    bat.insert(b2,"goodbye world");	# 7 BKCinsert_void_bun ($15:void)<-(b2:bat[:void,:str])($16:str)
-    tablet.setFormat(b1,b2);	# 8 TABsetFormat ($17:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
-    tablet.setStream(s);	# 9 TABsetStream ($18:void)<-(s:stream)
-    tablet.setProperties("name,type,dense,sorted,key,min,max");	# 10 TABsetProperties ($20:int)<-($21:str)
-    tablet.display(b1,b2);	# 11 TABdisplayTable ($22:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
-end main;	# 12  
-#Monet Debugger on
-#mdb !    b1 := bbp.new(0@0,0)
-#mdb !    bat.insert(<tmp_4>,42)
-#mdb !    bat.insert(<tmp_4>,49)
-#mdb !    b2 := bbp.new(0@0,nil)
-#mdb !    bat.insert(<tmp_5>,"hello world")
-#mdb !    bat.insert(<tmp_5>,"goodbye world")
-#mdb !    tablet.setFormat(<tmp_4>,<tmp_5>)
-#mdb !    tablet.setStream(nil)
-#mdb !    tablet.setProperties("name,type,dense,sorted,key,min,max")
-#mdb !    tablet.display(<tmp_4>,<tmp_5>)
+    b1 := bbp.new(:void,:int);	# 1 CMDBATnew (b1:bat[:void,:int])<-($2:void)($3:int)
+    bat.insert(b1,42);	# 2 BKCinsert_void_bun ($4:void)<-(b1:bat[:void,:int])($5:int)
+    bat.insert(b1,49);	# 3 BKCinsert_void_bun ($6:void)<-(b1:bat[:void,:int])($7:int)
+    b2 := bbp.new(:void,:str);	# 4 CMDBATnew (b2:bat[:void,:str])<-($9:void)($10:str)
+    bat.insert(b2,"hello world");	# 5 BKCinsert_void_bun ($11:void)<-(b2:bat[:void,:str])($12:str)
+    bat.insert(b2,"goodbye world");	# 6 BKCinsert_void_bun ($13:void)<-(b2:bat[:void,:str])($14:str)
+    tablet.setFormat(b1,b2);	# 7 TABsetFormat ($15:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+    tablet.setProperties("name,type,dense,sorted,key,min,max");	# 8 TABsetProperties ($16:int)<-($17:str)
+    tablet.display(b1,b2);	# 9 TABdisplayTable ($18:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+end main;	# 10  
 #---------------------------------------#
 # tmp_4,	tmp_5			# name
 # int,		str			# type

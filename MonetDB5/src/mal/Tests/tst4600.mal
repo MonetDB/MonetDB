@@ -10,7 +10,7 @@ barrier j:= i<lim;
 exit j;
 end welcome;
 
-optimizer.MEoptimizer("Admin","welcome");
+optimizer.macroExpansion("Admin","welcome");
 
 print("test expansion");
 welcome(2);

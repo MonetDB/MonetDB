@@ -1,14 +1,14 @@
 # using spaces
 
-u:str:=const.take(user);
+u:str:=const.take("user");
 printf("User bound to %s\n",u);
 roomnumber:= 321;
-const.deposit(roomnumber);
+const.deposit("roomnumber",roomnumber);
 
-v:int:= const.take(roomnumber);
+v:int:= const.take("roomnumber");
 print(v);
 v:= 123;
 v:= v+1;
-const.release(roomnumber);
+const.release("roomnumber");
 print("attempt twice to release");
-const.release(roomnumber); # failure? done twice or implicit take?
+const.release("roomnumber"); # failure? done twice or implicit take?

@@ -58,7 +58,7 @@ function Admin.qry():void;	# 0  (qry:void)
     ab := algebra.select(r,0,6);	# 15 ALGselect (ab:bat[:int,:int])<-(r:bat[:int,:int])($23:int)($8:int)
     bc := algebra.join(ab,s);	# 16 ALGjoin (bc:bat[:int,:int])<-(ab:bat[:int,:int])(s:bat[:int,:int])
     optimizer.setDebug();	# 17 QOTdebugOptimizers ($28:void)
-    optimizer.SPoptimizer();	# 18 QOTSPoptimizer ($29:str)
+    optimizer.selectPushdown();	# 18 QOTSPoptimizer ($29:str)
 end qry;	# 19  
 #
 

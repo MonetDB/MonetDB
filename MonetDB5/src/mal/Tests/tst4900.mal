@@ -83,9 +83,9 @@ function f1(s:str):void;
 	top := t98;
 	io.table(t97,top);
 end f1;
-	optimizer.expressionAccumulation(Admin,f1);
-	optimizer.garbageCollector(Admin,f1);
-	optimizer.factorize(Admin,f1);
-	showFunction(Admin,f1);
+	optimizer.expressionAccumulation("Admin","f1"); 
+	optimizer.garbageCollector("Admin","f1");
+	optimizer.factorize("Admin","f1");
+	showFunction("Admin","f1");
 	##f1();
 

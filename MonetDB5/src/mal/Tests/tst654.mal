@@ -1,5 +1,4 @@
 # An extensive test for the new tablet layout
-mdb.setTrace(true);
 tablet.display(2,"strong");
 tablet.display(2,"strong",true);
 first:=1;
@@ -22,6 +21,7 @@ tablet.setProperties("name,type,dense,sorted,key,min,max");
 tablet.display(b1,b2);
 
 in:= int(nil);
+sn := str(nil);
 insert(b1,in);
 insert(b2,sn);
 tablet.setProperties(sn);
@@ -29,7 +29,6 @@ tablet.setColumnDecimal(0,3,1);
 tablet.setColumnNull(1,"unknown");
 tablet.display(b1,b2);
 
-sn := str(nil);
 tablet.setTableBracket("<rowset>","</rowset>");
 tablet.setRowBracket("<row>","</row>");
 tablet.setColumnBracket(0,"<age>","</age>");

@@ -17,6 +17,8 @@ stdout of test 'tst003` in directory 'src/mal` itself:
 #a:=b;	#b not yet defined
 #b:=c;	#c undefined
 #
+!ERROR: 'b' may be used before being set in main[1]
+!ERROR: 'c' may be used before being set in main[2]
 function Admin.main():int;	# 0  (main:int)
     a := b;	# 1  (a:any)<-(b:any)
     b := c;	# 2  (b:any)<-(c:any)

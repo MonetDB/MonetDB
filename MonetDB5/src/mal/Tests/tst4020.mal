@@ -16,5 +16,5 @@ print(z);
 
 
 setDebug();
-selectPushdown(Admin,qry);
+selectPushdown("Admin","qry");
 end qry;

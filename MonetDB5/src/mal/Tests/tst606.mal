@@ -11,9 +11,9 @@ function main():void;
 	STORE_MEM :=0;
 	STORE_MMAP :=1;
 	STORE_COMPR :=2;
-	const.deposit(STORE_MEM);
-	const.deposit(STORE_MMAP);
-	const.deposit(STORE_COMPR);
+	const.deposit("STORE_MEM",STORE_MEM);
+	const.deposit("STORE_MAP",STORE_MMAP);
+	const.deposit("STORE_COMPR",STORE_COMPR);
 end main;
 
 # take uses the 'root' versions.
@@ -30,5 +30,6 @@ function release(v:any):void;
 end release;
 
 # accept the definition of a new constant
-function deposit(v:any,name:str) = space_deposit;
+function deposit(v:any,name:str) 
+address space_deposit;
 

@@ -31,12 +31,14 @@ barrier always := true;	# 2  (always:bit)<-($4:bit) jump 5
     redo always;	# 4  (always:bit) jump 3
 exit always;	# 5  (always:bit)
 end tryme;	# 6  
+!ERROR: 'b' may be used before being set in tryme[1]
 #tryme();    # shouldn;t hang when you forget the exception
 #
 function Admin.main():int;	# 0  (main:int)
     Admin.tryme();	# 1  ($1:void)
 end main;	# 2  
-!ERROR: MALexception:bat.setWriteMode:cannot access descriptor bid
+!ERROR: MALexception:factory.call:Factory contains errors
+#
 
 # 08:01:07 >  
 # 08:01:07 >  Done.

@@ -32,10 +32,10 @@ stdout of test 'tst605` in directory 'src/mal` itself:
 #exit b;
 #
 function Admin.main():int;	# 0  (main:int)
-    v := const.take(version);	# 1 CSTtake (v:str)<-(version:any)
-    u := const.take(user);	# 2 CSTtake (u:str)<-(user:any)
-    db := const.take(dbname);	# 3 CSTtake (db:str)<-(dbname:any)
-    df := const.take(dbfarm);	# 4 CSTtake (df:str)<-(dbfarm:any)
+    version := const.take("version");	# 1 CSTtake (version:str)<-($2:str)
+    user := const.take("user");	# 2 CSTtake (user:str)<-($4:str)
+    dbname := const.take("dbname");	# 3 CSTtake (dbname:str)<-($6:str)
+    dbfarm := const.take("dbfarm");	# 4 CSTtake (dbfarm:str)<-($8:str)
     io.print("Contents of the 'const' box");	# 5 IOprint_val ($9:int)<-($10:str)
 barrier (b,nme):= const.newIterator();	# 6 CSTnewIterator (b:lng)(nme:str) jump 11
     io.printf("# %s=",nme);	# 7 IOprint_formatted_str ($13:int)<-($14:str)(nme:str)

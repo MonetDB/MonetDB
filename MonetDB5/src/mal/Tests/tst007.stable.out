@@ -66,6 +66,14 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 !ERROR: 'bat.head' undefined in Admin.main[6]
 !ERROR: 'bat.nextElement' undefined in Admin.main[7]
 !ERROR: barrier 'FS' should be of type bit or number in main[24]
+!ERROR: 'batoperatie' may be used before being set in main[1]
+!ERROR: 'b' may be used before being set in main[2]
+!ERROR: 'b' may be used before being set in main[5]
+!ERROR: 'b' may be used before being set in main[6]
+!ERROR: 'b' may be used before being set in main[7]
+!ERROR: 'entry_or_exittest' may be used before being set in main[11]
+!ERROR: 'booleanexpr' may be used before being set in main[20]
+!ERROR: 'booleanexpr' may be used before being set in main[22]
 function Admin.main():int;	# 0  (main:int)
 barrier H := batoperatie;	# 1  (H:any)<-(batoperatie:any) jump 4
     Tail := bat.fetch(b,H);	# 2  unknown (Tail:any)<-(b:any)(H:any)

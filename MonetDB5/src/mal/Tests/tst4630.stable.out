@@ -183,7 +183,7 @@ Hit on pattern 1 pc 32
 Hit on pattern 1 pc 37
 Hit on pattern 1 pc 48
 function Admin.main():int;	# 0  (main:int)
-    mdb.showFunction(Admin,qry1);	# 1 MDBshowFunction3 ($4:void)<-(Admin:any)(qry1:any)
+    mdb.showFunction("Admin","qry1");	# 1 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
 end main;	# 2  
 factory Admin.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
     V6 := sql.bind("sys","lineitem","l_shipdate",0);

@@ -28,11 +28,11 @@ stdout of test 'tst601` in directory 'src/mal` itself:
 function Admin.main():int;	# 0  (main:int)
     const.open();	# 1 CSTopen ($1:void)
     pi := 3.147:flt;	# 2  (pi:flt)<-($3:flt)
-    const.deposit(pi);	# 3 CSTdeposit ($4:void)<-(pi:flt)
-    p2 := const.take(pi);	# 4 CSTtake (p2:flt)<-(pi:flt)
-    io.print(p2);	# 5 IOprint_val ($6:int)<-(p2:flt)
-    const.close();	# 6 CSTclose ($7:void)
-    io.print(p2);	# 7 IOprint_val ($8:int)<-(p2:flt)
+    const.deposit("pi",pi);	# 3 CSTdeposit ($4:void)<-($5:str)(pi:flt)
+    p2 := const.take("pi");	# 4 CSTtake (p2:flt)<-($5:str)
+    io.print(p2);	# 5 IOprint_val ($7:int)<-(p2:flt)
+    const.close();	# 6 CSTclose ($8:void)
+    io.print(p2);	# 7 IOprint_val ($9:int)<-(p2:flt)
 end main;	# 8  
 [ 3.14700007 ]
 [ 3.14700007 ]

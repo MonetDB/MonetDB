@@ -33,9 +33,9 @@ function constants.main():void;	# 0  (main:void)
     STORE_MEM := 0;	# 1  (STORE_MEM:int)<-($2:int)
     STORE_MMAP := 1;	# 2  (STORE_MMAP:int)<-($4:int)
     STORE_COMPR := 2;	# 3  (STORE_COMPR:int)<-($6:int)
-    const.deposit(STORE_MEM);	# 4 CSTdeposit ($7:void)<-(STORE_MEM:int)
-    const.deposit(STORE_MMAP);	# 5 CSTdeposit ($8:void)<-(STORE_MMAP:int)
-    const.deposit(STORE_COMPR);	# 6 CSTdeposit ($9:void)<-(STORE_COMPR:int)
+    const.deposit("STORE_MEM",STORE_MEM);	# 4 CSTdeposit ($7:void)<-($8:str)(STORE_MEM:int)
+    const.deposit("STORE_MAP",STORE_MMAP);	# 5 CSTdeposit ($9:void)<-($10:str)(STORE_MMAP:int)
+    const.deposit("STORE_COMPR",STORE_COMPR);	# 6 CSTdeposit ($11:void)<-($12:str)(STORE_COMPR:int)
 end main;	# 7  
 #
 ## take uses the 'root' versions.
@@ -61,10 +61,8 @@ function constants.release(v:any):void;	# 0  (release:void)<-(v:any)
 end release;	# 3  
 #
 ## accept the definition of a new constant
-!ERROR: function deposit(v:any,name:str) = space_deposit;
-!                                        ^';' expected
-function constants.deposit(v:any,name:str):void;	# 0  unknown (deposit:void)<-(v:any)(name:str)
-end deposit;	# 1  unknown 
+#function deposit(v:any,name:str) 
+#
 #
 
 # 08:01:25 >  

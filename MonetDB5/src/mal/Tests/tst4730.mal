@@ -33,6 +33,7 @@ barrier always := true;
     V57 := algebra.kdiff(V53,V12);
     V58 := algebra.join(V21,V57);
     V59 := aggrX3.sum(V58,V35,V37);
+	V60:= new(V12);
     V64 := algebra.kdiff(V60,V12);
     V65 := algebra.join(V21,V64);
     V66 := aggrX3.sum(V65,V35,V37);
@@ -76,5 +77,5 @@ barrier always := true;
 exit always;
 end qry1;
 
-costmodel.recalculate(Admin,qry1);
-showFunction(Admin,qry1);
+costmodel.recalculate("Admin","qry1");
+showFunction("Admin","qry1");

@@ -66,6 +66,13 @@ stdout of test 'tst2040` in directory 'src/mal` itself:
 !ERROR: MALresolve:Admin.main[40]:type mismatch bat[:any,:int] := int
 !ERROR: barrier 'b' should be of type bit or number in main[14]
 !ERROR: barrier 'b' should be of type bit or number in main[30]
+!ERROR: 'i' may be used before being set in main[14]
+!ERROR: 'i' may be used before being set in main[29]
+!ERROR: 'i' may be used before being set in main[30]
+!ERROR: 'b' used outside declaration scope in main[30]
+!ERROR: 'b' used outside declaration scope in main[32]
+!ERROR: 'i' may be used before being set in main[33]
+!ERROR: 'i' used outside declaration scope in main[40]
 function Admin.main():int;	# 0  (main:int)
     cWait := true;	# 1  (cWait:bit)<-($2:bit)
     pWait := true;	# 2  (pWait:bit)<-($2:bit)

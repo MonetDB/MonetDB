@@ -45,7 +45,7 @@ function Admin.qry():void;	# 0  (qry:void)
     z := algebra.select(t,0,6);	# 10 ALGselect (z:bat[:int,:int])<-(t:bat[:int,:int])($9:int)($13:int)
     io.print(z);	# 11 IOprint_val ($14:int)<-(z:bat[:int,:int])
     optimizer.setDebug();	# 12 QOTdebugOptimizers ($15:void)
-    optimizer.SPoptimizer(Admin,qry);	# 13 QOTSPoptimizerCALL ($16:str)<-(Admin:any)(qry:void)
+    optimizer.selectPushdown("Admin","qry");	# 13 QOTSPoptimizerCALL ($16:str)<-($17:str)($18:str)
 end qry;	# 14  
 #
 

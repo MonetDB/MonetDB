@@ -89,6 +89,12 @@ end main;	# 31
 !ERROR: exit-label 'F' without begin-label in main[21]
 !ERROR: exit-label 'A' without begin-label in main[28]
 !ERROR: begin 'unfinished' without exit in main[32]
+!ERROR: 'D' used outside declaration scope in main[23]
+!ERROR: 'D' used outside declaration scope in main[24]
+!ERROR: 'D' used outside declaration scope in main[25]
+!ERROR: 'D' used outside declaration scope in main[26]
+!ERROR: 'D' used outside declaration scope in main[27]
+!ERROR: 'A' used outside declaration scope in main[28]
 #
 function Admin.main():int;	# 0  (main:int)
 barrier L := 1;	# 1  (L:int)<-($2:int) jump 4
