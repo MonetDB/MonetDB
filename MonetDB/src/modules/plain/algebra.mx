@@ -839,10 +839,10 @@ that for the moment are defined as procs.
 		len := length(pat);
 		i := 0;
 		while (i < len) {
-			c := chr(string(pat, i, 1));
-			if (c = esc) {
+			c := string(pat, i, 1);
+			if (c = str(esc)) {
 				if ((i + 1) = len) return(nil);	# escape char at end of string
-				if (chr(string(pat, i + 1, 1)) = esc) {
+				if (string(pat, i + 1, 1) = str(esc)) {
 					ppat :+= pesc;
 					i :+= 1;
 					escaped := false;
@@ -851,33 +851,33 @@ that for the moment are defined as procs.
 					escaped := true;
 				}
 			} else if (
-				(c = '.') or
-				(c = '+') or
-				(c = '*') or
-				(c = '(') or
-				(c = ')') or
-				(c = '[') or
-				(c = ']') or
-				(c = chr("\\"))
+				(c = ".") or
+				(c = "+") or
+				(c = "*") or
+				(c = "(") or
+				(c = ")") or
+				(c = "[") or
+				(c = "]") or
+				(c = "\\")
 			) {
-				ppat :+= "\\" + str(c);
+				ppat :+= "\\" + c;
 				escaped := false;
-			} else if (c = '%') {
+			} else if (c = "%") {
 				if (escaped = true) {
-					ppat :+= str(c);
+					ppat :+= c;
 				} else {
 					ppat :+= ".*";
 				}
 				escaped := false;
-			} else if (c = '_') {
+			} else if (c = "_") {
 				if (escaped = true) {
-					ppat :+= str(c);
+					ppat :+= c;
 				} else {
 					ppat :+= ".";
 				}
 				escaped := false;
 			} else {
-				ppat :+= str(c);
+				ppat :+= c;
 			}
 			
 			i :+= 1;
