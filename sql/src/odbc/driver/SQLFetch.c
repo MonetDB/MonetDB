@@ -492,6 +492,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		case SQL_CHAR:
 			strncpy((char *) ptr, data, buflen);
 			if ((sz = strlen(data)) >= buflen) {
+				data[buflen - 1] = 0;
 				/* 01004: String data, right truncation */
 				addStmtError(stmt, "01004", NULL, 0);
 			}
@@ -517,9 +518,13 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				addStmtError(stmt, "22003", NULL, 0);
 				return SQL_ERROR;
 			}
+			if (lenp)
+				*lenp = sz;
 			if (nval.scale > 0) {
 				data += sz;
 				buflen -= sz;
+				if (lenp)
+					*lenp += nval.scale + 1;
 				if (buflen > 2)
 					sz = snprintf(data, buflen, ".%0*u",
 						      nval.scale,
@@ -542,12 +547,19 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				if (sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					if (i == 0) {
-						/* 22003: Numeric
-						   value out of
+						/* 22003: Numeric value out of
 						   range */
-						addStmtError(stmt, "22003", NULL, 0);
+						addStmtError(stmt, "22003",
+							     NULL, 0);
 						return SQL_ERROR;
 					}
+					/* current precision (i) doesn't fit,
+					   but previous did, so use that */
+					snprintf(data, buflen, "%.*g", i - 1,
+						 fval);
+					/* max space that would have
+					   been needed */
+					sz = strlen(data) + 17 - i;
 					/* 01004: String data, right
 					   truncation */
 					addStmtError(stmt, "01004", NULL, 0);
@@ -556,6 +568,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				if (fval == strtod(data, NULL))
 					break;
 			}
+			if (lenp)
+				*lenp = sz;
 			break;
 		}
 		case SQL_TYPE_DATE:
@@ -593,24 +607,19 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				*lenp = sz;
 			break;
 		case SQL_TYPE_TIMESTAMP:
-			if (buflen < 20) {
-				/* 22003: Numeric value out of range */
-				addStmtError(stmt, "22003", NULL, 0);
-				return SQL_ERROR;
-			}
 			data = (char *) ptr;
 			sz = snprintf(data, buflen,
 				      "%04u-%02u-%02u %02u:%02u:%02u",
 				      tsval.year, tsval.month, tsval.day,
 				      tsval.hour, tsval.minute, tsval.second);
 			if (sz < 0 || sz >= buflen) {
-				data[buflen - 1] = 0;
-				/* 01004: String data, right truncation */
-				addStmtError(stmt, "01004", NULL, 0);
+				/* 22003: Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+				return SQL_ERROR;
 			}
 			if (lenp)
 				*lenp = sz;
-			if (tsval.fraction && sz < buflen) {
+			if (tsval.fraction) {
 				int scale = 9;
 
 				data += sz;
@@ -699,7 +708,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		case SQL_TYPE_TIMESTAMP:
 		case SQL_INTERVAL_MONTH:
 		case SQL_INTERVAL_SECOND:
-			break;
+		default:
+			/* 07006: Restricted data type attribute violation */
+			addStmtError(stmt, "07006", NULL, 0);
+			return SQL_ERROR;
 		}
 		break;
 	case SQL_C_BIT:
@@ -990,6 +1002,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
+		if (lenp)
+			*lenp = sizeof(SQL_NUMERIC_STRUCT);
 		break;
 	case SQL_C_FLOAT:
 	case SQL_C_DOUBLE:
@@ -1077,6 +1091,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
+		if (lenp)
+			*lenp = sizeof(DATE_STRUCT);
 		break;
 	case SQL_C_TYPE_TIME:
 		i = 1;
@@ -1107,6 +1123,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
+		if (lenp)
+			*lenp = sizeof(TIME_STRUCT);
 		break;
 	case SQL_C_TYPE_TIMESTAMP:
 		i = 1;
@@ -1163,6 +1181,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
+		if (lenp)
+			*lenp = sizeof(TIMESTAMP_STRUCT);
 		break;
 	case SQL_C_INTERVAL_YEAR:
 	case SQL_C_INTERVAL_MONTH:
@@ -1243,6 +1263,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		}
 #undef p
+		if (lenp)
+			*lenp = sizeof(SQL_INTERVAL_STRUCT);
 		break;
 	case SQL_C_INTERVAL_DAY:
 	case SQL_C_INTERVAL_HOUR:
@@ -1454,6 +1476,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			}
 		}
 #undef p
+		if (lenp)
+			*lenp = sizeof(SQL_INTERVAL_STRUCT);
 		break;
 	}
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
