@@ -148,6 +148,7 @@ int stream_file_wastream( stream *S, fstream *file, str name ){
 int stream_write_string( stream *S, str data ){
 	stream *s = *(stream**)S;
 	s->write( s, data, 1, strlen(data));
+	s->flush( s );
 	return GDK_SUCCEED;
 }
 

@@ -219,14 +219,16 @@ int create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 static
 int create_dumpformat( ascii *as, BAT *names, BAT *seps, BAT *bats ){
 	int p;
-	int nr_attrs = BATcount(names);
+	int nr_attrs = BATcount(bats);
 	ascii_io *fmt = as->format =  
 		(ascii_io*)GDKmalloc(sizeof(ascii_io) * (nr_attrs + 1) );
 
 	as->nr_attrs = nr_attrs;
 	for (p=0; p<as->nr_attrs; p++){
 		BAT *b = (BAT*)BATdescriptor(*(bat*)bun_tail(bats, p));
-		fmt[p].name = (char*)bun_tail(names, p);
+		fmt[p].name = NULL;
+		if (names)
+			fmt[p].name = (char*)bun_tail(names, p);
 		fmt[p].sep = sep_dup((char*)bun_tail(seps, p));
 		fmt[p].seplen = strlen( fmt[p].sep );
 		fmt[p].type = ATOMname(b->ttype);
@@ -570,7 +572,7 @@ int ascii_io_dump( BAT *names, BAT* seps, BAT* bats, str datafile, int *nr){
 	return GDK_SUCCEED;
 }
 int ascii_io_output( BAT *order, BAT* seps, BAT* bats, stream *s ){
-	ASCIIoutput( order, seps, bats, s );
+	ASCIIoutput( order, seps, bats, *(stream**)s );
 	return GDK_SUCCEED;
 }
 

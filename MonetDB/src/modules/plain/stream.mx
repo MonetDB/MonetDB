@@ -43,6 +43,7 @@ typedef struct stream {
 	void (*close)( struct stream *s);
 	char *(*error)( struct stream *s );
 	void (*destroy)( struct stream *s );
+	void (*flush)( struct stream *s );
 } stream;
 
 stream_export stream *open_rstream( char *filename );
@@ -148,12 +149,21 @@ static int stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	return fread( buf, elmsize, cnt, (FILE*)s->stream_data);
 }
 static int stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	return fwrite( buf, elmsize, cnt, (FILE*)s->stream_data);
+	int res = fwrite( buf, elmsize, cnt, (FILE*)s->stream_data);
+/*
+	fflush( (FILE*)s->stream_data );
+*/
+	return res;
 }
 static void stream_close( stream *s ){
 	FILE *fp = (FILE*)s->stream_data;
 	if (fp != stdin && fp != stdout && fp != stderr)
 		fclose( fp );
+	else
+		fflush( fp );
+}
+static void stream_flush( stream *s ){
+	fflush( (FILE*)s->stream_data);
 }
 static stream *open_stream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
@@ -163,6 +173,7 @@ static stream *open_stream( char *filename, char *flags ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
@@ -323,6 +334,9 @@ static int stream_gzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
 static void stream_gzclose( stream *s ){
 	gzclose( (gzFile*)s->stream_data);
 }
+static void stream_gzflush( stream *s ){
+	gzflush( (gzFile*)s->stream_data, Z_SYNC_FLUSH);
+}
 stream *open_gzstream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
 	gzFile *fp = gzopen( filename, flags );
@@ -331,6 +345,7 @@ stream *open_gzstream( char *filename, char *flags ){
 	s->close = &stream_gzclose;
 	s->error = &stream_error;
 	s->destroy = &stream_destroy;
+	s->flush = &stream_gzflush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
@@ -376,6 +391,9 @@ static int stream_bzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
 static void stream_bzclose( stream *s ){
 	BZ2_bzclose( (BZFILE*)s->stream_data);
 }
+static void stream_bzflush( stream *s ){
+	BZ2_bzflush( (BZFILE*)s->stream_data);
+}
 stream *open_bzstream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
 	BZFILE *fp = BZ2_bzopen( filename, flags );
@@ -384,6 +402,7 @@ stream *open_bzstream( char *filename, char *flags ){
 	s->close = &stream_bzclose;
 	s->error = &stream_error;
 	s->destroy = &stream_destroy;
+	s->flush = &stream_bzflush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
@@ -420,6 +439,7 @@ stream *socket_rstream( int socket, char *name ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 
@@ -439,12 +459,14 @@ stream *socket_wstream( int socket, char *name ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 
 		if (s->errnr == NO__ERROR){
 	   		fwrite( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
+			fflush( (FILE*)s->stream_data );
 		}
 		return s;
 	}
@@ -459,6 +481,7 @@ stream *socket_rastream( int socket, char *name ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
@@ -474,6 +497,7 @@ stream *socket_wastream( int socket, char *name ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
@@ -488,6 +512,7 @@ stream *file_rstream( FILE *fp, char *name ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 
@@ -506,12 +531,14 @@ stream *file_wstream( FILE *fp, char *name ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 
 		if (s->errnr == NO__ERROR){
 	   		fwrite( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
+			fflush( (FILE*)s->stream_data );
 		}
 		return s;
 	}
@@ -525,6 +552,7 @@ stream *file_rastream( FILE *fp, char *name ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
@@ -539,6 +567,7 @@ stream *file_wastream( FILE *fp, char *name ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
+	s->flush = &stream_flush;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
