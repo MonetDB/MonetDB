@@ -469,7 +469,6 @@ int sqlexecute(backend * be, stream *out )
 		} else {
 			monet4_freecode( callnode, (backend_stack)(ptrdiff_t)procstk, q->id);
 			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
-printf("err %d\n", err);
 		}
 	} else if (q) {
 		c->type = q->type;
