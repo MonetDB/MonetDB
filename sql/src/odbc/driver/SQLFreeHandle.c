@@ -182,7 +182,11 @@ SQLRETURN SQL_API
 SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeHandle %d\n", handleType);
+	ODBCLOG("SQLFreeHandle %s " PTRFMT "\n",
+		handleType == SQL_HANDLE_ENV ? "Env" :
+		handleType == SQL_HANDLE_DBC ? "Dbc" :
+		handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST handle);
 #endif
 
 	return SQLFreeHandle_(handleType, handle);

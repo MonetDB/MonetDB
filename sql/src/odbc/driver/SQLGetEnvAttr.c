@@ -31,7 +31,8 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetEnvAttr %d\n", Attribute);
+	ODBCLOG("SQLGetEnvAttr " PTRFMT " %d\n",
+		PTRFMTCAST EnvironmentHandle, Attribute);
 #endif
 
 	(void) BufferLength;	/* Stefan: unused!? */

@@ -22,10 +22,14 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQL_API
+static SQLRETURN
 SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 {
 	fixODBCstring(szCursor, nCursorLength, addStmtError, stmt);
+
+#ifdef ODBCDEBUG
+	ODBCLOG("\".*s\"\n", nCursorLength, szCursor);
+#endif
 
 	/* TODO: implement the requested behavior */
 	/* Note: when cursor names are to be implemented the SQL parser &
@@ -43,7 +47,7 @@ SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetCursorName\n");
+	ODBCLOG("SQLSetCursorName " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -64,7 +68,7 @@ SQLSetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
 	SQLCHAR *cursor;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetCursorNameW\n");
+	ODBCLOG("SQLSetCursorNameW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

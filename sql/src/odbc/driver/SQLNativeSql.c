@@ -35,6 +35,10 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 		return SQL_ERROR;
 	}
 
+#ifdef ODBCDEBUG
+	ODBCLOG("\".*s\"\n", cbSqlStrIn, szSqlStrIn);
+#endif
+
 	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn);
 	copyString(query, szSqlStr, cbSqlStrMax, pcbSqlStr,
 		   addStmtError, stmt);
@@ -50,7 +54,7 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSql\n");
+	ODBCLOG("SQLNativeSql " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -75,7 +79,7 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	SQLCHAR *sqlin, *sqlout;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSqlW\n");
+	ODBCLOG("SQLNativeSqlW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

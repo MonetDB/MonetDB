@@ -20,7 +20,7 @@ SQLRETURN SQL_API
 SQLFreeConnect(SQLHDBC hDrvDbc)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeConnect\n");
+	ODBCLOG("SQLFreeConnect " PTRFMT "\n", PTRFMTCAST hDrvDbc);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

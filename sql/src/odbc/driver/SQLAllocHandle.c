@@ -35,6 +35,9 @@ SQLAllocEnv_(SQLHANDLE *pnOutputHandle)
 		return SQL_INVALID_HANDLE;
 	}
 	*pnOutputHandle = (SQLHANDLE *) newODBCEnv();
+#ifdef ODBCDEBUG
+	ODBCLOG("new env " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
+#endif
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
@@ -50,6 +53,9 @@ SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *pnOutputHandle)
 		return SQL_ERROR;
 	}
 	*pnOutputHandle = (SQLHANDLE *) newODBCDbc(env);
+#ifdef ODBCDEBUG
+	ODBCLOG("new dbc " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
+#endif
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
@@ -65,6 +71,9 @@ SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
 		return SQL_ERROR;
 	}
 	*pnOutputHandle = (SQLHANDLE *) newODBCStmt(dbc);
+#ifdef ODBCDEBUG
+	ODBCLOG("new stmt " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
+#endif
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
@@ -80,6 +89,9 @@ SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
 		return SQL_ERROR;
 	}
 	*pnOutputHandle = (SQLHANDLE *) newODBCDesc(dbc);
+#ifdef ODBCDEBUG
+	ODBCLOG("new desc " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
+#endif
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
@@ -120,10 +132,11 @@ SQLAllocHandle(SQLSMALLINT nHandleType,	/* type to be allocated */
 	       SQLHANDLE *pnOutputHandle) /* ptr for allocated handle struct */
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocHandle %s\n",
+	ODBCLOG("SQLAllocHandle %s " PTRFMT "\n",
 		nHandleType == SQL_HANDLE_ENV ? "Env" :
 		nHandleType == SQL_HANDLE_DBC ? "Dbc" :
-		nHandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc");
+		nHandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST nInputHandle);
 #endif
 
 	return SQLAllocHandle_(nHandleType, nInputHandle, pnOutputHandle);

@@ -29,7 +29,7 @@ SQLPutData(SQLHSTMT hStmt, SQLPOINTER pData, SQLINTEGER nLengthOrIndicator)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPutData\n");
+	ODBCLOG("SQLPutData " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	(void) pData;		/* Stefan: unused!? */

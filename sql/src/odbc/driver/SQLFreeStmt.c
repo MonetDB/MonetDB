@@ -63,7 +63,7 @@ SQLRETURN SQL_API
 SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeStmt\n");
+	ODBCLOG("SQLFreeStmt " PTRFMT " %d\n", PTRFMTCAST handle, option);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) handle))

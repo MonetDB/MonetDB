@@ -142,7 +142,7 @@ SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	       SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtAttr %d\n", Attribute);
+	ODBCLOG("SQLGetStmtAttr " PTRFMT " %d\n", PTRFMTCAST hStmt, Attribute);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))
@@ -160,7 +160,8 @@ SQLGetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtAttrW %d\n", Attribute);
+	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %d\n",
+		PTRFMTCAST hStmt, Attribute);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))

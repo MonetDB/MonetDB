@@ -152,7 +152,11 @@ SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	   SQLSMALLINT nCompletionType)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLEndTran\n");
+	ODBCLOG("SQLEndTran %s " PTRFMT " %d\n",
+		nHandleType == SQL_HANDLE_ENV ? "Env" :
+		nHandleType == SQL_HANDLE_DBC ? "Dbc" :
+		nHandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST nHandle, nCompletionType);
 #endif
 
 	return SQLEndTran_(nHandleType, nHandle, nCompletionType);

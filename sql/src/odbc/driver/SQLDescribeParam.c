@@ -31,7 +31,8 @@ SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber,
 	ODBCDescRec *rec;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeParam\n");
+	ODBCLOG("SQLDescribeParam " PTRFMT " %d\n", PTRFMTCAST hStmt,
+		nParmNumber);
 #endif
 
 	if (!isValidStmt(stmt))

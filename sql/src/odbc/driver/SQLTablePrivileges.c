@@ -35,8 +35,15 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 
+#ifdef ODBCDEBUG
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
+		nCatalogNameLength, szCatalogName,
+		nSchemaNameLength, szSchemaName,
+		nTableNameLength, szTableName);
+#endif
+
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -67,7 +74,7 @@ SQLTablePrivileges(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTablePrivileges\n");
+	ODBCLOG("SQLTablePrivileges " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -92,7 +99,7 @@ SQLTablePrivilegesW(SQLHSTMT hStmt,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTablePrivilegesW\n");
+	ODBCLOG("SQLTablePrivilegesW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -75,7 +75,7 @@ SQLRETURN SQL_API
 SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrepare\n");
+	ODBCLOG("SQLPrepare " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))
@@ -95,7 +95,7 @@ SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrepareW\n");
+	ODBCLOG("SQLPrepareW " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -219,7 +219,7 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDriverConnect ");
+	ODBCLOG("SQLDriverConnect " PTRFMT " ", PTRFMTCAST hDbc);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -245,7 +245,7 @@ SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDriverConnectW ");
+	ODBCLOG("SQLDriverConnectW " PTRFMT " ", PTRFMTCAST hDbc);
 #endif
 
 	if (!isValidDbc(dbc))

@@ -63,7 +63,8 @@ isValidEnv(ODBCEnv *env)
 {
 #ifdef ODBCDEBUG
 	if (!(env && env->Type == ODBC_ENV_MAGIC_NR))
-		ODBCLOG("not a valid environment handle\n");
+		ODBCLOG("env " PTRFMT " not a valid environment handle\n",
+			PTRFMTCAST env);
 #endif
 	return env && env->Type == ODBC_ENV_MAGIC_NR;
 }
@@ -85,7 +86,7 @@ addEnvError(ODBCEnv *env, const char *SQLState, const char *errMsg,
 
 #ifdef ODBCDEBUG
 	extern const char * getStandardSQLStateMsg(const char *);
-	ODBCLOG("addEnvError %s %s %d\n", SQLState,
+	ODBCLOG("addEnvError " PTRFMT " %s %s %d\n", PTRFMTCAST env, SQLState,
 		errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
 		nativeErrCode);
 #endif

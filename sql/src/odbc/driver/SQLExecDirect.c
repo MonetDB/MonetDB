@@ -41,7 +41,7 @@ SQLRETURN SQL_API
 SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecDirect\n");
+	ODBCLOG("SQLExecDirect " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))
@@ -61,7 +61,7 @@ SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	SQLCHAR *sql;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecDirectW\n");
+	ODBCLOG("SQLExecDirectW " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

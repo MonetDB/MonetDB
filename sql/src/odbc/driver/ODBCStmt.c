@@ -109,7 +109,8 @@ isValidStmt(ODBCStmt *stmt)
 {
 #ifdef ODBCDEBUG
 	if (!(stmt && stmt->Type == ODBC_STMT_MAGIC_NR))
-		ODBCLOG("not a valid statement handle\n");
+		ODBCLOG("stmt " PTRFMT " not a valid statement handle\n",
+			PTRFMTCAST stmt);
 #endif
 	return stmt && stmt->Type == ODBC_STMT_MAGIC_NR;
 }
@@ -131,8 +132,8 @@ addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg,
 
 #ifdef ODBCDEBUG
 	extern const char * getStandardSQLStateMsg(const char *);
-	ODBCLOG("addStmtError %s %s %d\n", SQLState,
-		errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
+	ODBCLOG("addStmtError " PTRFMT " %s %s %d\n", PTRFMTCAST stmt,
+		SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
 		nativeErrCode);
 #endif
 	assert(isValidStmt(stmt));

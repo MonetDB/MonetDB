@@ -93,7 +93,6 @@ SQLSetConnectOption = _SQLSetConnectOption@12
 SQLSetConnectOptionW = _SQLSetConnectOptionW@12
 SQLSetCursorName = _SQLSetCursorName@12
 SQLSetCursorNameW = _SQLSetCursorNameW@12
-SQLSetCursorName_ = _SQLSetCursorName_@12
 SQLSetDescField = _SQLSetDescField@20
 SQLSetDescFieldW = _SQLSetDescFieldW@20
 SQLSetDescRec = _SQLSetDescRec@40

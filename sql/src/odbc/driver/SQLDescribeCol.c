@@ -103,7 +103,7 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeCol\n");
+	ODBCLOG("SQLDescribeCol " PTRFMT " %d\n", PTRFMTCAST hStmt, nCol);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -129,7 +129,7 @@ SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeColW\n");
+	ODBCLOG("SQLDescribeColW " PTRFMT " %d\n", PTRFMTCAST hStmt, nCol);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -33,13 +33,16 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 
 	fixODBCstring(szConnStrIn, cbConnStrIn, addDbcError, dbc);
 
+#ifdef ODBCDEBUG
+	ODBCLOG(" \"%.*s\"\n", szConnStrIn, cbConnStrIn);
+#endif
+
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
 		/* 08002 = Connection already in use */
 		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
-	assert(!dbc->Connected);
 
 
 	/* TODO: finish implementation */
@@ -61,7 +64,7 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnect\n");
+	ODBCLOG("SQLBrowseConnect " PTRFMT, PTRFMTCAST hDbc);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -85,7 +88,7 @@ SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnectW\n");
+	ODBCLOG("SQLBrowseConnectW " PTRFMT, PTRFMTCAST hDbc);
 #endif
 
 	if (!isValidDbc(dbc))

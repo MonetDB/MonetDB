@@ -39,7 +39,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	char *query_end = NULL;
 
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 
@@ -49,6 +49,14 @@ SQLStatistics_(ODBCStmt *stmt,
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
+
+#ifdef ODBCDEBUG
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %d %d\n",
+		nCatalogNameLength, szCatalogName,
+		nSchemaNameLength, szSchemaName,
+		nTableNameLength, szTableName,
+		nUnique, nReserved);
+#endif
 
 	/* check for valid Unique argument */
 	switch (nUnique) {
@@ -108,16 +116,16 @@ SQLStatistics_(ODBCStmt *stmt,
 	/* TODO: finish the SQL query */
 	strcpy(query_end,
 	       "select "
-	       "'' as table_cat, "
-	       "s.name as table_schem, "
-	       "t.name as table_name, "
+	       "cast('' as varchar) as table_cat, "
+	       "cast(s.name as varchar) as table_schem, "
+	       "cast(t.name as varchar) as table_name, "
 	       "cast(1 as smallint) as non_unique, "
 	       "cast(null as varchar) as index_qualifier, "
 	       "cast(null as varchar) as index_name, "
 	       "cast(0 as smallint) as type, "
 	       "cast(null as smallint) as ordinal_position, "
-	       "c.name as column_name, "
-	       "'a' as asc_or_desc, "
+	       "cast(c.name as varchar) as column_name, "
+	       "cast('a' as varchar) as asc_or_desc, "
 	       "cast(null as integer) as cardinality, "
 	       "cast(null as integer) as pages, "
 	       "cast(null as varchar) as filter_condition "
@@ -165,7 +173,7 @@ SQLStatistics(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLStatistics\n");
+	ODBCLOG("SQLStatistics " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -192,7 +200,7 @@ SQLStatisticsW(SQLHSTMT hStmt,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLStatisticsW\n");
+	ODBCLOG("SQLStatisticsW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -29,7 +29,7 @@ SQLParamData(SQLHSTMT hStmt, SQLPOINTER *pValue)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLParamData\n");
+	ODBCLOG("SQLParamData " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	(void) pValue;		/* Stefan: unused!? */

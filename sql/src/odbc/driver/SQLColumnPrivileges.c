@@ -33,8 +33,16 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
+#ifdef ODBCDEBUG
+	ODBCLOG(" \".*s\" \".*s\" \".*s\" \".*s\"\n",
+		nCatalogNameLength, szCatalogName,
+		nSchemaNameLength, szSchemaName,
+		nTableNameLength, szTableName,
+		nColumnNameLength, szColumnName);
+#endif
+
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -75,7 +83,7 @@ SQLColumnPrivileges(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnPrivileges\n");
+	ODBCLOG("SQLColumnPrivileges " PTRFMT, PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -102,7 +110,7 @@ SQLColumnPrivilegesW(SQLHSTMT hStmt,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnPrivilegesW\n");
+	ODBCLOG("SQLColumnPrivilegesW " PTRFMT, PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

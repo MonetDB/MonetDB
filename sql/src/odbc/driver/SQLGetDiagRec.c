@@ -143,7 +143,11 @@ SQLGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle,
 	      SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRec %d %d\n", handleType, recNumber);
+	ODBCLOG("SQLGetDiagRec %s " PTRFMT " %d\n",
+		handleType == SQL_HANDLE_ENV ? "Env" :
+		handleType == SQL_HANDLE_DBC ? "Dbc" :
+		handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST handle, recNumber);
 #endif
 
 	return SQLGetDiagRec_(handleType, handle, recNumber, sqlState,
@@ -164,7 +168,11 @@ SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRecW %d %d\n", handleType, recNumber);
+	ODBCLOG("SQLGetDiagRecW %s " PTRFMT " %d\n",
+		handleType == SQL_HANDLE_ENV ? "Env" :
+		handleType == SQL_HANDLE_DBC ? "Dbc" :
+		handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST handle, recNumber);
 #endif
 
 	msg = (SQLCHAR *) malloc(bufferLength * 4);

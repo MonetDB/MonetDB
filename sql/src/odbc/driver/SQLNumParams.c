@@ -29,7 +29,7 @@ SQLNumParams(SQLHSTMT hStmt, SQLSMALLINT *pnParamCount)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNumParams\n");
+	ODBCLOG("SQLNumParams " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	(void) pnParamCount;	/* Stefan: unused!? */

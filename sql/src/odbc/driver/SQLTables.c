@@ -35,7 +35,7 @@ SQLTables_(ODBCStmt *stmt,
 	char *query = NULL;
 
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -69,36 +69,36 @@ SQLTables_(ODBCStmt *stmt,
 		/* Special case query to fetch all Catalog names. */
 		/* Note: Catalogs are not supported so the result set will be empty. */
 		query = strdup("select "
-			       "'' as table_cat, "
-			       "'' as table_schem, "
-			       "'' as table_name, "
-			       "'' as table_type, "
-			       "'' as remarks "
+			       "cast('' as varchar) as table_cat, "
+			       "cast('' as varchar) as table_schem, "
+			       "cast('' as varchar) as table_name, "
+			       "cast('' as varchar) as table_type, "
+			       "cast('' as varchar) as remarks "
 			       "from sys.schemas where 0 = 1");
 	} else if (nCatalogNameLength == 0 && nTableNameLength == 0 &&
 		   szSchemaName && 
 		   strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
-		query = strdup("select '' as table_cat, "
+		query = strdup("select cast('' as varchar) as table_cat, "
 			       "name as table_schem, "
-			       "'' as table_name, "
-			       "'' as table_type, "
-			       "'' as remarks "
-			       "from sys.schemas order by name");
+			       "cast('' as varchar) as table_name, "
+			       "cast('' as varchar) as table_type, "
+			       "cast('' as varchar) as remarks "
+			       "from sys.schemas order by table_schem");
 	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 &&
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
 		query = strdup("select "
-			       "'' as table_cat, "
-			       "'' as table_schem, "
-			       "'' as table_name, "
-			       "distinct case t.type when 1 then 'TABLE' "
-			       "when 0 then 'SYSTEM_TABLE' when 2 then 'VIEW' "
-			       "when 3 then 'LOCAL TEMPORARY TABLE' "
-			       "else 'INTERNAL TYPE' end as table_type, "
-			       "'' as remarks "
-			       "from sys.tables order by type");
+			       "cast('' as varchar) as table_cat, "
+			       "cast('' as varchar) as table_schem, "
+			       "cast('' as varchar) as table_name, "
+			       "distinct case t.type when 1 then cast('TABLE' as varchar) "
+			       "when 0 then cast('SYSTEM_TABLE' as varchar) when 2 then cast('VIEW' as varchar) "
+			       "when 3 then cast('LOCAL TEMPORARY TABLE' as varchar) "
+			       "else cast('INTERNAL TYPE' as varchar) end as table_type, "
+			       "cast('' as varchar) as remarks "
+			       "from sys.tables order by table_type");
 		/* TODO: UNION it with all supported table types */
 	} else {
 		/* no special case argument values */
@@ -113,14 +113,14 @@ SQLTables_(ODBCStmt *stmt,
 
 		sprintf(query_end,
 			"select "
-			"'%.*s' as table_cat, "
-			"s.name as table_schem, "
-			"t.name as table_name, "
-			"case t.type when 0 then 'TABLE' "
-			"when 1 then 'SYSTEM_TABLE' when 2 then 'VIEW' "
-			"when 3 then 'LOCAL TEMPORARY TABLE' "
-			"else 'INTERNAL TABLE TYPE' end as table_type, "
-			"'' as remarks "
+			"cast('%.*s' as varchar) as table_cat, "
+			"cast(s.name as varchar) as table_schem, "
+			"cast(t.name as varchar) as table_name, "
+			"case t.type when 0 then cast('TABLE' as varchar) "
+			"when 1 then cast('SYSTEM_TABLE' as varchar) when 2 then cast('VIEW' as varchar) "
+			"when 3 then cast('LOCAL TEMPORARY TABLE' as varchar) "
+			"else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
+			"cast('' as varchar) as remarks "
 			"from sys.schemas s, sys.tables t "
 			"where s.id = t.schema_id",
 			nCatalogNameLength, szCatalogName);
@@ -181,7 +181,7 @@ SQLTables_(ODBCStmt *stmt,
 		}
 
 		/* add the ordering */
-		strcpy(query_end, " order by s.name, t.name, t.type");
+		strcpy(query_end, " order by table_schem, table_name, table_type");
 	}
 
 	/* query the MonetDb data dictionary tables */
@@ -203,7 +203,7 @@ SQLTables(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTables ");
+	ODBCLOG("SQLTables " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -231,7 +231,7 @@ SQLTablesW(SQLHSTMT hStmt,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *type = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTablesW ");
+	ODBCLOG("SQLTablesW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

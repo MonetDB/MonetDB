@@ -27,7 +27,7 @@ SQLNumResultCols(SQLHSTMT hStmt, SQLSMALLINT *pnColumnCount)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNumResultCols\n");
+	ODBCLOG("SQLNumResultCols " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

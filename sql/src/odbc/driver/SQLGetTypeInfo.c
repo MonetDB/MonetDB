@@ -30,7 +30,7 @@ SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 	char *query = NULL;
 
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 
@@ -164,25 +164,25 @@ SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 	*/
 	strcpy(query,
 	       "select "
-	       "sqlname as type_name, "
-	       "systemname as data_type, "
-	       "digits as column_size, "
-	       "'' /*literal_prefix*/ as literal_prefix, "
-	       "'' /*literal_suffix*/ as literal_suffix, "
-	       "'' /*create_params*/ as create_params, "
-	       "1 /*sql_nullable*/ as nullable, "
-	       "0 /*case_sensitive*/ as case_sensitive, "
-	       "0 /*searchable*/ as searchable, "
-	       "0 /*unsigned*/ as unsigned_attribute, "
-	       "scale /*fixed_prec_scale*/ as fixed_prec_scale, "
-	       "0 /*auto_unique_vale*/ as auto_unique_vale, "
-	       "systemname /*monet_type_name*/ as local_type_name, "
-	       "0 /*min_scale*/ as minimum_scale, "
-	       "scale /*max_scale*/ as maximum_scale, "
-	       "0 /*sql_type*/ as sql_data_type, "
-	       "null as sql_datetime_sub, "
-	       "10 as num_prec_radix, "
-	       "0 /*interval_prec*/ as interval_precision "
+	       "cast(sqlname as varchar) as type_name, "
+	       "cast(systemname as smallint) as data_type, "
+	       "cast(digits as integer) as column_size, "
+	       "cast('' as varchar) /*literal_prefix*/ as literal_prefix, "
+	       "cast('' as varchar) /*literal_suffix*/ as literal_suffix, "
+	       "cast('' as varchar) /*create_params*/ as create_params, "
+	       "cast(1 as smallint) /*sql_nullable*/ as nullable, "
+	       "cast(0 as smallint) /*case_sensitive*/ as case_sensitive, "
+	       "cast(0 as smallint) /*searchable*/ as searchable, "
+	       "cast(0 as smallint) /*unsigned*/ as unsigned_attribute, "
+	       "cast(scale as smallint) /*fixed_prec_scale*/ as fixed_prec_scale, "
+	       "cast(0 as smallint) /*auto_unique_vale*/ as auto_unique_vale, "
+	       "cast(systemname as varchar) /*monet_type_name*/ as local_type_name, "
+	       "cast(0 as smallint) /*min_scale*/ as minimum_scale, "
+	       "cast(scale as smallint) /*max_scale*/ as maximum_scale, "
+	       "cast(0 as smallint) /*sql_type*/ as sql_data_type, "
+	       "cast(null as smallint) as sql_datetime_sub, "
+	       "cast(10 as smallint) as num_prec_radix, "
+	       "cast(0 as smallint) /*interval_prec*/ as interval_precision "
 	       "from types");
 
 /* TODO: SEARCHABLE should return an int iso str. Add a CASE
@@ -216,7 +216,8 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetTypeInfo %d\n", nSqlDataType);
+	ODBCLOG("SQLGetTypeInfo " PTRFMT " %d\n",
+		PTRFMTCAST hStmt, nSqlDataType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -234,7 +235,8 @@ SQLGetTypeInfoW(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetTypeInfoW %d\n", nSqlDataType);
+	ODBCLOG("SQLGetTypeInfoW " PTRFMT " %d\n",
+		PTRFMTCAST hStmt, nSqlDataType);
 #endif
 
 	if (!isValidStmt(stmt))

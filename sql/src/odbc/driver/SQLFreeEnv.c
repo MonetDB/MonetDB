@@ -20,7 +20,7 @@ SQLRETURN SQL_API
 SQLFreeEnv(SQLHENV hDrvEnv)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeEnv\n");
+	ODBCLOG("SQLFreeEnv " PTRFMT "\n", PTRFMTCAST hDrvEnv);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

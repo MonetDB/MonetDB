@@ -24,7 +24,7 @@ SQLRETURN SQL_API
 SQLAllocConnect(SQLHENV hEnv, SQLHDBC *phDbc)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocConnect\n");
+	ODBCLOG("SQLAllocConnect " PTRFMT "\n", PTRFMTCAST hEnv);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

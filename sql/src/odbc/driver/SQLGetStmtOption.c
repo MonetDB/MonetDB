@@ -27,7 +27,7 @@ SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtOption\n");
+	ODBCLOG("SQLGetStmtOption " PTRFMT " %d\n", PTRFMTCAST hStmt, fOption);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -93,7 +93,8 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	s = mo_find_option(NULL, 0, "host");
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s port=%d\n", dsn, uid, pwd, port);
+	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s port=%d\n",
+		dsn, uid, pwd, port);
 #endif
 
 	/* connect to a server on host via port */
@@ -139,7 +140,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	   SQLSMALLINT nPWDLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect\n");
+	ODBCLOG("SQLConnect " PTRFMT "\n", PTRFMTCAST hDbc);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) hDbc))
@@ -163,7 +164,7 @@ SQLConnectW(SQLHDBC hDbc,
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnectW\n");
+	ODBCLOG("SQLConnectW " PTRFMT "\n", PTRFMTCAST hDbc);
 #endif
 
 	if (!isValidDbc(dbc))

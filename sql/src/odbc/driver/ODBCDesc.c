@@ -56,7 +56,8 @@ isValidDesc(ODBCDesc *desc)
 {
 #ifdef ODBCDEBUG
 	if (!(desc && desc->Type == ODBC_DESC_MAGIC_NR))
-		ODBCLOG("not a valid descriptor handle\n");
+		ODBCLOG("desc " PTRFMT "not a valid descriptor handle\n",
+			PTRFMTCAST desc);
 #endif
 	return desc && desc->Type == ODBC_DESC_MAGIC_NR;
 }
@@ -77,8 +78,8 @@ addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg,
 
 #ifdef ODBCDEBUG
 	extern const char * getStandardSQLStateMsg(const char *);
-	ODBCLOG("addDescError %s %s %d\n", SQLState,
-		errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
+	ODBCLOG("addDescError " PTRFMT " %s %s %d\n", PTRFMTCAST desc,
+		SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
 		nativeErrCode);
 #endif
 	assert(isValidDesc(desc));

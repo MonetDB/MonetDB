@@ -51,7 +51,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 
 	/* check statement cursor state, no query should be prepared
 	   or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -124,14 +124,14 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 		/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO is 1 */
 		strcpy(query_end,
 		       "select "
-		       "1 as scope, "
-		       "c.name as column_name, "
-		       "c.type as data_type, "
-		       "c.type_name as type_name, "
-		       "c.column_size as column_size, "
-		       "c.buffer_length as buffer_length, "
-		       "c.decimal_digits as decimal_digits, "
-		       "1 as pseudo_column "
+		       "cast(1 as smallint) as scope, "
+		       "cast(c.name as varchar) as column_name, "
+		       "cast(c.type as smallint) as data_type, "
+		       "cast(c.type_name as varchar) as type_name, "
+		       "cast(c.column_size as integer) as column_size, "
+		       "cast(c.buffer_length as integer) as buffer_length, "
+		       "cast(c.decimal_digits as smallint) as decimal_digits, "
+		       "cast(1 as smallint) as pseudo_column "
 		       "from sys.schemas s, sys.tables t, "
 		       " columns c, keys k, keycolumns kc "
 		       "where s.id = t.schema_id and t.id = c.table_id and "
@@ -208,7 +208,8 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumns %d ", nIdentifierType);
+	ODBCLOG("SQLSpecialColumns " PTRFMT " %d ", PTRFMTCAST hStmt,
+		nIdentifierType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -236,7 +237,8 @@ SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumnsW %d ", nIdentifierType);
+	ODBCLOG("SQLSpecialColumnsW " PTRFMT " %d ", PTRFMTCAST hStmt,
+		nIdentifierType);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -45,7 +45,7 @@ SQLGetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetCursorName\n");
+	ODBCLOG("SQLGetCursorName " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -68,7 +68,7 @@ SQLGetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
 	SQLCHAR *cursor;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetCursorNameW\n");
+	ODBCLOG("SQLGetCursorNameW " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

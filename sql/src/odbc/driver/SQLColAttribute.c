@@ -211,7 +211,8 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 		SQLPOINTER pnValue)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttribute %d\n", nFieldIdentifier);
+	ODBCLOG("SQLColAttribute " PTRFMT " %d\n", PTRFMTCAST hStmt,
+		nFieldIdentifier);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))
@@ -237,7 +238,8 @@ SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributeW %d\n", nFieldIdentifier);
+	ODBCLOG("SQLColAttributeW " PTRFMT " %d\n", PTRFMTCAST hStmt,
+		nFieldIdentifier);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -26,7 +26,8 @@ SQLSetScrollOptions(SQLHSTMT hStmt, SQLUSMALLINT fConcurrency,
 		    SQLINTEGER crowKeyset, SQLUSMALLINT crowRowset)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetScrollOptions\n");
+	ODBCLOG("SQLSetScrollOptions " PTRFMT " %d %d %d\n", PTRFMTCAST hStmt,
+		fConcurrency, crowKeyset, crowRowset);
 #endif
 
 	(void) fConcurrency;	/* Stefan: unused!? */

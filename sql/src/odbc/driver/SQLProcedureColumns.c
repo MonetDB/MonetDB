@@ -33,7 +33,7 @@ SQLProcedureColumns_(ODBCStmt *stmt,
 		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -43,6 +43,14 @@ SQLProcedureColumns_(ODBCStmt *stmt,
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
+
+#ifdef ODBCDEBUG
+	ODBCLOG("\".*s\" \".*s\" \".*s\" \".*s\"\n",
+		nCatalogNameLength, szCatalogName,
+		nSchemaNameLength, szSchemaName,
+		nProcNameLength, szProcName,
+		nColumnNameLength, szColumnName);
+#endif
 
 	/* SQLProcedureColumns returns a table with the following columns:
 	   VARCHAR	procedure_cat
@@ -82,7 +90,7 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedureColumns\n");
+	ODBCLOG("SQLProcedureColumns " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -110,7 +118,7 @@ SQLProcedureColumnsW(SQLHSTMT hStmt,
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL, *column = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedureColumnsW\n");
+	ODBCLOG("SQLProcedureColumnsW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

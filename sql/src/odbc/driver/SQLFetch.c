@@ -1769,7 +1769,7 @@ SQLFetch(SQLHSTMT hStmt)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFetch\n");
+	ODBCLOG("SQLFetch " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

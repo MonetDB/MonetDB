@@ -24,7 +24,7 @@ SQLRETURN SQL_API
 SQLAllocStmt(SQLHDBC hDbc, SQLHSTMT *phStmt)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocStmt\n");
+	ODBCLOG("SQLAllocStmt " PTRFMT "\n", PTRFMTCAST hDbc);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

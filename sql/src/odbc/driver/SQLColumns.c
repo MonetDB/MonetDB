@@ -38,7 +38,7 @@ SQLColumns_(ODBCStmt *stmt,
 	char *query_end = NULL;
 
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -48,6 +48,14 @@ SQLColumns_(ODBCStmt *stmt,
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
+
+#ifdef ODBCDEBUG
+	ODBCLOG(" \".*s\" \".*s\" \".*s\" \".*s\"\n",
+		nCatalogNameLength, szCatalogName,
+		nSchemaNameLength, szSchemaName,
+		nTableNameLength, szTableName,
+		nColumnNameLength, szColumnName);
+#endif
 
 	/* construct the query now */
 	query = (char *) malloc(1000 + nSchemaNameLength + nTableNameLength +
@@ -78,24 +86,24 @@ SQLColumns_(ODBCStmt *stmt,
 
 	strcpy(query_end,
 	       "select "
-	       "'' as table_cat, "
-	       "s.name as table_schem, "
-	       "t.name as table_name, "
-	       "c.name as column_name, "
-	       "c.type as data_type, "
-	       "c.type as type_name, "
-	       "c.type_digits as column_size, "
-	       "c.type_digits as buffer_length, "
-	       "c.type_scale as decimal_digits, "
+	       "cast('' as varchar) as table_cat, "
+	       "cast(s.name as varchar) as table_schem, "
+	       "cast(t.name as varchar) as table_name, "
+	       "cast(c.name as varchar) as column_name, "
+	       "cast(c.type as smallint) as data_type, "
+	       "cast(c.type as varchar) as type_name, "
+	       "cast(c.type_digits as integer) as column_size, "
+	       "cast(c.type_digits as integer) as buffer_length, "
+	       "cast(c.type_scale as smallint) as decimal_digits, "
 	       "cast(0 as smallint) as num_prec_radix, "
-	       "c.\"null\" as nullable, "
-	       "'' as remarks, "
-	       "'' as column_def, "
-	       "c.type as sql_data_type, "
-	       "'' as sql_datetime_sub, "
-	       "'' as char_octet_length, "
-	       "c.number as ordinal_position, "
-	       "c.\"null\" as is_nullable "
+	       "cast(c.\"null\" as smallint) as nullable, "
+	       "cast('' as varchar) as remarks, "
+	       "cast('' as varchar) as column_def, "
+	       "cast(c.type as smallint) as sql_data_type, "
+	       "cast('' as varchar) as sql_datetime_sub, "
+	       "cast('' as varchar) as char_octet_length, "
+	       "cast(c.number as integer) as ordinal_position, "
+	       "cast(c.\"null\" as varchar) as is_nullable "
 	       "from sys.schemas s, sys.tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
@@ -166,7 +174,7 @@ SQLColumns(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumns\n");
+	ODBCLOG("SQLColumns " PTRFMT, PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -193,7 +201,7 @@ SQLColumnsW(SQLHSTMT hStmt,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnsW\n");
+	ODBCLOG("SQLColumnsW " PTRFMT, PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

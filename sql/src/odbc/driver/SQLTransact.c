@@ -24,7 +24,8 @@ SQLRETURN SQL_API
 SQLTransact(SQLHENV hEnv, SQLHDBC hDbc, UWORD fType)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTransact\n");
+	ODBCLOG("SQLTransact " PTRFMT " " PTRFMT " %d\n",
+		PTRFMTCAST hEnv, PTRFMTCAST hDbc, fType);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help */

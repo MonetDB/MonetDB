@@ -40,7 +40,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -54,6 +54,15 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szFKTableName, nFKTableNameLength, addStmtError, stmt);
 
+#ifdef ODCBDEBUG
+	ODBCLOG("\".*s\" \".*s\" \".*s\" \".*s\" \".*s\" \".*s\"\n",
+		nPKCatalogNameLength, szPKCatalogName,
+		nPKSchemaNameLength, szPKSchemaName,
+		nPKTableNameLength, szPKTableName,
+		nFKCatalogNameLength, szFKCatalogName,
+		nFKSchemaNameLength, szFKSchemaName,
+		nFKTableNameLength, szFKTableName);
+#endif
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */
 
@@ -84,20 +93,20 @@ SQLForeignKeys_(ODBCStmt *stmt,
 
 	strcpy(query_end,
 	       "select "
-	       "'' as pktable_cat, "
-	       "s1.name as pktable_schem, "
-	       "t1.name as pktable_name, "
-	       "c1.name as pkcolumn_name, "
-	       "'' as fktable_cat, "
-	       "s1.name as fktable_schem, "
-	       "t1.name as fktable_name, "
-	       "c1.name as fkcolumn_name, "
-	       "kc.ordinal_position as key_seq, "
-	       "k.update_rule as update_rule, "
-	       "k.delete_rule as delete_rule, "
-	       "k.fk_name as fk_name, "
-	       "k.pk_name as pk_name, "
-	       "k.deferrability as deferrability "
+	       "cast('' as varchar) as pktable_cat, "
+	       "cast(s1.name as varchar) as pktable_schem, "
+	       "cast(t1.name as varchar) as pktable_name, "
+	       "cast(c1.name as varchar) as pkcolumn_name, "
+	       "cast('' as varchar) as fktable_cat, "
+	       "cast(s1.name as varchar) as fktable_schem, "
+	       "cast(t1.name as varchar) as fktable_name, "
+	       "cast(c1.name as varchar) as fkcolumn_name, "
+	       "cast(kc.ordinal_position as smallint) as key_seq, "
+	       "cast(k.update_rule as smallint) as update_rule, "
+	       "cast(k.delete_rule as smallint) as delete_rule, "
+	       "cast(k.fk_name as varchar) as fk_name, "
+	       "cast(k.pk_name as varchar) as pk_name, "
+	       "cast(k.deferrability as smallint) as deferrability "
 	       "from sys.schemas s, sys.tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
@@ -167,7 +176,7 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLForeignKeys\n");
+	ODBCLOG("SQLForeignKeys " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -199,7 +208,7 @@ SQLForeignKeysW(SQLHSTMT hStmt,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLForeignKeysW\n");
+	ODBCLOG("SQLForeignKeysW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

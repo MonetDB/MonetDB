@@ -32,7 +32,7 @@ SQLProcedures_(ODBCStmt *stmt,
 	      SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -41,6 +41,13 @@ SQLProcedures_(ODBCStmt *stmt,
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);
+
+#ifdef ODBCDEBUG
+	ODBCLOG("\".*s\" \".*s\" \".*s\"\n",
+		nCatalogNameLength, szCatalogName,
+		nSchemaNameLength, szSchemaName,
+		nProcNameLength, szProcName);
+#endif
 
 	/* SQLProcedures returns a table with the following columns:
 	   VARCHAR	procedure_cat
@@ -76,7 +83,7 @@ SQLProcedures(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedures\n");
+	ODBCLOG("SQLProcedures " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -101,7 +108,7 @@ SQLProceduresW(SQLHSTMT hStmt,
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProceduresW\n");
+	ODBCLOG("SQLProceduresW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

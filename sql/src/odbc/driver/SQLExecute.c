@@ -207,7 +207,7 @@ SQLRETURN SQL_API
 SQLExecute(SQLHSTMT hStmt)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute\n");
+	ODBCLOG("SQLExecute " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))

@@ -37,7 +37,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
 	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State != INITED) {
+	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -55,6 +55,13 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
+#ifdef ODBCDEBUG
+	ODBCLOG("\".*s\" \".*s\" \".*s\"\n",
+		nCatalogNameLength, szCatalogName,
+		nSchemaNameLength, szSchemaName,
+		nTableNameLength, szTableName);
+#endif
+
 	/* construct the query */
 	query = (char *) malloc(1000 + nTableNameLength + nSchemaNameLength);
 	assert(query);
@@ -70,12 +77,12 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	 */
 	strcpy(query_end,
 	       "select "
-	       "'' as table_cat, "
-	       "s.name as table_schem, "
-	       "t.name as table_name, "
-	       "c.name as column_name, "
-	       "kc.ordinal_position as key_seq, "
-	       "k.key_name as pk_name "
+	       "cast('' as varchar) as table_cat, "
+	       "cast(s.name as varchar) as table_schem, "
+	       "cast(t.name as varchar) as table_name, "
+	       "cast(c.name as varchar) as column_name, "
+	       "cast(kc.ordinal_position as smallint) as key_seq, "
+	       "cast(k.key_name as varchar) as pk_name "
 	       "from sys.schemas s, sys.tables t, columns c, keys k, keycolumns kc "
 	       "where s.id = t.schema_id and t.id = c.table_id and "
 	       "t.id = k.table_id and c.id = kc.column_id and "
@@ -118,7 +125,7 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrimaryKeys\n");
+	ODBCLOG("SQLPrimaryKeys " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -143,7 +150,7 @@ SQLPrimaryKeysW(SQLHSTMT hStmt,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrimaryKeysW\n");
+	ODBCLOG("SQLPrimaryKeysW " PTRFMT " ", PTRFMTCAST hStmt);
 #endif
 
 	if (!isValidStmt(stmt))

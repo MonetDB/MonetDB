@@ -78,7 +78,8 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 		  SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectAttr\n");
+	ODBCLOG("SQLSetConnectAttr " PTRFMT " %d\n",
+		PTRFMTCAST ConnectionHandle, Attribute);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -101,7 +102,8 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectAttrW\n");
+	ODBCLOG("SQLSetConnectAttrW " PTRFMT " %d\n",
+		PTRFMTCAST ConnectionHandle, Attribute);
 #endif
 
 	if (!isValidDbc(dbc))

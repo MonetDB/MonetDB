@@ -30,7 +30,8 @@ SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
 	 SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLError\n");
+	ODBCLOG("SQLError " PTRFMT " " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST hEnv, PTRFMTCAST hDbc, PTRFMTCAST hStmt);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
@@ -56,7 +57,8 @@ SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR *szSqlState,
 	SQLCHAR *errmsg;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLErrorW\n");
+	ODBCLOG("SQLErrorW " PTRFMT " " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST hEnv, PTRFMTCAST hDbc, PTRFMTCAST hStmt);
 #endif
 
 	errmsg = (SQLCHAR *) malloc(nErrorMsgMax * 4);
