@@ -30,197 +30,197 @@ SQL  connected to database mTests_src_test using schema sys
 #---------
 #| i | f |
 #---------
-1	0.1
+1	0.10000000000000001
 SQL  1 Row affected
 #     8: 1 select * from T where I <  '2';
 #---------
 #| i | f |
 #---------
-1	0.1
+1	0.10000000000000001
 SQL  1 Row affected
 #     9: 1 select * from T where I <  "2";
 #---------
 #| i | f |
 #---------
-1	0.1
+1	0.10000000000000001
 SQL  1 Row affected
 #    10: 1 select * from T where F <  0.2;
 #---------
 #| i | f |
 #---------
-1	0.1
+1	0.10000000000000001
 SQL  1 Row affected
 #    11: 1 select * from T where F <  '0.2';
 #---------
 #| i | f |
 #---------
-1	0.1
+1	0.10000000000000001
 SQL  1 Row affected
 #    12: 1 select * from T where F <  "0.2";
 #---------
 #| i | f |
 #---------
-1	0.1
+1	0.10000000000000001
 SQL  1 Row affected
 #    13: 0 
 #    14: 1 select * from T where I <= 2;
 #---------
 #| i | f |
 #---------
-1	0.1
-2	0.2
+1	0.10000000000000001
+2	0.20000000000000001
 SQL  2 Rows affected
 #    15: 1 select * from T where I <= '2';
 #---------
 #| i | f |
 #---------
-1	0.1
-2	0.2
+1	0.10000000000000001
+2	0.20000000000000001
 SQL  2 Rows affected
 #    16: 1 select * from T where I <= "2";
 #---------
 #| i | f |
 #---------
-1	0.1
-2	0.2
+1	0.10000000000000001
+2	0.20000000000000001
 SQL  2 Rows affected
 #    17: 1 select * from T where F <= 0.2;
 #---------
 #| i | f |
 #---------
-1	0.1
-2	0.2
+1	0.10000000000000001
+2	0.20000000000000001
 SQL  2 Rows affected
 #    18: 1 select * from T where F <= '0.2';
 #---------
 #| i | f |
 #---------
-1	0.1
-2	0.2
+1	0.10000000000000001
+2	0.20000000000000001
 SQL  2 Rows affected
 #    19: 1 select * from T where F <= "0.2";
 #---------
 #| i | f |
 #---------
-1	0.1
-2	0.2
+1	0.10000000000000001
+2	0.20000000000000001
 SQL  2 Rows affected
 #    20: 0 
 #    21: 1 select * from T where I  = 2;
 #---------
 #| i | f |
 #---------
-2	0.2
+2	0.20000000000000001
 SQL  1 Row affected
 #    22: 1 select * from T where I  = '2';
 #---------
 #| i | f |
 #---------
-2	0.2
+2	0.20000000000000001
 SQL  1 Row affected
 #    23: 1 select * from T where I  = "2";
 #---------
 #| i | f |
 #---------
-2	0.2
+2	0.20000000000000001
 SQL  1 Row affected
 #    24: 1 select * from T where F  = 0.2;
 #---------
 #| i | f |
 #---------
-2	0.2
+2	0.20000000000000001
 SQL  1 Row affected
 #    25: 1 select * from T where F  = '0.2';
 #---------
 #| i | f |
 #---------
-2	0.2
+2	0.20000000000000001
 SQL  1 Row affected
 #    26: 1 select * from T where F  = "0.2";
 #---------
 #| i | f |
 #---------
-2	0.2
+2	0.20000000000000001
 SQL  1 Row affected
 #    27: 0 
 #    28: 1 select * from T where I >= 2;
 #---------
 #| i | f |
 #---------
-2	0.2
-3	0.3
+2	0.20000000000000001
+3	0.29999999999999999
 SQL  2 Rows affected
 #    29: 1 select * from T where I >= '2';
 #---------
 #| i | f |
 #---------
-2	0.2
-3	0.3
+2	0.20000000000000001
+3	0.29999999999999999
 SQL  2 Rows affected
 #    30: 1 select * from T where I >= "2";
 #---------
 #| i | f |
 #---------
-2	0.2
-3	0.3
+2	0.20000000000000001
+3	0.29999999999999999
 SQL  2 Rows affected
 #    31: 1 select * from T where F >= 0.2;
 #---------
 #| i | f |
 #---------
-2	0.2
-3	0.3
+2	0.20000000000000001
+3	0.29999999999999999
 SQL  2 Rows affected
 #    32: 1 select * from T where F >= '0.2';
 #---------
 #| i | f |
 #---------
-2	0.2
-3	0.3
+2	0.20000000000000001
+3	0.29999999999999999
 SQL  2 Rows affected
 #    33: 1 select * from T where F >= "0.2";
 #---------
 #| i | f |
 #---------
-2	0.2
-3	0.3
+2	0.20000000000000001
+3	0.29999999999999999
 SQL  2 Rows affected
 #    34: 0 
 #    35: 1 select * from T where I >  2;
 #---------
 #| i | f |
 #---------
-3	0.3
+3	0.29999999999999999
 SQL  1 Row affected
 #    36: 1 select * from T where I >  '2';
 #---------
 #| i | f |
 #---------
-3	0.3
+3	0.29999999999999999
 SQL  1 Row affected
 #    37: 1 select * from T where I >  "2";
 #---------
 #| i | f |
 #---------
-3	0.3
+3	0.29999999999999999
 SQL  1 Row affected
 #    38: 1 select * from T where F >  0.2;
 #---------
 #| i | f |
 #---------
-3	0.3
+3	0.29999999999999999
 SQL  1 Row affected
 #    39: 1 select * from T where F >  '0.2';
 #---------
 #| i | f |
 #---------
-3	0.3
+3	0.29999999999999999
 SQL  1 Row affected
 #    40: 1 select * from T where F >  "0.2";
 #---------
 #| i | f |
 #---------
-3	0.3
+3	0.29999999999999999
 SQL  1 Row affected
 #    41: 0 
 #    42: 1 drop table T;

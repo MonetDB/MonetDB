@@ -75,13 +75,13 @@ SQL  1 Row affected
 #---------------
 #| avg_engines |
 #---------------
-2.05926
+2.0592592592592593
 SQL  1 Row affected
 #     7: 1 select avg(engines) from aircraft where engines>0;
 #---------------
 #| avg_engines |
 #---------------
-2.37607
+2.3760683760683761
 SQL  1 Row affected
 #     8: 1 select count(*),min(pay_load),max(pay_load) from aircraft where pay_load>0;
 #-----------------------------------------------------
@@ -124,7 +124,7 @@ SQL  1 Row affected
 #------------------------------------------------
 #| from_airport | to_airport | avg_time_elapsed |
 #------------------------------------------------
-"ATL"	"BOS"	154.368
+"ATL"	"BOS"	154.36842105263159
 SQL  1 Row affected
 #    16: 1 select city_code, avg(ground_fare) from ground_service where ground_fare<>0 group by city_code;
 #-------------------------------
