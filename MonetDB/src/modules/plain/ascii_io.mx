@@ -382,7 +382,7 @@ size_t create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 		fmt[p].type = (char*)bun_tail(types, p);
 		fmt[p].adt = ATOMindex( fmt[p].type );
 		if (fmt[p].adt < 0) {
-			GDKerror("load_format: %s has unknown type %s (using str instead).\n", 
+			GDKerror("create_loadformat: %s has unknown type %s (using str instead).\n", 
 					fmt[p].name, fmt[p].name );
 			fmt[p].adt = TYPE_str;
 		}
@@ -487,7 +487,7 @@ int ASCIIcreate_bats( ascii *as ){
 	for (i=0; i<as->nr_attrs; i++){
 		fmt[i].c = void_bat_create(fmt[i].adt,as->nr);
 		if (!fmt[i].c) {
-			GDKerror("Failed to create bat of size %d\n", as->nr);
+			GDKerror("ASCIIcreate_bats: Failed to create bat of size %d\n", as->nr);
 			return -1;
 		}
 	}
@@ -505,7 +505,7 @@ BAT *ASCIIcollect_bats( ascii *as ){
 		BUNins(bats,(ptr)fmt[i].name, (ptr)&fmt[i].c->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
 		if (cnt != BATcount(fmt[i].c)){
-		        GDKerror("Error: counts are not equal\n");
+		        GDKerror("ASCIIcollect: counts are not equal\n");
 			return NULL;
 		}
 	}
@@ -580,7 +580,7 @@ insert_val( ascii_io *fmt, char *s, char *e, char quote )
 	adt = fmt->frstr( fmt->extra, fmt->adt, s, e, quote );
 	
 	if (!adt){
-		GDKerror("%lx not inserted %s\n", (size_t)adt, s);
+		GDKerror("insert_val: %lx not inserted %s\n", (size_t)adt, s);
 		return 1;
 	}
 
@@ -645,7 +645,7 @@ insert_line( ascii *as, char *line )
 			quote = 0;
 			line = end + fmt[i].seplen;
 		} else {
-		        GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
+		        GDKerror("insert_line: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
 			return -1;
 		}
 		e = 0;
@@ -678,7 +678,7 @@ insert_line( ascii *as, char *line )
 		quote = 0;
 		line = end + fmt[as->nr_attrs-1].seplen;
 	} else {
-		GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
+		GDKerror("insert_line: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
 		return -1;
 	}
 	e = 0;
@@ -820,7 +820,7 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 		char *s, *end;
 		if (b->pos >= b->len && 
 		    read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
-			GDKerror("read error\n");
+			GDKerror("ASCIIload_file: read error\n");
 			res = -1;
 			break;
 		}
@@ -835,7 +835,7 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 				if (insert_line(as, s ) < 0){
 					s = e + seplen;
 					b->pos = (s-b->buf);
-					GDKerror("value %s not inserted\n", s);	
+					GDKerror("ASCIIload_file: value %s not inserted\n", s);	
 					res = -1;
 					break;
 				}
@@ -845,7 +845,7 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 				if (insert_line(as, s ) < 0){
 					s = end;
 					b->pos = (s-b->buf);
-					GDKerror("value %s not inserted\n", s);	
+					GDKerror("ASCIIload_file: value %s not inserted\n", s);	
 					res = -1;
 					break;
 				}
@@ -860,7 +860,7 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 						b->size>>1) )
 						size <<= 4;
 					if ( read_more(b, out, size) == EOF) {
-						GDKerror("read error\n");
+						GDKerror("ASCIIload_file: read error\n");
 						res = -1;
 						break;
 					}
@@ -980,7 +980,7 @@ ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr )
 	bstream *b = NULL;
 
 	if (s == NULL || stream_errnr(s)){
-		GDKerror("could not open file %s\n", datafile );
+		GDKerror("ASCIIload: could not open file %s\n", datafile );
 		if (s) {
 			stream_destroy(s);
 		}
@@ -1020,7 +1020,7 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr ){
 			stream_printf(GDKerr, "saved in %s\n", datafile );
 		}
 		if (s == NULL || stream_errnr(s)){
-		 	GDKerror("could not open file %s\n", datafile );
+		 	GDKerror("ASCIIdump: could not open file %s\n", datafile );
 		} else {
 			stream_close(s);
 		}

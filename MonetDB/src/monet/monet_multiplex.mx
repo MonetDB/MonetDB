@@ -221,7 +221,7 @@ operator are a special case.
 		    all_synced = b; 
 		    tpe = BAThtype(b);
 		    if (sig->assignop && b->batRestricted) {
-                        GDKerror("%s: param 1 must be writeable.\n", name);
+                        GDKerror("interpret_multiplex: %s: param 1 must be writeable.\n", name);
                         return -2;
                     }
 		}
@@ -557,7 +557,7 @@ static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
 	/* void void case */
 	if (!desc->b){
 		GDKsetbuf(desc->bulkerror.bak);
-		GDKerror("Result bat[void,void] impossible.\n");
+		GDKerror("multiplex: result bat[void,void] impossible.\n");
 		GDKsetbuf(desc->bulkerror.buf);
 		return -1;
 	}
@@ -596,7 +596,7 @@ static int multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv){
 	/* void void case */
 	if (!desc->b){
 		GDKsetbuf(desc->bulkerror.bak);
-		GDKerror("Result bat[void,void] impossible.\n");
+		GDKerror("multiplex: result bat[void,void] impossible.\n");
 		GDKsetbuf(desc->bulkerror.buf);
 		return -1;
 	}

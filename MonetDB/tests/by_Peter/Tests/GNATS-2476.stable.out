@@ -22,7 +22,7 @@ b.delete(); # delete (1,1) without hash-lookup
 b.find(1).print(); # still finds (1,1) !
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 
 quit(); 
 

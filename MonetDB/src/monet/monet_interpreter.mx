@@ -252,7 +252,7 @@ int interpret_file(Cntxt stk, YYSTREE lt, ValPtr res){
         Client  c;
 
 	if (lt->cnt != 1) {
-		GDKerror("source: expects just one file name parameter\n");
+		GDKerror("interpret_file: expects just one file name parameter\n");
 		return -1;
 	}
 	i = interpret(stk, arg(lt,0), res);
@@ -337,7 +337,7 @@ void interpret_unpin(batrec *r, str s) {
 				s, (int) r->id, BBPrefs(r->id)-1);
 	if (b){
 	    if (b->batStamp != r->stamp) {
-		GDKerror("interpret_unpin(%s) bat=%d,stamp=%d OVERWRITTEN\n", s, r->id, r->stamp);
+		GDKerror("interpret_unpin: %s bat=%d,stamp=%d OVERWRITTEN\n", s, r->id, r->stamp);
 	    } else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
 		BAT *_b = BBPdescriptor(ABS(r->id));
 		MT_set_lock(monet_voidLock, "unpin");
@@ -374,7 +374,7 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 	    int inc = 1, param_range = 0;
 
 	    if (argc >= (1+MAXPARAMS)) {
-		GDKerror("%s(parameters out of range): [0,%d]).\n", fcn_nme, MAXPARAMS-1);
+		GDKerror("interpret_params: %s parameters out of range: [0,%d]).\n", fcn_nme, MAXPARAMS-1);
 		return -argc;
 	    }
 	    if (tt->token == TOK_RANGETEMP) {
@@ -382,26 +382,26 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 		param_range = 1;
 	    }
 	    if (interpret(stk, tt, &res) < 0) {
-		GDKerror("%s(param %d): evaluation error.\n", fcn_nme, j+1);
+		GDKerror("interpret_params: %s(param %d): evaluation error.\n", fcn_nme, j+1);
 		return -argc;
 	    } 
 	    if (param_range) {
 		inc += (*t)->yyval.len - argv->val.ival;
 		argv = ((ValPtr) (*t)->yyval.val.pval) + argv->val.ival;
 		if (res.vtype != TYPE_int) {
-		    GDKerror("%s(param %d): illegal vararg range.\n", fcn_nme, j+1);
+		    GDKerror("interpret_params: %s(param %d): illegal vararg range.\n", fcn_nme, j+1);
 		    return -argc;
 		}
 	    }
 	    if ((inc > 0) && ((argc+inc) < (1+MAXPARAMS))) while(inc--) {
 	        if (argv->vtype == TYPE_bat) {  
 		    if (BBPcheck(argv->val.bval,"interpret_params") == 0) {
-   			GDKerror("%s(param %d): invalid BAT.\n", fcn_nme, j+1);
+   			GDKerror("interpret_params: %s(param %d): invalid BAT.\n", fcn_nme, j+1);
 		        return -argc;
 		    }
 	        } else if (ATOMextern(argv->vtype)) {
 		    if (!argv->val.pval) {
-		        GDKerror("%s(param %d): invalid %s.\n", fcn_nme, j+1, ATOMname(argv->vtype));
+		        GDKerror("interpret_params %s(param %d): invalid %s.\n", fcn_nme, j+1, ATOMname(argv->vtype));
 		        return -argc;
 		    }
 	        }
@@ -1887,7 +1887,7 @@ int setProfilerFilter(str left, str right)
 	int i;
 	/*fprintf(stderr,"prepare filter %s %s\n",left,right);*/
 	if( filtertop==MAXFILTER){
-		GDKerror("Out of profile filter space");
+		GDKerror("setProfilerFilter: out of profile filter space.\n");
 		return GDK_FAIL;
 	}
 	if( profilerLock==NULL)
@@ -2134,7 +2134,7 @@ int setProfilerFilter(str left, str right)
 {
 	(void) left;
 	(void) right;
-	GDKerror("No profiler support");
+	GDKerror("setProfilerFilter: no profiler support.\n");
 	return GDK_FAIL;
 }
 

@@ -52,11 +52,11 @@ b.slice(5,8).print();
 b.position(111).print();
 !ERROR: CMDposition: item not found
 !ERROR: CMDposition: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 b.fetch(-1).print();
 !ERROR: CMDfetch: idx out of range
 !ERROR: CMDfetch: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 b.slice(8,5).print();
 #-----------------#
 # BAT:	  tmp_23  #

@@ -2227,7 +2227,7 @@ reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(rev
 _MMjoin_27.find(0@0).print();
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(_MMjoin_24)))),1@0))))).print();
 #-----------------#
 # h	tmp_98	  # name
@@ -2304,7 +2304,7 @@ _MMjoin_14.find(0@0).print();
 _MMjoin_14.find(3@0).print();
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 _MMjoin_14.find(2@0).print();
 [ 5000 ]
 # [ 2000 ,  8000 ,  9000 , ERROR: CMDfind: value not found,  5000 ]

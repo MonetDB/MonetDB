@@ -1314,7 +1314,7 @@ str BATrename(BAT *b, str nme) {
 	} else if (ret == BBPRENAME_LONG) {
 		GDKerror("BATrename: name too long: '%s'\n", nme); 
 	} else if (b == NULL) {
-		GDKerror("BATrename: null BAT\n"); 
+		GDKerror("BATrename: BAT argument missing\n"); 
 	}
 	return BBPname(b->batCacheid); 
 }
@@ -1325,13 +1325,13 @@ BAT *BATroles(BAT *b, str hnme,str tnme) {
 
 	BATcheck(b,"BATroles");
 	if( (i = strlen(hnme)) >= IDLENGTH - 1) {
-		GDKerror("BATroles:head name too long\n");
+		GDKerror("BATroles: head name too long\n");
 		hnme[IDLENGTH-1] = 0;
 		i = IDLENGTH-1;
 	}
 	memcpy(b->hident,hnme,i+1);
 	if( (i = strlen(tnme)) >= IDLENGTH - 1) {
-		GDKerror("BATroles:tail name too long\n");
+		GDKerror("BATroles: tail name too long\n");
 		tnme[IDLENGTH-1] = 0;
 		i = IDLENGTH-1;
 	}
@@ -1828,7 +1828,7 @@ if (mode & BATPROPS_CHECK) {
 	BAT *bm = BATmirror(b);
 	if (BAThvoid(b) && b->hseqbase != bm->tseqbase) {
 		oid o = (b->htype && yy != xx)?*(oid*) BUNhloc(b,BUNfirst(b)):oid_nil;
-		GDKerror("BATpropcheck: BAT %d set inconsistent hseqbase: %d != %d => %d\n", b->batCacheid, b->hseqbase, bm->tseqbase, o);
+		GDKerror("BATpropcheck: BAT %s set inconsistent hseqbase: %d != %d => %d\n", BBPname(b->batCacheid), b->hseqbase, bm->tseqbase, o);
 		b->hseqbase = bm->tseqbase = o; b->batDirty = TRUE;
 	}
 	zz = ((b->GDKversion != bm->GDKversion) + (b->U != bm->U) + (b->P != bm->P) +
@@ -1839,20 +1839,22 @@ if (mode & BATPROPS_CHECK) {
 	      (b->batDeleted < b->batBuns->base) + (b->batHole < b->batDeleted) +
 	      (b->batHole > b->batInserted) + (b->batBuns->free > b->batBuns->size) +
 	      (b->batInserted > (b->batBuns->base + b->batBuns->free)));
-	if (zz) GDKfatal("BATpropcheck: BAT %d has inconsistent descriptor %d\n", b->batCacheid, zz);
+	if (zz) GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d\n", BBPname(b->batCacheid), zz);
 
 	if (b->hhash_heap != bm->thash_heap || b->hidx_heap != bm->tidx_heap) {
-		GDKerror("BATpropcheck: BAT %d has inconsistent accrefs\n", b->batCacheid);
+		GDKerror("BATpropcheck: BAT %s has inconsistent accrefs\n", 
+			BBPname(b->batCacheid));
 		ACCremoveall(b); 
 		b->batDirty = TRUE;
 	}
 	if (b->dims.headkey != bm->dims.tailkey) {
-		GDKerror("BATpropcheck: BAT %d recovered hkey\n",b->batCacheid);
+		GDKerror("BATpropcheck: BAT %s recovered hkey\n",
+			BBPname(b->batCacheid));
 		b->dims.headkey = bm->dims.tailkey = b->batDirty = TRUE;
 	}
 	if (BAThdense(b) && !b->hkey) {
-		GDKerror("BATpropcheck: BAT %d is dense but not key!?\n", 
-			   b->batCacheid);
+		GDKerror("BATpropcheck: BAT %s is dense but not key!?\n", 
+			   BBPname(b->batCacheid));
 	}
 } 	
 	if (BAThdense(b) && !b->hkey) BATkey(b,TRUE);

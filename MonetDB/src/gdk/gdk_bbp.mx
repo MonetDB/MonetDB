@@ -379,7 +379,7 @@ void BBPextend(dbl factor, int buildhash) {
         BBP_notrim = BBP_getpid();
 	BBP = (BBPrec*) GDKvmrealloc(BBP, BBPlimit*sizeof(BBPrec), newsize*sizeof(BBPrec), 
 				     BBPmaxsize*sizeof(BBPrec), &maxsize, 1); 
-	if (BBP == NULL) GDKfatal("BBPextend failed\n");
+	if (BBP == NULL) GDKfatal("BBPextend: failed to extend BAT pool\n");
 
     	memset(BBP+BBPlimit, 0, (newsize-BBPlimit)*sizeof(BBPrec));
 	BBPlimit = newsize;
@@ -1128,13 +1128,13 @@ int decref(bat i, int logical, int lock) {
 	/* decrement references by one */
 	if (logical) {
 		if (BBP_lrefs(i) == 0) {
-			GDKerror("BBPdecref(%s) does not have logical references.\n", BBPname(i));
+			GDKerror("BBPdecref: %s does not have logical references.\n", BBPname(i));
 		} else {
 			refs = --BBP_lrefs(i);
 		}
 	} else {
 		if (BBP_refs(i) == 0) {
-			GDKerror("BBPdecref(%s) does not have pointer fixes.\n", BBPname(i));
+			GDKerror("BBPdecref: %s does not have pointer fixes.\n", BBPname(i));
 		} else {
 			refs = --BBP_refs(i);
 		}
@@ -1236,7 +1236,7 @@ int BBPreclaim(BAT* b) {
 			BBP_refs(b->batCacheid), BBP_status(b->batCacheid));
 
 	if (BBP_refs(b->batCacheid) > 1) {
-		GDKerror("BBPreclaim(%d) refs > 1 (%d)\n", i, BBP_refs(i));
+		GDKerror("BBPreclaim: %d refs > 1 (%d)\n", i, BBP_refs(i));
 		ret = -1;
 	} else {
 		/* unload whatever the LRU in the BBP */
@@ -2473,7 +2473,7 @@ void BBPreplace(BAT* b, BAT* bn) {
 			if (hugebn) { /* do the reload now */
 				b = BBPdescriptor(bid);
 				if (b == NULL) 
-					GDKfatal("BBPreplace: we cannot load the new BAT image %d\n", bid); 
+					GDKfatal("BBPreplace: failed to load the new BAT image %d\n", bid); 
 			}
 			BATmode(b, newmode);
 		}

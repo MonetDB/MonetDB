@@ -117,7 +117,7 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
         	h->storage = STORE_MEM;
                 h->base = (char *) GDKmallocmax(h->size, &h->maxsize,0);
 		if( h->base == 0)
-			GDKerror("Insufficient space for HEAP.");
+			GDKerror("HEAPalloc: Insufficient space for HEAP.");
 	}
 	if (h->filename && h->base == NULL) {
         	char privext[PATHLENGTH], *of = h->filename;
@@ -580,7 +580,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
    } else if (hheader->alignment == 4) {
       nbytes = roundup_4(nbytes);
    } else {
-      GDKfatal("Heap structure corrupt\n");
+      GDKfatal("HEAP_malloc: Heap structure corrupt\n");
    }
    if (nbytes < sizeof(CHUNK))
       nbytes = sizeof(CHUNK);
@@ -600,7 +600,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
    THRprintf(GDKerr, "block " SZFMT " is " SZFMT " bytes\n", block, blockp->size);
 #endif
       if ((trail != 0) && (block <= trail))
-	 GDKfatal("Free list is not orderered in Heapalloc\n");
+	 GDKfatal("HEAP_malloc: Free list is not orderered\n");
 
       if (blockp->size >= nbytes)
 	 break;
@@ -700,7 +700,7 @@ void HEAP_free(Heap* heap, var_t block) {
    size_t after,before;
 
    if (hheader->alignment != 8 && hheader->alignment != 4) {
-      GDKfatal("Heap structure corrupt\n");
+      GDKfatal("HEAP_free: Heap structure corrupt\n");
    }
 
    block -= hheader->alignment;
@@ -795,11 +795,12 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
       nwords >>= 1;
       alignshift = 3;
    } else if (hheader->alignment != 4) {
-      GDKerror("Heap structure corrupt alignment = %d\n",hheader->alignment);
+      GDKerror("HEAP_check: Heap structure corrupt alignment = %d\n",
+		hheader->alignment);
       return FALSE;
    } 
    if ((head != roundup_num(head,hheader->alignment))) {
-      GDKerror("Heap structure corrupt: head = %d\n",head);
+      GDKerror("HEAP_check: Heap structure corrupt: head = %d\n",head);
       return FALSE;
    }
 
@@ -820,9 +821,9 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
       size_t mask = 1 << (idx&31);
 
       if ((block <= prevblock) && (block != 0)) {
-	 GDKerror("Freelist is not ordered\n");
+	 GDKerror("HEAP_check: Freelist is not ordered\n");
       } else if (block <= 0 || block > heap->free) {
-	 GDKerror("Entry freelist corrupt: block %d not in heap\n",block);
+	 GDKerror("HEAP_check: Entry freelist corrupt: block %d not in heap\n",block);
       } else {
 	 freemask[pos] |= mask;
 	 continue;
@@ -849,7 +850,7 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
       }
    }
    if (block != heap->free) {
-      GDKerror("Something wrong with heap\n");
+      GDKerror("HEAP_check: Something wrong with heap\n");
       goto xit;
    }
 
@@ -861,7 +862,7 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
       size_t pos = idx >> 5;
       size_t mask = 1 << (idx&31);
       if (freemask[pos]&mask) {
-	 GDKerror("Entry freelist corrupt: block %d not in blocklist\n", block);
+	 GDKerror("HEAP_check: Entry freelist corrupt: block %d not in blocklist\n", block);
          goto xit;
       }
    }

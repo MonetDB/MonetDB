@@ -346,7 +346,7 @@ int iter_scan(iter *res, BAT *b) {
     ITER *it;
 
     if (b->batRestricted != BAT_READ) {
-	GDKerror("iter_scan(%s): must be a read-only BAT.\n", b->batId);
+	GDKerror("iter_scan: %s must be a read-only BAT.\n", b->batId);
 	return GDK_FAIL;
     }
     it = ITERinit(NULL, "scan", ScanNext, NULL, ScanGuess, b, NULL,NULL);

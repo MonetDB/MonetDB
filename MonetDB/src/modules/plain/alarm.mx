@@ -193,7 +193,7 @@ void CLKepilogue(void){
 int CMDsleep(int *secs){
 
         if (*secs < 0) {
-                GDKerror("sleep: negative delay\n");
+                GDKerror("CMDsleep: negative delay\n");
         	return GDK_FAIL;
         } else {
 		MT_sleep_ms(*secs*1000);
@@ -203,11 +203,11 @@ int CMDsleep(int *secs){
  
 int CMDalarm(int *secs, str action){
         if (*secs < 0) {
-                GDKerror("alarm: negative delay\n");
+                GDKerror("CMDalarm: negative delay\n");
         	return GDK_FAIL;
         } else {
 #ifndef SIGALRM
-		GDKerror("alarm: not implemented\n");
+		GDKerror("CMDalarm: not implemented\n");
 		return GDK_FAIL;
 #else
                 (void) CLKalarm(*secs+time(0), action);

@@ -81,11 +81,11 @@ print("negative start slice");
 b.slice(-1,5).print();
 !ERROR: CMDslice: start position of slice should >= 0
 !ERROR: CMDslice: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 a.slice(-1,5).print();
 !ERROR: CMDslice: start position of slice should >= 0
 !ERROR: CMDslice: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 
 print("over end slice");
 [ "over end slice" ]

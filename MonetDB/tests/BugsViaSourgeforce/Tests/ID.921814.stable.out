@@ -21,8 +21,8 @@ oid(0)   -> zero
 printf("oid(nil) -> %s\n",str(b.find(oid(nil))));
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
-!ERROR: str(param 1): evaluation error.
-!ERROR: printf(param 2): evaluation error.
+!ERROR: interpret_params: str(param 1): evaluation error.
+!ERROR: interpret_params: printf(param 2): evaluation error.
 
 b.seqbase(oid(nil));
 b.print();
@@ -34,8 +34,8 @@ b.print();
 printf("oid(0)   -> %s\n",str(b.find(oid(0))));
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
-!ERROR: str(param 1): evaluation error.
-!ERROR: printf(param 2): evaluation error.
+!ERROR: interpret_params: str(param 1): evaluation error.
+!ERROR: interpret_params: printf(param 2): evaluation error.
 printf("oid(nil) -> %s\n",str(b.find(oid(nil))));
 oid(nil) -> zero
 quit();

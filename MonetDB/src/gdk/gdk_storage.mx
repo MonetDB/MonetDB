@@ -421,7 +421,7 @@ static BAT *DESCload(int i) {
 	if ((*b->hatom && ((b->htype = DESCatom(s=b->hatom)) < 0)) ||
             (*b->tatom && ((b->ttype = DESCatom(s=b->tatom)) < 0))) 
 	{
-                GDKerror("atom '%s' unknown, in BAT '%s'.\n",s,nme);
+                GDKerror("DESCload: atom '%s' unknown, in BAT '%s'.\n",s,nme);
                 return 0;
 	}
     	b->hacctype = (b->hacctype && *b->haccname)?DESCacc(b->haccname):0;

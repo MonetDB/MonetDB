@@ -54,7 +54,7 @@ t2.print();
 [ 19,	  18	  ]
 print(t2.aligned(t));
 !ERROR: interpret: no matching MIL operator to 'aligned(BAT[int,int], BAT[int,int])'.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 print(t2.synced(t));
 [ false ]
 #t.sync(t2);
@@ -74,7 +74,7 @@ t.print();
 [ 11,	  12	  ]
 print(t2.aligned(t));
 !ERROR: interpret: no matching MIL operator to 'aligned(BAT[int,int], BAT[int,int])'.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 print(t2.synced(t));
 [ false ]
 

@@ -48,7 +48,7 @@ stderr of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 # 09:48:00 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=56955 < monet_mod_cnt-copy_C.milC
 # 09:48:00 >  
 
-MAPI  = monetdb@orion:41936
+MAPI  = monetdb@orion:49165
 QUERY = var b:=x.reverse().mirror().[bat]().[copy]().[count]();
 ERROR = !WARNING: [copy]: 1 times inserted nil due to errors at tuples "copy.count".
         !WARNING: [copy]: first error was: !ERROR: BATcopy: BAT required.

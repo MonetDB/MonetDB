@@ -147,7 +147,7 @@ int CNTXTrealloc(flt factor) {
 					newsize*sizeof(CntxtRec), maxsize, &maxsize, 1);
     if (p == NULL || p != monet_cntxtbuf) {
 	if (p) GDKvmfree(p, oldsize*sizeof(CntxtRec), maxsize);
-	GDKerror("CNTXTrealloc(): out of context space\n");
+	GDKerror("CNTXTrealloc: out of context space\n");
 	return FALSE;
     }
     memset(monet_cntxtbuf+oldsize, 0, (newsize-oldsize)*sizeof(CntxtRec));

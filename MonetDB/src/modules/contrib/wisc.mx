@@ -321,7 +321,7 @@ int WISCdestroy(str nme)
 		sprintf(buf, "%s_%s", nme, wisctype[i].attr);
 		b = BATload(buf);
 		if( b == 0 ){
-			GDKerror("%s not found\n",buf);
+			GDKerror("WISCdestroy: %s not found\n",buf);
 		} else {
 			BBPreclaim(b);
 		}

@@ -590,7 +590,7 @@ gdk_export int 		GDKsilent; 	/* should GDK shut up? */
 #define TYPEerror(t1,t2)	(!TYPEcomp(t1,t2))
 #define TYPEcheck(t1,t2)						\
 	if (TYPEerror(t1,t2)) {						\
-		GDKerror("Incompatible types %s and %s.\n",		\
+		GDKerror("TYPEcheck: Incompatible types %s and %s.\n",		\
 			ATOMname(t2), ATOMname(t1));			\
 		return 0;						\
 	} else if (!TYPEcomp(t1,t2)) {					\

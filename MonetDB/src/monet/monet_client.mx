@@ -138,7 +138,7 @@ Client initClient(str nme, str prompt, int thread)
 	MT_unset_lock(monet_contextLock, "initClient");
 
 	if (c == monet_clients+MAXCLIENTS) {
-		GDKerror("Out of client slots\n");
+		GDKerror("initClient: Out of client slots\n");
 		return 0;
 	}
 	if (thread && monetFork() == ~ (MT_Id) 0) {
@@ -226,7 +226,7 @@ void scheduleClient(Client c)
 		QMADD(req, c->stk, c->mil_accept, "readCmd;");
 	} 
 	if (!req){
-		GDKfatal("Daemon mode without startup script\n");
+		GDKfatal("scheduleClient: Daemon mode without startup script\n");
 	}
 	putRequest(req);
 }
@@ -727,7 +727,7 @@ str moduleClient(Client c, str mod, str parmod )
         str init_script=NULL;
 
 	if (TBL_loadmod(c, mod, parmod, 0, &init_script) == 0) {
-		GDKerror("module(%s): load error.\n", mod);
+		GDKerror("moduleClient: module(%s) load error.\n", mod);
 		return init_script;
 	}
 	return init_script;
@@ -746,7 +746,7 @@ int dropClient(Client c, YYSTREE lt)
 			ValRecord res;
 			int ret = interpret(c->stk, lt->yysons[i], &res);
 			if (ret < 0 || res.vtype != TYPE_str) {
-				GDKerror("drop: illegal argument.\n");
+				GDKerror("dropClient: illegal argument.\n");
 				return 0;
 			} 
 			mod = res.val.sval; 
