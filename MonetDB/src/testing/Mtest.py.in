@@ -1475,7 +1475,8 @@ def RunTest(env, TST, BusyPorts, COND) :
             SetExecEnv(env['exe'],0)
         CTIMEOUT = 0
         if   CALL in ["other", "python"]:
-            CTIMEOUT = CTIMEOUT + 60
+	    if TIMEOUT > 0:
+            	CTIMEOUT = CTIMEOUT + 60
             for l in fileinput.input(TST+EXT):
                 TOm = test.match(l)
                 if TOm:
@@ -1496,13 +1497,13 @@ def RunTest(env, TST, BusyPorts, COND) :
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
         STIMEOUT = CTIMEOUT
-        if  SERVER in ["MAPI", "SQL"]:
+        if  SERVER in ["MAPI", "SQL"] and TIMEOUT > 0:
             STIMEOUT = STIMEOUT + TIMEOUT + 60
 
         ME = ""
         ATJOB1 = ""
         MkillUsers = ""
-        if os.name != "nt" and sys.platform != 'cygwin' and not env.get('NO_AT'):
+        if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin' and not env.get('NO_AT'):
             for f in TST+".KILLED.out", TST+".KILLED.err":
                 if os.path.isfile(f):
                     os.remove(f)
@@ -1910,7 +1911,7 @@ def mapi_ping(port) :
 
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     ATJOB2 = ""
-    LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
+    LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<=%d,%d,%d) ...' % (TIMEOUT,CTIMEOUT,STIMEOUT)
     STDERR.flush()
     STDOUT.write(prompt()+LogLine)
     STDOUT.flush()
