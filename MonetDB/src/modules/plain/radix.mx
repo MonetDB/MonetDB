@@ -609,9 +609,9 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 
 .COMMAND radix_cluster(bat[any::1,any::2] b, str limits, flt perc, int radix1, ...int...) :
 		bat[any::1,any::2] = radix_cluster;
-"do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters.
- partial radix cluster (i.e. skipping lower significant bits) can be indicated
- by passing a negative number of bits as last parameter. 
+"do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses 
+ the last radix parameter, and so on backwards. Partial radix cluster (i.e. skipping lower 
+ significant bits) can be indicated by passing a negative number of bits as first parameter. 
 
  If you pass an appendable, empty, limits bat, a radix_count2 result with the resulting cluster 
  boundaries is returned in it. Note that you pass a batname of b, as returned by b.bbpname().
@@ -653,6 +653,9 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .COMMAND phash_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate, bit cutoff) :
 	bat[any,any] = phash_join;
 "partitioned hash-join on radix clustered inputs"
+
+.COMMAND jivejoin0(BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin0; 
+"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
 .COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin1; 
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
@@ -2498,6 +2501,87 @@ First phase of jivejoin does a positional join of join index with the left table
 Its output is clustered inline on left head-oid in a single pass and consists of two separate 
 (synced on void head) bats, one with the attribute values, the other with the other table oids.
 
+@= jivejoin0
+if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
+	long off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
+	BATloopFast(proj, p, q, xx) {
+		oid curoid = *(oid*) BUN@3(proj,p);
+		int clusterid = (curoid&yy) >> zz;
+		r = BUNptr(attr, off + *(long*) BUN@4(proj, p));
+		@2put(@1, &bn->theap, BUNptr(bn,cluster[clusterid]), @5); 
+		cluster[clusterid]++;
+	} break;
+}
+@c
+#define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
+
+int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
+	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
+	int any = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
+	BAT *bn = *res = BATnew(TYPE_void, any, BATcount(proj));
+	int xx, yy = 1 << *nbits, zz = *shift;
+	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
+	BUN p, q, r;
+
+	if (bn == NULL || cluster == NULL) {
+		GDKerror("jivejoin0: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
+		return GDK_FAIL;
+	}
+	/* find the destination byte-offsets using the radix-count bat */
+	for(xx=0; xx<=yy; xx++) cluster[xx] = 0;
+	BATloopFast(radix_count, p, q, xx) {
+		int idx = *(int*) BUNhloc(radix_count,p);
+		if (idx < 0 || idx >= yy) {
+			BBPreclaim(bn);
+			GDKerror("jivejoin0: illegal cluster id %d in %s.\n", idx, BBP_logical(radix_count->batCacheid));
+			return GDK_FAIL;
+		}
+		cluster[1+idx] += *(int*) BUNtloc(radix_count,p);
+	}
+	cluster[0] = BUNindex(bn, BUNfirst(bn));
+	for(xx=1; xx<=yy; xx++) cluster[xx] += cluster[xx-1];
+	xx = cluster[yy] - cluster[0];
+	if (xx != BATcount(proj)) {
+		BBPreclaim(bn);
+		GDKerror("jivejoin0: total cluster entries %d in %s does not match size %d of %s.\n",
+			xx, BBP_logical(radix_count->batCacheid), BATcount(proj), BBP_logical(proj->batCacheid));
+		return GDK_FAIL;
+	}
+	yy = (yy-1) << zz; /* yy is mask, zz is shift */
+
+/* PETER start experimentation hack; must emulate relational projection cost  */
+	if (any >= TYPE_integer1 && any <= TYPE_pax256) {
+		BAT *bm = BATmirror(attr);
+        	int width = ATOMsize(attr->ttype) >> 2;
+        	int distance = 1 << (parent->ttype - attr->ttype);
+
+		BATloopFast(proj, p, q, xx) {
+			oid curoid = *(oid*) BUNhead(proj,p);
+			int clusterid = (curoid&yy) >> zz;
+			BUNfndVOID(r, attr, BUNtail(proj,p));
+			integerCopy((int*) BUNptr(bn,cluster[clusterid]), bm, r, width, distance);
+			cluster[clusterid]++;
+		}
+	} else 
+/* PETER end experimentation hack */
+		switch(any = ATOMstorage(any)) {
+		case TYPE_chr:	@:jivejoin0(chr,SIMPLE,hloc,tloc,r,0)@  
+		case TYPE_sht:	@:jivejoin0(sht,SIMPLE,hloc,tloc,r,0)@ 
+		case TYPE_int:	
+		case TYPE_flt:	@:jivejoin0(int,SIMPLE,hloc,tloc,r,0)@ 
+		case TYPE_dbl:	
+		case TYPE_lng:	@:jivejoin0(lng,SIMPLE,hloc,tloc,r,0)@ 
+		default:	@:jivejoin0(any,ATOM,head,tail,BUNtail(attr,r),1)
+	}
+
+	/* restore normality in destination bats */
+	bn->batBuns->free += BATcount(proj)*BUNsize(bn);
+	bn->tsorted = 0;
+	if (proj->tkey && attr->tkey) BATkey(BATmirror(bn), TRUE); 
+	BATseqbase(bn, 0);
+	return GDK_SUCCEED;
+} 
+
 @= jivejoin1
 if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
 	long off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
@@ -2511,8 +2595,6 @@ if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
 	} break;
 }
 @c
-#define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
-
 int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
 	int any = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
@@ -2560,7 +2642,7 @@ int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 	bo->batBuns->base += BUNsize(bo)*(BUNindex(bo, BUNfirst(bo))-cluster[0]);
 
 /* PETER start experimentation hack; must emulate relational projection cost  */
-	if (any >= TYPE_integer1 && any <= TYPE_integer256) {
+	if (any >= TYPE_integer1 && any <= TYPE_pax256) {
 		BAT *bm = BATmirror(attr);
         	int width = ATOMsize(attr->ttype) >> 2;
         	int distance = 1 << (parent->ttype - attr->ttype);
@@ -2622,7 +2704,7 @@ int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 	bn->batBuns->base = BUNfirst(bn);
 
 /* PETER start experimentation hack; must emulate relational projection cost  */
-	if (any >= TYPE_integer1 && any <= TYPE_integer256) {
+	if (any >= TYPE_integer1 && any <= TYPE_pax256) {
 		BAT *bm = BATmirror(attr);
         	int width = ATOMsize(attr->ttype) >> 2;
         	int distance = 1 << (parent->ttype - attr->ttype);
