@@ -87,7 +87,8 @@ ODBCInitResult(ODBCStmt *stmt)
 		break;
 	default:
 		/* resultless query */
-		if (mapi_next_result(hdl) == 1)
+		if (mapi_result_error(hdl) == NULL &&
+		    mapi_next_result(hdl) == 1)
 			goto repeat;
 		stmt->State = EXECUTED0;
 		stmt->rowcount = 0;
