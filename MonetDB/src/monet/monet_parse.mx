@@ -595,7 +595,7 @@ statement:
         {   $$ = $2; $2->token = TOK_VAR;                                     }
     |   TOK_CONST constidents ';'
         {   YYSTREE t=$2,tt, n = yylognode(TOK_BUILTIN, TYPE_ptr);
-            int i; extern int CMDconstant();
+            int i; int CMDconstant = 0;
             n->yyval.val.pval = (ptr) CMDconstant;
             $$ = yylognode(TOK_SEQ,0); 
             $2->token = TOK_VAR;

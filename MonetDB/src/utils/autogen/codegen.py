@@ -135,7 +135,10 @@ def do_defs(targets,deps):
 	print ("\t%s" % i)
 
 def do_deps(deps,includes,incmap,cwd):
-  cache = shelve.open(cwd+os.sep+'.cache', "c")
+  cachefile = cwd + os.sep + '.cache'
+  if os.path.exists( cachefile ):
+    os.unlink(cachefile)
+  cache = shelve.open( cachefile, "c")
   for target,depfiles in deps.items():
     for i in depfiles:
       if (includes.has_key(i)):

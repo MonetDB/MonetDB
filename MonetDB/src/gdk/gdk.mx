@@ -1087,19 +1087,19 @@ transaction in which it is created.
 @h
 #define BATDELETE	-9999
 
-BAT*	     	BATnew     (int hdtype, int tltype, int capacity); 
-BAT*		BATtmp     (BAT *b, int mode); 
-BAT*		BATextend  (BAT *b, int newcap); 
-int		BATdestroy (BAT *b);
+extern BAT*	     	BATnew     (int hdtype, int tltype, int capacity); 
+extern BAT*		BATtmp     (BAT *b, int mode); 
+extern BAT*		BATextend  (BAT *b, int newcap); 
+extern int		BATdestroy (BAT *b);
 
 		/* internal */
-BAT*		BATnewstorage (int ht, int tt, int cap);
-BAT*		BATcreatedesc (int ht, int tt); 
-int 		BATfree       (BAT *b);
-int 		BATelmshift   (BAT *b);
-void 		BATsetdims    (BAT *b);
-void 		BATreduce     (BAT *b, int percentage);
-int  		BBPreclaim    (BAT *b);
+extern BAT*		BATnewstorage (int ht, int tt, int cap);
+extern BAT*		BATcreatedesc (int ht, int tt); 
+extern int 		BATfree       (BAT *b);
+extern int 		BATelmshift   (BAT *b);
+extern void 		BATsetdims    (BAT *b);
+extern void 		BATreduce     (BAT *b, int percentage);
+extern int  		BBPreclaim    (BAT *b);
 @
 @}
 

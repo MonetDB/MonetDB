@@ -50,13 +50,13 @@ In the past, we used integer modulo for hashing, with bucket chains of mean size
 This was show to be inferior to direct hashing with integer anding. The new implementation
 reflects this.
 @h
-int	        BAThash      (BAT *b, int *collision);
-Heap*		HASHnew      (Hash *h, int tpe, unsigned int size, unsigned int mask);
-unsigned int	HASHmask     (int cnt);
-BAT*	        HASHprint    (BAT *b);
-void	        HASHremove   (BAT *b);
-void		HASHdestroy  (BAT *b);
-unsigned int	HASHprobe    (Hash *h, ptr v); 
+extern int	        BAThash      (BAT *b, int *collision);
+extern Heap*		HASHnew      (Hash *h, int tpe, unsigned int size, unsigned int mask);
+extern unsigned int	HASHmask     (int cnt);
+extern BAT*	        HASHprint    (BAT *b);
+extern void	        HASHremove   (BAT *b);
+extern void		HASHdestroy  (BAT *b);
+extern unsigned int	HASHprobe    (Hash *h, ptr v); 
 
 #define mix_sht(X)            (((X)>>7)^(X))
 #define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))

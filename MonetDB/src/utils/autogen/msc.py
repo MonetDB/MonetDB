@@ -118,7 +118,7 @@ def msc_deps(fd,deps,objext, msc):
     for d in deplist:
       fd.write( " " + msc_translate_dir(msc_translate_ext(d),msc) )
     fd.write("\n");
-    if (ext == "glue.h"):
+    if (ext == "glue.c"):
 	fd.write( "\t$(MEL) $(INCLUDES) -o $@ -glue $<\n" );
     if (ext == "proto.h"):
 	fd.write( "\t$(MEL) $(INCLUDES) -o $@ -proto $<\n" );
@@ -162,6 +162,8 @@ def msc_binary(fd, var, binmap, msc ):
     t,ext = string.split(target,".",1)
     if (ext == "o"):
       srcs = srcs + " " + t + ".obj" 
+    elif (ext == "glue.o"):
+      srcs = srcs + " " + t + ".glue.obj" 
     elif (ext in hdrs_ext):
       HDRS.append(target)
     elif (ext in scripts_ext):
@@ -198,6 +200,7 @@ def msc_bins(fd, var, binsmap, msc ):
     name = binsmap["NAME"][0] # use first name given
   if (binsmap.has_key('MTSAFE')):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
+
   for binsrc in binsmap['SOURCES']:
     bin,ext = string.split(binsrc,".", 1) 	
     if (ext not in automake_ext):
@@ -216,6 +219,8 @@ def msc_bins(fd, var, binsmap, msc ):
         t,ext = string.split(target,".",1)
         if (ext == "o"):
           srcs = srcs + " " + t + ".obj" 
+        elif (ext == "glue.o"):
+          srcs = srcs + " " + t + ".glue.obj" 
 	elif (ext in hdrs_ext):
 	  HDRS.append(target)
         elif (ext in scripts_ext):
@@ -276,6 +281,8 @@ def msc_library(fd, var, libmap, msc ):
     t,ext = string.split(target,".",1)
     if (ext == "o"):
       srcs = srcs + " " + t + ".obj" 
+    elif (ext == "glue.o"):
+      srcs = srcs + " " + t + ".glue.obj" 
     elif (ext in hdrs_ext):
       HDRS.append(target)
     elif (ext in scripts_ext):
@@ -326,6 +333,8 @@ def msc_libs(fd, var, libsmap, msc ):
         t,ext = string.split(target,".",1)
         if (ext == "o"):
           srcs = srcs + " " + t + ".obj" 
+        elif (ext == "glue.o"):
+          srcs = srcs + " " + t + ".glue.obj" 
         elif (ext in scripts_ext):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)

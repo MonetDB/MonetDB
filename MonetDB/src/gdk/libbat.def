@@ -187,8 +187,20 @@ EXPORTS
 	dbl_nil
 	lng_nil
 	str_nil
+	strFromStr
+	strToStr 
+	strHash 
+	strPut
+	strHeap     
+	strLen     
+	strCmp    
+	strNil   
+	strHeapConvert
+	strElimDoubles
+	strLocate    
+	strHeapCheck
 	GDKsilent
-	BBP_dirty
+	BBP_dirty 
 	BBPsize
 	BBP
 	BBP_curstamp
@@ -342,7 +354,7 @@ EXPORTS
 	chrFromStr
 	fltFromStr
 	dblFromStr
-	strFromStr
+	OIDfromStr
 	BUNfastins
 	BUNins 
 	BATins  
@@ -351,7 +363,6 @@ EXPORTS
 	BUNdelete
 	BATdel   
 	BATdelHead
-	BATdelall
 	BUNreplace
 	BUNinplace
 	BATreplace
@@ -370,3 +381,23 @@ EXPORTS
 	BATseqbase 
 	BATsetaccess
 	BATgetaccess
+	BATnew 
+	BATtmp  
+	BATextend
+	BATdestroy
+	BATnewstorage
+	BATcreatedesc
+	BATfree     
+	BATelmshift
+	BATsetdims
+	BATreduce
+	BBPreclaim 
+	BAThash
+	HASHnew
+	HASHmask
+	HASHprint
+	HASHremove
+	HASHdestroy
+	HASHprobe
+	ACC_index
+	ACC_hash

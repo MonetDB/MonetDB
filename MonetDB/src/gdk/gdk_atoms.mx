@@ -81,7 +81,7 @@ int		ptrToStr       (str* dst, int* len, ptr*  src);
 extern int		bitFromStr     (str  src, int* len, bit** dst);
 int		bitToStr       (str* dst, int* len, bit*  src);
 
-int		OIDfromStr     (str  src, int* len, oid** dst);
+extern int		OIDfromStr     (str  src, int* len, oid** dst);
 int		OIDtoStr       (str* dst, int* len, oid*  src);
 
 extern int		shtFromStr     (str  src, int* len, sht** dst);
@@ -104,18 +104,17 @@ int		dblToStr       (str* dst, int* len, dbl*  src);
 int		dblCmp         (dbl* r, dbl* l);
 
 extern int		strFromStr     (str  src, int* len, str*  dst);
-int		strToStr       (str* dst, int* len, str   src);
-unsigned int 	strHash        (str s); 
-int		strGet         (Heap* b, int *off, int *len, str *dst);
-int		strPut         (Heap* b, int *off, str src);
-void 		strHeap        (Heap* d, int cap);
-int		strLen         (str s);
-int		strCmp         (str r, str l);
-int		strNil         (str s);
-void 		strHeapConvert (Heap *h);
-int		strElimDoubles (Heap *h);
-int 		strLocate      (Heap *h, str v);
-int		strHeapCheck   (Heap *h, HeapRepair *hr);
+extern int		strToStr       (str* dst, int* len, str   src);
+extern unsigned int 	strHash        (str s); 
+extern int		strPut         (Heap* b, int *off, str src);
+extern void 		strHeap        (Heap* d, int cap);
+extern int		strLen         (str s);
+extern int		strCmp         (str r, str l);
+extern int		strNil         (str s);
+extern void 		strHeapConvert (Heap *h);
+extern int		strElimDoubles (Heap *h);
+extern int 		strLocate      (Heap *h, str v);
+extern int		strHeapCheck   (Heap *h, HeapRepair *hr);
 
 extern Heap	str_smallHeap;
 
