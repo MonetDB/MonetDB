@@ -712,8 +712,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 96 ]
-[ 96 ]
+[ 97 ]
+[ 97 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature														| help													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -802,6 +802,7 @@ Module: "monettime"
 [ "rule",			  "PROC:      ",  "rule(int, str, int, int, int) : rule",										  "not available"											  ]
 [ "seconds",			  "COMMAND:   ",  "seconds(daytime) : int",												  "extracts seconds from daytime (value between 0 and 59)"						  ]
 [ "start_dst",			  "COMMAND:   ",  "start_dst(tzone) : rule",												  "extract rule that determines start of DST from tzone (!DS2.2)."					  ]
+[ "test_alarm",			  "PROC:      ",  "test_alarm() : void",												  "not available"											  ]
 [ "test_monettime",		  "PROC:      ",  "test_monettime() : void",												  "not available"											  ]
 [ "timestamp",			  "COMMAND:   ",  "timestamp(date, daytime) : timestamp",										  "creates a timestamp from (date,daytime) parameters (in the local timezone)."				  ]
 [ "timestamp",			  "COMMAND:   ",  "timestamp(date, daytime, tzone) : timestamp",									  "creates a timestamp from (date,daytime,tzone) parameters (!DS2.2)."					  ]
