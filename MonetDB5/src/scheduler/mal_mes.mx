@@ -100,6 +100,88 @@ of an operation is often immediately consumed.
 The underlying action involves an exchange operator, which should be
 aware of the nested structure of the program.
 
+@+ The strawman's approach
+The analysis of basic algebraic blocks is quite complicated, because
+it effectively requires semantic knowledge of both MAL execution
+and the pecularities of each (user defined) function.
+
+An easier way out of this problem runs as follows. If p is too large
+the operations in which it is used receive the information piece-wise.
+This means we have to define those functions in a library anyway, because
+the GDK kernel implementation does not support incremental execution.
+
+Any occurrence of such a function call becomes the target of a rewrite
+by redoing the operation p(). Conceptually the first step in the case
+above is to transform it to.
+@example
+	r:= select(R, 0, 100000);
+	s:= select(S, 0, 200000);
+	t:= select(s, 0,30);
+	u:= f("something");
+	w:= bat(p);
+barrier (b1,rf):= chopper.newChunkIterator(r,1024);
+barrier (b2,sf):= chopper.newChunkIterator(s,1024);
+	p:= prod(rf,sf);
+	wi:= +(p,4);
+	insert(w,wi)
+redo (b2,sf):= chopper.hasMoreChunks(s,1024);
+redo (b1,rf):= chopper.hasMoreChunks(r,1024);
+exit b2;
+exit b1;
+	v:= sum(w);
+barrier z:= count(p);
+	...
+@end example
+Ofcourse, this rewrites does not solve the problem, because now
+the accumulator bat w becomes too large and the process should
+be recursively applied to its uses.
+The leads to
+@example
+	r:= select(R, 0, 100000);
+	s:= select(S, 0, 200000);
+	t:= select(s, 0,30);
+	u:= f("something");
+	w:= bat(p);
+	v:= 0;
+barrier (b1,rf):= chopper.newChunkIterator(r,1024);
+barrier (b2,sf):= chopper.newChunkIterator(s,1024);
+	p:= prod(rf,sf);
+	wi:= +(p,4);
+	vc:= sum(wi);
+	v:= v+vc;
+	insert(w,wi)
+redo (b2,sf):= chopper.hasMoreChunks(s,1024);
+redo (b1,rf):= chopper.hasMoreChunks(r,1024);
+exit b2;
+exit b1;
+barrier z:= count(p);
+	...
+@end example
+
+The last statement is replaced by 
+@example
+	pcount:= 0:lng;
+barrier (b1,rf):= chopper.newChunkIterator(r,1024);
+barrier (b2,sf):= chopper.newChunkIterator(s,1024);
+	p:= prod(rf,sf);
+	c:= count(p);
+	pcount:= pcount+c;
+redo (b2,sf):= chopper.hasMoreChunks(s,1024);
+redo (b1,rf):= chopper.hasMoreChunks(r,1024);
+barrier z:= pcount
+	...
+@end example
+
+and may have to be re-evaluated within the barrier block if p
+is changed. (We ignore the semantic optimization step to replace p with
+a simple multiplication expression over the counts of the operands.)
+
+Since the operation v:=sum(w) could be anywhere in the
+plan, we should guarantee that the repeated execution of
+the iterator still produces the same result. This simply
+calls for making a readonly copy of the operands going into the
+product operation.
+
 @+ Optimization issues
 Once a target operation has been isolated for chopping it up
 into a loop, it becomes mandatory to find an optimal choice.
@@ -112,6 +194,13 @@ step, which means you find fragment size P and Q, such that
 This under the global constraint to leave room for the body to work, which
 could be determined  calculating the maximum volume needed.
 (is a separate scheduler support routine)
+
+The strawman's approach is a classical exchange of storage for
+cpu cycles. It is used as our first implementation under the
+assumption the need for chopping the same operand twice is a rare event.
+The simplicity of the algorithm makes the optimizer much faster and less
+error prone.
+
 @+ Preliminary results.
 The test suite contains a simple test (tst950) that measures
 the gross impact of this process. It aims at a cross-product
