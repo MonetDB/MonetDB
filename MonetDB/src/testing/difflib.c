@@ -284,13 +284,13 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
       pipe_fp=Rfopen(pipe_fn);
       wc_diff_fp=Afopen(wc_diff_fn);
       while(fgets(pipe_ln,BUFLEN,pipe_fp)) {
-          if ( strncmp(pipe_ln,"@@ -",4) && \
-               strncmp(pipe_ln,"+++ ",4) && \
-               strncmp(pipe_ln,"--- ",4) && \
-               strncmp(pipe_ln," @+-",4) && \
-               strncmp(pipe_ln,"+@+-",4) && \
+          if ( strncmp(pipe_ln,"@@ -",4) &&
+               strncmp(pipe_ln,"+++ ",4) &&
+               strncmp(pipe_ln,"--- ",4) &&
+               strncmp(pipe_ln," @+-",4) &&
+               strncmp(pipe_ln,"+@+-",4) &&
                strncmp(pipe_ln,"-@+-",4)     ) {
-              fprintf(wc_diff_fp,pipe_ln);
+              fprintf(wc_diff_fp,"%s",pipe_ln);
           }
       }
       fflush(wc_diff_fp); fclose(wc_diff_fp);
