@@ -1040,13 +1040,12 @@ differ significantly.
 
 @= binsemijoin
 {	BUN lp, lq;
-	BAT *rr = BATmirror(r);
 	int xx, yy;
 
         if (cpy == l) {
    		BATloopFast(l, lp, lq, xx) {
 			ptr v = BUNh@1(l,lp);
-			if (SORTfnd_@2(rr, v)) {
+			if (SORTfnd_@2(r, v)) {
 				BUNfastins(bn, v, BUNtail(l,lp));
 			}
 		}
@@ -1054,7 +1053,7 @@ differ significantly.
 		BATloopFast(l, lp, lq, xx) {
 			BUN rp, rq;
 			ptr v = BUNh@1(l,lp);
-			SORTloop_@2(rr, rp, rq, v, v, yy) {
+			SORTloop_@2(BATmirror(r), rp, rq, v, v, yy) {
 		    		BUNfastins(bn, v, BUNtail(r,rp));
 			}
 		}
