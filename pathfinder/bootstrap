@@ -94,7 +94,7 @@ rm -rf autom4*.cache
 
 # temporarly create fake-configure.in to give autoconf-wrappers a hint, which version we need:
 cat << "EOF" > configure.in
-AC_PREREQ(2.53)
+AC_PREREQ(2.57)
 AC_INIT(src/utils/Mx/Mx.h)
 EOF
 
@@ -122,7 +122,7 @@ elif [ "$_AM_VERSION" -lt "$_REQ_AM_VERSION" ]; then
 fi
 
 
-REQ_AC_VERSION="2.53"
+REQ_AC_VERSION="2.57"
 if [ ! "`type -p autoconf`" ]; then
 	echo "no autoconf found."
 	echo "We require (at least) autoconf $REQ_AC_VERSION."
