@@ -304,7 +304,7 @@ def am_headers(fd, var, headers, am):
             fd.write("install-exec-local-%s: %s\n" % (header, header))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, header))
-            fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
+            fd.write("\t$(INSTALL_DATA) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
             fd.write("uninstall-exec-local-%s: \n" % header)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
