@@ -46,7 +46,7 @@ autoconf
 cat << "EOF" | patch configure
 --- configure~	Wed May 23 20:46:51 2001
 +++ configure	Wed May 23 20:49:57 2001
-@@ -1061,7 +1061,7 @@
+@@ -1046,7 +1046,7 @@
    echo $ac_n "(cached) $ac_c" 1>&6
  else
    echo 'void f(){}' > conftest.c
