@@ -1019,13 +1019,12 @@ stmt *optimize( mvc *c, stmt *s ){
 
 	case st_pivot: {
 
+		stmt *filter;
 		stmt *ns = optimize(c, s->op2.stval); /* optimize ptable */
 		stmt *np = find_pivot(ns, s->t);
 		stmt_destroy(ns);
 
-		stmt *filter = 
-			op_stmt2filter(stmt_dup(s->op2.stval->op3.stval));
-
+		filter = op_stmt2filter(stmt_dup(s->op2.stval->op3.stval));
 		if (filter){
 			np = stmt_semijoin(np, optimize(c, filter));
 			stmt_destroy(filter);
