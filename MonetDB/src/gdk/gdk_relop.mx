@@ -235,12 +235,24 @@ static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	r_start = r_end = BUNfirst(r);
 
 	switch(loc) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr: @:mergejoin(simple,loc,loc,chr)@; break;
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht: @:mergejoin(simple,loc,loc,sht)@; break;
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int: @:mergejoin(simple,loc,loc,int)@; break;
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt: @:mergejoin(simple,loc,loc,flt)@; break;
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng: @:mergejoin(simple,loc,loc,lng)@; break;
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl: @:mergejoin(simple,loc,loc,dbl)@; break;
+#endif
 	default: if (l->tvarsized) {
 		       var = ATOMstorage(l->ttype);
 		       if (r->hvarsized) {
@@ -348,12 +360,20 @@ BAT* BAThashjoin(BAT* l, BAT* r, size_t estimate) {
 
         if (BATprepareHash(r)) return NULL;
         switch(any = ATOMstorage(l->ttype)) {
+#ifndef NOEXPAND_CHR
         case TYPE_chr: @:hashjoin(simple,chr,tloc)@
+#endif
+#ifndef NOEXPAND_SHT
         case TYPE_sht: @:hashjoin(simple,sht,tloc)@
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
         case TYPE_int: 
         case TYPE_flt: @:hashjoin(simple,int,tloc)@
+#endif
+#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
         case TYPE_dbl:
         case TYPE_lng: @:hashjoin(simple,lng,tloc)@
+#endif
         default:       @:hashjoin(atom,any,tail);
         }
 
@@ -987,12 +1007,20 @@ BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
 			return NULL;
 		}
 		switch(any) {
+#ifndef NOEXPAND_CHR
 		case TYPE_chr: @:outerjoinloop(simple,chr)@ 
+#endif
+#ifndef NOEXPAND_SHT
 		case TYPE_sht: @:outerjoinloop(simple,sht)@ 
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int: 
 		case TYPE_flt: @:outerjoinloop(simple,int)@ 
+#endif
+#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl: 
 		case TYPE_lng: @:outerjoinloop(simple,lng)@
+#endif
 		default:       @:outerjoinloop(atom,any)@
 		}
 		bn->tsorted = 0;
@@ -1293,12 +1321,24 @@ BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	}
 
 	switch(loc=var=ATOMstorage(l->htype)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr: @:binsemijoin(loc,chr,simple)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht: @:binsemijoin(loc,sht,simple)@
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int: @:binsemijoin(loc,int,simple)@
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt: @:binsemijoin(loc,flt,simple)@
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl: @:binsemijoin(loc,dbl,simple)@
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng: @:binsemijoin(loc,lng,simple)@
+#endif
 	default: if (l->hvarsized) {
 		   if (r->hvarsized) {
 		       @:binsemijoin(var,var,atom)@
@@ -1379,12 +1419,24 @@ BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	}
 
 	switch(loc=var=ATOMstorage(l->htype)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr: @:idxsemijoin(loc,chr,simple)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht: @:idxsemijoin(loc,sht,simple)@
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int: @:idxsemijoin(loc,int,simple)@
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt: @:idxsemijoin(loc,flt,simple)@
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl: @:idxsemijoin(loc,dbl,simple)@
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng: @:idxsemijoin(loc,lng,simple)@
+#endif
 	default: if (l->hvarsized) {
 		   if (r->hvarsized) {
 		       @:idxsemijoin(var,var,atom)@
@@ -1468,12 +1520,20 @@ BAT *BATrevsemijoin(BAT *l, BAT *r) {
 	if (BATprepareHash(l)) return NULL;
 	if (rdoubles && BATprepareHash(r)) return NULL;
 	switch(any = ATOMstorage(l->htype)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr:	@:revsemijoin(simple,chr,hloc)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht:	@:revsemijoin(simple,sht,hloc)@
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int: 
 	case TYPE_flt:	@:revsemijoin(simple,int,hloc)@
+#endif
+#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl: 
 	case TYPE_lng:	@:revsemijoin(simple,lng,hloc)@
+#endif
 	default:        @:revsemijoin(atom,any,head);
 	}
 	/* propagate properties */

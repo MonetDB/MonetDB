@@ -1976,12 +1976,24 @@ is only relevant for this type..
 Merge scan check to see if head values are sorted (&key) 
 @c
 	switch(ATOMstorage(tpe)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr: @:merge_disprove(simple,chr,loc)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht: @:merge_disprove(simple,sht,loc)@
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int: @:merge_disprove(simple,int,loc)@
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt: @:merge_disprove(simple,flt,loc)@
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng: @:merge_disprove(simple,lng,loc)@
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl: @:merge_disprove(simple,dbl,loc)@
+#endif
 	default:       @:merge_disprove(atom,tpe,ead)@
 	}
 
@@ -2038,12 +2050,20 @@ for determining which algebra commands set properties sub-optimally.
                 	bv->hhash_heap = BATmirror(bv)->thash_heap = hp;
 
                 	switch(ATOMstorage(tpe)) {
+#ifndef NOEXPAND_CHR
                 	case TYPE_chr: @:hash_disprove(_chr,loc)@
+#endif
+#ifndef NOEXPAND_SHT
                 	case TYPE_sht: @:hash_disprove(_sht,loc)@
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
                 	case TYPE_int:
                 	case TYPE_flt: @:hash_disprove(_int,loc)@
+#endif
+#if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
                 	case TYPE_lng:
                 	case TYPE_dbl: @:hash_disprove(_lng,loc)@
+#endif
                 	default:       @:hash_disprove(,ead)@
                 	}
 			BATDEBUG THRprintf(GDKerr, "BATpropcheck(%s) : used hashtable of size %d\n", BBPname(b->batCacheid), lim);

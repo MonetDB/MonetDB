@@ -167,12 +167,24 @@ typedef lng ptrdiff_t;
 
 typedef chr any;
 @:qsort_L_or_G_direction(any)@
+#ifndef NOEXPAND_CHR
 @:qsort_cmpdef(chr)@
+#endif
+#ifndef NOEXPAND_SHT
 @:qsort_cmpdef(sht)@
+#endif
+#ifndef NOEXPAND_INT
 @:qsort_cmpdef(int)@
+#endif
+#ifndef NOEXPAND_FLT
 @:qsort_cmpdef(flt)@
+#endif
+#ifndef NOEXPAND_DBL
 @:qsort_cmpdef(dbl)@
+#endif
+#ifndef NOEXPAND_LNG
 @:qsort_cmpdef(lng)@
+#endif
 
 @= qsort_cmpdef
 #define @1_LE(a,b) (*(@1*) (a) <= *(@1*) (b))
@@ -213,7 +225,8 @@ typedef chr any;
 
 @= qsort_algo
 static 
-void GDKqsort_@1_@2_@3@5(char *a, size_t n, buf_t *buf) {
+void GDKqsort_@1_@2_@3@5(char *a, size_t n, buf_t *buf)
+{
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
 	size_t r;
 	int swap_cnt;
@@ -310,7 +323,8 @@ if ((((size_t) a)&7) || width != 8) {
 } break;
 
 @= qsort
-void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc) {
+void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
+{
 	int i = 0;
 	buf_t buf;
 
@@ -331,12 +345,24 @@ void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc) {
 
 	/* factorization by comparsion type */
 	switch(ATOMstorage(tpe)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr: @:call_iterate_or_register_swapmethod(@1,chr)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht: @:call_iterate_or_register_swapmethod(@1,sht)@
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int: @:call_iterate_or_register_swapmethod(@1,int)@
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt: @:call_iterate_or_register_swapmethod(@1,flt)@
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng: @:call_iterate_or_register_swapmethod(@1,lng)@
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl: @:call_iterate_or_register_swapmethod(@1,dbl)@
+#endif
 	default:       @:call_iterate_or_register_swapmethod(@1,any)@
 	}
 }
@@ -345,7 +371,8 @@ void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc) {
 @:qsort(_rev)@
 
 @ test
-main(int argc, char** argv) {
+main(int argc, char** argv)
+{
         int i, n = atoi(argv[1]), m = atoi(argv[2]);
         float d = 0.0, f = d, *buf = (float*) malloc(2*n*sizeof(float));
 

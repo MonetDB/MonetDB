@@ -320,12 +320,20 @@ BAT* BAThash(BAT *b, size_t masksize) {
 		}
 
 		switch(tpe) {
+#ifndef NOEXPAND_CHR
 		case TYPE_chr: @:starthash(chr,hloc)@
+#endif
+#ifndef NOEXPAND_SHT
 		case TYPE_sht: @:starthash(sht,hloc)@
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
 		case TYPE_flt: @:starthash(int,hloc)@
+#endif
+#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl:
 		case TYPE_lng: @:starthash(lng,hloc)@
+#endif
 		default:       @:starthash(any,head)@
 		}
 	} while(r < p && mask < cnt && (mask <<= 2));
@@ -333,12 +341,20 @@ BAT* BAThash(BAT *b, size_t masksize) {
 	/* finish the hashtable with the current mask */
 	p = r;
 	switch(tpe) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr: @:finishhash(chr,hloc)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht: @:finishhash(sht,hloc)@
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
 	case TYPE_flt: @:finishhash(int,hloc)@
+#endif
+#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
 	case TYPE_lng: @:finishhash(lng,hloc)@
+#endif
 	default:       @:finishhash(any,head)@
 	}
         b->hhash_heap = BATmirror(b)->thash_heap = hp; 
@@ -353,14 +369,22 @@ routine @%HASHprobe@.
 @c
 hash_t HASHprobe(Hash *h, ptr v) {
 	switch(ATOMstorage(h->type)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr: return hash_chr(*h,v);
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht: return hash_sht(*h,v);
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
 	case TYPE_flt: return hash_int(*h,v);
+#endif
+#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
 	case TYPE_lng: return hash_lng(*h,v);
+#endif
+	default:       return hash_any(*h,v);
 	}
-	return hash_any(*h,v);
 }
 
 BAT *HASHprint(BAT *b) {
@@ -639,12 +663,24 @@ Use randomized order for insert elements to get a nicely balanced tree
 		lnk = idx->base; 
 
 		switch(ATOMstorage(b->htype)) {
+#ifndef NOEXPAND_CHR
 		case TYPE_chr:	@:idxinsloop(simple,chr,loc)@
+#endif
+#ifndef NOEXPAND_SHT
 		case TYPE_sht:	@:idxinsloop(simple,sht,loc)@
+#endif
+#ifndef NOEXPAND_INT
 		case TYPE_int:	@:idxinsloop(simple,int,loc)@
+#endif
+#ifndef NOEXPAND_FLT
 		case TYPE_flt:	@:idxinsloop(simple,flt,loc)@
+#endif
+#ifndef NOEXPAND_DBL
 		case TYPE_dbl:	@:idxinsloop(simple,dbl,loc)@
+#endif
+#ifndef NOEXPAND_LNG
 		case TYPE_lng:	@:idxinsloop(simple,lng,loc)@
+#endif
 		default:
 			if (b->hvarsized) {
 				@:idxinsloop(atom,b->htype,var)@
@@ -685,12 +721,24 @@ construction in one pass from a sorted histogram
 		}
 		if (cur == cnt) 
 		switch(ATOMstorage(b->htype)) {
+#ifndef NOEXPAND_CHR
 		case TYPE_chr:	@:idxhistoloop(chr,loc)@
+#endif
+#ifndef NOEXPAND_SHT
 		case TYPE_sht:	@:idxhistoloop(sht,loc)@
+#endif
+#ifndef NOEXPAND_INT
 		case TYPE_int:	@:idxhistoloop(int,loc)@
+#endif
+#ifndef NOEXPAND_FLT
 		case TYPE_flt:	@:idxhistoloop(flt,loc)@
+#endif
+#ifndef NOEXPAND_DBL
 		case TYPE_dbl:	@:idxhistoloop(dbl,loc)@
+#endif
+#ifndef NOEXPAND_LNG
 		case TYPE_lng:	@:idxhistoloop(lng,loc)@
+#endif
 		default:
 			if (b->hvarsized) {
 				@:idxhistoloop(var,var)@
@@ -768,17 +816,30 @@ BUN IDXfnd(BAT *b, ptr v){
 	FATALcheck(v == NULL, "IDXfnd: value expected"); 
 
 	switch(ATOMstorage(b->htype)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr:	return IDXfnd_chr(b,v);
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht:	return IDXfnd_sht(b,v);
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int:	return IDXfnd_int(b,v);
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt:	return IDXfnd_flt(b,v);
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl:	return IDXfnd_dbl(b,v);
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng:	return IDXfnd_lng(b,v);
+#endif
+	default:
+		if (b->hvarsized) {
+			return IDXfnd_var(b,v);
+		}
+		return IDXfnd_loc(b,v);
 	}
-	if (b->hvarsized) {
-		return IDXfnd_var(b,v);
-	}
-	return IDXfnd_loc(b,v);
 }
 
 @- 
@@ -860,17 +921,30 @@ BUN *IDXfnd@1(BAT *b, ptr v){
 	if (BATcount(b) <= 0) return b->H->idx.first;
 
 	switch(ATOMstorage(b->htype)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr:	return IDXfnd@1_chr(b,v);
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht:	return IDXfnd@1_sht(b,v);
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int:	return IDXfnd@1_int(b,v);
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt:	return IDXfnd@1_flt(b,v);
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl:	return IDXfnd@1_dbl(b,v);
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng:	return IDXfnd@1_lng(b,v);
+#endif
+	default:
+		if (b->hvarsized) {
+			return IDXfnd@1_var(b,v);
+		}
+		return IDXfnd@1_loc(b,v);
 	}
-	if (b->hvarsized) {
-		return IDXfnd@1_var(b,v);
-	}
-	return IDXfnd@1_loc(b,v);
 }
 @c
 @:idxfndwhich(first)@
@@ -1045,12 +1119,24 @@ BUN SORTfnd_@2(BAT *m, ptr v) {
 BUN SORTfnd@2(BAT *b, ptr v) {
 	if (b && b->@1sorted)
 	switch(ATOMstorage(b->@1type)) {
+#ifndef NOEXPAND_CHR
 	case TYPE_chr:	return SORTfnd@2_chr(b,v);
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht:	return SORTfnd@2_sht(b,v);
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int:	return SORTfnd@2_int(b,v);
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt:	return SORTfnd@2_flt(b,v);
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl:	return SORTfnd@2_dbl(b,v);
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng:	return SORTfnd@2_lng(b,v);
+#endif
 	default:
 		if (b->@1varsized) {
 			return SORTfnd@2_var(b,v);
