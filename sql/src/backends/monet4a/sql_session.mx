@@ -597,7 +597,7 @@ These lines should be eaten away into the prompt is encountered.
 		stream_flush(out);
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
 		if (stream_read(in, start, 1, 1) != 1) {
-			error(out, "!ERROR:Connection terminated");
+			/*error(out, "!ERROR:Connection terminated");*/
 			break;
 		}
 		if (*start != 'S') {
