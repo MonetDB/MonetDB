@@ -11,3 +11,13 @@ do
         Mx -i -B -H1 $f
         mv $b.bdy.texi ${MONET5_PREFIX}/share/MonetDB5
 done
+
+cd ${MONETDB_PREFIX}/../src/gdk
+ls *mx
+for f in  `ls *.mx`
+do
+	b=`basename $f .mx`
+	echo "---->" $f $b.bdy.texi 
+        Mx -i -B -H1 $f
+        mv $b.bdy.texi ${MONET5_PREFIX}/share/MonetDB5
+done

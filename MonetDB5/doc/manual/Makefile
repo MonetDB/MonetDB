@@ -2,7 +2,7 @@
 #for off-line printing and creates a webstructure for
 #inclusion in the MonetDB5 website
 
-ps,pdf: 
+pdf: 
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
@@ -28,3 +28,12 @@ xml:
 	)
 	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB5.xml /ufs/mk/cwi/public_html 
 	echo "XML file created"
+
+gdkpdf: 
+	mkbdy; cp gdkmanual.texi ${MONET5_PREFIX}/share/MonetDB5
+	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
+	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	pdftex gdkmanual.texi \
+	)
+	cp ${MONET5_PREFIX}/share/MonetDB5/gdkmanual.pdf /ufs/mk/cwi/public_html 
+	echo "Manual created" 
