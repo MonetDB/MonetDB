@@ -133,6 +133,36 @@ PFmil_lit_oid (oid o)
 }
 
 /**
+ * Create a MIL tree node representing a literal double.
+ * (The result will be a MIL leaf node, with kind #m_lit_dbl and
+ * semantic value @a d.)
+ *
+ * @param d The double value to represent in MIL
+ */
+PFmil_t *
+PFmil_lit_dbl (double d)
+{
+    PFmil_t *ret = leaf (m_lit_dbl);
+    ret->sem.d = d;
+    return ret;
+}
+
+/**
+ * Create a MIL tree node representing a literal boolean.
+ * (The result will be a MIL leaf node, with kind #m_lit_bit and
+ * semantic value @a b.)
+ *
+ * @param b The boolean value to represent in MIL
+ */
+PFmil_t *
+PFmil_lit_bit (bool b)
+{
+    PFmil_t *ret = leaf (m_lit_bit);
+    ret->sem.b = b;
+    return ret;
+}
+
+/**
  * Create a MIL tree node representing a variable.
  * (The result will be a MIL leaf node, with kind #m_var and
  * semantic value @a name (in the @c ident field).)
@@ -403,21 +433,48 @@ PFmil_mcast (const PFmil_t *type, const PFmil_t *e)
 }
 
 /**
- * Arithmetic plus operator
+ * Arithmetic add operator
  */
 PFmil_t *
-PFmil_plus (const PFmil_t *a, const PFmil_t *b)
+PFmil_add (const PFmil_t *a, const PFmil_t *b)
 {
-    return wire2 (m_plus, a, b);
+    return wire2 (m_add, a, b);
 }
 
 /**
  * Multiplexed arithmetic plus operator
  */
 PFmil_t *
-PFmil_mplus (const PFmil_t *a, const PFmil_t *b)
+PFmil_madd (const PFmil_t *a, const PFmil_t *b)
 {
-    return wire2 (m_mplus, a, b);
+    return wire2 (m_madd, a, b);
+}
+
+/**
+ * Multiplexed arithmetic subtract operator
+ */
+PFmil_t *
+PFmil_msub (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_msub, a, b);
+}
+
+/**
+ * Multiplexed arithmetic multiply operator
+ */
+PFmil_t *
+PFmil_mmult (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mmult, a, b);
+}
+
+/**
+ * Multiplexed arithmetic divide operator
+ */
+PFmil_t *
+PFmil_mdiv (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mdiv, a, b);
 }
 
 PFmil_t *

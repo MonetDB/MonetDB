@@ -34,8 +34,11 @@
                     | expression '.max'                        <m_max>
                     | Type '(' expression ')'                  <m_cast>
                     | '[' Type '](' expression ')'             <m_mcast>
-                    | '+(' expression ',' expression ')'       <m_plus>
-                    | '[+](' expression ',' expression ')'     <m_mplus>
+                    | '+(' expression ',' expression ')'       <m_add>
+                    | '[+](' expression ',' expression ')'     <m_madd>
+                    | '[-](' expression ',' expression ')'     <m_msub>
+                    | '[*](' expression ',' expression ')'     <m_mmult>
+                    | '[/](' expression ',' expression ')'     <m_mdiv>
 
    literal          : IntegerLiteral                           <m_lit_int>
                     | StringLiteral                            <m_lit_str>
@@ -104,8 +107,11 @@ static char *ID[] = {
     , [m_sort]       "sort"
     , [m_ctrefine]   "CTrefine"
 
-    , [m_plus]       "+"
-    , [m_mplus]      "[+]"
+    , [m_add]        "+"
+    , [m_madd]       "[+]"
+    , [m_msub]       "[-]"
+    , [m_mmult]      "[*]"
+    , [m_mdiv]       "[/]"
 
     , [m_max]        "max"
 
@@ -311,9 +317,15 @@ print_expression (PFmil_t * n)
             break;
 
         /* expression : '+(' expression ',' expression ')' */
-        case m_plus:
+        case m_add:
         /* expression : '[+](' expression ',' expression ')' */
-        case m_mplus:
+        case m_madd:
+        /* expression : '[-](' expression ',' expression ')' */
+        case m_msub:
+        /* expression : '[*](' expression ',' expression ')' */
+        case m_mmult:
+        /* expression : '[/](' expression ',' expression ')' */
+        case m_mdiv:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -325,6 +337,8 @@ print_expression (PFmil_t * n)
         case m_lit_int:
         case m_lit_str:
         case m_lit_oid:
+        case m_lit_dbl:
+        case m_lit_bit:
         case m_nil:
             print_literal (n);
             break;
@@ -374,6 +388,16 @@ print_literal (PFmil_t * n)
             milprintf ("%u@0", n->sem.o);
             break;
 
+        /* literal : DblLiteral */
+        case m_lit_dbl:
+            milprintf ("dbl(%g)", n->sem.d);
+            break;
+
+        /* literal : BitLiteral */
+        case m_lit_bit:
+            milprintf (n->sem.b ? "true" : "false");
+            break;
+
         /* literal : 'nil' */
         case m_nil:
             milprintf ("nil");
@@ -390,10 +414,12 @@ static void
 print_type (PFmil_t *n)
 {
     char *types[] = {
-          [m_oid]    "oid"
-        , [m_void]   "void"
-        , [m_int]    "int"
-        , [m_str]    "str"
+          [m_oid]   = "oid"
+        , [m_void]  = "void"
+        , [m_int]   = "int"
+        , [m_str]   = "str"
+        , [m_dbl]   = "dbl"
+        , [m_bit]   = "bit"
     };
 
     if (n->kind != m_type) {

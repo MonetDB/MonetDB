@@ -47,17 +47,21 @@
 #define TWIG_MAXCHILD PFALG_OP_MAXCHILD
 
 static int TWIG_ID[] = {
-      [aop_lit_tbl]   lit_tbl    /**< literal table */
-    , [aop_disjunion] disjunion  /**< union two relations with same schema */
-    , [aop_cross]     cross      /**< cross product (Cartesian product) */
-    , [aop_eqjoin]    eqjoin     /**< cross product (Cartesian product) */
-    , [aop_project]   project    /**< projection and renaming operator */
-    , [aop_rownum]    rownum     /**< consecutive number generation */
+      [aop_lit_tbl]      = lit_tbl    /**< literal table */
+    , [aop_disjunion]    = disjunion  /**< union two relations w/ same schema */
+    , [aop_cross]        = cross      /**< cross product (Cartesian product) */
+    , [aop_eqjoin]       = eqjoin     /**< cross product (Cartesian product) */
+    , [aop_project]      = project    /**< projection and renaming operator */
+    , [aop_rownum]       = rownum     /**< consecutive number generation */
 
-    , [aop_serialize] serialize  /**< serialize algebra expression below
-                                      (This is mainly used explicitly match
-                                      the expression root during the Twig
-                                      pass.) */
+    , [aop_serialize]    = serialize  /**< serialize algebra expression below
+                                           (This is mainly used explicitly match
+                                           the expression root during the Twig
+                                           pass.) */
+    , [aop_num_add]      = num_add      /**< arithmetic plus operator */
+    , [aop_num_subtract] = num_subtract /**< arithmetic plus operator */
+    , [aop_num_multiply] = num_multiply /**< arithmetic plus operator */
+    , [aop_num_divide]   = num_divide   /**< arithmetic plus operator */
 };
 
 /** twig: setup twig */
@@ -73,6 +77,10 @@ static int TWIG_ID[] = {
 #undef project
 #undef rownum
 #undef serialize
+#undef num_add
+#undef num_subtract
+#undef num_multiply
+#undef num_divide
 
 /* ----------------------- End of twig setup -------------------- */
 
@@ -84,16 +92,20 @@ static void zero_refctr (PFalg_op_t *n);
 static void inc_refctr (PFalg_op_t *n);
 static void deallocate (PFalg_op_t *n, int count);
 static PFmil_ident_t new_var (void);
-static PFmil_ident_t bat (PFmil_ident_t, PFalg_att_t, PFalg_simple_type_t);
+static PFmil_ident_t bat (const PFmil_ident_t,
+                          const PFalg_att_t,
+                          PFalg_simple_type_t);
 
 static PFmil_t * literal (PFalg_atom_t atom);
 
 /** MIL implementation types for algebra types */
 static PFmil_type_t impl_types[] = {
-      [aat_nat]    m_oid
-    , [aat_int]    m_int
-    , [aat_str]    m_str
-    , [aat_node]   m_oid
+      [aat_nat]   = m_oid
+    , [aat_int]   = m_int
+    , [aat_str]   = m_str
+    , [aat_node]  = m_oid
+    , [aat_dec]   = m_dbl
+    , [aat_bln]   = m_bit
 };
 
 /** implementation type for a given algebra type, as a MIL node */
@@ -247,7 +259,9 @@ new_var (void)
  * @return A MIL identifier of the form "<prefix>_<attribute>_<type>"
  */
 static PFmil_ident_t
-bat (PFmil_ident_t prefix, PFalg_att_t attribute, PFalg_simple_type_t type)
+bat (const PFmil_ident_t prefix,
+     const PFalg_att_t attribute,
+     PFalg_simple_type_t type)
 {
     PFmil_ident_t ret;
     static const char *type_ident[] = {
@@ -288,10 +302,13 @@ literal (PFalg_atom_t atom)
 {
     switch (atom.type) {
 
+        case aat_nat:  return lit_oid (atom.val.nat);
         case aat_int:  return lit_int (atom.val.int_);
         case aat_str:  return lit_str (atom.val.str);
         case aat_node: return lit_oid (atom.val.node);
-        case aat_nat:  return lit_oid (atom.val.nat);
+        case aat_dec:  return lit_dbl (atom.val.dec);
+        case aat_dbl:  return lit_dbl (atom.val.dec);
+        case aat_bln:  return lit_bit (atom.val.bln);
 
         default:
                        PFoops (OOPS_FATAL,
@@ -393,6 +410,26 @@ attr_type (PFalg_op_t *n, PFalg_att_t attname)
             attname);
 }
 
+/**
+ * Copy a whole relation, i.e. copy all the BATs that represent
+ * a relation to new names that represent a new relation.
+ *
+ * @param src Prefix of the @b source relation.
+ * @param tgt Prefix of the @b target relation.
+ * @param schema Schema of the relation to copy.
+ */
+static void
+copy_rel (const PFmil_ident_t src, const PFmil_ident_t tgt, PFalg_schema_t schema)
+{
+    int i;
+    PFalg_simple_type_t t;
+
+    for (i = 0; i < schema.count; i++)
+        for (t = 1; t; t <<= 1)
+            if (t & schema.items[i].type)
+                execute (assgn (var (bat (tgt, schema.items[i].name, t)),
+                                var (bat (src, schema.items[i].name, t))));
+}
 
 /**
  * Compile Algebra expression tree into MIL tree

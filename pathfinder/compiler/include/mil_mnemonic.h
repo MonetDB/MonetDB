@@ -43,6 +43,12 @@
 /** literal oids */
 #define lit_oid(i) PFmil_lit_oid (i)
 
+/** literal dbls */
+#define lit_dbl(i) PFmil_lit_dbl (i)
+
+/** literal bits */
+#define lit_bit(i) PFmil_lit_bit (i)
+
 /** MIL variables */
 #define var(v) PFmil_var(v)
 
@@ -121,11 +127,20 @@
 /** multiplexed type cast */
 #define mcast(type,e) PFmil_mcast ((type), (e))
 
-/** arithmetic plus */
-#define plus(a,b) PFmil_plus ((a), (b))
+/** arithmetic add */
+#define add(a,b) PFmil_add ((a), (b))
 
-/** multiplexed arithmetic plus */
-#define mplus(a,b) PFmil_mplus ((a), (b))
+/** multiplexed arithmetic add */
+#define madd(a,b) PFmil_madd ((a), (b))
+
+/** multiplexed arithmetic subtract */
+#define msub(a,b) PFmil_msub ((a), (b))
+
+/** multiplexed arithmetic multiply */
+#define mmult(a,b) PFmil_mmult ((a), (b))
+
+/** multiplexed arithmetic divide */
+#define mdiv(a,b) PFmil_mdiv ((a), (b))
 
 /** serialization function */
 #define serialize(prefix, a, b, c, d, e, f, g) \

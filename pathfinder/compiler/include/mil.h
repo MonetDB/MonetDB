@@ -23,6 +23,8 @@ enum PFmil_kind_t {
       m_lit_int      /**< literal integer */
     , m_lit_oid      /**< literal oid */
     , m_lit_str      /**< literal string */
+    , m_lit_dbl      /**< literal double */
+    , m_lit_bit      /**< literal boolean */
 
     , m_nil          /**< MonetDB's special value `nil' */
 
@@ -54,8 +56,11 @@ enum PFmil_kind_t {
     , m_cast         /**< typecast */
     , m_mcast        /**< multiplexed typecast */
 
-    , m_plus         /**< arithmetic plus */
-    , m_mplus        /**< multiplexed arithmetic plus */
+    , m_add          /**< arithmetic add */
+    , m_madd         /**< multiplexed arithmetic add */
+    , m_msub         /**< multiplexed arithmetic subtract */
+    , m_mmult        /**< multiplexed arithmetic multiply */
+    , m_mdiv         /**< multiplexed arithmetic divide */
 
     , m_max          /**< MIL max() function */
 
@@ -75,6 +80,8 @@ enum PFmil_type_t {
     , m_void
     , m_int
     , m_str
+    , m_dbl
+    , m_bit
 };
 typedef enum PFmil_type_t PFmil_type_t;
 
@@ -87,12 +94,14 @@ typedef enum PFmil_access_t PFmil_access_t;
 
 /** semantic content for MIL tree nodes */
 union PFmil_sem_t {
-    int           i;     /**< literal integer */
-    oid           o;     /**< literal oid */
-    char         *s;     /**< literal string */
+    int           i;       /**< literal integer */
+    oid           o;       /**< literal oid */
+    char         *s;       /**< literal string */
+    double        d;       /**< literal double */
+    bool          b;       /**< literal boolean */
 
-    PFmil_type_t  t;     /**< MIL type (for #m_type nodes) */
-    PFmil_ident_t ident; /**< MIL identifier (a string) */
+    PFmil_type_t  t;       /**< MIL type (for #m_type nodes) */
+    PFmil_ident_t ident;   /**< MIL identifier (a string) */
     PFmil_access_t access; /**< BAT access specifier, only for #m_access nodes*/
 
     struct {
@@ -130,6 +139,12 @@ PFmil_t * PFmil_lit_str (const char *s);
 
 /** a literal oid */
 PFmil_t * PFmil_lit_oid (oid o);
+
+/** a literal dbl */
+PFmil_t * PFmil_lit_dbl (double d);
+
+/** a literal bit */
+PFmil_t * PFmil_lit_bit (bool b);
 
 /** a MIL variable */
 PFmil_t * PFmil_var (const PFmil_ident_t name);
@@ -206,11 +221,20 @@ PFmil_t * PFmil_cast (const PFmil_t *, const PFmil_t *);
 /** multiplexed typecast */
 PFmil_t * PFmil_mcast (const PFmil_t *, const PFmil_t *);
 
-/** MIL plus operator */
-PFmil_t * PFmil_plus (const PFmil_t *, const PFmil_t *);
+/** MIL add operator */
+PFmil_t * PFmil_add (const PFmil_t *, const PFmil_t *);
 
-/** MIL multiplexed plus operator */
-PFmil_t * PFmil_mplus (const PFmil_t *, const PFmil_t *);
+/** MIL multiplexed add operator */
+PFmil_t * PFmil_madd (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed subtract operator */
+PFmil_t * PFmil_msub (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed multiply operator */
+PFmil_t * PFmil_mmult (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed divide operator */
+PFmil_t * PFmil_mdiv (const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_ser (const char *prefix,
                      const bool has_nat_part, const bool has_int_part,

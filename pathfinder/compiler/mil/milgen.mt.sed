@@ -96,6 +96,10 @@ node  lit_tbl      /* literal table */
       project      /* algebra projection and renaming operator */
       rownum       /* consecutive number generation */
       serialize    /* result serialization */
+      num_add      /* arithmetic plus operator */
+      num_subtract /* arithmetic minus operator */
+      num_multiply /* arithmetic times operator */
+      num_divide   /* arithmetic divide operator */
       ;
 
 
@@ -356,7 +360,7 @@ AlgExpr:  disjunion (AlgExpr, AlgExpr)
                                                   $2$->schema.items[i].type))),
                                     cast (
                                         type (m_oid),
-                                        plus (
+                                        add (
                                             cast (
                                                 type (m_int),
                                                 max (
@@ -375,7 +379,7 @@ AlgExpr:  disjunion (AlgExpr, AlgExpr)
                             = reverse (
                                 mcast (
                                     type (m_oid),
-                                    mplus (
+                                    madd (
                                         mcast (
                                             type (m_int),
                                             reverse (
@@ -383,7 +387,7 @@ AlgExpr:  disjunion (AlgExpr, AlgExpr)
                                                           $2$->schema.items[i]
                                                               .name,
                                                           t)))),
-                                        plus (
+                                        add (
                                             cast (
                                                 type (m_int),
                                                 max (
@@ -732,6 +736,10 @@ AlgExpr:  rownum (AlgExpr)
         int i;
         PFalg_type_t t;
 
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
         /*
          * We make a few assumptions here:
          *  - The operand expression has already been translated.
@@ -743,10 +751,6 @@ AlgExpr:  rownum (AlgExpr)
         assert ($$->sem.rownum.sortby.count >= 1);
         assert ((!$$->sem.rownum.part)
                 || attr_type ($1$, $$->sem.rownum.part) == aat_nat);
-
-        /* no need to do anything if we already translated that expression */
-        if ($$->bat_prefix)
-            break;
 
         $$->bat_prefix = new_var ();   /* BAT name prefix */
 
@@ -888,6 +892,150 @@ AlgExpr:  rownum (AlgExpr)
                                     var (bat ($1$->bat_prefix,
                                               $1$->schema.items[i].name,
                                               t))));
+
+        deallocate ($1$, $$->refctr);
+    }
+    ;
+
+AlgExpr:  num_add (AlgExpr)
+    =
+    {
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        $$->bat_prefix = new_var ();   /* BAT name prefix */
+
+        assert ($1$->bat_prefix);
+
+        /*
+         * All the attributes in our operand are also in the result,
+         * and we just copy them.
+         */
+        copy_rel ($1$->bat_prefix, $$->bat_prefix, $1$->schema);
+
+        /*
+         * The numeric plus can now be done with help of Monet's
+         * multiplex operator.
+         */
+        execute (assgn (var (bat ($$->bat_prefix,
+                                  $$->sem.arithm.res,
+                                  attr_type ($$, $$->sem.arithm.res))),
+                        madd (var (bat ($$->bat_prefix,
+                                        $$->sem.arithm.att1,
+                                        attr_type ($$, $$->sem.arithm.att1))),
+                              var (bat ($$->bat_prefix,
+                                        $$->sem.arithm.att2,
+                                        attr_type ($$, $$->sem.arithm.att2))))
+                       ));
+
+        deallocate ($1$, $$->refctr);
+    }
+    ;
+
+AlgExpr:  num_subtract (AlgExpr)
+    =
+    {
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        $$->bat_prefix = new_var ();   /* BAT name prefix */
+
+        assert ($1$->bat_prefix);
+
+        /*
+         * All the attributes in our operand are also in the result,
+         * and we just copy them.
+         */
+        copy_rel ($1$->bat_prefix, $$->bat_prefix, $1$->schema);
+
+        /*
+         * The numeric minus can now be done with help of Monet's
+         * multiplex operator.
+         */
+        execute (assgn (var (bat ($$->bat_prefix,
+                                  $$->sem.arithm.res,
+                                  attr_type ($$, $$->sem.arithm.res))),
+                        msub (var (bat ($$->bat_prefix,
+                                        $$->sem.arithm.att1,
+                                        attr_type ($$, $$->sem.arithm.att1))),
+                              var (bat ($$->bat_prefix,
+                                        $$->sem.arithm.att2,
+                                        attr_type ($$, $$->sem.arithm.att2))))
+                       ));
+
+        deallocate ($1$, $$->refctr);
+    }
+    ;
+
+AlgExpr:  num_multiply (AlgExpr)
+    =
+    {
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        $$->bat_prefix = new_var ();   /* BAT name prefix */
+
+        assert ($1$->bat_prefix);
+
+        /*
+         * All the attributes in our operand are also in the result,
+         * and we just copy them.
+         */
+        copy_rel ($1$->bat_prefix, $$->bat_prefix, $1$->schema);
+
+        /*
+         * The numeric minus can now be done with help of Monet's
+         * multiplex operator.
+         */
+        execute (assgn (var (bat ($$->bat_prefix,
+                                  $$->sem.arithm.res,
+                                  attr_type ($$, $$->sem.arithm.res))),
+                        mmult (var (bat ($$->bat_prefix,
+                                         $$->sem.arithm.att1,
+                                         attr_type ($$, $$->sem.arithm.att1))),
+                               var (bat ($$->bat_prefix,
+                                         $$->sem.arithm.att2,
+                                         attr_type ($$, $$->sem.arithm.att2))))
+                       ));
+
+        deallocate ($1$, $$->refctr);
+    }
+    ;
+
+AlgExpr:  num_divide (AlgExpr)
+    =
+    {
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        $$->bat_prefix = new_var ();   /* BAT name prefix */
+
+        assert ($1$->bat_prefix);
+
+        /*
+         * All the attributes in our operand are also in the result,
+         * and we just copy them.
+         */
+        copy_rel ($1$->bat_prefix, $$->bat_prefix, $1$->schema);
+
+        /*
+         * The numeric minus can now be done with help of Monet's
+         * multiplex operator.
+         */
+        execute (assgn (var (bat ($$->bat_prefix,
+                                  $$->sem.arithm.res,
+                                  attr_type ($$, $$->sem.arithm.res))),
+                        mdiv (var (bat ($$->bat_prefix,
+                                        $$->sem.arithm.att1,
+                                        attr_type ($$, $$->sem.arithm.att1))),
+                              var (bat ($$->bat_prefix,
+                                        $$->sem.arithm.att2,
+                                        attr_type ($$, $$->sem.arithm.att2))))
+                       ));
 
         deallocate ($1$, $$->refctr);
     }

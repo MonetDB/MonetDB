@@ -44,17 +44,21 @@
 #define TWIG_MAXCHILD PFALG_OP_MAXCHILD
 
 static int TWIG_ID[] = {
-      [aop_lit_tbl]   lit_tbl    /**< literal table */
-    , [aop_disjunion] disjunion  /**< union two relations with same schema */
-    , [aop_cross]     cross      /**< cross product (Cartesian product) */
-    , [aop_eqjoin]    eqjoin     /**< equi-join */
-    , [aop_project]   project    /**< projection and renaming operator */
-    , [aop_rownum]    rownum     /**< consecutive number generation */
+      [aop_lit_tbl]      = lit_tbl    /**< literal table */
+    , [aop_disjunion]    = disjunion  /**< union two relations w/ same schema */
+    , [aop_cross]        = cross      /**< cross product (Cartesian product) */
+    , [aop_eqjoin]       = eqjoin     /**< equi-join */
+    , [aop_project]      = project    /**< projection and renaming operator */
+    , [aop_rownum]       = rownum     /**< consecutive number generation */
 
-    , [aop_serialize] serialize  /**< serialize algebra expression below
-                                      (This is mainly used explicitly match
-                                      the expression root during the Twig
-                                      pass.) */
+    , [aop_serialize]    = serialize  /**< serialize algebra expression below
+                                           (This is mainly used explicitly match
+                                           the expression root during the Twig
+                                           pass.) */
+    , [aop_num_add]      = num_add      /**< arithmetic plus operator */
+    , [aop_num_subtract] = num_subtract /**< arithmetic plus operator */
+    , [aop_num_multiply] = num_multiply /**< arithmetic plus operator */
+    , [aop_num_divide]   = num_divide   /**< arithmetic plus operator */
 };
 
 /** twig: setup twig */
@@ -70,6 +74,10 @@ static int TWIG_ID[] = {
 #undef project
 #undef rownum
 #undef serialize
+#undef num_add
+#undef num_subtract
+#undef num_multiply
+#undef num_divide
 
 /* ----------------------- End of twig setup -------------------- */
 

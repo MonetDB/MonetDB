@@ -48,6 +48,10 @@ node  lit_tbl      /* literal table */
       project      /* algebra projection and renaming operator */
       rownum       /* consecutive number generation */
       serialize    /* result serialization */
+      num_add      /* arithmetic plus operator */
+      num_subtract /* arithmetic minus operator */
+      num_multiply /* arithmetic times operator */
+      num_divide   /* arithmetic divide operator */
       ;
 
 
@@ -84,6 +88,10 @@ AlgExpr:  cross (AlgExpr, AlgExpr);
 AlgExpr:  eqjoin (AlgExpr, AlgExpr);
 AlgExpr:  project (AlgExpr);
 AlgExpr:  rownum (AlgExpr);
+AlgExpr:  num_add (AlgExpr);
+AlgExpr:  num_subtract (AlgExpr);
+AlgExpr:  num_multiply (AlgExpr);
+AlgExpr:  num_divide (AlgExpr);
 
 AlgExpr:  disjunion (EmptyExpr, AlgExpr)
     { REWRITE; }
@@ -126,5 +134,11 @@ EmptyExpr: eqjoin (AlgExpr, EmptyExpr);
 EmptyExpr: eqjoin (EmptyExpr, EmptyExpr);
 
 EmptyExpr: rownum (EmptyExpr);
+
+EmptyExpr: num_add (EmptyExpr);
+EmptyExpr: num_subtract (EmptyExpr);
+EmptyExpr: num_multiply (EmptyExpr);
+EmptyExpr: num_divide (EmptyExpr);
+
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
