@@ -293,14 +293,14 @@ join_idx_insert(sql_idx * i, stmt **inserts)
 		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
 		if (nulls) {
 			stmt *t = stmt_temp(sql_dup_subtype(bt));
-			stmt *n = stmt_temp(sql_dup_subtype(tail_type(s)));
-			stmt *nn = s;
+			stmt *isnull = stmt_temp(sql_dup_subtype(tail_type(s)));
+			stmt *notnull = s;
 
-			stmt_append(n, stmt_atom(atom_general(sql_dup_subtype(tail_type(s)), NULL)));
+			isnull = stmt_append(isnull, stmt_atom(atom_general(sql_dup_subtype(tail_type(s)), NULL)));
 			t = stmt_append(t, cond);
-			n = stmt_join(t, stmt_reverse(stmt_const(stmt_reverse(n), stmt_bool(1))), cmp_equal);
-			n = stmt_join(t, stmt_reverse(stmt_const(stmt_reverse(stmt_dup(nn)), stmt_bool(0))), cmp_equal);
-			s = stmt_union(n, nn);
+			isnull = stmt_join(t, stmt_reverse(stmt_const(stmt_reverse(isnull), stmt_bool(1))), cmp_equal);
+			notnull = stmt_join(stmt_dup(t), stmt_reverse(stmt_const(stmt_reverse(notnull), stmt_bool(0))), cmp_equal);
+			s = stmt_union(isnull, notnull);
 		}
 	} else {
 		int nulls = 0;
