@@ -1,6 +1,6 @@
 
 INCLUDES = top_builddir/src/gdk top_builddir/src/monet \
-	$(Z_CFLAGS) $(BZ_CFLAGS)
+	top_builddir/src/mal $(Z_CFLAGS) $(BZ_CFLAGS)
 MTSAFE
 
 # install these libs in the pkglib
@@ -8,7 +8,7 @@ LIBDIR = pkglib
 
 LIBS = {
 	SEP = _
-	SOURCES = blob.mx
+	SOURCES = startup.mx str.mx blob.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""

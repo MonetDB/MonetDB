@@ -46,26 +46,6 @@ Not to be confused with blob parsing and printing.
          till the first 0 byte or the end of the blob.";
    command toblob(v:str) : blob = toblob
 	comment "store a string as a blob.";
-@-
-The registration of the atom functions relies on the atom module rules.
-@mal
-function mainTOBETESTED();
-	nme:= "blob";
-	#Zstr:= atoms.tostr(nme);
-	Zblob:= atoms.fromstr(nme);
-	Zbit:= atoms.nequal(nme);
-	Z:= atoms.hash(nme);
-	Zblob:= atoms.null(nme);
-	Zint:= atoms.convert(nme);
-	Zint:= atoms.put(nme);
-	Zint:= atoms.del(nme);
-	Zlng:= atoms.length(nme);
-
-CATCH GDKerror;
-	RAISE GDKfatal := "Can not load 'blob' data type\n";
-END GDKerror;
-
-END function;
 @* Example MAL Script
 @mil
 import blob;
