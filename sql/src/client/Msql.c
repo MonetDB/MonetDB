@@ -9,10 +9,6 @@
 #include <getopt.h>
 #endif
 
-#ifdef HAVE_LIBPTHREAD
-#include <pthread.h>
-#endif
-
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>

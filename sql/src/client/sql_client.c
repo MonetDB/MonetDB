@@ -99,10 +99,7 @@ void clientAccept( context *lc, stream *rs ){
 	while(lc->cur != EOF ){
 		int err = 0;
 		s = sqlnext(lc, in, &err);
-		if (err){
-			fprintf(stderr, "Error in %s: %s\n", lc->sql, lc->errstr);
-		       	continue;
-		}
+		if (err) break;
 		if (s){
 	    		int nr = 1;
 			if (lc->debug&128){
