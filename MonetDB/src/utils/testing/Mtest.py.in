@@ -1358,6 +1358,8 @@ def GetMonetConfig(arg) :
 	return value
 ### GetMonetConfig(arg) #
 
+SQLprefix = ''
+
 def main(argv) :
 	#TODO:
 	#signal.signal(signal.SIGALRM, AlarmHandler)
