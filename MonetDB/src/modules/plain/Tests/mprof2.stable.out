@@ -1,11 +1,11 @@
 stdout of test 'mprof2` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other mprof2
-#> Mtest:	Mtimeout -timeout 420 ./mprof2 mprof2
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain mprof2.mil
-# Monet Database Server V4.1
+#> Mtest (13:31:49):	other mprof2 1200
+#> Mtest (13:31:49):	Mtimeout -timeout 1200 ./mprof2 mprof2
+#> Mlog (13:31:49):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain mprof2.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:mprof2.mil
 
 loaded;
@@ -27,13 +27,13 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 1380 "mprof.mx"
+#line 1391 "../../../../src/modules/plain/mprof.mx"
 setoid(oid(20000000));
 
 
 
 
-#line 1406 "mprof.mx"
+#line 1417 "../../../../src/modules/plain/mprof.mx"
 # A test for the performance analysis
 pmB("abc");
 monet_atomtbl.count.print;
@@ -47,19 +47,73 @@ printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
 # (int)	  (str)		| (int)	| (Tms)		  #
 #-------------------------------------------------#
 [ 0,	  "abc",	  0,	  (0,0)		  ]
-[ 1,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 1,	  "pmPrint",	  0,	  (1,0)		  ]
+[ 2,	  "xyz",	  0,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  0,	  (1,-1)	  ]
+[ 3,	  "pmPrint",	  0,	  (-1,1)	  ]
+[ 3,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  -1,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  -1,	  (1,-1)	  ]
+[ 3,	  "pmPrint",	  -1,	  (-1,1)	  ]
+[ 3,	  "pmPrint",	  -1,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  1,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  1,	  (1,-1)	  ]
+[ 3,	  "pmPrint",	  1,	  (-1,1)	  ]
+[ 3,	  "pmPrint",	  1,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  0,	  (1,-1)	  ]
+[ 3,	  "pmPrint",	  0,	  (-1,1)	  ]
+[ 3,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 3,	  "abc",	  0,	  (0,0)		  ]
+[ 3,	  "abc",	  0,	  (1,-1)	  ]
+[ 3,	  "abc",	  0,	  (-1,1)	  ]
+[ 3,	  "abc",	  0,	  (0,0)		  ]
+[ 3,	  "abc",	  -1,	  (0,0)		  ]
+[ 3,	  "abc",	  -1,	  (1,-1)	  ]
+[ 3,	  "abc",	  -1,	  (-1,1)	  ]
+[ 3,	  "abc",	  -1,	  (0,0)		  ]
+[ 3,	  "abc",	  1,	  (0,0)		  ]
+[ 3,	  "abc",	  1,	  (1,-1)	  ]
+[ 3,	  "abc",	  1,	  (-1,1)	  ]
+[ 3,	  "abc",	  1,	  (0,0)		  ]
+[ 3,	  "abc",	  0,	  (0,0)		  ]
+[ 3,	  "abc",	  0,	  (1,-1)	  ]
+[ 3,	  "abc",	  0,	  (-1,1)	  ]
+[ 3,	  "abc",	  0,	  (0,0)		  ]
+[ 4,	  "pmPrint",	  0,	  (0,0)		  ]
 #-------------------------------------------------#
 # BAT:	  mprof_id	| ru_usage		  #
 # (int)	  (str)		| (Rusage)		  #
 #-------------------------------------------------#
-[ 0,	  "abc",	  (0,1,0,0,0,0,0,0)	  ]
-[ 1,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
+[ 0,	  "abc",	  (0,0,4,0,0,0,0,0)	  ]
+[ 1,	  "pmPrint",	  (0,0,15,0,0,0,0,0)	  ]
+[ 2,	  "xyz",	  (0,1,0,0,0,0,0,0)	  ]
+[ 3,	  "pmPrint",	  (0,0,1,0,0,0,0,0)	  ]
+[ 3,	  "pmPrint",	  (0,1,-16,0,0,0,0,0)	  ]
+[ 3,	  "pmPrint",	  (0,-1,21,0,0,0,0,0)	  ]
+[ 3,	  "pmPrint",	  (0,0,4,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,0,1,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,1,-16,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,-1,21,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,0,4,0,0,0,0,0)	  ]
+[ 4,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
 #-------------------------------------------------#
 # BAT:	  mprof_id	| mallinfo		  #
 # (int)	  (str)		| (Mallinfo)		  #
 #-------------------------------------------------#
 [ 0,	  "abc",	  (0,0,0,0,0,0,0,0)	  ]
-[ 1,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
+[ 1,	  "pmPrint",	  (0,2,0,0,0,0,0,4624)	  ]
+[ 2,	  "xyz",	  (0,1,0,0,0,0,0,-8)	  ]
+[ 3,	  "pmPrint",	  (0,3,0,0,0,0,0,200)	  ]
+[ 3,	  "pmPrint",	  (0,-22,0,0,0,0,0,4896)  ]
+[ 3,	  "pmPrint",	  (0,25,0,0,0,0,0,-4696)  ]
+[ 3,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,3,0,0,0,0,0,200)	  ]
+[ 3,	  "abc",	  (0,-22,0,0,0,0,0,4896)  ]
+[ 3,	  "abc",	  (0,25,0,0,0,0,0,-4696)  ]
+[ 3,	  "abc",	  (0,0,0,0,0,0,0,0)	  ]
+[ 4,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
 #~EndVariableOutput~#
 pmE("pmPrint");
 pmB("xyz");
@@ -76,49 +130,103 @@ printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
 [ 1,	  "pmPrint",	  0,	  (1,0)		  ]
 [ 2,	  "xyz",	  0,	  (0,0)		  ]
 [ 3,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  0,	  (1,-1)	  ]
+[ 3,	  "pmPrint",	  0,	  (-1,1)	  ]
+[ 3,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  -1,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  -1,	  (1,-1)	  ]
+[ 3,	  "pmPrint",	  -1,	  (-1,1)	  ]
+[ 3,	  "pmPrint",	  -1,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  1,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  1,	  (1,-1)	  ]
+[ 3,	  "pmPrint",	  1,	  (-1,1)	  ]
+[ 3,	  "pmPrint",	  1,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 3,	  "pmPrint",	  0,	  (1,-1)	  ]
+[ 3,	  "pmPrint",	  0,	  (-1,1)	  ]
+[ 3,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 3,	  "abc",	  0,	  (0,0)		  ]
+[ 3,	  "abc",	  0,	  (1,-1)	  ]
+[ 3,	  "abc",	  0,	  (-1,1)	  ]
+[ 3,	  "abc",	  0,	  (0,0)		  ]
+[ 3,	  "abc",	  -1,	  (0,0)		  ]
+[ 3,	  "abc",	  -1,	  (1,-1)	  ]
+[ 3,	  "abc",	  -1,	  (-1,1)	  ]
+[ 3,	  "abc",	  -1,	  (0,0)		  ]
+[ 3,	  "abc",	  1,	  (0,0)		  ]
+[ 3,	  "abc",	  1,	  (1,-1)	  ]
+[ 3,	  "abc",	  1,	  (-1,1)	  ]
+[ 3,	  "abc",	  1,	  (0,0)		  ]
+[ 3,	  "abc",	  0,	  (0,0)		  ]
+[ 3,	  "abc",	  0,	  (1,-1)	  ]
+[ 3,	  "abc",	  0,	  (-1,1)	  ]
+[ 3,	  "abc",	  0,	  (0,0)		  ]
+[ 4,	  "pmPrint",	  0,	  (0,0)		  ]
+[ 5,	  "xyz",	  0,	  (0,0)		  ]
+[ 6,	  "pmPrint",	  0,	  (0,0)		  ]
 #-------------------------------------------------#
 # BAT:	  mprof_id	| ru_usage		  #
 # (int)	  (str)		| (Rusage)		  #
 #-------------------------------------------------#
-[ 0,	  "abc",	  (0,1,0,0,0,0,0,0)	  ]
-[ 1,	  "pmPrint",	  (0,7,0,0,0,0,0,0)	  ]
-[ 2,	  "xyz",	  (0,0,0,0,0,0,0,0)	  ]
+[ 0,	  "abc",	  (0,0,4,0,0,0,0,0)	  ]
+[ 1,	  "pmPrint",	  (0,0,15,0,0,0,0,0)	  ]
+[ 2,	  "xyz",	  (0,1,0,0,0,0,0,0)	  ]
+[ 3,	  "pmPrint",	  (0,0,1,0,0,0,0,0)	  ]
+[ 3,	  "pmPrint",	  (0,1,-16,0,0,0,0,0)	  ]
+[ 3,	  "pmPrint",	  (0,-1,21,0,0,0,0,0)	  ]
+[ 3,	  "pmPrint",	  (0,0,4,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,0,1,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,1,-16,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,-1,21,0,0,0,0,0)	  ]
+[ 3,	  "abc",	  (0,0,4,0,0,0,0,0)	  ]
+[ 4,	  "pmPrint",	  (0,0,13,0,0,0,0,0)	  ]
+[ 5,	  "xyz",	  (0,0,0,0,0,0,0,0)	  ]
+[ 6,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
+#-------------------------------------------------#
+# BAT:	  mprof_id	| mallinfo		  #
+# (int)	  (str)		| (Mallinfo)		  #
+#-------------------------------------------------#
+[ 0,	  "abc",	  (0,0,0,0,0,0,0,0)	  ]
+[ 1,	  "pmPrint",	  (0,2,0,0,0,0,0,4624)	  ]
+[ 2,	  "xyz",	  (0,1,0,0,0,0,0,-8)	  ]
+[ 3,	  "pmPrint",	  (0,3,0,0,0,0,0,200)	  ]
+[ 3,	  "pmPrint",	  (0,-22,0,0,0,0,0,4896)  ]
+[ 3,	  "pmPrint",	  (0,25,0,0,0,0,0,-4696)  ]
 [ 3,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
-#---------------------------------------------------------#
-# BAT:	  mprof_id	| mallinfo			  #
-# (int)	  (str)		| (Mallinfo)			  #
-#---------------------------------------------------------#
-[ 0,	  "abc",	  (0,0,0,0,0,0,0,0)		  ]
-[ 1,	  "pmPrint",	  (24576,2,0,0,0,192,-192,6536)	  ]
-[ 2,	  "xyz",	  (0,0,0,0,0,0,0,0)		  ]
-[ 3,	  "pmPrint",	  (0,0,0,0,0,0,0,0)		  ]
+[ 3,	  "abc",	  (0,3,0,0,0,0,0,200)	  ]
+[ 3,	  "abc",	  (0,-22,0,0,0,0,0,4896)  ]
+[ 3,	  "abc",	  (0,25,0,0,0,0,0,-4696)  ]
+[ 3,	  "abc",	  (0,0,0,0,0,0,0,0)	  ]
+[ 4,	  "pmPrint",	  (0,3,0,0,0,0,0,4696)	  ]
+[ 5,	  "xyz",	  (0,0,0,0,0,0,0,0)	  ]
+[ 6,	  "pmPrint",	  (0,0,0,0,0,0,0,0)	  ]
 #~EndVariableOutput~#
 pmE("pmPrint");
 printf("#~BeginVariableOutput~#\n"); pmSummary; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-Label: abc called: 1
+Label: abc called: 2
 		sum	avg	min	max
-	time	   0	   0	   0	   0
-	utime	   0	   0	   0	   0
-	stime	   0	   0	   0	   0
+	time	   0	   0	  -1	   1
+	utime	   0	   0	  -1	   1
+	stime	   0	   0	  -1	   1
 	inblock	   0	   0	   0	   0
 	oublock	   0	   0	   0	   0
-	majflt	   0	   0	   0	   0
+	majflt	  14	   2	 -16	  21
 	cntxsw	   0	   0	   0	   0
 	arena	   0	   0	   0	   0
 
-Label: pmPrint called: 2
+Label: pmPrint called: 4
 		sum	avg	min	max
-	time	   0	   0	   0	   0
-	utime	   2	   1	   1	   1
-	stime	   0	   0	   0	   0
+	time	   0	   0	  -1	   1
+	utime	   2	   0	  -1	   1
+	stime	   0	   0	  -1	   1
 	inblock	   0	   0	   0	   0
 	oublock	   0	   0	   0	   0
-	majflt	   0	   0	   0	   0
+	majflt	  38	   5	 -16	  21
 	cntxsw	   0	   0	   0	   0
-	arena	24576	12288	   0	24576
+	arena	   0	   0	   0	   0
 
-Label: xyz called: 1
+Label: xyz called: 2
 		sum	avg	min	max
 	time	   0	   0	   0	   0
 	utime	   0	   0	   0	   0

@@ -1,5 +1,5 @@
 stderr of test 'mprof2` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other mprof2
-#> Mtest:	./mprof2 mprof2
-#> Mlog:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db modules_plain mprof2.mil
+#> Mtest (13:31:49):	other mprof2 1200
+#> Mtest (13:31:49):	Mtimeout -timeout 1200 ./mprof2 mprof2
+#> Mlog (13:31:49):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain mprof2.mil
