@@ -57,7 +57,7 @@ The following options are supported:
  -T          & --time           & time commands \\
  -u user     & --user=user      & user id \\
  -?          & --help           & show this usage message \\
-\end{itemize}
+\end{tabular}
 
 Calling "MapiClient -l sql" establishes a SQL connection with an
 Mserver server running on the local machine. The default user
