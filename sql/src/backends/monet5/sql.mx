@@ -270,6 +270,7 @@ backend *backend_create( int trace, mvc *m, Client c )
 	b->outbuf= NULL;
 	b->out= NULL;
 	b->trace = trace;
+	b->language = 0;
 	b->mvc = m;
 	b->currSchema = NULL;
 	b->currTable = NULL;

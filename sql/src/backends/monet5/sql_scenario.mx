@@ -264,7 +264,10 @@ str SQLreader(Client c){
 	backend *be = ((backend*)c->state[PARSER]);
 	bstream *in = c->fdin;
 	mvc *m;
-	int language = be->language; /* 'S' for SQL, 'D' from debugger */
+	int language; 
+
+	assert(be);
+	language = be->language; /* 'S' for SQL, 'D' from debugger */
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"#SQLparser: start reading SQL block\n");
@@ -418,6 +421,7 @@ str SQLparser(Client c) {
         return throwMessage("SQLparser","State decriptor missing\n");
     }
 	m = be->mvc;
+	assert(m);
 	be->language ='S'; /* expect SQL text first */
 	/* input string is copied to the SQL structure for parsing */
 	/*
@@ -526,7 +530,7 @@ finalize:
 	} 
 #ifdef _SQL_PARSER_DEBUG
 	else {
-		printf("#SQL finished:%s\n",msg);
+		stream_printf(GDKout,"#SQL finished:%s\n",msg);
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	}
 #endif
@@ -585,9 +589,9 @@ triggers the history action. A better approach is to directly
 update the history tables, without SQL intervention.
 Then the SQL history table is just a view over a few basic bats.
 @c
-		printf("#%s [parse %d]",be->qry,be->Tparse);
-		printf("[engine %d]",be->Texec);
-		printf("[total %d]\n",tot);
+		stream_printf(GDKout,"#%s [parse %d]",be->qry,be->Tparse);
+		stream_printf(GDKout,"[engine %d]",be->Texec);
+		stream_printf(GDKout,"[total %d]\n",tot);
 		if( be->qry) GDKfree(be->qry);
 		be->qry= NULL;
 

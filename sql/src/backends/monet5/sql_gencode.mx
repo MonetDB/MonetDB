@@ -184,7 +184,8 @@ Instructions are encapsulated with time code.
 @= SQLpostlude
         if (sql->debug&2){
 		/* t1 := time();t1:= t1-t0; 
-		   printf(" %d ",t1);printf("%d\n",nr);*/
+		   stream_printf(GDKout," %d ",t1);
+		   stream_printf(GDKout,"%d\n",nr);*/
 		q= newStmtId(mb,"t1","alarm","usec");
 		q= newStmtId(mb,"t1","calc","-");
 		q= pushArgumentId(mb,q,_strdup("t1"));
@@ -1091,7 +1092,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
         case st_pivot:
 	case st_relselect:
 	case st_groupby:
-                printf("not implemented stmt\n");
+                stream_printf(GDKout,"not implemented stmt\n");
                 assert(0);
 
 
@@ -1099,7 +1100,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 /*	if (s->nr == 0) s->nr = mb->stop;*/
 #ifdef _SQL_GENCODE_DEBUG	
     } else {
-	printf("called with zero statement nr\n");
+	stream_printf(GDKout,"called with zero statement nr\n");
 #endif
     }
     return s->nr;

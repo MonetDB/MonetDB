@@ -101,9 +101,9 @@ by removing simple assignments.
 str SQLoptimizer(Client c) {
 	(void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
-	printf("SQLoptimizer\n");
+	stream_printf(GDKout,"SQLoptimizer\n");
 	printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
-	printf("done\n");
+	stream_printf(GDKout,"done\n");
 #endif
 	return MAL_SUCCEED;
 }
@@ -115,22 +115,17 @@ void optimizeQueryInCache(Client c) {
 	int i,j,k,klim;
 	MALfcn setWriteMode=0;
 	Symbol s;
-/*
-	backend *be = ((backend*)c->state[PARSER]);
-	mvc *m = be? be->mvc: 0;
-	BAT *b= NULL;
-*/
 
 #ifdef _SQL_OPTIMIZER_DEBUG
-	printf("First call to SQL optimizer\n");
+	stream_printf(GDKout,"First call to SQL optimizer\n");
 #endif
 @-
 Reduce the program before other optimizations take place
 @c
-	MCoptimizer(c, c->curprg->def, 0, "algebra","joinPath");
-	ARoptimizer(c, c->curprg->def, 0);
-	CXoptimizer(c, c->curprg->def, 0);
-	AMoptimizer(c, c->curprg->def, 0);
+	MCoptimizer(c->curprg->def, 0,0,"algebra","joinPath");
+	ARoptimizer(c->curprg->def, 0,0);
+	CXoptimizer(c->curprg->def, 0,0);
+	AMoptimizer(c->curprg->def, 0,0);
 	/*SQLsetAccessMode(c); done in libraries now */
 
 	mb= c->curprg->def;
@@ -155,35 +150,56 @@ to extract some compiler relevant properties from the catalogue.
 			strcmp(moduleName(p),"sql") ==0 ) {
 				ns[k++]= p;
 @-
-At this stage of the implementation we simple look up the size
-of each significant bat. It can only be applied when the arguments
-for the bind() calls are constants.
+At this stage of the implementation we experiment with collecting
+information for a MAL specific optimizer. Aside from the size
+of BATs, it is helpful to detect empty bats as early as possible.
+The information is left behind as an ordinary call to an operator
+supported by the cost model or optimizer.
+
+@-
+We use knowledge on generation of bind() instructions.
 @c
-/* not yet active
-				if( strcmp(functionName(p),"bind")==0 && 
+				if( ( strcmp(functionName(p),"bind_dbat")==0 ||
+					  strcmp(functionName(p),"bind")==0 ) &&
 					isConstant(mb,p->argv[1]) &&
 					isConstant(mb,p->argv[2]) &&
-					isConstant(mb,p->argv[3])){
+					isConstant(mb,p->argv[3]) ){
+@-
+			!!This code produces an error in mvc_bind, look at it later
+					backend *be = ((backend*)c->state[PARSER]);
+					BAT *b= NULL;
 					str sname= getVarLiteral(mb, p->argv[1]);
 					str tname= getVarLiteral(mb, p->argv[2]);
 					str cname= getVarLiteral(mb, p->argv[3]);
-					int l; 
+					/* int l=0; */
 					InstrPtr qc;
-					char bufi[BUFSIZ];
+					/* char bufi[BUFSIZ];*/
 
-					snprintf(bufi,BUFSIZ,"count{%s}",	getArgName(mb,p,0));
-					b= mvc_bind( m, sname, tname, cname, 0 );
-					if( b== NULL) continue;
-					l= BATcount(b);
+
+					b= mvc_bind( be->mvc, sname, tname, cname, 0 );
+					if( b== NULL /* || (l= BATcount(b)) == 0 */) {
+						qc= newInstruction(ASSIGNsymbol);
+						setModuleId(qc,GDKstrdup("optimizer"));
+						setFunctionId(qc,GDKstrdup("RXemptyBAT"));
+						qc->argv[0]= newTmpVariable(mb,TYPE_void);
+						qc->argv[1]= p->argv[0];
+						qc->argc=2;
+						ns[k++] = qc;
+						continue;
+					}
+
 					qc= newInstruction(ASSIGNsymbol);
-					qc->argv[0]= newVariable(mb,GDKstrdup(bufi),TYPE_lng);
+					setModuleId(qc,GDKstrdup("costmodel"));
+					setFunctionId(qc,GDKstrdup("setCount"));
+					qc->argv[0]= newTmpVariable(mb,TYPE_void);
 					snprintf(bufi,BUFSIZ,"%d",l);
-					qc->argv[1]= newConstant(mb,TYPE_lng,_strdup(bufi),TRUE);
-					qc->argc++;
-					isVarUsed(mb,qc->argv[1])= TRUE;
+					qc->argv[1]= p->argv[0];
+					qc->argv[2]= newConstant(mb,TYPE_lng,_strdup(bufi),TRUE);
+					qc->argc= 3;
+					isVarUsed(mb,qc->argv[2])= TRUE;
 					ns[k++] = qc;
+@c
 				}
-*/
 			}
 		if( setWriteMode && p->fcn == setWriteMode) {
 			for(j=0;j<k;j++)
@@ -251,7 +267,7 @@ which can be used by the rewrite rules.
 This all works under the assumption that the SQL layer properly invalidates
 the cache when the underlying table is changed.
 @c
-	CXoptimizer(c, c->curprg->def, 0);
+	CXoptimizer(c->curprg->def, 0,0);
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
