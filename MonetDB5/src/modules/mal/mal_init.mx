@@ -47,7 +47,7 @@ include mtime;
 
 include bat;
 #include mkey;
-#include pcre;
+include pcre;
 include algebra;
 include algebra2;
 include calc;

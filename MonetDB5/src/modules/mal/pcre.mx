@@ -40,26 +40,25 @@ command fromstr() address pcre_fromstr;
 command nequal()  address pcre_nequal;
 command hash()    address pcre_hash;
 command null()    address pcre_null;
-command convert() address pcre_convert;
 command put()     address pcre_put;
 command del()     address pcre_del;
 command length()  address pcre_length;
 command heap()    address pcre_heap;
 
-command compile(pattern:str ) :pcre 
+command compile(pat:str ) :pcre 
 address PCREcompile_wrap
 comment "compile a pattern";
 
-command match(pattern:pcre, s:str) :bit 
+command match(pat:pcre, s:str) :bit 
 address PCREexec_wrap
-comment "match a pattern":
+comment "match a pattern";
 
-command select(pattern:str, strs:BAT[:any$1,:str]) :BAT[:any$1,:str] 
+command select(pat:str, strs:bat[:any$1,:str]) :bat[:any$1,:str] 
 address PCREselect
 comment "Select tuples based on the pattern";
 
-command uselect(pattern:str, strs:BAT[:any$1,:str]) :BAT[:any$1,:void] 
-address pcre_uselect
+command uselect(pat:str, strs:bat[:any$1,:str]) :bat[:any$1,:void] 
+address PCREuselect
 comment "Select tuples based on the pattern, only returning the head";
 
 command match(s:str, pat:str):bit
@@ -172,65 +171,6 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	return GDK_SUCCEED;
 }
 
-int
-pcre_select(BAT **res, str pattern, BAT *strs)
-{
-	const char err[BUFSIZ], *err_p = err;
-	int errpos = 0;
-	BAT *r;
-	BUN p, q;
-	pcre *re = NULL;
-
-	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
-	else
-		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
-	if ((re = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_select: pcre compile of pattern (%s) failed\n",
-			pattern);
-		return GDK_FAIL;
-	}
-	BATloop(strs, p, q) {
-		str s = BUNtail(strs, p);
-
-		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strs, p), s);
-		}
-	}
-	my_pcre_free(re);
-	*res = r;
-	return GDK_SUCCEED;
-}
-
-int
-pcre_uselect(BAT **res, str pattern, BAT *strs)
-{
-	const char err[BUFSIZ], *err_p = err;
-	int errpos = 0;
-	BAT *r;
-	BUN p, q;
-	pcre *re = NULL;
-
-	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
-	else
-		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
-	if ((re = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed\n",
-			pattern);
-		return GDK_FAIL;
-	}
-	BATloop(strs, p, q) {
-		str s = BUNtail(strs, p);
-
-		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strs, p), NULL);
-		}
-	}
-	my_pcre_free(re);
-	*res = r;
-	return GDK_SUCCEED;
-}
 
 bat *
 pcre_init(void)
@@ -356,18 +296,74 @@ PCREexec_wrap(bit *res, pcre * pattern, str *s)
 	return MAL_SUCCEED;
 }
 str 
-PCREselect(int *res, str *pattern, int *strs)
+PCREselect(int *res, str *pattern, int *bid)
 {
-	(void) res; (void) pattern; (void) strs;
-	throwMessage("pcre.select","Not yet defined, move to differentlayer\n");
+#ifndef HAVE_LIBPCRE
+	(void)res; (void) pattern; (void) strs;
+	return throwMessage("pcre_select", "library missing\n");
+#else
+	BAT *bn, *strs;
+	const char err[BUFSIZ], *err_p = err;
+	int errpos = 0;
+	BUN p, q;
+	pcre *re = NULL;
+
+	@:getBATdescriptor(&errpos,bid,strs,pcre.select)@
+	if (strs->htype == TYPE_void)
+		bn = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
+	else
+		bn = BATnew(strs->htype, TYPE_str, BATcount(strs));
+	re = pcre_compile(*pattern, PCRE_UTF8, &err_p, &errpos, NULL);
+	if ( re == NULL) 
+		return throwMessage("pcre_select", "pcre compile of pattern failed\n");
+	
+	BATloop(strs, p, q) {
+		str s = BUNtail(strs, p);
+
+		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
+			BUNins(bn, BUNhead(strs, p), s);
+		}
+	}
+	my_pcre_free(re);
+	*res = bn->batCacheid;
+#endif
 	return MAL_SUCCEED;
 }
 str 
-PCREuselect(BAT *res, str *pattern, int *strs)
+PCREuselect(int *res, str *pattern, int *bid)
 {
-	(void) res; (void) pattern; (void) strs;
-	throwMessage("pcre.uselect","Not yet defined, move to differentlayer\n");
+#ifndef HAVE_LIBPCRE
+	(void)res; (void) pattern; (void) strs;
+	return throwMessage("pcre_select", "library missing\n");
+#else
+	BAT *bn, *strs;
+	const char err[BUFSIZ], *err_p = err;
+	int errpos = 0;
+	BUN p, q;
+	pcre *re = NULL;
+
+	@:getBATdescriptor(&errpos,bid,strs,pcre.select)@
+	if (strs->htype == TYPE_void)
+		bn = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
+	else
+		bn = BATnew(strs->htype, TYPE_void, BATcount(strs));
+	re = pcre_compile(*pattern, PCRE_UTF8, &err_p, &errpos, NULL);
+	if ( re == NULL) {
+		throwMessage("pcre_select", "pcre compile of pattern failed\n");
+		return GDK_FAIL;
+	}
+
+	BATloop(strs, p, q) {
+		str s = BUNtail(strs, p);
+
+		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
+			BUNins(bn, BUNhead(strs, p), NULL);
+		}
+	}
+	my_pcre_free(re);
+	*res = bn->batCacheid;
 	return MAL_SUCCEED;
+#endif
 }
 
 str PCREmatch(bit  *ret, str *val, str *pat){
