@@ -688,7 +688,7 @@ static stmt *sql_case(context * sql, scope * scp, symbol *opt_cond, dlist * when
 			}
 		}
 		if (cond->type == st_set) {
-			stmt *nc = stmt_dup(cond->op1.lval->h->data);
+			stmt *nc = (stmt*)list_reduce(cond->op1.lval, (freduce)&stmt_semijoin, (fdup)&stmt_dup );
 			stmt_destroy(cond);
 			cond = nc;
 		}
@@ -1768,8 +1768,10 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 						check_types(sql, ct,
 						stmt_atom( atom_dup(an->a))));
 				}
-				return stmt_join(ls, 
-					stmt_reverse(temp), cmp_equal);
+				return stmt_reverse(
+					stmt_semijoin(
+						stmt_reverse(ls), 
+						stmt_reverse(temp)));
 			} else if (l->h->next->type == type_symbol) {
 				symbol *ro = l->h->next->data.sym;
 				stmt *sq = scope_subquery(sql, scp, ro);
