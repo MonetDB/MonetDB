@@ -205,6 +205,7 @@ void init_keywords(){
 	keywords_insert("STRING", VARCHAR );
 	keywords_insert("TABLE", TABLE );
 	keywords_insert("TEMPORARY", TEMPORARY );
+	keywords_insert("TEXT", VARCHAR );
 	keywords_insert("TIME", TIME );
 	keywords_insert("TO", TO );
 	/*
