@@ -47,7 +47,7 @@ sql_export int mvc_set_role( mvc *m, char *role );
 sql_export int mvc_set_schema( mvc *m, char *schema );
 sql_export char *mvc_login( mvc *c, char *user, char *passwd );
 
-extern int schema_privs( mvc *m, sql_schema *t, int privs );
+extern int schema_privs( int grantor, sql_schema *t );
 extern int table_privs( mvc *m, sql_table *t, int privs );
 
 extern int sql_privilege( mvc *m, int auth_id, int obj_id, int privs, int sub );
@@ -322,12 +322,9 @@ int sql_privilege( mvc *m, int auth_id, int obj_id, int priv, int sub )
 	return res;
 }
 
-int schema_privs( mvc *m, sql_schema *s, int priv )
+int schema_privs( int grantor, sql_schema *s)
 {
-	if (m->user_id == USER_MONETDB || m->role_id == s->auth_id ||
-	    sql_privilege( m, m->user_id, s->base.id, priv, 0 ) == priv ||
-	    sql_privilege( m, m->role_id, s->base.id, priv, 0 ) == priv ||
-	    sql_privilege( m, ROLE_PUBLIC, s->base.id, priv, 0 ) == priv) {
+	if (grantor == USER_MONETDB || grantor == s->auth_id) {
 		return 1;
 	}
 	return 0;

@@ -238,18 +238,19 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
 	if ( (ret = mvc_init(*Debug, (backend_stack)stk )) > 0 ){
-		sqlstatement("GRANT ALL on modules to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on schemas to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on tables to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on columns to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on keys to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on idxs to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on keycolumns to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on types to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on user_role to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on auths to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on privileges to PUBLIC with grant option;", stk);
-		sqlstatement("GRANT ALL on users to PUBLIC with grant option;", stk);
+		#define S(q) sqlstatement(q,stk)
+		S("GRANT ALL on modules to PUBLIC with grant option;" );
+		S("GRANT ALL on schemas to PUBLIC with grant option;" );
+		S("GRANT ALL on tables to PUBLIC with grant option;" );
+		S("GRANT ALL on columns to PUBLIC with grant option;" );
+		S("GRANT ALL on keys to PUBLIC with grant option;" );
+		S("GRANT ALL on idxs to PUBLIC with grant option;" );
+		S("GRANT ALL on keycolumns to PUBLIC with grant option;" );
+		S("GRANT ALL on types to PUBLIC with grant option;" );
+		S("GRANT ALL on user_role to PUBLIC with grant option;" );
+		S("GRANT ALL on auths to PUBLIC with grant option;" );
+		S("GRANT ALL on privileges to PUBLIC with grant option;" );
+		S("GRANT ALL on users to PUBLIC with grant option;" );
 	} else if (ret < 0) {
 		return GDK_FAIL;
 	}

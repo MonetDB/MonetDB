@@ -187,7 +187,7 @@ grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
  	l = create_stmt_list();
 	if (privs == NULL){ /* ALL [ PRIVILEGES ] */
 		int all = PRIV_SELECT|PRIV_UPDATE|PRIV_INSERT|PRIV_DELETE;
-		int allowed = sql_grantable( sql, grantor, t->s->base.id, all, 1);
+		int allowed = schema_privs( grantor, t->s);
 
 		if (!allowed)
 			allowed = sql_grantable( sql, grantor, t->base.id, all, 0);
@@ -597,7 +597,6 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 	if (mvc_bind_table(sql, cur_schema(sql), name)) {
 		return sql_error(sql, 02, "Create View name %s already in use", name);
 	} else {
-		char buf[BUFSIZ];
 		stmt *sq;
 		SelectNode *sn = (SelectNode*)query;
 		char *subquery;
@@ -641,9 +640,7 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 			}
 		}
 		stmt_destroy(sq);
-
-		snprintf(buf, BUFSIZ, "grant select on \"%s\" to \"%s\" with grant option;", name, sql->user);
-		return stmt_sql(buf);
+		return stmt_none();
 	}
 	return NULL;
 }
@@ -1141,13 +1138,11 @@ create_table(mvc * sql, sql_schema * ss,
 	if (mvc_bind_table(sql, ss, name)) {
 		return sql_error(sql, 02, 
 			"Create Table name %s already in use", name);
-	} else if (!schema_privs(sql, ss, PRIV_INSERT)){
+	} else if (!schema_privs(sql->role_id, ss)){
 		return sql_error(sql, 02, 
-			"User is not allowed to create tables in schema %s", 
-			ss->base.name);
+		    "User/Role is not allowed to create tables in schema %s", 
+		    ss->base.name);
 	} else {
-		char buf[BUFSIZ];
-
 		sql_table *t = mvc_create_table(sql, ss, name, 0, !temp, 0, size);
 		list *new_columns = create_stmt_list();
 		dnode *n;
@@ -1161,8 +1156,6 @@ create_table(mvc * sql, sql_schema * ss,
 			}
 			list_append_stmt(new_columns, te );
 		}
-		snprintf(buf, BUFSIZ, "grant all on \"%s\" to \"%s\" with grant option;", name, sql->user);
-		list_append( new_columns, stmt_sql(buf));
 		return list2stmt(new_columns);
 	}
 }
@@ -1254,7 +1247,7 @@ create_schema(mvc * sql, dlist * auth_name, dlist * schema_elements)
 	char *auth = schema_auth(auth_name);
 	int auth_id = sql->role_id;
 
-	if (auth && sql_find_auth( sql, auth) < 0) {
+	if (auth && (auth_id = sql_find_auth( sql, auth)) < 0) {
 		return sql_error(sql, 02, 
 			 "Authorizaion %s doesn't exist", auth);
 	}
