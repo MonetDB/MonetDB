@@ -807,15 +807,15 @@ that for the moment are defined as procs.
     "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
     
     # SQL LIKE functionality, PCRE implementation
-    PROC like_uselect_pcre(bat[any::1,str] b, str pat, chr esc) : bat[any::1,void]  {
-		# change the SQL wilcards into PCRE wilcards
+	proc sql2pcre(str pat, chr esc) : int {
+		# change the SQL wilcards into PCRE wildcards
 		var i, len;
 		var c;
 		var ppat := "";
 		var pesc;
 		var escaped := false;
 
-		# the escape character can be a char is special in a PCRE
+		# the escape character can be a char which is special in a PCRE
 		# if the user used the '+' char as escape and has "++" in
 		# its pattern, then replacing this with "+" is not correct
 		# in the PCRE pattern
@@ -876,11 +876,31 @@ that for the moment are defined as procs.
 					ppat :+= ".";
 				}
 				escaped := false;
+			} else {
+				ppat :+= str(c);
 			}
 			
 			i :+= 1;
 		}
+		return "^" + ppat + "$";
+	}
 		
+    PROC like(str s, str pat, chr esc) : bit  {
+		var ppat := sql2pcre(pat, esc);
+		return(pcre_match(pcre_compile(ppat), s));
+    }
+    ADDHELP("like", "nes", "Dec 20 2004",
+    "does SQL LIKE expression with use of PCRE", "algebra");
+
+    PROC like(str s, str pat) : bit  {
+		var ppat := sql2pcre(pat, chr("\\"));
+		return(pcre_match(pcre_compile(ppat), s));
+    }
+    ADDHELP("like", "nes", "Dec 20 2004",
+    "does SQL LIKE expression with use of PCRE", "algebra");
+
+    PROC like_uselect_pcre(bat[any::1,str] b, str pat, chr esc) : bat[any::1,void]  {
+		var ppat := sql2pcre(pat, esc);
 		return(pcre_uselect(ppat, b));
     }
     ADDHELP("like_uselect_pcre", "groffen", "Dec 19 2004",

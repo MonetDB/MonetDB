@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 		sql = strcmp(argv[2], "sql") == 0;
 
 	port = atol(argv[1]);
-	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", 0);
+	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (sql)?"sql":0);
 	if (mapi_error(dbh))
 		die(dbh);
 

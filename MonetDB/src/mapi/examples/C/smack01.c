@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < 1000; i++) {
 		/* printf("setup connection %d\n", i);*/
-		dbh = mapi_connect("localhost", port, "monetdb", "monetdb", argv[2]);
+		dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (sql)?"sql":0);
 		if (mapi_error(dbh))
 			die(dbh);
 		if (sql)
