@@ -40,9 +40,8 @@
 #include "oops.h"
 #include "subtyping.h"
 
-/* add some timing results for the code 
-#define TIMINGS 1
- * */
+/* add some timing results for the code, if set to 1 */ 
+#define TIMINGS 0
 #define WITH_SCRIPT 0
 
 static void
@@ -4151,7 +4150,12 @@ translateFunction (FILE *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        typed_value (f, false);
+        if (PFty_subtype(PFty_node(),args->child[0]->type))
+        {
+            /* FIXME: mixed types could be a problem */
+            PFoops (OOPS_WARNING, "fn:string is still not completely fixed");
+            typed_value (f, false);
+        }
         translateCast2STR (f, args->child[0]->type);
         fprintf(f,
                 "if (iter.count() != loop%03u.count())\n"
@@ -6175,12 +6179,12 @@ PFprintMILtemp (FILE *f, PFcnode_t *c, PFstate_t *status)
                     PFarray (sizeof (int)),
                     0);
 
+#if TIMINGS
 #if WITH_SCRIPT
 #else
     fprintf(f, "var tries := 3;\n");
 #endif
 
-#if TIMINGS
     if (status) {}
     fprintf(f,
             "module(alarm);\n"
@@ -6240,6 +6244,9 @@ PFprintMILtemp (FILE *f, PFcnode_t *c, PFstate_t *status)
             "printf(\"%%s\", timings);\n"
             "rep := nil; # nil_int is not declared here\n"
             "tries := nil; # nil_int is not declared here\n");
+#if WITH_SCRIPT
+    fprintf(f, "test_results.insert(test_number,times);\n");
+#endif
 #else
     switch( status->genType ) {
      case PF_GEN_ORG: {
@@ -6261,9 +6268,6 @@ PFprintMILtemp (FILE *f, PFcnode_t *c, PFstate_t *status)
       fprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* excpected!\n");
     }
 
-#endif
-#if WITH_SCRIPT
-    fprintf(f, "test_results.insert(test_number,times);\n");
 #endif
 }
 /* vim:set shiftwidth=4 expandtab: */
