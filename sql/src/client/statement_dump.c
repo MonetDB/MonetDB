@@ -150,6 +150,12 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.sintersect(s%d).access(BAT_READ);\n", *nr, l, r ); 
 		s->nr = (*nr)++;
 	} break;
+	case st_union: {
+		int l = statement_dump( s->op1.stval, nr, sql );
+		int r = statement_dump( s->op2.stval, nr, sql );
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.kunion(s%d);\n", *nr, l, r ); 
+		s->nr = (*nr)++;
+	} break;
 	case st_join: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );

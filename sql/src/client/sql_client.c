@@ -123,7 +123,7 @@ void clientAccept_new( context *lc, stream *rs ){
 
 	    		lc->out->flush( lc->out );
 		}
-		if (s && s->type == st_output){
+		if (!lc->debug&64 && s && s->type == st_output){
 			int nRows = 0;
 			char *buf = readblock( rs ), *n = buf;
 			
@@ -247,10 +247,19 @@ main(int ac, char **av)
 	if (!user) user = _strdup("default-user");
 	lc.cat->cc_getschema( lc.cat, schema, user );
 	lc.cur = ' ';
+	if (debug&64){
+		ws = lc.out;
+		lc.out = file_wastream(stdout, "<stdout>" );
+	}
 	clientAccept_new( &lc, rs );
 	if (rs){
 	       	rs->close(rs);
 	       	rs->destroy(rs);
+	}
+	if (debug&64){
+	       	lc.out->close(lc.out);
+	       	lc.out->destroy(lc.out);
+		lc.out = ws;
 	}
 	sql_exit_context( &lc );
 	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux ... */
