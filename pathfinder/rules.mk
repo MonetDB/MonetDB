@@ -158,7 +158,7 @@ HIDE=1
 	# .tex file to the local build dir.
 	if [ "$<" != "$(<F)" ] ; then $(LN_S) $< $(<F) ; fi
 	$(LATEX2HTML) -split 0 -no_images -info 0 -no_subdir  $(<F)
-	$(RM) -f $(<F)
+	if [ "$<" != "$(<F)" ] ; then $(RM) -f $(<F) ; fi
 
 %.pdf: %.tex
 	$(PDFLATEX) $< 
