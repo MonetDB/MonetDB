@@ -19,8 +19,8 @@
 --  999.6666666 is allowed and it should be rounded to 999.67
 --
 --
--- Results from MySql are completely wrong with respect to this semantics.
--- Results from PostgreSql are correct
+-- Results from MySQL are completely wrong with respect to this semantics.
+-- Results from PostgreSQL are correct
 
 
 create table test ( t1 dec(5,2) );
@@ -43,7 +43,7 @@ insert into test values (-123.128);
 commit;
 
 -- these should fail
-insert into test vALUES (1234);
+insert into test values (1234);
 rollback;
       -- a '.00' decimal part is assumed for the next value 
 insert into test values (-1234);

@@ -59,16 +59,16 @@ stderr of test 'decimal` in directory 'src/test` itself:
 
 MAPI  = monetdb@spin:58772
 QUERY = insert into test values (1234);
-ERROR = !Dynamic Types decimal(9,0) (int) and decimal(5,2) (int) are not equal
+ERROR = !Dynamic types decimal(9,0) (int) and decimal(5,2) (int) are not equal
 MAPI  = monetdb@spin:58772
 QUERY = insert into test values (-1234);
-ERROR = !Dynamic Types decimal(9,0) (int) and decimal(5,2) (int) are not equal
+ERROR = !Dynamic types decimal(9,0) (int) and decimal(5,2) (int) are not equal
 MAPI  = monetdb@spin:58772
 QUERY = insert into test values (1234.1);
-ERROR = !Dynamic Types decimal(5,1) (int) and decimal(5,2) (int) are not equal
+ERROR = !Dynamic types decimal(5,1) (int) and decimal(5,2) (int) are not equal
 MAPI  = monetdb@spin:58772
 QUERY = insert into test values (-1234.1);
-ERROR = !Dynamic Types decimal(5,1) (int) and decimal(5,2) (int) are not equal
+ERROR = !Dynamic types decimal(5,1) (int) and decimal(5,2) (int) are not equal
 
 # 09:34:12 >  
 # 09:34:12 >  Done.
