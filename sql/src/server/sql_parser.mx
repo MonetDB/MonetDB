@@ -1853,6 +1853,7 @@ opt_limit:
 opt_offset:
 	/* empty */				{ $$ = -1; }
  |  OFFSET posint			{ $$ = $2; }
+ ;
 
 ordering_spec_commalist:
     ordering_spec	 { $$ = dlist_append_symbol(dlist_create(), $1); }
