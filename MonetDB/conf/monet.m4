@@ -138,7 +138,7 @@ gcc)
 	dnl  however, other systems (IRIX,CYGWIN,Darwin) don't "like" these at all...
 	case "$host_os" in
 	irix*|cygwin*|darwin*)	;;
-	*)	CFLAGS="$CFLAGS -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500";;
+	*)	CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500";;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall"
@@ -150,13 +150,24 @@ icc|ecc)
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -Wall -w2"
+	CFLAGS="$CFLAGS -ansi -c99 -Wall -w2"
 	;;
 esac
 case $CXX in
-arm-linux-g++|g++)	
+arm-linux-g++)
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	dnl CXXFLAGS="$CXXFLAGS -Wall"
+	CXXFLAGS="$CXXFLAGS -Wall"
+	dnl "-W"
+	;;
+g++)
+	dnl  Some systems (SunOS) require these to find the right prototypes, e.g. for *time_r();
+	dnl  however, other systems (IRIX,CYGWIN,Darwin) don't "like" these at all...
+	case "$host_os" in
+	irix*|cygwin*|darwin*)	;;
+	*)	CXXFLAGS="$CXXFLAGS -ansi";;
+	esac
+	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
+	CXXFLAGS="$CXXFLAGS -Wall"
 	dnl "-W"
 	;;
 icpc|ecpc)
@@ -165,7 +176,7 @@ icpc|ecpc)
 	dnl  become an error to make configure tests work properly.
 	CXXFLAGS="$CXXFLAGS -we140"
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CXXFLAGS="$CXXFLAGS -Wall -w2"
+	CXXFLAGS="$CXXFLAGS -ansi -c99 -Wall -w2"
 	;;
 esac
 
@@ -304,7 +315,7 @@ icc|ecc)
 	CFLAGS="$CFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	CFLAGS="$CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,108,188,1357"
+	CFLAGS="$CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,108,188,1357"
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
 	dnl  # 279: controlling expression is constant
@@ -317,6 +328,7 @@ icc|ecc)
 	dnl  # 177: function "." was declared but never referenced
 	dnl  # 171: invalid type conversion: "." to "."
 	dnl  # 181: argument is incompatible with corresponding format string conversion
+	dnl  # 764: nonstandard format string conversion
 	dnl  # 108: implicitly-signed bit field of length 1
 	dnl  # 188: enumerated type mixed with another type
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
@@ -351,7 +363,7 @@ icpc|ecpc)
 	CXXFLAGS="$CXXFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	CXXFLAGS="$CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,108,188,1357"
+	CXXFLAGS="$CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,108,188,1357"
 	;;
 esac
 
