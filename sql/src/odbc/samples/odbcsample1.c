@@ -188,7 +188,6 @@ main(int argc, char **argv)
 					f5.hour = 0;
 			}
 		}
-		printf("%d\n", i);
 		ret = SQLExecute(stmt);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLExecute");
 	}
