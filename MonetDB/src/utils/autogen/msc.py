@@ -348,7 +348,8 @@ def msc_scripts(fd, var, scripts, msc):
         elif os.path.isfile(os.path.join(msc['cwd'], script)):
             fd.write("%s: $(SRCDIR)\\%s\n" % (script, script))
             fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script, script, script))
-        msc['INSTALL'].append((script, script, '', sd))
+        if script != 'mprof.mil':
+            msc['INSTALL'].append((script, script, '', sd))
 
 ##    msc_deps(fd, scripts['DEPS'], "\.o", msc)
 
