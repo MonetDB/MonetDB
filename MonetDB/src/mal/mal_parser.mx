@@ -438,7 +438,7 @@ int parseImport(Client cntxt)
 
 	@:parsePath@
 
-	malImport(modname, cntxt->listing);
+	malImport(cntxt,modname, cntxt->listing);
 	skipToEnd(cntxt);
 	return 1;
 }
@@ -608,10 +608,13 @@ Most functions are (dynamically) linked with the kernel.
 	if( keyphrase1(cntxt,"=")){
 		str nme;
 		int i;
+		skipBlanc2(cntxt);
 		i = idLength(cntxt);
+		if( i==0){
+			parseError(cntxt,"<identifier> expected\n");
+			return 0;
+		}
 		nme = idCopy(cntxt,i);
-		i= newVariable(curBlk,nme,getVarType(curBlk,0));
-		curInstr->argv[0]=i;
 		curInstr->modname = GDKstrdup(cntxt->nspace->name);
 		curInstr->fcn = getAddress(nme);
 		curBlk->binding = GDKstrdup(nme);
@@ -973,13 +976,12 @@ int parseMal(Client cntxt){
 	skipBlanc(cntxt);
 	while( currChar(cntxt)){
 		switch( currChar(cntxt)){
-		case '\n':
-		case '\r':
-		case '\f': nextChar(cntxt);
-			   echoInput(cntxt);
-			   continue;
-		case '\t':
-		case ' ': nextChar(cntxt);
+		case '\n': case '\r': case '\f': 
+			nextChar(cntxt);
+			echoInput(cntxt);
+			continue;
+		case '\t': case ' ': 
+			  nextChar(cntxt);
 		case  0 : continue;
 		case '#': skipComment(cntxt);
 			  continue;

@@ -108,6 +108,7 @@ It will simple terminate after consuming the input buffer.
 	str	nxt;			/* next unparsed input */
 	str	prompt;			/* acknowledge prompt */
 	int	promptlength;
+	int	blkmode;		/* control reading */
 	int	listing;		/* echo the input */
 	int	mode;			/* FREECLIENT..BLOCKED */
 @-
@@ -247,6 +248,7 @@ collect the buffer when in use.
 	setbuffer(c->fdout, c->output, BLOCKSIZE); */
 	c->output = 0;
  	c->socket = msgsock;
+	c->blkmode= c->fdin==stdin?0: MAPIBLKSIZE;
 	
 	c->nspace = 0;
 	c->curprg = 0;
@@ -481,7 +483,7 @@ To simplify misaligned communication with front-ends, we use different
 prompts structures. [think, can we avoid acks]
 
 @h
-#define BYTEMSG	"#blocks:%6d"
+#define MAPIBLOCKCNT	"#blockcnt:%6d"
 @c
 int readClient(Client c){
 	int i,bytes,blocks,len;
@@ -493,7 +495,7 @@ the front-end to issue the request.
 @c
  	last= s = c->input; *s = 0;
 	bytes = c->limit - c->input;
-again:
+readAgain:
 	clientPrompt(c);
 	if( feof(c->fdin) ) return 0;
 @-
@@ -502,11 +504,11 @@ Therefore, most interaction should be regulated through the Mclient
 front-end. This will also take care of buffering a request before
 submission. This avoids a significant number of network interactions.
 @c
-	if(c->fdin!=stdin && (i=fread(s,1,MAPIBLKSIZE,c->fdin)) != MAPIBLKSIZE){
-		GDKerror("readClient:Block read failed\n");
+	if(c->blkmode && (i=fread(s,1,MAPIBLKSIZE,c->fdin)) != MAPIBLKSIZE){
+		GDKerror("readClient:Block read failed (%dbytes)\n",i);
 		return 0;
 	} 
-	if( c->fdin== stdin && fgets(s,bytes,c->fdin) == NULL){
+	if( c->blkmode==0 && fgets(s,bytes,c->fdin) == NULL){
 		if (feof(c->fdin)
 #ifndef WIN32
 		    || (i < 0 && MT_geterrno() != EAGAIN) 
@@ -515,7 +517,7 @@ submission. This avoids a significant number of network interactions.
 			return 0;
 		}
 		MT_seterrno(0);
-		goto again;
+		goto readAgain;
 	}
 	for(i=0;s[i];i++){
 #ifdef WIN32
@@ -527,7 +529,7 @@ submission. This avoids a significant number of network interactions.
 		enlargebuffer(c, BLOCKSIZE);
 		s= c->input+len;
 		bytes= BLOCKSIZE;
-		goto again;
+		goto readAgain;
 	}
 
 @-
@@ -535,7 +537,12 @@ Check to see if this involves a blocked message. If so, read
 the complete block in one blow. Turn the ^M into a space afterwards.
 The alternative is to read the next line;
 @c
-	if(*last=='#' && sscanf(last,BYTEMSG,&blocks)==1){
+	if( *last != '#') return 1;
+	if(sscanf(last,"#blocksize:%6d",&blocks)==1){
+		c->blkmode = blocks;
+		goto readAgain;
+	}
+	if(sscanf(last,MAPIBLOCKCNT,&blocks)==1){
 		bytes= blocks * MAPIBLKSIZE;
 		while( bytes >= c->limit-c->input)
 			enlargebuffer(c, MAPIBLKSIZE);

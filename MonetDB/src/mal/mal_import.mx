@@ -32,12 +32,18 @@ html
 #define _MAL_IMPORT_H
 
 #include "mal_scope.h"
+#include "mal_stack.h"
+#include "mal_function.h"
+#include "mal_client.h"
 
-mal_export void malImport(str fname,int listing);
+mal_export void malImport(Client c, str fname,int listing);
+mal_export FILE *malOpenSource(str fname);
+mal_export void processInput(Client c,MalStkPtr glb);
+mal_export void runScript(Client c, str fname, int listing);
 #endif /*  _MAL_IMPORT_H*/
 @-
-The import context is located. If it already exists, we should silently skip
-parsing the file. This is handled at the parser level.
+The import context is located. If the module already exists, 
+we should silently skip parsing the file. This is handled at the parser level.
 The files are extracted from a default location,
 namely the DBHOME/modules directory.
 
@@ -46,24 +52,11 @@ If the string starts with '/' or '~' the context is not changed.
 Every IMPORT statement denotes a possible dynamic load library.
 Make sure it is loaded as well.
 @c
-#include "mal_client.h"
 #include "mal_import.h"
 
-void malImport(str fname,int listing){
-	FILE *fd;
-	long i,len;
-	char *buf;
-	Symbol	prg;
+FILE *malOpenSource(str fname){
+	FILE *fd= NULL;
 	char path[PATHLENGTH];
-        InstrPtr curInstr;
-        MalBlkPtr curBlk;
-
-	Client c= getClient();
-	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
-	int oldlisting = c->listing;
-	Scope oldscope = c->nspace;
-	Symbol oldprg = c->curprg;
-	int limit;
 
         SLASH_2_DIR_SEP(fname);
 	if ((fd = fopen(fname, "r")) == 0) {
@@ -82,24 +75,33 @@ void malImport(str fname,int listing){
 		}
             }
         }
-        if (fd == 0) {
+	return fd;
+}
+
+void malImport(Client c, str fname,int listing){
+	FILE *fd;
+	long i=0,len;
+	Symbol	prg;
+
+	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
+	int oldlisting = c->listing;
+	Scope oldscope = c->nspace;
+	Symbol oldprg = c->curprg;
+
+        if ( (fd= malOpenSource(fname)) == 0) {
                 GDKerror("malImport: could not open file: %s\n", fname);
                 return;
         }
         (void) fseek(fd,0L,SEEK_END);
-        i = 0; len = ftell(fd)+2;
+        len = ftell(fd)+1;
         (void) fseek(fd,0L,0);
-
-	limit= (len/1024+1)*1024;
-	c->nxt = c->input = (char *) GDKmalloc(limit);
-	c->limit = c->input + limit;
-	if( c->input == 0){
-		GDKerror("unable to allocate buffer\n");
-		return;
-	}
+	c->nxt = c->input = (char *) GDKmalloc(len);
+	c->limit = c->input + len ;
+	if( c->input == 0)
+		GDKfatal("unable to allocate buffer\n");
 
         i=fread(c->input, 1, len, fd);
-        if( i != len-2) GDKerror("not enough bytes read \n");
+        if( i != len - 1) GDKerror("not enough bytes read \n");
         fclose(fd);
         c->input[i] = 0;
 @-
@@ -131,4 +133,85 @@ resolving addresses.
 			GDKfree(msg);
 		}
 	} 
+}
+@+ File and input processing
+A recurring situation is to execute a stream of simple MAL instructions
+stored on a file or comes from standard input. We parse one MAL 
+instruction line at a time and attempt to execute it immediately.
+Note, this precludes entereing complex MAL structures on the primary
+input channel, because 1) this requires complex code to keep track
+that we are in 'definition mode' 2) this requires (too) carefull
+typing by the user, because he can not make an typeing error
+
+Therefore, all compound code fragments should be loaded and executed
+using the run(file) command.
+
+A stack frame is initialized to keep track of global variables.
+The nesting of barrier blocks should ensure detection of the end
+of the hierarchy.
+@c
+void processInput(Client c,MalStkPtr glb)
+{	str msg;
+	InstrPtr p;
+	MalBlkPtr mb;
+
+	mb= c->curprg->def;
+	while(c->mode > FINISHING && readClient(c)){
+		c->nxt= c->input;
+		if( parseMal(c,0)) {
+			resetMalBlk(c->curprg->def,glb);
+			continue;
+		}
+		if( mb->stop == 1) continue; /* nothing added */
+		p= getInstrPtr(mb, mb->stop-1);
+		pushEndInstruction(mb);
+		chkClientPrg(c);
+		if( mb->errors == 0){
+			msg= (str) runMAL(c,mb,0,glb);
+			if( msg && msg != (str) GDK_SUCCEED) {
+				if( !c->listing) 
+					printFunction(c->fdout,mb);
+				GDKerror(msg);
+				GDKfree(msg);
+			}
+		}
+		resetMalBlk(c->curprg->def,glb);
+	}
+}
+@-
+Running looks much like an Import operation, except for the execution
+phase. This is performed in the context of an a priori defined
+stack frame. Life becomes a little complicated when the script contains
+a definition.
+
+@c
+void runScript(Client c, str fname, int listing)
+{	
+	FILE *fd, *oldinput;
+	int oldlisting= c->listing;
+	int oldmode = c->blkmode;
+	str oldprompt = c->prompt;
+	MalStkPtr glb;
+
+        if ( (fd= malOpenSource(fname)) == 0) {
+                GDKerror("malImport: could not open file: %s\n", fname);
+                return;
+        }
+	oldinput= c->fdin;
+	c->fdin = fd;
+	c->listing = listing;
+	c->blkmode = 0;
+	c->prompt = "";
+	resetClientPrg(c);
+
+	newStack(glb,MAXGLOBALS);
+	glb->stktop = MAXGLOBALS;
+	glb->blk = c->curprg->def;
+
+	GDKerror("runScript is not yet defined\n");
+	c->fdin = oldinput;
+	c->listing = oldlisting;
+	c->blkmode = oldmode;
+	c->prompt = oldprompt;
+	(void) fclose(fd);
 }

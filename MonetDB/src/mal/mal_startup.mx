@@ -53,9 +53,8 @@ mal_export int malStartupAdmin(int listing);
 mal_export void serveClient(void *dummy);
 mal_export void resetClientPrg(Client cntxt);
 mal_export void closeClientPrg(Client cntxt, int flag);
-mal_export void chkClientPrg(Client cntxt,int flag);
+mal_export void chkClientPrg(Client cntxt);
 mal_export void scheduleClient(str user, int socket);
-mal_export void runScript(Client c, str fname, int listing);
 #endif /*  _MAL_STARTUP_H*/
 @-
 The startup script for databases recides in the administrator's
@@ -81,7 +80,7 @@ void startupPrelude(Client c, str fnme1, str fnme2)
 		}
 	} 
 	fclose(fd);
-	runScript(c,buf,0);
+	malImport(c,buf,0);
 }
 
 int malStartupAdmin(int listing){
@@ -138,7 +137,7 @@ void closeClientPrg(Client cntxt, int flag){
 			pushEndInstruction(mb);
 	}
 	trimMalBlk(mb);
-	chkClientPrg(cntxt,flag);
+	chkClientPrg(cntxt);
 	resetClientPrg(cntxt);
 }
 @-
@@ -152,7 +151,7 @@ and leads to flagging the function as erroneous.
 Also check general conformaty of the ML block structure.
 It should start with a signature and finish with and ENDDEFsymbol
 @c
-void chkClientPrg(Client cntxt,int flag)
+void chkClientPrg(Client cntxt)
 {
         InstrPtr p;
         MalBlkPtr mb;
@@ -252,8 +251,6 @@ variable stack, i.e. removing at least the temporary variables,
 but maybe everything beyond a previous defined pont.
 [also clear the stack! ]
 @c
-#define MAGIC GDKatomcnt	/* keep at least some */
-
 void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
         InstrPtr p;
         int i,j;
@@ -263,80 +260,42 @@ void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
                 freeInstruction(p);
 		mb->stmt[i] = NULL;
         }
-	if( mb->vtop>MAGIC){
-		for(i=j=MAGIC; i< mb->vtop; ){
-			if(getVarName(mb,i)[0]==TMPMARKER ) {
-				freeVariable(mb,i);
-				garbageElement(&glb->stk[i]);
-				i++;
-			} else {
-				if(i!=j){
-					copyVar(mb,j,i);
-					glb->stk[j]= glb->stk[i];
-				}
-				i++; j++;
+	for(i=j=0; i< mb->vtop; ){
+		if(getVarName(mb,i)[0]==TMPMARKER ) {
+			freeVariable(mb,i);
+			garbageElement(&glb->stk[i]);
+			i++;
+		} else {
+			if(i!=j){
+				copyVar(mb,j,i);
+				glb->stk[j]= glb->stk[i];
 			}
-			
+			i++; j++;
 		}
-		mb->vtop = j;
+		
 	}
+	mb->vtop = j;
 	mb->stop =1;
 	mb->errors = 0;
 }
 @c
 void serveClient(void *dummy)
-{
-	int inblock= -1;
-	str msg;
-	InstrPtr p;
-	MalBlkPtr mb;
+{	MalBlkPtr mb;
 	MalStkPtr glb;
 	Client c= (Client) dummy;
-
 
 	if( !isAdministrator(c) ) initClientThread(c);
 @-
 A stack frame is initialized to keep track of global variables.
-Note that it should be garbage collected before returning.
-(See interpreter.mx)
 @c
 	mb= c->curprg->def;
-	newStack(glb,mb->vtop+8);
+	newStack(glb,MAXGLOBALS);
 	glb->stktop =mb->vtop;
 	glb->blk = mb;
 
-	while(c->mode > FINISHING && readClient(c)){
-		c->nxt= c->input;
-		if( parseMal(c,0)) {
-			resetMalBlk(c->curprg->def,glb);
-			continue;
-		}
-		p= getInstrPtr(mb, mb->stop-1);
-		if( p->barrier && inblock < 0){
-			inblock = p->argv[0];
-		}
-		if( inblock > 0) {
-			if( p->token== ENDsymbol && p->argv[0]== inblock){
-				inblock= -1;
-			} else continue;
-		}
-		chkClientPrg(c,TRUE);
-		if( c->curprg->def->errors == 0){
-			if( c->listing) printFunction(c->fdout,mb);
-			msg= (str) runMAL(c,c->curprg->def,0,glb);
-			if( msg && msg != (str) GDK_SUCCEED) {
-				if( !c->listing) 
-					printFunction(c->fdout,mb);
-				GDKerror(msg);
-				GDKfree(msg);
-			}
-		}
-		resetMalBlk(c->curprg->def,glb);
-	}
-@-
-Garbage collect and time to close down a client.
-@c
-	garbageCollector(mb,glb);
+	processInput(c,glb);
+        garbageCollector(mb,glb);
+
 	if( c->mode > FINISHING){
 		if( isAdministrator(c)){
 			OIDflushdelta =0;
@@ -346,13 +305,4 @@ Garbage collect and time to close down a client.
 		}
 		closeClient(c);
 	}
-}
-@-
-A recurring situation is to execute a MAL program stored on a file.
-The code below uses the import facility, which means that any
-initialization routine, called 'main', will be executed automatically.
-@c
-void runScript(Client c, str fname, int listing)
-{	
-	malImport(fname,listing);
 }

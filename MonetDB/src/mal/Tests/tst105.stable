@@ -11,8 +11,8 @@
 #
 #module bat2;
 #command new(h:any::1,t:any::2):bat[any::1,any::2]= GDKbatnew;
-!ERROR: address of function GDKbatnew not found
-command bat2.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew;	#0 polymorphic:(GDKbatnew:bat[any::1,any::2]->3)(h:any::1->1)(t:any::2->2)
+!ERROR: address of function 'GDKbatnew' not found
+command bat2.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew;	#0 polymorphic:(new:bat[any::1,any::2]->0)(h:any::1->1)(t:any::2->2)
 #
 #a:= bat2.new(str,int);
 #b:= bat2.new(str,int);

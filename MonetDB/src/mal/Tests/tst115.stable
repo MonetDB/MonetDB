@@ -9,8 +9,8 @@
 ## the next step is to trace the call of a mal function call
 #
 #command + (L:any::1,R:any::1):any::1 = addIntInt; 
-!ERROR: address of function addIntInt not found
-command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:(addIntInt:any::1->3)(L:any::1->1)(R:any::1->2)
+!ERROR: address of function 'addIntInt' not found
+command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:(+:any::1->0)(L:any::1->1)(R:any::1->2)
 #
 #function doitOnce():int;
 #	z:= 12;

@@ -60,10 +60,7 @@ typedef struct MALSTK {
 #define MAXGLOBALS	4 * STACKINCR
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT)	S= (MalStkPtr) alloca(stackSize(CNT));\
-			memset((void *) S, 0, stackSize(CNT));\
-			(S)->stksize=CNT;
-#define gblStack(S,CNT)	S= (MalStkPtr) GDKmalloc(stackSize(CNT));\
-			memset((void *) S, 0, stackSize(CNT));\
+			bzero((char *) S, stackSize(CNT));\
 			(S)->stksize=CNT;
 	
 #define newFrame(S,Ssize,Top,Cnt) S= reallocStack(S,&(Ssize),Top,Cnt)

@@ -185,7 +185,7 @@ Get the new information for the server socket and start listening.
 	}
 	listen(sock, *maxusers); 
 
-	if( MT_create_thread(&pid, MAPIlistenThread, (void*) sock) <0){
+	if( MT_create_thread((MT_Id)&pid, MAPIlistenThread, (void*) sock) <0){
 		GDKerror("Can not start internet thread\n");
 		return GDK_FAIL;
 	}

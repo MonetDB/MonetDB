@@ -10,9 +10,9 @@
 	print(x);
 	print(pi);
 	printf("hello\n");
-	printf("%5d",0);
-	printf("%5d",1:lng);
-	printf("%c",'c');
-	printf("%-8s", true);
-	printf("%6.2f",pi);
+	printf("%5d\n",0);
+	printf("%5d\n",1:lng);
+	printf("%c\n",'c');
+	printf("%-8s\n", true);
+	printf("%6.2f\n",pi);
 	printf("single line %s \n","hello");

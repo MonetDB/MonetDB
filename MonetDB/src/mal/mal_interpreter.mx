@@ -396,7 +396,7 @@ The upper layers have assured that the result variable is of type boolean.
 { 
 	v= &stk->stk[pci->argv[0]];
 	/* skip to end of barrier */
-	if( v->val.ival == FALSE ) @:leaveControl@
+	if( v->val.cval[0] == FALSE ) @:leaveControl@
 	stk->pc++;
 	break;
 }
@@ -577,9 +577,9 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
 { 	int k;
 	ValPtr v;
 
-	for(k=0;k<mb->vtop-1; k++) {
+	for(k=0;k<mb->vtop-1; k++) 
+	if( mb->var[k] )
 		garbageElement(&stk->stk[k]);
-	}
 }
 
 @+ Performance section

@@ -186,14 +186,14 @@ pattern table(b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_table_def
 pattern table(order:int, b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_otable
 	comment "Print an n-ary table. Use the ordering of param [1..argc]";
 
-command printf(format:str,val:bit):int = CMDprint_bit;
-command printf(format:str,val:chr):int = CMDprint_chr;
-command printf(format:str,val:int):int = CMDprint_int;
-command printf(format:str,val:sht):int = CMDprint_sht;
+command printf(format:str,val:bit):int = CMDprint_formatted_bit;
+command printf(format:str,val:chr):int = CMDprint_formatted_chr;
+command printf(format:str,val:int):int = CMDprint_formatted_int;
+command printf(format:str,val:sht):int = CMDprint_formatted_sht;
 command printf(format:str,val:oid):int = CMDprint_oid;
-command printf(format:str,val:lng):int = CMDprint_lng;
-command printf(format:str,val:flt):int = CMDprint_flt;
-command printf(format:str,val:dbl):int = CMDprint_dbl;
+command printf(format:str,val:lng):int = CMDprint_formatted_lng;
+command printf(format:str,val:flt):int = CMDprint_formatted_flt;
+command printf(format:str,val:dbl):int = CMDprint_formatted_dbl;
 command printf(val:str):int = CMDprint_str;
 command printf(format:str,val:str):int = CMDprint_formatted_str;
 
@@ -1324,6 +1324,15 @@ replaced by a squeezer into a type-specific function calls.
 @-
 Formatted print statements are to be broken down into its constituents.
 This avoids repeated type checking in most cases.
+
+@= escaped
+	switch(*c){
+	case 'n': *ret =  fputc('\n',fd);break;
+	case 't': *ret =  fputc('\t',fd);break;
+	case 'r': *ret =  fputc('\r',fd);break;
+	case '\\': *ret =  fputc('\\',fd);break;
+	default : *ret = fputc('\\',fd);fputc(*c,fd);
+	}
 @c
 int CMDprint_str(int *ret, str *s){
 	FILE *fd = GDKout; /* getClient()->fdout;*/
@@ -1333,13 +1342,7 @@ int CMDprint_str(int *ret, str *s){
 		for(c= *s;*c; c++){
 			if( *c=='\\'){
 				c++;
-				switch(*c){
-				case 'n': *ret =  fputc('\n',fd);break;
-				case 't': *ret =  fputc('\t',fd);break;
-				case 'r': *ret =  fputc('\r',fd);break;
-				case '\\': *ret =  fputc('\\',fd);break;
-				default : *ret = fputc('\\',fd);fputc(*c,fd);
-				}
+				@:escaped@
 			} else *ret = fputc(*c,fd);
 		}
 	}
@@ -1354,6 +1357,49 @@ int formatMarker(str format){
 	}
 	return i;
 }
+@-
+Printing format values is limited to a single element each.
+This to simplify error handling
+@= printFormatted
+int CMDprint_formatted_@1(int *ret, ptr fmt, @1 *s){
+	FILE *fd = getClient()->fdout;
+	char *format;
+	str c;
+	/* TODO: check format properly !!! including sizes */
+	format= *(str *)fmt;
+	if( format== NULL) return GDK_FAIL;
+	if( formatMarker(format)!=1) return GDK_FAIL;
+
+	if( s == &@1_nil) *ret = fputs("nil",fd); 
+	else {
+		for(c= format;*c; c++){
+			if( *c=='\\'){
+				c++;
+				@:escaped@
+			} else 
+			if( *c== '%'){
+				char newformat[1024];
+				int i=0;
+
+				if(*(c+1)=='%'){ 
+					*ret= fputc(*c,fd);
+					c++; continue;
+				}
+				while(*c != '@2' && *c && i<1024)
+					 newformat[i++]= *c++;
+				newformat[i++]='@2';
+				newformat[i]=0;
+				if(*c!= '@2') 
+				GDKerror("ERROR: printf format limitation\n");
+				else  fprintf(fd,newformat,*s);
+			} else *ret = fputc(*c,fd);
+		}
+	}
+	return GDK_SUCCEED;
+}
+@-
+String nil testing is slightly different.
+@c
 int CMDprint_formatted_str(int *ret, ptr fmt, str *s){
 	FILE *fd = getClient()->fdout;
 	char *format;
@@ -1363,24 +1409,28 @@ int CMDprint_formatted_str(int *ret, ptr fmt, str *s){
 	if( format== NULL) return GDK_FAIL;
 	if( formatMarker(format)!=1) return GDK_FAIL;
 
-	if( strNil(*s)) *ret = fputs("nil",fd);
+	if( strNil( *s)) *ret = fputs("nil",fd); 
 	else {
 		for(c= format;*c; c++){
 			if( *c=='\\'){
 				c++;
-				switch(*c){
-				case 'n': *ret =  fputc('\n',fd);break;
-				case 't': *ret =  fputc('\t',fd);break;
-				case 'r': *ret =  fputc('\r',fd);break;
-				case '\\': *ret =  fputc('\\',fd);break;
-				default : *ret = fputc('\\',fd);fputc(*c,fd);
-				}
+				@:escaped@
 			} else 
 			if( *c== '%'){
-				c++;
+				char newformat[1024];
+				int i=0;
+
+				if(*(c+1)=='%'){ 
+					*ret= fputc(*c,fd);
+					c++; continue;
+				}
+				while(*c != 's' && *c && i<1024)
+					 newformat[i++]= *c++;
+				newformat[i++]='s';
+				newformat[i]=0;
 				if(*c!= 's') 
 				GDKerror("ERROR: printf format limitation\n");
-				else  fputs(*s,fd);
+				else  fprintf(fd,newformat,*s);
 			} else *ret = fputc(*c,fd);
 		}
 	}
@@ -1388,59 +1438,88 @@ int CMDprint_formatted_str(int *ret, ptr fmt, str *s){
 }
 int CMDprint_oid(int *ret, ptr fmt, oid *s){
 	FILE *fd = getClient()->fdout;
-	char *format; /* "%@2";*/
-	/* TODO: check format properly !!! */
+	char *format;
+	str msg,c;
+	int len =50;
 	format= *(str *)fmt;
+
 	if( format== NULL) return GDK_FAIL;
 	if( formatMarker(format)!=1) return GDK_FAIL;
 
+	if( *s == oid_nil) msg = GDKstrdup("nil");
+	else { msg = (str) GDKmalloc(len); OIDtoStr(&msg,&len,s);}
+	for(c= format;*c; c++){
+		if( *c=='\\'){
+			c++;
+			@:escaped@
+		} else 
+		if( *c== '%'){
+			char newformat[1024];
+			int i=0;
+
+			if(*(c+1)=='%'){ 
+				*ret= fputc(*c,fd);
+				c++; continue;
+			}
+			while(*c != 's' && *c && i<1024)
+				 newformat[i++]= *c++;
+			newformat[i++]='s';
+			newformat[i]=0;
+			if(*c!= 's') 
+			GDKerror("ERROR: printf format limitation\n");
+			else  fprintf(fd,newformat,msg);
+		} else *ret = fputc(*c,fd);
+	}
+	GDKfree(msg);
+	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
 	if( *s == oid_nil) *ret = fputs("nil",fd);
 	else *ret= ATOMprint(TYPE_oid,s,fd);
 	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
 }
-int CMDprint_bit(int *ret, ptr fmt, bit *s){
+int CMDprint_formatted_bit(int *ret, ptr fmt, bit *s){
 	FILE *fd = getClient()->fdout;
-	char *format; /* "%@2";*/
-	/* TODO: check format properly !!! */
+	char *format;
+	str msg;
+	str c;
+	/* TODO: check format properly !!! including sizes */
 	format= *(str *)fmt;
 	if( format== NULL) return GDK_FAIL;
 	if( formatMarker(format)!=1) return GDK_FAIL;
 
-	if( *s == bit_nil) *ret = fputs("nil",fd);
-	else 
-	if( *s ) fprintf(fd,format,"true");
-	else 	fprintf(fd,format,"false");
+	if( *s == bit_nil) msg = "nil";
+	else if( *s ) msg="true";
+	else 	msg="false";
+	for(c= format;*c; c++){
+		if( *c=='\\'){
+			c++;
+			@:escaped@
+		} else 
+		if( *c== '%'){
+			char newformat[1024];
+			int i=0;
 
-	/* *ret= ATOMprint(TYPE_bit,s,getClient()->fdout);*/
+			if(*(c+1)=='%'){ 
+				*ret= fputc(*c,fd);
+				c++; continue;
+			}
+			while(*c != 's' && *c && i<1024)
+				 newformat[i++]= *c++;
+			newformat[i++]='s';
+			newformat[i]=0;
+			if(*c!= 's') 
+			GDKerror("ERROR: printf format limitation\n");
+			else  fprintf(fd,newformat,msg);
+		} else *ret = fputc(*c,fd);
+	}
 	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
 }
 
-@-
-The formatted print routines permit just a single
-format and argument. This to simplify the analysis.
-The format type conformance should be implemented.
-
-@= printType
-int CMDprint_@1(int *ret, ptr fmt, @1 *v){
-	FILE *fd = getClient()->fdout;
-	char *format; /* "%@2";*/
-	/* TODO: check format properly !!! */
-	format= *(str *)fmt;
-	if( format== NULL) return GDK_FAIL;
-	if( formatMarker(format)!=1) return GDK_FAIL;
-
-	if( *v == @1_nil) *ret = fputs("nil",fd);
-	else *ret= fprintf(fd,format,*v);
-	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
-}
-
-@c
- 	@:printType(chr,c)@
- 	@:printType(sht,d)@
- 	@:printType(int,d)@
- 	@:printType(lng,d)@
- 	@:printType(flt,f)@
- 	@:printType(dbl,f)@
+ 	@:printFormatted(chr,c)@
+ 	@:printFormatted(sht,d)@
+ 	@:printFormatted(int,d)@
+ 	@:printFormatted(lng,d)@
+ 	@:printFormatted(flt,f)@
+ 	@:printFormatted(dbl,f)@
 
 int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         BAT *piv[MAXPARAMS],*b;

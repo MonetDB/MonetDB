@@ -284,7 +284,7 @@ void monet_init(int argc, char **argv ){
 	if( mal_init()) return;
 
         for(i=0; monet_script[i]; i++) {
-                runScript(mal_clients, monet_script[i], mal_listing);
+                malImport(mal_clients, monet_script[i], mal_listing);
 	}
 	resetClientPrg(mal_clients);
 	serveClient(mal_clients);

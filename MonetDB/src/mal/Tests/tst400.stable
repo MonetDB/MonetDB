@@ -6,7 +6,6 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-#
 #	i:= -1;
 #barrier v1:= iterator.nextElement(i,0,2);
 #	print("do something");
