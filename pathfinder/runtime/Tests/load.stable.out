@@ -63,6 +63,7 @@ loading module 'pathfinder'
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
