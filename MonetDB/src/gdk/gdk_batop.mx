@@ -512,11 +512,12 @@ And now correct the interpretation of the values encountered
 by bulk copying the heap as well
 @c
 	if (tricky) {
-		BAT *bm = BATmirror(bn);
+		BAT *bm;
 		if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
 bunins_failed:		BBPreclaim(bn);
 			return NULL;
 		}
+		bm = BATmirror(bn);
 		bm->ttype = bn->htype = b->ttype;
 		bm->tvarsized = bn->hvarsized = 1;
 		strcpy(bn->hatom, ATOMname(b->ttype));
@@ -1612,7 +1613,7 @@ achieve totally sorted chunks at the same time.
 			}
 	    		bf = part_bat(bn, BAThtype(bn), BATttype(bn), (size_t)(q-p),FALSE);
 			if (bf == NULL) {
-bunins_failed:			BBPreclaim(metabat);
+				BBPreclaim(metabat);
 				return NULL;
 			}
 		        if (!unary) bf->tsorted = GDK_SORTED; 
@@ -1692,6 +1693,10 @@ BATloopFast(b, r, s, xx) {
         GDKfree(sizes);
 
 	return metabat; 
+
+bunins_failed:
+	BBPreclaim(metabat);
+	return NULL;
 }
 @
 @}
