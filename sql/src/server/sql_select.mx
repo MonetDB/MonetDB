@@ -306,7 +306,7 @@ table_optname(mvc *sql, scope *scp, stmt *sq, char *query, symbol *optname)
 		dnode *d;
 
 		if (list_length(sq->op1.lval) != dlist_length(columnrefs)) {
-			return sql_error(sql, 02, "Error: Column definition list doesn't match real list of columns");
+			return sql_error(sql, 02, "Column definition list doesn't match real list of columns");
 		}
 		for (m = sq->op1.lval->h, d = columnrefs->h; d && m; d = d->next, m = m->next) {
 			stmt *st = m->data;
@@ -500,7 +500,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 	if (!restype) {
 		list_destroy(conds);
 		list_destroy(results);
-		return sql_error(sql, 02, "Error: result type missing");
+		return sql_error(sql, 02, "result type missing");
 	}
 	for (; dn; dn = dn->next) {
 		stmt *cond = NULL, *result = NULL;
@@ -536,14 +536,14 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		if (!tpe) {
 			list_destroy(conds);
 			list_destroy(results);
-			return sql_error(sql, 02, "Error: result type missing");
+			return sql_error(sql, 02, "result type missing");
 		}
 		tpe = supertype(restype, tpe);
 		sql_subtype_destroy(restype);
 		if (!tpe) {
 			list_destroy(conds);
 			list_destroy(results);
-			return sql_error(sql, 02, "Error: result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
+			return sql_error(sql, 02, "result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
 		}
 		restype = tpe;
 	}
