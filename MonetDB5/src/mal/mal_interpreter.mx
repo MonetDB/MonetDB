@@ -50,7 +50,7 @@ typedef struct{
     Client cntxt; 
     MalBlkPtr mb; 
     MalStkPtr stk; 
-    int startpc; 
+    int startpc,stoppc; 
     MalStkPtr env;
     InstrPtr pcicaller;
     InstrPtr pci;
@@ -61,11 +61,9 @@ typedef struct{
 /*#define STACKTRACE*/
 mal_export void showErrors();
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
-        MalBlkPtr mbcaller, 
-        MalStkPtr env, InstrPtr pcicaller);
-mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, 
-        int startpc, MalStkPtr stk,
-        MalStkPtr env, InstrPtr pcicaller);
+        MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
+mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
+	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
 mal_export void waitForChildren(MalStkPtr stk);
@@ -315,36 +313,43 @@ pattern operators to deal with it.
     return ret;
 }
 @-
+@+ Single instruction
 It is possible to re-enter the interpreter at a specific place.
 This is used in the area where we need to support co-routines.
+
+A special case for MAL interpretation is to execute just one instruction.
+This is typically used by optimizers and schedulers that need part of the 
+answer to direct their actions. Or, a dataflow scheduler could step in
+to enforce a completely different execution order.
 @c
-str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, MalStkPtr stk,
-       MalStkPtr env, InstrPtr pcicaller)
+str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
+	MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
     malTask task;
     str ret;
-        task.cntxt= cntxt;
-        task.mb= mb;
-        task.stk=stk;
-        task.startpc=startpc;
-        task.env=env;
-        task.pcicaller=pcicaller;
-        task.pci= 0;
+	task.cntxt= cntxt;
+	task.mb= mb;
+	task.stk=stk;
+	task.startpc=startpc;
+	task.stoppc=stoppc;
+	task.env=env;
+	task.pcicaller=pcicaller;
+	task.pci= 0;
 
-        if(env && stk->cmd!='f') stk->cmd = env->cmd ;
+	if(env && stk->cmd!='f') stk->cmd = env->cmd ;
 
-    ret= runMALsequence(&task);
+	ret= runMALsequence(&task);
 
-        @:waitForChildren@
-        /* pass the debug mode */
-        if(env && stk->cmd!='f') env->cmd = stk->cmd;
+	@:waitForChildren@
+	/* pass the debug mode */
+	if(env && stk->cmd!='f') env->cmd = stk->cmd;
 #ifdef STACKTRACE
-        stream_printf(GDKout,"Stack after loop\n");
-        printStack(GDKout,mb,stk); fflush(GDKout);
+	stream_printf(GDKout,"Stack after loop\n");
+	printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-    if( !stk->keepAlive)
-        garbageCollector(mb,stk,env != stk);
-        return ret;
+	if( !stk->keepAlive)
+		garbageCollector(mb,stk,env != stk);
+	return ret;
 }
 @-
 The core of the interpreter is presented next. It takes the context information
@@ -376,7 +381,7 @@ str runMALsequence( malTask *task)
 MALrestart:
     stkpc = startpc;
     stkexception = -1;
-    while(stkpc < mb->stop ){
+    while(stkpc < mb->stop && stkpc != task->stoppc ){
         pci = getInstrPtr(mb,stkpc);
         @:exceptionTypeTest@
         if( stk->cmd  ) {
@@ -412,6 +417,7 @@ void runMALtask(malTask *task){
     stream_printf(GDKout," task->mb = %d\n",task->mb);
     stream_printf(GDKout," task->stk = %d\n",task->stk);
     stream_printf(GDKout," task->startpc = %d\n",task->startpc);
+    stream_printf(GDKout," task->stoppc = %d\n",task->stoppc);
     stream_printf(GDKout," task->env = %d\n",task->env);
     stream_printf(GDKout," task->pcicaller = %d\n",
                     task->pcicaller);
@@ -976,8 +982,8 @@ Joining a process thread is controlled with a lock part of the stack frame
     stream_printf(GDKout," task->cntxt = %d\n",task->cntxt);
     stream_printf(GDKout," task->mb = %d\n",task->mb);
     stream_printf(GDKout," task->stk = %d\n",task->stk);
-    stream_printf(GDKout," task->startpc = %d\n",
-                task->startpc);
+    stream_printf(GDKout," task->startpc = %d\n", task->startpc);
+    stream_printf(GDKout," task->stoppc = %d\n", task->stoppc);
     stream_printf(GDKout," task->env = %d\n",task->env);
     stream_printf(GDKout," task->pcicaller = %d\n",
                 task->pcicaller);
