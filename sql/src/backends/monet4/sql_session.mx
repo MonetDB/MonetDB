@@ -438,10 +438,10 @@ int sqlexecute(backend * be, stream *out )
 
 	if (c->explain)
 	{
-	    	if (strcmp(c->explain, "plan") == 0)
-			explain = ex_plan;
-	    	else if (strcmp(c->explain, "performance") == 0)
-			explain = ex_performance;
+		if (strcmp(c->explain, "plan") == 0)
+		explain = ex_plan;
+		else if (strcmp(c->explain, "performance") == 0)
+		explain = ex_performance;
 	}
 
 	if (explain == ex_performance)
@@ -493,7 +493,7 @@ int sqlexecute(backend * be, stream *out )
 			}
 		}
 	} else if (explain == ex_plan || !c->cache ||
-	    !(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
+		!(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
 		char *cmd = NULL;
 		stmt *s = sql_symbol2stmt(c);
 
@@ -530,7 +530,7 @@ int sqlexecute(backend * be, stream *out )
 			backend_dumpproc( be, c->qc->id, s );
 		}
 		cmd = buffer_get_buf(be->outbuf);
-    		stream_flush( be->out );
+		stream_flush( be->out );
 		stmt_destroy(s);
 
 		if (explain == ex_plan) {
@@ -597,7 +597,8 @@ int sqlexecute(backend * be, stream *out )
 	 * and on schema changes
 	 */
 	if (c->cache &&
-	   ( c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id > 100)) {
+	   ( c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id > 100))
+	{
 		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
@@ -623,8 +624,9 @@ int sqlexecute(backend * be, stream *out )
 		if (mvc_status(c) < 0) {
 			error(out, "Error in result");
 		} else if (c->cache && 
-			   c->type != Q_RESULT && 
-			   c->type != Q_UPDATE) {
+			c->type != Q_RESULT && 
+			c->type != Q_UPDATE)
+		{
 			err = mvc_export_default( c, out ); 
 		}
 	}
@@ -701,8 +703,8 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
 	while(go){
 		int pstatus = 0;
 		while (in->pos < in->len &&
-                       (isspace((int)(in->buf[in->pos])) ||
-		        in->buf[in->pos] == ';' ))
+			(isspace((int)(in->buf[in->pos])) ||
+			in->buf[in->pos] == ';' ))
 			in->pos++;
 
 		if (in->pos >= in->len) {
@@ -729,7 +731,8 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
 				}
 
 				if (stream_write(out,PROMPT1,sizeof(PROMPT1)-1,1) != 1 ||
-				    stream_flush(out)) {
+				    stream_flush(out))
+				{
 					go = FALSE;
 					break;
 				}
@@ -742,7 +745,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
 					   (this time with prompt) */
 					continue;
 				}
-				go= FALSE;
+				go = FALSE;
 				break;
 			}
 			if (go && !sql->console && language == 0)
@@ -750,7 +753,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
 		}
 		if (sql->console && strncmp(in->buf+in->pos,"quit",4) == 0) {
 			in->pos = in->len; /* HACK: should use parsed lenght */
-			go=FALSE;
+			go = FALSE;
 			break;
 		}
 @-
@@ -771,7 +774,7 @@ query string with "M".
 			m->scanner.mode = LINE_1;
 		}
 		if (language != 'S' && language != 'X') {
-			error(out, "!ERROR:Unrecognized language prefix");
+			error(out, "!ERROR: Unrecognized language prefix");
 			break;
 		}
 		if (language == 'X') {
@@ -789,7 +792,7 @@ query string with "M".
 				in->pos = in->len; /* HACK: should use parsed lenght */
 				continue;
 			}
-			error(out, "!ERROR:Unrecognized X command");
+			error(out, "!ERROR: Unrecognized X command");
 			break;
 		}
 
@@ -1064,7 +1067,7 @@ These lines should be eaten away into the prompt is encountered.
 
 	if (!schema){
 		/* close the connection to the Monet server */
-		if( error(out, "!ERROR:Schema authorization error") == 0 &&
+		if( error(out, "!ERROR: Schema authorization error") == 0 &&
 		    stream_write(out,PROMPT1,sizeof(PROMPT1)-1,1) >=0 )
 			stream_flush(out);
 		res_tables_destroy(m->results);
@@ -1072,10 +1075,11 @@ These lines should be eaten away into the prompt is encountered.
 		return connect_error(in, out);
 	}
 	/* Send the profile to the client for inspection*/
-	if (!sendProperty(out, "version", "4.3") ||
+	if (!sendProperty(out, "version", "4") ||
 	    !sendProperty(out, "language", "sql") ||
 	    !sendProperty(out, "schema", schema) ||
-	    stream_flush(out) < 0) {
+	    stream_flush(out) < 0)
+	{
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		return connect_error(in, out);
@@ -1116,13 +1120,13 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	schema = mvc_login( m, "monetdb", "monetdb" );
 
 	if (!schema){
-		stream_printf(out, "!ERROR:Schema authorization error");
+		stream_printf(out, "!ERROR: Schema authorization error");
 		stream_flush(out);
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		return GDK_FAIL;
 	}
-	sendProperty(out, "version", "4.3");
+	sendProperty(out, "version", "4");
 	sendProperty(out, "language", "sql");
 	sendProperty(out, "schema", schema);
 	stream_flush(out);
