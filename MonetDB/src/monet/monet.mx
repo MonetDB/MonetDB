@@ -247,7 +247,7 @@ typedef struct {
 
 m_export int 	monet_running;
 m_export Client	monet_init	(void);
-m_export int 	protectMonet	(int force);
+m_export int 	protectMonet	(void);
 m_export str	monet_load_script(str file, str module);
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
@@ -338,7 +338,7 @@ int 		monet_running = 0;
 char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
 int             monet_listing=0, monet_daemon=0;
 int		monet_forks = 0;
-int		monet_upgrade_needed= 0, monet_upgrade_done =0;
+int		monet_needshared = 0;
 str             *monet_script = NULL;
 str		monet_dbinit = NULL; 		
 str		monet_general =0;
@@ -414,39 +414,23 @@ provided to make inclusion of new modules a piece of cake.
 }
 
 @c
-int protectMonet(int force){
-	/* int cnt = 0;*/
-	if( monet_forks > 0 || force ) {
+int protectMonet(void)
+{
+	if (!GDKprotected) {
 		TMDEBUG printf("# protectMonet: upgrade protection %d>0\n",
 				monet_forks);
-		if( monet_critical == NULL ){
-		/* wait for safe point 
-			if( force == 0){
-				monet_upgrade_needed = 1;
-				while( monet_upgrade_needed && cnt < 60) {
-					sleep(1);
-					cnt++;
-				}
-				if( monet_upgrade_needed){
-				GDKerror("waiting too long for lock upgrade\n");
-				return -1;
-				}
-			}
-		*/
-
-			TMDEBUG printf("# Monet locks created\n");
-			monet_critical   = MT_create_lock();
-			monet_contextLock= MT_create_lock();
-			monet_parserLock = MT_create_lock();
-			monet_notifyLock = MT_create_lock();
-			monet_voidLock   = MT_create_lock();
-			monet_started    = MT_create_sema(0);
-			monet_available  = MT_create_sema(0);
-			monet_forksync   = MT_create_sema(0);
-			TBL_protect();
-			GDKprotect();
-			monet_upgrade_done =0;
-		}
+		TMDEBUG printf("# Monet locks created\n");
+		monet_critical   = MT_create_lock();
+		monet_contextLock= MT_create_lock();
+		monet_parserLock = MT_create_lock();
+		monet_notifyLock = MT_create_lock();
+		monet_voidLock   = MT_create_lock();
+		monet_started    = MT_create_sema(0);
+		monet_available  = MT_create_sema(0);
+		monet_forksync   = MT_create_sema(0);
+		TBL_protect();
+		GDKprotect();
+		monet_needshared = 0;
 	}
 	return 0;
 }
@@ -456,13 +440,13 @@ This client could be running processing a MIL program or awaiting
 input from the user. 
 @c
 void protectMonetClient(){
-	if(monet_upgrade_needed == 0 ) return;
-	monet_upgrade_done =1;
-	monet_upgrade_needed = 0;
-	while(monet_upgrade_done){
+	if (GDKprotected) return;
+	monet_needshared++;
+	while(!GDKprotected) {
 		sleep(1);
 	}
 }
+
 Client monet_init(void){
         Client  c;
 

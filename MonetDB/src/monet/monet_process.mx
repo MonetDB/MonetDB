@@ -145,13 +145,13 @@ MT_Id monetFork(void) {
 
 	TMDEBUG printf("# monetFork: embedded %d protected %d forks %d\n",
 			GDKembedded,GDKprotected,monet_forks);
-	if( GDKembedded ){
+	if (GDKembedded && monet_forks > 0){
 		/* allow for one client only */
-		if( monet_forks > 0 ) 
-			return  ~ (MT_Id) 0;
-	} else
-	if( monet_forks > 0)
-		protectMonet(FALSE);
+		return  ~ (MT_Id) 0;
+	}
+	if (!GDKprotected && !GDKembedded) {
+		protectMonet();
+	}
 	monet_forks++;
 	monet_set_lock(monet_critical, "monetFork");
 	/* exclusive access to monet_forksync barrier
