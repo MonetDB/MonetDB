@@ -1381,14 +1381,16 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 	    lng offset;
 
 	    while(GDKisspace(*s)) s++;
-	    if (fleximatch(s, "gmt", 0) == 3 && (s[3] == '-' || s[3] == '+') &&
-		   GDKisdigit(s[4]) && GDKisdigit(s[5]) && GDKisdigit(s[pos=7]) &&
-		   ((s[6] == ':' && GDKisdigit(s[8])) || GDKisdigit(s[pos=6])))
+	    if (fleximatch(s, "gmt", 0) == 3)
+		s += 3;
+	    if ((s[0] == '-' || s[0] == '+') &&
+		   GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos=4]) &&
+		   ((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos=3])))
 	    {
-		offset = (((s[4] - '0')*(lng)10 + (s[5] - '0'))*(lng)60 + 
+		offset = (((s[1] - '0')*(lng)10 + (s[2] - '0'))*(lng)60 + 
 		              (s[pos] - '0')*(lng)10 + (s[pos+1] - '0'))*(lng)60000;
 		pos++;
-		if (s[3] != '-') offset = -offset;
+		if (s[0] != '-') offset = -offset;
 		s += pos;
 	    } else {
 		/* if no tzone is specified; work with the local */
