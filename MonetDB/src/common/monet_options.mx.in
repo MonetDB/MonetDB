@@ -81,7 +81,7 @@ mutils_export int mo_config_file( opt **Set, int setlen, char *file );
 
 /* mo_system_config will add the options from the system config file
    (returns the new setlen) */
-mutils_export int mo_system_config( opt **Set, int setlen);
+mutils_export int mo_system_config( opt **Set, int setlen, char *name);
 
 /* mo_builtin_settings, will place the builtin settings into a new
    option set (returns the length of this set). */ 
@@ -130,17 +130,9 @@ static opt *default_set = NULL;
 
 static int mo_default_set(opt **Set, int setlen)
 {
-	char *config;
-
 	if (*Set == NULL) {
-		if (default_set == NULL) {
+		if (default_set == NULL) 
 			default_setlen = mo_builtin_settings(&default_set);
-			config = getenv("MONET_CONFIG");
-			if (config)
-				default_setlen = mo_config_file(&default_set, default_setlen, config);
-			else
-				default_setlen = mo_system_config(&default_set, default_setlen);
-		}
 		*Set = default_set;
 		setlen = default_setlen;
 	}
@@ -308,7 +300,7 @@ int mo_config_file(opt **Set, int setlen, char *file )
 	return setlen;
 }
 
-int mo_system_config( opt **Set, int setlen)
+int mo_system_config( opt **Set, int setlen, char *name)
 {
 	char config[BUFSIZ];
 
@@ -320,7 +312,7 @@ int mo_system_config( opt **Set, int setlen)
 		Set = &default_set;
 		setlen = default_setlen;
 	}
-	snprintf(config,BUFSIZ,"%s%cmonet.conf", "@Qsysconfdir@", DIR_SEP);
+	snprintf(config,BUFSIZ,"%s%c%s", "@Qsysconfdir@", DIR_SEP, name);
 	mo_substitute(*Set, setlen, config);
 	return mo_config_file(Set, setlen, config );
 }
