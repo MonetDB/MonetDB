@@ -19,10 +19,10 @@ LIBS = {
 	LDFLAGS = -module -lm
 }
 scripts_mal = {
-	DIR = sysconfdir/MonetDB/kernel
-	SOURCES = kernel_init.mal calc.mal bat.mal algebra.mal system.mal \
-		unix.mal mapi.mal mmath.mal lock.mal alarm.mal batcalc.mal \
-		group.mal aggrX3.mal mkey.mal pcl.mx
+	DIR = pkglibdir/kernel
+	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
+		mapi.mx kernel_init.mx mmath.mx lock.mx alarm.mx \
+		batcalc.mx group.mx mkey.mx aggrX3.mx pcl.mx
 }
 
 

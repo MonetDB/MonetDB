@@ -19,6 +19,6 @@ lib_mal = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 scripts_mal = {
-	DIR = sysconfdir/MonetDB/mal
+	DIR = pkglibdir/mal
 	SOURCES = mal_scenario.mal
 }

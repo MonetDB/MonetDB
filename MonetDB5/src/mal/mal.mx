@@ -218,7 +218,7 @@ int mal_init(str modpath, str prefix){
 	char buf[PATHLENGTH];
 
 	monet_mod_path= modpath;
-	snprintf(buf,PATHLENGTH,"%s/etc/MonetDB",prefix);
+	snprintf(buf,PATHLENGTH,"%s/lib/MonetDB",prefix);
 	monet_mal_path= GDKstrdup(buf);
 	mal_contextLock= MT_create_lock();
 	tstAligned();
