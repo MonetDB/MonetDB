@@ -46,7 +46,8 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 	case SQL_RETRIEVE_DATA:
 	case SQL_USE_BOOKMARKS:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLSetStmtAttr_(stmt, fOption, &vParam, 0);
+		return SQLSetStmtAttr_(stmt, fOption,
+				       (SQLPOINTER) (size_t) vParam, SQL_NTS);
 	default:
 		if (!isValidStmt(stmt))
 			 return SQL_INVALID_HANDLE;
