@@ -137,10 +137,10 @@ HIDE=1
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.pm.c: %.pm.i
-	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o $@ $<
+	$(SWIG) -perl5 -module $*::$* $(SWIGFLAGS) -outdir . -o $@ $<
 
 %.pm: %.pm.i
-	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dymmy.c $<
+	$(SWIG) -perl5 -module $*::$* $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.tex: %.mx
 	$(MX) -1 -H$(HIDE) -t $< 

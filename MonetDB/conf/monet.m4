@@ -768,12 +768,26 @@ if test "x$perl" != xno; then
     perl=no
   fi
 fi
+if test "x$perl" != xno; then
+  PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
+  if test ! "$PERL_LIBDIR"; then
+    case "$perl" in
+    auto)
+      ;;
+    *)
+      AC_MSG_ERROR([No Perl library directory found.  Is Perl installed properly?])
+      ;;
+    esac
+    perl=no
+  fi
+fi
 if test x"$perl" != xno; then
 	perl=yes
 fi
 AC_MSG_RESULT($perl)
 AC_SUBST(PERLINC)
 AC_SUBST(PERL)
+AC_SUBST(PERL_LIBDIR)
 AM_CONDITIONAL(HAVE_PERL, test x"$perl" != xno)
 AM_CONDITIONAL(HAVE_PERL_SWIG, test x"$perl" != xno -a x"$SWIG" != xno)
 

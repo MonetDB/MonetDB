@@ -19,6 +19,6 @@ MTSAFE
 
 scripts_perl = {
 	EXT = pm
-	DIR = pkgdatadir/perl/DBD/monetdb
+	DIR = $(prefix)/$(PERL_LIBDIR)/DBD/monetdb
 	SOURCES = GetInfo.pm TypeInfo.pm
 }

@@ -21,6 +21,6 @@ SUBDIRS = monetdb
 
 scripts_perl = {
 	EXT = pl pm
-	DIR = pkgdatadir/perl/DBD
+	DIR = $(prefix)/$(PERL_LIBDIR)/DBD
 	SOURCES = monetdb.pm monetdbPP.pm
 }

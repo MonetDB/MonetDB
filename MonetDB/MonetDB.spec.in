@@ -18,7 +18,7 @@ Source: %{name}-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-BuildRequires: php python
+BuildRequires: php python perl
 
 %package client
 Summary: MonetDB clients
@@ -30,6 +30,10 @@ Group: System
 
 %package python
 Summary: MonetDB python interface
+Group: System
+
+%package perl
+Summary: MonetDB perl interface
 Group: System
 
 %package server
@@ -66,6 +70,12 @@ Add the MonetDB python description here
 Requires: %{name}-client
 Requires: python
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
+
+%description perl
+Add the MonetDB perl description here
+Requires: %{name}-client
+Requires: perl
+%define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
 
 %description server
 Add the MonetDB server description here
@@ -149,6 +159,12 @@ rm -fr $RPM_BUILD_ROOT
 %files python
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{python_libdir}/*
+
+%files perl
+%defattr(-,monetdb,monetdb) 
+%{prefix}/%{perl_libdir}/*
+%{prefix}/%{perl_libdir}/MapiLib/*
+%{prefix}/%{perl_libdir}/DBD/*
 
 %files server
 %defattr(-,monetdb,monetdb) 
