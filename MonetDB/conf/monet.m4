@@ -293,6 +293,11 @@ yes-*-*)
 	dnl  # 102: forward declaration of enum type is nonstandard
 	dnl  #  70: incomplete type is not allowed
 	;;
+-pgcc*-linux*)
+	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
+	dnl  required for "scale" in module "decimal"
+	CFLAGS="$CFLAGS -Msignextend"
+	;;
 esac
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
@@ -324,13 +329,13 @@ if test "$bits" = "64"; then
 		dnl  On our x86_64 machine, "gcc" defaults to "gcc -m64" ...
 		CC32="$CC -m32";;
 	-pgcc*-linux*-x86_64*)
-		dnl  On our x86_64 machine, "pgcc" defaults to "pgcc -tp=k8_64" ...
-		CC32="$CC -tp=k8_32";;
+		dnl  On our x86_64 machine, "pgcc" defaults to "pgcc -tp=k8-64" ...
+		CC32="$CC -tp=k8-32";;
 	*)	CC32="$CC";;
 	esac
 fi
-case "$GCC-$host_os-$host-$bits" in
-yes-solaris*-64)
+case "$GCC-$CC-$host_os-$host-$bits" in
+yes-*-solaris*-64)
 	case `$CC -v 2>&1` in
 	*'gcc version 3.'*)	;;
 	*)	AC_ERROR([need GCC version 3.X for 64 bits]);;
@@ -338,33 +343,37 @@ yes-solaris*-64)
 	CC="$CC -m$bits"
 	CXX="$CXX -m$bits"
 	;;
--solaris*-64)
+-*-solaris*-64)
 	CC="$CC -xarch=v9"
 	CXX="$CXX -xarch=v9"
 	;;
-yes-irix*-64)
+yes-*-irix*-64)
 	CC="$CC -mabi=$bits"
 	CXX="$CXX -mabi=$bits"
 	;;
--irix*-64)
+-*-irix*-64)
 	CC="$CC -$bits"
 	CXX="$CXX -$bits"
 	;;
-yes-aix*-64)
+yes-*-aix*-64)
 	CC="$CC -maix$bits"
 	CXX="$CXX -maix$bits"
 	AR="ar -X64"
 	NM="nm -X64 -B"
 	;;
--aix*-64)
+-*-aix*-64)
 	CC="$CC -q$bits"
 	CXX="$CXX -q$bits"
 	AR="ar -X64"
 	NM="nm -X64 -B"
 	;;
-yes-linux*-x86_64*-*)
+yes-*-linux*-x86_64*-*)
 	CC="$CC -m$bits"
 	CXX="$CXX -m$bits"
+	;;
+-pgcc*-linux*-x86_64*-*)
+	CC="$CC -tp=k8-$bits"
+	CXX="$CXX -tp=k8-$bits"
 	;;
 esac
 
@@ -517,11 +526,6 @@ if test "$bits" = "64"; then
 fi
 AC_PROG_LEX
 AM_PROG_LEX()
-case "$CC-$bits" in
-pgcc*-64)
-	dnl  32-bit version of Portland Group compiler (pgcc/pgCC) does not work, yet...
-	AC_DEFINE(YYTEXT_POINTER, 1, [Define to 1 if `lex' declares `yytext' as a `char *' by default, not a `char[]'.]);;
-esac
 if test "$CC64" != ""; then
 	dnl  Back to 64-bit, and don't use the 32-bit lib[f]l that might have been found.
 	CC="$CC64"
