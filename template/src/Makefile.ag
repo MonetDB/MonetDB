@@ -3,7 +3,7 @@ MTSAFE
 INCLUDES = $(MONET_INCS)
 
 lib__example = {
-	DIR = pkglibdir
+	DIR = libdir/MonetDB
 	SOURCES = example.mx
 	HEADERS = h
 	LIBS = $(MONET_LIBS) 
