@@ -142,7 +142,7 @@ extern	int	Main ARGS((int, char**));
 #endif
 extern	int	ModeDir ARGS((char));
 extern	char *	ExtMode ARGS((int));
-extern  int     extract ARGS((int));
+extern  int     extract ARGS((CmdCode));
 
 
 /* Print.c

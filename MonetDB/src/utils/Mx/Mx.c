@@ -245,7 +245,7 @@ void addextension(char *ext)
     else fprintf(stderr,"Invalid extension %s\n",ext);
 }
 	
-int extract(int dir)
+int extract(CmdCode dir)
 {
    int i=0;
    if(extcnt==0) return 1;
