@@ -3,6 +3,7 @@ package nl.cwi.monetdb.jdbc;
 import java.sql.*;
 import java.util.*;
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 /**
  * A Connection suitable for the Monet database
@@ -107,18 +108,49 @@ public class MonetConnection implements Connection {
 
 				// log in
 				if (blockMode) {
+					//-- \begin{reverse engineered mode}
+
+					// convenience cast shortcut
+					MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
+
 					// mind the newline at the end
-					monet.writeln(username + ":" + password + ":blocked\n");
-					// send the server a short with value 1234 to indicate our
-					// byte-order. (Java uses Most Significant Byte First)
+					blkmon.write(username + ":" + password + ":blocked\n");
+					// We need to send the server our byte order. Java by itself
+					// uses network order, however for performance reasons it
+					// is nice when we can use native byte buffers. Therefore
+					// we send the machine native byte-order to the server here.
+					// A short with value 1234 will be sent to indicate our
+					// byte-order.
 					/*
 					short x = 1234;
 					byte high = (byte)(x >>> 8);	// = 0x04
 					byte low = (byte)x;				// = 0xD2
 					*/
-					byte[] byteorder = {(byte)0x04, (byte)0xD2};
-					((MonetSocketBlockMode)monet).write(byteorder);
-					monet.flush();
+					final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
+					final byte[] littleEndian = {(byte)0xD2, (byte)0x04};
+					ByteOrder nativeOrder = ByteOrder.nativeOrder();
+					if (nativeOrder == ByteOrder.BIG_ENDIAN) {
+						blkmon.write(bigEndian);
+					} else if (nativeOrder == ByteOrder.LITTLE_ENDIAN) {
+						blkmon.write(littleEndian);
+					} else {
+						throw new AssertionError("Machine byte-order unknown!!!");
+					}
+					blkmon.flush();
+
+					// now read the byte-order of the server
+					byte[] byteorder = new byte[2];
+					if (blkmon.read(byteorder) != 2)
+						throw new SQLException("The server sent an incomplete byte-order sequence");
+					if (byteorder[0] == (byte)0x04) {
+						// set our connection to big-endian mode
+						blkmon.setByteOrder(ByteOrder.BIG_ENDIAN);
+					} else if (byteorder[0] == (byte)0xD2) {
+						// set our connection to litte-endian mode
+						blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+					}
+
+					//-- \end
 				} else {
 					monet.writeln(username + ":" + password);
 				}

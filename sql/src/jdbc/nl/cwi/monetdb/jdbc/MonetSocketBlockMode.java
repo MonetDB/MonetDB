@@ -1,6 +1,7 @@
 package nl.cwi.monetdb.jdbc;
 
 import java.io.*;
+import java.nio.*;
 import java.net.*;
 
 /**
@@ -30,7 +31,13 @@ class MonetSocketBlockMode extends MonetSocket {
 	private InputStream fromMonetRaw;
 	private OutputStream toMonetRaw;
 
+	private ByteBuffer inputBuffer;
 	private StringBuffer readBuffer;
+	private int readState = 0;
+
+	private ByteBuffer outputBuffer;
+
+	private final static int capacity = 1024;
 
 	MonetSocketBlockMode(String host, int port) throws IOException {
 		super(new Socket(host, port));
@@ -38,6 +45,13 @@ class MonetSocketBlockMode extends MonetSocket {
 		fromMonetRaw = new BufferedInputStream(con.getInputStream());
 		toMonetRaw = new BufferedOutputStream(con.getOutputStream());
 
+		outputBuffer = ByteBuffer.allocateDirect(4);
+		// put the buffer in native byte order
+		outputBuffer.order(ByteOrder.nativeOrder());
+
+		inputBuffer = ByteBuffer.allocateDirect(4);
+		// leave the buffer byte-order as is, it can be modified later
+		// by using setByteOrder()
 		readBuffer = new StringBuffer();
 	}
 
@@ -74,7 +88,7 @@ class MonetSocketBlockMode extends MonetSocket {
 		// but ignoring it can be nasty as well, so it is decided to
 		// let it go so there is feedback about something going wrong
 		if (debug) {
-			log.write("<< " + new String(data) + "\n");
+			log.write("<< " + new String(data));
 		}
 	}
 
@@ -98,6 +112,8 @@ class MonetSocketBlockMode extends MonetSocket {
 		}
 	}
 
+	private final static byte[] BLK_TERMINATOR =
+		{(byte)0, (byte)0, (byte)0, (byte)0};
 	/**
 	 * writeln puts the given string on the stream
 	 * and flushes the stream afterwards so the data will actually be sent
@@ -106,7 +122,19 @@ class MonetSocketBlockMode extends MonetSocket {
 	 * @throws IOException if writing to the stream failed
 	 */
 	public synchronized void writeln(String data) throws IOException {
-		write(data);
+		// write the length of this block
+		inputBuffer.rewind();
+		inputBuffer.putInt(data.length() + 1);
+
+		byte[] len = new byte[4];
+		inputBuffer.rewind();
+		inputBuffer.get(len);
+
+		write(len);
+		write(data + "\n");
+
+		// the server wants an empty int as termination, as it seems
+		write(BLK_TERMINATOR);
 		flush();
 	}
 
@@ -149,16 +177,32 @@ class MonetSocketBlockMode extends MonetSocket {
 		int nl;
 		while ((nl = readBuffer.indexOf("\n")) == -1) {
 			// not found, fetch us some more data
+			// start reading a new block of data if appropriate
+			if (readState == 0) {
+				// read next four bytes (int)
+				byte[] data = new byte[4];
+				int size = read(data);
+				if (size < 4) throw new AssertionError("Illegal start of block");
 
-			// read some block of data
-			byte[] data = new byte[1024];	// use blocksize of 1024
+				// start with a new block
+				inputBuffer.rewind();
+				inputBuffer.put(data);
+
+				// get the int-value and store it in the state
+				inputBuffer.rewind();
+				readState = inputBuffer.getInt();
+			}
+			// 'continue' fetching current block
+			byte[] data = new byte[Math.min(capacity, readState)];
 			int size = read(data);
+
+			// update the state
+			readState -= size;
 
 			// append the stuff to the buffer; let String do the charset
 			// conversion stuff
 			readBuffer.append((new String(data)).substring(0, size));
 		}
-
 		// fill line, excluding newline
 		line = readBuffer.substring(0, nl);
 
@@ -184,8 +228,17 @@ class MonetSocketBlockMode extends MonetSocket {
 			// I really think empty lines should not be sent by the server
 			throw new IOException("MonetBadTasteException: it sent us an empty line");
 		}
-
 		return(line);
+	}
+
+	/**
+	 * Sets the byte-order to reading data from the server. By default the
+	 * byte order is big-endian or network order.
+	 *
+	 * @param order either ByteOrder.BIG_ENDIAN or ByteOrder.LITTLE_ENDIAN
+	 */
+	public void setByteOrder(ByteOrder order) {
+		inputBuffer.order(order);
 	}
 
 	/**
