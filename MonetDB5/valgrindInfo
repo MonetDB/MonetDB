@@ -1,0 +1,4 @@
+
+How to use valgrind?
+
+valgrind --tool=cachegrind --trace-children=yes Mserver --set gdk_alloc_map=no tst5020.mal
