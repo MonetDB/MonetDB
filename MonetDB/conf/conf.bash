@@ -153,7 +153,7 @@ esac
 # exclude "illegal" combinations
 
 if [ "${os}" = "Linux" ] ; then
-	if [ "${BITS}" = "64"  -a  "${hw}" != "ia64" ] ; then
+	if [ "${BITS}" = "64"  -a  "${hw}" != "ia64"  -a  "${hw}" != "x86_64" ] ; then
 		echo ''
 		echo "${hw}"' is 32-bit, only; hence, using BITS="32".'
 		BITS="32"
@@ -217,6 +217,11 @@ if [ "${os}" = "Linux" ] ; then
 			binpath="/home/niels/soft/local/bin:${binpath}"
 			libpath="/home/niels/soft/local/lib:${libpath}"
 		fi
+	fi
+	if [ "${hw}" = "x86_64"  -a  "${host%.ins.cwi.nl}" = "spin"  -a  "${COMP}" = "GNU" ] ; then
+		# currently we need to use "gcc-3.3" & "g++-3.3" on spin
+		cc="gcc-3.3"
+		cxx="g++-3.3"
 	fi
 	if [ -x /usr/lib/java/bin/javac  -a  -x /usr/lib/java/bin/jar ] ; then
 		# java in Konstanz
