@@ -48,13 +48,13 @@ if test "x$have_monet" != xno; then
 
   if test "x$MONETDB_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB version $MONETDB_REQUIRED_VERSION or newer is installed) 
-    MONETVERS=`$MONETDB_CONFIG --version`
-    if test MONETDB_VERSION_TO_NUMBER(echo $MONETVERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB_REQUIRED_VERSION); then
+    MONETDBVERS=`$MONETDB_CONFIG --version`
+    if test MONETDB_VERSION_TO_NUMBER(echo $MONETDBVERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB_REQUIRED_VERSION); then
       have_monet=yes
-      AC_MSG_RESULT($have_monet: found version $MONETVERS)
+      AC_MSG_RESULT($have_monet: found version $MONETDBVERS)
     else
       have_monet=no
-      AC_MSG_RESULT($have_monet: found only version $MONETVERS)
+      AC_MSG_RESULT($have_monet: found only version $MONETDBVERS)
     fi
   fi
 

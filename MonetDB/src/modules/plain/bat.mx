@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f bat
-@t Binary Association Tables
 @v 1.0
 @a Peter Boncz, M.L. Kersten
-@* Introduction
+@* Binary Association Tables
 @T
 This module contains all commands that are of use when managing Binary 
 Association Tables (BATs). The relational operations you can execute
