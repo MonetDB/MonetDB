@@ -373,68 +373,72 @@ const PRE_LEVEL  :=  1;
 const PRE_PROP   :=  2;
 const PRE_KIND   :=  3;
 const PRE_FRAG   :=  4;
-const QN_NS      :=  5;
-const QN_LOC     :=  6;
-const PROP_TEXT  :=  7;
-const PROP_COM   :=  8;
-const PROP_INS   :=  9;
-const PROP_TGT   := 10;
-const ID_PRE     := 11;
-const IDREF_PRE  := 12;
-const ATTR_OWN   := 13;
-const ATTR_QN    := 14;
-const ATTR_PROP  := 15;
-const ATTR_FRAG  := 16;
-const PROP_VAL   := 17;
-const DOC_LOADED := 18;
-const FRAG       := 19;
-const WS_FRAG    := 20;
-const HEIGHT     := 21;
-const PRINT_WS_SZ:= 21;
-const KIND_PRE   := 22;
-const KIND_PRE_EL := 22;
-const KIND_PRE_TE := 23;
-const KIND_PRE_CO := 24;
-const KIND_PRE_PI := 25;
-const KIND_PRE_DO := 26;
-const PROP_PRE    := 27;
-const PROP_PRE_EL := 27;
-const PROP_PRE_PI := 28;
-const WS_SIZE     := 29; # must be last!
+const QN_URI	 :=  5;
+const QN_NS      :=  6; # must be DELETED, is replaced by QN_PREFIX
+const QN_PREFIX  :=  6;
+const QN_LOC     :=  7;
+const PROP_TEXT  :=  8;
+const PROP_COM   :=  9;
+const PROP_INS   := 10;
+const PROP_TGT   := 11;
+const ID_PRE     := 12;
+const IDREF_PRE  := 13;
+const ATTR_OWN   := 14;
+const ATTR_QN    := 15;
+const ATTR_PROP  := 16;
+const ATTR_FRAG  := 17;
+const PROP_VAL   := 18;
+const DOC_LOADED := 19;
+const FRAG       := 20;
+const WS_FRAG    := 21;
+const HEIGHT     := 22;
+const PRINT_WS_SZ:= 22;
+const KIND_PRE   := 23;
+const KIND_PRE_EL := 23;
+const KIND_PRE_TE := 24;
+const KIND_PRE_CO := 25;
+const KIND_PRE_PI := 26;
+const KIND_PRE_DO := 27;
+const PROP_PRE    := 28;
+const PROP_PRE_EL := 28;
+const PROP_PRE_PI := 29;
+const WS_SIZE     := 30; # must be last!
 @= define_ws_constants
 #define PRE_SIZE     0
 #define PRE_LEVEL    1
 #define PRE_PROP     2
 #define PRE_KIND     3
 #define PRE_FRAG     4
-#define QN_NS        5
-#define QN_LOC       6
-#define PROP_TEXT    7
-#define PROP_COM     8
-#define PROP_INS     9
-#define PROP_TGT    10
-#define ID_PRE	    11
-#define IDREF_PRE   12
-#define ATTR_OWN    13
-#define ATTR_QN     14
-#define ATTR_PROP   15
-#define ATTR_FRAG   16
-#define PROP_VAL    17
-#define DOC_LOADED  18
-#define FRAG        19
-#define WS_FRAG     20
-#define HEIGHT      21
-#define PRINT_WS_SZ 21
-#define KIND_PRE    22
-#define KIND_PRE_EL 22
-#define KIND_PRE_TE 23
-#define KIND_PRE_CO 24
-#define KIND_PRE_PI 25
-#define KIND_PRE_DO 26
-#define PROP_PRE    27
-#define PROP_PRE_EL 27
-#define PROP_PRE_PI 28
-#define WS_SIZE     29 /* must be last! */
+#define QN_URI       5
+#define QN_NS        6 /* must be DELETED, is replaced by QN_PREFIX */
+#define QN_PREFIX    6
+#define QN_LOC       7
+#define PROP_TEXT    8
+#define PROP_COM     9
+#define PROP_INS    10
+#define PROP_TGT    11
+#define ID_PRE	    12
+#define IDREF_PRE   13
+#define ATTR_OWN    14
+#define ATTR_QN     15
+#define ATTR_PROP   16
+#define ATTR_FRAG   17
+#define PROP_VAL    18
+#define DOC_LOADED  19
+#define FRAG        20
+#define WS_FRAG     21
+#define HEIGHT      22
+#define PRINT_WS_SZ 22
+#define KIND_PRE    23
+#define KIND_PRE_EL 23
+#define KIND_PRE_TE 24
+#define KIND_PRE_CO 25
+#define KIND_PRE_PI 26
+#define KIND_PRE_DO 27
+#define PROP_PRE    28
+#define PROP_PRE_EL 28
+#define PROP_PRE_PI 29
+#define WS_SIZE     30 /* must be last! */
 @mil
 
 PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
@@ -453,7 +457,8 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 	ws.fetch(PRE_PROP).insert(nil,bat("pre_prop" + docid));
 	ws.fetch(PRE_KIND).insert(nil,bat("pre_kind" + docid));
 	ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
-	ws.fetch(QN_NS).insert(nil,bat("qn_ns" + docid));
+	ws.fetch(QN_URI).insert(nil,bat("qn_uri" + docid));
+	ws.fetch(QN_PREFIX).insert(nil,bat("qn_ns" + docid));
 	ws.fetch(QN_LOC).insert(nil,bat("qn_loc" + docid));
 	ws.fetch(PROP_TEXT).insert(nil,bat("prop_text" + docid));
 	ws.fetch(PROP_COM).insert(nil,bat("prop_com" + docid));
@@ -507,7 +512,8 @@ PROC create_ws () : BAT[void,bat]
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_PROP
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_KIND
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_FRAG
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_NS
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_URI
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_PREFIX
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_LOC
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_TEXT
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_COM
@@ -541,7 +547,8 @@ PROC create_ws () : BAT[void,bat]
     ws.fetch(PRE_PROP).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # PRE_PROP
     ws.fetch(PRE_KIND).insert(nil, bat(void,chr).seqbase(PRE_BASE)); # PRE_KIND
     ws.fetch(PRE_FRAG).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # PRE_FRAG
-    ws.fetch(QN_NS).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_NS
+    ws.fetch(QN_URI).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_URI
+    ws.fetch(QN_PREFIX).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_PREFIX
     ws.fetch(QN_LOC).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_LOC
     ws.fetch(PROP_TEXT).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_TEXT
     ws.fetch(PROP_COM).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_COM
@@ -880,6 +887,8 @@ PROC import_doc(str flnm, str name) : void
 
     # load table prop|ns|loc
     tmp := load(tag, seps2, tag_ty, flnm + ".qn", -1);
+    # INCOMPLETE, fill the qn_uri in the loader
+    tmp.find("ns").copy().project(str(nil)).persists(true).bbpname("qn_uri" + docid);
     tmp.find("ns").persists(true).bbpname("qn_ns" + docid);
     tmp.find("loc").persists(true).bbpname("qn_loc" + docid);
 
@@ -983,7 +992,11 @@ PROC shred_doc_base(str flnm, str name, bit doCommit, str opt) : BAT[void,bat]
     xb.bbpname("pre_kind" + docid);
     if ( noCommit ) resBAT.insert(nil,xb);
 
-    xb := shredRES.fetch(QN_NS).mmap(STORE_MMAP).persists(doCommit);
+    xb := shredRES.fetch(QN_URI).mmap(STORE_MMAP).persists(doCommit);
+    xb.bbpname("qn_uri" + docid);
+    if ( noCommit ) resBAT.insert(nil,xb);
+
+    xb := shredRES.fetch(QN_PREFIX).mmap(STORE_MMAP).persists(doCommit);
     xb.bbpname("qn_ns" + docid);
     if ( noCommit ) resBAT.insert(nil,xb);
 
@@ -1102,6 +1115,7 @@ PROC delete_doc(str name) : void
     bat("pre_level" + docid).persists(false);
     bat("pre_prop" + docid).persists(false);
     bat("pre_kind" + docid).persists(false);
+    bat("qn_uri" + docid).persists(false);
     bat("qn_ns" + docid).persists(false);
     bat("qn_loc" + docid).persists(false);
     bat("prop_text" + docid).persists(false);
@@ -1199,7 +1213,7 @@ PROC attr_print(oid pre, oid frag, BAT[void,bat] ws) : void
 	var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fake_fetch($h);
 	var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($h);
 	var attr_qn := ws.fetch(ATTR_QN).fetch(frag).fetch($h);
-	var attr_ns := ws.fetch(QN_NS).fetch(attr_frag).fetch(attr_qn);
+	var attr_ns := ws.fetch(QN_PREFIX).fetch(attr_frag).fetch(attr_qn);
 	var attr_loc := ws.fetch(QN_LOC).fetch(attr_frag).fetch(attr_qn);
 	var attr_val := ws.fetch(PROP_VAL).fetch(attr_frag).fetch(attr_prop);
 	# recompose name
@@ -1221,7 +1235,7 @@ PROC node_print(oid pre, oid frag, BAT[void,bat] ws, BAT[oid,str] S) : void
     if (kind = ELEMENT)
     {    
 	# recompose tag name
-	var tag := ws.fetch(QN_NS).fetch(elem_frag).fetch(elem_prop);
+	var tag := ws.fetch(QN_PREFIX).fetch(elem_frag).fetch(elem_prop);
 	if (tag != "") { tag :+= ":"; }
 	tag :+=  ws.fetch(QN_LOC).fetch(elem_frag).fetch(elem_prop);
 	
@@ -1324,7 +1338,7 @@ PROC xml_print(BAT[void,bat] ws,
 		var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fake_fetch($t);
 		var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($t);
 		var attr_qn := ws.fetch(ATTR_QN).fetch(frag).fetch($h);
-		var attr_ns := ws.fetch(QN_NS).fetch(attr_frag).fetch(attr_qn);
+		var attr_ns := ws.fetch(QN_PREFIX).fetch(attr_frag).fetch(attr_qn);
 		var attr_loc := ws.fetch(QN_LOC).fetch(attr_frag).fetch(attr_qn);
 		var attr_val := ws.fetch(PROP_VAL).fetch(attr_frag).fetch(attr_prop);
 		if (attr_ns = "")
@@ -1740,7 +1754,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	if (is_fake_project(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
-		var qn_ns  := ws.fetch(QN_NS).fetch(frag);
+		var qn_ns  := ws.fetch(QN_PREFIX).fetch(frag);
 		    qn_ns  := qn_ns.ord_uselect(ns);
 		var qn_loc := ws.fetch(QN_LOC).fetch(frag);
 		    qn_loc := qn_loc.ord_uselect(loc);
@@ -1780,7 +1794,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    res_prop := nil;
 		var X_frag   := res_frag.reverse().mark(0@0).reverse();
 		    res_frag := nil;
-		var X_ns     := mposjoin(X_prop, X_frag, ws.fetch(QN_NS));
+		var X_ns     := mposjoin(X_prop, X_frag, ws.fetch(QN_PREFIX));
 		var X_loc    := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC));
 		    X_prop   := nil;
 		    X_frag   := nil;
@@ -1897,7 +1911,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	if (is_fake_project(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
-		var qn_ns  := ws.fetch(QN_NS).fetch(frag);
+		var qn_ns  := ws.fetch(QN_PREFIX).fetch(frag);
 		    qn_ns  := qn_ns.ord_uselect(ns);
 		var qn_loc := ws.fetch(QN_LOC).fetch(frag);
 		    qn_loc := qn_loc.ord_uselect(loc);
@@ -1925,7 +1939,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    pre_prop := nil;
 		var X_frag   := pre_frag.reverse().mark(0@0).reverse();
 		    pre_frag := nil;
-		var X_ns     := mposjoin(X_prop, X_frag, ws.fetch(QN_NS));
+		var X_ns     := mposjoin(X_prop, X_frag, ws.fetch(QN_PREFIX));
 		var X_loc    := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC));
 		    X_prop   := nil;
 		    X_frag   := nil;

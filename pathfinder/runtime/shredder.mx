@@ -245,7 +245,8 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
         { PRE_PROP, "PRE_PROP", TYPE_void, TYPE_oid, 1.0, 0},
         { PRE_KIND, "PRE_KIND", TYPE_void, TYPE_chr, 1.0, 0},
         { PRE_FRAG, "PRE_FRAG", TYPE_void, TYPE_oid, 1.0, 0},
-        { QN_NS,    "QN_NS",    TYPE_void, TYPE_str, 0.0, 0},
+        { QN_URI,   "QN_URI",   TYPE_void, TYPE_str, 0.0, 0},
+        { QN_PREFIX,"QN_PREFIX",TYPE_void, TYPE_str, 0.0, 0},
         { QN_LOC,   "QN_LOC",   TYPE_void, TYPE_str, 0.0, 0},
         { PROP_TEXT,"PROP_TEXT",TYPE_void, TYPE_str, 0.0, 1},
         { PROP_COM, "PROP_COM", TYPE_void, TYPE_str, 0.0, 1},
@@ -317,14 +318,16 @@ typedef struct shredCtxStruct {
         off_t           fileSize;       /* size of the input file */
         off_t           estSize;        /* extimated number of pre nodes */
         shredBAT        dstBAT[SHRED_BATS]; /* all the result BATs */
-        BAT*            nslocBAT;       /* the BAT to compress NS and LOC */
-        int             nslocDUPL;      /* the number of duplicates nslocs */
+        BAT*            pfxlocBAT;       /* the BAT to compress NS and LOC */
+        int             pfxlocDUPL;      /* the number of duplicates pfxlocs */
         int             shredWords;     /* store all words in text seperate,
                                          * this is something the Tijah 
                                          * people were asking for
                                          */
 	specAttrDbStr	specAttrDb;	/* the database containing the 
 					 * ID|IDREF|IDREFS attributes
+					 */
+	char		workSpace[1024];/* temporary workspace for this session
 					 */
 } shredCtxStruct;
 
@@ -373,12 +376,12 @@ static shredCtxStruct *createShredCtx(char* name, off_t  fileSize) {
         }
 #ifdef USE_COMPRESSION
         /* incomplete, what does second arg of BAThash do ?? */
-        res->nslocBAT = BAThash(BATnew(TYPE_str,TYPE_oid,res->estSize/50),0);
-        if ( !res->nslocBAT ) {
-            stream_printf(GDKerr,"shredder.mx:nslocBAT:create fails\n");
+        res->pfxlocBAT = BAThash(BATnew(TYPE_str,TYPE_oid,res->estSize/50),0);
+        if ( !res->pfxlocBAT ) {
+            stream_printf(GDKerr,"shredder.mx:pfxlocBAT:create fails\n");
             return NULL;
         }
-        res->nslocDUPL= 0;
+        res->pfxlocDUPL= 0;
 #endif
         res->shredWords = 0; /* do not shred words by default */
 	/* and finally init the special attribute database */
@@ -426,18 +429,18 @@ static void printStat(shredCtxStruct* shredCtx) {
 
                 stream_printf(GDKout,"# [%9s, ",sb->def->name);
                 stream_printf(GDKout,"cnt=%d",sb->cnt);
-                if ( sb->def->compress || i==QN_NS || i==QN_LOC) {
+                if ( sb->def->compress || i==QN_PREFIX || i==QN_LOC) {
                     int dupl;
 
                     if ( sb->def->compress )
                         dupl = sb->dupl;
                     else
-                        dupl = shredCtx->nslocDUPL;
+                        dupl = shredCtx->pfxlocDUPL;
                     stream_printf(GDKout,", dupl=%d(=%.f%%) ",dupl, ((dupl+sb->cnt)?100.0*(float)(sb->cnt)/(float)(dupl+sb->cnt):100.0));
                 }
                 if ( i==PRE_SIZE )
                         stream_printf(GDKout,", eg. the number of document nodes");
-                if ( i==QN_NS )
+                if ( i==QN_PREFIX )
                         stream_printf(GDKout,", eg. the number of distinct tags");
                 if ( i==ATTR_OWN )
                         stream_printf(GDKout,", eg. the number of attributes");
@@ -489,7 +492,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         if ( PRINT_STAT )
                 printStat(shredCtx);
 #ifdef USE_COMPRESSION
-        BBPunfix( BBPcacheid( shredCtx->nslocBAT ) );
+        BBPunfix( BBPcacheid( shredCtx->pfxlocBAT ) );
 #endif
 	disposeAttrDB(&shredCtx->specAttrDb);
         free( shredCtx );
@@ -828,12 +831,12 @@ handleXmlCharacters (shredCtxStruct* shredCtx)
     return 1;
 }
 
-static nat store_NsLoc(shredCtxStruct* shredCtx, char* nsloc) {
+static nat store_PfxLocORG(shredCtxStruct* shredCtx, char* pfxloc) {
 #ifdef USE_COMPRESSION
         BUN bun;
-        if ( (bun = BUNfnd(shredCtx->nslocBAT,nsloc)) ) {
-                shredCtx->nslocDUPL++;
-                return (nat)*(oid*)BUNtail(shredCtx->nslocBAT,bun);
+        if ( (bun = BUNfnd(shredCtx->pfxlocBAT,pfxloc)) ) {
+                shredCtx->pfxlocDUPL++;
+                return (nat)*(oid*)BUNtail(shredCtx->pfxlocBAT,bun);
         }
 	oid res_oid;
 #endif
@@ -841,24 +844,27 @@ static nat store_NsLoc(shredCtxStruct* shredCtx, char* nsloc) {
         char *colon, *nsStr, *locStr;
 
         /* new fast namespace/localname decoding */
-        if ( (colon = strchr (nsloc, ':')) ) {
-            nsStr  = nsloc;
+        if ( (colon = strchr (pfxloc, ':')) ) {
+            nsStr  = pfxloc;
             *colon = '\0';
             locStr = &colon[1]; 
         } else {
             nsStr  = emptyString;
-            locStr = nsloc; 
+            locStr = pfxloc; 
         }
-        if ( (res=append_str2bat(shredCtx,QN_NS,nsStr))==NIL)
+	/* incomplete, do something with the URI here */
+        if ( (res=append_str2bat(shredCtx,QN_URI,emptyString))==NIL)
+                return NIL;
+        if ( (res=append_str2bat(shredCtx,QN_PREFIX,nsStr))==NIL)
                 return NIL;
         if ( res != append_str2bat(shredCtx,QN_LOC,locStr) ) {
-                stream_printf(GDKerr,"store_NsLoc:NS-LOC sync error");
+                stream_printf(GDKerr,"store_PfxLoc:NS-LOC sync error");
                 return NIL;
         }
 #ifdef USE_COMPRESSION
 	res_oid = (oid)res;
-        if ( !BUNins(shredCtx->nslocBAT,nsloc,&res_oid) ) {
-                stream_printf(GDKerr,"Error:store_NsLoc:compression table insert fails\n");
+        if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
+                stream_printf(GDKerr,"Error:store_PfxLoc:compression table insert fails\n");
                 return NIL;
         }
 #endif
@@ -868,6 +874,65 @@ static nat store_NsLoc(shredCtxStruct* shredCtx, char* nsloc) {
 	}
         return res;
 }
+
+
+static nat store_PfxLocNEW(
+		shredCtxStruct* shredCtx,
+		const xmlChar*  a_uri,
+		const xmlChar*  a_pfx,
+		const xmlChar*  a_tag
+	) {
+	char *pfxloc;
+
+	if ( a_uri ) {
+	   sprintf(shredCtx->workSpace,"%s:%s:%s",a_uri,a_pfx,a_tag);
+	   pfxloc = &shredCtx->workSpace[0];
+	} else if ( a_pfx ) {
+	   a_uri = emptyString;
+	   sprintf(shredCtx->workSpace,"%s:%s",a_pfx,a_tag);
+	   pfxloc = &shredCtx->workSpace[0];
+	} else {
+	   a_uri = a_pfx = emptyString;
+	   pfxloc = (char*)a_tag;
+	}
+    	/* stream_printf(GDKout,"** store_PfxLocNEW(%s)\n",pfxloc); */
+#ifdef USE_COMPRESSION
+        BUN bun;
+        if ( (bun = BUNfnd(shredCtx->pfxlocBAT,pfxloc)) ) {
+                shredCtx->pfxlocDUPL++;
+                return (nat)*(oid*)BUNtail(shredCtx->pfxlocBAT,bun);
+        }
+	oid res_oid;
+#endif
+        nat res;
+
+        if ( (res=append_str2bat(shredCtx,QN_URI,(char*)a_uri))==NIL)
+                return NIL;
+        if ( res != append_str2bat(shredCtx,QN_PREFIX,(char*)a_pfx) )
+                return NIL;
+        if ( res != append_str2bat(shredCtx,QN_LOC,(char*)a_tag) ) {
+                stream_printf(GDKerr,"store_PfxLoc:NS-LOC sync error");
+                return NIL;
+        }
+#ifdef USE_COMPRESSION
+	res_oid = (oid)res;
+        if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
+                stream_printf(GDKerr,"Error:store_PfxLoc:compression table insert fails\n");
+                return NIL;
+        }
+#endif
+	/* if ( colon ) { */
+	    /* undo the inserted '\0' between the ns and the locName */
+	    /* *colon = ':'; */
+	/* } */
+        return res;
+}
+
+
+
+
+
+
 
 /* forward definition of tokenize_IDREFS() */
 static int tokenize_IDREFS( shredCtxStruct *shredCtx, char* ownerTag, oid pre, str attrTag, str attrVal);
@@ -881,7 +946,7 @@ handleID_IDREF( shredCtxStruct *shredCtx,
 		int   attrType)
 {
 #ifdef ADB_DEBUG
-	stream_printf(GDKout,"handleID_IDREF(own=%s,pre=%d,nsloc=%s,v=\"%s\") = %d\n",ownerTag,pre,attrTag,attrVal,attrType);
+	stream_printf(GDKout,"handleID_IDREF(own=%s,pre=%d,pfxloc=%s,v=\"%s\") = %d\n",ownerTag,pre,attrTag,attrVal,attrType);
 #endif
 	int batIdx = 0;
 
@@ -896,7 +961,7 @@ handleID_IDREF( shredCtxStruct *shredCtx,
 		return tokenize_IDREFS(shredCtx,ownerTag,pre,attrTag,attrVal);
 	}
 	if ( append_str_oid2bat(shredCtx,batIdx,attrVal,pre) == NIL ) {
-		stream_printf(GDKerr,"append() for handleID_IDREF(own=%s,pre=%d,nsloc=%s,v=\"%s\") = %d FAILED\n",ownerTag,pre,attrTag,attrVal,attrType);
+		stream_printf(GDKerr,"append() for handleID_IDREF(own=%s,pre=%d,pfxloc=%s,v=\"%s\") = %d FAILED\n",ownerTag,pre,attrTag,attrVal,attrType);
 		return 0;
 	}
 	return 1;
@@ -927,7 +992,95 @@ tokenize_IDREFS( shredCtxStruct *shredCtx,
  * SAX callback, invoked whenever `<t ...>' is seen
  */
 void 
-shred_start_element (void *xmlCtx, 
+shred_start_elementNEW(void *xmlCtx, 
+                     const xmlChar  *e_uri, 
+                     const xmlChar  *e_pfx, 
+                     const xmlChar  *e_loc, 
+		     int	     n_atts,
+		     const xmlChar **atts)
+{
+    node_t node;
+    nat qn_id, val_id;
+    shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
+
+    if ( handleXmlCharacters (shredCtx) < 0 ) {
+        xmlStopParser(xmlCtx);
+        return;
+    }
+    /* (1) assign preorder rank (document order), size, level, and kind */
+    node.pre   = shredCtx->nnode_pre;
+    NEXT_PRE(shredCtx->nnode_pre);
+    node.size  = 0;
+    node.level = shredCtx->level;
+    node.kind  = ELEMENT;
+
+    /* descend one level */
+    shredCtx->level++;
+
+    /* keep track of document depth */
+    if (shredCtx->level > shredCtx->depth)
+        shredCtx->depth = shredCtx->level;
+
+    if ( (node.prop = store_PfxLocNEW(shredCtx,e_uri,e_pfx,e_loc)) == NIL ) {
+        xmlStopParser(xmlCtx);
+        return;
+    }
+
+    /* push node onto node stack: size to be determined later */
+    PUSH (shredCtx,node);
+
+    /* (2) process the elements attribute(s) */
+    int i;
+    for(i=0;i<(5*n_atts); i+=5) {
+    	    const xmlChar *a_tag = atts[i];
+    	    const xmlChar *a_pfx = atts[i+1];
+    	    const xmlChar *a_uri = atts[i+2];
+    	    const xmlChar *a_val = atts[i+3];
+    	    const xmlChar *a_end = atts[i+4];
+
+            qn_id  = store_PfxLocNEW(shredCtx,a_uri,a_pfx,a_tag);
+
+	    /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
+	    char qiChar = '\"';
+	    char* qi = index(a_val,qiChar);
+	    if ( !qi ) {
+	    	qiChar = '\'';
+	    	qi = index(a_val,qiChar);
+	    }
+	    if ( !qi ) {
+	    	xmlParserError (xmlCtx,"badly quoted attr: %s in <%s ..\n",a_tag,e_loc);
+	    }
+	    if ( 0 )
+	    	stream_printf(GDKout,"*SAX2 attr[%s,%s,%s,%s,%s]\n",a_tag,a_pfx,a_uri,a_val,a_end);
+	    *qi = 0;
+            val_id = append_str2bat(shredCtx,PROP_VAL,(char*)a_val);
+            /* */
+            if ( 
+               qn_id  == NIL ||
+               val_id == NIL ||
+               direct_oid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NIL ||
+               direct_oid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NIL ||
+               direct_oid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NIL
+            ) {
+                xmlStopParser(xmlCtx);
+                return;
+            }
+	    int attrType;
+
+	    if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)e_loc,(char*)*atts)) ) {
+	        if ( !handleID_IDREF(shredCtx,(char*)e_loc,node.pre,(char*)a_tag,(char*)a_val,attrType) ) {
+                	xmlStopParser(xmlCtx);
+                	return;
+		}
+	    }
+	    *qi = qiChar; /* restore the quote */
+            /* process next attribute */
+            shredCtx->nnode_attr++;
+    }
+}
+
+void 
+shred_start_elementORG(void *xmlCtx, 
                      const xmlChar *t, const xmlChar **atts)
 {
     node_t node;
@@ -952,7 +1105,7 @@ shred_start_element (void *xmlCtx,
     if (shredCtx->level > shredCtx->depth)
         shredCtx->depth = shredCtx->level;
 
-    if ( (node.prop = store_NsLoc(shredCtx, (char*) t)) == NIL ) {
+    if ( (node.prop = store_PfxLocORG(shredCtx, (char*) t)) == NIL ) {
         xmlStopParser(xmlCtx);
         return;
     }
@@ -963,7 +1116,7 @@ shred_start_element (void *xmlCtx,
     /* (2) process the element's attribute(s), if any */
     if (atts)
         while (*atts) {            
-            qn_id  = store_NsLoc(shredCtx, (char*) *atts);
+            qn_id  = store_PfxLocORG(shredCtx, (char*) *atts);
             val_id = append_str2bat(shredCtx,PROP_VAL,(char*)*(atts + 1));
             /* */
             if ( 
@@ -1061,7 +1214,7 @@ shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
 {
     /*
      * incomplete, do not compress tgt ins properties yet. Should do
-     * it analog to nsloc with an extra BAT
+     * it analog to pfxloc with an extra BAT
      */
     node_t node;
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
@@ -1165,10 +1318,6 @@ int handleExternalSubset(shredCtxStruct* shredCtx, xmlDtdPtr dtd) {
 		 case XML_ATTRIBUTE_ID:
 		 case XML_ATTRIBUTE_IDREF:
 		 case XML_ATTRIBUTE_IDREFS:
-		 	/* INCOMPLETE, check if NameSpaces has to be used.
-		 	 * stream_printf(GDKout,"DTD attr: %s:%s in elem: %s, atype=%d\n", 
-			 *	ap->prefix,ap->name, ap->elem, ap->atype);
-			 */
 	 		insertAttrDB(&shredCtx->specAttrDb,(char*)ap->elem,(char*)ap->name,ap->atype);
 			break;
 		 default:
@@ -1207,14 +1356,49 @@ void catchExternalSubset(
 	}
 }
 
+/* libxml2 SAX2 version for the startElement construction */
+static void my_startElementNsSAX2Func(
+		void * ctx, 
+		const xmlChar * localname, 
+		const xmlChar * prefix, 
+		const xmlChar * URI, 
+		int nb_namespaces, 
+		const xmlChar ** namespaces, 
+		int nb_attributes, 
+		int nb_defaulted, 
+		const xmlChar ** attributes) {
+	(void)nb_namespaces; 
+	(void)namespaces; 
+	shred_start_elementNEW(ctx,URI,prefix,localname,nb_attributes+nb_defaulted,attributes);
+}
+
+/* libxml2 SAX2 version for the endElement construction */
+static void my_endElementNsSAX2Func(
+	void * ctx, 
+	const xmlChar * localname, 
+	const xmlChar * prefix, 
+	const xmlChar * URI) {
+	(void)prefix;
+	(void)URI;
+	shred_end_element(ctx,localname /* unused byfunc */);
+}
+
+
+#define USE_SAX2
+
 /**
  * SAX callback table.
  */
 xmlSAXHandler shredder = {
     .startDocument         = shred_start_document
   , .endDocument           = shred_end_document
-  , .startElement          = shred_start_element
+#ifdef USE_SAX2
+  , .startElement          = 0
+  , .endElement            = 0
+#else
+  , .startElement          = shred_start_elementORG
   , .endElement            = shred_end_element
+#endif
   , .characters            = shred_characters
   , .processingInstruction = shred_pi
   , .comment               = shred_comment
@@ -1238,7 +1422,15 @@ xmlSAXHandler shredder = {
   , .fatalError            = 0
   , .getParameterEntity    = 0
   , .externalSubset        = catchExternalSubset /* catch this 1 and process */
+#ifdef USE_SAX2
+  , .startElementNs	   = my_startElementNsSAX2Func
+  , .endElementNs	   = my_endElementNsSAX2Func
+  , .initialized           = XML_SAX2_MAGIC /* set this to zero for SAX1 */
+#else
+  , .startElementNs	   = 0
+  , .endElementNs	   = 0
   , .initialized           = 0
+#endif
 };
 
 /**

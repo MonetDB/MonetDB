@@ -751,7 +751,7 @@ static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
         /* */
         CHKVP(vp = idxTVinWSorFRGN(ctx,frag,ATTR_QN,id));
         oid qn_oid = *(oid*)vp;
-        CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,QN_NS,qn_oid));
+        CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,QN_PREFIX,qn_oid));
         str ns     = (str)vp;
         CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,QN_LOC,qn_oid));
         str name   = (str)vp;
@@ -796,7 +796,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
                         str name, ns;
-                        CHKVP(vp = idxTVinWSorFRGN(ctx,vFRAG,QN_NS,prop));
+                        CHKVP(vp = idxTVinWSorFRGN(ctx,vFRAG,QN_PREFIX,prop));
                         ns   = (str)vp;
                         CHKVP(vp = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_LOC,prop));
 			name = (str)vp;
