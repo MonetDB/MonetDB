@@ -183,12 +183,20 @@ def am_scripts(fd, var, scripts, am):
     sd = am_translate_dir(sd,am)
 
     for script in scripts['TARGETS']:
-        fd.write("install-exec-local-%s: %s\n" % (script,script))
-        fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
-        fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
-        fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd,script))
-        fd.write("uninstall-exec-local-%s: \n" % (script))
-        fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd,script))
+	print(sd)
+	if (sd == "$(sysconfdir)"):
+        	fd.write("install-exec-local-%s: %s\n" % (script,script))
+        	fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
+        	fd.write("\t$(INSTALL) -C --backup=nil $< $(DESTDIR)%s/%s\n\n" % (sd,script))
+        	fd.write("uninstall-exec-local-%s: \n" % (script))
+        	fd.write("\t$(ECHO) $(DESTDIR)%s/%s\n\n" % (sd,script))
+	else:
+        	fd.write("install-exec-local-%s: %s\n" % (script,script))
+        	fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
+        	fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
+        	fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd,script))
+        	fd.write("uninstall-exec-local-%s: \n" % (script))
+        	fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd,script))
         am['INSTALL'].append(script)
         am['InstallList'].append("\t"+sd+"/"+script+"\n")
 
