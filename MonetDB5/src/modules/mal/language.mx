@@ -54,7 +54,7 @@ comment "This routine introduces an iterator
 
 command nextElement(step:oid,last:oid)(:bit,:oid)
 address RNGnextElement_oid; 
-command nextElement(step:int,last:chr)(:bit,:chr)
+command nextElement(step:chr,last:chr)(:bit,:chr)
 address RNGnextElement_chr; 
 command nextElement(step:sht,last:sht)(:bit,:sht)
 address RNGnextElement_sht; 
