@@ -184,6 +184,7 @@ head_column(stmt *st)
 	case st_op:
 	case st_ptable:
 	case st_groupby:
+	case st_idxbat:
 		return NULL;
 
 		/* stmts without head column which also are not expected */
@@ -192,7 +193,6 @@ head_column(stmt *st)
 
 	case st_ubat:
 	case st_dbat:
-	case st_idxbat:
 
 	case st_limit:
 	case st_offset:
