@@ -356,7 +356,7 @@ The ELSE part may be omitted.
 A simple while-loop construction. The BIT expression is
 tested, on FALSE the loop stops, and on TRUE the statement
 is executed and we loop to a new BIT expression evaluation
-({\tt \{ var i := 0; while((i := i + 1) $\leq$ 10) i.print; \} }).
+({\tt \{ var i := 0; while((i := i + 1) $\leq$ 10) i.print(); \} }).
 
 \item {\tt BAT \@ ITERATOR(expr, ..expr.. ) statement}\\
 Iterate over the elements of a BAT. For each element, the statement
@@ -391,7 +391,7 @@ changed  using the built-in commands
 Also, the {\tt vars()} command produces a table of all active variables
 in the current context:
 \begin{verbatim}
-> vars;
+> vars();
 #-----------------------------------------------------------------------------------------#
 # type                  | type  | type_status   | value_status  | value_value             #
 #-----------------------------------------------------------------------------------------#
@@ -842,7 +842,7 @@ operation, as the {\tt @[<a href="../../Core/Modules/trans/index.html#mod_2_0_1"
 to the status at the last succeeded commit.
 
 BATs can be appended into with {\tt @[<a href="../../Core/Modules/bat/index.html#mod_2_0_2">insert()</a>@} and deleted from
-with {\tt @[<a href="../../Core/Modules/bat/index.html#mod_2_0_2">delete</a>@}.
+with {\tt @[<a href="../../Core/Modules/bat/index.html#mod_2_0_2">delete()</a>@}.
 
 The default BAT access mode is {\tt BAT\_READ} (an exception are newly created empty BATs,
 which have access mode {\tt BAT\_WRITE}). There is also an access mode {\tt BAT\_APPEND} that
@@ -914,7 +914,7 @@ module, a runtime error occurs!
 
 \begin{verbatim}
 > module(monettime);
-> loaded;
+> loaded();
 #---------------------------------#
 # module        | usage_count     #
 #---------------------------------#
@@ -965,7 +965,7 @@ We can now create temporal values, manipulate them, and store them in BATs.
 
 {\small\begin{verbatim}
 > d := timestamp("14-aug-2002 16:14");
-> d.print;
+> d.print();
 [ 14-au-1997 16:14 ]
 >
 > b := bat(oid,timestamp);
@@ -976,7 +976,7 @@ We can now create temporal values, manipulate them, and store them in BATs.
 > b.insert(4@0, timestamp("26-feb-1997 13:50"));
 > b.insert(5@0, timestamp("15-aug-1997 14:00"));
 >
-> b.print;
+> b.print();
 #----------------------------------#
 # oid    | timestamp               #
 #----------------------------------#
@@ -1139,7 +1139,7 @@ thread is created.  For each incoming MapiClient
 session, a new thread is created as well.
 
 \begin{verbatim}
-> threads;
+> threads();
 #-------------------------#
 # BAT:    thread          #
 # (int)   (str)           #
@@ -1184,8 +1184,8 @@ which returns a client-id.  \item killed with {\tt @[<a href="../../Core/Modules
 A common application of {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_3_1">fork()</a>@} is to start a Mapi listener in the background:
 \begin{verbatim}
 > module(mapi);
-> listen(45678).fork;
-> clients;
+> listen(45678).fork();
+> clients();
 #-------------------------------------------------------------------------#
 # BAT:    name  | login                         | mil                     #
 # (int)   (str) | (str)                         | (str)                   #
