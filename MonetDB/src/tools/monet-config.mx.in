@@ -34,6 +34,7 @@ Known values for OPTION are:
   --libs		print Monet module linking information
   --cflags		print Monet module pre-processor and compiler flags
   --modpath             print default Monet module directory
+  --classpath		print default Monet CLASSPATH
   --help		display this help and exit
   --version		output version information
 
@@ -125,6 +126,10 @@ while test $# -gt 0; do
 
     --modpath)
         echo 	$pkglibdir
+        ;;
+
+    --classpath)
+        echo 	$pkglibdir/mapi.jar
         ;;
 
     *)
