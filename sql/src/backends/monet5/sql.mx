@@ -218,6 +218,7 @@ typedef struct backend{
 	int console;
 	int debug;
 	int trace;
+	char language;	/* 'S' or 'D' */
 	mvc	*mvc;
 	buffer 	*outbuf;
 	stream 	*out;
@@ -380,7 +381,7 @@ str mvc_destroy_wrap(int *ret ){
 
 str mvc_update_var_wrap( int *ret, str *varname ){
 	mvc *m;
-        (void) ret;
+	(void) ret;
 	@:getContext(m)@
 	if ( sql_update_var( m, *varname ) != GDK_SUCCEED)
 		return throwException(MALEXCEPTION,"mvc_update_var","error");
