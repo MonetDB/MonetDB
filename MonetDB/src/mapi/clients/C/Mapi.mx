@@ -2311,7 +2311,7 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 		stream_flush(mid->to);
 		stream_flush(mid->to);
 		check_stream(mid, mid->to, "write error on stream",
-			     "mapi_execute", mid->error);
+			     "mapi_execute", hdl);
 		ret = answer_lookahead(hdl);
 	}
 	return hdl;
