@@ -55,7 +55,7 @@ P       [-!\$%\^\*~+|?<>=/\\]
 
 /* only needed for lex (we need  a big yytext array, since comments can
  * be lengthy. For lexis where yytext is a pointer this is not a problem
- * because they grow dynamically. But we must take care of copiing yytext
+ * because they grow dynamically. But we must take care of copying yytext
  * before any unput is called.
  */
 #define YYLMAX 100000
@@ -496,7 +496,7 @@ char       ll_project[] = "project";
 char       ll_reverse[] = "reverse";
 
 @-
-The Monet interpreter languages provides a sugar version to OO
+The Monet interpreter language provides a sugar version to OO
 programming by considering the first argument the receiver of the method.
 @c
 YYSTREE yysugar(YYSTREE node){
@@ -512,13 +512,13 @@ int yywrap() { return 1; }
 
 @- The YACC Grammar
 @T
-A parse tree is build during parsing, such that a compact
+A parse tree is built during parsing, such that a compact
 representation for function calls result. 
 
 The code below is
 {\tt yacc} input format. Executing {\tt yacc} produces the file 
 {y.tab.c}, which contains the parsing routine {\tt yyparse()}. It
-parses the grammar, executing the inlined C statements along its way. 
+parses the grammar, executing the inlined C statements along the way. 
 @
 @y
 
@@ -1255,7 +1255,7 @@ ident_decl:
 Display the error information for the current client.
 If the list-flag is on an arrow and state number is printed at the "appropriate"
 place. If no lookahead character is a used and the next character is a newline,
-we should also copy the input .
+we should also copy the input.
 @{
 @y
 void ll_parserror(str msg){
@@ -1362,7 +1362,7 @@ should be the same. And they are not.. Sucker!
 The parser performs a simple data dependency check for all
 identifiers mentioned in a parallel block. Duplicate use
 of an identifier is flagged as a potential conflict under
-parallel execution.It is up to the Monet programmer to assure
+parallel execution.  It is up to the Monet programmer to assure
 himself that these conflicts are avoided by other means (e.g.
 if-then-else).
 
