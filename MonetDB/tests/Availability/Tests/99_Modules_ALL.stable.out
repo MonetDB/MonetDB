@@ -55,6 +55,7 @@ malalgebra: loading... done.
      lock: loading... done.
    kernel: loaded.
  iterator: loading... done.
+    image: loading... done.
      enum: loading... done.
   decimal: loading... done.
   ddbench: loading... done.
@@ -102,6 +103,7 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 [ "ddbench"	  ]
 [ "decimal"	  ]
 [ "enum"	  ]
+[ "image"	  ]
 [ "iterator"	  ]
 [ "kernel"	  ]
 [ "lock"	  ]

@@ -32,6 +32,7 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "cluster"	  ]
 [ "color"	  ]
 [ "ddbench"	  ]
+[ "image"	  ]
 [ "iterator"	  ]
 [ "malalgebra"	  ]
 [ "mel"		  ]
@@ -264,6 +265,15 @@ Module: "ddbench"
 [ "{count}",		  "PROC:      ",  "{count}(BAT[any::1,any]) : BAT[any::1,int]",						  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
+
+Module: "image"
+
+[ 1 ]
+[ 1 ]
+#---------------------------------------------------------------------------------#
+# function		type		signature		help			  # name
+#---------------------------------------------------------------------------------#
+[ "test_url",	  "PROC:      ",  "test_url() : void",	  "not available"	  ]
 
 Module: "iterator"
 

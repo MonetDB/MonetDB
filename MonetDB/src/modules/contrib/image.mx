@@ -1,0 +1,18 @@
+@f image
+@a M.A. Windhouwer
+@* The image module
+
+The current version is just a very subtype of the url ADT.
+Future extensions include specialized constructors, the
+ability to specify a limited amount of meta-data (e.g.
+width and height) and a local representant (i.e. an icon).
+
+@m
+.MODULE image;
+
+   .USE url; 
+
+	.ATOM image = url;
+	.END;
+
+.END image;

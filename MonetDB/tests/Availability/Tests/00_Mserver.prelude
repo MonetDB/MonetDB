@@ -50,6 +50,7 @@ MODULES.replace("bitvector", "contrib");
 MODULES.replace("cluster",   "contrib");
 MODULES.replace("color",     "contrib");
 MODULES.replace("ddbench",   "contrib");
+MODULES.replace("image",     "contrib");
 MODULES.replace("iterator",  "contrib");
 MODULES.replace("malalgebra","contrib");
 MODULES.replace("mel",       "contrib");
