@@ -262,45 +262,8 @@ fi
 AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
 
-dnl libgetopt
-have_getopt=auto
-GETOPT_LIBS=""
-GETOPT_INCS=""
-AC_ARG_WITH(getopt,
-[  --with-getopt=DIR     getopt library is installed in DIR], 
-	[have_getopt="$withval"])
-if test "x$have_getopt" != xno; then
-  if test "x$have_getopt" != xauto; then
-    GETOPT_LIBS="-L$withval/lib"
-    GETOPT_INCS="-I$withval/include"
-  fi
-
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $GETOPT_INCS"
-  AC_CHECK_HEADERS(getopt.h) 
-  CPPFLAGS="$save_CPPFLAGS"
-
-  save_LDFLAGS="$LDFLAGS"
-  LDFLAGS="$LDFLAGS $GETOPT_LIBS"
-  AC_CHECK_LIB(c, getopt_long, 
-	[ GETOPT_LIBS="$GETOPT_LIBS" 
-          AC_DEFINE(HAVE_LIBGETOPT) 
-	  have_getopt=yes ] , 
-	[ AC_CHECK_LIB(getopt, getopt_long_only, 
-		[ GETOPT_LIBS="$GETOPT_LIBS -lgetopt" 
-          	AC_DEFINE(HAVE_LIBGETOPT) 
-	  	have_getopt=yes ] , [ have_getopt=no] )
-	] )
-  LDFLAGS="$save_LDFLAGS"
-
-  if test "x$have_getopt" != xyes; then
-    GETOPT_LIBS=""
-    GETOPT_INCS=""
-  fi
-fi
-AC_SUBST(GETOPT_LIBS)
-AC_SUBST(GETOPT_INCS)
-AM_CONDITIONAL(HAVE_GETOPT,test x$have_getopt = xyes)
-
+dnl check for getopt in standard library
+AC_SUBST(LIBOBJS)
+AC_CHECK_FUNCS(getopt_long , , [LIBOBJS="getopt.lo getopt1.lo"] ) 
 
 ])
