@@ -29,7 +29,7 @@ use vars qw($VERSION $drh);
 use sigtrap;
 # use Data::Dump qw(dump);
 
-$VERSION = '0.02';
+$VERSION = '0.03';
 $drh = undef;
 
 sub driver {
