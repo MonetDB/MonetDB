@@ -480,14 +480,17 @@ public class JdbcClient {
 			if (i > 0) out.println(",");
 			out.print("\t\""); out.print(cols.getString("COLUMN_NAME"));
 		 	out.print("\"\t"); out.print(cols.getString("TYPE_NAME"));
-		 	if (type != Types.REAL &&
+			int size = cols.getInt("COLUMN_SIZE");
+		 	if (size != 0 &&
+				type != Types.REAL &&
 				type != Types.DOUBLE &&
 				type != Types.FLOAT &&
+				type != Types.BOOLEAN &&
 				type != Types.TIMESTAMP &&
 				type != Types.DATE &&
 				type != Types.TIME)
 			{
-		 		out.print("("); out.print(cols.getString("COLUMN_SIZE"));
+		 		out.print("("); out.print(size);
 		 		if (cols.getInt("DATA_TYPE") == Types.DECIMAL) {
 					out.print(","); out.print(cols.getString("DECIMAL_DIGITS"));
 				}
@@ -595,9 +598,6 @@ public class JdbcClient {
 
 	private final static int AS_IS = 0;
 	private final static int QUOTE = 1;
-	private final static int TIMESTAMP = 2;
-	private final static int TIME = 3;
-	private final static int DATE = 4;
 
 	public static void dumpTable(PrintWriter out, Statement stmt, String table)
 		throws SQLException
@@ -612,6 +612,9 @@ public class JdbcClient {
 				case Types.CHAR:
 				case Types.VARCHAR:
 				case Types.LONGVARCHAR:
+				case Types.DATE:
+				case Types.TIME:
+				case Types.TIMESTAMP:
 					types[i] = QUOTE;
 				break;
 				case Types.NUMERIC:
@@ -626,15 +629,6 @@ public class JdbcClient {
 				case Types.FLOAT:
 				case Types.DOUBLE:
 					types[i] = AS_IS;
-				break;
-				case Types.DATE:
-					types[i] = DATE;
-				break;
-				case Types.TIME:
-					types[i] = TIME;
-				break;
-				case Types.TIMESTAMP:
-					types[i] = TIMESTAMP;
 				break;
 
 				default:
@@ -657,21 +651,6 @@ public class JdbcClient {
 					case QUOTE:
 						out.print("'");
 						out.print(rs.getString(i).replaceAll("\\\\", "\\\\\\\\").replaceAll("\\\'", "\\\\\'"));
-						out.print("'");
-					break;
-					case TIMESTAMP:
-						out.print("timestamp '");
-						out.print(rs.getTimestamp(i));
-						out.print("'");
-					break;
-					case TIME:
-						out.print("time '");
-						out.print(rs.getTime(i));
-						out.print("'");
-					break;
-					case DATE:
-						out.print("date '");
-						out.print(rs.getDate(i));
 						out.print("'");
 					break;
 				}
@@ -1052,7 +1031,7 @@ class Table {
 	String getFqnameQ() {
 		return("\"" + schem + "\".\"" + name + "\"");
 	}
-	
+
 	public String toString() {
 		return(fqname);
 	}
