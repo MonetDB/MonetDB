@@ -179,7 +179,7 @@ stream_export stream *buffer_rastream( buffer *b, const char *name );
 stream_export stream *buffer_wastream( buffer *b, const char *name );
 stream_export buffer *stream_get_buffer( stream *s );
 
-#define BLOCK 1024*1024
+#define BLOCK (8*1024)
 /* 
    Block stream is a stream which sends data in blocks of a known
    size (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
@@ -197,8 +197,8 @@ stream_export buffer *stream_get_buffer( stream *s );
    of bytes can be read the end of the major block if found. The next
    read will then start with a new major block.
  */
-stream_export stream *block_stream( stream *s );
-stream_export ssize_t bs_read_next( stream *s, void *buf, int *last );
+stream_export stream *block_stream(stream *s);
+stream_export ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
 stream_export int isa_block_stream(stream *s);
 
 @+ buffered streams
@@ -1496,12 +1496,10 @@ stream *buffer_wastream( buffer *b, const char *name )
 }
 
 typedef struct bs {
-	stream *s;
-	unsigned nr;
-	unsigned itotal;
-	size_t bsize;
-	int eob; 
-	char *buf;
+	stream *s;		/* underlying stream */
+	unsigned nr;		/* how far we got in buf */
+	unsigned itotal;	/* amount available in current read block */
+	char buf[BLOCK];	/* the buffered data */
 } bs;
 
 static
@@ -1509,146 +1507,198 @@ bs *bs_create( stream *s )
 {
 	/* should be a binary stream */
 	bs *ns = (bs*)malloc(sizeof(bs));
-	ns->bsize = BLOCK;
-	ns->buf = malloc(ns->bsize);
 	ns->s = s;
 	ns->nr = 0;
 	ns->itotal = 0;
-	ns->eob = 0;
 	return ns;
 }
 
-static ssize_t 
-bs_write( stream *ss, void *buf, size_t elmsize, size_t cnt )
+/* Collect data until the internal buffer is filled, then write the
+   filled buffer to the underlying stream.
+ */
+static ssize_t
+bs_write(stream *ss, void *buf, size_t elmsize, size_t cnt)
 {
 	bs *s = (bs*)ss->stream_data.p;
 	size_t todo = cnt * elmsize;
 
 	assert(ss->access == ST_WRITE);
-	if (s->nr + todo >= s->bsize) {
-		do {
-			s->bsize += BLOCK;
-		} while (s->nr + todo >= s->bsize);
-		s->buf = realloc(s->buf, s->bsize);
+	assert(s->nr < sizeof(s->buf));
+	while (todo > 0) {
+		size_t n = sizeof(s->buf) - s->nr;
+		if (todo < n)
+			n = todo;
+		memcpy(s->buf + s->nr, buf, n);
+		s->nr += n;
+		todo -= n;
+		buf = (void *) ((char *) buf + n);
+		if (s->nr == sizeof(s->buf)) {
+			if (!stream_writeInt(s->s, s->nr) ||
+			    stream_write(s->s, s->buf, 1, s->nr) != s->nr) {
+				ss->errnr = WRITE_ERROR;
+				return -1;
+			}
+			s->nr = 0;
+		}
 	}
-	memcpy(s->buf+s->nr, buf, todo);
-	s->nr += todo;
 	return cnt;
 }
 
-static ssize_t 
-bs_read( stream *ss, void *buf, size_t elmsize, size_t cnt )
-{
-	bs *s = (bs*)ss->stream_data.p;
-	unsigned nr = 0;
-	size_t todo = cnt * elmsize;
-
-	assert(ss->access == ST_READ);
-	if (s->nr + todo < s->itotal) {
-		memcpy( buf, s->buf + s->nr, todo );
-
-		s->nr += todo;
-		return cnt;
-	}
-	if (todo + s->nr >= s->itotal) {
-		size_t rest = s->itotal - s->nr;
-		memcpy( buf, s->buf + s->nr, rest );
-		buf = (void *) ((char *) buf + rest);
-		todo -= rest;
-
-		s->nr = 0;
-		s->itotal = 0;
-	}
-	if (s->eob){
-		s->eob = 0;
-		return cnt - (todo/elmsize);
-	}
-	if (todo) {
-		if (!stream_readInt( s->s, (int *) &nr)) {
-			ss->errnr = READ_ERROR;
-			return -1;
-		}
-		if (nr > s->bsize) {
-			s->bsize = nr;
-			s->buf = realloc(s->buf, s->bsize);
-		}
-		if (s->s->read(s->s, s->buf, 1, (size_t) nr) != nr) {
-			ss->errnr = READ_ERROR;
-			return -1;
-		}
-		s->eob = 1;
-		s->itotal = nr;
-
-		if (nr < todo)
-			memcpy( buf, s->buf, (size_t) nr );
-		else
-			memcpy( buf, s->buf, todo );
-                if (nr <= todo){
-                        s->nr = nr;
-			todo -= nr;
-			s->eob = 0;
-                } else {
-                        s->nr = (int) todo; /* todo < BLOCK, i.e. will fit in int */
-			todo = 0;
-		}
-	}
-	if (todo){
-		s->itotal = s->nr = 0;
-		return cnt - (todo/elmsize);
-	} else {
-		return cnt;
-	}
-}
-
-ssize_t bs_read_next( stream *ss, void *buf, int *last )
-{
-	bs *s = (bs*)ss->stream_data.p;
-	int nr = 0;
-
-	*last = 0;
-	if (s->itotal > s->nr ){
-		size_t rest = BLOCK;
-		if ((s->itotal-s->nr) < BLOCK)
-			rest = s->itotal - s->nr;
-		memcpy( buf, s->buf + s->nr, rest );
-		s->nr += rest;
-
-		*last = (s->itotal == s->nr);
-		if (*last){
-			s->nr = 0;
-			s->itotal = 0;
-			s->eob = 0;
-		}
-		return rest;
-	} else {
-		if (!stream_readInt( s->s, &nr) ||
-		   s->s->read( s->s, buf, (size_t) 1, (size_t) nr) != nr){
-			ss->errnr = READ_ERROR;
-			return -1;
-		}
-		if (nr < BLOCK){
-			*last = 1;
-			s->itotal = s->nr = 0;
-		} 
-		return (size_t) nr;
-	} 
-}
-
-static
-int bs_flush(stream *ss)
+/* If the internal buffer is partially filled, write it to the
+   underlying stream.  Then in any case write an empty buffer to the
+   underlying stream to indicate to the receiver that the data was
+   flushed.
+ */
+static int
+bs_flush(stream *ss)
 {
 	bs *s = (bs*)ss->stream_data.p;
 
 	assert(ss->access == ST_WRITE);
-	if (ss->access == ST_WRITE && s->nr){
-		if (!stream_writeInt( s->s, s->nr) ||
-			s->s->write( s->s, s->buf, 1, s->nr ) != s->nr){
+	assert(s->nr < sizeof(s->buf));
+	if (ss->access == ST_WRITE) {
+		/* first flush rest of buffer (if s->nr > 0), then
+		   write an extra empty buffer (second
+		   stream_writeInt) to indicate user-instigated
+		   flush */
+		if ((s->nr > 0 &&
+		     (!stream_writeInt(s->s, s->nr) ||
+		      s->s->write(s->s, s->buf, 1, s->nr) != s->nr)) ||
+		    !stream_writeInt(s->s, 0)
+			) {
 			ss->errnr = WRITE_ERROR;
 			return -1;
 		}
+		s->nr = 0;
 	}
-	s->nr = 0;
 	return 0;
+}
+
+/* Read buffered data and return the number of items read.  At the
+   flush boundary we will return 0 to indicate the end of a block. */
+static ssize_t 
+bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
+{
+	bs *s = (bs*)ss->stream_data.p;
+	int nr = 0;
+	size_t todo = cnt * elmsize;
+	size_t n;
+	char *p;
+
+	assert(ss->access == ST_READ);
+	assert(s->nr <= s->itotal);
+	assert(s->nr <= sizeof(s->buf));
+
+	if (s->itotal == 0) {
+		/* internal buffer is empty and there is nothing more
+		   to read in the current block, so fill the buffer
+		   from the underlying stream */
+		assert(s->nr == 0);
+		if (!stream_readInt(s->s, &nr) || nr < 0) {
+			ss->errnr = READ_ERROR;
+			return -1;
+		}
+		s->itotal = (unsigned) nr;
+		s->nr = 0;
+		/* read the data from the stream until our buffer is
+		   filled or until the stream is exhausted (i.e. n bytes) */
+		n = s->itotal > sizeof(s->buf) ? sizeof(s->buf) : s->itotal;
+		p = s->buf;
+		while (n > 0) {
+			ssize_t m = stream_read(s->s, p, 1, n);
+			if (m < 0) {
+				ss->errnr = READ_ERROR;
+				return -1;
+			}
+			n -= m;
+			p += m;
+		}
+	}
+
+	/* Fill the caller's buffer with data from the current block.
+	   Note we do not cross block boundaries. */
+	cnt = 0;		/* count how much we put into the buffer */
+	while (todo > 0) {
+		/* first calculate how much data we have buffered */
+		n = (s->itotal > sizeof(s->buf) ? sizeof(s->buf) : s->itotal) - s->nr;
+		if (todo < n)	/* don't copy more than requested */
+			n = todo;
+		memcpy(buf, s->buf + s->nr, n);
+		s->nr += n;
+		todo -= n;
+		buf = (void *) ((char *) buf + n);
+		cnt += n;
+		if (todo == 0)	/* caller's buffer is full */
+			break;
+		/* we exhausted our internal buffer */
+		s->nr = 0;
+		if (s->itotal > sizeof(s->buf)) {
+			/* there is more data waiting in the stream,
+			   so read it */
+			s->itotal -= sizeof(s->buf);
+			/* read the next bit in the current block */
+			n = s->itotal > sizeof(s->buf) ? sizeof(s->buf) : s->itotal;
+			p = s->buf;
+			while (n > 0) {
+				ssize_t m = stream_read(s->s, p, 1, n);
+				if (m < 0) {
+					ss->errnr = READ_ERROR;
+					return -1;
+				}
+				n -= m;
+				p += m;
+			}
+		} else {
+			/* we're at the end of the current block */
+			s->itotal = 0;
+			return cnt / elmsize; /* return what we have */
+		}
+	}
+	return cnt / elmsize;
+}
+
+/* Read the next bit of a block.  If this was the last bit of the
+   current block, set the value pointed to by last to 1, otherwise set
+   it to 0. */
+ssize_t
+bs_read_next(stream *ss, void *buf, size_t nbytes, int *last)
+{
+	ssize_t n;
+	bs *s = (bs *) ss->stream_data.p;
+
+	n = bs_read(ss, buf, 1, nbytes);
+	if (n < 0) {
+		if (last)
+			*last = 1;
+		return -1;
+	}
+	if (s->nr == s->itotal) {
+		/* We're at the end of a block, so check if there is
+		   more to come.  If the other side flushed, we will
+		   read a 0 byte count, otherwise set the internal
+		   variables so that the next call to bs_read will
+		   read the data from the stream. */
+		int nr = 0;
+		if (n > 0 && (!stream_readInt(s->s, &nr) || nr < 0)) {
+			ss->errnr = READ_ERROR;
+			return -1;
+		}
+		if (nr == 0) {
+			/* the other side flushed */
+			s->itotal = 0;
+			s->nr = 0;
+			if (last)
+				*last = 1;
+		} else {
+			/* there is more to come */
+			s->nr = sizeof(s->buf);
+			s->itotal = nr + sizeof(s->buf);
+			if (last)
+				*last = 0;
+		}
+	} else if (last)
+		*last = 0;
+	return n;
 }
 
 static

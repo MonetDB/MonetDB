@@ -538,8 +538,9 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 
 	/*fprintf(stderr,"mapisqlclient:accept queries\n");*/
 	while(go){
-		size = BUFSIZ + 1; err = 0;
-		inbuf = NEW_ARRAY(char, size ); start = inbuf;
+		size = BUFSIZ + 1;
+		err = 0;
+		start = inbuf = NEW_ARRAY(char, size);
 		inlen = 0;
 		if( stream_write(out,prompt,promptlength,1) != 1 ){
 			go= FALSE; break;
@@ -557,13 +558,16 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 		}
 		if( blocked ){
 			int nsize = BUFSIZ;
-			while ((len = stream_read(in, start, 1, nsize)) == nsize){
-				inlen += nsize;
+			int last;
+			len = bs_read_next(in, start, nsize, &last);
+			while (len >= 0 && !last) {
+				inlen += len;
 				nsize *= 4;
 				size += nsize;
 				inbuf = RENEW_ARRAY(char, inbuf, size); 
 				start = inbuf + inlen;
 				*start = '\0';
+				len = bs_read_next(in, start, nsize, &last);
 			}
 			if( len < 0){
 				/*fprintf(stdout,"mapisqlclient:error 1b\n"); */

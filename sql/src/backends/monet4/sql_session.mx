@@ -501,7 +501,7 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 		ssize_t inlen = 0, len;
 
 		while ((len = stream_read(in, start, 1, nsize)) == nsize){
-			inlen += nsize;
+			inlen += len;
 			nsize *= 4;
 			size += nsize;
 			inbuf = RENEW_ARRAY(char, inbuf, size); 

@@ -512,9 +512,7 @@ int readClient(Client c)
 			do {
 				nsize = c->limit - c->top;
 				i = stream_read(c->fdin, c->top, 1, nsize);
-				if (stream_errnr(c->fdin))
-					return 0;
-				if (i <= 0)
+				if (stream_errnr(c->fdin) || i < 0)
 					return 0;
 				c->top += i;
 				if (i == nsize)

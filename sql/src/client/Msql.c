@@ -259,11 +259,11 @@ static void header_data( stream *rs, stream *out, int nCols, int trace ){
 	if (nCols > 0){ 
 		char buf[BLOCK+1];
 		int last = 0;
-		int nr = bs_read_next(rs,buf,&last);
+		int nr = bs_read_next(rs,buf,BLOCK,&last);
 
 		cur = column_info(buf, nr, cols, cur);
 		while(!last){
-			int nr = bs_read_next(rs,buf,&last);
+			int nr = bs_read_next(rs,buf,BLOCK,&last);
 			cur = column_info(buf,nr, cols, cur);
 		}
 	}
@@ -310,7 +310,7 @@ int receive( stream *rs, stream *out, int trace ){
 		if (!stream_readInt(rs, &status))
 			return -1;
 		if (type < 0 || status < 0){ /* output error */
-			int nr = bs_read_next(rs,buf,&last);
+			int nr = bs_read_next(rs,buf,BLOCK,&last);
 			char *s;
 
 			fprintf( stdout, "SQL ERROR %d %d: ", type, status );
@@ -320,7 +320,7 @@ int receive( stream *rs, stream *out, int trace ){
 			fwrite( s, strlen(s), 1, stdout );
 			free(s);
 			while(!last){
-				int nr = bs_read_next(rs,buf,&last);
+				int nr = bs_read_next(rs,buf,BLOCK,&last);
 				buf[nr] = 0;
 				s = conv(buf, from_utf);
 				fwrite( s, strlen(s), 1, stdout );
@@ -332,7 +332,7 @@ int receive( stream *rs, stream *out, int trace ){
 		nRows = status;
 		if ((type == Q_TABLE || type == Q_DEBUG || type == Q_DEBUGP) 
 			&& nRows > 0){
-			int nr = bs_read_next(rs,buf,&last);
+			int nr = bs_read_next(rs,buf,BLOCK,&last);
 			char *s;
 
 			buf[nr] = 0;
@@ -340,7 +340,7 @@ int receive( stream *rs, stream *out, int trace ){
 			fwrite( s, strlen(s), 1, stdout );
 			free(s);
 			while(!last){
-				int nr = bs_read_next(rs,buf,&last);
+				int nr = bs_read_next(rs,buf,BLOCK,&last);
 				buf[nr] = 0;
 				s = conv(buf, from_utf);
 				fwrite( s, strlen(s), 1, stdout );
@@ -507,9 +507,9 @@ void skip_block(stream *rs){
 	int last = 0;
 	char buf[BLOCK+1];
 
-	bs_read_next(rs,buf,&last);
+	bs_read_next(rs,buf,BLOCK,&last);
 	while(!last){
-		bs_read_next(rs,buf,&last);
+		bs_read_next(rs,buf,BLOCK,&last);
 	}
 }
 
@@ -626,10 +626,10 @@ static void dump_data( stream *ws, stream *rs, int nRows, char *table, int dump,
 			printf( "Could not open %s for writing\n", table);
 	}
 
-	nr = bs_read_next(rs, buf, &last);
+	nr = bs_read_next(rs, buf, BLOCK, &last);
 	fwrite( buf, nr, 1, out );
 	while(!last){
-		int nr = bs_read_next(rs, buf, &last);
+		int nr = bs_read_next(rs, buf, BLOCK, &last);
 		fwrite( buf, nr, 1, out );
 	}
 	
