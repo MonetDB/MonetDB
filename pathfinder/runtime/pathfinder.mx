@@ -822,7 +822,7 @@ returns all nodes on the preceding axis of the ctx-nodes.",
 @= jRetType
 bat[oid,oid]
 @= jReturn
-result_scj := pruned_input.reverse.join(ctx_dn);
+result_scj := pruned_input.reverse.leftfetchjoin(ctx_dn);
 @= unjRetType
 bat[void,bat]
 @= unjReturn
@@ -844,7 +844,7 @@ result_scj := bat(void,bat).insert(nil,pruned_input).insert(nil,ctx_dn);
 @
 # code for kind testing
 @= kindcode
-        temp1_scj := temp1_scj.mirror.join(Tpre_kind);
+        temp1_scj := temp1_scj.mirror.leftfetchjoin(Tpre_kind);
         temp1_scj := temp1_scj.[=](kind).select(true);
 @
 # tagname argument
@@ -853,9 +853,9 @@ result_scj := bat(void,bat).insert(nil,pruned_input).insert(nil,ctx_dn);
 @
 # code for tagname testing
 @= tagnamecode
-        temp1_scj := temp1_scj.mirror.join(Tpre_prop);
-        temp1_scj := temp1_scj.join(propID);
-        temp1_scj := temp1_scj.mirror.join(Tpre_kind);
+        temp1_scj := temp1_scj.mirror.leftfetchjoin(Tpre_prop);
+        temp1_scj := temp1_scj.leftjoin(propID);
+        temp1_scj := temp1_scj.mirror.leftfetchjoin(Tpre_kind);
         temp1_scj := temp1_scj.[=](ELEMENT).select(true);
 @
 # resetting the tagname
@@ -879,8 +879,8 @@ proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item@3) : @4 :=
    var ctx_dn := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
 
    var sorting := iter.reverse.sort.reverse.mark(0@0).reverse;
-   iter := sorting.join(iter);
-   item := sorting.join(item);
+   iter := sorting.leftfetchjoin(iter);
+   item := sorting.leftfetchjoin(item);
    sorting := nil;
 
    var uniqueIter_count := {count}(iter.reverse, iter.tunique);
@@ -926,8 +926,89 @@ proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item@3) : @4 :=
 @
 @mil
 
+proc merged_union (bat[any::1,any::2] first, bat[any::1, any::2] second) : bat[any::1,any::2] :=
+{
+   var count_fst := first.count;
+   var count_snd := second.count;
+   var size_new := count_fst + count_snd;
+
+   # creates the bats for the comparison
+   var iter_fst := {count}(first.reverse, first.tunique);
+   var iter_snd := {count}(second.reverse, second.tunique);
+   iter_fst := iter_fst.[-](1);
+   iter_snd := iter_snd.[-](1);
+
+   # initialization of the counting variables
+   var i := 0;
+   var j := 0;
+   # maximum for the while loop over the both bats
+   var iter_count_fst := iter_fst.count;
+   var iter_count_snd := iter_snd.count;
+   # set the first offset to 0 that the slice starts at the beginning
+   var offset_fst := 0;
+   var offset_snd := 0;
+
+   if (first.head = "void")
+      eval ("var result := bat(void, " + first.tail + 
+         ", size_new).seqbase(0@0);");
+   else
+      eval ("var result := bat(" + first.head + ", " + first.tail + 
+         ", size_new);");
+
+   # iterates until one of the input tables is completely consumed
+   while ((i < iter_count_fst) and (j < iter_count_snd))
+   {
+          # if the value of the first argument is bigger
+          # than the value of the second argument ...
+          if (iter_fst.reverse.fetch(i) > iter_snd.reverse.fetch(j))
+          {
+             next_slice := second.slice (offset_snd, 
+                                         (offset_snd + iter_snd.fetch(j)));
+             result.insert(next_slice);
+             offset_snd := offset_snd + iter_snd.fetch(j) + 1;
+             j :+= 1;
+          }
+          else
+          {
+             next_slice := first.slice (offset_fst, 
+                                        (offset_fst + iter_fst.fetch(i)));
+             result.insert(next_slice);
+             offset_fst := offset_fst + iter_fst.fetch(i) + 1;
+             i :+= 1;
+          }
+   }
+   # if the second argument is completely consumed the rest of the
+   # first argument is appended to the result for each pair
+   if ((i < iter_count_fst) and (j = iter_count_snd))
+   {
+      next_slice := first.slice (offset_fst, count_fst);
+      result.insert(next_slice);
+   }
+   # if the first argument is completely consumed the rest of the
+   # second argument is appended to the result for each pair
+   if ((i = iter_count_fst) and (j < iter_count_snd))
+   {
+      next_slice := second.slice (offset_snd, count_snd);
+      result.insert(next_slice);
+   }
+   return result;
+}
+ADDHELP("merged_union", "tsheyar", "June 2004",
+"PARAMETERS:\n\
+BAT[any::1,any::2] first, BAT[any::1,any::2] second\n\
+DESCRIPITON:\n\
+general case of merged union where the result set is the same like\n\
+for a normal union.\n\
+intertwines first and second corresponding to their tail values.\n\
+If first and second are sorted on tail then the result is also sorted on tail.",
+"pathfinder");
+
 proc merged_union (bat[void,any::1] first, bat[void, any::1] second) : bat[void,any::1] :=
 {
+   var count_fst := first.count;
+   var count_snd := second.count;
+   var size_new := count_fst + count_snd;
+
    # creates the bats for the comparison
    var iter_fst := {count}(first.reverse, first.tunique);
    var iter_snd := {count}(second.reverse, second.tunique);
@@ -945,7 +1026,7 @@ proc merged_union (bat[void,any::1] first, bat[void, any::1] second) : bat[void,
    var offset_snd := 0;
 
    eval ("var result := bat(void," + first.tail + 
-         ", (count_fst + count_snd)).seqbase(0@0);");
+         ", size_new).seqbase(0@0);");
 
    # iterates until one of the input tables is completely consumed
    while ((i < iter_count_fst) and (j < iter_count_snd))
@@ -997,16 +1078,21 @@ proc merged_union (bat[void,any::1] first, bat[void, any::1] second, ..bat[void,
 {
    # tests the input for a even number of arguments
    if (($0%2) != 0) ERROR ("odd number of arguments");
-   var k := 1;
    var count_fst := first.count;
    var count_snd := second.count;
    var size_new := count_fst + count_snd;
+   var k := 1;
 
    # tests if the types of pairs fit
    while ((k :+= 2) < $0)
    {
-      if ($(k).tail != $(k+1).tail)
-         ERROR ("tails of argument %i and %i don't fit", k, (k+1));
+      if (((($(k).tail != "void") or ($(k+1).tail != "oid"))
+          and
+          (($(k).tail != "oid") or ($(k+1).tail != "void")))
+           and
+           ($(k).tail != $(k+1).tail))
+              ERROR ("tails of argument %i and %i don't fit", k, (k+1));
+
       if ($(k).count != count_fst)
          ERROR ("argument %i has the wrong size (found: %i, expected: %i)",
                 k, $(k).count, count_fst);
