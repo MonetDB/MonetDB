@@ -1,7 +1,7 @@
 # testing the heuristic rules
 # relations r(H,T) and s(H,T)
 function qry();
-r:= new(int,int);
+r:= new(:int,:int);
 
 sc:= copy(r);
 s:= reverse(sc);

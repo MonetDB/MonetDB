@@ -17,7 +17,7 @@ barrier	ba_a:= exist(aa_a,"tpe");
 #}
 exit	ba_a;
 #module(ddbench);
-	a := new(oid,oid);
+	a := new(:oid,:oid);
 #a := new(oid,oid);
 	insert(a,2@0,nil:oid);
 	insert(a,2@0,nil:oid);

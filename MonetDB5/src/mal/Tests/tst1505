@@ -1,4 +1,4 @@
-	y := new(oid,dbl);
+	y := new(:oid,:dbl);
 	le_a := dbl(1.0);
 	me_a := insert(y,1@0,le_a);
 	ne_a := dbl(2.0);
@@ -21,13 +21,13 @@ print(z);
 c:= count(z);
 print("count");print(c);
 
-	x:= new(oid,bit);
+	x:= new(:oid,:bit);
 	insert(x,1@0,true);
 	insert(x,2@0,false);
 	insert(x,3@0,true);
 	insert(x,4@0,false);
 	print(x);
-	A:= new(oid,bit);
+	A:= new(:oid,:bit);
 	insert(A,1@0,true);
 	insert(A,2@0,true);
 	insert(A,3@0,false);

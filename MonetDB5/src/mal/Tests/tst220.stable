@@ -24,7 +24,7 @@ function Admin.steal(bb:bat[any::1,any::2]):bat[any::1,any::2]; #0  dynamic (ste
     return bb; #6  (steal:bat[any::1,any::2])<-(bb:bat[any::1,any::2])
 end steal; #7  
 #
-#	b:= new(int,str);
+#	b:= new(:int,:str);
 #	i:= getBATrefcnt(b);
 #	printf("refcount =%d\n",i);
 #
@@ -44,7 +44,7 @@ end steal; #7
 #	printf("after 2nd assignment refcount =%d\n",i);
 #
 #	#re-use a bat variable
-#	b3:= new(int,str);			
+#	b3:= new(:int,:str);			
 #	i:= getBATrefcnt(b);
 #	printf("after 3rd assignment refcount =%d\n",i);
 #
@@ -65,10 +65,10 @@ end steal; #7
 #	printf("return from function refcount =%d\n",i);
 #
 function Admin.main():int; #0  (main:int)
-    b := bbp.new(int,str); #1 CMDBATnew (b:bat[int,str])<-(int:int)(str:str)
+    b := bbp.new(:int,:str); #1 CMDBATnew (b:bat[int,str])<-($2:int)($3:str)
     i := bat.getBATrefcnt(b); #2 getBATrefcnt (i:int)<-(b:bat[int,str])
     system.printf("refcount =%d\n",i); #3 SYSprint_formatted_int ($5:int)<-($6:str)(i:int)
-    bat.insert(b,1,"bat B"); #4 CMDinsert_bun ($7:bat[int,str])<-(b:bat[int,str])($8:int)($9:str)
+    bat.insert(b,1,"bat B"); #4 CMDinsert_bun ($7:void)<-(b:bat[int,str])($8:int)($9:str)
     io.print(b); #5 CMDprint_val ($10:int)<-(b:bat[int,str])
     i := bat.getBATrefcnt(b); #6 getBATrefcnt (i:int)<-(b:bat[int,str])
     system.printf("refcount =%d\n",i); #7 SYSprint_formatted_int ($11:int)<-($6:str)(i:int)
@@ -78,20 +78,20 @@ function Admin.main():int; #0  (main:int)
     b3 := b; #11  (b3:bat[int,str])<-(b:bat[int,str])
     i := bat.getBATrefcnt(b); #12 getBATrefcnt (i:int)<-(b:bat[int,str])
     system.printf("after 2nd assignment refcount =%d\n",i); #13 SYSprint_formatted_int ($16:int)<-($17:str)(i:int)
-    b3 := bbp.new(int,str); #14 CMDBATnew (b3:bat[int,str])<-(int:int)(str:str)
+    b3 := bbp.new(:int,:str); #14 CMDBATnew (b3:bat[int,str])<-($18:int)($19:str)
     i := bat.getBATrefcnt(b); #15 getBATrefcnt (i:int)<-(b:bat[int,str])
-    system.printf("after 3rd assignment refcount =%d\n",i); #16 SYSprint_formatted_int ($18:int)<-($19:str)(i:int)
+    system.printf("after 3rd assignment refcount =%d\n",i); #16 SYSprint_formatted_int ($20:int)<-($21:str)(i:int)
     b4 := algebra.select(b,"bat B","bat B"); #17 CMDselect (b4:bat[int,str])<-(b:bat[int,str])($9:str)($9:str)
-    io.print(b4); #18 CMDprint_val ($21:int)<-(b4:bat[int,str])
+    io.print(b4); #18 CMDprint_val ($23:int)<-(b4:bat[int,str])
     i := bat.getBATrefcnt(b); #19 getBATrefcnt (i:int)<-(b:bat[int,str])
-    system.printf("after 4rd assignment refcount =%d\n",i); #20 SYSprint_formatted_int ($22:int)<-($23:str)(i:int)
+    system.printf("after 4rd assignment refcount =%d\n",i); #20 SYSprint_formatted_int ($24:int)<-($25:str)(i:int)
     b2 := b3; #21  (b2:bat[int,str])<-(b3:bat[int,str])
     i := bat.getBATrefcnt(b); #22 getBATrefcnt (i:int)<-(b:bat[int,str])
-    system.printf("after 5rd assignment refcount =%d\n",i); #23 SYSprint_formatted_int ($24:int)<-($25:str)(i:int)
-    system.printf("call function\n"); #24 SYSprint_str ($26:int)<-($27:str)
+    system.printf("after 5rd assignment refcount =%d\n",i); #23 SYSprint_formatted_int ($26:int)<-($27:str)(i:int)
+    system.printf("call function\n"); #24 SYSprint_str ($28:int)<-($29:str)
     d := Admin.steal(b); #25  (d:bat[int,str])<-(b:bat[int,str])
     i := bat.getBATrefcnt(b); #26 getBATrefcnt (i:int)<-(b:bat[int,str])
-    system.printf("return from function refcount =%d\n",i); #27 SYSprint_formatted_int ($29:int)<-($30:str)(i:int)
+    system.printf("return from function refcount =%d\n",i); #27 SYSprint_formatted_int ($31:int)<-($32:str)(i:int)
 end main; #28  
 refcount =1
 #-------------------------#
@@ -99,9 +99,9 @@ refcount =1
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]
-refcount =2
-after assignment refcount =2
-after 2nd assignment refcount =2
+refcount =1
+after assignment refcount =1
+after 2nd assignment refcount =1
 after 3rd assignment refcount =1
 #-------------------------#
 # BAT:	  tmp_6		  #
@@ -111,7 +111,7 @@ after 3rd assignment refcount =1
 after 4rd assignment refcount =1
 after 5rd assignment refcount =1
 call function
-enter function refcount =2
-local in function refcount =2
+enter function refcount =1
+local in function refcount =1
 return from function refcount =1
 >

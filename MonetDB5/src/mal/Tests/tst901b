@@ -2,7 +2,7 @@
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
 #profiler.setAll();
 #profiler.setLogFile("/tmp/MonetProfile.xml");
-b:= new(lng,lng,1000100);
+b:= new(:lng,:lng,1000100);
 t0:= alarm.usec();
 i:= -1:lng;
 t0:= alarm.usec();
@@ -13,7 +13,7 @@ exit v;
 t1:= alarm.usec();
 c:=copy(b);
 t2:= alarm.usec();
-d:= new(lng,lng,1000100);
+d:= new(:lng,:lng,1000100);
 h:= 0:lng;
 t:= 0:lng;
 barrier mloop:= bunStream(b,h,t);

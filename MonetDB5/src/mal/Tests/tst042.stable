@@ -9,7 +9,7 @@
 #f := 3.14;
 #c := 'a';
 #b:= true;
-#bb:= new(void,str);
+#bb:= new(:void,:str);
 #
 #st:= getType(s); printf("string %d\n",st);
 #it:= getType(i); printf("int %d\n",it);
@@ -34,7 +34,7 @@ function Admin.main():int; #0  (main:int)
     f := 3.14; #3  (f:flt)<-($6:flt)
     c := 'a'; #4  (c:chr)<-($8:chr)
     b := true; #5  (b:bit)<-($10:bit)
-    bb := bbp.new(void,str); #6 CMDBATnew (bb:bat[void,str])<-(void:void)(str:str)
+    bb := bbp.new(:void,:str); #6 CMDBATnew (bb:bat[void,str])<-($12:void)($13:str)
     st := inspect.getType(s); #7 INSPECTtype (st:int)<-(s:str)
     system.printf("string %d\n",st); #8 SYSprint_formatted_int ($15:int)<-($16:str)(st:int)
     it := inspect.getType(i); #9 INSPECTtype (it:int)<-(i:int)

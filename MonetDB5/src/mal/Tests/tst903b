@@ -22,10 +22,10 @@ function tstmergejoin(r:bat, s:bat, rnme:str, snme:str):void;
 	printf(" count %d\n",cnt);
 end tstmergejoin;
 
-r1:= new(void,lng);
-r2:= new(lng,lng);
-s1:= new(void,lng);
-s2:= new(lng,lng);
+r1:= new(:void,:lng);
+r2:= new(:lng,:lng);
+s1:= new(:void,:lng);
+s2:= new(:lng,:lng);
 i:= -1:lng;
 barrier v:= nextElement(i,0:lng,1000000:lng);
 	k:= rand();

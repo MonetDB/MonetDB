@@ -18,7 +18,7 @@ k:=one(1);
 l:=three(1,2,3);
 p:= pow(1,2);
 
-b:=new(int,int);
+b:=new(:int,:int);
 insert(b,1,1);
 
 z:=multiplex.tactics("three",b,2,3);

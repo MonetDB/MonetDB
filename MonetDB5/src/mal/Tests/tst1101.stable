@@ -4,7 +4,7 @@
 # config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
 # dbname:demo
-#	t:= new(int, url);
+#	t:= new(:int, :url);
 #	cb_a := url("http://www.cwi.nl");
 #	db_a := insert(t,1,cb_a);
 #        eb_a := url("http://www.cwi.nl/~monet");
@@ -22,7 +22,7 @@
 #	qb_a := print("build a table finished");
 #	print(t);
 #
-#        rb:= new(int,url);
+#        rb:= new(:int,:url);
 #	print("start loop");
 ## Drop this line and you get a segmentation fault
 #barrier mloop:lng := bbp.bunStream(t,h:int,B2:url);
@@ -34,7 +34,7 @@
 #
 #
 function Admin.main():int; #0  (main:int)
-    t := bbp.new(int,url); #1 CMDBATnew (t:bat[int,url])<-(int:int)(url:url)
+    t := bbp.new(:int,:url); #1 CMDBATnew (t:bat[int,url])<-($2:int)($3:url)
     cb_a := url.url("http://www.cwi.nl"); #2 URLnew (cb_a:url)<-($5:str)
     db_a := bat.insert(t,1,cb_a); #3 CMDinsert_bun (db_a:void)<-(t:bat[int,url])($7:int)(cb_a:url)
     eb_a := url.url("http://www.cwi.nl/~monet"); #4 URLnew (eb_a:url)<-($9:str)
@@ -51,13 +51,13 @@ function Admin.main():int; #0  (main:int)
     pb_a := bat.insert(t,7,ob_a); #15 CMDinsert_bun (pb_a:void)<-(t:bat[int,url])($31:int)(ob_a:url)
     qb_a := io.print("build a table finished"); #16 CMDprint_val (qb_a:int)<-($33:str)
     io.print(t); #17 CMDprint_val ($34:int)<-(t:bat[int,url])
-    rb := bbp.new(int,url); #18 CMDBATnew (rb:bat[int,url])<-(int:int)(url:url)
-    io.print("start loop"); #19 CMDprint_val ($36:int)<-($37:str)
+    rb := bbp.new(:int,:url); #18 CMDBATnew (rb:bat[int,url])<-($36:int)($37:url)
+    io.print("start loop"); #19 CMDprint_val ($38:int)<-($39:str)
 barrier mloop := bbp.bunStream(t,h,B2); #20 CMDbunStream (mloop:lng)<-(t:bat[int,url])(h:int)(B2:url) jump 23
-    io.print(B2); #21 CMDprint_val ($41:int)<-(B2:url)
+    io.print(B2); #21 CMDprint_val ($43:int)<-(B2:url)
     redo mloop; #22  (mloop:lng) jump 20
 exit mloop; #23  (mloop:lng)
-    io.print(rb); #24 CMDprint_val ($42:int)<-(rb:bat[int,url])
+    io.print(rb); #24 CMDprint_val ($44:int)<-(rb:bat[int,url])
 end main; #25  
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#

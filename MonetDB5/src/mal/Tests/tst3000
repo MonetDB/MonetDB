@@ -2,7 +2,7 @@
 i{constant}:= 1;
 j{blah} := "kk";
 k{blah,freeze} := "whatever";
-n{cost="12"}:= new(int,int);
+n{cost="12"}:= new(:int,:int);
 #o{cost=12}:= new(int,int);
 q:= 1:int{frozen};
 

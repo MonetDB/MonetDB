@@ -6,7 +6,7 @@
 # dbname:demo
 ##Testing a loop over string bats
 #
-#b:= new(str,str);
+#b:= new(:str,:str);
 #insert(b,"one","red");
 #insert(b,"two","green");
 #print(b);
@@ -19,13 +19,13 @@
 #
 #
 function Admin.main():int; #0  (main:int)
-    b := bbp.new(str,str); #1 CMDBATnew (b:bat[str,str])<-(str:str)(str:str)
-    bat.insert(b,"one","red"); #2 CMDinsert_bun ($3:void)<-(b:bat[str,str])($4:str)($5:str)
-    bat.insert(b,"two","green"); #3 CMDinsert_bun ($6:void)<-(b:bat[str,str])($7:str)($8:str)
-    io.print(b); #4 CMDprint_val ($9:int)<-(b:bat[str,str])
+    b := bbp.new(:str,:str); #1 CMDBATnew (b:bat[str,str])<-($2:str)($3:str)
+    bat.insert(b,"one","red"); #2 CMDinsert_bun ($4:void)<-(b:bat[str,str])($5:str)($6:str)
+    bat.insert(b,"two","green"); #3 CMDinsert_bun ($7:void)<-(b:bat[str,str])($8:str)($9:str)
+    io.print(b); #4 CMDprint_val ($10:int)<-(b:bat[str,str])
 barrier v := bbp.bunStream(b,h,t); #5 CMDbunStream (v:lng)<-(b:bat[str,str])(h:str)(t:str) jump 9
-    system.printf("[ %s,",h); #6 SYSprint_formatted_str ($13:int)<-($14:str)(h:str)
-    system.printf("%s]\n",t); #7 SYSprint_formatted_str ($15:int)<-($16:str)(t:str)
+    system.printf("[ %s,",h); #6 SYSprint_formatted_str ($14:int)<-($15:str)(h:str)
+    system.printf("%s]\n",t); #7 SYSprint_formatted_str ($16:int)<-($17:str)(t:str)
     redo v; #8  (v:lng) jump 5
 exit v; #9  (v:lng)
 end main; #10  

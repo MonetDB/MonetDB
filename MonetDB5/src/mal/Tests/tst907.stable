@@ -39,7 +39,7 @@ end pow; #6
 #l:=three(1,2,3);
 #p:= pow(1,2);
 #
-#b:=new(int,int);
+#b:=new(:int,:int);
 #insert(b,1,1);
 #
 #z:=multiplex.tactics("three",b,2,3);
@@ -51,12 +51,12 @@ function Admin.main():int; #0  (main:int)
     k := Admin.one(1); #1  (k:int)<-($2:int)
     l := Admin.three(1,2,3); #2  (l:int)<-($2:int)($4:int)($5:int)
     p := Admin.pow(1,2); #3  (p:int)<-($2:int)($4:int)
-    b := bbp.new(int,int); #4 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,1); #5 CMDinsert_bun ($9:void)<-(b:bat[int,int])($2:int)($2:int)
-    z := multiplex.script("three",b,2,3); #6 CMDmultiplexScript (z:bat[int,int])<-($11:str)(b:bat[int,int])($4:int)($5:int)
-    z := multiplex.script("one",b); #7 CMDmultiplexScript (z:bat[int,int])<-($12:str)(b:bat[int,int])
-    z := multiplex.script("pow",b,2); #8 CMDmultiplexScript (z:bat[int,int])<-($13:str)(b:bat[int,int])($4:int)
-    io.print(z); #9 CMDprint_val ($14:int)<-(z:bat[int,int])
+    b := bbp.new(:int,:int); #4 CMDBATnew (b:bat[int,int])<-($8:int)($9:int)
+    bat.insert(b,1,1); #5 CMDinsert_bun ($10:void)<-(b:bat[int,int])($2:int)($2:int)
+    z := multiplex.script("three",b,2,3); #6  (z:bat[int,int])<-($12:str)(b:bat[int,int])($4:int)($5:int)
+    z := multiplex.script("one",b); #7  (z:bat[int,int])<-($13:str)(b:bat[int,int])
+    z := multiplex.script("pow",b,2); #8  (z:bat[int,int])<-($14:str)(b:bat[int,int])($4:int)
+    io.print(z); #9 CMDprint_val ($15:int)<-(z:bat[int,int])
 end main; #10  
 [ 1 ]
 [ 1 ]

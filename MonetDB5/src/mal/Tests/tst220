@@ -10,7 +10,7 @@ function steal(bb:bat[any::1,any::2]) :bat[any::1,any::2];
 	return bb;
 end steal; 
 
-	b:= new(int,str);
+	b:= new(:int,:str);
 	i:= getBATrefcnt(b);
 	printf("refcount =%d\n",i);
 
@@ -30,7 +30,7 @@ end steal;
 	printf("after 2nd assignment refcount =%d\n",i);
 
 	#re-use a bat variable
-	b3:= new(int,str);			
+	b3:= new(:int,:str);			
 	i:= getBATrefcnt(b);
 	printf("after 3rd assignment refcount =%d\n",i);
 

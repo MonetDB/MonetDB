@@ -1,4 +1,4 @@
-	x := new(oid,chr);
+	x := new(:oid,:chr);
 	de_a := insert(x,1@0,'a');
 	ee_a := insert(x,2@0,'a');
 	fe_a := insert(x,3@0,'b');
@@ -8,7 +8,7 @@
 	je_a := insert(x,7@0,'c');
 	ke_a := insert(x,8@0,'c');
 
-	y := new(oid,dbl);
+	y := new(:oid,:dbl);
 	le_a := dbl(1.0);
 	me_a := insert(y,1@0,le_a);
 	ne_a := dbl(2.0);
@@ -26,7 +26,7 @@
 	af_a := dbl(1.0);
 	bf_a := insert(y,8@0,af_a);
 
-	z := new(oid,str);
+	z := new(:oid,:str);
 	cf_a := insert(z,1@0,"c");
 	df_a := insert(z,2@0,"a");
 	ef_a := insert(z,3@0,"b");

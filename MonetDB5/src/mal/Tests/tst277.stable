@@ -4,11 +4,11 @@
 # config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
 # dbname:demo
-#b:= new(void,int);
+#b:= new(:void,:int);
 #r:= reverse(b);
 #
 function Admin.main():int; #0  (main:int)
-    b := bbp.new(void,int); #1 CMDBATnew (b:bat[void,int])<-(void:void)(int:int)
+    b := bbp.new(:void,:int); #1 CMDBATnew (b:bat[void,int])<-($2:void)($3:int)
     r := bat.reverse(b); #2 CMDreverse (r:bat[int,void])<-(b:bat[void,int])
 end main; #3  
 >

@@ -1,4 +1,4 @@
-	int_1M:= new(void,lng,1000000);
+	int_1M:= new(:void,:lng,1000000);
 	setSequenceBase(int_1M,0@0);
 	zinfo:= bat.info(int_1M);
 	print(zinfo);
@@ -51,7 +51,7 @@ exit	sj_a;
 	zinfo:= bat.info(vg_a);
 	print(zinfo);
 
-	M2:= new(lng,lng,1000000);
+	M2:= new(:lng,:lng,1000000);
 	i:= 1000000:lng;
 barrier	sj_b:= true;
 	i:= i-1;

@@ -40,7 +40,7 @@ function dir(s:str):void;
 	dir(tn);
 end dir;
 print("start test");
-b:=new(int,int);
+b:=new(:int,:int);
 setName(b,"simplemind");
 
 z:= bbp.getNames();

@@ -36,7 +36,7 @@
 	rule_feb:= rule("first fRiDaY on or after february 30@01:15");
 #var rule_feb := rule("first fRiDaY on or after february 30@01:15");
 # 
-	rule_bat:= new(str,rule,10);
+	rule_bat:= new(:str,:rule,10);
 #var rule_bat := new(str,rule,10);
 	insert(rule_bat,"jan",rule_jan);
 	insert(rule_bat,"feb",rule_feb);
@@ -173,7 +173,7 @@ print("rb_a,tb_a,xb_a,ac_a,ec_a,gc_a,kc_a");
 #var tzone_15 := tzone(24*60, rule_apr, rule_nov);
 #
 #
-	tzone_bat:= new(oid,tzone);
+	tzone_bat:= new(:oid,:tzone);
 #var tzone_bat := new(oid,tzone);
 	insert(tzone_bat,00@0,tzone_00);
 	insert(tzone_bat,01@0,tzone_01);
@@ -259,7 +259,7 @@ print("rb_a,tb_a,xb_a,ac_a,ec_a,gc_a,kc_a");
 	date_20:= date("1999-sept-31");
 #var date_20 := date("1999-sept-31");
 #
-	date_bat:= new(oid,date);
+	date_bat:= new(:oid,:date);
 #var date_bat := new(oid,date);
 	insert(date_bat,00@0,date_00);
 	insert(date_bat,01@0,date_01);
@@ -334,7 +334,7 @@ print("rb_a,tb_a,xb_a,ac_a,ec_a,gc_a,kc_a");
 #      [diff](date_addmonths, date_bat).setColumn("diff"));
 #
 ## test dayofweek and weeknumber using more than two years as consecutive days
-	date_seq:= new(int,date);
+	date_seq:= new(:int,:date);
 #var date_seq := new(int, date);
 	i:= -375;
 #var i := -375;
@@ -416,7 +416,7 @@ print("rf_a,tf_a,wf_a,bg_a,dg_a");
 	daytime_19:= daytime("nil");
 #var daytime_19 := daytime("nil");
 #
-	daytime_bat:= new(oid,daytime);
+	daytime_bat:= new(:oid,:daytime);
 #var daytime_bat := new(oid,daytime);
 	insert(daytime_bat,00@0,daytime_00);
 	insert(daytime_bat,01@0,daytime_01);

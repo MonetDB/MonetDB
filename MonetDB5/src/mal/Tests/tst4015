@@ -1,5 +1,5 @@
 # testing repeatative reverse optimalisation
-r:= new(int,int);
+r:= new(:int,:int);
 insert(r,5,1);
 s:= reverse(r);
 k::=23;

@@ -83,7 +83,7 @@ function Admin.dir(s:str):void; #0  (dir:void)<-(s:str)
     Admin.dir(tn); #5  ($7:void)<-(tn:bat[int,str])
 end dir; #6  
 #print("start test");
-#b:=new(int,int);
+#b:=new(:int,:int);
 #setName(b,"simplemind");
 #
 #z:= bbp.getNames();
@@ -94,11 +94,11 @@ end dir; #6
 #
 function Admin.main():int; #0  (main:int)
     io.print("start test"); #1 CMDprint_val ($1:int)<-($2:str)
-    b := bbp.new(int,int); #2 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.setName(b,"simplemind"); #3 CMDsetName ($5:bat[int,int])<-(b:bat[int,int])($6:str)
+    b := bbp.new(:int,:int); #2 CMDBATnew (b:bat[int,int])<-($4:int)($5:int)
+    bat.setName(b,"simplemind"); #3 CMDsetName ($6:bat[int,int])<-(b:bat[int,int])($7:str)
     z := bbp.getNames(); #4 CMDbbpNames (z:bat[int,str])
-    Admin.dir(z); #5  ($8:void)<-(z:bat[int,str])
-    Admin.dir("simple"); #6  ($9:void)<-($10:str)
+    Admin.dir(z); #5  ($9:void)<-(z:bat[int,str])
+    Admin.dir("simple"); #6  ($10:void)<-($11:str)
 end main; #7  
 [ "start test" ]
 #---------------------------------------------------------------------------------------------------------------------------------#
@@ -107,15 +107,15 @@ end main; #7
 [ 1,	  "monet_environment",	  "str",  "str",	  30,	  151,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  685,	  152,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  38,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 4,	  "simplemind",		  "int",  "int",	  0,	  37,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ "Search directory by name" ]
 #-------------------------#
-# BAT:	  tmp_21	  #
+# BAT:	  tmp_25	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 4,	  "simplemind"	  ]
 #-----------------------------------------------------------------------------------------------------------------#
-# tmp_21| tmp_20	| htype	| ttype	| count	| heat	| dirty		| status	| kind		| refcnt  #
+# tmp_25| tmp_28	| htype	| ttype	| count	| heat	| dirty		| status	| kind		| refcnt  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  194,	  "dirty",	  "dirty",	  "transient",	  5	  ]
+[ 4,	  "simplemind",	  "int",  "int",  0,	  165,	  "dirty",	  "dirty",	  "transient",	  5	  ]
 >

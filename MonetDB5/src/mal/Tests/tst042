@@ -3,7 +3,7 @@ i := 1;
 f := 3.14;
 c := 'a';
 b:= true;
-bb:= new(void,str);
+bb:= new(:void,:str);
 
 st:= getType(s); printf("string %d\n",st);
 it:= getType(i); printf("int %d\n",it);

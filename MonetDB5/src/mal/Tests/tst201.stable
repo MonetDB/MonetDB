@@ -16,7 +16,7 @@
 ###focussed on strings
 ###it includes insertions,deletions,selections, and joins.
 ##
-#	_v2:= new(str,int);
+#	_v2:= new(:str,:int);
 #	b := _v2;
 ##b:= new(str,int);
 #	_v3:= insert(b,"the",1);
@@ -169,7 +169,7 @@
 function Admin.main():int; #0  (main:int)
     _v0 := calc.oid(20000000); #1 CALClng2oid (_v0:oid)<-($2:lng)
     _v1 := calc.setoid(_v0); #2 CALCsetoidInc (_v1:oid)<-(_v0:oid)
-    _v2 := bbp.new(str,int); #3 CMDBATnew (_v2:bat[str,int])<-(str:str)(int:int)
+    _v2 := bbp.new(:str,:int); #3 CMDBATnew (_v2:bat[str,int])<-($5:str)($6:int)
     b := _v2; #4  (b:bat[str,int])<-(_v2:bat[str,int])
     _v3 := bat.insert(b,"the",1); #5 CMDinsert_bun (_v3:void)<-(b:bat[str,int])($9:str)($10:int)
     _v4 := bat.insert(b,"quick",2); #6 CMDinsert_bun (_v4:void)<-(b:bat[str,int])($12:str)($13:int)

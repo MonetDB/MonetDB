@@ -3,11 +3,11 @@
 debugOptimizers();
 CXoptimizer();
 ARoptimizer();
-b:= new(int,int);
-c:= new(int,int);
+b:= new(:int,:int);
+c:= new(:int,:int);
 insert(b,1,1);
 
 # in this case D should be left alone
-d:= new(int,int);
+d:= new(:int,:int);
 insert(d,2,2);
 

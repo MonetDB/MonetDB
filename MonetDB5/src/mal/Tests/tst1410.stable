@@ -8,7 +8,7 @@
 ## This example illustrates use of the atomary aspect
 #
 #atom fruit:enum;	# to announce existence of a new type
-#a:= new(int,str);
+#a:= new(:int,:str);
 #insert(a,0,"apples");
 #insert(a,1,"oranges");
 #insert(a,2,"grapes");
@@ -40,7 +40,7 @@
 #print(b);
 #
 function Admin.main():int; #0  (main:int)
-    a := bbp.new(int,str); #1 CMDBATnew (a:bat[int,str])<-(int:int)(str:str)
+    a := bbp.new(:int,:str); #1 CMDBATnew (a:bat[int,str])<-(int:int)(str:str)
     bat.insert(a,0,"apples"); #2 CMDinsert_bun ($4:void)<-(a:bat[int,str])($5:int)($6:str)
     bat.insert(a,1,"oranges"); #3 CMDinsert_bun ($7:void)<-(a:bat[int,str])($8:int)($9:str)
     bat.insert(a,2,"grapes"); #4 CMDinsert_bun ($10:void)<-(a:bat[int,str])($11:int)($12:str)
@@ -49,9 +49,9 @@ function Admin.main():int; #0  (main:int)
     bat.insert(a,6,"apples"); #7 CMDinsert_bun ($17:void)<-(a:bat[int,str])($18:int)($6:str)
     bat.insert(a,7,"apples"); #8 CMDinsert_bun ($19:void)<-(a:bat[int,str])($20:int)($6:str)
     io.print(a); #9 CMDprint_val ($21:int)<-(a:bat[int,str])
-    enum.create(fruit,a); #10 ENUMcreate ($22:bat[str,fruit])<-(fruit:fruit)(a:bat[int,str])
+    enum.create(:fruit,a); #10 ENUMcreate ($22:bat[str,fruit])<-(fruit:fruit)(a:bat[int,str])
     io.print("get encoding table"); #11 CMDprint_val ($24:int)<-($25:str)
-    e := enum.getTable(fruit); #12 ENUMtable (e:bat[any,any])<-(fruit:fruit)
+    e := enum.getTable(:fruit); #12 ENUMtable (e:bat[any,any])<-(fruit:fruit)
     io.print(e); #13 CMDprint_val ($27:int)<-(e:bat[any,any])
     io.print("test type for enumeration"); #14 CMDprint_val ($28:int)<-($29:str)
     b := enum.isEnum(e); #15 isEnum (b:bit)<-(e:bat[any,any])
@@ -60,15 +60,15 @@ function Admin.main():int; #0  (main:int)
     z := algebra.copy(a); #18 CMDcopy (z:bat[int,str])<-(a:bat[int,str])
     io.print(z); #19 CMDprint_val ($35:int)<-(z:bat[int,str])
     io.print("encode the bat"); #20 CMDprint_val ($36:int)<-($37:str)
-    y := enum.encode(fruit,z); #21 ENUMencode_multi (y:bat[int,fruit])<-(fruit:fruit)(z:bat[int,str])
+    y := enum.encode(:fruit,z); #21 ENUMencode_multi (y:bat[int,fruit])<-(fruit:fruit)(z:bat[int,str])
     io.print(y); #22 CMDprint_val ($39:int)<-(y:bat[int,fruit])
     io.print("decode the bat"); #23 CMDprint_val ($40:int)<-($41:str)
     x := enum.decode(y); #24 ENUMdecode_multi (x:bat[int,any])<-(y:bat[int,fruit])
     io.print(x); #25 CMDprint_val ($43:int)<-(x:bat[int,any])
     io.print("set histogram on tail"); #26 CMDprint_val ($44:int)<-($45:str)
     tt := bat.reverse(y); #27 CMDreverse (tt:bat[fruit,int])<-(y:bat[int,fruit])
-    enum.setHistogram(fruit,tt); #28 ENUMsethisto ($47:void)<-(fruit:fruit)(tt:bat[fruit,int])
-    b := enum.isHistogram(fruit,tt); #29 ENUMishisto (b:bit)<-(fruit:fruit)(tt:bat[fruit,int])
+    enum.setHistogram(:fruit,tt); #28 ENUMsethisto ($47:void)<-(fruit:fruit)(tt:bat[fruit,int])
+    b := enum.isHistogram(:fruit,tt); #29 ENUMishisto (b:bit)<-(fruit:fruit)(tt:bat[fruit,int])
     io.print(b); #30 CMDprint_val ($48:int)<-(b:bit)
 end main; #31  
 #-------------------------#

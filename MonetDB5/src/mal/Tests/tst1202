@@ -40,7 +40,7 @@ print("start");
 #	tzone_13:= tzone(60,rule_feb,rule_dec);
 #	rc_a := *(24,60);
 #	tzone_15:= tzone(rc_a,rule_apr,rule_nov);
-	tzone_bat:= new(oid,tzone);
+	tzone_bat:= new(:oid,:tzone);
 #	sc_a := insert(tzone_bat,00@0,tzone_00);
 #	tc_a := insert(sc_a,01@0,tzone_01);
 #	uc_a := insert(tc_a,02@0,tzone_02);

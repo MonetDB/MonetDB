@@ -46,7 +46,7 @@ function dir(s:str):void;
 	print(tn);
 	dir(tn);
 end dir;
-b:=new(int,int);
+b:=new(:int,:int);
 setName(b,"simplemind");
 
 z:= bbp.getNames();

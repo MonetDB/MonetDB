@@ -1,7 +1,7 @@
 # the first of a series of BBP test cases
 
 bbp.open();
-b:= new(int,int);
+b:= new(:int,:int);
 insert(b,1,2);
 bbp.deposit("mysecondbat",b);
 c:= bbp.take("mysecondbat");

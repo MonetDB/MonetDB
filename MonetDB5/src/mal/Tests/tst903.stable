@@ -6,7 +6,7 @@
 # dbname:demo
 ## the multiplex code blocks.
 #
-#b:= new(void,lng);
+#b:= new(:void,:lng);
 #i:= -1:lng;
 #barrier v:= nextElement(i,0:lng,1000000:lng);
 #	k:= rand();
@@ -121,7 +121,7 @@
 #printf("#multiplex.tactics(+) %d\n",d0);
 #
 function Admin.main():int; #0  (main:int)
-    b := bbp.new(void,lng); #1 CMDBATnew (b:bat[void,lng])<-(void:void)(lng:lng)
+    b := bbp.new(:void,:lng); #1 CMDBATnew (b:bat[void,lng])<-($2:void)($3:lng)
     i := -1; #2  (i:lng)<-($5:lng)
 barrier v := mal.nextElement(i,0,1000000); #3 lngForloop (v:bit)<-(i:lng)($7:lng)($8:lng) jump 8
     k := calc.rand(); #4 CALCrandint (k:int)
@@ -222,7 +222,7 @@ exit v; #8  (v:bit)
     system.printf(" count %d\n",cnt); #99 SYSprint_formatted_int ($73:int)<-($64:str)(cnt:int)
     cnt := algebra.count(z9); #100 CMDcount_bat (cnt:int)<-(z9:bat[void,lng])
     t0 := alarm.usec(); #101 CLKusec (t0:lng)
-    x := multiplex.script("+",b,c); #102 CMDmultiplexScript (x:bat[void,lng])<-($75:str)(b:bat[void,lng])(c:bat[void,lng])
+    x := multiplex.script("+",b,c); #102  (x:bat[void,lng])<-($75:str)(b:bat[void,lng])(c:bat[void,lng])
     t1 := alarm.usec(); #103 CLKusec (t1:lng)
     d0 := calc.-(t1,t0); #104 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     system.printf("#multiplex.script(+) %d\n",d0); #105 SYSprint_formatted_lng ($76:int)<-($77:str)(d0:lng)
@@ -232,17 +232,17 @@ exit v; #8  (v:bit)
     d0 := calc.-(t1,t0); #109 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     system.printf("#multiplex.tactics(+) %d\n",d0); #110 SYSprint_formatted_lng ($78:int)<-($79:str)(d0:lng)
 end main; #111  
-#copy 37335#count 1000000
-#select none 22443 count 0
-#select all 56351 count 1000000
-#select 0.05 43367 count 50004
-#select 0.1 48139 count 100016
-#select 0.2 47836 count 199929
-#select 0.4 59863 count 399791
-#select 0.6 70104 count 600237
-#select 0.8 76317 count 799837
-#select 1.0 59290 count 999999
-#tail sort 916274 count 1000000
-#multiplex.script(+) 2890676
-#multiplex.tactics(+) 84378
+#copy 38360#count 1000000
+#select none 23066 count 0
+#select all 57790 count 1000000
+#select 0.05 44042 count 50004
+#select 0.1 48408 count 100016
+#select 0.2 48149 count 199929
+#select 0.4 60523 count 399791
+#select 0.6 68903 count 600237
+#select 0.8 79123 count 799837
+#select 1.0 57873 count 999999
+#tail sort 1093177 count 1000000
+#multiplex.script(+) 2637464
+#multiplex.tactics(+) 73299
 >

@@ -1,4 +1,4 @@
-	t:= new(int, url);
+	t:= new(:int, :url);
 	cb_a := url("http://www.cwi.nl");
 	db_a := insert(t,1,cb_a);
         eb_a := url("http://www.cwi.nl/~monet");
@@ -16,7 +16,7 @@
 	qb_a := print("build a table finished");
 	print(t);
 
-        rb:= new(int,url);
+        rb:= new(:int,:url);
 	print("start loop");
 # Drop this line and you get a segmentation fault
 barrier mloop:lng := bbp.bunStream(t,h:int,B2:url);

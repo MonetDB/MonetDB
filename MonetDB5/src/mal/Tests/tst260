@@ -1,7 +1,7 @@
 # TopN queryies
 
 
-b:= new(int,int);
+b:= new(:int,:int);
 err := insert(b,1,15);
 err := insert(b,2,4);
 n0  := int(nil);

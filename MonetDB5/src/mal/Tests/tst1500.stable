@@ -4,7 +4,7 @@
 # config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
 # dbname:demo
-#	x := new(oid,chr);
+#	x := new(:oid,:chr);
 #	de_a := insert(x,1@0,'a');
 #	ee_a := insert(x,2@0,'a');
 #	fe_a := insert(x,3@0,'b');
@@ -20,7 +20,7 @@
 #print("hb1 becomes"); print(hb1);
 #
 function Admin.main():int; #0  (main:int)
-    x := bbp.new(oid,chr); #1 CMDBATnew (x:bat[oid,chr])<-(oid:oid)(chr:chr)
+    x := bbp.new(:oid,:chr); #1 CMDBATnew (x:bat[oid,chr])<-($2:oid)($3:chr)
     de_a := bat.insert(x,1@0,'a'); #2 CMDinsert_bun (de_a:void)<-(x:bat[oid,chr])($5:oid)($6:chr)
     ee_a := bat.insert(x,2@0,'a'); #3 CMDinsert_bun (ee_a:void)<-(x:bat[oid,chr])($8:oid)($6:chr)
     fe_a := bat.insert(x,3@0,'b'); #4 CMDinsert_bun (fe_a:void)<-(x:bat[oid,chr])($10:oid)($11:chr)

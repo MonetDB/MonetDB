@@ -6,7 +6,7 @@
 # dbname:demo
 ##Access BATs 
 #
-#b:= new(int,int);
+#b:= new(:int,:int);
 #insert(b,1,2);
 #bat.setName(b,"mybat");
 #c:= bbp.bind("mybat");
@@ -15,13 +15,13 @@
 #print(x);
 #
 function Admin.main():int; #0  (main:int)
-    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bat.insert(b,1,2); #2 CMDinsert_bun ($3:void)<-(b:bat[int,int])($4:int)($5:int)
-    bat.setName(b,"mybat"); #3 CMDsetName ($6:bat[int,int])<-(b:bat[int,int])($7:str)
-    c := bbp.bind("mybat"); #4 CMDbbpbind (c:bat[any,any])<-($7:str)
-    io.print(c); #5 CMDprint_val ($9:int)<-(c:bat[any,any])
+    b := bbp.new(:int,:int); #1 CMDBATnew (b:bat[int,int])<-($2:int)($3:int)
+    bat.insert(b,1,2); #2 CMDinsert_bun ($4:void)<-(b:bat[int,int])($5:int)($6:int)
+    bat.setName(b,"mybat"); #3 CMDsetName ($7:bat[int,int])<-(b:bat[int,int])($8:str)
+    c := bbp.bind("mybat"); #4 CMDbbpbind (c:bat[any,any])<-($8:str)
+    io.print(c); #5 CMDprint_val ($10:int)<-(c:bat[any,any])
     x := bbp.getNames(); #6 CMDbbpNames (x:bat[int,str])
-    io.print(x); #7 CMDprint_val ($11:int)<-(x:bat[int,str])
+    io.print(x); #7 CMDprint_val ($12:int)<-(x:bat[int,str])
 end main; #8  
 #-----------------#
 # BAT:	  mybat	  #

@@ -1,4 +1,4 @@
-b:= new(int,str);
+b:= new(:int,:str);
 insert(b,1,"hello");
 insert(b,2,"goodbye");
 

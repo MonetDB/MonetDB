@@ -4,7 +4,7 @@
 # config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
 # dbname:demo
-#	y := new(oid,dbl);
+#	y := new(:oid,:dbl);
 #	le_a := dbl(1.0);
 #	me_a := insert(y,1@0,le_a);
 #	ne_a := dbl(2.0);
@@ -27,13 +27,13 @@
 #c:= count(z);
 #print("count");print(c);
 #
-#	x:= new(oid,bit);
+#	x:= new(:oid,:bit);
 #	insert(x,1@0,true);
 #	insert(x,2@0,false);
 #	insert(x,3@0,true);
 #	insert(x,4@0,false);
 #	print(x);
-#	A:= new(oid,bit);
+#	A:= new(:oid,:bit);
 #	insert(A,1@0,true);
 #	insert(A,2@0,true);
 #	insert(A,3@0,false);
@@ -54,7 +54,7 @@
 #	x4:= or(x,A); print(x,A,x4);
 #
 function Admin.main():int; #0  (main:int)
-    y := bbp.new(oid,dbl); #1 CMDBATnew (y:bat[oid,dbl])<-(oid:oid)(dbl:dbl)
+    y := bbp.new(:oid,:dbl); #1 CMDBATnew (y:bat[oid,dbl])<-($2:oid)($3:dbl)
     le_a := calc.dbl(1.0); #2 CALCflt2dbl (le_a:dbl)<-($5:flt)
     me_a := bat.insert(y,1@0,le_a); #3 CMDinsert_bun (me_a:void)<-(y:bat[oid,dbl])($7:oid)(le_a:dbl)
     ne_a := calc.dbl(2.0); #4 CALCflt2dbl (ne_a:dbl)<-($9:flt)
@@ -76,42 +76,42 @@ function Admin.main():int; #0  (main:int)
     c := algebra.count(z); #20 CMDcount_bat (c:int)<-(z:bat[oid,bit])
     io.print("count"); #21 CMDprint_val ($35:int)<-($36:str)
     io.print(c); #22 CMDprint_val ($37:int)<-(c:int)
-    x := bbp.new(oid,bit); #23 CMDBATnew (x:bat[oid,bit])<-(oid:oid)(bit:bit)
-    bat.insert(x,1@0,true); #24 CMDinsert_bun ($40:void)<-(x:bat[oid,bit])($41:oid)($42:bit)
-    bat.insert(x,2@0,false); #25 CMDinsert_bun ($43:void)<-(x:bat[oid,bit])($44:oid)($45:bit)
-    bat.insert(x,3@0,true); #26 CMDinsert_bun ($46:void)<-(x:bat[oid,bit])($47:oid)($42:bit)
-    bat.insert(x,4@0,false); #27 CMDinsert_bun ($48:void)<-(x:bat[oid,bit])($17:oid)($45:bit)
-    io.print(x); #28 CMDprint_val ($49:int)<-(x:bat[oid,bit])
-    A := bbp.new(oid,bit); #29 CMDBATnew (A:bat[oid,bit])<-(oid:oid)(bit:bit)
-    bat.insert(A,1@0,true); #30 CMDinsert_bun ($51:void)<-(A:bat[oid,bit])($41:oid)($42:bit)
-    bat.insert(A,2@0,true); #31 CMDinsert_bun ($52:void)<-(A:bat[oid,bit])($44:oid)($42:bit)
-    bat.insert(A,3@0,false); #32 CMDinsert_bun ($53:void)<-(A:bat[oid,bit])($47:oid)($45:bit)
-    bat.insert(A,4@0,false); #33 CMDinsert_bun ($54:void)<-(A:bat[oid,bit])($55:oid)($45:bit)
-    io.print(A); #34 CMDprint_val ($56:int)<-(A:bat[oid,bit])
+    x := bbp.new(:oid,:bit); #23 CMDBATnew (x:bat[oid,bit])<-($39:oid)($40:bit)
+    bat.insert(x,1@0,true); #24 CMDinsert_bun ($41:void)<-(x:bat[oid,bit])($42:oid)($43:bit)
+    bat.insert(x,2@0,false); #25 CMDinsert_bun ($44:void)<-(x:bat[oid,bit])($45:oid)($46:bit)
+    bat.insert(x,3@0,true); #26 CMDinsert_bun ($47:void)<-(x:bat[oid,bit])($48:oid)($43:bit)
+    bat.insert(x,4@0,false); #27 CMDinsert_bun ($49:void)<-(x:bat[oid,bit])($50:oid)($46:bit)
+    io.print(x); #28 CMDprint_val ($51:int)<-(x:bat[oid,bit])
+    A := bbp.new(:oid,:bit); #29 CMDBATnew (A:bat[oid,bit])<-($53:oid)($54:bit)
+    bat.insert(A,1@0,true); #30 CMDinsert_bun ($55:void)<-(A:bat[oid,bit])($42:oid)($43:bit)
+    bat.insert(A,2@0,true); #31 CMDinsert_bun ($56:void)<-(A:bat[oid,bit])($45:oid)($43:bit)
+    bat.insert(A,3@0,false); #32 CMDinsert_bun ($57:void)<-(A:bat[oid,bit])($48:oid)($46:bit)
+    bat.insert(A,4@0,false); #33 CMDinsert_bun ($58:void)<-(A:bat[oid,bit])($50:oid)($46:bit)
+    io.print(A); #34 CMDprint_val ($59:int)<-(A:bat[oid,bit])
     xn := batcalc.not(x); #35 CMDbitbatNOT (xn:bat[oid,bit])<-(x:bat[oid,bit])
-    io.print(x,xn); #36 CMDtable ($58:int)<-(x:bat[oid,bit])(xn:bat[oid,bit])
+    io.print(x,xn); #36 CMDtable ($61:int)<-(x:bat[oid,bit])(xn:bat[oid,bit])
     xandx := batcalc.and(x,A); #37 CMDcmpAND (xandx:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
-    io.print(x,xandx); #38 CMDtable ($60:int)<-(x:bat[oid,bit])(xandx:bat[oid,bit])
+    io.print(x,xandx); #38 CMDtable ($63:int)<-(x:bat[oid,bit])(xandx:bat[oid,bit])
     xorx := batcalc.or(x,A); #39 CMDcmpOR (xorx:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
-    io.print(x,xorx); #40 CMDtable ($62:int)<-(x:bat[oid,bit])(xorx:bat[oid,bit])
-    io.print("ifthen group"); #41 CMDprint_val ($63:int)<-($64:str)
+    io.print(x,xorx); #40 CMDtable ($65:int)<-(x:bat[oid,bit])(xorx:bat[oid,bit])
+    io.print("ifthen group"); #41 CMDprint_val ($66:int)<-($67:str)
     xif0 := batcalc.ifthen(x,x); #42 CMDifThen (xif0:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])
-    io.print(x,xif0); #43 CMDtable ($66:int)<-(x:bat[oid,bit])(xif0:bat[oid,bit])
-    xif1 := batcalc.ifthen(x,false); #44 CMDifThenCst_bit (xif1:bat[oid,bit])<-(x:bat[oid,bit])($45:bit)
-    io.print(x,xif1); #45 CMDtable ($68:int)<-(x:bat[oid,bit])(xif1:bat[oid,bit])
+    io.print(x,xif0); #43 CMDtable ($69:int)<-(x:bat[oid,bit])(xif0:bat[oid,bit])
+    xif1 := batcalc.ifthen(x,false); #44 CMDifThenCst_bit (xif1:bat[oid,bit])<-(x:bat[oid,bit])($46:bit)
+    io.print(x,xif1); #45 CMDtable ($71:int)<-(x:bat[oid,bit])(xif1:bat[oid,bit])
     xif2 := batcalc.ifthenelse(x,x,xn); #46 CMDifThenElse (xif2:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])(xn:bat[oid,bit])
-    io.print(x,x,xn,xif2); #47 CMDtable ($70:int)<-(x:bat[oid,bit])(x:bat[oid,bit])(xn:bat[oid,bit])(xif2:bat[oid,bit])
-    xif3 := batcalc.ifthenelse(x,x,true); #48 CMDifThenElseCst2 (xif3:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])($42:bit)
-    io.print(x,x,xif3); #49 CMDtable ($72:int)<-(x:bat[oid,bit])(x:bat[oid,bit])(xif3:bat[oid,bit])
-    xif4 := batcalc.ifthenelse(x,1,2); #50 CMDifThenElseCst_int (xif4:bat[oid,int])<-(x:bat[oid,bit])($74:int)($75:int)
-    io.print(x,xif4); #51 CMDtable ($76:int)<-(x:bat[oid,bit])(xif4:bat[oid,int])
-    io.print("accumulators"); #52 CMDprint_val ($77:int)<-($78:str)
+    io.print(x,x,xn,xif2); #47 CMDtable ($73:int)<-(x:bat[oid,bit])(x:bat[oid,bit])(xn:bat[oid,bit])(xif2:bat[oid,bit])
+    xif3 := batcalc.ifthenelse(x,x,true); #48 CMDifThenElseCst2 (xif3:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])($43:bit)
+    io.print(x,x,xif3); #49 CMDtable ($75:int)<-(x:bat[oid,bit])(x:bat[oid,bit])(xif3:bat[oid,bit])
+    xif4 := batcalc.ifthenelse(x,1,2); #50 CMDifThenElseCst_int (xif4:bat[oid,int])<-(x:bat[oid,bit])($77:int)($78:int)
+    io.print(x,xif4); #51 CMDtable ($79:int)<-(x:bat[oid,bit])(xif4:bat[oid,int])
+    io.print("accumulators"); #52 CMDprint_val ($80:int)<-($81:str)
     x2 := batcalc.not(x,x); #53 CMDbitbataccumNOT (x2:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])
-    io.print(x,x2); #54 CMDtable ($80:int)<-(x:bat[oid,bit])(x2:bat[oid,bit])
+    io.print(x,x2); #54 CMDtable ($83:int)<-(x:bat[oid,bit])(x2:bat[oid,bit])
     x3 := batcalc.and(x,A); #55 CMDcmpAND (x3:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
-    io.print(x,A,x3); #56 CMDtable ($82:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x3:bat[oid,bit])
+    io.print(x,A,x3); #56 CMDtable ($85:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x3:bat[oid,bit])
     x4 := batcalc.or(x,A); #57 CMDcmpOR (x4:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
-    io.print(x,A,x4); #58 CMDtable ($84:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x4:bat[oid,bit])
+    io.print(x,A,x4); #58 CMDtable ($87:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x4:bat[oid,bit])
 end main; #59  
 #-----------------#
 # BAT:	  tmp_5	  #

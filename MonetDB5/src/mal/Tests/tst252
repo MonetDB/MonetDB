@@ -1,6 +1,6 @@
 #Testing a loop over string bats
 
-b:= new(str,str);
+b:= new(:str,:str);
 insert(b,"one","red");
 insert(b,"two","green");
 print(b);

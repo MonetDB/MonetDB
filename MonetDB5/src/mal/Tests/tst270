@@ -10,7 +10,7 @@ setoid(o);
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.
 
-b:= new(int,int);
+b:= new(:int,:int);
 printf("#~BeginVariableOutput~#\n"); 
 binfo:= info(b);
 print(binfo); 

@@ -50,4 +50,5 @@ end release; #3
 #function deposit(v:any,name:str) = space_deposit;
 #
 #
+function constants.deposit(v:any,name:str):any; #0  dynamic (deposit:any)<-(v:any)(name:str)
 >

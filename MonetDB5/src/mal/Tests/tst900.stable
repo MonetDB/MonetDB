@@ -6,7 +6,7 @@
 # dbname:demo
 ## the multiplex code blocks. Testing syntax errors
 #
-#b:= new(lng,lng);
+#b:= new(:lng,:lng);
 #x:= multiplex.+(b,b);
 #d:= [+](b,c) ;;# parser bug
 #a:= b [+] b;
@@ -15,7 +15,7 @@
 !ERROR: a:= b [+] b;
 !             ^operator expected
 function Admin.main():int; #0  unknown (main:int)
-    b := new(lng,lng); #1  unknown (b:any)<-(lng:lng)(lng:lng)
+    b := new(:lng,:lng); #1  unknown (b:any)<-($2:lng)($3:lng)
     x := multiplex.+(b,b); #2  unknown (x:any)<-(b:any)(b:any)
     d; #3  unknown (d:any)
     a := b; #4  unknown (a:any)<-(b:any)

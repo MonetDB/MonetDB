@@ -6,16 +6,16 @@
 # dbname:demo
 ## handling of correct header printing
 #
-#t:= new(int,str);
+#t:= new(:int,:str);
 #setColumn(t,"first");
-#u:= new(int,str);
+#u:= new(:int,:str);
 #print(t,u);
 #
 function Admin.main():int; #0  (main:int)
-    t := bbp.new(int,str); #1 CMDBATnew (t:bat[int,str])<-(int:int)(str:str)
+    t := bbp.new(:int,:str); #1 CMDBATnew (t:bat[int,str])<-($2:int)($3:str)
     bat.setColumn(t,"first"); #2 CMDsetColumn ($4:bat[int,str])<-(t:bat[int,str])($5:str)
-    u := bbp.new(int,str); #3 CMDBATnew (u:bat[int,str])<-(int:int)(str:str)
-    io.print(t,u); #4 CMDtable ($7:int)<-(t:bat[int,str])(u:bat[int,str])
+    u := bbp.new(:int,:str); #3 CMDBATnew (u:bat[int,str])<-($7:int)($8:str)
+    io.print(t,u); #4 CMDtable ($9:int)<-(t:bat[int,str])(u:bat[int,str])
 end main; #5  
 #-------------------------#
 # BAT:	  first	| tmp_5	  #

@@ -10,7 +10,7 @@
 ##focussed on strings
 ##it includes insertions,deletions,selections, and joins.
 #
-	_v2:= new(str,int);
+	_v2:= new(:str,:int);
 	b := _v2;
 #b:= new(str,int);
 	_v3:= insert(b,"the",1);

@@ -1,4 +1,4 @@
-b:=new(int,int);
+b:=new(:int,:int);
 insert(b,0,0);
 insert(b,1,1);
 insert(b,2,2);

@@ -1,6 +1,6 @@
 # the multiplex code blocks.
 
-b:= new(void,lng);
+b:= new(:void,:lng);
 i:= -1L;
 barrier v:= nextElement(i,0L,1000000L);
 	k:= rand();

@@ -5,7 +5,7 @@ function pow(i:int,j:int):int;
 end pow;
 function tst(A2:bat[void,int],A3:bat[void,int]):bat[void,int]; 
 	print(A2);
-	resB := bbp.new(void,int); 
+	resB := bbp.new(:void,:int); 
 	bat.setSequenceBase(resB,0@0);
 	lim:= count(A2);
 	printf("count %d\n",lim);
@@ -26,7 +26,7 @@ exit    mloop;
         return resB;    
 end tst;   
 
-	b := new(void,int);
+	b := new(:void,:int);
 	setSequenceBase(b,0@0);
 	insert(b,nil,1);
 	insert(b,nil,2);

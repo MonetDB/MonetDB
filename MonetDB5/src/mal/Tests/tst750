@@ -5,5 +5,5 @@ function test(b:bat[any::1,any::2],c:any::2):int;
 	print(k);
 end test;
 
-b:=new(int,int);
+b:=new(:int,:int);
 test(b,2);

@@ -7,7 +7,7 @@ bbp.open();
 x:= bbp.getObjects();
 print(x);
 print("test");
-b:= new(int,int);
+b:= new(:int,:int);
 insert(b,1,2);
 bbp.deposit("myfirstbat",b);
 c:= bbp.take("myfirstbat");

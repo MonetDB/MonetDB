@@ -4,7 +4,7 @@ z:= "hello world"; print(z);
 z:=z; print(z);
 print("done");
 
-b:=new(int,int);
+b:=new(:int,:int);
 i:= getBATrefcnt(b); print(i);
 b:=b;
 i:= getBATrefcnt(b); print(i);

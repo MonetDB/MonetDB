@@ -1,6 +1,6 @@
 #testing flt/lng/int coercions
 
-b:=new(int,int);
+b:=new(:int,:int);
 insert(b,1,1);
 insert(b,2,4);
 insert(b,3,9);

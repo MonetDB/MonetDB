@@ -2,7 +2,7 @@
 # This example illustrates use of the atomary aspect
 
 atom fruit:enum;	# to announce existence of a new type
-a:= new(int,str);
+a:= new(:int,:str);
 insert(a,0,"apples");
 insert(a,1,"oranges");
 insert(a,2,"grapes");
@@ -11,9 +11,9 @@ insert(a,5,"apples");
 insert(a,6,"apples");
 insert(a,7,"apples");
 print(a);
-enum.create(fruit,a);
+enum.create(:fruit,a);
 print("get encoding table");
-e:= enum.getTable(fruit);
+e:= enum.getTable(:fruit);
 print(e);
 print("test type for enumeration");
 b:= enum.isEnum(e);
@@ -22,13 +22,13 @@ print("start bulk encoding test");
 z:= copy(a);
 print(z);
 print("encode the bat");
-y:= enum.encode(fruit,z);
+y:= enum.encode(:fruit,z);
 print(y);
 print("decode the bat");
 x:= enum.decode(y);
 print(x);
 print("set histogram on tail");
 tt:= reverse(y);
-setHistogram(fruit,tt);
-b:= enum.isHistogram(fruit,tt);
+setHistogram(:fruit,tt);
+b:= enum.isHistogram(:fruit,tt);
 print(b);

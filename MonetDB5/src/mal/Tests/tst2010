@@ -12,7 +12,7 @@ exit	b;
 end clkticks;
 
 thread 	hdl;
-	printf("Start thread with id %d\n",hdl);
+	printf("#Start thread with id %d\n",hdl);
 	clkticks(2);
 	printf("About to exit child\n");
 exit	hdl;

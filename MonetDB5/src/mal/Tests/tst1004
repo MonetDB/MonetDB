@@ -2,7 +2,7 @@
 
 print("Start test");
 bbp.open();
-b:= new(int,int);
+b:= new(:int,:int);
 insert(b,1,2);
 bbp.deposit("myfirstbat",b);
 c:= bbp.take("myfirstbat");
