@@ -1,10 +1,8 @@
 
 MTSAFE
-INCLUDES = ../../gdk ../../monet $(PTHREAD_INCS) 
+INCLUDES = ../../common 
 
-GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
-MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
-MAPI_LIBS = $(SOCKET_LIBS) $(GDK_LIBS)
+MAPI_LIBS = $(SOCKET_LIBS) 
 
 EXTRA_DIST = \
 	MapiClient.java  Mapi.hs \
@@ -18,14 +16,15 @@ EXTRA_DIST_DIR = Mapi
 
 lib_Mapi = {
 	SOURCES = Mapi.mx 
-	LIBS = $(MAPI_LIBS) ../../gdk/libbat
+	LIBS = $(MAPI_LIBS) ../../common/libmutils
 	HEADERS = h
 }
 
 BINS = {
 	SOURCES = Mshutdown.mx MapiClient.mx
-	LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS)
-	MapiClient_LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS)
+	LIBS = libMapi ../../common/libmutils $(MAPI_LIBS)
+	MapiClient_LIBS = libMapi ../../common/libmutils \
+		$(MAPI_LIBS) $(READLINE_LIBS)
 }
 
 scripts_pl = {

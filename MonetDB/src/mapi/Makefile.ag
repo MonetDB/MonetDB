@@ -1,5 +1,6 @@
 
-INCLUDES = -I../gdk -I../monet -I../modules/plain -I../modules/plain/stream 
+INCLUDES = -I../common -I../gdk -I../monet \
+	   -I../modules/plain -I../modules/plain/stream 
 
 SUBDIRS = clients
 
@@ -12,7 +13,7 @@ lib__mapi = {
 	SOURCES = mapi.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
-	LIBS = ../gdk/libbat ../monet/libmonet \
+	LIBS = ../common/libmutils ../gdk/libbat ../monet/libmonet \
 		../modules/plain/lib_kernel \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

@@ -266,46 +266,9 @@ An error at this stage normally lead to an abort.
 extern "C" { 
 #endif
 
-#include <stdio.h>      /* NULL, printf etc. */
-#include <stdlib.h>     
-
-
-
-/* AIX requires this to be the first thing in the file.  */
-#ifndef __GNUC__
-# if HAVE_ALLOCA_H
-#  include <alloca.h>
-# else
-#  ifdef _AIX
-#pragma alloca
-#  else
-#   ifndef alloca /* predefined by HP cc +Olibcalls */
-char *alloca ();
-#   endif
-#  endif
-# endif
-#endif
-
-@T
-When using alloca(3) in a shared library, Intel's "C++ Compiler for 32-bit
-applications, Version 5.0.1 Beta Build 010528D0" seems to require another
-reference to alloca(3) in the file that contains the main(), otherwise it
-complains about an "undefined reference to `\_alloca\_probe'" when linking
-the shared library to the executable.
-Hence, we define this FAKE\_ALLOCA\_CALL and call it in the respective
-main()s just before the final return.
-@h
-#if ( defined(__INTEL_COMPILER) && (!defined(STATIC)) )
-# include <alloca.h>
-# define FAKE_ALLOCA_CALL (void)alloca(0);
-#else
-# define FAKE_ALLOCA_CALL ;
-#endif
-
 #include <ctype.h>      /* isspace etc. */
 #include <string.h>     /* strcmp, index etc. */
 #include <memory.h>     /* memcpy */
-#include <stdarg.h>     /* va_alist.. */
 
 #if HAVE_DIRENT_H
 # include <dirent.h>
@@ -341,11 +304,6 @@ main()s just before the final return.
 #undef BUS_OBJERR
 #include <sys/stat.h>
 
-#include <errno.h> 
-#ifdef HAVE_NETDB_H
-# include <netinet/in.h> 
-# include <netdb.h> 
-#endif
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h> 
 #endif

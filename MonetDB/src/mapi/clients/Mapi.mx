@@ -160,12 +160,8 @@ MMONETERR & Monet error.\\
 @+ Implementation
 @h
 
-#ifdef HAVE_CONFIG_H
-#include <gdk.h>		/* needed for windows version since the
-				   posix wrappers are part of gdk 
-				   this should move to a small wrap library */
-#endif
-#include  <stdio.h>
+#include <monet_utils.h>		
+#include <stdio.h>
 
 #define NAMELEN	256
 #define ERRLEN	1024
@@ -269,8 +265,7 @@ The Monet application interface commands are described below.
 They have been developed to ease interaction.
 
 @c
-#include   "Mapi.h"
-#include  <gdk.h>
+#include  "Mapi.h"
 
 #include  <stdio.h>
 #include  <sys/types.h>
@@ -291,6 +286,20 @@ They have been developed to ease interaction.
 # endif
 #endif
 
+/* taken from gdk.mx */
+#define TYPE_void	0		
+#define TYPE_bit	1		
+#define TYPE_chr	2		
+#define TYPE_sht	3		
+#define TYPE_bat	4		/* BAT id: index in BBPcache */
+#define TYPE_int	5		
+#define TYPE_oid	6		
+#define TYPE_ptr	7		/* C pointer! */
+#define TYPE_flt	8
+#define TYPE_dbl	9		
+#define TYPE_lng	10		
+#define TYPE_str	11		
+#define TYPE_any	255		/* limit types to <255! */
 
 char *Mmessages[]= { 
 	"No error:",
