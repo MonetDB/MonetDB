@@ -8,26 +8,6 @@ stdout of test 'big-example` in directory 'src/test` itself:
 # Monet Database Server V4.3.4
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# dbfarm:/export/data1/monet/tmp/manegold.ntv_32-d.3051/monet/.ntv_32-d/Linux2.4.17-0.1smp/dbfarm
-# dbname:Tests_src_test
-# dbdir:/export/data1/monet/tmp/manegold.ntv_32-d.3051/monet/.ntv_32-d/Linux2.4.17-0.1smp/dbfarm/Tests_src_test
-
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 printf("\nReady.\n");
 
 Ready.
