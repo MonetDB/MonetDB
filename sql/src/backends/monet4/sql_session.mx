@@ -757,6 +757,7 @@ mvc_sql(mvc *m, char *cmd )
 	m->params = NULL;
 	m->args = NULL;
 	m->sym = NULL;
+	m->autocommit = NULL;
 
 	err = sqlexecute(sql, GDKout );
 	backend_destroy( sql );

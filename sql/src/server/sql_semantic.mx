@@ -1852,7 +1852,12 @@ static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, sy
 			stmt *cmp = NULL;
 			stmt *h;
 
-			assert( list_length(rs->op1.lval) == 2);
+			if( list_length(rs->op1.lval) > 2 || !oref->t) {
+				stmt_destroy(oref);
+				stmt_destroy(sqa);
+				stmt_destroy(rs);
+				return sql_error(sql, 02, "comparision between incompatible types");
+			}
 
 			cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
 			/* need to fix the oref head */

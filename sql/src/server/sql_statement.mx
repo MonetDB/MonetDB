@@ -1321,7 +1321,7 @@ stmt *stmt_aggr(stmt * op1, group * grp, sql_subaggr * op )
 		s->h = stmt_dup(grp->grp->h);
 		grp_destroy(grp);
 	} else {
-		s->nrcols = 0;	
+		s->nrcols = 0;
 		s->h = stmt_dup(op1->h);
 	}
 	s->key = 1;
@@ -1494,6 +1494,7 @@ stmt *tail_column(stmt * st)
 	case st_unop:
 	case st_binop:
 	case st_Nop:
+	case st_aggr:
 	case st_diff:
 	case st_filter:
 	case st_select:
@@ -1525,7 +1526,6 @@ stmt *tail_column(stmt * st)
 
 	case st_idxbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
 	case st_relselect: /* required for eliminate_semijoin() in sql_rel2bin.mx */
-	case st_aggr:
 		printf("= TODO: tail_column(%d=%s) -> NULL !?\n",
 			st->type, st_type2string(st->type) );
 		return NULL;
