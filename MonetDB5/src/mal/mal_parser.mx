@@ -1048,7 +1048,7 @@ void parseAssign(Client cntxt, int cntrl)
 			} 
 			/* look ahead for assignment operator */
 			if( !keyphrase2(cntxt,":=") ){
-				/* no assignment !! */
+				/* no assignment !! a variable is allowed */
 				if( curInstr->barrier){
 					cntxt->nxt=v;
 					if( consumed==0){
@@ -1061,13 +1061,13 @@ void parseAssign(Client cntxt, int cntrl)
 					if( *cntxt->nxt!=';')
 					parseError(cntxt,"';' expected\n");
 					goto part3;
-				}
+				} 
 				if( *cntxt->nxt!='(' &&
 				    *cntxt->nxt!='.'){
 					parseError(cntxt,"'.' or '(' expected\n");
 					cntxt->nxt=v;
 					goto part3;
-				}
+				} 
 				if(consumed==0) cntxt->nxt=v;
 				curInstr->argv[0]= newTmpVariable(curBlk,TYPE_any);
 				goto startFCNcall;

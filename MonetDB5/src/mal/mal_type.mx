@@ -266,8 +266,8 @@ int getTypeIndex(str nme, int len){
 	char buf[IDLENGTH+2];
 	switch(*nme){
 	case 'a': if(qt("any")) return TYPE_any; break;
-	case 'b': if(qt("bat")) 
-		 return newBatType(TYPE_any,TYPE_any);
+	case 'b': if(qt("bat")) return TYPE_bat;
+		 /*return newBatType(TYPE_any,TYPE_any);*/
 		if(qt("bit")) return TYPE_bit; break;
 	case 'd': if(qt("dbl")) return TYPE_dbl; break;
 	case 'i': if(qt("int")) return TYPE_int; break;

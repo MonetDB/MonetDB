@@ -311,7 +311,7 @@ we should assure that also the target variables have the proper types
 or can inherit them from the signature. The type vector should be
 build separately first, because we may encounter an error later on.
 
-If any of the arguments refer to a constraint type, any::x, then
+If any of the arguments refer to a constraint type, any$x, then
 the resulting type can not be determined.
 @c
 	s1 = 0;
@@ -478,6 +478,10 @@ int resolveType(int dsttype, int srctype){
 			getTypeName(srctype),srctype);
 	}
 #endif
+	if( srctype== TYPE_bat)
+		srctype= newBatType(TYPE_any,TYPE_any);
+	if( dsttype== TYPE_bat)
+		dsttype= newBatType(TYPE_any,TYPE_any);
 	if( dsttype == srctype) return dsttype;
 	if( dsttype == TYPE_any) return srctype;
 	if( srctype == TYPE_any) return dsttype;
@@ -487,9 +491,17 @@ int resolveType(int dsttype, int srctype){
 		i2= getTailIndex(dsttype);
 #endif
 		h1= getHeadType(dsttype);
+		if( h1== TYPE_bat)
+			h1= newBatType(TYPE_any,TYPE_any);
 		t1= getTailType(dsttype);
+		if( t1== TYPE_bat)
+			t1= newBatType(TYPE_any,TYPE_any);
 		h2= getHeadType(srctype);
+		if( h2== TYPE_bat)
+			h2= newBatType(TYPE_any,TYPE_any);
 		t2= getTailType(srctype);
+		if( t2== TYPE_bat)
+			t2= newBatType(TYPE_any,TYPE_any);
 
 		h3= -1;
 		if( h1 == TYPE_any) h3= h2;
@@ -733,9 +745,9 @@ void chkProgram(Scope s, MalBlkPtr mb)
 	chkFlow(mb);
 }
 @+ Polymorphic type analysis
-MAL provides for type variables of the form any::N. This feature
+MAL provides for type variables of the form any$N. This feature
 supports polymorphic types, but also complicates the subsequent
-analysis. A variable typed with any::N not occuring in the function
+analysis. A variable typed with any$N not occuring in the function
 header leads to a dynamic typed statement. In principle we have
 to type check the function upon each call.
 @c
@@ -774,6 +786,8 @@ malType getPolyType(malType t,int polytype[MAXTYPEVAR]){
 		tail= getTailType(t);
 	else tail = polytype[ti];
 
+	if( t== TYPE_bat) 
+		return newBatType(TYPE_any,TYPE_any);
 	if( isaBatType(t))
 		return newBatType(head,tail);
 	return tail;
@@ -782,7 +796,7 @@ malType getPolyType(malType t,int polytype[MAXTYPEVAR]){
 Each argument is checked for binding of polymorphic arguments.
 This routine assumes that the type index is indeed smaller than maxarg. 
 (The parser currently enforces a single digit from 1-9 )
-The polymorphic type 'any', i.e. any::0, does never constraint an operation
+The polymorphic type 'any', i.e. any$0, does never constraint an operation
 it can match with all polymorphic types.
 The routine returns the instanciated formal type for subsequent
 type resolution.
@@ -804,6 +818,8 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 	}
 	if( (h=getTailIndex(formal)) ){
 		t= getTailType(actual);
+		if( t== TYPE_bat)
+			t= newBatType(TYPE_any,TYPE_any);
 		if( polytype[h] == TYPE_any ) polytype[h]=  t;
 		if( polytype[h] != t && t!= TYPE_any) return -1;
 	}
