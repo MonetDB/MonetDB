@@ -84,7 +84,7 @@ def mFilter (FILE, IGNORE) :
                 ftmp[i] = "#~ " + ftmp[i]
         #TODO
         # properly solve this "hack" to make diff on NT ignore so-called
-        # empty lines which actually contain a '\r' (i.e., '^M'=='')
+        # empty lines which actually contain a '\r'
         elif iline == os.linesep  or  iline == "\n":
             oline = "#" + iline
         else:
