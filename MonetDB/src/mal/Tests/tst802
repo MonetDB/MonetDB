@@ -3,7 +3,7 @@
 u:str:=const.take("user");
 printf("User bound to %s\n",u);
 
-v:int:= take("roomnumber");
+v:int:= const.take("roomnumber");
 
 v:= 123;
 v:= v+1;

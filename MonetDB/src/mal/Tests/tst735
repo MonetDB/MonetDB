@@ -1,0 +1,11 @@
+# some variable length stuff
+function d(i:int...):
+	print("something complex");
+	print(i...);
+barrier r:= i...
+	print(r);
+end r;
+end function;
+
+d(1);
+d(1,2,3);

@@ -34,7 +34,6 @@
 	fprintf(fp," %c",'c');
 	fprintf(fp," %d",10);
 	fprintf(fp," %f\n",7.0);
-#	ha_a := fprintf(fp,"%s %d %c %d %f\n","test",10,'c',10,7.0);
 #fprintf( fp, "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
 #
 	s := "testing again and again\n";
@@ -53,7 +52,12 @@
 #fflush( fp );
 	ma_a := fclose(fp);
 #fclose( fp );
-	na_a := printf("%s %d %c %d %f\n","test",10,'c',10,7.0);
+	fprintf(fp,"%s","test");
+	fprintf(fp," %d",10);
+	fprintf(fp," %c",'c');
+	fprintf(fp," %d",10);
+	fprintf(fp," %f\n",7.0);
+#	na_a := printf("%s %d %c %d %f\n","test",10,'c',10,7.0);
 #printf( "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
 	oa_a := printf("%s\n",s);
 #printf( "%s\n", s );

@@ -42,7 +42,6 @@
 #	fprintf(fp," %c",'c');
 #	fprintf(fp," %d",10);
 #	fprintf(fp," %f\n",7.0);
-##	ha_a := fprintf(fp,"%s %d %c %d %f\n","test",10,'c',10,7.0);
 ##fprintf( fp, "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
 ##
 #	s := "testing again and again\n";
@@ -61,7 +60,12 @@
 ##fflush( fp );
 #	ma_a := fclose(fp);
 ##fclose( fp );
-#	na_a := printf("%s %d %c %d %f\n","test",10,'c',10,7.0);
+#	fprintf(fp,"%s","test");
+#	fprintf(fp," %d",10);
+#	fprintf(fp," %c",'c');
+#	fprintf(fp," %d",10);
+#	fprintf(fp," %f\n",7.0);
+##	na_a := printf("%s %d %c %d %f\n","test",10,'c',10,7.0);
 ##printf( "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
 #	oa_a := printf("%s\n",s);
 ##printf( "%s\n", s );
@@ -73,6 +77,7 @@
 ###line 156 "/ufs/mk/monet_5-0/src/modules/kernel/io.mx"
 ##
 #
+!WARNING: newConstant:int coerced to lng
 function Admin.main():int;	#0:(main:int)
 	EOF := -1;	#1:(EOF:int)<-($2:int)
 	SEEK_SET := 0;	#2:(SEEK_SET:int)<-($4:int)
@@ -99,18 +104,26 @@ function Admin.main():int;	#0:(main:int)
 	s := io.fgets(fp);	#23:(s:str)<-(fp:fstream)
 	la_a := io.fflush(fp);	#24:(la_a:void)<-(fp:fstream)
 	ma_a := io.fclose(fp);	#25:(ma_a:void)<-(fp:fstream)
-	na_a := printf("%s %d %c %d %f\n","test",10,'c',10,7.0);	#26 unknown:(na_a:any)<-($45:str)($25:str)($28:int)($31:chr)($28:int)($35:flt)
-	oa_a := system.printf("%s\n",s);	#27:(oa_a:int)<-($47:str)(s:str)
-	quit := bbp.bind("quit");	#28:(quit:bat[any,any])<-($49:str)
-end function;	#29:
+	io.fprintf(fp,"%s","test");	#26:($44:void)<-(fp:fstream)($24:str)($25:str)
+	io.fprintf(fp," %d",10);	#27:($45:void)<-(fp:fstream)($27:str)($28:int)
+	io.fprintf(fp," %c",'c');	#28:($46:void)<-(fp:fstream)($30:str)($31:chr)
+	io.fprintf(fp," %d",10);	#29:($47:void)<-(fp:fstream)($27:str)($28:int)
+	io.fprintf(fp," %f\n",7.0);	#30:($48:void)<-(fp:fstream)($34:str)($35:flt)
+	oa_a := system.printf("%s\n",s);	#31:(oa_a:int)<-($50:str)(s:str)
+	quit := bbp.bind("quit");	#32:(quit:bat[any,any])<-($52:str)
+end function;	#33:
 [ "Dit is een test\\n" ]
-!ERROR: WARNING:newConstant:int coerced to lng
-!ERROR: 'printf' undefined in Admin.main[26]
-!WARNING: io_fprintf: not defined in version-5
-!WARNING: io_fprintf: not defined in version-5
-!WARNING: io_fprintf: not defined in version-5
-!WARNING: io_fprintf: not defined in version-5
-!WARNING: io_fprintf: not defined in version-5
-!ERROR: MALexception:Admin.main[26]:Instruction type not fixed
+testing again and again\n
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!WARNING: io_fprintf: not yet defined in version-5
+!ERROR: bbpException:Admin.main[32]:quit:failed to find
 
 >

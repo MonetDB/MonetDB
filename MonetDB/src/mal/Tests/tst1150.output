@@ -73,6 +73,8 @@
 ###line 156 "/ufs/mk/monet_5-0/src/modules/kernel/io.mx"
 ##
 #
+!WARNING: newConstant:int coerced to lng
+!ERROR: 'printf' undefined in Admin.main[26]
 function Admin.main():int;	#0:(main:int)
 	EOF := -1;	#1:(EOF:int)<-($2:int)
 	SEEK_SET := 0;	#2:(SEEK_SET:int)<-($4:int)
@@ -103,14 +105,6 @@ function Admin.main():int;	#0:(main:int)
 	oa_a := system.printf("%s\n",s);	#27:(oa_a:int)<-($47:str)(s:str)
 	quit := bbp.bind("quit");	#28:(quit:bat[any,any])<-($49:str)
 end function;	#29:
-[ "Dit is een test\\n" ]
-!ERROR: WARNING:newConstant:int coerced to lng
-!ERROR: 'printf' undefined in Admin.main[26]
-!WARNING: io_fprintf: not defined in version-5
-!WARNING: io_fprintf: not defined in version-5
-!WARNING: io_fprintf: not defined in version-5
-!WARNING: io_fprintf: not defined in version-5
-!WARNING: io_fprintf: not defined in version-5
-!ERROR: MALexception:Admin.main[26]:Instruction type not fixed
+!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 
 >
