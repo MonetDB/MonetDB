@@ -605,31 +605,28 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 	return 0;
 }
 
-static const char *column_format = "SELECT \"name\",\"type\",\"type_digits\","
-	"\"type_scale\",NULL,\"default\",\"number\" "
-	"FROM \"columns\" \"c\",\"tables\" \"t\" "
-	"WHERE \"c\".\"table_id\" = \"t\".\"id\" "
-	"AND '%s' = \"t\".\"name\" ORDER BY \"number\";\n";
-#define COLUMN 6
-#define C_NAME 0
-#define C_TYPE 1
-#define C_TYPE_DIGITS 2
-#define C_TYPE_SCALE 3
-
 static int
 dump_table(Mapi mid, char *tname)
 {
 	int cnt = 0, i;
 	MapiHdl hdl;
 	char query[BUFSIZ];
-
-	char *select_count = "SELECT count(*) FROM \"%s\"";
-	char *select_format = "SELECT * FROM \"%s\"";
 	int *string;
 
 	fprintf(toConsole, "CREATE TABLE \"%s\" (\n", tname);
 
-	snprintf(query, BUFSIZ, column_format, tname);
+	snprintf(query, sizeof(query),
+		 "SELECT \"name\","		/* 0 */
+			"\"type\","		/* 1 */
+			"\"type_digits\","	/* 2 */
+			"\"type_scale\","	/* 3 */
+			"\"null\","		/* 4 */
+			"\"default\","		/* 5 */
+			"\"number\" "		/* 6 */
+		 "FROM \"columns\" \"c\",\"tables\" \"t\" "
+		 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
+		 "AND '%s' = \"t\".\"name\" ORDER BY \"number\"",
+		 tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -640,10 +637,12 @@ dump_table(Mapi mid, char *tname)
 	}
 
 	while ((mapi_fetch_row(hdl)) != 0) {
-		char *c_name = mapi_fetch_field(hdl, C_NAME);
-		char *c_type = mapi_fetch_field(hdl, C_TYPE);
-		char *c_type_digits = mapi_fetch_field(hdl, C_TYPE_DIGITS);
-		char *c_type_scale = mapi_fetch_field(hdl, C_TYPE_SCALE);
+		char *c_name = mapi_fetch_field(hdl, 0);
+		char *c_type = mapi_fetch_field(hdl, 1);
+		char *c_type_digits = mapi_fetch_field(hdl, 2);
+		char *c_type_scale = mapi_fetch_field(hdl, 3);
+		char *c_null = mapi_fetch_field(hdl, 4);
+		char *c_default = mapi_fetch_field(hdl, 5);
 
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
@@ -662,6 +661,10 @@ dump_table(Mapi mid, char *tname)
 			fprintf(toConsole, "\t\"%s\" %s(%s,%s)", c_name,
 				c_type, c_type_digits, c_type_scale);
 		}
+		if (strcmp(c_null, "false") == 0)
+			fprintf(toConsole, " NOT NULL");
+		if (c_default != NULL)
+			fprintf(toConsole, " DEFAULT '%s'", c_default);
 		cnt++;
 	}
 	if (mapi_error(mid)) {
@@ -669,12 +672,117 @@ dump_table(Mapi mid, char *tname)
 		mapi_close_handle(hdl);
 		return 1;
 	}
+	mapi_close_handle(hdl);
+	snprintf(query, sizeof(query),
+		 "SELECT \"kc\".\"column\","		/* 0 */
+		 	"\"kc\".\"nr\" "		/* 1 */
+		 "FROM \"keycolumns\" \"kc\", "
+		       "\"keys\" \"k\", "
+		       "\"tables\" \"t\" "
+		 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
+		       "\"k\".\"table_id\" = \"t\".\"id\" AND "
+		       "\"k\".\"rkey\" = -1 AND "
+		       "\"t\".\"name\" = '%s' "
+		 "ORDER BY \"nr\"",
+		 tname);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+	cnt = 0;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		char *c_column = mapi_fetch_field(hdl, 0);
+
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+		if (cnt == 0)
+			fprintf(toConsole, ",\n\tPRIMARY KEY (");
+		else
+			fprintf(toConsole, ", ");
+		fprintf(toConsole, "\"%s\"", c_column);
+		cnt++;
+	}
+	if (cnt)
+		fprintf(toConsole, ")");
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
+	snprintf(query, sizeof(query),
+		 "SELECT \"pkt\".\"name\","		/* 0 */
+			"\"pkkc\".\"column\","		/* 1 */
+			"\"fkkc\".\"column\","		/* 2 */
+			"\"fkkc\".\"nr\""		/* 3 */
+		 "FROM \"tables\" \"fkt\","
+		      "\"keycolumns\" \"fkkc\","
+		      "\"keys\" \"fkk\","
+		      "\"tables\" \"pkt\","
+		      "\"keycolumns\" \"pkkc\","
+		      "\"keys\" \"pkk\""
+		 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" and"
+		       "\"pkt\".\"id\" = \"pkk\".\"table_id\" and"
+		       "\"fkk\".\"id\" = \"fkkc\".\"id\" and"
+		       "\"pkk\".\"id\" = \"pkkc\".\"id\" and"
+		       "\"fkk\".\"rkey\" = \"pkk\".\"id\" and"
+		       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" and"
+		       "\"fkt\".\"name\" = '%s'"
+		 "ORDER BY \"name\", \"nr\"",
+		 tname);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+	cnt = 0;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		char *c_name = mapi_fetch_field(hdl, 0);
+		char *c_pcolumn = mapi_fetch_field(hdl, 1);
+		char *c_fcolumn = mapi_fetch_field(hdl, 2);
+		char *c_nr = mapi_fetch_field(hdl, 3);
+
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+		if (strcmp(c_nr, "0") == 0) {
+			if (cnt)
+				fprintf(toConsole, ")");
+			fprintf(toConsole,
+				",\n\tFOREIGN KEY (\"%s\") REFERENCES \"%s\" (",
+				c_fcolumn, c_name);
+		} else
+			fprintf(toConsole, ", ");
+		fprintf(toConsole, "\"%s\"", c_pcolumn);
+		cnt++;
+	}
+	if (cnt)
+		fprintf(toConsole, ")");
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
 	fprintf(toConsole, "\n");
 
 	fprintf(toConsole, ");\n");
-	mapi_close_handle(hdl);
 
-	snprintf(query, BUFSIZ, select_count, tname);
+	snprintf(query, sizeof(query), "SELECT count(*) FROM \"%s\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -690,7 +798,7 @@ dump_table(Mapi mid, char *tname)
 	}
 	mapi_close_handle(hdl);
 
-	snprintf(query, BUFSIZ, select_format, tname);
+	snprintf(query, sizeof(query), "SELECT * FROM \"%s\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
