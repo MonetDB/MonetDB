@@ -101,7 +101,7 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 [ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
 [ "batPersistence",		  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient"	  ]
 [ "batRestricted",		  "updatable",	  "updatable",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only"	  ]
-[ "batRefcnt",			  "2",		  "2",		  "3",		  "2",		  "2",		  "2",		  "2",		  "3",		  "2",		  "3",		  "2"		  ]
+[ "batRefcnt",			  "1",		  "1",		  "2",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "batDirty",			  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batSet",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "head_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]

@@ -30,7 +30,7 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #---------------------------------------------------------------------------------------------------------#
-[ "dummy",		  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 1,	  1	  ]
+[ "dummy",		  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 0,	  1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_environment",	  "str",  "str",  23,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
@@ -55,10 +55,10 @@ stdout of test 'test_55` in directory 'tests/suite_00` itself:
 [ "monet_mod_load",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_25",		  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_26",		  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_28",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 1,	  1	  ]
-[ "tmp_29",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1	  ]
+[ "tmp_25",		  "int",  "bat",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1	  ]
+[ "tmp_26",		  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1	  ]
+[ "tmp_28",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1	  ]
+[ "tmp_29",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1	  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #

@@ -61,13 +61,13 @@ ls;
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  46,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "MODULES",	  "str",  "str",  46,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
 
 dir;
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  46,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "MODULES",		  "str",  "str",  46,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_environment",	  "str",  "str",  23,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]

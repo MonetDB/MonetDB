@@ -34,8 +34,8 @@ stdout of test 'refcnt` in directory 'src/monet` itself:
 #-----------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #-----------------------------------------------------------------------------------------#
-[ "a",	  "int",  "bat",  1,	  0,	  "clean",	  "disk", "pers", 0,	  1	  ]
-[ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  2	  ]
+[ "a",	  "int",  "bat",  1,	  0,	  "clean",	  "disk", "pers", 0,	  2	  ]
+[ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  3	  ]
 #-----------------#
 # BAT:	  a	  #
 # (int)	  (BAT)	  #
