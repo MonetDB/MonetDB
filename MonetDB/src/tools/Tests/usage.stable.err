@@ -1,10 +1,10 @@
 stderr of test 'usage` in directory 'src/tools` itself:
 
-#> Mtest:	other usage
-#> Mtest:	./usage usage
-#> Mlog:	Mserver -?
-#> Mlog:	Mclient -help
-Usage: Mclient [-port host:port] [-db name ] [-session key] [-prelude  pfile ]
+#> Mtest (05:10:34):	other usage 210
+#> Mtest (05:10:34):	Mtimeout -timeout 210 ./usage usage
+#> Mlog (05:10:34):	Mserver -?
+#> Mlog (05:10:34):	Mclient -help
+Usage: Mclient [-port host:port] [-session key] [-prelude  pfile ]
 [-c command] [-help ] 
 #> Mlog:	Mcreatedb -?
 #> Mlog:	Mdestroydb -?
