@@ -2227,7 +2227,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		return(getStmt().executeQuery(query));
 	}
 
-	/*
+	/**
 	 * Get a description of all the standard SQL types supported by
 	 * this database. They are ordered by DATA_TYPE and then by how
 	 * closely the data type maps to the corresponding JDBC SQL type.
@@ -2240,7 +2240,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	<LI><B>LITERAL_PREFIX</B> String => prefix used to quote a literal
 	 *		(may be null)
 	 *	<LI><B>LITERAL_SUFFIX</B> String => suffix used to quote a literal
-	 (may be null)
+	 *  (may be null)
 	 *	<LI><B>CREATE_PARAMS</B> String => parameters used in creating
 	 *		the type (may be null)
 	 *	<LI><B>NULLABLE</B> short => can you use NULL for this type?
@@ -2271,70 +2271,100 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	</OL>
 	 *
 	 * @return ResultSet each row is a SQL type description
+	 * @throws Exception if the developer made a Boo-Boo
 	 */
-	public java.sql.ResultSet getTypeInfo() throws SQLException
-	{
+	public java.sql.ResultSet getTypeInfo() throws SQLException {
+		String columns[] = {
+			"TYPE_NAME", "DATA_TYPE", "PRECISION", "LITERAL_PREFIX",
+			"LITERAL_SUFFIX", "CREATE_PARAMS", "NULLABLE", "CASE_SENSITIVE",
+			"SEARCHABLE", "UNSIGNED_ATTRIBUTE", "FIXED_PREC_SCALE", "AUTO_INCREMENT",
+			"LOCAL_TYPE_NAME", "MINIMUM_SCALE", "MAXIMUM_SCALE", "SQL_DATA_TYPE",
+			"SQL_DATETIME_SUB", "NUM_PREC_RADIX"
+		};
 
-		Field f[] = new Field[18];
-		Vector v = new Vector();		// The new ResultSet tuple stuff
+		String types[] = {
+			"varchar", "mediumint", "mediumint", "varchar", "varchar",
+			"varchar", "tinyint", "boolean", "tinyint", "boolean",
+			"boolean", "boolean", "varchar", "tinyint", "tinyint",
+			"mediumint", "mediumint", "mediumint"
+		};
 
-		f[0] = new Field(connection, "TYPE_NAME", iVarcharOid, getMaxNameLength());
-		f[1] = new Field(connection, "DATA_TYPE", iInt2Oid, 2);
-		f[2] = new Field(connection, "PRECISION", iInt4Oid, 4);
-		f[3] = new Field(connection, "LITERAL_PREFIX", iVarcharOid, getMaxNameLength());
-		f[4] = new Field(connection, "LITERAL_SUFFIX", iVarcharOid, getMaxNameLength());
-		f[5] = new Field(connection, "CREATE_PARAMS", iVarcharOid, getMaxNameLength());
-		f[6] = new Field(connection, "NULLABLE", iInt2Oid, 2);
-		f[7] = new Field(connection, "CASE_SENSITIVE", iBoolOid, 1);
-		f[8] = new Field(connection, "SEARCHABLE", iInt2Oid, 2);
-		f[9] = new Field(connection, "UNSIGNED_ATTRIBUTE", iBoolOid, 1);
-		f[10] = new Field(connection, "FIXED_PREC_SCALE", iBoolOid, 1);
-		f[11] = new Field(connection, "AUTO_INCREMENT", iBoolOid, 1);
-		f[12] = new Field(connection, "LOCAL_TYPE_NAME", iVarcharOid, getMaxNameLength());
-		f[13] = new Field(connection, "MINIMUM_SCALE", iInt2Oid, 2);
-		f[14] = new Field(connection, "MAXIMUM_SCALE", iInt2Oid, 2);
-		f[15] = new Field(connection, "SQL_DATA_TYPE", iInt4Oid, 4);
-		f[16] = new Field(connection, "SQL_DATETIME_SUB", iInt4Oid, 4);
-		f[17] = new Field(connection, "NUM_PREC_RADIX", iInt4Oid, 4);
+		String results[][] = {
+			{"table",     "" + Types.ARRAY,   "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"boolean",   "" + Types.BOOLEAN, "1", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typeSearchable, "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"bool",      "" + Types.BOOLEAN, "1", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typeSearchable, "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"blob",      "" + Types.BLOB,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"char",      "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"character", "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+		};
 
-		String sql;
-		if (connection.haveMinimumServerVersion("7.3")) {
-			sql = "SELECT typname FROM pg_catalog.pg_type";
+		} else if (.equals(type)) {
+			return();
+		} else if (.equals(type) || .equals(type)) {
+			return();
+		} else if ("date".equals(type)) {
+			return(Types.DATE);
+		} else if ("decimal".equals(type)) {
+			return(Types.DECIMAL);
+		} else if ("double".equals(type)) {
+			return(Types.DOUBLE);
+		} else if ("float".equals(type)) {
+			return(Types.FLOAT);
+		} else if ("tinyint".equals(type) || "smallint".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("mediumint".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("int".equals(type) || "integer".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("bigint".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("int".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("text".equals(type) || "tinytext".equals(type)) {
+			return(Types.LONGVARCHAR);
+		} else if ("string".equals(type)) {
+			return(Types.LONGVARCHAR);
+		} else if ("number".equals(type)) {
+			return(Types.NUMERIC);
+		} else if ("numeric".equals(type)) {
+			return(Types.NUMERIC);
+		} else if ("oid".equals(type)) {
+			return(Types.OTHER);
+		} else if ("month_interval".equals(type)) {
+			return(Types.OTHER);
+		} else if ("sec_interval".equals(type)) {
+			return(Types.OTHER);
+		} else if ("real".equals(type)) {
+			return(Types.REAL);
+		} else if ("time".equals(type)) {
+			return(Types.TIME);
+		} else if ("datetime".equals(type) || "timestamp".equals(type)) {
+			return(Types.TIMESTAMP);
+		} else if ("varchar".equals(type)) {
+			return(Types.VARCHAR);
 		} else {
-			sql = "SELECT typname FROM pg_type";
-		}
 
-		ResultSet rs = connection.createStatement().executeQuery(sql);
-		// cache some results, this will keep memory useage down, and speed
-		// things up a little.
-		byte b9[] = encoding.encode("9");
-		byte b10[] = encoding.encode("10");
-		byte bf[] = encoding.encode("f");
-		byte bnn[] = encoding.encode(Integer.toString(java.sql.DatabaseMetaData.typeNoNulls));
-		byte bts[] = encoding.encode(Integer.toString(java.sql.DatabaseMetaData.typeSearchable));
-
-		while (rs.next())
-		{
-			byte[][] tuple = new byte[18][];
-			String typname = rs.getString(1);
-			tuple[0] = encoding.encode(typname);
-			tuple[1] = encoding.encode(Integer.toString(connection.getSQLType(typname)));
-			tuple[2] = b9;	// for now
-			tuple[6] = bnn; // for now
-			tuple[7] = bf; // false for now - not case sensitive
-			tuple[8] = bts;
-			tuple[9] = bf; // false for now - it's signed
-			tuple[10] = bf; // false for now - must handle money
-			tuple[11] = bf; // false for now - handle autoincrement
-			// 12 - LOCAL_TYPE_NAME is null
-			// 13 & 14 ?
-			// 15 & 16 are unused so we return null
-			tuple[17] = b10; // everything is base 10
-			v.addElement(tuple);
-		}
-		rs.close();
-
-		return (ResultSet) ((BaseStatement)connection.createStatement()).createDriverResultSet(f, v);
 	}
 
 	/*

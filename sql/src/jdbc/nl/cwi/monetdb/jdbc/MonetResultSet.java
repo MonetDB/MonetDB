@@ -285,15 +285,62 @@ public class MonetResultSet implements ResultSet {
 				result[i] = null;
 			} else 	if (result[i].startsWith("\"") && result[i].endsWith("\"")) {
 				result[i] = result[i].substring(1, result[i].length() - 1);
-				// now unescape (see Monet source src/gdk/gdk_atoms.mx (strFromStr))
-				result[i] = result[i].replaceAll("\\\\\\\\", "\\\\");	// \
-				result[i] = result[i].replaceAll("\\\\\"", "\\\"");		// "
-				result[i] = result[i].replaceAll("\\\\\'", "\\\'");		// '
-				result[i] = result[i].replaceAll("\\\\r", "\\r");		// \r
-				result[i] = result[i].replaceAll("\\\\n", "\\n");		// \n
-				result[i] = result[i].replaceAll("\\\\t", "\\t");		// \t
-			// the thing below will not work
-			//	result[i] = result[i].replaceAll("\\\\([0-3][0-7]{2})", "\\0\\1");	// \377 octal
+				StringBuffer uesc = new StringBuffer();
+				int len = result[i].length();
+				for (int pos = 0; pos < len; pos++) {
+					char cur = result[i].charAt(pos);
+					if (cur == '\\' && pos + 1 < len) {
+						cur = result[i].charAt(++pos);
+						switch (cur) {
+							case '\\':
+								uesc.append('\\');
+							break;
+							case 'r':
+								uesc.append('\r');
+							break;
+							case 'n':
+								uesc.append('\n');
+							break;
+							case 'f':
+								uesc.append('\f');
+							break;
+							case 't':
+								uesc.append('\t');
+							break;
+							case '"':
+								uesc.append('"');
+							break;
+							case '\'':
+								uesc.append('\'');
+							break;
+							case '0': case '1': case '2': case '3':
+								// this could be an octal number, let's check it out
+								if (pos + 2 < len &&
+									result[i].charAt(pos + 1) >= '0' && result[i].charAt(pos + 1) <= '7' &&
+									result[i].charAt(pos + 2) >= '0' && result[i].charAt(pos + 2) <= '7'
+								) {
+									// we got the number!
+									try {
+										uesc.append((char)(Integer.parseInt("" + cur + result[i].charAt(pos + 1) + result[i].charAt(pos + 2), 8)));
+										pos += 2;
+										break;
+									} catch (NumberFormatException e) {
+										// hmmm, this point should never be reached actually...
+									}
+								}
+								// do default action if number seems not to be correct
+							default:
+								// this is wrong, just ignore the escape, and print the char
+								uesc.append(cur);
+							break;
+						}
+					} else {
+						uesc.append(cur);
+					}
+				}
+
+				// put the unescaped string in the right place
+				result[i] = uesc.toString();
 			}
 		}
 
