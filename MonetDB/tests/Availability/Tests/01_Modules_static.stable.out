@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 677 ]
+[ 678 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 677 ]
+[ 678 ]
 
 var All:=0;
 
@@ -180,7 +180,7 @@ Module: "algebra"
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",			  "Returns [left.head,right.tail] where (*fcn)(left.tail,right.head,..params..)"																											  ]
 [ "kdiff",			  "COMMAND:   ",  "kdiff(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]",					  "Returns the difference taken over only the *head* columns of two BATs.\n Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'kdiff(left.kunique,right.kunique)' or: 'kdiff(left,right).kunique'."																																	  ]
 [ "kintersect",			  "COMMAND:   ",  "kintersect(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]",				  "Returns the intersection taken over only the *head* columns of two BATs.\n Results in all BUNs of 'left' that are also in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'kintersect(left.kunique,right.kunique)' or: 'kintersect(left,right).kunique'."																																  ]
-[ "kunion",			  "COMMAND:   ",  "kunion(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Returns the union of two BATs; looking at head-columns only.\n Results in all BUNs of 'left' that are not in 'right', plus all BUNs\n of 'right'. *no* double-elimination is done. If you want this, do:\n 'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'."																																		  ]
+[ "kunion",			  "COMMAND:   ",  "kunion(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",	  "Returns the union of two BATs; looking at head-columns only.\n Results in all BUNs of 'left', plus all BUNs of 'right' that are not in \n'left'. *no* double-elimination is done. If you want this, do:\n 'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'."																																		  ]
 [ "kunique",	  "COMMAND:   ",  "kunique(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Select unique tuples from the input BAT. Double elimination is done\n only looking at the head column. Result is a BAT with hkeyed() == true."																			  ]
 [ "like",	  "COMMAND:   ",  "like(BAT[any::1,str], str) : BAT[any::1,str]",					  "Selects all elements from the input BAT that have 'substr'\nas substring in the tail."																										  ]
 [ "like",			  "PROC:      ",  "like(str, str) : bit",										  "does SQL LIKE expression with use of PCRE"																																																															  ]
@@ -236,7 +236,7 @@ Module: "algebra"
 [ "sort_ht",			  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "sorts a BAT according to its head (primary) and tail values (secondary).(straight forward hack, not tuned for performance at all, just used for testing.)"																																																	  ]
 [ "sort_rev",	  "COMMAND:   ",  "sort_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on descending head values."																				  ]
 [ "split",	  "COMMAND:   ",  "split(BAT[lng,void]) : BAT[oid,oid]",						  "Split head into two values"																																																																									  ]
-[ "sql2pcre",			  "PROC:      ",  "sql2pcre(str, str) : int",										  "converts SQL LIKE to PCRE pattern"																																																																  ]
+[ "sql2pcre",			  "PROC:      ",  "sql2pcre(str, str) : str",							  "converts SQL LIKE to PCRE pattern"																																																																  ]
 [ "sum_dbl",	  "COMMAND:   ",  "sum_dbl(BAT[any,dbl]) : dbl",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_dbl",	  "COMMAND:   ",  "sum_dbl(BAT[any,flt]) : dbl",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_flt",	  "COMMAND:   ",  "sum_flt(BAT[any,flt]) : flt",							  "Gives the sum of all tail values."																																	  ]
@@ -690,8 +690,8 @@ Module: "kernel"
 
 Module: "str"
 
-[ 23 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 24 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature									help																																					  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "+",		  "OPERATOR:  ",  "+(str, any) : str",											  "Concatenate two strings."																																																																									  ]
@@ -707,6 +707,7 @@ Module: "str"
 [ "rtrim",	  "COMMAND:   ",  "rtrim(str) : str",											  "Strip whitespaces from end of a string."																																																																							  ]
 [ "search",	  "COMMAND:   ",  "search(str, chr) : int",										  "Search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: search(str,str)"																																																												  ]
 [ "search",	  "COMMAND:   ",  "search(str, str) : int",										  "Search for a substring. Returns position, -1 if not found."																																																																					  ]
+[ "split",	  "COMMAND:   ",  "split(str) : BAT[void,chr]",							  "Split the string s into separate chrs"																																																																							  ]
 [ "split",	  "COMMAND:   ",  "split(str, str) : BAT[void,str]",								  "Split the string s based on the seperator sep\nnote: the separator may not be an empty string."																																																								  ]
 [ "startsWith",	  "COMMAND:   ",  "startsWith(str, str) : bit",										  "Prefix check."																																																																										  ]
 [ "string",	  "COMMAND:   ",  "string(str, int) : str",										  "Return the tail s[offset..n] of a string s[0..n]."																																																																						  ]
@@ -812,7 +813,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 677 ]
+[ 678 ]
 
 quit();
 
