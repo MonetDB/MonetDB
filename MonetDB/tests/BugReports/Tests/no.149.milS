@@ -21,7 +21,7 @@
 # 
 # var b := new (int, str );
 # 
-# proc test1 := {
+# proc test1() : void {
 #         var i := 1;
 #         "   test1".print;
 #         s := sprintf("Hallo dit is een string %d", i);

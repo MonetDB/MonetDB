@@ -52,7 +52,7 @@
 # # - xtable_test(str title, bat x, bat y, bat z)
 # #        major test script on xtable functionality
 # 
-# proc xtable_print := { 
+# proc xtable_print() : void { 
 #         var histo := $1.histogram;
 #         histo.rename("count");
 #         printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
@@ -60,7 +60,7 @@
 #         table(histo, $(3..));
 # }
 # 
-# proc xtable_realloc(b,cap) := { 
+# proc xtable_realloc(bat b, int cap) : bat { 
 #         bn := new(b.htype, b.ttype, bat);
 #         if (b.htype = void) bn.seqbase(b.reverse.fetch(0));
 #         if (b.ttype = void) bn.seqbase(b.fetch(0));
@@ -68,7 +68,7 @@
 #         return bn;
 # }
 # 
-# proc xtable_test(title, x, y, z) := {
+# proc xtable_test(str title, bat x, bat y, bat z) : bat {
 #     printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
 #                 title, x.count, x.batsize + y.batsize + z.batsize);
 #     x.rename("x"); y.rename("y"); z.rename("z");

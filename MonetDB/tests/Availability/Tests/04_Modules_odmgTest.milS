@@ -1,6 +1,6 @@
 setoid(oid(20000000));
 
-proc doit(str The_mod) {
+proc doit(str The_mod) : void {
 	var Fname:=new(oid,str);Fname.col_name("function");
 	var FnameS:=new(oid,str);FnameS.col_name("function");
 	var Ftype:=new(oid,str);Ftype.col_name("type");

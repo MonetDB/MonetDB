@@ -17,7 +17,7 @@
 # >Description:
 # #SCRIPT
 # > b:= new(int,int);
-# > proc error1(B):= {
+# > proc error1(B) : void {
 # >         B.insert(1,2);
 # >         B.insert(2,3);
 # >         B:= B.join(B);

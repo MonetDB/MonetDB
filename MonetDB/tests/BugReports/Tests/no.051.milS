@@ -17,7 +17,7 @@
 # >Description:
 # When a bat is returned from with a batloop the return value
 # is incorrect. 
-# proc create(b) := {
+# proc create(b) : bat {
 #         var a := new (oid,flt);
 #         b@batloop(){
 #                 if (a.count = 0)

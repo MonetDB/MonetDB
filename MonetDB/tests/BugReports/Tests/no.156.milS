@@ -29,7 +29,7 @@
 # Example script:
 # 
 # 8<----
-# PROC extractBit(theBitsets,theBit,theStr,loop) := {
+# PROC extractBit(any theBitsets,any theBit,any theStr,any loop) : void {
 #         VAR res;
 #         IF (loop = false) {
 # printf("!Before multiplex operation\n");
@@ -46,7 +46,7 @@
 #         res.print;
 # }
 # 
-# PROC bitsetHist(theEnum,theBitsets) := {
+# PROC bitsetHist(any theEnum,any theBitsets,any loop) : void {
 #         theEnum@batloop {
 #                 VAR c := extractBit(theBitsets,$h,$t,false);
 #         }

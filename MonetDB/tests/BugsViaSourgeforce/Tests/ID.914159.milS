@@ -1,4 +1,4 @@
-PROC crash()
+PROC crash() : void
 {
 	print($t);
 }

@@ -17,7 +17,7 @@
 # 
 # >Description:
 # #You are system administrator (adm)!
-# >PROC comp(left,right) := {
+# >PROC comp( any left, any right) : any {
 # >  IF (left = right) {
 # >    printf("left equals right\n");
 # >  } ELSE {
