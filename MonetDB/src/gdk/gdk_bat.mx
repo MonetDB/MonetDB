@@ -676,8 +676,6 @@ if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
       if( b== NULL) return b;
 }
 @c
-INLINE BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t);
-
 BAT *BUNins(BAT *b, ptr h, ptr t) {	
 	BUN p;
 	BAT *bm;
@@ -990,7 +988,6 @@ explicitly.
 	    }
 	}
 @c
-INLINE 
 BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t) {
 	if (p>=b->batInserted){
   		/* uncommitted BUN elements */

@@ -717,7 +717,7 @@ This macro expands to @`IDXfnd_chr@5,  @`IDXfnd_sht@5, @`IDXfnd_int@5,
 @`IDXfnd_var@5.
 
 @= idxfnd
-INLINE BUN IDXfnd_@2(BAT *b, ptr v) {
+BUN IDXfnd_@2(BAT *b, ptr v) {
 	int	i, var, loc; 
 	BUN	*low;
 	BUN	*up;
@@ -828,7 +828,7 @@ versions are available through macro expansions
 @`IDXfndfirst_loc@5 and @`IDXfndfirst_var@5.
 
 @= idxfndfcn
-INLINE BUN *IDXfnd@4_@5(BAT *b, ptr v){
+BUN *IDXfnd@4_@5(BAT *b, ptr v){
 	int	i;
 	BUN	*low;
 	BUN	*up;

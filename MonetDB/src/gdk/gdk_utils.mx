@@ -332,15 +332,15 @@ size_t GDK_mem_bigsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_minsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
-static int GDK_vm_allocs = 0;
-static int GDK_mem_allocs = 0;
+int GDK_vm_allocs = 0;
+int GDK_mem_allocs = 0;
 
 /* at least each 50M of memory increase, BBPtrim is run */
-#define CHKMEM(meminc, vminc) {\
-	int memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000)));\
-	int vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000)));\
-	if (memchk || vmchk) GDKmemchk(memchk, vmchk);\
-}
+#define CHKMEM(meminc, vminc) do {					\
+	int memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
+	int vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
+	if (memchk || vmchk) GDKmemchk(memchk, vmchk);			\
+} while (0)
 
 #define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 #define MAX_BIT         ((int) (sizeof(ssize_t)<<3))
@@ -361,7 +361,7 @@ static int GDK_mem_allocs = 0;
   }\
 }
 
-static volatile size_t GDK_mallocedbytes_estimate = 0;
+volatile size_t GDK_mallocedbytes_estimate = 0;
 static ssize_t GDK_mem_cursize = 0;
 static ssize_t GDK_vm_cursize = 0;
 #ifdef GDK_MEM_TRACE
@@ -425,9 +425,9 @@ size_t GDKmem_heapinuse(void) {
 	return GDK_mallocedbytes_estimate;
 }
 
-static volatile int GDK_heapcheck_last = 0;
+volatile int GDK_heapcheck_last = 0;
 
-static INLINE
+INLINE
 void GDKmem_heapcheck(int t) {
 	/* correct heap estimate with the real thing */ 
         struct mallinfo m = MT_mallinfo();
@@ -830,7 +830,6 @@ pointer (as well as the VM maxsize), so the malloc primitives can recognize
 these redirected blocks.This behavior is enabled by defining GDK\_MEM\_VMREDIRECT.
 \end{description}
 @c
-static
 void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 	int bak = GDKdebug;
 

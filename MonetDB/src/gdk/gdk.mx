@@ -2316,31 +2316,38 @@ gdk_export void*    THRdata[16];
 #ifdef __cplusplus
 extern "C" {
 #endif
-static INLINE bat BBPcheck(REGISTER bat x, REGISTER const char *y) {
+
+static INLINE bat BBPcheck(REGISTER bat x, REGISTER const char *y)
+{
 	if (x && x != bat_nil) {
-	    REGISTER bat z = ABS(x);
-	    if (z >= BBPsize || BBP[z].nme[0] == NULL) {
-		GDKwarning("%s: range error %d\n", y, x);
-	    } else  {
-		return z;
-	    }
+		REGISTER bat z = ABS(x);
+
+		if (z >= BBPsize || BBP[z].nme[0] == NULL) {
+			GDKwarning("%s: range error %d\n", y, x);
+		} else  {
+			return z;
+		}
 	}
 	return 0;
 }
 
-static INLINE BAT* BATdescriptor(REGISTER bat i) {
+static INLINE BAT* BATdescriptor(REGISTER bat i)
+{
 	REGISTER BAT *b = NULL;
 
 	if (BBPcheck(i,"BATdescriptor")) {
 		BBPfix(i);
 		b = BBP_cache(i);
-		if (b == NULL) b = BBPdescriptor(i);
+		if (b == NULL)
+			b = BBPdescriptor(i);
 	}
 	return b;
 }
 
-static INLINE ptr BUNhpos(REGISTER BAT *b, REGISTER BUN p) {
+static INLINE ptr BUNhpos(REGISTER BAT *b, REGISTER BUN p)
+{
 	oid *ip = &b->void_seq1; 
+
 	*ip = b->hseqbase;
 	if (*ip != oid_nil) {
 		*ip += BUNgetpos(b,p);
@@ -2348,8 +2355,10 @@ static INLINE ptr BUNhpos(REGISTER BAT *b, REGISTER BUN p) {
 	return (ptr) ip; 
 }
 
-static INLINE ptr BUNtpos(REGISTER BAT *b, REGISTER BUN p) {
+static INLINE ptr BUNtpos(REGISTER BAT *b, REGISTER BUN p)
+{
 	oid *ip = &b->void_seq2; 
+
 	*ip = b->tseqbase;
 	if (*ip != oid_nil) {
 		*ip += BUNgetpos(b,p);
@@ -2357,9 +2366,11 @@ static INLINE ptr BUNtpos(REGISTER BAT *b, REGISTER BUN p) {
 	return (ptr) ip; 
 }
 
-static INLINE BAT* BATmirror(REGISTER BAT *b) {
+static INLINE BAT* BATmirror(REGISTER BAT *b)
+{
 	return BBP_cache(-(b)->batCacheid);
 }
+
 #ifdef __cplusplus
 }
 #endif
