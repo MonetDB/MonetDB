@@ -188,7 +188,7 @@ entry	& Unique name for MSG entry	& 	MSG_DBI<nr>	& MSG_DBI_0\\
 dbname	& Database name		& 			& TPCH		\\
 owner   & DBAname			& 	current user	& niels\\
 password& DBA password for instance	& 	anonymous	& JollyGoodNight\\
-config	& Location of configuration file& ~<DBA>/.monet.conf	& ~niels/monet/performance.conf\\
+config	& Location of configuration file& ~<DBA>/.MonetDB.conf	& ~niels/monet/performance.conf\\
 dbfarm	& Location of database store 	& $MONET_PREFIX/var	&  ~niels/databases/\\
 mserver	& Path to Mserver executable	& $MONET_PREFIX/bin/Mserver & ~niels/monet/Linux/Mserver \\
 server   & Machine identity for instance& current machine	& stem.ins.cwi.nl \\
