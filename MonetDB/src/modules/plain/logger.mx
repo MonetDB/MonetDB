@@ -144,7 +144,7 @@ void buffer_flush(buf_p buf, FILE *logger_fp){
 }
 
 INLINE static 
-void buffer_flush_s(buf_p buf, int *logger_s){
+void buffer_flush_s(buf_p buf, int logger_s){
 	buf_node_p b = buf->root; 
 	for(;b;b=b->next){
 		send(logger_s, b->buf, b->used, 0);
