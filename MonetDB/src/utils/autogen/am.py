@@ -150,6 +150,7 @@ def am_scripts(fd, var, scripts, am):
       am['INSTALL'].append(script)
       am['InstallList'].append("\t"+sd+"/"+script+"\n")
 
+  am_find_ins(am, scripts)
   am_deps(fd,scripts['DEPS'],"\.o",am);
 
 def am_doc(fd, var, docmap, am ):
