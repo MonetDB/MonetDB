@@ -138,6 +138,14 @@ command insert(b:bat[:void,:any$1],p:bat[:void,:any$1]):bat[:void,:any$1]
 address BPTinsertBAT
 comment "Add a BAT as a partition to the end of the list.";
 
+command delete(b:bat[:void,:any$1],t:any$1):bat[:void,:any$1]
+address BPTdelete_void_bun
+comment "Delete a tuple from the BAT group";
+
+command delete(b:bat[:void,:any$1],p:bat[:void,:any$1]):bat[:void,:any$1]
+address BPTdeleteBAT
+comment "Delete a BAT from the partition";
+
 command dump()
 address BPTdump;
 
@@ -171,6 +179,7 @@ mal_export int BPTfindGrp(int bid);
 #include "partitions.h"
 extern str BKCinsert_void_bun(int *r, int *bid, ptr t) ;
 extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t) ;
+extern str BKCdelete_head(int *r, int *bid, ptr h) ;
 
 typedef struct{
 	int bid;	/* group bat identifier */
@@ -637,5 +646,35 @@ str
 BPTinsertBAT(int *ret, int *bid, int *bnid){
 	(void) ret; (void) bid; (void) bnid;
 	return throwMessage("partitions.insert","BAT insert not yet implemented");
+}
+@-
+A deletion over a BAT group may create holes between the groups comprising,
+which is solved by upgrading the hbase of the descriptors.
+@c
+str
+BPTdelete_oid(int *ret, int *bid, oid *h){
+	int i;
+	BAT *b;
+	i= getlastindex(*bid);
+	if( i<0)
+		return throwMessage("partitions.delete","BAT group not found");
+
+	for(; i>=0; i= partitions[i].prev){
+		b= BATdescriptor(partitions[i].pid);
+		if( b==0)
+			return throwMessage("partitions.delete","Internal error in BAT group");
+		partitions[i].first--;
+		b->hseqbase = partitions[i].first;
+		partitions[i].last--;
+		if( *h >= partitions[i].first)
+			return BKCdelete_head(ret, &partitions[i].pid,h);
+		BBPunfix(b->batCacheid);
+	}
+	return throwMessage("partitions.delete","Element not found in BAT group");
+}
+str
+BPTdeleteBAT(int *ret, int *bid, int *bnid){
+	(void) ret; (void) bid; (void) bnid;
+	return throwMessage("partitions.delete","BAT delete not yet implemented");
 }
 @}
