@@ -671,7 +671,7 @@ def CheckMods(env, TST, SERVER) :
 			if m not in env['TST_MODS']:
 				missing.append(m)
 	if SERVER == "SQL":
-		for m in "str", "sqlserver", "sql", "ascii_io", "alarm", "unix", "mvc", "ddbench", "aggr", "monettime":
+		for m in "str", "sqlserver", "ascii_io", "alarm", "unix", "ddbench", "aggrX3", "monettime":
 			if m not in env['TST_MODS']:
 				missing.append(m)
 	return missing
