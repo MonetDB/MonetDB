@@ -1,4 +1,5 @@
 MAL language issues
+- Check the cleaned up barrier control structure.
 - Co-routine (stream) function support in the kernel
 - replace module and function names with entries into a system/user id table
   [expected gain 10-20% due to less mallocs of small structures]
