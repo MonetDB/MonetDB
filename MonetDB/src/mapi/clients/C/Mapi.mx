@@ -1366,6 +1366,7 @@ mapi_lost_connection(Mapi mid)
 {
 	/* TODO: decide what to do with dup'ed entries */
 	mid->connected = 0;
+	mid->active = 0;
 	/* finish channels */
 	/* Make sure that the read- (from-) stream is closed first,
 	 * as the related write- (to-) stream closes the shared
@@ -1834,6 +1835,32 @@ mapi_timeout(Mapi mid, int time)
 @-
 Watch out. The explanation routine should not clear the error status.
 @c
+static void
+indented_print(const char *msg, const char *prefix, FILE *fd)
+{
+	/* for multiline error messages, indent all subsequent
+	   lines with the space it takes to print "ERROR = " */
+	const char *s, *p, *q;
+
+	s = prefix;
+	p = msg;
+	while (p && *p) {
+		fprintf(fd, "%s", s);
+		s = "        ";
+		q = strchr(p, '\n');
+		if (q) {
+			q++;	/* also print the newline */
+			fprintf(fd, "%.*s", (int) (q - p), p);
+		} else {
+			/* print bit after last newline,
+			   adding one ourselves */
+			fprintf(fd, "%s\n", p);
+			break;	/* nothing more to do */
+		}
+		p = q;
+	}
+}
+
 MapiMsg
 mapi_explain(Mapi mid, FILE *fd)
 {
@@ -1842,29 +1869,8 @@ mapi_explain(Mapi mid, FILE *fd)
 		mid->port);
 	if (mid->action)
 		fprintf(fd, "ACTION= %s\n", mid->action);
-	if (mid->error) {
-		/* for multiline error messages, indent all subsequent
-		   lines with the space it takes to print "ERROR = " */
-		char *s, *p, *q;
-
-		s = "ERROR = ";
-		p = mid->errorstr;
-		while (p && *p) {
-			fprintf(fd, "%s", s);
-			s = "        ";
-			q = strchr(p, '\n');
-			if (q) {
-				q++;	/* also print the newline */
-				fprintf(fd, "%.*s", (int) (q - p), p);
-			} else {
-				/* print bit after last newline,
-				   adding one ourselves */
-				fprintf(fd, "%s\n", p);
-				break;	/* nothing more to do */
-			}
-			p = q;
-		}
-	}
+	if (mid->errorstr)
+		indented_print(mid->errorstr, "ERROR = ", fd);
 	fflush(fd);
 	mapi_clrError(mid);
 	return MOK;
@@ -1882,35 +1888,10 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 		mid->port);
 	if (mid->action)
 		fprintf(fd, "ACTION= %s\n", mid->action);
-	if (hdl->query) {
-		if (strchr(hdl->query, '\n'))
-			fprintf(fd, "QUERY = %s", hdl->query);
-		else
-			fprintf(fd, "QUERY = %s\n", hdl->query);
-	}
-	if (mid->error) {
-		/* for multiline error messages, indent all subsequent
-		   lines with the space it takes to print "ERROR = " */
-		char *s, *p, *q;
-
-		s = "ERROR = ";
-		p = mid->errorstr;
-		while (p && *p) {
-			fprintf(fd, "%s", s);
-			s = "        ";
-			q = strchr(p, '\n');
-			if (q) {
-				q++;	/* also print the newline */
-				fprintf(fd, "%.*s", (int) (q - p), p);
-			} else {
-				/* print bit after last newline,
-				   adding one ourselves */
-				fprintf(fd, "%s\n", p);
-				break;	/* nothing more to do */
-			}
-			p = q;
-		}
-	}
+	if (hdl->query)
+		indented_print(hdl->query, "QUERY = ", fd);
+	if (mid->errorstr)
+		indented_print(mid->errorstr, "ERROR = ", fd);
 	fflush(fd);
 	mapi_clrError(mid);
 	return MOK;
@@ -2326,6 +2307,18 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 
 	mapi_hdl_check(hdl, "mapi_query_part");
 	mid = hdl->mid;
+	/* remember the query just for the error messages */
+	if (hdl->query) {
+		size_t l = strlen(hdl->query);
+		hdl->query = realloc(hdl->query, l + size + 1);
+		strncpy(hdl->query + l, query, size);
+		hdl->query[l + size] = 0;
+	} else {
+		hdl->query = malloc(size + 1);
+		strncpy(hdl->query, query, size);
+		hdl->query[size] = 0;
+	}
+		
 	if (mid->trace) {
 		printf("mapi_query_part:" SZFMT ":%.*s\n", size, size, query);
 	}
