@@ -63,10 +63,10 @@ AC_AIX
 
 dnl Checks for programs.
 
-AC_ARG_WITH(cxx,
-[  --with-cxx=<compiler>   which C++ compiler to use], [
+AC_ARG_WITH(gxx,
+[  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
-	yes|no)	AC_ERROR(must supply a compiler when using --with-cxx);;
+	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
 	*)	CXX=$withval;;
 	esac])
 
