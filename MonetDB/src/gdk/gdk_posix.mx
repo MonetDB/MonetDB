@@ -863,7 +863,7 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
                 }
         }
         if (q == (char*) -1) {
-                int oldmaxsize = *maxsize;
+                size_t oldmaxsize = *maxsize;
                 q = p; p = (char*) MT_vmalloc(newsize, maxsize);
                 if (p != NULL) {
                         memcpy(p, q, oldsize);
@@ -951,7 +951,7 @@ void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize)
 			} 
 		} p = a;
 	} else if (oldsize > newsize) {
- 		int ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
+ 		size_t ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
  		if (ret == 0) fprintf(MT_out, "VirtualFree(%x,%d,MEM_DECOMMIT): failed\n", (unsigned int) p+newsize, oldsize-newsize);
 	} 
 	return p;

@@ -61,7 +61,7 @@ The below is the interface to uniformly create, extend and delete heaps of all k
 #include "gdk_heap.h"
 #include "gdk_posix.h"
 
-int HEAPalloc(Heap *h, int nitems, int itemsize) {
+int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
         h->base = NULL;
         h->size = MAX(1,nitems)*itemsize;
         h->offset = h->free = 0;
@@ -84,7 +84,7 @@ int HEAPalloc(Heap *h, int nitems, int itemsize) {
 The routine heap extend can be used to create a larger storage space.
 Note that you should pass the requested new size.
 @c
-int HEAPextend(Heap *h, int size) {
+int HEAPextend(Heap *h, size_t size) {
         char nme[PATHLENGTH], nwext[IDLENGTH], *ext = NULL, *priv = NULL;
 
 	if (h->filename) { 
@@ -99,13 +99,13 @@ int HEAPextend(Heap *h, int size) {
 		}
 	}
 
-	if (((size_t) size) <= h->size) {
+	if (size <= h->size) {
 		return 0;
 #ifndef NOEXTEND_PRIVMAP
 	} else if (h->storage == STORE_PRIV && size <= h->maxsize) { 
 		long_str path;
 		FILE *fp = (FILE*) GDKfilelocate(h->filename, "rb+", NULL);
-		int totsize = MT_pagesize()*(1+(h->offset+size-1)/MT_pagesize()); 
+		size_t totsize = MT_pagesize()*(1+(h->offset+size-1)/MT_pagesize()); 
 		struct stat st;
 		char *b;
 
@@ -187,14 +187,14 @@ As we cannot start a new mapping at a random adress, but rather need to align
 it to a block boundary, the region is enlarged somewhat downwards,
 and the extra byte-offset is given back for the information of the caller.
 @c
-int HEAPsubcopy(Heap* dst, Heap* src, int size, int offset) {
+int HEAPsubcopy(Heap* dst, Heap* src, size_t size, size_t offset) {
 #ifndef WIN32
 	if ((src->storage&STORE_MMAP) && src->filename) {
 	    long_str path;
 	    FILE *fp = (FILE*) GDKfilelocate(src->filename, "mrb+", NULL);
 
 	    if (fp != NULL) {
-		int newoffset = (src->storage == STORE_PRIV)?
+		size_t newoffset = (src->storage == STORE_PRIV)?
 					offset+src->offset:offset;
 		char *b = NULL;
 		unsigned int shiftback = newoffset%MT_pagesize(); /*block align*/
@@ -259,8 +259,8 @@ int HEAPfree(Heap* h) {
                 if (ret < 0) {
                         GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
                 }
-                IODEBUG THRprintf(GDKerr, "munmap(base=%d, size=%d) = %d\n", 
-                                                (int) h->base, h->maxsize, ret);
+                IODEBUG THRprintf(GDKerr, "munmap(base=%ld, size=%d) = %d\n", 
+                                                (long)h->base, h->maxsize, ret);
 		if (h->storage == STORE_PRIV) {
 			/* may need to move back the file from X.priv to X */
 			int len = strlen(h->filename);
@@ -453,11 +453,11 @@ typedef struct hfblock
 @c
 #define roundup_8(x)	(((((x)-1)>>3)+1)<<3)
 #define roundup_4(x)	(((((x)-1)>>2)+1)<<2)
-#define callfcn(h,p)    ((((unsigned int) (h)->sizefcn) < 65536)?BATSIGcrash():(*(h)->sizefcn)(p))
+#define callfcn(h,p)    ((((size_t) (h)->sizefcn) < 65536)?BATSIGcrash():(*(h)->sizefcn)(p))
 #define blocksize(h,p)	((h)->sizefcn?callfcn(h,p):(p)->size) 
 
-static INLINE int roundup_num(int number, int alignment) {
-   int rval = number + alignment -1;
+static INLINE size_t roundup_num(size_t number, size_t alignment) {
+   size_t rval = number + alignment -1;
    rval -= (rval % alignment);
    return(rval);
 }
@@ -473,7 +473,7 @@ void HEAP_destroy(Heap *h) {
    HEAPfree(h);
 }
 
-void HEAP_empty(Heap* heap, int nprivate, int alignment) {
+void HEAP_empty(Heap* heap, size_t nprivate, int alignment) {
    /*
    // Find position of header block.
    */
@@ -482,7 +482,7 @@ void HEAP_empty(Heap* heap, int nprivate, int alignment) {
    /*
    // Calculate position of first and only free block.
    */
-   int head = roundup_num(HEAP_private(heap) + roundup_8(nprivate),alignment);
+   size_t head = roundup_num(HEAP_private(heap) + roundup_8(nprivate),alignment);
    CHUNK* headp = HEAP_index(heap,head,CHUNK);
 
    /*
@@ -507,7 +507,7 @@ void HEAP_empty(Heap* heap, int nprivate, int alignment) {
 #endif
 }
 
-void HEAP_initialize(Heap* heap, int nbytes, int nprivate, int alignment) {
+void HEAP_initialize(Heap* heap, size_t nbytes, size_t nprivate, int alignment) {
    /*
    // For now we know about two alignments.
    */
@@ -519,7 +519,7 @@ void HEAP_initialize(Heap* heap, int nbytes, int nprivate, int alignment) {
    // Calculate number of bytes needed for heap + structures.
    */
    {
-      int total = 100 + nbytes + nprivate + sizeof(HEADER) + sizeof(CHUNK);
+      size_t total = 100 + nbytes + nprivate + sizeof(HEADER) + sizeof(CHUNK);
       total = roundup_8(total);
       HEAPalloc(heap,total,1);
       heap->free = heap->size;
@@ -532,8 +532,8 @@ void HEAP_initialize(Heap* heap, int nbytes, int nprivate, int alignment) {
 }
 
 
-int HEAP_malloc(Heap *heap, int nbytes) {
-   int block,trail,ttrail;
+size_t HEAP_malloc(Heap *heap, size_t nbytes) {
+   size_t block,trail,ttrail;
    CHUNK* blockp;
    CHUNK* trailp;
    HEADER* hheader = HEAP_index(heap,0,HEADER);
@@ -581,7 +581,7 @@ int HEAP_malloc(Heap *heap, int nbytes) {
    */
    if (block == 0)
    {
-      int newsize = roundup_8((int) (heap->free + MAX(heap->free,nbytes)));
+      size_t newsize = roundup_8((size_t) (heap->free + MAX(heap->free,nbytes)));
       block = heap->free; /* current end-of-heap */
 
 #ifdef TRACE
@@ -637,7 +637,7 @@ int HEAP_malloc(Heap *heap, int nbytes) {
    */
    if (blockp->size >= nbytes + 16)
    {
-      int newblock = block + nbytes;
+      size_t newblock = block + nbytes;
       CHUNK* newblockp = HEAP_index(heap,newblock,CHUNK);
       newblockp->size = blockp->size - nbytes;
       newblockp->next = blockp->next;
@@ -662,12 +662,12 @@ int HEAP_malloc(Heap *heap, int nbytes) {
    return block;
 }
 
-void HEAP_free(Heap* heap, int block) {
+void HEAP_free(Heap* heap, size_t block) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
    CHUNK* beforep;
    CHUNK* blockp;
    CHUNK* afterp;
-   int after,before;
+   size_t after,before;
 
    if (hheader->alignment != 8 && hheader->alignment != 4) {
       GDKfatal("Heap structure corrupt\n");
@@ -756,7 +756,7 @@ void HEAP_free(Heap* heap, int block) {
 
 void HEAP_printstatus(Heap *heap) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
-   int block, cur_free = hheader->head;
+   size_t block, cur_free = hheader->head;
    CHUNK* blockp;
 
    THRprintf(GDKerr, "HEAP has head %d and alignment %d and size %d\n",
@@ -774,7 +774,7 @@ void HEAP_printstatus(Heap *heap) {
           cur_free = blockp->next;
           block += blockp->size;
       } else {
-	  int size = blocksize(hheader,blockp);
+	  size_t size = blocksize(hheader,blockp);
           THRprintf(GDKerr, "   block at %d with size %d\n", block, size);
           block += size;
       }
@@ -783,9 +783,9 @@ void HEAP_printstatus(Heap *heap) {
 
 int HEAP_check(Heap *heap, HeapRepair *hr) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
-   int head = hheader->head, alignshift = 2;
-   int block, nwords = (heap->free-1)>>7;
-   int *freemask, prevblock = 0;
+   size_t head = hheader->head, alignshift = 2;
+   size_t block, nwords = (heap->free-1)>>7;
+   size_t *freemask, prevblock = 0;
    CHUNK* blockp;
 
    hr->alignment = hheader->alignment;
@@ -800,7 +800,7 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
       GDKerror("Heap structure corrupt alignment = %d\n",hheader->alignment);
       return FALSE;
    } 
-   if ((head < 0) || (head != roundup_num(head,hheader->alignment))) {
+   if ((head != roundup_num(head,hheader->alignment))) {
       GDKerror("Heap structure corrupt: head = %d\n",head);
       return FALSE;
    }
@@ -808,8 +808,8 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    /*
     // Create bitmasks that will hold all valid block positions
     */
-   hr->validmask = (unsigned int*) GDKmalloc(sizeof(int) * ++nwords);
-   freemask = (int*) GDKmalloc(sizeof(int) * nwords);
+   hr->validmask = (unsigned int*) GDKmalloc(sizeof(size_t) * ++nwords);
+   freemask = (size_t*) GDKmalloc(sizeof(size_t) * nwords);
    for(block=0; block<nwords; block++) 
 	freemask[block] = hr->validmask[block] = 0;
 
@@ -817,9 +817,9 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    // Walk the freelist; register them in freemask
    */
    for (block = hheader->head; block!=0;block = HEAP_index(heap,block,CHUNK)->next) {
-      int idx = block >> alignshift;
-      int pos = idx >> 5;
-      int mask = 1 << (idx&31);
+      size_t idx = block >> alignshift;
+      size_t pos = idx >> 5;
+      size_t mask = 1 << (idx&31);
 
       if ((block <= prevblock) && (block != 0)) {
 	 GDKerror("Freelist is not ordered\n");
@@ -837,9 +837,9 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    */
    block = hheader->firstblock;
    while(((size_t) block) < heap->free) {
-      int idx = block >> alignshift;
-      int pos = idx >> 5;
-      int mask = 1 << (idx&31);
+      size_t idx = block >> alignshift;
+      size_t pos = idx >> 5;
+      size_t mask = 1 << (idx&31);
       hr->validmask[pos] |= mask;
       blockp = HEAP_index(heap,block,CHUNK);
 
@@ -859,9 +859,9 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    // Check if there are left over free blocks
    */
    for (block = hheader->head; block!=0;block = HEAP_index(heap,block,CHUNK)->next) {
-      int idx = block >> alignshift;
-      int pos = idx >> 5;
-      int mask = 1 << (idx&31);
+      size_t idx = block >> alignshift;
+      size_t pos = idx >> 5;
+      size_t mask = 1 << (idx&31);
       if (freemask[pos]&mask) {
 	 GDKerror("Entry freelist corrupt: block %d not in blocklist\n", block);
          goto xit;
@@ -882,9 +882,9 @@ void HEAP_checkformat(Heap *heap) {
 	/* it is the other format => correct to the desired format */
         HEADER *hheader = HEAP_index(heap,0,HEADER);
 #if SIZEOF_LONG==8
-	int hasfcn = *(int*) &image.sizefcn;
+	size_t hasfcn = *(size_t*) &image.sizefcn;
 #else 
-	int hasfcn = (int) (image.sizefcn || image.dummy);
+	size_t hasfcn = (size_t) (image.sizefcn || image.dummy);
 	hheader->dummy = 0;
 #endif
 	hheader->head = image.head;
@@ -897,7 +897,7 @@ void HEAP_checkformat(Heap *heap) {
 /* below routine is for converting between little-endian and big-endian disk images */
 void HEAP_convert(Heap* heap) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
-   int block, *buf = (int*) hheader;
+   size_t block, *buf = (size_t*) hheader;
    CHUNK* blockp;
 
    /*
@@ -940,7 +940,7 @@ The HEAP_init() function is called in the BAT load sequence, if Monet sees that 
 standard heap is being loaded (it looks for a directly registered HEAP_check ADT function). 
 @c
 /* save space in the heap by registering a size function */
-void HEAP_initialize_compact(Heap* heap, int nbytes, int nprivate, int alignment, int (*sizefcn)(ptr val)) {
+void HEAP_initialize_compact(Heap* heap, size_t nbytes, size_t nprivate, int alignment, int (*sizefcn)(ptr val)) {
    HEAP_initialize(heap, nbytes, nprivate, alignment);
    if (heap->base) {
        HEADER* hheader = HEAP_index(heap,0,HEADER);
@@ -959,7 +959,7 @@ void HEAP_init(Heap *heap, int tpe) {
      if (hheader->head > heap->free) {
         hheader->head = 0; /* cut off free block */ 
      } else if (hheader->head) {
-        int idx = hheader->head; 
+        size_t idx = hheader->head; 
         while(idx) {
            CHUNK *blk = HEAP_index(heap,idx,CHUNK);
            if (idx + blk->size > heap->free) {

@@ -197,8 +197,8 @@ Allocate anonymous virtual memory.
 #define MT_geterrno()		errno
 #define MT_seterrno(x)		errno=x
 
-gdk_export int _MT_npages;
-gdk_export int _MT_pagesize;
+gdk_export size_t _MT_npages;
+gdk_export size_t _MT_pagesize;
  
 #define MT_pagesize()	_MT_pagesize
 #define MT_npages()	_MT_npages
@@ -219,8 +219,8 @@ sem_t		MT_firstsema[MAXSEMAS];
 int MT_curlock=0, MT_nextlock[MAXLOCKS];
 int MT_cursema=0, MT_nextsema[MAXSEMAS];
 
-int     _MT_pagesize = 0;               /* variable holding memory size */
-int     _MT_npages = 0;                 /* variable holding page size */
+size_t     _MT_pagesize = 0;               /* variable holding memory size */
+size_t     _MT_npages = 0;                 /* variable holding page size */
  
 void MT_init() {
 	static pthread_mutex_t l;

@@ -45,7 +45,7 @@ The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @c
 BAT *BATins(BAT *b, BAT *n) {
-	int needed = 0;
+	size_t needed = 0;
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;

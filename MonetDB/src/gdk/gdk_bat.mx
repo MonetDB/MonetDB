@@ -119,7 +119,7 @@ void BATsetdims(BAT *b) {
 }
 
 
-BAT *BATnewstorage(int ht, int tt, int cap) {
+BAT *BATnewstorage(int ht, int tt, size_t cap) {
  	BAT *bn = BATcreatedesc(ht, tt); 
 	int hole_padding;
 @-
@@ -158,7 +158,7 @@ some integrity checking.
 Moreover, space is reserved for Delta management.
 @c
 
-BAT *BATnew(int ht, int tt, int cap) {
+BAT *BATnew(int ht, int tt, size_t cap) {
 	int	i; 
 	BAT	*b;
 
@@ -222,8 +222,8 @@ Small results BATs are more likely then 100M BATs.
 
 Likewise, the routine @%BATgrows@ provides a heuristic to enlarge the space.
 @c
-int BATguess(BAT *b) {
-	int newcap;
+size_t BATguess(BAT *b) {
+	size_t newcap;
 	BATcheck(b,"BATguess");
 	newcap = BATcount(b);
 	if( newcap < 10 * BATTINY) return newcap;
@@ -232,8 +232,8 @@ int BATguess(BAT *b) {
 	return newcap/100;
 }
 
-int BATgrows(BAT *b) {
-	int oldcap, newcap;
+size_t BATgrows(BAT *b) {
+	size_t oldcap, newcap;
 	BATcheck(b,"BATgrows");
 
 	newcap = oldcap = BATcapacity(b);
@@ -259,8 +259,8 @@ Overflow in the other heaps are dealt with in the atom  routines.
 Here we merely copy their references into the new administration space.
 
 @c
-BAT *BATextend(BAT *b, int newcap) {
-	int	hole_padding, heap_size; 
+BAT *BATextend(BAT *b, size_t newcap) {
+	size_t	hole_padding, heap_size; 
 
 	BATcheck(b, "BATextend"); 
 @- 
@@ -372,7 +372,7 @@ BAT *BATclear(BAT *b) {
 		   BUNs got removed. This means reinitialize when
 		   free > 0
 		*/
-		int cap = 0;
+		size_t cap = 0;
 		if (b->hheap.free > 0){
 			HEAPfree(&b->hheap);
 			ATOMheap(b->htype, &b->hheap, cap);
@@ -749,7 +749,6 @@ one now must do:
 @
 @c
 BUN BUNdelete(BAT *b, BUN p) {
-	int     sh, st;
 	unsigned int idx1, idx2; 
 	BAT*	bm = BBP_cache(-b->batCacheid);
 	int 	bs = BUNsize(b);
@@ -772,8 +771,8 @@ BUN BUNdelete(BAT *b, BUN p) {
 	if (b->hidx_heap || b->tidx_heap) {
 		IDXdestroy(b); /* get rid of range index */
 	}
-	sh = ATOMsize(b->htype);
-	st = ATOMsize(b->ttype);
+	(void)ATOMsize(b->htype);
+	(void)ATOMsize(b->ttype);
 
 @- Committed Delete. 
 The (committed) bun is moved into the hole, and the first 
@@ -1077,9 +1076,9 @@ It can be implemented quickly, because the system ensures a dense
 BUN list.
 @{
 @c
-int BATcount (BAT *b) {
-	int     f;
-	int     l;
+size_t BATcount (BAT *b) {
+	size_t     f;
+	size_t     l;
  
 	BATcheck(b, "BATcount");
 	f = BUNindex(b, BUNfirst(b));
@@ -1090,9 +1089,9 @@ int BATcount (BAT *b) {
 The alternative routine is @%BATbuncount@, which calculates the
 total buns in use.
 @c
-int BATbuncount (BAT *b)
+size_t BATbuncount (BAT *b)
 {
-        int     f;
+        size_t     f;
  
         BATcheck(b, "BATbuncount");
         f = b->batBuns->size - (BUNfirst(b) - b->batBuns->base);
@@ -1193,7 +1192,9 @@ BAT *BATsetaccess(BAT *b, int mode) {
 
 	if (b->batRestricted != mode) {
    	    int action=0, m1=0, m2=0, m3=0, m4=0, m5=0;	
+/*
 	    bat bid = ABS(b->batCacheid);
+*/
  
 	    if (VIEWparent(b) && mode != BAT_READ) {
 		VIEWreset(b);
