@@ -620,9 +620,9 @@ GDKmtrace(bit *enable) {
 	if(*enable) {
 		if(memBat == NULL) {
 			memBat   = BATnew(TYPE_ptr,TYPE_int,16384);
-			if( membat == NULL) return GDK_FAIL;
+			if( memBat == NULL) return GDK_FAIL;
 			stackBat = BATnew(TYPE_ptr,TYPE_ptr,16384);
-			if( stackbat == NULL) return GDK_FAIL;
+			if( stackBat == NULL) return GDK_FAIL;
 			BBPrename(memBat->batCacheid,"mem_trace");
 			BBPrename(stackBat->batCacheid,"mem_stack");
 			memBat->hsorted = memBat->tsorted = 0;
