@@ -23,6 +23,28 @@ aclocal -I . -I conf
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
 perl -i.bak -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
+
+# patch aclocal.m4: 
+# correct switch for Intel compiler on Linux (icc)
+# to pass options to the linker (ld) is -Qoption,ld,
+cat << "EOF" | patch aclocal.m4
+--- aclocal.m4~	Wed Jan 16 20:34:17 2002
++++ aclocal.m4	Wed Jan 16 20:37:55 2002
+@@ -1036,6 +1036,12 @@
+       fi
+       ;;
+ 
++    linux*)
++      lt_cv_prog_cc_pic='-Kpic'
++      lt_cv_prog_cc_static='-static'
++      lt_cv_prog_cc_wl='-Qoption,ld,'
++      ;;
++
+     *)
+       lt_cv_prog_cc_can_build_shared=no
+       ;;
+EOF
+
 autoheader
 automake -a -c
 
