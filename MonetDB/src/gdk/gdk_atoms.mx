@@ -1585,7 +1585,7 @@ int strFromStr(char *src, int *len, char** dst)
 {
 	unsigned char *p, *start = NULL, *cur = (unsigned char *) src;
 	int l = 1, escaped = FALSE;
-	int mask, n, c, utf8char;
+	int mask = 0, n, c, utf8char = 0;
 
 	while(GDKisspace(*cur)) cur++;
 	if (*cur != '"') {
