@@ -39,6 +39,8 @@
 #define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161) /* (2**64-1)/10 */
 #define MAXBIGNUMLAST	'5'	/* (2**64-1)%10 */
 
+#define space(c)	((c) == ' ' || (c) == '\t')
+
 typedef struct {
 	unsigned char precision;
 	signed char scale;
@@ -46,6 +48,27 @@ typedef struct {
 	SQLUBIGINT val;
 } bignum_t;
 
+#ifndef HAVE_STRNCASECMP
+static int
+strncasecmp(const char *s1, const char *s2, size_t n)
+{
+	int c1, c2;
+
+	while (n > 0) {
+		c1 = (unsigned char) *s1++;
+		c2 = (unsigned char) *s2++;
+		if (c1 == 0)
+			return -c2;
+		if (c2 == 0)
+			return c1;
+		if (tolower(c1) != tolower(c2))
+			return tolower(c1) - tolower(c2);
+		n--;
+	}
+	return 0;
+}
+#endif
+		
 /* Parse a number and store in a bignum_t.
    1 is returned if all is well;
    2 is returned if there is loss of precision (i.e. overflow of the value);
@@ -61,6 +84,8 @@ parseint(const char *data, bignum_t *nval)
 	nval->val = 0;
 	nval->precision = 0;
 	scale = 0;
+	while (space(*data))
+		data++;
 	if (*data == '-') {
 		nval->sign = 0;
 		data++;
@@ -69,7 +94,7 @@ parseint(const char *data, bignum_t *nval)
 		if (*data == '+')
 			data++;
 	}
-	while (*data && *data != 'e' && *data != 'E') {
+	while (*data && *data != 'e' && *data != 'E' && !space(*data)) {
 		if (*data == '.')
 			fraction = 1;
 		else if ('0' <= *data && *data <= '9') {
@@ -116,6 +141,10 @@ parseint(const char *data, bignum_t *nval)
 	if (scale < -128 || scale > 127)
 		return 0;
 	nval->scale = scale;
+	while (space(*data))
+		data++;
+	if (*data)
+		return 0;
 	return 1 + overflow;
 }
 
@@ -188,9 +217,15 @@ parsedate(const char *data, DATE_STRUCT *dval)
 {
 	int n;
 
+	while (space(*data))
+		data++;
 	if (sscanf(data, "%hd-%hu-%hu%n",
-		   &dval->year, &dval->month, &dval->day, &n) < 3 ||
-	    data[n] != 0)
+		   &dval->year, &dval->month, &dval->day, &n) < 3)
+		return 0;
+	data += n;
+	while (space(*data))
+		data++;
+	if (*data)
 		return 0;
 	if (dval->month == 0 || dval->month > 12 ||
 	    dval->day == 0 || dval->day > monthlengths[dval->month] ||
@@ -204,17 +239,23 @@ parsetime(const char *data, TIME_STRUCT *tval)
 {
 	int n;
 
+	while (space(*data))
+		data++;
 	if (sscanf(data, "%hu:%hu:%hu%n",
 		   &tval->hour, &tval->minute, &tval->second, &n) < 3)
 		return 0;
 	data += n;
+	n = 1;			/* tentative return value */
 	if (*data == '.') {
-		while (*++data)
-			if (*data < '0' || *data > '9')
-				return 0;
-		return 2;
+		while (*++data && '0' <= *data && *data <= '9')
+			;
+		n = 2;		/* indicate loss of precision */
 	}
-	return *data == 0;
+	while (space(*data))
+		data++;
+	if (*data)
+		return 0;
+	return n;
 }
 
 static int
@@ -222,6 +263,8 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 {
 	int n;
 
+	while (space(*data))
+		data++;
 	if (sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n",
 		   &tsval->year, &tsval->month, &tsval->day,
 		   &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
@@ -232,18 +275,38 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 		return 0;
 	tsval->fraction = 0;
 	data += n;
+	n = 1000000000;
 	if (*data == '.') {
-		n = 1000000000;
-		while (*++data) {
-			if (*data < '0' || *data > '9')
-				return 0;
+		while (*++data && '0' <= *data && *data <= '9') {
 			n /= 10;
 			tsval->fraction += (*data - '0') * n;
 		}
-		if (n == 0)
-			return 2; /* fractional digits truncated */
 	}
-	return *data == 0;
+	while (space(*data))
+		data++;
+	if (*data)
+		return 0;
+	if (n == 0)
+		return 2;	/* fractional digits truncated */
+	return 1;
+}
+
+static int
+parsedouble(const char *data, double *fval)
+{
+	char *p;
+
+	while (space(*data))
+		data++;
+	errno = 0;
+	*fval = strtod(data, &p);
+	if (p == NULL || p == data || errno == ERANGE)
+		return 0;
+	while (space(*p))
+		p++;
+	if (*p)
+		return 0;
+	return 1;
 }
 
 SQLRETURN
@@ -349,24 +412,40 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			parsemonthinterval(&nval, &ival);
 		break;
 	case SQL_DOUBLE:
-	case SQL_FLOAT: {
-		char *p;
-
-		errno = 0;
-		fval = strtod(data, &p);
-		if (p == data || *p || errno == ERANGE) {
+	case SQL_FLOAT:
+		if (!parsedouble(data, &fval)) {
 			/* 22018: Invalid character value for cast
 			   specification */
 			addStmtError(stmt, "22018", NULL, 0);
 			return SQL_ERROR;
 		}
 		break;
-	}
 	case SQL_BIT:
 		nval.precision = 1;
 		nval.scale = 0;
 		nval.sign = 1;
-		nval.val = strcmp(data, "true") == 0;
+		while (space(*data))
+			data++;
+		if (strncasecmp(data, "true", 4) == 0) {
+			data += 4;
+			nval.val = 1;
+		} else if (strncasecmp(data, "false", 5) == 0) {
+			data += 5;
+			nval.val = 0;
+		} else {
+			/* 22018: Invalid character value for cast
+			   specification */
+			addStmtError(stmt, "22018", NULL, 0);
+			return SQL_ERROR;
+		}
+		while (space(*data))
+			data++;
+		if (*data) {
+			/* 22018: Invalid character value for cast
+			   specification */
+			addStmtError(stmt, "22018", NULL, 0);
+			return SQL_ERROR;
+		}
 		break;
 	case SQL_TYPE_DATE:
 		if (!parsedate(data, &dval)) {
@@ -627,24 +706,14 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (lenp)
 			*lenp = 1;
 		switch (sql_type) {
-		case SQL_CHAR: {
-			char *p;
-
-			errno - 0;
-			fval = strtod(data, &p);
-			if (p == data || *p) {
+		case SQL_CHAR:
+			if (!parsedouble(data, &fval)) {
 				/* 22018: Invalid character value for
 				   cast specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
-			if (errno == ERANGE) {
-				/* 22003: Numeric value out of range */
-				addStmtError(stmt, "22003", NULL, 0);
-				return SQL_ERROR;
-			}
 			/* fall through */
-		}
 		case SQL_FLOAT:
 		case SQL_DOUBLE:
 			if (fval < 0 || fval >= 2) {
@@ -925,19 +994,14 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	case SQL_C_FLOAT:
 	case SQL_C_DOUBLE:
 		switch (sql_type) {
-		case SQL_CHAR: {
-			char *p;
-
-			errno = 0;
-			fval = strtod(data, &p);
-			if (p == data || *p || errno == ERANGE) {
+		case SQL_CHAR:
+			if (!parsedouble(data, &fval)) {
 				/* 22018: Invalid character value for
 				   cast specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
 			break;
-		}
 		case SQL_DOUBLE:
 		case SQL_FLOAT:
 			break;
@@ -1110,8 +1174,16 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			ival.interval_type = SQL_IS_YEAR_TO_MONTH;
 			ival.interval_sign = SQL_TRUE;
 			if (sscanf(data, "%d-%u%n", &i,
-				   &ival.intval.year_month.month, &n) < 2 ||
-			    data[n] != 0) {
+				   &ival.intval.year_month.month, &n) < 2) {
+				/* 22018: Invalid character value for
+				   cast specification */
+				addStmtError(stmt, "22018", NULL, 0);
+				return SQL_ERROR;
+			}
+			data += n;
+			while (space(*data))
+				data++;
+			if (*data) {
 				/* 22018: Invalid character value for
 				   cast specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -1191,8 +1263,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (sscanf(data, "%d %u:%u:%u%n", &i,
 				   &ival.intval.day_second.hour,
 				   &ival.intval.day_second.minute,
-				   &ival.intval.day_second.second, &n) < 4 ||
-			    (data[n] != 0 && data[n] != '.')) {
+				   &ival.intval.day_second.second, &n)) {
 				/* 22018: Invalid character value for
 				   cast specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -1208,16 +1279,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			i = 0;
 			if (*data == '.') {
 				n = 1;
-				while (*++data) {
-					if (*data < '0' || *data > '9') {
-						/* 22018: Invalid
-						   character value for
-						   cast
-						   specification */
-						addStmtError(stmt, "22018",
-							     NULL, 0);
-						return SQL_ERROR;
-					}
+				while (*++data && '0' <= *data && *data <= '9') {
 					if (n < 1000000000) {
 						i++;
 						n *= 10;
@@ -1225,6 +1287,14 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 						ival.intval.day_second.fraction += *data - '0';
 					}
 				}
+			}
+			while (space(*data))
+				data++;
+			if (*data) {
+				/* 22018: Invalid character value for
+				   cast specification */
+				addStmtError(stmt, "22018", NULL, 0);
+				return SQL_ERROR;
 			}
 			break;
 		}
