@@ -84,7 +84,7 @@ BAT *BATins(BAT *b, BAT *n) {
 	}
 
 	if (BAThdense(b) && b->htype == TYPE_void){
-		oid t = *(oid*)BUNhead(b,BUNlast(b)-1);
+		oid t = *(oid*)BUNhead(b,BUNlast(b)-BUNsize(b));
 		oid h = *(oid*)BUNhead(n,BUNfirst(n));
 		if ((t+1) != h)
 			b = BATmaterialize(b, BATcount(b)+ BATcount(n));
