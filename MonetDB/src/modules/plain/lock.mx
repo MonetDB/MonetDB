@@ -53,9 +53,6 @@ as already present in the Monet system.
 	"create an unset sema, with an initial value"
 .COMMAND sema_down(sema) = down_sema;
 	"decrease the semaphpore if >0; else block"
-.COMMAND sema_try(sema) : int = try_sema;
-	"try the semaphpore, if >0 decrease and return 0, 
-		if not return EBUSY"
 .COMMAND sema_up(sema) = up_sema;
 	"increase the semaphore"
 .COMMAND sema_destroy(sema) = destroy_sema;
@@ -108,11 +105,6 @@ int create_sema(monet_sema *s, int *init){
 
 int up_sema(monet_sema *s){
 	MT_up_sema((MT_Sema) *s, "up_sema");
-	return GDK_SUCCEED;
-}
-
-int try_sema(int *res, monet_sema *s){
-	*res = MT_try_sema((MT_Sema) *s)?EBUSY:0;
 	return GDK_SUCCEED;
 }
 
