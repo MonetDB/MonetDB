@@ -1279,11 +1279,14 @@ int strFromStr(char *src, int *len, char** dst) {
 				*p++ = '\n';
 			} else if (*cur == 't') { 
 				*p++ = '\t';
-			} else if ((cur[0] >= '0' && cur[0] <= '9') &&
-				   (cur[1] >= '0' && cur[1] <= '9') &&
-				   (cur[2] >= '0' && cur[2] <= '9'))
+			} else if ((cur[0] >= '0' && cur[0] <= '7') &&
+				   (cur[1] >= '0' && cur[1] <= '7') &&
+				   (cur[2] >= '0' && cur[2] <= '7'))
 			{
-				*p++ = (cur[2] + (cur[1]<<3) + (cur[0]<<6));
+				*p++ =  (cur[2] & 7 	  | 
+				       ((cur[1] & 7) <<3) | 
+				       ((cur[0] & 7) <<6));
+				cur += 2;
 			} else {
 			        *p++ = *cur;
 			}
