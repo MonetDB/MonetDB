@@ -392,23 +392,23 @@ public class MonetResultSet implements ResultSet {
 		return(absolute(1));
 	}
 
-	public Array 	getArray(int i) { return(null); }
-	public Array 	getArray(String colName) { return(null); }
+	public Array getArray(int i) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public Array getArray(String colName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 	/* Mapi doesn't allow something for streams at the moment, thus all
 	   not implemented for now */
-	public InputStream 	getAsciiStream(int columnIndex) { return(null); }
-	public InputStream 	getAsciiStream(String columnName) { return(null); }
-	public InputStream 	getBinaryStream(int columnIndex) { return(null); }
-	public InputStream 	getBinaryStream(String columnName) { return(null); }
-	public InputStream 	getUnicodeStream(int columnIndex) { return(null); }
-	public InputStream 	getUnicodeStream(String columnName) { return(null); }
-	public Blob 	getBlob(int i) { return(null); }
-	public Blob 	getBlob(String colName) { return(null); }
-	public Reader 	getCharacterStream(int columnIndex) { return(null); }
-	public Reader 	getCharacterStream(String columnName) { return(null); }
-	public Clob 	getClob(int i) { return(null); }
-	public Clob 	getClob(String colName) { return(null); }
+	public InputStream getAsciiStream(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public InputStream getAsciiStream(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public InputStream getBinaryStream(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public InputStream getBinaryStream(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public InputStream getUnicodeStream(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public InputStream getUnicodeStream(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public Blob getBlob(int i) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public Blob getBlob(String colName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public Reader getCharacterStream(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public Reader getCharacterStream(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public Clob getClob(int i) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public Clob getClob(String colName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 	/**
 	 * Retrieves the value of the designated column in the current row of this
@@ -865,7 +865,7 @@ public class MonetResultSet implements ResultSet {
 			public boolean isSearchable(int column) {return(false);}
 			public boolean isCurrency(int column) {return(false);}
 			public int isNullable(int column) {return(columnNullableUnknown);}
-			public boolean isSigned(int column) {return(false);}
+			public boolean isSigned(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 			/**
 			 * Indicates the designated column's normal maximum width in
@@ -925,9 +925,9 @@ public class MonetResultSet implements ResultSet {
 				return(ret);
 			}
 
-			public String getSchemaName(int column) {return(null);}
-			public int getPrecision(int column) {return(-1);}
-			public int getScale(int column) {return(-1);}
+			public String getSchemaName(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+			public int getPrecision(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+			public int getScale(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 			/**
 			 * Gets the designated column's table name.
@@ -939,7 +939,7 @@ public class MonetResultSet implements ResultSet {
 				return(header.getTableNames()[column - 1]);
 			}
 
-			public String getCatalogName(int column) {return(null);}
+			public String getCatalogName(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 			/**
 			 * Indicates whether the designated column is definitely not
@@ -975,7 +975,7 @@ public class MonetResultSet implements ResultSet {
 				return(false);
 			}
 
-			public String getColumnClassName(int column) {return(null);}
+			public String getColumnClassName(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 			/**
 			 * Gets the designated column's suggested title for use in printouts
@@ -1175,8 +1175,8 @@ public class MonetResultSet implements ResultSet {
 		return(getObject(findColumn(colName), map));
 	}
 
-	public Ref 	getRef(int i) { return(null); }
-	public Ref 	getRef(String colName) { return(null); }
+	public Ref getRef(int i) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public Ref getRef(String colName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 	/**
 	 * Retrieves the current row number. The first row is number 1, the second
@@ -1310,26 +1310,68 @@ public class MonetResultSet implements ResultSet {
 		}
 
 		try {
-			cal.setTime(MonetConnection.mTimestamp.parse("1970-01-01 00:00:00.000"));
-
 			switch(dataType) {
 				default:
 					throw new java.text.ParseException("Unsupported data type", 0);
 
 				case Types.DATE:
-					cal.setTime(MonetConnection.mDate.parse(monetDate));
-				break;
+					synchronized (MonetConnection.mDate) {
+						MonetConnection.mDate.setTimeZone(TimeZone.getDefault());
+						return(MonetConnection.mDate.parse(monetDate));
+					}
 				case Types.TIME:
-					cal.setTime(MonetConnection.mTime.parse(monetDate));
+					if (monetDate.length() == 18) { // "HH:mm:ss.SSS+00:00".length()
+						// RFC822:         Sign TwoDigitHours Minutes
+						// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
+						String tzRFC822 =
+							monetDate.substring(12, 15) +
+							monetDate.substring(16, 18);
+
+						synchronized (MonetConnection.mTimeZ) {
+							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
+							return(MonetConnection.mTimeZ.parse(monetDate.substring(0, 12) + tzRFC822));
+						}
+					} else if (monetDate.length() == 12) { // "HH:mm:ss.SSS".length()
+						// if there is no time zone information in the database
+						// we have to use the given calendar to construct it
+						synchronized (MonetConnection.mTimeZ) {
+							MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
+							String tz = MonetConnection.mTimeZ.format(Time.valueOf(monetDate.substring(0, 8)));
+							tz = tz.substring(12);
+							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
+							return(MonetConnection.mTimeZ.parse(monetDate + tz));
+						}
+					}
 				break;
 				case Types.TIMESTAMP:
-					cal.setTime(MonetConnection.mTimestamp.parse(monetDate));
+					if (monetDate.length() == 29) { // "yyyy-MM-dd HH:mm:ss.SSS+00:00".length()
+						// RFC822:         Sign TwoDigitHours Minutes
+						// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
+						String tzRFC822 =
+							monetDate.substring(23, 26) +
+							monetDate.substring(27, 29);
+
+						synchronized (MonetConnection.mTimestampZ) {
+							MonetConnection.mTimestampZ.setTimeZone(TimeZone.getDefault());
+							return(MonetConnection.mTimestampZ.parse(monetDate.substring(0, 23) + tzRFC822));
+						}
+					} else if (monetDate.length() == 23) { // "yyyy-MM-dd HH:mm:ss.SSS".length()
+						// if there is no time zone information in the database
+						// we have to use the given calendar to construct it
+						synchronized (MonetConnection.mTimestampZ) {
+							MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
+							String tz = MonetConnection.mTimestampZ.format(Timestamp.valueOf(monetDate));
+							tz = tz.substring(23);
+							MonetConnection.mTimestampZ.setTimeZone(TimeZone.getDefault());
+							return(MonetConnection.mTimestampZ.parse(monetDate + tz));
+						}
+					}
 				break;
 			}
 		} catch(java.text.ParseException e) {
 			// keep default value
 		}
-		return(cal.getTime());
+		return(Timestamp.valueOf("1970-01-01 00:00:00.000"));
 	}
 
 	/**
@@ -1551,8 +1593,8 @@ public class MonetResultSet implements ResultSet {
 		return(type);
 	}
 
-	public URL 	getURL(int columnIndex) { return(null); }
-	public URL 	getURL(String columnName) { return(null); }
+	public URL getURL(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public URL getURL(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 	/**
 	 * Retrieves the first warning reported by calls on this ResultSet object.
@@ -1684,64 +1726,64 @@ public class MonetResultSet implements ResultSet {
 
 	/* these methods are all related to updateable result sets, which we
 	   currently do not support */
-	public void 	cancelRowUpdates() {}
-	public void 	deleteRow() {}
-	public void 	insertRow() {}
-	public void 	moveToCurrentRow() {}
-	public void 	moveToInsertRow() {}
-	public void refreshRow() {}
-	public boolean 	rowDeleted() { return(false); }
-	public boolean 	rowInserted() { return(false); }
-	public boolean 	rowUpdated() { return(false); }
-	public void 	setFetchDirection(int direction) {}
-	public void 	setFetchSize(int rows) {}
-	public void 	updateArray(int columnIndex, Array x) {}
-	public void 	updateArray(String columnName, Array x) {}
-	public void 	updateAsciiStream(int columnIndex, InputStream x, int length) {}
-	public void 	updateAsciiStream(String columnName, InputStream x, int length) {}
-	public void 	updateBigDecimal(int columnIndex, BigDecimal x) {}
-	public void 	updateBigDecimal(String columnName, BigDecimal x) {}
-	public void 	updateBinaryStream(int columnIndex, InputStream x, int length) {}
-	public void 	updateBinaryStream(String columnName, InputStream x, int length) {}
-	public void 	updateBlob(int columnIndex, Blob x) {}
-	public void 	updateBlob(String columnName, Blob x) {}
-	public void 	updateBoolean(int columnIndex, boolean x) {}
-	public void 	updateBoolean(String columnName, boolean x) {}
-	public void 	updateByte(int columnIndex, byte x) {}
-	public void 	updateByte(String columnName, byte x) {}
-	public void 	updateBytes(int columnIndex, byte[] x) {}
-	public void 	updateBytes(String columnName, byte[] x) {}
-	public void 	updateCharacterStream(int columnIndex, Reader x, int length) {}
-	public void 	updateCharacterStream(String columnName, Reader reader, int length) {}
-	public void 	updateClob(int columnIndex, Clob x) {}
-	public void 	updateClob(String columnName, Clob x) {}
-	public void 	updateDate(int columnIndex, java.sql.Date x) {}
-	public void 	updateDate(String columnName, java.sql.Date x) {}
-	public void 	updateDouble(int columnIndex, double x) {}
-	public void 	updateDouble(String columnName, double x) {}
-	public void 	updateFloat(int columnIndex, float x) {}
-	public void 	updateFloat(String columnName, float x) {}
-	public void 	updateInt(int columnIndex, int x) {}
-	public void 	updateInt(String columnName, int x) {}
-	public void 	updateLong(int columnIndex, long x) {}
-	public void 	updateLong(String columnName, long x) {}
-	public void 	updateNull(int columnIndex) {}
-	public void 	updateNull(String columnName) {}
-	public void 	updateObject(int columnIndex, Object x) {}
-	public void 	updateObject(int columnIndex, Object x, int scale) {}
-	public void 	updateObject(String columnName, Object x) {}
-	public void 	updateObject(String columnName, Object x, int scale) {}
-	public void 	updateRef(int columnIndex, Ref x) {}
-	public void 	updateRef(String columnName, Ref x) {}
-	public void 	updateRow() {}
-	public void 	updateShort(int columnIndex, short x) {}
-	public void 	updateShort(String columnName, short x) {}
-	public void 	updateString(int columnIndex, String x) {}
-	public void 	updateString(String columnName, String x) {}
-	public void 	updateTime(int columnIndex, Time x) {}
-	public void 	updateTime(String columnName, Time x) {}
-	public void 	updateTimestamp(int columnIndex, Timestamp x) {}
-	public void 	updateTimestamp(String columnName, Timestamp x) {}
+	public void cancelRowUpdates() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void deleteRow() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void insertRow() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void moveToCurrentRow() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void moveToInsertRow() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void refreshRow() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public boolean rowDeleted() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public boolean rowInserted() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public boolean rowUpdated() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void setFetchDirection(int direction) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void setFetchSize(int rows) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateArray(int columnIndex, Array x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateArray(String columnName, Array x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateAsciiStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBigDecimal(String columnName, BigDecimal x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBinaryStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBlob(int columnIndex, Blob x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBlob(String columnName, Blob x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBoolean(int columnIndex, boolean x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBoolean(String columnName, boolean x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateByte(int columnIndex, byte x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateByte(String columnName, byte x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBytes(int columnIndex, byte[] x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateBytes(String columnName, byte[] x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateCharacterStream(String columnName, Reader reader, int length) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateClob(int columnIndex, Clob x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateClob(String columnName, Clob x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateDate(int columnIndex, java.sql.Date x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateDate(String columnName, java.sql.Date x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateDouble(int columnIndex, double x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateDouble(String columnName, double x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateFloat(int columnIndex, float x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateFloat(String columnName, float x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateInt(int columnIndex, int x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateInt(String columnName, int x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateLong(int columnIndex, long x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateLong(String columnName, long x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateNull(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateNull(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateObject(int columnIndex, Object x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateObject(int columnIndex, Object x, int scale) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateObject(String columnName, Object x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateObject(String columnName, Object x, int scale) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateRef(int columnIndex, Ref x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateRef(String columnName, Ref x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateRow() throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateShort(int columnIndex, short x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateShort(String columnName, short x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateString(int columnIndex, String x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateString(String columnName, String x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateTime(int columnIndex, Time x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateTime(String columnName, Time x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	public void updateTimestamp(String columnName, Timestamp x) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 	// Chapter 14.2.3.3 Sun JDBC 3.0 Specification
 	/**
@@ -1759,8 +1801,9 @@ public class MonetResultSet implements ResultSet {
 
 	//== end methods of interface ResultSet
 
-	protected void finalize() {
+	protected void finalize() throws Throwable {
 		close();
+		super.finalize();
 	}
 
 	/**

@@ -55,7 +55,6 @@ public class MonetPreparedStatement
 	 * to set up a socket to MonetDB and attempts to login.
 	 * This constructor is only accessible to classes from the jdbc package.
 	 *
-	 * @param monet the connection to Mserver to use
 	 * @param connection the connection that created this Statement
 	 * @param resultSetType type of ResultSet to produce
 	 * @param resultSetConcurrency concurrency of ResultSet to produce
@@ -63,7 +62,6 @@ public class MonetPreparedStatement
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
 	MonetPreparedStatement(
-		MonetSocket monet,
 		MonetConnection connection,
 		int resultSetType,
 		int resultSetConcurrency,
@@ -71,7 +69,6 @@ public class MonetPreparedStatement
 		throws SQLException, IllegalArgumentException
 	{
 		super(
-			monet,
 			connection,
 			resultSetType,
 			resultSetConcurrency
@@ -283,15 +280,15 @@ public class MonetPreparedStatement
 	 * it and then invoking the ResultSet.getMetaData method on the ResultSet
 	 * object that is returned.
 	 * <br /><br />
-	 * NOTE: Using this method is expensive for this drivers due to the lack of
-	 * underlying DBMS support.  Currently just returns null.
+	 * NOTE: Using this method is expensive for this driver due to the lack of
+	 * underlying DBMS support.  Currently not implemented
 	 *
 	 * @return the description of a ResultSet object's columns or null if the
 	 *         driver cannot return a ResultSetMetaData object
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ResultSetMetaData getMetaData() throws SQLException {
-		return(null);
+		throw new SQLException("Method currently not supported, sorry!");
 	}
 
     /**
@@ -304,7 +301,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ParameterMetaData getParameterMetaData() throws SQLException {
-		return(null);
+		throw new SQLException("Method currently not supported, sorry!");
 	}
 
 	/**
@@ -475,7 +472,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setDate(int parameterIndex, java.sql.Date x) throws SQLException {
-		setDate(parameterIndex, x, Calendar.getInstance());
+		setValue(parameterIndex, "'" + x.toString() + "'");
 	}
 
 	/**
@@ -495,9 +492,10 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 		throws SQLException
 	{
-		cal.setTime(x);
-		setValue(parameterIndex, "'" +
-		    MonetConnection.mDate.format(cal.getTime()) + "'");
+		synchronized (MonetConnection.mDate) {
+			MonetConnection.mDate.setTimeZone(cal.getTimeZone());
+			setValue(parameterIndex, "'" + MonetConnection.mDate.format(x) + "'");
+		}
 	}
 
 	/**
@@ -755,7 +753,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setTime(int parameterIndex, Time x) throws SQLException {
-		setTime(parameterIndex, x, Calendar.getInstance());
+		setValue(parameterIndex, "'" + x.toString() + "'");
 	}
 
 	/**
@@ -775,9 +773,13 @@ public class MonetPreparedStatement
 	public void setTime(int parameterIndex, Time x, Calendar cal)
 		throws SQLException
 	{
-		cal.setTime(x);
-		setValue(parameterIndex, "'" +
-		    MonetConnection.mTime.format(cal.getTime()) + "'");
+		synchronized (MonetConnection.mTimeZ) {
+			MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
+
+			String RFC822 = MonetConnection.mTimeZ.format(x);
+			setValue(parameterIndex, "'" +
+				RFC822.substring(0, 15) + ":" + RFC822.substring(15) + "'");
+		}
 	}
 
 	/**
@@ -792,7 +794,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int parameterIndex, Timestamp x)
 		throws SQLException
 	{
-		setTimestamp(parameterIndex, x, Calendar.getInstance());
+		setValue(parameterIndex, "'" + x.toString() + "'");
 	}
 
     /**
@@ -813,9 +815,13 @@ public class MonetPreparedStatement
 	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
 		throws SQLException
 	{
-		cal.setTime(x);
-		setValue(parameterIndex, "'" +
-		    MonetConnection.mTimestamp.format(cal.getTime()) + "'");
+		if (cal == null) cal = Calendar.getInstance();
+		synchronized (MonetConnection.mTimestampZ) {
+			MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
+			String RFC822 = MonetConnection.mTimestampZ.format(x);
+			setValue(parameterIndex, "'" +
+				RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
+		}
 	}
 
 	/**

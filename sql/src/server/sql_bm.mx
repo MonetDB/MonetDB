@@ -64,7 +64,7 @@ extern int bm_version( struct bm *bm);
 extern oid bm_add_bat(struct bm *bm, oid bid, char *name, int version);
 extern void bm_del_bat(struct bm *bm, oid lbid);
 extern void bm_new_version(struct bm *bm, oid lbid, int version );
-extern void bm_new_bat(struct bm *bm, oid lbid, oid bid );
+extern void bm_new_bat(struct bm *bm, oid lbid, BAT *b );
 
 extern oid bm_find_bat(struct bm *bm, char *name);
 extern BAT *bm_lbid2bat(struct bm *bm, oid lbid);
@@ -133,6 +133,7 @@ BAT *bat_new(int ht, int tt, size_t size, char *func)
 
 	if (bm_debug)
 		printf("bat_new(%s) %d (%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
+	nb->batDirty |= 2;
 	return nb;
 }
 
@@ -467,10 +468,10 @@ oid bm_name2lbid(bm *bm, char *name)
 {
 	BAT *r_bat_name = BATmirror(bm->bat_name);
 	oid res = 0;
-	ptr p = BUNfnd(r_bat_name, name);
+	BUN p = BUNfnd(r_bat_name, name);
 
 	if (p){
-		ptr q = BUNfnd(bm->bat_lbid, BUNtail(r_bat_name, p));
+		BUN q = BUNfnd(bm->bat_lbid, BUNtail(r_bat_name, p));
 		res = *(oid*)BUNtail(bm->bat_lbid, q);
 	}
 	return res;
@@ -480,7 +481,7 @@ oid bm_lbid2vid(bm *bm, oid lbid)
 {
 	BAT *r_bat_lbid = BATmirror(bm->bat_lbid);
 	oid res = 0;
-	ptr p = BUNfnd(r_bat_lbid, &lbid);
+	BUN p = BUNfnd(r_bat_lbid, &lbid);
 
 	if (p) {
 		res = *(oid*)BUNtail(r_bat_lbid, p);
@@ -520,7 +521,7 @@ static void bat_rename(bat bid, char *name, int version, int mode)
 }
 
 
-void bm_new_bat(bm *bm, oid lbid, oid bid )
+static void _bm_new_bat(bm *bm, oid lbid, oid bid )
 {
 	int mode = BM_WRITE;
 	oid vid = bm_lbid2vid(bm, lbid);
@@ -534,6 +535,12 @@ void bm_new_bat(bm *bm, oid lbid, oid bid )
 	BUNreplace(bm->bat_mode, (ptr)&vid, &mode);
 }
 
+void bm_new_bat(bm *bm, oid lbid, BAT *b )
+{
+	assert(!b->batRestricted);
+	_bm_new_bat(bm, lbid, (oid)b->batCacheid);
+}
+
 oid bm_add_bat(bm *bm, oid bid, char *name, int version)
 {
 	oid lbid = bm_find_bat(bm, name);
@@ -543,7 +550,7 @@ oid bm_add_bat(bm *bm, oid bid, char *name, int version)
 		(void)bm_add_bat_intern(bm, lbid, bid, name, version, BM_WRITE);
 		bat_rename(bid, name, version, BM_WRITE);
 	} else {
-		bm_new_bat(bm, lbid, bid);
+		_bm_new_bat(bm, lbid, bid);
 		bm_new_version(bm, lbid, version);
 	}
 	if (version > bm->version)

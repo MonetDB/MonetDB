@@ -32,6 +32,8 @@ typedef struct atom {
 	ValRecord data;
 } atom;
 
+#define atom_null(a) a->isnull
+
 extern atom *atom_int(sql_subtype * tpe, lng val);
 extern atom *atom_string(sql_subtype * tpe, char *val);
 extern atom *atom_float(sql_subtype * tpe, double val);
@@ -51,6 +53,7 @@ sql_export void atom_dump(atom *a, stream *s);
 @c
 #include "sql_atom.h"
 #include <sql_string.h>
+#include <monettime.h>
 
 static int atom_debug = 0;
 
@@ -95,7 +98,7 @@ atom *atom_string(sql_subtype * tpe, char *val)
 	a->data.len = 0;
 	if (val){
 		a->isnull = 0;
-		a->data.val.sval = sql2str(val);
+		a->data.val.sval = val;
 		a->data.len = strlen(a->data.val.sval); 
 	}
 
@@ -122,6 +125,9 @@ atom *atom_general(sql_subtype * tpe, char *val)
 	atom *a;
 	ptr p = NULL;
 
+	if (atom_debug)
+		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname, val);
+
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(tpe, val);
 	a = NEW(atom);
@@ -133,9 +139,7 @@ atom *atom_general(sql_subtype * tpe, char *val)
 
 	assert(a->data.vtype >= 0);
 
-	if (atom_debug) 
-		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname,val);
-	if (val){
+	if (val) {
 		int type = a->data.vtype;
 		a->isnull = 0;
 		if (ATOMstorage(type) == TYPE_str){

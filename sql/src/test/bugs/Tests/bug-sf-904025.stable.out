@@ -76,16 +76,16 @@ Over..
 # mediumint # type
 # 0 # length
 # 1 # tuplecount
-# 6 # id
-[ 25	]
+# 7 # id
+[ 28	]
 # 3 # querytype
 # tmp # table_name
 # count_name # name
 # mediumint # type
 # 0 # length
 # 1 # tuplecount
-# 7 # id
-[ 28	]
+# 8 # id
+[ 0	]
 
 # 16:15:08 >  
 # 16:15:08 >  Done.

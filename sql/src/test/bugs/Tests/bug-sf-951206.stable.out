@@ -41,7 +41,7 @@ Over..
 [ "types"	]
 [ "ttables"	]
 [ "tcolumns"	]
-[ "users"	]
+[ "db_users"	]
 [ "user_role"	]
 [ "auths"	]
 [ "privileges"	]

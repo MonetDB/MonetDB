@@ -1461,7 +1461,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
 				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
 				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
-				"END AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
+				"END AS \"TABLE_TYPE\", \"tables\".\"query\" AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
 				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
 			"FROM \"sys\".\"tables\" AS \"tables\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 			") AS \"tables\" WHERE 1 = 1 ";
@@ -1761,28 +1761,56 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 */
 	public ResultSet getColumnPrivileges(
 		String catalog,
-		String schema,
-		String table,
+		String schemaPattern,
+		String tableNamePattern,
 		String columnNamePattern
 	) throws SQLException
 	{
-		String[] columns = {
-			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
-			"GRANTOR", "GRANTEE", "PRIVILEGE", "IS_GRANTABLE"
-		};
-
-		String[] types = {
-			"varchar", "varchar", "varchar", "varchar", "varchar",
-			"varchar", "varchar", "varchar"
-		};
-
-		String[][] results = new String[0][columns.length];
-
-		try {
-			return(new MonetVirtualResultSet(columns, types, results));
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
+		String cat = (String)(getEnvMap().get("gdk_dbname"));
+		String query =
+		"SELECT '" + cat + "' AS \"TABLE_CAT\", " +
+			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
+			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
+			"\"columns\".\"name\" AS \"COLUMN_NAME\", " +
+			"\"grantors\".\"name\" AS \"GRANTOR\", " +
+			"\"grantees\".\"name\" AS \"GRANTEE\", " +
+			"CASE \"privileges\".\"privileges\" " +
+				"WHEN 1 THEN cast('SELECT' AS varchar) " +
+				"WHEN 2 THEN cast('UPDATE' AS varchar) " +
+				"WHEN 4 THEN cast('INSERT' AS varchar) " +
+				"WHEN 8 THEN cast('DELETE' AS varchar) " +
+				"WHEN 16 THEN cast('EXECUTE' AS varchar) " +
+				"WHEN 32 THEN cast('GRANT' AS varchar) " +
+			"END AS \"PRIVILEGE\", " +
+			"CASE \"privileges\".\"grantable\" " +
+				"WHEN 0 THEN cast('NO' AS varchar) " +
+				"WHEN 1 THEN cast('YES' AS varchar) " +
+			"END AS \"IS_GRANTABLE\" " +
+		"FROM \"sys\".\"privileges\" AS \"privileges\", " +
+			"\"sys\".\"tables\" AS \"tables\", " +
+			"\"sys\".\"schemas\" AS \"schemas\", " +
+			"\"sys\".\"columns\" AS \"columns\", " +
+			"\"sys\".\"auths\" AS \"grantors\", " +
+			"\"sys\".\"auths\" AS \"grantees\" " +
+		"WHERE \"privileges\".\"obj_id\" = \"columns\".\"id\" " +
+			"AND \"columns\".\"table_id\" = \"tables\".\"id\" " +
+			"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
+			"AND \"privileges\".\"auth_id\" = \"grantees\".\"id\" " +
+			"AND \"privileges\".\"grantor\" = \"grantors\".\"id\" ";
+		
+		if (schemaPattern != null) {
+			query += "AND \"schemas\".\"name\" LIKE '" + escapeQuotes(schemaPattern) + "' ";
 		}
+		if (tableNamePattern != null) {
+			query += "AND \"tables\".\"name\" LIKE '" + escapeQuotes(tableNamePattern) + "' ";
+		}
+		if (columnNamePattern != null) {
+			query += "AND \"columns\".\"name\" LIKE '" + escapeQuotes(columnNamePattern) + "' ";
+		}
+
+		query += "ORDER BY \"COLUMN_NAME\", \"PRIVILEGE\"";
+
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -2681,10 +2709,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Indicates whether the driver supports batch updates.
-	 * Not yet, but I want to do them in the near future
 	 */
 	public boolean supportsBatchUpdates() {
-		return(false);
+		return(true);
 	}
 
 	/**

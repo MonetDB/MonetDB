@@ -415,7 +415,9 @@ public class JdbcClient {
 				// we now have the right order to dump tables
 				for (int i = 0; i < tables.size(); i++) {
 					// dump the table
-					doDump(out, hasXMLDump, (Table)(tables.get(i)), dbmd, stmt);
+					Table t = (Table)(tables.get(i));
+					changeSchema(t, stmt);
+					doDump(out, hasXMLDump, t, dbmd, stmt);
 				}
 			}
 
@@ -456,11 +458,9 @@ public class JdbcClient {
 				// print welcome message
 				out.println("Welcome to the MonetDB interactive JDBC terminal!");
 				out.println("Database: " + dbmd.getDatabaseProductName() + " " +
-					dbmd.getDatabaseProductVersion() + " (" + dbmd.getDatabaseMajorVersion() +
-					"." + dbmd.getDatabaseMinorVersion() + ")");
+					dbmd.getDatabaseProductVersion());
 				out.println("Driver: " + dbmd.getDriverName() + " " +
-					dbmd.getDriverVersion() + " (" + dbmd.getDriverMajorVersion() +
-					"." + dbmd.getDriverMinorVersion() + ")");
+					dbmd.getDriverVersion());
 				out.println("Type \\q to quit, \\h for a list of available commands");
 				out.println("auto commit mode: on");
 
@@ -541,20 +541,18 @@ public class JdbcClient {
 								if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
 									(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
 									// we found it, describe it
-									if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
-										out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
-									} else {
-										createTable(
-											out,
-											dbmd,
-											new Table(
-												tbl.getString("TABLE_CAT"),
-												tbl.getString("TABLE_SCHEM"),
-												tbl.getString("TABLE_NAME"),
-												tbl.getString("TABLE_TYPE")
-											)
-										);
-									}
+									createTable(
+										out,
+										dbmd,
+										new Table(
+											tbl.getString("TABLE_CAT"),
+											tbl.getString("TABLE_SCHEM"),
+											tbl.getString("TABLE_NAME"),
+											tbl.getString("TABLE_TYPE")
+										),
+										true
+									);
+									
 									found = true;
 									break;
 								}
@@ -643,8 +641,13 @@ public class JdbcClient {
 									for (; rs.next(); count++) {
 										out.print("|");
 										for (int j = 0; j < width.length; j++) {
-											String data = rs.getString(j + 1);
-											if (data == null) data = "<NULL>";
+											Object rdata = rs.getObject(j + 1);
+											String data;
+											if (rdata == null) {
+												data = "<NULL>";
+											} else {
+												data = rdata.toString();
+											}
 											out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
 										}
 										out.println();
@@ -676,7 +679,6 @@ public class JdbcClient {
 							} else {
 								System.err.println("Error: " + e.getMessage());
 							}
-							System.err.println("Executed query: " + query);
 						} finally {
 							query = "";
 						}
@@ -762,33 +764,38 @@ public class JdbcClient {
 	private static void createTable(
 		PrintWriter out,
 		DatabaseMetaData dbmd,
-		Table table
+		Table table,
+		boolean fq
 	) throws SQLException {
 		// hande views directly
 		if (table.getType().equals("VIEW")) {
-			String[] types = new String[0];
+			String[] types = new String[1];
 			types[0] = table.getType();
 			ResultSet tbl = dbmd.getTables(table.getCat(), table.getSchem(), table.getName(), types);
 			if (!tbl.next()) throw new SQLException("Whoops no data for " + table);
 
 			// This will probably only work for MonetDB
 			out.print("CREATE VIEW ");
-		 	out.print(table.getFqnameQ());
+		 	out.print(fq ? table.getFqnameQ() : table.getNameQ());
 			out.print(" AS ");
-		 	out.print(tbl.getString("REMARKS").trim());
+		 	out.println(tbl.getString("REMARKS").trim());
+			return;
 		}
 
 		String comment = null;
 		int i;
 		out.print("CREATE "); out.print(table.getType()); out.print(" ");
-		out.print(table.getFqnameQ()); out.println(" (");
+		out.print(fq ? table.getFqnameQ() : table.getNameQ()); out.println(" (");
 		// put all columns with their type in place
 		ResultSet cols = dbmd.getColumns(table.getCat(), table.getSchem(), table.getName(), null);
+		ResultSetMetaData rsmd = cols.getMetaData();
+		int width = rsmd.getColumnDisplaySize(cols.findColumn("COLUMN_NAME"));
 		for (i = 0; cols.next(); i++) {
 			int type = cols.getInt("DATA_TYPE");
 			if (i > 0) out.println(",");
 			out.print("\t\""); out.print(cols.getString("COLUMN_NAME"));
-		 	out.print("\"\t"); out.print(cols.getString("TYPE_NAME"));
+			out.print("\""); out.print(repeat(' ', width - cols.getString("COLUMN_NAME").length()));
+		 	out.print(" "); out.print(cols.getString("TYPE_NAME"));
 			int size = cols.getInt("COLUMN_SIZE");
 		 	if (size != 0 &&
 				type != Types.REAL &&
@@ -804,6 +811,12 @@ public class JdbcClient {
 					out.print(","); out.print(cols.getString("DECIMAL_DIGITS"));
 				}
 				out.print(")");
+			} else if (
+				(type == Types.TIMESTAMP || type == Types.TIME) &&
+				size == 0 &&
+				cols.getBoolean("DECIMAL_DIGITS")
+			) {
+				out.print(" WITH TIME ZONE");
 			}
 			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
 				out.print("\tNOT NULL");
@@ -946,13 +959,16 @@ public class JdbcClient {
 	 * @param table the (fully qualified) name of the table to dump
 	 * @throws SQLException if a database related error occurs
 	 */
-	public static void dumpTable(PrintWriter out, Statement stmt, String table)
-		throws SQLException
+	public static void dumpTable(
+		PrintWriter out,
+		Statement stmt,
+		Table table
+	) throws SQLException
 	{
 		// Simply select all from the given table
-		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
+		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqnameQ());
 		ResultSetMetaData rsmd = rs.getMetaData();
-		String statement = "INSERT INTO " + table + " VALUES (";
+		String statement = "INSERT INTO " + table.getNameQ() + " VALUES (";
 		int cols = rsmd.getColumnCount();
 		int[] types = new int[cols];
 		for (int i = 0; i < cols; i++) {
@@ -1030,13 +1046,14 @@ public class JdbcClient {
 			createTable(
 				out,
 				dbmd,
-				table
+				table,
+				false
 			);
 			out.println();
 			dumpTable(
 				out,
 				stmt,
-				table.getFqnameQ()
+				table
 			);
 			out.println();
 		} else {
@@ -1066,6 +1083,28 @@ public class JdbcClient {
 				}
 				out.println("</table>");
 			}
+		}
+	}
+
+	private static Stack lastSchema;
+	private static void changeSchema(Table t, Statement stmt) {
+		if (lastSchema == null) {
+			lastSchema = new Stack();
+			lastSchema.push(null);
+		}
+
+		if (!t.getSchem().equals(lastSchema.peek())) {
+			if (!lastSchema.contains(t.getSchem())) {
+				// create schema
+				out.print("CREATE SCHEMA ");
+				out.print(t.getSchemQ());
+				out.println(";\n");
+				lastSchema.push(t.getSchem());
+			}
+		
+			out.print("SET SCHEMA ");
+			out.print(t.getSchemQ());
+			out.println(";\n");
 		}
 	}
 
@@ -1430,8 +1469,16 @@ class Table {
 		return(schem);
 	}
 
+	String getSchemQ() {
+		return("\"" + schem + "\"");
+	}
+
 	String getName() {
 		return(name);
+	}
+
+	String getNameQ() {
+		return("\"" + name + "\"");
 	}
 
 	String getType() {

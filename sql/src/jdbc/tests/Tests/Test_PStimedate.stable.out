@@ -31,11 +31,11 @@ Over..
 2. inserting a record... passed :)
 3. closing PreparedStatement... passed :)
 4. selecting record... passed :)
-5. retrieving... passed :)
-6. retrieving... passed :)
-7. retrieving... passed :)
+5. retrieving... (Time) passed :)
+6. retrieving... (Timestamp) passed :)
+7. retrieving... (Date) passed :)
 
-# 21:52:44 >  
-# 21:52:44 >  Done.
-# 21:52:44 >  
+# 13:22:45 >  
+# 13:22:45 >  Done.
+# 13:22:45 >  
 

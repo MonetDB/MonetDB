@@ -1,7 +1,7 @@
 CREATE TABLE a (
         var1 char(4)      NOT NULL,
         var2 varchar(255),
-        var3 int,
+        var3 bigint,
         var4 varchar(16)  NOT NULL,
         PRIMARY KEY (var1),
         UNIQUE(var1)
@@ -10,8 +10,8 @@ CREATE TABLE a (
 CREATE TABLE b (
         r_id int         NOT NULL,
         id char(4)        NOT NULL,
-        var1 int,
-        var2 int,
+        var1 bigint,
+        var2 bigint,
         var3 varchar(20)  NOT NULL,
         var4 char(20) NOT NULL,
         PRIMARY KEY (r_id),

@@ -5,7 +5,7 @@ WHERE    a.id < b.id AND
          a.id = ta.table_id AND
          b.id = tb.table_id AND
          ta.name = tb.name AND
-	 ta."type" = 1 
+	 a."system" = true 
 GROUP BY a.id, b.id
 HAVING COUNT(*) >= 1;
 
