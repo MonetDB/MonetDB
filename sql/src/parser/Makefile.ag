@@ -26,6 +26,7 @@ lib__sql = {
 
 lib__sqlserver = {
 	SOURCES = sqlserver.mx 
+	LIBS = -L$(MONETDIST)/lib/Monet
 }
 
 bin_sql_client = {
@@ -37,5 +38,5 @@ bin_sql_client = {
 bin_sql_aclient = {
 	SOURCES = sql_aclient.c catalog-aclient.c statement_adump.c \
 		  comm.c comm.h gdk.c
-	LIBS = libsql -L$(MONETDIST)/lib -lstream $(READLINE_LIBS)
+	LIBS = libsql -L$(MONETDIST)/lib/Monet -lstream $(READLINE_LIBS)
 }
