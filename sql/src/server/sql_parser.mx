@@ -421,7 +421,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval> 
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
-	ALL DISTINCT ANY EVERY SOME CHECK GLOBAL CAST
+	ALL DISTINCT ANY EVERY SOME CHECK GLOBAL CAST CONVERT
 	CHARACTER VARYING sqlDECIMAL sqlFLOAT 
 	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
@@ -1674,9 +1674,6 @@ opt_having_clause:
  |  HAVING search_condition	 { $$ = $2; }
  ;
 
-	/* search conditions 
- |  NOT search_condition    	{ $$ = _symbol_create_symbol(SQL_NOT, $2); }
-*/
 
 search_condition:
     search_condition OR search_condition  	
@@ -1691,6 +1688,9 @@ search_condition:
 		  $$ = _symbol_create_list(SQL_AND, l ); }
  |  '(' search_condition ')'	{ $$ = $2; }
  | predicate			
+/* search conditions 
+ |  NOT search_condition    	{ $$ = _symbol_create_symbol(SQL_NOT, $2); }
+*/
  ;
 
 opt_order_by_clause:
@@ -2348,6 +2348,12 @@ cast_exp:
 	  dlist_append_symbol(l, $3);
 	  dlist_append_type(l, $5);
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
+ |
+     CONVERT '(' data_type ',' cast_value ')'
+ 	{ dlist *l = dlist_create();
+	  dlist_append_symbol(l, $5);
+	  dlist_append_type(l, $3);
+	  $$ = _symbol_create_list( SQL_CAST, l ); }
  ;
 
 cast_value:
@@ -2498,19 +2504,19 @@ data_type:
  | interval_type		
  | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
  | aTYPE '(' nonzero ')'{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
- | type_alias		{ $$ = sql_bind_subtype($1, 0, 0); }
- | type_alias '(' nonzero ')'
-			{ $$ = sql_bind_subtype($1, $3, 0); }
- | type_alias '(' intval ',' intval ')'
-			{ if ($5 >= $3) {
+ | type_alias opt_var	{ $$ = sql_bind_subtype($1, 0, 0); }
+ | type_alias opt_var '(' nonzero ')'
+			{ $$ = sql_bind_subtype($1, $4, 0); }
+ | type_alias opt_var '(' intval ',' intval ')'
+			{ if ($6 >= $4) {
 				char buf[BUFSIZ]; 
 
-				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $6, $4);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
 			  } else {
-			 	$$ = sql_bind_subtype($1, $3, $5); 
+			 	$$ = sql_bind_subtype($1, $4, $6); 
 			  }
 			}
  | IDENT		{ mvc *m = (mvc*)parm;

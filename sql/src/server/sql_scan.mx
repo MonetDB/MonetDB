@@ -153,6 +153,7 @@ init_keywords()
 	keywords_insert("ASYMMETRIC", ASYMMETRIC);
 	keywords_insert("BY", BY);
 	keywords_insert("CAST", CAST);
+	keywords_insert("CONVERT", CONVERT);
 	keywords_insert("CHARACTER", CHARACTER);
 	keywords_insert("VARYING", VARYING);
 	keywords_insert("CHECK", CHECK);
