@@ -23,9 +23,10 @@ lib__sql = {
 		sql.mx \
 		sql_scenario.mx \
 		sql_gencode.mx \
-                sql_optimizer.mx \
-		sql_cache.mx 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io
+		sql_optimizer.mx \
+		sql_cache.mx \
+		sql_result.mx
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel 
 	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONETDB_LIBS) -lbat -lmal -lstream $(MONET5_LIBS)
 }
 

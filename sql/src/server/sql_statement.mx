@@ -160,8 +160,8 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define isbasetable(s) (s->type == st_basetable && s->op1.tval->table)
 #define basetable_table(s) s->op1.tval 
 
-#define ptable_pivots(s) 	((s)->op1.lval)
-#define ptable_parent(s)	((s)->op2.stval)
+#define ptable_pivots(s) 		((s)->op1.lval)
+#define ptable_parent(s)		((s)->op2.stval)
 #define ptable_statements(s) 	((s)->op3.stval)
 
 extern stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type);
@@ -737,7 +737,7 @@ stmt *stmt_const(stmt * s, stmt * val)
 
 /* BEWARE stmt_mark marks the head, this while the mil mark is a mark tail 
  * Current implementation adds the reverses in stmt_mark nolonger in
- * statement_exec.
+ * the generated code.
 */
 stmt *stmt_mark(stmt * s, int id)
 {

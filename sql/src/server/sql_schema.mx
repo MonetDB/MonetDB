@@ -835,16 +835,17 @@ drop_role(mvc * sql, dlist * qname )
 	return stmt_none();
 }
 
-static stmt *
+static int
 column_constraint_type(mvc * sql, char *name, symbol * s, sql_schema * ss, sql_table * t, sql_column * cs, int alter )
 {
-	stmt *res = NULL;
+	int res = SQL_ERR;
 
 	if (alter && 
 	   (s->token == SQL_UNIQUE || 
             s->token == SQL_PRIMARY_KEY ||
 	    s->token == SQL_FOREIGN_KEY)) {
-		return sql_error(sql, 02, "alter add column with key constraint not implemented\n");
+		(void)sql_error(sql, 02, "alter add column with key constraint not implemented\n");
+		return res;
 	}
 	(void)ss;
 	switch (s->token) {
@@ -854,7 +855,7 @@ column_constraint_type(mvc * sql, char *name, symbol * s, sql_schema * ss, sql_t
 		key_type kt = (s->token == SQL_UNIQUE)?ukey:pkey;
 		sql_key *k = mvc_create_key(sql, t, name, kt, NULL);
 		mvc_create_kc(sql, k, cs );
-		res = stmt_none();
+		res = SQL_OK;
 	} break;
 	case SQL_FOREIGN_KEY:
 	{
@@ -865,29 +866,32 @@ column_constraint_type(mvc * sql, char *name, symbol * s, sql_schema * ss, sql_t
 		sql_table *rt = mvc_bind_table( sql, cur_schema(sql), rtname );
 		sql_key *k, *rk;
 
-		if (!rt) 
-			return sql_error(sql, 02, "table %s unknown\n", rtname);
+		if (!rt) { 
+			(void)sql_error(sql, 02, "table %s unknown\n", rtname);
+			return res;
+		}
 
  		cols = list_append(list_create(NULL), rcname);
  		rk = mvc_bind_ukey( rt, cols);
 		list_destroy(cols);
-		if (!rk) 
-			return sql_error(sql, 02, "Could not find referenced primary key in table %s.%s\n", rtname, rcname );
+		if (!rk) {
+			(void) sql_error(sql, 02, "Could not find referenced primary key in table %s.%s\n", rtname, rcname );
+			return res;
+		}
 		k = mvc_create_key(sql, t, name, fkey, rk);
 		mvc_create_kc(sql, k, cs );
-		res = stmt_none();
+		res = SQL_OK;
 	} break;
 	case SQL_NOT_NULL:
 	case SQL_NULL: {
 		int null = (s->token == SQL_NOT_NULL)?0:1;
 		mvc_null(sql, cs, null);
-		res = stmt_none();
+		res = SQL_OK;
 	} 	break;
 	}
 
-	if (!res) {
-		return sql_error(sql, 02, 
-			 "Unknown constraint (%ld)->token = %s\n",
+	if (res == SQL_ERR) {
+		(void) sql_error(sql, 02, "Unknown constraint (%ld)->token = %s\n",
 			 (long) s, token2string(s->token));
 	}
 	return res;
@@ -966,10 +970,10 @@ static char* column_constraint_name(symbol* s, sql_column* sc, sql_table* t) {
 }
 
 
-static stmt *
+static int 
 column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column * cs, int alter )
 {
-	stmt *res = NULL;
+	int res = SQL_ERR;
 	assert(cs);
 	switch (s->token) {
 	case SQL_CONSTRAINT:
@@ -998,11 +1002,11 @@ column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column 
 					_DELETE(r);
 				}
 			}
-			res = stmt_none();
+			res = SQL_OK;
 		} break;
 	}
-	if (!res) {
-		return sql_error(sql, 02, 
+	if (res == SQL_ERR) {
+		(void) sql_error(sql, 02, 
 			 "Unknown column option (%ld)->token = %s\n",
 			 (long) s, token2string(s->token));
 	}
@@ -1010,20 +1014,19 @@ column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column 
 }
 
 static int 
-column_options(mvc * sql, dlist * opt_list, list *stmt_list, sql_schema *ss, sql_table * t, sql_column * cs, int alter )
+column_options(mvc * sql, dlist * opt_list, sql_schema *ss, sql_table * t, sql_column * cs, int alter )
 {
 	assert(cs);
 
 	if (opt_list) {
 		dnode *n = NULL;
 		for (n = opt_list->h; n; n = n->next) {
-			stmt *res = column_option(sql, n->data.sym, ss, t, cs, alter);
-			if (!res) 
-				return -1;
-			list_append_stmt( stmt_list, res);
+			int res = column_option(sql, n->data.sym, ss, t, cs, alter);
+			if (res == SQL_ERR) 
+				return SQL_ERR;
 		}
 	}
-	return 0;
+	return SQL_OK;
 }
 
 static stmt *
@@ -1039,14 +1042,12 @@ create_column(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, int alter )
 		opt_list = l->h->next->next->data.lval;
 
 	if (cname && ctype) {
-		list *l = create_stmt_list();
 		sql_column *cs = NULL;
 
 		ctype = sql_dup_subtype(ctype);
 		cs = mvc_create_column(sql, t, cname, ctype );
 
-		if (column_options(sql, opt_list, l, ss, t, cs, alter) < 0) {
-			list_destroy(l);
+		if (column_options(sql, opt_list, ss, t, cs, alter) == SQL_ERR) {
 			return NULL;
 		}
 		if (alter) { 
@@ -1228,10 +1229,10 @@ table_element(mvc * sql, symbol * s, sql_schema *ss, sql_table *t, int alter )
 				return sql_error(sql, 02, 
 					"Column %s not found\n", cname);
 			} else {
-				list *l = create_stmt_list();
-				column_options(sql, olist, l, ss, t, c, alter);
-				res = list2stmt(l);
+				if (column_options(sql, olist, ss, t, c, alter) == SQL_ERR)
+					return NULL;
 			}
+			res = stmt_none();
 		} break;
 	case SQL_LIKE:
 		{

@@ -49,7 +49,7 @@ sqlcommon_export void sql_subtype_destroy( sql_subtype *t );
 sqlcommon_export int type_cmp( sql_type *t1, sql_type *t2);
 sqlcommon_export int subtype_cmp( sql_subtype *t1, sql_subtype *t2);
 
-sqlcommon_export sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char fixed, char *name );
+sqlcommon_export sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, int bits, unsigned char fixed, char *name );
 sqlcommon_export void type_destroy(sql_type * t);
 
 sqlcommon_export sql_arg *sql_create_arg( char *name, sql_subtype *t );
@@ -684,7 +684,7 @@ char *sql_bind_alias( char *alias )
 }
 
 
-sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char fixed, char *name)
+sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, int bits, unsigned char fixed, char *name)
 {
 	sql_type *t = NEW(sql_type);
 
@@ -694,6 +694,7 @@ sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale
 	t->scale = scale;
 	t->localtype = ATOMindex(t->base.name);
 	t->radix = radix;
+	t->bits = bits;
 	t->fixed = fixed;
 	if (!keyword_exists(t->sqlname))
 		keywords_insert(t->sqlname, KW_TYPE);
@@ -880,40 +881,33 @@ void sqltypeinit()
 
 	lock = MT_create_lock();
  	t = ts;
-	*t++ = sql_create_type("TABLE", 0, 0, 0, 1, 	 	"bat");
+	*t++ = sql_create_type("TABLE", 0, 0, 0, 0, 1, 	 	"bat");
 
 	misc = t;
-	BIT = *t++ = sql_create_type("BOOLEAN", 0, 0, 2, 1,	"bit");
+	BIT = *t++ = sql_create_type("BOOLEAN", 0, 0, 2, 1, 1,	"bit");
 	sql_create_alias(BIT->sqlname, "BOOL");
-	/**t++ = sql_create_type("UBYTE", 2, 0, 2, 1,		"uchr");*/
+	/**t++ = sql_create_type("UBYTE", 2, 0, 2, 8, 1,		"uchr");*/
 
 	strings = t;
-	*t++ = sql_create_type("CHAR",	 	0, 0, 0, 1, 	"str");
-	*t++ = sql_create_type("VARCHAR", 	0, 0, 0, 0, 	"str");
-	*t++ = sql_create_type("CLOB",		0, 0, 0, 0, 	"str");
-
-	/* Following types are translated by the parser
-	   INT(n) n <= 2 <- TINYINT
-		  n <= 4 <- SMALLINT
-		  n <= 9 <- MEDIUMINT
-		  n <= 19 <- BIGINT
-	*/
+	*t++ = sql_create_type("CHAR",	 	0, 0, 0, 0, 1, 	"str");
+	*t++ = sql_create_type("VARCHAR", 	0, 0, 0, 0, 0, 	"str");
+	*t++ = sql_create_type("CLOB",		0, 0, 0, 0, 0, 	"str");
 
 	numerical = t;
 
-	OID = *t++ = sql_create_type("OID", 9, 0, 10, 1, 	"oid");
-			   /*sql_create_type("TINYINT",   2, SCALE_FIX, 10, 1, "uchr"); */
-	      *t++ = sql_create_type("SMALLINT",  4, SCALE_FIX, 10, 1, "sht");
-	INT = *t++ = sql_create_type("INT",       9, SCALE_FIX, 10, 1, "int");
-	LNG = *t++ = sql_create_type("BIGINT",   19, SCALE_FIX, 10, 1, "lng");
+	OID = *t++ = sql_create_type("OID", 9, 0, 10, 31, 1, 	"oid");
+			 /*sql_create_type("TINYINT",   2, SCALE_FIX, 10,  8, 1, "uchr"); */
+	      *t++ = sql_create_type("SMALLINT",  4, SCALE_FIX, 10, 16, 1, "sht");
+	INT = *t++ = sql_create_type("INT",       9, SCALE_FIX, 10, 32, 1, "int");
+	LNG = *t++ = sql_create_type("BIGINT",   19, SCALE_FIX, 10, 64, 1, "lng");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
 			s scale indicates nr of digits after the dot .) */
-	/*#sql_type("DECIMAL", 2, SCALE_FIX, 10, 		"uchr"); */
-	*t++ = sql_create_type("DECIMAL",  4, SCALE_FIX, 10, 0,	"sht");
-	*t++ = sql_create_type("DECIMAL",  9, SCALE_FIX, 10, 0,	"int");
-	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 0,	"lng");
+	/*#sql_type("DECIMAL", 2, SCALE_FIX, 10, 8, 		"uchr"); */
+	*t++ = sql_create_type("DECIMAL",  4, SCALE_FIX, 10, 16, 0,	"sht");
+	*t++ = sql_create_type("DECIMAL",  9, SCALE_FIX, 10, 32, 0,	"int");
+	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 64, 0,	"lng");
 
 	/* float(n) (n indicates precision of atleast n digits)*/
 	/* ie n <= 23 -> flt */
@@ -922,18 +916,18 @@ void sqltypeinit()
 	/* this requires a type definition */
 
 	floats = t;
-	      *t++ = sql_create_type("REAL",   24, SCALE_NOFIX, 2, 1,   "flt");
-	DBL = *t++ = sql_create_type("DOUBLE", 53, SCALE_NOFIX, 2, 1,   "dbl");
+	      *t++ = sql_create_type("REAL",   24, SCALE_NOFIX, 2, 32, 1,   "flt");
+	DBL = *t++ = sql_create_type("DOUBLE", 53, SCALE_NOFIX, 2, 64, 1,   "dbl");
 
 
 	dates = t;
-	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 0, 0, 10, 1, 	"int");
-	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 1, 	"lng");
-	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, 1, 	"date");
-	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 1, 	"daytime");
-	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0, 0, 1,"timestamp");
+	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 0, 0, 10, 32, 1, 	"int");
+	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 64, 1, 	"lng");
+	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, 0,  1, 	"date");
+	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 0,  1, 	"daytime");
+	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0, 0, 0,  1,"timestamp");
 
-	*t++ = sql_create_type("BLOB", 0, 0, 0, 0, "sqlblob");
+	*t++ = sql_create_type("BLOB", 0, 0, 0, 0, 0,  "sqlblob");
 	end = t;
 	*t = NULL;
 

@@ -127,13 +127,13 @@ They are not present in V4
 @mal
 command exportTable(s:stream, res_id:int, 
 		offset:int, nr:int ) 
-address mvc_export_table
+address mvc_export_table_wrap
 comment "Export a table (in order) to stream s 
 	with the given tuple and record 
 	seperators (sep/rsep)";
 
 command exportResult(s:stream, res_id:int ) 
-address mvc_export_result
+address mvc_export_result_wrap
 comment "Export a table (in order) to stream s 
 	with the given tuple and record 
 	seperators (sep/rsep)";
@@ -229,7 +229,7 @@ typedef struct backend{
 	int console;
 	int debug;
 	int trace;
-	char language;	/* 'S' or 'D' */
+	char language;	/* 'S' or 's' or 'X' */
 	mvc	*mvc;
 	buffer 	*outbuf;
 	stream 	*out;
@@ -260,12 +260,15 @@ extern BAT * mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int a
 extern BAT * mvc_bind_dbat(mvc * m, char *sname, char *tname, int access );
 extern BAT * mvc_bind_idxbat(mvc * m, char *sname, char *tname, char *iname, int access );
 
+extern int mvc_export_result( mvc *c, stream *s, int res_id );
+
 #endif /* _SQL_H */
 
 @-
 First introduce the routines to be called by the front-end.
 @c
 #include "sql.h"
+#include "sql_result.h"
 #include "sql_gencode.h"
 #include "bat/bat_store.h"
 #include "bat/res_table.h"
@@ -392,7 +395,8 @@ str mvc_create_wrap(int *ret, int *debug ){
 
 str mvc_destroy_wrap(int *ret ){
 	mvc *m;
-        (void) ret;
+
+	(void) ret;
 	@:getContext(m)@
 	mvc_destroy( m );
 	@:setContext(NULL,mvc)@
@@ -401,6 +405,7 @@ str mvc_destroy_wrap(int *ret ){
 
 str mvc_update_var_wrap( int *ret, str *varname ){
 	mvc *m;
+
 	(void) ret;
 	@:getContext(m)@
 	if ( sql_update_var( m, *varname ) != GDK_SUCCEED)
@@ -567,191 +572,6 @@ str mvc_clear_table_wrap( lng *res, str sname, str tname )
 	return MAL_SUCCEED;
 }
 
-@-
-@= dec_tostr
-	char buf[32];
-	@1 v = *(@1*)a;
-	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0;
-	int l;
-
-	if (v<0) v = -v;
-
-	buf[cur--] = 0;
-	if (scale){
-		for(i=0; i<scale; i++){
-			buf[cur--] = (v%10) + '0';
-			v /= 10;
-		}
-		buf[cur--] = '.';
-	}
-	while(v){
-		buf[cur--] = (v%10) + '0';
-		v /= 10;
-		done = 1;
-	}
-	if (!done)
-		buf[cur--] = '0';
-	if (neg)
-		buf[cur--] = '-';
-	l = (32-cur-1);
-	if (*len < l){
-		if (*Buf) GDKfree(*Buf);
-		*len = l+1;
-		*Buf = GDKmalloc(*len);
-	}
-	strcpy(*Buf, buf+cur+1);
-	return l-1;
-@c
-
-int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a){
-	/* support dec map to sht, int and lng */
-	if (type == TYPE_sht){
-		@:dec_tostr(sht)@
-	} else if (type == TYPE_int){
-		@:dec_tostr(int)@
-	} else if (type == TYPE_lng){
-		@:dec_tostr(lng)@
-	} else {
-		GDKwarning("Decimal cannot be mapped to %s\n", ATOMname(type));
-	}
-	return 0;
-}
-
-@= dec_frstr
-	sql_subtype *t = (sql_subtype*)extra;
-
-	int i, neg = 0;
-	char *p = s;
-	@1 *r;
-	@1 res = 0;
-	if (*s == '-'){
-		neg = 1;
-		s++;
-	} else if (*s == '+'){ 
-		neg = 0;
-		s++;
-	}
-	for( i = 0; i < (t->digits-t->scale) && *s != '.'; i++, s++){
-		if (!*s || *s < '0' || *s > '9' ){
-			GDKerror("decimal wrong format (%s)", p);
-			return NULL;
-		}
-		res *= 10;
-		res += (*s-'0');
-	}
-	if (*s){
-		if (*s != '.'){
-			GDKerror("decimal wrong format (%s)", p);
-			return NULL;
-		}
-		s++;
-		for( i = 0; *s && i < t->scale; i++, s++){
-			if (*s < '0' || *s > '9' ){
-				GDKerror("decimal wrong format (%s)", p);
-				return NULL;
-			}
-			res *= 10;
-			res += (*s-'0');
-		}
-	}
-	if (*s){
-		GDKerror("decimal wrong format (%s)", p);
-		return NULL;
-	}
- 	r = (@1*)GDKmalloc(sizeof(@1));
-	if (neg)
-		*r = -res;
-	else
-		*r = res;
-	return (ptr*)r;
-@c
-
-ptr *dec_frstr( void *extra, int type, char *s){
-	/* support dec map to sht, int and lng */
-	if (type == TYPE_sht){
-		@:dec_frstr(sht)@
-	} else if (type == TYPE_int){
-		@:dec_frstr(int)@
-	} else if (type == TYPE_lng){
-		@:dec_frstr(lng)@
-	} else {
-		GDKwarning("Decimal cannot be mapped to %s\n", ATOMname(type));
-	}
-	return NULL;
-}
-static char *coerce(char *s){
-	char *n= GDKmalloc(strlen(s)+1);
-	char *t=n;
-	for(; *s; s++)
-	switch(*s){
-	case '\\':
-		s++;
-		if( *s == 'n') *t++ = '\n'; else
-		if( *s == 't') *t++ = '\t'; else
-		if( *s == '\\') *t++ = '\\'; else
-	default: *t ++ = *s;
-	}
-	*t=0;
-	return n;
-}
-
-BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
-		char *sep, char *rsep, int sz)
-{
-	int i = 0;
-	sql_trans *tr = m->trans;
-	sql_table *t = mvc_bind_table(m, tr->schema, tname);
-	node *n;
-	BAT *bats = NULL;
-	Tablet as;
-	Column *fmt;
-
-	if (!t){
-		GDKerror("table %s not found\n", tname );
-		m->type = -1;
-		return NULL;
-	}
-	if (!bs || stream_errnr(bs->s)){
-		GDKerror("stream not open %d\n", stream_errnr(bs->s));
-		m->type = -1;
-		return  NULL;
-	}
-
-	if (t->columns.set){
-		as.nr_attrs = list_length(t->columns.set);
-		as.nr = sz;
-		fmt = as.format =
-                    (Column*)GDKmalloc(sizeof(Column) * (as.nr_attrs + 1) );
-
-		for (n = t->columns.set->h, i=0; n; n = n->next, i++)
-		{
-			sql_column *col = n->data;
-
-			fmt[i].name = _strdup(col->base.name);
-                	fmt[i].sep = (n->next)?coerce(sep):coerce(rsep);
-                	fmt[i].seplen = (int) strlen( fmt[i].sep );
-                	fmt[i].type = _strdup(col->type->type->base.name);
-                	fmt[i].adt = ATOMindex( fmt[i].type );
-                	fmt[i].tostr = &TABLETadt_toStr;
-                	fmt[i].frstr = &TABLETadt_frStr;
-                	fmt[i].extra = NULL;
-			if (strcmp(col->type->type->sqlname, "decimal")==0){
-				fmt[i].tostr = &dec_tostr;
-				fmt[i].frstr = &dec_frstr;
-				fmt[i].extra = col->type;
-			}
-		}
-        	if (TABLETcreate_bats( &as ) >= 0){
-                	if (TABLETload_file( &as, bs)>=0)
-                        	bats = TABLETcollect_bats( &as );
-        	}
-        	TABLETdestroy_format( &as );
-	}
-
-	m->type = Q_UPDATE;
-	return bats;
-}
-
 str mvc_import_table_wrap( int *res, stream **s, str *tname, 
 		str *sep, str *rsep, int *sz)
 {
@@ -767,113 +587,25 @@ str mvc_import_table_wrap( int *res, stream **s, str *tname,
 	return MAL_SUCCEED;
 }
 
-static res_table *find_export_table( mvc *m, int res_id ){
-	res_table *r = m->results;
-
-	for( ; r; r = r->next){
-		if (r->id == res_id)
-			return r;
+str mvc_export_result_wrap( stream *s, int *res_id )
+{
+	mvc *c;
+	
+	@:getContext(c)@
+	if (mvc_export_result( c, *(stream**)s, *res_id)) {
+		return throwMessage("sql.exportResult","failed");
 	}
 	return NULL;
 }
 
-str mvc_export_result( stream *s, int res_id )
+str mvc_export_table_wrap( stream *s, int *res_id, int *offset, int *nr )
 {
 	mvc *c;
-	int i;
-	res_table *t;
-	
-	@:getContext(c)@
- 	t = find_export_table(c, res_id);
-	c->type = Q_RESULT;
-
-	stream_writeInt( s, Q_RESULT );
-	stream_writeInt( s, t->nr_cols );
-	stream_writeInt( s, t->id );
-	
-	for (i = 0; i < t->nr_cols; i++) 
-	{
-		res_col *c = t->cols+i;
-		stream_write(s, c->name, strlen(c->name), 1);
-		stream_write(s, ",", 1, 1);
-		stream_write(s, c->type->type->sqlname, 
-				strlen(c->type->type->sqlname), 1);
-		stream_write(s, "\n", 1, 1);
-	}
-	stream_flush(s);
-	return NULL;
-}
-
-static void mvc_clean_result( mvc *m, res_table *t)
-{
-	res_table *r = m->results;
-
-	if (r == t){
-		m->results = t->next;
-	} else {
-		for( ; r; r = r->next){
-			if (r->next == t){
-				r->next = t->next;
-				break;
-			}
-		}
-	}
-	res_table_destroy(t);
-}
-
-
-static int mvc_export_row( mvc *m, stream *s, res_table *t ) 
-{
-	char *sep = "\t";
-	char *rsep = "\n";
-
-	int i;
-
-	m->type = Q_RESULT;
-	stream_writeInt( s, Q_TABLE );
-	stream_writeInt( s, 1 );
-
-	for (i = 0; i < t->nr_cols; i++) 
-	{
-		res_col *c = t->cols+i;
-		if (i != 0)
-			stream_write(s, sep, strlen(sep), 1);
-
-		if (c->type->type->scale == SCALE_FIX){
-			char *buf = NULL;
-			int len = 0;
-			int l = dec_tostr((void*)(ptrdiff_t)c->type->scale, &buf, &len,
-					c->mtype, c->p);
-			stream_write(s, buf, l, 1);
-			_DELETE(buf);
-		} else { 
-			char *buf = NULL;
-			int len = 0;
-			int l = (*BATatoms[c->mtype].atomToStr)(&buf, &len, c->p);
-			stream_write(s, buf, l, 1);
-			_DELETE(buf);
-		}
-	}
-	mvc_clean_result(m, t);
-	stream_write(s, rsep, strlen(rsep), 1);
-	stream_flush(s);
-	return 0;
-}
-
-str mvc_export_table( stream *s, int res_id, int offset, int nr )
-{
-	mvc *c;
-	char *sep = "\t";
-	char *rsep = "\n";
-	int clean = 0;
-	res_table *t;
 
 	@:getContext(c)@
- 	t = find_export_table(c, res_id);
-	(void)s; (void)offset; (void)nr;
-	(void)sep; (void)rsep;
-	if (clean)
-		mvc_clean_result(c, t);
+	if (mvc_export_table(c, *(stream**)s, *res_id, *offset, *nr)) {
+		return throwMessage("sql.exportTable","failed");
+	} 
 	return NULL;
 }
 

@@ -794,21 +794,21 @@ stmt *rel2bin( mvc *c, stmt *s )
 		if (s->op1.stval){
 			stmt *os, *ns;
 			os = s->op1.stval;
-		       	ns = rel2bin(c, os);
+			ns = rel2bin(c, os);
 			assert(ns != s);
 			stmt_destroy(os);
 			s->op1.stval = ns;
 		}
 		if (s->op2.stval){
 			stmt *os = s->op2.stval;
-		       	stmt *ns = rel2bin(c, os);
+			stmt *ns = rel2bin(c, os);
 			assert(ns != s);
 			stmt_destroy(os);
 			s->op2.stval = ns;
 		}
 		if (s->op3.stval){
 			stmt *os = s->op3.stval;
-		       	stmt *ns = rel2bin(c, os);
+			stmt *ns = rel2bin(c, os);
 			assert(ns != s);
 			stmt_destroy(os);
 			s->op3.stval = ns;

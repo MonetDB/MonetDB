@@ -343,8 +343,7 @@ stmt_push_join_head(stmt * s, stmt * join)
 		return stmt_reljoin2(l1,l2);
 	} else if (s->type == st_join){
 		stmt *op1 = stmt_join( join, stmt_dup(s->op1.stval), cmp_equal);
-		stmt *res = stmt_join( op1, stmt_dup(s->op2.stval), 
-					(comp_type)s->flag );
+		stmt *res = stmt_join( op1, stmt_dup(s->op2.stval), (comp_type)s->flag);
 		stmt_destroy(s);
 		return res;
 	} else if (s->type == st_reverse){
@@ -355,8 +354,7 @@ stmt_push_join_head(stmt * s, stmt * join)
 	} else if (s->type == st_intersect){
 		stmt *res = stmt_intersect(
 			stmt_push_join_head( stmt_dup(s->op1.stval), join),
-			stmt_push_join_head( stmt_dup(s->op2.stval), stmt_dup(join))
-				);
+			stmt_push_join_head( stmt_dup(s->op2.stval), stmt_dup(join)));
 		stmt_destroy(s);
 		return res;
 	} else if (s->type == st_diff){
@@ -650,15 +648,7 @@ list *mk_pivot( list *pivots, stmt *st, stmt *p, int markid ){
 		j = stmt_join2select(j);
 	}
 
-	/*
-	pnl = stmt_mark(j, markid);
-	*/
 	pnr = stmt_mark(stmt_reverse(j), markid);
-
-	/*
-	if (tp)
-		pnr = stmt_intersect(pnr,pnl);
-		*/
 
 	npivots = create_stmt_list();
 	if (!tp) {

@@ -50,12 +50,14 @@ should be initialized. Thereafter, each time a client enters
 we update its context descriptor to denote an SQL scenario.
 @c
 #include "sql_scenario.h"
+#include "sql_result.h"
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
 #include "sql_cache.h"
 #include "sql_env.h"
 #include "io.h"
 #include "mal_parser.h"
+#include <bat/res_table.h>
 
 static void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
 
@@ -110,12 +112,14 @@ str SQLexit(Client c){
 	stream_printf(GDKout,"#SQLexit\n");
 #endif
 	(void)c; /* not used */
+/*
 	if( SQLinitialized == FALSE){
 		return throwMessage("SQLexit",
 			"Catalogue not available\n");
 	}
 	mvc_exit();
 	SQLinitialized= FALSE;
+*/
 	return MAL_SUCCEED;
 }
 
@@ -180,8 +184,13 @@ str SQLinitClient(Client c){
 #endif
 
 	if( SQLinitialized == FALSE){
+		char *msg = SQLinit(c);
+		if (msg)
+			return msg;
+/*
 		return throwMessage("SQLinitClient",
 			"Catalogue not available\n");
+*/
 	}
 	if( (backend*) c->state[PARSER] == 0){
 		m = mvc_create(1, 0, c->fdin, c->fdout);
@@ -197,7 +206,6 @@ str SQLinitClient(Client c){
 				mvc_destroy(m);
 				return throwMessage("SQLparser","Disconnected\n");
 			}
-			_DELETE(schema);
 		}
 		c->state[PARSER] = (void*) backend_create(0/*debug*/, m, c);
 		c->state[OPTIMIZE] = m;
@@ -264,11 +272,8 @@ str SQLreader(Client c){
 	lng T0;
 	backend *be = ((backend*)c->state[PARSER]);
 	bstream *in = c->fdin;
-	mvc *m;
-	int language; 
-
-	assert(be);
-	language = be->language; /* 'S' for SQL, 'D' from debugger */
+	int language = be->language; /* 'S' for SQL, 'D' from debugger */
+	mvc *m = be->mvc;
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"#SQLparser: start reading SQL block\n");
@@ -276,7 +281,6 @@ str SQLreader(Client c){
 	if (!be || c->mode <= FINISHING)
 		return throwMessage("SQLreader","end of SQL input\n");
 
- 	m = be->mvc;
 @- 
 Continue processing any left-over input from the previous round.
 @c
@@ -292,6 +296,13 @@ Continue processing any left-over input from the previous round.
 		ssize_t rd;
 		assert(in->pos == in->len);
 
+		if (c->bak) {
+			popClientInput(c);
+			in = c->fdin;
+			m->scanner.rs = c->fdin;
+			c->fdin->pos += c->yycur;
+			c->yycur = 0;
+		}
 		if (in->eof || !isa_block_stream(in->s)) {
 			language = 0;
 
@@ -316,7 +327,7 @@ Continue processing any left-over input from the previous round.
 				(stream_write(c->fdout,c->prompt,c->promptlength,1) != 1 ||
 				stream_flush(c->fdout)) ) {
 				go = FALSE;
-			}
+			} 
 			in->eof = 0;
 		}
 		if (go && (rd = bstream_next(in)) <= 0) {
@@ -331,16 +342,14 @@ Continue processing any left-over input from the previous round.
 				(this time with prompt) */
 				SQLreader(c);
 			} else if( rd == 0 && in->eof==0 ){
-                            return 0;
+				return 0;
 			} else {
 				go = FALSE;
 			}
 		} else if (go && !be->console && language == 0) {
-			language = in->buf[in->pos++];
+			be->language = in->buf[in->pos++];
 		}
 	}
-	if( be->language=='D' )
-		return 0;
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"#SQL blk:%s\n",in->buf+in->pos);
@@ -372,7 +381,7 @@ void SQLsetDebugger(Client c, int onoff)
 	InstrPtr q;
 	mvc *m;
 
-   m = ((mvc*)c->state[OPTIMIZE]);
+   	m = ((mvc*)c->state[OPTIMIZE]);
 
 	if(m == 0 || m->debug==0 )
 		return;
@@ -403,6 +412,8 @@ prepare the intermediate code.
 #define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
 
 str SQLparser(Client c) {
+	bstream *in = c->fdin;
+	stream *out = c->fdout;
 	str msg=0;
 	int err=0;
 	backend *be;
@@ -410,6 +421,7 @@ str SQLparser(Client c) {
 	MalBlkRecord oldstate;
 	lng T0 = 0;
 	int pstatus = 0;
+	prot oldmode;
 
 	oldstate= *c->curprg->def;
 #ifdef _SQL_PARSER_DEBUG
@@ -424,10 +436,6 @@ str SQLparser(Client c) {
 	m = be->mvc;
 	assert(m);
 	be->language ='S'; /* expect SQL text first */
-	/* input string is copied to the SQL structure for parsing */
-	/*
-	scanner_reset(&m->scanner, _strdup(c->nxt));
-	*/
 
 	m->type = Q_PARSE;
 
@@ -437,7 +445,37 @@ str SQLparser(Client c) {
 	if (explainPerformance())
 		T0 = GDKusec();
 
-	pstatus = m->status;
+	oldmode = m->scanner.mode;
+	if (be->language == 's') {
+		be->language = 'S';
+		m->scanner.mode = LINE_1;
+	}
+	if (be->language != 'S' && be->language != 'X') {
+        return throwMessage("SQLparser", "Unrecognized language prefix\n");
+	}
+	if (be->language == 'X') {
+		int n, id, off, len;
+
+		n = sscanf(in->buf+in->pos, "export %d %d %d", &id, &off, &len);
+		if (n == 2 || n == 3) {
+			mvc_export_table(m, out, id, off, n == 3 ? len : m->reply_size);
+			in->pos = in->len; /* HACK: should use parsed lenght */
+			return NULL;
+		}
+		if (sscanf(in->buf+in->pos, "close %d", &id) == 1) {
+			res_table *t = res_tables_find(m->results, id);
+			if (t) m->results = res_tables_remove( m->results, t);
+			in->pos = in->len; /* HACK: should use parsed lenght */
+			return NULL;
+		}
+        return throwMessage("SQLparser", "Unrecognized X command\n");
+	}
+
+	if (m->trans) 
+		pstatus = m->status;
+
+	m->mode = m_normal;
+
 	if ((err = sqlparse(m)) ||
         /* Only forget old errors on transaction boundaries */
        	(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
@@ -526,6 +564,7 @@ query block.
 		}
 	}
 finalize:
+	m->scanner.mode = oldmode;
 	if( explainPlan()){
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	} 
@@ -535,7 +574,7 @@ finalize:
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	}
 #endif
-	stream_flush(c->fdout);
+	//TOBE removed stream_flush(c->fdout);
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
@@ -559,7 +598,6 @@ str SQLengine(Client c) {
 #endif
 	T0= GDKusec();
 	c->glb= 0;
-	be->language = 'D'; /* perhaps we need debugger commands */
 	msg= MALengine(c);
 @-
 Any error encountered during execution should block further processing

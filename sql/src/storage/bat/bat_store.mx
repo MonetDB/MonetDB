@@ -257,6 +257,13 @@ void kc_destroy(sql_kc * kc)
 
 void key_destroy(sql_key * k)
 {
+	sql_ukey *uk;
+
+	if (k->type == ukey || k->type == pkey){
+		uk = (sql_ukey*)k;
+		if (uk->keys)
+			list_destroy(uk->keys);
+	}
 	base_destroy( &k->base );
 	list_destroy(k->columns);
 	_DELETE(k);
@@ -728,6 +735,7 @@ static sql_type *load_type(sql_trans *tr, sql_module *m, BAT * types, BUN j)
 	BAT *type_digits = sys_bat(tr->bm, "types_digits");
 	BAT *type_scale = sys_bat(tr->bm, "types_scale");
 	BAT *type_radix = sys_bat(tr->bm, "types_radix");
+	BAT *type_bits = sys_bat(tr->bm, "types_bits");
 
 	(void)m;
 	base_init( &t->base, *(sqlid*) bun_find(type_id, lid),
@@ -736,6 +744,7 @@ static sql_type *load_type(sql_trans *tr, sql_module *m, BAT * types, BUN j)
 	t->digits = *(int*)bun_find(type_digits, lid);
 	t->scale = *(int*)bun_find(type_scale, lid);
 	t->radix = *(int*)bun_find(type_radix, lid);
+	t->bits = *(int*)bun_find(type_bits, lid);
 	t->localtype = ATOMindex(t->base.name);
 
 	bat_destroy(type_id);
@@ -744,6 +753,7 @@ static sql_type *load_type(sql_trans *tr, sql_module *m, BAT * types, BUN j)
 	bat_destroy(type_digits);
 	bat_destroy(type_scale);
 	bat_destroy(type_radix);
+	bat_destroy(type_bits);
 	return t;
 }
 
@@ -1143,6 +1153,7 @@ static void bs_init_type( struct bm *bm )
 	BAT *type_digits = mvc_bat(bm, "types_digits", TYPE_int);
 	BAT *type_scale = mvc_bat(bm, "types_scale", TYPE_int);
 	BAT *type_radix = mvc_bat(bm, "types_radix", TYPE_int);
+	BAT *type_bits = mvc_bat(bm, "types_bits", TYPE_int);
 	BAT *type_module_id = mvc_bat(bm, "types_module_id", TYPE_int);
 	BAT *type_systemname = mvc_bat(bm, "types_systemname", TYPE_str);
 	BAT *U_type_id = mvc_bat(bm, "U_types_id", TYPE_int);
@@ -1150,6 +1161,7 @@ static void bs_init_type( struct bm *bm )
 	BAT *U_type_digits = mvc_bat(bm, "U_types_digits", TYPE_int);
 	BAT *U_type_scale = mvc_bat(bm, "U_types_scale", TYPE_int);
 	BAT *U_type_radix = mvc_bat(bm, "U_types_radix", TYPE_int);
+	BAT *U_type_bits = mvc_bat(bm, "U_types_bits", TYPE_int);
 	BAT *U_type_module_id = mvc_bat(bm, "U_types_module_id", TYPE_int);
 	BAT *U_type_systemname = mvc_bat(bm, "U_types_systemname", TYPE_str);
 	BAT *D_type = mvc_bat(bm, "D_types", TYPE_oid);
@@ -1158,12 +1170,14 @@ static void bs_init_type( struct bm *bm )
 		oid nil = oid_nil;
 		sql_type *t = n->data;
 		int radix = t->radix;
+		int bits = t->bits;
 
 		BUNins(type_id, &nil, &t->base.id);
 		BUNins(type_sqlname, &nil, t->sqlname);
 		BUNins(type_digits, &nil, &t->digits);
 		BUNins(type_scale, &nil, &t->scale);
 		BUNins(type_radix, &nil, &radix);
+		BUNins(type_bits, &nil, &bits);
 		BUNins(type_module_id, &nil, &zero);
 		BUNins(type_systemname, &nil, t->base.name);
 	}
@@ -1173,6 +1187,7 @@ static void bs_init_type( struct bm *bm )
 	bat_destroy(type_digits);
 	bat_destroy(type_scale);
 	bat_destroy(type_radix);
+	bat_destroy(type_bits);
 	bat_destroy(type_module_id);
 	bat_destroy(type_systemname);
 	bat_destroy(U_type_id);
@@ -1180,6 +1195,7 @@ static void bs_init_type( struct bm *bm )
 	bat_destroy(U_type_digits);
 	bat_destroy(U_type_scale);
 	bat_destroy(U_type_radix);
+	bat_destroy(U_type_bits);
 	bat_destroy(U_type_module_id);
 	bat_destroy(U_type_systemname);
 	bat_destroy(D_type);
@@ -1417,6 +1433,7 @@ int store_init( int debug, char *logdir, char *dbname, backend_stack stk )
 		bootstrap_create_column(tr, t, "digits", "int", 9);
 		bootstrap_create_column(tr, t, "scale", "int", 9);
 		bootstrap_create_column(tr, t, "radix", "int", 9);
+		bootstrap_create_column(tr, t, "bits", "int", 9);
 		bootstrap_create_column(tr, t, "module_id", "int", 9);
 
 		if (sql_trans_commit(tr) != SQL_OK)
@@ -1798,13 +1815,13 @@ rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts,
 			}
 		}
 		/* add the new bases */
-		if (fd) {
+		if (fd && rollforward_creates) {
 			for (n = fs->nelm; ok == SQL_OK && n; n = n->next) {
 				sql_base *fb = n->data;
 				sql_base *tb = fd(tr, TR_NEW, fb, b);
 	
 				/* conditional add the new bases */
-				if (tb && rollforward_creates) {
+				if (tb) {
 				     sql_base *r = rollforward_creates(tr, tb);
 				     if (r)
 				     	cs_add( ts, r, TR_NEW );

@@ -22,7 +22,8 @@ lib__sql_server = {
 	SOURCES = \
 		sql_server.mx \
 		sql_session.mx \
-		sql_gencode.mx 
+		sql_gencode.mx \
+		sql_result.mx
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra -l_str -l_monettime
 	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONETDB_LIBS)
 }

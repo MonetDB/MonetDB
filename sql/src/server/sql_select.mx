@@ -2782,7 +2782,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 			list_append(rl, foundsubset);
 		}
 	}
-	/* the inner query should output a table where the first bat
+	/* the inner query should output a table where the first column
 	 * contains the queried column values. 
 	 * If variables from the outer query are correlated 
 	 * the oids from the base tables of these variables are returned

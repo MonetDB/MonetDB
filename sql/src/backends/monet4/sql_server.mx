@@ -223,6 +223,7 @@ extern int mvc_result_column( mvc *m, char *tn, char *name, char *typename, int 
 
 @c
 #include "sql_server.h"
+#include "sql_result.h"
 #include "sql_privileges.h"
 #include "sql_session.h"
 #include <sql_decimal.h>
@@ -773,7 +774,6 @@ module(bat_arith);
 module(pcre); # likeselect_pcre
 module(mapi); # mapi_listen 
 
-ascii_io_debug(1);
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);

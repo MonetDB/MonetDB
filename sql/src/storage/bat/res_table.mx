@@ -10,7 +10,10 @@ sqlbat_export res_table *res_table_create( sql_trans *tr, int res_id, int nr_col
 sqlbat_export res_col * res_col_create( sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale );
 
 sqlbat_export void res_table_destroy(res_table *t);
-sqlbat_export void res_tables_destroy(res_table *t);
+
+sqlbat_export res_table *res_tables_remove( res_table *results, res_table *t);
+sqlbat_export void res_tables_destroy(res_table *results);
+sqlbat_export res_table *res_tables_find( res_table *results, int res_id);
 
 #endif /* RES_TABLE_H */
 @c
@@ -78,6 +81,24 @@ void res_table_destroy(res_table *t)
 	_DELETE(t);
 }
 
+res_table *res_tables_remove( res_table *results, res_table *t)
+{
+	res_table *r = results;
+
+	if (r == t){
+		results = t->next;
+	} else {
+		for( ; r; r = r->next){
+			if (r->next == t){
+				r->next = t->next;
+				break;
+			}
+		}
+	}
+	res_table_destroy(t);
+	return results;
+}
+
 void res_tables_destroy(res_table *tab)
 {
 	if (tab){
@@ -87,4 +108,15 @@ void res_tables_destroy(res_table *tab)
 			res_table_destroy(t);
 		}
 	}
+}
+
+res_table *res_tables_find( res_table *results, int res_id)
+{
+	res_table *r = results;
+
+	for( ; r; r = r->next){
+		if (r->id == res_id)
+			return r;
+	}
+	return NULL;
 }

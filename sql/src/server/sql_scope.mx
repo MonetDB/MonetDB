@@ -318,7 +318,7 @@ tvar *scope_bind_table(scope * scp, char *name )
 	return NULL;
 }
 
-static cvar *bind_column(list * columns, char *cname)
+static cvar *scope_find_column(list * columns, char *cname)
 {
 	node *n = columns->h;
 
@@ -332,7 +332,7 @@ static cvar *bind_column(list * columns, char *cname)
 	return NULL;
 }
 
-static cvar *bind_table_column(list * columns, char *tname, char *cname)
+static cvar *find_table_column(list * columns, char *tname, char *cname)
 {
 	node *n = columns->h;
 
@@ -371,7 +371,7 @@ cvar *scope_bind_column(scope * scp, char *tname, char *cname )
 		node *n = scp->tables->h;
 		for (; n; n = n->next) {
 			tvar *tv = n->data;
-			if ( (cv = bind_column(tv->columns, cname)) != NULL) {
+			if ( (cv = scope_find_column(tv->columns, cname)) != NULL) {
 				if (ambigious_column(tv->columns, cv))
 					return NULL;
 				return cv;
@@ -382,11 +382,10 @@ cvar *scope_bind_column(scope * scp, char *tname, char *cname )
 		for (; n; n = n->next) {
 			tvar *tv = n->data;
 			if (tv->tname && strcmp(tv->tname, tname) == 0 &&
-			   (cv = bind_column(tv->columns, cname)) != NULL) {
+			   (cv = scope_find_column(tv->columns, cname)) != NULL) {
 				return cv;
 			} else if (!tv->tname &&
-			   (cv = bind_table_column(tv->columns, 
-						   tname, cname)) != NULL) {
+			   (cv = find_table_column(tv->columns, tname, cname)) != NULL) {
 				return cv;
 			}
 		}
@@ -403,14 +402,14 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 			node *n = scp->tables->h;
 			for (; n; n = n->next) {
 				tvar *tv = n->data;
-				if ( (cv = bind_column(tv->columns, cname)) != NULL) {
+				if ( (cv = scope_find_column(tv->columns, cname)) != NULL) {
 					if (ambigious_column(tv->columns, cv))
 						return NULL;
 					if (start != scp){
 						stmt *s = find_pivot(scp, tv->s);
 						/* add outer ref */
 						scope_add_table_(start, s, 1);
-						return stmt_column(stmt_join(stmt_dup(s),
+						return stmt_column(stmt_join(s,
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 					}
 					return stmt_dup(cv->s);
@@ -426,23 +425,22 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 		for (; n; n = n->next) {
 			tvar *tv = n->data;
 			if (tv->tname && strcmp(tv->tname, tname) == 0 &&
-			   (cv = bind_column(tv->columns, cname)) != NULL) {
+			   (cv = scope_find_column(tv->columns, cname)) != NULL) {
 				if (start != scp){
 					stmt *s = find_pivot(scp, tv->s);
 					/* add outer ref */
 					scope_add_table_(start, s, 1);
-					return stmt_column(stmt_join(stmt_dup(s),
+					return stmt_column(stmt_join(s,
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 				}
 				return stmt_dup(cv->s);
 			} else if (!tv->tname &&
-			   (cv = bind_table_column(tv->columns, 
-						   tname, cname)) != NULL) {
+			   (cv = find_table_column(tv->columns, tname, cname)) != NULL) {
 				if (start != scp){
 					stmt *s = find_pivot(scp, tv->s);
 					/* add outer ref */
 					scope_add_table_(start, s, 1);
-					return stmt_column(stmt_join(stmt_dup(s),
+					return stmt_column(stmt_join(s,
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 				}
 				return stmt_dup(cv->s);
