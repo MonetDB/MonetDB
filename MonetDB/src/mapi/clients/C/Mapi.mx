@@ -2197,8 +2197,7 @@ if(strncmp(@1,tag,4)==0){
 	}
 }
 @c
-	buf= (char *) malloc(strlen(mid->cache.rows[cr])+1);
-	strcpy(buf,mid->cache.rows[cr]);
+	buf= strdup(mid->cache.rows[cr]);
 	mapi_slice_row(mid);
 
 
@@ -2269,20 +2268,25 @@ of the unquoted part section.
 static
 void unquote(char *msg, char **start, char **next)
 {
-	char *p= msg, *s,*t;
+	/* A full line consists of comma-separated values, and the
+	   whole value is surrounded by [ and ].  Around the commas
+	   there may be arbitrary horizontal white space.  Strings and
+	   character values are surrounded by single or double quotes
+	   which may be escaped by backslashes.  Also, commas and
+	   white space may occur within strings. */
+	char *p= msg, *s;
 	char quote;
 
-	while(*p && isspace((int)(*p)))
+	/* first skip over leading white space */
+	while(*p && isspace((int) *p))
 		p++;
-	*start =p;
 	quote= *p;
 	if( quote=='\'' || quote=='"'){
 		/* get quoted string and remove trailing bracket first */
-		p++; *start=p;
-		t= strrchr(p,quote);
-		if(t) *t=0;
+		p++;
+		*start=p;
 		s= p;
-		while(*p && *p != quote){
+		while (*p && *p != quote) {
 			if(*p=='\\') {
 				p++;
 				switch(*p){
@@ -2290,24 +2294,43 @@ void unquote(char *msg, char **start, char **next)
 				case '0': case '1': case '2': case '3': case '4':
 				case '5': case '6': case '7': case '8': case '9':
 				*/
-				case 'n': *s= '\n'; break;
-				case 't': *s= '\t'; break;
-				case 'r': *s= '\r'; break;
-				case 'f': *s= '\f'; break;
-				case '\\': *s= '\\'; break;
-				default: *s =*p; break;
+				case 'n':
+					*s = '\n';
+					break;
+				case 't':
+					*s = '\t';
+					break;
+				case 'r':
+					*s = '\r';
+					break;
+				case 'f':
+					*s = '\f';
+					break;
+				default:
+					*s = *p;
+					break;
 				}
 				p++;
-			} else
-				*s++ = *p++;
+			} else {
+				*s = *p++;
+			}
+			s++;
 		}
-		*p = 0;
-	} else {
-		while( *p && (*p != ',' && *p != ']'))
+		*p++ = 0;	/* end-of-string quote */
+		while (*p && *p != ',' && *p != ']')
 			p++;
-		for( s= p-1; s > *start && *s == ' '; s--)
+	} else {
+		/* p points at first non-white space character */
+		*start = p;	/* record start of value */
+		/* find separator or terminator */
+		while (*p && *p != ',' && *p != ']')
+			p++;
+		/* search back over trailing white space */
+		for (s = p - 1; s > *start && isspace((int) *s); s--)
 			;
-		if( s>= *start && s< p-1)
+		if (!isspace((int) *s)) /* gone one too far */
+			s++;
+		if (s >= *start && s < p)
 			*s=0;
 		if( *p==0) {
 			*next = p;
@@ -2316,8 +2339,6 @@ void unquote(char *msg, char **start, char **next)
 		*p = 0;
 	}
 	p++;
-	while(*p && *p != '[' && *p != '\t' && *p != ' ')
-		p++;
 	*next = p;
 }
 @-
@@ -2336,18 +2357,32 @@ char *mapi_unquote(char *msg)
 
 char *mapi_quote(char *msg)
 {
-	int len= sizeof(msg)*3;
-	char *s= (char*) malloc(len);
-	char *t=s,*v= s+ len;
-	for(; *msg && t<v; t++){
+	char *s = malloc(strlen(msg) * 2 + 1); /* we absolutely don't need more than this (until we start producing octal escapes */
+	char *t = s;
+
+	while (*msg) {
 		switch(*msg){
-		case '\n': *t++= '\\'; *t= 'n'; break;
-		case '\t': *t++= '\\'; *t= 't'; break;
-		case '\?': *t++= '\\'; *t= PLACEHOLDER; break;
-		case '\\': *t++= '\\'; *t= '\\'; break;
+		case '\n':
+			*t++= '\\';
+			*t= 'n';
+			break;
+		case '\t':
+			*t++= '\\';
+			*t= 't';
+			break;
+		case PLACEHOLDER:
+			*t++= '\\';
+			*t = PLACEHOLDER;
+			break;
+		case '\\':
+			*t++= '\\';
+			*t= '\\';
+			break;
 		default:
 			*t= *msg++;
+			break;
 		}
+		t++;
 		/* also deal with binaries */
 	}
 	*t=0;
@@ -2516,6 +2551,16 @@ int mapi_slice_row(Mapi mid)
 			mapi_extend_anchor(mid);
 		}
 		mid->cache.anchors[cr][0] = p;
+		/* count fields by counting type columns in the header
+		   each type looks like "(str)\t", so only count \t if
+		   preceded by ). */
+		i = 0;
+		while ((p = strchr(p + 1, '\t')) != NULL) {
+			if (p[-1] == ')')
+				i++;
+		}
+		if (mid->fieldcnt < i)
+			mid->fieldcnt = i;
 		return 1;
 	}
 	p++;
