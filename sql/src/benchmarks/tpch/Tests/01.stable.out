@@ -15,41 +15,21 @@ quit();
 
 Over..
 
-# 19:36:41 >  
-# 19:36:41 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 01.sql
-# 19:36:41 >  
+# 13:18:40 >  
+# 13:18:40 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 01.sql
+# 13:18:40 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 select
-#     2: 0 	l_returnflag,
-#     3: 0 	l_linestatus,
-#     4: 0 	sum(l_quantity) as sum_qty,
-#     5: 0 	sum(l_extendedprice) as sum_base_price,
-#     6: 0 	sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
-#     7: 0 	sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
-#     8: 0 	avg(l_quantity) as avg_qty,
-#     9: 0 	avg(l_extendedprice) as avg_price,
-#    10: 0 	avg(l_discount) as avg_disc,
-#    11: 0 	count(*) as count_order
-#    12: 0 from
-#    13: 0 	lineitem
-#    14: 0 where
-#    15: 0 	l_shipdate <= date '1998-12-01' - interval '90' day (3)
-#    16: 0 group by
-#    17: 0 	l_returnflag,
-#    18: 0 	l_linestatus
-#    19: 0 order by
-#    20: 0 	l_returnflag,
-#    21: 1 	l_linestatus;
-#---------------------------------------------------------------------------------------------------------------------------------------
-#| l_returnflag | l_linestatus | sum_qty | sum_base_price | sum_disc_price | sum_charge | avg_qty | avg_price | avg_disc | count_order |
-#---------------------------------------------------------------------------------------------------------------------------------------
+# 3 # querytype
+# lineitem,	lineitem,	lineitem,	lineitem,	,	,	lineitem,	,	,	lineitem # table_name
+# l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
+# varchar,	varchar,	int,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
+# 1,	1,	0,	0,	0,	0,	0,	0,	0,	0 # length
+# 4,	,	,	,	,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	,	,	,	,	 # id
 [ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
 [ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]
 [ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.454987834549879,	35691.129209074395,	0.049931119564099929,	29181	]
 [ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.597168165346933,	35874.006532680178,	0.049827539927526504,	14902	]
-SQL  4 Rows affected
-#    22: 0 
 
 # 19:36:41 >  
 # 19:36:41 >  Done.

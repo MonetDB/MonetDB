@@ -15,51 +15,19 @@ quit();
 
 Over..
 
-# 19:37:13 >  
-# 19:37:13 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 18.sql
-# 19:37:13 >  
+# 13:19:53 >  
+# 13:19:53 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 18.sql
+# 13:19:53 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	c_name,
-#     5: 0 	c_custkey,
-#     6: 0 	o_orderkey,
-#     7: 0 	o_orderdate,
-#     8: 0 	o_totalprice,
-#     9: 0 	sum(l_quantity)
-#    10: 0 from
-#    11: 0 	customer,
-#    12: 0 	orders,
-#    13: 0 	lineitem
-#    14: 0 where
-#    15: 0 	o_orderkey in (
-#    16: 0 		select
-#    17: 0 			l_orderkey
-#    18: 0 		from
-#    19: 0 			lineitem
-#    20: 0 		group by
-#    21: 0 			l_orderkey having
-#    22: 0 				sum(l_quantity) > 300
-#    23: 0 	)
-#    24: 0 	and c_custkey = o_custkey
-#    25: 0 	and o_orderkey = l_orderkey
-#    26: 0 group by
-#    27: 0 	c_name,
-#    28: 0 	c_custkey,
-#    29: 0 	o_orderkey,
-#    30: 0 	o_orderdate,
-#    31: 0 	o_totalprice
-#    32: 0 order by
-#    33: 0 	o_totalprice desc,
-#    34: 1 	o_orderdate;
-#---------------------------------------------------------------------------------
-#| c_name | c_custkey | o_orderkey | o_orderdate | o_totalprice | sum_l_quantity |
-#---------------------------------------------------------------------------------
+# 3 # querytype
+# customer,	customer,	orders,	orders,	orders,	lineitem # table_name
+# c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	sum_l_quantity # name
+# varchar,	int,	int,	date,	decimal,	int # type
+# 18,	0,	0,	0,	0,	0 # length
+# 2,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	 # id
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303	]
-SQL  2 Rows affected
 
 # 19:37:13 >  
 # 19:37:13 >  Done.

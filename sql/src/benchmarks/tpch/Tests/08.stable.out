@@ -15,56 +15,19 @@ quit();
 
 Over..
 
-# 02:38:12 >  
-# 02:38:12 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=50271 --trace < 08.sql
-# 02:38:12 >  
+# 13:19:10 >  
+# 13:19:10 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 08.sql
+# 13:19:10 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	o_year,
-#     5: 0 	sum(case
-#     6: 0 		when nation = 'BRAZIL' then volume
-#     7: 0 		else 0
-#     8: 0 	end) / sum(volume) as mkt_share
-#     9: 0 from
-#    10: 0 	(
-#    11: 0 		select
-#    12: 0 			extract(year from o_orderdate) as o_year,
-#    13: 0 			l_extendedprice * (1 - l_discount) as volume,
-#    14: 0 			n2.n_name as nation
-#    15: 0 		from
-#    16: 0 			part,
-#    17: 0 			supplier,
-#    18: 0 			lineitem,
-#    19: 0 			orders,
-#    20: 0 			customer,
-#    21: 0 			nation n1,
-#    22: 0 			nation n2,
-#    23: 0 			region
-#    24: 0 		where
-#    25: 0 			p_partkey = l_partkey
-#    26: 0 			and s_suppkey = l_suppkey
-#    27: 0 			and l_orderkey = o_orderkey
-#    28: 0 			and o_custkey = c_custkey
-#    29: 0 			and c_nationkey = n1.n_nationkey
-#    30: 0 			and n1.n_regionkey = r_regionkey
-#    31: 0 			and r_name = 'AMERICA'
-#    32: 0 			and s_nationkey = n2.n_nationkey
-#    33: 0 			and o_orderdate between date '1995-01-01' and date '1996-12-31'
-#    34: 0 			and p_type = 'ECONOMY ANODIZED STEEL'
-#    35: 0 	) as all_nations
-#    36: 0 group by
-#    37: 0 	o_year
-#    38: 0 order by
-#    39: 1 	o_year;
-#----------------------
-#| o_year | mkt_share |
-#----------------------
+# 3 # querytype
+# ,	 # table_name
+# o_year,	mkt_share # name
+# int,	decimal # type
+# 0,	0 # length
+# 2,	 # tuplecount
+# 1,	 # id
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
-SQL  2 Rows affected
 
 # 02:38:12 >  
 # 02:38:12 >  Done.

@@ -15,28 +15,33 @@ quit();
 
 Over..
 
-# 22:08:10 >  
-# 22:08:10 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=56954 < check0.sql
-# 22:08:10 >  
+# 13:06:57 >  
+# 13:06:57 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < check0.sql
+# 13:06:57 >  
 
-SQL  connected to database mTests_src_benchmarks_arno using schema sys
-#     1: 1 select * from model;
-#---------------------------------------
-#| model_id | is_mutagen | lumo | logp |
-#---------------------------------------
-SQL  no Rows affected
-#     2: 1 select * from atom;
-#------------------------------------------------
-#| atom_id | model_id | element | type | charge |
-#------------------------------------------------
-SQL  no Rows affected
-#     3: 1 select * from bond;
-#---------------------------------------------
-#| bond_id | model_id | atom1 | atom2 | type |
-#---------------------------------------------
-SQL  no Rows affected
+# 3 # querytype
+# model,	model,	model,	model # table_name
+# model_id,	is_mutagen,	lumo,	logp # name
+# int,	char,	int,	int # type
+# 0,	0,	0,	0 # length
+# 0,	,	,	 # tuplecount
+# 1,	,	,	 # id
+# 3 # querytype
+# atom,	atom,	atom,	atom,	atom # table_name
+# atom_id,	model_id,	element,	type,	charge # name
+# varchar,	int,	char,	char,	int # type
+# 0,	0,	0,	0,	0 # length
+# 0,	,	,	,	 # tuplecount
+# 2,	,	,	,	 # id
+# 3 # querytype
+# bond,	bond,	bond,	bond,	bond # table_name
+# bond_id,	model_id,	atom1,	atom2,	type # name
+# int,	int,	varchar,	varchar,	char # type
+# 0,	0,	0,	0,	0 # length
+# 0,	,	,	,	 # tuplecount
+# 3,	,	,	,	 # id
 
-# 22:08:10 >  
-# 22:08:10 >  Done.
-# 22:08:10 >  
+# 13:06:57 >  
+# 13:06:57 >  Done.
+# 13:06:57 >  
 

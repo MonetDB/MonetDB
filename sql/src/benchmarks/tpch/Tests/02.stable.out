@@ -15,64 +15,21 @@ quit();
 
 Over..
 
-# 16:40:59 >  
-# 16:40:59 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace < 02.sql
-# 16:40:59 >  
+# 14:55:13 >  
+# 14:55:13 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=54590  < 02.sql
+# 14:55:13 >  
 
-#SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	s_acctbal,
-#     5: 0 	s_name,
-#     6: 0 	n_name,
-#     7: 0 	p_partkey,
-#     8: 0 	p_mfgr,
-#     9: 0 	s_address,
-#    10: 0 	s_phone,
-#    11: 0 	s_comment
-#    12: 0 from
-#    13: 0 	part,
-#    14: 0 	supplier,
-#    15: 0 	partsupp,
-#    16: 0 	nation,
-#    17: 0 	region
-#    18: 0 where
-#    19: 0 	p_partkey = ps_partkey
-#    20: 0 	and s_suppkey = ps_suppkey
-#    21: 0 	and p_size = 15
-#    22: 0 	and p_type like '%BRASS'
-#    23: 0 	and s_nationkey = n_nationkey
-#    24: 0 	and n_regionkey = r_regionkey
-#    25: 0 	and r_name = 'EUROPE'
-#    26: 0 	and ps_supplycost = (
-#    27: 0 		select
-#    28: 0 			min(ps_supplycost)
-#    29: 0 		from
-#    30: 0 			partsupp,
-#    31: 0 			supplier,
-#    32: 0 			nation,
-#    33: 0 			region
-#    34: 0 		where
-#    35: 0 			p_partkey = ps_partkey
-#    36: 0 			and s_suppkey = ps_suppkey
-#    37: 0 			and s_nationkey = n_nationkey
-#    38: 0 			and n_regionkey = r_regionkey
-#    39: 0 			and r_name = 'EUROPE'
-#    40: 0 	)
-#    41: 0 order by
-#    42: 0 	s_acctbal desc,
-#    43: 0 	n_name,
-#    44: 0 	s_name,
-#    45: 1 	p_partkey;
-#--------------------------------------------------------------------------------------
-#| s_acctbal | s_name | n_name | p_partkey | p_mfgr | s_address | s_phone | s_comment |
-#--------------------------------------------------------------------------------------
+# 3 # querytype
+# supplier,	supplier,	nation,	part,	part,	supplier,	supplier,	supplier # table_name
+# s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
+# decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
+# 0,	18,	7,	0,	14,	26,	15,	37 # length
+# 4,	,	,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	,	,	 # id
 [ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
 [ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
 [ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
 [ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
-SQL  4 Rows affected
 
 # 16:40:59 >  
 # 16:40:59 >  Done.

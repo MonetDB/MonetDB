@@ -17,147 +17,54 @@ quit();
 
 Over..
 
-# 12:47:38 >  
-# 12:47:38 >  Mtimeout -timeout 1380 ./01-22.SQL 01-22 
-# 12:47:38 >  
+# 16:23:02 >  
+# 16:23:02 >  Mtimeout -timeout 1380 ./01-22.SQL 01-22 
+# 16:23:02 >  
 
-# 19:36:41 >  
-# 19:36:41 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 01.sql
-# 19:36:41 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 select
-#     2: 0 	l_returnflag,
-#     3: 0 	l_linestatus,
-#     4: 0 	sum(l_quantity) as sum_qty,
-#     5: 0 	sum(l_extendedprice) as sum_base_price,
-#     6: 0 	sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
-#     7: 0 	sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
-#     8: 0 	avg(l_quantity) as avg_qty,
-#     9: 0 	avg(l_extendedprice) as avg_price,
-#    10: 0 	avg(l_discount) as avg_disc,
-#    11: 0 	count(*) as count_order
-#    12: 0 from
-#    13: 0 	lineitem
-#    14: 0 where
-#    15: 0 	l_shipdate <= date '1998-12-01' - interval '90' day (3)
-#    16: 0 group by
-#    17: 0 	l_returnflag,
-#    18: 0 	l_linestatus
-#    19: 0 order by
-#    20: 0 	l_returnflag,
-#    21: 1 	l_linestatus;
-#---------------------------------------------------------------------------------------------------------------------------------------
-#| l_returnflag | l_linestatus | sum_qty | sum_base_price | sum_disc_price | sum_charge | avg_qty | avg_price | avg_disc | count_order |
-#---------------------------------------------------------------------------------------------------------------------------------------
+# 16:23:02 >  
+# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:02 >  
+
+# 3 # querytype
+# lineitem,	lineitem,	lineitem,	lineitem,	,	,	lineitem,	,	,	lineitem # table_name
+# l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
+# varchar,	varchar,	int,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
+# 1,	1,	0,	0,	0,	0,	0,	0,	0,	0 # length
+# 4,	,	,	,	,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	,	,	,	,	 # id
 [ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
 [ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]
 [ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.454987834549879,	35691.129209074395,	0.049931119564099929,	29181	]
 [ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.597168165346933,	35874.006532680178,	0.049827539927526504,	14902	]
-SQL  4 Rows affected
-#    22: 0 
 
-# 19:36:41 >  
-# 19:36:41 >  Done.
-# 19:36:41 >  
+# 16:23:02 >  
+# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:02 >  
 
-
-# 16:40:59 >  
-# 16:40:59 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace < 02.sql
-# 16:40:59 >  
-
-#SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	s_acctbal,
-#     5: 0 	s_name,
-#     6: 0 	n_name,
-#     7: 0 	p_partkey,
-#     8: 0 	p_mfgr,
-#     9: 0 	s_address,
-#    10: 0 	s_phone,
-#    11: 0 	s_comment
-#    12: 0 from
-#    13: 0 	part,
-#    14: 0 	supplier,
-#    15: 0 	partsupp,
-#    16: 0 	nation,
-#    17: 0 	region
-#    18: 0 where
-#    19: 0 	p_partkey = ps_partkey
-#    20: 0 	and s_suppkey = ps_suppkey
-#    21: 0 	and p_size = 15
-#    22: 0 	and p_type like '%BRASS'
-#    23: 0 	and s_nationkey = n_nationkey
-#    24: 0 	and n_regionkey = r_regionkey
-#    25: 0 	and r_name = 'EUROPE'
-#    26: 0 	and ps_supplycost = (
-#    27: 0 		select
-#    28: 0 			min(ps_supplycost)
-#    29: 0 		from
-#    30: 0 			partsupp,
-#    31: 0 			supplier,
-#    32: 0 			nation,
-#    33: 0 			region
-#    34: 0 		where
-#    35: 0 			p_partkey = ps_partkey
-#    36: 0 			and s_suppkey = ps_suppkey
-#    37: 0 			and s_nationkey = n_nationkey
-#    38: 0 			and n_regionkey = r_regionkey
-#    39: 0 			and r_name = 'EUROPE'
-#    40: 0 	)
-#    41: 0 order by
-#    42: 0 	s_acctbal desc,
-#    43: 0 	n_name,
-#    44: 0 	s_name,
-#    45: 1 	p_partkey;
-#--------------------------------------------------------------------------------------
-#| s_acctbal | s_name | n_name | p_partkey | p_mfgr | s_address | s_phone | s_comment |
-#--------------------------------------------------------------------------------------
+# 3 # querytype
+# supplier,	supplier,	nation,	part,	part,	supplier,	supplier,	supplier # table_name
+# s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
+# decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
+# 0,	18,	7,	0,	14,	26,	15,	37 # length
+# 4,	,	,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	,	,	 # id
 [ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
 [ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
 [ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
 [ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
-SQL  4 Rows affected
 
-# 16:40:59 >  
-# 16:40:59 >  Done.
-# 16:40:59 >  
+# 16:23:02 >  
+# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:02 >  
 
-
-# 19:36:44 >  
-# 19:36:44 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 03.sql
-# 19:36:44 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	l_orderkey,
-#     5: 0 	sum(l_extendedprice * (1 - l_discount)) as revenue,
-#     6: 0 	o_orderdate,
-#     7: 0 	o_shippriority
-#     8: 0 from
-#     9: 0 	customer,
-#    10: 0 	orders,
-#    11: 0 	lineitem
-#    12: 0 where
-#    13: 0 	c_mktsegment = 'BUILDING'
-#    14: 0 	and c_custkey = o_custkey
-#    15: 0 	and l_orderkey = o_orderkey
-#    16: 0 	and o_orderdate < date '1995-03-15'
-#    17: 0 	and l_shipdate > date '1995-03-15'
-#    18: 0 group by
-#    19: 0 	l_orderkey,
-#    20: 0 	o_orderdate,
-#    21: 0 	o_shippriority
-#    22: 0 order by
-#    23: 0 	revenue desc,
-#    24: 1 	o_orderdate;
-#-------------------------------------------------------
-#| l_orderkey | revenue | o_orderdate | o_shippriority |
-#-------------------------------------------------------
+# 3 # querytype
+# lineitem,	,	orders,	orders # table_name
+# l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
+# int,	decimal,	date,	int # type
+# 0,	0,	0,	0 # length
+# 10,	,	,	 # tuplecount
+# 1,	,	,	 # id
 [ 47714,	267010.5894,	1995-03-11,	0	]
 [ 22276,	266351.5562,	1995-01-29,	0	]
 [ 32965,	263768.3414,	1995-02-25,	0	]
@@ -168,287 +75,95 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ 450,	205447.4232,	1995-03-05,	0	]
 [ 47204,	204478.5213,	1995-03-13,	0	]
 [ 9696,	201502.2188,	1995-02-20,	0	]
-SQL  10 Rows affected
 
-# 13:25:57 >  
-# 13:25:57 >  Done.
-# 13:25:57 >  
+# 16:23:02 >  
+# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:02 >  
 
-
-# 19:36:45 >  
-# 19:36:45 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 04.sql
-# 19:36:45 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	o_orderpriority,
-#     5: 0 	count(*) as order_count
-#     6: 0 from
-#     7: 0 	orders
-#     8: 0 where
-#     9: 0 	o_orderdate >= date '1993-07-01'
-#    10: 0 	and o_orderdate < date '1993-07-01' + interval '3' month
-#    11: 0 	and exists (
-#    12: 0 		select
-#    13: 0 			*
-#    14: 0 		from
-#    15: 0 			lineitem
-#    16: 0 		where
-#    17: 0 			l_orderkey = o_orderkey
-#    18: 0 			and l_commitdate < l_receiptdate
-#    19: 0 	)
-#    20: 0 group by
-#    21: 0 	o_orderpriority
-#    22: 0 order by
-#    23: 1 	o_orderpriority;
-#---------------------------------
-#| o_orderpriority | order_count |
-#---------------------------------
+# 3 # querytype
+# orders,	orders # table_name
+# o_orderpriority,	order_count # name
+# varchar,	int # type
+# 15,	0 # length
+# 5,	 # tuplecount
+# 1,	 # id
 [ "1-URGENT",	93	]
 [ "2-HIGH",	103	]
 [ "3-MEDIUM",	109	]
 [ "4-NOT SPECIFIED",	102	]
 [ "5-LOW",	128	]
-SQL  5 Rows affected
 
-# 19:36:46 >  
-# 19:36:46 >  Done.
-# 19:36:46 >  
+# 16:23:02 >  
+# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:02 >  
 
-
-# 19:36:47 >  
-# 19:36:47 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 05.sql
-# 19:36:47 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	n_name,
-#     5: 0 	sum(l_extendedprice * (1 - l_discount)) as revenue
-#     6: 0 from
-#     7: 0 	customer,
-#     8: 0 	orders,
-#     9: 0 	lineitem,
-#    10: 0 	supplier,
-#    11: 0 	nation,
-#    12: 0 	region
-#    13: 0 where
-#    14: 0 	c_custkey = o_custkey
-#    15: 0 	and l_orderkey = o_orderkey
-#    16: 0 	and l_suppkey = s_suppkey
-#    17: 0 	and c_nationkey = s_nationkey
-#    18: 0 	and s_nationkey = n_nationkey
-#    19: 0 	and n_regionkey = r_regionkey
-#    20: 0 	and r_name = 'ASIA'
-#    21: 0 	and o_orderdate >= date '1994-01-01'
-#    22: 0 	and o_orderdate < date '1994-01-01' + interval '1' year
-#    23: 0 group by
-#    24: 0 	n_name
-#    25: 0 order by
-#    26: 1 	revenue desc;
-#--------------------
-#| n_name | revenue |
-#--------------------
+# 3 # querytype
+# nation,	 # table_name
+# n_name,	revenue # name
+# varchar,	decimal # type
+# 9,	0 # length
+# 5,	 # tuplecount
+# 1,	 # id
 [ "VIETNAM",	1000926.6999	]
 [ "CHINA",	740210.7570	]
 [ "JAPAN",	660651.2425	]
 [ "INDONESIA",	566379.5276	]
 [ "INDIA",	422874.6844	]
-SQL  5 Rows affected
 
-# 19:36:47 >  
-# 19:36:47 >  Done.
-# 19:36:47 >  
+# 16:23:03 >  
+# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:03 >  
 
-
-# 20:04:52 >  
-# 20:04:52 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=54813 --trace < 06.sql
-# 20:04:52 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	sum(l_extendedprice * l_discount) as revenue
-#     5: 0 from
-#     6: 0 	lineitem
-#     7: 0 where
-#     8: 0 	l_shipdate >= date '1994-01-01'
-#     9: 0 	and l_shipdate < date '1994-01-01' + interval '1' year
-#    10: 0 	and l_discount between 0.05 and 0.07
-#    11: 1 	and l_quantity < 24;
-#-----------
-#| revenue |
-#-----------
+# 3 # querytype
+#  # table_name
+# revenue # name
+# decimal # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
 [ 1193053.2253	]
-SQL  1 Row affected
 
-# 20:04:53 >  
-# 20:04:53 >  Done.
-# 20:04:53 >  
+# 16:23:03 >  
+# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:03 >  
 
-
-# 02:38:09 >  
-# 02:38:09 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=50271 --trace < 07.sql
-# 02:38:09 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	supp_nation,
-#     5: 0 	cust_nation,
-#     6: 0 	l_year,
-#     7: 0 	sum(volume) as revenue
-#     8: 0 from
-#     9: 0 	(
-#    10: 0 		select
-#    11: 0 			n1.n_name as supp_nation,
-#    12: 0 			n2.n_name as cust_nation,
-#    13: 0 			extract(year from l_shipdate) as l_year,
-#    14: 0 			l_extendedprice * (1 - l_discount) as volume
-#    15: 0 		from
-#    16: 0 			supplier,
-#    17: 0 			lineitem,
-#    18: 0 			orders,
-#    19: 0 			customer,
-#    20: 0 			nation n1,
-#    21: 0 			nation n2
-#    22: 0 		where
-#    23: 0 			s_suppkey = l_suppkey
-#    24: 0 			and o_orderkey = l_orderkey
-#    25: 0 			and c_custkey = o_custkey
-#    26: 0 			and s_nationkey = n1.n_nationkey
-#    27: 0 			and c_nationkey = n2.n_nationkey
-#    28: 0 			and (
-#    29: 0 				(n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
-#    30: 0 				or (n1.n_name = 'GERMANY' and n2.n_name = 'FRANCE')
-#    31: 0 			)
-#    32: 0 			and l_shipdate between date '1995-01-01' and date '1996-12-31'
-#    33: 0 	) as shipping
-#    34: 0 group by
-#    35: 0 	supp_nation,
-#    36: 0 	cust_nation,
-#    37: 0 	l_year
-#    38: 0 order by
-#    39: 0 	supp_nation,
-#    40: 0 	cust_nation,
-#    41: 1 	l_year;
-#------------------------------------------------
-#| supp_nation | cust_nation | l_year | revenue |
-#------------------------------------------------
+# 3 # querytype
+# n1,	n2,	,	 # table_name
+# supp_nation,	cust_nation,	l_year,	revenue # name
+# varchar,	varchar,	int,	decimal # type
+# 7,	7,	0,	0 # length
+# 4,	,	,	 # tuplecount
+# 1,	,	,	 # id
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
 [ "GERMANY",	"FRANCE",	1996,	379095.8854	]
-SQL  4 Rows affected
 
-# 02:38:09 >  
-# 02:38:09 >  Done.
-# 02:38:09 >  
+# 16:23:03 >  
+# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:03 >  
 
-
-# 02:38:12 >  
-# 02:38:12 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=50271 --trace < 08.sql
-# 02:38:12 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	o_year,
-#     5: 0 	sum(case
-#     6: 0 		when nation = 'BRAZIL' then volume
-#     7: 0 		else 0
-#     8: 0 	end) / sum(volume) as mkt_share
-#     9: 0 from
-#    10: 0 	(
-#    11: 0 		select
-#    12: 0 			extract(year from o_orderdate) as o_year,
-#    13: 0 			l_extendedprice * (1 - l_discount) as volume,
-#    14: 0 			n2.n_name as nation
-#    15: 0 		from
-#    16: 0 			part,
-#    17: 0 			supplier,
-#    18: 0 			lineitem,
-#    19: 0 			orders,
-#    20: 0 			customer,
-#    21: 0 			nation n1,
-#    22: 0 			nation n2,
-#    23: 0 			region
-#    24: 0 		where
-#    25: 0 			p_partkey = l_partkey
-#    26: 0 			and s_suppkey = l_suppkey
-#    27: 0 			and l_orderkey = o_orderkey
-#    28: 0 			and o_custkey = c_custkey
-#    29: 0 			and c_nationkey = n1.n_nationkey
-#    30: 0 			and n1.n_regionkey = r_regionkey
-#    31: 0 			and r_name = 'AMERICA'
-#    32: 0 			and s_nationkey = n2.n_nationkey
-#    33: 0 			and o_orderdate between date '1995-01-01' and date '1996-12-31'
-#    34: 0 			and p_type = 'ECONOMY ANODIZED STEEL'
-#    35: 0 	) as all_nations
-#    36: 0 group by
-#    37: 0 	o_year
-#    38: 0 order by
-#    39: 1 	o_year;
-#----------------------
-#| o_year | mkt_share |
-#----------------------
+# 3 # querytype
+# ,	 # table_name
+# o_year,	mkt_share # name
+# int,	decimal # type
+# 0,	0 # length
+# 2,	 # tuplecount
+# 1,	 # id
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
-SQL  2 Rows affected
 
-# 02:38:12 >  
-# 02:38:12 >  Done.
-# 02:38:12 >  
+# 16:23:03 >  
+# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:03 >  
 
-
-# 02:38:14 >  
-# 02:38:14 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=50271 --trace < 09.sql
-# 02:38:14 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	nation,
-#     5: 0 	o_year,
-#     6: 0 	sum(amount) as sum_profit
-#     7: 0 from
-#     8: 0 	(
-#     9: 0 		select
-#    10: 0 			n_name as nation,
-#    11: 0 			extract(year from o_orderdate) as o_year,
-#    12: 0 			l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount
-#    13: 0 		from
-#    14: 0 			part,
-#    15: 0 			supplier,
-#    16: 0 			lineitem,
-#    17: 0 			partsupp,
-#    18: 0 			orders,
-#    19: 0 			nation
-#    20: 0 		where
-#    21: 0 			s_suppkey = l_suppkey
-#    22: 0 			and ps_suppkey = l_suppkey
-#    23: 0 			and ps_partkey = l_partkey
-#    24: 0 			and p_partkey = l_partkey
-#    25: 0 			and o_orderkey = l_orderkey
-#    26: 0 			and s_nationkey = n_nationkey
-#    27: 0 			and p_name like '%green%'
-#    28: 0 	) as profit
-#    29: 0 group by
-#    30: 0 	nation,
-#    31: 0 	o_year
-#    32: 0 order by
-#    33: 0 	nation,
-#    34: 1 	o_year desc;
-#--------------------------------
-#| nation | o_year | sum_profit |
-#--------------------------------
+# 3 # querytype
+# nation,	,	 # table_name
+# nation,	o_year,	sum_profit # name
+# varchar,	int,	decimal # type
+# 14,	0,	0 # length
+# 174,	,	 # tuplecount
+# 1,	,	 # id
 [ "ALGERIA",	1998,	386617.8283	]
 [ "ALGERIA",	1997,	401601.1258	]
 [ "ALGERIA",	1996,	156938.7971	]
@@ -623,54 +338,18 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ "VIETNAM",	1994,	1003275.5371	]
 [ "VIETNAM",	1993,	461389.0037	]
 [ "VIETNAM",	1992,	820665.7064	]
-SQL  174 Rows affected
 
-# 02:38:20 >  
-# 02:38:20 >  Done.
-# 02:38:20 >  
+# 16:23:03 >  
+# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:03 >  
 
-
-# 19:37:03 >  
-# 19:37:03 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 10.sql
-# 19:37:03 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	c_custkey,
-#     5: 0 	c_name,
-#     6: 0 	sum(l_extendedprice * (1 - l_discount)) as revenue,
-#     7: 0 	c_acctbal,
-#     8: 0 	n_name,
-#     9: 0 	c_address,
-#    10: 0 	c_phone,
-#    11: 0 	c_comment
-#    12: 0 from
-#    13: 0 	customer,
-#    14: 0 	orders,
-#    15: 0 	lineitem,
-#    16: 0 	nation
-#    17: 0 where
-#    18: 0 	c_custkey = o_custkey
-#    19: 0 	and l_orderkey = o_orderkey
-#    20: 0 	and o_orderdate >= date '1993-10-01'
-#    21: 0 	and o_orderdate < date '1993-10-01' + interval '3' month
-#    22: 0 	and l_returnflag = 'R'
-#    23: 0 	and c_nationkey = n_nationkey
-#    24: 0 group by
-#    25: 0 	c_custkey,
-#    26: 0 	c_name,
-#    27: 0 	c_acctbal,
-#    28: 0 	c_phone,
-#    29: 0 	n_name,
-#    30: 0 	c_address,
-#    31: 0 	c_comment
-#    32: 0 order by
-#    33: 1 	revenue desc;
-#---------------------------------------------------------------------------------------
-#| c_custkey | c_name | revenue | c_acctbal | n_name | c_address | c_phone | c_comment |
-#---------------------------------------------------------------------------------------
+# 3 # querytype
+# customer,	customer,	,	customer,	nation,	customer,	customer,	customer # table_name
+# c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
+# int,	varchar,	decimal,	decimal,	varchar,	varchar,	varchar,	varchar # type
+# 0,	18,	0,	0,	14,	40,	15,	116 # length
+# 20,	,	,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	,	,	 # id
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"regular ideas promise against the furiously final deposits. f"	]
 [ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"fluffily final grouches doubt. bold dependencies dazzle caref"	]
 [ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"furiously ironic asymptotes are slyly ironic, ironic requests. bold,"	]
@@ -691,50 +370,18 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ 1030,	"Customer#000001030",	282557.3566,	6359.27,	"INDIA",	"Xpt1BiB5h9o",	"18-759-877-1870",	"carefully express asymptotes are after the blithe deposits. regular pl"	]
 [ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"ironic, unusual dependencies sleep across the quickly reg"	]
 [ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"regular, regular accounts boost special instructions. bold, final accounts at the regular pa"	]
-SQL  20 Rows affected
 
-# 19:37:03 >  
-# 19:37:03 >  Done.
-# 19:37:03 >  
+# 16:23:03 >  
+# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:03 >  
 
-
-# 19:37:04 >  
-# 19:37:04 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 11.sql
-# 19:37:04 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	ps_partkey,
-#     5: 0 	sum(ps_supplycost * ps_availqty) as value
-#     6: 0 from
-#     7: 0 	partsupp,
-#     8: 0 	supplier,
-#     9: 0 	nation
-#    10: 0 where
-#    11: 0 	ps_suppkey = s_suppkey
-#    12: 0 	and s_nationkey = n_nationkey
-#    13: 0 	and n_name = 'GERMANY'
-#    14: 0 group by
-#    15: 0 	ps_partkey having
-#    16: 0 		sum(ps_supplycost * ps_availqty) > (
-#    17: 0 			select
-#    18: 0 				sum(ps_supplycost * ps_availqty) * 0.0001000000
-#    19: 0 			from
-#    20: 0 				partsupp,
-#    21: 0 				supplier,
-#    22: 0 				nation
-#    23: 0 			where
-#    24: 0 				ps_suppkey = s_suppkey
-#    25: 0 				and s_nationkey = n_nationkey
-#    26: 0 				and n_name = 'GERMANY'
-#    27: 0 		)
-#    28: 0 order by
-#    29: 1 	value desc;
-#----------------------
-#| ps_partkey | value |
-#----------------------
+# 3 # querytype
+# partsupp,	 # table_name
+# ps_partkey,	value # name
+# int,	decimal # type
+# 0,	0 # length
+# 359,	 # tuplecount
+# 1,	 # id
 [ 1376,	13271249.89	]
 [ 788,	9498648.06	]
 [ 1071,	9388264.40	]
@@ -1094,90 +741,32 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ 332,	112181.30	]
 [ 1596,	110565.00	]
 [ 295,	97604.25	]
-SQL  359 Rows affected
 
-# 19:37:04 >  
-# 19:37:04 >  Done.
-# 19:37:04 >  
+# 16:23:03 >  
+# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:03 >  
 
-
-# 19:37:06 >  
-# 19:37:06 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 12.sql
-# 19:37:06 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	l_shipmode,
-#     5: 0 	sum(case
-#     6: 0 		when o_orderpriority = '1-URGENT'
-#     7: 0 			or o_orderpriority = '2-HIGH'
-#     8: 0 			then 1
-#     9: 0 		else 0
-#    10: 0 	end) as high_line_count,
-#    11: 0 	sum(case
-#    12: 0 		when o_orderpriority <> '1-URGENT'
-#    13: 0 			and o_orderpriority <> '2-HIGH'
-#    14: 0 			then 1
-#    15: 0 		else 0
-#    16: 0 	end) as low_line_count
-#    17: 0 from
-#    18: 0 	orders,
-#    19: 0 	lineitem
-#    20: 0 where
-#    21: 0 	o_orderkey = l_orderkey
-#    22: 0 	and l_shipmode in ('MAIL', 'SHIP')
-#    23: 0 	and l_commitdate < l_receiptdate
-#    24: 0 	and l_shipdate < l_commitdate
-#    25: 0 	and l_receiptdate >= date '1994-01-01'
-#    26: 0 	and l_receiptdate < date '1994-01-01' + interval '1' year
-#    27: 0 group by
-#    28: 0 	l_shipmode
-#    29: 0 order by
-#    30: 1 	l_shipmode;
-#-------------------------------------------------
-#| l_shipmode | high_line_count | low_line_count |
-#-------------------------------------------------
+# 3 # querytype
+# lineitem,	,	 # table_name
+# l_shipmode,	high_line_count,	low_line_count # name
+# varchar,	int,	int # type
+# 4,	0,	0 # length
+# 2,	,	 # tuplecount
+# 1,	,	 # id
 [ "MAIL",	64,	86	]
 [ "SHIP",	61,	96	]
-SQL  2 Rows affected
 
-# 19:37:06 >  
-# 19:37:06 >  Done.
-# 19:37:06 >  
+# 16:23:04 >  
+# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:04 >  
 
-
-# 19:37:07 >  
-# 19:37:07 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 13.sql
-# 19:37:07 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	c_count,
-#     5: 0 	count(*) as custdist
-#     6: 0 from
-#     7: 0 	(
-#     8: 0 		select
-#     9: 0 			c_custkey,
-#    10: 0 			count(o_orderkey)
-#    11: 0 		from
-#    12: 0 			customer left outer join orders on
-#    13: 0 				c_custkey = o_custkey
-#    14: 0 				and o_comment not like '%special%requests%'
-#    15: 0 		group by
-#    16: 0 			c_custkey
-#    17: 0 	) as c_orders (c_custkey, c_count)
-#    18: 0 group by
-#    19: 0 	c_count
-#    20: 0 order by
-#    21: 0 	custdist desc,
-#    22: 1 	c_count desc;
-#-------------------------------
-#| count_o_orderkey | custdist |
-#-------------------------------
+# 3 # querytype
+# c_orders,	c_orders # table_name
+# c_count,	custdist # name
+# int,	int # type
+# 0,	0 # length
+# 32,	 # tuplecount
+# 1,	 # id
 [ 0,	500	]
 [ 11,	70	]
 [ 10,	70	]
@@ -1210,135 +799,46 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ 3,	2	]
 [ 2,	2	]
 [ 30,	1	]
-SQL  32 Rows affected
 
-# 19:37:07 >  
-# 19:37:07 >  Done.
-# 19:37:07 >  
+# 16:23:04 >  
+# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:04 >  
 
-
-# 19:37:08 >  
-# 19:37:08 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 14.sql
-# 19:37:08 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	100.00 * sum(case
-#     5: 0 		when p_type like 'PROMO%'
-#     6: 0 			then l_extendedprice * (1 - l_discount)
-#     7: 0 		else 0
-#     8: 0 	end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
-#     9: 0 from
-#    10: 0 	lineitem,
-#    11: 0 	part
-#    12: 0 where
-#    13: 0 	l_partkey = p_partkey
-#    14: 0 	and l_shipdate >= date '1995-09-01'
-#    15: 1 	and l_shipdate < date '1995-09-01' + interval '1' month;
-#-----------------
-#| promo_revenue |
-#-----------------
+# 3 # querytype
+#  # table_name
+# promo_revenue # name
+# decimal # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
 [ 15.4865	]
-SQL  1 Row affected
 
-# 19:37:09 >  
-# 19:37:09 >  Done.
-# 19:37:09 >  
+# 16:23:04 >  
+# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:04 >  
 
-
-# 19:37:10 >  
-# 19:37:10 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 15.sql
-# 19:37:10 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 create view revenue0 (supplier_no, total_revenue) as
-#     3: 0 	select
-#     4: 0 		l_suppkey,
-#     5: 0 		sum(l_extendedprice * (1 - l_discount))
-#     6: 0 	from
-#     7: 0 		lineitem
-#     8: 0 	where
-#     9: 0 		l_shipdate >= date '1996-01-01'
-#    10: 0 		and l_shipdate < date '1996-01-01' + interval '3' month
-#    11: 0 	group by
-#    12: 1 		l_suppkey;
-#    13: 0 
-#    14: 0 
-#    15: 0 select
-#    16: 0 	s_suppkey,
-#    17: 0 	s_name,
-#    18: 0 	s_address,
-#    19: 0 	s_phone,
-#    20: 0 	total_revenue
-#    21: 0 from
-#    22: 0 	supplier,
-#    23: 0 	revenue0
-#    24: 0 where
-#    25: 0 	s_suppkey = supplier_no
-#    26: 0 	and total_revenue = (
-#    27: 0 		select
-#    28: 0 			max(total_revenue)
-#    29: 0 		from
-#    30: 0 			revenue0
-#    31: 0 	)
-#    32: 0 order by
-#    33: 1 	s_suppkey;
-#------------------------------------------------------------
-#| s_suppkey | s_name | s_address | s_phone | total_revenue |
-#------------------------------------------------------------
+# 6 # querytype
+# 3 # querytype
+# supplier,	supplier,	supplier,	supplier,	revenue0 # table_name
+# s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
+# int,	varchar,	varchar,	varchar,	decimal # type
+# 0,	18,	36,	15,	0 # length
+# 1,	,	,	,	 # tuplecount
+# 1,	,	,	,	 # id
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
-SQL  1 Row affected
-#    34: 0 
-#    35: 1 drop view revenue0;
+# 6 # querytype
 
-# 19:37:10 >  
-# 19:37:10 >  Done.
-# 19:37:10 >  
+# 16:23:04 >  
+# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:04 >  
 
-
-# 19:37:11 >  
-# 19:37:11 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 16.sql
-# 19:37:11 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	p_brand,
-#     5: 0 	p_type,
-#     6: 0 	p_size,
-#     7: 0 	count(distinct ps_suppkey) as supplier_cnt
-#     8: 0 from
-#     9: 0 	partsupp,
-#    10: 0 	part
-#    11: 0 where
-#    12: 0 	p_partkey = ps_partkey
-#    13: 0 	and p_brand <> 'Brand#45'
-#    14: 0 	and p_type not like 'MEDIUM POLISHED%'
-#    15: 0 	and p_size in (49, 14, 23, 45, 19, 3, 36, 9)
-#    16: 0 	and ps_suppkey not in (
-#    17: 0 		select
-#    18: 0 			s_suppkey
-#    19: 0 		from
-#    20: 0 			supplier
-#    21: 0 		where
-#    22: 0 			s_comment like '%Customer%Complaints%'
-#    23: 0 	)
-#    24: 0 group by
-#    25: 0 	p_brand,
-#    26: 0 	p_type,
-#    27: 0 	p_size
-#    28: 0 order by
-#    29: 0 	supplier_cnt desc,
-#    30: 0 	p_brand,
-#    31: 0 	p_type,
-#    32: 1 	p_size;
-#--------------------------------------------
-#| p_brand | p_type | p_size | supplier_cnt |
-#--------------------------------------------
+# 3 # querytype
+# part,	part,	part,	partsupp # table_name
+# p_brand,	p_type,	p_size,	supplier_cnt # name
+# varchar,	varchar,	int,	int # type
+# 8,	25,	0,	0 # length
+# 296,	,	,	 # tuplecount
+# 1,	,	,	 # id
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
 [ "Brand#35",	"SMALL POLISHED COPPER",	14,	8	]
 [ "Brand#22",	"LARGE BURNISHED TIN",	36,	6	]
@@ -1635,146 +1135,46 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ "Brand#55",	"STANDARD ANODIZED BRASS",	36,	4	]
 [ "Brand#55",	"STANDARD BRUSHED COPPER",	3,	4	]
 [ "Brand#55",	"STANDARD BRUSHED STEEL",	19,	4	]
-SQL  296 Rows affected
 
-# 19:37:11 >  
-# 19:37:11 >  Done.
-# 19:37:11 >  
+# 16:23:04 >  
+# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:04 >  
 
-
-# 16:41:36 >  
-# 16:41:36 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace < 17.sql
-# 16:41:36 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	sum(l_extendedprice) / 7.0 as avg_yearly
-#     5: 0 from
-#     6: 0 	lineitem,
-#     7: 0 	part
-#     8: 0 where
-#     9: 0 	p_partkey = l_partkey
-#    10: 0 	and p_brand = 'Brand#23'
-#    11: 0 	and p_container = 'MED BOX'
-#    12: 0 	and l_quantity < (
-#    13: 0 		select
-#    14: 0 			0.2 * avg(l_quantity)
-#    15: 0 		from
-#    16: 0 			lineitem
-#    17: 0 		where
-#    18: 0 			l_partkey = p_partkey
-#    19: 1 	);
-#--------------
-#| avg_yearly |
-#--------------
+# 3 # querytype
+#  # table_name
+# avg_yearly # name
+# decimal # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
 [ 0.00	]
-SQL  1 Row affected
 
-# 16:41:37 >  
-# 16:41:37 >  Done.
-# 16:41:37 >  
+# 16:23:04 >  
+# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:04 >  
 
-
-# 19:37:13 >  
-# 19:37:13 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 18.sql
-# 19:37:13 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	c_name,
-#     5: 0 	c_custkey,
-#     6: 0 	o_orderkey,
-#     7: 0 	o_orderdate,
-#     8: 0 	o_totalprice,
-#     9: 0 	sum(l_quantity)
-#    10: 0 from
-#    11: 0 	customer,
-#    12: 0 	orders,
-#    13: 0 	lineitem
-#    14: 0 where
-#    15: 0 	o_orderkey in (
-#    16: 0 		select
-#    17: 0 			l_orderkey
-#    18: 0 		from
-#    19: 0 			lineitem
-#    20: 0 		group by
-#    21: 0 			l_orderkey having
-#    22: 0 				sum(l_quantity) > 300
-#    23: 0 	)
-#    24: 0 	and c_custkey = o_custkey
-#    25: 0 	and o_orderkey = l_orderkey
-#    26: 0 group by
-#    27: 0 	c_name,
-#    28: 0 	c_custkey,
-#    29: 0 	o_orderkey,
-#    30: 0 	o_orderdate,
-#    31: 0 	o_totalprice
-#    32: 0 order by
-#    33: 0 	o_totalprice desc,
-#    34: 1 	o_orderdate;
-#---------------------------------------------------------------------------------
-#| c_name | c_custkey | o_orderkey | o_orderdate | o_totalprice | sum_l_quantity |
-#---------------------------------------------------------------------------------
+# 3 # querytype
+# customer,	customer,	orders,	orders,	orders,	lineitem # table_name
+# c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	sum_l_quantity # name
+# varchar,	int,	int,	date,	decimal,	int # type
+# 18,	0,	0,	0,	0,	0 # length
+# 2,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	 # id
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303	]
-SQL  2 Rows affected
 
-# 19:37:13 >  
-# 19:37:13 >  Done.
-# 19:37:13 >  
+# 16:23:04 >  
+# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:04 >  
 
-
-# 19:37:14 >  
-# 19:37:14 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 19.sql
-# 19:37:14 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	sum(l_extendedprice* (1 - l_discount)) as revenue
-#     5: 0 from
-#     6: 0 	lineitem,
-#     7: 0 	part
-#     8: 0 where
-#     9: 0 	(
-#    10: 0 		p_partkey = l_partkey
-#    11: 0 		and p_brand = 'Brand#12'
-#    12: 0 		and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
-#    13: 0 		and l_quantity >= 1 and l_quantity <= 1 + 10
-#    14: 0 		and p_size between 1 and 5
-#    15: 0 		and l_shipmode in ('AIR', 'AIR REG')
-#    16: 0 		and l_shipinstruct = 'DELIVER IN PERSON'
-#    17: 0 	)
-#    18: 0 	or
-#    19: 0 	(
-#    20: 0 		p_partkey = l_partkey
-#    21: 0 		and p_brand = 'Brand#23'
-#    22: 0 		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
-#    23: 0 		and l_quantity >= 10 and l_quantity <= 10 + 10
-#    24: 0 		and p_size between 1 and 10
-#    25: 0 		and l_shipmode in ('AIR', 'AIR REG')
-#    26: 0 		and l_shipinstruct = 'DELIVER IN PERSON'
-#    27: 0 	)
-#    28: 0 	or
-#    29: 0 	(
-#    30: 0 		p_partkey = l_partkey
-#    31: 0 		and p_brand = 'Brand#34'
-#    32: 0 		and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
-#    33: 0 		and l_quantity >= 20 and l_quantity <= 20 + 10
-#    34: 0 		and p_size between 1 and 15
-#    35: 0 		and l_shipmode in ('AIR', 'AIR REG')
-#    36: 0 		and l_shipinstruct = 'DELIVER IN PERSON'
-#    37: 1 	);
-#-----------
-#| revenue |
-#-----------
+# 3 # querytype
+#  # table_name
+# revenue # name
+# decimal # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
 [ 22923.0280	]
-SQL  1 Row affected
 
 # 19:37:14 >  
 # 19:37:14 >  Done.
@@ -1828,117 +1228,31 @@ SQL  1 Row affected
 #| s_name | s_address |
 #----------------------
 [ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
-SQL  1 Row affected
 
-# 16:41:41 >  
-# 16:41:41 >  Done.
-# 16:41:41 >  
+# 16:23:05 >  
+# 16:23:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:05 >  
 
-
-# 16:41:43 >  
-# 16:41:43 >  Mtimeout -timeout 600 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace < 21.sql
-# 16:41:43 >  
-
-#SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	s_name,
-#     5: 0 	count(*) as numwait
-#     6: 0 from
-#     7: 0 	supplier,
-#     8: 0 	lineitem l1,
-#     9: 0 	orders,
-#    10: 0 	nation
-#    11: 0 where
-#    12: 0 	s_suppkey = l1.l_suppkey
-#    13: 0 	and o_orderkey = l1.l_orderkey
-#    14: 0 	and o_orderstatus = 'F'
-#    15: 0 	and l1.l_receiptdate > l1.l_commitdate
-#    16: 0 	and exists (
-#    17: 0 		select
-#    18: 0 			*
-#    19: 0 		from
-#    20: 0 			lineitem l2
-#    21: 0 		where
-#    22: 0 			l2.l_orderkey = l1.l_orderkey
-#    23: 0 			and l2.l_suppkey <> l1.l_suppkey
-#    24: 0 	)
-#    25: 0 	and not exists (
-#    26: 0 		select
-#    27: 0 			*
-#    28: 0 		from
-#    29: 0 			lineitem l3
-#    30: 0 		where
-#    31: 0 			l3.l_orderkey = l1.l_orderkey
-#    32: 0 			and l3.l_suppkey <> l1.l_suppkey
-#    33: 0 			and l3.l_receiptdate > l3.l_commitdate
-#    34: 0 	)
-#    35: 0 	and s_nationkey = n_nationkey
-#    36: 0 	and n_name = 'SAUDI ARABIA'
-#    37: 0 group by
-#    38: 0 	s_name
-#    39: 0 order by
-#    40: 0 	numwait desc,
-#    41: 1 	s_name;
-#--------------------
-#| s_name | numwait |
-#--------------------
+# 3 # querytype
+# supplier,	supplier # table_name
+# s_name,	numwait # name
+# varchar,	int # type
+# 18,	0 # length
+# 1,	 # tuplecount
+# 1,	 # id
 [ "Supplier#000000074",	9	]
-SQL  1 Row affected
 
-# 16:41:43 >  
-# 16:41:43 >  Done.
-# 16:41:43 >  
+# 16:23:05 >  
+# 16:23:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
+# 16:23:05 >  
 
-
-# 17:11:39 >  
-# 17:11:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=54936 --trace < 22.sql
-# 17:11:39 >  
-
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	cntrycode,
-#     5: 0 	count(*) as numcust,
-#     6: 0 	sum(c_acctbal) as totacctbal
-#     7: 0 from
-#     8: 0 	(
-#     9: 0 		select
-#    10: 0 			substring(c_phone from 1 for 2) as cntrycode,
-#    11: 0 			c_acctbal
-#    12: 0 		from
-#    13: 0 			customer
-#    14: 0 		where
-#    15: 0 			substring(c_phone from 1 for 2) in
-#    16: 0 				('13', '31', '23', '29', '30', '18', '17')
-#    17: 0 			and c_acctbal > (
-#    18: 0 				select
-#    19: 0 					avg(c_acctbal)
-#    20: 0 				from
-#    21: 0 					customer
-#    22: 0 				where
-#    23: 0 					c_acctbal > 0.00
-#    24: 0 					and substring(c_phone from 1 for 2) in
-#    25: 0 						('13', '31', '23', '29', '30', '18', '17')
-#    26: 0 			)
-#    27: 0 			and not exists (
-#    28: 0 				select
-#    29: 0 					*
-#    30: 0 				from
-#    31: 0 					orders
-#    32: 0 				where
-#    33: 0 					o_custkey = c_custkey
-#    34: 0 			)
-#    35: 0 	) as custsale
-#    36: 0 group by
-#    37: 0 	cntrycode
-#    38: 0 order by
-#    39: 1 	cntrycode;
-#------------------------------------
-#| cntrycode | numcust | totacctbal |
-#------------------------------------
+# 3 # querytype
+# ,	,	customer # table_name
+# cntrycode,	numcust,	totacctbal # name
+# varchar,	int,	decimal # type
+# 2,	0,	0 # length
+# 7,	,	 # tuplecount
+# 1,	,	 # id
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]
@@ -1946,7 +1260,6 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ "29",	11,	88722.85	]
 [ "30",	17,	122189.33	]
 [ "31",	8,	66313.16	]
-SQL  7 Rows affected
 
 # 17:11:39 >  
 # 17:11:39 >  Done.

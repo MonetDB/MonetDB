@@ -20,11 +20,13 @@ Over..
 # 21:13:05 >  Mtimeout -timeout 60 sql_client --port=54799 < select_join.sql
 # 21:13:05 >  
 
-SQL  connected to database mTests_src_benchmarks_ATIS using schema sys
-#     1: 1 select airline.airline_name,aircraft.aircraft_type from aircraft,airline,flight where flight.aircraft_code=aircraft.aircraft_code and flight.airline_code=airline.airline_code;
-#--------------------------------
-#| airline_name | aircraft_type |
-#--------------------------------
+# 3 # querytype
+# airline,	aircraft # table_name
+# airline_name,	aircraft_type # name
+# char,	char # type
+# 25,	48 # length
+# 579,	 # tuplecount
+# 1,	 # id
 [ "USAIR",	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"	]
 [ "USAIR",	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"	]
 [ "USAIR",	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"	]
@@ -604,7 +606,6 @@ SQL  connected to database mTests_src_benchmarks_ATIS using schema sys
 [ "DELTA AIR LINES,INC.",	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
 [ "DELTA AIR LINES,INC.",	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
 [ "DELTA AIR LINES,INC.",	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
-SQL  579 Rows affected
 
 # 21:13:05 >  
 # 21:13:05 >  Done.

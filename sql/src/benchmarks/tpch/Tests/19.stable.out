@@ -15,53 +15,18 @@ quit();
 
 Over..
 
-# 19:37:14 >  
-# 19:37:14 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 19.sql
-# 19:37:14 >  
+# 13:19:57 >  
+# 13:19:57 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 19.sql
+# 13:19:57 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	sum(l_extendedprice* (1 - l_discount)) as revenue
-#     5: 0 from
-#     6: 0 	lineitem,
-#     7: 0 	part
-#     8: 0 where
-#     9: 0 	(
-#    10: 0 		p_partkey = l_partkey
-#    11: 0 		and p_brand = 'Brand#12'
-#    12: 0 		and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
-#    13: 0 		and l_quantity >= 1 and l_quantity <= 1 + 10
-#    14: 0 		and p_size between 1 and 5
-#    15: 0 		and l_shipmode in ('AIR', 'AIR REG')
-#    16: 0 		and l_shipinstruct = 'DELIVER IN PERSON'
-#    17: 0 	)
-#    18: 0 	or
-#    19: 0 	(
-#    20: 0 		p_partkey = l_partkey
-#    21: 0 		and p_brand = 'Brand#23'
-#    22: 0 		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
-#    23: 0 		and l_quantity >= 10 and l_quantity <= 10 + 10
-#    24: 0 		and p_size between 1 and 10
-#    25: 0 		and l_shipmode in ('AIR', 'AIR REG')
-#    26: 0 		and l_shipinstruct = 'DELIVER IN PERSON'
-#    27: 0 	)
-#    28: 0 	or
-#    29: 0 	(
-#    30: 0 		p_partkey = l_partkey
-#    31: 0 		and p_brand = 'Brand#34'
-#    32: 0 		and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
-#    33: 0 		and l_quantity >= 20 and l_quantity <= 20 + 10
-#    34: 0 		and p_size between 1 and 15
-#    35: 0 		and l_shipmode in ('AIR', 'AIR REG')
-#    36: 0 		and l_shipinstruct = 'DELIVER IN PERSON'
-#    37: 1 	);
-#-----------
-#| revenue |
-#-----------
+# 3 # querytype
+#  # table_name
+# revenue # name
+# decimal # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
 [ 22923.0280	]
-SQL  1 Row affected
 
 # 19:37:14 >  
 # 19:37:14 >  Done.

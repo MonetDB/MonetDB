@@ -15,53 +15,22 @@ quit();
 
 Over..
 
-# 19:37:10 >  
-# 19:37:10 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 15.sql
-# 19:37:10 >  
+# 13:19:40 >  
+# 13:19:40 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 15.sql
+# 13:19:40 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 create view revenue0 (supplier_no, total_revenue) as
-#     3: 0 	select
-#     4: 0 		l_suppkey,
-#     5: 0 		sum(l_extendedprice * (1 - l_discount))
-#     6: 0 	from
-#     7: 0 		lineitem
-#     8: 0 	where
-#     9: 0 		l_shipdate >= date '1996-01-01'
-#    10: 0 		and l_shipdate < date '1996-01-01' + interval '3' month
-#    11: 0 	group by
-#    12: 1 		l_suppkey;
-#    13: 0 
-#    14: 0 
-#    15: 0 select
-#    16: 0 	s_suppkey,
-#    17: 0 	s_name,
-#    18: 0 	s_address,
-#    19: 0 	s_phone,
-#    20: 0 	total_revenue
-#    21: 0 from
-#    22: 0 	supplier,
-#    23: 0 	revenue0
-#    24: 0 where
-#    25: 0 	s_suppkey = supplier_no
-#    26: 0 	and total_revenue = (
-#    27: 0 		select
-#    28: 0 			max(total_revenue)
-#    29: 0 		from
-#    30: 0 			revenue0
-#    31: 0 	)
-#    32: 0 order by
-#    33: 1 	s_suppkey;
-#------------------------------------------------------------
-#| s_suppkey | s_name | s_address | s_phone | total_revenue |
-#------------------------------------------------------------
+# 6 # querytype
+# 3 # querytype
+# supplier,	supplier,	supplier,	supplier,	revenue0 # table_name
+# s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
+# int,	varchar,	varchar,	varchar,	decimal # type
+# 0,	18,	36,	15,	0 # length
+# 1,	,	,	,	 # tuplecount
+# 1,	,	,	,	 # id
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
-SQL  1 Row affected
-#    34: 0 
-#    35: 1 drop view revenue0;
+# 6 # querytype
 
-# 19:37:10 >  
-# 19:37:10 >  Done.
-# 19:37:10 >  
+# 13:19:41 >  
+# 13:19:41 >  Done.
+# 13:19:41 >  
 

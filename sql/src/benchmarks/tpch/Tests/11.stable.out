@@ -19,39 +19,13 @@ Over..
 # 19:37:04 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 11.sql
 # 19:37:04 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	ps_partkey,
-#     5: 0 	sum(ps_supplycost * ps_availqty) as value
-#     6: 0 from
-#     7: 0 	partsupp,
-#     8: 0 	supplier,
-#     9: 0 	nation
-#    10: 0 where
-#    11: 0 	ps_suppkey = s_suppkey
-#    12: 0 	and s_nationkey = n_nationkey
-#    13: 0 	and n_name = 'GERMANY'
-#    14: 0 group by
-#    15: 0 	ps_partkey having
-#    16: 0 		sum(ps_supplycost * ps_availqty) > (
-#    17: 0 			select
-#    18: 0 				sum(ps_supplycost * ps_availqty) * 0.0001000000
-#    19: 0 			from
-#    20: 0 				partsupp,
-#    21: 0 				supplier,
-#    22: 0 				nation
-#    23: 0 			where
-#    24: 0 				ps_suppkey = s_suppkey
-#    25: 0 				and s_nationkey = n_nationkey
-#    26: 0 				and n_name = 'GERMANY'
-#    27: 0 		)
-#    28: 0 order by
-#    29: 1 	value desc;
-#----------------------
-#| ps_partkey | value |
-#----------------------
+# 3 # querytype
+# partsupp,	 # table_name
+# ps_partkey,	value # name
+# int,	decimal # type
+# 0,	0 # length
+# 359,	 # tuplecount
+# 1,	 # id
 [ 1376,	13271249.89	]
 [ 788,	9498648.06	]
 [ 1071,	9388264.40	]
@@ -411,7 +385,6 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ 332,	112181.30	]
 [ 1596,	110565.00	]
 [ 295,	97604.25	]
-SQL  359 Rows affected
 
 # 19:37:04 >  
 # 19:37:04 >  Done.

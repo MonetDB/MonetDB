@@ -20,17 +20,21 @@ Over..
 # 21:13:04 >  Mtimeout -timeout 60 sql_client --port=54799 < select_simple_join.sql
 # 21:13:04 >  
 
-SQL  connected to database mTests_src_benchmarks_ATIS using schema sys
-#     1: 1 select city.city_name,state.state_name,city.city_code from city,state where city.city_code='MATL' and city.state_code=state.state_code;
-#--------------------------------------
-#| city_name | state_name | city_code |
-#--------------------------------------
+# 3 # querytype
+# city,	state,	city # table_name
+# city_name,	state_name,	city_code # name
+# char,	char,	char # type
+# 7,	7,	4 # length
+# 1,	,	 # tuplecount
+# 1,	,	 # id
 [ "ATLANTA",	"GEORGIA",	"MATL"	]
-SQL  1 Row affected
-#     2: 1 select city.city_name,state.state_name,city.city_code from state,city where city.state_code=state.state_code;
-#--------------------------------------
-#| city_name | state_name | city_code |
-#--------------------------------------
+# 3 # querytype
+# city,	state,	city # table_name
+# city_name,	state_name,	city_code # name
+# char,	char,	char # type
+# 13,	20,	4 # length
+# 11,	,	 # tuplecount
+# 2,	,	 # id
 [ "ATLANTA",	"GEORGIA",	"MATL"	]
 [ "BOSTON",	"MASSACHUSETTS",	"BBOS"	]
 [ "DALLAS",	"TEXAS",	"DDFW"	]
@@ -42,11 +46,13 @@ SQL  1 Row affected
 [ "OAKLAND",	"CALIFORNIA",	"OOAK"	]
 [ "WASHINGTON",	"DISTRICT OF COLUMBIA",	"WWAS"	]
 [ "BALTIMORE",	"MARYLAND",	"BBWI"	]
-SQL  11 Rows affected
-#     3: 1 select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code;
-#-------------------------
-#| month_name | day_name |
-#-------------------------
+# 3 # querytype
+# month_name,	day_name # table_name
+# month_name,	day_name # name
+# char,	char # type
+# 8,	9 # length
+# 7,	 # tuplecount
+# 3,	 # id
 [ "JANUARY",	"MONDAY"	]
 [ "FEBRUARY",	"TUESDAY"	]
 [ "MARCH",	"WEDNESDAY"	]
@@ -54,20 +60,24 @@ SQL  11 Rows affected
 [ "MAY",	"FRIDAY"	]
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
-SQL  7 Rows affected
-#     4: 1 select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code and day_name.day_code >= 4;
-#-------------------------
-#| month_name | day_name |
-#-------------------------
+# 3 # querytype
+# month_name,	day_name # table_name
+# month_name,	day_name # name
+# char,	char # type
+# 5,	8 # length
+# 4,	 # tuplecount
+# 4,	 # id
 [ "APRIL",	"THURSDAY"	]
 [ "MAY",	"FRIDAY"	]
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
-SQL  4 Rows affected
-#     5: 1 select flight.flight_code,aircraft.aircraft_type from flight,aircraft where flight.aircraft_code=aircraft.aircraft_code;
-#-------------------------------
-#| flight_code | aircraft_type |
-#-------------------------------
+# 3 # querytype
+# flight,	aircraft # table_name
+# flight_code,	aircraft_type # name
+# int,	char # type
+# 0,	48 # length
+# 579,	 # tuplecount
+# 5,	 # id
 [ 137361,	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"	]
 [ 137357,	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"	]
 [ 107474,	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"	]
@@ -647,7 +657,6 @@ SQL  4 Rows affected
 [ 101915,	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
 [ 101911,	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
 [ 101910,	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
-SQL  579 Rows affected
 
 # 21:13:04 >  
 # 21:13:04 >  Done.

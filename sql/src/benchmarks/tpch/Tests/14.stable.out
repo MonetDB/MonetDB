@@ -15,31 +15,18 @@ quit();
 
 Over..
 
-# 19:37:08 >  
-# 19:37:08 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 14.sql
-# 19:37:08 >  
+# 13:19:36 >  
+# 13:19:36 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 14.sql
+# 13:19:36 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	100.00 * sum(case
-#     5: 0 		when p_type like 'PROMO%'
-#     6: 0 			then l_extendedprice * (1 - l_discount)
-#     7: 0 		else 0
-#     8: 0 	end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
-#     9: 0 from
-#    10: 0 	lineitem,
-#    11: 0 	part
-#    12: 0 where
-#    13: 0 	l_partkey = p_partkey
-#    14: 0 	and l_shipdate >= date '1995-09-01'
-#    15: 1 	and l_shipdate < date '1995-09-01' + interval '1' month;
-#-----------------
-#| promo_revenue |
-#-----------------
+# 3 # querytype
+#  # table_name
+# promo_revenue # name
+# decimal # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
 [ 15.4865	]
-SQL  1 Row affected
 
 # 19:37:09 >  
 # 19:37:09 >  Done.

@@ -15,43 +15,22 @@ quit();
 
 Over..
 
-# 19:36:45 >  
-# 19:36:45 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 04.sql
-# 19:36:45 >  
+# 13:18:53 >  
+# 13:18:53 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 04.sql
+# 13:18:53 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	o_orderpriority,
-#     5: 0 	count(*) as order_count
-#     6: 0 from
-#     7: 0 	orders
-#     8: 0 where
-#     9: 0 	o_orderdate >= date '1993-07-01'
-#    10: 0 	and o_orderdate < date '1993-07-01' + interval '3' month
-#    11: 0 	and exists (
-#    12: 0 		select
-#    13: 0 			*
-#    14: 0 		from
-#    15: 0 			lineitem
-#    16: 0 		where
-#    17: 0 			l_orderkey = o_orderkey
-#    18: 0 			and l_commitdate < l_receiptdate
-#    19: 0 	)
-#    20: 0 group by
-#    21: 0 	o_orderpriority
-#    22: 0 order by
-#    23: 1 	o_orderpriority;
-#---------------------------------
-#| o_orderpriority | order_count |
-#---------------------------------
+# 3 # querytype
+# orders,	orders # table_name
+# o_orderpriority,	order_count # name
+# varchar,	int # type
+# 15,	0 # length
+# 5,	 # tuplecount
+# 1,	 # id
 [ "1-URGENT",	93	]
 [ "2-HIGH",	103	]
 [ "3-MEDIUM",	109	]
 [ "4-NOT SPECIFIED",	102	]
 [ "5-LOW",	128	]
-SQL  5 Rows affected
 
 # 19:36:46 >  
 # 19:36:46 >  Done.

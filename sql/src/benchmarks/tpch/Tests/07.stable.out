@@ -15,60 +15,21 @@ quit();
 
 Over..
 
-# 02:38:09 >  
-# 02:38:09 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=50271 --trace < 07.sql
-# 02:38:09 >  
+# 13:19:06 >  
+# 13:19:06 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 07.sql
+# 13:19:06 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	supp_nation,
-#     5: 0 	cust_nation,
-#     6: 0 	l_year,
-#     7: 0 	sum(volume) as revenue
-#     8: 0 from
-#     9: 0 	(
-#    10: 0 		select
-#    11: 0 			n1.n_name as supp_nation,
-#    12: 0 			n2.n_name as cust_nation,
-#    13: 0 			extract(year from l_shipdate) as l_year,
-#    14: 0 			l_extendedprice * (1 - l_discount) as volume
-#    15: 0 		from
-#    16: 0 			supplier,
-#    17: 0 			lineitem,
-#    18: 0 			orders,
-#    19: 0 			customer,
-#    20: 0 			nation n1,
-#    21: 0 			nation n2
-#    22: 0 		where
-#    23: 0 			s_suppkey = l_suppkey
-#    24: 0 			and o_orderkey = l_orderkey
-#    25: 0 			and c_custkey = o_custkey
-#    26: 0 			and s_nationkey = n1.n_nationkey
-#    27: 0 			and c_nationkey = n2.n_nationkey
-#    28: 0 			and (
-#    29: 0 				(n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
-#    30: 0 				or (n1.n_name = 'GERMANY' and n2.n_name = 'FRANCE')
-#    31: 0 			)
-#    32: 0 			and l_shipdate between date '1995-01-01' and date '1996-12-31'
-#    33: 0 	) as shipping
-#    34: 0 group by
-#    35: 0 	supp_nation,
-#    36: 0 	cust_nation,
-#    37: 0 	l_year
-#    38: 0 order by
-#    39: 0 	supp_nation,
-#    40: 0 	cust_nation,
-#    41: 1 	l_year;
-#------------------------------------------------
-#| supp_nation | cust_nation | l_year | revenue |
-#------------------------------------------------
+# 3 # querytype
+# n1,	n2,	,	 # table_name
+# supp_nation,	cust_nation,	l_year,	revenue # name
+# varchar,	varchar,	int,	decimal # type
+# 7,	7,	0,	0 # length
+# 4,	,	,	 # tuplecount
+# 1,	,	,	 # id
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
 [ "GERMANY",	"FRANCE",	1996,	379095.8854	]
-SQL  4 Rows affected
 
 # 02:38:09 >  
 # 02:38:09 >  Done.

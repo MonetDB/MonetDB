@@ -39,9 +39,7 @@ stderr of test 'select_simple_join` in directory 'src/benchmarks/ATIS` itself:
 # config opt 	sql_debug = 1
 # cmdline opt 	gdk_debug = 0
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = Tests_src_benchmarks_ATIS
-# cmdline opt 	sql_port = 54799
-server listening on port 54799
+# cmdline opt 	gdk_dbname = mTests_src_benchmarks_ATIS
 
 # 21:13:04 >  
 # 21:13:04 >  Mtimeout -timeout 60 sql_client --port=54799 < select_simple_join.sql

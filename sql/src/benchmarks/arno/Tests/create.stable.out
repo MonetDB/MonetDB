@@ -15,38 +15,16 @@ quit();
 
 Over..
 
-# 22:08:06 >  
-# 22:08:06 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=56954 < create.sql
-# 22:08:06 >  
+# 13:06:52 >  
+# 13:06:52 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < create.sql
+# 13:06:52 >  
 
-SQL  connected to database mTests_src_benchmarks_arno using schema sys
-#     1: 0 CREATE TABLE MODEL (
-#     2: 0    MODEL_ID int(11) DEFAULT '0' NOT NULL,
-#     3: 0    IS_MUTAGEN char(3),
-#     4: 0    LUMO int(11),
-#     5: 0    LOGP int(11),
-#     6: 0    PRIMARY KEY (MODEL_ID)
-#     7: 1 );
-#     8: 0 
-#     9: 0 CREATE TABLE ATOM (
-#    10: 0    ATOM_ID varchar(10) NOT NULL,
-#    11: 0    MODEL_ID int(11),
-#    12: 0    ELEMENT char(2),
-#    13: 0    TYPE char(3),
-#    14: 0    CHARGE int(11),
-#    15: 0    PRIMARY KEY (ATOM_ID)
-#    16: 1 );
-#    17: 0 
-#    18: 0 CREATE TABLE BOND (
-#    19: 0    BOND_ID int(11) DEFAULT '0' NOT NULL,
-#    20: 0    MODEL_ID int(11),
-#    21: 0    ATOM1 varchar(10),
-#    22: 0    ATOM2 varchar(10),
-#    23: 0    TYPE char(3),
-#    24: 0    PRIMARY KEY (BOND_ID)
-#    25: 1 );
+# 6 # querytype
+# 6 # querytype
+# 6 # querytype
+# 7 # querytype
 
-# 18:48:08 >  
-# 18:48:08 >  Done.
-# 18:48:08 >  
+# 13:06:53 >  
+# 13:06:53 >  Done.
+# 13:06:53 >  
 

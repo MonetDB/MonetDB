@@ -15,46 +15,22 @@ quit();
 
 Over..
 
-# 19:36:47 >  
-# 19:36:47 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 05.sql
-# 19:36:47 >  
+# 13:18:57 >  
+# 13:18:57 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 05.sql
+# 13:18:57 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	n_name,
-#     5: 0 	sum(l_extendedprice * (1 - l_discount)) as revenue
-#     6: 0 from
-#     7: 0 	customer,
-#     8: 0 	orders,
-#     9: 0 	lineitem,
-#    10: 0 	supplier,
-#    11: 0 	nation,
-#    12: 0 	region
-#    13: 0 where
-#    14: 0 	c_custkey = o_custkey
-#    15: 0 	and l_orderkey = o_orderkey
-#    16: 0 	and l_suppkey = s_suppkey
-#    17: 0 	and c_nationkey = s_nationkey
-#    18: 0 	and s_nationkey = n_nationkey
-#    19: 0 	and n_regionkey = r_regionkey
-#    20: 0 	and r_name = 'ASIA'
-#    21: 0 	and o_orderdate >= date '1994-01-01'
-#    22: 0 	and o_orderdate < date '1994-01-01' + interval '1' year
-#    23: 0 group by
-#    24: 0 	n_name
-#    25: 0 order by
-#    26: 1 	revenue desc;
-#--------------------
-#| n_name | revenue |
-#--------------------
+# 3 # querytype
+# nation,	 # table_name
+# n_name,	revenue # name
+# varchar,	decimal # type
+# 9,	0 # length
+# 5,	 # tuplecount
+# 1,	 # id
 [ "VIETNAM",	1000926.6999	]
 [ "CHINA",	740210.7570	]
 [ "JAPAN",	660651.2425	]
 [ "INDONESIA",	566379.5276	]
 [ "INDIA",	422874.6844	]
-SQL  5 Rows affected
 
 # 19:36:47 >  
 # 19:36:47 >  Done.

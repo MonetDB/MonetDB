@@ -15,35 +15,18 @@ quit();
 
 Over..
 
-# 16:41:36 >  
-# 16:41:36 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace < 17.sql
-# 16:41:36 >  
+# 13:19:49 >  
+# 13:19:49 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 17.sql
+# 13:19:49 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	sum(l_extendedprice) / 7.0 as avg_yearly
-#     5: 0 from
-#     6: 0 	lineitem,
-#     7: 0 	part
-#     8: 0 where
-#     9: 0 	p_partkey = l_partkey
-#    10: 0 	and p_brand = 'Brand#23'
-#    11: 0 	and p_container = 'MED BOX'
-#    12: 0 	and l_quantity < (
-#    13: 0 		select
-#    14: 0 			0.2 * avg(l_quantity)
-#    15: 0 		from
-#    16: 0 			lineitem
-#    17: 0 		where
-#    18: 0 			l_partkey = p_partkey
-#    19: 1 	);
-#--------------
-#| avg_yearly |
-#--------------
+# 3 # querytype
+#  # table_name
+# avg_yearly # name
+# decimal # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
 [ 0.00	]
-SQL  1 Row affected
 
 # 16:41:37 >  
 # 16:41:37 >  Done.

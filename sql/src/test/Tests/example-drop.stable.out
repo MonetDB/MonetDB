@@ -15,16 +15,15 @@ quit();
 
 Over..
 
-# 20:07:28 >  
-# 20:07:28 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < example-drop.sql
-# 20:07:28 >  
+# 13:26:18 >  
+# 13:26:18 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < example-drop.sql
+# 13:26:18 >  
 
-SQL  connected to database mTests_src_test using schema sys
-#     1: 0 
-#     2: 1 drop view example_view;
-#     3: 1 drop table example;
+# 6 # querytype
+# 6 # querytype
+# 7 # querytype
 
-# 19:16:07 >  
-# 19:16:07 >  Done.
-# 19:16:07 >  
+# 13:26:18 >  
+# 13:26:18 >  Done.
+# 13:26:18 >  
 

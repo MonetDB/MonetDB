@@ -44,8 +44,6 @@ stderr of test 'moa_ordered` in directory 'src/benchmarks/moa` itself:
 # cmdline opt 	gdk_dbfarm = /ufs/niels/data/monet/Linux/var/dbfarm
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_benchmarks_moa
-# cmdline opt 	sql_port = 59044
-server listening on port 59044
 
 # 15:22:54 >  
 # 15:22:54 >  Mtimeout -timeout 60 sql_client -u monetdb -P monetdb --host=stem --port=59044 < moa_ordered.sql

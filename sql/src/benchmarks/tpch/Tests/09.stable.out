@@ -15,48 +15,17 @@ quit();
 
 Over..
 
-# 02:38:14 >  
-# 02:38:14 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=50271 --trace < 09.sql
-# 02:38:14 >  
+# 13:19:14 >  
+# 13:19:14 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 09.sql
+# 13:19:14 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	nation,
-#     5: 0 	o_year,
-#     6: 0 	sum(amount) as sum_profit
-#     7: 0 from
-#     8: 0 	(
-#     9: 0 		select
-#    10: 0 			n_name as nation,
-#    11: 0 			extract(year from o_orderdate) as o_year,
-#    12: 0 			l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount
-#    13: 0 		from
-#    14: 0 			part,
-#    15: 0 			supplier,
-#    16: 0 			lineitem,
-#    17: 0 			partsupp,
-#    18: 0 			orders,
-#    19: 0 			nation
-#    20: 0 		where
-#    21: 0 			s_suppkey = l_suppkey
-#    22: 0 			and ps_suppkey = l_suppkey
-#    23: 0 			and ps_partkey = l_partkey
-#    24: 0 			and p_partkey = l_partkey
-#    25: 0 			and o_orderkey = l_orderkey
-#    26: 0 			and s_nationkey = n_nationkey
-#    27: 0 			and p_name like '%green%'
-#    28: 0 	) as profit
-#    29: 0 group by
-#    30: 0 	nation,
-#    31: 0 	o_year
-#    32: 0 order by
-#    33: 0 	nation,
-#    34: 1 	o_year desc;
-#--------------------------------
-#| nation | o_year | sum_profit |
-#--------------------------------
+# 3 # querytype
+# nation,	,	 # table_name
+# nation,	o_year,	sum_profit # name
+# varchar,	int,	decimal # type
+# 14,	0,	0 # length
+# 174,	,	 # tuplecount
+# 1,	,	 # id
 [ "ALGERIA",	1998,	386617.8283	]
 [ "ALGERIA",	1997,	401601.1258	]
 [ "ALGERIA",	1996,	156938.7971	]
@@ -231,7 +200,6 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 [ "VIETNAM",	1994,	1003275.5371	]
 [ "VIETNAM",	1993,	461389.0037	]
 [ "VIETNAM",	1992,	820665.7064	]
-SQL  174 Rows affected
 
 # 02:38:20 >  
 # 02:38:20 >  Done.

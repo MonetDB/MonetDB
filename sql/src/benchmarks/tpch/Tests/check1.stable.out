@@ -15,59 +15,74 @@ quit();
 
 Over..
 
-# 19:03:02 >  
-# 19:03:02 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=55885 --trace < check1.sql
-# 19:03:02 >  
+# 13:18:35 >  
+# 13:18:35 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < check1.sql
+# 13:18:35 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 1 select count(*) from customer;
-#-------------------
-#| count_c_custkey |
-#-------------------
+# 3 # querytype
+# customer # table_name
+# count_c_custkey # name
+# int # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
 [ 1500	]
-SQL  1 Row affected
-#     2: 1 select count(*) from nation;
-#---------------------
-#| count_n_nationkey |
-#---------------------
+# 3 # querytype
+# nation # table_name
+# count_n_nationkey # name
+# int # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
 [ 25	]
-SQL  1 Row affected
-#     3: 1 select count(*) from orders;
-#--------------------
-#| count_o_orderkey |
-#--------------------
+# 3 # querytype
+# orders # table_name
+# count_o_orderkey # name
+# int # type
+# 0 # length
+# 1 # tuplecount
+# 3 # id
 [ 15000	]
-SQL  1 Row affected
-#     4: 1 select count(*) from partsupp;
-#--------------------
-#| count_ps_partkey |
-#--------------------
+# 3 # querytype
+# partsupp # table_name
+# count_ps_partkey # name
+# int # type
+# 0 # length
+# 1 # tuplecount
+# 4 # id
 [ 8000	]
-SQL  1 Row affected
-#     5: 1 select count(*) from part;
-#-------------------
-#| count_p_partkey |
-#-------------------
+# 3 # querytype
+# part # table_name
+# count_p_partkey # name
+# int # type
+# 0 # length
+# 1 # tuplecount
+# 5 # id
 [ 2000	]
-SQL  1 Row affected
-#     6: 1 select count(*) from region;
-#---------------------
-#| count_r_regionkey |
-#---------------------
+# 3 # querytype
+# region # table_name
+# count_r_regionkey # name
+# int # type
+# 0 # length
+# 1 # tuplecount
+# 6 # id
 [ 5	]
-SQL  1 Row affected
-#     7: 1 select count(*) from supplier;
-#-------------------
-#| count_s_suppkey |
-#-------------------
+# 3 # querytype
+# supplier # table_name
+# count_s_suppkey # name
+# int # type
+# 0 # length
+# 1 # tuplecount
+# 7 # id
 [ 100	]
-SQL  1 Row affected
-#     8: 1 select count(*) from lineitem;
-#--------------------
-#| count_l_orderkey |
-#--------------------
+# 3 # querytype
+# lineitem # table_name
+# count_l_orderkey # name
+# int # type
+# 0 # length
+# 1 # tuplecount
+# 8 # id
 [ 60175	]
-SQL  1 Row affected
 
 # 19:03:02 >  
 # 19:03:02 >  Done.

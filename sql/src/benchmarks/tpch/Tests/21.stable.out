@@ -15,59 +15,20 @@ quit();
 
 Over..
 
-# 16:41:43 >  
-# 16:41:43 >  Mtimeout -timeout 600 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace < 21.sql
-# 16:41:43 >  
+# 16:22:53 >  
+# 16:22:53 >  Mtimeout -timeout 600 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601  < 21.sql
+# 16:22:53 >  
 
-#SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 0 
-#     2: 0 
-#     3: 0 select
-#     4: 0 	s_name,
-#     5: 0 	count(*) as numwait
-#     6: 0 from
-#     7: 0 	supplier,
-#     8: 0 	lineitem l1,
-#     9: 0 	orders,
-#    10: 0 	nation
-#    11: 0 where
-#    12: 0 	s_suppkey = l1.l_suppkey
-#    13: 0 	and o_orderkey = l1.l_orderkey
-#    14: 0 	and o_orderstatus = 'F'
-#    15: 0 	and l1.l_receiptdate > l1.l_commitdate
-#    16: 0 	and exists (
-#    17: 0 		select
-#    18: 0 			*
-#    19: 0 		from
-#    20: 0 			lineitem l2
-#    21: 0 		where
-#    22: 0 			l2.l_orderkey = l1.l_orderkey
-#    23: 0 			and l2.l_suppkey <> l1.l_suppkey
-#    24: 0 	)
-#    25: 0 	and not exists (
-#    26: 0 		select
-#    27: 0 			*
-#    28: 0 		from
-#    29: 0 			lineitem l3
-#    30: 0 		where
-#    31: 0 			l3.l_orderkey = l1.l_orderkey
-#    32: 0 			and l3.l_suppkey <> l1.l_suppkey
-#    33: 0 			and l3.l_receiptdate > l3.l_commitdate
-#    34: 0 	)
-#    35: 0 	and s_nationkey = n_nationkey
-#    36: 0 	and n_name = 'SAUDI ARABIA'
-#    37: 0 group by
-#    38: 0 	s_name
-#    39: 0 order by
-#    40: 0 	numwait desc,
-#    41: 1 	s_name;
-#--------------------
-#| s_name | numwait |
-#--------------------
+# 3 # querytype
+# supplier,	supplier # table_name
+# s_name,	numwait # name
+# varchar,	int # type
+# 18,	0 # length
+# 1,	 # tuplecount
+# 1,	 # id
 [ "Supplier#000000074",	9	]
-SQL  1 Row affected
 
-# 16:41:43 >  
-# 16:41:43 >  Done.
-# 16:41:43 >  
+# 16:22:53 >  
+# 16:22:53 >  Done.
+# 16:22:53 >  
 

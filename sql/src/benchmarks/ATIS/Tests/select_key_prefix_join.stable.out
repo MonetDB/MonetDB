@@ -20,11 +20,13 @@ Over..
 # 21:13:06 >  Mtimeout -timeout 60 sql_client --port=54799 < select_key_prefix_join.sql
 # 21:13:06 >  
 
-SQL  connected to database mTests_src_benchmarks_ATIS using schema sys
-#     1: 1 select fare.fare_code from restrict_carrier,airline,fare where restrict_carrier.airline_code=airline.airline_code and fare.restrict_code=restrict_carrier.restrict_code;
-#-------------
-#| fare_code |
-#-------------
+# 3 # querytype
+# fare # table_name
+# fare_code # name
+# char # type
+# 7 # length
+# 5692 # tuplecount
+# 1 # id
 [ "7100534"	]
 [ "7100531"	]
 [ "7100530"	]
@@ -5717,7 +5719,6 @@ SQL  connected to database mTests_src_benchmarks_ATIS using schema sys
 [ "7100055"	]
 [ "7100035"	]
 [ "7100034"	]
-SQL  5692 Rows affected
 
 # 21:13:07 >  
 # 21:13:07 >  Done.

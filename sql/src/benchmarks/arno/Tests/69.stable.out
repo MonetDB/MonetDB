@@ -15,18 +15,19 @@ quit();
 
 Over..
 
-# 22:11:41 >  
-# 22:11:41 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=56954 < 69.sql
-# 22:11:41 >  
+# 13:12:54 >  
+# 13:12:54 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=51137  < 69.sql
+# 13:12:54 >  
 
-SQL  connected to database mTests_src_benchmarks_arno using schema sys
-#     1: 1 SELECT MODEL264.is_mutagen,MODEL264.is_mutagen, count(distinct MODEL264.model_id ) FROM MODEL MODEL264  WHERE MODEL264.logp='4' group by MODEL264.is_mutagen , MODEL264.is_mutagen;
-#--------------------------------------------
-#| is_mutagen | is_mutagen | count_model_id |
-#--------------------------------------------
+# 3 # querytype
+# model264,	model264,	model264 # table_name
+# is_mutagen,	is_mutagen,	count_no_nil_model_id # name
+# char,	char,	int # type
+# 1,	1,	0 # length
+# 2,	,	 # tuplecount
+# 1,	,	 # id
 [ "T",	"T",	35	]
 [ "F",	"F",	5	]
-SQL  2 Rows affected
 
 # 22:11:41 >  
 # 22:11:41 >  Done.
