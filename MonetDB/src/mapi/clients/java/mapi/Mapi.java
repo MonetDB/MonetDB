@@ -1673,6 +1673,20 @@ class RowCache{
 		for(int j=0;j<maxfields;j++) fields[i][j]= null;
 	}
     }
+private void dumpLine(int i){
+	System.out.println("cache["+i+"] fldcnt["+fldcnt[i]+"]");
+	for(int j=0;j<fldcnt[i];j++)
+	System.out.println("field["+i+"]["+j+"] "+fields[i][j]);
+}
+private void dumpCacheStatus(){
+	System.out.println("cache limit="+rowlimit+
+	"shuffle="+shuffle+
+	"limit="+limit+
+	"writer="+writer+
+	"reader"+reader+
+	"tupleCount"+tupleCount);
+}
+	
 //---------------------- Special features ------------------------
 /**
  * Retrieving the tuples in a particular value order is a recurring
@@ -1684,11 +1698,17 @@ class RowCache{
  */
 public void sortColumn(int col){
 	if( col <0 || col > maxfields) return;
+	// make sure you have all tuples in the cache
+	// and that they are properly sliced
+	fetchAllRows();
+
 	int direction = columns[col].direction;
 	columns[col].direction = -direction;
 	if( columns[col].columntype.equals("int") ||
 	    columns[col].columntype.equals("lng") ||
 	    columns[col].columntype.equals("ptr") ||
+	    columns[col].columntype.equals("oid") ||
+	    columns[col].columntype.equals("void") ||
 	    columns[col].columntype.equals("sht") 
 	){
 		sortIntColumn(col);
@@ -1702,6 +1722,8 @@ public void sortColumn(int col){
 	}
 	int lim= cache.tupleCount;
 	for(int i=0;i<lim; i++){
+		if(fields[tuples[i]][col]== null)
+		System.out.println("tuple null:"+i+" "+tuples[i]);
 		for(int j=i+1;j<lim; j++){
 			String x= fields[tuples[i]][col];
 			String y= fields[tuples[j]][col];
@@ -1727,34 +1749,37 @@ private void sortIntColumn(int col){
 	int direction = columns[col].direction;
 	int lim= cache.tupleCount;
 	long val[]= new long[lim];
+	String sv;
 	for(int i=0; i<lim; i++){
+		sv= fields[tuples[i]][col];
+		if(sv==null){
+			val[i]= Long.MIN_VALUE;
+			System.out.println("tuple null:"+i+" "+tuples[i]);
+			//dumpLine(tuples[i]);
+			//seekRow(tuples[i]);
+			//sliceRow();
+			//dumpLine(tuples[i]);
+			continue;
+		}
+		int k= sv.indexOf("@");
+		if(k>0) sv= sv.substring(0,k);
 		try{
-			val[i]= Integer.parseInt(fields[tuples[i]][col]);
+			val[i]= Long.parseLong(sv);
 		} catch(NumberFormatException e){
-			val[i]= Integer.MIN_VALUE;}
+			val[i]= Long.MIN_VALUE;}
 	}
 	for(int i=0;i<lim; i++){
 		for(int j=i+1;j<lim; j++){
 			long x= val[i];
 			long y= val[j];
-			if( direction>0){
-				if(y>x){
-					int z= tuples[i];
-					tuples[i]= tuples[j];
-					tuples[j]= z;
-					val[i]= y;
-					val[j]= x;
-				}
-			} else 
-			if( direction<0){
-				if(y<x){
-					int z= tuples[i];
-					tuples[i]= tuples[j];
-					tuples[j]= z;
-					val[i]= y;
-					val[j]= x;
-				}
-			}
+			if( (direction>0 && y>x) ||
+			    (direction<0 && y<x) ){
+				int z= tuples[i];
+				tuples[i]= tuples[j];
+				tuples[j]= z;
+				val[i]= y;
+				val[j]= x;
+			} 
 		}
 	}
 }
@@ -1762,34 +1787,31 @@ private void sortDblColumn(int col){
 	int direction = columns[col].direction;
 	int lim= cache.tupleCount;
 	double val[]= new double[lim];
+	String sv;
 	for(int i=0; i<lim; i++){
+		sv= fields[tuples[i]][col];
+		if(sv==null){
+			System.out.println("tuple null:"+i+" "+tuples[i]);
+			val[i]= Double.MIN_VALUE;
+			continue;
+		}
 		try{
-			val[i]= Double.parseDouble(fields[tuples[i]][col]);
+			val[i]= Double.parseDouble(sv);
 		} catch(NumberFormatException e){
-			val[i]= Integer.MIN_VALUE;}
+			val[i]= Double.MIN_VALUE;}
 	}
 	for(int i=0;i<lim; i++){
 		for(int j=i+1;j<lim; j++){
 			double x= val[i];
 			double y= val[j];
-			if( direction>0){
-				if(y>x){
-					int z= tuples[i];
-					tuples[i]= tuples[j];
-					tuples[j]= z;
-					val[i]= y;
-					val[j]= x;
-				}
-			} else 
-			if( direction<0){
-				if(y<x){
-					int z= tuples[i];
-					tuples[i]= tuples[j];
-					tuples[j]= z;
-					val[i]= y;
-					val[j]= x;
-				}
-			}
+			if( (direction>0 && y>x) ||
+			    (direction<0 && y<x) ){
+				int z= tuples[i];
+				tuples[i]= tuples[j];
+				tuples[j]= z;
+				val[i]= y;
+				val[j]= x;
+			} 
 		}
 	}
 }
