@@ -1,1 +1,2 @@
 drop table adttest;
+commit;
