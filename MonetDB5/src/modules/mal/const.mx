@@ -49,43 +49,43 @@ A future implementation should provide transaction support over the box, which
 would permit multiple clients to exchange (scalar) information easily.";
 
 pattern open():void
-address CONSTopen
+address CSTopen
 comment "Locate and open the constant box";
 pattern close():void
-address CONSTclose
+address CSTclose
 comment "Close the constant box ";
 pattern destroy():void
-address CONSTdestroy
+address CSTdestroy
 comment "Destroy the box";
 pattern take(name:str):any 
-address CONSTtake
+address CSTtake
 comment "Locate and take the typed value";
 pattern deposit(name:str,v:any) :void 		
-address CONSTdeposit
+address CSTdeposit
 comment "Enter a new value into the box";
 
 pattern releaseAll():void 
-address CONSTreleaseAll
+address CSTreleaseAll
 comment "Release all constants";
 pattern release(name:str,val:any) :void 		
-address CONSTrelease
+address CSTrelease
 comment "Release a new constant value";
 pattern release(name:str):void 
-address CONSTrelease
+address CSTrelease
 comment "Release a new constant value";
 pattern toString(name:str):str 
-address CONSTtoString
+address CSTtoString
 comment "Get the string representation 
 	of an element in the box";
 pattern discard(name:str) :void 		
-address CONSTdiscard
+address CSTdiscard
 comment "Release the const from the box";
 pattern iterator(nme:str) :lng 		
-address CONSTiterator
+address CSTiterator
 comment "Locate next element in the box";
 
 pattern prelude():void 
-address CONSTprelude
+address CSTprelude
 comment "Initialize the const box";
 
 const.prelude();
@@ -118,7 +118,7 @@ int isAuthorized(str nme){
 	c= getClient();
 	return idcmp(c->user,nme)==0;
 }
-str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:authorize(prelude)@
@@ -160,20 +160,20 @@ str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 @- Operator implementation
 @c
-str CONSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:authorize(open)@
 	if(openBox("const.open") != 0) return MAL_SUCCEED;
 	return throwMessage("const.open","failed to open box");
 }
 
-str CONSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:authorize(close)@
 	if( closeBox("const" ,TRUE) ==0) return MAL_SUCCEED;
 	return throwMessage("const.close","failed to close box");
 }
-str CONSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:OpenBox(destroy)@
@@ -190,7 +190,7 @@ to a named box.
 	return throwMessage("const.@1","box is not open");
 @-
 @c
-str CONSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	ValPtr v;
 	Box box;
@@ -205,7 +205,7 @@ str CONSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str CONSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 	ValPtr v;
@@ -220,7 +220,7 @@ str CONSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str CONSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 	(void)mb; /* fool compiler*/
@@ -231,7 +231,7 @@ str CONSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str CONSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
 	(void)mb; (void)stk; (void) pci; /* fool compiler */
@@ -240,7 +240,7 @@ str CONSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str CONSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	Box box;
 
@@ -252,7 +252,7 @@ str CONSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			"failed to discard '%s' from box", name);
 	return MAL_SUCCEED;
 }
-str CONSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	int i,len=0;
 	ValPtr v;
@@ -279,7 +279,7 @@ str CONSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str CONSTiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	lng *cursor;
 	ValPtr v;

@@ -158,7 +158,7 @@ specific should be introduced last.
 
 pattern print(b1:bat[:any$1,:any], 
 		b2:bat[:any$1,:any]...):int 
-address CMDtable
+address IOtable
 comment "BATs are printed with '#' for legend 
 	lines, and the BUNs on seperate lines 
 	between brackets, containing each to 
@@ -170,41 +170,41 @@ comment "BATs are printed with '#' for legend
 pattern ftable( filep:fstream, 
 		b1:bat[:any$1,:any],
 		b:bat[:any$1,:any]... ):int
-address CMDftable 
+address IOftable 
 comment "Print an n-ary table to a file.";
 
 pattern print(order:int,b:bat[:any$1,:any], 
 		b2:bat[:any$1,:any]...):int
-address CMDotable
+address IOotable
 comment "The same as normal table print, but 
 	enforces to use the order of BAT 
 	number [1..argc] to do the printing.";
 
 pattern table(b1:bat[:any$1,:any], 
 		b2:bat[:any$1,:any]...):int 
-address CMDttable
+address IOttable
 comment "Print an n-ary table. Like print,
 	but does not print oid column";
 
 pattern table(order:int, b1:bat[:any$1,:any], 
 		b2:bat[:any$1,:any]...):int 
-address CMDtotable
+address IOtotable
 comment "Print an n-ary table.";
 pattern ftable(fp:fstream, order:int,
 	b1:bat[:any$1,:any], 
 	b:bat[:any$1,:any]...)
-address CMDfotable 
+address IOfotable 
 comment "Print an n-ary table to a file.";
 
 pattern print(val:any):int 
-address CMDprint_val
+address IOprint_val
 comment "Print a MIL value tuple .";
 
 pattern prompt(val:any):int 
-address CMDprompt_val
+address IOprompt_val
 comment "Print a MIL value without brackets.";
 pattern printft(val:any):int 
-address CMDprint_ft
+address IOprint_ft
 comment "Select default format ";
 
 pattern fprint(fp:fstream,arg:any...):void 
@@ -220,36 +220,36 @@ The routines that inspect the runtime setting are moved out of this area.
                                                                                 
 @mal
 command printf(format:str,val:bit):int
-address SYSprint_formatted_bit;
+address IOprint_formatted_bit;
 command printf(format:str,val:chr):int
-address SYSprint_formatted_chr;
+address IOprint_formatted_chr;
 command printf(format:str,val:int):int
-address SYSprint_formatted_int;
+address IOprint_formatted_int;
 command printf(format:str,val:sht):int
-address SYSprint_formatted_sht;
+address IOprint_formatted_sht;
 command printf(format:str,val:oid):int
-address SYSprint_oid;
+address IOprint_oid;
 command printf(format:str,val:lng):int
-address SYSprint_formatted_lng;
+address IOprint_formatted_lng;
 command printf(format:str,val:flt):int
-address SYSprint_formatted_flt;
+address IOprint_formatted_flt;
 command printf(format:str,val:dbl):int
-address SYSprint_formatted_dbl;
+address IOprint_formatted_dbl;
 command printf(val:str):int
-address SYSprint_str;
+address IOprint_str;
 command printf(format:str,val:str):int
-address SYSprint_formatted_str;
+address IOprint_formatted_str;
 @- ASCII import, export
 The below commands load and save a BAT from/to an ASCII dump. These
 functions are efficient but work only for binary tables. For printing
 ASCII n-ary tables you can use the @#print@(bat1,bat2,..) command
 from the system.mx module.
 @mal
-command export(b:bat[:any,:any], filepath:str):bit  = SYSexport
+command export(b:bat[:any,:any], filepath:str):bit  = IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
  is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
 
-command import(b:bat[:any,:any], filepath:str) :bit = SYSimport
+command import(b:bat[:any,:any], filepath:str) :bit = IOimport
 comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
  parameter BAT. You have to create it! Its signature must match the dump,
  else parsing errors will occur and FALSE is returned.";
@@ -300,9 +300,9 @@ quit;
 #include "mal.h"
 #include "mal_interpreter.h"
 
-extern str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
+extern str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
 		  InstrPtr pci, int i, int order, int printhead);
-extern str CMDprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl);
+extern str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl);
 
 typedef struct {
 	int up, down;
@@ -581,7 +581,7 @@ The old method in V4 essentially causes a lot of overhead
 because you have to prepare for the worst (e.g. mismatch format
 identifier and argument value)
 @c
-str CMDprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl)
+str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl)
 {
 	int tpe = getArgType(mb,pci,indx);
 	ptr val = (ptr) getArgReference(stk,pci,indx);
@@ -608,30 +608,30 @@ str CMDprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str 
 	stream_flush(fp);
         return MAL_SUCCEED;
 }
-str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+str IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
         int i;
         if( p->argc==2)
-                CMDprintBoth(mb,stk,p,1,"[ "," ]\n");
+                IOprintBoth(mb,stk,p,1,"[ "," ]\n");
         else {
-                CMDprintBoth(mb,stk,p,1,"[ ",0);
+                IOprintBoth(mb,stk,p,1,"[ ",0);
                 for(i=2; i<p->argc-2;i++)
-                        CMDprintBoth(mb,stk,p,i,", ",0);
-                CMDprintBoth(mb,stk,p,i,", ", "]\n");
+                        IOprintBoth(mb,stk,p,i,", ",0);
+                IOprintBoth(mb,stk,p,i,", ", "]\n");
         }
         return MAL_SUCCEED;
 
 }
-str CMDprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-        CMDtableAll(GDKout,mb,stk,p,1,0,FALSE);
+str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+        IOtableAll(GDKout,mb,stk,p,1,0,FALSE);
         return MAL_SUCCEED;
 }
 
-str CMDprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str IOprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return CMDprintBoth(mb,stk,pci,1,0,0);
+	return IOprintBoth(mb,stk,pci,1,0,0);
 }
-str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
 	ptr val = (ptr) getArgReference(stk,pci,1);
@@ -650,7 +650,7 @@ str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 The table printing routine implementations rely on the multiprintf.
 They merely differ in destination and order prerequisite
 @c
-str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
+str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
 		  InstrPtr pci, int i, int order, int printhead)
 {
         BAT *piv[MAXPARAMS],*b;
@@ -676,38 +676,38 @@ str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk,
         return MAL_SUCCEED;
 }
 
-str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str IOotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int order;
 	order = *(int*) getArgReference(stk,pci,1);
-	return CMDtableAll(GDKout,mb,stk,pci,2,order,TRUE);
+	return IOtableAll(GDKout,mb,stk,pci,2,order,TRUE);
 }
 
-str CMDtable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return CMDtableAll(GDKout,mb,stk,pci,1,0,TRUE);
+str IOtable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	return IOtableAll(GDKout,mb,stk,pci,1,0,TRUE);
 }
-str CMDfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str IOfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	stream *fp;
 	int order;
 
 	fp= *(stream **) getArgReference(stk,pci,1);
 	order = *(int*) getArgReference(stk,pci,2);
 	(void) order; /* fool compiler */
-	return CMDtableAll(fp,mb,stk,pci,3,1,TRUE);
+	return IOtableAll(fp,mb,stk,pci,3,1,TRUE);
 }
 
-str CMDftable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str IOftable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	stream *fp;
 	fp= *(stream **) getArgReference(stk,pci,1);
-	return CMDtableAll(fp,mb,stk,pci,2,0,TRUE);
+	return IOtableAll(fp,mb,stk,pci,2,0,TRUE);
 }
-str CMDttable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return CMDtableAll(GDKout,mb,stk,pci,1,0,FALSE);
+str IOttable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	return IOtableAll(GDKout,mb,stk,pci,1,0,FALSE);
 }
-str CMDtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str IOtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int order;
 	order = *(int*) getArgReference(stk,pci,1);
 	(void) order; /* fool compiler */
-	return CMDtableAll(GDKout,mb,stk,pci,1,0,FALSE);
+	return IOtableAll(GDKout,mb,stk,pci,1,0,FALSE);
 }
 
 @- Formatter print
@@ -728,7 +728,7 @@ This avoids repeated type checking in most cases.
 	default : *ret = stream_printf(fd,"\\");stream_printf(fd,"%c",*c);
 	}
 @c
-str SYSprint_str(int *ret, str *s){
+str IOprint_str(int *ret, str *s){
 	stream *fd = GDKout; 
 	str c;
 	if( strNil(*s)) stream_printf(fd,"nil");
@@ -780,7 +780,7 @@ This to simplify error handling
 @-
 
 @= printFormatted
-str SYSprint_formatted_@1(int *ret, ptr fmt, @1 *s){
+str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	stream *fd = getClient()->fdout;
 	char *format;
 	str c;
@@ -791,14 +791,14 @@ str SYSprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	if( formatMarker(format)!=1) 
 		return throwMessage("system.print", "too many %%");
 
-	if( *s == @1_nil) return SYSprint_formatted_nil(fd,* (str*) fmt, ret);
+	if( *s == @1_nil) return IOprint_formatted_nil(fd,* (str*) fmt, ret);
 	@:formatConversion(@2,*s)@
 	return MAL_SUCCEED;
 }
 @-
 String nil testing is slightly different.
 @c
-str SYSprint_formatted_nil(stream *fd, str format, int *ret){
+str IOprint_formatted_nil(stream *fd, str format, int *ret){
 	str c;
 	for(c= format;*c; c++){
 		if( *c=='\\'){
@@ -822,7 +822,7 @@ str SYSprint_formatted_nil(stream *fd, str format, int *ret){
 	}
 	return MAL_SUCCEED;
 }
-str SYSprint_formatted_str(int *ret, ptr fmt, str *s){
+str IOprint_formatted_str(int *ret, ptr fmt, str *s){
 	stream *fd = getClient()->fdout;
 	char *format;
 	str c;
@@ -833,11 +833,11 @@ str SYSprint_formatted_str(int *ret, ptr fmt, str *s){
 	if( formatMarker(format)!=1) 
 		return throwMessage("system.print", "too many %%");
 
-	if( strNil( *s)) return SYSprint_formatted_nil(fd,* (str*) fmt, ret);
+	if( strNil( *s)) return IOprint_formatted_nil(fd,* (str*) fmt, ret);
 	@:formatConversion(s,*s)@
 	return MAL_SUCCEED;
 }
-str SYSprint_oid(int *ret, ptr fmt, oid *s){
+str IOprint_oid(int *ret, ptr fmt, oid *s){
 	stream *fd = getClient()->fdout;
 	char *format;
 	str msg,c;
@@ -857,7 +857,7 @@ str SYSprint_oid(int *ret, ptr fmt, oid *s){
 		return throwMessage("system.print", "end-of-file error");
 	return MAL_SUCCEED;
 }
-str SYSprint_formatted_bit(int *ret, ptr fmt, bit *s){
+str IOprint_formatted_bit(int *ret, ptr fmt, bit *s){
 	stream *fd = getClient()->fdout;
 	char *format;
 	str msg;
@@ -899,7 +899,7 @@ The exported file is saved in the context of the directory
 where the server was started unless an absolute file name was
 presented.
 @c
-str SYSexport(int *ret, int *bid, str *fnme) {
+str IOexport(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	stream  *s = open_wastream(*fnme);
 	@:getBATdescriptor(ret,bid,b,export)@
@@ -931,7 +931,7 @@ a layout compatible with that produced by print or export.
         if(*@2 <0) @3 = BATmirror(@3);
 
 @c
-str SYSimport(int *ret, int *bid, str *fnme) {
+str IOimport(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	int	(*hconvert)(str, int*, ptr*), (*tconvert)(str, int*, ptr*);
 	size_t	bufsize = 2048; /* NIELS:tmp change used to be 1024 */
@@ -954,20 +954,20 @@ Open the file. Memory map it to minimize buffering problems.
 		int fn;
 	    	struct stat st;
                 if ((fn=fileno(fp)) <= 0) {
-                        return throwMessage("SYSimport","fileno fails\n");
+                        return throwMessage("IOimport","fileno fails\n");
                 }
                 if (fstat(fn, &st) != 0) {
-                        return throwMessage("SYSimports","fstat fails\n");
+                        return throwMessage("IOimports","fstat fails\n");
                 }
 
 		(void)fclose(fp);
 		if (st.st_size <= 0)
-                        return throwMessage("SYSimports",
+                        return throwMessage("IOimports",
 				"file empty or fstat broken?\n");
             	base = cur = (char*)MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size, NULL);
 		end = cur + st.st_size;
                 if (cur == (char*) -1) {
-                        return throwMessage("SYSimport", "MT_mmap failed\n");
+                        return throwMessage("IOimport", "MT_mmap failed\n");
                 }
 
 	}
