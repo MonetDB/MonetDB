@@ -93,6 +93,7 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
  --MONET_SOURCE=<abspath>
  --MONET_BUILD=<abspath>
  --MONET_PREFIX=<abspath>
+ --SQL_PREFIX=<abspath>
  --TSTSRCBASE=<abspath>
  --TSTBLDBASE=<abspath>
  --TSTTRGBASE=<abspath>
@@ -100,6 +101,7 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
 		MONET_SOURCE='''+GetMonetConfig('--source')+'''
 		MONET_BUILD='''+GetMonetConfig('--build')+'''
 		MONET_PREFIX='''+GetMonetConfig('--prefix')+'''
+		SQL_PREFIX='''+SQLprefix+'''
 		TSTSRCBASE=<MONET_SOURCE>
 		TSTBLDBASE=<MONET_BUILD>
 		TSTTRGBASE=<MONET_PREFIX>
@@ -788,10 +790,10 @@ def RunTest(env, TST) :
 		#TODO:
 		#elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
 		#SkipTest(env, TST, EXT, "as java is not in $PATH.")
-	elif SERVER == "SQL" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/server/catalog.mil")):
-		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/server/catalog.mil")+" is not available.")
-	elif SERVER == "SQL" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/server/sqlserver.mil")):
-		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/server/sqlserver.mil")+" is not available.")
+	elif SERVER == "SQL" and  not os.path.isfile(env['SQL_PREFIX']+path("/share/sql/catalog.mil")):
+		SkipTest(env, TST, EXT, "as "+env['SQL_PREFIX']+path("/share/sql/catalog.mil")+" is not available.")
+	elif SERVER == "SQL" and  not os.path.isfile(env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")):
+		SkipTest(env, TST, EXT, "as "+env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")+" is not available.")
 	elif EXT == ".sql" and  not env['exe']['sql_client'][0]:
 		SkipTest(env, TST, EXT, "as sql_client is not available.")
 	elif MissingMods:
@@ -1083,8 +1085,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 		if SERVER == "MAPI":
 			Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")
 		else:
-			Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/server/catalog.mil")
-			Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/server/sqlserver.mil")
+			Srvr = Srvr+" "+env['SQL_PREFIX']+path("/share/sql/catalog.mil")
+			Srvr = Srvr+" "+env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")
 		Srvr = Srvr+PROLOGUE
 		#-background"
 		if os.name == "nt":
@@ -1360,8 +1362,14 @@ def main(argv) :
 	#TODO:
 	#signal.signal(signal.SIGALRM, AlarmHandler)
 
+	if os.environ.has_key('SQL_PREFIX'):
+		SQLprefix = os.environ['SQL_PREFIX']
+	else:
+		SQLprefix = ''
+
 	vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX', \
-		'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'     ]
+		'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  , \
+		'SQL_PREFIX'                                   ]
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		vars = vars + ['MONETRC', 'MONET_MOD_PATH', 'MAPIPORT', 'SQLPORT']
 	if THISFILE == "Mprofile.py":
@@ -1372,6 +1380,7 @@ def main(argv) :
 	dft['MONET_SOURCE']   = "GetMonetConfig('--source')"
 	dft['MONET_BUILD']    = "GetMonetConfig('--build')"
 	dft['MONET_PREFIX']   = "GetMonetConfig('--prefix')"	# or THISPATH ?
+	dft['SQL_PREFIX']     = "SQLprefix"
 	dft['TSTSRCBASE']     = "env['MONET_SOURCE']"
 	dft['TSTBLDBASE']     = "env['MONET_BUILD']"
 	dft['TSTTRGBASE']     = "env['MONET_PREFIX']"	# or os.getcwd() ?
@@ -1405,7 +1414,7 @@ def main(argv) :
 
 	# commandline options overrule environment
 	shortOpts = "?hr"
-	longOpts  = ["help", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX="]
+	longOpts  = ["help", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX=", "SQL_PREFIX="]
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		shortOpts = shortOpts + "I:c:a:"
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
