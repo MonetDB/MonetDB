@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-1041324_JdbcClient` in directory 'src/test/bugs` itself:
+stdout of test 'unicode_varchar-bug-sf-1041324_JdbcClient` in directory 'src/test/bugs` itself:
 
 
 # 13:21:56 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:21:57 >  
-# 13:21:57 >  Mtimeout -timeout 180 ./bug-sf-1041324_JdbcClient.SQL bug-sf-1041324_JdbcClient 
+# 13:21:57 >  Mtimeout -timeout 180 ./unicode_varchar-bug-sf-1041324_JdbcClient.SQL bug-sf-1041324_JdbcClient 
 # 13:21:57 >  
 
 
