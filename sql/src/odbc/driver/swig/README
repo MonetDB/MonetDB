@@ -16,6 +16,9 @@ dbc = odbc.SQLAllocHandle(odbc.SQL_HANDLE_DBC, env)[1]
 odbc.SQLConnect(dbc, 'localhost', 'monetdb', 'monetdb')
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
 
+
+Some more code:
+
 import sys
 sys.path.insert(0,"build/lib.linux-i686-2.4")
 import odbc
@@ -23,26 +26,26 @@ env = odbc.SQLAllocHandle(odbc.SQL_HANDLE_ENV, None)[1]
 dbc = odbc.SQLAllocHandle(odbc.SQL_HANDLE_DBC, env)[1]
 odbc.SQLConnect(dbc, "localhost", "monetdb", "monetdb")
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
-odbc.SQLExecDirect(stmt, "CREATE DATABASE absentee")
+odbc.SQLExecDirect(stmt, """CREATE TABLE model (
+   model_id int(11) DEFAULT '0' NOT NULL,
+   is_mutagen CHAR(3),
+   lumo INT(11),
+   logp INT(11),
+   PRIMARY KEY (model_id)
+)""")
 odbc.SQLFreeHandle(odbc.SQL_HANDLE_STMT, stmt)
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
-odbc.SQLExecDirect(stmt, "USE absentee")
-odbc.SQLFreeHandle(odbc.SQL_HANDLE_STMT, stmt)
-stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
-odbc.SQLExecDirect(stmt, """CREATE TABLE absent (
-    person SMALLINT UNSIGNED,
-    start DATE,
-    end DATE,
-    period ENUM('Morning','Afternoon','Whole day'),
-    frequency TINYINT UNSIGNED,
-    reason VARCHAR(80),
-    id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    PRIMARY KEY (id),
-    gid VARCHAR(5) DEFAULT '')""")
-odbc.SQLFreeHandle(odbc.SQL_HANDLE_STMT, stmt)
-stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
-odbc.SQLExecDirect(stmt, "GRANT SELECT,INSERT,UPDATE,DELETE ON absentee.absent TO monetdb@localhost")
-odbc.SQLFreeHandle(odbc.SQL_HANDLE_STMT, stmt)
-stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
-odbc.SQLExecDirect(stmt, "INSERT INTO absent SET person = 234, start = '2003-9-14', end = '2003-9-22', period = 'Whole day', frequency = 1, reason = 'Vacation', gid = ''")
-odbc.SQLFreeHandle(odbc.SQL_HANDLE_STMT, stmt)
+odbc.SQLExecDirect(stmt, "SELECT * FROM model")
+for i in range(odbc.SQLNumResultCols(stmt)[1]):
+    odbc.SQLDescribeCol(stmt, i+1)
+
+
+
+Stuff missing (added to when found missing):
+
+ColumnHeader->nSQL_DESC_TYPE is not filled in by SQLExecute().  Can
+the information be derived from pszSQL_DESC_TYPE_NAME or is more info
+from the servr needed?  The info is neede by SQLColAttribute() and
+SQLDescribeCol().
+
+
