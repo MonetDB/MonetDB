@@ -60,7 +60,7 @@ Can be used in scripts, but is insecure.
 #include "Mapi.h"
 #endif /* _Mclient_H_*/
 @c
-#include "Mclient.h"
+#include "MapiClient.h"
 
 #include <monet_options.h>
 #include <stdlib.h> 
