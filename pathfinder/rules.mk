@@ -157,6 +157,19 @@ MXFLAGS= -notouch
 %.eps: %.feps
 	$(CP) $< $@
 
+%.symbols.h %.c : %.mt
+	$(CP) $< tmp.mt
+	$(TWIG) -t tmp.mt
+	mv -f symbols.h $*.symbols.h
+	sed 's/^short\(.*\)=/static short\1=/' walker.c > $@
+	rm -f walker.c
+	rm -f tmp.mt
+
+% :: %.m4
+	rm -f $@
+	$(M4) $< >$@
+	chmod =r $@
+
 $(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
 	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
 
