@@ -110,7 +110,7 @@ stream_export ssize_t stream_write(stream *s, void *buf, size_t elmsize, size_t 
 stream_export void stream_close(stream *s);
 stream_export void stream_destroy(stream *s);
 stream_export char *stream_error(stream *s);
-stream_export void stream_flush(stream *s);
+stream_export int stream_flush(stream *s);
 stream_export char *stream_name(stream *s);
 stream_export int stream_errnr(stream *s);
 stream_export int stream_byteorder(stream *s);
@@ -279,7 +279,7 @@ struct stream {
 	void (*close)(stream *s);
 	char *(*error)(stream *s);
 	void (*destroy)(stream *s);
-	void (*flush)(stream *s);
+	int (*flush)(stream *s);
 };
 
 #if !HAVE_DECL_STRDUP
@@ -385,13 +385,14 @@ char *stream_error(stream *s)
 	return (*s->error)(s);
 }
 
-void stream_flush(stream *s)
+int stream_flush(stream *s)
 {
 #ifdef STREAM_DEBUG
 	printf("flush %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	if (s->flush)
-		(*s->flush)(s);
+		return (*s->flush)(s);
+	return 0;
 }
 
 char *stream_name(stream *s)
@@ -513,10 +514,11 @@ static void file_close( stream *s )
 	s->stream_data.p = NULL;
 }
 
-static void file_flush( stream *s )
+static int file_flush( stream *s )
 {
 	if (s->access == ST_WRITE)
 		fflush( (FILE*)s->stream_data.p);
+	return 0;
 }
 
 static stream *open_stream( const char *filename, const char *flags )
@@ -720,10 +722,11 @@ static void stream_gzclose( stream *s )
 		gzclose( (gzFile*)s->stream_data.p);
 	s->stream_data.p = NULL;
 }
-static void stream_gzflush( stream *s )
+static int stream_gzflush( stream *s )
 {
 	if (s->access == ST_WRITE)
 		gzflush( (gzFile*)s->stream_data.p, Z_SYNC_FLUSH);
+	return 0;
 }
 stream *open_gzstream( const char *filename, const char *flags )
 {
@@ -795,10 +798,11 @@ static void stream_bzclose( stream *s )
 		BZ2_bzclose( (BZFILE*)s->stream_data.p);
 	s->stream_data.p = NULL;
 }
-static void stream_bzflush( stream *s )
+static int stream_bzflush( stream *s )
 {
 	if (s->access == ST_WRITE)
 		BZ2_bzflush( (BZFILE*)s->stream_data.p);
+	return 0;
 }
 stream *open_bzstream( const char *filename, const char *flags )
 {
@@ -1381,10 +1385,11 @@ static void buffer_close( stream *s )
 {
 	(void) s;
 }
-static void buffer_flush( stream *s )
+static int buffer_flush( stream *s )
 { 
 	buffer *b = (buffer*)s->stream_data.p;
 	b->pos = 0;
+	return 0;
 }
 
 stream *buffer_rastream( buffer *b, const char *name )
@@ -1579,16 +1584,18 @@ ssize_t bs_read_next( stream *ss, void *buf, int *last )
 }
 
 static
-void bs_flush(stream *ss)
+int bs_flush(stream *ss)
 {
 	bs *s = (bs*)ss->stream_data.p;
 	if (s->onr){
 		if (!stream_writeInt( s->s, s->onr) ||
 			s->s->write( s->s, s->out, 1, s->onr ) != s->onr){
 			ss->errnr = WRITE_ERROR;
+			return -1;
 		}
 	}
 	s->onr = 0;
+	return 0;
 }
 
 static
