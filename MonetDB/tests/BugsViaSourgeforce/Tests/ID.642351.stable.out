@@ -417,7 +417,7 @@ d.print();
 # BAT:	  tmp_28  #
 # (oid)	  (void)  #
 #-----------------#
-d@batloop { b.find($h).print(); }
+d@batloop() { b.find($h).print(); }
 
 var DBGMSK := debugmask();
 debugmask(or(DBGMSK,2097152));
@@ -429,7 +429,7 @@ e.print();
 # BAT:	  tmp_29  #
 # (oid)	  (void)  #
 #-----------------#
-e@batloop { b.find($h).print(); }
+e@batloop() { b.find($h).print(); }
 quit();
 
 # 17:33:35 >  

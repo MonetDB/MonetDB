@@ -1,4 +1,4 @@
-ls;
+ls();
 bat("a").print();
 bat("b").print();
 # tidy up

@@ -74,7 +74,7 @@ monet_mod_nme.reverse.sort.print;
 [ "kernel",	  10000@0	  ]
 [ "sys",	  10366@0	  ]
 [ "trans",	  10423@0	  ]
-monet_mod_nme.reverse.sort@batloop{
+monet_mod_nme.reverse.sort@batloop(){
 	printf("\n\t%s\n\n",$h);
 	sigs($h);
 }
@@ -779,7 +779,7 @@ others.print;
 [ "Example",	  20	  ]
 [ "CC_odmg",	  23	  ]
 [ "CC_Test",	  26	  ]
-others@batloop{
+others@batloop(){
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
 	loaded;
@@ -787,7 +787,7 @@ others@batloop{
 	procs;
 	off:=kdiff(monet_mod_nme.reverse,fix);
 	off.print;
-	off@batloop{
+	off@batloop(){
 		printf("\n\tdropping %s\n\n",$h);
 		drop($h);
 	}

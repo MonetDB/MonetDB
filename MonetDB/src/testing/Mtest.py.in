@@ -1079,10 +1079,10 @@ def GetBitsAndModsAndStatic(env) :
             {
                 # print a list of all modules found
                 # "Modules: mod1, mod2, ..."
-                var MODs := kunion(bat("monet_mod_nme").reverse().mark(oid(nil)),view_modules.reverse().mark(oid(nil))).kunique();
+                var MODs := kunion(bat("monet_mod_nme").reverse().mark(oid(nil)),view_modules().reverse().mark(oid(nil))).kunique();
                 printf("\\nModules: ");
                 var x := "";
-                MODs@batloop{
+                MODs@batloop(){
                     printf("%s\'%s\'",x,$h);
                     x:=",";
                 }
@@ -1188,7 +1188,7 @@ def CheckBATs(env, TST, TSTDB) :
             var BATs := view_bbp_name();
             printf("\\nBATs: ");
             var x := "";
-            BATs@batloop{
+            BATs@batloop(){
                 printf("%s\'%s\'",x,$t);
                 x:=",";
             }

@@ -33,11 +33,11 @@ c.import(TTD + "/ID.642351.c.txt");
 c.print();
 var d:=c.kintersect(b);
 d.print();
-d@batloop { b.find($h).print(); }
+d@batloop() { b.find($h).print(); }
 
 var DBGMSK := debugmask();
 debugmask(or(DBGMSK,2097152));
 var e:=c.kintersect(b);
 debugmask(DBGMSK);
 e.print();
-e@batloop { b.find($h).print(); }
+e@batloop() { b.find($h).print(); }

@@ -18,7 +18,7 @@ var Fsig:=new(oid,str);		Fsig.col_name("signature");
 var Fhelp:=new(oid,str);	Fhelp.col_name("help");
 var Fnts:=new(oid,str);
 
-monet_fcntbl.sort()@batloop {
+monet_fcntbl.sort()@batloop() {
 	var Tname:=$h;
 	var Ttype:=help_tpe(monet_fcn_tpe.find($t));
 	var Tmod:="";
@@ -47,7 +47,7 @@ monet_fcntbl.sort()@batloop {
 
 Fnts.count().print();
 [ 671 ]
-Fnts.reverse().sort().reverse()@batloop {
+Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
@@ -68,7 +68,7 @@ table(Static_mods.reverse().col_name(sprintf("%i modules",Static_mods.count())))
 [ "str"		  ]
 [ "sys"		  ]
 [ "trans"	  ]
-Static_mods@batloop {
+Static_mods@batloop() {
 	printf("\nModule: \"%s\"\n\n",$h);
 	var FnameM:=kintersect(FnameS,Fmod.select($h));FnameM.col_name("function");
 	FnameM.count().print(); table(1,FnameM,Ftype,Fsig,Fhelp);

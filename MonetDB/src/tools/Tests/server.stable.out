@@ -839,7 +839,7 @@ qstat();
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
 
-bbp.print();
+bbp().print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #

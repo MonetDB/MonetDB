@@ -9,7 +9,7 @@ bat("MMO_location").insert(oid(3),"http://www.searchengineshowdown.com/");
 bat("MMO_location").print();
 }
 
-commit;
+commit();
 
 {
 bat("MMO_location").delete(oid(0));
@@ -21,7 +21,7 @@ bat("MMO_location").insert(oid(2),"http://www.altavista.com/");
 bat("MMO_location").print();
 }
 
-commit;
+commit();
 
 {
 unload("MMO_location").print();

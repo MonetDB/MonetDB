@@ -37,7 +37,7 @@
 # printf("!After multiplex operation\n");
 #         } ELSE {
 #                 res := new(theBitsets.htype,int);
-#                 theBitsets@batloop {
+#                 theBitsets@batloop() {
 #                         VAR b := $t*theBit;
 #                         res.insert($h,b);
 #                 }
@@ -47,7 +47,7 @@
 # }
 # 
 # PROC bitsetHist(any theEnum,any theBitsets,any loop) : void {
-#         theEnum@batloop {
+#         theEnum@batloop() {
 #                 VAR c := extractBit(theBitsets,$h,$t,false);
 #         }
 # }

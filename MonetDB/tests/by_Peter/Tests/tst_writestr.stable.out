@@ -30,7 +30,7 @@ debugmask(m);
  unload("aa");
 }
 
-commit;
+commit();
 
 i := 0;
 while(true) { 

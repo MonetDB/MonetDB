@@ -110,7 +110,7 @@ print(b.info(),c.info());
 [ "tail_index",			  "absent",	  "absent"	  ]
 
 # save the list of BATs
-var pre  := view_bbp_name.copy().rename("pre");
+var pre  := view_bbp_name().copy().rename("pre");
 
 # build a histogram (accellerator) 
 # on both the original BAT and the view BAT
@@ -136,7 +136,7 @@ c := 0;
 b := 0;
 
 # check, which BATs still exist
-var post := view_bbp_name.copy().rename("post");
+var post := view_bbp_name().copy().rename("post");
 
 # both the original BAT and the view BAT
 # are gone. correct.
