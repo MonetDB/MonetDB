@@ -299,12 +299,9 @@ def msc_deps(fd, deps, objext, msc):
                 fd.write("\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t, b))
 	    if ext == "mil":
 		fd.write(getsrc)
-		print(deplist)
 		if b+".tmpmil" in deplist:
 			fd.write("\t$(MEL) $(INCLUDES) -mil %s.m > $@\n" % (b))
 			fd.write("\ttype %s.tmpmil >> $@\n" % (b))
-
-			
             if ext in ("obj", "glue.obj", "tab.obj", "yy.obj"):
                 target, name = msc_find_target(tar, msc)
                 if name[0] == '_':

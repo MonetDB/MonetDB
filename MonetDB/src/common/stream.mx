@@ -147,6 +147,8 @@ stream_export stream *open_bzrastream( char *filename );
 stream_export stream *open_bzwastream( char *filename );
 #endif
 
+stream_export void close_stream( stream *s );
+
 stream_export stream *socket_rstream( int socket, char *name );
 stream_export stream *socket_wstream( int socket, char *name );
 stream_export stream *socket_rastream( int socket, char *name );
@@ -354,12 +356,13 @@ static void stream_close( stream *s ){
 	if (!fp) return;
 	if (fp != stdin && fp != stdout && fp != stderr)
 		fclose( fp );
-	else
+	else if (s->access == ST_WRITE)
 		fflush( fp );
 }
 
 static void stream_flush( stream *s ){
-	fflush( (FILE*)s->stream_data);
+	if (s->access == ST_WRITE)
+		fflush( (FILE*)s->stream_data);
 }
 
 static stream *open_stream( char *filename, char *flags ){
@@ -542,7 +545,8 @@ static void stream_gzclose( stream *s ){
 	gzclose( (gzFile*)s->stream_data);
 }
 static void stream_gzflush( stream *s ){
-	gzflush( (gzFile*)s->stream_data, Z_SYNC_FLUSH);
+	if (s->access == ST_WRITE)
+		gzflush( (gzFile*)s->stream_data, Z_SYNC_FLUSH);
 }
 stream *open_gzstream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
@@ -605,7 +609,8 @@ static void stream_bzclose( stream *s ){
 	BZ2_bzclose( (BZFILE*)s->stream_data);
 }
 static void stream_bzflush( stream *s ){
-	BZ2_bzflush( (BZFILE*)s->stream_data);
+	if (s->access == ST_WRITE)
+		BZ2_bzflush( (BZFILE*)s->stream_data);
 }
 stream *open_bzstream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
@@ -1240,5 +1245,15 @@ void bstream_destroy( bstream *s )
 {
 	free(s->buf);
 	free(s);
+}
+
+void close_stream( stream *s )
+{
+	if (s && !s->errnr){
+		s->close( s );
+		s->destroy( s );
+	} else if (s) {
+		s->destroy( s );
+	}
 }
 

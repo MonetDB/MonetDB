@@ -263,7 +263,7 @@ int mo_system_config( opt **Set, int setlen)
 int mo_builtin_settings(opt **Set)
 {
 	int i = 0;
-	opt *set = (opt*)malloc(sizeof(opt)*23 /*MUST MATCH # OPTIONS BELOW*/);
+	opt *set = (opt*)malloc(sizeof(opt)*24 /*MUST MATCH # OPTIONS BELOW*/);
 
 	if (!set) return 0;
 
@@ -365,6 +365,12 @@ int mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_schema");
 	set[i].value = strdup("default-schema");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("sql_logdir");
+	set[i].value = (char*)malloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,
+		"@Qlocalstatedir@%c@PACKAGE@%clog", DIR_SEP, DIR_SEP);
 	i++;
 	
 	*Set = set;

@@ -268,12 +268,7 @@ int stream_flush( Stream *S ){
 }
 
 int stream_close_stream( Stream *S ){
-	stream *s = *(stream**)S;
-	if (s && !s->errnr){
-		s->close( s );
-	} else if (s) {
-		s->destroy( s );
-	}
+	close_stream(*(stream**)S);
 	return GDK_SUCCEED;
 }
 

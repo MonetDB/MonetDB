@@ -171,8 +171,8 @@ Find an empty client slot.  The console entry is reserved.
 	if (thread) {
 		if ((int)monetFork() < 0) return 0;
 	}
-       	c->user = nme;
-	c->prompt = prompt;
+       	c->user = GDKstrdup(nme);
+	c->prompt = GDKstrdup(prompt);
 	c->fdin = GDKstdin;
 	c->fdout = GDKstdout;
 	c->maxstk = c->stk = (int) (c-monet_clients);
@@ -285,6 +285,7 @@ Client forkClient(Cntxt stk, int thread){
 	}
 
 	if (father && (son=initClient(father->user, father->prompt, FALSE))) {
+
 	        /* reuse all crucial table information from father */
 		son->fdin = father->fdin;
 		son->fdout = father->fdout;
@@ -294,14 +295,17 @@ Client forkClient(Cntxt stk, int thread){
         	son->triggers = father->triggers;
         	son->events = father->events;
         	son->login = father->login;
-        	son->father = father->stk;
+
 		/* also reuse father's stack */
-		if (thread){
+		if (thread) {
 			son->father = -1;
 			nstk = CNTXTcopy( stk );
 			monet_cntxt[son->stk].outer = nstk;
 			TBL_initclient(son, father);
+			son->fdin = file_rastream(stdin, "stdin");
+			son->fdout = file_wastream(stdout, "stdout");
 		} else {
+        		son->father = father->stk;
         		monet_cntxt[son->stk].outer = stk;
         		monet_cntxt[son->stk].shadow = 1;
 		}
@@ -354,7 +358,7 @@ void freeClient(Client c) {
 		}
 		GDKfree(c->user); 
 		GDKfree(c->prompt); 
-	} else { 			/* fork() client */
+	} else { 			/* nested client */
 		c->father = monet_cntxt[c->stk].outer = -1;
 	}
 

@@ -832,8 +832,8 @@ int BBPtransient(bat i, int trans) {
 		}
 		if (pid != locked_by)
 	        	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPtransient"); 
-	    	if (!(BBP_status(i)&BBPPERSISTENT) && BBP_lrefs(i) == 0 
-		  		&& BBP_refs(i) == 0){
+	    	if (!(BBP_status(i)&BBPPERSISTENT) && BBP_lrefs(i) == 0 && BBP_refs(i) == 0)
+		{
 			BAT *b = (BAT*) BBPquickdesc(i, TRUE);
 			if (BBP_cache(i)) {
 				if (b->batPersistence != SESSION) BBPfree(b);

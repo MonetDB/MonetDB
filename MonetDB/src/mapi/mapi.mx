@@ -163,7 +163,7 @@ This module contains a simple interface for internet connections.
 int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	struct sockaddr_in server;
 	int 	sock;
-	SOCKLEN 	length;
+	SOCKLEN 	length = 0;
 	int    	on = 1;
 	int 	msgsock;
 	int	i = 0;
@@ -235,7 +235,8 @@ Get the new information for the server socket and start listening.
     		tv.tv_usec = 500;
 
     		retval = select(sock+1, &fds, &fds, &fds, &tv);
-    		if (retval && (msgsock = accept(sock, 0, (SOCKLEN *)0)) < 0) {
+		length = 0;
+    		if (retval && (msgsock = accept(sock, 0, &length)) < 0) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlisten:accept failed\n");
 				return GDK_FAIL;
@@ -271,7 +272,8 @@ Get the new information for the server socket and start listening.
 				strncpy(nmp+1,mp,mpl);
 				nmp[mpl+1] = '\1';
 				nmp[mpl+2] = '\0';
-				c = initClient(GDKstrdup(name), nmp, FALSE);
+				c = initClient(name, nmp, FALSE);
+				GDKfree(nmp);
 				if (c == 0) {
 					stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 					GDKfree(name);
@@ -290,10 +292,6 @@ Get the new information for the server socket and start listening.
 				c->socket = msgsock;
 				c->fdin = fdin;
 				c->fdout = fdout;
-@
-changed setbuf to setbuffer to avoid unintentional buffer overflow.
-	                       	setbuffer(c->fdout, c->output, 4096);
-@c
 				c->mode = BLOCKMODE;
 				monet_cntxt[c->stk].outer = CNTXTcopy(stk);
 				TBL_initclient(c, father);

@@ -2188,19 +2188,20 @@ deletes a MIL procedure. If pid is nil all procs with the
 given name are deleted.
 @c
 void TBL_delproc(Client client, str nme, oid pid, int lock) {
+	BAT *cb = BATmirror(client->fcntbl);
    	int xx, yy = TOK_PROC;
-        BAT *sb, *tb, *bb, *cb = BATmirror(client->fcntbl);
 	BUN p,q;
-
   
 	if (lock) TBL_M_lock(client);
-	sb = BATuselect(cb, nme, nme);
-        tb = BATsemijoin(TBL_fcn_tpe, sb);
-	BBPreclaim(sb);
-        bb = BATuselect(tb, &yy, &yy);
-	BBPreclaim(tb);
 
 	if (pid == oid_nil) {
+          BAT *sb, *tb, *bb;
+	  sb = BATuselect(cb, nme, nme);
+          tb = BATsemijoin(TBL_fcn_tpe, sb);
+	  BBPreclaim(sb);
+          bb = BATuselect(tb, &yy, &yy);
+	  BBPreclaim(tb);
+
 	  BATloopFast(bb, p, q, xx) {
 	    BUN s;
 	    int cnt;
@@ -2224,8 +2225,10 @@ void TBL_delproc(Client client, str nme, oid pid, int lock) {
   		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
 	    }
  	  }
+	  BBPreclaim(bb);
 	} else {
-	  if (BUNfnd(bb, &pid)){
+	  int type = *(int*)BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid));
+	  if (type == TOK_PROC){
 	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
 	    if (cnt == 1){
 		YYSTREE *x = (YYSTREE*)
@@ -2244,7 +2247,6 @@ void TBL_delproc(Client client, str nme, oid pid, int lock) {
 	    }
 	  }
 	}
-	BBPreclaim(bb);
 	if (lock) TBL_M_unlock(client);
 }
 
