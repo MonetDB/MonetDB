@@ -408,7 +408,7 @@ public class JdbcClient {
 									// find the widths of the columns
 									int[] width = new int[md.getColumnCount()];
 									for (int j = 0; j < md.getColumnCount(); j++) {
-										width[j] = Math.max(md.getColumnDisplaySize(j + 1), md.getColumnName(j + 1).length());
+										width[j] = Math.max((md.getColumnDisplaySize(j + 1) == 0 ? 8 : md.getColumnDisplaySize(j + 1)), md.getColumnName(j + 1).length());
 									}
 
 									out.print("+");
@@ -432,7 +432,7 @@ public class JdbcClient {
 										out.print("|");
 										for (int j = 0; j < width.length; j++) {
 											String data = rs.getString(j + 1);
-											out.print(" " + data + repeat(' ', width[j] - data.length()) +  " |");
+											out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
 										}
 										out.println();
 									}
@@ -704,11 +704,11 @@ public class JdbcClient {
 			dumpTable(
 				out,
 				stmt,
-				table.getFqname()
+				table.getFqnameQ()
 			);
 		} else {
 			if (table.getType().equals("VIEW")) {
-				out.println("<!-- unable to represent VIEW " + table + " -->");
+				out.println("<!-- unable to represent VIEW " + table.getFqnameQ() + " -->");
 			} else {
 				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqnameQ());
 				ResultSetMetaData rsmd = rs.getMetaData();

@@ -2428,13 +2428,14 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	{
 		String query =
 			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
-			"\"tables\".\"name\" AS \"TABLE_NAME\", \"idxs\".\"type\" AS \"nonunique\", " +
+			"\"tables\".\"name\" AS \"TABLE_NAME\", CASE \"keys\".\"name\" WHEN NULL " +
+			"THEN true ELSE false END AS \"NON_UNIQUE\", " +
 			"null AS \"INDEX_QUALIFIER\", \"idxs\".\"name\" AS \"INDEX_NAME\", " +
 			DatabaseMetaData. tableIndexOther + " AS \"TYPE\", " +
 			"\"columns\".\"number\" AS \"ORDINAL_POSITION\", \"columns\".\"name\" AS \"COLUMN_NAME\", " +
 			"null AS \"ASC_OR_DESC\", 0 AS \"PAGES\", " +
 			"null AS \"FILTER_CONDITION\" " +
-				"FROM \"idxs\", ( " +
+				"FROM \"idxs\" LEFT JOIN \"keys\" ON \"idxs\".name = \"keys\".name, ( " +
 					"SELECT * FROM \"columns\" " +
 					"UNION ALL " +
 					"SELECT * FROM \"tmp_columns\" " +
@@ -2487,7 +2488,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			result[0]  = null;
 			result[1]  = rs.getString("table_schem");
 			result[2]  = rs.getString("table_name");
-			result[3]  = (rs.getInt("nonunique") == 0 ? "false" : "true");
+			result[3]  = rs.getString("non_unique");
 			result[4]  = rs.getString("index_qualifier");
 			result[5]  = rs.getString("index_name");
 			result[6]  = rs.getString("type");
