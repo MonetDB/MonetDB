@@ -517,7 +517,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.3.16-rc03"
+#define VERSION "4.3.16_rc04"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32
