@@ -615,6 +615,7 @@ module(blob);
 module(txtsim);
 module(mmath);
 module(mkey);
+module(bat_arith);
 module(mapi); # mapi_listen 
 
 # extra SQL string functions 
