@@ -78,6 +78,8 @@ mal_export int idLength(Client cntxt);
 mal_export str idCopy(Client cntxt, int len);
 mal_export int cstLength(Client cntxt, int *type);
 mal_export str cstCopy(Client cntxt, int len);
+mal_export int stringLength(Client cntxt);
+mal_export str charCst(Client cntxt);
 mal_export int operatorLength(Client cntxt);
 mal_export str operatorCopy(Client cntxt, int length);
 mal_export int keyphrase(Client cntxt, str kw, int length);
