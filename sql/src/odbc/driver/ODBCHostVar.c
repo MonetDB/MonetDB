@@ -193,6 +193,26 @@ void addOdbcOutArray(OdbcOutArray * this, OdbcOutHostVar var)
 	this->array[icol] = var;
 }
 
+void delOdbcInArray(OdbcInArray * this, int n)
+{
+	assert(this);
+
+	if (n < this->size && this->array != NULL && this->array[n] != NULL) {
+		destroyOdbcInHostVar(this->array[n]);
+		this->array[n] = NULL;
+	}
+}
+
+void delOdbcOutArray(OdbcOutArray * this, int n)
+{
+	assert(this);
+
+	if (n < this->size && this->array != NULL && this->array[n] != NULL) {
+		destroyOdbcOutHostVar(this->array[n]);
+		this->array[n] = NULL;
+	}
+}
+
 
 void destroyOdbcInArray(OdbcInArray * this)
 {
@@ -232,3 +252,4 @@ void destroyOdbcOutArray(OdbcOutArray * this)
 	}
 	this->size = 0;
 }
+

@@ -6,7 +6,8 @@ typedef enum sql_query_t {
 	QTABLE = 2,
 	QUPDATE = 3,
 	QDATA = 4, 
-	QHEADER = 5 
+	QHEADER = 5,
+	QDEBUG = 6
 } sql_query_t;
 
 #endif /* QUERY_H */

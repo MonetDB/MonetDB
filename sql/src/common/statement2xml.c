@@ -193,7 +193,7 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 		len += snprintf( buf+len, BUFSIZ, 
 			"s%d := mvc_create_column(myc, %ld, %ld, \"%s\", \"%s\", %d, %d, %d);\n",
 			s->nr, c->id, c->table->id, c->name, 
-			c->tpe->type->sqlname, c->tpe->size, c->tpe->digits, c->colnr );
+			c->tpe->type->sqlname, c->tpe->digits, c->tpe->scale, c->colnr );
 		XNODE("mvc_create_column");
 			xml_field("name", "%s", c->name);
 		FXNODE;

@@ -233,10 +233,10 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 -*/
 
 %token <sval> 
-	IDENT TYPE STRING AGGR INT INTNUM APPROXNUM USER USING
+	IDENT TYPE AGGR STRING INT INTNUM APPROXNUM USER USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
-	CHARACTER NUMERIC DECIMAL INTEGER FLOAT REAL
-	DOUBLE PRECISION VARCHAR PARTIAL SIMPLE ACTION CASCADE RESTRICT
+	CHARACTER NUMERIC DECIMAL FLOAT REAL
+	DOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_USER CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
 
@@ -633,8 +633,8 @@ default_value:
     literal 
 
  |  USER     
-		{  sql_subtype t; t.size = t.digits = 0;
-		   t.type = sql_bind_type("STRING" ); 
+		{  sql_subtype t; t.digits = t.scale = 0;
+		   t.type = sql_bind_type("VARCHAR" ); 
 		   $$ = _newAtomNode( atom_string(&t, $1)); }
  |  NULLX 	
 		{ $$ = _newAtomNode( NULL);  }
@@ -1406,36 +1406,31 @@ scalar_exp:
 
  |  scalar_exp '+' scalar_exp	
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, _strdup("add"));
+				  dlist_append_string(l, _strdup("sql_add"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '-' scalar_exp   
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, _strdup("sub"));
+				  dlist_append_string(l, _strdup("sql_sub"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '*' scalar_exp
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, _strdup("mul"));
+				  dlist_append_string(l, _strdup("sql_mul"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '/' scalar_exp
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, _strdup("div"));
+				  dlist_append_string(l, _strdup("sql_div"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
- |  '+' scalar_exp %prec UMINUS { $$ = $2;
-				  /*
-				  dlist *l = dlist_create();
-				  dlist_append_string(l, _strdup("pos"));
-	  			  dlist_append_symbol(l, $2);
-	  			  $$ = _symbol_create_list( SQL_UNOP, l );*/ }
+ |  '+' scalar_exp %prec UMINUS { $$ = $2; }
  |  '-' scalar_exp %prec UMINUS { dlist *l = dlist_create();
-				  dlist_append_string(l, _strdup("neg"));
+				  dlist_append_string(l, _strdup("sql_neg"));
 	  			  dlist_append_symbol(l, $2);
 	  			  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '(' scalar_exp ')' 		{ $$ = $2; }
@@ -1498,8 +1493,8 @@ datetime_funcs:
 string_funcs:
     SUBSTRING '(' scalar_exp FROM intval FOR intval ')' 
 				{ dlist *l = dlist_create();
-				  sql_subtype t; t.size = t.digits = 0;
-				  t.type = sql_bind_type("INTEGER");
+				  sql_subtype t; t.digits = t.scale = 0;
+				  t.type = sql_bind_type("MEDIUMINT");
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, _newAtomNode(
@@ -1542,8 +1537,8 @@ atom:
     literal 	
 
  |  USER     
-		{  sql_subtype t; t.size = t.digits = 0;
-		   t.type = sql_bind_type("STRING" ); 
+		{  sql_subtype t; t.digits = t.scale = 0;
+		   t.type = sql_bind_type("VARCHAR" ); 
 		   $$ = _newAtomNode( atom_string(&t, $1)); }
  ;
 
@@ -1647,37 +1642,37 @@ interval_type:
     INTERVAL interval_qualifier	{ 
 		/* TODO: 
 		   usual trick is to have a INTERVAL type per range (YEAR-DAY
-		 * etc, and store the precisions in size/digits */
+		 * etc, and store the precisions in digits/scale */
 		$$ = new_subtype("INTERVAL", 0, 0); }
  ;
 
 literal:
     STRING   
-		{  sql_subtype t; t.size = t.digits = 0;
-		   t.type = sql_bind_type("STRING" ); 
+		{  sql_subtype t; t.digits = t.scale = 0;
+		   t.type = sql_bind_type("VARCHAR" ); 
 		   $$ = _newAtomNode( atom_string(&t, $1)); }
  |  intval   
-		{ sql_subtype t; t.size = t.digits = 0;
-		  t.type = sql_bind_type("INTEGER" );
+		{ sql_subtype t; t.digits = t.scale = 0;
+		  t.type = sql_bind_type("MEDIUMINT" );
 		  $$ = _newAtomNode( atom_int(&t, $1)); }
  |  INTNUM   
-		{ sql_subtype t; t.size = t.digits = 0;
+		{ sql_subtype t; t.digits = t.scale = 0;
 		  t.type = sql_bind_type("FLOAT" );
 		  $$ = _newAtomNode( atom_float(&t, strtod($1,&$1))); }
  |  APPROXNUM
-		{ sql_subtype t; t.size = t.digits = 0;
+		{ sql_subtype t; t.digits = t.scale = 0;
 		  t.type = sql_bind_type("DOUBLE" );
 		  $$ = _newAtomNode( atom_float(&t, strtod($1,&$1))); }
  |  DATE STRING 
-		{ sql_subtype t; t.size = t.digits = 0;
+		{ sql_subtype t; t.digits = t.scale = 0;
 		  t.type = sql_bind_type("DATE" );
 		  $$ = _newAtomNode( atom_general(&t, $2)); }
  |  TIME STRING 
-		{ sql_subtype t; t.size = t.digits = 0;
+		{ sql_subtype t; t.digits = t.scale = 0;
 		  t.type = sql_bind_type("TIME" );
 		  $$ = _newAtomNode( atom_general(&t, $2)); }
  |  TIMESTAMP STRING 
-		{ sql_subtype t; t.size = t.digits = 0;
+		{ sql_subtype t; t.digits = t.scale = 0;
 		  t.type = sql_bind_type("TIMESTAMP" );
 		  $$ = _newAtomNode( atom_general(&t, $2)); }
  |  INTERVAL opt_sign STRING interval_qualifier
@@ -1687,7 +1682,7 @@ literal:
 			yyerror("incorrect interval");
 			$$ = NULL;
 	  	  } else {
-			sql_subtype t; t.size = t.digits = 0; 
+			sql_subtype t; t.digits = t.scale = 0; 
 			if (tpe == 0){
 				t.type = sql_bind_type("MONTH_INTERVAL");
 			} else {
@@ -1697,16 +1692,16 @@ literal:
 	  	  }
 		}
  |  TYPE STRING 
-		{ sql_subtype t; t.size = t.digits = 0;
+		{ sql_subtype t; t.digits = t.scale = 0;
 		  t.type = sql_bind_type($1);
 		  $$ = _newAtomNode( atom_general(&t, $2)); 
 	  	  _DELETE($1); }
  |  BOOL_FALSE  
-		{ sql_subtype t; t.size = t.digits = 0;
+		{ sql_subtype t; t.digits = t.scale = 0;
 		  t.type = sql_bind_type("BOOL" );
 		  $$ = _newAtomNode( atom_general(&t, "false")); }
  |  BOOL_TRUE  
-		{ sql_subtype t; t.size = t.digits = 0;
+		{ sql_subtype t; t.digits = t.scale = 0;
 		  t.type = sql_bind_type("BOOL" );
 		  $$ = _newAtomNode( atom_general(&t, "true")); }
  ;
@@ -1817,9 +1812,6 @@ data_type:
  |  DECIMAL '(' intval ')'	{ $$ = new_subtype("DECIMAL", $3, 0); }
  |  DECIMAL '(' intval ',' intval ')' 
 				{ $$ = new_subtype("DECIMAL", $3, $5); }
- |  INT				{ $$ = new_subtype("INTEGER", 0, 0); }
- |  INTEGER			{ $$ = new_subtype("INTEGER", 0, 0); }
- |  INTEGER '(' intval ')'	{ $$ = new_subtype("INTEGER", $3, 0); }
  |  FLOAT			{ $$ = new_subtype("FLOAT", 0, 0); }
  |  FLOAT '(' intval ')'	{ $$ = new_subtype("FLOAT", $3, 0); }
  |  FLOAT '(' intval ',' intval ')'	
@@ -1829,8 +1821,6 @@ data_type:
  |  DOUBLE '(' intval ',' intval ')' 	
 				{ $$ = new_subtype("DOUBLE", $3, $5); }
  |  DOUBLE PRECISION		{ $$ = new_subtype("DOUBLE", 0, 0); }
- |  VARCHAR			{ $$ = new_subtype("VARCHAR", 0, 0); }
- |  VARCHAR '(' intval ')'	{ $$ = new_subtype("VARCHAR", $3, 0); }
  | datetime_type
  | interval_type		
  | TYPE				{ $$ = new_subtype($1, 0, 0); _DELETE($1); }
@@ -1852,12 +1842,10 @@ non_reserved_word:
   CHARACTER 	{ $$ = _strdup("character"); }
 | NUMERIC 	{ $$ = _strdup("numeric"); }
 | DECIMAL 	{ $$ = _strdup("decimal"); }
-| INTEGER 	{ $$ = _strdup("integer"); }
 | FLOAT 	{ $$ = _strdup("float"); }
 | REAL 		{ $$ = _strdup("real"); }
 | DOUBLE 	{ $$ = _strdup("double"); }
 | PRECISION 	{ $$ = _strdup("precision"); }
-| VARCHAR 	{ $$ = _strdup("varchar"); }
 | DATE 		{ $$ = _strdup("date"); }
 | TIME 		{ $$ = _strdup("time"); }
 | TIMESTAMP	{ $$ = _strdup("timestamp"); }

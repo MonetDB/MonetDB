@@ -1829,24 +1829,6 @@ static stmt *sql_compare(context * sql, stmt * ls,
 	}
 	if (join) {
 		if (ls->h && rs->h && ls->h == rs->h) {
-			/* 
-			 * same table, ie. no join 
-			 * do a [compare_op].select(true) 
-			sql_subtype t;
-			sql_func *cmp = sql_bind_func(compare_op, tail_type(ls), tail_type(rs), NULL);
-
-		       	t.type = sql_bind_type ("BOOL");
-			t.size = t.digits = 0;
-			if (!cmp) {
-				return sql_error(sql, 02, 
-					 "Binary compare operation %s %s %s missing",
-					 tail_type(ls)->type->sqlname,
-					 compare_op,
-					 tail_type(rs)->type->sqlname);
-			}
-			return
-			    stmt_select(stmt_binop(ls, rs, cmp), stmt_atom(atom_general (&t,"true"), cmp_equal);
-			 */
 			return stmt_select(ls, rs, type);
 		}
 		rs = check_types(sql, tail_type(ls), rs);
@@ -2264,8 +2246,8 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 				node *o = ls->op1.lval->h->next;	/* skip first */
 				stmt *sd, *j, *jr;
 
-				t.size = t.digits = 0;
-			       	t.type = sql_bind_type("INTEGER");
+				t.digits = t.scale = 0;
+			       	t.type = sql_bind_type("MEDIUMINT");
 			       	a = stmt_atom(atom_int(&t, 0));
 
 				j = stmt_const(
@@ -3585,7 +3567,7 @@ static stmt *delete_searched(context * sql, dlist * qname, symbol * opt_where)
 		list *l = create_stmt_list();
 		sql_subtype to;
 	       
-		to.size = to.digits = 0;
+		to.digits = to.scale = 0;
 		to.type	= sql_bind_type("OID");
 
 		scp = scope_open(NULL);

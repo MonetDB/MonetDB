@@ -100,12 +100,10 @@ SQLRETURN SQLBindCol(
 
 	if (pTargetValue == NULL)
 	{
-		/* Note: the ODBC spec specifies this should be possible,
-		   (it unbinds a column) however we currently do NOT support
-		   this functionality */
-		/* HY090 = Invalid string or buffer length */
-		addStmtError(stmt, "HY090", NULL, 0);
-		return SQL_ERROR;
+		/* the ODBC spec specifies this should be possible, 
+		 * 	(it unbinds a column) */
+		delOdbcOutArray(&(stmt->bindCols), nCol);
+		return SQL_SUCCESS;
 	}
 
 	if (nTargetValueMax <= 0 &&

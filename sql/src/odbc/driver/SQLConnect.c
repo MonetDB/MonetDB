@@ -36,7 +36,7 @@
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
 
-SQLRETURN SQLConnect(
+SQLRETURN Connect(
 	SQLHDBC		hDbc,
 	SQLCHAR *	szDataSource,
 	SQLSMALLINT	nDataSourceLength,
@@ -206,4 +206,15 @@ SQLRETURN SQLConnect(
 		GDKfree(host);
 	}
 	return rc;
+}
+SQLRETURN SQLConnect(
+	SQLHDBC		hDbc,
+	SQLCHAR *	szDataSource,
+	SQLSMALLINT	nDataSourceLength,
+	SQLCHAR *	szUID,
+	SQLSMALLINT	nUIDLength,
+	SQLCHAR *	szPWD,
+	SQLSMALLINT	nPWDLength )
+{
+	return Connect( hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength);
 }

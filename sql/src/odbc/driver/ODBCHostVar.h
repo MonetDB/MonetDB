@@ -96,8 +96,10 @@ typedef struct _OdbcOutArray
 void addOdbcInArray(OdbcInArray *, OdbcInHostVar);
 void addOdbcOutArray(OdbcOutArray *, OdbcOutHostVar);
 
+void delOdbcInArray(OdbcInArray *, int n);
+void delOdbcOutArray(OdbcOutArray *, int n);
+
 void destroyOdbcInArray(OdbcInArray *);
 void destroyOdbcOutArray(OdbcOutArray *);
-
 
 #endif

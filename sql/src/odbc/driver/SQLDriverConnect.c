@@ -76,6 +76,7 @@ SQLRETURN SQLDriverConnect(
 	}
 
 	/* TODO: finish implementation */
+
 	/* TODO: check szConnStrIn, parse it and retrieve the different settings */
 	/* TODO: next call (an internal version of) SQLConnect() */
 

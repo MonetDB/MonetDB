@@ -35,6 +35,8 @@ bat ids.
 
 #include <gdk.h>
 
+/* TODO move void_* functions into bm */
+
 extern struct bm *bm_create();
 extern void bm_destroy(struct bm *bm);
 extern struct bm *bm_dup(struct bm *bm);

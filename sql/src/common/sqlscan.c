@@ -160,8 +160,6 @@ void init_keywords()
 	keywords_insert("HAVING", HAVING);
 	keywords_insert("IN", IN);
 	keywords_insert("INNER", INNER);
-	keywords_insert("INT", INTEGER);
-	keywords_insert("INTEGER", INTEGER);
 	keywords_insert("INTO", INTO);
 	keywords_insert("IS", IS);
 	keywords_insert("JOIN", JOIN);
@@ -214,7 +212,6 @@ void init_keywords()
 	/*
 	   keywords_insert("SQLCODE", SQLCODE );
 	 */
-	keywords_insert("STRING", VARCHAR);
 	keywords_insert("TABLE", TABLE);
 	keywords_insert("TEMPORARY", TEMPORARY);
 	keywords_insert("TEMP", TEMPORARY);
@@ -227,7 +224,6 @@ void init_keywords()
 	keywords_insert("USER", USER);
 	keywords_insert("USING", USING);
 	keywords_insert("VALUES", VALUES);
-	keywords_insert("VARCHAR", VARCHAR);
 	keywords_insert("VIEW", VIEW);
 	/*
 	   keywords_insert("WHENEVER", WHENEVER );

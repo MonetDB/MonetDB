@@ -226,7 +226,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		len = snprintf( buf, BUFSIZ, 
 		"s%d := mvc_create_column(myc, s%d, \"%s\", \"%s\", %d, %d, %d);\n",
 			-s->nr, t, c->name, c->tpe->type->sqlname, 
-			c->tpe->size, c->tpe->digits, c->colnr );
+			c->tpe->digits, c->tpe->scale, c->colnr );
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_null: {
@@ -740,7 +740,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		  	"s%d := oid_insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		} else if (s->op2.stval->nrcols){
 			len = snprintf( buf, BUFSIZ, 
-		  	"s%d := insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+		  	"s%d := append(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		} else {
 			len = snprintf( buf, BUFSIZ, 
 		  	"s%d := insert(s%d,oid(nil),s%d);\n", -s->nr, l, r);

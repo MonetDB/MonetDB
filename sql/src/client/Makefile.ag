@@ -2,24 +2,6 @@
 
 INCLUDES = ../common $(MONET_INCS) $(READLINE_INCS)
 
-lib_gdk_wrap = {
-	SOURCES = gdk.c
-}
-
-bin_sql_dump = {
-	SOURCES = sql_dump.c catalog_client.c statement_dump.c \
-		  comm.c comm.h query.h \
-		  simple_prompt.c simple_prompt.h
-	LIBS = ../common/libsql $(MONET_LIBS) -lstream -lmutils -lgdk_wrap
-}
-
-bin_sql_client = {
-	SOURCES = sql_client.c catalog_client.c statement_dump.c \
-		  comm.c comm.h query.h \
-		  simple_prompt.c simple_prompt.h
-	LIBS = ../common/libsql $(MONET_LIBS) -lstream -lmutils -lgdk_wrap
-}
-
 bin_Msql = {
 	SOURCES = Msql.c comm.c comm.h gdk.c query.h \
 		  simple_prompt.c simple_prompt.h

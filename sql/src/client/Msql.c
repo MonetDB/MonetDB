@@ -13,6 +13,9 @@
 #include <readline/history.h>
 #endif
 
+#define SQL_DUMP 1
+#define MIL_DUMP 2
+
 stream *ws = NULL, *rs = NULL;
 int is_chrsp = 0;
 
@@ -163,7 +166,6 @@ static void header_data( stream *rs, stream *out, int nCols, int debug ){
 		if (cols[i].type) free(cols[i].type);
 	}
 	free(cols);
-	receive(rs, out, debug);
 }
 
 void receive( stream *rs, stream *out, int debug ){
@@ -188,7 +190,7 @@ void receive( stream *rs, stream *out, int debug ){
 			fprintf( stdout, "\n");
 		}
 		nRows = status;
-		if (type == QTABLE && nRows > 0){
+		if ((type == QTABLE || type == QDEBUG) && nRows > 0){
 			int nr = bs_read_next(rs,buf,&last);
 	
 			fwrite( buf, nr, 1, stdout );
@@ -199,6 +201,7 @@ void receive( stream *rs, stream *out, int debug ){
 		}
 		if (type == QHEADER) {
 			header_data(rs, out, nRows, debug);
+			receive(rs, out, debug);
 		} else if (type == QDATA) {
 			forward_data(out, debug);
 		} else if (type == QTABLE || type == QUPDATE){
@@ -279,6 +282,227 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug ){
 	ws->flush( ws );
 }
 
+void skip_block(stream *rs){
+	int last = 0;
+	char buf[BLOCK+1];
+
+	bs_read_next(rs,buf,&last);
+	while(!last){
+		bs_read_next(rs,buf,&last);
+	}
+}
+
+typedef int (*fptr)(stream *ws, stream *rs, char **lines, int cnt, int rlen, int dump );
+
+int handle_result( stream *ws, stream *rs, int cnt, fptr f, int rlen, int dump){
+	int i, res = 0, eof = 0, cur = 0;
+	char *sc, *ec;
+	bstream *bs = bstream_create(rs, BLOCK);
+	char **lines = NEW_ARRAY(char*,cnt*rlen);
+
+	eof = (bstream_read(bs, bs->size - (bs->len - bs->pos)) == 0);
+	sc = bs->buf + bs->pos;
+	ec = bs->buf + bs->len;
+	while(sc < ec){
+		char *s, *line = NULL;
+	
+		s = sc;
+	
+		while(sc<ec && *sc != '\n') sc++;
+	
+		if (sc>=ec && !eof){
+			bs->pos = s - bs->buf;
+			eof = (bstream_read(bs, bs->size - (bs->len - bs->pos)) == 0);
+			sc = bs->buf + bs->pos; 
+			ec = bs->buf + bs->len; 
+			continue;
+		} else if (eof){
+			break;
+		}
+	
+		*sc = 0;
+		for (i=0; i<rlen-1; i++){
+			char *e = s;
+
+			e = strchr(s, '\t');
+			if (!e) 
+				return -1;
+
+			*e = 0;
+			if (*s == '\"'){
+				s++;
+				*(e-1) = 0;
+			}
+			lines[cur++] = _strdup(s);
+			s = e+1;
+		}
+		if (*s == '\"'){
+			s++;
+			*(sc-1) = 0;
+		}
+		lines[cur++] = _strdup(s);
+		sc++;
+	}
+	bstream_destroy(bs);
+	res = f(ws, rs, lines, cnt, rlen, dump);
+	for(i=0; i<(cnt*rlen); i++)
+		_DELETE(lines[i]);
+	return res;
+}
+
+static int execute( stream *ws, stream *rs, char *query)
+{
+	int flag, type, status;
+
+	ws->write(ws, query, strlen(query), 1);
+	ws->flush(ws);
+
+	if (!stream_readInt(rs, &flag) || flag == COMM_DONE) {
+		return -1;
+	}
+
+	stream_readInt(rs, &type);	/* read result type */
+	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
+
+	if (type != QHEADER)
+		return -1;
+
+	skip_block(rs);
+
+	if (!stream_readInt(rs, &flag) || flag == COMM_DONE) {
+		return -1;
+	}
+
+	stream_readInt(rs, &type);	/* read result type */
+	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
+
+	if (type != QTABLE)
+		return -1;
+
+	return status;
+}
+
+static void dump_data( stream *rs, int nRows, char *table, int dump ){
+	FILE *out = stdout;
+	char buf[BLOCK+1];
+	const char *copystring =
+	    "COPY %d RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n";
+	int last = 0, nr = 0;
+
+	if (dump == SQL_DUMP){
+		printf( copystring, nRows, table);
+	} else {
+		snprintf(buf, BLOCK, "%s.data", table );
+		out = fopen( buf, "w+");
+		if (!out)
+			printf( "Could not open %s for writing\n", table);
+	}
+
+	nr = bs_read_next(rs, buf, &last);
+	fwrite( buf, nr, 1, out );
+	while(!last){
+		int nr = bs_read_next(rs, buf, &last);
+		fwrite( buf, nr, 1, out );
+	}
+	fprintf(out, "\n"); /* extra empty line */
+	if (out != stdout)
+		fclose(out);
+}
+
+static const char *column_format = "select name,type,type_digits,type_scale,null,default from columns c,tables t where c.table_id = t.id and '%s' = t.name order by c.number;\n"; 
+#define COLUMN 6
+#define C_NAME 0
+#define C_TYPE 1
+#define C_TYPE_DIGITS 2
+#define C_TYPE_SCALE 3
+
+/* TODO nullable/default */
+static int dump_column( stream *ws, stream *rs, char **columns, int cnt, int rlen, int dump )
+{
+	int i,j;
+	for(i=0,j=0; i<cnt; i++, j+=rlen){
+		if (strcmp(columns[j+C_TYPE_DIGITS], "0") == 0){
+			printf("\t%s %s", 
+					columns[j+C_NAME], columns[j+C_TYPE]);
+		} else if (strcmp(columns[j+C_TYPE_SCALE], "0") == 0){
+			printf("\t%s %s(%s)", 
+					columns[j+C_NAME], columns[j+C_TYPE],
+					columns[j+C_TYPE_DIGITS]);
+		} else {
+			printf("\t%s %s(%s,%s)", 
+					columns[j+C_NAME], columns[j+C_TYPE],
+					columns[j+C_TYPE_DIGITS],
+					columns[j+C_TYPE_SCALE]);
+		}
+		if (i < cnt-1)
+			printf(",");
+		printf("\n");
+	}
+	return 0;
+}
+
+static int dump_table( stream *ws, stream *rs, char **tables, int cnt, int rlen, int dump)
+{
+	int i;
+	for(i=0; i<cnt; i++){
+		int ccnt, res = 0;
+		char query[BUFSIZ], *s = tables[i];
+
+		if (dump == SQL_DUMP){
+			snprintf(query, BUFSIZ, column_format, s);
+			ccnt = execute(ws, rs, query);
+			if (ccnt > 0){
+
+				printf("CREATE TABLE %s (\n", s );
+				res = handle_result(ws, rs, ccnt, &dump_column, COLUMN, dump);
+				printf(");\n" );
+			}
+		}
+		if (res == 0){
+			char *select_format = "select * from %s;\n";
+			snprintf(query, BUFSIZ, select_format, s);
+			res = execute(ws, rs, query);
+			if (res > 0)
+				dump_data(rs, res, s, dump );
+		} else {
+			return res;
+		}
+	}
+	return 0;
+}
+
+static int dump_view( stream *ws, stream *rs, char **views, int cnt, int rlen, int dump)
+{
+	int i,j;
+	for(i=0, j=0; i<cnt; i++, j+=rlen)
+		printf("CREATE VIEW %s %s\n", views[j+0], views[j+1] );
+}
+
+static int dump_tables( stream *ws, stream *rs, int dump )
+{
+	int cnt = 0;
+	char *tables = "select name from tables where type=0;\n"; 
+	char *views = "select name,query from tables where type=2;\n";
+
+	cnt = execute( ws, rs, tables);
+	if (cnt > 0){
+		int res = handle_result(ws, rs, cnt, &dump_table, 1, dump);
+		if (res != 0) 
+			return res;
+	}
+	if (dump == SQL_DUMP){
+		cnt = execute( ws, rs, views);
+		if (cnt > 0){
+			int res = handle_result(ws, rs, cnt, &dump_view, 2, dump);
+			if (res != 0) 
+				return res;
+		}
+	}
+
+	return cnt;
+}
+
+
 int
 main(int ac, char **av)
 {
@@ -286,12 +510,13 @@ main(int ac, char **av)
 	char buf[BUFSIZ];
 	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
 	char *login = NULL, *db = NULL, *schema = NULL;
-	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0;
+	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, dump = 0;
 	opt 	*set = NULL;
 
 	static struct option long_options[] =
              {
                {"debug", 2, 0, 'd'},
+	       {"dump", 2, 0, 'D'},
 	       {"config", 1, 0, 'c'},
                {"host", 1, 0, 'h'},
                {"port", 1, 0, 'p'},
@@ -306,7 +531,7 @@ main(int ac, char **av)
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:d::h:p:P:u:", 
+		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -331,6 +556,13 @@ main(int ac, char **av)
 			} else {
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "sql_debug", "2" );
+			}
+			break;
+		case 'D':
+			if (optarg){ 
+				dump = MIL_DUMP;
+			} else {
+				dump = SQL_DUMP;
 			}
 			break;
 		case 'h':
@@ -427,11 +659,16 @@ main(int ac, char **av)
 
 	if (strlen(schema) > 0){
 		struct stat st;
+
 		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
-		fstat(fileno(stdin),&st);
-		if (S_ISCHR(st.st_mode))
-	   		is_chrsp = 1;
-		clientAccept( ws, rs, prompt, debug );
+		if (!dump){
+			fstat(fileno(stdin),&st);
+			if (S_ISCHR(st.st_mode))
+	   			is_chrsp = 1;
+			clientAccept( ws, rs, prompt, debug );
+		} else {
+			dump_tables( ws, rs, dump );
+		}
 	}
 
 	if (db) free(db); /* db + schema */
@@ -449,4 +686,3 @@ main(int ac, char **av)
 	mo_free_options(set,setlen);
 	return 0;
 } /* main */
-

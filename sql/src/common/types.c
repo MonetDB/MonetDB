@@ -6,16 +6,45 @@
 
 static int sql_debug = 0;
 
+list *aliases = NULL;
 list *types = NULL;
 list *aggrs = NULL;
 list *funcs = NULL;
 
-sql_subtype *sql_create_subtype( sql_type *t, int s, int d )
+void sql_create_alias( char *org, char *alias ){
+	sql_alias *a = NEW(sql_alias);
+	a->org = toLower(org);
+	a->alias = toLower(alias);
+
+	list_append(aliases, a);
+}
+
+static void alias_destroy(sql_alias * a)
+{
+	_DELETE(a->org);
+	_DELETE(a->alias);
+	_DELETE(a);
+}
+
+static char *sql_bind_alias( char *org ){
+	node *n;
+	for (n = aliases->h; n; n = n->next){
+		sql_alias *a = n->data;
+		if (strcmp(a->org, org) == 0){
+			return a->alias;
+		}
+	}
+	return NULL;
+}
+
+/* later types + alias should add a keyword to the keyword table */
+
+sql_subtype *sql_create_subtype( sql_type *t, int digits, int scale )
 {
 	sql_subtype *res = NEW(sql_subtype);
 	res->type = t;
-	res->size = s;
-	res->digits = d;
+	res->digits = digits;
+	res->scale = scale;
 	return res;
 }
 
@@ -26,20 +55,31 @@ sql_subtype *sql_dup_subtype( sql_subtype *t )
 	return res;
 }
 
-sql_type *sql_bind_type(char *sqlname)
+static sql_type *sql_bind_type_(char *sqlname)
 {
-	char *name = toLower(sqlname);
 	node *n = types->h;
 	while (n) {
 		sql_type *t = n->data;
-		if (strcmp(t->sqlname, name) == 0){
-			_DELETE(name);
+		if (strcmp(t->sqlname, sqlname) == 0){
 			return t;
 		}
 		n = n->next;
 	}
-	_DELETE(name);
 	return NULL;
+}
+
+sql_type *sql_bind_type(char *sqlname)
+{
+	char *name = toLower(sqlname);
+	sql_type *res = sql_bind_type_(name);
+
+	if (!res){
+		char *alias = sql_bind_alias(name);
+		if (alias)
+			res = sql_bind_type_(alias);
+	}
+	_DELETE(name);
+	return res;
 }
 
 static int type_cmp( sql_type *t1, sql_type *t2)
@@ -218,6 +258,7 @@ static void func_destroy(sql_func * t)
 void types_init(int debug){
 	sql_debug = debug;
 
+	aliases = list_create((fdestroy)&alias_destroy);
 	types = list_create((fdestroy)&type_destroy);
 	aggrs = list_create((fdestroy)&aggr_destroy);
 	funcs = list_create((fdestroy)&func_destroy);
@@ -227,38 +268,7 @@ void types_exit(){
 	list_destroy(aggrs);
 	list_destroy(funcs);
 	list_destroy(types);
-}
-
-void types_export(stream *s){
-	char buf[BUFSIZ];
-	node *n;
-	int i;
-
-	i = snprintf(buf, BUFSIZ, "%d\n", list_length(types) );
-	s->write(s, buf, i, 1);
-	for (n = types->h; n; n = n->next){
-		sql_type *t = n->data;
-		i = snprintf(buf, BUFSIZ, "%s,%s\n", t->sqlname, t->name );
-		s->write(s, buf, i, 1);
-	}
-	i = snprintf(buf, BUFSIZ, "%d\n", list_length(aggrs) );
-	s->write(s, buf, i, 1);
-	for (n = aggrs->h; n; n = n->next){
-		sql_aggr *a = n->data;
-		i = snprintf(buf, BUFSIZ, "%s,%s,%s,%s\n", a->name, a->imp, 
-			(a->tpe)?a->tpe->type->sqlname:"", a->res->type->sqlname	);
-		s->write(s, buf, i, 1);
-	}
-	i = snprintf(buf, BUFSIZ, "%d\n", list_length(funcs) );
-	s->write(s, buf, i, 1);
-	for (n = funcs->h; n; n = n->next){
-		sql_func *f = n->data;
-		int i = snprintf(buf, BUFSIZ, "%s,%s,%s,%s,%s,%s\n", f->name, f->imp, 
-			(f->tpe1)?f->tpe1->type->sqlname:"", (f->tpe2)?f->tpe2->type->sqlname:"", 
-			(f->tpe3)?f->tpe3->type->sqlname:"", f->res->type->sqlname	);
-		s->write(s, buf, i, 1);
-	}
-	s->flush(s);
+	list_destroy(aliases);
 }
 
 void sql_new_type( char *sqlname, char *name ){

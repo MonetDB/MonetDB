@@ -6,6 +6,11 @@
 
 /* todo add type aliases, ie sqlname1 -> sqlname 2 */
 
+typedef struct sql_alias {
+	char *org;
+	char *alias;
+} sql_alias;
+
 typedef struct sql_type {
 	char *sqlname;
 	char *name;
@@ -14,8 +19,8 @@ typedef struct sql_type {
 
 typedef struct sql_subtype {
 	sql_type *type;
-	unsigned int size;
 	unsigned int digits;
+	unsigned int scale;
 } sql_subtype;
 
 typedef struct sql_aggr {
@@ -36,8 +41,10 @@ typedef struct sql_func {
 	int nr;
 } sql_func;
 
-#define new_subtype(type_name, size, digits) \
-		sql_create_subtype( sql_bind_type(type_name), size, digits)
+extern void sql_create_alias( char *org, char *alias );
+
+#define new_subtype(type_name, digits, scale) \
+		sql_create_subtype( sql_bind_type(type_name), digits, scale)
 extern sql_subtype *sql_create_subtype( sql_type *t, int s, int d );
 extern sql_subtype *sql_dup_subtype( sql_subtype *t );
 
@@ -59,8 +66,6 @@ extern sql_func *sql_create_func(char *name, char *imp,
 
 extern void types_init(int debug);
 extern void types_exit();
-
-extern void types_export(stream *s);
 
 extern void sql_new_type( char *sqlname, char *name );
 extern void sql_new_aggr( char *name, char *imp, char *tpe, char *res );
