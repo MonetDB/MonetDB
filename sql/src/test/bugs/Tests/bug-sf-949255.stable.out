@@ -1,0 +1,43 @@
+stdout of test 'bug-sf-949255` in directory 'src/test/bugs` itself:
+
+
+# 21:56:40 >  
+# 21:56:40 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=42123 --set sql_port=59522 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 21:56:40 >  
+
+# Monet Database Server V4.3.17
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit;
+
+Over..
+
+# 21:56:40 >  
+# 21:56:40 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=59522  < bug-sf-949255.sql
+# 21:56:40 >  
+
+# sql_div_f # name
+# float # type
+# 1 # tuplecount
+# 0 # id
+[ 1	]
+# scale_up_single_value # name
+# mediumint # type
+# 1 # tuplecount
+# 1 # id
+[ 1	]
+# convert_sql_div_f # name
+# mediumint # type
+# 1 # tuplecount
+# 2 # id
+[ 1	]
+
+# 21:56:41 >  
+# 21:56:41 >  Done.
+# 21:56:41 >  
+
