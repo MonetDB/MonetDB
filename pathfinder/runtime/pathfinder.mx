@@ -2282,20 +2282,26 @@ void pathfinder_epilogue() {
 int
 CMDxquery(char *mode, char* xquery) {
     char *prologue = NULL, *query = NULL, *epilogue = NULL, *err = NULL;
-    int len = 0, ret = GDK_FAIL;
+    int len = 0, ret = GDK_FAIL, debug = strstr(mode,"debug") != NULL;
+    char *mapi = strstr(mode, "mapi")?"=":"";
      
-    (void)xquery;
+    if (debug) {
+        stream_printf(GDKout, "%s#xquery######################################################\n", mapi);
+	stream_write(GDKout, xquery, strlen(xquery), 1);
+    }
     MT_set_lock(pathfinder_lock, "CMDxquery");
 #ifdef HAVE_GC
     /* only if MonetDB is also compiled with gc (HAVE_GC) we allow server-side xquery */
     err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
+#else
+    err = "xquery disabled. Please configure & compile MonetDB with --enable-gc=DIR\n";
 #endif
-    if (err && strstr(mode, "mapi")) {
+    if (err && *mapi) {
 	/* put ! before error lines */
 	char *p = err, *q = err;
 	len = strlen(err);
 	while(*p) { if (*p++ == '\n') len++; }
-	err = (char*) alloca(len);
+	err = (char*) alloca(len+3);
 	*err = '!'; 
 	for(p=err+1; *q; q++) {
 		*p++ = *q;
@@ -2309,15 +2315,43 @@ CMDxquery(char *mode, char* xquery) {
     }
     MT_unset_lock(pathfinder_lock, "CMDxquery");
 
-
+    if (debug) {
+        stream_printf(GDKout, "%s#mil#########################################################\n", mapi);
+	if (prologue) stream_write(GDKout, prologue, strlen(prologue), 1);
+        else stream_printf(GDKout, "%s#null prologue\n", mapi);
+	if (query) stream_write(GDKout, query, strlen(query), 1);
+        else stream_printf(GDKout, "%s#null query\n", mapi);
+	if (epilogue) stream_write(GDKout, epilogue, strlen(epilogue), 1);
+        else stream_printf(GDKout, "%s#null epilogue\n", mapi);
+    }
     if (err) {
+        if (debug) {
+            stream_printf(GDKout, "%s#err#########################################################\n", mapi);
+        }
     	stream_write(GDKout, err, len, 1);
-    } else if (prologue && query && epilogue &&
-        monet_exec(prologue) >= 0 &&
-        monet_exec(query) >= 0 &&
-        monet_exec(epilogue) >= 0)
-    {
-	ret = GDK_SUCCEED;
+    } else if (prologue && query && epilogue) {
+        if (debug) {
+            stream_printf(GDKout, "%s#exec prologue...############################################\n", mapi);
+	}
+        if (monet_exec(prologue) >= 0) {
+            if (debug) {
+                stream_printf(GDKout, "%s#exec query...###############################################\n", mapi);
+            }
+            if (monet_exec(query) >= 0) {
+                if (debug) {
+                    stream_printf(GDKout, "%s#exec epilogue...############################################\n", mapi);
+                }
+                if (monet_exec(epilogue) >= 0) {
+                    if (debug) {
+                        stream_printf(GDKout, "%s#ok##########################################################\n", mapi);
+                    }
+	            ret = GDK_SUCCEED;
+                }
+	    }
+	}
+    }
+    if (debug && ret != GDK_SUCCEED) {
+        stream_printf(GDKout, "%s#execution failed############################################\n", mapi);
     }
 #ifdef HAVE_GC
     /* what comes out of PF is alloced differently */
