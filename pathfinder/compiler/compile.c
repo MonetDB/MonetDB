@@ -99,6 +99,23 @@ static char *phases[] = {
     [20]    "after the MIL program has been serialized"
 };
 
+/* pretty ugly to have such a global, could not entirely remove it yet JF */
+/** global state of the compiler */
+PFstate_t PFstate = {
+    quiet               : false,
+    timing              : false,
+    print_dot           : false,
+    print_pretty        : false,
+    stop_after          : 0,
+    print_types         : false,
+    optimize            : false,
+    print_parse_tree    : false,
+    print_core_tree     : false,
+    print_algebra_tree  : false,
+    print_ma_tree       : false,
+    parse_hsk           : false
+};
+
 #if 0
 /**
  * Print abstract syntax tree in dot notation or prettyprinted,

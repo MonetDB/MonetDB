@@ -27,10 +27,29 @@ INCLUDES = include $(MONETDB_INCS) $(LIBGC_CFLAGS)
 
 LDFLAGS = $(LIBGC_LIBS) $(SOCKET_LIBS) $(LIBXML2_LIBS)
 
+lib_compiler1 = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+	     compile.c
+}
+lib_compiler2 = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+	     env.c \
+	     oops.c \
+	     pfstrings.c \
+	     qname.c \
+	     scope.c \
+	     timer.c \
+	     variable.c
+}
 bin_pf = {
 	LIBS = \
-		schema/libschema \ 
-		debug/libdebug \ 
+		libcompiler1 \
+		schema/libschema \
+		debug/libdebug \
 		mem/libmem \
 		parser/libparser \
 		semantics/libsemantics \
@@ -38,16 +57,9 @@ bin_pf = {
 		algebra/libalgebra \
 		mil/libmil \
                 algebra/hskparser/libhskparser \
-		$(LIBGC_LDADD) $(LIBXML2_LDADD) $(LEXLIB)
+		libcompiler2 \
+		$(LIBGC_LDADD) $(LIBXML2_LDADD)
 		
 	SOURCES = \
-	     env.c \
-	     main.c \
-	     compile.c \
-	     oops.c \
-	     pfstrings.c \
-	     qname.c \
-	     scope.c \
-	     timer.c \
-	     variable.c
+	     main.c
 }
