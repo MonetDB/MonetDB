@@ -6,7 +6,7 @@ MTSAFE
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx \
+	SOURCES = str.mx blob.mx url.mx mtime.mx \
 		uchr.mx 
 
 	HEADERS = h 

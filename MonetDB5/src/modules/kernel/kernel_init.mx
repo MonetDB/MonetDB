@@ -27,3 +27,5 @@ use "kernel/group";
 use "kernel/aggrX3";
 use "kernel/mapi";
 @-
+Empty input file
+@c

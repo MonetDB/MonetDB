@@ -9,7 +9,7 @@ LIBS = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
-		mapi.mx kernel_init.mx mmath.mx lock.mx alarm.mx \
+		mapi.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx mkey.mx aggrX3.mx 
 # pcl.mx
 
