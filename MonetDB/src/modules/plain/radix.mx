@@ -1415,8 +1415,9 @@ BAT* quickbat(BAT *b, size_t cap) {
  *            right to left; and vice versa! Otherwise you overwrite blocks.
  */
 void move_chunks(move_t *mov, BUN base, size_t from, size_t end) {
+    assert(((ssize_t)end) >= 0); /* make sure that cop=(ssize_t)from does not overflow */
     while (from < end) {
-	size_t cur, cop = from;
+	ssize_t cur, cop = (ssize_t)from;
 
 	while(++from < end) {
 	    if (mov[from].src >= mov[from].dst) break;
