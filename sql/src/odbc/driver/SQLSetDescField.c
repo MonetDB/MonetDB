@@ -137,6 +137,11 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 		addDescError(desc, "HY091", NULL, 0);
 		return SQL_ERROR;
 	case SQL_DESC_ARRAY_SIZE:
+		if ((SQLUINTEGER) (size_t) Value == 0) {
+			/* Invalid attribute/option identifier */
+			addDescError(desc, "HY092", NULL, 0);
+			return SQL_ERROR;
+		}
 		if (isAD(desc)) {
 			if ((SQLUINTEGER) (size_t) Value != 1) {
 				/* driver does not support this feature */

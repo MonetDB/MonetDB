@@ -99,6 +99,7 @@ SQLExecute_(ODBCStmt *stmt)
 	/* initialize the Result meta data values */
 	nrCols = mapi_get_field_count(hdl);
 	stmt->currentRow = 0;
+	stmt->previousRow = 0;
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
 

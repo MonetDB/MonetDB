@@ -56,6 +56,7 @@ newODBCStmt(ODBCDbc *dbc)
 	assert(stmt->hdl);
 
 	stmt->currentRow = 0;
+	stmt->previousRow = 0;
 	stmt->query = NULL;
 
 	/* add this stmt to the administrative linked stmt list */

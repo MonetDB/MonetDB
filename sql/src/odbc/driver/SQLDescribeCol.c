@@ -47,7 +47,7 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 		return SQL_ERROR;
 	}
 	/* and it should return a result set */
-	if (stmt->ImplRowDescr->descRec == NULL) {
+	if (stmt->ImplRowDescr->sql_desc_count == 0) {
 		/* 07005 = Prepared statement not a cursor specification */
 		addStmtError(stmt, "07005", NULL, 0);
 		return SQL_ERROR;
@@ -65,29 +65,137 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 		colNameLen = strlen((char *) rec->sql_desc_name);
 
 	/* now copy the data */
-	if (szColName && rec->sql_desc_name) {
-		strncpy((char *) szColName, (char *) rec->sql_desc_name, nColNameMax - 1);
-		szColName[nColNameMax - 1] = 0; /* null terminate it */
+	if (szColName) {
+		if (rec->sql_desc_name) {
+			strncpy((char *) szColName, (char *) rec->sql_desc_name, nColNameMax - 1);
+			szColName[nColNameMax - 1] = 0;/* null terminate it */
+		} else if (nColNameMax > 0)
+			szColName[0] = 0; /* return empty string */
 	}
 	if (pnColNameLength)
-		*pnColNameLength = rec->sql_desc_name ? colNameLen : SQL_NULL_DATA;
+		*pnColNameLength = rec->sql_desc_name ? colNameLen : 0;
+	if (colNameLen >= nColNameMax) {
+		/* 01004 = String data, right truncation */
+		addStmtError(stmt, "01004", NULL, 0);
+	}
 
 	if (pnSQLDataType)
-		*pnSQLDataType = rec->sql_desc_type;
+		*pnSQLDataType = rec->sql_desc_concise_type;
 
-	if (pnColSize)
-		*pnColSize = rec->sql_desc_length;
+	/* also see SQLDescribeParam */
+	if (pnColSize) {
+		switch (rec->sql_desc_concise_type) {
+		case SQL_CHAR:
+		case SQL_VARCHAR:
+		case SQL_LONGVARCHAR:
+		case SQL_WCHAR:
+		case SQL_WVARCHAR:
+		case SQL_WLONGVARCHAR:
+			*pnColSize = rec->sql_desc_length;
+			break;
+		case SQL_DECIMAL:
+		case SQL_NUMERIC:
+			*pnColSize = rec->sql_desc_length;
+			break;
+		case SQL_BIT:
+			*pnColSize = 1;
+			break;
+		case SQL_TINYINT:
+			*pnColSize = 3;
+			break;
+		case SQL_SMALLINT:
+			*pnColSize = 5;
+			break;
+		case SQL_INTEGER:
+			*pnColSize = 10;
+			break;
+		case SQL_BIGINT:
+			*pnColSize = rec->sql_desc_unsigned ? 20 : 19;
+			break;
+		case SQL_REAL:
+			*pnColSize = 7;
+			break;
+		case SQL_FLOAT:
+		case SQL_DOUBLE:
+			*pnColSize = 15;
+			break;
+		case SQL_TYPE_DATE:
+			*pnColSize = 10; /* strlen("yyyy-mm-dd") */
+			break;
+		case SQL_TYPE_TIME:
+			*pnColSize = 12; /* strlen("hh:mm:ss.fff") */
+			break;
+		case SQL_TYPE_TIMESTAMP:
+			*pnColSize = 23; /* strlen("yyyy-mm-dd hh:mm:ss.fff") */
+			break;
+		case SQL_INTERVAL_SECOND:
+			/* strlen("sss.fff") */
+			*pnColSize = rec->sql_desc_datetime_interval_precision + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+			break;
+		case SQL_INTERVAL_DAY_TO_SECOND:
+			/* strlen("ddd hh:mm:ss.fff") */
+			*pnColSize = rec->sql_desc_datetime_interval_precision + 9 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+			break;
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+			/* strlen("hhh:mm:ss.fff") */
+			*pnColSize = rec->sql_desc_datetime_interval_precision + 6 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+			break;
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
+			/* strlen("mmm:ss.fff") */
+			*pnColSize = rec->sql_desc_datetime_interval_precision + 3 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+			break;
+		case SQL_INTERVAL_YEAR:
+		case SQL_INTERVAL_MONTH:
+		case SQL_INTERVAL_DAY:
+		case SQL_INTERVAL_HOUR:
+		case SQL_INTERVAL_MINUTE:
+			*pnColSize = rec->sql_desc_datetime_interval_precision;
+			break;
+		case SQL_INTERVAL_YEAR_TO_MONTH:
+		case SQL_INTERVAL_DAY_TO_HOUR:
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+			*pnColSize = rec->sql_desc_datetime_interval_precision + 3;
+			break;
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+			*pnColSize = rec->sql_desc_datetime_interval_precision + 6;
+			break;
+		case SQL_GUID:
+			/* strlen("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee") */
+			*pnColSize = 36;
+			break;
+		default:
+			*pnColSize = SQL_NO_TOTAL;
+			break;
+		}
+	}
 
-	if (pnDecDigits)
-		*pnDecDigits = rec->sql_desc_scale;
+	/* also see SQLDescribeParam */
+	if (pnDecDigits) {
+		switch (rec->sql_desc_concise_type) {
+		case SQL_DECIMAL:
+		case SQL_NUMERIC:
+			*pnDecDigits = rec->sql_desc_scale;
+			break;
+		case SQL_BIT:
+		case SQL_TINYINT:
+		case SQL_SMALLINT:
+		case SQL_INTEGER:
+		case SQL_BIGINT:
+			*pnDecDigits = 0;
+			break;
+		case SQL_TYPE_TIME:
+		case SQL_TYPE_TIMESTAMP:
+		case SQL_INTERVAL_SECOND:
+		case SQL_INTERVAL_DAY_TO_SECOND:
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
+			*pnDecDigits = rec->sql_desc_precision;
+			break;
+		}
+	}
 
 	if (pnNullable)
 		*pnNullable = rec->sql_desc_nullable;
 
-	if (colNameLen >= nColNameMax) {
-		/* 01004 = String data, right truncation */
-		addStmtError(stmt, "01004", NULL, 0);
-		return SQL_SUCCESS_WITH_INFO;
-	}
-	return SQL_SUCCESS;
+	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }

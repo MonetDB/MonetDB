@@ -53,10 +53,14 @@ SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber,
 	}
 
 	rec = &stmt->ImplRowDescr->descRec[nParmNumber];
+
 	if (pnDataType)
 		*pnDataType = rec->sql_desc_concise_type;
+
 	if (pnNullable)
 		*pnNullable = rec->sql_desc_nullable;
+
+	/* also see SQLDescribeCol */
 	if (pnSize) {
 		switch (rec->sql_desc_concise_type) {
 		case SQL_CHAR:
@@ -142,6 +146,8 @@ SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber,
 			break;
 		}
 	}
+
+	/* also see SQLDescribeCol */
 	if (pnDecDigits) {
 		switch (rec->sql_desc_concise_type) {
 		case SQL_DECIMAL:

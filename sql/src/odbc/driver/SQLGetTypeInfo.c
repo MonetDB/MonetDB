@@ -48,49 +48,50 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	}
 
 	switch (nSqlDataType) {
-	case SQL_ALL_TYPES:	/* 0 */
-	case SQL_CHAR:		/* 1 */
-	case SQL_NUMERIC:	/* 2 */
-	case SQL_DECIMAL:	/* 3 */
-	case SQL_INTEGER:	/* 4 */
-	case SQL_SMALLINT:	/* 5 */
-	case SQL_FLOAT:		/* 6 */
-	case SQL_REAL:		/* 7 */
-	case SQL_DOUBLE:	/* 8 */
-	case SQL_DATE:		/* 9 aka SQL_DATE_TIME in ODBC 3.0+ */
-	case SQL_TIME:		/* 10 aka SQL_INTERVAL in ODBC 3.0+ */
-	case SQL_TIMESTAMP:	/* 11 */
-	case SQL_VARCHAR:	/* 12 */
-	case SQL_TYPE_DATE:	/* 91 */
-	case SQL_TYPE_TIME:	/* 92 */
-	case SQL_TYPE_TIMESTAMP:	/* 93 */
-	case SQL_LONGVARCHAR:	/* (-1) */
-	case SQL_BINARY:	/* (-2) */
-	case SQL_VARBINARY:	/* (-3) */
-	case SQL_LONGVARBINARY:	/* (-4) */
-	case SQL_BIGINT:	/* (-5) */
-	case SQL_TINYINT:	/* (-6) */
-	case SQL_BIT:		/* (-7) */
-	case SQL_WCHAR:	/* (-8) */
-	case SQL_WVARCHAR:	/* (-9) */
-	case SQL_WLONGVARCHAR:	/* (-10) */
-	case SQL_GUID:		/* (-11) */
-	case SQL_INTERVAL_YEAR:	/* (100 + 1) */
-	case SQL_INTERVAL_MONTH:	/* (100 + 2) */
-	case SQL_INTERVAL_DAY:	/* (100 + 3) */
-	case SQL_INTERVAL_HOUR:	/* (100 + 4) */
-	case SQL_INTERVAL_MINUTE:	/* (100 + 5) */
-	case SQL_INTERVAL_SECOND:	/* (100 + 6) */
-	case SQL_INTERVAL_YEAR_TO_MONTH:	/* (100 + 7) */
-	case SQL_INTERVAL_DAY_TO_HOUR:	/* (100 + 8) */
-	case SQL_INTERVAL_DAY_TO_MINUTE:	/* (100 + 9) */
-	case SQL_INTERVAL_DAY_TO_SECOND:	/* (100 + 10) */
-	case SQL_INTERVAL_HOUR_TO_MINUTE:	/* (100 + 11) */
-	case SQL_INTERVAL_HOUR_TO_SECOND:	/* (100 + 12) */
-	case SQL_INTERVAL_MINUTE_TO_SECOND:	/* (100 + 13) */
+	case SQL_ALL_TYPES:
+	case SQL_CHAR:
+	case SQL_NUMERIC:
+	case SQL_DECIMAL:
+	case SQL_INTEGER:
+	case SQL_SMALLINT:
+	case SQL_FLOAT:
+	case SQL_REAL:
+	case SQL_DOUBLE:
+	case SQL_DATE:
+	case SQL_TIME:
+	case SQL_TIMESTAMP:
+	case SQL_VARCHAR:
+	case SQL_TYPE_DATE:
+	case SQL_TYPE_TIME:
+	case SQL_TYPE_TIMESTAMP:
+	case SQL_LONGVARCHAR:
+	case SQL_BINARY:
+	case SQL_VARBINARY:
+	case SQL_LONGVARBINARY:
+	case SQL_BIGINT:
+	case SQL_TINYINT:
+	case SQL_BIT:
+	case SQL_WCHAR:
+	case SQL_WVARCHAR:
+	case SQL_WLONGVARCHAR:
+	case SQL_GUID:
+	case SQL_INTERVAL_YEAR:
+	case SQL_INTERVAL_MONTH:
+	case SQL_INTERVAL_DAY:
+	case SQL_INTERVAL_HOUR:
+	case SQL_INTERVAL_MINUTE:
+	case SQL_INTERVAL_SECOND:
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+	case SQL_INTERVAL_DAY_TO_HOUR:
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+	case SQL_INTERVAL_DAY_TO_SECOND:
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
 		break;
 
-		/* some pre ODBC 3.0 data types which can be mapped to ODBC 3.0 data types */
+	/* some pre ODBC 3.0 data types which can be mapped to ODBC
+	   3.0 data types */
 	case -80:		/* SQL_INTERVAL_YEAR */
 		nSqlDataType = SQL_INTERVAL_YEAR;
 		break;
@@ -143,7 +144,6 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	default:
 		/* HY004 = Invalid SQL data type */
 		addStmtError(stmt, "HY004", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -158,9 +158,9 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	   VARCHAR	literal_prefix
 	   VARCHAR	literal_suffix
 	   VARCHAR	create_params
-	   SMALLINT	nullable NOT NULL 
+	   SMALLINT	nullable NOT NULL
 	   SMALLINT	case_sensitive NOT NULL
-	   SMALLINT	searchable NOT NULL 
+	   SMALLINT	searchable NOT NULL
 	   SMALLINT	unsigned_attribute
 	   SMALLINT	fixed_prec_scale NOT NULL
 	   SMALLINT	auto_unique_value
@@ -170,7 +170,7 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	   SMALLINT	sql_data_type NOT NULL
 	   SMALLINT	sql_datetime_sub
 	   SMALLINT	num_prec_radix
-	   SMALLINT	interval_precision 
+	   SMALLINT	interval_precision
 	*/
 	strcpy(query,
 	       "select "

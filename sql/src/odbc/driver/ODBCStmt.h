@@ -59,6 +59,7 @@ typedef struct tODBCDRIVERSTMT {
 	MapiHdl hdl;
 
 	unsigned int currentRow;	/* used by SQLFetch() */
+	unsigned int previousRow;	/* used by SQLFetch() */
 	unsigned int currentCol; /* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
 	char *query;		/* the query to be executed */

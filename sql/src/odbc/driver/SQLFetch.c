@@ -1689,6 +1689,7 @@ SQLFetch_(ODBCStmt *stmt)
 		}
 	}
 
+	stmt->previousRow = stmt->currentRow;
 	stmt->currentRow++;
 
 	return SQL_SUCCESS;

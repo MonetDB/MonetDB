@@ -6,10 +6,10 @@
 #include "ODBCDbc.h"
 
 /* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and
-   SQL_DESC_TYPE are interdependend and setting one affects the other.
+   SQL_DESC_TYPE are interdependent and setting one affects the other.
    Also, setting them affect other fields.  This is all encoded in
-   this table.  If a field is equal to UNAFFECTED, it is not
-   affected. */
+   this table.  If a field is equal to UNAFFECTED, it is (you guessed
+   it) not affected. */
 #define UNAFFECTED	(-1)
 
 typedef struct {
