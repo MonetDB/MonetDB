@@ -22,10 +22,10 @@ dnl 		Niels Nes <Niels.Nes@cwi.nl>
 dnl 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
-AC_DEFUN(MONET_VERSION_TO_NUMBER,
+AC_DEFUN([MONET_VERSION_TO_NUMBER],
 [`$1 | sed 's|[[_\-]][[a-zA-Z0-9]]*$||' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
 
-AC_DEFUN(AM_MONET,
+AC_DEFUN([AM_MONET],
 [
 
 dnl check for monet
@@ -85,7 +85,7 @@ AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
 ]) dnl AC_DEFUN AM_MONET
 
-AC_DEFUN(AM_MONET_COMPILER,
+AC_DEFUN([AM_MONET_COMPILER],
 [
 
 dnl Some special requirements for MacOS X/Darwin
@@ -496,7 +496,7 @@ AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 
 ]) dnl AC_DEFUN AM_MONET_COMPILER
 
-AC_DEFUN(AM_MONET_TOOLS,[
+AC_DEFUN([AM_MONET_TOOLS],[
 
 dnl AM_PROG_LIBTOOL has loads of required macros, when those are not satisfied within
 dnl this macro block the requirement is pushed to the next level, e.g. configure.ag
@@ -609,7 +609,7 @@ AC_HEADER_STDC()
 
 ]) dnl AC_DEFUN AM_MONET_TOOLS
 
-AC_DEFUN(AM_MONET_OPTIONS,
+AC_DEFUN([AM_MONET_OPTIONS],
 [
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
@@ -842,7 +842,7 @@ AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
 ]) dnl AC_DEFUN AM_MONET_OPTIONS
 
-AC_DEFUN(AM_MONET_LIBS,
+AC_DEFUN([AM_MONET_LIBS],
 [
 dnl libpthread
 have_pthread=auto
@@ -1304,7 +1304,7 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 ]) dnl AC_DEFUN AM_MONET_LIBS
 
-AC_DEFUN(AM_MONET_CLIENT,[
+AC_DEFUN([AM_MONET_CLIENT],[
 
 dnl check for Monet and some basic utilities
 AM_MONET($1)

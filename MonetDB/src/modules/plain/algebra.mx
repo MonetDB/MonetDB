@@ -287,6 +287,12 @@ Signature Changed: Output tail type incorrect because of soid to coid switch.
 .COMMAND semijoin ( BAT[any::1,any::2] left, 
                    BAT[any::1,any] right) :
 				BAT[any::1,any::2] = CMDsemijoin; 
+@- cross-product (projected out join columns)
+@m
+.COMMAND cross ( BAT[any::1,any::2] left, BAT[any::3,any::4] right) :
+                               BAT[any::1,any::4] = CMDcross; 
+"Returns head-value from 'left' and tail-value from 'right'
+for all BUNs in the cross product of 'left' and 'right'."
 @- join (projected out join columns)
 @m
 .COMMAND join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, lng estimate) :
@@ -1317,6 +1323,7 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:unary(kunique, BATkunique)@
 @:unary(sunique, BATsunique)@
 @:binary(semijoin, BATsemijoin)@
+@:binary(cross, BATcross)@
 @:binaryestimate(join, BATjoin)@
 @:binaryestimate(outerjoin, BATouterjoin)@
 @:binary(sunion, BATsunion)@

@@ -1123,9 +1123,9 @@ mapi_close_handle(MapiHdl hdl)
 		    read_until_prompt(hdl->mid->active) != MOK)
 			return MERROR;
 		hdl->mid->active = hdl;
-		if (stream_printf(hdl->mid->to, "X" "close %d\n",
+		if (hdl->mid->to && (stream_printf(hdl->mid->to, "X" "close %d\n",
 				  hdl->tableid) < 0 ||
-		    stream_flush(hdl->mid->to)) {
+		    stream_flush(hdl->mid->to))) {
 			mapi_lost_connection(hdl->mid);
 			mapi_setError(hdl->mid, stream_error(hdl->mid->to),
 				      "mapi_close_handle", MTIMEOUT);
