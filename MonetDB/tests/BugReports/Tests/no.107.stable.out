@@ -32,7 +32,7 @@ stdout of test 'no.107` in directory 'tests/BugReports` itself:
 setoid(oid(20000000));
 
 # [t_i, n_i]
-w.histogram.print;
+w.histogram().print();
 #---------------------------------#
 # BAT:			  tmp_28  #
 # (str)			  (int)	  #
@@ -48,10 +48,10 @@ w.histogram.print;
 [ "thoroughly",		  1	  ]
 
 #split w in twee tabellen
-docid := new( void, oid );
-tid := new( void, str );
-docid.insert( [w~].reverse );
-docid.print;
+var docid := new( void, oid );
+var tid := new( void, str );
+docid.insert( [w~].reverse() );
+docid.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (oid)	  #
@@ -72,7 +72,7 @@ docid.print;
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
 tid.insert( [~w] );
-tid.print;
+tid.print();
 #---------------------------------#
 # BAT:	  tmp_29		  #
 # (void)  (str)			  #
@@ -94,7 +94,7 @@ tid.print;
 [ nil,	  "database"		  ]
 
 docid.seqbase( 1000@0 );
-docid.print;
+docid.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (oid)	  #
@@ -115,7 +115,7 @@ docid.print;
 [ 1013@0, 2@0	  ]
 [ 1014@0, 2@0	  ]
 tid.seqbase( 1000@0 );
-tid.print;
+tid.print();
 #---------------------------------#
 # BAT:	  tmp_29		  #
 # (void)  (str)			  #
@@ -135,7 +135,7 @@ tid.print;
 [ 1012@0, "test"		  ]
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
-tid.reverse.print;
+tid.reverse().print();
 #---------------------------------#
 # BAT:			  tmp_29  #
 # (str)			  (void)  #
@@ -155,8 +155,8 @@ tid.reverse.print;
 [ "test",		  1012@0  ]
 [ "this",		  1013@0  ]
 [ "database",		  1014@0  ]
-tidx:=tid.copy;
-tidx.print;
+var tidx:=tid.copy();
+tidx.print();
 #---------------------------------#
 # BAT:	  tmp_30		  #
 # (void)  (str)			  #
@@ -176,8 +176,8 @@ tidx.print;
 [ 1012@0, "test"		  ]
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
-tidy:=([oid](tid)).copy;
-tidy.print;
+var tidy:=([oid](tid)).copy();
+tidy.print();
 #-----------------#
 # BAT:	  tmp_32  #
 # (void)  (oid)	  #
@@ -219,7 +219,7 @@ print( docid, tid );
 [ 1014@0, 2@0,	  "database"		  ]
 
 module( "xtables" );
-CTgroup( docid, tid ).print;
+CTgroup( docid, tid ).print();
 #-----------------#
 # BAT:	  tmp_31  #
 # (void)  (oid)	  #
@@ -241,7 +241,7 @@ CTgroup( docid, tid ).print;
 [ 1014@0, 1014@0  ]
 
 # t_i, tf_ij
-join( tidx.reverse, CTgroup( docid, tid ).histogram).print;
+join( tidx.reverse(), CTgroup( docid, tid ).histogram()).print();
 #---------------------------------#
 # BAT:			  tmp_35  #
 # (str)			  (int)	  #
@@ -259,7 +259,7 @@ join( tidx.reverse, CTgroup( docid, tid ).histogram).print;
 [ "test",		  1	  ]
 [ "this",		  1	  ]
 [ "database",		  1	  ]
-join( tidy.reverse, CTgroup( docid, tid ).histogram).print;
+join( tidy.reverse(), CTgroup( docid, tid ).histogram()).print();
 #-----------------#
 # BAT:	  tmp_31  #
 # (oid)	  (int)	  #
@@ -277,7 +277,7 @@ join( tidy.reverse, CTgroup( docid, tid ).histogram).print;
 [ nil,	  1	  ]
 [ nil,	  1	  ]
 [ nil,	  1	  ]
-join( tid.reverse, CTgroup( docid, tid ).histogram).print;
+join( tid.reverse(), CTgroup( docid, tid ).histogram()).print();
 #---------------------------------#
 # BAT:			  tmp_35  #
 # (str)			  (int)	  #
@@ -296,10 +296,10 @@ join( tid.reverse, CTgroup( docid, tid ).histogram).print;
 [ "this",		  1	  ]
 [ "database",		  1	  ]
 # d_j, max tf_j
-djtfij := new( oid, int );
-djtfij.insert( join( docid.reverse, CTgroup( docid, tid ).histogram ) );
+var djtfij := new( oid, int );
+djtfij.insert( join( docid.reverse(), CTgroup( docid, tid ).histogram() ) );
 
-{max}(djtfij).print;
+{max}(djtfij).print();
 #-----------------#
 # BAT:	  tmp_31  #
 # (oid)	  (int)	  #
@@ -311,8 +311,8 @@ djtfij.insert( join( docid.reverse, CTgroup( docid, tid ).histogram ) );
 # This way it works. However, if I do not do an explicit new and insert,
 # then the server crashes as follows:
 
-djtfijx :=join( docid.reverse, CTgroup( docid, tid ).histogram );
-{max}(djtfijx).print;
+var djtfijx :=join( docid.reverse(), CTgroup( docid, tid ).histogram() );
+{max}(djtfijx).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (oid)	  (int)	  #
@@ -320,7 +320,7 @@ djtfijx :=join( docid.reverse, CTgroup( docid, tid ).histogram );
 [ 0@0,	  2	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  1	  ]
-quit;
+quit();
 
 # 17:06:56 >  
 # 17:06:56 >  Done.

@@ -132,8 +132,8 @@ loaded();
 [ "uchr",	  nil	  ]
 
 # # module("Meta");
-# # loaded;
-# # [~mmn()].reverse.sort.print;
+# # loaded();
+# # [~mmn()].reverse().sort().print();
 
 fix:=mmn().reverse().copy();
 [fix~].print();
@@ -203,13 +203,13 @@ others:=kdiff(view_modules.reverse().kunique(),mmn().reverse()).sort().access(BA
 [ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
 
-others@batloop{
+others@batloop(){
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
 	loaded();
 	off:=kdiff(mmn().reverse(),fix);
 	[off~].print();
-	off@batloop{
+	off@batloop(){
 		printf("\n\tdropping %s\n\n",$h);
 	}
 	drop($h);
@@ -1954,7 +1954,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
-quit;
+quit();
 
 # 16:53:25 >  
 # 16:53:25 >  Done.

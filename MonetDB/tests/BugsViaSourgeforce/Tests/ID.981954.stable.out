@@ -83,7 +83,7 @@ itemID := nil;
 [ 1 ]
 [ 2 ]
 [ 3 ]
-print()(iter,pos,item,kind);
+print(iter,pos,item,kind);
 
 
 

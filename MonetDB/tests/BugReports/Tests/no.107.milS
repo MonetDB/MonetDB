@@ -1,7 +1,7 @@
 setoid(oid(20000000));
 
 # [t_i, n_i]
-var w:= bat("w").histogram().print();
+w.histogram().print();
 
 #split w in twee tabellen
 var docid := new( void, oid );
@@ -16,9 +16,9 @@ docid.print();
 tid.seqbase( 1000@0 );
 tid.print();
 tid.reverse().print();
-tidx:=tid.copy();
+var tidx:=tid.copy();
 tidx.print();
-tidy:=([oid](tid)).copy();
+var tidy:=([oid](tid)).copy();
 tidy.print();
 print( docid, tid );
 
@@ -30,7 +30,7 @@ join( tidx.reverse(), CTgroup( docid, tid ).histogram()).print();
 join( tidy.reverse(), CTgroup( docid, tid ).histogram()).print();
 join( tid.reverse(), CTgroup( docid, tid ).histogram()).print();
 # d_j, max tf_j
-djtfij := new( oid, int );
+var djtfij := new( oid, int );
 djtfij.insert( join( docid.reverse(), CTgroup( docid, tid ).histogram() ) );
 
 {max}(djtfij).print();
@@ -38,6 +38,6 @@ djtfij.insert( join( docid.reverse(), CTgroup( docid, tid ).histogram() ) );
 # This way it works. However, if I do not do an explicit new and insert,
 # then the server crashes as follows:
 
-djtfijx :=join( docid.reverse(), CTgroup( docid, tid ).histogram() );
+var djtfijx :=join( docid.reverse(), CTgroup( docid, tid ).histogram() );
 {max}(djtfijx).print();
 quit();

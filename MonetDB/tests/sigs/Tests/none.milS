@@ -13,8 +13,8 @@ loaded();
 [~mmn()].reverse().sort().print();
 
 # # module("Meta");
-# # loaded;
-# # [~mmn()].reverse.sort.print;
+# # loaded();
+# # [~mmn()].reverse().sort().print();
 
 fix:=mmn().reverse().copy();
 [fix~].print();
@@ -26,7 +26,7 @@ others@batloop(){
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
 	loaded();
-	off:=kdiff(mmn().reverse,fix);
+	off:=kdiff(mmn().reverse(),fix);
 	[off~].print();
 	off@batloop(){
 		printf("\n\tdropping %s\n\n",$h);
