@@ -206,6 +206,15 @@ AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 
 AC_DEFUN(AM_MONET_TOOLS,[
 
+dnl Some special requirements for MacOS X/Darwin
+case "$host" in
+powerpc-apple-darwin*)
+	CPPFLAGS="$CFLAGS -I/sw/include"
+	LDFLAGS="$LDFLAGS -L/sw/lib"
+	CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
+	;;
+esac
+
 dnl AM_PROG_LIBTOOL has loads of required macros, when those are not satisfied within
 dnl this macro block the requirement is pushed to the next level, e.g. configure.ag
 dnl this can lead to unwanted orders of checks and thus to wrong settings, e.g.
@@ -368,7 +377,7 @@ SHARED_LIBS=''
 [
 if [ "$enable_static" = "yes" ]; then
 	CFLAGS="$CFLAGS -DSTATIC"
-	SHARED_LIBS='$(smallTOC_SHARED_LIBS)'
+	SHARED_LIBS='$(STATIC_LIBS) $(smallTOC_SHARED_LIBS)'
 	case "$host_os" in
 	aix*)	CFLAGS="$CFLAGS -DsmallTOC";;
 	*)	SHARED_LIBS="$SHARED_LIBS "'$(largeTOC_SHARED_LIBS)';;

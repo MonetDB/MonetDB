@@ -195,6 +195,12 @@ def am_find_ins(am, map):
         if ext == 'in':
             am['OutList'].append(am['CWD']+t)
 
+def am_additional_flags(name, sep, type, list, am):
+    add = "lib"+sep+name+"_la_LDFLAGS ="
+    for l in list:
+        add = add + " " + l
+    return add + "\n"
+
 def am_additional_libs(name, sep, type, list, am):
     if type == "BIN":
         add = name+"_LDADD ="
@@ -484,6 +490,9 @@ def am_library(fd, var, libmap, am):
         fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am))
         fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"], am))
 
+    if libmap.has_key("LDFLAGS"):
+        fd.write(am_additional_flags(libname, sep, "LIB", libmap["LDFLAGS"], am))
+
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
         if ext not in automake_ext:
@@ -545,6 +554,9 @@ def am_libs(fd, var, libsmap, am):
         if libsmap.has_key(libname + "_DLIBS"):
             fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_DLIBS"], am))
             fd.write(am_additional_install_libs(libname, sep, libsmap[libname+ "_DLIBS"], am))
+
+        if libsmap.has_key("LDFLAGS"):
+            fd.write(am_additional_flags(libname, sep, "LIB", libsmap["LDFLAGS"], am))
 
         srcs = "lib"+sep+libname+"_la_SOURCES ="
         for target in libsmap['TARGETS']:
@@ -681,6 +693,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'SCRIPTS': am_scripts,
                 'CFLAGS': am_cflags,
                 'CXXFLAGS': am_cflags,
+                'STATIC_MODS': am_mods_to_libs,
                 'smallTOC_SHARED_MODS': am_mods_to_libs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,

@@ -89,7 +89,7 @@ EXTRA_DIST = static_modules.mx
 
 bin_Mserver = {
 	SOURCES = Mserver.mx initmodules.mx 
-	LIBS = ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS) ../common/libmutils ../common/libstream
+	LIBS = ../monet/libmonet  @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS) ../common/libmutils ../common/libstream
 }
 
 scripts_mcsh = {

@@ -35,9 +35,10 @@ LIBS = {
 	SEP = _
 	SOURCES = calib.mx 
 	HEADERS = h m
-	LIBS = ../../gdk/libbat ../../monet/libmonet \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 	SCRIPTS = mil ""
+	WINLIBS = ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LDFLAGS = -module
 }
 
 BINS = {

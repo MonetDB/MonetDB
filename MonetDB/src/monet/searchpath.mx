@@ -180,6 +180,17 @@ char *MSP_next_module() {
                     char *suffix=0;
                     if ((suffix=strstr(dent->d_name,SO_EXT))==0 || 
 		       	 strncmp(dent->d_name,"lib_",4)!=0) continue; 
+		    /*
+		     * On some platforms (e.g., MacOS X/Mach-O/Darwin), 
+		     * a library's version number (e.g., ".0"/".0.0.0")
+		     * is not appended to the suffix, but rather placed
+		     * between the library's name and suffix; however,
+		     * we only want to match "lib_<name><SO_EXT>", here,
+		     * but not "lib_<name><version><SO_EXT>":
+		     */
+		    if (((suffix-2)>=dent->d_name) &&
+		        (suffix[-2]=='.')          &&
+		       	(suffix[-1]>='0')&&(suffix[-1]<='9')) continue; 
                     suffix[0]='\0';
                     next_module=(char *)GDKmalloc(strlen(current_entry->path)+
                                                strlen(dent->d_name)+2);

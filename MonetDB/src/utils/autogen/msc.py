@@ -523,8 +523,13 @@ def msc_library(fd, var, libmap, msc):
     dlib = []
     if libmap.has_key(libname+ "_DLIBS"):
         dlib = libmap[libname+"_DLIBS"]
+    liblist = []
+    if libmap.has_key("WINLIBS"):
+        liblist += libmap["WINLIBS"]
     if libmap.has_key("LIBS"):
-        fd.write(msc_additional_libs(fd, libname, sep, "LIB", libmap["LIBS"], dlib, msc))
+        liblist += libmap["LIBS"]
+    if liblist:
+        fd.write(msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc))
 
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
@@ -600,8 +605,14 @@ def msc_libs(fd, var, libsmap, msc):
             dlib = libsmap[libname+"_DLIBS"]
         if libsmap.has_key(libname + "_LIBS"):
             fd.write(msc_additional_libs(fd, libname, sep, "LIB", libsmap[libname + "_LIBS"], dlib, msc))
-        elif libsmap.has_key("LIBS"):
-            fd.write(msc_additional_libs(fd, libname, sep, "LIB", libsmap["LIBS"], dlib, msc))
+        else:
+            libslist = []
+            if libsmap.has_key("WINLIBS"):
+                libslist += libsmap["WINLIBS"]
+            if libsmap.has_key("LIBS"):
+                libslist += libsmap["LIBS"]
+            if libslist:
+                fd.write(msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc))
 
         srcs = "lib"+sep+libname+"_OBJS ="
         for target in libsmap['TARGETS']:
@@ -670,6 +681,7 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'MTSAFE': msc_mtsafe,
                 'CFLAGS': msc_cflags,
                 'CXXFLAGS': msc_cflags,
+                'STATIC_MODS': msc_mods_to_libs,
                 'smallTOC_SHARED_MODS': msc_mods_to_libs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,
                 'HEADERS': msc_headers,
