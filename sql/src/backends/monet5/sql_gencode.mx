@@ -167,7 +167,7 @@ Instructions are encapsulated with time code.
 		q= newStmtId(mb, "t0","alarm","usec");
 		q= newStmt(mb,"io","printf");
 		q= pushStr(mb,q," %d ");
-		q= pushArgumentId(mb,q,"t0");
+		q= pushArgumentId(mb,q,_strdup("t0"));
         }
 
 @= SQLpostlude
@@ -176,14 +176,14 @@ Instructions are encapsulated with time code.
 		   printf(" %d ",t1);printf("%d\n",nr);*/
 		q= newStmtId(mb,"t1","alarm","usec");
 		q= newStmtId(mb,"t1","calc","-");
-		q= pushArgumentId(mb,q,"t1");
-		q= pushArgumentId(mb,q,"t0");
+		q= pushArgumentId(mb,q,_strdup("t1"));
+		q= pushArgumentId(mb,q,_strdup("t0"));
 		q= newStmt(mb,"io","printf");
 		q= pushStr(mb,q," %d ");
-		q= pushArgumentId(mb,q,"t1");
+		q= pushArgumentId(mb,q,_strdup("t1"));
 		q= newStmt(mb,"io","printf");
 		q= pushStr(mb,q," %d \n");
-		q= pushArgumentId(mb,q,"nr");
+		q= pushArgumentId(mb,q,_strdup("nr"));
         }
 @-
 The dump_header produces a sequence of instructions for
@@ -262,7 +262,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		q= newAssignment(mb);
 		s->nr = getDestVar(q);
 		if (s->op1.sval) {
-			q= pushArgumentId(mb,q,s->op1.sval);
+			q= pushArgumentId(mb,q,_strdup(s->op1.sval));
 		} else {
 			char buf[32];
 			(void)snprintf( buf, 32, "A%d", s->flag);
@@ -276,8 +276,8 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 	case st_temp: {
 		int l,r;
 		q= newStmt(mb,"bat","new");
-		q= pushArgumentId(mb,q,"void");
-		q= pushArgumentId(mb,q,s->op4.typeval->type->base.name);
+		q= pushArgumentId(mb,q,_strdup("void"));
+		q= pushArgumentId(mb,q,_strdup(s->op4.typeval->type->base.name));
 		l= getDestVar(q);
 		q= newStmt(mb,"calc","oid");
 		q= pushInt(mb,q,0);
@@ -779,7 +779,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
 		} else  {
-			//q= newStmt(mb,"multiplex", s->op4.funcval->func->imp);
+			/*q= newStmt(mb,"multiplex", s->op4.funcval->func->imp); */
 			q= newStmt(mb, NULL, s->op4.funcval->func->imp);
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
@@ -1069,7 +1069,7 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 
 	(void)id;
 	/* later we change this to a factory ? */
-	c->curprg = newFunction( fnme, FUNCTIONsymbol);
+	c->curprg = newFunction( _strdup(fnme), FUNCTIONsymbol);
 	curPrg = c->curprg;
         curBlk = curPrg->def;
         curInstr = getInstrPtr(curBlk,0);
