@@ -60,7 +60,7 @@ stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
-[ "monet_environment",	  25,	  25,		  0	  ]
+[ "monet_environment",	  26,	  26,		  0	  ]
 [ "monet_fcn_fcn",	  579,	  579,		  0	  ]
 [ "monet_fcn_imp",	  681,	  681,		  0	  ]
 [ "monet_fcn_tpe",	  681,	  681,		  0	  ]
@@ -154,7 +154,7 @@ Over..
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
-[ "monet_environment",	  25,	  25,		  0	  ]
+[ "monet_environment",	  26,	  26,		  0	  ]
 [ "monet_fcn_fcn",	  579,	  579,		  0	  ]
 [ "monet_fcn_imp",	  681,	  681,		  0	  ]
 [ "monet_fcn_tpe",	  681,	  681,		  0	  ]
