@@ -62,14 +62,8 @@ CONFLICT_MODS =	\
 EXTRA_DIST = static_modules.mx monet-config.mx.in monet-config.bat.in
 
 bin_Mserver = {
-	SOURCES = Mserver.mx initmodules.mx 
+	SOURCES = Mserver.mx.in initmodules.mx 
 	LIBS = ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS)
-}
-
-bin_Mdestroydb = bin_Mcreatedb
-BINS = {
-	SOURCES = Mcreatedb.mx 
-	LIBS = ../gdk/libbat $(SOCKET_LIBS) $(GDK_LIBS)
 }
 
 bin_SCRIPTS = monet-config monet-config.bat

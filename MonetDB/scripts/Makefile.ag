@@ -1,9 +1,10 @@
-EXTRA_DIST = general.mil quit.mil monet.conf
+EXTRA_DIST = general.mil quit.mil 
 EXTRA_DIST_DIR = gold 
 
 SUBDIRS = tools
 
 scripts_mil = {
 	DIR = pkgdatadir
-	SOURCES = general.mil quit.mil monet.conf
+	SOURCES = general.mil quit.mil
 }
+

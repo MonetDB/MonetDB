@@ -389,18 +389,6 @@ extern int setenv(char *name, char *value, int overwrite);
 #define DBLOGFILE	"MonetLog"
 
 #define PATHLENGTH	128		/* maximum file pathnamde length */ 
-#define MONETRC  ".monet.conf"
-
-gdk_export char 	GDKdbnameStr[PATHLENGTH];
-gdk_export char 	GDKdbfarmStr[PATHLENGTH];
-gdk_export char 	GDKdirStr[PATHLENGTH];
-gdk_export char 	GDKdistrStr[PATHLENGTH];
-gdk_export char 	GDKmonetrcStr[PATHLENGTH];
-@-
-Was Mserver called with -initonly, 
-i.e., by Mcreatedb just to initialize the database?
-@h
-gdk_export int		GDKinitonly;
 
 @
 @}
@@ -408,7 +396,7 @@ gdk_export int		GDKinitonly;
 @- GDK session handling
 @T
 {\tt \begin{tabular}{|lll|}\hline
-int & GDKinit & (int argv; char **argv)\\
+int & GDKinit & (char *db, char *dbfarm)\\
 int & GDKexit & ()\\
 \hline\end{tabular}}
 @
@@ -425,8 +413,12 @@ During system startup some environment variables are set.
 gdk_export int              GDKrecovery;
 gdk_export int              GDKstopped;
 
-gdk_export int     		GDKinit(int argc, char **argv); 
+gdk_export int     		GDKinit(char *db, char *dbfarm); 
 gdk_export void			GDKexit(); 
+
+gdk_export char			*GDKgetenv(char *var);
+gdk_export int			GDKgetenv_isyes(char *var);
+gdk_export void			GDKsetenv(char *var, char *value);
 
 @
 @}

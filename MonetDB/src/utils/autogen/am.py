@@ -488,7 +488,9 @@ def am_translate_dir(path,am):
           dir == "srcdir" or dir == "builddir" or \
           dir == "pkglibdir" or dir == "libdir" or \
           dir == "pkgbindir" or dir == "bindir" or \
-          dir == "pkgdatadir" or dir == "datadir"):
+          dir == "pkgdatadir" or dir == "datadir" or \
+          dir == "pkglocalstatedir" or dir == "localstatedir" or \
+          dir == "pkgsysconfdir" or dir == "sysconfdir"):
         dir = "$("+dir+")"
     dir = dir + rest
     return dir

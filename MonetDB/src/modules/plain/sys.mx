@@ -649,24 +649,13 @@ int view_gdk_env(
 	BAT *b = *retval = BATnew(TYPE_str, TYPE_str, 12);
 	char prefix[128];
 	if (b == 0) return GDK_FAIL;
-	if( GDKdbfarmStr[0])
-		BUNins(b, "gdk_dbfarm", GDKdbfarmStr);
-	if( GDKdbnameStr[0])
-		BUNins(b, "gdk_dbname", GDKdbnameStr);
-	if( GDKdistrStr[0])
-		BUNins(b, "gdk_distr", GDKdistrStr);
-	if( GDKmonetrcStr[0])
-		BUNins(b, "gdk_monetrc", GDKmonetrcStr);
-	BUNins(b, "gdk_dir", GDKdirStr);
         sprintf(prefix, "%dbit%s", sizeof(ptr)*8, monet_arch);
 	BUNins(b, "gdk_arch", prefix); 
 	BUNins(b, "gdk_version", monet_version);
 	BUNins(b, "monet_cwd", monet_cwd);
 	/* BUNins(b, "monet_general", monet_general);*/
 	BUNins(b, "monet_pid", local_itoa(getpid()));
-	BUNins(b, "monet_welcome", (monet_welcome?"yes":"no"));
 	BUNins(b, "monet_deamon", (monet_deamon?"yes":"no"));
-	BUNins(b, "monet_prompt", monet_prompt);
 	@:Pseudo(gdk,env)@
 	return GDK_SUCCEED;
 }

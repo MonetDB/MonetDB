@@ -7,8 +7,10 @@ AC_ARG_ENABLE(debug,
 if test "x$enable_debug" = xyes; then
   if test "x$GCC" = xyes; then
     CFLAGS="$CFLAGS -O0"
+    CXXFLAGS="$CXXFLAGS -O0"
   fi
   CFLAGS="$CFLAGS -g"
+  CXXFLAGS="$CXXFLAGS -g"
 fi
 
 dnl --enable-optimize

@@ -1,0 +1,590 @@
+@f Mserver
+@a M.L. Kersten, P. Boncz, Niels Nes
+@v 4.1
+@* The Monet Server
+@T
+The {\tt Mserver} is the Monet server. The database administrator starts
+and stops it. (S)he can type on the console, which is started on the
+standard input/output.
+
+@+ Manual Page
+@T
+The Mserver is a multithreaded program. There is one system thread, and for
+each user (system administrater included) there is one worker thread.
+As a default, the Mserver also starts the internet listener thread,
+on the port number specified in the parameter file.
+
+@- Usage
+@T
+\begin{verbatim}
+Mserver { [ --dbname <db-name> ] 
+	  [ --dbfarm <dbfarm> ]
+          [ -c|--config <config-file> ] 
+          [ -d|--debug [value]
+          [ -s|--set [option=value] set option can be given multiple times
+                                    to override verious options
+        } [ <mil-script> ]
+\end{verbatim}
+
+Since the console has no command-line history nor file name completion,
+you are {\bf recommended} to use the 
+@[<a href="MapiClient.html">Mclient</a>@ program for interactive sessions
+instead.
+
+The options have the following meaning:
+\begin{description}
+\item[{\tt --dbname $<$db-name$>$ }]
+	open the database {\em db-name}.
+\item[{\tt --config $<$config-file$>$ }]
+	where to find the environment settings
+\end{description}
+
+
+@+ Implementation
+@h
+#ifndef _MONET_GLOBAL_H_
+#define _MONET_GLOBAL_H_
+
+int debugger();
+#include "monet.h"
+#include "yytree.h"
+
+#endif /* _MONET_GLOBAL_H_ */
+@C
+extern "C" {
+#include "Mserver.h"
+#include "monet_context.h"
+#include "monet_interpreter.h"
+#include "monet_parse.h"
+#include "monet_queue.h"
+#include "monet_client.h"
+#include "monet_process.h"
+
+#ifdef HAVE_LIBGETOPT 
+#include <getopt.h>
+#endif
+
+extern void		static_module_init(Client c, char buf[]); 
+}
+
+void *operator new( size_t size ) {
+        void *ptr = GDKmalloc( size );
+        return(ptr);
+}
+void operator delete( void *ptr ) {
+        GDKfree( ptr );
+}
+#if defined(__GNUC__) && defined(__cplusplus)
+void *operator new[]( size_t size ) {
+        void *ptr = GDKmalloc( size );
+        return(ptr);
+}
+void operator delete[]( void *ptr ) {
+        GDKfree( ptr );
+}
+#endif
+
+
+@-
+The architecture is setup to handle multiple streams of requests.
+The first thread started represents the server. It reads from standard input
+and writes to standard input. This is also a way to recognize the server
+actions. 
+To start the server in the background one should use the argument -background.
+This closes standard input. Direct execution in the background may cause
+the server to hang in stdio for input from the terminal.
+@ 
+@ 
+The server thread started remains in existence until all other threads die.
+The server is stopped by cntrl-D or the quit command.
+@
+
+@-
+Braindamaged Sun engineers decided to use malloc for allocating an enormous
+buffer of 20 bytes in the sunos2.5.5.X thread library, making the tunable 
+malloc library totally unusable, since it requires you to do advice before any 
+use of malloc().  We hack around it, by using realloc(0,size) in 
+gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
+@C
+static int malloc_init=1;
+#ifdef SOLARIS
+#ifndef NOMALLOPT
+#undef malloc
+void* malloc(size_t size) {
+	@:mallopt@
+	return realloc(0,size);
+}
+#endif
+#endif
+@C
+#ifdef NATIVE_WIN32
+#include <eh.h>
+void Mserver_abort() {
+	fprintf(stderr,"\n! Mserver_abort() was called by terminate(). !\n");
+	fflush(stderr);
+	MT_global_exit(1);
+}
+#endif
+@C
+void usage( char *prog ){
+	fprintf(stderr, "usage\n");
+	exit(-1);
+}
+
+typedef enum opt_kind
+{
+	opt_builtin,
+	opt_systemconfig,
+	opt_config,
+	opt_cmdline
+} opt_kind;
+
+typedef struct opt 
+{
+	opt_kind  kind; 
+	char *name;
+	char *value;
+} opt;
+
+static void print_options(opt *set, int setlen)
+{
+	int i = 0;
+
+	for( i = 0; i<setlen; i++){
+		switch(set[i].kind){
+		case opt_builtin:
+			fprintf(stderr, 
+				"builtin opt \t%s = %s\n", 
+				set[i].name, set[i].value);
+			break;
+		case opt_systemconfig:
+			fprintf(stderr,
+				"system opt \t%s = %s\n", 
+				set[i].name, set[i].value);
+			break;
+		case opt_config:
+			fprintf(stderr,
+				"config opt \t%s = %s\n", 
+				set[i].name, set[i].value);
+			break;
+		case opt_cmdline:
+			fprintf(stderr,
+				"cmdline opt \t%s = %s\n", 
+				set[i].name, set[i].value);
+			break;
+		default: 
+			fprintf(stderr, "error: unknown kind (%d)\n", 
+				set[i].kind );
+		}
+	}
+}
+
+
+char *options_find( opt *set, int setlen, char *name )
+{
+	opt *o = NULL;
+	int i;
+	for(i=0; i<setlen; i++){
+		if (strcmp(set[i].name,name) == 0)
+			if (!o || o->kind < set[i].kind)
+				o = set+i;
+	}
+	if (o) return o->value;
+	return NULL;
+}
+
+int substitute_prefix( char *val, opt *set, int setlen )
+{
+	if ( strncmp(val,"${exec_prefix}",strlen("${exec_prefix}")) == 0){
+		char val2[BUFSIZ];
+		char *p = options_find(set, setlen, "exec_prefix");
+		char *t = strchr(val,'}');
+		if (!t || !p) return -1;
+		snprintf(val2,BUFSIZ,"%s%s", p, t+1 );
+		strncpy(val,val2,BUFSIZ);
+	}
+	if ( strncmp(val,"${prefix}",strlen("${prefix}")) == 0){
+		char val2[BUFSIZ];
+		char *p = options_find(set, setlen, "prefix");
+		char *t = strchr(val,'}');
+		if (!t || !p) return -1;
+		snprintf(val2,BUFSIZ,"%s%s", p, t+1 );
+		strncpy(val,val2,BUFSIZ);
+	}
+	return 0;
+}
+
+static int config_file(char *file, opt_kind kind, opt **Set, int setlen)
+{
+        char buf[BUFSIZ];
+        FILE *fd= NULL;
+	opt *set = *Set;
+
+        fd = fopen(file,"r");
+        while(fd!=NULL && fgets(buf,BUFSIZ,fd) != NULL){
+		char *s, *t, *val;
+
+                for(s=buf; *s && isspace(*s); s++) ;
+                if( *s == '#') continue;  /* commentary */
+                if( *s == 0) continue;   /* empty line */
+                
+                val = strchr(s,'=');
+                if( val == NULL) {
+                        fprintf(stderr, 
+				"config_file: syntax error in %s\n", file);
+			fclose(fd);
+			exit(1);
+                }
+                *val=0;
+
+                for(t=s; *t && !isspace(*t); t++) ;
+                *t =0;
+
+                /* skip any leading blancs in the value part */
+                for(val++; *val && isspace(*val) ;val++) ;
+                /* search first blanc, rest is commentary */
+                for(t=val;*t;t++) if( isspace(*t) || *t=='#') break;
+                *t=0;
+
+		set = (opt*)GDKrealloc(set,(setlen+1)*sizeof(opt));
+		set[setlen].kind = kind;
+		set[setlen].name = GDKstrdup(s);
+		set[setlen].value = GDKstrdup(val);
+		setlen++;
+
+        }
+	if (fd == NULL){
+		fprintf(stderr, "Could not open file %s\n", file );
+	}
+        if( fd != NULL) (void) fclose(fd);
+	*Set = set;
+	return setlen;
+}
+
+static int system_config( opt **Set, int setlen)
+{
+	char config[BUFSIZ];
+
+	snprintf(config,BUFSIZ,"@sysconfdir@%cmonet.conf", DIR_SEP);
+	substitute_prefix(config, *Set, setlen);
+	return config_file(config, opt_systemconfig, Set, setlen);
+}
+	
+
+static int builtin_settings(opt **Set)
+{
+	int i = 0;
+	opt *set = (opt*)GDKmalloc(sizeof(opt)*11);
+
+	if (!set) return 0;
+
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("prefix");
+	set[i].value = (char*)GDKmalloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,"@prefix@", DIR_SEP);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("exec_prefix");
+	set[i].value = (char*)GDKmalloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,"@exec_prefix@", DIR_SEP);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("gdk_dbname");
+	set[i].value = GDKstrdup("tst");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("gdk_dbfarm");
+	set[i].value = (char*)GDKmalloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,"@localstatedir@%c@PACKAGE@", DIR_SEP);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("gdk_debug");
+	set[i].value = GDKstrdup("8");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("gdk_mmap");
+	set[i].value = GDKstrdup("32M");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("monet_admin");
+	set[i].value = GDKstrdup("adm");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("monet_prompt");
+	set[i].value = GDKstrdup(">");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("monet_welcome");
+	set[i].value = GDKstrdup("yes");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("monet_mod_path");
+	set[i].value = (char*)GDKmalloc(BUFSIZ);
+	snprintf(set[i].value,BUFSIZ,"@libdir@%c@PACKAGE@", DIR_SEP);
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = GDKstrdup("monet_deamon");
+	set[i].value = GDKstrdup("yes");
+	i++;
+	
+	*Set = set;
+	return i;
+}
+
+static str absolute_path(str s) {
+        if (!MT_path_absolute(s)) {
+                str ret = (str)GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
+                sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
+                return ret;
+        }
+        return GDKstrdup(s);
+}
+
+static Client Monet_init( opt *set, int setlen )
+{
+	char *p;
+	opt *n = (opt*)GDKmalloc(setlen*sizeof(opt));
+	int i,j, nlen = 0;
+
+	char dbfarm[BUFSIZ];
+	char *dbname = options_find(set, setlen, "gdk_dbname");
+	char *dbfarmval = options_find(set, setlen, "gdk_dbfarm");
+
+	if (!n || !dbname || !dbfarmval){
+		if (n) GDKfree(n);
+		return NULL;
+	}
+
+	strcpy(dbfarm, dbfarmval );	
+	substitute_prefix(dbfarm, set, setlen);
+
+        /* determine Monet's kernel settings. */
+	GDKinit(dbname, dbfarm);
+
+	for(i=0; i<setlen; i++){
+		int done = 0;
+		for(j=0; j<nlen; j++){
+			if (strcmp(n[j].name, set[i].name) == 0 &&
+			    n[j].kind < set[i].kind){
+				n[j] = set[i];
+				done = 1;
+				break;
+			}
+		}
+		if (!done){
+			n[nlen] = set[i];
+			nlen++;
+		}
+	}
+	for(i=0; i<nlen; i++){
+		char value[BUFSIZ];
+
+		strncpy(value, n[i].value, BUFSIZ);
+		substitute_prefix(value, n, nlen);
+		if (strcmp(n[i].name,"prefix") !=0 &&
+		    strcmp(n[i].name,"exec_prefix") !=0) 
+			GDKsetenv(n[i].name, value);
+	}
+	GDKfree(n);
+
+	if ((p=GDKgetenv("gdk_debug")) )
+		GDKdebug = strtol(p,NULL,10);
+
+	if ((p=GDKgetenv("monet_mmap")) )
+		GDKmem_bigsize() = strtol(p,NULL,10);
+
+	if (GDKgetenv_isyes("monet_deamon")){	
+		monet_deamon=1;
+	}
+
+	return (Client) monet_init();
+}
+
+static void free_options( opt *set, int setlen )
+{
+	int i;
+	for(i=0; i<setlen; i++){
+		GDKfree(set[i].name);
+		GDKfree(set[i].value);
+	}
+	GDKfree(set);
+}
+
+@C
+int main(int ac, char **av)
+{
+	Client c;
+	char buf[BUFSIZ], *prog = *av;
+	opt *set = NULL;
+	int i,debug = 0, setlen = 0, status = 1;
+
+@-
+We give malloc advice here. Main goal: prevent fragmentation.
+We do this by declaring everything below 2K as 'small'. These
+values will be drawn from a fixed pools of 400K.
+A grain size of 128 bytes is used to keep overhead low.
+@= mallopt
+	if (malloc_init) {
+            if (mallopt(M_MXFAST, 192)) {
+		fprintf(stderr, "monet: mallopt(M_MXFAST,8192) fails.\n");
+	    }
+            if (mallopt(M_NLBLKS, 16)) {
+		fprintf(stderr, "monet: mallopt(M_NLBLKS,10) fails.\n");
+	    }
+#ifdef IRIX
+            if (mallopt(M_BLKSZ, 8*1024)) {
+		fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+	    }
+#endif
+	    if (mallopt(M_GRAIN, 32)) {
+		fprintf(stderr, "monet: mallopt(M_GRAIN,96) fails.\n");
+ 	    }
+	}
+	malloc_init=0;
+@C
+#ifdef NATIVE_WIN32
+	set_terminate( Mserver_abort );
+#endif
+@C
+
+#ifndef NOMALLOPT
+	@:mallopt@
+#endif
+
+	static struct option long_options[] =
+             {
+               {"config", 1, 0, 'c'},
+               {"dbname", 1, 0, 0},
+               {"dbfarm", 1, 0, 0},
+               {"debug", 2, 0, 'd'},
+               {"help", 0, 0, 'h'},
+               {"set", 1, 0, 's'},
+               {0, 0, 0, 0}
+             };
+
+        if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
+                perror("pwd");
+                GDKfatal("Monet_init: could not determine current directory\n");
+        }
+
+	if (!(setlen = builtin_settings(&set)) )
+		usage(prog);
+	if (!(setlen = system_config(&set, setlen)) )
+		usage(prog);
+
+	while(1){
+		int option_index = 0;
+
+		int c = getopt_long( ac, av, "c:ds:", 
+				long_options, &option_index);
+
+		if (c == -1)
+			break;
+
+		switch (c){
+		case 0:
+			if (strcmp(long_options[option_index].name, 
+						"dbname") == 0){
+				set = (opt*)
+					GDKrealloc(set,(setlen+1)*sizeof(opt));
+				set[setlen].kind = opt_cmdline;
+				set[setlen].name = GDKstrdup("gdk_dbname");
+				set[setlen].value = GDKstrdup(optarg);
+				setlen++;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, 
+						"dbfarm") == 0){
+				set = (opt*)
+					GDKrealloc(set,(setlen+1)*sizeof(opt));
+				set[setlen].kind = opt_cmdline;
+				set[setlen].name = GDKstrdup("gdk_dbfarm");
+				set[setlen].value = GDKstrdup(optarg);
+				setlen++;
+				break;
+			}
+			usage(prog);
+			break;
+		case 'c':
+			setlen = config_file(optarg, opt_config, &set, setlen);
+			break;
+		case 'd':
+			debug=1;
+			if (optarg){ 
+				set = (opt*)
+					GDKrealloc(set,(setlen+1)*sizeof(opt));
+				set[setlen].kind = opt_cmdline;
+				set[setlen].name = GDKstrdup("gdk_debug");
+				set[setlen].value = GDKstrdup(optarg);
+				setlen++;
+			}
+			break;
+		case 'h':
+			usage(prog);
+			break;
+		case 's': {
+			/* should add option to a list */
+			char *tmp = strchr(optarg, '=');
+
+			if (tmp){
+				set = (opt*)
+					GDKrealloc(set,(setlen+1)*sizeof(opt));
+				*tmp = '\0';
+				set[setlen].kind = opt_cmdline;
+				set[setlen].name = GDKstrdup(optarg);
+				set[setlen].value = GDKstrdup(tmp+1);
+				setlen++;
+			}
+		 } break;
+		case '?':
+			usage(prog);
+		default:
+			printf( "?? getopt returned character code 0%o ??\n",c);
+			usage(prog);
+		}
+	}
+
+	i = 0;
+	monet_script = (str*)GDKmalloc( sizeof(str) * (ac-optind+1) );
+	monet_script[i] = NULL;
+	while(optind < ac){
+		monet_listing = 1;
+		monet_script[i] = absolute_path(av[optind]);
+		monet_script[i+1] = NULL;
+		optind++;
+		printf("monet_script[%d] %s\n", i, monet_script[i] );
+	}
+
+	if (debug)
+		print_options(set, setlen);
+
+	c = Monet_init(set, setlen);
+	free_options(set,setlen);
+
+	if (!c) 
+		usage(prog);
+
+	monet_hello();
+	static_module_init(c,buf);
+@-
+Execute scripts.
+	if (monet_script ) printf("#script:%s\n",monet_script);
+@C
+@- 
+thread management.
+@C
+	scheduleClient(c);
+	monetInterpreter((void*)&status);
+@-
+At the end of a multi-threaded session we should wait
+for all processes to terminate properly.
+@C
+@-
+Peter: for the time being avoid difficult things like dropping everything 
+@C
+	monet_exit();
+	MT_global_exit(0);  
+	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux; see gdk.h (gdk.mx) for details */
+	return 0;
+} /* main */
+@}

@@ -10,12 +10,8 @@
 /* name of the environment variable */
 #define MONET_MSP	"MONET_MOD_PATH"
 
-#ifdef MSP_MAIN
-#define GDKfree(x)	free(x)
-#define GDKmalloc(x)	malloc(x)
-#else 
+#include <gdk.h>
 #include "monet.h"
-#endif
 
 #ifndef SO_EXT
 #define SO_EXT ".so"
@@ -36,15 +32,12 @@ char *MSP_next_module();
 
 #endif
 @c
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "searchpath.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 
-#include "searchpath.h"
 
 struct moddir {
     char *path;
@@ -109,13 +102,8 @@ void insert_moddir_recursively(char *name) {
 
 static 
 void parse_mod_path() {
-    char *mod_path = getenv(MONET_MSP);
-    char *default_path = alloca(strlen(GDKdistrStr)+32);
-    
-    sprintf(default_path, "%s%clib%c%s", GDKdistrStr, DIR_SEP, DIR_SEP, PACKAGE);
-/*
-    if (!mod_path) mod_path = getenv("LD_LIBRARY_PATH");
-*/
+    char *mod_path = GDKstrdup(GDKgetenv("monet_mod_path"));
+
     if (mod_path){
       int pos=0, len=strlen(mod_path);
       char *dirbegin=mod_path;
@@ -134,7 +122,7 @@ void parse_mod_path() {
         }
       while(1);
     }
-    insert_moddir_entry(default_path);
+    GDKfree(mod_path);
 }
 
 static struct moddir *current_entry=0;
@@ -216,26 +204,3 @@ char *MSP_locate_module(char *mod_name) {
     GDKfree(name);
     return 0;
 }
-
-#ifdef MSP_MAIN
-int main(int argc, char **argv) {
-    char *name;
-
-    MSP_rewind_module_list();
-    print_moddir_list();
-    
-    
-    while(1)
-        {
-            name=MSP_next_module();
-            if (!name) 
-                {
-                    break;
-                }
-            
-            printf("%s\n",name);
-        }
-    printf("%s\n",MSP_locate_module("algebra"));
-    return 0;
-}
-#endif  

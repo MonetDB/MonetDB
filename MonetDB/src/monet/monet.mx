@@ -156,7 +156,6 @@ as well as in user defined module implementations.
 #define m_export extern 
 #endif
 
-#define MONET_ADMIN	"adm"
  
 
 @- Parse Trees
@@ -248,7 +247,7 @@ typedef struct {
 @+ Interface functions 
 @h
 m_export int 	monet_running;
-m_export ptr	monet_init	(int argc, char** argv );
+m_export ptr	monet_init	();
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
 m_export void	monet_exit	();
@@ -301,12 +300,10 @@ See the monet.conf file for additional system variable settings
 #define MAXSCRIPT 64
 
 m_export char		monet_cwd[PATHLENGTH];	/* where the server started */
-m_export char*		monet_prompt;		/* system prompt. */
 m_export int		monet_listing;		/* echo input */
-m_export int		monet_welcome;		/* display welcome message? */
 m_export int		monet_deamon;		/* set server console is deaf */
 m_export int		monet_singlethreaded;	/* in singlethreaded mode? */
-m_export str		monet_script[MAXSCRIPT];/* batch of requests */
+m_export str		*monet_script; 		/* batch of requests */
 m_export str		monet_general ;
 m_export MT_Lock		monet_critical;		/* critical section queue mgmt*/
 m_export MT_Lock		monet_parserLock;	/* protects access to yacc/lex*/
@@ -335,10 +332,9 @@ m_export char 		monet_version[PATHLENGTH];
 
 int 		monet_running = 0;
 char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
-char            *monet_prompt="\1>\1";
-int             monet_listing=0, monet_welcome=1, monet_deamon=2;
+int             monet_listing=0, monet_deamon=0;
 int             monet_singlethreaded=0;
-str             monet_script[MAXSCRIPT]={0};
+str             *monet_script = NULL;
 str		monet_general =0;
 MT_Lock         monet_critical, monet_notifyLock, monet_voidLock;
 MT_Lock		monet_parserLock, monet_contextLock;
@@ -374,153 +370,13 @@ void monet_hello() {
     char *linkinfo = "dynamically";
 #endif
 
-    if (monet_welcome) {
+    if (GDKgetenv_isyes("monet_welcome")) {
         printf("# Monet Database Server V%s\n", monet_version);
-        printf("# Copyright (c) 1993-2001, CWI. ");
+        printf("# Copyright (c) 1993-2002, CWI. ");
         printf("All rights reserved.\n");
         printf("# compiled for %s/%dbit; %s linked.\n", 
 			monet_arch, sizeof(ptr)*8, linkinfo );
-	printf("# dbfarm:%s\n",GDKdbfarmStr);
-	printf("# dbname:%s\n",GDKdbnameStr);
-	printf("# dbdir:%s\n",GDKdirStr);
     }
-}
-
-static str absolute_path(str s) {
-        if (!MT_path_absolute(s)) {
-                str ret = GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
-                sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
-                return ret;
-        }
-        return GDKstrdup(s);
-}
-@- Monet configuration
-The parameters controlling the Monet server are obtained from a
-configuration file, which resides in the current directory, the
-$HOME directory, or a file passed as a parameter of -monetrc.
-
-The code fragment below is copied from the GDK_util section 
-and processes this file, looking for monet related variable settings.
-It assumes that it is called after GDKenvironment, which will
-set the GDKmonetrcStr.
-
-The net effect of this operation is that calling Monet is now triggered
-by much less variables, because the default setting should work
-for most cases.
-@c
-int yesno(str n){
-	if( strcmp("yes",n)==0) return 1;
-	if( strcmp("no",n)==0) return 0;
-	GDKerror("MILenvironment:(yes/no) value error\n");
-	return 0;
-}
-void MILenvironment()
-{
-	static char path[PATHLENGTH];
-	char buf[2*PATHLENGTH];
-	FILE *fd= NULL;
-
-@-
-If Mserver is called (with -initonly) by Mcreatedb, 
-i.e., just to initialize the database,
-we don't need to parse the monetrc file.
-Actually, we don't even want to use any other that the default
-monet\_general.mil and we don't want to risc getting a "monet_deamon = yes".
-@c
-	if( GDKinitonly ) return;
-
-	fd= fopen(GDKmonetrcStr ,"r");
-	while(fd!=NULL && fgets(buf,2*PATHLENGTH,fd) != NULL){
-		str s,t, val;
-
-		for(s=buf; *s && isspace(*s); s++) ;
-		if( *s== 0) continue;   /* empty line */
-		if( *s=='#') continue;	/* commentary */
-		
-		val = strchr(s,'=');
-		if( val == NULL) {
-			GDKerror("MILenvironment:syntax error in monetrc\n");
-			continue;
-		}
-		*val=0;
-
-		for(t=s; *t && !isspace(*t); t++) ;
-		*t =0;
-
-		/* skip any leading blancs in the value part */
-		for(val++; *val && isspace(*val) ;val++) ;
-		/* search first blanc, rest is commentary */
-		for(t=val;*t;t++) if( isspace(*t) || *t=='#') break;
-		*t=0;
-
-		/* This list may be extended later */
-		if( strcmp(s,"monet_welcome")==0)
-                    monet_welcome = yesno(val);
-		else
-		if( strcmp(s,"monet_version")==0)
-                    monet_ver = val;
-		else
-		if( strcmp(s,"monet_general")==0){
-		    SLASH_2_DIR_SEP(val);
-		    if( strncmp("...",val,3)==0 && val[3]==DIR_SEP){
-		        sprintf(path,"%s%s",GDKdistrStr,val+3);
-		        monet_general=GDKstrdup(path);
-		    }else
-                        monet_general=GDKstrdup(val);
-		}else
-		if( strcmp(s,"monet_deamon")==0)
-                    monet_deamon=yesno(val);
-		else
-		if( strcmp(s,"monet_prompt")==0){
-			if( val[0]!= 0){
-			    monet_prompt = strdup("\1\1\1");
-			    monet_prompt[1] = val[0];
-			} else {
-			    monet_prompt = strdup("\1\1");
-		}	}
-	}
-	if( fd != NULL) (void) fclose(fd);
-}
-
-monet_usage(str nme){
-    printf("usage: %s { option }\n", nme);
-    printf("option:\t-db <db-name>\t\tdatabase to open\n");
-    printf("\t-monetrc <file>\t\tsystem variable settings\n");
-    printf("\t<script(s)>\t\texecute MIL files first \n");
-    printf("\t\tdefault is .monet.conf in current/home directory\n");
-}
-static void getoptions(int argc, char **argv){
-        int i;
- 
-        for (i = 1; i < argc; i++) 
-	if( argv[i][0]){
-            if (argv[i][0] == '-') {
-		switch(argv[i][1]){
-		case '-': if( argv[i][2]!= 'h') goto explain;
-		case '?':
-		case 'h':
-		    monet_usage(argv[0]);
-		    exit(0);
-		default:
-		explain:
-		    monet_hello();
-		    printf("unknown calling option %s\n", argv[i]);
-		    monet_usage(argv[0]);
-                    exit(-1);
-		}
-            } else {
-		int k;
-		for(k=0;monet_script[k]!= 0; k++) ;
-
-		if( k< MAXSCRIPT-1){
-			monet_listing = 1;
-			monet_script[k] = absolute_path(argv[i]);
-			monet_script[k+1]=0;
-		} else
-		printf("argument list too long, too many script files \n");
-            } 
-        }
-	MILenvironment(GDKmonetrcStr);
 }
 
 @- Monet Exit
@@ -549,20 +405,11 @@ provided to make inclusion of new modules a piece of cake.
 }
 
 @c
-ptr monet_init(int argc, char **argv ){
-        static char buf[256];
+ptr monet_init(){
         Client  c;
 
 	monet_running = 1;
 
-        if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
-                perror("pwd");
-                GDKfatal("monet_init: could not determine current directory\n");
-        }
-
-        /* determine Monet's kernel settings. */
-	GDKinit(argc,argv);
-        getoptions(argc, argv);
 #ifdef IRIX
         setbuffer(stdout, GDKmalloc(4096), 4096);
 #endif
@@ -578,7 +425,9 @@ ptr monet_init(int argc, char **argv ){
 
 	CNTXTinit();
         TBL_init(); /* init MIL function table management. */
-        c = initClient(GDKstrdup(MONET_ADMIN), GDKstrdup(monet_prompt), FALSE);
+        c = initClient(
+		GDKstrdup(GDKgetenv("monet_admin")), 
+		GDKstrdup(GDKgetenv("monet_prompt")), FALSE);
         if (c == 0) monet_exit();
 	c->login = time(0);
         TBL_initclient(c); /* register user 'adm' for a function table. */
@@ -999,26 +848,3 @@ we can skip checking, as we can assume the reverse column will get checked.
                 THRprintf(GDKerr, "check %s = %d (tot %d)\n", b->batId,_t2,_t3);
         }
 }
-
-@* Example Monet Library Application 
-This is just a simple example that uses the monet library.
-Name the binary to your database and just type MIL in the
-command line arguments.
-@c
-#ifdef MAIN
-main(int argc, char** argv){
-    int restype;
-    char *mil_string;
-
-    if (argc < 2) {
-	fprintf(stderr, "usage: %s { monet-options } <mil-string>\n", argv[0]);
-	return -1;
-    }
-
-    mil_string = argv[--argc];
-    monet_init(argc, argv);
-    monet_eval(mil_string,&restype);
-    monet_exit();
-}
-#endif
-@

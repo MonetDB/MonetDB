@@ -52,7 +52,7 @@ m_export void	CNTXTclear   (Cntxt i);
 m_export void	CNTXTfree    (Cntxt stk, Client c);
 m_export void	CNTXTdelete  (Cntxt i);
 m_export int	CNTXTclient  (Cntxt i, Client *c);
-m_export void 	CNTXTcopy    (Cntxt dst, Cntxt src);
+m_export Cntxt 	CNTXTcopy    (Cntxt src);
 
 #define CNTXTuse(stk)		monet_cntxt[stk].used = 1;
 #define CNTXTfree2(stk,c)	if	(c->maxstk != stk) CNTXTfree(stk,c)
@@ -248,11 +248,11 @@ void CNTXTclear(Cntxt stk){
 @-
 Copy the stack with all its variables.
 @c
-void CNTXTcopy(Cntxt dststk, Cntxt srcstk){
-	Cntxt tmp = CNTXTnew(-1); 
+Cntxt CNTXTcopy(Cntxt srcstk){
+	Cntxt res, tmp = CNTXTnew(-1); 
         Variable v;
 
-	monet_cntxt[dststk].outer = tmp;
+	res = tmp;
 	while(srcstk>=0){
         	Variable v;
 
@@ -274,6 +274,7 @@ void CNTXTcopy(Cntxt dststk, Cntxt srcstk){
 		}
 		srcstk = monet_cntxt[srcstk].outer;
 	}
+	return res;
 }
 
 @-

@@ -173,7 +173,6 @@ Execution of the prelude file is scheduled as a separate action.
 The first time a client needs input (or when the last input contained
 errors) its read request is entered into the queue.
 @c
-static YYSTREE mil_general=NULL;
 
 static YYSTREE scheduleFile(str filename) {
         YYSTREE r = yynode(TOK_BUILTIN, TYPE_ptr);
@@ -199,6 +198,7 @@ static YYSTREE scheduleFile(str filename) {
 }
 
 void scheduleClient(Client c){	
+	static int monet_first = 1;
 	Request req = NULL;
 	YYSTREE t;
 	int k;
@@ -209,16 +209,8 @@ void scheduleClient(Client c){
 		c->mil_accept->yyval.val.pval = (ptr) serveClient;
 		t->yyval.val.ival = c-monet_clients;
 	}
-	if( mil_general == NULL) {
-		char buf[PATHLENGTH];
-		if( monet_general)
-		sprintf(buf,monet_general);
-		else
-		sprintf(buf,"%s/share/Monet/general.mil",GDKdistrStr);
-		SLASH_2_DIR_SEP(buf);
-		mil_general = scheduleFile(buf);
-		QMADD(req, 0, mil_general, "source(general.mil);");
-
+	if (monet_first){
+		monet_first=0;
 		for(k=0;monet_script[k]; k++){
 			QMADD(req, 0, scheduleFile(monet_script[k]), 
 				"source(<user script>);");
@@ -241,6 +233,7 @@ Forking is a relatively cheap way to create a new client.
 The new client record is shared most datastructures with the father.
 @c
 Client forkClient(Cntxt stk, int thread){
+	Cntxt nstk = 0;
         Client father = NULL, son = NULL;
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) { 
@@ -249,6 +242,9 @@ Client forkClient(Cntxt stk, int thread){
 		 * so: father always points to a real client session!
 		 */
 		father = monet_clients + father->father;
+	}
+	if (father && thread){
+		nstk = CNTXTcopy( nstk );
 	}
 	if (father && (son=initClient(father->user, father->prompt, thread))) {
 	        /* reuse all crucial table information from father */
@@ -263,7 +259,7 @@ Client forkClient(Cntxt stk, int thread){
         	son->father = father->stk;
 		/* also reuse father's stack */
 		if (thread){
-			CNTXTcopy( son->stk, stk );
+			monet_cntxt[son->stk].outer = nstk;
 		} else {
         		monet_cntxt[son->stk].outer = stk;
         		monet_cntxt[son->stk].shadow = 1;
@@ -324,9 +320,6 @@ void freeClient(Client c) {
 		yyfree(c->tree);
 		c->tree = NULL;
 		CNTXTfree2(c->stk, c);
-	}
-	if (c == monet_clients){ /* admin context */
-		yyfree(mil_general);
 	}
 
 	CNTXTclear(c->stk);

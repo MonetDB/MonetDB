@@ -764,7 +764,7 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
 	CNTXTclient(stk, &c);
    
-	if (strcmp(c->user, MONET_ADMIN)  )
+	if (strcmp(c->user, GDKgetenv("monet_adming"))  )
 	{
 		fprintf(GDKout,"No permission for shutdown; quit.\n");
 		fflush(GDKout);
