@@ -389,6 +389,8 @@ This piece of code may be shared by the separate binder
 		case COMMANDsymbol: 
 			p->token = CMDcall; 
 			p->fcn = getSignature(s)->fcn;
+			if( p->fcn == 0) 
+				p->typechk= TYPE_UNKNOWN;
 			break;
 		case PATTERNsymbol: 
 			p->token = PATcall; 

@@ -68,7 +68,7 @@ typedef struct{
 mal_export void showErrors();
 mal_export str runMAL(Client c, MalBlkPtr mb, 
 		MalBlkPtr mbcaller, 
-		MalStkPtr env, InstrPtr pcicaller);
+		MalStkPtr env, InstrPtr pcicaller, int envpc);
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
 mal_export void waitForChildren(MalStkPtr stk);
@@ -170,7 +170,7 @@ void showErrors(){
 }
 
 str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, 
-	   MalStkPtr env, InstrPtr pcicaller){
+	   MalStkPtr env, InstrPtr pcicaller,int envpc){
 	MalStkPtr stk= NULL;
 	int i;
 	ValPtr lhs,rhs;
@@ -220,7 +220,7 @@ being called.
 	if( env && mbcaller){
 		InstrPtr pp;
 		int k;
-		env->pcup= getPC(mbcaller,pcicaller);
+		env->pcup= envpc;
 @-
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
 the symbol table and stackframe contains the sequence 
@@ -658,15 +658,6 @@ the bind(namespace,batname,mode) operation.[todo]
 		ret= raiseException(mb,stkpc,MALexception,
 			"too many arguments for command call\n");
 	}
-/* old version
-	for(k=0;k<pci->argc && k<MAXARG; k++){
-		argv[k] =(ptr) getArgReference(stk,pci,k);
-	} 
-*/
-	if( pci->fcn== NULL)
-		ret= raiseException(mb,stkpc,MALexception,
-			"address of function missing\n");
-	else
 	switch(pci->argc){
 	case 0 : ret = (str) (*pci->fcn)(); break;
 	case 1 : ret = (str) (*pci->fcn)(argv[0]); break;
@@ -723,7 +714,7 @@ non-returned values.
 	if( pci->blk== NULL)
 		ret= raiseException(mb,stkpc,MALexception,
 			"reference to MAL function missing\n");
-	else ret= runMAL(cntxt,pci->blk,mb,stk,pci);
+	else ret= runMAL(cntxt,pci->blk,mb,stk,pci,stkpc);
 	@:resultParameter@
 @-
 The type dispatching table in getArgValue can be removed if we 
@@ -982,6 +973,11 @@ else {
 				    "Instruction type not fixed\n");
 		@:endProfile@
 		@:garbageTypeCheck@
+		goto MALevalExit;
+	}
+	if( pci->fcn== NULL){
+		ret= raiseException(mb,stkpc,MALexception,
+			"address of function missing\n");
 		goto MALevalExit;
 	}
 }

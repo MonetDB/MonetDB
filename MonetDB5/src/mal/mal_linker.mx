@@ -23,54 +23,27 @@
 
 @a M. Kersten
 @v 0.0
-@+ Dynamic loading 
+@+ Bootstrap loading 
 @T
-In line with previous versions of Monet it is possible to extend
-the functionalty with user-defined modules. The corresponding code
-is dynamically loaded when the MAL import command is encountered 
-from a specific file-system location.
-The user-defined modules reside in the library  $...$/lib/MonetDB, 
-they are recognized  as lib\_$<$modulename$>$.so names.
-The corresponding signature files are maintained 
-in $...$/etc/$<$modulepath$>$/$<$modulename$>$.mal.
-
-\begin{verbatim}
-[reminder for later, 
-directory structure of a database dir:
-.../bat
-.../bin		# database specific binaries
-.../boxes	# persistent store for state variables
-.../include	# compilation ifles
-.../lib		# all libraries (or symbolic links)
-.../mal		# scripts for the MAL interpreter
-.../mil		# scripts in MIL format
-.../sql
-]
-\end{verbatim}
-
-Mcreatedb should assess existence of a link-to/copy-of the distributed
-modules (eg algebra,arithm,..). Alternatively, the library should be
-reachable using the monet\_mod\_path option.
-Management of the directories is currently manual
+The server is bootstrapped by processing a MAL script with
+module definitions. For each module encountered, the object library 
+lib\_$<$modulename$>$.so is searched for in $...$/lib/MonetDB.
+The corresponding signature are defined 
+in $...$/lib/$<$modulepath$>$/$<$modulename$>$.mal.
 @-
+The default bootstrap script is called $...$/lib/MonetDB/mal_init.mal
+and it is designated in the configuration file as the mal_init property.
 The rationale for this set-up is that database administrators can
-extend/overload the modules loaded without affecting the distributed
-software package. They are responsible for a proper administration of
-the source tree of the user-defined modules.
-This scheme also forces database administrators to maintain separate
-databases and Monet instances to test out enhanced modules. 
-They can share an existing
-database using symbolic links to the database GDK  directory, but this
-is not recommended for purpose of database integrity and safety.
-It is better to develop and test a module on a copy/subset of a production
-database first.
+extend/overload the bootstrap procedure without affecting the distributed
+software package. 
+It merely requires a different direction for the mal_init property.
 @-
 The scheme also isolates the functionality embedded in modules from
 inadvertise use on non-compliant databases.
 [access control issue, how to limit what a user can do on a database?]
 @-
-Unlike previous versions of Monet, dynamically loaded modules can not 
-be unloaded. Dynamic libraries are always global and, therefore, it
+Unlike previous versions of Monet, modules can not be unloaded. 
+Dynamic libraries are always global and, therefore, it
 is best to load them as part of the server initialization phase.
 @-
 The MAL program should be compiled with -rdynamic and -ldl.

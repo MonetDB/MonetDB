@@ -21,7 +21,7 @@
 
 The Monet server uses a startup script to boot the system.
 This script is an ordinary MAL program, but will mostly
-consist of USE statements to load modules of interest.
+consist of include statements to load modules of interest.
 The startup script is ran in Admin mode.
 Its location is described in Monet configuration file.
 
@@ -34,7 +34,7 @@ time a user initializes a session against a database.[todo]
 
 #include "mal_scenario.h"
 
-mal_export int malStartupAdmin();
+mal_export int malBootstrap();
 mal_export void serveClient(void *dummy);
 mal_export void initClientPrg(Client cntxt, str nme);
 mal_export void scheduleClient(str command, stream *fin, stream *fout);
@@ -55,13 +55,17 @@ mal_export void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start);
 #include "mal_linker.h"		/* for initLibraries() */
 #include "mal_parser.h"		/* for parseMAL() */
 
-int malStartupAdmin(){
+int malBootstrap(){
 	Client c;
+	str bootfile= "mal_init",bf;
+
 	c= initClient(GDKstrdup("Admin"),NULL,0,0);
 	c->nspace= newScope(NULL, GDKstrdup("Admin"));
 	initLibraries();
 	defaultScenario(c);
-	malImport(c,"mal_init",0,0);
+	bf= GDKgetenv("mal_bootstrap");
+	if( bf) bootfile= bf;
+	malImport(c,bootfile,0,0);
 	mal_scope = c->nspace->outer;
 	showErrors();
 	return 1;
@@ -265,7 +269,7 @@ The scenarios are run until we finally close the last one.
 	}
 	closeClient(c);
 }
-@+ Scenario components
+@+ MAL scenario components
 The stages of processing user requests are controlled by a
 scenario. The routines below are the default implementation.
 The main issues to deal after parsing it to clean out the
@@ -364,7 +368,7 @@ str MALengine(Client c){
 
 	if( c->listing) printFunction(c->fdout,c->curprg->def, c->listing);
 
-	msg= (str) runMAL(c,prg->def,0,c->glb,0);
+	msg= (str) runMAL(c,prg->def,0,c->glb,0,0);
 	if( msg ){
 		GDKerror(msg);
 		if( !c->listing) 

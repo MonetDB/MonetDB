@@ -818,6 +818,7 @@ void  profileReport(Scope cntxt, int outer, stream *out)
 	Symbol t;
 	InstrPtr p;
 
+	if( malProfileMode == 0) return;
         while(out && s!= NULL){
                 if( s->subscope)
                 for(j=0;j<MAXSCOPE;j++)
