@@ -144,6 +144,14 @@ void buffer_flush(buf_p buf, FILE *logger_fp){
 }
 
 INLINE static 
+void buffer_flush_s(buf_p buf, int *logger_s){
+	buf_node_p b = buf->root; 
+	for(;b;b=b->next){
+		send(logger_s, b->buf, b->used, 0);
+	}
+}
+
+INLINE static 
 size_t buffer_used(buf_p buf){
 	size_t l = 0;
 	buf_node_p b = buf->root; 
@@ -162,6 +170,7 @@ static int   logger_server = 0;
 
 static char *logger_log 	= NULL;
 static FILE *logger_fp 		= NULL;
+static int   logger_socket 	= 0;
 static int   logger_logid 	= 0;
 
 int logger_backuphost(str host, int *port){
@@ -189,6 +198,7 @@ int logger_backuphost(str host, int *port){
 	} else if (connect(fd, addr, len)) {
 	    GDKsyserror("backuphost(%s:%d): could not connect with.\n", host,*port);
 	} else {
+	    logger_socket = fd;
 	    logger_fp = fdopen(fd, "w");
 	}
 	return GDK_SUCCEED; 
@@ -239,10 +249,13 @@ void logger_bat(buf_p buf, BAT *b ){
 
 	l.id = b->batCacheid;
 	status = BBPstatus(l.id);
-	if (status&BBPNEW && !status&BBPDELETED){
+	if (status&BBPNEW && !(status&BBPDELETED)){
 	    l.flag = LOG_CREATE;
 	    l.nr = ((b->htype)<<16) + b->ttype;
 	    bwrite(buf, &l, sizeof(logf));
+            if (logger_debug)
+		printf("new bat htype %d ttype %d id %d\n", 
+			b->htype, b->ttype, l.id );
 	} 
 	if (status&BBPDELETED){
 	    l.flag = LOG_DESTROY;
@@ -312,7 +325,7 @@ int logger_commit(){
 	/* first build the buffer with data to write
          * then write to file, host
          */
-	if (logger_debug&1)
+	if (logger_debug&2)
 		fprintf(stderr, "logger_commit\n");
 
 	id = logger_logid;
@@ -326,12 +339,18 @@ int logger_commit(){
 		if (b){
 		       logger_bat(buf,b); 
 		       BATfakeCommit(b); 
+			/* update BBP status */
 		}
 	}
 	*((int*)buf->root->buf) = buffer_used(buf);
-	buffer_flush(buf, logger_fp);
+	if (logger_host)
+		buffer_flush_s(buf, logger_socket);
+	else
+		buffer_flush(buf, logger_fp);
 	destroy_buffer(buf);
 	BBPunlock("logger_commit");
+
+	TMfakeCommit();
 	
 	return GDK_SUCCEED; 
 }
@@ -346,7 +365,7 @@ void merge_block(char *p, char *block_end){
 	memcpy(&l, p, sizeof(logf)); p += sizeof(logf);
 	switch(l.flag){
 	case LOG_CREATE:
-		printf("create bat %d %d %ld\n",
+		printf("create bat htype %d ttype %d id %ld\n",
 			(l.nr>>16)&((1<<16)-1), l.nr&((1<<16)-1), l.id);
 		b = BATnew((l.nr>>16)&((1<<16)-1),l.nr&((1<<16)-1),l.id);
 		BATmode(b,PERSISTENT);
@@ -482,9 +501,8 @@ int logger_listen(int *port){
 	}
 	listen(sock, 1); 
 
-	PARDEBUG {
-		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
-	}
+	printf("Backup started at %d\n", *port);
+
 	do {
 #ifdef AIX
        		msgsock = accept(sock, 0, (size_t)0);
