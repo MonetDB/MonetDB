@@ -138,9 +138,19 @@
     .ret_ty = PFty_opt (PFty_boolean ()) }                               \
 , /* op:plus (atomic?, atomic?) as atomic? */                            \
   { .ns = PFns_op, .loc = "plus",                                        \
-    .arity = 2, .par_ty = { PFty_opt (PFty_atomic ()),                   \
-                            PFty_opt (PFty_atomic ()) },                 \
-    .ret_ty = PFty_opt (PFty_atomic ()) }                                \
+    .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                   \
+                            PFty_opt (PFty_integer ()) },                 \
+    .ret_ty = PFty_opt (PFty_integer ()) }                                \
+, /* op:plus (atomic?, atomic?) as atomic? */                            \
+  { .ns = PFns_op, .loc = "plus",                                        \
+    .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                   \
+                            PFty_opt (PFty_decimal ()) },                 \
+    .ret_ty = PFty_opt (PFty_decimal ()) }                                \
+, /* op:plus (atomic?, atomic?) as atomic? */                            \
+  { .ns = PFns_op, .loc = "plus",                                        \
+    .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
+                            PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_opt (PFty_double ()) }                                \
 , /* op:minus (atomic?, atomic?) as atomic? */                           \
   { .ns = PFns_op, .loc = "minus",                                       \
     .arity = 2, .par_ty = { PFty_opt (PFty_atomic ()),                   \
@@ -200,10 +210,10 @@
   { .ns = PFns_op, .loc = "to",                                          \
     .arity = 2, .par_ty = { PFty_integer (), PFty_integer () },          \
     .ret_ty = PFty_star (PFty_integer ()) }                              \
-, /* dm:typed-value (node) as atomic */                                  \
+, /* pf:typed-value (node) as untypedAtomic */                           \
   { .ns = PFns_pf, .loc = "typed-value",                                 \
     .arity = 1, .par_ty = { PFty_node () },                              \
-    .ret_ty = PFty_atomic () }                                           \
+    .ret_ty = PFty_untypedAtomic () }                                    \
 , /* pf:distinct-doc-order (node *) as node* */                          \
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \

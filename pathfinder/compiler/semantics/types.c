@@ -119,11 +119,34 @@ PFty_item (void)
     return t;
 }
 		     
+PFty_t 
+PFty_untypedAny (void)
+{
+    PFty_t t = { .type  = ty_untypedAny,
+		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = 0,           
+		 .child = { 0 } 
+    };
+
+    return t;
+}
 		     
 PFty_t 
 PFty_atomic (void)
 {
     PFty_t t = { .type  = ty_atomic,
+		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = 0,           
+		 .child = { 0 } 
+    };
+
+    return t;
+}
+		     
+PFty_t 
+PFty_untypedAtomic (void)
+{
+    PFty_t t = { .type  = ty_untypedAtomic,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
                  .sym_space = 0,           
 		 .child = { 0 } 
@@ -601,18 +624,18 @@ PFty_xs_anyAttribute (void)
     return PFty_attr (wild, PFty_xs_anySimpleType ());
 }
 
-/** type xdt:untypedAtomic = atomic */
+/** type xdt:untypedAtomic = untypedAtomic */
 PFty_t
 PFty_xdt_untypedAtomic (void)
 {
-    return PFty_atomic ();
+    return PFty_untypedAtomic ();
 }
 
-/** type xdt:untypedAny = node* */
+/** type xdt:untypedAny = untypedAny */
 PFty_t
 PFty_xdt_untypedAny (void)
 {
-    return PFty_star (PFty_node ());
+    return PFty_untypedAny ();
 }
 
 /* ...................................................................... */
@@ -771,29 +794,31 @@ PFty_rchild (PFty_t t)
  * String representation of types.
  */
 static char* ty_id[] = {
-      [ty_none   ]     "none"
-    , [ty_empty  ]     "()"
-    , [ty_opt    ]     "?"
-    , [ty_plus   ]     "+"
-    , [ty_star   ]     "*"
-    , [ty_seq    ]     ","
-    , [ty_choice ]     " | "
-    , [ty_all    ]     " & "
-    , [ty_item   ]     "item"
-    , [ty_atomic ]     "atomic"
-    , [ty_numeric]     "numeric"
-    , [ty_integer]     "integer"
-    , [ty_decimal]     "decimal"
-    , [ty_double ]     "double"
-    , [ty_string ]     "string"
-    , [ty_boolean]     "boolean"
-    , [ty_node   ]     "node"
-    , [ty_elem   ]     "element"
-    , [ty_attr   ]     "attribute"
-    , [ty_doc    ]     "document"
-    , [ty_text   ]     "text"
-    , [ty_pi     ]     "processing-instruction"
-    , [ty_comm   ]     "comment"
+      [ty_none         ]     "none"
+    , [ty_empty        ]     "()"
+    , [ty_opt          ]     "?"
+    , [ty_plus         ]     "+"
+    , [ty_star         ]     "*"
+    , [ty_seq          ]     ","
+    , [ty_choice       ]     " | "
+    , [ty_all          ]     " & "
+    , [ty_item         ]     "item"
+    , [ty_untypedAny   ]     "untypedAny"
+    , [ty_atomic       ]     "atomic"
+    , [ty_untypedAtomic]     "untypedAtomic"
+    , [ty_numeric      ]     "numeric"
+    , [ty_integer      ]     "integer"
+    , [ty_decimal      ]     "decimal"
+    , [ty_double       ]     "double"
+    , [ty_string       ]     "string"
+    , [ty_boolean      ]     "boolean"
+    , [ty_node         ]     "node"
+    , [ty_elem         ]     "element"
+    , [ty_attr         ]     "attribute"
+    , [ty_doc          ]     "document"
+    , [ty_text         ]     "text"
+    , [ty_pi           ]     "processing-instruction"
+    , [ty_comm         ]     "comment"
 };
   
 /**

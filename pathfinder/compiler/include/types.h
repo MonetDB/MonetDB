@@ -38,9 +38,11 @@
  * possibly using wildcards `ns:*', `*:loc').  
  *
  * @verbatim
-                                                     +- decimal 
-                                                     |
-                                         +- numeric -+- integer
+                                         +- untypedAtomic          
+                                         |
+                                         |           +- decimal -- integer
+                                         |           |
+                                         +- numeric -+
                                          |           |
                                          |           +- double
                                          |
@@ -51,8 +53,8 @@
                               |           
                               |            +- comm
                               |            |
-                              |            +- p-i
-                              |            |
+       +- untypedAny          |            +- p-i
+       |                      |            |
        +- item ---------------+            +- text
        |                      |            |
        +- t&t                 +- node -----+- doc { t }
@@ -97,8 +99,8 @@
        [[ xs:anySimpleType ]]         = atomic*
        [[ xs:anyElement ]]            = elem * { [[ xs:anyType ]] }
        [[ xs:anyAttribute ]]          = attr * { [[ xs:anySimpleType ]] }
-       [[ xdt:untypedAtomic ]]        = atomic
-       [[ xdt:untypedAny ]]           = node*
+       [[ xdt:untypedAtomic ]]        = untypedAtomic
+       [[ xdt:untypedAny ]]           = untypedAny
        [[ qn ]]                       = [[ named qn ]]
        [[ empty ]]                    = ()
        [[ node ]]                     = node
@@ -147,20 +149,16 @@ enum PFtytype_t {
   ty_choice,                   /**< t|t                         */
   ty_all,                      /**< t&t                         */
   ty_item,                     /**< item                        */
-                               /** ---subtypes of item below--- */
+  ty_untypedAny,               /**< untypedAny                  */
   ty_atomic,                   /**< atomic                      */
-                               /** --subtypes of atomic below-- */
+  ty_untypedAtomic,            /**< untypedAtomic               */
   ty_numeric,                  /**< numeric                     */
-                               /** --subtypes of numeric below- */
   ty_integer,                  /**< integer                     */
   ty_decimal,                  /**< decimal                     */
   ty_double,                   /**< double                      */
-                               /** --subtypes of numeric above- */
   ty_string,                   /**< string                      */
   ty_boolean,                  /**< boolean                     */
-                               /** --subtypes of atomic above-- */
   ty_node,                     /**< node                        */
-                               /** ---subtypes of node below--- */
   ty_elem,                     /**< elem                        */
   ty_attr,                     /**< attr                        */
   ty_doc,                      /**< doc                         */
@@ -203,7 +201,9 @@ struct PFty_t {
 PFty_t PFty_none (void);
 PFty_t PFty_empty (void);
 PFty_t PFty_item (void);
+PFty_t PFty_untypedAny (void);
 PFty_t PFty_atomic (void);
+PFty_t PFty_untypedAtomic (void);
 PFty_t PFty_numeric (void);
 PFty_t PFty_node (void);
 PFty_t PFty_text (void);

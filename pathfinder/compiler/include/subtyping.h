@@ -54,6 +54,9 @@ bool PFty_subtype (PFty_t, PFty_t);
 /** The || (disjointness) relationship */
 bool PFty_disjoint (PFty_t, PFty_t);
 
+/** The `can be promoted to' relationship */
+bool PFty_promotable (PFty_t, PFty_t);
+
 /** Perform well-formedness (regularity) test for recursive types */
 bool PFty_regularity (PFty_t);
 

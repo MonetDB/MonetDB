@@ -201,13 +201,10 @@ static int TWIG_ID[] = {
 static PFarray_t *par_ty;
 
 /**
- * Resolve function overloading.  In the list of functions of
- * the same name @a qn, find the first (most specific) to match the actual
- * argument types @a args (matching is based on <:).
- *
- * @attention NB. W3C XQuery FS 5.1.4 defines argument type matching
- * based on <: and `can be promoted to'.  The latter is ignored here.
- * We will have to find out if we can get away with <: only.
+ * Resolve function overloading.  In the list of functions of the same
+ * name @a qn, find the first (most specific) to match the actual
+ * argument types @a args (matching is based on `can be promoted to'
+ * relationship).
  *
  * @attention NB. This relies on the list of functions for name @a qn
  * to be sorted: the most specific instance comes first (see
@@ -237,11 +234,11 @@ overload (PFqname_t qn, PFcnode_t *args)
         fn    = *(PFfun_t **) PFarray_at (fns, i);
         arg   = args;
 
-        /* are all actual argument types in <: relationship with
+        /* can all actual argument types be promoted to
          * expected formal parameter types?
          */
         for (a = 0, match = true; a < fn->arity; a++) {
-            match = match && PFty_subtype (arg->child[0]->type,
+            match = match && PFty_promotable (arg->child[0]->type,
                                            (fn->par_ty)[a]);
             if (!match)
                 break;

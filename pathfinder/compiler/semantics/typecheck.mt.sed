@@ -149,7 +149,6 @@ label Query
       SequenceExpr
 
       TypeswitchExpr
-      CaseBranch
       SequenceType
       SequenceTypeCast
       SubtypingProof
@@ -315,33 +314,41 @@ SequenceExpr:    seq (Atom, Atom)
     }
     ;
 
-TypeswitchExpr:  typeswitch (Atom, cases (CaseBranch, nil), CoreExpr)
+TypeswitchExpr:  typeswitch (Atom, 
+                             cases (case_ (SequenceType, CoreExpr), nil), 
+                             CoreExpr)
     =
     {   /* W3C XQuery, 5.12.2
          *
-         * E |- Atom:t1  E |- CaseBranch:t2  E |- CoreExpr:t3
-         * --------------------------------------------------
-         *   E |- typeswitch (Atom, cases (CaseBranch, nil), 
-         *                    CoreExpr) : t2 | t3
-         */
-        PFty_t t2, t3;
-
-        t2 = [[ $2.1$ ]];
-        t3 = [[ $3$ ]];
-
-        [[ $$ ]] = *PFty_simplify (PFty_choice (t2, t3));
-    }
-    ;
-
-CaseBranch:      case_ (SequenceType, CoreExpr)
-    =
-    {   /* W3C XQuery, 5.12.2
+         *                   E |- Atom:t1  E |- SequenceType:t2  
+         *           E |- CoreExpr1:t3    E |- CoreExpr2:t4    t1 <: t2
+         * --------------------------------------------------------------------
+         * E |- typeswitch (Atom, cases (case_ (SequenceType, CoreExpr1), nil),
+         *                  CoreExpr2) : t3
          *
-         * E |- SequenceType : t1   E |- CoreExpr : t2
-         * -------------------------------------------
-         *   E |- case (SequenceType, CoreExpr) : t2
+         *                   E |- Atom:t1  E |- SequenceType:t2  
+         *           E |- CoreExpr1:t3    E |- CoreExpr2:t4    t1 || t2
+         * --------------------------------------------------------------------
+         * E |- typeswitch (Atom, cases (case_ (SequenceType, CoreExpr1), nil),
+         *                  CoreExpr2) : t4
+         *
+         *                   E |- Atom:t1  E |- SequenceType:t2  
+         *                 E |- CoreExpr1:t3    E |- CoreExpr2:t4  
+         * --------------------------------------------------------------------
+         * E |- typeswitch (Atom, cases (case_ (SequenceType, CoreExpr1), nil),
+         *                  CoreExpr2) : t3 | t4
          */
-        [[ $$ ]] = [[ $2$ ]];
+        PFty_t t1, t2;
+
+        t1 = [[ $1$ ]];
+        t2 = [[ $2.1.1$ ]];
+
+        if (PFty_subtype (t1, t2))
+            [[ $$ ]] = [[ $2.1.2$ ]];
+        else if (PFty_disjoint (t1, t2))
+            [[ $$ ]] = [[ $3$ ]];
+        else 
+            [[ $$ ]] = *PFty_simplify (PFty_choice ([[ $2.1.2$ ]], [[ $3$ ]]));
     }
     ;
 
@@ -482,8 +489,8 @@ FunctionAppl:    apply (FunctionArgs)
         [[ core->child[2]->child[1]->child[0] ]] =                        
         [[ core->child[2]->child[2] ]]           = t;
         
-        /* pass 2: insert `seqcast's to cast actual argument types
-         * to expected formal parameter types (along <:)
+        /* pass 2: insert `seqcast's to cast actual promotable argument types
+         * to expected formal parameter types
          */
         *(PFty_t **) PFarray_add (par_ty) = ($$)->sem.fun->par_ty;
         tDO ($%1$);
@@ -542,8 +549,6 @@ ConstructorExpr: elem (tag, CoreExpr)
         PFty_t t1;
         PFqname_t n1;
 
-/*        assert (($1$)->sem.qname); *//* qname is a struct... */
-
         n1 = ($1$)->sem.qname;
         t1 = [[ $2$ ]];
 
@@ -564,8 +569,6 @@ ConstructorExpr: attr (tag, CoreExpr)
     {   
         PFty_t t1;
         PFqname_t n1;
-
-/*        assert (($1$)->sem.qname); *//* qname is a struct... */
 
         n1 = ($1$)->sem.qname;
         t1 = [[ $1$ ]];
