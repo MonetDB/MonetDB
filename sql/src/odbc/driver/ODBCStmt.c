@@ -59,6 +59,8 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->startRow = 0;
 	stmt->rowSetSize = 0;
 	stmt->query = NULL;
+	stmt->querytype = -1;
+	stmt->rowcount = 0;
 
 	/* add this stmt to the administrative linked stmt list */
 	stmt->next = dbc->FirstStmt;

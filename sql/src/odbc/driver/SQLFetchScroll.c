@@ -27,8 +27,6 @@ SQLRETURN
 SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 		SQLLEN FetchOffset)
 {
-	unsigned int LastResultRow;
-
 	assert(stmt->hdl);
 
 	/* check statement cursor state, query should be executed */
@@ -49,7 +47,6 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 	}
 
 #define RowSetSize	(stmt->ApplRowDescr->sql_desc_array_size)
-	LastResultRow = (unsigned int) mapi_get_row_count(stmt->hdl);
 	/* set currentRow to be the row number of the last row in the
 	   result set */
 	stmt->currentRow = stmt->startRow + stmt->rowSetSize;
@@ -57,17 +54,17 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 
 	switch (FetchOrientation) {
 	case SQL_FETCH_NEXT:
-		if (stmt->currentRow >= LastResultRow)
+		if (stmt->currentRow >= stmt->rowcount)
 			return SQL_NO_DATA;
 		break;
 	case SQL_FETCH_FIRST:
 		stmt->startRow = 0;
 		break;
 	case SQL_FETCH_LAST:
-		if (LastResultRow < RowSetSize)
+		if (stmt->rowcount < RowSetSize)
 			stmt->startRow = 0;
 		else
-			stmt->startRow = LastResultRow - RowSetSize;
+			stmt->startRow = stmt->rowcount - RowSetSize;
 		break;
 	case SQL_FETCH_PRIOR:
 		if (stmt->startRow == 0) {
@@ -82,7 +79,7 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 		break;
 	case SQL_FETCH_RELATIVE:
 		if ((stmt->currentRow != 0 || FetchOffset <= 0) &&
-		    (stmt->currentRow != LastResultRow || FetchOffset >= 0)) {
+		    (stmt->currentRow != stmt->rowcount || FetchOffset >= 0)) {
 			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||
 			    (stmt->startRow == 0 && FetchOffset < 0) ||
 			    (stmt->startRow > 0 &&
@@ -98,9 +95,9 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 				addStmtError(stmt, "01S06", NULL, 0);
 				break;
 			}
-			if (stmt->startRow + FetchOffset >= LastResultRow ||
-			    stmt->currentRow == LastResultRow) {
-				stmt->startRow = LastResultRow;
+			if (stmt->startRow + FetchOffset >= stmt->rowcount ||
+			    stmt->currentRow == stmt->rowcount) {
+				stmt->startRow = stmt->rowcount;
 				return SQL_NO_DATA;
 			}
 			stmt->startRow = stmt->startRow + FetchOffset;
@@ -109,8 +106,8 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 		/* fall through */
 	case SQL_FETCH_ABSOLUTE:
 		if (FetchOffset < 0) {
-			if ((unsigned int) -FetchOffset <= LastResultRow) {
-				stmt->startRow = LastResultRow + FetchOffset;
+			if ((unsigned int) -FetchOffset <= stmt->rowcount) {
+				stmt->startRow = stmt->rowcount + FetchOffset;
 				break;
 			}
 			stmt->startRow = 0;
@@ -123,8 +120,8 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 			stmt->startRow = 0;
 			return SQL_NO_DATA;
 		}
-		if ((unsigned int) FetchOffset > LastResultRow) {
-			stmt->startRow = LastResultRow;
+		if ((unsigned int) FetchOffset > stmt->rowcount) {
+			stmt->startRow = stmt->rowcount;
 			return SQL_NO_DATA;
 		}
 		stmt->startRow = FetchOffset - 1;

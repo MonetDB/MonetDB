@@ -59,20 +59,45 @@ ODBCInitResult(ODBCStmt *stmt)
 
 	hdl = stmt->hdl;
 	/* initialize the Result meta data values */
-	nrCols = mapi_get_field_count(hdl);
 	stmt->currentRow = 0;
 	stmt->startRow = 0;
 	stmt->rowSetSize = 0;
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
+  repeat:
+	nrCols = mapi_get_field_count(hdl);
+	stmt->querytype = mapi_get_querytype(hdl);
 
-	if (nrCols == 0 && mapi_get_row_count(hdl) == 0) {
+	switch (stmt->querytype) {
+	case 3:			/* Q_TABLE */
+		/* result set generating query */
+		assert(nrCols > 0);
+		stmt->rowcount = (unsigned int) nrCols;
+		break;
+	case 4:			/* Q_UPDATE */
+		/* result count generating query */
+		assert(nrCols == 1);
+		mapi_fetch_row(hdl);
+		nrCols = atoi(mapi_fetch_field(hdl, 0));
+		assert(nrCols >= 0);
+		stmt->rowcount = (unsigned int) nrCols;
+		nrCols = 0;
+		break;
+	default:
+		/* resultless query */
+		if (mapi_next_result(hdl) == 1)
+			goto repeat;
 		stmt->State = PREPARED;
 		return SQL_SUCCESS;
 	}
 
+	stmt->State = EXECUTED;
+
 	setODBCDescRecCount(stmt->ImplRowDescr, nrCols);
+	if (nrCols == 0)
+		return SQL_SUCCESS;
 	if (stmt->ImplRowDescr->descRec == NULL) {
+		stmt->State = PREPARED;
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -161,7 +186,6 @@ ODBCInitResult(ODBCStmt *stmt)
 		rec++;
 	}
 
-	stmt->State = EXECUTED;
 	return SQL_SUCCESS;
 }
 

@@ -100,8 +100,7 @@ SQLGetDiagField_(SQLSMALLINT HandleType, SQLHANDLE Handle,
 	case SQL_DIAG_ROW_COUNT:
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
-		* (SQLINTEGER *) DiagInfo = ((ODBCStmt *) Handle)->hdl ?
-			mapi_get_row_count(((ODBCStmt *) Handle)->hdl) : 0;
+		* (SQLINTEGER *) DiagInfo = (SQLINTEGER) ((ODBCStmt *) Handle)->rowcount;
 		return SQL_SUCCESS;
 	}
 

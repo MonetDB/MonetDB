@@ -1712,11 +1712,9 @@ SQLFetch_(ODBCStmt *stmt)
 	if (stmt->retrieveData == SQL_RD_OFF) {
 		/* don't really retrieve the data, just do as if,
 		   updating the SQL_DESC_ARRAY_STATUS_PTR */
-		unsigned int rowcount = (unsigned int) mapi_get_row_count(stmt->hdl);
-
 		stmt->rowSetSize = desc->sql_desc_array_size;
-		if (stmt->startRow + stmt->rowSetSize > rowcount)
-			stmt->rowSetSize = rowcount - stmt->startRow;
+		if (stmt->startRow + stmt->rowSetSize > stmt->rowcount)
+			stmt->rowSetSize = stmt->rowcount - stmt->startRow;
 		if (stmt->rowSetSize <= 0) {
 			stmt->rowSetSize = 0;
 			return SQL_NO_DATA;

@@ -189,8 +189,7 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 /*
  * Destroys the ODBCDesc object including its own managed data.
  *
- * Precondition: desc must be valid and inactive (internal State == INITED or
- * State == PREPARED, so NO active result set).
+ * Precondition: desc must be valid.
  * Postcondition: desc is completely destroyed, desc handle is become invalid.
  */
 void

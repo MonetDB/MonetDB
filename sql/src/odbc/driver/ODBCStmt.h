@@ -48,6 +48,8 @@ typedef struct tODBCDRIVERSTMT {
 	StatementState State;	/* needed to detect invalid cursor state */
 	MapiHdl hdl;
 
+	unsigned int rowcount;	/* # affected rows */
+
 	/* startRow is the row number of first row in the result
 	   set (0 based); rowSetSize is the number of rows in the
 	   current result set; currentRow is the row number of the
@@ -59,6 +61,8 @@ typedef struct tODBCDRIVERSTMT {
 	unsigned int currentCol;	/* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
 	char *query;		/* the query to be executed */
+
+	int querytype;		/* query type as returned by server */
 
 	SQLUINTEGER cursorType;
 	SQLUINTEGER cursorScrollable;
