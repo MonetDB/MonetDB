@@ -1,8 +1,8 @@
 /* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
 
-/** 
- * @file parser.h
- * Pathfinder parser and lexer interface.  Parse tree interface.
+/**
+ * @file
+ * Compiler Driver definitions for Pathfinder compiler.
  *
  *
  * Copyright Notice:
@@ -28,21 +28,16 @@
  *          Torsten Grust <torsten.grust@uni-konstanz.de>
  *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
  *          Jens Teubner <jens.teubner@uni-konstanz.de>
+ *          Jan Flokstra <flokstra@cs.utwente.nl>
  *
- * $Id$
  */
 
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef COMPILE_H
+#define COMPILE_H
 
-#include "abssyn.h"
+/** The main compiler driver function in compiler/compiler.c */
+int pf_compile (FILE* pfin, FILE* pfout, PFstate_t *status);
 
-/**
- * Parse an XQuery coming in on stdin (or whatever stdin might have
- * been dup'ed to)
- */
-void PFparse (FILE* pfin, PFpnode_t **);
-
-#endif   /* PARSER_H */
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -37,6 +37,8 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "compile.h"
+#include "compile_interface.h"
 #include "parser.h"       /* parsing XQuery syntax */
 #include "abssyn.h"
 #include "varscope.h"     /* variable scoping */
@@ -164,16 +166,21 @@ static PFcnode_t * unfold_lets (PFcnode_t *c);
         goto bailout;
 
 /**
+ * Linking test funn, remove if succeed
+ */
+int
+pf_ping() {
+        return 42;
+}
+
+/**
  * Compiler driver of the Pathfinder compiler,
  * It invokes the pipeline of query processing steps
  * (starting with the parser).
  */
 int
-pf_compile ( /*FILE pfin, FILE* pfout,*/ PFstate_t *status)
+pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 {
-    /* FILE* pfin  = stdin;  incomplete, JF */
-    FILE* pfout = stdout; /* incomplete, JF */
-
     PFpnode_t  *proot  = NULL;
     PFcnode_t  *croot  = NULL;
     PFalg_op_t *aroot  = NULL;
@@ -203,7 +210,7 @@ pf_compile ( /*FILE pfin, FILE* pfout,*/ PFstate_t *status)
   
     /* Invoke parser on stdin (or whatever stdin has been dup'ed to) 
      */
-    PFparse (&proot);
+    PFparse (pfin, &proot);
 
     tm = PFtimer_stop (tm);
     if (status->timing)

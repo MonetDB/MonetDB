@@ -37,6 +37,7 @@
 %{
 #include "pathfinder.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -2012,13 +2013,16 @@ void yyerror (const char *s)
                 s, yylineno);
 }
 
+extern FILE* yyin; /* standard input of scanner, defined by flex */
+
 /**
  * Parse an XQuery coming in on stdin (or whatever stdin might have
  * been dup'ed to)
  */
 void
-PFparse (PFpnode_t **r)
+PFparse (FILE* pfin, PFpnode_t **r)
 {
+    yyin = pfin;
 #if YYDEBUG
     yydebug = 1;
 #endif

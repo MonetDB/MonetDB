@@ -38,6 +38,8 @@
 #include <gdk.h>
 #include "pathfinder.h"
 
+#include "compile_interface.h"
+
 #define MAXTAGDEPTH        1024
 
 #define WS_BATS     19
@@ -882,6 +884,10 @@ int xquery_print_result_main(
         seqEnd(ctx);
         /* */
         return GDK_SUCCEED;
+}
+
+void call2pf_ping() {
+        /* pf_ping(); Sjoerd, remove comments here */
 }
 
 @c

@@ -397,6 +397,8 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#include "compile.h"
+
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
 #include <getopt.h>
 
@@ -527,8 +529,8 @@ main (int argc, char *argv[])
 
     PFstate_t* status = &PFstate;
 
-    /* fd of query file (if present) */
-    int query = 0;
+    /* fp of query file (if present) */
+    FILE* pfin = stdin;
 
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on *copies*
@@ -661,29 +663,22 @@ main (int argc, char *argv[])
         }           /* end of switch */
     }           /* end of while */
 
-    /* connect stdin to query file (if present) */
-    if (optind < argc) {
-        if ((query = open (argv[optind], O_RDONLY)) < 0) {
+    if ( optind < argc) {
+        if ( !(pfin = fopen (argv[optind], "r")) ) {
             PFoops (OOPS_FATAL, 
                     "cannot read query from file `%s': %s",
                     argv[optind],
                     strerror (errno));
             goto failure;
         }
-
-        close (fileno (stdin));
-
-        if (dup2 (query, fileno (stdin)) < 0) {
-            PFoops (OOPS_FATAL,
-                    "cannot dup query file: %s",
-                    strerror (errno));
-            goto failure;
-        }
     }
 
     /* Now call the main compiler driver */
-    if ( pf_compile( /*stdin, stdout,*/ status) < 0 )
+    if ( pf_compile(pfin, stdout, status) < 0 )
         goto failure;
+
+    if ( pfin != stdin )
+        fclose(pfin);
 
     exit (EXIT_SUCCESS);
 

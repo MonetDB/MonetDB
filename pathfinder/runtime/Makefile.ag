@@ -22,7 +22,7 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = $(MONETDB_INCS)
+INCLUDES = $(MONETDB_INCS) ../compiler/include
 
 lib__pathfinder = {
 	DIR = libdir/MonetDB
