@@ -128,6 +128,7 @@ AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h)
 AC_CHECK_HEADERS(ieeefp.h)
+AC_CHECK_HEADERS(iconv.h locale.h langinfo.h)
 AC_LANG_SAVE
 #AC_LANG_PUSH(C++)
 AC_LANG_CPLUSPLUS
@@ -230,6 +231,7 @@ AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf)
 AC_CHECK_FUNCS(mrand48 drand48)
 AC_CHECK_FUNCS(nanosleep lockf)
 AC_CHECK_FUNCS(ctime_r isinf fpclassify fpclass)
+AC_CHECK_FUNCS(iconv nl_langinfo setlocale)
 ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)
 AC_TRY_COMPILE([$ac_includes_default

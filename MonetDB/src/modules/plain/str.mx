@@ -93,6 +93,11 @@ this facilitates the use of the string module in bulk operations.
 .COMMAND unicode(int wchar) : str = strFromWChr;
 	"convert a unicode to a one-character string. (!DS2.2)"
 
+.COMMAND codeset() : str = codeset;
+	"Return the locale's codeset"
+.COMMAND iconv(str org, str fromCodeset, str toCodeset ) : str = strIconv;
+	"String codeset conversion"
+
 .COMMAND startsWith( str s, str prefix ) : bit = strPrefix;
         "Prefix check."
 .COMMAND endsWith( str s, str suffix ) : bit = strSuffix; 
@@ -249,6 +254,13 @@ quit;
 #include "ctype.h"
 #include "str.h"
 #include <string.h>
+
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
+#endif
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
 
 @+ UTF-8 Handling
 @T
@@ -610,6 +622,35 @@ int strWChrAt( int *res, str val, int *at ){
 	return GDK_SUCCEED;
 }
 
+int codeset( str *res ){
+	char *codeset = nl_langinfo(CODESET);
+	if (!codeset)
+		return GDK_FAIL;
+	*res = GDKstrdup(codeset);
+	return GDK_SUCCEED;
+}
+
+int strIconv( str *res, str org, str f, str t)
+{
+	int len = strlen(org);
+	iconv_t cd = iconv_open( t, f);
+	int size = 4*len; 		/* make sure enough memory is claimed */
+	char *r; 
+
+	if (!cd){
+		GDKerror("Cannot convert strings from (%s) to (%s)\n", f, t);
+		return GDK_FAIL;
+	}
+	*res = r = GDKmalloc(size); 
+	if ( iconv(cd, &org, &len, &r, &size ) < 0){
+		GDKfree(*res);
+		*res = NULL;
+		GDKerror("String convertion failed from (%s) to (%s)\n", f, t);
+		return GDK_FAIL;
+	}
+	iconv_close(cd);
+	return GDK_SUCCEED;
+}
 
 int strChrAt( chr *res, str val, int *at ){
 	int v;
