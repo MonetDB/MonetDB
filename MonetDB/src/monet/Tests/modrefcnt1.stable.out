@@ -1,13 +1,13 @@
 stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 
 
-# 12:45:05 >  
-# 12:45:05 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_monet  < modrefcnt1.milM
-# 12:45:05 >  
+# 10:19:31 >  
+# 10:19:31 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < modrefcnt1.milM
+# 10:19:31 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for mips-sgi-irix6.5/64bit; dynamically linked.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -20,7 +20,7 @@ stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_24  #
+# BAT:	  tmp_26  #
 # (int)	  (lock)  #
 #-----------------#
 [ 0 ]
@@ -36,7 +36,7 @@ stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_24  #
+# BAT:	  tmp_26  #
 # (int)	  (lock)  #
 #-----------------#
 [ 0 ]
@@ -50,11 +50,15 @@ stdout of test 'modrefcnt1` in directory 'src/monet` itself:
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ 26 ]
-!WARNING: CMDsize: range error 26
-[ nil ]
+!ERROR: atom 'lock' unknown, in BAT '26'.
+!ERROR: atom 'lock' unknown, in BAT '26'.
+!ERROR: CMDprint_table: operation failed.
+!ERROR: atom 'lock' unknown, in BAT '26'.
+!ERROR: atom 'lock' unknown, in BAT '26'.
+!ERROR: BATcount: BAT required.
+[ 0 ]
 
-# 15:35:25 >  
-# 15:35:25 >  Done.
-# 15:35:25 >  
+# 10:19:32 >  
+# 10:19:32 >  Done.
+# 10:19:32 >  
 
