@@ -570,6 +570,7 @@ void promptMonet(Msession mid) {
         mid->reply[i] = '\0';
 	strcpy(mid->prompt,mid->reply);
 	mid->reply[0]=0;
+	mid->from->read(mid->from,(char*)&c,1,1); /* skip newline */
 }
 
 @

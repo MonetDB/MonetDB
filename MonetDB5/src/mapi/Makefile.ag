@@ -22,3 +22,8 @@ BINS = {
 		$(READLINE_LIBS) $(Z_LIBS) $(BZ_LIBS)
 
 }
+
+scripts = {
+	SOURCES = Mapi.pm
+	DIR = pkglibdir
+}
