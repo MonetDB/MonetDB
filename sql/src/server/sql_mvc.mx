@@ -2574,14 +2574,13 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			int replace = 1;
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
+			BAT *ins, *ups;
 
 			if (!cc->base.wtime){
 				n = n->next;
 				m = m->next;
 				continue;
 			}
-
-			BAT *ins, *ups;
 
 			ins  = cc->bat.ibid?temp_descriptor(cc->bat.ibid):
 					bm_lbid2bat( tr->bm, cc->bat.bid);
