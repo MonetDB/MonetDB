@@ -909,13 +909,12 @@ void decimal_del(Heap* h, var_t* index) {
 	HEAP_free(h,(size_t)*index);
 }
 
-var_t decimal_put(Heap* h, var_t* bun, decimal* val) {
+void decimal_put(Heap* h, var_t* bun, decimal* val) {
 	int *dst, len = TOTLEN(val->precision);
 	int *src = (int*) val;
 	int *end = (int*) (((char*) src) + len);
 	dst = (int*) (h->base + (*bun = HEAP_malloc(h, len)));
-	if (*bun) while(src < end) *dst++ = *src++;
-	return *bun;
+	while(src < end) *dst++ = *src++;
 }
 
 @- operator implementations
@@ -1679,13 +1678,14 @@ int decimal_divide_default(decimal **ret, decimal *num, decimal *div) {
 int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 	size_t xx = BATcount(b);
 	int yy = 10;
-	BAT *bn = *ret =BATnew(b->htype, TYPE_var, xx);
+	BAT *bn = BATnew(b->htype, TYPE_var, xx);
 	BAT *bm ;
 	decimal *mult[10];
 	BUN p, q;
 	Heap hp;
 	
 	if(bn == NULL) return GDK_FAIL;
+	*ret = bn;
 	bm = BATmirror(bn);
 	/* create space for decimals */
 	if (prec) {
@@ -1710,9 +1710,7 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 		var_t idx = HEAP_malloc(&hp, len);
 		decimal *dst = (decimal*) (hp.base + idx);
 
-		if (BUNfastins(bn, BUNhead(b,p), &idx) == NULL) {
-			*ret = NULL; break;
-		}
+		BUNfastins(bn, BUNhead(b,p), &idx);
 
 		/* compute the division */
 		if (nil) {
@@ -1727,7 +1725,6 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 			decimal_divide_intern(dst, src, div, mult, divprc);
 		}
 	}
-
 	/* trickily place the heap as tailheap into the bat */
 	bn->ttype = bm->htype = TYPE_decimal;
 	bn->tvarsized = bm->hvarsized = 1;
@@ -1735,12 +1732,8 @@ int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 	strcpy(bn->tatom, "decimal");
 	ALIGNsetH(bn, b);
 
+	/* cleanup */
 	GDKfree(mult[0]);
-
-	if (!*ret) {
-		BBPreclaim(bn);
-		return GDK_FAIL;
-	}
 	return GDK_SUCCEED;
 }
 

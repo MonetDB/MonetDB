@@ -48,11 +48,6 @@ lib__str = {
 	LIBS	= $(ICONV_LIBS)
 }
 
-doc__str = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = str.mx
-}
-
 lib__xtables = {
 	DIR = pkglibdir
 	SEP = _
@@ -63,11 +58,6 @@ lib__xtables = {
 		../../monet/libmonet ./lib_algebra \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-doc_xtables = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = xtables.mx
 }
 
 LIBS = {
@@ -88,16 +78,6 @@ LIBS = {
 	LDFLAGS = -lm
 }
 
-doc_libs = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = \
-		algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
-		mkey.mx profiler.mx \
-		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
-		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx
-}
-
 lib__counters = {
 	DIR = pkglibdir
 	SOURCES = counters.mx
@@ -110,11 +90,6 @@ lib__counters = {
 	LIBS = $(HWCOUNTERS_LIBS)
 }
 
-doc__counters = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = counters.mx
-}
-
 lib__pcl = {
 	DIR = pkglibdir
 	SOURCES = pcl.mx
@@ -125,11 +100,6 @@ lib__pcl = {
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 	LIBS = $(PCL_LIBS)
-}
-
-doc__pcl = {
-	DIR = pkgdatadir/docs/plain/
-	SOURCES = pcl.mx
 }
 
 scripts_mil = {

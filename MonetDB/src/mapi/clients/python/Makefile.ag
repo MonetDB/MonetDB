@@ -21,8 +21,6 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SUBDIRS = HAVE_SWIG?Cimpl
-
 MTSAFE
 
 scripts_py = {
