@@ -25,7 +25,7 @@ smallTOC_SHARED_MODS =	\
 	-l_unix	\
 	-l_xtables	\
 	\
-	../backends/$(SQL_BACKEND)a/lib_sql_server2
+	../backends/$(SQL_BACKEND)/lib_sql_server
 
 EXTRA_DIST = static_modules.mx mysqldump2bulkload.py
 

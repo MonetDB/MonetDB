@@ -30,6 +30,6 @@
 @:install_module(ascii_io)@
 
 /* SQL */
-@:install_module(sql_server2)@
+@:install_module(sql_server)@
 
 #endif

@@ -16,7 +16,7 @@ The actions are read from a file passed as the last argument on the command
 string. An example of such a script would be:
 
 print("welcome to the world of MonetDB");
-module(sql_server2);
+module(sql_server);
 print("server is ready to accept SQL sessions");
 
 ================================================================================
