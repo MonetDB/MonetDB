@@ -23,9 +23,8 @@
 
 @f mapi
 @a N.J. Nes P. Boncz M. Kersten
-@t Monets Simple Internet Interface
 @v 1.1
-
+@+ Monets Internet Interface
 This module contains a simple interface for setting up
 internet connections and to initialize a client session.
 Without loading this interface, Monet runs in administrator
@@ -54,31 +53,47 @@ which is also backward compatible for older applications.
 @mal
 module mapi;
 
-command listen():int  = MAPIlisten_default
-	comment "Start a Mapi server with the default settings.";
-command listen(port:lng):int  = MAPIlisten_port
-	comment "Start a Mapi server with the default settings.";
-command listen(port:int, maxusers:int):int = MAPIlisten
-	comment "Start a Mapi server.";
+command listen():int  
+address MAPIlisten_default
+comment "Start a Mapi server with 
+	 the default settings.";
+command listen(port:lng):int  
+address MAPIlisten_port
+comment "Start a Mapi server with 
+	 the default settings.";
+command listen(port:int, maxusers:int):int 
+address MAPIlisten
+comment "Start a Mapi server.";
 
-command stop(id:int):bit = MAPIstop
-	comment "Terminate a specific client identified by index
-		in the client table.";
-command stop(name:str):bit = MAPIstopClient
-	comment "Terminate all sessions held by a client";
+command stop(id:int):bit 
+address MAPIstop
+comment "Terminate a specific client identified
+	 by index in the client table.";
+command stop(name:str):bit 
+address MAPIstopClient
+comment "Terminate all sessions of by a client";
 
-command suspend(sessionkey:lng,timeout:lng):void= MAPIsuspend
-	comment "Suspend a client interactiont using a user-supplied session key. 
-		The session is broken when the timer (in seconds) for the 
-		reconnect expires.";
+command suspend(sessionkey:lng,timeout:lng):void
+address MAPIsuspend
+comment "Suspend a client interactiont using a 
+	 user-supplied session key.  The session 
+	 is broken when the timer (in seconds) 
+	 for the reconnect expires.";
 
-command resume(sessionkey:lng):void = MAPIresume
-	comment "Resume the interaction with a specific client thread";
+command resume(sessionkey:lng):void 
+address MAPIresume
+comment "Resume the interaction with a specific 
+	 client thread";
 
-command trace(nme:str, flag:bit):void = MAPItrace2
-	comment "Trace (on/off) receipt of all messages from a specific user";
-command trace(flag:bit):void = MAPItrace
-	comment "Trace (on/off) receipt of messages for all users";
+command trace(nme:str, flag:bit):void 
+address MAPItrace2
+comment "Trace (on/off) receipt of all messages 
+	 from a specific user";
+command trace(flag:bit):void 
+address MAPItrace
+comment "Trace (on/off) receipt of messages 
+	 for all users";
+@{
 
 @h
 
@@ -283,3 +298,4 @@ str MAPIresume(int *res, int *skey){
 	(void) res; (void)skey; /* fool compiler */
 	return MAL_SUCCEED;
 }
+@}

@@ -22,9 +22,8 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f batcalc
-@t BAT accummulate instructions
 @a M.L. Kersten
-@* Introduction
+@* BAT accummulators
 Many applications require extension of the basic calculator and
 mathematic functions to work on BAT arguments. Although the
 MAL multiplex module contains a command ('multiplex.script')
@@ -264,6 +263,7 @@ The regexp library permits a pre-compilation.
 @mal
 command match(b:bat[:any$1,:str], pat:str):bat[:any$1,:bit] = CMDmatchStr
         comment "POSIX pattern matching against a string BAT";
+@{
 @- Implementation
 @h
 #include "gdk.h"
@@ -1271,3 +1271,4 @@ printf("name %s %s\n",left->batId,right->batId);
 	printf("execution time for CMD000 %d\n",t1-t0);
 	return MAL_SUCCEED;
 }
+@}

@@ -22,29 +22,25 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f uchr
-@t The uchr module
 @a Niels Nes
 @v 1.0
-@* Introduction
+@+ The uchr module
 @T
 The uchr atom is just a chr but uses numerical string representations.
 
-
-@* Implementation
-
-@+ MEL definition
 @mal
 atom module uchr:chr;
-command fromstr():uchr = uchr_fromstr;
-command tostr():str   = uchr_tostr;
+command fromstr():uchr address uchr_fromstr;
+command tostr():str   address uchr_tostr;
 
-command uchr(s:str):uchr = uchr_createStr;
-command uchr(i:int):uchr = uchr_createInt;
-command uchr(i:sht):uchr = uchr_createSht;
-command uchr(i:lng):uchr = uchr_createLng;
+command uchr(s:str):uchr address uchr_createStr;
+command uchr(i:int):uchr address uchr_createInt;
+command uchr(i:sht):uchr address uchr_createSht;
+command uchr(i:lng):uchr address uchr_createLng;
 
-command uchrInit():void= uchrInit;
+command uchrInit():void  address uchrInit;
 uchrInit();
+@{
 @+ C implementation
 @c
 /* #define DEBUG */
@@ -184,3 +180,4 @@ str uchr_createStr(uchr *ret, str *s){
 @mil
 var b := new(int, uchr);
 b.insert(1,uchr(1));
+@}

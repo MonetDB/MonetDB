@@ -22,9 +22,8 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f atoms_init
-@t Mal atom startup file
 @a Martin Kersten
-@* Introduction
+@+ Loading atom definitions
 Upon starting the Monet/MAL server we need to initialize the symbol table.
 This encompasses loading the signatures of several key modules.
 
@@ -44,3 +43,4 @@ use "atoms/uchr";
 use "atoms/mtime";
 @-
 @c
+

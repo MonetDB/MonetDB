@@ -1,7 +1,6 @@
 @f kernel_init
-@t Monet Startup file
 @a Martin Kersten
-@* Introduction
+@* Monet Startup file
 The Monet kernel needs a minimal set of modules to work properly.
 They are loaded using one operation, namely 'use "kernel/startup"'
 
@@ -27,5 +26,8 @@ use "kernel/group";
 use "kernel/aggrX3";
 use "kernel/mapi";
 @-
+@{
+@-
 Empty input file
 @c
+@}

@@ -1,7 +1,6 @@
 @f startup
-@t Mal atom startup file
 @a Martin Kersten
-@* Introduction
+@* Mal atom startup file
 Upon starting the Monet/MAL server we need to initialize the symbol table.
 This encompasses loading the signatures of several key modules.
 

@@ -22,7 +22,6 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f url
-@t The URL module
 @a M. Kersten
 @v 1.2
 @* The URL module
@@ -50,50 +49,73 @@ possible to redefine hashing.
 @mal
 atom module url:str;
 
-command url(s:str):url = URLnew
-	comment "Create an URL from a string literal";
-command getAnchor(u:url) :str        = URLgetAnchor 
-	comment "Extract the anchor (reference) from the URL";
-command getBasename(u:url) :str        = URLgetBasename 
-	comment "Extract the base file name of the URL";
-command getContent(u:url)   :str        = URLgetContent 
-	comment "Get the URL resource in a local file";
-command getContext(u:url)   :str        = URLgetContext 
-	comment "Get the path context of a URL ";
-command getDirectory(u:url) :bat[:int,:str]  = URLgetDirectory 
-	comment "Extract the directory names from the URL";
-command getDomain(u:url) :str        = URLgetDomain 
-	comment "Extract the Internet domain from the URL";
-command getExtension(u:url) :str        = URLgetExtension 
-	comment "Extract the file extension of the URL";
-command getFile(u:url) :str        = URLgetFile 
-	comment "Extract the last file name of the URL";
-command getHost(u:url)   :str        = URLgetHost 
-	comment "Extract the server identity from the URL";
-command getPort(u:url) :str        = URLgetPort 
-	comment "Extract the port id from the URL";
-command getProtocol(u:url) :str        = URLgetProtocol 
-	comment "Extract the protocol from the URL";
-command getQuery(u:url) :str        = URLgetQuery 
-	comment "Extract the query string from the URL";
-command getQueryArg(u:url) :bat[:str,:str]  = URLgetQueryArg 
-	comment "Extract the argument mappings from the URL";
-command getUser(u:url) :str        = URLgetUser 
-	comment "Extract the user identity from the URL";
-command getRobotURL(u:url) :str        = URLgetRobotURL 
-	comment "Extract the location of the robot control file";
-command isaURL(u:url)   :bit        = URLisaURL 
-	comment "Check conformity of the URL syntax";
-command newurl(prot:str,host:str,port:int,fnme:str)   :url        = URLnew4 
-	comment "Construct a URL from protocol, host,port,and file";
-command newurl(prot:str,host:str,fnme:str)   :url        = URLnew3 
-	comment "Construct a URL from protocol, host,and file";
+command url(s:str):url 
+address URLnew
+comment "Create an URL from a string literal";
+command getAnchor(u:url) :str        
+address URLgetAnchor 
+comment "Extract the URL anchor (reference)";
+command getBasename(u:url) :str        
+address URLgetBasename 
+comment "Extract the URL base file name";
+command getContent(u:url)   :str        
+address URLgetContent 
+comment "Get the URL resource in a local file";
+command getContext(u:url)   :str        
+address URLgetContext 
+comment "Get the path context of a URL ";
+command getDirectory(u:url) :bat[:int,:str]  
+address URLgetDirectory 
+comment "Extract the directory names from the URL";
+command getDomain(u:url) :str        
+address URLgetDomain 
+comment "Extract the Internet domain from the URL";
+command getExtension(u:url) :str        
+address URLgetExtension 
+comment "Extract the file extension of the URL";
+command getFile(u:url) :str        
+address URLgetFile 
+comment "Extract the last file name of the URL";
+command getHost(u:url)   :str        
+address URLgetHost 
+comment "Extract the server identity from the URL";
+command getPort(u:url) :str        
+address URLgetPort 
+comment "Extract the port id from the URL";
+command getProtocol(u:url) :str        
+address URLgetProtocol 
+comment "Extract the protocol from the URL";
+command getQuery(u:url) :str        
+address URLgetQuery 
+comment "Extract the query string from the URL";
+command getQueryArg(u:url) :bat[:str,:str]  
+address URLgetQueryArg 
+comment "Extract the argument mappings from the URL";
+command getUser(u:url) :str        
+address URLgetUser 
+comment "Extract the user identity from the URL";
+command getRobotURL(u:url) :str        
+address URLgetRobotURL 
+comment "Extract the location of the robot control file";
+command isaURL(u:url)   :bit        
+address URLisaURL 
+comment "Check conformity of the URL syntax";
+command newurl(prot:str,host:str,port:int,fnme:str)   :url        
+address URLnew4 
+comment "Construct a URL from protocol, host,port,and file";
+command newurl(prot:str,host:str,fnme:str)   :url        
+address URLnew3 
+comment "Construct a URL from protocol, host,and file";
 
 # the remaining instructions replace the string equivalent versions
-command fromstr():url = URLfromString
+command fromstr():url 
+address URLfromString
 	comment "Convert a string to an url. ";
-command tostr():str = URLtoString
+command tostr():str 
+address URLtoString
 	comment "Convert url to string equivalent";
+@-
+@{
 @* Example Script
 @mil
 setoid(oid(20000000));
@@ -136,7 +158,6 @@ t.[getProtocol].print;
 t.[getUser].print;
 
 quit;
-@{
 @* URL command implementation 
 The URLs are stored as strings without further optimization.
 A more compact representation is feasible, but not considered yet to
@@ -647,4 +668,3 @@ void plustospace(char *str) {
     for(x=0;str[x];x++) if(str[x] == '+') str[x] = ' ';
 }
 @}
-

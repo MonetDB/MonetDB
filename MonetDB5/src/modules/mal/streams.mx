@@ -3,18 +3,18 @@
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-@' 
+@'
 @' Software distributed under the License is distributed on an "AS
 @' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 @' implied. See the License for the specific language governing
 @' rights and limitations under the License.
-@' 
+@'
 @' The Original Code is the Monet Database System.
-@' 
+@'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
+@'
 @' Contributor(s):
 @' 		Martin Kersten <Martin.Kersten@cwi.nl>
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
@@ -23,9 +23,9 @@
 
 @f streams
 @a Niels Nes
-@* An simple interface to streams 
-This interface can be used to open 'non compressed, gzipped, bz2zipped' 
-data files. It encapsulates the corresponding library managed in 
+@* An simple interface to streams
+This interface can be used to open 'non compressed, gzipped, bz2zipped'
+data files. It encapsulates the corresponding library managed in
 .../stream.
 
 @mal
@@ -33,41 +33,56 @@ atom stream :ptr;
 
 module streams;
 
-command open_rstream( filename:str ) :stream = stream_open_rstream
-	comment "open a file stream for reading";
-command open_wstream( filename:str ) :stream = stream_open_wstream
-	comment "open a file stream for writing";
-command open_rastream( filename:str ) :stream = stream_open_rastream 
-	comment "open ascii file stream for reading";
-command open_wastream( filename:str ) :stream = stream_open_wastream 
-	comment "open ascii file stream for writing";
+command open_rstream( filename:str ) :stream
+address stream_open_rstream
+comment "open a file stream for reading";
+command open_wstream( filename:str ) :stream
+address stream_open_wstream
+comment "open a file stream for writing";
+command open_rastream( filename:str ) :stream
+address stream_open_rastream
+comment "open ascii file stream for reading";
+command open_wastream( filename:str ) :stream
+address stream_open_wastream
+comment "open ascii file stream for writing";
 
-command socket_rstream( socket:int, name:str ) :stream = stream_socket_rstream
-	comment "open a socket stream for reading";
-command socket_wstream( socket:int, name:str ) :stream = stream_socket_wstream
-	comment "open a socket stream for writing";
-command socket_rastream( socket:int, name:str ) :stream = stream_socket_rastream
-	comment "open ascii socket stream for reading";
-command socket_wastream( socket:int, name:str ) :stream = stream_socket_wastream
-	comment "open ascii socket stream for writing";
+command socket_rstream(skt:int,name:str):stream
+address stream_socket_rstream
+comment "open a socket stream for reading";
+command socket_wstream(skt:int,name:str):stream
+address stream_socket_wstream
+comment "open a socket stream for writing";
+command socket_rastream(skt:int,name:str):stream
+address stream_socket_rastream
+comment "open ascii socket stream for reading";
+command socket_wastream(skt:int,name:str):stream
+address stream_socket_wastream
+comment "open ascii socket stream for writing";
 
-command block_stream( s:stream ) :stream = open_block_stream
-	comment "open a block based stream";
+command block_stream( s:stream ) :stream
+address open_block_stream
+comment "open a block based stream";
 
-command writeStr( s:stream, data:str ):void = stream_write_string
-	comment "write data on the stream";
-command writeInt( s:stream, data:int ):void = stream_write_int
-	comment "write data on the stream";
-command readStr( s:stream):str = stream_read_str
-	comment "read string data from the stream";
-command readInt( s:stream):str = stream_read_int
-	comment "read integer data from the stream";
+command writeStr( s:stream, data:str ):void
+address stream_write_string
+comment "write data on the stream";
+command writeInt( s:stream, data:int ):void
+address stream_write_int
+comment "write data on the stream";
+command readStr( s:stream):str
+address stream_read_str
+comment "read string data from the stream";
+command readInt( s:stream):str
+address stream_read_int
+comment "read integer data from the stream";
 
 
-command flush( s:stream ) = stream_flush_stream
-	comment "flush the stream";
+command flush( s:stream )
+address stream_flush_stream
+comment "flush the stream";
 
-command close( s:stream ) = stream_close_stream 
+command close( s:stream )
+address stream_close_stream
 	"close and destroy the stream s";
 @-
 @{
@@ -111,7 +126,7 @@ str stream_socket_@1( stream *S, int *socket, str name ){
 
 	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)){
 		if (s) stream_destroy(s);
-		return throwMessage("streams.socket_rstream","failed"); 
+		return throwMessage("streams.socket_rstream","failed");
 	} else {
 		*(stream**)S = s;
 		return MAL_SUCCEED;
@@ -172,7 +187,7 @@ str stream_close_stream( stream *S ){
 
 str open_block_stream( stream *S, stream *is ){
 	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
-		return throwMessage("streams.block_stream","failed"); 
+		return throwMessage("streams.block_stream","failed");
 	} else {
 		return MAL_SUCCEED;
 	}

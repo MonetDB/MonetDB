@@ -36,26 +36,35 @@ It is inspired by the facilities in Java.lang.thread
 @mal
 module threads;
 
-pattern fork(fcn:str,arg:any...):int = THREADfork
-comment "Run a mal function in a separate process thread";
+pattern fork(fcn:str,arg:any...):int 
+address THREADfork
+comment "Run a mal function in a separate 
+	process thread";
 
-pattern join(nme:int):str = THREADjoin
+pattern join(nme:int):str 
+address THREADjoin
 comment "Wait for the named thread to die";
 
-pattern join(nme:int, delay:lng):str = THREADjoinDelay
-comment "Wait for the named thread to die for a short delay";
+pattern join(nme:int, delay:lng):str 
+address THREADjoinDelay
+comment "Wait for the named thread to die 
+	for a short delay";
 
-pattern suspend(nme:int):str= THREADsuspend
+pattern suspend(nme:int):str
+address THREADsuspend
 comment "suspend a processing thread";
 
-pattern resume(nme:int):str= THREADresume
-comment "Resume processing of a process thread";
+pattern resume(nme:int):str
+address THREADresume
+comment "Resume processing of a thread";
 
-pattern stop(nme:int):str= THREADstop
+pattern stop(nme:int):str
+address THREADstop
 comment "Stop thread at next convenient point";
 
-pattern kill(nme:int):str= THREADkill
-comment "Forced termination an executing thread";
+pattern kill(nme:int):str
+address THREADkill
+comment "Forced termination a thread";
 @-
 @{
 @h

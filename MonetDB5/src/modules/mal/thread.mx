@@ -30,12 +30,12 @@ Such threads share the stackframe of the caller for data exchange.
 The consequence is that a thread may only terminate when it is
 not the parent of one or more children
 administered on a stack-frame variable.
-@-
+
 A thread block encountered in a MAL program leads to at most
 one thread instance. This is detected by setting the thread
 variable to the process id. The thread block is skipped when it
 has already been set.
-@-
+
 A thread can be separated from its parent using the command
 thread.exec(arguments). The thread identity is being returned.
 A process can wait for all children using thread.wait().
@@ -48,22 +48,28 @@ interpreter loop.
 @mal
 module thread;
 
-pattern wait():void = CMDthreadWait
+pattern wait():void 
+address CMDthreadWait
 comment "Wait for all children to be finished";
 
-pattern wait(pid:int...):void = CMDthreadWaitList
-comment "Wait for all threads in the list to be finished";
+pattern wait(pid:int...):void 
+address CMDthreadWaitList
+comment "Wait for all threads to be finished";
 
-pattern isDead(pid:int):bit = CMDthreadIsDead
+pattern isDead(pid:int):bit 
+address CMDthreadIsDead
 commnet "Check availability of a child thread";
 
-pattern kill(pid:int):void = CMDthreadKill
+pattern kill(pid:int):void 
+address CMDthreadKill
 comment "Kill a specific thread";
 
-pattern terminate(pid:int):void= CMDthreadTerminate
+pattern terminate(pid:int):void
+address CMDthreadTerminate
 comment "Attempt a soft kill of a thread";
 
-pattern exec(arg:any ...):int= CMDthreadExec
+pattern exec(arg:any ...):int
+address CMDthreadExec
 comment "Run a function independently";
 @-
 @{

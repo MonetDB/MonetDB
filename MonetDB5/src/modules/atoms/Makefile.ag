@@ -17,7 +17,7 @@ LIBS = {
 }
 doc_atoms = {
 	DIR = pkgdatadir/docs/modules/atoms
-	SOURCES = str.mx blob.mx url.mx mtime.mx \
+	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx \
 		uchr.mx 
 }
 scripts_mal = {

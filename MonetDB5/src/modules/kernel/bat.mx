@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f bat
-@t Binary Association Tables
 @v 2.0
 @a Peter Boncz, M.L. Kersten
-@* Introduction
+@* Binary Association Tables
 @T
 This module contains the commands and patterns to manage Binary
 Association Tables (BATs). The relational operations you can execute
@@ -39,7 +38,6 @@ All commands needed for BAT updates, property management,
 search accellerator management, basic I/O, persistency, and storage options
 can be found in this module.
 
-@* Module Definition
 Type parameters are represented by short integers. The MAL frontend
 defines constants to simplify the mapping from type identifier to value.
 
@@ -86,10 +84,12 @@ command revert(b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] = CMDrevert
 comment "Puts all BUNs in a BAT in reverse order. (Belongs to the BAT sequence module)";
 
 @- BAT properties
+@T
 Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
 These properties can be inspected with the {\tt info(BAT[:any,:any]) :bat[str,str] } c
 ommand:
+{\small
 \begin{verbatim}
 > car_age.info.print;
 #---------------------------------#
@@ -110,10 +110,11 @@ ommand:
 [ "batSet",          "0"          ] # [head,tail] combinations are unique
 [ "batCopiedtodisk", "1"          ] # has been saved or not
 \end{verbatim}
+}
 
 Per column, a number of properties are kept. We only show the head-properties; the tail properties
 have the first character of their named replaced by 't' ({\tt sorted}, {\tt tdense}, etc.):
-
+{\small
 \begin{verbatim}
 [ "hsorted",         "1"          ] # column is known to be sorted
 [ "hdense",          "1"          ] # column is known to be densely ascended
@@ -121,6 +122,7 @@ have the first character of their named replaced by 't' ({\tt sorted}, {\tt tden
 [ "hacctype",        "null"       ] # name of user-defined accelerator
 [ "hindex",          "absent"     ] # name of built-in accelerator:hash or index (T-tree)
 \end{verbatim}
+}
 
 As described in the @[<a href="www/gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
 BATs store their data in one to five heaps, of which at least one called {\tt batBuns}
@@ -128,15 +130,17 @@ is present always. For each column type that is {\em variable-sized} - like {\tt
 heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search
 accelerator, more heaps may be present (({\tt haccelerator} and {\tt taccelerator}).
 
+{\small
 \begin{verbatim}
 [ "batBuns.free",    "400004"     ] # occupied size in bytes
 [ "batBuns.size",    "400012"     ] # allocated size in bytes
 [ "batBuns.maxsize", "400012"     ] # reserver virtual memory in bytes
 [ "batBuns.storage", "malloced"   ] # malloced/mmap/priv
 \end{verbatim}
+}
 
 Properties steer the algorithms that Monet uses to execute algebra command. For instance,
-the {\tt find(bat[:any$1,:any$2] b, :any:;1) :any$2) that looks up a tail value by head,
+the {\tt find(bat[:any\$1,:any\$2] b, :any\$1) :any\$2) that looks up a tail value by head,
 uses binary search if and only if the head column is sorted (in other cases, hash-lookup
 and scan are execution options).
 
@@ -158,7 +162,6 @@ newly created BATs to be checked. You must realize that finding out that a colum
 \end{description}
 
 By default, both bits in the {\tt debugmask} are off, which gives fastest performance.
-@-
 
 @mal
 command info ( b:bat[:any,:any]) :bat[:str,:str] = CMDinfo
@@ -173,8 +176,8 @@ command getHeadType ( b:bat[:any,:any] ) :int = CMDgetHeadType
 comment "Returns the type of the head column of a BAT,
 as an integer type number.";
 
-command getTailType( b:bat[:any,:any] ) :int = CMDgetTailType
-comment "Returns the type of the tail column of a BAT,
+command getTailType( b:bat[:any,:any] ) :int = CMDgetTailType comment "Returns
+the type of the tail column of a BAT,
 as an integer type number.";
 
 command getRole ( bid:bat[:any,:any] ) :str = CMDgetRole

@@ -22,44 +22,55 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f lock
-@t Lightweight Lock Module
 @v 1.0
 @a Peter Boncz
-@* Introduction
+@* Lightweight Lock Module
 This module provides simple SMP lock and thread functionality
 as already present in the Monet system.
 
-@* MEL Definitions
 @mal
 atom module lock:ptr;
 
-command create() :lock = LCKcreate
-	comment "Create an unset lock";
-command set(l:lock) = LCKset
-	comment "Try to set a lock; if set, block till it is freed";
-command try(l:lock) :int = LCKtry
-	comment "Try a lock, if free set it, if not return EBUSY";
-command unset(l:lock) = LCKunset
-	comment "Unset a lock";
-command destroy(l:lock) = LCKdestroy
-	comment "Destroy a lock";
-command tostr(l:lock) = lockToStr
-	comment "Overloaded atom function";
+command create() :lock 
+address LCKcreate
+comment "Create an unset lock";
+command set(l:lock) 
+address LCKset
+comment "Try to set a lock; if set, 
+	block till it is freed";
+command try(l:lock) :int 
+address LCKtry
+comment "Try a lock, if free set it, 
+	if not return EBUSY";
+command unset(l:lock) 
+address LCKunset
+comment "Unset a lock";
+command destroy(l:lock) 
+address LCKdestroy
+comment "Destroy a lock";
+command tostr(l:lock) 
+address lockToStr
+comment "Overloaded atom function";
 
 @- semaphores
 @mal
 atom module sema:ptr;
 
-command create(init:int ) :sema = SEMAcreate
-	comment "Create an unset sema, with an initial value";
-command down(s:sema) = SEMAdown
-	comment "Decrement the semaphpore if >0; else block";
-command try(s:sema) :int = SEMAtry
-	comment "try the semaphpore";
-command up(s:sema) = SEMAup
-	comment "Increment the semaphore";
-command destroy(s:sema) = SEMAdestroy
-	comment "Destroy a semaphore";
+command create(init:int ) :sema 
+address SEMAcreate
+comment "Create an unset sema, with an initial value";
+command down(s:sema) 
+address SEMAdown
+comment "Decrement the semaphpore if >0; else block";
+command try(s:sema) :int 
+address SEMAtry
+comment "try the semaphpore";
+command up(s:sema) 
+address SEMAup
+comment "Increment the semaphore";
+command destroy(s:sema) 
+address SEMAdestroy
+comment "Destroy a semaphore";
 @{
 @* Implementation
 @c

@@ -1,9 +1,7 @@
 @f radix
 @a Peter Boncz
 @v 1.0
-@t Radix Algorithms
-
-@* Introduction
+@* Radix Algorithms
 
 This module introduces algorithms that enhance performance of 
 generic join processing in Monet, by optimizing both memory and CPU
@@ -226,7 +224,7 @@ We provide our radix-algorithms in such versions that they can be experimented w
 with and without these optimization techniques enabled in order to monitor
 their effectiveness. 
 
-@* Join Processing Optimized for Memory/CPU cost
+@+ Join Processing Optimized for Memory/CPU cost
 @T
 We now address the issue of optimizing generic join processing for optimal usage of
 CPU resources and memory hardware on super-scalar CPUs featuring long pipelines and 
@@ -580,7 +578,7 @@ hash-join faster than partitioned hash-join:
 In either way, we expect a relational performance to be a factor 10 slower than Monet
 on big sizes of both the "smaller" and "larger" tables with hit rates such that the result table is big.
 
-@* Module Definition
+@*+Module Definition
 @mal
 module radix;
 
@@ -609,15 +607,26 @@ comment "merge a (partially) radix-clustered dense collection of oids
  of b.radix_count(x,y). Third parameter is a multiplier that tells how 
  many times the number of chunks the matching-window-size should be.";
 
-command decluster2(b:bat[any$2,oid], a:bat[any$2,any$1], 
-	radix_cnt:bat[int,int], multiplier:int) :bat[void,any$1] 
-	= radix_decluster2 comment "";
+command decluster2(b:bat[any$2,oid], 
+		a:bat[any$2,any$1], 
+		radix_cnt:bat[int,int], 
+		multiplier:int) 
+		:bat[void,any$1] 
+address radix_decluster2 comment "";
 
-command radix_join(l:bat[any$1,any$2], r:bat[any$2,any$3], radix:int, 
-	hitrate:int) :bat[any$1,any$3] = radix_join
+command radix_join(l:bat[any$1,any$2], 
+		r:bat[any$2,any$3], 
+		radix:int, 
+		hitrate:int) 
+		:bat[any$1,any$3] 
+address radix_join
 comment "nested-loop join on radix clustered inputs";
 
-command phash_join(l:bat[any$1,any$2], r:bat[any$2,any$3], radix:int, hitrate:int, cutoff:bit) :bat[any$1,any$3] = phash_join
+command phash_join(l:bat[any$1,any$2], 
+		r:bat[any$2,any$3], 
+		radix:int, hitrate:int, 
+		cutoff:bit) :bat[any$1,any$3] 
+address phash_join
 comment "partitioned hash-join on radix clustered inputs";
 
 @= integer
@@ -639,17 +648,31 @@ comment "partitioned hash-join on radix clustered inputs";
 @:integer(integer256,1024)@
 
 @mal
-command uniform(base:oid, size:int, domain:int) :bat[oid,int] = BATuniform
-comment "create a random bat of certain size, head values unique, tail values
- perfect uniform from a certain domain (domain>size => unique tails).";
+command uniform(base:oid, size:int, domain:int) 
+	:bat[oid,int] 
+address BATuniform
+comment "create a random bat of certain size, 
+	 head values unique, tail values perfect 
+	 uniform from a certain domain (domain>size 
+	 => unique tails).";
 
-command normal(base:oid, size:int, domain:int, stddev:int, mean:int) :bat[oid,int] = BATnormal
-comment "create a random bat of certain size, head values unique, tail values
- from a normal distribution between [0..domain].
- default values: base = 0@0, mean = size/2, stddev = size/10, domain=size.";
+command normal(base:oid, size:int, domain:int, 
+	 	stddev:int, mean:int) 
+		:bat[oid,int] 
+address BATnormal
+comment "create a random bat of certain size, 
+	 head values unique, tail values from 
+	 a normal distribution between [0..domain].
+	 default values: base = 0@0, mean = size/2, 
+	 stddev = size/10, domain=size.";
 
-command integer(b:bat[any$1,any], width:int) : bat[any$1,any] = BATinteger
-comment "create a view that makes tail column appear as an integerX column for some width=X";
+command integer(b:bat[any$1,any], width:int) 
+	 :bat[any$1,any] 
+address BATinteger
+comment "create a view that makes tail column 
+	 appear as an integerX column for some 
+	 width=X";
+@{
 @-
 OLD stuff
 .LOAD
@@ -2177,3 +2200,4 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 	
     return GDK_SUCCEED;
 }
+@}

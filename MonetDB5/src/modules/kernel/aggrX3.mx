@@ -23,8 +23,8 @@
 
 @f aggrX3
 @a S. Manegold 
-@t Improved & Extended Aggregates Module
 @v 1.0
+@+ Extended Aggregates Module
 
 This module contains some efficient aggregate functions that compute their 
 result in one scan, rather than in the iterative manner of the generic 
@@ -54,29 +54,53 @@ module aggrX3;
 #module group;
 
 @= sum_avg_signatures
-command sum(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_sum_@1_@1
+command sum(b:bat[:oid,:@1],e:bat[:oid,:any]) 
+	:bat[:oid,:@1] 
+address CMDaggrX3_sum_@1_@1
 	comment "grouped tail sum on @1";
-command prod(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_prod_@1_@1
+
+command prod(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@1] 
+address CMDaggrX3_prod_@1_@1
 	comment "grouped tail product on @1";
-command sum(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_sum3_@1_@1
+command sum(b:bat[:oid,:@1], 
+	g:bat[:oid,:oid], 
+	e:bat[:oid,:any]) :bat[:oid,:@1] 
+address CMDaggrX3_sum3_@1_@1
 	comment "grouped tail sum on @1";
-command avg(b:bat[:oid,:@1], e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_avg_@1
+command avg(b:bat[:oid,:@1], 
+	e:bat[:oid,:any]) :bat[:oid,:@1] 
+address CMDaggrX3_avg_@1
 	comment "grouped tail average on @1";
-command avg(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_avg3_@1
+command avg(b:bat[:oid,:@1], 
+	g:bat[:oid,:oid], 
+	e:bat[:oid,:any]) :bat[:oid,:@1] 
+address CMDaggrX3_avg3_@1
 	comment "grouped tail average on @1";
 
 @= sum_avg_signatures2
-command sum(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_sum_@1_@1
-	comment "grouped tail sum on @1";
-command sum(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_sum3_@1_@1
-	comment "grouped tail sum on @1";
-command sum(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@2] = CMDaggrX3_sum_@1_@2
-	comment "grouped tail sum on @1";
-command sum(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:@2] = CMDaggrX3_sum3_@1_@2
-	comment "grouped tail sum on @1";
+command sum(b:bat[:oid,:@1],
+	e:bat[:oid,:any]) :bat[:oid,:@1] 
+address CMDaggrX3_sum_@1_@1
+comment "grouped tail sum on @1";
+command sum(b:bat[:oid,:@1], 
+	g:bat[:oid,:oid], 
+	e:bat[:oid,:any]) :bat[:oid,:@1] 
+address CMDaggrX3_sum3_@1_@1
+comment "grouped tail sum on @1";
+command sum(b:bat[:oid,:@1],
+	e:bat[:oid,:any]) :bat[:oid,:@2] 
+address CMDaggrX3_sum_@1_@2
+comment "grouped tail sum on @1";
+command sum(b:bat[:oid,:@1], 
+	g:bat[:oid,:oid], 
+	e:bat[:oid,:any]) :bat[:oid,:@2] 
+address CMDaggrX3_sum3_@1_@2
+comment "grouped tail sum on @1";
 
 @= var_signature
-command variance(b:bat[:oid,:@1],e:bat[:oid,:any]):bat[:oid,:@1] = CMDaggr_variance_@1
+command variance(b:bat[:oid,:@1],
+	e:bat[:oid,:any]):bat[:oid,:@1] 
+address CMDaggr_variance_@1
 comment "grouped tail on variance";
 
 @mal
@@ -95,30 +119,53 @@ comment "grouped tail on variance";
 @:var_signature(dbl)@
 @:var_signature(flt)@
 
-command min(b:bat[:oid,:any$1], e:bat[:oid,:any]) :bat[:oid,:any$1] = CMDaggrX3_min
-	comment "grouped tail minimum";
-command max(b:bat[:oid,:any$1], e:bat[:oid,:any]) :bat[:oid,:any$1] = CMDaggrX3_max
-	comment "grouped tail maximum";
-command min(b:bat[:oid,:any$1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:any$1] = CMDaggrX3_min3
-	comment "grouped tail minimum";
-command max(b:bat[:oid,:any$1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:any$1] = CMDaggrX3_max3
-	comment "grouped tail maximum";
+command min(b:bat[:oid,:any$1], 
+	e:bat[:oid,:any]) :bat[:oid,:any$1] 
+address CMDaggrX3_min
+comment "grouped tail minimum";
+command max(b:bat[:oid,:any$1], 
+	e:bat[:oid,:any]) :bat[:oid,:any$1] 
+address CMDaggrX3_max
+comment "grouped tail maximum";
+command min(b:bat[:oid,:any$1], 
+	g:bat[:oid,:oid], 
+	e:bat[:oid,:any]) :bat[:oid,:any$1] 
+address CMDaggrX3_min3
+comment "grouped tail minimum";
+command max(b:bat[:oid,:any$1], 
+	g:bat[:oid,:oid], 
+	e:bat[:oid,:any]) :bat[:oid,:any$1] 
+address CMDaggrX3_max3
+comment "grouped tail maximum";
 
-command count(b:bat[:oid,:any], e:bat[:oid,:any]) :bat[:oid,:int] = CMDaggrX3_count
-	comment "grouped count";
-command count(b:bat[:oid,:any], g:bat[:oid,:oid], e:bat[:oid,:any], nonils:bit) :bat[:oid,:int] = CMDaggrX3_count3
-	comment "grouped count";
+command count(b:bat[:oid,:any], 
+	e:bat[:oid,:any]) :bat[:oid,:int] 
+address CMDaggrX3_count
+comment "grouped count";
+command count(b:bat[:oid,:any], 
+	g:bat[:oid,:oid], 
+	e:bat[:oid,:any], nonils:bit) :bat[:oid,:int] 
+address CMDaggrX3_count3
+comment "grouped count";
 
-command size(b:bat[:oid,:bit], e:bat[:oid,:any]) :bat[:oid,:int] = CMDaggrX3_size
-	comment "grouped count of true values";
-command size(b:bat[:oid,:bit]) :int = CMDsize
-	comment "grouped count of true values in the tail";
-command hasNil(b:bat[:any,:any]) :bit = CMDhasNil
-        comment "return if there is a nil value in the tail column";
-command card(b:bat[:any,:any]) :lng = CMDcard_unlimited
-        comment "return the number of different values in a tail column";
-command card(b:bat[:any,:any], maxelements:int) :lng = CMDcard
-        comment "as card(b), but returns nil if card(b) > maxelements";
+command size(b:bat[:oid,:bit], 
+	e:bat[:oid,:any]) :bat[:oid,:int] 
+address CMDaggrX3_size
+comment "grouped count of true values";
+command size(b:bat[:oid,:bit]) :int 
+address CMDsize
+comment "grouped count of true values in the tail";
+command hasNil(b:bat[:any,:any]) :bit 
+address CMDhasNil
+comment "return if there is a nil value in the tail column";
+command card(b:bat[:any,:any]) :lng 
+address CMDcard_unlimited
+comment "return the number of different values in a tail column";
+command card(b:bat[:any,:any], 
+	maxelements:int) :lng 
+address CMDcard
+comment "as card(b), but returns nil if card(b) > maxelements";
+@{
 @-
 OLD STUFF, recast in MAL proc 
 
@@ -143,7 +190,6 @@ OLD STUFF, recast in MAL proc
     proc {card}(BAT[oid,any] b, BAT[oid,any] e) :bat[oid,int] {
 	return {count}(b.sunique,e);
     }
-@{
 @+ Test Script
 @mil
 
@@ -197,7 +243,6 @@ aggrtst(16,160,"{max}","uchr","sht","int","lng","flt","dbl","decimal");
 aggrtst(16,160,"{card}","uchr","sht","int","lng","flt","dbl","decimal");
 aggrtst(16,160,"{count}","uchr","sht","int","lng","flt","dbl","decimal");
 
-@{
 @+ Implementation
 These implementations need just one scan and a simple hash-maintained data
 structure to compute a group of common aggregates. 
@@ -2365,5 +2410,4 @@ str CMDhasNil(int *ret, int* bid) {
 	return MAL_SUCCEED;
 }
 
-@}
 @}

@@ -1,8 +1,7 @@
 @f group
-@t The group module
 @a M.L. Kersten, P. Boncz, A.P. de Vries
 @v 2.3
-@* Introduction
+@* The group module
 @T
 This module contains the primitives to construct, derive, and
 perform statistical operations on BATs representing groups.
@@ -71,49 +70,71 @@ command group(attr:bat[{void,oid},:any$1]
 @mal
 module group;
 
-command group(b:bat[:any$1,:any], start:int, incr:int, grpsize:int):bat[:any$1,:int] = CTgroup0
-	comment "Produces a new BAT with identical head column, and in the tail
-	column groups of equally valued integers within each group. Parameters:
-	a start group value, group number increment, group size.";
+command group(b:bat[:any$1,:any], start:int, 
+	incr:int, grpsize:int):bat[:any$1,:int] 
+address CTgroup0
+comment "Produces a new BAT with identical head 
+	 column, and in the tail column groups of
+	 equally valued integers within each group.
+	 Parameters: a start group value, group 
+	 number increment, group size.";
 
 
 command group(attr:bat[:any$2,:any$1] )
-	(histo:bat[:any$1,:int], grp:bat[:any$2,:oid]) = CTgroup
+	(histo:bat[:any$1,:int], grp:bat[:any$2,:oid]) 
+address CTgroup
 comment "Cross tabulation group initialization.
-         Returned head values are identical as in 'attr'. Tail values are from
-         the same domain and indicate unique groups in 'attr' tail column.";
+         Returned head values are identical as 
+	 in 'attr'. Tail values are from the same 
+	 domain and indicate unique groups in 
+	 'attr' tail column.";
 command group(attr:bat[:any$2,:any$1] )
 	:bat[:any$2,:oid] = CTgroup2
 
 command group(attr:bat[:any$2,:any$1], N:int, rng:int)
-	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) = CTgroup_custom
-comment "Cross tabulation group initialization like CTgroup, but with user
-         provided #bits in hashmask and #distinct values in range.";
+	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) 
+address CTgroup_custom
+comment "Cross tabulation group initialization like 
+	 CTgroup, but with user provided #bits in 
+	 hashmask and #distinct values in range.";
 
 command group(ct:bat[:any$2,:any], attr:bat[:any$2,:any$1])
-	(map:bat[:any$1,:oid],grp:bat[:any$2,:oid]) = CTderive
+	(map:bat[:any$1,:oid],grp:bat[:any$2,:oid]) 
+address CTderive
 comment "Cross tabulation group extension step.
-         Returned head values are identical as in 'ct'. Tail values are from
-         the same domain and indicate further refinement of the groups in 'ct',
-         taking into account also the tail-values in 'attr'.";
+         Returned head values are identical as 
+	 in 'ct'. Tail values are from the same 
+	 domain and indicate further refinement 
+	 of the groups in 'ct', taking into account 
+	 also the tail-values in 'attr'.";
 command group(ct:bat[:any$2,:any], attr:bat[:any$2,:any$1])
 	:bat[:any$2,:oid] = CTderive2;
 
-command regroup(ct:bat[:any$2,:oid],attr:bat[:any$2,:any]) :bat[:any$2,:oid] = CTregroup
+command regroup(ct:bat[:any$2,:oid],
+		attr:bat[:any$2,:any]) :bat[:any$2,:oid] 
+address CTregroup
 comment "Performs a regrouping, modifying ct doing a group";
 
-command refine(b:bat[:any$2,:any], a:bat[:any$2,:any]) :bat[:any$2,:oid] = CTrefine
-comment "refine the ordering of a tail-ordered BAT by sub-ordering on the
-         values of a second bat 'a' (where the heads of a and b match 1-1). 
-         The effect of this is similar to (hash-based) CTderive, with the
-	 distinction that the group ids respect the ordering of the group values.";
+command refine(b:bat[:any$2,:any], a:bat[:any$2,:any]) :bat[:any$2,:oid] 
+address CTrefine
+comment "refine the ordering of a tail-ordered 
+	 BAT by sub-ordering on the values of a 
+	 second bat 'a' (where the heads of a and 
+	 b match 1-1).  The effect of this is similar 
+	 to (hash-based) CTderive, with the distinction 
+	 that the group ids respect the ordering 
+	 of the group values.";
 @-
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the CT by means of a histolink.
 oldstuff
-command subhisto(sel:bat[:void,:bit], grp:bat[:void,:oid], domain:bat[:oid,:any])
-	:bat[:oid,:int] = CTsubhisto
-comment "optimized sub-histogram for synced grp[:void,:oid] and sel[:void,:bit]
+command subhisto(sel:bat[:void,:bit], 
+		grp:bat[:void,:oid], 
+		domain:bat[:oid,:any])
+		:bat[:oid,:int] 
+address CTsubhisto
+comment "optimized sub-histogram for synced 
+	 grp[:void,:oid] and sel[:void,:bit]
          bats on a previously known domain ";
 
 @+ Group Aggregate operations
@@ -129,41 +150,85 @@ most value-based operators work on the tail, while counting groups
 is focussed on the head.
 @mal
 
-command sum(b:bat[:any$2,:sht], e:bat[:any$2,:any]) :bat[:any$2,:sht] = CTsum_sht
-	comment "grouped tail sum";
-command sum(b:bat[:any$2,:int], e:bat[:any$2,:any]) :bat[:any$2,:int] = CTsum_int
-	comment "grouped tail sum";
-command sum(b:bat[:any$2,:lng], e:bat[:any$2,:any]) :bat[:any$2,:lng] = CTsum_lng
-	comment "grouped tail sum";
-command sum(b:bat[:any$2,:flt], e:bat[:any$2,:any]) :bat[:any$2,:flt] = CTsum_flt
-	comment "grouped tail sum";
-command sum(b:bat[:any$2,:dbl], e:bat[:any$2,:any]) :bat[:any$2,:dbl] = CTsum_dbl
-	comment "grouped tail sum";
+command sum(b:bat[:any$2,:sht], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:sht] 
+address CTsum_sht
+comment "grouped tail sum";
+command sum(b:bat[:any$2,:int], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:int] 
+address CTsum_int
+comment "grouped tail sum";
+command sum(b:bat[:any$2,:lng], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:lng] 
+address CTsum_lng
+comment "grouped tail sum";
+command sum(b:bat[:any$2,:flt], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:flt] 
+address CTsum_flt
+comment "grouped tail sum";
+command sum(b:bat[:any$2,:dbl], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:dbl] 
+address CTsum_dbl
+comment "grouped tail sum";
 
-command avg(b:bat[:any$2,:sht], e:bat[:any$2,:any]) :bat[:any$2,:sht] = CTavg_sht
-	comment "grouped tail average";
-command avg(b:bat[:any$2,:int], e:bat[:any$2,:any]) :bat[:any$2,:int] = CTavg_int
-	comment "grouped tail average";
-command avg(b:bat[:any$2,:lng], e:bat[:any$2,:any]) :bat[:any$2,:lng] = CTavg_lng
-	comment "grouped tail average";
-command avg(b:bat[:any$2,:flt], e:bat[:any$2,:any]) :bat[:any$2,:flt] = CTavg_flt
-	comment "grouped tail average";
-command avg(b:bat[:int,:dbl], e:bat[:int,:any]) :bat[:int,:dbl] = CTavg_dbl
-	comment "grouped tail average";
+command avg(b:bat[:any$2,:sht], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:sht] 
+address CTavg_sht
+comment "grouped tail average";
+command avg(b:bat[:any$2,:int], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:int] 
+address CTavg_int
+comment "grouped tail average";
+command avg(b:bat[:any$2,:lng], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:lng] 
+address CTavg_lng
+comment "grouped tail average";
+command avg(b:bat[:any$2,:flt], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:flt] 
+address CTavg_flt
+comment "grouped tail average";
+command avg(b:bat[:int,:dbl], 
+		e:bat[:int,:any]) 
+		:bat[:int,:dbl] 
+address CTavg_dbl
+comment "grouped tail average";
 
-command min(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] = CTmin
-	comment "grouped tail minimum";
-command max(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] = CTmax
-	comment "grouped tail maximum";
+command min(b:bat[:any$2,:any$1], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:any$1] 
+address CTmin
+comment "grouped tail minimum";
+command max(b:bat[:any$2,:any$1], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:any$1] 
+address CTmax
+comment "grouped tail maximum";
 
-command count(b:bat[:any$2,:any], e:bat[:any$2,:any], nonils:bit) :bat[:any$2,:int] = CMDaggr_count
-	comment "grouped count";
-command size(b:bat[:any$2,:bit], e:bat[:any$2,:any]) :bat[:any$2,:int] = CTsize
-	comment "grouped count of true values";
+command count(b:bat[:any$2,:any], 
+		e:bat[:any$2,:any], 
+		nonils:bit) :bat[:any$2,:int] 
+address CMDaggr_count
+comment "grouped count";
+command size(b:bat[:any$2,:bit], 
+		e:bat[:any$2,:any]) 
+		:bat[:any$2,:int] 
+address CTsize
+comment "grouped count of true values";
 
 
 command prelude()= groupPrelude;
 prelude();
+@-
+@{
 @-
 old stuff
     proc size(bat[:any,bit] b) :int {
@@ -1359,3 +1424,4 @@ str CTsize(int *retval, int *bid,int  *eid){
 	*retval = bn->batCacheid;
 	return MAL_SUCCEED;
 }
+@}

@@ -24,15 +24,12 @@
 @f algebra
 @a Peter Boncz, Martin Kersten, Niels Nes
 @v 2.0
-@t BAT Algebra
-
-@* Introduction
+@* BAT Algebra
 This modules contains the most common algebraic BAT manipulation
 commands. We call them @#algebra@, because all operations take
 values as parameters, and produce new result values, but 
 @%do not modify their parameters@.
 @
-@* Module Definition
 Unlike the previous Monet versions, we reduce the number
 of functions returning a BAT reference. This was previously needed
 to simplify recursive bat-expression and manage reference counts.
@@ -50,52 +47,73 @@ This calls for knowlegde on the underlying BAT typs`s
 We split between selections that return one value, and selections
 that return a BAT.
 @+ Value Selections
-[Somehow we need this next marker to force Mx to produce good output]
-@-
-
 @mal
 module algebra;
 
-command exist(b:bat[:any$1,:any], h:any$1) :bit = CMDexist
-comment "Returns whether 'h' occurs as a head value in b.";
+command exist(b:bat[:any$1,:any], h:any$1):bit 
+address CMDexist
+comment "Returns whether 'h' occurs as a head 
+	value in b.";
 
-command exist(b:bat[:any$1,:any$2], h:any$1, t:any$2) :bit = CMDexistBUN
-comment "Returns true when 'h,t' occurs as a bun in b.";
+command exist(b:bat[:any$1,:any$2], 
+		h:any$1, t:any$2):bit 
+address CMDexistBUN
+comment "Returns true when 'h,t' occurs as a 
+	bun in b.";
 
-command find(b:bat[:any$1,:any$2], h:any$1):any$2 = CMDfind
-comment "Returns the tail value 't' for which some [h,t] BUN exists in b.
- If no such BUN exists, an error occurs." ;
+command find(b:bat[:any$1,:any$2], h:any$1):any$2 
+address CMDfind
+comment "Returns the tail value 't' for which some 
+	[h,t] BUN exists in b.  If no such BUN 
+	exists, an error occurs." ;
 
-command position(b:bat[:any$1,:any], val:any$1) :int = CMDposition
-comment "Returns the BAT position e [0.. b.count> of a 'val' in the
-head column of b.  It gives an error if 'val' does not occur in b. ";
+command position(b:bat[:any$1,:any],val:any$1):int
+address CMDposition
+comment "Returns the BAT position e [0.. b.count $>$
+	of a 'val' in the head column of b.  It gives 
+	an error if 'val' does not occur in b.";
 
-command position(b:bat[:any$1,:any$2], val:any$1, tval:any$2) :int = CMDpositionBUN
-comment "Returns the BAT position e [0.. b.count> of a 'val' in the
-head column of b.  It gives an error if 'val' does not occur in b. ";
+command position(b:bat[:any$1,:any$2], 
+		val:any$1, tval:any$2) :int 
+address CMDpositionBUN
+comment "Returns the BAT position e [0..b.count$>$
+	 of a 'val' in the head column of b.  It 
+	gives an error if 'val' does not occur in b. ";
 
-command fetch(b:bat[:any,:any$1], x:oid) :any$1 = CMDfetchoid
-comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count";
-command fetch(b:bat[:any,:any$1], x:lng) :any$1 = CMDfetch
-comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count";
+command fetch(b:bat[:any,:any$1], x:oid) :any$1 
+address CMDfetchoid
+comment "Returns the tail value of the BUN at the 
+	 x-th position with 0 <= x < b.count";
+command fetch(b:bat[:any,:any$1], x:lng) :any$1 
+address CMDfetch
+comment "Returns the tail value of the BUN at 
+	 the x-th position with 0 <= x < b.count";
 
 @+ BAT Selections
 @- positional select
 @mal
 command fetch(b:bat[:any$1,:any$2], s:bat[:int,:any] )  
-	:bat[:any$1,:any$2] = CMDfetchbat
-comment "Returns a positional selection of b by the integer head values of s";
+	:bat[:any$1,:any$2] 
+address CMDfetchbat
+comment "Returns a positional selection of b by the 
+	 integer head values of s";
 command fetch(b:bat[:any$1,:any$2],s:bat[:lng,:any] ) 
-	:bat[:any$1,:any$2] = CMDfetchbat
-comment "Returns a positional selection of b by the integer head values of s";
+	:bat[:any$1,:any$2] 
+address CMDfetchbat
+comment "Returns a positional selection of b by the 
+	integer head values of s";
 command fetch(b:bat[:any$1,:any$2],s:bat[:oid,:any]) 
-	:bat[:any$1,:any$2] = CMDfetchbat
-comment "Returns a positional selection of b by the oid head values of s";
+	:bat[:any$1,:any$2] 
+address CMDfetchbat
+comment "Returns a positional selection of b by the 
+	oid head values of s";
 @- range select
 @mal
 command select (b:bat[:any$1,:any$2], low:any$2, high:any$2) 
-	:bat[:any$1,:any$2] = CMDselect
-comment "Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.
+	:bat[:any$1,:any$2] 
+address CMDselect
+comment "Select all BUNs of a BAT that have tail 
+	values: {v| low <= v <= high}.
 NIL boundary values have a special meaning.
 + low  == nil means: no lower bound
 + high == nil means: no upper bound.
@@ -108,44 +126,52 @@ NOTE 2: as the 'nil' element has no clear place in the ordered domain
 @- unary range select
 @mal
 command uselect (b:bat[:any$1,:any$2], low:any$2, high:any$2) 
-	:bat[:any$1,:void] = CMDuselect
+	:bat[:any$1,:void] 
+address CMDuselect
 comment "Select on tail, returning only the head values.
  SEE ALSO: select(bat,low,high).";
 @- value select
 @mal
 command select ( b:bat[:any$1,:any$2], value:any$2)
-		:bat[:any$1,:any$2] = CMDselect1
+		:bat[:any$1,:any$2] 
+address CMDselect1
 comment "Select all BUNs of a BAT with a certain tail value. Selection
  on NIL is also possible (it should be properly casted, e.g.:int(nil)).";
 @- unary value select
 @mal
 command uselect ( b:bat[:any$1,:any$2], value:any$2) 
-	:bat[:any$1,:void] = CMDuselect1
+	:bat[:any$1,:void] 
+address CMDuselect1
 comment "Value select, but returning only the head values.
  SEE ALSO:select(bat,val)";
 @mal
 command fragment ( b:bat[:any$1,:any$2],
 	hlow:any$1, hhigh:any$1,
-	tlow:any$2, thigh:any$2 ) :bat[:any$1,:any$2] = CMDfragment
+	tlow:any$2, thigh:any$2 ) :bat[:any$1,:any$2] 
+address CMDfragment
 comment "Select both on head and tail range.";
 command slice(b:bat[:any$1,:any$2], x:int, y:int) :bat[:any$1,:any$2] =CMDslice
 comment "Return the slice with the BUNs at position x till y.";
 @- random selection
 @mal
-command sample ( b:bat[:any$1,:any$2], num:int ) :bat[:any$1,:any$2] = CMDsample
+command sample ( b:bat[:any$1,:any$2], num:int ) :bat[:any$1,:any$2] 
+address CMDsample
 comment "Produce a random selection of size 'num' from the input BAT.";
 @- substring select
 @mal
-command like ( b:bat[:any$1,:str], substr:str) :bat[:any$1,:str] = CMDlike
+command like ( b:bat[:any$1,:str], substr:str) :bat[:any$1,:str] 
+address CMDlike
 comment "Selects all elements from the input BAT that have 'substr'
 as substring in the tail.";
 @+ BAT copying
 @mal
-command copy( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] = CMDcopy
+command copy( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+address CMDcopy
 comment "Returns physical copy of a BAT.";
 @- sorted copy
 @mal
-command sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] = CMDsort
+command sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+address CMDsort
 comment "Returns a copy of a BAT sorted on the head column.";
 
 #command sort_ht( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] = CMDsort_ht
@@ -154,7 +180,8 @@ comment "Returns a copy of a BAT sorted on the head column.";
 This operation has been moved to module mal, because it requires access
 the type identifier for the second argument.
 to the context.
-#pattern project( b:bat[:any$1,:any], val:any$2) :bat[:any$1,:any$2] = CMDproject
+#pattern project( b:bat[:any$1,:any], val:any$2) :bat[:any$1,:any$2] 
+address CMDproject
 #comment "Fill the tail column with a constant value.";
 @+ Sets
 @T
@@ -206,26 +233,31 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 @- bun-unique elements
 @mal
 command unique (b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] = CMDsunique;
-command sunique (b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] = CMDsunique
+command sunique (b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 
+address CMDsunique
 comment "Select unique tuples from the input BAT. Double elimination is
  done over BUNs as a whole (head and tail).
  Result is a BAT with real set() semantics.";
 @- head-unique elements
 @mal
-command kunique ( b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] = CMDkunique
+command kunique ( b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 
+address CMDkunique
 comment "Select unique tuples from the input BAT. Double elimination is done
  only looking at the head column. Result is a BAT with hkeyed() == true.";
 
-command tunique ( b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] = CMDtunique
+command tunique ( b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 
+address CMDtunique
 comment "Select unique tail tuples from the input BAT. equivalent to
 	revers().kunique() ";
 
 @- bun-intersecting elements
 @mal
 command intersect ( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2]) 
-		:bat[:any$1,:any$2] = CMDsintersect;
+		:bat[:any$1,:any$2] 
+address CMDsintersect;
 command sintersect ( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2]) 
-		:bat[:any$1,:any$2] = CMDsintersect
+		:bat[:any$1,:any$2] 
+address CMDsintersect
 comment "Returns the intersection taken over *both* columns of two BATs.
  Results in all BUNs of 'left' that are also in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
@@ -234,18 +266,21 @@ comment "Returns the intersection taken over *both* columns of two BATs.
 @- head-intersecting elements (a.k.a. semijoin)
 @mal
 command semijoin( left:bat[:any$1,:any$2], right:bat[:any$1,:any] ) 
-		:bat[:any$1,:any$2] = CMDsemijoin
+		:bat[:any$1,:any$2] 
+address CMDsemijoin
 comment "Returns the intersection taken over only the *head* columns of
 two BATs. Results in all BUNs of 'left' that are also in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
  'kintersect(left.kunique,right.kunique)' or: 'kintersect(left,right).kunique'.";
 
 command semijoin( left:bat[:void,:any$2], right:bat[:oid,:any] ) 
-		:bat[:oid,:any$2] = CMDsemijoin
+		:bat[:oid,:any$2] 
+address CMDsemijoin
 comment "patch to enable semijoin over void/oid columns";
 
 command kintersect ( left:bat[:any$1,:any$2], right:bat[:any$1,:any] ) 
-		:bat[:any$1,:any$2] = CMDsemijoin
+		:bat[:any$1,:any$2] 
+address CMDsemijoin
 comment "Returns the intersection taken over only the *head* columns of
 two BATs. Results in all BUNs of 'left' that are also in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
@@ -253,9 +288,11 @@ two BATs. Results in all BUNs of 'left' that are also in 'right'. Does *not* do
 @- bun-differing elements
 @mal
 command diff ( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2] ) 
-		:bat[:any$1,:any$2] = CMDsdiff;
+		:bat[:any$1,:any$2] 
+address CMDsdiff;
 command sdiff ( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2] ) 
-		:bat[:any$1,:any$2] = CMDsdiff
+		:bat[:any$1,:any$2] 
+address CMDsdiff
 comment "Returns the difference taken over *both* columns of two BATs. 
  Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
@@ -263,7 +300,8 @@ comment "Returns the difference taken over *both* columns of two BATs.
 @- head-differing elements
 @mal
 command kdiff ( left:bat[:any$1,:any$2], right:bat[:any$1,:any] ) 
-		:bat[:any$1,:any$2] = CMDkdiff
+		:bat[:any$1,:any$2] 
+address CMDkdiff
 comment "Returns the difference taken over only the *head* columns of two BATs.
  Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
@@ -271,16 +309,19 @@ comment "Returns the difference taken over only the *head* columns of two BATs.
 @- union on bun
 @mal
 command union ( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2]) 
-		:bat[:any$1,:any$2] = CMDsunion;
+		:bat[:any$1,:any$2] 
+address CMDsunion;
 command sunion ( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2]) 
-		:bat[:any$1,:any$2] = CMDsunion
+		:bat[:any$1,:any$2] 
+address CMDsunion
 comment "Returns the union of two BATs; looking at both columns of both BATs.
  Results in all BUNs of 'left' that are  not in 'right', plus all BUNs
  of 'right'. *no* double-elimination is done. If you want this, do:
  'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'.";
 @- union on head
 @mal
-command kunion ( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2]):bat[:any$1,:any$2] = CMDkunion
+command kunion ( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2]):bat[:any$1,:any$2] 
+address CMDkunion
 comment "Returns the union of two BATs; looking at head-columns only.
  Results in all BUNs of 'left' that are  not in 'right', plus all BUNs
  of 'right'. *no* double-elimination is done. If you want this, do:
@@ -294,44 +335,55 @@ The join collection provided by the GDK kernel.
 Note that joins over void columns are handled as if they are oids.
 @mal
 command join( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3])
-		:bat[:any$1,:any$3] = CMDjoin
+		:bat[:any$1,:any$3] 
+address CMDjoin
 comment "Returns all BUNs, consisting of a head-value from 'left' and
 a tail-value from 'right' for which there are BUNs in 'left'
 and 'right' with equal tail- resp. head-value (i.e. the join
 columns are projected out).";
 
 command join( left:bat[:any$1,:void], right:bat[:oid,:any$3])
-		:bat[:any$1,:any$3] = CMDjoin;
+		:bat[:any$1,:any$3] 
+address CMDjoin;
 command join( left:bat[:any$1,:oid], right:bat[:void,:any$3])
-		:bat[:any$1,:any$3] = CMDjoin;
+		:bat[:any$1,:any$3] 
+address CMDjoin;
 
 command join( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3],estimate:lng)
-		:bat[:any$1,:any$3] = CMDjoinestimate;
+		:bat[:any$1,:any$3] 
+address CMDjoinestimate;
 command join( left:bat[:any$1,:void], right:bat[:oid,:any$3],estimate:lng)
-		:bat[:any$1,:any$3] = CMDjoinestimate;
+		:bat[:any$1,:any$3] 
+address CMDjoinestimate;
 command join( left:bat[:any$1,:oid], right:bat[:void,:any$3],estimate:lng)
-		:bat[:any$1,:any$3] = CMDjoinestimate;
+		:bat[:any$1,:any$3] 
+address CMDjoinestimate;
 
 command fetchjoin ( left:bat[:any$1,:any$2],right:bat[:any$2,:any$3] )
-		:bat[:any$1,:any$3] = CMDfetchjoin
+		:bat[:any$1,:any$3] 
+address CMDfetchjoin
 comment "Hook directly into the fetch implementation of the join.";
 
 command mergejoin (left:bat[:any$1,:any$2], right:bat[:any$2,:any$3])
-		:bat[:any$1,:any$3] = CMDmergejoin
+		:bat[:any$1,:any$3] 
+address CMDmergejoin
 comment "Hook directly into the merge implementation of the join.";
 
 command hashjoin ( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3])
-		:bat[:any$1,:any$3] = CMDhashjoin
+		:bat[:any$1,:any$3] 
+address CMDhashjoin
 comment "Hook directly into the hash implementation of the join.";
 
 command indexjoin ( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3])
-		:bat[:any$1,:any$3] = CMDindexjoin
+		:bat[:any$1,:any$3] 
+address CMDindexjoin
 comment "Hook directly into the index implementation of the join.";
 
 @- Outer Join
 @mal
 command outerjoin( outer:bat[:any$1,:any$2], inner:bat[:any$2,:any$3]) 
-		:bat[:any$1,:any$3] = CMDouterjoin
+		:bat[:any$1,:any$3] 
+address CMDouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in
 the tail and the head-values of 'outer' whose tail-value does
 not match an head-value in 'inner'.";
@@ -341,21 +393,24 @@ command outerjoin( outer:bat[:any$1,:any$2], inner:bat[:any$2,:any$3],
 @- { <,<=,=,>=,> } Join
 @mal
 command thetajoin( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3],
-		opname:str) :bat[:any$1,:any$3] = CMDthetajoin
+		opname:str) :bat[:any$1,:any$3] 
+address CMDthetajoin
 comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.
 JOIN_EQ is just the same as join(). All other options do merge
 algorithms. either using the fact that they are ordered()
 already (left on tail, right on head), or by using/creating
 binary search trees on the join columns. ";
 command thetajoin( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3],
-		opname:str,estimate:lng) :bat[:any$1,:any$3] = CMDthetajoinEstimate
+		opname:str,estimate:lng) :bat[:any$1,:any$3] 
+address CMDthetajoinEstimate
 @- Theta Join with inner columns
 @mal
 command theta ( inner_result:bat[:any$2,:any$2],
 		outer_result:bat[:any$1,:any$3],
 		left:bat[:any$1,:any$2],
 		right:bat[:any$2,:any$3], opname:str )
-				= CMDtheta
+				
+address CMDtheta
 comment "Theta join, just as simple thetajoin(l,r), the difference
 is that it returns two values, which are added to the first params
 'inner_result' and 'outer_result', 'inner_result' gets all matching
@@ -365,7 +420,8 @@ result of thetajoin(l,r)).";
 @mal
 command bandjoin( outer:bat[:any$1,:any$2],
 		   inner:bat[:any$2,:any$3],
-		   minus:any$2 , plus:any$2 ) :bat[:any$1,:any$3] = CMDbandjoin
+		   minus:any$2 , plus:any$2 ) :bat[:any$1,:any$3] 
+address CMDbandjoin
 comment "This is a join() for which the predicate is that two BUNs match if
 the left-tail value is within the range [right-head - minus,
 right-head + plus]
@@ -376,18 +432,22 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 
 @- OID head column
 @mal
-command mark( b:bat[:any$1,:any] ) :bat[:any$1,:oid] = CMDmark_default
+command mark( b:bat[:any$1,:any] ) :bat[:any$1,:oid] 
+address CMDmark_default
 comment "Produces a new BAT with fresh unique OIDs in the tail.";
 
-command mark( b:bat[:any$1,:any],base:void ):bat[:any$1,:oid] = CMDmark_default
+command mark( b:bat[:any$1,:any],base:void ):bat[:any$1,:oid] 
+address CMDmark_default
 comment "Produces a new BAT with fresh unique OIDs in the tail.";
 
-command mark( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] = CMDmark
+command mark( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
+address CMDmark
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in the tail
  that starts at base (i.e. [base,base+1,..base+b.count()-1] ).";
 @- number tail column
 @mal
-command number( b:bat[:any$1,:any] ) :bat[:any$1,:int]  = CMDnumber
+command number( b:bat[:any$1,:any] ) :bat[:any$1,:int]  
+address CMDnumber
 comment "Produces a new BAT with identical head column, and consecutively
 increasing integers (starting with 0) in the tail column.";
 
@@ -397,24 +457,28 @@ Various operations for splitting BATs into useful fragments.
 @- Hash Split
 The commands below is temporarilly postponed
 command hashsplit ( b:bat[:any$1,:any$2] , buckects:int ) 
-		:bat[:int,bat[:any$1,:any$2]] = CMDhashsplit
+		:bat[:int,bat[:any$1,:any$2]] 
+address CMDhashsplit
 comment "Split a BAT on tail column according (hash-value MOD buckets).
 Returns a recursive BAT, containing the fragments in the tail,
 their bucket number in the head.";
 
 command uhashsplit ( b:bat[:any$1,:any$2], buckets:int ) 
-		:bat[:int,bat[:any$1,:any$2]] = CMDuhashsplit
+		:bat[:int,bat[:any$1,:any$2]] 
+address CMDuhashsplit
 comment "Same as hashsplit, but only collect the head values in the fragments";
 @- Range Split
 command rangesplit ( b:bat[:any$1,:any$2], ranges:int ) 
-		:bat[:any$2,bat[:any$1,:any$2]] = CMDrangesplit
+		:bat[:any$2,bat[:any$1,:any$2]] 
+address CMDrangesplit
 comment "Split a BAT on tail column in 'ranges' equally sized
 consecutive ranges. Returns a recursive BAT, containing the
 fragments in the tail, the higher-bound of the range in the head.
 The higher bound of the last range is 'nil'.";
 
 command urangesplit ( b:bat[:any$1,:any$2], ranges:int ) 
-		:bat[:any$2,bat[:any$1,:void]] = CMDurangesplit
+		:bat[:any$2,bat[:any$1,:void]] 
+address CMDurangesplit
 comment "Same as rangesplit, but only collect the head values in the fragments" ;
 
 @+ Common BAT Aggregates
@@ -422,23 +486,28 @@ These operations examine a BAT, and compute some simple aggregate result
 over it.
 @- BAT size
 @mal
-command count( b:bat[:any,:any] ) :int = CMDcount_bat
+command count( b:bat[:any,:any] ) :int 
+address CMDcount_bat
 comment "Return the current size (in number of elements) in a BAT.";
-command count ( b:bat[:any,:any], ignore_nils:bit ) :int = CMDcount_nil
+command count ( b:bat[:any,:any], ignore_nils:bit ) :int 
+address CMDcount_nil
 comment "Return the number of elements currently in a BAT
 ignores BUNs with nil-tail iff ignore_nils==TRUE.";
-command topN ( b:bat[:any,:any], top:lng ) :int = CMDtopN
+command topN ( b:bat[:any,:any], top:lng ) :int 
+address CMDtopN
 comment "Trim all but the top N tuples.";
 @- Histogram on Tail
 @mal
-command histogram ( b:bat[:any,:any$2]) :bat[:any$2,:int] = CMDhistogram
+command histogram ( b:bat[:any,:any$2]) :bat[:any$2,:int] 
+address CMDhistogram
 comment "Produce a BAT containing the histogram of the tail values.
  bat.histogram() @= {count}(bat.reverse)";
 
 @-
 command out of order right now. Should become an optimization pattern
 group.count -> histogram(bat.reverse)
-command {count} ( b:bat[:any$2,:any]) :bat[:any$2,int] = CMDhistogram_rev
+command {count} ( b:bat[:any$2,:any]) :bat[:any$2,int] 
+address CMDhistogram_rev
 comment "Count the number of groups.
  It has fast implementation: histogram(bat.reverse)";
 
@@ -449,10 +518,12 @@ Implementations a generic Min and Max routines get declared first. The
 The type-specific routines defined later are faster, and will
 override these any implementations.
 @mal
-command card ( b:bat[:any,:any] ) :lng = CMDcard
+command card ( b:bat[:any,:any] ) :lng 
+address CMDcard
 comment "Return the cardinality of the BAT tail values.";
 
-command size ( b:bat[:any,:any] ) :int = CMDBATsize
+command size ( b:bat[:any,:any] ) :int 
+address CMDBATsize
 comment "Return the current size (in number of elements) of a BAT.";
 
 @- Default Min and Max
@@ -464,10 +535,12 @@ override these any implementations.
 
 @- minimum tail value
 @mal
-command min(b:bat[:any$1,:any$2]):any$2 = CMDminany
+command min(b:bat[:any$1,:any$2]):any$2 
+address CMDminany
 	comment "Give the lowest tail value. Error on empty BATs.";
 
-command max(b:bat[:any$1,:any$2]):any$2 = CMDmaxany
+command max(b:bat[:any$1,:any$2]):any$2 
+address CMDmaxany
 	comment "Give the highest tail value. Error on empty BATs.";
 @+ Type-Specific Sum, Prod, Max and Min
 @T
@@ -481,9 +554,11 @@ macro):
 \end{itemize}
 @-
 @= sum_definition
-command sum (b:bat[:any,:@1] ) :@2 = CMDsum_@1_@2
+command sum (b:bat[:any,:@1] ) :@2 
+address CMDsum_@1_@2
 	comment "Gives the sum of all tail values";
-command prod(b:bat[:any,:@1] ) :@2 = CMDprod_@1_@2
+command prod(b:bat[:any,:@1] ) :@2 
+address CMDprod_@1_@2
 	comment "Gives the produc of all tail values";
 @mal
 @:sum_definition(uchr,uchr)@
@@ -501,7 +576,8 @@ command prod(b:bat[:any,:@1] ) :@2 = CMDprod_@1_@2
 @:sum_definition(dbl,dbl)@
 @-
 @= aggregate_definition
-command @1 ( b:bat[:any,:@2] ) :@2 = CMD@1_@2 comment @3;
+command @1 ( b:bat[:any,:@2] ) :@2 
+address CMD@1_@2 comment @3;
 @= aggregate
 @:aggregate_definition(@1,uchr,@2)@
 @:aggregate_definition(@1,sht,@2)@
@@ -612,7 +688,7 @@ for each algebraic operand. Since each algebraic operands may apply
 different strategies, according to different status in its operand properties,
 each algebraic operator may have different propagation rules with these
 different situations as conditions.
-
+@{
 @* Command Implementations in C
 This module contains just a wrapper implementations; since all described
 operations are part of the GDK kernel.
@@ -1457,3 +1533,4 @@ str CMDfind(ptr ret, int *bid, ptr val){
 	@:putTail(q)@
         return MAL_SUCCEED;
 }
+@}

@@ -95,7 +95,7 @@ comment "Returns a string representation
 command getSignature(mod:str,fcn:str)
 	:bat[:str,:str] 
 address INSPECTsymbolSignature
-comment "Returns the signature(s) of a function";
+comment "Returns the function signature(s)";
 
 command getType(mod:str,fcn:str)
 	:bat[:str,:str] 
@@ -124,7 +124,7 @@ pattern showFunction():void
 address INSPECTshowFunction3
 comment "Dump the current routine on standard out.";
 #pattern showFunction(M:any,F:any):void 
-address INSPECTshowFunction3
+#address INSPECTshowFunction3
 #comment "Dump the routine M.F on standard out.";
 
 @+ The Monet Debugger interface

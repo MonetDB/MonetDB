@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f system
-@t System Information BATs and basic IO
 @a M.L. Kersten, P. Boncz, N.Nes
 @v 2.0
-@* Introduction
+@* System Information 
 This document introduces a series of bats that provide access
 to information stored within the Monet Version 5 internal data structures.
 In all cases, the pseudo BAT operation returns a transient BAT that
@@ -39,7 +38,6 @@ In addition, this module contains the primitives for printing on the
 client stdout channel. Additional file-directed IO is maintained in
 the io module.
 
-@* Module Definition 
 The system primitives have been taken over from version 4.
 @mal
 module system;
@@ -48,42 +46,54 @@ module system;
 The properties of the Client record can be obtained for inspection.
 Only the listing property can be dynamically set.
 @mal
-command cwd(s:str):str= SYSsetCwd
-        comment "Return the current working directory. Set it to a new one.";
-command quit():void= SYSquit
-	comment "Terminate the server"'
-command exit():void= SYSquit
-	comment "Terminate the server"'
+command cwd(s:str):str
+address SYSsetCwd
+comment "Return the current working directory. 
+	Set it to a new one.";
+command quit():void
+address SYSquit
+comment "Terminate the server"'
+command exit():void
+address SYSquit
+comment "Terminate the server"'
 
 @- Kernel Performance Statistics
 The BATs created below are rather expensive views over the
 GDK kernel. They have been retained for backward compatibility.
 
 @mal
-command cpuStatistics() :bat[:str,:int] = SYScpuStatistics
-	comment "Global cpu usage information";
-command memStatistics():bat[:str,:int] = SYSmemStatistics
-	comment "Global memory usage information";
-command ioStatistics():bat[:str,:int] = SYSioStatistics
-	comment "Global IO activity information";
-command bbpStatistics():bat[:str,:int] = SYSbbpStatistics
-	comment "Global BBP usage information";
-command memMap() :void = SYSmemMap
-        comment "print a map of all memory that is in use";
+command cpuStatistics() :bat[:str,:int] 
+address SYScpuStatistics
+comment "Global cpu usage information";
+command memStatistics():bat[:str,:int] 
+address SYSmemStatistics
+comment "Global memory usage information";
+command ioStatistics():bat[:str,:int] 
+address SYSioStatistics
+comment "Global IO activity information";
+command bbpStatistics():bat[:str,:int] 
+address SYSbbpStatistics
+comment "Global BBP usage information";
+command memMap() :void 
+address SYSmemMap
+comment "print a map of all memory that is in use";
 @-
 @T
 For each 64KB block in the first 3GB of the virtual memory {\tt mem\_printmap()} prints a character:
 \begin{verbatim}
 0-9 - thread stack space of thread <num>
-B - in use for a large BAT heap (i.e. anonymous virtual memory).
+B - in use for a large BAT heap 
+   (i.e. anonymous virtual memory).
 b - free (last usage was B)
 S - in use for a malloc block
 s - free (last usage was S)
-P - in use for the BBP array (i.e. anonymous virtual memory)
+P - in use for the BBP array 
+   (i.e. anonymous virtual memory)
 p - free (last usage was P)
 M - in use as memory mapped region
 m - free (last usage was M)
-C - in use as MIL context buffer (i.e. anonymous virtual memory)
+C - in use as MIL context buffer 
+   (i.e. anonymous virtual memory)
 c - free (last usage was M)
 \end{verbatim}
 On Linux, the malloc library appears to be using anonymous virtual memory, which goes unetected.
@@ -91,13 +101,18 @@ If you want to see all your memory in the map, lower the gdk\_mmap threshold in 
 low value (say 64KB).
 @-
 @mal
-command vmUsage(minsize:lng) :bat[:str,:lng] = SYSvm_usage
-        comment "Get a split-up of how much virtual memory blocks are in use.";
-command memUsage(minsize:lng) :bat[:str,:lng] = SYSmem_usage
-        comment "Get a split-up of how much memory blocks are in use.";
+command vmUsage(minsize:lng) :bat[:str,:lng] 
+address SYSvm_usage
+comment "Get a split-up of how much virtual 
+	 memory blocks are in use.";
+command memUsage(minsize:lng) :bat[:str,:lng] 
+address SYSmem_usage
+comment "Get a split-up of how much memory 
+	 blocks are in use.";
 @-
 @T
 Some explanation of what mem\_usage() and vm\_usage() display:
+{\small
 \begin{verbatim}
 > mem_usage.print;
 #------------------------------#
@@ -133,39 +148,64 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 [ "\_tot/vm",         71244560  ] total address space consumption
 >
 \end{verbatim}
+}
 @- MAL runtime status 
 @mal
-command gdkEnv( ):bat[:str,:str] = SYSgdkEnv
-	comment "Pseudo bat to map thread to name";
-command gdkThread( ):bat[:int,:str] = SYSgdkThread
-	comment "Pseudo bat to map thread to name";
+command gdkEnv( ):bat[:str,:str] 
+address SYSgdkEnv
+comment "Pseudo bat to map thread to name";
+command gdkThread( ):bat[:int,:str] 
+address SYSgdkThread
+comment "Pseudo bat to map thread to name";
 
-command mem_cursize() :lng = SYSgetmem_cursize
- 	comment "the amount of physical swapspace in KB that is currently in use";
-command mem_maxsize() :lng = SYSgetmem_maxsize
- 	comment "the maximum usable amount of physical swapspace in KB (target only)";
-command mem_maxsize(v:lng) :void = set_mem_maxsize
- 	comment "set the maximum usable amount of physical swapspace in KB";
-command vm_cursize() :lng = SYSgetvm_cursize
- 	comment "the amount of logical VM space in KB that is currently in use";
-command vm_maxsize() :lng = SYSgetvm_maxsize
- 	comment "the maximum usable amount of logical VM space in KB (target only)";
-command vm_maxsize(v:lng) :void = SYSsetvm_maxsize
- 	comment "set the maximum usable amount of physical swapspace in KB";
+command mem_cursize() :lng 
+address SYSgetmem_cursize
+comment "the amount of physical swapspace 
+	 in KB that is currently in use";
+command mem_maxsize() :lng 
+address SYSgetmem_maxsize
+comment "the maximum usable amount of physical 
+	 swapspace in KB (target only)";
+command mem_maxsize(v:lng) :void 
+address set_mem_maxsize
+comment "set the maximum usable amount of 
+	 physical swapspace in KB";
+command vm_cursize() :lng 
+address SYSgetvm_cursize
+comment "the amount of logical VM space in 
+	 KB that is currently in use";
+command vm_maxsize() :lng 
+address SYSgetvm_maxsize
+comment "the maximum usable amount of logical 
+	 VM space in KB (target only)";
+command vm_maxsize(v:lng) :void 
+address SYSsetvm_maxsize
+ 	comment "set the maximum usable amount 
+	of physical swapspace in KB";
 @- Printing 
 The routines that inspect the runtime setting are moved out of this area.
 
 @mal
-command printf(format:str,val:bit):int = SYSprint_formatted_bit;
-command printf(format:str,val:chr):int = SYSprint_formatted_chr;
-command printf(format:str,val:int):int = SYSprint_formatted_int;
-command printf(format:str,val:sht):int = SYSprint_formatted_sht;
-command printf(format:str,val:oid):int = SYSprint_oid;
-command printf(format:str,val:lng):int = SYSprint_formatted_lng;
-command printf(format:str,val:flt):int = SYSprint_formatted_flt;
-command printf(format:str,val:dbl):int = SYSprint_formatted_dbl;
-command printf(val:str):int = SYSprint_str;
-command printf(format:str,val:str):int = SYSprint_formatted_str;
+command printf(format:str,val:bit):int 
+address SYSprint_formatted_bit;
+command printf(format:str,val:chr):int 
+address SYSprint_formatted_chr;
+command printf(format:str,val:int):int 
+address SYSprint_formatted_int;
+command printf(format:str,val:sht):int 
+address SYSprint_formatted_sht;
+command printf(format:str,val:oid):int 
+address SYSprint_oid;
+command printf(format:str,val:lng):int 
+address SYSprint_formatted_lng;
+command printf(format:str,val:flt):int 
+address SYSprint_formatted_flt;
+command printf(format:str,val:dbl):int 
+address SYSprint_formatted_dbl;
+command printf(val:str):int 
+address SYSprint_str;
+command printf(format:str,val:str):int 
+address SYSprint_formatted_str;
 @{
 @* Implementation Code
 @h

@@ -123,7 +123,7 @@ comment "Decode a BAT of tail values
 
 pattern getTable(e:any) :bat[:any,:any] 
 address ENUMtable
-comment "Return the enumeration BAT of an enum type";
+comment "Return the enumeration BAT";
 
 command isEnum(tpe:bat[:any,:any]) :bit 
 address isEnum

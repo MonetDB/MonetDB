@@ -23,7 +23,7 @@
 
 @f pcl
 @a N. Nes
-@t Performance Counters Library
+@* Performance Counters Library
 @T
 
              PCL - The Performance Counter Library
@@ -86,6 +86,7 @@ command init():void = CMDpclinit;
 
 pcl.init();
   
+@{
 @+ Implementation
 @c
 #include "gdk.h"
@@ -475,3 +476,4 @@ PROC test_pcl() :void := {
   counts.print;
 }
 
+@}

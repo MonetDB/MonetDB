@@ -22,11 +22,10 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f mtime
-@t New Temporal Module
 @a Peter Boncz, Martin van Dinther
 @v 1.0
 
-@* Introduction
+@* Temporal Module
 @T
 The goal of this module is to provide adequate functionality for storing
 and manipulated time-related data. The minimum requirement is that data
@@ -159,26 +158,30 @@ maintain and access the tzone database stored in two bats [str,tzone],[str,year]
 Lookup of the correct tzone would be dynamic in this structure. The tzone\_setlocal 
 would just set the string name of the tzone.
 
-@+ Concepts
-
-@+ Monet Module Definition
-@- Comparison operators
+@- Time/date comparison 
 
 @= compareGrp
-command =(v:@1,w:@1):bit = CMD@1_EQ
-        comment "Equality of two @1s";
-command !=(v:@1,w:@1):bit = CMD@1_NEQ
-        comment "Equality of two @1s";
-command <(v:@1,w:@1):bit = CMD@1_LT
-        comment "Equality of two @1s";
-command <=(v:@1,w:@1):bit = CMD@1_LE
-        comment "Equality of two @1s";
-command >(v:@1,w:@1):bit = CMD@1_GT
-        comment "Equality of two @1s";
-command >=(v:@1,w:@1):bit = CMD@1_GE
-        comment "Equality of two @1s";
+command =(v:@1,w:@1):bit 
+address CMD@1_EQ
+comment "Equality of two @1s";
+command !=(v:@1,w:@1):bit 
+address CMD@1_NEQ
+comment "Equality of two @1s";
+command <(v:@1,w:@1):bit 
+address CMD@1_LT
+comment "Equality of two @1s";
+command <=(v:@1,w:@1):bit 
+address CMD@1_LE
+comment "Equality of two @1s";
+command >(v:@1,w:@1):bit 
+address CMD@1_GT
+comment "Equality of two @1s";
+command >=(v:@1,w:@1):bit 
+address CMD@1_GE
+comment "Equality of two @1s";
 
-command isnil(v:@1):bit = CMD@1_isnil
+command isnil(v:@1):bit 
+address CMD@1_isnil
         comment "Nil test for @1 value";
 @mal
 
@@ -189,6 +192,7 @@ chosen as the {\em print format}.
 
 To facilitate date descriptions, many formats are supported when parsing
 date atoms from a string, as described by the below grammar. 
+{\small
 \begin{verbatim}
 print format: INT_YEAR '-' INT_MONTH '-' INT_DAY
 parse format: INT_YEAR SEP1 INT_MONTH SEP1 INT_DAY
@@ -198,13 +202,18 @@ parse format: INT_YEAR SEP1 INT_MONTH SEP1 INT_DAY
 with:   INT_YEAR = integer between -5867411 and 5867411
          INT_DAY = integer between 1 and 31
        INT_MONTH = integer between 1 and 12
-       STR_MONTH = 'JANUARI' or 'FEBRUARI' or 'MARCH' or 'APRIL' or 'MAY'  
-                   or 'JUNE' or 'JULI' or 'AUGUST' or 'SEPTEMBER' or 'OCTOBER' 
-                   or 'NOVEMBER' or 'DECEMBER' (lowercase characters, and/or 
-                   only the first three characters are also allowed)
+       STR_MONTH = 'JANUARI' or 'FEBRUARI' or 
+		   'MARCH' or 'APRIL' or 'MAY'  or 
+		   'JUNE' or 'JULI' or 'AUGUST' or 
+		   'SEPTEMBER' or 'OCTOBER' 
+                   or 'NOVEMBER' or 'DECEMBER' 
+		   (lowercase characters, and/or 
+                   only the first three characters 
+		   are also allowed)
             SEP1 = '-' or '/' or '\' or (' ')+
             SEP2 = SEP1 or ''
 \end{verbatim}
+}
 Printing a date uses the 1999-01-31 format, as this is both language neutral 
 and the lexicografical string ordering of this representation respects the 
 actual date ordering.
@@ -214,21 +223,27 @@ that extract year, month and day from a date as integers and formats those
 in a string.
 @mal
 atom module date :int;
-	command fromstr() :date = date_fromstr;
-	command tostr() :str = date_tostr;
-	@:compareGrp(date)@
+command fromstr() :date 
+address date_fromstr;
+command tostr() :str 
+address date_tostr;
+@:compareGrp(date)@
 @-
 A few interval operations.
 @mal
-command date_sub_sec_interval(t:date,sec:int):date = date_sub_sec_interval_wrap
+command date_sub_sec_interval(t:date,sec:int):date 
+address date_sub_sec_interval_wrap
 comment "Subtract seconds from a date";
-command date_add_sec_interval(t:date,sec:int):date = date_add_sec_interval_wrap
+command date_add_sec_interval(t:date,sec:int):date 
+address date_add_sec_interval_wrap
 comment "Add seconds to a date";
-command date_add_month_interval(t:date,sec:int):date = date_add_month_interval_wrap
+command date_add_month_interval(t:date,sec:int):date 
+address date_add_month_interval_wrap
 comment "Add months to a date";
 @- daytime atom
 @T
 A valid time of day to the detail of milliseconds, like 23:59:59:000
+{\small
 \begin{verbatim}
 print format: HOUR ':' MIN ':' SEC '.' MSEC
 parse format: HOUR ':' MIN ':' SEC SEP MSEC
@@ -241,11 +256,14 @@ with: HOUR = integer between 0 and 23
       MSEC = integer between 0 and 999 (default = 0)
        SEP = '.' or ':'
 \end{verbatim}
+}
 @mal
 atom module daytime :int;
-	command fromstr():daytime = daytime_fromstr;
-	command tostr():str = daytime_tostr;
-	@:compareGrp(daytime)@
+command fromstr():daytime 
+address daytime_fromstr;
+command tostr():str 
+address daytime_tostr;
+@:compareGrp(daytime)@
 
 @- timestamp
 @T
@@ -253,14 +271,18 @@ An absolute point of time, as formed by the combination of a date a daytime in G
 e.g. 1999-01-31@23:59:59:000. GMT is the universal time at the greenwhich meridian, 
 without any daylight savings time (DST). As such GMT times are 'absolute' (continuous,
 without hour jumps as in DST), so accurate time difference computations can be performed.
+{\small
 \begin{verbatim}
 print format: DATE ' ' DAYTIME 
 parse format: DATE ' ' DAYTIME  ['GMT' ZONE ]
 
-with:    DATE = a valid parse format of the date atom (as decribed earlier)
-      DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
+with:    DATE = a valid parse format of the 
+	 	date atom (as decribed earlier)
+      DAYTIME = a valid parse format of the 
+		daytime atom (as decribed earlier)
          ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
 \end{verbatim}
+}
 Though internally timestamps are stored in GMT, the printing and parsing of 
 timestamps is relative to the local timezone. That is, timestamps are 
 printed without GMT part, meaning that the time is relative to the local 
@@ -270,15 +292,19 @@ timezone. The default local timzone is just GMT+00, but iit can be set
 arbitrarily.
 @mal
 atom module timestamp :lng;	# not stored as a lng !
-	command fromstr():timestamp = timestamp_fromstr;
-	command tostr():str = timestamp_tostr;
-	#.NULL	 = timestamp_null;
-	command  epoch():timestamp= CMDepoch
-	comment "unix-time (epoch) support:seconds since 1-jan-1970 GMT";
-	command epoch(t:timestamp):lng = CMDepoch2
-	comment "unix-time (epoch) support:seconds since epoch";
+command fromstr():timestamp 
+address timestamp_fromstr;
+command tostr():str 
+address timestamp_tostr;
+#.NULL	 address timestamp_null;
+command  epoch():timestamp
+address CMDepoch
+comment "unix-time (epoch) support:seconds since 1-jan-1970 GMT";
+command epoch(t:timestamp):lng 
+address CMDepoch2
+comment "unix-time (epoch) support:seconds since epoch";
 
-	@:compareGrp(timestamp)@
+@:compareGrp(timestamp)@
 
 @T
 When creating a timestamp from a date and daytime, a timezone should be specified
@@ -329,22 +355,30 @@ nil-timezone.
 
 @mal
 atom module tzone :lng;
-	command fromstr():tzone = tzone_fromstr;
-	command tostr():str   = tzone_tostr;
-	#.NULL	 = tzone_null;
-	command timestamp(secs:lng):timestamp= CMDtimestamp
-	comment "Enhancement of timestamp atom definition";
+command fromstr():tzone 
+address tzone_fromstr;
+command tostr():str   
+address tzone_tostr;
+#.NULL	 address tzone_null;
+command timestamp(secs:lng):timestamp
+address CMDtimestamp
+comment "Enhancement of timestamp atom definition";
 
 
 atom module rule :int;
-	command fromstr():rule = rule_fromstr;
-	command tostr():str = rule_tostr;
-	command define(m:int,d:int,w:int,h:int,min:int):rule = CMDruleDef0
-	comment "Introduce a synomym timezone rule.";
-	command define(m:int,d:str,w:int,h:int,min:int):rule = CMDruleDef1
-	comment "Introduce a synomym timezone rule.";
-	command define(m:int,d:str,w:int,min:int):rule = CMDruleDef2
-	comment "Introduce a synomym timezone rule.";
+command fromstr():rule 
+address rule_fromstr;
+command tostr():str 
+address rule_tostr;
+command define(m:int,d:int,w:int,h:int,min:int):rule 
+address CMDruleDef0
+comment "Introduce a synomym timezone rule.";
+command define(m:int,d:str,w:int,h:int,min:int):rule 
+address CMDruleDef1
+comment "Introduce a synomym timezone rule.";
+command define(m:int,d:str,w:int,min:int):rule 
+address CMDruleDef2
+comment "Introduce a synomym timezone rule.";
 
 
 module mtime;
@@ -355,102 +389,138 @@ module mtime;
 #command lng(d:tzone):lng = CMDtzone_2lng;
 #command int(d:rule):int = CMDrule_2int;
 
-command tzone_local(t:tzone):void = tzone_set_local 
+command tzone_local(t:tzone):void 
+address tzone_set_local 
 comment "set the local tzone; which is used for printing timestamps";
-command tzone_local() :tzone = tzone_get_local 
+command tzone_local() :tzone 
+address tzone_get_local 
 comment "get the local tzone; which is used for printing timestamps";
 
-@- construction
+@- Time/date construction
 Construct temporal values from simple(r) parameters.
 Out-of range result values are represented by the nil.
 @mal
-command date(s:str):date = date_create_fromstr
+command date(s:str):date 
+address date_create_fromstr
 comment "convert the string to a value of type date";
 
-command date(year:int, month:int, day:int) :date = date_create 
+command date(year:int, month:int, day:int) :date 
+address date_create 
 comment "creates a date from (year,month,day) parameters.";
 
-command daytime(s:str):daytime= daytime_create_fromstr
+command daytime(s:str):daytime
+address daytime_create_fromstr
 cmment "convert the string to a daytime value.";
 
-command daytime(hours:int, minutes:int, seconds:int, milliseconds:int) :daytime = daytime_create 
-comment "creates a time from (hours,minutes,seconds,milliseconds) parameters.";
-command timestamp(d:date,dt:daytime,t:tzone) :timestamp = timestamp_create 
-comment "creates a timestamp from (date,daytime,tzone) parameters.";
-command timestamp(d:date,dt:daytime) :timestamp = timestamp_create_default 
-comment "creates a timestamp from (d:date,dt:daytime) parameters (in the local timezone).";
+command daytime(h:int, m:int, s:int, milli:int) :daytime 
+address daytime_create 
+comment "creates a time from (hours,minutes,
+	seconds,milliseconds) parameters.";
+command timestamp(d:date,dt:daytime,t:tzone) :timestamp 
+address timestamp_create 
+comment "creates a timestamp from (date,
+	 daytime,tzone) parameters.";
+command timestamp(d:date,dt:daytime) :timestamp 
+address timestamp_create_default 
+comment "creates a timestamp from (d:date,dt:daytime) 
+	parameters (in the local timezone).";
 
-command rule(s:str):rule= rule_create_fromstr
+command rule(s:str):rule
+address rule_create_fromstr
 comment "create a rule from a  string.";
-command rule (month:int,day:int,weekday:int,minutes:int) :rule = rule_create 
+command rule (mo:int,d:int,wkday:int,mi:int) :rule 
+address rule_create 
 comment "create a DST start/end date rule.";
 
-command tzone(s:str):tzone = tzone_create_fromstr
+command tzone(s:str):tzone 
+address tzone_create_fromstr
 comment "Convert the string to a tzone.";
-command tzone(s:int):tzone = tzone_create
+command tzone(s:int):tzone 
+address tzone_create
 comment "Convert the int to a tzone.";
-command tzone(s:lng):tzone = tzone_create
+command tzone(s:lng):tzone 
+address tzone_create
 comment "Convert the int to a tzone.";
-command tzone(minutes:int, start:rule, endrule:rule) :tzone = tzone_create_dst 
+command tzone(mi:int,s:rule,erule:rule):tzone 
+address tzone_create_dst 
 comment "create a tzone as an hour difference from GMT and a DST.";
 
-@- decomposition
+@- Time/date decomposition
 @T
 There are routines that decompose a date and routines that decompose a daytime.
 For decomposing a timestamp, there are routines that decompose it in a date 
 and daytime.
 @mal
 # date
-command year(d:date) :int = date_extract_year 
+command year(d:date) :int 
+address date_extract_year 
 comment "extracts year from date (nonzero value between -5867411 and +5867411).";
-command month(d:date) :int = date_extract_month 
+command month(d:date) :int 
+address date_extract_month 
 comment "extracts month from date (value between 1 and 12)";
-command day(d:date) :int = date_extract_day 
+command day(d:date) :int 
+address date_extract_day 
 comment "extracts day from date (value between 1 and 31)";
 
 # daytime
-command hours(h:daytime) :int = daytime_extract_hours 
+command hours(h:daytime) :int 
+address daytime_extract_hours 
 comment "extracts hour from daytime (value between 0 and 23)";
-command minutes(d:daytime) :int = daytime_extract_minutes 
+command minutes(d:daytime) :int 
+address daytime_extract_minutes 
 comment "extracts minutes from daytime (value between 0 and 59)";
-command seconds(d:daytime) :int = daytime_extract_seconds 
+command seconds(d:daytime) :int 
+address daytime_extract_seconds 
 comment "extracts seconds from daytime (value between 0 and 59)";
-command milliseconds(d:daytime) :int = daytime_extract_milliseconds 
+command milliseconds(d:daytime) :int 
+address daytime_extract_milliseconds 
 comment "extracts milliseconds from daytime (value between 0 and 999)";
 
 # timestamp
-command daytime(t:timestamp) :daytime = timestamp_extract_daytime_default 
+command daytime(t:timestamp) :daytime 
+address timestamp_extract_daytime_default 
 comment "extracts daytime from timestamp (in the local timezone).";
-command daytime(t:timestamp, v:tzone) :daytime = timestamp_extract_daytime 
+command daytime(t:timestamp, v:tzone) :daytime 
+address timestamp_extract_daytime 
 comment "extracts daytime from timestamp in a certain tzone.";
 
-command date(t:timestamp) :date = timestamp_extract_date_default 
+command date(t:timestamp) :date 
+address timestamp_extract_date_default 
 comment "extracts date from timestamp (in the local timezone).";
-command date(t:timestamp,v:tzone) :date = timestamp_extract_date 
+command date(t:timestamp,v:tzone) :date 
+address timestamp_extract_date 
 comment "extracts date from timestamp in a certain tzone.";
 
 # tzone
-command timezone(name:str):tzone = CMDtimezone
+command timezone(name:str):tzone 
+address CMDtimezone
 comment "Test and set the timezone.";
 
-command start_dst(t:tzone) :rule = tzone_extract_start 
+command start_dst(t:tzone) :rule 
+address tzone_extract_start 
 comment "extract rule that determines start of DST from tzone.";
-command end_dst(t:tzone) :rule = tzone_extract_end 
+command end_dst(t:tzone) :rule 
+address tzone_extract_end 
 comment "extract rule that determines end of DST from tzone.";
-command minutes(t:tzone) :int = tzone_extract_minutes 
+command minutes(t:tzone) :int 
+address tzone_extract_minutes 
 comment "extract number of minutes that tzone is offset wrt GMT.";
 
 # rule
-command month(t:rule) :int = rule_extract_month 
+command month(t:rule) :int 
+address rule_extract_month 
 comment "extract month from rule.";
-command day(t:rule) :int = rule_extract_day 
+command day(t:rule) :int 
+address rule_extract_day 
 comment "extract day from rule.";
-command weekday(t:rule) :int = rule_extract_weekday 
+command weekday(t:rule) :int 
+address rule_extract_weekday 
 comment "extract weekday from rule.";
-command minutes(t:rule) :int = rule_extract_minutes 
+command minutes(t:rule) :int 
+address rule_extract_minutes 
 comment "extract minutes from rule.";
 
-@- arithmetic
+@- Time/date arithmetic
 @T
 We choose to represent intervals of time as numbers of days (as int, a 32-bits integer)
 and numbers of milliseconds (as lng, a 64-bits integer). Using standard integer types
@@ -461,72 +531,98 @@ Arithmetic overflow returns the nil atom (no error messages). For all commands i
 this modules it holds that if one of the parameters is nil, the result is also nil 
 (nil has the don't know semantics in MIL). 
 @mal
-command addyears(value:date, years:int) :date = date_addyears 
+command addyears(value:date, years:int) :date 
+address date_addyears 
 comment "returns the date after a number of years (possibly negative).";
-command addmonths(value:date, months:int) :date = date_addmonths 
+command addmonths(value:date, months:int) :date 
+address date_addmonths 
 comment "returns the date after a number of months (possibly negative).";
-command adddays(value:date, days:int) :date = date_adddays 
+command adddays(value:date, days:int) :date 
+address date_adddays 
 comment "returns the date after a number of days (possibly negative).";
-command diff(val1:date, val2:date) :int = date_diff 
+command diff(val1:date, val2:date) :int 
+address date_diff 
 comment "returns the number of days between 'val1' and 'val2'.";
 
-command dayofyear(d:date) :int = date_extract_dayofyear 
+command dayofyear(d:date) :int 
+address date_extract_dayofyear 
 comment "Returns N where d is the Nth day of the year (january 1 returns 1)";
-command weekofyear(d:date) :int = date_extract_weekofyear 
+command weekofyear(d:date) :int 
+address date_extract_weekofyear 
 comment "Returns the week number in the year.";
-command dayofweek(d:date) :int = date_extract_dayofweek 
+command dayofweek(d:date) :int 
+address date_extract_dayofweek 
 comment "Returns the current day of the week where 1=sunday, .., 7=saturday";
 
-command add(v:timestamp, msecs:lng) :timestamp = timestamp_add 
+command add(v:timestamp, msecs:lng) :timestamp 
+address timestamp_add 
 comment "returns the timestamp that comes 'msecs' (possibly negative) after 'value'.";
-command diff(val1:timestamp, val2:timestamp) :lng = timestamp_diff 
+command diff(val1:timestamp, val2:timestamp) :lng 
+address timestamp_diff 
 comment "returns the number of milliseconds between 'val1' and 'val2'.";
 
-command dst(t:timestamp,v:tzone) :bit = timestamp_inside_dst 
+command dst(t:timestamp,v:tzone) :bit 
+address timestamp_inside_dst 
 comment "return whether DST holds in the tzone at a certain point of time.";
 
-command compute(r:rule, year:int) :date = compute_rule_foryear 
+command compute(r:rule, year:int) :date 
+address compute_rule_foryear 
 comment "compute the date from a rule in a certain year.";
 
 @- day and month names
 One day we should introduce the concept of locale, and hook here.
 @mal
-command monthnum(month:str) :int = month_from_str 
+command monthnum(month:str) :int 
+address month_from_str 
 comment "Returns month number [1-12] from a string; or nil if does not match any.";
-command monthname(month:int) :str = month_to_str 
+command monthname(month:int) :str 
+address month_to_str 
 comment "Returns month name from a number between [1-12], str(nil) otherwise.";
-command daynum(day:str) :int = day_from_str 
+command daynum(day:str) :int 
+address day_from_str 
 comment "Returns number of day [1-7] from a string; or nil if does not match any.";
-command dayname(day:int) :str = day_to_str 
+command dayname(day:int) :str 
+address day_to_str 
 comment "Returns day name from a number between [1-7], str(nil) otherwise.";
 
-command time_synonyms(allow:bit) = time_synonyms 
+command time_synonyms(allow:bit) 
+address time_synonyms 
 comment "Allow synonyms for the parse format of date/timestamp in addition ot their print format.";
 
-command olddate (format:str) :date = olddate 
+command olddate (format:str) :date 
+address olddate 
 comment "create a date from the old instant format.";
-command oldduration(format:str) :int = oldduration 
+command oldduration(format:str) :int 
+address oldduration 
 comment "parse the old duration format and return an (estimated) number of days.";
 
 @- Utilities
 The Monet V4 procs are converted into functions.
 @mal
 
-command msecs(d:int,h:int,m:int,s:int,ms:int):lng= CMDmsecs
+command msecs(d:int,h:int,m:int,s:int,ms:int):lng
+address CMDmsecs
 	comment "convert date components to milliseconds";
 
-command daytime(h:int):daytime = CMDdaytime1
+command daytime(h:int):daytime 
+address CMDdaytime1
 comment "default time creation with zeroed components";
-command daytime(h:int,m:int):daytime = CMDdaytime2
+command daytime(h:int,m:int):daytime 
+address CMDdaytime2
 comment "default time creation with zeroed components";
-command daytime(h:int,m:int,s:int):daytime = CMDdaytime3
+command daytime(h:int,m:int,s:int):daytime 
+address CMDdaytime3
 comment "default time creation with zeroed components";
 
 #SQL utility functions
-command current_timestamp():timestamp= CMDcurrent_timestamp();
-command current_date():date= CMDcurrent_date();
-command current_time():daytime= CMDcurrent_time();
+command current_timestamp():timestamp
+address CMDcurrent_timestamp();
+command current_date():date
+address CMDcurrent_date();
+command current_time():daytime
+address CMDcurrent_time();
 
+@{
 @+ Prelude section
 Upon intialization of the time module, we have to
 initialize some variables, e.g. nils and the box with predefined
@@ -534,7 +630,8 @@ constants.
 These actions are captured in a single function activated directly after
 parsing of the signatures. 
 @mal
-command prelude()= CMDtime_prelude;
+command prelude()
+address CMDtime_prelude;
 
 mtime.prelude();
 
@@ -764,7 +861,6 @@ print(date_seq.col_name("date"),
 	[dst](timestamp_bra,TIMEZONE("Andes/Brazil")).col_name("dst"));
 
 quit;
-@{
 @* Implementation
 
 @+ Atoms

@@ -23,9 +23,7 @@
 
 @v 1.0
 @a Wilko Quak, Peter Boncz, M. Kersten
-@t The blob data type
-
-@* Introduction
+@+ The blob data type
 The datatype 'blob' introduced here illustrates the power
 in the hands of a programmer to extend the functionality of the
 Monet GDK library. It consists of an interface specification for
@@ -42,36 +40,42 @@ or interpretation.
 The blob memory layout consists of first 4 bytes containing 
 the bytes-size of the blob (excluding the integer), and then just binary data.
 
-@* Module Definition
+@+ Module Definition
 @mal
 atom module blob;
 
-      command tostr()   = BLOBtostr;
-      command fromstr() = BLOBfromstr;
-      command nequal()  = BLOBnequal;
-      command hash()    = BLOBhash;
-      command null()    = BLOBnull;
-      command convert() = BLOBconvert;
-      command put()     = BLOBput;
-      command del()     = BLOBdel;
-      command length()  = BLOBlength;
-      command heap()    = BLOBheap;
+command tostr()   address BLOBtostr;
+command fromstr() address BLOBfromstr;
+command nequal()  address BLOBnequal;
+command hash()    address BLOBhash;
+command null()    address BLOBnull;
+command convert() address BLOBconvert;
+command put()     address BLOBput;
+command del()     address BLOBdel;
+command length()  address BLOBlength;
+command heap()    address BLOBheap;
 
 @+ string functions
 Manipulation functions to extract strings from blobs and vice versa.
 Not to be confused with blob parsing and printing.
 @mal
-   command tostring(v:blob) :str = fromblob
-	comment "get the bytes from blob as a string, till the first 0 byte
-         or the end of the blob";
-   command tostring(v:blob, index:int ) :str = BLOBfromidx
-	comment "get the bytes from blob as a string, starting at byte 'index'
-         till the first 0 byte or the end of the blob.";
-   command toblob(v:str) :blob = toblob
-	comment "store a string as a blob.";
-   command nitems(b:blob):int = BLOBnitems
-	comment " get the number of bytes in this blob.";
+command tostring(v:blob) :str 
+address fromblob
+comment "get the bytes from blob as a string, till 
+	the first 0 byte or the end of the blob";
+command tostring(v:blob, index:int ) :str 
+address BLOBfromidx
+comment "get the bytes from blob as a string,
+	 starting at byte 'index' till the first 
+	0 byte or the end of the blob.";
+command toblob(v:str) :blob 
+address toblob
+comment "store a string as a blob.";
+command nitems(b:blob):int 
+address BLOBnitems
+comment " get the number of bytes in this blob.";
 
+@{
 @* Example MAL Script
 The following test should be moved to the test section.
 @mil
@@ -83,7 +87,6 @@ b2 := blob.toblob("Hello World");
 err:= print(b2);
 v1 := blob.tostring(b2);
 err:= print(v1);
-@{
 @* Implementation Code
 @h
 #ifndef __BLOB_H__
