@@ -48,6 +48,7 @@
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
 #define MONETDB_SERVER_NAME  "MonetDB"
 
+#include <config.h>
 #include <sql_config.h>
 
 /* standard ODBC driver include files */
