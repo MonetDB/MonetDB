@@ -65,10 +65,10 @@ public class MapiClient
 	}
 
 	try {
-      		Mapi M = new Mapi( hostname, portnr, user, password, lang );
-		Reader r = new BufferedReader(new InputStreamReader(System.in));
+		Mapi M = new Mapi( hostname, portnr, user, password, lang );
+		Reader r = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 		LineNumberReader input = new LineNumberReader(r);
-		Writer out = new OutputStreamWriter(System.out);
+		Writer out = new OutputStreamWriter(System.out, "UTF-8");
 		String s;
 		System.out.print(M.getPrompt());
 		while((s=input.readLine()) != null){
