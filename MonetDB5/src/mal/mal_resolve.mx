@@ -621,7 +621,8 @@ In those cases, the detailed analysis is performed upon an actual call.
         if( functionId(p) && (i=findVariable(mb,functionName(p))) != -1 &&
                     getVarType(mb,i) == TYPE_str){
             for(i=0;i<p->retc;i++) setFixed(mb,p->argv[i]);
-            p->typechk= TYPE_UNKNOWN; return; 
+            p->typechk= TYPE_UNKNOWN; 
+			return; 
         }
         if( ! isaSignature(p) &&
              ! getInstrPtr(mb,0)->polymorphic)  {
@@ -630,7 +631,8 @@ In those cases, the detailed analysis is performed upon an actual call.
                 (moduleId(p)?moduleName(p):""), (moduleName(p)?".":""),
                 functionName(p), scope->name,
                 functionName(getInstrPtr(mb,0)),getPC(mb,p));
-        }
+				p->typechk= TYPE_UNKNOWN;
+        } else p->typechk= TYPE_FIXED;
         return;
     }
 @+ Assignment 
@@ -642,8 +644,8 @@ variables.
     if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
         GDKerror("Multiple assignment mismatch\n");
         mb->errors++;
-    }
-    p->typechk= TYPE_FIXED;
+    } else
+		p->typechk= TYPE_FIXED;
     for(k=0,i= p->retc; k<p->retc && i<p->argc; i++,k++){
         int rhs = getArgType(mb,p,i);
         int lhs = getArgType(mb,p,k);
@@ -652,6 +654,7 @@ variables.
             s1= resolveType(lhs,rhs);
             if( s1== -1 ){
                 typeMismatch(mb,p,lhs,rhs);
+				p->typechk= TYPE_UNKNOWN;
                 return;
             }
         } else 
@@ -665,6 +668,7 @@ using the target type.
 		} else 
         if( lhs != TYPE_void && lhs != TYPE_any) {
             typeMismatch(mb,p,lhs,rhs);
+			p->typechk= TYPE_UNKNOWN;
             return;
         }
         if( !isFixed(mb,p->argv[k])) {
@@ -767,18 +771,35 @@ int chkProgramIdentifier(MalBlkPtr mb, str nme, int tpe){
     }
     return FALSE;
 }
+@-
+Type checking a program is limited to those instructions that are
+not resolved yet. Once the program is completely checked, further calls
+should be ignored. This should be separately administered for the flow
+as well, because a dynamically typed instruction should later on not
+lead to a re-check when it was already fully analysed.
+@c
 void chkProgram(Scope s, MalBlkPtr mb)
 {
-        InstrPtr p;
-    int i;
+	InstrPtr p;
+    int i, chk=0;
 
-    for(i=0;i<mb->stop;i++) {
-        p= getInstrPtr(mb,i);
-        if(p== NULL) continue;
-        if( p->typechk == TYPE_BIND) fcnBinder(s,mb,p);
-        else  typeChecker(s,mb,p);
-    }
-    chkFlow(mb);
+	if( mb->typefixed == 0)
+		for(i=0;i<mb->stop;i++) {
+			p= getInstrPtr(mb,i);
+			if(p== NULL) continue;
+			if( p->typechk == TYPE_BIND) fcnBinder(s,mb,p);
+			else  if( p->typechk != TYPE_FIXED) typeChecker(s,mb,p);
+			if( functionId(p) ){
+				if(p->fcn != NULL && p->typechk== TYPE_FIXED) chk++;
+			} else
+			if( p->typechk== TYPE_FIXED) chk++;
+		}
+/* Not safe yet, goes wrong in module initiated calls
+s
+	mb->typefixed = mb->stop == (chk+1); ignored END */
+
+	if( mb->flowfixed == 0)
+		chkFlow(mb);
 }
 @+ Polymorphic type analysis
 MAL provides for type variables of the form any$N. This feature

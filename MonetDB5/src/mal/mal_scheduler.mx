@@ -22,7 +22,13 @@ A key design decision for this MonetDB  version is to create a clean
 processing pipeline: compile-, optimize-, schedule- and execute.
 The MAL scheduler controls the actual execution of a program through a number of
 techniques described here. It accepts a program with the intend to execute it
-as soon as possible.
+as soon as possible with the best possible behaviour.
+
+Note that optimizer and scheduler should only work no temporary plans.
+Keeping an optimized plan in the symbol table calls for a sound administration
+to invalidate it. This assumed that such decisions are taken by a cooperative
+front-end compiler, e.g. SQL. For the remainder we assume a volatile MAL 
+program is available.
 
 Recall that the MAL optimizer already had an opportunity to massage the program
 into something that has a better execution behaviour. These optimizations

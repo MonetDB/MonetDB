@@ -452,6 +452,8 @@ typedef struct MALBLK{
     int ssize;  /* byte size of arena */
     InstrPtr *stmt; /* Instruction location */
     int errors; /* left over errors */
+	int typefixed;	/* no undtermined instruction */
+	int flowfixed;	/* all flow instructions are fixed */
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -630,6 +632,8 @@ MalBlkPtr newMalBlk(int maxvars, int maxstmts){
     mb->errors = 0;
     mb->props= NULL;
     mb->alternative= NULL;
+	mb->typefixed = 0;
+	mb->flowfixed = 0;
     return mb;
 }
 @-
@@ -693,6 +697,8 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
     mb->help = old->help?GDKstrdup(old->help): NULL;
     mb->binding = old->binding?GDKstrdup(old->binding): NULL;
     mb->errors= old->errors;
+	mb->typefixed= old->typefixed;
+	mb->flowfixed= old->flowfixed;
     /* copy the properties as well */
     if(mb->props)
         mb->props = cpyPropertySet(old->props);
@@ -1736,6 +1742,9 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
     if( flg & (LIST_MAL_BIND | LIST_MAL_TYPE)){
         advance(t);
         hiddenInstructionArgs(mb,p,t);
+		advance(t);
+		if( mb->typefixed) sprintf(t," typefixed");
+		if( mb->flowfixed) sprintf(t," flowfixed");
     }
 #endif
     return s;

@@ -145,6 +145,8 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 Checking the control flow structure is done by a single pass over the
 MAL program after the program has been type-checked.
 It should inspect all BARRIER and CATCH blocks for proper structure.
+If the flow is correct and not dependent on an undefined typed instruction
+we avoid doing this check any further.
 @c
 #define DEPTH 128
 
@@ -155,6 +157,7 @@ void chkFlow(MalBlkPtr mb)
     InstrPtr stmt[DEPTH];
     int btop=0;
     int retseen=0;
+    int fixed=1;    
     InstrPtr p;
 
     for(i= 0; i<mb->stop; i++){
@@ -178,6 +181,7 @@ void chkFlow(MalBlkPtr mb)
                     getVarName(mb,v), pc[j],
                     getFcnName(mb),pc[i]);
                 mb->errors++;
+                return;
             }
 
             if( getVarType(mb,v) != TYPE_bit && 
@@ -190,7 +194,7 @@ void chkFlow(MalBlkPtr mb)
                 getVarName(mb, v), getFcnName(mb), i);
             }
             btop++;
-
+            if( p->typechk != TYPE_FIXED) fixed =0;
             break;
         case EXITsymbol:
             v= getDestVar(p);
@@ -204,6 +208,7 @@ void chkFlow(MalBlkPtr mb)
             if(btop==0){
                 GDKerror("exit-label '%s' without begin-label in %s[%d]\n",
                 getVarName(mb,v), getFcnName(mb),i);
+                mb->errors++;
                 continue;
             }
             /* search the matching block */
@@ -215,15 +220,16 @@ void chkFlow(MalBlkPtr mb)
             /* and check their illegal use in THREAD block*/
             stmt[btop]->jump= i;
             for(k=pc[btop]; k<i; k++){
-            InstrPtr p1= getInstrPtr(mb,k);
-            if( getDestVar(p1)==v ) {
-                /* handle assignments with leave/redo option*/
-                if(p1->barrier== LEAVEsymbol )
-                    p1->jump= i;
-                if( p1->barrier==REDOsymbol )
-                    p1->jump= pc[btop]+1;
+                InstrPtr p1= getInstrPtr(mb,k);
+                if( getDestVar(p1)==v ) {
+                    /* handle assignments with leave/redo option*/
+                    if(p1->barrier== LEAVEsymbol )
+                        p1->jump= i;
+                    if( p1->barrier==REDOsymbol )
+                        p1->jump= pc[btop]+1;
+                }
             }
-            }
+            if( p->typechk != TYPE_FIXED) fixed =0;
             break;
         case LEAVEsymbol:
         case REDOsymbol:
@@ -234,7 +240,8 @@ void chkFlow(MalBlkPtr mb)
                 GDKerror("label '%s' not in guarded block in %s[%d]\n",
                 getVarName(mb,v),getFcnName(mb),i);
                 mb->errors++;
-            }
+            } else
+            if( p->typechk != TYPE_FIXED) fixed =0;
             break;
         case YIELDsymbol:
             { InstrPtr ps= getInstrPtr(mb,0);
@@ -257,6 +264,7 @@ void chkFlow(MalBlkPtr mb)
                                             getArgType(mb,p,i));
                     mb->errors++;
                 }
+                if(ps->typechk != TYPE_FIXED) fixed =0;
             }
             retseen = 1;
             break;
@@ -295,6 +303,8 @@ void chkFlow(MalBlkPtr mb)
         GDKerror("%s missing\n", p->token== FUNCTIONsymbol?"return":"yield");
         mb->errors++;
     }
+    if( mb->errors == 0 )
+        mb->flowfixed = fixed; /* we might not have to come back here */
 }
 @-
 A code may contain temporary names for marking barrier blocks.

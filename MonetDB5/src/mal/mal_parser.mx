@@ -1249,6 +1249,7 @@ int parseEnd(Client cntxt)
         insertSymbol(cntxt->nspace, cntxt->curprg);
         trimMalBlk(cntxt->curprg->def);
         cntxt->blkmode =0;
+		curBlk->typefixed=0;
         chkProgram(cntxt->nspace, cntxt->curprg->def);
         if( cntxt->backup){
             cntxt->curprg = cntxt->backup;
