@@ -266,7 +266,6 @@ class MapiQuery:
             raise IOError(self.__mid.error_str())
         return ret
 
-
     def explain_query(self, f):
         ret = MapiLib.mapi_explain_query(self.__mid, f)
         if ret == MERROR:
@@ -274,6 +273,13 @@ class MapiQuery:
         if ret == MTIMEOUT:
             raise IOError(self.__mid.error_str())
     explain = explain_query
+
+    def explain_result(self, f):
+        ret = MapiLib.mapi_explain_result(self.__mid, f)
+        if ret == MERROR:
+            raise RuntimeError(self.__mid.error_str())
+        if ret == MTIMEOUT:
+            raise IOError(self.__mid.error_str())
 
     def result_error(self):
         ret = MapiLib.mapi_result_error(self.__hdl)
