@@ -44,6 +44,9 @@
 
 typedef struct PFcnode_t PFcnode_t;
 
+/* global for core_new_var (TODO REMOVE) */
+extern unsigned int core_vars;
+
 /* PFfun_t */
 #include "functions.h"
 

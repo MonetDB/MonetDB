@@ -671,6 +671,7 @@ void
 PFns_resolve (PFpnode_t *root)
 {
     namespace = PFarray (sizeof (PFns_t));
+    ns_num = 0;
 
     /* bring the default NS into scope */
     ns_add (PFns_xml);

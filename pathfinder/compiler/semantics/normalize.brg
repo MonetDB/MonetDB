@@ -560,14 +560,14 @@ static void relabel (PFpnode_t *p,  PFpnode_t **kids);
 #define wire2(t,loc,a,b)  p_wire2 ((t), (loc), (a), (b))
 
 static PFpnode_t * varref (PFqname_t q, PFloc_t loc);
-static PFqname_t new_varname (char *prefix);
+static PFqname_t new_varname (char *prefix, unsigned int* varcount);
 
 /**
  * Reducer function. This is the heart of this source file. It
  * contains all the action code for the above burg patterns.
  */
 static bool
-reduce (PFpnode_t * p, int goalnt)
+reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
 {
     int           rule;           /* rule number that matches for this node */
     short        *nts;            /* target non-terminals for the leaf nodes of
@@ -600,7 +600,7 @@ reduce (PFpnode_t * p, int goalnt)
         unsigned short i;
         rewritten = false;
         for (i = 0; nts[i]; i++)
-            if ((rewritten = reduce (kids[i], nts[i])))
+            if ((rewritten = reduce (kids[i], nts[i], varcount)))
                 break;  /* abort if a subtree was rewritten */
 
         if (rewritten) {
@@ -849,7 +849,7 @@ reduce (PFpnode_t * p, int goalnt)
              *                                      /    \
              *                                     $d    def
              */
-            PFqname_t v1 = new_varname ("tsw");
+            PFqname_t v1 = new_varname ("tsw", varcount);
 
             c = wire2 (p_typeswitch, p->loc,
                        L(p),
@@ -978,18 +978,18 @@ varref (PFqname_t q, PFloc_t loc)
  *   a three digit, zero-padded integer number
  * @return A QName describing the new variable name
  */
+
 static PFqname_t
-new_varname (char *prefix)
+new_varname (char *prefix, unsigned int* varcount)
 {
-    static unsigned int varcount = 0;
     char                varname[sizeof("dot_000")];
     PFqname_t           qn;
     
     /* construct new variable name */
     if (prefix)
-        snprintf (varname, sizeof ("dot_000"), "%3s_%03u", prefix, varcount++);
+        snprintf (varname, sizeof ("dot_000"), "%3s_%03u", prefix, (*varcount)++);
     else
-        snprintf (varname, sizeof ("dot_000"), "v_%03u", varcount++);
+        snprintf (varname, sizeof ("dot_000"), "v_%03u", (*varcount)++);
     
     /* assign internal Pathfinder namespace `pf:...' */
     qn.ns  = PFns_pf;
@@ -1012,13 +1012,17 @@ new_varname (char *prefix)
 PFpnode_t *
 PFnormalize_abssyn (PFpnode_t *r)
 {
+    unsigned int varcount = 0; 
     assert (r);
+
+    /* initiliaze global */
+    varcount = 0;
 
     /* label the parse tree bottom up */
     PFnormalize_label (r);
 
     /* invoke rewriting */
-    while (reduce (r, 1))
+    while (reduce (r, 1, &varcount))
         /* rewrite as long as there is something to do. */;
 
     return r;

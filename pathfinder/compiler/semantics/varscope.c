@@ -95,6 +95,8 @@ static PFvar_t *find_var (PFqname_t);
  * If a violation of scoping rules is found during processing, this flag
  * is set to true. We still keep on processing to possibly find more rule
  * violations and report them all to the user.
+ *
+ * global (TODO: remove)
  */
 static bool scoping_failed = false;
 
@@ -479,6 +481,9 @@ void
 PFvarscope (PFpnode_t * root)
 {
     var_env = PFscope ();
+
+    /* initialize global */
+    scoping_failed = false;
 
     /* first process variable declarations in the prolog */
     scope_var_decls (root);

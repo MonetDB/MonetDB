@@ -3274,6 +3274,8 @@ PFfs (PFpnode_t *r)
 {
     assert (r);
 
+    core_vars = 0;
+
     /* initially, there is no function on the current function stack */
     funs = PFarray (sizeof (PFfun_t *));
 

@@ -159,10 +159,12 @@ PFcore_nil (void)
  *   a three digit, zero-padded integer number
  * @return the new variable
  */
+unsigned int core_vars; /* global for core_new_var (TODO REMOVE) */
+
+
 PFvar_t *
 PFcore_new_var (char *prefix)
 {
-    static unsigned int vars = 0;
     char                vname[VNAME_MAX];
     int                 l;
 
@@ -171,9 +173,9 @@ PFcore_new_var (char *prefix)
 
     /* construct new var name */
     if (prefix)
-        l = snprintf (vname, VNAME_MAX, "%3s_%03u", prefix, vars);
+        l = snprintf (vname, VNAME_MAX, "%3s_%03u", prefix, core_vars);
     else
-        l = snprintf (vname, VNAME_MAX, "v_%03u", vars);
+        l = snprintf (vname, VNAME_MAX, "v_%03u", core_vars);
     
     /* warn if we needed to truncate the variable name
      * (this does not affect the correct core mapping but may
@@ -185,7 +187,7 @@ PFcore_new_var (char *prefix)
                 vname);
 
     /* ensure uniqueness */
-    vars++;
+    core_vars++;
 
     /* assign internal Pathfinder namespace `#pf:...' */
     return PFnew_var (PFqname (PFns_pf, PFstrdup (vname)));
