@@ -283,7 +283,7 @@ def msc_library(fd, var, libmap, msc ):
         SCRIPTS.append(target)
   fd.write(srcs + "\n")
   fd.write( "lib"+sep+libname + ".dll: $(" + libname + "_OBJS)\n" )
-  fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(lib%s_LIBS) $(LDFLAGS) \n\n" % (libname,sep,libname,libname))
+  fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(lib%s_LIBS) $(LDFLAGS) /def:lib%s%s.def\n\n" % (libname,sep,libname,libname,sep,libname))
 
   if (len(SCRIPTS) > 0):
     fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -331,7 +331,7 @@ def msc_libs(fd, var, libsmap, msc ):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write( "lib"+sep+lib + ".dll: $(lib"+sep+lib+"_OBJS)\n" )
-    fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(lib%s%s_OBJS) $(lib%s%s_LIBS) $(LDFLAGS) \n\n" % (sep,lib,sep,lib,sep,lib))
+    fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(lib%s%s_OBJS) $(lib%s%s_LIBS) $(LDFLAGS) /def:lib%s%s.def \n\n" % (sep,lib,sep,lib,sep,lib,sep,lib))
 
   if (len(SCRIPTS) > 0):
     fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -466,7 +466,7 @@ CXXEXT = \\\"cxx\\\"
   if (topdir == cwd):
       fd.write("config.h: winconfig.h\n\t$(INSTALL) winconfig.h config.h\n")
       fd.write("unistd.h: \n\t$(ECHO) #ifndef UNISTD_H > unistd.h\n\t$(ECHO) #define UNISTD_H >> unistd.h\n\t$(ECHO) #include \"io.h\" >> unistd.h\n\t$(ECHO) #endif >> unistd.h\n")
-      fd.write("sys\\socket.h: \n\tmkdir sys\n\t$(ECHO) #ifndef SOCKET_H > sys\\socket.h\n\t$(ECHO) #define SOCKET_H >> sys\\socket.h\n\t$(ECHO) #include \"winsock.h\" >> sys\\socket.h\n\t$(ECHO) #endif >> sys\\socket.h\n")
+      fd.write("sys\\socket.h: \n\tif not exist sys $(MKDIR) sys\n\t$(ECHO) #ifndef SOCKET_H > sys\\socket.h\n\t$(ECHO) #define SOCKET_H >> sys\\socket.h\n\t$(ECHO) #include \"winsock.h\" >> sys\\socket.h\n\t$(ECHO) #endif >> sys\\socket.h\n")
 
   fd.write("install-msc: install-exec install-data\n")
   fd.write("install-exec: all\n")

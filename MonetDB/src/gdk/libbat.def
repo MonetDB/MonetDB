@@ -1,0 +1,16 @@
+EXPORTS
+	GDKenviron
+	GDKenvironName
+	GDKrecovery
+	GDKstopped
+	GDKsilent
+	GDKinit
+	GDKexit
+	chr_nil
+	bit_nil
+	sht_nil
+	int_nil
+	flt_nil
+	dbl_nil
+	lng_nil
+	str_nil

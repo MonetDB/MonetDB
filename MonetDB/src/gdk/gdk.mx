@@ -377,8 +377,8 @@ extern int setenv(char *name, char *value, int overwrite);
 #define GDKdir		3
 #define GDKowner	4
 
-EXPORT( char 		*GDKenviron[GDKPROP]); 
-EXPORT( char 		*GDKenvironName[GDKPROP]); 
+extern char 		*GDKenviron[GDKPROP]; 
+extern char 		*GDKenvironName[GDKPROP]; 
 @
 @}
 
@@ -399,11 +399,11 @@ A zero is returned upon encountering an erroneous situation.
 During system startup some environment variables are set.
 @{
 @h
-EXPORT( int              GDKrecovery);
-EXPORT( int              GDKstopped);
+extern int              GDKrecovery;
+extern int              GDKstopped;
 
-EXPORT( int     		GDKinit)	    (int argc, char **argv); 
-EXPORT( void			GDKexit)     (); 
+extern int     		GDKinit(int argc, char **argv); 
+extern void			GDKexit(); 
 
 @
 @}
@@ -459,14 +459,14 @@ typedef __int64		lng;
 typedef char*		str; 		
 
 /* representation of the nil */
-EXPORT( chr		chr_nil); 	
-EXPORT( bit		bit_nil); 	
-EXPORT( short		sht_nil); 	
-EXPORT( int		int_nil); 	
-EXPORT( flt		flt_nil); 	
-EXPORT( dbl		dbl_nil); 	
-EXPORT( lng		lng_nil); 	
-EXPORT( str		str_nil); 	
+extern chr		chr_nil; 	
+extern bit		bit_nil; 	
+extern short		sht_nil; 	
+extern int		int_nil; 	
+extern flt		flt_nil; 	
+extern dbl		dbl_nil; 	
+extern lng		lng_nil; 	
+extern str		str_nil; 	
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)
@@ -508,7 +508,7 @@ typedef	char		short_str[OLDLENGTH];/* old GDK small static string */
 @h
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
-EXPORT (int 		GDKsilent); 	/* should GDK shut up? */
+extern int 		GDKsilent; 	/* should GDK shut up? */
 
 #define FATALcheck(tst,	msg) if (tst) GDKfatal(msg);
 #define ERRORcheck(tst,	msg) if (tst) { GDKerror(msg); return 0; }
