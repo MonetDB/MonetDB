@@ -217,9 +217,6 @@ handles and returns proper error messages upon failure.
 #include "sql_mvc.h"
 #include "sql_server.proto.h"
 
-extern int mvc_result_table(mvc *m, int nr_cols, BAT *order);
-extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
-
 #endif /*_SQL_SERVER_H_*/
 
 @c
@@ -428,38 +425,6 @@ mvc_result_row(mvc *m, int nr_cols)
 	return m->results->id;
 }
 
-
-int
-mvc_result_table(mvc *m, int nr_cols, BAT *order)
-{
-	res_table *t = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
-
-	t->order = order->batCacheid;
-	bat_incref(t->order, TRUE, "mvc_result_table");
-	m->results = t;
-	return t->id;
-}
-
-
-int
-mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
-{
-	res_col *c = res_col_create(m->trans, m->results, tn, name, typename, digits, scale);
-
-	c->b = b->batCacheid;
-	bat_incref(c->b, TRUE, "mvc_result_column");
-	return 0;
-}
-
-static int
-mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
-{
-	res_col *c = res_col_create(m->trans, m->results, tn, name, typename, digits, scale);
-
-	c->mtype = mtype;
-	c->p = ATOMdup(mtype, p);
-	return 0;
-}
 
 int
 mvc_result_table_wrap(int *res_id, mvc *M, int *nr_cols, BAT *order)

@@ -1343,68 +1343,191 @@ distinct(stmt *s)
 }
 
 static stmt *
-sql_union_(mvc *sql, scope *scp, symbol *t1, int dist, dlist *cols, symbol *t2)
+sql_union(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 {
-	stmt *res;
 	node *n, *m;
+	list *stmts = create_stmt_list();
 
-	tvar *tv1 = table_ref(sql, scp, t1);
-	tvar *tv2 = table_ref(sql, scp, t2);
-	list *unions = NULL;
-
-	if (!tv1 || !tv2) {
-		return NULL;
-	}
-
-	if (list_length(tv1->columns) != list_length(tv2->columns)) {
-		return sql_error(sql, 02, "cannot UNION different ordinality queries");
-	}
-	unions = create_stmt_list();
 	if (!cols) {
 		for (n = tv1->columns->h, m = tv2->columns->h; n && m; n = n->next, m = m->next) {
 			cvar *lc = n->data;
 			cvar *rc = m->data;
+			stmt *rs = stmt_dup(rc->s);
 			stmt *ls = stmt_dup(lc->s);
+
+			if ((convert_types(sql, &ls, &rs, 1) < 0)) {
+				if (ls)
+					stmt_destroy(ls);
+				if (rs)
+					stmt_destroy(rs);
+				list_destroy(stmts);
+				return NULL;
+			}
 
 			/* insert single value into table */
 			if (lc->s->key) {
-				stmt *temp = stmt_temp(sql_dup_subtype(tail_type(lc->s)));
+				stmt *temp = stmt_temp(sql_dup_subtype(tail_type(ls)));
 
 				ls = stmt_append(temp, ls);
 			}
-			ls = stmt_append(ls, stmt_dup(rc->s));
+			ls = stmt_append(ls, rs);
 			/* the alias keeps the column name around */
 			ls = stmt_alias(ls, NULL, _strdup(lc->cname));
-			list_append(unions, ls);
+			list_append(stmts, ls);
 		}
 		/* TODO cols length 0 see natural join
 		   cols length > 0 see union join, join on name */
 	}
-	res = stmt_list(unions);
-	if (dist) {
-		res = distinct(res);
-	}
-	return res;
+	return stmt_list(stmts);
 }
 
 static stmt *
-sql_union(mvc *sql, scope *scp, symbol *q)
+sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 {
+	node *n, *m;
+	list *stmts = create_stmt_list();
 
+	if (!cols) {
+		cvar *c;
+		/*
+		 * The multi column except is handled using a multi column
+		 * join and a diff on the base oids. 
+		 *
+		 * so A minus B translates to A diff (A join B)
+		 */
+		stmt *s = stmt_reljoin_init();
+
+		for (n = tv1->columns->h, m = tv2->columns->h; n && m; n = n->next, m = m->next) {
+			cvar *lc = n->data;
+			cvar *rc = m->data;
+			stmt *rs = stmt_dup(rc->s);
+			stmt *ls = stmt_dup(lc->s);
+
+			if ((convert_types(sql, &ls, &rs, 1) < 0)) {
+				if (ls)
+					stmt_destroy(ls);
+				if (rs)
+					stmt_destroy(rs);
+				list_destroy(stmts);
+				return NULL;
+			}
+			stmt_reljoin_fill(s, ls, rs);
+		}
+		c = tv1->columns->h->data;
+		s = stmt_diff( stmt_dup(c->s), s);
+		s = stmt_mark( stmt_reverse(s), 100);
+		/* project columns of left hand expression */
+		for (n = tv1->columns->h; n; n = n->next) {
+			cvar *lc = n->data;
+			stmt *ls = stmt_dup(lc->s);
+
+			/* retain name via the stmt_alias */
+			ls = stmt_join(stmt_dup(s), ls, cmp_equal);
+			ls = stmt_alias(ls, NULL, _strdup(lc->cname));
+			list_append(stmts, ls);
+		}
+		stmt_destroy(s);
+
+		/* TODO cols length 0 see natural join
+		   cols length > 0 see union join, join on name */
+	}
+	return stmt_list(stmts);
+}
+
+static stmt *
+sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
+{
+	node *n, *m;
+	list *stmts = create_stmt_list();
+
+	if (!cols) {
+		cvar *c;
+		/*
+		 * The multi column intersect is handled using a multi column
+		 * join and a semijoin on the base oids. 
+		 *
+		 * so A intersect B translates to project [A.*] (A join B)
+		 */
+		stmt *s = stmt_reljoin_init();
+
+		for (n = tv1->columns->h, m = tv2->columns->h; n && m; n = n->next, m = m->next) {
+			cvar *lc = n->data;
+			cvar *rc = m->data;
+			stmt *rs = stmt_dup(rc->s);
+			stmt *ls = stmt_dup(lc->s);
+
+			if ((convert_types(sql, &ls, &rs, 1) < 0)) {
+				if (ls)
+					stmt_destroy(ls);
+				if (rs)
+					stmt_destroy(rs);
+				list_destroy(stmts);
+				return NULL;
+			}
+			stmt_reljoin_fill(s, ls, rs);
+		}
+		c = tv1->columns->h->data;
+		s = stmt_mark( stmt_reverse(s), 100 );
+		/* project columns of left hand expression */
+		for (n = tv1->columns->h; n; n = n->next) {
+			cvar *lc = n->data;
+			stmt *ls = stmt_dup(lc->s);
+
+			/* retain name via the stmt_alias */
+			ls = stmt_join(stmt_dup(s), ls, cmp_equal);
+			ls = stmt_alias(ls, NULL, _strdup(lc->cname));
+			list_append(stmts, ls);
+		}
+		stmt_destroy(s);
+
+		/* TODO cols length 0 see natural join
+		   cols length > 0 see union join, join on name */
+	}
+	return stmt_list(stmts);
+}
+
+static stmt *
+sql_setop(mvc *sql, scope *scp, symbol *q)
+{
+	stmt *res = NULL;
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
 	int dist = n->next->data.ival;
 	dlist *corresponding = n->next->next->data.lval;
 	symbol *tab_ref2 = n->next->next->next->data.sym;
 
-	return sql_union_(sql, scp, tab_ref1, dist, corresponding, tab_ref2);
+	tvar *tv1 = table_ref(sql, scp, tab_ref1);
+	tvar *tv2 = table_ref(sql, scp, tab_ref2);
+
+	if (!tv1 || !tv2) {
+		return NULL;
+	}
+
+	if (list_length(tv1->columns) != list_length(tv2->columns)) {
+		char *op = "UNION";
+		if (q->token == SQL_EXCEPT)
+			op = "EXCEPT";
+		else if (q->token == SQL_INTERSECT)
+			op = "INTERSECT";
+		return sql_error(sql, 02, "cannot %s different ordinality queries", op);
+	}
+	if ( q->token == SQL_UNION)
+		res = sql_union(sql, tv1, tv2, corresponding );
+	if ( q->token == SQL_EXCEPT)
+		res = sql_except(sql, tv1, tv2, corresponding );
+	if ( q->token == SQL_INTERSECT)
+		res = sql_intersect(sql, tv1, tv2, corresponding );
+	if (res && dist) {
+		res = distinct(res);
+	}
+	return res;
 }
 
 static stmt *
-scope_union(mvc *sql, symbol *q)
+scope_setop(mvc *sql, symbol *q)
 {
 	scope *nscp = scope_open(NULL);
-	stmt *tq = sql_union(sql, nscp, q);
+	stmt *tq = sql_setop(sql, nscp, q);
 
 	if (!tq)
 		return NULL;
@@ -1479,9 +1602,11 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 
 	switch (q->token) {
 	case SQL_UNION:
+	case SQL_EXCEPT:
+	case SQL_INTERSECT:
 	{
 		scope *nscp = scope_open(scp);
-		stmt *tq = sql_union(sql, nscp, q);
+		stmt *tq = sql_setop(sql, nscp, q);
 
 		if (!tq)
 			return NULL;
@@ -2917,21 +3042,9 @@ selects(mvc *sql, symbol *s)
 		sql->type = Q_TABLE;
 		break;
 	case SQL_UNION:
-		ret = scope_union(sql, s);
-		/* add output stmt */
-		if (ret)
-			ret = stmt_output(ret);
-		sql->type = Q_TABLE;
-		break;
 	case SQL_EXCEPT:
-		ret = scope_union(sql, s);
-		/* add output stmt */
-		if (ret)
-			ret = stmt_output(ret);
-		sql->type = Q_TABLE;
-		break;
 	case SQL_INTERSECT:
-		ret = scope_union(sql, s);
+		ret = scope_setop(sql, s);
 		/* add output stmt */
 		if (ret)
 			ret = stmt_output(ret);

@@ -31,6 +31,10 @@ extern int mvc_export_default(mvc *m, stream *s);
 extern int mvc_export_result(mvc *c, stream *s, int res_id);
 extern int mvc_export_table(mvc *c, stream *s, int res_id, unsigned int offset, unsigned int nr);
 extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
+extern int mvc_result_table(mvc *m, int nr_cols, BAT *order);
+
+extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
+extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
 
 #endif /* sql_result_H */
 @c
@@ -39,6 +43,7 @@ extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *r
 #include <ascii_io.h>
 #include <monettime.h>
 #include <bat/res_table.h>
+#include <bat/bat_bm.h>
 
 @= dec_tostr
 	char buf[32];
@@ -725,3 +730,35 @@ mvc_export_table(mvc *m, stream *s, int res_id, unsigned int offset, unsigned in
 		return -1;
 	return 0;
 }
+
+int
+mvc_result_table(mvc *m, int nr_cols, BAT *order)
+{
+	res_table *t = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
+
+	t->order = order->batCacheid;
+	bat_incref(t->order, TRUE, "mvc_result_table");
+	m->results = t;
+	return t->id;
+}
+
+int
+mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
+{
+	res_col *c = res_col_create(m->trans, m->results, tn, name, typename, digits, scale);
+
+	c->b = b->batCacheid;
+	bat_incref(c->b, TRUE, "mvc_result_column");
+	return 0;
+}
+
+int
+mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
+{
+	res_col *c = res_col_create(m->trans, m->results, tn, name, typename, digits, scale);
+
+	c->mtype = mtype;
+	c->p = ATOMdup(mtype, p);
+	return 0;
+}
+

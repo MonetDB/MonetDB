@@ -459,7 +459,6 @@ load_key(sql_trans *tr, BAT *keys, BUN j, sql_table *t)
 		sqlid rkey = *(sqlid *) bun_find(key_rkey, lid);
 		node *n = list_find(t->s->keys, &rkey, (fcmp) &key_cmp);
 
-		assert(n);
 		if (n) {
 			sql_ukey *uk = n->data;
 
@@ -1683,17 +1682,17 @@ key_dup(sql_trans *tr, int flag, sql_key *k, sql_table *t)
 		sql_fkey *ok = (sql_fkey *) k;
 		node *n;
 
-		assert(ok->rkey);
-		n = list_find(t->s->keys, &ok->rkey->k.base.id, (fcmp) &key_cmp);
+		if (ok->rkey) {
+			n = list_find(t->s->keys, &ok->rkey->k.base.id, (fcmp) &key_cmp);
 
-		assert(n);
-		if (n) {
-			sql_ukey *uk = n->data;
-
-			fk->rkey = uk;
-			if (!uk->keys)
-				uk->keys = list_create(NULL);
-			list_append(uk->keys, fk);
+			if (n) {
+				sql_ukey *uk = n->data;
+	
+				fk->rkey = uk;
+				if (!uk->keys)
+					uk->keys = list_create(NULL);
+				list_append(uk->keys, fk);
+			}
 		}
 	} else {		/* could be a set of rkeys */
 		sql_ukey *uk = (sql_ukey *) nk;
