@@ -55,17 +55,16 @@ void receive( stream *rs ){
 			}
 			fprintf( stdout, "\n");
 		}
-		if (type == QTABLE){
+		nRows = status;
+		if (type == QTABLE && nRows > 0){
 			int nr = bs_read_next(rs,buf,&last);
 	
-			n++; /* skip newline */
-			fwrite( n, nr - (n - buf), 1, stdout );
+			fwrite( buf, nr, 1, stdout );
 			while(!last){
 				int nr = bs_read_next(rs,buf,&last);
 				fwrite( buf, nr, 1, stdout );
 			}
 		}
-		nRows = status;
 		if (type == QTABLE || type == QUPDATE){
 			if (nRows > 1)
 				printf("%d Rows affected\n", nRows );

@@ -66,7 +66,8 @@ void receive( stream *rs ){
 				fwrite( buf, nr, 1, stdout );
 			}
 		}
-		if (type == QTABLE){
+		nRows = status;
+		if (type == QTABLE && nRows > 0){
 			int nr = bs_read_next(rs,buf,&last);
 	
 			fwrite( buf, nr, 1, stdout );
@@ -75,7 +76,6 @@ void receive( stream *rs ){
 				fwrite( buf, nr, 1, stdout );
 			}
 		}
-		nRows = status;
 		if (type == QTABLE){ /*|| type == QUPDATE){ */
 			if (nRows > 1)
 				printf("%d Rows affected\n", nRows );
@@ -91,15 +91,16 @@ void receive( stream *rs ){
 
 
 void clientAccept( context *lc, stream *rs ){
-	int i, err = 0;
+	int i;
 	stream *in = file_rastream( stdin, "<stdin>" );
 	stmt *s = NULL;
 	char buf[BUFSIZ];
 
 	while(lc->cur != EOF ){
+		int err = 0;
 		s = sqlnext(lc, in, &err);
 		if (err){
-			fprintf(stderr, "%s\n", lc->errstr);
+			fprintf(stderr, "Error in %s: %s\n", lc->sql, lc->errstr);
 		       	continue;
 		}
 		if (s){
