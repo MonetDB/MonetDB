@@ -150,14 +150,10 @@ The documentation starts in <prefixdir>/doc/monet.html
 
 NOTE: the current 'make install' does not yet generate this
       documentation to do this manually, execute *after* successful
-      'make install'. In the top-level directory of the MonetDB source
+      'make install'. In the top-level directory of the MonetDB build
       tree, call
 
-
- python doc/mkdoc.py <sourcedir> <prefixdir>
-
-where: <sourcedir> = top-level source directory (where HowToStart is)
-       <prefixdir> = installation directory (as specified to configure with --prefix)
+ make html
 
 
 Troubleshooting:
