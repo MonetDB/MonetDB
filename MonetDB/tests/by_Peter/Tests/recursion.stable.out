@@ -21,6 +21,7 @@ stdout of test 'recursion` in directory 'tests/by_Peter` itself:
 module(alarm);
 proc p;
 proc p(int i) : void := { if (i < 10000) p(i+1); }
+{
 p(100).fork;
 p(300).fork;
 p(301).fork;
@@ -28,6 +29,7 @@ p(302).fork;
 p(303).fork;
 p(304).fork;
 sleep(10);
+}
 !ERROR: interpret: running out of physical stack space!
 !ERROR: interpret: running out of physical stack space!
 !ERROR: interpret: running out of physical stack space!
