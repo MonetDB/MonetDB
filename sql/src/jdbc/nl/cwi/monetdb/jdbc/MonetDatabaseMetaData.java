@@ -671,22 +671,21 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Can a schema name be used in a data manipulation statement?
-	 * I just don't think MonetDB does...
 	 *
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInDataManipulation() {
-		return(false);
+		return(true);
 	}
 
 	/**
 	 * Can a schema name be used in a procedure call statement?
-	 * Ohw probably not (since there are no procedures I think)
+	 * Ohw probably, but I don't know of procedures in Monet
 	 *
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInProcedureCalls() {
-		return(false);
+		return(true);
 	}
 
 	/**
@@ -695,7 +694,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInTableDefinitions() {
-		return(false);
+		return(true);
 	}
 
 	/**
@@ -704,7 +703,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInIndexDefinitions() {
-		return(false);
+		return(true);
 	}
 
 	/**
@@ -713,7 +712,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInPrivilegeDefinitions() {
-		return(false);
+		return(true);
 	}
 
 	/**
@@ -1444,7 +1443,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	<LI><B>TABLE_CAT</B> String => catalog name
 	 *	</OL>
 	 *
-	 * Note: this will return an empty resultset, since there are no catalogs
+	 * Note: this will return a resultset with 'default', since there are no catalogs
 	 *       in Monet
 	 *
 	 * @return ResultSet each row has a single String column that is a
@@ -2393,14 +2392,41 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	public ResultSet getIndexInfo(
 		String catalog,
 		String schema,
-		String tableName,
+		String table,
 		boolean unique,
 		boolean approximate
 	) throws SQLException
 	{
+		String query =
+			"SELECT null AS TABLE_CAT, schemas.name AS TABLE_SCHEM, " +
+			"tables.name AS TABLE_NAME, idxs.type as nonunique, " +
+			"null AS INDEX_QUALIFIER, idxs.name AS INDEX_NAME, " +
+			DatabaseMetaData. tableIndexOther + " AS TYPE, " +
+			"columns.number AS ORDINAL_POSITION, columns.name AS COLUMN_NAME, " +
+			"null AS ASC_OR_DESC, 0 AS PAGES, " +
+			"null AS FILTER_CONDITION " +
+				"FROM idxs, columns, keycolumns, tables, schemas " +
+				"WHERE idxs.table_id = tables.id " +
+					"AND tables.schema_id = schemas.id " +
+					"AND keycolumns.id = idxs.id " +
+					"AND columns.name = keycolumns.\"column\" " +
+					"AND columns.table_id = tables.id ";
+
+		if (schema != null) {
+			query += "AND schemas.name LIKE '" + escapeQuotes(schema) + "' ";
+		}
+		if (table != null) {
+			query += "AND tables.name LIKE '" + escapeQuotes(table) + "' ";
+		}
+		if (unique) {
+			query += "AND idxs.type = 0 ";
+		}
+
+		query += "ORDER BY nonunique, TYPE, INDEX_NAME, ORDINAL_POSITION";
+
 		String columns[] = {
 			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE",
-			"INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION", "TYPE",
+			"INDEX_QUALIFIER", "INDEX_NAME", "TYPE", "ORDINAL_POSITION",
 			"COLUMN_NAME", "ASC_OR_DESC", "CARDINALITY", "PAGES",
 			"FILTER_CONDITION"
 		};
@@ -2411,7 +2437,44 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"varchar", "varchar", "mediumint", "mediumint", "varchar"
 		};
 
-		String[][] results = new String[0][columns.length];
+		String[][] results;
+		ArrayList tmpRes = new ArrayList();
+
+		Statement sub = null;
+		if (!approximate) sub = con.createStatement();
+
+		ResultSet rs = getStmt().executeQuery(query);
+		while (rs.next()) {
+			String[] result = new String[13];
+			result[0]  = null;
+			result[1]  = rs.getString("table_schem");
+			result[2]  = rs.getString("table_name");
+			result[3]  = (rs.getInt("nonunique") == 0 ? "false" : "true");
+			result[4]  = rs.getString("index_qualifier");
+			result[5]  = rs.getString("index_name");
+			result[6]  = rs.getString("type");
+			result[7]  = rs.getString("ordinal_position");
+			result[8]  = rs.getString("column_name");
+			result[9]  = rs.getString("asc_or_desc");
+			if (approximate) {
+				result[10] = "0";
+			} else {
+				ResultSet count = sub.executeQuery("SELECT COUNT(*) AS CARDINALITY FROM " + rs.getString("table_schem") + "." + rs.getString("table_name"));
+				if (count.next()) {
+					result[10] = count.getString("cardinality");
+				} else {
+					result[10] = "0";
+				}
+			}
+			result[11] = rs.getString("pages");
+			result[12] = rs.getString("filter_condition");
+			tmpRes.add(result);
+		}
+
+		if (!approximate) sub.close();
+		rs.close();
+
+		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
