@@ -1618,7 +1618,7 @@ int THRprintf(stream *s, char *format, ...) {
 	p = bf;
 	*p++ = c;
 	if (GDKdebug&1) {
-		sprintf(p, "%02ld ", THRgettid());
+		sprintf(p, "%02d ", THRgettid());
 		while(*p) p++;
 	}
 	m = p-bf;

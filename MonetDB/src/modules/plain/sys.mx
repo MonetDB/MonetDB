@@ -1420,9 +1420,9 @@ int view_gdk_bbp(BAT **retval) {
 }
 
 int view_gdk_mem_histo(BAT **retval) {
-	int i;
 	BAT *b = BATnew(TYPE_lng, TYPE_lng, GDK_HISTO_MAX_BIT);
 #ifdef GDK_MEM_KEEPHISTO
+	int i;
 	for (i = 3; i < GDK_HISTO_MAX_BIT - 1; i++) {
 		lng j = 1 << i;
 		lng v = (lng) GDK_nmallocs[i]
@@ -1434,9 +1434,9 @@ int view_gdk_mem_histo(BAT **retval) {
 }
 	
 int view_gdk_vm_histo(BAT **retval) {
-	int i;
 	BAT *b = BATnew(TYPE_lng, TYPE_lng, GDK_HISTO_MAX_BIT);
 #ifdef GDK_VM_KEEPHISTO
+	int i;
 	for (i = 12; i < GDK_HISTO_MAX_BIT - 1; i++) {
 		lng j = 1 << i;
 		lng v = (lng) GDK_vm_nallocs[i]
