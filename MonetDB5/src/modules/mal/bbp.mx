@@ -344,6 +344,8 @@ str CMDbbpbindindex(int *ret, int *bid){
 Moving BATs in/out of the box also involves
 checking the type already known for possible misfits.
 Therefore, we need access to the runtime context.
+If the bat is not known in the box, we go to the bbp pool
+and make an attempt to load it directly.
 @c
 str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
@@ -355,9 +357,16 @@ str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	name = (str) getArgValue(stk,pci,1);
 	@:chkIdentifier(name,take)@
 	v = &stk->stk[pci->argv[0]];
-	if(takeBox(box,name,v, (int) getArgType(mb,pci,0))) 
-	return throwException(MALEXCEPTION,"bbp.take",
-			"failed to take '%s' from box",name);
+	if(takeBox(box,name,v, (int) getArgType(mb,pci,0)))  {
+		int bid = BBPindex(name);
+		if( bid > 0 && (v->vtype== TYPE_any || v->vtype==TYPE_bat))  {
+			/* adjust the types as well */
+			v->vtype= TYPE_bat;
+			v->val.ival= bid;
+		} else
+			return throwException(MALEXCEPTION,"bbp.take",
+				"failed to take '%s' from box",name);
+	}
 	/* make a private copy for this client session */
 	/* use the cheapest copy method */
 	/* printf("bbp.take not yet fully implemented\n");*/

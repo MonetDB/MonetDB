@@ -79,7 +79,6 @@ command readInt( s:stream):int
 address stream_readIntwrap
 comment "read integer data from the stream";
 
-
 command flush( s:stream )
 address stream_flush_streamwrap
 comment "flush the stream";
