@@ -560,11 +560,14 @@ Catching errors is a recurring situation. The block below
 generates the default code block, ie catch it and print
 the error. It should also deal with the auto_commit
 situation. [todo]
+For the time being we do not catch errors. They are
+passed to the environment.
 @c
 static
 void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit){
 	InstrPtr p;
-	int i;
+/*	int i;*/
+        (void) nme;
 
 	if(autocommit){
 		p= newInstruction(ASSIGNsymbol);
@@ -572,6 +575,7 @@ void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit){
 		functionId(p)= GDKstrdup("commit");
 		pushInstruction(mb,p);
 	}
+/* no catch
 	p= newInstruction(CATCHsymbol);
 	i= findVariable(mb,nme);
 	if( i< 0) i= newVariable(mb,GDKstrdup(nme),TYPE_str);
@@ -585,13 +589,15 @@ void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit){
 	functionId(p)= GDKstrdup("print");
 	pushArgumentId(mb, p, GDKstrdup(nme));
 	pushInstruction(mb,p);
+*/
 
 	if(autocommit){
 		p= newInstruction(ASSIGNsymbol);
 		moduleId(p)= GDKstrdup("sql");
 		functionId(p)= GDKstrdup("rollback");
 		pushInstruction(mb,p);
-	} else {
+	}
+/*       else {
 		p= newInstruction(RAISEsymbol);
 		p->barrier= RAISEsymbol;
 		p->argv[0] = findVariable(mb,GDKstrdup("sqlerror"));
@@ -604,6 +610,7 @@ void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit){
 	p->argv[0] = findVariable(mb,GDKstrdup(nme));
 	p->barrier= EXITsymbol;
 	pushInstruction(mb,p);
+*/
 }
 @mal
 # nothing special to do
