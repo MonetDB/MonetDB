@@ -73,7 +73,7 @@ we use UTF-8 to store strings as unicode in zero-terminated byte-sequences.
 module str;
 
 command str(s:str):str 
-address CMDstr
+address STRtostr
 comment "Noop routine.";
 command string(s:str,offset:int) :str 
 address STRTail
@@ -1210,7 +1210,7 @@ str strMatch(int  *ret, str *val, str *pat){
 	return MAL_SUCCEED;
 }
 
-str CMDstr(str *res, str *src){
+str STRtostr(str *res, str *src){
 	*res = GDKstrdup(*src);
 	return MAL_SUCCEED;
 }
