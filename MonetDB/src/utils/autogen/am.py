@@ -210,7 +210,7 @@ def am_additional_libs(name,sep,type,list, am):
     return add + "\n"
 
 def am_additional_install_libs(name,sep,list, am):
-    add = "install-" + name + "LTLIBRARIES : "
+    add = "$(do)install-" + name + "LTLIBRARIES : "
     for l in list:
         if (l[0] not in  ("-", "$", "@", "." )):
 	    if l[3] == '_':
