@@ -433,12 +433,12 @@ Module: "mapi"
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help																							  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "listen",	  "PROC: ",	  "listen() : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
-[ "listen",	  "PROC: ",	  "listen(int) : any",					  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
-[ "listen",	  "PROC: ",	  "listen(int, int) : any",				  "Start the Mapi listener on <port>."																			  ]
-[ "listen",	  "PROC: ",	  "listen(int, int, str) : any",			  "Start the Mapi listener on 50000."																			  ]
-[ "listen",	  "PROC: ",	  "listen(int, str) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
-[ "listen",	  "PROC: ",	  "listen(str) : any",					  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "listen",	  "PROC: ",	  "listen() : any",					  "Start the Mapi listener on 50000."																			  ]
+[ "listen",	  "PROC: ",	  "listen(int) : any",					  "Start the Mapi listener on <port>."																			  ]
+[ "listen",	  "PROC: ",	  "listen(int, int) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
+[ "listen",	  "PROC: ",	  "listen(int, int, str) : any",			  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "listen",	  "PROC: ",	  "listen(int, str) : any",				  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
+[ "listen",	  "PROC: ",	  "listen(str) : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
 [ "mapi_listen",  "BUILTIN: ",	  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
 [ "stream_line",  "PROC: ",	  "stream_line(stream) : str",				  "Read a string from <S> until a newline."																		  ]
 [ "stream_read",  "PROC: ",	  "stream_read(stream) : str",				  "Read a string from <S> until a '1' character."																	  ]

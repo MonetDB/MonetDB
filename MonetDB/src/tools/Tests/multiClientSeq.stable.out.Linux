@@ -1,9 +1,9 @@
-stdout of test 'client` in directory 'src/tools` itself:
+stdout of test 'multiClientSeq` in directory 'src/tools` itself:
 
 
-# 15:15:17 >  
-# 15:15:17 >  Mtimeout -timeout 1260 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_src_tools /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/mapi.mil
-# 15:15:17 >  
+# 15:15:40 >  
+# 15:15:40 >  Mtimeout -timeout 1860 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_src_tools /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/mapi.mil
+# 15:15:40 >  
 
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
@@ -29,11 +29,11 @@ Try: modules;                - for other modules.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
 
-# 15:15:26 >  
-# 15:15:26 >  Mtimeout -timeout 600 MapiClient -everything -prelude client.prelude < client.milC
-# 15:15:26 >  
+# 15:15:49 >  
+# 15:15:49 >  Mtimeout -timeout 600 MapiClient -everything  < multiClientSeq_s00.milC
+# 15:15:49 >  
 
-Start of MIL server prelude.
+Start of MIL script.
 [ 1 ]
 [ 10 ]
 ##------------------------------------------------------------------------#
@@ -125,7 +125,7 @@ Start of MIL server prelude.
 [ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
 [ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -628,15 +628,15 @@ unknown(1)#"                            ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
-[ "adm",	  "Mon Jun 25 15:15:23 2001",	  ""				  ]
-[ "windhouw",	  "Mon Jun 25 15:15:31 2001",	  "clients()"			  ]
-[ "adm",	  "Mon Jun 25 15:15:23 2001",	  "listen(get_mapi_port(),5)"	  ]
+[ "adm",	  "Mon Jun 25 15:15:43 2001",	  ""				  ]
+[ "windhouw",	  "Mon Jun 25 15:15:51 2001",	  "clients()"			  ]
+[ "adm",	  "Mon Jun 25 15:15:43 2001",	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  30	  ]
+[ "user",	  20	  ]
 [ "elapuser",	  0	  ]
 [ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
@@ -652,7 +652,7 @@ unknown(1)#"                            ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
 [ "gdk_version",	  "4.3.3"										  ]
 [ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "2766"										  ]
+[ "monet_pid",		  "2867"										  ]
 [ "monet_welcome",	  "yes"											  ]
 [ "monet_deamon",	  "yes"											  ]
 [ "monet_prompt",	  "\001\001"										  ]
@@ -668,7 +668,7 @@ unknown(1)#"                            ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
 [ "gdk_version",	  "4.3.3"										  ]
 [ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "2766"										  ]
+[ "monet_pid",		  "2867"										  ]
 [ "monet_welcome",	  "yes"											  ]
 [ "monet_deamon",	  "yes"											  ]
 [ "monet_prompt",	  "\001\001"										  ]
@@ -709,9 +709,9 @@ unknown(1)#"                            ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Mon Jun 25 15:15:23 2001"	  ]
-[ 1,	  "Mon Jun 25 15:15:31 2001"	  ]
-[ 2,	  "Mon Jun 25 15:15:23 2001"	  ]
+[ 0,	  "Mon Jun 25 15:15:43 2001"	  ]
+[ 1,	  "Mon Jun 25 15:15:51 2001"	  ]
+[ 2,	  "Mon Jun 25 15:15:43 2001"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
@@ -724,7 +724,7 @@ unknown(1)#"                            ]
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  30	  ]
+[ "user",	  20	  ]
 [ "elapuser",	  0	  ]
 [ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
@@ -740,7 +740,7 @@ unknown(1)#"                            ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
 [ "gdk_version",	  "4.3.3"										  ]
 [ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "2766"										  ]
+[ "monet_pid",		  "2867"										  ]
 [ "monet_welcome",	  "yes"											  ]
 [ "monet_deamon",	  "yes"											  ]
 [ "monet_prompt",	  "\001\001"										  ]
@@ -778,7 +778,12 @@ unknown(1)#"                            ]
 [ 2,	  "Interpreter"	  ]
 [ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-End of MIL server prelude.
+End of MIL script.
+
+# 15:15:53 >  
+# 15:15:53 >  Mtimeout -timeout 600 MapiClient -everything  < multiClientSeq_s01.milC
+# 15:15:53 >  
+
 Start of MIL script.
 [ 1 ]
 [ 10 ]
@@ -818,29 +823,167 @@ Start of MIL script.
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "int",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "int",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "int",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "SEEK_END",		  "int",  "liquid",	  "constant",	  "2"			  ]
@@ -871,7 +1014,7 @@ Start of MIL script.
 [ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
 [ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -880,31 +1023,88 @@ Start of MIL script.
 [ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "26"			  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "23"			  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "25"			  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -1098,6 +1298,9 @@ Start of MIL script.
 [ "monet_atomtbl",	  "constant"	  ]
 [ "monet_acctbl",	  "constant"	  ]
 [ "monet_fcntbl",	  "constant"	  ]
+[ "monet_atomtbl",	  "constant"	  ]
+[ "monet_acctbl",	  "constant"	  ]
+[ "monet_fcntbl",	  "constant"	  ]
 [ "mapi_params",	  "changeable"	  ]
 [ "_params",		  "changeable"	  ]
 [ "SEEK_END",		  "constant"	  ]
@@ -1164,6 +1367,9 @@ Start of MIL script.
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
+[ "monet_atomtbl",	  "frozen"	  ]
+[ "monet_acctbl",	  "frozen"	  ]
+[ "monet_fcntbl",	  "frozen"	  ]
 [ "monet_atomtbl",	  "frozen"	  ]
 [ "monet_acctbl",	  "frozen"	  ]
 [ "monet_fcntbl",	  "frozen"	  ]
@@ -1236,6 +1442,9 @@ Start of MIL script.
 [ "monet_atomtbl",	  "BAT"	  ]
 [ "monet_acctbl",	  "BAT"	  ]
 [ "monet_fcntbl",	  "BAT"	  ]
+[ "monet_atomtbl",	  "int"	  ]
+[ "monet_acctbl",	  "int"	  ]
+[ "monet_fcntbl",	  "int"	  ]
 [ "mapi_params",	  "BAT"	  ]
 [ "_params",		  "BAT"	  ]
 [ "SEEK_END",		  "int"	  ]
@@ -1324,9 +1533,9 @@ Start of MIL script.
 [ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_25",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_26",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------#
@@ -1367,22 +1576,24 @@ Start of MIL script.
 #[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
 unknown(0)#"                            ]
 #[      3,         2,   running,         0, "listen(get_mapi_port(),5)#"                            ]
-#[    135,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
+#[     87,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
 unknown(1)#"                            ]
-#[    136,         3,   running,       135, "queue()#"                            ]
+#[    137,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
+unknown(1)#"                            ]
+#[    138,         3,   running,       137, "queue()#"                            ]
 [ 3 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
-[ "adm",	  "Mon Jun 25 15:15:23 2001",	  ""				  ]
-[ "windhouw",	  "Mon Jun 25 15:15:31 2001",	  "clients()"			  ]
-[ "adm",	  "Mon Jun 25 15:15:23 2001",	  "listen(get_mapi_port(),5)"	  ]
+[ "adm",	  "Mon Jun 25 15:15:43 2001",	  ""				  ]
+[ "windhouw",	  "Mon Jun 25 15:15:55 2001",	  "clients()"			  ]
+[ "adm",	  "Mon Jun 25 15:15:43 2001",	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  1	  ]
-[ "user",	  50	  ]
+[ "elapsed",	  4	  ]
+[ "user",	  40	  ]
 [ "elapuser",	  20	  ]
 [ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
@@ -1398,7 +1609,7 @@ unknown(1)#"                            ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
 [ "gdk_version",	  "4.3.3"										  ]
 [ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "2766"										  ]
+[ "monet_pid",		  "2871"										  ]
 [ "monet_welcome",	  "yes"											  ]
 [ "monet_deamon",	  "yes"											  ]
 [ "monet_prompt",	  "\001\001"										  ]
@@ -1414,7 +1625,7 @@ unknown(1)#"                            ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
 [ "gdk_version",	  "4.3.3"										  ]
 [ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "2766"										  ]
+[ "monet_pid",		  "2871"										  ]
 [ "monet_welcome",	  "yes"											  ]
 [ "monet_deamon",	  "yes"											  ]
 [ "monet_prompt",	  "\001\001"										  ]
@@ -1423,8 +1634,8 @@ unknown(1)#"                            ]
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  7	  ]
-[ "majflt",	  34	  ]
+[ "minflt",	  8	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -1436,14 +1647,14 @@ unknown(1)#"                            ]
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  1089480	  ]
-[ "ordblks",	  398		  ]
+[ "ordblks",	  390		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  826464	  ]
-[ "fordblks",	  263016	  ]
+[ "uordblks",	  826744	  ]
+[ "fordblks",	  262736	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1455,9 +1666,9 @@ unknown(1)#"                            ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Mon Jun 25 15:15:23 2001"	  ]
-[ 1,	  "Mon Jun 25 15:15:31 2001"	  ]
-[ 2,	  "Mon Jun 25 15:15:23 2001"	  ]
+[ 0,	  "Mon Jun 25 15:15:43 2001"	  ]
+[ 1,	  "Mon Jun 25 15:15:55 2001"	  ]
+[ 2,	  "Mon Jun 25 15:15:43 2001"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
@@ -1469,8 +1680,8 @@ unknown(1)#"                            ]
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  1	  ]
-[ "user",	  50	  ]
+[ "elapsed",	  5	  ]
+[ "user",	  40	  ]
 [ "elapuser",	  0	  ]
 [ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
@@ -1486,7 +1697,7 @@ unknown(1)#"                            ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
 [ "gdk_version",	  "4.3.3"										  ]
 [ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "2766"										  ]
+[ "monet_pid",		  "2871"										  ]
 [ "monet_welcome",	  "yes"											  ]
 [ "monet_deamon",	  "yes"											  ]
 [ "monet_prompt",	  "\001\001"										  ]
@@ -1495,8 +1706,8 @@ unknown(1)#"                            ]
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  7	  ]
-[ "majflt",	  34	  ]
+[ "minflt",	  8	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -1508,14 +1719,14 @@ unknown(1)#"                            ]
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  1089480	  ]
-[ "ordblks",	  405		  ]
+[ "ordblks",	  397		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  825384	  ]
-[ "fordblks",	  264096	  ]
+[ "uordblks",	  825672	  ]
+[ "fordblks",	  263808	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1526,9 +1737,9 @@ unknown(1)#"                            ]
 #~EndVariableOutput~#
 End of MIL script.
 
-# 15:15:34 >  
-# 15:15:34 >  Mtimeout -timeout 600 Mshutdown
-# 15:15:34 >  
+# 15:15:57 >  
+# 15:15:57 >  Mtimeout -timeout 600 Mshutdown
+# 15:15:57 >  
 
 connection= landvast:53714
 template= shutdown;
@@ -1538,7 +1749,7 @@ Error text= !terminating connection
 Reply= 
 # shutdown finished
 
-# 15:15:34 >  
-# 15:15:34 >  Done.
-# 15:15:34 >  
+# 15:15:57 >  
+# 15:15:57 >  Done.
+# 15:15:57 >  
 

@@ -1,9 +1,14 @@
-stdout of test 'server-single` in directory 'src/tools` itself:
+stdout of test 'server-single_2` in directory 'src/tools` itself:
 
 
-# 06:03:29 >  
-# 06:03:29 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_src_tools server-single.prelude < server-single.milS
-# 06:03:29 >  
+# 06:03:31 >  
+# 06:03:31 >  Mtimeout -timeout 924 ./server-single_2 server-single_2 server-single_2.prelude
+# 06:03:31 >  
+
+
+# 06:03:31 >  
+# 06:03:31 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_src_tools server-single_2.prelude < server-single_2.mil
+# 06:03:31 >  
 
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
@@ -148,13 +153,13 @@ Start of MIL prelude.
 [ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
 [ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "287"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "284"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "278"			  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
@@ -571,16 +576,16 @@ unknown(0)#"                   ]
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Fri Jan 19 18:06:16 2001",	  ""		  ]
-[ "adm",  "Fri Jan 19 18:06:16 2001",	  "clients()"	  ]
+[ "adm",  "Fri Jan 19 18:06:36 2001",	  ""		  ]
+[ "adm",  "Fri Jan 19 18:06:36 2001",	  "clients()"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  1100	  ]
+[ "user",	  1110	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  13230	  ]
+[ "system",	  13440	  ]
 [ "elapsystem",	  0	  ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # BAT:			  env												  #
@@ -594,7 +599,7 @@ unknown(0)#"                   ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
 [ "gdk_version",	  "4.3"												  ]
 [ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19335"											  ]
+[ "monet_pid",		  "19361"											  ]
 [ "monet_welcome",	  "yes"												  ]
 [ "monet_deamon",	  "yes"												  ]
 [ "monet_prompt",	  "\001\001"											  ]
@@ -610,7 +615,7 @@ unknown(0)#"                   ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
 [ "gdk_version",	  "4.3"												  ]
 [ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19335"											  ]
+[ "monet_pid",		  "19361"											  ]
 [ "monet_welcome",	  "yes"												  ]
 [ "monet_deamon",	  "yes"												  ]
 [ "monet_prompt",	  "\001\001"											  ]
@@ -624,8 +629,8 @@ unknown(0)#"                   ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  1	  ]
-[ "nvcsw",	  14401	  ]
-[ "ninvcsw",	  48	  ]
+[ "nvcsw",	  15144	  ]
+[ "ninvcsw",	  83	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
@@ -649,8 +654,8 @@ unknown(0)#"                   ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Jan 19 18:06:16 2001"	  ]
-[ 1,	  "Fri Jan 19 18:06:16 2001"	  ]
+[ 0,	  "Fri Jan 19 18:06:36 2001"	  ]
+[ 1,	  "Fri Jan 19 18:06:36 2001"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
@@ -662,9 +667,9 @@ unknown(0)#"                   ]
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  1110	  ]
+[ "user",	  1120	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  13230	  ]
+[ "system",	  13440	  ]
 [ "elapsystem",	  0	  ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # BAT:			  env												  #
@@ -678,7 +683,7 @@ unknown(0)#"                   ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
 [ "gdk_version",	  "4.3"												  ]
 [ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19335"											  ]
+[ "monet_pid",		  "19361"											  ]
 [ "monet_welcome",	  "yes"												  ]
 [ "monet_deamon",	  "yes"												  ]
 [ "monet_prompt",	  "\001\001"											  ]
@@ -686,14 +691,14 @@ unknown(0)#"                   ]
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1568	  ]
+[ "maxrss",	  1584	  ]
 [ "minflt",	  161	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  1	  ]
-[ "nvcsw",	  14401	  ]
-[ "ninvcsw",	  48	  ]
+[ "nvcsw",	  15144	  ]
+[ "ninvcsw",	  83	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
@@ -847,13 +852,13 @@ vars();
 [ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
 [ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "271"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "287"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "284"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "278"			  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
 [ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
@@ -1290,16 +1295,16 @@ clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Fri Jan 19 18:06:16 2001",	  "clients()"	  ]
+[ "adm",  "Fri Jan 19 18:06:36 2001",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  1170	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  1180	  ]
 [ "elapuser",	  60	  ]
-[ "system",	  13240	  ]
+[ "system",	  13450	  ]
 [ "elapsystem",	  10	  ]
 env();
 #-------------------------------------------------------------------------------------------------------------------------#
@@ -1314,7 +1319,7 @@ env();
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
 [ "gdk_version",	  "4.3"												  ]
 [ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19335"											  ]
+[ "monet_pid",		  "19361"											  ]
 [ "monet_welcome",	  "yes"												  ]
 [ "monet_deamon",	  "yes"												  ]
 [ "monet_prompt",	  "\001\001"											  ]
@@ -1331,7 +1336,7 @@ environment().print();
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
 [ "gdk_version",	  "4.3"												  ]
 [ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19335"											  ]
+[ "monet_pid",		  "19361"											  ]
 [ "monet_welcome",	  "yes"												  ]
 [ "monet_deamon",	  "yes"												  ]
 [ "monet_prompt",	  "\001\001"											  ]
@@ -1346,8 +1351,8 @@ io().print();
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  1	  ]
-[ "nvcsw",	  14402	  ]
-[ "ninvcsw",	  48	  ]
+[ "nvcsw",	  15144	  ]
+[ "ninvcsw",	  83	  ]
 memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1374,7 +1379,7 @@ view_client_login().print();
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Jan 19 18:06:16 2001"	  ]
+[ 0,	  "Fri Jan 19 18:06:36 2001"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -1386,11 +1391,11 @@ view_gdk_cpu().print();
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  1180	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  13250	  ]
-[ "elapsystem",	  10	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  13450	  ]
+[ "elapsystem",	  0	  ]
 view_gdk_env().print();
 #-------------------------------------------------------------------------------------------------------------------------#
 # BAT:			  env												  #
@@ -1404,7 +1409,7 @@ view_gdk_env().print();
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
 [ "gdk_version",	  "4.3"												  ]
 [ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19335"											  ]
+[ "monet_pid",		  "19361"											  ]
 [ "monet_welcome",	  "yes"												  ]
 [ "monet_deamon",	  "yes"												  ]
 [ "monet_prompt",	  "\001\001"											  ]
@@ -1419,8 +1424,8 @@ view_gdk_io().print();
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  1	  ]
-[ "nvcsw",	  14402	  ]
-[ "ninvcsw",	  48	  ]
+[ "nvcsw",	  15144	  ]
+[ "ninvcsw",	  83	  ]
 view_gdk_memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1451,7 +1456,7 @@ End of MIL script.
 
 quit();
 
-# 06:03:29 >  
-# 06:03:29 >  Done.
-# 06:03:29 >  
+# 06:03:31 >  
+# 06:03:31 >  Done.
+# 06:03:31 >  
 
