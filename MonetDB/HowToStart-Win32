@@ -43,18 +43,24 @@ UnxUtils for Win32
 	(http://UnxUtils.sourceforge.net/)
 	UnxUtils must be installed in the root directory ("\", i.e.,
 	without the default "\UnxUtils\" prefix) of the drive where you
-	what to compile MonetDB. 
+	want to compile MonetDB.
 	The same drive is required, as the UnxUtils do not know about
-	drive letters, and hence absolut paths start with "\" (i.e.,
+	drive letters, and hence absolute paths start with "\" (i.e.,
 	without a leading "C:", "D:", ...).  The default "\UnxUtils\"
 	prefix has to be omitted, as other the UnxUtils' "bison" does
 	not find its own "bison.simple" file, which it expects to be in
-	"/usr/share/bison/bison.simple" (aka.
+	"/usr/share/bison/bison.simple" (aka. 
 	"\usr\share\bison\bison.simple").
 	Next to some tools used by Mtest.py for testing MonetDB (see
 	below), UnxUtils provide the lexical analyzer generator "flex"
 	and the parser generator "bison", which are required to compile
 	MonetDB.
+	Note: You have to install the UnxUtils using the original .zip
+	file (http://UnxUtils.sourceforge.net/UnxUtils.zip). With the
+	third-party executable installer
+	(http://www.braindonors.net/products/unxutils.asp), choosing
+	another than the default installation directory doesn't seem to
+	work...
 	
 Microsoft Visual C++
 	You need Microsoft Visual C++ 5 or higher.
