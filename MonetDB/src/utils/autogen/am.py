@@ -492,6 +492,52 @@ def am_libs(fd, var, libsmap, am ):
     am_find_ins(am, libsmap)
     am_deps(fd,libsmap['DEPS'],".lo",am)
 
+def am_jar(fd, var, jar, am):
+
+    name = var[4:]
+
+    jd = "JARDIR"
+    if (jar.has_key("DIR")):
+        jd = jar["DIR"][0] # use first name given
+    jd = am_translate_dir(jd,am)
+
+    for src in jar['SOURCES']:
+        am['EXTRA_DIST'].append(src)
+
+    fd.write("\nif HAVE_JAVA\n")
+
+    if (jar.has_key("EXTRA")):
+        fd.write("\n%s_extra_files= %s\n" % (name,am_list2string(jar['EXTRA']," ","")))
+    else:
+        fd.write("\n%s_extra_files= \n" % (name))
+
+    fd.write("\n%s_java_files= %s\n" % (name,am_list2string(jar['TARGETS']," ","")))
+    fd.write("%s_class_files= $(patsubst %%.java,%%.class,$(%s_java_files))\n" % (name,name))
+    fd.write("%s_inner_class_files= $(patsubst %%.java,%%\$$*.class,$(%s_java_files))\n" % (name,name))
+
+    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name,name))
+    fd.write("\tCLASSPATH=.:$(CLASSPATH);$(JAVAC) -d . $(JAVACFLAGS) $^\n")
+
+    fd.write("\n%s.jar: $(%s_class_files) $(%s_extra_files)\n" % (name,name,name))
+    fd.write("\t$(shell $(JAR) $(JARFLAGS) -cf $@ $(%s_class_files) $(%s_inner_class_files) $(%s_extra_files))\n" % (name,name,name) )
+
+    fd.write("\nall-local-%s_jar: %s.jar\n" % (name,name))
+    am['ALL'].append(name+"_jar")
+
+    fd.write("\ninstall-exec-local-%s_jar: %s.jar\n" % (name,name))
+    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (jd))
+    fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.jar\n" % (jd,name))
+
+    fd.write("\nuninstall-exec-local-%s_jar: \n" % (name))
+    fd.write("\t$(RM) $(DESTDIR)%s/%s.jar\n" % (jd,name))
+
+    fd.write("\nendif #HAVE_JAVA\n")
+
+    am['INSTALL'].append(name+"_jar")
+    am['InstallList'].append("\t"+jd+"/"+name+".jar\n")
+
+    am_find_ins(am, jar)
+
 def am_add_srcdir(path,am,prefix =""):
     dir = path
     if (dir[0] == '$'):
@@ -548,6 +594,7 @@ output_funcs = { 'SUBDIRS': am_subdirs,
                  'smallTOC_SHARED_MODS' : am_mods_to_libs,
                  'largeTOC_SHARED_MODS' : am_mods_to_libs,
                  'HEADERS' : am_headers,
+		 'JAR' : am_jar,
                 }
 
 def output(tree, cwd, topdir, automake):

@@ -136,6 +136,18 @@ def filter( st ):
         return st + '\n'
     return ''
 
+def dirlen(l,r):
+    if ( string.count(l,os.sep) < string.count(r,os.sep) ):
+        return -1
+    elif ( string.count(l,os.sep) > string.count(r,os.sep) ):
+        return 1
+    elif (l < r):
+        return -1
+    elif (l > r):
+        return 1
+    return 0
+
+OutList.sort(dirlen)
 OutList = map( filter, OutList )
 OutListFd = open("acout.in", "w")
 OutListFd.writelines( OutList )

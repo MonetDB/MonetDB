@@ -586,6 +586,9 @@ def msc_includes(fd, var, values, msc):
                    + msc_add_srcdir(i,msc," -I");
     fd.write("INCLUDES = " + incs + "\n")
 
+def msc_jar(fd, var, values, msc):
+    print("msc doesn't support jars (yet)!")
+
 output_funcs = { 'SUBDIRS': msc_subdirs,
                  'EXTRA_DIST': msc_extra_dist,
                  'EXTRA_HEADERS': msc_extra_headers,
@@ -603,6 +606,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
                  'smallTOC_SHARED_MODS' : msc_mods_to_libs,
                  'largeTOC_SHARED_MODS' : msc_mods_to_libs,
                  'HEADERS' : msc_headers,
+		 'JAR' : msc_jar,
                 }
 
 def output(tree, cwd, topdir):

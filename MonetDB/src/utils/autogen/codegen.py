@@ -1,4 +1,3 @@
-
 import string
 import re
 import fileinput
@@ -83,7 +82,7 @@ code_gen = { 'm':       [ '.proto.h', '.glue.c' ],
             'c':        [ '.o' ],
             'i':        [ '_wrap.c' ],
             'glue.c':   [ '.glue.o' ],
-            'java':     [ '.class' ],
+#            'java':     [ '.class' ],
             'mx.in':    [ '.mx' ],
             'tex':      [ '.dvi' ],
             'dvi':      [ '.ps' ],
