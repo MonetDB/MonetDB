@@ -154,7 +154,7 @@ case $CC-$CXX in
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall -W"
 	CXXFLAGS="$CXXFLAGS -Wall -W"
-	dnl  Be rigid; "MonetDB code is supposed to ahear to this... ;-)
+	dnl  Be rigid; "MonetDB code is supposed to adhere to this... ;-)
 	X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
 	X_CXXFLAGS="$X_CXXFLAGS -Werror-implicit-function-declaration"
 	if test "$CC-$CXX" = "gcc-g++"; then
