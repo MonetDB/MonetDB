@@ -76,7 +76,6 @@ gdk_export int  BBPsize;        /* current occupied size of BBP array */
 gdk_export void BBPinit      ();
 gdk_export void BBPexit      ();
 gdk_export int  BBPdir       ();
-gdk_export int  BBPcountrefs ();
  
 /* update interface */ 
 gdk_export void BBPclear     (bat bid, int lock);
@@ -99,6 +98,8 @@ gdk_export int  BBPfix       (bat b);
 gdk_export int  BBPunfix     (bat b);
 gdk_export void BBPpersistent(bat b); 
 gdk_export void BBPtransient (bat b);
+gdk_export void BATpersistent(void *dummy, int *d2, bat *b);
+gdk_export void BATtransient (void *dummy, bat *b);
 
 #endif /* _GDK_BBP_H_ */
 @
@@ -407,7 +408,7 @@ void BBPinit() {
 		strcpy(batname, BBPparse(&c));
 		BBP_status_set(i, BBPEXISTING | (j & ~(BBPLOADED|BBPNEW)), "BBPinit");
 		BBP_physical(i) = GDKstrdup(BBPparse(&c)); 
-		BBP_refs(i) = atoi(BBPparse(&c));
+		BBP_plevel(i) = atoi(BBPparse(&c));
 		c = strchr(batname, '~');
 		if (c && c == batname) {
 			sprintf(logical, "tmp_%d", i);
@@ -436,7 +437,6 @@ void BBPinit() {
 		BBPrecover(); /* move files from BACKUP/ over current images */ 
 		closedir(recover);
 	}
-	BBPcountrefs(); 
 }
 
 @- 
@@ -480,7 +480,8 @@ static int new_bbpentry(FILE *fp, int i) {
 		r = fprintf(fp,"~%s", BBP_logical(-i));
 		if (r < 0) return r;
 	}
-	return fprintf(fp, ", %s, %d ]\n", BBP_physical(i), BBP_refs(i));
+	return fprintf(fp, ", %s, %d ]\n", 
+		BBP_physical(i), BBP_plevel(i));
 }
 
 int BBPdir() {	
@@ -509,65 +510,6 @@ int BBPdir() {
 	return 0;
 error:	GDKsyserror("BBPdir failed:\n"); 
 	return -1;
-}
-
-
-
-@- BBPcountrefs
-walk the entire BBP structure and make corrections where needed.
-This especially involves getting all BAT refcounts right.
-@c
-static int countrefs(BAT *b) {
-	int xx, res = TRUE;
-	BUN p,q;
-
-	BATloopFast(b, p, q, xx) {
-		bat i = ABS(*(bat*) BUNhloc(b,p));
-		if (i == 0 || i == int_nil) continue;
-		if (i >= BBPsize || BBP_logical(i) == NULL) {
-			GDKerror("BBPrepair: %s references illegal bat %d.\n",
-				 b->batId,i);
-			*(bat*) BUNhloc(b,p) = 0; res = FALSE;
-		} else {
-			BBP_refs(i)++;
-		}
-	}
-	if (res == FALSE) {
-		b->batDirty = 1;
-		ACCremoveall(b);
-	}
-	return res;
-}
-
-int BBPcountrefs() {
-	int i, res = TRUE;
-	BAT *b;
-
-	/* PHASE 1: make sure all nested BATs are in memory */
-	for(i=1; i<BBPsize; i++) {
-		str s = BBP_logical(i);
-
-		BBP_refs(i) = 0;
-		if (s == NULL || !(BBP_status(i)&BBPNESTED)) {
-			continue;
-		} 
-		if (BATdescriptor(i) == NULL) {
-			BBPclear(i, FALSE); 
-			res = FALSE;
-			continue;
-		}
-	}
-	/* PHASE 2: count all references */
-	for(i=1; i<BBPsize; i++) 
-	if ((b=BBP_cache(i)) != NULL) {
-		if (b->htype == TYPE_bat) {
-			res &= countrefs(b);
-		}
-		if (b->ttype == TYPE_bat) {
-			res &= countrefs(BATmirror(b)); 
-		}
-	}
-	return res;
 }
 
 @+ BBP Readonly Interface
@@ -747,19 +689,38 @@ int BBPentry(str dirname, str batname, int mode) {
 void BBPpersistent(bat i) {
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPpersistent")) {
-		if (!(BBP_status(i)&BBPDELETED))
-			BBP_status_on(i, BBPNEW, "BBPpersistent");
-		BBP_status_off(i, BBPDELETED, "BBPpersistent");
+		BBP_plevel(i)++;
+		if (BBP_plevel(i) == 1){
+			if (!(BBP_status(i)&BBPDELETED))
+				BBP_status_on(i, BBPNEW, "BBPpersistent");
+			BBP_status_off(i, BBPDELETED, "BBPpersistent");
+		}
 	}
 }
 
 void BBPtransient(bat i) {
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPtransient")) {
-		if (!(BBP_status(i)&BBPNEW))
-			BBP_status_on(i, BBPDELETED, "BBPtransient");
-		BBP_status_off(i, BBPPERSISTENT, "BBPtransient");
+		BBP_plevel(i)--;
+		if (BBP_plevel(i) == 0){
+			if (!(BBP_status(i)&BBPNEW))
+				BBP_status_on(i, BBPDELETED, "BBPtransient");
+			BBP_status_off(i, BBPPERSISTENT, "BBPtransient");
+			if (BBP_refs(i) == 0){
+				BAT *b = BBP_cache(i);
+				if (b) BBPfree(b);
+			}
+		}
+		if (BBP_plevel(i) < 0) 
+			BBP_plevel(i) = 0; /* correct for to many transients */
+				
 	}
+}
+void BATpersistent(void *dummy, int *d2, bat *i) {
+	BBPpersistent(*i);
+}
+void BATtransient(void *dummy, bat *i) {
+	BBPtransient(*i);
 }
 
 void BBPcacheit(BAT* b, int lock) {
@@ -784,6 +745,7 @@ void BBPcacheit(BAT* b, int lock) {
                 b->batStamp = BBP_curstamp;
                 b->creator_tid = (int) THRgettid();
                 BBP_refs(i) = 1; /* new bats have 1 pin */
+		BBP_plevel(i) = 0; /* and is transient */
                 BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", i,
                         b->batId, ATOMname(b->htype), ATOMname(b->ttype));
                 b->batCacheid = i;
@@ -859,6 +821,7 @@ void BBPclear(int i, int lock) {
 		BBP_physical(i) = NULL;
 		BBP_status_set(i, 0, "BBPclear");
 		BBP_refs(i) = 0; 
+		BBP_plevel(i) = 0; 
 		if (BBP_desc(i)) { 
 			GDKfree(BBP_desc(i)); 
 			BBP_desc(i) = NULL; 
@@ -946,7 +909,7 @@ int BBPrename(bat bid, str nme) {
 		BBP_insert(bid);
 	}
 	b->batDirtydesc = 1;
-	if (b->batPersistence&PERSISTENT){
+	if (BBP_plevel(bid) > 0){
 		BBP_status_on(ABS(bid), BBPRENAMED, "BBPrename");
 		BBPdirty(1);
 	}
@@ -1011,7 +974,7 @@ int BBPunfix(bat i) {
 		if (sec > b->batLastused) {
 			b->batLastused = sec;
 		} 
-		if (BBPswappable(b) && !(b->batPersistence&PERSISTENT)) {
+		if (BBPswappable(b) && !(BBP_plevel(i))) {
 			BBP_status_on(i, BBPUNLOADING, "BBPunfix");
 		} else {
 			b = NULL;
@@ -1080,12 +1043,13 @@ int BBPreclaim(BAT* b) {
 
 	/* make sure it is killed immediately */
 	BBP_status_on(i, BBPUNLOADING, "BBPreclaim");
-	b->batPersistence = TRANSIENT; 
+	BBP_plevel(i) = 0;
 	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
 
 	if (debug) THRprintf(GDKerr, 
 			"BBPreclaim: bat(%d) view=%d mod=%d ref=%d stat=%d\n", 
-			b->batCacheid, b->batSharecnt, b->batPersistence, 
+			b->batCacheid, b->batSharecnt, 
+			BBP_plevel(b->batCacheid), 
 			BBP_refs(b->batCacheid), BBP_status(b->batCacheid));
 
 	return (BBPfree(b) == 0);
@@ -1132,7 +1096,7 @@ int BBPsave(BAT* b) {
 
 	IODEBUG THRprintf(GDKerr, "save %s\n", b->batId); 
 
-	if ((b->batPersistence&PERSISTENT) && BATdirty(b)) {
+	if ((BBP_plevel(bid)) && BATdirty(b)) {
 		MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 		if ((BBP_status(bid)&BBPSAVING) == 0) {
 			int flags = BBPSAVING;
@@ -1140,7 +1104,7 @@ int BBPsave(BAT* b) {
 				flags |= BBPSWAPPED;
 				BBPdirty(1);
 			}
- 			if (!(b->batPersistence&PERSISTENT)) {
+ 			if (!(BBP_plevel(bid))) {
 				flags |= BBPTMP;
 			}
 			BBP_status_on(bid, flags, "BBPsave");
@@ -1169,13 +1133,13 @@ unloaded (or even destroyed, if the BAT is not persistent).
 @c
 int BBPfree(BAT *b) {
 	int xx, bid = ABS(b->batCacheid), parent = VIEWparent(b);
-	int destroy = (b->batPersistence&PERSISTENT) == 0 && 
+	int destroy = (BBP_plevel(bid)) == 0 && 
 		      (BBP_status(bid)&BBPDELETED) == 0;
 
 	if (!BBPswappable(b)) {
 		return 0;
 	}
-	if (b->batPersistence&PERSISTENT) {
+	if (BBP_plevel(bid) > 0) {
 		/* write dirty BATs before being unloaded */
 		int ret = BBPsave(b);
 		if (ret) {
@@ -1185,27 +1149,6 @@ int BBPfree(BAT *b) {
 	}
 	if (!parent) {
 		if (destroy) { 
-	    		/* bats that get destroyed must unfix their atoms */
-                	int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
-                	int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
-			BUN p, q;
-
-			if (hunfix) {
-                		DELloop(b, p, q, xx) {
-					 (*hunfix)(BUNhead(b,p));
-				}
-                		BATloopFast(b, p, q, xx) {
-					 (*hunfix)(BUNhead(b,p));
-				}
-			}
-			if (tunfix) {
-                		DELloop(b, p, q, xx) {
-					(*tunfix)(BUNtail(b,p));
-                        	}
-                		BATloopFast(b, p, q, xx) {
-					(*tunfix)(BUNtail(b,p));
-                        	}
-			}
 			BATdelete(b); /* remove persistent info and free memory */
                 } else {
 			BATfree(b); /* free memory */
@@ -1325,7 +1268,7 @@ void BBPtrim_select(lng *memtarget, lng *vmtarget, int dirty) {
 		MEMDEBUG if (b) {
 			THRprintf(GDKerr, "TRIMSELECT: candidate=%s BAT*=%d\n", BBPname(bbptrim[cur].bid), (int) b);   
 			THRprintf(GDKerr, "            (mode=%d, refs=%d, status=%d, parent=%d, lastused=%d,%d)\n",
-					b->batPersistence, BBPrefs(b->batCacheid), BBPstatus(b->batCacheid), 
+					BBP_plevel(b->batCacheid), BBPrefs(b->batCacheid), BBPstatus(b->batCacheid), 
 					VIEWparent(b), b->batLastused, bbptrim[cur].lastused);
 		}
 		/* recheck if conditions encountered by trimscan in the past still hold */
@@ -1671,7 +1614,7 @@ static BAT *dirty_bat(int i) {
 		BBPspin(i, "dirty_bat", BBPSAVING);
 		b = BBP_cache(i);
 		if (b != NULL) {
-			if ((b->batPersistence&PERSISTENT) && BATdirty(b)) {
+			if ((BBP_plevel(i)) && BATdirty(b)) {
 				return b; /* the bat is loaded, persistent and dirty */
 			}
 		} else if (BBP_status(i)&BBPSWAPPED) { 

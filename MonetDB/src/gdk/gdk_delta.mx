@@ -118,8 +118,7 @@ BAT *BATprecommit (BAT *b) {
 	return b; 
 }
 @- 
-batcommit really forgets the atoms guarded for an undo; we just need to free their
-heap space and unfix them (both only if necessary).
+batcommit really forgets the atoms guarded for an undo; we just need to free their heap space (only if necessary).
 @c
 BAT *BATcommit(BAT *b) {
 	DELTAprintf("#BATcommit1 %s free %d ins %d del %d hole %d base %d\n", 
@@ -127,26 +126,18 @@ BAT *BATcommit(BAT *b) {
 	  (int)(b)->batDeleted, (int)(b)->batHole, (int)(b)->batBuns->base );
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batHole  && BBP_cache(b->batCacheid)) {
-		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*,int*) = BATatoms[b->ttype].atomDel;
 		BUN p,q;
 		int xx;
 
-		if (hunfix || tunfix || hatmdel || tatmdel) {
+		if (hatmdel || tatmdel) {
 		DELloop(b, p, q, xx) {
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
 
-			if (hunfix) {
-				(*hunfix)(h);
-			}
 			if (hatmdel) {
 				(*hatmdel)(&b->hheap,(int*)(p+b->hloc));
-			}
-			if (tunfix) {
-				(*tunfix)(t);
 			}
 			if (tatmdel) {
 				(*tatmdel)(&b->theap,(int*)(p+b->tloc));
@@ -189,7 +180,7 @@ BAT *BATfakeCommit(BAT *b) {
 @- 
 The routine @%BATundo@ restores the BAT to the previous commit point.
 The inserted elements are removed from the accelerators, deleted from the
-heap and unfixed. The guarded elements from uncommitted deletes are
+heap. The guarded elements from uncommitted deletes are
 inserted into the accelerators.
 @{
 @c
@@ -216,16 +207,13 @@ BAT *BATundo(BAT *b) {
 	bunlast = BUNlast(b) - BUNsize(b); 
 	if (bunlast >= b->batInserted) {
 		unsigned int i = BUNindex(b, bunfirst);
-		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel)(Heap*, int*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*, int*) = BATatoms[b->ttype].atomDel;
 		void (*haccdel)(Heap*,int,BAT*,ptr) = 
 			BATaccelerators[(b->hacctype>0)?b->hacctype:0].accDelete;
 		void (*taccdel)(Heap*,int,BAT*,ptr) = 
 			BATaccelerators[(b->tacctype>0)?b->tacctype:0].accDelete;
-
-		if (hunfix || tunfix || hatmdel || tatmdel || haccdel || taccdel) {
+		if (hatmdel || tatmdel || haccdel || taccdel) {
 		for(p = bunfirst; p <= bunlast; p += bunsize, i++) { 
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
@@ -236,9 +224,6 @@ BAT *BATundo(BAT *b) {
 			if (haccdel) {
 				(*haccdel)(&b->haccelerator, i, b, h);
 			}
-			if (hunfix) {
-				(*hunfix)(h);
-			}
 			if (hatmdel) {
 				(*hatmdel)(&b->hheap, (int*) (p+b->hloc));
 			}
@@ -247,9 +232,6 @@ BAT *BATundo(BAT *b) {
 			}
 			if (taccdel) {
 				(*taccdel)(&b->taccelerator, i, b, t);
-			}
-			if (hunfix) {
-				(*tunfix)(t);
 			}
 			if (tatmdel) {
 				(*tatmdel)(&b->theap, (int*) (p+b->tloc));

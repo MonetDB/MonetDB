@@ -298,6 +298,7 @@ BAT *collect_bats( ascii *as ){
 
 	for (i=0; i<as->nr_attrs; i++){
 		BUNins(bats,(ptr)fmt[i].name, (ptr)&fmt[i].c->batCacheid);
+		BBPunfix( fmt[i].c->batCacheid );
 	}
 	return bats;
 }

@@ -1274,7 +1274,7 @@ static void purge_dependent_bats(int ntpes, int *tpes, int naccs, int *accs) {
                     if ((b->tacctype == accs[i]) || (b->hacctype == accs[i]))
                         goto doswap;
                 continue;
-doswap:         if (b->batPersistence&PERSISTENT) {
+doswap:         if (BBP_plevel(b->batCacheid)) {
                         BBPfree(b);
                 } else {
 			bats[nbats++] = ABS(b->batCacheid);

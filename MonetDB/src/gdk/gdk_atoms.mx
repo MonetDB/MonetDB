@@ -187,7 +187,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(int  (*)()) intCmp, 		
  		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,
 		(int  (*)()) batFix,		(int  (*)()) batUnfix,
- 		(void (*)()) 0,			(void (*)()) 0,
+ 		(void (*)()) BATpersistent,	(void (*)()) BATtransient,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
   { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, 
@@ -558,7 +558,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPfix(*(bat*) (P4));			\
+		BBPpersistent(*(bat*) (P4));			\
 		*(int *) (P3) = * (int *) (P4); 	\
 	}						\
 } else {						\
@@ -569,12 +569,11 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_str) {			\
 		(void) strPut(P2, (int*) (P3), (str) (P4));\
 	} else {                                        \
-	    if (ATOMvarsized(t_)) {			\
+	    if (BATatoms[t_].atomPut) {			\
 		(*BATatoms[t_].atomPut)(P2, P3, P4);	\
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
-	    ATOMfix(t_, P4); 				\
 } }    }
 
 #define ATOMreplace(P1,	P2, P3, P4)			\
@@ -588,8 +587,8 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
 	} else if (t_ == TYPE_bat) {			\
-		BBPunfix(*(bat*) (P3));			\
-		BBPfix(*(bat*) (P4));			\
+		BBPtransient(*(bat*) (P3));			\
+		BBPpersistent(*(bat*) (P4));			\
 		*(int *) (P3) = *(int *) (P4); 		\
 	}						\
   } else {						\
@@ -600,14 +599,14 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_str) {			\
 		(void) strPut(P2, (int*) (P3), (str) (P4));\
 	} else {					\
-	    ATOMunfix(t_, P3);				\
-	    if (ATOMvarsized(t_)) {			\
+	    if (BATatoms[t_].atomDel) {		\
 		ATOMdel(t_, P2,(int*) P3);		\
+	    } 						\
+	    if (BATatoms[t_].atomPut) {		\
 		(*BATatoms[t_].atomPut) (P2, (int*) (P3), P4);\
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
-	    ATOMfix(t_, P4);				\
 } }     }
 
 #define GDK_STRHASHTABLE	(1<<10)

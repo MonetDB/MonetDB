@@ -146,8 +146,7 @@ int TMabort() {
 				b = BATload_intern(i);
 			}
 			if (b) {
-				b->batPersistence &= ~PERSISTENT;
-				b->batPersistence |= TRANSIENT;
+				BBP_plevel(i) = 0; 
 				b->batDirtydesc = 1;
 			}
 		}
@@ -161,9 +160,8 @@ int TMabort() {
 			ALIGNundo(b);
 			BATundo(b); 
 			if (BBP_status(i)&BBPDELETED) {
-				b->batPersistence &= ~TRANSIENT;
 				BBP_status_on(i, BBPEXISTING, "TMabort");
-				b->batPersistence |= PERSISTENT;
+				BBP_plevel(i) = 1; 
 				b->batDirtydesc = 1;
 			}					
 		}

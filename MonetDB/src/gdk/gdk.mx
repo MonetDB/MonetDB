@@ -722,7 +722,7 @@ typedef struct {
           /* static BAT properties */
           str    batId;            /* bat name */
           bat    batCacheid;       /* bat id: index in BBPcache */
-          int    batPersistence;   /* persistence mode */
+          int    batPersistence;   /* persistence mode: not used anymore */
           bit    batCopiedtodisk;  /* BAT is saved on disk? */
           bit    batSet;           /* all tuples in the BAT are unique? */
           int    batStore;         /* multi-level storage mode */
@@ -1649,6 +1649,7 @@ typedef struct {
         BATstore *cache;	/* cached header info */
         str     path;		/* dir + basename for storage */ 
         int     refs;		/* number of batrefs */
+	int	plevel;		/* number of times the bat is made persistent */
         volatile int status;	/* always available bat info */
 } BBPrec;
 
@@ -1666,6 +1667,7 @@ gdk_export BBPrec*       	BBP;
 #define BBP_physical(i) BBP[ABS(i)].path
 #define BBP_desc(i)	BBP[ABS(i)].cache
 #define BBP_refs(i)     BBP[ABS(i)].refs
+#define BBP_plevel(i)   BBP[ABS(i)].plevel
 #define BBP_status(i)   BBP[ABS(i)].status
 
 /* macros that nicely check parameters */
