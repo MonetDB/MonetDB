@@ -2342,7 +2342,7 @@ str CMDcard_unlimited(int *result, int *bid){
 	size_t res;
 	BAT *b;
 	@:getBATdescriptor(result,bid,b,card_unlimited)@
-	size_t limit = BATcount(b);
+	unsigned int limit = BATcount(b);
 	CMDcard(&res, bid, &limit);
 	*result = res;
 	return MAL_SUCCEED;

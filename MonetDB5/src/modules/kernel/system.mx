@@ -191,8 +191,13 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
 #include "mal_client.h"
 
 #ifdef HAVE_SYS_TIMES_H
-# include <sys/times.h>
+#include <sys/times.h>
 #include <stream.h>
+#endif
+#ifndef NATIVE_WIN32
+# ifndef HZ
+#  define HZ CLK_TCK
+# endif
 #endif
  
 str SYSquit(int *ret) {

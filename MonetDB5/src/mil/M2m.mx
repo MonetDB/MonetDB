@@ -52,7 +52,7 @@ int main(int argc,char ** av)
          * however, that's too late for "case 'c'" in the 
 	 * option-checking "while(1)" loop ...
 	 */
-        char *buf = NULL, *ptr, *prog = *av, *config = NULL;
+        char *buf = NULL, *ptr, *config = NULL;
         opt *set = NULL;
         int i,debug = 0, setlen = 0;
 	int k,len,totlen;

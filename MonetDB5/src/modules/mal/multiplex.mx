@@ -118,6 +118,7 @@ static int batcalcTypeCheck(str operator, int type);
 
 str CMDmultiplexDebug(int *ret, int *b){
 	(void) ret ; /* still unused */
+	(void) multiplexDebug ; /* still unused */
 	multiplexDebug= *b;
 	return MAL_SUCCEED;
 }
@@ -410,10 +411,12 @@ code construction.
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i,k,l,mloop,refBat=0,resB,refType,cr;
-	int nilVar=0 /*, mvar*/,zz;
+	int nilVar=0 /*, mvar*/;
 	str ret= MAL_SUCCEED;
 	int hvar,rIndex=0;
+#ifdef DEBUG_MULTIPLEX
 	int assignop = FALSE;
+#endif
 	char name[128];
 	str s= (str) getArgValue(stk,pci,1);
 	MalBlkPtr m,m1;
@@ -432,7 +435,9 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* get result type of multiplexed operation */
 	refType = getArgType(m1,p,0);
 
+#ifdef DEBUG_MULTIPLEX
 	if(strcmp(s,functionName(p)) ) assignop= TRUE;
+#endif
 	m= newMalBlk(MAXVARS,MAXSTMTS);
 
 #ifdef DEBUG_MULTIPLEX
@@ -528,21 +533,10 @@ find the actule arguments at the proper place of the callee.
 	q->argv[1] = refBat;
 	hvar= q->argv[2] = newVariable(m,GDKstrdup("h"),getHeadType(refType));
 	sprintf(name,"B%d",rIndex);
-	zz= q->argv[3] = newVariable(m,GDKstrdup(name),
+	q->argv[3] = newVariable(m,GDKstrdup(name),
 		getTailType(getArgType(mb,pci,refBat)));
 	q->argc= 4;
 	pushInstruction(m,q);
-#ifdef TRACE_MULTIPLEX
-	if(multiplexDebug){
-	q= newInstruction(ASSIGNsymbol);
-	q->argv[0]= newTmpVariable(m,TYPE_any);
-	setFunctionId(q, GDKstrdup("print"));
-	q->argv[1] = zz;
-	q->argc=2;
-	pushInstruction(m,q);
-	}
-#endif
-	
 
 	/* $1:= bat.find(Ai,h) or constant */
 	for(i=2;i<pci->argc;i++)

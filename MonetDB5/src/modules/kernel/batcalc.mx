@@ -286,7 +286,7 @@ fixed-sized types.
 		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil)
 			*(@1*)p1= @1_nil;
 		else *(@1*)p1= * (@1*) p2 @2 *(@1 *) p3;
-		p1+= s1; p2+= s2; p3+= s3;
+		((@1*)p1)+= s1; ((@1*)p2)+= s2; ((@1*)p3)+= s3;
 	}
 @-
 This code could be further improved by factoring
@@ -297,7 +297,7 @@ This has been left out.
 		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
 			*(@1*)p1= @1_nil;
 		else *(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
-		p1+= s1; p2+= s2;
+		((@1*)p1)+= s1; ((@1*)p2)+= s2; 
 	}
 @-
 The following utility extracts the BATdescriptor

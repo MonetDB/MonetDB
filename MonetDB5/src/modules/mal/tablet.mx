@@ -1554,7 +1554,7 @@ static str bindVariable(Table *t, unsigned int anr, str nme, int tpe, ptr val, i
 
 	if(tpe == TYPE_bat){
 		BAT *b;
-		int ret,bid= *(int*)val;
+		int ret=0, bid= *(int*)val;
 		(void) ret; /* fool compiler */
 		@:getBATdescriptor(&ret,&bid,b,bindVariable)@
 		c->bval=b;
@@ -1687,7 +1687,8 @@ break;
 	else stream_write(t->fd, t->tbotbrk,1,strlen(t->tbotbrk));
 }
 void TABshowRow(Table *t){
-	unsigned int i=0, m=0;
+	unsigned int i=0;
+	int m=0;
 	char *buf=0;
 	Column *c= t->columns+i;
 	unsigned int len;
@@ -1789,7 +1790,8 @@ static int print_nil(char** dst, int *len, ptr dummy) {
 static int setTabwidth(Column *c) {
         strFcn tostr = printfcn(c->bval);
         size_t cnt = BATcount(c->bval);
-        unsigned int ret=0, max; int t = BATttype(c->bval);
+	int ret=0;
+        unsigned int max; int t = BATttype(c->bval);
 	char *buf=0;
 	char *title= c->bval->tident;
 
