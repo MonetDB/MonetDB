@@ -406,7 +406,8 @@ BIN = C:\\bin
 # Nothing much configurable below
 
 # cl -? describes the options
-CC = cl -G5 -GF -Ox -W3 -MD -nologo
+CC = cl -G6 -GF -W3 -MD -nologo -GZ -ZI
+# optimize use -Ox
 
 # No general LDFLAGS needed
 LDFLAGS = /link
