@@ -312,8 +312,8 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if( lhs->vtype == TYPE_bat){
 			BAT *b;
 			b= (BAT*) BBPgetdesc(lhs->val.bval);
-			if( b ) BBPfix(b->batCacheid);
-			else return throwMessage("bbp.bind","can not access descriptor");
+			if( b==NULL ) 
+			return throwMessage("bbp.bind","can not access descriptor");
 		}
 		return MAL_SUCCEED;
 	}
@@ -328,7 +328,6 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval= i;
-	BBPfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDbbpbindindex(int *ret, int *bid){
