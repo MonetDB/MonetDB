@@ -542,10 +542,11 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 		err = 0;
 		start = inbuf = NEW_ARRAY(char, size);
 		inlen = 0;
-		if( stream_write(out,prompt,promptlength,1) != 1 ){
-			go= FALSE; break;
+		if (stream_write(out,prompt,promptlength,1) != 1 ||
+		    stream_flush(out)) {
+			go = FALSE;
+			break;
 		}
-		stream_flush(out);
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
 		if (stream_read(in, start, 1, 1) != 1) {
 			/*error(out, "!ERROR:Connection terminated");*/
@@ -685,7 +686,10 @@ in the standard.
 					break;
 				}
 End of echo */
-				stream_flush( out );
+				if (stream_flush(out)) {
+					go = !go;
+					break;
+				}
 			}
 		}
 	  loop_end:
