@@ -2011,7 +2011,7 @@ def main(argv) :
 
     # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        mapi_mil = env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")
+        mapi_mil = env['MONET_PREFIX']+path("/lib/MonetDB/mapi.mil")
         if not os.path.isfile(mapi_mil):
             mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
             if not os.path.isfile(mapi_mil):

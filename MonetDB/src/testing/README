@@ -103,7 +103,7 @@ have changed since my proposal.
   * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB [TST.prelude] < TST.mil(M|S)
-  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT $MONET_PREFIX/share/MonetDB/mapi.mil [TST.prologue] &
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT $MONET_PREFIX/lib/MonetDB/mapi.mil [TST.prologue] &
          MapiClient < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
