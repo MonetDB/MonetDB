@@ -14,17 +14,11 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
-@' Contributor(s):
-@'              Martin Kersten <Martin.Kersten@cwi.nl>
-@'              Peter Boncz <Peter.Boncz@cwi.nl>
-@'              Niels Nes <Niels.Nes@cwi.nl>
-@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
-@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 
 @a M. Kersten
 @v 0.0
-@* MAL factories 
+@+ Factories 
+@T
 A convenient programming construct is the co-routine, which
 is specified as an ordinary function, but maintains its
 own state between calls, and permits re-entry other than
@@ -95,6 +89,7 @@ END random;
 }
 
 @+ Factory clients
+@T
 The factory can produce elements for multiple clients.
 The default policy is to not distinguish between clients,
 they share the same factory.
@@ -124,6 +119,7 @@ A read factory would be more involved, because aside
 from the first client, we may not have a seed value stored.
 
 @+ Factory control
+@T
 The predominant interaction between customer and factory
 is the ordinary call. The parameters can be used to instruct
 the factory on the actions to be taken. However, exceptional
@@ -136,6 +132,7 @@ gets a copy too.
 It effectively leads to a YIELD statement raising an exception.
 
 @+ Volcano processing
+@T
 One interesting use of the factory scheme is to model
 a volcano-style query processor. Each node in the query
 tree is an iterator that calls upon the operands to produce
@@ -235,5 +232,7 @@ exception to a Factory? implicitly yes.
 #include "mal_factory.h"
 
 Symbol newFactory(str nme,int kind){
-	return s;
+	(void) nme; (void) kind;
+	return 0;
 }
+@}

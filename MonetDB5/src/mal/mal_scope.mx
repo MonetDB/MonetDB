@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @a M. L. Kersten
 @* MAL runtime name space
@@ -235,16 +229,10 @@ void freeScopeList(Scope s){
 }
 @-
 After filling in a structure it is added to the multi-level
-symbol table.
+symbol table. We keep a skip list of similar named function
+symbols. This speeds up searching provided the modules adhire
+to the structure group the functions as well.
 @c
-/* old stuff for error detection
-int getSubScope(str nme) { 
-	if(nme == NULL){
-		return GDKerror("getSubScope with null function\n");
-	}
-	return *nme;
-}
-*/
 void insertSymbol(Scope scope, Symbol prg){
         InstrPtr sig;
         int t;
@@ -264,6 +252,10 @@ void insertSymbol(Scope scope, Symbol prg){
                 scope->subscope[t] = prg;
         } else {
                 prg->peer= scope->subscope[t];
+		if( prg->peer && 
+			idcmp(prg->name,prg->peer->name) == 0)
+			prg->skip = prg->peer->skip;
+		else	prg->skip = prg->peer;
                 scope->subscope[t] = prg;
         }
 }
@@ -313,7 +305,7 @@ Symbol findSymbolInScope(Scope v, str fcn){
 	s= v->subscope[(int)(*fcn)];
 	while(s!=NULL){
 		if( idcmp(s->name,fcn)==0 ) return s;
-		s= s->peer;
+		s= s->skip;
 	}
 	return NULL;
 }

@@ -9,7 +9,7 @@ lib_mal = {
 	mal_stack.mx mal_import.mx mal_session.mx mal_interpreter.mx \
 	mal_exception.mx mal_resolve.mx mal_function.mx mal_xml.mx \
 	mal_parser.mx mal_linker.mx mal_debugger.mx mal_atom.mx  \
-	mal_client.mx mal_profiler.mx mal_scenario.mx \
+	mal_client.mx mal_profiler.mx mal_scenario.mx mal_factory.mx \
 	mal_namespace.mx mal_properties.mx mal_optimizer.mx scenario_init.mx
 
 	HEADERS = h 
@@ -25,7 +25,7 @@ doc_ml = {
 	mal_stack.mx mal_import.mx mal_session.mx mal_interpreter.mx \
 	mal_exception.mx mal_resolve.mx mal_function.mx mal_xml.mx \
 	mal_parser.mx mal_linker.mx mal_debugger.mx mal_atom.mx  \
-	mal_client.mx mal_profiler.mx mal_scenario.mx \
+	mal_client.mx mal_profiler.mx mal_scenario.mx mal_factory.mx \
 	mal_namespace.mx mal_properties.mx mal_optimizer.mx scenario_init.mx
 }
 scripts_mal = {

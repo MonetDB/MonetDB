@@ -33,10 +33,10 @@ and others have found a resting place in the attic.
 MonetDB Version 5 is a major departure from the previous MonetDB database
 kernel versions. The most notable differences are its
 improved software stack and a new interface language,
-which turns the database server backend into an
+which turns the database server back-end into an
 abstract database machine with its associated assembler language (MAL).
 
-The architecture is designed to accomodate a wide-spectrum 
+The architecture is designed to accommodate a wide-spectrum 
 of query language front-ends (SQL,Xquery,RAM,MIL),
 a variety of query transformation schemes, and
 different execution platforms (interpreted MAL, x100, and
@@ -44,7 +44,7 @@ dynamic compilation).
 
 The system expands the MonetDB software infrastructure, distributed
 already in the open source community. In particular, it supports backward
-compatability of interfaces, tools, and source sharing where
+compatibility of interfaces, tools, and source sharing where
 feasible within the limited scope of resources available.
 
 This interface is designed for ease of interpretation, versatility and
@@ -56,7 +56,7 @@ Moreover, a textual interface reduces the programming
 effort otherwise needed to develop test and application programs.
 
 In the remainder of this section we shortly introduce the
-MonetDB product familiy, the design considerations and
+MonetDB product family, the design considerations and
 a quick overview of the MonetDB Version 5 architecture.
 
 @+ Backward compatibility
@@ -68,7 +68,7 @@ following components are taken into account.
 directly on both old and new versions. MIL programs can
 mostly be converted to the MAL language.\footnote{
 Only those features are compiled that do not require runtime
-knowledge on the typeing structure.}
+knowledge on the typing structure.}
 \item {\em back-ends}. Both  GDK, column buffer managers, and 
 possibly the x100 kernel can targets for execution.
 \item {\em extension modules}, the key extensions to the GDK kernel
@@ -77,7 +77,7 @@ are mostly carried over without change.
 complexity at the language layer. However, the concept of a BAT type
 is retained, it denotes the bat of interest with a guarantee
 that the bat was not removed after it got referenced.
-\item{\em auxilliary search paths} are not supported, due to lack
+\item{\em auxiliary search paths} are not supported, due to lack
 of interest in Version 4 user community.
 \end{itemize}
 @+ Design considerations
@@ -118,14 +118,15 @@ This results in a PnP architecture to assemble the components
 for a particular application domain and hardware platform.
 
 @+ Architecture overview
-The software stack for Version 5 is shown in 
-@T \figure{architecture.gif}
+The software stack for Version 5 is shown in Figure
+@T
+\figure{architecture.gif}
 @-
 The top layer consists of the query language processors and their
 strategic optimizers. Moreover, each language comes with its language
 oriented catalog, which may, but need not be stored in the MonetDB database.
 
-@+ MAL
+@+ MAL Synopsis
 @T
 The target language for Version 5 is an assembler-like language,
 derived as a subset of the Monet Interface Language introduced
@@ -143,7 +144,7 @@ the engines available and application needs.
 The novel container model for MAL objects is a balance between hardwired
 decisions based on the typing scheme
 and hooks to implement those as user-defined extensions.
-In particular, objects can be assembled in {\em box}es, which come
+For example, objects can be assembled in {\em box}es, which come
 with a simple management protocol. Their implementation can be
 geared towards any management style required, e.g. delivery of
 read-only objects for query processing, transparency to external
@@ -159,15 +160,13 @@ full breath of computational paradigms deployed in a database
 setting. In particular, it should provide a clean infrastructure
 to implement triggers and stream-based database applications.
 
-@+ Functional improvements
-@T
 The design and implementation takes the functionality a 
 significant step further. To name a few:
 \begin{itemize}
 \item {\em strong typing}. All instructions are strongly
 typed before being executed. However, type checking depends on
-the structure of the signarture, e.g. polymorphic functions are supported. 
-They act as templates that produce strongly typed instanciations when needed.
+the structure of the signature, e.g. polymorphic functions are supported. 
+They act as templates that produce strongly typed instantiations when needed.
 \item {\em function style expressions}, 
 each assignment instruction can receives multiple target results;
 it forms a point in the dataflow graph. 
@@ -245,10 +244,8 @@ Startup of the Monet engine consists of two steps. First, the
 system kernel libraries are loaded.
 The global symbol table is initialized with pre-compiled commands
 and pattern definitions.
-Second, for each service thread we execute a script with predefined
-MAL procedures.
 
-The information for the first phase consists of commands 
+The information for this phase consists of commands 
 signatures bound to actual routine implementations.
 The corresponding libraries may be statically linked or dynamically loaded.
 Failure to find the startup-files terminates to session, because
@@ -346,7 +343,6 @@ void tstAligned()
 int mal_init(){
 	mal_contextLock= MT_create_lock();
 	tstAligned();
-	GDKprotect();
 	initNamespace();
 	initParser();
         if( malBootstrap() == 0) return -1;

@@ -27,43 +27,42 @@ The language is not meant as a primary programming language,
 or scripting language. Such use is even discouraged.
 
 Furthermore, a MAL program is considered a specification
-of intended computation and data flow behaviour. It should be
+of intended computation and data flow behavior. It should be
 understood that its actual evaluation depends on the execution
-paradigm choosen in the scenario. The program blocks can both
-be interpreted as ordered sequences of assembler instructions
-as a representation of a dataflow graph that should be resolved.
+paradigm chosen in the scenario. The program blocks can both
+be interpreted as ordered sequences of assembler instructions,
+as a representation of a data-flow graph that should be resolved.
 
 The language uses a slightly different keyword connotation 
 from programming language arena to make this distinction more evident.
 In particular, flow of control keywords identify a point to chance
 the interpretation order or denote a synchronization point
-in dataflow behavior.
+in data-flow behavior.
 
-The first statement of a MAL block is taken up by a signature
+The first statement of a MAL block is always taken up by a signature
 description. (See functions)
 
 @+ MAL instructions
 MAL instructions have a simple format. 
-Each instruction denotes a dataflow statement.
-It is syntactially represented by an assignment, where
+Each instruction denotes a data-flow statement.
+It is syntactically represented by an assignment, where
 an expression (function call) delivers results to target variables. 
-Input variables changed in the process should also appear in
+Input variables changed in the process preferably also appear in
 the target list. This greatly simplifies future optimization
 decisions.
-
-Ommission of target variables is allowed. Then the compiler
-merely assigns temporary variables to hold the result of
-the expression. They act as data sinks in the flow graph.
-
-For parsing simplifity, each instruction fits on a single line.
-Comment starts with a sharp '#' and continues to the end of the line.
 
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
 the context in which they are used. 
-(See the MAL typing section)
 
-Built-in operators adhire to the conventional syntax
+Omission of target variables is allowed. Then the compiler
+merely assigns temporary variables to hold the result of
+the expression. They act as data sinks in the flow graph.
+
+For parsing simplicity, each instruction fits on a single line.
+Comment starts with a sharp '#' and continues to the end of the line.
+
+Built-in operators adhere to the conventional syntax
 as pre-, post-, and infix notations. They are translated
 during parsing to the generic form.
 
@@ -80,14 +79,14 @@ t1 := constant;
 
 Each operator is defined in a (user-defined) module.
 Knowing its name simplifies the implementation of the binding, but its use is optional.
-Ommission of the module name initiates a search for a possible
+Omission of the module name initiates a search for a possible
 matching definition in a hierarchical ordered scope
 structure. (See modules inheritance)
 
 Variables and literal constants can be tagged with a type
 qualifier. The literal value should fit the domain of the
-type identified, e.g. 4:lng is valid, but "1":int raises an
-error. [todo]
+type identified, e.g. 4:lng is valid, but "xyz":int raises an
+error. [TODO]
 
 Query languages like SQL are commonly mapped to an algebraic 
 operator model. In our case, even simple SQL queries generate
@@ -102,7 +101,7 @@ Only when the algebraic structure is too limited (e.g. updates),
 or the database back-end lacks feasible bulk operators,
 one has to rely on more detailed flow of control primitives.
 But even in that case, the basic blocks to be processed
-by a MAL backend are considered large, e.g. tens of simple
+by a MAL back-end are considered large, e.g. tens of simple
 bulk assignment instructions.
 
 @- Flow of control
@@ -114,9 +113,8 @@ and {\tt end}.
 They mark the end of a function call and return one or more results
 to the calling environment. 
 The {\tt return} and {\tt yield} are followed by a target list
-or an assignement, which is executed first.
+or an assignment, which is executed first.
 The {\tt end} marker identifies the end of functional abstraction. 
-Its target list is the function name, whose value is returned.
 Anything beyond it is ignored.
 
 The flow of control within a MAL program block can be changed by
@@ -129,32 +127,33 @@ The {\tt barrier}, {\tt leave} and {\tt redo} are conditional
 flow modifiers, because they use the value of the first target 
 variable after the expression has been evaluated to decide
 on the action to be taken.
-Builtin barrier controls exists for booleans and numeric values.
+Built-in barrier controls exists for booleans and numeric values.
 The barrier is opened when the first target variable holds
 true, when its numeric value $>=$ 0, when it is a non-empty
 string. The {\sc nil} value blocks entry in all cases.
 
-Similar, for redo and leave statements if the condition is
-met then the control action is taken.
 
 Once inside the barrier you have an option to prematurely
 {\tt leave} it at the exit statement
 or to {\tt redo} interpretation just after the corresponding
 barrier statement. Much like 'break' and 'continue' statements 
 in C.
+The control action is taken when the condition is met.
 
-The {\tt exit} marks the exit for a block. Its assignment
+The {\tt exit} marks the exit for a block. Its optional assignment
 can be used to re-initialize the barrier control variables
 or wrap-up any related administration.
-A control block is recognized by the same target set.
+
+A control block is recognized by its target variable set.
+This implies that nesting on the same target set is prohibited.
 
 The barrier blocks can be properly nested to form
 a hierarchy of basic blocks.
 The control flow within and between blocks is
-simple enough to deal with during the optimizer stage.
+simple enough to deal with during an optimizer stage.
 The {\tt redo} and {\tt leave} statements mark
 the partial end of a block. Statements within these
-blocks can be re-arranged according to the dataflow
+blocks can be re-arranged according to the data-flow
 dependencies. The order of partial blocks can not
 be changed that easily. It depends on the mutual
 exclusion of the data flows within each partial block.
@@ -181,12 +180,13 @@ becomes:
 barrier ifpart:= i<1;
     print("ok");
 exit ifpart;
-barrier elsepart:= not b;
+barrier elsepart:= i>=1;
     print("wrong");
 exit elsepart;
 \end{verbatim}
 Note that both guarded blocks can be interchanged without
-affecting the outcome.
+affecting the outcome. Moreover, neither block would
+have been entered if the variable happens to be assigned {\sc nil }
 
 Beware that {\tt redo} is a flow modifier attached to an instruction.
 The generic form of an iterator looks like
@@ -202,7 +202,7 @@ exit i:= exitIterator(T);
 The semantics obeyed by the implementations should be as follows.
 The redo expression updates the target variable {\em i} and control
 proceeds at the first statement after the barrier when the
-barried is opened by {\em i}. If the barrier could not be
+barrier is opened by {\em i}. If the barrier could not be
 re-opened, execution proceeds with the first statement after
 the redo.
 Likewise, the leave control statement skips to the exit
@@ -212,7 +212,7 @@ Note, in both failed cases the control variable is
 possibly changed.
 
 A recurring situation is to iterate over the elements in
-a BAT. This is supported by iterator implementation in
+a BAT. This is supported by an iterator implementation in
 the bbp module as follows:
 \begin{verbatim}
 barrier (idx,hd,tl):= newIterator(B);
@@ -257,23 +257,23 @@ exit    hdl;
 
 @-
 @}
-@+ MAL data structures
-The datastructure to represent a MAL block is kept simple.
+@+ The MAL instruction records
+The data structure to represent a MAL block is kept simple.
 Each descriptor carries a sequence of MAL statements 
 and a local symbol table.
 
-The constants are stored in the symbol table.
+The constants are all stored in the symbol table.
 Each tuple contains a reference to the argument name,
-a reference to a lexical value when it denotes a constant,
-its associated Mal type identifier.
+a reference to a lexical value when it denotes a constant
+and its optional Mal type identifier.
 Upon procedure return, the variable block is inspected to find
-objects eligable for garbage collection (e.g. strings).
+objects eligible for garbage collection (e.g. strings).
 
-The instruction is a code byte string overlaid with the
+The MAL instruction is a code byte string overlaid with the
 instruction pattern. This method leads to a large
 allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
-Each argument list starts with a reference to the destination variable. 
+Each argument list starts with a reference to a destination variable. 
 
 Variable- and stmt- block together describe the
 static part of a MAL procedure. It carries carry enough information to produce
@@ -281,20 +281,20 @@ a listing and to aid symbolic debugging. Ideally, the listing
 of a MAL program is identical to the non-commented source.
 This costs some space, but will improve readability and permits
 instruction sequences generated internally also to be kept
-around as ascii text for later inclusion.
+around as ASCII text for later inclusion.
 
 WARNING. The way we lay out the instructions means that 
 you can prepare only one instruction at a time, because you don't
 know how many arguments may be needed upfront.
-@-
-A variable binding may become CONSTANT for the duration of its
-life time.
+[TODO, rather then breaking the original input into pieces,
+it would be worthwhile to keep track of location of the
+instruction in the source.]
 @-
 The instruction records contain three optional pointers to functions:
 beforeCall, afterCall, and finalCall. They are bound to the result type.
 All expect a pointer to a VALrecord. The beforeCall is activated
 just before you enter a routine and can be used to initialize
-the stackframe, perform debugging, etc.etc.
+the stack frame, perform debugging, etc.etc.
 The afterCall is activated after a successful return and can be
 used to finalize the administration.
 Typical use of beforeCall and afterCall are handling of BAT references,
@@ -303,39 +303,11 @@ The finalCall is activated when the scope in which the object is
 used is terminated. This may require garbage collection actions.
 @-
 [Think, should beforeCall/afterCall also become part of the MAL functions?]
-@-
-The procedural abstraction comes in two forms, FUNCTION and FACTORY.
-The former behaves as a normal function, it computes one or more results
-and terminates. Contrary, the FACTORY call leads to an independent thread
-of control that waits for a re-activation request. Stream operations are
-primarilly interesting within code blocks that are executed repeatedly.
-To illustrate, the program below generates a stream of random numbers.
-@T
-\begin{verbatim}
-stream random(seed:int):(z:bit,v:int);
-        i:= seed;
-barrier L:= true;
-        i:= 125 *i;
-        i:= i % 32767;
-        return (true,i);
-        # continue here upon next
-        # call from same source
-        redo L;
-exit L;
-        return (false,0);
-end;
-
-#main block
-barrier (Z,val):=random(1);
-        print(val);
-       	redo Z;
-exit Z;
-\end{verbatim}
 @{
 For implementation reasons the maximum number of parameters is a
 compile time constant. Its choice should be large enough to
-accomodate the functions you have in mind. 
-[todo, the size is known after parsing]
+accommodate the functions you have in mind. 
+[TODO, the size is known after parsing]
 
 @h
 #ifndef _MAL_INSTR_H
@@ -360,6 +332,7 @@ accomodate the functions you have in mind.
 
 typedef struct SYMDEF {
         struct SYMDEF   *peer;  /* where to look next */
+        struct SYMDEF   *skip;  /* skip to next different symbol */
         str     name;
         int	kind;
         struct MALBLK   *def;    /* the details of the MAL fcn */
@@ -509,6 +482,7 @@ mal_export void		removeInstruction(MalBlkPtr mb, int pc);
 mal_export str 		operatorName(int i);
 
 mal_export int		findVariable(MalBlkPtr mb, str name);
+mal_export int		findTmpVariable(MalBlkPtr mb, int type);
 mal_export int		findVariableLength(MalBlkPtr mb, str name,int len);
 mal_export malType	getType(MalBlkPtr mb, str nme);
 mal_export str		getVarName(MalBlkPtr mb, int i);
@@ -886,6 +860,14 @@ int findVariable(MalBlkPtr mb, str name){
 		return i;
 	return -1;
 }
+int findTmpVariable(MalBlkPtr mb, int type){
+	int i;
+	if( type == TYPE_any) return -1;
+	for(i=mb->vtop-1; i>=0; i--)
+	if(isTmpVar(mb,i) && getVarType(mb,i) == type )
+		return i;
+	return -1;
+}
 @-
 The second version of findVariable assumes you have not
 yet allocated a private structure. This is particularly
@@ -946,14 +928,14 @@ int isReserved(str nme){
 		  if( idcmp("function",nme)==0) return 1;
 		  if( idcmp("factory",nme)==0) return 1;
 		  break;
+	case 'I': case 'i': if( idcmp("include",nme)==0) return 1;
+		  break;
 	case 'M': case 'm': if( idcmp("module",nme)==0) return 1;
 		  break;
 	case 'P': case 'p': if( idcmp("pattern",nme)==0) return 1;
 		  break;
 	case 'T': case 't': if( idcmp("thread",nme)==0) return 1;
 		  if( idcmp("true",nme)==0) return 1;
-		  break;
-	case 'U': case 'u': if( idcmp("use",nme)==0) return 1;
 		  break;
 	}
 	return 0;
@@ -1015,13 +997,25 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 	mb->vtop++;
 	return n;
 } 
-@-
-Temporary variables are relatively easy to add to the symbol table.
-We have copied the code base and trimmed all that does not make sense.
+@}
+@- Temporary variables
+Temporary target variable acts as sinks in the data flow graph.
+In this case, we can group them by underlying type and this way
+reduce the symbol table size significantly.
+@{
+Sharing of the temporary is only permitted if the type
+is a priory known and not TYPE_any.
 @c
 int newTmpVariable(MalBlkPtr mb, malType type){
         int n;
         
+/*
+	if( type != TYPE_any){
+		n= findTmpVariable(mb,type);
+		if( n >= 0 )
+			return n;
+	}
+*/
 	@:makeVarSpace@
 	n = mb->vtop;
 	if( getVar(mb,n)== NULL)
@@ -1477,7 +1471,7 @@ void pushEndInstruction(MalBlkPtr mb){
 	pushInstruction(mb,p);
 }
 @}
-@+ Reverse programming
+@- Reverse programming
 Since MAL programs can be created on the fly by linked-in query
 compilers, or transformed by optimizers, it becomes
 mandatory to be able to produce textual correct MAL programs

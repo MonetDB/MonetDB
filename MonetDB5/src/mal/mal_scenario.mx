@@ -25,6 +25,7 @@
 @a M. Kersten
 @v 0.0
 @* Session scenarios
+@T
 In MonetDB multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
 Such an assemblage of components is called a {\em scenario}
@@ -35,14 +36,14 @@ for both linked-in and external components.
 The languages "currently" supported are SQL, MIL ( a large 
 part of Monet version 4), and MAL (Monet Assembler Language).
 The default being to accept MAL instructions immediately
-followed by a MAL optimization & interpreter call.
+followed by a MAL optimization \& interpreter call.
 
 The {\em reader} component merely handles interaction with
 a front-end to obtain a string for subsequent compilation and
 execution. The string is associated with the client record
 for the duration of its execution.
-Possible functional enhancements are a history scheme, access
-to remote Mservers,....
+Possible functional enhancements are a query cache,
+history scheme, replication to remote Mservers,....
 
 The prime task of the language specific parser is to prepare a
 MAL block for subsequent processing. It could be as simple
@@ -56,7 +57,7 @@ optimizer, which normally deploys language specific optimizations,
 e.g. foreign-key optimizations in joins and volume reduction over
 intermediates. All information is statically derived from the
 code blocks. They may leave advice and their findings in properties
-in the symboltable.
+in the symbol table.
 
 Once the MAL block has thus been prepared for execution, the
 scheduler prepares for tactical optimizations.
@@ -75,7 +76,7 @@ The first time a scenario is used, the system looks for a scenario
 initialization routine and executes it. It is typically used to 
 prepare the server for language specific interactions.
 Thereafter its components are set to those required by
-the scenario (e.g. "sql") and the client initialization takes place.
+the scenario (e.g. "SQL") and the client initialization takes place.
 
 When the last user interested in a particular scenario leaves the
 scene, we activate its finalization routine.
@@ -96,7 +97,6 @@ pushing a new one(language, optimize, tactic,
 processor). Propagation of the state information is
 encapsulated a scenario2scenario() call. Not all transformations
 may be legal.
-
 @{
 @+ Scenario administration
 Administration of scenarios follows the access rules 
@@ -407,9 +407,11 @@ void exitScenario(Client c){
 		(*scen->exitScenarioCmd)(c);
 }
 @}
-@- 
+@- Scenario hooks
 The building blocks of scenarios are routines obeying a strict
-calling sequence.
+signature. They all require sole access to the client
+record. Any specific information should be accessible from
+there, e.g. access to a scenario specific state descriptor.
 
 The XYZparser(Client c) contains the parser for language XYZ
 and should fill the mal program block associated with the client record.

@@ -734,9 +734,9 @@ functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
 		arg = idCopy(cntxt,l);
 	else arg= 0;
 	type= typeElm(cntxt);
-	if( arg == 0)
-	     varid= newTmpVariable(curBlk,type);
-	else varid= newVariable(curBlk,arg,type);
+	if( arg == 0){
+	     varid= newTmpVariable(curBlk,TYPE_any);
+	} else varid= newVariable(curBlk,arg,type);
 	@:propList(varid)@
 	curInstr= pushArgument(curBlk,curInstr, varid);
 	if( isPolymorphic(type))

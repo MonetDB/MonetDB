@@ -14,13 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 @a M. Kersten
 @v 0.0
 @+ Bootstrap loading 
@@ -49,7 +42,7 @@ is best to load them as part of the server initialization phase.
 The MAL program should be compiled with -rdynamic and -ldl.
 This enables loading the routines and finding out the address
 of a particular routine
-
+@-
 @{
 For the time being we assume that all commands are statically linked.
 @h
@@ -65,6 +58,7 @@ mal_export void unloadModuleLibraries();
 mal_export void initLibraries();
 mal_export int 	isPreloaded(str nme);
 #endif
+@}
 @+ Function binding
 The mapping from MAL module.function() identifier to an address is
 resolved in the function getAddress. Since all modules libraries are loaded
@@ -73,6 +67,7 @@ name.
 Note, however, that the libraries are reference counted. Although we
 do;t close them until end of session it seems prudent to maintain
 the consistency of this counter.
+@{
 @c
 #include "mal_linker.h"
 #include "mal_function.h"	/* for throwException() */
@@ -105,7 +100,7 @@ MALfcn getAddress(str fcnname){
 	dlclose(dl);
 	return adr;
 }
-
+@}
 @+ Module loading
 The default location to search for the module is in monet_mod_path
 unless an absolute path is given.
@@ -121,6 +116,7 @@ before the module is unloaded.
 A module loading conflict emerges if a function is redefined.
 A duplicate load is simply ignored by keeping track of modules
 already loaded.
+@{
 @c
 #define MAXMODULES 256
 
@@ -185,6 +181,7 @@ void unloadModuleLibraries(){
 	}
 	(void) clear_moddir();
 }
+@}
 @+ Static pre-loading
 To speedup restart and to simplify debugging, the Monet server can
 be statically linked with some (or all) of the modules. 
@@ -194,11 +191,10 @@ of the module file, because it would lead to a dlopen error.
 The partial way out of this dilema is to administer somewhere
 the statically bound modules, or to enforce that each module
 comes with a known routine for which we can search.
-
 In the current version we use the former approach.
+@{
 The routine below turns off dynamic loading while parsing the
 command signature files.
-
 @c
 static str preloaded[]={
 	"kernel/bat",
@@ -222,7 +218,6 @@ void initLibraries() {
 	}
 */
 }
-@}
 @+ Handling of Module Search Path
 The plausible locations of the modules can be designated by
 an environment variable. 
@@ -523,3 +518,4 @@ char *MSP_locate_scriptVersion4(char *mod_name) {
     GDKfree(name);
     return 0;
 }
+@}

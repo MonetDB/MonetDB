@@ -158,7 +158,7 @@ Check first for a module specific type checker. It takes
 precedence and should handle all cases. It returns -1
 upon failure, which shortcuts the execution.
 @c
-	if(moduleId(p) && scope->typeChecker &&
+	if(scope->typeChecker && moduleId(p) &&
 		idcmp(moduleName(p),scope->name)==0 ){
 		if( (scope->typeChecker)(scope,mb,p)!=0)
 			return getArgType(mb,p,0);
@@ -176,7 +176,7 @@ of symbols.
 	s= m->subscope[(int)(getSubScope(functionName(p)))];
 	while(s != NULL){	/* single scope element check */
 	if( idcmp(functionName(p),s->name ) ){
-		s= s->peer; continue;
+		s= s->skip; continue;
 	}
 @-
 Perform a strong type-check on the actual arguments. If it turns
@@ -259,7 +259,7 @@ In all other cases the type should apply to all remaining arguments.
 Any reference to the polytype table is removed. Possibly
 turning a contrainted type into 'any', which matches all types.
 @c
-			if( resolveType( formal,actual) == -1 ){
+			if(formal!=actual &&  resolveType( formal,actual) == -1 ){
 				unmatched= i;
 				break;
 			}
@@ -270,7 +270,7 @@ turning a contrainted type into 'any', which matches all types.
 		for(i=p->retc;i<p->argc;i++){
 			int actual = getArgType(mb,p,i);
 			int formal = getArgType(s->def,sig,i);
-			if( resolveType( formal,actual) == -1 ){
+			if(formal!=actual &&  resolveType( formal,actual) == -1 ){
 				unmatched= i;
 				break;
 			}
@@ -473,24 +473,20 @@ i.e. of type 'any'. The type resolution algorithm creates the concrete
 type for subsequent use.
 @c
 int resolveType(int dsttype, int srctype){  
-	int h1,t1,h2,t2,h3,t3;
 #ifdef DEBUG_MAL_RESOLVE
-	int i1,i2;
 	if( tracefcn){
 		stream_printf(GDKout,"resolveType dst %s (%d) %s(%d)\n",
 			getTypeName(dsttype), dsttype,
 			getTypeName(srctype),srctype);
 	}
 #endif
-	if( srctype== TYPE_bat)
-		srctype= newBatType(TYPE_any,TYPE_any);
-	if( dsttype== TYPE_bat)
-		dsttype= newBatType(TYPE_any,TYPE_any);
 	if( dsttype == srctype) return dsttype;
 	if( dsttype == TYPE_any) return srctype;
 	if( srctype == TYPE_any) return dsttype;
 	if( isaBatType(dsttype) && isaBatType(srctype) ){
+		int h1,t1,h2,t2,h3,t3;
 #ifdef DEBUG_MAL_RESOLVE
+		int i1,i2;
 		i1= getHeadIndex(dsttype);
 		i2= getTailIndex(dsttype);
 #endif
