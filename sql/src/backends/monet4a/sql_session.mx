@@ -479,10 +479,10 @@ int sqlexecute(backend * be, stream *out )
 Sidestepping SQL to directly executed a single MIL statement 
 in the same context.
 @c
-void sidestepSQL(Cntxt stk, mvc *sqlc){
+void sidestepSQL(Cntxt stk, char *cmd){
 	ValRecord res;
 	res.vtype= TYPE_void;
-	interpret_str(stk, sqlc->scanner.buf+6, &res);
+	interpret_str(stk, cmd, &res);
 }
 
 @c
@@ -592,11 +592,23 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 			break;
 
 		if (language == 'X') {
+			int n, id, off, len;
 			int reply_size = 0;
+
 			if (sscanf(inbuf, "reply_size %d", &reply_size) == 1) {
 				Variable rs = 0;
 				if ((rs = VARfind(&stk, "reply_size")) != NULL) 
 					rs->binding.val.ival = reply_size;
+				goto loop_end; /* continue */
+			}
+			n = sscanf(inbuf, "export %d %d %d", &id, &off, &len);
+			if (n == 2 || n == 3) {
+				Variable rs = 0;
+				if ((rs = VARfind(&stk, "reply_size")) != 0)
+					reply_size = rs->binding.val.ival;
+				else
+					reply_size = 100;
+				mvc_export_table(m, out, id, off, n == 3 ? len : reply_size);
 				goto loop_end; /* continue */
 			}
 			error(out, "!ERROR:Unrecognized X command");
@@ -619,7 +631,7 @@ query string with "--mil ", which would be considered comment
 in the standard. 
 @c
 			if(strncmp(m->scanner.buf,"--mil ",6)==0){
-				sidestepSQL(stk, m);
+				sidestepSQL(stk,m->scanner.buf+6);
 				break;
 			}
 
