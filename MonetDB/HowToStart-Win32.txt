@@ -2,6 +2,9 @@ This document helps you to install the MonetDB source and compile it.
 Once succeeded, refer to doc/monet.html for the user documentation
 generated as part of the process.
 
+In case you prefer to install a pre-compiled binary distribution, please
+check-out http://sourceforge.net/project/showfiles.php?group_id=56967 .
+
 This document assumes that you are planning to compile and install
 MonetDB on a native Windows system (NT, 2000, XP). 
 For compilation and installation on a Unix system (e.g., Linux, IRIX,
