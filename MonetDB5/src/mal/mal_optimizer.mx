@@ -56,7 +56,7 @@ should have done their work already. For example, it doesn;t make sense
 to perform a static evaluation unless you have already propagated the
 constants using Alias Removal.
 
-@- Scalar expressions (SXoptimizer)
+@emph{Scalar expressions (SXoptimizer)}
 Goal: to remove scalar expressions which need be evaluated once during the
 query lifetime.
 Rationale: static expressions appear 
@@ -71,7 +71,7 @@ to do so. The result of a static evaluation provides a ground for AR.
 Impact: relevant for stored queries (MAL functions)
 Prereq: AR, CX
 
-@- Alias Removal (ARoptimizer)
+@emph{Alias Removal (ARoptimizer)}
 Goal: to reduce the number of  variables referenceing the same value,
 thereby reducing the analysis complexity.
 Rationale: query transformations often result in replacing
@@ -84,7 +84,7 @@ replaced by a single variable.
 Impact: medium
 
 
-@- Common Expression Optimizer (CXoptimizer)
+@emph{Common Expression Optimizer (CXoptimizer)}
 Goal: to reduce the amount of work by avoiding calculation of the same
 operation twice.
 Rationale: to simplify code generation for front-ends, they do not have
@@ -95,7 +95,7 @@ patterns.  (Enhance is with semantic equivalent instructions)
 Impact: High
 Prereq: AR
 
-@- Dead Code Removal (DCoptimizer)
+@emph{Dead Code Removal (DCoptimizer)}
 Goal: to remove all instructions whose result is not used
 Rationale: due to sloppy coding or alternative execution paths
 dead code may appear. Als XML Pathfinder is expected to produce
@@ -103,7 +103,7 @@ a large number of simple assignments.
 Approach: Every instruction should produce a value used somewhere else.
 Impact: low
 
-@- Idempotent Removal (RRoptimizer)
+@emph{Idempotent Removal (RRoptimizer)}
 Goal: combinations of reversals kan be removed
 Rationale: reversal pairs may occur due to the processing scheme of a front-end
 or as a side-effect from other optimization steps. Such reversal pairs should
@@ -114,7 +114,7 @@ that are bound to produce the operand.
 Approach: simple find the reverse combos.
 Impact: low (peephole optimizer)
 
-@- Selection Push Down (SPoptimizer)
+@emph{Selection Push Down (SPoptimizer)}
 Goal: to reduce the volume as quick as possible.
 Rationale: most queries are focussed on a small part of the database.
 To avoid carrying too many intermediates, the selection should be performed as
@@ -123,7 +123,7 @@ known upfront, which in turn depends on histogram of the value distribution.
 Approach: locate selections and push them back/forth through the flow graph.
 Impact: high
 
-@- Join Path Optimizer (JPOoptimizer)
+@emph{Join Path Optimizer (JPOoptimizer)}
 Goal: to reduce the volume produced by a join sequence
 Rationale: join paths are potentially expensive operations. Ideally the join
 path is evaluated starting at the smallest component, so as to reduce the
@@ -135,7 +135,7 @@ restore to an incremental algorithm, which decides on the steps using the
 size of the relations.
 Impact: high
 
-@- Operator Sort (OSoptimizer)
+@emph{Operator Sort (OSoptimizer)}
 Goal: to sort the dataflow graph in such a way as to reduce the
 cost, or to assure locality of access for operands.
 Rationale: A simple optimizer is to order the instructions for
@@ -143,7 +143,7 @@ execution by permutation of the query components
 Approach:
 Impact:
 
-@- Result Cacher (RCoptimizer)
+@emph{Result Cacher (RCoptimizer)}
 Goal: to reduce the processing cost by keeping track of expensive to
 compute intermediate results
 Rationale: 
@@ -153,7 +153,7 @@ remain unchanged. Result caching can be made transparent to the user, but
 affects the other QOTs
 Impact: high
 
-@- Vector Execution (VEoptimizer)
+@emph{Vector Execution (VEoptimizer)}
 Goal: to rewrite a query to use a cache-optimal vector implementation
 Rationale: processing in the cache is by far the best you can get.
 However, the operands may far exceed the cache size and should be broken
@@ -161,7 +161,7 @@ into pieces followed by a staged execution of the fragments involved.
 Approach: replace the query plan with fragment streamers
 Impact:
 
-@- Staged Execution (SEoptimizer)
+@emph{Staged Execution (SEoptimizer)}
 Goal: to split a query plan into a number of steps, such that the first
 response set is delivered as quickly as possible. The remainder is only
 produced upon request.
@@ -173,7 +173,7 @@ This fragmentation could be determined upfront by the user or is derived
 from the query and database statistics.
 impact: high
 
-@- Code Parallizer (CPoptimizer)
+@emph{Code Parallizer (CPoptimizer)}
 Goal: to exploit parallel IO and cpu processing in both SMP and MPP settings.
 Rationale: throwing more resources to solve a complex query helps, provided
 it is easy to determine that parallel processing recovers the administrative
@@ -181,7 +181,7 @@ overhead
 Approach: every flow path segment can be handled by an independent process thread.
 Impact: high
 
-@- Query Evaluation Maps (QEMoptimizer)
+@emph{Query Evaluation Maps (QEMoptimizer)}
 Goal: to avoid touching any tuple that is not relevant for answering a query.
 Rationale: the majority of work in solving a query is to disgard tuples of
 no interest and to find correlated tuples through join conditions. Ideally,
@@ -190,7 +190,7 @@ a map) to replace disgarding by map lookup.
 Approach: piggyback selection and joins as database fragmentation instructions
 Impact: high
 
-@- Expression Compiler (ECoptimizer) (tactics)
+@emph{Expression Compiler (ECoptimizer) (tactics)}
 Goal: to avoid interpretation of functional expressions
 Rationale: interpretation of arithmetic expressions with an interpreter
 is always expensive. Replacing a complex arithmetic expressin with a
@@ -199,7 +199,7 @@ cached (MAL) queries
 Approach:
 Impact: high
 
-@- Dynamic Query Scheduler (DQSoptimizer) (tactics)
+@emph{Dynamic Query Scheduler (DQSoptimizer) (tactics)}
 Goal: to organize the work in a way so as to optimize resource usage
 Rationale: straight interpretation of a query plan may not lead to the best
 use of the underlying resources. For example, the content of the runtime
@@ -209,7 +209,7 @@ takes over control. The scheduling step involves a re-ordering of the
 instructions within the boundaries imposed by the flow graph.
 impact: medium
 
-@- Aggregate Groups (AGoptimizer)
+@emph{Aggregate Groups (AGoptimizer)}
 Goal: to reduce the cost of computing aggregate expressions over times
 Rationale: many of our applications call for calculation of aggregates
 over dynamically defined groupings. They call for lengtly scans and it pays
@@ -218,20 +218,20 @@ later consumption (eg the optimizers)
 Approach:
 Impact: High
 
-@- Data Cube optimizer (DCoptimizer)
+@emph{Data Cube optimizer (DCoptimizer)}
 Goal: to recognize data cube operations
 Rationale: 
 Approach:
 Impact:
 
-@- Operator Cost Reduction (OCRoptimizer)
+@emph{Operator Cost Reduction (OCRoptimizer)}
 Goal: to locate sequences of operators and to replace them with cheaper ones.
 Rationale: based on the actual state of the computation and the richness of
 the supporting libraries there may exists alternative routes to solve a query.
 Approach: Operator rewriting depends on properties. No general technique.
 Impact: high
 
-@- Demand Driven Interpreter (DDoptimizer) (tactics)
+@emph{Demand Driven Interpreter (DDoptimizer) (tactics)}
 Goal: to use the best interpreter and libraries geared at the task at hand
 Rationale: Interpretation of a query plan can be based on different
 computational models. A demand driven interpretation starts at the intended 
@@ -240,7 +240,7 @@ possibly in a pipelined fashion. (Vulcano model)
 Approach: merely calls for a different implementation of the core operators
 Impact: high
 
-@- Iterator Strength Reduction (ISRoptimizer)
+@emph{Iterator Strength Reduction (ISRoptimizer)}
 Goal: to reduce the cost of iterator execution by moving instructions
 out of the loop.
 Rationale: although iteration at the MAL level should be avoided due to
@@ -250,7 +250,7 @@ work needed.
 Approach: inspect the flowgraph for each iterator and move instructions around.
 Impact: low
 
-@- Code Inliner (CIoptimizer)
+@emph{Code Inliner (CIoptimizer)}
 Goal: to reduce the calling depth of the interpreter and to obtain
 a better starting point for code squeezing
 Rationale: substitution of code blocks (or macro expansion) leads to
@@ -261,20 +261,20 @@ Approach: use a property attached to functions or automatic for small ones.
 Impact: medium
 
 
-@- Garbage Collector (GCoptimizer)
+@emph{Garbage Collector (GCoptimizer)}
 Goal: to release resources as quickly as possible
 Rationale: BATs referenced from a MAL program keep resources locked.
 Approach: In cooperation with a resource scheduler we should identify those
 that can be released quickly.
 Impact: large
 
-@- Foreign Key replacements (FKoptimizer)
+@emph{Foreign Key replacements (FKoptimizer)}
 Goal: to improve multi-attribute joins over foreign key constraints
 Rationale: the code produced by the SQL frontend involves foreign key 
 constraints, which provides many opportunities for speedy code.
 Impact: large
 
-@+ What is the dependency between optimizers?
+@section What is the dependency between optimizers?
 The optimizers are highly targeted to a particular problem.
 Aside from the resources available to invest in plan optimization,
 optimizers are partly dependent and may interfere.

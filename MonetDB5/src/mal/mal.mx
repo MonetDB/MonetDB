@@ -50,7 +50,15 @@ effort otherwise needed to develop test and application programs.
 In the remainder of this section we shortly introduce the
 MonetDB product family, the design considerations and
 a quick overview of the MonetDB Version 5 architecture.
+@menu
+* Backward compatibility::
+* Design considerations::
+* Architecture overview::
+* MAL Synopsis::
+* MAL interpretation::
+@end menu
 
+@node Backward compatibility, Design considerations, ,Top
 @+ Backward compatibility
 In the development of Version 5 the requirements of the
 following components are taken into account.
@@ -71,6 +79,16 @@ that the bat was not removed after it got referenced.
 @item @emph{ auxiliary search paths} are not supported, due to lack
 of interest in Version 4 user community.
 @end itemize
+
+@menu
+* Backward compatibility::
+* Design considerations::
+* Architecture overview::
+* MAL Synopsis::
+* MAL interpretation::
+@end menu
+
+@node  Design considerations, Architecture overview,Backward compatibility,Top
 @+ Design considerations
 Redesign of the MonetDB software stack was driven by the need to
 reduce the Total Execution Cost (TEC) for query execution.
@@ -107,6 +125,15 @@ option to combine the components needed for a particular situation.
 This results in a PnP architecture to assemble the components
 for a particular application domain and hardware platform.
 
+@menu
+* Backward compatibility::
+* Design considerations::
+* Architecture overview::
+* MAL Synopsis::
+* MAL interpretation::
+@end menu
+
+@node Architecture overview, MAL Synopsis, Design considerations,Top
 @+ Architecture overview
 The software stack for Version 5 is shown in Figure
  @c image{architecture}
@@ -114,6 +141,15 @@ The top layer consists of the query language processors and their
 strategic optimizers. Moreover, each language comes with its language
 oriented catalog, which may, but need not be stored in the MonetDB database.
 
+@menu
+* Backward compatibility::
+* Design considerations::
+* Architecture overview::
+* MAL Synopsis::
+* MAL interpretation::
+@end menu
+
+@node MAL Synopsis, MAL interpretation, Architecture overview,Top
 @+ MAL Synopsis
 The target language for Version 5 is an assembler-like language,
 derived as a subset of the Monet Interface Language introduced
@@ -162,6 +198,13 @@ streaming applications.
 @item @emph{ properties} The objects can be assigned properties
 for use during compilation and optimization.
 @end itemize
+@menu
+* Backward compatibility::
+* Design considerations::
+* Architecture overview::
+* MAL Synopsis::
+* MAL interpretation::
+@end menu
 @-
 @{
 @+ Critical sections and semaphores
@@ -219,8 +262,9 @@ char            monet_cwd[PATHLENGTH]={0};
 int             monet_welcome=1; 
 str             *monet_script;
 
-@-
 @}
+@-
+@node MAL interpretation, , MAL Synopsis, Top
 @+ MAL interpretation
 
 Startup of the Monet engine consists of two steps. First, the
@@ -245,6 +289,13 @@ able to detect references kept around.
 This danger required all accesses to global information to be packaged
 in a critical section, which was known to be a performance hindrence.
 @-
+@menu
+* Backward compatibility::
+* Design considerations::
+* Architecture overview::
+* MAL Synopsis::
+* MAL interpretation::
+@end menu
 @{
 @h
 

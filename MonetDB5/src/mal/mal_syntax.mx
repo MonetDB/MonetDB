@@ -13,7 +13,8 @@
 
 @a M. L. Kersten
 @v 1.0
-@* MAL syntax summary
+@-
+@appendix MAL syntax summary
 The MAL syntax is summarized below in extended BNF.
 Alternative constructs are seperated by | and grouped
 by parenthesis.
@@ -24,18 +25,11 @@ Lexical tokens are illustrated in small capitals.
 
 @multitable @columnfractions .15 .8
 @item program		
-@tab : ( definition [helpinfo] ';' 
-@item
-@tab | & statement ';' ) *
-@item
+@tab : ( definition [helpinfo] ';' | & statement ';' ) *
 @item definition	
-@tab : moduleStmt | includeStmt 
+@tab : moduleStmt | includeStmt | commandStmt
 @item
-@tab | commandStmt | patternStmt 
-@item
-@tab | functionStmt | factoryStmt
-@item
-@tab | includeStmt
+@tab | patternStmt | functionStmt | factoryStmt | includeStmt
 @item
 @item moduleStmt	
 @tab : @code{ atom} ident [':'ident]
@@ -48,21 +42,12 @@ Lexical tokens are illustrated in small capitals.
 @tab : @code{ address } identifier
 @item patternStmt	
 @tab : @code{ pattern } header 
-@item
-@tab : @code{ address } identifier
+@code{ address } identifier
 @item
 @item functionStmt	
-@tab : @code{ function } header 
-@item
-@tab : statement* 
-@item
-@tab : @code{ end } identifier
+@tab : @code{ function } header statement* @code{ end } identifier
 @item factoryStmt	
-@tab : @code{ factory } header 
-@item
-@tab : statement* 
-@item
-@tab : @code{ end } identifier
+@tab : @code{ factory } header statement* @code{ end } identifier
 @item
 @item includeStmt	
 @tab : @code{ include} identifier 
@@ -95,7 +80,7 @@ Lexical tokens are illustrated in small capitals.
 @tab : scalarType | anyType 
 @item
 @item props	
-@tab : ['@{' property [ ',' property]* '@}']
+@tab : ['@verb{{}' property [ ',' property]* '@verb{@}}']
 @item property	
 @tab : identifier 
 @item
@@ -108,7 +93,7 @@ Lexical tokens are illustrated in small capitals.
 @item varlist		
 @tab : variable 
 @item
-@tab |  '(' variable @{',' variable@}* ')' 
+@tab |  '(' variable [',' variable ] * ')' 
 @item variable	
 @tab : identifier propQualifier 
 @item

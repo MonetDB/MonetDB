@@ -61,6 +61,11 @@ i.e. interpretative (default), compilation of an ad-hoc user
 defined function, dataflow driven interpretation,
 or vectorized pipe-line execution by a dedicated engine.
 
+@menu
+* Scenario Interpretation::
+* Scenario Administration::
+@end menu
+@node Scenario Interpretation, Scenario Administration, ,Top
 @+ Scenario interpretation
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.
@@ -89,6 +94,11 @@ pushing a new one(language, optimize, tactic,
 processor). Propagation of the state information is
 encapsulated a scenario2scenario() call. Not all transformations
 may be legal.
+
+@menu
+* Scenario Interpretation::
+* Scenario Administration::
+@end menu
 @{
 @+ Scenario administration
 Administration of scenarios follows the access rules 
@@ -399,7 +409,9 @@ void exitScenario(Client c){
         (*scen->exitScenarioCmd)(c);
 }
 @}
-@+ Scenario hooks
+@-
+@node Scenario Administration, ,Scenario Interpretation,Top
+@+ Scenario Administration
 The building blocks of scenarios are routines obeying a strict
 signature. They all require sole access to the client
 record. Any specific information should be accessible from
@@ -419,6 +431,12 @@ The XYZtactics(Client c) synchronizes the program execution with the
 state of the machine, e.g. claiming resources, the history of the client 
 or alignment of the request with concurrent actions (e.g. transaction
 coordination).
+
+@menu
+* Scenario Interpretation::
+* Scenario Administration::
+@end menu
+@-
 @{
 @= runPhase
 #ifdef MAL_SCENARIO_DEBUG

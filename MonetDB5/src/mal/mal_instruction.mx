@@ -41,6 +41,17 @@ the interpretation order or denote a synchronization point.
 The first statement of a MAL block is always taken up by a signature
 description. (See functions)
 
+@menu
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Call encapsulation::
+* Temporary variables::
+* MAL constants::
+* Reverse programming::
+@end menu
+
+@node MAL instructions,Flow of control,, Top
 @+ MAL instructions
 MAL instructions have a simple format. 
 Each instruction denotes a data-flow statement.
@@ -104,7 +115,17 @@ But even in that case, the basic blocks to be processed
 by a MAL back-end are considered large, e.g. tens of simple
 bulk assignment instructions.
 
-@- Flow of control
+@menu
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Call encapsulation::
+* Temporary variables::
+* MAL constants::
+* Reverse programming::
+@end menu
+@node Flow of control, Instruction Records,MAL instructions, Top
+@+ Flow of control
 An assignment statement is turned into a flow of control statement
 by tagging it with a control modifier.
 The primary control flow modifiers are @code{ return} and @code{ yield}.
@@ -266,6 +287,8 @@ exit    hdl;
 
 @-
 @}
+@-
+@node Instruction Records,Call encapsulation, Flow of control, Top
 @+ The MAL instruction records
 The data structure to represent a MAL block is kept simple.
 It carries a sequence of MAL statements and a variable table.
@@ -292,7 +315,18 @@ know how many arguments may be needed upfront.
 [TODO, rather then breaking the original input into pieces,
 it would be worthwhile to keep track of location of the
 instruction in the source.]
-@- Call encapsulation
+@menu
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Call encapsulation::
+* Temporary variables::
+* MAL constants::
+* Reverse programming::
+@end menu
+
+@node Call encapsulation, Temporary variables ,Instruction Records, Top
+@+ Call encapsulation
 The instruction records contain three optional pointers to functions:
 beforeCall and afterCall. They are bound to the result type.
 All expect a pointer to a VALrecord. The beforeCall is activated
@@ -304,6 +338,15 @@ Typical use of beforeCall and afterCall are handling of BAT references,
 but they can also be used to update a front-end.
 @-
 [Think, should beforeCall/afterCall also become part of the MAL functions?]
+@menu
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Call encapsulation::
+* Temporary variables::
+* MAL constants::
+* Reverse programming::
+@end menu
 @{
 For implementation reasons the maximum number of parameters is a
 compile time constant. Its choice should be large enough to
@@ -1015,7 +1058,9 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     return n;
 } 
 @}
-@- Temporary variables
+@-
+@node Temporary variables, MAL constants, Call encapsulation, Top
+@+ Temporary variables
 Temporary target variable act as sinks in the data flow graph.
 In this case, an optimizer can group them by underlying type and this way
 reduce the symbol table size significantly.
@@ -1025,6 +1070,15 @@ the variable stack. Their default textual representation is '$'<digits>.
 Temporary names  are recognized by the parser and an error is
 produced if it does not satisfy this condition.
 
+@menu
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Call encapsulation::
+* Temporary variables::
+* MAL constants::
+* Reverse programming::
+@end menu
 @{
 Sharing of the temporary is only permitted if the type
 is a priory known and not TYPE_any.
@@ -1124,7 +1178,9 @@ void freeVariable(MalBlkPtr mb, int varid){
     getVar(mb,varid) = NULL;
 }
 @}
-@- MAL constants
+@-
+@node MAL constants, Reverse programming, Temporary variables, Top
+@+ MAL constants
 Constants are stored in the symbol table and referenced
 by a variable identifier.
 This means that per MAL instruction, we may end up with
@@ -1153,6 +1209,15 @@ MAL interpretation.
 
 The constant values are linked together to improve searching them.
 This start of the constant list is kept in the MalBlk.
+@menu
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Call encapsulation::
+* Temporary variables::
+* MAL constants::
+* Reverse programming::
+@end menu
 @{
 @c
 #define MAL_VAR_WINDOW  2*MAXARG
@@ -1496,7 +1561,9 @@ void pushEndInstruction(MalBlkPtr mb){
     pushInstruction(mb,p);
 }
 @}
-@- Reverse programming
+@-
+@node Reverse programming, , MAL constants, Top
+@+ Reverse programming
 Since MAL programs can be created on the fly by linked-in query
 compilers, or transformed by optimizers, it becomes
 mandatory to be able to produce textual correct MAL programs
@@ -1506,6 +1573,15 @@ No guarantee is given to produce the exact input for a reversed
 MAL program, except that the output can be fed back for 
 interpretation. Provided, the code did not produce an error.
 
+@menu
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Call encapsulation::
+* Temporary variables::
+* MAL constants::
+* Reverse programming::
+@end menu
 @{
 The hiddenInstruction operator assumes a sufficiently large block
 to leave information on the signature behind.
