@@ -114,13 +114,7 @@ dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
 AC_C_CONST()
-case $GCC-$host_os in
--aix*)	dnl  Somehow, the autoconf inline-check fails with the native AIX compiler (xlc),
-	dnl  but the compiler seems to handle the default "inline" quite well, hence, we
-	dnl  simply skip this test.
-	;;
-*)	AC_C_INLINE();;
-esac
+AC_C_INLINE()
 
 dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
 
