@@ -82,10 +82,6 @@ def empty_dir(fd, n):
 
 def create_subdir(fd, dir):
     res = ""
-    # HACK to keep uncompilable stuff out of Windows makefiles.
-    if dir == 'calibrator':
-        return None
-
     if string.find(dir, "?") > -1:
         parts = string.split(dir, "?")
         if len(parts) == 2:
