@@ -1403,6 +1403,8 @@ private void headerDecoder() {
 			s = s.substring(m.end(1));
 			m.reset(s);
 		}
+		if (i > fieldcnt)
+			fieldcnt = i;
 	} else if (trace)
 		System.out.println("Unrecognized header tag "+tag);
 	//REST LATER
