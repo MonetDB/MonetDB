@@ -101,10 +101,6 @@ in an overall improvement of about factor 4.5.
 #define _GDK_SCANSELECT_H
 #include "gdk.h"
 
-#if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
-#define SKIP_TYPE_EXPANSIONS
-#endif
-
 @- "Tools"
 First, we need some tools. These are the type-expanded replacements
 for some generic marcos from gdk.mx, gdk_bat.mx, and gdk_atom.mx.
@@ -260,6 +256,10 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 
 @c
 #include "gdk.h"
+
+#if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
+#define SKIP_TYPE_EXPANSIONS
+#endif
 #include "gdk_scanselect.h"
 
 @-
