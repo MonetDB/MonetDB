@@ -2703,12 +2703,9 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 					stmt *sqa = cs->op1.lval->h->data;
 					stmt *ids = cs->op1.lval->h->next->data;
 					stmt *s = stmt_join( 
-						stmt_reverse(stmt_dup(ids)),
-						stmt_dup(sqa), cmp_equal);
+						stmt_reverse(stmt_dup(ids)), stmt_dup(sqa), cmp_equal);
 					s = stmt_outerjoin(
-						stmt_mirror(
-						    first_subset(subset)), 
-						s, cmp_equal);
+						stmt_mirror( first_subset(subset)), s, cmp_equal);
 					list_append(rl, s);
 				}
 			} else if (cs->nrcols == 0) {

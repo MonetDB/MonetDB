@@ -356,6 +356,8 @@ stmt *stmt_uselect_select(stmt * s)
 list *shrink_select_ranges(list *oldsels)
 {
 	/* find minimal ranges for selects per column on one table */
+	sql_subfunc *min = NULL;
+	sql_subfunc *max = NULL;
 
 	list *newsels, *haveNoBasecol, *haveBasecol, *basecols, *oneColSels, *twoColSels;
 	node *bc;
@@ -383,7 +385,8 @@ list *shrink_select_ranges(list *oldsels)
 		if ( list_length(colsels) == 1 ){
 			/* only one select on this column; simply keep it. */
 			list_append( newsels, stmt_dup(colsels->h->data) );
-		} else if ( !sql_bind_func_result("sql_min", tt, tt, tt) || !sql_bind_func_result("sql_max", tt, tt, tt) ) {
+		} else if ( !(min = sql_bind_func_result("sql_min", tt, tt, tt)) || 
+					!(max = sql_bind_func_result("sql_max", tt, tt, tt)) ) {
 			/* no "min" and/or "max" available on this data type, hence, we cannot apply the following "tricks" */
 			list_merge( newsels, colsels, (fdup)&stmt_dup );
 		} else {
@@ -393,6 +396,9 @@ list *shrink_select_ranges(list *oldsels)
 			comp_type ct;
 			node *n;
 			int flg, len = 0;
+
+			sql_subfunc_destroy(min);
+			sql_subfunc_destroy(max);
 			
 			/* separate all single-range, equal, notequal, notlike, & like selects and eliminate duplicates
 			 * (notequal, notlike, & like selects are saved and re-added at the end) */

@@ -211,7 +211,7 @@ static stmt *find_pivot( scope *scp, stmt *t )
 	{
 		stmt *p = n->data;
 		if (p->t == t)
-			return p;
+			return stmt_dup(p);
 	}
 	assert(0);
 	return NULL;
@@ -219,11 +219,9 @@ static stmt *find_pivot( scope *scp, stmt *t )
 
 
 stmt *scope_find_pivot(scope *scp, stmt *t){
-	stmt *p  = find_pivot(scp, t);
-	if (p) return stmt_dup(p);
-	assert(0);
-	return NULL;
+	return find_pivot(scp, t);
 }
+
 stmt *scope_first_pivot(scope *scp){
 	node *n = scp->ppivots->h;
 	if (n) return stmt_dup(n->data);
