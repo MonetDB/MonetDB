@@ -3144,11 +3144,14 @@ int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 
 @+ clustered positional join
 @c
-#define RESTRICT
-#ifdef RESTRICT
-#define __r  __restrict__
+#ifdef HAVE_RESTRICT
+#define __r	restrict
+#else
+#ifdef HAVE___RESTRICT__
+#define __r	__restrict__
 #else
 #define __r
+#endif
 #endif
 
 static

@@ -279,6 +279,9 @@
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
 
+/* Define if the compiler supports the restrict keyword */
+/* #undef HAVE_RESTRICT */
+
 /* Define to 1 if you have the <rlimit.h> header file. */
 /* #undef HAVE_RLIMIT_H */
 
@@ -438,6 +441,9 @@
 
 /* Define to 1 if the system has the type `__int64'. */
 #define HAVE___INT64 1
+
+/* Define if the compiler supports the __restrict__ keyword */
+/* #undef HAVE___RESTRICT__ */
 
 /* Host identifier */
 #define HOST "i686-pc-win32"
