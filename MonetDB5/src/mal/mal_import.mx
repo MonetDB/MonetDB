@@ -126,8 +126,8 @@ It should be reset before continuing.
 	@:restoreClient2()@
 @= runPhase
     if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
-        /* error occurred */
-		stream_printf(GDKout,"%s",msg);
+        /* error occurred  and ignored */
+		/* stream_printf(GDKout,"%s",msg);*/
         GDKfree(msg); msg=0;
         @:@1()@
 		return;
@@ -183,9 +183,11 @@ resolving addresses.
             (void) bstream_destroy(c->fdin);
 		}
 		@:restoreClient1()@
+		c->listing = listing;
 		@:runPhase(OPTIMIZE,restoreClient2)@
 		@:runPhase(SCHEDULER,restoreClient2)@
 		@:runPhase(ENGINE,restoreClient2)@
+		c->listing = oldlisting;
 		@:restoreClient2()@
 		return;
     	/*runScenario(c);*/
