@@ -46,10 +46,10 @@ barrier	w := mal.bunStream(b,h,t);	#9:(w:lng)<-(b:bat[lng,lng])(h:lng)(t:lng)
 catch	GDKerror;	#15:(GDKerror:str)
 end	GDKerror;	#16:(GDKerror:str)
 end	w;	#17:(w:lng)
-	mal.print(d);	#18:($18:int)<-(d:bat[lng,lng])
+	io.print(d);	#18:($18:int)<-(d:bat[lng,lng])
 end function;	#19:
 #-----------------#
-# BAT:	  tmp_8	  #
+# BAT:	  tmp_5	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]

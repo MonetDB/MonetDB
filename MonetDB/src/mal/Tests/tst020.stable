@@ -33,7 +33,7 @@ end function;	#9:
 function Admin.main():int;	#0:(main:int)
 	a := "hello";	#1:(a:str)<-($2:str)
 	z := Admin.pl(a);	#2:(z:int)<-(a:str)
-	mal.print("done");	#3:($4:int)<-($5:str)
+	io.print("done");	#3:($4:int)<-($5:str)
 end function;	#4:
 [ "done" ]
 >

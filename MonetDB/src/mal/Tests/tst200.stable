@@ -54,13 +54,13 @@ function Admin.main():int;	#0:(main:int)
 	err := bat.insert(b,9,n0);	#15:(err:bat[int,int])<-(b:bat[int,int])($27:int)(n0:int)
 	err := bat.insert(b,n0,n0);	#16:(err:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
 	err := bat.insert(b,n0,81);	#17:(err:bat[int,int])<-(b:bat[int,int])(n0:int)($28:int)
-	mal.print(b);	#18:($29:int)<-(b:bat[int,int])
-	mal.print(b,b,b);	#19:($30:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
+	io.print(b);	#18:($29:int)<-(b:bat[int,int])
+	io.print(b,b,b);	#19:($30:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
 end function;	#20:
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -74,20 +74,25 @@ end function;	#20:
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-#-----------------#
-# tmp_6	| tmp_6	  #
-#-----------------#
-[ 15,	  15	  ]
-[ 4,	  4	  ]
-[ nil,	  nil	  ]
-[ 16,	  16	  ]
-[ 25,	  25	  ]
-[ 36,	  36	  ]
-[ 49,	  49	  ]
-[ 64,	  64	  ]
-[ nil,	  nil	  ]
-[ nil,	  81	  ]
-[ nil,	  nil	  ]
-[ 81,	  81	  ]
-[ 81,	  nil	  ]
+#---------------------------------#
+# BAT:	  tmp_3	| tmp_3	| tmp_3	  #
+# (int)	  (int)	| (int)	| (int)	  #
+#---------------------------------#
+[ 1,	  15,	  15,	  15	  ]
+[ 2,	  4,	  4,	  4	  ]
+[ 3,	  nil,	  nil,	  nil	  ]
+[ 4,	  16,	  16,	  16	  ]
+[ 5,	  25,	  25,	  25	  ]
+[ 6,	  36,	  36,	  36	  ]
+[ 7,	  49,	  49,	  49	  ]
+[ 8,	  64,	  64,	  64	  ]
+[ 9,	  nil,	  nil,	  nil	  ]
+[ nil,	  nil,	  81,	  81	  ]
+[ nil,	  nil,	  81,	  nil	  ]
+[ nil,	  nil,	  nil,	  81	  ]
+[ nil,	  nil,	  nil,	  nil	  ]
+[ nil,	  81,	  81,	  81	  ]
+[ nil,	  81,	  81,	  nil	  ]
+[ nil,	  81,	  nil,	  81	  ]
+[ nil,	  81,	  nil,	  nil	  ]
 >

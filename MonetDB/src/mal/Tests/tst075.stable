@@ -23,8 +23,8 @@ end function;	#4:
 #
 function Admin.main():int;	#0:(main:int)
 	(x,y):=Admin.swap("world","hello");	#1:(x:str)(y:str)<-($3:str)($4:str)
-	mal.print(x);	#2:($5:int)<-(x:str)
-	mal.print(y);	#3:($6:int)<-(y:str)
+	io.print(x);	#2:($5:int)<-(x:str)
+	io.print(y);	#3:($6:int)<-(y:str)
 end function;	#4:
 [ "hello" ]
 [ "world" ]

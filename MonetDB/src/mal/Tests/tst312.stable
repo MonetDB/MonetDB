@@ -29,10 +29,10 @@ function Admin.main():int;	#0:(main:int)
 	s0 := squeezer.access("p1");	#2:(s0:int)<-($4:str)
 	p2 := p1;	#3:(p2:int)<-(p1:int)
 catch	IllegalAccess;	#4:(IllegalAccess:str)
-	mal.print("should not come here");	#5:($7:int)<-($8:str)
+	io.print("should not come here");	#5:($7:int)<-($8:str)
 	p3 := p1;	#6:(p3:int)<-(p1:int)
 end	IllegalAccess;	#7:(IllegalAccess:str)
-	mal.print("done");	#8:($10:int)<-($11:str)
+	io.print("done");	#8:($10:int)<-($11:str)
 end function;	#9:
 entering sqzAccess blocking 1 p1
 	s0 := squeezer.access("p1");	#2:(s0:int)<-($4:str)
@@ -45,11 +45,11 @@ function Admin.main():int;	#0:(main:int)
 	squeezer.AccessTst(p1);	#2:($12:int)<-(p1:int)
 	p2 := p1;	#3:(p2:int)<-(p1:int)
 catch	IllegalAccess;	#4:(IllegalAccess:str)
-	mal.print("should not come here");	#5:($7:int)<-($8:str)
+	io.print("should not come here");	#5:($7:int)<-($8:str)
 	squeezer.AccessTst(p1);	#6:($13:int)<-(p1:int)
 	p3 := p1;	#7:(p3:int)<-(p1:int)
 end	IllegalAccess;	#8:(IllegalAccess:str)
-	mal.print("done");	#9:($10:int)<-($11:str)
+	io.print("done");	#9:($10:int)<-($11:str)
 end function;	#10:
 [ "done" ]
 >

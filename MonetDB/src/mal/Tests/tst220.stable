@@ -71,7 +71,7 @@ function Admin.main():int;	#0:(main:int)
 	i := bat.getBATrefcnt(b);	#2:(i:int)<-(b:bat[int,str])
 	system.printf("refcount =%d\n",i);	#3:($5:int)<-($6:str)(i:int)
 	bat.insert(b,1,"bat B");	#4:($7:bat[int,str])<-(b:bat[int,str])($8:int)($9:str)
-	mal.print(b);	#5:($10:int)<-(b:bat[int,str])
+	io.print(b);	#5:($10:int)<-(b:bat[int,str])
 	i := bat.getBATrefcnt(b);	#6:(i:int)<-(b:bat[int,str])
 	system.printf("refcount =%d\n",i);	#7:($11:int)<-($6:str)(i:int)
 	b2 := b;	#8:(b2:bat[int,str])<-(b:bat[int,str])
@@ -84,7 +84,7 @@ function Admin.main():int;	#0:(main:int)
 	i := bat.getBATrefcnt(b);	#15:(i:int)<-(b:bat[int,str])
 	system.printf("after 3rd assignment refcount =%d\n",i);	#16:($18:int)<-($19:str)(i:int)
 	b4 := algebra.select(b,"bat B","bat B");	#17:(b4:bat[int,str])<-(b:bat[int,str])($9:str)($9:str)
-	mal.print(b4);	#18:($21:int)<-(b4:bat[int,str])
+	io.print(b4);	#18:($21:int)<-(b4:bat[int,str])
 	i := bat.getBATrefcnt(b);	#19:(i:int)<-(b:bat[int,str])
 	system.printf("after 4rd assignment refcount =%d\n",i);	#20:($22:int)<-($23:str)(i:int)
 	b2 := b3;	#21:(b2:bat[int,str])<-(b3:bat[int,str])
@@ -97,7 +97,7 @@ function Admin.main():int;	#0:(main:int)
 end function;	#28:
 refcount =1
 #-------------------------#
-# BAT:	  tmp_6		  #
+# BAT:	  tmp_3		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]
@@ -106,7 +106,7 @@ after assignment refcount =3
 after 2nd assignment refcount =4
 after 3rd assignment refcount =3
 #-------------------------#
-# BAT:	  tmp_8		  #
+# BAT:	  tmp_5		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]

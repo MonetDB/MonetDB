@@ -17,19 +17,17 @@
 	mb_a := url("http://www.edgeonline.com/");
 	nb_a := insert(t,6,mb_a);
 #t.insert(6, url("http://www.edgeonline.com/"));
-	ob_a := url("http://robotics.stanford.edu/icons/ ");
-	pb_a := insert(t,7,ob_a);
+	#ob_a := url("http://robotics.stanford.edu/icons/ ");
+	#pb_a := insert(t,7,ob_a);
 #t.insert(7, url("http://robotics.stanford.edu/icons/ "));
 	qb_a := print("build a table finished");
 print(t);
-	rb:= new(int,str);
+	rb:= new(int,url);
 print("start loop");
-#Dropping this comment leads to a segmentation violation
 barrier mloop := mal.bunStream(t,h:int,B2:url);        
 	print(h);
 	print(B2);
-        cr := url.getHost(B2);  
-        bat.insert(rb,h,cr); 
+	insert(rb,h,B2);
 	redo mloop;
 end mloop;
 	print(rb);

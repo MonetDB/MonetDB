@@ -27,10 +27,10 @@ barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng)
 end	v;	#6:(v:bit)
 	c := algebra.copy(b);	#7:(c:bat[lng,lng])<-(b:bat[lng,lng])
 	x := multiplex.script("+",b,c);	#8:(x:bat[lng,lng])<-($11:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	mal.print(x);	#9:($12:int)<-(x:bat[lng,lng])
+	io.print(x);	#9:($12:int)<-(x:bat[lng,lng])
 end function;	#10:
 #-----------------#
-# BAT:	  tmp_8	  #
+# BAT:	  tmp_5	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]

@@ -61,7 +61,7 @@ function Admin.main():int;	#0:(main:int)
 	bat.insert(b,9,n0);	#11:($27:bat[int,int])<-(b:bat[int,int])($28:int)(n0:int)
 	bat.insert(b,n0,n0);	#12:($29:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
 	bat.insert(b,n0,81);	#13:($30:bat[int,int])<-(b:bat[int,int])(n0:int)($31:int)
-	mal.print(b);	#14:($32:int)<-(b:bat[int,int])
+	io.print(b);	#14:($32:int)<-(b:bat[int,int])
 barrier	v := mal.bunStream(b,h,t);	#15:(v:lng)<-(b:bat[int,int])(h:int)(t:int)
 	system.printf("[ %d,",h);	#16:($36:int)<-($37:str)(h:int)
 	system.printf("%d]\n",t);	#17:($38:int)<-($39:str)(t:int)
@@ -75,7 +75,7 @@ end	v;	#19:(v:lng)
 	x := calc.str(nil);	#25:(x:str)<-($55:void)
 	bat.insert(c,5,x);	#26:($56:bat[int,str])<-(c:bat[int,str])($57:int)(x:str)
 	bat.insert(c,6,"!");	#27:($58:bat[int,str])<-(c:bat[int,str])($59:int)($60:str)
-	mal.print(c);	#28:($61:int)<-(c:bat[int,str])
+	io.print(c);	#28:($61:int)<-(c:bat[int,str])
 barrier	v := mal.bunStream(c,h,ts);	#29:(v:lng)<-(c:bat[int,str])(h:int)(ts:str)
 	system.printf("[%d,",h);	#30:($63:int)<-($64:str)(h:int)
 	system.printf("%s]\n",ts);	#31:($65:int)<-($66:str)(ts:str)
@@ -83,7 +83,7 @@ barrier	v := mal.bunStream(c,h,ts);	#29:(v:lng)<-(c:bat[int,str])(h:int)(ts:str)
 end	v;	#33:(v:lng)
 end function;	#34:
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -109,7 +109,7 @@ end function;	#34:
 [ nil,nil]
 [ nil,81]
 #-------------------------#
-# BAT:	  tmp_7		  #
+# BAT:	  tmp_4		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "hello"	  ]

@@ -43,7 +43,7 @@ function Admin.main():int;	#0:(main:int)
 	err := bat.insert(b,9,n0);	#11:(err:bat[int,int])<-(b:bat[int,int])($20:int)(n0:int)
 	err := bat.insert(b,n0,n0);	#12:(err:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
 	err := bat.insert(b,n0,81);	#13:(err:bat[int,int])<-(b:bat[int,int])(n0:int)($21:int)
-	mal.print(b);	#14:($22:int)<-(b:bat[int,int])
+	io.print(b);	#14:($22:int)<-(b:bat[int,int])
 barrier	v := mal.bunStream(b,h,t);	#15:(v:lng)<-(b:bat[int,int])(h:int)(t:int)
 	system.printf("%d,",h);	#16:($26:int)<-($27:str)(h:int)
 	system.printf("%d\n",t);	#17:($28:int)<-($29:str)(t:int)
@@ -51,7 +51,7 @@ barrier	v := mal.bunStream(b,h,t);	#15:(v:lng)<-(b:bat[int,int])(h:int)(t:int)
 end	v;	#19:(v:lng)
 end function;	#20:
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]

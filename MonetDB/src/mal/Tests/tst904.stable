@@ -27,6 +27,6 @@ barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng)
 end	v;	#6:(v:bit)
 	c := 1;	#7:(c:int)<-($10:int)
 	x := multiplex.multiplex("+",b,c);	#8:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])(c:int)
-	mal.print(x);	#9:($13:int)<-(x:bat[lng,lng])
+	io.print(x);	#9:($13:int)<-(x:bat[lng,lng])
 end function;	#10:
 >

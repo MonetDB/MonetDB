@@ -27,7 +27,7 @@ function Admin.main():int;	#0:(main:int)
 	i := bat.getBATrefcnt(b);	#2:(i:int)<-(b:bat[int,str])
 	system.printf("refcount =%d\n",i);	#3:($5:int)<-($6:str)(i:int)
 	bat.insert(b,1,"bat B");	#4:($7:bat[int,str])<-(b:bat[int,str])($8:int)($9:str)
-	mal.print(b);	#5:($10:int)<-(b:bat[int,str])
+	io.print(b);	#5:($10:int)<-(b:bat[int,str])
 	i := bat.getBATrefcnt(b);	#6:(i:int)<-(b:bat[int,str])
 	system.printf("refcount =%d\n",i);	#7:($11:int)<-($6:str)(i:int)
 	b5 := bat.reverse(b);	#8:(b5:bat[str,int])<-(b:bat[int,str])
@@ -36,7 +36,7 @@ function Admin.main():int;	#0:(main:int)
 end function;	#11:
 refcount =1
 #-------------------------#
-# BAT:	  tmp_6		  #
+# BAT:	  tmp_3		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]
