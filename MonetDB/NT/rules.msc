@@ -110,13 +110,9 @@ CFLAGS = $(CFLAGS)
 .m.mil: 
 	$(MEL) $(INCLUDES) -mil $*.m > $@
 	type $*.tmpmil >> $@
-        if not exist .libs $(MKDIR) .libs
-        if exist $@ $(INSTALL) $@ .libs\$@
 
 .m.mil:
 	$(MEL) $(INCLUDES) -mil $*.m > $@
-        if not exist .libs $(MKDIR) .libs
-        if exist $@ $(INSTALL) $@ .libs\$@
 
 {$(SRCDIR)}.mx.tmpmil:
 	$(MX) $(MXFLAGS) -x mil $<

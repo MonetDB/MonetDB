@@ -10,7 +10,13 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\rules.msc"
 
-all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMapiClient.bat RunMtest.bat RunMapprove.bat
+!IFDEF USE_MINGW
+UNISTD_H =
+!ELSE
+UNISTD_H = unistd.h
+!ENDIF
+
+all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMserver.bat RunMapiClient.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
@@ -31,11 +37,13 @@ all-msc: monetdb_config.h
 monetdb_config.h: winconfig.h
 	$(INSTALL) winconfig.h monetdb_config.h
 
-unistd.h: 
+!IFNDEF USE_MINGW
+unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h
 	$(ECHO) #define UNISTD_H >> unistd.h
 	$(ECHO) #include "io.h" >> unistd.h
 	$(ECHO) #endif >> unistd.h
+!ENDIF
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
 	if exist "$(SRCDIR)\RunMtest.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat

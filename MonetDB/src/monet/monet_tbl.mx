@@ -491,10 +491,8 @@ DL_open(char *nme, int mode)
 			if ((hdl = dlopen(fullname, mode)) != NULL) {
 				tbl = (dltable *) DL_reglib(nme, hdl, 0);
 			} else {
-				int en = errno;
-
-				GDKerror("DL_open: dlopen(%s,%d) -> Error #%d: %s.\n", fullname, mode, en, strerror(en));
 				DL_errmsg = dlerror();
+				GDKerror("DL_open: dlopen(%s,%d) -> Error: %s.\n", fullname, mode, DL_errmsg);
 			}
 			GDKfree(fullname);
 		} else

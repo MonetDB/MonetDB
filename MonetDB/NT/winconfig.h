@@ -803,6 +803,9 @@
 /* Define to 1 if you have the `ftime' function. */
 #define HAVE_FTIME 1
 
+/* Define to 1 if you have the `ftruncate' function. */
+#define HAVE_FTRUNCATE 1
+
 /* Define to 1 if you have the `getcwd' function. */
 #define HAVE_GETCWD 1
 

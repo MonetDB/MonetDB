@@ -216,9 +216,9 @@ to an equivalent win_*() function (which in its implementation calls through to 
 #define RTLD_NOW	2
 #define RTLD_GLOBAL	4
 
-gdk_export void *dlopen(const char *__file, int __mode);
-gdk_export int dlclose(void *__handle);
-gdk_export void *dlsym(void *__handle, const char *__name);
+gdk_export void *dlopen(const char *file, int mode);
+gdk_export int dlclose(void *handle);
+gdk_export void *dlsym(void *handle, const char *name);
 gdk_export char *dlerror(void);
 gdk_export int gettimeofday(struct timeval *tv, int *ignore_zone);
 gdk_export int win_stat(const char *, struct stat *);
@@ -1121,34 +1121,29 @@ gettimeofday(struct timeval *tv, int *ignore_zone)
 }
 
 void *
-dlopen(const char *__file, int __mode)
+dlopen(const char *file, int mode)
 {
-	if (__file != NULL) {
-		HINSTANCE handle = LoadLibrary(__file);
-
-		return (void *) handle;
+	(void) mode;
+	if (file != NULL) {
+		return (void *) LoadLibrary(file);
 	}
 	return NULL;
 }
 
 int
-dlclose(void *__handle)
+dlclose(void *handle)
 {
-	if (__handle != NULL) {
-		HINSTANCE handle = (HINSTANCE) __handle;
-
-		return FreeLibrary(handle);
+	if (handle != NULL) {
+		return FreeLibrary((HINSTANCE) handle);
 	}
 	return -1;
 }
 
 void *
-dlsym(void *__handle, const char *__name)
+dlsym(void *handle, const char *name)
 {
-	if (__handle != NULL) {
-		HINSTANCE handle = (HINSTANCE) __handle;
-
-		return (void *) GetProcAddress(handle, __name);
+	if (handle != NULL) {
+		return (void *) GetProcAddress((HINSTANCE) handle, name);
 	}
 	return NULL;
 }
@@ -1156,7 +1151,10 @@ dlsym(void *__handle, const char *__name)
 char *
 dlerror(void)
 {
-	return strerror(errno);
+	static char msg[1024];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, msg, sizeof(msg), NULL);
+	return msg;
 }
 
 /* dir manipulations fail in WIN32 if file name contains trailing
@@ -1422,7 +1420,7 @@ MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, s
 
 #if defined(HAVE_LOCKF) && defined(__MACH__)
 /* lockf() seems to be there, but I didn't find any header file that declares the prototype ... */
-extern int lockf(int __fd, int __cmd, off_t __len);
+extern int lockf(int fd, int cmd, off_t len);
 #endif
 
 #ifndef HAVE_LOCKF

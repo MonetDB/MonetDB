@@ -91,7 +91,7 @@ gdk_export int intFromStr(str src, int *len, int **dst);
 gdk_export int intToStr(str *dst, int *len, int *src);
 gdk_export int *intRead(int *a, stream *s, size_t cnt);
 gdk_export int intWrite(int *a, stream *s, size_t cnt);
-int intCmp(int *r, int *l);
+gdk_export int intCmp(int *r, int *l);
 void intConvert(int *s);
 hash_t intHash(int *i);
 

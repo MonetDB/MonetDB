@@ -278,15 +278,20 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll
         add = pref+sep+name.replace('-','_')+"_LIBS ="
     else:
         add = name.replace('-','_') + " ="
+    add2 = add
     for l in list:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
+            add2 = add2 + " $(LIBOBJS)"
         elif l[:2] == "-l":
             add = add + " lib"+l[2:]+".lib"
+            add2 = add2 + ' "%s"' % l
         elif l[0] == "-":
             add = add + ' "%s"' % l
+            add2 = add2 + ' "%s"' % l
         elif l[0] == '$':
             add = add + ' %s' % l
+            add2 = add2 + ' %s' % l
         elif l[0] != "@":
             lib = msc_translate_dir(l, msc) + '.lib'
             # add quotes if space in name
@@ -296,21 +301,32 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll
             if ' ' in lib:
                 lib = '"%s"' % lib
             add = add + ' %s' % lib
+            add2 = add2 + ' %s' % lib
             deps = deps + ' %s' % lib
     # this can probably be removed...
     for l in dlibs:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
+            add2 = add2 + " $(LIBOBJS)"
         elif l[:2] == "-l":
             add = add + " lib"+l[2:]+".lib"
+            add2 = add2 + " " + l
         elif l[0] in  ("-", "$"):
             add = add + " " + l
+            add2 = add2 + " " + l
         elif l[0] not in  ("@"):
             add = add + " " + msc_translate_dir(l, msc) + ".lib"
+            add2 = add2 + " " + msc_translate_dir(l, msc) + ".lib"
             deps = deps + ' "' + msc_translate_dir(l, msc) + '.lib"'
+    fd.write('!IFDEF USE_MINGW\n')
     if type != "MOD":
         fd.write(deps + "\n")
-    return add + "\n"
+    fd.write(add2 + "\n")
+    fd.write('!ELSE\n')
+    if type != "MOD":
+        fd.write(deps + "\n")
+    fd.write(add + "\n")
+    fd.write('!ENDIF\n')
 
 def msc_translate_ext(f):
     n = string.replace(f, '.o', '.$O')
@@ -409,8 +425,6 @@ def msc_deps(fd, deps, objext, msc):
                 if b+".tmpmil" in deplist:
                     fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "$@"\n' % (b))
                     fd.write('\ttype "%s.tmpmil" >> "$@"\n' % (b))
-                    fd.write("\tif not exist .libs $(MKDIR) .libs\n")
-                    fd.write('\tif exist "%s.mil" $(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b, b))
             if ext in ("$O", "glue.$O", "tab.$O", "yy.$O"):
                 target, name = msc_find_target(tar, msc)
                 if name[0] == '_':
@@ -553,12 +567,12 @@ def msc_binary(fd, var, binmap, msc):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
     binlist = []
-    if binmap.has_key("WINLIBS"):
-        binlist = binlist + binmap["WINLIBS"]
     if binmap.has_key("LIBS"):
         binlist = binlist + binmap["LIBS"]
+    if binmap.has_key("WINLIBS"):
+        binlist = binlist + binmap["WINLIBS"]
     if binlist:
-        fd.write(msc_additional_libs(fd, binname, "", "BIN", binlist, [], msc))
+        msc_additional_libs(fd, binname, "", "BIN", binlist, [], msc)
 
     srcs = binname.replace('-','_')+"_OBJS ="
     for target in binmap['TARGETS']:
@@ -635,15 +649,15 @@ def msc_bins(fd, var, binsmap, msc):
         msc['BINS'].append(bin)
 
         if binsmap.has_key(bin + "_LIBS"):
-            fd.write(msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc))
+            msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc)
         else:
             binslist = []
-            if binsmap.has_key("WINLIBS"):
-                binslist = binslist + binsmap["WINLIBS"]
             if binsmap.has_key("LIBS"):
                 binslist = binslist + binsmap["LIBS"]
+            if binsmap.has_key("WINLIBS"):
+                binslist = binslist + binsmap["WINLIBS"]
             if binslist:
-                fd.write(msc_additional_libs(fd, bin, "", "BIN", binslist, [], msc))
+                msc_additional_libs(fd, bin, "", "BIN", binslist, [], msc)
 
         srcs = bin+"_OBJS ="
         for target in binsmap['TARGETS']:
@@ -686,7 +700,7 @@ def msc_bins(fd, var, binsmap, msc):
 def msc_mods_to_libs(fd, var, modmap, msc):
     modname = var[:-4]+"LIBS"
     msc_assignment(fd, var, modmap, msc)
-    fd.write(msc_additional_libs(fd, modname, "", "MOD", modmap, [], msc))
+    msc_additional_libs(fd, modname, "", "MOD", modmap, [], msc)
 
 def msc_library(fd, var, libmap, msc):
 
@@ -746,12 +760,12 @@ def msc_library(fd, var, libmap, msc):
     if libmap.has_key(libname+ "_DLIBS"):
         dlib = libmap[libname+"_DLIBS"]
     liblist = []
-    if libmap.has_key("WINLIBS"):
-        liblist = liblist + libmap["WINLIBS"]
     if libmap.has_key("LIBS"):
         liblist = liblist + libmap["LIBS"]
+    if libmap.has_key("WINLIBS"):
+        liblist = liblist + libmap["WINLIBS"]
     if liblist:
-        fd.write(msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc, pref, dll))
+        msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc, pref, dll)
 
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
@@ -798,9 +812,6 @@ def msc_library(fd, var, libmap, msc):
         fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln.replace('-','_')))
         fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile1))
         fd.write("!ENDIF\n")
-        if sep == "_":
-            fd.write("\tif not exist .libs $(MKDIR) .libs\n")
-            fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" .libs\\%s%s\n' % (ln, dll, ln, dll, ln, dll))
     fd.write("\n")
 
     if SCRIPTS:
@@ -846,15 +857,15 @@ def msc_libs(fd, var, libsmap, msc):
         if libsmap.has_key(libname + "_DLIBS"):
             dlib = libsmap[libname+"_DLIBS"]
         if libsmap.has_key(libname + "_LIBS"):
-            fd.write(msc_additional_libs(fd, libname, sep, "LIB", libsmap[libname + "_LIBS"], dlib, msc))
+            msc_additional_libs(fd, libname, sep, "LIB", libsmap[libname + "_LIBS"], dlib, msc)
         else:
             libslist = []
-            if libsmap.has_key("WINLIBS"):
-                libslist = libslist + libsmap["WINLIBS"]
             if libsmap.has_key("LIBS"):
                 libslist = libslist + libsmap["LIBS"]
+            if libsmap.has_key("WINLIBS"):
+                libslist = libslist + libsmap["WINLIBS"]
             if libslist:
-                fd.write(msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc))
+                msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc)
 
         srcs = "lib"+sep+libname+"_OBJS ="
         deffile1 = ''
@@ -889,9 +900,6 @@ def msc_libs(fd, var, libsmap, msc):
         fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_OBJS)\n")
         fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile1))
         fd.write("!ENDIF\n")
-        if sep == "_":
-            fd.write("\tif not exist .libs $(MKDIR) .libs\n")
-            fd.write('\tif exist "%s.dll" $(INSTALL) "%s.dll" .libs\\%s.dll\n' % (ln, ln, ln))
         fd.write("\n")
 
     if SCRIPTS:
