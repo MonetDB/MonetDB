@@ -284,7 +284,6 @@ char* yydeparseCall(Client c, YYSTREE t, char* buf, char* end){
 	return buf;
 }
 char* yydeparseFunction(Client c, YYSTREE t, char* buf, char* end){
-	int	tk;
 	char	*s=buf;
 
 	if (t == NULL || buf > end) {
@@ -300,7 +299,7 @@ char* yydeparseFunction(Client c, YYSTREE t, char* buf, char* end){
 		}
 		return buf;
 	} else {
-		tk = lex_name(c, buf, end, t, &t->yyval);
+		(void) lex_name(c, buf, end, t, &t->yyval);
 	}
 	for(;s<buf;s++) 
 	if( *s=='\n') *s= ' '; else
