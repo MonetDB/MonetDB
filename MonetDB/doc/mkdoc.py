@@ -44,7 +44,11 @@ tmpdir = tempfile.gettempdir()
 
 def copyfile(srcfile, dstfile):
     print 'copyfile', srcfile, dstfile
-    f = open(srcfile, 'rb')
+    try:
+        f = open(srcfile, 'rb')
+    except IOError, (IOerrNo, IOerrStr):
+        print "! mkdoc.py: copyfile: Opening file '%s' in mode 'rb' failed with #%d: '%s' !" % (srcfile, IOerrNo, IOerrStr)
+        return
     data = f.read()
     f.close()
     f = open(dstfile, 'wb')
