@@ -237,12 +237,14 @@ BAT *BATmark(BAT *b, oid oid_base) {
  
         BATcheck(b, "BATmark");
 	bn = VIEWhead(b);
-	if (bn && BATrestricted(b) != BAT_READ) {
-		BAT *v = bn;
-		bn = BATcopy(v);
-		BBPreclaim(v);
+	if (bn) {
+		BATseqbase(BATmirror(bn), oid_base);
+		if (BATrestricted(b) != BAT_READ) {
+			BAT *v = bn;
+			bn = BATcopy(v);
+			BBPreclaim(v);
+		}
 	}
-	if (bn) BATseqbase(BATmirror(bn), oid_base);
         return bn;
 }
 
