@@ -86,7 +86,7 @@ address STRbatstrSearch
 comment "Search for a substring. Returns position, -1 if not found.";
 
 command r_search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
-address STRbatReverseStrSearch
+address STRbatRstrSearch
 comment "Reverse search for a substring. Returns position, -1 if not found.";
 
 command +( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
