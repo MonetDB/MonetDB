@@ -21,7 +21,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	}
 
 	private synchronized Statement getStmt() throws SQLException {
-		if (stmt == null) stmt = connection.createStatement();
+		if (stmt == null) stmt = con.createStatement();
 
 		return(stmt);
 	}
@@ -1138,7 +1138,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the default isolation level
 	 * @see Connection
 	 */
-	public int getDefaultTransactionIsolation() throws {
+	public int getDefaultTransactionIsolation() {
 		return(Connection.TRANSACTION_READ_COMMITTED);
 	}
 
@@ -1598,20 +1598,20 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results;
 		ArrayList tmpRes = new ArrayList();
 
-		ResultSet rs = getStmt.executeQuery(query);
+		ResultSet rs = getStmt().executeQuery(query);
 		while (rs.next()) {
 			String[] result = new String[22];
 			result[0]  = rs.getString("table_cat");
 			result[1]  = rs.getString("table_schem");
 			result[2]  = rs.getString("table_name");
 			result[3]  = rs.getString("column_name");
-			result[4]  = "" + driver.getJavaType(rs.getString("type_name"));
+			result[4]  = "" + ((MonetDriver)driver).getJavaType(rs.getString("type_name"));
 			result[5]  = rs.getString("type_name");
 			result[6]  = rs.getString("column_size");
 			result[7]  = rs.getString("buffer_length");
 			result[8]  = rs.getString("decimal_digits");
 			result[9]  = rs.getString("num_prec_radix");
-			result[10] = "" + rs.getBoolean("nullable") ? ResultSetMetaData.columnNullable : ResultSetMetaData.columnNoNulls;
+			result[10] = "" + (rs.getBoolean("nullable") ? ResultSetMetaData.columnNullable : ResultSetMetaData.columnNoNulls);
 			result[11] = rs.getString("remarks");
 			result[12] = rs.getString("column_def");
 			result[13] = rs.getString("sql_data_type");
@@ -1622,12 +1622,12 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			result[18] = rs.getString("scope_catalog");
 			result[19] = rs.getString("scope_schema");
 			result[20] = rs.getString("scope_table");
-			result[21] = "" + driver.getJavaType("other");
+			result[21] = "" + ((MonetDriver)driver).getJavaType("other");
 			tmpRes.add(result);
 		}
 		rs.close();
 
-		results = tmpRes.toArray(new String[tmpRes.size()][]);
+		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
@@ -1827,12 +1827,12 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results;
 		ArrayList tmpRes = new ArrayList();
 
-		ResultSet rs = getStmt.executeQuery(query);
+		ResultSet rs = getStmt().executeQuery(query);
 		while (rs.next()) {
 			String[] result = new String[8];
 			result[0]  = "" + DatabaseMetaData.bestRowSession;
 			result[1]  = rs.getString("column_name");
-			result[2]  = "" + driver.getJavaType(rs.getString("type_name"));
+			result[2]  = "" + ((MonetDriver)driver).getJavaType(rs.getString("type_name"));
 			result[3]  = rs.getString("type_name");
 			result[4]  = rs.getString("column_size");
 			result[5]  = rs.getString("buffer_length");
@@ -1842,7 +1842,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		}
 		rs.close();
 
-		results = tmpRes.toArray(new String[tmpRes.size()][]);
+		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
@@ -2010,7 +2010,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @see #getExportedKeys
 	 * @throws SQLException if a database error occurs
 	 */
-	public getImportedKeys(String catalog, String schema, String table)
+	public ResultSet getImportedKeys(String catalog, String schema, String table)
 		throws SQLException
 	{
 		String query =
@@ -2094,7 +2094,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @see #getImportedKeys
 	 * @throws SQLException if a database error occurs
 	 */
-	public getImportedKeys(String catalog, String schema, String table)
+	public ResultSet getExportedKeys(String catalog, String schema, String table)
 		throws SQLException
 	{
 		String query =
@@ -2183,7 +2183,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @see #getImportedKeys
 	 * @throws SQLException if a database error occurs
 	 */
-	public getImportedKeys(
+	public ResultSet getCrossReference(
 		String pcatalog,
 		String pschema,
 		String ptable,
@@ -2273,7 +2273,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return ResultSet each row is a SQL type description
 	 * @throws Exception if the developer made a Boo-Boo
 	 */
-	public java.sql.ResultSet getTypeInfo() throws SQLException {
+	public ResultSet getTypeInfo() throws SQLException {
 		String columns[] = {
 			"TYPE_NAME", "DATA_TYPE", "PRECISION", "LITERAL_PREFIX",
 			"LITERAL_SUFFIX", "CREATE_PARAMS", "NULLABLE", "CASE_SENSITIVE",
@@ -2290,84 +2290,54 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		};
 
 		String results[][] = {
-			{"table",     "" + Types.ARRAY,   "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"boolean",   "" + Types.BOOLEAN, "1", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typeSearchable, "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"bool",      "" + Types.BOOLEAN, "1", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typeSearchable, "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"blob",      "" + Types.BLOB,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"char",      "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"character", "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
-			{"ubyte",     "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", null, "0", "0", "0", "0", "10"},
+		//	type_name     data_type         prec.   pre  suff  crte  nullable                            casesns  searchable                            unsign fixprec  autoinc   name    min  max  sql  sql radix
+			{"table",     "" + Types.ARRAY,   "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", "bat",  "0", "0", "0", "0",  "0"},
+			{"boolean",   "" + Types.BOOLEAN, "1", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "bit",  "0", "0", "0", "0",  "2"},
+			{"bool",      "" + Types.BOOLEAN, "1", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "bit",  "0", "0", "0", "0",  "2"},
+			{"blob",      "" + Types.BLOB,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", "blob", "0", "0", "0", "0",  "0"},
+			{"char",      "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
+			{"character", "" + Types.CHAR,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
+			{"ubyte",     "" + Types.CHAR,    "2", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false", "false", "uchr", "0", "0", "0", "0",  "2"},
+			{"date",      "" + Types.DATE,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "date", "0", "0", "0", "0",  "0"},
+			{"decimal",   "" + Types.DECIMAL, "4", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false",  "true", "false", "sht",  "1", "0", "0", "0", "10"},
+			{"decimal",   "" + Types.DECIMAL, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false",  "true", "false", "int",  "1", "0", "0", "0", "10"},
+			{"decimal",   "" + Types.DECIMAL,"19", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false",  "true", "false", "lng",  "1", "0", "0", "0", "10"},
+			{"double",    "" + Types.DOUBLE, "51", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "dbl",  "2", "0", "0", "0",  "2"},
+			{"float",     "" + Types.FLOAT,  "23", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "flt",  "2", "0", "0", "0",  "2"},
+			{"float",     "" + Types.FLOAT,  "51", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "dbl",  "2", "0", "0", "0",  "2"},
+			{"integer",   "" + Types.INTEGER, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "0", "0", "0", "0",  "2"},
+			{"number",    "" + Types.INTEGER, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "0", "0", "0", "0",  "2"},
+			{"mediumint", "" + Types.INTEGER, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "0", "0", "0", "0",  "2"},
+			{"int",       "" + Types.INTEGER, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "0", "0", "0", "0",  "2"},
+			{"tinyint",   "" + Types.INTEGER, "2", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "sht",  "0", "0", "0", "0",  "2"},
+			{"smallint",  "" + Types.INTEGER, "4", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "sht",  "0", "0", "0", "0",  "2"},
+			{"int",       "" + Types.INTEGER, "4", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "sht",  "0", "0", "0", "0",  "2"},
+			{"int",       "" + Types.INTEGER,"19", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "lng",  "0", "0", "0", "0",  "2"},
+			{"bigint",    "" + Types.INTEGER,"19", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "lng",  "0", "0", "0", "0",  "2"},
+			{"text",      "" + Types.LONGVARCHAR,"0",null,null,null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
+			{"tinytext",  "" + Types.LONGVARCHAR,"0",null,null,null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
+			{"string",    "" + Types.LONGVARCHAR,"0",null,null,null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"},
+			{"numeric",   "" + Types.NUMERIC, "4", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "sht",  "1", "0", "0", "0", "10"},
+			{"numeric",   "" + Types.NUMERIC, "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "int",  "1", "0", "0", "0", "10"},
+			{"numeric",   "" + Types.NUMERIC,"19", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "lng",  "1", "0", "0", "0", "10"},
+			{"oid",       "" + Types.OTHER,   "9", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,   "true", "false",  "true", "lng",  "0", "0", "0", "0",  "2"},
+			{"month_interval",""+Types.OTHER, "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,  "false", "false", "false", "int",  "0", "0", "0", "0", "10"},
+			{"sec_interval",""+Types.OTHER,   "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredNone,  "false", "false", "false", "lng",  "0", "0", "0", "0", "10"},
+			{"real",      "" + Types.REAL,   "51", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic, "false", "false", "false", "dbl",  "2", "0", "0", "0",  "2"},
+			{"time",      "" + Types.TIME,    "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "daytime","0","0","0", "0",  "0"},
+			{"datetime",  "" + Types.TIMESTAMP,"0",null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "timestamp","0","0","0","0", "0"},
+			{"timestamp", "" + Types.TIMESTAMP,"0",null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredBasic,  "true", "false", "false", "timestamp","0","0","0","0", "0"},
+			{"varchar",   "" + Types.VARCHAR, "0", null, null, null, "" + DatabaseMetaData.typeNullable, "false", "" + DatabaseMetaData.typePredChar,   "true", "false", "false", "str",  "0", "0", "0", "0",  "0"}
 		};
 
-		} else if (.equals(type)) {
-			return();
-		} else if (.equals(type) || .equals(type)) {
-			return();
-		} else if ("date".equals(type)) {
-			return(Types.DATE);
-		} else if ("decimal".equals(type)) {
-			return(Types.DECIMAL);
-		} else if ("double".equals(type)) {
-			return(Types.DOUBLE);
-		} else if ("float".equals(type)) {
-			return(Types.FLOAT);
-		} else if ("tinyint".equals(type) || "smallint".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("mediumint".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("int".equals(type) || "integer".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("bigint".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("int".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("text".equals(type) || "tinytext".equals(type)) {
-			return(Types.LONGVARCHAR);
-		} else if ("string".equals(type)) {
-			return(Types.LONGVARCHAR);
-		} else if ("number".equals(type)) {
-			return(Types.NUMERIC);
-		} else if ("numeric".equals(type)) {
-			return(Types.NUMERIC);
-		} else if ("oid".equals(type)) {
-			return(Types.OTHER);
-		} else if ("month_interval".equals(type)) {
-			return(Types.OTHER);
-		} else if ("sec_interval".equals(type)) {
-			return(Types.OTHER);
-		} else if ("real".equals(type)) {
-			return(Types.REAL);
-		} else if ("time".equals(type)) {
-			return(Types.TIME);
-		} else if ("datetime".equals(type) || "timestamp".equals(type)) {
-			return(Types.TIMESTAMP);
-		} else if ("varchar".equals(type)) {
-			return(Types.VARCHAR);
-		} else {
-
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage());
+		}
 	}
 
-	/*
+	/**
 	 * Get a description of a table's indices and statistics. They are
 	 * ordered by NON_UNIQUE, TYPE, INDEX_NAME, and ORDINAL_POSITION.
 	 *
@@ -2416,205 +2386,149 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	   or out of data values; when false, results are requested to be
 	 *	   accurate
 	 * @return ResultSet each row is an index column description
+	 * @throws SQLException if a database occurs
 	 */
-	// Implementation note: This is required for Borland's JBuilder to work
-	public java.sql.ResultSet getIndexInfo(String catalog, String schema, String tableName, boolean unique, boolean approximate) throws SQLException
+	public ResultSet getIndexInfo(
+		String catalog,
+		String schema,
+		String tableName,
+		boolean unique,
+		boolean approximate
+	) throws SQLException
 	{
-		String select;
-		String from;
-		String where = "";
-		if (connection.haveMinimumServerVersion("7.3")) {
-			select = "SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM, ";
-			from = " FROM pg_catalog.pg_namespace n, pg_catalog.pg_class ct, pg_catalog.pg_class ci, pg_catalog.pg_index i, pg_catalog.pg_attribute a, pg_catalog.pg_am am ";
-			where = " AND n.oid = ct.relnamespace ";
-			if (schema != null && ! "".equals(schema)) {
-				where += " AND n.nspname = '"+escapeQuotes(schema)+"' ";
-			}
-		} else {
-			select = "SELECT NULL AS TABLE_CAT, NULL AS TABLE_SCHEM, ";
-			from = " FROM pg_class ct, pg_class ci, pg_index i, pg_attribute a, pg_am am ";
-		}
+		String query =
+			"SELECT null AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, " +
+			"false AS NON_UNIQUE, '' AS INDEX_QUALIFIER, '' AS INDEX_NAME, " +
+			"0 AS TYPE, 0 AS ORDINAL_POSITION, '' AS COLUMN_NAME, " +
+			"'' AS ASC_OR_DESC, 0 AS CARDINALITY, 0 AS PAGES, " +
+			"'' AS FILTER_CONDITION WHERE 1 = 0";
 
-		String sql = select+
-			" ct.relname AS TABLE_NAME, NOT i.indisunique AS NON_UNIQUE, NULL AS INDEX_QUALIFIER, ci.relname AS INDEX_NAME, "+
-			" CASE i.indisclustered "+
-			" WHEN true THEN "+java.sql.DatabaseMetaData.tableIndexClustered+
-			" ELSE CASE am.amname "+
-			"	WHEN 'hash' THEN "+java.sql.DatabaseMetaData.tableIndexHashed+
-			"	ELSE "+java.sql.DatabaseMetaData.tableIndexOther+
-			"	END "+
-			" END AS TYPE, "+
-			" a.attnum AS ORDINAL_POSITION, "+
-			" a.attname AS COLUMN_NAME, "+
-			" NULL AS ASC_OR_DESC, "+
-			" ci.reltuples AS CARDINALITY, "+
-			" ci.relpages AS PAGES, "+
-			" NULL AS FILTER_CONDITION "+
-			from+
-			" WHERE ct.oid=i.indrelid AND ci.oid=i.indexrelid AND a.attrelid=ci.oid AND ci.relam=am.oid "+
-			where+
-			" AND ct.relname = '"+escapeQuotes(tableName)+"' ";
-
-		if (unique) {
-			sql += " AND i.indisunique ";
-		}
-		sql += " ORDER BY NON_UNIQUE, TYPE, INDEX_NAME, ORDINAL_POSITION ";
-		return connection.createStatement().executeQuery(sql);
+		return(getStmt().executeQuery(query));
 	}
-
-	/**
-	 * Tokenize based on words not on single characters.
-	 */
-	private static Vector tokenize(String input, String delimiter) {
-		Vector result = new Vector();
-		int start = 0;
-		int end = input.length();
-		int delimiterSize = delimiter.length();
-
-		while (start < end) {
-			int delimiterIndex = input.indexOf(delimiter,start);
-			if (delimiterIndex < 0) {
-				result.addElement(input.substring(start));
-				break;
-			} else {
-				String token = input.substring(start,delimiterIndex);
-				result.addElement(token);
-				start = delimiterIndex + delimiterSize;
-			}
-		}
-		return result;
-	}
-
-
 
 	// ** JDBC 2 Extensions **
 
-	/*
+	/**
 	 * Does the database support the given result set type?
 	 *
 	 * @param type - defined in java.sql.ResultSet
 	 * @return true if so; false otherwise
-	 * @exception SQLException - if a database access error occurs
+	 * @throws SQLException - if a database access error occurs
 	 */
-	public boolean supportsResultSetType(int type) throws SQLException
-	{
+	public boolean supportsResultSetType(int type) throws SQLException {
 		// The only type we don't support
-		return type != java.sql.ResultSet.TYPE_SCROLL_SENSITIVE;
+		return(type != ResultSet.TYPE_SCROLL_SENSITIVE);
 	}
 
 
-	/*
+	/**
 	 * Does the database support the concurrency type in combination
 	 * with the given result set type?
 	 *
 	 * @param type - defined in java.sql.ResultSet
 	 * @param concurrency - type defined in java.sql.ResultSet
 	 * @return true if so; false otherwise
-	 * @exception SQLException - if a database access error occurs
+	 * @throws SQLException - if a database access error occurs
 	*/
-	public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException
+	public boolean supportsResultSetConcurrency(int type, int concurrency)
+		throws SQLException
 	{
 		// These combinations are not supported!
-		if (type == java.sql.ResultSet.TYPE_SCROLL_SENSITIVE)
-			return false;
+		if (type == ResultSet.TYPE_SCROLL_SENSITIVE)
+			return(false);
 
-		// We do support Updateable ResultSets
-		if (concurrency == java.sql.ResultSet.CONCUR_UPDATABLE)
-			return true;
+		// We do only support Read Only ResultSets
+		if (concurrency != ResultSet.CONCUR_READ_ONLY)
+			return(false);
 
-		// Everything else we do
-		return true;
+		// Everything else we do (well, what's left of it :) )
+		return(true);
 	}
 
 
-	/* lots of unsupported stuff... */
-	public boolean ownUpdatesAreVisible(int type) throws SQLException
-	{
-		return true;
+	/* lots of unsupported stuff... (no updatable ResultSet!) */
+	public boolean ownUpdatesAreVisible(int type) {
+		return(false);
 	}
 
-	public boolean ownDeletesAreVisible(int type) throws SQLException
-	{
-		return true;
+	public boolean ownDeletesAreVisible(int type) {
+		return(false);
 	}
 
-	public boolean ownInsertsAreVisible(int type) throws SQLException
-	{
-		// indicates that
-		return true;
+	public boolean ownInsertsAreVisible(int type) {
+		return(false);
 	}
 
-	public boolean othersUpdatesAreVisible(int type) throws SQLException
-	{
-		return false;
+	public boolean othersUpdatesAreVisible(int type) {
+		return(false);
 	}
 
-	public boolean othersDeletesAreVisible(int i) throws SQLException
-	{
-		return false;
+	public boolean othersDeletesAreVisible(int i) {
+		return(false);
 	}
 
-	public boolean othersInsertsAreVisible(int type) throws SQLException
-	{
-		return false;
+	public boolean othersInsertsAreVisible(int type) {
+		return(false);
 	}
 
-	public boolean updatesAreDetected(int type) throws SQLException
-	{
-		return false;
+	public boolean updatesAreDetected(int type) {
+		return(false);
 	}
 
-	public boolean deletesAreDetected(int i) throws SQLException
-	{
-		return false;
+	public boolean deletesAreDetected(int i) {
+		return(false);
 	}
 
-	public boolean insertsAreDetected(int type) throws SQLException
-	{
-		return false;
+	public boolean insertsAreDetected(int type) {
+		return(false);
 	}
 
-	/*
+	/**
 	 * Indicates whether the driver supports batch updates.
+	 * Not yet, but I want to do them in the near future
 	 */
-	public boolean supportsBatchUpdates() throws SQLException
-	{
-		return true;
+	public boolean supportsBatchUpdates() {
+		return(false);
 	}
 
-	/*
+	/**
 	 * Return user defined types in a schema
+	 * Probably not possible within Monet
+	 *
+	 * @throws SQLException if I made a Boo-Boo
 	 */
-	public java.sql.ResultSet getUDTs(String catalog,
-									  String schemaPattern,
-									  String typeNamePattern,
-									  int[] types
-									 ) throws SQLException
+	public ResultSet getUDTs(
+		String catalog,
+		String schemaPattern,
+		String typeNamePattern,
+		int[] types
+	) throws SQLException
 	{
-		throw org.postgresql.Driver.notImplemented();
+		String query =
+			"SELECT null AS TYPE_CAT, '' AS TYPE_SCHEM, '' AS TYPE_NAME, " +
+			"'java.lang.Object' AS CLASS_NAME, 0 AS DATA_TYPE, " +
+			"'' AS REMARKS, 0 AS BASE_TYPE WHERE 1 = 0";
+
+		return(getStmt().executeQuery(query));
 	}
 
 
-	/*
+	/**
 	 * Retrieves the connection that produced this metadata object.
 	 *
 	 * @return the connection that produced this metadata object
 	 */
-	public java.sql.Connection getConnection() throws SQLException
-	{
-		return (java.sql.Connection)connection;
+	public Connection getConnection() {
+		return(con);
 	}
 
 	/* I don't find these in the spec!?! */
-
-	public boolean rowChangesAreDetected(int type) throws SQLException
-	{
-		return false;
+	public boolean rowChangesAreDetected(int type) {
+		return(false);
 	}
 
-	public boolean rowChangesAreVisible(int type) throws SQLException
-	{
-		return false;
+	public boolean rowChangesAreVisible(int type) {
+		return(false);
 	}
 
 	// ** JDBC 3 extensions **
@@ -2624,12 +2538,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *
 	 * @return <code>true</code> if savepoints are supported;
 	 *		   <code>false</code> otherwise
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public boolean supportsSavepoints() throws SQLException
-	{
-		return false;
+	public boolean supportsSavepoints() {
+		return(true);
 	}
 
 	/**
@@ -2638,12 +2549,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *
 	 * @return <code>true</code> if named parameters are supported;
 	 *		   <code>false</code> otherwise
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public boolean supportsNamedParameters() throws SQLException
-	{
-		return false;
+	public boolean supportsNamedParameters() {
+		return(false);
 	}
 
 	/**
@@ -2654,12 +2562,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return <code>true</code> if a <code>CallableStatement</code> object
 	 *		   can return multiple <code>ResultSet</code> objects
 	 *		   simultaneously; <code>false</code> otherwise
-	 * @exception SQLException if a datanase access error occurs
-	 * @since 1.4
 	 */
-	public boolean supportsMultipleOpenResults() throws SQLException
-	{
-		return false;
+	public boolean supportsMultipleOpenResults() {
+		return(false);
 	}
 
 	/**
@@ -2668,12 +2573,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *
 	 * @return <code>true</code> if auto-generated keys can be retrieved
 	 *		   after a statement has executed; <code>false</code> otherwise
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public boolean supportsGetGeneratedKeys() throws SQLException
-	{
-		return false;
+	public boolean supportsGetGeneratedKeys() {
+		return(false);
 	}
 
 	/**
@@ -2714,12 +2616,19 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return a <code>ResultSet</code> object in which a row gives information
 	 *		   about the designated UDT
 	 * @throws SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public ResultSet getSuperTypes(String catalog, String schemaPattern,
-								   String typeNamePattern) throws SQLException
+	public ResultSet getSuperTypes(
+		String catalog,
+		String schemaPattern,
+		String typeNamePattern
+	) throws SQLException
 	{
-		throw org.postgresql.Driver.notImplemented();
+		String query =
+			"SELECT '' AS TYPE_CAT, '' AS TYPE_SCHEM, '' AS TYPE_NAME, " +
+			"'' AS SUPERTYPE_CAT, '' AS SUPERTYPE_SCHEM, " +
+			"'' AS SUPERTYPE_NAME WHERE 1 = 0";
+
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -2753,12 +2662,18 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *		  name
 	 * @return a <code>ResultSet</code> object in which each row is a type description
 	 * @throws SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public ResultSet getSuperTables(String catalog, String schemaPattern,
-									String tableNamePattern) throws SQLException
+	public ResultSet getSuperTables(
+		String catalog,
+		String schemaPattern,
+		String tableNamePattern
+	) throws SQLException
 	{
-		throw org.postgresql.Driver.notImplemented();
+		String query =
+			"SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, " +
+			"'' AS SUPERTABLE_NAME WHERE 1 = 0";
+
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -2828,14 +2743,26 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *		  name as it is declared in the database
 	 * @return a <code>ResultSet</code> object in which each row is an
 	 *		   attribute description
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
+	 * @throws SQLException if a database access error occurs
 	 */
-	public ResultSet getAttributes(String catalog, String schemaPattern,
-								   String typeNamePattern, String attributeNamePattern)
-	throws SQLException
+	public ResultSet getAttributes(
+		String catalog,
+		String schemaPattern,
+		String typeNamePattern,
+		String attributeNamePattern
+	) throws SQLException
 	{
-		throw org.postgresql.Driver.notImplemented();
+		String query =
+			"SELECT '' AS TYPE_CAT, '' AS TYPE_SCHEM, '' AS TYPE_NAME, " +
+			"'' AS ATTR_NAME, '' AS ATTR_TYPE_NAME, 0 AS ATTR_SIZE, " +
+			"0 AS DECIMAL_DIGITS, 0 AS NUM_PREC_RADIX, 0 AS NULLABLE, " +
+			"'' AS REMARKS, '' AS ATTR_DEF, 0 AS SQL_DATA_TYPE, " +
+			"0 AS SQL_DATETIME_SUB, 0 AS CHAR_OCTET_LENGTH, " +
+			"0 AS ORDINAL_POSITION, 'YES' AS IS_NULLABLE, " +
+			"'' AS SCOPE_CATALOG, '' AS SCOPE_SCHEMA, '' AS SCOPE_TABLE, " +
+			"0 AS SOURCE_DATA_TYPE WHERE 1 = 0";
+
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -2845,13 +2772,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *			<code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
 	 *			<code>ResultSet.CLOSE_CURSORS_AT_COMMIT<code>
 	 * @return <code>true</code> if so; <code>false</code> otherwise
-	 * @exception SQLException if a database access error occurs
 	 * @see Connection
-	 * @since 1.4
 	 */
-	public boolean supportsResultSetHoldability(int holdability) throws SQLException
-	{
-		return true;
+	public boolean supportsResultSetHoldability(int holdability) {
+		return(holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	/**
@@ -2861,36 +2785,28 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the default holdability; either
 	 *		   <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
 	 *		   <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public int getResultSetHoldability() throws SQLException
-	{
-		return ResultSet.HOLD_CURSORS_OVER_COMMIT;
+	public int getResultSetHoldability() {
+		return(ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	/**
 	 * Retrieves the major version number of the underlying database.
+	 * We should actually retrieve this from the DB!!!
 	 *
 	 * @return the underlying database's major version
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public int getDatabaseMajorVersion() throws SQLException
-	{
-		return connection.getServerMajorVersion();
+	public int getDatabaseMajorVersion() {
+		return(4);
 	}
 
 	/**
 	 * Retrieves the minor version number of the underlying database.
 	 *
 	 * @return underlying database's minor version
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public int getDatabaseMinorVersion() throws SQLException
-	{
-		return connection.getServerMinorVersion();
+	public int getDatabaseMinorVersion() {
+		return(3);
 	}
 
 	/**
@@ -2898,12 +2814,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * driver.
 	 *
 	 * @return JDBC version major number
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public int getJDBCMajorVersion() throws SQLException
-	{
-		return 3; // This class implements JDBC 3.0
+	public int getJDBCMajorVersion() {
+		return(3); // This class implements JDBC 3.0 (at least we try to)
 	}
 
 	/**
@@ -2911,12 +2824,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * driver.
 	 *
 	 * @return JDBC version minor number
-	 * @exception SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public int getJDBCMinorVersion() throws SQLException
-	{
-		return 0; // This class implements JDBC 3.0
+	public int getJDBCMinorVersion() {
+		return(0); // This class implements JDBC 3.0 (at least we try to)
 	}
 
 	/**
@@ -2925,12 +2835,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the type of SQLSTATEs, one of:
 	 *		  sqlStateXOpen or
 	 *		  sqlStateSQL99
-	 * @throws SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public int getSQLStateType() throws SQLException
-	{
-		return DatabaseMetaData.sqlStateSQL99;
+	public int getSQLStateType() {
+		// we conform to the SQL99 standard, so...
+		return(DatabaseMetaData.sqlStateSQL99);
 	}
 
 	/**
@@ -2938,27 +2846,22 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * to the LOB.
 	 * @return <code>true</code> if updates are made to a copy of the LOB;
 	 *		   <code>false</code> if updates are made directly to the LOB
-	 * @throws SQLException if a database access error occurs
-	 * @since 1.4
 	 */
-	public boolean locatorsUpdateCopy() throws SQLException
-	{
-		throw org.postgresql.Driver.notImplemented();
+	public boolean locatorsUpdateCopy() {
+		// not that we have it, but in a transaction it will be copy-on-write
+		return(true);
 	}
 
 	/**
-	 * Retrieves weather this database supports statement pooling.
+	 * Retrieves whether this database supports statement pooling.
 	 *
 	 * @return <code>true</code> is so;
 		<code>false</code> otherwise
-	 * @throws SQLExcpetion if a database access error occurs
-	 * @since 1.4
 	 */
-	public boolean supportsStatementPooling() throws SQLException
-	{
-		return false;
+	public boolean supportsStatementPooling() {
+		// For the moment, I don't think so
+		return(false);
 	}
-
 }
 
 /**
@@ -2969,17 +2872,13 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
  * Any use of this class is disencouraged.
  */
 class MonetVirtualResultSet extends MonetResultSet {
-	private results[][];
+	private String results[][];
 
 	MonetVirtualResultSet(
 		String[] columns,
 		String[] types,
 		String[][] results
 	) throws IllegalArgumentException {
-		if (results[].length != columns.length) {
-			throw new IllegalArgumentException("Given arguments are not of the same size!");
-		}
-
 		super(columns, types, results.length);
 
 		this.results = results;

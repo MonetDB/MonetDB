@@ -29,10 +29,11 @@ import java.net.*;
  */
 public class MonetResultSet implements ResultSet {
 	private String[] line;
-	String[] result;	// default for the MonetVirtualResultSet
 	private int lastColumnRead = -1;
-	private boolean closed = false;
-	private int curRow = 0;
+	// the following have default access modifier for the MonetVirtualResultSet
+	String[] result;
+	boolean closed = false;
+	int curRow = 0;
 
 	// a blank final is immutable once assigned in the constructor
 	private final MonetStatement.CacheThread cache;
@@ -155,7 +156,10 @@ public class MonetResultSet implements ResultSet {
 			throw new IllegalArgumentException("One of the given arguments is null!");
 		}
 		if (columns.length != types.length) {
-			throw new IllegalArgumentException("Given arguments are not of same size!");
+			throw new IllegalArgumentException("Given arguments are not the same size!");
+		}
+		if (results != columns.length) {
+			throw new IllegalArgumentException("Given arguments are not consistant!");
 		}
 		if (results < 0) {
 			throw new IllegalArgumentException("Negative rowcount not allowed!");
