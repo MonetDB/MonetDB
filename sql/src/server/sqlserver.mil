@@ -91,13 +91,12 @@ proc oidrange( output_stream, nr ) := {
 	stream_flush( output_stream );
 }
 
-proc server_output( stream Output, ..bat[oid,any]..) : void := {
+proc server_output( stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void := {
 	var cnt := $0;
-	var Order := $2;
 	var bats := new(oid,bat);
 	var id := 0;
-	while((id + 1) < cnt ){
-		bats.insert(oid(id), $(id+2));
+	while((id + 2) < cnt ){
+		bats.insert(oid(id), $(id+3));
 		id :+= 1;
 	}
 	ascii_io_output(Order, bats, Output, "\t");
@@ -105,16 +104,16 @@ proc server_output( stream Output, ..bat[oid,any]..) : void := {
 
 proc ascii_export_functions(Output):= {
 	output_count( type_sql, Output);
-	server_output( Output, type_sql, type_db, type_cast );
+	server_output( Output, type_sql, type_sql, type_db, type_cast );
 
 	output_count( sql_aggr_name, Output);
-	server_output( Output, sql_aggr_name, sql_aggr_imp );
+	server_output( Output, sql_aggr_name, sql_aggr_name, sql_aggr_imp );
 		
 	output_count( sql_func_name, Output);
-	server_output( Output, sql_func_name, sql_func_imp );
+	server_output( Output, sql_func_name, sql_func_name, sql_func_imp );
 
 	#output_count( schema_name, Output);
-	#server_output( Output, schema_id, schema_name, schema_auth );
+	#server_output( Output, schema_id, schema_id, schema_name, schema_auth);
 	stream_flush(Output);
 }
 
@@ -128,15 +127,18 @@ proc ascii_export_schema(Output, schema):= {
 	var tables := table_name.semijoin(table_schema.select(sid));
 	tables := tables.kdiff( table_query );
 	output_count( tables, Output);
-	server_output( Output, table_id.semijoin(tables), tables, table_temp.semijoin(tables) );
+	var tableids := table_id.semijoin(tables);
+	server_output( Output, tableids, tableids, tables, table_temp.semijoin(tables) );
 
-	var table_names := column_table.join(table_id.reverse().join(tables));
-	output_count( table_names, Output);
-	server_output( Output, column_id.semijoin(table_names), table_names, column_name, column_type, column_default, column_null, column_number );
+	var table_ids := column_table.join(table_id.reverse().join(tables));
+	output_count( table_ids, Output);
+	var columnids := column_id.semijoin(table_ids);
+	server_output( Output, columnids, columnids, table_ids, column_name, column_type, column_default, column_null, column_number );
 
 	var views := table_name.semijoin(table_query); 
 	output_count( views, Output);
-	server_output( Output, table_id.semijoin(views), views, table_query );
+	var viewids := table_id.semijoin(views);
+	server_output( Output, viewids, viewids, views, table_query );
 
 	stream_flush(Output);
 }
