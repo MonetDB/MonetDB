@@ -35,6 +35,26 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
+static char *convert(char *str ){
+	char *res = NULL;
+	int i, len;
+
+	for(len = 1, i=0; str[i]; i++, len++){
+		if (str[i] == '\'')
+			len++;
+	}
+	res = GDKmalloc(len);
+	for(len = 0, i=0; str[i]; i++, len++){
+		if (str[i] == '\''){
+			res[len] = '\\';
+			len ++;
+		}
+		res[len] = str[i];
+	}
+	res[len] = '\0';
+	return res;
+}
+
 static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 	int flag, status;
 	if (!stream_readInt(rs, &flag) || flag == COMM_DONE) {
@@ -100,15 +120,15 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		int	i = 0, params = 1;
 		int	queryLen = strlen(hstmt->Query) + 1;
 		char    *oldquery = GDKstrdup(hstmt->Query);
+		char 	**strings = (char**)GDKmalloc(sizeof(char*)*hstmt->bindParams.size );
 
+		memset(strings,0,sizeof(char*)*hstmt->bindParams.size);
 		for(i=1; i <= hstmt->bindParams.size; i++){
 			if (!hstmt->bindParams.array[i])
 				break;
 
-			if (hstmt->bindParams.array[i]->StrLen_or_IndPtr)
-				queryLen += *hstmt->bindParams.array[i]->StrLen_or_IndPtr + 2;
-			else
-				queryLen += hstmt->bindParams.array[i]->BufferLength + 2;
+			strings[i] = convert(hstmt->bindParams.array[i]->ParameterValuePtr);
+			queryLen += 2 + strlen(strings[i]);
 		}
 		Query = GDKmalloc(queryLen);
 		Query[0] = '\0';
@@ -121,8 +141,7 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 				*query = '\0';
 				if (!hstmt->bindParams.array[params])
 					break;
-				i += snprintf(Query+i, queryLen-i, "%s'%s'", old,
-					hstmt->bindParams.array[params]->ParameterValuePtr);
+				i += snprintf(Query+i, queryLen-i, "%s'%s'", old, strings[params]);
 				query++;
 				old = query;
 				params++;
@@ -131,6 +150,11 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 				i += snprintf(Query+i, queryLen-i, "%s", old);
 			Query[i] = '\0';
 		}
+		for(i=0;i<hstmt->bindParams.size; i++){
+			if(strings[i])
+				GDKfree(strings[i]);
+		}
+		GDKfree(strings);
 		GDKfree(oldquery);
 		query = Query;
 	}

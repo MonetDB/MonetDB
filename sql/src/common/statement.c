@@ -114,6 +114,7 @@ void stmt_destroy(stmt * s)
 	if (--s->refcnt == 0) {
 		switch (s->type) {
 			/* stmt_destroy  op1 */
+		case st_ibat:
 		case st_column: case st_create_column:
 		case st_table: case st_create_table: 
 
@@ -123,6 +124,7 @@ void stmt_destroy(stmt * s)
 		case st_group:
 		case st_group_ext:
 		case st_order:
+		case st_limit:
 		case st_unop:
 		case st_output:
 		case st_result:
@@ -236,9 +238,11 @@ void stmt_reset( stmt *s ){
 	s->nr = 0;
 	switch(s->type){
 		/* stmt_reset  op1 */
+	case st_ibat:
 	case st_null: case st_reverse: case st_count: 
 	case st_group: case st_group_ext: 
-	case st_order: case st_unop: case st_alias: case st_column_alias:
+	case st_limit: case st_order: case st_unop: 
+	case st_alias: case st_column_alias:
 	case st_output: case st_result: case st_exists: 
 	case st_table: case st_create_table: case st_drop_table: 
 
@@ -302,6 +306,7 @@ void stmt_reset( stmt *s ){
 		}
 		break;
 	case st_bat:
+	case st_ubat:
 		if (s->op1.cval->s){
 			stmt_reset( s->op1.cval->s );
 		}
@@ -506,7 +511,17 @@ stmt *stmt_cbat(column * op1, stmt * basetable, int access, int type)
 	s->op1.cval = op1;
 	s->nrcols = 1;
 	s->flag = access;
-	s->h = basetable;
+	s->h = basetable; /* oid's used from this basetable */
+	return s;
+}
+
+stmt *stmt_ibat(stmt * op1, stmt * basetable )
+{
+	stmt *s = stmt_create();
+	s->type = st_ibat;
+	s->op1.stval = op1;
+	s->nrcols = 1;
+	s->h = basetable; /* oid's used from this basetable */
 	return s;
 }
 
@@ -590,6 +605,18 @@ stmt *stmt_unique(stmt * s, group * g)
 	}
 	ns->nrcols = s->nrcols;
 	ns->key = 1; /* ?? maybe change key to unique ? */
+	ns->t = stmt_dup(s->t);
+	return ns;
+}
+
+stmt *stmt_limit(stmt * s, int limit)
+{
+	stmt *ns = stmt_create();
+	ns->type = st_limit;
+	ns->op1.stval = s;
+	ns->flag = limit;
+	ns->nrcols = s->nrcols;
+	ns->key = s->key;
 	ns->t = stmt_dup(s->t);
 	return ns;
 }
@@ -1117,7 +1144,11 @@ sql_subtype *tail_type(stmt * st)
 	case st_mark:
 	case st_alias:
 	case st_column_alias:
+	case st_ibat:
 		return tail_type(st->op1.stval);
+
+	case st_list:
+		return tail_type(st->op1.lval->h->data);
 
 	case st_bat:
 		return st->op1.cval->tpe;
@@ -1160,7 +1191,11 @@ sql_subtype *head_type(stmt * st)
 	case st_semijoin:
 	case st_select:
 	case st_select2:
+	case st_ibat:
 		return head_type(st->op1.stval);
+
+	case st_list:
+		return head_type(st->op1.lval->h->data);
 
 	case st_mark:
 	case st_bat:
@@ -1203,6 +1238,7 @@ stmt *tail_column(stmt * st)
 	case st_unique:
 		return tail_column(st->op1.stval);
 
+	case st_ibat:
 	case st_bat:
 		return st;
 
@@ -1211,6 +1247,7 @@ stmt *tail_column(stmt * st)
 
 	case st_triop:
 		return head_column(st->op1.lval->h->data );
+
 	default:
 		fprintf(stderr, "missing base column %d\n", st->type );
 		assert(0);
@@ -1239,6 +1276,7 @@ stmt *head_column(stmt * st)
 	case st_select:
 	case st_select2:
 		return head_column(st->op1.stval);
+	case st_ibat:
 	case st_bat:
 		return st;
 
@@ -1259,7 +1297,7 @@ stmt *head_column(stmt * st)
 	}
 }
 
-static char *aggr_name(char *n1, char *n2)
+static char *func_name(char *n1, char *n2)
 {
 	int l1 = strlen(n1);
 	int l2 = strlen(n2);
@@ -1285,6 +1323,7 @@ char *column_name(stmt * st)
 	case st_outerjoin:
 	case st_derive:
 		return column_name(st->op2.stval);
+	case st_ibat:
 	case st_union:
 	case st_mark:
 	case st_select:
@@ -1294,8 +1333,15 @@ char *column_name(stmt * st)
 
 	case st_bat:
 		return st->op1.cval->name;
+	case st_unop:
+	case st_triop:
+		return func_name(st->op2.funcval->name,
+				 column_name(st->op1.stval));
+	case st_binop:
+		return func_name(st->op3.funcval->name,
+				 column_name(st->op1.stval));
 	case st_aggr:
-		return aggr_name(st->op2.aggrval->name,
+		return func_name(st->op2.aggrval->name,
 				 column_name(st->op1.stval));
 	case st_alias:
 		return st->op2.sval;

@@ -473,6 +473,14 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 		}
 		FXNODE;
 	} 	break;
+	case st_limit: {
+		int l;
+		XNODE("limit");
+		l = stmt2xml( s->op1.stval, nr, sql );
+		len += snprintf( buf+len, BUFSIZ, 
+			"s%d := s%d.slice(0, %d - 1);\n", s->nr, l, s->flag );
+		FXNODE;
+	} 	break;
 	case st_order: {
 		int l;
 		XNODE("order");

@@ -131,7 +131,7 @@ SQLRETURN ColAttribute(
 		break;
 	case SQL_DESC_LENGTH:
 	case SQL_COLUMN_LENGTH:
-		nValue = pColumnHeader->nSQL_DESC_LENGTH;
+		nValue = pColumnHeader->nSQL_DESC_LENGTH + 20;
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
 		strncpy(pszValue, pColumnHeader->pszSQL_DESC_LITERAL_PREFIX, nValueLengthMax);

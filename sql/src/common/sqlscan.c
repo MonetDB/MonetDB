@@ -171,6 +171,7 @@ void init_keywords()
 	 */
 	keywords_insert("LEFT", LEFT);
 	keywords_insert("LIKE", LIKE);
+	keywords_insert("LIMIT", LIMIT);
 	keywords_insert("LOCAL", LOCAL);
 	keywords_insert("NATURAL", NATURAL);
 	keywords_insert("NOT", NOT);

@@ -61,6 +61,7 @@ typedef struct Symbol {
 typedef struct SelectNode {
 	symbol s;
 
+	int limit;
 	int distinct;
 	struct dlist *selection;
 	struct dlist *into; /* ?? */
@@ -93,7 +94,7 @@ extern symbol *symbol_create_symbol(struct context *c, int token,
 				    symbol * data);
 extern void symbol_destroy(symbol * sym);
 
-extern symbol *newSelectNode( struct context* c, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name);
+extern symbol *newSelectNode( struct context* c, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit);
 
 extern symbol *newAtomNode( struct context *c, atom *a );
 

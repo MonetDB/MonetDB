@@ -278,12 +278,14 @@ symbol *newSelectNode( context *c,
 	symbol *groupby, 
 	symbol *having, 
 	symbol *orderby, 
-	symbol *name)
+	symbol *name,
+	int limit)
 {
 	symbol *s;
 	SelectNode *sn = NEW(SelectNode);
 
 	sn->distinct = distinct;
+	sn->limit = limit;
 	sn->selection = selection;
 	sn->into = into;
 	sn->from = from;

@@ -299,6 +299,11 @@ static stmt *sql_subquery(context * sql, scope * scp, symbol * sq)
 	SelectNode *sn = (SelectNode*)sq;
 	assert(sn->s.token == SQL_SELECT);
 
+	if (!toplevel && sn->limit >= 0){
+		(void) sql_error( sql, 01, "Can only limit outer select " );
+		return NULL;
+	}
+
 	if (toplevel)
 		scp = scope_open(scp);
 
@@ -416,15 +421,18 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 		     d && m; 
 		     d = d->next, m = m->next) {
 			stmt *st = m->data;
-			table_add_column(tv, stmt_dup(st), tname, d->data.sval);
+			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
+
+			table_add_column(tv, sc, tname, d->data.sval);
 		}
 	} else if (tname) {
 		/* foreach column add column name */
 		for ( m = sq->op1.lval->h; m; m = m->next) {
 			stmt *st = m->data;
 			char *cname = column_name(st);
+			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
 
-			table_add_column(tv, stmt_dup(st), tname, cname);
+			table_add_column(tv, sc, tname, cname);
 		}
 	} else {
 		/* foreach column add full basetable,column name */
@@ -432,8 +440,9 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 			stmt *st = m->data;
 			char *cname = column_name(st);
 			char *tname = table_name(st);
+			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
 
-			table_add_column(tv, st, tname, cname);
+			table_add_column(tv, sc, tname, cname);
 		}
 	}
 	return tv;
@@ -766,6 +775,16 @@ static stmt *sql_binop(context * sql, scope * scp, symbol * se, group * grp, stm
 		if (rs) stmt_destroy(rs);
 		return NULL;
 	}
+
+	/* TODO fix memory leak */
+	/* also need to add semantic checks here */
+	if (ls->type == st_list){
+		ls = ls->op1.lval->h->data;
+	}
+	if (rs->type == st_list){
+		rs = rs->op1.lval->h->data;
+	}
+
 	f = sql_bind_func(l->data.sval, tail_type(ls), tail_type(rs), NULL);
 	if (f) {
 		return stmt_binop(ls, rs, f);
@@ -2078,6 +2097,18 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 			return res;
 		}
 	case SQL_IN:
+		/*
+         <in predicate> ::=
+              <row value constructor>
+                [ NOT ] IN <in predicate value>
+
+         <in predicate value> ::=
+                <table subquery>
+              | <left paren> <in value list> <right paren>
+
+         <in value list> ::=
+              <value expression> { <comma> <value expression> }...
+		*/
 		{
 			dlist *l = sc->data.lval;
 			symbol *lo = l->h->data.sym;
@@ -2111,7 +2142,8 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 					    (stmt_semijoin
 					     (stmt_reverse(ls),
 					      stmt_reverse(rs)));
-				} else {	/* >= 2 */
+				} else {	/* >= 2, ie match full rows */
+					/* TODO fix this broken impl ! */
 					node *o = sq->op1.lval->h;
 					stmt *j = stmt_join(ls,
 						stmt_reverse (o->data),
@@ -2152,15 +2184,40 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 				}
 				return stmt_diff(ls, stmt_exists(ls, nl));
 			} else if (l->h->next->type == type_symbol) {
-				stmt *sr = stmt_reverse(ls);
-				tvar *sqn = sql_subquery_optname(sql, scp,
-								 l->h->
-								 next->
-								 data.sym);
-				if (sqn) {
-					cvar *c = sqn->columns->h->data;
-					return stmt_reverse(stmt_diff(sr,
-					      	stmt_reverse(stmt_dup(c->s))));
+				symbol *ro = l->h->next->data.sym;
+				stmt *sq = scope_subquery(sql, scp, ro);
+
+				if (!sq)
+					return NULL;
+
+				if (sq->type != st_list
+				    || list_length(sq->op1.lval) == 0) {
+					return sql_error(sql, 02, "Subquery result wrong");
+				}
+				if (list_length(sq->op1.lval) == 1) {
+					stmt *rs = sq->op1.lval->h->data;
+					return
+					    stmt_reverse
+					    (stmt_diff
+					     (stmt_reverse(ls),
+					      stmt_reverse(rs)));
+				} else {	/* >= 2, ie match full rows */
+					/* TODO fix this broken impl ! */
+					node *o = sq->op1.lval->h;
+					stmt *j = stmt_join(ls,
+						stmt_reverse (o->data),
+							cmp_equal);
+					stmt *sd = stmt_set(
+						stmt_join(j, o->next->data,
+							cmp_equal));
+					o = o->next;
+					o = o->next;
+					for (; o; o = o->next) {
+						list_append(sd->op1.lval,
+							stmt_join (j, o->data,
+								cmp_equal));
+					}
+					return sd;
 				}
 				return NULL;
 			} else {
@@ -2505,6 +2562,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					cur = stmt_dup(tmp);
 				/* add join to an allready used column */
 				} else {	
+					fprintf(stderr, "sql_select cross product, table not used in where part\n");
 					tmp = stmt_join(stmt_dup(cur),
 						stmt_reverse(tmp), cmp_all);
 				}
@@ -2534,6 +2592,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					cur = tmp;
 				}
 			} else {
+				fprintf(stderr, "sql_select (with from) cross product, table not used in where part\n");
 				tmp = stmt_join(stmt_dup(cur), 
 						stmt_reverse(tmp), cmp_all);
 				if (s) {
@@ -2634,6 +2693,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					stmt *cs1 = cs->op1.lval->h->data;
 					ss = stmt_dup(ss);
 					cs1 = stmt_dup(cs1);
+					fprintf(stderr, "sql_select single value subquery in where -> cross product\n");
 					list_append(rl, stmt_join (ss, cs1, cmp_all));
 				} else {	/* referenced variable(s) (can only be 2) */
 					stmt *ids = cs->op1.lval->h->next->data;
@@ -2744,6 +2804,13 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 	}
 
 	sql_select_cleanup(sql, NULL, subset, grp);
+
+	if (sn->limit >= 0){
+		if (order) 
+			order = stmt_limit(order, sn->limit);
+		else 
+			order = stmt_limit(stmt_dup(s->op1.lval->h->data), sn->limit);
+	}
 
 	if (s && order)
 		return stmt_ordered(order, s);

@@ -408,9 +408,13 @@ oid bm_find_bat(bm* bm, char *name)
 
 BAT* bm_lbid2bat(bm *bm, oid lbid)
 {
-	oid vid = bm_lbid2vid(bm, lbid);
-	return bat_descriptor(
-		*(bat*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid)));
+	BAT *b;
+	oid vid;
+
+	vid = bm_lbid2vid(bm, lbid);
+	b = bat_descriptor(
+		*(bat*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid))); 
+	return b;
 }
 
 int bm_lbid2version(bm *bm, oid lbid)

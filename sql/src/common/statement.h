@@ -20,6 +20,7 @@ typedef enum stmt_type {
 	st_basetable,
 	st_bat,
 	st_ubat,
+	st_ibat,	/* intermediate table result */
 	st_obat,
 	st_dbat,
 	st_drop_schema,
@@ -72,6 +73,7 @@ typedef enum stmt_type {
 	st_triop,
 	st_aggr,
 	st_exists,
+	st_limit,
 	st_column_alias,
 	st_alias,
 	st_set,
@@ -154,6 +156,7 @@ extern stmt *stmt_column_revoke(stmt *c, char *authid, int privilege);
 extern stmt *stmt_basetable(table *t); 
 
 extern stmt *stmt_cbat(column * c, stmt * basetable, int access, int type);
+extern stmt *stmt_ibat(stmt * i, stmt * basetable );
 extern stmt *stmt_tbat(table * t, int access, int type);
 
 extern stmt *stmt_atom(atom * op1);
@@ -192,6 +195,7 @@ extern stmt *stmt_remark(stmt * s, stmt * t, int id);
 extern stmt *stmt_reverse(stmt * s);
 extern stmt *stmt_unique(stmt * s, group * grp);
 
+extern stmt *stmt_limit(stmt * s, int limit);
 extern stmt *stmt_order(stmt * s, int direction);
 extern stmt *stmt_reorder(stmt * s, stmt * t, int direction);
 extern stmt *stmt_ordered(stmt * order, stmt * res);

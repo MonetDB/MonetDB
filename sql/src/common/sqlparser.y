@@ -204,6 +204,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_all
 	intval
 	opt_nr
+	opt_limit
 	opt_match
 	opt_match_type
 	opt_grantor
@@ -295,6 +296,7 @@ UNDER WHENEVER
 %token ALTER ADD TABLE TO UNION UNIQUE USER VALUES VIEW WHERE WITH 
 %token<sval> DATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
+%token LIMIT
 
 %token CASE WHEN THEN ELSE END NULLIF COALESCE
 %token COPY RECORDS DELIMITERS STDIN
@@ -1093,14 +1095,14 @@ opt_all:
 
 simple_select:
     SELECT opt_distinct selection opt_into
-           table_exp opt_order_by_clause
+           table_exp opt_order_by_clause opt_limit
 
 	{ $$ = newSelectNode( (context*)parm, $2, $3, $4, 
 	  	$5->h->data.sym,
 	  	$5->h->next->data.sym,
 	  	$5->h->next->next->data.sym,
 	  	$5->h->next->next->next->data.sym,
-	  	$6, NULL);
+	  	$6, NULL, $7);
 	  dlist_destroy_keep_data($5);
 	}
 
@@ -1230,6 +1232,11 @@ opt_order_by_clause:
     /* empty */ 			  { $$ = NULL; }
  |  ORDER BY ordering_spec_commalist  
 		{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
+ ;
+
+opt_limit:
+    /* empty */ 			{ $$ = -1; }
+ |  LIMIT intval 			{ $$ = $2; }
  ;
 
 ordering_spec_commalist:
@@ -1387,7 +1394,7 @@ subquery:
 	  	$5->h->next->data.sym,
 	  	$5->h->next->next->data.sym,
 	  	$5->h->next->next->next->data.sym,
-	  	NULL, NULL);
+	  	NULL, NULL, -1);
 	  dlist_destroy_keep_data($5);
 	}
  ;

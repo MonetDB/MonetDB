@@ -428,6 +428,9 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	  	} 
 		dump(sql,buf,len,-s->nr);
 	} break;
+	case st_ibat: 
+		s->nr = -stmt_dump( s->op1.stval, nr, sql );
+		break;
 	case st_bat:
 	case st_ubat: {
 		char *type = (s->type==st_bat)?"":"_ubat";
@@ -556,6 +559,12 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			"s%d := s%d.reverse().kunique().reverse();\n", 
 			-s->nr, l);
 		}
+		dump(sql,buf,len,-s->nr);
+	} 	break;
+	case st_limit: {
+		int l = stmt_dump( s->op1.stval, nr, sql );
+		len = snprintf( buf, BUFSIZ, 
+			"s%d := s%d.slice(0, %d - 1);\n", -s->nr, l, s->flag );
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_order: {
