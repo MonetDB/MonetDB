@@ -481,37 +481,37 @@ One day we should introduce the concept of locale, and hook here.
 
 @mil
 	# default time creation with zeroed secs and msecs
-	proc "daytime" (int h) : daytime
-		return daytime(h, 0, 0, 0);
-	proc "daytime" (int h, int m) : daytime
-		return daytime(h, m, 0, 0);
-	proc "daytime" (int h, int m, int s) : daytime
-		return daytime(h, m, s, 0);
+	proc "daytime" (int hour) : daytime
+		return daytime(hour, 0, 0, 0);
+	proc "daytime" (int hour, int minute) : daytime
+		return daytime(hour, minute, 0, 0);
+	proc "daytime" (int hour, int minute, int second) : daytime
+		return daytime(hour, minute, second, 0);
 
-	proc "[daytime]" (bat[any::1,int] h) : bat[any::1,daytime]
-		return [daytime](h, 0, 0, 0);
-	proc "[daytime]" (bat[any::1,int] h, bat[any::1,int] m) : bat[any::1,daytime]
-		return [daytime](h, m, 0, 0);
-	proc "[daytime]" (bat[any::1,int] h, bat[any::1,int] s) : bat[any::1,daytime]
-		return [daytime](h, m, s, 0);
+	proc "[daytime]" (bat[any::1,int] hour) : bat[any::1,daytime]
+		return [daytime](hour, 0, 0, 0);
+	proc "[daytime]" (bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,daytime]
+		return [daytime](hour, minute, 0, 0);
+	proc "[daytime]" (bat[any::1,int] hour, bat[any::1,int] minute, bat[any::1,int] second) : bat[any::1,daytime]
+		return [daytime](hour, minute, second, 0);
 
 	# rule creation synonyms
-	proc "rule" (int m, int d, int w, int h, int m) : rule
-		return rule(m, d, w, (h * 60) + m);
-	proc "rule" (int m, str d, int w, int h, int m) : rule
-		return rule(m, daynum(d), w, (h* 60) + m);
-	proc "rule" (int m, str d, int w, int m) : rule
-		return rule(m, daynum(d), w, m);
+	proc "rule" (int months, int days, int weekdays, int hour, int minute) : rule
+		return rule(months, days, weekdays, (hour * 60) + minute);
+	proc "rule" (int months, str days, int weekdays, int hour, int minute) : rule
+		return rule(months, daynum(days), weekdays, (hour * 60) + minute);
+	proc "rule" (int months, str days, int weekdays, int minute) : rule
+		return rule(months, daynum(days), weekdays, minute);
 
-	proc "[rule]" (bat[any::1,int] m, bat[any::1,int] d, bat[any::1,int] w, 
-                    bat[any::1,int] h, bat[any::1,int] m) : bat[any::1,rule]
-		return [rule](m, d, w, [+]([*](h,60),m));
-	proc "[rule]" (bat[any::1,int] m, bat[any::1,str] d, bat[any::1,int] w, 
-                    bat[any::1,int] h, bat[any::1,int] m) : bat[any::1,rule]
-		return [rule](m, [daynum](d), w, [+]([*](h,60),m));
-	proc "[rule]" (bat[any::1,int] m, bat[any::1,str] d, bat[any::1,int] w, 
-                    bat[any::1,int] m) : bat[any::1,rule]
-		return [rule](m, [daynum](d), w, m);
+	proc "[rule]" (bat[any::1,int] months, bat[any::1,int] days, bat[any::1,int] weekdays, 
+                    bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,rule]
+		return [rule](months, days, weekdays, [+]([*](hour,60),minute));
+	proc "[rule]" (bat[any::1,int] months, bat[any::1,str] days, bat[any::1,int] weekdays, 
+                    bat[any::1,int] hour, bat[any::1,int] minute) : bat[any::1,rule]
+		return [rule](months, [daynum](days), weekdays, [+]([*](hour,60),minute));
+	proc "[rule]" (bat[any::1,int] months, bat[any::1,str] days, bat[any::1,int] weekdays, 
+                    bat[any::1,int] minute) : bat[any::1,rule]
+		return [rule](months, [daynum](days), weekdays, minute);
 
         # As a starting point, we provide some standard tzones
 	#

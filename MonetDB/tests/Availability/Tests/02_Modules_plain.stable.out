@@ -751,7 +751,7 @@ Module: "monettime"
 [ "[date]",			  "PROC:      ",  "[date](BAT[any::1,timestamp]) : BAT[any::1,date]",									  "not available"											  ]
 [ "[daytime]",			  "PROC:      ",  "[daytime](BAT[any::1,int]) : BAT[any::1,daytime]",									  "not available"											  ]
 [ "[daytime]",			  "PROC:      ",  "[daytime](BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,daytime]",							  "not available"											  ]
-[ "[daytime]",			  "PROC:      ",  "[daytime](BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,daytime]",							  "not available"											  ]
+[ "[daytime]",			  "PROC:      ",  "[daytime](BAT[any::1,int], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,daytime]",					  "not available"											  ]
 [ "[daytime]",			  "PROC:      ",  "[daytime](BAT[any::1,timestamp]) : BAT[any::1,daytime]",								  "not available"											  ]
 [ "[epoch]",			  "PROC:      ",  "[epoch](BAT[any::1,timestamp]) : BAT[any::1,int]",									  "not available"											  ]
 [ "[rule]",			  "PROC:      ",  "[rule](BAT[any::1,int], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,rule]",	  "not available"											  ]
