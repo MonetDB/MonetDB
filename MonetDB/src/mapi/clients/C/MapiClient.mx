@@ -586,8 +586,11 @@ dump_table(Mapi mid, char *tname)
 	string = malloc(sizeof(int)*cnt);
 	for (i = 0; i < cnt; i++) {
 		string[i] = 0;
-		if (strcmp(mapi_get_type(hdl, i), "char") == 0) 
+		if (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
+			strcmp(mapi_get_type(hdl, i), "varchar") == 0)
+		{
 			string[i] = 1;
+		}
 	}
 	while (mapi_fetch_row(hdl)) {
 		char *format;
@@ -595,12 +598,12 @@ dump_table(Mapi mid, char *tname)
 		for(i = 0; i < cnt - 1; i++) {
 			format = "%s\t";
 			if (string[i])
-				format = "'%s'\t";
+				format = "\"%s\"\t";
 			fprintf(toConsole, format, mapi_fetch_field(hdl, i));
 		}
 		format = "%s\n";
 		if (string[i])
-			format = "'%s'\n";
+			format = "\"%s\"\n";
 		fprintf(toConsole, format, mapi_fetch_field(hdl, i));
 	}
 	free(string);
