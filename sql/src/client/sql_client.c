@@ -6,7 +6,9 @@
 #include <sys/stat.h>
 #include <catalog.h>
 
+#ifdef HAVE_GETOPT_H 
 #include <getopt.h>
+#endif
 
 stream *ws = NULL, *rs = NULL;
 

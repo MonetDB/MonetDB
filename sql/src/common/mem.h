@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <assert.h>
 
+#ifdef HAVE_MALLOC_H 
+#include <malloc.h>
+#endif
+
 extern void* 	GDKmalloc  (size_t size);
 extern void* 	GDKrealloc (void* pold, size_t size);
 extern void	GDKfree    (void* blk); 
