@@ -306,8 +306,10 @@ tvar *scope_bind_table(scope * scp, char *name )
 static cvar *bind_column(list * columns, char *cname)
 {
 	node *n = columns->h;
+
 	for (; n; n = n->next) {
 		cvar *c = n->data;
+
 		if (strcmp(c->cname, cname) == 0) {
 			return c;
 		}
@@ -318,14 +320,32 @@ static cvar *bind_column(list * columns, char *cname)
 static cvar *bind_table_column(list * columns, char *tname, char *cname)
 {
 	node *n = columns->h;
+
 	for (; n; n = n->next) {
 		cvar *c = n->data;
+
 		if (	strcmp(c->tname, tname) == 0 &&
 			strcmp(c->cname, cname) == 0) {
 			return c;
 		}
 	}
 	return NULL;
+}
+
+int ambigious_column( list *cols, cvar *cv )
+{
+	node *n; 
+
+	if (!cv->tname)	/* no tname ie columns are unique */
+		return 0;
+
+	for(n = cols->h; n; n = n->next) {
+		cvar *a = n->data;
+
+		if (a != cv && strcmp(a->cname, cv->cname) == 0)
+			return 1;
+	}
+	return 0;
 }
 
 cvar *scope_bind_column(scope * scp, char *tname, char *cname )
@@ -336,6 +356,8 @@ cvar *scope_bind_column(scope * scp, char *tname, char *cname )
 		for (; n; n = n->next) {
 			tvar *tv = n->data;
 			if ( (cv = bind_column(tv->columns, cname)) != NULL) {
+				if (ambigious_column(tv->columns, cv))
+					return NULL;
 				return cv;
 			}
 		}
@@ -360,12 +382,14 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 {
 	scope *start = scp;
 	cvar *cv = NULL;
-	if (!tname){ /* TODO: return NULL, if name exists more the once */ 
+	if (!tname){ 
 		for (; scp; scp = scp->p) {
 			node *n = scp->tables->h;
 			for (; n; n = n->next) {
 				tvar *tv = n->data;
 				if ( (cv = bind_column(tv->columns, cname)) != NULL) {
+					if (ambigious_column(tv->columns, cv))
+						return NULL;
 					if (start != scp){
 						stmt *s = find_pivot(scp, tv->s);
 						/* add outer ref */

@@ -206,7 +206,7 @@ static tvar *scope_add_table_columns(context * sql, scope * scp, sql_table * t, 
 		for ( n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
 			stmt *sc = stmt_dup(c->st);
-			table_add_column(tv, sc, tv->tname, c->base.name);
+			table_add_column(tv, sc, NULL, c->base.name);
 		}
 	} else {
 		stmt *ts;
@@ -215,7 +215,7 @@ static tvar *scope_add_table_columns(context * sql, scope * scp, sql_table * t, 
 		for ( n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
 			stmt *sc = stmt_cbat(c, stmt_dup(ts), RDONLY, st_bat);
-			table_add_column(tv, sc, tv->tname, c->base.name);
+			table_add_column(tv, sc, NULL, c->base.name);
 		}
 	}
 	return tv;
@@ -339,7 +339,7 @@ static stmt *sql_column_ref(context * sql, scope * scp, symbol * column_r)
 			cs = sql_bind_param(sql, name);
 			if (!cs)
 				return sql_error( sql, 02, 
-					"Identifier: %s unknown", name);
+					"Identifier: %s unknown or ambigious", name);
 		}
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
