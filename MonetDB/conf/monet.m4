@@ -96,6 +96,9 @@ powerpc-apple-darwin*)
 esac
 
 dnl check for compiler
+icc_ver=""
+gcc_ver=""
+
 AC_ARG_WITH(gcc,
 [  --with-gcc=<compiler>   which C compiler to use
   --without-gcc           do not use GCC], [
@@ -135,6 +138,10 @@ AC_PROG_CXX()
 AC_PROG_CPP()
 AC_PROG_GCC_TRADITIONAL()
 
+case $GCC-$host_os in
+yes-*)	gcc_ver="`$CC --version | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`";;
+esac
+
 dnl  Set compiler switches.
 dnl  The idea/goal is to be as strict as possible, i.e., enable preferable
 dnl  *all* warnings and make them errors. This should help keeping the code
@@ -153,7 +160,6 @@ X_CXXFLAGS=''
 case $GCC-$host_os in
 yes-*)
 	dnl  GNU (gcc/g++)
-	gcc_ver="`$CC --version | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
 	dnl  We need more features than the C89 standard offers, but not all
 	dnl  (if any at all) C/C++ compilers implements the complete C99
 	dnl  standard.  Moreover, there seems to be no standard for the
@@ -219,7 +225,6 @@ yes-*)
 	;;
 -linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
-	icc_ver="`$CC --version 2>/dev/null`"
  	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
@@ -531,7 +536,6 @@ if test "x$enable_optim" = xyes; then
     dnl  Optimization flags
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
-      gcc_ver="`$CC --version | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
       case "$host-$gcc_ver" in
       i*86-*-*-3.[[2-9]]*)
                       CFLAGS="$CFLAGS -O6"
