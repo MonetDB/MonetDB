@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# ! this file should be kept identical in !
-# ! monet, sql, xml, acoi                 !
+# ! this file should be kept identical in                         !
+# ! monet, sql, xml, acoi, gis, template, playpen, misq, times100 !
 
 # helps bootstrapping Monet, when checked out from CVS
 # requires GNU autoconf, automake and libtool
@@ -65,6 +65,7 @@ AC_DEFUN(AC_LIBOBJ,[LIBOBJS="$LIBOBJS $1.$ac_objext"])\
 AC_DEFUN(AC_CHECK_TYPES,[AC_TRY_COMPILE([$ac_includes_default],[$1 x=0;],[x=`echo $1|tr "abcdefghijklmnopqrstuvwxyz *" "ABCDEFGHIJKLMNOPQRSTUVWXYZ_P"`;AC_DEFINE_UNQUOTED(HAVE_$x)])])/;s/^AC_SYS_LARGEFILE/dnl AC_SYS_LARGEFILE/g' configure.ag > configure.in
 	cat > acconfig.h <<EOF
 #include "sysdefs.h"
+#include "stddef.h"
 @TOP@
 EOF
 	# the replacement for AC_CHECK_TYPES above does not add
