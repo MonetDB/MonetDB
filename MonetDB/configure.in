@@ -131,9 +131,9 @@ AC_HEADER_STAT
 AC_HEADER_TIME
 AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
-AC_LANG([C++])
+AC_LANG_CPLUSPLUS
 AC_TRY_COMPILE( [], [ bool x = true; ], [ AC_DEFINE(HAVE_BOOL) ] )
-AC_LANG([C])
+AC_LANG_C
 AC_C_BIGENDIAN
 AC_CHECK_SIZEOF(long,4)
 
@@ -172,7 +172,6 @@ src/mil/Makefile src/mel/Makefile src/mal/Makefile
 src/gdk/Makefile src/monet/Makefile
 src/modules/Makefile 
 src/modules/plain/Makefile
-src/modules/geometry/Makefile
 src/tools/Makefile
 conf/Makefile
 doc/Makefile
