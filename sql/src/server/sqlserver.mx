@@ -348,7 +348,11 @@ proc SQLclient_thread( int sock ):= {
 	}
 
 	while(cmd != ""){
-		sqlexecute(cmd, Output );
+		if (cmd.startsWith("0")){
+			mvc_insert(myc, cmd );
+	        } else {
+			sqlexecute(cmd, Output );
+		}
 		cmd := stream_read( Input );
 	}
 	stream_close( Output );

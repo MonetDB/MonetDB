@@ -8,7 +8,7 @@ ptr *ADTfromStr( int type, char *s){
         int l = 0;
         ptr *res = NULL;
         if (type == TYPE_str) {
-		if (*s == '\'') {
+		if (*s == '\1') {
 			int len = strlen(s);
 			char *r = GDKstrdup( s+1 );
 			r[len-2] = '\0';
@@ -259,31 +259,16 @@ oid mvc_default( mvc *c, oid colid, char *val ){
 	return colid;
 }
 
-char *next_single_quotes( char *s ){
+char *next_single_sep( char *s, char sep ){
 	int escaped;
 
-	s++; /* skip ' */
+	s++; /* skip sep */
         escaped	= (*s == '\\');
 	while(*s){
-	       	if (*s == '\'' && !escaped)
+	       	if (*s == sep && !escaped)
 		       return s+1;
 		else
 			escaped = (*s == '\\' && !escaped);
-		s++;
-	}
-	return s;
-}
-char *next_double_quotes( char *s ){
-	int escaped;
-
-	s++; /* skip ' */
-        escaped	= (*s == '\\');
-	while(*s){
-	       	if (*s == '\"' && !escaped){
-		       	return s+1;
-		} else {
-			escaped = (*s == '\\' && !escaped);
-		}
 		s++;
 	}
 	return s;
@@ -292,8 +277,9 @@ char *next_double_quotes( char *s ){
 char *next_comma( char *s ){
 	int escaped = (*s == '\\');
 
-	if (!escaped && (*s == '"')) return next_double_quotes (s);
-	if (!escaped && (*s == '\'')) return next_single_quotes (s);
+	if (!escaped && (*s == '"')) return next_single_sep (s, '\"');
+	if (!escaped && (*s == '\'')) return next_single_sep (s, '\'');
+	if (!escaped && (*s == '\1')) return next_single_sep (s, '\1');
 
 	while(*s != ',') s++;
 	return s;
@@ -301,7 +287,7 @@ char *next_comma( char *s ){
 
 
 void mvc_insert( mvc *c, char *insert_string ){
-	char *next = insert_string;
+	char *next = insert_string+2;
 	int nr = strtol( next, &next, 10);
 	int cnt = 0;
 
