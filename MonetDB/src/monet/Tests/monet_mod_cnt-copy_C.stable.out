@@ -87,7 +87,7 @@ stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 [ "adm_acctbl",		  2,	  2,		  0	  ]
 [ "adm_atomtbl",	  17,	  17,		  0	  ]
 [ "monet_unicode_case",	  685,	  685,		  0	  ]
-[ "mapi_params",	  0,	  1,		  -1	  ]
+[ "mapi_params",	  1,	  1,		  0	  ]
 [ "tmp_29",		  2,	  2,		  0	  ]
 [ "tmp_30",		  684,	  684,		  0	  ]
 [ "tmp_31",		  17,	  17,		  0	  ]
