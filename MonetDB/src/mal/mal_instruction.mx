@@ -82,7 +82,7 @@ html
 typedef struct SYMDEF {
         struct SYMDEF   *peer;  /* where to look next */
         struct SYMDEF   *outer; /* outer level in the scope tree */
-        struct SYMDEF   *scope; /* beginning of scope level */
+        /* struct SYMDEF   *scope;  beginning of scope level */
         str             name;
         str             help;   /* supportive commentary */
 	str		binding;/* related C-function */
@@ -111,7 +111,7 @@ typedef struct{
 typedef struct {
 	short	token;		/* instruction type */
 	short	barrier;	/* Begin-end of block */
-	short	pc;		/* instruction index in current proc */
+	/* short	pc;	instruction index in current proc */
 	int	typechk;	/* type check status */
 @-
 For performance analysis we keep track of the number of calls
@@ -188,7 +188,7 @@ mal_export int isVARG(MalBlkPtr mb, InstrPtr p, int i);
 mal_export str newTmpName(int i);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr old);
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
-mal_export void pushArgument(InstrPtr p, int varid);
+mal_export void pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export void setReturnArgument(InstrPtr p, int varid);
 mal_export void printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export void promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
@@ -307,14 +307,14 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 	mb->ctop += sizeof(InstrRecord);
 
 	bzero((str)p, sizeof(InstrRecord));
-	p->sym = mb->sym;
+	p->sym = 0;/* mb->sym;*/
 	p->token = kind;
 	p->barrier= 0;
 	p->modname= NULL;
 	p->fcnname= NULL;
 	p->argc= 1;
 	p->argv[0] = -1;
-	p->pc=0;
+	/* p->pc=0;*/
 	p->typechk = TYPE_UNKNOWN;
 	return p;
 }
@@ -620,21 +620,21 @@ Furthermore, we should assure that no variable is referenced
 before being assigned. Failure to obey should mark the instruction
 as type-error.
 @c
-void pushArgument(InstrPtr p, int varid){
-	MalBlkPtr m= p->sym->def;
+void pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
+	/* MalBlkPtr mb= p->sym->def;*/
         int n;
         
         n = p->argc;
         if( n == MAXARG-2){
-		m->errors++;
+		mb->errors++;
                 GDKerror("too many arguments\n");
 		p->argc--;
         } 
 	p->argc++;
 	p->argv[n] = varid;
 	p->argv[p->argc] = -1;
-	m->ctop += sizeof(int);
-	isVarUsed(m,varid) = TRUE;
+	mb->ctop += sizeof(int);
+	isVarUsed(mb,varid) = TRUE;
 } 
 void setReturnArgument(InstrPtr p, int varid){
 	p->argv[0]= varid;
@@ -667,7 +667,7 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p){
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
 	}
-	p->pc= i;
+	/* p->pc= i;*/
 	mb->stmt[i]= ((char *) p)-((char*)mb->code);
 	mb->stop++;
 }
@@ -694,7 +694,7 @@ str typechkName(int i){
 str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	int i;
 	
-	sprintf(s,"\t#%d%s:",p->pc, typechkName(p->typechk));
+	sprintf(s,"\t#%d%s:",getPC(mb,p), typechkName(p->typechk));
 	advance(s);
 	for(i=0;i<p->argc;i++)
 	if( p->argv[i] >=0){

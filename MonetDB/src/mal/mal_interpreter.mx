@@ -131,8 +131,6 @@ onto the value stack. Then we do not have to check for the location
 later on any more. The effect is optimal, if at least ca. 20 constants
 are referenced in a function (a gain on tst400a of 20% has been observed).
 Otherwise, it is cheaper to lookup them up. 
-This requires a change in pushArgument and the variable record structure,
-we have not included this option yet.
 @c
 	for(i=0; i< mb->vtop; i++)
 	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){

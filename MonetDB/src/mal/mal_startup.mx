@@ -165,7 +165,7 @@ void chkClientPrg(Client cntxt,int flag)
 	for(i=0;i<mb->stop;i++) {
 		p= getInstrPtr(mb,i);
 		if(p== NULL) continue;
-		typeChecker(p, TYPE_FIXED);
+		typeChecker2(cntxt->nspace,mb,p, TYPE_FIXED);
 		switch(p->token){
 		case FUNCTIONsymbol: case COMMANDsymbol:
 		case PATTERNsymbol: case HANDLERsymbol:

@@ -265,7 +265,7 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 		p->blk = s->def;
 		break;
 	default:
-		showException(mb,p->pc,"MALresolve","unexpected token type\n");
+		showException(mb,getPC(mb,p),"MALresolve","unexpected token type\n");
 		mb->errors++;
 	}
 	if(tracefcn) printf("%s:=%s\n",malTypeName(getDestType(mb,p)),
@@ -300,10 +300,7 @@ in a MAL block. We try to clear the type check flag by looking up the
 functions. Errors are simply ignored at this point of the game,
 because they may be resolved as part of the calling sequence.
 @c
-void typeChecker(InstrPtr p, int level){
-	Symbol prg= p->sym;
-	Symbol scope = prg->scope;
-	MalBlkPtr mb= prg->def;
+void typeChecker2(Symbol scope, MalBlkPtr mb, InstrPtr p, int level){
 	int s1, i;
 	char buf[1024];
 @-
@@ -372,7 +369,7 @@ procedure call without arguments and no module name.
 		if( level <= TYPE_UNKNOWN){
 			sprintf(buf,"unknown operator '%s'\n", 
 				p->fcnname);
-			showException(mb,p->pc,"MALresolve",buf);
+			showException(mb,getPC(mb,p),"MALresolve",buf);
 			mb->errors++;
 			return;
 		}
@@ -387,11 +384,19 @@ procedure call without arguments and no module name.
 	{ str n1 = malTypeName(s1);
 	  str n2 = malTypeName(getDestType(mb,p));
 	  sprintf(buf,"type mismatch %s := %s\n",n2,n1);
-	  showException(mb,p->pc,"MALresolve",buf);
+	  showException(mb,getPC(mb,p),"MALresolve",buf);
 	  mb->errors++;
 	}
 	p->typechk= TYPE_UNKNOWN;
 }
+/*
+void typeChecker(InstrPtr p, int level){
+	Symbol prg= p->sym;
+	Symbol scope = prg->scope;
+	MalBlkPtr mb= prg->def;
+	typeChecker2(scope,mb,p,level);
+}
+*/
 
 @+ Type analysis
 MAL provides for type variables of the form any::N. This feature

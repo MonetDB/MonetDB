@@ -485,11 +485,11 @@ defineStmt : FUNCTION
 	while( ch !=')' && ch && !NL(ch)){
 		str arg;
 		@:binding@
-		pushArgument(curInstr, newVariable(curBlk,arg,type));
+		pushArgument(curBlk,curInstr, newVariable(curBlk,arg,type));
 		skipBlanc2(cntxt);
 		/* the last argument may be variable length */
 		if( keyphrase2(cntxt,"[]") ){
-			pushArgument(curInstr, 
+			pushArgument(curBlk,curInstr, 
 			newVariable(curBlk,GDKstrdup(malVARG), malAnyType));
 			break;
 		}
@@ -847,20 +847,20 @@ This code is used in both positions of the expression
 		i= typeMarker(cntxt);
 		if(i) lt = i;
 		i= newConstant(curBlk,lt,v);
-		pushArgument(curInstr,i);
+		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	} 
 	if( (v= charCst(cntxt)) ){
 		i= typeMarker(cntxt);
 		if(i) lt = i; else lt= TYPE_chr;
 		i= newConstant(curBlk,lt,v);
-		pushArgument(curInstr,i);
+		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	} 
 	if( i = strLength(cntxt) ){
 		lt = TYPE_str;
 		i= newConstant(curBlk,lt,strCopy(cntxt,i));
-		pushArgument(curInstr,i);
+		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	}
 @-
@@ -880,7 +880,7 @@ idseen:
 		if( currChar(cntxt) != '.' &&
 		    currChar(cntxt) != '(' &&
 		    (isalpha(*arg) || *arg=='_') ) {
-			pushArgumentId(curInstr,arg);
+			pushArgumentId(curBlk,curInstr,arg);
 			goto part2;
 		}
 
@@ -913,7 +913,7 @@ opseen:
 		while( currChar(cntxt)!= ')'){
 			int idx;
 			@:factor@
-			pushArgument(curInstr,idx);
+			pushArgument(curBlk,curInstr,idx);
 			if( currChar(cntxt)==',') keyphrase1(cntxt,",");
 			else 
 			if( currChar(cntxt) != ')'){
@@ -935,7 +935,7 @@ part2:
 				v= idCopy(cntxt,i);
 				k= newVariable(curBlk, v, malAnyType);
 			} else advance(cntxt,i);
-			pushArgument(curInstr,k); 
+			pushArgument(curBlk,curInstr,k); 
 			goto part3;
 		} 
 		@:term(part3)@

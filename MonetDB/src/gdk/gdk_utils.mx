@@ -639,6 +639,7 @@ void GDKmemfail(str s, int len, lng memtarget, lng vmtarget) {
 		s = (long*) (p + 8); /* place 8 bytes before it */ 	\
 		s[-1] = realsize;					\
 	}								\
+/*printf("%d malloc %d\n",s,realsize);*/\
 }
 #endif
 
@@ -697,6 +698,7 @@ void GDKfree (void *blk) {
 
         if (s == NULL) return;
 	size = GDK_MEM_BLKSIZE(s);
+ /* printf("%d free %d\n",s,size);*/
 	if (size > 0) {
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;

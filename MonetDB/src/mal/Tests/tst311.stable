@@ -47,18 +47,18 @@ entering sqzAccess blocking 13 p1
 Modified stmt sequence
 function Admin.main():int;	#0:(main:int->0)
 	p1 := -1;	#1:(p1:int->13)($14:int->14)
-	c1 := 2;	#3:(c1:int->17)($18:int->18)
-	squeezer.AccessTst(p1);	#14:($30:int->30)(p1:int->13)
-	squeezer.AccessTst(p1);	#15:($31:int->31)(p1:int->13)
-	c2 := arith.+(p1,p1);	#4:(c2:int->19)(p1:int->13)(p1:int->13)
-	c4 := "should not come here";	#5:(c4:str->20)($21:str->21)
-catch	WrongBlock;	#6:(WrongBlock:str->22)
-	err := true;	#7:(err:bit->23)($24:bit->24)
-end	WrongBlock;	#8:(WrongBlock:str->22)
-catch	IllegalAccess;	#9:(IllegalAccess:str->25)
-	n0 := 0;	#10:(n0:int->26)($27:int->27)
-end	IllegalAccess;	#11:(IllegalAccess:str->25)
-	x := "end of program";	#12:(x:str->28)($29:str->29)
-end function;	#13:
+	c1 := 2;	#2:(c1:int->17)($18:int->18)
+	squeezer.AccessTst(p1);	#3:($30:int->30)(p1:int->13)
+	squeezer.AccessTst(p1);	#4:($31:int->31)(p1:int->13)
+	c2 := arith.+(p1,p1);	#5:(c2:int->19)(p1:int->13)(p1:int->13)
+	c4 := "should not come here";	#6:(c4:str->20)($21:str->21)
+catch	WrongBlock;	#7:(WrongBlock:str->22)
+	err := true;	#8:(err:bit->23)($24:bit->24)
+end	WrongBlock;	#9:(WrongBlock:str->22)
+catch	IllegalAccess;	#10:(IllegalAccess:str->25)
+	n0 := 0;	#11:(n0:int->26)($27:int->27)
+end	IllegalAccess;	#12:(IllegalAccess:str->25)
+	x := "end of program";	#13:(x:str->28)($29:str->29)
+end function;	#14:
 Entering AccessTst with argument -1
 >

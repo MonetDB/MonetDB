@@ -22,10 +22,10 @@ use "kernel/atoms";
 use "atoms/blob";
 use "kernel/algebra";
 use "kernel/system";
+use "kernel/mapi";
 use "mal/mdb";
 use "mal/iterator";
 use "mal/squeezer"; 
-use "mapi/mapi";
 @-
 In practice, we have to introduce different startup for each
 client group.

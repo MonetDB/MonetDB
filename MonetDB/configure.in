@@ -391,7 +391,6 @@ src/modules/Makefile
 src/modules/kernel/Makefile
 src/modules/atoms/Makefile
 src/modules/mal/Makefile
-src/modules/mapi/Makefile
 src/modules/clients/Makefile
 src/tools/Makefile
 src/tools/monet-config.mx

@@ -91,6 +91,12 @@ command view_client_login( ): bat[int,str] = view_client_login
 command view_client_info( ): bat[int,str] = view_client_info
 	comment "Pseudo bat with client attributes ";
 
+@-
+The properties of the Client record can be obtained for inspection.
+Only the listing property can be dynamically set.
+@mal
+command set_client_listing(b:bit):void= CMDsetListing
+	comment "Turn on/off echoing of MAL instructions";
 @- MAL interpreter status
 The prime scheme to inspect the MAL interpreter status is to use
 the MAL debugger. However, in case of automatic exception handling
@@ -693,7 +699,12 @@ int view_client_login(int *ret){
 	@:Pseudo(client,login)@
 	return GDK_FAIL;
 }
-
+CMDsetListing(int *ret, int *flag) {
+	Client c;
+	c= getClient();
+	c->listing = *flag >0;
+	return GDK_SUCCEED;
+}
 @+ Variables and stack information
 The variable information can be turned into a BAT for inspection as well.
 

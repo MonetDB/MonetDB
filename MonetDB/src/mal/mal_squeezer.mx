@@ -68,6 +68,7 @@ All examples are meant to help identifying the API for squeezer construction.
 
 #include "mal_stack.h"
 #include "mal_resolve.h"
+#include "mal_client.h"
 
 #define DEBUG_MAL_SQUEEZER 1
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
@@ -238,9 +239,9 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 			/* insert blocking statement */
 			newstmt= newCmdCall(m,"squeezer","AccessTst");
 			setReturnArgument(newstmt, newTmpVariable(m,TYPE_int));
-			pushArgument(newstmt, symid);
+			pushArgument(m,newstmt, symid);
 			pushInstruction(m,newstmt); /* add to block */
-			typeChecker(newstmt, TYPE_FIXED);
+			typeChecker2(getClient()->nspace,m,newstmt, TYPE_FIXED);
 			/*watch out for overflow , to do!*/
 			new[top++]= m->stmt[m->stop-1];
 		}

@@ -54,7 +54,8 @@ mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname);
 mal_export void		clearFcn(MalBlkPtr m);
-mal_export void 	pushArgumentId(InstrPtr p,str name);
+mal_export void 	pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
+mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 
 mal_export void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
@@ -84,15 +85,15 @@ Symbol newFunction(Symbol scope, str nme){
 	int i,j;
 
 	s = newSymbol(nme,FUNCTIONsymbol);
-	s->scope = scope;
+	/* s->scope = scope;*/
 	s->def->sym = s;
 	c = newInstruction(s->def, FUNCTIONsymbol);
 	c->fcnname = GDKstrdup(nme);
 	c->argv[0]= newVariable(s->def,GDKstrdup(nme),malAnyType);
 	/* there is always room at the beginning */
 	mb= s->def;
-	c->pc= mb->stop;
-	mb->stmt[c->pc] = ((char *) c)-((char*)mb->code);
+	/*c->pc= mb->stop;*/
+	mb->stmt[mb->stop] = ((char *) c)-((char*)mb->code);
         mb->stop++;
 	return s;
 }
@@ -142,6 +143,12 @@ proper weaveing of the begin-end pairs. This can simply be checked by
 counting the begin/end pairs. It should balance for every block.
 Finally, the destination variable type should be of type 'bit'
 @c
+int getPC(MalBlkPtr mb, InstrPtr p)
+{	int i;
+	for( i=0;i<mb->stop; i++)
+	if( getInstrPtr(mb,i)==p) return i;
+	return -1;
+}
 int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 {	int i, v, endBlk= -1,cnt=0;
 
@@ -162,7 +169,7 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 			} else {
 			mb->errors++;
 			GDKerror("%d:end-label '%s' doesnot match '%s'\n",
-				p->pc,getVarName(mb,p->argv[0]),
+				/*p->pc*/i,getVarName(mb,p->argv[0]),
 				getVarName(mb,v)
 				);
 			return i;
@@ -171,7 +178,7 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 	}
 	if( cnt!= 0)
 	GDKerror("%d: non-hierarchical block structure %s %d\n",
-			pp->pc,getVarName(mb,v),cnt);
+			getPC(mb,pp),getVarName(mb,v),cnt);
 	else GDKerror("%d: begin-label '%s' without end-label\n", 
 		begBlk,getVarName(mb,v));
 	mb->errors++;
@@ -194,7 +201,7 @@ void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 	if( getArgType(mb,pp,0) != TYPE_bit && pp->token==BARRIERsymbol){
 		mb->errors++;
 		GDKerror("%d: barrier '%s' should be of type bit\n",
-			pp->pc,getVarName(mb,v));
+			getPC(mb,pp),getVarName(mb,v));
 	}
 }
 @-
@@ -215,7 +222,7 @@ void chkEnd(MalBlkPtr mb, InstrPtr pp)
 	}
 	mb->errors++;
 	GDKerror("%d: end-label '%s' without begin-label\n", 
-		pp->pc,getVarName(mb,v));
+		getPC(mb,pp),getVarName(mb,v));
 }
 @-
 Exception blocks start with a CATCH statement and end with the
@@ -280,7 +287,7 @@ properly contained within a single guarded- or iterator- block.
 Thus, upon encountering an error we simply introduce a new variable.
 @c
 void chkLabel(MalBlkPtr mb, InstrPtr pp)
-{	int i,k, begBlk = -1;
+{	int i,k,n, begBlk = -1;
 
 	k= pp->argv[0];
 	for(i=0; i<mb->stop;i++){
@@ -289,13 +296,14 @@ void chkLabel(MalBlkPtr mb, InstrPtr pp)
 			begBlk = i;
 		}
 		if( p->token == ENDsymbol && p->argv[0]==k) {
-			if( begBlk>=0 && pp->pc >=begBlk && pp->pc<=i) return;
+			n = getPC(mb,pp);
+			if( begBlk>=0 && n >=begBlk && n<=i) return;
 			begBlk= -1;
 		}
 	}
 	mb->errors++;
 	GDKerror("%d:label '%s' not in guarded block\n",
-		pp->pc,getVarName(mb,k));
+		getPC(mb,pp),getVarName(mb,k));
 }
 @-
 Store the information of a destination variable in the signature structure of
@@ -303,13 +311,13 @@ each instruction. This code is largely equivalent to pushArgument,
 but it is more efficient in searching and collecting the information.
 [todo]
 @c
-void pushArgumentId(InstrPtr p,str name){
-	MalBlkPtr mb= p->sym->def;
+void pushArgumentId(MalBlkPtr mb, InstrPtr p,str name){
+	/*MalBlkPtr mb= p->sym->def;*/
         int v;
 
 	v= findVariable(mb,name);
 	if( v<0) v= newVariable(mb,name,getTypeIndex(name));
-	pushArgument(p,v);
+	pushArgument(mb,p,v);
 }
 @+ Function cloning
 MAL supports functions defined with type variables.
