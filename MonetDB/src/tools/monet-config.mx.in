@@ -127,7 +127,8 @@ while test $# -gt 0; do
 	  	-I\${MONET_INCLUDEDIR}/monet \
 	  	-I\${MONET_INCLUDEDIR}/plain \
 	  	-I\${MONET_INCLUDEDIR}/contrib \
-	  	-I\${MONET_INCLUDEDIR}/mapi 
+	  	-I\${MONET_INCLUDEDIR}/mapi \
+	  	-I\${MONET_INCLUDEDIR}/C 
        	;;
 
     --cflags)
@@ -138,7 +139,8 @@ while test $# -gt 0; do
 		-I$pkgincludedir/monet \
 		-I$pkgincludedir/plain \
 		-I$pkgincludedir/contrib \
-		-I$pkgincludedir/mapi 
+		-I$pkgincludedir/mapi \
+	  	-I$pkgincludedir/C 
        	;;
 
     --libs)
