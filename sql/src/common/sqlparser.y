@@ -176,6 +176,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	time_persision
 	non_second_datetime_field
 	opt_sign
+	intval
 
 %type <bval>
 	opt_distinct
@@ -803,6 +804,7 @@ table_ref:
 		  		  dlist_append_list(l, $1);  
 		  	  	  dlist_append_string(l, $2);  
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ | subquery
  ;
 
 opt_group_by_clause:
@@ -853,7 +855,7 @@ ordering_spec_commalist:
  ;
 
 ordering_spec:
-    INT opt_asc_desc 
+    intval opt_asc_desc 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, _symbol_create_int(SQL_INT_VALUE, (int)$1)); 
 	  dlist_append_int(l, $2); 
@@ -1132,7 +1134,7 @@ tz:
  ;
 
 time_persision:
-	'(' INT ')' 	{ $$ = strtol($2,&$2,10); }
+	'(' intval ')' 	{ $$ = $2; }
  | /* empty */		{ $$ = 0; }
  ;
 
@@ -1191,10 +1193,9 @@ interval_type:
 
 literal:
     STRING   { $$ = _symbol_create_atom( SQL_ATOM, atom_string($1) );}
- |  INT      { context *lc = (context*)parm;
+ |  intval   { context *lc = (context*)parm;
 	       $$ = _symbol_create_atom( SQL_ATOM, atom_int( 
-			cat_bind_type(lc->cat, "INTEGER" ), 
-			strtol($1,&$1,10))); }
+			cat_bind_type(lc->cat, "INTEGER" ), $1)); }
  |  INTNUM   { $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
  |  APPROXNUM{ $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
  |  DATE STRING { context *lc = (context*)parm;
@@ -1257,26 +1258,27 @@ column_ref:
 
 data_type:
     CHARACTER			{ $$ = "CHARACTER"; }
- |  CHARACTER '(' INT ')'	{ $$ = "CHARACTER"; }
+ |  CHARACTER '(' intval ')'	{ $$ = "CHARACTER"; }
  |  NUMERIC			{ $$ = "NUMERIC"; }
- |  NUMERIC '(' INT ')'		{ $$ = "NUMERIC"; }
- |  NUMERIC '(' INT ',' INT ')' { $$ = "NUMERIC"; }
+ |  NUMERIC '(' intval ')'		{ $$ = "NUMERIC"; }
+ |  NUMERIC '(' intval ',' intval ')' { $$ = "NUMERIC"; }
  |  DECIMAL			{ $$ = "DECIMAL"; }
- |  DECIMAL '(' INT ')'		{ $$ = "DECIMAL"; }
- |  DECIMAL '(' INT ',' INT ')' { $$ = "DECIMAL"; }
- |  INTEGER '(' INT ')'		{ $$ = "INTEGER"; }
+ |  DECIMAL '(' intval ')'		{ $$ = "DECIMAL"; }
+ |  DECIMAL '(' intval ',' intval ')' { $$ = "DECIMAL"; }
+ |  INTEGER '(' intval ')'		{ $$ = "INTEGER"; }
  |  INTEGER			{ $$ = "INTEGER"; }
  |  SMALLINT			{ $$ = "SMALLINT"; }
- |  SMALLINT '(' INT ')'	{ $$ = "SMALLINT"; }
+ |  SMALLINT '(' intval ')'	{ $$ = "SMALLINT"; }
  |  FLOAT			{ $$ = "FLOAT"; }
- |  FLOAT '(' INT ')'		{ $$ = "FLOAT"; }
- |  FLOAT '(' INT ',' INT ')'	{ $$ = "FLOAT"; }
+ |  FLOAT '(' intval ')'		{ $$ = "FLOAT"; }
+ |  FLOAT '(' intval ',' intval ')'	{ $$ = "FLOAT"; }
  |  REAL			{ $$ = "REAL"; }
  |  DOUBLE 			{ $$ = "DOUBLE"; }
- |  DOUBLE '(' INT ',' INT ')' 	{ $$ = "DOUBLE"; }
+ |  DOUBLE '(' intval ',' intval ')' 	{ $$ = "DOUBLE"; }
  |  DOUBLE PRECISION		{ $$ = "DOUBLE"; }
  |  VARCHAR			{ $$ = "VARCHAR"; }
- |  VARCHAR '(' INT ')'		{ $$ = "VARCHAR"; }
+ |  VARCHAR '(' intval ')'	{ if ($3 == 1) $$ = "VARCHAR(1)";
+				  else $$ = "VARCHAR"; }
  | datetime_type
  | interval_type
  ;
@@ -1304,6 +1306,9 @@ name_commalist:
     ident			{ $$ = dlist_append_string(dlist_create(), $1); }
  |  name_commalist ',' ident  	{ $$ = dlist_append_string($$, $3); } 
  ;
+
+intval:
+	INT			{ $$ = strtol($1,&$1,10); }
 
 	/* embedded condition things */
 /* sql: WHENEVER NOT FOUND when_action |	WHENEVER SQLERROR when_action ;

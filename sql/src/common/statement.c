@@ -192,7 +192,7 @@ statement *statement_count( statement *s ){
 	statement *ns = statement_create();
 	ns->type = st_count;
 	ns->op1.stval = s; s->refcnt++;
-	ns->nrcols = s->nrcols;
+	ns->nrcols = 0;
 	ns->t = s->t;
 	return ns;
 }
@@ -338,7 +338,7 @@ statement *statement_like( statement *op1, statement *a ){
 	s->type = st_like;
 	s->op1.stval = op1; op1->refcnt++;
 	s->op2.stval = a; a->refcnt++;
-	s->nrcols = s->op1.stval->nrcols;
+	s->nrcols = 1;
 	s->h = s->op1.stval->h;
 	s->t = s->op1.stval->t;
 	return s;
@@ -481,6 +481,7 @@ statement *statement_aggr( statement *op1, aggr *op, statement *group ){
 		s->op3.stval = group; group->refcnt++;
 	}
 	s->h = op1->h;
+	s->nrcols = op1->nrcols;
 	return s;
 }
 statement *statement_exists( statement *op1, list *l ){
@@ -489,6 +490,7 @@ statement *statement_exists( statement *op1, list *l ){
 	s->op1.stval = op1; op1->refcnt++;
 	s->op2.lval = l;
 	s->h = op1->h;
+	s->nrcols = op1->nrcols;
 	return s;
 }
 

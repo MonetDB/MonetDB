@@ -200,8 +200,9 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 	char *typename = BUNtail(c->type_db,BUNfnd(c->type_db, 
 			BUNtail(type_sqlr, BUNfnd(type_sqlr, sqltype))));
 	int type = ATOMindex(typename);
-	BAT *b = BATnew( TYPE_oid, type, 1000 );
+	BAT *b = BATnew( TYPE_void, type, 1000 );
 
+	BATseqbase(b,0);
 	if (c->debug) 
 		printf("mvc_crate_column %d %d %s %s  %d\n", 
 					cid, tid, name, sqltype, seqnr);

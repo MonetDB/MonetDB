@@ -57,7 +57,7 @@ proc load_seps( BAT[void,BAT] bats, str Sep ) : BAT[void,str] := {
 proc bat_name(b):= return str(b);
 proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
 
-proc bulkload( tab, file, Sep ):= {
+proc bulkload( tab, file, Sep, sze ):= {
 	var lid := table_name.reverse().find( tab );
 	var tid := table_id.find( lid );
         var columns := column_name.semijoin(column_table.select(tid));
@@ -68,7 +68,7 @@ proc bulkload( tab, file, Sep ):= {
 	var names := [bat_name](bats);
 	var types := [bat_type](bats);
 	var seps := load_seps(bats,Sep);
-	var res := load(names, seps, types, file, -1);
+	var res := load(names, seps, types, file, sze);
 	# merge result
 	var x := bats.reverse().join(names.join(res));
 	x@batloop(){ $h.insert($t); }

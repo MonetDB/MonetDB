@@ -121,7 +121,8 @@ char *token2string(int token){
 }
 
 typedef struct var {
-	table *t;
+	symtype type;
+	symdata data;
 	char *vname;
 } var;
 
@@ -158,6 +159,14 @@ static scope *scope_close( scope *s ){
 	return p;
 }
 
+static void scope_new_var( scope *scp, statement *s, char *name ){
+	var *v = NEW(var);
+	v->type = type_statement;
+	v->data.stval = s;
+	v->vname = name;
+	list_append_string( scp->vars, (char*)v);
+}
+
 static void scope_lift( scope *s, column *c ){
 	node *n = s->lifted->h;
 	for( ; n; n = n->next ){
@@ -174,8 +183,9 @@ table *scope_bind_table( scope *scp, char *name ){
 		node *n = scp->vars->h; 
 		for( ; n; n = n->next ){
 			var *v = (var*)n->data.sval;
-			if (strcmp( v->vname, name) == 0){
-				return v->t;	
+			if (v->type == type_table &&
+				strcmp( v->vname, name) == 0){
+				return v->data.tval;	
 			}
 		}
 	}
@@ -198,18 +208,36 @@ column *scope_bind_column( scope *scp, char *name ){
 	scope *start = scp;
 	column *c = NULL;
 	for( ; scp; scp = scp->p ){
-		node *n = scp->vars->h; 
-		for( ; n; n = n->next ){
-			var *v = (var*)n->data.sval;
-			if ((c = bind_column(v->t->columns, name)) != NULL){
-				if (start != scp)
-					scope_lift(start, c );
-				return c;
-			}
-		}
+	  node *n = scp->vars->h; 
+	  for( ; n; n = n->next ){
+	    var *v = (var*)n->data.sval;
+	    if (v->type == type_table){
+	      if ((c = bind_column(v->data.tval->columns, name)) != NULL){
+		if (start != scp)
+		  scope_lift(start, c );
+		return c;
+	      }
+	    }
+	  }
 	}
 	return NULL;
 }
+
+statement *scope_bind_statement( scope *scp, char *name ){
+	for( ; scp; scp = scp->p ){
+	  node *n = scp->vars->h; 
+	  for( ; n; n = n->next ){
+	    var *v = (var*)n->data.sval;
+	    if (v->type == type_statement){
+	      if (strcmp(v->vname, name) == 0){
+		return v->data.stval;
+	      }
+	    }
+	  }
+	}
+	return NULL;
+}
+
 
 
 static statement *query( context *sql, scope *scp, int distinct, 
@@ -217,7 +245,7 @@ static statement *query( context *sql, scope *scp, int distinct,
 		symbol *orderby );
 
 static 
-column *column_ref( context *sql, scope *scp, symbol *column_r ){
+statement *column_ref( context *sql, scope *scp, symbol *column_r ){
 	dlist *l = column_r->data.lval;
 	assert (column_r->token == SQL_COLUMN && column_r->type == type_list);
 
@@ -225,20 +253,26 @@ column *column_ref( context *sql, scope *scp, symbol *column_r ){
 		char *name = l->h->data.sval;
 		column *c = scope_bind_column( scp, name );
 
+		if (!c){
+			statement *sc = scope_bind_statement( scp, name );
+			if (sc) return sc;
+		}
 		if (!c)
 			snprintf(sql->errstr, ERRSIZE, 
 		  		_("Column: %s unknown"), name );
-		return c;
+		return statement_column(c);
 	} else if (dlist_length(l) == 2){
 		char *tname = l->h->data.sval;
 		char *cname = l->h->next->data.sval;
 		table *t = scope_bind_table( scp, tname );
 		if (t){
 			column *c = bind_column( t->columns, cname ); 
-			if (!c)
+			if (!c){
 				snprintf(sql->errstr, ERRSIZE, 
 		  		_("Column: %s.%s unknown"), tname, cname );
-			return c;
+				return NULL;
+			}
+			return statement_column(c);
 		} else {
 			snprintf(sql->errstr, ERRSIZE, 
 		  	_("Table: %s unknown"), tname );
@@ -301,7 +335,7 @@ char *schema_auth( dlist *name_auth ){
 static
 statement *find_subset( statement *subset, table *t ){
 	node *n = subset->op1.lval->h;
-	while(n){
+	if (t) while(n){
 		statement *s = n->data.stval;
 		if (s->t == t){
 			return s;
@@ -348,8 +382,6 @@ statement *check_types( context *sql, column *c, statement *s ){
 static
 statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 	      statement *subset	){
-
-	column* c = NULL;
 
 	switch(se->token){
 	case SQL_BINOP: { 
@@ -413,12 +445,11 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 		}
 	} break;
 	case SQL_COLUMN: {
-		c = column_ref( sql, scp, se );
-		if (c){ 
-			statement *res = statement_column(c);
+		statement *res = column_ref( sql, scp, se );
+		if (res){ 
 			if (res && subset){
 				statement *foundsubset = 
-					find_subset(subset, c->table);
+					find_subset(subset, res->h);
 
 				res = statement_join(foundsubset, res,
 						cmp_equal);
@@ -432,7 +463,7 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 		int distinct = l->h->next->data.ival;
 		statement *s = NULL;
 		if (!l->h->next->next->data.sym){
-		    	table *t = ((var*)scp->vars->h->data.sval)->t;
+		    	table *t = ((var*)scp->vars->h->data.sval)->data.tval;
 		    	s = statement_column( t->columns->h->data.cval);
 			if (s && subset){
 				statement *foundsubset = find_subset(subset, t);
@@ -514,8 +545,10 @@ statement *column_exp( context *sql, scope *scp, symbol *column_e, statement *gr
 			s = statement_join( group, s, cmp_equal );
 		}
 
+		/* AS name */
 		if (s && l->h->next->data.sval){
 			s = statement_name(s, l->h->next->data.sval);
+			scope_new_var( scp, s, l->h->next->data.sval);
 		} 
 		return s;
 	} break;
@@ -616,6 +649,54 @@ list *query_and( catalog *cat, list *ands ){
 }
 
 static
+statement *sql_compare( context *sql, statement *ls, statement *rs, char *compare_op ){
+	int join = 0;
+	int type = 0;
+
+	if (!ls || !rs) return NULL;
+
+	if (ls->h == NULL && rs->h == NULL){
+		snprintf(sql->errstr, ERRSIZE, 
+	  	_("Compare(%s) between two atoms is not possible"),
+		compare_op);
+	       	return NULL;
+		/*
+	} else if ((ls->h != NULL && rs->h == NULL) ||
+	           (ls->h == NULL && rs->h != NULL)) {
+		   */
+	} else if (ls->nrcols > 0 && rs->nrcols > 0){
+		join = 1;
+	}
+	if (compare_op[0] == '='){
+	   	type = cmp_equal;
+	} else if (compare_op[0] == '<'){
+	   	type = cmp_lt;
+	  	if (compare_op[1] != '\0'){
+	    		if (compare_op[1] == '>'){ 
+	   			type = cmp_notequal;
+	    		} else if (compare_op[1] == '='){
+	   			type = cmp_lte;
+	    		}
+	  	}
+	} else if (compare_op[0] == '>'){
+	   	type = cmp_gt;
+	  	if (compare_op[1] != '\0'){
+	       		if (compare_op[1] == '='){ 
+	   			type = cmp_gte;
+	    		}
+	  	}
+	}
+	if (join){
+		rs = statement_reverse( rs );
+		return statement_join( ls, rs, type );
+	} else {
+		rs = check_types( sql, basecolumn(ls), rs );
+		if (!rs) return NULL;
+		return statement_select( ls, rs, type );
+	}
+}
+
+static
 statement *search_condition( context *sql, scope *scp, symbol *sc ){
 	if (!sc) return NULL;
 	switch(sc->token){
@@ -686,55 +767,34 @@ statement *search_condition( context *sql, scope *scp, symbol *sc ){
 		return s;
 	} break;
 	case SQL_COMPARE: {
-		int join = 1;
-		int type = 0;
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->next->data.sym;
 		char *compare_op = sc->data.lval->h->next->data.sval;
 		statement *rs, *ls = scalar_exp(sql, scp, lo, NULL, NULL);
+
 		if (ro->token != SQL_SELECT){
 	       		rs = scalar_exp(sql, scp, ro, NULL, NULL);
+			return sql_compare( sql, ls, rs, compare_op );
 		} else {
+			statement *cur = NULL;
+			node *o;
 			rs = subquery(sql, scp, ro );
-			return rs;
-		}
-		if (!ls || !rs) return NULL;
-
-		if (ls->h == NULL && rs->h == NULL){
-			snprintf(sql->errstr, ERRSIZE, 
-		  	_("Compare(%s) between two atoms is not possible"),
-			compare_op);
-		       	return NULL;
-		} else if ((ls->h != NULL && rs->h == NULL) ||
-		           (ls->h == NULL && rs->h != NULL)) {
-			join = 0;
-		}
-		if (compare_op[0] == '='){
-		   	type = cmp_equal;
-		} else if (compare_op[0] == '<'){
-		   	type = cmp_lt;
-		  	if (compare_op[1] != '\0'){
-		    		if (compare_op[1] == '>'){ 
-		   			type = cmp_notequal;
-		    		} else if (compare_op[1] == '='){
-		   			type = cmp_lte;
-		    		}
-		  	}
-		} else if (compare_op[0] == '>'){
-		   	type = cmp_gt;
-		  	if (compare_op[1] != '\0'){
-	            		if (compare_op[1] == '='){ 
-		   			type = cmp_gte;
-		    		}
-		  	}
-		}
-		if (join){
-			rs = statement_reverse( rs );
-			return statement_join( ls, rs, type );
-		} else {
-			rs = check_types( sql, basecolumn(ls), rs );
-			if (!rs) return NULL;
-			return statement_select( ls, rs, type );
+			if (rs->type != st_list){
+				snprintf(sql->errstr, ERRSIZE, 
+		  		_("Subquery result wrong"));
+		       		return NULL;
+			}
+			o = rs->op1.lval->h;
+			if (o){
+				cur = sql_compare( 
+					sql, ls, o->data.stval, compare_op );
+				o = o->next;
+			}
+			if(o){
+				cur = statement_join( cur, o->data.stval, 
+				      	cmp_equal ); 
+			}
+			return cur;
 		}
 	} break;
 	case SQL_BETWEEN: {
@@ -808,9 +868,9 @@ statement *search_condition( context *sql, scope *scp, symbol *sc ){
 		  	_("Time to implement LIKE escapes"));
 		       	return NULL;
 		}
-		if (a->type != type_string){
+		if (a->type != string_value){
 			snprintf(sql->errstr, ERRSIZE, 
-		  	_("Wrong type used with LIKE statement, should be string"));
+		  	_("Wrong type used with LIKE statement, should be string %s %s"), atom2string(a), atomtype2string(a));
 		       	return NULL;
 		}
 		return statement_like( ls, statement_atom(atom_dup(a)) );
@@ -824,7 +884,8 @@ statement *search_condition( context *sql, scope *scp, symbol *sc ){
 			dnode *n = l->h->next->data.lval->h;
 			list *nl = list_create();
 			while(n){
-				list_append_atom(nl, atom_dup(n->data.aval));
+				list_append_atom(nl, 
+					atom_dup(n->data.sym->data.aval));
 				n = n->next;
 			}
 			return statement_exists( ls, nl);
@@ -866,6 +927,28 @@ statement *search_condition( context *sql, scope *scp, symbol *sc ){
 		  	_("In missing inner query"));
 			return NULL;
 		}
+	} break;
+	case SQL_EXISTS: {
+		symbol *lo = sc->data.sym;
+		statement *ls, *cur = NULL;
+		node *o;
+		ls = subquery(sql, scp, lo );
+
+		if (ls->type != st_list){
+			snprintf(sql->errstr, ERRSIZE, 
+		  	_("Subquery result wrong"));
+		       	return NULL;
+		}
+		o = ls->op1.lval->h;
+		if (o){
+			cur = statement_reverse(o->data.stval), 
+			o = o->next;
+		}
+		if (o){
+			cur = statement_join( cur, o->data.stval, 
+			      	cmp_equal ); 
+		}
+		return cur;
 	} break;
 	default:
 		snprintf(sql->errstr, ERRSIZE, 
@@ -1045,14 +1128,13 @@ statement *pearl2pivot( context *sql, list *ll ){
 	return NULL;
 }
 
-statement *query_groupby_inner( context *sql, scope *scp, column *c,
+statement *query_groupby_inner( context *sql, scope *scp, statement *c,
 				statement *st, statement *cur ){
 	node *n = st->op1.lval->h;
 	while(n){
 		statement *s = n->data.stval;
-		if (s->t->id == c->table->id ){
-			statement *j = statement_join( s, statement_column(c), 
-						cmp_equal);
+		if (s->t->id == c->h->id ){
+			statement *j = statement_join( s, c, cmp_equal);
 			if (cur) cur = statement_derive( cur, j );
 			else cur = statement_group( j );
 			break;
@@ -1068,7 +1150,7 @@ statement *query_groupby( context *sql, scope *scp, symbol *groupby, statement *
 	dnode *o = groupby->data.lval->h;
 	while(o){
 	    symbol *group = o->data.sym;
-	    column *c = column_ref(sql, scp, group );
+	    statement *c = column_ref(sql, scp, group );
 	    cur = query_groupby_inner( sql, scp, c, st, cur );
 	    o = o->next;
 	}
@@ -1082,41 +1164,48 @@ statement *query_groupby_lifted( context *sql, scope *scp, statement *st ){
 	node *o = scp->lifted->h;
 	while(o){
 	    column *c = o->data.cval;
-	    cur = query_groupby_inner( sql, scp, c, st, cur );
+	    statement *sc = statement_column(c);
+	    cur = query_groupby_inner( sql, scp, sc, st, cur );
 	    o = o->next;
 	}
 	return cur;
 }
 
 static
-statement *query_orderby( context *sql, scope *scp, symbol *orderby, statement *st, statement *group ){
+statement *query_orderby( context *sql, scope *scp, symbol *orderby, statement *st, statement *subset, statement *group ){
 	statement *cur = NULL;
 	dnode *o = orderby->data.lval->h;
 	if (group) group = statement_reverse(statement_unique(group));
 	while(o){
-	    node *n = st->op1.lval->h;
 	    symbol *order = o->data.sym;
 	    if (order->token == SQL_COLUMN){
 		symbol *col = order->data.lval->h->data.sym;
 		int direction = order->data.lval->h->next->data.ival;
-		column *c = column_ref(sql, scp, col );
-	        while(n){
-		    statement *s = n->data.stval;
-		    if (s->t->id == c->table->id ){
-			statement *j = s;
+		statement *sc = column_ref(sql, scp, col );
+		if (sc){
+		  statement *j = NULL;
+		  if (sc->type == st_column){
+			j = find_subset( subset, sc->h);
+			if (!j){
+				snprintf(sql->errstr, ERRSIZE,
+				"subset not found for orderby column\n" );
+				return NULL;
+			}
 			if (group)
-				j = statement_join( group, s, cmp_equal); 
-		        j = statement_join( j, statement_column(c), 
-						cmp_equal);
-			if (cur) cur = statement_reorder( cur, j, direction);
-			else cur = statement_order( j, direction );
-			break;
-		    }
-		    n = n->next;
-	        }
+				j = statement_join( group, j, cmp_equal); 
+		        j = statement_join( j, sc, cmp_equal);
+		  } else {
+			j = sc;
+		  }
+		  if (cur) cur = statement_reorder( cur, j, direction);
+		  else cur = statement_order( j, direction );
+	        } else {
+			return NULL;
+		}
 	    } else {
 		snprintf(sql->errstr, ERRSIZE,
 			"order not of type SQL_COLUMN\n" );
+		return NULL;
 	    }
 	    o = o->next;
 	}
@@ -1143,6 +1232,7 @@ static
 statement *query( context *sql, scope *scp, int distinct, dlist *selection, 
 	dlist *into, dlist *table_exp , symbol *orderby ) {
 
+  int toplevel = (!scp)?1:0;
   statement *s = NULL, *ns = NULL;
   dlist *from = table_exp->h->data.sym->data.lval;
   list *rl = list_create();
@@ -1150,7 +1240,7 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
   symbol *where = table_exp->h->next->data.sym;
   symbol *groupby = table_exp->h->next->next->data.sym;
   symbol *having = table_exp->h->next->next->next->data.sym;
-  statement *order = NULL, *group = NULL;
+  statement *order = NULL, *group = NULL, *subset = NULL;
   (void)having;
 
   if (from){ /* keep variable list with tables and names */
@@ -1160,7 +1250,8 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
 
 	  for( vars = list_create(); n; n = n->next ){
 		var *v = NEW(var);
-		p = v->t = table_ref( sql, n->data.sym);
+		v->type = type_table;
+		p = v->data.tval = table_ref( sql, n->data.sym);
 	  	if (!p){ 
 			symbol *s = (n)?n->data.sym:NULL;
 			if (s && s->token == SQL_NAME)
@@ -1176,13 +1267,14 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
 	  }
   	  scp = scope_open( scp, vars );
 
-  } else if (!scp) { /* only on top level query */
+  } else if (toplevel) { /* only on top level query */
 	  list *vars;
 	  node *n = sql->cat->cur_schema->tables->h;
 
 	  for( vars = list_create(); (n); n = n->next ){
 		var *v = NEW(var);
-		v->t = n->data.tval;
+		v->type = type_table;
+		v->data.tval = n->data.tval;
 		v->vname = n->data.tval->name;
 
 	  	list_append_string( vars, (char*)v);
@@ -1200,13 +1292,14 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
 		  _("Subquery over multiple tables misses where condition"));
 		return NULL;
 	}
-	if (list_length(((var*)scp->vars->h->data.sval)->t->columns) < 1 ){
+	if (list_length(((var*)scp->vars->h->data.sval)->data.tval->columns) < 1 ){
 		snprintf(sql->errstr, ERRSIZE, 
 		  _("Subquery table %s has no columns"), 
 		  scp->vars->h->data.tval->name);
 		return NULL;
 	}
-  	s = statement_column(((var*)scp->vars->h->data.sval)->t->columns->h->data.cval);
+  	s = statement_column(
+		((var*)scp->vars->h->data.sval)->data.tval->columns->h->data.cval);
   }
 
   if (s){
@@ -1223,33 +1316,42 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
 		s = ns;
 	}
 
-  	if (s && groupby)
-	       group = query_groupby(sql, scp, groupby, s );
+  	if (s && groupby){
+	       	group = query_groupby(sql, scp, groupby, s );
+		if (!group){
+  			if (subset)
+  				statement_destroy(subset);
+			return NULL;
+		}
+	}
 
-	if (s && list_length(scp->lifted) > 0)
-	       group = query_groupby_lifted(sql, scp, s );
-
-  	if (s && orderby)
-	       	order = query_orderby(sql, scp, orderby, s, group );
+	if (s && list_length(scp->lifted) > 0){
+	       	group = query_groupby_lifted(sql, scp, s );
+		if (!group){
+  			if (subset)
+  				statement_destroy(subset);
+			return NULL;
+		}
+	}
   }
 
-  if (s){
+  subset = s;
+  if (subset){
   	if (selection){
 	  dnode *n = selection->h;
 	  while (n){
-		statement *cs = 
-			column_exp(sql, scp, n->data.sym, group, s);
+		statement *cs = column_exp(sql, scp, n->data.sym, group,subset);
 		if (!cs) return NULL;
 		list_append_statement(rl, cs);
 		n = n->next;
 	  }
   	} else {
-	  /* select * from single table */
-	    table *t = ((var*)scp->vars->h->data.sval)->t;
+	    /* select * from single table */
+	    table *t = ((var*)scp->vars->h->data.sval)->data.tval;
             node *n = t->columns->h;
 	    while(n){
 		column *cs = n->data.cval;
-		node *m = s->op1.lval->h;
+		node *m = subset->op1.lval->h;
 		if(m){
 			statement *ss = m->data.stval;
 			list_append_statement(rl, 
@@ -1258,17 +1360,74 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
 		n = n->next;
 	    }
 	}
-	statement_destroy(s);
+	/* the inner query should output a table where the first bat
+	 * contains the queried column values. 
+	 * If variables from the outer query are correlated 
+	 * the oids from the base tables of these variables are returned
+	 * in the next columns.
+	 */
+	if (list_length(scp->lifted) > 0){
+		node *o = scp->lifted->h;
+		group = statement_reverse(statement_unique(group));
+		while(o){
+	    		column *c = o->data.cval;
+			statement *foundsubset =
+				find_subset(subset, c->table);
+			list_append_statement(rl, 
+			    statement_join( group, foundsubset, cmp_equal ));
+	    		o = o->next;
+		}
+
+	}
 	s = statement_list(rl);
+  }
+
+  if (s && subset && orderby){
+       	order = query_orderby(sql, scp, orderby, s, subset, group );
+	if (!order){
+  		if (subset)
+  			statement_destroy(subset);
+		return NULL;
+	}
   }
 
   if (scp) scp = scope_close( scp );
  
   if (!s && sql->errstr[0] == '\0')
 	  snprintf(sql->errstr, ERRSIZE, _("Subquery result missing")); 
+
+  if (subset)
+  	statement_destroy(subset);
+
   if (s && order) 
 	  return statement_ordered(order,s);
   return s;
+}
+
+
+static
+statement *create_table_intern( context *sql, schema *schema, 
+		char *name, char *query, statement *sq ){
+
+	catalog *cat = sql->cat;
+	table *table = cat_create_table( cat, 0, schema, name, 0, query);
+	statement *stct = statement_create_table( table );
+
+	int seqnr = 0;
+	node *m = sq->op1.lval->h;
+
+	while(m){
+		statement *st = m->data.stval;
+		char *cname = column_name(st);
+		char *ctype = (char*)column_type(st);
+		column *col = cat_create_column( cat, 0,
+				table, cname, ctype, "NULL", 1, seqnr);
+		col->s = st;
+		st_incref(st);
+		m = m->next;
+		seqnr++;
+	}
+	return stct;
 }
 
 static
@@ -1283,48 +1442,38 @@ statement *create_view( context *sql, schema *schema, dlist *qname,
 			_("Create View name %s allready in use"), name);
 		return NULL; 
 	} else {
-		table *table = cat_create_table( cat, 0, schema, name, 0, 
-					query->sql);
-		statement *st = statement_create_table( table );
-		list *newcolumns = list_append_statement(list_create(), st );
-		statement *s = subquery( sql, NULL, query );
+		statement *stct = NULL;
+		statement *sq = subquery( sql, NULL, query );
 
-		if (!s) return NULL;
+		if (!sq) return NULL;
+
 		if (column_spec){
+			table *table = cat_create_table( 
+					cat, 0, schema, name, 0, query->sql);
 			int seqnr = 0;
 			dnode *n = column_spec->h;
-			node *m = s->op1.lval->h;
+			node *m = sq->op1.lval->h;
+
+			stct = statement_create_table( table );
+
 			while(n){
 				char *cname = n->data.sval;
 				statement *st = m->data.stval;
 				char *ctype = (char*)column_type(st);
 				column *col = cat_create_column( cat, 0,  
 					table, cname, ctype, "NULL", 1, seqnr);
-				list_append_statement( newcolumns, 
-				  statement_create_column(col));
 				col->s = st;
+				st_incref(st);
 				n = n->next;
 				m = m->next;
 				seqnr++;
 			}
 		} else {
-			int seqnr = 0;
-			node *m = s->op1.lval->h;
-
-			while(m){
-				statement *st = m->data.stval;
-				char *cname = column_name(st);
-				char *ctype = (char*)column_type(st);
-				column *col =cat_create_column( cat, 0,
-					table, cname, ctype, "NULL", 1, seqnr);
-				list_append_statement( newcolumns, 
-				  statement_create_column(col));
-				col->s = st;
-				m = m->next;
-				seqnr++;
-			}
+			stct = create_table_intern( 
+				sql, schema, name, query->sql, sq );
 		}
-		return statement_list(newcolumns);
+		statement_destroy(sq); 
+		return stct;
 	}
 	return NULL;
 }
@@ -1605,7 +1754,7 @@ statement *update_set( context *sql, dlist *qname,
 		list *vars;
 		scope *scp;
 	        
-		v->t = t;
+		v->data.tval = t;
 		v->vname = t->name;
 		vars	= list_append_string( list_create() ,(char*)v); 
 		scp = scope_open(NULL, vars);
@@ -1666,7 +1815,7 @@ statement *delete_searched( context *sql, dlist *qname, symbol *opt_where){
 		list *vars;
 		scope *scp;
 	        
-		v->t = t;
+		v->data.tval = t;
 		v->vname = t->name;
 		vars	= list_append_string( list_create() ,(char*)v); 
 		scp = scope_open(NULL, vars);

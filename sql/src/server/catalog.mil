@@ -68,7 +68,8 @@ numerical.insert("REAL", "dbl");
 numerical.insert("DOUBLE", "dbl");
 
 if (type_sql.count() <= 0){
-	new_type( "CHARACTER", "str", "", "" );
+	new_type( "VARCHAR(1)", "chr", "", "" );
+	new_type( "CHARACTER", "str", "VARCHAR(1)", "" );
 	new_type( "VARCHAR", "str", "CHARACTER", "" );
 	new_type( "STRING", "str", "VARCHAR", "" );
 	

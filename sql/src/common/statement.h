@@ -78,6 +78,8 @@ typedef struct statement {
 	value v;
 } statement;
 
+#define st_incref(st) (st)->refcnt++
+
 extern statement *statement_create_schema( schema *s );
 extern statement *statement_drop_schema( schema *s );
 
