@@ -29,6 +29,10 @@ export PATH PYTHONPATH LD_LIBRARY_PATH
 # execute Mtest.py in the source directory
 cd "$srcdir"
 
+# check python version
+type -a python
+python -V
+
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
 exec python "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/monet.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" --TSTTRGBASE="${builddir}" "${@--r}"

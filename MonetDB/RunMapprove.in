@@ -12,6 +12,10 @@ export PATH PYTHONPATH
 # execute Mapprove.py in the source directory
 cd "$srcdir"
 
+# check python version
+type -a python
+python -V
+
 # execute the script
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
