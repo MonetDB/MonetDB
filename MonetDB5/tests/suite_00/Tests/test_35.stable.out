@@ -7,20 +7,178 @@ stdout of test 'test_35` in directory 'tests/suite_00` itself:
 # compiled for i686-pc-linux-gnu/32bit.
 #script:test_35.milS
 
+# 19:43:18 >  
+# 19:43:18 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux//var/MonetDB5/log" --set mapi_port=43031 --set sql_port=57193 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_35.mal </dev/null
+# 19:43:18 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-setoid(oid(20000000));
-# testing merge semijoin
-var c:= new(int,int);
-insert(c,1,1);
-insert(c,2,2);
-insert(c,3,4);
-insert(c,4,4);
-insert(c,4,9);
-insert(c,5,int(nil));
-c.print();
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm
+# dbname:mTests_tests_suite_00
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##include "mil_prelude";
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("# testing merge semijoin\n");
+#	mil.line("var c:= new(int,int);");
+#	c := new(nil:int,nil:int);
+#	mil.line("insert(c,1,1);");
+#	ca_a := insert(c,1,1);
+#	mil.line("insert(c,2,2);");
+#	da_a := insert(c,2,2);
+#	mil.line("insert(c,3,4);");
+#	ea_a := insert(c,3,4);
+#	mil.line("insert(c,4,4);");
+#	fa_a := insert(c,4,4);
+#	mil.line("insert(c,4,9);");
+#	ga_a := insert(c,4,9);
+#	mil.line("insert(c,5,int(nil));");
+#	ha_a := int(nil);
+#	ia_a := insert(c,5,ha_a);
+#	mil.line("c.print();");
+#	ja_a := print(c);
+#	mil.line("var d:= new(int,int);");
+#	d := new(nil:int,nil:int);
+#	mil.line("insert(d,1,1);");
+#	ka_a := insert(d,1,1);
+#	mil.line("insert(d,2,2);");
+#	la_a := insert(d,2,2);
+#	mil.line("insert(d,4,3);");
+#	ma_a := insert(d,4,3);
+#	mil.line("insert(d,4,4);");
+#	na_a := insert(d,4,4);
+#	mil.line("insert(d,9,4);");
+#	oa_a := insert(d,9,4);
+#	mil.line("insert(d,int(nil),5);");
+#	pa_a := int(nil);
+#	qa_a := insert(d,pa_a,5);
+#	mil.line("d.print();");
+#	ra_a := print(d);
+#	mil.line("var z:=c.semijoin(d);");
+#	z := semijoin(c,d);
+#	mil.line("z.print();");
+#	sa_a := print(z);
+#	mil.line("z:=c.reverse().semijoin(d);");
+#	ta_a := reverse(c);
+#	z := semijoin(ta_a,d);
+#	mil.line("z.print();");
+#	ua_a := print(z);
+#	mil.line("z:=d.semijoin(c);");
+#	z := semijoin(d,c);
+#	mil.line("z.print();");
+#	va_a := print(z);
+#	mil.line("# String management\n");
+#	mil.line("var b:= new(oid,str);");
+#	b := new(nil:oid,nil:str);
+#	mil.line("b.insert(oid(1),\"hello\");");
+#	wa_a := oid(1);
+#	xa_a := insert(b,wa_a,"hello");
+#	mil.line("b.insert(oid(2),\"world\");");
+#	ya_a := oid(2);
+#	ab_a := insert(b,ya_a,"world");
+#	mil.line("b.insert(oid(3),\"..\");");
+#	bb_a := oid(3);
+#	cb_a := insert(b,bb_a,"..");
+#	mil.line("var z1:= b.semijoin(b);");
+#	z1 := semijoin(b,b);
+#	mil.line("z1.print();");
+#	db_a := print(z1);
+#	mil.line("quit();");
+#	eb_a := quit();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("# testing merge semijoin\n");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("var c:= new(int,int);");	# 5 MILline ($8:void)<-($9:str)
+    c := bbp.new(nil,nil);	# 6 CMDBATnew (c:bat[:int,:int])<-($11:int)($11:int)
+    mil.line("insert(c,1,1);");	# 7 MILline ($12:void)<-($13:str)
+    ca_a := bat.insert(c,1,1);	# 8 BKCinsert_bun (ca_a:void)<-(c:bat[:int,:int])($15:int)($15:int)
+    mil.line("insert(c,2,2);");	# 9 MILline ($16:void)<-($17:str)
+    da_a := bat.insert(c,2,2);	# 10 BKCinsert_bun (da_a:void)<-(c:bat[:int,:int])($19:int)($19:int)
+    mil.line("insert(c,3,4);");	# 11 MILline ($20:void)<-($21:str)
+    ea_a := bat.insert(c,3,4);	# 12 BKCinsert_bun (ea_a:void)<-(c:bat[:int,:int])($23:int)($24:int)
+    mil.line("insert(c,4,4);");	# 13 MILline ($25:void)<-($26:str)
+    fa_a := bat.insert(c,4,4);	# 14 BKCinsert_bun (fa_a:void)<-(c:bat[:int,:int])($24:int)($24:int)
+    mil.line("insert(c,4,9);");	# 15 MILline ($28:void)<-($29:str)
+    ga_a := bat.insert(c,4,9);	# 16 BKCinsert_bun (ga_a:void)<-(c:bat[:int,:int])($24:int)($31:int)
+    mil.line("insert(c,5,int(nil));");	# 17 MILline ($32:void)<-($33:str)
+    ha_a := calc.int(nil);	# 18 CALCnil2int (ha_a:int)<-($35:void)
+    ia_a := bat.insert(c,5,ha_a);	# 19 BKCinsert_bun (ia_a:void)<-(c:bat[:int,:int])($37:int)(ha_a:int)
+    mil.line("c.print();");	# 20 MILline ($38:void)<-($39:str)
+    ja_a := io.print(c);	# 21 IOprint_val (ja_a:int)<-(c:bat[:int,:int])
+    mil.line("var d:= new(int,int);");	# 22 MILline ($41:void)<-($42:str)
+    d := bbp.new(nil,nil);	# 23 CMDBATnew (d:bat[:int,:int])<-($44:int)($44:int)
+    mil.line("insert(d,1,1);");	# 24 MILline ($45:void)<-($46:str)
+    ka_a := bat.insert(d,1,1);	# 25 BKCinsert_bun (ka_a:void)<-(d:bat[:int,:int])($48:int)($48:int)
+    mil.line("insert(d,2,2);");	# 26 MILline ($49:void)<-($50:str)
+    la_a := bat.insert(d,2,2);	# 27 BKCinsert_bun (la_a:void)<-(d:bat[:int,:int])($52:int)($52:int)
+    mil.line("insert(d,4,3);");	# 28 MILline ($53:void)<-($54:str)
+    ma_a := bat.insert(d,4,3);	# 29 BKCinsert_bun (ma_a:void)<-(d:bat[:int,:int])($24:int)($56:int)
+    mil.line("insert(d,4,4);");	# 30 MILline ($57:void)<-($58:str)
+    na_a := bat.insert(d,4,4);	# 31 BKCinsert_bun (na_a:void)<-(d:bat[:int,:int])($60:int)($60:int)
+    mil.line("insert(d,9,4);");	# 32 MILline ($61:void)<-($62:str)
+    oa_a := bat.insert(d,9,4);	# 33 BKCinsert_bun (oa_a:void)<-(d:bat[:int,:int])($64:int)($60:int)
+    mil.line("insert(d,int(nil),5);");	# 34 MILline ($65:void)<-($66:str)
+    pa_a := calc.int(nil);	# 35 CALCnil2int (pa_a:int)<-($68:void)
+    qa_a := bat.insert(d,pa_a,5);	# 36 BKCinsert_bun (qa_a:void)<-(d:bat[:int,:int])(pa_a:int)($70:int)
+    mil.line("d.print();");	# 37 MILline ($71:void)<-($72:str)
+    ra_a := io.print(d);	# 38 IOprint_val (ra_a:int)<-(d:bat[:int,:int])
+    mil.line("var z:=c.semijoin(d);");	# 39 MILline ($74:void)<-($75:str)
+    z := algebra.semijoin(c,d);	# 40 ALGsemijoin (z:bat[:int,:int])<-(c:bat[:int,:int])(d:bat[:int,:int])
+    mil.line("z.print();");	# 41 MILline ($77:void)<-($78:str)
+    sa_a := io.print(z);	# 42 IOprint_val (sa_a:int)<-(z:bat[:int,:int])
+    mil.line("z:=c.reverse().semijoin(d);");	# 43 MILline ($80:void)<-($81:str)
+    ta_a := bat.reverse(c);	# 44 BKCreverse (ta_a:bat[:int,:int])<-(c:bat[:int,:int])
+    z := algebra.semijoin(ta_a,d);	# 45 ALGsemijoin (z:bat[:int,:int])<-(ta_a:bat[:int,:int])(d:bat[:int,:int])
+    mil.line("z.print();");	# 46 MILline ($83:void)<-($78:str)
+    ua_a := io.print(z);	# 47 IOprint_val (ua_a:int)<-(z:bat[:int,:int])
+    mil.line("z:=d.semijoin(c);");	# 48 MILline ($85:void)<-($86:str)
+    z := algebra.semijoin(d,c);	# 49 ALGsemijoin (z:bat[:int,:int])<-(d:bat[:int,:int])(c:bat[:int,:int])
+    mil.line("z.print();");	# 50 MILline ($87:void)<-($78:str)
+    va_a := io.print(z);	# 51 IOprint_val (va_a:int)<-(z:bat[:int,:int])
+    mil.line("# String management\n");	# 52 MILline ($89:void)<-($90:str)
+    mil.line("var b:= new(oid,str);");	# 53 MILline ($91:void)<-($92:str)
+    b := bbp.new(nil,"nil");	# 54 CMDBATnew (b:bat[:oid,:str])<-($94:oid)($95:str)
+    mil.line("b.insert(oid(1),\"hello\");");	# 55 MILline ($96:void)<-($97:str)
+    wa_a := calc.oid(1);	# 56 CALCint2oid (wa_a:oid)<-($99:int)
+    xa_a := bat.insert(b,wa_a,"hello");	# 57 BKCinsert_bun (xa_a:void)<-(b:bat[:oid,:str])(wa_a:oid)($101:str)
+    mil.line("b.insert(oid(2),\"world\");");	# 58 MILline ($102:void)<-($103:str)
+    ya_a := calc.oid(2);	# 59 CALCint2oid (ya_a:oid)<-($105:int)
+    ab_a := bat.insert(b,ya_a,"world");	# 60 BKCinsert_bun (ab_a:void)<-(b:bat[:oid,:str])(ya_a:oid)($107:str)
+    mil.line("b.insert(oid(3),\"..\");");	# 61 MILline ($108:void)<-($109:str)
+    bb_a := calc.oid(3);	# 62 CALCint2oid (bb_a:oid)<-($111:int)
+    cb_a := bat.insert(b,bb_a,"..");	# 63 BKCinsert_bun (cb_a:void)<-(b:bat[:oid,:str])(bb_a:oid)($113:str)
+    mil.line("var z1:= b.semijoin(b);");	# 64 MILline ($114:void)<-($115:str)
+    z1 := algebra.semijoin(b,b);	# 65 ALGsemijoin (z1:bat[:oid,:str])<-(b:bat[:oid,:str])(b:bat[:oid,:str])
+    mil.line("z1.print();");	# 66 MILline ($117:void)<-($118:str)
+    db_a := io.print(z1);	# 67 IOprint_val (db_a:int)<-(z1:bat[:oid,:str])
+    mil.line("quit();");	# 68 MILline ($120:void)<-($121:str)
+    eb_a := clients.quit();	# 69 CLTquit (eb_a:void)
+end main;	# 70  
+#setoid(oid(20000000));
+## testing merge semijoin
+#var c:= new(int,int);
+#insert(c,1,1);
+#insert(c,2,2);
+#insert(c,3,4);
+#insert(c,4,4);
+#insert(c,4,9);
+#insert(c,5,int(nil));
+#c.print();
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -31,14 +189,14 @@ c.print();
 [ 4,	  4	  ]
 [ 4,	  9	  ]
 [ 5,	  nil	  ]
-var d:= new(int,int);
-insert(d,1,1);
-insert(d,2,2);
-insert(d,4,3);
-insert(d,4,4);
-insert(d,9,4);
-insert(d,int(nil),5);
-d.print();
+#var d:= new(int,int);
+#insert(d,1,1);
+#insert(d,2,2);
+#insert(d,4,3);
+#insert(d,4,4);
+#insert(d,9,4);
+#insert(d,int(nil),5);
+#d.print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -49,8 +207,8 @@ d.print();
 [ 4,	  4	  ]
 [ 9,	  4	  ]
 [ nil,	  5	  ]
-var z:=c.semijoin(d);
-z.print();
+#var z:=c.semijoin(d);
+#z.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -59,8 +217,8 @@ z.print();
 [ 2,	  2	  ]
 [ 4,	  4	  ]
 [ 4,	  9	  ]
-z:=c.reverse().semijoin(d);
-z.print();
+#z:=c.reverse().semijoin(d);
+#z.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -70,8 +228,8 @@ z.print();
 [ 4,	  3	  ]
 [ 4,	  4	  ]
 [ 9,	  4	  ]
-z:=d.semijoin(c);
-z.print();
+#z:=d.semijoin(c);
+#z.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -80,14 +238,13 @@ z.print();
 [ 2,	  2	  ]
 [ 4,	  3	  ]
 [ 4,	  4	  ]
-
-# String management
-var b:= new(oid,str);
-b.insert(oid(1),"hello");
-b.insert(oid(2),"world");
-b.insert(oid(3),"..");
-z:= b.semijoin(b);
-z.print();
+## String management
+#var b:= new(oid,str);
+#b.insert(oid(1),"hello");
+#b.insert(oid(2),"world");
+#b.insert(oid(3),"..");
+#var z1:= b.semijoin(b);
+#z1.print();
 #-------------------------#
 # BAT:	  tmp_27	  #
 # (void)  (str)		  #
@@ -96,9 +253,7 @@ z.print();
 [ 2@0,	  "world"	  ]
 [ 3@0,	  ".."		  ]
 
-quit();
-
-# 17:08:48 >  
-# 17:08:48 >  Done.
-# 17:08:48 >  
+# 19:43:19 >  
+# 19:43:19 >  Done.
+# 19:43:19 >  
 

@@ -2,7 +2,7 @@
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
-#The compiler can not guarantee an accurate compilation,
+#The compiler can not guarantee an accurate compilatioStatisticsn,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
@@ -18,17 +18,17 @@
 	k10_unique1 := new("k10_unique1");
 	mil.line("var c:= k10_unique1.select(0,9); ");
 	c := select(k10_unique1,0,9);
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	da_a := printf("#~BeginVariableOutput~#\n");
-	ea_a := cpu();
+	ea_a := cpuStatistics();
 	fa_a := print(ea_a);
 	ga_a := printf("#~EndVariableOutput~#\n");
 	ha_a := printf("#~BeginVariableOutput~#\n");
-	ia_a := memory();
+	ia_a := memStatisticsory();
 	ja_a := print(ia_a);
 	ka_a := printf("#~EndVariableOutput~#\n");
 	la_a := printf("#~BeginVariableOutput~#\n");
-	ma_a := io();
+	ma_a := ioStatistics();
 	na_a := print(ma_a);
 	oa_a := printf("#~EndVariableOutput~#\n");
 	mil.line("k10_unique1.join(c).count().print();commit();");
@@ -63,17 +63,17 @@
 	mil.line("k10_unique1.join(c);commit(); ");
 	kb_a := join(k10_unique1,c);
 	lb_a := commit();
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	mb_a := printf("#~BeginVariableOutput~#\n");
-	nb_a := cpu();
+	nb_a := cpuStatistics();
 	ob_a := print(nb_a);
 	pb_a := printf("#~EndVariableOutput~#\n");
 	qb_a := printf("#~BeginVariableOutput~#\n");
-	rb_a := memory();
+	rb_a := memStatisticsory();
 	sb_a := print(rb_a);
 	tb_a := printf("#~EndVariableOutput~#\n");
 	ub_a := printf("#~BeginVariableOutput~#\n");
-	vb_a := io();
+	vb_a := ioStatistics();
 	wb_a := print(vb_a);
 	xb_a := printf("#~EndVariableOutput~#\n");
 	mil.line("c.join(k10_unique1).count().print();commit();");
@@ -117,17 +117,17 @@
 	cd_a := join(c,k10_unique1);
 	dd_a := count(cd_a);
 	ed_a := commit();
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	fd_a := printf("#~BeginVariableOutput~#\n");
-	gd_a := cpu();
+	gd_a := cpuStatistics();
 	hd_a := print(gd_a);
 	id_a := printf("#~EndVariableOutput~#\n");
 	jd_a := printf("#~BeginVariableOutput~#\n");
-	kd_a := memory();
+	kd_a := memStatisticsory();
 	ld_a := print(kd_a);
 	md_a := printf("#~EndVariableOutput~#\n");
 	nd_a := printf("#~BeginVariableOutput~#\n");
-	od_a := io();
+	od_a := ioStatistics();
 	pd_a := print(od_a);
 	qd_a := printf("#~EndVariableOutput~#\n");
 	mil.line("quit();");

@@ -11,10 +11,10 @@
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-	mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ca_a := commit();
 	da_a := printf("#~BeginVariableOutput~#\n");
-	ea_a := io();
+	ea_a := ioStatistics();
 	fa_a := print(ea_a);
 	ga_a := printf("#~EndVariableOutput~#\n");
 	mil.line("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");
@@ -40,9 +40,9 @@
 	ya_a := commit();
 	ab_a := commit();
 	bb_a := commit();
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	cb_a := printf("#~BeginVariableOutput~#\n");
-	db_a := io();
+	db_a := ioStatistics();
 	eb_a := print(db_a);
 	fb_a := printf("#~EndVariableOutput~#\n");
 	mil.line("quit();");
