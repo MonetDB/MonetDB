@@ -2213,10 +2213,12 @@ reduce (PFpnode_t * p, int goalnt)
         /* CastExpr:               cast (UnaryExpr, SingleType) */
         case 139:
         {
-            PFvar_t *v = new_var (NULL);
+            PFvar_t *v1 = new_var (NULL);
+            PFvar_t *v2 = new_var (NULL);
 
-            C(p) = let (letbind (var (v), C(L(p))),
-                        seqcast (C(R(p)), var (v)));
+            C(p) = let (letbind (var (v1), C(L(p))),
+                        let (letbind (var (v2), fn_data (var (v1))),
+                             seqcast (C(R(p)), var (v2))));
         } break;
 
         /* UnaryExpr:              ValueExpr */
