@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pf -s10 <<'EOT'
-declare variable $a := 42;
-$a
-EOT
-echo $?

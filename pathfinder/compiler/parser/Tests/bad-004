@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-(: tag names must match :)
-<a> foo </b>
-EOT
-echo $?

@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s3 <<'EOT'
-<a xmlns:foo='http://www.foo.bar/' foo:a='bar' />
-EOT
-echo $?

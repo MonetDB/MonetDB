@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s3 <<'EOT'
-foo:bar
-EOT
-echo $?

@@ -1,4 +1,0 @@
-stderr of test 'test` in directory 'tests/from_Twente/moa` itself:
-
-#> Mtest:	milM test milM -prelude test.prelude
-#> Mtest:	Mtimeout -timeout 321 Mserver -yaccsilent -d8 -db tests_from_Twente_moa -prelude test.prelude test.milM
