@@ -150,7 +150,7 @@ c_inc = '^[ \t]*#[ \t]*include[ \t]*[<"](?P<fnd>[-a-zA-Z0-9._]+)[>"]'
 m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+(?P<fnd>[a-zA-Z0-9._, ]*);"
 m_sep = "[ \t]*,[ \t]*"
 xsl_inc = "^[ \t]*<xsl:(include|import)[ \t]+href=['\"](?P<fnd>[a-zA-Z0-9._]+)['\"]"
-tex_inc = r"\\epsffile{(?P<fnd>[a-zA-Z0-9._]+)"
+tex_inc = r"\\epsf(file|box){(?P<fnd>[a-zA-Z0-9._]+)"
 
 c_inc = re.compile(c_inc, re.MULTILINE)
 m_use = re.compile(m_use, re.MULTILINE)
