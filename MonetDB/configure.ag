@@ -62,7 +62,6 @@ dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
 AM_MONET_OPTIONS
 
-
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_DIRENT
@@ -140,4 +139,11 @@ AC_SUBST(SHARED_LIBS)
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
+
+dnl Mx and mel are used during make
+MEL="$MONET_BUILD/src/mel/mel"
+AC_SUBST(MEL)
+MX="$MONET_BUILD/src/utils/Mx/Mx"
+AC_SUBST(MX)
+
 

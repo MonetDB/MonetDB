@@ -1,6 +1,8 @@
+#
+# ! this file should be kept identical in !
+# ! monet, sql, xml, acoi, template       !
+#
 
-MEL=$(top_builddir)/src/mel/mel
-MX=$(top_builddir)/src/utils/Mx/Mx
 CP=cp
 MV=mv
 MXFLAGS= -notouch
@@ -18,9 +20,9 @@ MXFLAGS= -notouch
 	$(MX) $(MXFLAGS) -x l $< 
 
 %.yy.c: %.l
-	$(LEX) $(LFLAGS) $*.l
+	$(LEX) $(LFLAGS) $<
 	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.c ; fi
-
+	if [ -f lex.$(PARSERNAME).c ]; then $(MV) lex.$(PARSERNAME).c $*.yy.c ; fi
 
 %.cc: %.mx
 	$(MX) $(MXFLAGS) -x C $<
@@ -30,34 +32,33 @@ MXFLAGS= -notouch
 
 %.tab.cc: %.yy
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $*.yy
+	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
 	rm -f waiting
 
 %.tab.h: %.yy
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $*.yy
+	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
 	rm -f waiting
 
 %.tab.c: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $*.y
+	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
 	rm -f waiting
 
 %.tab.h: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $*.y
+	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
 	rm -f waiting
-
 
 %.ll: %.mx
 	$(MX) $(MXFLAGS) -x L $<
 
 %.yy.cc: %.ll
-	$(LEX) $(LFLAGS) $*.ll
+	$(LEX) $(LFLAGS) $<
 	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.cc ; fi
 
 %.m: %.mx
