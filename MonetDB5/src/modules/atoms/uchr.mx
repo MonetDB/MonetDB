@@ -45,6 +45,7 @@ uchrInit();
 We need some additional stuff to make it work in V5
 @h
 #include <gdk.h>
+extern int TYPE_uchr;
 
 @-
 The remainder is largely copied from V4
