@@ -1124,6 +1124,13 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 
 			/* forward inserts */
 			if (BATcount(ins)) {
+
+				if (BATcount(ups)){
+					BAT *ups_ins = BATkdiff(ups,ins);
+					BBPunfix(ups->batCacheid);
+					ups = ups_ins;
+				}
+
 				void_insert_bat(ob, ins);
 				log_bat(ob);
 			}
