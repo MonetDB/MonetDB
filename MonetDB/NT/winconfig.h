@@ -70,9 +70,6 @@
    */
 /* #undef HAVE_ALLOCA_H */
 
-/* Define to 1 if the system has the type `bool'. */
-#define HAVE_BOOL 1
-
 /* Define to 1 if you have the <cstdio> header file. */
 #if _MSC_VER >= 1300
 #define HAVE_CSTDIO 1
