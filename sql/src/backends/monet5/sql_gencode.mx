@@ -502,7 +502,13 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = backend_dumpstmt(sql, mb, s->op1.stval);
 
 			@:SQLprelude@
-			q = newStmt(mb, "algebra", (s->flag ? "sort_reverse" : "sort"));
+			q = newStmt(mb, "bat", "reverse");
+			q = pushArgument(mb, q, l);
+			l = getDestVar(q);
+			q = newStmt(mb, "algebra", (s->flag ? "sort" : "sort_reverse"));
+			q = pushArgument(mb, q, l);
+			l = getDestVar(q);
+			q = newStmt(mb, "bat", "reverse");
 			q = pushArgument(mb, q, l);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
@@ -835,7 +841,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op2.stval) {
-				int k2, g = backend_dumpstmt(sql, mb, s->op2.gval->grp);
+				int k2, g = backend_dumpstmt(sql, mb, s->op2.stval);
 
 				q = newStmt(mb, "group", "group");
 				q = pushArgument(mb, q, g);
@@ -846,7 +852,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, k);
 				k2 = getDestVar(q);
 
-				q = newStmt(mb, "algebra", "mirror");
+				q = newStmt(mb, "bat", "mirror");
 				q = pushArgument(mb, q, k2);
 				k2 = getDestVar(q);
 
@@ -1190,6 +1196,8 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* first rename the columns for better output */
 				dump_header(mb, s, l);
 				q = newStmt(mb, "sql", "output");
+				/* with or without order */
+				q = pushInt(mb, q, flg);
 				if (flg) {
 					q = pushArgument(mb, q, order->nr);
 				}
