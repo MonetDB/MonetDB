@@ -745,7 +745,8 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 			oid l = b->hseqbase;
 			oid h = l + BATcount(b) - 1;
 			if (p >= l && p <= h) {
-				void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNptr(b,p-l)));
+				oid b0 = BUNindex(b,BUNfirst(b));
+				void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNptr(b,p-l+b0)));
 				dst += bs;
 			}
 		}
