@@ -115,7 +115,8 @@ def msc_assignment(fd, var, values, msc):
     o = ""
     for v in values:
         o = o + " " + string.replace(v, '/', '\\')
-    fd.write("%s = %s\n" % (var, o))
+    if var[0] != '@':
+        fd.write("%s = %s\n" % (var, o))
 
 def msc_cflags(fd, var, values, msc):
     o = ""
