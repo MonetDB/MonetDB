@@ -51,6 +51,9 @@
 @:install_module(unix)@
 @:install_module(ascii_io)@
 
+/* contrib */
+@:install_module(txtsim)@
+
 /* SQL */
 @:install_module(sql_server)@
 
