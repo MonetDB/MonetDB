@@ -254,7 +254,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
  
     PROC help; # forward decl
     PROC help(str fcn) : void {
-	IF (monet_fcn_nme.reverse.exist(fcn)) monet_fcn_nme.reverse@hashloop(fcn) {
+	IF (monet_fcn_nme.reverse().exist(fcn)) monet_fcn_nme.reverse()@hashloop(fcn) {
 	    help_sig($t); printf("\n");
 	} ELSE {
 	    printf("no help available\n");
@@ -277,8 +277,8 @@ Some explanation of what mem\_usage() and vm\_usage() display:
          "try to name a BAT and fail if it is not possible.", "sys");
 
     PROC modules() : void {
-	var b := view_modules().reverse.kunique.reverse;
-	table(1,[module_name](b).reverse.sort.reverse.col_name("name"), 
+	var b := view_modules().reverse().kunique.reverse();
+	table(1,[module_name](b).reverse().sort().reverse().col_name("name"), 
 		[module_db](b).col_name("database"));
 	
     }
@@ -287,10 +287,10 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	
     PROC loaded() : void {
         var hidden := monet_mod_nme.semijoin(monet_mod_nme.[startsWith]("_").uselect(true));
-	var mods := monet_mod_use.select(clientid).reverse.histogram;
+	var mods := monet_mod_use.select(clientid).reverse().histogram();
         var nmes := mods.mirror.join(monet_mod_nme).kdiff(hidden).access(BAT_WRITE);
-        var disappeared := hidden.reverse.kdiff([+]("_",nmes).reverse).reverse;
-	table(1, nmes.insert(disappeared).reverse.sort.reverse.col_name("module"), 
+        var disappeared := hidden.reverse().kdiff([+]("_",nmes).reverse()).reverse();
+	table(1, nmes.insert(disappeared).reverse().sort().reverse().col_name("module"), 
                  mods.col_name("usage_count"));
     }
     ADDHELP("loaded", "boncz", "Feb  6 1996", 
@@ -308,16 +308,16 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	} else {
 	    modname2 := "_" + modname;
 	}
-	if (monet_mod_nme.reverse.exist(modname)) {
-	    var o := monet_mod_nme.reverse.find(modname);
+	if (monet_mod_nme.reverse().exist(modname)) {
+	    var o := monet_mod_nme.reverse().find(modname);
 	    var m := monet_fcn_mid.uselect(o);
-	    if (monet_mod_nme.reverse.exist(modname2)) {
-	    	o := monet_mod_nme.reverse.find(modname2);
+	    if (monet_mod_nme.reverse().exist(modname2)) {
+	    	o := monet_mod_nme.reverse().find(modname2);
 	    	m := union(m,monet_fcn_mid.uselect(o));
 	    }
-	    var b := [format_fcn_sig](m.reverse);
-	    table(1,b.reverse.sort.reverse.col_name("signature"));
-	} else if ([module_name](view_modules).reverse.exist(modname)) {
+	    var b := [format_fcn_sig](m.reverse());
+	    table(1,b.reverse().sort().reverse().col_name("signature"));
+	} else if ([module_name](view_modules).reverse().exist(modname)) {
   	    ERROR("sigs: must load module first.\n");
 	} else {
   	    ERROR("sigs: module does not exist.\n");
@@ -327,11 +327,11 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	"Show all signatures of the functions in a module.", "sys");
 
     proc dir(bat[int,str] b) : void {
-        var nme := view_bbp_name;
+        var nme := view_bbp_name();
 	
-	table(1, b.reverse.sort.reverse.col_name("name"),
-		[head](b.join(nme.reverse)).col_name("htype"),	
-		[tail](b.join(nme.reverse)).col_name("ttype"),	
+	table(1, b.reverse().sort().reverse().col_name("name"),
+		[head](b.join(nme.reverse())).col_name("htype"),	
+		[tail](b.join(nme.reverse())).col_name("ttype"),	
 		[count](b.mirror).col_name("count"),	
 		view_bbp_heat().col_name("heat"),
 		view_bbp_dirty().col_name("dirty"),
@@ -343,12 +343,12 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
     PROC dir() : void {
         var nme := view_bbp_name().copy.access(BAT_WRITE).col_name("name");
-	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
 	dir(nme.replace(rev));
     }
     PROC dir(str substr) : void {
         var nme := view_bbp_name().like(substr).access(BAT_WRITE).col_name("name");
-        var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+        var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
         dir(nme.replace(rev));
     }
     ADDHELP("dir", "boncz", "Feb  6 1996", 
@@ -356,31 +356,31 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
     proc dir_leaks() : void {
 	var b0 := view_bbp_name().access(BAT_WRITE);
-	b0.replace([*](b0.reverse.select(int(nil),-1),-1).reverse);
+	b0.replace([*](b0.reverse().select(int(nil),-1),-1).reverse());
         var b1 := [[startsWith](b0,"tmp_")?b0:].access(BAT_WRITE);
         var b2 := like(view_var_value, "tmp_");
-        var b3 := bat(int,str,b1.count);
+        var b3 := bat(int,str,b1.count());
         b1.delete(int(b0));
         b1@batloop() { 
             var pat := "tmp_" + $h;
-            if (like(b2,pat).count = 0) b3.insert($h,$t);
+            if (like(b2,pat).count() = 0) b3.insert($h,$t);
         }
         dir(b3);
     }
 
     PROC ls() : void {
-	var nme := view_bbp_name;
-	var prs := nme.semijoin(view_bbp_kind.select("pers"));
-	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	var nme := view_bbp_name();
+	var prs := nme.semijoin(view_bbp_kind().select("pers"));
+	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
 	dir(prs.access(BAT_WRITE).col_name("name").replace(rev));
     }
     ADDHELP("ls", "boncz", "Feb  6 1996", 
 	"list all data bats. Optionally filter on name with a certain substring", "sys"); 
 
     PROC ls(str substr) : void {
-        var nme := view_bbp_name;
+        var nme := view_bbp_name();
 	var prs := nme.semijoin(view_bbp_kind().select("pers"));
-	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
 	prs.access(BAT_WRITE).col_name("name").replace(rev);
 	dir(prs.like(substr));
     }
@@ -388,14 +388,14 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	"list all data bats filtered on name with some substring", "sys"); 
 
     PROC exit() : void {
-	quit;
+	quit();
     }
     ADDHELP("exit", "boncz", "Jan 9 1998", "quit for consultants", "sys"); 
 
     PROC procs() : void {
-	   var a := [format_fcn_sig](monet_fcntbl.reverse.
-			semijoin(monet_fcn_tpe.select(TOK_PROC)).reverse);
-	   table(1,a.reverse.sort.reverse.col_name("MIL Procedure"));
+	   var a := [format_fcn_sig](monet_fcntbl.reverse().
+			semijoin(monet_fcn_tpe.select(TOK_PROC)).reverse());
+	   table(1,a.reverse().sort().reverse().col_name("MIL Procedure"));
     }
     ADDHELP("procs", "boncz", "Feb  6 1996", "list all defined procs.", "sys"); 
 
