@@ -36,11 +36,11 @@ the function resolution scheme.
 In practice, we have to introduce different startup for each
 client group or database.
 @mal
-use "blob";
-use "str";
-use "url";
-use "uchr";
-use "mtime";
+include "blob";
+include "str";
+include "url";
+include "uchr";
+include "mtime";
 @-
 @c
 

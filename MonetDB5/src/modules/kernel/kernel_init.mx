@@ -10,22 +10,22 @@ The dependency among the modules require some care.
 All modules are put into a linked list, which is traversed
 in a lifo order to search for a matching signature.
 @mal
-#use "pcl";
-use "unix";
-use "lock";
-use "alarm";
-use "mmath";
-use "atoms_init";
-use "bat";
-use "mkey";
-use "algebra";
-use "calc";
-use "batcalc";	
-use "status";
-use "group";
-use "aggrX3";
-#use "unique";
-use "mapi";
+#include "pcl";
+include "unix";
+include "lock";
+include "alarm";
+include "mmath";
+include "atoms_init";
+include "bat";
+include "mkey";
+include "algebra";
+include "calc";
+include "batcalc";	
+include "status";
+include "group";
+include "aggrX3";
+#include "unique";
+include "mapi";
 @-
 @{
 @-
