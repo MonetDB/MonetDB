@@ -552,6 +552,7 @@ int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s ){
 		output_file( &as, order, s ); 
 	}
 	destroy_format( &as );
+	s->flush(s);
 	return as.nr;
 }
 
