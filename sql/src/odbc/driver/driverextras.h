@@ -2,6 +2,7 @@
 #include <context.h>
 #include <statement.h>
 #include <mem.h>
+#include <query.h>
 
 /**********************************************
  * driverextras.h

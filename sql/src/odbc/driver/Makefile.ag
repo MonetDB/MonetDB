@@ -3,6 +3,7 @@ INCLUDES = \
         -I$(srcdir)/../include -I. \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/common \
+	-I$(top_srcdir)/src/client \
 	-I$(MONET_PREFIX)/include  \
 	-I$(MONET_PREFIX)/include/plain \
 	-I$(MONET_PREFIX)/include/stream \

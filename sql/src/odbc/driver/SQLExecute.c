@@ -15,19 +15,13 @@
 extern stmt *sqlexecute( context *, char *);
 
 char *receive( stream *rs ){
-	char *buf = NULL;
-	int flag = 0;
-	if (rs->readInt(rs, &flag) && flag != COMM_DONE){
-		int size = BLOCK+1, nr, last = 0;
+	int size = BLOCK+1, last = 0;
+	char *buf = malloc(size);
+	int nr = bs_read_next(rs,buf,&last);
 
-		buf = malloc(size);
-	        nr = bs_read_next(rs,buf,&last);
-		while(!last){
-			buf = realloc(buf,size+BLOCK);
-			nr = bs_read_next(rs,buf,&last);
-		}
-	} else if (flag != COMM_DONE){
-		printf("flag %d\n", flag);
+	while(!last){
+		buf = realloc(buf,size+BLOCK);
+		nr = bs_read_next(rs,buf,&last);
 	}
 	return buf;
 }
@@ -39,6 +33,9 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 	int			nRow = 0;
 	int			nCols = 0;
 	int			nRows = 0;
+	int			type = 0;
+	int			status = 0;
+	int 			flag = 0;
 	COLUMNHDR	*pColumnHeader;			
 	stmt *res = NULL;
 	context *sql;
@@ -88,7 +85,24 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 		nCols = list_length(res->op1.lval);
 		hStmt->hStmtExtras->nCols = nCols;
 	}
-	if (res && res->type == st_output){ 
+
+	if (rs->readInt(rs, &flag) && flag == COMM_DONE){
+		return SQL_ERROR;
+	}
+	rs->readInt(rs, &type);
+	rs->readInt(rs, &status);
+
+	if (status < 0){ /* output error */
+		char buf[BLOCK];
+		int last = 0;
+		int nr = bs_read_next(rs,buf,&last);
+		while(!last){
+			int nr = bs_read_next(rs,buf,&last);
+		}
+        	return SQL_ERROR;
+	}
+	nRows = status;
+	if (res && type == QTABLE){ 
 		list *l;
 		node *n;
 		char *buf = receive( rs ), *start = buf, *m = buf;
@@ -99,12 +113,9 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 			l = res->op1.stval->op1.lval;
 		}
 
-		nRows = strtol(m,&m,10);
 		n = l->h;
-		m++;
 		hStmt->hStmtExtras->nRows = nRows;
 		nCols = list_length(l); 
-		printf("nRows %d, nCols %d\n", nRows, nCols );
 		hStmt->hStmtExtras->aResults = NEW_ARRAY(char*,(nCols+1)*(nRows+1));
 		hStmt->hStmtExtras->nCols = nCols;
 		for( nColumn = 1; nColumn <= nCols; nColumn++){
@@ -118,7 +129,6 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 				cHdr->pszSQL_DESC_BASE_TABLE_NAME = strdup(col->table->name);
 				cHdr->pszSQL_DESC_TYPE_NAME = strdup(col->tpe->sqlname);
 				cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup(col->tpe->name);
-				printf("column %s %s\n", cHdr->pszSQL_DESC_BASE_COLUMN_NAME, cHdr->pszSQL_DESC_TYPE_NAME);
 			}
 			cHdr->pszSQL_DESC_LABEL = strdup(column_name(n->data));
 			cHdr->pszSQL_DESC_CATALOG_NAME = strdup("catalog");

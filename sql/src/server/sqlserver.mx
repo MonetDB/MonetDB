@@ -6,6 +6,9 @@
 .MODULE sqlserver;
 	.USE ascii_io,streams;
 
+	.COMMAND isNil( str s ) : bit = isNil_wrap;
+		"isNil(s).."
+
 	.BUILTIN sqlserver_start(int port, str cmd) = sqlserver_start;
 		"start the sql server, calls cmd on each accepted connection"
 
@@ -36,7 +39,8 @@
     	.COMMAND sql_destroy_context( context c ) = 
 		sql_destroy_context; "destroy the sql interpreter context"
 
-	.COMMAND sql2code( context *c, stream *in ) : str = sql2code;
+	.BUILTIN sqlclient( mvc m,  context *c, stream *in, stream *out ) = 
+		sqlclient;
 		"parse the next sql command and convert this to mil code"
 
 	.COMMAND types_init( int debug ) = types_init_wrap; 
@@ -70,6 +74,12 @@
 
 	.COMMAND mvc_login( mvc m, str schema, str user, str passwd ) : int 
 		= mvc_login_wrap; "database login"
+
+	.COMMAND mvc_status( mvc m ) : int 
+		= mvc_status_wrap; "return the status of the last mvc operation"
+
+	.COMMAND mvc_type( mvc m ) : int 
+		= mvc_type_wrap; "return the type of the last mvc operation"
 
 	.COMMAND mvc_commit( mvc m, int chain, str name ) : int = 
 		mvc_commit_wrap; "Commit transaction/savepoint and chain"
@@ -127,22 +137,29 @@
 	.COMMAND mvc_key_add_column( mvc m, sql_key k, sql_column *c ) :
 		sql_key = mvc_key_add_column_wrap; "Key add column"
 
-	.COMMAND mvc_fast_insert( mvc c, str val ) = mvc_fast_insert_wrap; 
+	.COMMAND mvc_fast_insert( mvc c, str val ) : 
+		int = mvc_fast_insert_wrap; 
 		"Fast insert, string format 0,nr_args,(tname,val)*nr_arg,"
 
-	.COMMAND mvc_insert( mvc c, str tname, ...any... ) = mvc_insert_wrap; 
+	.COMMAND mvc_insert( mvc c, str tname, ...any... ) : 
+		int = mvc_insert_wrap; 
 		"Insert, values in the table with the given table id"
 
-	.COMMAND mvc_delete( mvc c, str tname, BAT[oid,any] rids ) = 
-		mvc_delete_wrap; "Delete, all rows (rids) from the table tname"
+	.COMMAND mvc_delete( mvc c, str tname, BAT[oid,any] rids ) : 
+		int = mvc_delete_wrap; 
+		"Delete, all rows (rids) from the table tname"
 
-	.COMMAND mvc_update( mvc c, str tname, str cname, BAT[oid,any] val ) = 
-		mvc_update_wrap; "Update the value of column, cname in table, tname"
+	.COMMAND mvc_update( mvc c, str tname, str cname, BAT[oid,any] val ) : 
+		int = mvc_update_wrap; 
+		"Update the value of column, cname in table, tname"
 
 	.COMMAND mvc_export(stream s, BAT order, BAT bats, str sep, str rsep) =
 		mvc_export_wrap; "export a table (in order) to stream s with the given tuple and record seperators (sep/rsep)"
 
-	.COMMAND mvc_import_table( mvc c, stream s, str tname, str sep, str rsep, int nr) = mvc_import_table_wrap; "import a table from stream s with the given tuple and record seperators (sep/rsep)"
+	.COMMAND mvc_import_table( mvc c, stream s, str tname, 
+					str sep, str rsep, int nr) : 
+		int = mvc_import_table_wrap; 
+		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
 	.COMMAND mvc_export_schema( mvc c, stream s ) = mvc_export_schema_wrap; 
 		"Export the schema info of the current transaction"
@@ -172,6 +189,17 @@
 
 extern catalog *catalog_create( context *lc, mvc *m);
 
+int isNil_wrap( bit *b, str s)
+{
+	if (s == NULL){
+		*b = FALSE;
+	} else {
+		*b = TRUE;
+	}
+	return GDK_SUCCEED;
+}
+
+
 int sql_create_context( context *res, int *debug, int *opt, stream *ws, mvc *m ){
 	context *lc = NEW(context);
 
@@ -188,33 +216,60 @@ int sql_destroy_context( context *lc ){
 	return GDK_SUCCEED;
 }
 
-int sql2code( str* resptr, context* c, stream* in){
+int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+	char buf[BUFSIZ];
 	int err = 0;
 	stmt *s = NULL;
-	context *lc = *(context**)c;
-	char *res = NULL;
+	char *cmd = NULL;
 
-	if(lc->cur != EOF ){
-		s = sqlnext(lc, *(stream**)in, &err);
-		if (err){
-			return GDK_FAIL;
-		}
-		if (s){
+	mvc **M, *m;
+	context **C, *lc;
+	stream **In, *in, **Out, *out;
+
+  	if (lt->cnt != 4) {
+        	return handle_argerror(res,lt->cnt,4);
+  	}
+  	@:builtin_operand(0,TYPE_mvc,M)@
+	m = *M;
+  	@:builtin_operand(1,TYPE_context,C)@
+	lc = *C;
+  	@:builtin_operand(2,TYPE_stream,In)@
+	in = *In;
+  	@:builtin_operand(3,TYPE_stream,Out)@
+	out = *Out;
+
+	while(lc->cur != EOF ){
+		s = sqlnext(lc, in, &err);
+		if (err){ /* output error */
+			out->writeInt( out, 0 );
+			out->writeInt( out, 0 );
+			out->writeInt( out, -1 );
+			out->write( out, lc->errstr, strlen(lc->errstr), 1 );
+			out->flush( out );
+		} else if (s){
 	    		int nr = 1;
 	    		stmt_dump( s, &nr, lc );
 
-			res = buffer_get_buf(stream_get_buffer( lc->out ));
+			cmd = buffer_get_buf(stream_get_buffer( lc->out ));
 	    		lc->out->flush( lc->out );
+			
+			if (cmd && cmd[0] == '0'){ /* return nr of inserts */
+				int res = mvc_fast_insert(m, cmd);
+				out->writeInt( out, 0 );
+				out->writeInt( out, mvc_type(m) );
+				out->writeInt( out, mvc_status(m) );
+				out->flush( out );
+			} else {
+				ValRecord res;
+				ptr val = &res.val.ival;
+        			res.vtype = TYPE_void; 
+				interpret_str( stk, cmd, &res);
+				/*TODO: we need to cleanup val */
+			}
+			if (cmd) _DELETE(cmd);
 		}
 		if (s) stmt_destroy(s);
 	}
-	if (!res){
- 		if (lc->cur == EOF)
-			res = _strdup("quit");
-		else
-			res = _strdup("");
-	}
-	*resptr = res;
 	return GDK_SUCCEED;
 }
 
@@ -332,7 +387,6 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
     }
   }
-  printf("closing socket\n");
   if (close(sock) < 0){
 	perror("Error closing sock\n");
   }
@@ -364,6 +418,16 @@ int mvc_login_wrap( int *r, mvc *c, str schema, str user, str passwd  ){
 	*r = mvc_login( *(mvc**)c, schema, user, passwd );
 	if (*r != 0)
 		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+int mvc_status_wrap( int* res, mvc* m ){
+	*res = mvc_status( *(mvc**)m );
+	return GDK_SUCCEED;
+}
+
+int mvc_type_wrap( int* res, mvc* m ){
+	*res = mvc_type( *(mvc**)m );
 	return GDK_SUCCEED;
 }
 
@@ -467,27 +531,27 @@ int mvc_key_add_column_wrap( sql_key* res, mvc* m, sql_key* k, sql_column *c){
 	return GDK_SUCCEED;
 }
 
-int mvc_fast_insert_wrap( mvc* c, str val){
-	mvc_fast_insert( *(mvc**)c, val );
+int mvc_fast_insert_wrap( int *res, mvc* c, str val){
+	*res = mvc_fast_insert( *(mvc**)c, val );
 	return GDK_SUCCEED;
 }
 
-int mvc_insert_wrap( mvc* c, str tname, ... ){
+int mvc_insert_wrap( int *res, mvc* c, str tname, ... ){
 	va_list ap;
 
 	va_start(ap,tname);
-	mvc_insert( *(mvc**)c, tname, ap);
+	*res = mvc_insert( *(mvc**)c, tname, ap);
 	va_end(ap);
 	return GDK_SUCCEED;
 }
 
-int mvc_delete_wrap( mvc* c, str tname, BAT *rids ){
-	mvc_delete( *(mvc**)c, tname, rids ); 
+int mvc_delete_wrap( int *res, mvc* c, str tname, BAT *rids ){
+	*res = mvc_delete( *(mvc**)c, tname, rids ); 
 	return GDK_SUCCEED;
 }
 
-int mvc_update_wrap( mvc* c, str tname, str cname, BAT *v){
-	mvc_update( *(mvc**)c, tname, cname, v ); 
+int mvc_update_wrap( int *res, mvc* c, str tname, str cname, BAT *v){
+	*res = mvc_update( *(mvc**)c, tname, cname, v ); 
 	return GDK_SUCCEED;
 }
 
@@ -496,8 +560,8 @@ int mvc_export_wrap( stream *s, BAT *order, BAT *bats, str sep, str rsep ){
 	return GDK_SUCCEED;
 }
 
-int mvc_import_table_wrap( mvc *c, stream *s, str tname , str sep, str rsep, int *sz ){
-	mvc_import_table( *(mvc**)c, *(stream**)s, tname, sep, rsep, *sz );
+int mvc_import_table_wrap( int *res, mvc *c, stream *s, str tname , str sep, str rsep, int *sz ){
+	*res = mvc_import_table( *(mvc**)c, *(stream**)s, tname, sep, rsep, *sz );
 	return GDK_SUCCEED;
 }
 
@@ -514,6 +578,10 @@ module(unix);
 module(ddbench);
 module(aggrX3);
 module(monettime);
+
+const QPARSE := 1;
+const QTABLE := 2;
+const QUPDATE := 3;
 
 proc {min}(val,grp, extent) := {
 	return {min}(grp.reverse.join(val), extent);
@@ -598,10 +666,10 @@ proc write_output( stream Output, str v ) := {
 	stream_write(Output, buf );
 }
 
-proc result( stream Output, int res ) := {
-	var buf := str(res) + "\n";
+proc result( stream Output, int Type, int status ) := {
 	stream_writeInt( Output, 0 ); # write not done.
-	stream_write(Output, buf );
+	stream_writeInt( Output, Type ); # write not done.
+	stream_writeInt( Output, status ); # write not done.
 	stream_flush( Output );
 }
 
@@ -617,10 +685,10 @@ proc ascii_io_output( bat Order, bat bats, stream Output, str Sep ) : int := {
 }
 
 proc server_output( stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void := {
-	stream_writeInt( Output, 0 ); # write not done.
-
 	var cnt := Order.count();
-	stream_write( Output, sprintf("%d\n", cnt) );
+	stream_writeInt( Output, 0 ); # write not done.
+	stream_writeInt( Output, QTABLE ); # type TABLE.
+	stream_writeInt( Output, cnt ); # NR records.
 
 	cnt := $0;
 	var bats := new(oid,bat);
@@ -642,15 +710,8 @@ proc SQLclient_sql( Output, Input, cmd ) := {
 	var LOutput := buffer_wastream( buf, sprintf("SQLserver-%d", sock ));
 	var c := sql_create_context( 0, 1, LOutput, myc );
 
-	cmd := sql2code( c, Input );
-	while(cmd != "quit"){
-		if (cmd.startsWith("0")){
-			mvc_fast_insert(myc, cmd );
-		} else {
-		    	sqlexecute(cmd, Output);
-		}
-		cmd := sql2code( c, Input );
-	}
+	sqlclient( myc, c, Input, Output );
+
 	mvc_destroy( myc );
 	sql_destroy_context( c );
 	stream_close( Output );
@@ -664,6 +725,7 @@ proc SQLclient_mil( Output, Input, cmd ) := {
 	while(length(cmd) > 1){
 		if (cmd.startsWith("0")){
 			mvc_fast_insert(myc, cmd );
+			result(Output, mvc_type(myc), mvc_status(myc));
 	        } else {
 			sqlexecute(cmd, Output );
 		}
@@ -701,7 +763,7 @@ proc SQLclient_thread( int sock ):= {
 }
 
 proc sqlexecute( str cmd, stream Output ):= {
-	#print(cmd);
+	#printf("sqlexecute %s\n", cmd);
 	eval(cmd);
 }
 

@@ -8,6 +8,7 @@ INCLUDES = \
 	-I$(MONET_PREFIX)/include/stream \
 	-I${top_srcdir}/src/common \
 	-I${top_builddir}/src/common \
+	-I${top_srcdir}/src/client \
 	$(GETOPT_INCS)
 
 lib__sqlserver = {

@@ -38,3 +38,5 @@ select t2.* from t2;
 select * from t1 where id>2;
 select * from t1 where id>2 and id<2;
 
+drop table t1;
+drop table t2;

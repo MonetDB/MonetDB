@@ -141,8 +141,6 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 
     hDbc->bConnected = TRUE;
 
-    printf("connected \n");
-
     logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );
 
     return SQL_SUCCESS;

@@ -47,13 +47,19 @@ SQLRETURN SQLDisconnect( SQLHDBC    hDrvDbc )
 	char buf[BUFSIZ];
 
 	i = snprintf(buf, BUFSIZ, "s0 := mvc_commit(myc, 0, \"\");\n" );
-	i += snprintf(buf+i, BUFSIZ-i, "result(Output, s0);\n" );
+	i += snprintf(buf+i, BUFSIZ-i, 
+			"result(Output, mvc_type(myc), mvc_status(myc));\n" );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
 
 	if (rs->readInt(rs, &flag)){
+		int type, status;
 		/* todo check if flag == COMM_DONE */
-		printf("flag %d\n", flag );
+		rs->readInt(rs, &type);
+		rs->readInt(rs, &status);
+		if (status < 0){
+			return SQL_ERROR;
+		}
 	}
 
 	/* client waves goodbye */

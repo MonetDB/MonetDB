@@ -1,4 +1,3 @@
-drop table t3;
 create table t3(id int, val int);
 insert into t3 values(2,6);
 insert into t3 values(2,NULL);
@@ -24,4 +23,4 @@ select sum(*) from t3;
 #this one, although wrong, results in core-dump of sql_client :)
 select sum(*),val from t3 group by val ;
 
-
+drop table t3;
