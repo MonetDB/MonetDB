@@ -52,11 +52,11 @@ stderr of test 'marcin2` in directory 'src/test` itself:
 # 20:07:33 >  
 
 MAPI  = monetdb@spin:58772
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = select sum(*) from t3;
 ERROR = !Aggregate: Cannot do a sum(*)
 MAPI  = monetdb@spin:58772
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = select sum(*),val from t3 group by val ;
 ERROR = !Aggregate: Cannot do a sum(*)
 

@@ -49,7 +49,7 @@ stderr of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 # 09:48:00 >  
 
 MAPI  = monetdb@draco:48195
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = b:=x.reverse.mirror.[bat].[copy].[count];
 ERROR = !WARNING: [copy]: 3 times inserted nil due to errors at tuples "name", "count", "copy.count".
         !WARNING: [copy]: first error was: !ERROR: BATcopy: BAT required.

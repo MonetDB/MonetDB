@@ -57,19 +57,19 @@ stderr of test 'bug-sf-953545` in directory 'src/test/bugs` itself:
 # 15:22:34 >  
 
 MAPI  = monetdb@stem:57632
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = -- the following statements should all fail
 ERROR = !transaction rollback not allowed in auto commit mode
 MAPI  = monetdb@stem:57632
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = COMMIT;
 ERROR = !transaction commit not allowed in auto commit mode
 MAPI  = monetdb@stem:57632
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = SAVEPOINT failingsavepoint;
 ERROR = !transaction savepoint not allowed in auto commit mode
 MAPI  = monetdb@stem:57632
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = -- this one is incorrect since the savepoint should not exist
 ERROR = !transaction release not allowed in auto commit mode
         !ERROR: release savepoint failingsavepoint doesn't exists

@@ -57,24 +57,24 @@ stderr of test 'bug-00001` in directory 'src/test/bugs` itself:
 # 21:23:44 >  
 
 MAPI  = monetdb@stem:56652
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = select * from r;
 ERROR = !Unknown table r
 MAPI  = monetdb@stem:56652
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = select * from r;
 ERROR = !Unknown table r
 MAPI  = monetdb@stem:56652
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = commit work;
 ERROR = !transaction commit failed
         !ERROR: Cannot commit this transaction will abort instead
 MAPI  = monetdb@stem:56652
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = select * from r;
 ERROR = !Unknown table r
 MAPI  = monetdb@stem:56652
-ACTION= mapi_get_row
+ACTION= read_into_cache
 QUERY = -- next query shouldn't work
 ERROR = !single value in column expression
 
