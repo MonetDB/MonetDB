@@ -1085,6 +1085,7 @@ def RunTest(env, TST, BusyPorts) :
 
         if os.name != "nt" and sys.platform != 'cygwin':
             StopAt(ATJOB1,ME)
+            os.system(string.replace(string.replace(WHAT, '\\', ''), " -p"+ME+" ", ' '))
         else:
             while os.path.exists(os.path.join(TSTTRGBASE,".KILLED.lck")):
                 time.sleep(1)
