@@ -1057,9 +1057,9 @@ gdk_export int GDKrecovery;
 int GDKtime_startsec, GDKrecovery = 0; 
 
 @h
-gdk_export int GDKinit(char *dbname, char *dbfarm);
+gdk_export int GDKinit(char *dbname, char *dbfarm, int alloc_map);
 @c
-int GDKinit(char *dbname, char *dbfarm) {
+int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 	int 	i;
 
 	errno = 0;
@@ -1067,7 +1067,7 @@ int GDKinit(char *dbname, char *dbfarm) {
 		return 0;
 
 	stream_init();
-	MT_init_posix();
+	MT_init_posix(alloc_map);
 	THRinit();
 	BATSIGinit(); 
 	GDKlockHome(); 
