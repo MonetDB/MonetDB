@@ -661,6 +661,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
 		if (s->op1.stval->nrcols || s->op2.stval->nrcols ){
+/*
 		  	if (!s->op1.stval->nrcols){
 				int n = (*nr)++; 
 		  		len += snprintf( buf+len, BUFSIZ-len, 
@@ -673,6 +674,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		    		"s%d := [s%d ~ s%d];\n", n, l, r ); 
 				r = n;
 		  	}
+*/
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 		    	"s%d := [%s](s%d,s%d);\n", 
 			-s->nr, s->op4.funcval->func->imp, l, r );
@@ -701,12 +703,14 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		    for (n = s->op1.stval->op1.lval->h; n; n=n->next){
 			stmt *op = n->data;
 			int n = op->nr;
+/*
 		  	if (!op->nrcols){
 				n = (*nr)++; 
 		  		len = snprintf( buf, BUFSIZ, 
 		    		"s%d := [ s%d ~ s%d];\n", n, h->nr, op->nr); 
 				write_part(sql,buf,len);
 		  	}
+*/
 			opslen += snprintf(ops+opslen, BUFSIZ-opslen, 
 			 "%cs%d", (opslen)?',':' ', n);
 		    }
