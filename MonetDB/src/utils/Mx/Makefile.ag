@@ -21,7 +21,22 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-CFLAGS = -DUNIX -DMX_CXX_SUFFIX=$(CXXEXT)
+# With the IBM compiler (xlc) and optimization enabled, 
+# Mx behaves "strangely" on sara's solo:
+# /tmp/StM/_BUILD_MONET_ntv_64_d_--enable-optimize_/src/utils/Mx/Mx -n -x c /san/stst/nielsnes/StM/MonetDB/src/common/stream.mxMx:Unresolved reference::stream_readVal[/san/stst/nielsnes/StM/MonetDB/src/common/stream.mx:1980].
+# Mx:Unresolved reference::stream_readVal[/san/stst/nielsnes/StM/MonetDB/src/common/stream.mx:1988].
+# Mx:Unresolved reference::stream_readVal[/san/stst/nielsnes/StM/MonetDB/src/common/stream.mx:1996].
+# Mx:Unresolved reference::stream_readArray[/san/stst/nielsnes/StM/MonetDB/src/common/stream.mx:2022].
+# Mx:Unresolved reference::stream_readArray[/san/stst/nielsnes/StM/MonetDB/src/common/stream.mx:2030].
+# Mx:Unresolved reference::stream_readArray[/san/stst/nielsnes/StM/MonetDB/src/common/stream.mx:2038].
+# Mx:Unresolved reference::stream_printf_va_vsnprintf[/san/stst/nielsnes/StM/MonetDB/src/common/stream.mx:2059].
+# Mx:Unresolved reference::stream_printf_va_vsnprintf[/san/stst/nielsnes/StM/MonetDB/src/common/stream.mx:2073].
+# /san/stst/nielsnes/StM/MonetDB/src/common/stream.mx: ./stream.c - created
+# Hence, we "mis-use" the NO_INLINE_CFLAGS (cf. conf/monet.m4) to disable
+# optimization in this case (and maybe disable inlining in same other cases,
+# but that does not matter for Mx).
+
+CFLAGS = -DUNIX -DMX_CXX_SUFFIX=$(CXXEXT) $(NO_INLINE_CFLAGS)
 
 bin_Mx = {
 	SOURCES = \

@@ -1,7 +1,9 @@
 # test memory map of string heap under append
+vm_minsize(lng(128*1024));
+
 i := 0;
 b := 500000;
-BIG := new(void,int,50000000); # claim 200MB
+#BIG := new(void,int,50000000); # claim 200MB
 d := new(void,int,b).seqbase(0@0);
 
 # temporarily disable propmask in order to make this bearable

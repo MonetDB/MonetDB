@@ -1558,7 +1558,8 @@ int start_count(counter *retval, int *event0, int *event1) {
         retval->count1 = (lng)before.pmc[1];
         retval->clocks = (lng)before.tsc;
  #elif ( defined(HW_Linux) && defined(HAVE_LIBPFM) )
- 	int rtrn, i;
+ 	int rtrn;
+	unsigned int i;
 	pfarg_context_t ctx[1];
 	pfmInfo_t *pfmInfo = (pfmInfo_t*) malloc(sizeof(pfmInfo_t));
 
@@ -1644,7 +1645,7 @@ int start_count(counter *retval, int *event0, int *event1) {
 		return GDK_FAIL;
 	}
 	if (perfmonctl(pfmInfo->pid, PFM_WRITE_PMDS, pfmInfo->pd, pfmInfo->evt.pfp_event_count) == -1) {
-		{int i; for(i=0; i < pfmInfo->evt.pfp_event_count; i++) printf("pmd%d: 0x%x\n", i, pfmInfo->pd[i].reg_flags);}
+		{unsigned int i; for(i=0; i < pfmInfo->evt.pfp_event_count; i++) printf("pmd%d: 0x%x\n", i, pfmInfo->pd[i].reg_flags);}
 		GDKerror("start_count: perfmonctl error PFM_WRITE_PMDS errno %d: %s\n",errno,strerror(errno));
 		return GDK_FAIL;
 	}

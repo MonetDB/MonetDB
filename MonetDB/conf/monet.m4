@@ -156,6 +156,7 @@ dnl  i.e., at the end of the configure.m4 file that includes this monet.m4.
 dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 X_CFLAGS=''
 X_CXXFLAGS=''
+NO_X_CFLAGS='_NO_X_CFLAGS_'
 case $GCC-$host_os in
 yes-*)
 	dnl  GNU (gcc/g++)
@@ -207,6 +208,17 @@ yes-*)
 		;;
 	esac
 	case $gcc_ver-$host_os in
+	2.9*-aix*)
+		dnl  In some cases, there is a (possibly) uninitialized
+		dnl  variable in bison.simple ... |-(
+		dnl  However, gcc-2.9-aix51-020209 on SARA's solo
+		dnl  seems to ignore "-Wno-uninitialized";
+		dnl  hence, we switch-off "-Werror" by disabling
+		dnl  X_CFLAGS locally in src/monet/Makefile.ag:
+		dnl  @NO_X_CFLAGS@ with NO_X_CFLAGS='X_CFLAGS'
+		dnl  generates "X_CFLAGS =" in the generated Makefile.
+		NO_X_CFLAGS='X_CFLAGS'
+		;;
 	*-solaris*|*-darwin*|*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
@@ -272,6 +284,7 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(X_CFLAGS)
 AC_SUBST(X_CXXFLAGS)
+AC_SUBST(NO_X_CFLAGS)
 
 bits=32
 AC_ARG_WITH(bits,
@@ -344,6 +357,7 @@ dnl and -lfl usually only in the 32bit version
 THREAD_SAVE_FLAGS="\$(thread_safe_flag_spec) -D_REENTRANT"
 # only needed in monet
 MEL_LIBS=""
+NO_OPTIMIZE_FILES=""
 case "$host_os" in
 solaris*)
     case "$GCC" in
@@ -363,6 +377,11 @@ aix*)
     case "$GCC" in
       yes)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -mthreads"
+        dnl  With "-On" (n>0), compilation of monet_multiplex.mx fails on sara's solo with
+        dnl  "Assembler:
+        dnl   /tmp/cc8qluZf.s: line 33198: Displacement must be divisible by 4.";
+        dnl  hence:
+        NO_OPTIMIZE_FILES="monet_multiplex.mx"
         ;;
       *)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -qthreaded"
@@ -374,6 +393,7 @@ esac
 AC_SUBST(MEL_LIBS)
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
+AC_SUBST(NO_OPTIMIZE_FILES)
 
 have_java=auto
 JAVA_VERSION=""
@@ -390,7 +410,7 @@ if test "x$have_java" != xno; then
   AC_PATH_PROG(JAVA,java,,$JPATH)
   if test "x$JAVA" != "x"; then
     AC_MSG_CHECKING(for Java >= 1.2)
-    JAVA_VERSION=[`$JAVA -version 2>&1 | head -n1 | sed -e 's|^[^0-9]*\([0-9][0-9\.]*[0-9]\)\([^0-9\.].*\)\?$|\1|'`]
+    JAVA_VERSION=[`$JAVA -version 2>&1 | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9\.]].*\)\?$|\1|'`]
     if test MONET_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONET_VERSION_TO_NUMBER(echo "1.2"); then
       have_java_1_2=yes
     else

@@ -331,7 +331,7 @@ int mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	25	/*MUST MATCH # OPTIONS BELOW*/
+#define N_OPTIONS	26	/*MUST MATCH # OPTIONS BELOW*/
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -373,8 +373,12 @@ int mo_builtin_settings(opt **Set)
 	set[i].value = strdup("8");
 	i++;
 	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_mmap");
-	set[i].value = strdup("32M");
+	set[i].name = strdup("gdk_mem_bigsize");
+	set[i].value = strdup("33554432");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("gdk_vm_minsize");
+	set[i].value = strdup("134217728");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_alloc_map");

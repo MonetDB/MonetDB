@@ -408,8 +408,10 @@ static gdk_uint64
 Conf95_m(Stats_t *st)
 {
   if (st->st_nadds == 0) return (gdk_uint64)-1;
-  return (gdk_uint64) ((19600 * Stddev_m(st)) /
-		       sqrt((double) st->st_nadds * 100000000));
+  /* cast to gdk_int64 first because Visual C++ 6.0 can't cast
+     gdk_uint64 directly to double */
+  return (gdk_uint64) ((19600 * (gdk_int64) Stddev_m(st)) /
+		       sqrt((double) (gdk_int64) st->st_nadds * 100000000));
 }
 
 static gdk_uint64

@@ -1479,8 +1479,6 @@ expected usage pattern of the memory in a heap.
 #define BUF_WILLNEED	3     /* Will need these pages */
 #define BUF_DONTNEED	4     /* Don't need these pages */
 
-#define GDK_BIGMEM	(GDKmem_maxsize()/2)
-
 gdk_export BAT*	BATload       (str nme);
 gdk_export BAT*	BATload_intern(bat bid);
 gdk_export BAT*	BATsave       (BAT *b);
@@ -2124,11 +2122,6 @@ gdk_export		size_t 	GDK_mem_bigsize;	/* size after which we use VM rather than h
 gdk_export		size_t	GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export		size_t 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
 gdk_export		size_t 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
-
-#define GDKvm_maxsize()		GDK_vm_maxsize		/* BBPunload threshold for VM address space usage */
-#define GDKvm_minsize()		GDK_vm_minsize		/* minimum size for a VM heap */
-#define GDKmem_bigsize()	GDK_mem_bigsize		/* see above */
-#define GDKmem_maxsize()	GDK_mem_maxsize		/* see above */
 
 gdk_export size_t	GDKmem_inuse(void); /* RAM/swapmem that Monet is really using now */
 gdk_export size_t	GDKmem_cursize(void); /* RAM/swapmem that Monet has claimed from OS */

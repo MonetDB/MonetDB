@@ -7,6 +7,16 @@ stdout of test 'tst_mmap` in directory 'tests/by_Peter` itself:
 # compiled for SunOS5.7/32bit on Wed Jun  7 07:15:00 MET DST 2000.
 #script:tst_mmap.milM
 
+# 15:14:02 >  
+# 15:14:02 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/rc/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/rc/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/rc/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/rc/Linux-i686/var/MonetDB/log" --set mapi_port=47758 --set sql_port=50013 --set monet_prompt= --trace --dbname=mTests_tests_by_Peter  < tst_mmap.milM
+# 15:14:02 >  
+
+# Monet Database Server V4.3.16_rc05
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# reduce mem_bigsize to trigger memory mapping
+#
+vm_minsize(lng(128*1024)); 
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -14,7 +24,7 @@ stdout of test 'tst_mmap` in directory 'tests/by_Peter` itself:
 # test memory map of string heap under append
 i := 0;
 b := 20000;
-BIG := new(void,int,50000000); # claim 200MB
+#BIG := new(void,int,50000000); # claim 200MB
 d := new(void,int,b).seqbase(0@0);
 
 # temporarily disable propmask in order to make this bearable
@@ -57,6 +67,7 @@ while(i < 10) {
 #-------------------------------------------------#
 [ "theap.storage",	  "memory mapped"	  ]
 [ 80000 ]
+
 #-------------------------------------------------#
 # BAT:			  tmp_31		  #
 # (str)			  (str)			  #

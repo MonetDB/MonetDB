@@ -457,10 +457,10 @@ implement heap mmap rules. return whether something changed.
 static int HEAPcheckmode(Heap *h, char storage, int persistent, int writeable) {
 	/* user may have requested illegal or system-wise unwanted mmap modes. correct this */
 	if (storage != (char) -1) {	
-		if (storage == STORE_MEM && h->free/4 >= GDK_mem_maxsize) {
+		if (storage == STORE_MEM && h->free > GDK_vm_minsize) {
 			storage = STORE_MMAP; /* do not allow huge heaps malloced (safety) */
 		}
-		if ((storage&STORE_MMAP) && h->free < GDKvm_minsize()) {
+		if ((storage&STORE_MMAP) && h->free < GDK_vm_minsize) {
 			h->storage = STORE_MEM;  /* avoid VM memory waste with a lowerbound */
 			return 1;
 		} 

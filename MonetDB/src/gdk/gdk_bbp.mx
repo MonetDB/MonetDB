@@ -2272,6 +2272,12 @@ lng BBPdiskscan_r(str parent) {
 		} else if (strncmp(p+1, "tacc", 4) == 0) {
 			BAT *b = getdesc(bid);
 			delete = (b == NULL || b->tacctype == 0) || transient_acc(b->taccname);
+		} else if (strncmp(p+1, "hhash", 5) == 0) {
+			BAT *b = getdesc(bid);
+			delete = (b == NULL || !b->hhash_heap);
+		} else if (strncmp(p+1, "thash", 5) == 0) {
+			BAT *b = getdesc(bid);
+			delete = (b == NULL || !b->thash_heap);
 		} else if (strcmp(p+1, "desc") && strncmp(p+1, "buns", 4)) {
 			ok = FALSE;
 		}

@@ -486,8 +486,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 }
 
 static const char *column_format = "select name,type,type_digits,type_scale,"
-	"null,default from columns c,tables t "
-	"where c.table_id = t.id and '%s' = t.name order by c.number;\n"; 
+	"null,default,number from columns c,tables t "
+	"where c.table_id = t.id and '%s' = t.name order by number;\n"; 
 #define COLUMN 6
 #define C_NAME 0
 #define C_TYPE 1

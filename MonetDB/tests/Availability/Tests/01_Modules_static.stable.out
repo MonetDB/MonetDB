@@ -716,6 +716,8 @@ Module: "sys"
 [ "loaded",		  "PROC:      ",  "loaded() : void",									  "list all loaded modules, and the number of active users."																																																								  ]
 [ "ls",			  "PROC:      ",  "ls() : void",									  "list all data bats. Optionally filter on name with a certain substring"																																																						  ]
 [ "ls",			  "PROC:      ",  "ls(str) : void",									  "list all data bats filtered on name with some substring"																																																								  ]
+[ "mem_bigsize",	  "COMMAND:   ",  "mem_bigsize() : lng",									  "returns threshold after which memory allocations come from anonymous VM"																																																																			  ]
+[ "mem_bigsize",	  "COMMAND:   ",  "mem_bigsize(lng) : void",									  "sets threshold after which memory allocations come from anonymous VM"																																																																			  ]
 [ "mem_colormap",	  "COMMAND:   ",  "mem_colormap() : void",									  "print a color map of all memory that is in use"																																																																						  ]
 [ "mem_cursize",	  "COMMAND:   ",  "mem_cursize() : lng",								  "the amount of physical swapspace in KB that is currently in use"																																																							  ]
 [ "mem_maxsize",	  "COMMAND:   ",  "mem_maxsize() : lng",								  "the maximum usable amount of physical swapspace in KB (target only)"																																																							  ]
@@ -723,8 +725,6 @@ Module: "sys"
 [ "mem_printmap",	  "COMMAND:   ",  "mem_printmap() : void",								  "print a map of all memory that is in use"																																																										  ]
 [ "mem_usage",		  "COMMAND:   ",  "mem_usage(lng) : BAT[str,lng]",							  "get a split-up of how much memory blocks are in use."																																																								  ]
 [ "memory",		  "PROC:      ",  "memory() : BAT[str,int]",								  "Global memory usage info"																																																												  ]
-[ "mmapsize",		  "COMMAND:   ",  "mmapsize() : lng",									  "use anonymous virtual memory for memory requests greater than this constant (in KB)."																																																				  ]
-[ "mmapsize",		  "COMMAND:   ",  "mmapsize(lng) : void",								  "set the threshold (in KB) on which memory requests are redirected to anonymous virtual memory."																																																			  ]
 [ "module_db",		  "COMMAND:   ",  "module_db(str) : str",								  "extract database name from module string"																																																										  ]
 [ "module_name",	  "COMMAND:   ",  "module_name(str) : str",								  "extract module name from module string"																																																										  ]
 [ "modules",		  "PROC:      ",  "modules() : void",									  "list all installed modules, plus owner and db restrictions"																																																								  ]
@@ -764,9 +764,9 @@ Module: "sys"
 [ "vm_cursize",		  "COMMAND:   ",  "vm_cursize() : lng",									  "the amount of logical VM space in KB that is currently in use"																																																							  ]
 [ "vm_maxsize",		  "COMMAND:   ",  "vm_maxsize() : lng",									  "the maximum usable amount of logical VM space in KB (target only)"																																																							  ]
 [ "vm_maxsize",		  "COMMAND:   ",  "vm_maxsize(lng) : void",								  "set the maximum usable amount of physical swapspace in KB"																																																								  ]
+[ "vm_minsize",		  "COMMAND:   ",  "vm_minsize() : lng",										  "Get the threshold. Block larger then this threshold will be mmapped."																																																																			  ]
+[ "vm_minsize",		  "COMMAND:   ",  "vm_minsize(lng) : void",									  "Set the threshold. Block larger then this threshold will be mmapped."																																																																			  ]
 [ "vm_usage",		  "COMMAND:   ",  "vm_usage(lng) : BAT[str,lng]",							  "get a split-up of how much virtual memory blocks are in use."																																																							  ]
-[ "vmredirect",		  "COMMAND:   ",  "vmredirect() : lng",									  "returns threshold after which memory allocations come from anonymous VM"																																																						  ]
-[ "vmredirect",		  "COMMAND:   ",  "vmredirect(lng) : void",								  "sets threshold after which memory allocations come from anonymous VM"																																																						  ]
 
 Module: "trans"
 

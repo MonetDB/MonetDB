@@ -895,10 +895,10 @@ typedef union {
 A tzone consists of an offset and two DST rules, all crammed into one lng.
 @h
 typedef struct {
-		/* we had this as bitfields in one unsigned long long, but native sun CC does not eat that.  */
-		unsigned int dst:1, off1:6, dst_start:25;
-		unsigned int off2:7, dst_end:25; 
-	} tzone;
+	/* we had this as bitfields in one unsigned long long, but native sun CC does not eat that.  */
+	unsigned int dst:1, off1:6, dst_start:25;
+	unsigned int off2:7, dst_end:25; 
+} tzone;
 @c
 /* as the offset field got split in two, we need macros to get and set them */
 #define get_offset(z)	(((int) (((z)->off1 << 7) + (z)->off2)) - OFFSET_ZERO)
@@ -940,6 +940,10 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 @+ auxiliary functions
 @c
 
+#define tz_isnil(z) ((z).dst == 0 && (z).off2 == 0 && (z).dst_start == 0 && \
+			(z).dst_end == 0 && (z).off1 == 12)
+#define ts_isnil(t) ((t).days == date_nil && (t).msecs == daytime_nil)
+
 static timestamp ts_nil = {-1,-1};
 static tzone tz_nil = {0,12,0,0,0};
 static timestamp *ts_nilptr = NULL;
@@ -957,6 +961,7 @@ bat* monettime_prelude(void){
 	date_prelude();
 	return NULL;
 }
+
 void monettime_epilogue(void){
 	GDKfree(ts_nilptr);
 	GDKfree(tz_nilptr);
@@ -1137,10 +1142,6 @@ date compute_rule(rule* val, int y) {
 static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2)) 
-
-#define ts_isnil(t) ((t).days == date_nil && (t).msecs == daytime_nil)
-#define tz_isnil(z) ( ( ( ((z).dst == (z).off2) == (z).dst_start ) == (z).dst_end ) == (unsigned) 1 \
-			&& (z).off1 == (unsigned) 12 )
 
 static INLINE
 int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {

@@ -97,27 +97,37 @@ extern "C" {
 extern void		static_module_init(Client c, char buf[]); 
 }
 
+#ifdef HAVE_NEW
 #include <new>
+#endif
 void *operator new( size_t size ) 
+#ifdef HAVE_NEW
 throw(std::bad_alloc) 
+#endif
 {
         void *ptr = GDKmalloc( size );
         return(ptr);
 }
 void operator delete( void *ptr ) 
+#ifdef HAVE_NEW
 throw() 
+#endif
 {
         GDKfree( ptr );
 }
 #if defined(__GNUC__) && defined(__cplusplus)
 void *operator new[]( size_t size ) 
+#ifdef HAVE_NEW
 throw (std::bad_alloc)
+#endif
 {
         void *ptr = GDKmalloc( size );
         return(ptr);
 }
 void operator delete[]( void *ptr ) 
+#ifdef HAVE_NEW
 throw()
+#endif
 {
         GDKfree( ptr );
 }
@@ -232,8 +242,10 @@ static Client Monet_init( opt *set, int setlen )
 	if ((p=GDKgetenv("gdk_debug")) )
 		GDKdebug = strtol(p,NULL,10);
 
-	if ((p=GDKgetenv("monet_mmap")) )
-		GDKmem_bigsize() = strtol(p,NULL,10);
+	if ((p=GDKgetenv("gdk_mem_bigsize")) )
+		GDK_mem_bigsize = strtol(p,NULL,10);
+	if ((p=GDKgetenv("gdk_vm_minsize")) )
+		GDK_vm_minsize = strtol(p,NULL,10);
 
 	if (GDKgetenv_isyes("monet_daemon")){	
 		monet_daemon=1;

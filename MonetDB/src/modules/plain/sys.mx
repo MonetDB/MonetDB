@@ -81,7 +81,7 @@ C - in use as MIL context buffer (i.e. anonymous virtual memory)
 c - free (last usage was c)
 \end{verbatim}
 On Linux, the malloc library appears to be using anonymous virtual memory, which goes unetected.
-If you want to see all your memory in the map, lower the gdk\_mmap threshold in monet.conf to a 
+If you want to see all your memory in the map, lower the gdk\_mem\_bigsize threshold in monet.conf to a 
 low value (say 64KB).
 @m
 .COMMAND mem_cursize() : lng = get_mem_cursize;
@@ -92,18 +92,18 @@ low value (say 64KB).
  	"set the maximum usable amount of physical swapspace in KB"
 .COMMAND vm_cursize() : lng = get_vm_cursize;
  	"the amount of logical VM space in KB that is currently in use"
+.COMMAND vm_minsize() : lng = get_vm_minsize;
+ 	"Get the threshold. Block larger then this threshold will be mmapped."
+.COMMAND vm_minsize(lng) : void = set_vm_minsize;
+ 	"Set the threshold. Block larger then this threshold will be mmapped."
 .COMMAND vm_maxsize() : lng = get_vm_maxsize;
  	"the maximum usable amount of logical VM space in KB (target only)"
 .COMMAND vm_maxsize(lng) : void = set_vm_maxsize;
  	"set the maximum usable amount of physical swapspace in KB"
-.COMMAND vmredirect() : lng = get_vmredirect;
+.COMMAND mem_bigsize() : lng = get_mem_bigsize;
 	"returns threshold after which memory allocations come from anonymous VM"
-.COMMAND vmredirect(lng) : void = set_vmredirect;
+.COMMAND mem_bigsize(lng) : void = set_mem_bigsize;
 	"sets threshold after which memory allocations come from anonymous VM"
-.COMMAND mmapsize() : lng = get_mmapsize;
-	"use anonymous virtual memory for memory requests greater than this constant (in KB)."
-.COMMAND mmapsize(lng) : void = set_mmapsize;
-	"set the threshold (in KB) on which memory requests are redirected to anonymous virtual memory."
 .COMMAND mem_usage(lng minsize) : BAT[str,lng] = get_mem_usage;
  	"get a split-up of how much memory blocks are in use."
 .COMMAND vm_usage(lng minsize) : BAT[str,lng] = get_vm_usage;
@@ -1135,7 +1135,7 @@ int get_mem_cursize(lng *num) {
 	return GDK_SUCCEED;
 }
 int get_mem_maxsize(lng *num) {
-	*num = GDKmem_maxsize();
+	*num = GDK_mem_maxsize;
 	return GDK_SUCCEED;
 }
 int set_mem_maxsize(lng *num) {
@@ -1146,27 +1146,27 @@ int get_vm_cursize(lng *num) {
 	*num = GDKvm_cursize();
 	return GDK_SUCCEED;
 }
+int get_vm_minsize(lng *num) {
+	*num = GDK_vm_minsize;
+	return GDK_SUCCEED;
+}
+int set_vm_minsize(lng *num) {
+	GDK_vm_minsize = (size_t) *num;
+	return GDK_SUCCEED;
+}
 int get_vm_maxsize(lng *num) {
-	*num = GDKvm_maxsize();
+	*num = GDK_vm_maxsize;
 	return GDK_SUCCEED;
 }
 int set_vm_maxsize(lng *num) {
 	GDK_vm_maxsize = (size_t) *num;
 	return GDK_SUCCEED;
 }
-int get_vmredirect(lng *vmredirect) {
-	*vmredirect = (lng) GDKmem_bigsize();
+int get_mem_bigsize(lng *num) {
+	*num = GDK_mem_bigsize;
 	return GDK_SUCCEED;
 }
-int set_vmredirect(lng *vmredirect) {
-	GDK_mem_bigsize = (size_t) *vmredirect;
-	return GDK_SUCCEED;
-}
-int get_mmapsize(lng *num) {
-	*num = GDKmem_bigsize();
-	return GDK_SUCCEED;
-}
-int set_mmapsize(lng *num) {
+int set_mem_bigsize(lng *num) {
 	GDK_mem_bigsize = (size_t) *num;
 	return GDK_SUCCEED;
 }
