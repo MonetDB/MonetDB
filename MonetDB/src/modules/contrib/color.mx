@@ -111,6 +111,7 @@ Type-mappers for convenience
 
 #endif
 @c
+#include "monetdb_config.h"
 #include <math.h>
 #include "color.h"
 
