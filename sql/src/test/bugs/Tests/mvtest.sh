@@ -29,6 +29,12 @@ then
 	sed "s/$1/$2/" $2.stable.err > $2.stable.err.tmp
 	mv $2.stable.err.tmp $2.stable.err
 fi;
+# update the source redirect if it exists
+if [ -f $2.sql.src ];
+then
+	sed "s/$1/$2/" $2.sql.src > $2.sql.src.tmp
+	mv $2.sql.src.tmp $2.sql.src
+fi
 # if this test was in the All file, update it
 if [ -f All ];
 then
