@@ -419,22 +419,22 @@ below.  The global variables should not be modified directly.
 #define TRUE	1
 #define FALSE	0
 #endif
-#define BOUND2BTRUE	2		/*	TRUE, and bound to be so */
+#define BOUND2BTRUE	2		/* TRUE, and bound to be so */
 
 #define IDLENGTH	64		/* maximum BAT id length */
 #define OLDLENGTH	32		/* old max  BAT id length */
 #define PATHLENGTH	128		/* maximum file pathnamde length */ 
-#define BATMARGIN	1.2		/*	extra free margin for new heaps */ 
-#define BATTINY		50		/*	extra fixed margin for BATS */
+#define BATMARGIN	1.2		/* extra free margin for new heaps */ 
+#define BATTINY		50		/* extra fixed margin for BATS */
 
 #define TYPE_void	0		
 #define TYPE_bit	1		
 #define TYPE_chr	2		
 #define TYPE_sht	3		
-#define TYPE_bat	4		/*	BAT id: index in BBPcache */
+#define TYPE_bat	4		/* BAT id: index in BBPcache */
 #define TYPE_int	5		
 #define TYPE_oid	6		
-#define TYPE_ptr	7		/*	C pointer! */
+#define TYPE_ptr	7		/* C pointer! */
 #define TYPE_flt	8
 #define TYPE_dbl	9		
 #define TYPE_lng	10		
@@ -984,10 +984,9 @@ they can either be stored on disk, loaded into memory, or memory mapped.
 int & HEAPalloc & (Heap *h, int nitems, int itemsize);\\
 int & HEAPfree & (Heap *h);\\
 int & HEAPextend & (Heap *h, int size);\\
-int & HEAPload & (Heap *h, str nme,ext);\\
+int & HEAPload & (Heap *h, str nme,ext, int trunc);\\
 int & HEAPsave & (Heap *h, str nme,ext);\\
 int & HEAPcopy & (Heap *dst,*src);\\
-int & HEAPmove & (Heap *dst, str o, str n, str ext);\\
 int & HEAPdelete & (Heap *dst, str o, str ext);\\
 \hline\end{tabular}}
 
@@ -999,11 +998,10 @@ they insulate you from the different ways heaps can be accessed.
 gdk_export int	HEAPalloc   (Heap *h, int nitems, int itemsize);
 gdk_export int	HEAPfree    (Heap *h);
 gdk_export int	HEAPextend  (Heap *h, int size);
-gdk_export int	HEAPload    (Heap *h, str nme, str ext);
+gdk_export int	HEAPload    (Heap *h, str nme, str ext, int trunc);
 gdk_export int	HEAPsave    (Heap *h, str nme, str ext);
 gdk_export void	HEAPcopy    (Heap *dst, Heap *src);
 gdk_export int	HEAPsubcopy (Heap *dst, Heap *src, int size, int offset);
-gdk_export int	HEAPmove    (Heap *h, str o, str n, str ext);
 gdk_export int	HEAPdelete  (Heap *h, str o, str ext);
 gdk_export size_t	HEAPvmsize  (Heap *h);
 gdk_export size_t	HEAPmemsize (Heap *h);
@@ -1676,7 +1674,7 @@ gdk_export BAT* BBPdescriptor (bat b);
 gdk_export str  BBPlogical    (bat b, str buf); 
 gdk_export str  BBPphysical   (bat b, str buf); 
 gdk_export int  BBP_curstamp;
-gdk_export BATstore* BBPgetdesc(int i, str nme); 
+gdk_export BATstore* BBPgetdesc(int i); 
 gdk_export BAT* BBPquickdesc  (bat b, int delaccess);
 @
 @}

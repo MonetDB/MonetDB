@@ -61,8 +61,8 @@ BAT *BATins(BAT *b, BAT *n) {
 	    && (b->hkey&BOUND2BTRUE)==0 && (b->tkey&BOUND2BTRUE)==0 && 
 		(b->hhash_heap==NULL || ATOMstorage(b->htype) == TYPE_int))
 	{
-		BUN p, q; 
- 		int xx;
+		BUN p, q, r = BUNlast(b); 
+ 		int xx, yy = BUNsize(b);
 
 		if (BATcount(b) == 0) {
 		    ALIGNset(b, n);
@@ -106,18 +106,21 @@ BAT *BATins(BAT *b, BAT *n) {
 		}
 		if (b->htype == TYPE_void) {
 			BATloopFast(n, p, q, xx) {
-				BUNfastins(b, NULL, BUNtail(n, p)); 
+				bunfastins_nocheck(b, r, NULL, BUNtail(n, p), yy);
+				r += yy;
 			}
 		} else if (b->hhash_heap) {
 			int i = BUNindex(b, BUNlast(b));
 			BATloopFast(n, p, q, xx) {
 				ptr v = BUNhloc(n,p);
-				BUNfastins(b, v, BUNtail(n, p)); 
-				HASHins_int(b->hhash, i, v); i++;
+                               	bunfastins_nocheck(b, r, v, BUNtail(n, p), yy); 
+                               	HASHins_int(b->hhash, i, v); 
+                               	r += yy; i++; 
 			}
 		} else {
 			BATloopFast(n, p, q, xx) {
-				BUNfastins(b, BUNhead(n, p), BUNtail(n, p)); 
+                               	bunfastins_nocheck(b, r, BUNhead(n, p), BUNtail(n, p), yy); 
+                               	r += yy;
 			}
 		}
 		b->batDirty = 1;
@@ -548,10 +551,10 @@ We have to do it: create a new BAT and put everything into it.
 	}
         bn->hsorted = BAThordered(b);
         bn->tsorted = BATtordered(b);
-	if (BAThdense(b) && b->hseqbase != oid_nil) { 
+	if (BAThdense(b)) { 
 		BATseqbase(bn, b->hseqbase+*l); 
 	}
-	if (BATtdense(b) && b->tseqbase != oid_nil) {
+	if (BATtdense(b)) {
 		BATseqbase(BATmirror(bn), b->tseqbase+*l);
 	}
         return bn;
@@ -622,7 +625,7 @@ through the definition of MIL we do not want the nils to appear in
 the result (as (nil {<,=,>} ANY) = bit(nil) != true).
 
 @= bunins_notnil
-	if (@3_CMP(nil, v, @1)) BUNfastins(bn, BUNh@2(b, p), v);
+	if (@3_CMP(nil, v, @1)) BUNfastins(bn, @2, v);
 @= select
         if (b->tidx_heap) {
 	    BAT *m = BATmirror(b);
@@ -643,7 +646,7 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
                 BATloopFast(b, p, q, xx) {
                     ptr v = BUNt@3(b, p); 
                     if ((!lval || @4_LE(tl,v,@1)) && (!hval || @4_LE(v,th,@1)))
-		    	@:bunins_notnil(@1,@2,@4)@
+                       @:bunins_notnil(@1,&yy,@4)@
 		    /* avoid computing BUNpos many times over */
 		    if (yy != oid_nil) yy++; 
                 }
@@ -651,7 +654,7 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
                 BATloopFast(b, p, q, xx) {
                     ptr v = BUNt@3(b, p); 
                     if ((!lval || @4_LE(tl,v,@1)) && (!hval || @4_LE(v,th,@1)))
-		    	@:bunins_notnil(@1,@2,@4)@
+                       @:bunins_notnil(@1,BUNh@2(b,p),@4)@
                 }
             }
 	/* Build a hash-table on the fly for equi-select. 
@@ -1150,6 +1153,7 @@ BAT *BATorder(BAT *b) {
         ALIGNdel(b, "BATorder");
 	b->hsorted = GDK_SORTED;
 	b->tsorted = FALSE;
+	b->hdense = FALSE;
 	b->batDirtydesc = b->batDirtybuns = TRUE;
 
 	return b;

@@ -140,11 +140,22 @@ int BATins_kunique(BAT *bn, BAT *b) {
 }
 
 int BATins_sunique(BAT *bn, BAT *b) {
-	if (BAThdense(b)) {
+	BUN fst1 = BUNfirst(bn), lst1 = BUNlast(bn) - BUNsize(bn);
+	BUN fst2 = BUNfirst(b), lst2 = BUNlast(b) - BUNsize(b);
+
+	if (BATcount(b) && (BAThordered(b)&1) && ATOMcmp(b->htype,BUNhead(b,fst2),BUNhead(b,lst2)) == 0 &&
+	   (BATcount(bn) == 0 || (ATOMcmp(bn->htype,BUNhead(bn,fst1),BUNhead(b,fst2)) == 0 &&
+	   (BAThordered(bn)&1) && ATOMcmp(bn->htype,BUNhead(bn,fst1),BUNhead(bn,lst1)) == 0)))
+	{
 		return BATins_kunique(BATmirror(bn), BATmirror(b));
-	} else if (BATtdense(b)) {
+	}
+	if (BATcount(b) && (BATtordered(b)&1) && ATOMcmp(b->ttype,BUNtail(b,fst2),BUNtail(b,lst2)) == 0 &&
+	   (BATcount(bn) == 0 || (ATOMcmp(bn->ttype,BUNtail(bn,fst1),BUNtail(b,fst2)) == 0 &&
+	   (BATtordered(bn)&1) && ATOMcmp(bn->ttype,BUNtail(bn,fst1),BUNtail(bn,lst1)) == 0)))
+	{
 		return BATins_kunique(bn, b);
-	} else if ((BATtordered(b)&1) && ATOMstorage(b->ttype) < TYPE_str) {
+	}
+	if ((BATtordered(b)&1) && ATOMstorage(b->ttype) < TYPE_str) {
 		BATflipflop(bn); BATflipflop(b);
 	}
 	@:elim_doubles(s)@

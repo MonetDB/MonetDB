@@ -69,8 +69,8 @@ int interpret_multiplex
 @- [X?Y:Z]() implementation functions
 @h
 m_export int interpret_ifthen    (str *r, bit *b, str t);
-m_export int interpret_ifthenelse(str *r, bit *b, str t, str f);
 m_export int interpret_ifelse    (str *r, bit *b, str f);
+m_export int interpret_ifthenelse(str *r, bit *b, str t, str f);
 
 m_export int CMDifthen           (int argc, ValPtr argv);
 m_export int CMDifelse           (int argc, ValPtr argv);
@@ -78,8 +78,56 @@ m_export int CMDifthenelse       (int argc, ValPtr argv);
 
 #endif /* _MONET_SETOP_H_ */
 
+@- bulk error handling
+When a certain predicate is executed in bulk, that is possibly millions of times, and something goes wrong, we 
+do not like to see millions of error messages. Therefore, both the multiplex and set aggregate implementations
+use the below macros to shield off bulk error reporting. Some buffers are maintained in order to condense
+all errors in a summary.
 @c
 #include "monet.h"
+
+#define EXEC_ERROR_WHERE 80
+
+typedef struct {
+	char buf[GDKMAXERRLEN];		/* buffer where GDKerror functions log into */
+        char where[EXEC_ERROR_WHERE];   /* tuples where errors happened */
+        char first[GDKMAXERRLEN];	/* first error */
+	char *bak;			/* backup of GDKerrbuf */
+	int cnt;			/* number of errors that have occurred sofar */
+} bulkerror_t;
+
+void bulkerror_init(bulkerror_t *bulkerror) {
+	bulkerror->bak = GDKerrbuf;
+	bulkerror->cnt = 0;
+	GDKsetbuf(bulkerror->buf);
+}
+
+void bulkerror_handle(bulkerror_t *bulkerror, str msg) {
+	if (bulkerror->cnt++ == 0) {
+		strcpy(bulkerror->first, bulkerror->buf);
+		strncpy(bulkerror->where, msg, EXEC_ERROR_WHERE-1);
+	} else if (strlen(bulkerror->where) + strlen(msg) + 2 < EXEC_ERROR_WHERE) {
+		strcat(bulkerror->where, ", ");
+		strcat(bulkerror->where, msg);
+	}
+	bulkerror->buf[0] = 0; 
+}
+
+void bulkerror_format(bulkerror_t *bulkerror, int tpe, ptr val) {
+	char *buf = NULL;
+	ATOMformat(tpe, val, &buf);
+	bulkerror_handle(bulkerror, buf);
+	GDKfree(buf); 
+}
+
+void bulkerror_finish(bulkerror_t *bulkerror, str fcn_nme) { 
+	GDKsetbuf(bulkerror->bak);
+	if (bulkerror->cnt > 0) {
+		GDKwarning("%s: %d times inserted nil due to errors at tuples %s.\n",
+			fcn_nme, bulkerror->cnt, bulkerror->where);
+		GDKwarning("%s: first error was: %s", fcn_nme, bulkerror->first);
+	}	
+}
 
 /* call an interpret tree, and return <0 only on error */
 int interpret_interpret(Cntxt stk, YYSTREE tt, ValPtr argv) {
@@ -239,6 +287,7 @@ by doing binary search on the 10M table.
 }
 
 
+
 @- Non-Optimized Multiplex Operator Interpretation
 As for the implementation, multiplex operators on strongly related BATs 
 with the alignment interface, are executed much faster. Also,
@@ -261,6 +310,7 @@ typedef struct {
 	int nbats;		/* actual number of involved bats */
         int notall;		/* ifthen or ifelse do not yield all values */
 	str name;		/* operator name */
+	bulkerror_t bulkerror;	/* bulk error structure */
 } exec_t;
 
 
@@ -375,22 +425,25 @@ Set up type and length info for the values that will come out of BAT params.
 			(ATOMextern(desc.id.vtype)?
 			    multiplex_fcn_extern_tpechk:
 			    multiplex_fcn_intern_tpechk));
+ 	if (ret > 0) {
+		desc.b = BATnew(desc.id.vtype, ret, desc.cap+3); 
+		desc.unfix = (desc.notall)?NULL:BATatoms[ret].atomUnfix;
+	}
 @-
 Ok, do it! The integer return status tells us about how the matching
 process was conducted.
 @c
+	bulkerror_init(&desc.bulkerror);
 	r = BATmultijoin(desc.nbats, desc.piv, wrap, &desc, desc.f, 
 			 (void**) desc.c, 0);
+	bulkerror_finish(&desc.bulkerror, desc.name);
 @-
 When zero matching elements where there, no execution took place.
 So, what tail-type should the empty return BAT have? Dilemma!
 @c
-	if (desc.b == NULL) {
-		if (ret <= 0) {
-			GDKwarning("interpret_multiplex: no return type.\n");
-			ret = TYPE_int;
-		}
-		desc.b = BATnew(desc.id.vtype, ret, 10);
+	if (desc.b == NULL && ret <= 0) {
+		GDKwarning("%s: empty result, hence return type unknown.\n", desc.name);
+		desc.b = BATnew(desc.id.vtype, TYPE_int, 10);
 	}
 @-
 Set the correct properties in the result BAT.
@@ -429,14 +482,7 @@ take care of memory deallocation.
 @= multiplex_exec
 static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
     int retval = @:call_@1@
-    if (retval < 0) {
-    	if (!desc->notall) {
-	    int len=20;
-	    char *buf = (char*) GDKmalloc(len); 
-	    ATOMformat(desc->id.vtype, VALptr(&desc->id), &buf);
-	    GDKwarning("%s: exec error at tuple %s.\n", desc->name, buf);
-	    GDKfree(buf);
-	}
+    if (desc->notall && retval < 0) {
 	return 0;
     }
     if (!desc->b) {
@@ -452,19 +498,23 @@ static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
 @= call_fcn
     (*desc->fcn)(desc->argc,desc->argv);
 
+@= insert_bat
+    if (retval < 0) {
+	VALnil(desc->argv, desc->b->ttype);
+	bulkerror_format(&desc->bulkerror, desc->id.vtype, @1);
+    }
+    bunfastins(desc->b, @1, @2);
+    if (desc->unfix) (desc->unfix)(@2);
+
 @= insert_intern_intern
-    BUNfastins(desc->b, &desc->id.val.ival, &desc->argv[0].val.ival);
-    if (desc->unfix) (desc->unfix)(&desc->argv[0].val.ival);
+    @:insert_bat(&desc->id.val.ival, &desc->argv[0].val.ival)@
 @= insert_extern_intern
-    BUNfastins(desc->b, desc->id.val.pval, &desc->argv[0].val.ival);
-    if (desc->unfix) (desc->unfix)(&desc->argv[0].val.ival);
+    @:insert_bat(desc->id.val.pval, &desc->argv[0].val.ival)@
 @= insert_intern_extern
-    BUNfastins(desc->b, &desc->id.val.ival, desc->argv[0].val.pval);
-    if (desc->unfix) (desc->unfix)(desc->argv[0].val.pval);
+    @:insert_bat(&desc->id.val.ival, desc->argv[0].val.pval)@
     GDKfree(desc->argv[0].val.pval);
 @= insert_extern_extern
-    BUNfastins(desc->b, desc->id.val.pval, desc->argv[0].val.pval);
-    if (desc->unfix) (desc->unfix)(desc->argv[0].val.pval);
+    @:insert_bat(desc->id.val.pval, desc->argv[0].val.pval)@
     GDKfree(desc->argv[0].val.pval);
 
 @= insert_intern
@@ -472,10 +522,16 @@ static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
 @= insert_extern
     @:insert_@1_extern@
 @= insert_tpechk
-    else if (desc->argv[0].vtype != desc->b->ttype) {
-	GDKwarning("%s: ignoring returned %s (%s expected).\n", desc->name,
-			ATOMname(argv[0]->vtype), ATOMname(desc->argv->vtype));
-	return 0;
+    else if (retval >= 0 && desc->argv[0].vtype != desc->b->ttype) {
+	/* fully destroy the returnvalue of the incorrect type */
+	ptr _p = VALptr(desc->argv);
+	if (_p) {
+		ATOMunfix(desc->argv->vtype, _p);
+		if (ATOMextern(desc->argv->vtype)) GDKfree(_p);
+	}
+	GDKerror("%s: return type %s is different than expected (%s).\n",
+		desc->name, ATOMname(desc->argv[0].vtype), ATOMname(desc->b->ttype));
+	retval = -1;
     }
     if (ATOMextern(desc->b->ttype)) {
 	@:insert_@1_extern@
@@ -494,22 +550,29 @@ We selected the 1, 2 and 3-ary executions of C-implemented functions
 handle => no bats or varsized returns). BATs may also be constant values 
 in this implementation. 
 
-@= call_special
-if (*(bit*) @2 == bit_nil) {
-	retval = 0; 
-} else
-@= call_multiplex
+@= check_special
+if (*(ptr*) tptr == NULL) {
+    *(ptr*) tptr = tnil;
+}
+if (retval) /* only insert some tuples */ 
+
+@= check_multiplex
+if (!retval) {
+    char buf[32];
+    sprintf(buf, "%d", @2);
+    bulkerror_handle(&bulkerror, buf); 
+    tptr = tnil; /* insert a nil */
+} 
 
 @= BUNins_array_special
-{   int _bunsize = BUNsize(@1);
-    ptr _h = (buntrick==-1)?BUNhpos(bh,ph):@2;
-    bunfastins_nocheck(@1, dst, _h, *(ptr*)@3, _bunsize); 
-    dst += _bunsize;
+{   ptr _h = (buntrick==-1)?BUNhpos(bh,ph):@2;
+    bunfastins_nocheck(@1, dst, _h, *(ptr*)@3, bunsize); 
+    dst += bunsize;
 }
 
 @= BUNins_array_multiplex
-    if (buntrick <= 0) {
-    	BUNfastins(@1, @2, @3);
+    if (buntrick == 0) { /* non-void head column */
+        bunfastins_nocheck(@1, dst, @2, @3, bunsize);
     } else if (buntrick == 4) {
 	*(int*) dst = *(int*) @3;
     } else if (buntrick == 1) {
@@ -524,40 +587,25 @@ if (*(bit*) @2 == bit_nil) {
 
 @= arrayloop1
     while(ph < hend) {
-	int retval; @:call_@1(tptr,@2)@ 
-	retval = (*addr)(tptr,@2);
-	if (retval > 0) {
-	    @:BUNins_array_@1(retb, ph, tptr)@
-	} else if (!special) {
-	    GDKwarning("%s: execution error in tuple %d.\n", name,
-		(ph - ah)/sh - hdff);
-	}
+	int retval = (*addr)(tptr,@2);
+	@:check_@1(name, (ph - ah)/sh - hdff)@
+	@:BUNins_array_@1(retb, ph, tptr)@
 	p1 += s1; ph += sh;
     }
 
 @= arrayloop2
     while(ph < hend) {
-	int retval; @:call_@1(tptr,@2)@ 
-	retval = (*addr)(tptr,@2,@3);
-	if (retval > 0) {
-	    @:BUNins_array_@1(retb, ph, tptr)@
-	} else if (!special) {
-	    GDKwarning("%s: execution error in tuple %d.\n", name,
-		(ph - ah)/sh - hdff);
-	}
+	int retval = (*addr)(tptr,@2,@3);
+	@:check_@1(name, (ph - ah)/sh - hdff)@
+	@:BUNins_array_@1(retb, ph, tptr)@
 	p1 += s1; p2 += s2; ph += sh;
     }
 
 @= arrayloop3
     while(ph < hend) {
-	int retval; @:call_@1(tptr,@2)@ 
-	retval = (*addr)(tptr,@2,@3,@4);
-	if (retval > 0) {
-	    @:BUNins_array_@1(retb, ph, tptr)@
-	} else if (!special) {
-	    GDKwarning("%s: execution error in tuple %d.\n", name,
-		(ph - ah)/sh - hdff);
-	}
+	int retval = (*addr)(tptr,@2,@3,@4);
+	@:check_@1(name, (ph - ah)/sh - hdff)@
+	@:BUNins_array_@1(retb, ph, tptr)@
 	p1 += s1; p2 += s2; p3 += s3; ph += sh;
     }
 
@@ -567,7 +615,7 @@ if (*(bit*) @2 == bit_nil) {
 	s@1 = BUNsize(b@1);
 	p@1 = (char*) (BUNfirst(b@1)+b@1->tloc);
 	if (htpe != TYPE_void) 
-		htpe = special?ATOMtype(b@1->htype):BAThstore(b@1);
+		htpe = (special>1)?ATOMtype(b@1->htype):BAThstore(b@1);
 	ph = (char*) (BUNfirst(b@1)+b@1->hloc);
 	hend = (char*) BUNlast(b@1);
 	hdff = BUNindex(b@1,BUNfirst(b@1))-1;
@@ -607,8 +655,10 @@ static int interpret_@1_array(
 	int  hky=0, hsrt=0, hdff, htpe=-1;
 	BAT  *b1, *b2, *b3=0, *retb, *bh=0;
 	int ret_sze = ATOMsize(ret_tpe);
-	str  tptr= (str) GDKmalloc(ret_sze+8);
+	ptr  tptr = (ptr) GDKmalloc(ret_sze+8);
+        ptr  tnil = ATOMnilptr(ret_tpe);
 	int replace = FALSE, bunsize, buntrick = 0;
+	bulkerror_t bulkerror;
 	BUN dst;
 
 	@:arrayinit(1)@
@@ -629,12 +679,13 @@ static int interpret_@1_array(
 	    if (htpe == TYPE_void && special == 0 && !ATOMvarsized(ret_tpe)) {
 	    	 buntrick = BUNsize(retb);
 	    	 retb->batBuns->free += BATcount(bh)*buntrick;
-	    } else if (special && bh->htype == TYPE_void) {
+	    } else if (special > 1 && bh->htype == TYPE_void) {
 		 buntrick = -1;
 	    }
 	    dst = BUNfirst(retb); 
         }
 	bunsize = BUNsize(retb);
+	bulkerror_init(&bulkerror);
 
 	if (argc == 2) {
 #ifndef FIRST_PARAM_FIXEDSIZE
@@ -693,7 +744,9 @@ static int interpret_@1_array(
 		}
 	    }
 	}
+	bulkerror_finish(&bulkerror, name);
 	GDKfree(tptr);
+
 	if (!assignop) {
 		if (BATcount(retb) == BATcount(bh)) {
 			ALIGNsetH(retb, bh);
@@ -727,10 +780,10 @@ end up in this case, and the function being executed should
 return a simple type.
 
 @= BUNins_merge_special
-    BUNfastins(@1, @2, *(ptr*)@3); 
+    bunfastins(@1, @2, *(ptr*)@3); 
 @= BUNins_merge_multiplex
     if (replace == 0) {
-        BUNfastins(@1, @2, @3);
+        bunfastins(@1, @2, @3);
     } else if (replace ==  4) {
 	*(int*) @4 = *(int*) @3;
     } else if (replace ==  1) {
@@ -750,14 +803,9 @@ while(p1<e1 && p2<e2) {
     } else if (r > 0) {
         p2 += s2; 
     } else {
-	int retval; @:call_@1(tptr,BUNt@2(b1,p1))@ 
-	retval = (*addr)(tptr,BUNt@2(b1,p1),BUNt@3(b2,p2));
-        if (retval > 0) {
-	    @:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
-	} else if (!special) {
-	    GDKwarning("interpret_multiplex: execution error in tuple %d.\n",
-		1+BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)));
-        }
+	int retval = (*addr)(tptr,BUNt@2(b1,p1),BUNt@3(b2,p2));
+        @:check_@1(name, 1+BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
+	@:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
         p1 += s1; p2 += s2; 
     }
 }
@@ -783,14 +831,9 @@ if (p1<e1 && p2<e2 && p3<e3) {
       } 
       r = *(oid*) BUNhloc(b1, p1) - *(oid*) BUNhloc(b2, p2);
       if (r == 0) {
-	int retval; @:call_@1(tptr,BUNt@2(b1,p1))@
-	retval = (*addr)(tptr, BUNt@2(b1,p1), BUNt@3(b2,p2), BUNt@4(b3,p3));
-        if (retval > 0) {
-	    @:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
-	} else if (!special) {
-	    GDKwarning("interpret_multiplex: execution error in tuple %d.\n",
-		1+BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)));
-        }
+	int retval = (*addr)(tptr, BUNt@2(b1,p1), BUNt@3(b2,p2), BUNt@4(b3,p3));
+	@:check_@1(name, 1+BUNindex(b1,p1)-BUNindex(b1,BUNfirst(b1)))@
+	@:BUNins_merge_@1(retb,BUNhloc(b1,p1),tptr,BUNtloc(b1,p1))@
         p1 += s2; if (p1 >= e1) goto xit;
         p2 += s2; if (p2 >= e2) goto xit;
         p3 += s3; if (p3 >= e3) goto xit;
@@ -803,7 +846,7 @@ if (p1<e1 && p2<e2 && p3<e3) {
 @= mergeinit
 {   BAT *bn = BATdescriptor(argv[@1].val.bval);
     if (htpe == TYPE_void) 
-	htpe = special?ATOMtype(bn->htype):bn->htype;
+	htpe = (special>1)?ATOMtype(bn->htype):bn->htype;
     b@1 = bn;
     s@1 = BUNsize(bn);
     p@1 = BUNfirst(bn);
@@ -838,21 +881,24 @@ static int interpret_@1_merge(
 	BUN  p1, p2, p3; /* bun pointers */
 	BUN  e1, e2, e3; /* bun pointers */
 	int ret_sze = ATOMsize(ret_tpe);
-	str  tptr= (str) GDKmalloc(MAX(1,ret_sze));
+	ptr  tptr = GDKmalloc(MAX(1,ret_sze));
+        ptr  tnil = ATOMnilptr(ret_tpe);
 	int replace=0, htpe = TYPE_void;
+	bulkerror_t bulkerror;
 	BAT* retb;
 
 	@:mergeinit(1)@
 	@:mergeinit(2)@
 	if (argc==4) @:mergeinit(3)@
 
-        if (assignop && b1->batInserted==b1->batHole+BUNsize(b1) && !special) {
+        if (assignop && b1->batInserted==b1->batHole+BUNsize(b1) && special == 0) {
 	    replace = ATOMsize(b1->ttype);
 	    ACCremoveall(retb = b1);
         } else {
             retb = BATnew(htpe, ret_tpe, size);
 	    BATseqbase(retb, b1->hseqbase);
         }
+	bulkerror_init(&bulkerror);
 
         if (argc < 4) {
 #ifndef FIRST_PARAM_FIXEDSIZE
@@ -904,7 +950,10 @@ static int interpret_@1_merge(
 	@:mergealign(1)@
 	@:mergealign(2)@
 	@:mergealign(3)@
-xit:	GDKfree(tptr);
+xit:	
+	bulkerror_finish(&bulkerror, name);
+	GDKfree(tptr);
+
 	if (!assignop) {
 		if (BATcount(retb) == BATcount(b1)) {
 			ALIGNsetH(retb, b1);
@@ -946,7 +995,7 @@ The following special multiplex operators are supported:
 \begin{itemize}
 \item {\tt ifthen(bit, val) -> (bit==true)?val:none}
 \item {\tt ifelse(bit, val) -> (bit==false)?val:none}
-\item {\tt ifthenelse(bit, val1,val2) -> (bit==true)?val1:val2}
+\item {\tt ifthenelse(bit, val1,val2) -> (bit==true)?val1:(bit==false)?val2:none}
 \end{itemize}
 The special thing about them is that they can return a 
 subset of the oids in the BATs -- the [ifthen] operation for
@@ -956,23 +1005,27 @@ also work with variable-sized atoms, and avoid all atom copying,
 even in the fixed size case.
 @c
 int interpret_ifelse(str *retv, bit *b, str p1){
-     if (*b) {
-         return -TOK_BREAK;
+     if (*b != FALSE) {
+         return GDK_FAIL;
      }
      *retv = p1;
-     return 1;
+     return GDK_SUCCEED;
 }
 
 int interpret_ifthen(str *retv, bit *b,  str p1){
-     if (*b) {
-         *retv = p1;
-         return 1;
+     if (*b != TRUE) {
+         return GDK_FAIL;
      }
-     return -TOK_BREAK;
+     *retv = p1;
+     return GDK_SUCCEED;
 }
 int interpret_ifthenelse(str *retv, bit *b, str p1, str p2) {
-     *retv = (*b)?p1:p2;
-     return 1;
+     if (*b == bit_nil) {
+	 *retv = NULL;
+     } else {
+         *retv = *b?p1:p2;
+     }
+     return GDK_SUCCEED;
 }
 
 @- Non-optimized Special Multiplex Operators
@@ -980,25 +1033,14 @@ int interpret_ifthenelse(str *retv, bit *b, str p1, str p2) {
 These are used as a backup implementation if optimization using 
 some bulk technique is not possible.
 
-@= return_null
-	    switch(ATOMstorage(argv[0].vtype = @1)) {
-            case TYPE_void: argv[0].val.ival = void_nil; break;
-	    case TYPE_chr: argv[0].val.cval[0] = bit_nil; break;
-            case TYPE_sht: argv[0].val.cval[0] = sht_nil; break;
-            case TYPE_int: argv[0].val.ival = int_nil; break;
-            case TYPE_flt: argv[0].val.fval = flt_nil; break;
-            case TYPE_lng: argv[0].val.lval = lng_nil; break;
-            case TYPE_dbl: argv[0].val.dval = dbl_nil; break;
-            default: argv[0].val.pval = ATOMnil(argv[0].vtype);
-	    }
 @c
 int CMDifelse(int argc, ValPtr argv){
 	int ret = argv[1].val.cval[0];
 
-	if (ret) {
-	    return -TOK_BREAK;
-	} else {
+	if (ret == FALSE) {
 	    VALcopy(argv,argv+2);
+	} else {
+	    return -1;
 	}
 	return 0;
 }
@@ -1006,11 +1048,11 @@ int CMDifelse(int argc, ValPtr argv){
 int CMDifthen(int argc, ValPtr argv){
 	int ret = argv[1].val.cval[0];
 
-	if (ret == 0 || ret == bit_nil) {
-	    return -TOK_BREAK;
-	} else {
+	if (ret == TRUE) {
 	    VALcopy(argv,argv+2);
- 	}
+	} else {
+	    return -1;
+	}
 	return 0;
 }
 	
@@ -1018,7 +1060,7 @@ int CMDifthenelse(int argc, ValPtr argv){
 	int ret = argv[1].val.cval[0];
 
 	if (ret == bit_nil) {
-	    @:return_null(argv[2].vtype)@
+            VALnil(argv, argv[2].vtype);
 	} else if (ret) {
 	    VALcopy(argv,argv+2);
 	} else {
@@ -1081,32 +1123,44 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	nested_rev->hkey = nested_rev->tkey = nested->hkey = nested->tkey = prop_key; 
 	nested->hsorted = prop_sorted;
 @= exec_interpret
+{	ptr _p;
 	if (packed_call) {
 		ret_val = (packed_call)(2, argv);
 	} else {
 		ret_val = interpret_interpret(stk, tt, argv);
 	}
+	if (ret_val >= 0 && argv->vtype != sig->ret_tpe) {
+		/* fully destroy the return value of the illegal type */
+		ptr _p = VALptr(argv);
+		if (_p) {
+			ATOMunfix(argv->vtype, _p);
+			if (ATOMextern(argv->vtype)) GDKfree(_p);
+		}
+		GDKerror("{%s}: return type %s is different than expected (%s).\n",
+			ATOMname(argv->vtype), ATOMname(sig->ret_tpe));
+		ret_val = -1;
+	}
 	if (ret_val < 0) {
-		goto cleanup;
-	} else if (argv->vtype != sig->ret_tpe) {
-                GDKerror("{%s}: returned unexpected type.\n", name);
-		goto cleanup;
-	} else {
-		ptr _p;
-		if (argv->vtype == TYPE_bat) {
-			/* terrible+true; we must check for views (on nested) */
-			BAT *b = BBP_cache(argv->val.bval);
-			if (VIEWparent(b)) VIEWreset(b);
-		}
-		BUNfastins(ret, @1, _p = VALptr(argv));
-		ATOMunfix(argv->vtype, _p);
-		if (ATOMextern(argv->vtype)) {
-			GDKfree(_p);
-		}
+		VALnil(argv, sig->ret_tpe);
+		bulkerror_format(&bulkerror, ret->htype, @1);
+	} 
+	if (argv->vtype == TYPE_bat) {
+		/* terrible+true; we must check for views (on nested) */
+		BAT *b = BBP_cache(argv->val.bval);
+		if (VIEWparent(b)) VIEWreset(b);
+	}
+	BUNfastins(ret, @1, _p = VALptr(argv));
+	ATOMunfix(argv->vtype, _p);
+	if (ATOMextern(argv->vtype)) {
+		GDKfree(_p);
 	}
 	@:exec_cleanup@
+}
 @= exec_opt
-	if (!(*direct_call)(buf, nested)) goto cleanup;
+	if (!(*direct_call)(buf, nested)) {
+		memcpy(buf, ATOMnilptr(ret->ttype), ATOMsize(ret->ttype));
+		bulkerror_format(&bulkerror, ret->htype, @1);
+	}
 	bunfastins(ret, @1, buf);
 	@:exec_cleanup@
 @c
@@ -1128,6 +1182,7 @@ int interpret_setaggr(
 	BUN	p, q, r, s;
 	int	xx, yy, zz;
 	str	buf;
+	bulkerror_t bulkerror;
 
 @- argument check
 @T
@@ -1192,7 +1247,7 @@ there are the {strings, polygons, images, etc}!
         if (hidden_vartype) {
             nested_rev->ttype = nested->htype = hidden_vartype;
             nested_rev->tvarsized = nested->hvarsized = TRUE;
-            strcpy(nested->tatom, ATOMname(hidden_vartype));
+            strcpy(nested->hatom, ATOMname(hidden_vartype));
             nested->hheap = b->theap;
         }
 
@@ -1231,9 +1286,11 @@ there are the {strings, polygons, images, etc}!
 	ret = BATnew(BAThtype(b),sig->ret_tpe,BATcount(extent));
 
 	/* find out things about the head type and the result type */
-	head_type = BAThdense(b)?TYPE_void:ATOMstorage(ATOMtype(b->htype));
+	head_type = BAThvoid(b)?TYPE_void:ATOMstorage(ATOMtype(b->htype));
 	varsize = ATOMvarsized(sig->ret_tpe);
 	if (!varsize) buf = (char*) GDKmalloc(ATOMsize(sig->ret_tpe)); 
+
+	bulkerror_init(&bulkerror);
 
 @+ sorted aggregation
 The idea is to avoid copying by mapping chunks of 'b' into 'nested'.
@@ -1454,23 +1511,15 @@ set return value
 @-
 clean up and exit
 @c
-	goto exit;
-cleanup:
-	ret_val = -1;
-	BBPreclaim(ret);
+	bulkerror_finish(&bulkerror, "interpret_setaggr");
+        if (nested_bak) *(BATstore*) nested = *nested_bak;
 	if (hidden_vartype) {
-	    nested_rev->ttype = nested->htype = TYPE_int; 
-	    nested_rev->tvarsized = nested->hvarsized = FALSE; 
- 	}	
-	nested_rev->htype = nested->ttype = 0;
-	nested_rev->hvarsized = nested->tvarsized = 0;
-exit:	
-	if (hidden_vartype) {
-		nested->htype = nested->ttype = TYPE_int;
+		nested->htype = nested_rev->ttype = TYPE_int;
+	        nested_rev->tvarsized = nested->hvarsized = FALSE; 
+            	strcpy(nested->hatom, "int");
 		nested->hheap.base = NULL;
 	}
 	if (histo) BBPreclaim(histo);
-        if (nested_bak) *(BATstore*) nested = *nested_bak;
 	if (!varsize) GDKfree(buf);
 	argv[1] = argv_bak;
 	BBPreclaim(nested);

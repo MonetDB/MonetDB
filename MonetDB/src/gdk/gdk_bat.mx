@@ -420,8 +420,7 @@ This routine could benefit from efficient OS memory management support.
 
 The routine assumes that the atom heaps can simply be copied as well.
 @c
-static INLINE
-BAT *batcopy(BAT *b, int writeable) {
+BAT *batcopy(BAT *b, int ht, int tt, int writeable) {
 	BAT *bn, *p = b;
 	BATcheck(b, "batcopy");
 
@@ -433,8 +432,6 @@ BAT *batcopy(BAT *b, int writeable) {
         if (p->batRestricted && !writeable) {
 		return VIEWcreate(b);
 	} else {
-		int ht = b->htype;
-		int tt = ht?b->ttype:ATOMtype(b->ttype);
 		int xx, yy;
 		BUN p, q, r;
 
@@ -442,6 +439,9 @@ BAT *batcopy(BAT *b, int writeable) {
 			if (tt && BAThvoid(b)) ht = TYPE_void;
 			if (ht && BATtvoid(b)) tt = TYPE_void;
 		}
+                if (ht == TYPE_void && tt == TYPE_void) {
+                        tt = TYPE_oid;
+                }
 		bn = BATnew(ht, tt, BATcount(b));
 		r  = BUNfirst(bn);
 		yy = BUNsize(bn);
@@ -459,13 +459,13 @@ BAT *batcopy(BAT *b, int writeable) {
 }
 
 BAT *BATcopy(BAT *b) {
-	BAT *bn = batcopy(b, TRUE);
+	BAT *bn = batcopy(b, b->htype, b->ttype, TRUE);
 	BATsetaccess(bn, BAT_WRITE);
 	return bn;
 }
 
 BAT *BATrcopy(BAT *b) {
-	return batcopy(b, FALSE);
+	return batcopy(b, b->htype, b->ttype, FALSE);
 }
 
 @+ BAT Unit Manipulation
@@ -632,16 +632,16 @@ BAT *BUNins(BAT *b, ptr h, ptr t) {
 	    	}
 	    } else {
 		if (b->htype == TYPE_oid) {
-			b->hdense = b->hkey = bm->tkey = TRUE;
+                        b->hkey = bm->tkey |= b->hdense = TRUE;
 			b->hseqbase = bm->tseqbase = *(oid*) h;
 		} else if (b->htype) {
-			b->hkey = bm->tkey = TRUE;
+			b->hkey = bm->tkey |= TRUE;
 		}
 		if (b->ttype == TYPE_oid) {
-			b->tdense = b->tkey = bm->hkey = TRUE;
+                        b->tkey = bm->hkey |= b->tdense = TRUE;
 			b->tseqbase = bm->hseqbase = *(oid*) t;
 		} else if (b->htype) {
-			b->tkey = bm->hkey = TRUE;
+			b->tkey = bm->hkey |= TRUE;
 		}
 	    }
             bunfastins(b, h, t);
@@ -1139,7 +1139,7 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	    if (b->batSharecnt && mode != BAT_READ) {
 	        GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", b->batId, b->batSharecnt);
 	        MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
-	        b = BATsetaccess(batcopy(b,TRUE),mode); 
+	        b = BATsetaccess(batcopy(b,b->htype,b->ttype,TRUE),mode); 
 		if (b->batStamp > 0) b->batStamp = -b->batStamp; /* prevent MIL setaccess */
 	    } else {
 	        MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");

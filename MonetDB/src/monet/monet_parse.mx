@@ -188,9 +188,9 @@ command:             {  int i, l = strlen(yytext);
 				if (i == TOK_BUILTIN) {
 				   GDKerror("yyparse: cannot use a %cBUILTIN%c()\n", *t, (*t=='[')?']':'}');
 				} else if (i!=TOK_ASSIGNOP || *t == '[') {
-				   t[l-1] = cb;
-				   s = GDKstrdup(t);
-                                   Function(i,s);
+				   str nme = (str) alloca(strlen(s)+3);
+				   sprintf(nme, "%c%s%c", *t, s, cb);
+                                   Function(i,nme);
 				}
                             }
                         }

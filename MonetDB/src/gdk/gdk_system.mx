@@ -47,7 +47,7 @@ typedef void    *MT_Lock;
 typedef void    *MT_Sema;
 typedef void    *MT_Id;
 
-#define THREAD_STACK_SIZE	((unsigned long)2*1024*1024)
+#define THREAD_STACK_SIZE	((unsigned long)1024*1024)
 
 #define MAXLOCKS	128
 #define MAXSEMAS	64

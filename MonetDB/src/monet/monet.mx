@@ -186,6 +186,7 @@ typedef struct {
 } *ValPtr, ValRecord;
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
+#define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
 
 m_export ValPtr 		VALnew	    ();
 m_export ValPtr 		VALset      (ValPtr v, int t, ptr p);

@@ -567,7 +567,7 @@ int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
 
 int CMDsize(int *res, int *bid) {
 	if (BBPcheck(*bid, "CMDsize")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid, NULL);
+		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
 			*res = int_nil;
 		} else if (BBP_cache(*bid)) {
@@ -582,7 +582,7 @@ int CMDsize(int *res, int *bid) {
 
 int CMDcapacity(int *res, int *bid) {
 	if (BBPcheck(*bid, "CMDcapacity")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid, NULL);
+		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
 			*res = int_nil;
 		} else {
@@ -594,7 +594,7 @@ int CMDcapacity(int *res, int *bid) {
 
 int CMDhtype(int *res, int *bid) {
 	if (BBPcheck(*bid, "CMDhtype")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid, NULL);
+		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
 			*res = TYPE_void;
 		} else {
@@ -606,7 +606,7 @@ int CMDhtype(int *res, int *bid) {
 
 int CMDttype(int *res, int *bid) {
 	if (BBPcheck(*bid, "CMDttype")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid, NULL);
+		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
 			*res = TYPE_void;
 		} else {
@@ -867,7 +867,7 @@ int CMDbatsize(int *tot, BAT *b){
 
 int CMDbatsize_str(int *tot, str batname){
 	int bid = BBPindex(batname);
-	BAT *b = bid?(BAT*) BBPgetdesc(bid, NULL):NULL;
+	BAT *b = bid?(BAT*) BBPgetdesc(bid):NULL;
 
 	if (b == NULL) {
 		GDKerror("CMDbatsize(%s): no such bat.\n", batname);

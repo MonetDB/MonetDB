@@ -19,7 +19,7 @@ are not being harmed too much.
 
 @{
 All join related operations have the same prelude to check
-domain compatibility and to creates the reseult BAT to hold the result.
+domain compatibility and to creates the BAT to hold the result.
 
 @= joincheck
 	ERRORcheck(l == NULL, "@1: invalid left operand"); 
@@ -175,7 +175,7 @@ BAT *BATmergejoin(BAT *l, BAT *r) {
 }
 
 
-@-
+@- hash join
 These macros encode the core of the join algorithm. They are
 the fast innerloops, optimized towards their type.
 
@@ -230,35 +230,39 @@ BAT* BAThashjoin(BAT* l, BAT* r) {
 The @`BATfetchjoin@5(l,r) does a join on the basis of positional lookup. 
 It looks up index numers from the second parameter in first parameter BAT.
 The right parameter may contain OIDs, in which case their base is
-subtracted. The left may also contain voids, in which case a
-OID base is added to the index number.
+subtracted. 
 
-Implementation starts with specifying the t(tail) = 3rd param of
-s = 2nd param to produce the tail column of the result. 
-Execution is left top the @#batfetch@ macro, which also handles the 
-join case.
+In a typical join(BAT[any::1,oid) L, BATvoid,any::2] R) : BAT[any::1,any::2]
+we expect each tuple of L to hit exactly once in R. Now if any::1=void
+this void column can be carried over to the result. We do that.
 
-Typically, a fetchjoin is done on a large BAT[void,any] that holds a
-large collection of values in the tail. If the other join relation  
-is a BAT[void,oid] that is smaller. Many times all tail-oids of the latter
-will match with a void of the first. In that case, the result can
-be expressed as a BAT[void,any] instead of BAT[oid,any]. This is
-embodied by the variable 'denseresult', which is the 4th parameter in 
-the call macro. 
-
-If denseresult=TRUE, the implementation will try to build a void result;
-if there is a miss during the matching, it will start over with 
-denseresult=FALSE.
-
-To avoid confusion, please take notice that in order to reuse the code
-of the semijoin fetch, we work with a reversed 'b'. Matching is done on
-both head columns; the result is formed by both tail columns.
+However, it is possible that an tail-oid is out of range wrt R; in that
+case some tuples will be missing and we cannot carry on producing
+a void column. In that case, we have to switch back on-the-fly
+to the non-dense implementation.
 
 The aftermath -- property setting -- is relatively straightforward here.
+
+@= fetchjoin
+    BATloopFast(l, l_cur, l_end, xx) {
+        yy = offset + *(unsigned int*) BUN@1(l,l_cur);
+        if (yy < base || yy >= end) {
+            bn->batBuns->free = dst - bn->batBuns->base;
+            BBPreclaim(bn); 
+            goto nondense;
+        }
+        r_cur = BUNptr(r, yy);
+	@4put(@3, &bn->theap, (int*) dst, BUN@2(r, r_cur));
+	dst += zz;
+    }
+    bn->batBuns->free = dst - bn->batBuns->base;
+@c
+#define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
+
 @c
 BAT* BATfetchjoin(BAT *l, BAT *r) {
-        int xx, yy, base, offset, end;
-        BUN r_cur, l_cur, l_end;
+        int xx, yy, zz, base, offset, end;
+        BUN r_cur, l_cur, l_end, dst;
         BAT *bn;
 
         BATcheck(l, "BATfetchjoin: l");
@@ -272,43 +276,66 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 	end = base + BATcount(r);
 
 	/* optimize for propagation of void columns in the result */	
-	if (l->tkey && r->hkey && BAThvoid(l)) {
-		bn = BATnew(TYPE_void, BATttype(r), BATcount(l));
-        	BATloopFast(l, l_cur, l_end, xx) {
-                	yy = offset + *(unsigned int*) BUNtail(l,l_cur);
-                	if (yy < base || yy >= end) {
-				BBPreclaim(bn); 
-				goto nondense;
-                	}
-                	r_cur = BUNptr(r, yy);
-			BUNfastins(bn, NULL, BUNtail(r,r_cur));
-        	}
+	if (BAThvoid(l)) {
+		int tpe = ATOMtype(r->ttype);
+		if (ATOMstorage(tpe) == TYPE_str && ELIMDOUBLES(&r->theap)) {
+			tpe = TYPE_int; /* insert double-eliminated strings as ints */
+		}
+		bn = BATnew(TYPE_void, tpe, BATcount(l));
+		dst = BUNfirst(bn);
+		zz = BUNsize(bn);
+
+		if (l->ttype && ATOMstorage(tpe) == TYPE_chr) {
+			@:fetchjoin(tloc,tloc,chr,SIMPLE)@
+		} else if (l->ttype && ATOMstorage(tpe) == TYPE_sht) {
+			@:fetchjoin(tloc,tloc,sht,SIMPLE)@
+		} else if (l->ttype && (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt)) {
+			@:fetchjoin(tloc,tloc,int,SIMPLE)@
+		} else if (l->ttype && (ATOMstorage(tpe) == TYPE_lng || ATOMstorage(tpe) == TYPE_dbl)) {
+			@:fetchjoin(tloc,tloc,lng,SIMPLE)@
+		} else {
+			@:fetchjoin(tail,tail,tpe,ATOM)@
+		}
+		/* handle string trick */
+		if (tpe == TYPE_int && ATOMstorage(r->ttype) == TYPE_str) {
+               		BAT *bm = BATmirror(bn);
+               		bn->ttype = bm->htype = r->ttype;
+               		bn->tvarsized = bm->hvarsized = 1;
+               		strcpy(bn->tatom, ATOMname(r->ttype));
+       	      		HEAPcopy(&bn->theap, &r->theap);
+       		}
 		BATseqbase(bn, *(oid*) BUNhead(l,BUNfirst(l))); 
 		if (bn->hseqbase != oid_nil) BATkey(bn, TRUE);
 		bn->hsorted = GDK_SORTED; 
 	} else {
 nondense:	bn = BATnew(BAThtype(l), BATttype(r), BATcount(l));
+		dst = BUNfirst(bn);
+		zz = BUNsize(bn);
         	BATloopFast(l, l_cur, l_end, xx) {
                 	yy = offset + *(unsigned int*) BUNtail(l,l_cur);
                 	if (yy < base || yy >= end) {
 				continue;
                 	}
                 	r_cur = BUNptr(r, yy);
-			BUNfastins(bn, BUNhead(l,l_cur), BUNtail(r,r_cur));
+			bunfastins_nocheck(bn, dst, BUNhead(l,l_cur), BUNtail(r,r_cur),zz);
+			dst += zz;
 		}
 		bn->hsorted = (BATtordered(l)&BAThordered(r)&1)?BAThordered(l):0;
 	}
 
 	/* property propagation */
-	bn->hsorted = bn->tsorted = FALSE;
 	if (BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l); /* r->hkey, remember? */
-	} 
+	} else {
+		bn->hsorted = l->hsorted;
+        } 
+        bn->tsorted = BATtordered(l)&BATtordered(r)&1;
 	if (l->tkey) {
 		/* if l->tkey elements of r match at most once */
-		BATkey(BATmirror(bn), r->tkey);
 		if ((BATtordered(l)&1) && BATcount(bn) == BATcount(r)) {
 			ALIGNsetT(bn, r);
+		} else {
+			BATkey(BATmirror(bn), r->tkey);
 		}
 	}
         return bn;
@@ -333,8 +360,8 @@ collect statistics that help us decide what to do
 	for(logr=4, i=BATcount(r); i > 0; logr++) i >>= 1; 
 	for(logl=4, i=BATcount(l); i > 0; logl++) i >>= 1; 
 
-	rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= TYPE_int);
-	lfetch = (BATtdense(l) && ATOMstorage(r->htype) <= TYPE_int);
+	rfetch = BAThdense(r);
+	lfetch = BATtdense(l);
 
 	must_hash = (int) ((rsize < lsize)?l->thash_heap:r->hhash_heap);
 @-
@@ -342,9 +369,9 @@ In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
 @c
 	if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
-		return BATfetchjoin(l, r);
-	} else if (rfetch) {
 		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l)));
+	} else if (rfetch) {
+		return BATfetchjoin(l, r);
 	}
 @-
 If both are ordered we do merge-join, or if hash-join is not possible right 
@@ -396,9 +423,6 @@ if no match can be found.
        			BUNfastins(bn, BUNhead(l, p), nilt);
        		}
 	}
-	/* set sorted flags by hand, because we used BUNfastins() */
-	bn->hsorted = BAThordered(l);
-	bn->tsorted = FALSE;
 } break;
 @
 @-
@@ -416,6 +440,13 @@ BAT *BATouterjoin(BAT *l, BAT *r) {
 	} else {
 		@:joinbat@
 	} 
+	/* set sorted flags by hand, because we used BUNfastins() */
+	bn->tsorted = 0;
+	if (r->hkey) {
+		ALIGNsetH(bn, l); /* always 1 hit, so columns are equal */
+	} else {
+		bn->hsorted = BAThordered(l);
+	}
 
 	if (BAThdense(r)) {
 		/* proceeding with hash on void column would give error and is stupid */
@@ -432,14 +463,9 @@ BAT *BATouterjoin(BAT *l, BAT *r) {
 			}
 			BUNfastins(bn, BUNhead(l, p), t);
 		}
-		/* set sorted flags by hand, because we used BUNfastins() */
-		bn->hsorted = BAThordered(l);
-		bn->tsorted = BATtdense(l) && BATtordered(r);
+		bn->tsorted = BATtordered(l) & BATtordered(r) & 1;
 		return bn;
 	}
-
-	/* propagate alignment info */
-	bn->hsorted = BAThordered(l);
 	if (BATprepareHash(r)) {
 		return(bn); 
 	}
@@ -1146,7 +1172,7 @@ order columns by their size (smallest first)
 
 @- handle explicit ordering requests
 @T
-Ad 'orderby' specification tells that the multijoin should match in the
+An 'orderby' specification tells that the multijoin should match in the
 order of one specific BAT parameter. 
 
 Notice that we *respect* the ordering of the orderby column rather than we 

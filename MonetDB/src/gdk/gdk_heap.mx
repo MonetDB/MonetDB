@@ -159,14 +159,11 @@ PROT_NONE, so we can do it.
 error:		HEAPalloc(&nw, size, 1);
 		memcpy(nw.base, h->base, nw.free=h->free);
 		HEAPfree(h); 
-		if (priv) { /* heap changes mode, rename file on disk */
-			GDKmove(BATDIR, nme, ext, BATDIR, nme, nwext); 
-		}
 		*h = nw;
 	} else if (h->filename) { /* mapped file */ 
                 HEAPfree(h);
                 h->maxsize = h->size = size;
-                HEAPload(h, h->filename=nme, ext);
+                HEAPload(h, h->filename=nme, ext, FALSE);
                 if ( h->base == NULL ) {
                         return 0;
                 }
@@ -281,16 +278,17 @@ int HEAPfree(Heap* h) {
                 }
                 IODEBUG THRprintf(GDKerr, "munmap(base=%d, size=%d) = %d\n", 
                                                 (int) h->base, h->maxsize, ret);
-                if (ret == 0 && h->storage != STORE_PRIV && 
-                   (fp = (FILE*) GDKfilelocate(h->filename,"rb+", NULL))) 
-                {
-                        if (h->free*1.05 < h->size) {
-                                h->size = h->maxsize = h->free*1.05;
-                                ret = ftruncate(fileno(fp), h->size);
-                                IODEBUG THRprintf(GDKerr, "ftruncate(file=%s, size=%d) = %d\n", 
-                                                h->filename, h->maxsize, ret);
-                        }
-                        fclose(fp);
+		if (h->storage == STORE_PRIV) {
+			/* move back the file from X.priv to X */
+			int len = strlen(h->filename);
+                	if (len < 5 || strcmp(h->filename+len-5, ".priv")) {
+				GDKerror("HEAPfree: priv-heap has unexpected name %s\n", h->filename);
+			} else {
+                        	long_str src, dst;
+                        	strcpy(dst, h->filename);
+                        	dst[len-5] = 0; /* cut off the .priv bit */
+                        	GDKmove(BATDIR,h->filename,NULL,BATDIR,dst,NULL); /* may fail; dst might already exist (a newer version) */
+			}
                 }
                 GDKfree(h->filename);
         } else { /* anonymous virtual memory */
@@ -301,57 +299,70 @@ int HEAPfree(Heap* h) {
         return 0;
 }
 
-int HEAPload(Heap* h, str nme, str ext) {
-	FILE *fp = NULL;
-	int ret = 0;
+int HEAPload(Heap* h, str nme, str ext, int trunc) {
+	FILE *fp = (FILE*) GDKfilelocate(nme, "mrb", ext);
+	int ret = 0, desc_status = 0;
 	char priv[80];
 
 	h->maxsize = h->size;
 	h->offset = 0;
 	h->filename = NULL;
+	/* legacy 1: some old repositories have wrong mmap modes => correct during load */
 	if (h->size < GDKvm_minsize()) {
 		h->storage = STORE_MEM; /* don't scatter memory in too small mmap-files */
+		desc_status = 1; /* modified descriptor */
+	}
+	IODEBUG {
+		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=%d,free=%d,size=%d) = %d\n", 
+			nme, ext, h->storage, h->offset, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
-         * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .priv.ext 
+         * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv
          */
-	fp = (FILE*) GDKfilelocate(nme, "mrb+", ext);
 	strcpy(priv, ext); 
-	if (strlen(ext)){
-		strcat(priv, ".");
-	}
-	strcat(priv, "priv");
+	strcat(priv, ".priv");
 	if (fp == NULL) {
-		/* try to move a previous version back */
+		/* file-not-found may be caused because it exists as .ext.priv => link to .ext */
 		GDKmove(BATDIR, nme, priv, BATDIR, nme, ext); 
 	} else {
 		ret += fclose(fp);
 	}
-	if (h->storage == STORE_PRIV) {
-		/* silently kill the previous one */
+	if (ret == 0 && h->storage == STORE_PRIV) {
+		/* silently remove any previous .ext.priv file */
 		long_str path;
 		GDKfilepath(path, BATDIR, nme, priv);
-		(void) unlink(path);
+		(void) unlink(path); /* this is allowed to fail (if it does not exist) */
 
-		/* rename heap to .priv */
+		/* rename .ext file to .ext.priv; it should not fail now */
 		ret = GDKmove(BATDIR, nme, ext, BATDIR, nme, priv); 
 		ext = priv;
 	}
-	IODEBUG {
-		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=%d,free=%d,size=%d)\n", 
-			nme, ext, h->storage,h->offset,h->free,h->size);
+	if (ret) {
+		return -1; /* file could not be located */
+	}
+	/* legacy 2: some old repositories have wasted space => truncate during load */
+	if (trunc && h->free*1.05 < h->size) {
+		fp = (FILE*) GDKfilelocate(nme, "mrb+", ext);
+		if (fp) {
+			ret = ftruncate(fileno(fp), h->free*1.05);
+			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s, size=%d) = %d\n", 
+                                                h->filename, h->maxsize, ret);
+			fclose(fp);
+			if (ret == 0) {
+				h->size = h->maxsize = h->free*1.05;
+				desc_status = 1;
+			}
+                }
 	}
 	h->base = (char*) GDKload(nme, ext, h->free, h->size, h->storage);
 	if (h->base == NULL) {
-		return -1;
+		return -1; /* file could  not be read satisfactorily */
 	}
 	if (h->storage&STORE_MMAP) {
 		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 		sprintf(h->filename, "%s.%s", nme, ext);
-	} else {
-		h->filename = NULL;
 	}
-	return ret;
+	return desc_status; /* ok */
 }
 
 int HEAPsave(Heap* h, str nme, str ext) {
@@ -374,30 +385,16 @@ int HEAPsave(Heap* h, str nme, str ext) {
 	return GDKsave(nme, ext, h->base, h->free, store);
 }
 
-int HEAPmove(Heap* h, str o, str n, str ext) {
-        int ret = 0;
-        if (h->filename) {
-                str priv = (h->storage==STORE_PRIV)?"priv":NULL;
-
-                ret = GDKmove(BATDIR, h->filename, priv, BATDIR, n, ext);
-                if (ret == 0) { /* rename the heap */
-                        str newpath = (str) GDKmalloc(PATHLENGTH);
-                        GDKfilepath(newpath, BATDIR, n, ext);
-                        if (priv) {
-                                strcat(newpath, ".");
-                                strcat(newpath, priv);
-                        }
-                        GDKfree(h->filename);
-                        h->filename = newpath;
-                }
-        } else if (h->base) {
-                ret = GDKmove(BATDIR, o, ext, BATDIR, n, ext);
-        }
-        return ret;
-}
-
 int HEAPdelete(Heap* h, str o, str ext) {
-	int ret = 0;
+        long_str dst, src;
+        short_str priv;
+        int ret = 0;
+
+        /* move a .priv to the .ext name; and delete the .priv */
+        strcpy(priv, ext);
+        strcat(priv, ".priv");
+        GDKmove(BATDIR, o, priv, BATDIR, o, ext); /* may fail (dst exist/src not)*/
+
 	if (h->filename) {
 		ret = GDKunlink(BATDIR, h->filename, NULL);
 	} else if (h->size) {

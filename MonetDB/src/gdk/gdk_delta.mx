@@ -14,8 +14,9 @@ BUNs upon deletion. Initialization of the BAT is extended as follows:
 #include "gdk.h"
 
 @-
-We make sure here that the BUNs section of thin BATs (width < sizeof(int))
-still starts at an address that is aligned to an integer boundary.
+We make sure here that the BUNs section of a BAT at least starts 
+4 bytes from the BUN start.  This ensures that the first data 
+item of e.g. a BAT[void,bit] is (at least) integer aligned. 
 This optimizes processing on such BATs (DDBENCH).
 @h
 #define DELTAprintf DELTADEBUG printf
@@ -26,7 +27,7 @@ This optimizes processing on such BATs (DDBENCH).
 	(P1)->batInserted = BUNlast((P1)); 				\
 	(P1)->batElmshift = BATelmshift((P1)); 				\
 	DELTAprintf(							\
-	 	"DELTAinit %s free %d ins %d del %d hole %d base %d\n",	\
+	 	"#DELTAinit %s free %d ins %d del %d hole %d base %d\n",\
 		(P1)->batId, (int)(P1)->batBuns->free, 			\
 		(int)(P1)->batInserted, (int)(P1)->batDeleted, 		\
 		(int)(P1)->batHole, (int)(P1)->batBuns->base );   	\
@@ -40,23 +41,21 @@ and convert them back into pointers upon reload.
 @{
 @h
 
-#define DELTAsave(P1)	{						\
-	if ((P1)->batBuns->base){					\
-	  (P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted); 	\
-	  (P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted); 	\
-	  (P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole); 		\
-	}								\
+#define DELTAsave(P1) 	if ((P1)->batBuns->base){			\
+	(P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted); 	\
+	(P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted); 	\
+	(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole); 		\
+}									\
 	DELTAprintf(							\
-	 	"DELTAsave %s free %d ins %d del %d hole %d base %d\n",	\
+	 	"#DELTAsave %s free %d ins %d del %d hole %d base %d\n",\
 		(P1)->batId, (int)(P1)->batBuns->free, 			\
 		(int)(P1)->batInserted, (int)(P1)->batDeleted, 		\
-		(int)(P1)->batHole, (int)(P1)->batBuns->base );   	\
-}
+		(int)(P1)->batHole, (int)(P1)->batBuns->base );   	
 	
 
 #define DELTAload(P1)	{						\
 	DELTAprintf(							\
-		"DELTAload %s free %d ins %d del %d hole %d base %d\n", \
+		"#DELTAload %s free %d ins %d del %d hole %d base %d\n",\
 		(P1)->batId, (int)(P1)->batBuns->free, 			\
 		(int)(P1)->batInserted, (int)(P1)->batDeleted, 		\
 		(int)(P1)->batHole, (int)(P1)->batBuns->base );   	\
@@ -83,7 +82,7 @@ tranaction-dirty). For this we have @%DELTAdirty(b)@.
 @{
 @h
 #define DELTAnexthole(b)						\
-	DELTAprintf( "DELTAnexthole %s \n", (b)->batId );		\
+	DELTAprintf( "#DELTAnexthole %s \n", (b)->batId );		\
 	(b)->batHole = (b)->batHole + BUNsize(b);			\
 	if (b->batInserted <= b->batHole) {				\
 		b->batInserted = (b)->batHole + BUNsize(b);		\
@@ -124,7 +123,7 @@ batcommit really forgets the atoms guarded for an undo; we just need to free the
 heap space and unfix them (both only if necessary).
 @c
 BAT *BATcommit(BAT *b) {
-	DELTAprintf("BATcommit1 %s free %d ins %d del %d hole %d base %d\n", 
+	DELTAprintf("#BATcommit1 %s free %d ins %d del %d hole %d base %d\n", 
 	  (b)->batId, (int)(b)->batBuns->free, (int)(b)->batInserted, 
 	  (int)(b)->batDeleted, (int)(b)->batHole, (int)(b)->batBuns->base );
 	ALIGNcommit(b);
@@ -167,7 +166,7 @@ BAT *BATcommit(BAT *b) {
 	} else {
 		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
 	}
-	DELTAprintf("BATcommit2 %s free %d ins %d del %d hole %d base %d\n", 
+	DELTAprintf("#BATcommit2 %s free %d ins %d del %d hole %d base %d\n", 
 	  (b)->batId, (int)(b)->batBuns->free, (int)(b)->batInserted, 
 	  (int)(b)->batDeleted, (int)(b)->batHole, (int)(b)->batBuns->base );
 	return b; 
@@ -200,7 +199,7 @@ BAT *BATundo(BAT *b) {
 	BUN p, bunlast, bunfirst; 
 	BAT *m = BATmirror(b);
 
-	DELTAprintf( "BATundo %s \n", (b)->batId );		
+	DELTAprintf( "#BATundo %s \n", (b)->batId );		
 	ALIGNundo(b);
 	if (b->hidx_heap || b->tidx_heap) {
 		IDXdestroy(b); 

@@ -495,17 +495,16 @@ CThistogram(
     BAT**	h, 
     BAT* 	b
 ){
-	if (b->tacctype != ACC_histolink || 
-		CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) 
-	{
-        	if (b->tacctype && b->taccelerator.base) { 
-			b->tacctype = 0;
-			HEAPfree(&b->taccelerator); 
-		}
+	if (b->tacctype && b->tacctype != ACC_histolink) {
+		/* another accelerator already exists; leave it */
+		*h = BAThistogram(b);
+		return GDK_SUCCEED;
+	} 
+	if (b->tacctype != ACC_histolink || CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) {
+		ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
 		CTbuild_hl(&b->taccelerator, NULL, BATmirror(b));
 	}
-	*h = VIEWcreate(BATdescriptor(((histolink*) b->taccelerator.base)
-			              ->histogram));
+	*h = VIEWcreate(BATdescriptor(((histolink*) b->taccelerator.base)->histogram));
 	return GDK_SUCCEED;
 }
 
@@ -514,20 +513,19 @@ CTtunique(
     BAT**       h,
     BAT*        b
 ){
-        if (b->tacctype != ACC_histolink ||
-                CTcheck_hl(&b->taccelerator,b) == GDK_FAIL)
-        {
-                BAT *v = VIEWhead(BATmirror(b));
-                *h = BATkunique(v);
-                BBPreclaim(v);
-        	if (b->tacctype && b->taccelerator.base) { 
-			b->tacctype = 0;
-			HEAPfree(&b->taccelerator); 
-		}
-        } else {
-                *h = VIEWhead(BATdescriptor(((histolink*)
-                                b->taccelerator.base)->histogram));
-        }
+	if (b->tacctype && b->tacctype != ACC_histolink) {
+		/* another accelerator already exists; leave it */
+		BAT *v = VIEWhead(BATmirror(b));
+		*h = BATkunique(v);
+		BBPreclaim(v);
+		return GDK_SUCCEED;
+	} 
+        if (b->tacctype != ACC_histolink || CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) {
+		ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
+		CTbuild_hl(&b->taccelerator, NULL, BATmirror(b));
+	}
+	*h = VIEWhead(BATdescriptor(((histolink*) b->taccelerator.base)->histogram));
+
         return GDK_SUCCEED;
 }
 
