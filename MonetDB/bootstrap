@@ -57,7 +57,7 @@ _NEW_AC_VERSION=`echo $NEW_AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", 
 
 if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
 	# old autoconf, we need to work around a few incompatibilities
-	sed '/AH_TOP/s/.*/AC_SUBST(LIBOBJS) AC_DEFUN(AC_LIBOBJ,[LIBOBJS="$LIBOBJS $1.$ac_objext"])/' configure.ag > configure.in
+	sed '/AH_TOP/s/.*/AC_SUBST(LIBOBJS) AC_DEFUN(AC_LIBOBJ,[LIBOBJS="$LIBOBJS $1.$ac_objext"])/g;s/^AC_SYS_LARGEFILE/dnl AC_SYS_LARGEFILE/g' configure.ag > configure.in
 	cat > acconfig.h <<EOF
 #include "sysdefs.h"
 @TOP@
