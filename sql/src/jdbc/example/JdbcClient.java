@@ -47,7 +47,8 @@ public class JdbcClient {
 
 		// parse the arguments
 		boolean hasFile = false, hasUser = false, hasHost = false,
-				hasPort = false, hasDump = false, debug = false;
+				hasPort = false, hasDump = false, hasXMLDump = false,
+				debug = false;
 		for (int i = 0; i < args.length; i++) {
 			if (!hasFile && args[i].equals("-f") && i + 1 < args.length) {
 				file = args[i + 1];
@@ -102,6 +103,16 @@ public class JdbcClient {
 				dump = args[i].substring(2);
 				if (dump.equals("")) dump = null;
 				hasDump = true;
+			} else if (!hasDump && args[i].equals("-X") && i + 1 < args.length) {
+				dump = args[i + 1];
+				i++;
+				hasXMLDump = true;
+				hasDump = false;
+			} else if (!hasDump && args[i].startsWith("-X")) {
+				dump = args[i].substring(2);
+				if (dump.equals("")) dump = null;
+				hasXMLDump = true;
+				hasDump = false;
 			} else if (args[i].equals("--help")) {
 				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user] [-d] [-D [table]]");
 				System.out.println("where arguments may be written directly after the option like -hlocalhost.");
@@ -189,6 +200,45 @@ public class JdbcClient {
 			}
 			tbl.close();
 			System.out.println("COMMIT;");
+			System.exit(0);
+		} else if (hasXMLDump) {
+			String[] types = {"TABLE", "VIEW"};
+			if (dump != null) types = null;
+			ResultSet tbl = dbmd.getTables(null, null, null, types);
+
+			// use new metadata object (with another statement)
+			DatabaseMetaData wdbmd = con.getMetaData();
+			while (tbl.next()) {
+				if (dump != null && !(tbl.getString("TABLE_NAME").equalsIgnoreCase(dump) ||
+					(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(dump)))
+					continue;
+				else if (tbl.getString("TABLE_NAME").equals("history") &&
+						tbl.getString("TABLE_SCHEM").equals("sys"))
+					continue;
+
+				if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
+					System.out.println("<!-- unable to represent VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim() + " -->");
+				} else {
+					String table = tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME");
+					ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
+					ResultSetMetaData rsmd = rs.getMetaData();
+					System.out.println("<table name=\"" + table + "\">");
+					while (rs.next()) {
+						System.out.println("  <row>");
+						for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+							System.out.print("    ");
+							System.out.print("<" + rsmd.getColumnName(i) + ">");
+							System.out.print(rs.getString(i).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
+							System.out.println("</" + rsmd.getColumnName(i) + ">");
+						}
+						System.out.println("  </row>");
+					}
+					System.out.println("</table>");
+
+					rs.close();
+				}
+			}
+			tbl.close();
 			System.exit(0);
 		}
 
