@@ -611,10 +611,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DOPTcd:hl:mno:pqst", 
+        c = getopt_long (argc, argv, "DMOPTcd:hl:mno:pqst", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DOPTcd:hl:mno:pqst");
+        c = getopt (argc, argv, "DMOPTcd:hl:mno:pqst");
 #endif
 
         if (c == -1)
@@ -655,6 +655,8 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'n'));
             printf ("  -c%s: stop after core language generation\n",
                     long_option (opt_buf, ", --%s", 'c'));
+            printf ("  -M%s: print out temporary MIL\n",
+                    long_option (opt_buf, ", --%s", 'M'));
             printf ("  -m%s: stop after MIL code generation\n",
                     long_option (opt_buf, ", --%s", 'm'));
             printf ("\n");
@@ -705,6 +707,11 @@ main (int argc, char *argv[])
         case 'c':
             if (PFstate.stop_after > phas_fs)
                 PFstate.stop_after = phas_fs;
+            break;
+
+        case 'M':
+            if (PFstate.stop_after > phas_milprint)
+                PFstate.stop_after = phas_milprint;
             break;
 
         case 'm':
@@ -928,7 +935,10 @@ main (int argc, char *argv[])
 
     /* ***** end of temporary unfolding code ***** */
 
-
+    if (PFstate.stop_after == phas_milprint) {
+        PFprintMILtemp (croot);
+        goto bailout;
+    }
 
     tm = PFtimer_start ();
 
