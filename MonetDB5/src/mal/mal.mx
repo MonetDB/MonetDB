@@ -119,7 +119,7 @@ for a particular application domain and hardware platform.
 
 @+ Architecture overview
 The software stack for Version 5 is shown in Figure
-@T
+@fgr
 \figure{architecture.gif}
 @-
 The top layer consists of the query language processors and their
@@ -188,7 +188,7 @@ is used in the Monet layer:
 @T
 \begin{tabular}{|l | l | l |}\hline
 Name & Used in & Protects\\
-mal_contextLock       & mal_client.mx      & {\em created  }\\
+mal\_contextLock       & mal\_client.mx      & {\em created  }\\
 \end{tabular}
  
 @+ Monet Basic Definitions 
@@ -307,7 +307,7 @@ int             mal_debug= 0;
 MT_Lock		mal_contextLock=0;
 @-
 Initialization of the MAL context
-The compiler directive STRUCT_ALIGNED tells that the
+The compiler directive STRUCT\_ALIGNED tells that the
 fields in the VALrecord all start at the same offset.
 This knowledge avoids low-level type decodings, but should
 be assured at least once for each platform.
