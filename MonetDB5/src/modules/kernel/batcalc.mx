@@ -844,6 +844,7 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 		return throwMessage("batcalc.@1", "no copy available");
 	}
 	msg= CMDbataccum@1cst(ret, &dst->batCacheid,l,cst);
+	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return msg;
 }
@@ -860,6 +861,7 @@ str CMDcst@1bat(int *ret,void *cst, int *l)
 		return throwMessage("batcalc.@1", "no copy available");
 	}
 	msg= CMDbataccum@1cst(ret, &dst->batCacheid,l,cst);
+	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return msg;
 }
@@ -1405,6 +1407,7 @@ str CMDconvertvoid_int_oid(int *ret, int *bid){
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 #endif
 
