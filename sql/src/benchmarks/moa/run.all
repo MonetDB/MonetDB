@@ -1,0 +1,10 @@
+#!/bin/sh
+SQL=sql_client
+if [ $# -eq 1 ]; then
+	SQL=$1
+fi
+
+echo "loading"
+$SQL < load1.sql  
+echo "queries"
+$SQL < moa1.sql
