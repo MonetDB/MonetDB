@@ -42,6 +42,7 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "pcl"		  ]
+[ "pcre"	  ]
 [ "profiler"	  ]
 [ "radix"	  ]
 [ "salgebra"	  ]
@@ -815,6 +816,19 @@ Module: "pcl"
 [ "pcl_stop",		  "COMMAND:   ",  "pcl_stop(BAT[int,any]) : BAT[int,lng]",	  "stop counting and return the counts for the given events."	  ]
 [ "pcl_stop_rates",	  "COMMAND:   ",  "pcl_stop_rates(BAT[int,any]) : BAT[int,dbl]",  "stop event counters and return the requested rates."		  ]
 [ "pcl_try",		  "COMMAND:   ",  "pcl_try(BAT[int,any], int) : bit",		  "try wheter the events could be started together on this CPU"	  ]
+
+Module: "pcre"
+
+[ 4 ]
+[ 4 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		type		signature							help								  # name
+# str		str		str								str								  # type
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "pcre_compile", "COMMAND:   ",  "pcre_compile(str) : pcre",					  "compile a pattern"						  ]
+[ "pcre_match",	  "COMMAND:   ",  "pcre_match(pcre, str) : bit",				  "match a pattern"						  ]
+[ "pcre_select",  "COMMAND:   ",  "pcre_select(str, BAT[any::1,str]) : BAT[any::1,str]",	  "Select tuples based on the pattern"				  ]
+[ "pcre_uselect", "COMMAND:   ",  "pcre_uselect(str, BAT[any::1,str]) : BAT[any::1,void]",	  "Select tuples based on the pattern, only returning the head"	  ]
 
 Module: "profiler"
 

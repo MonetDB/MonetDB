@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 673 ]
+[ 677 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 673 ]
+[ 677 ]
 
 var All:=0;
 
@@ -143,8 +143,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 107 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 111 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -171,7 +171,7 @@ Module: "algebra"
 [ "find",	  "COMMAND:   ",  "find(BAT[any::1,any::2], any::1) : any::2",						  "Returns the tail value 't' for which some [h,t] BUN exists in b.\n If no such BUN exists, an error occurs."																								  ]
 [ "find_higher",  "COMMAND:   ",  "find_higher(BAT[any::1,void], any::1) : oid",					  "find the value equal to or (of not exists) greater than the searched value"																																																																			  ]
 [ "find_lower",	  "COMMAND:   ",  "find_lower(BAT[any::1,void], any::1) : oid",						  "find the value equal to or (of not exists) smaller than the searched value"																																																																			  ]
-[ "find_unescaped_occurrence",	  "PROC:      ",  "find_unescaped_occurrence(str, chr) : int",							  "finds the first occurrence of c that is not escaped by a \\"																																																								  ]
+[ "find_unescaped_occurrence",	  "PROC:      ",  "find_unescaped_occurrence(str, str, str) : int",							  "finds the first occurrence of c that is not escaped by esc"																																																													  ]
 [ "fragment",	  "COMMAND:   ",  "fragment(BAT[any::1,any::2], any::1, any::1, any::2, any::2) : BAT[any::1,any::2]",	  "Select both on head and tail range."																																	  ]
 [ "group",	  "COMMAND:   ",  "group(BAT[any::1,any], int, int, int) : BAT[any::1,int]",				  "Produces a new BAT with identical head column, and in the tail column groups of equally valued \nintegers within each group. Parameters: a start group value, group number increment, group size."													  ]
 [ "hashsplit",	  "COMMAND:   ",  "hashsplit(BAT[any::1,any::2], int) : BAT[int,BAT]",					  "Split a BAT on tail column according (hash-value MOD buckets).\nReturns a recursive BAT, containing the fragments in the tail,\ntheir bucket number in the head."																	  ]
@@ -184,7 +184,10 @@ Module: "algebra"
 [ "kunion",	  "COMMAND:   ",  "kunion(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Returns the union of two BATs; looking at head-columns only. \n Results in all BUNs of 'left' that are  not in 'right', plus all BUNs \n of 'right'. *no* double-elimination is done. If you want this, do: \n 'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'."		  ]
 [ "kunique",	  "COMMAND:   ",  "kunique(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Select unique tuples from the input BAT. Double elimination is done\n only looking at the head column. Result is a BAT with hkeyed() == true."																			  ]
 [ "like",	  "COMMAND:   ",  "like(BAT[any::1,str], str) : BAT[any::1,str]",					  "Selects all elements from the input BAT that have 'substr'\nas substring in the tail."																										  ]
-[ "likeselect",			  "PROC:      ",  "likeselect(BAT[any::1,str], str) : BAT[any::1,oid]",						  "does SQL LIKE select which supports % and _ (also understands escapes)"																																																						  ]
+[ "like",			  "PROC:      ",  "like(str, str) : bit",										  "does SQL LIKE expression with use of PCRE"																																																															  ]
+[ "like",			  "PROC:      ",  "like(str, str, str) : bit",										  "does SQL LIKE expression with use of PCRE"																																																															  ]
+[ "like_uselect",		  "PROC:      ",  "like_uselect(BAT[any::1,str], str, str) : BAT[any::1,void]",						  "does SQL LIKE select which supports % and _ (also understands escapes)"																																																											  ]
+[ "like_uselect_pcre",		  "PROC:      ",  "like_uselect_pcre(BAT[any::1,str], str, str) : BAT[any::1,void]",					  "does SQL LIKE select with use of PCRE"																																																															  ]
 [ "mark",	  "COMMAND:   ",  "mark(BAT[any::1,any]) : BAT[any::1,oid]",						  "Produces a new BAT with fresh unique OIDs in the tail."																														  ]
 [ "mark",	  "COMMAND:   ",  "mark(BAT[any::1,any], oid) : BAT[any::1,oid]",					  "Produces a new BAT with fresh unique dense sequense of OIDs in the tail\n that starts at base (i.e. [base,base+1,..base+b.count()-1] )."																				  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any,dbl]) : dbl",								  "Give the highest tail value. Error on empty BATs."																															  ]
@@ -234,6 +237,7 @@ Module: "algebra"
 [ "sort_ht",	  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "sorts a BAT according to its head (primary) and tail values (secondary).             (straight forward hack, not tuned for performance at all, just used for testing.)"																  ]
 [ "sort_rev",	  "COMMAND:   ",  "sort_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on descending head values."																				  ]
 [ "split",	  "COMMAND:   ",  "split(BAT[lng,void]) : BAT[oid,oid]",						  "Split head into two values"																																																																									  ]
+[ "sql2pcre",			  "PROC:      ",  "sql2pcre(str, str) : int",										  "converts SQL LIKE to PCRE pattern"																																																																  ]
 [ "sum_dbl",	  "COMMAND:   ",  "sum_dbl(BAT[any,dbl]) : dbl",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_dbl",	  "COMMAND:   ",  "sum_dbl(BAT[any,flt]) : dbl",							  "Gives the sum of all tail values."																																	  ]
 [ "sum_flt",	  "COMMAND:   ",  "sum_flt(BAT[any,flt]) : flt",							  "Gives the sum of all tail values."																																	  ]
@@ -808,7 +812,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 673 ]
+[ 677 ]
 
 quit();
 
