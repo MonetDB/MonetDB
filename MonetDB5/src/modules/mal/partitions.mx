@@ -59,6 +59,9 @@ comment "Enter a new BAT into the partition box";
 command deposit(b:bat[:void,:any$1],p:bat[:void,:any$1]) :void
 address BPTdeposit2
 comment "Enter a new partition to a group into the partition box";
+command deposit(b:str,p:str,cap:int) :void
+address BPTdepositPartition
+comment "Enter a new BAT into the partition box";
 
 pattern releaseAll():void
 address BPTreleaseAll
@@ -147,7 +150,7 @@ partitions.prelude();
 
 @+ BAT Partition Iterator Implementation
 The implementation is organized around a shared box, which should
-be saved between session. It is up to other to ensure that BAT
+be saved between session. It is up to other layers to ensure that BATs
 being deleted are also removed from the partition box to avoid
 mis-represented information.
 
@@ -175,6 +178,7 @@ typedef struct{
 	oid first;	/* lowest oid stored */
 	oid last;	/* largest oid stored or nil */
 	int next;	/* next one in the list */
+	int prev;	/* previous one in the list */
 	int cap;	/* maximum capacity */
 } Partition;
 
@@ -201,11 +205,12 @@ str BPTdump(){
 	int i;
 	stream_printf(fd,"ptop=%d plimit=%d\n",ptop,plimit);
 	for(i=0;i<ptop; i++)
-	stream_printf(fd,"[%d] bid=%d pid=%d f=%d, l=%d nxt=%d cap=%d\n",i,
+	stream_printf(fd,"[%d] bid=%d pid=%d f=%d, l=%d prv=%d nxt=%d cap=%d\n",i,
 		partitions[i].bid,
 		partitions[i].pid,
 		partitions[i].first,
 		partitions[i].last,
+		partitions[i].prev,
 		partitions[i].next,
 		partitions[i].cap);
 	return MAL_SUCCEED;
@@ -239,9 +244,34 @@ BPTopen(){
 
 str 
 BPTclose(){
-	/* save its content todo*/
-    if( closeBox("partitions" ,TRUE) ==0) return MAL_SUCCEED;
-    return throwMessage("partitions.close","failed to close box");
+	stream *f;
+	str boxfile, boxfilebak;
+	Box box;
+	int i;
+
+	box= openBox("partitions");
+	f= prepareSaveBox(box, &boxfile, &boxfilebak);
+	if( f != NULL){
+		/* save the info */
+		for(i=0;i<ptop;i++)
+		if( partitions[i].bid != -1){
+			BAT *b= (BAT*)BBPgetdesc(partitions[i].pid);
+            if( b && b->batPersistence & PERSISTENT)
+            stream_printf(f,"%s.deposit(\"%s\",\"%s\",%d);\n",
+                box->name, 
+				BBPname(partitions[i].bid),
+				BBPname(partitions[i].pid),
+				partitions[i].cap);
+		}
+        stream_close(f);
+        if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) {
+            GDKfree(boxfile); GDKfree(boxfilebak);
+			return throwMessage("partitions.close","failed to unlink partitions box");
+        }
+		GDKfree(boxfile);
+		GDKfree(boxfilebak);
+	}
+    return MAL_SUCCEED;
 }
 str 
 BPTdestroy(){
@@ -263,20 +293,17 @@ Administration of new partitions.
 int BPTfindGrp(int bid){
 	int i;
 	for(i=0; i<ptop; i++)
-	if( partitions[i].bid== bid) return i;
+	if( partitions[i].bid== bid) {
+		while( partitions[i].prev )
+			i= partitions[i].prev;
+		return i;
+	}
 	return -1;
 }
-int BPTfindPartition(int bid, int pid, oid first){
+int BPTfindPartition(int bid, int pid){
 	int i;
 	for(i=0; i<ptop; i++)
-	if( partitions[i].bid== bid &&
-		partitions[i].pid== pid) {
-		/* check for oid overlap */
-			if( first < partitions[i].last &&
-				partitions[i].last != oid_nil)
-					return -2;
-			return i;
-	}
+	if( partitions[i].bid== bid && partitions[i].pid==pid) return i;
 	return -1;
 }
 str
@@ -298,6 +325,7 @@ BPTdeposit(int *ret, int *bid){
 	partitions[i].pid= *bid;
 	partitions[i].first= b->hseqbase;
 	partitions[i].last=  b->hseqbase+ BATcount(b);
+	partitions[i].prev= 0;
 	partitions[i].next= 0;
 	partitions[i].cap= oid_nil;
 	if(i>= ptop) {
@@ -317,15 +345,18 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 	if( b== NULL)
 		return throwMessage("partitions.deposit","Can not access descriptor");
 	
-	idx= BPTfindPartition(*bid, *pid, b->hseqbase);
-	if( idx == -2)
-		return throwMessage("partitions.deposit","Partition integrity violation");
-	if( idx != -1)
-		return throwMessage("partitions.deposit","Partition already known");
-	for(idx=ptop-1; idx>=0; idx--)
-	if( partitions[idx].bid== *bid &&
-		partitions[idx].next== 0){
-		break;
+	idx= BPTfindGrp(*bid);
+	if( idx == -1){
+		BBPunfix(b->batCacheid);
+		return throwMessage("partitions.deposit","BAT group unknown");
+	}
+
+	while( partitions[idx].next)
+		idx= partitions[idx].next;
+	if( b->hseqbase < partitions[idx].last &&
+			partitions[idx].last != oid_nil){
+			BBPunfix(b->batCacheid);
+			return throwMessage("partitions.deposit","Partition already known");
 	}
 
 	if( ptop == plimit)
@@ -337,6 +368,7 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 	partitions[i].first= b->hseqbase;
 	partitions[i].last=  b->hseqbase+ BATcount(b);
 	partitions[i].cap= oid_nil;
+	partitions[i].prev= idx;
 	partitions[idx].next= i;
 	if(i>= ptop) {
 		ptop=i+1;
@@ -346,6 +378,43 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 	(void) ret;
 	return MAL_SUCCEED;
 }
+
+str
+BPTdepositPartition(int *ret, str *bnme, str *pnme, int *cap){
+	BAT *b, *bn;
+	str msg;
+	int idx;
+
+	idx= BBPindex(*bnme);
+	if( idx == 0)
+		return throwMessage("partitions.deposit","Can not access descriptor");
+	b= BATdescriptor(idx);
+	if( b== NULL)
+		return throwMessage("partitions.deposit","Can not access descriptor");
+
+	idx= BBPindex(*pnme);
+	if( idx == 0)
+		return throwMessage("partitions.deposit","Can not access descriptor");
+	bn= BATdescriptor(idx);
+	if( bn== NULL){
+		BBPunfix(b->batCacheid);
+		return throwMessage("partitions.deposit","Can not access descriptor");
+	}
+	msg= BPTdeposit2(ret, &b->batCacheid, &bn->batCacheid);
+	if( msg) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
+		return msg;
+	}
+	idx= BPTfindPartition(b->batCacheid, bn->batCacheid);
+	partitions[idx].first= bn->hseqbase;
+	partitions[idx].last= bn->hseqbase + BATcount(bn)-1;
+	partitions[idx].cap= *cap;
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
 str
 BPTgetRange(oid *first, oid *last, int *bid){
 	int i;
