@@ -60,7 +60,7 @@ exit MALexception;	# 12  (MALexception:any)
     io.print(x);	# 17 IOprint_val ($24:int)<-(x:bat[:int,:str])
     bbp.close();	# 18 CMDbbpclose ($25:void)
 end main;	# 19  
-[ "MALexception:Admin.main[5]:bbp.bind:failed to find 'myfirstbat' in box\n" ]
+[ "MALexception:Admin.main[5]:bbp.bind:failed to locate 'myfirstbat' in box\n" ]
 [ "v" ]
 [ "nil" ]
 [ "getObjects" ]
