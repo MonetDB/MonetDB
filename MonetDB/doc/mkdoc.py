@@ -102,7 +102,7 @@ runMx(os.path.join(srcdir, 'src', 'modules', 'calibrator'), 'calib',
 
 for f in ['aggrX3', 'aggr', 'alarm', 'algebra', 'arith', 'ascii_io', 'bat',
           'blob', 'counters', 'ddbench', 'decimal', 'enum', 'kernel',
-          'lock', 'mmath', 'monettime', 'radix', 'streams', 'str', 'sys',
+          'lock', 'mmath', 'monettime', 'pcl', 'radix', 'streams', 'str', 'sys',
           'tcpip', 'trans', 'unix', 'url', 'xtables']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'plain'), f,
           os.path.join(dstdir, 'doc', 'www'))
@@ -112,7 +112,7 @@ for f in ['bitset', 'bitvector', 'mel', 'mprof', 'oo7', 'qt', 'tpcd',
     runMx(os.path.join(srcdir, 'src', 'modules', 'contrib'), f,
           os.path.join(dstdir, 'doc', 'www'))
 
-for f in ['README', 'init.mil']:
+for f in ['README', 'load.mil', 'init.mil']:
     copyfile(os.path.join(srcdir, 'scripts', 'gold', f),
              os.path.join(dstdir, 'doc', 'www', f))
 for f in ['HowToStart', 'HowToStart-Win32']:
