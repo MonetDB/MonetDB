@@ -41,5 +41,7 @@ bin_burg = {
 		symtab.c \
 		table.c \
 		trim.c \
-		zalloc.c
+		zalloc.c \
+		fe.h \
+		b.h
 }

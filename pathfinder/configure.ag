@@ -50,6 +50,10 @@ AM_MONETDB_CLIENT($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 fi
+req_monetdb_ver='4.99.19'
+AM_MONET5($req_monetdb_ver)
+AM_CONDITIONAL(MONET5,test "x$have_monet5" = xyes)
+
 AM_PROG_CC_C_O
 
 dnl Pathfinder needs bison (not yacc) and the `locations' feature

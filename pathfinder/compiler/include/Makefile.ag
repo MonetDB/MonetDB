@@ -24,14 +24,17 @@
 EXTRA_DIST = \
 	abssyn.h \
 	abssynprint.h \
-	algebra.h \
+	algdebug.h \
 	algebra_cse.h \
+	algebra.h \
 	algebra_mnemonic.h \
 	algopt.h \
 	array.h \
 	builtins.h \
-	core.h \
+	compile.h \
+	compile_interface.h \
 	core2alg.h \
+	core.h \
 	core_mnemonic.h \
 	coreopt.h \
 	coreprint.h \
@@ -41,16 +44,19 @@ EXTRA_DIST = \
 	functions.h \
 	hsk_parser.h \
 	import.h \
+	ma_cse.h \
 	ma_debug.h \
 	ma_gen.h \
 	ma_opt.h \
 	mem.h \
+	milalgebra.h \
+	milalgebra_mnemonic.h \
+	mildebug.h \
+	milgen.h \
 	mil.h \
 	mil_mnemonic.h \
-	milalgebra.h \
-	milgen.h \
-	milprint.h \
 	mil_opt.h \
+	milprint.h \
 	milprint_summer.h \
 	normalize.h \
 	ns.h \
