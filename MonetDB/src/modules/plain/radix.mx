@@ -2522,10 +2522,8 @@ iso
 price paid are two parameters to radix\_decluster.
 
 @= radix_decluster2
-{   @1 *dst = (@1*) BUNfirst(bn);
-/*    int prev,all=0,bad=0; */
+{   @1 *dst = ((@1*) BUNfirst(bn)) - lim;
     while(lim < lst) {
-/*	prev = lim; */
         lim += mult;
         yy = 0;
         while((size_t) yy < cnt) {
@@ -2547,19 +2545,12 @@ price paid are two parameters to radix\_decluster.
                     cnk[yy++].cur1 = p - src1;
                     break; /* value exceeds current limit, go to next cluster */
                 }
-/*
-		all++;
-		if (prev > cur || cur > lim)
-			bad++;
-*/
-/*			printf("2: %9d %9d %9d\n", prev, cur, lim ); */
 		p += xx;
                 @2_put(dst[cur], @1, BUN@3(a,r));
 		r += zz;
             }
         }
     } 
-/*    if (bad) printf("2: %d/%d = %f% miss-located writes!\n",bad,all,(flt)bad/(flt)all); */
     break;
 } 
 @= radix_decluster3
@@ -2720,7 +2711,8 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     *res = NULL;
     bn->batBuns->free += offset1*width;
     bn->tsorted = 0;
-    BATseqbase(bn, lim = 0); /* current oid */
+    lim = b->hseqbase;
+    BATseqbase(bn, lim); /* current oid */
     lst = lim + BATcount(b); /* highest oid */
     mult *= cnt; /* window size */
     xx = BUNsize(b);
