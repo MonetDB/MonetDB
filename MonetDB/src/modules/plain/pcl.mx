@@ -209,30 +209,41 @@ int pcl_info(BAT **result){
 	return GDK_SUCCEED;
 }
 
-int pcl_start(BAT *event, int *mode){ return GDK_SUCCEED; }
-int pcl_start_rates(BAT *event, int *mode){ return GDK_SUCCEED; }
+int pcl_start(BAT *event, int *mode){
+	(void) event; (void) mode;
+	return GDK_SUCCEED;
+}
+int pcl_start_rates(BAT *event, int *mode){
+	(void) event; (void) mode;
+	return GDK_SUCCEED;
+}
 
 int pcl_stop(BAT **result, BAT *event){ 
+	(void) event;
 	*result = NULL; 
 	return GDK_SUCCEED; 
 }
 
 int pcl_stop_rates(BAT **result, BAT *event){ 
+	(void) event;
 	*result = NULL; 
 	return GDK_SUCCEED; 
 }
 
 int pcl_query(BAT **result, BAT *event, int *mode){ 
+	(void) event; (void) mode;
 	*result = NULL; 
 	return GDK_SUCCEED; 
 }
 
 int pcl_try(bit *result, BAT *event, int *mode){ 
+	(void) event; (void) mode;
 	*result = FALSE; 
 	return GDK_SUCCEED; 
 }
 
 int pcl_eventname(str *result, int *event){ 
+	(void) event;
 	*result = str_nil; 
 	return GDK_SUCCEED; 
 }
