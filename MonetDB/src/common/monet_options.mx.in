@@ -279,33 +279,35 @@ int mo_builtin_settings(opt **Set)
 {
 	int i = 0;
 	opt *set = (opt*)malloc(sizeof(opt)*24 /*MUST MATCH # OPTIONS BELOW*/);
+	char buf[BUFSIZ];
 
 	if (!set) return 0;
 
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_arch");
-	set[i].value = (char*)malloc(BUFSIZ);
-        snprintf(set[i].value,BUFSIZ, "%dbit%s", (int)sizeof(char*)*8, HOST);
+        snprintf(buf,BUFSIZ, "%dbit%s", (int)sizeof(char*)*8, HOST);
+	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_version");
-	set[i].value = (char*)strdup(VERSION);
+	snprintf(buf,BUFSIZ,VERSION );
+	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_pid");
-	set[i].value = (char*)malloc(BUFSIZ);
-        snprintf(set[i].value,BUFSIZ, "%d", getpid());
+        snprintf(buf,BUFSIZ, "%d", getpid());
+	set[i].value = strdup(buf);
 	i++;
 
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("prefix");
-	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@Qprefix@" );
+	snprintf(buf,BUFSIZ,"@Qprefix@" );
+	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("exec_prefix");
-	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@Qexec_prefix@" );
+	snprintf(buf,BUFSIZ,"@Qexec_prefix@" );
+	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbname");
@@ -313,8 +315,8 @@ int mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbfarm");
-	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@Qlocalstatedir@%c@PACKAGE@", DIR_SEP);
+	snprintf(buf,BUFSIZ,"@Qlocalstatedir@%c@PACKAGE@", DIR_SEP);
+	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_debug");
@@ -338,8 +340,8 @@ int mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_mod_path");
-	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@Qlibdir@%c@PACKAGE@", DIR_SEP);
+	snprintf(buf,BUFSIZ,"@Qlibdir@%c@PACKAGE@", DIR_SEP);
+	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_daemon");
@@ -383,11 +385,11 @@ int mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_logdir");
-	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,
+	snprintf(buf,BUFSIZ,
 		"@Qlocalstatedir@%c@PACKAGE@%clog", DIR_SEP, DIR_SEP);
+	set[i].value = strdup(buf);
 	i++;
-	
+	assert(i==24);
 	*Set = set;
 	return i;
 }
@@ -397,7 +399,9 @@ int mo_add_option( opt **Set, int setlen,
 {
 	opt *set = (opt*)realloc(*Set,(setlen+1)*sizeof(opt));
 	set[setlen].kind = kind;
+	if( set[setlen].name) free(set[setlen].name);
 	set[setlen].name = strdup(name);
+	if( set[setlen].value) free(set[setlen].value);
 	set[setlen].value = strdup(value);
 	*Set = set;
 	return setlen+1;
@@ -407,8 +411,8 @@ void mo_free_options( opt *set, int setlen )
 {
 	int i;
 	for(i=0; i<setlen; i++){
-		free(set[i].name);
-		free(set[i].value);
+		if(set[i].name) free(set[i].name);
+		if(set[i].value) free(set[i].value);
 	}
 	free(set);
 }
