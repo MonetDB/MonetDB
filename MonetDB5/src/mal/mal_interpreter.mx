@@ -118,9 +118,9 @@ ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 } 
 @-
 Alternatively, the routines can obtain a reference to a particular
-value. This particularly handy for the optimizers, while the former
+value. This is particularly handy for the optimizers, while the former
 is mostly used to prepare a call to the linked libraries.
-
+The struct alignment leads to 40% gain in simple instructions when set.
 @c
 INLINE
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
@@ -971,7 +971,9 @@ The policy is to pass the first recognized exception to a context
 in which it can be handled.
 @{
 @= exceptionTypeTest
-if( pci->typechk== TYPE_UNKNOWN){
+if( pci->typechk != TYPE_UNKNOWN) 
+	/* mostly true */ ;
+else {
 	@:dynamicTypeCheck@
 	if( pci->typechk== TYPE_UNKNOWN) {
 		ret= raiseException(mb,stkpc,MALexception,
@@ -1005,7 +1007,7 @@ starts with the exception identifer, followed by contextual details.
 @{
 
 @= exceptionHndlr
-if( ret != MAL_SUCCEED ){
+if( ret != MAL_SUCCEED ) {
 	str msg = 0, nxt;
 	int symid= -1;
 	if(ret ) msg= strchr(ret,':');
@@ -1241,14 +1243,18 @@ we have to keep track of essential system counter information.
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if( malProfileMode){
+	if( malProfileMode == 0)
+		/* mostly true */;
+	else {
 		pci->clk= GDKusec();
 		times(&pci->timer);
 	}
 #endif
 @= endProfile
 #ifdef MALprofiler
-	if( malProfileMode){
+	if( malProfileMode == 0)
+		/* mostly true */;
+	else{
 		newclk= GDKusec();
 		pci->counter++;
 		pci->ticks += newclk - pci->clk;

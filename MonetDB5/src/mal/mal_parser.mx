@@ -321,8 +321,8 @@ int cstLength(Client cntxt, int *type)
 	str s= cntxt->nxt;
 
 	*type = TYPE_int;
-	if( *s == '-') { i++; s++;}
-	if( ! isdigit(*s)) {
+	if( *s == '-') { i++; s++;} 
+	if( !isdigit(*s)) {
 		if( *s!= '.') goto parseTFN;
 	} 
 	while( isdigit(*s)) { i++; s++;}
@@ -1113,16 +1113,26 @@ which starts with an operand.
 This code is used in both positions of the expression
 @= term
 	if( (i= cstLength(cntxt,&lt))){
+		str bak= cntxt->nxt;
 		v= cstCopy(cntxt,i);
 		i= typeId(cntxt);
-		if(i>=0) lt = i;
+		if(i>=0) {
+			int newlength = cntxt->nxt - bak;
+			lt = i;
+			/* save original input */
+			GDKfree(v);
+			cntxt->nxt = bak;
+			v= idCopy(cntxt,newlength);
+		}
 		i= newConstant(curBlk,lt,v,TRUE);
 		curInstr= pushArgument(curBlk,curInstr,i);
 		@1;
 	} else 
 	if( (v= charCst(cntxt)) ){
 		i= typeId(cntxt);
-		if(i>=0) lt = i; else lt= TYPE_chr;
+		if(i>=0){ 
+			lt = i; 
+		} else lt= TYPE_chr;
 		i= newConstant(curBlk,lt,v,TRUE);
 		curInstr= pushArgument(curBlk,curInstr,i);
 		@1;

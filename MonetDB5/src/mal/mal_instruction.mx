@@ -1161,7 +1161,7 @@ MAL interpretation.
 
 int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
 	int i,k,idx,parsetype=type;
-	str s;
+	str s,colon = 0;
 	ValPtr vr;
 	int tonil= FALSE;
 
@@ -1183,6 +1183,16 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
 	isVarUsed(mb,k) = FALSE;
 	isVarInitialized(mb,k) = FALSE;
 	vr = &getVarConstant(mb,k);
+	tonil= niltst && strncmp(val,"nil",3)==0;
+
+	/* remember the type classifier location */
+	if( type != TYPE_str && type != TYPE_chr)
+		colon = strchr(val,':');
+	if( type == TYPE_str && strncmp(val,"nil",3)==0 && niltst){
+		colon = strchr(val,':');
+		tonil= TRUE;
+	}
+	if( colon) *colon = 0;
 @}
 @-
 The current GDK layer does not perform a value range check.
@@ -1194,7 +1204,6 @@ has been given at the language level. A Warning is issued
 to make the user aware of this situation.
 @{
 @c
-	tonil= niltst && strcmp(val,"nil")==0;
 	 /*switch( BATatoms[type].storage){*/
 retryConstant:
 	switch( parsetype){ 
@@ -1317,6 +1326,8 @@ end.
 #endif
 		}
 	}
+	/* restore original input */
+	if(colon) *colon= ':';
 	return idx;
 }
 

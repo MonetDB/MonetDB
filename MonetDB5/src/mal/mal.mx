@@ -301,7 +301,7 @@ mal_export int mal_init();
 #define MAL_SUCCEED	(str) 0	/* apparently no error */
 #define MALexception	"MALexception"
 
-/* #define STRUCT_ALIGNED does not seem to work on SunOS ? */
+#define STRUCT_ALIGNED
 
 #endif /*  _MAL_H*/
 @c
@@ -319,7 +319,7 @@ Initialization of the MAL context
 The compiler directive STRUCT_ALIGNED tells that the
 fields in the VALrecord all start at the same offset.
 This knowledge avoids low-level type decodings, but should
-be assured at least once.
+be assured at least once for each platform.
 @c
 
 void tstAligned()
