@@ -45,7 +45,7 @@ AM_MONET_COMPILER()
 AM_MONET_TOOLS()
 AM_MONET_OPTIONS()
 AM_MONET_LIBS()
-AM_MONET_CLIENT(4.3.14)
+AM_MONET_CLIENT(4.3.16)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR(Monet is not found.)
 fi
