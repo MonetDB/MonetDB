@@ -72,12 +72,23 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	assert(query);
 	query_end = query;
 
+	/* SQLPrimaryKeys returns a table with the following columns:
+	   VARCHAR	table_cat
+	   VARCHAR	table_schem
+	   VARCHAR	table_name NOT NULL
+	   VARCHAR	column_name NOT NULL
+	   SMALLINT	key_seq NOT NULL
+	   VARCHAR	pk_name
+	 */
 	strcpy(query_end,
-	       "select '' as table_cat, s.name as table_schem, "
-	       "t.name as table_name, c.name as column_name, "
+	       "select "
+	       "'' as table_cat, "
+	       "s.name as table_schem, "
+	       "t.name as table_name, "
+	       "c.name as column_name, "
 	       "kc.ordinal_position as key_seq, "
-	       "k.key_name as pk_name from schemas s, tables t, "
-	       "columns c, keys k, keycolumns kc "
+	       "k.key_name as pk_name "
+	       "from schemas s, tables t, columns c, keys k, keycolumns kc "
 	       "where s.id = t.schema_id and t.id = c.table_id and "
 	       "t.id = k.table_id and c.id = kc.column_id and "
 	       "kc.key_id = k.key_id and k.is_primary = 1");

@@ -108,6 +108,10 @@ main(int argc, char **argv)
 			 (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
 
+/* 	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT, */
+/* 				(SQLPOINTER) (size_t) SQL_AUTOCOMMIT_OFF, 0); */
+/* 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr"); */
+
 	/* create a test table to be filled with values */
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");

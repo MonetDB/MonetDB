@@ -42,9 +42,6 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	ODBCLOG("SQLColumns\n");
 #endif
 
-	(void) szCatalogName;	/* Stefan: unused!? */
-	(void) nCatalogNameLength;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -57,6 +54,7 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		return SQL_ERROR;
 	}
 
+	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
@@ -67,16 +65,48 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	assert(query);
 	query_end = query;
 
+	/* SQLColumns returns a table with the following columns:
+	   VARCHAR	table_cat
+	   VARCHAR	table_schem
+	   VARCHAR	table_name NOT NULL
+	   VARCHAR	column_name NOT NULL
+	   SMALLINT	data_type NOT NULL
+	   VARCHAR	type_name NOT NULL
+	   INTEGER	column_size
+	   INTEGER	buffer_length
+	   SMALLINT	decimal_digits
+	   SMALLINT	num_prec_radix
+	   SMALLINT	nullable NOT NULL
+	   VARCHAR	remarks
+	   VARCHAR	column_def
+	   SMALLINT	sql_data_type NOT NULL
+	   SMALLINT	sql_datetime_sub
+	   INTEGER	char_octet_length
+	   INTEGER	ordinal_position NOT NULL
+	   VARCHAR	is_nullable
+	 */
+
 	strcpy(query_end,
-	       "select '' as table_cat, s.name as table_schem, "
-	       "t.name as table_name, c.name as column_name, "
-	       "c.type as data_type, c.type as type_name, "
-	       "c.type_digits as column_size, c.type_digits as buffer_length, "
-	       "c.type_scale as decimal_digits, '' as num_prec_radix, "
-	       "c.null as nullable, '' as remarks, '' as column_def, "
-	       "c.type as sql_data_type, '' as sql_datetime_sub, "
-	       "'' as char_octet_length, c.number as ordinal_position, "
-	       "c.null as is_nullable from schemas s, tables t, columns c "
+	       "select "
+	       "'' as table_cat, "
+	       "s.name as table_schem, "
+	       "t.name as table_name, "
+	       "c.name as column_name, "
+	       "c.type as data_type, "
+	       "c.type as type_name, "
+	       "c.type_digits as column_size, "
+	       "c.type_digits as buffer_length, "
+	       "c.type_scale as decimal_digits, "
+	       "cast(0 as smallint) as num_prec_radix, "
+	       "c.\"null\" as nullable, "
+	       "'' as remarks, "
+	       "'' as column_def, "
+	       "c.type as sql_data_type, "
+	       "'' as sql_datetime_sub, "
+	       "'' as char_octet_length, "
+	       "c.number as ordinal_position, "
+	       "c.\"null\" as is_nullable "
+	       "from schemas s, tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
 

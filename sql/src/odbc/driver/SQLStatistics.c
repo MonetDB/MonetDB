@@ -102,14 +102,38 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	assert(query);
 	query_end = query;
 
+	/* SQLStatistics returns a table with the following columns:
+	   VARCHAR	table_cat
+	   VARCHAR	table_schem
+	   VARCHAR	table_name NOT NULL
+	   SMALLINT	non_unique
+	   VARCHAR	index_qualifier
+	   VARCHAR	index_name
+	   SMALLINT	type NOT NULL
+	   SMALLINT	ordinal_position
+	   VARCHAR	column_name
+	   CHAR(1)	asc_or_desc
+	   INTEGER	cardinality
+	   INTEGER	pages
+	   VARCHAR	filter_condition
+	*/
 	/* TODO: finish the SQL query */
 	strcpy(query_end,
-	       "select '' as table_cat, s.name as table_schem, "
-	       "t.name as table_name, 1 as non_unique, "
-	       "null as index_qualifier, null as index_name, 0 as type, "
-	       "null as ordinal_position, c.name as column_name, "
-	       "'a' as asc_or_desc, null as cardinality, null as pages, "
-	       "null as filter_condition from schemas s, tables t, columns c "
+	       "select "
+	       "'' as table_cat, "
+	       "s.name as table_schem, "
+	       "t.name as table_name, "
+	       "cast(1 as smallint) as non_unique, "
+	       "cast(null as varchar) as index_qualifier, "
+	       "cast(null as varchar) as index_name, "
+	       "cast(0 as smallint) as type, "
+	       "cast(null as smallint) as ordinal_position, "
+	       "c.name as column_name, "
+	       "'a' as asc_or_desc, "
+	       "cast(null as integer) as cardinality, "
+	       "cast(null as integer) as pages, "
+	       "cast(null as varchar) as filter_condition "
+	       "from schemas s, tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id and "
 	       "t.id = k.table_id");
 	query_end += strlen(query_end);

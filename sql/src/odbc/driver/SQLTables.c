@@ -64,32 +64,51 @@ SQLTables(SQLHSTMT hStmt,
 		nTableNameLength, szTableName ? (char *) szTableName : "",
 		nTableTypeLength, szTableType ? (char *) szTableType : "");
 #endif
+
+	/* SQLTables returns a table with the following columns:
+	   VARCHAR	table_cat
+	   VARCHAR	table_schem
+	   VARCHAR	table_name
+	   VARCHAR	table_type
+	   VARCHAR	remarks
+	*/
+
 	/* Check first on the special cases */
 	if (nSchemaNameLength == 0 && nTableNameLength == 0 && szCatalogName &&
 	    strcmp((char*)szCatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
 		/* Note: Catalogs are not supported so the result set will be empty. */
-		query = strdup("select '' as table_cat, '' as table_schem, "
-			       "'' as table_name, '' as table_type, "
-			       "'' as remarks from schemas where 0 = 1");
+		query = strdup("select "
+			       "'' as table_cat, "
+			       "'' as table_schem, "
+			       "'' as table_name, "
+			       "'' as table_type, "
+			       "'' as remarks "
+			       "from schemas where 0 = 1");
 	} else if (nCatalogNameLength == 0 && nTableNameLength == 0 &&
 		   szSchemaName && 
 		   strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
-		query = strdup("select '' as table_cat, name as table_schem, "
-			       "'' as table_name, '' as table_type, "
-			       "'' as remarks from schemas order by name");
+		query = strdup("select '' as table_cat, "
+			       "name as table_schem, "
+			       "'' as table_name, "
+			       "'' as table_type, "
+			       "'' as remarks "
+			       "from schemas order by name");
 	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 &&
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
-		query = strdup("select '' as table_cat, '' as table_schem, "
+		query = strdup("select "
+			       "'' as table_cat, "
+			       "'' as table_schem, "
 			       "'' as table_name, "
 			       "distinct case t.type when 1 then 'TABLE' "
 			       "when 0 then 'SYSTEM_TABLE' when 2 then 'VIEW' "
 			       "when 3 then 'LOCAL TEMPORARY TABLE' "
 			       "else 'INTERNAL TYPE' end as table_type, "
-			       "'' as remarks from tables order by type");
+			       "'' as remarks "
+			       "from tables order by type");
 		/* TODO: UNION it with all supported table types */
 	} else {
 		/* no special case argument values */
@@ -102,13 +121,16 @@ SQLTables(SQLHSTMT hStmt,
 		query_end = query;
 
 		sprintf(query_end,
-			"select '%.*s' as table_cat, s.name as table_schem, "
+			"select "
+			"'%.*s' as table_cat, "
+			"s.name as table_schem, "
 			"t.name as table_name, "
 			"case t.type when 0 then 'TABLE' "
 			"when 1 then 'SYSTEM_TABLE' when 2 then 'VIEW' "
 			"when 3 then 'LOCAL TEMPORARY TABLE' "
 			"else 'INTERNAL TABLE TYPE' end as table_type, "
-			"'' as remarks from schemas s, tables t "
+			"'' as remarks "
+			"from schemas s, tables t "
 			"where s.id = t.schema_id",
 			nCatalogNameLength, szCatalogName);
 		query_end += strlen(query_end);

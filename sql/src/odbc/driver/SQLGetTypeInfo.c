@@ -151,31 +151,30 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	query = malloc(1000);
 	assert(query);
 
-	/* result (see http://odbcrouter.com/api/SQLGetTypeInfo.shtml (some
-	 * names changed when going from odbc 2.0 to 3.0)
-	 * list below is odbc 3.0
-	 *      VARCHAR(128)   TYPE_NAME
-	 *      SMALLINT       DATA_TYPE NOT NULL
-	 *      INTEGER        COLUMN_SIZE
-	 *      VARCHAR(128)   LITERAL_PREFIX   (example 0x (binary data), 
-	 *      VARCHAR(128)   LITERAL_SUFFIX   "'" (strings))
-	 *      VARCHAR(128)   CREATE_PARAMS    (example precision,scale or max length)
-	 *      SMALLINT       NULLABLE NOT NULL 
-	 *      SMALLINT       CASE_SENSITIVE NOT NULL
-	 *      SMALLINT       SEARCHABLE NOT NULL 
-	 *      SMALLINT       UNSIGNED_ATTRIBUTE
-	 *      SMALLINT       FIXED_PREC_SCALE NOT NULL
-	 *      SMALLINT       AUTO_UNIQUE_VALUE
-	 *      VARCHAR(128)   LOCAL_TYPE_NAME
-	 *      SMALLINT       MINIMUM_SCALE
-	 *      SMALLINT       MAXIMUM_SCALE
-	 *      SMALLINT       SQL_DATA_TYPE NOT NULL (== DATA_TYPE except for date interval)
-	 *      SMALLINT       SQL_DATETIME_SUB
-	 *      SMALLINT       NUM_PREC_RADIX (2 for approximate 10 for exact numeric values)
-	 *      SMALLINT       INTERVAL_PRECISION 
-	 */
+	/* SQLGetTypeInfo returns a table with the following columns:
+	   VARCHAR	type_name NOT NULL
+	   SMALLINT	data_type NOT NULL
+	   INTEGER	column_size
+	   VARCHAR	literal_prefix
+	   VARCHAR	literal_suffix
+	   VARCHAR	create_params
+	   SMALLINT	nullable NOT NULL 
+	   SMALLINT	case_sensitive NOT NULL
+	   SMALLINT	searchable NOT NULL 
+	   SMALLINT	unsigned_attribute
+	   SMALLINT	fixed_prec_scale NOT NULL
+	   SMALLINT	auto_unique_value
+	   VARCHAR	local_type_name
+	   SMALLINT	minimum_scale
+	   SMALLINT	maximum_scale
+	   SMALLINT	sql_data_type NOT NULL
+	   SMALLINT	sql_datetime_sub
+	   SMALLINT	num_prec_radix
+	   SMALLINT	interval_precision 
+	*/
 	strcpy(query,
-	       "select sqlname as type_name, "
+	       "select "
+	       "sqlname as type_name, "
 	       "systemname as data_type, "
 	       "digits as column_size, "
 	       "'' /*literal_prefix*/ as literal_prefix, "

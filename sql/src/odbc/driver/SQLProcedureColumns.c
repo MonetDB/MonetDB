@@ -58,6 +58,28 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
+	/* SQLProcedureColumns returns a table with the following columns:
+	   VARCHAR	procedure_cat
+	   VARCHAR	procedure_schem
+	   VARCHAR	procedure_name NOT NULL
+	   VARCHAR	column_name NOT NULL
+	   SMALLINT	column_type NOT NULL
+	   SMALLINT	data_type NOT NULL
+	   VARCHAR	type_name NOT NULL
+	   INTEGER	column_size
+	   INTEGER	buffer_length
+	   SMALLINT	decimal_digits
+	   SMALLINT	num_prec_radix
+	   SMALLINT	nullable NOT NULL
+	   VARCHAR	remarks
+	   VARCHAR	column_def
+	   SMALLINT	sql_data_type NOT NULL
+	   SMALLINT	sql_datetime_sub
+	   INTEGER	char_octet_length
+	   INTEGER	ordinal_position NOT NULL
+	   VARCHAR	is_nullable
+	*/
+
 	/* IM001 = Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
 

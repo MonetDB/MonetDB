@@ -22,26 +22,20 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 
 SQLRETURN
-SQLProcedures(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
-	      SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName,
-	      SQLSMALLINT nSchemaNameLength, SQLCHAR *szProcName,
-	      SQLSMALLINT nProcNameLength)
+SQLProcedures(SQLHSTMT hStmt,
+	      SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	      SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	      SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLProcedures\n");
 #endif
-
-	(void) szCatalogName;	/* Stefan: unused!? */
-	(void) nCatalogNameLength;	/* Stefan: unused!? */
-	(void) szSchemaName;	/* Stefan: unused!? */
-	(void) nSchemaNameLength;	/* Stefan: unused!? */
-	(void) szProcName;	/* Stefan: unused!? */
-	(void) nProcNameLength;	/* Stefan: unused!? */
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
@@ -55,8 +49,31 @@ SQLProcedures(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		return SQL_ERROR;
 	}
 
-	/* IM001 = Driver does not support this function */
-	addStmtError(stmt, "IM001", NULL, 0);
+	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
+	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);
 
-	return SQL_ERROR;
+	/* SQLProcedures returns a table with the following columns:
+	   VARCHAR	procedure_cat
+	   VARCHAR	procedure_schem
+	   VARCHAR	procedure_name NOT NULL
+	   n/a		num_input_params (reserved for future use)
+	   n/a		num_output_params (reserved for future use)
+	   n/a		num_result_sets (reserved for future use)
+	   VARCHAR	remarks
+	   SMALLINT	procedure_type
+	*/
+
+	/* for now return dummy result set */
+	return SQLExecDirect_(stmt,
+			      (SQLCHAR *) "select "
+			      "cast('' as varchar) as procedure_cat, "
+			      "cast('' as varchar) as procedure_schem, "
+			      "cast('' as varchar) as procedure_name, "
+			      "0 as num_input_params, "
+			      "0 as num_output_params, "
+			      "0 as num_result_sets, "
+			      "cast('' as varchar) as remarks, "
+			      "cast(0 as smallint) as procedure_type "
+			      "where 0 = 1", SQL_NTS);
 }
