@@ -267,7 +267,8 @@ int receive( stream *rs, stream *out, int trace ){
 			return status;
 		}
 		nRows = status;
-		if ((type == Q_TABLE || type == Q_DEBUG) && nRows > 0){
+		if ((type == Q_TABLE || type == Q_DEBUG || type == Q_DEBUGP) 
+			&& nRows > 0){
 			int nr = bs_read_next(rs,buf,&last);
 			char *s;
 	
@@ -282,12 +283,15 @@ int receive( stream *rs, stream *out, int trace ){
 				fwrite( s, strlen(s), 1, stdout );
 				free(s);
 			}
+			if (type == Q_DEBUGP) {
+				return receive(rs, out, trace);
+			}
 		}
 		if (type == Q_RESULT) {
 			int i, id;
 			stream_readInt(rs, &id);
 			header_data(rs, out, nRows, trace);
-			i = snprintf(buf, BLOCK, "mvc_export_table( myc, Output, %d, 0, -1, \"\\t\", \"\\n\");\n", id);
+			i = snprintf(buf, BLOCK, "EXPORT %d  0  -1;\n", id);
 			out->write(out, buf, i, 1);
 			out->flush(out);
 			return receive(rs, out, trace);
