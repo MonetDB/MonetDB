@@ -69,7 +69,7 @@ label Query
       ;
 
 
-Query:    serialize (AlgExpr)
+Query:    serialize (AlgExpr, AlgExpr)
     { assert ($$);  /* avoid `root unused' warning */ };
 
 AlgExpr:  EmptyExpr

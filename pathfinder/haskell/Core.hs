@@ -1786,7 +1786,7 @@ xq4 = XFNEMPTY XEMPTY
 -- for $x in (42,"a") 
 -- return ($x,42)
 xq5 = XFOR "x" (XSEQ (XINT 42) (XSTR "a"))
-               (XEQ (XVAR "x") (XINT 42))
+               (XSEQ (XVAR "x") (XINT 42))
 
 -- xq6:
 -- 1 + 3

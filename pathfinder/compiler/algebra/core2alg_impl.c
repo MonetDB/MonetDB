@@ -168,12 +168,14 @@ static int TWIG_ID[] = {
 #undef root_  
 #undef empty_ 
 
+#include "algebra.h"
 #include "algebra_mnemonic.h"
 #include "subtyping.h"
 
 
 /* Constructor for environment entry */
-static PFalg_env_t enventry (PFvar_t *var, PFalg_op_t *op);
+static PFalg_env_t enventry (PFvar_t *var,
+                             PFalg_op_t *result, PFalg_op_t *doc);
 
 
 /**
@@ -206,21 +208,23 @@ static PFalg_op_t *prec_sibl (PFalg_op_t *n);
 static PFalg_op_t *self (PFalg_op_t *n);
 
 /* Concatenate the parameters of built-in functions. */
-static PFalg_op_t * args (PFalg_op_t *arg, PFalg_op_t *args);
+static struct PFalg_pair_t args (struct PFalg_pair_t arg,
+                                 struct PFalg_pair_t args);
 
 /** Create the tail of an argument list. */
-static PFalg_op_t * args_tail(void);
+static struct PFalg_pair_t args_tail(void);
 
 
 static PFarray_t  *env = NULL;
 static PFalg_op_t *loop = NULL;
 static PFalg_op_t *delta __attribute__((unused)) = NULL;
+static PFalg_op_t *empty_doc __attribute__((unused)) = NULL;
 
 
 PFalg_op_t *
 PFcore2alg (PFcnode_t *c)
 {
-    PFalg_op_t *ret = NULL;
+    PFcnode_t *ret = NULL;
 
     assert (c);
 
@@ -240,12 +244,16 @@ PFcore2alg (PFcnode_t *c)
             attlist ("pre", "size", "level", "kind", "prop", "frag"),
             0, (PFalg_tuple_t *) NULL);
 
-    ret = rewrite (c, 0)->alg;
+    empty_doc = PFalg_lit_tbl_ (
+                attlist ("pre", "size", "level", "kind", "prop", "frag"),
+                0, (PFalg_tuple_t *) NULL);
+
+    ret =  rewrite (c, 0);
 
     if (!ret)
         PFoops (OOPS_FATAL, "Translation to Relational Algebra failed.");
 
-    return serialize (ret);
+    return serialize (ret->alg.doc, ret->alg.result);
 
     /*
     return serialize (lit_tbl (attlist ("pos", "item"),
@@ -359,9 +367,9 @@ implty (PFty_t ty)
  * Called whenever a new variable is declared.
  */
 static PFalg_env_t
-enventry (PFvar_t *var, PFalg_op_t *op)
+enventry (PFvar_t *var, PFalg_op_t *result, PFalg_op_t *doc)
 {
-    return (PFalg_env_t) { .var = var, .op = op };
+    return (PFalg_env_t) { .var = var, .result = result, .doc = doc };
 }
 
 
@@ -555,17 +563,18 @@ static PFalg_op_t *self (PFalg_op_t *n)
  * (in order to maintain correct order of the incoming arguments,
  * because they arrive at this function from last to first).
  */
-static PFalg_op_t * args (PFalg_op_t *arg, PFalg_op_t *args)
+static struct PFalg_pair_t args (struct PFalg_pair_t arg,
+                                 struct PFalg_pair_t args)
 {
-    PFarray_t *a = PFarray (sizeof (PFalg_op_t *));
-    *((PFalg_op_t **) PFarray_add (a)) = arg;
+    PFarray_t *a = PFarray (sizeof (struct  PFalg_pair_t));
+    *((struct PFalg_pair_t *) PFarray_add (a)) = arg;
 
     /* check if 'arg' is very first argument to arrive here */
-    if (args->sem.builtin.args == NULL)
-        args->sem.builtin.args = a;
+    if (args.result->sem.builtin.args == NULL)
+        args.result->sem.builtin.args = a;
     else
-        args->sem.builtin.args = PFarray_concat (a,
-                                 args->sem.builtin.args);
+        args.result->sem.builtin.args = PFarray_concat (a,
+                                 args.result->sem.builtin.args);
 
     return args;
 }
@@ -573,10 +582,14 @@ static PFalg_op_t * args (PFalg_op_t *arg, PFalg_op_t *args)
 /**
  * Create the tail of an argument list.
  */
-static PFalg_op_t * args_tail()
+static struct PFalg_pair_t args_tail()
 {
-    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
-    ret->sem.builtin.args = NULL;
+    struct  PFalg_pair_t ret;
+    
+    ret.result = PFmalloc (sizeof (PFalg_op_t));
+    ret.doc = empty_doc;
+
+    ret.result->sem.builtin.args = NULL;
 
     return ret;
 }

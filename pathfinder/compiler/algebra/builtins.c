@@ -35,6 +35,14 @@
 #include "builtins.h"
 
 
+static PFalg_op_t *empty_doc (void)
+{
+    return PFalg_lit_tbl_ (
+	attlist ("pre", "size", "level", "kind", "prop", "frag"),
+	0, (PFalg_tuple_t *) NULL);
+}
+
+
 /**
  * Worker function to construct algebra implementation of binary
  * arithmetic functions (e.g., op:numeric-add(), op:numeric-subtract(),...).
@@ -68,22 +76,25 @@
  *             functions do not require document representation and/or
  *             the loop relation. They are thus missing here.)
  */
-static PFalg_op_t *
+static struct PFalg_pair_t
 bin_arith (PFalg_simple_type_t t,
            PFalg_op_t *(*OP) (PFalg_op_t *, PFalg_att_t,
                              PFalg_att_t, PFalg_att_t),
-           PFalg_op_t **args)
+           struct PFalg_pair_t *args)
 {
-    return project (OP (eqjoin (cast (args[0], "item", t),
-                                project (cast (args[1], "item", t),
-                                         proj ("iter1", "iter"),
-                                         proj ("item1", "item")),
-                                "iter",
-                                "iter1"),
-                        "res", "item", "item1"),
-                    proj ("iter", "iter"),
-                    proj ("pos", "pos"),
-                    proj ("item", "res"));
+    return (struct PFalg_pair_t) {
+	.result = project (OP (eqjoin (cast (args[0].result, "item", t),
+				       project (cast (args[1].result,
+						      "item", t),
+						proj ("iter1", "iter"),
+						proj ("item1", "item")),
+				       "iter",
+				       "iter1"),
+			       "res", "item", "item1"),
+			   proj ("iter", "iter"),
+			   proj ("pos", "pos"),
+			   proj ("item", "res")),
+	.doc = empty_doc () };
 }
 
 
@@ -91,10 +102,9 @@ bin_arith (PFalg_simple_type_t t,
  * Algebra implementation for op:numeric-add(integer?,integer?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_add_int (PFalg_op_t *loop __attribute__((unused)),
-                          PFalg_op_t **delta __attribute__((unused)),
-                          PFalg_op_t **args)
+                          struct PFalg_pair_t *args)
 {
     return bin_arith (aat_int, PFalg_add, args);
 }
@@ -103,10 +113,9 @@ PFbui_op_numeric_add_int (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-add(decimal?,decimal?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_add_dec (PFalg_op_t *loop __attribute__((unused)),
-                          PFalg_op_t **delta __attribute__((unused)),
-                          PFalg_op_t **args)
+                          struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dec, PFalg_add, args);
 }
@@ -115,10 +124,9 @@ PFbui_op_numeric_add_dec (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-add(double?,double?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_add_dbl (PFalg_op_t *loop __attribute__((unused)),
-                          PFalg_op_t **delta __attribute__((unused)),
-                          PFalg_op_t **args)
+                          struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dbl, PFalg_add, args);
 }
@@ -128,10 +136,9 @@ PFbui_op_numeric_add_dbl (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-subtract(integer?,integer?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_subtract_int (PFalg_op_t *loop __attribute__((unused)),
-                               PFalg_op_t **delta __attribute__((unused)),
-                               PFalg_op_t **args)
+                               struct PFalg_pair_t *args)
 {
     return bin_arith (aat_int, PFalg_subtract, args);
 }
@@ -140,10 +147,9 @@ PFbui_op_numeric_subtract_int (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-subtract(decimal?,decimal?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_subtract_dec (PFalg_op_t *loop __attribute__((unused)),
-                               PFalg_op_t **delta __attribute__((unused)),
-                               PFalg_op_t **args)
+                               struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dec, PFalg_subtract, args);
 }
@@ -152,10 +158,9 @@ PFbui_op_numeric_subtract_dec (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-subtract(double?,double?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_subtract_dbl (PFalg_op_t *loop __attribute__((unused)),
-                               PFalg_op_t **delta __attribute__((unused)),
-                               PFalg_op_t **args)
+                               struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dbl, PFalg_subtract, args);
 }
@@ -165,10 +170,9 @@ PFbui_op_numeric_subtract_dbl (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-multiply(integer?,integer?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_multiply_int (PFalg_op_t *loop __attribute__((unused)),
-                               PFalg_op_t **delta __attribute__((unused)),
-                               PFalg_op_t **args)
+                               struct PFalg_pair_t *args)
 {
     return bin_arith (aat_int, PFalg_multiply, args);
 }
@@ -177,10 +181,9 @@ PFbui_op_numeric_multiply_int (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-multiply(decimal?,decimal?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_multiply_dec (PFalg_op_t *loop __attribute__((unused)),
-                               PFalg_op_t **delta __attribute__((unused)),
-                               PFalg_op_t **args)
+                               struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dec, PFalg_multiply, args);
 }
@@ -189,10 +192,9 @@ PFbui_op_numeric_multiply_dec (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-multiply(double?,double?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_multiply_dbl (PFalg_op_t *loop __attribute__((unused)),
-                               PFalg_op_t **delta __attribute__((unused)),
-                               PFalg_op_t **args)
+                               struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dbl, PFalg_multiply, args);
 }
@@ -201,10 +203,9 @@ PFbui_op_numeric_multiply_dbl (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-divide(integer?,integer?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_divide_int (PFalg_op_t *loop __attribute__((unused)),
-                             PFalg_op_t **delta __attribute__((unused)),
-                             PFalg_op_t **args)
+                             struct PFalg_pair_t *args)
 {
     return bin_arith (aat_int, PFalg_divide, args);
 }
@@ -213,10 +214,9 @@ PFbui_op_numeric_divide_int (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-divide(decimal?,decimal?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_divide_dec (PFalg_op_t *loop __attribute__((unused)),
-                             PFalg_op_t **delta __attribute__((unused)),
-                             PFalg_op_t **args)
+                             struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dec, PFalg_divide, args);
 }
@@ -225,10 +225,9 @@ PFbui_op_numeric_divide_dec (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:numeric-divide(double?,double?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_numeric_divide_dbl (PFalg_op_t *loop __attribute__((unused)),
-                             PFalg_op_t **delta __attribute__((unused)),
-                             PFalg_op_t **args)
+                             struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dbl, PFalg_divide, args);
 }
@@ -238,10 +237,9 @@ PFbui_op_numeric_divide_dbl (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:gt(integer?,integer?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_gt_int (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_int, PFalg_gt, args);
 }
@@ -250,10 +248,9 @@ PFbui_op_gt_int (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:gt(decimal?,decimal?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_gt_dec (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dec, PFalg_gt, args);
 }
@@ -262,10 +259,9 @@ PFbui_op_gt_dec (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:gt(double?,double?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_gt_dbl (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dbl, PFalg_gt, args);
 }
@@ -274,10 +270,9 @@ PFbui_op_gt_dbl (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:gt(boolean?,boolean?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_gt_bln (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_bln, PFalg_gt, args);
 }
@@ -286,10 +281,9 @@ PFbui_op_gt_bln (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:gt(string?,string?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_gt_str (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_str, PFalg_gt, args);
 }
@@ -299,60 +293,60 @@ PFbui_op_gt_str (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:lt(integer?,integer?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_lt_int (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
-    return bin_arith (aat_int, PFalg_gt, (PFalg_op_t *[]) { args[1], args[0] });
+    return bin_arith (aat_int, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] });
 }
 
 /**
  * Algebra implementation for op:lt(decimal?,decimal?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_lt_dec (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
-    return bin_arith (aat_dec, PFalg_gt, (PFalg_op_t *[]) { args[1], args[0] });
+    return bin_arith (aat_dec, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] });
 }
 
 /**
  * Algebra implementation for op:lt(double?,double?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_lt_dbl (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
-    return bin_arith (aat_dbl, PFalg_gt, (PFalg_op_t *[]) { args[1], args[0] });
+    return bin_arith (aat_dbl, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] });
 }
 
 /**
  * Algebra implementation for op:lt(boolean?,boolean?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_lt_bln (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
-    return bin_arith (aat_bln, PFalg_gt, (PFalg_op_t *[]) { args[1], args[0] });
+    return bin_arith (aat_bln, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] });
 }
 
 /**
  * Algebra implementation for op:lt(string?,string?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_lt_str (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
-    return bin_arith (aat_str, PFalg_gt, (PFalg_op_t *[]) { args[1], args[0] });
+    return bin_arith (aat_str, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] });
 }
 
 
@@ -360,10 +354,9 @@ PFbui_op_lt_str (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:eq(integer?,integer?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_eq_int (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_int, PFalg_eq, args);
 }
@@ -372,10 +365,9 @@ PFbui_op_eq_int (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:eq(decimal?,decimal?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_eq_dec (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dec, PFalg_eq, args);
 }
@@ -384,10 +376,9 @@ PFbui_op_eq_dec (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:eq(double?,double?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_eq_dbl (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dbl, PFalg_eq, args);
 }
@@ -396,10 +387,9 @@ PFbui_op_eq_dbl (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:eq(boolean?,boolean?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_eq_bln (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_bln, PFalg_eq, args);
 }
@@ -408,10 +398,9 @@ PFbui_op_eq_bln (PFalg_op_t *loop __attribute__((unused)),
  * Algebra implementation for op:eq(string?,string?)
  * @see bin_arith()
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_eq_str (PFalg_op_t *loop __attribute__((unused)),
-                 PFalg_op_t **delta __attribute__((unused)),
-                 PFalg_op_t **args)
+                 struct PFalg_pair_t *args)
 {
     return bin_arith (aat_str, PFalg_eq, args);
 }
@@ -423,10 +412,9 @@ PFbui_op_eq_str (PFalg_op_t *loop __attribute__((unused)),
  * If the operand is a single boolean value, the function returns
  * the boolean value itself.
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_fn_boolean_bool (PFalg_op_t *loop __attribute ((unused)),
-                       PFalg_op_t **delta __attribute__((unused)),
-                       PFalg_op_t **args)
+                       struct PFalg_pair_t *args)
 {
     return args[0];
 }
@@ -449,47 +437,52 @@ PFbui_fn_boolean_bool (PFalg_op_t *loop __attribute ((unused)),
  *   delta1
  * )
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_fn_boolean_optbool (PFalg_op_t *loop __attribute ((unused)),
-                          PFalg_op_t **delta __attribute__((unused)),
-                          PFalg_op_t **args)
+                          struct PFalg_pair_t *args)
 {
-    return
-        disjunion (
-            args[0],
-            cross (
-                difference (
-                    loop,
-                    project (eqjoin (args[0],
-                                     project (loop, proj ("iter1", "iter")),
-                                     "iter", "iter1"),
-                             proj ("iter", "iter"))
-                    ),
-                lit_tbl (attlist ("pos", "item"),
-                         tuple (lit_nat (1), lit_bln (false)))));
+    return (struct PFalg_pair_t) {
+	.result = disjunion (
+                      args[0].result,
+                      cross (
+                          difference (
+                              loop,
+                              project (eqjoin (args[0].result,
+                                               project (loop, proj ("iter1",
+                                                                    "iter")),
+                                               "iter", "iter1"),
+                                       proj ("iter", "iter"))
+                              ),
+                          lit_tbl (attlist ("pos", "item"),
+                                   tuple (lit_nat (1), lit_bln (false))))),
+	.doc = empty_doc () };
 }
 
 /**
  * @bug FIXME: This needs to be changed. It's just to far off the XQuery
  *      semantics.
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_fn_boolean_item (PFalg_op_t *loop __attribute ((unused)),
-                       PFalg_op_t **delta __attribute__((unused)),
-                       PFalg_op_t **args)
+                       struct PFalg_pair_t *args)
 {
-    return
-        cross (
-            disjunion (
-                cross (
-                    distinct (project (args[0], proj ("iter", "iter"))),
-                    lit_tbl (attlist ("item"), tuple (lit_bln (true)))),
-                cross (
-                    difference (
-                        loop,
-                        project (args[0], proj ("iter", "iter"))),
-                    lit_tbl (attlist ("item"), tuple (lit_bln (false))))),
-            lit_tbl (attlist ("pos"), tuple (lit_nat (1))));
+    return (struct PFalg_pair_t) {
+	.result = cross (
+                      disjunion (
+                          cross (
+                              distinct (project (args[0].result,
+                                                 proj ("iter", "iter"))),
+                              lit_tbl (attlist ("item"),
+                                       tuple (lit_bln (true)))),
+                          cross (
+                              difference (
+                                  loop,
+                                  project (args[0].result, proj ("iter",
+                                                                 "iter"))),
+                              lit_tbl (attlist ("item"),
+                                       tuple (lit_bln (false))))),
+                      lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
+	.doc = empty_doc ()};
 }
 
 /**
@@ -506,33 +499,36 @@ PFbui_fn_boolean_item (PFalg_op_t *loop __attribute ((unused)),
  *  delta1
  * )
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_fn_empty (PFalg_op_t *loop __attribute ((unused)),
-                PFalg_op_t **delta __attribute__((unused)),
-                PFalg_op_t **args)
+                struct PFalg_pair_t *args)
 {
-    return
-        cross (
-            disjunion (
-                cross (
-                    distinct (project (args[0], proj ("iter", "iter"))),
-                    lit_tbl (attlist ("item"), tuple (lit_bln (false)))),
-                cross (
-                    difference (
-                        loop,
-                        project (args[0], proj ("iter", "iter"))),
-                    lit_tbl (attlist ("item"), tuple (lit_bln (true))))),
-            lit_tbl (attlist ("pos"), tuple (lit_nat (1))));
+    return (struct PFalg_pair_t) {
+	.result = cross (
+                      disjunion (
+                          cross (
+                              distinct (project (args[0].result,
+                                                 proj ("iter", "iter"))),
+                              lit_tbl (attlist ("item"),
+                                       tuple (lit_bln (false)))),
+                          cross (
+                              difference (
+                                  loop,
+                                  project (args[0].result,
+                                           proj ("iter", "iter"))),
+                              lit_tbl (attlist ("item"),
+                                       tuple (lit_bln (true))))),
+                      lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
+	.doc = empty_doc ()};
 }
 
 
 /**
  * Build up operator tree for built-in function 'fn:typed-value'.
  */
-PFalg_op_t *
+struct PFalg_pair_t
 PFbui_op_typed_value (PFalg_op_t *loop __attribute__((unused)),
-                      PFalg_op_t **delta __attribute__((unused)),
-                      PFalg_op_t **args)
+                      struct PFalg_pair_t *args)
 {
     return args[0];
 }

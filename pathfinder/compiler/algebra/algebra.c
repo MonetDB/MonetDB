@@ -577,12 +577,13 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
 /**
  * Equi-join between two operator nodes.
  *
- * Assert that @a a1 is an attribute of @a n1 and @a a2 is an attribute
+ * Assert that @a att1 is an attribute of @a n1 and @a att2 is an attribute
  * of @a n2. @a n1 and @a n2 must not have duplicate attribute names.
  * The schema of the result is (schema(@a n1) + schema(@a n2)).
  */
 PFalg_op_t *
-PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2, PFalg_att_t a1, PFalg_att_t a2)
+PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2,
+              PFalg_att_t att1, PFalg_att_t att2)
 {
     PFalg_op_t *ret;
     int         i;
@@ -590,32 +591,32 @@ PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2, PFalg_att_t a1, PFalg_att_t a2)
 
     assert (n1); assert (n2);
 
-    /* verify that a1 is attribute of n1 ... */
+    /* verify that att1 is attribute of n1 ... */
     for (i = 0; i < n1->schema.count; i++)
-	if (!strcmp (a1, n1->schema.items[i].name))
+	if (!strcmp (att1, n1->schema.items[i].name))
 	    break;
 
-    /* did we find attribute a1? */
+    /* did we find attribute att1? */
     if (i >= n1->schema.count)
 	PFoops (OOPS_FATAL,
-		"attribute `%s' referenced in join not found", a1);
+		"attribute `%s' referenced in join not found", att1);
 
-    /* ... and a2 is attribute of n2 */
+    /* ... and att2 is attribute of n2 */
     for (i = 0; i < n2->schema.count; i++)
-	if (!strcmp (a2, n2->schema.items[i].name))
+	if (!strcmp (att2, n2->schema.items[i].name))
 	    break;
 
-    /* did we find attribute a2? */
+    /* did we find attribute att2? */
     if (i >= n2->schema.count)
 	PFoops (OOPS_FATAL,
-		"attribute `%s' referenced in join not found", a2);
+		"attribute `%s' referenced in join not found", att2);
 
     /* build new equi-join node */
     ret = alg_op_wire2 (aop_eqjoin, n1, n2);
 
     /* insert semantic value (join attributes) into the result */
-    ret->sem.eqjoin.att1 = PFstrdup (a1);
-    ret->sem.eqjoin.att2 = PFstrdup (a2);
+    ret->sem.eqjoin.att1 = PFstrdup (att1);
+    ret->sem.eqjoin.att2 = PFstrdup (att2);
 
     /* allocate memory for the result schema (schema(n1) + schema(n2)) */
     ret->schema.count = n1->schema.count + n2->schema.count;
@@ -654,59 +655,59 @@ PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2, PFalg_att_t a1, PFalg_att_t a2)
  * it in the newly created join operator and discard the @a scj node. 
  */
 PFalg_op_t *
-PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni, PFalg_op_t *scj)
+PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n, PFalg_op_t *scj)
 {
     PFalg_op_t *ret;
     int         i;
 
-    assert (proj); assert (uni);
+    assert (n); assert (doc);
 
     /* verify node type because the schema of the projection node
      * will become the overall schema
      */
-    assert (proj->kind == aop_project);
+    assert (n->kind == aop_project);
 
     /* create new join node */
-    ret = alg_op_wire2 (aop_scjoin, proj, uni);
+    ret = alg_op_wire2 (aop_scjoin, doc, n);
 
     /* insert semantic value (axis/kind test) into the result */
     ret->sem = scj->sem;
 
 #ifndef NDEBUG
     /* verify both schemata */
-    for (i = 0; i < proj->schema.count; i++) {
-	if (!strcmp(proj->schema.items[i].name, "iter")
-	 || !strcmp(proj->schema.items[i].name, "item"))
+    for (i = 0; i < n->schema.count; i++) {
+	if (!strcmp(n->schema.items[i].name, "iter")
+	 || !strcmp(n->schema.items[i].name, "item"))
 	    continue;
 	else
 	    PFoops (OOPS_FATAL,
 		    "illegal attribute `%s' in staircase join",
-		    proj->schema.items[i].name);
+		    n->schema.items[i].name);
     }
-    for (i = 0; i < uni->schema.count; i++) {
-	if (!strcmp(uni->schema.items[i].name, "pre")
-	 || !strcmp(uni->schema.items[i].name, "size")
-	 || !strcmp(uni->schema.items[i].name, "level")
-	 || !strcmp(uni->schema.items[i].name, "kind")
-	 || !strcmp(uni->schema.items[i].name, "prop")
-	 || !strcmp(uni->schema.items[i].name, "frag"))
+    for (i = 0; i < doc->schema.count; i++) {
+	if (!strcmp(doc->schema.items[i].name, "pre")
+	 || !strcmp(doc->schema.items[i].name, "size")
+	 || !strcmp(doc->schema.items[i].name, "level")
+	 || !strcmp(doc->schema.items[i].name, "kind")
+	 || !strcmp(doc->schema.items[i].name, "prop")
+	 || !strcmp(doc->schema.items[i].name, "frag"))
 	    continue;
 	else
 	    PFoops (OOPS_FATAL,
 		    "illegal attribute `%s' in staircase join",
-		    uni->schema.items[i].name);
+		    doc->schema.items[i].name);
     }
 #endif
 
-    /* allocate memory for the result schema (= schema(proj)) */
-    ret->schema.count = proj->schema.count;
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = n->schema.count;
 
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* copy schema from 'proj' argument */
-    for (i = 0; i < proj->schema.count; i++)
-        ret->schema.items[i] = proj->schema.items[i];
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
 
     return ret;
 }
@@ -960,7 +961,7 @@ PFalg_select (PFalg_op_t *n, PFalg_att_t att)
  * stored in newly created column @a res.
  */
 PFalg_op_t *
-PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
+PFalg_type (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att, PFty_t ty)
 {
     PFalg_op_t  *ret;
     int          i;
@@ -1128,32 +1129,32 @@ PFalg_op_t * PFalg_eq (PFalg_op_t *n,
 
 
 /** Constructor for numeric negation operators. */
-PFalg_op_t * PFalg_neg (PFalg_op_t *n, PFalg_att_t att,
-			PFalg_att_t res)
+PFalg_op_t * PFalg_neg (PFalg_op_t *n, PFalg_att_t res,
+			PFalg_att_t att)
 {
-    return unary_op (aop_num_neg, n, att, res);
+    return unary_op (aop_num_neg, n, res, att);
 }
 
 
 /** Constructor for boolean AND operators. */
-PFalg_op_t * PFalg_and (PFalg_op_t *n, PFalg_att_t att1,
-			PFalg_att_t att2, PFalg_att_t res)
+PFalg_op_t * PFalg_and (PFalg_op_t *n, PFalg_att_t res,
+			PFalg_att_t att1, PFalg_att_t att2)
 {
-    return boolean_op (aop_bool_and, n, att1, att2, res);
+    return boolean_op (aop_bool_and, n, res, att1, att2);
 }
 
 
 /** Constructor for boolean OR operators. */
-PFalg_op_t * PFalg_or (PFalg_op_t *n, PFalg_att_t att1,
-		       PFalg_att_t att2, PFalg_att_t res)
+PFalg_op_t * PFalg_or (PFalg_op_t *n, PFalg_att_t res,
+		       PFalg_att_t att1, PFalg_att_t att2)
 {
-    return boolean_op (aop_bool_or, n, att1, att2, res);
+    return boolean_op (aop_bool_or, n, res, att1, att2);
 }
 
 
 /** Constructor for boolean NOT operators. */
-PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t att,
-			PFalg_att_t res)
+PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t res,
+			PFalg_att_t att)
 {
     return unary_op (aop_bool_not, n, att, res);
 }
@@ -1316,8 +1317,8 @@ compar_op (PFalg_op_kind_t kind, PFalg_op_t *n,
  * of the input relation @a n plus @a res.
  */
 static PFalg_op_t *
-boolean_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
-	    PFalg_att_t att2, PFalg_att_t res)
+boolean_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t res,
+	    PFalg_att_t att1, PFalg_att_t att2)
 {
     PFalg_op_t *ret;
     int         i;
@@ -1387,8 +1388,8 @@ boolean_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
  * @a res.
  */
 static PFalg_op_t *
-unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att,
-	 PFalg_att_t res)
+unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t res,
+	 PFalg_att_t att)
 {
     PFalg_op_t *ret;
     int         i;
@@ -1452,8 +1453,8 @@ unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att,
  * (group by) attribute is represented by @a part. The result (sum) is
  * stored in attribute @a res.
  */
-PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t att,
-			PFalg_att_t res, PFalg_att_t part)
+PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t res,
+			PFalg_att_t att, PFalg_att_t part)
 {
     /* build a new sum node */
     PFalg_op_t *ret = alg_op_wire1 (aop_sum, n);
@@ -1636,7 +1637,7 @@ PFalg_op_t * PFalg_textnode (PFalg_op_t *doc, PFalg_op_t *cont)
  * @bug This is obsolete, I think.
  */
 PFalg_op_t *
-PFalg_cast_item (PFalg_op_t * o)
+PFalg_cast_item (PFalg_op_t *o)
 {
     int i;
 
@@ -1656,9 +1657,12 @@ PFalg_cast_item (PFalg_op_t * o)
  * A serialization node will be placed on the very top of the algebra
  * expression tree. Its main use is to have an explicit Twig match for
  * the expression root.
+ *
+ * @a doc is the current document (live nodes) and @a alg is the overall
+ * algebra expression.
  */
 PFalg_op_t *
-PFalg_serialize (PFalg_op_t *n)
+PFalg_serialize (PFalg_op_t *doc, PFalg_op_t *alg)
 {
-    return alg_op_wire1 (aop_serialize, n);
+    return alg_op_wire2 (aop_serialize, doc, alg);
 }

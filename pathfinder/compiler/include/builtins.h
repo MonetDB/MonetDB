@@ -44,84 +44,81 @@
 
 #include "algebra.h"
 #include "algebra_mnemonic.h"
+#include "core2alg.h"
 
 /* ----- arithmetic operators for various implementation types ----- */
-PFalg_op_t * PFbui_op_numeric_add_int (PFalg_op_t *loop, PFalg_op_t **delta,
-                                       PFalg_op_t **args);
-PFalg_op_t * PFbui_op_numeric_add_dec (PFalg_op_t *loop, PFalg_op_t **delta,
-                                       PFalg_op_t **args);
-PFalg_op_t * PFbui_op_numeric_add_dbl (PFalg_op_t *loop, PFalg_op_t **delta,
-                                       PFalg_op_t **args);
+struct PFalg_pair_t PFbui_op_numeric_add_int (PFalg_op_t *loop,
+                                              struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_add_dec (PFalg_op_t *loop,
+                                              struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_add_dbl (PFalg_op_t *loop,
+                                              struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_op_numeric_subtract_int (PFalg_op_t *loop, PFalg_op_t **delta,
-                                           PFalg_op_t **args);
-PFalg_op_t *PFbui_op_numeric_subtract_dec (PFalg_op_t *loop, PFalg_op_t **delta,
-                                           PFalg_op_t **args);
-PFalg_op_t *PFbui_op_numeric_subtract_dbl (PFalg_op_t *loop, PFalg_op_t **delta,
-                                           PFalg_op_t **args);
+struct PFalg_pair_t PFbui_op_numeric_subtract_int (PFalg_op_t *loop,
+                                                   struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_subtract_dec (PFalg_op_t *loop,
+                                                   struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_subtract_dbl (PFalg_op_t *loop,
+                                                   struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_op_numeric_multiply_int (PFalg_op_t *loop, PFalg_op_t **delta,
-                                           PFalg_op_t **args);
-PFalg_op_t *PFbui_op_numeric_multiply_dec (PFalg_op_t *loop, PFalg_op_t **delta,
-                                           PFalg_op_t **args);
-PFalg_op_t *PFbui_op_numeric_multiply_dbl (PFalg_op_t *loop, PFalg_op_t **delta,
-                                           PFalg_op_t **args);
+struct PFalg_pair_t PFbui_op_numeric_multiply_int (PFalg_op_t *loop,
+                                                   struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_multiply_dec (PFalg_op_t *loop,
+                                                   struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_multiply_dbl (PFalg_op_t *loop,
+                                                   struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_op_numeric_divide_int (PFalg_op_t *loop, PFalg_op_t **delta,
-                                         PFalg_op_t **args);
-PFalg_op_t *PFbui_op_numeric_divide_dec (PFalg_op_t *loop, PFalg_op_t **delta,
-                                         PFalg_op_t **args);
-PFalg_op_t *PFbui_op_numeric_divide_dbl (PFalg_op_t *loop, PFalg_op_t **delta,
-                                         PFalg_op_t **args);
+struct PFalg_pair_t PFbui_op_numeric_divide_int (PFalg_op_t *loop,
+                                                 struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_divide_dec (PFalg_op_t *loop,
+                                                 struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_divide_dbl (PFalg_op_t *loop,
+                                                 struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_op_gt_int (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_gt_dec (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_gt_dbl (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_gt_bln (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_gt_str (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
+struct PFalg_pair_t PFbui_op_gt_int (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_gt_dec (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_gt_dbl (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_gt_bln (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_gt_str (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_op_lt_int (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_lt_dec (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_lt_dbl (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_lt_bln (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_lt_str (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
+struct PFalg_pair_t PFbui_op_lt_int (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_lt_dec (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_lt_dbl (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_lt_bln (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_lt_str (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_op_eq_int (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_eq_dec (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_eq_dbl (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_eq_bln (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
-PFalg_op_t *PFbui_op_eq_str (PFalg_op_t *loop, PFalg_op_t **delta,
-                             PFalg_op_t **args);
+struct PFalg_pair_t PFbui_op_eq_int (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_eq_dec (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_eq_dbl (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_eq_bln (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_eq_str (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_op_typed_value (PFalg_op_t *loop,
-                                  PFalg_op_t **delta,
-                                  PFalg_op_t **args);
+struct PFalg_pair_t PFbui_op_typed_value (PFalg_op_t *loop,
+                                          struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_fn_boolean_bool (PFalg_op_t *loop,
-                                   PFalg_op_t **delta,
-                                   PFalg_op_t **args);
+struct PFalg_pair_t PFbui_fn_boolean_bool (PFalg_op_t *loop,
+                                           struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_fn_boolean_optbool (PFalg_op_t *loop,
-                                      PFalg_op_t **d,
-                                      PFalg_op_t **args);
+struct PFalg_pair_t PFbui_fn_boolean_optbool (PFalg_op_t *loop,
+                                              struct PFalg_pair_t *args);
 
-PFalg_op_t *PFbui_fn_empty (PFalg_op_t *loop,
-                            PFalg_op_t **d,
-                            PFalg_op_t **args);
+struct PFalg_pair_t PFbui_fn_empty (PFalg_op_t *loop,
+                                    struct PFalg_pair_t *args);
 
 #endif   /* BUITLINS_H */
 

@@ -319,25 +319,25 @@ binaryop :   LSQBR PLUS item COLON braclist operator RSQBR
              {
                /* [AND attr:(att1,att2,...) operator] */
 	       assert ($5.count == 2);
-	       $$=and ($6, $5.atts[0], $5.atts[1], $3);
+	       $$=and ($6, $3, $5.atts[0], $5.atts[1]);
              }
          |   LSQBR OR item COLON braclist operator RSQBR
              {
                /* [OR attr:(att1,att2,...) operator] */
 	       assert ($5.count == 2);
-	       $$=or ($6, $5.atts[0], $5.atts[1], $3);
+	       $$=or ($6, $3, $5.atts[0], $5.atts[1]);
              }
          ;
 
 unaryop :   LSQBR NOT item COLON LBRACK item RBRACK operator RSQBR
              {
                /* [NOT attr:(attr) operator] */
-	       $$=not ($8, $6, $3);
+	       $$=not ($8, $3, $6);
              }
         |   LSQBR NEG item COLON LBRACK item RBRACK operator RSQBR
              {
                /* [NEG attr:(attr) operator] */
-	       $$=neg ($8, $6, $3);
+	       $$=neg ($8, $3, $6);
              }
         ;
 
@@ -353,28 +353,28 @@ type    :   LSQBR TYPE list COMMA TYPEREF operator RSQBR
               /* [TYPE (attr,attr,type) operator] */
               assert (PFarray_last ($3) == 2);
 	      if (!strcmp ($5, "int"))
-                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   *((PFalg_att_t*) PFarray_at ($3, 1)),
 			   PFty_integer ());
 	      else if (!strcmp ($5, "str"))
-                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   *((PFalg_att_t*) PFarray_at ($3, 1)),
 			   PFty_string ());
 	      else if (!strcmp ($5, "bool"))
-                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   *((PFalg_att_t*) PFarray_at ($3, 1)),
 			   PFty_boolean ());
 	      else if (!strcmp ($5, "dec"))
-                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   *((PFalg_att_t*) PFarray_at ($3, 1)),
 			   PFty_decimal ());
 	      else if (!strcmp ($5, "dbl"))
-                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   *((PFalg_att_t*) PFarray_at ($3, 1)),
 			   PFty_double ());
 	      else if (!strcmp ($5, "node"))
-                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   *((PFalg_att_t*) PFarray_at ($3, 0)),
+                  $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
+			   *((PFalg_att_t*) PFarray_at ($3, 1)),
 			   PFty_node ());
 	      else
 		  hskerror ("unknown type in typeswitch");
@@ -497,12 +497,12 @@ relation:   LSQBR REL RELREF RSQBR
 sum     :   LSQBR SUM item COLON LBRACK item RBRACK operator RSQBR
             {
               /* [SUM attr:(attr) operator] */
-	      $$=sum ($8, $6, $3, NULL);
+	      $$=sum ($8, $3, $6, NULL);
             }
         |   LSQBR SUM item COLON LBRACK item RBRACK DIVIDE item operator RSQBR
             {
               /* [SUM attr:(attr)/attrlist operator] */
-	      $$=sum ($10, $6, $3, $9);
+	      $$=sum ($10, $3, $6, $9);
             }
         ;
 

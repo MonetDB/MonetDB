@@ -35,6 +35,9 @@
  */
 
 #ifndef FUNCTIONS_H
+
+typedef struct PFfun_t PFfun_t;
+
 #define FUNCTIONS_H
 
 #include "pathfinder.h"
@@ -43,8 +46,10 @@
 /* PFenv_t */
 #include "env.h"
 
+#include "core2alg.h"
+
 /** Data structure to hold information about XQuery functions.  */
-typedef struct PFfun_t PFfun_t;
+/* typedef struct PFfun_t PFfun_t; */
 
 /**
  * Data structure to hold information about XQuery functions.
@@ -58,13 +63,12 @@ typedef struct PFfun_t PFfun_t;
  * allowed.
  */
 struct PFfun_t {
-  PFqname_t    qname;      /**< function name */
-  unsigned int arity;      /**< number of arguments */
-  bool         builtin;    /**< is this a builtin (XQuery F&O) function? */
-  PFty_t      *par_ty;     /**< builtin: array of formal parameter types */
-  PFty_t       ret_ty;     /**< builtin: return type */
-  struct PFalg_op_t * (*alg) (struct PFalg_op_t *, struct PFalg_op_t **,
-                              struct PFalg_op_t **);
+    PFqname_t    qname;      /**< function name */
+    unsigned int arity;      /**< number of arguments */
+    bool         builtin;    /**< is this a builtin (XQuery F&O) function? */
+    PFty_t      *par_ty;     /**< builtin: array of formal parameter types */
+    PFty_t       ret_ty;     /**< builtin: return type */
+    struct PFalg_pair_t (*alg) (struct PFalg_op_t *, struct PFalg_pair_t *);
 };
 
 /**
@@ -74,9 +78,8 @@ extern PFenv_t *PFfun_env;
 
 /** allocate a new struct to describe a (built-in or user) function */
 PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, PFty_t *, PFty_t *,
-                    struct PFalg_op_t * (*alg) (struct PFalg_op_t *,
-                                                struct PFalg_op_t **,
-                                                struct PFalg_op_t **));
+                    struct PFalg_pair_t (*alg) (struct PFalg_op_t *,
+                                                struct PFalg_pair_t *));
 
 #endif   /* FUNCTIONS_H */
 

@@ -320,7 +320,7 @@ literal (PFalg_atom_t atom)
         case aat_str:  return lit_str (atom.val.str);
         case aat_node: return lit_oid (atom.val.node);
         case aat_dec:  return lit_dbl (atom.val.dec);
-        case aat_dbl:  return lit_dbl (atom.val.dec);
+        case aat_dbl:  return lit_dbl (atom.val.dbl);
         case aat_bln:  return lit_bit (atom.val.bln);
 
         default:

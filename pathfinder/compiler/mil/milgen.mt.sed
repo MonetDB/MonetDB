@@ -117,19 +117,19 @@ label Query
       ;
 
 
-Query:    serialize (AlgExpr)
+Query:    serialize (AlgExpr, AlgExpr)
     {   assert ($$);  /* avoid `root unused' warning */
         TOPDOWN;
     }
     =
     {
-        bool has_nat_part =  (aat_nat  & attr_type ($1$, "item"));
-        bool has_int_part =  (aat_int  & attr_type ($1$, "item"));
-        bool has_str_part =  (aat_str  & attr_type ($1$, "item"));
-        bool has_node_part = (aat_node & attr_type ($1$, "item"));
-        bool has_dec_part =  (aat_dec  & attr_type ($1$, "item"));
-        bool has_dbl_part =  (aat_dbl  & attr_type ($1$, "item"));
-        bool has_bln_part =  (aat_bln  & attr_type ($1$, "item"));
+        bool has_nat_part =  (aat_nat  & attr_type ($2$, "item"));
+        bool has_int_part =  (aat_int  & attr_type ($2$, "item"));
+        bool has_str_part =  (aat_str  & attr_type ($2$, "item"));
+        bool has_node_part = (aat_node & attr_type ($2$, "item"));
+        bool has_dec_part =  (aat_dec  & attr_type ($2$, "item"));
+        bool has_dbl_part =  (aat_dbl  & attr_type ($2$, "item"));
+        bool has_bln_part =  (aat_bln  & attr_type ($2$, "item"));
 
         /*
          * Set the variable `unused' to nil. Lateron, we will ``free''
@@ -143,20 +143,20 @@ Query:    serialize (AlgExpr)
                  assgn (var ("tmp2"), unused()));
 
         /* invoke compilation */
-        tDO ($%1$);
+        tDO ($%2$);
 
         /*
          * serialize result. We might need to rewrite this slightly
          * as soon as we have a ``real'' serialization function.
          */
-        execute (serialize ($1$->bat_prefix,
+        execute (serialize ($2$->bat_prefix,
                             has_nat_part, has_int_part, has_str_part,
                             has_node_part, has_dec_part, has_dbl_part,
                             has_bln_part
                            ));
 
         /* and then we clean up */
-        deallocate ($1$, $$->refctr);
+        deallocate ($2$, $$->refctr);
 
         assert ($$); /* avoid `root unused' warning */
     }

@@ -41,7 +41,9 @@
 #include "variable.h"    
 
 /* PFfun_t */
+/*
 #include "functions.h"
+*/
 
 /** no type of parse tree node will need more than
  *  this many child nodes 
@@ -231,7 +233,7 @@ union PFpsem_t {
 
   PFvar_t   *var;        /**< variable information (used after var scoping) */
 
-  PFfun_t   *fun;        /**< function information (used after fun checks) */
+  struct PFfun_t *fun;   /**< function information (used after fun checks) */
 }; 
 
 

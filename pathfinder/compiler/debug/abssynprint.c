@@ -45,6 +45,7 @@
 #include "abssyn.h"
 #include "prettyp.h"
 #include "pfstrings.h"
+#include "functions.h"
 
 /** Node names to print out for all the abstract syntax tree nodes. */
 char *p_id[]  = {

@@ -784,8 +784,8 @@ PFfun_xquery_fo ()
         unsigned int arity;
         PFty_t par_ty[XQUERY_FO_MAX_ARITY]; 
         PFty_t ret_ty;
-        struct PFalg_op_t * (*alg) (struct PFalg_op_t *, struct PFalg_op_t **,
-                                    struct PFalg_op_t **);
+        struct PFalg_pair_t (*alg) (struct PFalg_op_t *,
+                                    struct PFalg_pair_t *);
     } xquery_fo[] = XQUERY_FO;
 
     PFqname_t    qn;

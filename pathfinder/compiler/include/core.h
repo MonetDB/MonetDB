@@ -55,6 +55,8 @@
 /* PFty_t */
 #include "types.h"
 
+typedef struct PFcnode_t PFcnode_t;
+
 /* PFfun_t */
 #include "functions.h"
 
@@ -159,21 +161,19 @@ union PFcsem_t {
   PFqname_t  qname;      /**< qualified name */
   PFvar_t   *var;        /**< variable information */
   PFty_t     type;       /**< used with c_type */
-  PFfun_t   *fun;        /**< function reference */
+  struct PFfun_t *fun;   /**< function reference */
 };
 
 /** Semantic node content of core tree node */
 typedef union PFcsem_t PFcsem_t;
 
-typedef struct PFcnode_t PFcnode_t;
-
 /** struct representing a core tree node */
 struct PFcnode_t {
-  PFctype_t   kind;                    /**< node kind indicator */
-  PFcsem_t    sem;                     /**< semantic node information */
-  PFcnode_t  *child[PFCNODE_MAXCHILD]; /**< child nodes */
-  PFty_t      type;                    /**< static type */
-  struct PFalg_op_t *alg;              /**< Relational Algebra equivalent */
+    PFctype_t   kind;                    /**< node kind indicator */
+    PFcsem_t    sem;                     /**< semantic node information */
+    PFcnode_t  *child[PFCNODE_MAXCHILD]; /**< child nodes */
+    PFty_t      type;                    /**< static type */
+    struct PFalg_pair_t alg;
 };
 
 

@@ -117,50 +117,50 @@ CDEC                   {return CDEC;}
 CDBL                   {return CDBL;}
 TEXT                   {return TEXT;}
 ![01]                  {/* representation of boolean values */
-                        s = malloc(hskleng);
+                        s = PFmalloc(hskleng);
                         /* Delete ! character. */
-                        strncpy(s, hsktext + 1, hskleng - 1);
+                        s = PFstrndup(hsktext + 1, hskleng - 1);
                         hsklval.ival=atoi(s);
                         return BLN;}
 @{digits}             {/* representation of node references */
-                        s = malloc(hskleng);
+                        s = PFmalloc(hskleng);
                         /* Delete @ character. */
-                        strncpy(s, hsktext + 1, hskleng - 1);
+                        s = PFstrndup(hsktext + 1, hskleng - 1);
                         hsklval.ival=atoi(s);
                         return NODEREF;}
 &{digits}             {/* representation of unsigned integers */
-                        s = malloc(hskleng);
+                        s = PFmalloc(hskleng);
                         /* Delete & character. */
-                        strncpy(s, hsktext + 1, hskleng - 1);
+                        s = PFstrndup(hsktext + 1, hskleng - 1);
                         hsklval.ival=atoi(s);
                         return NAT;}
 {digits}               {/* representation of integers */
-                        s = malloc(hskleng + 1);
-                        strcpy(s, hsktext);
+                        s = PFmalloc(hskleng + 1);
+                        s = PFstrdup(hsktext);
                         hsklval.ival=atoi(s);
                         return INT;}
 "%"{digits}"."{digits} {/* representation of decimals */
-                        s = malloc(hskleng + 1);
+                        s = PFmalloc(hskleng + 1);
                         /* Delete % character. */
-                        strncpy(s, hsktext + 1, hskleng - 1);
+                        s = PFstrndup(hsktext + 1, hskleng - 1);
                         hsklval.fval=(float)atof(s);
                         return DEC;}
 "#"(({digits}"."{digits}([eE][+-]?{digits})?)|({digits}[eE][+-]?{digits})) {
                         /* representation of doubles */
-                        s = malloc(hskleng + 1);
+                        s = PFmalloc(hskleng + 1);
                         /* Delete # character. */
-                        strncpy(s, hsktext + 1, hskleng - 1);
+                        s = PFstrndup(hsktext + 1, hskleng - 1);
                         hsklval.dval=atof(s);
                         return DBL;}
 [a-zA-Z0-9._ø]+        {/* representation of strings */
-                        s = malloc(hskleng + 1);
-                        strcpy(s, hsktext);
+                        s = PFmalloc(hskleng + 1);
+                        s = PFstrdup(hsktext);
                         hsklval.attval = s;
                         return ATTREF;
                        }
 \"[^\"]*\"             {/* Remove quotes. */
-                        s = malloc (hskleng + 1 - 2);
-                        strncpy(s, hsktext + 1, hskleng - 2);
+                        s = PFmalloc (hskleng + 1 - 2);
+                        s = PFstrndup(hsktext + 1, hskleng - 2);
                         s[hskleng - 2] = '\0';
                         hsklval.sval = s;
                         return STR;
@@ -187,8 +187,8 @@ attribute              {return ATTRIB;}
 "*"                    {return XMLELEM;}
 node\(\)               {return NODES;}
 text\(\)               {return TEXT;}
-[_a-zA-Z][_a-zA-Z0-9]* {s = malloc(hskleng + 1);
-                        strcpy(s, hsktext);
+[_a-zA-Z][_a-zA-Z0-9]* {s = PFmalloc(hskleng + 1);
+                        s = PFstrdup(hsktext);
                         hsklval.sval = s;
                         return TAG;
                        }
@@ -201,8 +201,8 @@ text\(\)               {return TEXT;}
 ")"                    {BEGIN(INITIAL); return RBRACK;}
 ","                    {return COMMA;}
 [a-zA-Z0-9_]+          {BEGIN(TYPEMODE);
-                        s = malloc(hskleng + 1);
-                        strcpy(s, hsktext);
+                        s = PFmalloc(hskleng + 1);
+                        s = PFstrdup(hsktext);
                         hsklval.sval = s;
                         return SCHMATT;
                        }
@@ -213,8 +213,8 @@ text\(\)               {return TEXT;}
 {
 ","                    {return COMMA;}
 ")"                    {BEGIN(ATTMODE); return RBRACK;}
-[a-zA-Z0-9_ø]+         {s = malloc(hskleng + 1);
-                        strcpy(s, hsktext);
+[a-zA-Z0-9_ø]+         {s = PFmalloc(hskleng + 1);
+                        s = PFstrdup(hsktext);
                         hsklval.sval = s;
                         return SCHMTYPE;
                        }
@@ -222,11 +222,18 @@ text\(\)               {return TEXT;}
 
 
 <RELMODE>[a-zA-Z0-9._]+ {BEGIN(INITIAL);
-                         s = malloc(hskleng + 1);
-                         strcpy(s, hsktext);
+                         s = PFmalloc(hskleng + 1);
+                         s = PFstrdup(hsktext);
                          hsklval.sval = s;
                          return RELREF;
                         }
+
+
+<ANY>
+{
+\n                     {continue;}
+.                      {continue;}
+}
 
 
 " "                    {continue;}
@@ -236,12 +243,6 @@ text\(\)               {return TEXT;}
                          * from being scanned and parsed.
                          */
                         BEGIN(ANY); continue;}
-
-<ANY>
-{
-\n                     {continue;}
-.                      {continue;}
-}
 
 .                      {PFoops (OOPS_FATAL,
                                 "illegal token named %s between line "

@@ -115,4 +115,4 @@
 #define cast_item(o)      PFalg_cast_item (o)
 
 /** serialization */
-#define serialize(a)      PFalg_serialize(a)
+#define serialize(a,b)    PFalg_serialize((a),(b))

@@ -32,12 +32,16 @@
 #ifndef CORE2ALG_H
 #define CORE2ALG_H
 
-#include "core.h"
-#include "algebra.h"
 
+struct PFalg_pair_t {
+    struct PFalg_op_t *result;
+    struct PFalg_op_t *doc;
+};
+
+#include "core.h"
 
 /** Compile XQuery Core into Relational Algebra */
-PFalg_op_t *PFcore2alg (PFcnode_t *);
+struct PFalg_op_t *PFcore2alg (PFcnode_t *);
 
 /* ............. environment entry specification .............. */
 
@@ -51,7 +55,8 @@ PFalg_op_t *PFcore2alg (PFcnode_t *);
 /** environment entry node */
 struct PFalg_env_t {
     PFvar_t        *var;
-    PFalg_op_t     *op;
+    struct PFalg_op_t     *result;
+    struct PFalg_op_t     *doc;
 };
 /** environment entry node */
 typedef struct PFalg_env_t PFalg_env_t;

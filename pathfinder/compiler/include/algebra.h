@@ -421,18 +421,17 @@ PFalg_op_t * PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2);
  * No duplicate attribute names allowed.
  */
 PFalg_op_t * PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2,
-			   PFalg_att_t a1, PFalg_att_t a2);
+			   PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * Staircase join between two relations. Each such join corresponds
  * to the evaluation of an XPath location step.
  */
-PFalg_op_t * PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni,
+PFalg_op_t * PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n,
 			   PFalg_op_t *scj);
 
 /**
- * Creates a representation for the doc table if there is none
- * already. Otherwise returns the already created one.
+ * Creates a representation for the doc table.
  */
 PFalg_op_t * PFalg_doc_tbl (char *rel);
 
@@ -489,17 +488,18 @@ PFalg_op_t * PFalg_select (PFalg_op_t *n, PFalg_att_t att);
  * Constructor for type test of column values. The result is
  * stored in newly created column.
  */
-PFalg_op_t * PFalg_type (PFalg_op_t *n, PFalg_att_t att,
-			 PFalg_att_t res, PFty_t ty);
+PFalg_op_t * PFalg_type (PFalg_op_t *n, PFalg_att_t res,
+			 PFalg_att_t att, PFty_t ty);
 
 /**
  * Constructor for the type cast of a column.
  */
-PFalg_op_t * PFalg_cast (PFalg_op_t *, PFalg_att_t, PFalg_simple_type_t);
+PFalg_op_t * PFalg_cast (PFalg_op_t *n, PFalg_att_t att,
+                         PFalg_simple_type_t ty);
 
 /** Constructor for arithmetic addition operators. */
-PFalg_op_t * PFalg_add (PFalg_op_t *n,
-                        PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
+PFalg_op_t * PFalg_add (PFalg_op_t *n, PFalg_att_t res,
+                        PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for arithmetic subtraction operators. */
 PFalg_op_t * PFalg_subtract (PFalg_op_t *n, PFalg_att_t res,
@@ -510,36 +510,36 @@ PFalg_op_t * PFalg_multiply (PFalg_op_t *n, PFalg_att_t res,
                              PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for arithmetic division operators. */
-PFalg_op_t * PFalg_divide (PFalg_op_t *n,
-                           PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
+PFalg_op_t * PFalg_divide (PFalg_op_t *n, PFalg_att_t res,
+                           PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for numeric equal operators. */
-PFalg_op_t * PFalg_eq (PFalg_op_t *n,
-                       PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
+PFalg_op_t * PFalg_eq (PFalg_op_t *n, PFalg_att_t res,
+                       PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for numeric greater-than operators. */
-PFalg_op_t * PFalg_gt (PFalg_op_t *n, PFalg_att_t att1,
-                       PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_gt (PFalg_op_t *n, PFalg_att_t res,
+                       PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for numeric negation operators. */
-PFalg_op_t * PFalg_neg (PFalg_op_t *n, PFalg_att_t att,
-			PFalg_att_t res);
+PFalg_op_t * PFalg_neg (PFalg_op_t *n, PFalg_att_t res,
+			PFalg_att_t att);
 
 /** Constructor for boolean AND operators. */
-PFalg_op_t * PFalg_and (PFalg_op_t *n, PFalg_att_t att1,
-			PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_and (PFalg_op_t *n, PFalg_att_t res,
+			PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for boolean OR operators. */
-PFalg_op_t * PFalg_or (PFalg_op_t *n, PFalg_att_t att1,
-		       PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_or (PFalg_op_t *n, PFalg_att_t res,
+		       PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for boolean NOT operators. */
-PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t att,
-			PFalg_att_t res);
+PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t res,
+			PFalg_att_t att);
 
 /** Constructor for operators forming (partitioned) sum of a column. */
-PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t att,
-			PFalg_att_t res, PFalg_att_t part);
+PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t res,
+			PFalg_att_t att, PFalg_att_t part);
 
 /** Constructor for (partitioned) row counting operators. */
 PFalg_op_t * PFalg_count (PFalg_op_t *n, PFalg_att_t res,
@@ -549,16 +549,17 @@ PFalg_op_t * PFalg_count (PFalg_op_t *n, PFalg_att_t res,
 PFalg_op_t * PFalg_distinct (PFalg_op_t *n);
 
 /** Constructor for element operators. */
-PFalg_op_t * PFalg_element (PFalg_op_t *, PFalg_op_t *, PFalg_op_t *);
+PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tags,
+                            PFalg_op_t *cont);
 
 /** Constructor for text node operators. */
-PFalg_op_t * PFalg_textnode (PFalg_op_t *, PFalg_op_t *);
+PFalg_op_t * PFalg_textnode (PFalg_op_t *doc, PFalg_op_t *cont);
 
 /** Cast nat to int. */
-PFalg_op_t * PFalg_cast_item (PFalg_op_t *);
+PFalg_op_t * PFalg_cast_item (PFalg_op_t *o);
 
 
-PFalg_op_t * PFalg_serialize (PFalg_op_t *);
+PFalg_op_t * PFalg_serialize (PFalg_op_t *doc, PFalg_op_t *alg);
 
 
 /**

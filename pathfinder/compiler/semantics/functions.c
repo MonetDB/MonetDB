@@ -344,9 +344,8 @@ PFfun_new (PFqname_t qn,
            bool builtin,
            PFty_t *par_tys,
            PFty_t *ret_ty,
-           struct PFalg_op_t * (*alg) (struct PFalg_op_t *,
-                                       struct PFalg_op_t **,
-                                       struct PFalg_op_t **))
+           struct PFalg_pair_t (*alg) (struct PFalg_op_t *,
+                                       struct PFalg_pair_t *))
 {
     PFfun_t *n;
 
