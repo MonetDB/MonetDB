@@ -815,6 +815,13 @@ function MtestIt () {
 	  else  ErrXit "test missing: '$TSTSRCDIR/$TST[.milM|.milS|.milC|.java|.odmg]\`"
 	fi
 
+	if [ "$EXT" = "milC" ] ; then
+		cat >> $TST.modules <<- EOT
+			unix
+			str
+			mapi
+		EOT
+	fi
 	local MISSINGMODS="`LOG1x CheckModules $TST`"
 	local MISSINGBATS="`LOG1x CheckBATs    $TST`"
 
