@@ -258,11 +258,11 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	/* various interpretations of the input data */
 	bignum_t nval;
 	SQL_INTERVAL_STRUCT ival;
-	int i;			/* scale of ival fraction, or counter */
+	int i = 0;		/* scale of ival fraction, or counter */
 	DATE_STRUCT dval;
 	TIME_STRUCT tval;
 	TIMESTAMP_STRUCT tsval;
-	double fval;
+	double fval = 0;
 
 	if (ptr && offset)
 		ptr = (SQLPOINTER) ((char *) ptr + offset);
