@@ -1,5 +1,5 @@
 MAL language issues
-- look into the nested bat issues
+- look into the nested (referenced) bat issues
 - see if it makes sense have in/out variables mentioned twice 
   in an assignment statement to ease analysis
 - check all routines for proper match return type and actual
@@ -41,7 +41,7 @@ Implementation
 is about 5 times slower. It appears that it grows too slow,
 spending its time on copying bats all the time.
 - store also the module and function name on the MAL block symbol
-table. This reduces the number of malloc/free calls significantly.
+table. This can reduce the number of malloc/free calls significantly.
 [estimate about >15% speed] 
 
 API issues
@@ -61,6 +61,9 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20041112 Ensured that temporary variables are properly aligned
+	with their symbol table entry
+20041112 atom definiton implies start of module section
 20041108 introduced skip list in symbol table (2 % gain)
 	 removed some resolvetype issues (3 % gain)
 20041107 check the validity of constants against their type qualifier.
