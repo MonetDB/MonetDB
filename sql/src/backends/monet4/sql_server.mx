@@ -618,6 +618,7 @@ module(alarm);
 module(xtables);
 module(aggrX3);
 module(monettime);
+module(blob);
 module(mmath);
 module(mkey);
 module(mapi); # mapi_listen 
