@@ -185,22 +185,22 @@ def do_deps(targets,deps,includes,incmap,cwd):
 	cache_store[k] = vals
   cache_store.close()
 
-def do_recursive_combine(deplist,cache,depfiles):
+def do_recursive_combine(deplist,includes,cache,depfiles):
   for d in deplist:
-    if (cache.has_key(d)):
+    if (includes.has_key(d)):
+      for f in includes[d]:
+        if (f not in depfiles):
+	  depfiles.append(f)
+    elif (cache.has_key(d)):
       if (d not in depfiles):
         depfiles.append(d)
-        do_recursive_combine(cache[d],cache,depfiles)
+        do_recursive_combine(cache[d],includes,cache,depfiles)
 
 def do_dep_combine(deps,includes,cwd,cache):
   for target,depfiles in deps.items():
     for d in depfiles:
-      if (includes.has_key(d)):
-	for f in includes[d]:
-	  if (f not in depfiles):
-	    depfiles.append(f)
-      elif (cache.has_key(d)):
-	do_recursive_combine(cache[d],cache,depfiles)
+      if (cache.has_key(d)):
+	do_recursive_combine(cache[d],includes,cache,depfiles)
 
 def do_dep_rules(deps,cwd,cache):
   for target in deps.keys():
