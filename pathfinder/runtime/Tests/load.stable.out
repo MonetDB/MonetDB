@@ -63,6 +63,7 @@ loading module 'pathfinder'
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "aggrX3",	  1		  ]
 [ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -70,10 +71,12 @@ loading module 'pathfinder'
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
 [ "malalgebra",	  1		  ]
+[ "mapi",	  1		  ]
+[ "mmath",	  1		  ]
 [ "pathfinder",	  1		  ]
 [ "pf_support",	  1		  ]
 [ "str",	  1		  ]
-[ "streams",	  1		  ]
+[ "streams",	  2		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
