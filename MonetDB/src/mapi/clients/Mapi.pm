@@ -15,9 +15,26 @@ sub new {
 	bless($self);
     $self->{BUF} = "";
     $self->{PROMPT} = "";
-    $self->cmd_intern("$user\n");
+    print $self->cmd_intern("$user\n");
     $self->result();
     return $self;
+}
+
+sub mapiport_intern {
+  my $mapiport = 'localhost:50000';
+  $mapiport = $ENV{'MAPIPORT'} if defined($ENV{'MAPIPORT'});
+}
+
+sub hostname {
+  my ( $hostname ) = mapiport_intern() =~ /([^:]*)/;
+  $hostname = 'localhost' if ( $hostname eq '' );
+  return $hostname;
+}
+
+sub portnr {
+  my ( $portnr ) = mapiport_intern() =~ /:([^:]*)/;
+  $portnr = 50000 if ( $portnr eq '' );
+  return $portnr;
 }
 
 sub disconnect {

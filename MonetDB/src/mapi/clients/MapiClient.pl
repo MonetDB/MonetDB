@@ -3,14 +3,13 @@
 use Mapi;
 
 my ($monet, $line);
+$monet = new Mapi( 
+  Mapi::hostname() . ':' . Mapi::portnr(), $ENV{'USER'} );
 
-$monet = new Mapi( "localhost:50000",  $ENV{'USER'});
-#$monet = new Mapi( $ENV{'MAPIPORT'},  $ENV{'USER'});
-
-print ">";
+print "> ";
 while ( !(($line=<>) =~ /quit;/) ){
 	print $monet->cmd($line);
-	print ">";
+	print "> ";
 }
 
 $monet->disconnect();
