@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s9 <<'EOT'
+doc("foo.xml")/parent::foo/descendant::bar/following::baz
+EOT
+echo $?

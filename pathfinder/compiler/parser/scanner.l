@@ -5,7 +5,7 @@
 /**
  * @file
  *
- * XQuery (W3C WD November 15, 2002) terminals and lexer state machine.
+ * XQuery (W3C WD October 29, 2004) terminals and lexer state machine.
  * Feed this into `flex'.
  *
  *
@@ -25,63 +25,51 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
- *
- *  Contributors:
- *          Torsten Grust <torsten.grust@uni-konstanz.de>
- *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
- *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
  */
 
 %{
 
+/*
+#define DEBUG_SCANNER
+#define DEBUG_LEXSTATE
+*/
+
 /**
  * This is a implementation of the W3C document ``XQuery 1.0:
- * An XML Query Language'', W3C Working Draft November 15, 2002.
- *  
- * Places where we deviate from the W3C Working Draft are marked
- * by `!W3C'.
- *
- * !W3C: The Pathfinder lexer state machine collapses the XQuery lexer
- * states DEFAULT, OPERATOR, and QNAME states into a single DEFAULT
- * state. (As it currently stands, the W3C spec is simply too broken
- * to make sense of these states.)
- *
- * We implement states NAMESPACEDECL, NAMESPACEKEYWORD, 
- * XMLSPACE_DECL, ITEMTYPE, VARNAME, START_TAG, ELEMENT_CONTENT, END_TAG,
- * XML_COMMENT, PROCESSING_INSTRUCTION,
- * PROCESSING_INSTRUCTION_CONTENT, CDATA_SECTION,
- * QUOT_ATTRIBUTE_CONTENT, APOS_ATTRIBUTE_CONTENT.
+ * An XML Query Language'', W3C Working Draft October 29, 2004.
  */
 
 #include "pathfinder.h"
 
 /* atoi, atof, strtoul */
 #include <stdlib.h>
-#include <string.h>
 #include <assert.h>
+/* strncmp */
+#include <string.h>
+/* isspace */
+#include <ctype.h>
 
-/* import XQuery token and abstract syntax definitions */
+/* import XQuery abstract syntax definitions */
 #include "abssyn.h"
-/* PFarray_t */
+/* arrays for lexical stack */
 #include "array.h"
 /* PFstrdup */
 #include "mem.h"
+/* PFoops */
+#include "oops.h"
 
-/* override YYLTYPE definition in "XQuery.tab.h" */
+/* override YYLTYPE definition in "parser.tab.h" */
 #define YYLTYPE PFloc_t
 
-/* #include "XQuery.tab.h" */
+/* import tokens from parser specification */
 #include "parser.tab.h"
 
 /* bison 1.33 does not include this line in XQuery.tab.h. So we do it here. */
 extern YYLTYPE pflloc;
-
-/** avoid `defined but not used' warnings */
-#define YY_NO_UNPUT
 
 /** increment row and column numbers (required in YY_USER_ACTION) */
 static int i;
@@ -116,10 +104,6 @@ static int i;
    }                                                        \
  } while(0);
 
-/* prototypes */
-static char predefined_entity (char *ent);
-static char char_ref (char *ref);
-static char *expand_esc_quots (char *quot);
 
 /**
  * define DEBUG_SCANNER to activate debugging output in parser
@@ -131,951 +115,961 @@ static char *expand_esc_quots (char *quot);
 #define yield(t) return (t)
 #endif
 
-
-/** 
- * lexical state stack (see W3C XQuery, A.1.1 and A.1.2) 
- */
-
-/** the lexical stack itself (grows dynamically) */
-static PFarray_t *lexical_stack;
+/* lexical state stack */
+static PFarray_t *lexical_stack = NULL;
+static unsigned int lexical_sp = 0;
 
 /** initialize the lexical state stack when scanner starts up */
 #define YY_USER_INIT (lexical_stack = PFarray (sizeof (int)))
-		     
-/** current stack pointer for #lexical_stack */
-static unsigned lexical_sp = 0;
-
+   
 static void
-popState ()
+popState (void)
 {
-    assert (lexical_sp > 0);
-    BEGIN (*((int *) PFarray_at (lexical_stack, --lexical_sp)));
-
+    if (lexical_sp == 0) {
+        PFoops (OOPS_PARSE, "parsing problem: stack empty\n");
+        exit (-1);
+    }
+        
 #ifdef DEBUG_LEXSTATE
-    PFlog ("popState (), now in state %d", 
-            *((int *) PFarray_at (lexical_stack, lexical_sp)));
+    fprintf (stderr, "popState: going to state %i\n",
+                     *((int *) PFarray_at (lexical_stack, lexical_sp)));
 #endif
+
+    lexical_sp--;
+    BEGIN(*((int *) PFarray_at (lexical_stack, lexical_sp)));
 }
 
 static void
 pushState (int s)
 {
-    *((int *) PFarray_at (lexical_stack, lexical_sp++)) = s;
-
 #ifdef DEBUG_LEXSTATE
-    PFlog ("pushState (%d)", s);
+    PFlog ("pushState: pushing state %i\n", s);
 #endif
+
+    *((int *) PFarray_at (lexical_stack, lexical_sp++)) = s;
 }
 
 static void
 gotoState (int s)
 {
+#ifdef DEBUG_LEXSTATE
+    PFlog ("gotoState: going to state %i\n", s);
+#endif
+
     BEGIN (s);
-
-#ifdef DEBUG_LEXSTATE
-    PFlog ("gotoState (%d)", s);
-#endif
 }
 
-
-/** 
- * NB: as of W3C XQuery WD November 15, 2002 the paren stack seems to
- * be  u n u s e d.  (This mess is waiting to be abandoned, I hope.  We
- * keep it here in case it raises its ugly head again.  To be deleted.)
- *
- * paren stack (see W3C XQuery, A.1.2)
- * (we use the paren stack to ``remember'' if the lexer expects to see
- *  an (optional) SequenceType after a `,' token, e.g.
- *
- *               define foo ($x, node $y)
- *   vs.
- *               foo ($x, $y)
- * )
- *
- */
-
-#ifdef USE_PAREN_STATE_STACK
-
-/** 
- * maximum depth of paren stack
- * (this effectively limits the maximum depth of nested parenthesized
- *  expressions, including function calls, etc.)
- */
-#define PAREN_STACK_DEPTH 256
-
-/** the paren stack itself */
-static int paren_stack[PAREN_STACK_DEPTH];
-
-/** current stack pointer for #paren_stack */
-static int paren_sp = 0;
-
-static void
-popParenState (int s)
-{
-    assert (paren_sp > 0);
-    /* yes, we indeed ignore the state being popped */
-    paren_sp--;
-
-    gotoState (s);
-
-#ifdef DEBUG_LEXSTATE
-    PFlog ("popParenState (%d)", s);
-#endif
-}
-
-static void 
-pushParenState (int s)
-{
-    assert (paren_sp < PAREN_STACK_DEPTH + 1);
-    paren_stack[paren_sp++] = s;
-
-    gotoState (s);
-
-#ifdef DEBUG_LEXSTATE
-    PFlog ("pushParenState (%d)", s);
-#endif
-}
-
-static void
-resetParenStateOrSwitch (int s)
-{
-    if (paren_sp)
-        gotoState (paren_stack[paren_sp - 1]);
-    else
-        gotoState (s);
-
-#ifdef DEBUG_LEXSTATE
-    PFlog ("resetParenStateOrSwitch (%d), now in state %d",
-            s,
-            paren_sp ? paren_stack[paren_sp - 1] : s);
-#endif
-}
-#endif
+/* forward declarations */
+static char entity_ref (const char *s, char **endptr);
+static char *extract_string (const char *s);
+static PFqname_t extract_qname (const char *s, unsigned int index);
+static char *extract_ncname (const char *s, unsigned int index);
 
 %}
 
 /* no wrapping after EOF; hence, no libfl (-lfl) needed */
 %option noyywrap
 
+/* we need the `unput' feature of flex */
+%option unput
+
 /* provide token line number to the parser */
 %option yylineno
 
-/**
- * XQuery 1.0 lexical states (see W3C XQuery, A.1.2)
- *
- * We maintain the lexer state using bison's internal state stack.
- * The additional paren stack is implemented separately (but not used
- * anymore as of the W3C XQuery November 15, 2002 draft).
+/*
+ * We don't use the REJECT command and indicate this here. Unfortunately,
+ * flex still includes the code to support REJECT, resulting in the compiler
+ * warning `label `find_rule' defined but not used'.
  */
+%option noreject
+
+/* lexical states */
+/*   1 DEFAULT                         */
+/*   2 OPERATOR                        */
+/*   3 NAMESPACEDECL                   */
+/*   4 NAMESPACEKEYWORD                */
+/*   5 VARNAME                         */
+/*   6 SINGLETYPE                      */
+/*   7 ITEMTYPE                        */
+/*   8 OCCURRENCEINDICATOR             */
+/*   9 KINDTEST                        */
+/*  10 KINDTESTFORPI                   */
+/*  11 START_TAG                       */
+/*  12 QUOT_ATTRIBUTE_CONTENT          */
+/*  13 APOS_ATTRIBUTE_CONTENT          */
+/*  14 ELEMENT_CONTENT                 */
+/*  15 XML_COMMENT                     */
+/*  16 PROCESSING_INSTRUCTION          */
+/*  17 PROCESSING_INSTRUCTION_CONTENT  */
+/*  18 CDATA_SECTION                   */
+/*  19 END_TAG                         */
 
 %x DEFAULT
+%x OPERATOR
 %x NAMESPACEDECL
 %x NAMESPACEKEYWORD
-%x XMLSPACE_DECL
-%x ITEMTYPE
 %x VARNAME
+%x SINGLETYPE
+%x ITEMTYPE
+%x OCCURRENCEINDICATOR
+%x KINDTEST
+%x KINDTESTFORPI
 %x START_TAG
+%x QUOT_ATTRIBUTE_CONTENT
+%x APOS_ATTRIBUTE_CONTENT
 %x ELEMENT_CONTENT
-%x END_TAG
 %x XML_COMMENT
 %x PROCESSING_INSTRUCTION
 %x PROCESSING_INSTRUCTION_CONTENT
 %x CDATA_SECTION
-%x QUOT_ATTRIBUTE_CONTENT
-%x APOS_ATTRIBUTE_CONTENT
+%x END_TAG
 
-/**
- * XQuery 1.0 syntactic constructs (see W3C XQuery, A.1.1)
+/*
+ * XQuery 1.0 syntactic constructs
  *
- * @bug !W3C 
- * need to define `CombiningChar' to inlcude umlauts, diacritics, ... 
- * and `Extender' to include dots, special colons, etc. as valid `Nmchar's
- *
- * notes on W3C XQuery, A.1.1:
- * - `BaseChar' apparently unused
- * - `Ideographic' apparently unused
- * - `NCNameChar' apparently unused
+ * lex/flex currently only supports 8 bit charsets. The character classes
+ * are thus limited to the lower 8 bits.
  */
 
-/* character classes */
-Letter                            [a-zA-Z]                            
-Digit                             [0-9]                               
+/* XML Character Classes (http://www.w3.org/TR/REC-xml/#CharClasses) */
+/* 8 bit characters from the Letter class
+   see http://www.w3.org/TR/REC-xml/#NT-Letter */
+Letter                           [\x41-\x5a\x61-\x7a\xc0-\xd6\xd8-\xf6\xf8-\xff]
+/* 8 bit characters from the Digit class
+   see http://www.w3.org/TR/REC-xml/#NT-Digit */
+Digit                            [\x30-\x39]
+Digits                           {Digit}+
+/* 0x00B7 is the only 8 bit Extender char
+   see http://www.w3.org/TR/REC-xml/#NT-Extender */
+Extender                         "\xb7"
 
-/* identifiers */
-NCName                            {Nmstart}{Nmchar}*
-QName                             ({Prefix}":")?{LocalPart}
-Prefix                            {NCName}
-LocalPart                         {NCName}
+/* An XML Name, minus the ":"
+   see http://www.w3.org/TR/REC-xml-names/#NT-NCName */
+NCName                           ({Letter}|"_"){NCNameChar}*
+NCNameChar                       {Letter}|{Digit}|"."|"-"|"_"|{Extender}
 
-/* string literals and numbers */
-IntegerLiteral                    {Digits}
-DecimalLiteral                    ("."{Digits})|({Digits}"."[0-9]*)
-DoubleLiteral                     (("."{Digits})|({Digits}("."{Digit}*)?))("e"|"E")("+"|"-")?{Digits}
-StringLiteral                     ("\""("\"\""|[^"])*"\"")|("'"("''"|[^'])*"'")
+/* QName: http://www.w3.org/TR/REC-xml-names/#NT-QName */
+QName                            ({Prefix}":")?{LocalPart}
+Prefix                           {NCName}
+LocalPart                        {NCName}
 
-/* comments */
-ExprComment                       "{--"([^-]|"-"[^-]|"--"+[^}])*"-""-"+"}"
+/* Whitespace http://www.w3.org/TR/REC-xml/#NT-S */
+S                                {WhiteSpaceChar}+
+WhiteSpaceChar                   [\x20\x09\x0d\x0a]
 
-/* defined tokens */
-S                                 {WhiteSpaceChar}+
-Nmstart                           {Letter}|"_"                        
-Nmchar                            {Letter}|{Digit}|"."|"-"|"_"        
-Digits                            [0-9]+ 
-EscapeQuot                        "\"\""
-URLLiteral                        ("\""("\"\""|[^"])*"\"")|("'"("''"|[^'])*"'")
-PITarget                          {NCName}
-VarName                           {QName}
-NCNameForPrefix                   {Nmstart}{Nmchar}*
-PredefinedEntityRef               "&"("lt"|"gt"|"amp"|"quot"|"apos")";"
-HexDigits                         ([0-9]|[a-f]|[A-F])+                
-CharRef                           "&#"({Digits}|("x"{HexDigits}))";"
-EscapeApos                        "''"
-Char                              "\n"|.
-WhiteSpaceChar                    [ \t\n\r]
+/* 8 bit Char http://www.w3.org/TR/REC-xml/#NT-Char */
+Char                             [\x09\x0a\x0d\x20-\xff]
+
+/* ElementContentChar */
+QuotAttrContentChar              [\x09\x0a\x0d\x20-\x21\x23-\x25\x27-\x3b\x3d\x3f-\x7a\x7c\x7e-\xff]
+AposAttrContentChar              [\x09\x0a\x0d\x20-\x25\x28-\x3b\x3d\x3f-\x7a\x7c\x7e-\xff]
+ElementContentChar               [\x09\x0a\x0d\x20-\x25\x27-\x3b\x3d\x3f-\x7a\x7c\x7e-\xff]
+
+/* XQuery WD [132] */
+IntegerLiteral                   {Digits}
+/* XQuery WD [133] */
+DecimalLiteral                   ("."{Digits})|({Digits}"."[0-9]*)
+/* XQuery WD [134] */
+DoubleLiteral                    (("."{Digits})|({Digits}("."[0-9]*)?))[eE][-+]?{Digits}
+/* XQuery WD [135] */
+StringLiteral                    ("\""({PredefinedEntityRef}|{CharRef}|"\"\""|[^"&])*"\"")|("'"({PredefinedEntityRef}|{CharRef}|"''"|[^'&])*"'")
+/* XQuery WD [136] http://www.w3.org/TR/REC-xml/#NT-PITarget
+   !W3C: This pattern also matches "xml".
+   FIXME: Catch [xX][mM][lL] in parser rule. */
+PITarget                         ({Letter}|"_"|":"){NameChar}*
+NameChar                         {Letter}|{Digit}|"."|"-"|"_"|{Extender}
+
+/* XQuery WD [140] */
+PredefinedEntityRef              "&"("lt"|"gt"|"amp"|"quot"|"apos")";"
+/* XQuery WD [141] or http://www.w3.org/TR/REC-xml/#NT-CharRef */
+CharRef                          ("&#"[0-9]+";")|("&#x"[0-9a-fA-F]+";")
+
+ExprComment                      "(:"[^:]([^(:]|"("[^:]|":"[^)])*":)"
 
 /* whitespace/comments in compound keywords */
-_                                 ({S}|{ExprComment})+
+_                                ({S}|{ExprComment})+
 
 %%
 
+<INITIAL,DEFAULT>{
 
-<INITIAL,DEFAULT>{  
+"xquery"{_}"version"               { yield (xquery_version); }
 
-"?"                               yield ('?'); 
-"["                               yield ('['); 
-"]"                               yield (']'); 
-"+"                               yield ('+'); 
-"-"                               yield ('-'); 
-"("				  yield ('(');
-")"                               yield (')');
-";"                               yield (';'); 
-"*"                               yield ('*');
-","                               yield (',');
-"$"                               { pushState (DEFAULT);
-                                    gotoState (VARNAME);
-                                    yield ('$');
-                                  }
+"module"{_}"namespace"             { gotoState (NAMESPACEDECL);
+                                     yield (module_namespace); }
 
-"{"                               { pushState (DEFAULT);
-                                    yield ('{'); 
-                                  }
-"}"                               { popState (); 
-                                    yield ('}');
-                                  }
+";"                                { yield (semicolon); }
 
+"declare"{_}"namespace"            { gotoState (NAMESPACEDECL);
+                                     yield (declare_namespace); }
 
-"attribute"{S}{QName}{_}*"{"      { /* return the attribute QName */
-				    pflval.qname =
-                                      PFstr_qname (strtok (strpbrk (
-                                                            yytext, " \t\n\r"),
-                                                     " \t\n\r{"));
-   
-                                    pushState (DEFAULT);
-                                    yield (attribute_QName_lbrace);
-                                  }
-"element"{S}{QName}{_}*"{"        { /* return the element tag QName */
-				    pflval.qname =
-                                      PFstr_qname (strtok (strpbrk (
-                                                            yytext, " \t\n\r"),
-                                                     " \t\n\r{"));
+"declare"{_}"xmlspace"{_}"preserve" { yield (declare_xmlspace_preserve); }
+"declare"{_}"xmlspace"{_}"strip"   { yield (declare_xmlspace_strip); }
 
-                                    pushState (DEFAULT);
-                                    yield (element_QName_lbrace);
-                                  }
-"element"{_}*"{"                  { pushState (DEFAULT);
-                                    yield (element_lbrace);
-                                  }
-"document"{_}*"{"                 { pushState (DEFAULT);
-                                    yield (document_lbrace);
-                                  }
-"attribute"{_}*"{"                { pushState (DEFAULT);
-                                    yield (attribute_lbrace);
-                                  }
-"text"{_}*"{"                     { pushState (DEFAULT);
-                                    yield (text_lbrace);
-                                  }
+"declare"{_}"default"{_}"element"  { gotoState (NAMESPACEKEYWORD);
+                                     yield (declare_default_element); }
+"declare"{_}"default"{_}"function" { gotoState (NAMESPACEKEYWORD);
+                                     yield (declare_default_function); }
+"declare"{_}"ordering"{_}"ordered" { yield (declare_ordering_ordered); }
+"declare"{_}"ordering"{_}"unordered" { yield (declare_ordering_unordered); }
+"declare"{_}"default"{_}"order"    { yield (declare_default_order); }
+"declare"{_}"inherit-namespaces"{_}"yes" { yield (declare_inherit_namespaces_yes); }
+"declare"{_}"inherit-namespaces"{_}"no" { yield (declare_inherit_namespaces_no); }
+"empty"{_}"greatest"               { yield (empty_greatest); }
+"empty"{_}"least"                  { yield (empty_least); }
+"declare"{_}"default"{_}"collation" { yield (declare_default_collation); }
+"declare"{_}"base-uri"             { yield (declare_base_uri); }
+"import"{_}"schema"                { gotoState (NAMESPACEKEYWORD);
+                                     yield (import_schema); }
+"import"{_}"module"                { gotoState (NAMESPACEKEYWORD);
+                                     yield (import_module); }
+"at"{_}{StringLiteral}             { pflval.str = extract_string (yytext);
+                                     yield (at_StringLiteral);
+                                   }
+"declare"{_}"variable"{_}"$"       { gotoState (VARNAME);
+                                     yield (declare_variable_dollar); }
+"declare"{_}"construction"{_}"preserve" { yield (declare_construction_preserve); }
+"declare"{_}"construction"{_}"strip" { yield (declare_construction_strip); }
+"declare function"                 { yield (declare_function); }
+"$"                                { gotoState (VARNAME); yield (dollar); }
+")"                                { gotoState (OPERATOR); yield (rparen); }
+")"{_}?"as"                        { gotoState (ITEMTYPE); yield (rparen_as); }
+"{"                                { pushState (OPERATOR); yield (lbrace); }
+"}"                                { popState (); yield (rbrace); }
+","                                { yield (comma); }
 
 
-{IntegerLiteral}                  { /* return the int value
-                                     * represented by this integer literal 
-				     */
-                                    pflval.num = atoi (yytext);
+"for"{_}"$"                        { gotoState (VARNAME); yield (for_dollar); }
+"let"{_}"$"                        { gotoState (VARNAME); yield (let_dollar); }
+"some"{_}"$"                       { gotoState (VARNAME); yield (some_dollar); }
+"every"{_}"$"                      { gotoState (VARNAME); yield (every_dollar);}
+"typeswitch"{_}?"("/[^:]           { yield (typeswitch_lparen); }
+"if"{_}?"("/[^:]                   { yield (if_lparen); }
+"+"                                { yield (plus); /* unary plus */ }
+"-"                                { yield (minus); /* unary minus */ }
+"validate"{_}?"{"                  { pushState (OPERATOR);
+                                     yield (validate_lbrace); }
+"validate"{_}"lax"{_}?"{"          { pushState (OPERATOR);
+                                     yield (validate_lax_lbrace); }
+"validate"{_}"strict"{_}?"{"       { pushState (OPERATOR);
+                                     yield (validate_strict_lbrace); }
+"/"                                { yield (slash); }
+"//"                               { yield (slash_slash); }
+"child::"                          { yield (child_colon_colon); }
+"descendant::"                     { yield (descendant_colon_colon); }
+"attribute::"                      { yield (attribute_colon_colon); }
+"self::"                           { yield (self_colon_colon); }
+"descendant-or-self::"             { yield (descendant_or_self_colon_colon); }
+"following-sibling::"              { yield (following_sibling_colon_colon); }
+"following::"                      { yield (following_colon_colon); }
+"@"                                { yield (atsign); }
+"parent::"                         { yield (parent_colon_colon); }
+"ancestor::"                       { yield (ancestor_colon_colon); }
+"preceding-sibling::"              { yield (preceding_sibling_colon_colon); }
+"preceding::"                      { yield (preceding_colon_colon); }
+"ancestor-or-self::"               { yield (ancestor_or_self_colon_colon); }
+".."                               { gotoState (OPERATOR); yield (dot_dot); }
+"."                                { gotoState (OPERATOR); yield (dot); }
+"*"                                { gotoState (OPERATOR); yield (star); }
+{NCName}":*"                       { pflval.qname
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     gotoState (OPERATOR);
+                                     yield (NCName_Colon_Star); }
+"*:"{NCName}                       { pflval.qname
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     gotoState (OPERATOR); 
+                                     yield (Star_Colon_NCName); }
+"document-node"{_}?"("/[^:]        { pushState (OCCURRENCEINDICATOR);
+                                     yield (document_node_lparen); }
+"text"{_}?"("/[^:]                 { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (text_lparen); }
+"comment"{_}?"("/[^:]              { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (comment_lparen); }
+"processing-instruction"{_}?"("/[^:] { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTESTFORPI);
+                                     yield (pi_lparen); }
+"attribute"{_}?"("/[^:]            { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (attribute_lparen); }
+"schema-attribute"{_}?"("/[^:]     { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (schema_attribute_lparen); }
+"element"{_}?"("/[^:]              { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (element_lparen); }
+"schema-element"{_}?"("/[^:]       { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (schema_element_lparen); }
+"node"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
+                                     yield (node_lrparens); }
+"empty"{_}?"("{_}?")"              { gotoState (OPERATOR);
+                                     yield (empty_lrparens); }
+"item"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
+                                     yield (item_lrparens); }
+"("                                { yield (lparen); }
+"ordered"{_}?"{"                   { pushState (OPERATOR);
+                                     yield (ordered_lbrace); }
+"unordered"{_}?"{"                 { pushState (OPERATOR);
+                                     yield (unordered_lbrace); }
+"<"                                { pushState (OPERATOR);
+                                     gotoState (START_TAG); yield (less_than); }
+"document"{_}?"{"                  { pushState (OPERATOR);
+                                     yield (document_lbrace); }
+"element"{_}?"{"                   { pushState (OPERATOR); pushState (DEFAULT);
+                                     yield (element_lbrace); }
+"attribute"{_}?"{"                 { pushState (OPERATOR); pushState (DEFAULT);
+                                     yield (attribute_lbrace); }
+"text"{_}?"{"                      { pushState (OPERATOR);
+                                     yield (text_lbrace); }
+"comment"{_}?"{"                   { pushState (OPERATOR);
+                                     yield (comment_lbrace); }
+"processing-instruction"{_}?"{"    { pushState (OPERATOR);
+                                     yield (pi_lbrace); }
+"element"{_}{QName}{_}?"{"         { pflval.qname = extract_qname (yytext, 1);
+                                     pushState (OPERATOR);
+                                     yield (Element_QName_LBrace);
+                                   }
+"attribute"{_}{QName}{_}?"{"       { pflval.qname = extract_qname (yytext, 1);
+                                     pushState (OPERATOR);
+                                     yield (Attribute_QName_LBrace);
+                                   }
+"processing-instruction"{_}{NCName}{_}?"{" {
+                                     pflval.str = extract_ncname (yytext, 1);
+                                     pushState (OPERATOR);
+                                     yield (PI_NCName_LBrace);
+                                   }
 
-                                    yield (IntegerLiteral);
-                                  }
-{DecimalLiteral}                  { /* return double value represented
-                                     * by this decimal literal
-                                     */
-				    pflval.dec = atof (yytext);
+"<!--"                             { pushState (OPERATOR);
+                                     gotoState (XML_COMMENT);
+                                     yield (xml_comment_start); }
+"<?"                               { pushState (OPERATOR);
+                                     gotoState (PROCESSING_INSTRUCTION);
+                                     yield (lt_question_mark); }
+"<![CDATA["                        { pushState (OPERATOR);
+                                     gotoState (CDATA_SECTION);
+                                     yield (cdata_start); }
 
-                                    yield (DecimalLiteral);
-                                  }
-{DoubleLiteral}                   { /* return double value represented
-                                     * by this double literal
-                                     */
-				    pflval.dec = atof (yytext);
-
-                                    yield (DoubleLiteral);
-                                  }
-{StringLiteral}                   { /* return string between `"' or `''
-                                     * represented by the string literal,
-                                     * expand escaped quotation marks
-                                     */
-                                    pflval.str = expand_esc_quots (
-                                                   strpbrk (yytext, "'\""));
-
-                                    yield (StringLiteral);
-				  }
-"at"{S}{StringLiteral}            { /* return string between `"' or `''
-                                     * represented by the string literal,
-                                     * expand escaped quotation marks
-                                     */
-                                    pflval.str = expand_esc_quots (
-                                                   strpbrk (yytext, "'\""));
-
-                                    yield (at_StringLiteral);
-                                  }
-
-
-
-"default"{_}"collation"{_}"="     { gotoState (NAMESPACEDECL);
-                                    yield (default_collation_equals);
-                                  }
-"declare"{_}"namespace"           { gotoState (NAMESPACEDECL);
-                                    yield (declare_namespace);
-                                  }
-
-"default"{_}"element"             { gotoState (NAMESPACEKEYWORD);
-                                    yield (default_element);
-                                  }
-"default"{_}"function"            { gotoState (NAMESPACEKEYWORD);
-                                    yield (default_function);
-                                  }
-"import"{_}"schema"               { gotoState (NAMESPACEKEYWORD);
-                                    yield (import_schema);
-                                  }
-
-
-"declare"{_}"xmlspace"            { gotoState (XMLSPACE_DECL);
-                                    yield (declare_xmlspace);
-                                  }
-"define"{_}"function"             yield (define_function);
-
-"<"                               { pushState (DEFAULT);
-                                    gotoState (START_TAG);
-                                    yield ('<');
-                                  }
-"<!--"                            { pushState (DEFAULT);
-                                    gotoState (XML_COMMENT);
-                                    yield (xml_comment_start);
-                                  }
-"<?"                              { pushState (DEFAULT);
-                                    gotoState (PROCESSING_INSTRUCTION);
-                                    yield (pi_start);
-                                  }
-"<![CDATA["                       { pushState (DEFAULT);
-                                    gotoState (CDATA_SECTION);
-                                    yield (cdata_start);
-                                  }
-
-
-"div"                             yield (div_);
-"idiv"                            yield (idiv);
-"mod"                             yield (mod);
-"and"                             yield (and);
-"or"                              yield (or);
-"return"                          yield (return_);
-"then"                            yield (then_);
-"else"                            yield (else_);
-"to"                              yield (to);
-"union"                           yield (union_);
-"intersect"                       yield (intersect);
-"except"                          yield (except);
-"="                               yield ('=');
-"is"                              yield (is);
-"!="                              yield (neq);
-"isnot"                           yield (isnot);
-"<="                              yield (lte);
-">="                              yield (gte);
-"<"{_}                            yield (lt_s);
-">"                               yield ('>');
-"|"                               yield ('|');
-"<<"                              yield (lt_lt);
-">>"                              yield (gt_gt);
-"eq"                              yield (eq);
-"ne"                              yield (ne);
-"gt"                              yield (gt);
-"ge"                              yield (ge);
-"lt"                              yield (lt);
-"le"                              yield (le);
-"in"                              yield (in);
-"at"                              yield (at);
-"context"                         yield (context);
-"where"                           yield (where);
-"order"{_}"by"                    yield (order_by);
-"satisfies"                       yield (satisfies);
-":="                              yield (colon_equals);
-
-"for"{_}"$"                       { pushState (DEFAULT);
-                                    gotoState (VARNAME);
-                                    yield (for_dollar);
-                                  }
-"let"{_}"$"                       { pushState (DEFAULT);
-                                    gotoState (VARNAME);
-                                    yield (let_dollar);
-                                  }
-"some"{_}"$"                      { pushState (DEFAULT);
-                                    gotoState (VARNAME);
-                                    yield (some_dollar);
-                                  }
-"every"{_}"$"                     { pushState (DEFAULT);
-                                    gotoState (VARNAME);
-                                    yield (every_dollar);
-                                  }
-
-"if"{_}*"("                       yield (if_lparen);
-"typeswitch"{_}*"("               yield (typeswitch_lparen);
-"validate"                        yield (validate);
-"validate"{_}*"{"                 { pushState (DEFAULT);
-                                    yield (validate_lbrace);
-                                  }
-
-"stable"{_}"order"{_}"by"         yield (stable_order_by);
-"collation"                       yield (collation);
-"ascending"                       yield (ascending);
-"descending"                      yield (descending);
-"empty"{_}"greatest"              yield (empty_greatest);
-"empty"{_}"least"                 yield (empty_least);
-
-"typeswitch"{_}*"("               yield (typeswitch_lparen);
-"default"                         yield (default_);
-
-"case"                            { gotoState (ITEMTYPE);
-                                    yield (case_);
-                                  }
-"instance"{_}"of"                 { gotoState (ITEMTYPE);
-                                    yield (instance_of);
-                                  }
-"castable"{_}"as"                 { gotoState (ITEMTYPE);
-                                    yield (castable_as);
-                                  }
-"cast"{_}"as"                     { gotoState (ITEMTYPE);
-                                    yield (cast_as);
-                                  }
-"treat"{_}"as"                    { gotoState (ITEMTYPE);
-                                    yield (treat_as);
-                                  }
-")"{_}*"as"                       { gotoState (ITEMTYPE);
-                                    yield (rparen_as);
-                                  }
-"as"                              { gotoState (ITEMTYPE);
-                                    yield (as);
-                                  }
-
-"type"{S}{QName}                  { /* return the type QName */ 
-				    pflval.qname =
-                                      PFstr_qname (strtok (strpbrk (
-                                                            yytext, " \t\n\r"),
-                                                     " \t\n\r"));
-
-                                    yield (type_QName); 
-                                  }
-
-"of"{_}"type"                     yield (of_type);
-
-"."                               yield ('.');
-".."                              yield (dot_dot);
-"/"                               yield ('/');
-"//"                              yield (slash_slash);
-"child::"                         yield (child_colon_colon);
-"descendant::"                    yield (descendant_colon_colon);
-"parent::"                        yield (parent_colon_colon);
-"attribute::"                     yield (attribute_colon_colon);
-"self::"                          yield (self_colon_colon);
-"descendant-or-self::"            yield (descendant_or_self_colon_colon);
-"ancestor::"                      yield (ancestor_colon_colon);
-"ancestor-or-self::"              yield (ancestor_or_self_colon_colon);
-"preceding::"                     yield (preceding_colon_colon);
-"following::"                     yield (following_colon_colon);
-"following-sibling::"             yield (following_sibling_colon_colon);
-"preceding-sibling::"             yield (preceding_sibling_colon_colon);
-"@"                               yield ('@');
-
-"text"{_}*"("                     yield (text_lparen);
-"comment"{_}*"("                  yield (comment_lparen);
-"node"{_}*"("                     yield (node_lparen);
-"processing-instruction"{_}*"("   yield (processing_instruction_lparen);
-
-"*:*"                             yield ('*');
-{NCName}":*"                      { /* return wildcard as QName */
-                                    pflval.qname = PFstr_qname (yytext);
-
-                                    yield (NCName_colon_star);
-                                  }
-"*:"{NCName}                      { /* return wildcard as QName */
-                                    pflval.qname = PFstr_qname (yytext);
-
-                                    yield (star_colon_NCName);
-                                  }
-{QName}                           { /* return the QName as-is */
-				    pflval.qname = PFstr_qname (yytext);
-
-                                    yield (QName);
-                                  }
-
-{ExprComment}                     ; 
-{S}                               ;
-
+{QName}{_}?"("/[^:]                { pflval.qname = extract_qname (yytext, 0);
+                                     yield (QName_LParen);
+                                   }
+{IntegerLiteral}                   { pflval.num = atoi (yytext);
+                                     gotoState (OPERATOR);
+                                     yield (IntegerLiteral);
+                                   }
+{DecimalLiteral}                   { pflval.dec = atof (yytext);
+                                     gotoState (OPERATOR);
+                                     yield (DecimalLiteral);
+                                   }
+{DoubleLiteral}                    { pflval.dbl = atof (yytext);
+                                     gotoState (OPERATOR);
+                                     yield (DoubleLiteral);
+                                   }
+{QName}                            { pflval.qname
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     gotoState (OPERATOR);
+                                     yield (QName);
+                                   }
+{StringLiteral}                    { pflval.str = extract_string (yytext);
+                                     gotoState (OPERATOR);
+                                     yield (StringLiteral);
+                                   }
+{_}                                ;
+.                                  { yield (invalid_character); }
 }
 
+<OPERATOR>{
+"encoding"{_}{StringLiteral}       { pflval.str = extract_string (yytext);
+                                     gotoState (DEFAULT);
+                                     yield (encoding_StringLiteral);
+                                   }
 
-<NAMESPACEKEYWORD>{
+")"{_}?"as"                        { gotoState (ITEMTYPE); yield (rparen_as); }
+"as"                               { gotoState (ITEMTYPE); yield (as); }
+":="                               { gotoState (DEFAULT); yield (colon_equals);}
+"external"                         { gotoState (DEFAULT); yield (external); }
 
-{StringLiteral}                   { /* return string between `"' or `''
-                                     * represented by the string literal,
-                                     * expand escaped quotation marks
-                                     */
-                                    pflval.str = expand_esc_quots (
-                                                   strpbrk (yytext, "'\""));
+"at"{_}"$"                         { gotoState (VARNAME); yield (at_dollar); }
+"for"{_}"$"                        { gotoState (VARNAME); yield (for_dollar); }
+"let"{_}"$"                        { gotoState (VARNAME); yield (let_dollar); }
+"in"                               { gotoState (DEFAULT); yield (in); }
 
-                                    gotoState (DEFAULT);
-                                    yield (StringLiteral);
-				  }
-
-"namespace"                       { gotoState (NAMESPACEDECL);
-                                    yield (namespace);
-                                  }
-
-"default"{_}"element"             yield (default_element);
-"default"{_}"function"            yield (default_function);
-
-{ExprComment}                     ; 
-{S}                               ;
-
+"{"                                { pushState (OPERATOR);
+                                     gotoState (DEFAULT);
+                                     yield (lbrace); }
+"}"                                { popState (); yield (rbrace); }
+";"                                { gotoState (DEFAULT); yield (semicolon); }
+","                                { gotoState (DEFAULT); yield (comma); }
+"return"                           { gotoState (DEFAULT); yield (return_); }
+"where"                            { gotoState (DEFAULT); yield (where); }
+"order"{_}"by"                     { gotoState (DEFAULT); yield (order_by); }
+"stable"{_}"order"{_}"by"          { gotoState (DEFAULT);
+                                     yield (stable_order_by); }
+"ascending"                        { yield (ascending); }
+"descending"                       { yield (descending); }
+"collation"                        { yield (collation); }
+"empty"{_}"greatest"               { yield (empty_greatest); }
+"empty"{_}"least"                  { yield (empty_least); }
+{StringLiteral}                    { pflval.str = extract_string (yytext);
+                                     yield (StringLiteral);
+                                   }
+"satisfies"                        { gotoState (DEFAULT); yield (satisfies); }
+")"                                { yield (rparen); }
+"case"                             { gotoState (ITEMTYPE); yield (case_); }
+"default"                          { yield (default_); }
+"$"                                { gotoState (VARNAME); yield (dollar); }
+"then"                             { gotoState (DEFAULT); yield (then); }
+"else"                             { gotoState (DEFAULT); yield (else_); }
+"or"                               { gotoState (DEFAULT); yield (or); }
+"and"                              { gotoState (DEFAULT); yield (and); }
+"to"                               { gotoState (DEFAULT); yield (to); }
+"union"                            { gotoState (DEFAULT); yield (union_); }
+"|"                                { gotoState (DEFAULT); yield (pipe_); }
+"intersect"                        { gotoState (DEFAULT); yield (intersect); }
+"except"                           { gotoState (DEFAULT); yield (except); }
+"+"                                { gotoState (DEFAULT); yield (plus); }
+"-"                                { gotoState (DEFAULT); yield (minus); }
+"*"                                { gotoState (DEFAULT); yield (star); }
+"div"                              { gotoState (DEFAULT); yield (div_); }
+"idiv"                             { gotoState (DEFAULT); yield (idiv); }
+"mod"                              { gotoState (DEFAULT); yield (mod); }
+"instance"{_}"of"                  { gotoState (ITEMTYPE); yield (instance_of);}
+"treat"{_}"as"                     { gotoState (ITEMTYPE); yield (treat_as); }
+"castable"{_}"as"                  { gotoState (SINGLETYPE);
+                                     yield (castable_as); }
+"cast"{_}"as"                      { gotoState (SINGLETYPE); yield (cast_as); }
+"="                                { gotoState (DEFAULT); yield (equals); }
+"!="                               { gotoState (DEFAULT); yield (excl_equals); }
+"<"                                { gotoState (DEFAULT); yield (less_than); }
+"<="                               { gotoState (DEFAULT);
+                                     yield (less_than_equal); }
+">"                                { gotoState (DEFAULT); yield (greater_than);}
+">="                               { gotoState (DEFAULT);
+                                     yield (greater_than_equal); }
+"eq"                               { gotoState (DEFAULT); yield (eq); }
+"ne"                               { gotoState (DEFAULT); yield (ne); }
+"lt"                               { gotoState (DEFAULT); yield (lt); }
+"le"                               { gotoState (DEFAULT); yield (le); }
+"gt"                               { gotoState (DEFAULT); yield (gt); }
+"ge"                               { gotoState (DEFAULT); yield (ge); }
+"is"                               { gotoState (DEFAULT); yield (is); }
+"<<"                               { gotoState (DEFAULT); yield (lt_lt); }
+">>"                               { gotoState (DEFAULT); yield (gt_gt); }
+"/"                                { gotoState (DEFAULT); yield (slash); }
+"//"                               { gotoState (DEFAULT); yield (slash_slash); }
+"["                                { gotoState (DEFAULT); yield (lbracket); }
+"]"                                { yield (rbracket); }
+"?"                                { yield (question_mark); }
+{_}                                ;
+.                                  { yield (invalid_character); }
 }
 
 <NAMESPACEDECL>{
-
-"="                               yield ('=');
-{NCNameForPrefix}                 { /* return the NCName as-is */
-                                    pflval.str = PFstrdup (yytext);
-
-				    yield (NCNameForPrefix);
-				  }
-{URLLiteral}                      { /* return string between `"' or `''
-                                     * represented by the string literal,
-                                     * expand escaped quotation marks
-                                     */
-                                    pflval.str = expand_esc_quots (
-                                                   strpbrk (yytext, "'\""));
-
-                                    gotoState (DEFAULT);
-                                    yield (URLLiteral);
-				  }
-
-{ExprComment}                     ; 
-{S}                               ;
-
+{StringLiteral}                    { pflval.str = extract_string (yytext);
+                                     gotoState (DEFAULT);
+                                     yield (StringLiteral);
+                                   }
+{NCName}                           { pflval.str = PFstrndup (yytext, yyleng);
+                                     yield (NCName);
+                                   }
+"="                                { yield (equals); }
+{_}                                ;
+.                                  { yield (invalid_character); }
 }
 
-
-<XMLSPACE_DECL>{
-
-"preserve"                        { gotoState (DEFAULT);
-                                    yield (preserve);
-                                  }
-"strip"                           { gotoState (DEFAULT);
-                                    yield (strip);
-                                  }
-
-"="                               yield ('=');
-
-{ExprComment}                     ; 
-{S}                               ;
-
+<NAMESPACEKEYWORD>{
+"namespace"                        { gotoState (NAMESPACEDECL);
+                                     yield (namespace); }
+"default"{_}"element"              { yield (default_element); }
+{StringLiteral}                    { pflval.str = extract_string (yytext);
+                                     gotoState (DEFAULT);
+                                     yield (StringLiteral);
+                                   }
+{_}                                ;
+.                                  { yield (invalid_character); }
 }
-
-
-<ITEMTYPE>{
-
-"attribute"                       { gotoState (DEFAULT);
-                                    yield (attribute);
-                                  }
-"element"                         { gotoState (DEFAULT);
-                                    yield (element);
-                                  }
-"node"                            { gotoState (DEFAULT);
-                                    yield (node);
-                                  }
-"document"                        { gotoState (DEFAULT);
-                                    yield (document);
-                                  }
-"comment"                         { gotoState (DEFAULT);
-                                    yield (comment);
-                                  }
-"text"                            { gotoState (DEFAULT);
-                                    yield (text);
-                                  }
-"processing-instruction"          { gotoState (DEFAULT);
-                                    yield (processing_instruction);
-                                  }
-"item"                            { gotoState (DEFAULT);
-                                    yield (item);
-                                  }
-"atomic"{_}"value"                { gotoState (DEFAULT);
-                                    yield (atomic_value);
-                                  }
-"empty"                           { gotoState (DEFAULT);
-                                    yield (empty_);
-                                  }
-
-"as"                              yield (as);
-
-{QName}                           { /* return the QName (named type) */
-				    pflval.qname = PFstr_qname (yytext);
-
-				    gotoState (DEFAULT);
-                                    yield (QName);
-                                  }
-
-"$"                               { pushState (ITEMTYPE);
-                                    gotoState (VARNAME); 
-                                    yield ('$');
-                                  }
-
-{ExprComment}                     ; 
-{S}                               ;
-
-}
-
 
 <VARNAME>{
+{QName}                            { pflval.qname
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     gotoState (OPERATOR);
+                                     yield (QName);
+                                   }
+.                                  { yield (invalid_character); }
+}
 
-{VarName}                         { /* return the QName */
-				    pflval.qname = PFstr_qname (yytext);
+<SINGLETYPE>{
+{QName}                            { pflval.qname
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     gotoState (OPERATOR);
+                                     yield (QName);
+                                   }
+{_}                                ;
+.                                  { yield (invalid_character); }
+}
 
-                                    popState ();
-                                    yield (VarName);
-                                  }
+<ITEMTYPE>{
+"$"                                { gotoState (VARNAME); yield (dollar); }
+{QName}                            { pflval.qname
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     gotoState (OCCURRENCEINDICATOR);
+                                     yield (QName);
+                                   }
+"document-node"{_}?"("/[^:]        { pushState (OCCURRENCEINDICATOR);
+                                     yield (document_node_lparen); }
+"text"{_}?"("/[^:]                 { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (text_lparen); }
+"comment"{_}?"("/[^:]              { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (comment_lparen); }
+"processing-instruction"{_}?"("/[^:] { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTESTFORPI);
+                                     yield (pi_lparen); }
+"attribute"{_}?"("/[^:]            { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (attribute_lparen); }
+"schema-attribute"{_}?"("/[^:]     { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (schema_attribute_lparen); }
+"element"{_}?"("/[^:]              { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (element_lparen); }
+"schema-element"{_}?"("/[^:]       { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     yield (schema_element_lparen); }
+"node"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
+                                     yield (node_lrparens); }
+"empty"{_}?"("{_}?")"              { gotoState (OPERATOR);
+                                     yield (empty_lrparens); }
+"item"{_}?"("{_}?")"               { gotoState (OCCURRENCEINDICATOR);
+                                     yield (item_lrparens); }
+{_}                                ;
+.                                  { yield (invalid_character); }
+}
 
-{ExprComment}                     ; 
-{S}                               ;
+<OCCURRENCEINDICATOR>{
+"*"                                { gotoState (OPERATOR);
+                                     yield (star); }
+"?"                                { gotoState (OPERATOR);
+                                     yield (question_mark); }
+"+"                                { gotoState (OPERATOR);
+                                     yield (plus); }
+{_}                                ;
+.                                  { unput (yytext[yyleng-1]);
+                                     gotoState (OPERATOR); }
+}
 
+<KINDTEST>{
+{QName}                            { pflval.qname
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     yield (QName);
+                                   }
+","                                { yield (comma); }
+"?"                                { yield (question_mark); }
+")"                                { popState (); yield (rparen); }
+"*"                                { yield (star); }
+{_}                                ;
+.                                  { yield (invalid_character); }
+}
+
+<KINDTESTFORPI>{
+{NCName}                           { pflval.str = PFstrndup (yytext, yyleng);
+                                     yield (NCName);
+                                   }
+{StringLiteral}                    { pflval.str = extract_string (yytext);
+                                     yield (StringLiteral);
+                                   }
+")"                                { popState (); yield (rparen); }
+{_}                                ;
+.                                  { yield (invalid_character); }
 }
 
 <START_TAG>{
-
-"{"                               { pushState (START_TAG);
-				    gotoState (DEFAULT);
-				    yield ('{');
-                                  }
-
-">"                               { gotoState (ELEMENT_CONTENT);
-                                    yield ('>');
-                                  }
-
-"\""                              { gotoState (QUOT_ATTRIBUTE_CONTENT);
-	                            yield ('"');
-                                  }
-
-"'"                               { gotoState (APOS_ATTRIBUTE_CONTENT);
-                                    yield ('\'');
-                                  }
-
-{S}                               yield (S);
-{QName}                           { /* return the tag name */
-				    pflval.qname = PFstr_qname (yytext);
-
-				    yield (QName);
-				  }
-"="                               yield ('=');
-"/>"                              { popState ();
-				    yield (slash_gt);
-                                  }
-}
-
-<ELEMENT_CONTENT>{
-
-"{"                               { pushState (ELEMENT_CONTENT);
-                                    gotoState (DEFAULT);
-                                    yield ('{');
-                                  }
-
-"<"                               { pushState (ELEMENT_CONTENT);
-                                    gotoState (START_TAG);
-                                    yield ('<');
-                                  }
-
-"</"                              { gotoState (END_TAG);
-                                    yield (lt_slash);
-                                  }
-
-"<!--"                            { pushState (ELEMENT_CONTENT);
-                                    gotoState (XML_COMMENT);
-                                    yield (xml_comment_start);
-                                  }
-
-"<?"                              { pushState (ELEMENT_CONTENT);
-				    gotoState (PROCESSING_INSTRUCTION);
-                                    yield (pi_start);
-                                  }
-
-"<![CDATA["                       { pushState (ELEMENT_CONTENT);
-				    gotoState (CDATA_SECTION);
-				    yield (cdata_start);
-
-				    /* !W3C we do not recognize "]]>" here */
-				  }
-
-{ExprComment}                     ;
-
-{PredefinedEntityRef}             { /* map predefined entity and return
-                                     * character it represents
-                                     */
-                                    pflval.chr = 
-                                      predefined_entity (yytext + 1); 
-
-                                    yield (PredefinedEntityRef);
-                                  }
-{CharRef}                         { /* return the character referenced
-                                     * by its (hexa)decimal code value
-                                     */
-                                    pflval.chr = char_ref (yytext + 2);
-
-				    yield (CharRef);
-                                  }				    
-
-"{{"                              yield (lbrace_lbrace);
-"}}"                              yield (rbrace_rbrace);
-
-{Char}                            { /* return the character itself */
-                                    pflval.chr = *yytext;
-
-				    yield (Char);
-				  }
-}
-
-<END_TAG>{
-
-"{"                               { pushState (END_TAG);
-                                    gotoState (DEFAULT);
-                                    yield ('{');
-                                  }
-
-{S}                               yield (S);
-
-{QName}                           { /* return the tag name */
-				    pflval.qname = PFstr_qname (yytext);
-
-				    yield (QName);
-				  }
-
-">"                               { popState ();
-                                    yield ('>');
-                                  }
-}
-
-<XML_COMMENT>{
-
-{Char}                            { /* return the character itself */
-                                    pflval.chr = *yytext;
-
-				    yield (Char);
-				  }
-"-->"                             { popState ();
-                                    yield (xml_comment_end);
-                                  }
-}
-
-
-<PROCESSING_INSTRUCTION>{
-
-{PITarget}                        { /* return the processing-instruction
-                                     * target as-is
-                                     */
-				    pflval.str = PFstrdup (yytext);
-
-                                    gotoState (PROCESSING_INSTRUCTION_CONTENT);
-				    yield (PITarget);
-                                  }
-}
-
-<PROCESSING_INSTRUCTION_CONTENT>{
-
-{Char}                            { /* return the character itself */
-                                    pflval.chr = *yytext;
-
-				    yield (Char);
-				  }
-
-"?>"                              { popState ();
-                                    yield (pi_end);
-                                  }
-}
-
-<CDATA_SECTION>{
-
-"]]>"                             { popState ();
-                                    yield (cdata_end);
-                                  }
-
-{Char}                            { /* return the character itself */
-                                    pflval.chr = *yytext;
-
-				    yield (Char);
-				  }
+{QName}                            { pflval.qname 
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     yield (QName);
+                                   }
+{S}                                { yield (S); }
+"="                                { yield (equals); }
+"\""                               { gotoState (QUOT_ATTRIBUTE_CONTENT);
+                                     yield (quot_); }
+"'"                                { gotoState (APOS_ATTRIBUTE_CONTENT);
+                                     yield (apos); }
+"/>"                               { popState (); yield (slash_gt); }
+">"                                { gotoState (ELEMENT_CONTENT);
+                                     yield (greater_than); }
+.                                  { yield (invalid_character); }
 }
 
 <QUOT_ATTRIBUTE_CONTENT>{
-
-"{"                               { pushState (QUOT_ATTRIBUTE_CONTENT);
-				    gotoState (DEFAULT);
-                                    yield ('{');
-				  }
-
-"\""                              { gotoState (START_TAG);
-                                    yield ('"');
-                                  }
-
-{EscapeQuot}                      yield (EscapeQuot);
-{PredefinedEntityRef}             { /* map predefined entity and return
-                                     * character it represents
-                                     */
-                                    pflval.chr = 
-                                      predefined_entity (yytext + 1); 
-
-                                    yield (PredefinedEntityRef);
-                                  }
-{CharRef}                         { /* return the character referenced
-                                     * by its (hexa)decimal code value
-                                     */
-                                    pflval.chr = char_ref (yytext + 2);
-
-				    yield (CharRef);
-				  }
-"{{"                              yield (lbrace_lbrace);
-"}}"                              yield (rbrace_rbrace);
-
-{Char}                            { /* return the character itself */
-                                    pflval.chr = *yytext;
- 
-                                    yield (Char);  
-                                  }
+"\""                               { gotoState (START_TAG); yield (quot_); }
+"\"\""                             { yield (escape_quot); }
+"{{"                               { yield (lbrace_lbrace); }
+"}}"                               { yield (rbrace_rbrace); }
+"{"                                { pushState (QUOT_ATTRIBUTE_CONTENT);
+                                     gotoState (DEFAULT);
+                                     yield (lbrace); }
+{QuotAttrContentChar}              { pflval.chr = *yytext;
+                                     yield (AttrContentChar);
+                                   }
+{PredefinedEntityRef}              { pflval.chr = entity_ref (yytext, NULL);
+                                     yield (PredefinedEntityRef);
+                                   }
+{CharRef}                          { pflval.chr = entity_ref (yytext, NULL);
+                                     yield (CharRef);
+                                   }
 }
 
 <APOS_ATTRIBUTE_CONTENT>{
-
-"{"                               { pushState (APOS_ATTRIBUTE_CONTENT);
-				    gotoState (DEFAULT);
-                                    yield ('{');
-				  }
-
-"'"                               { gotoState (START_TAG);
-                                    yield ('\'');
-                                  }
-
-{EscapeApos}                      yield (EscapeApos);
-{PredefinedEntityRef}             { /* map predefined entity and return
-                                     * character it represents
-                                     */
-                                    pflval.chr = 
-                                      predefined_entity (yytext + 1); 
-
-                                    yield (PredefinedEntityRef);
-                                  }
-{CharRef}                         { /* return the character referenced
-                                     * by its (hexa)decimal code value
-                                     */
-                                    pflval.chr = char_ref (yytext + 2);
-
-				    yield (CharRef);
-                                  }
-
-"{{"                              yield (lbrace_lbrace);
-"}}"                              yield (rbrace_rbrace);
-
-{Char}                            { /* return the character itself */
-                                    pflval.chr = *yytext;
- 
-                                    yield (Char);  
-                                  }
+"'"                                { gotoState (START_TAG);
+                                     yield (apos); }
+"\"\""                             { yield (escape_apos); }
+"{{"                               { yield (lbrace_lbrace); }
+"}}"                               { yield (rbrace_rbrace); }
+"{"                                { pushState (APOS_ATTRIBUTE_CONTENT);
+                                     gotoState (DEFAULT);
+                                     yield (lbrace); }
+{AposAttrContentChar}              { pflval.chr = *yytext;
+                                     yield (AttrContentChar);
+                                   }
+{PredefinedEntityRef}              { pflval.chr = entity_ref (yytext, NULL);
+                                     yield (PredefinedEntityRef);
+                                   }
+{CharRef}                          { pflval.chr = entity_ref (yytext, NULL);
+                                     yield (CharRef);
+                                   }
 }
 
-<*>{
-.|"\n"                            yield (*yytext);
+<ELEMENT_CONTENT>{
+"</"                               { gotoState (END_TAG); yield (lt_slash); }
+"{{"                               { yield (lbrace_lbrace); }
+"}}"                               { yield (rbrace_rbrace); }
+"{"                                { pushState (ELEMENT_CONTENT);
+                                     gotoState (DEFAULT);
+                                     yield (lbrace); }
+"<!--"                             { pushState (ELEMENT_CONTENT);
+                                     gotoState (XML_COMMENT);
+                                     yield (xml_comment_start); }
+"<?"                               { pushState (ELEMENT_CONTENT);
+                                     gotoState (PROCESSING_INSTRUCTION);
+                                     yield (lt_question_mark); }
+"<![CDATA["                        { pushState (ELEMENT_CONTENT);
+                                     gotoState (CDATA_SECTION);
+                                     yield (cdata_start); }
+"<"                                { pushState (ELEMENT_CONTENT);
+                                     gotoState (START_TAG); yield (less_than); }
+{PredefinedEntityRef}              { pflval.chr = entity_ref (yytext, NULL);
+                                     yield (PredefinedEntityRef);
+                                   }
+{CharRef}                          { pflval.chr = entity_ref (yytext, NULL);
+                                     yield (CharRef);
+                                   }
+{ElementContentChar}               { pflval.chr = *yytext;
+                                     yield (ElementContentChar);
+                                   }
+}
+
+<XML_COMMENT>{
+"-->"                              { popState (); yield (xml_comment_end); }
+{Char}                             { pflval.chr = *yytext;
+                                     yield (Char);
+                                   }
+}
+
+<PROCESSING_INSTRUCTION>{
+{S}                                { gotoState (PROCESSING_INSTRUCTION_CONTENT);
+                                     yield (S); }
+"?>"                               { popState (); yield (question_mark_gt); }
+{PITarget}                         { pflval.str = PFstrndup (yytext, yyleng);
+                                     yield (PITarget);
+                                   }
+}
+
+<PROCESSING_INSTRUCTION_CONTENT>{
+"?>"                               { popState (); yield (question_mark_gt); }
+{Char}                             { pflval.chr = *yytext;
+                                     yield (Char);
+                                   }
+}
+
+<CDATA_SECTION>{
+"]]>"                              { popState (); yield (cdata_end); }
+{Char}                             { pflval.chr = *yytext;
+                                     yield (Char);
+                                   }
+}
+
+<END_TAG>{
+">"                                { popState (); yield (greater_than); }
+{QName}                            { pflval.qname
+                                         = PFstr_qname (PFstrndup (yytext,
+                                                                   yyleng));
+                                     yield (QName);
+                                   }
+{S}                                { yield (S); }
+.                                  { yield (invalid_character); }
 }
 
 %%
 
-/* Map an XML predefined entity and return the
- * character it represents.
- */
-static char predefined_entity (char *ent)
+static char
+entity_ref (const char *s, char **endptr)
 {
-    switch (*ent) {
-        case 'l': /* &lt; */
+    assert (*s == '&');
+
+    if (s[1] == '#') {
+        /* this is a character reference (`&#') */
+        if (s[2] == 'x') {
+            return (char) strtol (s + 3, endptr, 16);
+        } else {
+            return (char) strtol (s + 2, endptr, 10);
+        }
+    }
+    else {
+        /* this is a predefined entity */
+        if (!strncmp (s + 1, "lt", 2)) {
+            if (endptr)
+                *endptr = (char *) s + 3;
             return '<';
-        case 'g': /* &gt; */
+        }
+        else if (!strncmp (s + 1, "gt", 2)) {
+            if (endptr)
+                *endptr = (char *) s + 3;
             return '>';
-        case 'q': /* &quot; */
-            return '\"';
-        case 'a': /* &amp; or &apos; */
-            return (*(ent + 1) == 'm') ? '&' : '\'';
-        default:  /* entity unknown to us */
-            return '\0';
+        }
+        else if (!strncmp (s + 1, "amp", 3)) {
+            if (endptr)
+                *endptr = (char *) s + 4;
+            return '&';
+        }
+        else if (!strncmp (s + 1, "quot", 4)) {
+            if (endptr)
+                *endptr = (char *) s + 5;
+            return '"';
+        }
+        else if (!strncmp (s + 1, "apos", 5)) {
+            if (endptr)
+                *endptr = (char *) s + 5;
+            return '\'';
+        }
     }
+
+    PFoops (OOPS_PARSE, "error in entity reference: `%s'", s);
 }
 
-/* Return the character referenced by the given
- * (hexa)decimal code value.
+/**
+ * Extract a string literal from a pattern match.
+ * The string may occur anywhere in the match. This function
+ * also respects XQuery comments.
  */
-static char char_ref (char *ref)
+static char *
+extract_string (const char *s)
 {
-    switch (*ref) {
-        case 'x': /* hexadecimal */
-            return (char) strtoul (ref + 1, (char **) 0, 16);
-        default: /* decimal */
-            return (char) strtoul (ref,     (char **) 0, 10);
-    }
-}
+    unsigned int  start = 0;
+    unsigned int  end = 0;
+    PFarray_t    *ret = PFarray (sizeof (char));
+    char         *endptr;
+    unsigned int  i = 0;
+    unsigned short ws_level = 0;
 
-/** 
- * Expand escaped quotation marks in a string literal:
- * ".."".." --> "..".."
- * '..''..' --> '..'..'
- *
- * @param quot string to expand
- * @return expanded string (newly allocated)
- */
-static char *expand_esc_quots (char *quot)
-{
-    /* string with escaped quotation marks expanded */
-    char *e, *exp;
-    /* remember surrounding quote type (' or ") */
-    char quote = *quot;
-    /* cut off closing quote */
-    *(quot + strlen (quot) - 1) = '\0';
+    /* find first quote character, skipping comments */
+    while (true) {
 
-    exp = (char *) PFmalloc (strlen (quot));
+        assert (s[start]);
 
-    e = exp;
-
-    while (*++quot)
-        switch (*quot == quote) {
-            case true:
-                if (*++quot == quote)
-                    *e++ = quote;
+        if (s[start] == '(' && s[start+1] && s[start+1] == ':') {
+            ws_level = 1;
+            start += 2;
+            while (ws_level > 0) {
+                assert (s[start]);
+                if (s[start] == '(' && s[start+1] && s[start+1] == ':') {
+                    start += 2;
+                    ws_level++;
+                }
+                else if (s[start] == ':' && s[start+1] && s[start+1]==')') {
+                    start += 2;
+                    ws_level--;
+                }
                 else
-                    /* shouldn't happen (due to lexer regexp) */
-                    return 0;
+                    start++;
+            }
+        }
+        else if (s[start] != '"' && s[start] != '\'')
+            start++;
+        else
+            break;
+    }
+
+    if (!s[start])
+        return NULL;
+
+    end = start;
+
+    while (s[++end]) {
+        /* test for quotes/apostrophs */
+        if (s[end] == s[start]) {
+            if (s[end + 1] && s[end] == s[end+1])
+                *((char *) PFarray_at (ret, i++)) = s[end++];
+            else
+                return PFstrndup (ret->base, i);
+        }
+        /* test for entities */
+        else if (s[end] == '&') {
+            *((char *) PFarray_at (ret, i++))
+                = entity_ref (s + end, &endptr);
+            end = endptr - s;
+        }
+        /* everything else */
+        else {
+            *((char *) PFarray_at (ret, i++)) = s[end];
+        }
+    }
+    PFoops (OOPS_PARSE, "Error in StringLiteral");
+}
+
+/**
+ * Test if a character is an NC name char as defined by the W3C.
+ * (See also the lex pattern `NCNameChar' above.)
+ */
+static bool
+isncnamechar (const char c)
+{
+    return ((c >= '\x41' && c <= '\x5a')
+            || (c >= '\x61' && c <= '\x7a')
+            || (c >= '\xc0' && c <= '\xd6')
+            || (c >= '\xd8' && c <= '\xf6')
+            || (c >= '\xf8' && c <= '\xff')
+            || (c >= '\x30' && c <= '\x39')
+            || c == '.' || c == '-' || c == '_' || c == '\xb7');
+}
+
+/**
+ * Extract word number @a index from a pattern match and return
+ * it as a QName.
+ */
+static PFqname_t
+extract_qname (const char *s, unsigned int index)
+{
+    unsigned int start = 0;
+    unsigned int end;
+    unsigned int word = 0;
+    unsigned short ws_level = 0;
+
+    while (word < index) {
+
+        assert (s[start]);
+
+        /* skip a word */
+        while (s[start] && isncnamechar (s[start]))
+            start++;
+
+        /* skip whitespace (including comments) */
+        while (true) {
+
+            assert (s[start]);
+
+            if (isspace (s[start]))
+                start++;
+            else if (s[start] == '(' && s[start+1] && s[start+1] == ':') {
+                ws_level = 1;
+                start += 2;
+                while (ws_level > 0) {
+                    assert (s[start]);
+                    if (s[start] == '(' && s[start+1] && s[start+1] == ':') {
+                        start += 2;
+                        ws_level++;
+                    }
+                    else if (s[start] == ':' && s[start+1] && s[start+1]==')') {
+                        start += 2;
+                        ws_level--;
+                    }
+                    else
+                        start++;
+                }
+            }
+            else
                 break;
-            default:
-                *e++ = *quot;
         }
 
-    *e = '\0';
+        word++;
+    }
 
-    return exp;
+    for (end = start; s[end] && !isspace (s[end])
+                             && s[end] != '{'
+                             && s[end] != '('; end++)
+        /* do nothing */;
+
+    return PFstr_qname (PFstrndup (s + start, end - start));
+}
+
+/**
+ * Extract word number @a index from a pattern match and return
+ * it as a string.
+ */
+static char *
+extract_ncname (const char *s, unsigned int index)
+{
+    unsigned int start = 0;
+    unsigned int end;
+    unsigned int word = 0;
+    unsigned short ws_level = 0;
+
+    while (word < index) {
+
+        assert (s[start]);
+
+        /* skip a word */
+        while (s[start] && isncnamechar (s[start]))
+            start++;
+
+        /* skip whitespace (including comments) */
+        while (true) {
+
+            assert (s[start]);
+
+            if (isspace (s[start]))
+                start++;
+            else if (s[start] == '(' && s[start+1] && s[start+1] == ':') {
+                ws_level = 1;
+                start += 2;
+                while (ws_level > 0) {
+                    assert (s[start]);
+                    if (s[start] == '(' && s[start+1] && s[start+1] == ':') {
+                        start += 2;
+                        ws_level++;
+                    }
+                    else if (s[start] == ':' && s[start+1] && s[start+1]==')') {
+                        start += 2;
+                        ws_level--;
+                    }
+                    else
+                        start++;
+                }
+            }
+            else
+                break;
+        }
+
+        word++;
+    }
+
+    for (end = start; s[end] && !isspace (s[end])
+                             && s[end] != '{'
+                             && s[end] != '('; end++)
+        /* do nothing */;
+
+    return PFstrndup (s + start, end - start);
 }
 
 /* vim:set shiftwidth=4 expandtab: */
+

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+pf -s10 <<'EOT'
+<a>
+  <!-- a comment -->
+  foobar
+  <?php foobar?>
+</a>
+EOT
+echo $?

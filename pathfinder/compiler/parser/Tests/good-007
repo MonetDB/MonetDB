@@ -1,0 +1,7 @@
+#!/bin/bash
+
+pf -s1 <<'EOT'
+declare namespace foo = "http://www.foo.bar";
+42
+EOT
+echo $?

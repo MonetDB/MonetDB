@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s9 <<'EOT'
+<a> &quot;foo &amp; bar &#x41;BC </a>
+EOT
+echo $?

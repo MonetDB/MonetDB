@@ -16,6 +16,9 @@
 /** atomic boolean construction */
 #define lit_bln(b)      PFalg_lit_bln (b)
 
+/** atomic QName construction */
+#define lit_qname(b)      PFalg_lit_qname (b)
+
 /** tuple construction */
 #define tuple(...)      PFalg_tuple (__VA_ARGS__)
 
@@ -39,6 +42,9 @@
 
 /** equi-join */
 #define eqjoin(a,b,c,d) PFalg_eqjoin ((a),(b),(c),(d))
+
+/** dummy node creation */
+#define dummy()         PFalg_dummy ()
 
 /** staircase join */
 #define scjoin(a,b,c)   PFalg_scjoin ((a),(b),(c))

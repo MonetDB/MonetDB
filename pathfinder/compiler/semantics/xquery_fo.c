@@ -29,7 +29,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -40,19 +40,7 @@
  * $Id$
  */
 
-/*
- * NOTE (Revision Information):
- *
- * Changes in the Core2MIL_Summer2004 branch have been merged into
- * this file on July 15, 2004. I have tagged this file in the
- * Core2MIL_Summer2004 branch with `merged-into-main-15-07-2004'.
- *
- * For later merges from the Core2MIL_Summer2004, please only merge
- * the changes since this tag.
- *
- * Jens
- */
-  
+/* always include pathfinder.h first! */
 #include "pathfinder.h"
 
 #include <assert.h>
@@ -881,7 +869,8 @@ PFfun_xquery_fo ()
                                         true,
                                         xquery_fo[n].par_ty,
                                         &(xquery_fo[n].ret_ty),
-                                        xquery_fo[n].alg));
+                                        xquery_fo[n].alg,
+                                        NULL));
     }
                                            
 }

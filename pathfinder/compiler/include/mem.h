@@ -22,7 +22,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -80,9 +80,9 @@ void *PFmalloc_ (size_t, const char *, const char *, const int);
 
 void *PFrealloc_ (size_t, void *, const char *, const char *, const int);
 
-char *PFstrndup (char *str, size_t n);
+char *PFstrndup (const char *str, size_t n);
 
-char *PFstrdup (char *str);
+char *PFstrdup (const char *str);
 
 #endif
 

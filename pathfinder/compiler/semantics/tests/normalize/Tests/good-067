@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s2 <<'EOT'
+processing-instruction foo { "bar" }
+EOT
+echo $?

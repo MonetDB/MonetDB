@@ -23,7 +23,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -46,6 +46,12 @@ typedef struct PFfun_t PFfun_t;
 /* PFenv_t */
 #include "env.h"
 
+/* PFvar_t */
+#include "variable.h"
+
+/* PFcnode_t */
+#include "core.h"
+
 #include "core2alg.h"
 
 /** Data structure to hold information about XQuery functions.  */
@@ -63,12 +69,14 @@ typedef struct PFfun_t PFfun_t;
  * allowed.
  */
 struct PFfun_t {
-    PFqname_t    qname;      /**< function name */
-    unsigned int arity;      /**< number of arguments */
-    bool         builtin;    /**< is this a builtin (XQuery F&O) function? */
-    PFty_t      *par_ty;     /**< builtin: array of formal parameter types */
-    PFty_t       ret_ty;     /**< builtin: return type */
+    PFqname_t      qname;      /**< function name */
+    unsigned int   arity;      /**< number of arguments */
+    bool           builtin;    /**< is this a builtin (XQuery F&O) function? */
+    PFty_t        *par_ty;     /**< builtin: array of formal parameter types */
+    PFty_t         ret_ty;     /**< builtin: return type */
     struct PFalg_pair_t (*alg) (struct PFalg_op_t *, struct PFalg_pair_t *);
+    PFvar_t      **params;     /**< list of parameter variables */
+    PFcnode_t     *core;
 };
 
 /**
@@ -79,7 +87,8 @@ extern PFenv_t *PFfun_env;
 /** allocate a new struct to describe a (built-in or user) function */
 PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, PFty_t *, PFty_t *,
                     struct PFalg_pair_t (*alg) (struct PFalg_op_t *,
-                                                struct PFalg_pair_t *));
+                                                struct PFalg_pair_t *),
+                    PFvar_t **params);
 
 #endif   /* FUNCTIONS_H */
 

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+pf -s4 <<'EOT'
+typeswitch ("foo")
+  case $a as xs:integer return $b
+  default return 42
+EOT
+echo $?

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+pf -s10 <<'EOT'
+declare namespace foo = 'http://www.foo.bar/';
+doc("foo.xml")/element(foo:bar, xs:integer)
+EOT
+echo $?

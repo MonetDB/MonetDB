@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s2 <<'EOT'
+for $a at $p in (1,2) return 43
+EOT
+echo $?

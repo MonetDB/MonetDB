@@ -20,7 +20,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -62,6 +62,7 @@ typedef enum {
     , OOPS_TYPECHECK = -19          /**< type error */
     , OOPS_SCHEMAIMPORT = -20       /**< XML Schema import */
     , OOPS_BURG = -21               /**< Error during burg tree matching */
+    , OOPS_NOTSUPPORTED = -22       /**< Unsupported XQuery feature */
     , OOPS_WARNING = -100           /**< only warnings below */
     , OOPS_WARN_NOTSUPPORTED = -101 /**< unsupported feature */
     , OOPS_WARN_VARREUSE = -102     /**< variable reuse */

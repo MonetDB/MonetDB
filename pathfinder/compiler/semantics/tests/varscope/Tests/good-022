@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s4 <<'EOT'
+some $a in ("foo", 42) satisfies $a < 7
+EOT
+echo $?

@@ -21,7 +21,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -111,15 +111,6 @@ static char *atomtype[] = {
 static char    *child;
 /** Temporary variable for node labels in dot tree */
 /*static char     label[32];*/
-
-#if 0
-/** Print node with no content */
-#define L(t)           snprintf (label, 32, "%s", t)
-/** Print node with single content */
-#define L2(l1, l2)     snprintf (label, 32, "%s\\n%s",  l1, l2)
-/** Print node with two content parts */
-#define L3(l1, l2, l3) snprintf (label, 32, "%s %s %s", l1, l2, l3)
-#endif
 
 /**
  * Print algebra tree in AT&T dot notation.
@@ -458,6 +449,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_frag_union:
         case aop_empty_frag:
         case aop_doc_tbl:
+        case aop_dummy:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
     }
@@ -543,6 +535,9 @@ print_tuple (PFalg_tuple_t t)
                             break;
             case aat_bln:   PFprettyprintf ("%s", t.atoms[i].val.bln ? "true"
                                             : "false");
+                            break;
+            case aat_qname: PFprettyprintf ("%s",
+                                            PFqname_str (t.atoms[i].val.qname));
                             break;
         }
     }
@@ -680,6 +675,7 @@ alg_pretty (PFalg_op_t *n)
         case aop_fragment:
         case aop_frag_union:
         case aop_empty_frag:
+        case aop_dummy:
             break;
 
     }

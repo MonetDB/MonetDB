@@ -25,7 +25,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -34,19 +34,6 @@
  *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
- */
-
-/*
- * NOTE (Revision Information):
- *
- * Changes in the Core2MIL_Summer2004 branch have been merged into
- * this file on July 15, 2004. I have tagged this file in the
- * Core2MIL_Summer2004 branch with `merged-into-main-15-07-2004'.
- *
- * For later merges from the Core2MIL_Summer2004, please only merge
- * the changes since this tag.
- *
- * Jens
  */
 
 
@@ -65,12 +52,14 @@
 #undef seqtype    
 #undef seqcast    
 #undef proof      
+#undef subty      
 #undef typeswitch 
 #undef case_      
 #undef cases      
 #undef ifthenelse 
 #undef for_       
 #undef let        
+#undef letbind
 #undef seq        
 #undef empty      
 #undef true_      
@@ -102,15 +91,25 @@
 #define str(s)                PFcore_str (s)
 #define seqtype(t)            PFcore_seqtype (t)
 #define seqcast(e1,e2)        PFcore_seqcast ((e1), (e2))
-#define proof(e1,t,e2)        PFcore_proof ((e1), (t), (e2))
+#define proof(a,b)            PFcore_proof ((a), (b))
+#define subty(a,b)            PFcore_subty ((a), (b))
 #define stattype(e)           PFcore_stattype (e)
-#define typeswitch(e1,e2,e3)  PFcore_typeswitch ((e1), (e2), (e3))
-#define case_(e1,e2)          PFcore_case ((e1), (e2))
+#define typeswitch(a,b)       PFcore_typeswitch ((a), (b))
 #define cases(e1,e2)          PFcore_cases ((e1),(e2))
-#define ifthenelse(e1,e2,e3)  PFcore_ifthenelse ((e1), (e2), (e3))
-#define for_(e1,e2,e3,e4)     PFcore_for ((e1), (e2), (e3), (e4))
-#define let(e1,e2,e3)         PFcore_let ((e1), (e2), (e3))
+#define case_(e1,e2)          PFcore_case ((e1), (e2))
+#define default_(e1)          PFcore_default (e1)
+#define if_(cond,ret)         PFcore_if ((cond), (ret))
+#define then_else(t,e)        PFcore_then_else ((t), (e))
+#define for_(bind,expr)       PFcore_for ((bind), (expr))
+#define forbind(vars,expr)    PFcore_forbind ((vars), (expr))
+#define forvars(var,pos)      PFcore_forvars ((var), (pos))
+#define let(e1,e2)            PFcore_let ((e1), (e2))
+#define letbind(e1,e2)        PFcore_letbind ((e1), (e2))
+#define orderby(e1,e2)        PFcore_orderby ((e1), (e2))
+#define orderspecs(e1,e2)     PFcore_orderspecs ((e1), (e2))
 #define seq(e1,e2)            PFcore_seq ((e1), (e2))
+#define ordered(e)            PFcore_ordered (e)
+#define unordered(e)          PFcore_unordered (e)
 #define empty()               PFcore_empty ()
 #define true_()               PFcore_true ()
 #define false_()              PFcore_false ()
@@ -120,14 +119,14 @@
 #define constr_tag(qn)        PFcore_tag(qn)
 #define locsteps(e1,e2)       PFcore_locsteps ((e1), (e2))
 #define step(a,e)             PFcore_step ((a), (e))
-#define kindt(k,e)            PFcore_kindt ((k), (e))
-#define namet(qn)             PFcore_namet (qn)
+#define fun_decls(a,b)        PFcore_fun_decls ((a), (b))
+#define fun_decl(a,b,c)       PFcore_fun_decl ((a), (b), (c))
+#define params(a,b)           PFcore_params ((a), (b))
+#define param(a,b)            PFcore_param ((a), (b))
 #define function(qn)          PFcore_function (qn)
 #define arg(e1,e2)            PFcore_arg((e1), (e2))
 #define apply(fn,e)           PFcore_apply ((fn), (e))
 #define ebv(e)                PFcore_ebv (e)
-#define error(s,...)          PFcore_error ((s), __VA_ARGS__)
-#define error_loc(l,s,...)    PFcore_error_loc ((l), (s), __VA_ARGS__)
                               
 #define fs_convert_op_by_type(e,t)    PFcore_fs_convert_op_by_type ((e), (t))
 #define fs_convert_op_by_expr(e1,e2)  PFcore_fs_convert_op_by_expr ((e1), (e2))

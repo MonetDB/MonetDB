@@ -20,7 +20,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -52,108 +52,120 @@
 
 /** parse tree node type indicators */
 enum PFptype_t {
-  p_plus,         /**< binary + */
-  p_minus,        /**< binary - */
-  p_mult,         /**< * (multiplication) */
-  p_div,          /**< div (division) */
-  p_idiv,         /**< idiv (integer division) */
-  p_mod,          /**< mod */
-  p_and,          /**< and */
-  p_or,           /**< or */
-  p_lt,           /**< < (less than) */
-  p_le,           /**< <= (less than or equal) */
-  p_gt,           /**< > (greater than) */
-  p_ge,           /**< >= (greater than or equal) */
-  p_eq,           /**< = (equality) */
-  p_ne,           /**< != (inequality) */
-  p_val_lt,       /**< lt (value less than) */
-  p_val_le,       /**< le (value less than or equal) */
-  p_val_gt,       /**< gt (value greater than) */
-  p_val_ge,       /**< ge (value greter than or equal) */
-  p_val_eq,       /**< eq (value equality) */
-  p_val_ne,       /**< ne (value inequality) */
-  p_uplus,        /**< unary + */
-  p_uminus,       /**< unary - */
-  p_lit_int,      /**< integer literal */
-  p_lit_dec,      /**< decimal literal */
-  p_lit_dbl,      /**< double literal */
-  p_lit_str,      /**< string literal */
-  p_is,           /**< is (node identity) */
-  p_nis,          /**< isnot (negated node identity) *grin* */
-  p_step,         /**< axis step */
-  p_varref,       /**< variable reference (no scoping yet) */
-  p_var,          /**< ``real'' scoped variable */
-  p_namet,        /**< name test */
-  p_kindt,        /**< kind test */
-  p_locpath,      /**< location path */
-  p_root,         /**< / (document root) */
-  p_dot,          /**< current context node */
-  p_ltlt,         /**< << (less than in doc order) */
-  p_gtgt,         /**< >> (greater in doc order) */
-  p_flwr,         /**< for-let-where-return */
-  p_binds,        /**< sequence of variable bindings */
-  p_nil,          /**< end-of-sequence marker (*NOT* the empty sequence) */
-  p_bind,         /**< for/some/every variable binding */
-  p_empty_seq,    /**< the empty sequence */
-  p_let,          /**< let binding */
-  p_exprseq,      /**< e1, e2 (expression sequence) */
-  p_range,        /**< to (range) */
-  p_union,        /**< union */
-  p_intersect,    /**< intersect */
-  p_except,       /**< except */
-  p_pred,         /**< e1[e2] (predicate) */
-  p_if,           /**< if-then-else */
-  p_some,         /**< some (existential quantifier) */
-  p_every,        /**< every (universal quantifier) */
-  p_orderby,      /**< order by */
-  p_orderspecs,   /**< order criteria */
-  p_instof,       /**< instance of */
-  p_seq_ty,       /**< sequence type */
-  p_empty_ty,     /**< empty type */
-  p_node_ty,      /**< node type */
-  p_item_ty,      /**< item type */
-  p_atom_ty,      /**< named atomic type */
-  p_atomval_ty,   /**< atomic value type */
-  p_named_ty,     /**< named type */ 
-  p_req_ty,       /**< required type */
-  p_req_name,     /**< required name */
-  p_typeswitch,   /**< typeswitch */
-  p_cases,        /**< list of case branches */
-  p_case,         /**< a case branch */
-  p_schm_path,    /**< path of schema context steps */
-  p_schm_step,    /**< schema context step */
-  p_glob_schm,    /**< global schema */
-  p_glob_schm_ty, /**< global schema type */
-  p_castable,     /**< castable */
-  p_cast,         /**< cast as */
-  p_treat,        /**< treat as */
-  p_validate,     /**< validate */
-  p_char,         /**< character content */
-  p_doc,          /**< document constructor (document { }) */
-  p_elem,         /**< XML element constructor */
-  p_attr,         /**< XML attribute constructor */
-  p_text,         /**< XML text node constructor */
-  p_tag,          /**< (fixed) tag name */
-  p_pi,           /**< <?...?> content */
-  p_comment,      /**< <!--...--> content */
-  p_contseq,      /**< content sequence (in constructors) */
-  p_xquery,       /**< root of the query parse tree */
-  p_prolog,       /**< query prolog */
-  p_decl_imps,    /**< list of declarations and imports */
-  p_xmls_decl,    /**< xmlspace declaration */
-  p_coll_decl,    /**< default collation declaration */
-  p_ns_decl,      /**< namespace declaration */
-  p_fun_ref,      /**< function application (not ``scoped'' yet) */
-  p_apply,        /**< function application (``scoped'') */
-  p_args,         /**< function argument list (actuals) */
-  p_fun_decls,    /**< list of function declarations */
-  p_fun_decl,     /**< function declaration (yet ``unscoped'') */
-  p_fun,          /**< function declaration (after function ``scoping'') */
-  p_ens_decl,     /**< default element namespace declaration */
-  p_fns_decl,     /**< default function namespace declaration */
-  p_schm_imp,     /**< schema import */
-  p_params,       /**< list of (formal) function parameters */
-  p_param         /**< (formal) function parameter */
+      p_and              =   1  /**< and */
+    , p_apply            =   2  /**< function application (``scoped'') */
+    , p_args             =   3  /**< function argument list (actuals) */
+    , p_atom_ty          =   4  /**< named atomic type */
+    , p_attr             =   5  /**< XML attribute constructor */
+    , p_base_uri         =   6  /**< `declare base-uri' */
+    , p_bind             =   7  /**< for/some/every variable binding */
+    , p_binds            =   8  /**< sequence of variable bindings */
+    , p_case             =   9  /**< a case branch */
+    , p_cases            =  10  /**< list of case branches */
+    , p_cast             =  11  /**< cast as */
+    , p_castable         =  12  /**< castable */
+    , p_coll_decl        =  13  /**< default collation declaration */
+    , p_comment          =  14  /**< <!--...--> content */
+    , p_constr_decl      =  15  /**< `declare construction preserve' */
+    , p_contseq          =  16  /**< content sequence (in constructors) */
+    , p_decl_imps        =  17  /**< list of declarations and imports */
+    , p_def_order        =  18  /**< default order (empty greatest/least) */
+    , p_default          =  19  /**< `default' clause in typeswitches */
+    , p_div              =  20  /**< div (division) */
+    , p_doc              =  21  /**< document constructor (document { }) */
+    , p_dot              =  22  /**< current context node */
+    , p_elem             =  23  /**< XML element constructor */
+    , p_empty_seq        =  24  /**< the empty sequence */
+    , p_empty_ty         =  25  /**< empty type */
+    , p_ens_decl         =  26  /**< default element namespace declaration */
+    , p_eq               =  27  /**< = (equality) */
+    , p_every            =  28  /**< every (universal quantifier) */
+    , p_except           =  29  /**< except */
+    , p_exprseq          =  30  /**< e1, e2 (expression sequence) */
+    , p_external         =  31  /**< keyword external: var/fun def'd external */
+    , p_flwr             =  32  /**< for-let-where-return */
+    , p_fns_decl         =  33  /**< default function namespace declaration */
+    , p_fun              =  34  /**< function decl. (after fun. ``scoping'') */
+    , p_fun_decl         =  35  /**< function declaration (yet ``unscoped'') */
+    , p_fun_ref          =  36  /**< function appl. (not ``scoped'' yet) */
+    , p_fun_sig          =  37  /**< function signature (parameters and type) */
+    , p_ge               =  38  /**< >= (greater than or equal) */
+    , p_gt               =  39  /**< > (greater than) */
+    , p_gtgt             =  40  /**< >> (greater in doc order) */
+    , p_idiv             =  41  /**< idiv (integer division) */
+    , p_if               =  42  /**< if-then-else */
+    , p_inherit_ns       =  43  /**< inherit-namespaces */
+    , p_instof           =  44  /**< instance of */
+    , p_intersect        =  45  /**< intersect */
+    , p_is               =  46  /**< is (node identity) */
+    , p_item_ty          =  47  /**< item type */
+    , p_le               =  48  /**< <= (less than or equal) */
+    , p_let              =  49  /**< let binding */
+    , p_lib_mod          =  50  /**< library module */
+    , p_lit_dbl          =  51  /**< double literal */
+    , p_lit_dec          =  52  /**< decimal literal */
+    , p_lit_int          =  53  /**< integer literal */
+    , p_lit_str          =  54  /**< string literal */
+    , p_locpath          =  55  /**< location path */
+    , p_lt               =  56  /**< < (less than) */
+    , p_ltlt             =  57  /**< << (less than in doc order) */
+    , p_main_mod         =  58  /**< main module */
+    , p_minus            =  59  /**< binary - */
+    , p_mod              =  60  /**< mod */
+    , p_mod_imp          =  61  /**< Module import */
+    , p_mod_ns           =  62  /**< module namespace */
+    , p_mult             =  63  /**< * (multiplication) */
+    , p_named_ty         =  64  /**< named type */ 
+    , p_ne               =  65  /**< != (inequality) */
+    , p_nil              =  66  /**< end-of-sequence marker */
+    , p_nis              =  67  /**< isnot (negated node identity) *grin* */
+    , p_node_ty          =  68  /**< node type */
+    , p_ns_decl          =  69  /**< namespace declaration */
+    , p_or               =  70  /**< or */
+    , p_ord_ret          =  71  /**< `order by'/`return' in FLWOR clauses */
+    , p_orderby          =  72  /**< FLWOR `orderby' clause */
+    , p_ordered          =  73  /**< keyword `ordered {...}' */
+    , p_ordering_mode    =  74  /**< ordering mode declaration */
+    , p_orderspecs       =  75  /**< list of order specifiers (in FLWORs) */
+    , p_param            =  76  /**< (formal) function parameter */
+    , p_params           =  77  /**< list of (formal) function parameters */
+    , p_pi               =  78  /**< <?...?> content */
+    , p_plus             =  79  /**< binary + */
+    , p_pred             =  80  /**< e1[e2] (predicate) */
+    , p_range            =  81  /**< to (range) */
+    , p_req_name         =  82  /**< required name */
+    , p_req_ty           =  83  /**< required type */
+    , p_root             =  84  /**< / (document root) */
+    , p_schm_ats         =  85  /**< list of `at StringLit' in schema imp. */
+    , p_schm_attr        =  86  /**< `schema-attribute()' test */
+    , p_schm_elem        =  87  /**< `schema-element()' test */
+    , p_schm_imp         =  88  /**< schema import */
+    , p_seq_ty           =  89  /**< sequence type */
+    , p_some             =  90  /**< some (existential quantifier) */
+    , p_step             =  91  /**< axis step */
+    , p_tag              =  92  /**< (fixed) tag name */
+    , p_text             =  93  /**< XML text node constructor */
+    , p_then_else        =  94  /**< `then' and `else' in if-then-else */
+    , p_treat            =  95  /**< treat as */
+    , p_typeswitch       =  96  /**< typeswitch */
+    , p_uminus           =  97  /**< unary - */
+    , p_union            =  98  /**< union */
+    , p_unordered        =  99  /**< keyword `unordered {...}' */
+    , p_uplus            = 100  /**< unary + */
+    , p_val_eq           = 101  /**< eq (value equality) */
+    , p_val_ge           = 102  /**< ge (value greter than or equal) */
+    , p_val_gt           = 103  /**< gt (value greater than) */
+    , p_val_le           = 104  /**< le (value less than or equal) */
+    , p_val_lt           = 105  /**< lt (value less than) */
+    , p_val_ne           = 106  /**< ne (value inequality) */
+    , p_validate         = 107  /**< validate */
+    , p_var              = 108  /**< ``real'' scoped variable */
+    , p_var_decl         = 109  /**< variable declaration */
+    , p_var_type         = 110  /**< variable/type combination */
+    , p_varref           = 111  /**< variable reference (no scoping yet) */
+    , p_vars             = 112  /**< parent of two variables in FLWORs */
+    , p_where            = 113  /**< FLWOR `where' clause */
+    , p_xmls_decl        = 114  /**< xmlspace declaration */
 };
 
 typedef enum PFptype_t PFptype_t;
@@ -230,6 +242,7 @@ union PFpsem_t {
   PFpkind_t  kind;       /**< node kind */
   PFpsort_t  mode;       /**< sort modifier */
   PFpoci_t   oci;        /**< occurrence indicator */
+  PFempty_order_t empty; /**< empty ordering declaration */
 
   PFvar_t   *var;        /**< variable information (used after var scoping) */
 
@@ -260,11 +273,30 @@ p_wire4 (PFptype_t type, PFloc_t loc,
 
 
 struct PFpnode_t {
-  PFptype_t kind;                      /**< node kind */
-  PFpsem_t  sem;                       /**< semantic node information */
-  PFpnode_t *child[PFPNODE_MAXCHILD];  /**< child node list */
-  PFloc_t   loc;                       /**< textual location of this node */
+  PFptype_t         kind;              /**< node kind */
+  PFpsem_t          sem;               /**< semantic node information */
+  PFpnode_t        *child[PFPNODE_MAXCHILD];  /**< child node list */
+  PFloc_t           loc;               /**< textual location of this node */
   struct PFcnode_t *core;              /**< pointer to core representation */
+  short             state_label;       /**< for BURG pattern matcher */
+};
+
+/*
+ * In several cases, the semantic actions of a grammar rule cannot
+ * construct a complete abstract syntax tree, e.g., consider the
+ * generation of a right-deep abstract syntax tree from a left-recursive
+ * grammar rule.
+ *
+ * Whenever such a situation arises, we let the semantic action
+ * construct as much of the tree as possible with parts of the tree
+ * unspecified.  The semantic action then returns the ROOT of this
+ * tree as well as pointer to the node under which the yet unspecified
+ * tree part will reside; this node is subsequently referred to as the
+ * `hole'.
+ */
+struct phole_t {
+    PFpnode_t *root;
+    PFpnode_t *hole;
 };
 
 #endif  /* ABSSYN_H */

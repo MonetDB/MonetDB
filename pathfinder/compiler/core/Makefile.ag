@@ -16,7 +16,7 @@
 # The Original Code is the ``Pathfinder'' system. The Initial
 # Developer of the Original Code is the Database & Information
 # Systems Group at the University of Konstanz, Germany. Portions
-# created by U Konstanz are Copyright (C) 2000-2004 University
+# created by U Konstanz are Copyright (C) 2000-2005 University
 # of Konstanz. All Rights Reserved.
 #
 # Contributors:
@@ -32,12 +32,10 @@ lib_core = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		fs.mt.sed \
+		fs.brg \
 		core.c \
-		simplify.mt \
-		fs_impl.h.sed \
-		coreopt.mt \
-		coreopt_impl.h
+		simplify.brg \
+		coreopt.brg
 }
 
-EXTRA_DIST = simpl_impl.c 
+#EXTRA_DIST = 

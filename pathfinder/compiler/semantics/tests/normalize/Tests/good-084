@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s2 <<'EOT'
+(/) * 3
+EOT
+echo $?

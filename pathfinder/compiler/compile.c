@@ -20,7 +20,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -78,107 +78,54 @@
 #include "gc.h"
 
 static char *phases[] = {
-    [ 1]    "right after input parsing",
-    [ 2]    "after parse/abstract syntax tree has been normalized",
-    [ 3]    "after namespaces have been checked and resolved",
-    [ 4]    "after variable scoping has been checked",
-    [ 5]    "after XQuery built-in functions have been loaded",
-    [ 6]    "after valid function usage has been checked",
-    [ 7]    "after XML Schema predefined types have been loaded",
-    [ 8]    "after XML Schema document has been imported (if any)",
-    [ 9]    "after the abstract syntax tree has been mapped to Core",
-    [10]    "after the Core tree has been simplified/normalized",
-    [11]    "after type inference and checking",
-    [12]    "after XQuery Core optimization",
-    [13]    "after the Core tree has been translated to the internal algebra",
-    [14]    "after the algebra tree has been rewritten/optimized",
-    [15]    "after the common subexpression elimination on the algebra tree",
-    [16]    "after the algebra has been translated to MIL algebra",
-    [17]    "after MIL algebra optimization/simplification",
-    [18]    "after MIL algebra common subexpression elimination",
-    [19]    "after the MIL algebra has been compiled into MIL commands",
-    [20]    "after the MIL program has been serialized"
+    [ 1]  = "right after input parsing",
+    [ 2]  = "after parse/abstract syntax tree has been normalized",
+    [ 3]  = "after namespaces have been checked and resolved",
+    [ 4]  = "after variable scoping has been checked",
+    [ 5]  = "after XQuery built-in functions have been loaded",
+    [ 6]  = "after valid function usage has been checked",
+    [ 7]  = "after XML Schema predefined types have been loaded",
+    [ 8]  = "after XML Schema document has been imported (if any)",
+    [ 9]  = "after the abstract syntax tree has been mapped to Core",
+    [10]  = "after the Core tree has been simplified/normalized",
+    [11]  = "after type inference and checking",
+    [12]  = "after XQuery Core optimization",
+    [13]  = "after the Core tree has been translated to the internal algebra",
+    [14]  = "after the algebra tree has been rewritten/optimized",
+    [15]  = "after the common subexpression elimination on the algebra tree",
+    [16]  = "after the algebra has been translated to MIL algebra",
+    [17]  = "after MIL algebra optimization/simplification",
+    [18]  = "after MIL algebra common subexpression elimination",
+    [19]  = "after the MIL algebra has been compiled into MIL commands",
+    [20]  = "after the MIL program has been serialized"
 };
 
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
 /** global state of the compiler */
 PFstate_t PFstate = {
-    quiet               : false,
-    timing              : false,
-    print_dot           : false,
-    print_pretty        : false,
-    stop_after          : 0,
-    print_types         : false,
-    optimize            : 1,
-    print_parse_tree    : false,
-    print_core_tree     : false,
-    print_algebra_tree  : false,
-    print_ma_tree       : false,
-    parse_hsk           : false,
-    genType             : PF_GEN_XML
+    .quiet               = false,
+    .timing              = false,
+    .print_dot           = false,
+    .print_pretty        = false,
+    .stop_after          = 0,
+    .print_types         = false,
+    .optimize            = 1,
+    .print_parse_tree    = false,
+    .print_core_tree     = false,
+    .print_algebra_tree  = false,
+    .print_ma_tree       = false,
+    .parse_hsk           = false,
+    .genType             = PF_GEN_XML
 };
 
-#if 0
-/**
- * Print abstract syntax tree in dot notation or prettyprinted,
- * depending on command line switches.
- */
-static void
-print_abssyn (FILE* pfout, PFstate_t* status, PFpnode_t * proot)
-{
-    if (status->print_dot)
-        PFabssyn_dot ( pfout, proot);
+PFquery_t PFquery = {
+    .version            = "1.0",
+    .encoding           = NULL,
+    .ordering           = true,  /* implementation defined: ordered */
+    .empty_order        = undefined,
+    .inherit_ns         = false, /* implementation def'd: inherit-ns: no */
+};
 
-    if (status->print_pretty)
-        PFabssyn_pretty (pfout, proot);
-}
-
-/**
- * Print core tree in dot notation or prettyprinted,
- * depending on command line switches.
- */
-static void
-print_core (FILE* pfout, PFstate_t* status, PFcnode_t * croot)
-{
-    if (status->print_dot)
-        PFcore_dot (pfout, croot);
-
-    if (status->print_pretty)
-        PFcore_pretty (pfout, croot);
-}
-
-/**
- * Print algebra tree in dot notation or prettyprinted,
- * depending on command line switches.
- */
-static void
-print_algebra (FILE* pfout, PFstate_t* status, PFalg_op_t * aroot)
-{
-    if (status->print_dot)
-        PFalg_dot (pfout, aroot);
-
-    if (status->print_pretty)
-        PFalg_pretty (pfout, aroot);
-}
-
-/**
- * Print MIL tree in dot notation or prettyprinted,
- * depending on command line switches.
- */
-/*
-static void
-print_mil (FILE* pfout, PFstate_t* status, PFmnode_t * mroot)
-{
-    if (status->print_dot)
-        PFmil_dot (pfout, mroot);
-
-    if (status->print_pretty)
-        PFmil_pretty (pfout, mroot);
-}
-*/
-#endif
-
-static PFcnode_t * unfold_lets (PFcnode_t *c);
 
 #define STOP_POINT(a) \
     if ((a) == status->stop_after) \
@@ -338,35 +285,6 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(12);
 
-
-    /*
-     * FIXME:
-     * This is the place where we should do some optimization stuff
-     * on our core tree. This optimization should end in an unfolding
-     * of all unneccessary `let' clauses; we need that for efficient
-     * MIL code generation.
-     * As we don't have nifty optimizations yet, we do unfolding right
-     * here. Lateron, we put unfolding into (maybe twig based)
-     * optimization code.
-     */
-
-#if 0
-    /* ***** begin of temporary unfolding code ***** */
-
-    tm = PFtimer_start ();
-
-    croot = unfold_lets (croot);
-
-    tm = PFtimer_stop (tm);
-    if (status->timing)
-        PFlog ("let unfolding:\t %s", PFtimer_str (tm));
-
-#ifdef DEBUG_UNFOLDING
-    print_core (pfout,status,croot);
-#endif
-
-    /* ***** end of temporary unfolding code ***** */
-#endif
 
     /*
      * generate temporary MIL Code (summer branch version)
@@ -568,204 +486,6 @@ pf_compile_interface (FILE *pfin, FILE *pfout, char* mode)
         }
         int res = pf_compile(pfin,pfout,status);
         return res;
-}
-
-/**
- * Walk core tree @a e and replace occurrences of variable @a v
- * by core tree @a a (i.e., compute e[a/v]).
- *
- * @note Only copies the single node @a a for each occurence of
- *       @a v. Only use this function if you
- *       - either call it only with atoms @a a,
- *       - or copy @a a at most once (i.e. @a v occurs at most
- *         once in @a e).
- *       Otherwise we might come into deep trouble as children
- *       of @a e would have more than one parent afterwards...
- *
- * @param v variable to replace
- * @param a core tree to insert for @a v
- * @param e core tree to walk over
- * @return modified core tree
- */
-static void
-replace_var (PFvar_t *v, PFcnode_t *a, PFcnode_t *e)
-{
-  unsigned short int i;
-
-  assert (v && a && e);
-
-  if (e->kind == c_var && e->sem.var == v)
-      *e = *a;
-  else
-      for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
-          replace_var (v, a, e->child[i]);
-}
-
-/**
- * Worker for #unfoldable
- *
- * Walks recursively through the core tree fragment @a e and
- * tests if all occurences of @a v could be unfolded. The walk
- * is stopped immediately if anything violates the unfoldable
- * conditions.
- *
- * The parameter @a num_occur is considered as a static variable
- * for this tree walk, it is incremented with every occurence
- * of @a v. Obviously it should have an initial value of 0 when
- * called from outside (see #unfoldable).
- *
- * Parameter @a e1_is_atomic gives the information if we can
- * safely unfold although we counted more than one occurence
- * of @a v.
- *
- * @param v            the variable that should be unfolded
- * @param e            root node of current core sub-tree
- * @param num_occur    total occurences of this variable found so far;
- *                     should be 0 when called from outside.
- * @param e1_is_atomic Is the replacement for @a v an atom? In that
- *                     case @a v can also be replaced if there are
- *                     multiple occurences.
- */
-static bool
-unfoldable_ (PFvar_t *v, PFcnode_t *e, int *num_occur, bool e1_is_atomic)
-{
-    unsigned int i;
-
-    /* if we found an occurence of this variable, count it */
-    if ((e->kind == c_var) && (e->sem.var == v))
-        (*num_occur)++;
-
-    /*
-     * if the bound expression was not an atom, abort if we counted
-     * more than one occurence.
-     */
-    if ((*num_occur > 1) && !e1_is_atomic)
-        return false;
-
-    /* visit all our children and test for them */
-    for (i = 0; i < PFCNODE_MAXCHILD && e->child[i]; i++)
-        if (!unfoldable_ (v, e->child[i], num_occur, e1_is_atomic))
-            return false;
-
-    /*
-     * We may not unfold if $v occurs in special places
-     */
-    switch (e->kind) {
-
-        /*
-         * Do not unfold $v in the `in' clause of FLWOR expressions
-         */
-        case c_for:      
-            assert (e->child[2]->kind == c_var);
-            if (e->child[2]->sem.var != v)
-                return true;
-            break;
-
-        /*
-         * Only unfold $v in an `if-then-else' condition
-         * if e1 is an atom.
-         */
-        case c_ifthenelse:
-            if (e1_is_atomic
-                || (e->child[0]->kind != c_var)
-                || (e->child[0]->sem.var != v))
-                return true;
-            break;
-
-        /*
-         * We can safely unfold variables here
-         */
-        case c_var:
-        case c_lit_str:
-        case c_lit_int:
-        case c_lit_dec:
-        case c_lit_dbl:
-        case c_nil:
-        case c_empty:
-        case c_let:
-        case c_seq:
-            return true;
-
-        default:
-            break;
-    }
-
-    return false;
-}
-
-/**
- * Test if the expression
- *
- * @verbatim
-     let $v := e1 return e2
-@endverbatim
- * 
- * can be unfolded to
- *
- * @verbatim
-     e2[e1/$v]
-@endverbatim
- *
- * This is only possible, if some conditions are met (in order):
- *
- *  - $v must not occur as the `in' part of a FLWOR expression.
- *    (MIL code generation would fail otherwise, as iteration does
- *    not happen over a BAT variable.)
- *
- *  - If $v is an atom, we can safely unfold it.
- *
- *  - If $v occurs more than once in e2, do not unfold for performance
- *    reasons. (We don't want to re-evaluate e2 more than once.)
- *    This restriction is also implied by the implementation of
- *    replace_var().
- *
- *  - Note that we do not consider conditional expressions separately.
- *    This implies lazy evaluation as in the W3C drafts. (Particularly,
- *    errors within a twig of an if-then-else clause are only raised,
- *    if that twig is actually chosen by the if-then-else condition.)
- */
-static bool
-unfoldable (PFvar_t *v, PFcnode_t *e1, PFcnode_t *e2)
-{
-    bool e1_is_atomic;
-    int  num_occur;
-
-    /* see if e1 is atomic */
-    switch (e1->kind) {
-        case c_var:
-        case c_lit_str:
-        case c_lit_int:
-        case c_lit_dec:
-        case c_lit_dbl:
-            e1_is_atomic = true;
-            break;
-
-        default:
-            e1_is_atomic = false;
-            break;
-    }
-
-    num_occur = 0;
-
-    return unfoldable_ (v, e2, &num_occur, e1_is_atomic);
-}
-
-static PFcnode_t *
-unfold_lets (PFcnode_t *c)
-{
-    unsigned int i;
-
-    if (c->kind == c_let) {
-        if (unfoldable (c->child[0]->sem.var, c->child[1], c->child[2])) {
-            replace_var (c->child[0]->sem.var, c->child[1], c->child[2]);
-            return unfold_lets (c->child[2]);
-        }
-    }
-
-    for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
-        c->child[i] = unfold_lets (c->child[i]);
-
-    return c;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

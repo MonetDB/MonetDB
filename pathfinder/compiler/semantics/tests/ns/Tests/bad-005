@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s3 <<'EOT'
+<foo:a />
+EOT
+echo $?

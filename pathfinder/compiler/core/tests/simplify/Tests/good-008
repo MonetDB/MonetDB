@@ -1,0 +1,9 @@
+#!/bin/bash
+
+pf -s10 <<'EOT'
+declare function foo($a as xs:integer, $b as element(*)) as xs:string
+{ "foo" };
+
+foo(1, <foo/>)
+EOT
+echo $?

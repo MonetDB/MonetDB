@@ -57,7 +57,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -878,7 +878,7 @@ lf (PFty_t t)
  * content (attr qn { t }) = t
  * content (doc { t })     = t
  * content (item)          = item*
- * content (node)          = node*
+ * content (node)          = item*
  * content (t)             = empty
  * 
  * @param t type whose contents is needed
@@ -895,9 +895,8 @@ content (PFty_t t)
         return *(t.child[0]);
 
     case ty_item:
-        return PFty_star (PFty_item ());
     case ty_node:
-        return PFty_star (PFty_node ());
+        return PFty_star (PFty_item ());
 
     default: 
         return PFty_empty ();

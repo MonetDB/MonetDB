@@ -20,7 +20,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -54,6 +54,7 @@ enum PFalg_simple_type_t {
     , aat_dec   = 0x10  /**< algebra simple atomic type decimal */
     , aat_dbl   = 0x20  /**< algebra simple atomic type double  */
     , aat_bln   = 0x40  /**< algebra simple atomic type boolean  */
+    , aat_qname = 0x80  /**< algebra simple atomic type QName  */
 };
 /** Simple atomic types in our algebra */
 typedef enum PFalg_simple_type_t PFalg_simple_type_t;
@@ -70,13 +71,14 @@ typedef unsigned short PFalg_type_t;
 
 /** atomic algebra values */
 union PFalg_atom_val_t {
-    nat   nat;     /**< value for natural number atoms (#aat_nat) */
-    int   int_;    /**< value for integer atoms (#aat_int) */
-    char *str;     /**< value for string atoms (#aat_str)  */
-    int   node;    /**< value for node atoms (#aat_node) */
-    float  dec;    /**< value for decimal atoms (#aat_dec) */
-    double dbl;    /**< value for double atoms (#aat_dbl) */
-    bool bln;      /**< value for boolean atoms (#aat_bln) */
+    nat        nat;     /**< value for natural number atoms (#aat_nat) */
+    int        int_;    /**< value for integer atoms (#aat_int) */
+    char      *str;     /**< value for string atoms (#aat_str)  */
+    int        node;    /**< value for node atoms (#aat_node) */
+    float      dec;     /**< value for decimal atoms (#aat_dec) */
+    double     dbl;     /**< value for double atoms (#aat_dbl) */
+    bool       bln;     /**< value for boolean atoms (#aat_bln) */
+    PFqname_t  qname;
 };
 /** algebra values */
 typedef union PFalg_atom_val_t PFalg_atom_val_t;
@@ -174,6 +176,17 @@ enum PFalg_test_t {
 /** location steps */
 typedef enum PFalg_test_t PFalg_test_t;
 
+enum PFalg_node_kind_t {
+      node_kind_elem   /**< elements */
+    , node_kind_attr   /**< attributes */
+    , node_kind_text   /**< text nodes */
+    , node_kind_pi     /**< processing instructions */
+    , node_kind_comm   /**< comments */
+    , node_kind_doc    /**< document nodes */
+    , node_kind_node   /**< any XML tree node */
+};
+typedef enum PFalg_node_kind_t PFalg_node_kind_t;
+
 
 
 /* .............. algebra operators (operators on relations) .............. */
@@ -236,6 +249,8 @@ enum PFalg_op_kind_t {
 			        union of fragments */
     , aop_empty_frag     = 43 /**< representation of an empty fragment */
     , aop_doc_tbl        = 44 /**< document relation (is also a fragment) */
+
+    , aop_dummy               /**< dummy node during compilation */
 };
 /** algebra operator kinds */
 typedef enum PFalg_op_kind_t PFalg_op_kind_t;
@@ -272,11 +287,13 @@ union PFalg_op_sem_t {
 
     /* semantic content for staircase join operator */
     struct {
-        PFalg_axis_t    axis;     /**< represented axis */
-        PFalg_test_t    test;     /**< represented kind test */
+        PFalg_axis_t      axis;      /**< represented axis */
+        PFalg_node_kind_t kind;      /**< node kind to test for */
+        /* FIXME: delete */
+        PFalg_test_t      test;      /**< represented kind test @deprecated */
 	union {
-	    char *target;         /**< target specified in pi's */
-	    PFqname_t  qname;     /**< for name tests */
+	    char         *target;    /**< target specified in pi's */
+	    PFqname_t     qname;     /**< for name tests */
 	} str;
     } scjoin;
 
@@ -362,6 +379,20 @@ struct PFalg_op_t {
 /** algebra operator node */
 typedef struct PFalg_op_t PFalg_op_t;
 
+/**
+ * For a correct treatment of xml node fragments, we work with sets of
+ * fragments and algebra expressions of fragments. This type represents
+ * a set of xml fragments. Algebra expressions of xml fragments are
+ * represented by PFalg_op_t structs.
+ */
+typedef PFarray_t PFalg_set_t;
+
+struct PFalg_pair_t {
+    struct PFalg_op_t *rel;      /* algebra representation of query */
+    PFalg_set_t *frag;           /* set of currently live-node fragments */
+};
+typedef struct PFalg_pair_t PFalg_pair_t;
+
 
 
 /* ***************** Constructors ******************* */
@@ -383,6 +414,9 @@ PFalg_atom_t PFalg_lit_dbl (double value);
 
 /** construct literal boolean (atom) */
 PFalg_atom_t PFalg_lit_bln (bool value);
+
+/** construct literal QName (atom) */
+PFalg_atom_t PFalg_lit_qname (PFqname_t value);
 
 
 /**
@@ -456,11 +490,16 @@ PFalg_op_t * PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2,
 			   PFalg_att_t att1, PFalg_att_t att2);
 
 /**
+ * Dummy node to pass various stuff around during algebra compilation.
+ */
+PFalg_op_t * PFalg_dummy (void);
+
+/**
  * Staircase join between two relations. Each such join corresponds
  * to the evaluation of an XPath location step.
  */
 PFalg_op_t * PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n,
-			   PFalg_op_t *scj);
+			   PFalg_op_t *dummy);
 
 /**
  * Disjoint union of two relations.
@@ -587,6 +626,9 @@ PFalg_op_t * PFalg_count (PFalg_op_t *n, PFalg_att_t res,
 PFalg_op_t * PFalg_seqty1 (PFalg_op_t *n,
                            PFalg_att_t res, PFalg_att_t att, PFalg_att_t part);
 
+/** Cast nat to int. */
+PFalg_op_t * PFalg_cast_item (PFalg_op_t *o);
+
 /**
  * Constructor for `all' test.
  * (Do all tuples in partition @a part carry the value true in
@@ -597,6 +639,44 @@ PFalg_op_t * PFalg_all (PFalg_op_t *n, PFalg_att_t res,
 
 /** Constructor for duplicate elimination operators. */
 PFalg_op_t * PFalg_distinct (PFalg_op_t *n);
+
+
+/*********** node construction functionality *************/
+
+/*
+ * Algebra operators instantiated by the following functions
+ * create new XML tree nodes.  Their algebraic result is a
+ * (document fragment, expression result) pair.  The two components
+ * of such a pair may be derived with the operators `fragment'
+ * (see #PFalg_fragment()) that extracts the document fragment
+ * part, and `roots' (see #PFalg_roots()) for the expression
+ * result.
+ *
+ * Some operators (including most of the operators below) need
+ * access to the `live node set' and thus have a `fragment'
+ * type argument.  These operators don't want duplicates in the
+ * `live node set', which would be introduced very quickly by
+ * typical user queries.
+ *
+ * (Consider, e.g., the XQuery expression `(/foo, /bar)', where
+ * both operands of the sequence construction carry the same
+ * set of live nodes.  The union between these two sets would
+ * produce lots of duplicate nodes in the live node set.)
+ *
+ * However, such duplicates originate from the exact same XQuery
+ * operator and are thus already identical algebra expressions.
+ * Typically, they will be represented in this C code by the
+ * exact same pointer to the algebra expression root.  (The above
+ * query is such an example.)
+ *
+ * Duplicates can thus already be removed at compile time.  We
+ * do this by collecting document fragments in a _set_ of
+ * fragments.  (This set is held duplicate free, based on C
+ * pointer identity.)  Whenever we need the current live node
+ * set as the input to an algebra operator, we turn this set
+ * into an algebraic `fragment union' in the algebra expression
+ * tree.
+ */
 
 /** Constructor for element operators. */
 PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tags,
@@ -627,42 +707,86 @@ PFalg_op_t * PFalg_strconcat (PFalg_op_t *n);
 PFalg_op_t * PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc,
 						 PFalg_op_t *n);
 
-/** Cast nat to int. */
-PFalg_op_t * PFalg_cast_item (PFalg_op_t *o);
-
-
-PFalg_op_t * PFalg_serialize (PFalg_op_t *doc, PFalg_op_t *alg);
-
 
 /**
- * Algebraic representation of the roots of newly created xml nodes
- * (e.g. created by PFalg_element()); schema: iter | pos | item.
+ * Access to (persistently stored) XML documents, the fn:doc()
+ * function.  Returns a (frag, result) pair.
+ */
+PFalg_op_t * PFalg_doc_tbl (PFalg_op_t *rel);
+
+
+
+/**************** document fragment related stuff ******************/
+
+/**
+ * Extract the expression result part from a (frag, result) pair.
+ * The result of this algebra operator is a relation with schema
+ * iter | pos | item.
  */
 PFalg_op_t * PFalg_roots (PFalg_op_t *n);
 
-
-/** Representation of a new fragment. */
+/**
+ * Extract the document fragment part from a (frag, result) pair.
+ * It typically contains newly constructed nodes of some node
+ * construction operator.  The document representation is dependent
+ * on the back-end system.  Hence, the resulting algebra node does
+ * not have a meaningful relational schema (in fact, the schema
+ * component will be set to NULL).
+ */
 PFalg_op_t * PFalg_fragment (PFalg_op_t *n);
+
+
+
+/****************** fragment set handling *******************/
+
+/*
+ * These functions implement a _set_ of document fragments. This
+ * set is held duplicate free (in terms of C pointer identity),
+ * and may be turned into an algebra expression tree (with
+ * `frag_union' operators) with the function PFalg_set_to_alg().
+ */
+
+/**
+ * Create a new, empty set of fragments.
+ */
+PFalg_set_t *PFalg_empty_set (void);
+
+/**
+ * Create a new set of fragments, holding one fragment.
+ */
+PFalg_set_t *PFalg_set (PFalg_op_t *n);
+
+/**
+ * Form a set-oriented union between two sets of fragments.
+ * Eliminate duplicate fragments.
+ */
+PFalg_set_t *PFalg_set_union (PFalg_set_t *frag1, PFalg_set_t *frag2);
+
+/**
+ * Convert a set of fragments into an algebra expression. The fragments
+ * are unified by a special, fragment-specific union operator. It creates
+ * a binary tree in which the bottom-most leaf is always represented by an
+ * empty fragment.
+ */
+PFalg_op_t *PFalg_set_to_alg (PFalg_set_t *frags);
 
 
 /** Form algebraic disjoint union between two fragments. */
 PFalg_op_t * PFalg_frag_union (PFalg_op_t *n1, PFalg_op_t *n2);
 
-
 /** Constructor for an empty fragment */
 PFalg_op_t * PFalg_empty_frag (void);
 
 
-/**
- * Creates a representation for the doc table.
- */
-PFalg_op_t * PFalg_doc_tbl (PFalg_op_t *rel);
+/****************************************************************/
 
 
 /**
- * Core to algebra tree compilation
+ * A `serialize' node will be placed on the very top of the algebra
+ * expression tree.
  */
-/* PFalg_op_t * PFalg (PFcnode_t *c); */
+PFalg_op_t * PFalg_serialize (PFalg_op_t *doc, PFalg_op_t *alg);
+
 
 #endif  /* ALGEBRA_H */
 

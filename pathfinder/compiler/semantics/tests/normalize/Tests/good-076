@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s2 <<'EOT'
+/foo/42/bar
+EOT
+echo $?

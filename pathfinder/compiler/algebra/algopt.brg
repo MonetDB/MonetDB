@@ -1,8 +1,9 @@
 %{
 
-/*
- * Map MIL algebra expressions to MIL code
+/**
+ * @file
  *
+ * Optimize relational algebra expression tree.
  *
  * Copyright Notice:
  * -----------------
@@ -20,13 +21,14 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *
  * $Id$
  */
 
+/* always include pathfinder.h first! */
 #include "pathfinder.h"
 #include "oops.h"         /* PFoops() */
 #include "algebra.h"

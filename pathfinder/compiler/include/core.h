@@ -22,7 +22,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -31,19 +31,6 @@
  *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
- */
-
-/*
- * NOTE (Revision Information):
- *
- * Changes in the Core2MIL_Summer2004 branch have been merged into
- * this file on July 15, 2004. I have tagged this file in the
- * Core2MIL_Summer2004 branch with `merged-into-main-15-07-2004'.
- *
- * For later merges from the Core2MIL_Summer2004, please only merge
- * the changes since this tag.
- *
- * Jens
  */
 
 #ifndef CORE_H
@@ -60,8 +47,11 @@ typedef struct PFcnode_t PFcnode_t;
 /* PFfun_t */
 #include "functions.h"
 
+/* PFalg_pair_t */
+#include "algebra.h"
+
 /** Maximum number of children of a core tree node */
-#define PFCNODE_MAXCHILD 4
+#define PFCNODE_MAXCHILD 2
 
 /**
  * Core tree node type indicators
@@ -77,74 +67,83 @@ typedef struct PFcnode_t PFcnode_t;
  *    - #core2mil() in mil/core2mil.c
  */
 enum PFctype_t {
-    c_var                     /**< variable */
-  , c_lit_str                 /**< string literal */
-  , c_lit_int                 /**< integer literal */
-  , c_lit_dec                 /**< decimal literal */
-  , c_lit_dbl                 /**< double literal */
-  , c_nil                     /**< end-of-sequence marker */
+    c_var                =  1 /**< variable */
+  , c_lit_str            =  2 /**< string literal */
+  , c_lit_int            =  3 /**< integer literal */
+  , c_lit_dec            =  4 /**< decimal literal */
+  , c_lit_dbl            =  5 /**< double literal */
+  , c_nil                =  6 /**< end-of-sequence marker */
 
-  , c_seq                     /**< sequence construction */
+  , c_seq                =  7 /**< sequence construction */
+  , c_ordered            =  8
+  , c_unordered          =  9
 
-  , c_let                     /**< let binding */
-  , c_for                     /**< for binding */
+  , c_let                = 10 /**< let expression */
+  , c_letbind            = 11 /**< binding part of a let expression */
+  , c_for                = 12 /**< for expression */
+  , c_forbind            = 13 /**< binding part of a for expression */
+  , c_forvars            = 14 /**< variable pair (var + pos. var) of a for */
 
-  , c_apply                   /**< function application */
-  , c_arg                     /**< function argument (list) */
+  , c_orderby            = 15 /**< orderby clause */
+  , c_orderspecs         = 16 /**< list of order specs */
 
-  , c_typesw                  /**< typeswitch clause */
-  , c_cases                   /**< case concatenation for typeswitch */
-  , c_case                    /**< single case for typeswitch */
-  , c_seqtype                 /**< a SequenceType */
-  , c_seqcast                 /**< cast along <: */
-  , c_proof                   /**< typechecker only: prove <: relationship */
-  , c_stattype                /**< static type of expression. Required for
-                                   fs:convert-operand. Will be removed during
-                                   typechecking and replaced by seqtype, as
-                                   soon as types are known. */
+  , c_apply              = 17 /**< function application */
+  , c_arg                = 18 /**< function argument (list) */
 
-  , c_ifthenelse              /**< if-then-else conditional */
+  , c_typesw             = 19 /**< typeswitch clause */
+  , c_cases              = 20 /**< case concatenation for typeswitch */
+  , c_case               = 21 /**< single case for typeswitch */
+  , c_default            = 22 /**< default branch in typeswitch */
+  , c_seqtype            = 23 /**< a SequenceType */
+  , c_seqcast            = 24 /**< cast along <: */
+  , c_proof              = 25 /**< typechecker only: prove <: relationship */
+  , c_subty              = 26 /**< subtype condition for proof() */
+  , c_stattype           = 27 /**< static type of expression. Required for
+                                fs:convert-operand. Will be removed during
+                                typechecking and replaced by seqtype, as
+                                soon as types are known. */
 
-  , c_locsteps                /**< path of location steps only */
+  , c_if                 = 28 /**< if-then-else conditional */
+  , c_then_else          = 29 /**< then- and else-branches of an
+                                if-then-else conditional */
+
+  , c_locsteps           = 30 /**< path of location steps only */
 
   /* XPath axes */
-  , c_ancestor              /**< the parent, the parent's parent,... */
-  , c_ancestor_or_self      /**< the parent, the parent's parent,... + self */
-  , c_attribute             /**< attributes of the context node */
-  , c_child                 /**< children of the context node */
-  , c_descendant            /**< children, children's children,... + self */
-  , c_descendant_or_self    /**< children, children's children,... */
-  , c_following             /**< nodes after current node (document order) */
-  , c_following_sibling     /**< all following nodes with same parent */
-  , c_parent                /**< parent node (exactly one or none) */
-  , c_preceding             /**< nodes before context node (document order) */
-  , c_preceding_sibling     /**< all preceding nodes with same parent */
-  , c_self                  /**< the context node itself */
-
-  , c_kind_node
-  , c_kind_comment
-  , c_kind_text
-  , c_kind_pi
-  , c_kind_doc
-  , c_kind_elem
-  , c_kind_attr
-
-  , c_namet                   /**< name test */
+  , c_ancestor           = 31 /**< the parent, the parent's parent,... */
+  , c_ancestor_or_self   = 32 /**< the parent, the parent's parent,... + self */
+  , c_attribute          = 33 /**< attributes of the context node */
+  , c_child              = 34 /**< children of the context node */
+  , c_descendant         = 35 /**< children, children's children,... + self */
+  , c_descendant_or_self = 36 /**< children, children's children,... */
+  , c_following          = 37 /**< nodes after current node (document order) */
+  , c_following_sibling  = 38 /**< all following nodes with same parent */
+  , c_parent             = 39 /**< parent node (exactly one or none) */
+  , c_preceding          = 40 /**< nodes before context node (document order) */
+  , c_preceding_sibling  = 41 /**< all preceding nodes with same parent */
+  , c_self               = 42 /**< the context node itself */
 
   /* Constructor Nodes */
-  , c_elem                    /**< the element constructor */
-  , c_attr                    /**< the attribute constructor */
-  , c_text                    /**< the text constructor */
-  , c_doc                     /**< the document constructor */
-  , c_comment                 /**< the comment constructor */
-  , c_pi                      /**< the processing-instruction constructor */
-  , c_tag                     /**< the tagname for element and attribute constructors */
+  , c_elem               = 43 /**< the element constructor */
+  , c_attr               = 44 /**< the attribute constructor */
+  , c_text               = 45 /**< the text constructor */
+  , c_doc                = 46 /**< the document constructor */
+  , c_comment            = 47 /**< the comment constructor */
+  , c_pi                 = 48 /**< the processing-instruction constructor */
+  , c_tag                = 49 /**< the tagname for elem. and attr. constr. */
 
-  , c_true                    /**< built-in function `fn:true ()' */
-  , c_false                   /**< built-in function `fn:false ()' */
-  , c_error                   /**< built-in function `error' */
-  , c_root                    /**< built-in function `root' */
-  , c_empty                   /**< built-in function `empty' */
+  , c_true               = 50 /**< built-in function `fn:true ()' */
+  , c_false              = 51 /**< built-in function `fn:false ()' */
+  , c_empty              = 52 /**< built-in function `empty' */
+
+  , c_main               = 53 /**< tree root.
+                                   Separates function declarations from
+                                   the query body. */
+  , c_fun_decls          = 54 /**< list of function declarations */
+  , c_fun_decl           = 55 /**< function declaration */
+  , c_params             = 56 /**< function declaration parameter list */
+  , c_param              = 57 /**< function declaration parameter */
+
 };
 
 /** Core tree node type indicators */
@@ -174,6 +173,7 @@ struct PFcnode_t {
     PFcnode_t  *child[PFCNODE_MAXCHILD]; /**< child nodes */
     PFty_t      type;                    /**< static type */
     struct PFalg_pair_t alg;
+    short       state_label;       /**< for BURG pattern matcher */
 };
 
 
@@ -203,13 +203,9 @@ struct PFcnode_t {
  */
 PFcnode_t *PFcore_leaf (PFctype_t);
 PFcnode_t *PFcore_wire1 (PFctype_t, 
-                         PFcnode_t *);
+                         const PFcnode_t *);
 PFcnode_t *PFcore_wire2 (PFctype_t, 
-                         PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_wire3 (PFctype_t,
-                         PFcnode_t *, PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_wire4 (PFctype_t, 
-                         PFcnode_t *, PFcnode_t *, PFcnode_t *, PFcnode_t *);
+                         const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_nil (void);
 
@@ -221,54 +217,71 @@ PFcnode_t *PFcore_dec (double);
 PFcnode_t *PFcore_dbl (double);
 PFcnode_t *PFcore_str (char *);
 
+PFcnode_t *PFcore_main (const PFcnode_t *, const PFcnode_t *);
+
 PFcnode_t *PFcore_seqtype (PFty_t);
-PFcnode_t *PFcore_seqcast (PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_proof (PFcnode_t *, PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_stattype (PFcnode_t *);
-PFcnode_t *PFcore_typeswitch (PFcnode_t *, PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_case (PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_cases (PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_seqcast (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_proof (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_subty (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_stattype (const PFcnode_t *);
+PFcnode_t *PFcore_typeswitch (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_case (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_cases (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_default (const PFcnode_t *);
 
-PFcnode_t *PFcore_ifthenelse (PFcnode_t *, PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_if (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_then_else (const PFcnode_t *, const PFcnode_t *);
 
-PFcnode_t *PFcore_for (PFcnode_t *, PFcnode_t *, PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_let (PFcnode_t *, PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_for (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_forbind (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_forvars (const PFcnode_t *, const PFcnode_t *);
 
-PFcnode_t *PFcore_seq (PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_let (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_letbind (const PFcnode_t *, const PFcnode_t *);
+
+PFcnode_t *PFcore_orderby (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_orderspecs (const PFcnode_t *, const PFcnode_t *);
+
+PFcnode_t *PFcore_seq (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_ordered (const PFcnode_t *);
+PFcnode_t *PFcore_unordered (const PFcnode_t *);
 PFcnode_t *PFcore_empty (void);
 
 PFcnode_t *PFcore_true (void);
 PFcnode_t *PFcore_false (void);
 
-PFcnode_t *PFcore_locsteps (PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_step (PFpaxis_t, PFcnode_t *);
-PFcnode_t *PFcore_kindt (PFpkind_t, PFcnode_t *);
-PFcnode_t *PFcore_namet (PFqname_t );
+PFcnode_t *PFcore_locsteps (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_step (PFpaxis_t, const PFcnode_t *);
 
-PFcnode_t *PFcore_constr_elem (PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_constr_attr (PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_constr (PFptype_t, PFcnode_t *);
+PFcnode_t *PFcore_constr_elem (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_constr_attr (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_constr (PFptype_t, const PFcnode_t *);
 PFcnode_t *PFcore_tag (PFqname_t);
+PFcnode_t *PFcore_fun_decl (PFfun_t *fun, const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_fun_decls (const PFcnode_t *fun, const PFcnode_t *funs);
+PFcnode_t *PFcore_params (const PFcnode_t *param, const PFcnode_t *params);
+PFcnode_t *PFcore_param (const PFcnode_t *type, const PFcnode_t *var);
+
 
 PFfun_t *PFcore_function (PFqname_t);
-PFcnode_t *PFcore_apply (PFfun_t *, PFcnode_t *);
-PFcnode_t *PFcore_arg (PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_apply (PFfun_t *, const PFcnode_t *);
+PFcnode_t *PFcore_arg (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_apply_ (PFfun_t *, ...);
 
 /**
  * Expansion functions for Calculations
  */
-PFcnode_t *PFcore_fn_data (PFcnode_t *);
-PFcnode_t *PFcore_fs_convert_op_by_type (PFcnode_t *, PFty_t);
-PFcnode_t *PFcore_fs_convert_op_by_expr (PFcnode_t *, PFcnode_t *);
-PFcnode_t *PFcore_some (PFcnode_t *, PFcnode_t *, PFcnode_t *);
+PFcnode_t *PFcore_fn_data (const PFcnode_t *);
+PFcnode_t *PFcore_fs_convert_op_by_type (const PFcnode_t *, PFty_t);
+PFcnode_t *PFcore_fs_convert_op_by_expr (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_some (const PFcnode_t *, const PFcnode_t *, const PFcnode_t *);
 
 /**
  * Wrapper for #apply_.
  */
 #define APPLY(fn,...) PFcore_apply_ ((fn), __VA_ARGS__, 0)
 
-PFcnode_t *PFcore_ebv (PFcnode_t *);
+PFcnode_t *PFcore_ebv (const PFcnode_t *);
 
 PFcnode_t *PFcore_error (const char *, ...);
 PFcnode_t *PFcore_error_loc (PFloc_t, const char *, ...);

@@ -21,7 +21,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -60,6 +60,7 @@ p_leaf (PFptype_t kind, PFloc_t loc)
         n->child[c] = 0;
     n->kind = kind;
     n->loc = loc;
+    n->state_label = 0;
 
     /* core code for this node will be assigned by the
      * XQuery Formal Semantics phase

@@ -3,7 +3,7 @@
 /**
  * @file
  *
- * Importing XML Schema types into the Pathfinder type environment.
+ * Import XML Schema types into the Pathfinder type environment.
  *
  * See Section `Importing Schemas' in the W3C XQuery 1.0 and XPath 2.0
  * Formal Semantics and Jan Rittinger's BSc thesis.
@@ -25,7 +25,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -2501,22 +2501,34 @@ REGULARITY (named_attrgroup)
 void
 PFschema_import (PFpnode_t *root)
 {
-    assert (root &&
-            root->kind == p_xquery &&
-            root->child[0]->kind == p_prolog);
-
-    /* abstract syntax tree layout:
+    /*
+     *           main_mod                          lib_mod
+     *          /        \                         /     \
+     *     decl_imps     ...         or         mod_ns  decl_imps
+     *     /      \                                     /      \
+     *   ...     decl_imps                            ...      decl_imps
+     *              \                                             \
+     *              ...                                           ...
      *
-     *           xquery
-     *            /  \
-     *       prolog   body
-     *       /    \
-     * decl_imps  /\
-     *           /__\
      */
+    assert (root);
 
-    /* process all XML Schema imports */
-    schema_imports (root->child[0]->child[0]);
+    switch (root->kind) {
+        case p_main_mod:
+            assert (root->child[0]);
+            schema_imports (root->child[0]);
+            break;
+
+        case p_lib_mod:
+            assert (root->child[1]);
+            schema_imports (root->child[1]);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "illegal parse tree encountered during schema import.");
+            break;
+    }
 
     /* check imported types for well-formedness (ensure regularity) */
     PFenv_key_iterate (PFtype_defns,      regularity_named);

@@ -24,7 +24,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -54,14 +54,14 @@
 static void add_ufun (PFpnode_t *n);
 
 /* register a user-defined function */
-static void fun_add_user (PFqname_t     qname, 
-                          unsigned int  arity);
+static void fun_add_user (PFqname_t qname, unsigned int arity,
+                          PFvar_t **params);
 
 
 /**
  * Environment of functions known to Pathfinder.
  */
-PFenv_t *PFfun_env = 0;
+PFenv_t *PFfun_env = NULL;
 
 
 /* Print out all registered functions for debugging purposes */
@@ -73,6 +73,20 @@ static void print_functions (void);
 /**
  * Count number of formal arguments to a user-defined function
  * (defined in abstract syntax tree node @a n).
+ * 
+ * Parse tree structure:
+ *
+ *                  fun_decl
+ *                 /        \
+ *            fun_sig        e
+ *           /       \
+ *        params      t
+ *       /     \                        n is one of the params nodes
+ *      p1     params
+ *             /    \
+ *            p2    ...
+ *                    \
+ *                    nil
  *
  * @param n The current @c p_params node; when called from outside,
  *   this is the topmost @c p_params node below the function
@@ -127,19 +141,82 @@ actual_args (PFpnode_t *n)
     return 0;
 }
 
+/*
+ * Parse tree structure:
+ *
+ *                                  fun_decl
+ *                                 /        \
+ *                            fun_sig        e
+ *                           /       \
+ *                        params      t
+ *                       /      \
+ *                  param        params
+ *                /   |          /    \
+ *          seq_ty   var      param    ...
+ *            |              /   |       \
+ *           ...        seq_ty  var      nil
+ *                       |
+ *                      ...
+ *
+ * n is one of the params nodes.
+ */
+static void
+fill_paramlist (PFvar_t **params, PFpnode_t *n)
+{
+    assert (n);
+
+    switch (n->kind) {
+        case p_nil:
+            break;
+
+        case p_params:
+            assert (n->child[0]); assert (n->child[0]->kind == p_param);
+            assert (n->child[0]->child[1]
+                    && n->child[0]->child[1]->kind == p_var);
+            *params = n->child[0]->child[1]->sem.var;
+            fill_paramlist (params + 1, n->child[1]);
+            break;
+
+        default:     
+            PFoops_loc (OOPS_FATAL, n->loc,
+                        "illegal node kind (expecting nil/args)");
+    }
+}
+
 
 /**
  * Register a user-defined function.
+ * 
+ * Parse tree structure:
+ *
+ *                fun_decl     <--- n
+ *               /        \
+ *          fun_sig        e
+ *         /       \
+ *      params      t
+ *     /     \
+ *    p1     params
+ *           /    \
+ *          p2    ...
+ *                  \
+ *                  nil
  */
 static void
 add_ufun (PFpnode_t *n)
 {
-    unsigned int arity;
+    unsigned int   arity;
+    PFvar_t      **params;
+
+    assert (n->kind = p_fun_decl);
+    assert (n->child[0] && n->child[0]->child[0]);
 
     /* count formal function arguments */
-    arity = formal_args (n->child[0]);
+    arity = formal_args (n->child[0]->child[0]);
 
-    fun_add_user (n->sem.qname, arity);
+    params = PFmalloc (arity * sizeof (*params));
+    fill_paramlist (params, n->child[0]->child[0]);
+
+    fun_add_user (n->sem.qname, arity, params);
 }
 
 /**
@@ -156,9 +233,11 @@ add_ufuns (PFpnode_t *n)
             /* stop recursion */
             return;
 
-        case p_fun_decls:        
-            /* add this function */
-            add_ufun (n->child[0]);
+        case p_decl_imps:
+            assert (n->child[0]);
+            if (n->child[0]->kind == p_fun_decl)
+                /* add this function */
+                add_ufun (n->child[0]);
 
             /* and recurse */
             add_ufuns (n->child[1]);
@@ -296,7 +375,7 @@ print_functions (void)
 void
 PFfun_clear (void)
 {
-    PFfun_env = 0;
+    PFfun_env = NULL;
 }
 
 /**
@@ -307,19 +386,31 @@ PFfun_clear (void)
  * @return status code
  */
 static void
-fun_add_user (PFqname_t     qn,
-              unsigned int  arity)
+fun_add_user (PFqname_t      qn,
+              unsigned int   arity,
+              PFvar_t      **params)
 {
+    PFfun_t      *fun = PFfun_new (qn, arity, false, NULL, NULL, NULL, params);
+    PFarray_t    *funs = NULL;
+    unsigned int  i;
+
     /* insert new entry into function list */
-    if (PFenv_bind (PFfun_env, 
-                    qn, 
-                    (void *) PFfun_new (qn, 
-                                        arity, 
-                                        false, 
-                                        0,
-                                        0,
-                                        NULL)))
-        PFoops (OOPS_FUNCREDEF, "`%s'", PFqname_str (qn));
+    if ((funs = PFenv_bind (PFfun_env, qn, fun))) {
+
+        /*
+         * There is already a binding for a function with that
+         * name. Functions with same name are only allowed, if
+         * they have a different number of arguments.
+         *
+         * (Note that PFenv_bind() has already added to the list
+         * of bindings. So we must not look at the last binding,
+         * it will always have same arity as fun.)
+         */
+        for (i = 0; i < (PFarray_last (funs) - 1); i++) {
+            if ((*((PFfun_t **) PFarray_at (funs, i)))->arity == arity)
+                PFoops (OOPS_FUNCREDEF, "`%s'", PFqname_str (qn));
+        }
+    }
 }
 
 /**
@@ -339,13 +430,14 @@ fun_add_user (PFqname_t     qn,
  * @return a pointer to the newly allocated struct
  */
 PFfun_t *
-PFfun_new (PFqname_t qn,
-           unsigned int arity,
-           bool builtin,
-           PFty_t *par_tys,
-           PFty_t *ret_ty,
+PFfun_new (PFqname_t      qn,
+           unsigned int   arity,
+           bool           builtin,
+           PFty_t        *par_tys,
+           PFty_t        *ret_ty,
            struct PFalg_pair_t (*alg) (struct PFalg_op_t *,
-                                       struct PFalg_pair_t *))
+                                       struct PFalg_pair_t *),
+           PFvar_t      **params)
 {
     PFfun_t *n;
 
@@ -354,7 +446,9 @@ PFfun_new (PFqname_t qn,
     n->qname   = qn;
     n->arity   = arity;
     n->builtin = builtin;
-    n->alg = alg;
+    n->alg     = alg;
+    n->params  = params;
+    n->core    = NULL;      /* initialize Core equivalent with NULL */
 
     /* copy array of formal parameter types (if present) */
     if (arity > 0 && par_tys) {
@@ -362,7 +456,7 @@ PFfun_new (PFqname_t qn,
         memcpy (n->par_ty, par_tys, arity * sizeof (PFty_t));
     }
     else
-        n->par_ty = 0;
+        n->par_ty = NULL;
 
     if (ret_ty)
         n->ret_ty  = *ret_ty;
@@ -376,29 +470,44 @@ PFfun_new (PFqname_t qn,
  * Traverse the abstract syntax tree and check correct function usage.
  * Also generate a list of all XML Query functions available for this
  * XML Query expression.
+ *
  * @param root The root of the abstract syntax tree.
  * @return Status code
  */
 void
 PFfun_check (PFpnode_t * root)
 {
-    /*                 xquery
-     *                  /  \
-     *              prolog  ...
-     *               /  \
-     *             ...  fun_decls  
+    /*
+     *           main_mod                          lib_mod
+     *          /        \                         /     \
+     *     decl_imps     ...         or         mod_ns  decl_imps
+     *     /      \                                     /      \
+     *   ...     decl_imps                            ...      decl_imps
+     *              \                                             \
+     *              ...                                           ...
+     *
      */
-    assert (root                             /* parse tree root */
-            && root->child[0]                /* 'prolog' node   */
-            && root->child[0]->child[1]);    /* 'fun_decls' or 'nil' */
+    assert (root);
 
-    /* look for function definitions in the query prolog */
-    add_ufuns (root->child[0]->child[1]);
+    switch (root->kind) {
+        case p_main_mod:
+            assert (root->child[0]);
+            add_ufuns (root->child[0]);
+            break;
+
+        case p_lib_mod:
+            assert (root->child[1]);
+            add_ufuns (root->child[1]);
+            break;
+
+        default:
+            PFoops (OOPS_FATAL,
+                    "illegal parse tree encountered during function checking.");
+            break;
+    }
 
 #ifdef DEBUG_FUNCTIONS
-    /*
-     * For debugging, print out all functions that have been registered.
-     */
+    /* For debugging, print out all registered functions.  */
     print_functions ();
 #endif
 

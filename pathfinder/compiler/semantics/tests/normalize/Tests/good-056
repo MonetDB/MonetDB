@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s2 <<'EOT'
+<a b="foo {{ bar }}" c="foo { "bar" }" />
+EOT
+echo $?

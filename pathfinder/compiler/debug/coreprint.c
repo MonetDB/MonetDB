@@ -22,7 +22,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -32,20 +32,6 @@
  *
  * $Id$
  */
-
-/*
- * NOTE (Revision Information):
- *
- * Changes in the Core2MIL_Summer2004 branch have been merged into
- * this file on July 15, 2004. I have tagged this file in the
- * Core2MIL_Summer2004 branch with `merged-into-main-15-07-2004'.
- *
- * For later merges from the Core2MIL_Summer2004, please only merge
- * the changes since this tag.
- *
- * Jens
- */
-
 
 #include "pathfinder.h"
 
@@ -75,9 +61,17 @@ char *c_id[]  = {
   , [c_nil]                = "nil"
 
   , [c_seq]                = "seq"
+  , [c_ordered]            = "ordered"
+  , [c_unordered]          = "unordered"
 
   , [c_let]                = "let"
+  , [c_letbind]            = "letbind"
   , [c_for]                = "for"
+  , [c_forbind]            = "forbind"
+  , [c_forvars]            = "forvars"
+
+  , [c_orderby]            = "orderby"
+  , [c_orderspecs]         = "orderspecs"
 
   , [c_apply]              = "apply"
   , [c_arg]                = "arg"
@@ -85,12 +79,14 @@ char *c_id[]  = {
   , [c_typesw]             = "typesw"
   , [c_cases]              = "cases"
   , [c_case]               = "case"
+  , [c_default]            = "default"
   , [c_seqtype]            = "seqtype"
   , [c_seqcast]            = "seqcast"
   , [c_proof]              = "proof <:"
   , [c_stattype]           = "stattype"
 
-  , [c_ifthenelse]         = "if-then-else"
+  , [c_if]                 = "if"
+  , [c_then_else]          = "then_else"
 
   , [c_locsteps]           = "locsteps"
 
@@ -107,16 +103,6 @@ char *c_id[]  = {
   , [c_preceding_sibling]  = "preceding-sibling"
   , [c_self]               = "self"
 
-  , [c_kind_node]          = "kind-node"
-  , [c_kind_comment]       = "kind-comment"
-  , [c_kind_text]          = "kind-text"
-  , [c_kind_pi]            = "kind-pi"
-  , [c_kind_doc]           = "kind-doc"
-  , [c_kind_elem]          = "kind-elem"
-  , [c_kind_attr]          = "kind-attr"
-
-  , [c_namet]              = "namet"
-
   , [c_elem]               = "elem"
   , [c_attr]               = "attr" 
   , [c_text]               = "text"
@@ -127,9 +113,14 @@ char *c_id[]  = {
 
   , [c_true]               = "true"
   , [c_false]              = "false"
-  , [c_error]              = "error"
-  , [c_root]               = "root"
   , [c_empty]              = "empty"
+
+  , [c_main]               = "main"
+  , [c_fun_decls]          = "fun_decls"
+  , [c_fun_decl]           = "fun_decl"
+  , [c_params]             = "params"
+  , [c_param]              = "param"
+
 };
 
 /** Current node id */
@@ -178,10 +169,8 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
         snprintf (s, sizeof (s), "%.5g", n->sem.dbl);
         L2 (c_id[n->kind], s);                
         break;
-    case c_namet:     
-        L2 (c_id[n->kind], PFqname_str (n->sem.qname));
-        break;
     case c_apply:     
+    case c_fun_decl:     
         L2 (c_id[n->kind], PFqname_str (n->sem.fun->qname));
         break;
     case c_tag:
@@ -189,10 +178,6 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
         break;
     case c_seqtype:      
         L2 (c_id[n->kind], PFty_str (n->sem.type));
-        break;
-    case c_error:    
-        snprintf (s, sizeof (s), "%s", PFesc_string (n->sem.str));
-        L2 (c_id[n->kind], s);
         break;
         
     default:          
@@ -267,9 +252,6 @@ core_pretty (PFcnode_t *n)
     case c_lit_dbl:     
         PFprettyprintf ("%.5g", n->sem.dbl);
         break;
-    case c_namet:       
-        PFprettyprintf ("%s", PFqname_str (n->sem.qname));
-        break;
     case c_apply:       
         PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
         break;
@@ -278,9 +260,6 @@ core_pretty (PFcnode_t *n)
         break;
     case c_tag:       
         PFprettyprintf ("%s", PFqname_str (n->sem.qname));
-        break;
-    case c_error:       
-        PFprettyprintf ("\"%s\"", n->sem.str);
         break;
         
     default:            

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+pf -s2 <<'EOT'
+declare namespace foo = 'http://www.foo.bar/';
+
+<foo:b/>
+EOT
+echo $?

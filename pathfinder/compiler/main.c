@@ -20,7 +20,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -471,26 +471,26 @@ static const char
 #include "mem.h"
 
 static char *phases[] = {
-    [ 1]    "right after input parsing",
-    [ 2]    "after parse/abstract syntax tree has been normalized",
-    [ 3]    "after namespaces have been checked and resolved",
-    [ 4]    "after variable scoping has been checked",
-    [ 5]    "after XQuery built-in functions have been loaded",
-    [ 6]    "after valid function usage has been checked",
-    [ 7]    "after XML Schema predefined types have been loaded",
-    [ 8]    "after XML Schema document has been imported (if any)",
-    [ 9]    "after the abstract syntax tree has been mapped to Core",
-    [10]    "after the Core tree has been simplified/normalized",
-    [11]    "after type inference and checking",
-    [12]    "after XQuery Core optimization",
-    [13]    "after the Core tree has been translated to the internal algebra",
-    [14]    "after the algebra tree has been rewritten/optimized",
-    [15]    "after the common subexpression elimination on the algebra tree",
-    [16]    "after the algebra has been translated to MIL algebra",
-    [17]    "after MIL algebra optimization/simplification",
-    [18]    "after MIL algebra common subexpression elimination",
-    [19]    "after the MIL algebra has been compiled into MIL commands",
-    [20]    "after the MIL program has been serialized"
+    [ 1]  = "right after input parsing",
+    [ 2]  = "after parse/abstract syntax tree has been normalized",
+    [ 3]  = "after namespaces have been checked and resolved",
+    [ 4]  = "after variable scoping has been checked",
+    [ 5]  = "after XQuery built-in functions have been loaded",
+    [ 6]  = "after valid function usage has been checked",
+    [ 7]  = "after XML Schema predefined types have been loaded",
+    [ 8]  = "after XML Schema document has been imported (if any)",
+    [ 9]  = "after the abstract syntax tree has been mapped to Core",
+    [10]  = "after the Core tree has been simplified/normalized",
+    [11]  = "after type inference and checking",
+    [12]  = "after XQuery Core optimization",
+    [13]  = "after the Core tree has been translated to the internal algebra",
+    [14]  = "after the algebra tree has been rewritten/optimized",
+    [15]  = "after the common subexpression elimination on the algebra tree",
+    [16]  = "after the algebra has been translated to MIL algebra",
+    [17]  = "after MIL algebra optimization/simplification",
+    [18]  = "after MIL algebra common subexpression elimination",
+    [19]  = "after the MIL algebra has been compiled into MIL commands",
+    [20]  = "after the MIL program has been serialized"
 };
 
 /**

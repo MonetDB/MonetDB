@@ -16,6 +16,23 @@
  * XQuery constructs:
  *
  * @verbatim
+   - module namespace ns = "uri"
+   - declare namespace ns = "uri"
+   - declare default element namespace = "uri"
+   - declare default function namespace = "uri"
+   - import schema namespace ns = "uri" [at "url"]
+   - import schema default element namespace ns = "uri" [at "url"]
+   - import module namespace ns = "uri" "module" [at "url"]
+
+   - declare function ns:loc (...) {...}
+   - named types and schema references
+   - $ns:loc                  (variable usage)
+   - ns:loc (...)             (function application)
+   - .../ax::ns:loc           (name test)
+   - <ns:loc> ... </ns:loc>   (element construction)
+   - <... ns:loc="..." ...>   (attributes)
+
+FIXME: these are old
    - default function namespace = "uri"
    - default element namespace = "uri"
    - declare namespace ns = "uri"
@@ -56,13 +73,8 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
- *
- *  Contributors:
- *          Torsten Grust <torsten.grust@uni-konstanz.de>
- *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
- *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
  */
@@ -79,7 +91,7 @@
 
 /*
  * XML NS that are predefined for any query (may be used without
- * prior declaration) in XQuery, see W3C XQuery, 4.1
+ * prior declaration) in XQuery, see W3C XQuery, 4.12
  */
 /** Predefined namespace `xml' for any query */
 PFns_t PFns_xml = 
@@ -93,6 +105,10 @@ PFns_t PFns_xs  =
 PFns_t PFns_xsi = 
     { .ns  = "xsi", 
       .uri = "http://www.w3.org/2001/XMLSchema-instance" };
+/** XQuery default function namespace (fn:...). */
+PFns_t PFns_fn  =
+    { .ns  = "fn",  
+      .uri = "http://www.w3.org/2002/11/xquery-functions" };
 /** Predefined namespace `xdt' (XPath Data Types) for any query */
 PFns_t PFns_xdt = 
     { .ns  = "xdt",
@@ -102,12 +118,6 @@ PFns_t PFns_local =
     { .ns  = "local",
       .uri = "http://www.w3.org/2003/11/xquery-local-functions" };
 
-/**
- * XQuery default function namespace (fn:...).
- * (see W3C XQuery 1.0 and XPath 2.0 Function and Operators, 1.5).
- */
-PFns_t PFns_fn  = { .ns  = "fn",  
-		    .uri = "http://www.w3.org/2002/11/xquery-functions" };
 
 /**
  * XQuery operator namespace (op:...)
@@ -117,7 +127,7 @@ PFns_t PFns_fn  = { .ns  = "fn",
  * (see W3C XQuery F&O, 1.5).
  */
 PFns_t PFns_op  = { .ns  = "op",  
-		    .uri = "http://www.w3.org/2002/08/xquery-operators" };
+                    .uri = "http://www.w3.org/2002/08/xquery-operators" };
 
 
 /** 
@@ -128,13 +138,13 @@ PFns_t PFns_op  = { .ns  = "op",
  * This namespace is not accessible for the user.
  */ 
 PFns_t PFns_pf  = { .ns  = "#pf",  
-		    .uri = "http://www.inf.uni-konstanz.de/Pathfinder" };
+                    .uri = "http://www.inf.uni-konstanz.de/Pathfinder" };
 
 /**
  * Wildcard namespace.
  * Used in QNames of the form *:loc.
  */
-PFns_t PFns_wild = { .ns = 0, .uri = 0 };
+PFns_t PFns_wild = { .ns = NULL, .uri = NULL };
 
 /**
  * XQuery default element NS.  Intially the default element NS is
@@ -151,13 +161,6 @@ static PFns_t ens;
 static PFns_t fns;
 
 /**
- * The in-scope NS environment (W3C XQuery, 4.1).  During NS
- * resolution, all NS currently in scope are to be found in this
- * environment.  When NS resolution starts, the four NS xml:...,
- * xs:..., xsd:..., and xsi:... are in scope.
- */
-
-/**
  * Does QName @a qn actually have a NS prefix?
  */
 #define NS_QUAL(qn) ((qn).ns.ns)
@@ -169,14 +172,12 @@ static PFns_t fns;
 #define XMLNS "xmlns"
 
 /**
- * maximum size of NS scope 
- * (this effectively limits the number of different namespaces used in
- * a single query)
+ * The in-scope NS environment (W3C XQuery, 4.1).  During NS
+ * resolution, all NS currently in scope are to be found in this
+ * environment.  When NS resolution starts, the four NS xml:...,
+ * xs:..., xsd:..., and xsi:... are in scope.
  */
-#define NS_SCOPE_SIZE 256
-
-/** the in-scope NS environment itself */
-static PFns_t namespace[NS_SCOPE_SIZE];
+static PFarray_t *namespace = NULL;
 
 /** current # of NS in scope */
 static unsigned ns_num = 0;
@@ -190,8 +191,7 @@ static unsigned ns_num = 0;
 static void
 ns_add (PFns_t ns)
 {
-    assert (ns_num < NS_SCOPE_SIZE + 1);
-    namespace[ns_num++] = ns;
+    *((PFns_t *) PFarray_at (namespace, ns_num++)) = ns;
 }
 
 /**
@@ -210,8 +210,8 @@ ns_lookup (PFns_t *ns)
     assert (ns && ns->ns);
 
     while (nsi--)
-        if (! strcmp (ns->ns, namespace[nsi].ns)) {
-            *ns = namespace[nsi]; 
+        if (! strcmp (ns->ns, ((PFns_t *) PFarray_at (namespace, nsi))->ns)) {
+            *ns = *((PFns_t *) PFarray_at (namespace, nsi));
             return true;
         }
 
@@ -290,6 +290,8 @@ apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
     assert (c);
   
     switch (c->kind) {
+
+    case p_contseq:
     case p_exprseq:
         assert (c->child[0]);
         if (c->child[0]->kind == p_attr) {
@@ -322,8 +324,9 @@ apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
                      *                 /       \
                      *             lit_str     empty_seq
                      *          
-                     */	    
-                    if (a->child[1]->kind           == p_exprseq &&
+                     */     
+                    if ((a->child[1]->kind    == p_exprseq
+                         || a->child[1]->kind == p_contseq) &&
                         a->child[1]->child[0]->kind == p_lit_str &&
                         a->child[1]->child[1]->kind == p_empty_seq) {
                         ns_add ((PFns_t) { .ns  = a->child[0]->sem.qname.loc,
@@ -340,7 +343,7 @@ apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
                                     "required to have non-empty literal "
                                     "string value",
                                     PFqname_str (a->child[0]->sem.qname));
-	  
+          
                 }
                 else {
                     if (! strcmp (a->child[0]->sem.qname.loc, XMLNS)) {
@@ -362,7 +365,7 @@ apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
                          *           content                
                          *             / \          or        nil
                          *  "ns"-lit_str  nil           
-                         */	
+                         */     
                         switch (a->child[1]->kind) {
                         case p_empty_seq:
                             /*
@@ -373,6 +376,7 @@ apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
                             break;
 
                         case p_exprseq:
+                        case p_contseq:
                             if (a->child[1]->child[0]->kind == p_lit_str &&
                                 a->child[1]->child[1]->kind == p_empty_seq) {
                                 /* non-empty NS declaration attribute */
@@ -389,10 +393,10 @@ apply_xmlns (PFpnode_t *c, PFpnode_t **cc)
                                         "required to have literal string value",
                                         PFqname_str (a->child[0]->sem.qname));
                         }
-	    
+            
                         /* finally remove this NS declaration attribute */
                         assert (cc);
-                        *cc = c->child[1];	    
+                        *cc = c->child[1];          
                     }
                 }
             }
@@ -429,6 +433,10 @@ ns_resolve (PFpnode_t *n)
 
         /* handle query prolog */
 
+    case p_mod_ns:
+        PFoops (OOPS_NOTSUPPORTED,
+                "Pathfinder does currently not support XQuery modules.");
+
     case p_fns_decl:
         /* default function namespace = "foo" 
          *
@@ -438,7 +446,7 @@ ns_resolve (PFpnode_t *n)
          *              |
          *           lit_str-"foo"
          */
-        fns = (PFns_t) { .ns = 0, .uri = n->child[0]->sem.str };
+        fns = (PFns_t) { .ns = NULL, .uri = n->child[0]->sem.str };
 
         break;
 
@@ -451,7 +459,7 @@ ns_resolve (PFpnode_t *n)
          *              |
          *           lit_str-"foo"
          */
-        ens = (PFns_t) { .ns = 0, .uri = n->child[0]->sem.str };
+        ens = (PFns_t) { .ns = NULL, .uri = n->child[0]->sem.str };
 
         break;
 
@@ -475,6 +483,11 @@ ns_resolve (PFpnode_t *n)
          * abstract syntax tree layout:
          *
          *           fun_decl-ns:loc
+         *            /           \
+         *         fun_sig       body
+         *          /   \
+         *       param   t
+         *
          *           /  |  \
          *        parm  t  body
          */
@@ -491,14 +504,14 @@ ns_resolve (PFpnode_t *n)
                             PFqname_str (n->sem.qname));
 
         /* NS resolution in function parameters, return type, and body */
-        assert (n->child[0]);
-        ns_resolve (n->child[0]);
+        assert (n->child[0] && n->child[0]->child[0]);
+        ns_resolve (n->child[0]->child[0]);
+
+        assert (n->child[0]->child[1]);
+        ns_resolve (n->child[0]->child[1]);
 
         assert (n->child[1]);
         ns_resolve (n->child[1]);
-
-        assert (n->child[2]);
-        ns_resolve (n->child[2]);
 
         break;
 
@@ -506,10 +519,7 @@ ns_resolve (PFpnode_t *n)
 
     case p_atom_ty:
     case p_named_ty:
-    case p_glob_schm_ty:
     case p_req_name:
-    case p_glob_schm:
-    case p_schm_step:
         if (NS_QUAL (n->sem.qname))
             if (! ns_lookup (&(n->sem.qname.ns)))
                 PFoops_loc (OOPS_BADNS, n->loc,
@@ -520,14 +530,14 @@ ns_resolve (PFpnode_t *n)
 
         /* handle query body */
 
-    case p_var:
+    case p_varref:
         /* $ns:loc                       (variable)
          */
-        if (NS_QUAL (n->sem.var->qname))
-            if (! ns_lookup (&(n->sem.var->qname.ns)))
+        if (NS_QUAL (n->sem.qname))
+            if (! ns_lookup (&(n->sem.qname.ns)))
                 PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified variable name $%s",
-                            PFqname_str (n->sem.var->qname));
+                            PFqname_str (n->sem.qname));
 
         break;
 
@@ -556,41 +566,6 @@ ns_resolve (PFpnode_t *n)
         assert (n->child[0]);
         ns_resolve (n->child[0]);
 
-        break;
-
-    case p_step:
-        /* ax::ns:loc                  (axis step w/ name test)
-         *
-         * abstract syntax tree layout:
-         *        
-         *           step-ax
-         *             |
-         *           namet-ns:loc
-         */
-
-        /* make sure the step indeed comes with an associated name test */
-        assert (n->child[0]);
-        if (n->child[0]->kind == p_namet) {
-            /* if the name test uses an unqualified QName, only apply the
-             * default element NS prefix if this isn't an attribute axis step
-             * (attributes are not subject to NS resolution)
-             */
-            if (! NS_QUAL (n->child[0]->sem.qname)) {
-                if (n->sem.axis != p_attribute)
-                    n->child[0]->sem.qname.ns = ens;
-            }
-            else
-                /* the name test uses a qualified QName:
-                 * if this is a wildcard nametest (*:loc or *:*) let the
-                 * query pass, else make sure the NS is in scope
-                 */
-                if (strcmp (n->child[0]->sem.qname.ns.ns, "*") && 
-                    ! ns_lookup (&(n->child[0]->sem.qname.ns)))
-                    PFoops_loc (OOPS_BADNS, n->child[0]->loc,
-                                "unknown namespace in qualified name test %s", 
-                                PFqname_str (n->child[0]->sem.qname));
-        }
-    
         break;
 
     case p_elem:
@@ -695,10 +670,13 @@ ns_resolve (PFpnode_t *n)
 void
 PFns_resolve (PFpnode_t *root)
 {
+    namespace = PFarray (sizeof (PFns_t));
+
     /* bring the default NS into scope */
     ns_add (PFns_xml);
     ns_add (PFns_xs);
     ns_add (PFns_xsi);
+    ns_add (PFns_pf);
 
     /* bring the function and operator NS into scope
      * and make fn:... the default function NS

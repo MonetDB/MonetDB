@@ -64,7 +64,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -129,6 +129,8 @@ push (PFpnode_t *n)
 
     /* register variable in environment */
     PFscope_into (var_env, *varname, var);
+
+    var->type = PFty_none ();
 
     /* initialize fields of varref node n */
     n->sem.var = var;
@@ -206,8 +208,6 @@ scope (PFpnode_t *n)
         
         /* (3) */
         scope (n->child[1]);
-        scope (n->child[2]);
-        scope (n->child[3]);
         
         /* (4) */
         PFscope_close (var_env);
@@ -242,12 +242,15 @@ scope (PFpnode_t *n)
         
     case p_fun_decl:  
         /*                      fun_decl
-         *                      /  |  \
-         *                 params  t   e
+         *                     /        \
+         *                 fun_sig       e
+         *                /       \
+         *             params      t
+         *
          *
          * (1) save current variable environment 
          * (2) process function parameters
-         * (3) process return type t and function body e
+         * (3) process function body e
          * (4) restore variable environment
          */
         
@@ -259,7 +262,6 @@ scope (PFpnode_t *n)
         
         /* (3) */
         scope (n->child[1]);
-        scope (n->child[2]);
         
         /* (4) */
         PFscope_close (var_env);
@@ -268,8 +270,12 @@ scope (PFpnode_t *n)
         
     case p_bind:     
         /*                 bind
-         *                /| |\          for $v as t at $i in e
-         *               t i v e         some $v as t satisfies e
+         *                /    \
+         *             vars     e        for $v as t at $i in e
+         *            /    \             some $v as t satisfies e
+         *     var_type     i
+         *      /    \
+         *     v      t
          *
          * (i may be nil: no positional vars for some/every)
          *
@@ -280,37 +286,42 @@ scope (PFpnode_t *n)
       
       
         /* (1) */
-        scope (n->child[3]);
+        scope (n->child[1]);
 
         /* (2) */
-        assert (n->child[2] && (n->child[2]->kind == p_varref));
+        assert (n->child[0] && n->child[0]->child[0]
+                && n->child[0]->child[0]->child[0]
+                && n->child[0]->child[0]->child[0]->kind == p_varref);
 
-        push (n->child[2]);
+        push (n->child[0]->child[0]->child[0]);
         
         /* (3) */
-        assert (n->child[1]);
+        assert (n->child[0] && n->child[0]->child[1]);
 
-        if (n->child[1]->kind == p_varref)
-            push (n->child[1]);
+        if (n->child[0]->child[1]->kind == p_varref)
+            push (n->child[0]->child[1]);
 
         break;
 
     case p_let:  
         /*                 let
-         *                / | \          let $v as t := e 
-         *               t  v  e
+         *                /   \
+         *         var_type    e       let $v as t := e 
+         *          /    \
+         *         v      t
          *
          * (1) process e (v not yet visible in e)
          * (2) bring v into scope
          */
       
         /* (1) */
-        scope (n->child[2]);
+        scope (n->child[1]);
       
         /* (2) */
-        assert (n->child[1] && (n->child[1]->kind == p_varref));
+        assert (n->child[0] && n->child[0]->child[0]
+                && n->child[0]->child[0]->kind == p_varref);
 
-        push (n->child[1]);
+        push (n->child[0]->child[0]);
 
         break;
 
@@ -318,7 +329,7 @@ scope (PFpnode_t *n)
         /* Abstract syntax tree layout:
          *
          *                param                
-         *                 / \        define function (..., t v, ...)
+         *                 / \        declare function ... (..., t v, ...)
          *                t   v
          */
         assert (n->child[1] && (n->child[1]->kind == p_varref));
@@ -331,59 +342,55 @@ scope (PFpnode_t *n)
         /* Abstract syntax tree layout:
          *
          *                 case
-         *                 / | \             case t v return e
-         *                t  v  e
+         *                /    \
+         *           var_type   e            case $v as t return e
+         *          /       \
+         *         v         t
+         *
          */
       
         /* occurrence of a branch variable is optional */
-        assert (n->child[1]);
+        assert (n->child[0] && n->child[0]->child[0]);
 
         /* visibility of branch variable is branch-local only */
         PFscope_open (var_env);
 
-        if (n->child[1]->kind == p_varref)
-            push (n->child[1]);
+        if (n->child[0]->child[0]->kind == p_varref)
+            push (n->child[0]->child[0]);
 
         /* visit the case branch e itself */
-        assert (n->child[2]);
+        assert (n->child[1]);
         
-        scope (n->child[2]);
+        scope (n->child[1]);
 
         PFscope_close (var_env);
 
         break;
 
-    case p_typeswitch:    /* typeswitch expression */
-        /* Abstract syntax tree layout:
+    case p_default:    /* default clause of a typeswitch expression */
+        /*
+         * Abstract syntax tree layout:
          *
-         *             typeswitch
-         *              / |  | \      typeswitch (e) cs default $v return e' 
-         *             e  cs v  e'
+         *              default
+         *               /   \         default $v return e
+         *              v     e
+         *
+         * (variable $v is optional)
          */
-
-        /* Process typeswitch operand and cases */
-        assert (n->child[0]);
-        assert (n->child[1]);
-
-        scope (n->child[0]);
-        scope (n->child[1]);
-      
-        /* occurrence of the default branch variable is optional */
-        assert (n->child[2]);
-
-        /* visibility of branch variable is branch-local only */
         PFscope_open (var_env);
 
-        if (n->child[2]->kind == p_varref)
-            push (n->child[2]);
-      
-        /* visit the default branch e' itself */
-        assert (n->child[3]);
-        
-        scope (n->child[3]);
-      
+        assert (n->child[0]);
+        if (n->child[0]->kind == p_varref)
+            push (n->child[0]);
+
+        scope (n->child[1]);
+
         PFscope_close (var_env);
 
+        break;
+
+    case p_var_decl:    /* variable declaration in prolog */
+        /* already done, so skip on */
         break;
 
     default:
@@ -396,6 +403,65 @@ scope (PFpnode_t *n)
         break;
     }
 
+}
+
+/**
+ * Variable declarations in the query prolog must be scoped before anything
+ * else. Functions declared later in the query may depend on them.
+ */
+static void
+scope_var_decls (PFpnode_t *n)
+{
+    unsigned int child;     /* Iterate over children */
+
+    assert (n);
+
+    switch (n->kind) {
+        case p_main_mod:
+            /* only traverse the prolog, this is enough */
+            scope_var_decls (n->child[0]);
+            break;
+
+        case p_lib_mod:
+            /* only traverse the prolog, this is enough */
+            scope_var_decls (n->child[1]);
+            break;
+
+        case p_var_decl:
+            /*
+             * Abstract syntax tree layout:
+             *
+             *           var_decl
+             *          /        \
+             *     var_type       e       declare variable $v as t := e
+             *     /      \
+             *    v        t
+             *
+             * (1) bring variable into scope
+             * (2) scope-check the initialization code
+             *     (may not use any variables that are declared later)
+             */
+            assert (n->child[0] && n->child[0]->child[0]
+                    && n->child[0]->child[0]->kind == p_varref);
+
+            push (n->child[0]->child[0]);
+
+            scope (n->child[1]);
+
+            break;
+
+        default:
+            /*
+             * For all other cases just traverse the whole tree recursively.
+             */
+            for (child = 0;
+                 child < PFPNODE_MAXCHILD && n->child[child];
+                 child++)
+                scope_var_decls (n->child[child]);
+
+            break;
+
+    }
 }
 
 /**
@@ -414,6 +480,10 @@ PFvarscope (PFpnode_t * root)
 {
     var_env = PFscope ();
 
+    /* first process variable declarations in the prolog */
+    scope_var_decls (root);
+
+    /* then all the rest */
     scope (root);
 
     if (scoping_failed)

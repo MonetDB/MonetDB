@@ -20,7 +20,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -31,9 +31,14 @@
  * $Id$
  */
 
+/* always include pathfinder.h first! */
+#include "pathfinder.h"
+
 #include "algebra_cse.h"
 #include "array.h"
 #include "subtyping.h"
+#include "oops.h"
+
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -160,6 +165,10 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
             case aat_bln:
                 if ((a.atoms[i].val.bln && !b.atoms[i].val.bln) ||
                     (!a.atoms[i].val.bln && b.atoms[i].val.bln))
+                    mismatch = true;
+                break;
+            case aat_qname:
+                if (!PFqname_eq (a.atoms[i].val.qname, b.atoms[i].val.qname))
                     mismatch = true;
                 break;
         }
@@ -1284,6 +1293,9 @@ find_subexp (PFalg_op_t *new)
         case aop_empty_frag:
 	    return find_empty_frag (new);
 
+        case aop_dummy:
+            PFoops (OOPS_FATAL, "illegal node in algebra expression tree");
+            break;
     }
 
     return new;

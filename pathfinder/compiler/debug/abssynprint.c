@@ -22,7 +22,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -49,7 +49,33 @@
 
 /** Node names to print out for all the abstract syntax tree nodes. */
 char *p_id[]  = {
-      [p_plus]              = "plus"                                       
+      [p_main_mod]          = "main_mod"
+    , [p_lib_mod]           = "lib_mod"
+    , [p_mod_ns]            = "mod_ns"
+    , [p_ordering_mode]     = "ordering_mode"
+    , [p_def_order]         = "def_order"
+    , [p_inherit_ns]        = "inherit_ns"
+    , [p_base_uri]          = "base_uri"
+    , [p_schm_ats]          = "schm_ats"
+    , [p_mod_imp]           = "mod_imp"
+    , [p_var_decl]          = "var_decl"
+    , [p_external]          = "external"
+    , [p_constr_decl]       = "constr_decl"
+    , [p_fun_sig]           = "fun_sig"
+    , [p_where]             = "where"
+    , [p_ord_ret]           = "ord_ret"
+    , [p_orderby]           = "orderby"
+    , [p_vars]              = "vars"
+    , [p_var_type]          = "var_type"
+    , [p_orderspecs]        = "orderspecs"
+    , [p_default]           = "default"
+    , [p_schm_elem]         = "schm_elem"
+    , [p_schm_attr]         = "schm_attr"
+    , [p_then_else]         = "then_else"
+    , [p_ordered]           = "ordered"
+    , [p_unordered]         = "unordered"
+
+    , [p_plus]              = "plus"                                       
     , [p_minus]             = "minus"                                      
     , [p_mult]              = "mult"                                       
     , [p_div]               = "div"                                        
@@ -80,8 +106,6 @@ char *p_id[]  = {
     , [p_step]              = "step"
     , [p_varref]            = "varref" 
     , [p_var]               = "var"
-    , [p_namet]             = "namet"
-    , [p_kindt]             = "kindt"
     , [p_locpath]           = "locpath"                                    
     , [p_root]              = "root"                                       
     , [p_dot]               = "dot"                                        
@@ -110,17 +134,12 @@ char *p_id[]  = {
     , [p_node_ty]           = "node_ty"
     , [p_item_ty]           = "item_ty"                                     
     , [p_atom_ty]           = "atom_ty"
-    , [p_atomval_ty]        = "atomval_ty"                                 
     , [p_named_ty]          = "named_ty"
     , [p_req_ty]            = "req_ty"                                     
     , [p_req_name]          = "req_name"
     , [p_typeswitch]        = "typeswitch"                                 
     , [p_cases]             = "cases"                                      
     , [p_case]              = "case"           
-    , [p_schm_path]         = "schm_path"                                  
-    , [p_schm_step]         = "schm_step"
-    , [p_glob_schm]         = "glob_schm"
-    , [p_glob_schm_ty]      = "glob_schm_ty"
     , [p_castable]          = "castable"
     , [p_cast]              = "cast"                                       
     , [p_treat]             = "treat"                                      
@@ -128,7 +147,6 @@ char *p_id[]  = {
     , [p_apply]             = "apply"                                   
     , [p_fun_ref]           = "fun_ref"
     , [p_args]              = "args"                                       
-    , [p_char]              = "char"
     , [p_doc]               = "doc"                                       
     , [p_elem]              = "elem"
     , [p_attr]              = "attr"
@@ -137,13 +155,10 @@ char *p_id[]  = {
     , [p_pi]                = "pi"
     , [p_comment]           = "comment"                                    
     , [p_contseq]           = "contseq"
-    , [p_xquery]            = "xquery"                                     
-    , [p_prolog]            = "prolog"                                     
     , [p_decl_imps]         = "decl_imps"                                  
     , [p_xmls_decl]         = "xmls_decl"
     , [p_coll_decl]         = "coll_decl"
     , [p_ns_decl]           = "ns_decl"
-    , [p_fun_decls]         = "fun_decls"                                  
     , [p_fun_decl]          = "fun_decl"
     , [p_fun]               = "fun"
     , [p_ens_decl]          = "ens_decl"                                   
@@ -266,17 +281,8 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
         case p_step:
             L2 (p_id[n->kind], axis[n->sem.axis], n->loc);
             break;
-        case p_varref:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
         case p_var:
             L2 (p_id[n->kind], PFqname_str (n->sem.var->qname), n->loc);
-            break;
-        case p_namet:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
-        case p_kindt:
-            L2 (p_id[n->kind], kind[n->sem.kind], n->loc);
             break;
         case p_orderby:
             L2 (p_id[n->kind], n->sem.tru ? "stable" : "unstable", n->loc);
@@ -293,55 +299,33 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
         case p_node_ty:
             L2 (p_id[n->kind], kind[n->sem.kind], n->loc);
             break;
+
+        case p_validate:
+            L2 (p_id[n->kind], n->sem.tru ? "strict" : "lax", n->loc);
+            break;
+
+        case p_varref:
         case p_atom_ty:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
         case p_named_ty:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
         case p_req_name:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
-        case p_schm_step:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
-        case p_glob_schm:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
-        case p_apply:
-            L2 (p_id[n->kind], PFqname_str (n->sem.fun->qname), n->loc);
-            break;
+        case p_schm_elem:
+        case p_schm_attr:
         case p_fun_ref:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
-        case p_char:
-            switch (n->sem.chr)       /* Escape newlines, tabs and quotes */
-            {
-                case '\n':    L2 (p_id[n->kind], "\\n", n->loc); break;
-                case '\t':    L2 (p_id[n->kind], "\\t", n->loc); break;
-                case '"':     L2 (p_id[n->kind], "\\\"", n->loc); break;
-                default:      *s = n->sem.chr;
-                              *(s+1) = '\0';
-                              L2 (p_id[n->kind], s, n->loc);
-            }
-            break;
+        case p_fun_decl:
         case p_tag:
             L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
             break;
-        case p_pi:
-            L2 (p_id[n->kind], n->sem.str, n->loc);
+
+        case p_apply:
+        case p_fun:
+            L2 (p_id[n->kind], PFqname_str (n->sem.fun->qname), n->loc);
             break;
+
         case p_xmls_decl:
             L2 (p_id[n->kind], n->sem.tru ? "preserve" : "strip", n->loc);
             break;
         case p_ns_decl:
             L2 (p_id[n->kind], n->sem.str, n->loc);
-            break;
-        case p_fun_decl:
-            L2 (p_id[n->kind], PFqname_str (n->sem.qname), n->loc);
-            break;
-        case p_fun:
-            L2 (p_id[n->kind], PFqname_str (n->sem.fun->qname), n->loc);
             break;
         default:
             L (p_id[n->kind], n->loc);
@@ -419,12 +403,6 @@ abssyn_pretty (PFpnode_t *n)
         case p_var:
             PFprettyprintf ("$%s", PFqname_str (n->sem.var->qname));
             break;
-        case p_namet:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
-            break;
-        case p_kindt:
-            PFprettyprintf ("%s", kind[n->sem.kind]);
-            break;
         case p_orderby:
             PFprettyprintf ("%s", n->sem.tru ? "stable" : "unstable");
             break;
@@ -449,21 +427,12 @@ abssyn_pretty (PFpnode_t *n)
         case p_req_name:
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
             break;
-        case p_schm_step:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
-            break;
-        case p_glob_schm:
-            PFprettyprintf ("%s", PFqname_str (n->sem.qname));
-            break;
         case p_apply:
             PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
             break;
         case p_fun_ref:
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
             break;
-        case p_char:
-            PFprettyprintf ("'%c'", n->sem.chr);
-            break;    
         case p_tag:
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
             break;

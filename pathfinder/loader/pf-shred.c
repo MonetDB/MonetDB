@@ -197,11 +197,11 @@ typedef enum {
 
 db_t dbs[] = {
     /* db id  handle file name  */
-    [nsloc_db]  { 0, "" }
-  , [text_db]   { 0, "" }
-  , [com_db]    { 0, "" } 
-  , [tgtins_db] { 0, "" }
-  , [attval_db] { 0, "" }
+    [nsloc_db]  = { 0, "" }
+  , [text_db]   = { 0, "" }
+  , [com_db]    = { 0, "" } 
+  , [tgtins_db] = { 0, "" }
+  , [attval_db] = { 0, "" }
 };
 
 #endif /* HAVE_LIBDB */
@@ -314,25 +314,25 @@ typedef enum {
 #define _var  4
 
 rel_t rels[] = {
-    [presizelevelpropkind] 
+    [presizelevelpropkind] =
     /*               pre|size      pre|level       pre|prop       pre|kind */
     { 0, "pre",   _void + _int + _void + _chr + _void + _oid + _void + _chr }
-  , [propnsloc]
+  , [propnsloc] =
     /*             prop|ns        prop|loc                                 */
     { 0, "qn",   _void + _var + _void + _var }
-  , [proptext]
+  , [proptext] =
     /*              prop|text                                              */
     { 0, "text",  _void + _var }
-  , [propcom]
+  , [propcom] =
     /*              prop|com                                               */
     { 0, "com",   _void + _var }
-  , [proptgtins]
+  , [proptgtins] =
     /*              prop|tgt       prop|ins                                */
     { 0, "pi",    _void + _var + _void + _var }
-  , [attownqnprop]
+  , [attownqnprop] =
     /*                 @|own          @|qn           @|prop                */
     { 0, "@",     _void + _oid + _void + _oid + _void + _oid }
-  , [propval]
+  , [propval] =
     /*              prop|val                                               */
     { 0, "@val",  _void + _var }
 };

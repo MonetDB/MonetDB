@@ -179,10 +179,8 @@ projlist:   projitem
 projitem:   ATTREF COLON ATTREF
             {
               /* A (renamed) projection item (new_att:old_att). */
-              PFalg_proj_t p = {
-                  new               : $1,
-                  old               : $3 };
-              $$=p;
+              PFalg_proj_t p = { .new = $1, .old = $3 };
+              $$ = p;
             }
         ;
 

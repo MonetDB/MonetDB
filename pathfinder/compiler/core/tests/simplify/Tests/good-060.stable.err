@@ -1,0 +1,12 @@
+stderr of test 'good-060` in directory 'compiler/core/tests/simplify` itself:
+
+
+# 13:00:55 >  
+# 13:00:55 >  Mtimeout -timeout 60 ./good-060 good-060 
+# 13:00:55 >  
+
+
+# 13:00:55 >  
+# 13:00:55 >  Done.
+# 13:00:55 >  
+

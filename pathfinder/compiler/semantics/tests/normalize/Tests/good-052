@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s2 <<'EOT'
+<a b='foo' c='bar'/>
+EOT
+echo $?

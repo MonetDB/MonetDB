@@ -16,7 +16,7 @@
 # The Original Code is the ``Pathfinder'' system. The Initial
 # Developer of the Original Code is the Database & Information
 # Systems Group at the University of Konstanz, Germany. Portions
-# created by U Konstanz are Copyright (C) 2000-2004 University
+# created by U Konstanz are Copyright (C) 2000-2005 University
 # of Konstanz. All Rights Reserved.
 #
 # Contributors:
@@ -33,13 +33,13 @@ lib_semantics = {
 	DIR = libdir
 	SOURCES = \
 		functions.c \
-		normalize.mt \
+		normalize.brg \
 		ns.c \
 		subtyping.c \
-		typecheck.mt.sed \
+		typecheck.brg \
 		types.c \
 		varscope.c \
 		xquery_fo.c 
 }
 
-EXTRA_DIST = norm_impl.c typecheck_impl.c
+#EXTRA_DIST = 

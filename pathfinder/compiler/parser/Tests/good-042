@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s1 <<'EOT'
+let $a as element(foo) := 42 return 17
+EOT
+echo $?

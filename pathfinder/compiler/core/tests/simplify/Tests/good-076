@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s10 <<'EOT'
+<a xmlns:foo='http://www.foo.bar/' foo:a='bar' />
+EOT
+echo $?

@@ -21,7 +21,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -92,10 +92,32 @@ struct PFstate_t {
     bool summer_branch;       /**< command line switch: -M */
     bool parse_hsk;           /**< command line switch: -H */
     unsigned int genType;     /* kind of output */
+
 };
 
 /** global state of the compiler */
 extern PFstate_t PFstate;
+
+enum PFempty_order_t {
+      greatest
+    , least
+    , undefined
+};
+typedef enum PFempty_order_t PFempty_order_t;
+
+/**
+ * Declarations given in the input query (encoding, ordering mode, etc.)
+ */
+struct PFquery_t {
+    char           *version;        /**< XQuery version in query */
+    char           *encoding;       /**< Encoding specified in query */
+    bool            ordering;       /**< ordering declaration in query */
+    PFempty_order_t empty_order;    /**< `declare default order' */
+    bool            inherit_ns;
+};
+typedef struct PFquery_t PFquery_t;
+
+extern PFquery_t PFquery;
 
 /** information on textual location of XQuery parse tree node */
 typedef struct PFloc_t PFloc_t;
@@ -108,6 +130,17 @@ struct PFloc_t {
     unsigned int last_col;     /**< column number in which location ends. */
 };
 
-#endif
+/**
+ * We currently do not really implement the XQuery type xs:decimal.
+ * For now, it is implemented as a C float (which actually way off
+ * the XQuery specification).
+ *
+ * @warning Only few compiler phases actually use this typedef here!
+ *          Most phases explicitly use float, so you have to change
+ *          those first before you dare to change this typedef!
+ */
+typedef float dec;
+
+#endif  /* PATHFINDER_H */
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s1 <<'EOT'
+if (if) then then else else
+EOT
+echo $?

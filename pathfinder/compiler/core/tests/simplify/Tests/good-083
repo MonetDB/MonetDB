@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pf -s10 <<'EOT'
+for $i in unordered { (1,2,3) } return 42
+EOT
+echo $?

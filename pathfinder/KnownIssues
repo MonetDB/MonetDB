@@ -1,0 +1,31 @@
+
+ -- The Pathfinder compiler does not allow nested XQuery comments.
+    A query like
+
+      (: a (: nested :) comment :)
+      (1, 2)
+
+    thus produces a parsing error.
+
+    [For developers:
+      Within grouped tokens this is hard to implement. Between
+      tokens, however, we could support this by introducing an
+      additional lexical state, similar to the proposal in older
+      W3C drafts.]
+
+ -- Pathfinder does not support XQuery library modules. Declaring
+    or importing such modules produces an error message.
+
+ -- The sequence types `schema-element (...)' and schema-attribute (...)'
+    are not supported by the Pathfinder compiler. There are also issues
+    with the processing-instruction() and document-node() tests.
+
+ -- Features not supported by the Pathfinder compiler: `castable',
+    Collations, base-uri declaration, construction mode declaration.
+
+ -- We do not (yet) support validation.
+
+ -- We do not (yet) support external variables and functions.
+
+    [For developers: We'd only need a proper way to do this with MonetDB.]
+

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+pf -s1 <<'EOT'
+<a xmlns:foo='http://www.foo.bar/'>
+  { let $foo:a := 42 return $foo:a }
+</a>
+EOT
+echo $?

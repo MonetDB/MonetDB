@@ -20,7 +20,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -51,31 +51,32 @@
  * description when they call PFoops().
  */
 static char *oops_msg[] = {
-     [OOPS_OK]                  "successful"
-    ,[-OOPS_FATAL]              "fatal error"
-    ,[-OOPS_NOTICE]             "notice"
-    ,[-OOPS_UNKNOWNERROR]       "unknown error"
-    ,[-OOPS_CMDLINEARGS]        "unknown or incomplete command line argument"
-    ,[-OOPS_PARSE]              "parse error"
-    ,[-OOPS_OUTOFMEM]           "insufficient memory"
-    ,[-OOPS_BADNS]              "bad usage of XML namespaces"
-    ,[-OOPS_UNKNOWNVAR]         "variable(s) out of scope or unknown"
-    ,[-OOPS_NESTDEPTH]          "query nested too deeply"
-    ,[-OOPS_NOCONTEXT]          "illegal reference to context node"
-    ,[-OOPS_NOSERVICE]          "invalid TCP port (privileged?)"
-    ,[-OOPS_TAGMISMATCH]        "XML start/end tags do not match"
-    ,[-OOPS_NOTPRETTY]          "prettyprinting problem"
-    ,[-OOPS_APPLYERROR]         "error in function application"
-    ,[-OOPS_FUNCREDEF]          "function redefined"
-    ,[-OOPS_DUPLICATE_KEY]      "duplicate key in environment"
-    ,[-OOPS_TYPENOTDEF]         "use of undefined type"
-    ,[-OOPS_TYPEREDEF]          "duplicate type names in one symbol space"
-    ,[-OOPS_TYPECHECK]          "type error"
-    ,[-OOPS_SCHEMAIMPORT]       "XML Schema import"
-    ,[-OOPS_BURG]               "tree matching"
-    ,[-OOPS_WARNING]            "warning" /* only warnings below */
-    ,[-OOPS_WARN_NOTSUPPORTED]  "warning: unsupported feature"
-    ,[-OOPS_WARN_VARREUSE]      "warning: variable reuse"
+     [OOPS_OK]                 = "successful"
+    ,[-OOPS_FATAL]             = "fatal error"
+    ,[-OOPS_NOTICE]            = "notice"
+    ,[-OOPS_UNKNOWNERROR]      = "unknown error"
+    ,[-OOPS_CMDLINEARGS]       = "unknown or incomplete command line argument"
+    ,[-OOPS_PARSE]             = "parse error"
+    ,[-OOPS_OUTOFMEM]          = "insufficient memory"
+    ,[-OOPS_BADNS]             = "bad usage of XML namespaces"
+    ,[-OOPS_UNKNOWNVAR]        = "variable(s) out of scope or unknown"
+    ,[-OOPS_NESTDEPTH]         = "query nested too deeply"
+    ,[-OOPS_NOCONTEXT]         = "illegal reference to context node"
+    ,[-OOPS_NOSERVICE]         = "invalid TCP port (privileged?)"
+    ,[-OOPS_TAGMISMATCH]       = "XML start/end tags do not match"
+    ,[-OOPS_NOTPRETTY]         = "prettyprinting problem"
+    ,[-OOPS_APPLYERROR]        = "error in function application"
+    ,[-OOPS_FUNCREDEF]         = "function redefined"
+    ,[-OOPS_DUPLICATE_KEY]     = "duplicate key in environment"
+    ,[-OOPS_TYPENOTDEF]        = "use of undefined type"
+    ,[-OOPS_TYPEREDEF]         = "duplicate type names in one symbol space"
+    ,[-OOPS_TYPECHECK]         = "type error"
+    ,[-OOPS_SCHEMAIMPORT]      = "XML Schema import"
+    ,[-OOPS_BURG]              = "tree matching"
+    ,[-OOPS_NOTSUPPORTED]      = "unsupported feature"
+    ,[-OOPS_WARNING]           = "warning" /* only warnings below */
+    ,[-OOPS_WARN_NOTSUPPORTED] = "warning: unsupported feature"
+    ,[-OOPS_WARN_VARREUSE]     = "warning: variable reuse"
 };
 
 /** 
@@ -94,18 +95,24 @@ static char *oops_msg[] = {
 static void
 log_worker (const char *msg, va_list msgs)
 {
-    time_t now;
-    char *anow;
     char buf[OOPS_SIZE];
     int n;
 
     /* generate time stamp and write to log file */
+
+    /* printing time stamps only complicates testing. So
+     * we better don't do it.
+     *
+    time_t now;
+    char *anow;
+
     (void) time (&now);
     anow = asctime (localtime (&now));
     anow[strlen (anow) - 1] = '\0';
 
     n = snprintf (buf, OOPS_SIZE, "%s: ", anow);
     write (fileno (stderr), buf, n < OOPS_SIZE ? n : OOPS_SIZE - 1);
+    */
     
     n = vsnprintf (buf, OOPS_SIZE, msg, msgs);
     write (fileno (stderr), buf, n < OOPS_SIZE ? n : OOPS_SIZE - 1);
@@ -156,8 +163,11 @@ oops (PFrc_t rc, bool halt,
     /* halt the compiler if requested */
     if (halt) {
 #ifndef NDEBUG
-        /* if this is a debug version of Pathfinder, log source location */
-        PFlog ("halted in %s (%s), line %d", file, func, line);
+        /*
+         * If this is a debug version of Pathfinder, log source location
+         * The `=' makes this a minor difference in Mtest.
+         */
+        PFlog ("=halted in %s (%s), line %d", file, func, line);
 #else
 	/* fool compilers that otherwise complain about unused parameters */
 	(void)file;

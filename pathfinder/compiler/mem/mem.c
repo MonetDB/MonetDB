@@ -22,7 +22,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
  *  Contributors:
@@ -100,7 +100,7 @@ PFrealloc_ (size_t n, void *mem,
  * @return pointer to newly allocated (partial) copy of @a str
  */
 char *
-PFstrndup (char *str, size_t len)
+PFstrndup (const char *str, size_t len)
 {
     char *copy;
 
@@ -122,7 +122,7 @@ PFstrndup (char *str, size_t len)
  * @return pointer to newly allocated copy of @a str
  */
 char *
-PFstrdup (char *str)
+PFstrdup (const char *str)
 {
     return PFstrndup (str, strlen (str));
 }

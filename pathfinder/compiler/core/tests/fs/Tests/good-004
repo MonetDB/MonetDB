@@ -1,0 +1,7 @@
+#!/bin/bash
+
+pf -s9 <<'EOT'
+declare variable $a := 42;
+"foo"
+EOT
+echo $?
