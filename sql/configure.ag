@@ -22,9 +22,10 @@ AM_MONET_COMPILER()
 AM_MONET_TOOLS()
 AM_MONET_OPTIONS()
 AM_MONET_LIBS()
-AM_MONET_CLIENT(4.3.16)
+req_monetdb_ver='4.3.16'
+AM_MONET_CLIENT($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
-	AC_MSG_ERROR(Monet is not found or has a too old version.)
+	AC_MSG_ERROR([SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETVERS was found.])
 fi
 
 backend=monet4
