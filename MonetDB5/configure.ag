@@ -290,3 +290,9 @@ dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"
 
+dnl  However, there are still some signed-unsigned comparisons...
+if test "$GCC" = "yes"; then
+	X_CFLAGS="$X_CFLAGS -Wno-sign-compare"
+	X_CXXFLAGS="$X_CXXFLAGS -Wno-sign-compare"
+fi
+
