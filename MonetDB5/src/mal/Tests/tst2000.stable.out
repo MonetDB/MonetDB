@@ -36,9 +36,11 @@ end clkticks;	# 7
 #clkticks(2);
 #
 function Admin.main():int;	# 0  (main:int)
-    inspect.mdb('T');	# 1 mdbSetCmd ($1:void)<-($2:chr)
-    Admin.clkticks(2);	# 2  ($3:void)<-($4:int)
-end main;	# 3  
+    mdb.setTimer(true);	# 1 MDBsetTimer ($1:void)<-($2:bit)
+    mdb.setTrace("Admin","clkticks",true);	# 2 MDBsetTrace2 ($3:void)<-($4:str)($5:str)($2:bit)
+    Admin.clkticks(2);	# 3  ($6:void)<-($7:int)
+end main;	# 4  
+#Monet Debugger on
 #Monet Debugger on
 #mdb !    Admin.clkticks(2)
 #mdb !barrier b := calc.>(2,0)

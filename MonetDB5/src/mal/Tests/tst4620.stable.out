@@ -67,7 +67,7 @@ exit (k,v);	# 5  (k:bit)(v:int)
     zz := algebra.joinPath(b,c,d);	# 14  (zz:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(d:bat[:int,:int])
     i := algebra.count(zz);	# 15 ALGcount_bat (i:lng)<-(zz:bat[:int,:int])
     io.print(i);	# 16 IOprint_val ($23:int)<-(i:lng)
-    inspect.showFunction();	# 17 INSPECTshowFunction ($24:void)
+    mdb.showFunction();	# 17 MDBshowFunction ($24:void)
 [ 100 ]
 [ 10 ]
 [ 50 ]
@@ -89,7 +89,8 @@ exit (k,v);
     zz := algebra.joinPath(b,c,d);
     i := algebra.count(zz);
     io.print(i);
-    inspect.showFunction();
+    mdb.showFunction();
+#
 
 # 08:01:51 >  
 # 08:01:51 >  Done.

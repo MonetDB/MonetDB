@@ -40,13 +40,14 @@ function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
     c := bbp.new(:int,:int);	# 3 CMDBATnew (c:bat[:int,:int])<-($11:int)($12:int)
     h := algebra.joinPath(a,b,c);	# 4  (h:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
-    inspect.showFunction();	# 5 INSPECTshowFunction ($15:void)
+    mdb.showFunction();	# 5 MDBshowFunction ($15:void)
 function Admin.main():int;
     a := bbp.new(:int,:int);
     b := bbp.new(:int,:int);
     c := bbp.new(:int,:int);
     h := algebra.joinPath(a,b,c);
-    inspect.showFunction();
+    mdb.showFunction();
+#
 
 # 08:01:50 >  
 # 08:01:50 >  Done.

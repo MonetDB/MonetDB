@@ -25,7 +25,7 @@ stdout of test 'tst450` in directory 'src/mal` itself:
 function Admin.main():int;	# 0  (main:int)
     a := inspect.getAtomNames();	# 1 INSPECTatom_names (a:bat[:int,:str])
     io.print(a);	# 2 IOprint_val ($2:int)<-(a:bat[:int,:str])
-    m := inspect.getModules();	# 3 INSPECTmoduleNames (m:bat[:void,:str])
+    m := inspect.getModuleNames();	# 3 INSPECTmoduleNames (m:bat[:void,:str])
     io.print(m);	# 4 IOprint_val ($4:int)<-(m:bat[:void,:str])
     stmt := inspect.getDefinition("algebra","select");	# 5 INSPECTgetDefinition (stmt:bat[:int,:str])<-($6:str)($7:str)
     sig := inspect.getSignature("algebra","select");	# 6 INSPECTgetSignature (sig:bat[:str,:str])<-($6:str)($7:str)
@@ -109,6 +109,7 @@ end main;	# 11
 [ nil,	  "lock"		  ]
 [ nil,	  "sema"		  ]
 [ nil,	  "unix"		  ]
+[ nil,	  "mdb"			  ]
 [ nil,	  "crackers"		  ]
 [ nil,	  "thread"		  ]
 #-------------------------#

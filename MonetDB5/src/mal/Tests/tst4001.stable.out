@@ -64,7 +64,7 @@ function Admin.main():int;	# 0  (main:int)
     z := Admin.qry(0.0:dbl);	# 5  (z:dbl)<-($11:dbl)
     io.print(z);	# 6 IOprint_val ($12:int)<-(z:dbl)
     io.print("done");	# 7 IOprint_val ($13:int)<-($14:str)
-    inspect.showFunction(Admin,qry);	# 8 INSPECTshowFunction3 ($15:void)<-(Admin:any)(qry:any)
+    mdb.showFunction(Admin,qry);	# 8 MDBshowFunction3 ($15:void)<-(Admin:any)(qry:any)
 end main;	# 9  
 [ "execute" ]
 [ 0.8414709848078965 ]

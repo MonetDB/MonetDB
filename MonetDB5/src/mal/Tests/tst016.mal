@@ -1,6 +1,4 @@
 # handling basic strings
-mdb();
-
 a:= "Dit is een test\n";
 
 

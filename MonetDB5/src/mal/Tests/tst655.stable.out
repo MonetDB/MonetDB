@@ -28,7 +28,7 @@ stdout of test 'tst655` in directory 'src/mal` itself:
 #tablet.display(b1,b2);
 #
 function Admin.main():int;	# 0  (main:int)
-    inspect.mdb('T');	# 1 mdbSetCmd ($1:void)<-($2:chr)
+    mdb.setTrace(true);	# 1 MDBsetTrace ($1:void)<-($2:bit)
     b1 := bbp.new(:void,:int);	# 2 CMDBATnew (b1:bat[:void,:int])<-($4:void)($5:int)
     bat.insert(b1,42);	# 3 BKCinsert_void_bun ($6:void)<-(b1:bat[:void,:int])($7:int)
     bat.insert(b1,49);	# 4 BKCinsert_void_bun ($8:void)<-(b1:bat[:void,:int])($9:int)

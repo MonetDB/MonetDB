@@ -1,5 +1,5 @@
 # An extensive test for the new tablet layout
-mdb('T');
+mdb.setTrace(true);
 tablet.display(2,"strong");
 tablet.display(2,"strong",true);
 first:=1;

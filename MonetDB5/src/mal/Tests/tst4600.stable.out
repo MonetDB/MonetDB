@@ -44,7 +44,7 @@ barrier $13 := calc.<($11,2);	# 3 CALCcompLTintint ($13:bit)<-($11:int)($7:int) 
     $11 := calc.+($11,1);	# 5 CALCbinaryADDintint ($11:int)<-($11:int)($16:int)
     redo $13 := calc.<($11,2);	# 6 CALCcompLTintint ($13:bit)<-($11:int)($7:int) jump 4
 exit $13;	# 7  ($13:bit)
-    inspect.showFunction();	# 8 INSPECTshowFunction ($8:void)
+    mdb.showFunction();	# 8 MDBshowFunction ($8:void)
 end main;	# 9  
 [ "test expansion" ]
 [ "Welcome" ]
@@ -57,7 +57,7 @@ barrier $13 := calc.<($11,2);
     $11 := calc.+($11,1);
     redo $13 := calc.<($11,2);
 exit $13;
-    inspect.showFunction();
+    mdb.showFunction();
 end main;
 
 # 08:01:49 >  
