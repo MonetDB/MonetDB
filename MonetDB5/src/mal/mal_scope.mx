@@ -104,7 +104,7 @@ mal_export Scope    findScope(Scope scope, str name);
 mal_export Scope    findScopeL(Scope scope, str name, int l);
 mal_export Symbol   findSymbolInScope(Scope v, str fcn);
 mal_export Symbol   findSymbol(str mod, str fcn);
-mal_export int      displayScope(stream *f, Scope v, str fcn);
+mal_export int      displayScope(stream *f, Scope v, str fcn,int listing);
 mal_export void     showScopes(stream *f, Scope s);
 mal_export void     debugScope(stream *f, Scope v, str nme);
 mal_export void     dumpManual(stream *f, Scope v, int recursive);
@@ -350,7 +350,7 @@ Symbol findSymbol(str mod, str fcn){
     v= findScope(mal_scope, mod);
     return findSymbolInScope(v,fcn);
 }
-int displayScope(stream *f, Scope v, str fcn){
+int displayScope(stream *f, Scope v, str fcn, int listing){
     Symbol s;
     int k=0;
 
@@ -358,7 +358,7 @@ int displayScope(stream *f, Scope v, str fcn){
     s= v->subscope[(int)(*fcn)];
     while(s!=NULL){
         if( idcmp(s->name,fcn)==0 ) {
-            printFunction(f,s->def,LIST_MAL_INSTR);
+            printFunction(f,s->def,listing);
             k++;
         }
         s= s->peer;

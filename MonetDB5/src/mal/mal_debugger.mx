@@ -575,7 +575,7 @@ signatures satisfying the pattern.
                 continue;
             }
             /* display the overloaded symbol definition */
-            if( displayScope(out,fsym,fcnname)==0){
+            if( displayScope(out,fsym,fcnname,listing)==0){
                 stream_printf(out,"%sSymbol '%s.%s' not found\n",
                     "#mdb ",modnme,fcnname);
             } 
