@@ -47,7 +47,7 @@ end of the line.
 \end{itemize}
 
 @+ Value Types
-@[<a name="type_doc">@
+@[<a name="type_doc"></a>@
 @T
 MIL is a dynamically typed language. That is, variables can change
 value {\em and} type during execution. Operations and procedures may
@@ -525,7 +525,7 @@ still available with the positional parameter syntax \$X, \$(X) and \$(X..).
 \end{itemize}
 
 @* Relational Table Support
-@[<a name="special\_doc">@
+@[<a name="special\_doc"></a>@
 @T
 The relational data-model provides support for tables with more 
 than two columns. 
@@ -664,7 +664,7 @@ project(  #---------------#  ,  "Monet User"  )  =   #-------------------#
 \end{verbatim}
 {\center\em BAT Cast Example: Inserting a constant value in a column}}
 
-@[<a name="void">@
+@[<a name="void"></a>@
 @+ Virtual OIDs
 @T
 The {\tt VOID} in MIL is used like a {\tt V-OID}, or {\bf virtual oid}.
