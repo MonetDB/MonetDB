@@ -216,6 +216,7 @@ mal_export str 		resumeClient(Client c, int sessionkey);
 mal_export str 		suspendClient(Client c, int sessionkey, int timeout);
 mal_export void 	cleanupClients();
 mal_export void 	traceAllClients(int flag);
+mal_export void 	traceClient(str nme, int flag);
 
 #endif /* _MAL_CLIENT_H_ */
 @-
@@ -807,6 +808,7 @@ int streamClient(Client c, str prompt){
 @-
 In block stream mode we repeatedly read complete blocks
 from the stream until we have encountered the last one.
+This is recognized by an empty read.
 @c
 int bstreamClient(Client c, str prompt){
 	str  s;
@@ -822,7 +824,7 @@ int bstreamClient(Client c, str prompt){
 printf("bstreamClient:read block\n"); fflush(stdout);
 #endif
 
-        while ((len = stream_read(c->fdin, s, 1, BLOCK)) == BLOCK){
+        while ((len = stream_read(c->fdin, s, 1, BLOCK)) ){
                 size += len;
 		s[len]=0;
 		if( (c->limit-c->input) - size < BLOCK+1){
@@ -842,6 +844,6 @@ printf("bstreamClient:read block\n"); fflush(stdout);
 	printf("# block receive [%d] %s\n",size,c->input);
 #endif
 	@:sysTrace(c->input)@
-	return len != 0;
+	return size != 0;
 }
 @}
