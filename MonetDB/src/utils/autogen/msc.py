@@ -6,6 +6,13 @@ import os
 automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h' ]
 script_ext = [ 'mil' ]
 
+def split_filename(f): 
+	base = f
+	ext = ""
+	if (string.find(f,".") >= 0):
+		return string.split(f,".", 1)
+	return (base,ext)
+
 def msc_dummy(fd, var, values, msc ):
   res = fd
  
@@ -81,29 +88,29 @@ def msc_space_sep_list(l):
   return res + "\n"
 
 def msc_find_srcs(target,deps,msc):
-  base,ext = string.split(target,".", 1) 	
+  base,ext = split_filename(target) 	
   f = target
   pf = f
   while (ext != "h" and deps.has_key(f) ):
     f = deps[f][0]
-    b,ext = string.split(f,".",1)
+    b,ext = split_filename(f)
     if (ext in automake_ext):
       pf = f 
   # built source if has dep and ext != cur ext
   if (deps.has_key(pf) and pf not in msc['BUILT_SOURCES']):
-	pfb,pfext = string.split(pf,".",1)
-	sfb,sfext = string.split(deps[pf][0],".",1)
+	pfb,pfext = split_filename(pf)
+	sfb,sfext = split_filename(deps[pf][0])
 	if (sfext != pfext):
 		msc['BUILT_SOURCES'].append(pf)
   return pf
 
 def msc_find_hdrs(target,deps,hdrs):
-  base,ext = string.split(target,".", 1) 	
+  base,ext = split_filename(target) 	
   f = target
   pf = f
   while (ext != "h" and deps.has_key(f) ):
     f = deps[f][0]
-    b,ext = string.split(f,".",1)
+    b,ext = split_filename(f)
     if (ext in automake_ext):
       pf = f 
   return pf
@@ -144,7 +151,7 @@ def msc_find_target(target,msc):
 	 elif (t[0:4] == "lib_"):
 	   return ("LIB", string.upper(t[4:]))
          elif (t == "LIBS"):
-	   name,ext = string.split(target,".",1)
+	   name,ext = split_filename(target)
 	   return ("LIB", string.upper(name))
   return ("UNKNOWN","UNKNOWN")
  
@@ -152,7 +159,7 @@ def msc_find_target(target,msc):
 def msc_deps(fd,deps,objext, msc):
   for tar,deplist in deps.items():
     t = msc_translate_ext(tar)
-    b,ext = string.split(t,".",1)
+    b,ext = split_filename(t)
     tf = msc_translate_file(t,msc)
     fd.write( tf + ":" )
     for d in deplist:
@@ -160,7 +167,7 @@ def msc_deps(fd,deps,objext, msc):
 		msc_translate_ext(msc_translate_file(d,msc)),msc) )
     fd.write("\n");
     if (ext == "tab.h"):
-	x,de = string.split(deplist[0],".",1)
+	x,de = split_filename(deplist[0])
 	if (de == 'y'):
 		fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
 		fd.write( "\tif exist y.tab.c $(DEL) y.tab.c\n" )
@@ -191,7 +198,7 @@ def msc_deps(fd,deps,objext, msc):
     if (ext == "obj" or ext == "glue.obj" or ext == "tab.obj" or ext == "yy.obj"):
 	target,name = msc_find_target(tar,msc);
 	if (target == "LIB"):
-	  d,dext = string.split(deplist[0],".",1)
+	  d,dext = split_filename(deplist[0])
 	  if (dext == "c" or dext == "glue.c"):
 	    fd.write( "\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s -c %s\n" \
 		% (name,msc_translate_ext(deplist[0])) );
@@ -235,7 +242,7 @@ def msc_binary(fd, var, binmap, msc ):
 	
   srcs = binname+"_OBJS ="
   for target in binmap['TARGETS']:
-    t,ext = string.split(target,".",1)
+    t,ext = split_filename(target)
     if (ext == "o"):
       srcs = srcs + " " + t + ".obj" 
     elif (ext == "glue.o"):
@@ -282,7 +289,7 @@ def msc_bins(fd, var, binsmap, msc ):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   for binsrc in binsmap['SOURCES']:
-    bin,ext = string.split(binsrc,".", 1) 	
+    bin,ext = split_filename(binsrc) 	
     if (ext not in automake_ext):
       msc['EXTRA_DIST'].append(binsrc)
     msc['BINS'].append(bin)
@@ -296,7 +303,7 @@ def msc_bins(fd, var, binsmap, msc ):
     for target in binsmap['TARGETS']:
       l = len(bin)
       if (target[0:l] == bin):
-        t,ext = string.split(target,".",1)
+        t,ext = split_filename(target)
         if (ext == "o"):
           srcs = srcs + " " + t + ".obj" 
         elif (ext == "glue.o"):
@@ -359,13 +366,13 @@ def msc_library(fd, var, libmap, msc ):
     fd.write(msc_additional_libs(fd,libname, sep, "LIB", libmap["LIBS"],dlib,msc))
 
   for src in libmap['SOURCES']:
-    base,ext = string.split(src,".", 1) 	
+    base,ext = split_filename(src) 	
     if (ext not in automake_ext):
       msc['EXTRA_DIST'].append(src)
 	
   srcs = "lib" + sep + libname + "_OBJS ="
   for target in libmap['TARGETS']:
-    t,ext = string.split(target,".",1)
+    t,ext = split_filename(target)
     if (ext == "o"):
       srcs = srcs + " " + t + ".obj" 
     elif (ext == "glue.o"):
@@ -410,7 +417,7 @@ def msc_libs(fd, var, libsmap, msc ):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   for libsrc in libsmap['SOURCES']:
-    lib,ext = string.split(libsrc,".", 1) 	
+    lib,ext = split_filename(libsrc) 	
     if (ext not in automake_ext):
       msc['EXTRA_DIST'].append(libsrc)
     msc['LIBS'].append(sep+lib)
@@ -427,7 +434,7 @@ def msc_libs(fd, var, libsmap, msc ):
     for target in libsmap['TARGETS']:
       l = len(lib)
       if (target[0:l] == lib):
-        t,ext = string.split(target,".",1)
+        t,ext = split_filename(target)
         if (ext == "o"):
           srcs = srcs + " " + t + ".obj" 
         elif (ext == "glue.o"):
@@ -453,7 +460,7 @@ def msc_libs(fd, var, libsmap, msc ):
     HDRS = []
     hdrs_ext = libsmap['HEADERS']
     for target in libsmap['DEPS'].keys():
-      t,ext = string.split(target,".",1)
+      t,ext = split_filename(target)
       if (ext in hdrs_ext):
         msc['HDRS'].append(target)
 

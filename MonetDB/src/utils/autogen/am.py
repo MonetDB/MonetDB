@@ -6,6 +6,13 @@ import regsub
 automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h' ]
 script_ext = [ 'mil' ]
 
+def split_filename(f): 
+	base = f
+	ext = ""
+	if (string.find(f,".") >= 0):
+		return string.split(f,".", 1)
+	return (base,ext)
+	
 def am_assignment(fd, var, values, am ):
   o = ""
   for v in values:
@@ -46,29 +53,29 @@ def am_list2string(l,pre,post):
   return res
 
 def am_find_srcs(target,deps,am):
-  base,ext = string.split(target,".", 1) 	
+  base,ext = split_filename(target) 	
   f = target
   pf = f
   while (ext != "h" and deps.has_key(f) ):
     f = deps[f][0]
-    b,ext = string.split(f,".",1)
+    b,ext = split_filename(f)
     if (ext in automake_ext):
       pf = f 
   # built source if has dep and ext != cur ext
   if (deps.has_key(pf) and pf not in am['BUILT_SOURCES']):
-	pfb,pfext = string.split(pf,".",1)
-	sfb,sfext = string.split(deps[pf][0],".",1)
+	pfb,pfext = split_filename(pf)
+	sfb,sfext = split_filename(deps[pf][0])
 	if (sfext != pfext):
 		am['BUILT_SOURCES'].append(pf)
   return pf
 
 def am_find_hdrs(target,deps,hdrs):
-  base,ext = string.split(target,".", 1) 	
+  base,ext = split_filename(target) 	
   f = target
   pf = f
   while (ext != "h" and deps.has_key(f) ):
     f = deps[f][0]
-    b,ext = string.split(f,".",1)
+    b,ext = split_filename(f)
     if (ext in automake_ext):
       pf = f 
   return pf
@@ -162,13 +169,13 @@ def am_binary(fd, var, binmap, am ):
     fd.write(am_additional_libs(binname, "", "BIN", binmap["LIBS"],am))
 
   for src in binmap['SOURCES']:
-    base,ext = string.split(src,".", 1) 	
+    base,ext = split_filename(src) 	
     if (ext not in automake_ext):
       am['EXTRA_DIST'].append(src)
 	
   srcs = binname+"_SOURCES ="
   for target in binmap['TARGETS']:
-    t,ext = string.split(target,".",1)
+    t,ext = split_filename(target)
     if (ext in hdrs_ext):
       HDRS.append(target)
     if (ext in scripts_ext):
@@ -206,7 +213,7 @@ def am_bins(fd, var, binsmap, am ):
     fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
   for binsrc in binsmap['SOURCES']:
     SCRIPTS = []
-    bin,ext = string.split(binsrc,".", 1) 	
+    bin,ext = split_filename(binsrc) 	
     if (ext not in automake_ext):
       am['EXTRA_DIST'].append(binsrc)
     am['BINS'].append(bin)
@@ -220,7 +227,7 @@ def am_bins(fd, var, binsmap, am ):
     for target in binsmap['TARGETS']:
       l = len(bin)
       if (target[0:l] == bin):
-        t,ext = string.split(target,".",1)
+        t,ext = split_filename(target)
 	if (ext in hdrs_ext):
 	  HDRS.append(target)
         if (ext in scripts_ext):
@@ -273,13 +280,13 @@ def am_library(fd, var, libmap, am ):
 #    fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
 
   for src in libmap['SOURCES']:
-    base,ext = string.split(src,".", 1) 	
+    base,ext = split_filename(src) 	
     if (ext not in automake_ext):
       am['EXTRA_DIST'].append(src)
 	
   srcs = "lib"+sep+libname+"_la_SOURCES ="
   for target in libmap['TARGETS']:
-    t,ext = string.split(target,".",1)
+    t,ext = split_filename(target)
     if (ext in hdrs_ext):
       HDRS.append(target)
     if (ext in scripts_ext):
@@ -314,7 +321,7 @@ def am_libs(fd, var, values, am ):
 
   for libsrc in values['SOURCES']:
     SCRIPTS = []
-    lib,libext = string.split(libsrc,".", 1) 	
+    lib,libext = split_filename(libsrc) 	
     if (libext not in automake_ext):
       am['EXTRA_DIST'].append(libsrc)
     am['LIBS'].append(sep+lib)
@@ -332,7 +339,7 @@ def am_libs(fd, var, values, am ):
     for target in values['TARGETS']:
       l = len(lib)
       if (target[0:l] == lib):
-        t,ext = string.split(target,".",1)
+        t,ext = split_filename(target)
         if (ext in scripts_ext):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
@@ -347,7 +354,7 @@ def am_libs(fd, var, values, am ):
     HDRS = []
     hdrs_ext = values['HEADERS']
     for target in values['DEPS'].keys():
-      t,ext = string.split(target,".",1)
+      t,ext = split_filename(target)
       if (ext in hdrs_ext):
         am['HDRS'].append(target)
 
