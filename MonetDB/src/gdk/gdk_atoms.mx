@@ -1220,7 +1220,7 @@ we have to take corrective action to ensure that str(nil) is the smallest value 
 #define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1:\
 				(*(unsigned char*)(l) < *(unsigned char*)(r))?-1:\
                                 (*(unsigned char*)(l) > *(unsigned char*)(r))?1:\
-					strCmpNoNil((unsigned char*)(l)+1,(unsigned char*)(r)+1))
+					strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
 @c
 int strNil(str s)        { return GDK_STRNIL(s); }
 int strLen(str s)        { return GDK_STRLEN(s); }
