@@ -44,26 +44,26 @@ SQL  no Rows affected
 #------------
 #| id | val |
 #------------
+2	nil
 nil	nil
 1	nil
-2	nil
+1	5
 2	5
 nil	5
-1	5
-2	6
-nil	6
 1	6
+nil	6
+2	6
 SQL  9 Rows affected
 #    11: select * from t3 order by id;
 #------------
 #| id | val |
 #------------
-nil	5
 nil	6
+nil	5
 nil	nil
+1	5
 1	nil
 1	6
-1	5
 2	nil
 2	5
 2	6
