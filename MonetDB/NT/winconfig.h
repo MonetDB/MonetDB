@@ -236,7 +236,7 @@
 #define PACKAGE "Monet"
 
 /* Version number of package */
-#define VERSION "4.3.2"
+#define VERSION "4.3.3"
 
 /* Host identifier */
 #define HOST "i686-pc-win32"
