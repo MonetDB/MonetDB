@@ -1,9 +1,9 @@
 stdout of test 'void` in directory 'src/gdk` itself:
 
 
-# 13:38:53 >  
-# 13:38:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_src_gdk  < void.milM
-# 13:38:53 >  
+# 16:29:54 >  
+# 16:29:54 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --trace --dbname=Tests_src_gdk  < void.milM
+# 16:29:54 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -26,7 +26,7 @@ a.insert(nil,3);
 a.seqbase(oid(10));
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  A	  #
 # (void)  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
@@ -48,7 +48,7 @@ print("insert tests");
 a.insert(oid(20),8);
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  A	  #
 # (void)  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
@@ -69,7 +69,7 @@ print("replace tests");
 a.replace(oid(15),9);
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  A	  #
 # (void)  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
@@ -88,7 +88,7 @@ a.print;
 a.replace(oid(20),9);
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  A	  #
 # (void)  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
@@ -107,7 +107,7 @@ a.print;
 a.replace(oid(20),9);
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  A	  #
 # (void)  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
@@ -138,7 +138,7 @@ a.delete(oid(11));
 # only 1 left and still void
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  A	  #
 # (void)  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
@@ -154,8 +154,8 @@ print("insert tests");
 a.insert(oid(21),8);
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  C	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -173,8 +173,8 @@ a.print;
 a.delete(oid(21));
 a.reverse().join(b).print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  tmp_28  #
+# (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
 [ 4,	  4	  ]
@@ -201,8 +201,8 @@ a.replace(oid(19),-1);
 a.replace(oid(20),-2);
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  D	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -238,7 +238,7 @@ a.print;
 
 a.delete(oid(20));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  E	  #
 # (void)  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
@@ -253,8 +253,8 @@ a.delete(oid(20));a.print;
 [ 19@0,	  3	  ]
 a.delete(oid(19));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  E	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -267,8 +267,8 @@ a.delete(oid(19));a.print;
 [ 18@0,	  8	  ]
 a.delete(oid(18));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  E	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -280,8 +280,8 @@ a.delete(oid(18));a.print;
 [ 17@0,	  5	  ]
 a.delete(oid(17));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  E	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -292,8 +292,8 @@ a.delete(oid(17));a.print;
 [ 16@0,	  4	  ]
 a.delete(oid(16));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  E	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -303,8 +303,8 @@ a.delete(oid(16));a.print;
 [ 15@0,	  1	  ]
 a.delete(oid(15));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  E	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -313,8 +313,8 @@ a.delete(oid(15));a.print;
 [ 14@0,	  8	  ]
 a.delete(oid(14));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  E	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -322,8 +322,8 @@ a.delete(oid(14));a.print;
 [ 13@0,	  2	  ]
 a.delete(oid(13));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
-# (void)  (int)	  #
+# BAT:	  E	  #
+# (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 [ 11@0,	  4	  ]
@@ -337,21 +337,50 @@ a.delete(oid(12));a.print;
 [ 11@0,	  4	  ]
 a.delete(oid(11));a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  E	  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 # only 1 left and still void
 a.print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  E	  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 
+# deleting a transient value from a just void table didn't fix
+# the denseness
+
+t1 := bat(void,int);
+t1.seqbase(0@0);
+t1.insert(nil,1);
+t1.insert(nil,2);
+t1.insert(nil,3);
+v1 := t1.mil_select("<in>", 2,int(nil));
+v2 := v1.mark(0@0).reverse;
+v2.join(t1).print;
+#-----------------#
+# BAT:	  tmp_32  #
+# (void)  (int)	  #
+#-----------------#
+[ 0@0,	  3	  ]
+
+v3 := t1.select(2, int(nil));
+v3.info.find("hseqbase").print;
+[ "1@0" ]
+v3.info.find("hdense").print;
+[ "1" ]
+v3.access(BAT_WRITE);
+v3.reverse.delete(2);
+v3.info.find("hseqbase").print;
+[ "1@0" ]
+v3.info.find("hdense").print;
+[ "0" ]
+
 quit;
 
-# 17:04:55 >  
-# 17:04:55 >  Done.
-# 17:04:55 >  
+# 16:29:54 >  
+# 16:29:54 >  Done.
+# 16:29:54 >  
 
