@@ -172,6 +172,12 @@ proc SQLclient_thread( int sock ):= {
 	stream_close( Input );
 }
 
+proc hjoin( b1, b2 ) := {
+	b1.reverse().accbuild(hash);
+	b2.accbuild(hash);
+	return b1.join(b2);
+}
+
 proc sqlexecute( str cmd, stream Output ):= {
 	#print(cmd);
 	eval(cmd);
