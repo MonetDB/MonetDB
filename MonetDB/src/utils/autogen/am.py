@@ -477,6 +477,16 @@ def am_libs(fd, var, libsmap, am ):
     am_find_ins(am, libsmap)
     am_deps(fd,libsmap['DEPS'],".lo",am)
 
+def am_add_srcdir(path,am,prefix =""):
+    dir = path
+    if (dir[0] == '$'):
+	return ""
+    elif not os.path.isabs(dir):
+	dir = "$(srcdir)/" + dir
+    else:
+	return ""
+    return prefix+dir
+
 def am_translate_dir(path,am):
     dir = path
     rest = ""
@@ -496,12 +506,13 @@ def am_translate_dir(path,am):
     return dir
 
 def am_includes(fd, var, values, am):
-    incs = ""
+    incs = "-I$(srcdir)"
     for i in values:
         if (i[0] == "-" or i[0] == "$"):
             incs = incs + " " + i
         else:
-            incs = incs + " -I" + am_translate_dir(i,am)
+            incs = incs + " -I" + am_translate_dir(i,am) \
+		+ am_add_srcdir(i,am," -I");
     fd.write("INCLUDES = " + incs + "\n")
 
 output_funcs = { 'SUBDIRS': am_subdirs,
@@ -541,6 +552,9 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 CXXEXT = \\\"cc\\\"
 
 ''')
+
+    if 'INCLUDES' not in tree.keys():
+	tree.add('INCLUDES',"")
 
     am = {}
     if ('NAME' in tree.keys()):

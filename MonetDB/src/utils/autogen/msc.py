@@ -64,6 +64,16 @@ def msc_libdir(fd, var, values, msc ):
 def msc_mtsafe(fd, var, values, msc ):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
+def msc_add_srcdir(path,msc,prefix =""):
+    dir = path
+    if (dir[0] == '$'):
+	return ""
+    elif not os.path.isabs(dir):
+	dir = "$(SRCDIR)/" + dir
+    else:
+	return ""
+    return prefix+string.replace(dir, '/', '\\')
+
 def msc_translate_dir(path,msc):
     dir = path
     rest = ""
@@ -564,12 +574,13 @@ def msc_libs(fd, var, libsmap, msc ):
     msc_deps(fd,libsmap['DEPS'],".obj",msc)
 
 def msc_includes(fd, var, values, msc):
-    incs = ""
+    incs = "-I$(SRCDIR)"
     for i in values:
         if (i[0] == "-" or i[0] == "$"):
             incs = incs + " " + i
         else:
-            incs = incs + " -I" + msc_translate_dir(i,msc)
+            incs = incs + " -I" + msc_translate_dir(i,msc) \
+		+ msc_add_srcdir(i,msc," -I");
     fd.write("INCLUDES = " + incs + "\n")
 
 output_funcs = { 'SUBDIRS': msc_subdirs,
@@ -623,6 +634,9 @@ CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
 CXXEXT = \\\"cxx\\\"
 
 ''')
+
+    if 'INCLUDES' not in tree.keys():
+	tree.add('INCLUDES',"")
 
     msc = {}
     msc['BUILT_SOURCES'] = []
