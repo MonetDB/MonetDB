@@ -46,6 +46,12 @@ sub driver {
     });
 }
 
+
+sub CLONE {
+    undef $drh;
+}
+
+
 # The monetdb dsn structure is DBI:monetdb:host:port:dbname:language
 sub _parse_dsn {
     my $class = shift;
