@@ -345,6 +345,9 @@ if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; th
 elif [ "${os}" = "Linux"  -a  "${what}" = "PATHFINDER"  -a  -d /net/lin_local/libgc-devel ] ; then
 	# libgc in Konstanz
 	conf_opts="${conf_opts} --with-gc=/net/lin_local/libgc-devel"
+elif [ "${os}" = "Darwin"  -a  "${what}" = "PATHFINDER"  -a  -d /Users/monet/soft/local ] ; then
+	# libgc in Amherst
+	conf_opts="${conf_opts} --with-gc=/Users/monet/soft/local/"
 fi
 
 # CWI specific additional package settings
