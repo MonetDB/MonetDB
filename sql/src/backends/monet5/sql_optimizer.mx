@@ -25,6 +25,11 @@ It is also the first version that uses state records attached to
 the client record. They are initialized as part of the initialization 
 phase of the scenario.
 
+The SQL compiler uses only a small subset of the MAL language.
+This involves ca 65 different operators, divided into the
+catalog management (23) and query processing (42)
+[Make complete list of SQL functions]
+
 @h
 #ifndef _SQL_OPTIMIZER_H_
 #define _SQL_OPTIMIZER_H_
@@ -54,7 +59,7 @@ void addQueryToCache(Client c)
 {
 	backend *be = ((backend*)c->state[PARSER]);
 
-        insertSymbol(findScope(c->nspace,"sql_cache"), c->curprg);
+        insertSymbol(findModule(c->nspace,"sql_cache"), c->curprg);
         trimMalBlk(c->curprg->def);
         c->blkmode =0;
         chkProgram(c->nspace, c->curprg->def);
@@ -107,13 +112,16 @@ void optimizeQueryInCache(Client c) {
 #ifdef _SQL_OPTIMIZER_DEBUG
         printf("First call to SQL optimizer\n");
 #endif
-        mb= c->curprg->def;
-        if( mb->stop <= TOSMALL ) return;
 @-
 Reduce the program before other optimizations take place
 @c
         ARoptimizer(c, c->curprg->def, 0);
         AMoptimizer(c, c->curprg->def, 0);
+        SQLsetAccessMode(c);
+
+        mb= c->curprg->def;
+        if( mb->stop <= TOSMALL ) return;
+
         s= findMALSymbol("bat","setWriteMode");
         if( s)
             setWriteMode = getSignature(s)->fcn;
@@ -185,7 +193,6 @@ Finalize the factory loop
         mb->stop += 4;
         GDKfree(mb->stmt);
         mb->stmt = ns;
-        SQLsetAccessMode(c);
         chkProgram(c->nspace,mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
         printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
@@ -202,6 +209,17 @@ To compensate for this behaviour, a final pass is made
 to inject the access modes in all places relevant.
 In this case, we start with the mark operations, which
 will be faster when the operand is read only.
+Likewise, an append or insert requires write access.
+@= setAccess
+        if( p->fcnname && strcmp(p->fcnname,@1)==0){
+            q= newInstruction(ASSIGNsymbol);
+            q->modname= GDKstrdup("bat");
+            q->fcnname= GDKstrdup(@2);
+            q->argv[0]= newTmpVariable(mb,TYPE_any);
+            q->argv[1]= p->argv[1];
+            q->argc= 2;
+            ns[k++]= q;
+        }
 @c
 void SQLsetAccessMode(Client c){
     MalBlkPtr mb;
@@ -212,15 +230,10 @@ void SQLsetAccessMode(Client c){
     k =0;
     for(i=0; i< mb->stop; i++){
         p= getInstrPtr(mb,i);
-        if( p->fcnname && strcmp(p->fcnname,"mark")==0){
-            q= newInstruction(ASSIGNsymbol);
-            q->modname= GDKstrdup("bat");
-            q->fcnname= GDKstrdup("setReadMode");
-            q->argv[0]= newTmpVariable(mb,TYPE_any);
-            q->argv[1]= p->argv[1];
-            q->argc= 2;
-            ns[k++]= q;
-        }
+        @:setAccess("mark","setReadMode")@
+        @:setAccess("append","setWriteMode")@
+        @:setAccess("insert","setWriteMode")@
+        @:setAccess("replace","setWriteMode")@
         ns[k++] = p;
     }
     mb->ssize = 2* mb->stop;

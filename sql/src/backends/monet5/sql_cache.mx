@@ -83,11 +83,11 @@ str SQLCacheExists(bit *res, str *nme){
 	Symbol s;
         Client c = getClient();
 
-	scope= findScope(c->nspace,"sql_cache");
+	scope= findModule(c->nspace,"sql_cache");
 	if( scope == NULL)
 		return throwMessage("sql_cache.exists",
 			"internal error, sql_cache missing\n");
-	s= findSymbolInScope(scope,*nme);
+	s= findSymbolInModule(scope,*nme);
 	*res = s != NULL;
 	return MAL_SUCCEED;
 }
@@ -99,11 +99,11 @@ str SQLCacheGetDefinition(int *ret, str *nme){
         if(b == 0) 
 	return throwMessage("sql_cache.getDefinition", "failed to create BAT");
 	
-        scope= findScope(c->nspace,"sql_cache");
+        scope= findModule(c->nspace,"sql_cache");
         if( scope == NULL)
                 return throwMessage("sql_cache.getDefinition",
                         "internal error, sql_cache missing\n");
-        s= findSymbolInScope(scope,*nme);
+        s= findSymbolInModule(scope,*nme);
 
 	if(s){
 		int i;
@@ -128,11 +128,11 @@ str SQLCacheRemove(int *ret, str *nme){
 #ifdef _SQL_CACHE_DEBUG
 	stream_printf(GDKout,"SQLCacheRemove %s\n", *nme);
 #endif
-	scope= findScope(c->nspace,"sql_cache");
+	scope= findModule(c->nspace,"sql_cache");
 	if( scope == NULL)
 		return throwMessage("sql_cache.remove",
 			"internal error, sql_cache missing\n");
-	s= findSymbolInScope(scope,*nme);
+	s= findSymbolInModule(scope,*nme);
 	if( s == NULL)
 		return throwMessage("sql_cache.remove",
 			"internal error, sql_cache entry missing\n");

@@ -878,8 +878,6 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		int r = backend_dumpstmt(sql,mb, s->op2.stval);
 		@:SQLprelude@
 		if (s->op2.stval->nrcols){
-			q= newStmt(mb,"bat","setWriteMode");
-			q= pushArgument(mb,q,l);
 			q= newStmt(mb,"bat","insert");
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
@@ -895,8 +893,6 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 	case st_append:{
                 int l = backend_dumpstmt(sql, mb, s->op1.stval);
                 int r = backend_dumpstmt(sql, mb, s->op2.stval );
-		q= newStmt(mb,"bat","setWriteMode");
-		q= pushArgument(mb,q,l);
 		q= newStmt(mb,"bat","append");
 		q= pushArgument(mb,q,l);
 		q= pushArgument(mb,q,r);
@@ -907,8 +903,6 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
 		int r = backend_dumpstmt(sql,mb, s->op2.stval);
 		@:SQLprelude@
-		q= newStmt(mb,"bat","setWriteMode");
-		q= pushArgument(mb,q,l);
 		q= newStmt(mb,"bat","replace");
 		q= pushArgument(mb,q,l);
 		q= pushArgument(mb,q,r);
