@@ -26,93 +26,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-# >Number:         107
-# >Category:       MIL
-# >Synopsis:       related? bug with voids
-# >Confidential:   no
-# >Severity:       serious
-# >Priority:       medium
-# >Responsible:    boncz
-# >State:          open
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Wed Jan  7 15:49:59 1998
-# >Originator:     arjen
-# >Organization:
-# Other
-# >Release:        971007
-# >Environment:
-# Solaris 2.5.1
-# >Description:
-# Okay, maybe this helps in determining the problem with voids as
-# reported earlier today: (other option is below)
-# 
-# #
-# # Text retrieval testjes
-# #
-# 
-# # w.bat is een text dump formaat ( oid, str ),
-# # bevattende docid, term
-# w := new( oid, str );
-# w.import( "w.bat" );
-# w.print;
-# 
-# # [t_i, n_i]
-# w.histogram.print;
-# 
-# #split w in twee tabellen
-# docid := new( void, oid );
-# tid := new( void, str );
-# docid.insert( [w~].reverse );
-# tid.insert( [~w] );
-# 
-# docid.seqbase( 1000@0 );
-# tid.seqbase( 1000@0 );
-# print( docid, tid );
-# 
-# module( "xtables" );
-# CTgroup( docid, tid ).print;
-# 
-# # t_i, tf_ij
-# join( tid.reverse, CTgroup( docid, tid ).histogram).print;
-# # d_j, max tf_j
-# djtfij := new( oid, int );
-# djtfij.insert( join( docid.reverse, CTgroup( docid, tid ).histogram ) );
-# 
-# {max}(djtfij).print;
-# 
-# -----------------------------
-# This way it works. However, if I do not do an explicit new and insert,
-# then the server crashes as follows:
-# 
-# > djtfij :=join( docid.reverse, CTgroup( docid, tid ).histogram );
-# > {max}(djtfij).print;
-# !ERROR: BATcreate:tt error
-#  
-# !ERROR: BUNins: BAT required.
-#  
-# !ERROR: BATcreate:tt error
-#  
-# !ERROR: BUNins: BAT required.
-#  
-# !ERROR: BATcreate:tt error
-#  
-# !ERROR: BUNins: BAT required.
-#  
-# ! Terminating connection
-# ! Connection broken
-
-setoid(oid(10000000));
-module("unix");
-#
-# Text retrieval testjes
-#
-
-# w.bat is een text dump formaat ( oid, str ),
-# bevattende docid, term
-w := new( oid, str );
-w.import( sprintf("%s/no.107.w.bat",getenv("TSTTRGDIR")) );
-w.print;
 #---------------------------------#
 # BAT:	  tmp_27		  #
 # (oid)	  (str)			  #
@@ -132,10 +45,6 @@ w.print;
 [ 2@0,	  "test"		  ]
 [ 2@0,	  "this"		  ]
 [ 2@0,	  "database"		  ]
-setoid(oid(20000000));
-
-# [t_i, n_i]
-w.histogram.print;
 #---------------------------------#
 # BAT:			  tmp_28  #
 # (str)			  (int)	  #
@@ -149,12 +58,6 @@ w.histogram.print;
 [ "functionality",	  1	  ]
 [ "it",			  1	  ]
 [ "thoroughly",		  1	  ]
-
-#split w in twee tabellen
-docid := new( void, oid );
-tid := new( void, str );
-docid.insert( [w~].reverse );
-docid.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (oid)	  #
@@ -174,8 +77,6 @@ docid.print;
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
-tid.insert( [~w] );
-tid.print;
 #---------------------------------#
 # BAT:	  tmp_29		  #
 # (void)  (str)			  #
@@ -195,9 +96,6 @@ tid.print;
 [ nil,	  "test"		  ]
 [ nil,	  "this"		  ]
 [ nil,	  "database"		  ]
-
-docid.seqbase( 1000@0 );
-docid.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (oid)	  #
@@ -217,8 +115,6 @@ docid.print;
 [ 1012@0, 2@0	  ]
 [ 1013@0, 2@0	  ]
 [ 1014@0, 2@0	  ]
-tid.seqbase( 1000@0 );
-tid.print;
 #---------------------------------#
 # BAT:	  tmp_29		  #
 # (void)  (str)			  #
@@ -238,7 +134,6 @@ tid.print;
 [ 1012@0, "test"		  ]
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
-tid.reverse.print;
 #---------------------------------#
 # BAT:			  tmp_29  #
 # (str)			  (void)  #
@@ -258,8 +153,6 @@ tid.reverse.print;
 [ "test",		  1012@0  ]
 [ "this",		  1013@0  ]
 [ "database",		  1014@0  ]
-tidx:=tid.copy;
-tidx.print;
 #---------------------------------#
 # BAT:	  tmp_30		  #
 # (void)  (str)			  #
@@ -279,8 +172,6 @@ tidx.print;
 [ 1012@0, "test"		  ]
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
-tidy:=([oid](tid)).copy;
-tidy.print;
 #-----------------#
 # BAT:	  tmp_32  #
 # (void)  (oid)	  #
@@ -300,7 +191,6 @@ tidy.print;
 [ 1012@0, nil	  ]
 [ 1013@0, nil	  ]
 [ 1014@0, nil	  ]
-print( docid, tid );
 #-----------------------------------------#
 # BAT:	  tmp_28| tmp_29		  #
 # (void)  (oid)	| (str)			  #
@@ -320,9 +210,6 @@ print( docid, tid );
 [ 1012@0, 2@0,	  "test"		  ]
 [ 1013@0, 2@0,	  "this"		  ]
 [ 1014@0, 2@0,	  "database"		  ]
-
-
-CTgroup( docid, tid ).print;
 #-----------------#
 # BAT:	  tmp_31  #
 # (void)  (oid)	  #
@@ -342,9 +229,6 @@ CTgroup( docid, tid ).print;
 [ 1012@0, 1012@0  ]
 [ 1013@0, 1013@0  ]
 [ 1014@0, 1014@0  ]
-
-# t_i, tf_ij
-join( tidx.reverse, CTgroup( docid, tid ).histogram).print;
 #---------------------------------#
 # BAT:			  tmp_35  #
 # (str)			  (int)	  #
@@ -362,7 +246,6 @@ join( tidx.reverse, CTgroup( docid, tid ).histogram).print;
 [ "test",		  1	  ]
 [ "this",		  1	  ]
 [ "database",		  1	  ]
-join( tidy.reverse, CTgroup( docid, tid ).histogram).print;
 #-----------------#
 # BAT:	  tmp_31  #
 # (oid)	  (int)	  #
@@ -380,7 +263,6 @@ join( tidy.reverse, CTgroup( docid, tid ).histogram).print;
 [ nil,	  1	  ]
 [ nil,	  1	  ]
 [ nil,	  1	  ]
-join( tid.reverse, CTgroup( docid, tid ).histogram).print;
 #---------------------------------#
 # BAT:			  tmp_35  #
 # (str)			  (int)	  #
@@ -398,11 +280,6 @@ join( tid.reverse, CTgroup( docid, tid ).histogram).print;
 [ "test",		  1	  ]
 [ "this",		  1	  ]
 [ "database",		  1	  ]
-# d_j, max tf_j
-djtfij := new( oid, int );
-djtfij.insert( join( docid.reverse, CTgroup( docid, tid ).histogram ) );
-
-{max}(djtfij).print;
 #-----------------#
 # BAT:	  tmp_31  #
 # (oid)	  (int)	  #
@@ -410,12 +287,6 @@ djtfij.insert( join( docid.reverse, CTgroup( docid, tid ).histogram ) );
 [ 0@0,	  2	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  1	  ]
-
-# This way it works. However, if I do not do an explicit new and insert,
-# then the server crashes as follows:
-
-djtfijx :=join( docid.reverse, CTgroup( docid, tid ).histogram );
-{max}(djtfijx).print;
 #-----------------#
 # BAT:	  tmp_36  #
 # (oid)	  (int)	  #
@@ -423,4 +294,3 @@ djtfijx :=join( docid.reverse, CTgroup( docid, tid ).histogram );
 [ 0@0,	  2	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  1	  ]
-quit;

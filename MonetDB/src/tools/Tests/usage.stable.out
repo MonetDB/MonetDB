@@ -14,7 +14,6 @@ option:	-db <db-name>		database to open
 	-noclients			no Mclient listener
 	-background		no console (only Mclient)
 	-home <dir>		use alternative MONETHOME
-	-port <nr>		TCP/IP listen port for Mclient
 	-version <ver>		create BATs in old formats
 	-id <num>		generate oid@id (default=0 <= id <= 3)
 	-p <prompt-str>		change the MIL prompt
@@ -38,19 +37,17 @@ option:	-db <db-name>		database to open
 usage:
 Mdestroydb [-home <file>] -db <name> {-user <usr>}
 	the special file 'homes' is expected in $MONETHOME
-Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>] [-port <port>]
+Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>]
 	the default users are 'adm' and 'guest'
 	the default database directory is $MONETHOME/dbfarm/
-	the default tcp port is 50050
-#> Mlog:	Mdestroydb -?
+#> Mlog (18:04:51):	Mdestroydb -?
 usage:
 Mdestroydb [-home <file>] -db <name> {-user <usr>}
 	the special file 'homes' is expected in $MONETHOME
-Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>] [-port <port>]
+Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>]
 	the default users are 'adm' and 'guest'
 	the default database directory is $MONETHOME/dbfarm/
-	the default tcp port is 50050
-#> Mlog:	Mload -?
+#> Mlog (18:04:51):	Mload -?
 Mload: <ascii_file> { -db <db> | -id <stamp> | -home <home> | -version <ver>}
 	[-oid <seqbase>] [-s <size>] [-f <specfile>] {-mod <module>}
 	{ [[~|*|+]<batname>],("<sep>"|<len>),<type>[::<fcn>][,<nil>] } }

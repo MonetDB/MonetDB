@@ -25,19 +25,7 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-s:= new(str,int);
-insert(s,"hello",1);
-print(find(s,"hello"));
 [ 1 ]
-insert(s,"bello",2);
-insert(s,"cello",3);
-insert(s,"dello",4);
-insert(s,"eello",5);
-insert(s,"fello",6);
-insert(s,"gello",7);
-insert(s,"hello",8);
-printf("#~BeginVariableOutput~#\n"); info(s).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # BAT:				  tmp_23	  #
@@ -79,21 +67,21 @@ printf("#~BeginVariableOutput~#\n"); info(s).print; printf("#~EndVariableOutput~
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "9"		  ]
-[ "batStamp",			  "-72"		  ]
-[ "curStamp",			  "80"		  ]
+[ "batStamp",			  "-73"		  ]
+[ "curStamp",			  "81"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "72"		  ]
-[ "batBuns.size",		  "440"		  ]
-[ "batBuns.maxsize",		  "440"		  ]
+[ "batBuns.size",		  "424"		  ]
+[ "batBuns.maxsize",		  "424"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
 [ "batBuns.filename",		  "no file"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "4180"	  ]
-[ "hheap.size",			  "4980"	  ]
-[ "hheap.maxsize",		  "4980"	  ]
+[ "hheap.size",			  "4724"	  ]
+[ "hheap.maxsize",		  "4724"	  ]
 [ "hheap.storage",		  "malloced"	  ]
 [ "hheap.filename",		  "no file"	  ]
 [ "hheap.offset",		  "0"		  ]
@@ -125,10 +113,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print; printf("#~EndVariableOutput~
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
 #~EndVariableOutput~#
-print(find(s,"cello"));
 [ 3 ]
-delete(s,"cello",3);
-print(s);
 #-------------------------#
 # BAT:		  tmp_24  #
 # (str)		  (int)	  #
@@ -140,8 +125,6 @@ print(s);
 [ "eello",	  5	  ]
 [ "fello",	  6	  ]
 [ "gello",	  7	  ]
-sn:= select(s,1,5);
-print(sn);
 #-------------------------#
 # BAT:		  tmp_23  #
 # (str)		  (int)	  #
@@ -150,8 +133,6 @@ print(sn);
 [ "bello",	  2	  ]
 [ "dello",	  4	  ]
 [ "eello",	  5	  ]
-sn:= semijoin(s.reverse,sn.reverse);
-print(sn);
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (int)	  (str)		  #
@@ -160,8 +141,6 @@ print(sn);
 [ 2,	  "bello"	  ]
 [ 4,	  "dello"	  ]
 [ 5,	  "eello"	  ]
-x:= join(s,sn);
-print(x);
 #---------------------------------#
 # BAT:		  tmp_23	  #
 # (str)		  (str)		  #
@@ -170,4 +149,3 @@ print(x);
 [ "bello",	  "bello"	  ]
 [ "dello",	  "dello"	  ]
 [ "eello",	  "eello"	  ]
-quit;

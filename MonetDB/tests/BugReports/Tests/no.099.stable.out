@@ -25,81 +25,11 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-# >Number:         99
-# >Category:       Mserver
-# >Synopsis:       comparison of nil values is not reliable
-# >Confidential:   no
-# >Severity:       critical
-# >Priority:       high
-# >Responsible:    boncz
-# >State:          open
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Mon Dec 15 11:22:32 1997
-# >Originator:     windhouw
-# >Organization:
-# UvA
-# >Release:        971007
-# >Environment:
-# 
-# >Description:
-# #You are system administrator (adm)!
-# >PROC comp(left,right) := {
-# >  IF (left = right) {
-# >    printf("left equals right\n");
-# >  } ELSE {
-# >    printf("left is not equal to right\n");
-# >  }
-# >  IF (left != right) {
-# >    printf("left is not equal to right\n");
-# >  } ELSE {
-# >    printf("left equals right\n");
-# >  }
-# >}
-# >comp(oid(nil),oid(nil));
-# left equals right
-# left is not equal to right
-# >comp(oid(1),oid(nil));
-# left is not equal to right
-# left is not equal to right
-# >comp(oid(1),oid(1));
-# left equals right
-# left equals right
-# >comp(str(nil),str(nil));
-# left equals right
-# left is not equal to right
-# >comp(str("a"),str(nil));
-# left equals right
-# left is not equal to right
-# >comp(str("a"),str("a"));
-# left equals right
-# left equals right
-
-setoid(oid(20000000));
-PROC comp(left,right) := {
-  IF (left = right) {
-    printf("left equals right\n");
-  } ELSE {
-    printf("left is not equal to right\n");
-  }
-  IF (left != right) {
-    printf("left is not equal to right\n");
-  } ELSE {
-    printf("left equals right\n");
-  }
-}
-comp(oid(nil),oid(nil));
 !ERROR: interpret: if bit(nil): don't know what to do!
-comp(oid(1),oid(nil));
 !ERROR: interpret: if bit(nil): don't know what to do!
-comp(oid(1),oid(1));
 left equals right
 left equals right
-comp(str(nil),str(nil));
 !ERROR: interpret: if bit(nil): don't know what to do!
-comp(str("a"),str(nil));
 !ERROR: interpret: if bit(nil): don't know what to do!
-comp(str("a"),str("a"));
 left equals right
 left equals right
-quit;

@@ -25,36 +25,19 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-printf("X%2.3sX\n", "A");
 X AX
-printf("X%2.3sX\n", "AB");
 XABX
-printf("X%2.3sX\n", "ABC");
 XABCX
-printf("X%2.3sX\n", "ABCD");
 XABCX
-printf("X%3.2sX\n", "A");
 X  AX
-printf("X%3.2sX\n", "AB");
 X ABX
-printf("X%3.2sX\n", "ABC");
 X ABX
-printf("X%3.2sX\n", "ABCD");
 X ABX
-printf("X%-2.3sX\n", "A");
 XA X
-printf("X%-2.3sX\n", "AB");
 XABX
-printf("X%-2.3sX\n", "ABC");
 XABCX
-printf("X%-2.3sX\n", "ABCD");
 XABCX
-printf("X%-3.2sX\n", "A");
 XA  X
-printf("X%-3.2sX\n", "AB");
 XAB X
-printf("X%-3.2sX\n", "ABC");
 XAB X
-printf("X%-3.2sX\n", "ABCD");
 XAB X
-quit;

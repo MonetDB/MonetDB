@@ -25,52 +25,38 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#advanced features BATs as primitives.
-
-c:= new(int,bat);
-#c.insert(1,gdk_cpu_stat);
-c.insert(1,cpu);
-c.insert(2,c);
-c.print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
 [ 2,	  <tmp_24>	  ]
-
-printf("#~BeginVariableOutput~#\n"); c.find(1).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  90	  ]
+[ "user",	  170	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  130	  ]
+[ "system",	  360	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-c.print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
 [ 2,	  <tmp_24>	  ]
-c.find(2).print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
 [ 2,	  <tmp_24>	  ]
-c.print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
 [ 2,	  <tmp_24>	  ]
-quit;

@@ -25,60 +25,39 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# Testing key and set constraints ;
-b:= new(int,int);
-b.key(true);
-insert(b,1,2);
-insert(b,2,2);
-print(b);
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
 [ 2,	  2	  ]
-insert(b,1,3);
-print(b);
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  3	  ]
 [ 2,	  2	  ]
-insert(b,2,4);
-print(b);
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  3	  ]
 [ 2,	  4	  ]
-c:= new(int,int);
-set(c,true);
-insert(c,1,2);
-insert(c,2,2);
-print(c);
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
 [ 2,	  2	  ]
-insert(c,1,2);
-print(c);
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
 [ 2,	  2	  ]
-insert(c,2,2);
-print(c);
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
 [ 2,	  2	  ]
-quit;

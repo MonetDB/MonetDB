@@ -25,10 +25,5 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-VAR res := bat(nil); 
-res.print;
 !ERROR: print(param 1): invalid BAT.
-res := 1;
-res.print;
 [ 1 ]
-quit;

@@ -25,14 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#test basic functionality of the BAT library.
-#focussed on integers
-#it includes insertions,deletions,selections, and joins.
-
-b:= new(int,int);
-#b.roles("head","tail"); roles was removed from the kernel ops
-printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # BAT:				  tmp_23	  #
@@ -74,8 +66,8 @@ printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
-[ "batStamp",			  "-72"		  ]
-[ "curStamp",			  "73"		  ]
+[ "batStamp",			  "-73"		  ]
+[ "curStamp",			  "74"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -120,19 +112,6 @@ printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
 #~EndVariableOutput~#
-
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-b.insert(int(nil),int(nil));
-b.insert(int(nil),81);
-b.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -148,26 +127,12 @@ b.print;
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-
-
-# Testing simple retrievals
-b.find(1).print;
 [ 15 ]
-b.find(4).print;
 [ 16 ]
-b.find(int(nil)).print;
 [ 81 ]
-# This should cause an error
-b.find(10).print;
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
 !ERROR: print(param 1): evaluation error.
-
-# Can we delete them and re-insert them later on
-b.delete(4,16);
-b.delete(1,15);
-b.delete(int(nil),81);
-b.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -180,13 +145,7 @@ b.print;
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
-
-b.insert(4,16);
-b.insert(int(nil),81);
-b.insert(1,15);
-b.count.print;
 [ 11 ]
-b.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -202,9 +161,6 @@ b.print;
 [ 4,	  16	  ]
 [ nil,	  81	  ]
 [ 1,	  15	  ]
-
-# Lets cut out a few sections
-b.select(25,64).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -213,32 +169,26 @@ b.select(25,64).print;
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
-b.select(4,15).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 [ 1,	  15	  ]
-b.select(4,4).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
-# This should cause an error
-b.select(4,3).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
-b.select(81,int(nil)).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  81	  ]
-b.select(int(nil),int(nil)).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -251,23 +201,18 @@ b.select(int(nil),int(nil)).print;
 [ 4,	  16	  ]
 [ nil,	  81	  ]
 [ 1,	  15	  ]
-
-# A 2-dimensional cut
-bn:=b.fragment(1,5,4,15);bn.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 [ 1,	  15	  ]
-b.fragment(1,5,16,int(nil)).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  25	  ]
 [ 4,	  16	  ]
-b.fragment(1,int(nil),16,int(nil)).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -277,7 +222,6 @@ b.fragment(1,int(nil),16,int(nil)).print;
 [ 7,	  49	  ]
 [ 8,	  64	  ]
 [ 4,	  16	  ]
-b.fragment(int(nil),int(nil),16,int(nil)).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -288,28 +232,18 @@ b.fragment(int(nil),int(nil),16,int(nil)).print;
 [ 8,	  64	  ]
 [ 4,	  16	  ]
 [ nil,	  81	  ]
-
-bn:= b.join(bn.reverse);
-bn.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  2	  ]
 [ 1,	  1	  ]
-
-bn:= b.semijoin(bn.reverse);
-bn.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 [ 1,	  15	  ]
-
-# band join experiment
-c:= b.copy;
-bandjoin(b,c,4,4).print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -322,9 +256,6 @@ bandjoin(b,c,4,4).print;
 [ 2,	  64	  ]
 [ 2,	  16	  ]
 [ 2,	  15	  ]
-
-#and theta joins?
-b.thetajoin(c,LT).print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -334,4 +265,3 @@ b.thetajoin(c,LT).print;
 [ 2,	  49	  ]
 [ 2,	  64	  ]
 [ 2,	  nil	  ]
-quit;

@@ -25,26 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# test the new set operations
-
-b := new(int,int);
-c := new(int,int);
-b.insert(3,5);
-b.insert(3,6);
-b.insert(4,5);
-b.insert(4,6);
-b.insert(8,10);
-b.insert(8,11);
-b.insert(9,10);
-b.insert(9,11);
-b.insert(9,11);
-c.insert(3,10);
-c.insert(3,5);
-c.insert(8,10);
-c.insert(8,5);
-
-b.sunique.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -57,7 +37,6 @@ b.sunique.print;
 [ 8,	  11	  ]
 [ 9,	  10	  ]
 [ 9,	  11	  ]
-b.kunique.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -66,14 +45,12 @@ b.kunique.print;
 [ 4,	  6	  ]
 [ 8,	  11	  ]
 [ 9,	  11	  ]
-sintersect(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
 [ 8,	  10	  ]
-kintersect(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -82,7 +59,6 @@ kintersect(c,b).print;
 [ 3,	  5	  ]
 [ 8,	  10	  ]
 [ 8,	  5	  ]
-kintersect(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -91,14 +67,12 @@ kintersect(b,c).print;
 [ 3,	  6	  ]
 [ 8,	  10	  ]
 [ 8,	  11	  ]
-sdiff(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
 [ 8,	  5	  ]
-kdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -108,7 +82,6 @@ kdiff(b,c).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-sdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -120,7 +93,6 @@ sdiff(b,c).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-kdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -130,7 +102,6 @@ kdiff(b,c).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-sunion(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -146,7 +117,6 @@ sunion(c,b).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-kunion(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -160,7 +130,6 @@ kunion(c,b).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-kunion(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -174,11 +143,6 @@ kunion(b,c).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-
-b.insert(0,0);
-c.insert(0,0);
-
-b.sunique.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -192,7 +156,6 @@ b.sunique.print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 0,	  0	  ]
-b.kunique.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -202,7 +165,6 @@ b.kunique.print;
 [ 8,	  10	  ]
 [ 9,	  10	  ]
 [ 0,	  0	  ]
-sintersect(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -210,7 +172,6 @@ sintersect(c,b).print;
 [ 3,	  5	  ]
 [ 8,	  10	  ]
 [ 0,	  0	  ]
-kintersect(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -220,7 +181,6 @@ kintersect(c,b).print;
 [ 8,	  10	  ]
 [ 8,	  5	  ]
 [ 0,	  0	  ]
-kintersect(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -230,14 +190,12 @@ kintersect(b,c).print;
 [ 8,	  10	  ]
 [ 8,	  11	  ]
 [ 0,	  0	  ]
-sdiff(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
 [ 8,	  5	  ]
-kdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -247,7 +205,6 @@ kdiff(b,c).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-sdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -259,7 +216,6 @@ sdiff(b,c).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-kdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -269,7 +225,6 @@ kdiff(b,c).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-sunion(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -286,7 +241,6 @@ sunion(c,b).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-kunion(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -301,7 +255,6 @@ kunion(c,b).print;
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-kunion(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -316,5 +269,3 @@ kunion(b,c).print;
 [ 9,	  11	  ]
 [ 9,	  11	  ]
 [ 0,	  0	  ]
-
-quit;

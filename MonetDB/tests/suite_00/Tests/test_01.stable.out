@@ -25,25 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#test basic functionality of the BAT library.
-#focussed on strings
-#it includes insertions,deletions,selections, and joins.
-
-b:= new(str,int);
-b.insert("the",1);
-b.insert("quick",2);
-b.insert("brown",3);
-b.insert("fox",4);
-b.insert("jumps",5);
-b.insert("over",6);
-b.insert("lazy",7);
-b.insert("dog",8);
-b.insert(str(nil),9);
-b.insert(".",10);
-b.insert("",int(nil));
-b.insert(str(nil),int(nil));
-b.print;
 #-------------------------#
 # BAT:		  tmp_24  #
 # (str)		  (int)	  #
@@ -60,26 +41,12 @@ b.print;
 [ ".",		  10	  ]
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
-
-
-# Testing simple retrievals
-b.find("the").print;
 [ 1 ]
-b.find("fox").print;
 [ 4 ]
-b.find(str(nil)).print;
 [ nil ]
-# This should cause an error
-b.find("cat").print;
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
 !ERROR: print(param 1): evaluation error.
-
-# Can we delete them and re-insert them later on
-b.delete("fox",4);
-b.delete("the",1);
-b.delete(".",10);
-b.print;
 #-------------------------#
 # BAT:		  tmp_24  #
 # (str)		  (int)	  #
@@ -93,15 +60,7 @@ b.print;
 [ "lazy",	  7	  ]
 [ "dog",	  8	  ]
 [ nil,		  9	  ]
-
-b.insert("fox",4);
-b.insert("the",1);
-b.insert(".",10);
-b.count.print;
 [ 12 ]
-
-# Lets cut out a few sections
-b.select(2,4).print;
 #-------------------------#
 # BAT:		  tmp_23  #
 # (str)		  (int)	  #
@@ -109,7 +68,6 @@ b.select(2,4).print;
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
 [ "fox",	  4	  ]
-b.select(7,int(nil)).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (str)	  (int)	  #
@@ -118,7 +76,6 @@ b.select(7,int(nil)).print;
 [ "dog",  8	  ]
 [ nil,	  9	  ]
 [ ".",	  10	  ]
-b.select(int(nil),int(nil)).print;
 #-------------------------#
 # BAT:		  tmp_23  #
 # (str)		  (int)	  #
@@ -133,9 +90,6 @@ b.select(int(nil),int(nil)).print;
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
 [ ".",		  10	  ]
-
-# A 2-dimensional cut
-bn:=b.fragment("fox","quick",1,5);bn.print;
 #-------------------------#
 # BAT:		  tmp_23  #
 # (str)		  (int)	  #
@@ -143,7 +97,6 @@ bn:=b.fragment("fox","quick",1,5);bn.print;
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
-b.fragment("fox",str(nil),1,5).print;
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -152,7 +105,6 @@ b.fragment("fox",str(nil),1,5).print;
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-b.fragment("fox",str(nil),int(nil),int(nil)).print;
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -163,7 +115,6 @@ b.fragment("fox",str(nil),int(nil),int(nil)).print;
 [ "lazy",	  7	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-b.fragment(str(nil),"f",int(nil),int(nil)).print;
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -174,7 +125,6 @@ b.fragment(str(nil),"f",int(nil),int(nil)).print;
 [ "dog",	  8	  ]
 [ nil,		  9	  ]
 [ ".",		  10	  ]
-b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (int)	  (str)		  #
@@ -185,9 +135,6 @@ b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
 [ 8,	  "dog"		  ]
 [ 9,	  nil		  ]
 [ 10,	  "."		  ]
-
-bn:= b.join(bn.reverse);
-bn.print;
 #---------------------------------#
 # BAT:		  tmp_25	  #
 # (str)		  (str)		  #
@@ -195,9 +142,6 @@ bn.print;
 [ "quick",	  "quick"	  ]
 [ "jumps",	  "jumps"	  ]
 [ "fox",	  "fox"		  ]
-
-bn:= b.semijoin(bn.reverse);
-bn.print;
 #-------------------------#
 # BAT:		  tmp_23  #
 # (str)		  (int)	  #
@@ -205,29 +149,22 @@ bn.print;
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
-
-# testing the like command
-b.reverse.like("ox").print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
-b.reverse.like("fo").print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
-b.reverse.like("fox").print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
-b.reverse.like(" fox").print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
-quit;

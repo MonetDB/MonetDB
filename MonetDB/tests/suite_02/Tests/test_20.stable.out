@@ -25,144 +25,7 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(2000000));
-# analyse selection using indexing
-print(count(k10_unique1));
 [ 10000 ]
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  130	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  60	  ]
-[ "elapsystem",	  0	  ]
-#~EndVariableOutput~#
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  140	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  60	  ]
-[ "elapsystem",	  0	  ]
-#~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
-#~BeginVariableOutput~#
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  1310720	  ]
-[ "arena",	  1359856	  ]
-[ "ordblks",	  109		  ]
-[ "smblks",	  7680		  ]
-[ "hblkhd",	  15360		  ]
-[ "hblks",	  480		  ]
-[ "usmblks",	  308832	  ]
-[ "fsmblks",	  443808	  ]
-[ "uordblks",	  531368	  ]
-[ "fordblks",	  60488		  ]
-#~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  3088	  ]
-[ "minflt",	  126	  ]
-[ "majflt",	  1	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  22	  ]
-[ "ninvcsw",	  1	  ]
-#~EndVariableOutput~#
-
-#Index first to speed-up selection
-accbuild(k10_unique1,find(monet_acctbl,"index"));
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  160	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  60	  ]
-[ "elapsystem",	  0	  ]
-#~EndVariableOutput~#
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-t:=fragment(k10_unique1,0,10,int(nil),int(nil));
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  160	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  60	  ]
-[ "elapsystem",	  0	  ]
-#~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
-#~BeginVariableOutput~#
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  122880	  ]
-[ "arena",	  1482736	  ]
-[ "ordblks",	  111		  ]
-[ "smblks",	  7680		  ]
-[ "hblkhd",	  15360		  ]
-[ "hblks",	  480		  ]
-[ "usmblks",	  309792	  ]
-[ "fsmblks",	  442848	  ]
-[ "uordblks",	  571384	  ]
-[ "fordblks",	  143352	  ]
-#~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  3248	  ]
-[ "minflt",	  126	  ]
-[ "majflt",	  1	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  22	  ]
-[ "ninvcsw",	  1	  ]
-#~EndVariableOutput~#
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -170,46 +33,51 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 #-------------------------#
 [ "elapsed",	  0	  ]
 [ "user",	  180	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  60	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  350	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  180	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  350	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1482736	  ]
-[ "ordblks",	  111		  ]
-[ "smblks",	  7680		  ]
-[ "hblkhd",	  15360		  ]
-[ "hblks",	  480		  ]
-[ "usmblks",	  310560	  ]
-[ "fsmblks",	  442080	  ]
-[ "uordblks",	  571384	  ]
-[ "fordblks",	  143352	  ]
+[ "memincr",	  1110016	  ]
+[ "arena",	  1138216	  ]
+[ "ordblks",	  534		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  736064	  ]
+[ "fordblks",	  402152	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  3248	  ]
-[ "minflt",	  126	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  344	  ]
+[ "majflt",	  468	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  22	  ]
-[ "ninvcsw",	  1	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-
-#index the tail
-accbuild(reverse(k10_unique1),find(monet_acctbl,"index"));
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -218,16 +86,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 [ "elapsed",	  0	  ]
 [ "user",	  200	  ]
 [ "elapuser",	  20	  ]
-[ "system",	  60	  ]
+[ "system",	  350	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-t:=fragment(k10_unique1,int(nil),int(nil),0,10);
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -236,39 +97,129 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 [ "elapsed",	  0	  ]
 [ "user",	  210	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  70	  ]
-[ "elapsystem",	  10	  ]
+[ "system",	  350	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  -106496	  ]
+[ "arena",	  1031720	  ]
+[ "ordblks",	  533		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  776128	  ]
+[ "fordblks",	  255592	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  347	  ]
+[ "majflt",	  470	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  210	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  350	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1031720	  ]
+[ "ordblks",	  535		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  776120	  ]
+[ "fordblks",	  255600	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  347	  ]
+[ "majflt",	  470	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  230	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  350	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  240	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  350	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  40960		  ]
-[ "arena",	  1523696	  ]
-[ "ordblks",	  113		  ]
-[ "smblks",	  7680		  ]
-[ "hblkhd",	  15360		  ]
-[ "hblks",	  480		  ]
-[ "usmblks",	  311584	  ]
-[ "fsmblks",	  441056	  ]
-[ "uordblks",	  611400	  ]
-[ "fordblks",	  144296	  ]
+[ "arena",	  1072680	  ]
+[ "ordblks",	  530		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  816208	  ]
+[ "fordblks",	  256472	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  3280	  ]
-[ "minflt",	  126	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  387	  ]
+[ "majflt",	  470	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  22	  ]
-[ "ninvcsw",	  1	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-quit;

@@ -25,30 +25,11 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#testing the set operations;
-b:= new(int,int);
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-b.insert(int(nil),int(nil));
-b.insert(int(nil),81);
-
-c:= b.copy;
-t:= b.select(80,int(nil)); print(t);
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  81	  ]
-c.access(BAT_WRITE);
-insert(c,t);print(c);
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -65,13 +46,6 @@ insert(c,t);print(c);
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 [ nil,	  81	  ]
-
-z:= new(int,int);
-b.replace(1,1);
-z.insert(2,4);
-z.insert(3,9);
-b.replace(z);
-b.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -87,8 +61,6 @@ b.print;
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-
-c.reverse.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -105,15 +77,11 @@ c.reverse.print;
 [ nil,	  nil	  ]
 [ 81,	  nil	  ]
 [ 81,	  nil	  ]
-d:= intersect(reverse(c),b);
-print(d);
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  nil	  ]
-e:= diff(reverse(c),d);
-print(e);
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -129,8 +97,6 @@ print(e);
 [ nil,	  9	  ]
 [ 81,	  nil	  ]
 [ 81,	  nil	  ]
-f:= union(e,b);
-print(f);
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
@@ -157,9 +123,6 @@ print(f);
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-# specials
-marcel:= b.kunion(b);
-marcel.print;
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -175,4 +138,3 @@ marcel.print;
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-quit;

@@ -25,21 +25,8 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# This test at some point caused Monet to hang and
-# it did not present the error messages at the proper line.
-# It forgot to echo the input line.
-var x;
-#!ERROR: "var 34;"
-#!               ^
-#! can't help you here, sorry.
-#var 34;
-time.print;
 !WARNING: interpret: convert identifier 'time' to string.
 [ "time" ]
-module("alarm");
-printf("#~BeginVariableOutput~#\n"); time.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 843 ]
+[ 648 ]
 #~EndVariableOutput~#
-quit;

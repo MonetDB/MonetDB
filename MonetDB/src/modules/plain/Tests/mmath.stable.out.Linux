@@ -26,37 +26,16 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-
-#line 102 "mmath.mx"
-
-setoid(oid(20000000));
-asin(sin(M_PI)).print;
 [ 1.22461e-16 ]
-acos(cos(M_PI)).print;
 [ 3.14159 ]
-atan(tan(M_PI_2)).print;
 [ 1.5708 ]
-atan(tan(M_PI_4)).print;
 [ 0.785398 ]
-tan(atan2(dbl(0.1),dbl(1.0))).print;
 [ 0.1 ]
-sqrt(pow(dbl(2),dbl(2))).print;
 [ 2 ]
-
-exp(dbl(10)).print;
 [ 22026.5 ]
-log(dbl(10)).print;
 [ 2.30259 ]
-log10(dbl(10)).print;
 [ 1 ]
-
-ceil(dbl(1.2)).print;
 [ 2 ]
-fabs(dbl(1.2)).print;
 [ 1.2 ]
-floor(dbl(1.2)).print;
 [ 1 ]
-fmod(dbl(15.2),dbl(2.5)).print;
 [ 0.2 ]
-
-quit;

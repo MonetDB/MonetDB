@@ -25,22 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# basic nameing problem
-b:= new(int,int);
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-b.insert(int(nil),int(nil));
-b.insert(int(nil),81);
-
-b.print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -56,8 +40,6 @@ b.print;
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-h:=b.hashsplit(3);
-h.print;
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (int)	  (BAT)		  #
@@ -65,8 +47,6 @@ h.print;
 [ 0,	  <tmp_25>	  ]
 [ 1,	  <tmp_26>	  ]
 [ 2,	  <tmp_27>	  ]
-h.find(0).rename("dummy");
-dir;
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
@@ -97,7 +77,6 @@ dir;
 [ "tmp_24",		  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "tmp_26",		  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 2	  ]
 [ "tmp_27",		  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 2	  ]
-vars;
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
@@ -151,4 +130,3 @@ vars;
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-quit;

@@ -26,18 +26,7 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-testje := new(int,str);
-
-testje.insert(1,"one");
-testje.insert(2,"two");
-testje.insert(3,"three");
-testje.insert(1,"een");
-testje.insert(2,"twee");
-testje.insert(3,"drie");
-
-printf("* Example BAT\n");
 * Example BAT
-testje.print;
 #-------------------------#
 # BAT:	  tmp_24	  #
 # (int)	  (str)		  #
@@ -49,20 +38,12 @@ testje.print;
 [ 2,	  "twee"	  ]
 [ 3,	  "drie"	  ]
 
-deltest := new(int,str);
-deltest.insert(1,"one");
-
-printf("\n* deleteBuns: Delete the exact BUN\n");
-
 * deleteBuns: Delete the exact BUN
-deltest.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "one"	  ]
-testje.deleteBuns(deltest);
-testje.print;
 #-------------------------#
 # BAT:	  tmp_24	  #
 # (int)	  (str)		  #
@@ -73,26 +54,15 @@ testje.print;
 [ 1,	  "een"		  ]
 [ 2,	  "twee"	  ]
 
-deltest := new(int,int);
-deltest.insert(2,2);
-deltest.insert(3,3);
-
-printf("\n* delete: Delete the BUNs with corresponding head values\n");
-
 * delete: Delete the BUNs with corresponding head values
-deltest.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  2	  ]
 [ 3,	  3	  ]
-testje.delete(deltest);
-testje.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "een"	  ]
-
-quit;

@@ -27,21 +27,12 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(10000000));
-
-printf("Start of MIL prelude.\n");
 Start of MIL prelude.
-
-clientid().print();
-[ 0 ]
-debugmask().print();
+[ 1 ]
 [ 10 ]
-qstat();
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
-
-bbp.print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -52,7 +43,6 @@ bbp.print();
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
-loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -63,7 +53,6 @@ loaded();
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-procs();
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -130,7 +119,6 @@ procs();
 [ "vars() : void"									  ]
 [ "vm_usage() : BAT[str,lng]"								  ]
 [ "vm_usage(int) : BAT[str,lng]"							  ]
-vars();
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
@@ -182,7 +170,6 @@ vars();
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-view_bbp_kind().print();
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -209,7 +196,6 @@ view_bbp_kind().print();
 [ 20,	  "tran"  ]
 [ 21,	  "tran"  ]
 [ 22,	  "tran"  ]
-view_bbp_location().print();
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -236,7 +222,6 @@ view_bbp_location().print();
 [ 20,	  "20"		  ]
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
-view_bbp_name().print();
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -263,7 +248,6 @@ view_bbp_name().print();
 [ 20,	  "monet_fcntbl"	  ]
 [ 21,	  "monet_acctbl"	  ]
 [ 22,	  "monet_atomtbl"	  ]
-view_bbp_refcnt().print();
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -290,7 +274,6 @@ view_bbp_refcnt().print();
 [ 20,	  1	  ]
 [ 21,	  1	  ]
 [ 22,	  1	  ]
-view_bbp_status().print();
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -317,13 +300,12 @@ view_bbp_status().print();
 [ 20,	  "load"  ]
 [ 21,	  "load"  ]
 [ 22,	  "load"  ]
-view_client_tree().print();
-#-----------------------------------------#
-# BAT:	  tree				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  "print(view_client_tree())"	  ]
-view_gdk_bbp().print();
+#-------------------------------------------------------------------------------------------------#
+# BAT:	  tree											  #
+# (int)	  (str)											  #
+#-------------------------------------------------------------------------------------------------#
+[ 0,	  ""											  ]
+[ 1,	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());print"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -334,7 +316,6 @@ view_gdk_bbp().print();
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
-view_var_constant().print();
 #-----------------------------------------#
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
@@ -386,7 +367,6 @@ view_var_constant().print();
 [ "monet_fcn_tpe",	  "constant"	  ]
 [ "monet_fcn_imp",	  "constant"	  ]
 [ "monet_fcn_fcn",	  "constant"	  ]
-view_var_kind().print();
 #-----------------------------------------#
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
@@ -438,7 +418,6 @@ view_var_kind().print();
 [ "monet_fcn_tpe",	  "frozen"	  ]
 [ "monet_fcn_imp",	  "frozen"	  ]
 [ "monet_fcn_fcn",	  "frozen"	  ]
-view_var_type().print();
 #---------------------------------#
 # BAT:			  type	  #
 # (str)			  (str)	  #
@@ -490,8 +469,6 @@ view_var_type().print();
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
-
-dir();
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
@@ -517,11 +494,9 @@ dir();
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
-ls();
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------#
-view_bbp_heat().print();
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -548,21 +523,14 @@ view_bbp_heat().print();
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
-
-printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-
-queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
 #[     49,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5fe20c70.
 unknown(0)#"                   ]
-#[     50,         1,   running,        49, "queue()#"                      ]
-threadid().print();
+#[      3,         1,   running,         0, "source("/var/tmp/manegold#"    ]
 [ 1 ]
-
-clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
@@ -1261,7 +1229,7 @@ cpu().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
+[ "user",	  1110	  ]
 [ "elapuser",	  30	  ]
 [ "system",	  80	  ]
 [ "elapsystem",	  10	  ]
@@ -1326,8 +1294,7 @@ threads();
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Server"	  ]
-view_client_login().print();
+[ 1,	  "Interpreter"	  ]
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
@@ -1345,7 +1312,7 @@ view_gdk_cpu().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  200	  ]
+[ "user",	  1120	  ]
 [ "elapuser",	  10	  ]
 [ "system",	  80	  ]
 [ "elapsystem",	  0	  ]
@@ -1396,12 +1363,6 @@ view_gdk_thread().print();
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Server"	  ]
-
-printf("#~EndVariableOutput~#\n");
+[ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-
-printf("End of MIL script.\n");
 End of MIL script.
-
-quit();

@@ -89,10 +89,6 @@ print(dec_bat.col_name("value"),
 [ "nec_big",	  -11220000000000E30,	  14,		  30	  ]
 [ "dec_huge",	  22440000000000E9000,	  14,		  9000	  ]
 [ "nec_huge",	  -2244E9010,		  4,		  9010	  ]
-
-print(dec_bat.col_name("value"), 
-      dec_int.col_name("int"), 
-      dec_lng.col_name("lng"));
 #-------------------------------------------------------------------------#
 # BAT:		  value			| int	| lng			  #
 # (str)		  (decimal)		| (int)	| (lng)			  #
@@ -109,10 +105,6 @@ print(dec_bat.col_name("value"),
 [ "nec_big",	  -11220000000000E30,	  nil,	  nil			  ]
 [ "dec_huge",	  22440000000000E9000,	  nil,	  nil			  ]
 [ "nec_huge",	  -2244E9010,		  nil,	  nil			  ]
-
-print(dec_bat.col_name("value"), 
-      dec_flt.col_name("flt"), 
-      dec_dbl.col_name("dbl"));
 #-------------------------------------------------------------------------#
 # BAT:		  value			| flt		| dbl		  #
 # (str)		  (decimal)		| (flt)		| (dbl)		  #
@@ -129,11 +121,6 @@ print(dec_bat.col_name("value"),
 [ "nec_big",	  -11220000000000E30,	  nil,		  -1.122e+43	  ]
 [ "dec_huge",	  22440000000000E9000,	  nil,		  nil		  ]
 [ "nec_huge",	  -2244E9010,		  nil,		  nil		  ]
-
-# test reverse conversion
-print(dec_bat.col_name("decimal"), 
-      [decimal](dec_int).col_name("from_int"), 
-      [decimal](dec_lng).col_name("from_lng"));
 #---------------------------------------------------------------------------------#
 # BAT:		  decimal		| from_int	| from_lng		  #
 # (str)		  (decimal)		| (decimal)	| (decimal)		  #
@@ -150,9 +137,6 @@ print(dec_bat.col_name("decimal"),
 [ "nec_big",	  -11220000000000E30,	  nil,		  nil			  ]
 [ "dec_huge",	  22440000000000E9000,	  nil,		  nil			  ]
 [ "nec_huge",	  -2244E9010,		  nil,		  nil			  ]
-
-print(dec_bat.col_name("decimal"), 
-      [decimal](dec_flt).col_name("from_flt"));
 #-----------------------------------------------------------------#
 # BAT:		  decimal		| from_flt		  #
 # (str)		  (decimal)		| (decimal)		  #
@@ -169,9 +153,6 @@ print(dec_bat.col_name("decimal"),
 [ "nec_big",	  -11220000000000E30,	  nil			  ]
 [ "dec_huge",	  22440000000000E9000,	  nil			  ]
 [ "nec_huge",	  -2244E9010,		  nil			  ]
-
-print(dec_bat.col_name("decimal"), 
-      [decimal](dec_dbl).col_name("from_dbl"));
 #-------------------------------------------------------------------------#
 # BAT:		  decimal		| from_dbl			  #
 # (str)		  (decimal)		| (decimal)			  #
@@ -188,12 +169,6 @@ print(dec_bat.col_name("decimal"),
 [ "nec_big",	  -11220000000000E30,	  -11219999999999999000E24	  ]
 [ "dec_huge",	  22440000000000E9000,	  nil				  ]
 [ "nec_huge",	  -2244E9010,		  nil				  ]
-
-# test set_scale and set_precision
-print(dec_bat.col_name("decimal"), 
-      [setscale](dec_bat,0).col_name("setscale(0)"),
-      [setscale](dec_bat,10).col_name("setscale(10)"),
-      [setscale](dec_bat,[-](dec_scl,5)).col_name("setscale(-5)"));
 #-------------------------------------------------------------------------------------------------------------------------#
 # BAT:		  decimal		| setscale(0)		| setscale(10)		| setscale(-5)			  #
 # (str)		  (decimal)		| (decimal)		| (decimal)		| (decimal)			  #
@@ -210,11 +185,6 @@ print(dec_bat.col_name("decimal"),
 [ "nec_big",	  -11220000000000E30,	  -1122(40 times 0),	  -1122(30 times 0)E10,	  -1122000000000000000E25	  ]
 [ "dec_huge",	  22440000000000E9000,	  2244(9010 times 0),	  2244(9000 times 0)E10,  2244000000000000000E8995	  ]
 [ "nec_huge",	  -2244E9010,		  -2244(9010 times 0),	  -2244(9000 times 0)E10, -224400000E9005		  ]
-
-print(dec_bat.col_name("decimal"), 
-      [setprecision](dec_bat,0).col_name("setprecision(0)"),
-      [setprecision](dec_bat,10).col_name("setprecision(10)"),
-      [setprecision](dec_bat,[-](dec_prc,5)).col_name("setprecision(-5)"));
 #-----------------------------------------------------------------------------------------------------------------#
 # BAT:		  decimal		| setprecision(0)	| setprecision(10)	| setprecision(-5)	  #
 # (str)		  (decimal)		| (decimal)		| (decimal)		| (decimal)		  #
@@ -231,10 +201,6 @@ print(dec_bat.col_name("decimal"),
 [ "nec_big",	  -11220000000000E30,	  0,			  -1122000000E34,	  -112200000E35		  ]
 [ "dec_huge",	  22440000000000E9000,	  0,			  2244000000E9004,	  224400000E9005	  ]
 [ "nec_huge",	  -2244E9010,		  0,			  -2244000000E9004,	  nil			  ]
-
-print(dec_bat.col_name("decimal"), 
-      [addscale](dec_bat,-5).col_name("addscale(-5)"),
-      [addscale](dec_bat,5).col_name("addscale(5)"));
 #-----------------------------------------------------------------------------------------#
 # BAT:		  decimal		| addscale(-5)		| addscale(5)		  #
 # (str)		  (decimal)		| (decimal)		| (decimal)		  #
@@ -251,18 +217,6 @@ print(dec_bat.col_name("decimal"),
 [ "nec_big",	  -11220000000000E30,	  -11220000000000E25,	  -11220000000000E35	  ]
 [ "dec_huge",	  22440000000000E9000,	  22440000000000E8995,	  22440000000000E9005	  ]
 [ "nec_huge",	  -2244E9010,		  -2244E9005,		  -2244E9015		  ]
-
-# test binary operators
-var dec_zero := project(dec_bat.reverse,0@0).reverse;
-var dec_cart := join(dec_zero.reverse,dec_zero);
-var dec_bat1 := dec_cart.reverse.mark(0@0).reverse;
-var dec_bat2 := dec_cart.mark(0@0).reverse;
-var dec_raise := [-]([getprecision](dec_bat1),10);
-var dec_prec := [-]([getprecision](dec_bat1),1);
-
-print(dec_bat1.col_name("decimal1"),
-      dec_raise.col_name("raise"),
-      [pow](dec_bat1,dec_raise).col_name("pow"));
 #---------------------------------------------------------#
 # BAT:	  decimal1		| raise	| pow		  #
 # (void)  (decimal)		| (int)	| (decimal)	  #
@@ -411,11 +365,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  4,	  158478897E164	  ]
 [ 142@0,  22440000000000E9000,	  4,	  nil		  ]
 [ 143@0,  -2244E9010,		  -6,	  nil		  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_raise.col_name("raise"),
-      dec_prec.col_name("precision"),
-      [pow](dec_bat1,dec_raise,dec_prec).col_name("pow"));
 #-------------------------------------------------------------------------#
 # BAT:	  decimal1		| raise	| precision	| pow		  #
 # (void)  (decimal)		| (int)	| (int)		| (decimal)	  #
@@ -564,10 +513,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  4,	  13,		  15847889E165	  ]
 [ 142@0,  22440000000000E9000,	  4,	  13,		  nil		  ]
 [ 143@0,  -2244E9010,		  -6,	  3,		  nil		  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [*](dec_bat1,dec_bat2).col_name("*"));
 #-------------------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| *		  #
 # (void)  (decimal)		| (decimal)		| (decimal)	  #
@@ -716,10 +661,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  2517768E9050	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  nil		  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  nil		  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [/](dec_bat1,dec_bat2).col_name("/"));
 #-------------------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| /		  #
 # (void)  (decimal)		| (decimal)		| (decimal)	  #
@@ -868,10 +809,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  0		  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  -1		  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  1		  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [divide](dec_bat1,dec_bat2,10).col_name("divide"));
 #-------------------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| divide	  #
 # (void)  (decimal)		| (decimal)		| (decimal)	  #
@@ -1020,11 +957,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  5E-8971	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  -1		  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  1		  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      dec_prec.col_name("precision"),
-      [divide](dec_bat1,dec_bat2,dec_prec).col_name("divide"));
 #-----------------------------------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| precision	| divide	  #
 # (void)  (decimal)		| (decimal)		| (int)		| (decimal)	  #
@@ -1173,10 +1105,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  13,		  5E-8971	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  13,		  -1		  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  3,		  1		  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [+](dec_bat1,dec_bat2).col_name("+"));
 #-----------------------------------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| +				  #
 # (void)  (decimal)		| (decimal)		| (decimal)			  #
@@ -1325,10 +1253,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  -2244(8966 times 0)1122E40	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  0				  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  -4488E9010			  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [-](dec_bat1,dec_bat2).col_name("-"));
 #-----------------------------------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| -				  #
 # (void)  (decimal)		| (decimal)		| (decimal)			  #
@@ -1477,10 +1401,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  2243(8966 times 9)8878E40	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  4488E9010			  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  0				  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [=](dec_bat1,dec_bat2).col_name("="));
 #-----------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| =	  #
 # (void)  (decimal)		| (decimal)		| (bit)	  #
@@ -1629,10 +1549,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  false	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  false	  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  true	  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [!=](dec_bat1,dec_bat2).col_name("!="));
 #-----------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| !=	  #
 # (void)  (decimal)		| (decimal)		| (bit)	  #
@@ -1781,10 +1697,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  true	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  true	  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  false	  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [<](dec_bat1,dec_bat2).col_name("<"));
 #-----------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| <	  #
 # (void)  (decimal)		| (decimal)		| (bit)	  #
@@ -1933,10 +1845,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  false	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  false	  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  false	  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [<=](dec_bat1,dec_bat2).col_name("<="));
 #-----------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| <=	  #
 # (void)  (decimal)		| (decimal)		| (bit)	  #
@@ -2085,10 +1993,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  false	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  false	  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  true	  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [>](dec_bat1,dec_bat2).col_name(">"));
 #-----------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| >	  #
 # (void)  (decimal)		| (decimal)		| (bit)	  #
@@ -2237,10 +2141,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  true	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  true	  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  false	  ]
-
-print(dec_bat1.col_name("decimal1"),
-      dec_bat2.col_name("decimal2"),
-      [>=](dec_bat1,dec_bat2).col_name(">="));
 #-----------------------------------------------------------------#
 # BAT:	  decimal1		| decimal2		| >=	  #
 # (void)  (decimal)		| (decimal)		| (bit)	  #
@@ -2389,15 +2289,6 @@ print(dec_bat1.col_name("decimal1"),
 [ 141@0,  -11220000000000E30,	  -2244E9010,		  true	  ]
 [ 142@0,  22440000000000E9000,	  -2244E9010,		  true	  ]
 [ 143@0,  -2244E9010,		  -2244E9010,		  true	  ]
-
-# test unary operators
-var dec_abs := [abs](dec_bat);
-var dec_neg := [-](dec_bat);
-
-print(dec_bat.col_name("decimal"),
-      [isnil](dec_bat).col_name("isnil"),
-      dec_abs.col_name("[abs]"),
-      dec_neg.col_name("[-]"));
 #---------------------------------------------------------------------------------#
 # BAT:		  decimal		| isnil	| [abs]		| [-]		  #
 # (str)		  (decimal)		| (bit)	| (decimal)	| (decimal)	  #
@@ -2414,9 +2305,6 @@ print(dec_bat.col_name("decimal"),
 [ "nec_big",	  -11220000000000E30,	  false,  1122E40,	  1122E40	  ]
 [ "dec_huge",	  22440000000000E9000,	  false,  2244E9010,	  -2244E9010	  ]
 [ "nec_huge",	  -2244E9010,		  false,  2244E9010,	  2244E9010	  ]
-
-# test sorting
-dec_bat.reverse.sort.reverse.col_name("sorted dec").print;
 #-----------------------------------------#
 # BAT:		  sorted dec		  #
 # (str)		  (decimal)		  #
@@ -2433,7 +2321,6 @@ dec_bat.reverse.sort.reverse.col_name("sorted dec").print;
 [ "dec_num",	  4488E15		  ]
 [ "dec_big",	  1122E40		  ]
 [ "dec_huge",	  22440000000000E9000	  ]
-dec_abs.reverse.sort.reverse.col_name("sorted abs(dec)").print;
 #-----------------------------------------#
 # BAT:		  sorted abs(dec)	  #
 # (str)		  (decimal)		  #
@@ -2450,9 +2337,6 @@ dec_abs.reverse.sort.reverse.col_name("sorted abs(dec)").print;
 [ "nec_big",	  1122E40		  ]
 [ "dec_huge",	  2244E9010		  ]
 [ "nec_huge",	  2244E9010		  ]
-
-# test hash-join
-dec_abs.join(dec_abs.reverse).print;
 #---------------------------------#
 # BAT:		  tmp_53	  #
 # (str)		  (str)		  #
@@ -2519,9 +2403,6 @@ group(int_10K=100) = 3 ms
 [pow](int_10K=10000) = 263 ms
 sort(int_10K) = 32 ms
 #~EndVariableOutput~#
-
-var dec_10K := [decimal](int_10K);
-printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_10K, decimal("101"), "dec_10K"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 [/](dec_10K) = 40ms
 join(dec_10K=10000) = 37 ms
@@ -2532,15 +2413,6 @@ group(dec_10K=100) = 9 ms
 [pow](dec_10K=10000) = 932 ms
 sort(dec_10K) = 105 ms
 #~EndVariableOutput~#
-
-var int_100K := new(void,int,100000);
-while((i :+= 1) < 10) {
-        var base := (9 - i) * 10000;
-        int_100K.insert([+](int_10K,base));
-}
-int_100K.seqbase(0@0);
-
-printf("#~BeginVariableOutput~#\n"); arith_perftest(int_100K, 1001, "int_100K"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 [/](int_100K) = 34ms
 join(int_100K=100000) = 180 ms
@@ -2551,9 +2423,6 @@ group(int_100K=100) = 35 ms
 [pow](int_100K=100000) = 2738 ms
 sort(int_100K) = 959 ms
 #~EndVariableOutput~#
-
-var dec_100K := [decimal](int_100K);
-printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_100K, decimal("1001"), "dec_100K"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 [/](dec_100K) = 463ms
 join(dec_100K=100000) = 768 ms
@@ -2564,15 +2433,6 @@ group(dec_100K=100) = 92 ms
 [pow](dec_100K=100000) = 9680 ms
 sort(dec_100K) = 2378 ms
 #~EndVariableOutput~#
-
-var int_1M := new(void,int,1000000);
-while((i :-= 1) >= 0) {
-        var base := i * 100000;
-        int_1M.insert([+](int_100K,base));
-}
-int_1M.seqbase(0@0);
-
-printf("#~BeginVariableOutput~#\n"); arith_perftest(int_1M, 10001, "int_1M"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 [/](int_1M) = 333ms
 join(int_1M=1000000) = 1700 ms
@@ -2581,9 +2441,6 @@ group(int_1M=100) = 338 ms
 [-](int_1M=1000000) = 337 ms
 [+](int_1M=1000000) = 800 ms
 #~EndVariableOutput~#
-
-var dec_1M := [decimal](int_1M);
-printf("#~BeginVariableOutput~#\n"); arith_perftest(dec_1M, decimal("10001"), "dec_1M"); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 [/](dec_1M) = 5000ms
 join(dec_1M=1000000) = 6238 ms
@@ -2592,5 +2449,3 @@ group(dec_1M=100) = 911 ms
 [-](dec_1M=1000000) = 10960 ms
 [+](dec_1M=1000000) = 11937 ms
 #~EndVariableOutput~#
-
-quit;

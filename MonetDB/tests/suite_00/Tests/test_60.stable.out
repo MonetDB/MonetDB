@@ -25,42 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# For distributed processing it should be possible
-# split and re-distribute BATs.
-# This is supported by hashsplit, rangesplit,  and groupby operations.
-
-PROC groupby(b, rng) := {
- VAR r := rng.reverse.number.reverse;
- VAR l := rng.number.reverse;
- RETURN [select]([l~const b],l,r);
-}
-
-
-b:= new(int,int);
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-b.insert(int(nil),int(nil));
-b.insert(int(nil),81);
-b.rename("b");
-
-rng:= new(int,int);
-rng.insert(1,1);
-rng.insert(1,9);
-rng.insert(int(nil),9);
-rng.insert(1,int(nil));
-rng.insert(9,9);
-rng.insert(3,5);
-
-bb := b.groupby(rng);
-bb.print;
 #-------------------------#
 # BAT:	  tmp_28	  #
 # (int)	  (BAT)		  #
@@ -71,7 +35,6 @@ bb.print;
 [ 3,	  <tmp_32>	  ]
 [ 4,	  <tmp_33>	  ]
 [ 5,	  <tmp_34>	  ]
-bb@batloop() $t.print;
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
@@ -107,24 +70,6 @@ bb@batloop() $t.print;
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
-
-# other values;
-x:= new(int,chr);
-x.insert(1,'a');
-x.insert(2,'a');
-x.insert(3,'b');
-x.insert(4,'b');
-x.insert(5,'b');
-x.insert(6,'b');
-x.insert(7,'c');
-x.insert(8,'c');
-
-t := new(chr,chr);
-t.insert('a','b');
-t.insert('c','c');
-t.insert('b','b');
-xx:= x.groupby(t);
-xx.print;
 #-------------------------#
 # BAT:	  tmp_37	  #
 # (int)	  (BAT)		  #
@@ -132,7 +77,6 @@ xx.print;
 [ 0,	  <tmp_38>	  ]
 [ 1,	  <tmp_39>	  ]
 [ 2,	  <tmp_40>	  ]
-xx@batloop() $t.print;
 #-----------------#
 # BAT:	  tmp_38  #
 # (int)	  (chr)	  #
@@ -157,25 +101,6 @@ xx@batloop() $t.print;
 [ 4,	  'b'	  ]
 [ 5,	  'b'	  ]
 [ 6,	  'b'	  ]
-
-# other values;
-x:= new(int,str);
-x.insert(1,"a");
-x.insert(2,"a");
-x.insert(3,"b");
-x.insert(4,"b");
-x.insert(5,"b");
-x.insert(6,"b");
-x.insert(7,"c");
-x.insert(8,"c");
-
-t:= new(str,str);
-t.rename("t");
-t.insert("a","b");
-t.insert("c","c");
-t.insert("b","b");
-xx:= x.groupby(t);
-xx.print;
 #-------------------------#
 # BAT:	  tmp_41	  #
 # (int)	  (BAT)		  #
@@ -183,7 +108,6 @@ xx.print;
 [ 0,	  <tmp_42>	  ]
 [ 1,	  <tmp_43>	  ]
 [ 2,	  <tmp_44>	  ]
-xx@batloop() $t.print;
 #-----------------#
 # BAT:	  tmp_42  #
 # (int)	  (str)	  #
@@ -208,4 +132,3 @@ xx@batloop() $t.print;
 [ 4,	  "b"	  ]
 [ 5,	  "b"	  ]
 [ 6,	  "b"	  ]
-quit;

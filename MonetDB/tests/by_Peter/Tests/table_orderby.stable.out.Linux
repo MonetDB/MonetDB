@@ -25,19 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-
-
-a := new(void,str);
-a.insert(nil, "the");
-a.insert(nil, "cat");
-a.insert(nil, "sat");
-a.insert(nil, "on");
-a.insert(nil, "the");
-a.insert(nil, "mat");
-
-c := a.copy.seqbase(0@0);
-b := [str](c);
-print(c,b);
 #-------------------------#
 # BAT:	  tmp_25| tmp_27  #
 # (void)  (str)	| (str)	  #
@@ -48,9 +35,6 @@ print(c,b);
 [ 3@0,	  "on",	  "on"	  ]
 [ 4@0,	  "the",  "the"	  ]
 [ 5@0,	  "mat",  "mat"	  ]
-
-d := c.mark(10000@0);
-print("1",c,d);
 #---------------------------------#
 # BAT:	  tmp_32| tmp_28	  #
 # (oid)	  (str)	| (void)	  #
@@ -61,7 +45,6 @@ print("1",c,d);
 [ 2@0,	  "sat",  10002@0	  ]
 [ 0@0,	  "the",  10000@0	  ]
 [ 4@0,	  "the",  10004@0	  ]
-print("2",c,d);
 #---------------------------------#
 # BAT:	  tmp_25| tmp_31	  #
 # (void)  (str)	| (oid)		  #
@@ -72,12 +55,6 @@ print("2",c,d);
 [ 3@0,	  "on",	  10003@0	  ]
 [ 4@0,	  "the",  10004@0	  ]
 [ 5@0,	  "mat",  10005@0	  ]
-
-e := [oid](d).access(BAT_WRITE).seqbase(nil).insert([oid]([*]([int](d),2)));
-e := e.insert(e.copy).reverse.sort.mark(0@0).reverse;
-f := a.copy.access(BAT_WRITE).insert(a).insert(a).insert(a).seqbase(0@0);
-g := [>]([int](f.mirror),12);
-print("1",e,f,g);
 #-----------------------------------------#
 # BAT:	  tmp_36	| tmp_32| tmp_34  #
 # (void)  (oid)		| (str)	| (bit)	  #
@@ -106,7 +83,6 @@ print("1",e,f,g);
 [ 21@0,	  20008@0,	  "on",	  true	  ]
 [ 22@0,	  20010@0,	  "the",  true	  ]
 [ 23@0,	  20010@0,	  "mat",  true	  ]
-print("1,2",e,f,g);
 #-----------------------------------------#
 # BAT:	  tmp_35	| tmp_32| tmp_34  #
 # (oid)	  (oid)		| (str)	| (bit)	  #
@@ -135,7 +111,6 @@ print("1,2",e,f,g);
 [ 20@0,	  20008@0,	  "sat",  true	  ]
 [ 23@0,	  20010@0,	  "mat",  true	  ]
 [ 22@0,	  20010@0,	  "the",  true	  ]
-print("2",e,f,g);
 #-----------------------------------------#
 # BAT:	  tmp_30	| tmp_33| tmp_34  #
 # (void)  (oid)		| (str)	| (bit)	  #
@@ -164,7 +139,6 @@ print("2",e,f,g);
 [ 16@0,	  20004@0,	  "the",  true	  ]
 [ 18@0,	  20006@0,	  "the",  true	  ]
 [ 22@0,	  20010@0,	  "the",  true	  ]
-print("2,1",e,f,g);
 #-----------------------------------------#
 # BAT:	  tmp_30	| tmp_35| tmp_34  #
 # (void)  (oid)		| (str)	| (bit)	  #
@@ -193,7 +167,6 @@ print("2,1",e,f,g);
 [ 16@0,	  20004@0,	  "the",  true	  ]
 [ 18@0,	  20006@0,	  "the",  true	  ]
 [ 22@0,	  20010@0,	  "the",  true	  ]
-print("3,1,2",e,f,g);
 #-----------------------------------------#
 # BAT:	  tmp_30	| tmp_32| tmp_36  #
 # (void)  (oid)		| (str)	| (bit)	  #
@@ -222,5 +195,3 @@ print("3,1,2",e,f,g);
 [ 20@0,	  20008@0,	  "sat",  true	  ]
 [ 23@0,	  20010@0,	  "mat",  true	  ]
 [ 22@0,	  20010@0,	  "the",  true	  ]
-
-quit;

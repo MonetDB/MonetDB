@@ -25,32 +25,18 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#test basic functionality of the BAT library.
-#focussed on temporary reversal of roles.
-
-b:= new(int,str);
-
-b.insert(1,"15");
-
-b.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "15"	  ]
-
-b.reverse.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (str)	  (int)	  #
 #-----------------#
 [ "15",	  1	  ]
-
-b.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "15"	  ]
-quit;

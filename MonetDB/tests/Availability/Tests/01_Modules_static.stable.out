@@ -25,52 +25,8 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-
-Fname:=new(oid,str);Fname.col_name("function");
-FnameS:=new(oid,str);FnameS.col_name("function");
-Ftype:=new(oid,str);Ftype.col_name("type");
-Fmod:=new(oid,str);Fmod.col_name("module");
-Fsig:=new(oid,str);Fsig.col_name("signature");
-Fhelp:=new(oid,str);Fhelp.col_name("help");
-Fnts:=new(oid,str);
-
-monet_fcntbl.sort@batloop {
-	Tname:=$h;
-	Ttype:=help_tpe(monet_fcn_tpe.find($t));
-	Tmod:="";
-	if (monet_fcn_mid.exist($t)) {
-		Tmod:=monet_mod_nme.find(monet_fcn_mid.find($t));
-	} else {
-		Tmod:="";
-	}
-	Tsig:=format_fcn_sig($t);
-	Thelp:="";
-	if (monet_fcn_dsc.exist($t)) {
-		Thelp:=monet_fcn_dsc.find($t);
-	} else {
-		Thelp:="not available";
-	}
-	Fname.insert($t,Tname);
-	Ftype.insert($t,Ttype);
-	Fmod.insert($t,Tmod);
-	Fsig.insert($t,Tsig);
-	Fhelp.insert($t,Thelp);
-	Fnts.insert($t,sprintf("%s %s %s",Tname,Ttype,Tsig));
-}
-
-Fnts.count.print;
 [ 497 ]
-Fnts.reverse.sort.reverse@batloop {
-	FnameS.insert($h,Fname.find($h));
-}
-FnameS.count.print;
 [ 497 ]
-
-All:=0;
-
-Static_mods:=Fmod.reverse.kunique.sort.copy;
-table(Static_mods.reverse.col_name(sprintf("%i modules",Static_mods.count)));
 #-----------------#
 # 8 modules	  #
 #-----------------#
@@ -82,12 +38,6 @@ table(Static_mods.reverse.col_name(sprintf("%i modules",Static_mods.count)));
 [ "str"		  ]
 [ "sys"		  ]
 [ "trans"	  ]
-Static_mods@batloop {
-	printf("\nModule: \"%s\"\n\n",$h);
-	FnameM:=kintersect(FnameS,Fmod.select($h));FnameM.col_name("function");
-	FnameM.count.print; table(1,FnameM,Ftype,Fsig,Fhelp);
-	All:=All+FnameM.count;
-}
 
 Module: ""
 
@@ -641,8 +591,4 @@ Module: "trans"
 [ "commit",	  "COMMAND: ",	  "commit(BAT[any,any], ..BAT[any,any]..) : void",				  "commit changes in certain BATs."																																									  ]
 [ "delta",	  "COMMAND: ",	  "delta(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "give list of deletions since last commit."																																								  ]
 [ "sync",	  "COMMAND: ",	  "sync() : void",								  "save all persistent BATs"																																										  ]
-
-All.print;
 [ 497 ]
-
-quit;

@@ -25,14 +25,5 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#exercise simple loop
-bats@batloop() {
-	print("enter");
-        tmp := bats.select($2);
-        tmp.print;
-}
 !WARNING: interpret: convert identifier 'bats' to string.
 !ERROR: interpret_iterator: iterator should work on a BAT.
-
-quit;

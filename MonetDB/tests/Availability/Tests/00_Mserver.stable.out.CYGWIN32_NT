@@ -161,17 +161,10 @@ MODULES.sort.print;
 [ "url",	  "plain"	  ]
 [ "wisc",	  "plain"	  ]
 [ "xtables",	  "plain"	  ]
-
-commit;
-setoid(oid(20000000));
-
-ls;
 #-----------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-----------------------------------------------------------------------------------------#
 [ "MODULES",	  "str",  "str",  44,	  0,	  "clean",	  "load", "pers", 1	  ]
-
-dir;
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
@@ -198,8 +191,6 @@ dir;
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
-
-table(monet_mod_nme.reverse.sort.reverse.col_name("static modules"));
 #-----------------#
 # static modules  #
 #-----------------#
@@ -211,8 +202,6 @@ table(monet_mod_nme.reverse.sort.reverse.col_name("static modules"));
 [ "sys"		  ]
 [ "trans"	  ]
 [ "ascii_io"		  ]
-
-table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col_name("dynamic modules"));
 #-------------------------#
 # dynamic modules	  #
 #-------------------------#
@@ -256,7 +245,3 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "url"			  ]
 [ "wisc"		  ]
 [ "xtables"		  ]
-
-commit;
-
-quit;

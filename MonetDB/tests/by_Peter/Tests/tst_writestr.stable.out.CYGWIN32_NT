@@ -25,37 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-# test memory map of string heap under append
-i := 0;
-b := 500000;
-BIG := new(void,int,50000000); # claim 200MB
-d := new(void,int,b).seqbase(0@0);
-
-# temporarily disable propmask in order to make this bearable
-m := debugmask;
-debugmask(2);
-while(i < b) d.insert(nil,i :+= 1);
-debugmask(m);
-
-{
- new(void,str,1000000).seqbase(0@0).access(BAT_WRITE).rename("aa").persists(true);
- unload("aa");
-}
-
-commit;
-
-i := 0;
-while(true) { 
- aa.info.reverse.select("theap.storage").reverse.print;
- e := [str]([+](d,b));
- #e := [str]([/](d,10000));
- print(b :+= 500000); 
- aa.insert(e);
- aa.mmap(1,1,1,1,1);
- i :+= 1;
- if (i = 4) shutdown;
- unload("aa");
-}
 #-------------------------------------------------#
 # BAT:			  tmp_31		  #
 # (str)			  (str)			  #

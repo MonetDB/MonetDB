@@ -25,35 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-PROC tmp() : void := {
-        var sts := view_bbp_status.semijoin(view_bbp_kind.select("tran"));
-        var nme := view_bbp_name.access(BAT_WRITE).col_name("name");
-        var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-        nme.replace(rev).table(view_bbp_heat, sts.col_name("status"),
-                view_bbp_kind, view_bbp_refcnt);
-}
-
-#NOTE: the reference counter of bat(name) is during insertion
-#      into bat(b) correctly increased
-PROC addBAT(bat b,str name) := {
-	VAR add := new(int,int);
-	add.rename(name);
-	b.insert(name,add);
-}
-
-#BUG: bat(name) will not be deleted in the garbage collection
-#     because the delete doesn't decrease the reference counter
-PROC delBAT(bat b,str name) := {
-	b.delete(name);
-}
-
-PROC createBAT(str name) := {
-	VAR res := new(int,int);
-	res.rename(name);
-	RETURN res;
-}
-
-tmp;
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
@@ -79,29 +50,6 @@ tmp;
 [ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
-
-{
-
-VAR top := new(str,bat);
-top.rename("top");
-
-addBAT(top,"one");
-addBAT(top,"two");
-tmp;
-
-delBAT(top,"one");
-tmp;
-
-VAR i := new(oid,str);
-i.insert(oid(10),"ten");
-i.insert(oid(20),"twenty");
-VAR res := [createBAT](i);
-tmp;
-
-top := nil;
-res := nil;
-
-}
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
@@ -188,13 +136,6 @@ res := nil;
 [ "top",		  0,	  "load", "tran", 1	  ]
 [ "tmp_28",		  0,	  "load", "tran", 1	  ]
 [ "twenty",		  0,	  "load", "tran", 1	  ]
-
-#BUGS:
-#- bat("one") still exists, due to not decreasing the reference counter
-#  at the delete from bat("top")
-#- bat("ten") and bat("twenty") still exist, due to creation during multiplex
-#  operation (?)
-tmp;
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
@@ -220,4 +161,3 @@ tmp;
 [ "monet_fcntbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
-quit;

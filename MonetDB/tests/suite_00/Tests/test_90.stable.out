@@ -25,23 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#test mark and number primitives
-
-b:= new(str,int);
-b.insert("the",1);
-b.insert("quick",20);
-b.insert("brown",30);
-b.insert("fox",40);
-b.insert("jumps",50);
-b.insert("over",60);
-b.insert("lazy",70);
-b.insert("dog",80);
-b.insert(str(nil),90);
-b.insert(".",100);
-b.insert("",int(nil));
-b.insert(str(nil),int(nil));
-b.print;
 #-------------------------#
 # BAT:		  tmp_24  #
 # (str)		  (int)	  #
@@ -58,9 +41,6 @@ b.print;
 [ ".",		  100	  ]
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
-
-c:= mark(b);
-print(c);
 #---------------------------------#
 # BAT:		  tmp_23	  #
 # (str)		  (void)	  #
@@ -77,9 +57,6 @@ print(c);
 [ ".",		  20000059@0	  ]
 [ "",		  20000060@0	  ]
 [ nil,		  20000061@0	  ]
-
-d:=number(b);
-print(d);
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -96,4 +73,3 @@ print(d);
 [ ".",		  9	  ]
 [ "",		  10	  ]
 [ nil,		  11	  ]
-quit;

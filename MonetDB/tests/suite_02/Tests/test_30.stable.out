@@ -25,10 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(2000000));
-# load a few wisconsin tables and produce histograms
-h1:= W10k_evenOnePercent.histogram;
-h1.sort.print;
 #-----------------#
 # BAT:	  tmp_61  #
 # (int)	  (int)	  #
@@ -83,16 +79,15 @@ h1.sort.print;
 [ 94,	  200	  ]
 [ 96,	  200	  ]
 [ 98,	  200	  ]
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  140	  ]
+[ "user",	  170	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  60	  ]
+[ "system",	  360	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -100,33 +95,31 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1220608	  ]
-[ "arena",	  1269744	  ]
-[ "ordblks",	  108		  ]
-[ "smblks",	  7680		  ]
-[ "hblkhd",	  15360		  ]
-[ "hblks",	  480		  ]
-[ "usmblks",	  314368	  ]
-[ "fsmblks",	  438272	  ]
-[ "uordblks",	  488352	  ]
-[ "fordblks",	  13392		  ]
+[ "memincr",	  1110016	  ]
+[ "arena",	  1138216	  ]
+[ "ordblks",	  492		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  702064	  ]
+[ "fordblks",	  436152	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1472	  ]
-[ "minflt",	  127	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  344	  ]
+[ "majflt",	  455	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  18	  ]
-[ "ninvcsw",	  1	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-h2:= W10k_tenPercent.histogram;
-h2.sort.print;
 #-----------------#
 # BAT:	  tmp_62  #
 # (int)	  (int)	  #
@@ -141,16 +134,15 @@ h2.sort.print;
 [ 7,	  1000	  ]
 [ 8,	  1000	  ]
 [ 9,	  1000	  ]
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  140	  ]
+[ "user",	  170	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  60	  ]
+[ "system",	  360	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -158,29 +150,28 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  40960		  ]
-[ "arena",	  1310704	  ]
-[ "ordblks",	  112		  ]
-[ "smblks",	  7680		  ]
-[ "hblkhd",	  15360		  ]
-[ "hblks",	  480		  ]
-[ "usmblks",	  315392	  ]
-[ "fsmblks",	  437248	  ]
-[ "uordblks",	  531600	  ]
-[ "fordblks",	  11104		  ]
+[ "memincr",	  0		  ]
+[ "arena",	  1138216	  ]
+[ "ordblks",	  491		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  745568	  ]
+[ "fordblks",	  392648	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1504	  ]
-[ "minflt",	  127	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  344	  ]
+[ "majflt",	  466	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  18	  ]
-[ "ninvcsw",	  1	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-quit;

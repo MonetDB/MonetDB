@@ -25,12 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# Test for the 'sys' module.
-module(sys);
-
-# Pseudo bat to map a BAT id into its name
-view_bbp_name.print;
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -57,9 +51,6 @@ view_bbp_name.print;
 [ 20,	  "monet_fcntbl"	  ]
 [ 21,	  "monet_acctbl"	  ]
 [ 22,	  "monet_atomtbl"	  ]
-
-# Pseudo bat to map a BAT id into its refcnt
-view_bbp_refcnt.print;
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -86,9 +77,6 @@ view_bbp_refcnt.print;
 [ 20,	  1	  ]
 [ 21,	  1	  ]
 [ 22,	  1	  ]
-
-# Pseudo bat to map a BAT id into its disk location
-view_bbp_location.print;
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -115,9 +103,6 @@ view_bbp_location.print;
 [ 20,	  "20"		  ]
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
-
-# Pseudo bat to map a BAT id into its heat
-view_bbp_heat.print;
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -144,9 +129,6 @@ view_bbp_heat.print;
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
-
-# Pseudo bat to map a BAT id into its dirty status
-view_bbp_dirty.print;
 #-------------------------#
 # BAT:	  status	  #
 # (int)	  (str)		  #
@@ -173,9 +155,6 @@ view_bbp_dirty.print;
 [ 20,	  "dirty"	  ]
 [ 21,	  "dirty"	  ]
 [ 22,	  "dirty"	  ]
-
-# Pseudo bat to map a BAT id into its disk/loaded/dirty status
-view_bbp_status.print;
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -202,9 +181,6 @@ view_bbp_status.print;
 [ 20,	  "load"  ]
 [ 21,	  "load"  ]
 [ 22,	  "load"  ]
-
-# Pseudo bat to map a BAT id into its type
-view_bbp_kind.print;
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -231,39 +207,23 @@ view_bbp_kind.print;
 [ 20,	  "tran"  ]
 [ 21,	  "tran"  ]
 [ 22,	  "tran"  ]
-
-# Pseudo bat with statistics on the use of BAT buffer pool
-"view_bbp_info".print;
 [ "view_bbp_info" ]
-
-# Pseudo bat to map an atom type id into its name
-"view_atom_name".print;
 [ "view_atom_name" ]
-
-# Pseudo bat with variable settings for GDK
-"view_gdk_env".print;
 [ "view_gdk_env" ]
-printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#-------------------------------------------------------------------------#
-# BAT:		  env							  #
-# (str)		  (str)							  #
-#-------------------------------------------------------------------------#
-[ "dbname",	  "tests_suite_08"					  ]
-[ "server",	  "apollo-hrn0615.multiweb.net"				  ]
-[ "port",	  "50072"						  ]
-[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/tests_suite_08"	  ]
-[ "owner",	  "niels"						  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"				  ]
-[ "processid",	  "10774"						  ]
-[ "home",	  "/home/niels/new/monet/Linux"				  ]
-[ "version",	  "4.2"							  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:		  env											  #
+# (str)		  (str)											  #
+#---------------------------------------------------------------------------------------------------------#
+[ "dbname",	  "tests_suite_08"									  ]
+[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/tests_suite_08"  ]
+[ "owner",	  "manegold"										  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"								  ]
+[ "processid",	  "18118"										  ]
+[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/Linux2.2.14-12smp"			  ]
+[ "version",	  "4.2"											  ]
 #~EndVariableOutput~#
-
-# Pseudo bat to map thread to name
-"view_gdk_thread".print;
 [ "view_gdk_thread" ]
-printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -271,46 +231,20 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariabl
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-
-# Pseudo bat to map client identifier to its name
-view_client_name.print;
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
 #-----------------#
 [ 0,	  "adm"	  ]
-
-# Pseudo bat to map client identifier to its login time
-printf("#~BeginVariableOutput~#\n"); view_client_login.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Tue Sep 12 16:27:22 2000"	  ]
+[ 0,	  "Fri Jan 19 17:47:30 2001"	  ]
 #~EndVariableOutput~#
-
-# Pseudo bat to map client identifier to its current active tree
-view_client_tree.print;
 #-----------------------------------------#
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 0,	  "print(view_client_tree())"	  ]
-
-# Pseudo bat to map module name to their functions
-#view_mod_fcn.print;
-
-# Pseudo bat to map queue entry to its action
-#view_queue_action.print;
-
-# Pseudo bat to gain access to all visible variables
-view_var_type = view_var_type; 
-
-# Pseudo bat to map variable name to frozen/liquid
-view_var_kind = view_var_kind; 
-
-# Pseudo bat to map variable name to constant/changeable
-view_var_constant = view_var_constant; 
-
-quit;

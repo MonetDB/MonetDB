@@ -27,21 +27,12 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(10000000));
-
-printf("Start of MIL prelude.\n");
 Start of MIL prelude.
-
-clientid().print();
-[ 0 ]
-debugmask().print();
+[ 1 ]
 [ 10 ]
-qstat();
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
-
-bbp.print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -52,7 +43,6 @@ bbp.print();
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
-loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -63,7 +53,6 @@ loaded();
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-procs();
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -130,7 +119,6 @@ procs();
 [ "vars() : void"									  ]
 [ "vm_usage() : BAT[str,lng]"								  ]
 [ "vm_usage(int) : BAT[str,lng]"							  ]
-vars();
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
@@ -182,7 +170,6 @@ vars();
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-view_bbp_kind().print();
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -209,7 +196,6 @@ view_bbp_kind().print();
 [ 20,	  "tran"  ]
 [ 21,	  "tran"  ]
 [ 22,	  "tran"  ]
-view_bbp_location().print();
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -236,7 +222,6 @@ view_bbp_location().print();
 [ 20,	  "20"		  ]
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
-view_bbp_name().print();
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -263,7 +248,6 @@ view_bbp_name().print();
 [ 20,	  "monet_fcntbl"	  ]
 [ 21,	  "monet_acctbl"	  ]
 [ 22,	  "monet_atomtbl"	  ]
-view_bbp_refcnt().print();
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -290,7 +274,6 @@ view_bbp_refcnt().print();
 [ 20,	  1	  ]
 [ 21,	  1	  ]
 [ 22,	  1	  ]
-view_bbp_status().print();
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -317,13 +300,12 @@ view_bbp_status().print();
 [ 20,	  "load"  ]
 [ 21,	  "load"  ]
 [ 22,	  "load"  ]
-view_client_tree().print();
-#-----------------------------------------#
-# BAT:	  tree				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  "print(view_client_tree())"	  ]
-view_gdk_bbp().print();
+#-------------------------------------------------------------------------------------------------#
+# BAT:	  tree											  #
+# (int)	  (str)											  #
+#-------------------------------------------------------------------------------------------------#
+[ 0,	  ""											  ]
+[ 1,	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());print"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -334,7 +316,6 @@ view_gdk_bbp().print();
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
-view_var_constant().print();
 #-----------------------------------------#
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
@@ -386,7 +367,6 @@ view_var_constant().print();
 [ "monet_fcn_tpe",	  "constant"	  ]
 [ "monet_fcn_imp",	  "constant"	  ]
 [ "monet_fcn_fcn",	  "constant"	  ]
-view_var_kind().print();
 #-----------------------------------------#
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
@@ -438,7 +418,6 @@ view_var_kind().print();
 [ "monet_fcn_tpe",	  "frozen"	  ]
 [ "monet_fcn_imp",	  "frozen"	  ]
 [ "monet_fcn_fcn",	  "frozen"	  ]
-view_var_type().print();
 #---------------------------------#
 # BAT:			  type	  #
 # (str)			  (str)	  #
@@ -490,8 +469,6 @@ view_var_type().print();
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
-
-dir();
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
@@ -517,11 +494,9 @@ dir();
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
-ls();
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------#
-view_bbp_heat().print();
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -548,188 +523,152 @@ view_bbp_heat().print();
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
-
-printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-
-queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
 #[     49,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5fe20cf0.
 unknown(0)#"                   ]
-#[     50,         1,   running,        49, "queue()#"                      ]
-threadid().print();
+#[      3,         1,   running,         0, "source("/var/tmp/manegold#"    ]
 [ 1 ]
-
-clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Tue May 23 06:15:50 2000",	  "clients()"	  ]
-cpu().print();
+[ "adm",  "Fri Jan 19 18:06:36 2001",	  ""		  ]
+[ "adm",  "Fri Jan 19 18:06:36 2001",	  "clients()"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
+[ "user",	  1110	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  70	  ]
+[ "system",	  13440	  ]
 [ "elapsystem",	  0	  ]
-env();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5921822"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
-environment().print();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5921822"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
-io().print();
+#-------------------------------------------------------------------------------------------------#
+# BAT:		  env										  #
+# (str)		  (str)										  #
+#-------------------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"									  ]
+[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "manegold"									  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
+[ "processid",	  "16486117"									  ]
+[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"										  ]
+#-------------------------------------------------------------------------------------------------#
+# BAT:		  env										  #
+# (str)		  (str)										  #
+#-------------------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"									  ]
+[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "manegold"									  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
+[ "processid",	  "16486117"									  ]
+[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1728	  ]
-[ "minflt",	  141	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  1568	  ]
+[ "minflt",	  161	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  21	  ]
-[ "ninvcsw",	  2	  ]
-memory().print();
+[ "inblock",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  15144	  ]
+[ "ninvcsw",	  83	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1417216	  ]
-[ "arena",	  1466352	  ]
-[ "ordblks",	  169		  ]
-[ "smblks",	  8048		  ]
-[ "hblkhd",	  16096		  ]
-[ "hblks",	  503		  ]
-[ "usmblks",	  382496	  ]
-[ "fsmblks",	  416736	  ]
-[ "uordblks",	  441744	  ]
-[ "fordblks",	  209280	  ]
-threads();
+[ "memincr",	  1220608	  ]
+[ "arena",	  1253360	  ]
+[ "ordblks",	  4594		  ]
+[ "smblks",	  2000		  ]
+[ "hblkhd",	  640		  ]
+[ "hblks",	  20		  ]
+[ "usmblks",	  30968		  ]
+[ "fsmblks",	  12232		  ]
+[ "uordblks",	  928560	  ]
+[ "fordblks",	  280960	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Server"	  ]
-view_client_login().print();
+[ 1,	  "Interpreter"	  ]
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Tue May 23 06:15:50 2000"	  ]
-view_client_name().print();
+[ 0,	  "Fri Jan 19 18:06:36 2001"	  ]
+[ 1,	  "Fri Jan 19 18:06:36 2001"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
 #-----------------#
 [ 0,	  "adm"	  ]
-view_gdk_cpu().print();
+[ 1,	  "adm"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  200	  ]
+[ "user",	  1120	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  70	  ]
+[ "system",	  13440	  ]
 [ "elapsystem",	  0	  ]
-view_gdk_env().print();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5921822"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
-view_gdk_io().print();
+#-------------------------------------------------------------------------------------------------#
+# BAT:		  env										  #
+# (str)		  (str)										  #
+#-------------------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"									  ]
+[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "manegold"									  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
+[ "processid",	  "16486117"									  ]
+[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1728	  ]
-[ "minflt",	  141	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  1584	  ]
+[ "minflt",	  161	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  21	  ]
-[ "ninvcsw",	  2	  ]
-view_gdk_memory().print();
+[ "inblock",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  15144	  ]
+[ "ninvcsw",	  83	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1466352	  ]
-[ "ordblks",	  168		  ]
-[ "smblks",	  8048		  ]
-[ "hblkhd",	  16096		  ]
-[ "hblks",	  503		  ]
-[ "usmblks",	  382272	  ]
-[ "fsmblks",	  416960	  ]
-[ "uordblks",	  441216	  ]
-[ "fordblks",	  209808	  ]
-view_gdk_thread().print();
+[ "arena",	  1261552	  ]
+[ "ordblks",	  4648		  ]
+[ "smblks",	  2000		  ]
+[ "hblkhd",	  640		  ]
+[ "hblks",	  20		  ]
+[ "usmblks",	  31024		  ]
+[ "fsmblks",	  12176		  ]
+[ "uordblks",	  939320	  ]
+[ "fordblks",	  278392	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Server"	  ]
-
-printf("#~EndVariableOutput~#\n");
+[ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-
-printf("End of MIL prelude.\n");
 End of MIL prelude.
-setoid(oid(20000000));
-
-printf("Start of MIL script.\n");
 Start of MIL script.
-
-clientid().print();
 [ 0 ]
-debugmask().print();
 [ 10 ]
-qstat();
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
-
-bbp.print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -740,7 +679,6 @@ bbp.print();
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
-loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -751,7 +689,6 @@ loaded();
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-procs();
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -818,7 +755,6 @@ procs();
 [ "vars() : void"									  ]
 [ "vm_usage() : BAT[str,lng]"								  ]
 [ "vm_usage(int) : BAT[str,lng]"							  ]
-vars();
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
@@ -870,7 +806,6 @@ vars();
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-view_bbp_kind().print();
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -897,7 +832,6 @@ view_bbp_kind().print();
 [ 20,	  "tran"  ]
 [ 21,	  "tran"  ]
 [ 22,	  "tran"  ]
-view_bbp_location().print();
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -924,7 +858,6 @@ view_bbp_location().print();
 [ 20,	  "20"		  ]
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
-view_bbp_name().print();
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -951,7 +884,6 @@ view_bbp_name().print();
 [ 20,	  "monet_fcntbl"	  ]
 [ 21,	  "monet_acctbl"	  ]
 [ 22,	  "monet_atomtbl"	  ]
-view_bbp_refcnt().print();
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -978,7 +910,6 @@ view_bbp_refcnt().print();
 [ 20,	  1	  ]
 [ 21,	  1	  ]
 [ 22,	  1	  ]
-view_bbp_status().print();
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -1005,13 +936,11 @@ view_bbp_status().print();
 [ 20,	  "load"  ]
 [ 21,	  "load"  ]
 [ 22,	  "load"  ]
-view_client_tree().print();
 #-----------------------------------------#
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 0,	  "print(view_client_tree())"	  ]
-view_gdk_bbp().print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -1022,7 +951,6 @@ view_gdk_bbp().print();
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
-view_var_constant().print();
 #-----------------------------------------#
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
@@ -1074,7 +1002,6 @@ view_var_constant().print();
 [ "monet_fcn_tpe",	  "constant"	  ]
 [ "monet_fcn_imp",	  "constant"	  ]
 [ "monet_fcn_fcn",	  "constant"	  ]
-view_var_kind().print();
 #-----------------------------------------#
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
@@ -1126,7 +1053,6 @@ view_var_kind().print();
 [ "monet_fcn_tpe",	  "frozen"	  ]
 [ "monet_fcn_imp",	  "frozen"	  ]
 [ "monet_fcn_fcn",	  "frozen"	  ]
-view_var_type().print();
 #---------------------------------#
 # BAT:			  type	  #
 # (str)			  (str)	  #
@@ -1178,8 +1104,6 @@ view_var_type().print();
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
-
-dir();
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
@@ -1205,11 +1129,9 @@ dir();
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
-ls();
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------#
-view_bbp_heat().print();
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -1236,172 +1158,140 @@ view_bbp_heat().print();
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
-
-printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-
-queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
 #[    132,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5fe20cf0.
 unknown(0)#"                   ]
-#[    133,         1,   running,       132, "queue()#"                      ]
-threadid().print();
+#[     51,         1,   running,        50, "queue()#"                      ]
 [ 1 ]
-
-clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Tue May 23 06:15:50 2000",	  "clients()"	  ]
-cpu().print();
+[ "adm",  "Fri Jan 19 18:06:36 2001",	  "clients()"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  1	  ]
-[ "user",	  240	  ]
-[ "elapuser",	  40	  ]
-[ "system",	  80	  ]
+[ "user",	  1180	  ]
+[ "elapuser",	  60	  ]
+[ "system",	  13450	  ]
 [ "elapsystem",	  10	  ]
-env();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5921822"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
-environment().print();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5921822"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
-io().print();
+#-------------------------------------------------------------------------------------------------#
+# BAT:		  env										  #
+# (str)		  (str)										  #
+#-------------------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"									  ]
+[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "manegold"									  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
+[ "processid",	  "16486117"									  ]
+[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"										  ]
+#-------------------------------------------------------------------------------------------------#
+# BAT:		  env										  #
+# (str)		  (str)										  #
+#-------------------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"									  ]
+[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "manegold"									  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
+[ "processid",	  "16486117"									  ]
+[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1728	  ]
-[ "minflt",	  141	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  1648	  ]
+[ "minflt",	  161	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  21	  ]
-[ "ninvcsw",	  2	  ]
-memory().print();
+[ "inblock",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  15144	  ]
+[ "ninvcsw",	  83	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1466352	  ]
-[ "ordblks",	  169		  ]
-[ "smblks",	  8048		  ]
-[ "hblkhd",	  16096		  ]
-[ "hblks",	  503		  ]
-[ "usmblks",	  386848	  ]
-[ "fsmblks",	  412384	  ]
-[ "uordblks",	  441744	  ]
-[ "fordblks",	  209280	  ]
-threads();
+[ "memincr",	  73728		  ]
+[ "arena",	  1335280	  ]
+[ "ordblks",	  4683		  ]
+[ "smblks",	  2000		  ]
+[ "hblkhd",	  640		  ]
+[ "hblks",	  20		  ]
+[ "usmblks",	  31104		  ]
+[ "fsmblks",	  12096		  ]
+[ "uordblks",	  936512	  ]
+[ "fordblks",	  354928	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Server"	  ]
-view_client_login().print();
+[ 1,	  "Interpreter"	  ]
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Tue May 23 06:15:50 2000"	  ]
-view_client_name().print();
+[ 0,	  "Fri Jan 19 18:06:36 2001"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
 #-----------------#
 [ 0,	  "adm"	  ]
-view_gdk_cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  1	  ]
-[ "user",	  240	  ]
+[ "user",	  1180	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  80	  ]
+[ "system",	  13450	  ]
 [ "elapsystem",	  0	  ]
-view_gdk_env().print();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5921822"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
-view_gdk_io().print();
+#-------------------------------------------------------------------------------------------------#
+# BAT:		  env										  #
+# (str)		  (str)										  #
+#-------------------------------------------------------------------------------------------------#
+[ "dbname",	  "src_tools"									  ]
+[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "owner",	  "manegold"									  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
+[ "processid",	  "16486117"									  ]
+[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
+[ "version",	  "4.2"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1728	  ]
-[ "minflt",	  141	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  1648	  ]
+[ "minflt",	  161	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  4	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  21	  ]
-[ "ninvcsw",	  2	  ]
-view_gdk_memory().print();
+[ "inblock",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  15144	  ]
+[ "ninvcsw",	  83	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1466352	  ]
-[ "ordblks",	  168		  ]
-[ "smblks",	  8048		  ]
-[ "hblkhd",	  16096		  ]
-[ "hblks",	  503		  ]
-[ "usmblks",	  386624	  ]
-[ "fsmblks",	  412608	  ]
-[ "uordblks",	  441216	  ]
-[ "fordblks",	  209808	  ]
-view_gdk_thread().print();
+[ "arena",	  1335280	  ]
+[ "ordblks",	  4677		  ]
+[ "smblks",	  2000		  ]
+[ "hblkhd",	  640		  ]
+[ "hblks",	  20		  ]
+[ "usmblks",	  31080		  ]
+[ "fsmblks",	  12120		  ]
+[ "uordblks",	  935416	  ]
+[ "fordblks",	  356024	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Server"	  ]
-
-printf("#~EndVariableOutput~#\n");
+[ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-
-printf("End of MIL script.\n");
 End of MIL script.
-
-quit();

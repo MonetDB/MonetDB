@@ -25,34 +25,4 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-# >Number:         150
-# >Category:       MIL
-# >Synopsis:       Mserver crashes on non-existing module.
-# >Confidential:   no
-# >Severity:       critical
-# >Priority:       high
-# >Responsible:    boncz (Peter Boncz)
-# >State:          open
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Wed Apr  8 16:48:12 1998
-# >Originator:     quak@cwi.nl
-# >Organization:
-# UvA
-# >Release:        980101
-# >Environment:
-# solaris
-# >Description:
-# On solaris if you load a module which does not exist,
-# the Mserver crashes. How to repeat:
-# 
-# Mclient
-# > module("jabberwocky");
-# 
-# (Under the assumption that the module "jabberwocky"
-# does not exist
-
-setoid(oid(20000000));
 !ERROR: module(jabberwocky): load error.
-module("jabberwocky");
-quit;

@@ -218,7 +218,7 @@ function InitMaster () {
 		export DBGMASK=$DBGMASK   ; DEBUG DBGMASK=$DBGMASK
 		TIMEOUTED="Mtimeout"
 		export MTIMEOUT="Mtimeout -timeout $TIMEOUT"       ; TIMEOUTED="$TIMEOUTED|MTIMEOUT"   ; DEBUG MTIMEOUT=$MTIMEOUT
-		export MSERVER="$MTIMEOUT Mserver -modulesilent -yaccsilent $DBGMASK" ; TIMEOUTED="$TIMEOUTED|MSERVER"    ; DEBUG MSERVER=$MSERVER
+		export MSERVER="$MTIMEOUT Mserver -p"" -modulesilent -yaccsilent $DBGMASK" ; TIMEOUTED="$TIMEOUTED|MSERVER"    ; DEBUG MSERVER=$MSERVER
 ###		export MSERVER="$MTIMEOUT Mserver -yaccsilent    " ; TIMEOUTED="$TIMEOUTED|MSERVER"    ; DEBUG MSERVER=$MSERVER
 		export MCLIENT="$MTIMEOUT Mclient"                 ; TIMEOUTED="$TIMEOUTED|MCLIENT"    ; DEBUG MCLIENT=$MCLIENT
 		export MCREATEDB="$MTIMEOUT Mcreatedb -user $USER" ; TIMEOUTED="$TIMEOUTED|MCREATEDB"  ; DEBUG MCREATEDB=$MCREATEDB
@@ -566,7 +566,7 @@ function milM () {
 	local EXT="$1"     ; if [ "$1" ] ; then  shift ; fi
 	local PRELUDE="$1" ; if [ "$1" ] ; then  shift ; fi
 
-	LOG2x $MSERVER -db $TSTDB $PRELUDE $TST.$EXT
+	LOG2x $MSERVER -db $TSTDB $PRELUDE < $TST.$EXT
 } # milM ()
 
 function milS () {
@@ -574,7 +574,7 @@ function milS () {
 	local EXT="$1"     ; if [ "$1" ] ; then  shift ; fi
 	local PRELUDE="$1" ; if [ "$1" ] ; then  shift ; fi
 
-	LOG2x $MSERVER -db $TSTDB -single $PRELUDE $TST.$EXT
+	LOG2x $MSERVER -db $TSTDB -single $PRELUDE < $TST.$EXT
 } # milS ()
 
 function milC () {

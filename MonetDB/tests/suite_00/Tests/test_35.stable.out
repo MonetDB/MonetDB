@@ -25,16 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# testing merge semijoin
-c:= new(int,int);
-insert(c,1,1);
-insert(c,2,2);
-insert(c,3,4);
-insert(c,4,4);
-insert(c,4,9);
-insert(c,5,int(nil));
-c.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -45,14 +35,6 @@ c.print;
 [ 4,	  4	  ]
 [ 4,	  9	  ]
 [ 5,	  nil	  ]
-d:= new(int,int);
-insert(d,1,1);
-insert(d,2,2);
-insert(d,4,3);
-insert(d,4,4);
-insert(d,9,4);
-insert(d,int(nil),5);
-d.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -63,8 +45,6 @@ d.print;
 [ 4,	  4	  ]
 [ 9,	  4	  ]
 [ nil,	  5	  ]
-z:=c.semijoin(d);
-z.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -73,8 +53,6 @@ z.print;
 [ 2,	  2	  ]
 [ 4,	  4	  ]
 [ 4,	  9	  ]
-z:=c.reverse.semijoin(d);
-z.print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -85,8 +63,6 @@ z.print;
 [ 4,	  4	  ]
 [ 9,	  4	  ]
 [ nil,	  5	  ]
-z:=d.semijoin(c);
-z.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -95,14 +71,6 @@ z.print;
 [ 2,	  2	  ]
 [ 4,	  3	  ]
 [ 4,	  4	  ]
-
-# String management
-b:= new(oid,str);
-b.insert(oid(1),"hello");
-b.insert(oid(2),"world");
-b.insert(oid(3),"..");
-z:= b.semijoin(b);
-z.print;
 #-------------------------#
 # BAT:	  tmp_27	  #
 # (void)  (str)		  #
@@ -110,5 +78,3 @@ z.print;
 [ 1@0,	  "hello"	  ]
 [ 2@0,	  "world"	  ]
 [ 3@0,	  ".."		  ]
-
-quit;

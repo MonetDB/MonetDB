@@ -26,17 +26,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-# restart gives correct refcnt b from 0 to 1 
-# since b is part of a and persistent expected refcnt should be 2
-b:=new(int,int);
-b.rename("b");
-b.persists(true);
-a:=new(int,bat);
-a.rename("a");
-a.persists(true);
-a.insert(1,b);
-commit;
-quit;   
  restart gives correct refcnt b from 0 to 1 
  since b is part of a and persistent expected refcnt should be 2 
 #> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db src_monet refcnt.2.mil
@@ -63,21 +52,17 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-ls;
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------#
 [ "a",	  "int",  "bat",  1,	  0,	  "clean",	  "load", "pers", 0	  ]
 [ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 1	  ]
-a.print;
 #-----------------#
 # BAT:	  a	  #
 # (int)	  (BAT)	  #
 #-----------------#
 [ 1,	  <b>	  ]
-b.print;
 #-----------------#
 # BAT:	  b	  #
 # (int)	  (int)	  #
 #-----------------#
-quit;   

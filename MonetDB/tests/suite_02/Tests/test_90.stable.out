@@ -25,90 +25,77 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(2000000));
-#determine cost components of a join
-# load("k100_unique1");
-
-b:=k100_unique1.copy;
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");c:=join(b.reverse,k100_unique1);
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  180	  ]
+[ "user",	  220	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  90	  ]
+[ "system",	  370	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  280	  ]
-[ "elapuser",	  100	  ]
-[ "system",	  100	  ]
+[ "user",	  310	  ]
+[ "elapuser",	  90	  ]
+[ "system",	  380	  ]
 [ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
-d:=join(b.reverse,k100_unique1);
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  390	  ]
+[ "user",	  420	  ]
 [ "elapuser",	  110	  ]
-[ "system",	  100	  ]
+[ "system",	  380	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-commit;
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  390	  ]
+[ "user",	  420	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  110	  ]
-[ "elapsystem",	  10	  ]
+[ "system",	  380	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  5406720	  ]
-[ "arena",	  5455856	  ]
-[ "ordblks",	  111		  ]
-[ "smblks",	  7680		  ]
-[ "hblkhd",	  15360		  ]
-[ "hblks",	  480		  ]
-[ "usmblks",	  311712	  ]
-[ "fsmblks",	  440928	  ]
-[ "uordblks",	  3747312	  ]
-[ "fordblks",	  940544	  ]
+[ "memincr",	  1110016	  ]
+[ "arena",	  1138216	  ]
+[ "ordblks",	  507		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  3284992	  ]
+[ "hblks",	  4		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  657096	  ]
+[ "fordblks",	  481120	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  5504	  ]
-[ "minflt",	  128	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  2712	  ]
+[ "majflt",	  451	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  3	  ]
-[ "oublock",	  11	  ]
-[ "nvcsw",	  32	  ]
-[ "ninvcsw",	  42	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-quit;

@@ -25,37 +25,20 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#test sampling
-b:= new(int,int);
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-
-printf("#~BeginVariableOutput~#\n"); b.sample(1).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
-[ 4,	  16	  ]
+[ 2,	  4	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); b.sample(1).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
-[ 7,	  49	  ]
+[ 8,	  64	  ]
 #~EndVariableOutput~#
-
-printf("#~BeginVariableOutput~#\n"); b.sample(9).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-----------------#
 # BAT:	  tmp_23  #
@@ -71,10 +54,7 @@ printf("#~BeginVariableOutput~#\n"); b.sample(9).print; printf("#~EndVariableOut
 [ 8,	  64	  ]
 [ 9,	  nil	  ]
 #~EndVariableOutput~#
-
-b.sample(0).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
-quit;

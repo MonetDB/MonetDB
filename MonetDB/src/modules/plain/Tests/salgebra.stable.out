@@ -26,28 +26,8 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-
-#line 1070 "../../../../src/modules/plain/salgebra.mx"
-
-
-
-ti := new( void, oid );
-ti.insert( nil, 0@0 );
-ti.insert( nil, 3@0 );
-ti.insert( nil, 0@0 );
-ti.insert( nil, 2@0 );
-ti.insert( nil, 3@0 );
-ti.seqbase( 0@0 );
-ti.rename( "ti" );
-
-ch := clusterhash( ti );
 !WARNING: Building clusterhash
-ch.rename( "ti" );
-printf( "Created clusterhash %s\n", str(ch) );
 Created clusterhash ti
-
-ch_2 := clusterhash( "ti" );
-ch_2.info.print;
 #-------------------------#
 # BAT:		  tmp_41  #
 # (str)		  (str)	  #
@@ -58,17 +38,6 @@ ch_2.info.print;
 [ "batId",	  "39"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "3"	  ]
-ch_2 := nil;
-
-tj := new( oid, str );
-tj.rename( "tj" );
-tj.insert( 2@0, "two" );
-tj.insert( 3@0, "three" );
-
-#ch2 := clusterhash( tj.mark(nil).reverse );
-#ch2.rename("tjrev");
-
-ch.info.print;
 #-------------------------#
 # BAT:		  tmp_42  #
 # (str)		  (str)	  #
@@ -79,43 +48,32 @@ ch.info.print;
 [ "batId",	  "39"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "2"	  ]
-#ch2.info.print;
-
-CHdir();
 #---------------------------------------------------------#
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
 [ 39,	  "ti",		  2,		  ti		  ]
-
-# use the clusterhash for a uselect or a ujoin
-uselect( ch, 0@0 ).print;
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  nil	  ]
 [ 2@0,	  nil	  ]
-uselect( ch, 1@0 ).print;
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (void)  #
 #-----------------#
-uselect( ch, 2@0 ).print;
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (void)  #
 #-----------------#
 [ 3@0,	  nil	  ]
-uselect( ch, 3@0 ).print;
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  nil	  ]
 [ 4@0,	  nil	  ]
-
-ujoin( ch, tj ).print;
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (void)  #
@@ -123,7 +81,6 @@ ujoin( ch, tj ).print;
 [ 3@0,	  nil	  ]
 [ 1@0,	  nil	  ]
 [ 4@0,	  nil	  ]
-usortedjoin( ch, tj ).print;
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (void)  #
@@ -131,16 +88,8 @@ usortedjoin( ch, tj ).print;
 [ 1@0,	  nil	  ]
 [ 3@0,	  nil	  ]
 [ 4@0,	  nil	  ]
-
-CHdir();
 #---------------------------------------------------------#
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
 [ 39,	  "ti",		  2,		  ti		  ]
-
-ch := nil;
-drop( "salgebra" );
-
-quit;
-#move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)

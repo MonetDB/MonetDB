@@ -25,78 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-# >Number:         171
-# >Category:       MIL
-# >Synopsis:       X.reverse.select() fails after X.sort()
-# >Confidential:   no
-# >Severity:       critical
-# >Priority:       high
-# >Responsible:    boncz (Peter Boncz)
-# >State:          open
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Thu Dec 10 22:54:12 1998
-# >Originator:     manegold@cwi.nl
-# >Organization:
-# CWI
-# >Release:        980101
-# >Environment:
-# IRIX
-# >Description:
-# a select on an reversed BAT returns incorrect result
-# when a sort has been done on the same BAT before.
-#
-# sample script:
-# ========
-# s:=new(int,int);
-# insert(s,5,5);
-# insert(s,3,3);
-# insert(s,4,2);
-# insert(s,2,1);
-# insert(s,1,1);
-# insert(s,4,2);
-# insert(s,4,3);
-# s.sort.print;
-# s.reverse.select(2).print;
-# ========
-#
-# incorrect output of the last select:
-# ========
-# s.reverse.select(2).print;
-# #-----------------#
-# # BAT:    tmp_24  #
-# # (int)   (int)   #
-# #-----------------#
-# [ 1,      1       ]
-# [ 1,      2       ]
-# ========
-#
-# correct output of the last select:
-# ========
-# s.reverse.select(2).print;
-# #-----------------#
-# # BAT:    tmp_24  #
-# # (int)   (int)   #
-# #-----------------#
-# [ 1,      2       ]
-# ========
-#
-# for a detailed test script see 
-# tests/BugReports/Tests/no.171.*
-# in the Monet source repository.
-#
-#         stefan
-
-s:=new(int,int);
-insert(s,5,5);
-insert(s,3,3);
-insert(s,4,2);
-insert(s,2,1);
-insert(s,1,1);
-insert(s,4,2);
-insert(s,4,3);
-
-s.print;
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -108,40 +36,33 @@ s.print;
 [ 1,	  1	  ]
 [ 4,	  2	  ]
 [ 4,	  3	  ]
-s.select(1).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  1	  ]
 [ 1,	  1	  ]
-s.select(2).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  2	  ]
 [ 4,	  2	  ]
-s.select(3).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
 [ 4,	  3	  ]
-s.select(4).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
-s.select(5).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  5	  ]
-
-s.reverse.print;
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -153,25 +74,21 @@ s.reverse.print;
 [ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(1).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-s.reverse.select(2).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
-s.reverse.select(3).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
-s.reverse.select(4).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -179,16 +96,12 @@ s.reverse.select(4).print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(5).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  5	  ]
-
-printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-s.sort.print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -200,9 +113,7 @@ s.sort.print;
 [ 4,	  2	  ]
 [ 4,	  3	  ]
 [ 5,	  5	  ]
-printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
-s.sort_ht.print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -214,40 +125,33 @@ s.sort_ht.print;
 [ 4,	  2	  ]
 [ 4,	  3	  ]
 [ 5,	  5	  ]
-s.select(1).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  1	  ]
 [ 1,	  1	  ]
-s.select(2).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  2	  ]
 [ 4,	  2	  ]
-s.select(3).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
 [ 4,	  3	  ]
-s.select(4).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
-s.select(5).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  5	  ]
-
-s.reverse.print;
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -259,25 +163,21 @@ s.reverse.print;
 [ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(1).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-s.reverse.select(2).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
-s.reverse.select(3).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
-s.reverse.select(4).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -285,7 +185,6 @@ s.reverse.select(4).print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(4).sort_ht.print;
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
@@ -293,16 +192,12 @@ s.reverse.select(4).sort_ht.print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(5).print;
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  5	  ]
-
-printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-s.reverse.sort.print;
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
@@ -314,9 +209,7 @@ s.reverse.sort.print;
 [ 3,	  4	  ]
 [ 3,	  3	  ]
 [ 5,	  5	  ]
-printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
-s.reverse.sort_ht.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -328,25 +221,21 @@ s.reverse.sort_ht.print;
 [ 3,	  3	  ]
 [ 3,	  4	  ]
 [ 5,	  5	  ]
-s.reverse.select(1).print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
-s.reverse.select(2).print;
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
-s.reverse.select(3).print;
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  3	  ]
-s.reverse.select(4).print;
 #-----------------#
 # BAT:	  tmp_72  #
 # (int)	  (int)	  #
@@ -354,7 +243,6 @@ s.reverse.select(4).print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(4).sort_ht.print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
@@ -362,11 +250,8 @@ s.reverse.select(4).sort_ht.print;
 [ 2,	  4	  ]
 [ 2,	  4	  ]
 [ 3,	  4	  ]
-s.reverse.select(5).print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  5	  ]
-
-quit;

@@ -25,16 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-b := bat(int,int);
-b.insert(1,1);
-b.insert(9,2); # in same hash list (default hash-mask=7, 1&7=9&7=1)
-b.accbuild(hash);
-b.commit;
-b.delete(9); # triggers move (1,1) over (9,2); hash corrupt
-b.delete; # delete (1,1) without hash-lookup
-b.find(1).print; # still finds (1,1) !
-
-quit; 
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
 !ERROR: print(param 1): evaluation error.

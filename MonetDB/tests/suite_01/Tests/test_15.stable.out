@@ -25,38 +25,31 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-commit; printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1472	  ]
-[ "minflt",	  124	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  339	  ]
+[ "majflt",	  437	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  5	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  17	  ]
-[ "ninvcsw",	  20	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-commit; commit; commit; commit; commit; commit; commit; commit; commit; commit; 
-commit; commit; commit; commit; commit; commit; commit; commit; commit; commit; 
-printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1472	  ]
-[ "minflt",	  125	  ]
-[ "majflt",	  1	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  340	  ]
+[ "majflt",	  439	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  5	  ]
-[ "oublock",	  7	  ]
-[ "nvcsw",	  17	  ]
-[ "ninvcsw",	  20	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-
-quit;

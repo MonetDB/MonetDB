@@ -25,67 +25,39 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# Selfcontained test of delta operations
-module("trans");
-b:=new(int,int);
-bi:=new(int,int);
-bd:=new(int,int);
-insert(b,1,2);
-insert(b,2,3);
-bd:=b.delta;
-print(bd);
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
-a:= b.alpha;
-a.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
 [ 2,	  3	  ]
-
-#commit the changes and repeat the action
-clear(bd);
-commit(b);
-b.alpha.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
-
-insert(b,4,5);
-delete(b,2,3);
-print(b);
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
 [ 4,	  5	  ]
-bd:=b.delta();
-print(bd);
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  3	  ]
-a:= b.alpha;
-a.print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  5	  ]
-abort(b);
-print(b);
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  3	  ]
 [ 1,	  2	  ]
-quit;

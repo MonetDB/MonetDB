@@ -25,22 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-#check out arithmatic against using Multi-cast operator
-
-t:= new(int, int);
-t.insert(1,2);
-t.insert(3,6);
-t.insert(13,14);
-t.insert(17,16);
-t.insert(19,18);
-t.insert(5,8);
-t.insert(7,10);
-t.insert(2,4);
-t.insert(11,12);
-
-z:= t[+]t;
-z.print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -54,8 +38,6 @@ z.print;
 [ 7,	  20	  ]
 [ 2,	  8	  ]
 [ 11,	  24	  ]
-z:= t [*] z;
-z.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
@@ -69,8 +51,6 @@ z.print;
 [ 7,	  200	  ]
 [ 2,	  32	  ]
 [ 11,	  288	  ]
-z:= t [/] t;
-z.print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -84,5 +64,3 @@ z.print;
 [ 7,	  1	  ]
 [ 2,	  1	  ]
 [ 11,	  1	  ]
-
-quit;

@@ -25,23 +25,8 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# The Monet interpreter supports type casts
-p:=  int("21");
-p.print;
 [ 21 ]
-p:= flt("23");
-p.print;
 [ 23 ]
-p:= bit(1);
-p.print;
 [ true ]
-z:= int(p);
-z.print;
 [ 1 ]
-p:= bit(0);
-p.print;
 [ false ]
-
-p:= str(1);
-quit;

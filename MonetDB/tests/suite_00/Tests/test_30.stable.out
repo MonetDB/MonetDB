@@ -25,24 +25,8 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-## testing transitive closure on cyclic graph;
-module("oo7");
-module("alarm");
-
-c:= new(int,int);
-insert(c,1,2);
-insert(c,2,3);
-insert(c,2,7);
-insert(c,3,4);
-insert(c,4,5);
-insert(c,5,1);
-count(c).print;
 [ 6 ]
-d:= closure(c);
-count(d).print;
 [ 30 ]
-print(d);
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -77,43 +61,22 @@ print(d);
 [ 3,	  7	  ]
 [ 3,	  3	  ]
 [ 4,	  4	  ]
-## testing traversal on directed acyclic graph
-## produces the end-points only
-c:= new(int,int);
-insert(c,1,2);
-insert(c,2,3);
-insert(c,2,7);
-insert(c,3,4);
-insert(c,4,5);
-insert(c,3,5);
-count(c).print;
 [ 6 ]
-d:= new(int,int);
-d.insert(1,1);
-d.traverse(c).print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  7	  ]
 [ 1,	  5	  ]
-d.clear;
-d.insert(2,3);
-d.traverse(c).print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  5	  ]
-## The alternative is to extract a subgraph
-d.clear;
-d.insert(2,2);
-printf("#~BeginVariableOutput~#\n"); time.print; z:=d.subgraph(c); time.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 428 ]
-[ 429 ]
+[ 920 ]
+[ 920 ]
 #~EndVariableOutput~#
-z.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
@@ -123,15 +86,10 @@ z.print;
 [ 3,	  5	  ]
 [ 3,	  4	  ]
 [ 4,	  5	  ]
-d.clear;
-d.insert(2,2);
-d.insert(3,3);
-printf("#~BeginVariableOutput~#\n"); time.print; z:=d.subgraph(c); time.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 430 ]
-[ 430 ]
+[ 921 ]
+[ 922 ]
 #~EndVariableOutput~#
-z.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -141,4 +99,3 @@ z.print;
 [ 3,	  5	  ]
 [ 3,	  4	  ]
 [ 4,	  5	  ]
-quit;

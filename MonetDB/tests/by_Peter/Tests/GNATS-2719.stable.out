@@ -25,18 +25,8 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-b := bat(void,bit);
-b.insert(nil,true);
-b.insert(nil,true);
-b.insert(nil,true);
-b.insert(nil,true);
-b.seqbase(0@0);
-s := b.select(true);
-b.histogram.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (bit)	  (int)	  #
 #-----------------#
 [ true,	  4	  ]
-
-quit;

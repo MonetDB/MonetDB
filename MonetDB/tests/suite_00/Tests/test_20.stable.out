@@ -25,19 +25,11 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-setoid(oid(20000000));
-# test single column BATs
-a:= new(int,void);
-a.insert(1,void(nil));
-a.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (void)  #
 #-----------------#
 [ 1,	  nil	  ]
-a.insert(2,void(nil));
-a.insert(int(nil),void(nil));
-a.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (void)  #
@@ -45,18 +37,11 @@ a.print;
 [ 1,	  nil	  ]
 [ 2,	  nil	  ]
 [ nil,	  nil	  ]
-
-b:= new(void,int);
-b.insert(void(nil),1);
-b.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (void)  (int)	  #
 #-----------------#
 [ nil,	  1	  ]
-b.insert(void(nil),2);
-b.insert(void(nil),int(nil));
-b.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (void)  (int)	  #
@@ -64,4 +49,3 @@ b.print;
 [ nil,	  1	  ]
 [ nil,	  2	  ]
 [ nil,	  nil	  ]
-quit;

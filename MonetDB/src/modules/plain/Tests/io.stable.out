@@ -26,33 +26,7 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
-
-#line 142 "../../../../src/modules/plain/io.mx"
-setoid(oid(20000000));
-
-
-fp := fopen ( "test", "w+" );
-fwrite( fp, "Dit is een test\n", 17 );
-fp := freopen ( "test", "r+", fp );
-fread( fp, 17 ).tostr.print;
 [ "Dit is een test\n" ]
-
-fseek( fp, 0, 0);
-fprintf( fp, "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
-
-s := "testing again and again\n";
-
-fseek( fp, 0, 0);
-fputs( s, fp );
-fseek( fp, 0, 0);
-s := fgets( fp );
-
-fflush( fp );
-fclose( fp );
-printf( "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
 test 10 c 10 7.000000
-printf( "%s\n", s );
 testing again and again
 
-
-quit;
