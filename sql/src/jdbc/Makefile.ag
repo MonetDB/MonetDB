@@ -36,5 +36,5 @@ jar_MonetJDBC = {
 	          nl/cwi/monetdb/jdbc/MonetStatement.java \
 	          nl/cwi/monetdb/jdbc/MonetSocketBlockMode.java \
 	          example/JdbcClient.java
-	MANIFEST = $(srcdir)/manifest
+	MANIFEST = srcdir/manifest
 }
