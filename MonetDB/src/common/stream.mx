@@ -1078,6 +1078,7 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	if (size == 0 || elmsize == 0)
 		return cnt;
 
+	errno = 0;
 	while (res < size && (
 #ifdef NATIVE_WIN32
 				     ((nr = send(s->stream_data.i, (void *) ((char *) buf + res), size - res, 0)) > 0)
@@ -1108,6 +1109,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr)
 		return -1;
 
+	errno = 0;
 	while (res < size && (
 #ifdef NATIVE_WIN32
 				     ((nr = recv(s->stream_data.i, (void *) ((char *) buf + res), size - res, 0)) > 0)
