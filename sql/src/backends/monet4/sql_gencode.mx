@@ -694,7 +694,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 	  	} 
 		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf(buf +len, BUFSIZ-len, 
-				"s%d.info().print;\n", -s->nr);
+				"s%d.info().print();\n", -s->nr);
 		}
 		dump(sql,buf,len,-s->nr);
 		_DELETE(buf);
