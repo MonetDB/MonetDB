@@ -97,7 +97,7 @@ html
 mal_export Symbol mal_scope;	/* the root of the tree */
 mal_export Symbol MAL_scope;		/* the bottom of the imported scopes */
 
-mal_export Symbol	initScope();
+mal_export void		initScope();
 mal_export Symbol 	newScope(Symbol cntxt, str nme);
 mal_export Symbol	insertSymbol(Symbol cntxt, Symbol prg);
 mal_export Symbol	findScope(Symbol cntxt, str name);
@@ -147,14 +147,13 @@ void newSubScope(Symbol cntxt){
 	cntxt->subscope = (Symbol *) GDKmalloc(len);
 	bzero((char*)cntxt->subscope, len);
 }
-Symbol	initScope()
+void	initScope()
 {	Symbol cur;
 	str nme= GDKstrdup("root");
 	int kind= SCOPEsymbol;
 	@:newsymbol(initScope)@
 	newSubScope(cur);
-	mal_scope = cur;
-	return cur;
+	MAL_scope = mal_scope = cur;
 }
 @-
 After filling in a structure it is added to the multi-level

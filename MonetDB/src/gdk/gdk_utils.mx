@@ -108,7 +108,7 @@ str expandFile(str fname){
 
 	SLASH_2_DIR_SEP(fname);
 	if( strncmp("...",fname,3)==0 && fname[3]==DIR_SEP ) {
-		sprintf(name,"%s%s",MONET_PREFIX,fname+3);
+		sprintf(name,"%s%s",GDKdistrStr,fname+3);
 		return GDKstrdup(name);
 	} else return fname;
 }
@@ -123,9 +123,26 @@ void GDKusage(){
 
 void GDKenvironment(str db, str monetrc)
 {
-	char buf[2*PATHLENGTH];
+	static int monet_config_called=0;
+	char buf[2*PATHLENGTH],*bp;
 	char pwd[PATHLENGTH];
-	FILE *fd= NULL;
+	FILE *fd= NULL, *pd= NULL;
+ 
+	if (!monet_config_called) {
+		monet_config_called = 1;
+		pd = popen("monet-config --prefix", "r");
+		if (pd && fgets(buf,2*PATHLENGTH,pd)) {
+			bp = strstr(buf, "\n");
+			if (bp) {
+				*bp = '\0';
+			}
+			if (strlen(buf) < PATHLENGTH) {
+			       strcpy(GDKdistrStr, buf);
+			}
+			pclose(pd);
+		}
+	}
+
 
 	if( db != NULL && strchr(db,DIR_SEP) ) {
 		strcpy(GDKdbnameStr,db);
@@ -561,7 +578,7 @@ void GDKmemdump() {
 		}
 	}
 #endif
-#ifdef GDK_VM_KEEPHISTO
+#ifdef GDK_MEM_KEEPHISTO
 	if (GDK_vm_histo) {	
 		BUN p,q;
 		THRprintf(GDKerr, "\n!virtual memory histogram\n");
@@ -946,9 +963,11 @@ int GDKinit(int argc, char** argv) {
 	GDK_nmallocs = ((int*) GDK_mem_histo->batBuns->base) - 6;
 #endif
 #ifdef GDK_VM_KEEPHISTO
-#ifdef __CYGWIN32__
+#ifdef WIN32
+#ifndef WIN32_NATIVE
 	GDKmallidx(i, 67108864);
 	GDK_vm_nallocs[i]++; 
+#endif
 #endif
 	GDK_vm_histo = BATnew(TYPE_lng,TYPE_int,MAX_BIT);
 	BATrename(GDK_vm_histo, "monet_histo_vm");

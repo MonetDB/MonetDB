@@ -1,0 +1,72 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+	_v0:= oid(20000000);
+	_v1:= setoid(_v0);
+#setoid(oid(20000000));
+## Some applications may wish to directly access the buns
+## i.e. they use a BAT like an array.
+	_v2:= new(int,int);
+	b := _v2;
+#b:= new(int,int);
+	_v3:= rename(b,"b");
+#b.rename("b");
+#
+	_v4:= insert(b,1,15);
+#b.insert(1,15);
+	_v5:= insert(b,2,4);
+#b.insert(2,4);
+	_v6:= int(nil);
+	_v7:= insert(b,3,_v6);
+#b.insert(3,int(nil));
+	_v8:= insert(b,4,16);
+#b.insert(4,16);
+	_v9:= insert(b,5,25);
+#b.insert(5,25);
+	_v10:= insert(b,6,36);
+#b.insert(6,36);
+	_v11:= insert(b,7,49);
+#b.insert(7,49);
+	_v12:= insert(b,8,64);
+#b.insert(8,64);
+	_v13:= int(nil);
+	_v14:= insert(b,9,_v13);
+#b.insert(9,int(nil));
+	_v15:= int(nil);
+	_v16:= int(nil);
+	_v17:= insert(b,_v15,_v16);
+#b.insert(int(nil),int(nil));
+	_v18:= int(nil);
+	_v19:= insert(b,_v18,81);
+#b.insert(int(nil),81);
+##b.rename("b");
+#
+#
+	_v20:= save(b);
+#b.save;
+	_v21:= load("b");
+#load("b");
+	_v22:= position(b,4);
+	_v23:= print(_v22);
+#b.position(4).print;
+	_v24:= fetch(b,5);
+	_v25:= print(_v24);
+#b.fetch(5).print;
+	_v26:= fetch(b,8);
+	_v27:= print(_v26);
+#b.fetch(8).print;
+	_v28:= slice(b,5,8);
+	_v29:= print(_v28);
+#b.slice(5,8).print;
+## errors
+	_v30:= position(b,111);
+	_v31:= print(_v30);
+#b.position(111).print;
+	_v32:= fetch(b,-1);
+	_v33:= print(_v32);
+#b.fetch(-1).print;
+	_v34:= slice(b,8,5);
+	_v35:= print(_v34);
+#b.slice(8,5).print;
+#quit;

@@ -1,0 +1,402 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## Mil compiler Version 1.0)
+## Copyright (c) 1993-2001, CWI. All rights reserved.
+#
+## Predefined code segment
+##use "mal/iterator";		CAUSES an ERROR!!
+#	_v0:= oid(20000000);
+WARNING:newConstant:int coerced to lng
+#	_v1:= setoid(_v0);
+##setoid(oid(20000000));
+###test basic functionality of the BAT library.
+###focussed on strings
+###it includes insertions,deletions,selections, and joins.
+##
+#	_v2:= new(str,int);
+#	b := _v2;
+##b:= new(str,int);
+#	_v3:= insert(b,"the",1);
+##b.insert("the",1);
+#	_v4:= insert(b,"quick",2);
+##b.insert("quick",2);
+#	_v5:= insert(b,"brown",3);
+##b.insert("brown",3);
+#	_v6:= insert(b,"fox",4);
+##b.insert("fox",4);
+#	_v7:= insert(b,"jumps",5);
+##b.insert("jumps",5);
+#	_v8:= insert(b,"over",6);
+##b.insert("over",6);
+#	_v9:= insert(b,"lazy",7);
+##b.insert("lazy",7);
+#	_v10:= insert(b,"dog",8);
+##b.insert("dog",8);
+#	_v11:= str(nil);
+#	_v12:= insert(b,_v11,9);
+##b.insert(str(nil),9);
+#	_v13:= insert(b,".",10);
+##b.insert(".",10);
+#	_v14:= int(nil);
+#	_v15:= insert(b,"",_v14);
+##b.insert("",int(nil));
+#	_v16:= str(nil);
+#	_v17:= int(nil);
+#	_v18:= insert(b,_v16,_v17);
+##b.insert(str(nil),int(nil));
+#	_v19:= print(b);
+##b.print;
+##
+##
+### Testing simple retrievals
+#	_v20:= find(b,"the");
+#	_v21:= print(_v20);
+##b.find("the").print;
+#	_v22:= find(b,"fox");
+#	_v23:= print(_v22);
+##b.find("fox").print;
+#	_v24:= str(nil);
+#	_v25:= find(b,_v24);
+#	_v26:= print(_v25);
+##b.find(str(nil)).print;
+### This should cause an error
+#	_v27:= find(b,"cat");
+#	_v28:= print(_v27);
+##b.find("cat").print;
+##
+### Can we delete them and re-insert them later on
+#	_v29:= delete(b,"fox",4);
+##b.delete("fox",4);
+#	_v30:= delete(b,"the",1);
+##b.delete("the",1);
+#	_v31:= delete(b,".",10);
+##b.delete(".",10);
+#	_v32:= print(b);
+##b.print;
+##
+#	_v33:= insert(b,"fox",4);
+##b.insert("fox",4);
+#	_v34:= insert(b,"the",1);
+##b.insert("the",1);
+#	_v35:= insert(b,".",10);
+##b.insert(".",10);
+#	_v36:= count(b);
+#	_v37:= print(_v36);
+##b.count.print;
+##
+### Lets cut out a few sections
+#	_v38:= select(b,2,4);
+#	_v39:= print(_v38);
+##b.select(2,4).print;
+#	_v40:= int(nil);
+#	_v41:= select(b,7,_v40);
+#	_v42:= print(_v41);
+##b.select(7,int(nil)).print;
+#	_v43:= int(nil);
+#	_v44:= int(nil);
+#	_v45:= select(b,_v43,_v44);
+#	_v46:= print(_v45);
+##b.select(int(nil),int(nil)).print;
+##
+### A 2-dimensional cut
+#	_v47:= fragment(b,"fox","quick",1,5);
+#	bns := _v47;
+#	_v48:= print(bns);
+##bns:=b.fragment("fox","quick",1,5);bns.print;
+#	_v49:= str(nil);
+#	_v50:= fragment(b,"fox",_v49,1,5);
+#	_v51:= print(_v50);
+##b.fragment("fox",str(nil),1,5).print;
+#	_v52:= str(nil);
+#	_v53:= int(nil);
+#	_v54:= int(nil);
+#	_v55:= fragment(b,"fox",_v52,_v53,_v54);
+#	_v56:= print(_v55);
+##b.fragment("fox",str(nil),int(nil),int(nil)).print;
+#	_v57:= str(nil);
+#	_v58:= int(nil);
+#	_v59:= int(nil);
+#	_v60:= fragment(b,_v57,"f",_v58,_v59);
+#	_v61:= print(_v60);
+##b.fragment(str(nil),"f",int(nil),int(nil)).print;
+#	_v62:= reverse(b);
+#	_v63:= int(nil);
+#	_v64:= int(nil);
+#	_v65:= str(nil);
+#	_v66:= fragment(_v62,_v63,_v64,_v65,"f");
+#	_v67:= print(_v66);
+##b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
+##
+#	_v68:= reverse(bns);
+#	_v69:= join(b,_v68);
+#	bnj := _v69;
+##bnj:= b.join(bns.reverse);
+#	_v70:= print(bnj);
+##bnj.print;
+##
+#	_v71:= reverse(bnj);
+#	_v72:= semijoin(b,_v71);
+#	bnk := _v72;
+##bnk:= b.semijoin(bnj.reverse);
+#	_v73:= print(bnk);
+##bnk.print;
+##
+### testing the like command
+#	_v74:= reverse(b);
+#	_v75:= like(_v74,"ox");
+#	_v76:= print(_v75);
+##b.reverse.like("ox").print;
+#	_v77:= reverse(b);
+#	_v78:= like(_v77,"fo");
+#	_v79:= print(_v78);
+##b.reverse.like("fo").print;
+#	_v80:= reverse(b);
+#	_v81:= like(_v80,"fox");
+#	_v82:= print(_v81);
+##b.reverse.like("fox").print;
+#	_v83:= reverse(b);
+#	_v84:= like(_v83," fox");
+#	_v85:= print(_v84);
+##b.reverse.like(" fox").print;
+##quit;
+#
+function Service.main():int;	#0:(main:int->0)
+	_v0 := atoms.oid(20000000);	#1:(_v0:oid->13)($14:int->14)
+	_v1 := atoms.setoid(_v0);	#2:(_v1:any->15)(_v0:oid->13)
+	_v2 := bat.new(str,int);	#3:(_v2:bat[str,int]->16)(str:str->12)(int:int->6)
+	b := _v2;	#4:(b:bat[str,int]->17)(_v2:bat[str,int]->16)
+	_v3 := bat.insert(b,"the",1);	#5:(_v3:int->18)(b:bat[str,int]->17)($19:str->19)($20:int->20)
+	_v4 := bat.insert(b,"quick",2);	#6:(_v4:int->21)(b:bat[str,int]->17)($22:str->22)($23:int->23)
+	_v5 := bat.insert(b,"brown",3);	#7:(_v5:int->24)(b:bat[str,int]->17)($25:str->25)($26:int->26)
+	_v6 := bat.insert(b,"fox",4);	#8:(_v6:int->27)(b:bat[str,int]->17)($28:str->28)($29:int->29)
+	_v7 := bat.insert(b,"jumps",5);	#9:(_v7:int->30)(b:bat[str,int]->17)($31:str->31)($32:int->32)
+	_v8 := bat.insert(b,"over",6);	#10:(_v8:int->33)(b:bat[str,int]->17)($34:str->34)($35:int->35)
+	_v9 := bat.insert(b,"lazy",7);	#11:(_v9:int->36)(b:bat[str,int]->17)($37:str->37)($38:int->38)
+	_v10 := bat.insert(b,"dog",8);	#12:(_v10:int->39)(b:bat[str,int]->17)($40:str->40)($41:int->41)
+	_v11 := atoms.str(nil);	#13:(_v11:str->42)($43:void->43)
+	_v12 := bat.insert(b,_v11,9);	#14:(_v12:int->44)(b:bat[str,int]->17)(_v11:str->42)($45:int->45)
+	_v13 := bat.insert(b,".",10);	#15:(_v13:int->46)(b:bat[str,int]->17)($47:str->47)($48:int->48)
+	_v14 := atoms.int(nil);	#16:(_v14:int->49)($43:void->43)
+	_v15 := bat.insert(b,"",_v14);	#17:(_v15:int->50)(b:bat[str,int]->17)($51:str->51)(_v14:int->49)
+	_v16 := atoms.str(nil);	#18:(_v16:str->52)($43:void->43)
+	_v17 := atoms.int(nil);	#19:(_v17:int->53)($43:void->43)
+	_v18 := bat.insert(b,_v16,_v17);	#20:(_v18:int->54)(b:bat[str,int]->17)(_v16:str->52)(_v17:int->53)
+	_v19 := system.print(b);	#21:(_v19:int->55)(b:bat[str,int]->17)
+	_v20 := algebra.find(b,"the");	#22:(_v20:int->56)(b:bat[str,int]->17)($19:str->19)
+	_v21 := system.print(_v20);	#23:(_v21:int->57)(_v20:int->56)
+	_v22 := algebra.find(b,"fox");	#24:(_v22:int->58)(b:bat[str,int]->17)($28:str->28)
+	_v23 := system.print(_v22);	#25:(_v23:int->59)(_v22:int->58)
+	_v24 := atoms.str(nil);	#26:(_v24:str->60)($43:void->43)
+	_v25 := algebra.find(b,_v24);	#27:(_v25:int->61)(b:bat[str,int]->17)(_v24:str->60)
+	_v26 := system.print(_v25);	#28:(_v26:int->62)(_v25:int->61)
+	_v27 := algebra.find(b,"cat");	#29:(_v27:int->63)(b:bat[str,int]->17)($64:str->64)
+	_v28 := system.print(_v27);	#30:(_v28:int->65)(_v27:int->63)
+	_v29 := bat.delete(b,"fox",4);	#31:(_v29:int->66)(b:bat[str,int]->17)($28:str->28)($29:int->29)
+	_v30 := bat.delete(b,"the",1);	#32:(_v30:int->67)(b:bat[str,int]->17)($19:str->19)($20:int->20)
+	_v31 := bat.delete(b,".",10);	#33:(_v31:int->68)(b:bat[str,int]->17)($47:str->47)($48:int->48)
+	_v32 := system.print(b);	#34:(_v32:int->69)(b:bat[str,int]->17)
+	_v33 := bat.insert(b,"fox",4);	#35:(_v33:int->70)(b:bat[str,int]->17)($28:str->28)($29:int->29)
+	_v34 := bat.insert(b,"the",1);	#36:(_v34:int->71)(b:bat[str,int]->17)($19:str->19)($20:int->20)
+	_v35 := bat.insert(b,".",10);	#37:(_v35:int->72)(b:bat[str,int]->17)($47:str->47)($48:int->48)
+	_v36 := algebra.count(b);	#38:(_v36:int->73)(b:bat[str,int]->17)
+	_v37 := system.print(_v36);	#39:(_v37:int->74)(_v36:int->73)
+	_v38 := algebra.select(b,2,4);	#40:(_v38:bat[str,int]->75)(b:bat[str,int]->17)($23:int->23)($29:int->29)
+	_v39 := system.print(_v38);	#41:(_v39:int->76)(_v38:bat[str,int]->75)
+	_v40 := atoms.int(nil);	#42:(_v40:int->77)($43:void->43)
+	_v41 := algebra.select(b,7,_v40);	#43:(_v41:bat[str,int]->78)(b:bat[str,int]->17)($38:int->38)(_v40:int->77)
+	_v42 := system.print(_v41);	#44:(_v42:int->79)(_v41:bat[str,int]->78)
+	_v43 := atoms.int(nil);	#45:(_v43:int->80)($43:void->43)
+	_v44 := atoms.int(nil);	#46:(_v44:int->81)($43:void->43)
+	_v45 := algebra.select(b,_v43,_v44);	#47:(_v45:bat[str,int]->82)(b:bat[str,int]->17)(_v43:int->80)(_v44:int->81)
+	_v46 := system.print(_v45);	#48:(_v46:int->83)(_v45:bat[str,int]->82)
+	_v47 := algebra.fragment(b,"fox","quick",1,5);	#49:(_v47:bat[str,int]->84)(b:bat[str,int]->17)($28:str->28)($22:str->22)($85:int->85)($32:int->32)
+	bns := _v47;	#50:(bns:bat[str,int]->86)(_v47:bat[str,int]->84)
+	_v48 := system.print(bns);	#51:(_v48:int->87)(bns:bat[str,int]->86)
+	_v49 := atoms.str(nil);	#52:(_v49:str->88)($43:void->43)
+	_v50 := algebra.fragment(b,"fox",_v49,1,5);	#53:(_v50:bat[str,int]->89)(b:bat[str,int]->17)($28:str->28)(_v49:str->88)($85:int->85)($32:int->32)
+	_v51 := system.print(_v50);	#54:(_v51:int->90)(_v50:bat[str,int]->89)
+	_v52 := atoms.str(nil);	#55:(_v52:str->91)($43:void->43)
+	_v53 := atoms.int(nil);	#56:(_v53:int->92)($43:void->43)
+	_v54 := atoms.int(nil);	#57:(_v54:int->93)($43:void->43)
+	_v55 := algebra.fragment(b,"fox",_v52,_v53,_v54);	#58:(_v55:bat[str,int]->94)(b:bat[str,int]->17)($95:str->95)(_v52:str->91)(_v53:int->92)(_v54:int->93)
+	_v56 := system.print(_v55);	#59:(_v56:int->96)(_v55:bat[str,int]->94)
+	_v57 := atoms.str(nil);	#60:(_v57:str->97)($43:void->43)
+	_v58 := atoms.int(nil);	#61:(_v58:int->98)($43:void->43)
+	_v59 := atoms.int(nil);	#62:(_v59:int->99)($43:void->43)
+	_v60 := algebra.fragment(b,_v57,"f",_v58,_v59);	#63:(_v60:bat[str,int]->100)(b:bat[str,int]->17)(_v57:str->97)($101:str->101)(_v58:int->98)(_v59:int->99)
+	_v61 := system.print(_v60);	#64:(_v61:int->102)(_v60:bat[str,int]->100)
+	_v62 := bat.reverse(b);	#65:(_v62:bat[int,str]->103)(b:bat[str,int]->17)
+	_v63 := atoms.int(nil);	#66:(_v63:int->104)($43:void->43)
+	_v64 := atoms.int(nil);	#67:(_v64:int->105)($43:void->43)
+	_v65 := atoms.str(nil);	#68:(_v65:str->106)($43:void->43)
+	_v66 := algebra.fragment(_v62,_v63,_v64,_v65,"f");	#69:(_v66:bat[int,str]->107)(_v62:bat[int,str]->103)(_v63:int->104)(_v64:int->105)(_v65:str->106)($101:str->101)
+	_v67 := system.print(_v66);	#70:(_v67:int->108)(_v66:bat[int,str]->107)
+	_v68 := bat.reverse(bns);	#71:(_v68:bat[int,str]->109)(bns:bat[str,int]->86)
+	_v69 := algebra.join(b,_v68);	#72:(_v69:bat[str,str]->110)(b:bat[str,int]->17)(_v68:bat[int,str]->109)
+	bnj := _v69;	#73:(bnj:bat[str,str]->111)(_v69:bat[str,str]->110)
+	_v70 := system.print(bnj);	#74:(_v70:int->112)(bnj:bat[str,str]->111)
+	_v71 := bat.reverse(bnj);	#75:(_v71:bat[str,str]->113)(bnj:bat[str,str]->111)
+	_v72 := algebra.semijoin(b,_v71);	#76:(_v72:bat[str,int]->114)(b:bat[str,int]->17)(_v71:bat[str,str]->113)
+	bnk := _v72;	#77:(bnk:bat[str,int]->115)(_v72:bat[str,int]->114)
+	_v73 := system.print(bnk);	#78:(_v73:int->116)(bnk:bat[str,int]->115)
+	_v74 := bat.reverse(b);	#79:(_v74:bat[int,str]->117)(b:bat[str,int]->17)
+	_v75 := algebra.like(_v74,"ox");	#80:(_v75:bat[int,str]->118)(_v74:bat[int,str]->117)($119:str->119)
+	_v76 := system.print(_v75);	#81:(_v76:int->120)(_v75:bat[int,str]->118)
+	_v77 := bat.reverse(b);	#82:(_v77:bat[int,str]->121)(b:bat[str,int]->17)
+	_v78 := algebra.like(_v77,"fo");	#83:(_v78:bat[int,str]->122)(_v77:bat[int,str]->121)($123:str->123)
+	_v79 := system.print(_v78);	#84:(_v79:int->124)(_v78:bat[int,str]->122)
+	_v80 := bat.reverse(b);	#85:(_v80:bat[int,str]->125)(b:bat[str,int]->17)
+	_v81 := algebra.like(_v80,"fox");	#86:(_v81:bat[int,str]->126)(_v80:bat[int,str]->125)($95:str->95)
+	_v82 := system.print(_v81);	#87:(_v82:int->127)(_v81:bat[int,str]->126)
+	_v83 := bat.reverse(b);	#88:(_v83:bat[int,str]->128)(b:bat[str,int]->17)
+	_v84 := algebra.like(_v83," fox");	#89:(_v84:bat[int,str]->129)(_v83:bat[int,str]->128)($130:str->130)
+	_v85 := system.print(_v84);	#90:(_v85:int->131)(_v84:bat[int,str]->129)
+end function;	#91:
+#-------------------------#
+# BAT:		  tmp_1	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "the",	  1	  ]
+[ "quick",	  2	  ]
+[ "brown",	  3	  ]
+[ "fox",	  4	  ]
+[ "jumps",	  5	  ]
+[ "over",	  6	  ]
+[ "lazy",	  7	  ]
+[ "dog",	  8	  ]
+[ nil,		  9	  ]
+[ ".",		  10	  ]
+[ "",		  nil	  ]
+[ nil,		  nil	  ]
+[ 1 ]
+[ 4 ]
+[ nil ]
+!ERROR: CMDfind: value not found.
+[ 0 ]
+#-------------------------#
+# BAT:		  tmp_1	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "",		  nil	  ]
+[ "quick",	  2	  ]
+[ "brown",	  3	  ]
+[ nil,		  nil	  ]
+[ "jumps",	  5	  ]
+[ "over",	  6	  ]
+[ "lazy",	  7	  ]
+[ "dog",	  8	  ]
+[ nil,		  9	  ]
+[ 12 ]
+#-------------------------#
+# BAT:		  tmp_2	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "brown",	  3	  ]
+[ "fox",	  4	  ]
+#-----------------#
+# BAT:	  tmp_3	  #
+# (str)	  (int)	  #
+#-----------------#
+[ "lazy", 7	  ]
+[ "dog",  8	  ]
+[ nil,	  9	  ]
+[ ".",	  10	  ]
+#-------------------------#
+# BAT:		  tmp_4	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "brown",	  3	  ]
+[ "jumps",	  5	  ]
+[ "over",	  6	  ]
+[ "lazy",	  7	  ]
+[ "dog",	  8	  ]
+[ nil,		  9	  ]
+[ "fox",	  4	  ]
+[ "the",	  1	  ]
+[ ".",		  10	  ]
+#-------------------------#
+# BAT:		  tmp_5	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "fox",	  4	  ]
+#-------------------------#
+# BAT:		  tmp_6	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "fox",	  4	  ]
+[ "the",	  1	  ]
+#-------------------------#
+# BAT:		  tmp_7	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "over",	  6	  ]
+[ "lazy",	  7	  ]
+[ "fox",	  4	  ]
+[ "the",	  1	  ]
+#-------------------------#
+# BAT:		  tmp_8	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "",		  nil	  ]
+[ "brown",	  3	  ]
+[ nil,		  nil	  ]
+[ "dog",	  8	  ]
+[ nil,		  9	  ]
+[ ".",		  10	  ]
+#-------------------------#
+# BAT:	  tmp_9		  #
+# (int)	  (str)		  #
+#-------------------------#
+[ nil,	  ""		  ]
+[ 3,	  "brown"	  ]
+[ nil,	  nil		  ]
+[ 8,	  "dog"		  ]
+[ 9,	  nil		  ]
+[ 10,	  "."		  ]
+#---------------------------------#
+# BAT:		  tmp_10	  #
+# (str)		  (str)		  #
+#---------------------------------#
+[ "quick",	  "quick"	  ]
+[ "jumps",	  "jumps"	  ]
+[ "fox",	  "fox"		  ]
+#-------------------------#
+# BAT:		  tmp_11  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "fox",	  4	  ]
+#-----------------#
+# BAT:	  tmp_12  #
+# (int)	  (str)	  #
+#-----------------#
+[ 4,	  "fox"	  ]
+#-----------------#
+# BAT:	  tmp_13  #
+# (int)	  (str)	  #
+#-----------------#
+[ 4,	  "fox"	  ]
+#-----------------#
+# BAT:	  tmp_14  #
+# (int)	  (str)	  #
+#-----------------#
+[ 4,	  "fox"	  ]
+#-----------------#
+# BAT:	  tmp_15  #
+# (int)	  (str)	  #
+#-----------------#

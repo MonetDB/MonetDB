@@ -29,31 +29,31 @@ MV=copy
 DEL=del
 
 {$(SRCDIR)}.mx.h:
-	$(MX) $(MXFLAGS) -l -x h $<
+	$(MX) $(MXFLAGS) -x h $<
 
 {$(SRCDIR)}.mx.c:
-	$(MX) $(MXFLAGS) -l -x c $<
+	$(MX) $(MXFLAGS) -x c $<
 
 {$(SRCDIR)}.mx.cxx:
-	$(MX) $(MXFLAGS) -l -x C $<
+	$(MX) $(MXFLAGS) -x C $<
 
 {$(SRCDIR)}.mx.m:
-	$(MX) $(MXFLAGS) -l -x m $<
+	$(MX) $(MXFLAGS) -x m $<
 
 {$(SRCDIR)}.mx.mil:
-	$(MX) $(MXFLAGS) -l -x mil $<
+	$(MX) $(MXFLAGS) -x mil $<
 
 {$(SRCDIR)}.mx.y:
-	$(MX) $(MXFLAGS) -l -x y $<
+	$(MX) $(MXFLAGS) -x y $<
 
 {$(SRCDIR)}.mx.l:
-	$(MX) $(MXFLAGS) -l -x l $<
+	$(MX) $(MXFLAGS) -x l $<
 
 {$(SRCDIR)}.mx.yy:
-	$(MX) $(MXFLAGS) -l -x Y $<
+	$(MX) $(MXFLAGS) -x Y $<
 
 {$(SRCDIR)}.mx.ll:
-	$(MX) $(MXFLAGS) -l -x L $<
+	$(MX) $(MXFLAGS) -x L $<
 
 {$(SRCDIR)}.c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
@@ -62,5 +62,5 @@ DEL=del
 .cc.cxx:
 	rename $< $@
 
-.SUFFIXES: .m .mx .proto_h .mil .cxx .cc
+.SUFFIXES: .m .mx .proto_h .mil .glue_c .cxx .cc
 .PRECIOUS: .m 

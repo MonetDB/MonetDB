@@ -57,7 +57,7 @@ str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env){
 	MalBlkPtr mb=mbcaller;
 	MalStkPtr stk= NULL;
 	int space = 0;
-	ValPtr retval;
+	ValPtr retval, lhs,rhs;
 	InstrPtr pci=0;
 	str ret=0;
 	char 	cmd='n';	/* debugger command */
@@ -79,6 +79,8 @@ allocStackLabel:
 @-
 Prepare a new interpreter call. The env stackframe is only set when
 a MAL function is called recursively.
+Notice that arguments are always the first entries on the stack.
+They are followed by predefined constants.
 @c
 	if( env){
 		int k;
@@ -90,8 +92,7 @@ a MAL function is called recursively.
 		}
 		/* printf("recursive MAL function call %s[%d]\n",
 			pci->fcnname,env->pc); */
-		for(k=0;k<pci->argc;k++){
-			ValPtr lhs,rhs;
+		for(k=1;k<pci->argc;k++){
 			lhs = &stk->stk[k];
 			if( isVarConstant(mbcaller,pci->argv[k]))
 				rhs = &getVarConstant(mbcaller,pci->argv[k]);
@@ -138,10 +139,12 @@ We do not want recursive programs crashing the server, so once in
 a while we check whether we are running dangerously low on available
 stack space.
 @= safeguardStack
+/* Expensive? yes 1.5 sec for 1M calls another solution is needed.
     if (THRhighwater()) {
         GDKerror("interpret: running out of physical stack space!\n");
         goto MALevalExit;
     }
+*/
 
 @+ The interpreter loop
 The interpreter is geared towards execution a MAL procedure together
@@ -179,7 +182,7 @@ elements in the value stack.
 		@:functioncall@ stk->pc++; 
 		cmd = stk->cmd;
 		break;
-	case RULERsymbol:
+	case RULEsymbol:
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
 	case RAISEsymbol:
@@ -190,7 +193,6 @@ elements in the value stack.
 		stk->pc++; break;
 	case RETURNsymbol:
 		if( env != NULL){
-			ValPtr lhs,rhs;
 			rhs = &stk->stk[pci->argv[0]];
 			pci = getInstrPtr(mbcaller,env->pc);
 			lhs = &env->stk[pci->argv[0]];
@@ -212,7 +214,7 @@ Pushing constants/initial values onto the stack is a separate operation.
 It takes the constant value discovered at compile time and stored in the
 symbol table and moves it to the stackframe location.
 @= assignStmt
-{	ValPtr lhs, rhs;
+{	
 	lhs = &stk->stk[pci->argv[0]];
 	if( isVarConstant(mb,pci->argv[1]))
 		rhs = &getVarConstant(mb,pci->argv[1]);
@@ -528,6 +530,10 @@ The second major area to be careful, is management of the BAT reference counts.
 
 Before we return from the interpreter, we should free all
 dynamically allocated objects and adjust the BAT reference counts.
+Early experience shows that for small stack frames the overhead
+is about 200 ms for a 1M function call loop (tst400e). This means that
+for the time being we do not introduce more complex garbage
+administration code.
 @= cleanupStack
 { 	int k;
 	ValPtr v;

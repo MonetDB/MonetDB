@@ -6,7 +6,7 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-#function p1(i:str):int;
+#function pl(i:str):int;
 #	L:= "something";
 #	r:=0;
 #barrier l:= r= 0;
@@ -16,23 +16,20 @@
 #	redo l;
 #end l;
 #end function;
-FUNCTION p1(i:str):int;	#0:(p1:int->0)(i:str->1)
-	L := "something";	#1:(L:str->3)($2:str->2)
-	r := 0;	#2:(r:int->5)($4:int->4)
-BARRIER	l := arith.=(r,0);	#3:(l:bit->6)(r:int->5)($4:int->4)
-	y := r;	#4:(y:int->7)(r:int->5)
-	r := arith.+(r,1);	#5:(r:int->5)(r:int->5)($8:int->8)
-	LEAVE l;	#6:(l:bit->6)
-	REDO l ;	#7:(l:bit->6)
-END	l;	#8:(l:bit->6)
-END FUNCTION;	#9:
-#a:= 1;
+function pl(i:str):int;	#0:(pl:int->0)(i:str->13)
+	L := "something";	#1:(L:str->14)($15:str->15)
+	r := 0;	#2:(r:int->16)($17:int->17)
+barrier	l := arith.=(r,0);	#3:(l:bit->18)(r:int->16)($17:int->17)
+	y := r;	#4:(y:int->19)(r:int->16)
+	r := arith.+(r,1);	#5:(r:int->16)(r:int->16)($20:int->20)
+	leave l;	#6:(l:bit->18)
+	redo l ;	#7:(l:bit->18)
+end	l;	#8:(l:bit->18)
+end function;	#9:
+#a:= "hello";
 #z:= pl(a);
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-	a := 1;	#1:(a:int->2)($1:int->1)
-	z := pl(a);	#2 unknown:(z:any->3)(a:int->2)
-END FUNCTION;	#3:
-CATCH ERROR MALexception:Service.main[2]:Instruction type not fixed
-
-MALexception:Service.main[2]:Instruction type not fixed
+function Service.main():int;	#0:(main:int->0)
+	a := "hello";	#1:(a:str->13)($14:str->14)
+	z := Service.pl(a);	#2:(z:int->15)(a:str->13)
+end function;	#3:

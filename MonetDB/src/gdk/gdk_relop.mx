@@ -366,7 +366,7 @@ nondense:       bn = BATnew(BAThtype(l), BATttype(r), BATcount(l));
                 bn = BATslice(v, &lo_pos, &hi_pos);
                 if (seqbase != oid_nil) seqbase += lo_val - l->tseqbase;
                 BATseqbase(bn, seqbase);
-                VIEWdestroy(v);
+		BBPunfix(v->batCacheid);
         } else {
                 /* nil join column => empty result */
                 bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), 10);

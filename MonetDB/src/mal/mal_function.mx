@@ -49,6 +49,7 @@ html
 /* #define DEBUG_MAL_FCN */
 
 mal_export Symbol	newFunction(Symbol scope, str nme);
+mal_export void 	initStack(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname);
@@ -64,7 +65,7 @@ mal_export Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrP
 mal_export void	safeFunction(Symbol proc);
 mal_export void	restoreFunction(Symbol proc);
 mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
-mal_export str 	reverseOperator(Symbol scope, MalBlkPtr mb,str nme);
+/* mal_export str 	reverseOperator(Symbol scope, MalBlkPtr mb,str nme);*/
 mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
 
 
@@ -92,18 +93,23 @@ Symbol newFunction(Symbol scope, str nme){
 	c->pc= mb->stop;
 	mb->stmt[c->pc] = ((char *) c)-((char*)mb->code);
         mb->stop++;
+	return s;
+}
 @-
-Each function symbol table is initialized by system constants.
+Each function symbol table is initialized by system constants,
+stored directly after the paran=meter list.
 Although this increases somewhat the space, it is much cheaper
 than testing at any other occassion 
 @c
+void initStack(MalBlkPtr mb){
+	int i,j;
+
 	for(i=0;i<GDKatomcnt; i++){
 		j= newVariable(mb, GDKstrdup(ATOMname(i)), i);
 		isVarConstant(mb,j) = TRUE;
 		getVarConstant(mb,j).val.ival = i;
 		getVarConstant(mb,j).vtype= TYPE_int; 
 	}
-	return s;
 }
 InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind){
 	InstrPtr p;
@@ -344,6 +350,7 @@ void pushArgumentId(InstrPtr p,str name){
 @-
 Create an instruction to reverse a bat variable and return its identity.
 @c
+/*
 str reverseOperator(Symbol scope, MalBlkPtr mb,str nme){
 	InstrPtr p;
 	malType v;
@@ -369,6 +376,7 @@ str reverseOperator(Symbol scope, MalBlkPtr mb,str nme){
 	pushInstruction(mb,p);
 	return GDKstrdup(getVarName(mb,k));
 }
+*/
 @+ Function cloning
 MAL supports functions defined with type variables.
 Each time such a MAL routine is called, a complete copy of

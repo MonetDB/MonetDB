@@ -14,10 +14,10 @@
 #	redo v1;
 #end	v1;
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-	i := -1.0;	#1:(i:flt->2)($1:flt->1)
-BARRIER	v1 := iterator.nextElement(i,0.0,2.5,1.3);	#2:(v1:bit->6)(i:flt->2)($3:flt->3)($4:flt->4)($5:flt->5)
-	v := "do something";	#3:(v:str->8)($7:str->7)
-	REDO v1 ;	#4:(v1:bit->6)
-END	v1;	#5:(v1:bit->6)
-END FUNCTION;	#6:
+function Service.main():int;	#0:(main:int->0)
+	i := -1.0;	#1:(i:flt->13)($14:flt->14)
+barrier	v1 := iterator.nextElement(i,0.0,2.5,1.3);	#2:(v1:bit->15)(i:flt->13)($16:flt->16)($17:flt->17)($18:flt->18)
+	v := "do something";	#3:(v:str->19)($20:str->20)
+	redo v1 ;	#4:(v1:bit->15)
+end	v1;	#5:(v1:bit->15)
+end function;	#6:

@@ -102,12 +102,10 @@ found in the same directory.
 
 #define GDK_NOLINK
 #include <gdk.h>
-#include "../gdk/gdk_utils.c"
 
 static int error, fatal;
 static char dbhome[PATHLENGTH] = {0};
 static char dist[PATHLENGTH]= {0};
-static char farm[PATHLENGTH]= {0};
 static str  prog, user[64] = { 0 };
 static char dir=0;
 

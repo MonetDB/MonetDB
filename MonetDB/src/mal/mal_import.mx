@@ -33,7 +33,7 @@ html
 
 #include "mal_symbol.h"
 
-mal_export Symbol malImport(Symbol cntxt, str fname,int listing,int loaded);
+mal_export Symbol malImport(str fname,int listing,int loaded);
 #endif /*  _MAL_IMPORT_H*/
 @-
 The import context is located. If it already exists, we should silently skip
@@ -46,18 +46,24 @@ If the string starts with '/' or '~' the context is not changed.
 Every IMPORT statement denotes a possible dynamic load library.
 Make sure it is loaded as well.
 @c
+#include "mal_client.h"
 #include "mal_import.h"
 
-Symbol malImport(Symbol cntxt, str fname,int listing,int loaded){
+Symbol malImport(str fname,int listing,int loaded){
 	FILE *fd;
 	long i,len;
 	char *buf;
 	Symbol	prg;
 	char path[PATHLENGTH];
+	Client c= getClient();
+	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
+	int oldlisting = c->listing;
+	Symbol oldscope = c->nspace;
+	Symbol oldmain = c->mainprg;
+	int limit;
 
         SLASH_2_DIR_SEP(fname);
 	if ((fd = fopen(fname, "r")) == 0) {
-
 	    sprintf(path, "%s.mal",fname);
             if (fname[0] == DIR_SEP) {
                 strcpy(path, fname);
@@ -80,27 +86,43 @@ Symbol malImport(Symbol cntxt, str fname,int listing,int loaded){
         (void) fseek(fd,0L,SEEK_END);
         i = 0; len = ftell(fd)+2;
         (void) fseek(fd,0L,0);
-        buf = (char *) GDKmalloc(len);
-        if( buf == 0){
-                sprintf(buf,"ERROR:unable to allocate %ld bytes\n",len);
-		GDKerror(buf);
-                return 0;
-        }
 
-        i=fread(buf, 1, len, fd);
+	limit= (len/1024+1)*1024;
+	c->nxt = c->input = (char *) GDKmalloc(limit);
+	c->limit = c->input + limit;
+	if( c->input == 0){
+		GDKerror("ERROR:unable to allocate buffer\n");
+		return 0;
+	}
+
+        i=fread(c->input, 1, len, fd);
         if( i != len-2) {
                 GDKerror("ERROR:not enough bytes read \n");
         }
         fclose(fd);
-        buf[i] = 0;
+        c->input[i] = 0;
 @-
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
 	if(loaded == 0) (void) loadModuleLibrary(fname);
 
-	prg= mal_parse(cntxt,buf,listing);
+	c->listing = listing;
+	setClientMain(c);
+	parseMal(c);
+	if( listing && c->mainprg) printFunction(stdout,c->mainprg->def);
+	/* reset the input buffer */
+	GDKfree(c->input);
+	if( oldmain) {
+		if( c->mainprg != oldmain) closeClientMain(c);
+		c->mainprg = oldmain;
+	}
+	c->listing = oldlisting;
+	c->input= oldinput;
+	c->limit= oldlimit;
+	c->nxt = oldnxt;
+	c->nspace= oldscope;
 	/* execute main procedure of module */
-	return prg;
+	return c->curprg;
 }
 

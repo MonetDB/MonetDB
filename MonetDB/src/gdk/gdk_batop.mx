@@ -1132,6 +1132,8 @@ int BATordered(BAT *b) {
 }
 
 @- return a sorted copy
+The sort operation just looks at the head column.
+To request a lexicgraphic sort on both columns call sort-ht.
 @c
 BAT *BATsort(BAT *b) {
 	int tt = b->ttype;
@@ -1145,6 +1147,23 @@ BAT *BATsort(BAT *b) {
 		tt = TYPE_oid;
 	}
 	return BATorder(batcopy(b, b->htype, tt, TRUE));
+}
+BAT *BATsort_ht(BAT *b) {
+	BAT *bks,*bs,*rn;
+	int tt = b->ttype;
+	ptr h,t;
+
+	BATcheck(b, "BATsort_ht: BAT"); 
+	rn = BATnew(BAThtype(b), BATttype(b), BATcount(b));
+	bks = BATkunique(BATsort(b));
+
+printf("BATsort_ht not yet implemented\n");
+/* TO BE DONE
+        BATloopFast(bks, h, t, xx) {
+		bs= BATselect(bks, h, h);
+	}
+*/
+	return rn;
 }
 
 

@@ -136,7 +136,7 @@ static double get_double(const char* startp,char** endp) {
 @
 
 @= fixedsize_twonormdiff_m
-    .COMMAND twonormdiff(@1_vector@3, @1_vector@3) : @2_vector@3 = cmd_@1_vector@2_twonormdiff;
+    .COMMAND twonormdiff(@1_vector@3, @1_vector@3) : @2_vector@3 = cmd_@1_vector@3_twonormdiff;
       "Calculates 2norm difference between 2 vectors"
 @
 
@@ -614,8 +614,8 @@ typedef struct {
             return(GDK_FAIL);
         }
 
-        cmd_@1_vector@2_normalize(&normVec1, vec1);
-        cmd_@1_vector@2_normalize(&normVec2, vec2);
+        cmd_@1_vector@3_normalize(&normVec1, vec1);
+        cmd_@1_vector@3_normalize(&normVec2, vec2);
         
         for(i = 0; i < @3; i++) {
             res->data[i] = normVec1->data[i] - normVec2->data[i];

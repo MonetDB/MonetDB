@@ -93,5 +93,4 @@ mil_code_prelude(){
         printf("# Copyright (c) 1993-2001, CWI. ");
         printf("All rights reserved.\n");
 	printf("\n# Predefined code segment\n");
-	printf("use \"mal/iterator\";\n");
 }

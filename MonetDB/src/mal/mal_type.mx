@@ -78,7 +78,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define IMPORTsymbol	30	/* dependency on outer scopes */
 #define COMMANDsymbol   31
 #define FUNCTIONsymbol	32
-#define RULERsymbol	33
+#define RULEsymbol	33
 #define ENDDEFsymbol	34
 #define THRDsymbol	43
 #define COMMENTsymbol	35	/* propagation of comments */
@@ -86,6 +86,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define SCOPEsymbol	41
 #define PUSHsymbol	42	/* move constant to stack */
 #define PATTERNsymbol   44
+#define AGENTsymbol     45
 
 #define FCNcall		50	/* determines interpreter action*/
 #define RLRcall		51

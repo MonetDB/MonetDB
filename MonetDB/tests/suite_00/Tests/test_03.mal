@@ -1,0 +1,27 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+	_v0:= oid(20000000);
+	_v1:= setoid(_v0);
+#setoid(oid(20000000));
+##test basic functionality of the BAT library.
+##focussed on temporary reversal of roles.
+#
+	_v2:= new(int,str);
+	b := _v2;
+#b:= new(int,str);
+#
+	_v3:= insert(b,1,"15");
+#b.insert(1,"15");
+#
+	_v4:= print(b);
+#b.print;
+#
+	_v5:= reverse(b);
+	_v6:= print(_v5);
+#b.reverse.print;
+#
+	_v7:= print(b);
+#b.print;
+#quit;

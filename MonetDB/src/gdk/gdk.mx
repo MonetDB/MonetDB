@@ -1546,7 +1546,8 @@ allow that Monet's main-memory oriented algorithms work efficient  also
 in such a disk-oriented context.
 @
 The @%BATsort@ functions returns a copy of the input BAT, sorted
-in ascending order on the head column. @%BATordered@ starts a 
+in ascending order on the head column. @%BATsort_ht@ sorts
+a bat lexicographic on head and tail column. @%BATordered@ starts a 
 check on the head values to see if their are ordered. The result
 is returned and stored in the @%hsorted@ field of the BAT. 
 @%BATorder@ is similar to @%BATsort@, but sorts the BAT itself, rather
@@ -1559,6 +1560,7 @@ this does not mean that they are sorted in reverse order!
 #define 		GDK_SORTED	65 /* 65 = (32 bits radix_clustered)<<1 + 1 */
 
 gdk_export BAT*		BATsort          (BAT *b); 
+gdk_export BAT*		BATsort_ht       (BAT *b); 
 gdk_export BAT*		BATsort_insert   (BAT *r, BAT *b);
 gdk_export BAT*		BATorder         (BAT *b); 
 gdk_export BAT*		BATrevert        (BAT *b); 

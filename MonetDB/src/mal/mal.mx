@@ -20,6 +20,7 @@ Discuss the role of Mal and collect all central definitions here.
 #define mal_export extern
 #endif
 
+mal_export int 		mal_init();
 mal_export int             mal_listing;
 mal_export int             mal_xlisting;
 mal_export int             mal_debug;
@@ -28,6 +29,10 @@ mal_export MT_Lock	mal_contextLock;
 #endif /*  _MAL_H*/
 @c
 #include "mal.h"
+#include "mal_symbol.h"
+#include "mal_client.h"
+#include "mal_linker.h"
+#include "mal_startup.h"
 
 int             mal_listing= 0;
 int             mal_xlisting= 0;
@@ -37,6 +42,12 @@ MT_Lock		mal_contextLock=0;
 @-
 Initialization of the MAL context
 @c
-void mal_init(){
+int mal_init(){
+	Client c;
 	mal_contextLock= MT_create_lock();
+	initScope();
+        c= initClient(GDKstrdup("adm"),NULL,0);
+        if( malStartupAdmin(c,GDKdbnameStr,mal_listing) == NULL) return -1;
+	initLibraries(FALSE);
+	return 0;
 }

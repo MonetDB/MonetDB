@@ -123,6 +123,10 @@ As already mentioned above, during "normal development", you will just edit
 (your) sources in BASE and then call make / make install in BUILD. Very
 convenient ...
 
+3) Static linkage
+To speed up loading of the server and to enable performance profiling
+use --disable-shared --enable-static
+
 Have fun with Monet!
 
 

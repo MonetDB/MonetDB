@@ -1,5 +1,5 @@
 # simple test of a function call 
-# performance evaluation, how expensive are 1M calls?
+# performance evaluation, how expensive are 100k calls?
 
 function simple(z:lng):lng;
 	z:= z+1:lng;  #type cast is error
@@ -7,8 +7,7 @@ function simple(z:lng):lng;
 end function;
 
 	k:= 0:lng;
-barrier	v:= k<100000:lng;
+barrier	v:= k<1000000:lng;
 	k:= simple(k);
 	redo v;
 end	v;
-	z:= "done";

@@ -18,101 +18,100 @@ the io module.
 
 @* Module Definition 
 @mal
-MODULE system;
+module system;
 
 @- Performance Stats
 @mal
-COMMAND view_gdk_cpu() : BAT[str,int] = view_gdk_cpu; 	
-	"Global cpu usage info"
-COMMAND view_gdk_memory(): BAT[str,int] = view_gdk_mem; 
-	"Global memory usage info"
-COMMAND view_gdk_io(): BAT[str,int] = view_gdk_io; 
-	"Global IO activityinfo"
-COMMAND view_gdk_bbp(): BAT[str,int] = view_gdk_bbp; 
-	"Global BBP usage info"
+command view_gdk_cpu() : bat[str,int] = view_gdk_cpu
+	comment "Global cpu usage info";
+command view_gdk_memory(): bat[str,int] = view_gdk_mem
+	comment "Global memory usage info";
+command view_gdk_io(): bat[str,int] = view_gdk_io
+	comment "Global IO activityinfo";
+command view_gdk_bbp(): bat[str,int] = view_gdk_bbp
+	comment "Global BBP usage info";
 
-COMMAND mem_printmap() : void = print_mem_map;
-        "print a map of all memory that is in use"
-COMMAND mem_cursize() : lng = get_mem_cursize;
- 	"the amount of physical swapspace in KB that is currently in use"
-COMMAND mem_maxsize() : lng = get_mem_maxsize;
- 	"the maximum usable amount of physical swapspace in KB (target only)"
-COMMAND mem_maxsize(v:lng) : void = set_mem_maxsize;
- 	"set the maximum usable amount of physical swapspace in KB"
-COMMAND vm_cursize() : lng = get_vm_cursize;
- 	"the amount of logical VM space in KB that is currently in use"
-COMMAND vm_maxsize() : lng = get_vm_maxsize;
- 	"the maximum usable amount of logical VM space in KB (target only)"
-COMMAND vm_maxsize(v:lng) : void = set_vm_maxsize;
- 	"set the maximum usable amount of physical swapspace in KB"
-COMMAND mem_usage(minsize:lng) : BAT[str,lng] = get_mem_usage;
-	"get a split-up of how much memory blocks are in use."
-COMMAND vm_usage(minsize:lng) : BAT[str,lng] = get_vm_usage;
-	"get a split-up of how much virtual memory blocks are in use."
+command mem_printmap() : void = print_mem_map
+        comment "print a map of all memory that is in use";
+command mem_cursize() : lng = get_mem_cursize
+ 	comment "the amount of physical swapspace in KB that is currently in use";
+command mem_maxsize() : lng = get_mem_maxsize
+ 	comment "the maximum usable amount of physical swapspace in KB (target only)";
+command mem_maxsize(v:lng) : void = set_mem_maxsize
+ 	comment "set the maximum usable amount of physical swapspace in KB";
+command vm_cursize() : lng = get_vm_cursize
+ 	comment "the amount of logical VM space in KB that is currently in use";
+command vm_maxsize() : lng = get_vm_maxsize
+ 	comment "the maximum usable amount of logical VM space in KB (target only)";
+command vm_maxsize(v:lng) : void = set_vm_maxsize
+ 	comment "set the maximum usable amount of physical swapspace in KB";
+command mem_usage(minsize:lng) : bat[str,lng] = get_mem_usage
+	comment "get a split-up of how much memory blocks are in use.";
+command vm_usage(minsize:lng) : bat[str,lng] = get_vm_usage
+	comment "get a split-up of how much virtual memory blocks are in use.";
 
 @- BAT Buffer Pool
 @mal
-COMMAND view_bbp_name(): BAT[int,str] = view_bbp_name; 
-	"Pseudo bat to map a BAT id into its name"
-COMMAND view_bbp_refcnt(): BAT[int,int] = view_bbp_refcnt; 
-	"Pseudo bat to map a BAT id into its reference count"
-COMMAND view_bbp_location(): BAT[int,str] = view_bbp_location; 
-	"Pseudo bat to map a BAT id into its disk location"
-COMMAND view_bbp_heat(): BAT[int,int] = view_bbp_heat; 
-	"Pseudo bat to map a BAT id into its name"
-COMMAND view_bbp_dirty(): BAT[int,str] = view_bbp_dirty; 
-	"Pseudo bat to map a BAT id into its dirty/diffs/clean status"
-COMMAND view_bbp_status(): BAT[int,str] = view_bbp_status; 
-	"Pseudo bat to map a BAT id into its disk/load status"
-COMMAND view_bbp_kind(): BAT[int,str] = view_bbp_kind; 
-	"Pseudo bat to map a BAT id into its type"
+command view_bbp_name(): bat[int,str] = view_bbp_name
+	comment "Pseudo bat to map a BAT id into its name";
+command view_bbp_refcnt(): bat[int,int] = view_bbp_refcnt
+	comment "Pseudo bat to map a BAT id into its reference count";
+command view_bbp_location(): bat[int,str] = view_bbp_location
+	comment "Pseudo bat to map a BAT id into its disk location";
+command view_bbp_heat(): bat[int,int] = view_bbp_heat
+	comment "Pseudo bat to map a BAT id into its name";
+command view_bbp_dirty(): bat[int,str] = view_bbp_dirty
+	comment "Pseudo bat to map a BAT id into its dirty/diffs/clean status";
+command view_bbp_status(): bat[int,str] = view_bbp_status
+	comment "Pseudo bat to map a BAT id into its disk/load status";
+command view_bbp_kind(): bat[int,str] = view_bbp_kind
+	comment "Pseudo bat to map a BAT id into its type";
 
-COMMAND check_bbp_size() : lng = check_bbp_size;
-	"Walk the BBP directories, delete leftovers and return total size"
+command check_bbp_size() : lng = check_bbp_size
+	comment "Walk the BBP directories, delete leftovers and return total size";
 
 @- GDK status 
 @mal
-COMMAND view_gdk_env( ): BAT[str,str] = view_gdk_env; 
-	"Pseudo bat to map thread to name"
-COMMAND view_gdk_thread( ): BAT[int,str] = view_gdk_thread; 
-	"Pseudo bat to map thread to name"
+command view_gdk_env( ): bat[str,str] = view_gdk_env
+	comment "Pseudo bat to map thread to name";
+command view_gdk_thread( ): bat[int,str] = view_gdk_thread
+	comment "Pseudo bat to map thread to name";
 
 @- Monet Client Data
 Depricated routines. The client structure is changed
 @mal
-COMMAND view_client_name( ): BAT[int,str] = view_client_name; 
-	"Pseudo bat to map client identifier to its name"
-COMMAND view_client_login( ): BAT[int,str] = view_client_login; 
-	"Pseudo bat to map client identifier to its login time"
-COMMAND view_client_tree( ): BAT[int,str] = view_client_tree; 
-	"Pseudo bat to map client identifier to its current active tree"
+command view_client_name( ): bat[int,str] = view_client_name
+	comment "Pseudo bat to map client identifier to its name";
+command view_client_login( ): bat[int,str] = view_client_login
+	comment "Pseudo bat to map client identifier to its login time";
+command view_client_tree( ): bat[int,str] = view_client_tree
+	comment "Pseudo bat to map client identifier to its current active tree";
 
 @- Monet Variables
 The Monet Variable commands are depreciated, because here we
 convert it to Mal. This has a different structure.
-@mal
-COMMAND view_var_type() : BAT[int,str] = view_var_type; 
-	"Pseudo bat to gain access to all visible variables"
-COMMAND view_var_kind() : BAT[int,str] = view_var_kind; 
-	"Pseudo bat to map variable name to frozen/liquid"
-COMMAND view_var_constant() : BAT[int,str] = view_var_constant; 
-	"Pseudo bat to map variable name to constant/changeable"
-COMMAND view_var_value() : BAT[int,str] = view_var_value; 
-	"Pseudo bat to map variable name to its value (as a string)."
+command view_var_type() : bat[int,str] = view_var_type
+	comment "Pseudo bat to gain access to all visible variables";
+command view_var_kind() : bat[int,str] = view_var_kind
+	comment "Pseudo bat to map variable name to frozen/liquid";
+command view_var_constant() : bat[int,str] = view_var_constant
+	comment "Pseudo bat to map variable name to constant/changeable";
+command view_var_value() : bat[int,str] = view_var_value
+	comment "Pseudo bat to map variable name to its value (as a string).";
 
 @- Monet Modules
 The monet modules are stored differently in V5. Several of the
 old dictionary tables are retained and turned into a view.
 
 @mal
-COMMAND view_modules() : BAT[int,str] = view_modules;
-	"Pseudo bat with all currently available modules" 
-COMMAND module_name(nme:str) : str = get_mod_name;
-	"extract module name from module string" 
-COMMAND module_db(nme:str) : str = get_mod_db;
-	"extract database name from module string" 
-COMMAND format_fcn_sig(nme:str) : str = format_fcn_sig;
-	"print a function signature"
+command view_modules() : bat[int,str] = view_module
+	comment "Pseudo bat with all currently available modules" ;
+command module_name(nme:str) : str = get_mod_name
+	comment "extract module name from module string" ;
+command module_db(nme:str) : str = get_mod_db
+	comment "extract database name from module string" ;
+command format_fcn_sig(nme:str) : str = format_fcn_sig
+	comment "print a function signature";
 
 
 @- Printing 
@@ -121,37 +120,37 @@ Watch out, the order of definitions is crucial, because the most
 specific should be introduced last.
 @mal
 
-PATTERN print(b1:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY][]):int = CMDprint_table;
- "BATs are printed with '#' for legend lines, and the BUNs on seperate
+pattern print(b1:bat[ANY::1,ANY], b2:bat[ANY::1,ANY][]):int = CMDprint_table
+ comment "BATs are printed with '#' for legend lines, and the BUNs on seperate
  lines between brackets, containing each to comma separated values
  (head and tail).
  If multiple BATs are passed for printing, print() performs an implicit
- natural join, producing a multiattribute table."
+ natural join, producing a multiattribute table.";
 
-PATTERN print(order:int,b:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY][]):int
-                                                = CMDprint_otable;
- "The same as normal table print, but enforces to use the order of
-  BAT number [1..argc] to do the printing."
+pattern print(order:int,b:bat[ANY::1,ANY], b2:bat[ANY::1,ANY][]):int
+                                                = CMDprint_otable
+ comment "The same as normal table print, but enforces to use the order of
+  BAT number [1..argc] to do the printing.";
 
-PATTERN table(b1:BAT[any::1,any], b2:BAT[any::1,any][]):int = CMDprint_table_default;
-	"Print an n-ary table. Like print(n-ary) but does not print oid column"
+pattern table(b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_table_default
+	comment "Print an n-ary table. Like print(n-ary) but does not print oid column";
 
-PATTERN table(order:int, b1:BAT[any::1,any], b2:BAT[any::1,any][]):int = CMDprint_table;
-	"Print an n-ary table. Use the ordering of param [1..argc]"
+pattern table(order:int, b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_otable
+	comment "Print an n-ary table. Use the ordering of param [1..argc]";
 
-COMMAND printf(val:bit):int = CMDprint_bit;
-COMMAND printf(val:chr):int = CMDprint_chr;
-COMMAND printf(val:int):int = CMDprint_int;
-COMMAND printf(val:sht):int = CMDprint_sht;
-COMMAND printf(val:oid):int = CMDprint_oid;
-COMMAND printf(val:lng):int = CMDprint_lng;
-COMMAND printf(val:flt):int = CMDprint_flt;
-COMMAND printf(val:dbl):int = CMDprint_dbl;
-COMMAND printf(val:str):int = CMDprint_str;
-COMMAND printf(format:str,val:str):int = CMDprint_formatted_str;
+command printf(format:str,val:bit):int = CMDprint_bit;
+command printf(format:str,val:chr):int = CMDprint_chr;
+command printf(format:str,val:int):int = CMDprint_int;
+command printf(format:str,val:sht):int = CMDprint_sht;
+command printf(format:str,val:oid):int = CMDprint_oid;
+command printf(format:str,val:lng):int = CMDprint_lng;
+command printf(format:str,val:flt):int = CMDprint_flt;
+command printf(format:str,val:dbl):int = CMDprint_dbl;
+command printf(val:str):int = CMDprint_str;
+command printf(format:str,val:str):int = CMDprint_formatted_str;
 
-PATTERN print(val:any):int = CMDprint_val;
-"Print a MIL value between square brackets."
+pattern print(val:any):int = CMDprint_val
+comment "Print a MIL value between square brackets.";
 
 @mil
 LOAD
@@ -161,11 +160,11 @@ LOAD
     ADDHELP("help", "boncz", "Feb  6 1996",
          "provide help for a MIL construct.", "sys");
 
-    PROC col_name(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] := {
+    PROC col_name(bat[any::1,any::2] b, str name) : bat[any::1,any::2] := {
 	b.bbpname(name);
 	return b;
     }
-    PROC rename(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] := {
+    PROC rename(bat[any::1,any::2] b, str name) : bat[any::1,any::2] := {
 	if (not(b.bbpname(name))) 
 		ERROR("rename(%s,%s): operation failed", str(b), name);
 	return b;
@@ -311,12 +310,12 @@ LOAD
          return adm_atomtbl.reverse.find(b.htype);
     ADDHELP("head","boncz","Mar 22 1998","Get head-type as an int","sys");
 
-    PROC readonly( BAT[any::1,any::2] b, int mode) : BAT[any::1,any::2]
+    PROC readonly( bat[any::1,any::2] b, int mode) : bat[any::1,any::2]
         := return access(b,mode);
     ADDHELP("readonly", "boncz", "Aug  6 1998",
         "deprecated. Use 'b.access' instead.", "sys");
  
-    PROC readonly( BAT[any::1,any::2] b) : int := {
+    PROC readonly( bat[any::1,any::2] b) : int := {
         var s := b.info.find("batRestricted");
         if (s = "updatable") {
                 return BAT_WRITE;
@@ -330,10 +329,10 @@ LOAD
     ADDHELP("readonly", "boncz", "Aug  6 1998",
         "deprecated. Use 'info.find(batRestricted)' instead.", "sys");
 
-    PROC mem_usage() : BAT[str,lng] return mem_usage(lng(100000));
-    PROC vm_usage() : BAT[str,lng] return vm_usage(lng(100000));
-    PROC mem_usage(int minsize) : BAT[str,lng] return mem_usage(lng(minsize));
-    PROC vm_usage(int minsize) : BAT[str,lng] return vm_usage(lng(minsize));
+    PROC mem_usage() : bat[str,lng] return mem_usage(lng(100000));
+    PROC vm_usage() : bat[str,lng] return vm_usage(lng(100000));
+    PROC mem_usage(int minsize) : bat[str,lng] return mem_usage(lng(minsize));
+    PROC vm_usage(int minsize) : bat[str,lng] return vm_usage(lng(minsize));
 
 END;
 
@@ -402,11 +401,11 @@ because it provides access to the system guaranteed persistent BAT identifier.
         BATroles(b,"@1","@2");
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
-	*retval= b;
+	*ret = b->batCacheid;
 	
 @c
 int
-view_bbp_name( BAT **retval){       
+view_bbp_name( int *ret){       
 	BAT*    b;
         int     i;
 
@@ -432,7 +431,7 @@ view_bbp_name( BAT **retval){
 The BAT status is redundantly stored in view_bat_info.
 @c
 int
-view_bbp_location(BAT **retval){       
+view_bbp_location(int *ret){       
 	BAT*    b;
         int     i;
 
@@ -452,7 +451,7 @@ view_bbp_location(BAT **retval){
 
 #define monet_modulesilent (GDKdebug&4096)
 
-int view_bbp_heat(BAT **retval){       
+int view_bbp_heat(int *ret){       
 	BAT*    b;
         int     i;
 
@@ -477,7 +476,7 @@ int view_bbp_heat(BAT **retval){
 @-
 The BAT dirty status: dirty => (mem != disk); diffs = not-committed
 @c
-int view_bbp_dirty(BAT **retval){       
+int view_bbp_dirty(int *ret){       
 	BAT*    b;
         int     i;
 
@@ -506,7 +505,7 @@ int view_bbp_dirty(BAT **retval){
 @-
 The BAT status is redundantly stored in view_bat_info.
 @c
-int view_bbp_status(BAT **retval){       
+int view_bbp_status(int *ret){       
 	BAT*    b;
         int     i;
 
@@ -524,7 +523,7 @@ int view_bbp_status(BAT **retval){
         return GDK_SUCCEED;
 }
 
-int view_bbp_kind(BAT **retval){       
+int view_bbp_kind(int *ret){       
 	BAT*    b;
         int     i;
 
@@ -547,7 +546,7 @@ int view_bbp_kind(BAT **retval){
         return GDK_SUCCEED;
 }
 
-int view_bbp_refcnt(BAT **retval){       
+int view_bbp_refcnt(int *ret){       
 	BAT	 *b;
         int     i;
 
@@ -568,7 +567,7 @@ int view_bbp_refcnt(BAT **retval){
 @+ GDK
 The old-fashioned BATdump command is replaced by the sys.
 @c
-int view_gdk_thread(BAT **retval){       
+int view_gdk_thread(int *ret){       
 	BAT*    b;
         int     i;
 
@@ -583,8 +582,8 @@ int view_gdk_thread(BAT **retval){
         return GDK_SUCCEED;
 }
 
-int view_gdk_env(BAT **retval){
-	BAT *b = *retval = BATnew(TYPE_str, TYPE_str, 12);
+int view_gdk_env(int *ret){
+	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
 	char prefix[128];
 	if (b == 0) return GDK_FAIL;
 	if( GDKdbfarmStr[0])
@@ -614,15 +613,15 @@ int check_bbp_size(lng *ret) {
 The Monet system variables are depreciated. They may be revived for Mal though.
 @c
 int
-view_client_name(BAT **retval){       
+view_client_name(int *retval){       
 
 	return GDK_FAIL;
 }
-int view_client_login(BAT **retval){       
-return GDK_FAIL;
+int view_client_login(int *retval){       
+	return GDK_FAIL;
 }
 
-int view_client_tree(BAT **retval){
+int view_client_tree(int *retval){
 	return GDK_FAIL;
 }
 
@@ -633,7 +632,7 @@ The variable information can be turned into a BAT for inspection as well.
 @c
 static char any_str[] = "any";
 
-int view_modules(BAT** res){
+int view_modules(int *res){
 	return GDK_SUCCEED;
 }
 
@@ -674,13 +673,13 @@ time since the beginning of each process.
 static int clk = 0;
 static struct tms state;
 
-int view_gdk_cpu(BAT **retval) {
+int view_gdk_cpu(int *ret) {
 	int     i;
 	struct tms newst;
 	BAT *b;
  
  
-	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
+	b = BATnew(TYPE_str, TYPE_int, 32);
 	if ( b == 0) return GDK_FAIL;
 	if( clk == 0) {
 		clk= time(0);
@@ -707,13 +706,13 @@ int view_gdk_cpu(BAT **retval) {
 Same observations as to view_gdk_cpu()
 @c
 static void *memincr=NULL;
-int view_gdk_mem(BAT **retval) {
+int view_gdk_mem(int *ret) {
 	struct mallinfo m;
 	BAT *b;
 	int i;
 	m = MT_mallinfo();
  
-	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
+	b = BATnew(TYPE_str, TYPE_int, 32);
 	if ( b == 0) return GDK_FAIL;
 
 	/* store counters, ignore errors */
@@ -770,7 +769,7 @@ if (sz > *minsize) {
 } @3 += sz; tot += sz;
 @c
 
-int get_mem_usage(BAT **ret, lng *minsize) {
+int get_mem_usage(int *ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, n=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
@@ -824,11 +823,11 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	if (sz) BUNins(bn, "_tot/bbp", &sz);
 	tot += sz;
 
-	/* special area 2: monet context records 
+/* special area 2: monet context records 
 	DEPRICATED
 	sz = monet_cntxtmax*sizeof(CntxtRec);
-*/
 	if (sz) BUNins(bn, "_tot/mil", &sz);
+*/
 	tot += sz;
 	if (tot) BUNins(bn, "_tot/found", &tot);
 	sz = GDKmem_heapsize();
@@ -845,11 +844,11 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	if (sz) BUNins(bn, "_tot/all", &sz);
 	BBPunlock("get_mem_usage");
 
-	*ret = bn;
+	*ret = bn->batCacheid;
 	return GDK_SUCCEED;
 }
 
-int get_vm_usage(BAT **ret, lng *minsize) {
+int get_vm_usage(int *ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
@@ -903,7 +902,7 @@ int get_vm_usage(BAT **ret, lng *minsize) {
 	if (sz) BUNins(bn, "_tot/sbrk", &tot);
 	BBPunlock("get_vm_usage");
 
-	*ret = bn;
+	*ret = bn->batCacheid;
 	return GDK_SUCCEED;
 }
 
@@ -944,13 +943,13 @@ The BAT grows. It should be compacted.
 # include <sys/resource.h>
 #endif
  
-int view_gdk_io(BAT **retval) {
+int view_gdk_io(int *ret) {
 	struct rusage ru;
 	int i;
 	BAT *b;
  
 	getrusage(RUSAGE_SELF, &ru);
-	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
+	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0) return GDK_FAIL;
  
 	/* store counters, ignore errors */
@@ -967,14 +966,14 @@ int view_gdk_io(BAT **retval) {
 	return GDK_SUCCEED;
 }
 
-int view_gdk_bbp(BAT **retval) {
+int view_gdk_bbp(int *ret) {
 	int 	pbat = 0;
 	int	pdisk = 0;
 	int	pheat = 0; 
 	int	i,tmp=0,per=0; 
 	BAT	*b;
 
-	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
+	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0) return GDK_FAIL;
 
 	for (i = 1; i < BBPsize; i++) {
@@ -1009,57 +1008,64 @@ Check string printing first !!
 int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
-	ptr val = getArgValue(mb,stk,pci,1);
-	/* check for BAT value! */
+	ptr val = getArgReference(mb,stk,pci,1);
         FILE *fp = GDKout;
 	if( val==NULL) {
 		tpe = TYPE_str;
 		val = (ptr) "<null>";
 	}
+	if( isBatType(tpe)){
+		BAT *b = BATdescriptor(*(int*)val);
+		if( b== NULL) {
+			GDKerror("CMDprint_val:could not access descriptor\n");
+			return GDK_FAIL;
+		}
+		BATprint(b);
+		return GDK_SUCCEED;
+	}
         fputs("[ ", fp);
 	if( tpe== TYPE_str)
 		ATOMprint(tpe, *(str*)val, fp);
-        else 	ATOMprint(tpe, val, fp);
+        else  	ATOMprint(tpe, val, fp);
         fputs(" ]\n", fp);
         return GDK_SUCCEED;
 }
 
-int CMDprint_bats( MalBlkPtr m, MalStkPtr s, InstrPtr p){
-        FILE *fp = GDKout;
-	fputs("[print bats]",fp);
-        /* BATmultiprintf(fp, argc+1, argv, TRUE, order);*/
+int CMDprint_otable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+        BAT *piv[MAXPARAMS],*b;
+        int nbats = 0;
+	int tpe,i,order=0;
+	ptr val;
+
+	order = *(int*) getArgReference(mb,stk,pci,1);
+	for(i=2; i< pci->argc;i++) {
+		tpe = getArgType(mb,pci,i);
+		val = getArgReference(mb,stk,pci,i);
+		if( !isBatType(tpe)) return GDK_FAIL;
+		b= BATdescriptor(*(int*)val);
+		if(b == NULL) return GDK_FAIL;
+                piv[nbats++] = b;
+        } 
+        BATmultiprintf(GDKout, nbats, piv, TRUE, order);
         return GDK_SUCCEED;
 }
 
-int CMDprint_otable( MalBlkPtr m, MalStkPtr s, InstrPtr p){
-/* int *order, ...) {
-        BAT *b, *piv[MAXPARAMS];
+int CMDprint_table( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+        BAT *piv[MAXPARAMS],*b;
         int nbats = 0;
-        va_list ap;
+	int tpe,i;
+	ptr val;
 
-        va_start(ap,order);
-        while((b = va_arg(ap, BAT*)) != NULL) {
+	for(i=1; i< pci->argc;i++) {
+		tpe = getArgType(mb,pci,i);
+		val = getArgReference(mb,stk,pci,i);
+		if( !isBatType(tpe)) return GDK_FAIL;
+		b= BATdescriptor(*(int*)val);
+		if(b == NULL) return GDK_FAIL;
                 piv[nbats++] = b;
-        }
-        return CMDprint_bats(nbats, piv, *order);
-*/
-	printf("calling otable");
-	return GDK_SUCCEED;
-}
-
-int CMDprint_table( MalBlkPtr m, MalStkPtr s, InstrPtr p){
-/* (BAT* b, ...) {
-        BAT *piv[MAXPARAMS];
-        int nbats = 0;
-        va_list ap;
-
-        va_start(ap,b);
-        do {
-                piv[nbats++] = b;
-        } while((b = va_arg(ap, BAT*)) != NULL);
-        return CMDprint_bats(nbats, piv, 0);
-*/	printf("calling print_table");
-	return GDK_SUCCEED;
+        } 
+        BATmultiprintf(GDKout, nbats, piv, FALSE, 0);
+        return GDK_SUCCEED;
 }
 
 @-
@@ -1071,32 +1077,6 @@ replaced by a squeezer into a type-specific function calls.
 Formatted print statements are to be broken down into its constituents.
 This avoids repeated type checking in most cases.
 @c
-int CMDprint_formatted_str(int *ret, str *format, str *s){
-	FILE *fd = getClient()->fdout;
-	str c;
-	if( strNil(*s)) *ret = fputs("nil",fd);
-	else {
-		for(c= *format;*c; c++){
-			if( *c=='\\'){
-				c++;
-				switch(*c){
-				case 'n': *ret =  fputc('\n',fd);break;
-				case 't': *ret =  fputc('\t',fd);break;
-				case 'r': *ret =  fputc('\r',fd);break;
-				case '\\': *ret =  fputc('\\',fd);break;
-				default : *ret = fputc('\\',fd);fputc(*c,fd);
-				}
-			} else 
-			if( *c== '%'){
-				c++;
-				if(*c!= 's') 
-				GDKerror("ERROR: printf format limitation\n");
-				else  fputs(*s,fd);
-			} else *ret = fputc(*c,fd);
-		}
-	}
-	return GDK_SUCCEED;
-}
 int CMDprint_str(int *ret, str *s){
 	FILE *fd = getClient()->fdout;
 	str c;
@@ -1117,68 +1097,110 @@ int CMDprint_str(int *ret, str *s){
 	}
 	return GDK_SUCCEED;
 }
-int CMDprint_oid(int *ret, oid *s){
+int CMDprint_formatted_str(int *ret, ptr fmt, str *s){
 	FILE *fd = getClient()->fdout;
+	char *format;
+	str c;
+	/* TODO: check format properly !!! */
+	format= *(str *)fmt;
+	if( format== NULL) return GDK_FAIL;
+	if( strchr(format,'%') == NULL) return GDK_FAIL;
+
+	if( strNil(*s)) *ret = fputs("nil",fd);
+	else {
+		for(c= format;*c; c++){
+			if( *c=='\\'){
+				c++;
+				switch(*c){
+				case 'n': *ret =  fputc('\n',fd);break;
+				case 't': *ret =  fputc('\t',fd);break;
+				case 'r': *ret =  fputc('\r',fd);break;
+				case '\\': *ret =  fputc('\\',fd);break;
+				default : *ret = fputc('\\',fd);fputc(*c,fd);
+				}
+			} else 
+			if( *c== '%'){
+				c++;
+				if(*c!= 's') 
+				GDKerror("ERROR: printf format limitation\n");
+				else  fputs(*s,fd);
+			} else *ret = fputc(*c,fd);
+		}
+	}
+	return GDK_SUCCEED;
+}
+int CMDprint_oid(int *ret, ptr fmt, oid *s){
+	FILE *fd = getClient()->fdout;
+	char *format; /* "%@2";*/
+	/* TODO: check format properly !!! */
+	format= *(str *)fmt;
+	if( format== NULL) return GDK_FAIL;
+	if( strchr(format,'%') == NULL) return GDK_FAIL;
+
 	if( *s == oid_nil) *ret = fputs("nil",fd);
 	else *ret= ATOMprint(TYPE_oid,s,fd);
 	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
 }
-int CMDprint_bit(int *ret, bit *s){
+int CMDprint_bit(int *ret, ptr fmt, bit *s){
 	FILE *fd = getClient()->fdout;
+	char *format; /* "%@2";*/
+	/* TODO: check format properly !!! */
+	format= *(str *)fmt;
+	if( format== NULL) return GDK_FAIL;
+	if( strchr(format,'%') == NULL) return GDK_FAIL;
+
 	if( *s == bit_nil) *ret = fputs("nil",fd);
-	else *ret= ATOMprint(TYPE_bit,s,getClient()->fdout);
+	else 
+	if( *s ) fprintf(fd,format,"true");
+	else 	fprintf(fd,format,"false");
+
+	/* *ret= ATOMprint(TYPE_bit,s,getClient()->fdout);*/
 	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
 }
 
 @-
+The formatted print routines permit just a single
+format and argument. This to simplify the analysis.
+The format type conformance should be implemented.
+
 @= printType
-int CMDprint_@1(int *ret, @1 *v){
+int CMDprint_@1(int *ret, ptr fmt, @1 *v){
 	FILE *fd = getClient()->fdout;
+	char *format; /* "%@2";*/
+	/* TODO: check format properly !!! */
+	format= *(str *)fmt;
+	if( format== NULL) return GDK_FAIL;
+	if( strchr(format,'%') == NULL) return GDK_FAIL;
+
 	if( *v == @1_nil) *ret = fputs("nil",fd);
-	else
-	*ret= fprintf(fd,@2,*v);
+	else *ret= fprintf(fd,format,*v);
 	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
 }
 
 @c
- 	@:printType(chr,"%c")@
- 	@:printType(sht,"%d")@
- 	@:printType(int,"%d")@
- 	@:printType(lng,"%d")@
- 	@:printType(flt,"%f")@
- 	@:printType(dbl,"%f")@
-/*
-int print_table(int *order, ...) {
-	BAT *piv[MAXPARAMS];
-	int argc = 0;
-	va_list ap;
+ 	@:printType(chr,c)@
+ 	@:printType(sht,d)@
+ 	@:printType(int,d)@
+ 	@:printType(lng,d)@
+ 	@:printType(flt,f)@
+ 	@:printType(dbl,f)@
 
-        va_start (ap, order);
-        do {
-		piv[argc] = va_arg (ap,BAT*) ;
-	} while(piv[argc++]);
-        va_end (ap);
-	BATmultiprintf(GDKout, argc, piv, FALSE, *order);
-	return GDK_SUCCEED;
-}
+int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+        BAT *piv[MAXPARAMS],*b;
+        int nbats = 0;
+	int tpe,i;
+	ptr val;
 
-*/
-int CMDprint_table_default( MalBlkPtr m, MalStkPtr s, InstrPtr p){
-/*(BAT *b, ...) {
-	BAT *piv[MAXPARAMS];
-	int argc = 1;
-	va_list ap;
-
-	piv[0] = b;
-        va_start (ap, b);
-        do {
-		piv[argc] = va_arg (ap,BAT*) ;
-	} while(piv[argc++]);
-        va_end (ap);
-	BATmultiprintf(GDKout, argc, piv, FALSE, 0);
-*/
-	printf("calling print_table_default");
-	return GDK_SUCCEED;
+	for(i=1; i< pci->argc;i++) {
+		tpe = getArgType(mb,pci,i);
+		val = getArgReference(mb,stk,pci,i);
+		if( !isBatType(tpe)) return GDK_FAIL;
+		b= BATdescriptor(*(int*)val);
+		if(b == NULL) return GDK_FAIL;
+                piv[nbats++] = b;
+        } 
+        BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
+        return GDK_SUCCEED;
 }
 
 int format_fcn_sig(str *sig, oid *fid){

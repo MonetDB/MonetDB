@@ -27,18 +27,18 @@ initialization routine.
 A concrete example is the 'blob' datatype (see blob.mx)
 
 @mal
-MODULE atoms;
+module atoms;
 
-PATTERN tostr(nme:str):int   = atoms_tostr;
-PATTERN fromstr(nme:str):int = atoms_fromstr;
-PATTERN nequal(nme:str):int  = atoms_nequal;
-PATTERN hash(nme:str):int    = atoms_hash;
-PATTERN null(nme:str):int    = atoms_null;
-PATTERN convert(nme:str):int = atoms_convert;
-PATTERN put(nme:str):int     = atoms_put;
-PATTERN del(nme:str):int     = atoms_del;
-PATTERN length(nme:str):int  = atoms_length;
-PATTERN heap(nme:str):int    = atoms_heap;
+pattern tostr(nme:str):int   = atoms_tostr;
+pattern fromstr(nme:str):int = atoms_fromstr;
+pattern nequal(nme:str):int  = atoms_nequal;
+pattern hash(nme:str):int    = atoms_hash;
+pattern null(nme:str):int    = atoms_null;
+pattern convert(nme:str):int = atoms_convert;
+pattern put(nme:str):int     = atoms_put;
+pattern del(nme:str):int     = atoms_del;
+pattern length(nme:str):int  = atoms_length;
+pattern heap(nme:str):int    = atoms_heap;
 
 @-
 The Monet kernel contains a few built-in atomic types together
@@ -89,6 +89,17 @@ COMMAND flt(v:flt):flt = fltFromfltImpl;
 COMMAND dbl(v:dbl):dbl = dblFromdblImpl;
 COMMAND ptr(v:ptr):ptr = ptrFromptrImpl;
 COMMAND oid(v:oid):oid = oidFromoidImpl;
+
+COMMAND void(v:void):void = voidFromvoidImpl;
+COMMAND bit(v:void):bit = bitFromvoidImpl;
+COMMAND sht(v:void):sht = shtFromvoidImpl;
+COMMAND int(v:void):int = intFromvoidImpl;
+COMMAND lng(v:void):lng = lngFromvoidImpl;
+COMMAND bat(v:void):bat = batFromvoidImpl;
+COMMAND flt(v:void):flt = fltFromvoidImpl;
+COMMAND dbl(v:void):dbl = dblFromvoidImpl;
+COMMAND oid(v:void):oid = oidFromvoidImpl;
+COMMAND ptr(v:void):ptr = ptrFromvoidImpl;
 @-
 We should also deal with superflous operations, such as int(v:int).
 This is a noop operation that should ideally be filtered out with
@@ -122,29 +133,15 @@ the code squeezer. [TODO]
 
 #ifndef _MAL_ATOMS
 #define _MAL_ATOMS
-/*
 #include "mal_stack.h"
 #include "mal_resolve.h"
 
-*/
 #include "gdk.h"
 #define DEBUG_MAL_ATOMS 1
 #endif /*  _MAL_ATOMS*/
 
 @c
 #include "atoms.h"
-/*
-str atoms_tostr(MalBlkPtr m, MalStkPtr s, int argc, ptr argv[MAXARG]){
-	str nme = argv[1];
-	InstrPtr p;
-
-	search the function 'nme' in the current scope 
-
-	sprintf(buf,"signature of '%s.%s' should be: tostr(...)\n",
-		p->modname, p->fcnnme);
-	return raiseException("GDKerror","signature should be: tostr(...)\n");
-}
-*/
 @-
 The pattern for conversion routines is relatively easy to define.
 @= convertImpl
@@ -156,23 +153,43 @@ int @1FromStrImpl(@1 *ret, str *val){
 }
 int @1ToStrImpl(str *ret, @1 *val){
 	int l=strlen(*ret);
-	(void) @1ToStr(&ret,&l,val);
+	(void) @1ToStr(ret,&l,val);
 	return GDK_SUCCEED;
 }
 int @1From@1Impl(@1 *ret, @1 *val){
 	*ret= *val;
 	return GDK_SUCCEED;
 }
+int @1FromvoidImpl(@1 *ret, void *val){
+	memcpy(ret, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
+	return GDK_SUCCEED;
+}
 @-
+Strings have to be dealt with differently, because
+we recieve a pointer to the string directly.
+To make it work properly, we need a call be reference
+in those places where we leave a result behind.
 @c
+int voidFromStrImpl(void *ret, str val){
+	memcpy(ret, ATOMnilptr(TYPE_void), ATOMsize(TYPE_void));
+	return GDK_SUCCEED;
+}
+int voidToStrImpl(str *ret, void *val){
+	*ret = ATOMnilptr(TYPE_str);
+	return GDK_SUCCEED;
+}
 int oidFromStrImpl(oid *ret, str *val){
 	int l = strlen(*val);
-	(void) OIDfromStr(*val, &l, &ret);
+	(void) OIDfromStr(*val, &l, ret);
 	return GDK_SUCCEED;
 }
 int oidToStrImpl(str *ret, oid *val){
 	int l= sizeof(oid);
 	(void) OIDtoStr(ret,&l, val);
+	return GDK_SUCCEED;
+}
+int voidFromvoidImpl(ptr *ret, ptr *val){
+	*ret = oid_nil;
 	return GDK_SUCCEED;
 }
 @:convertImpl(sht)@

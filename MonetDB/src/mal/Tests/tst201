@@ -2,7 +2,7 @@
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 
 # Predefined code segment
-use "mal/iterator";
+#use "mal/iterator";		CAUSES an ERROR!!
 	_v0:= oid(20000000);
 	_v1:= setoid(_v0);
 #setoid(oid(20000000));

@@ -544,28 +544,38 @@ unknown(0)#"                   ]
 [ "elapuser",	  0	  ]
 [ "system",	  13230	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------------------------------#
-# BAT:		  env										  #
-# (str)		  (str)										  #
-#-------------------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"									  ]
-[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "manegold"									  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
-[ "processid",	  "16592552"									  ]
-[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"										  ]
-#-------------------------------------------------------------------------------------------------#
-# BAT:		  env										  #
-# (str)		  (str)										  #
-#-------------------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"									  ]
-[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "manegold"									  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
-[ "processid",	  "16592552"									  ]
-[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"										  ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  env												  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
+[ "gdk_dbname",		  "Tests_src_tools"										  ]
+[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
+[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3"												  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
+[ "monet_pid",		  "19335"											  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_deamon",	  "yes"												  ]
+[ "monet_prompt",	  "\001\001"											  ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  env												  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
+[ "gdk_dbname",		  "Tests_src_tools"										  ]
+[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
+[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3"												  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
+[ "monet_pid",		  "19335"											  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_deamon",	  "yes"												  ]
+[ "monet_prompt",	  "\001\001"											  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
@@ -618,17 +628,22 @@ unknown(0)#"                   ]
 [ "elapuser",	  10	  ]
 [ "system",	  13230	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------------------------------#
-# BAT:		  env										  #
-# (str)		  (str)										  #
-#-------------------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"									  ]
-[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "manegold"									  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
-[ "processid",	  "16592552"									  ]
-[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"										  ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  env												  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
+[ "gdk_dbname",		  "Tests_src_tools"										  ]
+[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
+[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3"												  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
+[ "monet_pid",		  "19335"											  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_deamon",	  "yes"												  ]
+[ "monet_prompt",	  "\001\001"											  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
@@ -662,12 +677,21 @@ unknown(0)#"                   ]
 [ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL prelude.
+setoid(oid(20000000));
+
+printf("Start of MIL script.\n");
 Start of MIL script.
+
+clientid().print();
 [ 0 ]
+debugmask().print();
 [ 10 ]
+qstat();
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
+
+bbp.print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -678,6 +702,7 @@ Start of MIL script.
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -688,6 +713,7 @@ Start of MIL script.
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+procs();
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -754,6 +780,7 @@ Start of MIL script.
 [ "vars() : void"									  ]
 [ "vm_usage() : BAT[str,lng]"								  ]
 [ "vm_usage(int) : BAT[str,lng]"							  ]
+vars();
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
@@ -805,6 +832,7 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+view_bbp_kind().print();
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -831,6 +859,7 @@ Start of MIL script.
 [ 20,	  "tran"  ]
 [ 21,	  "tran"  ]
 [ 22,	  "tran"  ]
+view_bbp_location().print();
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -857,6 +886,7 @@ Start of MIL script.
 [ 20,	  "20"		  ]
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
+view_bbp_name().print();
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -883,6 +913,7 @@ Start of MIL script.
 [ 20,	  "monet_fcntbl"	  ]
 [ 21,	  "monet_acctbl"	  ]
 [ 22,	  "monet_atomtbl"	  ]
+view_bbp_refcnt().print();
 #-----------------#
 # BAT:	  group	  #
 # (int)	  (int)	  #
@@ -909,6 +940,7 @@ Start of MIL script.
 [ 20,	  1	  ]
 [ 21,	  1	  ]
 [ 22,	  1	  ]
+view_bbp_status().print();
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -935,11 +967,13 @@ Start of MIL script.
 [ 20,	  "load"  ]
 [ 21,	  "load"  ]
 [ 22,	  "load"  ]
+view_client_tree().print();
 #-----------------------------------------#
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 0,	  "print(view_client_tree())"	  ]
+view_gdk_bbp().print();
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -950,6 +984,7 @@ Start of MIL script.
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
+view_var_constant().print();
 #-----------------------------------------#
 # BAT:			  value_status	  #
 # (str)			  (str)		  #
@@ -1001,6 +1036,7 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "constant"	  ]
 [ "monet_fcn_imp",	  "constant"	  ]
 [ "monet_fcn_fcn",	  "constant"	  ]
+view_var_kind().print();
 #-----------------------------------------#
 # BAT:			  type_status	  #
 # (str)			  (str)		  #
@@ -1052,6 +1088,7 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "frozen"	  ]
 [ "monet_fcn_imp",	  "frozen"	  ]
 [ "monet_fcn_fcn",	  "frozen"	  ]
+view_var_type().print();
 #---------------------------------#
 # BAT:			  type	  #
 # (str)			  (str)	  #
@@ -1103,6 +1140,8 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
+
+dir();
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
@@ -1128,9 +1167,11 @@ Start of MIL script.
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
+ls();
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------#
+view_bbp_heat().print();
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -1157,18 +1198,26 @@ Start of MIL script.
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
+
+printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
+
+queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
 #[    132,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5fe20cf0.
 unknown(0)#"                   ]
 #[     51,         1,   running,        50, "queue()#"                      ]
+threadid().print();
 [ 1 ]
+
+clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
 [ "adm",  "Fri Jan 19 18:06:16 2001",	  "clients()"	  ]
+cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
@@ -1178,28 +1227,41 @@ unknown(0)#"                   ]
 [ "elapuser",	  60	  ]
 [ "system",	  13240	  ]
 [ "elapsystem",	  10	  ]
-#-------------------------------------------------------------------------------------------------#
-# BAT:		  env										  #
-# (str)		  (str)										  #
-#-------------------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"									  ]
-[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "manegold"									  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
-[ "processid",	  "16592552"									  ]
-[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"										  ]
-#-------------------------------------------------------------------------------------------------#
-# BAT:		  env										  #
-# (str)		  (str)										  #
-#-------------------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"									  ]
-[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "manegold"									  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
-[ "processid",	  "16592552"									  ]
-[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"										  ]
+env();
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  env												  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
+[ "gdk_dbname",		  "Tests_src_tools"										  ]
+[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
+[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3"												  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
+[ "monet_pid",		  "19335"											  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_deamon",	  "yes"												  ]
+[ "monet_prompt",	  "\001\001"											  ]
+environment().print();
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  env												  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
+[ "gdk_dbname",		  "Tests_src_tools"										  ]
+[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
+[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3"												  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
+[ "monet_pid",		  "19335"											  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_deamon",	  "yes"												  ]
+[ "monet_prompt",	  "\001\001"											  ]
+io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
@@ -1212,6 +1274,7 @@ unknown(0)#"                   ]
 [ "oublock",	  1	  ]
 [ "nvcsw",	  14402	  ]
 [ "ninvcsw",	  48	  ]
+memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
@@ -1226,21 +1289,25 @@ unknown(0)#"                   ]
 [ "fsmblks",	  12096		  ]
 [ "uordblks",	  936512	  ]
 [ "fordblks",	  354928	  ]
+threads();
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
+view_client_login().print();
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 0,	  "Fri Jan 19 18:06:16 2001"	  ]
+view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
 #-----------------#
 [ 0,	  "adm"	  ]
+view_gdk_cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
@@ -1250,17 +1317,24 @@ unknown(0)#"                   ]
 [ "elapuser",	  10	  ]
 [ "system",	  13250	  ]
 [ "elapsystem",	  10	  ]
-#-------------------------------------------------------------------------------------------------#
-# BAT:		  env										  #
-# (str)		  (str)										  #
-#-------------------------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"									  ]
-[ "directory",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "manegold"									  ]
-[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
-[ "processid",	  "16592552"									  ]
-[ "home",	  "/var/tmp/manegold.GNU_32.30231/monet/.GNU_32/IRIX646.5"			  ]
-[ "version",	  "4.2"										  ]
+view_gdk_env().print();
+#-------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  env												  #
+# (str)			  (str)												  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
+[ "gdk_dbname",		  "Tests_src_tools"										  ]
+[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
+[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
+[ "gdk_version",	  "4.3"												  ]
+[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
+[ "monet_pid",		  "19335"											  ]
+[ "monet_welcome",	  "yes"												  ]
+[ "monet_deamon",	  "yes"												  ]
+[ "monet_prompt",	  "\001\001"											  ]
+view_gdk_io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
@@ -1273,6 +1347,7 @@ unknown(0)#"                   ]
 [ "oublock",	  1	  ]
 [ "nvcsw",	  14402	  ]
 [ "ninvcsw",	  48	  ]
+view_gdk_memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
@@ -1287,10 +1362,17 @@ unknown(0)#"                   ]
 [ "fsmblks",	  12120		  ]
 [ "uordblks",	  935416	  ]
 [ "fordblks",	  356024	  ]
+view_gdk_thread().print();
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
+
+printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
+
+printf("End of MIL script.\n");
 End of MIL script.
+
+quit();

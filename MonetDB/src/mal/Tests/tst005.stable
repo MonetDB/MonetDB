@@ -14,12 +14,12 @@
 #	redo l;
 #end l;
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-	r := 0;	#1:(r:int->2)($1:int->1)
-	l := arith.<(r,1);	#2:(l:bit->4)(r:int->2)($3:int->3)
-BARRIER	l;	#3:(l:bit->4)
-	r := arith.+(r,1);	#4:(r:int->2)(r:int->2)($3:int->3)
-	l := false;	#5:(l:bit->4)($5:bit->5)
-	REDO l ;	#6:(l:bit->4)
-END	l;	#7:(l:bit->4)
-END FUNCTION;	#8:
+function Service.main():int;	#0:(main:int->0)
+	r := 0;	#1:(r:int->13)($14:int->14)
+	l := arith.<(r,1);	#2:(l:bit->15)(r:int->13)($16:int->16)
+barrier	l;	#3:(l:bit->15)
+	r := arith.+(r,1);	#4:(r:int->13)(r:int->13)($16:int->16)
+	l := false;	#5:(l:bit->15)($17:bit->17)
+	redo l ;	#6:(l:bit->15)
+end	l;	#7:(l:bit->15)
+end function;	#8:

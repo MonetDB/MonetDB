@@ -9,16 +9,17 @@
 ## the next step is to trace the call of a mal function call
 #
 #command + (L:any::1,R:any::1):any::1 = addIntInt; 
+ERROR: address of function addIntInt not found
+command Service.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 unknown:(addIntInt:any::1->15)(L:any::1->13)(R:any::1->14)
 #
 #function doitOnce():int;
-COMMAND Service.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 unknown:(addIntInt:any::1->3)(L:any::1->1)(R:any::1->2)
 #	z:= 12;
 #	return z;
 #end function;
-FUNCTION doitOnce():int;	#0:(doitOnce:int->0)
-	z := 12;	#1:(z:int->2)($1:int->1)
-	RETURN z;	#2:(z:int->2)
-END FUNCTION;	#3:
+function doitOnce():int;	#0:(doitOnce:int->0)
+	z := 12;	#1:(z:int->13)($14:int->14)
+	return z;	#2:(z:int->13)
+end function;	#3:
 #
 #function doitTwice(i:int):int;
 #	j:= 2;
@@ -26,12 +27,12 @@ END FUNCTION;	#3:
 #	i:= j+k;
 #	return i;
 #end function;
-FUNCTION doitTwice(i:int):int;	#0:(doitTwice:int->0)(i:int->1)
-	j := 2;	#1:(j:int->3)($2:int->2)
-	k := 11111;	#2:(k:int->5)($4:int->4)
-	i := Service.+(j,k);	#3:(i:int->1)(j:int->3)(k:int->5)
-	RETURN i;	#4:(i:int->1)
-END FUNCTION;	#5:
+function doitTwice(i:int):int;	#0:(doitTwice:int->0)(i:int->13)
+	j := 2;	#1:(j:int->14)($15:int->15)
+	k := 11111;	#2:(k:int->16)($17:int->17)
+	i := Service.+(j,k);	#3:(i:int->13)(j:int->14)(k:int->16)
+	return i;	#4:(i:int->13)
+end function;	#5:
 #
 #
 #a:=1;
@@ -41,14 +42,14 @@ END FUNCTION;	#5:
 #c:= 3;
 #d:= doitTwice("wrong");
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-	a := 1;	#1:(a:int->2)($1:int->1)
-	b := Service.doitOnce();	#2:(b:int->3)
-	c := 2;	#3:(c:int->5)($4:int->4)
-	d := Service.doitTwice(3);	#4:(d:int->7)($6:int->6)
-	c := 3;	#5:(c:int->5)($6:int->6)
-	d := doitTwice("wrong");	#6 unknown:(d:int->7)($8:str->8)
-END FUNCTION;	#7:
+function Service.main():int;	#0:(main:int->0)
+	a := 1;	#1:(a:int->13)($14:int->14)
+	b := Service.doitOnce();	#2:(b:int->15)
+	c := 2;	#3:(c:int->16)($17:int->17)
+	d := Service.doitTwice(3);	#4:(d:int->18)($19:int->19)
+	c := 3;	#5:(c:int->16)($19:int->19)
+	d := doitTwice("wrong");	#6 unknown:(d:int->18)($20:str->20)
+end function;	#7:
 mal_interpreter address Service.+ unknown
 CATCH ERROR MALexception:Service.main[6]:Instruction type not fixed
 

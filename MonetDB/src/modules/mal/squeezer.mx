@@ -20,7 +20,6 @@ infrastructure. They will disappear when the functionality is fixed.
 # The routines below are linked with the kernel by default
 
 MODULE squeezer;
-EXCEPTION IllegalAccess;
 PATTERN prepare():int = sqzPrepare;
 PATTERN access(nme:str):int = sqzAccess;
 COMMAND AccessTst(i:int):int = sqzAccessTst;

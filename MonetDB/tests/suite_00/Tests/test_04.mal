@@ -1,0 +1,41 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+	_v0:= oid(20000000);
+	_v1:= setoid(_v0);
+#setoid(oid(20000000));
+## test correctness of semijoin
+	_v2:= new(int,int);
+	b := _v2;
+#b:= new(int,int);
+	_v3:= new(int,int);
+	c := _v3;
+#c:= new(int,int);
+	_v4:= insert(b,0,0);
+#b.insert(0,0);
+	_v5:= insert(b,1,1);
+#b.insert(1,1);
+	_v6:= insert(b,1,2);
+#b.insert(1,2);
+	_v7:= insert(b,1,3);
+#b.insert(1,3);
+	_v8:= insert(b,1,4);
+#b.insert(1,4);
+	_v9:= insert(c,1,5);
+#c.insert(1,5);
+	_v10:= insert(c,1,4);
+#c.insert(1,4);
+	_v11:= insert(c,2,2);
+#c.insert(2,2);
+	_v12:= semijoin(b,c);
+	_v13:= print(_v12);
+#b.semijoin(c).print;
+	_v14:= semijoin(c,b);
+	_v15:= print(_v14);
+#c.semijoin(b).print;
+	_v16:= semijoin(b,b);
+	_v17:= print(_v16);
+#b.semijoin(b).print;
+#
+#quit;

@@ -3,9 +3,8 @@
 @* System Independent Layer
 
 GDK is built on POSIX. Exceptions are made for memory mapped files and 
-anonynmous
-virtual memory, for which somewhat higher-level functions are defined 
-here.
+anonynmous virtual memory, for which somewhat higher-level functions are 
+defined here.
 
 Most of this file concerns itself with emulation POSIX functionality on 
 the WIN32 native platform.
@@ -36,7 +35,14 @@ the WIN32 native platform.
 # endif
 #endif
 
-#ifdef HAVE_NOMALLINFO
+#define NOMALLOPT 	/* we assume no mallopt if there is no mallinfo */
+
+#if (defined(WIN32) && (!defined(__CYGWIN__)) && (!defined(__CYGWIN32__)))
+# define NATIVE_WIN32 1
+#endif
+
+#define HAVE_MALLINFO	/* forcefull define */
+#ifndef HAVE_MALLINFO
 #define M_MXFAST	1  /* set size of blocks to be fast */
 #define M_NLBLKS	2  /* set number of block in a holding block */
 #define M_GRAIN		3  /* set number of sizes mapped to one, for */
@@ -57,27 +63,33 @@ struct mallinfo  {
 };
 typedef struct mallinfo mallinfo_t;
 
+#define mallinfo() 		{0}
 #define mallopt(cmd,value)	0
+
+#endif /* ! HAVE_MALLINFO */
+
+gdk_export struct mallinfo MT_mallinfo();
+
+@- locking, sleep, vsnprintf
+@h
+#define F_TLOCK 2 /* test and lock a region for exclusive use */
+#define F_ULOCK 0 /* unlock a previously locked region */
+#define F_LOCK 1 /* lock a region for exclusive use */
+
+gdk_export int 	MT_lockf(char *filename, int mode, size_t off, int len);
+gdk_export void MT_sleep_ms(unsigned int ms);
+
+#ifndef HAVE_VSNPRINTF
+#define vsnprintf(buf,size,format,ap) vsprintf(buf,format,ap)
 #endif
 
-#define NOMALLOPT
+@- virtual memory
+@h
+#define MT_VMUNITLOG 	16
+#define MT_VMUNITSIZE 	(1 << MT_VMUNITLOG)
 
-#ifdef NATIVE_WIN32
-#define DIR_SEP '\\' 
-#define DIR_SEP_STR "\\" 
-#define PATH_SEP ';'
-#define PATH_SEP_STR ";"
-#define SO_EXT ".dll"
-#else
-#define DIR_SEP '/' 
-#define DIR_SEP_STR "/" 
-#define PATH_SEP ':'
-#define PATH_SEP_STR ":"
-#define SO_EXT ".so"
-#endif 
-
-#define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
-#define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
+gdk_export int MT_alloc_register(void *p, unsigned int size, char mode);
+gdk_export int MT_alloc_print();
 
 /* the new mmap modes, mimick default MADV_* madvise POSIX constants */
 #define MMAP_NORMAL     	0               /* no further special treatment */
@@ -107,19 +119,42 @@ gdk_export void  MT_vmfree(void *p, size_t size);
 gdk_export void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsize);
 gdk_export int   MT_path_absolute(char *path);
 
+@- Posix under WIN32 
+@T
+WIN32 actually supports many posix functions directly.  Some it does not, though. 
 
-gdk_export struct mallinfo MT_mallinfo();
+For some functionality we move in Monet from posix calls to MT_*() calls, which translate easier 
+to WIN32.  Examples are MT_mmap() , MT_sleep_ms() and MT_path_absolute(). Why? In the case
+of mmap() it is much easier for WIN32 to get a filename parameter rather than a file-descriptor. 
+That is the reason in the case of mmap() to go for a MT_mmap() solution.
 
-#ifdef WIN32
+For some other funtionality, we do not need to abandon the posix interface, though. Two cases can
+be distuinguished:
+\begin{itemize}
+\item missing functions in WIN32, which are directly implemented (e.g. dlopen()/dlsym()/dlclose()).
+\item posix functions in WIN32 whose functionlity should be changed a bit. Examples are 
+      stat()/rename()/mkdir()/rmdir() who under WIN32 do not work if the path ends with a directory 
+      separator, but should work according to posix. We remap such functions using a define
+      to an equivalent win_*() function (which in its implementation calls through to the WIN32
+      function).
+\end{itemize}
+@h
 #ifdef NATIVE_WIN32
+#define DIR_SEP '\\' 
+#define DIR_SEP_STR "\\" 
+#define PATH_SEP ';'
+#define PATH_SEP_STR ";"
+#define SO_EXT ".dll"
+
 #define RTLD_LAZY	1
 #define RTLD_NOW	2
 #define RTLD_GLOBAL	4
 
-gdk_export void *dlopen  (const char *__file, int __mode);
-gdk_export int dlclose   (void *__handle);
-gdk_export void *dlsym   (void * __handle, const char * __name);
-gdk_export char *dlerror (void);
+gdk_export void*	dlopen (const char *__file, int __mode);
+gdk_export int		dlclose (void *__handle);
+gdk_export void*	dlsym (void * __handle, const char * __name);
+gdk_export char*	dlerror (void);
+gdk_export int 		gettimeofday(struct timeval *tv, int *ignore_zone);
 
 #define _errno		win_errno
 #define ftruncate	win_ftruncate
@@ -158,57 +193,45 @@ gdk_export int win_mkdir(const char*, const int mode);
 
 #define GDK_MEM_QUERYSIZE(p) _msize(p)
 
-#else /* CYGWIN32 */
+#else /* UNIX (or CYGWIN) */
+
+#define DIR_SEP '/' 
+#define DIR_SEP_STR "/" 
+#define PATH_SEP ':'
+#define PATH_SEP_STR ":"
+#define SO_EXT ".so"
+
+#ifdef WIN32 /* but not native, hence CYGWIN specific defines */
 
 #define GDK_MEM_QUERYSIZE(p)	((unsigned int*) (p))[-1]
-#endif
+#define sem_init	win_sem_init
+#define sem_destroy	win_sem_destroy
+#define sem_wait	win_sem_wait
+#define sem_trywait	win_sem_trywait
+#define sem_post	win_sem_post
 
-#define gettimeofday	MT_gettimeofday
+#endif 
+#endif 
 
-gdk_export int 	MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
-gdk_export int 	MT_lockf(char *filename, int mode, size_t off, int len);
-gdk_export void MT_sleep_ms(unsigned int ms);
-
-#define F_TLOCK 2 /* test and lock a region for exclusive use */
-#define F_ULOCK 0 /* unlock a previously locked region */
-#define F_LOCK 1 /* lock a region for exclusive use */
-
-#define MT_PAGESIZE(s)		(((((s)-1) >> 12) + 1) << 12)
-#define MT_SEGSIZE(s)		((((((s)-1) >> 16) & 65535) + 1) << 16)
-typedef struct MT_socket {
-	SOCKET sock;
-} mt_socket;
-
-#else /* UNIX */
-
-#define MT_PAGESIZE(s)		((((s-1)/MT_pagesize())+1)*MT_pagesize())
-typedef struct MT_socket {
-	int sock;
-} mt_socket;
-
-#endif
-
-#ifndef HAVE_VSNPRINTF
-#define vsnprintf(buf,size,format,ap) vsprintf(buf,format,ap)
-#endif
-
-#define MT_VMUNITLOG 	16
-#define MT_VMUNITSIZE 	(1 << MT_VMUNITLOG)
-
-gdk_export int MT_alloc_register(void *p, unsigned int size, char mode);
-gdk_export int MT_alloc_print();
+#define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
+#define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
 
 #endif /* GDK_POSIX_H */
 @c
 #include "gdk_posix.h"
 
+static void MT_alloc_init();
+
 #include <stdio.h>
+
 #ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
+# include <sys/mman.h>
 #endif
+
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
+# include <fcntl.h>
 #endif
+
 #include <errno.h>
 
 #ifndef HAVE_MADVISE
@@ -219,117 +242,11 @@ gdk_export int MT_alloc_print();
 #endif 
 
 #ifndef MAP_NORESERVE
-#define MAP_NORESERVE 		MAP_PRIVATE
+# define MAP_NORESERVE 		MAP_PRIVATE
 #endif 
 
 #define MMAP_ADVISE		7
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
-
-@- memory fragmentation monitoring
-@T
-On 32-bits systems, Monet's aggressive use of virtual memory may bring into into
-trouble as the limits of what is addreassable in a 32-bits sytem are reached 
-(an 32-bits OS only allowd 2-4GB of memory to be used). In order to aid debugging
-situations where VM allocs fail (due to memory fragmentation), a monitoring
-system was established. To this purpose, a map is maode for the VM addresses
-betwen 0 and 3GB, in tiles of MT_VMUNITSIZE (64KB). 
-
-\begin{verbatim}
-0-9 - thread stack space of thread <num>
-B - in use for a large BAT heap.
-b - free (last usage was B)
-S - in use for a malloc block
-s - free (last usage was S)
-P - in use for the BBP array
-p - free (last usage was P)
-M - in use as memory mapped region
-m - free (last usage was M)
-C - in use as MIL context buffer
-c - free (last usage was M)
-\end{verbatim}
-
-The MT_alloc_printmap condenses the map by printing a char for each MB,
-hence combining info from 16 tiles. On NT, we can check in realtime which 
-tiles are actually in use (in case our own tile administration is out-of-sync 
-with reality, eg due to a memory leak). This real-life usage is printed in a 
-second line with encodingw .=free, *=inuse, X=unusable. On Unix systems,
-*=inuse is not testable (unless with complicated signal stuff). On 64-bits
-systems, this administation is disfunctional. 
-@c
-unsigned char MT_alloc_map[49600]= { 0 };
-
-int MT_alloc_register(void *addr, unsigned int size, char mode) {
-#if SIZEOF_LONG==4
-        unsigned int p = (unsigned int) addr;
-        if (p > 0 && p < 3*((unsigned int) 1024*1024*1024) && size > 0) {
-                unsigned int i, base = ((int) p) >> 16;
-                size = (size-1) >> 16;
-                for(i=0; i<=size; i++)
-                        MT_alloc_map[base+i] = (MT_alloc_map[base+i]&128) | mode;
-        }
-#endif
-        return 0;
-}
-
-#define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
-
-int MT_alloc_print() {
-#if SIZEOF_LONG==4
-        char *p = NULL;
-        int i, j, k;
-
-        for(i=0; i<31; i++) {
-                fprintf(MT_out, "%02d00MB ", i);
-                for(j=0; j<100; j++) {
-                        int mode = '.';
-                        for(k=0; k<16; k++)  {
-                                int m = MT_alloc_map[k + 16*(j + 100*i)]&127;
-                                if (mode == '.' || INUSEMODE(m)) mode = m;
-                        }
-                        fprintf(MT_out, "%c", mode);
-                }
-#ifdef WIN32
-                fprintf(MT_out, "\n       ");
-                for(j=0; j<100; j++) {
-                        int mode = '.';
-                        for(k=0; k<16; k++,p+=1<<16)
-                                if (!IsBadReadPtr(p, 1)) {
-                                        mode = '*';
-                                } else if (MT_alloc_map[k + 16*(j + 100*i)]&128) {
-                                        mode = 'X';
-                                }
-                        fprintf(MT_out, "%c", mode);
-                }
-#endif
-                fprintf(MT_out, "\n");
-        }
-#endif
-        return 0;
-}
-
-static void MT_alloc_init() {
-#if SIZEOF_LONG==4
-        char* p = NULL;
-        int i;
-        for(i=0; i<49600; i++, p+=MT_VMUNITSIZE) {
-		int mode = '.';
-#ifdef WIN32
-                if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
-			mode |= 128;
-                } else {
-                        VirtualFree(p, 0, MEM_RELEASE);
-                }
-#else
-		int fd = open("/dev/zero", O_RDWR, 0666);
-                void *q = (char*) mmap(p, MT_VMUNITSIZE, PROT_NONE, MAP_NORESERVE, fd, 0);
-		close(fd);
-		if (q != p) mode != 128;
-		if (q != (char*) -1) munmap(q, MT_VMUNITSIZE);
-#endif
-                MT_alloc_map[i] = mode;
-        }
-#endif
-}
 
 #ifndef NATIVE_WIN32
 
@@ -349,11 +266,9 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void *fixed){
 		((mode&MMAP_COPY)?MAP_PRIVATE:MAP_SHARED)|(fixed?MAP_FIXED:0),
 	        fileno(fp), off);
 	    fclose(fp);
-/*
 	    if (ret != (void*) -1 && (mode&MMAP_ADVISE)) {
 		madvise(fixed+off, len, mode&MMAP_ADVISE);
 	    }
-*/
         }
 	return ret;
 }
@@ -372,7 +287,12 @@ int MT_madvise(void* p, size_t len, int advise) {
 
 struct mallinfo 
 MT_mallinfo(){
-	struct mallinfo _ret = mallinfo();
+	struct mallinfo _ret;
+#ifdef HAVE_MALLINFO
+	_ret = mallinfo();
+#else
+	memset(&_ret, 0, sizeof(_ret));
+#endif
 	if (_ret.uordblks + _ret.fordblks > _ret.arena) {
 		MT_alloc_register(MT_membase, _ret.arena, 'H');
 	}
@@ -386,8 +306,6 @@ int MT_path_absolute(char *pathname) {
 #ifdef WIN32
 #include <windows.h>
 #endif
-
-
 
 #else /* WIN32 native */
 
@@ -404,7 +322,7 @@ int MT_path_absolute(char *pathname) {
 #undef stat		
 #undef mkdir		
 #undef rmdir		
-#undef gettimeofday
+
 #undef NAME_MAX
 
 #include <windows.h>
@@ -510,6 +428,7 @@ int MT_madvise(void *p, size_t len, int advise) {
 
 
 
+
 /* TODO */
 struct mallinfo MT_mallinfo() {
 	struct mallinfo _ret; 
@@ -561,6 +480,7 @@ int MT_path_absolute(char *pathname) {
 	}
 	return (path_start == pathname || drive_end == (path_start-1));
 }
+
 
 int win_ftruncate (int  fd, unsigned int size)
 {
@@ -708,6 +628,28 @@ int win_closedir (DIR *dir)
   return 0;
 }
 
+static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };  
+
+#define LEAPYEAR(y) ((((y)%4)==0 && ((y)%100)!=0) || ((y)%400)==0)
+#define NODAYS(m,y) (((m)!=2)?nodays[(m)-1]:LEAPYEAR(y)?29:28)
+
+int gettimeofday(struct timeval *tv, int *ignore_zone) {
+	unsigned int year, day, month;
+	SYSTEMTIME st;
+
+	GetSystemTime(&st);
+	for(year=1970; year<st.wYear; year++)
+		day += LEAPYEAR(year)?366:365;
+
+	for(month=1; month < st.wMonth; month++)
+		day += NODAYS(month,st.wYear);
+
+	day += st.wDay;
+	tv->tv_sec = 60*(day*24*60 + st.wMinute) + st.wSecond;
+	tv->tv_usec = 1000*st.wMilliseconds;
+	return 0;
+}
+
 void *dlopen(const char *__file, int __mode){
   if (__file != NULL){
   	HINSTANCE handle = LoadLibrary (__file);
@@ -766,21 +708,21 @@ static char* reduce_dir_name(const char* src, char* dst, const int cap) {
 int win_stat(const char* pathname, struct stat *st) {
 	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
 	int ret = stat(p, st);
-	if (p != buf) free(buf);
+	if (p != buf) free(p);
 	return ret;
 }
 
 int win_rmdir(const char* pathname) {
 	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
 	int ret = rmdir(p);
-	if (p != buf) free(buf);
+	if (p != buf) free(p);
 	return ret;
 }
 
 int win_mkdir(const char* pathname, const int mode) {
 	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
 	int ret = mkdir(p);
-	if (p != buf) free(buf);
+	if (p != buf) free(p);
 	return ret;
 }
 
@@ -882,6 +824,8 @@ int *win_errno(){
 
 #ifndef WIN32
 
+#define MT_PAGESIZE(s)		((((s-1)/MT_pagesize())+1)*MT_pagesize())
+
 void *MT_vmalloc(size_t size, size_t *maxsize) {
         int fd = open("/dev/zero", O_RDWR, 0666);
         char *q, *r = (char*) -1;
@@ -963,87 +907,83 @@ void MT_sleep_ms(unsigned int ms) {
 
 #else  /* WIN32 */
 
-void *MT_vmalloc(size_t size, size_t *maxsize) {
-        void *p, *a = NULL;
-        size = MT_PAGESIZE(size);
-        if (*maxsize < size) {
-                *maxsize = size;
-        }
-        *maxsize = MT_SEGSIZE(*maxsize);
-        if (*maxsize > size) {
-                a = (void*) VirtualAlloc(NULL, *maxsize, MEM_RESERVE, PAGE_NOACCESS);
-                if (a == NULL) {
-                        *maxsize = size;
-                }
-        }
-        p = (void*) VirtualAlloc(a, size, MEM_COMMIT, PAGE_READWRITE);
-        return p;
-}
+#define MT_PAGESIZE(s)		(((((s)-1) >> 12) + 1) << 12)
+#define MT_SEGSIZE(s)		((((((s)-1) >> 16) & 65535) + 1) << 16)
 
+#ifndef MEM_TOP_DOWN
+#define MEM_TOP_DOWN 0
+#endif
+
+void *MT_vmalloc(size_t size, size_t *maxsize) {
+       	void *p, *a = NULL;
+	int mode = 0;
+	size = MT_PAGESIZE(size);
+	if (*maxsize < size) {
+		*maxsize = size;
+	}
+	*maxsize = MT_SEGSIZE(*maxsize);
+	if (*maxsize < 1000000)	{
+		mode = MEM_TOP_DOWN; /* help NT in keeping memory defragmented */
+	}
+	if (*maxsize > size) {
+		a = (void*) VirtualAlloc(NULL, *maxsize, MEM_RESERVE|mode, PAGE_NOACCESS);
+		if (a == NULL) {
+			*maxsize = size;
+		}
+	}
+	p = (void*) VirtualAlloc(a, size, MEM_COMMIT|mode, PAGE_READWRITE);
+	if (p == NULL) {
+		fprintf(MT_out, "VirtualAlloc(%x,%d,MEM_COMMIT,PAGE_READWRITE): failed\n", (unsigned int) a, size);
+	}
+	return p; 
+}
+ 
 
 void MT_vmfree(void *p, size_t size) {
-        VirtualFree(p, size, MEM_DECOMMIT);
-        VirtualFree(p, 0, MEM_RELEASE);
+	if (VirtualFree(p, size, MEM_DECOMMIT) == 0)
+	fprintf(MT_out, "VirtualFree(%x,%d,MEM_DECOMMIT): failed\n", (unsigned int) p, size);
+	if (VirtualFree(p, 0, MEM_RELEASE) == 0)
+	fprintf(MT_out, "VirtualFree(%x,0,MEM_RELEASE): failed\n", (unsigned int) p);
 }
 
-void*   MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize) {
-        char *a, *p = (char*) v;
-        size_t oldmaxsize = *maxsize;
+void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t *maxsize)
+{
+	char *a, *p = (char*) v;
+	size_t oldmaxsize = *maxsize;
 
-        oldsize = MT_PAGESIZE(oldsize);
-        newsize = MT_PAGESIZE(newsize);
-        if(oldsize < newsize) {
-                if (*maxsize < newsize) {
-                        *maxsize = newsize;
-                }
-                a = (char*)VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
-                if (a != p) {
-                        if (a == NULL) {
-                                a = MT_vmalloc(newsize, maxsize);
-                        }
-                        if (a != NULL) {
-                                memcpy(a, p, oldsize);
-                                MT_vmfree(p, oldmaxsize);
-                        }
-                } p = a;
-        } else if (oldsize > newsize) {
-                VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
-        }
-        return p;
+	oldsize = MT_PAGESIZE(oldsize);
+	newsize = MT_PAGESIZE(newsize);
+	if(oldsize < newsize) {
+		if (*maxsize < newsize) {
+			*maxsize = newsize;
+		}
+ 		a = (char*) VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
+		if (a != p) {
+			if (a == NULL) {
+				a = MT_vmalloc(newsize, maxsize);
+			}
+			if (a != NULL) {
+				memcpy(a, p, oldsize);
+				MT_vmfree(p, oldmaxsize);
+			} 
+		} p = a;
+	} else if (oldsize > newsize) {
+ 		int ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
+ 		if (ret == 0) fprintf(MT_out, "VirtualFree(%x,%d,MEM_DECOMMIT): failed\n", (unsigned int) p+newsize, oldsize-newsize);
+	} 
+	return p;
 }
-
-static int nodays[12] = 
-	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };  
-
-#define LEAPYEAR(y) ((((y)%4)==0 && ((y)%100)!=0) || ((y)%400)==0)
-#define NODAYS(m,y) (((m)!=2)?nodays[(m)-1]:LEAPYEAR(y)?29:28)
-
-int MT_gettimeofday(struct timeval *tv, int *ignore_zone) {
-	unsigned int years, days, i;
-	SYSTEMTIME st;
-
-	GetSystemTime(&st);
-	years = st.wYear - 1970;
-	days = 365*years + (years+1)/4;
-
-	for(i=1; i < st.wMonth; i++)
-		days += NODAYS(i,st.wYear);
-
-	days += st.wDay;
-	tv->tv_sec = 60*(days*24*60 + st.wMinute) + st.wSecond;
-	tv->tv_usec = 1000*st.wMilliseconds;
-	return 0;
-}
-
 
 int MT_lockf(char *filename, int mode, size_t off, int len) {
-	int ret = 0, illegalmode = 0;
+	int ret = 1, illegalmode = 0;
 	OVERLAPPED ov;
+	OSVERSIONINFO os;
 	HANDLE fh = CreateFile(filename, 
 			GENERIC_READ|GENERIC_WRITE, 0,
-			/* FILE_SHARE_READ|FILE_SHARE_WRITE, */
 			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	    
+	os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx(&os);
 	memset(&ov, 0, sizeof(ov));
 	ov.Offset = (unsigned int) off;
 	ov.OffsetHigh = off >> 32;
@@ -1052,11 +992,13 @@ int MT_lockf(char *filename, int mode, size_t off, int len) {
 	    return -1;
         } 
         if (mode == F_ULOCK) {
-	    /* ret = UnlockFile(fh, (unsigned int) off, off >> 32, len, 0);*/
+	    if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
 	    ret = UnlockFileEx(fh, 0, 0, len, &ov);
         } else if(mode == F_TLOCK) {
+	    if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
 	    ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY|LOCKFILE_EXCLUSIVE_LOCK, 0, 0, len, &ov);
         } else if(mode == F_LOCK) {
+	    if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
 	    ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, 0, len, &ov);
         } else {
 	    illegalmode = 1;
@@ -1071,4 +1013,157 @@ int MT_lockf(char *filename, int mode, size_t off, int len) {
 void MT_sleep_ms(unsigned int ms) {
         sleep(ms);
 }
+
+
+/* this one actually has not been fixed in CYGWIN, hence we do it ourselves */
+#undef rename
+int win_rename(char* src, char* dst) {
+	char srcbuf[128], *p = reduce_dir_name(src, srcbuf, 128);
+	char dstbuf[128], *q = reduce_dir_name(src, dstbuf, 128);
+	int ret = rename(p,q);
+	if (p != srcbuf) free(p);
+	if (q != dstbuf) free(q);
+	return ret;
+}
+
+@-
+cygnus1.1.X has a bug in the semaphore routines. we work around it by directly using the WIN32 primitives.
+@c
+#ifndef NATIVE_WIN32
+
+#undef sem_init
+#undef sem_destroy
+#undef sem_wait
+#undef sem_trywait
+#undef sem_post
+
+int win_sem_init (sem_t * sem, int pshared, unsigned int value) {
+	*sem = (sem_t) CreateSemaphore(NULL, value, 128, NULL);
+	return (*sem)?0:-1;
+}
+
+int win_sem_destroy (sem_t * sem) {
+	return CloseHandle((HANDLE) *sem)?0:-1;
+}
+
+int win_sem_wait (sem_t * sem) {
+	return (WaitForSingleObject((HANDLE) *sem, (unsigned int) INFINITE) != WAIT_FAILED)?0:-1;
+}
+
+int win_sem_trywait (sem_t * sem) {
+	return (WaitForSingleObject((HANDLE) *sem, 0) == 0)?0:EBUSY;
+}
+
+int win_sem_post (sem_t * sem) {
+	return (ReleaseSemaphore((HANDLE) *sem, 1, NULL) == 0)?-1:0;
+}
 #endif
+#endif
+
+@- memory fragmentation monitoring
+@T
+On 32-bits systems, Monet's aggressive use of virtual memory may bring it into
+trouble as the limits of what is addreassable in a 32-bits system are reached 
+(an 32-bits OS only allows 2 to 4GB of memory to be used). In order to aid debugging
+situations where VM allocs fail (due to memory fragmentation), a monitoring
+system was established. To this purpose, a map is made for the VM addresses
+between 0 and 3GB, in tiles of MT_VMUNITSIZE (64KB). These tiles have a byte
+value from the following domain:
+
+\begin{verbatim}
+0-9 - thread stack space of thread <num>
+B - in use for a large BAT heap.
+b - free (last usage was B)
+S - in use for a malloc block
+s - free (last usage was S)
+P - in use for the BBP array
+p - free (last usage was P)
+M - in use as memory mapped region
+m - free (last usage was M)
+C - in use as MIL context buffer
+c - free (last usage was M)
+\end{verbatim}
+
+The MT_alloc_printmap condenses the map by printing a char for each MB,
+hence combining info from 16 tiles. On NT, we can check in real-time which 
+tiles are actually in use (in case our own tile administration is out-of-sync 
+with reality, eg due to a memory leak). This real-life usage is printed in a 
+second line with encodingw .=free, *=inuse, X=unusable. On Unix systems,
+*=inuse is not testable (unless with complicated signal stuff). On 64-bits
+systems, this administation is disfunctional. 
+@c
+unsigned char MT_alloc_map[49600]= { 0 };
+
+int MT_alloc_register(void *addr, unsigned int size, char mode) {
+#if SIZEOF_LONG==4
+        unsigned int p = (unsigned int) addr;
+        if (p > 0 && p < 3*((unsigned int) 1024*1024*1024) && size > 0) {
+                unsigned int i, base = ((int) p) >> 16;
+                size = (size-1) >> 16;
+                for(i=0; i<=size; i++)
+                        MT_alloc_map[base+i] = (MT_alloc_map[base+i]&128) | mode;
+        }
+#endif
+        return 0;
+}
+
+#define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
+
+int MT_alloc_print() {
+#if SIZEOF_LONG==4
+        char *p = NULL;
+        int i, j, k;
+
+        for(i=0; i<31; i++) {
+                fprintf(MT_out, "%02d00MB ", i);
+                for(j=0; j<100; j++) {
+                        int mode = '.';
+                        for(k=0; k<16; k++)  {
+                                int m = MT_alloc_map[k + 16*(j + 100*i)]&127;
+                                if (mode == '.' || INUSEMODE(m)) mode = m;
+                        }
+                        fprintf(MT_out, "%c", mode);
+                }
+#ifdef WIN32
+                fprintf(MT_out, "\n       ");
+                for(j=0; j<100; j++) {
+                        int mode = '.';
+                        for(k=0; k<16; k++,p+=1<<16)
+                                if (!IsBadReadPtr(p, 1)) {
+                                        mode = '*';
+                                } else if (MT_alloc_map[k + 16*(j + 100*i)]&128) {
+                                        mode = 'X';
+                                }
+                        fprintf(MT_out, "%c", mode);
+                }
+#endif
+                fprintf(MT_out, "\n");
+        }
+#endif
+        return 0;
+}
+
+static void MT_alloc_init() {
+#if SIZEOF_LONG==4
+        char* p = NULL;
+        int i;
+        for(i=0; i<49600; i++, p+=MT_VMUNITSIZE) {
+		int mode = '.';
+#ifdef WIN32
+                if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
+			mode |= 128;
+                } else {
+                        VirtualFree(p, 0, MEM_RELEASE);
+                }
+#else
+		int fd = open("/dev/zero", O_RDWR, 0666);
+                void *q = (char*) mmap(p, MT_VMUNITSIZE, PROT_NONE, MAP_NORESERVE, fd, 0);
+		close(fd);
+		if (q != p) mode != 128;
+		if (q != (char*) -1) munmap(q, MT_VMUNITSIZE);
+#endif
+                MT_alloc_map[i] = mode;
+        }
+#endif
+}
+

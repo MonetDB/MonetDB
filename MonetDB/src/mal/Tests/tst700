@@ -1,4 +1,5 @@
 # A few system calls
+err:= print('c');
 err:= print("hello world");
 err:= print(0);
 err:= print(1:lng);
@@ -10,6 +11,6 @@ err:= printf("hello\n");
 err:= printf("%5d",0);
 err:= printf("%5d",1:lng);
 err:= printf("%c",'c');
-err:= printf("%s", true);
+err:= printf("%-8s", true);
 err:= printf("%6.2f",pi);
 err:= printf("single line %s \n","hello");

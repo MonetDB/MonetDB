@@ -269,8 +269,7 @@ Startup the monet server by preparing the argument list for the GDK kernel.
 @c
 void monet_init(int argc, char **argv ){
 	int i;
-	Symbol prg=NULL, scope=NULL;
-	Client c;
+	Symbol prg=NULL;
 
         if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
                 perror("pwd");
@@ -284,23 +283,17 @@ void monet_init(int argc, char **argv ){
         setbuffer(stdout, GDKmalloc(4096), 4096);
 #endif
         monet_hello();
-	mal_init();
-        scope= malStartupGlobal(GDKdbnameStr,mal_listing);
-        if( scope == NULL) return;
-	c=initClient(GDKstrdup("adm"),NULL,0);
+	if( mal_init()) return;
 
         for(i=0; monet_script[i]; i++)
-                prg = malImport(scope,scope->name,monet_script[i],mal_listing);
-        /* printScope(scope,0);*/
-        /* and execute the last routine loaded */
+                prg = malImport(monet_script[i],mal_listing,0);
         if( prg ) {
-                str msg= runMAL(c,prg->def,0);
+                str msg= runMAL(getClient(),prg->def,0);
 		if( msg && msg != (str) GDK_SUCCEED) printf(msg);
         }
 	/* start administrator loop */
 	/* runClient(c);*/
         freeAllSymbols();
-        freeStringStack();
 }
 
 @* Example Monet Library Application 

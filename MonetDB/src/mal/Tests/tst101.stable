@@ -10,14 +10,14 @@
 ## this should be sufficient to determine outcome
 #
 #function + (L:any::1, R:any::1):any::1 ; end function;
-FUNCTION +(L:any::1,R:any::1):any::1;	#0 polymorphic:(+:any::1->0)(L:any::1->1)(R:any::1->2)
-END FUNCTION;	#1:
+function +(L:any::1,R:any::1):any::1;	#0 polymorphic:(+:any::1->0)(L:any::1->13)(R:any::1->14)
+end function;	#1:
 #a:=3+1;
 #b:=3.5+2.7;
 #c:= 7+8;
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-	a := Service.+(3,1);	#1:(a:int->3)($1:int->1)($2:int->2)
-	b := Service.+(3.5,2.7);	#2:(b:flt->6)($4:flt->4)($5:flt->5)
-	c := Service.+(7,8);	#3:(c:int->9)($7:int->7)($8:int->8)
-END FUNCTION;	#4:
+function Service.main():int;	#0:(main:int->0)
+	a := Service.+(3,1);	#1:(a:int->13)($14:int->14)($15:int->15)
+	b := Service.+(3.5,2.7);	#2:(b:flt->16)($17:flt->17)($18:flt->18)
+	c := Service.+(7,8);	#3:(c:int->19)($20:int->20)($21:int->21)
+end function;	#4:

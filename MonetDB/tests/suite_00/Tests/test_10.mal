@@ -1,0 +1,56 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+	_v0:= oid(20000000);
+	_v1:= setoid(_v0);
+#setoid(oid(20000000));
+## Sorting activities
+## left->right shift + left boundary;
+	_v2:= new(int,int);
+	s := _v2;
+#s:=new(int,int);
+	_v3:= insert(s,5,5);
+	_v4:= insert(s,3,3);
+	_v5:= insert(s,4,2);
+	_v6:= insert(s,2,1);
+#insert(s,5,5);insert(s,3,3);insert(s,4,2);insert(s,2,1);
+	_v7:= insert(s,1,1);
+	_v8:= insert(s,4,2);
+	_v9:= insert(s,4,3);
+#insert(s,1,1);insert(s,4,2); insert(s,4,3);
+	_v10:= printf("#~BeginVariableOutput~#\n");
+#printf("#~BeginVariableOutput~#\n");
+	_v11:= sort(s);
+	_v12:= print(_v11);
+#sort(s).print;
+	_v13:= printf("#~EndVariableOutput~#\n");
+#printf("#~EndVariableOutput~#\n");
+	_v14:= sort_ht(s);
+	_v15:= print(_v14);
+#sort_ht(s).print;
+#
+## right->left shift + right boundary;
+	_v16:= new(int,int);
+	s := _v16;
+#s:=new(int,int);
+	_v17:= insert(s,2,1);
+	_v18:= insert(s,4,1);
+	_v19:= insert(s,3,1);
+	_v20:= insert(s,5,1);
+#insert(s,2,1);insert(s,4,1); insert(s,3,1); insert(s,5,1);
+	_v21:= insert(s,6,1);
+	_v22:= insert(s,4,2);
+	_v23:= insert(s,1,1);
+#insert(s,6,1);insert(s,4,2);insert(s,1,1);
+	_v24:= printf("#~BeginVariableOutput~#\n");
+#printf("#~BeginVariableOutput~#\n");
+	_v25:= sort(s);
+	_v26:= print(_v25);
+#sort(s).print;
+	_v27:= printf("#~EndVariableOutput~#\n");
+#printf("#~EndVariableOutput~#\n");
+	_v28:= sort_ht(s);
+	_v29:= print(_v28);
+#sort_ht(s).print;
+#quit;

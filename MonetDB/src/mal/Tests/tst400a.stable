@@ -1,0 +1,21 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## simple iterator loop test
+#
+#	i:= -1:lng;
+#barrier v:= iterator.foreach(i,0:lng,1000000:lng);
+#	redo v;
+#end	v;
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	i := -1:lng;	#1:(i:lng->2)($1:lng->1)
+BARRIER	v := iterator.foreach(i,0:lng,1000000:lng);	#2:(v:bit->5)(i:lng->2)($3:lng->3)($4:lng->4)
+	REDO v ;	#3:(v:bit->5)
+END	v;	#4:(v:bit->5)
+END FUNCTION;	#5:

@@ -176,10 +176,11 @@ mal_export MalBlkPtr copyMalBlk(MalBlkPtr);
 mal_export void freeInstruction(InstrPtr p);
 mal_export void freeVariable(MalBlkPtr mb, int varid);
 mal_export int findVariable(MalBlkPtr mb, str name);
+mal_export int findVariableLenght(MalBlkPtr mb, str name,int len);
 mal_export malType getType(MalBlkPtr mb, str nme);
 mal_export int newVariable(MalBlkPtr mb, str name,malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
-mal_export str newConstant(MalBlkPtr mb, malType type, str val);
+mal_export int newConstant(MalBlkPtr mb, malType type, str val);
 mal_export int isVARG(MalBlkPtr mb, InstrPtr p, int i);
 mal_export str newTmpName(int i);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr old);
@@ -367,6 +368,23 @@ int findVariable(MalBlkPtr mb, str name){
 		return i;
 	return -1;
 }
+@-
+The second version of findVariable assumes you have not
+yet allocated a private structure. This is particularly
+usefull during parsing, because most variables are already
+defined. This way we safe GDKmalloc/GDKfree.
+@c
+int findVariableLength(MalBlkPtr mb, str name, int len){
+	register int i;
+	register int j;
+	for(i= mb->vtop-1; i>=0; i--) {
+		str s = getVarName(mb,i);
+		for(j=0;j<len;j++)
+		if( name[j]!=s[j]) break;
+		if(j==len && s[j]==0) return i;
+	}
+	return -1;
+}
 malType getType(MalBlkPtr mb, str nme){
 	int i;
 	i= findVariable(mb,nme);
@@ -471,8 +489,8 @@ MAL interpretation.
 @c
 #define MAL_VAR_WINDOW	2*MAXARG
 
-str newConstant(MalBlkPtr mb, malType type, str val){
-	int i,k;
+int newConstant(MalBlkPtr mb, malType type, str val){
+	int i,k,idx;
 	str s;
 	ValPtr vr;
 	char buf[1024];
@@ -487,10 +505,10 @@ str newConstant(MalBlkPtr mb, malType type, str val){
 		  ) {
 /* printf("reused a constant variable %s\n",v->name);*/
 			GDKfree(val);
-			return GDKstrdup(v->name);
+			return i;
 		 }
 	}
-	k= newVariable(mb, s=newTmpName(mb->vtop), type);
+	idx= k= newVariable(mb, s=newTmpName(mb->vtop), type);
 /* printf("new constant %d val %s\n",k,val);*/
 	getVarValue(mb,k)= val;
 	isVarConstant(mb,k) = 1;
@@ -516,7 +534,7 @@ to make the user aware of this situation.
 			}
 	case TYPE_chr: 
 			vr->vtype= TYPE_chr;
-			vr->val.cval[0]= val[1];
+			vr->val.cval[0]= val[0];
 			vr->val.cval[1]= 0;
 			vr->val.cval[2]= 0;
 			vr->val.cval[3]= 0;
@@ -582,7 +600,7 @@ to make the user aware of this situation.
 		GDKfree(s);
 		}
 	}
-	return GDKstrdup(s);
+	return idx;
 }
 @+ Variable argument list
 Functions and rules may contain a single variable argument list
@@ -750,7 +768,11 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 		case PATcall:
 		case CMDcall:
 		case ASSIGNsymbol:
-			sprintf(t,"\t%s := ",nme); break;
+			if( p->argc<=1 && p->fcnname==NULL)
+				sprintf(t,"\t%s",nme); 
+			else
+				sprintf(t,"\t%s := ",nme); 
+			break;
 		case REDOsymbol:
 			sprintf(t,"\tredo %s ",nme); break;
 		case LEAVEsymbol:
@@ -762,14 +784,14 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 		case ENDDEFsymbol:
 			switch(getInstrPtr(mb,0)->token){
 			case FUNCTIONsymbol: nme = "function"; break;
-			case RULERsymbol: nme = "ruler"; break;
+			case RULEsymbol: nme = "ruler"; break;
 			default: nme = "unknown";
 			}
 			sprintf(t,"end %s",nme);
 			break;
 		case ENDsymbol:
 			sprintf(t,"end\t%s",nme); break;
-		case RULERsymbol:
+		case RULEsymbol:
 		case COMMANDsymbol:
 		case FUNCTIONsymbol:
 		case PATTERNsymbol:
@@ -791,6 +813,9 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 		if( getArgDefault(mb,p,i) != NULL){
 			if( getArgType(mb,p,i)== TYPE_str)
 				sprintf(t,"\"%s\"", getArgDefault(mb,p,i));
+			else
+			if( getArgType(mb,p,i)== TYPE_chr)
+				sprintf(t,"'%s'", getArgDefault(mb,p,i));
 			else	sprintf(t,"%s", getArgDefault(mb,p,i));
 		} else sprintf(t,"%s", getArgName(mb,p,i));
 		advance(t);

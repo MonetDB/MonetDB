@@ -80,9 +80,10 @@ html
 
 /*#define DEBUG_MAL_LINKER */
 #define MONET64 1
-mal_export void 	*getAddress(str fcnname);
-mal_export void 	*loadModuleLibrary(str modname);
-mal_export int 	initLibraries(str dbname);
+mal_export void *getAddress(str fcnname);
+mal_export void *loadModuleLibrary(str modname);
+mal_export void initLibraries();
+mal_export int 	isPreloaded(str nme);
 
 #endif
 @+ Function binding
@@ -95,6 +96,7 @@ do;t close them until end of session it seems prudent to maintain
 the consistency of this counter.
 @c
 #include "mal_linker.h"
+static int noDlopen;
 
 void *getAddress(str fcnname){
 	void *dl;
@@ -111,6 +113,13 @@ void *getAddress(str fcnname){
         }
         adr= dlsym(dl,fcnname);
 	msg= dlerror();
+	if(noDlopen && adr == NULL){
+		char buf[1024];
+		sprintf(buf,"ERROR: address of function %s not found\n",
+			fcnname);
+		GDKerror(buf);
+	}
+	/* if( adr== NULL) printf("address of '%s' not found\n",fcnname);*/
 #ifdef DEBUG_MAL_LINKER
 	if( adr != NULL)
         printf("addres of %s %o %s\n", fcnname,(int) adr, (msg?msg:""));
@@ -136,6 +145,7 @@ A duplicate load is simply ignored.
 @c
 #define LIBPATH "lib/Monet"
 
+
 void *loadModuleLibrary(str modname){
 	char buf[MAXPATHLEN];
 	void *handle = NULL;
@@ -143,6 +153,7 @@ void *loadModuleLibrary(str modname){
 	str library=0;
 	str msg= NULL;
 
+	if( isPreloaded(modname)) return;
 	if( (library=strrchr(modname,DIR_SEP))  != NULL){
 		*library=0;
 		library++;
@@ -192,21 +203,45 @@ void *loadModuleLibrary(str modname){
 #endif
 	return handle;
 }
-@+ Static loading
-Upon system restart a few system libraries are loaded before
-the first user-specific script is interpreted. These form the
-system kernel and its functionaltiy is needed to setup
-server-speciific administration tables.
+@+ Static pre-loading
+To speedup restart and to simplify debugging, the Monet server can
+be statically linked with some (or all) of the modules. 
+A complicating factor is then to avoid users to initiate another load
+of the module file, because it would lead to a dlopen error.
 
-@= systemLoad
-	malImport(mal_scope,@1,0,1);
+The partial way out of this dilema is to administer somewhere
+the statically bound modules, or to enforce that each module
+comes with a known routine for which we can search.
+
+In the current version we use the former approach.
+The routine below turns off dynamic loading while parsing the
+command signature files.
+
 @c
-int initLibraries(str dbname) {
-	@:systemLoad("kernel/arith")@
-	@:systemLoad("kernel/bat")@
-	@:systemLoad("kernel/atoms")@
-	@:systemLoad("kernel/algebra")@
-	@:systemLoad("kernel/system")@
+static str preloaded[]={
+	"kernel/arith",
+	"kernel/bat",
+	"kernel/atoms",
+	"kernel/algebra",
+	"kernel/system",
+	"mal/iterator",
+	"mal/squeezer",
+	"atoms/blob",
+	0 };
+
+int isPreloaded(str nme){
+	int i;
+	for(i=0;preloaded[i];i++) 
+	if( strcmp(preloaded[i],nme)==0) return 1;
 	return 0;
 }
-
+void initLibraries() {
+	int i;
+	noDlopen = TRUE;
+/*
+	for(i=0;preloaded[i];i++) {
+		printf("loading %s\n",preloaded[i]);
+		malImport(preloaded[i],0,1);
+	}
+*/
+}

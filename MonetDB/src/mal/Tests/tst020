@@ -1,4 +1,4 @@
-function p1(i:str):int;
+function pl(i:str):int;
 	L:= "something";
 	r:=0;
 barrier l:= r= 0;
@@ -8,5 +8,5 @@ barrier l:= r= 0;
 	redo l;
 end l;
 end function;
-a:= 1;
+a:= "hello";
 z:= pl(a);

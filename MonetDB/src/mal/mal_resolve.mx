@@ -167,14 +167,14 @@ we simple avoid an increment when running out of formal arguments.
 @c
 	sig = getSignature(s); 
 	varargs=isVARG(s->def,sig,sig->argc-1);
+	if(tracefcn) printf("%s varargs %d\n",p->fcnname,varargs);
+	if(tracefcn) printf("p->argc %d %d\n",p->argc,sig->argc);
 	if( varargs){
 		if( p->argc< sig->argc-1 ) {s= s->peer; continue;}
 	} else 	if( sig->argc!= p->argc ) {s= s->peer; continue;}
 
 	polymorphic = 0;
 	unmatched = 0;
-	if( varargs) varargs = sig->argc-2;
-	if(tracefcn) printf("%s varargs %d\n",p->fcnname,varargs);
 	for(k=i=1;i<p->argc;i++,k++){
 		if(varargs>0 && k>varargs) k= varargs;
 		if( isPolymorphicArgument(s->def,sig,k) ){
@@ -250,7 +250,7 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 		p->token = CMDcall; 
 		p->fcn = getSignature(s)->fcn;
 		break;
-	case RULERsymbol: 
+	case RULEsymbol: 
 		p->token = RLRcall; 
 		p->fcn = getSignature(s)->fcn;
 		break;
@@ -335,6 +335,8 @@ message to the user.
 			Symbol m= findScope(scope,p->modname);
 			if(m == scope) m= m->outer;
 			while(s1<0 && m!= NULL){
+				if( tracefcn) 
+				printf("checking scope %s\n",m->name);
 				s1= findFunctionType(m,mb,p);
 				m= m->outer;
 			}
@@ -421,7 +423,6 @@ int typeKind(MalBlkPtr mb, InstrPtr p, int i){
 	}
 	return TYPE_FIXED;
 }
-INLINE
 int isPolymorphicArgument(MalBlkPtr mb, InstrPtr p, int i){
 	malType t= getArgType(mb,p,i);
 	if( t== malAnyType) return 1;

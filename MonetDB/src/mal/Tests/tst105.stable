@@ -11,17 +11,17 @@
 #
 #module bat2;
 #command new(h:any::1,t:any::2):bat[any::1,any::2]= GDKbatnew;
+ERROR: address of function GDKbatnew not found
+command bat2.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew;	#0 unknown:(GDKbatnew:bat[any::1,any::2]->15)(h:any::1->13)(t:any::2->14)
 #
 #a:= bat2.new(str,int);
-COMMAND bat2.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew;	#0 unknown:(GDKbatnew:bat[any::1,any::2]->3)(h:any::1->1)(t:any::2->2)
 #b:= bat2.new(str,int);
 #c:= new(str,int);
 #
-FUNCTION bat2.main():int;	#0:(main:int->0)
-	a := bat2.new(str,int);	#1:(a:bat[str,int]->3)(str:str->1)(int:int->2)
-	b := bat2.new(str,int);	#2:(b:bat[str,int]->4)(str:str->1)(int:int->2)
-	c := bat2.new(str,int);	#3:(c:bat[str,int]->5)(str:str->1)(int:int->2)
-END FUNCTION;	#4:
+function bat2.main():int;	#0:(main:int->0)
+	a := bat2.new(str,int);	#1:(a:bat[str,int]->13)(str:str->12)(int:int->6)
+	b := bat2.new(str,int);	#2:(b:bat[str,int]->14)(str:str->12)(int:int->6)
+	c := bat2.new(str,int);	#3:(c:bat[str,int]->15)(str:str->12)(int:int->6)
 mal_interpreter address bat2.new unknown
 CATCH ERROR MALexception:bat2.main[1]:mal_interpreter address bat2.new unknown
 

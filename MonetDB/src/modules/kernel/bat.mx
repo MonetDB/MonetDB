@@ -4,163 +4,187 @@
 @a Peter Boncz, M.L. Kersten
 @* Introduction
 @T
-This module contains the COMMANDs and PATTERNs to manage Binary 
+This module contains the commands and patterns to manage Binary 
 Association Tables (BATs). The relational operations you can execute
-on BATs have the form of a neat algebra., described in algebra.mx
+on BATs have the form of a neat algebra, described in algebra.mx
 
 All commands needed for BAT updates, property management,
-search accellerator management, I/O, persistency, and storage options
+search accellerator management, basic I/O, persistency, and storage options
 can be found in this module.
 
+BATs are always identified by their reference number in the BAT buffer pool.
+We assume that these references are 'safe', i.e. they denote the intended
+BAT. This means that front-ends should not destroy/remove temporary BATS
+without garbage collection of the references held. The alternative way
+is to call for a fresh reference to a BAT using its (hopefully) unique
+name with the bind() command. A reference can be released using the
+unbind(), but it is up to the buffer pool to actually release the
+storage held.
+
 @* Module Definition
-Where type identifiers are expected, we use similarly named variables instead.
-The MAL symbol table manager assures that a type-named variable 
-equals its designated type (e.g. str:="hello" is valid, str:=1 is wrong).
+Type parameters are represented by short integers. The MAL frontend
+defines constants to simplify the mapping from type identifier to value.
 
-A consequence of this approach is that type-parameters are essentially
-not needed anymore. The type is derived from the actual argument.
-A PATTERN block may be required to make the proper translation to
+Unlike the previous Monet versions, we reduce the number
+of functions returning a BAT reference. This was previously needed 
+to simplify recursive bat-expression.
+In the current version we return only a BAT identifier when a new
+bat is being created.
+
+A pattern block may be required to make the proper translation to
 the BAT library.
-
-Note, unlike the previous Monet versions, we return a status code 
-as an integer, unless a new bat is derived.
-@mal
-MODULE bat;
+@-
+All parameters to the modules are passed by reference.
+In particular, this means that
+string values are passed to the module layer as (str *)
+and we have to de-reference them before entering the gdk library.
+This calls for knowlegde on the underlying BAT typs`s
+@= derefStr
+	if( @1->@2type== TYPE_str) @3 = *(str *)@3;
+@-
 
 @- BAT basics
+command bind(nme:str): bat[any,any] = CMDbind
+comment "Locates the bat in the current dictionary";
+
+command bind(dictionary:str,nme:str): bat[any,any] = CMDbind2
+comment "Locates the bat in a specific dictionary";
+
+@-
+
 @mal
-PATTERN new(ht:any::1, tt:any::2) : BAT[any::1,any::2] = CMDBATnew;
-"Creates a new empty transient BAT, with head- and tail-types as indicated."
 
-PATTERN new(ht:any::1, tt:any::2, size:int) : BAT[any::1,any::2] = CMDBATnew;
-"Creates a new empty BAT, directly allocating for 'size' elements."
+module bat;
 
-COMMAND reverse(b:BAT[any::1,any::2]) : BAT[any::2,any::1] = CMDreverse;
-"Returns the reverse view of a BAT (head is tail and tail is head).
- BEWARE:  no copying is involved; input and output refer to the same object!"
+pattern new(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
+comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
 
-COMMAND mirror(b:BAT[any::1,any]) : BAT[any::1,any::1] = CMDmirror;
-"Returns the head-mirror image of a BAT (two head columns)."
+pattern new(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
+comment "Creates a new empty BAT, directly allocating for 'size' elements.";
 
-COMMAND convert(b:BAT[any,any] ) : int = CMDconvert;
-"Convert the contents of a BAT from little-endian to big-endian and vice versa.
- THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PURPOSES ONLY!"
+command reverse(b:bat[any::1,any::2]) : bat[any::2,any::1] = CMDreverse
+comment "Returns the reverse view of a BAT (head is tail and tail is head).
+ BEWARE:  no copying is involved; input and output refer to the same object!";
 
-COMMAND order(b:BAT[any,any]) : int = CMDorder;
-"Sorts the BAT itself, in place. "
+command mirror(b:bat[any::1,any]) : bat[any::1,any::1] = CMDmirror
+comment "Returns the head-mirror image of a BAT (two head columns).";
 
-COMMAND revert(b:BAT[any,any]) : int = CMDrevert;
-"Puts all BUNs in a BAT in reverse order. "
+command convert(b:bat[any::1,any::2] ) : int = CMDconvert
+comment "Convert the contents of a BAT from little-endian to big-endian and vice versa.
+ THIS command SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PURPOSES ONLY!";
+
+command order(b:bat[any,any]) : int = CMDorder
+comment "Sorts the BAT itself, in place. ";
+
+command revert(b:bat[any,any]) : int = CMDrevert
+comment "Puts all BUNs in a BAT in reverse order. (Belongs to the BAT sequence module)";
 
 @- BAT updates
-Update commands come in many disguises. 
+Update commands come in many disguises.  Note that we don;t return
+the BAT id, but merely a success/failure code.
 @mal
-COMMAND insert(b:BAT[any::1, any::2], h:any::1, t:any::2) 
-				: int = CMDinsert_bun; 
-"Insert one BUN[h,t] in a BAT."
+command insert(b:bat[any::1, any::2], h:any::1, t:any::2) 
+				: int = CMDinsert_bun
+comment "Insert one BUN[h,t] in a BAT.";
 
-COMMAND insert(b:BAT[any::1, any::2], src:BAT[any::1,any::2]) 
-				: int = CMDinsert_bat;
-"Insert all BUNs of the second BAT into the first."
+command insert(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
+				: int = CMDinsert_bat
+comment "Insert all BUNs of the second BAT into the first.";
 
-COMMAND replace(b:BAT[any::1, any::2], h:any::1, t:any::2) 
-				: int = CMDreplace_bun; 
-"Replace the tail value of one BUN that has some head value."
+command replace(b:bat[any::1, any::2], h:any::1, t:any::2) 
+				: int = CMDreplace_bun
+comment "Replace the tail value of one BUN that has some head value.";
 
-COMMAND replace(b:BAT[any::1, any::2], src:BAT[any::1,any::2]) 
-				: int = CMDreplace_bat;
-"Perform replace for all BUNs of the second BAT into the first."
+command replace(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
+				: int = CMDreplace_bat
+comment "Perform replace for all BUNs of the second BAT into the first.";
 
-COMMAND delete(b:BAT[any::1, any::2], h:any::1, t:any::2) 
-				: int = CMDdelete_bun;
-"Delete one specific BUN."
+command delete(b:bat[any::1, any::2], h:any::1, t:any::2) 
+				: int = CMDdelete_bun
+comment "Delete one specific BUN.";
 
-COMMAND delete(b:BAT[any::1, any::2], h:any::1) 
-				: int = CMDdelete_head;
-"Delete all BUNs with a certain head value."
+command delete(b:bat[any::1, any::2], h:any::1) 
+				: int = CMDdelete_head
+comment "Delete all BUNs with a certain head value.";
 
-COMMAND delete(b:BAT[any::1, any::2]) 
-				: int = CMDdelete_all;
-"Delete all BUNs in a BAT."
+command delete(b:bat[any::1, any::2]) 
+				: int = CMDdelete_all
+comment "Delete all BUNs in a BAT.";
 
-COMMAND delete(b:BAT[any::1, any::2], src:BAT[any::1,any]) 
-				: int = CMDdelete_bat_head;
-"Delete from the first BAT all BUNs with a head value that is in the second."
+command delete(b:bat[any::1, any::2], src:bat[any::1,any]) 
+				: int = CMDdelete_bat_head
+comment "Delete from the first BAT all BUNs with a head value that is in the second.";
 
-COMMAND deleteBuns(b:BAT[any::1, any::2], src:BAT[any::1,any::2]) 
-				: int = CMDdelete_bat_bun;
-"Delete from the first BAT all BUNs with a corresponding BUN in the second."
+command deleteBuns(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
+				: int = CMDdelete_bat_bun
+comment "Delete from the first BAT all BUNs with a corresponding BUN in the second.";
 
 @- BAT properties 
 Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
 RETHINK position of BatID
 @mal
-COMMAND count ( bid:int ) : int = CMDsize;
-"Returns the current size (in number of elements) of a BAT."
+command capacity ( bid:int ) : int = CMDcapacity
+comment "Returns the current allocation size (in max number of elements) of a BAT.";
 
-COMMAND capacity ( bid:int ) : int = CMDcapacity;
-"Returns the current allocation size (in max number of elements) of a BAT."
-
-COMMAND info ( b:BAT) : BAT[str,str] = CMDinfo;
-"Produce a BAT containing info about a BAT in [attribute,value] format.
+command info ( b:BAT) : bat[str,str] = CMDinfo
+comment "Produce a BAT containing info about a BAT in [attribute,value] format.
  It contains all properties of the BAT record. See the BAT documentation in
- GDK for more information."
+ GDK for more information.";
  
-COMMAND getHeadType ( bid:int ) : str = CMDhtype;
-"Returns the type of the head column of a BAT, as an integer type number."
+command htype ( bid:int ) : int = CMDhtype
+comment "Returns the type of the head column of a BAT, as an integer type number.";
  
-COMMAND getTailTtype ( bid:int ) : str = CMDttype;
-"Returns the type of the tail column of a BAT, as an integer type number."
+command ttype ( bid:int ) : int = CMDttype
+comment "Returns the type of the tail column of a BAT, as an integer type number.";
 
-COMMAND setKey( b:BAT[any::1,any::2], mode:bit) 
-				: BAT[any::1,any::2] = CMDsetkey;
-"Sets the 'key' property of the head column to 'mode'. In 'key' mode, 
+command setKey( b:bat[any,any], mode:bit) :int = CMDsetkey
+comment "Sets the 'key' property of the head column to 'mode'. In 'key' mode, 
  the kernel will silently block insertions that cause a duplicate entries
  in the head column. 
  KNOWN BUG: when 'key' is set to TRUE, this function does not automatically 
- eliminate duplicates. Use b := b.kunique;"
+ eliminate duplicates. Use b := b.kunique;";
 
-COMMAND isKey( b:BAT[any::1,any::2]) : bit = CMDgetkey;
-"return whether the head column of a BAT is unique (key)."
+command isaKey( b:bat[any,any]) : bit = CMDgetkey
+comment "return whether the head column of a BAT is unique (key).";
 
-COMMAND setSet( b:BAT[any::1,any::2], mode:bit) 
-				: BAT[any::1,any::2] = CMDsetset;
-"Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel 
+command setSet( b:bat[any,any], mode:bit) : int = CMDsetset
+comment "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel 
  will silently block insertions that cause a duplicate BUN [head,tail] entries
  in the BAT. 
  KNOWN BUG: when 'set' is set to TRUE, this function does not automatically 
  eliminate duplicates. Use b := b.sunique;
- Returns the BAT itself."
+ Returns the BAT itself.";
 
-COMMAND isSet( b:BAT[any::1,any::2]) : bit = CMDgetmode;
-"return whether the BAT mode is set to unique."
+command isaSet( b:bat[any,any]) : bit = CMDgetmode
+comment "return whether the BAT mode is set to unique.";
 
-COMMAND setAccess( b:BAT[any::1,any::2], mode:str) 
-				: BAT[any::1,any::2] = CMDsetaccess;
-"Try to change the update access priviliges to this BAT. Mode:
+command setAccess( b:bat[any,any], mode:str) : int = CMDsetAccess
+comment "Try to change the update access priviliges to this BAT. Mode:
  r[ead-only]      - allow only read access.
  a[append-only]   - allow reads and insertions of new elements.
  w[riteable]      - allow reads, insertions, and updates.
  BATs are updateable by default. On making a BAT readonly, all 
  subsequent updates fail with an error message.
- Returns the BAT itself." 
+ Returns the BAT itself.";
 
-COMMAND getAccess( b:BAT[any::1,any::2]):chr = CMDgetaccess;
-"return the access mode attached to this BAT." 
+command setAccess( b:bat[any,any], mode:chr) : int = CMDsetAccess2
+comment "Change access priviliges";
 
-COMMAND setSequenceBase( b:BAT[void,any::1], seqbase:oid) 
-				: int = CMDseqbase;
-"Set the sequence base for the void vcolumn of a BAT."
+command getAccess( b:bat[any::1,any::2]):chr = CMDgetAccess
+comment "return the access mode attached to this BAT as a character.";
 
-COMMAND isOrdered(b:BAT[any,any]) : bit = CMDordered;
-"Returns whether a BAT is ordered on head or not."
+command setSequenceBase( b:bat[void,any::1], seqbase:oid):int = CMDseqbase
+comment "Set the sequence base for the void vcolumn of a BAT.";
 
-COMMAND getBATSize(batname:str) : int = CMDbatsize_str;
-"A version of BATsize that does not require loading the BAT."
+command isOrdered(b:bat[any,any]) : bit = CMDordered
+comment "Returns whether a BAT is ordered on head or not.";
 
-COMMAND getBATSize(b:BAT[any,any]) : int = CMDbatsize;
-"A version of BATsize that does not require loading the BAT."
+command getBATSize(batname:str) : int = CMDbatsize_str
+comment "A version of BATsize that does not require loading the BAT.";
+
+command getBATSize(b:bat[any,any]) : int = CMDbatsize
+comment "A version of BATsize that does not require loading the BAT.";
 
 @- BUN Access
 The BAT-loop iterator contructs take on a different flavour in MAL.
@@ -168,21 +192,23 @@ They mimick a for-loop as described in 'iterator.mx'.
 The iterator is initialized with a value outside the range 0..BATcount(b).
 @mal
 
-COMMAND nextElement(i:int,b:bat[any,any]):bit = CMDbatloop;
-"Iterate over the elements of a BAT using an index."
+command nextElement(i:int,b:bat[any,any]):bit = CMDbatloop
+comment "Iterate over the elements of a BAT using an index.";
 
-COMMAND nextElement(i:int,b:bat[any,any],low:int,high:int):bit = CMDbatloopslice;
-"Iterator over all BUNs of b.slice(low,high)"
+command nextElement(i:int,b:bat[any,any],low:int,high:int):bit = CMDbatloopslice
+comment "Iterator over all BUNs of b.slice(low,high)";
 
-COMMAND nextHashElement(i:int, p:ptr, b:bat[any,any]):bit = CMDhashloop;
-"Iterate over the elements of a BAT using its hash index.
-Each call we set 'i' to denote the next element"
+command nextHashElement(i:int, p:ptr, b:bat[any,any]):bit = CMDhashloop
+comment "Iterate over the elements of a BAT using its hash index.
+Each call we set 'i' to denote the next element";
 
-PATTERN getHead(b:bat[any::1,any], i:int):any::1 = CMDgetHead;
-"return the BUN head value using the iterator."
+@-
+The remainder for the future
+pattern getHead(b:bat[any::1,any], i:int):any::1 = CMDgetHead
+comment "return the BUN head value using the iterator.";
 
-PATTERN getTail(b:bat[any::1,any], i:int):any::1 = CMDgetTail;
-"return the BUN tail value using the iterator."
+pattern getTail(b:bat[any::1,any], i:int):any::1 = CMDgetTail
+comment "return the BUN tail value using the iterator.";
 
 @- BAT I/O, Persistency
 @T
@@ -198,40 +224,47 @@ algorithm. BATs have a {\em heat}, which drops over time, and is
 increased when a BAT is used by some command.  If the size of the 
 allocated arena gets to be large, BATs may be swapped out. 
 @mal
-COMMAND bbpname ( b:BAT[any,any] , s:str) : BIT = CMDrename;
-"Give a logical name to a BAT. This can fail if a BAT with name 's' already
- exists. The command then returns FALSE, ales TRUE."
+command rename ( b:bat[any,any] , s:str) : BIT = CMDrename;
+command bbpname ( b:bat[any,any] , s:str) : BIT = CMDrename
+comment "Give a logical name to a BAT. This can fail if a BAT with 
+name 's' already exists. The command then returns FALSE, ales TRUE.";
 
-COMMAND bbpname ( b:BAT[any,any]) : STR = CMDname;
-"Gives back the logical name of a BAT."
+command bbpname ( b:bat[any,any]) : STR = CMDname
+comment "Gives back the logical name of a BAT.";
 
-COMMAND roles ( b:BAT[any::1,any::2] , h:str, t:str) 
-				: int = CMDroles;
-"Give a logical name to the columns of a BAT."
+command roles ( b:bat[any::1,any::2] , h:str, t:str):int = CMDroles
+comment "Give a logical name to the columns of a BAT.";
 
-COMMAND setTransient( b:BAT) :bit = CMDsetTransient;
-"Make the BAT transient.  Returns boolean which indicates if the
-BAT administration has indeed changed." 
+command setTransient( b:BAT) :bit = CMDsetTransient
+comment "Make the BAT transient.  Returns boolean which indicates if the
+BAT administration has indeed changed.";
 
-COMMAND setPersistent( b:BAT) : bit = CMDsetPersistent;
-"Make the BAT persistent.  Returns boolean which indicates if the
-BAT administration has indeed changed." 
+command setPersistent( b:BAT) : bit = CMDsetPersistence
+comment "Make the BAT persistent.  Returns boolean which indicates if the
+BAT administration has indeed changed.";
 
-COMMAND save(nme:str) : bit = CMDsave;
-"Save a BAT to storage, if it was loaded and dirty. Returns whether IO was necessary.
- Please realize that calling this function violates the atomic repository commit protocol!!"
+command save(nme:bat[any,any]) : bit = CMDsave2;
 
-COMMAND unload(name:str) : bit = CMDunload;
-"Swapout a BAT to disk. Transient BATs can also be swapped out.
- Returns whether the unload indeed happened. "
+command save(nme:str) : bit = CMDsave
+comment "Save a BAT to storage, if it was loaded and dirty. 
+Returns whether IO was necessary.
+Please realize that calling this function violates 
+the atomic commit protocol!!";
 
-COMMAND hot(name:str) : void = CMDhot;
-"Makes a BAT very hot for the BBP. The chance of being chosen for swapout is 
- small, afterwards.  Returns the BAT itself."
+command load(name:str) : bat[any,any] = CMDload
+comment "Load a particylar bat from disk";
 
-COMMAND cold(nme:str) : void = CMDcold;
-"Makes a BAT very cold for the BBP. The chance of being choses for swapout is 
- big, afterwards.  Returns the BAT itself."
+command unload(name:str) : bit = CMDunload
+comment "Swapout a BAT to disk. Transient BATs can also be swapped out.
+ Returns whether the unload indeed happened. ";
+
+command hot(name:str) : void = CMDhot
+comment "Makes a BAT very hot for the BBP. The chance of being chosen 
+for swapout is small, afterwards.  Returns the BAT itself.";
+
+command cold(nme:str) : void = CMDcold
+comment "Makes a BAT very cold for the BBP. The chance of being choses 
+for swapout is big, afterwards.  Returns the BAT itself.";
 
 @- Heap Specific Commands
 @T
@@ -271,24 +304,24 @@ For more technical information on BATs, we refer to the
 @[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
 documentation.
 @mal
-COMMAND mmap(b:BAT, buns_mode:int, hheap_mode:int, theap_mode:int, 
-		hacc_mode:int, tacc_mode:int) : bit = CMDmmap;
-"For each individual heap, you can change the allocation mode to 
+command mmap(b:BAT, buns_mode:int, hheap_mode:int, theap_mode:int, 
+		hacc_mode:int, tacc_mode:int) : bit = CMDmmap
+comment "For each individual heap, you can change the allocation mode to 
  either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.
  Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save 
  (this has to happen before the heap can be mapped into virtual memory). 
- These modes are persistent. "
+ These modes are persistent. ";
 
-COMMAND madvise(b:BAT, buns_mode:int, hheap_mode:int, theap_mode:int, 
-		hacc_mode:int, tacc_mode:int) : bit = CMDmadvise;
-"Modern Operating Systems allow users to influence the buffer management
+command madvise(b:BAT, buns_mode:int, hheap_mode:int, theap_mode:int, 
+		hacc_mode:int, tacc_mode:int) : bit = CMDmadvise
+comment "Modern Operating Systems allow users to influence the buffer management
  policy of virtual memory. This is a crucial feature for database systems,
  and eliminates the need to reimplement the OS in a database buffer manager.
  The supported flags are BUF_NORMAL (the normal adaptive kernel algorithm),
  BUF_RANDOM (no page prefetching), BUF_SEQUENTIAL (prefetch and swapout),
  BUF_WILLNEED (load everything with prefetch), BUF_DONTNEED (swapout).
  These buffer management modes are not persistent.
- Returns the BAT operated upon."
+ Returns the BAT operated upon.";
 
 @- ASCII import, export
 The below commands load and save a BAT from/to an ASCII dump. These
@@ -296,14 +329,14 @@ functions are efficient but work only for binary tables. For printing
 ASCII n-ary tables you can use the @#print@(bat1,bat2,..) command
 from the system.mx module.
 @mal
-COMMAND export(b:BAT, filepath:str):bit  = CMDexport; 
-"Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
- is put into the .../dbfarm/$DB directory. Success of failure is indicated." 
+command export(b:BAT, filepath:str):bit  = CMDexport
+comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
+ is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
 
-COMMAND import(b:BAT, filepath:str) : bit = CMDimport;
-"Import a BAT from an ASCII dump. The new tuples are *inserted* into the
+command import(b:BAT, filepath:str) : bit = CMDimport
+comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
  parameter BAT. You have to create it! Its signature must match the dump, 
- else parsing errors will occur and FALSE is returned."
+ else parsing errors will occur and FALSE is returned.";
 
 @- BAT Accelerators
 @T
@@ -328,24 +361,24 @@ a list of all currently known accelarator types.
 More info on how to write new search accelerators can be found in the
 @[<a href="../mel.html">MEL documentation</a>@.
 @mal
-COMMAND accbuild(b:BAT[any,any], acctype:int):bit = CMDaccbuild_std;
-"Build an accelerator on the head column of b. The builtin accelerator
+command accbuild(b:bat[any,any], acctype:int):bit = CMDaccbuild_std
+comment "Build an accelerator on the head column of b. The builtin accelerator
  types index and hash will be created as transient accelerators. They
  will not be saved on disk. User-defined accelerators must always be
- persistent." 
+ persistent." ;
 
-COMMAND accbuild(b:BAT[any,any], acctype:int, param:any):int = CMDaccbuild;
-"like accbuild(BAT[any,any] b, int acctype), but with a parameter that
- is provide to the specific accelerator build routine."
+command accbuild(b:bat[any,any], acctype:int, param:ptr):int = CMDaccbuild
+comment "like accbuild(bat[any,any] b, int acctype), but with a parameter that
+ is provide to the specific accelerator build routine.";
 
-COMMAND accdestroy(b:BAT[any,any], acctype:int) = CMDaccdestroy;
-"Destroy the accelerator of type 'acctype'  that is present on
- the head-type of b." 
+command accdestroy(b:bat[any,any], acctype:int) = CMDaccdestroy
+comment "Destroy the accelerator of type 'acctype'  that is present on
+ the head-type of b.";
 
-COMMAND accpresent(b:BAT[any,any] ) : int = CMDaccpresent;
-"Returns the accelerator type of the *persistent* accelerator present 
+command accpresent(b:bat[any,any] ) : int = CMDaccpresent
+comment "Returns the accelerator type of the *persistent* accelerator present 
  on the head column of b. Note that index and hash accelerators are
- generally *not* persistent, and will not be returned by this function!"
+ generally *not* persistent, and will not be returned by this function!";
   
 
 @- Synced BATs
@@ -365,8 +398,8 @@ By comparing two OIDs the Monet kernel can very quickly decide that
 two columns are exactly equal. All BAT algebra operations propagate
 these 'sync' OIDs with their own propagation rules.
 @mal
-COMMAND synced (b1:BAT[any,any], b2:BAT[any,any]) : bit = CMDsynced;
-"Tests whether two BATs are synced or not. "
+command synced (b1:bat[any,any], b2:bat[any,any]) : bit = CMDsynced
+comment "Tests whether two BATs are synced or not. ";
 @- constants for mmap()
 @mil
     CONST STORE_MEM   := 0;     # load into GDKmalloced memory
@@ -448,62 +481,100 @@ bat-name or batCacheid
 	(BAT@2type(@1) == TYPE_bat)?&((BAT*)@2)->batCacheid:@2
 
 @+ Information Functions
+In most cases we pass a BAT identifier, which should be unified
+with a BAT descriptor. Upon failure we can simply abort the function.
+
+@= batcheck
+	if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
+	@3= (BAT*) BBPgetdesc(*@2);
+	if( @3 == NULL) {
+		*@1 = 0;
+		return GDK_FAIL;
+	}
+@= batcheck2
+	if( BBPcheck(*@2,@4)== 0 ) {
+		return *@1 = GDK_FAIL;
+	}
+	@3= (BAT*) BBPgetdesc(*@2);
+	if( @3 == NULL) return *@1 = GDK_FAIL;
+@-
+At this stage of the game, we should translate
+the arguments of BATnew into types.
 @c
 #include "monet.h"
 
 int CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int ht, tt, cap=0;
+	str hn,tn;
 	BAT *b;
 
-	ht= *(int *) getArgValue(m,s,p,1);
-	tt= *(int *) getArgValue(m,s,p,2);
+	hn= getArgName(m,p,1);
+	tn= getArgName(m,p,2);
+	ht = ATOMindex(hn);
+	tt = ATOMindex(tn);
 	if( p->argc>3)
-		cap= *(int *) getArgValue(m,s,p,3);
-printf("batnew %d %d %d\n",ht,tt,cap);
+		cap= *(int *) getArgReference(m,s,p,3);
 	b = BATnew(ht,tt,cap);
 	if( b){
 		int *i;
-		i= (int *) getArgValue(m,s,p,0);
+		i= (int *) getArgReference(m,s,p,0);
 		*i= b->batCacheid;
 		return GDK_SUCCEED;
 	}
 	return  GDK_FAIL;
 }
 
-int CMDreverse(BAT **ret, BAT *b){
-	*ret = BATmirror(b);
-	BBPfix(b->batCacheid);
+int CMDreverse(int *ret, int *bid){
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDreverse")@
+	*ret= -b->batCacheid;
 	return GDK_SUCCEED;
 } 
 
-int CMDmirror(BAT **ret, BAT *b){
-	BAT *v = *ret = VIEWcombine(b);
+int CMDmirror(int *ret, int *bid){
+	BAT *b, *v;
+	@:batcheck(ret,bid,b,"CMDmirror")@
+	v = VIEWcombine(b);
 	if (b->batRestricted == BAT_WRITE) {
-		*ret = BATrcopy(v);
+		BAT *bc = BATrcopy(v);
 		BBPreclaim(v);
+		v = bc;
 	}
-	return (*ret)?GDK_SUCCEED:GDK_FAIL;
+	if(v) {
+		*ret = v->batCacheid;
+		return GDK_SUCCEED;
+	}
+	*ret = 0;
+	return GDK_FAIL;
 }
 
-int CMDconvert(int *ret, BAT *b){
+int CMDconvert(int *ret, int *bid){
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDconvert")@
 	BATconvert(b,CONV_HTON);
 	BBPfix(b->batCacheid);
-	return *ret= GDK_SUCCEED;
+	return *ret = GDK_SUCCEED;
 }
 
-int CMDrevert(int *ret, BAT *b){
+int CMDrevert(int *ret, int *bid){
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDrevert")@
 	BATrevert(b);
 	BBPfix(b->batCacheid);
 	return *ret= GDK_SUCCEED;
 }
 
-int CMDorder(int *ret, BAT *b){
+int CMDorder(int *ret, int *bid){
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDorder")@
 	BATorder(b);
 	BBPfix(b->batCacheid);
 	return *ret= GDK_SUCCEED;
 }
 @-
-Insertions into the BAT
+Insertions into the BAT may involve void types (=no storage required)
+These cases should actually be captured during BUNins, because they
+may emerge internally as well.
 @= void_insertbun
 if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
     *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
@@ -511,28 +582,24 @@ if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
       GDKerror("CMDinsert: cannot insert non-nil values in a void column.\n");
       return GDK_FAIL;
 }
-@-
 @c
 int CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-printf("insert bun bid %d\n",*bid);
-printf("int value %d %d\n",*(int*)h, *(int*)t);
-	b= BATdescriptor(*bid);
-	if( b == NULL) return *r= GDK_FAIL;
-/*
+	@:batcheck2(r,bid,b,"CMDinsert_bun")@
 	@:void_insertbun(h)@
 	@:void_insertbun(t)@
-	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
-*/
-	BUNins(b,h,t);
-printf("cacheid %d\n",b->batCacheid);
-	BBPfix(b->batCacheid);
+	@:derefStr(b,h,h)@
+	@:derefStr(b,t,t)@
+	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@); 
+/* 	BUNins(b, h,t); */
 	return *r= GDK_SUCCEED;
 } 
 
-int CMDinsert_bat(int *r, BAT *b, BAT *s){
+int CMDinsert_bat(int *r, int *bid, int *sid){
+	BAT *b, *s;
+	@:batcheck2(r,bid,b,"CMDinsert_bat")@
+	@:batcheck2(r,sid,s,"CMDinsert_bat")@
 	BATins(b,s);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 } 
 
@@ -546,127 +613,121 @@ int CMDinsert_bat(int *r, BAT *b, BAT *s){
 		return GDK_FAIL;
 	}
 @c
-int CMDreplace_bun(int *r, BAT *b, ptr h, ptr t) {
+int CMDreplace_bun(int *r, int *bid, ptr h, ptr t) {
+	BAT *b;
+	@:batcheck2(r,bid,b,"CMDreplace_bat")@
+	@:derefStr(b,h,h)@
+	@:derefStr(b,t,t)@
 	@:void_append_only(CMDreplace_bun)@
 	BUNreplace(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 } 
 
-int CMDreplace_bat(int *r, BAT *b, BAT *s){
+int CMDreplace_bat(int *r, int *bid, int *sid){
+	BAT *b,*s;
+	@:batcheck2(r,bid,b,"CMDreplace_bat")@
+	@:batcheck2(r,sid,s,"CMDreplace_bat")@
 	@:void_append_only(CMDreplace_bat)@
 	BATreplace(b,s);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 } 
 
-int CMDdelete_bun(int *r, BAT *b, ptr h, ptr t) {
+int CMDdelete_bun(int *r, int *bid, ptr h, ptr t) {
+	BAT *b;
+	@:batcheck2(r,bid,b,"CMDdelete_bun")@
+	@:derefStr(b,h,h)@
+	@:derefStr(b,t,t)@
 	@:void_append_only(CMDdelete_bun)@
 	BUNdel(b,h,t);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 } 
 
-int CMDdelete_head(int *r, BAT *b, ptr h) {
+int CMDdelete_head(int *r, int *bid, ptr h) {
+	BAT *b;
+	@:batcheck2(r,bid,b,"CMDdelete_head")@
+	@:derefStr(b,h,h)@
 	@:void_append_only(CMDdelete_head)@
 	BUNdelHead(b, @:batconvert(b,h)@);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 } 
 
-int CMDdelete_all(int *r, BAT *b) {
+int CMDdelete_all(int *r, int *bid) {
+	BAT *b;
+	@:batcheck2(r,bid,b,"CMDdelete_all")@
 	BATclear(b);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 } 
 
-int CMDdelete_bat_bun(int *r, BAT *b, BAT *s){
+int CMDdelete_bat_bun(int *r, int *bid, int *sid){
+	BAT *b,*s;
+	@:batcheck2(r,bid,b,"CMDdelete_bat_bun")@
+	@:batcheck2(r,sid,s,"CMDdelete_bat_bun")@
 	@:void_append_only(CMDdelete_bat_bun)@
 	BATdel(b,s);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 } 
 
-int CMDdelete_bat_head(int *r, BAT *b, BAT *s){
+int CMDdelete_bat_head(int *r, int *bid, int *sid){
+	BAT *b,*s;
+	@:batcheck2(r,bid,b,"CMDdelete_bat_head")@
+	@:batcheck2(r,sid,s,"CMDdelete_bat_head")@
 	@:void_append_only(CMDdelete_bat_head)@
 	BATdelHead(b,s);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 } 
 
-int CMDsize(int *res, int *bid) {
-	if (BBPcheck(*bid, "CMDsize")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid);
-		if (b == NULL) {
-			*res = int_nil;
-		} else if (BBP_cache(*bid)) {
-			*res = BATcount(b);  
-		} else {
-			/* BAT not loaded */
-			*res = (b->batBuns->free - (b->batHole - b->batBuns->base))/BUNsize(b) - 1;
-		}
-	}
-	return GDK_SUCCEED;
-}
-
+@- Property management
+@c
 int CMDcapacity(int *res, int *bid) {
-	if (BBPcheck(*bid, "CMDcapacity")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid);
-		if (b == NULL) {
-			*res = int_nil;
-		} else {
-			*res = BATcapacity(b);
-		}
-	}
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDcapacity")@
+	*res = BATcapacity(b);
 	return GDK_SUCCEED;
 }
 
 int CMDhtype(int *res, int *bid) {
-	if (BBPcheck(*bid, "CMDhtype")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid);
-		if (b == NULL) {
-			*res = TYPE_void;
-		} else {
-			*res = (*bid > 0)?BAThtype(b):BATttype(b);
-		}
-	}
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDhtype")@
+	*res = (*bid > 0)?BAThtype(b):BATttype(b);
 	return GDK_SUCCEED;
 }
 
 int CMDttype(int *res, int *bid) {
-	if (BBPcheck(*bid, "CMDttype")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid);
-		if (b == NULL) {
-			*res = TYPE_void;
-		} else {
-			*res = (*bid > 0)?BATttype(b):BAThtype(b);
-		}
-	}
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDttype")@
+	*res = (*bid > 0)?BATttype(b):BAThtype(b);
 	return GDK_SUCCEED;
 }
 
-int CMDsetkey(BAT **result, BAT *input, bit *param) {
-	BATkey(*result=input, *param?BOUND2BTRUE:FALSE);
-	BBPfix(input->batCacheid);
-        return GDK_SUCCEED;
+int CMDsetkey(int *res, int *bid, bit *param) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDsetkey")@
+	BATkey(b, *param?BOUND2BTRUE:FALSE);
+        return *res= GDK_SUCCEED;
 }
 
-int CMDsetset(BAT **result, BAT *input, bit *param) {
-	BATset(*result=input, *param?BOUND2BTRUE:FALSE);
-	BBPfix(input->batCacheid);
-        return GDK_SUCCEED;
+int CMDsetset(int *res, int *bid, bit *param) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDsetset")@
+	BATset(b, *param?BOUND2BTRUE:FALSE);
+        return *res= GDK_SUCCEED;
 }
 
-int CMDordered(bit *result, BAT *input) {
-        *result = BATordered(input)?1:0;
+int CMDordered(bit *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDordered")@
+        *res = BATordered(b)?1:0;
         return GDK_SUCCEED;
 }
+@-
+We must take care of the special case of a nil column (TYPE_void,seqbase=nil) 
+such nil columns never set hkey (and BUNins will never invalidate it if set) yet
+a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
+@c
 
-int CMDgetkey(bit *ret, BAT *b) {
-	/* we must take care of the special case of a nil column (TYPE_void,seqbase=nil) 
-         * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
-         * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
-         */
+int CMDgetkey(bit *ret, int *bid) {
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDgetkey")@
 	if (BATcount(b) <= 1) {
 		*ret = TRUE;
 	} else {
@@ -678,34 +739,70 @@ int CMDgetkey(bit *ret, BAT *b) {
 	return GDK_SUCCEED;
 }
 
-int CMDpersists(BAT **r, BAT *input, bit *param) {
-/*
-	if (*param) {
-		BATpropcheck(input);
-        	BATpropcheck(BATmirror(input));
-	}
-*/
-	BATmode(*r=input, *param?PERSISTENT:TRANSIENT);
-	BBPfix(input->batCacheid);
-        return GDK_SUCCEED;
+int CMDsetPersistence(int *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDsetPersistence")@
+	BATpropcheck(b);
+	BATpropcheck(BATmirror(b));
+	BATmode(b, PERSISTENT);
+        return *res= GDK_SUCCEED;
+}
+int CMDsetTransient(int *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDsetTransient")@
+	BATmode(b, TRANSIENT);
+        return *res= GDK_SUCCEED;
 }
 
-int CMDsetaccess(BAT **r, BAT *input, int *param) {
-	*r = BATsetaccess(input, *param);
-	if (*r == input) {
-		BBPfix(input->batCacheid);
+int CMDsetAccess(int *res, int *bid, str *param) {
+	BAT *b;
+	int m;
+	@:batcheck(res,bid,b,"CMDsetAccess")@
+	switch(*param[0]){
+	case 'r': m= 1; break;
+	case 'a': m= 2; break;
+	case 'w': m= 0; break;
+	default: GDKwarning("CMDsetAccess: illegal access mode\n");
+		*res = 0;
+		return GDK_FAIL;
 	}
-        return GDK_SUCCEED;
+	BATsetaccess(b, m);
+        return *res = GDK_SUCCEED;
 }
 
-int CMDgetaccess(int *r, BAT *input) {
-	*r = BATgetaccess(input);
+int CMDsetAccess2(int *res, int *bid, char *param) {
+	BAT *b;
+	int m;
+	@:batcheck(res,bid,b,"CMDsetAccess2")@
+	switch(*param){
+	case 'r': m= 1; break;
+	case 'a': m= 2; break;
+	case 'w': m= 0; break;
+	default: GDKwarning("CMDsetAccess: illegal access mode\n");
+		*res = 0;
+		return GDK_FAIL;
+	}
+	BATsetaccess(b, m);
+        return *res = GDK_SUCCEED;
+}
+
+int CMDgetAccess(char *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDgetAccess")@
+	switch(BATgetaccess(b)){
+	case 1: *res= 'r'; break;
+	case 2: *res= 'a'; break;
+	case 0: *res= 'w'; break;
+	}
         return GDK_SUCCEED;
 }
 
 char* pre(str s1,str s2){
 	static char buf[64];
-	strcpy(buf,s1); strcat(buf,s2);
+	if( strlen(s1)+strlen(s2) >=64){
+		GDKerror("pre: buffer space (64) too small\n");
+		buf[0]=0;
+	} else { strcpy(buf,s1); strcat(buf,s2); }
 	return buf;
 }
 static char* local_itoa(int i){
@@ -877,10 +974,12 @@ int CMDinfo(int *retval, int *bid){
 
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
-int CMDbatsize(int *tot, BAT *b){
+int CMDbatsize(int *tot, int *bid){
+	BAT *b;
 	int blksize = MT_pagesize();
 	int size = ROUND_UP(sizeof(BATstore),blksize);
 
+	@:batcheck(tot,bid,b,"CMDbatsize")@
 	if (!VIEWparent(b)) {
 		int cnt = BATcapacity(b);
 		size += ROUND_UP(b->batBuns->size, blksize);
@@ -897,43 +996,50 @@ int CMDbatsize(int *tot, BAT *b){
 	return GDK_SUCCEED;
 }
 
-int CMDbatsize_str(int *tot, str batname){
-	int bid = BBPindex(batname);
+int CMDbatsize_str(int *tot, str *batname){
+	int bid = BBPindex(*batname);
 	BAT *b = bid?(BAT*) BBPgetdesc(bid):NULL;
 
 	if (b == NULL) {
-		GDKerror("CMDbatsize(%s): no such bat.\n", batname);
+		GDKerror("CMDbatsize(%s): no such bat.\n", *batname);
 		return GDK_FAIL;
 	}
-	return CMDbatsize(tot, b);
+	return CMDbatsize(tot, &bid);
 }
 
 @+ Synced BATs
 @c
-int CMDsynced(bit *ret, BAT *b1, BAT *b2){
+int CMDsynced(bit *ret, int *bid1, int *bid2){
+	BAT *b1, *b2;
+	@:batcheck(ret,bid1,b1,"CMDsynced")@
+	@:batcheck(ret,bid2,b2,"CMDsynced")@
 	*ret = ALIGNsynced(b1,b2)?1:0;
 	return GDK_SUCCEED;
 }
 
 @+ BBP Management, IO
 @c
-int CMDroles(int *r, BAT *b, str hname, str tname){
-	BATroles(b, hname, tname);
-	BBPfix(b->batCacheid);
+int CMDroles(int *r, int *bid, str *hname, str *tname){
+	BAT *b;
+	@:batcheck(r,bid,b,"CMDroles")@
+	BATroles(b, *hname, *tname);
 	return *r= GDK_SUCCEED;
 }
 
-int CMDrename(bit *retval, BAT *b, str s){
-	int ret = BATname(b,s);
+int CMDrename(bit *retval, int *bid, str *s){
+	BAT *b;
+	int ret;
+	@:batcheck(retval,bid,b,"CMDrename")@
+	ret = BATname(b,*s);
 	*retval = FALSE;
         if (ret == 1) {
-                GDKerror("CMDrename: identifier expected: %s\n",s);
+                GDKerror("CMDrename: identifier expected: %s\n",*s);
 		return GDK_FAIL;
         } else if (ret == BBPRENAME_ILLEGAL) {
-                GDKerror("CMDrename: illegal temporary name: '%s'\n", s);
+                GDKerror("CMDrename: illegal temporary name: '%s'\n", *s);
 		return GDK_FAIL;
         } else if (ret == BBPRENAME_LONG) {
-                GDKerror("CMDrename: name too long: '%s'\n", s);
+                GDKerror("CMDrename: name too long: '%s'\n", *s);
 		return GDK_FAIL;
         } else if (ret != BBPRENAME_ALREADY) {
 		*retval = TRUE;
@@ -941,13 +1047,15 @@ int CMDrename(bit *retval, BAT *b, str s){
 	return GDK_SUCCEED;
 }
 
-int CMDname(str *retval, BAT *b){
+int CMDname(str *retval, int *bid){
+	BAT *b;
+	@:batcheck(retval,bid,b,"CMDname")@
 	*retval = GDKstrdup(BBPname(b->batCacheid));
 	return GDK_SUCCEED;
 }
 
-int CMDunload(bit *res, str input) {
-        int bid = ABS(BBPindex(input));
+int CMDunload(bit *res, str *input) {
+        int bid = ABS(BBPindex(*input));
 	*res = FALSE;
         if (bid > 0) {
 		BBPfix(bid);
@@ -955,19 +1063,25 @@ int CMDunload(bit *res, str input) {
 	}
         return GDK_SUCCEED;
 }
+int CMDload(int *res, str *input) {
+	BAT *b= BBPindex(*input);
+	if( b) *res = b->batCacheid;
+	else return GDK_FAIL;
+        return GDK_SUCCEED;
+}
 
-int CMDhot(str input) {
-	BBPhot(BBPindex(input));
+int CMDhot(str *input) {
+	BBPhot(BBPindex(*input));
 	return GDK_SUCCEED;
 }
 
-int CMDcold(str input) {
-	BBPcold(BBPindex(input));
+int CMDcold(str *input) {
+	BBPcold(BBPindex(*input));
 	return GDK_SUCCEED;
 }
 
-int CMDsave(bit *res, str input) {
-	int bid = BBPindex(input);
+int CMDsave(bit *res, str *input) {
+	int bid = BBPindex(*input);
 	BAT *b;
 	*res = FALSE;
 	if (bid ) {
@@ -978,6 +1092,15 @@ int CMDsave(bit *res, str input) {
 		}
 		BBPunfix(bid);
 	}
+        return GDK_SUCCEED;
+}
+int CMDsave2(bit *res, int *bid) {
+	BAT *b;
+	@:batcheck2(res,bid,b,"CMDsave")@
+	if (b && BATdirty(b)) { 
+		if (BBPsave(b) == 0) *res = TRUE;
+	}
+	BBPunfix(*bid);
         return GDK_SUCCEED;
 }
 
@@ -991,26 +1114,29 @@ int CMDsave(bit *res, str input) {
 	}
 }
 @c
-int CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp, int *hacc, int *tacc){
+int CMDmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
+			int *hacc, int *tacc)
+{	BAT *b;
+	@:batcheck(res,bid,b,"CMDmmap")@
 	@:change_heap(bns,(*b->batBuns))@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
 	@:change_heap(hacc,b->haccelerator)@
 	@:change_heap(tacc,b->taccelerator)@
-	if (BATmmap(*r=b, *bns, *hhp, *thp, *hacc, *tacc) == 0) {
-	        BBPfix(b->batCacheid);
-		return GDK_SUCCEED;
+	if (BATmmap(b, *bns, *hhp, *thp, *hacc, *tacc) == 0) {
+		return *res= GDK_SUCCEED;
 	}
-	return GDK_FAIL;
+	return *res= GDK_FAIL;
 }
 
-int CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp, 
+int CMDmadvise(int *res, int *bid, int *bns, int *hhp, int *thp, 
 		 	        int *hacc, int *tacc)
-{
-	BBPfix(b->batCacheid);
-	return BATmadvise(*r=b, (*bns==int_nil)?-1:*bns, 
+{	BAT *b;
+	@:batcheck(res,bid,b,"CMDmadvice")@
+	return *res= BATmadvise(b, (*bns==int_nil)?-1:*bns, 
 		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp, 
-		(*hacc==int_nil)?-1:*hacc, (*tacc==int_nil)?-1:*tacc)?GDK_FAIL:GDK_SUCCEED;
+		(*hacc==int_nil)?-1:*hacc, 
+		(*tacc==int_nil)?-1:*tacc)?GDK_FAIL:GDK_SUCCEED;
 }
 
 @+ Bulk export/loading
@@ -1027,22 +1153,25 @@ The exported file is saved in the context of the directory
 where the server was started unless an absolute file name was
 presented.
 @c
-int CMDexport(BAT *b, str fnme) {
-	FILE	*f = fopen(fnme, "w");
+int CMDexport(int *ret, int *bid, str *fnme) {
+	BAT *b;
+	FILE	*f = fopen(*fnme, "w");
+	@:batcheck(ret,bid,b,"CMDexport")@
 	if (f == NULL) {
-		GDKsyserror("CMDexport: could not open file %s\n",fnme);
-		return GDK_FAIL;
+		GDKsyserror("CMDexport: could not open file %s\n",*fnme);
+		return *ret= GDK_FAIL;
 	}
 	BATprintf(f,b);
 	fclose(f);
-	return GDK_SUCCEED;
+	return *ret= GDK_SUCCEED;
 }
 
 @
 The import command reads a single BAT from an ascii file. It assumes
 a layout compatible with that produced by print or export.
 @c
-int CMDimport(BAT **ret, BAT *b, str fnme) {
+int CMDimport(int *ret, int *bid, str fnme) {
+	BAT *b;
 	int	(*hconvert)(), (*tconvert)();
 	int	bufsize = 2048; /* NIELS: tmp change used to be 1024 */
 	char	*base, *cur, *end;
@@ -1051,6 +1180,7 @@ int CMDimport(BAT **ret, BAT *b, str fnme) {
 	int	lh = 0,	lt = 0;
 	FILE	*fp = fopen(fnme, "r");
 
+	@:batcheck(ret,bid,b,"CMDimport")@
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 @-
@@ -1105,7 +1235,7 @@ Parse the line, and insert a BUN.
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
        		if (*p == 0){
 		       	GDKerror("CMDimport: error in %s\n",buf);
-			return GDK_FAIL;
+			return *ret = GDK_FAIL;
        		}
        		p += @1(p, @3, @4);			
 @c
@@ -1130,31 +1260,37 @@ Cleanup and exit. Return the filled BAT.
 	GDKfree(buf);
 	MT_munmap(base, end-base);
 	BBPfix(b->batCacheid);
-	*ret = b;
-	return GDK_SUCCEED;
+	return *ret= GDK_SUCCEED;
 }
 
 @+ Accelerator Control
 @c
-int CMDaccbuild(BAT *b, int* acc, ptr param, int dummy){
-	ACCbuild(*acc, b, &b->haccelerator, param); 
-	return GDK_SUCCEED;
+int CMDaccbuild(int *ret, int *bid, int* acc, ptr *param){
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDaccbuild")@
+	ACCbuild(*acc, b, &b->haccelerator, *param); 
+	return *ret = GDK_SUCCEED;
 }
-int CMDaccbuild_std(BAT *b, int* acc){
-	return CMDaccbuild(b, acc, NULL, 0);	
+int CMDaccbuild_std(int *ret, int *bid, int* acc){
+	ptr n= NULL;
+	return CMDaccbuild(ret,bid, acc, &n);	
 }
 
-int CMDaccdestroy(BAT *b, int *acc) {
+int CMDaccdestroy(int *ret, int *bid, int *acc) {
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDaccdestroy")@
 	ACCdestroy(*acc, b, &b->haccelerator);
-	return GDK_SUCCEED;
+	return *ret = GDK_SUCCEED;
 }
 
-int CMDaccpresent(int *retval, BAT* b) {
-	*retval = 0;
+int CMDaccpresent(int *ret, int *bid) {
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDaccpresent")@
+	*ret = 0;
 	if (b->hacctype) {
 	    int (*check)() = BATaccelerators[b->hacctype].accRepair;
 	    if (check == NULL || (*check)(&b->haccelerator,b) == GDK_SUCCEED) {
-		*retval = b->hacctype;
+		*ret = b->hacctype;
  	    }
 	}
 	return GDK_SUCCEED;
@@ -1162,6 +1298,8 @@ int CMDaccpresent(int *retval, BAT* b) {
 
 
 @+ Iterators
+This section should still be upgraded to V 5.0, because iterators
+are handled in a completely different manner.
 @= hashiter
 	if (b->tvarsized) {
 		HASHloop@1(b, b->hhash, idx, v, p)
@@ -1239,9 +1377,10 @@ int CMDbatloop_std(BAT *b, ptr *h) {
 	return CMDbatloop(b, h, &low, &high);
 }
 
-int CMDseqbase(int *r, BAT *b, oid* o){
+int CMDseqbase(int *r, int *bid, oid* o){
+	BAT *b;
+	@:batcheck(r,bid,b,"CMDseqbase")@
 	BATseqbase(b, *o);
-	BBPfix(b->batCacheid);
 	return *r= GDK_SUCCEED;
 }
 @}

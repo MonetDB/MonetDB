@@ -224,7 +224,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int j,symid;
 	InstrPtr pp, newstmt;
 
-	nme = * (str *) getArgValue(m,s,p,1);
+	nme = (str *) getArgValue(m,s,p,1);
 	symid= findVariable(m,nme);
 	printf("entering sqzAccess blocking %d %s\n",symid,nme);
 	@:prepareSqueeze(10)@

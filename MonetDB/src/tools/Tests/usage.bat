@@ -1,9 +1,9 @@
 @echo on
 @prompt # $t $g  
 
-Mserver -?
-MapiClient -help
-Mcreatedb -?
-Mdestroydb -?
-Mshutdown -?
+	%MTIMEOUT% Mserver -?
+REM	%MTIMEOUT% MapiClient -help
+	%MTIMEOUT% Mcreatedb -?
+	%MTIMEOUT% Mdestroydb -?
+REM	%MTIMEOUT% Mshutdown -?
 

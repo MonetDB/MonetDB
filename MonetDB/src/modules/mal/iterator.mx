@@ -12,19 +12,19 @@ collection.
 @mal
 # The routines below are linked with the kernel by default
 
-MODULE iterator;
+module iterator;
 
-COMMAND nextElement(i:lng, first:lng, last:lng):bit = lngForloop;
-COMMAND nextElement(i:int, first:int, last:int):bit = intForloop;
-COMMAND nextElement(i:sht, first:sht, last:sht):bit = shtForloop;
-COMMAND nextElement(i:chr, first:chr, last:chr):bit = chrForloop;
+command nextElement(i:lng, first:lng, last:lng):bit = lngForloop; 
+command nextElement(i:int, first:int, last:int):bit = intForloop; 
+command nextElement(i:sht, first:sht, last:sht):bit = shtForloop; 
+command nextElement(i:chr, first:chr, last:chr):bit = chrForloop; 
 
-COMMAND nextElement(i:flt, first:flt, last:flt, step:flt):bit = fltForloopStep;
-COMMAND nextElement(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep;
-COMMAND nextElement(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep;
-COMMAND nextElement(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep;
-COMMAND nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep;
-COMMAND nextElement(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep;
+command nextElement(i:flt, first:flt, last:flt, step:flt):bit = fltForloopStep; 
+command nextElement(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep; 
+command nextElement(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep; 
+command nextElement(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep; 
+command nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep; 
+command nextElement(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep; 
 
 @-
 A BATloop construct uses an integer cursor to keep track of its
@@ -34,10 +34,12 @@ The head and tail elements can be obtained
 using the fetchHead and fetchTail functions, which are to be defined for
 all atomary types.
 @= fetch
-COMMAND fetchHead(b:bat[@1, any], cursor:lng):@1= @1fetchHeadImpl;
-COMMAND fetchTail(b:bat[any, @1], cursor:lng):@1= @1fetchTailImpl;
+@-
+postponed until information is available
+command fetchHead(b:bat[@1, any], cursor:lng):@1= CMD@1fetchHeadImpl;
+command fetchTail(b:bat[any, @1], cursor:lng):@1= CMD@1fetchTailImpl;
 @mal
-COMMAND batloop(b:bat[any,any], cursor:lng):bit = batloopStep;
+command batloop(b:bat[any,any], cursor:lng):bit = batloopStep comment "";
 	@:fetch(any)@
 	@:fetch(bit)@
 	@:fetch(chr)@
@@ -77,3 +79,4 @@ COMMAND batloop(b:bat[any,any], cursor:lng):bit = batloopStep;
 @c
 #include "iterator.h"
 
+int batloopStep(int *ret){ return 0;}

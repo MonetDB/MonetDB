@@ -1,0 +1,44 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+	_v0:= oid(20000000);
+	_v1:= setoid(_v0);
+#setoid(oid(20000000));
+## test single column BATs
+	_v2:= new(int,void);
+	a := _v2;
+#a:= new(int,void);
+	_v3:= void(nil);
+	_v4:= insert(a,1,_v3);
+#a.insert(1,void(nil));
+	_v5:= print(a);
+#a.print;
+	_v6:= void(nil);
+	_v7:= insert(a,2,_v6);
+#a.insert(2,void(nil));
+	_v8:= int(nil);
+	_v9:= void(nil);
+	_v10:= insert(a,_v8,_v9);
+#a.insert(int(nil),void(nil));
+	_v11:= print(a);
+#a.print;
+#
+	_v12:= new(void,int);
+	b := _v12;
+#b:= new(void,int);
+	_v13:= void(nil);
+	_v14:= insert(b,_v13,1);
+#b.insert(void(nil),1);
+	_v15:= print(b);
+#b.print;
+	_v16:= void(nil);
+	_v17:= insert(b,_v16,2);
+#b.insert(void(nil),2);
+	_v18:= void(nil);
+	_v19:= int(nil);
+	_v20:= insert(b,_v18,_v19);
+#b.insert(void(nil),int(nil));
+	_v21:= print(b);
+#b.print;
+#quit;

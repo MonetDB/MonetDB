@@ -6,7 +6,6 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## testing the simple iterators on builtin types
 #
 #	i:= -1;
 #barrier v1:= iterator.nextElement(i,0,2);
@@ -20,16 +19,16 @@
 #	redo v2;
 #end	v2;
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-	i := -1;	#1:(i:int->2)($1:int->1)
-BARRIER	v1 := iterator.nextElement(i,0,2);	#2:(v1:bit->5)(i:int->2)($3:int->3)($4:int->4)
-	v := "do something";	#3:(v:str->7)($6:str->6)
-	REDO v1 ;	#4:(v1:bit->5)
-END	v1;	#5:(v1:bit->5)
-	v := "next iteration";	#6:(v:str->7)($8:str->8)
-	i := -1;	#7:(i:int->2)($1:int->1)
-BARRIER	v2 := iterator.nextElement(i,0,5,2);	#8:(v2:bit->10)(i:int->2)($3:int->3)($9:int->9)($4:int->4)
-	v := "do something else";	#9:(v:str->7)($11:str->11)
-	REDO v2 ;	#10:(v2:bit->10)
-END	v2;	#11:(v2:bit->10)
-END FUNCTION;	#12:
+function Service.main():int;	#0:(main:int->0)
+	i := -1;	#1:(i:int->13)($14:int->14)
+barrier	v1 := iterator.nextElement(i,0,2);	#2:(v1:bit->15)(i:int->13)($16:int->16)($17:int->17)
+	v := "do something";	#3:(v:str->18)($19:str->19)
+	redo v1 ;	#4:(v1:bit->15)
+end	v1;	#5:(v1:bit->15)
+	v := "next iteration";	#6:(v:str->18)($20:str->20)
+	i := -1;	#7:(i:int->13)($14:int->14)
+barrier	v2 := iterator.nextElement(i,0,5,2);	#8:(v2:bit->21)(i:int->13)($16:int->16)($22:int->22)($17:int->17)
+	v := "do something else";	#9:(v:str->18)($23:str->23)
+	redo v2 ;	#10:(v2:bit->21)
+end	v2;	#11:(v2:bit->21)
+end function;	#12:

@@ -3,7 +3,6 @@
 @t The Arithmetics Module
 @* Introduction
 @T
-[THIS MODULE HAS BEEN PATCHED TO PRODUCE MAL CODE]
 This module implements the arithmetic operations on the built-in types,
 {\tt chr}, {\tt sht}, {\tt int}, {\tt flt}, {\tt dbl} and {\tt lng}.
 All combinations are implemented. Limited combinations are implemented
@@ -62,13 +61,17 @@ test routines (it would otherwise become rather difficult to test
 whether a value is nil). 
 
 @* Module Definition
-@mal
-MODULE arith;
-
+Most of the primitives.
 @= mal_isnil
-	COMMAND isnil(v:@1) : bit = @2_isnil; 
-		"is a value nil?"
+	#command @1(v:void) :@1 = @1_tonil;
+
+	command isnil(v:@1) : bit = @2_isnil
+		comment "is a value nil?";
+@-
 @mal
+
+module arith;
+
 	@:mal_isnil(any,any)@
 	@:mal_isnil(chr,chr)@
 	@:mal_isnil(bit,chr)@
@@ -78,6 +81,7 @@ MODULE arith;
 	@:mal_isnil(flt,flt)@
 	@:mal_isnil(lng,lng)@
 	@:mal_isnil(dbl,dbl)@
+	@:mal_isnil(str,str)@
 
 @- comparisons { <, <=, =, !=, >=, > } 
 @T 
@@ -86,22 +90,22 @@ arithmetic operations. Note that comparison operators with unequal
 operands are already supported in the kernel, but are not nearly as fast,
 (because they have to convert values on the fly).  
 @= mal_eq_ops
-	COMMAND =(left:@1, right:@1) : bit = @2_comp_EQ; 
-		"left equal to right?"
-	COMMAND !=(left:@1, right:@1) : bit = @2_comp_NEQ; 
-		"left unequal to right?"
+	command =(left:@1, right:@1) : bit = @2_comp_EQ
+		comment "left equal to right?";
+	command !=(left:@1, right:@1) : bit = @2_comp_NEQ
+		comment "left unequal to right?";
 @= mal_comp_ops
 	@:mal_eq_ops(@1,@2)@
-	COMMAND <(left:@1, right:@1) : bit = @2_comp_LT; 
-		"left smaller than right?"
-	COMMAND <=(left:@1, right:@1) : bit = @2_comp_LE; 
-		"left smaller than right or equal?"
-	COMMAND >=(left:@1, right:@1) : bit = @2_comp_GE; 
-		"left greater than right or equal?)"
-	COMMAND >(left:@1, right:@1) : bit = @2_comp_GT; 
-		"left greater than right?"
-	COMMAND between(val:@1, low:@1, high:@1) : bit = @2_comp_between; 
-		"checks (low <= val <= high)"
+	command <(left:@1, right:@1) : bit = @2_comp_LT
+		comment "left smaller than right?";
+	command <=(left:@1, right:@1) : bit = @2_comp_LE
+		comment "left smaller than right or equal?";
+	command >=(left:@1, right:@1) : bit = @2_comp_GE
+		comment "left greater than right or equal?)";
+	command >(left:@1, right:@1) : bit = @2_comp_GT
+		comment "left greater than right?";
+	command between(val:@1, low:@1, high:@1) : bit = @2_comp_between
+		comment "checks (low <= val <= high)";
 @mal
         @:mal_comp_ops(any::1,any)@
         @:mal_eq_ops(bit,chr)@
@@ -142,17 +146,17 @@ The {\tt mel\_arith\_ops} Mx macro implements the mel interface to the
 arithmetic operations.  The macro expects three parameters, two input
 atomic types and a result type. 
 @mal
-	COMMAND %(left:chr, right:int) : int = chrint_binary_MOD;	"modulo"
-	COMMAND %(left:sht, right:int) : int = shtint_binary_MOD;	"modulo"
-	COMMAND %(left:int, right:int) : int = intint_binary_MOD;	"modulo"
-	COMMAND %(left:lng, right:int) : int = lngint_binary_MOD;	"modulo"
-	COMMAND %(left:int, right:chr) : chr = intchr_binary_MOD;	"modulo"
-	COMMAND %(left:int, right:sht) : sht = intsht_binary_MOD;	"modulo"
+	command %(left:chr, right:int) : int = chrint_binary_MOD;
+	command %(left:sht, right:int) : int = shtint_binary_MOD;
+	command %(left:int, right:int) : int = intint_binary_MOD;
+	command %(left:lng, right:int) : int = lngint_binary_MOD;
+	command %(left:int, right:chr) : chr = intchr_binary_MOD;
+	command %(left:int, right:sht) : sht = intsht_binary_MOD;
 @= mal_arith_ops
-	COMMAND +(left:@1, right:@2) : @3 = @1@2_binary_ADD; 	"addition"
-	COMMAND -(left:@1, right:@2) : @3 = @1@2_binary_SUB;	"substraction"
-	COMMAND *(left:@1, right:@2) : @3 = @1@2_binary_MUL;	"multiplication"
-	COMMAND /(left:@1, right:@2) : @3 = @1@2_checkbinary_DIV;"division"
+	command +(left:@1, right:@2) : @3 = @1@2_binary_ADD; 
+	command -(left:@1, right:@2) : @3 = @1@2_binary_SUB;
+	command *(left:@1, right:@2) : @3 = @1@2_binary_MUL;
+	command /(left:@1, right:@2) : @3 = @1@2_checkbinary_DIV;
 @-
 The coercions described below ensure that there is never an information loss.
 @mal
@@ -202,8 +206,9 @@ The coercions described below ensure that there is never an information loss.
 
 @- binary  operations { max, min, }
 @= mal_binary_ops
-   	COMMAND max(l:@1, r:@1) : @1 = @2_binary_MAX; "maximum of two values"
-   	COMMAND min(l:@1, r:@1) : @1 = @2_binary_MIN; "minimum of two values"
+   	command max(l:@1, r:@1) : @1 = @2_binary_MAX; 
+   	command min(l:@1, r:@1) : @1 = @2_binary_MIN;
+@-
 @mal
 	@:mal_binary_ops(chr,chr)@
 	@:mal_binary_ops(sht,sht)@
@@ -215,9 +220,10 @@ The coercions described below ensure that there is never an information loss.
 
 @- unary operations { abs, inv }
 @= mal_unary_ops
-   	COMMAND abs(x:@1) : @1 = @1_unary_ABS; "absolute value"
-   	COMMAND inv(x:@1) : @1 = @1_unary_INV; "inverse value (1/x)"
-   	COMMAND -(x:@1) : @1 = @1_unary_NEG; "negative value"
+   	command abs(x:@1) : @1 = @1_unary_ABS comment "absolute value";
+   	command inv(x:@1) : @1 = @1_unary_INV comment "inverse value (1/x)";
+   	command -(x:@1) : @1 = @1_unary_NEG comment "negative value";
+@-
 @mal
 	@:mal_unary_ops(chr)@
 	@:mal_unary_ops(sht)@
@@ -228,23 +234,33 @@ The coercions described below ensure that there is never an information loss.
 
 @- boolean { or, xor, and, not }
 @mal
-	COMMAND or(left:bit, right:bit) : bit = bit_binary_OR; "boolean or"
-	COMMAND and(left:bit, right:bit) : bit = bit_binary_AND; "boolean and"
-	COMMAND xor(left:bit, right:bit) : bit = bit_binary_XOR; "boolean xor"
-	COMMAND not(left:bit) : bit = bit_unary_NOT; "boolean negation"
-	COMMAND ifthenelse(b:bit, t:any::1, f:any::1) : any::1 = bit_switch;
-         "boolean switch: returns b?t:f"
+	command or(left:bit, right:bit) : bit = bit_binary_OR 
+	comment "boolean or";
+	command and(left:bit, right:bit) : bit = bit_binary_AND 
+	comment "boolean and";
+	command xor(left:bit, right:bit) : bit = bit_binary_XOR 
+	comment "boolean xor";
+	command not(left:bit) : bit = bit_unary_NOT 
+	comment "boolean negation";
+	command ifthenelse(b:bit, t:any::1, f:any::1) : any::1 = bit_switch 
+	comment "boolean switch: returns b?t:f";
 
 @- bitwise operations
 Cardinal numerical types (inclusing {\tt chr} can be regarded as a bit
 array. Specific operations work with this interpretation.
 @= mal_bitwise_ops
-	COMMAND or(left:@1, right:@1) : @1 = @1@1_binary_OR; "bitwise or"
-	COMMAND and(left:@1, right:@1) : @1 = @1@1_binary_AND; "bitwise and"
-	COMMAND xor(left:@1, right:@1) : @1 = @1@1_binary_XOR; "bitwise xor"
-	COMMAND not(left:@1) : @1 = @1_unary_NOT; "bitwise negation"
-	COMMAND <<(left:@1,right:int) : @1 = @1int_binary_LSH; "shift left" 
-	COMMAND >>(left:@1, right:int) : @1 = @1int_binary_RSH; "shift right" 
+	command or(left:@1, right:@1) : @1 = @1@1_binary_OR 
+	comment "bitwise or";
+	command and(left:@1, right:@1) : @1 = @1@1_binary_AND 
+	comment "bitwise and";
+	command xor(left:@1, right:@1) : @1 = @1@1_binary_XOR 
+	comment "bitwise xor";
+	command not(left:@1) : @1 = @1_unary_NOT 
+	comment "bitwise negation";
+	command <<(left:@1,right:int) : @1 = @1int_binary_LSH 
+	comment "shift left" ;
+	command >>(left:@1, right:int) : @1 = @1int_binary_RSH 
+	comment "shift right" ;
 @mal
 	@:mal_bitwise_ops(chr)@
 	@:mal_bitwise_ops(sht)@
@@ -253,10 +269,10 @@ array. Specific operations work with this interpretation.
 
 @- random numbers
 @mal
-	COMMAND rand () : int = int_rand; 
-		"return a random number"
-	COMMAND srand(seed:int) : void = int_srand; 
-		"initialize the rand() function with a seed"
+	command rand () : int = int_rand
+	comment "return a random number";
+	command srand(seed:int) : void = int_srand
+	comment "initialize the rand() function with a seed";
 
 @+ Example script 
 The following example script will do each operation in the
@@ -747,10 +763,16 @@ int any_comp_between(bit *retval, ptr *val, int tpe, ptr *low, ptr *high){
 }
 
 @= c_isnil
-int @1_isnil(bit *retval, @1* val) {
-	*retval = (*val == @1_nil);
+int @1_isnil(bit *retval, @1 val) {
+	*retval = (val == @1_nil);
 	return GDK_SUCCEED;
 }
+/*
+int @1_tonil(@1 *retval, ptr val){
+	memcpy(retval, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
+	return GDK_SUCCEED;
+}
+*/
 @c
 @:c_isnil(chr)@
 @:c_isnil(sht)@
@@ -759,6 +781,7 @@ int @1_isnil(bit *retval, @1* val) {
 @:c_isnil(flt)@
 @:c_isnil(lng)@
 @:c_isnil(dbl)@
+@:c_isnil(str)@
 
 int any_isnil(bit *retval, ptr *val, int tpe) {
 	ptr nilval = ATOMnilptr(tpe);

@@ -1,0 +1,55 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## functions and rules with variable arguments complicate our live
+#
+#function pr(format:str,arg:any[]):void;
+#	i:= -1;
+#barrier  b:= iterator.argument(i,arg);
+#end b;
+#end function; 
+function pr(format:str,arg:any, malVARG:any):void;	#0:(pr:void->0)(format:str->13)(arg:any->14)( malVARG:any->15)
+	i := -1;	#1:(i:int->16)($17:int->17)
+barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any->18)(i:int->16)(arg:any->14)
+end	b;	#3:(b:any->18)
+end function;	#4:
+#
+## how to iterator through a variable list
+#function prStr(format:str,arg:str[]):void;
+#	i:= -1;
+#	limit:= Array.getLength(arg);
+#barrier  b:= iterator.nextElement(i,0,limit);	#elm:= arg[i]
+#	elm:= Array.get(arg,i);  #elm:= arg[i]
+#	e1:= printf("argument ");
+#	e1:= printf(i);
+#	e1:= printf(elm);
+#end b;
+#end function; 
+function prStr(format:str,arg:str, malVARG:any):void;	#0:(prStr:void->0)(format:str->13)(arg:str->14)( malVARG:any->15)
+	i := -1;	#1:(i:int->16)($17:int->17)
+	limit := Array.getLength(arg);	#2 unknown:(limit:any->18)(arg:str->14)
+barrier	b := iterator.nextElement(i,0,limit);	#3 unknown:(b:any->19)(i:int->16)($20:int->20)(limit:any->18)
+	elm := Array.get(arg,i);	#4 unknown:(elm:any->21)(arg:str->14)(i:int->16)
+	e1 := system.printf("argument ");	#5:(e1:int->22)($23:str->23)
+	e1 := printf(i);	#6 unknown:(e1:int->22)(i:int->16)
+	e1 := printf(elm);	#7 unknown:(e1:int->22)(elm:any->21)
+end	b;	#8:(b:any->19)
+end function;	#9:
+#
+#e1:= pr("hello",1,true);
+#e1:= prStr("hello",1,true);
+#e1:= prStr("hello","quick","brown","fox");
+#
+function Service.main():int;	#0:(main:int->0)
+	e1 := pr("hello",1,true);	#1 unknown:(e1:void->13)($14:str->14)($15:int->15)($16:bit->16)
+	e1 := prStr("hello",1,true);	#2 unknown:(e1:void->13)($14:str->14)($15:int->15)($16:bit->16)
+	e1 := Service.prStr("hello","quick","brown","fox");	#3:(e1:void->13)($14:str->14)($17:str->17)($18:str->18)($19:str->19)
+end function;	#4:
+CATCH ERROR MALexception:Service.main[1]:Instruction type not fixed
+
+MALexception:Service.main[1]:Instruction type not fixed

@@ -16,11 +16,11 @@
 #end	IllegalAccess;
 #	post:= "done";
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-RAISE	IllegalAccess := "new exception";	#1:(IllegalAccess:str->2)($1:str->1)
-	c4 := "should not come here";	#2:(c4:str->4)($3:str->3)
-CATCH	IllegalAccess;	#3:(IllegalAccess:str->2)
-	n0 := 0;	#4:(n0:int->6)($5:int->5)
-END	IllegalAccess;	#5:(IllegalAccess:str->2)
-	post := "done";	#6:(post:str->8)($7:str->7)
-END FUNCTION;	#7:
+function Service.main():int;	#0:(main:int->0)
+raise	IllegalAccess := "new exception";	#1:(IllegalAccess:str->13)($14:str->14)
+	c4 := "should not come here";	#2:(c4:str->15)($16:str->16)
+catch	IllegalAccess;	#3:(IllegalAccess:str->13)
+	n0 := 0;	#4:(n0:int->17)($18:int->18)
+end	IllegalAccess;	#5:(IllegalAccess:str->13)
+	post := "done";	#6:(post:str->19)($20:str->20)
+end function;	#7:

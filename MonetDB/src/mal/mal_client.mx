@@ -49,7 +49,7 @@ Inspection of upper layers is limited as much as possible.
 
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
-#include "mal_instruction.h"
+#include "mal_function.h"
 #include "mal.h"
 
 #define MAL_MAXCLIENTS	32
@@ -97,8 +97,10 @@ It will simple terminate after consuming the input buffer.
 	FILE	*fdin, *fdout;		/* streams from and to user. */
 	int 	socket;			/* socket with tcp conn. */
 	str	input, output, limit;	/* IO buffers + input limit */
+	str	nxt;			/* next unparsed input */
 	str	prompt;			/* acknowledge prompt */
 	int	promptlength;
+	int	listing;		/* echo the input */
 	int	mode;			/* FREECLIENT..BLOCKED */
 @-
 Client records are organized into a two-level dependency
@@ -111,8 +113,12 @@ is retained here for access by others (=father).
 @-
 Each client has a private entry point into the namespace. 
 (See mal_symbols.mx)
+Moreover, the parser needs some administration variables
+to keep track of critical elements.
 @h
-	Symbol		np;
+	Symbol		nspace;
+	Symbol		curprg;		/* focus of parser */
+	Symbol		mainprg;	/* default global block */
 } *Client, ClientRec;
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
@@ -125,6 +131,8 @@ mal_export void		killClient     (Client c);
 mal_export void 	freeClient	(Client c);
 mal_export void 	runClient	(Client c);
 mal_export int 	readClient	(Client c);
+mal_export void closeClientMain(Client cntxt);
+mal_export void setClientMain(Client cntxt);
 
 #endif /* _MAL_CLIENT_H_ */
 @-
@@ -214,11 +222,16 @@ Client initClient(str nme, str passwd, int msgsock){
 	c->fdin = msgsock? fdopen(msgsock, "r"):stdin;
 	c->input = (str) GDKmalloc(BLOCKSIZE);
 	c->limit = c->input + BLOCKSIZE;
+	c->listing = FALSE;
 	*c->input = 0;
+	c->nxt = c->input;
 
 	c->fdout = msgsock? fdopen(msgsock, "w"):stdout;
 	c->output = (str) GDKmalloc(BLOCKSIZE);
  	c->socket = msgsock;
+	
+	c->nspace = MAL_scope;
+	c->mainprg = c->curprg = 0;
 
 	c->father = NULL;
 	c->login = time(0); c->delay= TIMEOUT;
@@ -498,5 +511,36 @@ The alternative is to read the next line;
 #endif
 	return 1;
 }
+@-
+Every client has a 'main' function which catches
+all assignments outside a definition block.
+This procedure is typically cleaned between successive external
+messages except for the variables.
+@c
+
+void setClientMain(Client cntxt){
+        InstrPtr curInstr;
+        MalBlkPtr curBlk;
+        Symbol curPrg;
+
+        if( cntxt->mainprg) return;
+        cntxt->mainprg = newFunction(cntxt->nspace, GDKstrdup("main"));
+        curBlk = cntxt->mainprg->def;
+        curInstr = getSignature(cntxt->mainprg);
+        curInstr->modname= GDKstrdup(cntxt->nspace->name);
+        getVarType(curBlk,findVariable(curBlk,"main"))= TYPE_int;
+        staticTypeCheck(curInstr);
+        insertSymbol(cntxt->nspace,cntxt->mainprg);
+}
+void closeClientMain(Client cntxt){
+        InstrPtr curInstr;
+        MalBlkPtr curBlk;
+
+        curBlk = cntxt->mainprg->def;
+        curInstr = getSignature(cntxt->mainprg);
+        curInstr= newInstruction(curBlk,ENDDEFsymbol);
+        pushInstruction(curBlk,curInstr);
+}
+
 @
 @}

@@ -6,20 +6,88 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## Variables names may be identical to type names, but
-## then they also have to bear the same value 
+## The series tst2?? is a patched version of suite_00
+## The first and foremost BAT operations
 #
-#str := "hello";
-#int := 1:sht;
-MALresolve:Service.main[2]:ERROR: type mismatch int := sht
-#flt := "wrong";
-MALresolve:Service.main[3]:ERROR: type mismatch flt := str
-#i   := true;
+#o:=oid(20000000);
+WARNING:newConstant:int coerced to lng
+#err:=setoid(o);
+##test basic functionality of the BAT library.
+##focussed on integers
+##it includes insertions,deletions,selections, and joins.
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-	str := "hello";	#1:(str:str->2)($1:str->1)
-	int := 1:sht;	#2 unknown:(int:int->4)($3:sht->3)
-	flt := "wrong";	#3 unknown:(flt:flt->6)($5:str->5)
-	i := true;	#4:(i:bit->8)($7:bit->7)
-END FUNCTION;	#5:
-SyntaxError::'Service.main' contains errors
+#b:= new(int,int);
+#err:= printf("#~BeginVariableOutput~#\n"); 
+##binfo:= info(b);
+##err:= print(binfo); 
+#err:= printf("#~EndVariableOutput~#\n");
+#
+#err := insert(b,1,15);
+#err := insert(b,2,4);
+#n0  := int(nil);
+#err := insert(b,3,n0);
+#err := insert(b,4,16);
+#err := insert(b,5,25);
+#err := insert(b,6,36);
+#err := insert(b,7,49);
+#err := insert(b,8,64);
+#err := insert(b,9,n0);
+#err := insert(b,n0,n0);
+#err := insert(b,n0,81);
+#err := print(b);
+#err := print(b,b,b);
+#
+function Service.main():int;	#0:(main:int->0)
+	o := atoms.oid(20000000);	#1:(o:oid->13)($14:int->14)
+	err := atoms.setoid(o);	#2:(err:int->15)(o:oid->13)
+	b := bat.new(int,int);	#3:(b:bat[int,int]->16)(int:int->6)(int:int->6)
+	err := system.printf("#~BeginVariableOutput~#\n");	#4:(err:int->15)($17:str->17)
+	err := system.printf("#~EndVariableOutput~#\n");	#5:(err:int->15)($18:str->18)
+	err := bat.insert(b,1,15);	#6:(err:int->15)(b:bat[int,int]->16)($19:int->19)($20:int->20)
+	err := bat.insert(b,2,4);	#7:(err:int->15)(b:bat[int,int]->16)($21:int->21)($22:int->22)
+	n0 := atoms.int(nil);	#8:(n0:int->23)($24:void->24)
+	err := bat.insert(b,3,n0);	#9:(err:int->15)(b:bat[int,int]->16)($25:int->25)(n0:int->23)
+	err := bat.insert(b,4,16);	#10:(err:int->15)(b:bat[int,int]->16)($22:int->22)($26:int->26)
+	err := bat.insert(b,5,25);	#11:(err:int->15)(b:bat[int,int]->16)($27:int->27)($28:int->28)
+	err := bat.insert(b,6,36);	#12:(err:int->15)(b:bat[int,int]->16)($29:int->29)($30:int->30)
+	err := bat.insert(b,7,49);	#13:(err:int->15)(b:bat[int,int]->16)($31:int->31)($32:int->32)
+	err := bat.insert(b,8,64);	#14:(err:int->15)(b:bat[int,int]->16)($33:int->33)($34:int->34)
+	err := bat.insert(b,9,n0);	#15:(err:int->15)(b:bat[int,int]->16)($35:int->35)(n0:int->23)
+	err := bat.insert(b,n0,n0);	#16:(err:int->15)(b:bat[int,int]->16)(n0:int->23)(n0:int->23)
+	err := bat.insert(b,n0,81);	#17:(err:int->15)(b:bat[int,int]->16)(n0:int->23)($36:int->36)
+	err := system.print(b);	#18:(err:int->15)(b:bat[int,int]->16)
+	err := system.print(b,b,b);	#19:(err:int->15)(b:bat[int,int]->16)(b:bat[int,int]->16)(b:bat[int,int]->16)
+end function;	#20:
+#~BeginVariableOutput~#
+#~EndVariableOutput~#
+#-----------------#
+# BAT:	  tmp_1	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  15	  ]
+[ 2,	  4	  ]
+[ 3,	  nil	  ]
+[ 4,	  16	  ]
+[ 5,	  25	  ]
+[ 6,	  36	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 9,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
+#-----------------#
+# tmp_1	| tmp_1	  #
+#-----------------#
+[ 15,	  15	  ]
+[ 4,	  4	  ]
+[ nil,	  nil	  ]
+[ 16,	  16	  ]
+[ 25,	  25	  ]
+[ 36,	  36	  ]
+[ 49,	  49	  ]
+[ 64,	  64	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
+[ nil,	  nil	  ]
+[ 81,	  81	  ]
+[ 81,	  nil	  ]

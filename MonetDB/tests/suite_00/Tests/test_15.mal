@@ -1,0 +1,94 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+	_v0:= oid(20000000);
+	_v1:= setoid(_v0);
+#setoid(oid(20000000));
+##testing the set operations;
+	_v2:= new(int,int);
+	b := _v2;
+#b:= new(int,int);
+	_v3:= insert(b,1,15);
+#b.insert(1,15);
+	_v4:= insert(b,2,4);
+#b.insert(2,4);
+	_v5:= int(nil);
+	_v6:= insert(b,3,_v5);
+#b.insert(3,int(nil));
+	_v7:= insert(b,4,16);
+#b.insert(4,16);
+	_v8:= insert(b,5,25);
+#b.insert(5,25);
+	_v9:= insert(b,6,36);
+#b.insert(6,36);
+	_v10:= insert(b,7,49);
+#b.insert(7,49);
+	_v11:= insert(b,8,64);
+#b.insert(8,64);
+	_v12:= int(nil);
+	_v13:= insert(b,9,_v12);
+#b.insert(9,int(nil));
+	_v14:= int(nil);
+	_v15:= int(nil);
+	_v16:= insert(b,_v14,_v15);
+#b.insert(int(nil),int(nil));
+	_v17:= int(nil);
+	_v18:= insert(b,_v17,81);
+#b.insert(int(nil),81);
+#
+	_v19:= copy(b);
+	c := _v19;
+#c:= b.copy;
+	_v20:= int(nil);
+	_v21:= select(b,80,_v20);
+	t := _v21;
+	_v22:= print(t);
+#t:= b.select(80,int(nil)); print(t);
+	_v23:= setAccess(c,"writeable");
+#c.setAccess("writeable");
+	_v24:= insert(c,t);
+	_v25:= print(c);
+#insert(c,t);print(c);
+#
+	_v26:= new(int,int);
+	z := _v26;
+#z:= new(int,int);
+	_v27:= replace(b,1,1);
+#b.replace(1,1);
+	_v28:= insert(z,2,4);
+#z.insert(2,4);
+	_v29:= insert(z,3,9);
+#z.insert(3,9);
+	_v30:= replace(b,z);
+#b.replace(z);
+	_v31:= print(b);
+#b.print;
+#
+	_v32:= reverse(c);
+	_v33:= print(_v32);
+#c.reverse.print;
+	_v34:= reverse(c);
+	_v35:= intersect(_v34,b);
+	d := _v35;
+#d:= intersect(reverse(c),b);
+	_v36:= print(d);
+#print(d);
+	_v37:= reverse(c);
+	_v38:= diff(_v37,d);
+	e := _v38;
+#e:= diff(reverse(c),d);
+	_v39:= print(e);
+#print(e);
+	_v40:= union(e,b);
+	f := _v40;
+#f:= union(e,b);
+	_v41:= print(f);
+#print(f);
+## specials
+	_v42:= kunion(b,b);
+	marcel := _v42;
+#marcel:= b.kunion(b);
+	_v43:= print(marcel);
+#marcel.print;
+#quit;

@@ -1,7 +1,7 @@
 setoid(oid(20000000));
 ## testing transitive closure on cyclic graph;
-module("oo7");
-module("alarm");
+#module("oo7");
+#module("alarm");
 
 c:= new(int,int);
 insert(c,1,2);

@@ -15,7 +15,7 @@ b.insert(int(nil),81);
 
 c:= b.copy;
 t:= b.select(80,int(nil)); print(t);
-c.access(BAT_WRITE);
+c.setAccess("writeable");
 insert(c,t);print(c);
 
 z:= new(int,int);

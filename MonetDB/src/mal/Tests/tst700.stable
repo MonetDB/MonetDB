@@ -7,6 +7,7 @@
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
 ## A few system calls
+#err:= print('c');
 #err:= print("hello world");
 #err:= print(0);
 #err:= print(1:lng);
@@ -15,29 +16,31 @@
 #pi := 3.147;
 #err:= print(pi);
 #err:= printf("hello\n");
-#err:= printf(0);
-#err:= printf(1:lng);
-#err:= printf('c');
-#err:= printf(true);
-#err:= printf(pi);
+#err:= printf("%5d",0);
+#err:= printf("%5d",1:lng);
+#err:= printf("%c",'c');
+#err:= printf("%-8s", true);
+#err:= printf("%6.2f",pi);
 #err:= printf("single line %s \n","hello");
 #
-FUNCTION Service.main():int;	#0:(main:int->0)
-	err := system.print("hello world");	#1:(err:int->2)($1:str->1)
-	err := system.print(0);	#2:(err:int->2)($3:int->3)
-	err := system.print(1:lng);	#3:(err:int->2)($4:lng->4)
-	err := system.print('c');	#4:(err:int->2)($5:chr->5)
-	err := system.print(true);	#5:(err:int->2)($6:bit->6)
-	pi := 3.147;	#6:(pi:flt->8)($7:flt->7)
-	err := system.print(pi);	#7:(err:int->2)(pi:flt->8)
-	err := system.printf("hello\n");	#8:(err:int->2)($9:str->9)
-	err := system.printf(0);	#9:(err:int->2)($3:int->3)
-	err := system.printf(1:lng);	#10:(err:int->2)($4:lng->4)
-	err := system.printf('c');	#11:(err:int->2)($5:chr->5)
-	err := system.printf(true);	#12:(err:int->2)($6:bit->6)
-	err := system.printf(pi);	#13:(err:int->2)(pi:flt->8)
-	err := system.printf("single line %s \n","hello");	#14:(err:int->2)($10:str->10)($11:str->11)
-END FUNCTION;	#15:
+function Service.main():int;	#0:(main:int->0)
+	err := system.print('c');	#1:(err:int->13)($14:chr->14)
+	err := system.print("hello world");	#2:(err:int->13)($15:str->15)
+	err := system.print(0);	#3:(err:int->13)($16:int->16)
+	err := system.print(1);	#4:(err:int->13)($17:lng->17)
+	err := system.print('c');	#5:(err:int->13)($14:chr->14)
+	err := system.print(true);	#6:(err:int->13)($18:bit->18)
+	pi := 3.147;	#7:(pi:flt->19)($20:flt->20)
+	err := system.print(pi);	#8:(err:int->13)(pi:flt->19)
+	err := system.printf("hello\n");	#9:(err:int->13)($21:str->21)
+	err := system.printf("%5d",0);	#10:(err:int->13)($22:str->22)($16:int->16)
+	err := system.printf("%5d",1);	#11:(err:int->13)($22:str->22)($17:lng->17)
+	err := system.printf("%c",'c');	#12:(err:int->13)($23:str->23)($14:chr->14)
+	err := system.printf("%-8s",true);	#13:(err:int->13)($24:str->24)($18:bit->18)
+	err := system.printf("%6.2f",pi);	#14:(err:int->13)($25:str->25)(pi:flt->19)
+	err := system.printf("single line %s \n","hello");	#15:(err:int->13)($26:str->26)($27:str->27)
+end function;	#16:
+[ 'c' ]
 [ "hello world" ]
 [ 0 ]
 [ 1 ]
@@ -45,4 +48,4 @@ END FUNCTION;	#15:
 [ true ]
 [ 3.147 ]
 hello
-01ctrue3.147000single line hello 
+    0    1ctrue      3.15single line hello 

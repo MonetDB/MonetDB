@@ -4,7 +4,8 @@
 @+ MAL startup
 Startup of the Monet engine consists of two steps. First, the
 system kernel libraries are loaded.
-The global symbol table is initialized with pre-compiled routines.
+The global symbol table is initialized with pre-compiled commands
+and pattern definitions.
 Second, for each service thread we execute a script with predefined
 MAL procedures.
 
@@ -33,13 +34,6 @@ attached to the core modules.
 The global scope and private scopes are separated by an a priori known
 scope name "MAL_scope". 
 
-The new MEL compiler should emit two files for each module, named
-<module>.global.mal and <module>.mal. The former only contains the signatures
-of commands and their help information. It is included in the core
-and shared amongst all users.
-The latter file contains initialization code to be run for each
-service thread separately. It includes all MAL procedures, because they
-may be optimized differently depending on the context of execution.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -66,29 +60,29 @@ html
 
 #include "mal_symbol.h"
 #include "mal_import.h"
+#include "mal_client.h"
 
 #define SRVINIT "startup.mal"
 #define SRVORIGIN "share/Monet/startup.mal"
 
-mal_export Symbol malStartupGlobal(str dbname, int listing);
+mal_export int malStartupAdmin(Client c, str dbname, int listing);
 mal_export Symbol malStartupService(Symbol cntxt);
 #endif /*  _MAL_STARTUP_H*/
 @-
 The startup script for databases recides in the administrator's
-directory of each database. Upon need, it can be overruled at system
-restart with a command argument.
+directory of each database. Upon need, it can be overruled 
+using the configuration scripts.
 If initialization of the server is successful, then the MAL_scope symbol
-position is being returned.
-
+position is being returned as the namespace entry point for the client.
 @c
 #include "mal_startup.h"
 
-Symbol malStartupGlobal(str dbname,int listing){
-	Symbol scope;
+int malStartupAdmin(Client c, str dbname,int listing){
+        MalBlkPtr curBlk = 0;
+        InstrPtr curInstr=0;
 	char buf[PATHLENGTH];
 	FILE *fd;
 	
-	scope = initScope();
 	sprintf(buf,"%s/%s",GDKdirStr,SRVINIT);
 	SLASH_2_DIR_SEP(buf);
 	if( (fd= fopen(buf,"r")) == NULL){
@@ -96,16 +90,13 @@ Symbol malStartupGlobal(str dbname,int listing){
 		SLASH_2_DIR_SEP(buf);
 		if( (fd= fopen(buf,"r")) == NULL){
 			GDKerror("FATAL:server file '%s' missing\n",SRVORIGIN);
+			return 0;
 		}
-		fclose(fd);
-		
-	} else fclose(fd);
+	} 
+	fclose(fd);
 
-	if( malImport(scope,buf,0,0) == NULL){
-		return NULL;
-	}
-	MAL_scope = scope;
-	scope= newScope(scope,GDKstrdup("Service"));
-
-	return scope;
+	c->nspace= newScope(mal_scope,GDKstrdup("Service"));
+	if( malImport(buf,0,0) == NULL) return 0;
+	MAL_scope = c->nspace;
+	return 1;
 }

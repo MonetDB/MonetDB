@@ -1,6 +1,6 @@
 @f algebra
 @a Peter Boncz, Martin Kersten, Niels Nes
-@v 1.0
+@v 2.0
 @t BAT Algebra
 
 @* Introduction
@@ -10,52 +10,67 @@ values as parameters, and produce new result values, but
 @%do not modify their parameters@.
 @
 @* Module Definition 
-@mal
-MODULE algebra;
+Unlike the previous Monet versions, we reduce the number
+of functions returning a BAT reference. This was previously needed
+to simplify recursive bat-expression.
+In the current version we return only a BAT identifier when a new
+bat is being created.
+@-
+All parameters to the modules are passed by reference.
+In particular, this means that
+string values are passed to the module layer as (str *)
+and we have to de-reference them before entering the gdk library.
+This calls for knowlegde on the underlying BAT typs`s
+@= derefStr
+        if( @1->@2type== TYPE_str) @3 = *(str *)@3;
 @
 We split between selections that return one value, and selections 
 that return a BAT.
 @+ Value Selections
+[Somehow we need this next marker to force Mx to produce good output]
+@-
 @mal
-COMMAND exist(b:BAT[any::1,any], h:any::1) : bit = CMDexist;
-"Returns whether 'h' occurs as a head value in b."
 
-COMMAND exist(b:BAT[any::1,any::2], h:any::1, t:any::2) : bit = CMDexistBUN;
-"Returns true when 'h,t' occurs as a bun in b."
+module algebra;
 
-COMMAND find(b:BAT[any::1,any::2], h:any::1): any::2 = CMDfind; 
-"Returns the tail value 't' for which some [h,t] BUN exists in b.
- If no such BUN exists, an error occurs." 
+command exist(b:bat[any::1,any], h:any::1) : bit = CMDexist
+comment "Returns whether 'h' occurs as a head value in b.";
 
-COMMAND position(b:BAT[any::1,any], val:any::1) : int = CMDposition; 
-"Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.
- It gives an error if 'val' does not occur in b. "
+command exist(b:bat[any::1,any::2], h:any::1, t:any::2) : bit = CMDexistBUN
+comment "Returns true when 'h,t' occurs as a bun in b.";
+
+command find(b:bat[any::1,any::2], h:any::1): any::2 = CMDfind
+comment "Returns the tail value 't' for which some [h,t] BUN exists in b.
+ If no such BUN exists, an error occurs." ;
+
+command position(b:bat[any::1,any], val:any::1) : int = CMDposition
+comment "Returns the BAT position e [0.. b.count> of a 'val' in the 
+head column of b.  It gives an error if 'val' does not occur in b. ";
  
-COMMAND position(b:BAT[any::1,any::2], val:any::1, tval:any::2) : int = CMDpositionBUN; 
-"Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.
- It gives an error if 'val' does not occur in b. "
+command position(b:bat[any::1,any::2], val:any::1, tval:any::2) : int = CMDpositionBUN
+comment "Returns the BAT position e [0.. b.count> of a 'val' in the 
+head column of b.  It gives an error if 'val' does not occur in b. ";
  
-COMMAND fetch(b:BAT[any,any::1], x:int) : any::1 = CMDfetch; 
-"Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
+command fetch(b:bat[any,any::1], x:int) : any::1 = CMDfetch
+comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count";
 
-COMMAND fetch(b:BAT[any,any::1], x:oid) : any::1 = CMDfetchoid; 
-"Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
+command fetch(b:bat[any,any::1], x:oid) : any::1 = CMDfetchoid
+comment "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count";
 @+ BAT Selections
 @- positional select
 @mal
-COMMAND fetch(b:BAT[any::1,any::2], s:BAT[int, any] ) : 
-				BAT[any::1,any::2] = CMDfetchbat; 
-"Returns a positional selection of b by the integer head values of s"
+command fetch(b:bat[any::1,any::2], s:bat[int, any] ) : 
+				bat[any::1,any::2] = CMDfetchbat
+comment "Returns a positional selection of b by the integer head values of s";
 
-COMMAND fetch(b:BAT[any::1,any::2], s:BAT[oid, any]) : 
-				BAT[any::1,any::2] = CMDfetchbat; 
-"Returns a positional selection of b by the oid head values of s"
+command fetch(b:bat[any::1,any::2], s:bat[oid, any]) : 
+				bat[any::1,any::2] = CMDfetchbat
+comment "Returns a positional selection of b by the oid head values of s";
 @- range select
 @mal
-COMMAND select (b:BAT[any::1,any::2], low:any::2, high:any::2) : 
-				BAT[any::1, any::2] = CMDselect; 
-"Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.\n
-
+command select (b:bat[any::1,any::2], low:any::2, high:any::2) : 
+				bat[any::1, any::2] = CMDselect
+comment "Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.\n
 NIL boundary values have a special meaning.\n
 + low  == nil means: no lower bound\n
 + high == nil means: no upper bound.
@@ -64,60 +79,64 @@ NOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)
         in order to cirumvent type clashes.
 NOTE 2: as the 'nil' element has no clear place in the ordered domain 
         of values, tuples with 'nil values are NEVER returned by the 
-        range select."
+        range select.";
 @- unary range select
 @mal
-COMMAND uselect (b:BAT[any::1,any::2], low:any::2, high:any::2) : 
-				BAT[any::1, void] = CMDuselect;
-"Select on tail, returning only the head values. 
- SEE ALSO: select(bat,low,high)."
+command uselect (b:bat[any::1,any::2], low:any::2, high:any::2) : 
+				bat[any::1, void] = CMDuselect
+comment "Select on tail, returning only the head values. 
+ SEE ALSO: select(bat,low,high).";
 @- value select
 @mal
-COMMAND select ( b:BAT[any::1,any::2], value:any::2) :
-                                BAT[any::1, any::2] = CMDselect1; 
-"Select all BUNs of a BAT with a certain tail value. Selection
- on NIL is also possible (it should be properly casted, e.g.: int(nil))."
+command select ( b:bat[any::1,any::2], value:any::2) :
+                                bat[any::1, any::2] = CMDselect1
+comment "Select all BUNs of a BAT with a certain tail value. Selection
+ on NIL is also possible (it should be properly casted, e.g.: int(nil)).";
 @- unary value select
 @mal
-COMMAND uselect ( b:BAT[any::1,any::2], value:any::2) : 
-				BAT[any::1, void] = CMDuselect1; 
-"Value select, but returning only the head values.
- SEE ALSO: select(bat,val)"
+command uselect ( b:bat[any::1,any::2], value:any::2) : 
+				bat[any::1, void] = CMDuselect1
+comment "Value select, but returning only the head values.
+ SEE ALSO: select(bat,val)";
 @mal
-COMMAND fragment ( b:BAT[any::1,any::2], 
+command fragment ( b:bat[any::1,any::2], 
 	hlow:any::1, hhigh:any::1,
 	tlow:any::2, thigh:any::2 ) : 
-				BAT[any::1,any::2] = CMDfragment; 
-"Select both on head and tail range."
+				bat[any::1,any::2] = CMDfragment
+comment "Select both on head and tail range.";
 @- random selection 
 @mal
-COMMAND sample ( b:BAT[any::1,any::2], num:int ) : 
-				BAT[any::1,any::2] = CMDsample; 
-"Produce a random selection of size 'num' from the input BAT."
+command sample ( b:bat[any::1,any::2], num:int ) : 
+				bat[any::1,any::2] = CMDsample
+comment "Produce a random selection of size 'num' from the input BAT.";
 @- substring select 
 @mal
-COMMAND like ( b:BAT[any::1, str], substr:str) :  
-				BAT[any::1, str] = CMDlike; 
-"Selects all elements from the input BAT that have 'substr'
-as substring in the tail."
-COMMAND slice(b:BAT[any::1,any::2], x:int, y:int) : 
-				BAT[any::1,any::2] =CMDslice;
-"Return the slice with the BUNs at position x till y."
+command like ( b:bat[any::1, str], substr:str) :  
+				bat[any::1, str] = CMDlike
+comment "Selects all elements from the input BAT that have 'substr'
+as substring in the tail.";
+command slice(b:bat[any::1,any::2], x:int, y:int) : 
+				bat[any::1,any::2] =CMDslice
+comment "Return the slice with the BUNs at position x till y.";
 @+ BAT copying
 @mal
-COMMAND copy( b:BAT[any::1,any::2]) : 
-				BAT[any::1, any::2] = CMDcopy; 
-"Returns physical copy of a BAT."
+command copy( b:bat[any::1,any::2]) : 
+				bat[any::1, any::2] = CMDcopy
+comment "Returns physical copy of a BAT.";
 @- sorted copy
 @mal
-COMMAND sort( b:BAT[any::1,any::2]) : 
-				BAT[any::1, any::2] = CMDsort; 
-"Returns a sorted copy of a BAT."
+command sort( b:bat[any::1,any::2]) : 
+				bat[any::1, any::2] = CMDsort
+comment "Returns a copy of a BAT sorted on the head column.";
+
+command sort_ht( b:bat[any::1,any::2]) : 
+				bat[any::1, any::2] = CMDsort_ht
+comment "Returns a sorted copy of a BAT.";
 @- vertical projection
 @mal
-COMMAND project ( b:BAT[any::1,any], val:any::2) : 
-				BAT[any::1, any::2] = CMDproject; 
-"Fill the tail column with a constant value."
+command project ( b:bat[any::1,any], val:any::2) : 
+				bat[any::1, any::2] = CMDproject
+comment "Fill the tail column with a constant value.";
 @+ Sets
 @T
 Sets in Monet can be viewed in two ways:
@@ -169,183 +188,192 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 
 @- bun-unique elements
 @mal
-COMMAND sunique (b:BAT[any::1,any::2] ) : 
-				BAT[any::1,any::2] = CMDsunique; 
-"Select unique tuples from the input BAT. Double elimination is done over 
- BUNs as a whole (head and tail). Result is a BAT with real set() semantics."
+command unique (b:bat[any::1,any::2] ) : bat[any::1,any::2] = CMDsunique; 
+command sunique (b:bat[any::1,any::2] ) : bat[any::1,any::2] = CMDsunique
+comment "Select unique tuples from the input BAT. Double elimination is 
+ done over BUNs as a whole (head and tail). 
+ Result is a BAT with real set() semantics.";
 @- head-unique elements
 @mal
-COMMAND kunique ( b:BAT[any::1,any::2] ) : 
-				BAT[any::1,any::2] = CMDkunique; 
-"Select unique tuples from the input BAT. Double elimination is done
- only looking at the head column. Result is a BAT with hkeyed() == true."
+command kunique ( b:bat[any::1,any::2] ) : 
+				bat[any::1,any::2] = CMDkunique
+comment "Select unique tuples from the input BAT. Double elimination is done
+ only looking at the head column. Result is a BAT with hkeyed() == true.";
 @- bun-intersecting elements
 @mal
-COMMAND sintersect ( left:BAT[any::1,any::2], right:BAT[any::1,any::2]) : 
-				BAT[any::1,any::2] = CMDsintersect; 
-"Returns the intersection taken over *both* columns of two BATs.
+command intersect ( left:bat[any::1,any::2], right:bat[any::1,any::2]) : 
+				bat[any::1,any::2] = CMDsintersect; 
+command sintersect ( left:bat[any::1,any::2], right:bat[any::1,any::2]) : 
+				bat[any::1,any::2] = CMDsintersect
+comment "Returns the intersection taken over *both* columns of two BATs.
  Results in all BUNs of 'left' that are also in 'right'. Does *not* do 
  double-elimination over the 'left' BUNs, If you want this, use:
- 'sintersect(left.sunique,right.sunique)' or: 'sintersect(left,right).sunique'."
+ 'sintersect(left.sunique,right.sunique)' or: 'sintersect(left,right).sunique'.";
+
 @- head-intersecting elements (a.k.a. semijoin)
 @mal
-COMMAND kintersect ( left:BAT[any::1,any::2], right:BAT[any::1,any] ) :
-				BAT[any::1,any::2] = CMDsemijoin; 
-"Returns the intersection taken over only the *head* columns of two BATs.
- Results in all BUNs of 'left' that are also in 'right'. Does *not* do 
+command semijoin( left:bat[any::1,any::2], right:bat[any::1,any] ) :
+				bat[any::1,any::2] = CMDsemijoin
+comment "Returns the intersection taken over only the *head* columns of 
+two BATs. Results in all BUNs of 'left' that are also in 'right'. Does *not* do 
  double-elimination over the 'left' BUNs, If you want this, use:
- 'kintersect(left.kunique,right.kunique)' or: 'kintersect(left,right).kunique'."
+ 'kintersect(left.kunique,right.kunique)' or: 'kintersect(left,right).kunique'.";
+command kintersect ( left:bat[any::1,any::2], right:bat[any::1,any] ) :
+				bat[any::1,any::2] = CMDsemijoin
+comment "Returns the intersection taken over only the *head* columns of 
+two BATs. Results in all BUNs of 'left' that are also in 'right'. Does *not* do 
+ double-elimination over the 'left' BUNs, If you want this, use:
+ 'kintersect(left.kunique,right.kunique)' or: 'kintersect(left,right).kunique'.";
 @- bun-differing elements
 @mal
-COMMAND sdiff ( left:BAT[any::1,any::2], right:BAT[any::1,any::2] ) : 
-				BAT[any::1,any::2] = CMDsdiff; 
-"Returns the difference taken over *both* columns of two BATs.  
+command diff ( left:bat[any::1,any::2], right:bat[any::1,any::2] ) : 
+				bat[any::1,any::2] = CMDsdiff; 
+command sdiff ( left:bat[any::1,any::2], right:bat[any::1,any::2] ) : 
+				bat[any::1,any::2] = CMDsdiff
+comment "Returns the difference taken over *both* columns of two BATs.  
  Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
- 'sdiff(left.sunique,right.sunique)' or: 'sdiff(left,right).sunique'."
+ 'sdiff(left.sunique,right.sunique)' or: 'sdiff(left,right).sunique'.";
 @- head-differing elements
 @mal
-COMMAND kdiff ( left:BAT[any::1,any::2], right:BAT[any::1,any] ) :
-				BAT[any::1,any::2] = CMDkdiff; 
-"Returns the difference taken over only the *head* columns of two BATs. 
+command kdiff ( left:bat[any::1,any::2], right:bat[any::1,any] ) :
+				bat[any::1,any::2] = CMDkdiff
+comment "Returns the difference taken over only the *head* columns of two BATs. 
  Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do
  double-elimination over the 'left' BUNs, If you want this, use:
- 'kdiff(left.kunique,right.kunique)' or: 'kdiff(left,right).kunique'."
+ 'kdiff(left.kunique,right.kunique)' or: 'kdiff(left,right).kunique'.";
 @- union on bun
 @mal
-COMMAND sunion ( left:BAT[any::1,any::2], right:BAT[any::1,any::2]) : 
-				BAT[any::1,any::2] = CMDsunion; 
-"Returns the union of two BATs; looking at both columns of both BATs. 
+command union ( left:bat[any::1,any::2], right:bat[any::1,any::2]) : 
+				bat[any::1,any::2] = CMDsunion; 
+command sunion ( left:bat[any::1,any::2], right:bat[any::1,any::2]) : 
+				bat[any::1,any::2] = CMDsunion
+comment "Returns the union of two BATs; looking at both columns of both BATs. 
  Results in all BUNs of 'left' that are  not in 'right', plus all BUNs 
  of 'right'. *no* double-elimination is done. If you want this, do: 
- 'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'."
+ 'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'.";
 @- union on head
 @mal
-COMMAND kunion ( left:BAT[any::1,any::2], right:BAT[any::1,any::2]) : 
-				BAT[any::1,any::2] = CMDkunion; 
-"Returns the union of two BATs; looking at head-columns only. 
+command kunion ( left:bat[any::1,any::2], right:bat[any::1,any::2]):bat[any::1,any::2] = CMDkunion
+comment "Returns the union of two BATs; looking at head-columns only. 
  Results in all BUNs of 'left' that are  not in 'right', plus all BUNs 
  of 'right'. *no* double-elimination is done. If you want this, do: 
- 'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'."
+ 'kunion(left.kunique,right.kunique)' or: 'sunion(left,right).kunique'.";
 @+ Joins
 The core of every relational engine.
 Signature Changed: Output tail type incorrect because of soid to coid switch. 
-@- semijoin
-COMMAND semijoin (left:BAT[any::1,any::2], right:BAT[any::1,any]) :
-				BAT[any::1,any::2] = CMDsemijoin; 
+
 @- join (projected out join columns)
 @mal
-COMMAND join ( left:BAT[any::1,any::2], right:BAT[any::2,any::3]) :
-                               BAT[any::1,any::3] = CMDjoin; 
-"Returns all BUNs, consisting of a head-value from 'left' and
+command join ( left:bat[any::1,any::2], right:bat[any::2,any::3]) :
+                               bat[any::1,any::3] = CMDjoin
+comment "Returns all BUNs, consisting of a head-value from 'left' and
 a tail-value from 'right' for which there are BUNs in 'left'
 and 'right' with equal tail- resp. head-value (i.e. the join
-columns are projected out)."
+columns are projected out).";
 @- Outer Join
 @mal
-COMMAND outerjoin ( outer:BAT[any::1,any::2], inner:BAT[any::2,any::3]) :
-                                BAT[any::1,any::3] = CMDouterjoin; 
-"Returns all the result of a join, plus the BUNS formed NIL in
+command outerjoin ( outer:bat[any::1,any::2], inner:bat[any::2,any::3]) :
+                                bat[any::1,any::3] = CMDouterjoin
+comment "Returns all the result of a join, plus the BUNS formed NIL in
 the tail and the head-values of 'outer' whose tail-value does
-not match an head-value in 'inner'."
+not match an head-value in 'inner'.";
 @- { <,<=,=,>=,> } Join
 @mal
-COMMAND thetajoin ( left:BAT[any::1,any::2], right:BAT[any::2,any::3], 
-		mode:int) : BAT[any::1,any::3] = CMDthetajoin; 
-"Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.\n
+command thetajoin ( left:bat[any::1,any::2], right:bat[any::2,any::3], 
+		mode:int) : bat[any::1,any::3] = CMDthetajoin
+comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.\n
 JOIN_EQ is just the same as join(). All other options do merge
 algorithms; either using the fact that they are ordered()
 already (left on tail, right on head), or by using/creating
-binary search trees on the join columns. "
+binary search trees on the join columns. ";
 @- Theta Join with inner columns
 @mal
-COMMAND theta ( inner_result:BAT[any::2,any::2], 
-		outer_result:BAT[any::1,any::3],
-		left:BAT[any::1,any::2], 
-		right:BAT[any::2,any::3], mode:int ) 
-				= CMDtheta; 
-"Theta join, just as simple thetajoin(l,r); the difference
+command theta ( inner_result:bat[any::2,any::2], 
+		outer_result:bat[any::1,any::3],
+		left:bat[any::1,any::2], 
+		right:bat[any::2,any::3], mode:int ) 
+				= CMDtheta
+comment "Theta join, just as simple thetajoin(l,r); the difference
 is that it returns two values, which are added to the first params
 'inner_result' and 'outer_result'; 'inner_result' gets all matching
 inner tuples, 'outer_result' the other two (what would have the
-result of thetajoin(l,r))."
+result of thetajoin(l,r)).";
 @- Band Join (approximate match)
 @mal
-COMMAND bandjoin ( outer:BAT[any::1,any::2], 
-		   inner:BAT[any::2,any::3],
+command bandjoin ( outer:bat[any::1,any::2], 
+		   inner:bat[any::2,any::3],
 		   minus:any::2 , plus:any::2 ) : 
-				BAT[any::1,any::3] = CMDbandjoin; 
-"This is a join() for which the predicate is that two BUNs match if
+				bat[any::1,any::3] = CMDbandjoin
+comment "This is a join() for which the predicate is that two BUNs match if
 the left-tail value is within the range [right-head - minus,
 right-head + plus]\n
-Works only for the builtin numerical types, and their derivates."
+Works only for the builtin numerical types, and their derivates.";
 @+ OID Introducing Commands
 For relational processing, some operators are necessary to produce newly 
 initiated OID columns, for representing n-ary (intermediary) relations. 
 
 @- OID head column
 @mal
-COMMAND mark( b:BAT[any::1,any] ) : 
-				BAT[any::1,OID] = CMDmark_default; 
-"Produces a new BAT with fresh unique OIDs in the tail."
+command mark( b:bat[any::1,any] ) : 
+				bat[any::1,OID] = CMDmark_default
+comment "Produces a new BAT with fresh unique OIDs in the tail.";
 
-COMMAND mark( b:BAT[any::1,any], base:oid ) : 
-				BAT[any::1,OID] = CMDmark; 
-"Produces a new BAT with fresh unique dense sequense of OIDs in the tail
- that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
+command mark( b:bat[any::1,any], base:oid ) : 
+				bat[any::1,OID] = CMDmark
+comment "Produces a new BAT with fresh unique dense sequense of OIDs in the tail
+ that starts at base (i.e. [base,base+1,..base+b.count()-1] ).";
 @- number tail column
 @mal
-COMMAND number( b:BAT[any::1,any] ) : 
-				BAT[any::1,int]  = CMDnumber;
-"Produces a new BAT with identical head column, and consecutively
-increasing integers (starting with 0) in the tail column."
+command number( b:bat[any::1,any] ) : bat[any::1,int]  = CMDnumber
+comment "Produces a new BAT with identical head column, and consecutively
+increasing integers (starting with 0) in the tail column.";
 
 @+ BAT fragmentation commands
 Various operations for splitting BATs into useful fragments.
 
 @- Hash Split
 The commands below is temporarilly postponed
-COMMAND hashsplit ( b:BAT[any::1,any::2] , buckects:int ) :
-			 	BAT[int,BAT[any::1,any::2]] = CMDhashsplit; 
-"Split a BAT on tail column according (hash-value MOD buckets).
+command hashsplit ( b:bat[any::1,any::2] , buckects:int ) :
+			 	bat[int,bat[any::1,any::2]] = CMDhashsplit
+comment "Split a BAT on tail column according (hash-value MOD buckets).
 Returns a recursive BAT, containing the fragments in the tail,
-their bucket number in the head."
+their bucket number in the head.";
 
-COMMAND uhashsplit ( b:BAT[any::1,any::2], buckets:int ) :
-			 	BAT[int,BAT[any::1,any::2]] = CMDuhashsplit; 
-"Same as hashsplit, but only collect the head values in the fragments" 
+command uhashsplit ( b:bat[any::1,any::2], buckets:int ) :
+			 	bat[int,bat[any::1,any::2]] = CMDuhashsplit
+comment "Same as hashsplit, but only collect the head values in the fragments";
 @- Range Split
-COMMAND rangesplit ( b:BAT[any::1,any::2], ranges:int ) : 
-				BAT[any::2,BAT[any::1,any::2]] = CMDrangesplit;
-"Split a BAT on tail column in 'ranges' equally sized
+command rangesplit ( b:bat[any::1,any::2], ranges:int ) : 
+				bat[any::2,bat[any::1,any::2]] = CMDrangesplit
+comment "Split a BAT on tail column in 'ranges' equally sized
 consecutive ranges. Returns a recursive BAT, containing the
 fragments in the tail, the higher-bound of the range in the head.
-The higher bound of the last range is 'nil'."
+The higher bound of the last range is 'nil'.";
 
-COMMAND urangesplit ( b:BAT[any::1,any::2], ranges:int ) : 
-				BAT[any::2,BAT[any::1,void]] = CMDurangesplit;
-"Same as rangesplit, but only collect the head values in the fragments" 
+command urangesplit ( b:bat[any::1,any::2], ranges:int ) : 
+				bat[any::2,bat[any::1,void]] = CMDurangesplit
+comment "Same as rangesplit, but only collect the head values in the fragments" ;
 
 @+ Common BAT Aggregates
 These operations examine a BAT, and compute some simple aggregate result 
 over it.
 @- BAT size
 @mal
-COMMAND count ( b:BAT[any,any] ) : 
-				int = CMDcount; 
-"Return the number of elements currently in a BAT."
+command count ( b:bat[any,any] ) : int = CMDcount
+comment "Return the number of elements currently in a BAT.";
 @- Histogram on Tail 
 @mal
-COMMAND histogram ( b:BAT[any,any::2]) : 
-				BAT[any::2,int] = CMDhistogram; 
-"Produce a BAT containing the histogram of the tail values.
- bat.histogram() ::= {count}(bat.reverse)"
+command histogram ( b:bat[any,any::2]) : 
+				bat[any::2,int] = CMDhistogram
+comment "Produce a BAT containing the histogram of the tail values.
+ bat.histogram() ::= {count}(bat.reverse)";
 
 @-
 command out of order right now.
-COMMAND {count} ( b:BAT[any::2,any]) : 
-				BAT[any::2,int] = CMDhistogram_rev; 
-"has fast implementation: histogram(bat.reverse)"
+command {count} ( b:bat[any::2,any]) : 
+				bat[any::2,int] = CMDhistogram_rev
+comment "has fast implementation: histogram(bat.reverse)";
 
 @- Default Min and Max
 @T
@@ -355,23 +383,25 @@ The type-specific routines defined later are faster, and will
 override these any implementations.
 @- minimum tail value
 @mal
-COMMAND min ( b:BAT[any::1,any::2] ) 	
-			: any::2 = CMDminany; "
-Give the lowest tail value. Error on empty BATs."
+command min ( b:bat[any::1,any::2] ): any::2 = CMDminany
+comment "Give the lowest tail value. Error on empty BATs.";
 
 @- maximum tail value
 @mal
-COMMAND max ( b:BAT[any::1,any::2] ) 
-			: any::2 = CMDmaxany; "
-Give the highest tail value. Error on empty BATs."
+command max ( b:bat[any::1,any::2] ) : any::2 = CMDmaxany
+comment "Give the highest tail value. Error on empty BATs.";
+
+command size ( b:bat[any,any] ) : int = CMDsize
+comment "Returns the current size (in number of elements) of a BAT.";
+
 @+ Type-Specific Sum, Max and Min
 @T
 For X $\in$ \{ sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
 macro):
 \begin{itemize}
-\item COMMAND sum(BAT[any,X] : X, 
-\item COMMAND max(BAT[any,X] : X, and 
-\item COMMAND min(BAT[any,X] : X. 
+\item command sum(bat[any,X] : X, 
+\item command max(bat[any,X] : X, and 
+\item command min(bat[any,X] : X. 
 \end{itemize}
 @mal
 @:aggregate(sum,"Gives the sum of all tail values.")@
@@ -379,7 +409,7 @@ macro):
 @:aggregate(min,"Give the lowest tail value. Error on empty BATs.")@
 
 @= aggregate_definition
-COMMAND @1 ( b:BAT[any,@2] ) : @2 = CMD@1_@2; @3
+command @1 ( b:bat[any,@2] ) : @2 = CMD@1_@2 comment @3;
 @= aggregate
 @:aggregate_definition(@1,sht,@2)@
 @:aggregate_definition(@1,int,@2)@
@@ -614,8 +644,8 @@ that for the moment are defined as procs.
             return b.mil_select("<=",val);
         }
         ERROR("rev_select: unknown predicate %s(%s)\n", fcn, str(val));
-    }
-    ADDHELP("rev_select", "boncz", "Aug  6 1998",
+}
+ADDHELP("rev_select", "boncz", "Aug  6 1998",
             "(value OP column) select rather than (column OP value)","algebra");
 
     PROC tunique (bat[any,any::1] b) : bat[any::1,void]
@@ -638,6 +668,7 @@ that for the moment are defined as procs.
 .END;
 
 @* Cost Model
+OBSOLETE
 This module contains a full cost model on the algebraic 
 operators, in the form of executable Prolog clauses.
 We in turn discuss the basic concepts of this model:
@@ -856,14 +887,35 @@ rm /tmp/$$
 This module contains just a wrapper implementations; since all described 
 operations are part of the GDK kernel.
 
+@-
+The BAT identifiers passed through this module may indicate
+that the 'reverse' view applies. This should be taken into
+account while resolving them.
+@= batcheck2
+        if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
+        @3= (BAT*) BBPgetdesc(*@2);
+        if( @3 == NULL) {
+		*@1 = 0;
+		return GDK_FAIL;
+	}
+	if( *@2 <0){ /* BAT reverse */
+		@3 = BATmirror(@3);
+	}
+
 @= aggregate_implementation
-int CMDsum_@1(@1* result, BAT *b) {
+int CMDsum_@1(@1* result, int *bid) {
+	BAT *b;
+	@:batcheck2(result,bid,b,"CMDsum")@
 	return BATsum(b, result)?GDK_SUCCEED:GDK_FAIL;
 }
-int CMDmin_@1(@1* result, BAT *b) {
+int CMDmin_@1(@1* result, int *bid) {
+	BAT *b;
+	@:batcheck2(result,bid,b,"CMDmin")@
 	return BATmin(b, result)?GDK_SUCCEED:GDK_FAIL;
 }
-int CMDmax_@1(@1* result, BAT *b) {
+int CMDmax_@1(@1* result, int *bid) {
+	BAT *b;
+	@:batcheck2(result,bid,b,"CMDmax")@
 	return BATmax(b, result)?GDK_SUCCEED:GDK_FAIL;
 }
 @c
@@ -891,6 +943,23 @@ int CMDmax_@1(@1* result, BAT *b) {
  *		   Niels Nes <Niels.Nes@cwi.nl>
  */
 
+int CMDsize(int *res, int *bid) {
+        if (BBPcheck(*bid, "CMDsize")) {
+                BAT *b = (BAT*) BBPgetdesc(*bid);
+                if (b == NULL) {
+                        *res = int_nil;
+                } else if (BBP_cache(*bid)) {
+                        *res = BATcount(b);
+                } else {
+                        /* BAT not loaded */
+                        *res = (b->batBuns->free - 
+			(b->batHole - b->batBuns->base))/BUNsize(b) - 1;
+                }
+        }
+        return GDK_SUCCEED;
+}
+
+
 
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
@@ -898,12 +967,16 @@ int CMDmax_@1(@1* result, BAT *b) {
 @:aggregate_implementation(dbl)@
 @:aggregate_implementation(lng)@
 
-int CMDminany(ptr result, BAT *b) {
+int CMDminany(ptr *result, int *bid) {
+	BAT *b;
+	@:batcheck2(result,bid,b,"CMDminany")@
 	if (!ATOMlinear(b->ttype)) 
 	    return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n",
 			ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype)) 
-	    return (*(ptr*) result = BATmin(b, NULL))?GDK_SUCCEED:GDK_FAIL;
+	if (ATOMvarsized(b->ttype)) {
+	    *(ptr*) result = BATmin(b, NULL);
+	    if( *(ptr*) result ) return GDK_SUCCEED; else return GDK_FAIL;
+	}
 	if (BATmin(b, result)) {
 	    if (b->ttype == TYPE_bat) 
 		*(BAT**) result = BATdescriptor(*(int*) result);
@@ -911,12 +984,16 @@ int CMDminany(ptr result, BAT *b) {
 	}
 	return GDK_FAIL;
 }
-int CMDmaxany(ptr result, BAT *b) {
+int CMDmaxany(ptr *result, int *bid) {
+	BAT *b;
+	@:batcheck2(result,bid,b,"CMDmaxany")@
 	if (!ATOMlinear(b->ttype)) 
 	    return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n",
 			ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype)) 
-	    return (*(ptr*) result = BATmax(b, NULL))?GDK_SUCCEED:GDK_FAIL;
+	if (ATOMvarsized(b->ttype)) {
+	    *(ptr*) result = BATmax(b, NULL);
+	    if( *(ptr*) result ) return GDK_SUCCEED; else return GDK_FAIL;
+	}
 	if (BATmax(b, result)) {
 	    if (b->ttype == TYPE_bat) 
 		*(BAT**) result = BATdescriptor(*(int*) result);
@@ -924,59 +1001,151 @@ int CMDmaxany(ptr result, BAT *b) {
 	}
 	return GDK_FAIL;
 }
-int CMDselect1(BAT **result, BAT* b, ptr value) {
-	return (*result = (BAT*) BATselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
+int CMDselect1(int *result, int *bid, ptr value) {
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDselect1")@
+	@:derefStr(b,h,value);@
+	bn = (BAT*) BATselect(b, value, 0);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDuselect1(BAT **result, BAT* b, ptr value) {
-	return (*result = (BAT*) BATuselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
+
+int CMDuselect1(int *result, int *bid, ptr value) {
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDuselect1")@
+	@:derefStr(b,h,value);@
+	bn = (BAT*) BATuselect(b, value, 0);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDselect(BAT **result, BAT *b, ptr low, ptr high) {
-	return (*result = (BAT*) BATselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
+
+int CMDselect(int *result, int *bid, ptr low, ptr high) {
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDselect")@
+	@:derefStr(b,t,low);@
+	@:derefStr(b,t,high);@
+	bn = (BAT*) BATselect(b, low, high);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDuselect(BAT **result, BAT *b, ptr low, ptr high) {
-	return (*result = (BAT*) BATuselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
+int CMDuselect(int *result, int *bid, ptr low, ptr high) {
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDuselect")@
+	@:derefStr(b,t,low);@
+	@:derefStr(b,t,high);@
+	bn = (BAT*) BATuselect(b, low, high);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh) 
+int CMDfragment(int *result, int *bid, 
+		ptr hlow, ptr hhigh, ptr tlow, ptr thigh) 
 {
-	return (*result = (BAT*) BATrestrict(b, hlow, hhigh, tlow, thigh))?
-		GDK_SUCCEED:GDK_FAIL;
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDfragment")@
+	@:derefStr(b,h,hlow);@
+	@:derefStr(b,h,hhigh);@
+	@:derefStr(b,t,tlow);@
+	@:derefStr(b,t,thigh);@
+	bn = (BAT*) BATrestrict(b, hlow, hhigh, tlow, thigh);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode) {
-	return (*result = (BAT*) BATthetajoin(left, right, *mode))?
-		GDK_SUCCEED:GDK_FAIL;
+int CMDthetajoin(int *result, int *lid, int *rid, int *mode) {
+	BAT *left, *right, *bn;
+	@:batcheck2(result,lid,left,"CMDthetajoin")@
+	@:batcheck2(result,rid,right,"CMDthetajoin")@
+	bn = (BAT*) BATthetajoin(left, right, *mode);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode) {
+int CMDtheta(int *iid, int *oi, int *lid, int *rid, int *mode) {
+	BAT *inner,*outer, *left, *right;
+	int result;
+	@:batcheck2(&result,iid,inner,"CMDtheta")@
+	@:batcheck2(&result,oi,outer,"CMDtheta")@
+	@:batcheck2(&result,lid,left,"CMDtheta")@
+	@:batcheck2(&result,rid,right,"CMDtheta")@
 	BATtheta(inner, outer, left, right, *mode);
 	return GDK_SUCCEED;
 }
-int CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus) {
-	return (*result = (BAT*) BATbandjoin(left, right, minus, plus))?
-		GDK_SUCCEED:GDK_FAIL;
+int CMDbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
+	BAT *left, *right, *bn;
+	@:batcheck2(result,lid,left,"CMDbandjoin")@
+	@:batcheck2(result,rid,right,"CMDbandjoin")@
+	bn = (BAT*) BATbandjoin(left, right, minus, plus);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 
 @-
 Let cut this text down with some Mx macro's
 @= unary
-int CMD@1(BAT **result, BAT *b) {
-	return (*result = (BAT*) @2(b))?GDK_SUCCEED:GDK_FAIL;
+int CMD@1(int *result, int *bid) {
+	BAT *b,*bn;
+	@:batcheck2(result,bid,b,"CMD@1")@
+	bn = (BAT*) @2(b);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 @= unaryint
-int CMD@1(int *result, BAT *b) {
+int CMD@1(int *result, int *bid) {
+	BAT *b;
+	@:batcheck2(result,bid,b,"CMD@1")@
 	*result = (int) @2(b);
 	return GDK_SUCCEED;
 }
 @= binary
-int CMD@1(BAT **result, BAT *left, BAT* right) {
-	return (*result = (BAT*) @2(left, right))?GDK_SUCCEED:GDK_FAIL;
+int CMD@1(int *result, int *lid, int *rid) {
+	BAT *left, *right,*bn;
+	@:batcheck2(result,lid,left,"CMD@1")@
+	@:batcheck2(result,rid,right,"CMD@1")@
+	bn = (BAT*) @2(left, right);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 @= binaryint
-int CMD@1(BAT **result, BAT* b, int *param) {
-	return (*result = @2(b, *param))?GDK_SUCCEED:GDK_FAIL;
+int CMD@1(int *result, int* bid, int *param) {
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMD@1")@
+	bn = @2(b, *param);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 @c
 @:unaryint(count, BATcount)@
 @:unary(histogram, BAThistogram)@
 @:unary(sort, BATsort)@
+@:unary(sort_ht, BATsort_ht)@
 @:unary(number, BATnumber)@
 @:unary(copy, BATcopy)@
 @:unary(kunique, BATkunique)@
@@ -992,32 +1161,84 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
 
-int CMDproject(BAT** res, BAT *b, ptr *p, int t) {
-	return (*res=BATconst(b, t, *p))?GDK_SUCCEED:GDK_FAIL;
+int CMDproject(int *result, int *bid, ptr *p, int *t) {
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDproject")@
+	bn= BATconst(b, *t, *p);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 
-int CMDmark(BAT** res, BAT *b, oid *base){
-	return (*res=BATmark(b, *base))?GDK_SUCCEED:GDK_FAIL;
+int CMDmark(int *result, int *bid, oid *base){
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDmark")@
+	bn= BATmark(b, *base);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDmark_default(BAT** res, BAT *b){
-	oid base = OIDnew(BATcount(b));
-	return CMDmark(res, b, &base);
+int CMDmark_default(int *result, int *bid){
+	oid base;
+	BAT *b;
+	@:batcheck2(result,bid,b,"CMDmark_default")@
+	base = OIDnew(BATcount(b));
+	return CMDmark(result, bid, &base);
 }
-int CMDhashsplit(BAT **res, BAT *b, int *nfrag){
-	return (*res=BAThashsplit(b, *nfrag, FALSE))?GDK_SUCCEED:GDK_FAIL;
+int CMDhashsplit(int *result, int *bid, int *nfrag){
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDhashsplit")@
+	bn= BAThashsplit(b, *nfrag, FALSE);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDuhashsplit(BAT **res, BAT *b, int *nfrag){
-	return (*res=BAThashsplit(b, *nfrag, TRUE))?GDK_SUCCEED:GDK_FAIL;
+int CMDuhashsplit(int *result, int *bid, int *nfrag){
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDuhashsplit")@
+	bn= BAThashsplit(b, *nfrag, TRUE);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDrangesplit(BAT **res, BAT *b, int *nfrag){
-	return (*res=BATrangesplit(b, *nfrag, FALSE))?GDK_SUCCEED:GDK_FAIL;
+int CMDrangesplit(int *result, int *bid, int *nfrag){
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDrangesplit")@
+	bn= BATrangesplit(b, *nfrag, FALSE);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
-int CMDurangesplit(BAT **res, BAT *b, int *nfrag){
-	return (*res=BATrangesplit(b, *nfrag, TRUE))?GDK_SUCCEED:GDK_FAIL;
+int CMDurangesplit(int *result, int *bid, int *nfrag){
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDurangesplit")@
+	bn= BATrangesplit(b, *nfrag, TRUE);
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 
-int CMDhistogram_rev(BAT **bn, BAT *b) {
-	return CMDhistogram(bn, BATmirror(b));
+int CMDhistogram_rev(int *result, int *bid) {
+	BAT *b, *bn;
+	@:batcheck2(result,bid,b,"CMDhistogram_rev")@
+	bn =BAThistogram(BATmirror(b));
+	if( bn ) {
+		*result = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 } 
 
 
@@ -1027,34 +1248,42 @@ dynamically linked.
 A simple string matcher is included. It should be refined later on
 @c
 INLINE int like(x, y, ylen)
-str *x, *y;
+str x, y;
 int ylen;
 {
         char *r;
-        if (*x == (char *)NULL) {
+        if (*x == (char )NULL) {
                 return 0;
         }
-        for (r = *x+strlen(*x)-ylen; *x <= r; *x++) {
+/* printf("compare %s against %s %d ",x,y,ylen);*/
+        for (r = x+strlen(x)-ylen; x <= r; x++) {
                 int ok = 1;
-                char *s = *x;
+                char *s = x;
                 char *q;
-                for (q = *y; *q; q++, s++)
+                for (q = y; *q; q++, s++)
                     if (*q != tolower(*s)) {
                         ok = 0; break;
                     }
-                if (ok) return 1;
+                if (ok){
+/*			printf("ok\n"); */
+			return 1;
+		}
         }
+/* 	printf("wrong\n");*/
         return 0;
 }
 
-int CMDlike(BAT **ret, BAT* b, str *s) {
-        BAT	*c = BATnew(BAThtype(b), TYPE_str, BATcount(b)/10);
-	str	t = GDKstrdup(*s);
+int CMDlike(int *ret, int *bid, str *k) {
+	BAT *c, *b, *bn;
+	str	t,s;
 	BUN	u, v;
 	int 	xx, yy=0;
+	@:batcheck2(ret,bid,b,"CMDlike")@
+        c = BATnew(BAThtype(b), TYPE_str, BATcount(b)/10);
+	t = GDKstrdup(*k);
 
-	for(*s=t; **s; *s++,yy++)
-		**s = tolower(**s);
+	for(s=t; *s; s++,yy++)
+		*s = tolower(*s);
 	
 	if (b->hvarsized) {
 	    BATloopFast(b, u, v, xx) 
@@ -1067,7 +1296,8 @@ int CMDlike(BAT **ret, BAT* b, str *s) {
 	}
 	c->hsorted = BAThordered(b);
 	c->tsorted = BATtordered(b);
-	*ret = c;
+	GDKfree(t);
+	*ret = c->batCacheid;
 	return GDK_SUCCEED;
 }
 
@@ -1079,9 +1309,13 @@ int CMDslice(BAT **retval, BAT *b, int *start, int *end){
 
 @- BUN Get/Fetch
 @c
-int CMDposition(int *retval, BAT *b, ptr *val){
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
-	ptr v = BUNfnd(b, p);
+int CMDposition(int *retval, int *bid, ptr *val){
+	BAT *b;
+	ptr p,v;
+
+	@:batcheck2(retval,bid,b,"CMDposition")@
+	p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
+	v = BUNfnd(b, p);
         if (v == 0) {
                 GDKerror("CMDposition: item not found\n");
                 return GDK_FAIL;
@@ -1089,10 +1323,14 @@ int CMDposition(int *retval, BAT *b, ptr *val){
         *retval = BUNindex(b, v)- BUNindex(b, BUNfirst(b));
         return GDK_SUCCEED;
 }
-int CMDpositionBUN(int *retval, BAT *b, ptr *val, ptr *tval){
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
-	ptr o = (b->ttype == TYPE_bat)?(ptr) &((BAT*) *tval)->batCacheid:tval;
-	ptr v = BUNlocate(b, p,o);
+int CMDpositionBUN(int *retval, int *bid, ptr *val, ptr *tval){
+	BAT *b;
+	ptr p,o,v;
+
+	@:batcheck2(retval,bid,b,"CMDpositionBUN")@
+	p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
+	o = (b->ttype == TYPE_bat)?(ptr) &((BAT*) *tval)->batCacheid:tval;
+	v = BUNlocate(b, p,o);
         if (v == 0) {
                 GDKerror("CMDposition: item not found\n");
                 return GDK_FAIL;
@@ -1101,18 +1339,22 @@ int CMDpositionBUN(int *retval, BAT *b, ptr *val, ptr *tval){
         return GDK_SUCCEED;
 }
 
-int CMDfetchbat(BAT** ret, BAT *b, BAT *s){
-	return (*ret = BATfetch(b, s))?GDK_SUCCEED:GDK_FAIL;
+int CMDfetchbat(int * ret, int *bid, int *sid){
+	BAT *b, *s, *bn;
+	@:batcheck2(ret,bid,b,"CMDfetchbat")@
+	@:batcheck2(ret,sid,s,"CMDfetchbat")@
+
+	bn= BATfetch(b, s);
+	if( bn ) {
+		*ret = bn->batCacheid;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 
-int CMDfetch(ptr ret, BAT *b, int *pos){
-	int i = *pos;
-        if ((i < 0) || (i >= BATcount(b))) {
-                GDKerror("CMDfetch: idx out of range\n");
-                return GDK_FAIL;
-        }
-        i += BUNindex(b, BUNfirst(b));
-	@:putTail(BUNptr(b,i))@
+@-
+Factor out some common code.
+
 @= putTail
 	if (b->theap.base) {
 	    ptr _src = b->theap.base + *(int*) BUNtloc(b,@1);
@@ -1141,35 +1383,71 @@ int CMDfetch(ptr ret, BAT *b, int *pos){
 	    }
 	}
 @c
+int CMDfetch(ptr ret, int *bid, int *pos){
+	int i = *pos;
+	BAT *b;
+	int result;
+
+	@:batcheck2(&result,bid,b,"CMDfetch");
+        if ((i < 0) || (i >= BATcount(b))) {
+                GDKerror("CMDfetch: idx out of range\n");
+                return GDK_FAIL;
+        }
+        i += BUNindex(b, BUNfirst(b));
+	@:putTail(BUNptr(b,i))@
         return GDK_SUCCEED;
 }
 
-int CMDfetchoid(ptr *ret, BAT *b, oid *pos){
-	int newpos = (int) (*pos - b->hseqbase);
+int CMDfetchoid(ptr *ret, int *bid, oid *pos){
+	BAT *b;
+	int newpos;
+	int result;
+
+	@:batcheck2(&result,bid,b,"CMDfetchoid");
+	newpos = (int) (*pos - b->hseqbase);
 	if (b->hseqbase == oid_nil) {
                 GDKerror("CMDfetchoid: void lookup on uninitialized column.\n");
                 return GDK_FAIL;
         }
-	return CMDfetch(*ret, b, &newpos);
+	return CMDfetch(*ret, bid, &newpos);
 }
 
-int CMDexist(bit *ret, BAT* b, ptr *val){ 
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:*val;
-	BUN q = BUNfnd(b, p);
+int CMDexist(bit *ret, int *bid, ptr *val){ 
+	BAT *b;
+	ptr p;
+	BUN q;
+	int result;
+
+	@:batcheck2(&result,bid,b,"CMDexist");
+	p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:*val;
+	q = BUNfnd(b, p);
 	*ret = q?1:0;
         return GDK_SUCCEED;
 }
-int CMDexistBUN(bit *ret, BAT* b, ptr *val, ptr *tval){ 
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
-	ptr o = (b->ttype == TYPE_bat)?(ptr) &((BAT*) *tval)->batCacheid:tval;
-	BUN q = BUNlocate(b, p, o);
+int CMDexistBUN(bit *ret, int *bid, ptr *val, ptr *tval){ 
+	BAT *b;
+	ptr p,o;
+	BUN q;
+	int result;
+
+	@:batcheck2(&result,bid,b,"CMDexistBUN");
+	p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
+	o = (b->ttype == TYPE_bat)?(ptr) &((BAT*) *tval)->batCacheid:tval;
+	q = BUNlocate(b, p, o);
 	*ret = q?1:0;
         return GDK_SUCCEED;
 }
 
-int CMDfind(ptr ret, BAT* b, ptr *val){ 
-	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:*val;
-	BUN q = BUNfnd(b, p);
+int CMDfind(ptr ret, int *bid, ptr val){ 
+	BAT *b;
+	ptr p;
+	BUN q;
+	int result;
+
+	@:batcheck2(&result,bid,b,"CMDfind");
+	@:derefStr(b,h,val)@
+	/* p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;*/
+	q = BUNfnd(b, val);
 	if (q == NULL) {
 		GDKerror("CMDfind: value not found.\n");
 		return GDK_FAIL;
