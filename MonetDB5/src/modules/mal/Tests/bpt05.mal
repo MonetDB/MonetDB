@@ -1,0 +1,20 @@
+#testing the BAT partition table with fixed capacity
+a1:= new(:void,:int);
+setSequenceBase(a1,0@0);
+
+partitions.deposit(a1);
+partitions.setCapacity(a1,3);
+
+barrier (go,i):= newRange(0);
+	partitions.insert(a1,i);
+	redo (go,i):= nextElement(1,10);
+exit (go,i);
+partitions.dump();
+barrier (k,b):= partitions.newIterator(a1);
+	print(b);
+	redo (k,b):= partitions.hasMoreElements(a1);
+exit (k,b);
+
+# add it
+
+
