@@ -417,9 +417,7 @@ int CMDvarval(int stk, YYSTREE lt, ValPtr res){
                 Variable act = VARfind(&stk, res->val.sval);
                 if (act != NULL) {
                         VALcopy(res, &act->binding);
-			if (res->vtype == TYPE_bat){
-				BBPfix(res->val.bval);
-			}
+ 			ATOMfix(res->vtype, VALptr(res));
                         return 0;
                 }
 	    }
