@@ -670,9 +670,8 @@ int CMDfork(Cntxt stk, YYSTREE lt, ValPtr res){
 	if( GDKembedded ) 
 		monet_forks++;
 	else
-	if( monet_forks > 0 && GDKprotected ==0){
-		printf("fork need protected entry\n");
-	}
+	if( monet_forks > 0 && GDKprotected ==0)
+		protectMonet(TRUE);
 @-
 Create a shadow client. This is necessary in order not to mangle
 cntxt record administration between running jobs. They need to belong
