@@ -88,8 +88,8 @@ end main;	# 30
 #-------------------------------------------------#
 # h				tmp_5		  # name
 # str				str		  # type
-#-------------------------------------------------#
-[ "version",			  "980714"	  ]
+#-----------------------------------------#
+[ "version",		  "20696"	  ]
 [ "batId",			  "tmp_13"	  ]
 [ "batCacheid",			  "13"		  ]
 [ "batParentid",		  "0"		  ]
@@ -147,22 +147,6 @@ end main;	# 30
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
 [ "theap.filename",		  "no file"	  ]
-[ "hacctype",			  "null"	  ]
-[ "haccdirty",			  "clean"	  ]
-[ "haccCopiedtodisk",		  "0"		  ]
-[ "haccelerator.free",		  "0"		  ]
-[ "haccelerator.size",		  "0"		  ]
-[ "haccelerator.maxsize",	  "0"		  ]
-[ "haccelerator.storage",	  "absent"	  ]
-[ "haccelerator.filename",	  "no file"	  ]
-[ "tacctype",			  "null"	  ]
-[ "taccdirty",			  "clean"	  ]
-[ "taccCopiedtodisk",		  "0"		  ]
-[ "taccelerator.free",		  "0"		  ]
-[ "taccelerator.size",		  "0"		  ]
-[ "taccelerator.maxsize",	  "0"		  ]
-[ "taccelerator.storage",	  "absent"	  ]
-[ "taccelerator.filename",	  "no file"	  ]
 #~EndVariableOutput~#
 # Start performance profiling
 #-----------------#
