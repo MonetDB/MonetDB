@@ -263,35 +263,49 @@ have changed since my proposal.
   See "Mapprove.py -?" for command-line options.
 
 
-- A development session is than supposed to proceed as follows:
+- A development session is then supposed to proceed as follows:
   (assuming TSTSRCBASE=$MONET_SOURCE and TSTBLDBASE=$MONET_BUILD)
 
-        cd $TSTSRCBASE
-        run  cvs update
-        loop
-                loop
-			cd $TSTSRCBASE/$TSTDIR
-                        edit source
-			cd $TSTBLDBASE/$TSTDIR
-                        [g]make
-			[g]make install
-                endloop
-                loop
-			cd $TSTSRCBASE/$TSTDIR
-			edit/create  Tests/All
-                        edit/create  Tests/<names...>.*
-                        run  Mtest.py <names...>
-                        check 	$TSTTRGDIR/<names...>.test.{out,err}
-                        	$TSTTRGDIR/<names...>.{out,err}.diff.html
-				(cf. $TSTTRGBASE/Tests/index.html)
-                endloop
-        endloop
-        run  Mapprove.py <names...>
-        run  cvs ci
+	cd $TSTSRCBASE
+	run  cvs update
+	loop
+		loop
+			loop
+				# write & compile your code
+				cd $TSTSRCBASE/$TSTDIR
+				edit source
+				cd $TSTBLDBASE/$TSTDIR
+				[g]make
+				[g]make install
+			endloop
+			loop
+				# write, adapt, run your tests ...
+				cd $TSTSRCBASE/$TSTDIR
+				edit/create  Tests/All
+				edit/create  Tests/<names...>.*
+				run  Mtest.py <names...>
+				# ... and check their results
+				check 	$TSTTRGDIR/<names...>.test.{out,err}
+					$TSTTRGDIR/<names...>.{out,err}.diff.html
+					(cf. $TSTTRGBASE/Tests/index.html)
+			endloop
+			# approve new/modified correct output of your tests
+			run  Mapprove.py <names...>
+		endloop
+		# run all Monet tests...
+		cd $TSTSRCBASE
+		run  Mtest.py -r
+		# ... and check their results
+		check $TSTTRGBASE/Tests/index.html
+	endloop
+	# approve "intended" impact of your changes on other tests' output
+	run  Mapprove.py <names...>
+	# checkin all correct new stuff to cvs
+	run  cvs ci
 
 
 
-        Stefan
+	Stefan
 
 --
 | Stefan Manegold     | mailto:Stefan.Manegold@cwi.nl |
