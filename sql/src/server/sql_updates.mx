@@ -792,9 +792,15 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 				for(m = t->columns.set->h; m; m = m->next){
 					sql_column *c = m->data;
 					if (c->colnr == i) {
-						atom *a = atom_general(
+						atom *a = NULL;
+						if (c->def)
+						    a = atom_general(
 						    sql_dup_subtype(c->type), 
 						    _strdup(c->def) );
+						else
+						    a = atom_general(
+						    sql_dup_subtype(c->type), 
+						    NULL );
 						/* no valid default ! */
 						if (!a) {
 							scp = scope_close(scp);

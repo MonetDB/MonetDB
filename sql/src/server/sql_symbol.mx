@@ -471,6 +471,8 @@ static int dnode_cmp( dnode *d1, dnode *d2 )
 			return dlist_cmp(d1->data.lval,d2->data.lval);
 		case type_symbol: 	
 			return symbol_cmp(d1->data.sym, d2->data.sym);
+		case type_type: 	
+			return subtype_cmp(d1->data.typeval, d2->data.typeval);
 		default: assert(0);
 		}
 	}

@@ -683,7 +683,8 @@ static void column_destroy(sql_column * c)
 
 	base_destroy( &c->base );
 	sql_subtype_destroy(c->type);
-	_DELETE(c->def);
+	if (c->def)
+		_DELETE(c->def);
 	if (c->st)
 		stmt_destroy(c->st);
 	_DELETE(c);
@@ -1042,6 +1043,7 @@ static sql_idx *load_idx(sql_trans *tr, BAT * idxs, BUN j, sql_table *t)
 
 static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j)
 {
+	char *def;
 	char name[BUFSIZ], *tpe;
 	sql_column *c = NEW(sql_column);
 	ptr lid = BUNhead(columns, j);
@@ -1062,7 +1064,10 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	sz = *(int*)bun_find(column_type_digits, lid);
 	d =  *(int*)bun_find(column_type_scale, lid);
 	c->type = sql_bind_subtype(tpe,sz,d);
-	c->def = _strdup((char *) bun_find(column_default, lid));
+	def = (char *) bun_find(column_default, lid);
+	c->def = NULL;
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
+		c->def = _strdup(def);
 	c->null = *(bit *) bun_find(column_null, lid);
 	c->colnr = *(int *) bun_find(column_number, lid);
 	c->t = t;
@@ -1448,7 +1453,9 @@ static sql_column *column_dup(sql_trans *tr, int flag, sql_column * oc, sql_tabl
 	(void)tr;
 	base_init( &c->base, oc->base.id, tr_flag(&oc->base, flag), oc->base.name);
 	c->type = sql_dup_subtype(oc->type);
-	c->def = _strdup(oc->def);
+	c->def = NULL;
+	if (oc->def)
+		c->def = _strdup(oc->def);
 	c->null = oc->null;
 	c->colnr = oc->colnr;
 	c->bat.bid = oc->bat.bid;
@@ -3949,7 +3956,7 @@ static sql_column *bootstrap_create_column(mvc * m, sql_table *t, char *name,
 
 	base_init( &col->base, OIDnew(1), TR_NEW, name);
 	col->type = sql_bind_subtype(sqltype, type_digits, type_scale);
-	col->def = _strdup("");
+	col->def = NULL;
 	col->null = 1;
 	col->colnr = cs_size( &t->columns);
 	col->t = t;
@@ -3977,7 +3984,11 @@ static sql_column *bootstrap_create_column(mvc * m, sql_table *t, char *name,
 	b = sys_bat(m->trans->bm, "columns_type_scale");
 	BUNins(b, (ptr) & rid, (ptr) & col->type->scale); bat_destroy(b);
 	b = sys_bat(m->trans->bm, "columns_default");
-	BUNins(b, (ptr) & rid, (ptr) col->def); bat_destroy(b);
+	if (col->def)
+		BUNins(b, (ptr) & rid, (ptr) col->def); 
+	else
+		BUNins(b, (ptr) & rid, (ptr) ATOMnilptr(TYPE_str)); 
+	bat_destroy(b);
 	b = sys_bat(m->trans->bm, "columns_null");
 	BUNins(b, (ptr) & rid, (ptr) & col->null); bat_destroy(b);
 	b = sys_bat(m->trans->bm, "columns_number");
@@ -4002,7 +4013,7 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 
 	base_init( &col->base, OIDnew(1), TR_NEW, name);
 	col->type = sql_bind_subtype(sqltype, type_digits, type_scale);
-	col->def = _strdup("");
+	col->def = NULL;
 	col->null = 1;
 	col->colnr = cs_size( &t->columns );
 	col->t = t;
@@ -4048,7 +4059,10 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	b = bind_bat(tr, find_column(syscolumn, "type_scale"), 1);
 	BUNins(b, (ptr) & rid, (ptr) & col->type->scale); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "default"), 1);
-	BUNins(b, (ptr) & rid, (ptr) col->def); bat_destroy(b);
+	if (col->def)
+		BUNins(b, (ptr) & rid, (ptr) col->def); 
+	else
+		BUNins(b, (ptr) & rid, (ptr) ATOMnilptr(TYPE_str)); 
 	b = bind_bat(tr, find_column(syscolumn, "null"), 1);
 	BUNins(b, (ptr) & rid, (ptr) & col->null); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "number"), 1);
@@ -4160,7 +4174,10 @@ sql_column * mvc_default(mvc * m, sql_column * col, char *val)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_default %s %s\n", col->base.name, val);
 
-	if (strcmp(col->def, val) != 0){
+	if (!col->def && !val) 
+		return col; /* no change */
+	
+	if (!col->def || !val || strcmp(col->def, val) != 0){
 		sql_table *syscolumn = find_table(find_schema(tr, "sys"), "columns");
 		BAT *b, *r;
 		oid rid = 0;
@@ -4171,7 +4188,10 @@ sql_column * mvc_default(mvc * m, sql_column * col, char *val)
 		rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & col->base.id ));
 		bat_destroy(b);
 		b = bind_bat(tr, find_column(syscolumn, "default"), 1);
-		bun_inplace(b, rid, val); 
+		if (val)
+			bun_inplace(b, rid, val); 
+		else
+			bun_inplace(b, rid, ATOMnilptr(TYPE_str));
 		bat_destroy(b);
 
 		if (col->base.flag != TR_NEW) {
@@ -4179,8 +4199,11 @@ sql_column * mvc_default(mvc * m, sql_column * col, char *val)
 			BUNins(b, (ptr) & rid, (ptr) val); 
 			bat_destroy(b);
 		}
-		_DELETE(col->def);
-		col->def = _strdup(val);
+		if (col->def)
+			_DELETE(col->def);
+		col->def = NULL;
+		if (val)
+			col->def = _strdup(val);
 		col->base.wtime = tr->wtime = tr->stime;
 	}
 	return col;

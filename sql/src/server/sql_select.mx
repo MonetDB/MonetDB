@@ -575,7 +575,7 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 	t2 = tail_type(rs);
 
 	/* input from different tables requires an extra cross-product! */
-	if (ls->h != rs->h) {
+	if (ls->nrcols > 0 && rs->nrcols > 0 && ls->h != rs->h) {
 		ls = stmt_join(scope_find_pivot(scp, ls->h), ls, cmp_equal);
 		rs = stmt_join(scope_find_pivot(scp, rs->h), rs, cmp_equal);
 	}
