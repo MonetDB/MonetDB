@@ -814,7 +814,7 @@ public class JdbcClient {
 					new SQLException("Illegal value for precision of type (" + size + ")");
 		 		out.print("("); out.print(size); out.print(")");
 			} else if (type == Types.CLOB) {
-				if (size> 0) {
+				if (size > 0) {
 					out.print("("); out.print(size); out.print(")");
 				}
 			} else if (type == Types.DECIMAL ||

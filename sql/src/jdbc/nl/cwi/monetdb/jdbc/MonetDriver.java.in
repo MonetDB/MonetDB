@@ -271,10 +271,11 @@ public class MonetDriver implements Driver {
 		typeMap.put("boolean", new Integer(Types.BOOLEAN));
 		typeMap.put("char", new Integer(Types.CHAR));
 		typeMap.put("varchar", new Integer(Types.VARCHAR));
-		typeMap.put("bigint", new Integer(Types.BIGINT));
-		typeMap.put("int", new Integer(Types.INTEGER));
-		typeMap.put("smallint", new Integer(Types.SMALLINT));
+		typeMap.put("clob", new Integer(Types.CLOB));
 		typeMap.put("oid", new Integer(Types.OTHER));
+		typeMap.put("smallint", new Integer(Types.SMALLINT));
+		typeMap.put("int", new Integer(Types.INTEGER));
+		typeMap.put("bigint", new Integer(Types.BIGINT));
 		typeMap.put("decimal", new Integer(Types.DECIMAL));
 		typeMap.put("real", new Integer(Types.REAL));
 		typeMap.put("double", new Integer(Types.DOUBLE));
@@ -282,10 +283,8 @@ public class MonetDriver implements Driver {
 		typeMap.put("sec_interval", new Integer(Types.BIGINT));
 		typeMap.put("date", new Integer(Types.DATE));
 		typeMap.put("time", new Integer(Types.TIME));
-		typeMap.put("datetime", new Integer(Types.TIMESTAMP));
 		typeMap.put("timestamp", new Integer(Types.TIMESTAMP));
 		typeMap.put("blob", new Integer(Types.BLOB));
-		typeMap.put("clob", new Integer(Types.CLOB));
 	}
 
 	/**
