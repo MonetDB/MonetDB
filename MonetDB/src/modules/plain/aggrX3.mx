@@ -1014,10 +1014,9 @@ int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	oid min, max;
 	oid bhsb;
 	int btt;
-	ptr bt_nil;
+	ptr bt_nil = ATOMnilptr(b->ttype);
 
 	if( bn == NULL) return GDK_FAIL;
-	bt_nil = ATOMnilptr(b->ttype);
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count(b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: set all counts to zero and calculate min/max oid */
@@ -1375,7 +1374,7 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	if( bn == NULL) return GDK_FAIL;
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum3_@1_@2(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
-	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
+	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		return CMDaggrX3_sum_@1_@2(ret, BATjoin(BATmirror(g),b,oid_nil), e);
@@ -1467,7 +1466,7 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	if( bn == NULL) return GDK_FAIL;
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_prod3_@1_@2(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_prod3_@1: BATs b & g must be of equal size.\n");	*/
-	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_prod3_@1: head of BAT g must not be nil.\n");
+	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_prod3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		return CMDaggrX3_prod_@1_@2(ret, BATjoin(BATmirror(g),b,oid_nil), e);
@@ -1573,7 +1572,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_avg3_@1: BATs b & g must be of equal size.\n");	*/
-	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_avg3_@1: head of BAT g must not be nil.\n");
+	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_avg3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		return CMDaggrX3_avg_@1(ret, BATjoin(BATmirror(g),b,oid_nil), e);
@@ -1716,7 +1715,7 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13_@3_@4: BATs b & g must be of equal size.\n");	*/
-	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13_@3_@4: head of BAT g must not be nil.\n");
+	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "aggrX3_@13_@3_@4: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		return aggrX3_@1_@3_@4(ret, BATjoin(BATmirror(g),b,oid_nil), e);
@@ -1776,7 +1775,7 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	int rtrn, tt = ATOMstorage(b->ttype);
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13: BATs b & g must be of equal size.\n");	*/
-	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13: head of BAT g must not be nil.\n");
+	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "aggrX3_@13: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		return CMDaggrX3_@1(ret, BATjoin(BATmirror(g),b,oid_nil), e);
@@ -1918,7 +1917,7 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e, bit *ignore_nils){
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count3(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_count3: BATs b & g must be of equal size.\n");	*/
-	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_count3: head of BAT g must not be nil.\n");
+	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_count3: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		return CMDaggrX3_count(ret, BATjoin(BATmirror(g),b,oid_nil), e, ignore_nils);
