@@ -797,12 +797,14 @@ stmt: ';'
     |   varidents ';' { constantdeclaration = 0; }
     |   expression ';'
     |   expression TOK_ITERATION_PAR expression ']' iterator
-	{ char local[100];
+	{ char local[100],local2[100];
 	  $2.val= newName();
-	  sprintf(local,"%s := bunStream(%s,%sH,%sT)",
-			$2.val,$4.val,$2.val,$2.val);
+	  sprintf(local,"(%s,%sH,%sT) := newIterator(%s)",
+			$2.val,$2.val,$2.val,$4.val);
+	  sprintf(local2,"(%s,%sH,%sT) := hasMoreElements(%s)",
+			$2.val,$2.val,$2.val,$4.val);
 	  pushIterator($2.val);
-	  $4.val= GDKstrdup(local);
+	  $4.val= GDKstrdup(local2);
 #ifdef M2Moffline
 	rem; printf("barrier\t%s;\n", local);
 #else
@@ -814,20 +816,26 @@ stmt: ';'
 	stmt
 	{
 #ifdef M2Moffline
+	  char *c;
 	  printf("redo\t%s;\n", $4.val);
-	  printf("exit\t%s;\n",$2.val);
+	  c= strchr($4.val,':');
+	  if(c) *c=0;
+	  *(c+1)=0;
+	  printf("exit\t%s;\n",$4.val);
 #else
 	TODO
 #endif
 	  popIterator();
 	}
     |   expression TOK_ITERATION iterator
-	{ char local[100];
+	{ char local[100], local2[100];
 	  $2.val= newName();
 	  pushIterator($2.val);
-	  sprintf(local,"%s := bunStream(%s,%sH,%sT)",
-			$2.val,$1.val,$2.val,$2.val);
-	$1.val= GDKstrdup(local);
+	  sprintf(local,"(%s,%sH,%sT) := newIterator(%s)",
+			$2.val,$2.val,$2.val,$1.val);
+	  sprintf(local2,"(%s,%sH,%sT) := hasMoreElements(%s)",
+			$2.val,$2.val,$2.val,$1.val);
+	$1.val= GDKstrdup(local2);
 #ifdef M2Moffline
 	rem; printf("barrier\t%s;\n",local);
 #else
@@ -839,8 +847,11 @@ stmt: ';'
 	stmt
 	{
 #ifdef M2Moffline
+	  char *c;
 	  printf("redo\t%s;\n", $1.val);
-	  printf("exit\t%s;\n",$2.val);
+	  c= strchr($1.val,':');
+	  if(c) *c=0;
+	  printf("exit\t%s;\n",$1.val);
 #else
 	TODO
 #endif

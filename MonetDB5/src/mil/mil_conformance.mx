@@ -37,7 +37,7 @@ struct{
 {"rename",		"bat.setName",0}, 
 {"cold",		"bbp.setCold",0},
 {"hot",			"bbp.setHot",0},
-{"view_bbp_name",	"bbp.getNames",0},
+{"view_bbp_name",	"bbp.getNames()",0},
 {"view_bbp_refcnt",	"bbp.getRefCount",0},
 {"view_bbp_lrefcnt",	"bbp.getLRefCount",0},
 {"view_bbp_htype",	"bbp.getHeadType",0},
@@ -72,6 +72,7 @@ struct{
 {"time",		"alarm.time",0},
 {"epoch",		"alarm.epoch()",0},
 {"ctime",		"alarm.ctime()",0},
+{"debugmask",		"setDebug",0},
 {0,0,0}
 };
 
