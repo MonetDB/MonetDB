@@ -1455,7 +1455,7 @@ def Check(command, input) :
     if not rOutErr:
         for l in qOut+qErr:
             if l[0] == "!":
-                if ( len(l) < 26  or  
+                if ( len(l) < 24  or  
                    ( l[:24] != "!WARNING: BATpropcheck: " and 
                      l[:26] != "!WARNING: monet_checkbat: " and 
                      l[:59] != "!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock." and 
