@@ -958,7 +958,7 @@ int GDKinit(int argc, char** argv) {
 #endif
 #ifdef GDK_VM_KEEPHISTO
 #ifdef WIN32
-#ifndef WIN32_NATIVE
+#ifndef NATIVE_WIN32
 	GDKmallidx(i, 67108864);
 	GDK_vm_nallocs[i]++; 
 #endif

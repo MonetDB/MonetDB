@@ -357,7 +357,7 @@ extern int setenv(char *name, char *value, int overwrite);
 
 #define GDKPROP		6	/*	use one spare! */
 #define MONETHOME	"MONETHOME"
-#ifndef WIN32_NATIVE
+#ifndef NATIVE_WIN32
 #define BATDIR          "bat/"
 #define DELDIR          "bat/DELETE_ME/"
 #define BAKDIR          "bat/BACKUP/"
