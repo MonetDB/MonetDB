@@ -753,6 +753,7 @@ public class JdbcClient {
 	 * @return a String holding cnt times chr
 	 */
 	private static String repeat(char chr, int cnt) {
+		if (cnt < 0) return("");
 		StringBuffer sb = new StringBuffer(cnt);
 		for (int i = 0; i < cnt; i++) sb.append(chr);
 		return(sb.toString());
@@ -760,8 +761,8 @@ public class JdbcClient {
 
 	/**
 	 * A helper method to generate SQL CREATE code for a given table.
-	 * This method performs all required lookups to find all relations and column
-	 * information, as well as additional indices.
+	 * This method performs all required lookups to find all relations and
+	 * column information, as well as additional indices.
 	 *
 	 * @param out a Writer to write the output to
 	 * @param dbmd a DatabaseMetaData object to query on
@@ -790,8 +791,9 @@ public class JdbcClient {
 		}
 
 		int i;
-		out.print("CREATE "); out.print(table.getType()); out.print(" ");
-		out.print(fq ? table.getFqnameQ() : table.getNameQ()); out.println(" (");
+		String s;
+		out.println("CREATE " + table.getType() + " " +
+			(fq ? table.getFqnameQ() : table.getNameQ()) + " (");
 		// put all columns with their type in place
 		ResultSet cols = dbmd.getColumns(table.getCat(), table.getSchem(), table.getName(), null);
 		ResultSetMetaData rsmd = cols.getMetaData();
@@ -800,10 +802,10 @@ public class JdbcClient {
 		for (i = 0; cols.next(); i++) {
 			int type = cols.getInt("DATA_TYPE");
 			if (i > 0) out.println(",");
-			out.print("\t\""); out.print(cols.getString("COLUMN_NAME"));
-			out.print("\""); out.print(repeat(' ', colwidth - cols.getString("COLUMN_NAME").length()));
-		 	out.print(" "); out.print(cols.getString("TYPE_NAME"));
-			out.print(repeat(' ', typewidth - cols.getString("TYPE_NAME").length()));
+			s = dq(cols.getString("COLUMN_NAME"));
+			out.print("\t" + s + repeat(' ', (colwidth - s.length()) + 3));
+			s = cols.getString("TYPE_NAME");
+			out.print(s + repeat(' ', typewidth - s.length()));
 			int size = cols.getInt("COLUMN_SIZE");
 			int digits = cols.getInt("DECIMAL_DIGITS");
 		 	if (type == Types.FLOAT ||
@@ -813,19 +815,15 @@ public class JdbcClient {
 			) {
 				if (size <= 0) throw
 					new SQLException("Illegal value for precision of type (" + size + ")");
-		 		out.print("("); out.print(size); out.print(")");
+		 		out.print("(" + size + ")");
 			} else if (type == Types.CLOB) {
-				if (size > 0) {
-					out.print("("); out.print(size); out.print(")");
-				}
+				if (size > 0) out.print("(" + size + ")");
 			} else if (type == Types.DECIMAL ||
 				type == Types.NUMERIC
 			) {
 				if (digits < 0) throw
 					new SQLException("Illegal value for scale of decimal type (" + digits + ")");
-		 		out.print("("); out.print(size);
-				out.print(","); out.print(digits);
-				out.print(")");
+		 		out.print("(" + size + "," + digits + ")");
 			} else if (type == Types.TIMESTAMP ||
 				type == Types.TIME
 			) {
@@ -840,49 +838,44 @@ public class JdbcClient {
 		cols = dbmd.getPrimaryKeys(table.getCat(), table.getSchem(), table.getName());
 		for (i = 0; cols.next(); i++) {
 			if (i == 0) {
-				out.println(","); out.println();
-				out.print("\tCONSTRAINT \"");
-				out.print(cols.getString("PK_NAME"));
-				out.print("\" PRIMARY KEY (\"");
+				// terminate the previous line
+				out.println(",");
+				out.print("\tCONSTRAINT " + dq(cols.getString("PK_NAME")) +
+					" PRIMARY KEY (");
 			}
-			if (i > 0) out.print("\", \"");
-			out.print(cols.getString("COLUMN_NAME"));
+			if (i > 0) out.print(", ");
+			out.print(dq(cols.getString("COLUMN_NAME")));
 		}
-		if (i != 0) {
-			out.print("\")");
-		}
+		if (i != 0) out.print(")");
 		cols.close();
 
 		// unique constraints
 		cols = dbmd.getIndexInfo(table.getCat(), table.getSchem(), table.getName(), true, true);
 		while (cols.next()) {
-			out.print(",");
 			String idxname = cols.getString("INDEX_NAME");
-			out.println();
-			out.print("\tCONSTRAINT \""); out.print(idxname);
-			out.print("\" UNIQUE (\""); out.print(cols.getString("COLUMN_NAME"));
+			out.println(",");
+			out.print("\tCONSTRAINT " + dq(idxname) + " UNIQUE (" +
+				dq(cols.getString("COLUMN_NAME")));
 
 			boolean next;
 			while ((next = cols.next()) && idxname != null &&
 				idxname.equals(cols.getString("INDEX_NAME")))
 			{
-				out.print("\", \""); out.print(cols.getString("COLUMN_NAME"));
+				out.print(", " + dq(cols.getString("COLUMN_NAME")));
 			}
-			// go back one
+			// go back one, we've gone one too far
 			if (next) cols.previous();
 
-			out.print("\")");
+			out.print(")");
 		}
 		cols.close();
 
 		// foreign keys
 		cols = dbmd.getImportedKeys(table.getCat(), table.getSchem(), table.getName());
 		while (cols.next()) {
-			out.print(",");
 			String fkname = cols.getString("FK_NAME");
-			out.println();
-			out.print("\tCONSTRAINT \""); out.print(fkname);
-			out.print("\" FOREIGN KEY (");
+			out.println(",");
+			out.print("\tCONSTRAINT " + dq(fkname) + " FOREIGN KEY (");
 
 			boolean next;
 			Set fk = new LinkedHashSet();
@@ -902,21 +895,16 @@ public class JdbcClient {
 			Iterator it = fk.iterator();
 			for (i = 0; it.hasNext(); i++) {
 				if (i > 0) out.print(", ");
-				out.print("\"");
-				out.print(it.next());
-				out.print("\"");
+				out.print(dq((String)it.next()));
 			}
 			out.print(") ");
 
-			out.print("REFERENCES \""); out.print(cols.getString("PKTABLE_SCHEM"));
-		 	out.print("\".\""); out.print(cols.getString("PKTABLE_NAME"));
-			out.print("\" (");
+			out.print("REFERENCES " + dq(cols.getString("PKTABLE_SCHEM")) +
+				"." + dq(cols.getString("PKTABLE_NAME")) + " (");
 			it = pk.iterator();
 			for (i = 0; it.hasNext(); i++) {
 				if (i > 0) out.print(", ");
-				out.print("\"");
-				out.print(it.next());
-				out.print("\"");
+				out.print(dq((String)it.next()));
 			}
 		 	out.print(")");
 		}
@@ -933,21 +921,20 @@ public class JdbcClient {
 				continue;
 			} else {
 				String idxname = cols.getString("INDEX_NAME");
-				out.print("CREATE INDEX \"");
-				out.print(idxname);
-				out.print("\" ON \""); out.print(cols.getString("TABLE_NAME"));
-				out.print("\" (\""); out.print(cols.getString("COLUMN_NAME"));
+				out.print("CREATE INDEX " + dq(idxname) + " ON " +
+					dq(cols.getString("TABLE_NAME")) + " (" +
+					dq(cols.getString("COLUMN_NAME")));
 
 				boolean next;
 				while ((next = cols.next()) && idxname != null &&
 					idxname.equals(cols.getString("INDEX_NAME")))
 				{
-					out.print("\", \""); out.print(cols.getString("COLUMN_NAME"));
+					out.print(", " + dq(cols.getString("COLUMN_NAME")));
 				}
 				// go back one
 				if (next) cols.previous();
 
-				out.println("\");");
+				out.println(");");
 			}
 		}
 		cols.close();
@@ -1121,7 +1108,7 @@ public class JdbcClient {
 	 * @return a prompt which consist of a username plus the top of the stack
 	 */
 	private static String getPrompt(String user, SQLStack stack) {
-		return(user + "-" + (stack.empty() ? '>' : stack.peek()) + " ");
+		return(user + (stack.empty() ? "->" : "=" + stack.peek()) + " ");
 	}
 
 	/**
@@ -1234,6 +1221,17 @@ public class JdbcClient {
 				return(new QueryPart(false, query.substring(start, stop), false));
 			}
 		}
+	}
+
+	/**
+	 * returns the given string between two double quotes for usage as
+	 * exact column or table name in SQL queries.
+	 *
+	 * @param in the string to quote
+	 * @return the quoted string
+	 */
+	public static String dq(String in) {
+		return("\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"");
 	}
 }
 
@@ -1475,7 +1473,7 @@ class Table {
 	}
 
 	String getSchemQ() {
-		return("\"" + schem + "\"");
+		return(JdbcClient.dq(schem));
 	}
 
 	String getName() {
@@ -1483,7 +1481,7 @@ class Table {
 	}
 
 	String getNameQ() {
-		return("\"" + name + "\"");
+		return(JdbcClient.dq(name));
 	}
 
 	String getType() {
@@ -1495,7 +1493,7 @@ class Table {
 	}
 
 	String getFqnameQ() {
-		return("\"" + schem + "\".\"" + name + "\"");
+		return(getSchemQ() + "." + getNameQ());
 	}
 
 	public String toString() {
