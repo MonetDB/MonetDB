@@ -230,7 +230,7 @@ in the Monet Command implementations. Since there are two types of commands:
   records as parameters.
 
 @c
-int handle_argerror(ValPtr res, int actual, int correct) {
+kernel_export int handle_argerror(ValPtr res, int actual, int correct) {
 	str s = GDKmalloc(80);	
 	VALclear(res);
 	res->val.sval = s; 
@@ -239,7 +239,7 @@ int handle_argerror(ValPtr res, int actual, int correct) {
 	return -1;
 }  
 
-int handle_paramerror(ValPtr res, int param, int actual, int correct) {
+kernel_export int handle_paramerror(ValPtr res, int param, int actual, int correct) {
 	str s = GDKmalloc(80);	  
 	VALclear(res);
 	res->val.sval = s; 

@@ -69,7 +69,7 @@ typedef struct mallinfo mallinfo_t;
 
 gdk_export struct mallinfo MT_mallinfo();
 
-@- locking, sleep, vsnprintf
+@- locking, sleep, vsnprintf, snprintf
 @h
 #define F_TLOCK 2 /* test and lock a region for exclusive use */
 #define F_ULOCK 0 /* unlock a previously locked region */
@@ -80,6 +80,10 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 
 #ifndef HAVE_VSNPRINTF
 #define vsnprintf(buf,size,format,ap) vsprintf(buf,format,ap)
+#endif
+
+#ifndef HAVE_SNPRINTF
+#define snprintf(buf,size,format,ap) sprintf(buf,format,ap)
 #endif
 
 @- virtual memory

@@ -14,6 +14,7 @@ lib__mapi = {
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
 	LIBS = ../gdk/libbat ../monet/libmonet \
+		../modules/plain/lib_kernel \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 

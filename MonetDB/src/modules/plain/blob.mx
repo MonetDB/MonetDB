@@ -78,7 +78,7 @@ typedef struct blob
 
 #include "blob.h"
 
-size_t blobsize(int nitems)
+blob_export size_t blobsize(int nitems)
 {
    if (nitems <0)
       nitems = 0;
