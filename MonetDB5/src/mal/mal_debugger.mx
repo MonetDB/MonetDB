@@ -30,6 +30,7 @@ The debugger can be entered at any time using the call mdb().
 Also if there is no apparent console from which the debugger can be controlled.
 
 @- The debugger instruction set
+@T
 <table>
 <tr><td>next		</td><td> Advance to next statement</td></tr>
 <tr><td>continue 	</td><td> Continue program being debugged</td></tr>

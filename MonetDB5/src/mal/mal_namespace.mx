@@ -30,13 +30,13 @@ is expected to be rather limited except for those generated on
 the fly to represent temporaries functions.
 [First check impact using profiler, there are about 500 entries after
 loading the modules.]
-
+@-
 We can gain speed at type resolution and during the optimization phases 
 when each identifier is replaced by a fixed length internal identifier,
 i.e. an integer. 
 Translation from/to their string is needed only in limited places, e.g.
 input output.
-
+@-
 The namespace manager is organized as a shared table. The alternative
 considered would be a namespace per client. However, this would force
 passing around the client identity or an expensive operation to deduce
