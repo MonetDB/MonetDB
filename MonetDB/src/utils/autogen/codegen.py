@@ -409,6 +409,8 @@ def read_depsfile(incdirs, cwd, topdir):
                 if os.environ.has_key( var ):
                     value = os.environ[var]
                     i = value + rest
+            if i[0:2] != "$(":
+                i = os.path.join(cwd,i)
             if os.path.exists(i):
                 for dep in os.listdir(i):
                     includes[os.path.join(i,dep)] = [ os.path.join(i,dep) ]
