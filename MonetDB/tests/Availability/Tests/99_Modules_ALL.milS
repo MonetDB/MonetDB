@@ -1,14 +1,16 @@
 setoid(oid(20000000));
 
-PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+PROC mmn() : BAT[oid,str] {
+	 return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+}
 
 #All_mods:=MODULES.sort.copy;
 module("cluster");
 # # module(Meta);
-All_mods:=MODULES.sort.copy.access(BAT_WRITE).revert;
+var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();
 All_mods@batloop {
 	printf("%9s: ",$h);
-	if (not(monet_mod_nme.reverse.exist($h))) {
+	if (not(monet_mod_nme.reverse().exist($h))) {
 		printf("loading... ");
 		module($h);
 		printf("done.\n");
@@ -17,7 +19,7 @@ All_mods@batloop {
 	}
 }
 
-table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
+table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count())));
 
 ##Fname:=new(oid,str);Fname.col_name("function");
 ##FnameS:=new(oid,str);FnameS.col_name("function");
@@ -66,4 +68,4 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 ##}
 ##FmodS.count.print; table(1,FmodS,Fname,Ftype,Fsig,Fhelp);
 
-quit;
+quit();

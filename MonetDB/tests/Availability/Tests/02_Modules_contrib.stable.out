@@ -10,17 +10,17 @@ stdout of test '02_Modules_contrib` in directory 'tests/Availability` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
-Static_fcn:=monet_fcntbl.reverse.copy;
+var Static_fcn:=monet_fcntbl.reverse().copy();
 
-Fname:=new(oid,str);Fname.col_name("function");
-FnameS:=new(oid,str);FnameS.col_name("function");
-Ftype:=new(oid,str);Ftype.col_name("type");
-Fsig:=new(oid,str);Fsig.col_name("signature");
-Fhelp:=new(oid,str);Fhelp.col_name("help");
-Fnts:=new(oid,str);
+var Fname:=new(oid,str);	Fname.col_name("function");
+var FnameS:=new(oid,str);	FnameS.col_name("function");
+var Ftype:=new(oid,str);	Ftype.col_name("type");
+var Fsig:=new(oid,str);		Fsig.col_name("signature");
+var Fhelp:=new(oid,str);	Fhelp.col_name("help");
+var Fnts:=new(oid,str);
 
-Plain_mods:=MODULES.select("contrib").sort.copy;
-table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
+var Plain_mods:=MODULES.select("contrib").sort().copy();
+table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 #-----------------#
 # 13 modules	  #
 #-----------------#
@@ -44,17 +44,17 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "vector"	  ]
 [ "wisc"	  ]
 Plain_mods@batloop {
-	The_mod:=$h;
+	var The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
 	module($h);
 
-	Mod_fcn:=sdiff(monet_fcntbl.reverse,Static_fcn).reverse;
-	Mod_fcn.sort@batloop {
-	    addThis:=false;
+	var Mod_fcn:=sdiff(monet_fcntbl.reverse(),Static_fcn).reverse();
+	Mod_fcn.sort()@batloop {
+	    var addThis:=false;
 	    if (not(monet_fcn_mid.exist($t))) {
 		addThis:=true;
 	    } else {
-		m:=monet_mod_nme.find(monet_fcn_mid.find($t));
+		var m:=monet_mod_nme.find(monet_fcn_mid.find($t));
 		if (m.startsWith("_")) {
 		    m:=string(m,1);
 		}
@@ -63,10 +63,10 @@ Plain_mods@batloop {
 		}
 	    }
 	    if (addThis) {
-		Tname:=$h;
-		Ttype:=help_tpe(monet_fcn_tpe.find($t));
-		Tsig:=format_fcn_sig($t);
-		Thelp:="";
+		var Tname:=$h;
+		var Ttype:=help_tpe(monet_fcn_tpe.find($t));
+		var Tsig:=format_fcn_sig($t);
+		var Thelp:="";
 		if (monet_fcn_dsc.exist($t)) {
 			Thelp:=monet_fcn_dsc.find($t);
 		} else {
@@ -81,20 +81,20 @@ Plain_mods@batloop {
 	}
 
 	drop($h);
-	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse);
+	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse());
 
-	Fnts.count.print;
-	Fnts.reverse.sort.reverse@batloop {
+	Fnts.count().print();
+	Fnts.reverse().sort().reverse()@batloop {
 		FnameS.insert($h,Fname.find($h));
 	}
-	FnameS.count.print; table(1,FnameS,Ftype,Fsig,Fhelp);
+	FnameS.count().print(); table(1,FnameS,Ftype,Fsig,Fhelp);
 
-	Fname.delete;
-	FnameS.delete;
-	Ftype.delete;
-	Fsig.delete;
-	Fhelp.delete;
-	Fnts.delete;
+	Fname.delete();
+	FnameS.delete();
+	Ftype.delete();
+	Fsig.delete();
+	Fhelp.delete();
+	Fnts.delete();
 }
 
 Module: "array"
@@ -462,8 +462,8 @@ Module: "tpcd"
 
 Module: "txtsim"
 
-[ 5 ]
-[ 5 ]
+[ 6 ]
+[ 6 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature					help																	  # name
 # str			str		str						str																	  # type
@@ -473,6 +473,7 @@ Module: "txtsim"
 [ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str) : int",		  "Calculates Levenshtein distance (edit distance) between two strings"									  ]
 [ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str, int, int, int) : int",	  "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)"	  ]
 [ "soundex",		  "COMMAND:   ",  "soundex(str) : str",				  "Soundex function for phonetic matching"												  ]
+[ "stringdiff",		  "PROC:      ",  "stringdiff(str, str) : any",			  "not available"															  ]
 
 Module: "vector"
 
@@ -633,7 +634,7 @@ Module: "wisc"
 [ "wisc",	  "COMMAND:   ",  "wisc(str, int) : void",	  "Wisconsin Benchmark Database Generator"	  ]
 [ "wiscdestroy",  "COMMAND:   ",  "wiscdestroy(str) : void",	  "WBD destroy table"				  ]
 
-quit;
+quit();
 
 # 15:30:10 >  
 # 15:30:10 >  Done.
