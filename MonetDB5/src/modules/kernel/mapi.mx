@@ -116,7 +116,7 @@ command trace(flag:bit):void = MAPItrace
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
 
-#define DEBUG_MAPI	1
+/* #define DEBUG_MAPI	1*/
 
 #endif /* MAPI_H */
 @c
@@ -132,8 +132,9 @@ void MAPIlistenThread(int sock)
 {
 	int 	msgsock= -1;
 	do {
-		if(DEBUG_MAPI)
+#ifdef DEBUG_MAPI
 		printf("wait for next connection\n");
+#endif
 #ifdef AIX
        		msgsock = accept(sock, 0, (size_t)0);
 #else
@@ -158,8 +159,9 @@ void MAPIlistenThread(int sock)
 				fflush(stdout);
 				continue;
 			}
-			if( DEBUG_MAPI) 
+#ifdef DEBUG_MAPI
 			THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
+#endif
 			scheduleClient(GDKstrdup(name),0,0,msgsock,fdin,fdout);
 			/*if( mapiSpy)*/ traceClient(name, mapiSpy);
 		}
@@ -193,8 +195,9 @@ The port id is obtained from the Monet configuration file.
 @c
 	if (*port == 0)
 		*port = MAPIPORT;
-	if( DEBUG_MAPI)
-		THRprintf(GDKerr, "start at %d\n", *port);
+#ifdef DEBUG_MAPI
+	THRprintf(GDKerr, "start at %d\n", *port);
+#endif
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = htons((unsigned short)((*port)&0xFFFF));
@@ -219,8 +222,9 @@ Get the new information for the server socket and start listening.
 	if( MT_create_thread((MT_Id *)&pid, MAPIlistenThread, (void*) sock) <0){
 		return throwMessage("mapi.listen", "starting thread failed");
 	}
-	if( DEBUG_MAPI)
-		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
+#ifdef DEBUG_MAPI
+	THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
+#endif
 	gethostname(host,512);
 	{int i;
 	snprintf(msg,512,"#Ready to accept connections on %s:",host);
@@ -262,12 +266,12 @@ side. At least as far as it concerns requests received.
 The kernel supports this 'spying' behavior with a file descriptor
 field in the client record.
 @c
-str MAPItrace2(str *nme,int *flg){
+str MAPItrace2(int *ret, str *nme,int *flg){
 	traceClient(*nme,*flg);
 	return MAL_SUCCEED;
 }
 
-str MAPItrace(int *flg){
+str MAPItrace(int *res, int *flg){
 	traceAllClients(*flg);
 	mapiSpy = *flg;
 	return MAL_SUCCEED;

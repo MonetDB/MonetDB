@@ -228,10 +228,7 @@ str SYSkill(int *ret, int *k) {
 	return throwMessage("system.kill", "not yet implemented");
 }
 str SYSquit(int *ret) {
-	Client c;
-	c= getClient();
-	c->fdin->close(c->fdin);
-	c->fdin= NULL;
+	Client c= getClient();
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
 }
