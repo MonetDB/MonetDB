@@ -24,7 +24,7 @@ proc avg(BAT b):= {
 
 proc date_sub_sec_interval( date d, int sec ) := {
 	if (sec > 0){
-		return d.adddays( -1 * sec/3600);
+		return d.adddays( -1 * sec/86400);
 	}
 	return d;
 }
