@@ -185,7 +185,7 @@ public class MonetDriver implements Driver {
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
 		if (!acceptsURL(url)) return(null);
 
-		DriverPropertyInfo[] dpi = new DriverPropertyInfo[2];
+		DriverPropertyInfo[] dpi = new DriverPropertyInfo[5];
 		dpi[0] = new DriverPropertyInfo("user", info.getProperty("user"));
 		dpi[0].required = true;
 		dpi[0].description = "The username to use when authenticating on the database";
