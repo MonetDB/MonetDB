@@ -27,8 +27,9 @@ import sys
 import fileinput
 import os
 
-prefix=os.path.abspath(sys.argv[1]);
-build=prefix
+build=os.path.abspath(sys.argv[1]);
+prefix=os.path.abspath(sys.argv[2]);
+
 source=os.path.abspath(os.path.join(build,os.pardir))
 
 subs = [
@@ -59,5 +60,5 @@ def substitute(line):
         line = line.replace(p, v);
     return line
 
-for line in fileinput.input(sys.argv[2:]):
+for line in fileinput.input(sys.argv[3:]):
     sys.stdout.write(substitute(line))

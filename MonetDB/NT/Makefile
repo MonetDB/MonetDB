@@ -6,15 +6,15 @@ MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-!INCLUDE "$(TOPDIR)\rules.msc"
-
 prefix = $(MAKEDIR)
 
+!INCLUDE "$(TOPDIR)\rules.msc"
+
 all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" all
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
-	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" check
+	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" check
 	call RunMtest.bat
 
 install: targetdirs monetdb_config.h all
