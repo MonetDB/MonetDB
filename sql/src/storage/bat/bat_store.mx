@@ -1234,7 +1234,7 @@ bootstrap_create_column(sql_trans * tr, sql_table *t, char *name, char *sqltype,
 	b = sys_bat(tr->bm, "pcolumns_number");
 	BUNins(b, (ptr) & rid, (ptr) & col->colnr); bat_destroy(b);
 
-	col->base.wtime = t->base.wtime = tr->wtime = tr->stime;
+	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 
 	return col;
 }
@@ -2118,9 +2118,9 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 	if (ok == SQL_OK && n && m) {
 		BAT *db = bm_lbid2bat( tr->bm, ft->dbid );
 
-                if (ft->base.rtime) 
+		if (ft->base.rtime) 
 			tt->base.rtime = tr->stime;
-                tt->base.wtime = tr->stime;
+        tt->base.wtime = tr->stime;
 
 		if (ft->cleared && ttr == gtrans)
 			ok = log_bat_clear(logger, tt->dbid);
@@ -2138,7 +2138,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
 			BAT *ins, *ups, *cur;
-			int renewed = 0, inserted = 0;
+			int renewed = ft->cleared, inserted = 0;
 
 			if (!cc->base.wtime){
 				n = n->next;
@@ -2398,7 +2398,7 @@ static void sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc ){
 
 	table_delete( tr, syskc, rid);
 
-	syskc->base.wtime = tr->wtime = tr->stime;
+	syskc->base.wtime = syskc->s->base.wtime = tr->wtime = tr->stime;
 }
 
 static void 
@@ -2413,7 +2413,7 @@ sys_drop_key(sql_trans *tr, sql_key *k ){
 		sql_kc *kc = n->data;
 		sys_drop_kc(tr, k, kc);
 	}
-	syskey->base.wtime = tr->wtime = tr->stime;
+	syskey->base.wtime = syskey->s->base.wtime = tr->wtime = tr->stime;
 	list_remove_data( k->t->s->keys, k);
 	if (k->type == fkey) {
 		sql_fkey *fk = (sql_fkey*)k;
@@ -2430,7 +2430,7 @@ sys_drop_ic(sql_trans *tr, sql_idx *i, sql_kc *kc ){
 
 	table_delete( tr, syskc, rid);
 
-	syskc->base.wtime = tr->wtime = tr->stime;
+	syskc->base.wtime = syskc->s->base.wtime = tr->wtime = tr->stime;
 }
 
 static void 
@@ -2446,7 +2446,7 @@ sys_drop_idx(sql_trans *tr, sql_idx *i ){
 		sys_drop_ic(tr, i, ic);
 	}
 
-	sysidx->base.wtime = tr->wtime = tr->stime;
+	sysidx->base.wtime = sysidx->s->base.wtime = tr->wtime = tr->stime;
 	list_remove_data( i->t->s->idxs, i);
 }
 
@@ -2457,7 +2457,7 @@ sys_drop_column(sql_trans *tr, sql_column *col ){
 					&col->base.id, NULL );
 
 	table_delete( tr, syscolumn, rid);
-	syscolumn->base.wtime = tr->stime;
+	syscolumn->base.wtime = syscolumn->s->base.wtime = tr->wtime = tr->stime;
 }
 
 static void sys_drop_keys(sql_trans * tr, sql_table * t)
@@ -2504,7 +2504,7 @@ static void sys_drop_table(sql_trans * tr, sql_table *t)
 	if (t->table) 
 		sys_drop_columns(tr, t);
 
-	systable->base.wtime = tr->stime;
+	systable->base.wtime = systable->s->base.wtime = tr->wtime = tr->stime;
 }
 
 static void sys_drop_tables(sql_trans * tr, sql_schema * s)
@@ -2535,7 +2535,8 @@ sql_module* sql_trans_create_module( sql_trans *tr, char *name )
 	table_insert( tr, sysmodule, & m->base.id, m->base.name); 
 
 	do_load_module(tr, name);
-	sysmodule->base.wtime = m->base.wtime = tr->wtime = tr->stime;
+	sysmodule->base.wtime = sysmodule->s->base.wtime = 
+		m->base.wtime = tr->wtime = tr->stime;
 	return m;
 }
 
@@ -2549,7 +2550,8 @@ void sql_trans_drop_module( sql_trans *tr, char *name )
 
 	do_drop_module(tr, name);
 	table_delete( tr, sysmodule, rid);
-	m->base.wtime = sysmodule->base.wtime = tr->wtime = tr->stime;
+	m->base.wtime = sysmodule->base.wtime = sysmodule->s->base.wtime = 
+		tr->wtime = tr->stime;
 	cs_del( &tr->modules, n, m->base.flag);
 }
 
@@ -2571,7 +2573,8 @@ sql_trans_create_type( sql_trans *tr, sql_module *m,
 
 	table_insert( tr, systype, &t->base.id, t->base.name, t->sqlname,
 			&t->digits, &t->scale, &t->radix, &m->base.id);
-	systype->base.wtime = t->base.wtime = m->base.wtime = tr->wtime = tr->stime;
+	systype->base.wtime = systype->s->base.wtime = 
+			t->base.wtime = m->base.wtime = tr->wtime = tr->stime;
 	return t;
 }
 
@@ -2591,7 +2594,8 @@ sql_schema *sql_trans_create_schema(sql_trans * tr, char *name, int auth_id)
 	tr->schema = s;
 
 	table_insert( tr, sysschema, &s->base.id, s->base.name, &s->auth_id);
-	sysschema->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	sysschema->base.wtime = sysschema->s->base.wtime = 
+		s->base.wtime = tr->wtime = tr->stime;
 	return s;
 }
 
@@ -2605,7 +2609,8 @@ void sql_trans_drop_schema(sql_trans * tr, char *sname)
 	table_delete( tr, sysschema, rid);
 	sys_drop_tables(tr, s);
 
-	s->base.wtime = sysschema->base.wtime = tr->wtime = tr->stime;
+	s->base.wtime = sysschema->base.wtime = sysschema->s->base.wtime =
+		tr->wtime = tr->stime;
 	cs_del( &tr->schemas, n, s->base.flag);
 }
 
@@ -2689,6 +2694,7 @@ size_t sql_trans_clear_table(sql_trans * tr, sql_table *t )
 	size_t sz = 0;
 
 	t->cleared = 1;
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (t->clear || !t->persists)	{
 		BAT *b = temp_descriptor(c->bat.bid);
 		sz = BATcount(b);
@@ -2703,6 +2709,8 @@ size_t sql_trans_clear_table(sql_trans * tr, sql_table *t )
 		/* temp's do not have indices */
 	} else {
 		BAT *b, *nb;
+
+		c->base.wtime = tr->stime;
 		if (c->bat.ibid) {
 			b = temp_descriptor(c->bat.ibid);
 			sz += BATcount(b);
@@ -2734,6 +2742,7 @@ size_t sql_trans_clear_table(sql_trans * tr, sql_table *t )
 		
 		for ( n = n->next; n; n = n->next) {
 			c = n->data;
+			c->base.wtime = tr->stime;
 			if (c->bat.ibid) {
 				b = temp_descriptor(c->bat.ibid);
 				bat_destroy(b);
@@ -2756,7 +2765,9 @@ size_t sql_trans_clear_table(sql_trans * tr, sql_table *t )
 		if (t->idxs.set){
 			for(n = t->idxs.set->h; n; n = n->next){
 				sql_idx *ci = n->data;
-			    	if (ci->bat.bid && ci->bat.ubid){
+
+				ci->base.wtime = tr->stime;
+			   	if (ci->bat.bid && ci->bat.ubid){
 					if (ci->bat.ibid) {
 						b = temp_descriptor(ci->bat.ibid);
 						bat_destroy(b);
@@ -2803,7 +2814,7 @@ sql_column *create_column_bat(sql_trans * tr, sql_table *t, char *name,
 	col->bat.ubid = 0;
 	cs_add( &t->columns, col, TR_NEW);
 
-	col->base.wtime = t->base.wtime = tr->wtime = tr->stime;
+	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 
 	if (bb){
 		snprintf(bname, BUFSIZ, "%s_%s", col->t->base.name, 
@@ -2828,7 +2839,7 @@ sql_column *create_column_bat(sql_trans * tr, sql_table *t, char *name,
 		&t->base.id, (col->def)?col->def:ATOMnilptr(TYPE_str), 
 		&col->null, &col->colnr); 
 
-	syscolumn->base.wtime = tr->stime;
+	syscolumn->base.wtime = syscolumn->s->base.wtime = tr->stime;
 	return col;
 }
 
@@ -2874,7 +2885,7 @@ void sql_trans_drop_column(sql_trans * tr, sql_table *t, char *name)
 		sys_drop_column(tr, col);
 
 	if (t->persists)
-		col->base.wtime = t->base.wtime = tr->wtime = tr->stime;
+		col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	cs_del( &t->columns, n, col->base.flag);
 }
 
@@ -2889,7 +2900,8 @@ sql_column * sql_trans_alter_null(sql_trans * tr, sql_column * col, int isnull)
 		column_update_value( tr, find_column(syscolumn, "null"), 
 						rid, &isnull);
 		col->null = isnull;
-		col->base.wtime = tr->wtime = tr->stime;
+		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = 
+			tr->wtime = tr->stime;
 	}
 
 	return col;
@@ -2913,7 +2925,8 @@ sql_column * sql_trans_alter_default(sql_trans * tr, sql_column * col, char *val
 		col->def = NULL;
 		if (val)
 			col->def = _strdup(val);
-		col->base.wtime = tr->wtime = tr->stime;
+		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = 
+			tr->wtime = tr->stime;
 	}
 	return col;
 }
@@ -2960,7 +2973,8 @@ sql_trans_create_key( sql_trans * tr, sql_table *t, char *name, key_type kt, sql
 		nk->base.name,
 		(nk->type == fkey)?&((sql_fkey*)nk)->rkey->k.base.id:&neg); 
 
-	syskey->base.wtime = t->base.wtime = tr->wtime = tr->stime;
+	syskey->base.wtime = syskey->s->base.wtime = 
+		t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	return nk;
 }
 
@@ -2993,7 +3007,7 @@ void sql_trans_drop_key(sql_trans * tr, sql_schema *s, char *name)
 	if (k->t->persists && !k->t->clear)
 		sys_drop_key(tr, k);
 
-	k->base.wtime = k->t->base.wtime = tr->wtime = tr->stime;
+	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	n = cs_find_name( &k->t->keys, name );
 	if (n)
 		cs_del( &k->t->keys, n, k->base.flag);
@@ -3040,7 +3054,7 @@ sql_trans_create_idx( sql_trans * tr, sql_table *t, char *name, idx_type it )
 	table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, 
 			ni->base.name);
 
-	sysidx->base.wtime = t->base.wtime = tr->wtime = tr->stime;
+	sysidx->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	return ni;
 }
 
@@ -3072,7 +3086,7 @@ sql_idx *sql_trans_create_ic( sql_trans *tr, sql_idx *i, sql_column *c /*, extra
 
 	table_insert(tr, sysic, &i->base.id, ic->c->base.name, &ic->trunc, &nr);
 
-	sysic->base.wtime = tr->wtime = tr->stime;
+	sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->stime;
 	return i;
 }
 
@@ -3084,7 +3098,7 @@ void sql_trans_drop_idx(sql_trans * tr, sql_schema *s, char *name)
 	if (i->t->persists && !i->t->clear)
 		sys_drop_idx(tr, i);
 
-	i->base.wtime = i->t->base.wtime = tr->wtime = tr->stime;
+	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	n = cs_find_name( &i->t->idxs, name );
 	if (n)
 		cs_del( &i->t->idxs, n, i->base.flag);

@@ -901,7 +901,7 @@ static char *table_constraint_name()
 {
 	oid id = OIDnew(1);
 	static char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "c%ld", id );
+	snprintf(buf, BUFSIZ, "#c%ld", id );
 	return buf;
 }
 
@@ -1249,9 +1249,14 @@ drop_table(mvc * sql, dlist * qname, int drop_action)
 						k = l->data;
 						/* make sure it is not a self referencing key */
 						if (k->t != t) {
-							return sql_error(sql, 02, 
-							"DROP TABLE: foreign key %s depends on %s",
-							k->base.name, tname);
+							if (!internal_key(k))
+								return sql_error(sql, 02, 
+								"DROP TABLE: foreign key %s.%s depends on %s",
+									k->t->base.name, k->base.name, tname);
+							else
+								return sql_error(sql, 02, 
+								"DROP TABLE: foreign key of table"
+								" %s depends on %s", k->t->base.name, tname);
 						}
 					}
 				}
