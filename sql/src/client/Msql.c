@@ -8,6 +8,10 @@
 #include <query.h>
 #include <simple_prompt.h>
 
+#ifndef S_ISCHR
+#define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
+#endif
+
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -152,12 +156,16 @@ static char *sql_readline( char *prompt ){
 			add_history(line);
 		}
 	} else 
-#else
-	(void) prompt; /* Stefan: unused!? */
 #endif
 	{
 		int len;
 	   	char *buf =(char *)malloc(BUFSIZ);
+#ifndef HAVE_LIBREADLINE
+		if (is_chrsp) {
+			fputs(prompt, stdout);
+			fflush(stdout);
+		}
+#endif
         	if ((line =(char *)fgets(buf,BUFSIZ,stdin))==NULL) {
 		   	free(buf);
 			return NULL;
@@ -1038,13 +1046,11 @@ main(int ac, char **av)
 		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
 		fflush(stdout);
 		if (!dump){
-#ifdef HAVE_LIBREADLINE
 			struct stat st;
 
 			fstat(fileno(stdin),&st);
 			if (S_ISCHR(st.st_mode))
 	   			is_chrsp = 1;
-#endif
 			clientAccept( ws, rs, prompt, trace );
 		} else {
 			dump_tables( ws, rs, dump );
