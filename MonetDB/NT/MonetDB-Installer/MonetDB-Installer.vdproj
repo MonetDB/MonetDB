@@ -4070,7 +4070,7 @@
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
                             "Setting" = "3:2"
-                            "Value" = "8:You have the option to install the MonetDB ODBC Driver.  When the checkbox is checked, the driver will be installed.  If the ODBC Driver Manager is not installed, installation will fail.  You will then have to install the Microsoft Data Access Component (MDAC) first, or you can refrain from installing the MonetDB ODBC Driver."
+                            "Value" = "8:You have the option to install the MonetDB ODBC Driver.  When the checkbox is checked, the driver will be installed.  If the ODBC Driver Manager is not installed but the checkbox is checked, installation will fail.  You will then have to install the Microsoft Data Access Component (MDAC) first, or you can refrain from installing the MonetDB ODBC Driver."
                             "DefaultValue" = "8:#1215"
                             "UsePlugInResources" = "11:TRUE"
                             }
