@@ -489,24 +489,6 @@ AC_SUBST(JAR)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 
-AC_ARG_WITH(swig,
-	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
-	SWIG="$withval",
-	SWIG=swig)
-if test "x$SWIG" != xno; then
-  case "$SWIG" in
-  yes|auto)
-    SWIG=swig;;
-  esac
-  case `$SWIG -version 2>&1` in
-  *Version\ 1.3*)
-    ;;
-  *) SWIG=no;;
-  esac
-fi
-AC_SUBST(SWIG)
-AM_CONDITIONAL(HAVE_SWIG, test $SWIG != no)
-
 ]) dnl AC_DEFUN AM_MONET_COMPILER
 
 AC_DEFUN(AM_MONET_TOOLS,[
@@ -565,6 +547,37 @@ AC_CHECK_PROG(MV,mv,mv -f)
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
+
+AC_ARG_WITH(swig,
+	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
+	SWIG="$withval",
+	SWIG=swig)
+if test "x$SWIG" != xno; then
+  case "$SWIG" in
+  yes|auto)
+    SWIG=swig;;
+  esac
+  case `$SWIG -version 2>&1` in
+  *Version\ 1.3*)
+    ;;
+  *) SWIG=no;;
+  esac
+fi
+AC_SUBST(SWIG)
+AM_CONDITIONAL(HAVE_SWIG, test $SWIG != no)
+
+AC_ARG_WITH(python,
+	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
+	PYTHON="$withval",
+	PYTHON=python)
+if test "x$PYTHON" != xno; then
+  case "$PYTHON" in
+  yes|auto)
+    PYTHON=python;;
+  esac
+fi
+AC_SUBST(PYTHON)
+AM_CONDITIONAL(HAVE_PYTHON, test x"$PYTHON" != xno)
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
