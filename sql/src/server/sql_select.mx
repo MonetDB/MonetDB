@@ -1761,7 +1761,7 @@ sql_or(mvc * sql, scope *scp, stmt * ls, stmt * rs, int f)
 }
 
 stmt *
-sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset, int f)
+sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset, int f)
 {
 	if (!sc)
 		return NULL;
@@ -2143,6 +2143,30 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 	return sql_error(sql, 02, "Predicate: time to implement some more");
 }
 
+stmt *
+sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset, int f)
+{
+	stmt *s = sql_logical_exp_(sql, scp, sc, grp, subset, f);
+	if (s && s->nrcols == 0 && (f == sql_where || f == sql_search)) {
+		/* predicate */
+		sql_subtype *bt = sql_bind_localtype( "bit" );
+		stmt *t = NULL;
+		int found = 1;
+
+		if (! (t = scope_bind( scp, NULL, "row")) ) {
+			t = stmt_temp( sql_dup_subtype( bt ));
+			t = stmt_append( t, stmt_bool(1));
+			found = 0;
+		}
+		if (!(s = check_types(sql, bt, s))) 
+			return NULL;
+		s = stmt_select(t, s, cmp_equal);
+		if (!found)
+			scope_add_alias( scp, stmt_dup(t), "row");
+	}
+	return s;
+}
+
 static group *query_groupby_inner(mvc * sql, scope * scp, stmt * c, stmt * subset, group * cur)
 {
 	stmt *s = find_pivot(subset, c->h);
@@ -2257,12 +2281,12 @@ orderby_column_ref(mvc * sql, symbol * column_r, stmt *s)
 			char *tn = table_name(t);
 			char *cn = column_name(t);
 
-			if (strcmp(tn, tname) == 0 && strcmp(cn, name) == 0){
-				_DELETE(tn);
+			if (tn && strcmp(tn, tname) == 0 && strcmp(cn, name) == 0){
+				if (tn) _DELETE(tn);
 				_DELETE(cn);
 				return stmt_dup(t);
 			}
-			_DELETE(tn);
+			if (tn) _DELETE(tn);
 			_DELETE(cn);
 		}
 		return sql_error( sql, 02, "Unknown column name (%s) in order by", name );
@@ -2341,21 +2365,6 @@ static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * se
 			list_append(rl, cs);
 		}
 		n = n->next;
-	}
-	if (s) {
-		list *nl = create_stmt_list();
-		node *n;
-
-		for( n = rl->h; n; n = n->next ) {
-			stmt *v = n->data;
-			stmt *t = stmt_temp(sql_dup_subtype(tail_type(v)));
-
-			t = stmt_predicate( stmt_dup(s), t, stmt_dup(v));
-			list_append(nl, t);
-		}
-		stmt_destroy(s);
-		list_destroy(rl);
-		rl = nl;
 	}
 	s = stmt_list(rl);
 

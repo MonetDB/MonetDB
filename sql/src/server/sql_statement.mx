@@ -87,7 +87,6 @@ typedef enum stmt_type {
 	st_insert,
 	st_replace,
 	st_exception,
-	st_predicate,
 
 	st_group_ext,
 	st_group,
@@ -224,7 +223,6 @@ extern stmt *stmt_replace(stmt * c, stmt * values);
 
 /* raise exception incase the condition (cond) holds */
 extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
-extern stmt *stmt_predicate(stmt *cond, stmt *def/*allways done*/, stmt *s /* done if cond is true */);
 
 extern stmt *stmt_const(stmt * s, stmt * val);
 extern stmt *stmt_mark(stmt * s, int id);
@@ -258,8 +256,6 @@ extern char *table_name(stmt * st);
 
 sql_export void stmt_destroy(stmt *s );
 extern stmt *stmt_dup( stmt *s );
-
-sql_export void stmt_reset(stmt *s );
 
 extern group *grp_create(stmt * s, group *og, stmt *col );
 extern group *grp_semijoin(group *og, stmt *s );
@@ -323,7 +319,6 @@ const char * st_type2string(st_type type) {
 	ST(insert);
 	ST(replace);
 	ST(exception);
-	ST(predicate);
 
 	ST(group_ext);
 	ST(group);
@@ -516,7 +511,7 @@ void stmt_destroy(stmt * s)
 		case st_unique:
 		case st_alias: 
 		case st_append: case st_insert: case st_replace:
-		case st_exception: case st_predicate:
+		case st_exception: 
 		case st_pivot:
 	  	case st_find:
 		case st_sql:
@@ -627,113 +622,6 @@ void stmt_destroy(stmt * s)
 		_DELETE(s);
 	}
 }
-
-static void list_reset( list *l )
-{
-	node *n;
-	for( n = l->h; n; n = n->next) {
-		stmt *s = n->data;
-		stmt_reset(s);
-	}
-}
-
-void stmt_reset(stmt * s)
-{
-	s->nr = 0;
-	s->nr = -1;
-	s->optimized = 0;
-
-	switch (s->type) {
-	case st_relselect:
-		list_reset(s->op1.lval);
-		break;
-	case st_reljoin:
-		list_reset(s->op1.lval);
-		list_reset(s->op2.lval);
-		break;
-
-	case st_diff: case st_intersect: case st_union:
-	case st_join: case st_outerjoin:
-	case st_derive:
-	case st_unique:
-	case st_alias: 
-	case st_append: case st_insert: case st_replace:
-	case st_exception: case st_predicate:
-	case st_pivot:
-	case st_find:
-	case st_sql:
-	case st_temp:
-	case st_aggr:
-	case st_op: case st_unop: case st_binop: case st_Nop:
-
-		if (s->op1.stval) stmt_reset(s->op1.stval);
-		if (s->op2.stval) stmt_reset(s->op2.stval);
-		if (s->op3.stval) stmt_reset(s->op3.stval);
-		break;
-
-	case st_set: 
-	case st_list:
-		list_reset(s->op1.lval);
-		if (s->op2.lval) list_reset(s->op2.lval);
-		if (s->op3.stval) stmt_reset(s->op3.stval);
-		if (s->op4.stval) stmt_reset(s->op4.stval);
-		break;
-
-	case st_ptable:
-		/* cannot reset pivots as they point back to the pivot table, 
-		   which would lead to a recusive reset */
-		if (s->op2.stval) stmt_reset(s->op2.stval);
-		if (s->op3.stval) stmt_reset(s->op3.stval);
-		break;
-	case st_sets: 
-	{
-		node *n;
-		for (n=s->op1.lval->h; n; n = n->next) {
-			list *l = n->data;
-			list_reset(l);
-		}
-	}
-	/* reference only independently managed resources */
-	case st_basetable: 
-	case st_bat: case st_ubat:
-	case st_dbat: case st_idxbat:
-	case st_none:
-	case st_atom:
-		break;
-
-	/* simple case of statements of only statements */
-	case st_const: case st_mark:
-	case st_reverse: case st_mirror:
-	case st_limit: case st_order: case st_reorder:
-	case st_ordered: case st_output:
-
-	case st_ibat:
-	case st_group: case st_group_ext:
-
-	case st_filter:
-	case st_select: case st_select2:
-	case st_uselect: case st_uselect2:
-	case st_semijoin:
-
-	case st_bulkinsert:
-		if (s->op1.stval) stmt_reset(s->op1.stval);
-		if (s->op2.stval) stmt_reset(s->op2.stval);
-		if (s->op3.stval) stmt_reset(s->op3.stval);
-		if (s->op4.stval) stmt_reset(s->op4.stval);
-		break;
-
-	case st_var:
-		break;
-
-	default:
-		printf("! TODO: stmt_reset(%d=%s) !\n",s->type,st_type2string(s->type));
-	}
-	if (s->rewritten) {
-		stmt_destroy(s->rewritten);
-		s->rewritten = NULL;
-	}
-}
-
 
 stmt *stmt_none(){
 	return stmt_create(st_none);
@@ -1392,21 +1280,6 @@ stmt *stmt_exception(stmt * cond, char *errstr, int errcode )
 	return s;
 }
 
-stmt *stmt_predicate(stmt *cond, stmt *def/*allways done*/, stmt *ss /* done if cond is true */)
-{
-	stmt *s = stmt_create(st_predicate);
-	s->op1.stval = cond;
-	s->op2.stval = def;
-	s->op3.stval = ss;
-	s->key = ss->key;
-	s->aggr = ss->aggr;
-	s->nrcols = ss->nrcols;
-	s->h = stmt_dup(ss->h);
-	s->t = stmt_dup(ss->t);
-	return s;
-}
-
-
 stmt *stmt_op(sql_subfunc * op)
 {
 	stmt *s = stmt_create(st_op);
@@ -1555,9 +1428,6 @@ sql_subtype *tail_type(stmt * st)
 	case st_list:
 		return tail_type(st->op1.lval->h->data);
 
-	case st_predicate:
-		return tail_type(st->op3.stval);
-
 	case st_bat:
 		return st->op1.cval->type;
 	case st_idxbat:
@@ -1638,8 +1508,6 @@ sql_subtype *head_type(stmt * st)
 		return atom_type(st->op1.aval);
 	case st_find:
 		return head_type(st->op2.stval);
-	case st_predicate:
-		return head_type(st->op3.stval);
 
 	default:
 		fprintf(stderr, "missing head type %d: %s\n", st->type, st_type2string(st->type) );
@@ -1731,7 +1599,6 @@ char *column_name(stmt * st)
 		return r;
 	}
 	case st_alias:
-	case st_predicate:
 		return column_name(st->op3.stval);
 	case st_bat:
 		return _strdup(st->op1.cval->base.name);
@@ -1788,21 +1655,17 @@ char *table_name(stmt * st)
 		return _strdup(st->op2.sval);
 	case st_bat:
 		return table_name(st->h);
-	case st_var:
-	case st_temp:
-		return _strdup("unknown");
 	case st_alias:
 		if (st->op2.stval)
 			return table_name(st->op2.stval);
-		return _strdup("unknown");
-	case st_predicate:
-		return table_name(st->op3.stval);
+		return NULL;
 
 	case st_atom:
 		if (st->op1.aval->data.vtype == TYPE_str)
 			return atom2string(st->op1.aval);
-		assert(0);
 
+	case st_var:
+	case st_temp:
 	case st_relselect:
 	case st_reljoin:
 	default:

@@ -899,19 +899,6 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLpostlude@
 		break;
 	}
-	case st_predicate:{
-		/* if(l){} else {} */
-		int pred=  backend_dumpstmt(sql,mb, s->op1.stval);
-		int def = backend_dumpstmt(sql,mb, s->op2.stval);
-		int e= backend_dumpstmt(sql,mb, s->op3.stval);
-
-		@:SQLprelude@
-		@:newStmt("sql","if")@
-		@:pushArg(pred)@
-		@:pushArg(def)@
-		@:pushArg(e)@
-		@:SQLpostlude@
-		}
 	case st_intersect: {
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
 		int r = backend_dumpstmt(sql,mb, s->op2.stval);

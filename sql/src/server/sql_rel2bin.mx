@@ -108,9 +108,9 @@ static stmt *tail_column(stmt * st)
 	case st_derive:
 	case st_group_ext:
 	case st_group:	
-	case st_predicate:	/* 1 = 1 is not a column */
 	case st_basetable: 	/* a table is not a column */
 	case st_ptable:
+	case st_temp: 
 		return NULL;
 
 	default:
@@ -181,7 +181,6 @@ static stmt *head_column(stmt * st)
 	case st_var:
 	case st_basetable:
 	case st_temp: 
-	case st_predicate:
 	case st_op:
 	case st_ptable:
 	case st_groupby:
@@ -784,7 +783,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_ibat: 
 	case st_output: 
 	case st_append: case st_insert: case st_replace: 
-	case st_exception: case st_predicate:
+	case st_exception: 
 
 	case st_aggr: 
 	case st_op: case st_unop: case st_binop: case st_Nop:

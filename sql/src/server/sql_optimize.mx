@@ -696,21 +696,11 @@ static list *pivot_sets(list *joins, int *Markid)
 
 static stmt *set2pivot(list * l)
 {
-	int zero = 0;
 	list *pivots = create_stmt_list();
-	stmt *join, *st, *pred;
+	stmt *join, *st;
 	node *n;
 	int len = 0;
 	int markid = 0;
-	list *preds;
-
-/* In this step also the column-less predicates (select * from x where true) 
- * are turned into selects.
- */
-	preds = list_select(l, (void*)&zero, (fcmp)&stmt_cmp_nrcols, (fdup)&stmt_dup );
-	/* preds are 'and' together */
-	pred = list_reduce(preds, (freduce)&stmt_binop_and, (fdup)&stmt_dup );
-	list_destroy(preds);
 
 	l = push_selects_down(l);
 	n = l->h;
@@ -721,8 +711,6 @@ static stmt *set2pivot(list * l)
 	if (!n) {
 		list_destroy(l);
 		list_destroy(pivots);
-		if (pred) /* simple selects with where could have a predicate */
-			return pred;
 		return NULL;
 	}
 	st = n->data;
@@ -767,26 +755,6 @@ static stmt *set2pivot(list * l)
 		return NULL;
 	}
 	list_destroy(l);
-	
-	if (pred) {
-		/* rewrite each pivot statement to
-			x := bat(oid,oid);
-	 		if (pred) x := pivot();
-		*/
-		sql_subtype *o = sql_bind_localtype( "oid" );
-		list *npivots = create_stmt_list();
-		for ( n = pivots->h; n; n = n->next) {
-			stmt *s = n->data;
-			list_append(npivots, 
-				stmt_predicate(
-					stmt_dup(pred),
-					stmt_temp(sql_dup_subtype(o)),
-					stmt_dup(s)));
-		}
-		stmt_destroy(pred);
-		list_destroy(pivots);
-		pivots = npivots;
-	}
 	return stmt_list(pivots);
 }
 
@@ -982,7 +950,7 @@ stmt *optimize( mvc *c, stmt *s ){
 	case st_ibat: case st_alias: 
 	case st_output: 
 	case st_append: case st_insert: case st_replace: 
-	case st_exception: case st_predicate:
+	case st_exception: 
 
 	case st_aggr: 
 	case st_op: case st_unop: case st_binop: case st_Nop:

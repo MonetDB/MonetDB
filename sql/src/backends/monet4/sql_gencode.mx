@@ -952,27 +952,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		backend_dump_nil( sql, s->op2.stval );
 		break;
 	}
-	case st_predicate: {
-		int pred = backend_dumpstmt_( s->op1.stval, nr, sql );
-		int e, def = backend_dumpstmt_( s->op2.stval, nr, sql );
-		buf = NEW_ARRAY(char, BUFSIZ+1);
-		len = snprintf( buf, BUFSIZ, "if (s%d){\n", pred);
-		write_part(sql,buf,len);
-		e = backend_dumpstmt_( s->op3.stval, nr, sql );
-		stmt_reset(s->op3.stval);
-		len = snprintf( buf, BUFSIZ, "s%d := s%d;\n}\n", def, e);
-		write_part(sql,buf,len);
-		/* make sure right variable is used later */
-		len = snprintf( buf, BUFSIZ, "s%d := s%d;\n", -s->nr, def);
-		write_part(sql,buf,len);
-		_DELETE(buf);
-		backend_dump_nil( sql, s->op1.stval );
-		backend_dump_nil( sql, s->op2.stval );
-		/* FIX: just reset op3 ie nil checking fails 
-		backend_dump_nil( sql, s->op3.stval );
-		*/
-		break;
-	}
 	case st_alias: 
 		s->nr = - backend_dumpstmt_( s->op1.stval, nr, sql );
 		backend_dec_nr2(s->op1.stval);
