@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -28,71 +13,61 @@
  * CLI Compliance: ISO 92
  *
  * Note: the option SQL_DROP is deprecated in ODBC 3.0 and replaced by
- * SQLFreeHanlde(). It is provided here for old (pre ODBC 3.0) applications.
+ * SQLFreeHandle(). It is provided here for old (pre ODBC 3.0) applications.
  *
  * Author: Martin van Dinther
- * Date  : 30 aug 2002
+ * Date  : 30 Aug 2002
  *
  **********************************************************************/
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN SQLFreeStmt(
-	SQLHSTMT	handle,
-	SQLUSMALLINT	option )
+SQLRETURN
+SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 {
-	ODBCStmt * stmt = (ODBCStmt *)handle;
+	ODBCStmt *stmt = (ODBCStmt *) handle;
 
-        /* Check parameter handle */
-	if (! isValidStmt(stmt)) {
+	/* Check parameter handle */
+	if (!isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
-	}
 
 	clearStmtErrors(stmt);
 
 	switch (option) {
-		case SQL_CLOSE:
+	case SQL_CLOSE:
 		/* Note: this option is also called from SQLCancel() and
 		   SQLCloseCursor(), so be careful when changing the code */
-		{
-			/* close cursor, discard result set, set to prepared */
-			if (stmt->ResultCols) {
-				free(stmt->ResultCols);
-				stmt->ResultCols = NULL;
-			}
-			if (stmt->ResultRows) {
-				free(stmt->ResultRows);
-				stmt->ResultRows = NULL;
-			}
-			stmt->nrCols = 0;
-			stmt->nrRows = 0;
-			stmt->currentRow = 0;
-			if (stmt->State == EXECUTED) {
-				stmt->State = PREPARED;
-			}
-			/* Important: do not destroy the bind parameters and columns! */
-			break;
+		/* close cursor, discard result set, set to prepared */
+		if (stmt->ResultCols) {
+			free(stmt->ResultCols);
+			stmt->ResultCols = NULL;
 		}
-		case SQL_DROP:
-			return SQLFreeHandle(SQL_HANDLE_STMT, (SQLHANDLE)stmt);
+		if (stmt->ResultRows) {
+			free(stmt->ResultRows);
+			stmt->ResultRows = NULL;
+		}
+		stmt->nrCols = 0;
+		stmt->nrRows = 0;
+		stmt->currentRow = 0;
 
-		case SQL_UNBIND:
-		{
-			destroyOdbcOutArray(&(stmt->bindCols));
-			break;
-		}
-		case SQL_RESET_PARAMS:
-		{
-			destroyOdbcInArray(&(stmt->bindParams));
-			break;
-		}
-		default:
-		{
-			addStmtError(stmt, "HY092", NULL, 0);
-			return SQL_ERROR;
-		}
+		if (stmt->State == EXECUTED)
+			stmt->State = PREPARED;
+
+		/* Important: do not destroy the bind parameters and columns! */
+		return SQL_SUCCESS;
+	case SQL_DROP:
+		return SQLFreeHandle(SQL_HANDLE_STMT, handle);
+	case SQL_UNBIND:
+		destroyOdbcOutArray(&stmt->bindCols);
+		return SQL_SUCCESS;
+	case SQL_RESET_PARAMS:
+		destroyOdbcInArray(&stmt->bindParams);
+		return SQL_SUCCESS;
+	default:
+		addStmtError(stmt, "HY092", NULL, 0);
+		return SQL_ERROR;
 	}
 
-	return SQL_SUCCESS;
+	/* not reached */
 }

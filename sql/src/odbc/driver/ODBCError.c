@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************
@@ -38,9 +23,16 @@
 #include "ODBCGlobal.h"
 #include "ODBCError.h"
 
+struct tODBCError {
+	char sqlState[SQL_SQLSTATE_SIZE + 1];	/* +1 for the string terminator */
+	char *message;		/* pointer to the allocated error msg */
+	int nativeErrorCode;
+
+	struct tODBCError *next;	/* pointer to the next Error object or NULL */
+};
 
 const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver 1.0]";
-const int ODBCErrorMsgPrefixLength = sizeof(ODBCErrorMsgPrefix)-1;
+const int ODBCErrorMsgPrefixLength = sizeof(ODBCErrorMsgPrefix) - 1;
 
 /*
  * Local utility function which retuns the standard ODBC/ISO error
@@ -101,9 +93,11 @@ static struct SQLStateMsg {
 	{0, 0},
 };
 
-static const char * getStandardSQLStateMsg(const char * SQLState)
+static const char *
+getStandardSQLStateMsg(const char *SQLState)
 {
 	struct SQLStateMsg *p;
+
 	assert(SQLState);
 
 	for (p = SQLStateMsg; p->SQLState; p++)
@@ -111,7 +105,9 @@ static const char * getStandardSQLStateMsg(const char * SQLState)
 			return p->SQLMsg;
 
 	/* Present a msg to notify the system administrator/programmer */
-	fprintf(stderr, "\nMonetDB, ODBC Driver, ODBCError.c: No message defined for SQLState: %s. Please report this error.\n", SQLState);
+	fprintf(stderr,
+		"\nMonetDB, ODBC Driver, ODBCError.c: No message defined for SQLState: %s. Please report this error.\n",
+		SQLState);
 
 	return SQLState;	/* always return a string */
 }
@@ -124,9 +120,11 @@ static const char * getStandardSQLStateMsg(const char * SQLState)
  * Precondition: none
  * Postcondition: returns a new ODBCError object
  */
-ODBCError * newODBCError(const char *SQLState, const char *msg, int nativeCode)
+ODBCError *
+newODBCError(const char *SQLState, const char *msg, int nativeCode)
 {
-	ODBCError * error = (ODBCError *)malloc(sizeof(ODBCError));
+	ODBCError *error = (ODBCError *) malloc(sizeof(ODBCError));
+
 	assert(error);
 
 	if (SQLState) {
@@ -135,6 +133,7 @@ ODBCError * newODBCError(const char *SQLState, const char *msg, int nativeCode)
 	} else {
 		/* initialize it with nulls */
 		int i = 0;
+
 		for (; i <= SQL_SQLSTATE_SIZE; i++)
 			error->sqlState[i] = '\0';
 	}
@@ -154,7 +153,8 @@ ODBCError * newODBCError(const char *SQLState, const char *msg, int nativeCode)
  * Precondition: error must be valid
  * Returns: a none NULL string pointer, intended for reading only.
  */
-char * getSqlState(ODBCError * error)
+char *
+getSqlState(ODBCError *error)
 {
 	assert(error);
 	return error->sqlState;
@@ -167,7 +167,8 @@ char * getSqlState(ODBCError * error)
  * Precondition: error must be valid
  * Returns: a string pointer, intended for reading only, which can be NULL !!.
  */
-char * getMessage(ODBCError * error)
+char *
+getMessage(ODBCError *error)
 {
 	assert(error);
 
@@ -175,14 +176,12 @@ char * getMessage(ODBCError * error)
 	if (error->message == NULL) {
 		/* No error message was set, use the default error msg
 		   for the set sqlState (if a msg is available) */
-		const char * SQLStateMsg = getStandardSQLStateMsg(error->sqlState);
+		const char *SQLStateMsg = getStandardSQLStateMsg(error->sqlState);
 		assert(SQLStateMsg);
-		/* check if a usefull (not empty) msg was found */
-		if (strcmp(SQLStateMsg, "") != 0) {
-			/* use this message instead of the NULL */
-			error->message = strdup(SQLStateMsg);
-		}
+		/* use this message instead of the NULL */
+		error->message = strdup(SQLStateMsg);
 	}
+
 	return error->message;
 }
 
@@ -193,7 +192,8 @@ char * getMessage(ODBCError * error)
  * Precondition: error must be valid
  * Returns: an int value representing the native (MonetDB) error code.
  */
-int getNativeErrorCode(ODBCError * error)
+int
+getNativeErrorCode(ODBCError *error)
 {
 	assert(error);
 	return error->nativeErrorCode;
@@ -201,15 +201,25 @@ int getNativeErrorCode(ODBCError * error)
 
 
 /*
- * Get the pointer to the next ODBCError object or NULL when there no next object.
+ * Get the pointer to the recNumber'th (starting at 1) ODBCError
+ * object or NULL when there no next object.
  *
  * Precondition: error must be valid
- * Returns: the pointer to the next ODBCError object or NULL when there no next object.
+ * Returns: the pointer to the next ODBCError object or NULL when
+ * the record does not exist.
  */
-ODBCError * getNextError(ODBCError * error)
+ODBCError *
+getErrorRec(ODBCError *error, int recNumber)
 {
 	assert(error);
-	return error->next;
+
+	while (--recNumber > 0) {
+		error = error->next;
+		if (!error)
+			return NULL;
+	}
+
+	return error;
 }
 
 
@@ -219,17 +229,17 @@ ODBCError * getNextError(ODBCError * error)
  *
  * Precondition: both head and this must be valid (non NULL)
  */
-void appendODBCError(ODBCError * head, ODBCError * this)
+void
+appendODBCError(ODBCError *head, ODBCError *this)
 {
-	ODBCError * error = head;
+	ODBCError *error = head;
 
 	assert(head);
-	assert(this);	/* if this could be NULL this function would do nothing */
+	assert(this);		/* if this could be NULL this function would do nothing */
 
 	/* search for the last ODBCError in the linked list */
-	while (error->next) {
+	while (error->next)
 		error = error->next;
-	}
 
 	/* add 'this' in the last ODBCError */
 	error->next = this;
@@ -243,10 +253,12 @@ void appendODBCError(ODBCError * head, ODBCError * this)
  * Precondition: both head and this must be valid (non NULL)
  * Returns: the new head (which is the same as the prepended 'this').
  */
-ODBCError * prependODBCError(ODBCError * head, ODBCError * this)
+ODBCError *
+prependODBCError(ODBCError *head, ODBCError *this)
 {
-	assert(head);	/* if head could be NULL this function would do nothing */
+	assert(head);		/* if head could be NULL this function would do nothing */
 	assert(this);
+	assert(this->next == NULL);
 
 	this->next = head;
 
@@ -255,35 +267,20 @@ ODBCError * prependODBCError(ODBCError * head, ODBCError * this)
 
 
 /*
- * Frees the internally allocated data (msg) and the ODBCError object itself.
- *
- * Precondition: error must be valid
- */
-void deleteODBCError(ODBCError * error)
-{
-	assert(error);
-
-	if (error->message) {
-		free(error->message);
-	}
-	error->next = NULL;
-	free(error);
-}
-
-
-/*
  * Frees the ODBCError object including its linked ODBCError objects.
  *
  * Precondition: none (error may be NULL)
  */
-void deleteODBCErrorList(ODBCError * error)
+void
+deleteODBCErrorList(ODBCError *error)
 {
-	ODBCError * nxt = NULL;
+	ODBCError *nxt = NULL;
 
 	while (error) {
 		nxt = error->next;
-		deleteODBCError(error);
+		if (error->message)
+			free(error->message);
+		free(error);
 		error = nxt;
 	}
 }
-

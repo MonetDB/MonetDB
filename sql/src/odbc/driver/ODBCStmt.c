@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************
@@ -47,10 +32,12 @@
  * Precondition: none
  * Postcondition: returns a new ODBCStmt object
  */
-ODBCStmt * newODBCStmt(ODBCDbc * dbc)
+ODBCStmt *
+newODBCStmt(ODBCDbc *dbc)
 {
-	ODBCStmt * stmt = (ODBCStmt *)malloc(sizeof(ODBCStmt));
+	ODBCStmt *stmt = (ODBCStmt *) malloc(sizeof(ODBCStmt));
 	assert(stmt);
+
 	assert(dbc);
 
 	stmt->Dbc = dbc;
@@ -97,9 +84,10 @@ ODBCStmt * newODBCStmt(ODBCDbc * dbc)
  * Postcondition: returns 1 if it is a valid statement handle,
  * 	returns 0 if is invalid and thus an unusable handle.
  */
-int isValidStmt(ODBCStmt * stmt)
+int
+isValidStmt(ODBCStmt *stmt)
 {
-	return (stmt && (stmt->Type == ODBC_STMT_MAGIC_NR)) ? 1 : 0;
+	return stmt && stmt->Type == ODBC_STMT_MAGIC_NR;
 }
 
 
@@ -111,18 +99,19 @@ int isValidStmt(ODBCStmt * stmt)
  *
  * Precondition: stmt must be valid. SQLState and errMsg may be NULL.
  */
-void addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg, int nativeErrCode)
+void
+addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg,
+	     int nativeErrCode)
 {
-	ODBCError * error = NULL;
+	ODBCError *error = NULL;
 
 	assert(isValidStmt(stmt));
 
 	error = newODBCError(SQLState, errMsg, nativeErrCode);
-	if (stmt->Error == NULL) {
+	if (stmt->Error == NULL)
 		stmt->Error = error;
-	} else {
+	else
 		appendODBCError(stmt->Error, error);
-	}
 }
 
 
@@ -132,9 +121,11 @@ void addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg, int 
  *
  * Precondition: stmt and error must be valid.
  */
-void addStmtErrorObj(ODBCStmt * stmt, ODBCError * error)
+void
+addStmtErrorObj(ODBCStmt *stmt, ODBCError *error)
 {
 	assert(isValidStmt(stmt));
+
 	assert(error);
 
 	if (stmt->Error == NULL) {
@@ -153,16 +144,12 @@ void addStmtErrorObj(ODBCStmt * stmt, ODBCError * error)
  * Precondition: stmt and error must be valid
  * Postcondition: returns a ODBCError object or null when no error is available.
  */
-ODBCError * getStmtError(ODBCStmt * stmt)
+ODBCError *
+getStmtError(ODBCStmt *stmt)
 {
-	ODBCError * err;
 	assert(isValidStmt(stmt));
 
-
-	err = stmt->Error;	/* get first error */
-	stmt->Error = (err) ? err->next : NULL;	/* set new first error */
-
-	return err;
+	return stmt->Error;
 }
 
 
@@ -174,7 +161,8 @@ ODBCError * getStmtError(ODBCStmt * stmt)
  * State == PREPARED, so NO active result set).
  * Postcondition: stmt is completely destroyed, stmt handle is become invalid.
  */
-void destroyODBCStmt(ODBCStmt * stmt)
+void
+destroyODBCStmt(ODBCStmt *stmt)
 {
 	assert(isValidStmt(stmt));
 	assert(stmt->State == INITED || stmt->State == PREPARED);
@@ -185,17 +173,18 @@ void destroyODBCStmt(ODBCStmt * stmt)
 	/* remove this stmt from the dbc */
 	assert(stmt->Dbc);
 	assert(stmt->Dbc->FirstStmt);
+
 	{
 		/* search for this stmt in the list */
-		ODBCStmt * tmp_stmt = (ODBCStmt *) stmt->Dbc->FirstStmt;
-		ODBCStmt * prv_stmt = NULL;
+		ODBCStmt *tmp_stmt = (ODBCStmt *) stmt->Dbc->FirstStmt;
+		ODBCStmt *prv_stmt = NULL;
 
 		while ((tmp_stmt != NULL) && (tmp_stmt != stmt)) {
 			prv_stmt = tmp_stmt;
 			tmp_stmt = tmp_stmt->next;
 		}
 
-		assert(tmp_stmt == stmt); /* we must have found it */
+		assert(tmp_stmt == stmt);	/* we must have found it */
 
 		/* now remove it from the linked list */
 		if (prv_stmt != NULL) {
@@ -207,12 +196,13 @@ void destroyODBCStmt(ODBCStmt * stmt)
 
 	/* cleanup own managed data */
 	deleteODBCErrorList(stmt->Error);
+
 	if (stmt->Query) {
 		free(stmt->Query);
 	}
 
-	destroyOdbcInArray(&(stmt->bindParams));
-	destroyOdbcOutArray(&(stmt->bindCols));
+	destroyOdbcInArray(&stmt->bindParams);
+	destroyOdbcOutArray(&stmt->bindCols);
 
 	if (stmt->ResultCols) {
 		/* probably we need to free strings in here */

@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 #include <config.h>
@@ -29,15 +14,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#ifdef HAVE_STRINGS_H 
-#include <strings.h>	/* for strcasecmp() */
+#ifdef HAVE_STRINGS_H
+#include <strings.h>		/* for strcasecmp() */
 #endif
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
 
-#ifdef HAVE_LIMITS_H 
-#include <limits.h>	/* PATH_MAX */
+#ifdef HAVE_LIMITS_H
+#include <limits.h>		/* PATH_MAX */
 #endif
 
 #ifndef PATH_MAX
@@ -45,15 +30,16 @@
 #endif
 
 /* this does not do any reallocation */
-static void trim_spaces(char *str)
+static void
+trim_spaces(char *str)
 {
 	static const char *start_crap = " \t";
 	static const char *end_crap = " \t\r\n";
 	int start = 0, end = strlen(str) - 1;
 	while (strchr(start_crap, str[start]) != NULL)
-		start++;
+		 start++;
 	while (end >= 0 && strchr(end_crap, str[end]) != NULL)
-		end--;
+		 end--;
 
 	if (start <= end) {
 		memmove(str, &str[start], end - start + 1);
@@ -67,7 +53,8 @@ static void trim_spaces(char *str)
  * If successeful, positions on the line after the section
  * name.
  */
-static int find_section(FILE * ini, const char *section)
+static int
+find_section(FILE *ini, const char *section)
 {
 	char buf[1024];
 	int found = 0;
@@ -95,6 +82,7 @@ static int find_section(FILE * ini, const char *section)
 			if (end) {
 				int len = end - &buf[pos];
 				char *sect_name = (char *) malloc(len + 1);
+
 				strncpy(sect_name, &buf[pos], len);
 				sect_name[len] = 0;
 				trim_spaces(sect_name);
@@ -109,7 +97,8 @@ static int find_section(FILE * ini, const char *section)
 /* Returns NULL if not found, otherwise result must be freed
  * Expects ini to be positioned at the beginning of a section
  */
-static char *find_key(FILE * ini, const char *key)
+static char *
+find_key(FILE *ini, const char *key)
 {
 	char buf[1024];
 	int pos;
@@ -144,6 +133,7 @@ static char *find_key(FILE * ini, const char *key)
 		tmp = strchr(buf, '=');
 		if (tmp) {
 			char *name = (char *) malloc((tmp - buf + 1));
+
 			strncpy(name, buf, tmp - buf);
 			name[tmp - buf] = 0;
 			trim_spaces(name);
@@ -166,8 +156,8 @@ static char *find_key(FILE * ini, const char *key)
  * Do not mix up values from both.
  */
 
-static char *find_key_by_dsn(const char *dsn, const char *key,
-			     const char *file)
+static char *
+find_key_by_dsn(const char *dsn, const char *key, const char *file)
 {
 	char buf[PATH_MAX];
 	FILE *fp;
@@ -177,6 +167,7 @@ static char *find_key_by_dsn(const char *dsn, const char *key,
 #ifdef HAVE_PWD_H
 	if (file[0] == '~') {
 		struct passwd *pwd;
+
 		pwd = getpwuid(getuid());
 		if (!pwd) {
 			return NULL;
@@ -184,7 +175,7 @@ static char *find_key_by_dsn(const char *dsn, const char *key,
 		snprintf(buf, PATH_MAX, "%s%s", pwd->pw_dir, file + 1);
 		file = buf;
 	}
-#endif 
+#endif
 	fp = fopen(file, "r");
 
 	if (fp && find_section(fp, dsn)) {
@@ -199,9 +190,10 @@ static char *find_key_by_dsn(const char *dsn, const char *key,
 
 
 
-int __SQLGetPrivateProfileString
-    (char *section, char *entry, char *def_value,
-     char *buf, int buf_len, char *filename) {
+int
+__SQLGetPrivateProfileString(char *section, char *entry, char *def_value,
+			     char *buf, int buf_len, char *filename)
+{
 	char *value;
 	char *src;
 

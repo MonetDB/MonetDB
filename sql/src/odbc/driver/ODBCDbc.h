@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************
@@ -43,31 +28,30 @@
 #include "ODBCError.h"
 
 
-typedef struct tODBCDRIVERDBC
-{
+typedef struct tODBCDRIVERDBC {
 	/* Dbc properties */
-	int		Type;	/* structure type, used for handle validy test */
-	ODBCEnv *	Env;	/* the Env object it belongs to, NOT NULL */
-	struct tODBCDRIVERDBC * next;	/* the linked list of dbc's in this Env */
+	int Type;		/* structure type, used for handle validy test */
+	ODBCEnv *Env;		/* the Env object it belongs to, NOT NULL */
+	struct tODBCDRIVERDBC *next;	/* the linked list of dbc's in this Env */
 
-	ODBCError *	Error;	/* pointer to an Error object or NULL */
+	ODBCError *Error;	/* pointer to an Error object or NULL */
 
 	/* connection information */
-	char *		DSN;	/* Data source name or NULL */
-	char *		UID;	/* User ID or NULL */
-	char *		PWD;	/* Password for User ID or NULL */
-	char *		DBNAME;	/* Database Name or NULL */
-	int		Connected;	/* 1 is Yes, 0 is No */
-	int 		autocommit;	
+	char *DSN;		/* Data source name or NULL */
+	char *UID;		/* User ID or NULL */
+	char *PWD;		/* Password for User ID or NULL */
+	char *DBNAME;		/* Database Name or NULL */
+	int Connected;		/* 1 is Yes, 0 is No */
+	int autocommit;
 
 	/* MonetDB connection handle & status information */
-	int		socket;	/* socket descriptor/handle */
-	stream *	Mrs;	/* read stream for fetching the execution result set */
-	stream *	Mws;	/* write stream for writing SQL statements */
-	int		Mdebug;
+	int socket;		/* socket descriptor/handle */
+	stream *Mrs;		/* read stream for fetching the execution result set */
+	stream *Mws;		/* write stream for writing SQL statements */
+	int Mdebug;
 
 	/* Dbc children: list of ODBC Statement handles created within this Connection */
-	void *		FirstStmt;	/* first in list or NULL */
+	void *FirstStmt;	/* first in list or NULL */
 } ODBCDbc;
 
 
@@ -78,7 +62,7 @@ typedef struct tODBCDRIVERDBC
  * Precondition: none
  * Postcondition: returns a new ODBCDbc object
  */
-ODBCDbc * newODBCDbc();
+ODBCDbc *newODBCDbc(ODBCEnv *env);
 
 
 /*
@@ -90,7 +74,7 @@ ODBCDbc * newODBCDbc();
  * Postcondition: returns 1 if it is a valid connection handle,
  * 	returns 0 if is invalid and thus an unusable handle.
  */
-int isValidDbc(ODBCDbc * dbc);
+int isValidDbc(ODBCDbc *dbc);
 
 
 /*
@@ -101,7 +85,8 @@ int isValidDbc(ODBCDbc * dbc);
  *
  * Precondition: dbc must be valid. SQLState and errMsg may be NULL.
  */
-void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nativeErrCode);
+void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg,
+		 int nativeErrCode);
 
 
 /*
@@ -110,7 +95,7 @@ void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nat
  *
  * Precondition: dbc and error must be valid.
  */
-void addDbcErrorObj(ODBCDbc * dbc, ODBCError * error);
+void addDbcErrorObj(ODBCDbc *dbc, ODBCError *error);
 
 
 /*
@@ -121,7 +106,7 @@ void addDbcErrorObj(ODBCDbc * dbc, ODBCError * error);
  * Precondition: dbc and error must be valid
  * Postcondition: returns a ODBCError object or null when no error is available.
  */
-ODBCError * getDbcError(ODBCDbc * dbc);
+ODBCError *getDbcError(ODBCDbc *dbc);
 
 
 /* utility macro to quickly remove any none collected error msgs */
@@ -136,7 +121,7 @@ ODBCError * getDbcError(ODBCDbc * dbc);
  * no ODBCStmt (or ODBCDesc) objects may refer to this dbc.
  * Postcondition: dbc is completely destroyed, dbc handle is become invalid.
  */
-void destroyODBCDbc(ODBCDbc * dbc);
+void destroyODBCDbc(ODBCDbc *dbc);
 
 
 #endif

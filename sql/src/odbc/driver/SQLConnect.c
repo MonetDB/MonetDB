@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -35,30 +20,27 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
-#include "ini.h"	/* for __SQLGetPrivateProfileString() */
+#include "ini.h"		/* for __SQLGetPrivateProfileString() */
 
-SQLRETURN SQLConnect(
-	SQLHDBC		hDbc,
-	SQLCHAR *	szDataSource,
-	SQLSMALLINT	nDataSourceLength,
-	SQLCHAR *	szUID,
-	SQLSMALLINT	nUIDLength,
-	SQLCHAR *	szPWD,
-	SQLSMALLINT	nPWDLength )
+SQLRETURN
+SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+	   SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
+	   SQLSMALLINT nPWDLength)
 {
-	ODBCDbc * dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc = SQL_SUCCESS;
-	char * dsn = NULL;
-	char * uid = NULL;
-	char * pwd = NULL;
-	char * database = NULL;
-	char * db = NULL;
-	char * schema = NULL;
-	char * host = NULL;
+	char *dsn = NULL;
+	char *uid = NULL;
+	char *pwd = NULL;
+	char *database = NULL;
+	char *db = NULL;
+	char *schema = NULL;
+	char *host = NULL;
 	int port = 0;
 	int debug = 0;
 	int trace = 0;
 	char buf[BUFSIZ + 1];
+
 #ifdef WIN32
 	char ODBC_INI[] = "ODBC.INI";
 #else
@@ -66,7 +48,7 @@ SQLRETURN SQLConnect(
 #endif
 	int socket_fd = 0;
 
-	if (! isValidDbc(dbc))
+	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 
 	clearDbcErrors(dbc);
@@ -80,29 +62,38 @@ SQLRETURN SQLConnect(
 	assert(dbc->Connected == 0);
 
 	/* convert input string parameters to normal null terminated C strings */
-	dsn = copyODBCstr2Cstr(szDataSource, nDataSourceLength);
-	if (dsn == NULL || strlen(dsn) == 0) {
+	fixODBCstring(szDataSource, nDataSourceLength);
+	if (nDataSourceLength == 0) {
 		/* IM002 = Datasource not found */
 		addDbcError(dbc, "IM002", NULL, 0);
 		return SQL_ERROR;
 	}
+	dsn = dupODBCstring(szDataSource, nDataSourceLength);
 
-	uid = copyODBCstr2Cstr(szUID, nUIDLength);
-	if (uid == NULL || strlen(uid) == 0) {
-		__SQLGetPrivateProfileString(dsn, "USER", "", buf, BUFSIZ, ODBC_INI);
+	fixODBCstring(szUID, nUIDLength);
+	if (nUIDLength == 0) {
+		__SQLGetPrivateProfileString(dsn, "USER", "", buf, BUFSIZ,
+					     ODBC_INI);
 		uid = strdup(buf);
+	} else {
+		uid = dupODBCstring(szUID, nUIDLength);
 	}
-	pwd = copyODBCstr2Cstr(szPWD, nPWDLength);
-	if (uid == NULL || strlen(pwd) == 0) {
-		__SQLGetPrivateProfileString(dsn, "PASSWORD", "", buf, BUFSIZ, ODBC_INI);
+	fixODBCstring(szPWD, nPWDLength);
+	if (nPWDLength == 0) {
+		__SQLGetPrivateProfileString(dsn, "PASSWORD", "", buf, BUFSIZ,
+					     ODBC_INI);
 		pwd = strdup(buf);
+	} else {
+		pwd = dupODBCstring(szPWD, nPWDLength);
 	}
 
 	/* get the other information from the ODBC.INI file */
-	__SQLGetPrivateProfileString(dsn, "DATABASE", "", buf, BUFSIZ, ODBC_INI);
+	__SQLGetPrivateProfileString(dsn, "DATABASE", "", buf, BUFSIZ,
+				     ODBC_INI);
 	database = strdup(buf);
 	/* TODO: Provided database/schema are currently not used/implemented */
-	__SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ, ODBC_INI);
+	__SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ,
+				     ODBC_INI);
 	host = strdup(buf);
 	__SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
 	port = atoi(buf);
@@ -117,34 +108,40 @@ SQLRETURN SQLConnect(
 	/* connect to a server on host via port */
 	socket_fd = client(host, port);
 	if (socket_fd >= 0) {
-		stream * rs = NULL;
-		stream * ws = NULL;
-		int  chars_printed;
-		char * login = NULL;
+		stream *rs = NULL;
+		stream *ws = NULL;
+		int chars_printed;
+		char *login = NULL;
 
-		rs = block_stream(socket_rstream(socket_fd, "sql client read"));
-		ws = block_stream(socket_wstream(socket_fd, "sql client write"));
+		rs = block_stream(socket_rstream(socket_fd,
+						 "sql client read"));
+		ws = block_stream(socket_wstream(socket_fd,
+						 "sql client write"));
 
-		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n", debug, trace );
+		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n",
+					 debug, trace);
 		ws->write(ws, buf, chars_printed, 1);
 		ws->flush(ws);
 		/* read login. The returned login value is not used yet. */
-		login = (char *)readblock(rs);
+		login = readblock(rs);
 
-		if (login) free(login);
+		if (login)
+			free(login);
 
-		chars_printed = snprintf(buf, BUFSIZ, "login(%s,%s);\n", uid, pwd);
+		chars_printed = snprintf(buf, BUFSIZ, "login(%s,%s);\n",
+					 uid, pwd);
 		ws->write(ws, buf, chars_printed, 1);
 		ws->flush(ws);
 		/* read schema */
-		db = (char *)readblock(rs);
+		db = (char *) readblock(rs);
 		if (db) {
 			char *s = strrchr(db, ',');
-			if (s){ 
+
+			if (s) {
 				*s = '\0';
-				schema = s+1;
+				schema = s + 1;
 				s = strrchr(schema, '\n');
-				if (s){ 
+				if (s) {
 					*s = '\0';
 				}
 				schema = strdup(schema);
@@ -163,7 +160,8 @@ SQLRETURN SQLConnect(
 			/* TODO: if a database name is set, change the current schema to this database name */
 		} else {
 			/* 08001 = Client unable to establish connection */
-			addDbcError(dbc, "08001", "sockets not opened correctly", 0);
+			addDbcError(dbc, "08001",
+				    "sockets not opened correctly", 0);
 			rc = SQL_ERROR;
 		}
 	} else {
@@ -174,41 +172,29 @@ SQLRETURN SQLConnect(
 
 	/* store internal information and clean up buffers */
 	if (dbc->Connected == 1) {
-		if (dbc->DSN != NULL) {
+		if (dbc->DSN != NULL)
 			free(dbc->DSN);
-			dbc->DSN = NULL;
-		}
 		dbc->DSN = dsn;
-		if (dbc->UID != NULL) {
+		if (dbc->UID != NULL)
 			free(dbc->UID);
-			dbc->UID = NULL;
-		}
 		dbc->UID = uid;
-		if (dbc->PWD != NULL) {
+		if (dbc->PWD != NULL)
 			free(dbc->PWD);
-			dbc->PWD = NULL;
-		}
 		dbc->PWD = pwd;
-		if (dbc->DBNAME != NULL) {
+		if (dbc->DBNAME != NULL)
 			free(dbc->DBNAME);
-			dbc->DBNAME = NULL;
-		}
 		dbc->DBNAME = schema;
 
 	} else {
-		if (uid != NULL) {
+		if (uid != NULL)
 			free(uid);
-		}
-		if (pwd != NULL) {
+		if (pwd != NULL)
 			free(pwd);
-		}
-		if (database != NULL) {
+		if (database != NULL)
 			free(database);
-		}
 	}
 	/* free allocated but not stored strings */
-	if (host != NULL) {
+	if (host != NULL)
 		free(host);
-	}
 	return rc;
 }

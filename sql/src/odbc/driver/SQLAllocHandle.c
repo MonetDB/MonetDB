@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -33,7 +18,7 @@
  * All checks and allocation is done in this function.
  *
  * Author: Martin van Dinther
- * Date  : 30 aug 2002
+ * Date  : 30 Aug 2002
  *
  **********************************************************************/
 
@@ -43,119 +28,82 @@
 #include "ODBCStmt.h"
 #include "ODBCError.h"
 
-static int odbc_init = 0; 
+static int odbc_init = 0;
 
-SQLRETURN  SQLAllocHandle(
-	SQLSMALLINT	nHandleType,	/* type to be allocated */
-	SQLHANDLE	nInputHandle,	/* type to be allocated */
-	SQLHANDLE *	pnOutputHandle )/* ptr for allocated handle struct */
+SQLRETURN
+SQLAllocHandle(SQLSMALLINT nHandleType,	/* type to be allocated */
+	       SQLHANDLE nInputHandle,	/* context for new handle */
+	       SQLHANDLE *pnOutputHandle) /* ptr for allocated handle struct */
 {
-	if (!odbc_init){
+	if (!odbc_init) {
 		odbc_init = 1;
 		stream_init();
 	}
 
 	/* Check parameters nHandleType and nInputHandle */
-	if (nInputHandle == NULL && nHandleType != SQL_HANDLE_ENV)
-	{
+	if (nInputHandle == NULL && nHandleType != SQL_HANDLE_ENV) {
 		/* can not set an error message because the handle is NULL */
 		return SQL_INVALID_HANDLE;
 	}
-	switch (nHandleType)
-	{
-		case SQL_HANDLE_ENV:
-			/* there is no parent handle to test */
-			break;
-		case SQL_HANDLE_DBC:
-		{
-			ODBCEnv * env = (ODBCEnv *)nInputHandle;
-			if (! isValidEnv(env))
-				return SQL_INVALID_HANDLE;
-			break;
-		}
-		case SQL_HANDLE_STMT:
-		case SQL_HANDLE_DESC:
-		{
-			ODBCDbc * dbc = (ODBCDbc *)nInputHandle;
-			if (! isValidDbc(dbc))
-				return SQL_INVALID_HANDLE;
-			break;
-		}
-		default:
-		{
-			/* we cannot set an error because we do not know
-			   the handle type of the possible non-null handle */
+
+	switch (nHandleType) {
+	case SQL_HANDLE_ENV:
+		/* there is no parent handle to test */
+		break;
+	case SQL_HANDLE_DBC:
+		if (!isValidEnv((ODBCEnv *) nInputHandle))
 			return SQL_INVALID_HANDLE;
-		}
+		break;
+	case SQL_HANDLE_STMT:
+	case SQL_HANDLE_DESC:
+		if (!isValidDbc((ODBCDbc *) nInputHandle))
+			return SQL_INVALID_HANDLE;
+		break;
+	default:
+		/* we cannot set an error because we do not know
+		   the handle type of the possible non-null handle */
+		return SQL_INVALID_HANDLE;
 	}
 
 	/* Check parameter pnOutputHandle */
-	if (pnOutputHandle == NULL)
-	{
+	if (pnOutputHandle == NULL) {
 		if (nInputHandle) {
-		switch (nHandleType) {
+			switch (nHandleType) {
 			case SQL_HANDLE_ENV:
 				/* there is no valid parent handle */
 				break;
 			case SQL_HANDLE_DBC:
-			{
-				ODBCEnv * env = (ODBCEnv *)nInputHandle;
-				addEnvError(env, "HY009", NULL, 0);
+				addEnvError((ODBCEnv *) nInputHandle, "HY009",
+					    NULL, 0);
 				return SQL_ERROR;
-			}
 			case SQL_HANDLE_STMT:
 			case SQL_HANDLE_DESC:
-			{
-				ODBCDbc * dbc = (ODBCDbc *)nInputHandle;
-				addDbcError(dbc, "HY009", NULL, 0);
+				addDbcError((ODBCDbc *) nInputHandle, "HY009",
+					    NULL, 0);
 				return SQL_ERROR;
 			}
-			default:
-			{
-				assert(0);  /* this should not be possible */
-			}
-		}
 		}
 		return SQL_INVALID_HANDLE;
 	}
 
 	/* We are ready to do the allocation now */
-	switch (nHandleType)
-	{
-		case SQL_HANDLE_ENV:
-		{
-			*pnOutputHandle = (SQLHANDLE *) newODBCEnv();
-			return SQL_SUCCESS;
-		}
-		case SQL_HANDLE_DBC:
-		{
-			ODBCEnv * env = (ODBCEnv *)nInputHandle;
-			assert(isValidEnv(env));
-			*pnOutputHandle = (SQLHANDLE *) newODBCDbc(env);
-			return SQL_SUCCESS;
-		}
-		case SQL_HANDLE_STMT:
-		{
-			ODBCDbc * dbc = (ODBCDbc *)nInputHandle;
-			assert(isValidDbc(dbc));
-			*pnOutputHandle = (SQLHANDLE *) newODBCStmt(dbc);
-			return SQL_SUCCESS;
-		}
-		case SQL_HANDLE_DESC:
-		{
-			/* TODO: implement this handle type.
-			 * For now, report an error.
-			 */
-			ODBCDbc * dbc = (ODBCDbc *)nInputHandle;
-			assert(isValidDbc(dbc));
-			addDbcError(dbc, "HYC00", NULL, 0);
-			*pnOutputHandle = SQL_NULL_HDESC;
-			return SQL_ERROR;
-		}
-		default:
-		{
-			assert(0);	/* this should not be possible */
-		}
+	switch (nHandleType) {
+	case SQL_HANDLE_ENV:
+		*pnOutputHandle = (SQLHANDLE *) newODBCEnv();
+		return SQL_SUCCESS;
+	case SQL_HANDLE_DBC:
+		*pnOutputHandle = (SQLHANDLE *) newODBCDbc((ODBCEnv *) nInputHandle);
+		return SQL_SUCCESS;
+	case SQL_HANDLE_STMT:
+		*pnOutputHandle = (SQLHANDLE *) newODBCStmt((ODBCDbc *) nInputHandle);
+		return SQL_SUCCESS;
+	case SQL_HANDLE_DESC:
+		/* TODO: implement this handle type.
+		 * For now, report an error.
+		 */
+		addDbcError((ODBCDbc *) nInputHandle, "HYC00", NULL, 0);
+		*pnOutputHandle = SQL_NULL_HDESC;
+		return SQL_ERROR;
 	}
 
 	return SQL_INVALID_HANDLE;

@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************
@@ -47,9 +32,11 @@
  * Precondition: none
  * Postcondition: returns a new ODBCDbc object
  */
-ODBCDbc * newODBCDbc(ODBCEnv * env)
+ODBCDbc *
+newODBCDbc(ODBCEnv *env)
 {
-	ODBCDbc * dbc = (ODBCDbc *)malloc(sizeof(ODBCDbc));
+	ODBCDbc *dbc = (ODBCDbc *) malloc(sizeof(ODBCDbc));
+
 	assert(dbc);
 	assert(env);
 
@@ -96,9 +83,10 @@ ODBCDbc * newODBCDbc(ODBCEnv * env)
  * Postcondition: returns 1 if it is a valid connection handle,
  * 	returns 0 if is invalid and thus an unusable handle.
  */
-int isValidDbc(ODBCDbc * dbc)
+int
+isValidDbc(ODBCDbc *dbc)
 {
-	return (dbc && (dbc->Type == ODBC_DBC_MAGIC_NR)) ? 1 : 0;
+	return dbc && dbc->Type == ODBC_DBC_MAGIC_NR;
 }
 
 
@@ -111,9 +99,11 @@ int isValidDbc(ODBCDbc * dbc)
  *
  * Precondition: dbc must be valid. SQLState and errMsg may be NULL.
  */
-void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nativeErrCode)
+void
+addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg,
+	    int nativeErrCode)
 {
-	ODBCError * error = NULL;
+	ODBCError *error = NULL;
 
 	assert(isValidDbc(dbc));
 
@@ -134,7 +124,8 @@ void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nat
  *
  * Precondition: dbc and error must be valid.
  */
-void addDbcErrorObj(ODBCDbc * dbc, ODBCError * error)
+void
+addDbcErrorObj(ODBCDbc *dbc, ODBCError *error)
 {
 	assert(isValidDbc(dbc));
 	assert(error);
@@ -155,15 +146,12 @@ void addDbcErrorObj(ODBCDbc * dbc, ODBCError * error)
  * Precondition: dbc and error must be valid
  * Postcondition: returns a ODBCError object or null when no error is available.
  */
-ODBCError * getDbcError(ODBCDbc * dbc)
+ODBCError *
+getDbcError(ODBCDbc *dbc)
 {
-	ODBCError * err;
 	assert(isValidDbc(dbc));
 
-	err = dbc->Error;	/* get first error */
-	dbc->Error = (err) ? err->next : NULL;	/* set new first error */
-
-	return err;
+	return dbc->Error;
 }
 
 
@@ -174,7 +162,8 @@ ODBCError * getDbcError(ODBCDbc * dbc)
  * no ODBCStmt (or ODBCDesc) objects may refer to this dbc.
  * Postcondition: dbc is completely destroyed, dbc handle is become invalid.
  */
-void destroyODBCDbc(ODBCDbc * dbc)
+void
+destroyODBCDbc(ODBCDbc *dbc)
 {
 	assert(isValidDbc(dbc));
 	assert(dbc->Connected == 0);
@@ -188,8 +177,8 @@ void destroyODBCDbc(ODBCDbc * dbc)
 	assert(dbc->Env->FirstDbc);
 	{
 		/* search for this dbc in the list */
-		ODBCDbc * tmp_dbc = (ODBCDbc *) dbc->Env->FirstDbc;
-		ODBCDbc * prv_dbc = NULL;
+		ODBCDbc *tmp_dbc = (ODBCDbc *) dbc->Env->FirstDbc;
+		ODBCDbc *prv_dbc = NULL;
 
 		while ((tmp_dbc != NULL) && (tmp_dbc != dbc)) {
 			prv_dbc = tmp_dbc;
@@ -223,4 +212,3 @@ void destroyODBCDbc(ODBCDbc * dbc)
 
 	free(dbc);
 }
-

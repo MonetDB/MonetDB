@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************
@@ -47,9 +32,11 @@
  * Precondition: none
  * Postcondition: returns a new ODBCEnv object
  */
-ODBCEnv * newODBCEnv()
+ODBCEnv *
+newODBCEnv(void)
 {
-	ODBCEnv * env = (ODBCEnv *)malloc(sizeof(ODBCEnv));
+	ODBCEnv *env = (ODBCEnv *) malloc(sizeof(ODBCEnv));
+
 	assert(env);
 
 	env->Error = NULL;
@@ -69,9 +56,10 @@ ODBCEnv * newODBCEnv()
  * Postcondition: returns 1 if it is a valid environment handle,
  * 	returns 0 if is invalid and thus an unusable handle.
  */
-int isValidEnv(ODBCEnv * env)
+int
+isValidEnv(ODBCEnv *env)
 {
-	return (env && (env->Type == ODBC_ENV_MAGIC_NR)) ? 1 : 0;
+	return env && env->Type == ODBC_ENV_MAGIC_NR;
 }
 
 
@@ -83,9 +71,11 @@ int isValidEnv(ODBCEnv * env)
  *
  * Precondition: env must be valid. SQLState and errMsg may be NULL.
  */
-void addEnvError(ODBCEnv *env, const char *SQLState, const char *errMsg, int nativeErrCode)
+void
+addEnvError(ODBCEnv *env, const char *SQLState, const char *errMsg,
+	    int nativeErrCode)
 {
-	ODBCError * error = NULL;
+	ODBCError *error = NULL;
 
 	assert(isValidEnv(env));
 
@@ -104,7 +94,8 @@ void addEnvError(ODBCEnv *env, const char *SQLState, const char *errMsg, int nat
  *
  * Precondition: env and error must be valid.
  */
-void addEnvErrorObj(ODBCEnv * env, ODBCError * error)
+void
+addEnvErrorObj(ODBCEnv *env, ODBCError *error)
 {
 	assert(isValidEnv(env));
 	assert(error);
@@ -125,15 +116,12 @@ void addEnvErrorObj(ODBCEnv * env, ODBCError * error)
  * Precondition: env and error must be valid
  * Postcondition: returns a ODBCError object or null when no error is available.
  */
-ODBCError * getEnvError(ODBCEnv * env)
+ODBCError *
+getEnvError(ODBCEnv *env)
 {
-	ODBCError * err;
 	assert(isValidEnv(env));
 
-	err = env->Error;	/* get first error */
-	env->Error = (err) ? err->next : NULL;	/* set new first error */
-
-	return err;
+	return env->Error;;
 }
 
 
@@ -143,7 +131,8 @@ ODBCError * getEnvError(ODBCEnv * env)
  * Precondition: env must be valid and no ODBCDbc objects may refer to this env.
  * Postcondition: env is completely destroyed, env handle is become invalid.
  */
-void destroyODBCEnv(ODBCEnv * env)
+void
+destroyODBCEnv(ODBCEnv *env)
 {
 	assert(isValidEnv(env));
 	assert(env->FirstDbc == NULL);
@@ -152,6 +141,5 @@ void destroyODBCEnv(ODBCEnv * env)
 	env->Type = 0;
 
 	deleteODBCErrorList(env->Error);
-	free((void *)env);
+	free((void *) env);
 }
-

@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -39,41 +24,29 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-
-SQLRETURN SQLForeignKeys(
-	SQLHSTMT	hStmt,
-	SQLCHAR *	szPKCatalogName,
-	SQLSMALLINT	nPKCatalogNameLength,
-	SQLCHAR *	szPKSchemaName,
-	SQLSMALLINT	nPKSchemaNameLength,
-	SQLCHAR *	szPKTableName,
-	SQLSMALLINT	nPKTableNameLength,
-	SQLCHAR *	szFKCatalogName,
-	SQLSMALLINT	nFKCatalogNameLength,
-	SQLCHAR *	szFKSchemaName,
-	SQLSMALLINT	nFKSchemaNameLength,
-	SQLCHAR *	szFKTableName,
-	SQLSMALLINT	nFKTableNameLength )
+SQLRETURN
+SQLForeignKeys(SQLHSTMT hStmt,
+	       SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength,
+	       SQLCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength,
+	       SQLCHAR *szPKTableName, SQLSMALLINT nPKTableNameLength,
+	       SQLCHAR *szFKCatalogName, SQLSMALLINT nFKCatalogNameLength,
+	       SQLCHAR *szFKSchemaName, SQLSMALLINT nFKSchemaNameLength,
+	       SQLCHAR *szFKTableName, SQLSMALLINT nFKTableNameLength)
 {
-	ODBCStmt * stmt = (ODBCStmt *) hStmt;
-	char *	pkschName = NULL;
-	char *	pktabName = NULL;
-	char *	fkschName = NULL;
-	char *	fktabName = NULL;
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 	/* buffer for the constructed query to do meta data retrieval */
-	char * query = NULL;
-	char * work_str = NULL;
-	int work_str_len = 1000;
+	char *query = NULL;
+	char *query_end = NULL;	/* pointer to end of built-up query */
 
 	(void) szPKCatalogName;	/* Stefan: unused!? */
 	(void) nPKCatalogNameLength;	/* Stefan: unused!? */
 	(void) szFKCatalogName;	/* Stefan: unused!? */
 	(void) nFKCatalogNameLength;	/* Stefan: unused!? */
 
-	if (! isValidStmt(stmt))
-		return SQL_INVALID_HANDLE;
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
 
@@ -86,105 +59,81 @@ SQLRETURN SQLForeignKeys(
 
 	assert(stmt->Query == NULL);
 
-	/* convert input string parameters to normal null terminated C strings */
-	pkschName = copyODBCstr2Cstr(szPKSchemaName, nPKSchemaNameLength);
-	pktabName = copyODBCstr2Cstr(szPKTableName, nPKTableNameLength);
-	fkschName = copyODBCstr2Cstr(szFKSchemaName, nFKSchemaNameLength);
-	fktabName = copyODBCstr2Cstr(szFKTableName, nFKTableNameLength);
+	/* deal with SQL_NTS and SQL_NULL_DATA */
+	fixODBCstring(szPKSchemaName, nPKSchemaNameLength);
+	fixODBCstring(szPKTableName, nPKTableNameLength);
+	fixODBCstring(szFKSchemaName, nFKSchemaNameLength);
+	fixODBCstring(szFKTableName, nFKTableNameLength);
 
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */
 
-	/* first create a string buffer */
-	if (pkschName != NULL) {
-		work_str_len += strlen(pkschName);
-	}
-	if (pktabName != NULL) {
-		work_str_len += strlen(pktabName);
-	}
-	if (fkschName != NULL) {
-		work_str_len += strlen(fkschName);
-	}
-	if (fktabName != NULL) {
-		work_str_len += strlen(fktabName);
-	}
-	work_str = malloc(work_str_len);
-	assert(work_str);
-	strcpy(work_str, "");	/* initialize it */
+	/* first create a string buffer (1000 extra bytes is plenty:
+	   we actually need under 600) */
+	query = malloc(1000 + nPKSchemaNameLength + nPKTableNameLength +
+		       nFKSchemaNameLength + nFKTableNameLength);
+	assert(query);
+	query_end = query;
 
+	strcpy(query_end,
+	       "SELECT '' AS PKTABLE_CAT, S1.NAME AS PKTABLE_SCHEM, "
+	       "T1.NAME AS PKTABLE_NAME, C1.NAME AS PKCOLUMN_NAME, "
+	       "'' AS FKTABLE_CAT, S1.NAME AS FKTABLE_SCHEM, "
+	       "T1.NAME AS FKTABLE_NAME, C1.NAME AS FKCOLUMN_NAME, "
+	       "KC.ORDINAL_POSITION AS KEY_SEQ, "
+	       "K.UPDATE_RULE AS UPDATE_RULE, K.DELETE_RULE AS DELETE_RULE, "
+	       "K.FK_NAME AS FK_NAME, K.PK_NAME AS PK_NAME, "
+	       "K.DEFERRABILITY AS DEFERRABILITY FROM SCHEMAS S, TABLES T, "
+	       "_COLUMNS C WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID");
+	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (pkschName != NULL && (strcmp(pkschName, "") != 0)) {
+	if (szPKSchemaName != NULL && nPKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND S1.NAME = '");
-		strcat(work_str, pkschName);
-		strcat(work_str, "'");
+		sprintf(query_end, " AND S1.NAME = '%.*s'",
+			nPKSchemaNameLength, szPKSchemaName);
+		query_end += strlen(query_end);
 	}
 
-	if (pktabName != NULL && (strcmp(pktabName, "") != 0)) {
+	if (szPKTableName != NULL && nPKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND T1.NAME = '");
-		strcat(work_str, pktabName);
-		strcat(work_str, "'");
+		sprintf(query_end, " AND T1.NAME = '%.*s'",
+			nPKTableNameLength, szPKTableName);
+		query_end += strlen(query_end);
 	}
 
-	if (fkschName != NULL && (strcmp(fkschName, "") != 0)) {
+	if (szFKSchemaName != NULL && nFKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND S2.NAME = '");
-		strcat(work_str, fkschName);
-		strcat(work_str, "'");
+		sprintf(query_end, " AND S2.NAME = '%.*s'",
+			nFKSchemaNameLength, szFKSchemaName);
+		query_end += strlen(query_end);
 	}
 
-	if (fktabName != NULL && (strcmp(fktabName, "") != 0)) {
+	if (szFKTableName != NULL && nFKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND T2.NAME = '");
-		strcat(work_str, fktabName);
-		strcat(work_str, "'");
+		sprintf(query_end, " AND T2.NAME = '%.*s'",
+			nFKTableNameLength, szFKTableName);
+		query_end += strlen(query_end);
 	}
 
 
-	/* construct the query now */
-	query = malloc(1000 + strlen(work_str));
-	assert(query);
-
-	strcpy(query, "SELECT '' AS PKTABLE_CAT, S1.NAME AS PKTABLE_SCHEM, T1.NAME AS PKTABLE_NAME, C1.NAME AS PKCOLUMN_NAME, '' AS FKTABLE_CAT, S1.NAME AS FKTABLE_SCHEM, T1.NAME AS FKTABLE_NAME, C1.NAME AS FKCOLUMN_NAME, KC.ORDINAL_POSITION AS KEY_SEQ, K.UPDATE_RULE AS UPDATE_RULE, K.DELETE_RULE AS DELETE_RULE, K.FK_NAME AS FK_NAME, K.PK_NAME AS PK_NAME, K.DEFERRABILITY AS DEFERRABILITY \
- FROM SCHEMAS S, TABLES T, _COLUMNS C WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID");
-/* TODO finish the FROM en WHERE clauses */
-
-	/* add the selection condition */
-	strcat(query, work_str);
+/* TODO finish the FROM and WHERE clauses */
 
 	/* add the ordering */
-	if (pktabName != NULL) {	/* selection on primary key */
-		/* order on FK output columns */
-		strcat(query, " ORDER BY S2.NAME, T2.NAME, KC.ORDINAL_POSITION");
-	} else {
-		/* order on PK output columns */
-		strcat(query, " ORDER BY S1.NAME, T1.NAME, KC.ORDINAL_POSITION");
-	}
-	free(work_str);
-
-	/* Done with parameter values evaluation. Now free the C strings. */
-	if (pkschName != NULL) {
-		free(pkschName);
-	}
-	if (pktabName != NULL) {
-		free(pktabName);
-	}
-	if (fkschName != NULL) {
-		free(fkschName);
-	}
-	if (fktabName != NULL) {
-		free(fktabName);
-	}
+	/* if szPKTableName != NULL, selection on primary key, order
+	   on FK output columns, else order on PK output columns */
+	sprintf(query_end, " ORDER BY %s.NAME, %s.NAME, KC.ORDINAL_POSITION",
+		szPKTableName != NULL ? "S2" : "S1",
+		szPKTableName != NULL ? "T2" : "T1");
+	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */
-	assert(query);
-	rc = SQLExecDirect(hStmt, (SQLCHAR*)query, SQL_NTS);
+	rc = SQLExecDirect(hStmt, (SQLCHAR *) query,
+			   (SQLINTEGER) (query_end - query));
 
 	free(query);
 

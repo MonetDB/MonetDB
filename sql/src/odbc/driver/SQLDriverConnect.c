@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -36,26 +21,22 @@
 #include "ODBCDbc.h"
 
 
-SQLRETURN SQLDriverConnect(
-	SQLHDBC		hDbc,
-	SQLHWND		hWnd,
-	SQLCHAR *	szConnStrIn,
-	SQLSMALLINT	nConnStrIn,
-	SQLCHAR *	szConnStrOut,
-	SQLSMALLINT	cbConnStrOutMax,
-	SQLSMALLINT *	pnConnStrOut,
-	SQLUSMALLINT	nDriverCompletion )
+SQLRETURN
+SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
+		 SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
+		 SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
+		 SQLUSMALLINT nDriverCompletion)
 {
-	ODBCDbc * dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
-	(void) hWnd;	/* Stefan: unused!? */
+	(void) hWnd;		/* Stefan: unused!? */
 	(void) szConnStrIn;	/* Stefan: unused!? */
 	(void) nConnStrIn;	/* Stefan: unused!? */
 	(void) szConnStrOut;	/* Stefan: unused!? */
 	(void) cbConnStrOutMax;	/* Stefan: unused!? */
 	(void) pnConnStrOut;	/* Stefan: unused!? */
 
-	if (! isValidDbc(dbc))
+	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 
 	clearDbcErrors(dbc);
@@ -69,17 +50,16 @@ SQLRETURN SQLDriverConnect(
 	assert(dbc->Connected == 0);
 
 	/* check input arguments */
-	switch (nDriverCompletion)
-	{
-		case SQL_DRIVER_PROMPT:
-		case SQL_DRIVER_COMPLETE:
-		case SQL_DRIVER_COMPLETE_REQUIRED:
-		case SQL_DRIVER_NOPROMPT:
-			break;
-		default:
-			/* HY092 = Invalid attribute/option identifier */
-			addDbcError(dbc, "HY092", NULL, 0);
-			return SQL_ERROR;
+	switch (nDriverCompletion) {
+	case SQL_DRIVER_PROMPT:
+	case SQL_DRIVER_COMPLETE:
+	case SQL_DRIVER_COMPLETE_REQUIRED:
+	case SQL_DRIVER_NOPROMPT:
+		break;
+	default:
+		/* HY092 = Invalid attribute/option identifier */
+		addDbcError(dbc, "HY092", NULL, 0);
+		return SQL_ERROR;
 	}
 
 	/* TODO: finish implementation */

@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************
@@ -32,7 +17,7 @@
  * output columns (OutHostVar), see ODBCHostVar.h
  *
  * Author: Martin van Dinther
- * Date  : 30 aug 2002
+ * Date  : 30 Aug 2002
  *
  **********************************************/
 
@@ -40,19 +25,16 @@
 #include "ODBCHostVar.h"
 
 
-OdbcInHostVar makeOdbcInHostVar(
-	SQLUSMALLINT	ParameterNumber,
-	SQLSMALLINT	InputOutputType,
-	SQLSMALLINT	ValueType,
-	SQLSMALLINT	ParameterType,
-	SQLUINTEGER	ColumnSize,
-	SQLSMALLINT	DecimalDigits,
-	SQLPOINTER	ParameterValuePtr,
-	SQLINTEGER	BufferLength,
-	SQLINTEGER*	StrLen_or_IndPtr)
+OdbcInHostVar
+makeOdbcInHostVar(SQLUSMALLINT ParameterNumber, SQLSMALLINT InputOutputType,
+		  SQLSMALLINT ValueType, SQLSMALLINT ParameterType,
+		  SQLUINTEGER ColumnSize, SQLSMALLINT DecimalDigits,
+		  SQLPOINTER ParameterValuePtr, SQLINTEGER BufferLength,
+		  SQLINTEGER *StrLen_or_IndPtr)
 {
-	OdbcInHostVar this = (OdbcInHostVar)malloc(sizeof(OdbcInHostVarRec));
+	OdbcInHostVar this = (OdbcInHostVar) malloc(sizeof(OdbcInHostVarRec));
 
+	assert(this);
 	this->ParameterNumber = ParameterNumber;
 	this->InputOutputType = InputOutputType;
 	this->ValueType = ValueType;
@@ -67,15 +49,13 @@ OdbcInHostVar makeOdbcInHostVar(
 }
 
 
-OdbcOutHostVar makeOdbcOutHostVar(
-	SQLUSMALLINT		icol,
-	SQLSMALLINT		fCType,
-	SQLPOINTER		rgbValue,
-	SQLINTEGER		cbValueMax,
-	SQLINTEGER *		pcbValue )
+OdbcOutHostVar
+makeOdbcOutHostVar(SQLUSMALLINT icol, SQLSMALLINT fCType, SQLPOINTER rgbValue,
+		   SQLINTEGER cbValueMax, SQLINTEGER *pcbValue)
 {
-	OdbcOutHostVar this = (OdbcOutHostVar)malloc(sizeof(OdbcOutHostVarRec));
+	OdbcOutHostVar this = (OdbcOutHostVar) malloc(sizeof(OdbcOutHostVarRec));
 
+	assert(this);
 	this->icol = icol;
 	this->fCType = fCType;
 	this->rgbValue = rgbValue;
@@ -86,17 +66,19 @@ OdbcOutHostVar makeOdbcOutHostVar(
 }
 
 
-void destroyOdbcInHostVar(OdbcInHostVar this)
+void
+destroyOdbcInHostVar(OdbcInHostVar this)
 {
 	assert(this);
-	free((void *)this);
+	free((void *) this);
 }
 
 
-void destroyOdbcOutHostVar(OdbcOutHostVar this)
+void
+destroyOdbcOutHostVar(OdbcOutHostVar this)
 {
 	assert(this);
-	free((void *)this);
+	free((void *) this);
 }
 
 
@@ -106,33 +88,38 @@ void destroyOdbcOutHostVar(OdbcOutHostVar this)
  * If a ODBC in host var for the specified parameter already exists
  * in the array, the previous one is destroyed.
  */
-void addOdbcInArray(OdbcInArray * this, OdbcInHostVar var)
+void
+addOdbcInArray(OdbcInArray *this, OdbcInHostVar var)
 {
 	SQLUSMALLINT ParameterNumber;
+
 	assert(this);
 	assert(var);
 
 	ParameterNumber = var->ParameterNumber;
+
 	if (ParameterNumber > this->size) {
 		int idx = this->size;
 		int new_size = ParameterNumber + 7;	/* grow in steps of 8 for efficiency */
-		OdbcInHostVar * new_array = NULL;
+		OdbcInHostVar *new_array = NULL;
 
 		if (this->array == NULL) {
 			/* create a new array of pointers */
-			new_array = (OdbcInHostVar *) malloc((new_size +1) * sizeof(OdbcInHostVar));
+			new_array = (OdbcInHostVar *) malloc((new_size + 1) *
+							     sizeof(OdbcInHostVar));
 			idx = 0;
 		} else {
 			/* enlarge the array of pointers */
-			new_array = (OdbcInHostVar *) realloc(this->array, ((new_size +1) * sizeof(OdbcInHostVar)));
+			new_array = (OdbcInHostVar *) realloc(this->array,
+							      ((new_size + 1) *
+							       sizeof(OdbcInHostVar)));
 			idx = this->size;
 		}
 		assert(new_array);
 
 		/* initialize the new places with NULL */
-		for (; idx <= new_size; idx++) {
+		for (; idx <= new_size; idx++)
 			new_array[idx] = NULL;
-		}
 
 		this->array = new_array;
 		this->size = new_size;
@@ -153,32 +140,37 @@ void addOdbcInArray(OdbcInArray * this, OdbcInHostVar var)
  * If a ODBC out host var for the column is already in the array,
  * the previous one is destroyed.
  */
-void addOdbcOutArray(OdbcOutArray * this, OdbcOutHostVar var)
+void
+addOdbcOutArray(OdbcOutArray *this, OdbcOutHostVar var)
 {
 	UWORD icol;
+
 	assert(this);
 	assert(var);
 
 	icol = var->icol;
+
 	if (icol > this->size) {
 		int idx = this->size;
 		int new_size = icol + 7;	/* grow in steps of 8 for efficiency */
-		OdbcOutHostVar * new_array = NULL;
+		OdbcOutHostVar *new_array = NULL;
 
 		if (this->array == NULL) {
 			/* create a new array of pointers */
-			new_array = (OdbcOutHostVar *) malloc((new_size +1) * sizeof(OdbcOutHostVar));
+			new_array = (OdbcOutHostVar *) malloc((new_size + 1) *
+							      sizeof(OdbcOutHostVar));
 			idx = 0;
 		} else {
 			/* enlarge the array of pointers */
-			new_array = (OdbcOutHostVar *) realloc(this->array, ((new_size +1) * sizeof(OdbcOutHostVar)));
+			new_array = (OdbcOutHostVar *) realloc(this->array,
+							       ((new_size + 1) *
+								sizeof(OdbcOutHostVar)));
 			idx = this->size;
 		}
 		assert(new_array);
 		/* initialize the new places with NULL */
-		for (; idx <= new_size; idx++) {
+		for (; idx <= new_size; idx++)
 			new_array[idx] = NULL;
-		}
 
 		this->array = new_array;
 		this->size = new_size;
@@ -187,13 +179,13 @@ void addOdbcOutArray(OdbcOutArray * this, OdbcOutHostVar var)
 	/* add the OutHostVar to the array */
 	assert(icol <= this->size);
 	assert(this->array);
-	if (this->array[icol] != NULL) {
+	if (this->array[icol] != NULL)
 		destroyOdbcOutHostVar(this->array[icol]);
-	}
 	this->array[icol] = var;
 }
 
-void delOdbcInArray(OdbcInArray * this, int n)
+void
+delOdbcInArray(OdbcInArray *this, int n)
 {
 	assert(this);
 
@@ -203,7 +195,8 @@ void delOdbcInArray(OdbcInArray * this, int n)
 	}
 }
 
-void delOdbcOutArray(OdbcOutArray * this, int n)
+void
+delOdbcOutArray(OdbcOutArray *this, int n)
 {
 	assert(this);
 
@@ -214,42 +207,45 @@ void delOdbcOutArray(OdbcOutArray * this, int n)
 }
 
 
-void destroyOdbcInArray(OdbcInArray * this)
+void
+destroyOdbcInArray(OdbcInArray *this)
 {
 	assert(this);
 
 	if (this->array != NULL) {
 		/* first remove any allocated Host Var */
 		int idx = this->size;
+
 		for (; idx > 0; idx--) {
 			if (this->array[idx] != NULL)
 				destroyOdbcInHostVar(this->array[idx]);
 		}
 
 		/* next remove the allocated array */
-		free((void *)this->array);
+		free((void *) this->array);
 		this->array = NULL;
 	}
 	this->size = 0;
 }
 
 
-void destroyOdbcOutArray(OdbcOutArray * this)
+void
+destroyOdbcOutArray(OdbcOutArray *this)
 {
 	assert(this);
 
 	if (this->array != NULL) {
 		/* first remove any allocated Host Var */
 		int idx = this->size;
+
 		for (; idx > 0; idx--) {
 			if (this->array[idx] != NULL)
 				destroyOdbcOutHostVar(this->array[idx]);
 		}
 
 		/* next remove the allocated array */
-		free((void *)this->array);
+		free((void *) this->array);
 		this->array = NULL;
 	}
 	this->size = 0;
 }
-

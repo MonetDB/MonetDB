@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -28,35 +13,40 @@
  * CLI Compliance: ISO 92
  *
  * Author: Martin van Dinther
- * Date  : 30 aug 2002
+ * Date  : 30 Aug 2002
  *
  **********************************************************************/
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-static char *convert(char *str ){
+static char *
+convert(char *str)
+{
 	char *res = NULL;
-	int i, len;
+	size_t i, len;
 
-	for(len = 1, i=0; str[i]; i++, len++){
+	for (len = 1, i = 0; str[i]; i++, len++) {
 		if (str[i] == '\'')
 			len++;
 	}
 	res = malloc(len);
-	for(len = 0, i=0; str[i]; i++, len++){
-		if (str[i] == '\''){
-			res[len] = '\\';
-			len ++;
+	for (len = 0, i = 0; str[i]; i++) {
+		if (str[i] == '\'') {
+			res[len++] = '\\';
+			len++;
 		}
-		res[len] = str[i];
+		res[len++] = str[i];
 	}
 	res[len] = '\0';
 	return res;
 }
 
-static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
+static int
+next_result(stream *rs, ODBCStmt *hstmt, int *type)
+{
 	int status;
+
 	if (!stream_readInt(rs, type) || *type == Q_END) {
 		/* 08S01 = Communication link failure */
 		addStmtError(hstmt, "08S01", NULL, 0);
@@ -66,15 +56,17 @@ static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
 	if (*type < 0 || status < 0) {
 		/* output error */
-		char buf[BLOCK+1];
+		char buf[BLOCK + 1];
 		int last = 0;
+
 		(void) bs_read_next(rs, buf, &last);
 		/* read result string (not used) */
 		while (!last) {
 			(void) bs_read_next(rs, buf, &last);
 		}
 		/* HY000 = General Error */
-		addStmtError(hstmt, "HY000", "No result available (status < 0)", 0);
+		addStmtError(hstmt, "HY000",
+			     "No result available (status < 0)", 0);
 		return SQL_ERROR;
 	}
 	return status;
@@ -98,13 +90,22 @@ struct sql_types {
 	{0, 0},			/* sentinel */
 };
 
-SQLRETURN SQLExecute(SQLHSTMT hStmt)
+SQLRETURN
+SQLExecute(SQLHSTMT hStmt)
 {
-	ODBCStmt *	hstmt = (ODBCStmt *) hStmt;
-	ODBCDbc *	dbc = NULL;
-	char* 		query = NULL;
+	ODBCStmt *hstmt = (ODBCStmt *) hStmt;
+	ODBCDbc *dbc = NULL;
+	char *query = NULL;
 
-	if (! isValidStmt(hstmt))
+	int nCol = 0;
+	int nRow = 0;
+	int nCols = 0;
+	int nRows = 0;
+	int type = 0;
+	int status = 0;
+	stream *rs;
+
+	if (!isValidStmt(hstmt))
 		return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(hstmt);
@@ -128,15 +129,15 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 
 	query = hstmt->Query;
 	/* Send the Query to the server for execution */
-	if (hstmt->bindParams.size){
-		char	*Query = 0;
-		int	i = 0, params = 1;
-		int	queryLen = strlen(hstmt->Query) + 1;
-		char    *oldquery = strdup(hstmt->Query);
-		char 	**strings = (char**)malloc(sizeof(char*)*hstmt->bindParams.size );
+	if (hstmt->bindParams.size) {
+		char *Query = 0;
+		int i = 0, params = 1;
+		int queryLen = strlen(hstmt->Query) + 1;
+		char *oldquery = strdup(hstmt->Query);
+		char **strings = (char **) calloc((size_t) hstmt->bindParams.size,
+						  sizeof(char *));
 
-		memset(strings,0,sizeof(char*)*hstmt->bindParams.size);
-		for(i=1; i <= hstmt->bindParams.size; i++){
+		for (i = 1; i <= hstmt->bindParams.size; i++) {
 			if (!hstmt->bindParams.array[i])
 				break;
 
@@ -147,24 +148,27 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		Query[0] = '\0';
 		i = 0;
 		query = oldquery;
-		while(query && *query){
+		while (query && *query) {
 			/* problem with strings with ?s */
 			char *old = query;
-			if ((query = strchr(query, '?')) != NULL){
+
+			if ((query = strchr(query, '?')) != NULL) {
 				*query = '\0';
 				if (!hstmt->bindParams.array[params])
 					break;
-				i += snprintf(Query+i, queryLen-i, "%s'%s'", old, strings[params]);
+				i += snprintf(Query + i, queryLen - i,
+					      "%s'%s'", old, strings[params]);
 				query++;
 				old = query;
 				params++;
-		        }
-			if (old && *old != '\0') 
-				i += snprintf(Query+i, queryLen-i, "%s", old);
+			}
+			if (old && *old != '\0')
+				i += snprintf(Query + i, queryLen - i, "%s",
+					      old);
 			Query[i] = '\0';
 		}
-		for(i=0;i<hstmt->bindParams.size; i++){
-			if(strings[i])
+		for (i = 0; i < hstmt->bindParams.size; i++) {
+			if (strings[i])
 				free(strings[i]);
 		}
 		free(strings);
@@ -177,14 +181,6 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 	dbc->Mws->flush(dbc->Mws);
 
 	/* now get the result data and store it to our internal data structure */
-	{ /* start of "get result data" code block */
-	int	nCol = 0;
-	int	nRow = 0;
-	int	nCols = 0;
-	int	nRows = 0;
-	int	type = 0;
-	int	status = 0;
-	stream *	rs;
 
 	/* initialize the Result meta data values */
 	hstmt->nrCols = 0;
@@ -196,7 +192,7 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 	if (status == SQL_ERROR)
 		return status;
 
-	if (type == Q_RESULT && status > 0) { /* header info */
+	if (type == Q_RESULT && status > 0) {	/* header info */
 		char *sc, *ec;
 		bstream *bs = bstream_create(rs, BLOCK);
 		int eof = 0;
@@ -204,29 +200,34 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		ColumnHeader *pCol;
 
 		stream_readInt(rs, &id);
+
 		nCols = status;
 
 		hstmt->nrCols = nCols;
-		hstmt->ResultCols = NEW_ARRAY(ColumnHeader,(nCols+1));
-		memset( hstmt->ResultCols, 0, (nCols+1)*sizeof(ColumnHeader));
+		hstmt->ResultCols = NEW_ARRAY(ColumnHeader, (nCols + 1));
+		memset(hstmt->ResultCols, 0,
+		       (nCols + 1) * sizeof(ColumnHeader));
 		pCol = hstmt->ResultCols + 1;
 
 		eof = (bstream_read(bs, bs->size - (bs->len - bs->pos)) == 0);
 		sc = bs->buf + bs->pos;
 		ec = bs->buf + bs->len;
-		while(sc < ec){
+
+		while (sc < ec) {
 			char *s, *name = NULL, *type = NULL;
 			struct sql_types *p;
 
 			s = sc;
-			while(sc<ec && *sc != ',') sc++;
-			if (sc>=ec && !eof){
+			while (sc < ec && *sc != ',')
+				sc++;
+			if (sc >= ec && !eof) {
 				bs->pos = s - bs->buf;
 				eof = (bstream_read(bs, bs->size - (bs->len - bs->pos)) == 0);
-				sc = bs->buf + bs->pos; 
-				ec = bs->buf + bs->len; 
+				sc = bs->buf + bs->pos;
+				ec = bs->buf + bs->len;
+
 				continue;
-			} else if (eof){
+			} else if (eof) {
 				/* TODO: set some error message */
 				break;
 			}
@@ -235,21 +236,24 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 			name = strdup(s);
 			sc++;
 			s = sc;
-			while(sc<ec && *sc != '\n') sc++;
-			if (sc>=ec && !eof){
+			while (sc < ec && *sc != '\n')
+				sc++;
+			if (sc >= ec && !eof) {
 				bs->pos = s - bs->buf;
 				eof = (bstream_read(bs, bs->size - (bs->len - bs->pos)) == 0);
-				sc = bs->buf + bs->pos; 
-				ec = bs->buf + bs->len; 
-				while(sc<ec && *sc != '\n') sc++;
-				if (sc>=ec){
+				sc = bs->buf + bs->pos;
+				ec = bs->buf + bs->len;
+
+				while (sc < ec && *sc != '\n')
+					sc++;
+				if (sc >= ec) {
 					/* TODO: set some error message */
 					break;
 				}
-			} else if (eof){
+			} else if (eof) {
 				/* TODO: set some error message */
 				break;
-			} 
+			}
 			*sc = 0;
 			type = strdup(s);
 			sc++;
@@ -276,10 +280,14 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		}
 		bstream_destroy(bs);
 
-		{ char buf[1024]; int i;
-		i = snprintf(buf, BLOCK, "mvc_export_table( myc, Output, %d, 0, -1, \"\\t\", \"\\n\");\n", id);
-		dbc->Mws->write(dbc->Mws, buf, i, 1);
-		dbc->Mws->flush(dbc->Mws);
+		{
+			char buf[1024];
+			int i;
+			i = snprintf(buf, BLOCK,
+				     "mvc_export_table( myc, Output, %d, 0, -1, \"\\t\", \"\\n\");\n",
+				     id);
+			dbc->Mws->write(dbc->Mws, buf, i, 1);
+			dbc->Mws->flush(dbc->Mws);
 		}
 		status = next_result(rs, hstmt, &type);
 		if (status == SQL_ERROR)
@@ -293,52 +301,56 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		nRows = status;
 
 		hstmt->nrRows = nRows;
-		hstmt->ResultRows = NEW_ARRAY(char*,(nCols+1)*(nRows+1));
-		memset(hstmt->ResultRows, 0, (nCols+1)*(nRows+1));
+		hstmt->ResultRows = NEW_ARRAY(char *,
+					      (nCols + 1) * (nRows + 1));
+		memset(hstmt->ResultRows, 0, (nCols + 1) * (nRows + 1));
 		assert(hstmt->ResultRows != NULL);
 
 		/* Next copy data from all columns for all rows */
 		eof = (bstream_read(bs, bs->size - (bs->len - bs->pos)) == 0);
 		sc = bs->buf + bs->pos;
 		ec = bs->buf + bs->len;
+
 		for (nRow = 1; nRow <= nRows && !eof; nRow++) {
 			for (nCol = 1; nCol <= nCols && !eof; nCol++) {
 				char *s = sc;
-				while (sc < ec && *sc != '\t' && *sc != '\n') 
+
+				while (sc < ec && *sc != '\t' && *sc != '\n')
 					sc++;
 				if (sc >= ec && !eof) {
 					bs->pos = s - bs->buf;
 					eof = (bstream_read(bs, bs->size - (bs->len - bs->pos)) == 0);
-					sc = bs->buf + bs->pos; 
-					ec = bs->buf + bs->len; 
-					while (sc < ec && *sc != '\t' && *sc != '\n') 
+					sc = bs->buf + bs->pos;
+					ec = bs->buf + bs->len;
+
+					while (sc < ec && *sc != '\t' &&
+					       *sc != '\n')
 						sc++;
-					if (sc >= ec){
+					if (sc >= ec) {
 						bstream_destroy(bs);
+
 						return SQL_ERROR;
 					}
 				}
 				*sc = '\0';
-				if (*s == '\"' && *(sc-1) == '\"'){
+				if (*s == '\"' && *(sc - 1) == '\"') {
 					s++;
-					*(sc-1) = '\0';
+					*(sc - 1) = '\0';
 				}
-				if (*s == '\'' && *(sc-1) == '\''){
+				if (*s == '\'' && *(sc - 1) == '\'') {
 					s++;
-					*(sc-1) = '\0';
+					*(sc - 1) = '\0';
 				}
-				hstmt->ResultRows[nRow*nCols+nCol] = strdup(s);
+				hstmt->ResultRows[nRow * nCols + nCol] = strdup(s);
 				sc++;
 			}
 		}
 
 		bstream_destroy(bs);
-	} else if (Q_UPDATE) {  
+	} else if (Q_UPDATE) {
 		hstmt->nrRows = nRows;
 		hstmt->ResultRows = NULL;
 	}
-
-	} /* end of "get result data" code block */
 
 	hstmt->State = EXECUTED;
 	return SQL_SUCCESS;

@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -36,21 +21,18 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN SQLColAttribute(
-	SQLHSTMT	hStmt,
-	SQLUSMALLINT	nCol,
-	SQLUSMALLINT	nFieldIdentifier,
-	SQLPOINTER	pszValue,
-	SQLSMALLINT	nValueLengthMax,
-	SQLSMALLINT *	pnValueLength,
-	SQLPOINTER	pnValue )
+SQLRETURN
+SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
+		SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
+		SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
+		SQLPOINTER pnValue)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ColumnHeader *pColumnHeader;
 	int *valueptr = (int *) pnValue;
 
-	if (! isValidStmt(stmt))
-		return SQL_INVALID_HANDLE;
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
 
@@ -68,11 +50,15 @@ SQLRETURN SQLColAttribute(
 	/* we only have a correct data when the query is executed and a Result is created */
 	if (stmt->State != EXECUTED) {
 		/* HY000 = General Error */
-		addStmtError(stmt, "HY000", "Cannot return the column info. Query must be executed first", 0);
+		addStmtError(stmt, "HY000",
+			     "Cannot return the column info. Query must be executed first",
+			     0);
 		return SQL_ERROR;
 	}
 	if (stmt->ResultCols == NULL) {
-		addStmtError(stmt, "HY000", "Cannot return the column info. No result set is available", 0);
+		addStmtError(stmt, "HY000",
+			     "Cannot return the column info. No result set is available",
+			     0);
 		return SQL_ERROR;
 	}
 
@@ -84,7 +70,7 @@ SQLRETURN SQLColAttribute(
 	}
 
 /* TODO: finish implementation */
-	pColumnHeader = stmt->ResultCols+nCol;
+	pColumnHeader = stmt->ResultCols + nCol;
 
 	switch (nFieldIdentifier) {
 	case SQL_DESC_AUTO_UNIQUE_VALUE:
@@ -93,13 +79,17 @@ SQLRETURN SQLColAttribute(
 		break;
 	case SQL_DESC_BASE_COLUMN_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_BASE_COLUMN_NAME, nValueLengthMax);
+			strncpy(pszValue,
+				pColumnHeader->pszSQL_DESC_BASE_COLUMN_NAME,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_BASE_COLUMN_NAME);
 		break;
 	case SQL_DESC_BASE_TABLE_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_BASE_TABLE_NAME, nValueLengthMax);
+			strncpy(pszValue,
+				pColumnHeader->pszSQL_DESC_BASE_TABLE_NAME,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_BASE_TABLE_NAME);
 		break;
@@ -109,7 +99,9 @@ SQLRETURN SQLColAttribute(
 		break;
 	case SQL_DESC_CATALOG_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_CATALOG_NAME, nValueLengthMax);
+			strncpy(pszValue,
+				pColumnHeader->pszSQL_DESC_CATALOG_NAME,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_CATALOG_NAME);
 		break;
@@ -120,6 +112,7 @@ SQLRETURN SQLColAttribute(
 	case SQL_DESC_COUNT:
 		if (valueptr)
 			*valueptr = stmt->nrCols;
+
 		break;
 	case SQL_DESC_DISPLAY_SIZE:
 		if (valueptr)
@@ -132,7 +125,8 @@ SQLRETURN SQLColAttribute(
 	case SQL_COLUMN_NAME:
 	case SQL_DESC_LABEL:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_LABEL, nValueLengthMax);
+			strncpy(pszValue, pColumnHeader->pszSQL_DESC_LABEL,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_LABEL);
 		break;
@@ -143,25 +137,32 @@ SQLRETURN SQLColAttribute(
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_LITERAL_PREFIX, nValueLengthMax);
+			strncpy(pszValue,
+				pColumnHeader->pszSQL_DESC_LITERAL_PREFIX,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_LITERAL_PREFIX);
 		break;
 	case SQL_DESC_LITERAL_SUFFIX:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_LITERAL_SUFFIX, nValueLengthMax);
+			strncpy(pszValue,
+				pColumnHeader->pszSQL_DESC_LITERAL_SUFFIX,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_LITERAL_SUFFIX);
 		break;
 	case SQL_DESC_LOCAL_TYPE_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_LOCAL_TYPE_NAME, nValueLengthMax);
+			strncpy(pszValue,
+				pColumnHeader->pszSQL_DESC_LOCAL_TYPE_NAME,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_LOCAL_TYPE_NAME);
 		break;
 	case SQL_DESC_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_NAME, nValueLengthMax);
+			strncpy(pszValue, pColumnHeader->pszSQL_DESC_NAME,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_NAME);
 		break;
@@ -187,7 +188,8 @@ SQLRETURN SQLColAttribute(
 		break;
 	case SQL_DESC_SCHEMA_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_SCHEMA_NAME, nValueLengthMax);
+			strncpy(pszValue, pColumnHeader->pszSQL_DESC_SCHEMA_NAME,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_SCHEMA_NAME);
 		break;
@@ -197,7 +199,9 @@ SQLRETURN SQLColAttribute(
 		break;
 	case SQL_DESC_TABLE_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_TABLE_NAME, nValueLengthMax);
+			strncpy(pszValue,
+				pColumnHeader->pszSQL_DESC_TABLE_NAME,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_TABLE_NAME);
 		break;
@@ -207,7 +211,8 @@ SQLRETURN SQLColAttribute(
 		break;
 	case SQL_DESC_TYPE_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_TYPE_NAME, nValueLengthMax);
+			strncpy(pszValue, pColumnHeader->pszSQL_DESC_TYPE_NAME,
+				nValueLengthMax);
 		if (pnValueLength)
 			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_TYPE_NAME);
 		break;
@@ -226,6 +231,7 @@ SQLRETURN SQLColAttribute(
 	default:
 		/* HY091 = Invalid descriptor field identifier */
 		addStmtError(stmt, "HY091", NULL, 0);
+
 		return SQL_ERROR;
 	}
 

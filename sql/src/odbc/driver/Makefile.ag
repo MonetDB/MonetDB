@@ -50,7 +50,6 @@ lib_MonetODBC = {
 	SQLAllocHandle.c \
 	SQLAllocStmt.c \
 	SQLBindCol.c \
-	SQLBindParam.c \
 	SQLBindParameter.c \
 	SQLBrowseConnect.c \
 	SQLBulkOperations.c \

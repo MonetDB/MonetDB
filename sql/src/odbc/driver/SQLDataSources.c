@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -36,17 +21,13 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN SQLDataSources(
-	SQLHENV EnvironmentHandle,
-	SQLUSMALLINT Direction,
-	SQLCHAR *ServerName,
-	SQLSMALLINT BufferLength1,
-	SQLSMALLINT *NameLength1,
-	SQLCHAR *Description,
-	SQLSMALLINT BufferLength2,
-	SQLSMALLINT *NameLength2)
+SQLRETURN
+SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
+	       SQLCHAR *ServerName, SQLSMALLINT BufferLength1,
+	       SQLSMALLINT *NameLength1, SQLCHAR *Description,
+	       SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
 {
-	ODBCEnv * env = (ODBCEnv *) EnvironmentHandle;
+	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 	(void) Direction;	/* Stefan: unused!? */
 	(void) ServerName;	/* Stefan: unused!? */
@@ -56,7 +37,7 @@ SQLRETURN SQLDataSources(
 	(void) BufferLength2;	/* Stefan: unused!? */
 	(void) NameLength2;	/* Stefan: unused!? */
 
-	if (! isValidEnv(env))
+	if (!isValidEnv(env))
 		return SQL_INVALID_HANDLE;
 
 	clearEnvErrors(env);

@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************************************
@@ -35,11 +20,12 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 
-SQLRETURN SQLDisconnect(SQLHDBC hDbc)
+SQLRETURN
+SQLDisconnect(SQLHDBC hDbc)
 {
-	ODBCDbc * dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
-	if (! isValidDbc(dbc))
+	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 
 	clearDbcErrors(dbc);
@@ -52,26 +38,24 @@ SQLRETURN SQLDisconnect(SQLHDBC hDbc)
 	}
 	assert(dbc->Connected == 1);
 
-		/* 
-	if (dbc->FirstStmt != NULL)
-	{
-		 * there are still active statements for this connection */
-		/* 25000 = Invalid transaction state 
+#if 0
+	if (dbc->FirstStmt != NULL) {
+		/* there are still active statements for this connection */
+		/* 25000 = Invalid transaction state */
 		addDbcError(dbc, "25000", NULL, 0);
 		return SQL_ERROR;
 	}
-		 * */
-
+#endif
 
 	/* Ready to close the connection and clean up */
 	{
-		int	chars_printed;
-		stream *	rs = dbc->Mrs;
-		stream *	ws = dbc->Mws;
-		int 		debug = dbc->Mdebug;
-		char	buf[BUFSIZ];
+		int chars_printed;
+		stream *rs = dbc->Mrs;
+		stream *ws = dbc->Mws;
+		int debug = dbc->Mdebug;
+		char buf[BUFSIZ];
 
-		if (dbc->autocommit && dbc->Error == NULL){
+		if (dbc->autocommit && dbc->Error == NULL) {
 			chars_printed = snprintf(buf, BUFSIZ, "COMMIT;\n");
 			ws->write(ws, buf, chars_printed, 1);
 			ws->flush(ws);

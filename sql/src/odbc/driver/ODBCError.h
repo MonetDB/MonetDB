@@ -1,26 +1,11 @@
 /*
- * The contents of this file are subject to the MonetDB Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * This code was created by Peter Harvey (mostly during Christmas 98/99).
+ * This code is LGPL. Please ensure that this message remains in future
+ * distributions and uses of this code (thats about all I get out of it).
+ * - Peter Harvey pharvey@codebydesign.com
  * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
- * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ * This file has been modified for the MonetDB project.  See the file
+ * Copyright in this directory for more information.
  */
 
 /**********************************************
@@ -46,14 +31,7 @@
 #include "ODBCGlobal.h"		/* for SQL_SQLSTATE_SIZE */
 
 
-typedef struct tODBCError
-{
-	char	sqlState[SQL_SQLSTATE_SIZE + 1];	/* +1 for the string terminator */
-	char *	message;		/* pointer to the allocated error msg */
-	int	nativeErrorCode;
-
-	struct tODBCError *	next;	/* pointer to the next Error object or NULL */
-} ODBCError;
+typedef struct tODBCError ODBCError;
 
 
 extern const char ODBCErrorMsgPrefix[];	/* the prefix required by ODBC for each error msg. */
@@ -78,7 +56,7 @@ ODBCError *newODBCError(const char *SQLState, const char *msg, int nativeCode);
  * Precondition: error must be valid
  * Returns: a none NULL string pointer, intended for reading only.
  */
-char * getSqlState(ODBCError * err);
+char *getSqlState(ODBCError *err);
 
 
 /*
@@ -87,7 +65,7 @@ char * getSqlState(ODBCError * err);
  * Precondition: error must be valid
  * Returns: a string pointer, intended for reading only, which can be NULL !!.
  */
-char * getMessage(ODBCError * err);
+char *getMessage(ODBCError *err);
 
 
 /*
@@ -96,17 +74,18 @@ char * getMessage(ODBCError * err);
  * Precondition: error must be valid
  * Returns: an int value representing the native (MonetDB) error code.
  */
-int getNativeErrorCode(ODBCError * err);
+int getNativeErrorCode(ODBCError *err);
 
 
 /*
- * Get the pointer to the next ODBCError object or NULL when there no next object.
+ * Get the pointer to the recNumber'th (starting at 1) ODBCError
+ * object or NULL when there no next object.
  *
  * Precondition: error must be valid
- * Returns: the pointer to the next ODBCError object or NULL when there no next object.
+ * Returns: the pointer to the next ODBCError object or NULL when
+ * the record does not exist.
  */
-ODBCError * getNextError(ODBCError * err);
-
+ODBCError *getErrorRec(ODBCError *error, int recNumber);
 
 /*
  * Appends a valid ODBCError object 'this' to the end of the list
@@ -114,7 +93,7 @@ ODBCError * getNextError(ODBCError * err);
  *
  * Precondition: both head and this must be valid (non NULL)
  */
-void appendODBCError(ODBCError * head, ODBCError * err);
+void appendODBCError(ODBCError *head, ODBCError *err);
 
 
 /*
@@ -124,15 +103,7 @@ void appendODBCError(ODBCError * head, ODBCError * err);
  * Precondition: both head and this must be valid (non NULL)
  * Returns: the new head (which is the same as the prepended 'this').
  */
-ODBCError * prependODBCError(ODBCError * head, ODBCError * err);
-
-
-/*
- * Frees the internally allocated data (msg) and the ODBCError object itself.
- *
- * Precondition: error must be valid
- */
-void deleteODBCError(ODBCError * err);
+ODBCError *prependODBCError(ODBCError *head, ODBCError *err);
 
 
 /*
@@ -140,6 +111,6 @@ void deleteODBCError(ODBCError * err);
  *
  * Precondition: none (error may be NULL)
  */
-void deleteODBCErrorList(ODBCError * err);
+void deleteODBCErrorList(ODBCError *err);
 
-#endif	/* _H_ODBCERROR */
+#endif /* _H_ODBCERROR */
