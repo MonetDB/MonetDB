@@ -36,29 +36,9 @@
 *
 */
 #include <gdk.h>
+#include "pathfinder.h"
 
 #define MAXTAGDEPTH        1024
-
-#define PRE_SIZE     0
-#define PRE_LEVEL    1
-#define PRE_PROP     2
-#define PRE_KIND     3
-#define PRE_FRAG     4
-#define QN_NS        5
-#define QN_LOC       6
-#define PROP_TEXT    7
-#define PROP_COM     8
-#define PROP_INS     9
-#define PROP_TGT    10
-#define ATTR_OWN    11
-#define ATTR_QN     12
-#define ATTR_PROP   13
-#define ATTR_FRAG   14
-#define PROP_VAL    15
-#define DOC_LOADED  16
-#define FRAG        17
-#define WS_FRAG     18
-#define HEIGHT      19
 
 #define WS_BATS     19
 /**

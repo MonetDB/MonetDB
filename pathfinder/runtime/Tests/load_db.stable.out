@@ -16,23 +16,23 @@ module(unix);
 var path:=getenv("TSTSRCDIR");
 
 import_doc(path+"/xml-docs/book_uncompressed.xml","book_unc.xml");
-[ ">>> Importing '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/book_uncompressed.xml' with name 'book_unc.xml'" ]
+# ">>> Importing '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/book_uncompressed.xml' with name 'book_unc.xml'"
 [ "Document successfully imported" ]
-[ "The properties of the file '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/book_uncompressed.xml' are propably not compressed!" ]
-[ "You can compress the loaded instance 'book_unc.xml' with: 'compress_properties("book_unc.xml");'" ]
+# "The properties of the file '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/book_uncompressed.xml' are propably not compressed!"
+# "You can compress the loaded instance 'book_unc.xml' with: 'compress_properties("book_unc.xml");'"
 compress_properties("book_unc.xml");
-[ ">>> Compress properties of loaded document 'book_unc.xml'" ]
+# ">>> Compress properties of loaded document 'book_unc.xml'"
 
 [ "Compression completed" ]
 delete_doc("book_unc.xml");
 
 import_doc(path+"/xml-docs/foo.xml","foo.xml");
-[ ">>> Importing '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/foo.xml' with name 'foo.xml'" ]
+# ">>> Importing '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/foo.xml' with name 'foo.xml'"
 [ "Document successfully imported" ]
-[ "The properties of the file '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/foo.xml' are propably not compressed!" ]
-[ "You can compress the loaded instance 'foo.xml' with: 'compress_properties("foo.xml");'" ]
+# "The properties of the file '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/foo.xml' are propably not compressed!"
+# "You can compress the loaded instance 'foo.xml' with: 'compress_properties("foo.xml");'"
 import_doc(path+"/xml-docs/book.xml","http://bstore1.example.com/bib.xml");
-[ ">>> Importing '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/book.xml' with name 'http://bstore1.example.com/bib.xml'" ]
+# ">>> Importing '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/book.xml' with name 'http://bstore1.example.com/bib.xml'"
 [ "Document successfully imported" ]
 
 quit();

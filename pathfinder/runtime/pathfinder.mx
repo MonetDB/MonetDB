@@ -40,6 +40,8 @@
 @m
 .MODULE pathfinder;
 
+.USE xtables;
+
 @:prec_foll(following)@
 @:prec_foll(preceding)@
 
@@ -75,6 +77,23 @@ axis step evaluation on the @1 axis from the given context."
   upperbound: upperbound for size of result context node sequence
 DESCRIPTION
 axis step evaluation on the @2 axis from the given context."
+@m
+@:ll_cmd(descendant)@
+@:ll_cmd(descendant_or_self)@
+@:ll_cmd(child)@
+
+@= ll_cmd
+.COMMAND ll_@1(BAT[void,oid] iter,
+                   BAT[void,oid] ctx,
+                   oid frag,
+                   BAT[void,bat] ws): BAT[oid,oid] = PFll_@1;
+"PARAMETERS:
+BAT[void,oid] iter (grouping relation)
+BAT[void,oid] ctx (context set)
+oid frag (the current fragment of the ws)
+BAT[void,bat] ws (working set)
+DESCRIPITON:
+returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
 @m
 @:lev_cmd(child,child)@
 @:lev_cmd(parent,parent)@
@@ -127,7 +146,6 @@ tuple will be in the result for this group."
 
 @mil
 # load modules used in pathfinder.mx
-module(xtables);
 module(pf_support);
 module(malalgebra);
 
@@ -354,6 +372,30 @@ const DOC_LOADED := 16;
 const FRAG       := 17;
 const WS_FRAG    := 18;
 const HEIGHT     := 19;
+const WS_SIZE    := 20; # must be last!
+@= define_ws_constants
+#define PRE_SIZE     0
+#define PRE_LEVEL    1
+#define PRE_PROP     2
+#define PRE_KIND     3
+#define PRE_FRAG     4
+#define QN_NS        5
+#define QN_LOC       6
+#define PROP_TEXT    7
+#define PROP_COM     8
+#define PROP_INS     9
+#define PROP_TGT    10
+#define ATTR_OWN    11
+#define ATTR_QN     12
+#define ATTR_PROP   13
+#define ATTR_FRAG   14
+#define PROP_VAL    15
+#define DOC_LOADED  16
+#define FRAG        17
+#define WS_FRAG     18
+#define HEIGHT      19
+#define WS_SIZE     20 /* must be last! */
+@mil
 
 PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 {
@@ -488,7 +530,7 @@ PROC compress_properties(str name) : void
 	{ ERROR("Document %s does not exist\n",name); }
     var docid := str(int(bat("doc_name").reverse().find(name)));
 
-    printf("[ \">>> Compress properties of loaded document '%s'\" ]\n",name);
+    printf("# \">>> Compress properties of loaded document '%s'\"\n",name);
     
     # eliminate property duplicates in each BAT prop_*
     # (in case of tag-names and PIs every unique combination of
@@ -611,7 +653,7 @@ PROC import_doc(str flnm, str name) : void
 
     module("ascii_io");
 
-    printf("[ \">>> Importing '%s' with name '%s'\" ]\n",flnm,name);
+    printf("# \">>> Importing '%s' with name '%s'\"\n",flnm,name);
 
     # column/line separators (4 columns)
     var seps4 := new (void, str);
@@ -757,8 +799,8 @@ PROC import_doc(str flnm, str name) : void
 	(bat("pre_kind" + docid).select(TEXT).count() =
         bat("prop_text" + docid).count()))
     {
-        printf("[ \"The properties of the file '%s' are propably not compressed!\" ]\n", flnm);
-	printf("[ \"You can compress the loaded instance '%s' with: 'compress_properties(\"%s\");'\" ]\n", name, name);
+        printf("# \"The properties of the file '%s' are propably not compressed!\"\n", flnm);
+	printf("# \"You can compress the loaded instance '%s' with: 'compress_properties(\"%s\");'\"\n", name, name);
     }
 }
 ADDHELP("import_doc", "rode", "Nov 2003",
@@ -1071,19 +1113,43 @@ Print loaded XML-document with the specified name.",
 # In order to simplify the invocation of the axis steps functions, this
 # interface provides...
 # 
+@(
 @:step(descendant,descendant,scj_desc,,@:sizes_code@,,)@
 @:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
+@)
+@:wrap(descendant)@
+@:wrap(descendant_or_self)@
+
 @:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
 @:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
+
+@(
 @:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
+@)
+@:wrap(child)@
+
 @:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
 @:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
 @:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
 
 @:step(following,following,following_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
 @:step(preceding,preceding,preceding_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
-@
 
+@= wrap
+proc @1 (BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws) : BAT[oid,oid] {
+	return ll_@1 (iter, ctx, frag, ws);
+}
+ADDHELP("@1", "tsheyar", "Sep 2004",
+"PARAMETERS:\n\
+BAT[void,oid] iter (grouping relation)\n\
+BAT[void,oid] ctx (context set)\n\
+oid frag (the current fragment of the ws)\n\
+BAT[void,bat] ws (working set)\n\
+DESCRIPITON:\n\
+returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
+"pathfinder");
+@
+@
 # use size concept
 @= sizes_code
 pre_sizes
@@ -1362,6 +1428,8 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #define PATHFINDER_H
 
 #include "pathfinder.proto.h"
+
+@:define_ws_constants@
 
 #endif
 

@@ -29,6 +29,7 @@ lib__pathfinder = {
 	SOURCES = \
 		pathfinder.mx \
 		staircasejoin.mx \
+		ll_staircasejoin.mx \
 		prec_foll.mx \
 		levelsteps.mx \ 
 		xquery.mx
