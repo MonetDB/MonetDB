@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PATH=/cwi/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH
+PATH=/cwi/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH
 
 THISPATH=${0%/*}
 THISFILE=${0##*/}
