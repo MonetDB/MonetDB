@@ -2444,7 +2444,7 @@ def main(argv) :
             dft['SQLCLIENT']  = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
         dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
         dft['X100CLIENT']     = "'x100run_mapi'" # --port='+env['MAPIPORT']"
-        dft['XQUERYCLIENT']   = "'pf -M'" # --port='+env['MAPIPORT']"
+        dft['XQUERYCLIENT']   = "'pf -M -O3'" # --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
 
