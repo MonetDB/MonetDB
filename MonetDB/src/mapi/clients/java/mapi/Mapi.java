@@ -335,6 +335,9 @@ throws MapiException
 		errortext= "Failed to establish contact\n" ;
 		throw new MapiException( errortext );
 	}
+
+	if( pwd==null ) pwd="";
+
 	blocked=false;
 	this.mapiversion= "1.0";
 	this.username= user;
@@ -1085,7 +1088,15 @@ public int openStream(String cmd, int windowsize){
 	query(cmd);
 	if( gotError()) return error;
 	// reset the active flag to enable continual reads
-	cacheResetInternal();
+	// stolen part of cacheResetInternal();
+	finish_internal();
+	rows_affected= 0;
+	active= true;
+	if( cache.fldcnt==null)
+		cache.fldcnt = new int[cache.limit];
+	cache.tupleCount= 0;
+	cacheFreeup(100);
+
 	cacheLimit(windowsize);
 	cacheShuffle(1);
 	return error;
@@ -1297,7 +1308,6 @@ private int clearCache(){
 		setError("Cache reset with non-read lines","clearCache");
 	}
 	cacheFreeup(cache.shuffle);
-	//cacheResetInternal();
 	return MOK;
 }
     
