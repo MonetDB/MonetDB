@@ -230,8 +230,8 @@ static Client Monet_init( opt *set, int setlen )
 	if ((p=GDKgetenv("monet_mmap")) )
 		GDKmem_bigsize() = strtol(p,NULL,10);
 
-	if (GDKgetenv_isyes("monet_deamon")){	
-		monet_deamon=1;
+	if (GDKgetenv_isyes("monet_daemon")){	
+		monet_daemon=1;
 	}
 
 	return (Client) monet_init();

@@ -69,10 +69,10 @@ monet_admin=adm			#administrator user name
 monet_prompt=monet>		#prompt 
 monet_welcome=yes		#Version and copyright information
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
-monet_deamon=no			# default yes
+monet_daemon=no			# default yes
 
 #monet_clients = 32		number of concurrent Mclient listeners
-#monet_deamon =no		(yes/no) console (only Mclient)
+#monet_daemon =no		(yes/no) console (only Mclient)
 #monet_prompt=>			the MIL prompt character
 #monet_version=<str>		to enforce creation of old bat structures
 

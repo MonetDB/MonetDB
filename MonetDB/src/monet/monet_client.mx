@@ -244,7 +244,7 @@ void scheduleClient(Client c){
 				"source(<user script>);");
 		}
 	}
-	if (c != monet_clients || monet_deamon != 1) {
+	if (c != monet_clients || monet_daemon != 1) {
 		QMADD(req, c->stk, c->mil_accept, "readCmd;");
         }
         putRequest(req);
