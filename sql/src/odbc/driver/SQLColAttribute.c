@@ -36,7 +36,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN SQLColAttribute(
+SQLRETURN ColAttribute(
 	SQLHSTMT	hStmt,
 	SQLUSMALLINT	nCol,
 	SQLUSMALLINT	nFieldIdentifier,
@@ -123,6 +123,7 @@ SQLRETURN SQLColAttribute(
 	case SQL_DESC_FIXED_PREC_SCALE:
 		nValue = pColumnHeader->bSQL_DESC_FIXED_PREC_SCALE;
 		break;
+	case SQL_COLUMN_NAME:
 	case SQL_DESC_LABEL:
 		strncpy(pszValue, pColumnHeader->pszSQL_DESC_LABEL, nValueLengthMax);
 		if (pnValueLength)
@@ -206,4 +207,17 @@ SQLRETURN SQLColAttribute(
 		*(int*)pnValue = nValue;
 
 	return SQL_SUCCESS;
+}
+
+SQLRETURN SQLColAttribute(
+	SQLHSTMT	hStmt,
+	SQLUSMALLINT	nCol,
+	SQLUSMALLINT	nFieldIdentifier,
+	SQLPOINTER	pszValue,
+	SQLSMALLINT	nValueLengthMax,
+	SQLSMALLINT *	pnValueLength,
+	SQLPOINTER	pnValue )
+{
+	ColAttribute( hStmt, nCol, nFieldIdentifier, pszValue, nValueLengthMax,
+				pnValueLength, pnValue);
 }

@@ -52,13 +52,13 @@ SQLRETURN SQLDisconnect(SQLHDBC hDbc)
 	}
 	assert(dbc->Connected == 1);
 
-	if (dbc->FirstStmt != NULL)
-	{
+	//if (dbc->FirstStmt != NULL)
+	//{
 		/* there are still active statements for this connection */
 		/* 25000 = Invalid transaction state */
-		addDbcError(dbc, "25000", NULL, 0);
-		return SQL_ERROR;
-	}
+	//	addDbcError(dbc, "25000", NULL, 0);
+	//	return SQL_ERROR;
+	//}
 
 
 	/* Ready to close the connection and clean up */

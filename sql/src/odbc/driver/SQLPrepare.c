@@ -37,7 +37,7 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN SQLPrepare(
+SQLRETURN Prepare(
 	SQLHSTMT	hStmt,
 	SQLCHAR *	szSqlStr,
 	SQLINTEGER	nSqlStrLength )
@@ -92,4 +92,12 @@ SQLRETURN SQLPrepare(
 	/* TODO: count the number of output columns and their description */
 
 	return SQL_SUCCESS;
+}
+
+SQLRETURN SQLPrepare(
+	SQLHSTMT	hStmt,
+	SQLCHAR *	szSqlStr,
+	SQLINTEGER	nSqlStrLength )
+{
+	return Prepare( hStmt, szSqlStr, nSqlStrLength);
 }

@@ -36,7 +36,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN SQLFetch(SQLHSTMT hStmt)
+SQLRETURN Fetch(SQLHSTMT hStmt)
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 	SQLRETURN retCode = SQL_SUCCESS;
@@ -113,4 +113,8 @@ SQLRETURN SQLFetch(SQLHSTMT hStmt)
 	}
 
 	return retCode;
+}
+SQLRETURN SQLFetch(SQLHSTMT hStmt)
+{
+	Fetch( hStmt );
 }

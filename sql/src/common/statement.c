@@ -1279,6 +1279,7 @@ char *column_name(stmt * st)
 	case st_group_ext:
 	case st_reverse:
 		return column_name(head_column(st->op1.stval));
+	case st_const:
 	case st_join:
 	case st_outerjoin:
 	case st_derive:
@@ -1301,6 +1302,9 @@ char *column_name(stmt * st)
 		return st->op3.sval;
 	case st_unique:
 		return column_name(st->op1.stval);
+	case st_atom:
+		return strdup("single_value");
+
 	default:
 		fprintf(stderr, "missing name %d\n", st->type );
 		return NULL;

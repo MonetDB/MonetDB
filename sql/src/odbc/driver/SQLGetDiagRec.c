@@ -38,7 +38,7 @@
 #include "ODBCStmt.h"
 #include "ODBCError.h"
 
-SQLRETURN SQLGetDiagRec(
+SQLRETURN GetDiagRec(
 	SQLSMALLINT	handleType,	/* must contain a valid type */
 	SQLHANDLE	handle,		/* must contain a valid handle */
 	SQLSMALLINT	recNumber,	/* must be >= 1 */
@@ -198,4 +198,17 @@ SQLRETURN SQLGetDiagRec(
 	deleteODBCError(err);
 
 	return retCode;
+}
+
+SQLRETURN SQLGetDiagRec(
+	SQLSMALLINT	handleType,	/* must contain a valid type */
+	SQLHANDLE	handle,		/* must contain a valid handle */
+	SQLSMALLINT	recNumber,	/* must be >= 1 */
+	SQLCHAR *	sqlState,	/* may be null */
+	SQLINTEGER *	nativeErrorPtr,	/* may be null */
+	SQLCHAR *	messageText,	/* may be null */
+	SQLSMALLINT	bufferLength,	/* must be >= 0 */
+	SQLSMALLINT *	textLengthPtr )	/* may be null */
+{
+	return GetDiagRec( handleType, handle, recNumber, sqlState, nativeErrorPtr, messageText, bufferLength, textLengthPtr);
 }

@@ -40,7 +40,7 @@
 #include "ODBCError.h"
 
 
-SQLRETURN SQLFreeHandle(
+SQLRETURN FreeHandle(
 	SQLSMALLINT	handleType,
 	SQLHANDLE	handle )
 {
@@ -102,6 +102,7 @@ SQLRETURN SQLFreeHandle(
 			if (dbc->FirstStmt != NULL) {
 				/* There are allocated statements */
 				/* should be closed and freed first */
+				printf("No FirstStmt \n");
 				addDbcError(dbc, "HY010", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -121,8 +122,9 @@ SQLRETURN SQLFreeHandle(
 			/* check if statement is not active */
 			if (stmt->State == EXECUTED) {
 				/* should be closed first */
-				addStmtError(stmt, "HY010", NULL, 0);
-				return SQL_ERROR;
+				int res = FreeStmt(stmt, SQL_CLOSE);
+				if (res != SQL_SUCCESS)
+					return res;
 			}
 
 			/* Ready to destroy the stmt handle */
@@ -140,4 +142,11 @@ SQLRETURN SQLFreeHandle(
 	}
 
 	return SQL_INVALID_HANDLE;
+}
+
+SQLRETURN SQLFreeHandle(
+	SQLSMALLINT	handleType,
+	SQLHANDLE	handle )
+{
+	FreeHandle( handleType, handle);
 }

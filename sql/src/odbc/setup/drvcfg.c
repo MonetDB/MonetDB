@@ -58,6 +58,13 @@ int ODBCINSTGetProperties( HODBCINSTPROPERTY hLastProperty )
 	strncpy( hLastProperty->szName, "Password", INI_MAX_PROPERTY_NAME );
 	strncpy( hLastProperty->szValue, "", INI_MAX_PROPERTY_VALUE );
 
+	hLastProperty->pNext 	= (HODBCINSTPROPERTY)malloc( sizeof(ODBCINSTPROPERTY) );
+	hLastProperty 		= hLastProperty->pNext;
+	memset( hLastProperty, 0, sizeof(ODBCINSTPROPERTY) );
+	hLastProperty->nPromptType			= ODBCINST_PROMPTTYPE_TEXTEDIT;
+	strncpy( hLastProperty->szName, "Debug", INI_MAX_PROPERTY_NAME );
+	strncpy( hLastProperty->szValue, "", INI_MAX_PROPERTY_VALUE );
+
 	return 1;
 }
 

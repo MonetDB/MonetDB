@@ -106,7 +106,7 @@ SQLRETURN SQLConnect(
 	SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
 	port = atoi(buf);
 /*	port = 45123; */
-	SQLGetPrivateProfileString(dsn, "FLAG", "0", buf, BUFSIZ, ODBC_INI);
+	SQLGetPrivateProfileString(dsn, "DEBUG", "0", buf, BUFSIZ, ODBC_INI);
 	debug = atoi(buf);
 
 

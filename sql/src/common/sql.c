@@ -181,6 +181,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 static stmt *sql_simple_select(context * sql, scope * scp, dlist * selection);
 static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * grp, stmt * subset);
 static stmt *sql_value_exp(context * sql, scope * scp, symbol * se, group * grp, stmt * subset);
+static stmt *sql_compare_exp( context *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op );
 
 static stmt *sets2pivot(context * sql, list * ll);
 static stmt *set2pivot(context * sql, list * l);
@@ -542,7 +543,7 @@ static stmt *check_types(context * sql, sql_subtype * ct, stmt * s)
    is involved (ie. find one subset).
    We need to check if for all results the types are the same. 
  */
-static stmt *sql_search_case(context * sql, scope * scp, dlist * when_search_list, symbol * opt_else, group * grp, stmt * subset)
+static stmt *sql_case(context * sql, scope * scp, symbol *opt_cond, dlist * when_search_list, symbol * opt_else, group * grp, stmt * subset)
 {
 	list *conds = create_stmt_list();
 	list *results = create_stmt_list();
@@ -551,12 +552,20 @@ static stmt *sql_search_case(context * sql, scope * scp, dlist * when_search_lis
 	stmt *res = NULL;
 	node *n, *m;
 
+
 	if (dn) {
 		dlist *when = dn->data.sym->data.lval;
 		stmt *cond, *result;
 
-		cond = sql_logical_exp(sql, scp, when->h->data.sym, grp, subset);
-		result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset);
+		if (opt_cond){
+			cond = sql_compare_exp( sql, scp, grp, subset, 
+					opt_cond, when->h->data.sym, "=");
+		} else {
+			cond = sql_logical_exp(sql, scp, 
+					when->h->data.sym, grp, subset);
+		}
+		result = sql_value_exp(sql, scp, 
+					when->h->next->data.sym, grp, subset);
 		if (!cond || !result) {
 			list_destroy(conds);
 			list_destroy(results);
@@ -577,8 +586,15 @@ static stmt *sql_search_case(context * sql, scope * scp, dlist * when_search_lis
 		dlist *when = dn->data.sym->data.lval;
 		stmt *cond, *result;
 
-		cond = sql_logical_exp(sql, scp, when->h->data.sym, grp, subset);
-		result = sql_value_exp(sql, scp, when->h->next->data.sym, grp, subset);
+		if (opt_cond){
+			cond = sql_compare_exp( sql, scp, grp, subset, 
+					opt_cond, when->h->data.sym, "=");
+		} else {
+			cond = sql_logical_exp(sql, scp, 
+					when->h->data.sym, grp, subset);
+		}
+		result = sql_value_exp(sql, scp, 
+					when->h->next->data.sym, grp, subset);
 		if (!cond || !result) {
 			list_destroy(conds);
 			list_destroy(results);
@@ -674,16 +690,18 @@ static stmt *sql_search_case(context * sql, scope * scp, dlist * when_search_lis
 	return res;
 }
 
-static stmt *sql_case(context * sql, scope * scp, symbol * se, group * grp, stmt * subset)
+static stmt *sql_case_exp(context * sql, scope * scp, symbol * se, group * grp, stmt * subset)
 {
 	dlist *l = se->data.lval;
 	if (l->h->type == type_list) {
 		dlist *when_search_list = l->h->data.lval;
 		symbol *opt_else = l->h->next->data.sym;
-		return sql_search_case(sql, scp, when_search_list, opt_else, grp, subset);
+		return sql_case(sql, scp, NULL,  when_search_list, opt_else, grp, subset);
 	} else {
-		/*sql_value_case(); */
-		printf("sql_value_case not handeled\n");
+		symbol *scalar_exp = l->h->data.sym;
+		dlist *when_value_list = l->h->next->data.lval;
+		symbol *opt_else = l->h->next->next->data.sym;
+		return sql_case(sql, scp, scalar_exp, when_value_list, opt_else, grp, subset);
 		return NULL;
 	}
 	printf("case %d %s\n", se->token, token2string(se->token));
@@ -901,7 +919,7 @@ static stmt *sql_value_exp(context * sql, scope * scp, symbol * se, group * grp,
 	case SQL_CAST:
 		return sql_cast(sql, scp, se, grp, subset);
 	case SQL_CASE:
-		return sql_case(sql, scp, se, grp, subset);
+		return sql_case_exp(sql, scp, se, grp, subset);
 	case SQL_NULLIF:
 	case SQL_COALESCE:
 		printf("case %d %s\n", se->token, token2string(se->token));
@@ -1830,6 +1848,53 @@ static stmt *sql_compare(context * sql, stmt * ls,
 	}
 }
 
+static stmt *sql_compare_exp( context *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op )
+{
+	stmt *rs, *ls = sql_value_exp(sql, scp, lo, grp, subset);
+	if (!ls)
+		return NULL;
+	if (ro->token != SQL_SELECT) {
+		rs = sql_value_exp(sql, scp, ro, grp, subset);
+		if (!rs)
+			return NULL;
+		if (grp && (!rs->key || !ls->key)) {
+			stmt_destroy(rs);
+			stmt_destroy(ls);
+			return sql_error(sql, 02, "Cannot compare sets with values, probably a aggrate function missing");
+		}
+		return sql_compare(sql, ls, rs, compare_op);
+	} else {
+		node *o;
+		rs = scope_subquery(sql, scp, ro);
+
+		if (!rs)
+			return NULL;
+		if (rs->type != st_list || list_length(rs->op1.lval) == 0) {
+			return sql_error(sql, 02, "Subquery result wrong");
+		}
+		o = rs->op1.lval->h;
+		if (list_length(rs->op1.lval) == 1) {
+			stmt *j = sql_compare(sql, ls, o->data, compare_op);
+			if (!j)
+				return NULL;
+			return stmt_semijoin(ls, j);
+		} else {
+			stmt *sd, *j = sql_compare(sql, ls, o->data, compare_op);
+			if (!j)
+				return NULL;
+			sd = stmt_set( stmt_join(j, o->next->data, cmp_equal));
+			o = o->next;
+			o = o->next;
+			for (; o; o = o->next) {
+				list_append(sd->op1.lval,
+					stmt_join(j, o->data, cmp_equal));
+			}
+			return sd;
+		}
+		return NULL;
+	}
+}
+
 static stmt *sql_and(context * sql, stmt * ls, stmt * rs)
 {
 	stmt *res = NULL;
@@ -1938,53 +2003,8 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 			symbol *lo = sc->data.lval->h->data.sym;
 			symbol *ro = sc->data.lval->h->next->next->data.sym;
 			char *compare_op = sc->data.lval->h->next->data.sval;
-			stmt *rs, *ls = sql_value_exp(sql, scp, lo, grp, subset);
-			if (!ls)
-				return NULL;
-			if (ro->token != SQL_SELECT) {
-				rs = sql_value_exp(sql, scp, ro, grp, subset);
-				if (!rs)
-					return NULL;
-				if (grp && (!rs->key || !ls->key)) {
-					stmt_destroy(rs);
-					stmt_destroy(ls);
-					return sql_error(sql, 02, "Cannot compare sets with values, probably a aggrate function missing");
-				}
-				return sql_compare(sql, ls, rs, compare_op);
-			} else {
-				node *o;
-				rs = scope_subquery(sql, scp, ro);
-
-				if (!rs)
-					return NULL;
-				if (rs->type != st_list
-				    || list_length(rs->op1.lval) == 0) {
-					return sql_error(sql, 02, "Subquery result wrong");
-				}
-				o = rs->op1.lval->h;
-				if (list_length(rs->op1.lval) == 1) {
-					stmt *j = sql_compare(sql, ls, o->data, compare_op);
-					if (!j)
-						return NULL;
-					return stmt_semijoin(ls, j);
-				} else {
-					stmt *sd, *j = sql_compare(sql, ls, o->data, compare_op);
-					if (!j)
-						return NULL;
-					sd = stmt_set(
-						stmt_join(j, o->next->data, 
-							cmp_equal));
-					o = o->next;
-					o = o->next;
-					for (; o; o = o->next) {
-						list_append(sd->op1.lval,
-							stmt_join(j, o->data,
-								  cmp_equal));
-					}
-					return sd;
-				}
-				return NULL;
-			}
+			return sql_compare_exp(
+				 sql, scp, grp, subset, lo, ro, compare_op);
 		}
 		break;
 	case SQL_BETWEEN:

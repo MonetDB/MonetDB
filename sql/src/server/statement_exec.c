@@ -742,7 +742,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ-len, 
-		  "s%d := replace(s%d,s%d);\n", -s->nr, l, r);
+		  "s%d := replace(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_delete: {
@@ -758,13 +758,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
-	case st_alias: {
-		int l = stmt_dump( s->op1.stval, nr, sql );
-		len = snprintf( buf, BUFSIZ, 
-			"s%d := roles(s%d, \"%s\", \"%s\");\n",
-		  	-s->nr, l, s->op2.sval, s->op2.sval );
-		dump(sql,buf,len,-s->nr);
-	} break;
+	case st_alias: 
 	case st_column_alias: 
 		s->nr = - stmt_dump( s->op1.stval, nr, sql );
 		break;

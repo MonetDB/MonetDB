@@ -146,7 +146,6 @@ static void header_data( stream *rs, stream *out, int nCols, int debug ){
 		if (cols[i].name){
 			int l =	strlen(cols[i].name); 
 	        	len += l;
-			printf("%s %d\n", cols[i].name, l);
 		}
 		len += 3;
 	} len ++;

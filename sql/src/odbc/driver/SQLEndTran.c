@@ -42,7 +42,7 @@
 #include "ODBCError.h"
 
 
-SQLRETURN SQLEndTran(
+SQLRETURN EndTran(
 	SQLSMALLINT	nHandleType,
 	SQLHANDLE	nHandle,
 	SQLSMALLINT	nCompletionType )
@@ -113,11 +113,11 @@ SQLRETURN SQLEndTran(
 
 
 	/* construct a statement object and excute a SQL COMMIT or ROLLBACK */
-	rc = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &hStmt);
+	rc = AllocHandle(SQL_HANDLE_STMT, dbc, &hStmt);
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
 	{
 		ODBCStmt * stmt = (ODBCStmt *)hStmt;
-		rc = SQLExecDirect(stmt,
+		rc = ExecDirect(stmt,
 			(nCompletionType == SQL_COMMIT) ? "COMMIT" : "ROLLBACK",
 			SQL_NTS);
 		if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
@@ -128,14 +128,14 @@ SQLRETURN SQLEndTran(
 			SQLCHAR		msgText[SQL_MAX_MESSAGE_LENGTH + 1];
 			RETCODE		rc2;
 
-			rc2 = SQLGetDiagRec(SQL_HANDLE_STMT, stmt, 1,
+			rc2 = GetDiagRec(SQL_HANDLE_STMT, stmt, 1,
 					sqlState, &nativeErrCode, msgText,
 					SQL_MAX_MESSAGE_LENGTH, NULL);
 			addDbcError(dbc, sqlState, msgText, nativeErrCode);
 		}
 		/* clean up the statement handle */
-		SQLFreeStmt(stmt, SQL_CLOSE);
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+		FreeStmt(stmt, SQL_CLOSE);
+		FreeHandle(SQL_HANDLE_STMT, stmt);
 	} else {
 		/* could not allocated a statement object */
 		addDbcError(dbc, "HY013", NULL, 0);
@@ -143,4 +143,12 @@ SQLRETURN SQLEndTran(
 	}
 
 	return rc;
+}
+
+SQLRETURN SQLEndTran(
+	SQLSMALLINT	nHandleType,
+	SQLHANDLE	nHandle,
+	SQLSMALLINT	nCompletionType )
+{
+	return EndTran( nHandleType, nHandle, nCompletionType );
 }

@@ -61,7 +61,7 @@ static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 	return status;
 }
 
-SQLRETURN SQLExecute(SQLHSTMT hStmt)
+SQLRETURN Execute(SQLHSTMT hStmt)
 {
 	ODBCStmt *	hstmt = (ODBCStmt *) hStmt;
 	ODBCDbc *	dbc = NULL;
@@ -94,7 +94,7 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 
 	/* Send the Query to the server for execution */
 	dbc->Mws->write( dbc->Mws, hstmt->Query, strlen(hstmt->Query), 1 );
-	dbc->Mws->write( dbc->Mws, "\n", 1, 1 );
+	dbc->Mws->write( dbc->Mws, ";\n", 2, 1 );
 	dbc->Mws->flush( dbc->Mws );
 
 	/* now get the result data and store it to our internal data structure */
@@ -228,6 +228,14 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 						return SQL_ERROR;
 				}
 				*sc = '\0';
+				if (*s == '\"' && *(sc-1) == '\"'){
+					s++;
+					*(sc-1) = '\0';
+				}
+				if (*s == '\'' && *(sc-1) == '\''){
+					s++;
+					*(sc-1) = '\0';
+				}
 				hstmt->ResultRows[nRow*nCols+nCol] = strdup(s);
 				sc++;
 			}
@@ -243,4 +251,9 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 
 	hstmt->State = EXECUTED;
 	return SQL_SUCCESS;
+}
+
+SQLRETURN SQLExecute(SQLHSTMT hStmt)
+{
+	return Execute( hStmt );
 }

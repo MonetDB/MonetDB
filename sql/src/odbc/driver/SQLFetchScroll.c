@@ -38,7 +38,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN SQLFetchScroll(
+SQLRETURN FetchScroll(
 	SQLHSTMT	hStmt,
 	SQLSMALLINT	nOrientation,
 	SQLINTEGER	nOffset )
@@ -50,13 +50,52 @@ SQLRETURN SQLFetchScroll(
 
 	clearStmtErrors(stmt);
 
-	/* TODO: check the parameter values */
+	/* check statement cursor state, query should be executed */
+	if (stmt->State != EXECUTED) {
+		/* caller should have called SQLExecute or SQLExecDirect first */
+		/* HY010 = Function sequence error */
+		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
 
-	/* TODO: store the parameter information in stmt */
+	if (stmt->ResultRows == NULL) {
+		return SQL_NO_DATA;
+	}
+	if (stmt->nrRows <= 0) {
+		return SQL_NO_DATA;
+	}
 
-	/* TODO: implement this function and corresponding behavior */
+	switch(nOrientation){
+	case SQL_FETCH_NEXT: 
+		break;
+	case SQL_FETCH_FIRST:
+		stmt->currentRow = 0;
+		break;
+	case SQL_FETCH_LAST:
+		stmt->currentRow = stmt->nrRows-1;
+		break;
+	case SQL_FETCH_PRIOR:
+		stmt->currentRow -= 2;
+		break;
+	case SQL_FETCH_ABSOLUTE:
+		stmt->currentRow = nOffset-1;
+		break;
+	case SQL_FETCH_RELATIVE:
+		stmt->currentRow += nOffset;
+		break;
+	default:
+		/* TODO change to unkown Orientation */
+		/* for now return error IM001: driver not capable */
+		addStmtError(stmt, "IM001", NULL, 0);
+		return SQL_ERROR;
+	}
+	return Fetch(stmt);
+}
 
-	/* for now return error IM001: driver not capable */
-	addStmtError(stmt, "IM001", NULL, 0);
-	return SQL_ERROR;
+SQLRETURN SQLFetchScroll(
+	SQLHSTMT	hStmt,
+	SQLSMALLINT	nOrientation,
+	SQLINTEGER	nOffset )
+{
+	return FetchScroll( hStmt, nOrientation, nOffset );
 }

@@ -204,7 +204,7 @@ SQLRETURN SQLSpecialColumns(
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
-	rc = SQLExecDirect(hStmt, query, SQL_NTS);
+	rc = ExecDirect(hStmt, query, SQL_NTS);
 
 	GDKfree(query);
 

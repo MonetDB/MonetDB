@@ -56,10 +56,5 @@ SQLRETURN SQLExtendedFetch(
 		return SQL_ERROR;
 	}
 
-	/* TODO: finish implementation by using a mapping to SQLFetch() */
-
-
-	/* IM001 = Driver does not support this function */
-	addStmtError(stmt, "IM001", NULL, 0);
-	return SQL_ERROR;
+	return FetchScroll(stmt, nOrientation, nOffset);
 }

@@ -36,5 +36,5 @@ SQLRETURN SQLCancel(SQLHSTMT hStmt)
 	if (! isValidStmt(hStmt))
 		return SQL_INVALID_HANDLE;
 
-	return SQLFreeStmt(hStmt, SQL_CLOSE);
+	return FreeStmt(hStmt, SQL_CLOSE);
 }

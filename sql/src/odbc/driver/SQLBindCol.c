@@ -53,15 +53,6 @@ SQLRETURN SQLBindCol(
 
 	clearStmtErrors(stmt);
 
-	/* check statement cursor state, should NOT be in executed state */
-	/* Note: the ODBC spec specifies this should be possible, however
-	   we currently do not support this functionality */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	/* check input parameters */
 	/* column number 0 (Bookmark column) is not supported */
 	if (nCol == 0)
