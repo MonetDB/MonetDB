@@ -130,7 +130,9 @@ proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 #include <ascii_io.proto.h>
 
 extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, int nr );
+extern BAT *ASCCIIinput( BAT *names, BAT *seps, BAT *types, stream *s, int nr );
 extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr );
+extern int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s );
 
 #endif
 @c
@@ -640,6 +642,19 @@ int output_file_ordered( ascii *as, BAT *order, stream *fd, int base ){
 
 BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, 
 		 char *datafile, int nr ){
+	BAT *res;
+	stream *s = open_rastream( datafile );
+	if (s->errnr){
+		GDKerror("could not open file %s\n", datafile );
+		return NULL;
+	}
+	res = ASCCIIinput( names, seps, types, s, nr );
+	s->close(s);
+	s->destroy(s);
+	return res;
+}
+
+BAT *ASCCIIinput( BAT *names, BAT *seps, BAT *types, stream *s, int nr ){
 	BAT *bats = NULL;
 	ascii as;
 
@@ -647,15 +662,8 @@ BAT *ASCIIload( BAT *names, BAT *seps, BAT *types,
 	as.nr = nr;
 	if (create_loadformat( &as, names, seps, types) >= 0 && 
 	    create_bats( &as ) >= 0){
-		stream *s = open_rastream( datafile );
-		if (!s->errnr && load_file( &as, s )>=0)
+		if (load_file( &as, s )>=0)
 			bats = collect_bats( &as );
-		if (s->errnr){
-		 	GDKerror("could not open file %s\n", datafile );
-		} else {
-			s->close(s);
-		}
-		s->destroy(s);
 	}
 	destroy_format( &as );
 	return bats;
