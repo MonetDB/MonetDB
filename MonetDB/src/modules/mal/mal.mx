@@ -7,6 +7,15 @@ iterators over ranges and bats, object management, access to the debugger, ....
 This module is loaded directly after the kernel modules and provides
 a first abstraction layer.
 
+@+ Exception handling
+The exception handler works through a string-returning pattern
+@mal
+# The routines below are linked with the kernel by default
+
+module mal;
+
+command raise(msg:str) :str = CMDraise
+comment "Raise an exception labelled with a specific message.";
 @+ Iterator primitives
 This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few paramaters,
@@ -15,10 +24,6 @@ call by recognizing that the control variable lies outside the intended
 collection.
 
 @mal
-# The routines below are linked with the kernel by default
-
-module mal;
-
 
 command nextElement(i:flt, first:flt, last:flt, step:flt):bit = fltForloopStep; 
 command nextElement(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep; 
@@ -99,6 +104,12 @@ pattern mdb():void = MDBmdb
 @c
 #include "monet.h"
 
+@+ Exception implementation
+@c
+int CMDraise(str *ret,  str *msg){
+	*ret= GDKstrdup(*msg);
+	return (int) *ret;
+}
 @+ BAT Iterator Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
 @= batcheck

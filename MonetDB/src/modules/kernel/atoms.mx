@@ -243,7 +243,7 @@ int @1From@2Impl(@1 *res, @2 *val){
 int shtFromlngImpl(sht *res, lng *val){
 	/* perform a range check !! */
 	if( *val<0 ||*val >255){
-		raiseException2("ERROR","coercion error lng->sht\n");
+		raiseException(0,0,"ERROR","coercion error lng->sht\n");
 		return GDK_FAIL;
 	}
 	*res = *val;
@@ -252,7 +252,7 @@ int shtFromlngImpl(sht *res, lng *val){
 int shtFromintImpl(sht *res, int *val){
 	/* perform a range check !! */
 	if( *val<0 ||*val >255){
-		raiseException2("ERROR","coercion error int->sht\n");
+		raiseException(0,0,"ERROR","coercion error int->sht\n");
 		return GDK_FAIL;
 	}
 	*res = *val;

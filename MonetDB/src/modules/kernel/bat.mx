@@ -66,49 +66,6 @@ comment "Sorts the BAT itself, in place. ";
 command revert(b:bat[any,any]) : int = CMDrevert
 comment "Puts all BUNs in a BAT in reverse order. (Belongs to the BAT sequence module)";
 
-@- BAT updates
-Update commands come in many disguises.  Note that we don;t return
-the BAT id, but merely a success/failure code.
-@mal
-command insert(b:bat[any::1, any::2], h:any::1, t:any::2) 
-				: int = CMDinsert_bun
-comment "Insert one BUN[h,t] in a BAT.";
-
-command insert(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
-				: int = CMDinsert_bat
-comment "Insert all BUNs of the second BAT into the first.";
-
-command replace(b:bat[any::1, any::2], h:any::1, t:any::2) 
-				: int = CMDreplace_bun
-comment "Replace the tail value of one BUN that has some head value.";
-
-command replace(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
-				: int = CMDreplace_bat
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
-command destroy(b:bat):void = CMDdestroy_bat
-comment "Schedule bat for removal upon session commit\n";
-
-command delete(b:bat[any::1, any::2], h:any::1, t:any::2) 
-				: int = CMDdelete_bun
-comment "Delete one specific BUN.";
-
-command delete(b:bat[any::1, any::2], h:any::1) 
-				: int = CMDdelete_head
-comment "Delete all BUNs with a certain head value.";
-
-command delete(b:bat[any::1, any::2]) 
-				: int = CMDdelete_all
-comment "Delete all BUNs in a BAT.";
-
-command delete(b:bat[any::1, any::2], src:bat[any::1,any]) 
-				: int = CMDdelete_bat_head
-comment "Delete from the first BAT all BUNs with a head value that is in the second.";
-
-command deleteBuns(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
-				: int = CMDdelete_bat_bun
-comment "Delete from the first BAT all BUNs with a corresponding BUN in the second.";
-
 @- BAT properties 
 Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
@@ -178,6 +135,49 @@ comment "A version of BATsize that does not require loading the BAT.";
 
 command getBATrefcnt(b:bat) : int = CMDgetBATrefcnt
 comment "Utility for debugging MAL interpreter";
+
+@- BAT updates
+Update commands come in many disguises.  Note that we don;t return
+the BAT id, but merely a success/failure code.
+@mal
+command insert(b:bat[any::1, any::2], h:any::1, t:any::2) 
+				: int = CMDinsert_bun
+comment "Insert one BUN[h,t] in a BAT.";
+
+command insert(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
+				: int = CMDinsert_bat
+comment "Insert all BUNs of the second BAT into the first.";
+
+command replace(b:bat[any::1, any::2], h:any::1, t:any::2) 
+				: int = CMDreplace_bun
+comment "Replace the tail value of one BUN that has some head value.";
+
+command replace(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
+				: int = CMDreplace_bat
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
+command destroy(b:bat):void = CMDdestroy_bat
+comment "Schedule bat for removal upon session commit\n";
+
+command delete(b:bat[any::1, any::2], h:any::1, t:any::2) 
+				: int = CMDdelete_bun
+comment "Delete one specific BUN.";
+
+command delete(b:bat[any::1, any::2], h:any::1) 
+				: int = CMDdelete_head
+comment "Delete all BUNs with a certain head value.";
+
+command delete(b:bat[any::1, any::2]) 
+				: int = CMDdelete_all
+comment "Delete all BUNs in a BAT.";
+
+command delete(b:bat[any::1, any::2], src:bat[any::1,any]) 
+				: int = CMDdelete_bat_head
+comment "Delete from the first BAT all BUNs with a head value that is in the second.";
+
+command deleteBuns(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
+				: int = CMDdelete_bat_bun
+comment "Delete from the first BAT all BUNs with a corresponding BUN in the second.";
 
 
 @- BAT I/O, Persistency

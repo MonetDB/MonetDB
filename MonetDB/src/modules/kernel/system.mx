@@ -772,14 +772,14 @@ int view_prof_cnt(int *ret, str *mod, str *fcn){
 	BAT *b;
 	Symbol *s;
 	*ret= 0;
-	raiseException2("ERROR","view_prof_cnt not yet implemented");
+	raiseException(0,0,"ERROR","view_prof_cnt not yet implemented");
 	return GDK_FAIL;
 }
 int view_prof_time(int *ret, str *mod, str *fcn){
 	BAT *b;
 	Symbol *s;
 	*ret= 0;
-	raiseException2("ERROR","view_prof_time not yet implemented");
+	raiseException(0,0,"ERROR","view_prof_time not yet implemented");
 	return GDK_FAIL;
 }
 static int clk = 0;
