@@ -19,7 +19,7 @@ t.count().print(); k100_unique1.count().print();
 [ 1 ]
 [ 100000 ]
 var u:= t.copy();
-printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -39,7 +39,7 @@ z.print();
 # (int)	  (int)	  #
 #-----------------#
 [ 10,	  10	  ]
-printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
@@ -52,7 +52,7 @@ printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 z:= k100_unique1.reverse().join(u);
-printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #

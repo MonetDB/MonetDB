@@ -67,7 +67,7 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 [ "system",	  710	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print(); printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #

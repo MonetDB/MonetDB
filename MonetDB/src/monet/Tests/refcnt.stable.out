@@ -37,7 +37,7 @@ quit();
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-ls;
+ls();
 #-------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-------------------------------------------------------------------------------------------------#

@@ -5,6 +5,6 @@
 # recent changes made by Peter in the parser?
 
 ls("address_name"); 
-VAR name := nil; IF (view_bbp_name.reverse().exist("address_name")) { name := bat("address_name"); } ELSE { name := new(oid,str); name.rename("address_name"); name.persists(true); }
+VAR name := nil; IF (view_bbp_name().reverse().exist("address_name")) { name := bat("address_name"); } ELSE { name := new(oid,str); name.rename("address_name"); name.persists(true); }
 ls("address_name"); name.print();
 \q

@@ -39,7 +39,7 @@ mmn().reverse().mark(oid(nil)).sort().print();
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
-view_modules.reverse().mark(oid(nil)).kunique().sort().print();
+view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -144,7 +144,7 @@ fix.mark(oid(nil)).print();
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
 
-var others:=kdiff(view_modules.reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
+var others:=kdiff(view_modules().reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
 others.mark(oid(nil)).print();
 #-------------------------#
 # BAT:		  tmp_26  #

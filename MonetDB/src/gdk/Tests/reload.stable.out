@@ -30,7 +30,7 @@ bat("MMO_location").print();
 [ 2@0,	  "http://www.altavista.com/"		  ]
 [ 3@0,	  "http://www.searchengineshowdown.com/"  ]
 
-commit;
+commit();
 
 {
 bat("MMO_location").delete(oid(0));
@@ -50,7 +50,7 @@ bat("MMO_location").print();
 [ 0@0,	  "http://www.metacrawler.com/"		  ]
 [ 2@0,	  "http://www.altavista.com/"		  ]
 
-commit;
+commit();
 
 {
 unload("MMO_location").print();

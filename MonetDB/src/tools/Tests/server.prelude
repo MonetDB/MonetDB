@@ -5,7 +5,7 @@ printf("Start of MIL prelude.\n");
 clientid().print();
 qstat();
 
-bbp.print();
+bbp().print();
 loaded();
 procs();
 vars();

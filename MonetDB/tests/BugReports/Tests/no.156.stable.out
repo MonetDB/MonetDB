@@ -50,7 +50,7 @@ stdout of test 'no.156` in directory 'tests/BugReports` itself:
 # printf("!After multiplex operation\n");
 #         } ELSE {
 #                 res := new(theBitsets.htype,int);
-#                 theBitsets@batloop {
+#                 theBitsets@batloop() {
 #                         VAR b := $t*theBit;
 #                         res.insert($h,b);
 #                 }
@@ -60,7 +60,7 @@ stdout of test 'no.156` in directory 'tests/BugReports` itself:
 # }
 # 
 # PROC bitsetHist(theEnum,theBitsets) := {
-#         theEnum@batloop {
+#         theEnum@batloop() {
 #                 VAR c := extractBit(theBitsets,$h,$t,false);
 #         }
 # }

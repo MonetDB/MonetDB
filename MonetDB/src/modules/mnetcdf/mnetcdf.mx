@@ -879,7 +879,7 @@ just produce an array of bat pointers.
 PROC nc_import_all(int ncid) : bat[str,bat] {
     var tables    := new(str,bat);
     var variables := nc_list(ncid);
-    variables@batloop {
+    variables@batloop() {
         var data := nc_import(ncid,$t);
 	insert(tables,$t,data);
     }

@@ -20,7 +20,7 @@ proc doit(str The_mod) {
 	Fnts:=new(oid,str);
 
 	Mod_fcn:=sdiff(monet_fcntbl.reverse,Static_fcn).reverse;
-	Mod_fcn.sort@batloop {
+	Mod_fcn.sort@batloop() {
 	    addThis:=false;
 	    if (not(monet_fcn_mid.exist($t))) {
 		addThis:=true;
@@ -46,7 +46,7 @@ proc doit(str The_mod) {
 	}
 
 	Fnts.count.print;
-	Fnts.reverse.sort.reverse@batloop {
+	Fnts.reverse.sort.reverse@batloop() {
 		FnameS.insert($h,Fname.find($h));
 	}
 	FnameS.count.print; table(1,FnameS,Ftype,Fsig,Fhelp);
@@ -231,7 +231,7 @@ table(Odmg_mods.reverse.col_name(sprintf("%i modules",Odmg_mods.count)));
 [ "Test7"	  ]
 [ "TestUse"	  ]
 [ "TransTest"	  ]
-Odmg_mods@batloop {
+Odmg_mods@batloop() {
 	The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
 	module($h);

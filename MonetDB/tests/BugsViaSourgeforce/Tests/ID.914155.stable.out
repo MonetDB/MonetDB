@@ -14,7 +14,7 @@ VAR N  := 10000;	#1000000;
 VAR Li := 100;		#1000;
 VAR Lj := 1000;		#1000;
 
-if (not(view_bbp_name.reverse().exist("a"))) {
+if (not(view_bbp_name().reverse().exist("a"))) {
 	commit();
 	var a := bat(void,dbl,N).rename("a");
 	var i := 0;

@@ -9,11 +9,11 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 PROC tmp() : void {
-        var sts := view_bbp_status;
-        var nme := view_bbp_name.access(BAT_WRITE).col_name("name");
+        var sts := view_bbp_status();
+        var nme := view_bbp_name().access(BAT_WRITE).col_name("name");
         var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
-        nme.replace(rev).table(view_bbp_heat, sts.col_name("status"),
-                view_bbp_kind, view_bbp_refcnt);
+        nme.replace(rev).table(view_bbp_heat(), sts.col_name("status"),
+                view_bbp_kind(), view_bbp_refcnt());
 }
 
 #NOTE: the reference counter of bat(name) is during insertion

@@ -1423,15 +1423,15 @@ PROC test_mprof() : void {
 	monet_atomtbl.count().print();
 	pmE("abc");
 	pmB("pmPrint");
-	printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
+	printf("#~BeginVariableOutput~#\n"); pmPrint(); printf("#~EndVariableOutput~#\n");
 	pmE("pmPrint");
 	pmB("xyz");
 	monet_fcn_fcn.count();
 	pmE("xyz");
 	pmB("pmPrint");
-	printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
+	printf("#~BeginVariableOutput~#\n"); pmPrint(); printf("#~EndVariableOutput~#\n");
 	pmE("pmPrint");
-	printf("#~BeginVariableOutput~#\n"); pmSummary; printf("#~EndVariableOutput~#\n");
+	printf("#~BeginVariableOutput~#\n"); pmSummary(); printf("#~EndVariableOutput~#\n");
 }
 @T
 

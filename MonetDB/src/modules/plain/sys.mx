@@ -291,9 +291,9 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	"list all loaded modules, and the number of active users.", "sys"); 
 
     PROC atoms():void {
-	table(1,view_atom_name.col_name("atom type"),
-		view_atom_size.col_name("size"),
-		view_atom_align.col_name("alignment"));
+	table(1,view_atom_name().col_name("atom type"),
+		view_atom_size().col_name("size"),
+		view_atom_align().col_name("alignment"));
     }
     PROC sigs(str modname) : void {
 	var modname2;
@@ -311,7 +311,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	    }
 	    var b := [format_fcn_sig](m.reverse());
 	    table(1,b.reverse().sort().reverse().col_name("signature"));
-	} else if ([module_name](view_modules).reverse().exist(modname)) {
+	} else if ([module_name](view_modules()).reverse().exist(modname)) {
   	    ERROR("sigs: must load module first.\n");
 	} else {
   	    ERROR("sigs: module does not exist.\n");
@@ -396,7 +396,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     PROC clients() : void { 
 	var tree := view_client_tree().access(BAT_WRITE);
 	tree.replace(clientid(), "clients()");
-	print(view_client_name,view_client_login,tree.col_name("mil"));
+	print(view_client_name(),view_client_login(),tree.col_name("mil"));
     } 
     ADDHELP("clients", "boncz", "Feb  6 1996", 
 	"list all active clients by their number.", "sys"); 
@@ -408,27 +408,27 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     ADDHELP("vars", "boncz", "Feb  6 1996", 
         	"list all Monet variables and their values.", "sys"); 
 
-    PROC threads() : void { print(view_gdk_thread); }
+    PROC threads() : void { print(view_gdk_thread()); }
     ADDHELP("threads", "boncz", "Feb  6 1996", 
 		"list all system threads and their function.", "sys"); 
 
-    PROC env() : void { print(view_gdk_env);}
+    PROC env() : void { print(view_gdk_env());}
     ADDHELP("env", "boncz", "Feb  6 1996", 
 		"list the values of all environment variables", "sys"); 
 
-    PROC environment() : bat[str,str] { return view_gdk_env;}
+    PROC environment() : bat[str,str] { return view_gdk_env();}
     ADDHELP("environment", "boncz", "Mar 22 1998", "deprecated", "sys");
 
-    PROC cpu() : bat[str,int] { RETURN view_gdk_cpu;}
+    PROC cpu() : bat[str,int] { RETURN view_gdk_cpu();}
     ADDHELP("cpu", "boncz", "Mar 22 1998", "Global cpu usage info", "sys");
 
-    PROC memory() : bat[str,int] { RETURN view_gdk_memory;}
+    PROC memory() : bat[str,int] { RETURN view_gdk_memory();}
     ADDHELP("memory", "boncz", "Mar 22 1998", "Global memory usage info","sys");
 
-    PROC io() : bat[str,int]  { RETURN view_gdk_io;}
+    PROC io() : bat[str,int]  { RETURN view_gdk_io();}
     ADDHELP("io", "boncz", "Mar 22 1998", "Global IO activity info", "sys");
 
-    PROC bbp() : bat[str,int] { RETURN view_gdk_bbp;}
+    PROC bbp() : bat[str,int] { RETURN view_gdk_bbp();}
     ADDHELP("bbp", "boncz", "Mar 22 1998", "Global BBP usage info", "sys");
 
     PROC readonly( BAT[any::1,any::2] b, int mode) : BAT[any::1,any::2]{
