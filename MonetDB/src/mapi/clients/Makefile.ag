@@ -17,3 +17,8 @@ BINS = {
 	LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS)
 	MapiClient_LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS)
 }
+
+scripts_pl = {
+	DIR = pkgdatadir/site_perl
+	SOURCES = Mapi.pm MapiClient.pl
+}
