@@ -1058,8 +1058,8 @@ static int _ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
 	(void) extra;
 	if (!a || ATOMcmp(type, ATOMnilptr(type),a) == 0){
 		char *dst;
-		const char *src = "NULL";
-		int l = sizeof(src);
+		const char src[] = "NULL";
+		int l = sizeof(src) - 1;
 
 		if (l+1 > *len) {
 			GDKfree(buf);
@@ -1222,7 +1222,7 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 			_DELETE(buf);
 		} else if (!c->p || 
 			ATOMcmp(c->mtype, ATOMnilptr(c->mtype),c->p) == 0){
-			stream_write(s, "NULL", sizeof("NULL"), 1);
+			stream_write(s, "NULL", sizeof("NULL")-1, 1);
 		} else {
 			char *buf = NULL;
 			int len = 0;
