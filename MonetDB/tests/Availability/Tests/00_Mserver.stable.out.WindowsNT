@@ -55,7 +55,6 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "url",	  "plain"	  ]
 [ "vector",	  "plain"	  ]
 [ "wisc",	  "plain"	  ]
-[ "x100",	  "plain"	  ]
 [ "xtables",	  "plain"	  ]
 setoid(oid(20000000));
 
@@ -63,13 +62,13 @@ ls;
 #-----------------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  45,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
+[ "MODULES",	  "str",  "str",  44,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
 
 dir;
 #-------------------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #-------------------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  45,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
+[ "MODULES",		  "str",  "str",  44,	  0,	  "clean",	  "load", "pers", 0,	  2,		  1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_environment",	  "str",  "str",  24,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
@@ -148,7 +147,6 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "url"			  ]
 [ "vector"		  ]
 [ "wisc"		  ]
-[ "x100"		  ]
 [ "xtables"		  ]
 
 commit;

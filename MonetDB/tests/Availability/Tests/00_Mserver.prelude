@@ -54,7 +54,6 @@ MODULES.replace("unix",      "plain");
 MODULES.replace("url",       "plain");
 MODULES.replace("vector",    "plain");
 MODULES.replace("wisc",      "plain");
-MODULES.replace("x100",      "plain");
 MODULES.replace("xtables",   "plain");
 #MODULES.replace("gdkmem",    "misc");
 #MODULES.replace("vector",    "misc");

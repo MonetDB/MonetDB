@@ -63,7 +63,6 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]
-[ "x100"	  ]
 [ "xtables"	  ]
 Plain_mods@batloop {
 	The_mod:=$h;
@@ -1318,44 +1317,6 @@ Module: "wisc"
 #-----------------------------------------------------------------------------------------------------------------#
 [ "wisc",	  "COMMAND:   ",  "wisc(str, int) : void",	  "Wisconsin Benchmark Database Generator"	  ]
 [ "wiscdestroy",  "COMMAND:   ",  "wiscdestroy(str) : void",	  "WBD destroy table"				  ]
-
-Module: "x100"
-
-#-----------------------------------------------------------------#
-# l1	| l2	| l3	| l4	| l5	| l6	| l7		  #
-#-----------------------------------------------------------------#
-[ 'a',	  'c',	  1,	  10,	  0,	  0.2,	  2003-01-01	  ]
-[ 'b',	  'c',	  2,	  20,	  0.2,	  0.2,	  2003-01-02	  ]
-[ 'b',	  'c',	  3,	  30,	  0.4,	  0.2,	  2003-01-03	  ]
-
-vectorized_q1("l1","l2","l3","l4","l5","l6","l7",date(2003,1,3),1,1000LL).printf;
-[ 22 ]
-[ 22 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature														| help																						  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "TIMEZONE",		  "PROC:      ",  "TIMEZONE(str) : tzone",												  "not available"																				  ]
-[ "[date]",		  "PROC:      ",  "[date](BAT[any::1,timestamp]) : BAT[any::1,date]",									  "not available"																				  ]
-[ "[daytime]",		  "PROC:      ",  "[daytime](BAT[any::1,int]) : BAT[any::1,daytime]",									  "not available"																				  ]
-[ "[daytime]",		  "PROC:      ",  "[daytime](BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,daytime]",							  "not available"																				  ]
-[ "[daytime]",		  "PROC:      ",  "[daytime](BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,daytime]",							  "not available"																				  ]
-[ "[daytime]",		  "PROC:      ",  "[daytime](BAT[any::1,timestamp]) : BAT[any::1,daytime]",								  "not available"																				  ]
-[ "[epoch]",		  "PROC:      ",  "[epoch](BAT[any::1,timestamp]) : BAT[any::1,int]",									  "not available"																				  ]
-[ "[rule]",		  "PROC:      ",  "[rule](BAT[any::1,int], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,rule]",	  "not available"																				  ]
-[ "[rule]",		  "PROC:      ",  "[rule](BAT[any::1,int], BAT[any::1,str], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,rule]",			  "not available"																				  ]
-[ "[rule]",		  "PROC:      ",  "[rule](BAT[any::1,int], BAT[any::1,str], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,rule]",	  "not available"																				  ]
-[ "[timestamp]",	  "PROC:      ",  "[timestamp](BAT[any::1,date], BAT[any::1,daytime]) : BAT[any::1,timestamp]",						  "not available"																				  ]
-[ "[timestamp]",	  "PROC:      ",  "[timestamp](BAT[any::1,int]) : BAT[any::1,timestamp]",								  "not available"																				  ]
-[ "daytime",		  "PROC:      ",  "daytime(int) : daytime",												  "not available"																				  ]
-[ "daytime",		  "PROC:      ",  "daytime(int, int) : daytime",											  "not available"																				  ]
-[ "daytime",		  "PROC:      ",  "daytime(int, int, int) : daytime",											  "not available"																				  ]
-[ "epoch",		  "PROC:      ",  "epoch(timestamp) : int",												  "not available"																				  ]
-[ "msecs",		  "PROC:      ",  "msecs(int, int, int, int, int) : lng",										  "not available"																				  ]
-[ "rule",		  "PROC:      ",  "rule(int, int, int, int, int) : rule",										  "not available"																				  ]
-[ "rule",		  "PROC:      ",  "rule(int, str, int, int) : rule",											  "not available"																				  ]
-[ "rule",		  "PROC:      ",  "rule(int, str, int, int, int) : rule",										  "not available"																				  ]
-[ "timestamp",		  "PROC:      ",  "timestamp(int) : timestamp",												  "not available"																				  ]
-[ "vectorized_q1",	  "COMMAND:   ",  "vectorized_q1(str, str, str, str, str, str, str, date, int, lng) : str",						  "Return the result of TPC-H Q1 in XML. Last two parameters: memchunk is the number of tuples to pipeline, iochunk the number of tuples to read from disk at once in a scan."	  ]
 
 Module: "xtables"
 
