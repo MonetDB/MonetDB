@@ -1470,6 +1470,61 @@ int BATgetaccess(BAT *b) {
 	return b->batRestricted;
 }
 
+@- check legal heap modes
+
+Some heaps may be in use with STORE_MMAP even if they are appendable, as we suppose our
+code is bug-free (:-) and we know we won't modify the already committed parts of the mapped
+file pages. For string-heaps append-bats may mmap the heap if doubles are not  being eliminated
+anymore (i.e. when the contents of the builtin hash table at the start of the string heap
+are not crucial anymore).
+
+Se the comment at dirty_bat() in gdk_bbp.mx to understand why we won't correct (just report) 
+the heap storage modes if unloadable is set.
+@c
+static int HEAPcheckmode(Heap *h, int persistent, int unloadable, int writeable) {
+	/* user may have requested illegal or system-wise unwanted mmap modes. correct this */
+	if (h->size > 0 && h->storage == STORE_MMAP && persistent && writeable) {
+		if (!unloadable) h->storage = STORE_PRIV; /* writable mmap needs copy-on-write */
+		return 1;
+	}
+	return 0;
+}
+
+int BATcheckmodes(BAT *b, int persistent, int unloadable) {
+	int dirty = 0;
+	if (HEAPcheckmode(b->batBuns, persistent, unloadable, b->batRestricted == BAT_WRITE)) {
+		b->batMapbuns = STORE_PRIV;
+		dirty = b->batMapdirty = TRUE;
+	}
+	if (HEAPcheckmode(&b->hheap, persistent, unloadable, b->batRestricted == BAT_WRITE ||
+		(b->batRestricted == BAT_APPEND && 
+	  	(BATatoms[b->htype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&b->hheap)) && 
+		(ATOMstorage(b->htype) != TYPE_str || GDK_ELIMDOUBLES((&b->hheap)))))) 
+	{
+		b->batMaphheap = STORE_PRIV;
+		dirty = TRUE;
+	}
+	if (HEAPcheckmode(&b->theap, persistent, unloadable, b->batRestricted == BAT_WRITE ||
+		(b->batRestricted == BAT_APPEND && 
+	  	(BATatoms[b->ttype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&b->theap)) && 
+		(ATOMstorage(b->ttype) != TYPE_str || GDK_ELIMDOUBLES((&b->theap))))))
+	{
+		b->batMaptheap = STORE_PRIV;
+		dirty = TRUE;
+	}
+	if (HEAPcheckmode(&b->haccelerator, persistent, unloadable, b->batRestricted != BAT_READ)) {
+		b->batMaphacc = STORE_PRIV;
+		dirty = TRUE;
+	}
+	if (HEAPcheckmode(&b->taccelerator, persistent, unloadable, b->batRestricted != BAT_READ)) {
+		b->batMaptacc = STORE_PRIV;
+		dirty = TRUE;
+	}
+	b->batMapdirty |= dirty;
+	b->batDirtydesc |= dirty;
+	return dirty;
+}
+
 @- 
 BATs have a logical name that is indepent of their 
 location in the file system (this depends on batCacheid).

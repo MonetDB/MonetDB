@@ -449,62 +449,26 @@ static BAT *DESCload(int i) {
 	return b;
 }
 
-@-
-implement heap mmap rules. return whether something changed.
-@c
-#define HEAPcurmode(x) ((x)->size?((x)->filename?(x)->storage:STORE_MEM):-1)
-
-static int HEAPcheckmode(Heap *h, char storage, int persistent, int writeable) {
-	/* user may have requested illegal or system-wise unwanted mmap modes. correct this */
-	if (storage != (char) -1) {	
-		if (storage == STORE_MEM && h->free > GDK_vm_minsize) {
-			storage = STORE_MMAP; /* do not allow huge heaps malloced (safety) */
-		}
-		if ((storage&STORE_MMAP) && h->free < GDK_vm_minsize) {
-			h->storage = STORE_MEM;  /* avoid VM memory waste with a lowerbound */
-			return 1;
-		} 
-		if (storage == STORE_MMAP && persistent && writeable) {
-			h->storage = STORE_PRIV; /* writable mmap needs copy-on-write */
-			return 1;
-		}
-	}
-	h->storage = storage;
-	return 0;
-}
-
 static void DESCsetmodes(BAT *b, BAT *img) {
-	int pers = BBP_status(b->batCacheid)&BBPEXISTING;
-
-	/* sanity check: if nothing proposed, set proposed modes to current modes */
-	if (b->batMapdirty == 0 || b->batMapbuns == (char) -1) {
-		b->batMapbuns = HEAPcurmode(b->batBuns);
+	/* propagate the proposed modes to the separate img of the bat (so concurrent execution on this bat is not affected) */
+	if (b->batMapbuns != (char) -1) {
+		img->batBuns->storage = b->batMapbuns;
 	}
-	if (b->batMapdirty == 0 || b->batMaphheap == (char) -1) {
-		b->batMaphheap = HEAPcurmode(&b->hheap);
+	if (b->batMaphheap != (char) -1) {
+		img->hheap.storage = b->batMaphheap;
 	}
-	if (b->batMapdirty == 0 || b->batMaptheap == (char) -1) {
-		b->batMaptheap = HEAPcurmode(&b->theap);
+	if (b->batMaptheap != (char) -1) {
+		img->theap.storage = b->batMaptheap;
 	}
-	if (b->batMapdirty == 0 || b->batMaphacc == (char) -1) {
-		b->batMaphacc = HEAPcurmode(&b->haccelerator);
+	if (b->batMaphacc != (char) -1) {
+		img->haccelerator.storage = b->batMaphacc;
 	}
-	if (b->batMapdirty == 0 || b->batMaptacc == (char) -1) {
-		b->batMaptacc = HEAPcurmode(&b->taccelerator);
+	if (b->batMaptacc != (char) -1) {
+		img->taccelerator.storage = b->batMaptacc;
 	}
 
-	/* change modes into legal modes */
-	b->batMapdirty |= HEAPcheckmode(img->batBuns, b->batMapbuns, pers, b->batRestricted == BAT_WRITE);
-	b->batMapdirty |= HEAPcheckmode(&img->hheap, b->batMaphheap, pers, b->batRestricted == BAT_WRITE ||
-				(b->batRestricted == BAT_APPEND && 
-	  	 		(BATatoms[b->htype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&img->hheap)) && 
-				(ATOMstorage(b->htype) != TYPE_str || GDK_ELIMDOUBLES((&b->hheap)))));
-	b->batMapdirty |= HEAPcheckmode(&img->theap, b->batMaptheap, pers, b->batRestricted == BAT_WRITE ||
-				(b->batRestricted == BAT_APPEND && 
-	  	 		(BATatoms[b->ttype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&img->theap)) && 
-				(ATOMstorage(b->ttype) != TYPE_str || GDK_ELIMDOUBLES((&b->theap)))));
-	b->batMapdirty |= HEAPcheckmode(&img->haccelerator, b->batMaphacc, pers, b->batRestricted != BAT_READ);
-	b->batMapdirty |= HEAPcheckmode(&img->taccelerator, b->batMaptacc, pers, b->batRestricted != BAT_READ);
+	/* change modes in img into legal modes, and reset b's mapdity if something had to be corrected */
+	b->batMapdirty |= BATcheckmodes(img, BBP_status(b->batCacheid)&BBPEXISTING, FALSE);
 }
 
 void DESCclean(BAT* b) {

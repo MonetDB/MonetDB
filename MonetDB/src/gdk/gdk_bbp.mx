@@ -1335,7 +1335,8 @@ static int file_exists(str dir, str name, str ext)
 
 static int heap_move(Heap* hp, str srcdir, str dstdir, str nme, str ext) {
 	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on .priv heap modes */
-	if (hp->filename && strstr(hp->filename, ".priv")) {
+	str p;
+	if (hp->filename && (p=strrchr(hp->filename, '.')) != NULL && strcmp(p, ".priv") == 0) {
 		long_str path;
 		struct stat st;
 		GDKfilepath(path, srcdir, nme, ext);
@@ -1358,6 +1359,8 @@ static int heap_move(Heap* hp, str srcdir, str dstdir, str nme, str ext) {
 			}
 		}
 		/* if X.priv already has a saved X, that one is backed up as normal.. */
+	} else if (hp->storage == STORE_MMAP) {
+		return 0; /* memory mapped heaps under append need not be backed up! */
 	}
 	return file_move(srcdir, dstdir, nme, ext);
 }
@@ -1925,24 +1928,65 @@ BAT *BBPquickdesc(bat bid, int delaccess) {
         return b;
 }
 
-static BAT *dirty_bat(bat i) {
+
+@- is a bat dirty at commit time?
+
+Used to be simple: look if it is loaded. If not, only its cached descriptor might still
+be dirty. Otherwise look at the union of all dirty bits.
+
+But, sometimes clean BATs must be made dirty, just because this is called from a commit!
+
+This happens in a commit where we have persistent BATs that fulfill all following conditions:
+(1) are updatable (non BAT_READ) 
+(2) are new in this commit
+(3) have at least one huge STORE_MMAP .priv heap
+
+These BATs are a problem, as after the commit, the STORE_MMAP status should be a STORE_PRIV
+(subsequent updates followed by a crash corrupt the stable heap image).
+
+Also, if such a BAT was already clean at commit time (due to a BBPtrim or explicit save),
+its descriptor would not even be saved. Recall that HEAPcheckmodes in gdk_storage.mx would 
+at least have re-set the heap->storage modes in the desc correctly for subsequent BAT loads. 
+Not even that will happen if the BAT is clean.
+
+So, one thing we do is making the descriptor dirty always for such BATs. This solves the
+latter problem.
+
+Also, if there are no hot-locks on this BAT, we just unload the BAT inside the commit.
+In this case, we do not modify the storage modes yet. Thus, its heaps get saved with 
+an efficient msync(). After the unload, a re-load will use the correct STORE_PRIV mode. 
+
+Only if the BAT cannot be unloaded, we hack the storage state of the BAT, such that it 
+appears to be STORE_PRIV. This works, but causes a very expensive write()-based save of
+the entire bat, and duplicates disk consumption for its heap.
+@c
+static BAT *dirty_bat(bat i, int *unload) {
 	if (BBP_logical(i)) {
+		int unloadable = (BBP_refs(i) == 0); /* are no other threads currently executing on this image?? */ 
+		int newbat = (BBP_status(i)&BBPNEW);
 		BAT *b;
 		BBPspin(i, "dirty_bat", BBPSAVING);
 		b = BBP_cache(i);
 		if (b != NULL) {
-			if ((BBP_status(i)&BBPPERSISTENT) && BATdirty(b)) {
-				return b; /* the bat is loaded, persistent and dirty */
+			if (BBP_status(i)&BBPPERSISTENT) {
+				if (unload) 
+					*unload = BATcheckmodes(b, newbat, unloadable) && unloadable;
+ 				if (BATdirty(b)) 
+					return b; /* the bat is loaded, persistent and dirty */
 			}
 		} else if (BBP_status(i)&BBPSWAPPED) { 
 		  	b = (BAT*) BBPquickdesc(i, TRUE);
-			if (b && b->batDirtydesc) {
-				return b; /* only the desc is loaded & dirty */
+			if (b) {
+				if (unload)
+					(void) BATcheckmodes(b, newbat, unloadable);
+				if (b->batDirtydesc) 
+					return b; /* only the desc is loaded & dirty */
 			}
 		}
 	}
 	return NULL;
 }
+
 
 @+ Atomic Write
 @T
@@ -1975,7 +2019,7 @@ int BBPsync(int commit) {
 	}
 	if (ret == 0) {
 		for (i = 1; i < BBPsize; i++) {
-			BAT *b = dirty_bat(i);
+			BAT *b = dirty_bat(i, NULL);
 			if (b != NULL && backup_bat(b)) break;
 		} ret = (i != BBPsize);
 	}
@@ -1985,8 +2029,18 @@ int BBPsync(int commit) {
 	/* PHASE 2: save the repository */
 	if (ret == 0) {
 		for (i = 1; i < BBPsize; i++) {
-			BAT *b = dirty_bat(i);
-			if (b != NULL && BATsave(b) == NULL) break; /* write error */
+			int unload = FALSE;
+			BAT *b = dirty_bat(i, &unload);
+			if (b != NULL) {
+				if (BATsave(b) == NULL) break; /* write error */
+				DESCclean(b);
+				if (unload) {
+					/* BATs that became persistent and have heaps that should in the 
+					   future be STORE_PRIV (but are not yet), are unloaded */
+					BATfree(b);
+					BBPuncacheit(i, TRUE);
+				}
+			}
 		}
 		ret = (i != BBPsize);
 	}
@@ -2019,23 +2073,14 @@ int BBPsync(int commit) {
 
 		/* AFTERMATH */
 		if (ret == 0) {
-			for (i = 1; i < BBPsize; i++) {
-				BAT *b = dirty_bat(i);
-				if (b) DESCclean(b);
-			}
 			BBP_dirty = 0;
 			(void) GDKremovedir(DELDIR);
-		} else {
-			BBPrecover(); 
+			backuped_files = 0;
+			if (prepare_backup() == 0) {
+				/* always have a backup dir with a BBP.dir available */
+				(void) GDKmove( BATDIR,"BBP","dir", BAKDIR,"BBP","dir" );
+			}
 		}
-	}
-
-	backuped_files = 0;
-	if (prepare_backup() == 0) {
-		/* always move the BBP.dir to the BAKDIR, as unloads
-		   and mmap's can happen at any time during a transaction
-		 */
-		(void) GDKmove( BATDIR,"BBP","dir", BAKDIR,"BBP","dir" );
 	}
 
 	if (!commit)
@@ -2051,26 +2096,44 @@ The recovery process can resume later with the left over files.
 @c
 static int force_move(str srcdir, str dstdir, str name) { 
 	char *p;
-	long_str srcpath, dstpath;
+	long_str srcpath, dstpath, killfile;
 	int ret = 0;
 
 	if ((p=strrchr(name, '.'))!=NULL && strcmp(p,".kill") == 0){
+		struct stat st;
 		ptrdiff_t len = p-name;
 
 		strncpy(srcpath,name,len);
 		srcpath[len] = '\0';
 		GDKfilepath(dstpath, dstdir, srcpath, NULL);
-		ret = unlink(dstpath); /* clear destination */
-		IODEBUG THRprintf(GDKerr, "unlink %s = %d\n", dstpath, ret);
+
+		/* step 1: remove the X file that is going to be overwritten by X.priv */
+		if (stat(dstpath, &st) == 0) {
+			ret = unlink(dstpath); /* clear destination */
+			if (ret) {
+				/* if it exists and cannot be removed, all this is going to fail */
+				GDKsyserror("force_move: unlink(%s)\n", dstpath);
+				return ret;
+			}
+		}
+
+		/* step 2: now remove the .kill file. This one is crucial, otherwise we'll never finish recovering */
+		strcpy(killfile, srcdir);
+		strcat(killfile, name);
+		ret = unlink(killfile);
+		if (ret) {
+			GDKsyserror("force_move: unlink(%s)\n", killfile);
+			return ret;
+		}
+
+		/* step 3: move X.priv to X. Even if this fails, HEAPload will retry to do this later */
 		if (GDKcreatedir(dstdir)) ret = 0;
 		ret = GDKmove(dstdir, srcpath, "priv", dstdir, srcpath, NULL);
-		if (ret) GDKsyserror(
-		    	"force_move: link(%s%c%s.priv,%s)=%d\n", 
-			srcdir, DIR_SEP,srcpath, dstpath);
-		IODEBUG THRprintf(GDKerr, 
-			"link %s%c%s.priv %s = %d\n", 
-			srcdir, DIR_SEP, srcpath, dstpath, ret);
-		return ret;
+		if (ret) GDKsyserror("force_move: link(%s%c%s.priv,%s)=%d\n", srcdir, DIR_SEP,srcpath, dstpath);
+
+		IODEBUG THRprintf(GDKerr, "link %s%c%s.priv %s = %d\n", srcdir, DIR_SEP, srcpath, dstpath, ret);
+
+		return 0;
 	} 
 	/* try to rename it */
 	ret = GDKmove(srcdir, name, NULL, dstdir, name, NULL);
