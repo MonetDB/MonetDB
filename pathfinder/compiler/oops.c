@@ -167,7 +167,7 @@ oops (PFrc_t rc, bool halt,
          * If this is a debug version of Pathfinder, log source location
          * The `=' makes this a minor difference in Mtest.
          */
-        PFlog ("=halted in %s (%s), line %d", file, func, line);
+        PFlog ("# halted in %s (%s), line %d", file, func, line);
 #else
 	/* fool compilers that otherwise complain about unused parameters */
 	(void)file;

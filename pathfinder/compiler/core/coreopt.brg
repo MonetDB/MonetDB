@@ -38,6 +38,7 @@
 #include "qname.h"
 #include "mem.h"
 #include "subtyping.h"
+#include "typecheck.h"
 
 /*
  * Accessors for the burg matcher
@@ -537,8 +538,30 @@ reduce (PFcnode_t * p, int goalnt)
                                                   PFty_text (),
                                                   PFty_doc (PFty_xs_anyType ()))
                                               ))))) {
-                    p->sem.fun = function (PFqname (PFns_pf, "typed-value"));
+                    /*
+                     *   fn:data(e)
+                     * -->
+                     *   for $v in e return
+                     *     fn:typed-value ($v)
+                     */
+                    PFvar_t *v = new_var (NULL);
+                    PFfun_t *fn_tv
+                        = function (PFqname (PFns_pf, "typed-value"));
+
+                    *p = *for_ (forbind (forvars (var (v), nil ()), LL(p)),
+                                apply (fn_tv, arg (var (v), nil ())));
+
+                    /* type-check what we just created */
+                    PFty_check (p);
+
                     rewritten = true;
+
+                    /*
+                     * Re-label entire subtree. Type-checking may have
+                     * modified all the state labels in the subtree, so
+                     * we have to restore them.
+                     */
+                    PFcoreopt_label (p);
                     break;
                 }
             }
@@ -559,17 +582,22 @@ reduce (PFcnode_t * p, int goalnt)
                 *c = *p;
                 c->sem.fun = function (PFqname (PFns_pf, "string-value"));
 
-                TY(c) = c->sem.fun->ret_ty;
-
                 *p = *let (letbind (var (v), c),
                            seqcast (seqtype (PFty_untypedAtomic ()), var (v)));
 
-                /* Fixup type annotations */
-                TY(v) = TY(LL(p)) = TY(RR(p)) = TY(c);
-                TY(p) = TY(R(p)) = TY(RL(p)) = PFty_untypedAtomic ();
+                /* type-check what we just created */
+                PFty_check (p);
 
                 rewritten = true;
-                relabel (p, kids);
+
+                /*
+                 * Re-label entire subtree. Type-checking may have
+                 * modified all the state labels in the subtree, so
+                 * we have to restore them.
+                 */
+                PFcoreopt_label (p);
+
+                break;
             }
             break;
 

@@ -7,7 +7,7 @@ stderr of test 'bad-004` in directory 'compiler/parser` itself:
 
 XML start/end tags do not match: at (2,1-2,12): <a> and </b>
 parse error: XQuery parsing failed
-=halted in parser.y (PFparse), line 2237
+# halted in parser.y (PFparse), line 2237
 
 # 12:36:19 >  
 # 12:36:19 >  Done.
