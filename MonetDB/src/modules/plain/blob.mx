@@ -266,7 +266,7 @@ int blob_fromstr(char* instr,int* l,blob** val)
    s = strchr(s,'(');
    if (s == NULL)
    {
-      GDKwarning("Missing ( in bob\n");
+      GDKwarning("Missing ( in blob\n");
       *val = (blob*)NULL;
       return(0);
    }
