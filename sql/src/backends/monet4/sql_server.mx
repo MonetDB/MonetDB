@@ -36,7 +36,7 @@ To avoid clashes with the default port settings, we have hardwired a number
 for the time being.
 @m
 .MODULE sql_server;
-	.USE ascii_io; 
+	.USE ascii_io, monettime; 
 
 	.ATOM mvc = ptr;
 	.END;
@@ -66,14 +66,11 @@ access after being logged in.
 	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql_wrap;
 		"execute a sql query"
 
+	.COMMAND mvc_update_var( mvc m, str varname ) = mvc_update_var_wrap;
+		"update a session variable in the mvc structure"
+
 	.COMMAND mvc_login( mvc m, str user, str passwd ) : str 
 		= mvc_login_wrap; "database login"
-
-	.COMMAND mvc_status( mvc m ) : int 
-		= mvc_status_wrap; "return the status of the last mvc operation"
-
-	.COMMAND mvc_type( mvc m ) : int 
-		= mvc_type_wrap; "return the type of the last mvc operation"
 
 @-
 The updates against the relational tables are collected in separate
@@ -173,6 +170,7 @@ handles and returns proper error messages upon failure.
 
 #include <streams.h>
 #include <ascii_io.h>
+#include <monettime.h>
 #include <monet_context.h>
 #include "sql_mvc.h"
 #include "sql_server.proto.h"
@@ -185,6 +183,7 @@ handles and returns proper error messages upon failure.
 #include "sql_session.h"
 #include <sql_decimal.h>
 #include <sql_string.h>
+#include <sql_env.h>
 #include <algebra.h>
 
 @-
@@ -264,21 +263,15 @@ int mvc_sql_wrap( mvc *c, str cmd ){
 	return mvc_sql( *(mvc**)c, cmd );
 }
 
+int mvc_update_var_wrap( mvc *c, str varname ){
+	return sql_update_var( *(mvc**)c, varname );
+}
+
 
 int mvc_login_wrap( str *r, mvc *c, str user, str passwd  ){
 	*r = mvc_login( *(mvc**)c, user, passwd );
 	if (*r == NULL)
 		*r = _strdup("");
-	return GDK_SUCCEED;
-}
-
-int mvc_status_wrap( int* res, mvc* m ){
-	*res = mvc_status( *(mvc**)m );
-	return GDK_SUCCEED;
-}
-
-int mvc_type_wrap( int* res, mvc* m ){
-	*res = mvc_type( *(mvc**)m );
 	return GDK_SUCCEED;
 }
 

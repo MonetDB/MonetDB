@@ -287,8 +287,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 	if( err == 0){
                 stmt *s = sql_symbol2stmt(be->mvc);
 
-                if (!s && mvc_status(be->mvc)){
-                        err = mvc_status(be->mvc);
+                if (!s && (err = mvc_status(be->mvc)) ){
 			stream_printf(c->fdout,"#%s\n", be->mvc->errstr);
 			*be->mvc->errstr=0;
                         sqlcleanup(be->mvc, err, cache);
@@ -298,7 +297,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
                 assert(s);
 		/* generate MAL code */
 		if (!be->mvc->cache) {
-			backend_dumpstmt( be, c->curprg->def,s );
+			backend_dumpstmt( be, c->curprg->def, s );
 		} else {
 			backend_dumpproc( be, c->curprg->def, 
 					  be->mvc->qc->id, s );

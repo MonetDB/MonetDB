@@ -104,6 +104,7 @@ static stmt *tail_column(stmt * st)
 	/* some statements have no column coming from any basetable */
 	case st_atom:
 	case st_var:
+	case st_update_var:
 	case st_mark:
 	case st_derive:
 	case st_group_ext:
@@ -179,6 +180,7 @@ static stmt *head_column(stmt * st)
 	/* st_temp has no head column coming from any basetable */
 	case st_atom:
 	case st_var:
+	case st_update_var:
 	case st_basetable:
 	case st_temp: 
 	case st_op:
@@ -682,7 +684,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_atom: 
 	case st_find: 
 	case st_bulkinsert: 
-	case st_var:
+	case st_var: case st_update_var:
 
 		s->optimized = 2;
 		return stmt_dup(s);

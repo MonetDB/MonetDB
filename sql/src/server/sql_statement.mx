@@ -45,6 +45,7 @@ typedef enum stmt_type {
 	st_none,
 	st_sql,		/* sometimes a query rewrite is easier */
 	st_var,		/* still needs work */
+	st_update_var,	
 
 	st_basetable,
 	st_temp,	/* temporal bat */
@@ -160,6 +161,7 @@ sql_export const char * st_type2string(st_type type);
 extern stmt *stmt_none();
 extern stmt *stmt_sql( char *query );
 extern stmt *stmt_var( char *varname, sql_subtype *t);
+extern stmt *stmt_update_var( char *varname );
 
 extern stmt *stmt_basetable(sql_table *t, char *tname); 
 
@@ -515,6 +517,7 @@ void stmt_destroy(stmt * s)
 		case st_pivot:
 	  	case st_find:
 		case st_sql:
+		case st_update_var:
 
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
 			if (s->op2.stval) stmt_destroy(s->op2.stval);
@@ -637,6 +640,13 @@ stmt *stmt_var(char *varname, sql_subtype *t){
 	stmt *s = stmt_create(st_var);
 	s->op1.sval = varname;
 	s->op2.typeval = t;
+	s->key = 1;
+	return s;
+}
+
+stmt *stmt_update_var(char *varname){
+	stmt *s = stmt_create(st_update_var);
+	s->op1.stval = stmt_atom_string(varname);
 	s->key = 1;
 	return s;
 }

@@ -85,20 +85,14 @@ command login( user:str, passwd:str ):str
 address mvc_login_wrap
 comment "Login to an SQL database";
 
-command status( ):int 
-address mvc_status_wrap
-comment "Return the status of the last 
-	catalogue operation";
-
-#command type( ) :int 
-#address mvc_type_wrap
-#comment "Return the type of the last 
-#	catalogue operation";
+command update_var( varname:str ):void
+address mvc_update_var_wrap
+comment "Update a session variable";
 
 command bind_ubat(sname:str, tname:str, 
 		cname:str, access:int ) 
 	:bat[:any$1,:any$2] 
-address mvc_bind_ubat_wrapREAD
+address mvc_bind_ubat_wrap
 comment "Bind bat with the updates to tname.cname 
 	with specific access mode";
 
@@ -107,6 +101,12 @@ command bind_dbat(sname:str, tname:str, access:int)
 address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
 	with specific access modes";
+
+command bind_ibat(sname:str, tname:str, iname:str, access:int)
+		:bat[:any$1,:any$2] 
+address mvc_bind_ibat_wrap
+comment "Bind the idx bat, tname.idx
+	with specific accsess modes";
 
 command bind(sname:str, tname:str, 
 		cname:str, access:int )
@@ -119,95 +119,6 @@ comment "Bind the bat tname.cname into the
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
-command commit() :int 
-address mvc_commitDefault_wrap
-comment "Commit transaction";
-command commit( chain:int, name:str) :int 
-address mvc_commit_wrap
-comment "Commit transaction/savepoint and chain";
-
-command rollback():int 
-address mvc_rollbackDefault_wrap
-comment "Rollback transaction";
-command rollback( chain:int, name:str ):int 
-address mvc_rollback_wrap
-comment "Rollback transaction/savepoint and chain";
-
-command release( name:str ) :int 
-address mvc_release_wrap
-comment "Release the savepoint";
-
-command bindSchema( sname:str ) :void 
-address mvc_bind_schema_wrap
-comment "Locate the schema and make it 
-	the current one";
-
-command bindTable(tname:str ):void
-address mvc_bind_table_wrap
-comment "Locate the table in the current 
-	schema and make it the focus";
-
-command bindColumn( cname:str ) 
-address mvc_bind_column_wrap
-comment "Locate the column in the current 
-	table and make it the focus";
-
-command bindKey(s:str, kname:str ):ptr 
-address mvc_bind_key_wrap
-comment "Locate the key with kname";
-
-command bindIndex(s:str, iname:str ):ptr 
-address mvc_bind_idx_wrap
-comment "Locate the index with iname";
-
-command dropSchema( name:str ) 
-address mvc_drop_schema_wrap
-comment "Drop schema";
-
-command createSchema( name:str, auth:str) :void 
-address mvc_create_schema_wrap 
-comment "Create schema";
-
-command dropTable(name:str,  cascade:bit ) 
-address mvc_drop_table_wrap 
-comment "Drop table from a schema";
-
-#command createTable(name:str, temp:int, size:int):void 
-#address mvc_create_table_wrap
-#comment "Create table in current schema";
-
-#command createView( name:str, sql:str) 
-#address mvc_create_view_wrap 
-#comment "Create view within the current schema";
-
-command dropColumn( name:str ) 
-address mvc_drop_column_wrap 
-comment "Drop column from a table in a schema";
-
-command createColumn( name:str, type:str,
-		digits:int,scale:int ) :int
-address mvc_create_column_wrap
-comment "Create column within the current table";
-
-command setNotNull(flg:int) 
-address mvc_null_wrap
-comment "Set current column (not) null";
-
-command default(val:str ) 
-address mvc_default_wrap
-comment "Set current column default value";
-
-command createKey(name:str,kt:int):int 
-address mvc_create_key_wrap
-comment "Create a (compound) table key";
-
-#command createForeignKey( nme:str, kt:str) 
-		#= mvc_create_fkey_wrap
-#comment "Create a table key";
-
-#command keyAddColumn( s:str, t:str, k:sql_key, c:sql_column ) = mvc_key_add_column_wrap
-#comment "Key add column";
-
 command exportTable(s:stream, res_id:int, 
 		offset:int, nr:int ) 
 address mvc_export_table
@@ -435,7 +346,7 @@ printf("Re-establish context for client not expected\n");
 	if(_client == NULL || _client ->state[OPTIMIZE]== 0 ){
 		return throwMessage("mvc","Can not get access to @2 state");
 	} 
-	((mvc *) _client ->state[OPTIMIZE])= @1;
+	_client ->state[OPTIMIZE]= @1;
 }
 @= getBackend
 {	Client _client= getClient();
@@ -465,59 +376,21 @@ str mvc_destroy_wrap(int *ret ){
 	return MAL_SUCCEED;
 }
 
+str mvc_update_var_wrap( str *varname ){
+	mvc *c;
+	@:getContext(c,mvc)@
+	if ( sql_update_var( c, *varname ) )
+		return throwException(MALEXCEPTION,"mvc_update_var","error");
+	return MAL_SUCCEED;
+}
+
+
 str mvc_login_wrap(str *r, str *user, str *passwd  ){
 	mvc *c;
 	@:getContext(c,mvc)@
 	*r = mvc_login( c, *user, *passwd );
 	if (*r != 0)
 		return throwException(MALEXCEPTION,"mvc_login_wrap","error");
-	return MAL_SUCCEED;
-}
-
-str mvc_status_wrap(int* res ){
-	mvc *c;
-	@:getContext(c,mvc)@
-	*res = mvc_status( c );
-	return MAL_SUCCEED;
-}
-
-str mvc_type_wrap(int *res ){
-	mvc *m;
-	@:getContext(m,mvc)@
-	*res = mvc_type( m );
-	return MAL_SUCCEED;
-}
-
-str mvc_commit_wrap(int* res, int* chain, str *name){
-	mvc *m;
-	@:getContext(m,mvc)@
-	*res = mvc_commit( m, *chain, *name );
-	return MAL_SUCCEED;
-}
-str mvc_commitDefault_wrap(int* res){
-	mvc *m;
-	@:getContext(m,mvc)@
-	*res = mvc_commit( m, 0, NULL );
-	return MAL_SUCCEED;
-}
-
-str mvc_rollback_wrap(int *res, int *chain, str *name ){
-	mvc *m;
-	@:getContext(m,mvc)@
-	*res = mvc_rollback( m, *chain, *name );
-	return MAL_SUCCEED;
-}
-str mvc_rollbackDefault_wrap(int *res ){
-	mvc *m;
-	@:getContext(m,mvc)@
-	*res = mvc_rollback( m, 0, NULL );
-	return MAL_SUCCEED;
-}
-
-str mvc_release_wrap(int *res, str *name ){
-	mvc *m;
-	@:getContext(m,mvc)@
-	*res = mvc_release( m, *name );
 	return MAL_SUCCEED;
 }
 
@@ -545,14 +418,6 @@ str mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access
 	}
 	return throwException(MALEXCEPTION,"mvc_bind_ubat_wrap","error");
 }
-str mvc_bind_ubat_wrapWRITE(int *bid, str *sname, str *tname, str *cname){
-	int i=1;
-	return mvc_bind_ubat_wrap(bid, sname, tname, cname, &i);
-}
-str mvc_bind_ubat_wrapREAD(int *bid, str *sname, str *tname, str *cname){
-	int i=0;
-	return mvc_bind_ubat_wrap(bid, sname, tname, cname, &i);
-}
 
 str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
 	mvc *c;
@@ -566,211 +431,18 @@ str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
 	return throwException(MALEXCEPTION,"mvc_bind_dbat_wrap","error");
 }
 
-str mvc_bind_schema_wrap(int *ret, str *sname){
-	backend *be;
+str mvc_bind_ibat_wrap(int *ret, str *sname, str *tname, str *iname, int *access ){
 	mvc *c;
-	@:getBackend(be)@
-	@:getContext(c)@
-	be->currSchema = mvc_bind_schema( c, *sname );
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_bind_table_wrap(int *ret, str *tname){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-	if( be->currSchema == NULL) 
-		return throwMessage("bindTable","Schema not in focus");
-	be->currTable = mvc_bind_table( c, be->currSchema, *tname);
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_bind_column_wrap(int *ret, str *col){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-	if( be->currTable == NULL) 
-		return throwMessage("bindColumn","Table focus not found");
-	be->currColumn = mvc_bind_column(c, be->currTable, *col);
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_bind_key_wrap(int *ret, str *kname){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	if( be->currSchema == NULL) 
-		return throwMessage("bindKey","Schema not found");
-
-	be->currKey = mvc_bind_key( c, be->currSchema, *kname);
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_bind_idx_wrap(int *ret, str *iname){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	if( be->currSchema == NULL) 
-		return throwMessage("bindIndex","Schema not found");
-
-	be->currIndex = mvc_bind_idx( c, be->currSchema, *iname);
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-
-str mvc_create_schema_wrap(int *ret, str *name, str *auth){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	be->currSchema = mvc_create_schema( c, *name, *auth );
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_drop_schema_wrap(int *ret, str *name){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-	mvc_drop_schema( c, *name );
-	be->currSchema = NULL;
-	be->currTable = NULL;
-	be->currColumn = NULL;
-	be->currKey = NULL;
-	be->currIndex = NULL;
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-/* old
-str mvc_create_table_wrap(int *ret, str *name, bit* temp, int *size){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	if( be->currSchema == NULL) 
-		return throwMessage("createTable","Schema not found");
-
-	be->currTable = mvc_create_table( c, be->currSchema, *name, *temp, *size );
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_create_view_wrap(int *ret, str *name, str *sql){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
+	BAT *b;
 	@:getContext(c,mvc)@
-
-	if( be->currSchema == NULL) 
-		return throwMessage("createView","Schema not found");
-
-	be->currTable = mvc_create_view( c, be->currSchema, *name, *sql );
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-*/
-
-str mvc_drop_table_wrap(int *ret, str *name, bit* cascade){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	if( be->currSchema == NULL) 
-		return throwMessage("dropTable","Schema not found");
-
-	mvc_drop_table( c, be->currSchema, *name, *cascade );
-	be->currTable = NULL;
-	be->currColumn = NULL;
-	*ret = 0;
-	return MAL_SUCCEED;
+	b = mvc_bind_ibat( c, *sname, *tname, *iname, *access );
+	if (b){
+		*ret= b->batCacheid;
+		return MAL_SUCCEED;
+	}
+	return throwException(MALEXCEPTION,"mvc_bind_ibat_wrap","error");
 }
 
-
-str mvc_create_column_wrap(int *ret, str *name, str *tpe ){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	if( be->currTable == NULL) 
-		return throwMessage("createColumn","Table not found");
-
-	be->currColumn = mvc_create_column_( c, be->currTable, *name, *tpe);
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_drop_column_wrap(int *ret, str *name){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	if( be->currTable == NULL) 
-		return throwMessage("createColumn","Table not found");
-
-	mvc_drop_column( c, be->currTable, *name );
-	be->currColumn = NULL;
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_null_wrap(int *ret, int *flg){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	if (be->currColumn == NULL) 
-		return throwMessage("notNull","Column not found");
-
-	mvc_null( c, be->currColumn, *flg);
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str mvc_default_wrap(int *ret, str *val){
-	backend *be;
-	mvc *c;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	if (be->currColumn == NULL) 
-		return throwMessage("notNull","Column not found");
-
-	mvc_default( c, be->currColumn, *val );
-	*ret = 0;
-	return MAL_SUCCEED;
-}
 @-
 The recurring structure to handle bat descriptors
 @= getBATdescriptor
@@ -783,47 +455,6 @@ The recurring structure to handle bat descriptors
         if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
 @-
 @c
-str mvc_create_key_wrap( int *ret, str *name, int *kt){
-	mvc *c;
-	backend *be;
-	sql_schema *s;
-	sql_table *t;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	s = be->currSchema;
-	if( s == NULL) return throwMessage("notNull","Schema not found");
-	t = be->currTable;
-	if( t == NULL) return throwMessage("notNull","Table not found");
-
-        be->currKey = mvc_create_key(c, t, *name, *kt, NULL);
-	*ret =0;
-        return MAL_SUCCEED;
-}
-str mvc_create_fkey_wrap( int *ret, str *name, int *kt){
-	mvc *c;
-	backend *be;
-	sql_schema *s;
-	sql_table *t;
-	sql_key *fk;
-
-	@:getBackend(be)@
-	@:getContext(c)@
-
-	s = be->currSchema;
-	if( s == NULL) return throwMessage("notNull","Schema not found");
-	t = be->currTable;
-	if( t == NULL) return throwMessage("notNull","Table not found");
-	fk = be->currKey;
-	if( fk == NULL) return throwMessage("notNull","Key not found");
-
-        be->currKey = mvc_create_key(c, t, *name, *kt, fk);
-	*ret =0;
-        return MAL_SUCCEED;
-}
-
-
 @= dec_tostr
 	char buf[32];
 	@1 v = *(@1*)a;

@@ -39,9 +39,7 @@ stderr of test 'load` in directory 'src/benchmarks/moa` itself:
 # config opt 	sql_debug = 1
 # cmdline opt 	gdk_debug = 0
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = Tests_src_benchmarks_moa
-# cmdline opt 	sql_port = 55755
-server listening on port 55755
+# cmdline opt 	gdk_dbname = mTests_src_benchmarks_moa
 
 # 21:48:36 >  
 # 21:48:36 >  Mtimeout -timeout 60 sql_client --port=55755 < load.sql

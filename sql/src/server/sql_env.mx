@@ -77,7 +77,9 @@ sql_export int mvc_debug_on( mvc *m, int flag);
 
 sql_export stmt *env(mvc * sql, symbol * s); 
 
+sql_export int sql_update_var(mvc *sql, char *name );
 sql_export int sql_set_var_value(mvc *sql, char *name, char *value );
+
 sql_export char * sql_get_var( mvc *sql, char *name );
 sql_export char * sql_get_type( mvc *sql, char *name );
 
@@ -92,7 +94,11 @@ sql_export int sql_session(mvc *sql);
 #include "sql_bm.h"
 #include "sql_scope.h"
 #include "sql_select.h"
+#include "sql_updates.h"
 #include "sql_semantic.h"
+
+#define SESSION_RW 0
+#define SESSION_RO 1
 
 int mvc_debug_on( mvc *m, int flg)
 {
@@ -135,6 +141,22 @@ sql_get_type( mvc *sql, char *name )
 	return type;
 }
 
+int  
+sql_get_access( mvc *sql, char *name )
+{
+	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
+	BAT *a = mvc_bind( sql, "sys", "sessions", "access", 0); 
+	int access = -1;
+	BUN p;
+
+	if ((p=BUNfnd(BATmirror(n), name))) {
+		access = *(int*)BUNtail(a, BUNfnd(a, BUNhead(n, p)));
+	}
+	bat_destroy(n);
+	bat_destroy(a);
+	return access;
+}
+
 int 
 sql_get_bit_var( mvc *sql, char *name )
 {
@@ -163,24 +185,6 @@ sql_get_str_var( mvc *sql, char *name )
 	return NULL;
 }
 
-void
-mvc_update_flags( mvc *m )
-{
-	char *explain;
-
-	m->debug = sql_get_int_var(m, "debug");
-	m->auto_commit = sql_get_bit_var(m, "auto_commit");
-	m->reply_size = sql_get_int_var(m, "reply_size");
-	explain = sql_get_str_var(m, "explain");
-	if (m->explain)  
-		_DELETE(m->explain);
-	if (!explain || strcmp(explain, "") == 0)
-		m->explain = NULL;
-	else
-		m->explain = _strdup(explain);
-}
-
-
 int 
 inttype( sql_subtype *itype, sql_subtype *rtype ) 
 {
@@ -193,97 +197,60 @@ inttype( sql_subtype *itype, sql_subtype *rtype )
 	return 0;
 }
 
-int simple_type( stmt *s ) 
+static stmt *
+set_var( mvc *sql, char *name, symbol *val, char *typename )
 {
-	int type = s->type;
-	return type == st_var || type == st_atom || 
-		(type == st_unop && simple_type(s->op1.stval) && 
-		 strcmp(s->op4.funcval->func->name, "sql_neg") == 0);
-}
+	sql_subtype *ctype;
+	scope *scp = scope_open(NULL);
+	sql_table *sessions = mvc_bind_table(sql, cur_schema(sql), "sessions");
+	tvar *tv = scope_add_table_columns(sql, scp, sessions, sessions->base.name);
+	stmt *st, *v = sql_value_exp( sql, scp, val, NULL, NULL, sql_sel);
+	sql_column *c = mvc_bind_column(sql, sessions, "value");
+	list *l;
 
-atom *getatom( mvc *sql, stmt *s ) 
-{
-	atom *a;
-	int type = s->type;
-	if (type == st_var)
-		return sql->args->h->data;
-	if (type == st_atom)
-		return s->op1.aval;
-	/* unop */
-	a = getatom(sql, s->op1.stval);
-	if (a->data.vtype == TYPE_sht){
-		a->data.val.shval = -a->data.val.shval;
-	} else if (a->data.vtype == TYPE_int){
-		a->data.val.ival = -a->data.val.ival;
-	} else if (a->data.vtype == TYPE_lng){
-		a->data.val.lval = -a->data.val.lval;
+	if (!v) {
+		scope_close(scp);
+		return NULL;
 	}
-	return a;
+
+	/* find variable */
+ 	ctype = sql_bind_subtype(typename, 0, 0);
+	v = check_types(sql, ctype, v);
+	sql_subtype_destroy(ctype);
+	if (!v || (v = check_types(sql, c->type, v)) == NULL) {
+		return NULL;
+	}
+	st = sql_compare(sql, scope_bind(scp, NULL, "name"), 
+			 stmt_atom_string(name),"=", sql_where );
+	st = stmt_const(st, v);
+	st = stmt_replace( stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), st);
+	scp = scope_close(scp);
+	l = create_stmt_list();
+	list_append(l, st );
+	list_append(l, stmt_update_var(name) );
+	list_append(l, output_value( stmt_atom_int(1) ));
+	return stmt_list(l);
 }
 
 static stmt *
 sql_set_var( mvc *sql, symbol *s )
 {
 	if (s->token == SQL_SET) {
-		BUN p;
-		dlist *l = s->data.lval;
-		symbol *val = l->h->next->data.sym;
-		scope *scp = scope_open(NULL);
+		dlist *dl = s->data.lval;
+		char *name = dl->h->data.sval;
+		symbol *val = dl->h->next->data.sym;
+		int access = sql_get_access(sql, name);
 
-		char *name = l->h->data.sval;
-		stmt *v = sql_value_exp( sql, scp, val, NULL, NULL, sql_sel);
-		sql_subtype *ctype, *valtype;
-		str typename;
-		BAT *n, *t;
-		char *atom;
-
-		scope_close(scp);
-
-		if (!v)
-			return NULL;
-
-		if (!simple_type(v)) {
+		if (access < 0) {
 			return sql_error(sql, 02, 
-				"Can only set %s=simple_value (%s,%d)\n", 
-				name, st_type2string(v->type), v->type);
-		}
-
-		n = mvc_bind( sql, "sys", "sessions", "name", 0); 
-		t = mvc_bind( sql, "sys", "sessions", "type", 0); 
-		if (!(p=BUNfnd(BATmirror(n), name))) {
-			bat_destroy(n);
-			bat_destroy(t);
-@-
-Any user defined variable should be added to the table.
-They don;t survive session boundaries [?]
-@c
+				"Unknown session variable %s\n",
+				name);
+		} else if (access == SESSION_RO) {
 			return sql_error(sql, 02, 
-				"Unknown session variable, %s\n",
+				"You have no permissions to change the session variable %s\n",
 				name);
 		}
-		typename = BUNtail(t, BUNfnd(t, BUNhead(n,p)));
-		ctype = sql_bind_subtype(typename, 0, 0);
-		bat_destroy(n);
-		bat_destroy(t);
-
-		/* support 3 types 
-			bool (bit)
-			ints (sht,int,lng)
-			str
-		 */
- 		valtype = tail_type(v);
-		if (!ctype || (strcmp(ctype->type->base.name, valtype->type->base.name) != 0 && (inttype(valtype, ctype)) == 0 )) {
-			sql_subtype_destroy(ctype);
-			stmt_destroy(v);
-			return sql_error(sql, 02, "Can only set %s=simple_value where simple_value is of type %s, value is of type %s\n", name, ctype->type->base.name, valtype->type->base.name);
-		}
-	
-		sql_set_var_value(sql, name, atom=atom2string(getatom(sql, v)));
-		sql_subtype_destroy(ctype);
-		stmt_destroy(v);
-		mvc_update_flags(sql);
-		_DELETE(atom);
-		return stmt_none();
+		return set_var(sql, name, val, sql_get_type(sql, name) );
 	}
 	return NULL;
 }
@@ -293,29 +260,66 @@ sql_set_var_value( mvc *sql, char *name, char *value )
 {
 	int res = -1;
 	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
-	BAT *v = mvc_bind( sql, "sys", "sessions", "value", 1); 
+	BAT *a = mvc_bind( sql, "sys", "sessions", "access", 0); 
 	BUN p;
 	
 	if ((p=BUNfnd(BATmirror(n), name))) {
 		oid id = *(oid*)BUNhead(n,p);
-		void_inplace(v, id, value);
-		res = 0;
+		int access = *(int*)BUNtail(a,BUNfnd(a,&id));
+
+		if (access == SESSION_RW) {
+			BAT *v = mvc_bind( sql, "sys", "sessions", "value", 1); 
+			void_inplace(v, id, value);
+			res = 0;
+			bat_destroy(v);
+		}
 	}
 	bat_destroy(n);
-	bat_destroy(v);
+	bat_destroy(a);
 	return res;
 }
+
+int sql_update_var(mvc *m, char *name )
+{
+	if (strcmp(name, "debug") == 0) {
+		m->debug = sql_get_int_var(m, "debug");
+	} else if (strcmp(name, "auto_commit") == 0) {
+		m->auto_commit = sql_get_bit_var(m, "auto_commit");
+	} else if (strcmp(name, "reply_size") == 0) {
+		m->reply_size = sql_get_int_var(m, "reply_size");
+	} else if (strcmp(name, "current_timezone") == 0) {
+		m->timezone = sql_get_int_var(m, "current_timezone")/60;
+	} else if (strcmp(name, "explain") == 0) {
+		char *explain = sql_get_str_var(m, "explain");
+
+		if (m->explain)  
+			_DELETE(m->explain);
+		if (!explain || strcmp(explain, "") == 0)
+			m->explain = NULL;
+		else if (strcmp(explain, "plan") == 0 ||
+			 strcmp(explain, "performance") == 0)
+			m->explain = _strdup(explain);
+		else {
+			GDKwarning("Session variable explain can only be set to 'plan', 'performance' or to the empty string\n");
+			return GDK_FAIL;
+		}
+	}
+	return GDK_SUCCEED;
+}
+
 
 stmt *
 sql_declare_var( mvc *sql, symbol *s ) 
 {
 	if (s->token == SQL_DECLARE) {
+		int rw = SESSION_RW;
 		dlist *l = s->data.lval;
 		char *name = l->h->data.sval;
 		sql_subtype *ctype = l->h->next->data.typeval;
 		BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
 		BAT *t = mvc_bind( sql, "sys", "sessions", "type", 0); 
 		BAT *v = mvc_bind( sql, "sys", "sessions", "value", 0); 
+		BAT *a = mvc_bind( sql, "sys", "sessions", "access", 0); 
 		oid h;
 
 		if (BUNfnd(BATmirror(n), name)) {
@@ -323,7 +327,7 @@ sql_declare_var( mvc *sql, symbol *s )
 			bat_destroy(t);
 @-
 Any user defined variable should be added to the table.
-They don;t survive session boundaries [?]
+They don't survive session boundaries
 @c
 			return sql_error(sql, 02, 
 				"Allready used session variable, %s\n",
@@ -334,10 +338,12 @@ They don;t survive session boundaries [?]
 		BUNins(n, (ptr) &h, name );
 		BUNins(v, (ptr) &h, "NULL" );
 		BUNins(t, (ptr) &h, ctype->type->sqlname);
+		BUNins(a, (ptr) &h, &rw);
 
 		bat_destroy(n);
 		bat_destroy(v);
 		bat_destroy(t);
+		bat_destroy(a);
 		return stmt_none();
 	}
 	return NULL;
@@ -350,24 +356,28 @@ int
 sql_session( mvc *m ) 
 {
 	char buf[BUFSIZ];
-	BAT *n,*v,*T;
+	BAT *n,*v,*T, *a;
+	int rw = SESSION_RW, ro = SESSION_RO;
 
 	oid h = 0;
 
 	n = mvc_bind( m, "sys", "sessions", "name", 1 );
 	v = mvc_bind( m, "sys", "sessions", "value", 1 );
 	T = mvc_bind( m, "sys", "sessions", "type", 1 );
+	a = mvc_bind( m, "sys", "sessions", "access", 1 );
 
 	BUNins(n, (ptr) &h, "debug" );
 	snprintf(buf, BUFSIZ, "%d", m->debug );
 	BUNins(v, (ptr) &h, buf);
 	BUNins(T, (ptr) &h, "mediumint");
+	BUNins(a, (ptr) &h, &rw);
 	h++;
 
 	BUNins(n, (ptr) &h, "reply_size" );
 	snprintf(buf, BUFSIZ, "%d", m->reply_size );
 	BUNins(v, (ptr) &h, buf);
 	BUNins(T, (ptr) &h, "mediumint");
+	BUNins(a, (ptr) &h, &rw);
 	h++;
 
 	BUNins(n, (ptr) &h, "explain" );
@@ -376,6 +386,7 @@ sql_session( mvc *m )
 		snprintf(buf, BUFSIZ, "%s", m->explain );
 	BUNins(v, (ptr) &h, buf);
 	BUNins(T, (ptr) &h, "varchar");
+	BUNins(a, (ptr) &h, &rw);
 	h++;
 
 	BUNins(n, (ptr) &h, "auto_commit" );
@@ -384,11 +395,40 @@ sql_session( mvc *m )
 	else
 		BUNins(v, (ptr) &h, "false");
 	BUNins(T, (ptr) &h, "boolean");
+	BUNins(a, (ptr) &h, &rw);
+	h++;
+
+	BUNins(n, (ptr) &h, "current_schema" );
+	BUNins(v, (ptr) &h, m->schema);
+	BUNins(T, (ptr) &h, "varchar");
+	BUNins(a, (ptr) &h, &ro);
+	h++;
+
+	/* MonetDB/SQL user/current_user/session_user (authorization id) */
+	BUNins(n, (ptr) &h, "current_user" );
+	BUNins(v, (ptr) &h, m->user);
+	BUNins(T, (ptr) &h, "varchar");
+	BUNins(a, (ptr) &h, &ro);
+	h++;
+
+	/* MonetDB/SQL role/current_role/session_role */
+	BUNins(n, (ptr) &h, "current_role" );
+	BUNins(v, (ptr) &h, m->role);
+	BUNins(T, (ptr) &h, "varchar");
+	BUNins(a, (ptr) &h, &ro);
+	h++;
+
+	BUNins(n, (ptr) &h, "current_timezone" );
+	snprintf(buf, BUFSIZ, "%d", m->timezone*60 );
+	BUNins(v, (ptr) &h, buf);
+	BUNins(T, (ptr) &h, "sec_interval");
+	BUNins(a, (ptr) &h, &rw);
 	h++;
 
 	bat_destroy(n);
 	bat_destroy(v);
 	bat_destroy(T);
+	bat_destroy(a);
 
 	return 0;
 }
@@ -405,6 +445,13 @@ sql_create_env( mvc *m, sql_schema *s )
 	mvc_create_column_(m, t, "name", "VARCHAR");
 	mvc_create_column_(m, t, "value", "VARCHAR");
 	mvc_create_column_(m, t, "type", "VARCHAR");
+	mvc_create_column_(m, t, "access", "MEDIUMINT");
+	/* access 0 	read/write
+		  1	via sql_privileges (role/user) 	
+				ie set session authorization bla
+				   set role bla
+		  2	read only
+	 */
 
 	t = mvc_create_table(m, s, "env", 1, 1, 0, -1 );
 	mvc_create_column_(m, t, "name", "VARCHAR");

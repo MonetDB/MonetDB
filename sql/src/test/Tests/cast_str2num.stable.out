@@ -57,15 +57,6 @@ Over..
 # int,	float # type
 # 0,	0 # length
 # 1,	 # tuplecount
-# 3,	 # id
-[ 1,	0.10000000000000001	]
-#-
-# 3 # querytype
-# t,	t # table_name
-# i,	f # name
-# int,	float # type
-# 0,	0 # length
-# 1,	 # tuplecount
 # 4,	 # id
 [ 1,	0.10000000000000001	]
 #-
@@ -95,7 +86,6 @@ Over..
 # 2,	 # tuplecount
 # 7,	 # id
 [ 1,	0.10000000000000001	]
-[ 2,	0.20000000000000001	]
 #-
 # 3 # querytype
 # t,	t # table_name
@@ -134,6 +124,7 @@ Over..
 # 0,	0 # length
 # 1,	 # tuplecount
 # 11,	 # id
+[ 1,	0.10000000000000001	]
 [ 2,	0.20000000000000001	]
 #-
 # 3 # querytype
@@ -171,7 +162,6 @@ Over..
 # 2,	 # tuplecount
 # 15,	 # id
 [ 2,	0.20000000000000001	]
-[ 3,	0.29999999999999999	]
 #-
 # 3 # querytype
 # t,	t # table_name
@@ -210,6 +200,7 @@ Over..
 # 0,	0 # length
 # 1,	 # tuplecount
 # 19,	 # id
+[ 2,	0.20000000000000001	]
 [ 3,	0.29999999999999999	]
 #-
 # 3 # querytype
@@ -237,6 +228,15 @@ Over..
 # 0,	0 # length
 # 1,	 # tuplecount
 # 22,	 # id
+[ 3,	0.29999999999999999	]
+#-
+# 3 # querytype
+# t,	t # table_name
+# i,	f # name
+# int,	float # type
+# 0,	0 # length
+# 1,	 # tuplecount
+# 23,	 # id
 [ 3,	0.29999999999999999	]
 #-
 # 6 # querytype

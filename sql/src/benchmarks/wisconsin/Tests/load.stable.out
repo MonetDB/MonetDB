@@ -38,15 +38,6 @@ Over..
 # mediumint # type
 # 0 # length
 # 1 # tuplecount
-# 0 # id
-[ 1	]
-#-
-# 4 # querytype
-# affected # table_name
-# rows # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
 # 1 # id
 [ 1	]
 #-
@@ -279039,6 +279030,15 @@ Over..
 # 0 # length
 # 1 # tuplecount
 # 31000 # id
+[ 1	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 31001 # id
 [ 9000	]
 #-
 # 7 # querytype

@@ -73,6 +73,7 @@ extern int sqlstatement(char *cmd, Cntxt stk );
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
 #include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
+#include <monettime.h>
 
 static res_table *find_export_table( mvc *m, int res_id );
 
@@ -449,10 +450,8 @@ int sqlexecute(backend * be, stream *out )
 		char *cmd = NULL;
 		stmt *s = sql_symbol2stmt(c);
 
-		if (!s && mvc_status(c)){
-			err = mvc_status(c);
+		if (!s && (err = mvc_status(c)) )
 			return sqlcleanup(c, err, cache);
-		}
 		assert(s);
 
 		if (explain == ex_plan) {
@@ -1117,6 +1116,38 @@ int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a)
 	return 0;
 }
 
+int sql_timestamp_tostr( void *M, char **buf, int *len, int type, ptr A)
+{
+	mvc *m = M;
+	int len1, len2, big=128;
+	char buf1[128], buf2[128], *s, *s1=buf1, *s2=buf2;
+	timestamp tmp, *a = A;
+	lng timezone = m->timezone * 60*1000;
+
+	(void)type;
+	if (*(lng*)a == lng_nil) {
+		strcpy(s, "nil");
+		return 3;
+	}
+
+	timestamp_add(&tmp, a, &timezone);
+	len1 = date_tostr(&s1, &big, &tmp.days);
+	len2 = daytime_tostr(&s2, &big, &tmp.msecs);
+
+	if (*len < len1+len2 + 8) {
+		if (*buf) GDKfree(*buf);
+		*buf = (str) GDKmalloc(*len = len1+len2+8);
+	} s = *buf;
+	strcpy(s, buf1); s += len1;
+	*s++ = ' '; 
+	strcpy(s, buf2); s += len2;
+
+	*s++ = (m->timezone>=0)?'+':'-';
+	sprintf(s, "%02d:%02d", ABS(m->timezone)/60, ABS(m->timezone)%60); 
+	s += 5;
+	return (int) (s - *buf);
+}
+
 static int bat_max_length( BAT *b ) 
 {
 	BUN p, q;
@@ -1516,6 +1547,12 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void*)(ptrdiff_t)c->type->scale;
+		}
+		if (c->type->scale == 1 && 
+	            strcmp(c->type->type->sqlname, "timestamp")==0){
+			fmt[i].tostr = &sql_timestamp_tostr;
+			fmt[i].frstr = NULL;
+			fmt[i].extra = m;
 		}
 	}
 	if (i == t->nr_cols+1){

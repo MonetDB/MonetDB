@@ -231,6 +231,7 @@ init_keywords()
 	keywords_insert("CURRENT_USER", CURRENT_USER);
 	keywords_insert("CURRENT_ROLE", CURRENT_ROLE);
 	keywords_insert("SESSION_USER", SESSION_USER);
+	keywords_insert("SESSION", sqlSESSION);
 
 	keywords_insert("RIGHT", RIGHT);
 	keywords_insert("SCHEMA", SCHEMA);
@@ -268,6 +269,7 @@ init_keywords()
 	keywords_insert("CURRENT_TIME", CURRENT_TIME);
 	keywords_insert("CURRENT_TIMESTAMP", CURRENT_TIMESTAMP);
 	keywords_insert("NOW", CURRENT_TIMESTAMP);
+	keywords_insert("ZONE", ZONE);
 
 	keywords_insert("YEAR", YEAR);
 	keywords_insert("MONTH", MONTH);

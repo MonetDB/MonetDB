@@ -51,6 +51,8 @@ sql_export stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp,
 sql_export stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset, int f);
 sql_export stmt *stmt2pivot(scope * scp, stmt * s);
 
+sql_export stmt *sql_compare(mvc * sql, stmt * ls,
+			 stmt * rs, char *compare_op, int f);
 #endif /*_SQL_SELECT_H_*/
 @c
 
@@ -64,8 +66,6 @@ sql_export stmt *stmt2pivot(scope * scp, stmt * s);
 
 static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel );
 static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * selection);
-static stmt *sql_compare(mvc * sql, stmt * ls,
-			 stmt * rs, char *compare_op, int f);
 static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op, int f );
 
 static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q);
@@ -606,7 +606,8 @@ static stmt *sql_case_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt
 	}
 }
 
-static stmt *sql_cast(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f)
+static stmt *
+sql_cast(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f)
 {
 
 	dlist *dl = se->data.lval;
@@ -1542,7 +1543,7 @@ static list *list_map_append_list(list * l2, list * l1)
 	return list_append(l1, list_dup(l2, (fdup)&stmt_dup));
 }
 
-static stmt *sql_compare(mvc * sql, stmt * ls,
+stmt *sql_compare(mvc * sql, stmt * ls,
 			 stmt * rs, char *compare_op, int f)
 {
 	int join = 0;

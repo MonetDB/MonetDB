@@ -922,7 +922,7 @@ stmt *optimize( mvc *c, stmt *s ){
 	case st_atom: 
 	case st_find: 
 	case st_bulkinsert:
-	case st_var:
+	case st_var: case st_update_var:
 
 		s->optimized = 1;
 		return stmt_dup(s);

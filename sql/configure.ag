@@ -24,14 +24,15 @@ AM_MONET_CLIENT($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETVERS was found.])
 fi
+AM_MONET5('4.99.19')
+AM_CONDITIONAL(MONET5,test "x$have_monet5" = xyes)
 
 backend=monet4
 AC_ARG_WITH(backend,
-[  --backend=     	which backend to use ], backend="$withval")
+[  --with-backend=     	which backend to use ], backend="$withval")
 SQL_BACKEND=$backend
 AC_SUBST(SQL_BACKEND)
 AM_CONDITIONAL(MONET4,test "x$backend" = xmonet4)
-AM_CONDITIONAL(MONET5,test "x$backend" = xmonet5)
 
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 

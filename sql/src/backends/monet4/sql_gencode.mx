@@ -319,6 +319,10 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		backend_dec_nr2(s); /* StM: no idea, why this is necessary... */
 		break;
 	}
+	case st_update_var: {
+		mvc_dump_1( sql, s, "update_var", nr );
+	 	break;
+	}
 	case st_temp: {
 		size_t buflen = strlen(s->op4.typeval->type->base.name) + 64;
 		buf = NEW_ARRAY(char, buflen+1);
@@ -702,7 +706,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		dump_1( sql, s, "CTgroup", nr );
 		break;
 	case st_group_ext: 
-		dump_1( sql, s, "tunique.mirror", nr );
+		dump_1( sql, s, "tunique().mirror", nr );
 		break;
 	case st_derive: 
 		dump_2( sql, s, "CTgroup", nr );

@@ -290,6 +290,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	atom
 	insert_atom
 	literal
+	interval_expression
 	ordering_spec
 	simple_table
 	table_ref 
@@ -429,7 +430,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
 	LEX_ERROR
-%token	USER CURRENT_USER SESSION_USER LOCAL
+%token	USER CURRENT_USER sqlSESSION SESSION_USER LOCAL
 
 %token <sval> sqlDELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER 
@@ -538,7 +539,35 @@ set:
 			dlist_append_string(l, $2 );
 			dlist_append_symbol(l, $4 );
 			$$ = _symbol_create_list( SQL_SET, l); }
-	;
+  |	SET sqlSESSION AUTHORIZATION scalar_exp	
+			{ dlist *l = dlist_create();
+			dlist_append_string(l, _strdup("current_user") );
+			dlist_append_symbol(l, $4 );
+			$$ = _symbol_create_list( SQL_SET, l); }
+  |	SET user '=' scalar_exp	
+			{ dlist *l = dlist_create();
+			dlist_append_string(l, _strdup("current_user") );
+			dlist_append_symbol(l, $4 );
+			$$ = _symbol_create_list( SQL_SET, l); }
+  |	SET ROLE '=' scalar_exp	
+			{ dlist *l = dlist_create();
+			dlist_append_string(l, _strdup("current_role") );
+			dlist_append_symbol(l, $4 );
+			$$ = _symbol_create_list( SQL_SET, l); }
+  | 	SET TIME ZONE LOCAL
+			{ dlist *l = dlist_create();
+			dlist_append_string(l, _strdup("current_timezone") );
+			dlist_append_symbol(l, _symbol_create_list( SQL_OP, 
+				dlist_append_string(
+					dlist_create(), 
+					_strdup("local_timezone"))));
+			$$ = _symbol_create_list( SQL_SET, l); }
+  | 	SET TIME ZONE interval_expression
+			{ dlist *l = dlist_create();
+			dlist_append_string(l, _strdup("current_timezone") );
+			dlist_append_symbol(l, $4 );
+			$$ = _symbol_create_list( SQL_SET, l); }
+  ;
 
 schema:
     CREATE SCHEMA schema_name opt_schema_default_char_set
@@ -2272,23 +2301,7 @@ literal:
 		  } else {
 		  	$$ = _newAtomNode(a); 
 		} }
- |  INTERVAL opt_sign string interval_qualifier
-		{ mvc *m = (mvc*)parm;
-	  	  int i,tpe;
-	  	  if ( (tpe = parse_interval( m, $2, $3, $4, &i)) < 0 ){
-			yyerror("incorrect interval");
-			$$ = NULL;
-			YYABORT;
-	  	  } else {
-			sql_subtype *t; 
-			if (tpe == 0){
-				t = sql_bind_subtype("MONTH_INTERVAL", 0, 0);
-			} else {
-				t = sql_bind_subtype("SEC_INTERVAL", 0, 0);
-			}
-	  		$$ = _newAtomNode( atom_int(t,i));
-	  	  }
-		}
+ |  interval_expression
  |  aTYPE string 
 		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
 		  atom *a = atom_general(t, $2);
@@ -2345,6 +2358,25 @@ literal:
 		  _DELETE($1); 
 		}
  ;
+
+interval_expression:
+   INTERVAL opt_sign string interval_qualifier
+		{ mvc *m = (mvc*)parm;
+	  	  int i,tpe;
+	  	  if ( (tpe = parse_interval( m, $2, $3, $4, &i)) < 0 ){
+			yyerror("incorrect interval");
+			$$ = NULL;
+			YYABORT;
+	  	  } else {
+			sql_subtype *t; 
+			if (tpe == 0){
+				t = sql_bind_subtype("MONTH_INTERVAL", 0, 0);
+			} else {
+				t = sql_bind_subtype("SEC_INTERVAL", 0, 0);
+			}
+	  		$$ = _newAtomNode( atom_int(t,i));
+	  	  }
+		}
 
 	/* miscellaneous */
 

@@ -230,9 +230,11 @@ typedef struct mvc {
 	int user_id;
 	int role_id;
 
+	/* current session variables */
 	char *schema;
 	char *user;
 	char *role;
+	int timezone; /* minutes west of UTC */
 
 	modes_t mode;
 	int auto_commit;
@@ -2143,6 +2145,7 @@ int mvc_set_user( mvc *m, char *user )
 		int id = *(int*)BUNtail(auth_id, BUNfnd(auth_id, lid));
 		m->user_id = m->role_id = id;
 		m->user = _strdup(user);
+		m->role = _strdup(user);
 		res = 1;
 		bat_destroy(auth_id);
 	}
@@ -2977,6 +2980,7 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 
 	m->role_id = m->user_id = -1;
 	m->schema = m->role = m->user = NULL;
+	m->timezone = 0;
 
 	m->mode = 0;
 	m->auto_commit = 0;
