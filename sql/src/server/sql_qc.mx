@@ -36,6 +36,7 @@
 
 typedef struct cq {
 	struct cq *next;
+	int	type;
 	symbol 	*s;
 	list 	*params;
 	Cntxt	stk;
@@ -52,7 +53,7 @@ typedef struct qc {
 sql_export qc *qc_create();
 sql_export void qc_destroy( qc *cache, Cntxt stk );
 sql_export cq *qc_find( qc *cache, symbol *s, list *params, int key );
-sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key );
+sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type );
 sql_export int qc_size( qc *cache );
 
 #endif /*_SQL_QC_H_*/
@@ -149,7 +150,7 @@ cq *qc_find( qc *cache, symbol *s, list *params, int key )
 	return NULL;
 }
 
-cq *qc_insert( qc *cache, symbol *s, list *params, int key )
+cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type )
 {
 	cq *n = NEW(cq);
 	n->id = cache->id++;
@@ -158,6 +159,7 @@ cq *qc_insert( qc *cache, symbol *s, list *params, int key )
 	n->next = cache->q;
 	n->stk = 0;
 	n->mil = NULL;
+	n->type = type;
 	n->key = key;
 	cache -> q = n;
 	return n;

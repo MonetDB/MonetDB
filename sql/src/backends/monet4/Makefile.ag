@@ -1,0 +1,25 @@
+
+INCLUDES = ../../common ../../server $(MONET_INCS)
+
+#lib__unique = {
+#	DIR = libdir/MonetDB
+#	SOURCES = unique.mx
+#	WINLIBS = -lbat
+#	LIBS = $(MONET_LIBS)
+#	LDFLAGS = -module
+#}
+
+lib__sql_server = {
+	DIR = libdir/MonetDB
+	SOURCES = \
+		sql_server.mx \
+		sql_gencode.mx 
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
+	LIBS = ../../common/libsql ../../server/libsqlserver $(MONET_LIBS)
+	LDFLAGS = -module
+}
+
+scripts_mil = {
+	DIR = libdir/MonetDB
+	SOURCES = sql_server.mx unique.mx
+}

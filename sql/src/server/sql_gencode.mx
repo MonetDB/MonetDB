@@ -21,24 +21,19 @@
 @' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
 
-@f query
+@f sql_gencode
 @a N.J. Nes
 @* 
 
 @h
-#ifndef QUERY_H
-#define QUERY_H
+#ifndef _EXEC_H_
+#define _EXEC_H_
 
-typedef enum sql_query_t {
-	Q_END = 0,
-	Q_PARSE = 1, 
-	Q_RESULT = 2,
-	Q_TABLE = 3,
-	Q_UPDATE = 4,
-	Q_DATA = 5, 
-	Q_SCHEMA = 6,
-	Q_DEBUG = 7,
-	Q_DEBUGP = 8
-} sql_query_t;
+#include "mem.h"
+#include "sql_statement.h"
+#include "sql_context.h"
 
-#endif /* QUERY_H */
+sql_export int stmt_dump( stmt *s, int *nr, context *sql );
+
+#endif /*_EXEC_H_*/
+

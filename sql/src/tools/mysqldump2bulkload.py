@@ -15,7 +15,7 @@ def copy_line( line, write = write ):
 	m = re.search('(INSERT INTO ([A-Za-z0-9_]*) .*VALUES \()', line) 
 	if (m != None):
 		write('SELECT \'' + line[m.start(2):m.end(2)] +'\';\n')
-		write('COPY INTO ' + line[m.start(2):m.end(2)] + ' FROM STDIN USING DELIMITERS \',\', \'\\n\';\n')
+		write('COPY INTO ' + line[m.start(2):m.end(2)] + ' FROM STDIN USING DELIMITERS \',\', \'\\n\';\n\n')
 		return line[0:m.end(1)]
 	return ""
 

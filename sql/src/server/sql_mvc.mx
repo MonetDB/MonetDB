@@ -2094,6 +2094,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		m->trans = trans_dup(m->trans, name);
 		m->trans->schema = find_schema(m->trans, schema);
 		_DELETE(schema);
+		m->type = Q_PARSE;
 		return 0;
 	}
 
@@ -3646,8 +3647,10 @@ int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
 	}
 	if (offset >= BATcount(order))
 		cnt = 0;
-	if (offset + cnt > BATcount(order))
+	if (offset + cnt > BATcount(order)){
 		cnt = BATcount(order)-offset;
+		clean = 1;
+	}
 
 	stream_writeInt( s, Q_TABLE );
 	stream_writeInt( s, cnt );

@@ -42,8 +42,46 @@
  * 		with <40 BUNs, the whole BAT is printed;
  * 		for larges BATs, we print the first 10 BUNs, the last 10 BUNs, 
  * 		and 10 BUNs sampled from the rest.
+
  * 	4096	disable optimization/"squeezing" in rel2bin
- */ 
+ *
+
+Towards an efficient sql communication model
+  
+  SQL standard requires each line to produce a result. Select queries produce 
+tabular results, ie. header information and result table. Update queries 
+just report the status, ie. how many rows where affected by the query 
+(update). Bulk input/output requires client side control else a large result 
+would overflow the client. Client side control means the client could
+request for a result chunk (moving both forwards and backwards).
+On errors the SQL standard requres a status code and error string to be
+returned.
+
+  For efficiency we need to reduce waiting on communication. This means the
+client should send as many queries as available at once. The query results
+for these set of queries should also be returned in large chunks. And the 
+client should receive the first answer quickly!
+
+  The clash between the SQL standard and efficient communication is clear. 
+To solve most of the issues we us a small communication protocol, which
+basically has two modes, single query execution and multi query execution.
+
+  The protocol uses blocked input/output channels (see for more information 
+stream.mx). In multi query mode a client sends a l-block of SQL, which 
+could contain a partial query. The server sends a single l-block of results. 
+If a client application needs to get query results in chunks, it should 
+use the single query at the time mode. Than a client sends a query and
+waits for the result (usually needed for ODBC driver). In this case the 
+partial results can be obtained using extra queries.
+
+  Debug and trace output should be generated at the server side as only there
+the query boundaries are known.
+
+later improvements, 
+	move iconv to server (just set language once) server
+	could better convert from and to utf8 (only strings and only once).
+	Reduces library dependencies for client. 
+*/ 
 
 #define SQL_DUMP 1
 #define MIL_DUMP 2
@@ -131,6 +169,7 @@ static char *sql_readline( char *prompt ){
 
 static int receive( stream *rs, stream *out, int trace );
 
+/* not needed any more once the new protocol is in place */
 static int forward_data(stream *out, int trace)
 	/* read from stdin */
 {
@@ -239,6 +278,16 @@ static void header_data( stream *rs, stream *out, int nCols, int trace ){
 	free(cols);
 }
 
+/* with new protocol and new table_print this should be come simpler
+ * ie just dump until end of block and transform status+count into
+	printf("SQL  %d Rows affected\n", nRows );
+ * Requires the client selects a special table_print at the start, ie.
+ * one that has simple headers like
+#-----------------
+# col1  |  col2  |
+#-----------------
+ * and dumps all results in one go, ie. no partial results.
+ */
 int receive( stream *rs, stream *out, int trace ){
 	int status = 0, type = 0, res = 0;
 	if ((res = stream_readInt(rs, &type)) && type != Q_END){
@@ -284,18 +333,14 @@ int receive( stream *rs, stream *out, int trace ){
 				fwrite( s, strlen(s), 1, stdout );
 				free(s);
 			}
-			if (type == Q_DEBUGP) {
+			if (type == Q_DEBUGP) 
 				return receive(rs, out, trace);
-			}
 		}
 		if (type == Q_RESULT) {
-			int i, id;
+			int i, id, res = 0;
 			stream_readInt(rs, &id);
 			header_data(rs, out, nRows, trace);
-			i = snprintf(buf, BLOCK, "EXPORT %d  0  -1;\n", id);
-			out->write(out, buf, i, 1);
-			out->flush(out);
-			return receive(rs, out, trace);
+			nRows = receive(rs, out, trace);
 		} else if (type == Q_DATA) {
 			status = forward_data(out, trace);
 		} else if (type == Q_TABLE || type == Q_UPDATE){
@@ -338,10 +383,12 @@ int parse_line( const unsigned char *line )
 		} else if (*line == '\''){
 			ins = 1;
 		/* skip comments */
-		} else if (!ins && len && 
-			 ((*line == '-' && line[-1] == '-') || *line =='#') ){
+		} else if (!ins && 
+			 ((len && *line == '-' && line[-1] == '-') 
+				|| *line =='#') ){
 			while(*line && *line != '\n') line++;
 		} else if (!ins && len && *line == '*' && line[-1] == '/'){
+			line ++; /* skip first * */
 			while(*line && *line != '/' && line[-1] != '*') line++;
 		/* count command's */
 		} else if (!ins && *line == ';'){
@@ -362,6 +409,7 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 	int  i, lineno = 0;
 	char *line = NULL;
 	char buf[BUFSIZ];
+	int cmdsum = 0;
 
 	while(!feof(stdin)){
 		int cmdcnt = 0;
@@ -372,10 +420,13 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 		if (!line) break;
 		lineno++;
 		cmdcnt = parse_line((unsigned char*)line);
+		cmdsum += cmdcnt;
 		if (cmdcnt < 0)
 			break;
+		/*
 		if (trace)
 			printf("# %5d: %d %s\n", lineno, cmdcnt, line);
+		*/
 #ifdef HAVE_ICONV
 		if (to_utf)
 		{
@@ -389,15 +440,39 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 			ws->write( ws, line, strlen(line), 1 );
 		}
 		ws->write( ws, "\n", 1, 1 );
-		if (cmdcnt){
+
+		if (is_chrsp && cmdcnt){
+			ins = 0;
+			ws->flush( ws );
+
+			for (; cmdcnt > 0; cmdcnt--) {
+				int status = receive(rs, ws, trace);
+				if (status < 0 && exit_on_error)
+					exit(status);
+			}
+			cmdsum = 0;
+		} else if (strlen(line) == 0 && cmdsum){
+			ins = 0;
+			ws->flush( ws );
+
+			for (; cmdsum > 0; cmdsum--) { 
+				int status = receive(rs, ws, trace);
+				if (status < 0 && exit_on_error)
+					exit(status);
+			}
+		}
+	}
+	if (!is_chrsp){ /* receive all in one go */
+		if (cmdsum){
 			ins = 0;
 			ws->flush( ws );
 		}
 
-		for (; cmdcnt > 0; cmdcnt--) {
+		for (; cmdsum > 0; cmdsum--) { 
 			int status = receive(rs, ws, trace);
-			if (status < 0 && exit_on_error)
+			if (status < 0 && exit_on_error){
 				exit(status);
+			}
 		}
 	}
 	
@@ -480,7 +555,23 @@ int handle_result( stream *ws, stream *rs, int cnt, fptr f, int rlen, int dump, 
 	return res;
 }
 
-static int execute( stream *ws, stream *rs, const char *query)
+static int tableresult( stream *rs )
+{
+	int type, status;
+
+	if (!stream_readInt(rs, &type) || type == Q_END) {
+		return -1;
+	}
+
+	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
+
+	if (type != Q_TABLE)
+		return -1;
+
+	return status;
+}
+
+static int execute( stream *ws, stream *rs, const char *query, int *id)
 {
 	int type, status;
 
@@ -495,26 +586,18 @@ static int execute( stream *ws, stream *rs, const char *query)
 
 	if (type != Q_RESULT)
 		return -1;
+	stream_readInt(rs, id);
 
 	skip_block(rs);
 
-	if (!stream_readInt(rs, &type) || type == Q_END) {
-		return -1;
-	}
-
-	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
-
-	if (type != Q_TABLE)
-		return -1;
-
-	return status;
+	return tableresult(rs);
 }
 
-static void dump_data( stream *rs, int nRows, char *table, int dump ){
+static void dump_data( stream *ws, stream *rs, int nRows, char *table, int dump, int id ){
 	FILE *out = stdout;
 	char buf[BLOCK+1];
 	const char *copystring =
-	    "COPY %d RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n";
+	    "COPY %d RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n\n";
 	int last = 0, nr = 0;
 
 	if (dump == SQL_DUMP){
@@ -532,6 +615,7 @@ static void dump_data( stream *rs, int nRows, char *table, int dump ){
 		int nr = bs_read_next(rs, buf, &last);
 		fwrite( buf, nr, 1, out );
 	}
+	
 	fprintf(out, "\n"); /* extra empty line */
 	if (out != stdout)
 		fclose(out);
@@ -671,13 +755,13 @@ static int dump_column( stream *ws, stream *rs, char **columns, int cnt, int rle
 
 static int dump_table( stream *ws, stream *rs, char **tables, int cnt, int rlen, int dump, FILE *out)
 {
-	int i;
+	int i, id;
 	for(i=0; i<cnt; i++){
 		int ccnt, res = 0;
 		char query[BUFSIZ], *s = tables[i];
 
 		snprintf(query, BUFSIZ, column_format, s);
-		ccnt = execute(ws, rs, query);
+		ccnt = execute(ws, rs, query, &id);
 		if (ccnt > 0){
 			FILE * out = stdout;
 
@@ -702,9 +786,10 @@ static int dump_table( stream *ws, stream *rs, char **tables, int cnt, int rlen,
 		if (res == 0){
 			char *select_format = "select * from %s;\n";
 			snprintf(query, BUFSIZ, select_format, s);
-			res = execute(ws, rs, query);
+			res = execute(ws, rs, query, &id);
 			if (res > 0)
-				dump_data(rs, res, s, dump );
+				dump_data(ws, rs, res, s, dump, id );
+	
 		} else {
 			return res;
 		}
@@ -722,25 +807,25 @@ static int dump_view( stream *ws, stream *rs, char **views, int cnt, int rlen, i
 
 static int dump_tables( stream *ws, stream *rs, int dump )
 {
-	int cnt = 0;
+	int cnt = 0, id;
 	char *tables = "select name from tables where type=0;\n"; 
 	char *views = "select name,query from tables where type=2;\n";
 
-	cnt = execute( ws, rs, types_format);
+	cnt = execute( ws, rs, types_format, &id);
 	if (cnt > 0){
 		int res = handle_result(ws, rs, cnt, &dump_type, 4, dump, stdout);
 		if (res != 0) 
 			return res;
 	}
 
-	cnt = execute( ws, rs, tables);
+	cnt = execute( ws, rs, tables, &id);
 	if (cnt > 0){
 		int res = handle_result(ws, rs, cnt, &dump_table, 1, dump, stdout);
 		if (res != 0) 
 			return res;
 	}
 	if (dump == SQL_DUMP){
-		cnt = execute( ws, rs, views);
+		cnt = execute( ws, rs, views, &id);
 		if (cnt > 0){
 			int res = handle_result(ws, rs, cnt, &dump_view, 2, dump, stdout);
 			if (res != 0) 
@@ -896,7 +981,7 @@ main(int ac, char **av)
 	 * New start client sequence
 	 *
 	 * 1) socket connect
-	 * 2) send 'api(sql,debug)' api(sql,0);
+	 * 2) send 'api(sql,debug,reply_size)' api(sql,0,-1);
 	 * 3) receive request for login 
 	 * 4) send user/passwd
 	 */
@@ -905,7 +990,7 @@ main(int ac, char **av)
 	if (!passwd)
 		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
 
-	snprintf(buf, BUFSIZ, "api(sql,%d);\n", debug ); 
+	snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n", debug, trace ); 
 	ws->write( ws, buf, strlen(buf), 1 );
 	ws->flush( ws );
 	/* read login */
@@ -918,6 +1003,7 @@ main(int ac, char **av)
 	ws->flush( ws );
 	/* read database, schema */
 	db = readblock( rs );
+
 	if (db){
 		char *s = strrchr(db, ',');
 		if (s){ 

@@ -2359,7 +2359,7 @@ stmt *sql_error( context * sql, int error_code, char *format, ... )
 
 	va_start (ap,format); 
 	if (sql->errstr[0] == '\0') {
-		sql->status = error_code;
+		sql->mvc->status = error_code;
 		vsnprintf(sql->errstr, ERRSIZE, _(format), ap); 
 	}
 	va_end (ap); 

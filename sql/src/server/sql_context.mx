@@ -50,6 +50,8 @@ typedef struct context {
 	int yylen;
 	int yysize;
 	int debug;
+	int trace;
+	int cnt;
 
 	char *sql;
 	int sqllen;
@@ -60,8 +62,8 @@ typedef struct context {
 	char *buf;
 	buffer *outbuf;
 	stream *out;
+	int	reply_size;
 
-	int status; 	/* sql error code */
 	char errstr[ERRSIZE];
 	struct  mvc *mvc;
 	struct  qc  *qc;
@@ -74,7 +76,7 @@ typedef struct context {
 	struct symbol *sym;
 } context;
 
-sql_export void sql_init_context(context * c, int debug, mvc *m);
+sql_export void sql_init_context(context * c, int debug, int trace, int reply_size, mvc *m);
 sql_export void sql_exit_context(context * c);
 
 sql_export void cmd_init(context * c);
@@ -203,10 +205,10 @@ YYSTREE milnode2(int tok, ValPtr valp)
         return res;
 }
 
-int sqlexecute(context * c, char *inbuf, stream *out, Cntxt stk, ValPtr res )
+int sqlexecute(context * c, stream *out, Cntxt stk, ValPtr res )
 {
 	stream *cout = c->out;
-	char *cmd = NULL, buf[BUFSIZ];
+	char *cmd = NULL, buf[BUFSIZ], *s;
 	node *n;
 	int i, err = 0;
 	cq *q = NULL;
@@ -214,21 +216,50 @@ int sqlexecute(context * c, char *inbuf, stream *out, Cntxt stk, ValPtr res )
 	ValRecord v;
 	v.vtype = TYPE_void;
 
-	c->buf = inbuf;
-	c->cur = ' ';
-
 	cmd_init(c);
 
-	if ((err = sqlparse(c)) || !c->sym) {
+	s = c->buf;
+
+	c->mvc->type = Q_PARSE;
+	c->mvc->status = 0;
+
+	if ((err = sqlparse(c)) || c->mvc->status || !c->sym) {
+		if (!err)
+			err = c->mvc->status;
 		return sqlcleanup(c, cmd, err);
+	}
+	
+	if (c->trace){
+		char *buf = s;
+
+		char old = *c->buf;
+
+		*c->buf = '\0';
+		*c->buf = old;
+
+		stream_writeInt( out, Q_DEBUGP );
+		stream_writeInt( out, 1 );
+		while( buf < c->buf) {
+			int i;
+			char b[BUFSIZ];
+
+		  	while( *buf != '\n' && buf < c->buf) buf++;
+			i = snprintf(b, BUFSIZ, "# %5d: ", c->cnt);
+		  	out->write(out, b, 1, i);
+		  	out->write(out, s, 1, buf - s);
+			out->write(out, "\n", 1, 1);
+			s = ++buf;
+		}
+		c->cnt++;
+		out->flush(out);
 	}
 	if ( !(q = qc_find(c->qc, c->sym, c->params, c->key)) ){
 	    	int nr = 1;
 		int id = c->qc->id;
 		stmt *s = symbol2stmt(c);
 
-		if (!s && c->status){
-			err = c->status;
+		if (!s && c->mvc->status){
+			err = c->mvc->status;
 			return sqlcleanup(c, cmd, err);
 		}
 
@@ -255,9 +286,9 @@ int sqlexecute(context * c, char *inbuf, stream *out, Cntxt stk, ValPtr res )
 	
 		cmd = buffer_get_buf(c->outbuf);
     		cout->flush( cout );
+	
 		err = milinterpret( c, cmd, out, stk, 1 );
-
-		q = qc_insert(c->qc, c->sym, c->params, c->key );
+		q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
 
 		c->sym = NULL;
 		c->params = NULL;
@@ -314,6 +345,7 @@ int sqlexecute(context * c, char *inbuf, stream *out, Cntxt stk, ValPtr res )
 		CNTXTuse(procstk);
 		monet_cntxt[procstk].reuse = TRUE;
 
+		c->mvc->type = q->type;
 		err = interpret( procstk, procnode, &v);
 
 		if (!err){
@@ -334,6 +366,7 @@ int sqlexecute(context * c, char *inbuf, stream *out, Cntxt stk, ValPtr res )
 				argv[i] = a->data;
 			}
 		}
+		c->mvc->type = q->type;
 		err = interpret( q->stk, procnode->yysons[1]->yysons[0], &v);
 	}
 /*
@@ -342,11 +375,27 @@ int sqlexecute(context * c, char *inbuf, stream *out, Cntxt stk, ValPtr res )
 		c->qc = qc_create();
 	}
 */
+
+	if (!err && !(c->debug&64)){
+		ssize_t status, type;
+
+		if ((status = mvc_status(c->mvc)) < 0){
+			char *errstr = "Error in result";
+			stream_writeInt( out, mvc_type(c->mvc) );
+			stream_writeInt( out, status );
+			out->write( out, errstr, strlen(errstr), 1 );
+			out->flush( out );
+  		} else if ( (type = mvc_type(c->mvc)) != Q_RESULT ) {
+			stream_writeInt( out, type );
+			stream_writeInt( out, status );
+			out->flush( out );
+  		}
+	}
 	return sqlcleanup(c, cmd, err);
 }
 
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
-	int debug = 0, l = 0, i, sock, *Sock;
+	int debug = 0, trace = 0, reply_size = 100, l = 0, i, sock, *Sock;
 	char buf[BUFSIZ+1], *errbuf;
 	char *user, *passwd, *schema, *dbname;
 	Variable v;
@@ -369,8 +418,18 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	buf[i] = 0;
 	/* expect api(sql,debug); */
 	l = strlen("api(sql,");
-	if (i > l+1 )
-		debug = strtol(buf+l,NULL,10);
+	if (i > l+1 ){
+		char *s = NULL;
+		debug = strtol(buf+l,&s,10);
+		if (s){
+			s++; /* skip , */
+			trace = strtol(s, &s, 10);
+			if (s){
+				s++; /* skip , */
+				reply_size = strtol(s, NULL, 10);
+			}
+		}
+	}
 
 	i=snprintf(buf, BUFSIZ, "login\n" );
 	out->write(out, buf, 1, i);
@@ -411,7 +470,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
 
 	sql = NEW(context);
-	sql_init_context( sql, debug, m );
+	sql_init_context( sql, debug, trace, reply_size, m );
 	sql->qc = qc_create();
 
 	/* add myc and Output, Input to the stack */
@@ -433,49 +492,44 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 
 	while(TRUE){
 		int size = BUFSIZ + 1, err = 0;
-		char *inbuf = NEW_ARRAY(char, size );
-		int inlen = 0;
+		char *inbuf = NEW_ARRAY(char, size ), *start = inbuf;
+		int inlen = 0, len;
 
-		while ((inlen = in->read(in, inbuf, 1, BUFSIZ)) == BUFSIZ){
-			err = 1;
+		while ((len = in->read(in, start, 1, BUFSIZ)) == BUFSIZ){
+			inlen += BUFSIZ;
+			size += BUFSIZ;
+			inbuf = RENEW_ARRAY(char, inbuf, size); 
+			start = inbuf + size - BUFSIZ - 1;
+			*start = '\0';
 		}
+		inlen += len;
 		inbuf[inlen] = '\0';
 
 		if (!inlen || inbuf[0] == EOT)
 			break;
 
-		if (!err)
-			err = sqlexecute(sql, inbuf, out, stk, res);
+		sql->buf = inbuf;
+		sql->cur = ' ';
 
-		if (err){ /* output error */
-			char *ibuf = inbuf;
-			char *buf = GDKerrbuf;
-			stream_writeInt( out, -1 );
-			stream_writeInt( out, err );
-			out->write( out, sql->errstr, strlen(sql->errstr), 1 );
-			if (buf)
-			out->write( out, buf, strlen(buf), 1 );
-			buf[0] = 0; /* reset error buf */
+		while( sql->buf && *sql->buf && *sql->buf != EOT ){
+			char *ibuf = sql->buf;
 
-			/* show the buggy query */
-			out->write( out, " in:\n", 5, 1);
-			while (ibuf[0] == '\n') ibuf++;
-			out->write( out, ibuf, strlen(ibuf), 1);
-			out->flush( out );
-		} else if (!(sql->debug&64)){
-			ssize_t status, type;
-
-			if ((status=mvc_status(m)) < 0){
-				char *errstr = "Error in result";
-				stream_writeInt( out, mvc_type(m) );
-				stream_writeInt( out, status );
-				out->write( out, errstr, strlen(errstr), 1 );
+			err = sqlexecute(sql, out, stk, res);
+			if (err){ /* output error */
+				char *buf = GDKerrbuf;
+				stream_writeInt( out, -1 );
+				stream_writeInt( out, err );
+				out->write( out, sql->errstr, strlen(sql->errstr), 1 );
+				if (buf)
+				out->write( out, buf, strlen(buf), 1 );
+				buf[0] = 0; /* reset error buf */
+	
+				/* show the buggy query */
+				out->write( out, " in:\n", 5, 1);
+				while (ibuf[0] == '\n') ibuf++;
+				out->write( out, ibuf, strlen(ibuf), 1);
 				out->flush( out );
-		  	} else if ( (type = mvc_type(m)) != Q_RESULT ) {
-				stream_writeInt( out, type );
-				stream_writeInt( out, status );
-				out->flush( out );
-		  	}
+			}
 		}
 		if (inbuf) _DELETE(inbuf);
 	}
@@ -491,20 +545,22 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	return GDK_SUCCEED;
 }
 
-void sql_init_context(context * c, int debug, mvc * mvc)
+void sql_init_context(context * c, int debug, int trace, int reply_size, mvc * mvc)
 {
 	memset(c, 0, sizeof(context));
 	c->cur = ' ';
 	c->buf = NULL;
  	c->outbuf = buffer_create( BUFSIZ );
 	c->out = buffer_wastream( c->outbuf, "SQLserver" );
+	c->reply_size = reply_size;
 
 	c->debug = debug;
+	c->trace = trace;
+	c->cnt = 0;
 	c->lineno = 1;
 	c->sym = NULL;
 	c->qc = NULL;
 	c->mvc = mvc;
-	c->status = 0;
 	c->errstr[0] = '\0';
 
 	c->yyval = 0;
