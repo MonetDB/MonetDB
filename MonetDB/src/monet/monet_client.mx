@@ -261,8 +261,13 @@ Client forkClient(Cntxt stk, int thread){
         	son->events = father->events;
         	son->login = father->login;
         	son->father = father->stk;
-        	monet_cntxt[son->stk].outer = stk;
-        	monet_cntxt[son->stk].shadow = 1;
+		/* also reuse father's stack */
+		if (thread){
+			CNTXTcopy( son->stk, stk );
+		} else {
+        		monet_cntxt[son->stk].outer = stk;
+        		monet_cntxt[son->stk].shadow = 1;
+		}
 		MT_set_lock(monet_contextLock, "forkClient");
 		father->children++;
 		MT_unset_lock(monet_contextLock, "forkClient");

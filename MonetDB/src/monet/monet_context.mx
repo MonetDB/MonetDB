@@ -188,6 +188,7 @@ in use in parallel worker threads. We must keep them and adapt
 @c
 void CNTXTdelete(Cntxt cur){
 	Variable w, v = monet_cntxt[cur].var;
+
 	for(monet_cntxt[cur].var = 0; v ; v= w) {
 		w = v->next;
 		GDKfree(v);
@@ -243,6 +244,39 @@ void CNTXTclear(Cntxt stk){
 }
 
 @-
+Copy the stack with all its variables.
+@c
+void CNTXTcopy(Cntxt dststk, Cntxt srcstk){
+	Cntxt tmp = CNTXTnew(0); 
+
+	monet_cntxt[dststk].outer = tmp;
+	while(srcstk>=0){
+		CntxtRec *d = &monet_cntxt[tmp];
+		CntxtRec *s = &monet_cntxt[srcstk];
+
+        	Variable v = monet_cntxt[srcstk].var;
+
+		d->shadow = 0;
+		d->used = s->used;
+		d->reuse = s->reuse;
+		while(v){
+			Variable n = VARnew( tmp, v->name );
+			
+			n->constant = v->constant;
+			n->frozen = v->frozen;
+			VALcopy(&n->binding, &v->binding);
+
+			v = v->next;
+		}
+		if (s->outer){ 
+			monet_cntxt[tmp].outer = CNTXTnew(0); 
+			tmp = monet_cntxt[tmp].outer;
+		}
+		srcstk = monet_cntxt[srcstk].outer;
+	}
+}
+
+@-
 A variable is initialized as an integer 0 and made accessible through
 a context.
 The value structure can be cleared with VALclear, it releases the BAT.
@@ -252,7 +286,6 @@ Variable VARnew(Cntxt stk, str name){
 	Variable v;
 	int	i;
 	
-
 	i = strlen(name);
 	v = (Variable) GDKmalloc(sizeof(VarRecord)+i);
 	v->binding.vtype = TYPE_int;
