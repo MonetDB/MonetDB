@@ -1,7 +1,7 @@
-Test_Cautocommit
-Test_Rtimedate
-Test_Csavepoints
-Test_PStimedate
-Test_Rbooleans
-Test_Rpositioning
-Test_Sbatching
+HAVE_JAVA?Test_Cautocommit
+HAVE_JAVA?Test_Rtimedate
+HAVE_JAVA?Test_Csavepoints
+HAVE_JAVA?Test_PStimedate
+HAVE_JAVA?Test_Rbooleans
+HAVE_JAVA?Test_Rpositioning
+HAVE_JAVA?Test_Sbatching

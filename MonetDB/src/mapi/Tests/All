@@ -1,4 +1,4 @@
 monet_BATs
 manyMapiClients
 utf_8_C
-utf_8_JAVA
+HAVE_JAVA?utf_8_JAVA
