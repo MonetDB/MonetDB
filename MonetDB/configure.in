@@ -158,6 +158,74 @@ SOCKET_LIBS=""
 AC_CHECK_LIB(socket, socket, [ SOCKET_LIBS="-lsocket -lnsl" ], [], "-lnsl" )
 AC_SUBST(SOCKET_LIBS)
 
+dnl check for z (de)compression library (default /usr and /usr/local)
+have_z=auto
+Z_CFLAGS=""
+Z_LIBS=""
+AC_ARG_WITH(z,
+[  --with-z=DIR     z library is installed in DIR], have_z="$withval")
+if test "x$have_z" != xno; then
+  if test "x$have_z" != xauto; then
+    Z_CFLAGS="-I$withval/include"
+    Z_LIBS="-L$withval/lib"
+  fi
+
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
+  AC_CHECK_HEADER(zlib.h, have_z=yes, have_z=no)
+  CPPFLAGS="$save_CPPFLAGS"
+
+  if test "x$have_z" = xyes; then
+  	save_LIBS="$LIBS"
+  	LIBS="$LIBS $Z_LIBS"
+  	AC_CHECK_LIB(z, gzopen, Z_LIBS="$Z_LIBS -lz"
+        	AC_DEFINE(HAVE_LIBZ) have_z=yes, have_z=no)
+  	LIBS="$save_LIBS"
+  fi
+
+  if test "x$have_z" != xyes; then
+    Z_CFLAGS=""
+    Z_LIBS=""
+  fi
+fi
+AC_SUBST(Z_CFLAGS)
+AC_SUBST(Z_LIBS)
+
+dnl check for bz2 (de)compression library (default /usr and /usr/local)
+have_bz=auto
+BZ_CFLAGS=""
+BZ_LIBS=""
+AC_ARG_WITH(bz2,
+[  --with-bz2=DIR     bz2 library is installed in DIR], have_bz="$withval")
+if test "x$have_bz" != xno; then
+  if test "x$have_bz" != xauto; then
+    BZ_CFLAGS="-I$withval/include"
+    BZ_LIBS="-L$withval/lib"
+  fi
+
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
+  AC_CHECK_HEADER(bzlib.h, have_bz=yes, have_bz=no)
+  CPPFLAGS="$save_CPPFLAGS"
+
+  if test "x$have_bz" = xyes; then
+  	save_LIBS="$LIBS"
+  	LIBS="$LIBS $BZ_LIBS"
+  	AC_CHECK_LIB(bz2, bzopen, BZ_LIBS="$BZ_LIBS -lbz2"
+        	AC_DEFINE(HAVE_LIBBZ2) have_bz=yes, have_bz=no)
+  	LIBS="$save_LIBS"
+  fi
+
+  if test "x$have_bz" != xyes; then
+    BZ_CFLAGS=""
+    BZ_LIBS=""
+  fi
+fi
+AC_SUBST(BZ_CFLAGS)
+AC_SUBST(BZ_LIBS)
+
+
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
