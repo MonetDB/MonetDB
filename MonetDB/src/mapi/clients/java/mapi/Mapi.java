@@ -658,7 +658,6 @@ public int sliceRow(){
 						break;
 					}
 				} 
-				break;
 			default: l++;
 			}
 		}
