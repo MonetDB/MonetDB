@@ -710,13 +710,16 @@ public class MonetResultSet implements ResultSet {
 	 * @throws SQLException if there is no such column
 	 */
 	public double getDouble(int columnIndex) throws SQLException {
-		double ret = 0.0;
-		try {
-			ret = Double.parseDouble(getString(columnIndex));
-		} catch (NumberFormatException e) {
-			// ignore, return the default: 0
+		double ret = 0;	// note: relaxing by compiler here
+		String dbl = getString(columnIndex);
+		if (dbl != null) {
+			try {
+				ret = Double.parseDouble(dbl);
+			} catch (NumberFormatException e) {
+				// ignore, return the default: 0
+			}
+			// do not catch SQLException for it is declared to be thrown
 		}
-		// do not catch SQLException for it is declared to be thrown
 
 		return(ret);
 	}
@@ -765,12 +768,15 @@ public class MonetResultSet implements ResultSet {
 	 */
 	public float getFloat(int columnIndex) throws SQLException {
 		float ret = 0;	// note: relaxing by compiler here
-		try {
-			ret = Float.parseFloat(getString(columnIndex));
-		} catch (NumberFormatException e) {
-			// ignore, return the default: 0
+		String flt = getString(columnIndex);
+		if (flt != null) {
+			try {
+				ret = Float.parseFloat(flt);
+			} catch (NumberFormatException e) {
+				// ignore, return the default: 0
+			}
+			// do not catch SQLException for it is declared to be thrown
 		}
-		// do not catch SQLException for it is declared to be thrown
 
 		return(ret);
 	}
@@ -800,6 +806,8 @@ public class MonetResultSet implements ResultSet {
 	public int getInt(int columnIndex) throws SQLException {
 		int ret = 0;
 		try {
+			// note: Integer.parseInt DOES unlike Double and Float
+			// accept a null value
 			ret = Integer.parseInt(getString(columnIndex));
 		} catch (NumberFormatException e) {
 			// ignore, return the default: 0
@@ -834,6 +842,8 @@ public class MonetResultSet implements ResultSet {
 	public long getLong(int columnIndex) throws SQLException {
 		long ret = 0;
 		try {
+			// note: Long.parseLong DOES unlike Double and Float
+			// accept a null value
 			ret = Long.parseLong(getString(columnIndex));
 		} catch (NumberFormatException e) {
 			// ignore, return the default: 0
