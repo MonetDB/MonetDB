@@ -829,7 +829,7 @@ The server should emit an identity message, e.g. the Mserver version
 These lines should be eaten away into the prompt is encountered.
 @c
 
-	rs = bstream_create(in, BLOCK);
+	rs = bstream_create(in, isa_block_stream(in) ? BLOCK : 0);
 	m = mvc_create(1, (backend_stack)stk, rs, out );
 	schema = mvc_login( m, user, passwd );
 	GDKfree(user);  /* possible leakage */
