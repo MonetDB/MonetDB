@@ -894,15 +894,15 @@ static nat store_PfxLocNEW(
 
 	if ( a_uri ) {
 	   if ( !a_pfx )
-	       a_pfx = emptyString;
+	       a_pfx = (xmlChar*)emptyString;
 	   sprintf(shredCtx->workSpace,"%s:%s:%s",a_uri,a_pfx,a_tag);
 	   pfxloc = &shredCtx->workSpace[0];
 	} else if ( a_pfx ) {
-	   a_uri = emptyString;
+	   a_uri = (xmlChar*)emptyString;
 	   sprintf(shredCtx->workSpace,"%s:%s",a_pfx,a_tag);
 	   pfxloc = &shredCtx->workSpace[0];
 	} else {
-	   a_uri = a_pfx = emptyString;
+	   a_uri = a_pfx = (xmlChar*)emptyString;
 	   pfxloc = (char*)a_tag;
 	}
     	/* stream_printf(GDKout,"** store_PfxLocNEW(%s)\n",pfxloc); */
