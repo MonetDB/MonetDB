@@ -400,7 +400,7 @@ typedef int ssize_t;
 #define HOST "i686-pc-win32"
 
 /* Name of package */
-#define PACKAGE "MonetDB"
+#define PACKAGE "sql"
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""

@@ -58,16 +58,12 @@ subs = [
     ('@Qdatadir@',          "@Qprefix@@QDIRSEP@share"),
     ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
     ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
-    ('@PACKAGE@',           "MonetDB"),
+    ('@PACKAGE@',           "sql"),
     ('@VERSION@',           "2.0"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
-    ('@MONET_BUILD@',       build),
-    ('@MONET_SOURCE@',      source),
     ('@QDIRSEP@',           "\\\\"),
     ('@Qprefix@',           Qprefix),
-    ('@QMONET_BUILD@',      Qbuild),
-    ('@QMONET_SOURCE@',     Qsource),
 ]
 
 
