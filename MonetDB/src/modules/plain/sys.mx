@@ -419,11 +419,11 @@ Some explanation of what mem_usage() and vm_usage() display:
     PROC bbp() : bat[str,int] := RETURN view_gdk_bbp;
     ADDHELP("bbp", "boncz", "Mar 22 1998", "Global BBP usage info", "sys");
 
-    PROC tail(bat[any,any] b) : int := 
+    PROC tail(bat[any,any] b) : str := 
          return adm_atomtbl.reverse.find(b.ttype);
     ADDHELP("tail","boncz","Mar 22 1998","Get tail-type as a string","sys");
 
-    PROC head(bat[any,any] b) : int:= 
+    PROC head(bat[any,any] b) : str := 
          return adm_atomtbl.reverse.find(b.htype);
     ADDHELP("head","boncz","Mar 22 1998","Get head-type as a string","sys");
 
