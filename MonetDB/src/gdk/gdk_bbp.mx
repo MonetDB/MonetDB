@@ -1677,8 +1677,7 @@ BBPsave(BAT *b)
 TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
-static
-    int
+static int
 BBPfree(BAT *b, str calledFrom)
 {
 	int ret;
