@@ -17,7 +17,8 @@ LIBS = {
 		malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx \
 		perfex.mx qt.mx radix.mx salgebra.mx stats.mx str.mx \
 		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
-		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx
+		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
+		mel.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
 	LIBS = ../../gdk/libbat ../../monet/libmonet \

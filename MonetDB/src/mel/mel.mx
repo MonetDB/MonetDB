@@ -502,8 +502,6 @@ char *script = NULL;
 
 extern void script_start( );
 extern void script_concat( int );
-/*<LOAD,DROP>"#"            { while (yyinput() != '\n'); return yylex();  }
-*/
 %}
 %p 3400 
 %a 2300 
