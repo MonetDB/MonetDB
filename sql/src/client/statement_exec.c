@@ -198,7 +198,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	case st_derive: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.derive(s%d);\n", *nr, l, r);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.group(s%d);\n", *nr, l, r);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_unique: {
@@ -208,44 +208,59 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_order: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.order(%s);\n", *nr, l, 
+		/*
+		len += snprintf( buf+len, BUFSIZ, 
+			"s%d := s%d.order(%s);\n", *nr, l, 
 				s->flag?"desc":"asc");
+				*/
+		len += snprintf( buf+len, BUFSIZ, 
+			"s%d := s%d.reverse.sort.reverse();\n", *nr, l );
 		s->nr = (*nr)++;
 	} 	break;
 	case st_reorder: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reorder(s%d,%s);\n", *nr, l, r, 
-				s->flag?"desc":"asc");
+			len += snprintf( buf+len, BUFSIZ, 
+			"s%d := s%d.CTrefine(s%d);\n", *nr, l, r); 
+		/* s->flag?"desc":"asc"); */
 		s->nr = (*nr)++;
 	} 	break;
 	case st_unop: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		if (s->op1.stval->nrcols)
-		  len += snprintf( buf+len, BUFSIZ, "s%d := [%s](s%d);\n", *nr, s->op2.funcval->name, l );
+		  len += snprintf( buf+len, BUFSIZ, 
+		   "s%d := [%s](s%d);\n", *nr, s->op2.funcval->imp, l );
 		else 
-		  len += snprintf( buf+len, BUFSIZ, "s%d := %s(s%d);\n", *nr, s->op2.funcval->name, l);
+		  len += snprintf( buf+len, BUFSIZ, 
+		   "s%d := %s(s%d);\n", *nr, s->op2.funcval->imp, l);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_binop: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := [%s](s%d,s%d);\n", *nr, s->op3.funcval->name, l,r );
+		if (s->op1.stval->nrcols || s->op2.stval->nrcols )
+		  len += snprintf( buf+len, BUFSIZ, 
+		    "s%d := [%s](s%d,s%d);\n", *nr, s->op3.funcval->imp, l,r );
+		else 
+		  len += snprintf( buf+len, BUFSIZ, 
+		    "s%d := %s(s%d,s%d);\n", *nr, s->op3.funcval->imp, l,r );
+
 		s->nr = (*nr)++;
 	} 	break;
 	case st_aggr: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		if (s->flag)
+		if (s->flag){
 			len += snprintf( buf+len, BUFSIZ, "s%d := {%s}(s%d);\n", 
-					*nr, s->op2.aggrval->name, l);
-		else 
+					*nr, s->op2.aggrval->imp, l);
+		} else { 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.%s();\n", 
-					*nr, l, s->op2.aggrval->name );
+					*nr, l, s->op2.aggrval->imp );
 			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n"
 				, *nr+1, basecolumn(s->op1.stval)->tpe->name );
 			len += snprintf( buf+len, BUFSIZ, "s%d.insert(oid(0),s%d);\n"
 				, *nr+1, *nr );
 			(*nr)++;
+		}
 		s->nr = (*nr)++;
 	} 	break;
 	case st_exists: {
@@ -254,7 +269,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int k = *nr;
 		if (n){
 			char *tpe = (char*)atomtype2string(n->data.aval );
-			type *t = sql->cat->bind_type( sql->cat, s->op1.sval );
+			type *t = cat_bind_type( sql->cat, s->op1.sval );
 			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n", *nr, t->name );
 		}
 		k++;

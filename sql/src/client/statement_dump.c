@@ -122,28 +122,28 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int r = statement_dump( s->op2.stval, nr, sql );
 		switch(s->flag){
 		case cmp_equal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_notequal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", *nr, l, r ); 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.kdiff(s%d);\n", *nr+1, l, *nr );
 			(void)(*nr)++; s->nr = (*nr)++;
 			break;
 		case cmp_lt:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \"<\");\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<\");\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_lte: /* broken */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \"<=\");\n", *nr, l, r );
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<=\");\n", *nr, l, r );
 			s->nr = (*nr)++;
 			break;
 		case cmp_gt: 
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \">\" );\n", *nr, l, r); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">\" );\n", *nr, l, r); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_gte: /* broken */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \">=\" );\n", *nr, l, r);
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">=\" );\n", *nr, l, r);
 			s->nr = (*nr)++;
 			break;
 		default:
@@ -269,7 +269,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int k = *nr;
 		if (n){
 			char *tpe = (char*)atomtype2string(n->data.aval );
-			type *t = sql->cat->bind_type( sql->cat, s->op1.sval );
+			type *t = cat_bind_type( sql->cat, s->op1.sval );
 			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n", *nr, t->name );
 		}
 		k++;
@@ -390,6 +390,11 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} break;
 	case st_output: {
 		statement_dump( s->op1.stval, nr, sql );
+		if (sql->debug&32){
+			len += snprintf( buf+len, BUFSIZ,
+			"stream_write(Output,\"0\\n\");stream_flush(Output);\n");
+			break;
+		}
 		if (s->op1.stval->type == st_list){
 			list *l = s->op1.stval->op1.lval;
 			node *n = l->h;
