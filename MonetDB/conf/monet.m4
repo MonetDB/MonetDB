@@ -239,7 +239,7 @@ yes-*-*)
 		;;
 	*-irix*|*-cygwin*|*-darwin*|2.*-*)
 		;;
-	3.[[3-9]]*-*)
+	3.[[2-9]]*-*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
