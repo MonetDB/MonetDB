@@ -98,6 +98,8 @@ trace()    	&       Set trace flag
 traceLog()	& 	Keep log of interaction
 unquote()  	&       remove escaped characters
 
+*/
+
 package mapi;
 
 import java.awt.*;
