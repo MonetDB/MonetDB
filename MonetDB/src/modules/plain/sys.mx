@@ -76,7 +76,7 @@ p - free (last usage was P)
 M - in use as memory mapped region
 m - free (last usage was M)
 C - in use as MIL context buffer (i.e. anonymous virtual memory)
-c - free (last usage was M)
+c - free (last usage was c)
 \end{verbatim}
 On Linux, the malloc library appears to be using anonymous virtual memory, which goes unetected.
 If you want to see all your memory in the map, lower the gdk\_mmap threshold in monet.conf to a 

@@ -861,7 +861,7 @@ fail:		    GDKerror("conn_waiter: illegal %s[%s,%s].\n",nm,line,ht,tt);
 		    cache_del(c);
 		    continue;
 		}
-		b = BATcreatedesc(htpe, ttpe);
+		b = BATcreatedesc(htpe, ttpe, TRUE);
 		b->dims.headvarsized = BATatoms[htpe].varsized; 
 		b->dims.tailvarsized = BATatoms[ttpe].varsized;
 		b->dims.headkey = h_key;

@@ -1095,7 +1095,7 @@ gdk_export BAT*		BATextend  (BAT *b, size_t newcap);
 
 		/* internal */
 gdk_export BAT*		BATnewstorage (int ht, int tt, size_t cap);
-gdk_export BAT*		BATcreatedesc (int ht, int tt); 
+gdk_export BAT*		BATcreatedesc (int ht, int tt, int heapnames); 
 gdk_export int 		BATfree       (BAT *b);
 gdk_export int 		BATelmshift   (BAT *b);
 gdk_export void 		BATsetdims    (BAT *b);

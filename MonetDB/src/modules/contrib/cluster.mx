@@ -259,7 +259,7 @@ int CMDheapclustercopy(BAT *b, BAT* order){
  
 	/* alloc && copy the old structures into scratch structures. */
 	bunsize = BUNsize(b);
-	hn.filename=NULL;
+	hn.filename = NULL;
 	ATOMheap(b->ttype, &hn, BATcount(b)+1);   
  
 	if (b == order) {
