@@ -58,7 +58,10 @@ str MILinit(Client cntxt){
 #ifdef _MIL_SCENARIO_DEBUG
 	stream_printf(GDKout,"#MILinit MonetDB V5\n");
 #endif
-	/* nothing to be done */
+	/* load the modules */
+	malInclude(cntxt,"mil","mil",0);
+	malInclude(cntxt,"mil_algebra_procs","mil_algebra_procs",0);
+	malInclude(cntxt,"mil_sysprocs","mil_sysprocs",0);
 	(void) cntxt;
 	return MAL_SUCCEED;
 }
