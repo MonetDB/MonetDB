@@ -21,4 +21,4 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SUBDIRS = atoms kernel mal #x100 
+SUBDIRS = atoms kernel mal milprocs #x100 
