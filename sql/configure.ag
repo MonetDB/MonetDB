@@ -117,13 +117,3 @@ dnl Checks for library functions.
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
-
-AC_OUTPUT(
-Makefile
-conf/Makefile
-src/Makefile
-src/parser/Makefile
-src/odbc/Makefile
-src/odbc/setup/Makefile
-src/odbc/driver/Makefile
-)

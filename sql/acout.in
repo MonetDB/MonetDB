@@ -1,7 +1,0 @@
-./Makefile
-conf/Makefile
-src/Makefile
-src/parser/Makefile
-src/odbc/Makefile
-src/odbc/setup/Makefile
-src/odbc/driver/Makefile
