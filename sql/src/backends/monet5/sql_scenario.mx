@@ -208,7 +208,11 @@ SQLinitClient(Client c)
 		if (!schema) {
 			return throwMessage("SQLparser", "No schema defined\n");
 		} else {
-			if (!sendProperty(c->fdout, "version", "4.3") || !sendProperty(c->fdout, "language", "sql") || !sendProperty(c->fdout, "schema", schema) || stream_flush(c->fdout) < 0) {
+			if (!sendProperty(c->fdout, "version", "5") ||
+				!sendProperty(c->fdout, "language", "sql") ||
+				!sendProperty(c->fdout, "schema", schema) ||
+				stream_flush(c->fdout) < 0)
+			{
 				mvc_destroy(m);
 				return throwMessage("SQLparser", "Disconnected\n");
 			}
@@ -299,7 +303,8 @@ SQLreader(Client c)
 Continue processing any left-over input from the previous round.
 @c
 	T0 = GDKusec();
-	while (in->pos < in->len && (isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
+	while (in->pos < in->len &&
+		(isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
 		in->pos++;
 
 #ifdef _SQL_READER_DEBUG
@@ -323,8 +328,7 @@ Continue processing any left-over input from the previous round.
 			/* auto_commit on end of statement */
 			if (m->auto_commit && m->trans) {
 				if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
-					if (m->qc)
-						qc_destroy(m->qc);
+					if (m->qc) qc_destroy(m->qc);
 					m->qc = qc_create();
 				}
 				if (mvc_commit(m, 0, NULL) < 0) {
@@ -581,7 +585,7 @@ query block.
 			msg = throwMessage("SQLparser", "Semantic errors\n");
 		}
 	}
-      finalize:
+finalize:
 	m->scanner.mode = oldmode;
 	if (explainPlan()) {
 		printFunction(c->fdout, c->curprg->def, c->listing);

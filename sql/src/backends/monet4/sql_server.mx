@@ -712,7 +712,7 @@ str_cast(str *res, ptr v, int tpe, int *len)
 	if (sz > *len) {
 		GDKfree(r);
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
-			GDKerror("str_cast: value to long for type (var)char(%d)\n", *len);
+			GDKerror("str_cast: value too long for type (var)char(%d)\n", *len);
 			return GDK_FAIL;
 		} else {
 			*res = GDKstrdup(str_nil);
@@ -729,7 +729,7 @@ int str2@1( @1 *res, str v, int *len ){
 
 	if (slen > *len || slen > 5) {
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
-			GDKerror("str2@1: value to long for type int(%d)\n",*len);
+			GDKerror("str2@1: value too long for type int(%d)\n",*len);
 			return GDK_FAIL;
 		} else {
 			*res = @1_nil;
