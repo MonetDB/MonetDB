@@ -56,7 +56,7 @@ module mapi;
 command listen():int
 address MAPIlisten_default
 comment "Start a Mapi server with the default settings.";
-command listen(port:lng):int
+command listen(port:int):int
 address MAPIlisten_port
 comment "Start a Mapi server with the default settings.";
 command listen(port:int, maxusers:int):int
